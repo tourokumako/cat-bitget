@@ -189,22 +189,11 @@ class BitgetAdapter:
         hold_side: str,   # "long" / "short"
         client_oid: str,
     ) -> Dict[str, Any]:
-        r = self.api._request_with_params(
-            POST,
-            "/api/v2/mix/order/place-order",
-            {
-                "symbol": symbol,
-                "productType": product_type,
-                "marginMode": margin_mode,
-                "marginCoin": margin_coin,
-                "size": size,
-                "side": side,
-                "tradeSide": "close",
-                "holdSide": hold_side,
-                "orderType": "market",
-                "clientOid": client_oid,
-            },
-        )
+        r = self.api.closePositions({
+            "symbol": symbol,
+            "productType": product_type,
+            "holdSide": hold_side,
+        })
         if r.get("code") != "00000":
             raise RuntimeError(f"close-order failed: {r}")
         return r

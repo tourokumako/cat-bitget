@@ -8,7 +8,7 @@ from runner.io_json import read_json, write_json, state_path
 
 # bitget-python-sdk-api がプロジェクトルート（io_json.state_path と同じ基準）
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
-_STRATEGY_FILE = _PROJECT_ROOT / "strategies" / "cat_live_decider.py"
+_STRATEGY_FILE = _PROJECT_ROOT / "strategies" / "cat_v9_decider.py"
 
 # キャッシュ（毎回importし直さない）
 _cached_mod: Optional[object] = None
