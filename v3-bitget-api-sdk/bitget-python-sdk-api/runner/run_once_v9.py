@@ -7,7 +7,7 @@ ALLOW_LIVE_ORDERS = True
 ALLOW_LIVE_ORDERS=False → DRY_RUN（発注スキップ）
 ALLOW_LIVE_ORDERS=True  → 実発注（ユーザーのみ変更可）
 """
-import json, math, sys, time
+import json, math, os, sys, time
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -35,9 +35,12 @@ PRICE_TICK       = Decimal("0.1")
 _KEYS_PATH     = _ROOT / "config" / "bitget_keys.json"
 _PARAMS_PATH   = _ROOT / "config" / "cat_params_v9.json"
 _PENDING_PATH  = state_path("pending_entry.json")
-_OPEN_POS_PATH = state_path("open_position.json")
+_TEST_INJECTION = bool(os.environ.get("CAT_TEST_INJECTION"))
+_OPEN_POS_PATH  = state_path("test_injection_position.json" if _TEST_INJECTION else "open_position.json")
 _OVERRIDE_PATH = state_path("decision_override.json")
 _LOG_PATH      = _ROOT / "logs" / "run_once_v9.jsonl"
+_FAIL_COUNT_PATH = state_path("api_failure_count.json")
+API_FAILURE_LIMIT = 3  # S-9: 連続API失敗でSTOP
 
 # ---- 必須パラメータキー（H-2: Fail-fast） ----
 _REQUIRED_KEYS = [
@@ -58,7 +61,8 @@ _REQUIRED_KEYS = [
 # ログ
 # ==============================================================
 def _log(event: str, **kw) -> None:
-    rec = {"ts": int(time.time() * 1000), "event": event, **kw}
+    _ev = f"[TEST_INJECTION]{event}" if _TEST_INJECTION else event
+    rec = {"ts": int(time.time() * 1000), "event": _ev, **kw}
     line = json.dumps(rec, ensure_ascii=False, default=str)
     _LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(_LOG_PATH, "a", encoding="utf-8") as f:
@@ -77,7 +81,8 @@ def _load_params() -> Dict[str, Any]:
     _log("PARAMS_LOADED", path=str(_PARAMS_PATH),
          sample={k: params[k] for k in [
              "LONG_TP_PCT", "SHORT_TP_PCT", "LONG_SL_PCT", "SHORT_SL_PCT",
-             "LONG_POSITION_SIZE_BTC", "TP_FEE_FLOOR_ENABLE", "TP_ADX_BOOST_ENABLE",
+             "LONG_POSITION_SIZE_BTC", "SHORT_POSITION_SIZE_BTC",
+             "TP_FEE_FLOOR_ENABLE", "TP_ADX_BOOST_ENABLE", "MAX_ADDS_BY_PRIORITY",
          ]})
     return params
 
@@ -106,6 +111,26 @@ def _calc_tp_pct(side: str, adx: float, params: Dict[str, Any]) -> float:
     _log("TPSL_CTX", side=side, effective_tp_pct=round(base, 8),
          adx=round(adx, 2), fee_applied=fee_applied, boost_applied=boost_applied)
     return base
+
+
+# ==============================================================
+# S-9: 連続API失敗カウンター
+# ==============================================================
+def _update_fail_count(api_ok: dict) -> None:
+    """market/candle/pos が全成功 → リセット、1つでも失敗 → +1（1run最大+1）"""
+    try:
+        if all(api_ok.values()):
+            _FAIL_COUNT_PATH.unlink(missing_ok=True)
+        else:
+            fc = 0
+            try:
+                if _FAIL_COUNT_PATH.exists():
+                    fc = int(read_json(_FAIL_COUNT_PATH).get("count", 0))
+            except Exception:
+                pass
+            write_json(_FAIL_COUNT_PATH, {"count": min(fc + 1, API_FAILURE_LIMIT)})
+    except Exception:
+        pass
 
 
 # ==============================================================
@@ -161,7 +186,7 @@ def _cancel_order(adapter: BitgetAdapter, order_id: str) -> None:
         raise RuntimeError(f"cancel_order failed: {r}")
 
 
-def _cancel_plan_order(adapter: BitgetAdapter, order_id: str) -> None:
+def _cancel_plan_order(adapter: BitgetAdapter, order_id: str, event: str = "TP_CANCELLED") -> None:
     """TP/SL plan注文のキャンセル（失敗は WARN 止まり、例外にしない）"""
     if not ALLOW_LIVE_ORDERS:
         _log("DRY_RUN_SKIP", action="cancel_plan_order", order_id=order_id)
@@ -171,7 +196,7 @@ def _cancel_plan_order(adapter: BitgetAdapter, order_id: str) -> None:
     if r.get("code") != "00000":
         _log("TP_CANCEL_WARN", order_id=order_id, response=r)
     else:
-        _log("TP_CANCELLED", order_id=order_id)
+        _log(event, order_id=order_id)
 
 
 def _get_order_state(adapter: BitgetAdapter, order_id: str) -> Dict[str, Any]:
@@ -243,6 +268,8 @@ def _place_sl(adapter: BitgetAdapter, *, side: str,
         return sl, None
     r = adapter.api._request_with_params(POST, "/api/v2/mix/order/place-tpsl-order", req)
     if r.get("code") != "00000":
+        if r.get("code") == "40917":
+            raise RuntimeError(f"SL_PRICE_INVALID:40917: {r}")
         raise RuntimeError(f"place_sl failed: {r}")
     sl_order_id = (r.get("data") or {}).get("orderId")
     _log("SL_SET", side=side, sl_price=float(sl), entry=float(entry_price),
@@ -286,23 +313,25 @@ def _check_exits(pos: Dict, mark_price: float, df, params: Dict) -> Optional[str
             return float("nan")
         return float(df.at[len(df) - 1, col])
 
-    # 1. BREAKOUT_CUT (P22/P23 SHORT, add≥3)
-    if side == "SHORT" and priority in (22, 23) and add_count >= 3:
-        if priority == 23:
-            bw = _col("bb_width"); rsi = _col("rsi_short")
-            if (not math.isnan(bw)  and bw  >= float(params.get("P23_BREAKOUT_BB_WIDTH_MIN", 0.03))
-                    and not math.isnan(rsi) and rsi >= float(params.get("P23_BREAKOUT_RSI_MIN", 70.0))):
-                return "BREAKOUT_CUT"
-        else:
+    # 1. BREAKOUT_CUT (P22/P23 SHORT, add==3, bb_width+rsi条件)
+    if side == "SHORT" and priority in (22, 23) and add_count == 3:
+        bw = _col("bb_width"); rsi = _col("rsi_short")
+        if (not math.isnan(bw)  and bw  >= float(params.get("P23_BREAKOUT_BB_WIDTH_MIN", 0.03))
+                and not math.isnan(rsi) and rsi >= float(params.get("P23_BREAKOUT_RSI_MIN", 70.0))):
             return "BREAKOUT_CUT"
 
-    # 2. MFE_STALE_CUT (P22 SHORT, add≥5, hold≥120min)
+    # 2. MFE_EXIT (P22 SHORT, hold≥TIME_EXIT×0.6, mfe_max≥20USD)
+    if side == "SHORT" and priority == 22:
+        _tmin = float(params.get("SHORT_TIME_EXIT_MIN", 480))
+        if hold_min >= _tmin * 0.6 and mfe_usd >= float(params.get("P22_SHORT_MFE_MAX_GATE_USD", 20.0)):
+            return "MFE_EXIT"
+
+    # 3. MFE_STALE_CUT (P22 SHORT, add≥5, hold≥120min, mfe_max<12USD)
     if side == "SHORT" and priority == 22 and add_count >= 5 and hold_min >= 120:
-        if (mfe_usd  >= float(params.get("P22_SHORT_MFE_EXIT_PROFIT_USD", 15.0))
-                and unreal <= float(params.get("P22_SHORT_MFE_MAX_GATE_USD", 20.0))):
+        if mfe_usd < float(params.get("P22_SHORT_MFE_STALE_GATE_USD", 12.0)):
             return "MFE_STALE_CUT"
 
-    # 3. RSI 逆行 EXIT (SHORT)
+    # 4. RSI 逆行 EXIT (SHORT)
     if side == "SHORT" and bool(params.get("FEAT_SHORT_RSI_REVERSE_EXIT", False)):
         rsi_v = _col("rsi_short"); rsi_sl = _col("rsi_slope_short"); adx_v = _col("adx")
         if (hold_min >= float(params.get("SHORT_MIN_HOLD_FOR_RSI_EXIT", 1))
@@ -311,11 +340,13 @@ def _check_exits(pos: Dict, mark_price: float, df, params: Dict) -> Optional[str
                 and not math.isnan(adx_v)  and adx_v  < float(params.get("SHORT_RSI_EXIT_ADX_MAX", 12))):
             return "RSI_REVERSE_EXIT"
 
-    # 4. MAE_CUT (P23 SHORT, add≥4, hold≥300min)
+    # 5. MAE_CUT (P23 SHORT, add≥4, hold≥300min, mark_price >= entry + 50/size)
     if side == "SHORT" and priority == 23 and add_count >= 4 and hold_min >= 300:
-        return "MAE_CUT"
+        _mae_cap_price = entry_p + (50.0 / size_btc)
+        if mark_price >= _mae_cap_price:
+            return "MAE_CUT"
 
-    # 5. PROFIT_LOCK
+    # 6. PROFIT_LOCK
     if side == "LONG" and int(params.get("LONG_PROFIT_LOCK_ENABLE", 0)):
         if (mfe_usd >= float(params.get("LONG_PROFIT_LOCK_ARM_USD", 15.0))
                 and unreal < float(params.get("LONG_PROFIT_LOCK_USD", 6.0))):
@@ -324,17 +355,39 @@ def _check_exits(pos: Dict, mark_price: float, df, params: Dict) -> Optional[str
         if (mfe_usd >= float(params.get("P22_SHORT_PROFIT_LOCK_ARM_USD", 22.0))
                 and unreal < float(params.get("P22_SHORT_PROFIT_LOCK_USD", 8.0))):
             return "PROFIT_LOCK"
+    # 6a. PROFIT_LOCK (P23_SHORT, add==5, lock_usd=10固定)
+    # 原本: low <= lock_price（利益が$10に達した時点で即EXIT）に合わせて mark_price <= lock_price
+    if side == "SHORT" and priority == 23 and add_count == 5:
+        _lock_usd_p23 = 10.0
+        _lock_price_p23 = entry_p - (_lock_usd_p23 / size_btc)
+        if mark_price <= _lock_price_p23:
+            return "PROFIT_LOCK"
+    # 6b. PROFIT_LOCK (P22_SHORT, add==5, lock_usd=10固定)
+    if side == "SHORT" and priority == 22 and add_count == 5:
+        _lock_usd_p22 = 10.0
+        _lock_price_p22 = entry_p - (_lock_usd_p22 / size_btc)
+        if mark_price <= _lock_price_p22:
+            return "PROFIT_LOCK"
 
-    # 6. STAGNATION_CUT
-    if hold_min >= float(params.get("STAG_MIN_M", 20.0)) and mfe_usd <= float(params.get("STAG_MFE_USD", 1.0)):
-        if priority == 4 and int(params.get("P4_STAGNATION_WIDE_ENABLE", 0)):
-            if (hold_min >= float(params.get("P4_STAGNATION_WIDE_MIN", 20.0))
-                    and mfe_usd <= float(params.get("P4_STAGNATION_WIDE_MAX_MFE", 1.0))):
-                return "STAGNATION_CUT"
-        elif priority != 4:
+    # 7. STAGNATION_CUT
+    if priority == 4 and int(params.get("P4_STAGNATION_WIDE_ENABLE", 0)):
+        if (hold_min >= float(params.get("P4_STAGNATION_WIDE_MIN", 20.0))
+                and mfe_usd <= float(params.get("P4_STAGNATION_WIDE_MAX_MFE", 1.0))):
             return "STAGNATION_CUT"
+    elif hold_min >= float(params.get("STAG_MIN_M", 30.0)) and mfe_usd <= float(params.get("STAG_MFE_USD", 1.0)):
+        return "STAGNATION_CUT"
 
-    # 7. TIME_EXIT
+    # 8a. P4_BREAK_EXIT (P4 LONG, hold≒P4_BREAK_HOLD_MIN, bb_mid_slope<=閾値)
+    if side == "LONG" and priority == 4:
+        _break_min = float(params.get("P4_BREAK_HOLD_MIN", 90.0))
+        _break_slope = float(params.get("P4_BREAK_SLOPE_MAX", -20.0))
+        bb_slope = _col("bb_mid_slope")
+        if (abs(hold_min - _break_min) < 5.0
+                and not math.isnan(bb_slope)
+                and bb_slope <= _break_slope):
+            return "P4_BREAK_EXIT"
+
+    # 8b. TIME_EXIT
     base_t = float(params.get("P2_TIME_EXIT_MIN" if priority == 2 else
                               f"{side}_TIME_EXIT_MIN", 150 if side == "LONG" else 480))
     down_f = float(params.get(f"{side}_TIME_EXIT_DOWN_FACTOR", 0.75))
@@ -434,6 +487,7 @@ def _run_exit_checks(adapter: BitgetAdapter, open_pos: Dict, mark_price: float,
             elif mark_price >= float(_sl):         ext_reason = "SL_FILLED"
             else:                                  ext_reason = "TP_OR_SL_HIT"
         _log("EXIT_EXTERNAL", reason=ext_reason, side=_side,
+             priority=open_pos.get("entry_priority"),
              mark_price=mark_price, tp=_tp, sl=_sl)
         _OPEN_POS_PATH.unlink(missing_ok=True)
         return True
@@ -472,11 +526,46 @@ def _run_exit_checks(adapter: BitgetAdapter, open_pos: Dict, mark_price: float,
     if exit_reason is None:
         return False
 
-    hold_min = (int(time.time() * 1000) - int(open_pos["entry_time"])) / 60_000
+    hold_min   = (int(time.time() * 1000) - int(open_pos["entry_time"])) / 60_000
+    p_priority = int(open_pos.get("entry_priority", -1))
+    p_add      = int(open_pos.get("add_count", 1))
+
+    def _col_last(col: str):
+        if df is None or col not in df.columns: return None
+        v = df.at[len(df) - 1, col]
+        try: return round(float(v), 4) if not math.isnan(float(v)) else None
+        except Exception: return None
+
+    exit_ctx: Dict = {"add_count": p_add}
+    if exit_reason == "TIME_EXIT":
+        base_t = float(params.get("P2_TIME_EXIT_MIN" if p_priority == 2 else
+                                  f"{p_side}_TIME_EXIT_MIN", 150 if p_side == "LONG" else 480))
+        down_f = float(params.get(f"{p_side}_TIME_EXIT_DOWN_FACTOR", 0.75))
+        exit_ctx["effective_exit_min"] = round(base_t * (down_f if unreal < 0 else 1.0), 1)
+    elif exit_reason == "STAGNATION_CUT":
+        exit_ctx.update({"stag_min_m": params.get("STAG_MIN_M"),
+                         "stag_mfe_usd": params.get("STAG_MFE_USD")})
+    elif exit_reason == "PROFIT_LOCK":
+        arm_k  = ("P22_SHORT_PROFIT_LOCK_ARM_USD" if (p_side == "SHORT" and p_priority == 22)
+                  else "LONG_PROFIT_LOCK_ARM_USD")
+        lock_k = ("P22_SHORT_PROFIT_LOCK_USD" if (p_side == "SHORT" and p_priority == 22)
+                  else "LONG_PROFIT_LOCK_USD")
+        exit_ctx.update({"arm_usd": params.get(arm_k), "lock_usd": params.get(lock_k)})
+    elif exit_reason == "RSI_REVERSE_EXIT":
+        exit_ctx.update({"rsi": _col_last("rsi_short"), "rsi_slope": _col_last("rsi_slope_short"),
+                         "adx": _col_last("adx"), "rsi_thresh": params.get("SHORT_RSI_THRESH"),
+                         "adx_max": params.get("SHORT_RSI_EXIT_ADX_MAX")})
+    elif exit_reason == "BREAKOUT_CUT":
+        exit_ctx.update({"bb_width": _col_last("bb_width"), "rsi": _col_last("rsi_short")})
+    elif exit_reason == "MFE_STALE_CUT":
+        exit_ctx.update({"mfe_profit_thresh": params.get("P22_SHORT_MFE_EXIT_PROFIT_USD"),
+                         "mfe_gate": params.get("P22_SHORT_MFE_MAX_GATE_USD")})
+
     _log("EXIT_TRIGGERED", reason=exit_reason, side=p_side,
+         priority=open_pos.get("entry_priority"),
          mark_price=mark_price, entry_price=entry_p,
          hold_min=round(hold_min, 1), mfe_usd=open_pos.get("mfe_usd", 0),
-         unreal_usd=round(unreal, 4))
+         unreal_usd=round(unreal, 4), exit_ctx=exit_ctx)
 
     # クローズ前再確認
     try:
@@ -512,7 +601,7 @@ def _run_exit_checks(adapter: BitgetAdapter, open_pos: Dict, mark_price: float,
             _cancel_plan_order(adapter, tp_oid)
         sl_oid = open_pos.get("sl_order_id")
         if sl_oid:
-            _cancel_plan_order(adapter, sl_oid)
+            _cancel_plan_order(adapter, sl_oid, event="SL_CANCELLED")
         _OPEN_POS_PATH.unlink(missing_ok=True)
         _log("CLOSE_VERIFY", status="complete", reason=exit_reason)
     else:
@@ -525,6 +614,18 @@ def _run_exit_checks(adapter: BitgetAdapter, open_pos: Dict, mark_price: float,
 # ==============================================================
 def run() -> None:
     _log("RUN_START", allow_live_orders=ALLOW_LIVE_ORDERS)
+
+    # S-9: 連続API失敗チェック（market/candle/pos の成否を追跡）
+    _api_ok = {"market": False, "candle": False, "pos": not ALLOW_LIVE_ORDERS}
+    _fc = 0
+    try:
+        if _FAIL_COUNT_PATH.exists():
+            _fc = int(read_json(_FAIL_COUNT_PATH).get("count", 0))
+    except Exception:
+        pass
+    if _fc >= API_FAILURE_LIMIT:
+        _log("STOP", reason=f"consecutive_api_failures: count={_fc} limit={API_FAILURE_LIMIT}")
+        return
 
     # 1. 設定ロード
     try:
@@ -557,8 +658,10 @@ def run() -> None:
             _live_pos = adapter.get_single_position(
                 product_type=PRODUCT_TYPE, margin_coin=MARGIN_COIN, symbol=SYMBOL)
             _exchange_has_pos = _live_pos is not None and float(_live_pos.get("total", 0)) > 0
+            _api_ok["pos"] = True
         except Exception as e:
             _log("STOP", reason=f"startup_reconciliation_error: {e}")
+            _update_fail_count(_api_ok)  # +1: pos API 失敗
             return
         if open_pos is None and pending is None and _exchange_has_pos:
             _log("STOP", reason=(
@@ -568,6 +671,49 @@ def run() -> None:
             ))
             return
         if open_pos is not None and not _exchange_has_pos:
+            # plan order 履歴で証拠確認（TP/SL約定の場合は EXIT_EXTERNAL として確定処理）
+            _tp_oid = open_pos.get("tp_order_id")
+            _sl_oid = open_pos.get("sl_order_id")
+            _exit_reason = None
+            try:
+                _plan_hist = adapter.get_plan_order_history(PRODUCT_TYPE, SYMBOL)
+                _sl_execute_oid = None
+                for _ph in _plan_hist:
+                    if _ph.get("planStatus") != "executed":
+                        continue
+                    _ph_oid = _ph.get("orderId")
+                    if _tp_oid and _ph_oid == _tp_oid:
+                        _exit_reason = "TP_FILLED"
+                        break
+                    # SL: executeOrderId を取得して fill-history で照合する
+                    # NOTE: 本番専用の暫定実装 / デモ口座では fillList=null のため未検証
+                    if _sl_oid and _ph_oid == _sl_oid:
+                        _sl_execute_oid = _ph.get("executeOrderId")
+                if _exit_reason is None and _sl_execute_oid:
+                    _fills = adapter.get_fill_history(PRODUCT_TYPE, SYMBOL, order_id=_sl_execute_oid)
+                    for _f in _fills:
+                        if _f.get("orderId") == _sl_execute_oid and _f.get("tradeSide") == "close":
+                            _exit_reason = "SL_FILLED"
+                            break
+            except Exception as _e:
+                _log("RECONCILIATION_HISTORY_ERROR", error=str(_e))
+            if _exit_reason:
+                _log("EXIT_EXTERNAL", reason=_exit_reason, side=open_pos.get("side"),
+                     priority=open_pos.get("entry_priority"),
+                     tp=open_pos.get("tp"), sl=open_pos.get("sl"),
+                     source="startup_reconciliation")
+                _OPEN_POS_PATH.unlink(missing_ok=True)
+                if pending is not None:
+                    try:
+                        adapter.cancel_order(PRODUCT_TYPE, SYMBOL, pending["order_id"])
+                        _log("PENDING_CANCELLED_ON_EXIT", order_id=pending["order_id"],
+                             reason="exit_external_startup_recon")
+                    except Exception as _ce:
+                        _log("PENDING_CANCEL_ERROR", order_id=pending.get("order_id"),
+                             error=str(_ce))
+                    finally:
+                        _PENDING_PATH.unlink(missing_ok=True)
+                return
             _log("STOP", reason=(
                 f"startup_reconciliation_failed: open_position.json exists "
                 f"(side={open_pos.get('side')} size={open_pos.get('size_btc')}) "
@@ -608,6 +754,13 @@ def run() -> None:
                     # → _run_exit_checks (S-7) へ進む
                 else:
                     _log("TP_ORDER_VERIFIED", tp_order_id=tp_oid)
+                    # Change B: SL order 存在チェック（TP_ORDER_VERIFIED と同じ entrustedList を使用）
+                    sl_oid_chk = open_pos.get("sl_order_id")
+                    if sl_oid_chk and str(sl_oid_chk) not in ids:
+                        _log("STOP", reason=f"sl_order_missing_pos_exists: sl_order_id={sl_oid_chk}")
+                        return
+                    if sl_oid_chk:
+                        _log("SL_ORDER_VERIFIED", sl_order_id=sl_oid_chk)
             except Exception as e:
                 _log("STOP", reason=f"tp_order_verify_failed: {e}")
                 return
@@ -630,8 +783,10 @@ def run() -> None:
     # 3. 市場健全性
     try:
         mark_price = _market_sanity(adapter)
+        _api_ok["market"] = True
     except RuntimeError as e:
         _log("STOP", reason=str(e))
+        _update_fail_count(_api_ok)  # +1: market API 失敗
         return
 
     # 4. 足データ
@@ -640,9 +795,12 @@ def run() -> None:
         candles_raw = candles_r.get("data") or []
         if len(candles_raw) < 60:
             _log("STOP", reason=f"insufficient_candles: {len(candles_raw)}")
+            _update_fail_count(_api_ok)  # +1: candle データ不足
             return
+        _api_ok["candle"] = True
     except Exception as e:
         _log("STOP", reason=f"candles_fetch_failed: {e}")
+        _update_fail_count(_api_ok)  # +1: candle API 失敗
         return
 
     last_close = float(candles_raw[-1][4]) if candles_raw else mark_price
@@ -671,7 +829,22 @@ def run() -> None:
             try:
                 _confirm_entry(adapter, pending, open_pos, detail, mark_price, params)
             except Exception as e:
+                _PENDING_PATH.unlink(missing_ok=True)   # filled確定後の例外→pending必ずクリア
+                if "SL_PRICE_INVALID:40917" in str(e):
+                    p_side = str(pending.get("side", ""))
+                    _log("SL_PRICE_INVALID_CLOSE", side=p_side, reason=str(e))
+                    try:
+                        _do_close(adapter, p_side=p_side,
+                                  size=str(pending.get("size", "")),
+                                  client_oid=f"sl_invalid_{int(time.time()*1000)}")
+                        _OPEN_POS_PATH.unlink(missing_ok=True)
+                        _log("EXIT_COMPLETE", exit_reason="SL_PRICE_INVALID")
+                    except Exception as ce:
+                        _log("STOP", reason=f"sl_invalid_close_failed: {ce}")
+                    _update_fail_count(_api_ok)
+                    return
                 _log("STOP", reason=f"confirm_entry_failed: {e}")
+                _update_fail_count(_api_ok)
                 return
             try:
                 open_pos = read_json(_OPEN_POS_PATH) if _OPEN_POS_PATH.exists() else None
@@ -700,6 +873,7 @@ def run() -> None:
                 remaining_sz = float((lp or {}).get("total", 0)) if lp else 0.0
             except Exception as e:
                 _log("STOP", reason=f"post_cancel_pos_check_failed: {e}")
+                _update_fail_count(_api_ok)
                 return
 
             existing_sz = float(open_pos.get("size_btc", 0)) if open_pos else 0.0
@@ -729,6 +903,7 @@ def run() -> None:
                          entry_price=actual_price, tp=float(tp))
                 except Exception as e:
                     _log("STOP", reason=f"partial_fill_tp_failed: {e}")
+                    _update_fail_count(_api_ok)
                     return
 
             _PENDING_PATH.unlink(missing_ok=True)
@@ -740,6 +915,7 @@ def run() -> None:
             if open_pos is not None:
                 _run_exit_checks(adapter, open_pos, mark_price, candles_raw, params)
             _log("NOOP", reason="pending_waiting", bar_elapsed=bar_elapsed)
+            _update_fail_count(_api_ok)
             return
 
     # ----------------------------------------------------------
@@ -748,6 +924,7 @@ def run() -> None:
     if open_pos is not None:
         exited = _run_exit_checks(adapter, open_pos, mark_price, candles_raw, params)
         if exited:
+            _update_fail_count(_api_ok)
             return
 
     # ----------------------------------------------------------
@@ -762,6 +939,7 @@ def run() -> None:
             decision = v9_decide(snapshot)
         except Exception as e:
             _log("STOP", reason=f"v9_decide_failed: {e}")
+            _update_fail_count(_api_ok)
             return
 
     _log("DECISION", action=decision.get("action"), reason=decision.get("reason"),
@@ -770,12 +948,17 @@ def run() -> None:
     action = decision.get("action")
     if action == "STOP":
         _log("STOP", reason=decision.get("reason"))
+        _update_fail_count(_api_ok)
         return
     if action == "NOOP":
         _log("NOOP", reason=decision.get("reason"), debug=decision.get("debug"))
+        _log("RUN_SUMMARY", action="NOOP", reason=decision.get("reason"),
+             side=decision.get("side"), priority=decision.get("entry_priority"))
+        _update_fail_count(_api_ok)
         return
     if action != "ENTER":
         _log("STOP", reason=f"unexpected_action: {action}")
+        _update_fail_count(_api_ok)
         return
 
     d_side     = str(decision["side"])
@@ -786,6 +969,7 @@ def run() -> None:
     if open_pos is not None:
         if open_pos["side"] != d_side:
             _log("NOOP", reason=f"pos_side_mismatch: pos={open_pos['side']} dec={d_side}")
+            _update_fail_count(_api_ok)
             return
         add_count = int(open_pos.get("add_count", 1))
         pos_pri   = int(open_pos.get("entry_priority", d_priority))
@@ -793,11 +977,13 @@ def run() -> None:
                         str(pos_pri), params.get(f"{d_side}_MAX_ADDS", 5)))
         if add_count >= max_adds:
             _log("NOOP", reason=f"add_limit_reached: add_count={add_count} max={max_adds}")
+            _update_fail_count(_api_ok)
             return
 
     # 同一 side の pending が残っていたら発注しない
     if pending is not None and pending.get("side") == d_side:
         _log("NOOP", reason=f"same_side_pending_exists: side={d_side}")
+        _update_fail_count(_api_ok)
         return
 
     # 指値計算
@@ -818,6 +1004,7 @@ def run() -> None:
                                       price=lp_str, client_oid=client_oid)
     except Exception as e:
         _log("STOP", reason=f"place_limit_order_failed: {e}")
+        _update_fail_count(_api_ok)
         return
 
     write_json(_PENDING_PATH, {
@@ -832,6 +1019,8 @@ def run() -> None:
         "adx_at_entry":    adx_val,
     })
     _log("PENDING_WRITTEN", order_id=order_id, side=d_side, limit_price=lp_str)
+    _log("RUN_SUMMARY", action="ENTRY", side=d_side, priority=d_priority, limit_price=lp_str)
+    _update_fail_count(_api_ok)
 
 
 if __name__ == "__main__":

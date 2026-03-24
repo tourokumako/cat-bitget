@@ -144,6 +144,34 @@ class BitgetAdapter:
         lst = data.get("entrustedList")
         return [] if lst in (None, []) else list(lst)
 
+    def get_fill_history(self, product_type: str, symbol: str,
+                         limit: int = 20, order_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """約定履歴を取得（第一証拠: クローズ約定確認用）"""
+        params: Dict[str, Any] = {"productType": product_type, "symbol": symbol, "limit": str(limit)}
+        if order_id:
+            params["orderId"] = order_id
+        r = self.api._request_with_params(
+            GET,
+            "/api/v2/mix/order/fill-history",
+            params,
+        )
+        if r.get("code") != "00000":
+            raise RuntimeError(f"fill-history failed: {r}")
+        data = r.get("data") or {}
+        return data.get("fillList") or []
+
+    def get_plan_order_history(self, product_type: str, symbol: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """plan order履歴を取得（第二証拠: TP/SL filled確認用）"""
+        r = self.api._request_with_params(
+            GET,
+            "/api/v2/mix/order/orders-plan-history",
+            {"productType": product_type, "symbol": symbol, "planType": "profit_loss", "limit": str(limit)},
+        )
+        if r.get("code") != "00000":
+            raise RuntimeError(f"orders-plan-history failed: {r}")
+        data = r.get("data") or {}
+        return data.get("entrustedList") or []
+
     # --- EXEC helpers (still no retries) ---
 
     def place_market_order(

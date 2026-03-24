@@ -89,7 +89,7 @@
   "P24_BB_SLOPE_MAX": 50.0,
   "P24_STOCH_MIN": 60.0,
 
-  "STAG_MIN_M": 20.0,
+  "STAG_MIN_M": 30.0,
   "STAG_MFE_USD": 1.0,
 
   "LONG_COOLDOWN_MIN": 0.0,

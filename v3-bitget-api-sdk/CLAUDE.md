@@ -87,6 +87,7 @@ Bitget本番環境（BTCUSDT先物）において、CAT_v9_regime.pyのロジッ
 |---------|-----------|
 | `.claude/context/test_checklist.md` | テスト実行前 |
 | `.claude/context/project_spec.md` | ファイル構成確認時 |
+| `.claude/context/cat_v9_regime_map.md` | 原本 Exit 条件確認・Logic Parity 作業時 |
 | `.claude/rules/exchange_spec.md` | APIエラー発生時・コード変更時 |
 | `config/cat_params_v9.json` | パラメータ確認時 |
 
