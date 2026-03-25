@@ -1,9 +1,9 @@
 {
-  "api_key": "bg_6e564b8bd9deb9b7ed02b0c90db81a20",
-  "api_secret": "055268a500a627845aedb324532cd47e154c7869c5f25dbd02a944069ddb0841",
-  "passphrase": "CatDEMOdemo2025",
-  "paper_trading": true,
-  "allow_paper_orders": true
+  "api_key": "bg_1d9b6bc15957014e152ac70526e128bd",
+  "api_secret": "38c428d2755e43cfcd8ab1d247ce2dc6c67a77d88d0a7cec526f67c35603334a",
+  "passphrase": "catphase3safe01",
+  "paper_trading": false,
+  "allow_paper_orders": false
 
 
 }
