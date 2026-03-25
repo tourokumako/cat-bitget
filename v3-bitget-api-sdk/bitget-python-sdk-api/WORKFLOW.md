@@ -4,11 +4,12 @@
 
 | 項目 | 状態 |
 |------|------|
-| 現在のフェーズ | **Phase 2c-bis（デモ連続稼働テスト）— 進行中** |
-| デモポジション | なし（クリーン）|
-| 次のタスク | 24時間稼働確認 → trade_summary.py で集計確認 → Phase 4 へ |
-| ALLOW_LIVE_ORDERS | True（テスト実行中。Claudeは変更しない） |
-| open_position.json | なし（削除済み） |
+| 現在のフェーズ | **Phase 5（常時稼働）** |
+| 本番ポジション | なし（クリーン）|
+| 次のタスク | cron 稼働監視・初回エントリー確認 |
+| ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
+| open_position.json | なし |
+| paper_trading | false（本番稼働中） |
 
 ---
 
@@ -206,7 +207,7 @@ Phase: **2（V9判断ロジック移植）**
 | S-1 ① | ✅ | 実API: ENTRY_SEND code=00000 / PENDING_WRITTEN / pending_entry.json作成確認（2026-03-21 セッション7） |
 | S-1 ② | ✅ | 実API: PENDING_STATUS filled / ADD_CONFIRMED / PENDING_CLEARED / pending_entry.json消滅確認（2026-03-21 セッション7） |
 | S-1 ③ | 未 | DRY_RUNのため無効化。実APIキャンセルで再実施 |
-| S-1 ④ | ✅ | pending live 中に run → NOOP:pending_waiting 確認（2026-03-22 セッション13） |
+| S-1 ④ | ✅ | pending live 中に run → NOOP:pending_waiting 確認（2026-03-22 セッショ��13） |
 | S-1 ⑤⑥⑦ | 未 | API失敗・部分約定・post_only拒否（実弾待ち）|
 | S-1 ⑦ | ✅ | post_only拒否 → PENDING_CLEARED:externally_canceled 確認（2026-03-22 セッション9） |
 | S-4 SL設定 | ✅ | 実API: add_count=2でSL_SET code=00000 / sl_order_id=1419232714410180608 / 取引所一致（2026-03-21 セッション7） |

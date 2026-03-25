@@ -7,7 +7,8 @@ ALLOW_LIVE_ORDERS = True
 ALLOW_LIVE_ORDERS=False → DRY_RUN（発注スキップ）
 ALLOW_LIVE_ORDERS=True  → 実発注（ユーザーのみ変更可）
 """
-import json, math, os, sys, time
+import csv, json, math, os, sys, time
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -42,6 +43,16 @@ _LOG_PATH      = _ROOT / "logs" / "run_once_v9.jsonl"
 _FAIL_COUNT_PATH = state_path("api_failure_count.json")
 API_FAILURE_LIMIT = 3  # S-9: 連続API失敗でSTOP
 
+# ---- ライブログ（paper_trading=False 時のみ書き出し） ----
+_LIVE_MODE: bool = False
+_JST = timezone(timedelta(hours=9))
+_LIVE_DECISION_LOG = _ROOT / "logs" / "live_decision.log"
+_LIVE_TRADES_CSV   = _ROOT / "logs" / "live_trades.csv"
+_DECISION_LOG_EVENTS = {
+    "DECISION", "ENTRY_SEND", "ENTRY_CONFIRMED",
+    "EXIT_TRIGGERED", "EXIT_EXTERNAL", "CLOSE_VERIFY", "EXIT_COMPLETE", "STOP",
+}
+
 # ---- 必須パラメータキー（H-2: Fail-fast） ----
 _REQUIRED_KEYS = [
     "LONG_POSITION_SIZE_BTC", "SHORT_POSITION_SIZE_BTC",
@@ -68,6 +79,57 @@ def _log(event: str, **kw) -> None:
     with open(_LOG_PATH, "a", encoding="utf-8") as f:
         f.write(line + "\n")
     print(line)
+    if _LIVE_MODE and event in _DECISION_LOG_EVENTS and not _TEST_INJECTION:
+        with open(_LIVE_DECISION_LOG, "a", encoding="utf-8") as _df:
+            _df.write(line + "\n")
+
+
+_CSV_HEADER = [
+    "datetime_jst", "entry_time_jst", "holding_minutes",
+    "side", "priority", "size_btc", "add_count",
+    "entry_price_avg", "exit_price_approx", "exit_reason",
+    "gross_usd_approx", "fee_usd_approx", "net_usd_approx",
+]
+
+
+def _append_trade_csv(open_pos: dict, exit_price: float, exit_reason: str) -> None:
+    """1トレード1行の集計用CSVに追記（live時のみ）。近似値。秘密情報は出力しない。"""
+    if not _LIVE_MODE or _TEST_INJECTION:
+        return
+    try:
+        side        = open_pos.get("side", "")
+        entry_p     = float(open_pos.get("entry_price", 0))
+        size_b      = float(open_pos.get("size_btc", 0))
+        add_count   = int(open_pos.get("add_count", 1))
+        priority    = open_pos.get("entry_priority", "")
+        entry_ts_ms = int(open_pos.get("entry_time", 0))
+        now_ms      = int(time.time() * 1000)
+        holding_min = round((now_ms - entry_ts_ms) / 60_000, 1) if entry_ts_ms else ""
+        dt_jst       = datetime.fromtimestamp(now_ms / 1000,      tz=_JST).strftime("%Y-%m-%d %H:%M:%S")
+        entry_dt_jst = datetime.fromtimestamp(entry_ts_ms / 1000, tz=_JST).strftime("%Y-%m-%d %H:%M:%S") if entry_ts_ms else ""
+        ep = float(exit_price) if exit_price else None
+        if ep:
+            direction = 1 if side == "LONG" else -1
+            gross = round((ep - entry_p) * size_b * direction, 4)
+            maker, taker = 0.00014, 0.00042
+            fee = round(size_b * ep * (maker * 2 if exit_reason in ("TP_FILLED", "SL_FILLED", "TP_OR_SL_HIT") else maker + taker), 4)
+            net = round(gross - fee, 4)
+        else:
+            gross = fee = net = ""
+        write_header = not _LIVE_TRADES_CSV.exists()
+        _LIVE_TRADES_CSV.parent.mkdir(parents=True, exist_ok=True)
+        with open(_LIVE_TRADES_CSV, "a", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            if write_header:
+                w.writerow(_CSV_HEADER)
+            w.writerow([
+                dt_jst, entry_dt_jst, holding_min,
+                side, priority, size_b, add_count,
+                entry_p, ep if ep else "", exit_reason,
+                gross, fee, net,
+            ])
+    except Exception as e:
+        _log("TRADE_CSV_ERROR", error=str(e))
 
 
 # ==============================================================
@@ -489,6 +551,10 @@ def _run_exit_checks(adapter: BitgetAdapter, open_pos: Dict, mark_price: float,
         _log("EXIT_EXTERNAL", reason=ext_reason, side=_side,
              priority=open_pos.get("entry_priority"),
              mark_price=mark_price, tp=_tp, sl=_sl)
+        _ep = (float(_tp) if ext_reason == "TP_FILLED" and _tp
+               else float(_sl) if ext_reason == "SL_FILLED" and _sl
+               else mark_price)
+        _append_trade_csv(open_pos, _ep, ext_reason)
         _OPEN_POS_PATH.unlink(missing_ok=True)
         return True
 
@@ -602,6 +668,7 @@ def _run_exit_checks(adapter: BitgetAdapter, open_pos: Dict, mark_price: float,
         sl_oid = open_pos.get("sl_order_id")
         if sl_oid:
             _cancel_plan_order(adapter, sl_oid, event="SL_CANCELLED")
+        _append_trade_csv(open_pos, mark_price, exit_reason)
         _OPEN_POS_PATH.unlink(missing_ok=True)
         _log("CLOSE_VERIFY", status="complete", reason=exit_reason)
     else:
@@ -637,6 +704,8 @@ def run() -> None:
         _log("STOP", reason=f"config_load_failed: {e}")
         return
     adapter = BitgetAdapter(keys, paper_trading=paper_trading)
+    global _LIVE_MODE
+    _LIVE_MODE = not paper_trading
     _log("CONFIG_LOADED", paper_trading=paper_trading)
 
     # 2. state ロード
@@ -688,7 +757,9 @@ def run() -> None:
                     # SL: executeOrderId を取得して fill-history で照合する
                     # NOTE: 本番専用の暫定実装 / デモ口座では fillList=null のため未検証
                     if _sl_oid and _ph_oid == _sl_oid:
-                        _sl_execute_oid = _ph.get("executeOrderId")
+                        _sl_execute_oid = _ph.get("executeOrderId") or None
+                        if not _sl_execute_oid:
+                            _log("SL_EXECUTE_OID_MISSING", sl_oid=_sl_oid)
                 if _exit_reason is None and _sl_execute_oid:
                     _fills = adapter.get_fill_history(PRODUCT_TYPE, SYMBOL, order_id=_sl_execute_oid)
                     for _f in _fills:
@@ -702,10 +773,14 @@ def run() -> None:
                      priority=open_pos.get("entry_priority"),
                      tp=open_pos.get("tp"), sl=open_pos.get("sl"),
                      source="startup_reconciliation")
+                _ep_recon = (float(open_pos.get("tp", 0)) if _exit_reason == "TP_FILLED"
+                             else float(open_pos.get("sl", 0)) if _exit_reason == "SL_FILLED"
+                             else 0.0)
+                _append_trade_csv(open_pos, _ep_recon, _exit_reason)
                 _OPEN_POS_PATH.unlink(missing_ok=True)
                 if pending is not None:
                     try:
-                        adapter.cancel_order(PRODUCT_TYPE, SYMBOL, pending["order_id"])
+                        _cancel_order(adapter, pending["order_id"])
                         _log("PENDING_CANCELLED_ON_EXIT", order_id=pending["order_id"],
                              reason="exit_external_startup_recon")
                     except Exception as _ce:
@@ -764,6 +839,7 @@ def run() -> None:
                                  priority=open_pos.get("entry_priority"),
                                  tp=open_pos.get("tp"), sl=open_pos.get("sl"),
                                  source="tp_order_missing_lag_recovery")
+                            _append_trade_csv(open_pos, float(open_pos.get("tp", 0)), "TP_FILLED")
                             _OPEN_POS_PATH.unlink(missing_ok=True)
                             return
                         _log("STOP", reason=f"tp_order_missing: tp_order_id={tp_oid} not in plan orders")
@@ -798,7 +874,7 @@ def run() -> None:
             pass
     _log("OVERRIDE_STATUS", active=override is not None, value=override)
 
-    # 3. 市場健全性
+    # 3. 市場健全��
     try:
         mark_price = _market_sanity(adapter)
         _api_ok["market"] = True

@@ -57,7 +57,7 @@ Bitget本番環境（BTCUSDT先物）において、CAT_v9_regime.pyのロジッ
   1. `paper_trading=true` をユーザーが目視確認
   2. `ALLOW_LIVE_ORDERS=True` をClaudeがRead確認
   3. `open_position.json` の現状をClaudeがRead
-  4. 実行コマンドを提示 → GO待ち ← ここで必ず止まる
+  4. 実行コマンドを提示 → GO待ち ← ここで必ず��まる
   5. 実行後、APIレスポンス（code=00000）をログからコピペして確認
 - DRY_RUNで実施したテストを完了扱いにしない
 - セッション終了前にWORKFLOW.mdとproject_v9_progress.mdを更新する
@@ -90,6 +90,7 @@ Bitget本番環境（BTCUSDT先物）において、CAT_v9_regime.pyのロジッ
 | `.claude/context/cat_v9_regime_map.md` | 原本 Exit 条件確認・Logic Parity 作業時 |
 | `.claude/rules/exchange_spec.md` | APIエラー発生時・コード変更時 |
 | `config/cat_params_v9.json` | パラメータ確認時 |
+| `.claude/context/release_guide.md` | 本番切り替え時（Phase 4） |
 
 ---
 
