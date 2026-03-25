@@ -748,6 +748,24 @@ def run() -> None:
                         _log("STOP", reason=f"tp_order_missing_pos_check_failed: {chk_e}")
                         return
                     if live_chk is not None and float(live_chk.get("total", 0)) > 0:
+                        # plan history でTP約定の証拠を確認（タイムラグによる誤STOP防止）
+                        _tp_exit_confirmed = False
+                        try:
+                            _ph_list = adapter.get_plan_order_history(PRODUCT_TYPE, SYMBOL)
+                            for _ph in _ph_list:
+                                if _ph.get("planStatus") == "executed" and str(_ph.get("orderId", "")) == str(tp_oid):
+                                    _tp_exit_confirmed = True
+                                    break
+                        except Exception as _phe:
+                            _log("RECONCILIATION_HISTORY_ERROR", error=str(_phe))
+                        if _tp_exit_confirmed:
+                            _log("EXIT_EXTERNAL", reason="TP_FILLED",
+                                 side=open_pos.get("side"),
+                                 priority=open_pos.get("entry_priority"),
+                                 tp=open_pos.get("tp"), sl=open_pos.get("sl"),
+                                 source="tp_order_missing_lag_recovery")
+                            _OPEN_POS_PATH.unlink(missing_ok=True)
+                            return
                         _log("STOP", reason=f"tp_order_missing: tp_order_id={tp_oid} not in plan orders")
                         return
                     _log("TP_ORDER_MISSING_POS_GONE", tp_order_id=tp_oid)

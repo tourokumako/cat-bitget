@@ -13,7 +13,9 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+
+JST = timezone(timedelta(hours=9))
 
 import pandas as pd
 
@@ -269,6 +271,35 @@ def report(trades: list[dict]) -> None:
     ).round(4)
     print(ag.to_string())
 
+    # ── Priority × ポジションサイズ × Exit理由 詳細 ────────────────────
+    print()
+    print("【Priority × ポジションサイズ × Exit理由（件数 / net_sum / avg_add）】")
+    detail = (
+        df.groupby(["priority", "pos_size_btc", "exit_label"])
+        .agg(
+            件数    =("net_usd", "count"),
+            net_sum =("net_usd", "sum"),
+            add_mean=("add_count", "mean"),
+        )
+        .round(4)
+    )
+    print(detail.to_string())
+
+    # ── Exit理由別 損失集計 ────────────────────────────────────────────
+    print()
+    print("【Exit理由別集計（件数 / net損益）】")
+    er = (
+        df.groupby("exit_label")
+        .agg(
+            件数    =("net_usd", "count"),
+            net_sum =("net_usd", "sum"),
+            net_mean=("net_usd", "mean"),
+        )
+        .round(4)
+        .sort_values("net_sum")
+    )
+    print(er.to_string())
+
     print()
 
 
@@ -291,7 +322,7 @@ def main() -> None:
     if args.since:
         dt = datetime.fromisoformat(args.since)
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
+            dt = dt.replace(tzinfo=JST)
         since_ts = int(dt.timestamp() * 1000)
 
     log_path = Path(args.log)
