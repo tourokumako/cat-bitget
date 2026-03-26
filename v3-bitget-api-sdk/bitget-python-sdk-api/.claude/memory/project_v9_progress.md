@@ -1,4 +1,79 @@
-# project_v9_progress.md — V9実装進捗（Phase 4移行時に圧縮 2026-03-25）
+# project_v9_progress.md — V9実装進捗（2026-03-26 更新）
+
+## 本セッション完了分（2026-03-26 セッション2）
+
+### MAX_SIDES=2（LONG/SHORT同時保有）実装
+
+**背景**: バックテストで oneway → ヘッジモード比でDaily 約60USD → 約120USD（約2倍）。早急対応と判断。BT-1（P2_BB_MID_SLOPE_MIN）はバックテストで悪化のためNO-GO。
+
+**変更ファイル**:
+- `runner/bitget_adapter.py`:
+  - `get_position_by_side(hold_side)` 追加（hedge_mode 両サイド独立取得）
+  - `wait_open_price_avg(hold_side)` に `hold_side` パラメータ追加
+- `runner/run_once_v9.py`: 全面書き直し
+  - state ファイルをサイド別4ファイルに変更（`open_position_long/short.json`, `pending_entry_long/short.json`）
+  - `_migrate_legacy_state_files()`: 旧 `open_position.json` / `pending_entry.json` を自動移行
+  - `_reconcile_side()`: reconciliation をサイド別関数化
+  - `_check_tp_sl_side()`: S-5/S-6 をサイド別関数化
+  - `_confirm_entry(pos_path)` / `_run_exit_checks(pos_path)`: `pos_path` パラメータ追加
+  - `run()`: 両サイドループ構造に全面書き直し。`pos_side_mismatch` NOOP 削除。
+
+**デモ動作確認（2026-03-26）✅ 全項目クリア**:
+- LONG ENTER → `open_position_long.json` 生成 ✅
+- LONG保有中に SHORT ENTER → `open_position_short.json` 生成 ✅
+- `STATE_DECLARED: open_long=true, open_short=true` ✅
+- LONG add×2 約定（add_count=3まで積み上がり）✅
+- pending_long 作成→キャンセル/約定フロー正常 ✅
+- EXIT: `EXIT_EXTERNAL: TP_FILLED (LONG)` → `open_position_long.json` 削除 ✅
+- EXIT後の新規エントリー再発火 ✅
+
+**本番復帰（2026-03-26 完了）**:
+- `config/bitget_keys.json`: 本番キー・`paper_trading=false` に変更
+- cron 再登録（`*/5 * * * *`、🍎マーカー付き）
+- 初回実行確認: `CONFIG_LOADED: paper_trading=false` / `STATE_DECLARED: mode=live` / `MARKET_SANITY_OK` ✅
+
+---
+
+## 本セッション完了分（2026-03-26 セッション1）
+
+### バグ修正・機能追加 3件（run_once_v9.py）
+
+**Fix 1: 429 Too Many Requests リトライ対応**
+- `get_candles()` で429が返った際に即STOPしていた → 最大3回リトライ（1s→2s backoff）
+- 変更箇所: L886-907（`# 4. 足データ`ブロック）
+- トリガー: 03/26 03:00 JST に本番で429 STOP発生
+
+**Fix 2: EMERGENCY_CLOSE（tp_order_id なし → 成行クローズ）**
+- `tp_order_id` が欠損している場合に STOP→手動対応 だったものを 成行クローズ に変更
+- 変更箇所: L802-814（S-5/S-6チェックブロック）
+- イベント: `EMERGENCY_CLOSE` → `EXIT_COMPLETE(exit_reason=EMERGENCY_CLOSE_TP_MISSING)`
+- クローズ失敗時は `emergency_close_failed` で STOP（従来より明示的）
+
+### 本番稼働 観察・分析
+
+**本番成績（2026-03-25 23:25〜2026-03-26）**
+- 3トレード完了: net -31.10 USD
+  - TP利確 P2: +5.68 USD
+  - STAGNATION_CUT P2: -10.20 USD（slope=-19.8 で入りbスルー）
+  - TIME_EXIT P4 add×3: -26.57 USD
+
+**P2 LONGのトレンドフィルター問題**
+- `P2_BB_MID_SLOPE_MIN=8.0` はparamsに定義されているが P2ロジック本体で未使用（原本も同様）
+- slope<0の下げ相場でP2が入り STAGNATION_CUT になるケースが発生
+- → バックテスト BT-1 で検証（improvements.md G-Runner-3 参照）
+
+**P23 SHORT 2回ブロック（pos_side_mismatch）**
+- 03/26 01:10・01:25 にP23 SHORT発火 → LONG保有中でNOOP
+- ヘッジモード活用（MAX_SIDES=2）で対応可能だが実装コスト大
+- → バックテスト BT-2 で機会損失を定量化してから判断
+
+**P23/P24 SHORT不発の原因**
+- P22: bb_mid_slope <= -50 が必要 → 直近は-22〜+8で未達
+- P23: 3本足パターンのタイミング依存。条件は正常動作
+- P24: RSI(21) > 65 が必要 → 直近は60以下で未達
+- じわ下げ相場では SHORT条件が設計上発火しにくい
+
+---
 
 ## 本セッション完了分（2026-03-25 セッション3）
 
@@ -12,7 +87,7 @@
 
 ---
 
-## 本セッション完了分（2026-03-25 セッション2）
+## 本セッション完了分（2026-03-25 セ���ション2）
 
 ### バグ修正2件（run_once_v9.py）
 

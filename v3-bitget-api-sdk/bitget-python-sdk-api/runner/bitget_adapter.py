@@ -130,6 +130,20 @@ class BitgetAdapter:
                 continue
         return None
 
+    def get_position_by_side(self, *, product_type: str, margin_coin: str, symbol: str, hold_side: str) -> Optional[Dict[str, Any]]:
+        """hedge_mode用: symbol + holdSide ('long'/'short') で1ポジションを返す"""
+        ps = self.get_positions(product_type, margin_coin)
+        sym = str(symbol).upper()
+        hs  = str(hold_side).lower()
+        for p in ps:
+            try:
+                if (str(p.get("symbol", "")).upper() == sym and
+                        str(p.get("holdSide", "")).lower() == hs):
+                    return p
+            except Exception:
+                continue
+        return None
+
 
     def pos_count(self, product_type: str, margin_coin: str) -> int:
         return len(self.get_positions(product_type, margin_coin))
@@ -232,15 +246,20 @@ class BitgetAdapter:
         *,
         product_type: str,
         margin_coin: str,
+        hold_side: str,
         max_wait_s: float = 6.0,
         poll_interval_s: float = 0.5,
     ) -> Decimal:
+        """hedge_mode用: holdSide ('long'/'short') に対応した openPriceAvg 待機"""
         deadline = time.time() + max_wait_s
         last_seen: Optional[str] = None
+        hs = str(hold_side).lower()
         while time.time() < deadline:
             ps = self.get_positions(product_type, margin_coin)
-            if ps:
-                opa = ps[0].get("openPriceAvg")
+            for p in ps:
+                if str(p.get("holdSide", "")).lower() != hs:
+                    continue
+                opa = p.get("openPriceAvg")
                 last_seen = str(opa)
                 try:
                     d = Decimal(str(opa))
@@ -249,7 +268,7 @@ class BitgetAdapter:
                 except Exception:
                     pass
             time.sleep(poll_interval_s)
-        raise RuntimeError(f"openPriceAvg not ready (last_seen={last_seen})")
+        raise RuntimeError(f"openPriceAvg not ready for {hold_side} (last_seen={last_seen})")
 
     def attach_tpsl_short(
         self,

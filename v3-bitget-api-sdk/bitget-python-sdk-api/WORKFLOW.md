@@ -4,12 +4,13 @@
 
 | 項目 | 状態 |
 |------|------|
-| 現在のフェーズ | **Phase 5（常時稼働）** |
-| 本番ポジション | なし（クリーン）|
-| 次のタスク | cron 稼働監視・初回エントリー確認 |
+| 現在のフェーズ | **Phase 5（常時稼働）— MAX_SIDES=2 本番稼働中** |
+| 本番ポジション | なし（cron稼働中・エントリー待ち） |
+| 次のタスク | 通常監視（本番トレード蓄積） |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
-| open_position.json | なし |
-| paper_trading | false（本番稼働中） |
+| open_position_long.json | なし |
+| open_position_short.json | なし |
+| paper_trading | false（本番APIキー使用中） |
 
 ---
 
