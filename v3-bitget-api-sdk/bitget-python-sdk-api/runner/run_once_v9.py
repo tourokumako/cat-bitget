@@ -429,6 +429,18 @@ def _check_exits(pos: Dict, mark_price: float, df, params: Dict) -> Optional[str
         if mark_price >= _mae_cap_price:
             return "MAE_CUT"
 
+    # 5b. MAE_CUT (P2 LONG, add≥4, hold≥300min, mark_price <= entry - 50/size)
+    if side == "LONG" and priority == 2 and add_count >= 4 and hold_min >= 300:
+        _mae_cap_price_long = entry_p - (50.0 / size_btc)
+        if mark_price <= _mae_cap_price_long:
+            return "MAE_CUT"
+
+    # 5c. MIDTERM_CUT (P4 LONG, add≥2, hold≥90min, unrealized PnL < -$30)
+    if side == "LONG" and priority == 4 and add_count >= 2:
+        if hold_min >= float(params.get("LONG_MIDTERM_HOLD_MIN", 90.0)):
+            if unreal < float(params.get("LONG_MIDTERM_PNL_USD", -30.0)):
+                return "MIDTERM_CUT"
+
     # 6. PROFIT_LOCK
     if side == "LONG" and int(params.get("LONG_PROFIT_LOCK_ENABLE", 0)):
         if (mfe_usd >= float(params.get("LONG_PROFIT_LOCK_ARM_USD", 15.0))
@@ -438,12 +450,14 @@ def _check_exits(pos: Dict, mark_price: float, df, params: Dict) -> Optional[str
         if (mfe_usd >= float(params.get("P22_SHORT_PROFIT_LOCK_ARM_USD", 22.0))
                 and unreal < float(params.get("P22_SHORT_PROFIT_LOCK_USD", 8.0))):
             return "PROFIT_LOCK"
-    # 6a. PROFIT_LOCK (P23_SHORT, add==5, lock_usd=10固定)
-    if side == "SHORT" and priority == 23 and add_count == 5:
-        _lock_usd_p23 = 10.0
-        _lock_price_p23 = entry_p - (_lock_usd_p23 / size_btc)
-        if mark_price <= _lock_price_p23:
-            return "PROFIT_LOCK"
+    # 6a. PROFIT_LOCK V2 (P23 SHORT, add_count不問, ARM=$15, LOCK=$5)
+    if side == "SHORT" and priority == 23 and int(params.get("P23_SHORT_PROFIT_LOCK_ENABLE", 1)):
+        _arm_usd_p23 = float(params.get("P23_SHORT_PROFIT_LOCK_ARM_USD", 15.0))
+        _lock_usd_p23 = float(params.get("P23_SHORT_PROFIT_LOCK_USD", 5.0))
+        if mfe_usd >= _arm_usd_p23:
+            _lock_price_p23 = entry_p - (_lock_usd_p23 / size_btc)
+            if mark_price >= _lock_price_p23:
+                return "PROFIT_LOCK"
     # 6b. PROFIT_LOCK (P22_SHORT, add==5, lock_usd=10固定)
     if side == "SHORT" and priority == 22 and add_count == 5:
         _lock_usd_p22 = 10.0
@@ -537,6 +551,14 @@ def _reconcile_side(
         return False, open_pos, pending
 
     if open_pos is not None and not _exchange_has_pos:
+        if open_pos.get("active_close_sent"):
+            _exit_r = open_pos["active_close_sent"]
+            _log("EXIT_EXTERNAL", reason=f"ACTIVE_CLOSE_COMPLETE:{_exit_r}",
+                 side=open_pos.get("side"), priority=open_pos.get("entry_priority"),
+                 source="startup_reconciliation")
+            _append_trade_csv(open_pos, 0.0, _exit_r)
+            _opp(side).unlink(missing_ok=True)
+            return True, None, None
         _tp_oid = open_pos.get("tp_order_id")
         _sl_oid = open_pos.get("sl_order_id")
         _exit_reason = None
@@ -897,6 +919,8 @@ def _run_exit_checks(adapter: BitgetAdapter, open_pos: Dict, mark_price: float,
         _log("CLOSE_VERIFY", status="complete", reason=exit_reason)
     else:
         _log("EXIT_PENDING", remaining=remaining, reason=exit_reason)
+        open_pos["active_close_sent"] = exit_reason
+        write_json(pos_path, open_pos)
     return True
 
 

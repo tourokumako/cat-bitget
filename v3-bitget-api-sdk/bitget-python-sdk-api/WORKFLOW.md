@@ -6,7 +6,7 @@
 |------|------|
 | 現在のフェーズ | **Phase 5（常時稼働）— MAX_SIDES=2 本番稼働中** |
 | 本番ポジション | なし（cron稼働中・エントリー待ち） |
-| 次のタスク | 通常監視（本番トレード蓄積） |
+| 次のタスク | 本番トレード蓄積 → 20〜30件で G-Runner-4 検証（priority別・曜日別勝率集計） |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
@@ -257,6 +257,14 @@ Phase: **2（V9判断ロジック移植）**
 - `LONG_SL_PCT = SHORT_SL_PCT = 0.05`
 - **Phase 2a 完全完了**（Logic Parity A + G-1〜G-5 + B スナップショット比較 200/200 MATCH ✅）
 - 次のタスク: **Phase 2b（Param Parity）H-0〜H-TPX ゲート確認**
+
+### 2026-03-26 変更内容（バックテスト改善の本番反映）
+
+- `run_once_v9.py`: `_check_exits` に MAE_CUT（P2 LONG）ブロック追加（#5b）
+  - 条件: `side == "LONG" and priority == 2 and add_count >= 4 and hold_min >= 300`
+  - トリガー: `mark_price <= entry_price - 50 / size_btc`
+  - 根拠: バックテスト（CAT_v9_regime.py）で同条件を追加し全12ファイル +$4.51/day 改善を確認
+  - 挿入箇所: `run_once_v9.py` #5（P23 SHORT MAE_CUT）の直後、#6（PROFIT_LOCK）の前
 
 ### セッション23 変更内容（2026-03-24）
 - `run_once_v9.py`: `_check_exits` に `MFE_EXIT` ブロック追加（#2: P22 SHORT + hold≥TIME_EXIT×0.6 + mfe_max≥20USD）
