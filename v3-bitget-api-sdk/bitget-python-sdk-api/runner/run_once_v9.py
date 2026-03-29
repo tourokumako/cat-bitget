@@ -473,16 +473,6 @@ def _check_exits(pos: Dict, mark_price: float, df, params: Dict) -> Optional[str
     elif hold_min >= float(params.get("STAG_MIN_M", 30.0)) and mfe_usd <= float(params.get("STAG_MFE_USD", 1.0)):
         return "STAGNATION_CUT"
 
-    # 8a. P4_BREAK_EXIT (P4 LONG, hold≒P4_BREAK_HOLD_MIN, bb_mid_slope<=閾値)
-    if side == "LONG" and priority == 4:
-        _break_min = float(params.get("P4_BREAK_HOLD_MIN", 90.0))
-        _break_slope = float(params.get("P4_BREAK_SLOPE_MAX", -20.0))
-        bb_slope = _col("bb_mid_slope")
-        if (abs(hold_min - _break_min) < 5.0
-                and not math.isnan(bb_slope)
-                and bb_slope <= _break_slope):
-            return "P4_BREAK_EXIT"
-
     # 8b. TIME_EXIT
     base_t = float(params.get("P2_TIME_EXIT_MIN" if priority == 2 else
                               f"{side}_TIME_EXIT_MIN", 150 if side == "LONG" else 480))
