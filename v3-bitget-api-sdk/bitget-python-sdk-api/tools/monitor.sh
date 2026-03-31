@@ -22,3 +22,11 @@ fi
 
 # チェック位置を更新
 echo "$CURRENT" > "$STATE"
+
+# B: 30分無更新チェック
+LAST_MOD=$(stat -f %m "$LOG")
+NOW=$(date +%s)
+ELAPSED=$(( NOW - LAST_MOD ))
+if [ "$ELAPSED" -gt 1800 ]; then
+    curl -s -d "🔴 BOT停止？ ログ更新なし ${ELAPSED}秒" $NTFY
+fi

@@ -296,17 +296,24 @@ def _get_order_state(adapter: BitgetAdapter, order_id: str) -> Dict[str, Any]:
 
 def _place_tp(adapter: BitgetAdapter, *, side: str,
               entry_price: Decimal, tp_pct: float,
-              position_size: Optional[float] = None) -> tuple:
+              position_size: Optional[float] = None,
+              mark_price: Optional[float] = None) -> tuple:
     if side == "LONG":
         tp = q_down(entry_price * (Decimal("1") + Decimal(str(tp_pct))), PRICE_TICK)
         hold_side = "long"
         if not tp > entry_price:
             raise RuntimeError(f"LONG tp {tp} <= entry {entry_price}")
+        if mark_price and tp <= Decimal(str(mark_price)):
+            tp = q_up(Decimal(str(mark_price)) + PRICE_TICK, PRICE_TICK)
+            _log("TP_ADJUSTED_TO_MARK", side=side, adjusted_tp=float(tp), mark_price=mark_price)
     else:
         tp = q_up(entry_price * (Decimal("1") - Decimal(str(tp_pct))), PRICE_TICK)
         hold_side = "short"
         if not tp < entry_price:
             raise RuntimeError(f"SHORT tp {tp} >= entry {entry_price}")
+        if mark_price and tp >= Decimal(str(mark_price)):
+            tp = q_down(Decimal(str(mark_price)) - PRICE_TICK, PRICE_TICK)
+            _log("TP_ADJUSTED_TO_MARK", side=side, adjusted_tp=float(tp), mark_price=mark_price)
     req = {
         "marginCoin": MARGIN_COIN, "productType": PRODUCT_TYPE, "symbol": SYMBOL,
         "holdSide": hold_side, "planType": "pos_profit", "triggerType": "mark_price",
@@ -708,7 +715,7 @@ def _confirm_entry(adapter: BitgetAdapter, pending: Dict, open_pos: Optional[Dic
     if open_pos is None:
         # 初回 ENTRY
         tp, tp_order_id = _place_tp(adapter, side=p_side, entry_price=Decimal(str(price_avg)),
-                                    tp_pct=tp_pct, position_size=filled_sz)
+                                    tp_pct=tp_pct, position_size=filled_sz, mark_price=mark_price)
         write_json(pos_path, {
             "side": p_side, "entry_priority": p_pri,
             "entry_price": price_avg,
@@ -733,7 +740,7 @@ def _confirm_entry(adapter: BitgetAdapter, pending: Dict, open_pos: Optional[Dic
         if old_tp_order_id:
             _cancel_plan_order(adapter, old_tp_order_id)
         tp, tp_order_id = _place_tp(adapter, side=p_side, entry_price=entry_dec,
-                                    tp_pct=tp_pct, position_size=new_sz)
+                                    tp_pct=tp_pct, position_size=new_sz, mark_price=mark_price)
         sl_val = None
         sl_order_id_new = None
         if new_cnt >= 2:
@@ -1117,7 +1124,8 @@ def run() -> None:
                     tp, tp_order_id = _place_tp(
                         adapter, side=p_side,
                         entry_price=Decimal(str(actual_price)),
-                        tp_pct=tp_pct, position_size=remaining_sz)
+                        tp_pct=tp_pct, position_size=remaining_sz,
+                        mark_price=float((lp or {}).get("markPrice") or 0) or None)
                     write_json(_opp(_s), {
                         "side": p_side, "entry_priority": p_pri,
                         "entry_price": actual_price,
