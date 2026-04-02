@@ -4,13 +4,15 @@
 
 | 項目 | 状態 |
 |------|------|
-| 現在のフェーズ | **Phase 5（常時稼働）— MAX_SIDES=2 本番稼働中** |
-| 本番ポジション | なし（cron稼働中・エントリー待ち） |
-| 次のタスク | 本番トレード蓄積 → 20〜30件で G-Runner-4 検証（priority別・曜日別勝率集計） |
+| 現在のフェーズ | **Phase 5（常時稼働）— BOT 停止中** |
+| 本番ポジション | なし（BOT 停止中） |
+| 次のタスク | **G: エントリー精度改善の設計**（90日 Replay を基準値として使用） |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
-| paper_trading | false（本番APIキー使用中） |
+| paper_trading | false |
+| P23 SHORT MAX_ADDS | 1 に制限済み（cat_params_v9.json: MAX_ADDS_BY_PRIORITY {"2":4,"23":1}） |
+| 90日 Replay 基準値 | NET -$7,711 / 90日（-$85.7/day）。results/replay_BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv |
 
 ---
 

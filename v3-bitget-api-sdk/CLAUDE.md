@@ -1,5 +1,24 @@
 # CLAUDE.md — cat-bitget
 
+## 最終目標（常にこれを念頭に置くこと）
+
+**Bitget本番運用で以下を同時に満たす状態にする:**
+- 平均 NET ≥ $120 / day
+- 15日 cumulative NET ≥ $1,800
+
+## 現在のアプローチ（2026-04-03 更新）
+
+`replay_csv.py` は `run_once_v9.py` を過去 CSV データで動かすツールとして位置づける。
+
+1. 過去 CSV で `replay_csv.py` を実行 → 改善案を検証
+2. Replay で改善確認 → 同じ変更を `run_once_v9.py` / `cat_params_v9.json` に直接適用
+3. BT（cat-swing-sniper）は参照しない
+
+**前提条件（これが崩れると改善が本番に反映されない）:**
+- `replay_csv.py` の `_check_exits_replay` と `run_once_v9.py` の `_check_exits` が常に同期していること
+- パラメータは `cat_params_v9.json` を一次ソースとし、両者が同じファイルを読むこと
+- Exit ロジックを変更したときは必ず両ファイルを同時に更新する
+
 ## 目的
 Bitget本番環境（BTCUSDT先物）において、CAT_v9_regime.pyのロジックを
 **本番で再現可能な範囲で一致させて移植し、自動売買BOTを安全に継続稼働させること。**
@@ -61,6 +80,9 @@ Bitget本番環境（BTCUSDT先物）において、CAT_v9_regime.pyのロジッ
   5. 実行後、APIレスポンス（code=00000）をログからコピペして確認
 - DRY_RUNで実施したテストを完了扱いにしない
 - セッション終了前にWORKFLOW.mdとproject_v9_progress.mdを更新する
+- セッション終了前に、今セッションで判明した失敗・予想外の結果・再発防止ルールを
+  `.claude/memory/lessons.md` に追記する（草案提示→GOを得てから書き込む）。
+  書くべきタイミング: バグ発見時・検証結果が予想と逆だったとき・仮説が外れたとき
 - バグ修正・誤り指摘・API仕様の想定外・プロセス問題が発生したら、lessons.mdへの追記を能動的に提案する（草案提示→GOを得てから書き込む）
 - 実行コマンドを提示する際は以下を必ずセットで示す：
   1. 何を実行するか（コマンド1行）

@@ -91,7 +91,7 @@ def _call_decider(fn: Callable[..., Dict[str, Any]], snapshot: Dict[str, Any], p
 def main(argv: Optional[List[str]] = None) -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--snapshot", default="state/market_snapshot.json")
-    ap.add_argument("--params", default="config/cat_params.json")
+    ap.add_argument("--params", default="config/cat_params_v9.json")
     ap.add_argument("--tag", default="F1")
     ns = ap.parse_args(argv)
 
