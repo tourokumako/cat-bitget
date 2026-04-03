@@ -58,7 +58,7 @@
     "23": 1,
     "24": 1
   },
-  "P2_ADX_MIN": 25.0,
+  "P2_ADX_MIN": 30.0,
   "P2_STOCH_GAP_MIN": 0.3,
   "P2_TIME_EXIT_MIN": 480.0,
   "P4_BB_MID_SLOPE_MIN": 20.0,
