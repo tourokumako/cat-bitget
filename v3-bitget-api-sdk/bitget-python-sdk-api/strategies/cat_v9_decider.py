@@ -472,6 +472,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
         and df["close"].iloc[i] <= df["open"].iloc[i]
         and df["bb_mid_slope"].iloc[i] < float(params.get("P23_BB_MID_SLOPE_MAX", 0.0))
         and get("adx") >= float(params.get("P23_ADX_MIN", 0.0))
+        and get("adx") < float(params.get("P23_ADX_MAX", 9999.0))
     ):
         return 23
 
