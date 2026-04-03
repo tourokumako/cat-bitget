@@ -239,6 +239,19 @@ add=1 に制限すると「即 TP or 即 SL」設計になり、ATR より狭い
 **Why:** add 制限はフィルタリング改善の一環として導入したが、ADD 本来の役割（逆行吸収）を失わせる。
 **How to apply:** 次セッションでは add=3 を復活させてから TP/SL を設計する。
 
+### L-25: post_only maker 指値のfill rate は33%しかない（モメンタム系シグナルと相性が最悪）
+
+ENTRY_SEND 278件 → ENTRY_CONFIRMED 92件 = fill rate 33%（2026-04-03 ライブログ確認）。
+
+**Why:** post_only 指値は close ±0.01% に置かれる。LONG シグナルはモメンタム上昇時に発火するため、
+価格はさらに上昇して指値には戻ってこない。Replay は全約定前提なので 3× 過大評価になっていた。
+パラメータをいくらチューニングしても fill rate 問題が解決されない限り実効 NET は改善しない。
+
+**How to apply:**
+- エントリーを taker（成行 or aggressive limit）に変更する（run_once_v9.py + replay_csv.py 両方）
+- Replay でも taker 想定（= close 価格で即約定）に統一してから TP/SL を最適化する
+- fill rate < 50% の状態でパラメータチューニングをしない
+
 ### L-24: 現設計の理論的な収益上限
 
 ```

@@ -1,5 +1,41 @@
 # project_v9_progress.md — V9実装進捗（2026-04-03 更新 セッション2）
 
+## 本セッション確認事項（2026-04-03 セッション3）
+
+### 最重要発見：fill rate 33% が根本問題
+
+- ENTRY_SEND 278件 → ENTRY_CONFIRMED 92件 = **33%** の fill rate
+- Replay は全約定前提 → 実態の 3× 過大評価
+- 原因: post_only maker 指値（close ±0.01%）でモメンタム系シグナルに対応しようとしている
+  - LONG シグナル = 上昇中 → 0.01% 下の指値は刺さらない
+- **TP/SL チューニングより先にエントリー mechanism を直す必要がある**
+
+### bar-by-bar グリッドサーチ結果（2026-04-03 実施）
+
+- `results/grid_search_results.csv` に全結果保存済み
+- 最良パラメータ: **TP=3%/SL=0.5%/add=0**（0.024 BTC で $25.2/day）
+- add を増やすほど悪化（avg_fills=1.27 しか約定しないため）
+- fill rate 33% を加味すると: 実質 **$8/day** 相当
+
+### 目標の修正
+
+- $120/day → **$60/day** に修正（0.12 BTC 制約・リスク管理込みの現実的上限として合意）
+
+### 設計理念の文書化
+
+- CLAUDE.md に Priority 設計思想・0.12 BTC 制約を追記（2026-04-03）
+- feedback_rules.md に「Priority 廃止禁止」「1パラメータ変更の限界」「add数・サイズ制約」を追記
+
+### 次セッションのタスク（優先順）
+
+1. **エントリーを taker に変更**（run_once_v9.py + replay_csv.py）← 最優先・L-25
+   - `force: post_only` → market order または taker limit に変更
+   - 期待効果: fill rate 33% → ~95%、実質 trades/day 3× 増
+2. Replay 実走で fill rate 改善後の NET を確認
+3. TP=3%/SL=0.5% に変更（cat_params_v9.json）
+4. MAX_ADDS_BY_PRIORITY を 0 に変更（add=0 が最適と判明）
+5. ポジションサイズ調整（LONG/SHORT 各 0.06 BTC で $60/day 目標）← fill rate 改善後
+
 ## 本セッション確認事項（2026-04-03 セッション2）
 
 ### 今セッションの主な発見

@@ -6,14 +6,15 @@
 |------|------|
 | 現在のフェーズ | **Phase 5（常時稼働）— BOT 停止中** |
 | 本番ポジション | なし（BOT 停止中） |
-| 次のタスク | **add=3 復活 + TP/SL 設計の最適化**。L-23/L-24 参照。まず bar-by-bar グリッドサーチ（L-22）で add=3 時の edge を確認してから Replay 実走。 |
+| 次のタスク | **エントリーを taker に変更（最優先）**→ L-25 参照。post_only maker 指値の fill rate が 33% しかなく、これが根本問題。run_once_v9.py と replay_csv.py の両方を修正してから Replay で効果確認。その後 TP=3%/SL=0.5% に変更。 |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
 | paper_trading | false |
-| MAX_ADDS_BY_PRIORITY | `{"2": 1, "4": 1, "22": 1, "23": 1, "24": 1}`（全Priority add=1 ← 次セッションで add=3 に戻す） |
-| LONG_TP_PCT / SHORT_TP_PCT | 0.020（旧: 0.0056） |
-| LONG_SL_PCT / SHORT_SL_PCT | 0.010（旧: 0.05） |
+| MAX_ADDS_BY_PRIORITY | `{"2": 1, "4": 1, "22": 1, "23": 1, "24": 1}`（変更なし） |
+| LONG_TP_PCT / SHORT_TP_PCT | 0.020（→ 次セッションで 0.030 に変更予定） |
+| LONG_SL_PCT / SHORT_SL_PCT | 0.010（→ 次セッションで 0.005 に変更予定） |
+| LONG_POSITION_SIZE_BTC / SHORT_POSITION_SIZE_BTC | 0.024（変更なし） |
 | LONG_TIME_EXIT_MIN / SHORT_TIME_EXIT_MIN / P2_TIME_EXIT_MIN | 9999（実質廃止） |
 | TP_ADX_BOOST_ENABLE | 0（無効化） |
 | TP_PCT_CLAMP_ENABLE | 0（無効化） |
@@ -28,7 +29,8 @@
 | P23_ADX_MAX | 50.0 |
 | Replay 現在値 | NET -$372 / 90日（**-$4.1/day**）318件。`results/replay_BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
 | Replay 用 CSV | `/Users/tachiharamasako/Documents/GitHub/cat-swing-sniper/data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
-| replay_csv.py 修正済み | SL add=1 でも設定・TP/SL 判定を high/low ベースに変更（L-21）|
+| グリッドサーチ結果 | `results/grid_search_results.csv`（2026-04-03 実施済み） |
+| 目標 NET/day | **$60/day**（0.12 BTC 制約内の現実的上限として合意済み） |
 
 ---
 
