@@ -411,7 +411,9 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
         and get("close") >= get("open")
     )
 
-    if stoch_cross and get("adx") >= float(params.get("P2_ADX_MIN", 0.0)):
+    if (stoch_cross
+            and get("adx") >= float(params.get("P2_ADX_MIN", 0.0))
+            and get("rsi_short") >= float(params.get("P2_RSI_MIN", 0.0))):
         return 2
 
     # =========================
