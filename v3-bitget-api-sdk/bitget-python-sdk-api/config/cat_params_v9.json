@@ -82,7 +82,7 @@
   "P22_ADX_MIN": 22.0,
   "ENABLE_P23_SHORT": true,
   "P23_BB_MID_SLOPE_MAX": -10.0,
-  "P23_ADX_MIN": 25.0,
+  "P23_ADX_MIN": 30.0,
   "ENABLE_P24_SHORT": true,
   "P24_RSI_MIN": 65.0,
   "P24_BB_SLOPE_MAX": 50.0,
