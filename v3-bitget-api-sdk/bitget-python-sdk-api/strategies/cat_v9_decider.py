@@ -89,7 +89,7 @@ def preprocess(df: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFrame:
 
     # ストキャスティクス（P2/P23用）
     stoch = ta.momentum.StochasticOscillator(
-        df["high"], df["low"], df["close"], window=7, smooth_window=2
+        df["high"], df["low"], df["close"], window=14, smooth_window=3
     )
     df["stoch_k"] = stoch.stoch()
     df["stoch_d"] = stoch.stoch_signal()
@@ -410,7 +410,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
         and get("close") >= get("open")
     )
 
-    if stoch_cross:
+    if stoch_cross and get("adx") >= float(params.get("P2_ADX_MIN", 0.0)):
         return 2
 
     # =========================
@@ -467,6 +467,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
         and df["stoch_k"].iloc[i] < df["stoch_d"].iloc[i]
         and (df["stoch_d"].iloc[i] - df["stoch_k"].iloc[i]) > 0.3
         and df["close"].iloc[i] <= df["open"].iloc[i]
+        and df["bb_mid_slope"].iloc[i] < float(params.get("P23_BB_MID_SLOPE_MAX", 0.0))
     ):
         return 23
 

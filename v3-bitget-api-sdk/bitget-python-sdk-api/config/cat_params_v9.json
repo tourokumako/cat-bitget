@@ -55,8 +55,9 @@
   "SHORT_RSI_SLOPE_MAX": 0.0,
   "SHORT_RSI_EXIT_ADX_MAX": 12,
 
-  "MAX_ADDS_BY_PRIORITY": {"2": 4, "23": 1},
+  "MAX_ADDS_BY_PRIORITY": {"2": 1, "4": 1, "22": 1, "23": 1, "24": 1},
 
+  "P2_ADX_MIN": 25.0,
   "P2_STOCH_GAP_MIN": 0.3,
   "P2_TIME_EXIT_MIN": 480.0,
 
@@ -80,6 +81,7 @@
   "P22_ADX_MIN": 22.0,
 
   "ENABLE_P23_SHORT": true,
+  "P23_BB_MID_SLOPE_MAX": -10.0,
 
   "ENABLE_P24_SHORT": true,
   "P24_RSI_MIN": 65.0,

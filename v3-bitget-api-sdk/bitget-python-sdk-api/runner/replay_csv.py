@@ -272,19 +272,22 @@ def _record_trade(trades: List, pos: Dict, exit_price: float, exit_reason: str,
     net   = gross - fee
 
     trades.append({
-        "entry_time":  _ts_to_str(entry_ms),
-        "exit_time":   _ts_to_str(exit_ts_ms),
-        "side":        side,
-        "priority":    priority,
-        "add_count":   add_count,
-        "size_btc":    round(size_b, 4),
-        "entry_price": round(entry_p, 2),
-        "exit_price":  round(exit_price, 2),
-        "exit_reason": exit_reason,
-        "hold_min":    hold_min,
-        "gross_usd":   round(gross, 4),
-        "fee_usd":     round(fee, 4),
-        "net_usd":     round(net, 4),
+        "entry_time":            _ts_to_str(entry_ms),
+        "exit_time":             _ts_to_str(exit_ts_ms),
+        "side":                  side,
+        "priority":              priority,
+        "add_count":             add_count,
+        "size_btc":              round(size_b, 4),
+        "entry_price":           round(entry_p, 2),
+        "exit_price":            round(exit_price, 2),
+        "exit_reason":           exit_reason,
+        "hold_min":              hold_min,
+        "gross_usd":             round(gross, 4),
+        "fee_usd":               round(fee, 4),
+        "net_usd":               round(net, 4),
+        "adx_at_entry":          round(float(pos.get("adx_at_entry", 0.0)), 2),
+        "bb_mid_slope_at_entry": round(float(pos.get("bb_mid_slope_at_entry", float("nan"))), 4),
+        "rsi_at_entry":          round(float(pos.get("rsi_at_entry", float("nan"))), 2),
     })
 
 
@@ -294,7 +297,8 @@ def _write_results(csv_path: str, trades: List) -> None:
     out_path = _RESULTS_DIR / f"replay_{stem}.csv"
     fields   = ["entry_time", "exit_time", "side", "priority", "add_count",
                  "size_btc", "entry_price", "exit_price", "exit_reason",
-                 "hold_min", "gross_usd", "fee_usd", "net_usd"]
+                 "hold_min", "gross_usd", "fee_usd", "net_usd",
+                 "adx_at_entry", "bb_mid_slope_at_entry", "rsi_at_entry"]
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
@@ -410,15 +414,18 @@ def main(csv_path: str) -> None:
                 # 新規エントリー
                 tp_price = _calc_tp_price(side, fill_p, adx_val, params)
                 pos[side] = {
-                    "side":           side,
-                    "entry_priority": pnd["priority"],
-                    "entry_price":    fill_p,
-                    "entry_time":     ts_ms,
-                    "add_count":      1,
-                    "size_btc":       unit_size,
-                    "tp_price":       tp_price,
-                    "sl_price":       None,  # add_count=1 は SL 不要
-                    "mfe_usd":        0.0,
+                    "side":                  side,
+                    "entry_priority":        pnd["priority"],
+                    "entry_price":           fill_p,
+                    "entry_time":            ts_ms,
+                    "add_count":             1,
+                    "size_btc":              unit_size,
+                    "tp_price":              tp_price,
+                    "sl_price":              None,  # add_count=1 は SL 不要
+                    "mfe_usd":               0.0,
+                    "adx_at_entry":          pnd.get("adx_at_entry", 0.0),
+                    "bb_mid_slope_at_entry": pnd.get("bb_mid_slope_at_entry", float("nan")),
+                    "rsi_at_entry":          pnd.get("rsi_at_entry", float("nan")),
                 }
             else:
                 # ADD
@@ -529,13 +536,17 @@ def main(csv_path: str) -> None:
         else:
             lp = float(Decimal(str(close_p)) * Decimal("1.0001"))
 
-        adx_val = float(df.at[i, "adx"]) if "adx" in df.columns else 0.0
+        adx_val   = float(df.at[i, "adx"])          if "adx"          in df.columns else 0.0
+        slope_val = float(df.at[i, "bb_mid_slope"]) if "bb_mid_slope" in df.columns else float("nan")
+        rsi_val   = float(df.at[i, "rsi_short"])    if "rsi_short"    in df.columns else float("nan")
         pending[side] = {
-            "side":          side,
-            "priority":      priority,
-            "limit_price":   lp,
-            "placed_bar_ms": ts_ms,
-            "adx_at_entry":  adx_val,
+            "side":                  side,
+            "priority":              priority,
+            "limit_price":           lp,
+            "placed_bar_ms":         ts_ms,
+            "adx_at_entry":          adx_val,
+            "bb_mid_slope_at_entry": slope_val,
+            "rsi_at_entry":          rsi_val,
         }
 
     # ---- 未クローズポジションを強制クローズ（期間末） ----
