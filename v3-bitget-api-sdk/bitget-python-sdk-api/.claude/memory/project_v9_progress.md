@@ -1,42 +1,59 @@
-# project_v9_progress.md — V9実装進捗（2026-04-03 更新）
+# project_v9_progress.md — V9実装進捗（2026-04-03 更新 セッション2）
 
-## 本セッション確認事項（2026-04-03）
+## 本セッション確認事項（2026-04-03 セッション2）
 
-### 方針変更（重要）
-- **改善アプローチを「Replay = run_once_v9.py の CSV 版」として一本化**
-- BT（cat-swing-sniper）との乖離解消は追わない
-- `replay_csv.py` で改善検証 → `cat_params_v9.json` / `run_once_v9.py` に直接反映
-- 前提条件: `_check_exits_replay` と `_check_exits` の同期（✅ 確認済み・完全一致）
+### 今セッションの主な発見
 
-### 90日 Replay 基準値（2026-01-01〜04-01）
-- **NET: -$7,711 / 90日（-$85.7/day）**
-- GROSS: -$6,080（手数料前からすでに赤字 → 構造的問題）
-- 主な損失源:
-  - MAE_CUT 63件 -$6,385（avg -$101/trade、P2 LONG add=4 が主因）
-  - TIME_EXIT 260件 -$5,087（avg -$20/trade）
-  - MIDTERM_CUT 53件 -$2,450（avg -$46/trade、P4 LONG）
-- Priority別:
-  - P2-LONG: -$4,583（-$51/day）← 5日テストで +$10/day に見えたのは偽陽性
-  - P23-SHORT: -$1,597（-$18/day）
-  - P4-LONG: -$1,571（-$17/day）
+1. **シグナルに edge が存在する（確認済み）**
+   - 全 Priority でランダムウォーク理論値を +10〜23% 上回る TP 到達率
+   - L-22 の bar-by-bar グリッドサーチで確認
+   - grid 最良: TP+2%/SL-0.5% → P2+P4+P23 合計 +$35/day（理論値）
 
-### 5日テストの教訓
-- 2026-03-27〜04-01 の5日間は P2 LONG が +$51（偶然の好調期）
-- 90日で見ると P2 LONG は -$4,583（全体最大の損失源）
-- **5日データでの判断は統計的に無意味。今後は90日データを基準とする**
+2. **TIME_EXIT が損失の主因だった → 廃止**
+   - `LONG_TIME_EXIT_MIN` / `SHORT_TIME_EXIT_MIN` / `P2_TIME_EXIT_MIN` → 9999
+
+3. **Replay に SL シミュレーション欠陥があった → 修正済み（L-21）**
+   - `replay_csv.py`: add_count=1 でも SL セット / TP・SL 判定を high/low ベースに変更
+
+4. **add=1 制限が収益上限を $21/day に押し下げていた（L-23・L-24）**
+   - 3.5件/day × EV$6/trade = $21/day が構造的な天井
+   - add 復活で頻度・EV 両方改善の可能性あり
+
+### 現在の cat_params_v9.json 変更点（旧値 → 新値）
+
+| パラメータ | 旧値 | 新値 |
+|-----------|------|------|
+| LONG_TP_PCT / SHORT_TP_PCT | 0.0056 | **0.020** |
+| LONG_SL_PCT / SHORT_SL_PCT | 0.05 | **0.010** |
+| LONG_TIME_EXIT_MIN / SHORT_TIME_EXIT_MIN | 150 / 480 | **9999** |
+| P2_TIME_EXIT_MIN | 480 | **9999** |
+| TP_ADX_BOOST_ENABLE | 1 | **0** |
+| TP_PCT_CLAMP_ENABLE | 1 | **0** |
+| FEAT_SHORT_RSI_REVERSE_EXIT | true | **false** |
+| LONG_PROFIT_LOCK_ENABLE | 1 | **0** |
+| P23_SHORT_PROFIT_LOCK_ENABLE | 1 | **0** |
+
+### 現在の Replay 成績
+- NET: **-$372 / 90日（-$4.1/day）** 318件
+- TP=101件 / SL=216件 / TP率=32%（損益分岐 33.3% にあと少し）
+
+### 次のタスク（最優先）
+
+**add=3 復活 → bar-by-bar グリッドサーチ → Replay 実走**
+
+1. `MAX_ADDS_BY_PRIORITY` を `{"2":3,"4":3,"22":2,"23":3,"24":2}` に変更
+2. Replay 実走でエントリーポイントを確定
+3. bar-by-bar グリッドサーチで TP/SL 最適値を探索
+4. 最良パラメータで Replay 実走・確認
+
+- 基準ファイル: `data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv`（90日結合済み）
+
+## 本セッション確認事項（2026-04-03 セッション1）
 
 ### 今セッションの変更点
 - `cat_params_v9.json`: `MAX_ADDS_BY_PRIORITY` に `"23": 1` 追加（P23 SHORT add 上限を1に制限）
 - `CLAUDE.md`: 現在のアプローチを「replay = 本番エンジンの CSV 版」として更新
 - `lessons.md`: L-15（MIDTERM_CUT 早期カット逆効果）追記
-
-### 次のタスク（G: エントリー精度改善）
-- 90日 Replay の -$85.7/day を改善するには **ADD 設計かエントリーシグナルの根本見直し**が必要
-- 検討候補:
-  1. P2 LONG の MAE_CUT 対策（add=4 時の損失が最大）
-  2. ADD を積まない設計（全 Priority add=1 に統一してシグナル純粋評価）
-  3. トレンドフィルターの追加（逆張りエントリーを大局トレンドで絞る）
-- 基準ファイル: `data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv`（90日結合済み）
 
 ## 本セッション確認事項（2026-04-01）
 

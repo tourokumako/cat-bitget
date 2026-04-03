@@ -421,7 +421,7 @@ def main(csv_path: str) -> None:
                     "add_count":             1,
                     "size_btc":              unit_size,
                     "tp_price":              tp_price,
-                    "sl_price":              None,  # add_count=1 は SL 不要
+                    "sl_price":              _calc_sl_price(side, fill_p, params),
                     "mfe_usd":               0.0,
                     "adx_at_entry":          pnd.get("adx_at_entry", 0.0),
                     "bb_mid_slope_at_entry": pnd.get("bb_mid_slope_at_entry", float("nan")),
@@ -468,8 +468,8 @@ def main(csv_path: str) -> None:
             if p is None:
                 continue
             tp = float(p["tp_price"])
-            tp_hit = (side == "LONG" and close_p >= tp) or \
-                     (side == "SHORT" and close_p <= tp)
+            tp_hit = (side == "LONG" and high_p >= tp) or \
+                     (side == "SHORT" and low_p <= tp)
             if tp_hit:
                 _record_trade(trades, p, exit_price=tp, exit_reason="TP_FILLED",
                               exit_ts_ms=ts_ms, params=params)
@@ -483,8 +483,8 @@ def main(csv_path: str) -> None:
             if p is None or p.get("sl_price") is None:
                 continue
             sl = float(p["sl_price"])
-            sl_hit = (side == "LONG" and close_p <= sl) or \
-                     (side == "SHORT" and close_p >= sl)
+            sl_hit = (side == "LONG" and low_p <= sl) or \
+                     (side == "SHORT" and high_p >= sl)
             if sl_hit:
                 _record_trade(trades, p, exit_price=sl, exit_reason="SL_FILLED",
                               exit_ts_ms=ts_ms, params=params)
