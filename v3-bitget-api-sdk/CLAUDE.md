@@ -83,7 +83,10 @@ Bitget 本番で NET ≥ $120/day を達成すること。**
   4. 実行コマンドを提示 → GO待ち ← ここで必ず��まる
   5. 実行後、APIレスポンス（code=00000）をログからコピペして確認
 - DRY_RUNで実施したテストを完了扱いにしない
-- セッション終了前にWORKFLOW.mdとproject_v9_progress.mdを更新する
+- セッション終了前に以下を更新する（この3ファイルが唯一の正本。auto-memoryのproject_status_*.mdは廃止済み）:
+  1. `WORKFLOW.md` — 現在のパラメータ・Replay成績・次のタスクを最新状態に
+  2. `.claude/memory/project_v9_progress.md` — 今セッションの変更点・発見を追記
+  3. `.claude/memory/lessons.md` — 失敗・再発防止ルール（草案提示→GO後に書き込み）
 - セッション終了前に、今セッションで判明した失敗・予想外の結果・再発防止ルールを
   `.claude/memory/lessons.md` に追記する（草案提示→GOを得てから書き込む）。
   書くべきタイミング: バグ発見時・検証結果が予想と逆だったとき・仮説が外れたとき
