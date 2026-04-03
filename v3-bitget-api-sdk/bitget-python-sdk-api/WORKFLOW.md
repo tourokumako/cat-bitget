@@ -6,13 +6,19 @@
 |------|------|
 | 現在のフェーズ | **Phase 5（常時稼働）— BOT 停止中** |
 | 本番ポジション | なし（BOT 停止中） |
-| 次のタスク | **G: エントリー精度改善**（Replay を唯一の指標として使用） |
+| 次のタスク | **G: P2 LONG 追加分析**（RSI/slope フィルター検討。-$705が最大損失源） |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
 | paper_trading | false |
 | MAX_ADDS_BY_PRIORITY | `{"2": 1, "4": 1, "22": 1, "23": 1, "24": 1}`（全Priority add=1） |
-| Replay 基準値 | NET -$3,531 / 90日（-$39.3/day）。`results/replay_BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
+| P2_ADX_MIN | 30.0（ADX < 30 の発火を除外） |
+| ストキャス設定 | 14-3-3（デイトレ標準。旧: 7-2-2） |
+| LONG_TP_PCT / SHORT_TP_PCT | 0.0056（旧: 0.0032） |
+| P4_RSI_MAX | 60.0（RSI > 60 の発火を除外） |
+| P23_BB_MID_SLOPE_MAX | -10.0（下落トレンドのみ発火） |
+| P23_ADX_MIN | 25.0（ADX < 25 の発火を除外） |
+| Replay 現在値 | NET -$1,347 / 90日（**-$15.0/day**）。`results/replay_BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
 | Replay 用 CSV | `/Users/tachiharamasako/Documents/GitHub/cat-swing-sniper/data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
 
 ---
