@@ -37,26 +37,25 @@
 **このフローを必ず順番通りに実行する。前のステップが完了するまで次に進まない。**
 
 ```
-Step 1. 現状把握      — replay_csv.py を実行・結果CSV確認
-Step 2. 集計分析      — exit reason別・priority別・LONG/SHORT別に数値把握
-Step 2.5. 個別分析   — 損失トレードのエントリー時インジケータ値を直接確認
-                       （集計だけからの仮説立案禁止）
-Step 3. 改善案提示    — Step 2.5 の共通パターンを根拠として仮説を立てる
-                       複数案があればスコアリングして最優先の1つだけ提案する
-                       「この変更で何件が影響を受けるか」を事前に計算して明示する
-Step 4. ユーザー承認  — GO サインが出るまでコードを変更しない ← STOP
-Step 5. 最小差分修正  — 1つの仮説に基づく最小変更のみ実施する
-Step 6. Replay 実行   — 90日CSVで実行・結果提示・ユーザー確認 ← STOP
-Step 7. 回帰確認      — Priority別 net が劣化していないか確認
-                       「採用しますか？」と確認を取る ← STOP
-Step 8. 採用 or 却下  — 却下なら即巻き戻し（cat_params_v9.json / コード）
-Step 9. 本番反映      — run_once_v9.py / cat_params_v9.json への反映確認 ← STOP
-Step 10. Git コミット  — 確認後コミット ← STOP
+Step 1. パラメータ変更  — cat_params_v9.json を変更（GO後のみ）
+Step 2. Replay 実走     — 90日CSVで実行・エントリーポイント確定 ← STOP
+Step 3. グリッドサーチ  — Replayのエントリー固定でbar-by-bar TP/SL先着確率を計算
+                         理論値（SL/(TP+SL)）と実測を比較してedge確認（L-22手法）
+                         TP%/SL%の組み合わせで90日EVを試算
+Step 4. 候補提示        — EVが最大の組み合わせを提案・件数・EV/trade・90d NET を明示 ← STOP
+Step 5. ユーザー承認    — GO サインが出るまでコードを変更しない ← STOP
+Step 6. パラメータ適用  — cat_params_v9.json を最良値に更新
+Step 7. Replay 実走     — 実際のNETを確認・グリッドサーチ理論値と照合 ← STOP
+Step 8. 採用 or 却下    — 却下なら即巻き戻し
+Step 9. 本番反映        — run_once_v9.py / cat_params_v9.json への反映確認 ← STOP
+Step 10. Git コミット   — 確認後コミット ← STOP
 ```
 
-**注意:**
+**設計原則（2026-04-03 確定）:**
+- TIME_EXIT 廃止: TP か SL のどちらかに当たるまで待つ
+- add=3 設計: 逆行時に平均エントリーを改善しTP率を高める（L-23）
+- SL 幅は ATR の 2〜3倍 を目安に設定（狭すぎると即死連発・L-24）
 - `replay_csv.py` と `run_once_v9.py` の `_check_exits` は常に同期を保つこと
-- Exit ロジックを変更したときは必ず両ファイルを同時に更新する
 
 ---
 
