@@ -42,7 +42,7 @@ if str(_ROOT) not in sys.path:
 from strategies.cat_v9_decider import preprocess, check_entry_priority
 
 # ---- 定数 ----
-PENDING_TTL_BARS = 3
+PENDING_TTL_BARS = 2
 CANDLE_WARMUP   = 200   # 指標計算に必要な最小バー数（live engine と同値）
 _PARAMS_PATH    = _ROOT / "config" / "cat_params_v9.json"
 _RESULTS_DIR    = _ROOT / "results"
@@ -268,7 +268,9 @@ def _record_trade(trades: List, pos: Dict, exit_price: float, exit_reason: str,
 
     gross = (exit_price - entry_p) * size_b if side == "LONG" else (entry_p - exit_price) * size_b
     maker = float(params.get("FEE_RATE_MAKER", 0.00014))
-    fee   = size_b * exit_price * maker * 2
+    taker = float(params.get("FEE_RATE_TAKER", 0.00042))
+    exit_rate = maker if exit_reason == "TP_FILLED" else taker
+    fee = size_b * exit_price * (maker + exit_rate)
     net   = gross - fee
 
     trades.append({
@@ -288,6 +290,10 @@ def _record_trade(trades: List, pos: Dict, exit_price: float, exit_reason: str,
         "adx_at_entry":          round(float(pos.get("adx_at_entry", 0.0)), 2),
         "bb_mid_slope_at_entry": round(float(pos.get("bb_mid_slope_at_entry", float("nan"))), 4),
         "rsi_at_entry":          round(float(pos.get("rsi_at_entry", float("nan"))), 2),
+        "ret_5":                 round(float(pos.get("ret_5", float("nan"))), 4),
+        "atr_14":                round(float(pos.get("atr_14", float("nan"))), 2),
+        "entry_hour":            int(pos.get("entry_hour", -1)),
+        "entry_weekday":         int(pos.get("entry_weekday", -1)),
     })
 
 
@@ -298,7 +304,8 @@ def _write_results(csv_path: str, trades: List) -> None:
     fields   = ["entry_time", "exit_time", "side", "priority", "add_count",
                  "size_btc", "entry_price", "exit_price", "exit_reason",
                  "hold_min", "gross_usd", "fee_usd", "net_usd",
-                 "adx_at_entry", "bb_mid_slope_at_entry", "rsi_at_entry"]
+                 "adx_at_entry", "bb_mid_slope_at_entry", "rsi_at_entry",
+                 "ret_5", "atr_14", "entry_hour", "entry_weekday"]
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
@@ -311,36 +318,165 @@ def _print_summary(trades: List) -> None:
         print("[replay_csv] No trades.")
         return
 
+    import math
+
+    def _avg(vals):
+        v = [x for x in vals if x is not None and not (isinstance(x, float) and math.isnan(x))]
+        return sum(v) / len(v) if v else float("nan")
+
     total_net   = sum(t["net_usd"]   for t in trades)
     total_gross = sum(t["gross_usd"] for t in trades)
     total_fee   = sum(t["fee_usd"]   for t in trades)
     hold_mins   = [t["hold_min"] for t in trades]
 
-    print(f"\n{'='*52}")
+    print(f"\n{'='*60}")
     print(f"  総トレード数:   {len(trades)}")
-    print(f"  NET合計:        ${total_net:+.2f}")
+    print(f"  NET合計:        ${total_net:+.2f}  (${total_net/90:.1f}/day)")
     print(f"  GROSS合計:      ${total_gross:+.2f}")
     print(f"  手数料合計:     ${total_fee:.2f}")
-    print(f"  平均保持時間:   {sum(hold_mins)/len(hold_mins):.1f}min")
-    print(f"{'='*52}")
+    print(f"  平均保持時間:   {_avg(hold_mins):.1f}min")
+    print(f"{'='*60}")
 
+    # ── 1. Exit理由別 ────────────────────────────────────────
     by_reason = defaultdict(lambda: {"count": 0, "net": 0.0})
     for t in trades:
         by_reason[t["exit_reason"]]["count"] += 1
         by_reason[t["exit_reason"]]["net"]   += t["net_usd"]
-    print("\n  Exit理由別:")
+    print("\n  [Exit理由別]")
     for reason, v in sorted(by_reason.items(), key=lambda x: -abs(x[1]["net"])):
         print(f"    {reason:<28} {v['count']:3}件  net ${v['net']:+8.2f}")
 
-    by_pri = defaultdict(lambda: {"count": 0, "net": 0.0})
+    # ── 2. Priority別サマリー（TP率・平均NET・平均hold） ─────
+    pri_keys_order = sorted({f"P{t['priority']}-{t['side']}" for t in trades})
+    by_pri = defaultdict(list)
     for t in trades:
-        k = f"P{t['priority']}-{t['side']}"
-        by_pri[k]["count"] += 1
-        by_pri[k]["net"]   += t["net_usd"]
-    print("\n  Priority別:")
-    for pri, v in sorted(by_pri.items()):
-        print(f"    {pri:<12} {v['count']:3}件  net ${v['net']:+8.2f}")
-    print(f"{'='*52}\n")
+        by_pri[f"P{t['priority']}-{t['side']}"].append(t)
+
+    print(f"\n  [Priority別サマリー]")
+    print(f"    {'Pri':<12} {'件数':>4}  {'NET':>9}  {'TP率':>5}  {'avgNET':>7}  {'avgHold':>7}")
+    for pri in pri_keys_order:
+        ts = by_pri[pri]
+        n = len(ts)
+        net = sum(t["net_usd"] for t in ts)
+        tp_n = sum(1 for t in ts if t["exit_reason"] == "TP_FILLED")
+        avg_net = net / n
+        avg_hold = _avg([t["hold_min"] for t in ts])
+        print(f"    {pri:<12} {n:4}  ${net:+8.2f}  {tp_n/n*100:4.0f}%  ${avg_net:+6.2f}  {avg_hold:6.1f}min")
+
+    # ── 3. Priority × Exit reason クロス集計 ─────────────────
+    print(f"\n  [Priority × Exit reason クロス集計]")
+    all_reasons = sorted({t["exit_reason"] for t in trades},
+                         key=lambda r: -abs(by_reason[r]["net"]))
+    hdr = f"    {'Pri':<12}" + "".join(f"  {r[:10]:>10}" for r in all_reasons)
+    print(hdr)
+    for pri in pri_keys_order:
+        ts = by_pri[pri]
+        cross = defaultdict(lambda: {"count": 0, "net": 0.0})
+        for t in ts:
+            cross[t["exit_reason"]]["count"] += 1
+            cross[t["exit_reason"]]["net"]   += t["net_usd"]
+        row = f"    {pri:<12}"
+        for r in all_reasons:
+            if cross[r]["count"]:
+                cell = f"{cross[r]['count']}件${cross[r]['net']:+.0f}"
+            else:
+                cell = "-"
+            row += f"  {cell:>10}"
+        print(row)
+
+    # ── 4. TIME_EXIT / MIDTERM_CUT の add_count 別詳細 ───────
+    for bad_exit in ["TIME_EXIT", "MIDTERM_CUT"]:
+        bad = [t for t in trades if t["exit_reason"] == bad_exit]
+        if not bad:
+            continue
+        by_add = defaultdict(list)
+        for t in bad:
+            by_add[t["add_count"]].append(t)
+        print(f"\n  [{bad_exit} × add_count 詳細]")
+        print(f"    {'add':>4}  {'件数':>4}  {'NET':>9}  {'avgNET':>7}  {'avgHold':>8}  {'avgADX':>7}")
+        for add in sorted(by_add):
+            ts2 = by_add[add]
+            net2 = sum(t["net_usd"] for t in ts2)
+            avg_hold2 = _avg([t["hold_min"] for t in ts2])
+            avg_adx2  = _avg([t["adx_at_entry"] for t in ts2])
+            print(f"    {add:4}  {len(ts2):4}  ${net2:+8.2f}  ${net2/len(ts2):+6.2f}  {avg_hold2:7.1f}min  {avg_adx2:6.1f}")
+
+    # ── 5. Entry指標統計（TP vs 損失別） ─────────────────────
+    loss_reasons = [r for r in all_reasons if r != "TP_FILLED"]
+    tp_trades   = [t for t in trades if t["exit_reason"] == "TP_FILLED"]
+    loss_trades = [t for t in trades if t["exit_reason"] != "TP_FILLED"]
+    print(f"\n  [Entry指標統計 TP vs 損失]")
+    print(f"    {'指標':<22}  {'TP avg':>8}  {'損失 avg':>8}")
+    for field, label in [("adx_at_entry", "ADX"),
+                         ("bb_mid_slope_at_entry", "BB_slope"),
+                         ("rsi_at_entry", "RSI"),
+                         ("ret_5",        "ret_5(%)"),
+                         ("atr_14",       "atr_14($)")]:
+        tp_v   = _avg([t[field] for t in tp_trades])
+        loss_v = _avg([t[field] for t in loss_trades])
+        print(f"    {label:<22}  {tp_v:8.2f}  {loss_v:8.2f}")
+
+    # ── 時間帯別 NET ──────────────────────────────────────────
+    by_hour: Dict[int, List] = defaultdict(list)
+    for t in trades:
+        by_hour[t["entry_hour"]].append(t)
+    print(f"\n  [時間帯別 NET（JST）]")
+    print(f"    {'hour':>4}  {'件数':>4}  {'NET':>9}  {'TP率':>5}  {'avgNET':>7}")
+    for h in sorted(by_hour):
+        ts_h  = by_hour[h]
+        net_h = sum(t["net_usd"] for t in ts_h)
+        tp_r  = sum(1 for t in ts_h if t["exit_reason"] == "TP_FILLED") / len(ts_h) * 100
+        print(f"    {h:4}  {len(ts_h):4}  ${net_h:+8.2f}  {tp_r:4.0f}%  ${net_h/len(ts_h):+6.2f}")
+
+    # ── 6. TIME_EXIT / MIDTERM_CUT のEntry指標 Priority別 ───
+    for bad_exit in ["TIME_EXIT", "MIDTERM_CUT"]:
+        bad = [t for t in trades if t["exit_reason"] == bad_exit]
+        if not bad:
+            continue
+        by_pri2 = defaultdict(list)
+        for t in bad:
+            by_pri2[f"P{t['priority']}-{t['side']}"].append(t)
+        print(f"\n  [{bad_exit} Entry指標 Priority別]")
+        print(f"    {'Pri':<12}  {'件数':>4}  {'NET':>9}  {'avgADX':>7}  {'avgSlope':>9}  {'avgRSI':>7}")
+        for pri in pri_keys_order:
+            ts3 = by_pri2.get(pri, [])
+            if not ts3:
+                continue
+            net3 = sum(t["net_usd"] for t in ts3)
+            print(f"    {pri:<12}  {len(ts3):4}  ${net3:+8.2f}"
+                  f"  {_avg([t['adx_at_entry'] for t in ts3]):6.1f}"
+                  f"  {_avg([t['bb_mid_slope_at_entry'] for t in ts3]):8.1f}"
+                  f"  {_avg([t['rsi_at_entry'] for t in ts3]):6.1f}")
+
+    print(f"\n{'='*60}\n")
+
+
+# ==============================================================
+# エントリー時の状態指標計算
+# ==============================================================
+def _calc_entry_states(df: "pd.DataFrame", i: int, ts_ms: int) -> Dict:
+    """ret_5 / atr_14 / entry_hour / entry_weekday を計算して返す"""
+    close_now = float(df.iloc[i]["close"])
+
+    # 直前5本リターン（%）
+    ret_5 = (close_now / float(df.iloc[i - 5]["close"]) - 1.0) * 100 if i >= 5 else float("nan")
+
+    # ATR14: 直前14本の平均 True Range（$）
+    tr_vals = []
+    for j in range(max(1, i - 13), i + 1):
+        h  = float(df.iloc[j]["high_raw"])
+        l  = float(df.iloc[j]["low_raw"])
+        pc = float(df.iloc[j - 1]["close"])
+        tr_vals.append(max(h - l, abs(h - pc), abs(l - pc)))
+    atr_14 = sum(tr_vals) / len(tr_vals) if tr_vals else float("nan")
+
+    dt = datetime.fromtimestamp(ts_ms / 1000, tz=_JST)
+    return {
+        "ret_5":         round(ret_5, 4),
+        "atr_14":        round(atr_14, 2),
+        "entry_hour":    dt.hour,
+        "entry_weekday": dt.weekday(),   # 0=Mon, 6=Sun
+    }
 
 
 # ==============================================================
@@ -398,17 +534,16 @@ def main(csv_path: str) -> None:
                 pending[side] = None
                 continue
 
-            # fill 判定（intra-bar: LONG=low, SHORT=high）
+            # fill判定（intra-bar: LONG=low, SHORT=high）
             limit_p = float(pnd["limit_price"])
             filled  = (side == "LONG" and low_p <= limit_p) or \
                       (side == "SHORT" and high_p >= limit_p)
             if not filled:
                 continue
-
-            # 約定処理
-            fill_p    = limit_p  # post-only なので limit_price で約定
+            fill_p = limit_p
             adx_val   = float(pnd.get("adx_at_entry", 0.0))
             unit_size = float(params[f"{side}_POSITION_SIZE_BTC"])
+            states    = _calc_entry_states(df, i, ts_ms)
 
             if pos[side] is None:
                 # 新規エントリー
@@ -426,6 +561,10 @@ def main(csv_path: str) -> None:
                     "adx_at_entry":          pnd.get("adx_at_entry", 0.0),
                     "bb_mid_slope_at_entry": pnd.get("bb_mid_slope_at_entry", float("nan")),
                     "rsi_at_entry":          pnd.get("rsi_at_entry", float("nan")),
+                    "ret_5":                 states["ret_5"],
+                    "atr_14":                states["atr_14"],
+                    "entry_hour":            states["entry_hour"],
+                    "entry_weekday":         states["entry_weekday"],
                 }
             else:
                 # ADD
@@ -530,7 +669,7 @@ def main(csv_path: str) -> None:
             if add_cnt >= max_adds:
                 continue
 
-        # 指値計算（run_once_v9 と同じ係数）
+        # maker指値: ±0.01%
         if side == "LONG":
             lp = float(Decimal(str(close_p)) * Decimal("0.9999"))
         else:
