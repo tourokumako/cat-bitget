@@ -6,7 +6,7 @@
 |------|------|
 | 現在のフェーズ | **Phase 5（常時稼働）— BOT 停止中** |
 | 本番ポジション | なし（BOT 停止中） |
-| 次のタスク | **構造的天井を確認済み → 次方針を選択（下記参照）** |
+| 次のタスク | **環境分類 × 損失特化分析（Step 2）→ 時間帯フィルター等の改善案検討** |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
