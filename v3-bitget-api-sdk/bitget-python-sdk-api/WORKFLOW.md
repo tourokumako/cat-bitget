@@ -1,4 +1,4 @@
-# WORKFLOW.md — V9 改善フロー（2026-04-03 更新）
+# WORKFLOW.md — V9 改善フロー（2026-04-04 更新）
 
 ## セッション開始時の確認事項（最優先）
 
@@ -6,31 +6,101 @@
 |------|------|
 | 現在のフェーズ | **Phase 5（常時稼働）— BOT 停止中** |
 | 本番ポジション | なし（BOT 停止中） |
-| 次のタスク | **エントリーを taker に変更（最優先）**→ L-25 参照。post_only maker 指値の fill rate が 33% しかなく、これが根本問題。run_once_v9.py と replay_csv.py の両方を修正してから Replay で効果確認。その後 TP=3%/SL=0.5% に変更。 |
+| 次のタスク | **構造的天井を確認済み → 次方針を選択（下記参照）** |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
 | paper_trading | false |
-| MAX_ADDS_BY_PRIORITY | `{"2": 1, "4": 1, "22": 1, "23": 1, "24": 1}`（変更なし） |
-| LONG_TP_PCT / SHORT_TP_PCT | 0.020（→ 次セッションで 0.030 に変更予定） |
-| LONG_SL_PCT / SHORT_SL_PCT | 0.010（→ 次セッションで 0.005 に変更予定） |
-| LONG_POSITION_SIZE_BTC / SHORT_POSITION_SIZE_BTC | 0.024（変更なし） |
-| LONG_TIME_EXIT_MIN / SHORT_TIME_EXIT_MIN / P2_TIME_EXIT_MIN | 9999（実質廃止） |
-| TP_ADX_BOOST_ENABLE | 0（無効化） |
-| TP_PCT_CLAMP_ENABLE | 0（無効化） |
-| FEAT_SHORT_RSI_REVERSE_EXIT | false（無効化） |
-| LONG_PROFIT_LOCK_ENABLE | 0（無効化） |
-| P23_SHORT_PROFIT_LOCK_ENABLE | 0（無効化） |
-| P2_ADX_MIN | 30.0 |
-| P2_RSI_MIN | 45.0 |
-| P4_RSI_MAX | 60.0 |
-| P23_BB_MID_SLOPE_MAX | -10.0 |
-| P23_ADX_MIN | 30.0 |
-| P23_ADX_MAX | 50.0 |
-| Replay 現在値 | NET -$372 / 90日（**-$4.1/day**）318件。`results/replay_BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
-| Replay 用 CSV | `/Users/tachiharamasako/Documents/GitHub/cat-swing-sniper/data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
-| グリッドサーチ結果 | `results/grid_search_results.csv`（2026-04-03 実施済み） |
-| 目標 NET/day | **$60/day**（0.12 BTC 制約内の現実的上限として合意済み） |
+| Replay 本番投入基準 | **NET $100/day 以上**（intra-bar fill 過大評価バッファ込み） |
+| 本番 NET 目標 | **$60/day** |
+
+### 現在の cat_params_v9.json（2026-04-04 セッション後）
+
+| パラメータ | 値 |
+|-----------|-----|
+| **LONG_TP_PCT / SHORT_TP_PCT** | **0.005**（旧 0.0032） |
+| LONG_SL_PCT / SHORT_SL_PCT | 0.05 |
+| LONG_TIME_EXIT_MIN | 150 |
+| SHORT_TIME_EXIT_MIN | 480 |
+| P2_TIME_EXIT_MIN | 480 |
+| **LONG_TIME_EXIT_DOWN_FACTOR** | **0.50**（旧 0.75） |
+| **SHORT_TIME_EXIT_DOWN_FACTOR** | **0.50**（旧 0.75） |
+| LONG_MAX_ADDS / SHORT_MAX_ADDS | 5 |
+| **MAX_ADDS_BY_PRIORITY** | **`{"2": 4, "4": 1, "23": 1, "24": 1}`**（旧 `{"2": 4}`） |
+| TP_ADX_BOOST_ENABLE | 1 |
+| TP_PCT_CLAMP_ENABLE | 1 |
+| FEAT_SHORT_RSI_REVERSE_EXIT | true |
+| LONG_PROFIT_LOCK_ENABLE | 1 |
+| P23_SHORT_PROFIT_LOCK_ENABLE | 1 |
+| LONG_POSITION_SIZE_BTC / SHORT_POSITION_SIZE_BTC | 0.024 |
+
+### 現在の replay_csv.py の設定
+
+| 項目 | 値 |
+|------|-----|
+| PENDING_TTL_BARS | 2（= 翌バー1本のみで fill 判定） |
+| fill 判定 | intra-bar（LONG=low, SHORT=high） |
+| limit_price | close ± 0.01% |
+| 手数料 | entry=maker / exit TP=maker / exit SL=taker |
+| **サマリー出力** | **Priority×Exit クロス・add_count別・entry指標別に拡張済み** |
+
+### 直近 Replay 結果（2026-04-04 セッション2・最新）
+
+| 項目 | 値 |
+|------|-----|
+| 総トレード数 | 793件 |
+| NET | **-$127 / 90日（-$1.4/day）** |
+| TP率 | 77%（606件） |
+| TIME_EXIT | 179件 / -$2,242 |
+| MIDTERM_CUT | 0件 |
+| 平均保持時間 | 60.4分 |
+| CSV | `results/replay_BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
+
+### Priority別 NET（最新）
+
+| Priority | 件数 | NET | TP率 | TIME_EXIT | 主な問題 |
+|---------|------|-----|------|-----------|---------|
+| P2-LONG | 280 | **+$38** | 85% | 41件/-$833 | TIME_EXIT が損失源 |
+| P22-SHORT | 8 | -$9 | 62% | 2件/-$44 | 件数少・影響小 |
+| P23-SHORT | 259 | -$160 | 83% | 39件/-$571 | TIME_EXIT が損失源 |
+| P24-SHORT | 32 | -$53 | 81% | 6件/-$121 | TIME_EXIT が損失源 |
+| P4-LONG | 214 | **+$57** | 57% | 91件/-$672 | TP率低・TIME_EXIT 多い |
+
+### 構造的天井の発見（重要）
+
+**TP_PCT=0.005 時の TP 利益合計: +$2,309 / 90日 = +$25.7/day**
+
+損失ゼロにしても最大 +$25.7/day → **目標 $100/day はパラメータ調整のみでは到達不可**。
+
+→ スケールアップ（マルチシンボル等）が必要。まず per-trade エッジをプラスにしてからスケール。
+
+### このセッションで実施・却下した変更
+
+**採用済み（累計 +$974 改善）:**
+| 変更 | 効果 |
+|------|------|
+| MAX_ADDS_BY_PRIORITY P4: 5→2 | +$215（MIDTERM_CUT 削減） |
+| DOWN_FACTOR LONG/SHORT: 0.75→0.50 | +$170（MIDTERM_CUT 完全消滅） |
+| MAX_ADDS_BY_PRIORITY P4: 2→1 | +$71（P4 add=2 損失削減） |
+| MAX_ADDS_BY_PRIORITY P23/P24: 5→1 | +$192（P24 壊滅的 add=4,5 消滅） |
+| **LONG/SHORT_TP_PCT: 0.0032→0.005** | **+$326（NET -$452→-$127、P2/P4 黒字転換）** |
+
+**却下済み:**
+| 変更 | 理由 |
+|------|------|
+| LONG_MIDTERM_PNL_USD: -30→-20 | MIDTERM_CUT が 17→23件に増加（逆効果） |
+| P2/SHORT_TIME_EXIT_MIN: 480→240 | TP 14件減少・TIME_EXIT 増加（+$146 のみ） |
+| P4 ADX Entry フィルター（>=24等） | TP維持率 57%（基準 80%未満） |
+| P23_SLOPE<=-25 Entry フィルター | 外科的スコア 0.15（不十分） |
+
+### 次セッションの選択肢
+
+| 方針 | 内容 | 期待値 |
+|------|------|--------|
+| **A. TIME_EXIT 削減** | P23/P4 add=1 TIME_EXIT 130件/-$1,244 が最大損失源 | Entry フィルター or EXIT短縮で狙い打ち |
+| **B. TP_PCT さらに拡大** | 0.005→0.006〜0.007 | TP単価↑・TP率さらに↓・要検証 |
+| **C. 現状で本番投入** | -$1.4/day は小さい損失。実損見て判断 | リスク低・データ収集 |
+| **D. スケールアップ** | ETH/SOL 追加でトレード数×3〜5倍 | エッジが正になってから |
 
 ---
 
@@ -47,49 +117,47 @@ Step 2. 問題特定
   — どの Priority・どの Exit reason が損失源か特定
   — 損失トレードのエントリー時指標分布を確認（集計だけからの仮説立案禁止）
 
-Step 3. 改善手段の選択（以下から最も効果が大きいものを1つ選ぶ）
-  A. エントリー条件の改善
-     — 勝ち vs 負けのエントリー時指標分布を比較
-     — 差が大きい指標を根拠にフィルターを追加・変更
-     — 「何件が影響を受けるか」を事前に計算して明示
-  B. TP/SL 幅の最適化
-     — Replay エントリー固定 → bar-by-bar グリッドサーチ（L-22）
-     — TP%/SL% 組み合わせで edge・EV/trade・90d NET を試算
-  C. add設計の変更
-     — MAX_ADDS_BY_PRIORITY を変更
-     — Replay で件数・TP率・EV への影響を確認
-  D. Exit ロジックの変更
-     — TIME_EXIT・PROFIT_LOCK 等の変更
-     — 両ファイル（replay_csv.py / run_once_v9.py）同時更新必須
+Step 3. CSV シミュレーション（Replay の前に必ず実施）← NEW
+  — 既存の結果CSV（880件等）を使って Python で直接フィルター効果を試算
+  — 評価軸: NET改善額・TP維持率・TIME_EXIT削減率・外科的スコア(TE削減/TP損失)
+  — Entry フィルター変更 → CSV上で完全シミュレーション可能
+  — Exit タイミング変更 → 線形近似で上限推定（実値は Replay で確認）
+  — 複数アプローチを比較してから最良案を1つ選ぶ
 
-Step 4. 提案 → ユーザー承認
-  — 手段・変更内容・期待値を明示してGO待ち ← STOP
+Step 4. 提案 → ユーザー承認 ← STOP
+  — 変更内容・期待値（NET改善・TP維持率・外科的スコア）を明示
 
-Step 5. 最小差分修正（1回につき1箇所のみ）
+Step 5. 実装（同じ目的の変更はまとめてOK）
 
 Step 6. Replay 実走 → 結果確認 ← STOP
 
 Step 7. 採用 or 却下
   — 採用: 次のステップへ
-  — 却下: 即巻き戻し（cat_params_v9.json / コード）← Step 1 に戻る
+  — 却下: 即巻き戻し → Step 1 に戻る
 
 Step 8. WORKFLOW.md 更新 ← STOP
-  — セッション開始時の確認事項テーブルを最新状態に更新:
-    ・現在のパラメータ（cat_params_v9.json と一致させる）
-    ・Replay 現在値（NET・件数）
-    ・次のタスク
 
-Step 9. 本番反映
-  — run_once_v9.py / cat_params_v9.json への反映確認 ← STOP
+Step 9. 本番反映（run_once_v9.py / cat_params_v9.json）← STOP
 
 Step 10. Git コミット ← STOP
 ```
 
-**現在の設計原則（2026-04-03 確定）:**
-- TIME_EXIT 廃止: TP か SL のどちらかに当たるまで待つ
-- add=3 設計: 逆行時に平均エントリーを改善しTP率を高める（L-23）
-- SL 幅は ATR の 2〜3倍 を目安に設定（狭すぎると即死連発・L-24）
-- `replay_csv.py` と `run_once_v9.py` の `_check_exits` は常に同期を保つこと
+### Step 3 シミュレーションの判断基準
+
+| 指標 | 定義 | 目安 |
+|------|------|------|
+| NET改善額 | 変更後NET - 現在NET | 大きいほど良い |
+| TP維持率 | 残るTP件数 / 全TP件数 | 80%以上が望ましい |
+| 外科的スコア | TE削減件数 / (TP損失件数+1) | 高いほどTP巻き添えが少ない |
+
+**Entry フィルターは構造的にTP巻き添えが発生する（最良でも外科的スコア0.2前後）。**
+TP維持率が低い場合は Exit タイミング変更を優先して検討すること。
+
+**設計思想（CLAUDE.md より）:**
+- 対象トレード: 24時間以内に決済できる取引
+- ベース: レンジ回帰型（行って戻ってきてTP）
+- 手数料を上回る利益を確実に取る設計
+- 手段（TP幅・add回数等）は目標達成のために最適化する
 
 ---
 
@@ -108,8 +176,6 @@ echo "=====🚀 RUN START $(date) =====" && \
 
 ### tools/trade_summary.py — 本番ログ集計レポート
 
-本番の `logs/cron.log` からトレード集計を出力する。
-
 ```bash
 .venv/bin/python3 tools/trade_summary.py
 .venv/bin/python3 tools/trade_summary.py --since "2026-03-24"
@@ -119,9 +185,6 @@ echo "=====🚀 RUN START $(date) =====" && \
 
 ## 過去作業記録（Phase 0-4）
 
-Phase 0-4（移植・デモ・本番切り替え）の詳細記録。現フェーズでは参照不要。
-
-### Phase 0〜4 完了サマリー
 - Phase 0（2026-03-20）: cat/パッケージ・cat_v9_decider.py・cat_params_v9.json 作成
 - Phase 1（2026-03-21）: run_once_v9.py 作成・H-0〜H-5 通過
 - Phase 2（2026-03-21〜24）: Logic Parity 200/200 MATCH・Param Parity・Demo Run 完了
