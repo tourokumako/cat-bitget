@@ -78,6 +78,14 @@ def preprocess(df: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFrame:
     adx = ta.trend.ADXIndicator(df["high"], df["low"], df["close"], window=14)
     df["adx"] = adx.adx()
 
+    # atr_14: 単純平均ATR（replay_csv._calc_entry_states と同じ計算）
+    _tr = pd.DataFrame({
+        "hl":  df["high"] - df["low"],
+        "hpc": (df["high"] - df["close"].shift(1)).abs(),
+        "lpc": (df["low"]  - df["close"].shift(1)).abs(),
+    }).max(axis=1)
+    df["atr_14"] = _tr.rolling(window=14, min_periods=1).mean()
+
     # EMA20
     ensure_ema20(df)
 
@@ -392,7 +400,8 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
     entry_ok_flag = bool(row.get("entry_ok_long", True))
 
     if pullback_ok and trend_ok and cont_ok and candle_ok and entry_ok_flag \
-            and get("rsi_short") <= float(params.get("P4_RSI_MAX", 100.0)):
+            and get("rsi_short") <= float(params.get("P4_RSI_MAX", 100.0)) \
+            and get("atr_14") >= float(params.get("P4_ATR14_MIN", 0.0)):
         return 4
 
     # =========================
@@ -413,7 +422,8 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
 
     if (stoch_cross
             and get("adx") >= float(params.get("P2_ADX_MIN", 0.0))
-            and get("rsi_short") >= float(params.get("P2_RSI_MIN", 0.0))):
+            and get("rsi_short") >= float(params.get("P2_RSI_MIN", 0.0))
+            and get("atr_14") >= float(params.get("P2_ATR14_MIN", 0.0))):
         return 2
 
     # =========================
