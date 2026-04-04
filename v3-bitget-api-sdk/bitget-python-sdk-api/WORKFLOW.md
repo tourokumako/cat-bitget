@@ -6,7 +6,7 @@
 |------|------|
 | 現在のフェーズ | **Phase 5（常時稼働）— BOT 停止中** |
 | 本番ポジション | なし（BOT 停止中） |
-| 次のタスク | **環境分類 × 損失特化分析（Step 2）→ 時間帯フィルター等の改善案検討** |
+| 次のタスク | **P4 TIME_EXIT 58件の MFE 分析（Step 2）→ Entry フィルター候補特定** |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
