@@ -467,6 +467,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
             and pd.notna(_p24_slope_val) and _p24_slope_val < _p24_slope_max
             and pd.notna(_p24_sk_val)    and _p24_sk_val   > _p24_stoch_min
             and pd.notna(_p24_close) and pd.notna(_p24_open) and _p24_close < _p24_open
+            and get("atr_14") >= float(params.get("P24_ATR14_MIN", 0.0))
         ):
             return 24
 
@@ -483,6 +484,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
         and df["bb_mid_slope"].iloc[i] < float(params.get("P23_BB_MID_SLOPE_MAX", 0.0))
         and get("adx") >= float(params.get("P23_ADX_MIN", 0.0))
         and get("adx") < float(params.get("P23_ADX_MAX", 9999.0))
+        and get("atr_14") >= float(params.get("P23_ATR14_MIN", 0.0))
     ):
         return 23
 
