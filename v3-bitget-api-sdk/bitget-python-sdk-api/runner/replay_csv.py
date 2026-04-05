@@ -252,7 +252,8 @@ def _check_exits_replay(pos: Dict, mark_price: float, df: pd.DataFrame, i: int,
 # ユーティリティ
 # ==============================================================
 def _ts_to_str(ts_ms: int) -> str:
-    dt = datetime.fromtimestamp(ts_ms / 1000, tz=_JST)
+    # UTC で出力（candles.csv と timezone を合わせる）
+    dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
