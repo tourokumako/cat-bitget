@@ -6,7 +6,7 @@
 |------|------|
 | 現在のフェーズ | **Phase 5（常時稼働）— BOT 停止中** |
 | 本番ポジション | なし（BOT 停止中） |
-| 次のタスク | **全体 TP_PCT 最適化（TIME_EXIT 116件の81%がTP未到達→TP縮小でTP_FILLED変換）** |
+| 次のタスク | **Phase 1: 全Priority Entry/Exit ロジック棚卸し（フィルター効果確認・デッドコード除去）** |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
@@ -81,7 +81,7 @@
 - **P23 TIME_EXIT は全件逆行**（L-27タイムゾーンバグで誤分析→UTC修正後確認）。ret_5フィルターは L-26 で禁止、atr_14上限も逆効果。
 - **P23_ADX_MAX=40 で解決**: ADX 40-50（強トレンド）への逆張りが損失の主因。ADX 30-40 のみに絞り P23 を黒字化（-$114→+$63）。
 - **TP_ADX_BOOST_ENABLE=1 + TP_ADX_FACTOR=0.25 はTPを縮小していた**: ADX>=33でTP_PCT=0.5%→0.15%に圧縮。P2/P23/P24のTP利益を$2-3/件に抑制していた。0無効化でP2 TP=$17.6/件に正常化。NET+$287→+$896。
-- **L-27 根絶（2026-04-05）**: replay_csv.py の entry/exit_time を UTC 出力に修正。MFEマッチ率 54%→100%。MFE正確値: TIME_EXIT 116件の81%がTP未到達（MFE 0〜0.55%）→TP縮小で大量救済可能。
+- **L-27 根絶（2026-04-05）**: replay_csv.py の entry/exit_time を UTC 出力に修正。MFEマッチ率 54%→100%。MFE正確値: TIME_EXIT 116件の81%がTP未到達（MFE 0〜0.55%）。※TP縮小は不採用（下記参照）。
 - **P4_ADX_EXCL_MIN/MAX**: ADX_MINと違い「除外バンド」で実装。ADX<20（黒字）とADX>=25（一部良好）を維持したまま20-25（TP率50%）を除外。
 - **分析スクリプトのタイムゾーン注意（L-27）**: Replay CSV は JST、candles.csv は UTC。変換せずに使うと 9h ずれたバーを参照する。
 
@@ -112,16 +112,38 @@
 | **P4 ret_5 ≤ 0.25 Entry フィルター** | **L-19 発生: P4除外→P2流入で P2 NET -$47悪化。全体 +$76→+$29（-$47）。P4は±0改善なし。** |
 | **P23 ret_5 ≤ 0.05 Entry フィルター** | **L-26 発動: CSV期待値+$242 → Replay +$6。TP 40件が余計に除外。signal/fill バーズレで ret_5 が大きくズレた。** |
 
-### 次セッションの選択肢
+### 今セッションの追加知見（2026-04-05）
 
-※ 本番投入基準: **Replay NET $100/day 以上**（現在 +$0.1/day のため本番投入不可）
+- **TP_PCT 削減は全候補で NET 悪化（不採用）**:
+  シミュレーション（add=1 ADX精度保証）で確認。
+  - nom=0.004（実効0.44%）: -$150 / nom=0.003（実効0.33%）: -$374
+  - 理由: TP_FILLED 174件の利益減 > TIME_EXIT 転換30件の利益。TIME_EXIT の62%はMFE<0.2%でTP変更では救えない。
+- **実効TP = nominal × CLAMP scale**（TP_PCT_SCALE=1.1 / TP_PCT_SCALE_HIGH=1.2）:
+  LONG_TP_PCT=0.005 → 実効 **0.55%**（ADX<35）/ **0.60%**（ADX≥35）
+- **P4_TP_MULT=1.05 はデッドコード**: config に存在するが replay/run_once どこにも使われていない（無効）
+- **add_count 別 TP_FILLED avg net**: add=1: $9.6 / add=2: $20.4 / add=3: $27.1 / add=4: $37.7
+  → addが積み上がるほどTP価格が現値に近づき、かつ USD 利益が増える（設計の根幹）
+- **TP / ADD / TIME_EXIT は相互作用が複雑**（TP幅広→TIME_EXIT増→add深損失増）
+  → Phase 3+4 は同時最適化が必要（グリッドサーチ方式）
 
-| 方針 | 内容 | 期待値 |
-|------|------|--------|
-| **A. 全体 TP_PCT 最適化** | TIME_EXIT 116件の81%がTP未到達（MFE 0〜0.55%）。TP縮小でTP_FILLED変換 | TP_PCT: 0.005→0.003-0.004 で最適点を探索。Replayで複数値比較 |
-| **B. P4 TP_PCT 個別調整** | TP_ADX_BOOST無効化でP4 TP率66%→53%に後退。P4専用TP_PCT縮小 | P4_TP_PCT: 0.005→0.003-0.004 でTP率回復 |
-| **C. P2 TIME_EXIT 削減** | 32件/-$788。add_count>=2 が深い損失（add=3: avg-$74.9） | MAX_ADDS["2"]: 4→2 削減 |
-| **D. スケールアップ** | ETH/SOL 追加でトレード数×3〜5倍 | 現状 $10/day → $100/day 基準達成にはまだ必要 |
+### 次セッション以降のフェーズ構成
+
+※ 本番投入基準: **Replay NET $100/day 以上**（現在 +$10/day のため本番投入不可）
+
+| Phase | 内容 | 状態 |
+|-------|------|------|
+| **Phase 1** | 全Priority Entry/Exit ロジック棚卸し（フィルター発火確認・デッドコード除去） | **← 次のタスク** |
+| **Phase 2** | Entry ロジック最適化（Priority間相互作用を考慮） | 未着手 |
+| **Phase 3+4** | Add構造 × TP/TimeExit/SL 同時最適化（グリッドサーチ: TP_PCT × MAX_ADDS） | 未着手 |
+| **Phase 5** | スケールアップ（ETH/SOL 追加） | 未着手 |
+
+**Phase 3+4 グリッドサーチ案（将来）:**
+
+```
+TP_PCT:   [0.004, 0.005, 0.006, 0.007]
+MAX_ADDS: [{"2":4,"4":1}, {"2":4,"4":2}, {"2":4,"4":3}]
+→ 12通りを Replay で比較してヒートマップで最適点を特定
+```
 
 ---
 
