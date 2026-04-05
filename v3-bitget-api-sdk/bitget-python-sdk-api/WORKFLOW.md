@@ -6,7 +6,7 @@
 |------|------|
 | 現在のフェーズ | **Phase 5（常時稼働）— BOT 停止中** |
 | 本番ポジション | なし（BOT 停止中） |
-| 次のタスク | **P4 に対して priority-specific な TP_PCT 調整（TP_ADX_BOOST無効化でP4 TP率66%→53%に後退）** |
+| 次のタスク | **全体 TP_PCT 最適化（TIME_EXIT 116件の81%がTP未到達→TP縮小でTP_FILLED変換）** |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
@@ -81,6 +81,7 @@
 - **P23 TIME_EXIT は全件逆行**（L-27タイムゾーンバグで誤分析→UTC修正後確認）。ret_5フィルターは L-26 で禁止、atr_14上限も逆効果。
 - **P23_ADX_MAX=40 で解決**: ADX 40-50（強トレンド）への逆張りが損失の主因。ADX 30-40 のみに絞り P23 を黒字化（-$114→+$63）。
 - **TP_ADX_BOOST_ENABLE=1 + TP_ADX_FACTOR=0.25 はTPを縮小していた**: ADX>=33でTP_PCT=0.5%→0.15%に圧縮。P2/P23/P24のTP利益を$2-3/件に抑制していた。0無効化でP2 TP=$17.6/件に正常化。NET+$287→+$896。
+- **L-27 根絶（2026-04-05）**: replay_csv.py の entry/exit_time を UTC 出力に修正。MFEマッチ率 54%→100%。MFE正確値: TIME_EXIT 116件の81%がTP未到達（MFE 0〜0.55%）→TP縮小で大量救済可能。
 - **P4_ADX_EXCL_MIN/MAX**: ADX_MINと違い「除外バンド」で実装。ADX<20（黒字）とADX>=25（一部良好）を維持したまま20-25（TP率50%）を除外。
 - **分析スクリプトのタイムゾーン注意（L-27）**: Replay CSV は JST、candles.csv は UTC。変換せずに使うと 9h ずれたバーを参照する。
 
@@ -117,9 +118,10 @@
 
 | 方針 | 内容 | 期待値 |
 |------|------|--------|
-| **A. P4 TP_PCT 個別調整** | TP_ADX_BOOST無効化でP4 TP率66%→53%に後退。P4専用TP_PCT縮小で回復を狙う | P4_TP_PCT: 0.005→0.003-0.004 でTP率回復・NET改善 |
-| **B. P2 TIME_EXIT 削減** | 32件/-$788。add_count>=2 が深い損失（add=3: avg-$74.9） | MAX_ADDS["2"]: 4→2 削減 |
-| **C. スケールアップ** | ETH/SOL 追加でトレード数×3〜5倍 | 現状 $10/day → $100/day 基準達成にはまだ必要 |
+| **A. 全体 TP_PCT 最適化** | TIME_EXIT 116件の81%がTP未到達（MFE 0〜0.55%）。TP縮小でTP_FILLED変換 | TP_PCT: 0.005→0.003-0.004 で最適点を探索。Replayで複数値比較 |
+| **B. P4 TP_PCT 個別調整** | TP_ADX_BOOST無効化でP4 TP率66%→53%に後退。P4専用TP_PCT縮小 | P4_TP_PCT: 0.005→0.003-0.004 でTP率回復 |
+| **C. P2 TIME_EXIT 削減** | 32件/-$788。add_count>=2 が深い損失（add=3: avg-$74.9） | MAX_ADDS["2"]: 4→2 削減 |
+| **D. スケールアップ** | ETH/SOL 追加でトレード数×3〜5倍 | 現状 $10/day → $100/day 基準達成にはまだ必要 |
 
 ---
 
