@@ -401,7 +401,8 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
 
     if pullback_ok and trend_ok and cont_ok and candle_ok and entry_ok_flag \
             and get("rsi_short") <= float(params.get("P4_RSI_MAX", 100.0)) \
-            and get("atr_14") >= float(params.get("P4_ATR14_MIN", 0.0)):
+            and get("atr_14") >= float(params.get("P4_ATR14_MIN", 0.0)) \
+            and not (float(params.get("P4_ADX_EXCL_MIN", 0.0)) <= get("adx") < float(params.get("P4_ADX_EXCL_MAX", 0.0))):
         return 4
 
     # =========================
