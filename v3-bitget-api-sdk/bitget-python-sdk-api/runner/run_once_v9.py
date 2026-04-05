@@ -174,8 +174,9 @@ def _load_params() -> Dict[str, Any]:
 # ==============================================================
 # TP 計算
 # ==============================================================
-def _calc_tp_pct(side: str, adx: float, params: Dict[str, Any]) -> float:
-    base     = float(params[f"{side}_TP_PCT"])
+def _calc_tp_pct(side: str, adx: float, params: Dict[str, Any], priority: int = -1) -> float:
+    pri_key  = f"P{priority}_TP_PCT" if priority > 0 else None
+    base     = float(params[pri_key] if pri_key and pri_key in params else params[f"{side}_TP_PCT"])
     fee_rate = float(params.get("FEE_RATE_MAKER", 0.00014))
     margin   = float(params.get("FEE_MARGIN", 1.5))
     if int(params.get("TP_FEE_FLOOR_ENABLE", 0)):
@@ -243,13 +244,13 @@ def _place_limit_order(adapter: BitgetAdapter, *, side: str, size: str,
     req = {
         "symbol": SYMBOL, "productType": PRODUCT_TYPE,
         "marginMode": MARGIN_MODE, "marginCoin": MARGIN_COIN,
-        "size": size, "price": price,
+        "size": size,
         "side": "buy" if side == "LONG" else "sell",
         "tradeSide": "open",
-        "orderType": "limit", "force": "post_only",
+        "orderType": "market",
         "clientOid": client_oid,
     }
-    _log("ENTRY_SEND", side=side, limit_price=price, size=size, client_oid=client_oid)
+    _log("ENTRY_SEND", side=side, close_price=price, size=size, client_oid=client_oid)
     if not ALLOW_LIVE_ORDERS:
         _log("DRY_RUN_SKIP", action="place_limit_order")
         return f"DRY_{client_oid}"
@@ -403,8 +404,8 @@ def _check_exits(pos: Dict, mark_price: float, df, params: Dict) -> Optional[str
             return float("nan")
         return float(df.at[len(df) - 1, col])
 
-    # 1. BREAKOUT_CUT (P22/P23 SHORT, add==3, bb_width+rsi条件)
-    if side == "SHORT" and priority in (22, 23) and add_count == 3:
+    # 1. BREAKOUT_CUT (P22 SHORT, add==3, bb_width+rsi条件)
+    if side == "SHORT" and priority == 22 and add_count == 3:
         bw = _col("bb_width"); rsi = _col("rsi_short")
         if (not math.isnan(bw)  and bw  >= float(params.get("P23_BREAKOUT_BB_WIDTH_MIN", 0.03))
                 and not math.isnan(rsi) and rsi >= float(params.get("P23_BREAKOUT_RSI_MIN", 70.0))):
@@ -430,23 +431,11 @@ def _check_exits(pos: Dict, mark_price: float, df, params: Dict) -> Optional[str
                 and not math.isnan(adx_v)  and adx_v  < float(params.get("SHORT_RSI_EXIT_ADX_MAX", 12))):
             return "RSI_REVERSE_EXIT"
 
-    # 5. MAE_CUT (P23 SHORT, add≥4, hold≥300min, mark_price >= entry + 50/size)
-    if side == "SHORT" and priority == 23 and add_count >= 4 and hold_min >= 300:
-        _mae_cap_price = entry_p + (50.0 / size_btc)
-        if mark_price >= _mae_cap_price:
-            return "MAE_CUT"
-
     # 5b. MAE_CUT (P2 LONG, add≥4, hold≥300min, mark_price <= entry - 50/size)
     if side == "LONG" and priority == 2 and add_count >= 4 and hold_min >= 300:
         _mae_cap_price_long = entry_p - (50.0 / size_btc)
         if mark_price <= _mae_cap_price_long:
             return "MAE_CUT"
-
-    # 5c. MIDTERM_CUT (P4 LONG, add≥2, hold≥90min, unrealized PnL < -$30)
-    if side == "LONG" and priority == 4 and add_count >= 2:
-        if hold_min >= float(params.get("LONG_MIDTERM_HOLD_MIN", 90.0)):
-            if unreal < float(params.get("LONG_MIDTERM_PNL_USD", -30.0)):
-                return "MIDTERM_CUT"
 
     # 6. PROFIT_LOCK
     if side == "LONG" and int(params.get("LONG_PROFIT_LOCK_ENABLE", 0)):
@@ -710,7 +699,7 @@ def _confirm_entry(adapter: BitgetAdapter, pending: Dict, open_pos: Optional[Dic
     price_avg = float(detail.get("priceAvg") or 0) or mark_price
     filled_sz = float(detail.get("baseVolume") or 0) or size_btc
 
-    tp_pct = _calc_tp_pct(p_side, adx_val, params)
+    tp_pct = _calc_tp_pct(p_side, adx_val, params, p_pri)
 
     if open_pos is None:
         # 初回 ENTRY
@@ -1119,7 +1108,7 @@ def run() -> None:
                 adx_val = float(pnd.get("adx_at_entry", 0) or 0)
                 actual_price = float((lp or {}).get("openPriceAvg")
                                      or pnd.get("limit_price", 0))
-                tp_pct = _calc_tp_pct(p_side, adx_val, params)
+                tp_pct = _calc_tp_pct(p_side, adx_val, params, p_pri)
                 try:
                     tp, tp_order_id = _place_tp(
                         adapter, side=p_side,

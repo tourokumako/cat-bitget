@@ -6,7 +6,7 @@
 |------|------|
 | 現在のフェーズ | **Phase 5（常時稼働）— BOT 停止中** |
 | 本番ポジション | なし（BOT 停止中） |
-| 次のタスク | **Phase 1: 全Priority Entry/Exit ロジック棚卸し（フィルター効果確認・デッドコード除去）** |
+| 次のタスク | **次フェーズ検討中（Priority別TP最適化・デッドパラメータ整理 完了）** |
 | ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
@@ -19,6 +19,9 @@
 | パラメータ | 値 |
 |-----------|-----|
 | **LONG_TP_PCT / SHORT_TP_PCT** | **0.005**（旧 0.0032） |
+| **P22_TP_PCT** | **0.005** |
+| **P23_TP_PCT** | **0.007**（旧 0.005） |
+| **P24_TP_PCT** | **0.007**（旧 0.005） |
 | LONG_SL_PCT / SHORT_SL_PCT | 0.05 |
 | LONG_TIME_EXIT_MIN | 150 |
 | SHORT_TIME_EXIT_MIN | 480 |
@@ -26,9 +29,10 @@
 | **LONG_TIME_EXIT_DOWN_FACTOR** | **0.50**（旧 0.75） |
 | **SHORT_TIME_EXIT_DOWN_FACTOR** | **0.50**（旧 0.75） |
 | LONG_MAX_ADDS / SHORT_MAX_ADDS | 5 |
-| **MAX_ADDS_BY_PRIORITY** | **`{"2": 4, "4": 1, "23": 1, "24": 1}`**（旧 `{"2": 4}`） |
+| **MAX_ADDS_BY_PRIORITY** | **`{"2": 5, "4": 5, "23": 1, "24": 1}`**（旧 `{"2": 4}`） |
 | **P23_ADX_MAX** | **40**（旧 50） |
 | **P4_ADX_EXCL_MIN / P4_ADX_EXCL_MAX** | **20.0 / 25.0**（新規・弱トレンド移行期除外） |
+| **P22_SHORT_BB_MID_SLOPE_MAX** | **-20.0**（旧 -50.0） |
 | **TP_ADX_BOOST_ENABLE** | **0**（旧 1。TP圧縮バグ解消） |
 | TP_PCT_CLAMP_ENABLE | 1 |
 | FEAT_SHORT_RSI_REVERSE_EXIT | true |
@@ -50,20 +54,20 @@
 
 | 項目 | 値 |
 |------|-----|
-| 総トレード数 | ~349件 |
-| NET | **+$896 / 90日（+$10.0/day）** |
-| TP率 | 63%（TP幅拡大に伴い低下） |
+| 総トレード数 | 411件 |
+| NET | **+$1,493 / 90日（+$16.6/day）** |
+| TP率 | — |
 | CSV | `results/replay_BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
 
 ### Priority別 NET（最新）
 
 | Priority | 件数 | NET | TP率 | TIME_EXIT | 主な問題 |
 |---------|------|-----|------|-----------|---------|
-| P2-LONG | 129 | **+$733** | 67% | 32件/-$788 | TIME_EXIT増（TP幅拡大の代償）|
-| P22-SHORT | 8 | +$18 | 62% | 2件/-$44 | 件数少・影響小 |
-| P23-SHORT | 89 | **+$54** | 65% | 27件/-$340 | SL 2件/-$162 残存 |
-| P24-SHORT | 19 | +$12 | 63% | 7件/-$111 | 件数少 |
-| P4-LONG | 104 | **+$78** | 53% | 48件/-$363 | TP率低下（TP幅拡大の影響）|
+| P2-LONG | 129 | **+$740** | 67% | 32件/-$788 | TIME_EXIT増（TP幅拡大の代償）|
+| P22-SHORT | 87 | **+$205** | 53% | 27件/-$649 | MFE_STALE_CUT 3件/-$126 |
+| P23-SHORT | 82 | +$14 | 65% | 26件/-$338 | SL 2件/-$162 残存 |
+| P24-SHORT | 17 | -$10 | 59% | 7件/-$111 | 件数少 |
+| P4-LONG | 102 | **+$258** | 51% | 44件/-$611 | add=2〜5追加でTP avg $18.7/件に改善 |
 
 ### 構造的天井の更新（重要）
 
@@ -100,6 +104,11 @@
 | **P23_ADX_MAX: 50→40** | **+$177（NET +$76→+$253、P23 -$114→+$63、TP率86%→88%）ADX40-50の強トレンド逆張りを除外** |
 | **P4_ADX_EXCL_MIN/MAX: 20-25** | **+$34（NET +$253→+$287）ADX20-25の弱トレンド移行期を除外（ADX<20良環境は維持）** |
 | **TP_ADX_BOOST_ENABLE: 1→0** | **+$609（NET +$287→+$896）TP圧縮バグ解消。P2 TP avg $3.2→$17.6/件** |
+| **P22_SHORT_BB_MID_SLOPE_MAX: -50→-20** | **+$124（NET +$896→+$1,020）P22 8件→87件に拡大。-10は崩壊（MFE_STALE_CUT急増）** |
+| **MAX_ADDS_BY_PRIORITY["4"]: 1→3** | **+$104（NET +$1,020→+$1,124）P4 TP avg $9.4→$17.0/件。MIDTERM_CUT削除済みのため再add有効** |
+| **MAX_ADDS_BY_PRIORITY["4"]: 3→5（拡張グリッド）** | **+$76（NET +$1,124→+$1,200）P4 NET $182→$258。TIME_EXIT add=5は1件のみ** |
+| **MAX_ADDS_BY_PRIORITY["2"]: 4→5** | **+$24（NET +$1,200→+$1,224）P2 NET $733→$740** |
+| **Priority別TP実装 + P23_TP_PCT: 0.005→0.007 / P24_TP_PCT: 0.005→0.007** | **+$149（NET +$1,344→+$1,493）P23 $215→$319、P22 $177→$210、P24 -$63→-$52** |
 
 **却下済み:**
 | 変更 | 理由 |
@@ -111,6 +120,67 @@
 | P23 transit_A × ret_5>0 フィルター | signal/fill バーズレで CSV+$143 → Replay +$2（L-26） |
 | **P4 ret_5 ≤ 0.25 Entry フィルター** | **L-19 発生: P4除外→P2流入で P2 NET -$47悪化。全体 +$76→+$29（-$47）。P4は±0改善なし。** |
 | **P23 ret_5 ≤ 0.05 Entry フィルター** | **L-26 発動: CSV期待値+$242 → Replay +$6。TP 40件が余計に除外。signal/fill バーズレで ret_5 が大きくズレた。** |
+
+### Phase 1 棚卸し結果（2026-04-05）
+
+**削除済みデッドコード:**
+| 対象 | 理由 |
+|------|------|
+| `MIDTERM_CUT` (P4 LONG add≥2) | MAX_ADDS_BY_PRIORITY["4"]=1 で不到達。現時点で無貢献。 |
+| `MAE_CUT` (P23 SHORT add≥4) | MAX_ADDS_BY_PRIORITY["23"]=1 で不到達。同上。 |
+| `BREAKOUT_CUT` P23分岐 | 同上。P22分岐は残存（SHORT_MAX_ADDS=5で到達可能） |
+| config: `P4_TP_MULT` / `LONG_TP_WEAK_REDUCE` / `LONG_SHALLOW_TAIL_MIN` | コード内に参照なし |
+
+**可視化済み:**
+| 対象 | 対処 |
+|------|------|
+| `P22_SHORT_MFE_STALE_GATE_USD` | configに明示追加（従来は暗黙デフォルト12.0） |
+
+**残存孤立パラメータ:** なし（2026-04-05 全件整理済み）
+- 削除済み: PRICE_HIT_TOL / LONG_SLOPE_THRESH / LONG_RSI_{PERIOD,SLOPE_N,THRESH} / LONG_MIN_HOLD_FOR_RSI_EXIT / LONG_MIDTERM_{HOLD_MIN,PNL_USD} / SHORT_RISKSCORE_LOWER_THRESH（計9個）
+- グレーゾーン残存: TP_ADX_FACTOR / TP_ADX_RANGE（BOOST=0で無効。再有効化時のため保留）
+
+**現在の有効フィルター一覧:**
+- P4: pullback + trend + slope(≥20/mean5≥15) + 陽線 + entry_ok + RSI_MAX(60) + ATR14(150) + ADX_EXCL(20-25)
+- P2: stoch_GC(gap>0.3) + 陽線 + ADX(≥30) + RSI(≥45) + ATR14(150)
+- P22: core_gate + bb_mid_slope(≤-50) ※ADX/RISKはRELAX_FINAL=1でバイパス
+- P23: stoch_DC(gap>0.3) + 陰線 + bb_mid_slope(<-10) + ADX(30〜40) + ATR14(150)
+- P24: RSI(>65) + rsi_slope(<0) + bb_slope(<50) + stoch_k(>60) + 陰線 + ATR14(150)
+
+### Phase 2 進捗（2026-04-05 セッション）
+
+**P22_SHORT_BB_MID_SLOPE_MAX 最適化（採用済み: -20）:**
+
+フィルター段階別分析（180d=51,845バー）:
+- core_gate 単独: 14,583バー（28%）→ bb_mid_slope≤-50 で **39バーに激減（99.7%除外）**
+- slope≤-30: 222バー / slope≤-20: 543バー / slope≤-10: 1,522バー
+
+テスト結果（90d Replay）:
+
+| 閾値 | P22件数 | P22 NET | 全体NET | 全体差分 |
+|------|--------|--------|--------|---------|
+| -50（旧） | 8 | +$18 | +$896 | baseline |
+| -30 | 41 | +$69 | +$908 | +$12 |
+| **-20（採用）** | **87** | **+$205** | **+$1,020** | **+$124** |
+| -10 | 201 | -$582 | +$258 | -$638（MFE_STALE_CUT急増で崩壊） |
+
+※ -10崩壊原因: bb_slope緩い信号が長時間塩漬け → MFE_STALE_CUT 19件/$-982 急増
+※ SHORT間 Priority 相互作用あり: P22増加→P23/P24が若干減少（P22がSHORT信号を先取り）
+
+**P24 分析結果（完了・保留）:**
+- コア信号自体が稀（0.51%）+ bb_slope<50 が55%除外
+- 全ATR14閾値でTP維持率80%未満 → Entry filter不適
+- 17件 NET -$10 ≈ フラット。Phase 3+4の自然対象として保留。
+
+**P2/P4 LONG側分析結果（完了・打ち止め）:**
+- P2: ATR14フィルター不効果（TIME_EXITのatr_14が逆に高い: add=2 avg232/add=3 avg292）。ret_5フィルターも改善なし。add≥2 TE 21件/$-641は設計上の代償（add深→大TP利益のトレードオフ）
+- P4: 時間帯（18-19h・21h JST）除外で +$69 / TP維持率94.5% / 外科的3.75 だが18件サンプルで統計不十分 → 保留
+- 結論: LONG側のEntryフィルター改善余地なし。Phase 3+4へ移行。
+
+**180dデータ作成:**
+- `/cat-swing-sniper/data/BTCUSDT-5m-2025-10-03_04-01_combined_180d.csv` を作成済み
+- Nov-Dec 2025 は history-candles API（v2）で取得
+- Oct-Dec 2025 は BTC 強上昇レジーム（$65k→$100k）→ 現行パラメータと別レジーム・参考程度
 
 ### 今セッションの追加知見（2026-04-05）
 
@@ -132,18 +202,58 @@
 
 | Phase | 内容 | 状態 |
 |-------|------|------|
-| **Phase 1** | 全Priority Entry/Exit ロジック棚卸し（フィルター発火確認・デッドコード除去） | **← 次のタスク** |
-| **Phase 2** | Entry ロジック最適化（Priority間相互作用を考慮） | 未着手 |
-| **Phase 3+4** | Add構造 × TP/TimeExit/SL 同時最適化（グリッドサーチ: TP_PCT × MAX_ADDS） | 未着手 |
+| **Phase 1** | 全Priority Entry/Exit ロジック棚卸し（フィルター発火確認・デッドコード除去） | **完了** |
+| **Phase 2** | Entry ロジック最適化（Priority間相互作用を考慮） | **← 次のタスク** |
+| **Phase 3+4** | Add構造 × TP/TimeExit/SL 同時最適化（グリッドサーチ: TP_PCT × MAX_ADDS） | **LONG側完了・SHORT側未着手** |
 | **Phase 5** | スケールアップ（ETH/SOL 追加） | 未着手 |
 
-**Phase 3+4 グリッドサーチ案（将来）:**
+**Phase 3+4 LONG側グリッドサーチ結果（完了）:**
 
-```
-TP_PCT:   [0.004, 0.005, 0.006, 0.007]
-MAX_ADDS: [{"2":4,"4":1}, {"2":4,"4":2}, {"2":4,"4":3}]
-→ 12通りを Replay で比較してヒートマップで最適点を特定
-```
+| | P4max=1 | P4max=2 | P4max=3 | P4max=4 | P4max=5 |
+|---|---|---|---|---|---|
+| TP=0.003 | $413 | $473 | $483 | $500 | $507 |
+| TP=0.0035 | $750 | $836 | $851 | $900 | $918 |
+| TP=0.004 | $501 | $556 | $566 | $606 | $626 |
+| **TP=0.005（採用）** | **$1,020** | **$1,099** | **$1,124** | **$1,177** | **$1,200★** |
+| TP=0.006 | $910 | $1,014 | $940 | $965 | $966 |
+| TP=0.007 | $839 | $847 | $867 | $895 | $911 |
+
+→ TP=0.005 / P4max=5 が最良。採用済み。
+
+**Phase 3+4 SHORT側グリッドサーチ（次セッション）:**
+
+SHORT_TP グリッド結果（LONG_TP=0.005固定 / SHORT adds上限=5）:
+
+| SHORT_TP | NET | /day | P22 | P23 | P24 |
+|---|---|---|---|---|---|
+| 0.003 | $892 | $9.9 | $27 | -$14 | -$136 |
+| 0.0035 | $1,009 | $11.2 | $47 | $62 | -$115 |
+| 0.004 | $1,162 | $12.9 | $118 | $115 | -$85 |
+| **0.005** | **$1,345** | **$14.9** | $177 | $215 | -$63 ◀現行 |
+| 0.006 | $1,297 | $14.4 | $189 | $182 | -$90 |
+| 0.007 | $1,436 | $16.0 | $67 | **$406** | -$52 |
+
+**分析知見（2026-04-05）:**
+- **P23 TP=0.007 $406 は異常値ではない**: add=5+TP拡大の相乗効果。TP件数44件/$1,021（avg $23.2/件 vs 0.005時 $9.8/件）。add積み上がりでTP価格が現値に近づきUSD利益増大。
+- **P22 は TP=0.007 で崩壊**: TP率 53%→39%、BREAKOUT_CUT 出現。TP幅が広すぎてP22では届かない。
+- **P24 は全TP値で赤字**: add解放しても TIME_EXIT 損失（avg -$44.9/件）が支配的。add=1 維持が適切。
+- **結論: P22/P23/P24 は同一 TP での一括最適化は不適切。Priority別に分離最適化が必要。**
+
+**Priority別TP最適化 完了（2026-04-05）:**
+- P22_TP_PCT=0.005 / P23_TP_PCT=0.007 / P24_TP_PCT=0.007 に確定（adds=5 前提で再検証）
+- P22は0.005が最良。P23=0.007で+$104、P24=0.007で+$44（P22相互作用込み）
+- 組み合わせ確認Replay: NET $1,493（+$149改善）
+- Priority別TP は replay_csv.py / run_once_v9.py / cat_params_v9.json に実装済み
+- P24 は全TP値で赤字継続（TIME_EXIT支配的）→ 抜本的な構造変更なしには改善困難
+
+**デッドパラメータ整理 完了（2026-04-05）:**
+- 9個削除: PRICE_HIT_TOL / LONG_SLOPE_THRESH / LONG_RSI_{PERIOD,SLOPE_N,THRESH} / LONG_MIN_HOLD_FOR_RSI_EXIT / LONG_MIDTERM_{HOLD_MIN,PNL_USD} / SHORT_RISKSCORE_LOWER_THRESH
+- 107個 → 89個に削減
+- MAX_ADDS_BY_PRIORITY に P22/P23/P24=5 を明示追加（旧: SHORT_MAX_ADDS=5 暗黙フォールバック）
+
+**集計出力拡充 完了（2026-04-05）:**
+- replay_csv.py に [TP_FILLED × add_count 詳細] を追加（勝ち構造の可視化）
+- add=1: avgNET $10.5 / add=2: $21.6 / add=3: $29.6 / add=4: $37.8 / add=5: $51.0
 
 ---
 

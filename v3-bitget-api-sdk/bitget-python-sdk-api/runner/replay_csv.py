@@ -103,8 +103,9 @@ def _load_csv(path: str) -> pd.DataFrame:
 # ==============================================================
 # TP 価格計算（run_once_v9._calc_tp_pct と完全一致）
 # ==============================================================
-def _calc_tp_price(side: str, entry_price: float, adx: float, params: Dict) -> float:
-    base     = float(params[f"{side}_TP_PCT"])
+def _calc_tp_price(side: str, entry_price: float, adx: float, params: Dict, priority=None) -> float:
+    pri_key  = f"P{priority}_TP_PCT" if priority is not None else None
+    base     = float(params[pri_key] if pri_key and pri_key in params else params[f"{side}_TP_PCT"])
     fee_rate = float(params.get("FEE_RATE_MAKER", 0.00014))
     margin   = float(params.get("FEE_MARGIN", 1.5))
     if int(params.get("TP_FEE_FLOOR_ENABLE", 0)):
@@ -162,8 +163,8 @@ def _check_exits_replay(pos: Dict, mark_price: float, df: pd.DataFrame, i: int,
             return float("nan")
         return float(df.at[i, col])
 
-    # 1. BREAKOUT_CUT (P22/P23 SHORT, add==3)
-    if side == "SHORT" and priority in (22, 23) and add_count == 3:
+    # 1. BREAKOUT_CUT (P22 SHORT, add==3)
+    if side == "SHORT" and priority == 22 and add_count == 3:
         bw = _col("bb_width"); rsi = _col("rsi_short")
         if (not math.isnan(bw)  and bw  >= float(params.get("P23_BREAKOUT_BB_WIDTH_MIN", 0.03))
                 and not math.isnan(rsi) and rsi >= float(params.get("P23_BREAKOUT_RSI_MIN", 70.0))):
@@ -189,23 +190,11 @@ def _check_exits_replay(pos: Dict, mark_price: float, df: pd.DataFrame, i: int,
                 and not math.isnan(adx_v)  and adx_v  < float(params.get("SHORT_RSI_EXIT_ADX_MAX", 12))):
             return "RSI_REVERSE_EXIT"
 
-    # 5. MAE_CUT (P23 SHORT, add>=4, hold>=300min)
-    if side == "SHORT" and priority == 23 and add_count >= 4 and hold_min >= 300:
-        _mae_cap = entry_p + (50.0 / size_btc)
-        if mark_price >= _mae_cap:
-            return "MAE_CUT"
-
     # 5b. MAE_CUT (P2 LONG, add>=4, hold>=300min)
     if side == "LONG" and priority == 2 and add_count >= 4 and hold_min >= 300:
         _mae_cap_long = entry_p - (50.0 / size_btc)
         if mark_price <= _mae_cap_long:
             return "MAE_CUT"
-
-    # 5c. MIDTERM_CUT (P4 LONG, add>=2, hold>=90min)
-    if side == "LONG" and priority == 4 and add_count >= 2:
-        if hold_min >= float(params.get("LONG_MIDTERM_HOLD_MIN", 90.0)):
-            if unreal < float(params.get("LONG_MIDTERM_PNL_USD", -30.0)):
-                return "MIDTERM_CUT"
 
     # 6. PROFIT_LOCK
     if side == "LONG" and int(params.get("LONG_PROFIT_LOCK_ENABLE", 0)):
@@ -386,7 +375,7 @@ def _print_summary(trades: List) -> None:
         print(row)
 
     # ── 4. TIME_EXIT / MIDTERM_CUT の add_count 別詳細 ───────
-    for bad_exit in ["TIME_EXIT", "MIDTERM_CUT"]:
+    for bad_exit in ["TIME_EXIT"]:
         bad = [t for t in trades if t["exit_reason"] == bad_exit]
         if not bad:
             continue
@@ -397,6 +386,21 @@ def _print_summary(trades: List) -> None:
         print(f"    {'add':>4}  {'件数':>4}  {'NET':>9}  {'avgNET':>7}  {'avgHold':>8}  {'avgADX':>7}")
         for add in sorted(by_add):
             ts2 = by_add[add]
+            net2 = sum(t["net_usd"] for t in ts2)
+            avg_hold2 = _avg([t["hold_min"] for t in ts2])
+            avg_adx2  = _avg([t["adx_at_entry"] for t in ts2])
+            print(f"    {add:4}  {len(ts2):4}  ${net2:+8.2f}  ${net2/len(ts2):+6.2f}  {avg_hold2:7.1f}min  {avg_adx2:6.1f}")
+
+    # ── 4b. TP_FILLED × add_count 詳細 ───────────────────────
+    tp_filled = [t for t in trades if t["exit_reason"] == "TP_FILLED"]
+    if tp_filled:
+        by_add_tp = defaultdict(list)
+        for t in tp_filled:
+            by_add_tp[t["add_count"]].append(t)
+        print(f"\n  [TP_FILLED × add_count 詳細]")
+        print(f"    {'add':>4}  {'件数':>4}  {'NET':>9}  {'avgNET':>7}  {'avgHold':>8}  {'avgADX':>7}")
+        for add in sorted(by_add_tp):
+            ts2 = by_add_tp[add]
             net2 = sum(t["net_usd"] for t in ts2)
             avg_hold2 = _avg([t["hold_min"] for t in ts2])
             avg_adx2  = _avg([t["adx_at_entry"] for t in ts2])
@@ -430,7 +434,7 @@ def _print_summary(trades: List) -> None:
         print(f"    {h:4}  {len(ts_h):4}  ${net_h:+8.2f}  {tp_r:4.0f}%  ${net_h/len(ts_h):+6.2f}")
 
     # ── 6. TIME_EXIT / MIDTERM_CUT のEntry指標 Priority別 ───
-    for bad_exit in ["TIME_EXIT", "MIDTERM_CUT"]:
+    for bad_exit in ["TIME_EXIT"]:
         bad = [t for t in trades if t["exit_reason"] == bad_exit]
         if not bad:
             continue
@@ -548,7 +552,7 @@ def main(csv_path: str) -> None:
 
             if pos[side] is None:
                 # 新規エントリー
-                tp_price = _calc_tp_price(side, fill_p, adx_val, params)
+                tp_price = _calc_tp_price(side, fill_p, adx_val, params, pnd["priority"])
                 pos[side] = {
                     "side":                  side,
                     "entry_priority":        pnd["priority"],
@@ -575,7 +579,7 @@ def main(csv_path: str) -> None:
                 new_sz  = old_sz + unit_size
                 new_avg = (old_p * old_sz + fill_p * unit_size) / new_sz
                 new_cnt = int(p["add_count"]) + 1
-                tp_price = _calc_tp_price(side, new_avg, adx_val, params)
+                tp_price = _calc_tp_price(side, new_avg, adx_val, params, p["entry_priority"])
                 sl_price = _calc_sl_price(side, new_avg, params) if new_cnt >= 2 else None
                 p.update({
                     "entry_price": new_avg,
