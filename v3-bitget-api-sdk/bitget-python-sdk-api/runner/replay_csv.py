@@ -181,6 +181,17 @@ def _check_exits_replay(pos: Dict, mark_price: float, df: pd.DataFrame, i: int,
         if mfe_usd < float(params.get("P22_SHORT_MFE_STALE_GATE_USD", 12.0)):
             return "MFE_STALE_CUT"
 
+
+    # 3b. MFE_STALE_CUT (P2 LONG, add==1, hold>=120min)
+    if side == "LONG" and priority == 2 and add_count == 1 and hold_min >= 120:
+        if mfe_usd < float(params.get("P2_MFE_STALE_GATE_USD", 10.0)):
+            return "MFE_STALE_CUT"
+
+    # 3c. MFE_STALE_CUT (P23 SHORT, add==1, hold>=120min)
+    if side == "SHORT" and priority == 23 and add_count == 1 and hold_min >= 120:
+        if mfe_usd < float(params.get("P23_MFE_STALE_GATE_USD", 10.0)):
+            return "MFE_STALE_CUT"
+
     # 4. RSI_REVERSE_EXIT (SHORT)
     if side == "SHORT" and bool(params.get("FEAT_SHORT_RSI_REVERSE_EXIT", False)):
         rsi_v = _col("rsi_short"); rsi_sl = _col("rsi_slope_short"); adx_v = _col("adx")
