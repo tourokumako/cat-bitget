@@ -142,72 +142,68 @@ def _calc_indicators(df: pd.DataFrame, params: Dict) -> pd.DataFrame:
     )
     df["ema200_5m"] = df["ema200_5m"].ffill()
 
+    # 15m ADX + DMI — レジーム判定用
+    adx_period = int(params.get("ADX_PERIOD", 14))
+    alpha_adx  = 1.0 / adx_period
+    df15 = (
+        df.set_index("datetime")
+        .resample("15min")
+        .agg({"open": "first", "high": "max", "low": "min", "close": "last"})
+        .dropna()
+    )
+    h15, l15, c15 = df15["high"], df15["low"], df15["close"]
+    pc15 = c15.shift(1)
+    ph15 = h15.shift(1)
+    pl15 = l15.shift(1)
+    tr15 = pd.concat([h15 - l15, (h15 - pc15).abs(), (l15 - pc15).abs()], axis=1).max(axis=1)
+    raw_plus  = (h15 - ph15).clip(lower=0)
+    raw_minus = (pl15 - l15).clip(lower=0)
+    mask15    = raw_plus >= raw_minus
+    plus_dm15  = raw_plus.where(mask15, 0.0)
+    minus_dm15 = raw_minus.where(~mask15, 0.0)
+    atr15      = tr15.ewm(alpha=alpha_adx, adjust=False).mean()
+    plus_di15  = 100 * plus_dm15.ewm(alpha=alpha_adx, adjust=False).mean() / (atr15 + 1e-9)
+    minus_di15 = 100 * minus_dm15.ewm(alpha=alpha_adx, adjust=False).mean() / (atr15 + 1e-9)
+    dx15  = 100 * (plus_di15 - minus_di15).abs() / (plus_di15 + minus_di15 + 1e-9)
+    adx15 = dx15.ewm(alpha=alpha_adx, adjust=False).mean()
+    df15["adx_15m"]      = adx15
+    df15["plus_di_15m"]  = plus_di15
+    df15["minus_di_15m"] = minus_di15
+    df = df.merge(
+        df15[["adx_15m", "plus_di_15m", "minus_di_15m"]].reset_index(),
+        on="datetime",
+        how="left",
+    )
+    df["adx_15m"]      = df["adx_15m"].ffill()
+    df["plus_di_15m"]  = df["plus_di_15m"].ffill()
+    df["minus_di_15m"] = df["minus_di_15m"].ffill()
+
     return df
 
 
 # ================================================================
-# シグナル検出
+# シグナル検出（Stoch K/Dクロス + RSI 過熱判定）
 # ================================================================
 def _detect_signals(df: pd.DataFrame, params: Dict) -> pd.DataFrame:
-    ob       = float(params["STOCH_OB"])
-    os_      = float(params["STOCH_OS"])
-    bb_entry = float(params["BB_ENTRY_STD"])
-    bb_std   = float(params["BB_STD"])
-    mode     = params.get("STRATEGY_MODE", "mean_reversion")
+    rsi_ob = float(params.get("RSI_OB", 70))
+    rsi_os = float(params.get("RSI_OS", 30))
 
     k   = df["stoch_k"]
     d   = df["stoch_d"]
     k_p = k.shift(1)
     d_p = d.shift(1)
-    cl  = df["close"]
 
-    # BB エントリーライン
-    if bb_entry != bb_std:
-        bb_s        = df["close"].rolling(int(params["BB_PERIOD"])).std(ddof=0)
-        entry_lower = df["bb_mid"] - bb_entry * bb_s
-        entry_upper = df["bb_mid"] + bb_entry * bb_s
-    else:
-        entry_lower = df["bb_lower"]
-        entry_upper = df["bb_upper"]
+    # Stoch K/D クロス（OS/OB条件なし）
+    stoch_cross_up   = (k > d) & (k_p <= d_p)
+    stoch_cross_down = (k < d) & (k_p >= d_p)
 
-    # トレンド判定（1m + 5m EMA 両方が同方向）
-    trend_up   = (cl > df["ema200"]) & (cl > df["ema200_5m"])
-    trend_down = (cl < df["ema200"]) & (cl < df["ema200_5m"])
-
-    if mode == "mean_reversion":
-        # 逆張り: トレンド方向の押し目 + BB 外側タッチ + Stoch 反転クロス
-        stoch_cross_up   = (k_p < os_) & (k > d) & (k_p <= d_p)
-        stoch_cross_down = (k_p > ob)  & (k < d) & (k_p >= d_p)
-        long_sig  = trend_up   & (cl <= entry_lower) & stoch_cross_up
-        short_sig = trend_down & (cl >= entry_upper) & stoch_cross_down
-
-    elif mode == "trend_follow":
-        # 順張り: トレンド方向 + BB 外側ブレイク + Stoch 勢い確認
-        stoch_bull = (k > 50) & (k > k_p)
-        stoch_bear = (k < 50) & (k < k_p)
-        long_sig  = trend_up   & (cl >= entry_upper) & stoch_bull
-        short_sig = trend_down & (cl <= entry_lower) & stoch_bear
-
-    elif mode == "ema20":
-        # A案: 20EMA フィルター + Stoch クロス（軽量・高頻度）
-        stoch_cross_up   = (k_p < os_) & (k > d) & (k_p <= d_p)
-        stoch_cross_down = (k_p > ob)  & (k < d) & (k_p >= d_p)
-        long_sig  = (cl > df["ema20"]) & stoch_cross_up
-        short_sig = (cl < df["ema20"]) & stoch_cross_down
-
-    elif mode == "rsi9":
-        # B案: RSI(9) 50ライン + Stoch クロス
-        stoch_cross_up   = (k_p < os_) & (k > d) & (k_p <= d_p)
-        stoch_cross_down = (k_p > ob)  & (k < d) & (k_p >= d_p)
-        long_sig  = (df["rsi"] > 50) & stoch_cross_up
-        short_sig = (df["rsi"] < 50) & stoch_cross_down
-
-    else:
-        raise ValueError(f"Unknown STRATEGY_MODE: {mode}")
+    # RSI 過熱判定 + Stoch クロス
+    sig_long  = (df["rsi"] < rsi_os) & stoch_cross_up
+    sig_short = (df["rsi"] > rsi_ob) & stoch_cross_down
 
     df = df.copy()
-    df["sig_long"]  = long_sig.fillna(False)
-    df["sig_short"] = short_sig.fillna(False)
+    df["sig_long"]  = sig_long.fillna(False)
+    df["sig_short"] = sig_short.fillna(False)
     return df
 
 
@@ -231,10 +227,8 @@ def _record_trade(trades: List, pos: Dict, exit_price: float,
 
     gross = (exit_price - entry_p) * size_b if side == "LONG" else (entry_p - exit_price) * size_b
     maker = float(params["FEE_RATE_MAKER"])
-    taker = float(params["FEE_RATE_TAKER"])
-    # TP=maker指値 / SL=maker指値(placePosTpsl limit) / TIME_EXIT=taker成行
-    exit_rate = taker if exit_reason == "TIME_EXIT" else maker
-    fee  = size_b * entry_p * maker + size_b * exit_price * exit_rate
+    # TP/SL ともに maker指値
+    fee  = size_b * entry_p * maker + size_b * exit_price * maker
     net  = gross - fee
 
     trades.append({
@@ -264,17 +258,11 @@ def run_replay(csv_path: str) -> List[Dict]:
     df      = _calc_indicators(df_raw, params)
     df      = _detect_signals(df, params)
 
-    mode   = params.get("STRATEGY_MODE", "mean_reversion")
-    if mode == "trend_follow":
-        tp_pct = float(params["TF_TP_PCT"])
-        sl_pct = float(params["TF_SL_PCT"])
-    else:
-        tp_pct = float(params["MR_TP_PCT"])
-        sl_pct = float(params["MR_SL_PCT"])
-    time_exit_min = float(params["TIME_EXIT_MIN"])
-    size_btc      = float(params["POSITION_SIZE_BTC"])
-    ttl_bars      = int(params["PENDING_TTL_BARS"])
-    lim_offset    = float(params["LIMIT_OFFSET_PCT"])
+    tp_pct     = float(params["TP_PCT"])
+    sl_pct     = float(params["SL_PCT"])
+    size_btc   = float(params["POSITION_SIZE_BTC"])
+    ttl_bars   = int(params["PENDING_TTL_BARS"])
+    lim_offset = float(params["LIMIT_OFFSET_PCT"])
 
     # 保有中ポジション {side: pos_dict}
     positions: Dict[str, Optional[Dict]] = {"LONG": None, "SHORT": None}
@@ -303,16 +291,16 @@ def run_replay(csv_path: str) -> List[Dict]:
             if filled:
                 entry_price = lp
                 positions[side] = {
-                    "side":            side,
-                    "entry_price":     entry_price,
-                    "entry_time":      ts_ms,
-                    "size_btc":        size_btc,
-                    "tp_price":        entry_price * (1 + tp_pct) if side == "LONG" else entry_price * (1 - tp_pct),
-                    "sl_price":        (entry_price * (1 - sl_pct) if side == "LONG" else entry_price * (1 + sl_pct)) if sl_pct > 0 else 0,
-                    "mfe_usd":         0.0,
-                    "stoch_k_entry":   pend.get("stoch_k"),
-                    "stoch_d_entry":   pend.get("stoch_d"),
-                    "entry_hour":      dt_utc.hour,
+                    "side":          side,
+                    "entry_price":   entry_price,
+                    "entry_time":    ts_ms,
+                    "size_btc":      size_btc,
+                    "tp_price":      entry_price * (1 + tp_pct) if side == "LONG" else entry_price * (1 - tp_pct),
+                    "sl_price":      entry_price * (1 - sl_pct) if side == "LONG" else entry_price * (1 + sl_pct),
+                    "mfe_usd":       0.0,
+                    "stoch_k_entry": pend.get("stoch_k"),
+                    "stoch_d_entry": pend.get("stoch_d"),
+                    "entry_hour":    dt_utc.hour,
                 }
                 pending[side] = None
             else:
@@ -353,10 +341,6 @@ def run_replay(csv_path: str) -> List[Dict]:
             elif sl_price > 0 and side == "SHORT" and hi >= sl_price:
                 exit_reason = "SL_FILLED"
                 exit_price  = sl_price
-            # 時間エグジット
-            elif hold_min >= time_exit_min:
-                exit_reason = "TIME_EXIT"
-                exit_price  = cl
 
             if exit_reason:
                 _record_trade(trades, pos, exit_price, exit_reason, ts_ms, params)
@@ -367,9 +351,9 @@ def run_replay(csv_path: str) -> List[Dict]:
             if not row.get(sig_col, False):
                 continue
             if positions[side] is not None:
-                continue  # 既にポジションあり → スキップ
+                continue
             if pending[side] is not None:
-                continue  # 既に pending あり → スキップ
+                continue
 
             limit_price = cl * (1 - lim_offset) if side == "LONG" else cl * (1 + lim_offset)
             pending[side] = {
@@ -399,12 +383,11 @@ def _print_summary(df: pd.DataFrame, days: float) -> None:
 
     tp_n  = (df["exit_reason"] == "TP_FILLED").sum()
     sl_n  = (df["exit_reason"] == "SL_FILLED").sum()
-    te_n  = (df["exit_reason"] == "TIME_EXIT").sum()
     tp_r  = tp_n / total * 100
 
-    W = 52
+    W = 56
     print(f"\n{'='*W}")
-    print(f"  V10 Replay  [{df['entry_time'].iloc[0][:10]} 〜 {df['entry_time'].iloc[-1][:10]}]")
+    print(f"  V10 Replay (Stoch+RSI)  [{df['entry_time'].iloc[0][:10]} 〜 {df['entry_time'].iloc[-1][:10]}]")
     print(f"{'='*W}")
     print(f"  {'トレード数':<16}: {total:,}件  ({total/days:.1f}件/日)")
     print(f"  {'NET 利益':<16}: ${net:>10,.2f}  (${net_d:>8.2f}/日)")
@@ -412,10 +395,9 @@ def _print_summary(df: pd.DataFrame, days: float) -> None:
     print(f"  {'手数料合計':<16}: ${fee:>10,.2f}  (${fee/total:.3f}/件)")
     print(f"  {'平均保有時間':<16}: {avg_h:.1f}分")
     print(f"{'─'*W}")
-    print(f"  {'TP/SL':<16}: TP={tp_n}件({tp_r:.1f}%)  SL={sl_n}件  TIME={te_n}件")
+    print(f"  {'TP/SL':<16}: TP={tp_n}件({tp_r:.1f}%)  SL={sl_n}件")
     print(f"{'─'*W}")
-    print(f"  損失理由別:")
-    for reason in ("SL_FILLED", "TIME_EXIT", "TP_FILLED"):
+    for reason in ("SL_FILLED", "TP_FILLED"):
         grp = df[df["exit_reason"] == reason]
         if len(grp) == 0:
             continue
@@ -437,22 +419,19 @@ def main() -> None:
     print(f"[INFO] Replay 開始: {csv_path}")
 
     trades = run_replay(csv_path)
-
     if not trades:
         print("[WARN] トレードなし")
         return
 
-    df = pd.DataFrame(trades)
-
-    # 日数計算
-    df_raw  = _load_csv(csv_path)
-    days    = (df_raw["timestamp_ms"].max() - df_raw["timestamp_ms"].min()) / (1000 * 60 * 60 * 24)
+    df     = pd.DataFrame(trades)
+    df_raw = _load_csv(csv_path)
+    days   = (df_raw["timestamp_ms"].max() - df_raw["timestamp_ms"].min()) / (1000 * 60 * 60 * 24)
 
     _print_summary(df, days)
 
     _RESULTS_DIR.mkdir(exist_ok=True)
-    stem    = pathlib.Path(csv_path).stem
-    out     = _RESULTS_DIR / f"replay_v10_{stem}.csv"
+    stem = pathlib.Path(csv_path).stem
+    out  = _RESULTS_DIR / f"replay_v10_{stem}_regime.csv"
     df.to_csv(out, index=False)
     print(f"\n[OK] → {out}")
 
