@@ -1,27 +1,46 @@
-# WORKFLOW.md — V9 改善フロー（2026-04-05 更新）
+# WORKFLOW.md — V9 改善フロー（2026-04-06 更新）
 
-## セッション開始時の確認事項（最優先）
+## ⚠️ V9 アーカイブ済み（2026-04-06）
+
+このV9戦略は開発を終了し、失敗例として保管。
+新戦略（V10：1分足ストキャスベーススキャル）の開発へ移行。
+
+### V9 総括
+
+| 項目 | 結果 |
+|------|------|
+| 90日Replay NET | +$20.3/day |
+| 180日Replay NET | +$5.3/day（急騰レジームで崩壊） |
+| 本番投入基準（$100/day） | **未達・達成不可** |
+| 失敗の根本原因 | addナンピン+広いTPでスイング化。設計思想と乖離 |
+| バックテスト($61/day)の問題 | same-bar fill・手数料未控除・P23過学習 |
+
+### 次のタスク（V10開発）
+
+1. 1分足BTCデータ取得
+2. ストキャスベーススキャル戦略の設計
+3. シミュレーター構築（1分足対応replay）
+4. 検証 → 本番投入
+
+---
+
+## セッション開始時の確認事項（V9 参照用）
 
 | 項目 | 状態 |
 |------|------|
-| 現在のフェーズ | **Phase 5（常時稼働）— BOT 停止中** |
-| 本番ポジション | なし（BOT 停止中） |
-| 次のタスク | **次フェーズ検討中（Priority別TP最適化・デッドパラメータ整理 完了）** |
-| ALLOW_LIVE_ORDERS | True（Claudeは変更しない） |
+| V9フェーズ | **アーカイブ済み** |
+| ALLOW_LIVE_ORDERS | True（変更しない） |
 | open_position_long.json | なし |
 | open_position_short.json | なし |
-| paper_trading | false |
-| Replay 本番投入基準 | **NET $100/day 以上**（intra-bar fill 過大評価バッファ込み） |
-| 本番 NET 目標 | **$60/day** |
 
-### 現在の cat_params_v9.json（2026-04-05 セッション後）
+### 現在の cat_params_v9.json（2026-04-05 更新）
 
 | パラメータ | 値 |
 |-----------|-----|
 | **LONG_TP_PCT / SHORT_TP_PCT** | **0.005**（旧 0.0032） |
 | **P22_TP_PCT** | **0.005** |
 | **P23_TP_PCT** | **0.007**（旧 0.005） |
-| **P24_TP_PCT** | **0.007**（旧 0.005） |
+| ~~P24_TP_PCT~~ | ~~0.007~~ （P24無効化のため参照なし） |
 | LONG_SL_PCT / SHORT_SL_PCT | 0.05 |
 | LONG_TIME_EXIT_MIN | 150 |
 | SHORT_TIME_EXIT_MIN | 480 |
@@ -29,16 +48,26 @@
 | **LONG_TIME_EXIT_DOWN_FACTOR** | **0.50**（旧 0.75） |
 | **SHORT_TIME_EXIT_DOWN_FACTOR** | **0.50**（旧 0.75） |
 | LONG_MAX_ADDS / SHORT_MAX_ADDS | 5 |
-| **MAX_ADDS_BY_PRIORITY** | **`{"2": 5, "4": 5, "23": 1, "24": 1}`**（旧 `{"2": 4}`） |
+| **MAX_ADDS_BY_PRIORITY** | **`{"2": 5, "4": 5, "22": 5, "23": 5, "24": 5}`**（旧 `{"2": 4}`） |
 | **P23_ADX_MAX** | **40**（旧 50） |
 | **P4_ADX_EXCL_MIN / P4_ADX_EXCL_MAX** | **20.0 / 25.0**（新規・弱トレンド移行期除外） |
 | **P22_SHORT_BB_MID_SLOPE_MAX** | **-20.0**（旧 -50.0） |
+| **P2_ADX_EXCL_MIN / P2_ADX_EXCL_MAX** | **40.0 / 50.0**（新規・超強トレンド帯除外） |
 | **TP_ADX_BOOST_ENABLE** | **0**（旧 1。TP圧縮バグ解消） |
 | TP_PCT_CLAMP_ENABLE | 1 |
 | FEAT_SHORT_RSI_REVERSE_EXIT | true |
 | LONG_PROFIT_LOCK_ENABLE | 1 |
 | P23_SHORT_PROFIT_LOCK_ENABLE | 1 |
 | LONG_POSITION_SIZE_BTC / SHORT_POSITION_SIZE_BTC | 0.024 |
+| **ENABLE_P24_SHORT** | **false**（旧 true。P22/P23干渉で全体NET悪化のため無効化） |
+
+### データファイルパス（固定）
+
+| 用途 | パス |
+|------|------|
+| キャンドル 90日（Replay 入力） | `/Users/tachiharamasako/Documents/GitHub/cat-swing-sniper/data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
+| キャンドル 180日 | `/Users/tachiharamasako/Documents/GitHub/cat-swing-sniper/data/BTCUSDT-5m-2025-10-03_04-01_combined_180d.csv` |
+| Replay 結果 CSV | `results/replay_BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
 
 ### 現在の replay_csv.py の設定
 
@@ -50,12 +79,12 @@
 | 手数料 | entry=maker / exit TP=maker / exit SL=taker |
 | **サマリー出力** | **Priority×Exit クロス・add_count別・entry指標別に拡張済み** |
 
-### 直近 Replay 結果（2026-04-05 セッション・最新）
+### 直近 Replay 結果（2026-04-05 最新）
 
 | 項目 | 値 |
 |------|-----|
-| 総トレード数 | 411件 |
-| NET | **+$1,493 / 90日（+$16.6/day）** |
+| 総トレード数 | 385件 |
+| NET | **+$1,828 / 90日（+$20.3/day）** |
 | TP率 | — |
 | CSV | `results/replay_BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
 
@@ -63,11 +92,11 @@
 
 | Priority | 件数 | NET | TP率 | TIME_EXIT | 主な問題 |
 |---------|------|-----|------|-----------|---------|
-| P2-LONG | 129 | **+$740** | 67% | 32件/-$788 | TIME_EXIT増（TP幅拡大の代償）|
-| P22-SHORT | 87 | **+$205** | 53% | 27件/-$649 | MFE_STALE_CUT 3件/-$126 |
-| P23-SHORT | 82 | +$14 | 65% | 26件/-$338 | SL 2件/-$162 残存 |
-| P24-SHORT | 17 | -$10 | 59% | 7件/-$111 | 件数少 |
-| P4-LONG | 102 | **+$258** | 51% | 44件/-$611 | add=2〜5追加でTP avg $18.7/件に改善 |
+| P2-LONG | 109 | **+$895** | 71% | 11件/-$206 | MFE_STALE_CUT 14件/-$198 |
+| P22-SHORT | 89 | **+$237** | 54% | 27件/-$651 | MFE_STALE_CUT 3件/-$126 |
+| P23-SHORT | 79 | **+$387** | 54% | 13件/-$299 | MFE_STALE_CUT 16件/-$196 / SL 1件/-$79 |
+| P24-SHORT | — | — | — | — | **無効化（ENABLE_P24_SHORT=false）** |
+| P4-LONG | 108 | **+$310** | 52% | 46件/-$615 | — |
 
 ### 構造的天井の更新（重要）
 
@@ -88,6 +117,12 @@
 - **L-27 根絶（2026-04-05）**: replay_csv.py の entry/exit_time を UTC 出力に修正。MFEマッチ率 54%→100%。MFE正確値: TIME_EXIT 116件の81%がTP未到達（MFE 0〜0.55%）。※TP縮小は不採用（下記参照）。
 - **P4_ADX_EXCL_MIN/MAX**: ADX_MINと違い「除外バンド」で実装。ADX<20（黒字）とADX>=25（一部良好）を維持したまま20-25（TP率50%）を除外。
 - **分析スクリプトのタイムゾーン注意（L-27）**: Replay CSV は JST、candles.csv は UTC。変換せずに使うと 9h ずれたバーを参照する。
+- **P24はP22/P23のSHORT枠を圧迫していた**: P24無効化でP23が $14→$346 に大幅改善。Priority間のSHORT枠競合を常に意識すること。
+- **P22/P23/P24間の孤立シミュレーションは不正確**: 同一SHORT枠を共有するため、1つのExitタイミング変更が他の入出タイミングに連鎖する。MFE_STALE_CUT等の閾値グリッドはP2/P4（孤立性高）には有効だがP22/P23には過信禁止。
+- **MFE_STALE_CUT有効パターン**: add==1 かつ hold>=120min（SHORT）/40min（LONG）で MFE低い場合。add≥2はMFE高く設計上の損失（add深→大TP利益のトレードオフ）なので対象外。
+- **P4 TIME_EXIT**: 44件/-$611。MFE_STALE/TIME_EXIT短縮/STAGNATION/ADX_MAX（L-19）全て失敗。P4 ADX30-40は「P2より安価な損失吸収役」構造（P4-$116 vs P2流入-$494）。エントリーフィルターでの解決不可。
+- **P2_ADX_EXCL 40-50**: P2は超強トレンド(ADX40-50)でTE率29-42%。ADX50+は再びTP率高い（U字型）。P4はADX40-50で0件のためL-19なし。+$162/90日実測。
+- **P4 ADX30-40は L-19 の「盾」**: P4がADX30-40スロットを保持することでP2の劣質流入を防ぐ。P4を除くと同スロットにP2が入りavg-$26/件の損失。P4除外(-$116)より悪化。
 
 ### このセッションで実施・却下した変更
 
@@ -109,6 +144,9 @@
 | **MAX_ADDS_BY_PRIORITY["4"]: 3→5（拡張グリッド）** | **+$76（NET +$1,124→+$1,200）P4 NET $182→$258。TIME_EXIT add=5は1件のみ** |
 | **MAX_ADDS_BY_PRIORITY["2"]: 4→5** | **+$24（NET +$1,200→+$1,224）P2 NET $733→$740** |
 | **Priority別TP実装 + P23_TP_PCT: 0.005→0.007 / P24_TP_PCT: 0.005→0.007** | **+$149（NET +$1,344→+$1,493）P23 $215→$319、P22 $177→$210、P24 -$63→-$52** |
+| **ENABLE_P24_SHORT: true→false（P24無効化）** | **+$96（NET +$1,493→+$1,589）P22 $205→$228、P23 $14→$346。P24がP22/P23のSHORT枠を圧迫していた構造が解消** |
+| **P2/P23 MFE_STALE_CUT追加（add==1, hold>=120min）+ 閾値P2=$5/P23=$4** | **+$77（NET +$1,589→+$1,666）P23 TIME_EXIT 25→13件。閾値はシミュレーションで最適化（フルReplay不要）** |
+| **P2_ADX_EXCL_MIN/MAX: 40-50** | **+$162（NET +$1,666→+$1,828）P2 TIME_EXIT 22→11件、TP率65%→71%。ADX40-50は超強トレンドでP2モメンタムが失敗しやすい帯域。L-19なし（P4はADX40-50に0件）** |
 
 **却下済み:**
 | 変更 | 理由 |
@@ -120,6 +158,15 @@
 | P23 transit_A × ret_5>0 フィルター | signal/fill バーズレで CSV+$143 → Replay +$2（L-26） |
 | **P4 ret_5 ≤ 0.25 Entry フィルター** | **L-19 発生: P4除外→P2流入で P2 NET -$47悪化。全体 +$76→+$29（-$47）。P4は±0改善なし。** |
 | **P23 ret_5 ≤ 0.05 Entry フィルター** | **L-26 発動: CSV期待値+$242 → Replay +$6。TP 40件が余計に除外。signal/fill バーズレで ret_5 が大きくズレた。** |
+| **P24 MACDクロス軸へ再設計** | **P24単体 +$48 も P22 -$208（SHORT枠干渉）で全体 -$159。MACDは単なる干渉増加要因になっただけ。** |
+| **P22 add=1 MFE_STALE_CUT（gate=$4, hold>=120min）** | **シミュレーション+$31予測も Replay -$59。STALE発火17件（予測9件）→ P22ポジション解放タイミング変化による interaction効果。P22はSHORT間干渉が強く孤立シミュレーション不正確。** |
+| **P4_ADX_MAX=30** | **L-19: P4+$77も P2-$318でトータル-$241。P4ブロック→P2がADX30-40で劣質トレード流入（avg-$26/件）** |
+| **P4 MFE_STALE_CUT add=1 hold>=30m** | **TP誤カット損 -$52 > TE改善 +$32。P4のTP到達は遅い（30min時点MFE<$5でも最終TP）** |
+| **P4 TIME_EXIT_MIN 短縮（P4_TIME_EXIT_MIN=130-140）** | **価格回復パターンが多く早期カットが逆効果。75min→70minで net差-$45** |
+| **P4 STAGNATION_WIDE 有効化** | **add=3 TP誤カット（tp$25→cut-$32）。P4はadd深まってからTP到達する設計と相性悪い** |
+| **UTC 3h 全Priority除外** | **月別一貫性なし（2月は逆に黒字+$104）。90日30件では統計的根拠不十分。** |
+| **P22_TIME_EXIT_MIN=360（240→180min短縮）** | **L-28: hold_min分析の欠陥。途中でunreal<0→後にTP到達する件数を見落とし。TE 27→30件に増加、-$112悪化。** |
+| **スキャル化（TP=0.003, SL=0.02）** | **L-29: add構造と根本的に競合。SL_FILLED 2→15件（avg-$53/件）で-$1,364悪化。スキャル化はMAX_ADDS=0か1が前提。** |
 
 ### Phase 1 棚卸し結果（2026-04-05）
 
@@ -196,9 +243,17 @@
 - **TP / ADD / TIME_EXIT は相互作用が複雑**（TP幅広→TIME_EXIT増→add深損失増）
   → Phase 3+4 は同時最適化が必要（グリッドサーチ方式）
 
+### 今セッション追加知見（2026-04-05 夜セッション）
+
+- **時間帯除外は統計的に弱い**: UTC 3h (-$81.5) は月別一貫性なし（2月は+$104）。90日30件では不十分。
+- **ATR帯別構造**: ATR<250でTP率50%、TE率40%。ATR>=250でTP率71%+。構造的な問題でTIME_EXIT調整では解決できない。
+- **P22 TIME_EXIT短縮の限界（L-28）**: hold_min分析は途中の含み損状態を見えない。P22はシミュレーション精度が特に低い。
+- **スキャル化はadd構造と非互換（L-29）**: TP=0.003+SL=0.02でSL_FILLED 2→15件(-$796)急増。add深いとSL損失が倍増する。スキャル化するならMAX_ADDS=0-1が前提。
+- **TIME_EXITのadverse moveとTP利益が同程度（≈0.55%）**: SL=2%はTE（median 0.59%逆行）を捕捉できない。SL有効化には≤0.5%が必要だがTP全件巻き添えになる。
+
 ### 次セッション以降のフェーズ構成
 
-※ 本番投入基準: **Replay NET $100/day 以上**（現在 +$10/day のため本番投入不可）
+※ 本番投入基準: **Replay NET $100/day 以上**（現在 +$20.3/day のため本番投入不可）
 
 | Phase | 内容 | 状態 |
 |-------|------|------|
@@ -206,6 +261,13 @@
 | **Phase 2** | Entry ロジック最適化（Priority間相互作用を考慮） | **← 次のタスク** |
 | **Phase 3+4** | Add構造 × TP/TimeExit/SL 同時最適化（グリッドサーチ: TP_PCT × MAX_ADDS） | **LONG側完了・SHORT側未着手** |
 | **Phase 5** | スケールアップ（ETH/SOL 追加） | 未着手 |
+
+### 次セッション候補（優先度順）
+
+1. **ポジションサイズ増加検討**: 現行 $20.3/day → $100/day は約5倍。0.024→0.12 BTCへの段階的スケールアップ（リスク管理要検討）
+2. **Phase 2 Entry最適化残り**: P22 bb_mid_slope 下限調整（-20より緩めた場合の検証）
+3. **P4 Entry 品質向上**: ADX 150-250帯でTP率34-51%。エントリー条件の再検討（L-19回避しながら）
+4. **スキャル化（addなし版）**: MAX_ADDS=1 + TP=0.003 + SL=0.005 の純粋スキャルテスト（add構造を一時停止）
 
 **Phase 3+4 LONG側グリッドサーチ結果（完了）:**
 
