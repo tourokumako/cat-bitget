@@ -1,10 +1,11 @@
-# CLAUDE.md — cat-bitget V10（開発中）
+# CLAUDE.md — cat-bitget（開発中）
 
 ---
 
-## ⚠️ V9 はアーカイブ済み（タグ: v9-archived）
-V9（addナンピン+TP=0.5%）は設計思想の乖離により廃止。
-V9コードは参照のみ。変更・実行しない。
+## 現在の方針
+
+V9シグナルをベースに、V10の設計思想（スキャル型・小利確）で調整する。
+詳細な検証結果・パラメータ・次のタスクは WORKFLOW.md を参照。
 
 ---
 
@@ -17,19 +18,14 @@ V9コードは参照のみ。変更・実行しない。
 
 ---
 
-## 設計思想（V10）
+## 設計思想
 
-**スキャル型・高頻度・小利確を積み上げる。**
+**V9シグナル × スキャル型TP（小刻みに利確を積み上げる）**
 
 - タイムフレーム: 5分足
-- シグナル: ストキャスティクスベース
-- TP: 手堅く、確実に取れる幅
-- 目標トレード数: 100件/日以上
-- 保有上限: 15〜30分
-
-**V9の失敗から学んだこと:**
-- 広いTP + 長い保有 = スイング化 → レジーム依存・不安定
-- 90日単一期間での最適化 = 過学習
+- シグナル: V9エントリーロジック（P2/P4/P22/P23）
+- TP: スキャル幅（手堅く確実に取れる幅）で調整
+- 広いTP・長い保有はスイング化するため避ける
 - 検証は必ず複数レジーム（最低180日）で行う
 
 ---
@@ -63,7 +59,7 @@ V9コードは参照のみ。変更・実行しない。
 - `ALLOW_LIVE_ORDERS=False` を True に変更しない（ユーザーのみ）
 - `paper_trading` フラグをコードで変更しない
 - `config/bitget_keys.json` の中身をログ・画面に出力しない
-- V9のrunnerをユーザー確認なしに実行しない
+- `runner/replay_csv.py` / `runner/run_once_v9.py` をユーザー確認なしに実行しない
 
 ---
 
@@ -84,10 +80,26 @@ V9コードは参照のみ。変更・実行しない。
    - 現在の設計・パラメータ・Replay結果・次のタスクを最新状態に書き直す
    - パス: `bitget-python-sdk-api/WORKFLOW.md`
 
-3. **Git コミットする**
-   - ステージング: 変更ファイルを確認してから `git add` （機密ファイル除く）
-   - コミットメッセージ: 変更内容を端的に日本語で記述
-   - `config/bitget_keys.json` は **絶対にコミットしない**
+3. **Git コミットする**（ユーザーの明示 OK なしに commit しない）
+
+   **コミット対象**
+   - ロジックコード（.py）
+   - パラメータファイル（cat_params*.json）
+
+   **コミット禁止**
+   - `config/bitget_keys.json`（機密）
+   - `results/` 配下すべて
+   - `*.csv`（過去データ・バックテスト結果）
+
+   **コマンド制約**
+   - `git add .` / `git add -A` 禁止。必ずファイル単位で add する
+   - 作業前に `git status` を表示し、変更ファイル一覧を提示してから add する
+
+   **コミットメッセージ**
+   - 日本語で簡潔に（例: `refactor: エントリーロジック修正` / `feat: ADXレジーム判定追加`）
+
+   **危険ファイル検知**
+   - `bitget_keys.json` が変更されていたら必ず警告する
 
 ---
 
@@ -101,14 +113,14 @@ V9コードは参照のみ。変更・実行しない。
 
 ---
 
-## ファイル構成（V9ベース・V10で変更予定）
+## ファイル構成
 
-| ファイル | 役割 | V10での扱い |
-|---------|------|------------|
-| `runner/run_once_v9.py` | 実行エンジン | V10用に作り直し |
-| `runner/replay_csv.py` | 過去CSV検証エンジン | 5分足対応に改修 |
-| `strategies/cat_v9_decider.py` | エントリー判断 | V10用に作り直し |
-| `config/cat_params_v9.json` | パラメータ | V10用config作成 |
-| `runner/bitget_adapter.py` | Bitget SDKラッパー | 流用予定 |
-| `config/bitget_keys.json` | APIキー（機密） | 読み取りのみ |
-| `cat/indicators.py` / `cat/const.py` | 指標計算・定数 | 流用予定 |
+| ファイル | 役割 |
+|---------|------|
+| `runner/run_once_v9.py` | 実行エンジン |
+| `runner/replay_csv.py` | 過去CSV検証エンジン |
+| `strategies/cat_v9_decider.py` | エントリー判断（P2/P4/P22/P23） |
+| `config/cat_params_v9.json` | パラメータ（唯一の正本） |
+| `runner/bitget_adapter.py` | Bitget SDKラッパー |
+| `config/bitget_keys.json` | APIキー（機密） |
+| `cat/indicators.py` / `cat/const.py` | 指標計算・定数 |
