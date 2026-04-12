@@ -2,59 +2,19 @@
 
 ---
 
-## 現在の方針
+## ⛔ 提案禁止リスト（NEVER SUGGEST AGAIN）← 提案前に必ず確認
 
-V9シグナルをベースに、V10の設計思想（スキャル型・小利確）で調整する。
-詳細な検証結果・パラメータ・次のタスクは WORKFLOW.md を参照。
+以下は検証済みの失敗・却下済み方針。**理由を問わず再提案しない。**
 
----
-
-## このBOTの存在意義
-
-人間が24時間監視・執行できない相場を、ルール通りに動き続けることで稼ぐ。
-- 感情に左右されない規律ある取引
-- 24時間365日の自動監視・自動執行
-- 人間が張り付かなくてよい時間コストの削減
+- **TP=0.005（V9元の幅）への回帰提案**：$20.3/dayで目標未達。構造的天井あり。再提案禁止。
+- **TP_PCT引き上げ全般**：スキャル設計に反する。ユーザーが明示禁止。再提案禁止。
+- **ポジションサイズ増加でスケール（0.024→0.12BTC）**：Entry/Exitロジックが未完成の状態でのサイズ増加は論外。提案禁止。
+- **「V9に戻す」提案全般（5m足への回帰含む）**：スキャル仕様へのリデザインが現在の方針。V9回帰・5m足回帰は方針違反。再提案禁止。
+- **トレード数を20件/day未満に減らす変更**：スキャルの定義（≥20件/day）を崩す。フィルタ・パラメータ変更でこの水準を下回る場合は採用禁止。
 
 ---
 
-## 設計思想
-
-**V9シグナル × スキャル型TP（小刻みに利確を積み上げる）**
-
-- タイムフレーム: 5分足
-- シグナル: V9エントリーロジック（P2/P4/P22/P23）
-- TP: スキャル幅（手堅く確実に取れる幅）で調整
-- 広いTP・長い保有はスイング化するため避ける
-- 検証は必ず複数レジーム（最低180日）で行う
-
----
-
-## 目標
-
-| 指標 | 基準 |
-|------|------|
-| 本番 NET 目標 | **$60/day** |
-| 手数料コスト想定 | 100件/日 × $0.60 = $60/day |
-| 必要 GROSS | **$120/day 以上** |
-
----
-
-## 開発フロー
-
-```
-1. 5分足データ取得
-2. 戦略設計（シグナル・TP/SL・add構造・フィルター）
-3. シミュレーター構築（5分足対応）
-4. バックテスト（複数レジーム・最低180日）
-5. 本番投入判断
-```
-
-**検証は必ず複数レジーム（急騰/急落/レンジ）で行う。**
-
----
-
-## 絶対禁止（NEVER）
+## ⛔ 絶対禁止（NEVER）
 
 - `ALLOW_LIVE_ORDERS=False` を True に変更しない（ユーザーのみ）
 - `paper_trading` フラグをコードで変更しない
@@ -65,9 +25,23 @@ V9シグナルをベースに、V10の設計思想（スキャル型・小利確
 
 ## AI行動ルール（MUST）
 
+### 提案を出す前に毎回・例外なく実行すること
+
+```
+[提案前チェック]
+1. 上記「提案禁止リスト」に該当しないか → 該当すれば提案しない
+2. 直近のユーザー指示と矛盾しないか   → 矛盾すれば提案しない
+3. 設計思想（1m足・スキャル・小TP）と整合しているか → 非整合なら提案しない
+```
+
+**このチェックを省略した提案は出さない。チェック通過を確認してから提案する。**
+
+### その他の行動ルール
+
 - 変更前に差分を提示して GO を待つ
 - 実行コマンドは「何を実行するか・期待する挙動・成功条件」をセットで提示
 - コマンド先頭に必ず `echo "=====🚀 RUN START $(date) ====="` を付ける
+- **1ターン1変更（L-5）**
 
 ### セッション終了時に必ず行うこと（順番通りに）
 
@@ -110,6 +84,105 @@ V9シグナルをベースに、V10の設計思想（スキャル型・小利確
 | `bitget-python-sdk-api/WORKFLOW.md` | 現在の状態・次のタスク（**唯一の正本**） |
 | `bitget-python-sdk-api/.claude/memory/lessons.md` | 過去の失敗・再発防止（V9含む） |
 | `bitget-python-sdk-api/.claude/memory/project_v9_progress.md` | V9実装進捗（参照用） |
+
+---
+
+## 現在の方針
+
+V9シグナルをベースに、V10の設計思想（スキャル型・小利確）で調整する。
+詳細な検証結果・パラメータ・次のタスクは WORKFLOW.md を参照。
+
+---
+
+## このBOTの存在意義
+
+人間が24時間監視・執行できない相場を、ルール通りに動き続けることで稼ぐ。
+- 感情に左右されない規律ある取引
+- 24時間365日の自動監視・自動執行
+- 人間が張り付かなくてよい時間コストの削減
+
+---
+
+## 設計思想
+
+**V9シグナル × スキャル型TP（小刻みに利確を積み上げる）**
+
+- タイムフレーム: 1分足
+- シグナル: V9エントリーロジック（P2/P4/P22/P23）
+- TP: スキャル幅（手堅く確実に取れる幅）で調整
+- 広いTP・長い保有はスイング化するため避ける
+- 検証は必ず複数レジーム（90日）で行う
+
+---
+
+## 目標
+
+| 指標 | 基準 |
+|------|------|
+| 本番 NET 目標 | **$60/day** |
+| 手数料コスト想定 | 100件/日 × $0.60 = $60/day |
+| 必要 GROSS | **$120/day 以上** |
+
+---
+
+## 開発フロー
+
+```
+1. 1分足データ取得
+2. 戦略設計（シグナル・TP/SL・add構造・フィルター）
+3. シミュレーター構築（1分足対応）
+4. バックテスト（複数レジーム・90日/180日）
+5. 本番投入判断
+```
+
+**検証は必ず複数レジーム（急騰/急落/レンジ）で行う。**
+
+---
+
+## TP_PCT提案時の必須チェック（L-40）
+
+TP_PCTを提案・変更する前に**必ずこの計算を先に実施・提示する**：
+
+```
+position_usd = POSITION_SIZE_BTC × 現在価格
+往復fee      = position_usd × FEE_RATE_MAKER × 2
+TP gross     = position_usd × TP_PCT
+net per TP   = TP gross - 往復fee  ← これが正でないと提案しない
+```
+
+**「戦略全体のNETがマイナス」≠「手数料負け」**
+TIME_EXIT / SL損失 と 手数料 を必ず切り分けて報告する。
+
+---
+
+## データファイルパス（固定）
+
+| 用途 | パス |
+|------|------|
+| 5分足 90日 | `/Users/tachiharamasako/Documents/GitHub/cat-swing-sniper/data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv` |
+| 5分足 180日 | `/Users/tachiharamasako/Documents/GitHub/cat-swing-sniper/data/BTCUSDT-5m-2025-10-03_04-01_combined_180d.csv` |
+| **1分足 90日**（Phase 1-3用） | **`/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/data/BTCUSDT-1m-binance-2026-04-06_90d.csv`** |
+| 1分足 180日（Phase 4 過学習チェック用） | `/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/data/BTCUSDT-1m-binance-2026-04-06_180d.csv` |
+
+---
+
+## Replay実行コマンド
+
+```bash
+# 90日データ（メイン検証）
+echo "=====🚀 RUN START $(date) =====" && \
+cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
+python3 runner/replay_csv.py \
+  /Users/tachiharamasako/Documents/GitHub/cat-swing-sniper/data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv
+
+# 180日データ（過学習チェック）
+echo "=====🚀 RUN START $(date) =====" && \
+cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
+python3 runner/replay_csv.py \
+  /Users/tachiharamasako/Documents/GitHub/cat-swing-sniper/data/BTCUSDT-5m-2025-10-03_04-01_combined_180d.csv
+```
+
+出力CSV: `results/replay_BTCUSDT-5m-{入力ファイル名}.csv`（自動命名・上書き）
 
 ---
 
