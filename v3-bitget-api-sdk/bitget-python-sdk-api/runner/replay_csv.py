@@ -182,14 +182,16 @@ def _check_exits_replay(pos: Dict, mark_price: float, df: pd.DataFrame, i: int,
             return "MFE_STALE_CUT"
 
 
-    # 3b. MFE_STALE_CUT (P2 LONG, add==1, hold>=120min)
-    if side == "LONG" and priority == 2 and add_count == 1 and hold_min >= 120:
-        if mfe_usd < float(params.get("P2_MFE_STALE_GATE_USD", 10.0)):
+    # 3b. MFE_STALE_CUT (P2 LONG, add==1, hold>=P2_MFE_STALE_HOLD_MIN)
+    if side == "LONG" and priority == 2 and add_count == 1:
+        _p2_hold_min = float(params.get("P2_MFE_STALE_HOLD_MIN", 120.0))
+        if hold_min >= _p2_hold_min and mfe_usd < float(params.get("P2_MFE_STALE_GATE_USD", 10.0)):
             return "MFE_STALE_CUT"
 
-    # 3c. MFE_STALE_CUT (P23 SHORT, add==1, hold>=120min)
-    if side == "SHORT" and priority == 23 and add_count == 1 and hold_min >= 120:
-        if mfe_usd < float(params.get("P23_MFE_STALE_GATE_USD", 10.0)):
+    # 3c. MFE_STALE_CUT (P23 SHORT, add==1, hold>=P23_MFE_STALE_HOLD_MIN)
+    if side == "SHORT" and priority == 23 and add_count == 1:
+        _p23_hold_min = float(params.get("P23_MFE_STALE_HOLD_MIN", 120.0))
+        if hold_min >= _p23_hold_min and mfe_usd < float(params.get("P23_MFE_STALE_GATE_USD", 10.0)):
             return "MFE_STALE_CUT"
 
     # 4. RSI_REVERSE_EXIT (SHORT)
@@ -241,7 +243,9 @@ def _check_exits_replay(pos: Dict, mark_price: float, df: pd.DataFrame, i: int,
     # 8. TIME_EXIT
     base_t = float(params.get("P2_TIME_EXIT_MIN" if priority == 2 else
                               f"{side}_TIME_EXIT_MIN", 150 if side == "LONG" else 480))
-    down_f = float(params.get(f"{side}_TIME_EXIT_DOWN_FACTOR", 0.75))
+    _pri_df_key = f"P{priority}_TIME_EXIT_DOWN_FACTOR"
+    down_f = float(params[_pri_df_key] if _pri_df_key in params else
+                   params.get(f"{side}_TIME_EXIT_DOWN_FACTOR", 0.75))
     if hold_min >= base_t * (down_f if unreal < 0 else 1.0):
         return "TIME_EXIT"
 
@@ -255,6 +259,24 @@ def _ts_to_str(ts_ms: int) -> str:
     # UTC で出力（candles.csv と timezone を合わせる）
     dt = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _calc_tp_diff(pos: Dict, side: str, size_b: float) -> float:
+    """TPまでの距離をUSDで返す（正値=TP未到達、負値=TP超過）
+    LONG:  tp_diff = (tp_price - max_high) * size_b  （正=届かなかった）
+    SHORT: tp_diff = (min_low - tp_price) * size_b   （正=届かなかった）
+    """
+    tp_price = float(pos.get("tp_price", float("nan")))
+    if side == "LONG":
+        max_high = float(pos.get("max_high", float("-inf")))
+        if max_high == float("-inf") or tp_price != tp_price:
+            return float("nan")
+        return (tp_price - max_high) * size_b
+    else:
+        min_low = float(pos.get("min_low", float("inf")))
+        if min_low == float("inf") or tp_price != tp_price:
+            return float("nan")
+        return (min_low - tp_price) * size_b
 
 
 def _record_trade(trades: List, pos: Dict, exit_price: float, exit_reason: str,
@@ -295,6 +317,12 @@ def _record_trade(trades: List, pos: Dict, exit_price: float, exit_reason: str,
         "atr_14":                round(float(pos.get("atr_14", float("nan"))), 2),
         "entry_hour":            int(pos.get("entry_hour", -1)),
         "entry_weekday":         int(pos.get("entry_weekday", -1)),
+        "mfe_usd":               round(float(pos.get("mfe_usd", 0.0)), 4),
+        "mae_usd":               round(float(pos.get("mae_usd", 0.0)), 4),
+        "stoch_k_at_entry":      round(float(pos.get("stoch_k_at_entry", float("nan"))), 2),
+        "stoch_d_at_entry":      round(float(pos.get("stoch_d_at_entry", float("nan"))), 2),
+        "bb_width_at_entry":     round(float(pos.get("bb_width_at_entry", float("nan"))), 4),
+        "tp_diff_usd":           round(_calc_tp_diff(pos, side, size_b), 4),
     })
 
 
@@ -306,7 +334,9 @@ def _write_results(csv_path: str, trades: List) -> None:
                  "size_btc", "entry_price", "exit_price", "exit_reason",
                  "hold_min", "gross_usd", "fee_usd", "net_usd",
                  "adx_at_entry", "bb_mid_slope_at_entry", "rsi_at_entry",
-                 "ret_5", "atr_14", "entry_hour", "entry_weekday"]
+                 "ret_5", "atr_14", "entry_hour", "entry_weekday",
+                 "mfe_usd", "mae_usd", "tp_diff_usd",
+                 "stoch_k_at_entry", "stoch_d_at_entry", "bb_width_at_entry"]
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
@@ -417,6 +447,25 @@ def _print_summary(trades: List) -> None:
             avg_adx2  = _avg([t["adx_at_entry"] for t in ts2])
             print(f"    {add:4}  {len(ts2):4}  ${net2:+8.2f}  ${net2/len(ts2):+6.2f}  {avg_hold2:7.1f}min  {avg_adx2:6.1f}")
 
+    # ── 4c. MFE_STALE_CUT 詳細（Priority別） ─────────────────
+    stale_trades = [t for t in trades if t["exit_reason"] == "MFE_STALE_CUT"]
+    if stale_trades:
+        by_pri_stale = defaultdict(list)
+        for t in stale_trades:
+            by_pri_stale[f"P{t['priority']}-{t['side']}"].append(t)
+        print(f"\n  [MFE_STALE_CUT 詳細 Priority別]")
+        print(f"    {'Pri':<12}  {'件数':>4}  {'NET':>9}  {'avgMFE':>8}  {'avgMAE':>8}  {'avgTP_diff':>10}  {'avgHold':>8}")
+        for pri in pri_keys_order:
+            ts_s = by_pri_stale.get(pri, [])
+            if not ts_s:
+                continue
+            net_s    = sum(t["net_usd"]    for t in ts_s)
+            avg_mfe  = _avg([t["mfe_usd"]    for t in ts_s])
+            avg_mae  = _avg([t["mae_usd"]    for t in ts_s])
+            avg_tpd  = _avg([t["tp_diff_usd"] for t in ts_s])
+            avg_hold = _avg([t["hold_min"]   for t in ts_s])
+            print(f"    {pri:<12}  {len(ts_s):4}  ${net_s:+8.2f}  ${avg_mfe:+7.2f}  ${avg_mae:+7.2f}  ${avg_tpd:+9.2f}  {avg_hold:7.1f}min")
+
     # ── 5. Entry指標統計（TP vs 損失別） ─────────────────────
     loss_reasons = [r for r in all_reasons if r != "TP_FILLED"]
     tp_trades   = [t for t in trades if t["exit_reason"] == "TP_FILLED"]
@@ -432,6 +481,28 @@ def _print_summary(trades: List) -> None:
         loss_v = _avg([t[field] for t in loss_trades])
         print(f"    {label:<22}  {tp_v:8.2f}  {loss_v:8.2f}")
 
+    # ── 5b. Priority別 TP vs MFE_STALE Entry指標統計 ──────────
+    for pri in pri_keys_order:
+        ts_pri    = by_pri[pri]
+        tp_pri    = [t for t in ts_pri if t["exit_reason"] == "TP_FILLED"]
+        stale_pri = [t for t in ts_pri if t["exit_reason"] == "MFE_STALE_CUT"]
+        if not stale_pri:
+            continue
+        print(f"\n  [{pri}  TP({len(tp_pri)}件) vs MFE_STALE({len(stale_pri)}件) Entry指標統計]")
+        print(f"    {'指標':<22}  {'TP avg':>8}  {'STALE avg':>10}  {'差':>8}")
+        for field, label in [("adx_at_entry",         "ADX"),
+                              ("bb_mid_slope_at_entry","BB_slope"),
+                              ("rsi_at_entry",         "RSI"),
+                              ("stoch_k_at_entry",     "stoch_k"),
+                              ("stoch_d_at_entry",     "stoch_d"),
+                              ("bb_width_at_entry",    "bb_width"),
+                              ("ret_5",                "ret_5(%)"),
+                              ("atr_14",               "atr_14($)")]:
+            tp_v    = _avg([t.get(field, float("nan")) for t in tp_pri])
+            stale_v = _avg([t.get(field, float("nan")) for t in stale_pri])
+            diff    = stale_v - tp_v if not (math.isnan(tp_v) or math.isnan(stale_v)) else float("nan")
+            print(f"    {label:<22}  {tp_v:8.2f}  {stale_v:10.2f}  {diff:+8.2f}")
+
     # ── 時間帯別 NET ──────────────────────────────────────────
     by_hour: Dict[int, List] = defaultdict(list)
     for t in trades:
@@ -443,6 +514,25 @@ def _print_summary(trades: List) -> None:
         net_h = sum(t["net_usd"] for t in ts_h)
         tp_r  = sum(1 for t in ts_h if t["exit_reason"] == "TP_FILLED") / len(ts_h) * 100
         print(f"    {h:4}  {len(ts_h):4}  ${net_h:+8.2f}  {tp_r:4.0f}%  ${net_h/len(ts_h):+6.2f}")
+
+    # ── 時間帯別 NET（Priority別・損失上位のみ） ──────────────
+    for pri in pri_keys_order:
+        ts_pri = by_pri[pri]
+        net_pri = sum(t["net_usd"] for t in ts_pri)
+        if net_pri >= 0:
+            continue  # 黒字Priorityはスキップ
+        by_hour_pri: Dict[int, List] = defaultdict(list)
+        for t in ts_pri:
+            by_hour_pri[t["entry_hour"]].append(t)
+        print(f"\n  [時間帯別 NET — {pri}（損失時間帯のみ）]")
+        print(f"    {'hour':>4}  {'件数':>4}  {'NET':>9}  {'TP率':>5}  {'avgNET':>7}")
+        for h in sorted(by_hour_pri):
+            ts_h2  = by_hour_pri[h]
+            net_h2 = sum(t["net_usd"] for t in ts_h2)
+            if net_h2 >= 0:
+                continue
+            tp_r2 = sum(1 for t in ts_h2 if t["exit_reason"] == "TP_FILLED") / len(ts_h2) * 100
+            print(f"    {h:4}  {len(ts_h2):4}  ${net_h2:+8.2f}  {tp_r2:4.0f}%  ${net_h2/len(ts_h2):+6.2f}")
 
     # ── 6. TIME_EXIT / MIDTERM_CUT のEntry指標 Priority別 ───
     for bad_exit in ["TIME_EXIT"]:
@@ -498,27 +588,37 @@ def _calc_entry_states(df: "pd.DataFrame", i: int, ts_ms: int) -> Dict:
 # ==============================================================
 # メインループ
 # ==============================================================
-def main(csv_path: str) -> None:
-    params = _load_params()
+def preload(csv_path: str, params: Dict):
+    """CSV読み込み＋preprocess を実行して (df, df_raw) を返す。
+    グリッドサーチで preprocess を1回だけ走らせたい場合に使う。"""
     df_raw = _load_csv(csv_path)
-    print(f"[replay_csv] loaded {len(df_raw)} bars from {csv_path}")
-
-    # preprocess（全バー一括で指標計算）
     df_for_prep = df_raw[["timestamp_ms", "open", "high", "low", "close"]].copy()
     df_for_prep["timestamp"] = pd.to_datetime(df_for_prep["timestamp_ms"], unit="ms")
     if "volume" in df_raw.columns:
         df_for_prep["volume"] = df_raw["volume"].values
     else:
         df_for_prep["volume"] = 0.0
+    df = preprocess(df_for_prep[["timestamp", "open", "high", "low", "close", "volume"]].copy(), params)
+    df["timestamp_ms"] = df_raw["timestamp_ms"].values
+    df["high_raw"] = df_raw["high"].values
+    df["low_raw"]  = df_raw["low"].values
+    return df, df_raw
 
-    try:
-        df = preprocess(df_for_prep[["timestamp", "open", "high", "low", "close", "volume"]].copy(), params)
-        df["timestamp_ms"] = df_raw["timestamp_ms"].values
-        df["high_raw"] = df_raw["high"].values
-        df["low_raw"]  = df_raw["low"].values
-    except Exception as e:
-        print(f"[ERROR] preprocess failed: {e}")
-        return
+
+def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
+    """CSV をリプレイして trades リストを返す。グリッドサーチ等から直接呼び出し可。
+    _preloaded=(df, df_raw) を渡すと CSV読み込み・preprocess をスキップする。"""
+    if _preloaded is not None:
+        df, df_raw = _preloaded
+    else:
+        try:
+            df, df_raw = preload(csv_path, params)
+        except Exception as e:
+            print(f"[ERROR] preprocess failed: {e}")
+            return []
+
+    # バー足間隔を自動検出（5m=300000ms, 1m=60000ms 等）
+    _bar_ms = int(df_raw["timestamp_ms"].iloc[1] - df_raw["timestamp_ms"].iloc[0])
 
     # 状態変数（in-memory）
     pos:     Dict[str, Optional[Dict]] = {"LONG": None, "SHORT": None}
@@ -543,7 +643,7 @@ def main(csv_path: str) -> None:
                 continue
 
             placed_ms   = int(pnd["placed_bar_ms"])
-            bar_elapsed = max(0, (ts_ms - placed_ms) // (5 * 60 * 1000))
+            bar_elapsed = max(0, (ts_ms - placed_ms) // _bar_ms)
 
             # TTL 切れ → キャンセル
             if bar_elapsed >= PENDING_TTL_BARS:
@@ -558,7 +658,8 @@ def main(csv_path: str) -> None:
                 continue
             fill_p = limit_p
             adx_val   = float(pnd.get("adx_at_entry", 0.0))
-            unit_size = float(params[f"{side}_POSITION_SIZE_BTC"])
+            _pri_size_key = f"P{pnd['priority']}_POSITION_SIZE_BTC"
+            unit_size = float(params.get(_pri_size_key, params[f"{side}_POSITION_SIZE_BTC"]))
             states    = _calc_entry_states(df, i, ts_ms)
 
             if pos[side] is None:
@@ -574,9 +675,15 @@ def main(csv_path: str) -> None:
                     "tp_price":              tp_price,
                     "sl_price":              _calc_sl_price(side, fill_p, params),
                     "mfe_usd":               0.0,
+                    "mae_usd":               0.0,
+                    "max_high":              float("-inf"),
+                    "min_low":               float("inf"),
                     "adx_at_entry":          pnd.get("adx_at_entry", 0.0),
                     "bb_mid_slope_at_entry": pnd.get("bb_mid_slope_at_entry", float("nan")),
                     "rsi_at_entry":          pnd.get("rsi_at_entry", float("nan")),
+                    "stoch_k_at_entry":      pnd.get("stoch_k_at_entry", float("nan")),
+                    "stoch_d_at_entry":      pnd.get("stoch_d_at_entry", float("nan")),
+                    "bb_width_at_entry":     pnd.get("bb_width_at_entry", float("nan")),
                     "ret_5":                 states["ret_5"],
                     "atr_14":                states["atr_14"],
                     "entry_hour":            states["entry_hour"],
@@ -603,7 +710,7 @@ def main(csv_path: str) -> None:
             pending[side] = None
 
         # --------------------------------------------------
-        # 2. MFE 更新（exit チェック前に必ず更新）
+        # 2. MFE / MAE / 価格極値 更新（exit チェック前に必ず更新）
         # --------------------------------------------------
         for side in ("LONG", "SHORT"):
             p = pos[side]
@@ -614,6 +721,15 @@ def main(csv_path: str) -> None:
             unreal  = ((mark_p - entry_p) if side == "LONG" else (entry_p - mark_p)) * size_b
             if unreal > float(p.get("mfe_usd", 0.0)):
                 p["mfe_usd"] = unreal
+            if unreal < float(p.get("mae_usd", 0.0)):
+                p["mae_usd"] = unreal
+            # 価格極値（tp_diff計算用）
+            if side == "LONG":
+                if high_p > float(p.get("max_high", float("-inf"))):
+                    p["max_high"] = high_p
+            else:
+                if low_p < float(p.get("min_low", float("inf"))):
+                    p["min_low"] = low_p
 
         # --------------------------------------------------
         # 3. TP 発動チェック（close が TP 価格を超えたか）
@@ -691,9 +807,12 @@ def main(csv_path: str) -> None:
         else:
             lp = float(Decimal(str(close_p)) * Decimal("1.0001"))
 
-        adx_val   = float(df.at[i, "adx"])          if "adx"          in df.columns else 0.0
-        slope_val = float(df.at[i, "bb_mid_slope"]) if "bb_mid_slope" in df.columns else float("nan")
-        rsi_val   = float(df.at[i, "rsi_short"])    if "rsi_short"    in df.columns else float("nan")
+        adx_val      = float(df.at[i, "adx"])          if "adx"          in df.columns else 0.0
+        slope_val    = float(df.at[i, "bb_mid_slope"]) if "bb_mid_slope" in df.columns else float("nan")
+        rsi_val      = float(df.at[i, "rsi_short"])    if "rsi_short"    in df.columns else float("nan")
+        stoch_k_val  = float(df.at[i, "stoch_k"])      if "stoch_k"      in df.columns else float("nan")
+        stoch_d_val  = float(df.at[i, "stoch_d"])      if "stoch_d"      in df.columns else float("nan")
+        bb_width_val = float(df.at[i, "bb_width"])     if "bb_width"     in df.columns else float("nan")
         pending[side] = {
             "side":                  side,
             "priority":              priority,
@@ -702,6 +821,9 @@ def main(csv_path: str) -> None:
             "adx_at_entry":          adx_val,
             "bb_mid_slope_at_entry": slope_val,
             "rsi_at_entry":          rsi_val,
+            "stoch_k_at_entry":      stoch_k_val,
+            "stoch_d_at_entry":      stoch_d_val,
+            "bb_width_at_entry":     bb_width_val,
         }
 
     # ---- 未クローズポジションを強制クローズ（期間末） ----
@@ -712,7 +834,13 @@ def main(csv_path: str) -> None:
             _record_trade(trades, pos[side], exit_price=last_close,
                           exit_reason="FORCE_CLOSE_EOD", exit_ts_ms=last_ts, params=params)
 
-    # ---- 出力 ----
+    return trades
+
+
+def main(csv_path: str) -> None:
+    params = _load_params()
+    print(f"[replay_csv] loaded from {csv_path}")
+    trades = run(csv_path, params)
     _write_results(csv_path, trades)
     _print_summary(trades)
 

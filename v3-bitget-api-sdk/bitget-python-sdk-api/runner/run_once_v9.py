@@ -423,14 +423,16 @@ def _check_exits(pos: Dict, mark_price: float, df, params: Dict) -> Optional[str
             return "MFE_STALE_CUT"
 
 
-    # 3b. MFE_STALE_CUT (P2 LONG, add==1, hold≥120min, mfe_max<10USD)
-    if side == "LONG" and priority == 2 and add_count == 1 and hold_min >= 120:
-        if mfe_usd < float(params.get("P2_MFE_STALE_GATE_USD", 10.0)):
+    # 3b. MFE_STALE_CUT (P2 LONG, add==1, hold≥P2_MFE_STALE_HOLD_MIN)
+    if side == "LONG" and priority == 2 and add_count == 1:
+        _p2_hold_min = float(params.get("P2_MFE_STALE_HOLD_MIN", 120.0))
+        if hold_min >= _p2_hold_min and mfe_usd < float(params.get("P2_MFE_STALE_GATE_USD", 10.0)):
             return "MFE_STALE_CUT"
 
-    # 3c. MFE_STALE_CUT (P23 SHORT, add==1, hold≥120min, mfe_max<10USD)
-    if side == "SHORT" and priority == 23 and add_count == 1 and hold_min >= 120:
-        if mfe_usd < float(params.get("P23_MFE_STALE_GATE_USD", 10.0)):
+    # 3c. MFE_STALE_CUT (P23 SHORT, add==1, hold≥P23_MFE_STALE_HOLD_MIN)
+    if side == "SHORT" and priority == 23 and add_count == 1:
+        _p23_hold_min = float(params.get("P23_MFE_STALE_HOLD_MIN", 120.0))
+        if hold_min >= _p23_hold_min and mfe_usd < float(params.get("P23_MFE_STALE_GATE_USD", 10.0)):
             return "MFE_STALE_CUT"
 
     # 4. RSI 逆行 EXIT (SHORT)
