@@ -837,12 +837,139 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
     return trades
 
 
+# ==============================================================
+# シグナルファネル分析（P2/P23 フィルター段階別通過件数）
+# ==============================================================
+def _signal_funnel(df: "pd.DataFrame", params: Dict) -> None:
+    """P2/P23 各フィルター段階で何件落とされているかを表示する。
+    run() とは独立して呼ぶ（グリッドサーチには影響しない）。"""
+    import math
+
+    n_bars = len(df) - CANDLE_WARMUP
+    ts_start = int(df.iloc[CANDLE_WARMUP]["timestamp_ms"])
+    ts_end   = int(df.iloc[-1]["timestamp_ms"])
+    n_days   = max(1.0, (ts_end - ts_start) / (86_400 * 1_000))
+
+    def _g(i, col):
+        if col not in df.columns or i < 0 or i >= len(df):
+            return float("nan")
+        try:
+            return float(df.at[i, col])
+        except Exception:
+            return float("nan")
+
+    # ── P2 LONG フィルター定数 ──
+    p2_gap_min      = float(params.get("P2_STOCH_GAP_MIN",  0.3))
+    p2_k_min        = float(params.get("P2_STOCH_K_MIN",    0.0))
+    p2_adx_min      = float(params.get("P2_ADX_MIN",        0.0))
+    p2_rsi_min      = float(params.get("P2_RSI_MIN",        0.0))
+    p2_atr_min      = float(params.get("P2_ATR14_MIN",      0.0))
+    p2_atr_max      = float(params.get("P2_ATR14_MAX",  99999.0))
+    p2_adx_excl_min = float(params.get("P2_ADX_EXCL_MIN",   0.0))
+    p2_adx_excl_max = float(params.get("P2_ADX_EXCL_MAX",   0.0))
+
+    # ── P23 SHORT フィルター定数 ──
+    p23_slope_max = float(params.get("P23_BB_MID_SLOPE_MAX", 0.0))
+    p23_adx_min   = float(params.get("P23_ADX_MIN",         0.0))
+    p23_adx_max   = float(params.get("P23_ADX_MAX",      9999.0))
+    p23_atr_min   = float(params.get("P23_ATR14_MIN",       0.0))
+
+    p2_counts  = [0] * 6   # [base, +k, +adx, +rsi, +atr, +adx_excl]
+    p23_counts = [0] * 4   # [base, +adx_range, +atr, ...]
+
+    for i in range(CANDLE_WARMUP, len(df)):
+        sk   = _g(i,   "stoch_k")
+        sd   = _g(i,   "stoch_d")
+        sk1  = _g(i-1, "stoch_k")
+        sd1  = _g(i-1, "stoch_d")
+        sk2  = _g(i-2, "stoch_k")
+        sd2  = _g(i-2, "stoch_d")
+        adx  = _g(i, "adx")
+        rsi  = _g(i, "rsi_short")
+        atr  = _g(i, "atr_14")
+        cls  = _g(i, "close")
+        opn  = _g(i, "open")
+        slp  = _g(i, "bb_mid_slope")
+
+        # ── P2 ──
+        cross = (
+            i >= 2
+            and not any(math.isnan(v) for v in [sk2, sd2, sk1, sd1, sk, sd, cls, opn])
+            and sk2 < sd2 and sk1 < sd1 and sk > sd
+            and (sk - sd) > p2_gap_min
+            and cls >= opn
+        )
+        if cross:
+            p2_counts[0] += 1
+            if sk >= p2_k_min:
+                p2_counts[1] += 1
+                if not math.isnan(adx) and adx >= p2_adx_min:
+                    p2_counts[2] += 1
+                    if not math.isnan(rsi) and rsi >= p2_rsi_min:
+                        p2_counts[3] += 1
+                        if not math.isnan(atr) and p2_atr_min <= atr <= p2_atr_max:
+                            p2_counts[4] += 1
+                            if not (p2_adx_excl_min <= adx < p2_adx_excl_max):
+                                p2_counts[5] += 1
+
+        # ── P23 ──
+        dead = (
+            i >= 2
+            and not any(math.isnan(v) for v in [sk2, sd2, sk1, sd1, sk, sd, cls, opn, slp])
+            and sk2 > sd2 and sk1 > sd1 and sk < sd
+            and (sd - sk) > 0.3
+            and cls <= opn
+            and slp < p23_slope_max
+        )
+        if dead:
+            p23_counts[0] += 1
+            if not math.isnan(adx) and p23_adx_min <= adx < p23_adx_max:
+                p23_counts[1] += 1
+                if not math.isnan(atr) and atr >= p23_atr_min:
+                    p23_counts[2] += 1
+
+    def _line(label, n, prev):
+        drop = f"  落:{prev-n}" if prev is not None else ""
+        return f"    {label:<42} {n:5}件  ({n/n_days:.1f}/day){drop}"
+
+    print(f"\n{'='*60}")
+    print(f"  [シグナルファネル]  期間: {n_days:.0f}日  全バー: {n_bars}")
+    print(f"{'='*60}")
+
+    print(f"\n  P2-LONG:")
+    labels = [
+        f"stoch_cross (gap>{p2_gap_min}, close>=open)",
+        f"+ stoch_k >= {p2_k_min:.0f}",
+        f"+ ADX >= {p2_adx_min:.0f}",
+        f"+ RSI >= {p2_rsi_min:.0f}",
+        f"+ ATR [{p2_atr_min:.0f}, {p2_atr_max:.0f}]",
+        f"+ ADX excl [{p2_adx_excl_min:.0f}, {p2_adx_excl_max:.0f})",
+    ]
+    for j, (lbl, cnt) in enumerate(zip(labels, p2_counts)):
+        prev = p2_counts[j-1] if j > 0 else None
+        print(_line(lbl, cnt, prev))
+
+    print(f"\n  P23-SHORT:")
+    p23_labels = [
+        f"stoch_dead (gap>0.3, close<=open, slope<{p23_slope_max:.0f})",
+        f"+ ADX [{p23_adx_min:.0f}, {p23_adx_max:.0f})",
+        f"+ ATR >= {p23_atr_min:.0f}",
+    ]
+    for j, (lbl, cnt) in enumerate(zip(p23_labels, p23_counts)):
+        prev = p23_counts[j-1] if j > 0 else None
+        print(_line(lbl, cnt, prev))
+
+    print(f"\n{'='*60}\n")
+
+
 def main(csv_path: str) -> None:
     params = _load_params()
     print(f"[replay_csv] loaded from {csv_path}")
-    trades = run(csv_path, params)
+    preloaded = preload(csv_path, params)
+    trades = run(csv_path, params, _preloaded=preloaded)
     _write_results(csv_path, trades)
     _print_summary(trades)
+    _signal_funnel(preloaded[0], params)
 
 
 if __name__ == "__main__":

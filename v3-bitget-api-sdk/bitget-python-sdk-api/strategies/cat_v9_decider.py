@@ -423,6 +423,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
     )
 
     if (stoch_cross
+            and get("stoch_k") >= float(params.get("P2_STOCH_K_MIN", 0.0))
             and get("adx") >= float(params.get("P2_ADX_MIN", 0.0))
             and get("rsi_short") >= float(params.get("P2_RSI_MIN", 0.0))
             and get("atr_14") >= float(params.get("P2_ATR14_MIN", 0.0))
@@ -449,7 +450,11 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
     if core_gate and probe["adx_ok_p22"] and probe["risk_ok_p22"] and _p22_slope_ok and _p22_bb_width_ok:
         return 22
 
-    if int(params.get("P22_RELAX_FINAL", 1)) == 1 and core_gate and _p22_slope_ok and _p22_bb_width_ok:
+    _p22_adx_relax_min = float(params.get("P22_ADX_RELAX_MIN", 0.0))
+    _p22_adx_val = df.at[i, "adx"] if "adx" in df.columns else np.nan
+    _p22_adx_relax_ok = pd.isna(_p22_adx_val) or (float(_p22_adx_val) >= _p22_adx_relax_min)
+    if (int(params.get("P22_RELAX_FINAL", 1)) == 1 and core_gate and _p22_slope_ok and _p22_bb_width_ok
+            and _p22_adx_relax_ok):
         return 22
 
     # =========================
