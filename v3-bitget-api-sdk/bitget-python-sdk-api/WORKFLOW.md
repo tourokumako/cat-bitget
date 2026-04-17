@@ -189,10 +189,10 @@ Step 10. Gitコミット     — ユーザーの明示OK後のみ  ← STOP
 
 | Priority | 型 | 現在フェーズ | 未解決問題 | ゴール |
 |---------|-----|------------|---------|-------|
-| P2-LONG | スキャル | ✅完了 | MFE_STALE 2件/-$82（構造的残存） | NET≥$100/90d ✅($+167), TP率≥97% ✅(98%) |
-| P23-SHORT | スキャル | ✅完了 | MFE_STALE 3件/-$62（残存） | NET≥$0 ✅($+24.56), TP率≥90% ✅(98%) |
-| P22-SHORT | 中スイング | 保留（構造的限界） | RSI_REVERSE 2件/-$51（PATH 1経由・除外不可） | NET≥$0 ❌(-$6.34), TP率≥65% ✅(96%) |
-| P4-LONG | スイング | 保留 | TIME_EXIT 12件/-$165 | NET≥$0✅, TP率≥65%✅ |
+| P2-LONG | スキャル | ✅完了 | TIME_EXIT 11件/-$261（構造的残存） | NET≥$0 ✅(+$945/90d), TP率≥65% ✅(69%) |
+| P23-SHORT | スキャル | 改善中 | TIME_EXIT 12件/-$321, MFE_STALE 17件/-$209 | NET≥$0 ✅(+$402/90d), TP率≥65% ✅ |
+| P22-SHORT | 中スイング | ✅改善済み | TIME_EXIT 10件/-$291（残存） | NET≥$0 ✅(+$329/90d), TP率≥65% ✅(65%) |
+| P4-LONG | スイング | 保留（構造的限界） | TIME_EXIT 46件/-$613（MAX_ADDS設計由来） | NET≥$0 ✅(+$348/90d), TP率≥65% ✅(51%) |
 | P1-LONG | 5m MACD | ✅改善済み | TIME_EXIT 7件/-$318（構造的残存） | NET>$0 ✅(+$2.5/day) |
 | P21-SHORT | 5m MACD | ✅改善済み | TIME_EXIT 7件/-$222（構造的残存） | NET>$0 ✅(+$3.9/day) |
 
@@ -253,51 +253,59 @@ Step 3: $60/day 達成検証
 
 ---
 
-## 現在地: ロードマップ Step 2（P4 TIME_EXIT削減）
+## 現在地: ロードマップ Step 2（P23 TIME_EXIT / MFE_STALE 削減）
 
-**2026-04-16 統合 Replay 結果（P1/P21改善後・5m CSV・90日）:**
+**2026-04-17 統合 Replay 結果（P22 DOWN_FACTOR改善後・5m CSV・90日）:**
 
 | Priority | 件数/90d | NET/90d | NET/day | TP率 |
 |---------|---------|---------|---------|------|
 | P2-LONG | 108件 | +$945 | +$10.5 | 69% |
 | P4-LONG | 107件 | +$348 | +$3.9 | 51% |
-| P22-SHORT | 49件 | +$219 | +$2.4 | 65% |
+| P22-SHORT | 49件 | **+$329** | **+$3.7** | 65% |
 | P23-SHORT | 81件 | +$402 | +$4.5 | 52% |
-| P1-LONG | 180件 | **+$226** | **+$2.5** | 2% |
-| P21-SHORT | 170件 | **+$355** | **+$3.9** | 5% |
-| **全体合算** | **695件** | **+$2,495** | **+$27.7** | |
+| P1-LONG | 180件 | +$226 | +$2.5 | 2% |
+| P21-SHORT | 170件 | +$355 | +$3.9 | 5% |
+| **全体合算** | **695件** | **+$2,605** | **+$28.9** | |
 
-**P1/P21 改善内容（2026-04-16採用）:**
+**P22 改善内容（2026-04-17採用）:**
 
 | パラメータ | 変更前 | 変更後 | 効果 |
 |-----------|--------|--------|------|
-| P1_ATR14_MAX | 150 | 9999 | TRAIL_EXIT per-trade改善（$1.83→$2.94） |
-| P1_ADX_MIN | 20 | 30 | TIME_EXIT 21件→7件 |
-| P21_ATR14_MAX | 150 | 9999 | TRAIL_EXIT per-trade改善（$1.38→$2.78） |
-| P21_ADX_MIN | 20 | 30 | TIME_EXIT 7件 -$324→-$222 |
+| P22_TIME_EXIT_DOWN_FACTOR | なし（SHORT=0.5） | 0.4 | TIME_EXIT保有240分→192分・NET +$219→+$329 |
 
-**残存損失（主なもの）:**
+**P4 調査結果（2026-04-17 全方向確認・打ち止め）:**
+
+| アプローチ | 結果 |
+|-----------|------|
+| DOWN_FACTOR 短縮・延長 | ❌ 両方向とも悪化 |
+| TRAIL_EXIT | ❌ TIME_EXIT MFE(avg 0.238%) が TP(0.5%) に届かない |
+| TP_PCT変更 | ❌ 既に LONG_TP_PCT=0.005 が最大値 |
+| MAX_ADDS削減 | ❌ TP add=4-5 が高収益で削減が逆効果 |
+→ P4 TIME_EXIT(-$613)は MAX_ADDS設計由来の構造的損失（Step 2 MAX_ADDS最適化で対処予定）
+
+**残存損失（更新版）:**
 
 | Priority | 損失 | 件数 | NET |
 |---------|------|------|-----|
-| P4 TIME_EXIT | 46件 | -$613 | 最大 |
-| P22 TIME_EXIT | 10件 | -$401 | |
-| P23 MFE_STALE | 17件 | -$209 | |
+| P23 TIME_EXIT | 12件 | -$321 | |
+| P4 TIME_EXIT | 46件 | -$613 | 構造的（保留） |
 | P2 TIME_EXIT | 11件 | -$261 | |
+| P23 MFE_STALE | 17件 | -$209 | |
+| P22 TIME_EXIT | 10件 | -$291 | 改善済み |
 
 **次のアクション（セッション開始直後）:**
 ```
-P4 TIME_EXIT 削減グリッドサーチ（最大損失源）
-① P4 TIME_EXIT の指標分析（ADX avg 24.9 → ADX低い帯で長期保有→損失）
-② GRID = {"P4_ADX_EXCL_MIN": [20,22,25], "P4_ATR14_MIN": [100,130,150,180]}
-   または P4_TIME_EXIT_MIN の短縮方向
+P23 TIME_EXIT 削減（-$321/90d・12件）
+① P23 TIME_EXIT の指標分析（ADX・ATR・hold_min）
+② P23_TIME_EXIT_DOWN_FACTOR グリッドサーチ（replay_csv.py は対応済み）
+   GRID = {"P23_TIME_EXIT_DOWN_FACTOR": [0.25, 0.33, 0.4, 0.5]}
 ③ 採用基準: NET ≥ $0, TP率 ≥ 65%
 ```
 
 **現在のファイル状態:**
-- `runner/replay_csv.py`: P1/P21 TRAIL_EXIT 統合済み（2026-04-16）
-- `config/cat_params_v9.json`: P1/P21 ATR14_MAX=9999, ADX_MIN=30 更新済み（2026-04-16）
-- `runner/macd_edge_check.py`: standalone検証スクリプト（参照用）
+- `runner/replay_csv.py`: P1/P21 TRAIL_EXIT・P{n}_MAX_ADDS 優先参照 統合済み（2026-04-17）
+- `config/cat_params_v9.json`: P1/P21 ATR14_MAX=9999, ADX_MIN=30 / P22_TIME_EXIT_DOWN_FACTOR=0.4 更新済み（2026-04-17）
+- `runner/grid_search.py`: 最後の設定 TARGET=22, GRID=P22_TIME_EXIT_DOWN_FACTOR（次回更新要）
 
 ---
 
@@ -323,9 +331,11 @@ P4 TIME_EXIT 削減グリッドサーチ（最大損失源）
 | P23-SHORT | P23_MFE_STALE_GATE_USD | 4.0 | 採用済み |
 | P23-SHORT | P23_MFE_STALE_HOLD_MIN | 90.0 | 採用済み |
 | P4-LONG | P4_TP_PCT | 0.003 | ✅採用 |
-| P4-LONG | P4_TIME_EXIT_DOWN_FACTOR | 1.0 | ✅採用 |
+| P4-LONG | P4_TIME_EXIT_DOWN_FACTOR | （なし・LONG共通0.5使用） | 構造的限界確認済み |
+| P4-LONG | P4_TP_PCT | （なし・LONG_TP_PCT=0.005使用） | 最適値確認済み |
 | P4-LONG | LONG_POSITION_SIZE_BTC | 0.024 | 未スケール |
 | P4-LONG | P4_ATR14_MAX | 130.0 | 採用済み |
+| P22-SHORT | P22_TIME_EXIT_DOWN_FACTOR | **0.4** | ✅2026-04-17更新（TIME_EXIT保有短縮） |
 | P1-LONG | P1_ATR14_MAX | **9999** | ✅2026-04-16更新（上限撤廃） |
 | P1-LONG | P1_ADX_MIN | **30.0** | ✅2026-04-16更新（TIME_EXIT削減） |
 | P21-SHORT | P21_ATR14_MAX | **9999** | ✅2026-04-16更新（上限撤廃） |
@@ -333,17 +343,17 @@ P4 TIME_EXIT 削減グリッドサーチ（最大損失源）
 
 ---
 
-## 現在のベースライン（2026-04-16）
+## 現在のベースライン（2026-04-17）
 
 | Priority | 件数/90d | NET | TP率 | 主な損失 |
 |---------|---------|-----|------|---------|
-| P2-LONG | 108 | +$945 | 69% | MFE_STALE 14件/-$134 |
-| P4-LONG | 107 | +$348 | 51% | TIME_EXIT 46件/-$613 |
-| P22-SHORT | 48 | +$256 | 65% | TIME_EXIT 11件/-$485 |
-| P23-SHORT | 80 | +$398 | 52% | MFE_STALE 16件/-$199 |
-| P1-LONG | 180 | **+$226** | 2% | TIME_EXIT 7件/-$318（構造的残存） |
-| P21-SHORT | 170 | **+$355** | 5% | TIME_EXIT 7件/-$222（構造的残存） |
-| **全体** | **695件（7.7件/day）** | **+$2,495/$27.7/day** | | |
+| P2-LONG | 108 | +$945 | 69% | TIME_EXIT 11件/-$261 |
+| P4-LONG | 107 | +$348 | 51% | TIME_EXIT 46件/-$613（構造的） |
+| P22-SHORT | 49 | **+$329** | 65% | TIME_EXIT 10件/-$291 |
+| P23-SHORT | 81 | +$402 | 52% | TIME_EXIT 12件/-$321, MFE_STALE 17件/-$209 |
+| P1-LONG | 180 | +$226 | 2% | TIME_EXIT 7件/-$318（構造的残存） |
+| P21-SHORT | 170 | +$355 | 5% | TIME_EXIT 7件/-$222（構造的残存） |
+| **全体** | **695件（7.7件/day）** | **+$2,605/$28.9/day** | | |
 
 ---
 

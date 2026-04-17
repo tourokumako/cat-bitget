@@ -95,6 +95,19 @@ def preprocess(df: pd.DataFrame, params: Dict[str, Any]) -> pd.DataFrame:
     df["rsi_short"] = ta.momentum.RSIIndicator(df["close"], window=short_rsi_period).rsi()
     df["rsi_slope_short"] = df["rsi_short"].diff(short_rsi_slope_n).fillna(0)
 
+    # MACD（P1/P21用）
+    _macd_fast = int(params.get("P1_MACD_FAST", 9))
+    _macd_slow = int(params.get("P1_MACD_SLOW", 17))
+    _macd_sign = int(params.get("P1_MACD_SIGNAL", 7))
+    _macd_ind = ta.trend.MACD(
+        df["close"],
+        window_fast=_macd_fast,
+        window_slow=_macd_slow,
+        window_sign=_macd_sign,
+    )
+    df["macd"]        = _macd_ind.macd()
+    df["macd_signal"] = _macd_ind.macd_signal()
+
     # ストキャスティクス（P2/P23用）
     stoch = ta.momentum.StochasticOscillator(
         df["high"], df["low"], df["close"], window=14, smooth_window=3
@@ -497,14 +510,50 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
     ):
         return 23
 
+    # =========================
+    # 優先度 1（LONG・スキャル: MACD ゴールデンクロス）
+    # =========================
+    if params.get("ENABLE_P1_LONG", False) and i > 0:
+        _p1_macd_prev = df.at[i - 1, "macd"]        if "macd"        in df.columns else float("nan")
+        _p1_msig_prev = df.at[i - 1, "macd_signal"] if "macd_signal" in df.columns else float("nan")
+        _p1_macd = get("macd"); _p1_msig = get("macd_signal")
+        _p1_adx  = get("adx");  _p1_atr  = get("atr_14")
+        if (pd.notna(_p1_macd_prev) and pd.notna(_p1_msig_prev)
+                and pd.notna(_p1_macd) and pd.notna(_p1_msig)
+                and _p1_macd_prev <= _p1_msig_prev
+                and _p1_macd > _p1_msig
+                and pd.notna(_p1_adx) and _p1_adx >= float(params.get("P1_ADX_MIN", 22.0))
+                and pd.notna(_p1_atr)
+                and _p1_atr >= float(params.get("P1_ATR14_MIN", 60.0))
+                and _p1_atr <= float(params.get("P1_ATR14_MAX", 150.0))):
+            return 1
+
+    # =========================
+    # 優先度 21（SHORT・スキャル: MACD デッドクロス）
+    # =========================
+    if params.get("ENABLE_P21_SHORT", False) and i > 0:
+        _p21_macd_prev = df.at[i - 1, "macd"]        if "macd"        in df.columns else float("nan")
+        _p21_msig_prev = df.at[i - 1, "macd_signal"] if "macd_signal" in df.columns else float("nan")
+        _p21_macd = get("macd"); _p21_msig = get("macd_signal")
+        _p21_adx  = get("adx");  _p21_atr  = get("atr_14")
+        if (pd.notna(_p21_macd_prev) and pd.notna(_p21_msig_prev)
+                and pd.notna(_p21_macd) and pd.notna(_p21_msig)
+                and _p21_macd_prev >= _p21_msig_prev
+                and _p21_macd < _p21_msig
+                and pd.notna(_p21_adx) and _p21_adx >= float(params.get("P21_ADX_MIN", 22.0))
+                and pd.notna(_p21_atr)
+                and _p21_atr >= float(params.get("P21_ATR14_MIN", 60.0))
+                and _p21_atr <= float(params.get("P21_ATR14_MAX", 150.0))):
+            return 21
+
     return None
 
 
 # ---------------------------------------------------------------------------
 # decide（新規：snapshot dict → decision dict）
 # ---------------------------------------------------------------------------
-_LONG_PRIORITIES  = (2, 4)
-_SHORT_PRIORITIES = (22, 23, 24)
+_LONG_PRIORITIES  = (1, 2, 4)
+_SHORT_PRIORITIES = (21, 22, 23, 24)
 
 
 def decide(snapshot: Dict[str, Any]) -> Dict[str, Any]:
@@ -628,6 +677,24 @@ def _build_material(priority: int, i: int, df: pd.DataFrame, params: Dict[str, A
     """発火した priority の成立材料（証跡用）"""
     row = df.iloc[i]
     g = lambda col: _safe_float(df.at[i, col] if col in df.columns else float("nan"))
+
+    if priority == 1:
+        return {
+            "macd":        g("macd"),
+            "macd_signal": g("macd_signal"),
+            "adx":         g("adx"),
+            "atr_14":      g("atr_14"),
+            "P1_ADX_MIN":  float(params.get("P1_ADX_MIN", 22.0)),
+        }
+
+    if priority == 21:
+        return {
+            "macd":         g("macd"),
+            "macd_signal":  g("macd_signal"),
+            "adx":          g("adx"),
+            "atr_14":       g("atr_14"),
+            "P21_ADX_MIN":  float(params.get("P21_ADX_MIN", 22.0)),
+        }
 
     if priority == 4:
         lookback = int(params.get("P4_PULLBACK_LOOKBACK", 5))

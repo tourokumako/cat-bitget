@@ -47,8 +47,8 @@ CANDLE_WARMUP   = 200   # 指標計算に必要な最小バー数（live engine 
 _PARAMS_PATH    = _ROOT / "config" / "cat_params_v9.json"
 _RESULTS_DIR    = _ROOT / "results"
 _JST            = timezone(timedelta(hours=9))
-_LONG_PRIORITIES  = (2, 4)
-_SHORT_PRIORITIES = (22, 23, 24)
+_LONG_PRIORITIES  = (1, 2, 4)
+_SHORT_PRIORITIES = (21, 22, 23, 24)
 
 
 # ==============================================================
@@ -241,8 +241,9 @@ def _check_exits_replay(pos: Dict, mark_price: float, df: pd.DataFrame, i: int,
         return "STAGNATION_CUT"
 
     # 8. TIME_EXIT
-    base_t = float(params.get("P2_TIME_EXIT_MIN" if priority == 2 else
-                              f"{side}_TIME_EXIT_MIN", 150 if side == "LONG" else 480))
+    _pri_t_key = f"P{priority}_TIME_EXIT_MIN"
+    base_t = float(params[_pri_t_key] if _pri_t_key in params else
+                   params.get(f"{side}_TIME_EXIT_MIN", 150 if side == "LONG" else 480))
     _pri_df_key = f"P{priority}_TIME_EXIT_DOWN_FACTOR"
     down_f = float(params[_pri_df_key] if _pri_df_key in params else
                    params.get(f"{side}_TIME_EXIT_DOWN_FACTOR", 0.75))
@@ -313,6 +314,7 @@ def _record_trade(trades: List, pos: Dict, exit_price: float, exit_reason: str,
         "adx_at_entry":          round(float(pos.get("adx_at_entry", 0.0)), 2),
         "bb_mid_slope_at_entry": round(float(pos.get("bb_mid_slope_at_entry", float("nan"))), 4),
         "rsi_at_entry":          round(float(pos.get("rsi_at_entry", float("nan"))), 2),
+        "rsi_slope_at_entry":    round(float(pos.get("rsi_slope_at_entry", float("nan"))), 4),
         "ret_5":                 round(float(pos.get("ret_5", float("nan"))), 4),
         "atr_14":                round(float(pos.get("atr_14", float("nan"))), 2),
         "entry_hour":            int(pos.get("entry_hour", -1)),
@@ -333,7 +335,7 @@ def _write_results(csv_path: str, trades: List) -> None:
     fields   = ["entry_time", "exit_time", "side", "priority", "add_count",
                  "size_btc", "entry_price", "exit_price", "exit_reason",
                  "hold_min", "gross_usd", "fee_usd", "net_usd",
-                 "adx_at_entry", "bb_mid_slope_at_entry", "rsi_at_entry",
+                 "adx_at_entry", "bb_mid_slope_at_entry", "rsi_at_entry", "rsi_slope_at_entry",
                  "ret_5", "atr_14", "entry_hour", "entry_weekday",
                  "mfe_usd", "mae_usd", "tp_diff_usd",
                  "stoch_k_at_entry", "stoch_d_at_entry", "bb_width_at_entry"]
@@ -664,7 +666,20 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
 
             if pos[side] is None:
                 # 新規エントリー
-                tp_price = _calc_tp_price(side, fill_p, adx_val, params, pnd["priority"])
+                _entry_pri = pnd["priority"]
+                if _entry_pri in (1, 21):
+                    _bb_u = float(df.at[i, "bb_sigma2_upper"]) if "bb_sigma2_upper" in df.columns else float("nan")
+                    _bb_l = float(df.at[i, "bb_sigma2_lower"]) if "bb_sigma2_lower" in df.columns else float("nan")
+                    if not (math.isnan(_bb_u) or math.isnan(_bb_l)):
+                        _bb_half  = (_bb_u - _bb_l) / 2
+                        _tp_ratio = float(params.get("P1_TP_BB_RATIO", 1.0))
+                        _tp_min   = float(params.get("P1_TP_MIN_PCT", 0.0003))
+                        _tp_dist  = max(_bb_half * _tp_ratio, fill_p * _tp_min)
+                        tp_price  = fill_p + _tp_dist if side == "LONG" else fill_p - _tp_dist
+                    else:
+                        tp_price = _calc_tp_price(side, fill_p, adx_val, params, _entry_pri)
+                else:
+                    tp_price = _calc_tp_price(side, fill_p, adx_val, params, _entry_pri)
                 pos[side] = {
                     "side":                  side,
                     "entry_priority":        pnd["priority"],
@@ -681,6 +696,7 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
                     "adx_at_entry":          pnd.get("adx_at_entry", 0.0),
                     "bb_mid_slope_at_entry": pnd.get("bb_mid_slope_at_entry", float("nan")),
                     "rsi_at_entry":          pnd.get("rsi_at_entry", float("nan")),
+                    "rsi_slope_at_entry":    pnd.get("rsi_slope_at_entry", float("nan")),
                     "stoch_k_at_entry":      pnd.get("stoch_k_at_entry", float("nan")),
                     "stoch_d_at_entry":      pnd.get("stoch_d_at_entry", float("nan")),
                     "bb_width_at_entry":     pnd.get("bb_width_at_entry", float("nan")),
@@ -688,6 +704,8 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
                     "atr_14":                states["atr_14"],
                     "entry_hour":            states["entry_hour"],
                     "entry_weekday":         states["entry_weekday"],
+                    "mfe_peak_pct":          0.0,
+                    "trail_stop_price":      None,
                 }
             else:
                 # ADD
@@ -731,6 +749,22 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
                 if low_p < float(p.get("min_low", float("inf"))):
                     p["min_low"] = low_p
 
+            # P1/P21: high/low ベースで MFE ピーク追跡 → trail_stop_price 更新
+            if int(p.get("entry_priority", -1)) in (1, 21):
+                _ep = float(p["entry_price"])
+                _fav_pct = ((high_p - _ep) / _ep * 100 if side == "LONG"
+                            else ((_ep - low_p) / _ep * 100))
+                _prev_peak = float(p.get("mfe_peak_pct", 0.0))
+                if _fav_pct > _prev_peak:
+                    p["mfe_peak_pct"] = _fav_pct
+                    _gate  = float(params.get("P1_MFE_GATE_PCT", 0.05))
+                    _ratio = float(params.get("P1_TRAIL_RATIO", 0.8))
+                    if _fav_pct >= _gate:
+                        if side == "LONG":
+                            p["trail_stop_price"] = _ep * (1 + _fav_pct / 100 * _ratio)
+                        else:
+                            p["trail_stop_price"] = _ep * (1 - _fav_pct / 100 * _ratio)
+
         # --------------------------------------------------
         # 3. TP 発動チェック（close が TP 価格を超えたか）
         # --------------------------------------------------
@@ -758,6 +792,24 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
                      (side == "SHORT" and high_p >= sl)
             if sl_hit:
                 _record_trade(trades, p, exit_price=sl, exit_reason="SL_FILLED",
+                              exit_ts_ms=ts_ms, params=params)
+                pos[side] = None
+
+        # --------------------------------------------------
+        # 4b. TRAIL_EXIT チェック（P1/P21専用・price-level trailing stop）
+        # --------------------------------------------------
+        for side in ("LONG", "SHORT"):
+            p = pos[side]
+            if p is None or int(p.get("entry_priority", -1)) not in (1, 21):
+                continue
+            tsp = p.get("trail_stop_price")
+            if tsp is None:
+                continue
+            tsp = float(tsp)
+            trail_hit = (side == "LONG" and low_p <= tsp) or \
+                        (side == "SHORT" and high_p >= tsp)
+            if trail_hit:
+                _record_trade(trades, p, exit_price=tsp, exit_reason="TRAIL_EXIT",
                               exit_ts_ms=ts_ms, params=params)
                 pos[side] = None
 
@@ -796,8 +848,9 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
             p        = pos[side]
             add_cnt  = int(p["add_count"])
             pos_pri  = int(p["entry_priority"])
-            max_adds = int(params.get("MAX_ADDS_BY_PRIORITY", {}).get(
-                str(pos_pri), params.get(f"{side}_MAX_ADDS", 5)))
+            max_adds = int(params.get(f"P{pos_pri}_MAX_ADDS",
+                           params.get("MAX_ADDS_BY_PRIORITY", {}).get(
+                               str(pos_pri), params.get(f"{side}_MAX_ADDS", 5))))
             if add_cnt >= max_adds:
                 continue
 
@@ -807,12 +860,13 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
         else:
             lp = float(Decimal(str(close_p)) * Decimal("1.0001"))
 
-        adx_val      = float(df.at[i, "adx"])          if "adx"          in df.columns else 0.0
-        slope_val    = float(df.at[i, "bb_mid_slope"]) if "bb_mid_slope" in df.columns else float("nan")
-        rsi_val      = float(df.at[i, "rsi_short"])    if "rsi_short"    in df.columns else float("nan")
-        stoch_k_val  = float(df.at[i, "stoch_k"])      if "stoch_k"      in df.columns else float("nan")
-        stoch_d_val  = float(df.at[i, "stoch_d"])      if "stoch_d"      in df.columns else float("nan")
-        bb_width_val = float(df.at[i, "bb_width"])     if "bb_width"     in df.columns else float("nan")
+        adx_val        = float(df.at[i, "adx"])             if "adx"             in df.columns else 0.0
+        slope_val      = float(df.at[i, "bb_mid_slope"])    if "bb_mid_slope"    in df.columns else float("nan")
+        rsi_val        = float(df.at[i, "rsi_short"])       if "rsi_short"       in df.columns else float("nan")
+        rsi_slope_val  = float(df.at[i, "rsi_slope_short"]) if "rsi_slope_short" in df.columns else float("nan")
+        stoch_k_val    = float(df.at[i, "stoch_k"])         if "stoch_k"         in df.columns else float("nan")
+        stoch_d_val    = float(df.at[i, "stoch_d"])         if "stoch_d"         in df.columns else float("nan")
+        bb_width_val   = float(df.at[i, "bb_width"])        if "bb_width"        in df.columns else float("nan")
         pending[side] = {
             "side":                  side,
             "priority":              priority,
@@ -821,6 +875,7 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
             "adx_at_entry":          adx_val,
             "bb_mid_slope_at_entry": slope_val,
             "rsi_at_entry":          rsi_val,
+            "rsi_slope_at_entry":    rsi_slope_val,
             "stoch_k_at_entry":      stoch_k_val,
             "stoch_d_at_entry":      stoch_d_val,
             "bb_width_at_entry":     bb_width_val,

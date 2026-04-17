@@ -26,16 +26,15 @@ if str(_ROOT) not in sys.path:
 from runner.replay_csv import run, preload
 
 _PARAMS_PATH = _ROOT / "config" / "cat_params_v9.json"
-_DEFAULT_CSV = str(_ROOT / "data" / "BTCUSDT-1m-binance-2026-04-06_90d.csv")
+_DEFAULT_CSV = str(_ROOT / "data" / "BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv")
 
 # ============================================================
 # ▼ ここを変更して使う
 # ============================================================
-TARGET_PRIORITY = 21  # 詳細集計するPriority（NETソートの基準）
+TARGET_PRIORITY = 22  # 詳細集計するPriority（NETソートの基準）
 
 GRID: Dict[str, List[Any]] = {
-    "P21_ATR14_MAX": [150, 400, 600, 800, 9999],
-    "P21_ADX_MIN":   [20, 25, 30],
+    "P22_TIME_EXIT_DOWN_FACTOR": [0.25, 0.33, 0.4, 0.5],
 }
 # ============================================================
 

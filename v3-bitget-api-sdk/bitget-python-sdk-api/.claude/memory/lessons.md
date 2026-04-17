@@ -1,5 +1,42 @@
 # lessons.md — 過去の失敗・教訓（V8移行時含む）
 
+### L-67: P4 TIME_EXIT は構造的問題でパラメータチューニングでは解決不能（2026-04-17）
+
+**何が起きたか：**
+P4 TIME_EXIT(-$613/90d, 46件)を DOWN_FACTOR短縮・延長・TRAIL_EXIT・TP_PCT変更・MAX_ADDS削減で全方向試したが全て悪化。
+
+- DOWN_FACTOR短縮: 回復中トレードを早期カット → 悪化
+- DOWN_FACTOR延長: adds 蓄積が損失拡大 → 悪化
+- TRAIL_EXIT: TIME_EXIT の MFE avg 0.238% が TP(0.5%)に届かないためゲートが機能しない
+- TP_PCT変更: P4 は P4_TP_PCT 未設定のため LONG_TP_PCT=0.005 が既に最適値
+- MAX_ADDS削減: TP add=4-5 が avg+$42〜52/件 の高収益のため削減は逆効果
+
+**Why:** P4 の TIME_EXIT 損失は「MAX_ADDS=5 × 損失中も add が入る設計」に起因。
+TIME_EXIT 件数を減らすと TP add による利益も減る（同じエントリー条件でフィルターすると TP も消える）。
+
+**How to apply:**
+P4 TIME_EXIT 改善を試みる場合は MAX_ADDS の add interval や add 条件の変更を検討する。
+単純な時間・TP・フィルター系パラメータでは解決しない。
+
+---
+
+### L-66: TIME_EXIT DOWN_FACTOR は Priority 別に設定すべき（2026-04-17）
+
+**何が起きたか：**
+P22 の TIME_EXIT(-$401/90d)は「SHORT_TIME_EXIT_DOWN_FACTOR=0.5 × 480min = 240分保有」が原因。
+240分の長期保有中に adds が蓄積し per-trade 損失が -$40 に拡大していた。
+P22_TIME_EXIT_DOWN_FACTOR=0.4（192分）に設定すると NET +$219 → +$329（+$110/90d）。
+
+**Why:** SHORT 共通の DOWN_FACTOR を使っていたため P22 専用の最適化ができていなかった。
+P22 の TIME_EXIT は「深く逆行してからの切り」だったため、短めの設定が有効。
+
+**How to apply:**
+TIME_EXIT が多い Priority があれば、まず hold_min 分布を確認する（`avg hold_min ≈ BASE × DOWN_FACTOR`）。
+P{n}_TIME_EXIT_DOWN_FACTOR がなければ共通値を使っているので、グリッドサーチで個別最適化する。
+replay_csv.py は `P{n}_TIME_EXIT_DOWN_FACTOR` を優先参照する実装済み。
+
+---
+
 ### L-64: ATR14_MAXの上限設定がTP到達件数を大幅に制限していた（2026-04-16）
 
 **何が起きたか：**
