@@ -34,7 +34,7 @@ _DEFAULT_CSV = str(_ROOT / "data" / "BTCUSDT-5m-2026-01-01_04-01_combined_90d.cs
 TARGET_PRIORITY = 22  # 詳細集計するPriority（NETソートの基準）
 
 GRID: Dict[str, List[Any]] = {
-    "P22_TIME_EXIT_DOWN_FACTOR": [0.25, 0.33, 0.4, 0.5],
+    "P22_SHORT_BB_MID_SLOPE_MAX": [-5, -10, -15, -20],
 }
 # ============================================================
 
