@@ -671,8 +671,10 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
                     _bb_l = float(df.at[i, "bb_sigma2_lower"]) if "bb_sigma2_lower" in df.columns else float("nan")
                     if not (math.isnan(_bb_u) or math.isnan(_bb_l)):
                         _bb_half  = (_bb_u - _bb_l) / 2
-                        _tp_ratio = float(params.get("P1_TP_BB_RATIO", 1.0))
-                        _tp_min   = float(params.get("P1_TP_MIN_PCT", 0.0003))
+                        _tp_key_r = "P1_TP_BB_RATIO" if _entry_pri == 1 else "P21_TP_BB_RATIO"
+                        _tp_key_m = "P1_TP_MIN_PCT"  if _entry_pri == 1 else "P21_TP_MIN_PCT"
+                        _tp_ratio = float(params.get(_tp_key_r, 1.0))
+                        _tp_min   = float(params.get(_tp_key_m, 0.0003))
                         _tp_dist  = max(_bb_half * _tp_ratio, fill_p * _tp_min)
                         tp_price  = fill_p + _tp_dist if side == "LONG" else fill_p - _tp_dist
                     else:
@@ -756,8 +758,9 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
                 _prev_peak = float(p.get("mfe_peak_pct", 0.0))
                 if _fav_pct > _prev_peak:
                     p["mfe_peak_pct"] = _fav_pct
-                    _gate  = float(params.get("P1_MFE_GATE_PCT", 0.05))
-                    _ratio = float(params.get("P1_TRAIL_RATIO", 0.8))
+                    _trail_pri = int(p.get("entry_priority", 1))
+                    _gate  = float(params.get(f"P{_trail_pri}_MFE_GATE_PCT", 0.05))
+                    _ratio = float(params.get(f"P{_trail_pri}_TRAIL_RATIO", 0.8))
                     if _fav_pct >= _gate:
                         if side == "LONG":
                             p["trail_stop_price"] = _ep * (1 + _fav_pct / 100 * _ratio)

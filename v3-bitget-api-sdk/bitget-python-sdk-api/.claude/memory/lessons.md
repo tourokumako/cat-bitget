@@ -1,5 +1,54 @@
 # lessons.md — 過去の失敗・教訓（V8移行時含む）
 
+### L-86: P21 check_entry_priority はチェーン最後（7番目）。スロット競合でReplayとスタンドアロンに10倍差（2026-04-18）
+
+**何が起きたか：**
+Signal D（BB upper 上ヒゲ反落→SHORT）のスタンドアロン性能は $41/day（$3,729/90d）だったが、
+Replayでは$3.6/day（$329/90d）に終わった。原因: check_entry_priority の評価順は
+P4→P2→P22→P24→P23→P1→P21（最後）。P22/P23が先にSHORTスロットを取得するとP21は不実行。
+
+**Why:** priority番号は小さいほど優先と思いがちだが、コードの実際の if-elif 評価順が優先順位を決める。
+P22(22)がP21(21)より先に評価されている。
+
+**How to apply:**
+P21の新シグナルを検討する際は必ずcheck_entry_priorityの評価順を確認する。
+P21優先化（P22より前に移動）はP22のEV($15/件)を奪うため、トータルNET-$5,027/90dと試算済み。禁止。
+
+---
+
+### L-85: P21 MACD+TRAILのrevert時は BB動的TP と TRAIL も一緒に復元する（2026-04-18）
+
+**何が起きたか：**
+P21をMACDデッドクロスにrevertした際、TRAILとBB動的TPも除外してしまい、
+P21が+$649/90d→-$944/90dに崩壊した。
+
+**Why:** P21の+$649/90dベースラインは「MACD entry + BB動的TP(BB半幅×1.0) + TRAIL(gate=0.05%)」
+の組み合わせで達成されていた。P21_TP_PCT=0.005はparams内に存在するが実際には使われていない。
+
+**How to apply:**
+P21をrevertする際は必ずreplay_csv.pyで`if _entry_pri in (1, 21):`の両ブロック（TPとTRAIL）が
+残っていることを確認してからReplayを走らせる。P21専用パラメータ: P21_TP_BB_RATIO=1.0,
+P21_TP_MIN_PCT=0.0003, P21_MFE_GATE_PCT=0.05, P21_TRAIL_RATIO=0.8
+
+---
+
+### L-84: BB Mean Reversion シグナル（A/B/C/D）のExit設計比較 — E1（TRAIL gate=0.05%）が最優秀（2026-04-18）
+
+**何が起きたか：**
+7種のExit設計（TRAIL有無・TP幅・TIME_EXIT長さ）を4シグナル×ATR≥80で比較した結果、
+E1（TRAIL gate=0.05% ratio=0.8）が全シグナルでNET/90d最大。
+
+**結果サマリー：**
+- Signal D(SHORT): E1=+$3,729（TRAIL率92%, TIME率1.2%）, E2(Pure TP)=+$948, E6(TP×0.5)=+$554
+- TRAIL率90%超: TRAILが主要Exitとして機能。「BB動的TP×TRAILは不整合」の懸念は実測では問題なし。
+- Pure TP設計（E2/E5/E6/E7）: TIME率15-30%で全シグナルNET低下。
+
+**How to apply:**
+BB Mean Reversion系のExitは TRAIL gate=0.05% ratio=0.8 を固定ベースとして使う。
+TP幅・TIME_EXIT長さを変えてもE1を超えられない。
+
+---
+
 ### L-83: ポジションサイズ調整はExit/Entry最適化が頭打ちになった後のアプローチ（2026-04-18）
 
 **何が起きたか：**

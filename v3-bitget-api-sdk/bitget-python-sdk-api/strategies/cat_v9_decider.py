@@ -543,7 +543,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
                 and pd.notna(_p21_adx) and _p21_adx >= float(params.get("P21_ADX_MIN", 22.0))
                 and pd.notna(_p21_atr)
                 and _p21_atr >= float(params.get("P21_ATR14_MIN", 60.0))
-                and _p21_atr <= float(params.get("P21_ATR14_MAX", 150.0))):
+                and _p21_atr <= float(params.get("P21_ATR14_MAX", 9999))):
             return 21
 
     return None
