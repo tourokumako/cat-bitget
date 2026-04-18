@@ -1,5 +1,103 @@
 # lessons.md — 過去の失敗・教訓（V8移行時含む）
 
+### L-83: ポジションサイズ調整はExit/Entry最適化が頭打ちになった後のアプローチ（2026-04-18）
+
+**何が起きたか：**
+P21/P23のTIME_EXIT削減施策（MFE_STALE・PROFIT_LOCK・MAX_ADDS・TIME_EXIT短縮）を全て試したが全滅。
+ユーザーから「TP率高いPriorityのサイズを上げ・低いものを下げるバランス調整では？」と提案。
+資本効率分析（$/BTC/trade）でP1($22)・P21($17)が低く、P2($140)・P23($158)・P22($78)が高いことが判明。
+
+**Why:** Exit最適化には構造的天井がある。TP_FILLEDとTIME_EXITが同じ入り口条件から生まれると
+どの出口設計も相殺されてしまう。資本効率の再配分が有効な手段として残る。
+
+**How to apply:**
+高効率Priority（P2/P22/P23）のサイズを上げ・低効率（P1/P21）のサイズを下げるバランス調整を
+次セッションで検証する。P2_POSITION_SIZE_BTC が params に存在しない（LONG_POSITION_SIZE_BTC=0.024
+を使用）ことを先に確認してから変更する。
+
+---
+
+### L-82: P23 TIME_EXIT削減はEntry/Exit両面から試みたが全て失敗（2026-04-18）
+
+**何が起きたか：**
+P23 TIME_EXIT 31件/-$908/90d の削減を以下の全施策で試みたが全て悪化または効果ゼロ：
+① PROFIT_LOCK V2（lock_price→unreal修正版）: 全16パターン悪化（TP機会を削る）
+② MAX_ADDS削減: P23=1〜5で5→1に下げるほど悪化（多add戦略が本質）
+③ TIME_EXIT_MIN短縮: TP_FILLEDに長期保有高利益（$229/415min等）があり、短縮すると削れる
+④ ATR/BB_WIDTH フィルター強化: TP/TE が同じ入り口条件で区別不可
+
+**Why:** P23のTP_FILLEDとTIME_EXITは入り口・途中経過ともに区別が難しい設計。
+TIME_EXIT 31件の avg MFE=$36 は「一時的に順行するが逆行するトレード」で、
+これらを除去しようとするとTP_FILLED（avg $89/trade）も削れる。
+
+**How to apply:**
+P23は現状$11.6/dayが構造的上限。これ以上のExit/Entry最適化に時間をかけない。
+
+---
+
+### L-81: P21 MFE_STALE型早期カットは効果ゼロ（2026-04-18）
+
+**何が起きたか：**
+P21 TIME_EXIT 58件/-$1,096/90d に対してMFE_STALE早期カット（3d ブロック追加）を設計・グリッド実行。
+HOLD=60min, GATE=$3.0でTIME_EXIT=0件になるが、NET変化は$0.24のみ（全体NET同じ）。
+HOLD=45以下は正常TRAIL_EXITトレードを早期カットして大幅悪化。
+
+**Why:** P21 TIME_EXIT 58件は「60min時点で既に今の損失水準に達している」構造。
+早期カット（60min）と遅延カット（120min）で損失額がほぼ同じ = どこで切っても変わらない。
+
+**How to apply:**
+P21のTIME_EXIT対策はMFE_STALE型では解決できない。構造的残存損失として受け入れる。
+追加の改善余地はポジションサイズ削減（P21の資本効率が低い）で対応する。
+
+---
+
+### L-80: P1/P21 が TRAIL パラメータを共有している設計バグ（2026-04-18）
+
+**何が起きたか：**
+グリッドサーチで `P1_MFE_GATE_PCT` を変えると P21 の TIME_EXIT 件数が 3倍超に変化。
+P1（LONG）のパラメータが P21（SHORT）に影響する理由を調査したところ、
+`replay_csv.py:760` で `params.get("P1_MFE_GATE_PCT", 0.05)` を P1/P21 共通で参照していた。
+
+**Why:** P1/P21 の TRAIL ロジック（line 752-766）が `priority in (1, 21)` で共通処理され、
+gate 値も `P1_MFE_GATE_PCT` だけしか存在しない設計。
+
+**How to apply:**
+P1/P21 を独立最適化したい場合は `P21_MFE_GATE_PCT` を新設して分離する必要がある。
+現状は `P1_MFE_GATE_PCT=0.05` が最良値として確定しているため差し当たり問題なし。
+
+---
+
+### L-79: P1 無効化でスロット解放を期待したが全体NET悪化（2026-04-18）
+
+**何が起きたか：**
+P1 にエッジなし確認済みのため、ENABLE_P1_LONG=false で無効化を試みた。
+結果、P2+6件・P4+1件しか増えず（LONGスロット解放効果ほぼゼロ）、
+P1の+$215/90d を丸々失い全体 -$516/90d（-$5.8/day）悪化。
+
+**Why:** P1 はエッジなしでも TRAIL_EXIT で +$2.4/day を稼いでいた実態があった。
+「エッジなし = 無効化すべき」は誤り。実益がある限り稼働させ続けるべき。
+
+**How to apply:**
+「エッジなし」確認だけで無効化を決定しない。Replay で全体NET への影響を必ず確認してから判断する。
+
+---
+
+### L-78: P21_SL_PCT を Priority 別に独立化してTIME_EXIT損失を削減（2026-04-18）
+
+**何が起きたか：**
+P21 の SL が `SHORT_SL_PCT=0.05`（5%）で設定されており、TIME_EXIT（480min/-$50/trade）より
+先に発動することがほぼなかった。`_calc_sl_price` に priority 引数を追加し、
+`P21_SL_PCT=0.02` + `P21_TIME_EXIT_MIN=120` を採用した結果 +$186/90d（+$2.0/day）改善。
+
+**Why:** SL=5%は120min以内では発動しない距離。TIME_EXIT短縮が主効果で、
+SL=2%はセーフティネット（実際の SL_FILLED は 0件）として機能。
+
+**How to apply:**
+Priority別SLを設計する際は `P{priority}_SL_PCT` パラメータで独立管理する。
+`_calc_sl_price(side, price, params, priority)` の呼び出し形式に統一済み。
+
+---
+
 ### L-77: P21 ADX_MIN=0採用後、TIME_EXIT件数が3倍超に増加（2026-04-18）
 
 **何が起きたか：**

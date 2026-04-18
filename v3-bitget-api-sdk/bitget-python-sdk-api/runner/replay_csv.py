@@ -133,8 +133,9 @@ def _calc_tp_price(side: str, entry_price: float, adx: float, params: Dict, prio
 # ==============================================================
 # SL 価格計算
 # ==============================================================
-def _calc_sl_price(side: str, entry_price: float, params: Dict) -> float:
-    sl_pct = float(params[f"{side}_SL_PCT"])
+def _calc_sl_price(side: str, entry_price: float, params: Dict, priority: int = 0) -> float:
+    pri_key = f"P{priority}_SL_PCT"
+    sl_pct = float(params.get(pri_key, params[f"{side}_SL_PCT"]))
     ep = Decimal(str(entry_price))
     if side == "LONG":
         return float(ep * (Decimal("1") - Decimal(str(sl_pct))))
@@ -218,14 +219,12 @@ def _check_exits_replay(pos: Dict, mark_price: float, df: pd.DataFrame, i: int,
         if (mfe_usd >= float(params.get("P22_SHORT_PROFIT_LOCK_ARM_USD", 22.0))
                 and unreal < float(params.get("P22_SHORT_PROFIT_LOCK_USD", 8.0))):
             return "PROFIT_LOCK"
-    # 6a. P23 SHORT PROFIT_LOCK V2
+    # 6a. P23 SHORT PROFIT_LOCK V2 (MFE-drawdown type: add_count非依存)
     if side == "SHORT" and priority == 23 and int(params.get("P23_SHORT_PROFIT_LOCK_ENABLE", 1)):
         _arm  = float(params.get("P23_SHORT_PROFIT_LOCK_ARM_USD", 15.0))
         _lock = float(params.get("P23_SHORT_PROFIT_LOCK_USD", 5.0))
-        if mfe_usd >= _arm:
-            _lock_price = entry_p - (_lock / size_btc)
-            if mark_price >= _lock_price:
-                return "PROFIT_LOCK"
+        if mfe_usd >= _arm and unreal < _lock:
+            return "PROFIT_LOCK"
     # 6b. P22 SHORT add==5
     if side == "SHORT" and priority == 22 and add_count == 5:
         _lock_price = entry_p - (10.0 / size_btc)
@@ -688,7 +687,7 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
                     "add_count":             1,
                     "size_btc":              unit_size,
                     "tp_price":              tp_price,
-                    "sl_price":              _calc_sl_price(side, fill_p, params),
+                    "sl_price":              _calc_sl_price(side, fill_p, params, _entry_pri),
                     "mfe_usd":               0.0,
                     "mae_usd":               0.0,
                     "max_high":              float("-inf"),
@@ -716,7 +715,7 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
                 new_avg = (old_p * old_sz + fill_p * unit_size) / new_sz
                 new_cnt = int(p["add_count"]) + 1
                 tp_price = _calc_tp_price(side, new_avg, adx_val, params, p["entry_priority"])
-                sl_price = _calc_sl_price(side, new_avg, params) if new_cnt >= 2 else None
+                sl_price = _calc_sl_price(side, new_avg, params, int(p.get("entry_priority", 0))) if new_cnt >= 2 else None
                 p.update({
                     "entry_price": new_avg,
                     "add_count":   new_cnt,

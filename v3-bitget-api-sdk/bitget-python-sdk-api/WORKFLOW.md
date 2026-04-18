@@ -246,7 +246,7 @@ Step 10. Gitコミット     — ユーザーの明示OK後のみ  ← STOP
 | P22-SHORT | 検証中 | ✅改善済み | TIME_EXIT 10件/-$291（残存） | NET≥$0 ✅(+$329/90d) |
 | P4-LONG | 検証中 | 保留（構造的限界） | TIME_EXIT 46件/-$613（MAX_ADDS設計由来） | NET≥$0 ✅(+$348/90d) |
 | P1-LONG | V9+MACD | ✅改善済み | TIME_EXIT 7件/-$318（構造的残存） | NET>$0 ✅(+$2.5/day) |
-| P21-SHORT | V9+MACD | ✅改善済み | TIME_EXIT 7件/-$222（構造的残存） | NET>$0 ✅(+$3.9/day) |
+| P21-SHORT | V9+MACD | 停滞トレード対策中 | TIME_EXIT 58件/-$1,096（SL・TRAIL不発の停滞） | NET>$0 ✅(+$7.2/day) |
 
 ---
 
@@ -264,7 +264,7 @@ Step 10. Gitコミット     — ユーザーの明示OK後のみ  ← STOP
 ## 目標達成ロードマップ（2026-04-17改訂）
 
 ```
-Goal: $60/day（現状 $32.4/day → 不足 $27.6/day）
+Goal: $60/day（現状 $43.0/day → 不足 $17.0/day）
 
 【設計フェーズ D-1 試算（2026-04-17）】
   理論最大: $111.5/day（各Priority件数を最大化した場合）
@@ -287,60 +287,76 @@ Step 3: 180日Replay → 過学習チェック
 
 ---
 
-## 現在地: P21 TIME_EXIT削減フェーズ
+## 現在地: ポジションサイズ バランス調整フェーズ
 
-**2026-04-18 最新ベースライン（P21_ADX_MIN=0採用後）:**
+**2026-04-18 最新ベースライン（P21_SL_PCT=0.02・P21_TIME_EXIT_MIN=120採用後）:**
 
 | Priority | 件数/90d | NET/90d | NET/day | TP率 |
 |---------|---------|---------|---------|------|
 | P2-LONG | 170件 | **+$1,271** | **+$14.1** | 59% |
 | P4-LONG | 106件 | +$346 | +$3.8 | 51% |
-| P22-SHORT | 47件 | +$349 | +$3.9 | 64% |
+| P22-SHORT | 48件 | +$344 | +$3.8 | 62% |
 | P23-SHORT | 64件 | **+$1,048** | **+$11.6** | 38% |
 | P1-LONG | 163件 | +$215 | +$2.4 | 2% |
-| P21-SHORT | **611件** | +$359 | +$4.0 | 8% |
-| **全体合算** | **1,161件** | **+$3,588** | **+$39.9** | |
+| P21-SHORT | **651件** | **+$649** | **+$7.2** | 7% |
+| **全体合算** | **1,202件** | **+$3,872** | **+$43.0** | |
 
 **今セッション作業結果（2026-04-18）:**
 
 | Priority | 施策 | 結果 |
 |---------|-----|-----|
-| P23-SHORT | favorable move分布計測（p23_exit_analysis.py作成） | ✅ D-4設計根拠を取得 |
-| P23-SHORT | 型を「中スイング」に再定義 | ✅ P23_TP_PCT=0.012採用 (+$3.6/day) |
-| 全体 | スキャル/スイング型分類を廃止 | ✅ WORKFLOW・CLAUDE.md更新済み |
-| P1/P21 | MACDエッジ検証（p1p21_edge_check.py作成） | ✅ P1エッジなし・P21エッジあり確認 |
-| P21 | ADX_MIN=0（フィルター撤廃）グリッドサーチ | ✅ 採用 (+$3.6/day) |
+| P21 | MFE_STALE早期カット（3dブロック）グリッド25パターン | ❌ 不採用（効果ゼロ・削除済み） |
+| P23 | PROFIT_LOCK V2 再設計（unreal型）グリッド16パターン | ❌ 不採用（全パターン悪化） |
+| P23 | MAX_ADDS削減グリッド（P23_MAX_ADDS=1〜5） | ❌ 不採用（全パターン悪化） |
+| P23 | TIME_EXIT_MIN短縮検討 | ❌ 不採用（長期保有TP削れる） |
+| P2 | STOCH_K緩和・件数増加検討 | ❌ 不採用（30-40帯TP率11%） |
+| 全体 | 資本効率分析（$/BTC/trade）実施 | ✅ 次セッションへ引継ぎ |
 
 **P1/P21 構造的発見（2026-04-18確定）:**
 
 | 発見 | 内容 |
 |------|------|
 | P1-LONG エッジなし | ゴールデンクロスは全TP/SL組合せでEV負。TRAIL_EXIT頼みで辛うじて+$2.4/day |
-| P21-SHORT エッジあり | デッドクロスはTP=1%/SL=2%でEV+$4.39。ADXフィルターなしで11.3件/day |
+| P21-SHORT エッジあり | MACDデッドクロス + TRAIL_EXIT設計で+$7.2/day。改善余地あり |
 | P21_TP_PCT 無効 | TRAIL_EXIT（gate=0.05%）が先に発動するためTP到達不可。TP_PCTはデッドコード |
-| TRAIL_EXIT必須 | P1_MFE_GATE_PCT=0.05（デフォルト）が最良。緩和すると全体NET急悪化 |
-| P21 TIME_EXIT問題 | ADX=0採用後、TIME_EXIT 23件/-$1,159に増加（ADX低局面で480min引っ張られる） |
+| P1_MFE_GATE_PCT 共有バグ | P1/P21 が同一パラメータ参照（replay_csv.py:760）。独立化は将来課題 |
+| P1 無効化は逆効果 | P1 削除で全体-$5.8/day。LONGスロット解放効果は微小（P2+6件のみ） |
+| P21 TIME_EXIT残存問題 | 58件/-$1,096/90d。SL=2%は120min以内に発動しない（停滞トレード）|
 
-**次のアクション（セッション開始直後）:**
+**次のアクション（次セッション開始直後）:**
 ```
-Step 0: $60/day - $39.9 = -$20.1/day 不足
+Step 0: $60/day - $43.0 = -$17.0/day 不足
 
-優先順位:
-① P21 TIME_EXIT削減（改善サイクル Step 2〜4）
-   - 現状: 23件/-$1,159（ADX低局面でTIME_EXITまで保有）
-   - 仮説: P21_TIME_EXIT_MIN短縮（480→120〜240min）で早期カット
-   - グリッド: P21_TIME_EXIT_MIN × P21_ADX_MIN（低ADX閾値でTIME_EXIT対象絞り込み）
+【確定事項】
+- P21 MFE_STALE: 効果ゼロ確認（構造的残存損失）
+- P23 TIME_EXIT: PROFIT_LOCK/MAX_ADDS/TIME_EXIT短縮 全滅（$11.6/day が上限）
+- P2 件数増加: STOCH_K緩和無効（30-40帯TP率11%）
 
-② P1-LONG無効化検討
-   - エッジなし確認済み・TRAIL_EXIT頼みで+$2.4/day
-   - 無効化でLONG枠をP2/P4に解放できるか検証
+【資本効率分析結果（2026-04-18）】
+  Priority   $/BTC/trade  現在SIZE  方向
+  P1-LONG      +$22      0.06 BTC  ↓ 下げ候補（低効率）
+  P2-LONG     +$140      0.024 BTC ↑ 上げ候補（高効率・P2_POSITION_SIZE_BTCがparams未定義）
+  P4-LONG      +$63      0.024 BTC  → 維持
+  P21-SHORT    +$17      0.06 BTC  ↓ 下げ候補（最低効率）
+  P22-SHORT    +$78      0.091 BTC  ↑ 上げ候補（per-add 0.024→引き上げ余地）
+  P23-SHORT   +$158      0.104 BTC  ↑ 上げ候補（per-add 0.024→引き上げ余地）
+
+【次セッション 優先タスク】
+① P2_POSITION_SIZE_BTC を params に追加（現在 LONG_POSITION_SIZE_BTC=0.024 を使用）
+   + P1_POSITION_SIZE_BTC 削減 + P21_POSITION_SIZE_BTC 削減
+   → バランス調整 Replay で全体NET確認
+   → 採用基準: 全体NET > $3,872（ベースライン）
+
+② 採用後: 180日Replay で過学習チェック
 ```
 
 **現在のファイル状態:**
-- `config/cat_params_v9.json`: P21_ADX_MIN=0 更新済み（2026-04-18）
-- `runner/grid_search.py`: TARGET=21, GRID=P1_MFE_GATE_PCT×P21_TP_PCT×P21_ADX_MIN（次回更新要）
-- `runner/p23_exit_analysis.py`: P23 favorable move分析スクリプト（新規作成）
-- `runner/p1p21_edge_check.py`: P1/P21 MACDエッジ検証スクリプト（新規作成）
+- `config/cat_params_v9.json`: P21_SL_PCT=0.02, P21_TIME_EXIT_MIN=120, P23_SHORT_PROFIT_LOCK_ENABLE=0
+- `runner/replay_csv.py`: _calc_sl_price に priority 引数追加済み、P23 PROFIT_LOCK V2 unreal型に修正済み
+- `runner/grid_search.py`: TARGET=23, GRID=P23_MAX_ADDS（次回: ポジサイズグリッドに更新要）
+- `runner/p23_exit_analysis.py`: P23 favorable move分析スクリプト
+- `runner/p1p21_edge_check.py`: P1/P21 MACDエッジ検証スクリプト
+- `runner/macd_edge_check.py`: P1/P21 edge_check（POSITION_BTC=0.06, SL=3%, TRAIL付き）
 
 ---
 
@@ -375,20 +391,22 @@ Step 0: $60/day - $39.9 = -$20.1/day 不足
 | P1-LONG | P1_ADX_MIN | **30.0** | ✅2026-04-16更新 |
 | P21-SHORT | P21_ATR14_MAX | **9999** | ✅2026-04-16更新 |
 | P21-SHORT | P21_ADX_MIN | **0** | ✅2026-04-18更新（ADXフィルター撤廃） |
+| P21-SHORT | **P21_SL_PCT** | **0.02** | ✅2026-04-18新設（Priority別SL対応）|
+| P21-SHORT | **P21_TIME_EXIT_MIN** | **120** | ✅2026-04-18更新（480→120）|
 
 ---
 
-## 現在のベースライン（2026-04-18）
+## 現在のベースライン（2026-04-18 最終）
 
 | Priority | 件数/90d | NET | TP率 | 主な損失 |
 |---------|---------|-----|------|---------|
 | P2-LONG | 170 | **+$1,271** | 59% | MFE_STALE 38件/-$245 |
 | P4-LONG | 106 | +$346 | 51% | TIME_EXIT 46件/-$617（構造的） |
-| P22-SHORT | 47 | +$349 | 64% | TIME_EXIT 8件/-$386 |
+| P22-SHORT | 48 | +$344 | 62% | TIME_EXIT 8件/-$386 |
 | P23-SHORT | 64 | **+$1,048** | 38% | TIME_EXIT 31件/-$908 |
 | P1-LONG | 163 | +$215 | 2% | TIME_EXIT 6件/-$289・エッジなし確認済み |
-| P21-SHORT | **611** | +$359 | 8% | TIME_EXIT **23件/-$1,159**（ADX=0後増加・次の課題） |
-| **全体** | **1,161件（12.9件/day）** | **+$3,588/$39.9/day** | | |
+| P21-SHORT | **651** | **+$649** | 7% | TIME_EXIT 58件/-$1,096（停滞トレード・次の課題） |
+| **全体** | **1,202件（13.4件/day）** | **+$3,872/$43.0/day** | | |
 
 ---
 
