@@ -237,16 +237,16 @@ Step 10. Gitコミット     — ユーザーの明示OK後のみ  ← STOP
 
 ---
 
-## Priority別ステータス（毎サイクル更新）
+## Priority別ステータス（2026-04-20 180d分析後 全面見直し）
 
-| Priority | 型 | 現在フェーズ | 未解決問題 | ゴール |
-|---------|-----|------------|---------|-------|
-| P2-LONG | 検証中 | ✅完了 | TIME_EXIT 11件/-$261（構造的残存） | NET≥$0 ✅(+$945/90d) |
-| P23-SHORT | 検証中 | TP/TIME_EXIT最適化中 | TIME_EXIT 12件/-$321, MFE_STALE 17件/-$209 | NET改善・ベースライン比+ |
-| P22-SHORT | 検証中 | ✅改善済み | TIME_EXIT 10件/-$291（残存） | NET≥$0 ✅(+$329/90d) |
-| P4-LONG | 検証中 | 保留（構造的限界） | TIME_EXIT 46件/-$613（MAX_ADDS設計由来） | NET≥$0 ✅(+$348/90d) |
-| P1-LONG | V9+MACD | ✅改善済み | TIME_EXIT 7件/-$318（構造的残存） | NET>$0 ✅(+$2.5/day) |
-| P21-SHORT | V9+MACD | 停滞トレード対策中 | TIME_EXIT 58件/-$1,096（SL・TRAIL不発の停滞） | NET>$0 ✅(+$7.2/day) |
+| Priority | 後半90d/day | 前半90d/day | 180d/day | 判定 |
+|---------|-----------|-----------|---------|------|
+| P23-SHORT | +$11.6 | +$1.8 | +$6.7 | ✅ 両期間プラス（唯一の安定） |
+| P2-LONG | +$14.1 | **-$15.7** | -$0.8 | ❌ 過学習崩壊・再設計候補 |
+| P22-SHORT | +$3.8 | **-$5.4** | -$0.8 | ⚠️ ADX上限修正で救済可能性あり |
+| P4-LONG | +$3.8 | **-$5.4** | -$0.8 | ❌ 過学習崩壊・再設計候補 |
+| P1-LONG | +$2.4 | **-$7.2** | -$2.4 | ❌ エッジなし確認済み・再設計確定 |
+| P21-SHORT | +$7.2 | **-$5.0** | +$1.1 | ⚠️ EXIT設計見直し要 |
 
 ---
 
@@ -261,103 +261,78 @@ Step 10. Gitコミット     — ユーザーの明示OK後のみ  ← STOP
 
 ---
 
-## 目標達成ロードマップ（2026-04-17改訂）
+## 目標達成ロードマップ（2026-04-20 全面改訂）
 
 ```
-Goal: $60/day（現状 $43.0/day → 不足 $17.0/day）
+Goal: NET $60/day（180日・365日 両期間で安定）
 
-【設計フェーズ D-1 試算（2026-04-17）】
-  理論最大: $111.5/day（各Priority件数を最大化した場合）
-  → $60/day は達成可能。問題は件数制約。
+【根本方針（2026-04-20 確定）】
+  - 後半90日のみの最適化は過学習。180日崩壊を確認（-$3,325/前半90d）
+  - 採用基準: 前半90d EV>0 AND 後半90d EV>0（両期間でシングルアドEV正）
+  - 複数シグナル × ポジション分散でリスク管理（1本集中禁止）
+  - 最終検証: 365日Replay で GO/NO（ここでの再チューニング禁止）
 
-Step 1: 全Priority 設計フェーズ（D-1〜D-4）← 現在地
+【検証データセット】
+  開発・チューニング: 前半90d（2025/10-12）+ 後半90d（2026/01-04）
+  中間チェック:      180d（2025/10-2026/04）
+  最終GO/NO判定:     365d（2025/04-2026/04）← 2026-04-20 新規追加
+
+Step 1: P23-SHORT 最適化（前半TIME_EXIT削減）← 現在地
 ────────────────────────────────────────────
-  目標: 各Priorityの Entry/Exit ロジックを価格挙動から逆算して再設計
+  現状: 前半90d +$1.8/day / 後半90d +$11.6/day
+  課題: 前半TIME_EXIT 40件/-$1,315 が大きい
+  目標: 前半EV>0 AND 後半EV>0 を維持しつつ前半強化
 
-  優先順位:
-    ① P2-LONG  → 件数1.2→1.9/day ✅採用済み（ATR_MIN=80）
-    ② P22-SHORT → slope緩和は❌（システム悪化）→ EXIT最適化へ
-    ③ P23-SHORT → D-2分析へ（0.9→3/day が目標）
-    ④ P1/P21    → per-trade NET改善（TRAIL_EXIT設計見直し）
-    ⑤ P4-LONG  → Entry/Exit全体を再確認
+Step 2: P3新規作成（P23-LONGミラー）
+  候補: stoch golden cross + ADX[30,40) + ATR≥150 + slope>+10 + TP=0.5%/SL=1.0%
+  現状: 前半EV+$1.74(70%WR) / 後半EV-$0.28(65%WR) → 後半EV>0に持っていけるか検証
+  ゲート: 前半・後半 両方EV>0 達成後のみ採用
 
-Step 2: 全Priority採用後 → 90日Replay → NET≥$5,400検証
-Step 3: 180日Replay → 過学習チェック
+Step 3: 既存Priority 180dエッジ検証（高速edge_checkで確認）
+  優先順: P22-SHORT（ADX上限修正候補）→ P21-SHORT → P2-LONG → P4-LONG → P1-LONG
+
+Step 4: 修正可能 → パラメータ調整
+Step 5: 修正不可 → 新規設計フロー（N-1〜N-4）で再設計
+
+Step 6: 全採用Priority → 180d Replay 中間チェック
+Step 7: 365d Replay 最終GO/NO判定（再チューニング禁止）
 ```
 
 ---
 
-## 現在地: ポジションサイズ バランス調整フェーズ
+## 現在地: Step 1（P23-SHORT 最適化）← 2026-04-20
 
-**2026-04-18 最新ベースライン（P21_SL_PCT=0.02・P21_TIME_EXIT_MIN=120採用後）:**
-
-| Priority | 件数/90d | NET/90d | NET/day | TP率 |
-|---------|---------|---------|---------|------|
-| P2-LONG | 170件 | **+$1,271** | **+$14.1** | 59% |
-| P4-LONG | 106件 | +$346 | +$3.8 | 51% |
-| P22-SHORT | 48件 | +$344 | +$3.8 | 62% |
-| P23-SHORT | 64件 | **+$1,048** | **+$11.6** | 38% |
-| P1-LONG | 163件 | +$215 | +$2.4 | 2% |
-| P21-SHORT | **651件** | **+$649** | **+$7.2** | 7% |
-| **全体合算** | **1,202件** | **+$3,872** | **+$43.0** | |
-
-**今セッション作業結果（2026-04-18 P1/P21再構築セッション）:**
-
-| Priority | 施策 | 結果 |
-|---------|-----|-----|
-| P21 | Signal D（BB upper 上ヒゲ反落）に変更 | ❌ Replay $329/90d（スロット競合でスタンドアロン1/10に圧縮） |
-| P21 | BB Exit設計7パターン×4シグナル比較 | ✅ E1（TRAIL gate=0.05%）が全シグナルで最優秀。BB動的TP+TRAILが正解 |
-| P21 | ATR14_MIN スキャン（0/60/80/100/120/150/200） | ATR≥60が最大NET。現行設定が既に最適 |
-| P21 | P21優先度UP（P22より前） | ❌ 即却下。P22を奪う損失-$6,064 vs P21増益+$1,037 = -$5,027/90d |
-| P21 | MACDデッドクロスに復元（Option B） | ✅ +$649/90d = ベースライン復元確認 |
-| 全体 | L-80バグ修正（P1/P21 TRAIL params共有→独立化） | ✅ 修正済み。P21専用: MFE_GATE_PCT=0.05, TRAIL_RATIO=0.8 |
-
-**P1/P21 構造的発見（2026-04-18 更新）:**
+**180d分析で判明した構造的問題（2026-04-20）:**
 
 | 発見 | 内容 |
 |------|------|
-| P1-LONG エッジなし | ゴールデンクロスは全TP/SL組合せでEV負。TRAIL_EXIT頼みで辛うじて+$2.4/day |
-| P21-SHORT エッジあり | MACDデッドクロス + BB動的TP(×1.0) + TRAIL(gate=0.05%) = +$7.2/day。P21_TP_PCT=0.005は未使用 |
-| P21 評価順は最後（7番目）| check_entry_priority の評価順: P4→P2→P22→P24→P23→P1→P21 |
-| P21 Signal D スタンドアロン | $41/day相当だがReplay $3.6/day（P22/P23がSHORTスロット先占） |
-| L-80バグ修正済み | P21 TRAIL params 独立化完了（P21_MFE_GATE_PCT=0.05, P21_TRAIL_RATIO=0.8） |
-| P1 無効化は逆効果 | P1削除で全体-$5.8/day。LONGスロット解放効果は微小（P2+6件のみ） |
-| P21 TIME_EXIT残存問題 | 58件/-$1,096/90d。構造的残存（MACD+TRAIL設計の限界） |
+| 全Priority 過学習 | 後半90d最適化パラメータが前半90dで崩壊。前半-$3,325/90d |
+| P23のみ安定 | 両期間でプラス（前半+$159 / 後半+$1,048）|
+| TIME_EXIT が最大損失 | 180d合計-$12,396。add≥2のTIME_EXITが致命的 |
+| P2シグナルエッジ依存 | TP率32%（前半）↔59%（後半）と市場レジームで大幅変動 |
 
-**次のアクション（次セッション開始直後）:**
+**P23 180dエッジ検証結果（シングルアド・p23_long_edge_check.py）:**
+
+| シグナル | 前半EV/件 | 後半EV/件 | 採用判定 |
+|---------|---------|---------|---------|
+| P23-SHORT TP=1.0%/SL=2.0% | +$2.81 | +$3.09 | ✅ 両期間プラス |
+| P23-SHORT TP=1.2%/SL=2.0% | +$2.17 | +$4.04 | ✅ 両期間プラス（現採用値） |
+| P23-LONG TP=0.5%/SL=1.0% | +$1.74 | -$0.28 | ❌ 後半わずかにマイナス |
+
+**次のアクション（Step 1: P23最適化）:**
 ```
-Step 0: $60/day - $43.0 = -$17.0/day 不足
-
-【確定事項】
-- P21 MFE_STALE: 効果ゼロ確認（構造的残存損失）
-- P23 TIME_EXIT: PROFIT_LOCK/MAX_ADDS/TIME_EXIT短縮 全滅（$11.6/day が上限）
-- P2 件数増加: STOCH_K緩和無効（30-40帯TP率11%）
-
-【資本効率分析結果（2026-04-18）】
-  Priority   $/BTC/trade  現在SIZE  方向
-  P1-LONG      +$22      0.06 BTC  ↓ 下げ候補（低効率）
-  P2-LONG     +$140      0.024 BTC ↑ 上げ候補（高効率・P2_POSITION_SIZE_BTCがparams未定義）
-  P4-LONG      +$63      0.024 BTC  → 維持
-  P21-SHORT    +$17      0.06 BTC  ↓ 下げ候補（最低効率）
-  P22-SHORT    +$78      0.091 BTC  ↑ 上げ候補（per-add 0.024→引き上げ余地）
-  P23-SHORT   +$158      0.104 BTC  ↑ 上げ候補（per-add 0.024→引き上げ余地）
-
-【次セッション 優先タスク】
-① P2_POSITION_SIZE_BTC を params に追加（現在 LONG_POSITION_SIZE_BTC=0.024 を使用）
-   + P1_POSITION_SIZE_BTC 削減 + P21_POSITION_SIZE_BTC 削減
-   → バランス調整 Replay で全体NET確認
-   → 採用基準: 全体NET > $3,872（ベースライン）
-
-② 採用後: 180日Replay で過学習チェック
+P23-SHORTの前半TIME_EXIT（40件/-$1,315）を削減する施策を検討
+  → MAX_ADDS削減 or TIME_EXIT_MIN短縮 をgrid_searchで探索
+  → 採用基準: 前半EV>0 AND 後半EV>0 を維持しつつ前半NET改善
 ```
 
-**現在のファイル状態:**
+**現在のファイル状態（2026-04-20）:**
 - `config/cat_params_v9.json`: P21_SL_PCT=0.02, P21_TIME_EXIT_MIN=120, P23_SHORT_PROFIT_LOCK_ENABLE=0
-- `runner/replay_csv.py`: _calc_sl_price に priority 引数追加済み、P23 PROFIT_LOCK V2 unreal型に修正済み
-- `runner/grid_search.py`: TARGET=23, GRID=P23_MAX_ADDS（次回: ポジサイズグリッドに更新要）
-- `runner/p23_exit_analysis.py`: P23 favorable move分析スクリプト
-- `runner/p1p21_edge_check.py`: P1/P21 MACDエッジ検証スクリプト
-- `runner/macd_edge_check.py`: P1/P21 edge_check（POSITION_BTC=0.06, SL=3%, TRAIL付き）
+- `runner/replay_csv.py`: _calc_sl_price に priority 引数追加済み
+- `runner/p23_long_edge_check.py`: P23-LONG/SHORT エッジ検証スクリプト（新規）
+- `runner/fetch_ohlcv.py`: Binance公開APIデータ取得スクリプト（新規）
+- `data/BTCUSDT-5m-2025-04-01_03-31_365d.csv`: 365日データ（新規取得）
+- `data/BTCUSDT-5m-2025-10-03_12-31_first90d.csv`: 前半90日（生成済み）
 
 ---
 
@@ -414,13 +389,32 @@ Step 0: $60/day - $43.0 = -$17.0/day 不足
 ## Replayコマンド
 
 ```bash
-# 90日（メイン検証）
+# 後半90日（開発・チューニング用）
 echo "=====🚀 RUN START $(date) =====" && \
 cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
 python3 runner/replay_csv.py data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv
 
-# 180日（過学習チェック用）
+# 前半90日（開発・チューニング用）
+echo "=====🚀 RUN START $(date) =====" && \
+cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
+python3 runner/replay_csv.py data/BTCUSDT-5m-2025-10-03_12-31_first90d.csv
+
+# 180日（中間チェック用）
 echo "=====🚀 RUN START $(date) =====" && \
 cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
 python3 runner/replay_csv.py data/BTCUSDT-5m-2025-10-03_04-01_combined_180d.csv
+
+# 365日（最終GO/NO判定・再チューニング禁止）
+echo "=====🚀 RUN START $(date) =====" && \
+cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
+python3 runner/replay_csv.py data/BTCUSDT-5m-2025-04-01_03-31_365d.csv
+```
+
+## エッジ検証コマンド（採用前に必ず実行）
+
+```bash
+# P23-LONG/SHORT エッジ確認（前半）
+python3 runner/p23_long_edge_check.py data/BTCUSDT-5m-2025-10-03_12-31_first90d.csv
+# P23-LONG/SHORT エッジ確認（後半）
+python3 runner/p23_long_edge_check.py data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv
 ```
