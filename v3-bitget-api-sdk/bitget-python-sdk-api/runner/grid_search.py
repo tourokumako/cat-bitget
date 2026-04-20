@@ -34,7 +34,18 @@ _DEFAULT_CSV = str(_ROOT / "data" / "BTCUSDT-5m-2026-01-01_04-01_combined_90d.cs
 TARGET_PRIORITY = 23  # 詳細集計するPriority（NETソートの基準）
 
 GRID: Dict[str, List[Any]] = {
-    "P23_MAX_ADDS": [1, 2, 3, 4, 5],
+    "P23_ADX_MAX":            [45, 50, 55],
+    "P23_MFE_STALE_HOLD_MIN": [30, 45, 60],
+}
+
+# TARGET_PRIORITY以外を無効化するフラグ（単一Priority精度調整時に使う）
+# 空dictにすれば全Priority有効（通常運用）
+FIXED_PARAMS: Dict[str, Any] = {
+    "ENABLE_P2_LONG":   False,
+    "ENABLE_P4_LONG":   False,
+    "ENABLE_P22_SHORT": False,
+    "ENABLE_P1_LONG":   False,
+    "ENABLE_P21_SHORT": False,
 }
 # ============================================================
 
@@ -71,9 +82,17 @@ def main(csv_path: str) -> None:
     rows = []
     for idx, combo in enumerate(combos, 1):
         params = copy.deepcopy(base_params)
+        params.update(FIXED_PARAMS)
         label  = {}
         for k, v in zip(keys, combo):
-            params[k] = v
+            if "." in k:
+                outer, inner = k.split(".", 1)
+                if outer in params and isinstance(params[outer], dict):
+                    params[outer][inner] = v
+                else:
+                    params[k] = v
+            else:
+                params[k] = v
             label[k]  = v
 
         trades = run(csv_path, params, _preloaded=preloaded)

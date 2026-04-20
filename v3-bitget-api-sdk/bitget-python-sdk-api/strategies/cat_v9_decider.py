@@ -412,7 +412,8 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
 
     entry_ok_flag = bool(row.get("entry_ok_long", True))
 
-    if pullback_ok and trend_ok and cont_ok and candle_ok and entry_ok_flag \
+    if params.get("ENABLE_P4_LONG", True) \
+            and pullback_ok and trend_ok and cont_ok and candle_ok and entry_ok_flag \
             and get("rsi_short") <= float(params.get("P4_RSI_MAX", 100.0)) \
             and get("atr_14") >= float(params.get("P4_ATR14_MIN", 0.0)) \
             and get("atr_14") <= float(params.get("P4_ATR14_MAX", 999999.0)) \
@@ -435,7 +436,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
         and get("close") >= get("open")
     )
 
-    if (stoch_cross
+    if params.get("ENABLE_P2_LONG", True) and (stoch_cross
             and get("stoch_k") >= float(params.get("P2_STOCH_K_MIN", 0.0))
             and get("adx") >= float(params.get("P2_ADX_MIN", 0.0))
             and get("rsi_short") >= float(params.get("P2_RSI_MIN", 0.0))
@@ -460,13 +461,13 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
     _p22_bb_width_val = df.at[i, "bb_width"] if "bb_width" in df.columns else np.nan
     _p22_bb_width_ok = pd.isna(_p22_bb_width_val) or (float(_p22_bb_width_val) <= _p22_bb_width_max)
 
-    if core_gate and probe["adx_ok_p22"] and probe["risk_ok_p22"] and _p22_slope_ok and _p22_bb_width_ok:
+    if params.get("ENABLE_P22_SHORT", True) and core_gate and probe["adx_ok_p22"] and probe["risk_ok_p22"] and _p22_slope_ok and _p22_bb_width_ok:
         return 22
 
     _p22_adx_relax_min = float(params.get("P22_ADX_RELAX_MIN", 0.0))
     _p22_adx_val = df.at[i, "adx"] if "adx" in df.columns else np.nan
     _p22_adx_relax_ok = pd.isna(_p22_adx_val) or (float(_p22_adx_val) >= _p22_adx_relax_min)
-    if (int(params.get("P22_RELAX_FINAL", 1)) == 1 and core_gate and _p22_slope_ok and _p22_bb_width_ok
+    if (params.get("ENABLE_P22_SHORT", True) and int(params.get("P22_RELAX_FINAL", 1)) == 1 and core_gate and _p22_slope_ok and _p22_bb_width_ok
             and _p22_adx_relax_ok):
         return 22
 
@@ -501,6 +502,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
         and df["stoch_k"].iloc[i - 2] > df["stoch_d"].iloc[i - 2]
         and df["stoch_k"].iloc[i - 1] > df["stoch_d"].iloc[i - 1]
         and df["stoch_k"].iloc[i] < df["stoch_d"].iloc[i]
+        and df["stoch_k"].iloc[i] <= float(params.get("P23_STOCH_K_MAX", 999.0))
         and (df["stoch_d"].iloc[i] - df["stoch_k"].iloc[i]) > 0.3
         and df["close"].iloc[i] <= df["open"].iloc[i]
         and df["bb_mid_slope"].iloc[i] < float(params.get("P23_BB_MID_SLOPE_MAX", 0.0))
