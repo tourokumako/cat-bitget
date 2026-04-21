@@ -383,38 +383,51 @@ Goal: NET $60/day
 
 ---
 
-## 現在地: レジーム切り替え実装 + downtrend最適化 ← 2026-04-21
+## 現在地: レジーム切り替えReplay確立 → 各レジーム最適化フェーズ ← 2026-04-21
 
-**2026-04-21 セッションで確定した事項:**
+**2026-04-21 セッション2で確定した事項:**
 
 | 発見 | 内容 |
 |------|------|
-| 前半/後半区切りは相場レジームと無関係 | 単純な時系列3か月区切り。SMAベースの分析が正しい |
-| MA70がP23の性能分離に最適 | downtrend $8.03/day vs uptrend -$3.70/day（MA70基準）|
-| 200SMAは切り替え基準として不適切 | データで確認済み。MA70を採用 |
-| P23はdowntrendで圧倒的 | $8.03/day（MA70 downtrend）|
-| P4はrangeでのみプラス | range $0.34/day。uptrend -$1.55/dayと逆相関 |
-| P21はrange件数爆発 | range -$6.05/day（2189件）。レジーム切り替えで無効化が必須 |
+| MA70レジーム切り替えReplay実装完了 | replay_csv.py に `--regime` フラグ追加。`--summary results/xxx.csv` で再実行不要 |
+| 365d切り替えベースライン: $5.97/day | 全Priority固定より大幅改善（P21排除効果）|
+| P4はRANGEで赤字・MIXEDで黒字 | RANGE -$0.41/day vs MIXED +$0.39/day。純レンジでP4は機能しない |
+| P3のdowntrend割り当てが問題 | SL_FILLED 10件 -$317。downtrend×LONGの構造的矛盾 |
+| P23 TIME_EXIT が最大損失源 | 65件 -$1,385（-$3.80/day）。avgATR=268 vs TP avgATR=339。差-110がフィルター候補 |
+| 月別分散が大きい | 2025-12: -$10.83/day ↔ 2026-02: +$26.65/day。安定性に課題 |
+
+### レジーム別ベースライン（365d・MA70切り替えON）
+
+| レジーム | 件数 | /day | 有効Priority |
+|---------|------|------|-------------|
+| DOWNTREND | 487件 | **+$5.12** | P2/P3/P23 |
+| RANGE | 120件 | **-$0.41** | P4 |
+| UPTREND | 34件 | **+$0.88** | P24 |
+| MIXED | 26件 | **+$0.39** | P4 |
+| **合計** | **667件** | **+$5.97** | |
 
 **次のアクション（次セッション）:**
 ```
-Step 1: MA70切り替えロジック実装
-  - run_once_v9.py に日足MA70+ADX計算 → Priority セット切り替えを実装
-  - regime_analysis.py でテスト確認
+Step 2-A: P23 TIME_EXIT削減（最優先・最大レバー）
+  - ATR >= 270〜300 フィルター追加のグリッドサーチ（180d・2段階法）
+  - 推定効果: TIME_EXIT 65件削減 → +$3/day以上の改善余地
+  - グリッド軸: P23_ATR14_MIN（現150 → [200, 250, 300, 350]）
 
-Step 2: downtrend セット最適化
-  - P23: 現状 $8.03/day（ベースライン）→ さらに改善余地を探る
-  - P2: downtrend $0.63/day → グリッドサーチで改善
-  - P3: downtrend $0.24/day → TP/SL設計見直しで改善
+Step 2-B: P3のdowntrend割り当て見直し
+  - SL_FILLED 10件 -$317はdowntrend×LONGの構造的問題
+  - 選択肢①: P3をdowntrendから除外（P23のみに集中）
+  - 選択肢②: P3のSL_PCT緩和 or MIXED/uptrend限定に移す
 
-Step 3: range セット（Step 2完了後）
-  - P4: range $0.34/day → range特化で最適化
+Step 2-C: P4 RANGE再設計（Step 2-A/B完了後）
+  - RANGE -$0.41/dayはP4 LONG単体では機能不足
+  - RANGE用SHORT新規設計の検討
 
-Step 4: uptrend セット（Step 3完了後）
-  - P24: 33件と少ない → シグナル検証から開始
+Step 3: uptrend最適化（Step 2完了後）
+  - P24: 34件 +$0.88/day → シグナル検証・件数増加を検討
 ```
 
 **現在のファイル状態（2026-04-21）:**
+- `runner/replay_csv.py`: `--regime` / `--summary` フラグ追加・表示刷新・regimeフィールド追加
 - `runner/regime_analysis.py`: 新規作成（全Priority × レジーム別パフォーマンス分析）
 - `config/cat_params_v9.json`: ENABLE_P3_LONG=true（他は未変更）
 - `runner/fetch_ohlcv.py`: --interval オプション追加済み（1d対応）

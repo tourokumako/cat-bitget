@@ -50,6 +50,27 @@ _JST            = timezone(timedelta(hours=9))
 _LONG_PRIORITIES  = (1, 2, 3, 4)
 _SHORT_PRIORITIES = (21, 22, 23, 24)
 
+_DAILY_WARMUP = str(_ROOT / "data" / "BTCUSDT-1d-2024-09-01_04-15_227d.csv")
+
+# 日足MA70レジーム → Priority enable/disable セット
+_REGIME_PRIORITY_SETS: Dict[str, Dict] = {
+    "downtrend": {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": True,  "ENABLE_P3_LONG": True,
+                  "ENABLE_P4_LONG": False,  "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
+                  "ENABLE_P23_SHORT": True,  "ENABLE_P24_SHORT": False},
+    "range":     {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
+                  "ENABLE_P4_LONG": True,  "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
+                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": False},
+    "uptrend":   {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
+                  "ENABLE_P4_LONG": False, "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
+                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": True},
+    "mixed":     {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
+                  "ENABLE_P4_LONG": True,  "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
+                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": False},
+    "unknown":   {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
+                  "ENABLE_P4_LONG": False, "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
+                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": False},
+}
+
 
 # ==============================================================
 # パラメータ読み込み
@@ -307,6 +328,7 @@ def _record_trade(trades: List, pos: Dict, exit_price: float, exit_reason: str,
         "exit_time":             _ts_to_str(exit_ts_ms),
         "side":                  side,
         "priority":              priority,
+        "regime":                pos.get("regime", ""),
         "add_count":             add_count,
         "size_btc":              round(size_b, 4),
         "entry_price":           round(entry_p, 2),
@@ -337,7 +359,7 @@ def _write_results(csv_path: str, trades: List) -> None:
     _RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     stem     = pathlib.Path(csv_path).stem
     out_path = _RESULTS_DIR / f"replay_{stem}.csv"
-    fields   = ["entry_time", "exit_time", "side", "priority", "add_count",
+    fields   = ["entry_time", "exit_time", "side", "priority", "regime", "add_count",
                  "size_btc", "entry_price", "exit_price", "exit_reason",
                  "hold_min", "gross_usd", "fee_usd", "net_usd",
                  "adx_at_entry", "bb_mid_slope_at_entry", "rsi_at_entry", "rsi_slope_at_entry",
@@ -351,95 +373,156 @@ def _write_results(csv_path: str, trades: List) -> None:
     print(f"\n[replay_csv] → {out_path}  ({len(trades)} trades)")
 
 
-def _print_summary(trades: List) -> None:
+def _print_summary(trades: List, regime_switch: bool = False) -> None:
     if not trades:
         print("[replay_csv] No trades.")
         return
 
     import math
+    from datetime import datetime as _dt
 
     def _avg(vals):
         v = [x for x in vals if x is not None and not (isinstance(x, float) and math.isnan(x))]
         return sum(v) / len(v) if v else float("nan")
+
+    # 期間計算（最初と最後のentryから）
+    try:
+        ts_min = min(_dt.strptime(t["entry_time"], "%Y-%m-%d %H:%M:%S") for t in trades)
+        ts_max = max(_dt.strptime(t["entry_time"], "%Y-%m-%d %H:%M:%S") for t in trades)
+        n_days = max(1.0, (ts_max - ts_min).total_seconds() / 86400 + 1)
+    except Exception:
+        n_days = 90.0
 
     total_net   = sum(t["net_usd"]   for t in trades)
     total_gross = sum(t["gross_usd"] for t in trades)
     total_fee   = sum(t["fee_usd"]   for t in trades)
     hold_mins   = [t["hold_min"] for t in trades]
 
-    print(f"\n{'='*60}")
-    print(f"  総トレード数:   {len(trades)}")
-    print(f"  NET合計:        ${total_net:+.2f}  (${total_net/90:.1f}/day)")
-    print(f"  GROSS合計:      ${total_gross:+.2f}")
-    print(f"  手数料合計:     ${total_fee:.2f}")
-    print(f"  平均保持時間:   {_avg(hold_mins):.1f}min")
-    print(f"{'='*60}")
+    by_pri_all = defaultdict(list)
+    for t in trades:
+        by_pri_all[f"P{t['priority']}-{t['side']}"].append(t)
+    pri_keys_order = sorted(by_pri_all.keys())
 
-    # ── 1. Exit理由別 ────────────────────────────────────────
+    mode_str = "レジーム切り替えON" if regime_switch else "固定パラメータ"
+    print(f"\n{'='*64}")
+    print(f"  [{mode_str}]  期間: {n_days:.0f}日")
+    print(f"  総トレード数: {len(trades)}   NET: ${total_net:+.2f} (${total_net/n_days:+.2f}/day)")
+    print(f"  GROSS: ${total_gross:+.2f}   手数料: ${total_fee:.2f}   平均保持: {_avg(hold_mins):.1f}min")
+    print(f"{'='*64}")
+
+    # ─── レジーム別セクション ────────────────────────────────────
+    if regime_switch:
+        _REGIME_LABEL = {
+            "downtrend": "▼ DOWNTREND",
+            "range":     "◆ RANGE    ",
+            "uptrend":   "▲ UPTREND  ",
+            "mixed":     "～ MIXED   ",
+            "unknown":   "? UNKNOWN  ",
+            "":          "? UNKNOWN  ",
+        }
+        _REGIME_PSET = {
+            "downtrend": "P2-LONG / P3-LONG / P23-SHORT",
+            "range":     "P4-LONG",
+            "uptrend":   "P24-SHORT",
+            "mixed":     "P4-LONG",
+            "unknown":   "（全無効）",
+            "":          "（全無効）",
+        }
+        by_regime = defaultdict(list)
+        for t in trades:
+            by_regime[t.get("regime", "unknown")].append(t)
+
+        print(f"\n  {'━'*62}")
+        print(f"  レジーム別パフォーマンス")
+        print(f"  {'━'*62}")
+        print(f"  {'レジーム':<13} {'件数':>4}  {'NET':>9}  {'/day':>7}  {'有効Priority'}")
+        print(f"  {'─'*62}")
+        for regime in ["downtrend", "range", "uptrend", "mixed", "unknown", ""]:
+            rts = by_regime.get(regime, [])
+            if not rts:
+                continue
+            r_net  = sum(t["net_usd"] for t in rts)
+            label  = _REGIME_LABEL.get(regime, regime)
+            pset   = _REGIME_PSET.get(regime, "")
+            print(f"  {label} {len(rts):4}  ${r_net:+8.2f}  ${r_net/n_days:+6.2f}  {pset}")
+
+        for regime in ["downtrend", "range", "uptrend", "mixed", "unknown", ""]:
+            rts = by_regime.get(regime, [])
+            if not rts:
+                continue
+            label = _REGIME_LABEL.get(regime, regime).strip()
+            pset  = _REGIME_PSET.get(regime, "")
+            r_net = sum(t["net_usd"] for t in rts)
+
+            print(f"\n  ┌── {label}  (有効: {pset}) ──")
+            print(f"  │  {'Priority':<12} {'件数':>4}  {'NET':>9}  {'/day':>7}  {'TP率':>5}  {'avgNET':>7}  {'avgHold':>8}")
+
+            by_pri_r = defaultdict(list)
+            for t in rts:
+                by_pri_r[f"P{t['priority']}-{t['side']}"].append(t)
+            for pri in sorted(by_pri_r):
+                ts2  = by_pri_r[pri]
+                n    = len(ts2)
+                net  = sum(t["net_usd"] for t in ts2)
+                tp_n = sum(1 for t in ts2 if t["exit_reason"] == "TP_FILLED")
+                avg_h = _avg([t["hold_min"] for t in ts2])
+                print(f"  │  {pri:<12} {n:4}  ${net:+8.2f}  ${net/n_days:+6.2f}  {tp_n/n*100:4.0f}%  ${net/n:+6.2f}  {avg_h:7.1f}min")
+
+            # Exit理由別（1行で）
+            by_reason_r: dict = defaultdict(lambda: {"c": 0, "n": 0.0})
+            for t in rts:
+                by_reason_r[t["exit_reason"]]["c"] += 1
+                by_reason_r[t["exit_reason"]]["n"] += t["net_usd"]
+            exit_str = "  ".join(
+                f"{r}:{v['c']}件${v['n']:+.0f}"
+                for r, v in sorted(by_reason_r.items(), key=lambda x: -abs(x[1]["n"]))
+            )
+            print(f"  │  Exit: {exit_str}")
+            print(f"  └{'─'*61}")
+
+    # ─── 全体Exit理由別 ──────────────────────────────────────────
     by_reason = defaultdict(lambda: {"count": 0, "net": 0.0})
     for t in trades:
         by_reason[t["exit_reason"]]["count"] += 1
         by_reason[t["exit_reason"]]["net"]   += t["net_usd"]
-    print("\n  [Exit理由別]")
+    all_reasons = sorted({t["exit_reason"] for t in trades}, key=lambda r: -abs(by_reason[r]["net"]))
+
+    print(f"\n  [Exit理由別（全体）]")
+    print(f"    {'理由':<28} {'件数':>4}  {'NET':>9}  {'/day':>7}")
     for reason, v in sorted(by_reason.items(), key=lambda x: -abs(x[1]["net"])):
-        print(f"    {reason:<28} {v['count']:3}件  net ${v['net']:+8.2f}")
+        print(f"    {reason:<28} {v['count']:4}件  ${v['net']:+8.2f}  ${v['net']/n_days:+6.2f}")
 
-    # ── 2. Priority別サマリー（TP率・平均NET・平均hold） ─────
-    pri_keys_order = sorted({f"P{t['priority']}-{t['side']}" for t in trades})
-    by_pri = defaultdict(list)
-    for t in trades:
-        by_pri[f"P{t['priority']}-{t['side']}"].append(t)
-
-    print(f"\n  [Priority別サマリー]")
-    print(f"    {'Pri':<12} {'件数':>4}  {'NET':>9}  {'TP率':>5}  {'avgNET':>7}  {'avgHold':>7}")
-    for pri in pri_keys_order:
-        ts = by_pri[pri]
-        n = len(ts)
-        net = sum(t["net_usd"] for t in ts)
-        tp_n = sum(1 for t in ts if t["exit_reason"] == "TP_FILLED")
-        avg_net = net / n
-        avg_hold = _avg([t["hold_min"] for t in ts])
-        print(f"    {pri:<12} {n:4}  ${net:+8.2f}  {tp_n/n*100:4.0f}%  ${avg_net:+6.2f}  {avg_hold:6.1f}min")
-
-    # ── 3. Priority × Exit reason クロス集計 ─────────────────
+    # ─── Priority × Exit reason クロス集計 ──────────────────────
     print(f"\n  [Priority × Exit reason クロス集計]")
-    all_reasons = sorted({t["exit_reason"] for t in trades},
-                         key=lambda r: -abs(by_reason[r]["net"]))
     hdr = f"    {'Pri':<12}" + "".join(f"  {r[:10]:>10}" for r in all_reasons)
     print(hdr)
     for pri in pri_keys_order:
-        ts = by_pri[pri]
+        ts = by_pri_all[pri]
         cross = defaultdict(lambda: {"count": 0, "net": 0.0})
         for t in ts:
             cross[t["exit_reason"]]["count"] += 1
             cross[t["exit_reason"]]["net"]   += t["net_usd"]
         row = f"    {pri:<12}"
         for r in all_reasons:
-            if cross[r]["count"]:
-                cell = f"{cross[r]['count']}件${cross[r]['net']:+.0f}"
-            else:
-                cell = "-"
+            cell = f"{cross[r]['count']}件${cross[r]['net']:+.0f}" if cross[r]["count"] else "-"
             row += f"  {cell:>10}"
         print(row)
 
-    # ── 4. TIME_EXIT / MIDTERM_CUT の add_count 別詳細 ───────
-    for bad_exit in ["TIME_EXIT"]:
-        bad = [t for t in trades if t["exit_reason"] == bad_exit]
-        if not bad:
-            continue
+    # ─── TIME_EXIT × add_count 詳細 ─────────────────────────────
+    bad_te = [t for t in trades if t["exit_reason"] == "TIME_EXIT"]
+    if bad_te:
         by_add = defaultdict(list)
-        for t in bad:
+        for t in bad_te:
             by_add[t["add_count"]].append(t)
-        print(f"\n  [{bad_exit} × add_count 詳細]")
+        print(f"\n  [TIME_EXIT × add_count 詳細]")
         print(f"    {'add':>4}  {'件数':>4}  {'NET':>9}  {'avgNET':>7}  {'avgHold':>8}  {'avgADX':>7}")
         for add in sorted(by_add):
             ts2 = by_add[add]
             net2 = sum(t["net_usd"] for t in ts2)
-            avg_hold2 = _avg([t["hold_min"] for t in ts2])
-            avg_adx2  = _avg([t["adx_at_entry"] for t in ts2])
-            print(f"    {add:4}  {len(ts2):4}  ${net2:+8.2f}  ${net2/len(ts2):+6.2f}  {avg_hold2:7.1f}min  {avg_adx2:6.1f}")
+            print(f"    {add:4}  {len(ts2):4}  ${net2:+8.2f}  ${net2/len(ts2):+6.2f}"
+                  f"  {_avg([t['hold_min'] for t in ts2]):7.1f}min  {_avg([t['adx_at_entry'] for t in ts2]):6.1f}")
 
-    # ── 4b. TP_FILLED × add_count 詳細 ───────────────────────
+    # ─── TP_FILLED × add_count 詳細 ─────────────────────────────
     tp_filled = [t for t in trades if t["exit_reason"] == "TP_FILLED"]
     if tp_filled:
         by_add_tp = defaultdict(list)
@@ -450,11 +533,10 @@ def _print_summary(trades: List) -> None:
         for add in sorted(by_add_tp):
             ts2 = by_add_tp[add]
             net2 = sum(t["net_usd"] for t in ts2)
-            avg_hold2 = _avg([t["hold_min"] for t in ts2])
-            avg_adx2  = _avg([t["adx_at_entry"] for t in ts2])
-            print(f"    {add:4}  {len(ts2):4}  ${net2:+8.2f}  ${net2/len(ts2):+6.2f}  {avg_hold2:7.1f}min  {avg_adx2:6.1f}")
+            print(f"    {add:4}  {len(ts2):4}  ${net2:+8.2f}  ${net2/len(ts2):+6.2f}"
+                  f"  {_avg([t['hold_min'] for t in ts2]):7.1f}min  {_avg([t['adx_at_entry'] for t in ts2]):6.1f}")
 
-    # ── 4c. MFE_STALE_CUT 詳細（Priority別） ─────────────────
+    # ─── MFE_STALE_CUT 詳細 ─────────────────────────────────────
     stale_trades = [t for t in trades if t["exit_reason"] == "MFE_STALE_CUT"]
     if stale_trades:
         by_pri_stale = defaultdict(list)
@@ -466,51 +548,45 @@ def _print_summary(trades: List) -> None:
             ts_s = by_pri_stale.get(pri, [])
             if not ts_s:
                 continue
-            net_s    = sum(t["net_usd"]    for t in ts_s)
-            avg_mfe  = _avg([t["mfe_usd"]    for t in ts_s])
-            avg_mae  = _avg([t["mae_usd"]    for t in ts_s])
-            avg_tpd  = _avg([t["tp_diff_usd"] for t in ts_s])
-            avg_hold = _avg([t["hold_min"]   for t in ts_s])
-            print(f"    {pri:<12}  {len(ts_s):4}  ${net_s:+8.2f}  ${avg_mfe:+7.2f}  ${avg_mae:+7.2f}  ${avg_tpd:+9.2f}  {avg_hold:7.1f}min")
+            net_s = sum(t["net_usd"] for t in ts_s)
+            print(f"    {pri:<12}  {len(ts_s):4}  ${net_s:+8.2f}"
+                  f"  ${_avg([t['mfe_usd'] for t in ts_s]):+7.2f}"
+                  f"  ${_avg([t['mae_usd'] for t in ts_s]):+7.2f}"
+                  f"  ${_avg([t['tp_diff_usd'] for t in ts_s]):+9.2f}"
+                  f"  {_avg([t['hold_min'] for t in ts_s]):7.1f}min")
 
-    # ── 5. Entry指標統計（TP vs 損失別） ─────────────────────
-    loss_reasons = [r for r in all_reasons if r != "TP_FILLED"]
+    # ─── Entry指標統計（TP vs 損失） ─────────────────────────────
     tp_trades   = [t for t in trades if t["exit_reason"] == "TP_FILLED"]
     loss_trades = [t for t in trades if t["exit_reason"] != "TP_FILLED"]
     print(f"\n  [Entry指標統計 TP vs 損失]")
     print(f"    {'指標':<22}  {'TP avg':>8}  {'損失 avg':>8}")
-    for field, label in [("adx_at_entry", "ADX"),
-                         ("bb_mid_slope_at_entry", "BB_slope"),
-                         ("rsi_at_entry", "RSI"),
-                         ("ret_5",        "ret_5(%)"),
-                         ("atr_14",       "atr_14($)")]:
-        tp_v   = _avg([t[field] for t in tp_trades])
-        loss_v = _avg([t[field] for t in loss_trades])
-        print(f"    {label:<22}  {tp_v:8.2f}  {loss_v:8.2f}")
+    for field, label in [("adx_at_entry", "ADX"), ("bb_mid_slope_at_entry", "BB_slope"),
+                         ("rsi_at_entry", "RSI"), ("ret_5", "ret_5(%)"), ("atr_14", "atr_14($)")]:
+        print(f"    {label:<22}  {_avg([t[field] for t in tp_trades]):8.2f}"
+              f"  {_avg([t[field] for t in loss_trades]):8.2f}")
 
-    # ── 5b. Priority別 TP vs MFE_STALE Entry指標統計 ──────────
-    for pri in pri_keys_order:
-        ts_pri    = by_pri[pri]
-        tp_pri    = [t for t in ts_pri if t["exit_reason"] == "TP_FILLED"]
-        stale_pri = [t for t in ts_pri if t["exit_reason"] == "MFE_STALE_CUT"]
-        if not stale_pri:
-            continue
-        print(f"\n  [{pri}  TP({len(tp_pri)}件) vs MFE_STALE({len(stale_pri)}件) Entry指標統計]")
-        print(f"    {'指標':<22}  {'TP avg':>8}  {'STALE avg':>10}  {'差':>8}")
-        for field, label in [("adx_at_entry",         "ADX"),
-                              ("bb_mid_slope_at_entry","BB_slope"),
-                              ("rsi_at_entry",         "RSI"),
-                              ("stoch_k_at_entry",     "stoch_k"),
-                              ("stoch_d_at_entry",     "stoch_d"),
-                              ("bb_width_at_entry",    "bb_width"),
-                              ("ret_5",                "ret_5(%)"),
-                              ("atr_14",               "atr_14($)")]:
-            tp_v    = _avg([t.get(field, float("nan")) for t in tp_pri])
-            stale_v = _avg([t.get(field, float("nan")) for t in stale_pri])
-            diff    = stale_v - tp_v if not (math.isnan(tp_v) or math.isnan(stale_v)) else float("nan")
-            print(f"    {label:<22}  {tp_v:8.2f}  {stale_v:10.2f}  {diff:+8.2f}")
+    # ─── 月別 NET ────────────────────────────────────────────────
+    by_month: Dict[str, List] = defaultdict(list)
+    for t in trades:
+        month = t["entry_time"][:7]  # "YYYY-MM"
+        by_month[month].append(t)
+    print(f"\n  [月別 NET]")
+    print(f"    {'月':>7}  {'件数':>4}  {'NET':>9}  {'TP率':>5}  {'/day':>7}")
+    for month in sorted(by_month):
+        ts_m  = by_month[month]
+        net_m = sum(t["net_usd"] for t in ts_m)
+        tp_r  = sum(1 for t in ts_m if t["exit_reason"] == "TP_FILLED") / len(ts_m) * 100
+        # 月の日数（月末日 - 月初日 + 1 の近似として件数の最初と最後から計算）
+        days_m = 30.0
+        try:
+            t_min = min(_dt.strptime(t["entry_time"], "%Y-%m-%d %H:%M:%S") for t in ts_m)
+            t_max = max(_dt.strptime(t["entry_time"], "%Y-%m-%d %H:%M:%S") for t in ts_m)
+            days_m = max(1.0, (t_max - t_min).total_seconds() / 86400 + 1)
+        except Exception:
+            pass
+        print(f"    {month}  {len(ts_m):4}  ${net_m:+8.2f}  {tp_r:4.0f}%  ${net_m/days_m:+6.2f}")
 
-    # ── 時間帯別 NET ──────────────────────────────────────────
+    # ─── 時間帯別 NET ────────────────────────────────────────────
     by_hour: Dict[int, List] = defaultdict(list)
     for t in trades:
         by_hour[t["entry_hour"]].append(t)
@@ -522,35 +598,14 @@ def _print_summary(trades: List) -> None:
         tp_r  = sum(1 for t in ts_h if t["exit_reason"] == "TP_FILLED") / len(ts_h) * 100
         print(f"    {h:4}  {len(ts_h):4}  ${net_h:+8.2f}  {tp_r:4.0f}%  ${net_h/len(ts_h):+6.2f}")
 
-    # ── 時間帯別 NET（Priority別・損失上位のみ） ──────────────
-    for pri in pri_keys_order:
-        ts_pri = by_pri[pri]
-        net_pri = sum(t["net_usd"] for t in ts_pri)
-        if net_pri >= 0:
-            continue  # 黒字Priorityはスキップ
-        by_hour_pri: Dict[int, List] = defaultdict(list)
-        for t in ts_pri:
-            by_hour_pri[t["entry_hour"]].append(t)
-        print(f"\n  [時間帯別 NET — {pri}（損失時間帯のみ）]")
-        print(f"    {'hour':>4}  {'件数':>4}  {'NET':>9}  {'TP率':>5}  {'avgNET':>7}")
-        for h in sorted(by_hour_pri):
-            ts_h2  = by_hour_pri[h]
-            net_h2 = sum(t["net_usd"] for t in ts_h2)
-            if net_h2 >= 0:
-                continue
-            tp_r2 = sum(1 for t in ts_h2 if t["exit_reason"] == "TP_FILLED") / len(ts_h2) * 100
-            print(f"    {h:4}  {len(ts_h2):4}  ${net_h2:+8.2f}  {tp_r2:4.0f}%  ${net_h2/len(ts_h2):+6.2f}")
-
-    # ── 6. TIME_EXIT / MIDTERM_CUT のEntry指標 Priority別 ───
-    for bad_exit in ["TIME_EXIT"]:
-        bad = [t for t in trades if t["exit_reason"] == bad_exit]
-        if not bad:
-            continue
+    # ─── TIME_EXIT Entry指標 Priority別 ─────────────────────────
+    bad_te2 = [t for t in trades if t["exit_reason"] == "TIME_EXIT"]
+    if bad_te2:
         by_pri2 = defaultdict(list)
-        for t in bad:
+        for t in bad_te2:
             by_pri2[f"P{t['priority']}-{t['side']}"].append(t)
-        print(f"\n  [{bad_exit} Entry指標 Priority別]")
-        print(f"    {'Pri':<12}  {'件数':>4}  {'NET':>9}  {'avgADX':>7}  {'avgSlope':>9}  {'avgRSI':>7}")
+        print(f"\n  [TIME_EXIT Entry指標 Priority別]")
+        print(f"    {'Pri':<12}  {'件数':>4}  {'NET':>9}  {'avgADX':>7}  {'avgSlope':>9}  {'avgRSI':>7}  {'avgATR':>8}")
         for pri in pri_keys_order:
             ts3 = by_pri2.get(pri, [])
             if not ts3:
@@ -559,9 +614,10 @@ def _print_summary(trades: List) -> None:
             print(f"    {pri:<12}  {len(ts3):4}  ${net3:+8.2f}"
                   f"  {_avg([t['adx_at_entry'] for t in ts3]):6.1f}"
                   f"  {_avg([t['bb_mid_slope_at_entry'] for t in ts3]):8.1f}"
-                  f"  {_avg([t['rsi_at_entry'] for t in ts3]):6.1f}")
+                  f"  {_avg([t['rsi_at_entry'] for t in ts3]):6.1f}"
+                  f"  {_avg([t['atr_14'] for t in ts3]):7.1f}")
 
-    print(f"\n{'='*60}\n")
+    print(f"\n{'='*64}\n")
 
 
 # ==============================================================
@@ -595,6 +651,58 @@ def _calc_entry_states(df: "pd.DataFrame", i: int, ts_ms: int) -> Dict:
 # ==============================================================
 # メインループ
 # ==============================================================
+def _build_regime_map(csv_5m_path: str) -> Dict:
+    """5m CSV + 日足warmupから date(Timestamp normalized) → regime文字列 のdictを返す。"""
+    try:
+        import numpy as np
+        import ta
+    except ImportError:
+        print("[regime] numpy/ta not available; regime_switch disabled")
+        return {}
+
+    df_5m = _load_csv(csv_5m_path)
+    df_5m_indexed = df_5m.copy()
+    df_5m_indexed.index = pd.to_datetime(df_5m["timestamp_ms"], unit="ms")
+    df_5m_indexed = df_5m_indexed.sort_index()
+    daily_5m = df_5m_indexed.resample("D").agg(
+        {"close": "last", "high": "max", "low": "min"}
+    ).dropna()
+
+    dw = pd.read_csv(_DAILY_WARMUP)
+    dw["ts"] = pd.to_datetime(dw["timestamp"])
+    for c in ("close", "high", "low"):
+        dw[c] = pd.to_numeric(dw[c], errors="coerce")
+    dw = dw.set_index("ts").sort_index()
+
+    combined = pd.concat([dw[["close", "high", "low"]], daily_5m[["close", "high", "low"]]])
+    combined = combined[~combined.index.duplicated(keep="last")].sort_index()
+    for c in ("close", "high", "low"):
+        combined[c] = pd.to_numeric(combined[c], errors="coerce")
+
+    combined["ma70"]       = combined["close"].rolling(70, min_periods=70).mean()
+    combined["ma70_slope"] = combined["ma70"].diff(5)
+    adx_obj = ta.trend.ADXIndicator(combined["high"], combined["low"], combined["close"], window=14)
+    combined["adx_d"] = adx_obj.adx()
+
+    def _classify(row):
+        slope, adx_v, close, ma = row["ma70_slope"], row["adx_d"], row["close"], row["ma70"]
+        if any(pd.isna(v) for v in [slope, adx_v, close, ma]):
+            return "unknown"
+        if adx_v < 20:
+            return "range"
+        if slope > 0 and close > ma:
+            return "uptrend"
+        if slope < 0 and close < ma:
+            return "downtrend"
+        return "mixed"
+
+    start = pd.to_datetime(df_5m["timestamp_ms"].min(), unit="ms").normalize()
+    regime_df = combined[combined.index >= start].copy()
+    regime_df["regime"] = regime_df.apply(_classify, axis=1)
+    print(f"[regime] 分布: {regime_df['regime'].value_counts().to_dict()}")
+    return {pd.Timestamp(idx).normalize(): r for idx, r in zip(regime_df.index, regime_df["regime"])}
+
+
 def preload(csv_path: str, params: Dict):
     """CSV読み込み＋preprocess を実行して (df, df_raw) を返す。
     グリッドサーチで preprocess を1回だけ走らせたい場合に使う。"""
@@ -612,7 +720,7 @@ def preload(csv_path: str, params: Dict):
     return df, df_raw
 
 
-def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
+def run(csv_path: str, params: Dict, _preloaded=None, regime_switch: bool = False) -> List[Dict]:
     """CSV をリプレイして trades リストを返す。グリッドサーチ等から直接呼び出し可。
     _preloaded=(df, df_raw) を渡すと CSV読み込み・preprocess をスキップする。"""
     if _preloaded is not None:
@@ -631,6 +739,11 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
     pos:     Dict[str, Optional[Dict]] = {"LONG": None, "SHORT": None}
     pending: Dict[str, Optional[Dict]] = {"LONG": None, "SHORT": None}
     trades:  List[Dict]                = []
+
+    # レジーム切り替え用
+    _regime_map     = _build_regime_map(csv_path) if regime_switch else {}
+    _current_regime: Optional[str] = None
+    _working_params = dict(params)
 
     # ---- バーごとのループ ----
     for i in range(CANDLE_WARMUP, len(df)):
@@ -696,6 +809,7 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
                     "size_btc":              unit_size,
                     "tp_price":              tp_price,
                     "sl_price":              _calc_sl_price(side, fill_p, params, _entry_pri),
+                    "regime":                _current_regime or "",
                     "mfe_usd":               0.0,
                     "mae_usd":               0.0,
                     "max_high":              float("-inf"),
@@ -837,8 +951,17 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
         # --------------------------------------------------
         # 6. エントリー / ADD 判断
         # --------------------------------------------------
+        # レジーム切り替え（新規エントリーのみに影響。既存ポジションは継続）
+        if regime_switch and _regime_map:
+            _bar_date   = pd.Timestamp(ts_ms, unit="ms").normalize()
+            _new_regime = _regime_map.get(_bar_date, "unknown")
+            if _new_regime != _current_regime:
+                _current_regime = _new_regime
+                _working_params = dict(params)
+                _working_params.update(_REGIME_PRIORITY_SETS.get(_new_regime, {}))
+
         try:
-            priority = check_entry_priority(i, df, params)
+            priority = check_entry_priority(i, df, _working_params)
         except Exception:
             priority = None
 
@@ -1058,18 +1181,29 @@ def _signal_funnel(df: "pd.DataFrame", params: Dict) -> None:
     print(f"\n{'='*60}\n")
 
 
-def main(csv_path: str) -> None:
+def main(csv_path: str, regime_sw: bool = False) -> None:
     params = _load_params()
-    print(f"[replay_csv] loaded from {csv_path}")
+    mode = "【レジーム切り替えON】" if regime_sw else "【固定パラメータ】"
+    print(f"[replay_csv] {mode} loaded from {csv_path}")
     preloaded = preload(csv_path, params)
-    trades = run(csv_path, params, _preloaded=preloaded)
+    trades = run(csv_path, params, _preloaded=preloaded, regime_switch=regime_sw)
     _write_results(csv_path, trades)
-    _print_summary(trades)
+    _print_summary(trades, regime_switch=regime_sw)
     _signal_funnel(preloaded[0], params)
 
 
 if __name__ == "__main__":
+    if "--summary" in sys.argv:
+        idx = sys.argv.index("--summary")
+        results_path = sys.argv[idx + 1]
+        df_r = pd.read_csv(results_path)
+        trades_from_csv = df_r.to_dict("records")
+        has_regime = "regime" in df_r.columns and df_r["regime"].notna().any() and (df_r["regime"] != "").any()
+        _print_summary(trades_from_csv, regime_switch=has_regime)
+        sys.exit(0)
+
     if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} /path/to/BTCUSDT-5m-*.csv")
+        print(f"Usage: {sys.argv[0]} /path/to/BTCUSDT-5m-*.csv [--regime]")
+        print(f"       {sys.argv[0]} --summary results/replay_*.csv")
         sys.exit(1)
-    main(sys.argv[1])
+    main(sys.argv[1], regime_sw="--regime" in sys.argv)
