@@ -31,15 +31,15 @@ _DEFAULT_CSV = str(_ROOT / "data" / "BTCUSDT-5m-2026-01-01_04-01_combined_90d.cs
 # ============================================================
 # ▼ ここを変更して使う
 # ============================================================
-TARGET_PRIORITY = 23  # 詳細集計するPriority（NETソートの基準）
+TARGET_PRIORITY = 3  # 詳細集計するPriority（NETソートの基準）
 
 GRID: Dict[str, List[Any]] = {
-    "P23_ADX_MAX":            [45, 50, 55],
-    "P23_MFE_STALE_HOLD_MIN": [30, 45, 60],
+    "LONG_PROFIT_LOCK_ENABLE": [0, 1],               # 0=無効(主仮説), 1=現状
+    "P3_SL_PCT":               [0.010, 0.015, 0.020], # タイト, 現状, ワイド
+    "P3_MFE_STALE_HOLD_MIN":   [240],                 # Phase1で方向確定
 }
 
-# TARGET_PRIORITY以外を無効化するフラグ（単一Priority精度調整時に使う）
-# 空dictにすれば全Priority有効（通常運用）
+# P3・P23のみ有効（単一Priority精度調整）
 FIXED_PARAMS: Dict[str, Any] = {
     "ENABLE_P2_LONG":   False,
     "ENABLE_P4_LONG":   False,

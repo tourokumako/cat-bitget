@@ -331,6 +331,23 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
     mid_up_ok = (pd.isna(bb_mid_slope) or bb_mid_slope >= 0.0)
 
     # =========================
+    # 優先度 3（LONG・stoch ゴールデンクロス: P23-SHORTのミラー）[LONG側TOP]
+    # =========================
+    if params.get("ENABLE_P3_LONG", False) and (
+        i >= 2
+        and df["stoch_k"].iloc[i - 2] < df["stoch_d"].iloc[i - 2]
+        and df["stoch_k"].iloc[i - 1] < df["stoch_d"].iloc[i - 1]
+        and df["stoch_k"].iloc[i] > df["stoch_d"].iloc[i]
+        and (df["stoch_k"].iloc[i] - df["stoch_d"].iloc[i]) > 0.3
+        and df["close"].iloc[i] >= df["open"].iloc[i]
+        and df["bb_mid_slope"].iloc[i] > float(params.get("P3_BB_MID_SLOPE_MIN", 10.0))
+        and get("adx") >= float(params.get("P3_ADX_MIN", 30.0))
+        and get("adx") < float(params.get("P3_ADX_MAX", 50.0))
+        and get("atr_14") >= float(params.get("P3_ATR14_MIN", 250.0))
+    ):
+        return 3
+
+    # =========================
     # 優先度 4（LONG）
     # =========================
     if "close" not in df.columns or "open" not in df.columns:
@@ -446,6 +463,24 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
         return 2
 
     # =========================
+    # 優先度 23（SHORT・stoch デッドクロス）[SHORT側TOP]
+    # =========================
+    if params.get("ENABLE_P23_SHORT", False) and (
+        i >= 2
+        and df["stoch_k"].iloc[i - 2] > df["stoch_d"].iloc[i - 2]
+        and df["stoch_k"].iloc[i - 1] > df["stoch_d"].iloc[i - 1]
+        and df["stoch_k"].iloc[i] < df["stoch_d"].iloc[i]
+        and df["stoch_k"].iloc[i] <= float(params.get("P23_STOCH_K_MAX", 999.0))
+        and (df["stoch_d"].iloc[i] - df["stoch_k"].iloc[i]) > 0.3
+        and df["close"].iloc[i] <= df["open"].iloc[i]
+        and df["bb_mid_slope"].iloc[i] < float(params.get("P23_BB_MID_SLOPE_MAX", 0.0))
+        and get("adx") >= float(params.get("P23_ADX_MIN", 0.0))
+        and get("adx") < float(params.get("P23_ADX_MAX", 9999.0))
+        and get("atr_14") >= float(params.get("P23_ATR14_MIN", 0.0))
+    ):
+        return 23
+
+    # =========================
     # 優先度 22（SHORT）
     # =========================
     probe = compute_p22_probe(i, df, params)
@@ -495,24 +530,6 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
             return 24
 
     # =========================
-    # 優先度 23（SHORT）
-    # =========================
-    if params.get("ENABLE_P23_SHORT", False) and (
-        i >= 2
-        and df["stoch_k"].iloc[i - 2] > df["stoch_d"].iloc[i - 2]
-        and df["stoch_k"].iloc[i - 1] > df["stoch_d"].iloc[i - 1]
-        and df["stoch_k"].iloc[i] < df["stoch_d"].iloc[i]
-        and df["stoch_k"].iloc[i] <= float(params.get("P23_STOCH_K_MAX", 999.0))
-        and (df["stoch_d"].iloc[i] - df["stoch_k"].iloc[i]) > 0.3
-        and df["close"].iloc[i] <= df["open"].iloc[i]
-        and df["bb_mid_slope"].iloc[i] < float(params.get("P23_BB_MID_SLOPE_MAX", 0.0))
-        and get("adx") >= float(params.get("P23_ADX_MIN", 0.0))
-        and get("adx") < float(params.get("P23_ADX_MAX", 9999.0))
-        and get("atr_14") >= float(params.get("P23_ATR14_MIN", 0.0))
-    ):
-        return 23
-
-    # =========================
     # 優先度 1（LONG・スキャル: MACD ゴールデンクロス）
     # =========================
     if params.get("ENABLE_P1_LONG", False) and i > 0:
@@ -554,7 +571,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
 # ---------------------------------------------------------------------------
 # decide（新規：snapshot dict → decision dict）
 # ---------------------------------------------------------------------------
-_LONG_PRIORITIES  = (1, 2, 4)
+_LONG_PRIORITIES  = (1, 2, 3, 4)
 _SHORT_PRIORITIES = (21, 22, 23, 24)
 
 
@@ -734,6 +751,16 @@ def _build_material(priority: int, i: int, df: pd.DataFrame, params: Dict[str, A
             "rci_9":        g("rci_9"),
             "rci_52":       g("rci_52"),
             "adx":          g("adx"),
+        }
+
+    if priority == 3:
+        k0 = g("stoch_k")
+        d0 = g("stoch_d")
+        return {
+            "stoch_k": k0,
+            "stoch_d": d0,
+            "gap":     _safe_float((k0 or 0.0) - (d0 or 0.0)),
+            "bullish": bool((g("close") or 0.0) >= (g("open") or 0.0)),
         }
 
     if priority == 23:

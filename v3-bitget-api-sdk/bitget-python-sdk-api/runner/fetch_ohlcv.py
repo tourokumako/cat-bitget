@@ -31,16 +31,25 @@ _ROOT    = pathlib.Path(__file__).resolve().parents[1]
 _DATA    = _ROOT / "data"
 _API_URL = "https://api.binance.com/api/v3/klines"
 _SYMBOL  = "BTCUSDT"
-_INTERVAL = "5m"
 _LIMIT   = 1000          # Binance max per request
 _SLEEP   = 0.12          # ~8 req/s (well within 1200/min limit)
 
+# interval → bar duration (ms)
+_BAR_MS = {
+    "1m":  60_000,
+    "5m":  300_000,
+    "15m": 900_000,
+    "1h":  3_600_000,
+    "4h":  14_400_000,
+    "1d":  86_400_000,
+}
 
-def fetch_chunk(start_ms: int, end_ms: int) -> list[list]:
+
+def fetch_chunk(start_ms: int, end_ms: int, interval: str = "5m") -> list[list]:
     """1リクエスト分（最大1000バー）を取得して返す"""
     params = urllib.parse.urlencode({
         "symbol":    _SYMBOL,
-        "interval":  _INTERVAL,
+        "interval":  interval,
         "startTime": start_ms,
         "endTime":   end_ms,
         "limit":     _LIMIT,
@@ -50,13 +59,12 @@ def fetch_chunk(start_ms: int, end_ms: int) -> list[list]:
         return json.loads(resp.read().decode())
 
 
-def fetch_range(start_dt: datetime, end_dt: datetime) -> pd.DataFrame:
+def fetch_range(start_dt: datetime, end_dt: datetime, interval: str = "5m") -> pd.DataFrame:
     """期間全体を複数リクエストに分割して取得"""
     start_ms = int(start_dt.timestamp() * 1000)
     end_ms   = int(end_dt.timestamp() * 1000)
 
-    # 5m足: 1バー = 300_000ms
-    bar_ms   = 300_000
+    bar_ms   = _BAR_MS[interval]
     total_bars = (end_ms - start_ms) // bar_ms
     n_requests = (total_bars + _LIMIT - 1) // _LIMIT
 
@@ -69,7 +77,7 @@ def fetch_range(start_dt: datetime, end_dt: datetime) -> pd.DataFrame:
     req_count = 0
 
     while cur_ms < end_ms:
-        chunk = fetch_chunk(cur_ms, end_ms - 1)
+        chunk = fetch_chunk(cur_ms, end_ms - 1, interval)
         if not chunk:
             break
         all_rows.extend(chunk)
@@ -113,10 +121,12 @@ def _to_dataframe(rows: list[list]) -> pd.DataFrame:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Binance BTCUSDT 5m OHLCV取得")
-    parser.add_argument("--days",  type=int, default=365, help="取得日数（デフォルト: 365）")
-    parser.add_argument("--start", type=str, default=None, help="開始日 YYYY-MM-DD (UTC)")
-    parser.add_argument("--end",   type=str, default=None, help="終了日 YYYY-MM-DD (UTC, exclusive)")
+    parser = argparse.ArgumentParser(description="Binance BTCUSDT OHLCV取得")
+    parser.add_argument("--days",     type=int, default=365,  help="取得日数（デフォルト: 365）")
+    parser.add_argument("--start",    type=str, default=None, help="開始日 YYYY-MM-DD (UTC)")
+    parser.add_argument("--end",      type=str, default=None, help="終了日 YYYY-MM-DD (UTC, exclusive)")
+    parser.add_argument("--interval", type=str, default="5m", choices=list(_BAR_MS.keys()),
+                        help="足種 (デフォルト: 5m)")
     args = parser.parse_args()
 
     # 終了: 2026-04-01 00:00:00 UTC（既存CSVと同じ終端）
@@ -131,12 +141,13 @@ def main() -> None:
         start_dt = end_dt - timedelta(days=args.days)
 
     # 出力ファイル名
+    interval = args.interval
     s_str = start_dt.strftime("%Y-%m-%d")
     e_str = (end_dt - timedelta(days=1)).strftime("%m-%d")
     days_actual = (end_dt - start_dt).days
-    out_path = _DATA / f"BTCUSDT-5m-{s_str}_{e_str}_{days_actual}d.csv"
+    out_path = _DATA / f"BTCUSDT-{interval}-{s_str}_{e_str}_{days_actual}d.csv"
 
-    df = fetch_range(start_dt, end_dt)
+    df = fetch_range(start_dt, end_dt, interval)
 
     # バー数・期間の最終確認
     first_ts = df["timestamp"].iloc[0]

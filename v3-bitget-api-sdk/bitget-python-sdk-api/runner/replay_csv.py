@@ -47,7 +47,7 @@ CANDLE_WARMUP   = 200   # 指標計算に必要な最小バー数（live engine 
 _PARAMS_PATH    = _ROOT / "config" / "cat_params_v9.json"
 _RESULTS_DIR    = _ROOT / "results"
 _JST            = timezone(timedelta(hours=9))
-_LONG_PRIORITIES  = (1, 2, 4)
+_LONG_PRIORITIES  = (1, 2, 3, 4)
 _SHORT_PRIORITIES = (21, 22, 23, 24)
 
 
@@ -193,6 +193,12 @@ def _check_exits_replay(pos: Dict, mark_price: float, df: pd.DataFrame, i: int,
     if side == "SHORT" and priority == 23 and add_count == 1:
         _p23_hold_min = float(params.get("P23_MFE_STALE_HOLD_MIN", 120.0))
         if hold_min >= _p23_hold_min and mfe_usd < float(params.get("P23_MFE_STALE_GATE_USD", 10.0)):
+            return "MFE_STALE_CUT"
+
+    # 3d. MFE_STALE_CUT (P3 LONG, add==1, hold>=P3_MFE_STALE_HOLD_MIN)
+    if side == "LONG" and priority == 3 and add_count == 1:
+        _p3_hold_min = float(params.get("P3_MFE_STALE_HOLD_MIN", 90.0))
+        if hold_min >= _p3_hold_min and mfe_usd < float(params.get("P3_MFE_STALE_GATE_USD", 4.0)):
             return "MFE_STALE_CUT"
 
     # 4. RSI_REVERSE_EXIT (SHORT)
@@ -895,10 +901,10 @@ def run(csv_path: str, params: Dict, _preloaded=None) -> List[Dict]:
 
 
 # ==============================================================
-# シグナルファネル分析（P2/P23 フィルター段階別通過件数）
+# シグナルファネル分析（P2/P3/P23 フィルター段階別通過件数）
 # ==============================================================
 def _signal_funnel(df: "pd.DataFrame", params: Dict) -> None:
-    """P2/P23 各フィルター段階で何件落とされているかを表示する。
+    """P2/P3/P23 各フィルター段階で何件落とされているかを表示する。
     run() とは独立して呼ぶ（グリッドサーチには影響しない）。"""
     import math
 
@@ -931,8 +937,15 @@ def _signal_funnel(df: "pd.DataFrame", params: Dict) -> None:
     p23_adx_max   = float(params.get("P23_ADX_MAX",      9999.0))
     p23_atr_min   = float(params.get("P23_ATR14_MIN",       0.0))
 
+    # ── P3 LONG フィルター定数 ──
+    p3_slope_min = float(params.get("P3_BB_MID_SLOPE_MIN", 10.0))
+    p3_adx_min   = float(params.get("P3_ADX_MIN",          30.0))
+    p3_adx_max   = float(params.get("P3_ADX_MAX",          50.0))
+    p3_atr_min   = float(params.get("P3_ATR14_MIN",       250.0))
+
     p2_counts  = [0] * 6   # [base, +k, +adx, +rsi, +atr, +adx_excl]
     p23_counts = [0] * 4   # [base, +adx_range, +atr, ...]
+    p3_counts  = [0] * 3   # [base, +adx_range, +atr]
 
     for i in range(CANDLE_WARMUP, len(df)):
         sk   = _g(i,   "stoch_k")
@@ -985,6 +998,22 @@ def _signal_funnel(df: "pd.DataFrame", params: Dict) -> None:
                 if not math.isnan(atr) and atr >= p23_atr_min:
                     p23_counts[2] += 1
 
+        # ── P3 ──
+        golden = (
+            i >= 2
+            and not any(math.isnan(v) for v in [sk2, sd2, sk1, sd1, sk, sd, cls, opn, slp])
+            and sk2 < sd2 and sk1 < sd1 and sk > sd
+            and (sk - sd) > 0.3
+            and cls >= opn
+            and slp > p3_slope_min
+        )
+        if golden:
+            p3_counts[0] += 1
+            if not math.isnan(adx) and p3_adx_min <= adx < p3_adx_max:
+                p3_counts[1] += 1
+                if not math.isnan(atr) and atr >= p3_atr_min:
+                    p3_counts[2] += 1
+
     def _line(label, n, prev):
         drop = f"  落:{prev-n}" if prev is not None else ""
         return f"    {label:<42} {n:5}件  ({n/n_days:.1f}/day){drop}"
@@ -1014,6 +1043,16 @@ def _signal_funnel(df: "pd.DataFrame", params: Dict) -> None:
     ]
     for j, (lbl, cnt) in enumerate(zip(p23_labels, p23_counts)):
         prev = p23_counts[j-1] if j > 0 else None
+        print(_line(lbl, cnt, prev))
+
+    print(f"\n  P3-LONG:")
+    p3_labels = [
+        f"stoch_golden (gap>0.3, close>=open, slope>{p3_slope_min:.0f})",
+        f"+ ADX [{p3_adx_min:.0f}, {p3_adx_max:.0f})",
+        f"+ ATR >= {p3_atr_min:.0f}",
+    ]
+    for j, (lbl, cnt) in enumerate(zip(p3_labels, p3_counts)):
+        prev = p3_counts[j-1] if j > 0 else None
         print(_line(lbl, cnt, prev))
 
     print(f"\n{'='*60}\n")
