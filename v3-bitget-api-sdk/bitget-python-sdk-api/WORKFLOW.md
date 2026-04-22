@@ -88,6 +88,13 @@ CSVにmfe_usd/mae_usd/exit_reason/hold_minが揃っているか確認する。
 
 - **0. ポジション構造**: add_count × exit_reason マトリクスを作る。TIME_EXITが構造的コストか・フィルターで削れるかを1文で言語化してからA/Bへ進む
 - **A. なぜ負けているか**: exit_reason別 件数/NET/avgMFE。MFEとMAEから損失の性質（即逆行 or 長期漂流）を特定する
+
+  **TIME_EXIT分類（TIME_EXIT削減に着手する前に必須）**:
+  TIME_EXITトレードのMFE分布を確認し、TYPE I / II に分類してから対策を決める。
+  - TYPE I（MFEが小さい・概ね<$5）: Entry品質問題 → フィルター強化（ATR/ADX/RSI）
+  - TYPE II（MFEが大きいが戻った・概ね>$15）: Exit設計問題 → TRAIL/PROFIT_LOCK改善
+  - 分類なしのTIME_EXIT削減は失敗する（L-100: 早期EXIT→逆効果）
+  採用条件: 「件数削減」ではなく「TIME_EXIT per-trade 平均損失改善 かつ 全体NET改善」で評価する
 - **B. なぜ勝てないか**: TIME_EXIT中のMFE/TP比率・TP_FILLEDのMFE余裕を確認。「勝ちを逃している主因」を1文で言語化する
 - **C. 総合判断**: A・Bを並べてどちらを先に解決するか決めてから Step 2.5 へ
 
