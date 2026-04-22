@@ -55,12 +55,12 @@ _DAILY_WARMUP = str(_ROOT / "data" / "BTCUSDT-1d-2024-09-01_04-15_227d.csv")
 # 日足MA70レジーム → Priority enable/disable セット
 _REGIME_PRIORITY_SETS: Dict[str, Dict] = {
     "downtrend": {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": True,  "ENABLE_P3_LONG": True,
-                  "ENABLE_P4_LONG": False,  "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
+                  "ENABLE_P4_LONG": False,  "ENABLE_P21_SHORT": True,  "ENABLE_P22_SHORT": False,
                   "ENABLE_P23_SHORT": True,  "ENABLE_P24_SHORT": False},
     "range":     {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
                   "ENABLE_P4_LONG": True,  "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
                   "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": False},
-    "uptrend":   {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
+    "uptrend":   {"ENABLE_P1_LONG": True,  "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
                   "ENABLE_P4_LONG": False, "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
                   "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": True},
     "mixed":     {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
@@ -220,6 +220,12 @@ def _check_exits_replay(pos: Dict, mark_price: float, df: pd.DataFrame, i: int,
     if side == "LONG" and priority == 3 and add_count == 1:
         _p3_hold_min = float(params.get("P3_MFE_STALE_HOLD_MIN", 90.0))
         if hold_min >= _p3_hold_min and mfe_usd < float(params.get("P3_MFE_STALE_GATE_USD", 4.0)):
+            return "MFE_STALE_CUT"
+
+    # 3e. MFE_STALE_CUT (P21 SHORT, add==1, hold>=P21_MFE_STALE_HOLD_MIN)
+    if side == "SHORT" and priority == 21 and add_count == 1:
+        _p21_hold_min = float(params.get("P21_MFE_STALE_HOLD_MIN", 90.0))
+        if hold_min >= _p21_hold_min and mfe_usd < float(params.get("P21_MFE_STALE_GATE_USD", 4.0)):
             return "MFE_STALE_CUT"
 
     # 4. RSI_REVERSE_EXIT (SHORT)
