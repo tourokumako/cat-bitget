@@ -165,13 +165,13 @@ for threshold in candidates:
 
 | Priority | downtrend/day | range/day | uptrend/day | 状態 |
 |---------|--------------|-----------|-------------|------|
-| P23-SHORT | **+$18.52/dt-day**（90d実測） | +$0.60 | -$3.70 | ✅ 確定（TP=0.012/ADX_MAX=50/DF=0.5） |
-| P21-SHORT | **+$6.24/dt-day**（365d OOS） | — | — | ✅ 確定（ATR14_MIN=150・TRAIL_EXIT） |
-| P2-LONG | **+$0.88/dt-day**（180d実測） | — | — | ✅ 確定（P2_TP_PCT=0.004追加済み） |
-| P3-LONG | **+$0.88/dt-day**（180d実測） | — | — | ✅ 確定（現状パラメータが最良） |
+| P23-SHORT | **+$18.74/dt-day**（365d OOS・STOCH_REVERSE_EXIT採用） | +$0.60 | -$3.70 | ✅ 確定（STOCH_REVERSE_EXIT MFE=20/HOLD=150） |
+| P21-SHORT | **+$5.90/dt-day**（365d OOS） | — | — | ✅ 確定（ATR14_MIN=150・TRAIL_EXIT） |
+| P2-LONG | **-$0.64/dt-day**（365d OOS） | — | — | ⚠️ 要改善（MFE_STALE_CUT 68件が主因） |
+| P3-LONG | **-$0.43/dt-day**（365d OOS） | — | — | ⚠️ 微損（SL_FILLED 10件$-317が主因） |
 | P4-LONG | — | +$0.69/day | — | 🔲 RANGE着手待ち（DT目標達成後） |
-| P24-SHORT | — | — | +$0.39/day | 🔲 UPTREND着手待ち |
-| P1-LONG | — | — | -$0.18/day | 🔲 UPTREND割り当て済み・要改善 |
+| P24-SHORT | — | — | +$0.88/day | 🔲 UPTREND着手待ち |
+| P1-LONG | — | — | -$0.36/day | 🔲 UPTREND割り当て済み・要改善 |
 | P22-SHORT | -$0.81 | -$1.12 | +$0.12 | ❌ 全レジーム赤字・保留 |
 
 ---
@@ -194,11 +194,11 @@ for threshold in candidates:
 
 | Priority | 対象レジーム | $/regime-day | データ |
 |---------|------------|-------------|-------|
-| P23-SHORT | DOWNTREND | +$18.52（90d） / +$14.30（365d） | 90d=52dt-day |
-| P21-SHORT | DOWNTREND | **+$6.24（365d OOS・ATR=150）** | 365d=136dt-day |
-| P2-LONG | DOWNTREND | +$0.88（180d） | 180d=82dt-day |
-| P3-LONG | DOWNTREND | +$0.88（180d） | 180d=82dt-day |
-| **DT合計** | DOWNTREND | **~$26.52/dt-day** | 目標$60まで-$33.48 |
+| P23-SHORT | DOWNTREND | **+$18.74（365d OOS・STOCH_REVERSE_EXIT採用）** | 365d=143dt-day |
+| P21-SHORT | DOWNTREND | +$5.90（365d OOS） | 365d=143dt-day |
+| P2-LONG | DOWNTREND | -$0.64（365d OOS） | 365d=143dt-day |
+| P3-LONG | DOWNTREND | -$0.43（365d OOS） | 365d=143dt-day |
+| **DT合計** | DOWNTREND | **~$23.57/dt-day** | 目標$60まで-$36.43 |
 | P4-LONG | RANGE | 未最適化 | — |
 | P24-SHORT | UPTREND | 未最適化 | — |
 
@@ -220,35 +220,52 @@ for threshold in candidates:
 
 ```
 【現在フォーカス: DOWNTREND / 合計$60/dt-day目標】
-現状: ~$26.52/dt-day（サイズ配分最適化前） / 目標$60 / 残差-$33.48
+現状: ~$23.57/dt-day / 目標$60 / 残差-$36.43
+
+【P23 最適化 - 完了済み】
+✅ STOCH_REVERSE_EXIT 採用確定（2026-04-23）
+  - パラメータ: MFE_GATE=20 / MIN_HOLD=150 / UNREAL_MIN=0 / ENABLE=true
+  - 180d grid: $16.01/dt-day（+$3.20 vs ベースライン$12.81）
+  - 365d OOS: $18.74/dt-day・STOCH_REVERSE_EXIT 48件 $+1730（avg $+36/trade）
+
+試行済み（P23 TIME_EXIT最適化）:
+- ADX_MIN引き上げ（30→37）: REJECTED
+- per-add sizing: REJECTED
+- PROFIT_LOCK: REJECTED（L-96）
+- MFE_DRAWDOWN_CUT Phase2（16組）: REJECTED（全てベースライン以下）
+- STOCH_REVERSE_EXIT: ✅ 採用確定
 
 【直近タスク（優先順位順）】
-1. P23 TIME_EXIT最適化（最優先・次セッション着手）
-   - TIME_EXIT 68件/-$2,861が最大損失源（未着手）
-   - 仮想シミュ（ADX/ATR）でTIME_EXITエントリーの特性を分析してから開始
-   - 目標: TIME_EXIT件数を現状（68件）の半分以下に削減
+1. P2-LONG 改善（-$0.64/dt-day・要因: MFE_STALE_CUT 68件$-592）
+   - 365d OOS で P2 が-$0.64/dt-dayと判明。180d推定$0.88とは乖離あり
+   - 主因: MFE_STALE_CUT 68件（avgMAE=-$12.24、avgTP_diff=+$6.71）→ STALEカットが損失を増幅
+   - 次の分析: STALE設定見直し or P2_MFE_STALE_HOLD_MIN調整
+   ※ 先にStep 2（結果分析）を実施してから設計する
 
-2. P23 サイズ最適化（TIME_EXIT改善後のみ着手可）
-   - P23_POSITION_SIZE_BTCをJSONに追記するだけで実装可能（replay_csv.py対応済み）
-   - 0.024→0.06（2.5倍）で理論上$35.75/dt-day
-   - 採用条件: TIME_EXIT件数が現状（68件）の半分以下であること
-   - ⚠️ TIME_EXIT未解決のままサイズ増加すると損失も2.5倍になる
+2. P3-LONG 改善（-$0.43/dt-day・要因: SL_FILLED 10件$-317）
+   - SL設定（P3_SL_PCT=0.015）が厳しすぎる可能性
+   ※ P2完了後に着手
 
-3. P2 追加最適化（P23完了後）
-   - P2_TP_PCT=0.004/STALE=90が$0.88/dt-day（180d）
-   - 次軸: ATR14_MIN or ADX条件の微調整（仮想シミュから開始）
-
-4. P21 さらなる改善余地（P23完了後）
-   - ATR=150で$6.24/dt-day（365d OOS）
-   - TIME_EXIT 29件（avgADX=26.6）がまだ残存 → Entry品質改善余地あり
+3. P21 追加改善（P2/P3完了後）
+   - $5.90/dt-day（365d OOS）/ TIME_EXIT 30件（avgADX=26.2）残存
 
 【確認済み・変更禁止】
-- P23: TP=0.012/ADX_MAX=50/DOWN_FACTOR=0.5 → $14.30/dt-day（365d）確定
-- P21: ATR14_MIN=150 / TRAIL_EXIT / TIME_EXIT_MIN=120 → $6.24/dt-day（365d OOS）確定
-- P2: TP=0.004/STALE=90 → $0.88/dt-day 確定（JSON追加済み）
-- P3: TP=0.008/ATR=250/STALE=90 → $0.88/dt-day 確定（変更なし）
+- P23: STOCH_REVERSE_EXIT(MFE=20/HOLD=150/UNREAL=0) / TP=0.012/ADX_MAX=50/DF=0.5
+  → $18.74/dt-day（365d OOS）確定
+- P21: ATR14_MIN=150 / TRAIL_EXIT / TIME_EXIT_MIN=120 → $5.90/dt-day（365d OOS）確定
+- replay_csv.py: P23 STOCH_REVERSE_EXIT（3f）実装済み
+- replay_csv.py: P21 MFE_STALE_CUT（3e）実装済み
 - _REGIME_PRIORITY_SETS: P21→DOWNTREND、P1→UPTREND 追加済み
-- replay_csv.py: P21 MFE_STALE_CUT（3e）実装済み（STALE_HOLD=60/GATE=1.0が最クリーン）
+
+【PMレビュー知見（2026-04-23）】
+- スロット占有制約: 1ポジション保有中は他Priority入れない（シリアル実行）
+  → サイズ増加提案前に機会損失計算必須（L-46）
+- $60/total-dayは現Priority構造のみでは困難。RANGE/UPTREND改善が将来必要
+  → 現フォーカスはDOWNTREND維持
+
+【grid_search.py 現在の設定】
+- TARGET: P23 / Phase 3c MIN_HOLD全域探索（完了・次はP2用に変更予定）
+- 結果: HOLD=150がグローバル最適（+$16.01/dt-day）
 ```
 
 ---
@@ -287,6 +304,10 @@ python3 runner/replay_csv.py data/BTCUSDT-5m-2025-04-01_03-31_365d.csv --regime
 | P23-SHORT | P23_ATR14_MIN | 150.0 |
 | P23-SHORT | P23_MFE_STALE_GATE_USD / HOLD_MIN | 4.0 / 30.0 |
 | P23-SHORT | P23_SHORT_PROFIT_LOCK_ENABLE | 0 |
+| P23-SHORT | P23_STOCH_REVERSE_EXIT_ENABLE | true |
+| P23-SHORT | P23_STOCH_EXIT_MFE_GATE | 20.0 |
+| P23-SHORT | P23_STOCH_EXIT_MIN_HOLD | 150.0 |
+| P23-SHORT | P23_STOCH_EXIT_UNREAL_MIN | 0.0 |
 | P21-SHORT | P21_TRAIL_RATIO / TIME_EXIT_MIN | 0.8 / 120 |
 | P21-SHORT | P21_SL_PCT | 0.02 |
 | P22-SHORT | P22_TIME_EXIT_DOWN_FACTOR | 0.4 |
