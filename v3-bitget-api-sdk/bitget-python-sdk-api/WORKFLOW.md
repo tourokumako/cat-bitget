@@ -167,7 +167,7 @@ for threshold in candidates:
 |---------|--------------|-----------|-------------|------|
 | P23-SHORT | **+$18.74/dt-day**（365d OOS・STOCH_REVERSE_EXIT採用） | +$0.60 | -$3.70 | ✅ 確定（STOCH_REVERSE_EXIT MFE=20/HOLD=150） |
 | P21-SHORT | **+$5.90/dt-day**（365d OOS） | — | — | ✅ 確定（ATR14_MIN=150・TRAIL_EXIT） |
-| P2-LONG | **+$1.08/dt-day**（365d OOS・ATR_MAX=300採用） | — | — | ✅ 確定（P2_ATR14_MAX=300） |
+| P2-LONG | **+$2.11/dt-day**（365d OOS・ATR_MIN=100採用） | — | — | ✅ 確定（P2_ATR14_MIN=100・ATR14_MAX=300） |
 | P3-LONG | **-$0.43/dt-day**（365d OOS） | — | — | ⚠️ 微損（SL_FILLED 10件$-317が主因） |
 | P4-LONG | — | +$0.69/day | — | 🔲 RANGE着手待ち（DT目標達成後） |
 | P24-SHORT | — | — | +$0.88/day | 🔲 UPTREND着手待ち |
@@ -196,9 +196,9 @@ for threshold in candidates:
 |---------|------------|-------------|-------|
 | P23-SHORT | DOWNTREND | **+$18.74（365d OOS・STOCH_REVERSE_EXIT採用）** | 365d=143dt-day |
 | P21-SHORT | DOWNTREND | +$5.90（365d OOS） | 365d=143dt-day |
-| P2-LONG | DOWNTREND | **+$1.08（365d OOS・ATR_MAX=300採用）** | 365d=143dt-day |
+| P2-LONG | DOWNTREND | **+$2.11（365d OOS・ATR_MIN=100採用）** | 365d=143dt-day |
 | P3-LONG | DOWNTREND | -$0.43（365d OOS） | 365d=143dt-day |
-| **DT合計** | DOWNTREND | **~$25.32/dt-day** | 目標$60まで-$34.68 |
+| **DT合計** | DOWNTREND | **~$26.35/dt-day** | 目標$60まで-$33.65 |
 | P4-LONG | RANGE | 未最適化 | — |
 | P24-SHORT | UPTREND | 未最適化 | — |
 
@@ -220,7 +220,7 @@ for threshold in candidates:
 
 ```
 【現在フォーカス: DOWNTREND / 合計$60/dt-day目標】
-現状: ~$25.32/dt-day / 目標$60 / 残差-$34.68
+現状: ~$26.35/dt-day / 目標$60 / 残差-$33.65
 
 【P23 最適化 - 完了済み】
 ✅ STOCH_REVERSE_EXIT 採用確定（2026-04-23）
@@ -228,11 +228,12 @@ for threshold in candidates:
   - 365d OOS: $18.74/dt-day・STOCH_REVERSE_EXIT 48件 $+1730（avg $+36/trade）
 
 【P2-LONG 最適化 - 完了済み（2026-04-23）】
-✅ P2_ATR14_MAX=300 採用確定
-  - 22パターン仮想sim → ATR_MAX系が最有力（ADX引き上げは全パターン逆効果）
-  - 180d grid: ATR300=+$2.94（rank3）/ ATR500=+$3.46（rank1 ← 外れ値依存・L-110）
-  - 365d OOS: ATR300=+$1.08（Best）/ ベースライン-$0.64から+$1.72改善
-  試行済み（REJECTED）: ADX_MIN引き上げ（33/35/37/40・全逆効果）/ RSI_MIN引き上げ
+✅ P2_ATR14_MIN=100 採用確定（ATR14_MAX=300は前回採用済み）
+  - Phase 1 グリッド（ADX_MAX×ATR_MIN 9パターン）: ATR_MIN=100・ADX_MAX=999が最強
+  - ADX_MAXフィルター: 効果なし（ADX_MAX=999=制限なしが常に最強）
+  - 180d grid: ATR_MIN=100 = +$3.49/day（rank1）
+  - 365d OOS: ATR_MIN=100 = +$2.11/dt-day / ベースライン+$1.08から+$1.03改善
+  試行済み（REJECTED）: ADX_MIN引き上げ（33/35/37/40・全逆効果）/ RSI_MIN引き上げ / ADX_MAX追加
   Phase 2候補（将来）: add_count制限（仮想sim+$0.56・小さいため後回し）
 
 【直近タスク（優先順位順）】
@@ -251,7 +252,7 @@ for threshold in candidates:
 - P23: STOCH_REVERSE_EXIT(MFE=20/HOLD=150/UNREAL=0) / TP=0.012/ADX_MAX=50/DF=0.5
   → $18.74/dt-day（365d OOS）確定
 - P21: ATR14_MIN=150 / TRAIL_EXIT / TIME_EXIT_MIN=120 → $5.95/dt-day（365d OOS）確定
-- P2: ATR14_MAX=300 → +$1.08/dt-day（365d OOS）確定
+- P2: ATR14_MIN=100 / ATR14_MAX=300 → +$2.11/dt-day（365d OOS）確定
 - replay_csv.py: P23 STOCH_REVERSE_EXIT（3f）実装済み
 - replay_csv.py: P21 MFE_STALE_CUT（3e）実装済み
 - _REGIME_PRIORITY_SETS: P21→DOWNTREND、P1→UPTREND 追加済み
@@ -263,7 +264,7 @@ for threshold in candidates:
   → 現フォーカスはDOWNTREND維持
 
 【grid_search.py 現在の設定】
-- TARGET: P2 / ATR_MAX探索完了（ATR300採用・次はP3用に変更予定）
+- TARGET: P2 Phase 1完了（ATR_MIN=100採用・次はP3用に変更予定）
 ```
 
 ---
@@ -294,7 +295,7 @@ python3 runner/replay_csv.py data/BTCUSDT-5m-2025-04-01_03-31_365d.csv --regime
 | Priority | パラメータ | 値 |
 |---------|-----------|-----|
 | P2-LONG | P2_TP_PCT | 0.004 |
-| P2-LONG | P2_ATR14_MIN / ATR14_MAX | 80.0 / **300.0（採用確定）** |
+| P2-LONG | P2_ATR14_MIN / ATR14_MAX | **100.0（採用確定）** / **300.0（採用確定）** |
 | P2-LONG | P2_MFE_STALE_GATE_USD / HOLD_MIN | 5.0 / 90.0 |
 | P23-SHORT | P23_TP_PCT | 0.012 |
 | P23-SHORT | P23_TIME_EXIT_MIN | 480（実効240min via DOWN_FACTOR=0.5） |

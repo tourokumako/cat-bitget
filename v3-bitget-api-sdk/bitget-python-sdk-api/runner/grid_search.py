@@ -34,13 +34,12 @@ _DEFAULT_CSV = str(_ROOT / "data" / "BTCUSDT-5m-2025-10-03_04-01_combined_180d.c
 TARGET_PRIORITY = 2      # 詳細集計するPriority（NETソートの基準）
 TARGET_REGIME   = "downtrend"  # P2=downtrend / P4=range / P24=uptrend / None=全日数
 
-# P2 ATR_MAX探索（Phase 1）
-# ベースライン: -$0.64/dt-day（365d OOS）
-# 仮想sim結果: ATR250(+1.85) > ATR500(+1.60) > ATR300(+1.37)
-# 主効果: SL_FILLED(ATR=514, -$218) + 高ATR TIME_EXIT 除外
-# P2_ATR14_MAXはcat_v9_decider.py 461行目に既実装（デフォルト999999）
+# P2-LONG Phase 1 ADX_MAX × ATR14_MIN グリッド（2026-04-23）
+# ベースライン: +$1.08/dt-day（365d OOS・ATR_MAX=300採用後）
+# 仮想sim予測: ADX_MAX=60×ATR_MIN=100 → $+2.74（最強）
 GRID: Dict[str, List[Any]] = {
-    "P2_ATR14_MAX": [180, 220, 250, 300, 350, 500],
+    "P2_ADX_MAX":   [50, 60, 999],
+    "P2_ATR14_MIN": [100, 140, 180],
 }
 
 # [Phase 2 候補: ATR_MAX確定後にadd_count制限を追加探索]
