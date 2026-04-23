@@ -31,51 +31,36 @@ _DEFAULT_CSV = str(_ROOT / "data" / "BTCUSDT-5m-2025-10-03_04-01_combined_180d.c
 # ============================================================
 # ▼ ここを変更して使う
 # ============================================================
-TARGET_PRIORITY = 23     # 詳細集計するPriority（NETソートの基準）
+TARGET_PRIORITY = 2      # 詳細集計するPriority（NETソートの基準）
 TARGET_REGIME   = "downtrend"  # P2=downtrend / P4=range / P24=uptrend / None=全日数
 
-# P23 Exit設計探索
-# ベースライン: $12.81/dt-day（180d）/ TIME_EXIT 37件（うちMFE>15が26件・-$1,101）
-#
-# [現在実行中: Phase 3 STOCH_REVERSE_EXIT（TYPE II複合Exit）]
-# 分析結果: MFE>15のTIME_EXIT 26件で全件Stochクロス発生。
-#          「MFE>gate + hold>=min_hold + unreal>=unreal_min + Stochゴールデンクロス」の3条件AND
-#          TP_FILLED 4件への破壊はmin_hold>=30で全防衛確認済み。
+# P2 ATR_MAX探索（Phase 1）
+# ベースライン: -$0.64/dt-day（365d OOS）
+# 仮想sim結果: ATR250(+1.85) > ATR500(+1.60) > ATR300(+1.37)
+# 主効果: SL_FILLED(ATR=514, -$218) + 高ATR TIME_EXIT 除外
+# P2_ATR14_MAXはcat_v9_decider.py 461行目に既実装（デフォルト999999）
 GRID: Dict[str, List[Any]] = {
-    "P23_STOCH_REVERSE_EXIT_ENABLE": [True],
-    "P23_STOCH_EXIT_MFE_GATE":   [20],
-    "P23_STOCH_EXIT_MIN_HOLD":   [120, 150, 180, 240, 300, 360, 420, 480],
-    "P23_STOCH_EXIT_UNREAL_MIN": [0],
+    "P2_ATR14_MAX": [180, 220, 250, 300, 350, 500],
 }
-# 8組み合わせ / Phase 3c: MIN_HOLD全域探索（120〜480 / TIME_EXIT_MIN=480まで）
-# 既知: HOLD=60→+14.95 / HOLD=90→+12.19（谷） / HOLD=120→+15.80（現Best）
-# ベースライン比較は $12.81/dt-day
 
-# [Phase 3a STOCH_REVERSE_EXIT 48組み - HOLD=60が最良 → 上方探索]
+# [Phase 2 候補: ATR_MAX確定後にadd_count制限を追加探索]
+# GRID = {
+#     "P2_ATR14_MAX": [最良値],
+#     "P2_MAX_ADDS":  [0, 1, 2],  # 実装確認後
+# }
+
+# [P23 Phase 3c 完了済み - STOCH_REVERSE_EXIT HOLD=150採用確定]
 # GRID = {
 #     "P23_STOCH_REVERSE_EXIT_ENABLE": [True],
-#     "P23_STOCH_EXIT_MFE_GATE":   [10, 15, 20, 30],
-#     "P23_STOCH_EXIT_MIN_HOLD":   [20, 30, 45, 60],
-#     "P23_STOCH_EXIT_UNREAL_MIN": [0, 5, 10],
+#     "P23_STOCH_EXIT_MFE_GATE":   [20],
+#     "P23_STOCH_EXIT_MIN_HOLD":   [120, 150, 180, 240, 300, 360, 420, 480],
+#     "P23_STOCH_EXIT_UNREAL_MIN": [0],
 # }
 
-# [Phase 2 MFE Drawdown - REJECTED 全16組ベースライン以下]
-# GRID = {
-#     "P23_MFE_DRAWDOWN_MIN_USD": [10, 20, 30, 40],
-#     "P23_MFE_DRAWDOWN_RATIO":   [0.0, 0.1, 0.2, 0.3],
-# }
-
-# [Phase 1 STALE拡張 - 待機中]
-# GRID = {
-#     "P23_MFE_STALE_ADD_MIN":  [1, 2, 5],
-#     "P23_MFE_STALE_HOLD_MIN": [30, 60, 90],
-#     "P23_MFE_STALE_GATE_USD": [4, 12, 24],
-# }
-
-# P23のみ有効
+# P2のみ有効
 FIXED_PARAMS: Dict[str, Any] = {
-    "ENABLE_P2_LONG":    False,
-    "ENABLE_P23_SHORT":  True,
+    "ENABLE_P2_LONG":    True,
+    "ENABLE_P23_SHORT":  False,
     "ENABLE_P3_LONG":    False,
     "ENABLE_P4_LONG":    False,
     "ENABLE_P22_SHORT":  False,

@@ -167,7 +167,7 @@ for threshold in candidates:
 |---------|--------------|-----------|-------------|------|
 | P23-SHORT | **+$18.74/dt-day**（365d OOS・STOCH_REVERSE_EXIT採用） | +$0.60 | -$3.70 | ✅ 確定（STOCH_REVERSE_EXIT MFE=20/HOLD=150） |
 | P21-SHORT | **+$5.90/dt-day**（365d OOS） | — | — | ✅ 確定（ATR14_MIN=150・TRAIL_EXIT） |
-| P2-LONG | **-$0.64/dt-day**（365d OOS） | — | — | ⚠️ 要改善（MFE_STALE_CUT 68件が主因） |
+| P2-LONG | **+$1.08/dt-day**（365d OOS・ATR_MAX=300採用） | — | — | ✅ 確定（P2_ATR14_MAX=300） |
 | P3-LONG | **-$0.43/dt-day**（365d OOS） | — | — | ⚠️ 微損（SL_FILLED 10件$-317が主因） |
 | P4-LONG | — | +$0.69/day | — | 🔲 RANGE着手待ち（DT目標達成後） |
 | P24-SHORT | — | — | +$0.88/day | 🔲 UPTREND着手待ち |
@@ -196,9 +196,9 @@ for threshold in candidates:
 |---------|------------|-------------|-------|
 | P23-SHORT | DOWNTREND | **+$18.74（365d OOS・STOCH_REVERSE_EXIT採用）** | 365d=143dt-day |
 | P21-SHORT | DOWNTREND | +$5.90（365d OOS） | 365d=143dt-day |
-| P2-LONG | DOWNTREND | -$0.64（365d OOS） | 365d=143dt-day |
+| P2-LONG | DOWNTREND | **+$1.08（365d OOS・ATR_MAX=300採用）** | 365d=143dt-day |
 | P3-LONG | DOWNTREND | -$0.43（365d OOS） | 365d=143dt-day |
-| **DT合計** | DOWNTREND | **~$23.57/dt-day** | 目標$60まで-$36.43 |
+| **DT合計** | DOWNTREND | **~$25.32/dt-day** | 目標$60まで-$34.68 |
 | P4-LONG | RANGE | 未最適化 | — |
 | P24-SHORT | UPTREND | 未最適化 | — |
 
@@ -220,39 +220,38 @@ for threshold in candidates:
 
 ```
 【現在フォーカス: DOWNTREND / 合計$60/dt-day目標】
-現状: ~$23.57/dt-day / 目標$60 / 残差-$36.43
+現状: ~$25.32/dt-day / 目標$60 / 残差-$34.68
 
 【P23 最適化 - 完了済み】
 ✅ STOCH_REVERSE_EXIT 採用確定（2026-04-23）
   - パラメータ: MFE_GATE=20 / MIN_HOLD=150 / UNREAL_MIN=0 / ENABLE=true
-  - 180d grid: $16.01/dt-day（+$3.20 vs ベースライン$12.81）
   - 365d OOS: $18.74/dt-day・STOCH_REVERSE_EXIT 48件 $+1730（avg $+36/trade）
 
-試行済み（P23 TIME_EXIT最適化）:
-- ADX_MIN引き上げ（30→37）: REJECTED
-- per-add sizing: REJECTED
-- PROFIT_LOCK: REJECTED（L-96）
-- MFE_DRAWDOWN_CUT Phase2（16組）: REJECTED（全てベースライン以下）
-- STOCH_REVERSE_EXIT: ✅ 採用確定
+【P2-LONG 最適化 - 完了済み（2026-04-23）】
+✅ P2_ATR14_MAX=300 採用確定
+  - 22パターン仮想sim → ATR_MAX系が最有力（ADX引き上げは全パターン逆効果）
+  - 180d grid: ATR300=+$2.94（rank3）/ ATR500=+$3.46（rank1 ← 外れ値依存・L-110）
+  - 365d OOS: ATR300=+$1.08（Best）/ ベースライン-$0.64から+$1.72改善
+  試行済み（REJECTED）: ADX_MIN引き上げ（33/35/37/40・全逆効果）/ RSI_MIN引き上げ
+  Phase 2候補（将来）: add_count制限（仮想sim+$0.56・小さいため後回し）
 
 【直近タスク（優先順位順）】
-1. P2-LONG 改善（-$0.64/dt-day・要因: MFE_STALE_CUT 68件$-592）
-   - 365d OOS で P2 が-$0.64/dt-dayと判明。180d推定$0.88とは乖離あり
-   - 主因: MFE_STALE_CUT 68件（avgMAE=-$12.24、avgTP_diff=+$6.71）→ STALEカットが損失を増幅
-   - 次の分析: STALE設定見直し or P2_MFE_STALE_HOLD_MIN調整
-   ※ 先にStep 2（結果分析）を実施してから設計する
-
-2. P3-LONG 改善（-$0.43/dt-day・要因: SL_FILLED 10件$-317）
+1. P3-LONG 改善（-$0.45/dt-day・要因: SL_FILLED 10件$-317）
    - SL設定（P3_SL_PCT=0.015）が厳しすぎる可能性
-   ※ P2完了後に着手
+   - ATR avg=327（TIME_EXIT）・ATR_MAX追加が有効か検討
+   ※ まずStep 2（結果分析）を実施してから設計する
 
-3. P21 追加改善（P2/P3完了後）
-   - $5.90/dt-day（365d OOS）/ TIME_EXIT 30件（avgADX=26.2）残存
+2. P21 追加改善（P3完了後）
+   - $5.95/dt-day（365d OOS）/ TIME_EXIT 30件（avgADX=26.2）残存
+
+3. P2 Phase 2（P3/P21完了後）
+   - add_count制限（仮想sim+$0.56）
 
 【確認済み・変更禁止】
 - P23: STOCH_REVERSE_EXIT(MFE=20/HOLD=150/UNREAL=0) / TP=0.012/ADX_MAX=50/DF=0.5
   → $18.74/dt-day（365d OOS）確定
-- P21: ATR14_MIN=150 / TRAIL_EXIT / TIME_EXIT_MIN=120 → $5.90/dt-day（365d OOS）確定
+- P21: ATR14_MIN=150 / TRAIL_EXIT / TIME_EXIT_MIN=120 → $5.95/dt-day（365d OOS）確定
+- P2: ATR14_MAX=300 → +$1.08/dt-day（365d OOS）確定
 - replay_csv.py: P23 STOCH_REVERSE_EXIT（3f）実装済み
 - replay_csv.py: P21 MFE_STALE_CUT（3e）実装済み
 - _REGIME_PRIORITY_SETS: P21→DOWNTREND、P1→UPTREND 追加済み
@@ -264,8 +263,7 @@ for threshold in candidates:
   → 現フォーカスはDOWNTREND維持
 
 【grid_search.py 現在の設定】
-- TARGET: P23 / Phase 3c MIN_HOLD全域探索（完了・次はP2用に変更予定）
-- 結果: HOLD=150がグローバル最適（+$16.01/dt-day）
+- TARGET: P2 / ATR_MAX探索完了（ATR300採用・次はP3用に変更予定）
 ```
 
 ---
@@ -295,9 +293,9 @@ python3 runner/replay_csv.py data/BTCUSDT-5m-2025-04-01_03-31_365d.csv --regime
 
 | Priority | パラメータ | 値 |
 |---------|-----------|-----|
-| P2-LONG | P2_TP_PCT | **0.004（Phase1確定・要JSON追加）** |
+| P2-LONG | P2_TP_PCT | 0.004 |
+| P2-LONG | P2_ATR14_MIN / ATR14_MAX | 80.0 / **300.0（採用確定）** |
 | P2-LONG | P2_MFE_STALE_GATE_USD / HOLD_MIN | 5.0 / 90.0 |
-| P2-LONG | P2_ATR14_MIN | 80.0 |
 | P23-SHORT | P23_TP_PCT | 0.012 |
 | P23-SHORT | P23_TIME_EXIT_MIN | 480（実効240min via DOWN_FACTOR=0.5） |
 | P23-SHORT | P23_ADX_MIN/MAX | 30.0 / 50.0 |

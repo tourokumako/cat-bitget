@@ -88,6 +88,7 @@
   "P2_ADX_EXCL_MAX": 50.0,
   "P2_TP_PCT": 0.004,
   "P2_ATR14_MIN": 80.0,
+  "P2_ATR14_MAX": 300.0,
   "P2_RSI_MIN": 45.0,
   "P2_STOCH_GAP_MIN": 0.3,
   "P2_STOCH_K_MIN": 0.0,
