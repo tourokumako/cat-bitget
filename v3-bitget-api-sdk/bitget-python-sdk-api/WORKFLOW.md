@@ -170,13 +170,14 @@ for threshold in candidates:
 | Priority | downtrend/day | range/day | uptrend/day | 状態 |
 |---------|--------------|-----------|-------------|------|
 | P23-SHORT | **+$21.32/dt-day**（365d OOS・HIGH_ADX filter採用） | +$0.60 | -$3.70 | 稼働中（DT最適化完了） |
-| P21-SHORT | **+$7.36/dt-day**（365d OOS・TIME_EXIT_MIN=180採用） | — | — | 稼働中（DT最適化完了） |
-| P2-LONG | **+$2.11/dt-day**（365d OOS・ATR_MIN=100採用） | — | — | 稼働中（DT最適化完了） |
-| P3-LONG | **-$0.45/dt-day**（365d OOS） | — | — | 休止（DTで停止・他レジーム未着手） |
+| P21-SHORT | **+$7.51/dt-day**（365d OOS・2026-04-24再計測） | — | — | 稼働中（DT最適化完了） |
+| P2-LONG | **+$2.32/dt-day**（365d OOS・2026-04-24再計測・P3停止効果+$0.21） | — | — | 稼働中（DT最適化完了） |
+| P3-LONG | — | — | — | DT停止確定（2026-04-24 整合修正・`ENABLE_P3_LONG: False`） |
 | P4-LONG | — | +$0.69/day | — | 未着手（RANGE割当） |
 | P24-SHORT | — | — | +$0.88/day | 未着手（UPTREND割当） |
 | P1-LONG | — | — | -$0.36/day | 未着手（UPTREND割当・要改善） |
-| P22-SHORT | -$0.81 | -$1.12 | +$0.12 | 未着手（全レジーム赤字・改善未試行） |
+| P22-SHORT | — | — | — | DT停止中（コード`ENABLE_P22_SHORT: False`・全レジーム未着手） |
+| P25-SHORT | — | — | — | REJECTED（L-118・N3 ADXスパイク・P23干渉で DT-$14.38悪化） |
 
 > 状態の定義:
 > - 稼働中: 現在 replay で動作・最適化完了または進行中
@@ -191,11 +192,11 @@ for threshold in candidates:
 
 | レジーム | /total-day | 有効Priority |
 |---------|-----------|-------------|
-| DOWNTREND | +$11.92（365d実測） | P2/P3/P21/P23 |
+| DOWNTREND | +$12.20（365d実測・2026-04-24更新） | P2/P21/P23 |
 | RANGE | -$0.41 | P4 |
 | UPTREND | +$0.52 | P1/P24 |
 | MIXED | +$0.39 | P4 |
-| **合計** | **+$11.37** | ※365d regime_switch=ON |
+| **合計** | **+$12.70** | ※365d regime_switch=ON |
 
 ※90d（Jan-Apr 2026）は好況期バイアスあり。365dを正本とする。
 
@@ -204,24 +205,26 @@ for threshold in candidates:
 | Priority | 対象レジーム | $/regime-day | データ |
 |---------|------------|-------------|-------|
 | P23-SHORT | DOWNTREND | **+$21.32（365d OOS・HIGH_ADX filter採用）** | 365d=143dt-day |
-| P21-SHORT | DOWNTREND | **+$7.36（365d OOS・TIME_EXIT_MIN=180採用）** | 365d=143dt-day |
-| P2-LONG | DOWNTREND | +$2.11（365d OOS・ATR_MIN=100採用） | 365d=143dt-day |
-| P3-LONG | DOWNTREND | -$0.45（365d OOS・DT休止中） | 365d=143dt-day |
-| **DT合計** | DOWNTREND | **~$30.43/dt-day** | 目標$60まで-$29.57 |
+| P21-SHORT | DOWNTREND | **+$7.51（365d OOS・2026-04-24再計測）** | 365d=143dt-day |
+| P2-LONG | DOWNTREND | +$2.32（365d OOS・2026-04-24再計測・P3停止効果） | 365d=143dt-day |
+| P3-LONG | DOWNTREND | — | DT停止確定（0件） |
+| **DT合計** | DOWNTREND | **$31.15/dt-day（2026-04-24更新）** | 目標$60まで-$28.85 |
 | P4-LONG | RANGE | 未最適化 | — |
 | P24-SHORT | UPTREND | 未最適化 | — |
 
-### _REGIME_PRIORITY_SETS（replay_csv.py・2026-04-22修正）
+### _REGIME_PRIORITY_SETS（replay_csv.py・2026-04-24修正）
 
 | Priority | DOWNTREND | RANGE | UPTREND | MIXED |
 |---------|-----------|-------|---------|-------|
 | P1-LONG | ❌ | ❌ | ✅ | ❌ |
 | P2-LONG | ✅ | ❌ | ❌ | ❌ |
-| P3-LONG | ✅ | ❌ | ❌ | ❌ |
+| P3-LONG | ❌（2026-04-24停止確定） | ❌ | ❌ | ❌ |
 | P4-LONG | ❌ | ✅ | ❌ | ✅ |
 | P21-SHORT | ✅ | ❌ | ❌ | ❌ |
+| P22-SHORT | ❌ | ❌ | ❌ | ❌ |
 | P23-SHORT | ✅ | ❌ | ❌ | ❌ |
 | P24-SHORT | ❌ | ❌ | ✅ | ❌ |
+| P25-SHORT | ❌（REJECTED・L-118） | ❌ | ❌ | ❌ |
 
 ---
 
@@ -229,15 +232,35 @@ for threshold in candidates:
 
 ```
 【現在フォーカス: DOWNTREND / 合計$60/dt-day目標】
-現状: ~$30.43/dt-day / 目標$60 / 残差-$29.57
-前セッション改善: +$4.08/dt-day（$26.35→$30.43, +15.5%）
-本セッション(継続): ±$0（全提案 REJECT・ロールバック済）
+現状: $31.15/dt-day / 目標$60 / 残差-$28.85
+2026-04-24 前セッション(Exit改善): +$4.08/dt-day（$26.35→$30.43）
+2026-04-24 本セッション(新規Priority探索): +$0.72/dt-day（$30.43→$31.15）
+  - P3-LONG DT停止（WORKFLOW認識と実装整合修正）→ +$0.72
+  - N1/N3 新規シグナル検証: 両方却下・P25-SHORT実装→L-118でロールバック
+
+【本セッション 2026-04-24 採用済み】
+✅ P3-LONG DT停止（ENABLE_P3_LONG: False）
+   - WORKFLOW表「休止」と実装「True」の矛盾を修正
+   - 365d Replay: P3 0件・P2-LONG +$0.21/dt-day（LONGスロット空き効果）
 
 【前セッション 2026-04-24 採用済み】
 ✅ P21_TIME_EXIT_MIN=180（実効90min）→ P21 $5.95→$7.36/dt-day
 ✅ P23 HIGH_ADX フィルター → P23 $18.74→$21.32/dt-day
 
-【本セッションの REJECTED 提案（2026-04-24 継続）】
+【本セッション REJECTED 提案（2026-04-24 新規Priority探索）】
+❌ N1 シグナル（EMA20リジェクト SHORT・戻り売り）
+  - 180d grid exit: $25.44/dt-day / 365d OOS: $2.60/dt-day（L-115 過学習）
+  - 20件/dt-day で per-trade 構造的に薄い（L-116）
+  - per-trade指標フィルタでも改善せず（L-117）
+
+❌ N3 シグナル → P25-SHORT 実装（ADXスパイク順張り SHORT）
+  - 365d grid/exit: $10.90/dt-day 予測
+  - 365d Replay 実測: P25 +$2.90 / DT合計 $30.43→$16.05（-$14.38悪化）
+  - P23-SHORT が $21.32→$3.58 に失墜（L-118 / L-46 干渉）
+  - 即ロールバック（downtrend の ENABLE_P25_SHORT: False）
+  - P25 コード（cat_v9_decider + cat_params）は将来再設計用に残存
+
+【前セッション REJECTED 提案（2026-04-24 継続）】
 ❌ P23 MAX_ADDS 削減（5→3or4）
   - 仮想シミュ: add=4,5 は NET最大貢献源（+$1,860 / 全体61%）
   - 削減は $-1.19〜-$4.14/dt-day。WORKFLOW直近タスク1は却下
@@ -270,65 +293,72 @@ for threshold in candidates:
   原則禁止。P23 は TP到達までに volatile-path をたどる性質で、ratchet型は
   TP経路の中間 pullback を誤認して発火しTP奪取する。3連敗で構造確定。
 
-【本セッションの保留アイデア（次セッション以降）】
+【保留資産（次セッション以降）】
+- P25-SHORT コード: decider + params 残存・無効化状態
+  avgHold短縮 or 強Entry絞り込みで再設計の可能性
 - A1_STALL の per-trade 損失 -$8.48 自体は MFE_STALE_HOLD_MIN 短縮で
   $0.5〜$1.7/dt-day 削れる可能性（非ratchet型・安全）
 
 【直近タスク（優先順位順・非ratchet型のみ）】
-1. STOCH_REVERSE_EXIT MFE_GATE 単軸スイープ
+1. 【新規】共通エンジン scripts/analyze_signals.py 作成
+   - L-118織り込み: 占有時間試算 + 既存Priority発火重複率を事前評価
+   - 複数シグナル候補を1スクリプトで効率検証（signal_ledger.md で追跡）
+   - 実装前 Replay 干渉テストを必須化
+
+2. 【新規】N6〜N18 候補シグナル検証（最低10候補）
+   - feedback_ten_trials_minimum: 10候補×365d検証してから撤退判断
+   - 優先順: N6 (ADX50超+DI-) / N2 (BB Trap) / N12 (出来高急増+陰線) / N8 (Donchian)
+   - 制約: 発火 5-10件/dt-day・avgHold 60-120min（L-116）
+   - 365d 直接検証（180d は使わない・L-115）
+   - 順張り歓迎（feedback_trend_follow_welcomed）
+
+3. STOCH_REVERSE_EXIT MFE_GATE 単軸スイープ（既存最適化）
    - 現行 P23_STOCH_EXIT_MFE_GATE=20 の周辺 [10, 15, 25, 30]
-   - L-109 は MIN_HOLD 軸のみ最適化・MFE_GATE は未探索
-   - 期待 +$0.5〜+$2/dt-day（データ不足・実測で判定）
+   - 期待 +$0.5〜+$2/dt-day
 
-2. P23_STOCH_K_MAX ゲート（Entry強化）
+4. P23_STOCH_K_MAX ゲート（Entry強化）
    - decider L474 に実装済みだが params=999.0 で実質無効
-   - まず CSV で TP vs TIME_EXIT の stoch_k_at_entry 分布を確認
-   - 分布に差があればスイープ
+   - CSV で TP vs TIME_EXIT の stoch_k_at_entry 分布を確認
 
-3. P23_TIME_EXIT_DOWN_FACTOR スイープ
-   - 現行 SHORT_TIME_EXIT_DOWN_FACTOR=0.5 を継承（実効240min）
-   - P22 は 0.4 採用実績あり・P23 独自値は未探索
-   - 期待 +$0.3/dt-day（上限 +$1.5）・L-100 通り短縮悪化リスクあり
-
-4. P21 TP_PCT / BB_RATIO 最適化（別Priority・未試行軸）
-   - 現行 TP_BB_RATIO=1.0 / TP_MIN_PCT=0.0003
+5. P21 TP_PCT / BB_RATIO 最適化（別Priority・未試行軸）
    - 期待 +$1〜$3/dt-day
 
-5. 新 DOWNTREND Priority 設計（ゼロベース）
-   - 既存Priority内では $60/dt-day 到達厳しい可能性
-   - 新シグナル発見フェーズから
-   - ratchet型以外の Exit 設計を前提にする
+6. P22-SHORT DT 改善（新規設計級の工数）
+   - 現在 DT 無効・DT 有効化 replay → フィルタ強化の流れ
 
-6. P4-LONG RANGE 改善（DT目標達成後）
+7. P4-LONG RANGE 改善（DT目標達成後）
 
 【確認済み・変更禁止】
 - P23: HIGH_ADX_THRESH=40 / HIGH_ADX_ATR_MIN=200 / STOCH_REVERSE_EXIT(MFE=20/HOLD=150/UNREAL=0)
   → $21.32/dt-day（365d OOS）確定
-- P21: ATR14_MIN=150 / TRAIL_EXIT / TIME_EXIT_MIN=180 → $7.36/dt-day（365d OOS）確定
-- P2: ATR14_MIN=100 / ATR14_MAX=300 → +$2.11/dt-day（365d OOS）確定
+- P21: ATR14_MIN=150 / TRAIL_EXIT / TIME_EXIT_MIN=180 → $7.51/dt-day（365d OOS・2026-04-24再計測）
+- P2: ATR14_MIN=100 / ATR14_MAX=300 → +$2.32/dt-day（365d OOS・2026-04-24再計測・P3停止効果）
+- **_REGIME_PRIORITY_SETS DT: ENABLE_P3_LONG=False / ENABLE_P25_SHORT=False 確定（2026-04-24）**
 - replay_csv.py: P23 STOCH_REVERSE_EXIT（3f）実装済み
 - replay_csv.py: P21 MFE_STALE_CUT（3e）実装済み
-- replay_csv.py: TRAIL_EXIT 対象 priority は (1, 21) 維持（P23追加は回帰確認済）
-- _REGIME_PRIORITY_SETS: P21→DOWNTREND、P1→UPTREND 追加済み
+- replay_csv.py: TRAIL_EXIT 対象 priority は (1, 21) 維持
+- P25-SHORT コード: decider + params 残存・無効化（ENABLE=False）
 
-【PMレビュー知見（2026-04-23）】
+【PMレビュー知見（2026-04-23 + 2026-04-24）】
 - スロット占有制約: 1ポジション保有中は他Priority入れない（シリアル実行）
-  → サイズ増加提案前に機会損失計算必須（L-46）
-- $60/total-dayは現Priority構造のみでは困難。RANGE/UPTREND改善が将来必要
-  → 現フォーカスはDOWNTREND維持（feedback_downtrend_focus）
+  → 新規Priority追加前に占有時間試算必須（L-46 / L-118）
+- $60/total-dayは現Priority構造のみでは困難・新Priority発掘が必要
+  → 現フォーカスは DOWNTREND 維持（feedback_downtrend_focus）
+  → 新Priority探索は順張り系歓迎（feedback_trend_follow_welcomed）
+  → 最低10候補×365d検証が原則（feedback_ten_trials_minimum）
 
 【本セッションの教訓】
 - L-111: PROFIT_LOCK/TRAIL系は TP_FILLED 奪取リスクを必ず事前確認
 - L-112: final_mfe は途中時点 MFE の推定に使えない（MFE=単調増加型）
-- L-113: TRAIL_EXIT の trail_net ≈ ratio × final_mfe - fee 仮想シミュは ratchet型の動的挙動を
-  捉えず大外しする。GATE_PCT は Priority 固有の TP_PCT・avgHold に合わせて設計必須
-- L-114: P23 は ratchet型 Exit 全般と構造的不整合。P23 の TP経路は volatile-path で
-  中間pullback が正常経路。PROFIT_LOCK/TRAIL/MFE_DRAWDOWN_CUT は全て誤認発火で TP奪取。
-  P23 の Exit 改善は非ratchet型（STOCH_REVERSE/MFE_STALE/TIME_EXIT/Entry強化）に限定
+- L-113: TRAIL_EXIT の trail_net 仮想シミュは ratchet型の動的挙動を捉えず大外しする
+- L-114: P23 は ratchet型 Exit 全般と構造的不整合（volatile-path TP経路）
+- L-115: 180d Exit最適化は過学習リスク極大（→365d正本化）
+- L-116: 発火件数少=質高=Exit柔軟性（最適域 5-10件/dt-day・avgHold 60-120min）
+- L-117: 発火少シグナルのper-tradeフィルタは絶対NET悪化（件数削減コスト）
+- L-118: 単独シミュは複数Priority共存で $/dt-day を過大評価（L-46 実証確認）
 
 【grid_search.py 現在の設定】
-- TARGET: P23 TIME_EXIT_MIN グリッド（完了・480維持確定）
-- 次: P21 TP_PCT / BB_RATIO グリッド、もしくは P23 TRAIL_EXIT 再設計用
+- TARGET: 未設定（新規シグナル検証フェーズ中）
 ```
 
 ---

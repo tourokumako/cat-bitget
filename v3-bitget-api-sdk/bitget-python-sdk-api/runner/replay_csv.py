@@ -54,21 +54,21 @@ _DAILY_WARMUP = str(_ROOT / "data" / "BTCUSDT-1d-2024-09-01_04-15_227d.csv")
 
 # 日足MA70レジーム → Priority enable/disable セット
 _REGIME_PRIORITY_SETS: Dict[str, Dict] = {
-    "downtrend": {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": True,  "ENABLE_P3_LONG": True,
+    "downtrend": {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": True,  "ENABLE_P3_LONG": False,
                   "ENABLE_P4_LONG": False,  "ENABLE_P21_SHORT": True,  "ENABLE_P22_SHORT": False,
-                  "ENABLE_P23_SHORT": True,  "ENABLE_P24_SHORT": False},
+                  "ENABLE_P23_SHORT": True,  "ENABLE_P24_SHORT": False, "ENABLE_P25_SHORT": False},
     "range":     {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
                   "ENABLE_P4_LONG": True,  "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
-                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": False},
+                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": False, "ENABLE_P25_SHORT": False},
     "uptrend":   {"ENABLE_P1_LONG": True,  "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
                   "ENABLE_P4_LONG": False, "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
-                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": True},
+                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": True,  "ENABLE_P25_SHORT": False},
     "mixed":     {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
                   "ENABLE_P4_LONG": True,  "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
-                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": False},
+                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": False, "ENABLE_P25_SHORT": False},
     "unknown":   {"ENABLE_P1_LONG": False, "ENABLE_P2_LONG": False, "ENABLE_P3_LONG": False,
                   "ENABLE_P4_LONG": False, "ENABLE_P21_SHORT": False, "ENABLE_P22_SHORT": False,
-                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": False},
+                  "ENABLE_P23_SHORT": False, "ENABLE_P24_SHORT": False, "ENABLE_P25_SHORT": False},
 }
 
 

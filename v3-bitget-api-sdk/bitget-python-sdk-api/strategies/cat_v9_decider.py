@@ -568,6 +568,21 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
                 and _p21_atr <= float(params.get("P21_ATR14_MAX", 9999))):
             return 21
 
+    # =========================
+    # 優先度 25（SHORT・ADXスパイク順張り）
+    # =========================
+    if params.get("ENABLE_P25_SHORT", False) and i >= 3:
+        _p25_adx_now  = get("adx")
+        _p25_adx_prev = df.at[i - 3, "adx"] if "adx" in df.columns else float("nan")
+        _p25_bb_slope = get("bb_mid_slope")
+        if (pd.notna(_p25_adx_now) and pd.notna(_p25_adx_prev)
+                and (_p25_adx_now - _p25_adx_prev) >= float(params.get("P25_ADX_SPIKE_MIN", 5.0))
+                and _p25_adx_now >= float(params.get("P25_ADX_MIN", 25.0))
+                and pd.notna(_p25_bb_slope) and _p25_bb_slope < 0.0
+                and pd.notna(get("close")) and pd.notna(get("open"))
+                and get("close") < get("open")):
+            return 25
+
     return None
 
 
@@ -575,7 +590,7 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
 # decide（新規：snapshot dict → decision dict）
 # ---------------------------------------------------------------------------
 _LONG_PRIORITIES  = (1, 2, 3, 4)
-_SHORT_PRIORITIES = (21, 22, 23, 24)
+_SHORT_PRIORITIES = (21, 22, 23, 24, 25)
 
 
 def decide(snapshot: Dict[str, Any]) -> Dict[str, Any]:
@@ -716,6 +731,23 @@ def _build_material(priority: int, i: int, df: pd.DataFrame, params: Dict[str, A
             "adx":          g("adx"),
             "atr_14":       g("atr_14"),
             "P21_ADX_MIN":  float(params.get("P21_ADX_MIN", 22.0)),
+        }
+
+    if priority == 25:
+        _p25_adx_prev = _safe_float(df.at[i - 3, "adx"] if i >= 3 else float("nan"))
+        _p25_adx_now  = g("adx")
+        _p25_spike    = None
+        if _p25_adx_now is not None and _p25_adx_prev is not None:
+            _p25_spike = _p25_adx_now - _p25_adx_prev
+        return {
+            "adx":               _p25_adx_now,
+            "adx_prev_3":        _p25_adx_prev,
+            "adx_spike":         _p25_spike,
+            "bb_mid_slope":      g("bb_mid_slope"),
+            "close":             g("close"),
+            "open":              g("open"),
+            "P25_ADX_SPIKE_MIN": float(params.get("P25_ADX_SPIKE_MIN", 5.0)),
+            "P25_ADX_MIN":       float(params.get("P25_ADX_MIN", 25.0)),
         }
 
     if priority == 4:
