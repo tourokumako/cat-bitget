@@ -31,40 +31,44 @@ _DEFAULT_CSV = str(_ROOT / "data" / "BTCUSDT-5m-2025-10-03_04-01_combined_180d.c
 # ============================================================
 # ▼ ここを変更して使う
 # ============================================================
-TARGET_PRIORITY = 2      # 詳細集計するPriority（NETソートの基準）
-TARGET_REGIME   = "downtrend"  # P2=downtrend / P4=range / P24=uptrend / None=全日数
+TARGET_PRIORITY = 23     # 詳細集計するPriority（NETソートの基準）
+TARGET_REGIME   = "downtrend"  # P21=downtrend / P4=range / P24=uptrend / None=全日数
 
-# P2-LONG Phase 1 ADX_MAX × ATR14_MIN グリッド（2026-04-23）
-# ベースライン: +$1.08/dt-day（365d OOS・ATR_MAX=300採用後）
-# 仮想sim予測: ADX_MAX=60×ATR_MIN=100 → $+2.74（最強）
+# P23 TIME_EXIT_MIN グリッド（2026-04-24・365d検証）
+# ベースライン: +$18.74/dt-day（P23_TIME_EXIT_MIN=480・実効240min）
+# 問題: TIME_EXIT 43件(-$2476/-$17.32/dt-day) add=3,4,5 に集中（avg -$58~-$94）
+# 仮説: 実効180minで早期脱出→add=3,4,5 の積み上げを防ぎ損失削減
+# リスク: STOCH_REVERSE_EXIT（181-240min帯 10件+$551）の奪取リスクあり
+# 注: SHORT_TIME_EXIT_DOWN_FACTOR=0.5が適用されるので実効=MIN×0.5
 GRID: Dict[str, List[Any]] = {
-    "P2_ADX_MAX":   [50, 60, 999],
-    "P2_ATR14_MIN": [100, 140, 180],
+    "P23_TIME_EXIT_MIN": [300, 360, 420, 480],  # 実効 150/180/210/240分
 }
 
-# [Phase 2 候補: ATR_MAX確定後にadd_count制限を追加探索]
+# [旧: P21 ATR14_MIN グリッド（2026-04-24 結論: ATR14_MIN=150維持）]
+# GRID = { "P21_ATR14_MIN": [50, 80, 100, 120, 150] }
+
+# [旧: P23 PROFIT_LOCK グリッド（2026-04-24 REJECTED・L-111）]
 # GRID = {
-#     "P2_ATR14_MAX": [最良値],
-#     "P2_MAX_ADDS":  [0, 1, 2],  # 実装確認後
+#     "P23_SHORT_PROFIT_LOCK_ENABLE":  [0, 1],
+#     "P23_SHORT_PROFIT_LOCK_ARM_USD": [20, 22],
+#     "P23_SHORT_PROFIT_LOCK_USD":     [5, 8],
 # }
 
-# [P23 Phase 3c 完了済み - STOCH_REVERSE_EXIT HOLD=150採用確定]
+# [旧: P2-LONG Phase 1 ADX_MAX × ATR14_MIN グリッド（2026-04-23 完了）]
 # GRID = {
-#     "P23_STOCH_REVERSE_EXIT_ENABLE": [True],
-#     "P23_STOCH_EXIT_MFE_GATE":   [20],
-#     "P23_STOCH_EXIT_MIN_HOLD":   [120, 150, 180, 240, 300, 360, 420, 480],
-#     "P23_STOCH_EXIT_UNREAL_MIN": [0],
+#     "P2_ADX_MAX":   [50, 60, 999],
+#     "P2_ATR14_MIN": [100, 140, 180],
 # }
 
-# P2のみ有効
+# P23のみ有効
 FIXED_PARAMS: Dict[str, Any] = {
-    "ENABLE_P2_LONG":    True,
-    "ENABLE_P23_SHORT":  False,
+    "ENABLE_P21_SHORT":  False,
+    "ENABLE_P23_SHORT":  True,
+    "ENABLE_P2_LONG":    False,
     "ENABLE_P3_LONG":    False,
     "ENABLE_P4_LONG":    False,
     "ENABLE_P22_SHORT":  False,
     "ENABLE_P1_LONG":    False,
-    "ENABLE_P21_SHORT":  False,
     "ENABLE_P24_SHORT":  False,
 }
 

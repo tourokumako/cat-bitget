@@ -478,6 +478,8 @@ def check_entry_priority(i: int, df: pd.DataFrame, params: Dict[str, Any] = None
         and get("adx") >= float(params.get("P23_ADX_MIN", 0.0))
         and get("adx") < float(params.get("P23_ADX_MAX", 9999.0))
         and get("atr_14") >= float(params.get("P23_ATR14_MIN", 0.0))
+        and (get("adx") < float(params.get("P23_HIGH_ADX_THRESH", 9999.0))
+             or get("atr_14") >= float(params.get("P23_HIGH_ADX_ATR_MIN", 0.0)))
     ):
         return 23
 

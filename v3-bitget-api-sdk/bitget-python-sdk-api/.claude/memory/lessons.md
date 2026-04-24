@@ -1,5 +1,41 @@
 # lessons.md — 過去の失敗・教訓（V8移行時含む）
 
+### L-112: final_mfe_usd から「途中時点のMFE」を逆算してはならない（2026-04-24）
+
+**何が起きたか:**
+P23 の add>=1 への MFE_STALE_CUT 拡張を提案（`P23_MFE_STALE_ADD_MIN=1`）。プリシムで「add>=2 TP_FILLED 32件の最小 final_mfe = $18.4 > gate $4 → TP奪取ゼロ」と予測し +$2.45/dt-day 改善を見込んだ。365d実Replay結果: P23 $18.74→**$11.37/dt-day（-$7.37悪化）**。TP_FILLED 45件→40件（5件奪取）、STOCH_REVERSE_EXIT 48件→36件（12件奪取）、MFE_STALE_CUT 61件→110件（予想+7件だったが実際+49件）。即ロールバック。
+
+**プリシムの欠陥:**
+「`final_mfe = $18` の trade は MFE@30min も $18近辺」と無意識に仮定した。これは誤り。**MFE は単調増加型ratchet指標**なので、`final_mfe = $18` の trade でも `MFE@30min = $2` は十分あり得る。30min時点でゲートを切ると、その後 MFE が成長して TP に到達する trade まで奪取してしまう。
+
+**Why:** MFE = max(unreal_usd over time)。初期フェーズで低く、価格が順行するほど拡大する。add>=2 trades は特に「価格逆行 → add累積 → 反転 → MFE拡大 → TP」というシナリオを設計前提にしている。30min時点の低MFEは**多くの trade にとって正常状態**。
+
+**How to apply:**
+- CSV の `mfe_usd` 列は exit 時点の最終値のみ。「途中時点の MFE」は推定不可能
+- MFE_STALE / PROFIT_LOCK / TRAIL / MFE_DRAWDOWN_CUT 等「途中 MFE に依存する exit」は final_mfe を使った仮想シミュでは TP奪取の評価ができない。実測ランでのみ検証すること
+- add>=2 に MFE_STALE を拡張するのは**マルチadd戦略の設計思想と矛盾**。add は逆行時の蓄積のためにある。早期カットは add=1（単発失敗検知）の文脈にのみ妥当
+
+---
+
+### L-111: PROFIT_LOCK仮想シミュはTP_FILLED奪取を見落として大外しする（2026-04-24）
+
+**何が起きたか:**
+P23のTIME_EXIT TYPE II（MFE≥$15で戻った20件・$-1,723）をPROFIT_LOCKでCapture する提案。仮想シミュで ARM=20/LOCK=5 → +$29.13/dt-day と予測したが、365d実Replay結果: +$7.00/dt-day（ベースライン$18.74から-$11.74悪化）。全12パターン REJECT。
+
+**仮想シミュの欠陥:**
+「MFE≥ARMに到達したTIME_EXITがPROFIT_LOCKに置換される」と仮定した。しかしTP_FILLED 45件もほぼ全件MFE≥15を通過しており、TP到達前にunreal<LOCK の瞬間があればPROFIT_LOCKが先に発動。
+- TP率: 22.5% → 17.5%（-5pt、TP avg$88がPROFIT_LOCK avg$3に置換）
+- TIME_EXIT削減効果（43→28件=-15件）はTP奪取の損失を全く補えない
+
+**Why:** PROFIT_LOCKは「MFE≥ARM AND unreal<LOCK」のみで判定するため、TP_FILLEDに向かう途中の一時的な押し戻しを捕まえてしまう。STOCH_REVERSE_EXITはstoch crossという独立シグナルを要求するのでTP奪取しない。設計思想が違う。
+
+**How to apply:**
+- PROFIT_LOCK/TRAIL系のExit追加を仮想シミュする時は、**TP_FILLED／STOCH_REVERSE_EXITトレードのMFE分布**も必ず確認し「切り替わり対象のはずのexit_reason」以外への波及影響を推定する
+- 「unrealの途中経過」が必要な Exit（PROFIT_LOCK, TRAIL, MFE_DRAWDOWN_CUT 等）はCSVだけでは仮想シミュ不可能に近い。ARM/LOCK値はSTOCH/TP等の既存Exit発動条件と重ならないか必ず確認してから提案する
+- 仮想シミュ結果を根拠に「理論最大+$10/dt-day」と断言しない。見落としの可能性を明示する
+
+---
+
 ### L-110: 180dの外れ値依存最良値はOOSで逆転する（ATR_MAX=500→300逆転）（2026-04-23）
 
 **何が起きたか:**
@@ -1671,4 +1707,25 @@ PMブリーフィングにこの制約を含めなかった。L-45の教訓がPM
 ```
 
 PMブリーフィング作成時は「スロット占有制約（シリアル実行）」を不変制約として必ず明記する。
+
+---
+
+### L-47: P2 TP=0.005 は仮想シムで壊滅的と確認（2026-04-23）
+
+**何が起きたか：**
+TP=0.005 禁止ルールがV10スキャル時代の古いルールか確認した結果、ルール自体は削除されたが、
+仮想シミュレーションで現在のP2設計（TP=0.004）に対しTP=0.005は壊滅的に悪いことが判明。
+
+**数値（365d OOS・P2 202件）:**
+- TP_FILLED 117件のうち、85件が新TP未到達 → $1,100利益消滅 → $-828損失へ転落
+- MFE_STALE/TIME_EXIT: 新TP到達ゼロ（MFE中央値 $0.9〜$5）
+- 推定NET: +$301 → -$1,533（-$12.83/dt-day悪化）
+
+**根本原因：**
+現在のP2は「低MFEで小さく勝つ × 多件数」構造。TP=0.005はこの構造と相性が最悪。
+旧era の良い成績（$+1,270/170件）は ADX_BOOST・レジームフィルターなし・MFE_STALE_CUTなし等の複合条件であり現在と別物。
+
+**How to apply:**
+P2の TP_PCT = 0.004 は変更禁止。仮想シムで-$12/dt-dayの根拠あり。
+旧成績との比較でTP引き上げを提案する誘惑が生じても、必ず仮想シムで先に検証する。
 - スロット占有コストがゼロなら時間短縮の主なメリット消失 → Entry改善を検討
