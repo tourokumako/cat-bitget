@@ -1,5 +1,23 @@
 # lessons.md — 過去の失敗・教訓（V8移行時含む）
 
+### L-113: TRAIL_EXIT の `trail_net ≈ ratio × final_mfe - fee` 仮想シミュは大外しする（2026-04-24）
+
+**何が起きたか:**
+P23 の TIME_EXIT giveback（35件 -$2,102・avg giveback $78）を TRAIL_EXIT で捕捉する提案。非TP_FILLED置換の仮想シミュで「activation=$15・ratio=0.8」→ **+$14.62/dt-day** を予測。P23 の優先順位リストに 23 を追加（デフォルト `P23_MFE_GATE_PCT=0.05` / `P23_TRAIL_RATIO=0.8` 継承）して 365d Replay 実行。結果 P23 $21.32 → **$1.18/dt-day（-$20.14悪化）**。TP_FILLED 47件→1件（-46件・L-111そのもの）、STOCH_REVERSE_EXIT 41件消滅、avgHold 100分→9.5分。即ロールバック。
+
+**仮想シミュの欠陥:**
+`trail_net = ratio × mfe_final - fee` という近似は「TRAIL は peak MFE まで成長してから retrace で確定する」と仮定していた。実際の TRAIL 実装は `_fav_pct >= P23_MFE_GATE_PCT` で即活性化するので、デフォルト GATE_PCT=0.05（≈MFE $1）では **価格がわずかに順行した瞬間に活性化、ratio=0.8 で 20%retrace → ほぼ全 trade が MFE=$5〜$10 で TRAIL_EXIT される**。TP_PCT=0.012（≈MFE $96）到達より遥か手前で利確されてしまい、TP_FILLED の長ホールド構造が成立しない。
+
+**Why:**
+TRAIL_EXIT は「MFE ピークがある程度育ってから retrace を検出する」のではなく、「活性化後は常に `peak × ratio` で stop を更新する」ratchet型ロジック。GATE が小さいほど早期活性化し、ratio が高いほど小さな retrace で発火する。P21（8分avg hold・小MFE型）にはフィット、P23（100分avg hold・大MFE型）には壊滅的にアンマッチ。シグナルの性格（短期決着 vs 長時間育成）と TRAIL パラメータの相性を見誤った。
+
+**How to apply:**
+- TRAIL_EXIT を新規 Priority に有効化する時は、**既存の `P21_MFE_GATE_PCT=0.05` をそのまま継承してはならない**。Priority 固有の TP_PCT・avgHold・MFE分布に合わせて GATE_PCT を先に設計する（例: P23 なら TP=1.2% の半分 0.6% 以上を起点に検討）
+- 仮想シミュの `trail_net ≈ ratio × final_mfe - fee` 近似は **ratchet 型 Exit の動的挙動を全く捉えない**。TP_FILLED の avgHold と TRAIL 活性化タイミングの前後関係（TRAIL 活性化 → 小retrace発火 → TP到達前に退場）を必ず手で追ってから採用判定する
+- PROFIT_LOCK/TRAIL/MFE_DRAWDOWN_CUT など途中 unreal に依存する Exit は **L-111 / L-112 の原則通り、CSV 仮想シミュでは採否判定できない**。必ず最小変更で Replay → 結果確認 → パラメータ詰め、の順序。大改修を一度に乗せない
+
+---
+
 ### L-112: final_mfe_usd から「途中時点のMFE」を逆算してはならない（2026-04-24）
 
 **何が起きたか:**

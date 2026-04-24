@@ -216,49 +216,59 @@ for threshold in candidates:
 
 ---
 
-## 次のアクション（2026-04-24 セッション終了時点）
+## 次のアクション（2026-04-24 継続セッション終了時点）
 
 ```
 【現在フォーカス: DOWNTREND / 合計$60/dt-day目標】
 現状: ~$30.43/dt-day / 目標$60 / 残差-$29.57
-本セッション改善: +$4.08/dt-day（$26.35→$30.43, +15.5%）
+前セッション改善: +$4.08/dt-day（$26.35→$30.43, +15.5%）
+本セッション(継続): ±$0（全提案 REJECT・ロールバック済）
 
-【本セッションで採用確定（2026-04-24）】
-✅ P21_TIME_EXIT_MIN: 120→180 採用確定
-  - 実効: 60min→90min（MFE_STALE_HOLD_MIN と一致）
-  - 365d OOS: P21 $5.95→$7.36/dt-day（+$1.41）
-  - TIME_EXIT 30件全消滅・MFE_STALE_CUT が肩代わり
+【前セッション 2026-04-24 採用済み】
+✅ P21_TIME_EXIT_MIN=180（実効90min）→ P21 $5.95→$7.36/dt-day
+✅ P23 HIGH_ADX フィルター → P23 $18.74→$21.32/dt-day
 
-✅ P23 HIGH_ADX フィルター採用確定
-  - パラメータ: P23_HIGH_ADX_THRESH=40 / P23_HIGH_ADX_ATR_MIN=200
-  - 除外条件: ADX>=40 AND ATR<200 をエントリー拒否
-  - 365d OOS: P23 $18.74→$21.32/dt-day（+$2.58）
-  - 28件除外（TP奪取ゼロ・TP率 22.5%→27.0%に向上）
-  - コード変更: strategies/cat_v9_decider.py の P23 エントリー条件
+【本セッションの REJECTED 提案（2026-04-24 継続）】
+❌ P23 MAX_ADDS 削減（5→3or4）
+  - 仮想シミュ: add=4,5 は NET最大貢献源（+$1,860 / 全体61%）
+  - 削減は $-1.19〜-$4.14/dt-day。WORKFLOW直近タスク1は却下
 
-【本セッションの REJECTED 提案】
-❌ P23_TIME_EXIT_MIN 短縮（300/360/420/480 グリッド）
-  - 短縮するほど悪化（TP奪取+STOCH奪取）。480維持確定
-❌ P23_MFE_STALE_ADD_MIN=1（add>=1 拡張）
-  - 致命的失敗: P23 $18.74→$11.37 (-$7.37/dt-day)
-  - L-112 記録: final_mfe から途中時点 MFE を逆算してはならない
-❌ C案エントリーフィルタ（P2適用）
-  - TE vs TP の指標分布が区別不能・除外クラスタなし
+❌ P23 A1_STALL 事前エントリーフィルタ
+  - A1_STALL 51件-$433 の分離可能性を探索
+  - 最良 bb_mid_slope>-20 で +$1.07/dt-day（A1_TP 4件巻き添え）
+  - 改善幅が小さくサンプル過少（統計有意性弱）
+
+❌ P23 MFE_STALE_CUT チューニング（B2案）
+  - 現行 GATE=$4/HOLD=30 は A1_STALL 51件を完璧に捕捉済み
+  - HOLD短縮（20min）の理論上限 +$0.5〜+$1.7/dt-day
+  - 優先度低く実行せず
+
+❌ P23 TRAIL_EXIT 追加（L-113 記録）
+  - 仮想シミュ予測 +$14.62/dt-day → 実測 -$20.14/dt-day（P23 $21.32→$1.18）
+  - TP_FILLED 47件→1件・STOCH_REVERSE_EXIT 41件消滅・avgHold 100→9.5分
+  - 原因: デフォルト GATE_PCT=0.05（≈MFE$1で即活性化）が P23 長ホールド型に壊滅的不整合
+  - ロールバック済（replay_csv.py の priority list を (1,21) に復元）
+
+【本セッションの保留アイデア（次セッション以降）】
+- P23 TRAIL_EXIT 再設計: GATE_PCT を TP_PCT=0.012 の半分付近（0.6〜1.0）+ RATIO 0.85〜0.9
+  で STOCH_REVERSE_EXIT と共存前提に設計。L-113 通り小刻み実測必須
+- A1_STALL の per-trade 損失 -$8.48 自体は MFE_STALE_HOLD_MIN 短縮で $0.5〜$1.7/dt-day 削れる可能性
 
 【直近タスク（優先順位順）】
-1. P23 D案: MAX_ADDS 削減（5→3or4）の仮想シミュ検証
-   - add=4,5 TIME_EXIT は brutal（avg -$94/$-89）
-   - TP_FILLED add=4,5 の利益と比較要
-   - 仮想シミュで NET 効果推定 → グリッド
-
-2. P4-LONG RANGE 改善
-   - 現状 -$1.18/rg-day（127日で -$150 損失）
-   - TIME_EXIT 69件 -$1023 / TP率 37%
-   - RANGE 新戦略の余地あり
-
-3. P21 TP_PCT / BB_RATIO 最適化（未検証軸）
+1. P21 TP_PCT / BB_RATIO 最適化（未試行軸・期待+$1〜$3/dt-day）
    - 現行 TP_BB_RATIO=1.0 / TP_MIN_PCT=0.0003
    - 他Priority との比較で最適化余地を確認
+
+2. P23 TRAIL_EXIT 再設計（L-113 準拠で小刻み Replay 検証）
+   - GATE_PCT 0.6〜1.0 / RATIO 0.85〜0.9 範囲
+   - まず GATE_PCT=1.0 / RATIO=0.9 で 1 ケースだけ実測
+   - TP_FILLED 件数がベースライン 47件の 90%以上維持が必須条件
+
+3. 新 DOWNTREND Priority 設計（ゼロベース）
+   - 既存Priority内では $60/dt-day 到達厳しい可能性
+   - 新シグナル発見フェーズから
+
+4. P4-LONG RANGE 改善（DT目標達成後）
 
 【確認済み・変更禁止】
 - P23: HIGH_ADX_THRESH=40 / HIGH_ADX_ATR_MIN=200 / STOCH_REVERSE_EXIT(MFE=20/HOLD=150/UNREAL=0)
@@ -267,22 +277,24 @@ for threshold in candidates:
 - P2: ATR14_MIN=100 / ATR14_MAX=300 → +$2.11/dt-day（365d OOS）確定
 - replay_csv.py: P23 STOCH_REVERSE_EXIT（3f）実装済み
 - replay_csv.py: P21 MFE_STALE_CUT（3e）実装済み
+- replay_csv.py: TRAIL_EXIT 対象 priority は (1, 21) 維持（P23追加は回帰確認済）
 - _REGIME_PRIORITY_SETS: P21→DOWNTREND、P1→UPTREND 追加済み
 
 【PMレビュー知見（2026-04-23）】
 - スロット占有制約: 1ポジション保有中は他Priority入れない（シリアル実行）
   → サイズ増加提案前に機会損失計算必須（L-46）
 - $60/total-dayは現Priority構造のみでは困難。RANGE/UPTREND改善が将来必要
-  → 現フォーカスはDOWNTREND維持
+  → 現フォーカスはDOWNTREND維持（feedback_downtrend_focus）
 
 【本セッションの教訓】
 - L-111: PROFIT_LOCK/TRAIL系は TP_FILLED 奪取リスクを必ず事前確認
 - L-112: final_mfe は途中時点 MFE の推定に使えない（MFE=単調増加型）
-  → MFE_STALE/PROFIT_LOCK の拡張は実測ランのみで検証
+- L-113: TRAIL_EXIT の trail_net ≈ ratio × final_mfe - fee 仮想シミュは ratchet型の動的挙動を
+  捉えず大外しする。GATE_PCT は Priority 固有の TP_PCT・avgHold に合わせて設計必須
 
 【grid_search.py 現在の設定】
 - TARGET: P23 TIME_EXIT_MIN グリッド（完了・480維持確定）
-- 次: D案 MAX_ADDS 用に変更予定
+- 次: P21 TP_PCT / BB_RATIO グリッド、もしくは P23 TRAIL_EXIT 再設計用
 ```
 
 ---
