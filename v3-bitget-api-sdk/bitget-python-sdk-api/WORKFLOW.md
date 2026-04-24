@@ -169,14 +169,19 @@ for threshold in candidates:
 
 | Priority | downtrend/day | range/day | uptrend/day | 状態 |
 |---------|--------------|-----------|-------------|------|
-| P23-SHORT | **+$21.32/dt-day**（365d OOS・HIGH_ADX filter採用） | +$0.60 | -$3.70 | ✅ 確定（STOCH_REVERSE_EXIT + HIGH_ADX filter） |
-| P21-SHORT | **+$7.36/dt-day**（365d OOS・TIME_EXIT_MIN=180採用） | — | — | ✅ 確定（ATR14_MIN=150・TRAIL_EXIT・TIME_EXIT_MIN=180） |
-| P2-LONG | **+$2.11/dt-day**（365d OOS・ATR_MIN=100採用） | — | — | ✅ 確定（改善余地なし：L-112, L-111該当・保留） |
-| P3-LONG | **-$0.45/dt-day**（365d OOS） | — | — | ⚠️ 微損（ENABLE_P3_LONG=false 設定済・replay は無視） |
-| P4-LONG | — | +$0.69/day | — | 🔲 RANGE着手待ち（DT目標達成後） |
-| P24-SHORT | — | — | +$0.88/day | 🔲 UPTREND着手待ち |
-| P1-LONG | — | — | -$0.36/day | 🔲 UPTREND割り当て済み・要改善 |
-| P22-SHORT | -$0.81 | -$1.12 | +$0.12 | ❌ 全レジーム赤字・保留 |
+| P23-SHORT | **+$21.32/dt-day**（365d OOS・HIGH_ADX filter採用） | +$0.60 | -$3.70 | 稼働中（DT最適化完了） |
+| P21-SHORT | **+$7.36/dt-day**（365d OOS・TIME_EXIT_MIN=180採用） | — | — | 稼働中（DT最適化完了） |
+| P2-LONG | **+$2.11/dt-day**（365d OOS・ATR_MIN=100採用） | — | — | 稼働中（DT最適化完了） |
+| P3-LONG | **-$0.45/dt-day**（365d OOS） | — | — | 休止（DTで停止・他レジーム未着手） |
+| P4-LONG | — | +$0.69/day | — | 未着手（RANGE割当） |
+| P24-SHORT | — | — | +$0.88/day | 未着手（UPTREND割当） |
+| P1-LONG | — | — | -$0.36/day | 未着手（UPTREND割当・要改善） |
+| P22-SHORT | -$0.81 | -$1.12 | +$0.12 | 未着手（全レジーム赤字・改善未試行） |
+
+> 状態の定義:
+> - 稼働中: 現在 replay で動作・最適化完了または進行中
+> - 休止: 特定レジームで停止中（他レジームは未評価・将来再開候補あり）
+> - 未着手: 改善試行をまだしていない
 
 ---
 
@@ -201,7 +206,7 @@ for threshold in candidates:
 | P23-SHORT | DOWNTREND | **+$21.32（365d OOS・HIGH_ADX filter採用）** | 365d=143dt-day |
 | P21-SHORT | DOWNTREND | **+$7.36（365d OOS・TIME_EXIT_MIN=180採用）** | 365d=143dt-day |
 | P2-LONG | DOWNTREND | +$2.11（365d OOS・ATR_MIN=100採用） | 365d=143dt-day |
-| P3-LONG | DOWNTREND | -$0.45（365d OOS） | 365d=143dt-day |
+| P3-LONG | DOWNTREND | -$0.45（365d OOS・DT休止中） | 365d=143dt-day |
 | **DT合計** | DOWNTREND | **~$30.43/dt-day** | 目標$60まで-$29.57 |
 | P4-LONG | RANGE | 未最適化 | — |
 | P24-SHORT | UPTREND | 未最適化 | — |
