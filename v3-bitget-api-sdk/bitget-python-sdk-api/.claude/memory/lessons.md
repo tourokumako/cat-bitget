@@ -1,5 +1,29 @@
 # lessons.md — 過去の失敗・教訓（V8移行時含む）
 
+### L-114: P23 は ratchet型 Exit（PROFIT_LOCK / TRAIL / MFE_DRAWDOWN_CUT）全般と構造的に不整合（2026-04-24）
+
+**何が起きたか:**
+PMレビュー後に MFE_DRAWDOWN_CUT（`P23_MFE_DRAWDOWN_MIN_USD=30` / `RATIO=0.3`）を Replay で実測。「MIN=30 は TP MFE $96 より大幅に低く・RATIO=0.3 は 70%giveback許容＝ゆるい＝TP奪取しにくい」と設計したにもかかわらず、P23 $21.32 → **$11.03/dt-day（-$10.29悪化）**。TP_FILLED 47件→40件（-7件 / -$1,003）、STOCH_REVERSE_EXIT 41件→26件（-15件 / -$643）、新 MFE_DRAWDOWN_CUT 33件は **NET -$219（avg -$6.6・負の期待値）**。即ロールバック。
+
+**共通パターンの確定:**
+本セッション中に同型の失敗が 2 連続した（L-113: TRAIL_EXIT、L-114: MFE_DRAWDOWN_CUT）。さらに L-111（PROFIT_LOCK）を加えると **ratchet型（MFE峰到達後の retracement で発火する）Exit は P23 に対し 3 連敗**。
+
+**Why（P23 の構造的特性）:**
+P23 は TP_PCT=0.012（≈MFE $96）に向けて **長時間ホールド（avg 100-185分）・volatile-path（中間で複数回の押し戻し）** が正常経路。TP到達前に MFE が一時的に $30〜$60 まで伸び、その後 $5〜$20 付近まで戻し、再び伸びて TP に到達する trade が多い。ratchet型 Exit はこの「MFE峰到達後の一時 pullback」を「TP が届かない反転の始まり」と誤認して発火し、TP_FILLED / STOCH_REVERSE_EXIT を奪取する。Ratio を緩めても（0.3＝70%giveback）P23 の pullback 振幅を区別できず、逆に Ratio を厳しくすれば奪取がさらに増える。
+
+**How to apply:**
+- **P23 には ratchet型 Exit（PROFIT_LOCK / TRAIL_EXIT / MFE_DRAWDOWN_CUT / 類似概念）を追加しない**。3回の実測失敗（L-111 / L-113 / L-114）で確定
+- P23 の Exit 改善は以下の非ratchet型に限定する:
+  - STOCH_REVERSE_EXIT（現採用・独立シグナルベース）
+  - MFE_STALE_CUT（低MFE早期カットは OK・現採用）
+  - TIME_EXIT（時間切れ）
+  - Entry フィルター強化（そもそも負けトレードを入らない）
+  - TP_PCT / 段階的利確（固定閾値型）
+- 「ratchet型Exit はリスクを lockして大きな MFE を確定できる」という一般論は P23 には適用できない。P23 独自の特性に従って設計する
+- 新Priority に TRAIL/PROFIT_LOCK を追加する際は、そのPriority の「TPまでの経路が単調に近いか volatile か」を必ず事前確認する。**volatile-path Priority には ratchet型は不可**
+
+---
+
 ### L-113: TRAIL_EXIT の `trail_net ≈ ratio × final_mfe - fee` 仮想シミュは大外しする（2026-04-24）
 
 **何が起きたか:**

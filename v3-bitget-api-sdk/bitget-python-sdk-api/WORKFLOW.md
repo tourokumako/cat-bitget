@@ -249,26 +249,48 @@ for threshold in candidates:
   - 原因: デフォルト GATE_PCT=0.05（≈MFE$1で即活性化）が P23 長ホールド型に壊滅的不整合
   - ロールバック済（replay_csv.py の priority list を (1,21) に復元）
 
+❌ P23 MFE_DRAWDOWN_CUT（L-114 記録・PMレビュー後の第2ラウンド）
+  - パラメータ: MIN_USD=30 / RATIO=0.3（TP奪取リスクを設計で回避したつもり）
+  - 実測 -$10.29/dt-day（P23 $21.32→$11.03）
+  - TP_FILLED 47件→40件（-7件）・STOCH_REVERSE_EXIT 41件→26件（-15件）
+  - MFE_DRAWDOWN_CUT 33件は NET -$219（avg -$6.6・期待値負）
+  - ロールバック済（cat_params_v9.json から 2行削除）
+
+【ratchet型 Exit 全面禁止（L-114 確定）】
+  P23 に PROFIT_LOCK / TRAIL_EXIT / MFE_DRAWDOWN_CUT を追加する提案は
+  原則禁止。P23 は TP到達までに volatile-path をたどる性質で、ratchet型は
+  TP経路の中間 pullback を誤認して発火しTP奪取する。3連敗で構造確定。
+
 【本セッションの保留アイデア（次セッション以降）】
-- P23 TRAIL_EXIT 再設計: GATE_PCT を TP_PCT=0.012 の半分付近（0.6〜1.0）+ RATIO 0.85〜0.9
-  で STOCH_REVERSE_EXIT と共存前提に設計。L-113 通り小刻み実測必須
-- A1_STALL の per-trade 損失 -$8.48 自体は MFE_STALE_HOLD_MIN 短縮で $0.5〜$1.7/dt-day 削れる可能性
+- A1_STALL の per-trade 損失 -$8.48 自体は MFE_STALE_HOLD_MIN 短縮で
+  $0.5〜$1.7/dt-day 削れる可能性（非ratchet型・安全）
 
-【直近タスク（優先順位順）】
-1. P21 TP_PCT / BB_RATIO 最適化（未試行軸・期待+$1〜$3/dt-day）
+【直近タスク（優先順位順・非ratchet型のみ）】
+1. STOCH_REVERSE_EXIT MFE_GATE 単軸スイープ
+   - 現行 P23_STOCH_EXIT_MFE_GATE=20 の周辺 [10, 15, 25, 30]
+   - L-109 は MIN_HOLD 軸のみ最適化・MFE_GATE は未探索
+   - 期待 +$0.5〜+$2/dt-day（データ不足・実測で判定）
+
+2. P23_STOCH_K_MAX ゲート（Entry強化）
+   - decider L474 に実装済みだが params=999.0 で実質無効
+   - まず CSV で TP vs TIME_EXIT の stoch_k_at_entry 分布を確認
+   - 分布に差があればスイープ
+
+3. P23_TIME_EXIT_DOWN_FACTOR スイープ
+   - 現行 SHORT_TIME_EXIT_DOWN_FACTOR=0.5 を継承（実効240min）
+   - P22 は 0.4 採用実績あり・P23 独自値は未探索
+   - 期待 +$0.3/dt-day（上限 +$1.5）・L-100 通り短縮悪化リスクあり
+
+4. P21 TP_PCT / BB_RATIO 最適化（別Priority・未試行軸）
    - 現行 TP_BB_RATIO=1.0 / TP_MIN_PCT=0.0003
-   - 他Priority との比較で最適化余地を確認
+   - 期待 +$1〜$3/dt-day
 
-2. P23 TRAIL_EXIT 再設計（L-113 準拠で小刻み Replay 検証）
-   - GATE_PCT 0.6〜1.0 / RATIO 0.85〜0.9 範囲
-   - まず GATE_PCT=1.0 / RATIO=0.9 で 1 ケースだけ実測
-   - TP_FILLED 件数がベースライン 47件の 90%以上維持が必須条件
-
-3. 新 DOWNTREND Priority 設計（ゼロベース）
+5. 新 DOWNTREND Priority 設計（ゼロベース）
    - 既存Priority内では $60/dt-day 到達厳しい可能性
    - 新シグナル発見フェーズから
+   - ratchet型以外の Exit 設計を前提にする
 
-4. P4-LONG RANGE 改善（DT目標達成後）
+6. P4-LONG RANGE 改善（DT目標達成後）
 
 【確認済み・変更禁止】
 - P23: HIGH_ADX_THRESH=40 / HIGH_ADX_ATR_MIN=200 / STOCH_REVERSE_EXIT(MFE=20/HOLD=150/UNREAL=0)
@@ -291,6 +313,9 @@ for threshold in candidates:
 - L-112: final_mfe は途中時点 MFE の推定に使えない（MFE=単調増加型）
 - L-113: TRAIL_EXIT の trail_net ≈ ratio × final_mfe - fee 仮想シミュは ratchet型の動的挙動を
   捉えず大外しする。GATE_PCT は Priority 固有の TP_PCT・avgHold に合わせて設計必須
+- L-114: P23 は ratchet型 Exit 全般と構造的不整合。P23 の TP経路は volatile-path で
+  中間pullback が正常経路。PROFIT_LOCK/TRAIL/MFE_DRAWDOWN_CUT は全て誤認発火で TP奪取。
+  P23 の Exit 改善は非ratchet型（STOCH_REVERSE/MFE_STALE/TIME_EXIT/Entry強化）に限定
 
 【grid_search.py 現在の設定】
 - TARGET: P23 TIME_EXIT_MIN グリッド（完了・480維持確定）
