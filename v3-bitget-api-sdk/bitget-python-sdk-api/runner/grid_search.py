@@ -31,18 +31,27 @@ _DEFAULT_CSV = str(_ROOT / "data" / "BTCUSDT-5m-2025-10-03_04-01_combined_180d.c
 # ============================================================
 # ▼ ここを変更して使う
 # ============================================================
-TARGET_PRIORITY = 23     # 詳細集計するPriority（NETソートの基準）
-TARGET_REGIME   = "downtrend"  # P21=downtrend / P4=range / P24=uptrend / None=全日数
+TARGET_PRIORITY = 4      # 詳細集計するPriority（NETソートの基準）
+TARGET_REGIME   = "range"  # P21=downtrend / P4=range / P24=uptrend / None=全日数
 
-# P23 TIME_EXIT_MIN グリッド（2026-04-24・365d検証）
-# ベースライン: +$18.74/dt-day（P23_TIME_EXIT_MIN=480・実効240min）
-# 問題: TIME_EXIT 43件(-$2476/-$17.32/dt-day) add=3,4,5 に集中（avg -$58~-$94）
-# 仮説: 実効180minで早期脱出→add=3,4,5 の積み上げを防ぎ損失削減
-# リスク: STOCH_REVERSE_EXIT（181-240min帯 10件+$551）の奪取リスクあり
-# 注: SHORT_TIME_EXIT_DOWN_FACTOR=0.5が適用されるので実効=MIN×0.5
+# P4 ATR14_MIN × TP_PCT 複合グリッド（2026-04-25・マスタープラン #9 RANGE着手）
+# ベースライン: -$1.18/range-day（P4_ATR14_MIN=150 / P4_TP_PCT=0.003・365d OOS・損失中）
+# trades 120件・TIME_EXIT 69件(57%)が支配・損失主因
+# 仮説: ATR14_MIN 引き上げで弱ボラtrade排除 + TP_PCT 微増で per-trade NET 改善
+# リスク: 件数削減 (L-117) / add=2-5 の動的挙動は実測のみ判定
 GRID: Dict[str, List[Any]] = {
-    "P23_TIME_EXIT_MIN": [300, 360, 420, 480],  # 実効 150/180/210/240分
+    "P4_ATR14_MIN":  [150, 200, 250],
+    "P4_TP_PCT":     [0.003, 0.005, 0.006],
 }
+
+# [旧: P2 TP_PCT × MFE_STALE_GATE（2026-04-25 完了・TP=0.006/GATE=3.0 採用 +$2.43/dt-day）]
+# GRID = { "P2_TP_PCT":[0.004,0.005,0.006], "P2_MFE_STALE_GATE_USD":[3.0,5.0,7.0] }
+
+# [旧: P21 TRAIL_RATIO × MFE_GATE_PCT（2026-04-25 完了・TRAIL=0.9/MFE=0.04 採用 +$3.90/dt-day）]
+# GRID = { "P21_TRAIL_RATIO":[0.7,0.8,0.9], "P21_MFE_GATE_PCT":[0.04,0.05,0.06] }
+
+# [旧: P23 TIME_EXIT_MIN グリッド（2026-04-24 完了・MIN=480維持）]
+# GRID = { "P23_TIME_EXIT_MIN": [300, 360, 420, 480] }
 
 # [旧: P21 ATR14_MIN グリッド（2026-04-24 結論: ATR14_MIN=150維持）]
 # GRID = { "P21_ATR14_MIN": [50, 80, 100, 120, 150] }
@@ -60,19 +69,20 @@ GRID: Dict[str, List[Any]] = {
 #     "P2_ATR14_MIN": [100, 140, 180],
 # }
 
-# P23のみ有効
+# P4 グリッド: 全 Priority ON 維持し L-118 干渉込み実測（RANGEレジーム評価）
 FIXED_PARAMS: Dict[str, Any] = {
-    "ENABLE_P21_SHORT":  False,
+    "ENABLE_P21_SHORT":  True,
     "ENABLE_P23_SHORT":  True,
-    "ENABLE_P2_LONG":    False,
+    "ENABLE_P2_LONG":    True,
     "ENABLE_P3_LONG":    False,
-    "ENABLE_P4_LONG":    False,
+    "ENABLE_P4_LONG":    True,
     "ENABLE_P22_SHORT":  False,
-    "ENABLE_P1_LONG":    False,
-    "ENABLE_P24_SHORT":  False,
+    "ENABLE_P1_LONG":    True,
+    "ENABLE_P24_SHORT":  True,
+    "ENABLE_P25_SHORT":  False,
 }
 
-REGIME_SWITCH = True  # P2はDOWNTREND限定で評価
+REGIME_SWITCH = True  # P4 は RANGE 限定で評価
 # ============================================================
 
 

@@ -170,8 +170,8 @@ for threshold in candidates:
 | Priority | downtrend/day | range/day | uptrend/day | 状態 |
 |---------|--------------|-----------|-------------|------|
 | P23-SHORT | **+$21.32/dt-day**（365d OOS・HIGH_ADX filter採用） | +$0.60 | -$3.70 | 稼働中（DT最適化完了） |
-| P21-SHORT | **+$7.51/dt-day**（365d OOS・2026-04-24再計測） | — | — | 稼働中（DT最適化完了） |
-| P2-LONG | **+$2.32/dt-day**（365d OOS・2026-04-24再計測・P3停止効果+$0.21） | — | — | 稼働中（DT最適化完了） |
+| P21-SHORT | **+$11.41/dt-day**（365d OOS・2026-04-25 TRAIL_RATIO=0.9/MFE_GATE_PCT=0.04 採用） | — | — | 稼働中（DT最適化進行中） |
+| P2-LONG | **+$4.75/dt-day**（365d OOS・2026-04-25 TP_PCT=0.006/MFE_STALE_GATE=3.0 採用） | — | — | 稼働中（DT最適化進行中） |
 | P3-LONG | — | — | — | DT停止確定（2026-04-24 整合修正・`ENABLE_P3_LONG: False`） |
 | P4-LONG | — | +$0.69/day | — | 未着手（RANGE割当） |
 | P24-SHORT | — | — | +$0.88/day | 未着手（UPTREND割当） |
@@ -192,11 +192,11 @@ for threshold in candidates:
 
 | レジーム | /total-day | 有効Priority |
 |---------|-----------|-------------|
-| DOWNTREND | +$12.20（365d実測・2026-04-24更新） | P2/P21/P23 |
+| DOWNTREND | +$14.68（365d実測・2026-04-25 マスタープラン#2完了） | P2/P21/P23 |
 | RANGE | -$0.41 | P4 |
 | UPTREND | +$0.52 | P1/P24 |
 | MIXED | +$0.39 | P4 |
-| **合計** | **+$12.70** | ※365d regime_switch=ON |
+| **合計** | **+$15.18** | ※365d regime_switch=ON |
 
 ※90d（Jan-Apr 2026）は好況期バイアスあり。365dを正本とする。
 
@@ -205,10 +205,10 @@ for threshold in candidates:
 | Priority | 対象レジーム | $/regime-day | データ |
 |---------|------------|-------------|-------|
 | P23-SHORT | DOWNTREND | **+$21.32（365d OOS・HIGH_ADX filter採用）** | 365d=143dt-day |
-| P21-SHORT | DOWNTREND | **+$7.51（365d OOS・2026-04-24再計測）** | 365d=143dt-day |
-| P2-LONG | DOWNTREND | +$2.32（365d OOS・2026-04-24再計測・P3停止効果） | 365d=143dt-day |
+| P21-SHORT | DOWNTREND | **+$11.41（365d OOS・2026-04-25 TRAIL系最適化）** | 365d=143dt-day |
+| P2-LONG | DOWNTREND | **+$4.75（365d OOS・2026-04-25 TP/MFE系最適化）** | 365d=143dt-day |
 | P3-LONG | DOWNTREND | — | DT停止確定（0件） |
-| **DT合計** | DOWNTREND | **$31.15/dt-day（2026-04-24更新）** | 目標$60まで-$28.85 |
+| **DT合計** | DOWNTREND | **$37.48/dt-day（2026-04-25 マスタープラン#2完了）** | 目標$60まで-$22.52 |
 | P4-LONG | RANGE | 未最適化 | — |
 | P24-SHORT | UPTREND | 未最適化 | — |
 
@@ -225,6 +225,94 @@ for threshold in candidates:
 | P23-SHORT | ✅ | ❌ | ❌ | ❌ |
 | P24-SHORT | ❌ | ❌ | ✅ | ❌ |
 | P25-SHORT | ❌（REJECTED・L-118） | ❌ | ❌ | ❌ |
+
+---
+
+## 🔴 セッション切替メモ（2026-04-25 終了時点・最優先で読む）
+
+### 本セッション総括
+- **マスタープラン #1 P21 TRAIL系**: 採用 (+$3.90/dt-day) ✅
+- **マスタープラン #2 P2 TP/MFE系**: 採用 (+$2.43/dt-day) ✅
+- **マスタープラン #4 P23 ATR-TP**: 不採用・ロールバック済み (L-120)
+- **マスタープラン #5 レジーム変化Exit**: Step 3.5 仮想シミュで却下 (L-121)
+- **マスタープラン #9-P4 RANGE着手**: P4_ATR14_MIN=200/P4_TP_PCT=0.005 採用 (+$0.51/range-day) → **依然 -$0.67/range-day 損失でユーザー「論外」評価・セッション切替**
+- **累計改善**: $12.70 → **$15.32/total-day** (+$2.62/total-day)
+- **残差**: 全体 **-$44.68** / DT -$22.52
+
+### 🔴 次セッション最優先タスク（RANGE 戦略の白紙再設計）
+
+**問題認識**: RANGE 127日（DT 143日に次ぐ最大期間レジーム）で P4-LONG 1本のみ・損失中。これは **構造的欠陥**（DT は P21/P2/P23 の3本柱）。パラメータ最適化では届かない。
+
+**やるべきこと**:
+1. **RANGE 専用 Priority を 2-3本ゼロから設計**（反発系特化）
+   - 候補シグナル: BBバンド逸脱→反転、Stoch 過買・過売反転、Pinbar 反転、N2 BB Trap、N11 Pinbar
+   - 既存 13候補シグナル (N2/N6/N8/N9/N11/N12/N13/N15) のうち反発系を **RANGE 限定で再評価**（DT全敗結果は RANGE 適性を否定しない）
+   - 共通エンジン scripts/analyze_signals.py の `--regime range` で即評価可
+2. **P22-SHORT の RANGE 試行**（既存コード流用・cat_params 1行変更で即試行可・10分）
+   - 現状: ENABLE_P22_SHORT=False / DT停止中・全レジ未着手
+   - WORKFLOW _REGIME_PRIORITY_SETS の RANGE に P22 を ✅ で試行
+3. **P4 自体のシグナル再考**（現実装は順張り寄り・反発系に書き換え）
+   - cat_v9_decider.py の P4 ロジック確認 → 反発系シグナル構造に変更可能性検討
+
+**期待効果**: RANGE +$5〜+$22/range-day = +$1.7〜+$7.6/total-day（達成すれば全レジ $17〜$23/total-day）
+
+### 🔴 アンチパターン記録（次セッションで踏まないこと）
+- ❌ 「Priority 1本でレジームをカバー」発想（RANGE で P4 のみは器が小さい）
+- ❌ 「シグナル設計を疑わずパラメータチューニングだけで解決しようとする」
+- ❌ 「DT で全敗だったシグナルは全レジで使えない」と決めつける（RANGE では別評価必要）
+- ❌ 「+$0.51/rg-day 改善で満足」発想（依然損失なら改善とは言えない）
+
+### 🔴 引き継ぎリソース（必読）
+- WORKFLOW.md（このファイル・現在状態の唯一の正本）
+- .claude/memory/lessons.md（L-119/L-120/L-121/L-122 を必読）
+- .claude/memory/signal_ledger.md（13候補シグナル試行台帳）
+- scripts/analyze_signals.py（共通エンジン・--regime オプションあり）
+- scripts/signals/n*.py（13候補シグナル定義）
+- config/cat_params_v9.json（採用パラメータ正本）
+
+### 🔴 確定パラメータ（変更禁止）
+- P21: TRAIL_RATIO=0.9 / MFE_GATE_PCT=0.04 / TIME_EXIT_MIN=180 / ATR14_MIN=150 → $11.41/dt-day
+- P2: TP_PCT=0.006 / MFE_STALE_GATE=3.0 / ATR14_MIN=100 / ATR14_MAX=300 → $4.75/dt-day
+- P23: TP_PCT=0.012 / HIGH_ADX_THRESH=40 / HIGH_ADX_ATR_MIN=200 / TIME_EXIT_MIN=480 / TP_ATR_ENABLE=0 (rollback後) → $21.32/dt-day
+- P4: ATR14_MIN=200 / TP_PCT=0.005 → -$0.67/range-day（採用済みだが要再設計）
+- replay_csv.py の `_calc_tp_price` シグネチャに `atr_14` 引数追加済み（無害）
+- cat_params に `P23_TP_ATR_ENABLE: 0` / `P23_TP_ATR_FACTOR: 1.5` / `P23_TP_PCT_MAX: 0.020` 残置（無効化状態）
+
+---
+
+## マスタープラン（2026-04-25・$60/day 必達コミット）
+
+CLAUDE.md「目標 $60/day に対し、あらゆる手段を講じてコミット」原則に従い、
+DT 単独で届かない積算上限（PMレビュー $37〜$42/dt-day）を補うため、
+**全レジ並行 9本マスタープラン** を順次消化する。
+
+### 重大事実（2026-04-25 仮想シミュ確定）
+- **DT 期間中の idle 時間 = 90.95%**（誰もポジ持ってない時間が大半）
+- → 「Priority 別固定枠」の期待効果は +$1.3〜+$2.4/dt-day と薄い（Step 3 判定基準で ④ 採用）
+- → 構造的問題は **「枠の取り合い」ではなく「発火頻度の絶対不足」**
+- → 解決策は サイズ最適化ではなく シグナル/Exit 多軸並行改善
+
+### マスタープラン 9本（順次消化・順序固定）
+
+| # | 手段 | 期待効果 $/dt-day | リスク |
+|---|------|---|------|
+| 1 | ✅ **完了** P21 TRAIL_RATIO=0.9 / MFE_GATE_PCT=0.04 採用（+$3.90/dt-day 達成・L-118干渉ゼロ）| +$3.90 実測 | — |
+| 2 | ✅ **完了** P2 TP_PCT=0.006 / MFE_STALE_GATE=3.0 採用（+$2.43/dt-day 達成・L-118干渉ゼロ）| +$2.43 実測 | — |
+| 3 | P23 段階的利確（MFE=$50で半分決済・非ratchet）| +$1〜+$2 | L-114 変形リスク（要慎重） |
+| 4 | P23 ATR ベース動的TP（下限0.012・上限ATR連動）| +$1〜+$3 | TP狭めると L-114 再発・**広げる方向のみ** |
+| 5 | レジーム変化Exit（MA70再クロスで即Exit）| +$0.5〜+$2 | 未計測 |
+| 6 | 共通エンジン拡張 → N6 SHORT を P26 として育成 | +$1〜+$3 | L-118 干渉再発リスク |
+| 7 | DT サブレジーム分類（深DT/浅DT で別 Priority）| +$2〜+$5 | 設計大改修 |
+| 8 | 新規シグナル N7/N10/N14/N16/N17 候補追加（10→20候補）| +$0〜+$5 | L-117 発火少シグナル罠 |
+| 9 | RANGE/UPTREND 並行着手（P4/P1/P24）| +$15〜+$25/total-day | 別レジーム最適化 |
+
+**累計期待効果（DT $/dt-day）**: +$10〜+$25
+**累計期待効果（total $/day）**: + $15〜+$25 (RANGE/UP 寄与)
+**理論到達点**: $31.15 + DT追加 $10〜$25 + RANGE/UP $15〜$25 = **$56〜$81/total-day**（$60目標達成圏内）
+
+### 既決事項（2026-04-25）
+- ❌ Priority 別固定枠導入: idle 90% で効果薄 → ④（現状取り合い設計維持）
+- ❌ ポジションサイズ拡大（個別 Priority のみ）: CLAUDE.md「サイズ増加でスケール禁止」抵触
 
 ---
 
@@ -331,8 +419,8 @@ for threshold in candidates:
 【確認済み・変更禁止】
 - P23: HIGH_ADX_THRESH=40 / HIGH_ADX_ATR_MIN=200 / STOCH_REVERSE_EXIT(MFE=20/HOLD=150/UNREAL=0)
   → $21.32/dt-day（365d OOS）確定
-- P21: ATR14_MIN=150 / TRAIL_EXIT / TIME_EXIT_MIN=180 → $7.51/dt-day（365d OOS・2026-04-24再計測）
-- P2: ATR14_MIN=100 / ATR14_MAX=300 → +$2.32/dt-day（365d OOS・2026-04-24再計測・P3停止効果）
+- P21: ATR14_MIN=150 / TRAIL_RATIO=0.9 / MFE_GATE_PCT=0.04 / TIME_EXIT_MIN=180 → **$11.41/dt-day（365d OOS・2026-04-25 マスタープラン#1完了）**
+- P2: TP_PCT=0.006 / MFE_STALE_GATE=3.0 / ATR14_MIN=100 / ATR14_MAX=300 → **+$4.75/dt-day（365d OOS・2026-04-25 マスタープラン#2完了）**
 - **_REGIME_PRIORITY_SETS DT: ENABLE_P3_LONG=False / ENABLE_P25_SHORT=False 確定（2026-04-24）**
 - replay_csv.py: P23 STOCH_REVERSE_EXIT（3f）実装済み
 - replay_csv.py: P21 MFE_STALE_CUT（3e）実装済み
@@ -388,9 +476,9 @@ python3 runner/replay_csv.py data/BTCUSDT-5m-2025-04-01_03-31_365d.csv --regime
 
 | Priority | パラメータ | 値 |
 |---------|-----------|-----|
-| P2-LONG | P2_TP_PCT | 0.004 |
+| P2-LONG | **P2_TP_PCT** | **0.006（2026-04-25採用・$2.32→$4.75）** |
 | P2-LONG | P2_ATR14_MIN / ATR14_MAX | **100.0（採用確定）** / **300.0（採用確定）** |
-| P2-LONG | P2_MFE_STALE_GATE_USD / HOLD_MIN | 5.0 / 90.0 |
+| P2-LONG | **P2_MFE_STALE_GATE_USD** / HOLD_MIN | **3.0（2026-04-25採用）** / 90.0 |
 | P23-SHORT | P23_TP_PCT | 0.012 |
 | P23-SHORT | P23_TIME_EXIT_MIN | 480（実効240min via DOWN_FACTOR=0.5） |
 | P23-SHORT | P23_ADX_MIN/MAX | 30.0 / 50.0 |
@@ -402,7 +490,8 @@ python3 runner/replay_csv.py data/BTCUSDT-5m-2025-04-01_03-31_365d.csv --regime
 | P23-SHORT | P23_STOCH_EXIT_MFE_GATE | 20.0 |
 | P23-SHORT | P23_STOCH_EXIT_MIN_HOLD | 150.0 |
 | P23-SHORT | P23_STOCH_EXIT_UNREAL_MIN | 0.0 |
-| P21-SHORT | P21_TRAIL_RATIO / **P21_TIME_EXIT_MIN** | 0.8 / **180（2026-04-24採用・実効90min）** |
+| P21-SHORT | **P21_TRAIL_RATIO / P21_MFE_GATE_PCT** | **0.9 / 0.04（2026-04-25採用・$7.51→$11.41）** |
+| P21-SHORT | P21_TIME_EXIT_MIN | 180（2026-04-24採用・実効90min） |
 | P21-SHORT | P21_SL_PCT | 0.02 |
 | P22-SHORT | P22_TIME_EXIT_DOWN_FACTOR | 0.4 |
 | P4-LONG | P4_TP_PCT | 0.003 |

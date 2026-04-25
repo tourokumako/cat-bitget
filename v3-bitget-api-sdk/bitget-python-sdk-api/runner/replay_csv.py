@@ -124,9 +124,18 @@ def _load_csv(path: str) -> pd.DataFrame:
 # ==============================================================
 # TP 価格計算（run_once_v9._calc_tp_pct と完全一致）
 # ==============================================================
-def _calc_tp_price(side: str, entry_price: float, adx: float, params: Dict, priority=None) -> float:
+def _calc_tp_price(side: str, entry_price: float, adx: float, params: Dict, priority=None, atr_14: float = float("nan")) -> float:
     pri_key  = f"P{priority}_TP_PCT" if priority is not None else None
     base     = float(params[pri_key] if pri_key and pri_key in params else params[f"{side}_TP_PCT"])
+
+    # P23 ATR ベース動的 TP（マスタープラン #4・2026-04-25）
+    # base を下限に、ATR連動値で上書き。max() により広げる方向のみ。L-114 抵触回避。
+    if priority == 23 and int(params.get("P23_TP_ATR_ENABLE", 0)) and not math.isnan(atr_14) and atr_14 > 0 and entry_price > 0:
+        atr_factor = float(params.get("P23_TP_ATR_FACTOR", 1.5))
+        tp_max     = float(params.get("P23_TP_PCT_MAX", 0.020))
+        atr_pct    = atr_factor * atr_14 / entry_price
+        base = max(base, min(atr_pct, tp_max))
+
     fee_rate = float(params.get("FEE_RATE_MAKER", 0.00014))
     margin   = float(params.get("FEE_MARGIN", 1.5))
     if int(params.get("TP_FEE_FLOOR_ENABLE", 0)):
@@ -957,9 +966,9 @@ def run(csv_path: str, params: Dict, _preloaded=None, regime_switch: bool = Fals
                         _tp_dist  = max(_bb_half * _tp_ratio, fill_p * _tp_min)
                         tp_price  = fill_p + _tp_dist if side == "LONG" else fill_p - _tp_dist
                     else:
-                        tp_price = _calc_tp_price(side, fill_p, adx_val, params, _entry_pri)
+                        tp_price = _calc_tp_price(side, fill_p, adx_val, params, _entry_pri, atr_14=states.get("atr_14", float("nan")))
                 else:
-                    tp_price = _calc_tp_price(side, fill_p, adx_val, params, _entry_pri)
+                    tp_price = _calc_tp_price(side, fill_p, adx_val, params, _entry_pri, atr_14=states.get("atr_14", float("nan")))
                 pos[side] = {
                     "side":                  side,
                     "entry_priority":        pnd["priority"],
@@ -996,7 +1005,7 @@ def run(csv_path: str, params: Dict, _preloaded=None, regime_switch: bool = Fals
                 new_sz  = old_sz + unit_size
                 new_avg = (old_p * old_sz + fill_p * unit_size) / new_sz
                 new_cnt = int(p["add_count"]) + 1
-                tp_price = _calc_tp_price(side, new_avg, adx_val, params, p["entry_priority"])
+                tp_price = _calc_tp_price(side, new_avg, adx_val, params, p["entry_priority"], atr_14=states.get("atr_14", float("nan")))
                 sl_price = _calc_sl_price(side, new_avg, params, int(p.get("entry_priority", 0))) if new_cnt >= 2 else None
                 p.update({
                     "entry_price": new_avg,
