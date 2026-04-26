@@ -1,0 +1,5853 @@
+{
+  "n_days": 365,
+  "label_counts": {
+    "uptrend": 35,
+    "downtrend": 62,
+    "range": 216,
+    "warmup": 52
+  },
+  "days": [
+    {
+      "date": "2025-04-01",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 85158.34
+    },
+    {
+      "date": "2025-04-02",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 82516.29
+    },
+    {
+      "date": "2025-04-03",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 83213.09
+    },
+    {
+      "date": "2025-04-04",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 83889.87
+    },
+    {
+      "date": "2025-04-05",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 83537.99
+    },
+    {
+      "date": "2025-04-06",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 78430.0
+    },
+    {
+      "date": "2025-04-07",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 79163.24
+    },
+    {
+      "date": "2025-04-08",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 76322.42
+    },
+    {
+      "date": "2025-04-09",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 82615.22
+    },
+    {
+      "date": "2025-04-10",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 79607.3
+    },
+    {
+      "date": "2025-04-11",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 83423.84
+    },
+    {
+      "date": "2025-04-12",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 85276.9
+    },
+    {
+      "date": "2025-04-13",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 83760.0
+    },
+    {
+      "date": "2025-04-14",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 84591.58
+    },
+    {
+      "date": "2025-04-15",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 83643.99
+    },
+    {
+      "date": "2025-04-16",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 84030.38
+    },
+    {
+      "date": "2025-04-17",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 84947.91
+    },
+    {
+      "date": "2025-04-18",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 84474.69
+    },
+    {
+      "date": "2025-04-19",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 85077.01
+    },
+    {
+      "date": "2025-04-20",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 85179.24
+    },
+    {
+      "date": "2025-04-21",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 87516.23
+    },
+    {
+      "date": "2025-04-22",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 93442.99
+    },
+    {
+      "date": "2025-04-23",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 93691.08
+    },
+    {
+      "date": "2025-04-24",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 93980.47
+    },
+    {
+      "date": "2025-04-25",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 94638.68
+    },
+    {
+      "date": "2025-04-26",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 94628.0
+    },
+    {
+      "date": "2025-04-27",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 93749.3
+    },
+    {
+      "date": "2025-04-28",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 95011.18
+    },
+    {
+      "date": "2025-04-29",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 94256.82
+    },
+    {
+      "date": "2025-04-30",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 94172.0
+    },
+    {
+      "date": "2025-05-01",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 96489.91
+    },
+    {
+      "date": "2025-05-02",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 96887.14
+    },
+    {
+      "date": "2025-05-03",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 95856.42
+    },
+    {
+      "date": "2025-05-04",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 94277.62
+    },
+    {
+      "date": "2025-05-05",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 94733.68
+    },
+    {
+      "date": "2025-05-06",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 96834.02
+    },
+    {
+      "date": "2025-05-07",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 97030.5
+    },
+    {
+      "date": "2025-05-08",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 103261.6
+    },
+    {
+      "date": "2025-05-09",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 102971.99
+    },
+    {
+      "date": "2025-05-10",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 104809.53
+    },
+    {
+      "date": "2025-05-11",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 104118.0
+    },
+    {
+      "date": "2025-05-12",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 102791.32
+    },
+    {
+      "date": "2025-05-13",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 104103.72
+    },
+    {
+      "date": "2025-05-14",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 103507.82
+    },
+    {
+      "date": "2025-05-15",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 103763.71
+    },
+    {
+      "date": "2025-05-16",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 103463.9
+    },
+    {
+      "date": "2025-05-17",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 103126.65
+    },
+    {
+      "date": "2025-05-18",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 106454.26
+    },
+    {
+      "date": "2025-05-19",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 105573.74
+    },
+    {
+      "date": "2025-05-20",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 106849.99
+    },
+    {
+      "date": "2025-05-21",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 109643.99
+    },
+    {
+      "date": "2025-05-22",
+      "label": "",
+      "direction_score": "",
+      "ichimoku": "",
+      "adx": "",
+      "bb_width_pct": "",
+      "bb_median": "",
+      "note": "warmup_insufficient",
+      "close": 111696.21
+    },
+    {
+      "date": "2025-05-23",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "32.76",
+      "bb_width_pct": "16.564",
+      "bb_median": "16.438",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 107318.3
+    },
+    {
+      "date": "2025-05-24",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "32.31",
+      "bb_width_pct": "16.56",
+      "bb_median": "16.436",
+      "note": "条件不一致",
+      "close": 107761.91
+    },
+    {
+      "date": "2025-05-25",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "31.89",
+      "bb_width_pct": "14.934",
+      "bb_median": "16.298",
+      "note": "条件不一致",
+      "close": 109004.19
+    },
+    {
+      "date": "2025-05-26",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "31.35",
+      "bb_width_pct": "13.052",
+      "bb_median": "16.241",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 109434.79
+    },
+    {
+      "date": "2025-05-27",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "31.21",
+      "bb_width_pct": "11.717",
+      "bb_median": "16.086",
+      "note": "条件不一致",
+      "close": 108938.17
+    },
+    {
+      "date": "2025-05-28",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "30.44",
+      "bb_width_pct": "9.799",
+      "bb_median": "15.947",
+      "note": "条件不一致",
+      "close": 107781.78
+    },
+    {
+      "date": "2025-05-29",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "29.33",
+      "bb_width_pct": "9.739",
+      "bb_median": "15.918",
+      "note": "条件不一致",
+      "close": 105589.75
+    },
+    {
+      "date": "2025-05-30",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "27.57",
+      "bb_width_pct": "9.568",
+      "bb_median": "15.854",
+      "note": "弱下落",
+      "close": 103985.48
+    },
+    {
+      "date": "2025-05-31",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "26.02",
+      "bb_width_pct": "9.832",
+      "bb_median": "15.753",
+      "note": "弱下落",
+      "close": 104591.88
+    },
+    {
+      "date": "2025-06-01",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "24.8",
+      "bb_width_pct": "9.708",
+      "bb_median": "15.645",
+      "note": "条件不一致",
+      "close": 105642.93
+    },
+    {
+      "date": "2025-06-02",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "23.2",
+      "bb_width_pct": "9.148",
+      "bb_median": "15.526",
+      "note": "条件不一致",
+      "close": 105857.99
+    },
+    {
+      "date": "2025-06-03",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "21.76",
+      "bb_width_pct": "8.925",
+      "bb_median": "15.391",
+      "note": "条件不一致",
+      "close": 105376.89
+    },
+    {
+      "date": "2025-06-04",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "20.41",
+      "bb_width_pct": "8.644",
+      "bb_median": "15.263",
+      "note": "条件不一致",
+      "close": 104696.86
+    },
+    {
+      "date": "2025-06-05",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "19.1",
+      "bb_width_pct": "8.511",
+      "bb_median": "15.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 101508.68
+    },
+    {
+      "date": "2025-06-06",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "19.42",
+      "bb_width_pct": "9.462",
+      "bb_median": "14.935",
+      "note": "ADX<20 AND BB狭い",
+      "close": 104288.44
+    },
+    {
+      "date": "2025-06-07",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "19.72",
+      "bb_width_pct": "8.94",
+      "bb_median": "14.737",
+      "note": "ADX<20 AND BB狭い",
+      "close": 105552.15
+    },
+    {
+      "date": "2025-06-08",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "19.68",
+      "bb_width_pct": "8.875",
+      "bb_median": "14.37",
+      "note": "ADX<20 AND BB狭い",
+      "close": 105734.0
+    },
+    {
+      "date": "2025-06-09",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "19.3",
+      "bb_width_pct": "8.848",
+      "bb_median": "13.627",
+      "note": "ADX<20 AND BB狭い",
+      "close": 110263.02
+    },
+    {
+      "date": "2025-06-10",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "18.74",
+      "bb_width_pct": "8.976",
+      "bb_median": "12.384",
+      "note": "ADX<20 AND BB狭い",
+      "close": 110274.39
+    },
+    {
+      "date": "2025-06-11",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "18.22",
+      "bb_width_pct": "9.122",
+      "bb_median": "10.774",
+      "note": "ADX<20 AND BB狭い",
+      "close": 108645.12
+    },
+    {
+      "date": "2025-06-12",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "17.6",
+      "bb_width_pct": "8.445",
+      "bb_median": "9.816",
+      "note": "ADX<20 AND BB狭い",
+      "close": 105671.73
+    },
+    {
+      "date": "2025-06-13",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "16.76",
+      "bb_width_pct": "8.693",
+      "bb_median": "9.769",
+      "note": "ADX<20 AND BB狭い",
+      "close": 106066.59
+    },
+    {
+      "date": "2025-06-14",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "17.07",
+      "bb_width_pct": "8.601",
+      "bb_median": "9.723",
+      "note": "ADX<20 AND BB狭い",
+      "close": 105414.64
+    },
+    {
+      "date": "2025-06-15",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "17.31",
+      "bb_width_pct": "8.395",
+      "bb_median": "9.638",
+      "note": "ADX<20 AND BB狭い",
+      "close": 105594.01
+    },
+    {
+      "date": "2025-06-16",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "17.54",
+      "bb_width_pct": "7.927",
+      "bb_median": "9.515",
+      "note": "ADX<20 AND BB狭い",
+      "close": 106794.53
+    },
+    {
+      "date": "2025-06-17",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "16.39",
+      "bb_width_pct": "7.475",
+      "bb_median": "9.305",
+      "note": "ADX<20 AND BB狭い",
+      "close": 104551.17
+    },
+    {
+      "date": "2025-06-18",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "up",
+      "adx": "15.95",
+      "bb_width_pct": "7.548",
+      "bb_median": "9.135",
+      "note": "ADX<20 AND BB狭い",
+      "close": 104886.78
+    },
+    {
+      "date": "2025-06-19",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "15.53",
+      "bb_width_pct": "7.561",
+      "bb_median": "9.049",
+      "note": "ADX<20 AND BB狭い",
+      "close": 104658.59
+    },
+    {
+      "date": "2025-06-20",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "15.15",
+      "bb_width_pct": "7.482",
+      "bb_median": "8.958",
+      "note": "ADX<20 AND BB狭い",
+      "close": 103297.99
+    },
+    {
+      "date": "2025-06-21",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "15.42",
+      "bb_width_pct": "7.811",
+      "bb_median": "8.933",
+      "note": "ADX<20 AND BB狭い",
+      "close": 102120.01
+    },
+    {
+      "date": "2025-06-22",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "16.2",
+      "bb_width_pct": "8.484",
+      "bb_median": "8.9",
+      "note": "ADX<20 AND BB狭い",
+      "close": 100963.87
+    },
+    {
+      "date": "2025-06-23",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "17.7",
+      "bb_width_pct": "9.446",
+      "bb_median": "8.9",
+      "note": "条件不一致",
+      "close": 105333.93
+    },
+    {
+      "date": "2025-06-24",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "17.74",
+      "bb_width_pct": "9.054",
+      "bb_median": "8.9",
+      "note": "条件不一致",
+      "close": 106083.0
+    },
+    {
+      "date": "2025-06-25",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "17.67",
+      "bb_width_pct": "8.995",
+      "bb_median": "8.9",
+      "note": "条件不一致",
+      "close": 107340.58
+    },
+    {
+      "date": "2025-06-26",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "16.79",
+      "bb_width_pct": "8.37",
+      "bb_median": "8.862",
+      "note": "ADX<20 AND BB狭い",
+      "close": 106947.06
+    },
+    {
+      "date": "2025-06-27",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "15.91",
+      "bb_width_pct": "8.373",
+      "bb_median": "8.771",
+      "note": "ADX<20 AND BB狭い",
+      "close": 107047.59
+    },
+    {
+      "date": "2025-06-28",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "15.18",
+      "bb_width_pct": "8.422",
+      "bb_median": "8.669",
+      "note": "ADX<20 AND BB狭い",
+      "close": 107296.79
+    },
+    {
+      "date": "2025-06-29",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "14.51",
+      "bb_width_pct": "8.478",
+      "bb_median": "8.623",
+      "note": "ADX<20 AND BB狭い",
+      "close": 108356.93
+    },
+    {
+      "date": "2025-06-30",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "13.54",
+      "bb_width_pct": "7.853",
+      "bb_median": "8.556",
+      "note": "ADX<20 AND BB狭い",
+      "close": 107146.5
+    },
+    {
+      "date": "2025-07-01",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "12.72",
+      "bb_width_pct": "7.094",
+      "bb_median": "8.498",
+      "note": "ADX<20 AND BB狭い",
+      "close": 105681.14
+    },
+    {
+      "date": "2025-07-02",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "12.66",
+      "bb_width_pct": "6.727",
+      "bb_median": "8.481",
+      "note": "ADX<20 AND BB狭い",
+      "close": 108849.6
+    },
+    {
+      "date": "2025-07-03",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "12.0",
+      "bb_width_pct": "7.043",
+      "bb_median": "8.462",
+      "note": "ADX<20 AND BB狭い",
+      "close": 109584.78
+    },
+    {
+      "date": "2025-07-04",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "11.73",
+      "bb_width_pct": "7.641",
+      "bb_median": "8.433",
+      "note": "ADX<20 AND BB狭い",
+      "close": 107984.24
+    },
+    {
+      "date": "2025-07-05",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "10.93",
+      "bb_width_pct": "7.921",
+      "bb_median": "8.409",
+      "note": "ADX<20 AND BB狭い",
+      "close": 108198.12
+    },
+    {
+      "date": "2025-07-06",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "up",
+      "adx": "10.18",
+      "bb_width_pct": "8.084",
+      "bb_median": "8.384",
+      "note": "ADX<20 AND BB狭い",
+      "close": 109203.84
+    },
+    {
+      "date": "2025-07-07",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "10.03",
+      "bb_width_pct": "8.362",
+      "bb_median": "8.372",
+      "note": "ADX<20 AND BB狭い",
+      "close": 108262.94
+    },
+    {
+      "date": "2025-07-08",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "9.74",
+      "bb_width_pct": "8.446",
+      "bb_median": "8.372",
+      "note": "条件不一致",
+      "close": 108922.98
+    },
+    {
+      "date": "2025-07-09",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "9.42",
+      "bb_width_pct": "8.505",
+      "bb_median": "8.372",
+      "note": "条件不一致",
+      "close": 111233.99
+    },
+    {
+      "date": "2025-07-10",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "10.37",
+      "bb_width_pct": "8.88",
+      "bb_median": "8.372",
+      "note": "条件不一致",
+      "close": 116010.0
+    },
+    {
+      "date": "2025-07-11",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "12.67",
+      "bb_width_pct": "10.388",
+      "bb_median": "8.372",
+      "note": "条件不一致",
+      "close": 117527.66
+    },
+    {
+      "date": "2025-07-12",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "up",
+      "adx": "15.23",
+      "bb_width_pct": "11.724",
+      "bb_median": "8.372",
+      "note": "条件不一致",
+      "close": 117420.0
+    },
+    {
+      "date": "2025-07-13",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "up",
+      "adx": "17.6",
+      "bb_width_pct": "12.041",
+      "bb_median": "8.372",
+      "note": "条件不一致",
+      "close": 119086.64
+    },
+    {
+      "date": "2025-07-14",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "20.07",
+      "bb_width_pct": "13.491",
+      "bb_median": "8.372",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 119841.18
+    },
+    {
+      "date": "2025-07-15",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "up",
+      "adx": "22.98",
+      "bb_width_pct": "14.874",
+      "bb_median": "8.372",
+      "note": "条件不一致",
+      "close": 117758.09
+    },
+    {
+      "date": "2025-07-16",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "up",
+      "adx": "24.05",
+      "bb_width_pct": "15.795",
+      "bb_median": "8.397",
+      "note": "条件不一致",
+      "close": 118630.43
+    },
+    {
+      "date": "2025-07-17",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "25.07",
+      "bb_width_pct": "16.252",
+      "bb_median": "8.434",
+      "note": "条件不一致",
+      "close": 119177.56
+    },
+    {
+      "date": "2025-07-18",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "26.22",
+      "bb_width_pct": "16.638",
+      "bb_median": "8.462",
+      "note": "3条件合意・強上昇",
+      "close": 117924.84
+    },
+    {
+      "date": "2025-07-19",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "26.95",
+      "bb_width_pct": "16.828",
+      "bb_median": "8.481",
+      "note": "条件不一致",
+      "close": 117840.0
+    },
+    {
+      "date": "2025-07-20",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "27.64",
+      "bb_width_pct": "16.847",
+      "bb_median": "8.494",
+      "note": "条件不一致",
+      "close": 117265.12
+    },
+    {
+      "date": "2025-07-21",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "27.82",
+      "bb_width_pct": "16.45",
+      "bb_median": "8.692",
+      "note": "条件不一致",
+      "close": 117380.36
+    },
+    {
+      "date": "2025-07-22",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "28.23",
+      "bb_width_pct": "15.329",
+      "bb_median": "8.937",
+      "note": "条件不一致",
+      "close": 119954.42
+    },
+    {
+      "date": "2025-07-23",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "28.78",
+      "bb_width_pct": "14.884",
+      "bb_median": "8.937",
+      "note": "3条件合意・強上昇",
+      "close": 118755.99
+    },
+    {
+      "date": "2025-07-24",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "29.28",
+      "bb_width_pct": "14.678",
+      "bb_median": "8.937",
+      "note": "3条件合意・強上昇",
+      "close": 118340.99
+    },
+    {
+      "date": "2025-07-25",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "29.62",
+      "bb_width_pct": "13.682",
+      "bb_median": "9.634",
+      "note": "条件不一致",
+      "close": 117614.31
+    },
+    {
+      "date": "2025-07-26",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "up",
+      "adx": "28.49",
+      "bb_width_pct": "12.407",
+      "bb_median": "11.056",
+      "note": "条件不一致",
+      "close": 117919.99
+    },
+    {
+      "date": "2025-07-27",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "27.43",
+      "bb_width_pct": "11.064",
+      "bb_median": "11.394",
+      "note": "3条件合意・強上昇",
+      "close": 119415.55
+    },
+    {
+      "date": "2025-07-28",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "27.06",
+      "bb_width_pct": "8.848",
+      "bb_median": "11.394",
+      "note": "3条件合意・強上昇",
+      "close": 118062.32
+    },
+    {
+      "date": "2025-07-29",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "26.47",
+      "bb_width_pct": "6.058",
+      "bb_median": "11.394",
+      "note": "条件不一致",
+      "close": 117950.76
+    },
+    {
+      "date": "2025-07-30",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "up",
+      "adx": "25.63",
+      "bb_width_pct": "3.2",
+      "bb_median": "11.394",
+      "note": "弱下落",
+      "close": 117840.3
+    },
+    {
+      "date": "2025-07-31",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "24.17",
+      "bb_width_pct": "2.736",
+      "bb_median": "11.394",
+      "note": "条件不一致",
+      "close": 115764.08
+    },
+    {
+      "date": "2025-08-01",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "up",
+      "adx": "22.66",
+      "bb_width_pct": "3.334",
+      "bb_median": "11.394",
+      "note": "弱下落",
+      "close": 113297.93
+    },
+    {
+      "date": "2025-08-02",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "up",
+      "adx": "22.18",
+      "bb_width_pct": "5.066",
+      "bb_median": "11.394",
+      "note": "弱下落",
+      "close": 112546.35
+    },
+    {
+      "date": "2025-08-03",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "up",
+      "adx": "22.03",
+      "bb_width_pct": "6.528",
+      "bb_median": "11.394",
+      "note": "弱下落",
+      "close": 114208.8
+    },
+    {
+      "date": "2025-08-04",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "up",
+      "adx": "21.45",
+      "bb_width_pct": "6.695",
+      "bb_median": "11.394",
+      "note": "条件不一致",
+      "close": 115055.03
+    },
+    {
+      "date": "2025-08-05",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "20.39",
+      "bb_width_pct": "6.866",
+      "bb_median": "11.394",
+      "note": "条件不一致",
+      "close": 114129.75
+    },
+    {
+      "date": "2025-08-06",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "20.07",
+      "bb_width_pct": "7.217",
+      "bb_median": "11.394",
+      "note": "条件不一致",
+      "close": 114992.27
+    },
+    {
+      "date": "2025-08-07",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "19.43",
+      "bb_width_pct": "7.103",
+      "bb_median": "11.394",
+      "note": "ADX<20 AND BB狭い",
+      "close": 117472.01
+    },
+    {
+      "date": "2025-08-08",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "18.24",
+      "bb_width_pct": "6.919",
+      "bb_median": "11.394",
+      "note": "ADX<20 AND BB狭い",
+      "close": 116674.74
+    },
+    {
+      "date": "2025-08-09",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "17.15",
+      "bb_width_pct": "6.918",
+      "bb_median": "11.394",
+      "note": "ADX<20 AND BB狭い",
+      "close": 116462.25
+    },
+    {
+      "date": "2025-08-10",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "16.29",
+      "bb_width_pct": "6.92",
+      "bb_median": "11.394",
+      "note": "ADX<20 AND BB狭い",
+      "close": 119294.01
+    },
+    {
+      "date": "2025-08-11",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "16.17",
+      "bb_width_pct": "7.005",
+      "bb_median": "9.956",
+      "note": "ADX<20 AND BB狭い",
+      "close": 118686.0
+    },
+    {
+      "date": "2025-08-12",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "17.22",
+      "bb_width_pct": "6.774",
+      "bb_median": "8.032",
+      "note": "ADX<20 AND BB狭い",
+      "close": 120134.08
+    },
+    {
+      "date": "2025-08-13",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "18.19",
+      "bb_width_pct": "6.992",
+      "bb_median": "7.16",
+      "note": "ADX<20 AND BB狭い",
+      "close": 123306.43
+    },
+    {
+      "date": "2025-08-14",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "20.06",
+      "bb_width_pct": "8.174",
+      "bb_median": "7.16",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 118295.09
+    },
+    {
+      "date": "2025-08-15",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "20.78",
+      "bb_width_pct": "8.561",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 117342.05
+    },
+    {
+      "date": "2025-08-16",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "21.24",
+      "bb_width_pct": "8.609",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 117380.66
+    },
+    {
+      "date": "2025-08-17",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "21.66",
+      "bb_width_pct": "8.411",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 117405.01
+    },
+    {
+      "date": "2025-08-18",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "22.29",
+      "bb_width_pct": "8.373",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 116227.05
+    },
+    {
+      "date": "2025-08-19",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "21.44",
+      "bb_width_pct": "8.431",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 112872.94
+    },
+    {
+      "date": "2025-08-20",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "20.04",
+      "bb_width_pct": "9.152",
+      "bb_median": "7.16",
+      "note": "弱下落",
+      "close": 114271.24
+    },
+    {
+      "date": "2025-08-21",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "18.89",
+      "bb_width_pct": "9.193",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 112500.0
+    },
+    {
+      "date": "2025-08-22",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "17.98",
+      "bb_width_pct": "9.529",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 116935.99
+    },
+    {
+      "date": "2025-08-23",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "17.41",
+      "bb_width_pct": "8.639",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 115438.05
+    },
+    {
+      "date": "2025-08-24",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "16.89",
+      "bb_width_pct": "8.591",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 113493.59
+    },
+    {
+      "date": "2025-08-25",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "16.6",
+      "bb_width_pct": "9.003",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 110111.98
+    },
+    {
+      "date": "2025-08-26",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "16.81",
+      "bb_width_pct": "10.473",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 111763.22
+    },
+    {
+      "date": "2025-08-27",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "17.19",
+      "bb_width_pct": "10.904",
+      "bb_median": "7.16",
+      "note": "条件不一致",
+      "close": 111262.01
+    },
+    {
+      "date": "2025-08-28",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "17.42",
+      "bb_width_pct": "11.587",
+      "bb_median": "7.695",
+      "note": "条件不一致",
+      "close": 112566.9
+    },
+    {
+      "date": "2025-08-29",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "17.18",
+      "bb_width_pct": "11.737",
+      "bb_median": "8.273",
+      "note": "条件不一致",
+      "close": 108377.4
+    },
+    {
+      "date": "2025-08-30",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "18.08",
+      "bb_width_pct": "13.545",
+      "bb_median": "8.392",
+      "note": "条件不一致",
+      "close": 108816.33
+    },
+    {
+      "date": "2025-08-31",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "18.94",
+      "bb_width_pct": "14.039",
+      "bb_median": "8.421",
+      "note": "条件不一致",
+      "close": 108246.35
+    },
+    {
+      "date": "2025-09-01",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "19.43",
+      "bb_width_pct": "14.673",
+      "bb_median": "8.496",
+      "note": "条件不一致",
+      "close": 109237.42
+    },
+    {
+      "date": "2025-09-02",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "20.15",
+      "bb_width_pct": "14.225",
+      "bb_median": "8.576",
+      "note": "条件不一致",
+      "close": 111240.01
+    },
+    {
+      "date": "2025-09-03",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "19.82",
+      "bb_width_pct": "11.667",
+      "bb_median": "8.6",
+      "note": "条件不一致",
+      "close": 111705.71
+    },
+    {
+      "date": "2025-09-04",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "19.11",
+      "bb_width_pct": "10.876",
+      "bb_median": "8.624",
+      "note": "条件不一致",
+      "close": 110730.87
+    },
+    {
+      "date": "2025-09-05",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "18.92",
+      "bb_width_pct": "10.431",
+      "bb_median": "8.821",
+      "note": "条件不一致",
+      "close": 110659.99
+    },
+    {
+      "date": "2025-09-06",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "18.14",
+      "bb_width_pct": "9.715",
+      "bb_median": "9.078",
+      "note": "条件不一致",
+      "close": 110187.97
+    },
+    {
+      "date": "2025-09-07",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "17.51",
+      "bb_width_pct": "8.844",
+      "bb_median": "9.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 111137.34
+    },
+    {
+      "date": "2025-09-08",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "16.78",
+      "bb_width_pct": "7.991",
+      "bb_median": "9.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 112065.23
+    },
+    {
+      "date": "2025-09-09",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "15.73",
+      "bb_width_pct": "7.865",
+      "bb_median": "9.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 111546.39
+    },
+    {
+      "date": "2025-09-10",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "14.94",
+      "bb_width_pct": "7.576",
+      "bb_median": "9.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 113960.0
+    },
+    {
+      "date": "2025-09-11",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "14.68",
+      "bb_width_pct": "7.63",
+      "bb_median": "9.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 115482.69
+    },
+    {
+      "date": "2025-09-12",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "14.95",
+      "bb_width_pct": "6.955",
+      "bb_median": "9.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 116029.42
+    },
+    {
+      "date": "2025-09-13",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "15.67",
+      "bb_width_pct": "7.138",
+      "bb_median": "9.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 115918.29
+    },
+    {
+      "date": "2025-09-14",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "16.33",
+      "bb_width_pct": "7.767",
+      "bb_median": "9.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 115268.01
+    },
+    {
+      "date": "2025-09-15",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "16.95",
+      "bb_width_pct": "8.202",
+      "bb_median": "9.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 115349.71
+    },
+    {
+      "date": "2025-09-16",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "16.99",
+      "bb_width_pct": "8.621",
+      "bb_median": "9.078",
+      "note": "ADX<20 AND BB狭い",
+      "close": 116788.96
+    },
+    {
+      "date": "2025-09-17",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "17.13",
+      "bb_width_pct": "9.209",
+      "bb_median": "9.172",
+      "note": "条件不一致",
+      "close": 116447.59
+    },
+    {
+      "date": "2025-09-18",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "17.42",
+      "bb_width_pct": "9.753",
+      "bb_median": "9.201",
+      "note": "条件不一致",
+      "close": 117073.53
+    },
+    {
+      "date": "2025-09-19",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "up",
+      "adx": "18.0",
+      "bb_width_pct": "9.726",
+      "bb_median": "9.369",
+      "note": "条件不一致",
+      "close": 115632.38
+    },
+    {
+      "date": "2025-09-20",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "17.76",
+      "bb_width_pct": "9.493",
+      "bb_median": "9.511",
+      "note": "ADX<20 AND BB狭い",
+      "close": 115685.63
+    },
+    {
+      "date": "2025-09-21",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "17.53",
+      "bb_width_pct": "8.78",
+      "bb_median": "9.351",
+      "note": "ADX<20 AND BB狭い",
+      "close": 115232.29
+    },
+    {
+      "date": "2025-09-22",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "17.14",
+      "bb_width_pct": "8.167",
+      "bb_median": "9.351",
+      "note": "ADX<20 AND BB狭い",
+      "close": 112650.99
+    },
+    {
+      "date": "2025-09-23",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "17.2",
+      "bb_width_pct": "8.139",
+      "bb_median": "9.351",
+      "note": "ADX<20 AND BB狭い",
+      "close": 111998.8
+    },
+    {
+      "date": "2025-09-24",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "17.41",
+      "bb_width_pct": "8.137",
+      "bb_median": "9.351",
+      "note": "ADX<20 AND BB狭い",
+      "close": 113307.0
+    },
+    {
+      "date": "2025-09-25",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "17.14",
+      "bb_width_pct": "7.626",
+      "bb_median": "9.027",
+      "note": "ADX<20 AND BB狭い",
+      "close": 108994.49
+    },
+    {
+      "date": "2025-09-26",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "18.0",
+      "bb_width_pct": "8.508",
+      "bb_median": "8.812",
+      "note": "ADX<20 AND BB狭い",
+      "close": 109643.46
+    },
+    {
+      "date": "2025-09-27",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "18.8",
+      "bb_width_pct": "8.632",
+      "bb_median": "8.706",
+      "note": "ADX<20 AND BB狭い",
+      "close": 109635.85
+    },
+    {
+      "date": "2025-09-28",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "19.54",
+      "bb_width_pct": "9.038",
+      "bb_median": "8.706",
+      "note": "条件不一致",
+      "close": 112163.95
+    },
+    {
+      "date": "2025-09-29",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "18.43",
+      "bb_width_pct": "8.821",
+      "bb_median": "8.706",
+      "note": "条件不一致",
+      "close": 114311.96
+    },
+    {
+      "date": "2025-09-30",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "17.88",
+      "bb_width_pct": "8.442",
+      "bb_median": "8.626",
+      "note": "ADX<20 AND BB狭い",
+      "close": 114048.93
+    },
+    {
+      "date": "2025-10-01",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "17.55",
+      "bb_width_pct": "8.461",
+      "bb_median": "8.564",
+      "note": "ADX<20 AND BB狭い",
+      "close": 118594.99
+    },
+    {
+      "date": "2025-10-02",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "18.67",
+      "bb_width_pct": "8.74",
+      "bb_median": "8.564",
+      "note": "条件不一致",
+      "close": 120529.35
+    },
+    {
+      "date": "2025-10-03",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "20.34",
+      "bb_width_pct": "9.666",
+      "bb_median": "8.564",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 122232.0
+    },
+    {
+      "date": "2025-10-04",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "22.51",
+      "bb_width_pct": "10.998",
+      "bb_median": "8.564",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 122391.0
+    },
+    {
+      "date": "2025-10-05",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "24.52",
+      "bb_width_pct": "12.251",
+      "bb_median": "8.564",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 123482.31
+    },
+    {
+      "date": "2025-10-06",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "up",
+      "adx": "26.9",
+      "bb_width_pct": "13.5",
+      "bb_median": "8.564",
+      "note": "条件不一致",
+      "close": 124658.54
+    },
+    {
+      "date": "2025-10-07",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "29.2",
+      "bb_width_pct": "14.806",
+      "bb_median": "8.564",
+      "note": "3条件合意・強上昇",
+      "close": 121332.95
+    },
+    {
+      "date": "2025-10-08",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "up",
+      "adx": "29.9",
+      "bb_width_pct": "15.698",
+      "bb_median": "8.626",
+      "note": "条件不一致",
+      "close": 123306.0
+    },
+    {
+      "date": "2025-10-09",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "up",
+      "adx": "30.55",
+      "bb_width_pct": "16.245",
+      "bb_median": "8.686",
+      "note": "3条件合意・強上昇",
+      "close": 121662.4
+    },
+    {
+      "date": "2025-10-10",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "up",
+      "adx": "30.4",
+      "bb_width_pct": "16.856",
+      "bb_median": "8.76",
+      "note": "条件不一致",
+      "close": 112774.5
+    },
+    {
+      "date": "2025-10-11",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "30.83",
+      "bb_width_pct": "18.434",
+      "bb_median": "8.801",
+      "note": "弱下落",
+      "close": 110644.4
+    },
+    {
+      "date": "2025-10-12",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "31.23",
+      "bb_width_pct": "19.354",
+      "bb_median": "8.93",
+      "note": "弱下落",
+      "close": 114958.8
+    },
+    {
+      "date": "2025-10-13",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "30.87",
+      "bb_width_pct": "18.426",
+      "bb_median": "9.124",
+      "note": "条件不一致",
+      "close": 115166.0
+    },
+    {
+      "date": "2025-10-14",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "30.48",
+      "bb_width_pct": "18.075",
+      "bb_median": "9.351",
+      "note": "条件不一致",
+      "close": 113028.14
+    },
+    {
+      "date": "2025-10-15",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "30.74",
+      "bb_width_pct": "18.451",
+      "bb_median": "9.579",
+      "note": "条件不一致",
+      "close": 110763.28
+    },
+    {
+      "date": "2025-10-16",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "30.98",
+      "bb_width_pct": "18.404",
+      "bb_median": "9.696",
+      "note": "3条件合意・強下落",
+      "close": 108194.28
+    },
+    {
+      "date": "2025-10-17",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "31.63",
+      "bb_width_pct": "19.247",
+      "bb_median": "9.74",
+      "note": "3条件合意・強下落",
+      "close": 106431.68
+    },
+    {
+      "date": "2025-10-18",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "32.75",
+      "bb_width_pct": "20.534",
+      "bb_median": "10.362",
+      "note": "条件不一致",
+      "close": 107185.01
+    },
+    {
+      "date": "2025-10-19",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "33.79",
+      "bb_width_pct": "21.505",
+      "bb_median": "11.625",
+      "note": "条件不一致",
+      "close": 108642.78
+    },
+    {
+      "date": "2025-10-20",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "34.07",
+      "bb_width_pct": "22.045",
+      "bb_median": "12.876",
+      "note": "条件不一致",
+      "close": 110532.09
+    },
+    {
+      "date": "2025-10-21",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "33.58",
+      "bb_width_pct": "22.05",
+      "bb_median": "14.153",
+      "note": "条件不一致",
+      "close": 108297.67
+    },
+    {
+      "date": "2025-10-22",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "32.42",
+      "bb_width_pct": "23.157",
+      "bb_median": "15.252",
+      "note": "3条件合意・強下落",
+      "close": 107567.44
+    },
+    {
+      "date": "2025-10-23",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "31.52",
+      "bb_width_pct": "23.672",
+      "bb_median": "15.971",
+      "note": "3条件合意・強下落",
+      "close": 110078.18
+    },
+    {
+      "date": "2025-10-24",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "30.05",
+      "bb_width_pct": "22.501",
+      "bb_median": "16.55",
+      "note": "条件不一致",
+      "close": 111004.89
+    },
+    {
+      "date": "2025-10-25",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "28.44",
+      "bb_width_pct": "21.321",
+      "bb_median": "17.466",
+      "note": "条件不一致",
+      "close": 111646.27
+    },
+    {
+      "date": "2025-10-26",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "26.95",
+      "bb_width_pct": "19.568",
+      "bb_median": "18.24",
+      "note": "条件不一致",
+      "close": 114559.4
+    },
+    {
+      "date": "2025-10-27",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "25.48",
+      "bb_width_pct": "16.67",
+      "bb_median": "18.24",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 114107.65
+    },
+    {
+      "date": "2025-10-28",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "24.35",
+      "bb_width_pct": "15.204",
+      "bb_median": "18.24",
+      "note": "条件不一致",
+      "close": 112898.45
+    },
+    {
+      "date": "2025-10-29",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "22.82",
+      "bb_width_pct": "12.385",
+      "bb_median": "18.24",
+      "note": "条件不一致",
+      "close": 110021.29
+    },
+    {
+      "date": "2025-10-30",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "21.8",
+      "bb_width_pct": "9.504",
+      "bb_median": "18.24",
+      "note": "弱下落",
+      "close": 108322.88
+    },
+    {
+      "date": "2025-10-31",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "21.53",
+      "bb_width_pct": "9.736",
+      "bb_median": "18.24",
+      "note": "弱下落",
+      "close": 109608.01
+    },
+    {
+      "date": "2025-11-01",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "21.28",
+      "bb_width_pct": "9.661",
+      "bb_median": "18.24",
+      "note": "弱下落",
+      "close": 110098.1
+    },
+    {
+      "date": "2025-11-02",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "21.05",
+      "bb_width_pct": "8.927",
+      "bb_median": "18.24",
+      "note": "条件不一致",
+      "close": 110540.68
+    },
+    {
+      "date": "2025-11-03",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "20.58",
+      "bb_width_pct": "7.971",
+      "bb_median": "18.24",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 106583.04
+    },
+    {
+      "date": "2025-11-04",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "21.14",
+      "bb_width_pct": "8.381",
+      "bb_median": "18.24",
+      "note": "弱下落",
+      "close": 101497.22
+    },
+    {
+      "date": "2025-11-05",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "22.74",
+      "bb_width_pct": "11.301",
+      "bb_median": "18.24",
+      "note": "弱下落",
+      "close": 103885.16
+    },
+    {
+      "date": "2025-11-06",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "24.22",
+      "bb_width_pct": "11.943",
+      "bb_median": "18.24",
+      "note": "条件不一致",
+      "close": 101346.04
+    },
+    {
+      "date": "2025-11-07",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "25.6",
+      "bb_width_pct": "13.811",
+      "bb_median": "18.24",
+      "note": "3条件合意・強下落",
+      "close": 103339.08
+    },
+    {
+      "date": "2025-11-08",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "27.05",
+      "bb_width_pct": "14.283",
+      "bb_median": "18.24",
+      "note": "条件不一致",
+      "close": 102312.94
+    },
+    {
+      "date": "2025-11-09",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "28.39",
+      "bb_width_pct": "15.428",
+      "bb_median": "18.24",
+      "note": "条件不一致",
+      "close": 104722.96
+    },
+    {
+      "date": "2025-11-10",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "28.72",
+      "bb_width_pct": "15.252",
+      "bb_median": "17.373",
+      "note": "条件不一致",
+      "close": 106011.13
+    },
+    {
+      "date": "2025-11-11",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "28.55",
+      "bb_width_pct": "15.164",
+      "bb_median": "16.049",
+      "note": "条件不一致",
+      "close": 103058.99
+    },
+    {
+      "date": "2025-11-12",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "28.79",
+      "bb_width_pct": "16.151",
+      "bb_median": "15.79",
+      "note": "3条件合意・強下落",
+      "close": 101654.37
+    },
+    {
+      "date": "2025-11-13",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "29.37",
+      "bb_width_pct": "17.04",
+      "bb_median": "15.79",
+      "note": "3条件合意・強下落",
+      "close": 99692.02
+    },
+    {
+      "date": "2025-11-14",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "30.41",
+      "bb_width_pct": "18.259",
+      "bb_median": "15.79",
+      "note": "3条件合意・強下落",
+      "close": 94594.0
+    },
+    {
+      "date": "2025-11-15",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "31.98",
+      "bb_width_pct": "21.665",
+      "bb_median": "15.79",
+      "note": "3条件合意・強下落",
+      "close": 95596.24
+    },
+    {
+      "date": "2025-11-16",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "33.44",
+      "bb_width_pct": "21.738",
+      "bb_median": "15.79",
+      "note": "3条件合意・強下落",
+      "close": 94261.44
+    },
+    {
+      "date": "2025-11-17",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "35.0",
+      "bb_width_pct": "22.299",
+      "bb_median": "15.79",
+      "note": "3条件合意・強下落",
+      "close": 92215.14
+    },
+    {
+      "date": "2025-11-18",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "36.69",
+      "bb_width_pct": "23.573",
+      "bb_median": "15.79",
+      "note": "3条件合意・強下落",
+      "close": 92960.83
+    },
+    {
+      "date": "2025-11-19",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "38.49",
+      "bb_width_pct": "24.083",
+      "bb_median": "15.79",
+      "note": "条件不一致",
+      "close": 91554.96
+    },
+    {
+      "date": "2025-11-20",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "40.23",
+      "bb_width_pct": "25.577",
+      "bb_median": "15.79",
+      "note": "条件不一致",
+      "close": 86637.23
+    },
+    {
+      "date": "2025-11-21",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "42.12",
+      "bb_width_pct": "29.272",
+      "bb_median": "15.79",
+      "note": "3条件合意・強下落",
+      "close": 85129.43
+    },
+    {
+      "date": "2025-11-22",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "44.34",
+      "bb_width_pct": "31.491",
+      "bb_median": "15.79",
+      "note": "条件不一致",
+      "close": 84739.74
+    },
+    {
+      "date": "2025-11-23",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "46.4",
+      "bb_width_pct": "32.171",
+      "bb_median": "15.79",
+      "note": "条件不一致",
+      "close": 86830.0
+    },
+    {
+      "date": "2025-11-24",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "47.16",
+      "bb_width_pct": "31.656",
+      "bb_median": "15.79",
+      "note": "条件不一致",
+      "close": 88300.01
+    },
+    {
+      "date": "2025-11-25",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "47.39",
+      "bb_width_pct": "31.72",
+      "bb_median": "15.79",
+      "note": "条件不一致",
+      "close": 87369.96
+    },
+    {
+      "date": "2025-11-26",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "47.61",
+      "bb_width_pct": "32.005",
+      "bb_median": "15.79",
+      "note": "条件不一致",
+      "close": 90484.02
+    },
+    {
+      "date": "2025-11-27",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "46.88",
+      "bb_width_pct": "30.534",
+      "bb_median": "16.595",
+      "note": "条件不一致",
+      "close": 91333.95
+    },
+    {
+      "date": "2025-11-28",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "45.67",
+      "bb_width_pct": "29.06",
+      "bb_median": "17.65",
+      "note": "条件不一致",
+      "close": 90890.7
+    },
+    {
+      "date": "2025-11-29",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "44.1",
+      "bb_width_pct": "28.076",
+      "bb_median": "19.962",
+      "note": "条件不一致",
+      "close": 90802.44
+    },
+    {
+      "date": "2025-11-30",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "42.65",
+      "bb_width_pct": "25.741",
+      "bb_median": "21.702",
+      "note": "条件不一致",
+      "close": 90360.0
+    },
+    {
+      "date": "2025-12-01",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "40.96",
+      "bb_width_pct": "22.114",
+      "bb_median": "21.926",
+      "note": "3条件合意・強下落",
+      "close": 86286.01
+    },
+    {
+      "date": "2025-12-02",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "40.82",
+      "bb_width_pct": "20.545",
+      "bb_median": "21.926",
+      "note": "条件不一致",
+      "close": 91277.88
+    },
+    {
+      "date": "2025-12-03",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "39.98",
+      "bb_width_pct": "16.272",
+      "bb_median": "21.926",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 93429.95
+    },
+    {
+      "date": "2025-12-04",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "38.56",
+      "bb_width_pct": "13.495",
+      "bb_median": "21.926",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 92078.06
+    },
+    {
+      "date": "2025-12-05",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "37.25",
+      "bb_width_pct": "13.137",
+      "bb_median": "21.926",
+      "note": "条件不一致",
+      "close": 89330.04
+    },
+    {
+      "date": "2025-12-06",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "36.67",
+      "bb_width_pct": "12.33",
+      "bb_median": "21.926",
+      "note": "3条件合意・強下落",
+      "close": 89236.79
+    },
+    {
+      "date": "2025-12-07",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "36.14",
+      "bb_width_pct": "11.469",
+      "bb_median": "21.926",
+      "note": "3条件合意・強下落",
+      "close": 90395.31
+    },
+    {
+      "date": "2025-12-08",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "35.06",
+      "bb_width_pct": "11.037",
+      "bb_median": "21.926",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 90634.34
+    },
+    {
+      "date": "2025-12-09",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "33.86",
+      "bb_width_pct": "10.506",
+      "bb_median": "21.926",
+      "note": "条件不一致",
+      "close": 92678.8
+    },
+    {
+      "date": "2025-12-10",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "31.9",
+      "bb_width_pct": "10.549",
+      "bb_median": "21.926",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 92015.37
+    },
+    {
+      "date": "2025-12-11",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "30.07",
+      "bb_width_pct": "10.52",
+      "bb_median": "21.926",
+      "note": "条件不一致",
+      "close": 92513.38
+    },
+    {
+      "date": "2025-12-12",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "29.08",
+      "bb_width_pct": "9.751",
+      "bb_median": "21.926",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 90268.42
+    },
+    {
+      "date": "2025-12-13",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "28.15",
+      "bb_width_pct": "8.41",
+      "bb_median": "21.926",
+      "note": "弱下落",
+      "close": 90240.01
+    },
+    {
+      "date": "2025-12-14",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "27.29",
+      "bb_width_pct": "7.629",
+      "bb_median": "21.926",
+      "note": "弱下落",
+      "close": 88172.17
+    },
+    {
+      "date": "2025-12-15",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "27.15",
+      "bb_width_pct": "7.846",
+      "bb_median": "21.926",
+      "note": "弱下落",
+      "close": 86432.08
+    },
+    {
+      "date": "2025-12-16",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "27.64",
+      "bb_width_pct": "8.439",
+      "bb_median": "21.33",
+      "note": "弱下落",
+      "close": 87863.42
+    },
+    {
+      "date": "2025-12-17",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "28.1",
+      "bb_width_pct": "8.687",
+      "bb_median": "18.409",
+      "note": "条件不一致",
+      "close": 86243.22
+    },
+    {
+      "date": "2025-12-18",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "27.48",
+      "bb_width_pct": "9.675",
+      "bb_median": "14.884",
+      "note": "弱下落",
+      "close": 85516.41
+    },
+    {
+      "date": "2025-12-19",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "27.17",
+      "bb_width_pct": "10.744",
+      "bb_median": "13.316",
+      "note": "弱下落",
+      "close": 88136.94
+    },
+    {
+      "date": "2025-12-20",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "26.87",
+      "bb_width_pct": "10.491",
+      "bb_median": "12.734",
+      "note": "条件不一致",
+      "close": 88360.9
+    },
+    {
+      "date": "2025-12-21",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "26.6",
+      "bb_width_pct": "10.512",
+      "bb_median": "11.9",
+      "note": "条件不一致",
+      "close": 88658.86
+    },
+    {
+      "date": "2025-12-22",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "26.07",
+      "bb_width_pct": "9.97",
+      "bb_median": "11.253",
+      "note": "条件不一致",
+      "close": 88620.79
+    },
+    {
+      "date": "2025-12-23",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "24.8",
+      "bb_width_pct": "9.882",
+      "bb_median": "10.891",
+      "note": "条件不一致",
+      "close": 87486.0
+    },
+    {
+      "date": "2025-12-24",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "24.14",
+      "bb_width_pct": "9.325",
+      "bb_median": "10.646",
+      "note": "弱下落",
+      "close": 87669.45
+    },
+    {
+      "date": "2025-12-25",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "23.59",
+      "bb_width_pct": "8.933",
+      "bb_median": "10.534",
+      "note": "条件不一致",
+      "close": 87225.27
+    },
+    {
+      "date": "2025-12-26",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "22.78",
+      "bb_width_pct": "9.148",
+      "bb_median": "10.516",
+      "note": "弱下落",
+      "close": 87369.56
+    },
+    {
+      "date": "2025-12-27",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "21.51",
+      "bb_width_pct": "9.254",
+      "bb_median": "10.509",
+      "note": "弱下落",
+      "close": 87877.01
+    },
+    {
+      "date": "2025-12-28",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "20.33",
+      "bb_width_pct": "9.094",
+      "bb_median": "10.498",
+      "note": "条件不一致",
+      "close": 87952.71
+    },
+    {
+      "date": "2025-12-29",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "19.18",
+      "bb_width_pct": "8.882",
+      "bb_median": "10.23",
+      "note": "ADX<20 AND BB狭い",
+      "close": 87237.13
+    },
+    {
+      "date": "2025-12-30",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "18.7",
+      "bb_width_pct": "7.918",
+      "bb_median": "9.926",
+      "note": "ADX<20 AND BB狭い",
+      "close": 88485.49
+    },
+    {
+      "date": "2025-12-31",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "18.27",
+      "bb_width_pct": "6.796",
+      "bb_median": "9.816",
+      "note": "ADX<20 AND BB狭い",
+      "close": 87648.22
+    },
+    {
+      "date": "2026-01-01",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "17.86",
+      "bb_width_pct": "5.092",
+      "bb_median": "9.713",
+      "note": "ADX<20 AND BB狭い",
+      "close": 88839.04
+    },
+    {
+      "date": "2026-01-02",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "17.48",
+      "bb_width_pct": "4.502",
+      "bb_median": "9.5",
+      "note": "ADX<20 AND BB狭い",
+      "close": 89995.13
+    },
+    {
+      "date": "2026-01-03",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "18.13",
+      "bb_width_pct": "4.316",
+      "bb_median": "9.29",
+      "note": "ADX<20 AND BB狭い",
+      "close": 90628.01
+    },
+    {
+      "date": "2026-01-04",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "18.73",
+      "bb_width_pct": "5.077",
+      "bb_median": "9.201",
+      "note": "ADX<20 AND BB狭い",
+      "close": 91529.73
+    },
+    {
+      "date": "2026-01-05",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "19.75",
+      "bb_width_pct": "5.868",
+      "bb_median": "9.121",
+      "note": "ADX<20 AND BB狭い",
+      "close": 93859.71
+    },
+    {
+      "date": "2026-01-06",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "21.71",
+      "bb_width_pct": "7.776",
+      "bb_median": "9.014",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 93747.97
+    },
+    {
+      "date": "2026-01-07",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "23.32",
+      "bb_width_pct": "8.884",
+      "bb_median": "8.909",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 91364.16
+    },
+    {
+      "date": "2026-01-08",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "24.36",
+      "bb_width_pct": "8.772",
+      "bb_median": "8.883",
+      "note": "条件不一致",
+      "close": 91099.99
+    },
+    {
+      "date": "2026-01-09",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "24.33",
+      "bb_width_pct": "8.93",
+      "bb_median": "8.883",
+      "note": "条件不一致",
+      "close": 90641.28
+    },
+    {
+      "date": "2026-01-10",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "24.46",
+      "bb_width_pct": "9.015",
+      "bb_median": "8.883",
+      "note": "条件不一致",
+      "close": 90504.7
+    },
+    {
+      "date": "2026-01-11",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "24.59",
+      "bb_width_pct": "9.056",
+      "bb_median": "8.883",
+      "note": "条件不一致",
+      "close": 91013.65
+    },
+    {
+      "date": "2026-01-12",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "24.91",
+      "bb_width_pct": "9.074",
+      "bb_median": "8.907",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 91296.2
+    },
+    {
+      "date": "2026-01-13",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "25.73",
+      "bb_width_pct": "8.919",
+      "bb_median": "8.924",
+      "note": "条件不一致",
+      "close": 95414.0
+    },
+    {
+      "date": "2026-01-14",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "27.69",
+      "bb_width_pct": "9.69",
+      "bb_median": "8.932",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 96951.78
+    },
+    {
+      "date": "2026-01-15",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "29.82",
+      "bb_width_pct": "10.882",
+      "bb_median": "8.974",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 95604.8
+    },
+    {
+      "date": "2026-01-16",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "31.79",
+      "bb_width_pct": "11.426",
+      "bb_median": "9.035",
+      "note": "条件不一致",
+      "close": 95550.94
+    },
+    {
+      "date": "2026-01-17",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "32.96",
+      "bb_width_pct": "11.687",
+      "bb_median": "9.035",
+      "note": "条件不一致",
+      "close": 95147.77
+    },
+    {
+      "date": "2026-01-18",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "34.04",
+      "bb_width_pct": "11.683",
+      "bb_median": "9.035",
+      "note": "条件不一致",
+      "close": 93673.14
+    },
+    {
+      "date": "2026-01-19",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "33.95",
+      "bb_width_pct": "11.083",
+      "bb_median": "9.035",
+      "note": "条件不一致",
+      "close": 92631.0
+    },
+    {
+      "date": "2026-01-20",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "32.75",
+      "bb_width_pct": "10.607",
+      "bb_median": "9.035",
+      "note": "条件不一致",
+      "close": 88427.66
+    },
+    {
+      "date": "2026-01-21",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "31.12",
+      "bb_width_pct": "10.795",
+      "bb_median": "9.035",
+      "note": "弱下落",
+      "close": 89454.73
+    },
+    {
+      "date": "2026-01-22",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "29.86",
+      "bb_width_pct": "10.481",
+      "bb_median": "9.035",
+      "note": "条件不一致",
+      "close": 89559.67
+    },
+    {
+      "date": "2026-01-23",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "28.68",
+      "bb_width_pct": "10.578",
+      "bb_median": "9.035",
+      "note": "弱下落",
+      "close": 89600.26
+    },
+    {
+      "date": "2026-01-24",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "27.13",
+      "bb_width_pct": "10.79",
+      "bb_median": "9.065",
+      "note": "条件不一致",
+      "close": 89225.34
+    },
+    {
+      "date": "2026-01-25",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "25.7",
+      "bb_width_pct": "11.238",
+      "bb_median": "9.065",
+      "note": "弱下落",
+      "close": 86670.36
+    },
+    {
+      "date": "2026-01-26",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "25.62",
+      "bb_width_pct": "12.701",
+      "bb_median": "9.065",
+      "note": "3条件合意・強下落",
+      "close": 88347.08
+    },
+    {
+      "date": "2026-01-27",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "25.55",
+      "bb_width_pct": "12.766",
+      "bb_median": "9.065",
+      "note": "条件不一致",
+      "close": 89250.0
+    },
+    {
+      "date": "2026-01-28",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "25.08",
+      "bb_width_pct": "12.845",
+      "bb_median": "9.382",
+      "note": "条件不一致",
+      "close": 89299.99
+    },
+    {
+      "date": "2026-01-29",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "24.03",
+      "bb_width_pct": "13.013",
+      "bb_median": "10.086",
+      "note": "条件不一致",
+      "close": 84650.16
+    },
+    {
+      "date": "2026-01-30",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "24.87",
+      "bb_width_pct": "15.39",
+      "bb_median": "10.529",
+      "note": "弱下落",
+      "close": 84260.49
+    },
+    {
+      "date": "2026-01-31",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "26.18",
+      "bb_width_pct": "17.01",
+      "bb_median": "10.592",
+      "note": "条件不一致",
+      "close": 78741.09
+    },
+    {
+      "date": "2026-02-01",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "28.3",
+      "bb_width_pct": "22.566",
+      "bb_median": "10.698",
+      "note": "3条件合意・強下落",
+      "close": 76968.21
+    },
+    {
+      "date": "2026-02-02",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "30.28",
+      "bb_width_pct": "27.449",
+      "bb_median": "10.793",
+      "note": "3条件合意・強下落",
+      "close": 78738.61
+    },
+    {
+      "date": "2026-02-03",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "32.27",
+      "bb_width_pct": "28.374",
+      "bb_median": "10.838",
+      "note": "条件不一致",
+      "close": 75770.21
+    },
+    {
+      "date": "2026-02-04",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "34.34",
+      "bb_width_pct": "31.185",
+      "bb_median": "10.982",
+      "note": "3条件合意・強下落",
+      "close": 73165.83
+    },
+    {
+      "date": "2026-02-05",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "36.41",
+      "bb_width_pct": "34.922",
+      "bb_median": "11.16",
+      "note": "3条件合意・強下落",
+      "close": 62909.86
+    },
+    {
+      "date": "2026-02-06",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "39.18",
+      "bb_width_pct": "49.955",
+      "bb_median": "11.332",
+      "note": "3条件合意・強下落",
+      "close": 70580.26
+    },
+    {
+      "date": "2026-02-07",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "41.89",
+      "bb_width_pct": "45.703",
+      "bb_median": "11.554",
+      "note": "条件不一致",
+      "close": 69289.38
+    },
+    {
+      "date": "2026-02-08",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "44.41",
+      "bb_width_pct": "47.851",
+      "bb_median": "11.685",
+      "note": "条件不一致",
+      "close": 70330.38
+    },
+    {
+      "date": "2026-02-09",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "46.46",
+      "bb_width_pct": "47.401",
+      "bb_median": "12.194",
+      "note": "条件不一致",
+      "close": 70138.0
+    },
+    {
+      "date": "2026-02-10",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "48.42",
+      "bb_width_pct": "48.474",
+      "bb_median": "12.733",
+      "note": "条件不一致",
+      "close": 68841.29
+    },
+    {
+      "date": "2026-02-11",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "50.27",
+      "bb_width_pct": "49.867",
+      "bb_median": "12.805",
+      "note": "3条件合意・強下落",
+      "close": 67082.52
+    },
+    {
+      "date": "2026-02-12",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "52.15",
+      "bb_width_pct": "51.512",
+      "bb_median": "12.929",
+      "note": "条件不一致",
+      "close": 66272.17
+    },
+    {
+      "date": "2026-02-13",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "53.94",
+      "bb_width_pct": "51.875",
+      "bb_median": "14.202",
+      "note": "3条件合意・強下落",
+      "close": 68853.96
+    },
+    {
+      "date": "2026-02-14",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "55.0",
+      "bb_width_pct": "48.162",
+      "bb_median": "16.2",
+      "note": "条件不一致",
+      "close": 69822.95
+    },
+    {
+      "date": "2026-02-15",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "55.38",
+      "bb_width_pct": "45.919",
+      "bb_median": "19.788",
+      "note": "条件不一致",
+      "close": 68832.58
+    },
+    {
+      "date": "2026-02-16",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "55.84",
+      "bb_width_pct": "43.725",
+      "bb_median": "25.008",
+      "note": "条件不一致",
+      "close": 68892.43
+    },
+    {
+      "date": "2026-02-17",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "56.35",
+      "bb_width_pct": "39.225",
+      "bb_median": "27.911",
+      "note": "条件不一致",
+      "close": 67503.52
+    },
+    {
+      "date": "2026-02-18",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "56.93",
+      "bb_width_pct": "34.068",
+      "bb_median": "29.78",
+      "note": "3条件合意・強下落",
+      "close": 66461.0
+    },
+    {
+      "date": "2026-02-19",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "57.56",
+      "bb_width_pct": "30.635",
+      "bb_median": "30.91",
+      "note": "3条件合意・強下落",
+      "close": 67003.73
+    },
+    {
+      "date": "2026-02-20",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "58.18",
+      "bb_width_pct": "24.952",
+      "bb_median": "30.91",
+      "note": "条件不一致",
+      "close": 68020.01
+    },
+    {
+      "date": "2026-02-21",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "58.08",
+      "bb_width_pct": "21.916",
+      "bb_median": "30.91",
+      "note": "条件不一致",
+      "close": 67975.93
+    },
+    {
+      "date": "2026-02-22",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "57.72",
+      "bb_width_pct": "19.747",
+      "bb_median": "30.91",
+      "note": "条件不一致",
+      "close": 67643.4
+    },
+    {
+      "date": "2026-02-23",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "57.47",
+      "bb_width_pct": "15.264",
+      "bb_median": "30.91",
+      "note": "3条件合意・強下落",
+      "close": 64656.02
+    },
+    {
+      "date": "2026-02-24",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "57.84",
+      "bb_width_pct": "13.483",
+      "bb_median": "30.91",
+      "note": "3条件合意・強下落",
+      "close": 64058.15
+    },
+    {
+      "date": "2026-02-25",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "58.38",
+      "bb_width_pct": "12.766",
+      "bb_median": "30.91",
+      "note": "条件不一致",
+      "close": 67988.04
+    },
+    {
+      "date": "2026-02-26",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "56.18",
+      "bb_width_pct": "10.092",
+      "bb_median": "30.91",
+      "note": "条件不一致",
+      "close": 67485.18
+    },
+    {
+      "date": "2026-02-27",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "54.14",
+      "bb_width_pct": "9.563",
+      "bb_median": "30.91",
+      "note": "条件不一致",
+      "close": 65872.1
+    },
+    {
+      "date": "2026-02-28",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "52.65",
+      "bb_width_pct": "9.919",
+      "bb_median": "30.91",
+      "note": "3条件合意・強下落",
+      "close": 66973.26
+    },
+    {
+      "date": "2026-03-01",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "down",
+      "adx": "51.69",
+      "bb_width_pct": "9.089",
+      "bb_median": "30.91",
+      "note": "条件不一致",
+      "close": 65776.47
+    },
+    {
+      "date": "2026-03-02",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "50.59",
+      "bb_width_pct": "8.765",
+      "bb_median": "30.91",
+      "note": "3条件合意・強下落",
+      "close": 68830.06
+    },
+    {
+      "date": "2026-03-03",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "down",
+      "adx": "48.65",
+      "bb_width_pct": "8.372",
+      "bb_median": "30.91",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 68338.0
+    },
+    {
+      "date": "2026-03-04",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "46.84",
+      "bb_width_pct": "8.529",
+      "bb_median": "30.91",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 72666.77
+    },
+    {
+      "date": "2026-03-05",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "43.73",
+      "bb_width_pct": "10.102",
+      "bb_median": "30.91",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 70890.72
+    },
+    {
+      "date": "2026-03-06",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "40.84",
+      "bb_width_pct": "11.004",
+      "bb_median": "27.793",
+      "note": "条件不一致",
+      "close": 68114.02
+    },
+    {
+      "date": "2026-03-07",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "38.66",
+      "bb_width_pct": "11.133",
+      "bb_median": "23.434",
+      "note": "条件不一致",
+      "close": 67262.91
+    },
+    {
+      "date": "2026-03-08",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "36.89",
+      "bb_width_pct": "11.178",
+      "bb_median": "20.832",
+      "note": "弱下落",
+      "close": 65971.2
+    },
+    {
+      "date": "2026-03-09",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "35.62",
+      "bb_width_pct": "11.451",
+      "bb_median": "17.506",
+      "note": "弱下落",
+      "close": 68432.16
+    },
+    {
+      "date": "2026-03-10",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "33.9",
+      "bb_width_pct": "11.107",
+      "bb_median": "14.374",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 69948.63
+    },
+    {
+      "date": "2026-03-11",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "31.49",
+      "bb_width_pct": "11.175",
+      "bb_median": "13.125",
+      "note": "条件不一致",
+      "close": 70191.86
+    },
+    {
+      "date": "2026-03-12",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "29.24",
+      "bb_width_pct": "11.512",
+      "bb_median": "12.139",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 70541.34
+    },
+    {
+      "date": "2026-03-13",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "27.15",
+      "bb_width_pct": "11.927",
+      "bb_median": "11.72",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 70930.0
+    },
+    {
+      "date": "2026-03-14",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "26.31",
+      "bb_width_pct": "12.403",
+      "bb_median": "11.72",
+      "note": "条件不一致",
+      "close": 71211.95
+    },
+    {
+      "date": "2026-03-15",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "25.49",
+      "bb_width_pct": "12.894",
+      "bb_median": "11.72",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 72815.24
+    },
+    {
+      "date": "2026-03-16",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "25.32",
+      "bb_width_pct": "12.827",
+      "bb_median": "11.72",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 74884.67
+    },
+    {
+      "date": "2026-03-17",
+      "label": "uptrend",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "25.63",
+      "bb_width_pct": "13.061",
+      "bb_median": "11.72",
+      "note": "弱上昇（方向+一目orADX）",
+      "close": 73909.36
+    },
+    {
+      "date": "2026-03-18",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "26.2",
+      "bb_width_pct": "14.209",
+      "bb_median": "11.72",
+      "note": "条件不一致",
+      "close": 71246.54
+    },
+    {
+      "date": "2026-03-19",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "neutral",
+      "adx": "25.42",
+      "bb_width_pct": "14.627",
+      "bb_median": "11.72",
+      "note": "条件不一致",
+      "close": 69930.0
+    },
+    {
+      "date": "2026-03-20",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "24.03",
+      "bb_width_pct": "14.011",
+      "bb_median": "11.72",
+      "note": "弱下落",
+      "close": 70510.73
+    },
+    {
+      "date": "2026-03-21",
+      "label": "range",
+      "direction_score": "1",
+      "ichimoku": "neutral",
+      "adx": "22.74",
+      "bb_width_pct": "13.357",
+      "bb_median": "11.72",
+      "note": "条件不一致",
+      "close": 68918.12
+    },
+    {
+      "date": "2026-03-22",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "21.22",
+      "bb_width_pct": "12.513",
+      "bb_median": "11.72",
+      "note": "弱下落",
+      "close": 67859.0
+    },
+    {
+      "date": "2026-03-23",
+      "label": "downtrend",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "20.06",
+      "bb_width_pct": "12.959",
+      "bb_median": "11.72",
+      "note": "弱下落",
+      "close": 70906.45
+    },
+    {
+      "date": "2026-03-24",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "19.11",
+      "bb_width_pct": "12.179",
+      "bb_median": "11.72",
+      "note": "条件不一致",
+      "close": 70556.74
+    },
+    {
+      "date": "2026-03-25",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "18.23",
+      "bb_width_pct": "11.872",
+      "bb_median": "11.692",
+      "note": "条件不一致",
+      "close": 71336.53
+    },
+    {
+      "date": "2026-03-26",
+      "label": "range",
+      "direction_score": "3",
+      "ichimoku": "neutral",
+      "adx": "17.64",
+      "bb_width_pct": "11.793",
+      "bb_median": "11.652",
+      "note": "条件不一致",
+      "close": 68820.31
+    },
+    {
+      "date": "2026-03-27",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "neutral",
+      "adx": "16.61",
+      "bb_width_pct": "12.045",
+      "bb_median": "11.652",
+      "note": "条件不一致",
+      "close": 66407.28
+    },
+    {
+      "date": "2026-03-28",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "16.55",
+      "bb_width_pct": "12.904",
+      "bb_median": "11.832",
+      "note": "条件不一致",
+      "close": 66377.03
+    },
+    {
+      "date": "2026-03-29",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "16.5",
+      "bb_width_pct": "12.674",
+      "bb_median": "11.9",
+      "note": "条件不一致",
+      "close": 66010.93
+    },
+    {
+      "date": "2026-03-30",
+      "label": "range",
+      "direction_score": "-3",
+      "ichimoku": "down",
+      "adx": "16.76",
+      "bb_width_pct": "13.752",
+      "bb_median": "11.986",
+      "note": "条件不一致",
+      "close": 66797.37
+    },
+    {
+      "date": "2026-03-31",
+      "label": "range",
+      "direction_score": "-1",
+      "ichimoku": "down",
+      "adx": "16.5",
+      "bb_width_pct": "14.285",
+      "bb_median": "12.112",
+      "note": "条件不一致",
+      "close": 68284.48
+    }
+  ],
+  "monthly_summary": [
+    {
+      "month": "2025-04",
+      "uptrend": 0,
+      "downtrend": 0,
+      "range": 0,
+      "warmup": 30,
+      "total": 30
+    },
+    {
+      "month": "2025-05",
+      "uptrend": 2,
+      "downtrend": 2,
+      "range": 5,
+      "warmup": 22,
+      "total": 31
+    },
+    {
+      "month": "2025-06",
+      "uptrend": 0,
+      "downtrend": 0,
+      "range": 30,
+      "warmup": 0,
+      "total": 30
+    },
+    {
+      "month": "2025-07",
+      "uptrend": 6,
+      "downtrend": 1,
+      "range": 24,
+      "warmup": 0,
+      "total": 31
+    },
+    {
+      "month": "2025-08",
+      "uptrend": 1,
+      "downtrend": 4,
+      "range": 26,
+      "warmup": 0,
+      "total": 31
+    },
+    {
+      "month": "2025-09",
+      "uptrend": 0,
+      "downtrend": 0,
+      "range": 30,
+      "warmup": 0,
+      "total": 30
+    },
+    {
+      "month": "2025-10",
+      "uptrend": 6,
+      "downtrend": 8,
+      "range": 17,
+      "warmup": 0,
+      "total": 31
+    },
+    {
+      "month": "2025-11",
+      "uptrend": 1,
+      "downtrend": 12,
+      "range": 17,
+      "warmup": 0,
+      "total": 30
+    },
+    {
+      "month": "2025-12",
+      "uptrend": 5,
+      "downtrend": 12,
+      "range": 14,
+      "warmup": 0,
+      "total": 31
+    },
+    {
+      "month": "2026-01",
+      "uptrend": 5,
+      "downtrend": 5,
+      "range": 21,
+      "warmup": 0,
+      "total": 31
+    },
+    {
+      "month": "2026-02",
+      "uptrend": 0,
+      "downtrend": 12,
+      "range": 16,
+      "warmup": 0,
+      "total": 28
+    },
+    {
+      "month": "2026-03",
+      "uptrend": 9,
+      "downtrend": 6,
+      "range": 16,
+      "warmup": 0,
+      "total": 31
+    }
+  ],
+  "weekly_human_labels": [
+    {
+      "week_start": "2025-03-30",
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    {
+      "week_start": "2025-04-06",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-04-13",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-04-20",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-04-27",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-05-04",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-05-11",
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    {
+      "week_start": "2025-05-18",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-05-25",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2025-06-01",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-06-08",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-06-15",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2025-06-22",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-06-29",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-07-06",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-07-13",
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    {
+      "week_start": "2025-07-20",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-07-27",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2025-08-03",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-08-10",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-08-17",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-08-24",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-08-31",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-09-07",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-09-14",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-09-21",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2025-09-28",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-10-05",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2025-10-12",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2025-10-19",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-10-26",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2025-11-02",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2025-11-09",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2025-11-16",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2025-11-23",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2025-11-30",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-12-07",
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    {
+      "week_start": "2025-12-14",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2025-12-21",
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    {
+      "week_start": "2025-12-28",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2026-01-04",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2026-01-11",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2026-01-18",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2026-01-25",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2026-02-01",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2026-02-08",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2026-02-15",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2026-02-22",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2026-03-01",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2026-03-08",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    {
+      "week_start": "2026-03-15",
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    {
+      "week_start": "2026-03-22",
+      "label": "",
+      "note": ""
+    },
+    {
+      "week_start": "2026-03-29",
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    }
+  ],
+  "daily_human_labels": {
+    "2025-04-01": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-04-02": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-04-03": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-04-04": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-04-05": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-04-06": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-07": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-08": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-09": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-10": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-11": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-12": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-13": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-14": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-15": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-16": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-17": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-18": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-19": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-20": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-21": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-22": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-23": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-24": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-25": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-26": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-27": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-28": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-29": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-04-30": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-01": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-02": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-03": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-04": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-05": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-06": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-07": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-08": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-09": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-10": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-05-11": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-05-12": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-05-13": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-05-14": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-05-15": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-05-16": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-05-17": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-05-18": {
+      "label": "",
+      "note": ""
+    },
+    "2025-05-19": {
+      "label": "",
+      "note": ""
+    },
+    "2025-05-20": {
+      "label": "",
+      "note": ""
+    },
+    "2025-05-21": {
+      "label": "",
+      "note": ""
+    },
+    "2025-05-22": {
+      "label": "",
+      "note": ""
+    },
+    "2025-05-23": {
+      "label": "",
+      "note": ""
+    },
+    "2025-05-24": {
+      "label": "",
+      "note": ""
+    },
+    "2025-05-25": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-05-26": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-05-27": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-05-28": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-05-29": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-05-30": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-05-31": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-06-01": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-02": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-03": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-04": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-05": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-06": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-07": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-08": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-09": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-10": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-11": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-12": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-13": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-14": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-15": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-06-16": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-06-17": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-06-18": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-06-19": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-06-20": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-06-21": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-06-22": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-06-23": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-06-24": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-06-25": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-06-26": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-06-27": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-06-28": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-06-29": {
+      "label": "",
+      "note": ""
+    },
+    "2025-06-30": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-01": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-02": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-03": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-04": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-05": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-06": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-07-07": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-07-08": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-07-09": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-07-10": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-07-11": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-07-12": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-07-13": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-07-14": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-07-15": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-07-16": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-07-17": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-07-18": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-07-19": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-07-20": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-21": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-22": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-23": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-24": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-25": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-26": {
+      "label": "",
+      "note": ""
+    },
+    "2025-07-27": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-07-28": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-07-29": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-07-30": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-07-31": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-08-01": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-08-02": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-08-03": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-08-04": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-08-05": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-08-06": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-08-07": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-08-08": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-08-09": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-08-10": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-11": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-12": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-13": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-14": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-15": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-16": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-17": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-18": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-19": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-20": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-21": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-22": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-23": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-24": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-25": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-26": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-27": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-28": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-29": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-30": {
+      "label": "",
+      "note": ""
+    },
+    "2025-08-31": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-01": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-02": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-03": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-04": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-05": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-06": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-07": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-08": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-09": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-10": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-11": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-12": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-13": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-14": {
+      "label": "",
+      "note": ""
+    },
+    "2025-09-15": {
+      "label": "",
+      "note": ""
+    },
+    "2025-09-16": {
+      "label": "",
+      "note": ""
+    },
+    "2025-09-17": {
+      "label": "",
+      "note": ""
+    },
+    "2025-09-18": {
+      "label": "",
+      "note": ""
+    },
+    "2025-09-19": {
+      "label": "",
+      "note": ""
+    },
+    "2025-09-20": {
+      "label": "",
+      "note": ""
+    },
+    "2025-09-21": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-09-22": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-09-23": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-09-24": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-09-25": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-09-26": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-09-27": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-09-28": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-29": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-09-30": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-01": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-02": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-03": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-04": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-05": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-06": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-07": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-08": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-09": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-10": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-11": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-12": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-13": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-14": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-15": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-16": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-17": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-18": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-19": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-20": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-21": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-22": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-23": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-24": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-25": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-10-26": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-27": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-28": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-29": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-30": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-10-31": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-01": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-02": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-03": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-04": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-05": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-06": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-07": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-08": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-09": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-10": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-11": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-12": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-13": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-14": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-15": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-16": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-17": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-18": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-19": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-20": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-21": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-22": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2025-11-23": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-11-24": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-11-25": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-11-26": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-11-27": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-11-28": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-11-29": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-11-30": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-01": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-02": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-03": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-04": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-05": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-06": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-07": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-08": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-09": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-10": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-11": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-12": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-13": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-14": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-15": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-16": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-17": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-18": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-19": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-20": {
+      "label": "",
+      "note": ""
+    },
+    "2025-12-21": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-22": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-23": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-24": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-25": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-26": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-27": {
+      "label": "range",
+      "note": "低ボラ、平坦"
+    },
+    "2025-12-28": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-12-29": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-12-30": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2025-12-31": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-01": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-02": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-03": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-04": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-05": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-06": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-07": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-08": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-09": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-10": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-11": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-12": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-13": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-14": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-15": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-16": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-17": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-01-18": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-19": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-20": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-21": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-22": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-23": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-24": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-25": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-26": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-27": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-28": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-29": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-30": {
+      "label": "",
+      "note": ""
+    },
+    "2026-01-31": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-01": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-02": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-03": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-04": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-05": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-06": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-07": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-08": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-09": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-10": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-11": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-12": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-13": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-14": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-15": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-16": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-17": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-18": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-19": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-20": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-21": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-22": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-23": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-24": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-25": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-26": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-27": {
+      "label": "",
+      "note": ""
+    },
+    "2026-02-28": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-01": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-02": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-03": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-04": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-05": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-06": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-07": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-08": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-03-09": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-03-10": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-03-11": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-03-12": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-03-13": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-03-14": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-03-15": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2026-03-16": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2026-03-17": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2026-03-18": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2026-03-19": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2026-03-20": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2026-03-21": {
+      "label": "downtrend",
+      "note": "週終わりの値が週始めより低い"
+    },
+    "2026-03-22": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-23": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-24": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-25": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-26": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-27": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-28": {
+      "label": "",
+      "note": ""
+    },
+    "2026-03-29": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-03-30": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    },
+    "2026-03-31": {
+      "label": "uptrend",
+      "note": "週終わりの値が週始めより上昇している"
+    }
+  }
+}

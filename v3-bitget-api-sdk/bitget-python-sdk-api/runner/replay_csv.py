@@ -810,8 +810,178 @@ def _calc_entry_states(df: "pd.DataFrame", i: int, ts_ms: int) -> Dict:
 # ==============================================================
 # メインループ
 # ==============================================================
-def _build_regime_map(csv_5m_path: str) -> Dict:
-    """5m CSV + 日足warmupから date(Timestamp normalized) → regime文字列 のdictを返す。"""
+def _build_regime_map_v3(csv_5m_path: str,
+                          ma_period: int = 70,
+                          slope_lag: int = 5,
+                          bb_period: int = 20,
+                          bb_stdev: float = 2.0,
+                          bb_narrow_pct: float = 6.0,
+                          adx_period: int = 14,
+                          adx_range_thresh: float = 20.0,
+                          trend_thresh: float = 3.0,
+                          range_thresh: float = 1.0,
+                          lookahead_safe: bool = False) -> Dict:
+    """日足ベース・スコアリング型 regime 判定（v3）。
+
+    score = (close vs MA70: ±2) + (MA70_slope: ±1) + (bb_mid_slope: ±1)
+            × (ADX≥30 なら 1.5倍 boost)
+    BB幅<narrow & ADX<adx_range_thresh → range (最優先)
+    score ≥ trend_thresh → uptrend
+    score ≤ -trend_thresh → downtrend
+    |score| ≤ range_thresh → range
+    その他 → mixed
+
+    L-XXX (2026-04-25 試作・採用判定中):
+      check_bb_regime.py のロジック③ T=3 R=1 を本実装に組み込み。
+      検証段階で mismatches=0 / 日次切替36回 / 分布 DO138 MI119 UP97 RA11。
+    """
+    try:
+        import numpy as np  # noqa: F401
+        import ta
+    except ImportError:
+        print("[regime] numpy/ta not available; regime_switch disabled")
+        return {}
+
+    df_5m = _load_csv(csv_5m_path)
+    df_5m_indexed = df_5m.copy()
+    df_5m_indexed.index = pd.to_datetime(df_5m["timestamp_ms"], unit="ms")
+    df_5m_indexed = df_5m_indexed.sort_index()
+    daily_5m = df_5m_indexed.resample("D").agg(
+        {"close": "last", "high": "max", "low": "min"}
+    ).dropna()
+
+    dw = pd.read_csv(_DAILY_WARMUP)
+    dw["ts"] = pd.to_datetime(dw["timestamp"])
+    for c in ("close", "high", "low"):
+        dw[c] = pd.to_numeric(dw[c], errors="coerce")
+    dw = dw.set_index("ts").sort_index()
+
+    combined = pd.concat([dw[["close", "high", "low"]], daily_5m[["close", "high", "low"]]])
+    combined = combined[~combined.index.duplicated(keep="last")].sort_index()
+    for c in ("close", "high", "low"):
+        combined[c] = pd.to_numeric(combined[c], errors="coerce")
+
+    src_close = combined["close"].shift(1) if lookahead_safe else combined["close"]
+    src_high  = combined["high"].shift(1)  if lookahead_safe else combined["high"]
+    src_low   = combined["low"].shift(1)   if lookahead_safe else combined["low"]
+
+    combined["ma70"] = src_close.rolling(ma_period, min_periods=ma_period).mean()
+    combined["ma70_slope"] = combined["ma70"].diff(slope_lag)
+
+    bb = ta.volatility.BollingerBands(src_close, window=bb_period, window_dev=bb_stdev)
+    combined["bb_mid"] = bb.bollinger_mavg()
+    combined["bb_mid_slope"] = combined["bb_mid"].diff(slope_lag)
+    combined["bb_width"] = bb.bollinger_hband() - bb.bollinger_lband()
+    combined["bb_width_pct"] = combined["bb_width"] / src_close * 100
+
+    adx_obj = ta.trend.ADXIndicator(src_high, src_low, src_close, window=adx_period)
+    combined["adx"] = adx_obj.adx()
+    combined["close_eval"] = src_close
+
+    def _classify(row):
+        keys = ["ma70", "ma70_slope", "bb_mid_slope", "bb_width_pct", "adx", "close_eval"]
+        if any(pd.isna(row[k]) for k in keys):
+            return "unknown"
+        if row["adx"] < adx_range_thresh and row["bb_width_pct"] < bb_narrow_pct:
+            return "range"
+        score = 0.0
+        if row["close_eval"] > row["ma70"]: score += 2
+        elif row["close_eval"] < row["ma70"]: score -= 2
+        if row["ma70_slope"] > 0: score += 1
+        elif row["ma70_slope"] < 0: score -= 1
+        if row["bb_mid_slope"] > 0: score += 1
+        elif row["bb_mid_slope"] < 0: score -= 1
+        if row["adx"] >= 30: score *= 1.5
+        if score >= trend_thresh: return "uptrend"
+        if score <= -trend_thresh: return "downtrend"
+        if abs(score) <= range_thresh: return "range"
+        return "mixed"
+
+    start = pd.to_datetime(df_5m["timestamp_ms"].min(), unit="ms").normalize()
+    regime_df = combined[combined.index >= start].copy()
+    regime_df["regime"] = regime_df.apply(_classify, axis=1)
+    print(f"[regime v3] 分布: {regime_df['regime'].value_counts().to_dict()}")
+    return {pd.Timestamp(idx).normalize(): r for idx, r in zip(regime_df.index, regime_df["regime"])}
+
+
+def _build_regime_map_hourly(csv_5m_path: str,
+                              ma_period: int = 70,
+                              slope_lag: int = 5,
+                              adx_period: int = 14,
+                              adx_range_thresh: float = 20.0,
+                              hyst_hours: int = 36,
+                              lookahead_safe: bool = False) -> Dict:
+    """1時間足ベース regime 判定 + 連続 hyst_hours 同regime ヒステリシス。
+
+    返値: dict[Timestamp(hour単位) -> regime文字列]
+    L-XXX (Phase 1 検証 2026-04-25): 日足版より UP 判定が 66日→134日に倍増し、
+    2025-04 +13.9%上昇月の UP=0問題が解消された。日次切替52回・mismatches=1。
+    """
+    try:
+        import numpy as np  # noqa: F401
+        import ta
+    except ImportError:
+        print("[regime] numpy/ta not available; regime_switch disabled")
+        return {}
+
+    from collections import Counter
+    df_5m = _load_csv(csv_5m_path)
+    df_5m_indexed = df_5m.copy()
+    df_5m_indexed.index = pd.to_datetime(df_5m["timestamp_ms"], unit="ms")
+    df_5m_indexed = df_5m_indexed.sort_index()
+
+    hourly = df_5m_indexed.resample("1h").agg(
+        {"close": "last", "high": "max", "low": "min"}
+    ).dropna()
+    for c in ("close", "high", "low"):
+        hourly[c] = pd.to_numeric(hourly[c], errors="coerce")
+
+    src_close = hourly["close"].shift(1) if lookahead_safe else hourly["close"]
+    src_high  = hourly["high"].shift(1)  if lookahead_safe else hourly["high"]
+    src_low   = hourly["low"].shift(1)   if lookahead_safe else hourly["low"]
+
+    hourly["ma70"] = src_close.rolling(ma_period, min_periods=ma_period).mean()
+    hourly["ma70_slope"] = hourly["ma70"].diff(slope_lag)
+    adx_obj = ta.trend.ADXIndicator(src_high, src_low, src_close, window=adx_period)
+    hourly["adx"] = adx_obj.adx()
+    hourly["close_eval"] = src_close
+
+    def _classify_h(row):
+        if any(pd.isna(v) for v in [row["ma70"], row["ma70_slope"], row["adx"], row["close_eval"]]):
+            return "unknown"
+        if row["adx"] < adx_range_thresh:
+            return "range"
+        if row["ma70_slope"] > 0 and row["close_eval"] > row["ma70"]:
+            return "uptrend"
+        if row["ma70_slope"] < 0 and row["close_eval"] < row["ma70"]:
+            return "downtrend"
+        return "mixed"
+
+    raw = hourly.apply(_classify_h, axis=1).tolist()
+    committed: List[str] = []
+    last = "unknown"
+    for i, r in enumerate(raw):
+        if i < hyst_hours - 1:
+            committed.append(r)
+            last = r
+            continue
+        window = raw[i - hyst_hours + 1 : i + 1]
+        if len(set(window)) == 1 and window[0] != "unknown":
+            last = window[0]
+            committed.append(last)
+        else:
+            committed.append(last)
+
+    print(f"[regime] hourly+hyst{hyst_hours}h 分布(時間): {dict(Counter(committed))}")
+    return {pd.Timestamp(idx).floor("1h"): r for idx, r in zip(hourly.index, committed)}
+
+
+def _build_regime_map(csv_5m_path: str, lookahead_safe: bool = False) -> Dict:
+    """5m CSV + 日足warmupから date(Timestamp normalized) → regime文字列 のdictを返す。
+
+    lookahead_safe=True: t日のregimeはt-1日までのclose/high/lowで計算する（look-aheadゼロ）。
+    既存（False）はt日のcloseを含めて計算するため最大23h55min のlook-aheadあり。
+    """
     try:
         import numpy as np
         import ta
@@ -838,13 +1008,18 @@ def _build_regime_map(csv_5m_path: str) -> Dict:
     for c in ("close", "high", "low"):
         combined[c] = pd.to_numeric(combined[c], errors="coerce")
 
-    combined["ma70"]       = combined["close"].rolling(70, min_periods=70).mean()
+    src_close = combined["close"].shift(1) if lookahead_safe else combined["close"]
+    src_high  = combined["high"].shift(1)  if lookahead_safe else combined["high"]
+    src_low   = combined["low"].shift(1)   if lookahead_safe else combined["low"]
+
+    combined["ma70"]       = src_close.rolling(70, min_periods=70).mean()
     combined["ma70_slope"] = combined["ma70"].diff(5)
-    adx_obj = ta.trend.ADXIndicator(combined["high"], combined["low"], combined["close"], window=14)
+    adx_obj = ta.trend.ADXIndicator(src_high, src_low, src_close, window=14)
     combined["adx_d"] = adx_obj.adx()
+    combined["close_eval"] = src_close
 
     def _classify(row):
-        slope, adx_v, close, ma = row["ma70_slope"], row["adx_d"], row["close"], row["ma70"]
+        slope, adx_v, close, ma = row["ma70_slope"], row["adx_d"], row["close_eval"], row["ma70"]
         if any(pd.isna(v) for v in [slope, adx_v, close, ma]):
             return "unknown"
         if adx_v < 20:
@@ -880,10 +1055,11 @@ def preload(csv_path: str, params: Dict):
 
 
 def run(csv_path: str, params: Dict, _preloaded=None, regime_switch: bool = False,
-        _regime_map_in: Dict = None) -> List[Dict]:
+        _regime_map_in: Dict = None, regime_freq: str = "D") -> List[Dict]:
     """CSV をリプレイして trades リストを返す。グリッドサーチ等から直接呼び出し可。
     _preloaded=(df, df_raw) を渡すと CSV読み込み・preprocess をスキップする。
-    _regime_map_in を渡すと _build_regime_map の再実行をスキップする。"""
+    _regime_map_in を渡すと _build_regime_map の再実行をスキップする。
+    regime_freq: "D"=日次キー（既存）、"1h"=1時間粒度キー（hourly mode）。"""
     if _preloaded is not None:
         df, df_raw = _preloaded
     else:
@@ -1122,7 +1298,8 @@ def run(csv_path: str, params: Dict, _preloaded=None, regime_switch: bool = Fals
         # --------------------------------------------------
         # レジーム切り替え（新規エントリーのみに影響。既存ポジションは継続）
         if regime_switch and _regime_map:
-            _bar_date   = pd.Timestamp(ts_ms, unit="ms").normalize()
+            _ts = pd.Timestamp(ts_ms, unit="ms")
+            _bar_date = _ts.floor("1h") if regime_freq == "1h" else _ts.normalize()
             _new_regime = _regime_map.get(_bar_date, "unknown")
             if _new_regime != _current_regime:
                 _current_regime = _new_regime
@@ -1350,24 +1527,122 @@ def _signal_funnel(df: "pd.DataFrame", params: Dict) -> None:
     print(f"\n{'='*60}\n")
 
 
-def main(csv_path: str, regime_sw: bool = False) -> None:
+def _write_summary_json(out_path: str, csv_path: str, regime_sw: bool,
+                         regime_days: Dict, trades: List) -> None:
+    """ダッシュボード等の外部ツール向け：サマリを JSON で書き出す。
+
+    出力には regime_days（OHLCV から正確に算出された値・--summary モードでは
+    trade ベース推定値）を含めるため、build 側で固定値ハードコードが不要になる。
+    """
+    import json as _json
+    from pathlib import Path as _Path
+    from datetime import datetime as _dt
+    from collections import defaultdict as _dd
+
+    if not trades:
+        print(f"[replay_csv] summary skipped (no trades)")
+        return
+
+    def _f(v):
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return 0.0
+
+    try:
+        ts_min = min(_dt.strptime(str(t["entry_time"]), "%Y-%m-%d %H:%M:%S") for t in trades)
+        ts_max = max(_dt.strptime(str(t["entry_time"]), "%Y-%m-%d %H:%M:%S") for t in trades)
+        n_days = max(1, int((ts_max - ts_min).total_seconds() / 86400) + 1)
+    except Exception:
+        n_days = 365
+
+    total_net = sum(_f(t["net_usd"]) for t in trades)
+
+    by_regime: dict = _dd(lambda: {"count": 0, "net": 0.0})
+    by_pri_reg: dict = _dd(lambda: {"count": 0, "net": 0.0})
+    for t in trades:
+        rg = t.get("regime") or "unknown"
+        net = _f(t["net_usd"])
+        by_regime[rg]["count"] += 1
+        by_regime[rg]["net"] += net
+        try:
+            pri = int(t["priority"])
+        except (TypeError, ValueError):
+            continue
+        by_pri_reg[(pri, rg)]["count"] += 1
+        by_pri_reg[(pri, rg)]["net"] += net
+
+    summary = {
+        "source_csv": str(csv_path),
+        "regime_switch": bool(regime_sw),
+        "n_days": int(n_days),
+        "trade_count": int(len(trades)),
+        "total_net_usd": round(total_net, 2),
+        "regime_days": {str(k): int(v) for k, v in (regime_days or {}).items()},
+        "regimes": [
+            {
+                "regime": rg,
+                "count": d["count"],
+                "net_usd": round(d["net"], 2),
+                "days": int((regime_days or {}).get(rg, 0)),
+            }
+            for rg, d in by_regime.items()
+        ],
+        "priorities": [
+            {"priority": pri, "regime": rg, "count": d["count"], "net_usd": round(d["net"], 2)}
+            for (pri, rg), d in by_pri_reg.items()
+        ],
+    }
+
+    out = _Path(out_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(_json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[replay_csv] summary → {out_path}")
+
+
+def main(csv_path: str, regime_sw: bool = False, regime_hourly: bool = False,
+         regime_v3: bool = False, lookahead_safe: bool = False) -> None:
     params = _load_params()
-    mode = "【レジーム切り替えON】" if regime_sw else "【固定パラメータ】"
+    safe_tag = " / look-ahead SAFE" if lookahead_safe else ""
+    if regime_sw and regime_v3:
+        mode = f"【レジーム切り替えON / 日足v3スコアリング{safe_tag}】"
+    elif regime_sw and regime_hourly:
+        mode = f"【レジーム切り替えON / 1h+ヒス36h{safe_tag}】"
+    elif regime_sw:
+        mode = f"【レジーム切り替えON / 日足{safe_tag}】"
+    else:
+        mode = "【固定パラメータ】"
     print(f"[replay_csv] {mode} loaded from {csv_path}")
     preloaded = preload(csv_path, params)
 
     regime_map_built: Dict = {}
     regime_days: Dict[str, int] = {}
+    regime_freq = "D"
     if regime_sw:
         from collections import Counter
-        regime_map_built = _build_regime_map(csv_path)
-        regime_days = dict(Counter(v for v in regime_map_built.values() if v != "unknown"))
+        if regime_v3:
+            regime_map_built = _build_regime_map_v3(csv_path, lookahead_safe=lookahead_safe)
+            regime_days = dict(Counter(v for v in regime_map_built.values() if v != "unknown"))
+        elif regime_hourly:
+            regime_map_built = _build_regime_map_hourly(csv_path, lookahead_safe=lookahead_safe)
+            regime_freq = "1h"
+            hcount = Counter(v for v in regime_map_built.values() if v != "unknown")
+            regime_days = {k: max(1, round(v / 24)) for k, v in hcount.items()}
+        else:
+            regime_map_built = _build_regime_map(csv_path, lookahead_safe=lookahead_safe)
+            regime_days = dict(Counter(v for v in regime_map_built.values() if v != "unknown"))
 
     trades = run(csv_path, params, _preloaded=preloaded, regime_switch=regime_sw,
-                 _regime_map_in=regime_map_built)
+                 _regime_map_in=regime_map_built, regime_freq=regime_freq)
     _write_results(csv_path, trades)
     _print_summary(trades, regime_switch=regime_sw, regime_days=regime_days)
     _signal_funnel(preloaded[0], params)
+
+    if "--out-summary-json" in sys.argv:
+        _idx = sys.argv.index("--out-summary-json")
+        if _idx + 1 < len(sys.argv):
+            _write_summary_json(sys.argv[_idx + 1], csv_path=csv_path,
+                                regime_sw=regime_sw, regime_days=regime_days, trades=trades)
 
 
 if __name__ == "__main__":
@@ -1385,10 +1660,20 @@ if __name__ == "__main__":
                 if _rg:
                     rdays_est[str(_rg)] = int(df_r[df_r["regime"] == _rg]["_date"].nunique())
         _print_summary(trades_from_csv, regime_switch=has_regime, regime_days=rdays_est)
+        if "--out-summary-json" in sys.argv:
+            _idx2 = sys.argv.index("--out-summary-json")
+            if _idx2 + 1 < len(sys.argv):
+                _write_summary_json(sys.argv[_idx2 + 1], csv_path=results_path,
+                                    regime_sw=has_regime, regime_days=rdays_est,
+                                    trades=trades_from_csv)
         sys.exit(0)
 
     if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} /path/to/BTCUSDT-5m-*.csv [--regime]")
+        print(f"Usage: {sys.argv[0]} /path/to/BTCUSDT-5m-*.csv [--regime] [--regime-hourly] [--regime-v3] [--regime-safe]")
         print(f"       {sys.argv[0]} --summary results/replay_*.csv")
         sys.exit(1)
-    main(sys.argv[1], regime_sw="--regime" in sys.argv)
+    main(sys.argv[1],
+         regime_sw=("--regime" in sys.argv or "--regime-hourly" in sys.argv or "--regime-v3" in sys.argv),
+         regime_hourly="--regime-hourly" in sys.argv,
+         regime_v3="--regime-v3" in sys.argv,
+         lookahead_safe="--regime-safe" in sys.argv)

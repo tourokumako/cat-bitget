@@ -1,0 +1,77 @@
+{
+  "source_csv": "data/BTCUSDT-5m-2025-04-01_03-31_365d.csv",
+  "regime_days_source": "summary.json",
+  "period_days": 359,
+  "goal_per_day": 60.0,
+  "current_per_day": 9.99,
+  "gap_per_day": 50.01,
+  "total_net_usd": 3585.54,
+  "trade_count": 1302,
+  "regimes": [
+    {
+      "regime": "downtrend",
+      "days": 158,
+      "net_usd": 3996.61,
+      "per_regime_day": 25.3,
+      "per_total_day": 11.13
+    },
+    {
+      "regime": "range",
+      "days": 69,
+      "net_usd": -196.31,
+      "per_regime_day": -2.85,
+      "per_total_day": -0.55
+    },
+    {
+      "regime": "uptrend",
+      "days": 134,
+      "net_usd": -214.76,
+      "per_regime_day": -1.6,
+      "per_total_day": -0.6
+    }
+  ],
+  "priorities": [
+    {
+      "priority": 1,
+      "regime": "uptrend",
+      "trades": 257,
+      "net_usd": -431.78,
+      "per_regime_day": -3.22
+    },
+    {
+      "priority": 2,
+      "regime": "downtrend",
+      "trades": 245,
+      "net_usd": 263.14,
+      "per_regime_day": 1.67
+    },
+    {
+      "priority": 4,
+      "regime": "range",
+      "trades": 48,
+      "net_usd": -196.31,
+      "per_regime_day": -2.85
+    },
+    {
+      "priority": 21,
+      "regime": "downtrend",
+      "trades": 538,
+      "net_usd": 1084.67,
+      "per_regime_day": 6.87
+    },
+    {
+      "priority": 23,
+      "regime": "downtrend",
+      "trades": 166,
+      "net_usd": 2648.8,
+      "per_regime_day": 16.76
+    },
+    {
+      "priority": 24,
+      "regime": "uptrend",
+      "trades": 48,
+      "net_usd": 217.03,
+      "per_regime_day": 1.62
+    }
+  ]
+}

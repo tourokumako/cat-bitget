@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>cat-bitget dashboard</title>
+<link rel="stylesheet" href="assets/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>cat-bitget dashboard</h1>
+  <nav>
+    <button data-tab="progress" class="active">① 進捗</button>
+    <button data-tab="fires">② 発火チャート</button>
+    <button data-tab="signals">③ シグナルマッピング</button>
+    <button data-tab="ground_truth">④ Ground Truth</button>
+    <button data-tab="truth_check">⑤ 日次肉眼判定</button>
+    <button data-tab="ml_check">⑥ ML予測検証</button>
+  </nav>
+  <small id="source-note"></small>
+</header>
+
+<main>
+  <section id="progress" class="tab active">
+    <div class="kpi-grid">
+      <div class="kpi big">
+        <div class="kpi-label">目標</div>
+        <div class="kpi-value">$<span id="kpi-goal">—</span>/day</div>
+      </div>
+      <div class="kpi big">
+        <div class="kpi-label">現状（365d 実測）</div>
+        <div class="kpi-value" id="kpi-current">—</div>
+      </div>
+      <div class="kpi big">
+        <div class="kpi-label">残差</div>
+        <div class="kpi-value gap" id="kpi-gap">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">期間</div>
+        <div class="kpi-value" id="kpi-days">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">累計 NET</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div id="progress-pct">0%</div>
+    </div>
+
+    <h2>レジーム別</h2>
+    <table class="data-table" id="regime-table">
+      <thead><tr><th>regime</th><th>days</th><th>NET</th><th>$/regime-day</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Priority × レジーム別</h2>
+    <table class="data-table" id="priority-table">
+      <thead><tr><th>priority</th><th>regime</th><th>trades</th><th>NET</th><th>$/regime-day</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Regime Timeline (365日)</h2>
+    <div class="regime-strip-legend">
+      <span class="rg-dt">downtrend</span>
+      <span class="rg-rg">range</span>
+      <span class="rg-up">uptrend</span>
+      <span class="rg-mx">mixed</span>
+      <span class="rg-uk">unknown</span>
+    </div>
+    <div class="regime-strip" id="regime-strip"></div>
+  </section>
+
+  <section id="fires" class="tab">
+    <div class="filter-row">
+      <label>期間:
+        <select id="fires-window">
+          <option value="recent7">直近7日</option>
+          <option value="recent30" selected>直近30日</option>
+          <option value="recent90">直近90日</option>
+          <option value="all">365日全部（重め）</option>
+          <option disabled>──月別──</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="fires-regime-bg" checked> regime 背景</label>
+      <span class="bg-legend">
+        <span class="bg-dt">DT</span>
+        <span class="bg-rg">RG</span>
+        <span class="bg-up">UP</span>
+        <span class="bg-mx">MIX</span>
+      </span>
+      <label>Regime: <select id="fires-regime">
+        <option value="all">all</option>
+        <option value="downtrend">downtrend</option>
+        <option value="range">range</option>
+        <option value="uptrend">uptrend</option>
+        <option value="mixed">mixed</option>
+      </select></label>
+      <label class="prio-checks">Priority: <span id="fires-priority-checks"></span></label>
+      <span id="fires-count"></span>
+    </div>
+    <div class="chart-wrap large"><canvas id="fires-chart"></canvas></div>
+    <h2>該当 trade（直近50件）</h2>
+    <table class="data-table" id="fires-table">
+      <thead><tr><th>entry</th><th>P</th><th>side</th><th>regime</th><th>entry$</th><th>exit$</th><th>exit reason</th><th>hold(m)</th><th>NET</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="signals" class="tab">
+    <div class="legend" id="legend"></div>
+    <div class="filter-row">
+      <label>Category:
+        <select id="signals-category">
+          <option value="all">all</option>
+          <option value="A">A 価格位置・ブレイク</option>
+          <option value="B">B BBバンド</option>
+          <option value="C">C モメンタム</option>
+          <option value="D">D オシレーター</option>
+          <option value="E">E MACD</option>
+          <option value="F">F ボラ</option>
+          <option value="G">G 出来高</option>
+          <option value="H">H ローソク足</option>
+        </select>
+      </label>
+      <span id="signals-count"></span>
+    </div>
+    <table class="data-table mapping" id="signals-table">
+      <thead><tr>
+        <th>ID</th><th>名前</th>
+        <th>DT-L</th><th>DT-S</th>
+        <th>RG-L</th><th>RG-S</th>
+        <th>UP-L</th><th>UP-S</th>
+        <th>備考</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="ground_truth" class="tab">
+    <h2>Ground Truth ラベリング（週単位・案B 一括適用）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      ① 各週の数値とチャートを見て、連続する似た週を <strong>チェックボックスで複数選択</strong><br>
+      ② 上の「一括適用」エリアで <code>uptrend / downtrend / range</code> + note を入力 → APPLY<br>
+      ③ <strong>未記入のままにする週</strong>: 週中でトレンドが切り替わる週・判定困難な境界週（評価から自動除外）<br>
+      ④ 画面下部の「コピー用CSV」を <code>data/regime_ground_truth.csv</code> に貼り付けて保存
+    </p>
+
+    <div id="gt-bulk-bar" style="position:sticky;top:0;background:#fffae6;border:1px solid #e0c068;padding:10px 14px;margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;z-index:10;">
+      <strong>一括適用:</strong>
+      <span>選択中 <span id="gt-selected-count">0</span> 週</span>
+      <select id="gt-bulk-label">
+        <option value="">— 判定 —</option>
+        <option value="uptrend">uptrend</option>
+        <option value="downtrend">downtrend</option>
+        <option value="range">range</option>
+        <option value="__clear__">（クリア）</option>
+      </select>
+      <input type="text" id="gt-bulk-note" placeholder="note（必須・例: 11月急落フェーズ）" style="width:340px;">
+      <button id="gt-apply-btn">APPLY</button>
+      <button id="gt-uncheck-all-btn" type="button">全チェック解除</button>
+    </div>
+
+    <div id="gt-split">
+      <div id="gt-table-wrap">
+        <table class="data-table" id="gt-table">
+          <thead><tr>
+            <th><input type="checkbox" id="gt-check-all" title="全選択/解除"></th>
+            <th>週起点（月）</th>
+            <th>open</th><th>close</th>
+            <th>騰落率</th><th>レンジ%</th>
+            <th>足色</th>
+            <th>ADX平均</th>
+            <th>現行ラベル分布</th>
+            <th>判定</th>
+            <th>note</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="gt-chart-pane">
+        <div id="gt-chart-wrap">
+          <h3 id="gt-chart-title">週をクリックすると日足チャートを表示</h3>
+          <div style="color:#555;font-size:0.85em;margin-bottom:8px;" id="gt-chart-meta">—</div>
+          <div class="chart-wrap" style="height:380px;"><canvas id="gt-week-chart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:24px;">コピー用CSV（入力すると自動更新）</h3>
+    <textarea id="gt-csv-output" rows="14" style="width:100%;font-family:monospace;font-size:0.9em;"></textarea>
+    <div style="margin-top:8px;color:#555;font-size:0.85em;">
+      入力統計: <span id="gt-stats">—</span>
+    </div>
+  </section>
+
+  <section id="truth_check" class="tab">
+    <h2>日次 肉眼判定（365日分・案A）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      ① 月切替で対象月を表示 → ② チャートで動きを確認 → ③ 連続日をチェックボックスで複数選択 → ④ 一括APPLY<br>
+      初期値として既存の53週肉眼判定が継承されています（225日に既ラベル）。修正したい日のみ上書きしてください。
+    </p>
+
+    <div id="dh-bulk-bar" style="position:sticky;top:0;background:#fffae6;border:1px solid #e0c068;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:10;">
+      <strong>一括適用:</strong>
+      <span>選択中 <span id="dh-selected-count">0</span> 日</span>
+      <select id="dh-bulk-label">
+        <option value="">— 判定 —</option>
+        <option value="uptrend">uptrend</option>
+        <option value="downtrend">downtrend</option>
+        <option value="range">range</option>
+        <option value="__clear__">（クリア）</option>
+      </select>
+      <input type="text" id="dh-bulk-note" placeholder="note（必須）" style="width:280px;">
+      <button id="dh-apply-btn">APPLY</button>
+      <button id="dh-uncheck-all-btn" type="button">全チェック解除</button>
+      <span style="margin-left:14px;color:#555;font-size:0.85em;">
+        統計: <span id="dh-stats">—</span>
+      </span>
+    </div>
+
+    <h3>価格チャート + 現在の肉眼ラベル背景色</h3>
+    <div style="margin-bottom:8px;">
+      月切替:
+      <select id="dh-month-filter">
+        <option value="all">全期間（365日）</option>
+      </select>
+    </div>
+    <div class="chart-wrap" style="height:380px;"><canvas id="dh-price-chart"></canvas></div>
+
+    <h3 style="margin-top:18px;">日別テーブル（チェックで選択 + 行単位ラベル変更可）</h3>
+    <div style="max-height:520px;overflow-y:auto;border:1px solid #ddd;">
+      <table class="data-table" id="dh-day-table">
+        <thead><tr>
+          <th><input type="checkbox" id="dh-check-all-month"></th>
+          <th>日付</th>
+          <th>曜日</th>
+          <th>close</th>
+          <th>1日変動%</th>
+          <th>判定</th>
+          <th>note</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:18px;">コピー用CSV（入力すると自動更新）</h3>
+    <textarea id="dh-csv-output" rows="14" style="width:100%;font-family:monospace;font-size:0.9em;"></textarea>
+    <div style="margin-top:6px;color:#555;font-size:0.85em;">
+      保存先: <code>data/regime_ground_truth_daily_human.csv</code>
+    </div>
+  </section>
+
+  <section id="ml_check" class="tab">
+    <h2>ML予測検証（肉眼正解 vs ML予測）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      365日分の time-series CV out-of-fold 予測。背景色 上半分=肉眼正解 / 下半分=ML予測。<br>
+      上下同色=一致 / 上下違う色=ML誤判定。
+    </p>
+
+    <div id="ml-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <div class="kpi"><div class="kpi-label">RandomForest 正解率</div><div class="kpi-value" id="ml-rf-acc">—</div></div>
+      <div class="kpi"><div class="kpi-label">GradientBoosting 正解率</div><div class="kpi-value" id="ml-gb-acc">—</div></div>
+      <div class="kpi"><div class="kpi-label">期間</div><div class="kpi-value" id="ml-period">—</div></div>
+    </div>
+
+    <h3>価格チャート + 肉眼上 / ML予測下 の背景色比較</h3>
+    <div style="margin-bottom:8px;">
+      表示期間:
+      <select id="ml-month-filter">
+        <option value="all">全期間</option>
+      </select>
+      &nbsp;モデル:
+      <select id="ml-model-select">
+        <option value="rf">RandomForest</option>
+        <option value="gb">GradientBoosting</option>
+      </select>
+    </div>
+    <div class="chart-wrap" style="height:400px;"><canvas id="ml-price-chart"></canvas></div>
+
+    <h3 style="margin-top:18px;">日別テーブル</h3>
+    <div style="margin-bottom:8px;">
+      フィルタ:
+      <select id="ml-row-filter">
+        <option value="all">すべて</option>
+        <option value="mismatch">不一致のみ（ML誤判定）</option>
+        <option value="match">一致のみ</option>
+      </select>
+      <span id="ml-row-count" style="margin-left:14px;color:#555;"></span>
+    </div>
+    <div style="max-height:480px;overflow-y:auto;border:1px solid #ddd;">
+      <table class="data-table" id="ml-day-table">
+        <thead><tr>
+          <th>日付</th><th>曜日</th><th>close</th>
+          <th>肉眼正解</th><th>RF予測</th><th>RF</th>
+          <th>GB予測</th><th>GB</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:18px;">特徴量重要度（上位20・RandomForest）</h3>
+    <table class="data-table" id="ml-feat-table">
+      <thead><tr><th>順位</th><th>特徴量</th><th>重要度</th><th>バー</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="assets/app.js"></script>
+</body>
+</html>

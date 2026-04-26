@@ -1,0 +1,3382 @@
+{
+  "n_days": 365,
+  "rf_summary": {
+    "n": 305,
+    "hit": 117,
+    "accuracy": 0.384
+  },
+  "gb_summary": {
+    "n": 305,
+    "hit": 108,
+    "accuracy": 0.354
+  },
+  "feature_importances": [
+    {
+      "feature": "macd",
+      "importance": 0.03933044484492081
+    },
+    {
+      "feature": "bb_width_pct",
+      "importance": 0.03347637259342145
+    },
+    {
+      "feature": "adx_14",
+      "importance": 0.031934015105090266
+    },
+    {
+      "feature": "macd_signal",
+      "importance": 0.03166247375389254
+    },
+    {
+      "feature": "atr_14",
+      "importance": 0.03085729029688326
+    },
+    {
+      "feature": "ich_tenkan_kijun_diff",
+      "importance": 0.030578864294765987
+    },
+    {
+      "feature": "atr_pct",
+      "importance": 0.029844572283658947
+    },
+    {
+      "feature": "ma20_slope_pct",
+      "importance": 0.028483075464476714
+    },
+    {
+      "feature": "macd_diff",
+      "importance": 0.02823825944471127
+    },
+    {
+      "feature": "close",
+      "importance": 0.026908603157790575
+    },
+    {
+      "feature": "ma10_slope_pct",
+      "importance": 0.025979807664848736
+    },
+    {
+      "feature": "ma50_slope_pct",
+      "importance": 0.02522594325232848
+    },
+    {
+      "feature": "di_pos",
+      "importance": 0.024122391178208597
+    },
+    {
+      "feature": "vol_24h_div_72h_avg",
+      "importance": 0.023358792946654012
+    },
+    {
+      "feature": "ret_30d",
+      "importance": 0.02313648961576285
+    },
+    {
+      "feature": "di_neg",
+      "importance": 0.022763474470973433
+    },
+    {
+      "feature": "ma5_slope_pct",
+      "importance": 0.022722093622207305
+    },
+    {
+      "feature": "ret_7d",
+      "importance": 0.02213024643540096
+    },
+    {
+      "feature": "ich_close_vs_cloud",
+      "importance": 0.02204921672109771
+    },
+    {
+      "feature": "close_div_ma50",
+      "importance": 0.021935080528373146
+    }
+  ],
+  "days": [
+    {
+      "date": "2025-04-01",
+      "close": 85158.34,
+      "true": "downtrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-02",
+      "close": 82516.29,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-03",
+      "close": 83213.09,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-04",
+      "close": 83889.87,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-05",
+      "close": 83537.99,
+      "true": "downtrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-06",
+      "close": 78430.0,
+      "true": "downtrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-07",
+      "close": 79163.24,
+      "true": "downtrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-08",
+      "close": 76322.42,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-09",
+      "close": 82615.22,
+      "true": "downtrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-10",
+      "close": 79607.3,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-11",
+      "close": 83423.84,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-12",
+      "close": 85276.9,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-13",
+      "close": 83760.0,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-14",
+      "close": 84591.58,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-15",
+      "close": 83643.99,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-16",
+      "close": 84030.38,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-17",
+      "close": 84947.91,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-18",
+      "close": 84474.69,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-19",
+      "close": 85077.01,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-20",
+      "close": 85179.24,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-21",
+      "close": 87516.23,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-22",
+      "close": 93442.99,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-23",
+      "close": 93691.08,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-24",
+      "close": 93980.47,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-25",
+      "close": 94638.68,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-26",
+      "close": 94628.0,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-27",
+      "close": 93749.3,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-28",
+      "close": 95011.18,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-29",
+      "close": 94256.82,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-04-30",
+      "close": 94172.0,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-01",
+      "close": 96489.91,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-02",
+      "close": 96887.14,
+      "true": "downtrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-03",
+      "close": 95856.42,
+      "true": "downtrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-04",
+      "close": 94277.62,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-05",
+      "close": 94733.68,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-06",
+      "close": 96834.02,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-07",
+      "close": 97030.5,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-08",
+      "close": 103261.6,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-09",
+      "close": 102971.99,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-10",
+      "close": 104809.53,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-11",
+      "close": 104118.0,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-12",
+      "close": 102791.32,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-13",
+      "close": 104103.72,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-14",
+      "close": 103507.82,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-15",
+      "close": 103763.71,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-16",
+      "close": 103463.9,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-17",
+      "close": 103126.65,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-18",
+      "close": 106454.26,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-19",
+      "close": 105573.74,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-20",
+      "close": 106849.99,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-21",
+      "close": 109643.99,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-22",
+      "close": 111696.21,
+      "true": "downtrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-23",
+      "close": 107318.3,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-24",
+      "close": 107761.91,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-25",
+      "close": 109004.19,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-26",
+      "close": 109434.79,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-27",
+      "close": 108938.17,
+      "true": "range",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-28",
+      "close": 107781.78,
+      "true": "downtrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-29",
+      "close": 105589.75,
+      "true": "downtrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-30",
+      "close": 103985.48,
+      "true": "uptrend",
+      "rf_pred": "",
+      "gb_pred": "",
+      "rf_match": null,
+      "gb_match": null
+    },
+    {
+      "date": "2025-05-31",
+      "close": 104591.88,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-01",
+      "close": 105642.93,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-02",
+      "close": 105857.99,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-03",
+      "close": 105376.89,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-04",
+      "close": 104696.86,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-05",
+      "close": 101508.68,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-06",
+      "close": 104288.44,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-07",
+      "close": 105552.15,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-08",
+      "close": 105734.0,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-09",
+      "close": 110263.02,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-10",
+      "close": 110274.39,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-11",
+      "close": 108645.12,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-12",
+      "close": 105671.73,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-13",
+      "close": 106066.59,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-14",
+      "close": 105414.64,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-15",
+      "close": 105594.01,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-16",
+      "close": 106794.53,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-17",
+      "close": 104551.17,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-18",
+      "close": 104886.78,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-19",
+      "close": 104658.59,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-20",
+      "close": 103297.99,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-21",
+      "close": 102120.01,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-06-22",
+      "close": 100963.87,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-23",
+      "close": 105333.93,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-24",
+      "close": 106083.0,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-25",
+      "close": 107340.58,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-26",
+      "close": 106947.06,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-27",
+      "close": 107047.59,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-28",
+      "close": 107296.79,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-29",
+      "close": 108356.93,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-06-30",
+      "close": 107146.5,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-01",
+      "close": 105681.14,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-02",
+      "close": 108849.6,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-03",
+      "close": 109584.78,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-04",
+      "close": 107984.24,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-05",
+      "close": 108198.12,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-06",
+      "close": 109203.84,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-07",
+      "close": 108262.94,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-08",
+      "close": 108922.98,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-09",
+      "close": 111233.99,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-10",
+      "close": 116010.0,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-11",
+      "close": 117527.66,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-12",
+      "close": 117420.0,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-13",
+      "close": 119086.64,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-14",
+      "close": 119841.18,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-15",
+      "close": 117758.09,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-16",
+      "close": 118630.43,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-17",
+      "close": 119177.56,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-18",
+      "close": 117924.84,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-19",
+      "close": 117840.0,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-20",
+      "close": 117265.12,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-21",
+      "close": 117380.36,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-22",
+      "close": 119954.42,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-23",
+      "close": 118755.99,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-24",
+      "close": 118340.99,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-25",
+      "close": 117614.31,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-26",
+      "close": 117919.99,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-27",
+      "close": 119415.55,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-28",
+      "close": 118062.32,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-07-29",
+      "close": 117950.76,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-30",
+      "close": 117840.3,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-07-31",
+      "close": 115764.08,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-01",
+      "close": 113297.93,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-02",
+      "close": 112546.35,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-03",
+      "close": 114208.8,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-04",
+      "close": 115055.03,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-05",
+      "close": 114129.75,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-06",
+      "close": 114992.27,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-07",
+      "close": 117472.01,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-08",
+      "close": 116674.74,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-09",
+      "close": 116462.25,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-10",
+      "close": 119294.01,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-11",
+      "close": 118686.0,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-12",
+      "close": 120134.08,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-13",
+      "close": 123306.43,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-14",
+      "close": 118295.09,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-15",
+      "close": 117342.05,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-16",
+      "close": 117380.66,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-17",
+      "close": 117405.01,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-18",
+      "close": 116227.05,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-19",
+      "close": 112872.94,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-20",
+      "close": 114271.24,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-21",
+      "close": 112500.0,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-22",
+      "close": 116935.99,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-23",
+      "close": 115438.05,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-24",
+      "close": 113493.59,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-25",
+      "close": 110111.98,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-26",
+      "close": 111763.22,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-27",
+      "close": 111262.01,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-08-28",
+      "close": 112566.9,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-29",
+      "close": 108377.4,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-30",
+      "close": 108816.33,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-08-31",
+      "close": 108246.35,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-01",
+      "close": 109237.42,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-02",
+      "close": 111240.01,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-03",
+      "close": 111705.71,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-04",
+      "close": 110730.87,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-05",
+      "close": 110659.99,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-06",
+      "close": 110187.97,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-07",
+      "close": 111137.34,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-08",
+      "close": 112065.23,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-09",
+      "close": 111546.39,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-10",
+      "close": 113960.0,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-11",
+      "close": 115482.69,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-12",
+      "close": 116029.42,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-13",
+      "close": 115918.29,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-14",
+      "close": 115268.01,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-15",
+      "close": 115349.71,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-16",
+      "close": 116788.96,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-17",
+      "close": 116447.59,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-18",
+      "close": 117073.53,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-19",
+      "close": 115632.38,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-20",
+      "close": 115685.63,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-21",
+      "close": 115232.29,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-22",
+      "close": 112650.99,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-23",
+      "close": 111998.8,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-24",
+      "close": 113307.0,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-25",
+      "close": 108994.49,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-26",
+      "close": 109643.46,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-09-27",
+      "close": 109635.85,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-28",
+      "close": 112163.95,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-29",
+      "close": 114311.96,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-09-30",
+      "close": 114048.93,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-01",
+      "close": 118594.99,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-02",
+      "close": 120529.35,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-03",
+      "close": 122232.0,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-04",
+      "close": 122391.0,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-05",
+      "close": 123482.31,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-06",
+      "close": 124658.54,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-07",
+      "close": 121332.95,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-08",
+      "close": 123306.0,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-09",
+      "close": 121662.4,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-10",
+      "close": 112774.5,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-11",
+      "close": 110644.4,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-12",
+      "close": 114958.8,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-13",
+      "close": 115166.0,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-14",
+      "close": 113028.14,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-15",
+      "close": 110763.28,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-16",
+      "close": 108194.28,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-17",
+      "close": 106431.68,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-18",
+      "close": 107185.01,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-19",
+      "close": 108642.78,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-20",
+      "close": 110532.09,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-21",
+      "close": 108297.67,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-22",
+      "close": 107567.44,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-23",
+      "close": 110078.18,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-24",
+      "close": 111004.89,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-25",
+      "close": 111646.27,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-26",
+      "close": 114559.4,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-27",
+      "close": 114107.65,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-10-28",
+      "close": 112898.45,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-29",
+      "close": 110021.29,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-30",
+      "close": 108322.88,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-10-31",
+      "close": 109608.01,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-01",
+      "close": 110098.1,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-02",
+      "close": 110540.68,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-03",
+      "close": 106583.04,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-04",
+      "close": 101497.22,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-05",
+      "close": 103885.16,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-06",
+      "close": 101346.04,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-07",
+      "close": 103339.08,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-08",
+      "close": 102312.94,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-09",
+      "close": 104722.96,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-10",
+      "close": 106011.13,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-11",
+      "close": 103058.99,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-12",
+      "close": 101654.37,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-13",
+      "close": 99692.02,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-14",
+      "close": 94594.0,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-15",
+      "close": 95596.24,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-16",
+      "close": 94261.44,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-17",
+      "close": 92215.14,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-18",
+      "close": 92960.83,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-19",
+      "close": 91554.96,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-20",
+      "close": 86637.23,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-21",
+      "close": 85129.43,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-22",
+      "close": 84739.74,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-23",
+      "close": 86830.0,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-24",
+      "close": 88300.01,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-25",
+      "close": 87369.96,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-26",
+      "close": 90484.02,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-11-27",
+      "close": 91333.95,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-28",
+      "close": 90890.7,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-29",
+      "close": 90802.44,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-11-30",
+      "close": 90360.0,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-01",
+      "close": 86286.01,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-02",
+      "close": 91277.88,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-03",
+      "close": 93429.95,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-04",
+      "close": 92078.06,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-05",
+      "close": 89330.04,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-06",
+      "close": 89236.79,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-07",
+      "close": 90395.31,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-08",
+      "close": 90634.34,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-09",
+      "close": 92678.8,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-10",
+      "close": 92015.37,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-11",
+      "close": 92513.38,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-12",
+      "close": 90268.42,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-13",
+      "close": 90240.01,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-14",
+      "close": 88172.17,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-15",
+      "close": 86432.08,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-16",
+      "close": 87863.42,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-17",
+      "close": 86243.22,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-18",
+      "close": 85516.41,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-19",
+      "close": 88136.94,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-20",
+      "close": 88360.9,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-21",
+      "close": 88658.86,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-22",
+      "close": 88620.79,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-23",
+      "close": 87486.0,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-24",
+      "close": 87669.45,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-25",
+      "close": 87225.27,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-26",
+      "close": 87369.56,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-27",
+      "close": 87877.01,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-28",
+      "close": 87952.71,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2025-12-29",
+      "close": 87237.13,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-30",
+      "close": 88485.49,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2025-12-31",
+      "close": 87648.22,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-01",
+      "close": 88839.04,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-02",
+      "close": 89995.13,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-03",
+      "close": 90628.01,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-04",
+      "close": 91529.73,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-05",
+      "close": 93859.71,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-06",
+      "close": 93747.97,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-07",
+      "close": 91364.16,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-08",
+      "close": 91099.99,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-01-09",
+      "close": 90641.28,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-10",
+      "close": 90504.7,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-11",
+      "close": 91013.65,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-12",
+      "close": 91296.2,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-13",
+      "close": 95414.0,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-14",
+      "close": 96951.78,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-15",
+      "close": 95604.8,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-16",
+      "close": 95550.94,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-01-17",
+      "close": 95147.77,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-18",
+      "close": 93673.14,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-19",
+      "close": 92631.0,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-20",
+      "close": 88427.66,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-21",
+      "close": 89454.73,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-22",
+      "close": 89559.67,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-23",
+      "close": 89600.26,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-24",
+      "close": 89225.34,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-25",
+      "close": 86670.36,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-26",
+      "close": 88347.08,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-01-27",
+      "close": 89250.0,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-28",
+      "close": 89299.99,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-29",
+      "close": 84650.16,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-30",
+      "close": 84260.49,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-01-31",
+      "close": 78741.09,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-01",
+      "close": 76968.21,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-02",
+      "close": 78738.61,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2026-02-03",
+      "close": 75770.21,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-04",
+      "close": 73165.83,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-05",
+      "close": 62909.86,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-06",
+      "close": 70580.26,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-07",
+      "close": 69289.38,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-08",
+      "close": 70330.38,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-02-09",
+      "close": 70138.0,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-02-10",
+      "close": 68841.29,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-11",
+      "close": 67082.52,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-12",
+      "close": 66272.17,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-13",
+      "close": 68853.96,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-14",
+      "close": 69822.95,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-02-15",
+      "close": 68832.58,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-02-16",
+      "close": 68892.43,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-17",
+      "close": 67503.52,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-02-18",
+      "close": 66461.0,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-19",
+      "close": 67003.73,
+      "true": "range",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-20",
+      "close": 68020.01,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-02-21",
+      "close": 67975.93,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-02-22",
+      "close": 67643.4,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-23",
+      "close": 64656.02,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-24",
+      "close": 64058.15,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-25",
+      "close": 67988.04,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-26",
+      "close": 67485.18,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-27",
+      "close": 65872.1,
+      "true": "range",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-02-28",
+      "close": 66973.26,
+      "true": "range",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-01",
+      "close": 65776.47,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-02",
+      "close": 68830.06,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-03",
+      "close": 68338.0,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-04",
+      "close": 72666.77,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-05",
+      "close": 70890.72,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-06",
+      "close": 68114.02,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-07",
+      "close": 67262.91,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-08",
+      "close": 65971.2,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-09",
+      "close": 68432.16,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-10",
+      "close": 69948.63,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-11",
+      "close": 70191.86,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-12",
+      "close": 70541.34,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-13",
+      "close": 70930.0,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-14",
+      "close": 71211.95,
+      "true": "uptrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-15",
+      "close": 72815.24,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-16",
+      "close": 74884.67,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-17",
+      "close": 73909.36,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-18",
+      "close": 71246.54,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-19",
+      "close": 69930.0,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-20",
+      "close": 70510.73,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-21",
+      "close": 68918.12,
+      "true": "downtrend",
+      "rf_pred": "range",
+      "gb_pred": "range",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-22",
+      "close": 67859.0,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-23",
+      "close": 70906.45,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-24",
+      "close": 70556.74,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-25",
+      "close": 71336.53,
+      "true": "downtrend",
+      "rf_pred": "downtrend",
+      "gb_pred": "downtrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-26",
+      "close": 68820.31,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-27",
+      "close": 66407.28,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "downtrend",
+      "rf_match": false,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-28",
+      "close": 66377.03,
+      "true": "downtrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": false
+    },
+    {
+      "date": "2026-03-29",
+      "close": 66010.93,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-30",
+      "close": 66797.37,
+      "true": "uptrend",
+      "rf_pred": "uptrend",
+      "gb_pred": "uptrend",
+      "rf_match": true,
+      "gb_match": true
+    },
+    {
+      "date": "2026-03-31",
+      "close": 68284.48,
+      "true": "uptrend",
+      "rf_pred": "range",
+      "gb_pred": "uptrend",
+      "rf_match": false,
+      "gb_match": true
+    }
+  ]
+}

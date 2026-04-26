@@ -1,0 +1,608 @@
+{
+  "source": "signal_ledger.md",
+  "legend": [
+    {
+      "symbol": "◎",
+      "label": "本命候補（未検証）",
+      "css": "mark-bull"
+    },
+    {
+      "symbol": "○",
+      "label": "補助候補（未検証）",
+      "css": "mark-aux"
+    },
+    {
+      "symbol": "△",
+      "label": "条件次第",
+      "css": "mark-cond"
+    },
+    {
+      "symbol": "×",
+      "label": "不適",
+      "css": "mark-na"
+    },
+    {
+      "symbol": "?",
+      "label": "未評価",
+      "css": "mark-tbd"
+    },
+    {
+      "symbol": "✅",
+      "label": "稼働中",
+      "css": "mark-live"
+    },
+    {
+      "symbol": "❌",
+      "label": "検証済 NO-GO",
+      "css": "mark-nogo"
+    },
+    {
+      "symbol": "⚠",
+      "label": "WARN",
+      "css": "mark-warn"
+    }
+  ],
+  "rows": [
+    {
+      "id": "A1",
+      "name": "EMA20 上抜け",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "?",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "A2",
+      "name": "EMA20 下抜け",
+      "dt_long": "×",
+      "dt_short": "◎",
+      "rg_long": "×",
+      "rg_short": "?",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=N7 未実装"
+    },
+    {
+      "id": "A3",
+      "name": "EMA20 リジェクト LONG",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "?",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "A4",
+      "name": "EMA20 リジェクト SHORT",
+      "dt_long": "×",
+      "dt_short": "❌",
+      "rg_long": "×",
+      "rg_short": "?",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=N1 旧式 (DT 365d $2.60/dt-day・L-115)"
+    },
+    {
+      "id": "A5",
+      "name": "前日高値ブレイク",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "A6",
+      "name": "前日安値ブレイク",
+      "dt_long": "×",
+      "dt_short": "◎",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "A7",
+      "name": "前日高値リジェクト",
+      "dt_long": "×",
+      "dt_short": "○",
+      "rg_long": "×",
+      "rg_short": "◎",
+      "up_long": "×",
+      "up_short": "△",
+      "memo": "=N16 未実装"
+    },
+    {
+      "id": "A8",
+      "name": "Donchian 高値更新",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": "=N8 LONG (DT検証$-26.91 ❌だが UP未評価)"
+    },
+    {
+      "id": "A9",
+      "name": "Donchian 安値更新",
+      "dt_long": "×",
+      "dt_short": "❌",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=N8 SHORT (DT $-5.47 ❌)"
+    },
+    {
+      "id": "B1",
+      "name": "BB上限タッチ逆張り",
+      "dt_long": "×",
+      "dt_short": "△",
+      "rg_long": "×",
+      "rg_short": "◎",
+      "up_long": "×",
+      "up_short": "△",
+      "memo": "RG-SHORT 本命候補"
+    },
+    {
+      "id": "B2",
+      "name": "BB下限タッチ逆張り",
+      "dt_long": "△",
+      "dt_short": "×",
+      "rg_long": "◎",
+      "rg_short": "×",
+      "up_long": "△",
+      "up_short": "×",
+      "memo": "RG-LONG 本命候補"
+    },
+    {
+      "id": "B3",
+      "name": "BB Trap (上抜け→戻り)",
+      "dt_long": "×",
+      "dt_short": "❌",
+      "rg_long": "×",
+      "rg_short": "◎",
+      "up_long": "×",
+      "up_short": "△",
+      "memo": "=N2 (DT $-3.59 ❌・RG未評価)"
+    },
+    {
+      "id": "B4",
+      "name": "BB下限ブレイク順張り",
+      "dt_long": "×",
+      "dt_short": "◎",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "B5",
+      "name": "BB上限ブレイク順張り",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "B6",
+      "name": "BB Squeeze → Break",
+      "dt_long": "△",
+      "dt_short": "△",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "△",
+      "up_short": "△",
+      "memo": "=N14 未実装・方向不定"
+    },
+    {
+      "id": "B7",
+      "name": "BBミドル上抜け",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "○",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "B8",
+      "name": "BBミドル下抜け",
+      "dt_long": "×",
+      "dt_short": "◎",
+      "rg_long": "×",
+      "rg_short": "○",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "C1",
+      "name": "ADXスパイク LONG",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": "=N3 LONG 旧式"
+    },
+    {
+      "id": "C2",
+      "name": "ADXスパイク SHORT",
+      "dt_long": "×",
+      "dt_short": "❌",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=N3 SHORT → P25 REJECTED L-118"
+    },
+    {
+      "id": "C3",
+      "name": "ADX50超 + DI-",
+      "dt_long": "×",
+      "dt_short": "❌",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=N6 (DT $-1.35 ❌)"
+    },
+    {
+      "id": "C4",
+      "name": "ADX50超 + DI+",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "C5",
+      "name": "DI+/DI- クロス LONG",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": "=N15 LONG (DT検証 fires 0.11/dt-day 発火少)"
+    },
+    {
+      "id": "C6",
+      "name": "DI+/DI- クロス SHORT",
+      "dt_long": "×",
+      "dt_short": "◎",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=N15 SHORT (DT検証 fires 0.13/dt-day 発火少)"
+    },
+    {
+      "id": "C7",
+      "name": "3本連続陽線",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "○",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "C8",
+      "name": "3本連続陰線",
+      "dt_long": "×",
+      "dt_short": "○",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "D1",
+      "name": "RSI OB Rejection",
+      "dt_long": "×",
+      "dt_short": "○",
+      "rg_long": "×",
+      "rg_short": "◎",
+      "up_long": "×",
+      "up_short": "○",
+      "memo": "=N4 未実装"
+    },
+    {
+      "id": "D2",
+      "name": "RSI OS Bounce",
+      "dt_long": "○",
+      "dt_short": "×",
+      "rg_long": "◎",
+      "rg_short": "×",
+      "up_long": "○",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "D3",
+      "name": "RSI Divergence LONG",
+      "dt_long": "△",
+      "dt_short": "×",
+      "rg_long": "○",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": "=N17 LONG 未実装"
+    },
+    {
+      "id": "D4",
+      "name": "RSI Divergence SHORT",
+      "dt_long": "×",
+      "dt_short": "△",
+      "rg_long": "×",
+      "rg_short": "○",
+      "up_long": "×",
+      "up_short": "◎",
+      "memo": "=N17 SHORT 未実装"
+    },
+    {
+      "id": "D5",
+      "name": "Stoch 50割れ",
+      "dt_long": "×",
+      "dt_short": "○",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "△",
+      "memo": "=N10 未実装"
+    },
+    {
+      "id": "D6",
+      "name": "Stoch 50上抜け",
+      "dt_long": "○",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "△",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "D7",
+      "name": "Stoch GC",
+      "dt_long": "✅",
+      "dt_short": "×",
+      "rg_long": "○",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": "**P2-LONG 稼働中** $4.75/dt-day・P3 DT停止確定"
+    },
+    {
+      "id": "D8",
+      "name": "Stoch DC",
+      "dt_long": "×",
+      "dt_short": "✅",
+      "rg_long": "×",
+      "rg_short": "○",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "**P23-SHORT 稼働中** $21.32/dt-day"
+    },
+    {
+      "id": "D9",
+      "name": "RCI52 hot + 陰線",
+      "dt_long": "×",
+      "dt_short": "○",
+      "rg_long": "×",
+      "rg_short": "◎",
+      "up_long": "×",
+      "up_short": "○",
+      "memo": "N11 派生（要分離実装）"
+    },
+    {
+      "id": "D10",
+      "name": "RCI52 cold + 陽線",
+      "dt_long": "○",
+      "dt_short": "×",
+      "rg_long": "◎",
+      "rg_short": "×",
+      "up_long": "○",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "D11",
+      "name": "RCI クロス SHORT",
+      "dt_long": "×",
+      "dt_short": "❌",
+      "rg_long": "×",
+      "rg_short": "○",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=P22-SHORT (DT停止確定) RG未評価"
+    },
+    {
+      "id": "D12",
+      "name": "RCI クロス LONG",
+      "dt_long": "◎",
+      "dt_short": "×",
+      "rg_long": "○",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "E1",
+      "name": "MACD GC",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "✅",
+      "up_short": "×",
+      "memo": "=**P1-LONG** UP割当（最適化未着手・WORKFLOW確定）"
+    },
+    {
+      "id": "E2",
+      "name": "MACD DC",
+      "dt_long": "×",
+      "dt_short": "✅",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=**P21-SHORT 稼働中** $11.41/dt-day"
+    },
+    {
+      "id": "E3",
+      "name": "MACD ゼロ上抜け",
+      "dt_long": "❌",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": "=N9 LONG (DT $-12.91 ❌)"
+    },
+    {
+      "id": "E4",
+      "name": "MACD ゼロ下抜け",
+      "dt_long": "×",
+      "dt_short": "❌",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=N9 SHORT (DT $-2.04 ❌)"
+    },
+    {
+      "id": "E5",
+      "name": "MACD 連続下降",
+      "dt_long": "×",
+      "dt_short": "○",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=N18 未実装"
+    },
+    {
+      "id": "F1",
+      "name": "ATR 急拡大 + 陰線",
+      "dt_long": "×",
+      "dt_short": "❌",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=N13 SHORT (DT $-0.20・発火 0.03/dt-day 測定不能)"
+    },
+    {
+      "id": "F2",
+      "name": "ATR 急拡大 + 陽線",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": "=N13 LONG (DT 発火 0.01/dt-day 測定不能・UP未評価)"
+    },
+    {
+      "id": "F3",
+      "name": "ATR 低水準からの拡大",
+      "dt_long": "△",
+      "dt_short": "△",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "△",
+      "up_short": "△",
+      "memo": "方向不定"
+    },
+    {
+      "id": "G1",
+      "name": "出来高急増 + 陰線",
+      "dt_long": "×",
+      "dt_short": "❌",
+      "rg_long": "×",
+      "rg_short": "△",
+      "up_long": "×",
+      "up_short": "×",
+      "memo": "=N12 (DT $-10.00 ❌)"
+    },
+    {
+      "id": "G2",
+      "name": "出来高急増 + 陽線",
+      "dt_long": "×",
+      "dt_short": "×",
+      "rg_long": "×",
+      "rg_short": "×",
+      "up_long": "◎",
+      "up_short": "×",
+      "memo": ""
+    },
+    {
+      "id": "H1",
+      "name": "ピンバー SHORT",
+      "dt_long": "×",
+      "dt_short": "❌",
+      "rg_long": "×",
+      "rg_short": "◎",
+      "up_long": "×",
+      "up_short": "○",
+      "memo": "=N11 SHORT (DT $-5.12 ❌)"
+    },
+    {
+      "id": "H2",
+      "name": "ピンバー LONG",
+      "dt_long": "❌",
+      "dt_short": "×",
+      "rg_long": "◎",
+      "rg_short": "×",
+      "up_long": "○",
+      "up_short": "×",
+      "memo": "=N11 LONG (DT $-33.09 ❌)"
+    },
+    {
+      "id": "H3",
+      "name": "エンゲルフィン SHORT",
+      "dt_long": "×",
+      "dt_short": "○",
+      "rg_long": "×",
+      "rg_short": "◎",
+      "up_long": "×",
+      "up_short": "○",
+      "memo": ""
+    },
+    {
+      "id": "H4",
+      "name": "エンゲルフィン LONG",
+      "dt_long": "○",
+      "dt_short": "×",
+      "rg_long": "◎",
+      "rg_short": "×",
+      "up_long": "○",
+      "up_short": "×",
+      "memo": ""
+    }
+  ]
+}
