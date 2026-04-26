@@ -18,6 +18,8 @@
     <button data-tab="truth_check">⑤ 日次肉眼判定</button>
     <button data-tab="ml_check">⑥ ML予測検証</button>
     <button data-tab="phase1_features">⑦ HMM特徴量</button>
+    <button data-tab="phase2_hmm">⑧ HMMレジーム検証</button>
+    <button data-tab="phase3_hmm">⑨ HMM 1h K=3 (採択候補)</button>
   </nav>
   <small id="source-note"></small>
 </header>
@@ -341,6 +343,158 @@
       <table class="data-table" id="ph1-corr-table" style="font-size:0.85em;">
         <thead></thead>
         <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="phase2_hmm" class="tab">
+    <h2>HMMレジーム検証（Phase 2 / 段階1合格モデル・凍結）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      マルチイニット最良採択（200試行 → 7構成合格 → margin最大の1構成を採択して pickle 凍結）。<br>
+      候補B（平均±0.3σ）合格判定 + 月単位視認チェック用。<strong>UPTREND/DOWNTREND/RANGE が見た目通り並んでいるか確認してください。</strong>
+    </p>
+
+    <div id="ph2-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <div class="kpi"><div class="kpi-label">採択構成</div><div class="kpi-value" id="ph2-config">—</div></div>
+      <div class="kpi"><div class="kpi-label">margin</div><div class="kpi-value" id="ph2-margin">—</div></div>
+      <div class="kpi"><div class="kpi-label">logL</div><div class="kpi-value" id="ph2-logl">—</div></div>
+      <div class="kpi"><div class="kpi-label">合格率</div><div class="kpi-value" id="ph2-passrate">—</div></div>
+      <div class="kpi"><div class="kpi-label">期間</div><div class="kpi-value" id="ph2-period">—</div></div>
+    </div>
+
+    <h3>候補B 合格判定</h3>
+    <table class="data-table" id="ph2-passcheck-table" style="max-width:520px;">
+      <thead><tr><th>項目</th><th>判定</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">状態別サマリ</h3>
+    <table class="data-table" id="ph2-states-table">
+      <thead><tr>
+        <th>ラベル</th><th>state_id</th><th>n_days</th>
+        <th>ret平均%</th><th>ret中央%</th>
+        <th>duration中央(日)</th><th>p値</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">日次 価格チャート + 状態背景色</h3>
+    <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button id="ph2-prev-btn" type="button">← 前</button>
+      <button id="ph2-next-btn" type="button">次 →</button>
+      <label>表示単位:
+        <select id="ph2-period-mode">
+          <option value="month" selected>月単位（判定推奨）</option>
+          <option value="year">年単位（俯瞰）</option>
+          <option value="all">全期間</option>
+        </select>
+      </label>
+      <label>期間:
+        <select id="ph2-period-pick"></select>
+      </label>
+      <span id="ph2-period-info" style="color:#555;font-size:0.85em;"></span>
+    </div>
+    <div class="chart-wrap" style="height:360px;"><canvas id="ph2-price-chart"></canvas></div>
+
+    <h3 style="margin-top:18px;">月別レジーム分布（カラー帯）</h3>
+    <p style="color:#555;font-size:0.85em;">
+      各セルは「その月で最も多かった状態」。クリックで日次内訳を表示。
+    </p>
+    <div id="ph2-monthly-strip"></div>
+
+    <h3 style="margin-top:18px;">月別テーブル</h3>
+    <div style="max-height:480px;overflow-y:auto;border:1px solid #ddd;">
+      <table class="data-table" id="ph2-monthly-table">
+        <thead><tr>
+          <th>月</th><th>n_days</th><th>mean_ret%</th>
+          <th>dominant</th>
+          <th>強UP%</th><th>弱UP%</th><th>微UP%</th>
+          <th>横%</th>
+          <th>微DN%</th><th>弱DN%</th><th>強DN%</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:18px;">状態別 リターン分布</h3>
+    <div id="ph2-histograms" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;"></div>
+
+    <h3 style="margin-top:18px;">状態遷移確率行列</h3>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="ph2-transition-table" style="font-size:0.85em;">
+        <thead></thead><tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="phase3_hmm" class="tab">
+    <h2>HMM 1h K=3（採択候補・凍結）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      特徴量 [ma50_dev / ma200_slope / di_diff] × 1h × K=3。<br>
+      seed×50 中 14 seed が候補B合格、合格 seed 同士の <strong>ARI = 0.9999</strong> で実質完全一致。<br>
+      <strong>月別 dominant が「DOWN/RANGE/UP」として肉眼判定と合うか確認してください。</strong>
+    </p>
+
+    <div id="ph3-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <div class="kpi"><div class="kpi-label">採択 seed / LL</div><div class="kpi-value" id="ph3-config">—</div></div>
+      <div class="kpi"><div class="kpi-label">候補B合格率</div><div class="kpi-value" id="ph3-passrate">—</div></div>
+      <div class="kpi"><div class="kpi-label">解A内ARI</div><div class="kpi-value" id="ph3-ari">—</div></div>
+      <div class="kpi"><div class="kpi-label">spread daily</div><div class="kpi-value" id="ph3-spread">—</div></div>
+      <div class="kpi"><div class="kpi-label">期間</div><div class="kpi-value" id="ph3-period">—</div></div>
+    </div>
+
+    <h3>状態別サマリ</h3>
+    <table class="data-table" id="ph3-states-table" style="max-width:720px;">
+      <thead><tr>
+        <th>ラベル</th><th>state_id</th><th>n(1h)</th><th>share</th>
+        <th>mean(1h)%</th><th>daily%</th><th>std(1h)</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">日次 価格チャート + 状態背景色（その日の支配ラベル）</h3>
+    <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button id="ph3-prev-btn" type="button">← 前</button>
+      <button id="ph3-next-btn" type="button">次 →</button>
+      <label>表示単位:
+        <select id="ph3-period-mode">
+          <option value="month" selected>月単位（判定推奨）</option>
+          <option value="year">年単位（俯瞰）</option>
+          <option value="all">全期間</option>
+        </select>
+      </label>
+      <label>期間:
+        <select id="ph3-period-pick"></select>
+      </label>
+      <span id="ph3-period-info" style="color:#555;font-size:0.85em;"></span>
+    </div>
+    <div class="chart-wrap" style="height:360px;"><canvas id="ph3-price-chart"></canvas></div>
+
+    <h3 style="margin-top:18px;">月別レジーム分布（カラー帯）</h3>
+    <p style="color:#555;font-size:0.85em;">
+      各セルは「その月で最も多かった状態」。<strong>赤=DOWN / 灰=RANGE / 緑=UP</strong>。
+    </p>
+    <div id="ph3-monthly-strip"></div>
+
+    <h3 style="margin-top:18px;">月別テーブル</h3>
+    <div style="max-height:480px;overflow-y:auto;border:1px solid #ddd;">
+      <table class="data-table" id="ph3-monthly-table">
+        <thead><tr>
+          <th>月</th><th>n_hours</th><th>mean_ret/h%</th>
+          <th>dominant</th>
+          <th>UP%</th><th>RANGE%</th><th>DOWN%</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:18px;">状態別 1hリターン分布</h3>
+    <div id="ph3-histograms" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;"></div>
+
+    <h3 style="margin-top:18px;">状態遷移確率行列（1h単位）</h3>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="ph3-transition-table" style="font-size:0.85em;">
+        <thead></thead><tbody></tbody>
       </table>
     </div>
   </section>

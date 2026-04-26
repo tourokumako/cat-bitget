@@ -234,7 +234,91 @@ for threshold in candidates:
 
 ---
 
-## 🔴 セッション切替メモ（2026-04-26 Day 2 終了時点・最優先で読む）
+## 🔴 セッション切替メモ（2026-04-26 Day 3 終了時点・最優先で読む）
+
+### Day 3 完了報告（2026-04-26）
+
+**実施内容（凍結まで進めたが「2割合致」評価で行き詰まり）**:
+
+1. **粒度決定の系統分析**（L-133対策・本来Day 0でやるべきだった）
+   - [scripts/phase3_acf_analysis.py](scripts/phase3_acf_analysis.py): リターン/|リターン| ACF算出。ボラ持続性は7日後も残存
+   - [scripts/phase3_hmm_multiresolution.py](scripts/phase3_hmm_multiresolution.py): 5m〜1d粒度でBIC比較→「1h採択」
+2. **K(状態数)決定**: K=2/3/4/5 比較。 **K=3 採択**（既存3区分 DOWN/RANGE/UP と整合）
+   - [scripts/phase3_hmm_compare_k4_k5.py](scripts/phase3_hmm_compare_k4_k5.py)
+3. **特徴量試行 5パターン**（L-134対策含む）:
+   - 旧: ma50_dev / ma200_slope / di_diff → spread 2.55%・合格14/50
+   - 新: ma20_dev / ma50_slope / di_diff → spread 2.56%・合格21/50（時定数短縮で**反応性UP**）
+   - +ボラ2本: ARI 0.92 / 合格 0/20（ボラ軸支配）
+   - +Funding生値: ARI 0.79 / 合格 2/20（Funding軸支配）
+   - +Funding加工2本: ARI 0.81 / 合格 0/20（同様）
+4. **採択モデル凍結**（[models/hmm_1h_K3_frozen.pkl](models/hmm_1h_K3_frozen.pkl)）:
+   - 特徴量: ma20_dev / ma50_slope / di_diff (3本)
+   - K=3 / seed=13 / LL=-112,503
+   - 状態分布: DOWN -1.00%/d (23.1%) / RANGE -0.003%/d (49.2%) / UP +1.56%/d (27.7%)
+   - 合格 seed内 ARI = 0.9996（実質完全一致）
+5. **ダッシュボード ⑨タブ追加** ([dashboard/data/phase3_hmm.json](dashboard/data/phase3_hmm.json))
+6. **Funding Rate 5年分取得**（[data/funding_rate_BTCUSDT_5y.csv](data/funding_rate_BTCUSDT_5y.csv) 5481件・Binance API・無料）
+   - HMM 直接組込みは失敗 → **後処理用に保管**
+
+**まこさん視認チェック結果**: **「2割くらいあってきた感じ」**（2024-08 月単位で確認・チグハグ・後追い問題残存）
+
+**今日の判断**:
+- 粒度比較・特徴量試行・Funding 追加と段階的に試行 → 構造的限界を確認
+- ガウシアンHMM の特徴量追加は方向系のみが原則（L-134確定）
+- 段階1（ガウシアンHMM）はここで一旦区切る
+
+**懸念**:
+- 「2割合致」のままでは Priority 個別最適化に戻っても精度問題が再発する
+- HMM のマルコフ性（点で見る）が「相場の流れ」を捉えられない構造的問題
+
+### 🔴 取得済みリソース（次セッション使用可能）
+
+- **凍結モデル**: `models/hmm_1h_K3_frozen.pkl`（採択候補・ma20/ma50_slope/di_diff・K=3・seed=13）
+- **状態CSV**: `results/phase3_hmm_1h_K3_states.csv`（43,758行・1h単位・5年）
+- **summary**: `results/phase3_hmm_1h_K3_summary.json`
+- **ダッシュボード ⑨タブ**: `dashboard/data/phase3_hmm.json`（1825日 × 60ヶ月）
+- **Funding Rate 5年分**: `data/funding_rate_BTCUSDT_5y.csv`（5481件・Binance）
+- **27パターン探索結果**: `results/phase3_grid_search_summary.csv`
+
+### 🔴 次セッション最優先タスク（4つの方向性候補・要判断）
+
+**A. 後処理スムージング**（最も低コスト・即実用化候補）
+- HMMの1h生判定を「3h以上連続でしか切替えない」フィルタで平滑化
+- チグハグ問題（1-2hの短期スポット判定）を解消
+- 実装0.5日
+
+**B. Funding Rate 後処理補正**（取得済データ活用）
+- HMM出力の信頼度補正に Funding Rate の符号を使う
+  - 例: DOWN判定 + ロング過熱(funding 大きく+) → 信頼度UP（強DOWN信号）
+  - 不整合時間帯はノートレード判定
+- 実装1-2日
+
+**C. 2階層モデル**（方向系HMM + Funding系HMM の出力統合）
+- HMM_dir(方向のみ) と HMM_funding(Funding加工特徴のみ) を別々に学習
+- 両者の出力が一致した時間帯のみ採用
+- 実装数日・設計大改修
+
+**D. 型学習（LSTM/Transformer）**（高コスト・高リスク）
+- HMM出力を入力として「相場の流れ」を学習
+- ground truth が必要（教師データ作成 = L-129 の壁）
+- 実装1週間以上・効果未知
+
+### 🔴 試行禁止リスト（今日確定したもの追加）
+
+既存の禁止リストに加え:
+- ❌ HMM 特徴量に Funding Rate / OI / L-S Ratio を直接追加（L-134・5回試行で全失敗確認）
+- ❌ HMM 特徴量にボラ系（ATR/BB幅）を方向系と混合（L-134・分離度ゼロ確認）
+- ❌ K=2 採択（候補B不合格・上昇バイアス問題）
+- ❌ ARI 全体値だけで凍結可否判断（L-135・合格 seed 内 ARI を見る）
+
+### 🔴 引き継ぎリソース（次セッション必読）
+
+- **WORKFLOW.md**（このファイル）
+- **.claude/memory/lessons.md**（L-126〜L-135 全部・特に L-133/134/135 が今日追加）
+- **dashboard/data/phase3_hmm.json**（⑨タブで月別判定確認）
+- **dashboard ⑨タブ**: `dashboard/index.html` + `dashboard/assets/app.js` の `ph3*` 関数群
+
+---
 
 ### Day 2 完了報告（2026-04-26）
 

@@ -1310,6 +1310,596 @@ async function renderPhase1Features() {
   ph1RenderCorrTable();
 }
 
+let PH2_DATA = null;
+
+const PH2_LABEL_COLOR = {
+  STRONG_UP:   "#1b5e20",  // 濃緑
+  WEAK_UP:     "#66bb6a",  // 中緑
+  DRIFT_UP:    "#c8e6c9",  // 薄緑
+  NEUTRAL:     "#bdbdbd",  // 灰
+  DRIFT_DOWN:  "#ffcdd2",  // 薄赤
+  WEAK_DOWN:   "#ef5350",  // 中赤
+  STRONG_DOWN: "#b71c1c",  // 濃赤
+};
+
+const PH2_LABEL_SHORT = {
+  STRONG_UP:   "強UP",
+  WEAK_UP:     "弱UP",
+  DRIFT_UP:    "微UP",
+  NEUTRAL:     "横",
+  DRIFT_DOWN:  "微DN",
+  WEAK_DOWN:   "弱DN",
+  STRONG_DOWN: "強DN",
+};
+
+function ph2Color(label) {
+  return PH2_LABEL_COLOR[label] || "#bdbdbd";
+}
+
+function ph2RenderSummary() {
+  const cfg = PH2_DATA.adopted_config;
+  const m = PH2_DATA.metrics;
+  document.getElementById("ph2-config").textContent =
+    `${cfg.candidate_label} / n=${cfg.n_states} / seed=${cfg.random_state}`;
+  document.getElementById("ph2-margin").textContent = m.margin.toFixed(3);
+  document.getElementById("ph2-logl").textContent = m.logL.toFixed(1);
+  const ss = PH2_DATA.search_stats;
+  document.getElementById("ph2-passrate").textContent =
+    `${ss.n_passed}/${ss.n_combinations_tried} (${ss.pass_rate_pct}%)`;
+  document.getElementById("ph2-period").textContent =
+    `${PH2_DATA.period.start} 〜 ${PH2_DATA.period.end} (${PH2_DATA.period.n_days}日)`;
+}
+
+function ph2RenderPassCheck() {
+  const tbody = document.querySelector("#ph2-passcheck-table tbody");
+  tbody.innerHTML = "";
+  for (const [k, v] of Object.entries(PH2_DATA.pass_check)) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${k}</td><td style="font-weight:bold;color:${v ? "#2e7d32" : "#c62828"}">${v ? "✅ 合格" : "❌ 不合格"}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function ph2RenderStatesTable() {
+  const tbody = document.querySelector("#ph2-states-table tbody");
+  tbody.innerHTML = "";
+  // ラベル順: UPTREND, MID4, MID3, RANGE, MID1, MID2, DOWNTREND（リターン降順）
+  const entries = Object.entries(PH2_DATA.state_summary);
+  entries.sort((a, b) => b[1].ret_mean_pct - a[1].ret_mean_pct);
+  for (const [label, s] of entries) {
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td><span style="display:inline-block;width:14px;height:14px;background:${ph2Color(label)};margin-right:6px;vertical-align:middle;"></span><strong>${label}</strong></td>` +
+      `<td class="num">${s.state_id}</td>` +
+      `<td class="num">${s.n_days}</td>` +
+      `<td class="num ${s.ret_mean_pct >= 0 ? "pos" : "neg"}">${s.ret_mean_pct.toFixed(3)}</td>` +
+      `<td class="num ${s.ret_median_pct >= 0 ? "pos" : "neg"}">${s.ret_median_pct.toFixed(3)}</td>` +
+      `<td class="num">${s.duration_median_days}</td>` +
+      `<td class="num">${s.p_value}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+let PH2_PRICE_CHART = null;
+
+function ph2GetPeriodOptions(mode) {
+  if (mode === "all") return ["all"];
+  const keys = new Set(PH2_DATA.daily.map((d) => mode === "year" ? d.date.slice(0, 4) : d.date.slice(0, 7)));
+  return Array.from(keys).sort();
+}
+
+function ph2RepopulatePeriodPicker() {
+  const mode = document.getElementById("ph2-period-mode").value;
+  const sel = document.getElementById("ph2-period-pick");
+  const opts = ph2GetPeriodOptions(mode);
+  sel.innerHTML = "";
+  for (const v of opts) {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v === "all" ? "全期間" : (mode === "year" ? v + "年" : v);
+    sel.appendChild(o);
+  }
+  if (mode === "month") sel.value = opts[opts.length - 1];
+}
+
+function ph2StepPeriod(delta) {
+  const sel = document.getElementById("ph2-period-pick");
+  const idx = sel.selectedIndex;
+  const next = idx + delta;
+  if (next >= 0 && next < sel.options.length) {
+    sel.selectedIndex = next;
+    ph2RenderPriceChart();
+  }
+}
+
+function ph2RenderPriceChart() {
+  const mode = document.getElementById("ph2-period-mode").value;
+  const sel = document.getElementById("ph2-period-pick").value;
+  const data = sel === "all"
+    ? PH2_DATA.daily
+    : PH2_DATA.daily.filter((d) => d.date.startsWith(sel));
+
+  const info = document.getElementById("ph2-period-info");
+  if (data.length > 0) {
+    const counts = {};
+    data.forEach((d) => { counts[d.label] = (counts[d.label] || 0) + 1; });
+    const summary = Object.entries(counts).sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `${PH2_LABEL_SHORT[k] || k}=${v}`).join(" / ");
+    info.textContent = `${data.length}日 [${summary}]`;
+  } else {
+    info.textContent = "";
+  }
+
+  const ctx = document.getElementById("ph2-price-chart").getContext("2d");
+  if (PH2_PRICE_CHART) PH2_PRICE_CHART.destroy();
+
+  // 背景色プラグイン: 状態によって縦帯
+  const bgPlugin = {
+    id: "ph2RegimeBg",
+    beforeDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      if (!chartArea) return;
+      ctx.save();
+      const xScale = scales.x;
+      const total = data.length;
+      data.forEach((d, i) => {
+        const xStart = xScale.getPixelForValue(i);
+        const xEnd = i + 1 < total ? xScale.getPixelForValue(i + 1) : chartArea.right;
+        ctx.fillStyle = ph2Color(d.label);
+        ctx.globalAlpha = 0.35;
+        ctx.fillRect(xStart, chartArea.top, xEnd - xStart, chartArea.bottom - chartArea.top);
+      });
+      ctx.restore();
+    },
+  };
+
+  PH2_PRICE_CHART = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: data.map((d) => d.date),
+      datasets: [{
+        label: "BTC close",
+        data: data.map((d) => d.close),
+        borderColor: "#000",
+        borderWidth: 1.2,
+        pointRadius: 0,
+        tension: 0.1,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const d = data[ctx.dataIndex];
+              return `${d.date}  $${d.close}  ret=${d.ret_pct >= 0 ? "+" : ""}${d.ret_pct}%  [${d.label}]`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { ticks: { maxTicksLimit: 12, font: { size: 10 } } },
+        y: { ticks: { font: { size: 10 } } },
+      },
+    },
+    plugins: [bgPlugin],
+  });
+}
+
+function ph2RenderMonthlyStrip() {
+  const container = document.getElementById("ph2-monthly-strip");
+  container.innerHTML = "";
+  const grid = document.createElement("div");
+  grid.style.cssText = "display:grid;grid-template-columns:repeat(12,1fr);gap:2px;font-size:0.7em;";
+  // 年×月マトリクス
+  const byYM = {};
+  PH2_DATA.monthly.forEach((m) => { byYM[m.date] = m; });
+  const years = Array.from(new Set(PH2_DATA.monthly.map((m) => m.date.slice(0, 4)))).sort();
+
+  // ヘッダー（月）
+  const labelHead = document.createElement("div");
+  labelHead.style.cssText = "grid-column:1 / -1;display:grid;grid-template-columns:60px repeat(12,1fr);gap:2px;font-weight:bold;text-align:center;margin-bottom:4px;";
+  labelHead.innerHTML = `<div></div>` + Array.from({length: 12}, (_, i) => `<div>${i + 1}月</div>`).join("");
+  container.appendChild(labelHead);
+
+  for (const y of years) {
+    const row = document.createElement("div");
+    row.style.cssText = "display:grid;grid-template-columns:60px repeat(12,1fr);gap:2px;margin-bottom:2px;";
+    row.innerHTML = `<div style="font-weight:bold;align-self:center;">${y}年</div>`;
+    for (let mon = 1; mon <= 12; mon++) {
+      const ym = `${y}-${String(mon).padStart(2, "0")}`;
+      const m = byYM[ym];
+      const cell = document.createElement("div");
+      if (m) {
+        const color = ph2Color(m.dominant_label);
+        cell.style.cssText = `background:${color};color:#fff;padding:6px 4px;text-align:center;cursor:pointer;`;
+        cell.textContent = PH2_LABEL_SHORT[m.dominant_label] || m.dominant_label;
+        cell.title = `${ym}\n${m.dominant_label} (${(m.label_share[m.dominant_label]*100).toFixed(0)}%)\nmean_ret=${m.mean_ret_pct.toFixed(3)}%`;
+      } else {
+        cell.style.cssText = "background:#eee;padding:6px 4px;";
+      }
+      row.appendChild(cell);
+    }
+    container.appendChild(row);
+  }
+}
+
+function ph2RenderMonthlyTable() {
+  const tbody = document.querySelector("#ph2-monthly-table tbody");
+  tbody.innerHTML = "";
+  const pct = (v) => ((v || 0) * 100).toFixed(0);
+  PH2_DATA.monthly.forEach((m) => {
+    const sh = m.label_share;
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td>${m.date}</td>` +
+      `<td class="num">${m.n_days}</td>` +
+      `<td class="num ${m.mean_ret_pct >= 0 ? "pos" : "neg"}">${m.mean_ret_pct.toFixed(3)}</td>` +
+      `<td><span style="display:inline-block;width:10px;height:10px;background:${ph2Color(m.dominant_label)};margin-right:4px;vertical-align:middle;"></span>${PH2_LABEL_SHORT[m.dominant_label] || m.dominant_label}</td>` +
+      `<td class="num">${pct(sh.STRONG_UP)}</td>` +
+      `<td class="num">${pct(sh.WEAK_UP)}</td>` +
+      `<td class="num">${pct(sh.DRIFT_UP)}</td>` +
+      `<td class="num">${pct(sh.NEUTRAL)}</td>` +
+      `<td class="num">${pct(sh.DRIFT_DOWN)}</td>` +
+      `<td class="num">${pct(sh.WEAK_DOWN)}</td>` +
+      `<td class="num">${pct(sh.STRONG_DOWN)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function ph2RenderHistograms() {
+  const container = document.getElementById("ph2-histograms");
+  container.innerHTML = "";
+  const entries = Object.entries(PH2_DATA.return_histograms_per_state);
+  entries.sort((a, b) => b[1].mean - a[1].mean);
+  for (const [label, h] of entries) {
+    const wrap = document.createElement("div");
+    wrap.style.cssText = `border:1px solid ${ph2Color(label)};padding:10px;background:#fff;`;
+    wrap.innerHTML =
+      `<div style="font-weight:bold;margin-bottom:6px;color:${ph2Color(label)};">${label}` +
+      ` <span style="color:#666;font-weight:normal;">n=${h.n} mean=${h.mean.toFixed(3)}% median=${h.median.toFixed(3)}% std=${h.std.toFixed(2)}%</span></div>` +
+      `<div style="height:160px;"><canvas></canvas></div>`;
+    container.appendChild(wrap);
+    const labels = h.bin_edges.slice(0, -1).map((e, i) => `${e.toFixed(1)}〜${h.bin_edges[i+1].toFixed(1)}`);
+    new Chart(wrap.querySelector("canvas"), {
+      type: "bar",
+      data: { labels, datasets: [{ data: h.counts, backgroundColor: ph2Color(label), borderWidth: 0 }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { display: false }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+        },
+      },
+    });
+  }
+}
+
+function ph2RenderTransition() {
+  const t = PH2_DATA.transition;
+  const thead = document.querySelector("#ph2-transition-table thead");
+  const tbody = document.querySelector("#ph2-transition-table tbody");
+  thead.innerHTML = "";
+  tbody.innerHTML = "";
+  const trh = document.createElement("tr");
+  trh.innerHTML = `<th>from \\ to</th>` + t.labels_in_order.map((l) => `<th><span style="background:${ph2Color(l)};color:#fff;padding:2px 4px;">${l}</span></th>`).join("");
+  thead.appendChild(trh);
+  t.labels_in_order.forEach((label, i) => {
+    const tr = document.createElement("tr");
+    let html = `<th><span style="background:${ph2Color(label)};color:#fff;padding:2px 4px;">${label}</span></th>`;
+    t.matrix[i].forEach((p, j) => {
+      const intensity = Math.min(p, 1);
+      const bg = `rgba(46,125,50,${intensity.toFixed(2)})`;
+      html += `<td class="num" style="background:${bg};color:${intensity > 0.5 ? "#fff" : "#000"};">${(p*100).toFixed(1)}%</td>`;
+    });
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============== Phase 3 (HMM 1h K=3) ==============
+let PH3_DATA = null;
+const PH3_LABEL_COLOR = { UP: "#1b5e20", RANGE: "#bdbdbd", DOWN: "#b71c1c" };
+const PH3_LABEL_SHORT = { UP: "UP", RANGE: "RG", DOWN: "DOWN" };
+function ph3Color(l) { return PH3_LABEL_COLOR[l] || "#bdbdbd"; }
+
+function ph3RenderSummary() {
+  const s = PH3_DATA.summary;
+  document.getElementById("ph3-config").textContent =
+    `seed=${s.picked_seed} / LL=${s.picked_ll.toFixed(0)}`;
+  document.getElementById("ph3-passrate").textContent =
+    `${s.n_seeds_passing}/${s.n_seeds_tried} (${(s.passing_rate*100).toFixed(0)}%)`;
+  document.getElementById("ph3-ari").textContent =
+    s.intra_solution_ari_mean !== null ? s.intra_solution_ari_mean.toFixed(4) : "—";
+  document.getElementById("ph3-spread").textContent =
+    `${s.spread_daily.toFixed(2)}%  (${s.min_daily_pct.toFixed(2)} / ${s.max_daily_pct.toFixed(2)})`;
+  document.getElementById("ph3-period").textContent =
+    `${PH3_DATA.period.start.slice(0,10)} 〜 ${PH3_DATA.period.end.slice(0,10)} (${PH3_DATA.period.n_days}日)`;
+}
+
+function ph3RenderStatesTable() {
+  const tbody = document.querySelector("#ph3-states-table tbody");
+  tbody.innerHTML = "";
+  const ss = PH3_DATA.summary.state_summary;
+  const labelToSid = {};
+  for (const [sid, lab] of Object.entries(PH3_DATA.labels_by_sid)) labelToSid[lab] = sid;
+  const order = ["UP", "RANGE", "DOWN"];
+  for (const label of order) {
+    const s = ss[label];
+    if (!s) continue;
+    const sid = labelToSid[label];
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td><span style="display:inline-block;width:14px;height:14px;background:${ph3Color(label)};margin-right:6px;vertical-align:middle;"></span><strong>${label}</strong></td>` +
+      `<td class="num">${sid}</td>` +
+      `<td class="num">${s.n}</td>` +
+      `<td class="num">${(s.share*100).toFixed(1)}%</td>` +
+      `<td class="num ${s.mean_period_pct >= 0 ? "pos" : "neg"}">${s.mean_period_pct.toFixed(4)}</td>` +
+      `<td class="num ${s.daily_pct >= 0 ? "pos" : "neg"}">${s.daily_pct.toFixed(3)}</td>` +
+      `<td class="num">${s.std_period_pct.toFixed(3)}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+let PH3_PRICE_CHART = null;
+
+function ph3GetPeriodOptions(mode) {
+  if (mode === "all") return ["all"];
+  const keys = new Set(PH3_DATA.daily.map((d) => mode === "year" ? d.date.slice(0, 4) : d.date.slice(0, 7)));
+  return Array.from(keys).sort();
+}
+
+function ph3RepopulatePeriodPicker() {
+  const mode = document.getElementById("ph3-period-mode").value;
+  const sel = document.getElementById("ph3-period-pick");
+  const opts = ph3GetPeriodOptions(mode);
+  sel.innerHTML = "";
+  for (const v of opts) {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v === "all" ? "全期間" : (mode === "year" ? v + "年" : v);
+    sel.appendChild(o);
+  }
+  if (mode === "month") sel.value = opts[opts.length - 1];
+}
+
+function ph3StepPeriod(delta) {
+  const sel = document.getElementById("ph3-period-pick");
+  const idx = sel.selectedIndex;
+  const next = idx + delta;
+  if (next >= 0 && next < sel.options.length) {
+    sel.selectedIndex = next;
+    ph3RenderPriceChart();
+  }
+}
+
+function ph3RenderPriceChart() {
+  const mode = document.getElementById("ph3-period-mode").value;
+  const sel = document.getElementById("ph3-period-pick").value;
+  const data = sel === "all"
+    ? PH3_DATA.daily
+    : PH3_DATA.daily.filter((d) => d.date.startsWith(sel));
+
+  const info = document.getElementById("ph3-period-info");
+  if (data.length > 0) {
+    const counts = {};
+    data.forEach((d) => { counts[d.dominant] = (counts[d.dominant] || 0) + 1; });
+    const summary = Object.entries(counts).sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `${PH3_LABEL_SHORT[k] || k}=${v}`).join(" / ");
+    info.textContent = `${data.length}日 [${summary}]`;
+  } else {
+    info.textContent = "";
+  }
+
+  const ctx = document.getElementById("ph3-price-chart").getContext("2d");
+  if (PH3_PRICE_CHART) PH3_PRICE_CHART.destroy();
+
+  const bgPlugin = {
+    id: "ph3RegimeBg",
+    beforeDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      if (!chartArea) return;
+      ctx.save();
+      const xScale = scales.x;
+      data.forEach((d, i) => {
+        const xStart = xScale.getPixelForValue(i);
+        const xEnd = i + 1 < data.length ? xScale.getPixelForValue(i + 1) : chartArea.right;
+        ctx.fillStyle = ph3Color(d.dominant);
+        ctx.globalAlpha = 0.30 + 0.30 * (d.dominant_share || 0);
+        ctx.fillRect(xStart, chartArea.top, xEnd - xStart, chartArea.bottom - chartArea.top);
+      });
+      ctx.restore();
+    },
+  };
+
+  PH3_PRICE_CHART = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: data.map((d) => d.date),
+      datasets: [{
+        label: "BTC close",
+        data: data.map((d) => d.close),
+        borderColor: "#000",
+        borderWidth: 1.2,
+        pointRadius: 0,
+        tension: 0.1,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (cx) => {
+              const d = data[cx.dataIndex];
+              const sh = Object.entries(d.share).map(([k,v]) => `${PH3_LABEL_SHORT[k]||k}=${(v*100).toFixed(0)}%`).join("/");
+              return `${d.date}  $${d.close}  ret=${d.mean_ret_pct >= 0 ? "+" : ""}${d.mean_ret_pct}%  [${d.dominant} ${(d.dominant_share*100).toFixed(0)}%] (${sh})`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: { ticks: { maxTicksLimit: 12, font: { size: 10 } } },
+        y: { ticks: { font: { size: 10 } } },
+      },
+    },
+    plugins: [bgPlugin],
+  });
+}
+
+function ph3RenderMonthlyStrip() {
+  const container = document.getElementById("ph3-monthly-strip");
+  container.innerHTML = "";
+  const byYM = {};
+  PH3_DATA.monthly.forEach((m) => { byYM[m.date] = m; });
+  const years = Array.from(new Set(PH3_DATA.monthly.map((m) => m.date.slice(0, 4)))).sort();
+
+  const labelHead = document.createElement("div");
+  labelHead.style.cssText = "display:grid;grid-template-columns:60px repeat(12,1fr);gap:2px;font-weight:bold;text-align:center;margin-bottom:4px;font-size:0.7em;";
+  labelHead.innerHTML = `<div></div>` + Array.from({length: 12}, (_, i) => `<div>${i + 1}月</div>`).join("");
+  container.appendChild(labelHead);
+
+  for (const y of years) {
+    const row = document.createElement("div");
+    row.style.cssText = "display:grid;grid-template-columns:60px repeat(12,1fr);gap:2px;margin-bottom:2px;font-size:0.7em;";
+    row.innerHTML = `<div style="font-weight:bold;align-self:center;">${y}年</div>`;
+    for (let mon = 1; mon <= 12; mon++) {
+      const ym = `${y}-${String(mon).padStart(2, "0")}`;
+      const m = byYM[ym];
+      const cell = document.createElement("div");
+      if (m) {
+        const color = ph3Color(m.dominant);
+        cell.style.cssText = `background:${color};color:#fff;padding:6px 4px;text-align:center;`;
+        cell.textContent = PH3_LABEL_SHORT[m.dominant] || m.dominant;
+        const sh = Object.entries(m.label_share).map(([k,v]) => `${PH3_LABEL_SHORT[k]||k}=${(v*100).toFixed(0)}%`).join(" / ");
+        cell.title = `${ym}\n${m.dominant} 支配\n${sh}\nmean_ret/h=${m.mean_ret_pct_per_h.toFixed(4)}%`;
+      } else {
+        cell.style.cssText = "background:#eee;padding:6px 4px;";
+      }
+      row.appendChild(cell);
+    }
+    container.appendChild(row);
+  }
+}
+
+function ph3RenderMonthlyTable() {
+  const tbody = document.querySelector("#ph3-monthly-table tbody");
+  tbody.innerHTML = "";
+  const pct = (v) => ((v || 0) * 100).toFixed(0);
+  PH3_DATA.monthly.forEach((m) => {
+    const sh = m.label_share;
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td>${m.date}</td>` +
+      `<td class="num">${m.n_hours}</td>` +
+      `<td class="num ${m.mean_ret_pct_per_h >= 0 ? "pos" : "neg"}">${m.mean_ret_pct_per_h.toFixed(4)}</td>` +
+      `<td><span style="display:inline-block;width:10px;height:10px;background:${ph3Color(m.dominant)};margin-right:4px;vertical-align:middle;"></span>${PH3_LABEL_SHORT[m.dominant] || m.dominant}</td>` +
+      `<td class="num">${pct(sh.UP)}</td>` +
+      `<td class="num">${pct(sh.RANGE)}</td>` +
+      `<td class="num">${pct(sh.DOWN)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function ph3RenderHistograms() {
+  const container = document.getElementById("ph3-histograms");
+  container.innerHTML = "";
+  const order = ["UP", "RANGE", "DOWN"];
+  for (const label of order) {
+    const h = PH3_DATA.return_histograms_per_state[label];
+    if (!h) continue;
+    const wrap = document.createElement("div");
+    wrap.style.cssText = `border:1px solid ${ph3Color(label)};padding:10px;background:#fff;`;
+    wrap.innerHTML =
+      `<div style="font-weight:bold;margin-bottom:6px;color:${ph3Color(label)};">${label}` +
+      ` <span style="color:#666;font-weight:normal;">n=${h.n} mean=${h.mean.toFixed(4)}% std=${h.std.toFixed(3)}%</span></div>` +
+      `<div style="height:160px;"><canvas></canvas></div>`;
+    container.appendChild(wrap);
+    const labels = h.bin_edges.slice(0, -1).map((e, i) => `${e.toFixed(2)}〜${h.bin_edges[i+1].toFixed(2)}`);
+    new Chart(wrap.querySelector("canvas"), {
+      type: "bar",
+      data: { labels, datasets: [{ data: h.counts, backgroundColor: ph3Color(label), borderWidth: 0 }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { display: false }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+        },
+      },
+    });
+  }
+}
+
+function ph3RenderTransition() {
+  const t = PH3_DATA.transition;
+  const thead = document.querySelector("#ph3-transition-table thead");
+  const tbody = document.querySelector("#ph3-transition-table tbody");
+  thead.innerHTML = "";
+  tbody.innerHTML = "";
+  const trh = document.createElement("tr");
+  trh.innerHTML = `<th>from \\ to</th>` + t.labels_in_order.map((l) => `<th><span style="background:${ph3Color(l)};color:#fff;padding:2px 4px;">${l}</span></th>`).join("");
+  thead.appendChild(trh);
+  t.labels_in_order.forEach((label, i) => {
+    const tr = document.createElement("tr");
+    let html = `<th><span style="background:${ph3Color(label)};color:#fff;padding:2px 4px;">${label}</span></th>`;
+    t.matrix[i].forEach((p) => {
+      const intensity = Math.min(p, 1);
+      const bg = `rgba(46,125,50,${intensity.toFixed(2)})`;
+      html += `<td class="num" style="background:${bg};color:${intensity > 0.5 ? "#fff" : "#000"};">${(p*100).toFixed(1)}%</td>`;
+    });
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+}
+
+async function renderPhase3Hmm() {
+  PH3_DATA = await fetchJSON("data/phase3_hmm.json");
+  ph3RenderSummary();
+  ph3RenderStatesTable();
+  ph3RepopulatePeriodPicker();
+  ph3RenderPriceChart();
+  ph3RenderMonthlyStrip();
+  ph3RenderMonthlyTable();
+  ph3RenderHistograms();
+  ph3RenderTransition();
+  document.getElementById("ph3-period-mode").addEventListener("change", () => {
+    ph3RepopulatePeriodPicker();
+    ph3RenderPriceChart();
+  });
+  document.getElementById("ph3-period-pick").addEventListener("change", ph3RenderPriceChart);
+  document.getElementById("ph3-prev-btn").addEventListener("click", () => ph3StepPeriod(-1));
+  document.getElementById("ph3-next-btn").addEventListener("click", () => ph3StepPeriod(1));
+}
+
+async function renderPhase2Hmm() {
+  PH2_DATA = await fetchJSON("data/phase2_hmm.json");
+  ph2RenderSummary();
+  ph2RenderPassCheck();
+  ph2RenderStatesTable();
+  ph2RepopulatePeriodPicker();
+  ph2RenderPriceChart();
+  ph2RenderMonthlyStrip();
+  ph2RenderMonthlyTable();
+  ph2RenderHistograms();
+  ph2RenderTransition();
+  document.getElementById("ph2-period-mode").addEventListener("change", () => {
+    ph2RepopulatePeriodPicker();
+    ph2RenderPriceChart();
+  });
+  document.getElementById("ph2-period-pick").addEventListener("change", ph2RenderPriceChart);
+  document.getElementById("ph2-prev-btn").addEventListener("click", () => ph2StepPeriod(-1));
+  document.getElementById("ph2-next-btn").addEventListener("click", () => ph2StepPeriod(1));
+}
+
 (async () => {
   try {
     await renderProgress();
@@ -1319,6 +1909,8 @@ async function renderPhase1Features() {
     await renderTruthCheck();
     await renderMlCheck();
     await renderPhase1Features();
+    await renderPhase2Hmm();
+    await renderPhase3Hmm();
   } catch (e) {
     console.error(e);
     document.body.insertAdjacentHTML("afterbegin",
