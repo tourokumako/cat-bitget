@@ -17,6 +17,7 @@
     <button data-tab="ground_truth">④ Ground Truth</button>
     <button data-tab="truth_check">⑤ 日次肉眼判定</button>
     <button data-tab="ml_check">⑥ ML予測検証</button>
+    <button data-tab="phase1_features">⑦ HMM特徴量</button>
   </nav>
   <small id="source-note"></small>
 </header>
@@ -308,6 +309,40 @@
       <thead><tr><th>順位</th><th>特徴量</th><th>重要度</th><th>バー</th></tr></thead>
       <tbody></tbody>
     </table>
+  </section>
+
+  <section id="phase1_features" class="tab">
+    <h2>HMM 特徴量分布（Phase 1）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      5年分日足（2020-01-01〜2024-12-31）から計算した HMM 入力特徴量。<br>
+      look-ahead 安全（その日の終値時点までの情報のみ使用）。冗長な特徴量を相関ヒートマップで事前確認する。
+    </p>
+
+    <div id="ph1-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <div class="kpi"><div class="kpi-label">期間</div><div class="kpi-value" id="ph1-period">—</div></div>
+      <div class="kpi"><div class="kpi-label">日数</div><div class="kpi-value" id="ph1-days">—</div></div>
+      <div class="kpi"><div class="kpi-label">特徴量数</div><div class="kpi-value" id="ph1-fcount">—</div></div>
+    </div>
+
+    <h3>特徴量サマリ</h3>
+    <table class="data-table" id="ph1-summary-table">
+      <thead><tr>
+        <th>特徴量</th><th>mean</th><th>std</th><th>min</th>
+        <th>p5</th><th>p25</th><th>p50</th><th>p75</th><th>p95</th><th>max</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">分布ヒストグラム</h3>
+    <div id="ph1-histograms" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;"></div>
+
+    <h3 style="margin-top:18px;">相関ヒートマップ（|r| ≥ 0.7 は冗長候補）</h3>
+    <div id="ph1-corr-wrap" style="overflow-x:auto;">
+      <table class="data-table" id="ph1-corr-table" style="font-size:0.85em;">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </section>
 </main>
 

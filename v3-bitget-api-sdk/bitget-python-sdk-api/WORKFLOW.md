@@ -234,7 +234,41 @@ for threshold in candidates:
 
 ---
 
-## 🔴 セッション切替メモ（2026-04-26 終了時点・最優先で読む）
+## 🔴 セッション切替メモ（2026-04-26 Day 2 終了時点・最優先で読む）
+
+### Day 2 完了報告（2026-04-26）
+
+**実施内容**:
+1. 特徴量計算スクリプト実装: [scripts/phase1_features.py](scripts/phase1_features.py)
+2. 5年分日足から特徴量算出: [results/phase1_features_daily.csv](results/phase1_features_daily.csv)（1778行×8特徴・warmup49日除外）
+3. ダッシュボード組み込み: [dashboard/data/phase1_features.json](dashboard/data/phase1_features.json) + ⑦HMM特徴量タブ追加
+4. JSON生成スクリプト: [scripts/build_phase1_features_json.py](scripts/build_phase1_features_json.py)
+
+**特徴量設計（情報量効率版・8本）**:
+当初20本まで拡張予定 → 初版8本で相関確認したところ |r|≥0.7 が6ペア発生（方向性カテゴリの冗長）→ 1ペアまで削減 → streak_max_30d 差し替えで完全消滅。
+- A方向性: `ma50_dev`（MA50乖離率%）
+- B強度  : `adx_14`
+- C構造  : `streak_max_30d`（30日内最大連続陽線/陰線・符号付き）
+- Dボラ  : `atr_14_pct` / `bb_width_20` / `bb_pct_b`
+- Eその他: `vol_chg_7d` / `ret_skew_30d`（30日リターン歪度）
+
+**確認結果**:
+- |r|≥0.7 ペア: 0個（冗長削除成功）
+- 中度相関（許容）: ma50_dev⇔bb_pct_b +0.67 / atr_14_pct⇔bb_width_20 +0.62 など4ペア
+- 全特徴の分布が妥当範囲内（NaN/∞なし）
+
+**今日の判断**:
+- 当初予定の「15-20本まで拡張」を **8本で確定** に変更
+- 理由: 冗長を抱えたまま膨らませると HMMが方向性カテゴリに支配される。情報量効率を優先
+- 精度低下時は5m足の日中分布特徴を追加して粒度上げる方針（次セッション以降）
+
+**懸念**:
+- ma50_devが他4つの特徴と中度相関（最大+0.67）→ HMM学習で支配的になる可能性。Day 3で状態解釈時に要観察
+- 段階1（ガウシアンHMM）が30-40%精度天井にぶつかる可能性は残る（L-129相当）
+
+**明日（Day 3）予定**: ガウシアンHMM学習・状態解釈・リターン分布評価
+
+---
 
 ### 本セッション総括（2026-04-25〜26）
 
@@ -293,25 +327,32 @@ for threshold in candidates:
 - 各段階 5-7回の調整で不合格なら次段階（最大15-21回でストップ）
 - 段階1 完了予定: Day 3-4（特徴量実装+学習+評価まで）
 
-### 🔴 次セッション最優先タスク（HMM Day 2: 特徴量計算）
+### 🔴 次セッション最優先タスク（HMM Day 3: ガウシアンHMM学習）
 
 **Day 1完了** (2026-04-26): データ取得・ライブラリ準備・Phase 0 統計算出 ✅
+**Day 2完了** (2026-04-26): 特徴量設計・計算・ダッシュボード組み込み ✅
 
-**Day 2 タスク（次セッション）**:
-1. 特徴量計算スクリプト実装（15-20特徴・look-ahead安全）
-   - A. 方向性: 騰落率 7/14/30日、MA20/50/200乖離、各時間足MA傾き
-   - B. 強度: ADX 14/28、DI+/DI-差、ローソク連続性
-   - C. 構造: HHLL更新数、直近高値安値からの距離、スイング対称性
-   - D. ボラ: ATR 14/28、BB幅・%B、ヒストリカルボラ
-   - E. その他: 出来高変化率、価格分布の歪度
-2. 5年分・1826日に対して計算・保存
-3. 視覚確認: 特徴量分布をダッシュボードに追加（ヒストグラム・相関ヒートマップ）
-4. Day 2 進捗報告
+**Day 3 タスク（次セッション）**:
+1. ガウシアンHMM学習スクリプト実装（hmmlearn）
+   - 入力: [results/phase1_features_daily.csv](results/phase1_features_daily.csv)（1778行×8特徴）
+   - 状態数: まず 3（uptrend/downtrend/range 想定）→ 結果次第で 4-5 試行
+   - StandardScaler で正規化してから fit
+   - 出力: 各日の予測状態 + 状態遷移確率 + 各状態の平均特徴量
+2. 状態解釈
+   - 各状態の平均日次リターン分布を算出（Phase 0 基準と照合）
+   - 候補B（平均±0.3σ）合格判定:
+     - UPTREND判定状態 平均日次リターン > +1.22%
+     - DOWNTREND判定状態 平均日次リターン < -0.82%
+     - RANGE判定状態 |平均日次リターン| < 0.34%
+   - 状態継続中央値 ≥ 3日 かつ ≤ 30日
+3. ダッシュボード「⑦ HMM特徴量」を拡張または「⑧ HMM状態検証」タブ追加
+4. 段階1合格判定 → 合格なら即 Replay 移行 / 不合格なら 5-7 回調整 → 上限到達で段階2へ
 
-**Day 3-4 タスク**:
-- ガウシアンHMM学習 → 状態解釈 → リターン分布評価
-- ダッシュボード「⑦ HMM状態検証」タブ追加
-- 判定基準4つ（A/B/C/D）の合格判定提示
+**判定基準 候補B 数値（再掲）**:
+- UPTREND: 平均日次リターン > +1.2213%
+- DOWNTREND: 平均日次リターン < -0.8216%
+- RANGE: |平均日次リターン| < 0.3405%
+- 統計有意性: t検定 p<0.05 補助確認
 
 ### 🔴 既採用パラメータの取り扱い（停止中・解凍は regime確定後）
 - P21: TRAIL_RATIO=0.9 / MFE_GATE_PCT=0.04 / TIME_EXIT_MIN=180 / ATR14_MIN=150 → $11.41/dt-day（look-ahead プレミアム含む）
@@ -336,8 +377,13 @@ for threshold in candidates:
 - **CLAUDE.md**（v3-bitget-api-sdk/CLAUDE.md・設計思想・絶対不変）
 - **scripts/download_binance_5y.py**（5年分DLスクリプト）
 - **scripts/phase0_return_distribution.py**（リターン分布算出）
+- **scripts/phase1_features.py**（Day 2: 8特徴量計算・look-ahead安全）
+- **scripts/build_phase1_features_json.py**（Day 2: ダッシュボード用JSON生成）
 - **data/BTCUSDT-5m-2020-01-01_2024-12-31_5y.csv**（5年分5m足・1826日）
 - **results/phase0_return_distribution.json**（基準算出結果）
+- **results/phase1_features_daily.csv**（Day 2: 1778行×8特徴）
+- **dashboard/data/phase1_features.json**（Day 2: ⑦タブ用データ）
+- **dashboard/index.html / assets/app.js**（⑦HMM特徴量タブ実装済み）
 - **.venv/**（hmmlearn / scikit-learn / ta / pandas / numpy インストール済）
 
 ### 🔴 ライブラリインストール状況

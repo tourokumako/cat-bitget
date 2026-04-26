@@ -1212,6 +1212,104 @@ async function renderMlCheck() {
   document.getElementById("ml-row-filter").addEventListener("change", mlRenderDayTable);
 }
 
+let PH1_DATA = null;
+
+function ph1RenderSummary() {
+  document.getElementById("ph1-period").textContent =
+    `${PH1_DATA.period.start} 〜 ${PH1_DATA.period.end}`;
+  document.getElementById("ph1-days").textContent = PH1_DATA.period.n_days;
+  document.getElementById("ph1-fcount").textContent = PH1_DATA.feature_count;
+}
+
+function ph1RenderSummaryTable() {
+  const tbody = document.querySelector("#ph1-summary-table tbody");
+  tbody.innerHTML = "";
+  for (const [name, s] of Object.entries(PH1_DATA.features)) {
+    const tr = document.createElement("tr");
+    const f = (v) => Number(v).toFixed(2);
+    tr.innerHTML =
+      `<td><strong>${name}</strong></td>` +
+      `<td class="num">${f(s.mean)}</td>` +
+      `<td class="num">${f(s.std)}</td>` +
+      `<td class="num">${f(s.min)}</td>` +
+      `<td class="num">${f(s.p5)}</td>` +
+      `<td class="num">${f(s.p25)}</td>` +
+      `<td class="num">${f(s.p50)}</td>` +
+      `<td class="num">${f(s.p75)}</td>` +
+      `<td class="num">${f(s.p95)}</td>` +
+      `<td class="num">${f(s.max)}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function ph1RenderHistograms() {
+  const container = document.getElementById("ph1-histograms");
+  container.innerHTML = "";
+  for (const [name, h] of Object.entries(PH1_DATA.histograms)) {
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "border:1px solid #ddd;padding:10px;background:#fff;";
+    wrap.innerHTML = `<div style="font-weight:bold;margin-bottom:6px;">${name}</div>` +
+      `<div style="height:160px;"><canvas></canvas></div>`;
+    container.appendChild(wrap);
+    const canvas = wrap.querySelector("canvas");
+    const labels = h.bin_edges.slice(0, -1).map((e, i) =>
+      `${e.toFixed(1)}〜${h.bin_edges[i + 1].toFixed(1)}`);
+    new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{ data: h.counts, backgroundColor: "#1976d2", borderWidth: 0 }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { display: false }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+        },
+      },
+    });
+  }
+}
+
+function ph1CorrColor(r) {
+  const a = Math.min(Math.abs(r), 1);
+  if (r >= 0) return `rgba(211,47,47,${a.toFixed(2)})`;
+  return `rgba(25,118,210,${a.toFixed(2)})`;
+}
+
+function ph1RenderCorrTable() {
+  const { features, matrix } = PH1_DATA.correlation;
+  const thead = document.querySelector("#ph1-corr-table thead");
+  const tbody = document.querySelector("#ph1-corr-table tbody");
+  thead.innerHTML = "";
+  tbody.innerHTML = "";
+
+  const trh = document.createElement("tr");
+  trh.innerHTML = `<th></th>` + features.map((f) => `<th>${f}</th>`).join("");
+  thead.appendChild(trh);
+
+  features.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    let html = `<th>${row}</th>`;
+    matrix[i].forEach((v, j) => {
+      const flag = (i !== j && Math.abs(v) >= 0.7) ? " ⚠" : "";
+      html += `<td class="num" style="background:${ph1CorrColor(v)};color:${Math.abs(v) > 0.6 ? "#fff" : "#000"};">${v.toFixed(2)}${flag}</td>`;
+    });
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+}
+
+async function renderPhase1Features() {
+  PH1_DATA = await fetchJSON("data/phase1_features.json");
+  ph1RenderSummary();
+  ph1RenderSummaryTable();
+  ph1RenderHistograms();
+  ph1RenderCorrTable();
+}
+
 (async () => {
   try {
     await renderProgress();
@@ -1220,6 +1318,7 @@ async function renderMlCheck() {
     await renderGroundTruth();
     await renderTruthCheck();
     await renderMlCheck();
+    await renderPhase1Features();
   } catch (e) {
     console.error(e);
     document.body.insertAdjacentHTML("afterbegin",
