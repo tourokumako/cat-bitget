@@ -1,0 +1,52 @@
+recipes:
+  - id: R01
+    label: "現行ルール再現（ベースライン）"
+    timeframes: [D]
+    indicators:
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+      - {tf: D, name: adx, period: 14}
+    aggregation:
+      intra: weighted_sum
+      cross: null
+    threshold_default:
+      ma_slope_70_d_5: 0.0
+      adx_14_d: 20.0
+    threshold_grid:
+      ma_slope_70_d_5: [-0.3, 0.0, 0.3]
+      adx_14_d: [15.0, 20.0, 25.0]
+
+  - id: R02
+    label: "1h ヒステリシスを多数決で取り込む"
+    timeframes: [D, "1h"]
+    indicators:
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+      - {tf: D, name: adx, period: 14}
+      - {tf: "1h", name: ma_slope, period: 70, lookback: 24}
+      - {tf: "1h", name: adx, period: 14}
+    aggregation:
+      intra: weighted_sum
+      cross: multi_vote
+    threshold_default:
+      ma_slope_70_d_5: 0.0
+      adx_14_d: 20.0
+      ma_slope_70_1h_24: 0.0
+      adx_14_1h: 20.0
+    threshold_grid:
+      ma_slope_70_d_5: [-0.3, 0.0, 0.3]
+      adx_14_d: [15.0, 20.0, 25.0]
+      ma_slope_70_1h_24: [-0.1, 0.0, 0.1]
+      adx_14_1h: [15.0, 20.0, 25.0]
+
+  - id: R03
+    label: "月支配＋日補正"
+    timeframes: [M_dom, D]
+    indicators:
+      - {tf: M_dom, name: human_label}
+      - {tf: D, name: adx, period: 14}
+    aggregation:
+      intra: score
+      cross: hierarchical
+    threshold_default:
+      adx_14_d: 25.0
+    threshold_grid:
+      adx_14_d: [20.0, 25.0, 30.0]

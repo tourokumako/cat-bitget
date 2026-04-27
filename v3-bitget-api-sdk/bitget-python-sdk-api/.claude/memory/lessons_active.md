@@ -1,4 +1,27 @@
-# lessons_active.md — 直近38件の現役教訓（L-137〜L-103）
+# lessons_active.md — 直近39件の現役教訓（L-138〜L-103）
+
+---
+
+### L-138: hierarchical レシピは上位粒度に該当 regime が無いと予測が偏る（2026-04-27）
+
+**何が起きたか:**
+レシピ型 grid search harness の smoke test で R03（M_dom hierarchical → D ADX）を 365日データで走らせたら、`dt_mean_pct=nan`（DT予測が0件）。一見バグに見えるが、365日肉眼ラベルの月支配分布が range 8月 / uptrend 4月 / **downtrend 0月** で、上位粒度（M_dom）に DT 月が無いため hierarchical の上位確定で DT 予測が一度も出ない、という正しい挙動だった。
+
+**Why:**
+- 365日の DT は 102日(27.9%)あるが月内で連続せず散発し、月内最頻として勝てない
+- hierarchical 集約は「上位粒度確定なら採用」が原則なので、上位の出現分布が下位の予測分布の上限になる
+- 1826日データには DT 連続局面（2022 bear等）が含まれるため、月支配 DT 月が出てくる見込み
+
+**How to apply:**
+- hierarchical レシピのスコア解釈時は **必ず `coverage_months` と上位粒度の regime 出現分布を先に確認**する
+- 上位粒度に DT 月が無いデータで「dt_mean=nan」が出ても廃案にせず、データの構造的限界として記録する
+- 365日でのスコアと 1826日でのスコアは別物として扱う（前者は予選、後者が本選）
+- hierarchical 系レシピ（R03/R13〜R18）の最終評価は 1826日完了後にする
+- evaluator.py docstring と regime_research.md §10.2 に nan の意味を明記済（2026-04-27）
+
+**関連:** L-126（月単位支配 regime が本丸）/ regime_research.md §10.2「365日データの構造的限界」
+
+---
 
 > **方針**: 直近36件を active として常時参照。L-102以前は `lessons_archive.md` 参照（必要時のみ読み込み）。
 > **早期重要教訓（CLAUDE.md/WORKFLOW.md 直接参照）**: L-4/L-5/L-6（feedback_rules.md 参照）/ L-17 / L-20 / L-40（手数料計算）→ いずれも `lessons_archive.md` 内に本体あり。
