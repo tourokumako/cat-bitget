@@ -1000,6 +1000,39 @@ function dhPopulateMonthFilter() {
   }
 }
 
+async function dhSaveLabels() {
+  const btn = document.getElementById("dh-save-btn");
+  const status = document.getElementById("dh-save-status");
+  btn.disabled = true;
+  status.textContent = "保存中…";
+  status.style.color = "#555";
+  const labels = DH_DATA.days.map((d) => {
+    const s = DH_STATE[d.date] || {label: "", note: ""};
+    return {date: d.date, label: s.label || "", note: s.note || ""};
+  });
+  try {
+    const res = await fetch("/api/save_daily_labels", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({labels}),
+    });
+    const j = await res.json();
+    if (!res.ok || !j.ok) {
+      status.textContent = `保存失敗: ${j.error || res.status}`;
+      status.style.color = "#c62828";
+    } else {
+      const ts = new Date().toLocaleTimeString("ja-JP");
+      status.textContent = `✓ ${j.rows}行保存 (${ts}・backup: ${j.backup})`;
+      status.style.color = "#2e7d32";
+    }
+  } catch (e) {
+    status.textContent = `保存失敗: ${e.message}`;
+    status.style.color = "#c62828";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function renderTruthCheck() {
   DH_DATA = await fetchJSON("data/regime_truth_daily.json");
   // 初期状態に肉眼日次ラベルを取り込む
@@ -1023,6 +1056,7 @@ async function renderTruthCheck() {
   document.getElementById("dh-apply-btn").addEventListener("click", dhApplyBulk);
   document.getElementById("dh-uncheck-all-btn").addEventListener("click", dhUncheckAll);
   document.getElementById("dh-check-all-month").addEventListener("change", dhCheckAllVisible);
+  document.getElementById("dh-save-btn").addEventListener("click", dhSaveLabels);
 }
 
 // ====== ⑥ ML予測検証タブ ======

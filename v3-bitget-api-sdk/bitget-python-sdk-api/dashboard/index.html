@@ -15,7 +15,7 @@
     <button data-tab="fires">② 発火チャート</button>
     <button data-tab="signals">③ シグナルマッピング</button>
     <button data-tab="ground_truth">④ Ground Truth</button>
-    <button data-tab="truth_check">⑤ 日次肉眼判定</button>
+    <button data-tab="truth_check">⑤ 日次肉眼判定（5年）</button>
     <button data-tab="ml_check">⑥ ML予測検証</button>
     <button data-tab="phase1_features">⑦ HMM特徴量</button>
     <button data-tab="phase2_hmm">⑧ HMMレジーム検証</button>
@@ -202,10 +202,11 @@
   </section>
 
   <section id="truth_check" class="tab">
-    <h2>日次 肉眼判定（365日分・案A）</h2>
+    <h2>日次 肉眼判定（1826日分・5年・案A）</h2>
     <p style="color:#555;font-size:0.9em;">
       ① 月切替で対象月を表示 → ② チャートで動きを確認 → ③ 連続日をチェックボックスで複数選択 → ④ 一括APPLY<br>
-      初期値として既存の53週肉眼判定が継承されています（225日に既ラベル）。修正したい日のみ上書きしてください。
+      期間: 2021-04-01〜2026-03-31（1826日）。既存365日分のラベルは継承済。残り1461日を埋めてください。<br>
+      入力後、画面右上の <strong>[💾 保存]</strong> ボタンで CSV に書き戻されます（自動バックアップ付）。
     </p>
 
     <div id="dh-bulk-bar" style="position:sticky;top:0;background:#fffae6;border:1px solid #e0c068;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:10;">
@@ -221,6 +222,9 @@
       <input type="text" id="dh-bulk-note" placeholder="note（必須）" style="width:280px;">
       <button id="dh-apply-btn">APPLY</button>
       <button id="dh-uncheck-all-btn" type="button">全チェック解除</button>
+      <span style="margin-left:auto;"></span>
+      <button id="dh-save-btn" type="button" style="background:#1976d2;color:#fff;font-weight:bold;padding:6px 18px;">💾 保存</button>
+      <span id="dh-save-status" style="margin-left:8px;color:#555;font-size:0.85em;"></span>
       <span style="margin-left:14px;color:#555;font-size:0.85em;">
         統計: <span id="dh-stats">—</span>
       </span>
@@ -254,7 +258,7 @@
     <h3 style="margin-top:18px;">コピー用CSV（入力すると自動更新）</h3>
     <textarea id="dh-csv-output" rows="14" style="width:100%;font-family:monospace;font-size:0.9em;"></textarea>
     <div style="margin-top:6px;color:#555;font-size:0.85em;">
-      保存先: <code>data/regime_ground_truth_daily_human.csv</code>
+      保存先: <code>data/regime_ground_truth_daily_human.csv</code>（保存ボタンで書き戻し・コピペ不要）
     </div>
   </section>
 
