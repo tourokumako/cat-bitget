@@ -49,10 +49,11 @@
 
 ### セッション終了時に必ず行うこと（順番通りに）
 
-1. **`lessons.md` を更新する**
+1. **`lessons_active.md` を更新する**
    - このセッションで発見した失敗・教訓を L-XX 形式で追記する
    - 「同じミスを次セッションで繰り返さないか？」を自問してから書く
-   - パス: `bitget-python-sdk-api/.claude/memory/lessons.md`
+   - パス: `bitget-python-sdk-api/.claude/memory/lessons_active.md`（直近36件・現役）
+   - 古いものは `lessons_archive.md`（L-102以前・参照用）。active が約40件超えたら最古を archive に移送する
 
 2. **`WORKFLOW.md` を更新する**
    - 現在の設計・パラメータ・Replay結果・次のタスクを最新状態に書き直す
@@ -87,7 +88,8 @@
 |---------|------|
 | `bitget-python-sdk-api/WORKFLOW.md` | 現在の状態・次のタスク（**唯一の正本**） |
 | `bitget-python-sdk-api/.claude/memory/signal_ledger.md` | **シグナル候補・レジーム×方向マッピング・検証実績の唯一の正本**（51候補マスター） |
-| `bitget-python-sdk-api/.claude/memory/lessons.md` | 過去の失敗・再発防止（V9含む） |
+| `bitget-python-sdk-api/.claude/memory/lessons_active.md` | 過去の失敗・再発防止（直近36件・常時参照） |
+| `bitget-python-sdk-api/.claude/memory/lessons_archive.md` | L-102以前のアーカイブ（必要時のみ） |
 | `bitget-python-sdk-api/.claude/memory/project_v9_progress.md` | V9実装進捗（参照用） |
 
 ---

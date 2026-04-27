@@ -2,7 +2,7 @@
 
 > ⚠️ **このファイルがシグナル管理の唯一の正本です。**
 > シグナル一覧・レジーム×方向マッピング・検証結果・実装ステータスは全部ここに集約。
-> WORKFLOW.md / CLAUDE.md / lessons.md / scripts/signals/ のシグナル情報はこのファイルが正本。
+> WORKFLOW.md / CLAUDE.md / lessons_active.md / scripts/signals/ のシグナル情報はこのファイルが正本。
 > 矛盾を見つけたら**このファイルを更新**して、他は参照リンクに留める。
 
 ---
