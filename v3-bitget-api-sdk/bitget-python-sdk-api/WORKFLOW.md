@@ -166,90 +166,44 @@ for threshold in candidates:
 
 ## 🔴 現在のフェーズ（2026-04-27時点・唯一の正本）
 
-**フェーズ: regime判定研究中（教師なし学習プロジェクト）**
+**フェーズ: regime判定研究中（判定軸 網羅マトリクスやり直し）**
 **Priority個別最適化: regime確定まで全停止**
 
-### 経緯
-- 2026-04-25 look-ahead バグ発覚 → 既採用パラメータが look-ahead プレミアム前提と判明
-- 2026-04-25〜26 HMM 研究プロジェクト開始（段階1: ガウシアンHMM）
-- 2026-04-26 段階1 完了 → 「2割合致」で実質不合格
-- 2026-04-27 ML手法網羅性が不十分と判明 → 段階計画を再設計（下記）
+> **regime研究の詳細は `.claude/memory/regime_research.md` が唯一の正本**
+> （経緯タイムライン・判定軸マトリクス・試行履歴・既知リスク・凍結リソース・候補B評価軸・次の優先未試行セル を全集約）
+>
+> **段階1〜8の表記は廃止**。判定軸マトリクスの 🔲 セルを全部潰すまで撤退禁止（feedback_exhaustive_search）。
 
-### regime研究 段階計画（2026-04-27 改訂版）
+### 要点抜粋（詳細は regime_research.md）
 
-| 段階 | 手法 | 状態 | 備考 |
-|------|------|------|------|
-| 1 | Gaussian HMM | ✅ 完了・不合格（2割合致） | 詳細は archive/workflow/WORKFLOW_20260427.md |
-| 2 | GMM-HMM | 🔲 未着手 | pomegranate 要インストール |
-| 3 | UMAP + HDBSCAN | 🔲 未着手 | llvmlite ビルド要対応 |
-| 4 | **HSMM**（Hidden Semi-Markov）| 🔲 **新規追加・未着手** | 状態継続時間を明示モデル化・「2割合致」直接対策 |
-| 5 | **Markov Switching GARCH/AR** | 🔲 **新規追加・未着手** | 金融時系列レジーム研究の標準手法 |
-| 6 | **変化点検知** (ruptures/BOCPD/PELT) | 🔲 **新規追加・未着手** | 「天井底検知」=レジーム転換点検出 |
-| 7 | LSTM / Transformer | 🔲 検討 | ground truth 必要・L-129 過学習リスク |
-
-### 判定基準（候補B・全段階共通）
-
-- **UPTREND判定時 平均日次リターン > +1.22%** (= mean+0.3σ)
-- **DOWNTREND判定時 平均日次リターン < -0.82%** (= mean-0.3σ)
-- **RANGE判定時 |平均日次リターン| < 0.34%** (= 0.1σ)
-- **状態継続中央値 ≥ 3日 かつ ≤ 30日**
-- 統計的有意性: t検定で p<0.05 を補助確認
-
-### 凍結リソース（次セッション使用可能）
-
-- `models/hmm_1h_K3_frozen.pkl` — 段階1 凍結モデル（ma20/ma50_slope/di_diff・K=3・seed=13）
-- `results/phase3_hmm_1h_K3_states.csv` — 状態CSV（43,758行・1h単位・5年）
-- `results/phase3_hmm_1h_K3_summary.json`
-- `dashboard/data/phase3_hmm.json` — ダッシュボード ⑨タブ（1825日 × 60ヶ月）
-- `data/funding_rate_BTCUSDT_5y.csv` — 5481件・Binance（後処理用）
-- `results/phase3_grid_search_summary.csv` — 27パターン探索結果
-- `results/phase1_features_daily.csv` — Day 2 特徴量（1778行×8）
-- `data/BTCUSDT-5m-2020-01-01_2024-12-31_5y.csv` — 5年5m足
-- `results/regime_mom_1h_states.csv` — 2026-04-27 試行: Mom 1h(10) ルール判定（候補B数値合格・継続性ダメ）
-
-### ライブラリ状況
-
-- ✅ scikit-learn 1.8.0 / pandas 2.3.3 / numpy 2.4.0 / ta / hmmlearn 0.3.3
-- ⚠️ hdbscan / umap-learn: llvmlite ビルド失敗（段階3で対応必要）
-- ⚠️ pomegranate: 未インストール（段階2で対応必要）
-- ⚠️ ruptures: 未インストール（段階6で対応必要）
-- ⚠️ statsmodels（MS-AR用）: 要確認
+- **既試行**: 日足ルール（採用中）/ 1h+ヒステリシス（不採用）/ v3スコアリング（不採用）/ Gaussian HMM（不合格）/ Mom 1h ルール（不採用）/ PELT（不採用）/ 教師あり週52本+RF/GB（L-129過学習）
+- **未試行多数**: 5m/15m/4h 粒度・モメンタム/ボラ/出来高 単独主軸・マルチ時間軸合議・階層型・モデル合議・MiniROCKET/TS2Vec 等
+- **評価本丸**: 月単位の支配 regime が肉眼判定と一致するか（L-126）
 
 ---
 
-## 🔴 次のタスク（2026-04-27時点・唯一の正本）
+## 🔴 次のタスク（2026-04-27時点）
 
-**まこさん選定待ち**: 段階2-7のうちどれから着手するか
+**判定軸マトリクスの優先未試行セルから着手**（regime_research.md §8 参照）。
 
-### 私の推奨優先順（参考）
-
-| 優先 | 段階 | 理由 |
-|------|------|------|
-| 1 | **段階4 HSMM** | HMM の最大欠点（状態継続時間幾何分布固定）に直接対処。「2割合致」の本質的原因に最も効く可能性 |
-| 2 | **段階6 変化点検知** | まこさんの「Mom = 天井底検知」発言と直結。レジーム転換点を独立検出 |
-| 3 | **段階5 MS-GARCH** | 金融時系列レジーム研究で実績豊富 |
-| 4 | 段階2 GMM-HMM | 段階1 の自然な拡張 |
-| 5 | 段階3 UMAP+HDBSCAN | 教師なしクラスタリング |
-
-※ 上記は推測。最終判断はまこさん。
+候補（regime_research.md §8 抜粋・着手順は議論で確定）:
+1. 階層型（月支配＞日内補正＞5m発火条件）
+2. 5m足直接判定
+3. マルチ時間軸合議（日+4h+1h 多数決）
+4. モメンタム系（RSI/Stoch）単独主軸
+5. MiniROCKET（教師あり時系列分類）
 
 ### Step 0 で必ず確認すること
 
-セッション開始時に「現フェーズ = regime研究中」「次のタスク = 段階N」を声に出してから提案開始する。
+セッション開始時に「現フェーズ = regime研究中（判定軸マトリクス）」「次の未試行セル」を regime_research.md §2/§8 から声に出してから提案開始する。
 
 ---
 
 ## 試行禁止リスト
 
 ### regime判定研究関連
-- ❌ HMM 特徴量に Funding Rate / OI / L-S Ratio を直接追加（L-134・5回試行で全失敗）
-- ❌ HMM 特徴量にボラ系（ATR/BB幅）を方向系と混合（L-134・分離度ゼロ）
-- ❌ K=2 採択（候補B不合格・上昇バイアス問題）
-- ❌ ARI 全体値だけで凍結可否判断（L-135・合格 seed 内 ARI を見る）
-- ❌ 教師あり学習で ground truth に完全フィット狙い（L-129 で30-40%天井確認）
-- ❌ ground truth との完全一致を目標にする（リターン分布評価が正本）
-- ❌ 段階1合格後に段階2/3に進む過剰最適化（合格時のみ即Replay移行）
-- ❌ 根拠なき閾値提示（L-130・対象データ統計を必ず先に確認）
+
+→ **`.claude/memory/regime_research.md` §7 が正本**。重複を避けるためここでは省略。
 
 ### Priority最適化関連（regime確定まで全停止）
 - ❌ Replay組み込み・Priority最適化への着手（regime確定まで全停止）
@@ -334,7 +288,8 @@ python3 runner/replay_csv.py data/BTCUSDT-5m-2025-04-01_03-31_365d.csv --regime
 
 - **WORKFLOW.md**（このファイル・現状の唯一の正本）
 - **CLAUDE.md**（v3-bitget-api-sdk/CLAUDE.md・設計思想・絶対不変）
-- **.claude/memory/lessons.md**（L-126〜L-135 が最新・regime研究の経緯）
+- **.claude/memory/lessons_active.md**（直近36件・L-103〜L-135／regime研究の経緯はL-126〜L-135）
+- **.claude/memory/lessons_archive.md**（L-102以前のアーカイブ・必要時のみ）
 - **.claude/memory/signal_ledger.md**（シグナル候補唯一の正本）
 - **archive/workflow/WORKFLOW_20260427.md**（直前の Day 2/3 完了報告・マスタープラン9本詳細）
 - **dashboard/index.html**（⑨タブで月別判定確認可）
