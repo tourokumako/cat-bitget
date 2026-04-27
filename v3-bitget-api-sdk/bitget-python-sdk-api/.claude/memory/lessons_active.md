@@ -21,6 +21,13 @@
 
 **関連:** L-126（月単位支配 regime が本丸）/ regime_research.md §10.2「365日データの構造的限界」
 
+**1826日データで解消確認（2026-04-27 同日）:**
+- 1826日肉眼ラベル充足後、`data/BTCUSDT-5m-2021-04-01_03-31_1826d.csv` で R01〜R03 再走
+- M_dom 分布: range 31月 / uptrend 17月 / **downtrend 12月**（365日では DT 0月）
+- R03 predict: range 938日 / uptrend 521日 / **downtrend 367日**（365日では DT 0日）
+- dt_mean_pct に値が入り、harness が正しく動作することを実証
+- 365日スコアは予選・1826日スコアが本選、を運用ルールとして確立
+
 ---
 
 > **方針**: 直近36件を active として常時参照。L-102以前は `lessons_archive.md` 参照（必要時のみ読み込み）。

@@ -231,13 +231,11 @@ for threshold in candidates:
 
 **並行2タスク（ラベル付け中・私=設計）**:
 
-### A. まこさん作業: 1826日肉眼ラベル付け
+### A. まこさん作業: 1826日肉眼ラベル付け ✅ 完了（2026-04-27）
+- 1826/1826 (100%) — downtrend 536日(29.4%) / range 691日(37.8%) / uptrend 599日(32.8%)
+- 期間: 2021-04-01〜2026-03-31
 - UI: http://localhost:8765/index.html → タブ⑤「日次肉眼判定（5年）」
-- 起動: `python3 scripts/dashboard_server.py`（既存 http.server は kill）
 - 進捗確認: `python3 scripts/regime_label_progress.py`
-- 現状: 365/1826 (20.0%) — 残 1461日
-- 既存365日のラベルは継承済（2025-04-01〜2026-03-31）
-- [💾 保存] ボタンで CSV 自動書き戻し（バックアップ自動）
 
 ### B. Claude 作業: レシピ型 grid search 設計
 
@@ -255,8 +253,29 @@ for threshold in candidates:
 - ✅ §10.4 レシピ表 R01〜R35（35件・**2026-04-27 凍結**・全件採用）
 - ✅ harness 実装（`cat/recipe/` パッケージ + `scripts/recipe_grid_search.py` + `configs/recipes.yaml`・2026-04-27）
 - ✅ smoke test 合格（R01〜R03・365日ラベルで exit 0・致命バグなし。hierarchical の構造的限界を L-138 として記録）
-- ⬜ **次の作業**: configs/recipes.yaml に R04〜R35（残32件）を追加 → 全件 default-grid で smoke test
-- ⬜ ラベル進捗 70%+ 到達後: 本走査（S2 閾値前向き選択 → S3 上位N抽出 → S4 クロス世代 → S5 最終OOS）
+- ✅ 1826日OHLCV取得（`data/BTCUSDT-5m-2021-04-01_03-31_1826d.csv`・525,708バー・32.7MB・2026-04-27）
+- ✅ R01〜R03 を 1826日全期間で再走 → L-138 解消確認（DT予測 367日出る）
+- ⬜ **次の作業**: configs/recipes.yaml に R04〜R35（残32件）を追加 → 全件 default-grid で本走査
+- ⬜ 全35レシピ default 通過後: S2 閾値前向き選択（5×5 grid）→ S3 上位N抽出 → S4 クロス世代 → S5 最終OOS
+
+#### 1826日 default-grid 結果（R01〜R03 / 2026-04-27）
+
+| Recipe | monthly | daily | DT% | UT% | RANGE% | 候補B |
+|--------|---------|-------|-----|-----|--------|-------|
+| R03 月支配＋日補正 | 1.00 | 0.52 | -0.24 | +0.28 | ±0.03 | ❌（M_dom直結のため評価対象外）|
+| R02 1h多数決 | 0.42 | 0.37 | -0.73 | +0.73 | ±0.11 | ❌（DT基準-0.82%まで0.09pt）|
+| R01 ベースライン | 0.22 | 0.33 | -0.03 | +0.18 | ±0.57 | ❌ |
+
+> 観察: R02 が R01 を全項目で上回る（多時間軸合議が単一時間軸より有意な兆候）。R02 の DT は基準にあと 0.09pt なので R04〜R35 で DT 系シグナル強化レシピが通る可能性。
+
+#### 1826日OHLCV 再取得手順（コミット対象外のため）
+
+```
+echo "=====🚀 RUN START $(date) =====" && \
+cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
+python3 runner/fetch_ohlcv.py --start 2021-04-01 --end 2026-04-01
+# → data/BTCUSDT-5m-2021-04-01_03-31_1826d.csv (約1分・32.7MB)
+```
 
 **設計探索戦略**: S1テンプレ起案 → S2 閾値前向き選択 → S3 上位N抽出（R01比NET方向チェック含む）→ S4 クロス世代 → S5 最終OOS
 
