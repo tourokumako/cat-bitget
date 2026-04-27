@@ -4,5 +4,23 @@ __pycache__/
 .venv/
 venv/
 logs/
+
 # Secrets: 絶対にコミットしない
 config/bitget_keys.json
+**/config/bitget_keys.json
+
+# データ・結果・モデル（容量大・再生成可能）
+# ※ dashboard/data/ はダッシュボード表示用なので除外しない
+v3-bitget-api-sdk/bitget-python-sdk-api/data/
+v3-bitget-api-sdk/bitget-python-sdk-api/results/
+v3-bitget-api-sdk/bitget-python-sdk-api/models/
+*.csv
+*.pkl
+*.zip
+# dashboard 配下の json は tracking 維持
+!**/dashboard/data/*.json
+
+# 一時ファイル
+*.bak
+.env
+**/state/
