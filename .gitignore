@@ -14,6 +14,8 @@ config/bitget_keys.json
 v3-bitget-api-sdk/bitget-python-sdk-api/data/
 v3-bitget-api-sdk/bitget-python-sdk-api/results/
 v3-bitget-api-sdk/bitget-python-sdk-api/models/
+# regime_prototype は試作版出力（80MB超・再生成可・scripts/regime_classifier_prototype.py で生成）
+v3-bitget-api-sdk/bitget-python-sdk-api/dashboard/regime_prototype/
 *.csv
 *.pkl
 *.zip

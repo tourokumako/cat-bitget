@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <title>cat-bitget dashboard</title>
-<link rel="stylesheet" href="assets/style.css" />
+<link rel="stylesheet" href="assets/style.css?v=recipe-check-20260428" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
@@ -20,6 +20,9 @@
     <button data-tab="phase1_features">⑦ HMM特徴量</button>
     <button data-tab="phase2_hmm">⑧ HMMレジーム検証</button>
     <button data-tab="phase3_hmm">⑨ HMM 1h K=3 (採択候補)</button>
+    <button data-tab="recipe_check">⑩ レシピ判定検証</button>
+    <button data-tab="regime_proto">⑪ レジーム試作</button>
+    <button data-tab="samples_4h">⑫ 4h肉眼判定（2025年）</button>
   </nav>
   <small id="source-note"></small>
 </header>
@@ -502,8 +505,214 @@
       </table>
     </div>
   </section>
+
+  <section id="recipe_check" class="tab">
+    <h2>レシピ判定検証（肉眼正解 vs レシピ予測・1826日）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      configs/recipes.yaml の各レシピを 1826日（2021-04-01〜2026-03-31）の肉眼ラベルと突合した結果。<br>
+      レシピを選ぶと、月別の支配ラベル比較（上=肉眼/下=予測）と日別テーブルが切り替わります。<br>
+      <strong>不一致のみフィルタで誤判定日を可視化できます。捏造防止用：このページは実データのみ表示。</strong>
+    </p>
+
+    <div style="margin-bottom:14px;">
+      レシピ:
+      <select id="rc-recipe-select" style="font-family:monospace;"></select>
+      &nbsp;<span id="rc-recipe-detail" style="color:#555;font-size:0.85em;"></span>
+    </div>
+
+    <div id="rc-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+      <div class="kpi"><div class="kpi-label">月単位支配 合致率</div><div class="kpi-value" id="rc-monthly-acc">—</div></div>
+      <div class="kpi"><div class="kpi-label">日次合致率</div><div class="kpi-value" id="rc-daily-acc">—</div></div>
+      <div class="kpi"><div class="kpi-label">不一致日数</div><div class="kpi-value" id="rc-mismatch-count">—</div></div>
+      <div class="kpi"><div class="kpi-label">候補B</div><div class="kpi-value" id="rc-cb-pass">—</div></div>
+      <div class="kpi"><div class="kpi-label">期間</div><div class="kpi-value" id="rc-period">—</div></div>
+    </div>
+
+    <h3>予測ラベル分布 vs 肉眼ラベル分布</h3>
+    <table class="data-table" id="rc-dist-table" style="max-width:520px;">
+      <thead><tr><th>regime</th><th>肉眼（日数）</th><th>予測（日数）</th><th>差</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h3 style="margin-top:18px;">価格チャート + 背景色比較（上半分=肉眼 / 下半分=レシピ予測）</h3>
+    <p style="color:#555;font-size:0.85em;">
+      上下同色=日次一致 / 上下違う色=日次ミス。月フィルタで詳細期間を切り替え可能。
+    </p>
+    <div style="margin-bottom:8px;">
+      表示期間:
+      <select id="rc-chart-month-filter">
+        <option value="all">全期間（1826日）</option>
+      </select>
+    </div>
+    <div class="chart-wrap" style="height:400px;"><canvas id="rc-price-chart"></canvas></div>
+
+    <h3 style="margin-top:18px;">月別ラベル比較（上半分=肉眼支配 / 下半分=レシピ予測支配）</h3>
+    <p style="color:#555;font-size:0.85em;">
+      赤=downtrend / 灰=range / 緑=uptrend。上下同色=一致 / 上下違う色=月支配ミス。クリックで月詳細にスクロール。
+    </p>
+    <div id="rc-monthly-strip" style="display:flex;flex-wrap:wrap;gap:2px;"></div>
+
+    <h3 style="margin-top:18px;">日別テーブル</h3>
+    <div style="margin-bottom:8px;">
+      フィルタ:
+      <select id="rc-row-filter">
+        <option value="all">すべて</option>
+        <option value="mismatch">不一致のみ（レシピ誤判定）</option>
+        <option value="match">一致のみ</option>
+      </select>
+      &nbsp;月:
+      <select id="rc-month-filter">
+        <option value="all">全期間</option>
+      </select>
+      <span id="rc-row-count" style="margin-left:14px;color:#555;"></span>
+    </div>
+    <div style="max-height:520px;overflow-y:auto;border:1px solid #ddd;">
+      <table class="data-table" id="rc-day-table">
+        <thead><tr>
+          <th>日付</th><th>曜日</th><th>close</th>
+          <th>肉眼</th><th>レシピ予測</th><th>判定</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:18px;">全レシピ ランキング（クリックで切替）</h3>
+    <div style="max-height:480px;overflow-y:auto;border:1px solid #ddd;">
+      <table class="data-table" id="rc-rank-table">
+        <thead><tr>
+          <th>順位</th><th>ID</th><th>ラベル</th>
+          <th>monthly</th><th>daily</th>
+          <th>候補B</th><th>mode_run</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="regime_proto" class="tab">
+    <h2>⑪ レジーム試作（バージョン × 粒度切替）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      上半分=肉眼ラベル / 下半分=試作版予測 の背景塗り。緑=uptrend / 灰=range / 赤=downtrend。<br>
+      新しい試作版を実行すると <code>index.json</code> 経由で自動的に追加されます。
+    </p>
+
+    <div id="rp-controls" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-end;">
+      <label>バージョン: <select id="rp-version"></select></label>
+      <label>粒度:
+        <select id="rp-granularity">
+          <option value="1d">1日</option>
+          <option value="4h" selected>4時間</option>
+          <option value="1h">1時間</option>
+          <option value="5m">5分</option>
+        </select>
+      </label>
+      <label>表示期間: <select id="rp-month"></select></label>
+      <span id="rp-loading" style="color:#888;"></span>
+    </div>
+
+    <div id="rp-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      <div class="kpi"><div class="kpi-label">日次一致率</div><div class="kpi-value" id="rp-acc-1d">—</div></div>
+      <div class="kpi"><div class="kpi-label">1時間一致率</div><div class="kpi-value" id="rp-acc-1h">—</div></div>
+      <div class="kpi"><div class="kpi-label">分布</div><div class="kpi-value" id="rp-dist">—</div></div>
+    </div>
+
+    <div id="rp-spec" style="background:#f8f8f8;border:1px solid #ddd;padding:10px 14px;margin-bottom:14px;font-size:0.9em;"></div>
+
+    <div style="overflow-x:auto;margin-bottom:16px;border-radius:8px;">
+      <div class="chart-wrap" style="height:420px;width:200%;min-width:200%;margin-bottom:0;"><canvas id="rp-chart"></canvas></div>
+    </div>
+
+    <h3 style="margin-top:18px;">日別テーブル（hourly 内訳付き）</h3>
+    <div style="margin-bottom:8px;">
+      フィルタ:
+      <select id="rp-day-filter">
+        <option value="all">すべて</option>
+        <option value="mismatch">不一致のみ</option>
+        <option value="match">一致のみ</option>
+      </select>
+      <span id="rp-day-count" style="margin-left:14px;color:#555;"></span>
+    </div>
+    <div style="max-height:520px;overflow-y:auto;border:1px solid #ddd;">
+      <table class="data-table" id="rp-day-table">
+        <thead><tr>
+          <th>日付</th><th>close</th><th>肉眼</th><th>予測(最頻)</th><th>判定</th>
+          <th>up時</th><th>range時</th><th>dn時</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="samples_4h" class="tab">
+    <h2>⑫ 4h 肉眼判定（2025年・サンプルラベル付け）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      ① 月切替で対象月を表示 → ② チャートで動きを確認 → ③ 連続4hバーをチェックボックスで複数選択 → ④ 一括APPLY<br>
+      期間: 2025-01-01 〜 2025-12-31（4h × 2190 バー）。<strong>全期間網羅は不要</strong>。「明らかにこのregime」という代表区間だけ付ける。<br>
+      入力後、画面上の <strong>[💾 保存]</strong> ボタンで CSV に書き戻されます（自動バックアップ付）。
+    </p>
+
+    <div id="s4-bulk-bar" style="position:sticky;top:0;background:#fffae6;border:1px solid #e0c068;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:10;">
+      <strong>一括適用:</strong>
+      <span>選択中 <span id="s4-selected-count">0</span> バー</span>
+      <select id="s4-bulk-label">
+        <option value="">— 判定 —</option>
+        <option value="uptrend">uptrend</option>
+        <option value="downtrend">downtrend</option>
+        <option value="range">range</option>
+        <option value="__clear__">（クリア）</option>
+      </select>
+      <button id="s4-apply-btn">APPLY</button>
+      <button id="s4-uncheck-all-btn" type="button">全チェック解除</button>
+      <span style="margin-left:auto;"></span>
+      <button id="s4-save-btn" type="button" style="background:#1976d2;color:#fff;font-weight:bold;padding:6px 18px;">💾 保存</button>
+      <span id="s4-save-status" style="margin-left:8px;color:#555;font-size:0.85em;"></span>
+      <span style="margin-left:14px;color:#555;font-size:0.85em;">
+        統計: <span id="s4-stats">—</span>
+      </span>
+    </div>
+
+    <h3>価格チャート + 現在のラベル背景色</h3>
+    <div style="margin-bottom:8px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+      <label>月切替:
+        <select id="s4-month-filter">
+          <option value="all">全期間（2025年）</option>
+        </select>
+      </label>
+      <label>粒度:
+        <select id="s4-granularity">
+          <option value="4h">4h</option>
+          <option value="1d">1d</option>
+        </select>
+      </label>
+    </div>
+    <div style="display:flex;align-items:stretch;background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:12px 12px 12px 0;margin-bottom:16px;">
+      <div style="flex:0 0 50px;height:760px;"><canvas id="s4-yaxis-chart"></canvas></div>
+      <div style="flex:1 1 auto;overflow-x:auto;">
+        <div style="height:760px;width:200%;min-width:200%;"><canvas id="s4-price-chart"></canvas></div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:18px;">4h バー別テーブル（チェックで選択 + 行単位ラベル変更可）</h3>
+    <div style="max-height:520px;overflow-y:auto;border:1px solid #ddd;">
+      <table class="data-table" id="s4-bar-table">
+        <thead><tr>
+          <th><input type="checkbox" id="s4-check-all-month"></th>
+          <th>4hバー（UTC）</th>
+          <th>open</th>
+          <th>close</th>
+          <th>変動%</th>
+          <th>判定</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:6px;color:#555;font-size:0.85em;">
+      保存先: <code>data/regime_samples_4h.csv</code>（保存ボタンで書き戻し・コピペ不要）
+    </div>
+  </section>
 </main>
 
-<script src="assets/app.js"></script>
+<script src="assets/app.js?v=samples4h-logauto-20260428"></script>
 </body>
 </html>

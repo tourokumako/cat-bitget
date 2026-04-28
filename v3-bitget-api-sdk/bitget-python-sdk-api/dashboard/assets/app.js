@@ -1059,6 +1059,392 @@ async function renderTruthCheck() {
   document.getElementById("dh-save-btn").addEventListener("click", dhSaveLabels);
 }
 
+// ====== ⑫ 4h 肉眼判定（2025年・サンプルラベル付け） ======
+let S4_DATA = null;
+let S4_PRICE_CHART = null;
+let S4_YAXIS_CHART = null;
+const S4_STATE = {};  // timestamp_utc -> label
+const S4_SELECTED = new Set();
+let S4_CHART_ITEMS = [];  // {key, close, label, intensity}
+const S4_Y_STEP = 2000;
+let S4_Y_GLOBAL_MIN = 0;  // 2025年全期間で固定（月切替/粒度切替で変動しない）
+let S4_Y_GLOBAL_MAX = 0;
+
+function s4LabelColor(label) {
+  if (label === "uptrend") return "#4caf50";
+  if (label === "downtrend") return "#e53935";
+  if (label === "range") return "#9e9e9e";
+  return "#ffffff";
+}
+
+function s4LabelLight(label, intensity) {
+  // intensity = "strong" (default) | "weak" (1d 混在用・強度半分)
+  const w = intensity === "weak";
+  if (label === "uptrend")   return w ? "rgba(76, 175, 80, 0.11)" : "rgba(76, 175, 80, 0.22)";
+  if (label === "downtrend") return w ? "rgba(229, 57, 53, 0.11)" : "rgba(229, 57, 53, 0.22)";
+  if (label === "range")     return w ? "rgba(158, 158, 158, 0.09)" : "rgba(158, 158, 158, 0.18)";
+  return "rgba(255, 255, 255, 0)";
+}
+
+function s4BarChangePct(bar) {
+  if (!bar || bar.open === 0) return null;
+  return (bar.close - bar.open) / bar.open * 100;
+}
+
+const s4BackgroundPlugin = {
+  id: "s4BackgroundPlugin",
+  beforeDatasetsDraw(chart) {
+    const {ctx, chartArea, scales} = chart;
+    if (!chartArea || !S4_CHART_ITEMS.length) return;
+    const xScale = scales.x;
+    ctx.save();
+    for (let i = 0; i < S4_CHART_ITEMS.length; i++) {
+      const it = S4_CHART_ITEMS[i];
+      const x0 = xScale.getPixelForValue(i);
+      const x1 = (i + 1 < S4_CHART_ITEMS.length) ? xScale.getPixelForValue(i + 1) : chartArea.right;
+      const left = Math.max(x0, chartArea.left);
+      const right = Math.min(x1, chartArea.right);
+      if (right <= left) continue;
+      ctx.fillStyle = s4LabelLight(it.label, it.intensity);
+      ctx.fillRect(left, chartArea.top, right - left, chartArea.bottom - chartArea.top);
+    }
+    ctx.restore();
+  },
+};
+
+function s4UpdateStats() {
+  const total = S4_DATA.bars.length;
+  const counts = {uptrend: 0, downtrend: 0, range: 0, blank: 0};
+  for (const b of S4_DATA.bars) {
+    const l = S4_STATE[b.timestamp_utc] || "";
+    if (counts[l] !== undefined) counts[l]++;
+    else counts.blank++;
+  }
+  document.getElementById("s4-stats").textContent =
+    `up:${counts.uptrend} / dn:${counts.downtrend} / rg:${counts.range} / 空:${counts.blank} / 計:${total}`;
+}
+
+function s4UpdateSelectedCount() {
+  document.getElementById("s4-selected-count").textContent = String(S4_SELECTED.size);
+}
+
+function s4AggregateDaily(bars) {
+  // bars (4h) を日単位に集約。背景色 intensity 判定込み。
+  const byDay = new Map();
+  for (const b of bars) {
+    const day = b.timestamp_utc.slice(0, 10);
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(b);
+  }
+  const items = [];
+  for (const [day, list] of byDay) {
+    list.sort((a, b) => a.timestamp_utc.localeCompare(b.timestamp_utc));
+    const labels = list.map((b) => S4_STATE[b.timestamp_utc] || "");
+    const counts = {uptrend: 0, downtrend: 0, range: 0};
+    let blanks = 0;
+    for (const l of labels) {
+      if (counts[l] !== undefined) counts[l]++;
+      else blanks++;
+    }
+    const totalLabeled = labels.length - blanks;
+    let label = "";
+    let intensity = "strong";
+    if (totalLabeled === 0) {
+      label = "";
+    } else {
+      const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+      label = top[0];
+      const allSame = (top[1] === labels.length);
+      intensity = allSame ? "strong" : "weak";
+    }
+    items.push({
+      key: day,
+      close: list[list.length - 1].close,
+      label,
+      intensity,
+    });
+  }
+  items.sort((a, b) => a.key.localeCompare(b.key));
+  return items;
+}
+
+function s4RenderPriceChart() {
+  const monthFilter = document.getElementById("s4-month-filter").value;
+  const granularity = document.getElementById("s4-granularity").value;
+  const filteredBars = monthFilter === "all"
+    ? S4_DATA.bars.slice()
+    : S4_DATA.bars.filter((b) => b.timestamp_utc.startsWith(monthFilter));
+
+  if (granularity === "1d") {
+    S4_CHART_ITEMS = s4AggregateDaily(filteredBars);
+  } else {
+    S4_CHART_ITEMS = filteredBars.map((b) => ({
+      key: b.timestamp_utc,
+      close: b.close,
+      label: S4_STATE[b.timestamp_utc] || "",
+      intensity: "strong",
+    }));
+  }
+
+  const labels = S4_CHART_ITEMS.map((it) => {
+    if (granularity === "1d") return it.key;  // YYYY-MM-DD
+    return it.key.slice(5, 16).replace("T", " ");  // MM-DD HH:MM
+  });
+  const closes = S4_CHART_ITEMS.map((it) => it.close);
+
+  // Y軸: 表示中データの min/max + 上下 3% パディング（対数軸前提）
+  const dataMin = closes.length ? Math.min(...closes) : 1;
+  const dataMax = closes.length ? Math.max(...closes) : 1;
+  const yMin = dataMin * 0.97;
+  const yMax = dataMax * 1.03;
+
+  if (S4_PRICE_CHART) S4_PRICE_CHART.destroy();
+  const ctx = document.getElementById("s4-price-chart").getContext("2d");
+  S4_PRICE_CHART = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: granularity === "1d" ? "BTC close (1d)" : "BTC close (4h)",
+        data: closes,
+        borderColor: "#1976d2",
+        backgroundColor: "transparent",
+        tension: 0.1,
+        pointRadius: monthFilter === "all" ? 0 : 1.5,
+        borderWidth: 1.5,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {mode: "index", intersect: false},
+      plugins: {
+        legend: {display: false},
+        tooltip: {
+          callbacks: {
+            afterLabel: (item) => {
+              const it = S4_CHART_ITEMS[item.dataIndex];
+              if (!it) return "";
+              if (granularity === "1d") {
+                const labText = it.label || "—";
+                const mix = it.label && it.intensity === "weak" ? "（混在）" : "";
+                return `日支配ラベル: ${labText}${mix}`;
+              }
+              return `肉眼ラベル: ${it.label || "—"}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {ticks: {maxTicksLimit: 24}},
+        y: {
+          display: false,
+          type: "logarithmic",
+          min: yMin,
+          max: yMax,
+        },
+      },
+      layout: {padding: {left: 0, right: 0}},
+    },
+    plugins: [s4BackgroundPlugin],
+  });
+
+  // Y軸専用チャート（左固定・本体と同じ min/max/stepSize）
+  if (S4_YAXIS_CHART) S4_YAXIS_CHART.destroy();
+  const yaxisCtx = document.getElementById("s4-yaxis-chart").getContext("2d");
+  S4_YAXIS_CHART = new Chart(yaxisCtx, {
+    type: "line",
+    data: {
+      labels: [""],
+      datasets: [{data: [yMin], borderColor: "transparent", pointRadius: 0}],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      layout: {padding: {left: 20, right: 0, top: 0, bottom: 0}},
+      plugins: {legend: {display: false}, tooltip: {enabled: false}},
+      scales: {
+        x: {display: false, offset: false},
+        y: {
+          type: "logarithmic",
+          min: yMin,
+          max: yMax,
+          ticks: {
+            callback: (v) => {
+              // 対数軸では Chart.js が自動で目盛り選択。
+              // 5桁・6桁の整数を「k」表記に圧縮（例: 90,000 → 90k）して幅を抑える
+              const n = Number(v);
+              if (n >= 1000) return (n / 1000).toFixed(0) + "k";
+              return n.toLocaleString();
+            },
+            padding: 0,
+            maxTicksLimit: 12,
+          },
+          grid: {display: false},
+          border: {display: false},
+          position: "right",
+        },
+      },
+    },
+  });
+}
+
+function s4RenderBarTable() {
+  const monthFilter = document.getElementById("s4-month-filter").value;
+  const tbody = document.querySelector("#s4-bar-table tbody");
+  tbody.innerHTML = "";
+  const filtered = monthFilter === "all"
+    ? S4_DATA.bars
+    : S4_DATA.bars.filter((b) => b.timestamp_utc.startsWith(monthFilter));
+  for (const b of filtered) {
+    const lab = S4_STATE[b.timestamp_utc] || "";
+    const tr = document.createElement("tr");
+    tr.style.background = s4LabelLight(lab);
+    const change = s4BarChangePct(b);
+    const checkbox = `<input type="checkbox" class="s4-row-check" data-ts="${b.timestamp_utc}" ${S4_SELECTED.has(b.timestamp_utc) ? "checked" : ""}>`;
+    const labelCell = lab
+      ? `<strong style="color:${s4LabelColor(lab)};">${lab}</strong>`
+      : "—";
+    const tsDisplay = b.timestamp_utc.slice(0, 16).replace("T", " ");
+    tr.innerHTML =
+      `<td>${checkbox}</td>` +
+      `<td>${tsDisplay}</td>` +
+      `<td class="num">${Number(b.open).toFixed(0)}</td>` +
+      `<td class="num">${Number(b.close).toFixed(0)}</td>` +
+      `<td class="${change != null && change >= 0 ? 'num pos' : 'num neg'}">${change != null ? change.toFixed(2) + "%" : "—"}</td>` +
+      `<td>${labelCell}</td>`;
+    tbody.appendChild(tr);
+  }
+  tbody.querySelectorAll(".s4-row-check").forEach((cb) => {
+    cb.addEventListener("change", (ev) => {
+      ev.stopPropagation();
+      const ts = ev.target.dataset.ts;
+      if (ev.target.checked) S4_SELECTED.add(ts);
+      else S4_SELECTED.delete(ts);
+      s4UpdateSelectedCount();
+    });
+  });
+}
+
+function s4ApplyBulk() {
+  if (S4_SELECTED.size === 0) {
+    alert("4hバーが1つも選択されていません");
+    return;
+  }
+  const label = document.getElementById("s4-bulk-label").value;
+  if (!label) {
+    alert("判定（uptrend/downtrend/range/クリア）を選んでください");
+    return;
+  }
+  const apply = label === "__clear__" ? "" : label;
+  for (const ts of S4_SELECTED) {
+    S4_STATE[ts] = apply;
+  }
+  S4_SELECTED.clear();
+  document.getElementById("s4-bulk-label").value = "";
+  document.getElementById("s4-check-all-month").checked = false;
+  s4UpdateSelectedCount();
+  s4RenderPriceChart();
+  s4RenderBarTable();
+  s4UpdateStats();
+}
+
+function s4UncheckAll() {
+  S4_SELECTED.clear();
+  document.getElementById("s4-check-all-month").checked = false;
+  document.querySelectorAll(".s4-row-check").forEach((cb) => { cb.checked = false; });
+  s4UpdateSelectedCount();
+}
+
+function s4CheckAllVisible() {
+  const checked = document.getElementById("s4-check-all-month").checked;
+  const monthFilter = document.getElementById("s4-month-filter").value;
+  const visible = monthFilter === "all"
+    ? S4_DATA.bars
+    : S4_DATA.bars.filter((b) => b.timestamp_utc.startsWith(monthFilter));
+  if (checked) {
+    for (const b of visible) S4_SELECTED.add(b.timestamp_utc);
+  } else {
+    for (const b of visible) S4_SELECTED.delete(b.timestamp_utc);
+  }
+  document.querySelectorAll(".s4-row-check").forEach((cb) => {
+    cb.checked = S4_SELECTED.has(cb.dataset.ts);
+  });
+  s4UpdateSelectedCount();
+}
+
+function s4PopulateMonthFilter() {
+  const sel = document.getElementById("s4-month-filter");
+  const months = Array.from(new Set(S4_DATA.bars.map((b) => b.timestamp_utc.slice(0, 7)))).sort();
+  for (const m of months) {
+    const opt = document.createElement("option");
+    opt.value = m; opt.textContent = m;
+    sel.appendChild(opt);
+  }
+}
+
+async function s4SaveLabels() {
+  const btn = document.getElementById("s4-save-btn");
+  const status = document.getElementById("s4-save-status");
+  btn.disabled = true;
+  status.textContent = "保存中…";
+  status.style.color = "#555";
+  const labels = S4_DATA.bars.map((b) => ({
+    timestamp_utc: b.timestamp_utc,
+    label: S4_STATE[b.timestamp_utc] || "",
+  }));
+  try {
+    const res = await fetch("/api/save_4h_labels", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({labels}),
+    });
+    const j = await res.json();
+    if (!res.ok || !j.ok) {
+      status.textContent = `保存失敗: ${j.error || res.status}`;
+      status.style.color = "#c62828";
+    } else {
+      const ts = new Date().toLocaleTimeString("ja-JP");
+      status.textContent = `✓ ${j.rows}行保存 (${ts}・backup: ${j.backup})`;
+      status.style.color = "#2e7d32";
+    }
+  } catch (e) {
+    status.textContent = `保存失敗: ${e.message}`;
+    status.style.color = "#c62828";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function renderSamples4h() {
+  S4_DATA = await fetchJSON("data/regime_samples_4h.json");
+  const initial = S4_DATA.labels || {};
+  for (const b of S4_DATA.bars) {
+    S4_STATE[b.timestamp_utc] = initial[b.timestamp_utc] || "";
+  }
+  // 2025年全期間の min/max を固定値として保存（Y軸スケール一貫性のため）
+  const allCloses = S4_DATA.bars.map((b) => b.close);
+  S4_Y_GLOBAL_MIN = Math.floor(Math.min(...allCloses) / S4_Y_STEP) * S4_Y_STEP;
+  S4_Y_GLOBAL_MAX = Math.ceil(Math.max(...allCloses) / S4_Y_STEP) * S4_Y_STEP;
+  s4PopulateMonthFilter();
+  s4RenderPriceChart();
+  s4RenderBarTable();
+  s4UpdateStats();
+  s4UpdateSelectedCount();
+
+  document.getElementById("s4-month-filter").addEventListener("change", () => {
+    s4RenderPriceChart();
+    s4RenderBarTable();
+    document.getElementById("s4-check-all-month").checked = false;
+  });
+  document.getElementById("s4-granularity").addEventListener("change", s4RenderPriceChart);
+  document.getElementById("s4-apply-btn").addEventListener("click", s4ApplyBulk);
+  document.getElementById("s4-uncheck-all-btn").addEventListener("click", s4UncheckAll);
+  document.getElementById("s4-check-all-month").addEventListener("change", s4CheckAllVisible);
+  document.getElementById("s4-save-btn").addEventListener("click", s4SaveLabels);
+}
+
 // ====== ⑥ ML予測検証タブ ======
 let ML_DATA = null;
 let ML_PRICE_CHART = null;
@@ -1914,6 +2300,293 @@ async function renderPhase3Hmm() {
   document.getElementById("ph3-next-btn").addEventListener("click", () => ph3StepPeriod(1));
 }
 
+let RC_DATA = null;
+let RC_CURRENT_RECIPE = null;
+let RC_CHART_DAYS = [];
+let RC_CHART = null;
+
+const rcBackgroundPlugin = {
+  id: "rcBackgroundPlugin",
+  beforeDatasetsDraw(chart) {
+    const {ctx, chartArea, scales} = chart;
+    if (!chartArea || !RC_CHART_DAYS.length) return;
+    const xScale = scales.x;
+    const midY = (chartArea.top + chartArea.bottom) / 2;
+    ctx.save();
+    for (let i = 0; i < RC_CHART_DAYS.length; i++) {
+      const d = RC_CHART_DAYS[i];
+      const x0 = xScale.getPixelForValue(i);
+      const x1 = (i + 1 < RC_CHART_DAYS.length) ? xScale.getPixelForValue(i + 1) : chartArea.right;
+      const left = Math.max(x0, chartArea.left);
+      const right = Math.min(x1, chartArea.right);
+      if (right <= left) continue;
+      ctx.fillStyle = mlLabelLight(d.true);
+      ctx.fillRect(left, chartArea.top, right - left, midY - chartArea.top);
+      ctx.fillStyle = mlLabelLight(d.pred);
+      ctx.fillRect(left, midY, right - left, chartArea.bottom - midY);
+    }
+    ctx.strokeStyle = "rgba(0,0,0,0.2)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(chartArea.left, midY);
+    ctx.lineTo(chartArea.right, midY);
+    ctx.stroke();
+    ctx.restore();
+  },
+};
+
+function rcRenderPriceChart(rid) {
+  const monthFilter = document.getElementById("rc-chart-month-filter").value;
+  const days = rcRecipeDays(rid);
+  RC_CHART_DAYS = monthFilter === "all" ? days.slice() : days.filter((d) => d.date.startsWith(monthFilter));
+  const canvas = document.getElementById("rc-price-chart");
+  if (RC_CHART) RC_CHART.destroy();
+  RC_CHART = new Chart(canvas, {
+    type: "line",
+    data: {
+      labels: RC_CHART_DAYS.map((d) => d.date),
+      datasets: [{
+        label: "close",
+        data: RC_CHART_DAYS.map((d) => d.close),
+        borderColor: "#1a1a1a",
+        backgroundColor: "rgba(0,0,0,0)",
+        borderWidth: 1.4,
+        pointRadius: 0,
+        tension: 0,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: {display: false},
+        tooltip: {
+          callbacks: {
+            afterBody(items) {
+              const idx = items[0].dataIndex;
+              const d = RC_CHART_DAYS[idx];
+              const mark = d.match === true ? "◯一致" : (d.match === false ? "✗ミス" : "—");
+              return `肉眼: ${d.true || "—"} / 予測: ${d.pred || "—"} ${mark}`;
+            },
+          },
+        },
+      },
+      scales: {x: {ticks: {maxTicksLimit: 14}}, y: {beginAtZero: false}},
+    },
+    plugins: [rcBackgroundPlugin],
+  });
+}
+
+function rcMonthMode(labels) {
+  const counts = {};
+  for (const l of labels) {
+    if (!l) continue;
+    counts[l] = (counts[l] || 0) + 1;
+  }
+  let best = null, bn = -1;
+  for (const k in counts) {
+    if (counts[k] > bn) { best = k; bn = counts[k]; }
+  }
+  return best;
+}
+
+function rcRecipeDays(rid) {
+  return RC_DATA.days.map((d) => ({
+    date: d.date,
+    close: d.close,
+    true: d.true,
+    pred: d.predicts[rid] || null,
+    match: d.matches[rid] === undefined ? null : d.matches[rid],
+  }));
+}
+
+function rcRenderRecipeDetail(rid) {
+  const r = RC_DATA.recipes.find((x) => x.id === rid);
+  if (!r) return "";
+  const tfs = r.timeframes.join(", ");
+  const inds = r.indicators.map((i) => `${i.tf}=${i.name}${i.period ? "(" + i.period + ")" : ""}`).join(" / ");
+  return `${r.label} | TF: ${tfs} | IND: ${inds} | AGG: intra=${r.aggregation_intra}, cross=${r.aggregation_cross}`;
+}
+
+function rcRenderSummary(rid) {
+  const r = RC_DATA.recipes.find((x) => x.id === rid);
+  if (!r) return;
+  document.getElementById("rc-monthly-acc").textContent =
+    r.monthly_acc != null ? `${(r.monthly_acc * 100).toFixed(1)}%` : "—";
+  document.getElementById("rc-daily-acc").textContent =
+    r.daily_acc != null ? `${(r.daily_acc * 100).toFixed(1)}%` : "—";
+  const days = rcRecipeDays(rid);
+  const mismatch = days.filter((d) => d.match === false).length;
+  document.getElementById("rc-mismatch-count").textContent = `${mismatch} / ${days.length}日`;
+  document.getElementById("rc-cb-pass").textContent = r.candidate_b_pass ? "✅" : "❌";
+  document.getElementById("rc-period").textContent =
+    `${RC_DATA.period.start} 〜 ${RC_DATA.period.end}`;
+  document.getElementById("rc-recipe-detail").textContent = rcRenderRecipeDetail(rid);
+}
+
+function rcRenderDistTable(rid) {
+  const days = rcRecipeDays(rid);
+  const trueDist = {downtrend: 0, range: 0, uptrend: 0};
+  const predDist = {downtrend: 0, range: 0, uptrend: 0};
+  for (const d of days) {
+    if (d.true && trueDist[d.true] !== undefined) trueDist[d.true]++;
+    if (d.pred && predDist[d.pred] !== undefined) predDist[d.pred]++;
+  }
+  const tbody = document.querySelector("#rc-dist-table tbody");
+  tbody.innerHTML = "";
+  for (const reg of ["downtrend", "range", "uptrend"]) {
+    const tr = document.createElement("tr");
+    const diff = predDist[reg] - trueDist[reg];
+    const diffStr = diff >= 0 ? `+${diff}` : `${diff}`;
+    tr.innerHTML =
+      `<td><strong style="color:${mlLabelColor(reg)};">${reg}</strong></td>` +
+      `<td class="num">${trueDist[reg]}</td>` +
+      `<td class="num">${predDist[reg]}</td>` +
+      `<td class="num">${diffStr}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function rcRenderMonthlyStrip(rid) {
+  const days = rcRecipeDays(rid);
+  const byMonth = {};
+  for (const d of days) {
+    const m = d.date.slice(0, 7);
+    if (!byMonth[m]) byMonth[m] = {trues: [], preds: []};
+    byMonth[m].trues.push(d.true);
+    byMonth[m].preds.push(d.pred);
+  }
+  const wrap = document.getElementById("rc-monthly-strip");
+  wrap.innerHTML = "";
+  const months = Object.keys(byMonth).sort();
+  for (const m of months) {
+    const trueLab = rcMonthMode(byMonth[m].trues);
+    const predLab = rcMonthMode(byMonth[m].preds);
+    const cell = document.createElement("div");
+    cell.style.cssText = "min-width:62px;text-align:center;border:1px solid #ccc;cursor:pointer;font-size:0.78em;";
+    cell.title = `${m}\n肉眼: ${trueLab || "—"}\n予測: ${predLab || "—"}\n${trueLab === predLab ? "✓ 一致" : "✗ 不一致"}`;
+    cell.innerHTML =
+      `<div style="background:${mlLabelColor(trueLab)}40;padding:3px 4px;color:#000;border-bottom:1px solid #999;">${m.slice(2)}<br>${(trueLab || "").slice(0, 4)}</div>` +
+      `<div style="background:${mlLabelColor(predLab)}40;padding:3px 4px;color:#000;">${(predLab || "").slice(0, 4)}</div>`;
+    cell.addEventListener("click", () => {
+      document.getElementById("rc-month-filter").value = m;
+      rcRenderDayTable(rid);
+    });
+    wrap.appendChild(cell);
+  }
+}
+
+function rcRenderDayTable(rid) {
+  const filter = document.getElementById("rc-row-filter").value;
+  const monthFilter = document.getElementById("rc-month-filter").value;
+  const days = rcRecipeDays(rid);
+  const tbody = document.querySelector("#rc-day-table tbody");
+  tbody.innerHTML = "";
+  let count = 0;
+  for (const d of days) {
+    if (monthFilter !== "all" && !d.date.startsWith(monthFilter)) continue;
+    if (filter === "mismatch" && d.match !== false) continue;
+    if (filter === "match" && d.match !== true) continue;
+    count++;
+    const tlbl = d.true ? `<strong style="color:${mlLabelColor(d.true)};">${d.true}</strong>` : "—";
+    const plbl = d.pred ? `<strong style="color:${mlLabelColor(d.pred)};">${d.pred}</strong>` : "—";
+    const mark = d.match === true ? "◯" : (d.match === false ? "✗" : "—");
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td>${d.date}</td>` +
+      `<td>${mlDow(d.date)}</td>` +
+      `<td class="num">${d.close != null ? Number(d.close).toFixed(0) : "—"}</td>` +
+      `<td>${tlbl}</td>` +
+      `<td>${plbl}</td>` +
+      `<td>${mark}</td>`;
+    tbody.appendChild(tr);
+  }
+  document.getElementById("rc-row-count").textContent = `表示中: ${count}日`;
+}
+
+function rcRenderRankTable() {
+  const tbody = document.querySelector("#rc-rank-table tbody");
+  tbody.innerHTML = "";
+  const sorted = RC_DATA.recipes.slice().sort((a, b) => {
+    const am = a.monthly_acc ?? -1, bm = b.monthly_acc ?? -1;
+    if (bm !== am) return bm - am;
+    const ad = a.daily_acc ?? -1, bd = b.daily_acc ?? -1;
+    return bd - ad;
+  });
+  sorted.forEach((r, i) => {
+    const tr = document.createElement("tr");
+    tr.style.cursor = "pointer";
+    if (r.id === RC_CURRENT_RECIPE) tr.style.background = "#fffbe0";
+    tr.innerHTML =
+      `<td class="num">${i + 1}</td>` +
+      `<td><strong>${r.id}</strong></td>` +
+      `<td>${r.label}</td>` +
+      `<td class="num">${r.monthly_acc != null ? (r.monthly_acc * 100).toFixed(1) + "%" : "—"}</td>` +
+      `<td class="num">${r.daily_acc != null ? (r.daily_acc * 100).toFixed(1) + "%" : "—"}</td>` +
+      `<td>${r.candidate_b_pass ? "✅" : "❌"}</td>` +
+      `<td class="num">${r.mode_run_len ?? "—"}</td>`;
+    tr.addEventListener("click", () => {
+      document.getElementById("rc-recipe-select").value = r.id;
+      rcSwitchRecipe(r.id);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function rcSwitchRecipe(rid) {
+  RC_CURRENT_RECIPE = rid;
+  rcRenderSummary(rid);
+  rcRenderDistTable(rid);
+  rcRenderMonthlyStrip(rid);
+  rcRenderDayTable(rid);
+  rcRenderRankTable();
+  rcRenderPriceChart(rid);
+}
+
+function rcPopulateMonthFilter() {
+  const months = Array.from(new Set(RC_DATA.days.map((d) => d.date.slice(0, 7)))).sort();
+  for (const selId of ["rc-month-filter", "rc-chart-month-filter"]) {
+    const sel = document.getElementById(selId);
+    sel.innerHTML = '<option value="all">全期間</option>';
+    for (const m of months) {
+      const opt = document.createElement("option");
+      opt.value = m; opt.textContent = m;
+      sel.appendChild(opt);
+    }
+  }
+}
+
+function rcPopulateRecipeSelect() {
+  const sel = document.getElementById("rc-recipe-select");
+  sel.innerHTML = "";
+  const sorted = RC_DATA.recipes.slice().sort((a, b) => {
+    const am = a.monthly_acc ?? -1, bm = b.monthly_acc ?? -1;
+    if (bm !== am) return bm - am;
+    return (b.daily_acc ?? -1) - (a.daily_acc ?? -1);
+  });
+  for (const r of sorted) {
+    const opt = document.createElement("option");
+    opt.value = r.id;
+    const monthly = r.monthly_acc != null ? (r.monthly_acc * 100).toFixed(0) + "%" : "—";
+    const daily = r.daily_acc != null ? (r.daily_acc * 100).toFixed(0) + "%" : "—";
+    opt.textContent = `${r.id}  M=${monthly} D=${daily}  ${r.label}`;
+    sel.appendChild(opt);
+  }
+}
+
+async function renderRecipeCheck() {
+  RC_DATA = await fetchJSON("data/recipe_predictions.json");
+  rcPopulateRecipeSelect();
+  rcPopulateMonthFilter();
+  const initial = document.getElementById("rc-recipe-select").value;
+  rcSwitchRecipe(initial);
+  document.getElementById("rc-recipe-select").addEventListener("change", (e) => rcSwitchRecipe(e.target.value));
+  document.getElementById("rc-row-filter").addEventListener("change", () => rcRenderDayTable(RC_CURRENT_RECIPE));
+  document.getElementById("rc-month-filter").addEventListener("change", () => rcRenderDayTable(RC_CURRENT_RECIPE));
+  document.getElementById("rc-chart-month-filter").addEventListener("change", () => rcRenderPriceChart(RC_CURRENT_RECIPE));
+}
+
 async function renderPhase2Hmm() {
   PH2_DATA = await fetchJSON("data/phase2_hmm.json");
   ph2RenderSummary();
@@ -1934,6 +2607,263 @@ async function renderPhase2Hmm() {
   document.getElementById("ph2-next-btn").addEventListener("click", () => ph2StepPeriod(1));
 }
 
+// ====== ⑪ レジーム試作 ======
+let RP_INDEX = null;
+const RP_DATA = {};
+let RP_CHART = null;
+let RP_CHART_ROWS = [];
+
+const rpBackgroundPlugin = {
+  id: "rpBackgroundPlugin",
+  beforeDatasetsDraw(chart) {
+    const {ctx, chartArea, scales} = chart;
+    if (!chartArea || !RP_CHART_ROWS.length) return;
+    const xScale = scales.x;
+    const midY = (chartArea.top + chartArea.bottom) / 2;
+    ctx.save();
+    for (let i = 0; i < RP_CHART_ROWS.length; i++) {
+      const r = RP_CHART_ROWS[i];
+      const x0 = xScale.getPixelForValue(i);
+      const x1 = (i + 1 < RP_CHART_ROWS.length) ? xScale.getPixelForValue(i + 1) : chartArea.right;
+      const left  = Math.max(x0, chartArea.left);
+      const right = Math.min(x1, chartArea.right);
+      if (right <= left) continue;
+      ctx.fillStyle = mlLabelLight(r[3]);  // human (top)
+      ctx.fillRect(left, chartArea.top, right - left, midY - chartArea.top);
+      ctx.fillStyle = mlLabelLight(r[2]);  // pred  (bottom)
+      ctx.fillRect(left, midY, right - left, chartArea.bottom - midY);
+    }
+    ctx.strokeStyle = "rgba(0,0,0,0.2)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(chartArea.left, midY);
+    ctx.lineTo(chartArea.right, midY);
+    ctx.stroke();
+    ctx.restore();
+  },
+};
+
+function rpAggregateTo4h(rows1h) {
+  // group every 4 hourly rows by 4h boundary (UTC). use first row's ts and last row's close;
+  // pred/human are mode (most common label) within the bucket.
+  const buckets = new Map();
+  for (const r of rows1h) {
+    const bucketTs = Math.floor(r[0] / (4 * 3600 * 1000)) * (4 * 3600 * 1000);
+    let b = buckets.get(bucketTs);
+    if (!b) { b = {ts: bucketTs, lastClose: r[1], pred: {}, human: {}}; buckets.set(bucketTs, b); }
+    b.lastClose = r[1];
+    if (r[2]) b.pred[r[2]]   = (b.pred[r[2]]   || 0) + 1;
+    if (r[3]) b.human[r[3]] = (b.human[r[3]] || 0) + 1;
+  }
+  const mode = (m) => {
+    let bestK = "", bestV = 0;
+    for (const k in m) if (m[k] > bestV) { bestV = m[k]; bestK = k; }
+    return bestK;
+  };
+  return Array.from(buckets.values()).sort((a, b) => a.ts - b.ts)
+    .map(b => [b.ts, b.lastClose, mode(b.pred), mode(b.human)]);
+}
+
+async function rpFetchData(version, granularity, yearMonth) {
+  RP_DATA[version] = RP_DATA[version] || {};
+  if (granularity === "5m") {
+    RP_DATA[version]["5m"] = RP_DATA[version]["5m"] || {};
+    if (!RP_DATA[version]["5m"][yearMonth]) {
+      const data = await fetchJSON(`regime_prototype/predictions_${version}_5m/${yearMonth}.json`);
+      RP_DATA[version]["5m"][yearMonth] = data.rows;
+    }
+    return RP_DATA[version]["5m"][yearMonth];
+  }
+  if (granularity === "4h") {
+    if (!RP_DATA[version]["4h"]) {
+      const rows1h = await rpFetchData(version, "1h");
+      RP_DATA[version]["4h"] = rpAggregateTo4h(rows1h);
+    }
+    return RP_DATA[version]["4h"];
+  }
+  if (!RP_DATA[version][granularity]) {
+    const data = await fetchJSON(`regime_prototype/predictions_${version}_${granularity}.json`);
+    RP_DATA[version][granularity] = data.rows;
+  }
+  return RP_DATA[version][granularity];
+}
+
+function rpFilterByMonth(rows, yearMonth) {
+  if (yearMonth === "all") return rows;
+  const [y, m] = yearMonth.split("-").map(Number);
+  const start = Date.UTC(y, m - 1, 1);
+  const end   = Date.UTC(y, m, 1);
+  return rows.filter(r => r[0] >= start && r[0] < end);
+}
+
+function rpFmtTs(tsMs, granularity) {
+  const d = new Date(tsMs);
+  const iso = d.toISOString();
+  if (granularity === "1d") return iso.slice(0, 10);
+  return iso.slice(0, 16).replace("T", " ");
+}
+
+async function rpRenderChart() {
+  const version = document.getElementById("rp-version").value;
+  const gran    = document.getElementById("rp-granularity").value;
+  const ym      = document.getElementById("rp-month").value;
+  const loading = document.getElementById("rp-loading");
+  loading.textContent = "読み込み中...";
+
+  let rows;
+  if (gran === "5m") {
+    if (ym === "all") {
+      loading.textContent = "5分粒度では月を選択してください（全期間は重すぎます）";
+      return;
+    }
+    rows = await rpFetchData(version, "5m", ym);
+  } else {
+    const all = await rpFetchData(version, gran);
+    rows = rpFilterByMonth(all, ym);
+  }
+  loading.textContent = `${rows.length.toLocaleString()} 行`;
+
+  RP_CHART_ROWS = rows;
+  const labels = rows.map(r => rpFmtTs(r[0], gran));
+  const closes = rows.map(r => r[1]);
+
+  if (RP_CHART) RP_CHART.destroy();
+  const ctx = document.getElementById("rp-chart").getContext("2d");
+  RP_CHART = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "BTC close",
+        data: closes,
+        borderColor: "#1976d2",
+        backgroundColor: "transparent",
+        tension: 0.1,
+        pointRadius: 0,
+        borderWidth: 1.4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      interaction: {mode: "index", intersect: false},
+      plugins: {
+        legend: {display: false},
+        tooltip: {
+          callbacks: {
+            afterLabel: (item) => {
+              const r = RP_CHART_ROWS[item.dataIndex];
+              if (!r) return "";
+              return `肉眼: ${r[3] || "—"} / 予測: ${r[2] || "—"}`;
+            },
+          },
+        },
+      },
+      scales: {x: {ticks: {maxTicksLimit: 14}}, y: {beginAtZero: false}},
+    },
+    plugins: [rpBackgroundPlugin],
+  });
+}
+
+function rpRenderSummary() {
+  const version = document.getElementById("rp-version").value;
+  const proto = RP_INDEX.prototypes.find(p => p.version === version);
+  if (!proto) return;
+  document.getElementById("rp-spec").innerHTML =
+    `<strong>仕様（${version}）</strong>` +
+    `<ul style="margin:6px 0;line-height:1.7;">` +
+    `<li>上位: ${proto.spec.upper}</li>` +
+    `<li>中位: ${proto.spec.middle}</li>` +
+    `<li>下位: ${proto.spec.lower}</li>` +
+    `<li>統合: ${proto.spec.integration}</li>` +
+    `<li>ヒステリシス: ${proto.spec.hysteresis_hours} 時間</li>` +
+    `<li>出力粒度: ${proto.spec.output_granularity}</li>` +
+    `</ul>` +
+    `<small style="color:#666;">生成: ${proto.generated_utc}</small>`;
+  const a1h = proto.accuracy["1h"];
+  const a1d = proto.accuracy["1d"];
+  document.getElementById("rp-acc-1h").textContent = a1h && a1h.accuracy != null
+    ? `${(a1h.accuracy * 100).toFixed(1)}% (${a1h.hit.toLocaleString()}/${a1h.n.toLocaleString()})` : "—";
+  document.getElementById("rp-acc-1d").textContent = a1d && a1d.accuracy != null
+    ? `${(a1d.accuracy * 100).toFixed(1)}% (${a1d.hit.toLocaleString()}/${a1d.n.toLocaleString()})` : "—";
+  const dist = proto.distribution || {};
+  const pctOf = (k) => dist[k] ? `${dist[k].pct}%` : "0%";
+  document.getElementById("rp-dist").textContent =
+    `up ${pctOf("uptrend")} / dn ${pctOf("downtrend")} / rg ${pctOf("range")}`;
+}
+
+async function rpRenderDayTable() {
+  const version = document.getElementById("rp-version").value;
+  const filter  = document.getElementById("rp-day-filter").value;
+  const rowsHourly = await rpFetchData(version, "1h");
+  const rowsDaily  = await rpFetchData(version, "1d");
+  const dailyBreak = {};
+  for (const r of rowsHourly) {
+    const d = new Date(r[0]).toISOString().slice(0, 10);
+    dailyBreak[d] = dailyBreak[d] || {uptrend: 0, downtrend: 0, range: 0};
+    if (r[2] && dailyBreak[d][r[2]] !== undefined) dailyBreak[d][r[2]]++;
+  }
+  const tbody = document.querySelector("#rp-day-table tbody");
+  tbody.innerHTML = "";
+  let count = 0;
+  for (const r of rowsDaily) {
+    const date = new Date(r[0]).toISOString().slice(0, 10);
+    const close = r[1], pred = r[2], hu = r[3];
+    const valid = pred && hu;
+    const match = valid && pred === hu;
+    if (filter === "mismatch" && (!valid || match)) continue;
+    if (filter === "match" && !match) continue;
+    count++;
+    const br = dailyBreak[date] || {uptrend: 0, downtrend: 0, range: 0};
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td>${date}</td>` +
+      `<td class="num">${Number(close).toLocaleString()}</td>` +
+      `<td><strong style="color:${mlLabelColor(hu)};">${hu || "—"}</strong></td>` +
+      `<td><strong style="color:${mlLabelColor(pred)};">${pred || "—"}</strong></td>` +
+      `<td>${valid ? (match ? "◯" : "×") : "—"}</td>` +
+      `<td class="num">${br.uptrend}</td>` +
+      `<td class="num">${br.range}</td>` +
+      `<td class="num">${br.downtrend}</td>`;
+    tbody.appendChild(tr);
+  }
+  document.getElementById("rp-day-count").textContent = `表示中: ${count}日`;
+}
+
+async function renderRegimeProto() {
+  RP_INDEX = await fetchJSON("regime_prototype/index.json");
+  if (!RP_INDEX.prototypes || !RP_INDEX.prototypes.length) return;
+
+  const vs = document.getElementById("rp-version");
+  vs.innerHTML = "";
+  for (const p of RP_INDEX.prototypes) {
+    const opt = document.createElement("option");
+    opt.value = p.version; opt.textContent = p.version;
+    vs.appendChild(opt);
+  }
+  vs.value = RP_INDEX.prototypes[RP_INDEX.prototypes.length - 1].version;
+
+  const ms = document.getElementById("rp-month");
+  ms.innerHTML = '<option value="all" selected>全期間</option>';
+  for (const ym of (RP_INDEX.available_months || [])) {
+    const opt = document.createElement("option");
+    opt.value = ym; opt.textContent = ym;
+    ms.appendChild(opt);
+  }
+
+  document.getElementById("rp-version").addEventListener("change", async () => {
+    rpRenderSummary(); await rpRenderChart(); await rpRenderDayTable();
+  });
+  document.getElementById("rp-granularity").addEventListener("change", rpRenderChart);
+  document.getElementById("rp-month").addEventListener("change", rpRenderChart);
+  document.getElementById("rp-day-filter").addEventListener("change", rpRenderDayTable);
+
+  rpRenderSummary();
+  await rpRenderChart();
+  await rpRenderDayTable();
+}
+
 (async () => {
   try {
     await renderProgress();
@@ -1945,6 +2875,9 @@ async function renderPhase2Hmm() {
     await renderPhase1Features();
     await renderPhase2Hmm();
     await renderPhase3Hmm();
+    await renderRecipeCheck();
+    await renderRegimeProto();
+    await renderSamples4h();
   } catch (e) {
     console.error(e);
     document.body.insertAdjacentHTML("afterbegin",
