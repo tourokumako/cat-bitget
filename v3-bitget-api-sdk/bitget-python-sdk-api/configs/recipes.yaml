@@ -50,3 +50,417 @@ recipes:
       adx_14_d: 25.0
     threshold_grid:
       adx_14_d: [20.0, 25.0, 30.0]
+
+  - id: R04
+    label: "4h単独・モメンタム主軸"
+    timeframes: ["4h"]
+    indicators:
+      - {tf: "4h", name: macd_hist}
+      - {tf: "4h", name: adx, period: 14}
+      - {tf: "4h", name: di_diff, period: 14}
+    aggregation:
+      intra: vote
+      cross: null
+    threshold_default:
+      macd_hist_4h: 0.0
+      adx_14_4h: 25.0
+      di_diff_14_4h: 5.0
+
+  - id: R05
+    label: "週支配＞日補正"
+    timeframes: [W, D]
+    indicators:
+      - {tf: W, name: ma_slope, period: 20, lookback: 4}
+      - {tf: D, name: rsi, period: 14}
+    aggregation:
+      intra: vote
+      cross: hierarchical
+    threshold_default:
+      ma_slope_20_w_4: 0.0
+      rsi_14_d: 0.0
+
+  - id: R06
+    label: "レンジ判定特化（日トレンド + 1h オシレータ）"
+    timeframes: [D, "1h"]
+    indicators:
+      - {tf: D, name: rsi, period: 14}
+      - {tf: "1h", name: stoch_k, period: 14}
+    aggregation:
+      intra: vote
+      cross: multi_vote
+    threshold_default:
+      rsi_14_d: 0.0
+      stoch_k_14_1h: 0.0
+
+  - id: R07
+    label: "ボラ主軸（日 ATR% / BB幅）"
+    timeframes: [D]
+    indicators:
+      - {tf: D, name: atr_pct, period: 14}
+      - {tf: D, name: bb_width, period: 20}
+    aggregation:
+      intra: weighted_sum
+      cross: null
+    threshold_default:
+      atr_pct_14_d: 2.0
+      bb_width_20_d: 4.0
+
+  - id: R08
+    label: "マルチ時間軸合議（MA70傾き 日/4h/1h）"
+    timeframes: [D, "4h", "1h"]
+    indicators:
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+      - {tf: "4h", name: ma_slope, period: 70, lookback: 6}
+      - {tf: "1h", name: ma_slope, period: 70, lookback: 24}
+    aggregation:
+      intra: vote
+      cross: multi_vote
+    threshold_default:
+      ma_slope_70_d_5: 0.0
+      ma_slope_70_4h_6: 0.0
+      ma_slope_70_1h_24: 0.0
+
+  - id: R09
+    label: "階層 + 4hモメンタム補正"
+    timeframes: [D, "4h"]
+    indicators:
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+      - {tf: "4h", name: macd_hist}
+      - {tf: "4h", name: adx, period: 14}
+    aggregation:
+      intra: weighted_sum
+      cross: hierarchical
+    threshold_default:
+      ma_slope_70_d_5: 0.0
+      macd_hist_4h: 0.0
+      adx_14_4h: 25.0
+
+  - id: R10
+    label: "日足4軸統合スコア"
+    timeframes: [D]
+    indicators:
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+      - {tf: D, name: adx, period: 14}
+      - {tf: D, name: rsi, period: 14}
+      - {tf: D, name: atr_pct, period: 14}
+    aggregation:
+      intra: weighted_sum
+      cross: null
+    threshold_default:
+      ma_slope_70_d_5: 0.0
+      adx_14_d: 20.0
+      rsi_14_d: 0.0
+      atr_pct_14_d: 2.0
+
+  - id: R11
+    label: "出来高主軸（OBV傾き / Volume zscore）"
+    timeframes: [D]
+    indicators:
+      - {tf: D, name: obv_slope, lookback: 5}
+      - {tf: D, name: volume_z, period: 20}
+    aggregation:
+      intra: vote
+      cross: null
+    threshold_default:
+      obv_slope_d_5: 0.0
+      volume_z_20_d: 1.0
+
+  - id: R13
+    label: "月支配＋日 MA70傾き"
+    timeframes: [M_dom, D]
+    indicators:
+      - {tf: M_dom, name: human_label}
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+    aggregation:
+      intra: score
+      cross: hierarchical
+    threshold_default:
+      ma_slope_70_d_5: 0.0
+
+  - id: R14
+    label: "月支配＞日強度＞4hモメンタム（3層階層）"
+    timeframes: [M_dom, D, "4h"]
+    indicators:
+      - {tf: M_dom, name: human_label}
+      - {tf: D, name: adx, period: 14}
+      - {tf: "4h", name: macd_hist}
+    aggregation:
+      intra: score
+      cross: hierarchical
+    threshold_default:
+      adx_14_d: 25.0
+      macd_hist_4h: 0.0
+
+  - id: R15
+    label: "月支配＋日内オシレータ補正"
+    timeframes: [M_dom, D]
+    indicators:
+      - {tf: M_dom, name: human_label}
+      - {tf: D, name: rsi, period: 14}
+      - {tf: D, name: stoch_k, period: 14}
+    aggregation:
+      intra: vote
+      cross: hierarchical
+    threshold_default:
+      rsi_14_d: 0.0
+      stoch_k_14_d: 0.0
+
+  - id: R16
+    label: "月確定月のみ採用・不確定月は4h判定"
+    timeframes: [M_dom, "4h"]
+    indicators:
+      - {tf: M_dom, name: human_label}
+      - {tf: "4h", name: adx, period: 14}
+      - {tf: "4h", name: di_diff, period: 14}
+    aggregation:
+      intra: vote
+      cross: hierarchical
+    threshold_default:
+      adx_14_4h: 25.0
+      di_diff_14_4h: 5.0
+
+  - id: R17
+    label: "月支配＋日ボラ補正"
+    timeframes: [M_dom, D]
+    indicators:
+      - {tf: M_dom, name: human_label}
+      - {tf: D, name: bb_pos, period: 20}
+      - {tf: D, name: atr_pct, period: 14}
+    aggregation:
+      intra: weighted_sum
+      cross: hierarchical
+    threshold_default:
+      bb_pos_20_d: 0.0
+      atr_pct_14_d: 2.0
+
+  - id: R19
+    label: "日方向＞4h強度確認"
+    timeframes: [D, "4h"]
+    indicators:
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+      - {tf: "4h", name: adx, period: 14}
+      - {tf: "4h", name: di_diff, period: 14}
+    aggregation:
+      intra: vote
+      cross: hierarchical
+    threshold_default:
+      ma_slope_70_d_5: 0.0
+      adx_14_4h: 25.0
+      di_diff_14_4h: 5.0
+
+  - id: R20
+    label: "4h単独・3カテゴリ統合"
+    timeframes: ["4h"]
+    indicators:
+      - {tf: "4h", name: ma_slope, period: 50, lookback: 6}
+      - {tf: "4h", name: adx, period: 14}
+      - {tf: "4h", name: rsi, period: 14}
+    aggregation:
+      intra: weighted_sum
+      cross: null
+    threshold_default:
+      ma_slope_50_4h_6: 0.0
+      adx_14_4h: 25.0
+      rsi_14_4h: 0.0
+
+  - id: R21
+    label: "4hメイン1h補正"
+    timeframes: ["4h", "1h"]
+    indicators:
+      - {tf: "4h", name: macd_hist}
+      - {tf: "4h", name: adx, period: 14}
+      - {tf: "1h", name: di_diff, period: 14}
+    aggregation:
+      intra: weighted_sum
+      cross: multi_vote
+    threshold_default:
+      macd_hist_4h: 0.0
+      adx_14_4h: 25.0
+      di_diff_14_1h: 3.0
+
+  - id: R22
+    label: "同一指標マルチ時間軸合議（ADX14）"
+    timeframes: [D, "4h", "1h"]
+    indicators:
+      - {tf: D, name: adx, period: 14}
+      - {tf: "4h", name: adx, period: 14}
+      - {tf: "1h", name: adx, period: 14}
+    aggregation:
+      intra: vote
+      cross: multi_vote
+    threshold_default:
+      adx_14_d: 25.0
+      adx_14_4h: 25.0
+      adx_14_1h: 25.0
+
+  - id: R23
+    label: "4hボラ＋出来高（カテゴリ網羅）"
+    timeframes: ["4h"]
+    indicators:
+      - {tf: "4h", name: bb_pos, period: 20}
+      - {tf: "4h", name: atr_pct, period: 14}
+      - {tf: "4h", name: volume_z, period: 20}
+    aggregation:
+      intra: weighted_sum
+      cross: null
+    threshold_default:
+      bb_pos_20_4h: 0.0
+      atr_pct_14_4h: 2.0
+      volume_z_20_4h: 1.0
+
+  - id: R24
+    label: "日方向＞5m発火条件（誤検知抑制）"
+    timeframes: ["5m", D]
+    indicators:
+      - {tf: "5m", name: atr_pct, period: 14}
+      - {tf: "5m", name: rsi, period: 14}
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+    aggregation:
+      intra: vote
+      cross: hierarchical
+    threshold_default:
+      atr_pct_14_5m: 0.5
+      rsi_14_5m: 0.0
+      ma_slope_70_d_5: 0.0
+
+  - id: R25
+    label: "4hメイン・5m参考"
+    timeframes: ["5m", "4h"]
+    indicators:
+      - {tf: "5m", name: atr_pct, period: 14}
+      - {tf: "4h", name: macd_hist}
+      - {tf: "4h", name: adx, period: 14}
+    aggregation:
+      intra: weighted_sum
+      cross: hierarchical
+    threshold_default:
+      atr_pct_14_5m: 0.5
+      macd_hist_4h: 0.0
+      adx_14_4h: 25.0
+
+  - id: R26
+    label: "5m単独（誤検知過多リスク高・リファレンス）"
+    timeframes: ["5m"]
+    indicators:
+      - {tf: "5m", name: atr_pct, period: 14}
+      - {tf: "5m", name: rsi, period: 14}
+      - {tf: "5m", name: volume_z, period: 20}
+    aggregation:
+      intra: weighted_sum
+      cross: null
+    threshold_default:
+      atr_pct_14_5m: 0.5
+      rsi_14_5m: 0.0
+      volume_z_20_5m: 1.0
+
+  - id: R27
+    label: "出来高主軸2件目（OBV / Volume z / MA70傾き）"
+    timeframes: [D]
+    indicators:
+      - {tf: D, name: obv_slope, lookback: 5}
+      - {tf: D, name: volume_z, period: 20}
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+    aggregation:
+      intra: weighted_sum
+      cross: null
+    threshold_default:
+      obv_slope_d_5: 0.0
+      volume_z_20_d: 1.0
+      ma_slope_70_d_5: 0.0
+
+  - id: R29
+    label: "Ichimoku 単独主軸（雲位置 + 転換vs基準 + 遅行）"
+    timeframes: [D]
+    indicators:
+      - {tf: D, name: ichimoku_cloud_pos}
+      - {tf: D, name: ichimoku_tk_diff}
+      - {tf: D, name: ichimoku_chikou}
+    aggregation:
+      intra: vote
+      cross: null
+    threshold_default:
+      ichimoku_cloud_pos_d: 0.0
+      ichimoku_tk_diff_d: 0.0
+      ichimoku_chikou_d: 0.0
+
+  - id: R30
+    label: "Ichimoku 副軸 + 1h強度"
+    timeframes: [D, "1h"]
+    indicators:
+      - {tf: D, name: ichimoku_cloud_pos}
+      - {tf: "1h", name: adx, period: 14}
+    aggregation:
+      intra: weighted_sum
+      cross: hierarchical
+    threshold_default:
+      ichimoku_cloud_pos_d: 0.0
+      adx_14_1h: 25.0
+
+  - id: R31
+    label: "週単独"
+    timeframes: [W]
+    indicators:
+      - {tf: W, name: ma_slope, period: 20, lookback: 4}
+      - {tf: W, name: adx, period: 14}
+    aggregation:
+      intra: weighted_sum
+      cross: null
+    threshold_default:
+      ma_slope_20_w_4: 0.0
+      adx_14_w: 20.0
+
+  - id: R32
+    label: "月単独（リターン符号近似 + ADX14）"
+    timeframes: [M]
+    indicators:
+      - {tf: M, name: ma_slope, period: 1, lookback: 1}
+      - {tf: M, name: adx, period: 14}
+    aggregation:
+      intra: vote
+      cross: null
+    threshold_default:
+      ma_slope_1_m_1: 0.0
+      adx_14_m: 20.0
+
+  - id: R33
+    label: "多時間軸 AND（同方向のみ確定）"
+    timeframes: [D, "4h"]
+    indicators:
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+      - {tf: "4h", name: macd_hist}
+    aggregation:
+      intra: vote
+      cross: and_chain
+    threshold_default:
+      ma_slope_70_d_5: 0.0
+      macd_hist_4h: 0.0
+
+  - id: R34
+    label: "3時間軸 AND（MA70傾き 日/4h/1h）"
+    timeframes: [D, "4h", "1h"]
+    indicators:
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+      - {tf: "4h", name: ma_slope, period: 70, lookback: 6}
+      - {tf: "1h", name: ma_slope, period: 70, lookback: 24}
+    aggregation:
+      intra: vote
+      cross: and_chain
+    threshold_default:
+      ma_slope_70_d_5: 0.0
+      ma_slope_70_4h_6: 0.0
+      ma_slope_70_1h_24: 0.0
+
+  - id: R35
+    label: "単粒度 4軸 AND（日 MA70傾き + ADX14 + RSI14）"
+    timeframes: [D]
+    indicators:
+      - {tf: D, name: ma_slope, period: 70, lookback: 5}
+      - {tf: D, name: adx, period: 14}
+      - {tf: D, name: rsi, period: 14}
+    aggregation:
+      intra: and_chain
+      cross: null
+    threshold_default:
+      ma_slope_70_d_5: 0.0
+      adx_14_d: 25.0
+      rsi_14_d: 0.0

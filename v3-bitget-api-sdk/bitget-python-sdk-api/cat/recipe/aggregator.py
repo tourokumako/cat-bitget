@@ -35,7 +35,17 @@ def _indicator_directional_score(
     name = ind.name
     th = threshold.get(ind.key, 0.0)
 
-    if name in ("ma_slope", "ma_dev", "price_ma_diff", "di_diff", "macd_hist", "obv_slope"):
+    if name in (
+        "ma_slope",
+        "ma_dev",
+        "price_ma_diff",
+        "di_diff",
+        "macd_hist",
+        "obv_slope",
+        "ichimoku_cloud_pos",
+        "ichimoku_tk_diff",
+        "ichimoku_chikou",
+    ):
         if panel_value > th:
             return 1, 1.0
         if panel_value < -th:

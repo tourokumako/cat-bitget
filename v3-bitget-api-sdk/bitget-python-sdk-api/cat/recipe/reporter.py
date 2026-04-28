@@ -17,6 +17,86 @@ def write_scores_csv(rows: list[dict], path: Path | str) -> pd.DataFrame:
     return df
 
 
+def write_dashboard_predictions_json(
+    predictions_by_recipe: dict[str, pd.Series],
+    recipes: list[Recipe],
+    scores_df: pd.DataFrame,
+    labels_human: pd.DataFrame,
+    daily_close: pd.Series,
+    path: Path | str,
+) -> None:
+    """ダッシュボード ⑩タブ用に日次予測 + 肉眼ラベル + close を出力。
+
+    出力構造:
+    {
+      "n_days": 1826,
+      "recipes": [{"id": "R01", "label": "...", "monthly_acc": 0.22, "daily_acc": 0.33, ...}, ...],
+      "days": [{"date": "2021-04-01", "close": ..., "true": "uptrend",
+                "predicts": {"R01": "uptrend", ...},
+                "matches": {"R01": true, ...}}, ...]
+    }
+    """
+    recipes_by_id = {r.id: r for r in recipes}
+
+    truth = pd.Series(labels_human["label"].values, index=pd.to_datetime(labels_human.index))
+    truth.index = truth.index.normalize()
+    close = daily_close.copy()
+    close.index = pd.to_datetime(close.index).normalize()
+
+    all_dates = sorted(set(truth.index).union(*[p.index for p in predictions_by_recipe.values()]))
+
+    days_out = []
+    for ts in all_dates:
+        d_str = ts.strftime("%Y-%m-%d")
+        true_lab = truth.get(ts, None)
+        c = close.get(ts, None)
+        predicts = {}
+        matches = {}
+        for rid, pred in predictions_by_recipe.items():
+            p = pred.get(ts, None)
+            if p is not None and not (isinstance(p, float) and pd.isna(p)):
+                predicts[rid] = str(p)
+                if true_lab is not None:
+                    matches[rid] = bool(p == true_lab)
+                else:
+                    matches[rid] = None
+        days_out.append({
+            "date": d_str,
+            "close": float(c) if c is not None and not pd.isna(c) else None,
+            "true": str(true_lab) if true_lab is not None and not (isinstance(true_lab, float) and pd.isna(true_lab)) else None,
+            "predicts": predicts,
+            "matches": matches,
+        })
+
+    recipes_meta = []
+    score_by_id = {row["recipe_id"]: row for _, row in scores_df.iterrows()}
+    for r in recipes:
+        s = score_by_id.get(r.id, {})
+        recipes_meta.append({
+            "id": r.id,
+            "label": r.label,
+            "timeframes": r.timeframes,
+            "indicators": [{"tf": ind.tf, "name": ind.name, "period": ind.period} for ind in r.indicators],
+            "aggregation_intra": r.aggregation_intra,
+            "aggregation_cross": r.aggregation_cross,
+            "daily_acc": float(s.get("daily_acc")) if s.get("daily_acc") is not None and not pd.isna(s.get("daily_acc")) else None,
+            "monthly_acc": float(s.get("monthly_acc")) if s.get("monthly_acc") is not None and not pd.isna(s.get("monthly_acc")) else None,
+            "candidate_b_pass": bool(s.get("candidate_b_pass", False)),
+            "mode_run_len": int(s.get("mode_run_len")) if s.get("mode_run_len") is not None and not pd.isna(s.get("mode_run_len")) else None,
+        })
+
+    out = {
+        "n_days": len(days_out),
+        "period": {"start": days_out[0]["date"], "end": days_out[-1]["date"]} if days_out else None,
+        "recipes": recipes_meta,
+        "days": days_out,
+    }
+
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(out, f, ensure_ascii=False)
+
+
 def _format_combo(combo: dict) -> str:
     return ", ".join(f"{k}={v}" for k, v in combo.items())
 

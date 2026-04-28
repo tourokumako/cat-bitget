@@ -98,6 +98,25 @@ def _compute_one_indicator(df: pd.DataFrame, ind: IndicatorSpec) -> pd.Series:
         lookback = int(ind.lookback or 5)
         obv = ta.volume.OnBalanceVolumeIndicator(df["close"], df["volume"]).on_balance_volume()
         return obv - obv.shift(lookback)
+    if name == "ichimoku_cloud_pos":
+        high9 = df["high"].rolling(9).max()
+        low9 = df["low"].rolling(9).min()
+        high26 = df["high"].rolling(26).max()
+        low26 = df["low"].rolling(26).min()
+        high52 = df["high"].rolling(52).max()
+        low52 = df["low"].rolling(52).min()
+        tenkan = (high9 + low9) / 2
+        kijun = (high26 + low26) / 2
+        senkou_a = ((tenkan + kijun) / 2).shift(26)
+        senkou_b = ((high52 + low52) / 2).shift(26)
+        cloud_mid = (senkou_a + senkou_b) / 2
+        return (df["close"] - cloud_mid) / cloud_mid * 100
+    if name == "ichimoku_tk_diff":
+        tenkan = (df["high"].rolling(9).max() + df["low"].rolling(9).min()) / 2
+        kijun = (df["high"].rolling(26).max() + df["low"].rolling(26).min()) / 2
+        return (tenkan - kijun) / df["close"] * 100
+    if name == "ichimoku_chikou":
+        return (df["close"] - df["close"].shift(26)) / df["close"].shift(26) * 100
     raise ValueError(f"unknown indicator: {name}")
 
 

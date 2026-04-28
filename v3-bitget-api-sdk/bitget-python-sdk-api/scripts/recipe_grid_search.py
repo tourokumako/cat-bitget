@@ -38,7 +38,11 @@ from cat.recipe.indicators_multi_tf import (
     precompute_panels,
 )
 from cat.recipe.loader import load_recipes
-from cat.recipe.reporter import write_scores_csv, write_top10_markdown
+from cat.recipe.reporter import (
+    write_dashboard_predictions_json,
+    write_scores_csv,
+    write_top10_markdown,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -50,6 +54,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--grid-mode", choices=["default", "full"], default="default")
     p.add_argument("--output-csv", default="results/recipe_scores.csv", type=Path)
     p.add_argument("--output-md", default="results/recipe_top10.md", type=Path)
+    p.add_argument("--output-dashboard-json", default="dashboard/data/recipe_predictions.json", type=Path)
     return p.parse_args()
 
 
@@ -83,9 +88,10 @@ def main() -> int:
 
     print(f"[5/5] evaluate {len(recipes)} recipe(s) × grid-mode={args.grid_mode}")
     rows: list[dict] = []
+    default_predicts: dict[str, pd.Series] = {}
     for recipe in recipes:
         combos = expand_grid(recipe, mode=args.grid_mode)
-        for combo in combos:
+        for i, combo in enumerate(combos):
             pred = predict_with_recipe(recipe, panels, combo, eval_dates)
             metrics = evaluate(pred, labels, daily_ret)
             rows.append(
@@ -95,12 +101,26 @@ def main() -> int:
                     **metrics,
                 }
             )
+            if i == 0:
+                default_predicts[recipe.id] = pred
         print(f"  {recipe.id}: {len(combos)} combos done")
 
     df = write_scores_csv(rows, args.output_csv)
     write_top10_markdown(df, recipes, args.output_md)
     print(f"=> {args.output_csv} ({len(df)} rows)")
     print(f"=> {args.output_md}")
+
+    # ダッシュボード用 JSON（default 閾値 1 通りの日次予測）
+    daily_close = df_5m["close"].resample("1D", label="right", closed="right").last().dropna()
+    write_dashboard_predictions_json(
+        default_predicts,
+        recipes,
+        df,
+        labels,
+        daily_close,
+        args.output_dashboard_json,
+    )
+    print(f"=> {args.output_dashboard_json}")
     return 0
 
 
