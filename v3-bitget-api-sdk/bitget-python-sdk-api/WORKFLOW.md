@@ -216,46 +216,55 @@ for threshold in candidates:
 
 ---
 
-## 🔴 現在のフェーズ（2026-04-28 改訂）
+## 🔴 現在のフェーズ（2026-04-30 改訂3）
 
-**フェーズ: 4h サンプル教師付け学習方式（判定器逆算）へ移行**
+**フェーズ: 設計探索フェーズ（v10 凍結・L-146 で網羅マトリクス採用）**
 **Priority 個別最適化: regime 確定まで全停止**
 
-### 現在地（要点のみ・詳細は regime_research.md）
+### 現在地（要点のみ・詳細は regime_research.md §0/§12）
 
-- 階層型 v1〜v4 試行 → 粒度ミスマッチで一致率天井 39%（L-139）→ 全期間網羅方式は廃止（L-140）
-- 4h サンプル教師付け学習方式に転換 → タブ⑫ で `data/regime_samples_4h.csv` に **93 区間 / 731 バー** 収集完了
-- 次は判定器逆算（教師あり学習）
+- v6〜v10 で「特徴量1個追加→RF再学習」を5反復・+4pt 微改善のみで構造的天井（L-146）
+  - v6: 52.9% / v7: 55.0% / v8: 57.2% / v9: 57.7% / v10: 56.9%（凍結）
+- 2022〜2025 全年 4,745バー教師データ収集完了（人間ラベル）
+- **構造的問題（L-148）**: 教師ラベル分布傾向そのものが肉眼ルールと乖離するケース有り → 特徴量追加では解けない
+- 未試行カテゴリが大量（ボラ・出来高・プライスアクション・MTF・統計・Change Point・異モデル）
 
-詳細・経緯・操作要素・試行ログ・禁止リスト・ダッシュボード仕様・既知資産・既知リスク・判断軸詳細（A〜G）・判定器逆算の設計手順は **すべて [`regime_research.md`](.claude/memory/regime_research.md) §1〜§12 が唯一の正本**。
+詳細は **[`regime_research.md`](.claude/memory/regime_research.md) §0/§5/§12 が唯一の正本**。
 
 ---
 
-## 🔴 次のタスク（2026-04-28 改訂）
+## 🔴 次のタスク（2026-04-30 改訂3）
 
-**判定器逆算（教師あり学習）から開始**。
+**設計探索マトリクスを最初に作って、未試行セルから1反復1セル並行探索する**。L-146 セッション総括で確定した方針。
 
-| 項目 | 場所 |
-|------|------|
-| 教師データ | `data/regime_samples_4h.csv`（93 区間 / 731 バー）|
-| 特徴量元 OHLCV | `data/BTCUSDT-5m-2021-04-01_03-31_1826d.csv` |
-| 設計手順・学習方式候補・評価基準・過学習対策・反復停止基準・Priority 接続フェーズ | [`regime_research.md`](.claude/memory/regime_research.md) **§12** |
-| 判断軸詳細（A〜G）| [`regime_research.md`](.claude/memory/regime_research.md) **§11** |
-| 試行履歴 v1〜v4 | [`regime_trial_log.md`](.claude/memory/regime_trial_log.md) |
+### 次セッション手順
 
-### Step 0 セッション開始時に必読（厳守）
+1. `regime_research.md` §12 の設計探索マトリクス（軸1〜4）を読む
+2. 未試行セルの中から「最も effort/期待値比が良い」候補をまこさんに3つ提案
+3. まこさんが選んだ1セルを試行（特徴量カテゴリ追加 OR モデル変更 OR ハイパラ変更 OR 教師範囲変更のいずれか1つだけ）
+4. 結果報告（数値 + 3区間視認 + 採用基準への到達度）
+5. 採用基準（4h一致率≥65% / CV≥60% / 視認OK）未達なら次セル選定。同じ方向で2ターン続けない（L-146 厳守）
+6. regime_trial_log.md に v11/v12... を追記
+
+### Step 0 セッション開始時に必読（厳守・順番通り）
 
 1. WORKFLOW.md（このファイル・現フェーズ + 次のタスク）
-2. [`regime_research.md`](.claude/memory/regime_research.md) §1〜§12（regime 研究の唯一の正本）
-3. [`regime_trial_log.md`](.claude/memory/regime_trial_log.md)（v1〜v4 試行履歴）
-4. [`feedback_regime_essence.md`](.claude/memory/feedback_regime_essence.md)
-5. [`feedback_writing_style.md`](.claude/memory/feedback_writing_style.md)
-6. [`lessons_active.md`](.claude/memory/lessons_active.md) L-138〜L-140（粒度ミスマッチ・方針大転換）
-7. `data/regime_samples_4h.csv` の中身を確認
+2. [`regime_research.md`](.claude/memory/regime_research.md) §0/§5/§12（最新の現在地・試行履歴・設計探索マトリクス）
+3. [`regime_trial_log.md`](.claude/memory/regime_trial_log.md) v6〜v10（直近5反復の詳細）
+4. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-146 / L-147 / L-148**（このセッションの3大教訓・絶対必読）
+5. [`lessons_active.md`](.claude/memory/lessons_active.md) L-139〜L-141（粒度ミスマッチ・方針大転換・解像度統一）
+6. [`feedback_regime_essence.md`](.claude/memory/feedback_regime_essence.md)
+7. [`feedback_exhaustive_search.md`](.claude/memory/feedback_exhaustive_search.md)（網羅マトリクス運用ルール）
+8. [`feedback_writing_style.md`](.claude/memory/feedback_writing_style.md)
+9. `data/regime_samples_4h*.csv` 4ファイル全部の件数確認（破壊されてないか）
 
-### 思考の自衛（再発防止）
+### 思考の自衛（再発防止・L-146 / L-147 / L-148 重点）
 
-**「月単位で当てる」「monthly_acc 最優先」「regime 廃止」「肉眼ラベル全期間網羅で一致率最大化」フレーズが頭に浮かんだら自分を止める**（判断軸違反 / 方針大転換済）。chart を見ずに数値だけで設計提案するのも禁止。
+- **「次の v11 も特徴量1個追加して RF 再学習」フレーズが頭に浮かんだら止める**（L-146 直撃）。設計探索フェーズでは網羅マトリクスから次セルを選ぶ
+- **「同じ構造の提案を2ターン続けたら必ずフレーム自己点検を起動」**（WORKFLOW 思考フレーム自己点検 + L-146）
+- 肉眼ルールを「単純条件」で特徴量化しない。位置と動きを分けて表現（L-147）
+- 分類器の特定ケース誤判定を見たら、まず該当条件帯の教師データ分布を出す（L-148）
+- 「月単位で当てる」「monthly_acc 最優先」「regime 廃止」「肉眼ラベル全期間網羅で一致率最大化」も依然禁止
 
 ---
 

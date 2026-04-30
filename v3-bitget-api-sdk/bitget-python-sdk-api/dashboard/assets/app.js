@@ -1059,7 +1059,7 @@ async function renderTruthCheck() {
   document.getElementById("dh-save-btn").addEventListener("click", dhSaveLabels);
 }
 
-// ====== ⑫ 4h 肉眼判定（2025年・サンプルラベル付け） ======
+// ====== ⑫ 4h 肉眼判定（年選択・サンプルラベル付け） ======
 let S4_DATA = null;
 let S4_PRICE_CHART = null;
 let S4_YAXIS_CHART = null;
@@ -1067,8 +1067,9 @@ const S4_STATE = {};  // timestamp_utc -> label
 const S4_SELECTED = new Set();
 let S4_CHART_ITEMS = [];  // {key, close, label, intensity}
 const S4_Y_STEP = 2000;
-let S4_Y_GLOBAL_MIN = 0;  // 2025年全期間で固定（月切替/粒度切替で変動しない）
+let S4_Y_GLOBAL_MIN = 0;
 let S4_Y_GLOBAL_MAX = 0;
+let S4_YEAR = "2025";
 
 function s4LabelColor(label) {
   if (label === "uptrend") return "#4caf50";
@@ -1398,7 +1399,7 @@ async function s4SaveLabels() {
     const res = await fetch("/api/save_4h_labels", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({labels}),
+      body: JSON.stringify({labels, year: parseInt(S4_YEAR, 10)}),
     });
     const j = await res.json();
     if (!res.ok || !j.ok) {
@@ -1417,22 +1418,62 @@ async function s4SaveLabels() {
   }
 }
 
-async function renderSamples4h() {
-  S4_DATA = await fetchJSON("data/regime_samples_4h.json");
+function s4JsonPath(year) {
+  return year === "2025" ? "data/regime_samples_4h.json" : `data/regime_samples_4h_${year}.json`;
+}
+
+async function s4AutoSave() {
+  if (!S4_DATA) return;
+  const labels = S4_DATA.bars.map((b) => ({
+    timestamp_utc: b.timestamp_utc,
+    label: S4_STATE[b.timestamp_utc] || "",
+  }));
+  try {
+    await fetch("/api/save_4h_labels", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({labels, year: parseInt(S4_YEAR, 10)}),
+    });
+  } catch (_) { /* 失敗しても年切替は続行 */ }
+}
+
+async function s4LoadYear(year) {
+  // 年切替前に現在の入力を自動保存
+  await s4AutoSave();
+
+  S4_YEAR = year;
+  // 状態リセット
+  for (const k of Object.keys(S4_STATE)) delete S4_STATE[k];
+  S4_SELECTED.clear();
+
+  S4_DATA = await fetchJSON(s4JsonPath(year));
   const initial = S4_DATA.labels || {};
   for (const b of S4_DATA.bars) {
     S4_STATE[b.timestamp_utc] = initial[b.timestamp_utc] || "";
   }
-  // 2025年全期間の min/max を固定値として保存（Y軸スケール一貫性のため）
   const allCloses = S4_DATA.bars.map((b) => b.close);
   S4_Y_GLOBAL_MIN = Math.floor(Math.min(...allCloses) / S4_Y_STEP) * S4_Y_STEP;
   S4_Y_GLOBAL_MAX = Math.ceil(Math.max(...allCloses) / S4_Y_STEP) * S4_Y_STEP;
+
+  // 月フィルタ再構築（"全期間" オプションのみ残す）
+  const sel = document.getElementById("s4-month-filter");
+  while (sel.options.length > 1) sel.remove(1);
   s4PopulateMonthFilter();
+  sel.value = "all";
+
+  s4UpdateSelectedCount();
   s4RenderPriceChart();
   s4RenderBarTable();
   s4UpdateStats();
-  s4UpdateSelectedCount();
+}
 
+async function renderSamples4h() {
+  await s4LoadYear(S4_YEAR);
+
+  document.getElementById("s4-year-select").addEventListener("change", async (ev) => {
+    await s4LoadYear(ev.target.value);
+    document.getElementById("s4-check-all-month").checked = false;
+  });
   document.getElementById("s4-month-filter").addEventListener("change", () => {
     s4RenderPriceChart();
     s4RenderBarTable();

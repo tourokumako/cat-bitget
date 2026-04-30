@@ -22,7 +22,7 @@
     <button data-tab="phase3_hmm">⑨ HMM 1h K=3 (採択候補)</button>
     <button data-tab="recipe_check">⑩ レシピ判定検証</button>
     <button data-tab="regime_proto">⑪ レジーム試作</button>
-    <button data-tab="samples_4h">⑫ 4h肉眼判定（2025年）</button>
+    <button data-tab="samples_4h">⑫ 4h肉眼判定</button>
   </nav>
   <small id="source-note"></small>
 </header>
@@ -644,10 +644,10 @@
   </section>
 
   <section id="samples_4h" class="tab">
-    <h2>⑫ 4h 肉眼判定（2025年・サンプルラベル付け）</h2>
+    <h2>⑫ 4h 肉眼判定（サンプルラベル付け）</h2>
     <p style="color:#555;font-size:0.9em;">
-      ① 月切替で対象月を表示 → ② チャートで動きを確認 → ③ 連続4hバーをチェックボックスで複数選択 → ④ 一括APPLY<br>
-      期間: 2025-01-01 〜 2025-12-31（4h × 2190 バー）。<strong>全期間網羅は不要</strong>。「明らかにこのregime」という代表区間だけ付ける。<br>
+      ① 年・月切替で対象期間を表示 → ② チャートで動きを確認 → ③ 連続4hバーをチェックボックスで複数選択 → ④ 一括APPLY<br>
+      4h × 2190 バー/年。<strong>全期間網羅は不要</strong>。「明らかにこのregime」という代表区間だけ付ける。<br>
       入力後、画面上の <strong>[💾 保存]</strong> ボタンで CSV に書き戻されます（自動バックアップ付）。
     </p>
 
@@ -673,9 +673,17 @@
 
     <h3>価格チャート + 現在のラベル背景色</h3>
     <div style="margin-bottom:8px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+      <label>年:
+        <select id="s4-year-select">
+          <option value="2025" selected>2025年</option>
+          <option value="2024">2024年</option>
+          <option value="2023">2023年</option>
+          <option value="2022">2022年</option>
+        </select>
+      </label>
       <label>月切替:
         <select id="s4-month-filter">
-          <option value="all">全期間（2025年）</option>
+          <option value="all">全期間</option>
         </select>
       </label>
       <label>粒度:

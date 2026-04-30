@@ -21,6 +21,8 @@ import http.server
 import json
 import shutil
 import socketserver
+import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -32,6 +34,13 @@ LABEL_4H_CSV = DATA_DIR / "regime_samples_4h.csv"
 BACKUP_DIR = DATA_DIR / "regime_label_backups"
 PORT = 8765
 VALID_LABELS = {"", "downtrend", "range", "uptrend"}
+VALID_YEARS = {2022, 2023, 2024, 2025}
+
+
+def _label_4h_csv(year: int) -> Path:
+    if year == 2025:
+        return LABEL_4H_CSV
+    return DATA_DIR / f"regime_samples_4h_{year}.csv"
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -105,6 +114,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if not isinstance(labels, list) or not labels:
             self._send_json(400, {"error": "labels must be non-empty list"})
             return
+        year = int(payload.get("year", 2025))
+        if year not in VALID_YEARS:
+            self._send_json(400, {"error": f"invalid year: {year}"})
+            return
         for r in labels:
             if not isinstance(r, dict) or "timestamp_utc" not in r:
                 self._send_json(400, {"error": "each row must have timestamp_utc"})
@@ -112,17 +125,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             if r.get("label", "") not in VALID_LABELS:
                 self._send_json(400, {"error": f"invalid label: {r.get('label')!r}"})
                 return
+        csv_path = _label_4h_csv(year)
         BACKUP_DIR.mkdir(exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = BACKUP_DIR / f"regime_samples_4h_{ts}.csv"
-        if LABEL_4H_CSV.exists():
-            shutil.copy2(LABEL_4H_CSV, backup_path)
+        backup_path = BACKUP_DIR / f"regime_samples_4h_{year}_{ts}.csv"
+        if csv_path.exists():
+            shutil.copy2(csv_path, backup_path)
         rows_sorted = sorted(labels, key=lambda r: r["timestamp_utc"])
-        with LABEL_4H_CSV.open("w", newline="", encoding="utf-8") as f:
+        with csv_path.open("w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             w.writerow(["timestamp_utc", "label"])
             for r in rows_sorted:
                 w.writerow([r["timestamp_utc"], r.get("label", "")])
+        # CSV → JSON を自動再ビルド（年切替後もラベルが消えないように）
+        build_script = REPO_ROOT / "scripts" / "build_regime_samples_4h_dashboard_json.py"
+        subprocess.run([sys.executable, str(build_script), "--year", str(year)], check=False)
         self._send_json(200, {"ok": True, "rows": len(labels), "backup": backup_path.name})
 
 
