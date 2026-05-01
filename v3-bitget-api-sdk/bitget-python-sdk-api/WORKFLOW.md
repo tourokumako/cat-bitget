@@ -144,6 +144,43 @@ WORKFLOW.md には進捗詳細を書かない（重複は不整合の元・シ�
 
 ---
 
+## ファイル配置規則（恒久・直下平置き禁止）
+
+### scripts/
+直下に `.py` を置かない。必ず以下のサブフォルダのいずれかに配置:
+
+| サブフォルダ | 用途 |
+|---|---|
+| `dashboard/`        | ダッシュボード配信・JSON生成 |
+| `labels/`           | 教師ラベル基盤 |
+| `data/`             | 外部データ取得・テスト |
+| `regime/`           | regime 試作・検証スクリプト |
+| `signal_research/`  | シグナル候補検証（`signals/` サブモジュール含む） |
+| `grid_search/`      | レシピ・パラメータ探索 |
+| `hmm/`              | HMM 系（凍結中・参照のみ） |
+
+新カテゴリが必要な場合は本セクションに追加してから作成する。
+
+### results/
+直下にデータファイルを置かない。出力先は必ずサブフォルダ:
+
+| サブフォルダ | 用途 |
+|---|---|
+| `replay/`              | Replay 出力（CSV / summary JSON） |
+| `phase_hmm/`           | HMM 系出力 |
+| `regime_research/`     | regime 評価出力 |
+| `recipe_search/`       | レシピ探索出力 |
+| `grid_search/`         | グリッドサーチ結果 |
+| `vshape_design/`       | v13/v14 V字検出仕様 + 出力 |
+| `spike_analysis*/`     | スパイク検出（凍結） |
+| `regime_prototype/`    | v1 試作（凍結） |
+| `regime_label_analysis/` | 教師ラベル分布（§13 用） |
+| `charts/`              | 共通チャート |
+
+新スクリプトの書き出し先は `OUT_DIR = REPO_ROOT / "results" / "<カテゴリ>"` で必ずサブフォルダ指定する。
+
+---
+
 ## 改善サイクル（Priority最適化フェーズ用・現在は凍結中）
 
 **Step 1. 構造把握**
