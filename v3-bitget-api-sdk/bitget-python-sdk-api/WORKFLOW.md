@@ -253,9 +253,9 @@ for threshold in candidates:
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-01 改訂5）
+## 🔴 現在のフェーズ（2026-05-02 改訂7）
 
-**フェーズ: ハイブリッド設計フェーズ（v10 ML ベース + v14 ルールベース V字オーバーライド・チューニング継続）**
+**フェーズ: §13 フロー v2 運用開始（全指標分析 Step 1 へ）**
 **Priority 個別最適化: regime 確定まで全停止**
 
 ### 現在地（要点のみ・詳細は regime_research.md §0）
@@ -282,30 +282,29 @@ for threshold in candidates:
 
 ---
 
-## 🔴 次のタスク（2026-05-02 改訂6）
+## 🔴 次のタスク（2026-05-02 改訂7）
 
-**§13 のフローを「目的」に整合する形で再設計する。**
+**§13 Step 1: 全指標分析を実施する。**
 
 ### 背景
 
-2026-05-02 セッションで以下が判明:
-- §13 Step 1-2 に Claude が勝手に「絞り込み（効く指標として残す）」を組み込んでいた
-- まこさんの目的「全レジームの指標特徴を検出して判定に使う」と整合しない
-- 既に実装した `effective_indicators.md` / `label_definition.md`（採用指標版）は削除済
+2026-05-02 セッションで以下が完了:
+- §13 フロー v2 再設計完了（Step 1 = 分析専用・絞り込み禁止 / Step 2 新設 = 絞り込みはここで初めて行う）
+- `effective_indicators.md` / `label_definition.md`（採用指標版）は削除済
 - `single_indicator_distribution.md`（全指標数値）は残置（正確）
 
 ### 目的（regime_research.md §13 冒頭・確定済）
 
 > まこさんが教師ラベル付けした各レジーム（uptrend / downtrend / range）について、複数時間軸（5m / 1h / 4h / 1d）での各種指標の値・特徴を分析し、その結果を実際のレジーム判定ロジックに使う。
 
-### 次セッション手順
+### 次セッション手順（§13 フロー v2 Step 1 実施）
 
-1. `regime_research.md` §13「目的」を読む
-2. §13 のフロー本体（参考扱い）の問題点を整理
-3. 目的に整合するフローを再設計（**Claude が「絞り込み」を勝手に追加しない**）
-4. まこさんに提示 → GO 待ち
-5. GO 後にフロー本体を書き直す
-6. その後、Step 1-2 を全指標版でやり直し（次々セッション以降）
+1. `regime_research.md` §13「フロー本体 v2」を読む
+2. カテゴリ 1〜7 × 時間軸 4軸（5m/1h/4h/1d）で全指標分析を実施
+3. ラベル(up/dn/rg)ごとに分布（中央値・Q1/Q3・ヒストグラム）を出力
+4. 各ラベルの特徴を言語化（**ここで指標の絞り込みはしない**）
+5. カテゴリ別に順次まこさんに提示 → STOP → 確認後に次カテゴリへ
+6. 全カテゴリ完了後に分布サマリ提示 → GO で Step 2（ロジック設計）へ
 
 ### v14.5 の扱い（保留中）
 
@@ -316,13 +315,12 @@ for threshold in candidates:
 ### Step 0 セッション開始時に必読（厳守・順番通り）
 
 1. WORKFLOW.md（このファイル・現フェーズ + 次のタスク）
-2. [`regime_research.md`](.claude/memory/regime_research.md) §0（最新の現在地・v14 ハイブリッド構造）
-3. [`results/vshape_design/v14_judgment_logic.md`](results/vshape_design/v14_judgment_logic.md)（v14 仕様正本）
-4. [`results/vshape_design/base_regime_v10_logic.md`](results/vshape_design/base_regime_v10_logic.md)（v10 ベース仕様正本）
-5. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-150 / L-151 / L-152**（今セッションの3大教訓）
-6. [`lessons_active.md`](.claude/memory/lessons_active.md) L-146 / L-148（特徴量追加 RF再学習の限界・教師分布構造的問題）
+2. [`regime_research.md`](.claude/memory/regime_research.md) §0（最新の現在地・フロー v2）
+3. [`regime_research.md`](.claude/memory/regime_research.md) §13「フロー本体（v2）」
+4. [`results/vshape_design/v14_judgment_logic.md`](results/vshape_design/v14_judgment_logic.md)（v14 仕様正本）
+5. [`results/vshape_design/base_regime_v10_logic.md`](results/vshape_design/base_regime_v10_logic.md)（v10 ベース仕様正本）
+6. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-150 / L-151 / L-152 / L-153**（直近4大教訓）
 7. [`feedback_writing_style.md`](.claude/memory/feedback_writing_style.md)
-8. `data/regime_samples_4h*.csv` 4ファイル全部の件数確認（破壊されてないか）
 
 ### 思考の自衛（再発防止・L-150〜L-152 重点）
 
