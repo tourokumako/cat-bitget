@@ -305,7 +305,7 @@ A1, A3, A5, A6, A7, B1, B2, B4, B5, B6, B7, B8, C4, C7, C8, D1, D2, D3, D4, D5, 
 
 ## §5 採用判定基準
 
-検証実行は scripts/analyze_signals.py を使用。L-118 対応として、干渉率・調整後NET・判定を必ず記録する。
+検証実行は scripts/signal_research/analyze_signals.py を使用。L-118 対応として、干渉率・調整後NET・判定を必ず記録する。
 
 - **GO**   : 調整後NET ≥ $3/regime-day かつ 干渉率 < 0.3
 - **WARN** : 調整後NET ≥ $1/regime-day または 干渉率 0.3〜0.5（実装前に Replay 干渉テスト必須）

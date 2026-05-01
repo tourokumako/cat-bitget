@@ -12,7 +12,7 @@
 
 ### bar-by-bar グリッドサーチ結果（2026-04-03 実施）
 
-- `results/grid_search_results.csv` に全結果保存済み
+- `results/grid_search/grid_search_results.csv` に全結果保存済み
 - 最良パラメータ: **TP=3%/SL=0.5%/add=0**（0.024 BTC で $25.2/day）
 - add を増やすほど悪化（avg_fills=1.27 しか約定しないため）
 - fill rate 33% を加味すると: 実質 **$8/day** 相当

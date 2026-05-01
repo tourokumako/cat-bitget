@@ -8,6 +8,161 @@
 
 ---
 
+## v12 — 2026-05-01（4h V字反転スコア特徴量追加・採用基準未達 / L-148 構造的問題を再確認）
+
+### v11 → v12 変更点
+
+- v11 の spike 4特徴量を**削除**（粒度ミスマッチで効かなかった）
+- 4h V字反転スコア 8特徴量を追加（events.parquet 不使用・4h OHLC のみで計算）:
+  - `recent_swing_high_age_4h` / `recent_swing_low_age_4h`: 直近24本の swing high/low が何バー前か
+  - `pullback_from_recent_high_pct` / `bounce_from_recent_low_pct`: 直近 swing 高安からの戻し率（%）
+  - `pre_peak_run_bars_high` / `pre_peak_run_bars_low`: ピーク直前の単調上昇/下降バー数
+  - `vshape_top_score` / `vshape_bottom_score`: 上記の合成スコア（0〜1）
+- パラメータ: lookback=24本（4日）/ max_age=12本（48h）
+
+### 結果
+
+| 指標 | v10 | v12 | 差 |
+|------|-----|-----|-----|
+| 2025年サンプル一致率 | 56.9% | **56.5%** | -0.4pt |
+| CV 5-fold | 57.2% | 57.2% | ±0pt |
+| 全期間分布 | dt31.1/rg36.0/up32.9% | dt31.4/rg35.4/up33.2% | ほぼ同 |
+
+### V字特徴量の重要度（4h時）
+
+| 特徴量 | 重要度 | 全体ランク |
+|--------|-------|----------|
+| bounce_from_recent_low_pct | 0.070 | 6位 |
+| pullback_from_recent_high_pct | 0.067 | 7位 |
+| recent_swing_high_age_4h | 0.007 | 21位 |
+| recent_swing_low_age_4h | 0.007 | 22位 |
+| pre_peak_run_bars_high | 0.0045 | 23位 |
+| **vshape_top_score** | **0.0025** | 24位 |
+| **vshape_bottom_score** | **0.0024** | 25位 |
+| pre_peak_run_bars_low | 0.0020 | 26位（最下位）|
+
+→ **V字合成スコアは最下位**。pullback/bounce 単体（連続値）は中位に入るが、合成スコア（離散的に作った）は使われない。
+
+### 区間3（2026-02-05〜02-07）
+
+- v10: 全 18バー（4h集約）= downtrend
+- v12: 全 18バー = downtrend → **判定変化なし**
+
+### V字スコア自体は正常動作している（重要発見）
+
+区間3 の vshape_bottom_score 推移:
+
+| 時刻 | bounce_pct | bottom_score | low_age |
+|------|-----------|-------------|--------|
+| 02-06 00:00 | 6.95% | 0.7 | 0 |
+| **02-06 04:00** | 8.09% | **1.0** | 1 |
+| **02-06 08:00 〜 02-07 00:00** | 11〜18% | **1.0**（連続）| 2〜6 |
+| 02-07 04:00 〜 20:00 | 13〜15% | 0.8 | 7〜11 |
+
+→ V字検出ロジックは「02-06 04:00 から底V字発生（直前急落 + 直後急反発）」を正しく1.0スコアで識別している。**ロジック側に問題はない**。しかし RF はそのスコアを使わない（重要度 0.0024）。
+
+### 採用判定: 撤退
+
+事前宣言基準:
+- 第1: 一致率 ≥ 60% → ❌ 56.5%
+- 第2: 区間3 で range 判定増 → ❌ 全 dn のまま
+
+→ v12 撤退。
+
+### 教訓（L-148 構造的問題の再確認）
+
+- **V字検出ロジック自体は正確に動作する**（区間3 の底V字を 1.0 で識別）
+- それでも RF が使わないのは、**当該条件帯（bottom_score=1.0 + 各種値）の教師ラベル分布が dn 多数派**だから
+- L-148 構造的問題（強下落+半値戻し中の教師 dn 主体 59%）は**特徴量を変えても解けない**
+- v6〜v12 で計7反復・特徴量 17→25個まで増やしても 2025一致率は 56.9% → 56.5% で**1pt も改善しない**
+- 教師 vs 肉眼ルールの整合性問題に切り戻す必要がある
+
+### 次セッション候補
+
+1. **教師ラベル分布の構造調査**: vshape_bottom_score >= 0.6 の領域（全期間 26%）で教師 dn/rg/up がどう分布しているか確認。L-148 の知見を全期間に拡張
+2. **ハイブリッド後処理**: RF出力に対し「vshape_bottom_score >= 0.7 → range にオーバーライド」等の人間ルールを適用（特徴量学習で解けない問題を別レイヤーで解く発想転換）
+3. **教師再ラベル基準の見直し**: まこさんと「半値戻し後の値動き」の判定ルールを再定義してから 2022-2024 を再ラベル
+4. 設計探索マトリクス他セル（モデル変更・出来高系・教師年別）
+
+### 関連
+
+- L-148（教師分布構造的問題） / L-146（探索マトリクス採用） / L-141（粒度統一）
+- scripts/regime/regime_inverter.py VERSION="v12"
+
+---
+
+## v11 — 2026-05-01（events.parquet 由来 spike 特徴量追加・採用基準未達で撤退）
+
+### v10 → v11 変更点
+
+- 追加特徴量（4個・events.parquet 由来）:
+  - `hours_since_last_spike`: 直近スパイクのピーク時刻からの経過時間（h・5m精度）
+  - `last_spike_magnitude_signed`: 直近スパイクの magnitude_pct（%・符号付き）
+  - `last_spike_retrace_progress`: ピーク→start方向の戻し進行度（0〜1+）
+  - `spike_active_flag`: hours_since_last_spike <= K（K=24h・閾値）
+- spike プール定義（L-149 推奨）: `events.parquet` から `half_retrace_time` が peak から **24h以内**の真スパイク 22,690 件のみ採用（全 33,644 件中 67.4%）
+- look-ahead 防止: 各 4h バー終端 t_end に対し `peak_time < t_end` のスパイクのみ参照
+- events.parquet は 2023-01-04 以降のため、2022年教師（1,296バー）はすべて「spike未発生扱い」（hours_since=9999）で学習
+
+### 結果（24h 閾値・本命）
+
+| 指標 | v10 | v11 (24h) | 差 |
+|------|-----|-----------|-----|
+| 2025年サンプル一致率 | 56.9% | **57.6%** | +0.7pt |
+| CV 5-fold | 57.2% | 56.4% | -0.8pt |
+| 学習精度 | — | 61.6% | — |
+| 全期間分布 | dt31.1/rg36.0/up32.9% | dt30.9/rg36.0/up33.1% | ほぼ同 |
+
+### 閾値比較（spike_active_flag のみ変更・他特徴量同一）
+
+| 閾値 | 一致率 | CV | 学習 |
+|------|-------|----|----|
+| 12h | 56.9% | 56.6% | 61.6% |
+| **24h（本命）** | **57.6%** | 56.4% | 61.6% |
+| 48h | **58.5%** | 56.7% | 61.6% |
+
+→ 48h が最良だが v10 比 +1.6pt にとどまる。閾値を伸ばすと改善する弱い傾向はあるが、採用基準（≥60%）には届かない。
+
+### spike特徴量重要度（24h時）
+
+| 特徴量 | 重要度 | 全体ランク |
+|--------|-------|-----------|
+| hours_since_last_spike | 0.042 | 10位 |
+| spike_active_flag | 0.016 | 16位 |
+| last_spike_magnitude_signed | 0.014 | 17位 |
+| last_spike_retrace_progress | 0.009 | **22位（最下位）** |
+
+合計約 8%。最強の `reversal_from_high_10b` (0.133) 単体より小さい。
+
+### 区間3（2026-02-05〜02-07・L-148 構造的問題の検証区間）
+
+- v10: 全 18バー（4h集約）= downtrend
+- v11 (24h): 全 18バー = downtrend → **判定変化なし**
+- L-148 構造的問題（教師 dn 主体 59% / 肉眼 range）は spike 特徴量でも解けなかった
+
+### 採用判定: 撤退
+
+事前宣言基準（A-3 開始時に明示）:
+- 第1: 4h サンプル一致率 ≥ 60%（v10 +3pt） → ❌ 最良 48h で 58.5%
+- 第2: 区間3 で range 判定が増える → ❌ 全 dn のまま
+
+→ A-3（events 由来の特徴量を v11 RF に追加）撤退。
+
+### 教訓・所見
+
+- spike 特徴量は L-148 構造的問題（教師ラベル分布のズレ）には効かない。教師再ラベル / 肉眼ルール再定義が本筋
+- 閾値 12h→48h の方向性（伸ばす方が良い）は記録に残す。`hours_since_last_spike` 自体は単独で hours_since の連続値として効いており、active_flag の閾値変化は限界貢献
+- 2022年教師（events 範囲外）が spike特徴量を希釈している可能性あり。events 抽出を 2021-04 から再走すれば多少改善するかもしれないが、現状の +1.6pt 上限を考えると優先度は低い
+- 設計探索マトリクス次セル候補: B（ボラ系・出来高系・モデル変更・教師年別比較）
+
+### 関連
+
+- L-149（events 抽出フィルタ確定） / L-148（教師分布構造的問題） / L-146（探索マトリクス採用）
+- scripts/regime/regime_inverter.py VERSION="v11"
+- スクリプト引数: `main(spike_active_hours=24.0, version_suffix="")` で閾値可変
+
+---
+
 ## v10 — 2026-04-30（半値戻し位置追加・微改善で天井近接）
 
 ### v9 → v10 変更点
@@ -44,10 +199,10 @@ ADX>50 AND retrace_ratio_20b 30-70 AND di_diff<-10 のサンプル分布: n=34 �
 
 ### スクリプト/出力
 
-- `scripts/regime_inverter.py` (VERSION="v10")
+- `scripts/regime/regime_inverter.py` (VERSION="v10")
 - `dashboard/regime_prototype/predictions_v10_*.json`
-- 視認スクリプト: `scripts/inspect_v7_misclassify.py`（v10 対応）
-- 教師分布スクリプト: `scripts/inspect_teacher_distribution.py`
+- 視認スクリプト: `scripts/regime/inspect_v7_misclassify.py`（v10 対応）
+- 教師分布スクリプト: `scripts/regime/inspect_teacher_distribution.py`
 
 ---
 
@@ -164,7 +319,7 @@ CV 改善（汎化向上）と 2025年一致率悪化（v5 が2025年に過適�
 
 | 要素 | 値 |
 |------|-----|
-| スクリプト | `scripts/regime_inverter.py` VERSION="v5" |
+| スクリプト | `scripts/regime/regime_inverter.py` VERSION="v5" |
 | 学習器 | RandomForestClassifier(n_estimators=300, max_depth=4, min_samples_leaf=5, class_weight="balanced") |
 | 特徴量（10種） | close_vs_ma20, close_vs_ma50, slope_4b, slope_8b, slope_12b, slope_ma20_5b, slope_ma50_5b, adx14, di_diff, rsi14 |
 | 学習解像度 | 4h（特徴量計算・学習・推論すべて 4h・L-141）|
@@ -204,7 +359,7 @@ CV 改善（汎化向上）と 2025年一致率悪化（v5 が2025年に過適�
 
 ### スクリプト/出力
 
-- スクリプト: `scripts/regime_inverter.py` (VERSION = "v5")
+- スクリプト: `scripts/regime/regime_inverter.py` (VERSION = "v5")
 - 出力 JSON: `dashboard/regime_prototype/predictions_v5_1h.json`（43812行）・`predictions_v5_1d.json`（1826行）
 - ダッシュボード: タブ ⑪ → バージョン v5 を選択
 
@@ -291,7 +446,7 @@ CV 改善（汎化向上）と 2025年一致率悪化（v5 が2025年に過適�
 
 ### スクリプト/出力
 
-- スクリプト: [`scripts/regime_classifier_prototype.py`](../../scripts/regime_classifier_prototype.py) (VERSION = "v3")
+- スクリプト: [`scripts/regime/regime_classifier_prototype.py`](../../scripts/regime/regime_classifier_prototype.py) (VERSION = "v3")
 - 出力 JSON: `dashboard/regime_prototype/predictions_v3_*.json`
 - ダッシュボード: タブ ⑪ → バージョン v3 を選択
 
@@ -345,7 +500,7 @@ CV 改善（汎化向上）と 2025年一致率悪化（v5 が2025年に過適�
 
 ### スクリプト/出力
 
-- スクリプト: [`scripts/regime_classifier_prototype.py`](../../scripts/regime_classifier_prototype.py) (VERSION = "v2")
+- スクリプト: [`scripts/regime/regime_classifier_prototype.py`](../../scripts/regime/regime_classifier_prototype.py) (VERSION = "v2")
 - 出力 JSON: `dashboard/regime_prototype/predictions_v2_*.json`
 - ダッシュボード: タブ ⑪ → バージョン v2 を選択
 

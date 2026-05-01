@@ -176,12 +176,12 @@
 | フェーズ | 内容 | 終了条件 |
 |---------|------|---------|
 | 8.0 | ラベル基準明文化（UP/DT/RG の定義文書） | `.claude/memory/phase8_label_criteria.md` 確定 |
-| 8.1a | **直近1年365点ラベル先行作成（まこさん）** | `results/phase8_daily_labels_y1.csv` 確定 |
-| 8.2a | 入力特徴設計・1年×日次特徴行列構築 | `results/phase8_features_daily_y1.csv` 確定 |
+| 8.1a | **直近1年365点ラベル先行作成（まこさん）** | `results/phase_hmm/phase8_daily_labels_y1.csv` 確定 |
+| 8.2a | 入力特徴設計・1年×日次特徴行列構築 | `results/phase_hmm/phase8_features_daily_y1.csv` 確定 |
 | 8.3a | **5手法ベースライン同時実装・ブロックCV 1巡** | 5手法すべての合致率・候補B数値・過学習指標が出揃う |
 | **8.3.5** | **進める/止める判定ゲート（下記合格ライン）** | **GO → 8.1b / NOGO → 段階打ち切り** |
-| 8.1b | 残り4年1460点ラベル作成（まこさん） | `results/phase8_daily_labels_y5.csv` 確定 |
-| 8.2b | 5年×日次特徴行列再構築 | `results/phase8_features_daily_y5.csv` 確定 |
+| 8.1b | 残り4年1460点ラベル作成（まこさん） | `results/phase_hmm/phase8_daily_labels_y5.csv` 確定 |
+| 8.2b | 5年×日次特徴行列再構築 | `results/phase_hmm/phase8_features_daily_y5.csv` 確定 |
 | 8.3b | 5手法ベースライン再実行（5年データ） | 合致率・数値・過学習指標を1年版と比較 |
 | 8.4 | 上位2手法を選抜・各最大5回調整 | 合致率 ≥ 60% & 候補B数値合格 が出るか確定 |
 | 8.5 | 合格手法の365d Replay 検証 | $/dt-day がベースライン超え or 失格確定 |
@@ -231,4 +231,4 @@
 - `WORKFLOW.md` — 段階計画（教師あり方針転換版）
 - `.claude/memory/lessons_active.md` L-126〜L-135 — 経緯と既知リスク
 - `archive/workflow/WORKFLOW_20260427.md` — 段階1 完了報告
-- `results/phase0_return_distribution.json` — 候補B 閾値の根拠統計
+- `results/phase_hmm/phase0_return_distribution.json` — 候補B 閾値の根拠統計

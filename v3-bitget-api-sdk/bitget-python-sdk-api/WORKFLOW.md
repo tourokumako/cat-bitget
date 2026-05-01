@@ -216,55 +216,83 @@ for threshold in candidates:
 
 ---
 
-## 🔴 現在のフェーズ（2026-04-30 改訂3）
+## 🔴 現在のフェーズ（2026-05-01 改訂5）
 
-**フェーズ: 設計探索フェーズ（v10 凍結・L-146 で網羅マトリクス採用）**
+**フェーズ: ハイブリッド設計フェーズ（v10 ML ベース + v14 ルールベース V字オーバーライド・チューニング継続）**
 **Priority 個別最適化: regime 確定まで全停止**
 
-### 現在地（要点のみ・詳細は regime_research.md §0/§12）
+### 現在地（要点のみ・詳細は regime_research.md §0）
 
-- v6〜v10 で「特徴量1個追加→RF再学習」を5反復・+4pt 微改善のみで構造的天井（L-146）
-  - v6: 52.9% / v7: 55.0% / v8: 57.2% / v9: 57.7% / v10: 56.9%（凍結）
-- 2022〜2025 全年 4,745バー教師データ収集完了（人間ラベル）
-- **構造的問題（L-148）**: 教師ラベル分布傾向そのものが肉眼ルールと乖離するケース有り → 特徴量追加では解けない
-- 未試行カテゴリが大量（ボラ・出来高・プライスアクション・MTF・統計・Change Point・異モデル）
+- v11/v12 撤退（ML経由のV字検出は L-148 構造的問題で解けないと判明）
+- L-151 で発想転換: V字検出は ML を経由せずルールベースで実装
+- v13.0〜v13.5: V字頂点検出オーバーライドを段階的に厳格化（一致率 24% → 56.8% / ヒット率 67% → 29%）
+- v14.0〜v14.4: トレンド継続判定を追加（L-152）。pivot からの戻り維持で 12-01 を 23h uptrend 維持達成
+- ダッシュボード タブ⑪ で **v14** 選択可能
 
-詳細は **[`regime_research.md`](.claude/memory/regime_research.md) §0/§5/§12 が唯一の正本**。
+### v14.4 性能
+
+- 24サンプルヒット率: 7/24 (29.2%)
+- 2025年一致率: 56.6%（v10 -0.3pt・ほぼ同等）
+- オーバーライド適用率: 11.2%
+- 12-01 の上昇トレンド: 23h 維持
+
+### 主要ドキュメント（必読）
+
+- [`results/vshape_design/v14_judgment_logic.md`](results/vshape_design/v14_judgment_logic.md): V字検出オーバーライド（v14）の判定ロジック総まとめ
+- [`results/vshape_design/base_regime_v10_logic.md`](results/vshape_design/base_regime_v10_logic.md): ベースレジーム判定（v10）ロジック総まとめ
+
+詳細は **[`regime_research.md`](.claude/memory/regime_research.md) §0 が唯一の正本**。
 
 ---
 
-## 🔴 次のタスク（2026-04-30 改訂3）
+## 🔴 次のタスク（2026-05-02 改訂6）
 
-**設計探索マトリクスを最初に作って、未試行セルから1反復1セル並行探索する**。L-146 セッション総括で確定した方針。
+**§13 のフローを「目的」に整合する形で再設計する。**
+
+### 背景
+
+2026-05-02 セッションで以下が判明:
+- §13 Step 1-2 に Claude が勝手に「絞り込み（効く指標として残す）」を組み込んでいた
+- まこさんの目的「全レジームの指標特徴を検出して判定に使う」と整合しない
+- 既に実装した `effective_indicators.md` / `label_definition.md`（採用指標版）は削除済
+- `single_indicator_distribution.md`（全指標数値）は残置（正確）
+
+### 目的（regime_research.md §13 冒頭・確定済）
+
+> まこさんが教師ラベル付けした各レジーム（uptrend / downtrend / range）について、複数時間軸（5m / 1h / 4h / 1d）での各種指標の値・特徴を分析し、その結果を実際のレジーム判定ロジックに使う。
 
 ### 次セッション手順
 
-1. `regime_research.md` §12 の設計探索マトリクス（軸1〜4）を読む
-2. 未試行セルの中から「最も effort/期待値比が良い」候補をまこさんに3つ提案
-3. まこさんが選んだ1セルを試行（特徴量カテゴリ追加 OR モデル変更 OR ハイパラ変更 OR 教師範囲変更のいずれか1つだけ）
-4. 結果報告（数値 + 3区間視認 + 採用基準への到達度）
-5. 採用基準（4h一致率≥65% / CV≥60% / 視認OK）未達なら次セル選定。同じ方向で2ターン続けない（L-146 厳守）
-6. regime_trial_log.md に v11/v12... を追記
+1. `regime_research.md` §13「目的」を読む
+2. §13 のフロー本体（参考扱い）の問題点を整理
+3. 目的に整合するフローを再設計（**Claude が「絞り込み」を勝手に追加しない**）
+4. まこさんに提示 → GO 待ち
+5. GO 後にフロー本体を書き直す
+6. その後、Step 1-2 を全指標版でやり直し（次々セッション以降）
+
+### v14.5 の扱い（保留中）
+
+- 現状 v14.5（trail方式）は不安定状態のまま放置
+- v14.4 に戻すか様子見かは次セッションで判断
+- ボット運用は止まっているので実害なし
 
 ### Step 0 セッション開始時に必読（厳守・順番通り）
 
 1. WORKFLOW.md（このファイル・現フェーズ + 次のタスク）
-2. [`regime_research.md`](.claude/memory/regime_research.md) §0/§5/§12（最新の現在地・試行履歴・設計探索マトリクス）
-3. [`regime_trial_log.md`](.claude/memory/regime_trial_log.md) v6〜v10（直近5反復の詳細）
-4. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-146 / L-147 / L-148**（このセッションの3大教訓・絶対必読）
-5. [`lessons_active.md`](.claude/memory/lessons_active.md) L-139〜L-141（粒度ミスマッチ・方針大転換・解像度統一）
-6. [`feedback_regime_essence.md`](.claude/memory/feedback_regime_essence.md)
-7. [`feedback_exhaustive_search.md`](.claude/memory/feedback_exhaustive_search.md)（網羅マトリクス運用ルール）
-8. [`feedback_writing_style.md`](.claude/memory/feedback_writing_style.md)
-9. `data/regime_samples_4h*.csv` 4ファイル全部の件数確認（破壊されてないか）
+2. [`regime_research.md`](.claude/memory/regime_research.md) §0（最新の現在地・v14 ハイブリッド構造）
+3. [`results/vshape_design/v14_judgment_logic.md`](results/vshape_design/v14_judgment_logic.md)（v14 仕様正本）
+4. [`results/vshape_design/base_regime_v10_logic.md`](results/vshape_design/base_regime_v10_logic.md)（v10 ベース仕様正本）
+5. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-150 / L-151 / L-152**（今セッションの3大教訓）
+6. [`lessons_active.md`](.claude/memory/lessons_active.md) L-146 / L-148（特徴量追加 RF再学習の限界・教師分布構造的問題）
+7. [`feedback_writing_style.md`](.claude/memory/feedback_writing_style.md)
+8. `data/regime_samples_4h*.csv` 4ファイル全部の件数確認（破壊されてないか）
 
-### 思考の自衛（再発防止・L-146 / L-147 / L-148 重点）
+### 思考の自衛（再発防止・L-150〜L-152 重点）
 
-- **「次の v11 も特徴量1個追加して RF 再学習」フレーズが頭に浮かんだら止める**（L-146 直撃）。設計探索フェーズでは網羅マトリクスから次セルを選ぶ
+- **「実装内部用語（5m発火・クールダウン・特徴量名）をユーザーに見せない」**（L-150）。レジーム判定の文脈では 1h dn/range/up でのみ話す
+- **「ML 経由で V字検出を解こう」と思ったら止める**（L-151）。V字はルールベース・v14 オーバーライドの担当
+- **「反転点検出」と「反転後のトレンド維持」を分離する**（L-152）。両方の責務を明示的に設計する
 - **「同じ構造の提案を2ターン続けたら必ずフレーム自己点検を起動」**（WORKFLOW 思考フレーム自己点検 + L-146）
-- 肉眼ルールを「単純条件」で特徴量化しない。位置と動きを分けて表現（L-147）
-- 分類器の特定ケース誤判定を見たら、まず該当条件帯の教師データ分布を出す（L-148）
-- 「月単位で当てる」「monthly_acc 最優先」「regime 廃止」「肉眼ラベル全期間網羅で一致率最大化」も依然禁止
 
 ---
 
