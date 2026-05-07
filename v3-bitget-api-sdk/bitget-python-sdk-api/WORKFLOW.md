@@ -253,58 +253,65 @@ for threshold in candidates:
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-02 改訂7）
+## 🔴 現在のフェーズ（2026-05-07 改訂8）
 
-**フェーズ: §13 フロー v2 運用開始（全指標分析 Step 1 へ）**
+**フェーズ: §13 フロー v3 — 段階1-A / 1-B 完了 / 1-C 着手前**
 **Priority 個別最適化: regime 確定まで全停止**
 
-### 現在地（要点のみ・詳細は regime_research.md §0）
+### 2026-05-06〜07 セッション成果
 
-- v11/v12 撤退（ML経由のV字検出は L-148 構造的問題で解けないと判明）
-- L-151 で発想転換: V字検出は ML を経由せずルールベースで実装
-- v13.0〜v13.5: V字頂点検出オーバーライドを段階的に厳格化（一致率 24% → 56.8% / ヒット率 67% → 29%）
-- v14.0〜v14.4: トレンド継続判定を追加（L-152）。pivot からの戻り維持で 12-01 を 23h uptrend 維持達成
-- ダッシュボード タブ⑪ で **v14** 選択可能
+- §13 フロー v2 → **v3** 全面再設計（archive 退避: [`archive/regime_research/section13_v2_obsolete.md`](archive/regime_research/section13_v2_obsolete.md)）
+- v3 3原則明示: ① post 使用禁止 / ② 切替点が本丸 / ③ 段階1 では絞り込まない
+- **段階1-A 完了**: 全指標 × 6パターン × 3軸 (1h/4h/1d) の t=0+過去N 分布 + メタスコア併記
+  - 出力: [`stage1a_meta_analysis.md`](results/regime_label_analysis/stage1a_meta_analysis.md) / [`stage1a_main_distribution.md`](results/regime_label_analysis/stage1a_main_distribution.md)
+- **段階1-B 完了**: 形状特徴量 (B-1〜B-5) × 6パターン × 5軸 (15m/30m/1h/4h/1d) + メタスコア3系統
+  - 出力: [`stage1b_meta_analysis.md`](results/regime_label_analysis/stage1b_meta_analysis.md) / [`stage1b_main_distribution.md`](results/regime_label_analysis/stage1b_main_distribution.md)
+- **重要仮説保管**: 「前レジームの継続条件薄れ + 次レジームの兆候なし」構造を §13 重要仮説セクションに記録
+- 新規教訓 L-154〜L-158（post 禁止 / 中央値の罠 / メタ分析駆動 / ドリフト併用必須 / per-event prev_run 必須）
 
-### v14.4 性能
+### 現行 v14 判定ロジック（実装中・regime 確定までこの判定で運用）
 
-- 24サンプルヒット率: 7/24 (29.2%)
-- 2025年一致率: 56.6%（v10 -0.3pt・ほぼ同等）
-- オーバーライド適用率: 11.2%
-- 12-01 の上昇トレンド: 23h 維持
-
-### 主要ドキュメント（必読）
-
-- [`results/vshape_design/v14_judgment_logic.md`](results/vshape_design/v14_judgment_logic.md): V字検出オーバーライド（v14）の判定ロジック総まとめ
-- [`results/vshape_design/base_regime_v10_logic.md`](results/vshape_design/base_regime_v10_logic.md): ベースレジーム判定（v10）ロジック総まとめ
+- v14.4 性能: 24サンプルヒット率 7/24 (29.2%) / 2025年一致率 56.6% / オーバーライド適用率 11.2%
+- 詳細: [`results/vshape_design/v14_judgment_logic.md`](results/vshape_design/v14_judgment_logic.md) / [`results/vshape_design/base_regime_v10_logic.md`](results/vshape_design/base_regime_v10_logic.md)
+- regime_research.md §0「現行 v14 判定ロジック仕様」セクションが正本
 
 詳細は **[`regime_research.md`](.claude/memory/regime_research.md) §0 が唯一の正本**。
 
 ---
 
-## 🔴 次のタスク（2026-05-02 改訂7）
+## 🔴 次のタスク（2026-05-07 改訂8）
 
-**§13 Step 1: 全指標分析を実施する。**
+**§13 段階1-C: 構造的要素分析に着手する。**
 
 ### 背景
 
-2026-05-02 セッションで以下が完了:
-- §13 フロー v2 再設計完了（Step 1 = 分析専用・絞り込み禁止 / Step 2 新設 = 絞り込みはここで初めて行う）
-- `effective_indicators.md` / `label_definition.md`（採用指標版）は削除済
-- `single_indicator_distribution.md`（全指標数値）は残置（正確）
+2026-05-06〜07 セッションで段階1-A / 1-B が完了。残るは段階1-C（構造的要素）→ 段階2（判定ロジック設計）→ 段階3（検証・実装・採否）。
 
-### 目的（regime_research.md §13 冒頭・確定済）
+### 段階1-C スコープ
 
-> まこさんが教師ラベル付けした各レジーム（uptrend / downtrend / range）について、複数時間軸（5m / 1h / 4h / 1d）での各種指標の値・特徴を分析し、その結果を実際のレジーム判定ロジックに使う。
+**目的**: ボット運用で取得可能な構造データ（レジサポライン・ピボット・出来高クラスタ等）を切替点周辺で集計する。
 
-### 次セッション手順（§13 フロー v2 Step 1 実施）
+⚠️ **取得困難な外部データは対象外**（清算ヒートマップ・板情報等）。
 
-1. `regime_research.md` §13「フロー本体 v2」を読む
-2. カテゴリ 1〜7 × 時間軸 4軸（5m/1h/4h/1d）で全指標分析を実施
-3. ラベル(up/dn/rg)ごとに分布（中央値・Q1/Q3・ヒストグラム）を出力
-4. 各ラベルの特徴を言語化（**ここで指標の絞り込みはしない**）
-5. カテゴリ別に順次まこさんに提示 → STOP → 確認後に次カテゴリへ
-6. 全カテゴリ完了後に分布サマリ提示 → GO で Step 2（ロジック設計）へ
+候補（着手時にメタ分析で詳細化）:
+- レジサポライン（過去 N バー高安・複数回タッチした価格帯）
+- ピボットポイント（クラシック / フィボナッチ）
+- 出来高クラスタ（出来高プロファイル）
+- フィボナッチ・リトレースメント（直近スイング間）
+
+### 次セッション手順
+
+1. WORKFLOW.md と regime_research.md §0 / §13 v3 を読む
+2. 段階1-C のスコープ範囲をまこさんと再確認（取得可能性を1個ずつ確認）
+3. 段階1-C メタ分析を設計（自己相関・分離度・特異性）
+4. 段階1-C 本実装 → 結果提示
+5. 段階2 着手判定（段階1-C 結果次第で段階2 に進む or 1-C 拡張）
+
+### 段階2 着手時の重要仮説（regime_research.md §13 重要仮説セクション）
+
+- 「前レジームの継続条件薄れ + 次レジームの兆候なし」構造
+- 含意 5（ドリフト併用必須）+ prev_run 分け論点
+- **段階1-A と段階1-B で時間軸が異なる**: 1-A は 1h/4h/1d / 1-B は 15m/30m/1h/4h/1d → 段階2 で統合設計が必要
 
 ### v14.5 の扱い（保留中）
 
@@ -312,22 +319,23 @@ for threshold in candidates:
 - v14.4 に戻すか様子見かは次セッションで判断
 - ボット運用は止まっているので実害なし
 
-### Step 0 セッション開始時に必読（厳守・順番通り）
+### Step 0 セッション開始時に必読(厳守・順番通り)
 
 1. WORKFLOW.md（このファイル・現フェーズ + 次のタスク）
-2. [`regime_research.md`](.claude/memory/regime_research.md) §0（最新の現在地・フロー v2）
-3. [`regime_research.md`](.claude/memory/regime_research.md) §13「フロー本体（v2）」
-4. [`results/vshape_design/v14_judgment_logic.md`](results/vshape_design/v14_judgment_logic.md)（v14 仕様正本）
-5. [`results/vshape_design/base_regime_v10_logic.md`](results/vshape_design/base_regime_v10_logic.md)（v10 ベース仕様正本）
-6. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-150 / L-151 / L-152 / L-153**（直近4大教訓）
+2. [`regime_research.md`](.claude/memory/regime_research.md) §0（最新の現在地）
+3. [`regime_research.md`](.claude/memory/regime_research.md) §13 v3「3原則」「重要仮説」「フロー本体」
+4. [`results/regime_label_analysis/stage1a_main_distribution.md`](results/regime_label_analysis/stage1a_main_distribution.md)（段階1-A 正本）
+5. [`results/regime_label_analysis/stage1b_main_distribution.md`](results/regime_label_analysis/stage1b_main_distribution.md)（段階1-B 正本）
+6. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-154 / L-155 / L-156 / L-157 / L-158**（最新5大教訓）
 7. [`feedback_writing_style.md`](.claude/memory/feedback_writing_style.md)
 
-### 思考の自衛（再発防止・L-150〜L-152 重点）
+### 思考の自衛（v3 3原則の徹底）
 
-- **「実装内部用語（5m発火・クールダウン・特徴量名）をユーザーに見せない」**（L-150）。レジーム判定の文脈では 1h dn/range/up でのみ話す
-- **「ML 経由で V字検出を解こう」と思ったら止める**（L-151）。V字はルールベース・v14 オーバーライドの担当
-- **「反転点検出」と「反転後のトレンド維持」を分離する**（L-152）。両方の責務を明示的に設計する
-- **「同じ構造の提案を2ターン続けたら必ずフレーム自己点検を起動」**（WORKFLOW 思考フレーム自己点検 + L-146）
+- **post（未来）を判定材料に使わない**（L-154）。新規スクリプトを書くたびにセルフチェック
+- **中央値だけで判定材料を選ばない**（L-155）。Q1/Q3 + 典型形一致率を必ず併記
+- **N・軸・閾値はメタ分析でデータから決める**（L-156）。直感で振らない
+- **窓なし指標はドリフト方向を必ず併用**（L-157）
+- **per-event テーブルに prev_run カラム必須**（L-158）
 
 ---
 
