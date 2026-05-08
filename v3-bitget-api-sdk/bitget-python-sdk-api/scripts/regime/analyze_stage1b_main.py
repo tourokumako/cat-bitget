@@ -5,7 +5,7 @@
 で併記して優先候補を ★ で示す。
 
 設計:
-- 対象軸: 15m / 30m / 1h / 4h / 1d (5m はメタ処理2-C で最も分離悪い → 除外)
+- 対象軸: 5m / 15m / 30m / 1h / 4h / 1d (全6軸並列・絞り込みなし)
 - 窓 W: W=10 を主軸 (全特徴量×全軸で計算) + W=20/W=50 で重複度 0 のものを追加
 - 切替点: 直接遷移 198 件 (blank・同ラベル復帰除外)
 - per-event テーブルに **prev_run カラム必須** (段階2 でフィルタ可能にする)
@@ -49,8 +49,8 @@ DATA_5M = BASE / "data/BTCUSDT-5m-2021-04-01_03-31_1826d.csv"
 OUT_DIR = BASE / "results/regime_label_analysis"
 OUT_MD = OUT_DIR / "stage1b_main_distribution.md"
 
-# 対象軸 (5m 除外・段階1-A と異なる: 30m/15m を新規採用)
-TIMEFRAMES = ["15m", "30m", "1h", "4h", "1d"]
+# 対象軸 (全6軸並列)
+TIMEFRAMES = ["5m", "15m", "30m", "1h", "4h", "1d"]
 
 # W 採用方針
 W_PRIMARY = 10  # 全特徴量×全軸でこの W
@@ -189,7 +189,7 @@ def write_md(cohort_df, sep_df, spec_dfs, per_event_df, combos, out_path):
     lines.append("")
     lines.append("## 設計")
     lines.append("")
-    lines.append(f"- **対象軸**: {' / '.join(TIMEFRAMES)} (5m はメタ処理2-C で最弱 → 除外)")
+    lines.append(f"- **対象軸**: {' / '.join(TIMEFRAMES)} (全6軸並列・絞り込みなし)")
     lines.append(f"- **W**: W={W_PRIMARY} を主軸 (全特徴量×全軸) + W={W_ADDITIONAL_FROM_META} で重複度 0 のもの追加")
     lines.append(f"- **切替点**: 直接遷移 198 件 (blank・同ラベル復帰除外)")
     lines.append(f"- **post (未来) は使わない**: 形状特徴量自体が過去 W バーを要約するため過去窓不要")
@@ -315,15 +315,17 @@ def main():
     transitions = extract_transitions(runs)
     print(f"  切替点数: {len(transitions)}")
 
-    print("OHLCV resample (5軸)...")
+    print(f"OHLCV resample ({len(TIMEFRAMES)}軸)...")
     df5m = pd.read_csv(DATA_5M, parse_dates=["timestamp"]).set_index("timestamp").sort_index()
-    df_per_tf = {
+    all_dfs = {
+        "5m": df5m,
         "15m": resample_ohlcv(df5m, "15min"),
         "30m": resample_ohlcv(df5m, "30min"),
         "1h": resample_ohlcv(df5m, "1h"),
         "4h": resample_ohlcv(df5m, "4h"),
         "1d": resample_ohlcv(df5m, "1D"),
     }
+    df_per_tf = {tf: all_dfs[tf] for tf in TIMEFRAMES if tf in all_dfs}
 
     print("形状特徴量計算 (軸 × W)...")
     features_per_tf: dict[str, dict[int, pd.DataFrame]] = {}

@@ -18,6 +18,17 @@ ClaudeはPM・PL・SE・プログラマの全役割を担う。
 - 目標（$60/day）から常に逆算して行動する。目先の指標改善に満足しない
 - 方向転換時は WORKFLOW のフェーズと照合してから提案する（脇道に逸れない）
 - 議論が行き詰まった・同じ提案を繰り返している・直前2ターン同じ語彙の時は「思考フレーム/目標コミット 自己点検」を実行する（後述）
+- **作業完了報告は 3点必須**（2026-05-08 追加）: ① 完了フラグ + ファイル名 / ② 結果中身のサマリー（数値・上位5-10件・次元保持）/ ③ ファイル提示（リンク）。「ファイルに書いた」だけでは報告完了とみなさない
+- **完了報告必須証跡 4点**（2026-05-08 追加・虚偽報告防止）:
+  1. **コード総点検 grep 結果**（全件・"no matches"含む・関連スクリプト全部）
+     - 4種の grep: ① TF endswith/startswith ② TFリスト固定値 ③ カテゴリ固定値 ④ 絞り込み処理（best 1/argmax/nlargest(1)）
+  2. **数値の二重提示**（サマリー + 出典ファイル引用・行番号付き）
+  3. **成果物ファイルの実体**（チャット側に届く形・パス + 行数 + 更新時刻）
+  4. **実行ログ**（コマンド・開始時刻・終了時刻・所要時間・終了コード）
+  - 1つでも欠けたら完了とみなさない
+  - 「総点検したから違反なし」を grep 結果なしに主張しない
+  - 「やった」「完了」を実行ログなしに主張しない
+  - 「実は完了済み」を主張する場合は該当ターン番号と全文を再提示する
 
 ## 思考フレーム自己点検
 
@@ -253,65 +264,91 @@ for threshold in candidates:
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-07 改訂8）
+## 🔴 現在のフェーズ（2026-05-08 改訂9）
 
-**フェーズ: §13 フロー v3 — 段階1-A / 1-B 完了 / 1-C 着手前**
+**フェーズ: §13 v3 段階1 全工程完了 → 段階2 着手前素描の再評価**
 **Priority 個別最適化: regime 確定まで全停止**
 
-### 2026-05-06〜07 セッション成果
+### 2026-05-08 セッション成果
 
-- §13 フロー v2 → **v3** 全面再設計（archive 退避: [`archive/regime_research/section13_v2_obsolete.md`](archive/regime_research/section13_v2_obsolete.md)）
-- v3 3原則明示: ① post 使用禁止 / ② 切替点が本丸 / ③ 段階1 では絞り込まない
-- **段階1-A 完了**: 全指標 × 6パターン × 3軸 (1h/4h/1d) の t=0+過去N 分布 + メタスコア併記
-  - 出力: [`stage1a_meta_analysis.md`](results/regime_label_analysis/stage1a_meta_analysis.md) / [`stage1a_main_distribution.md`](results/regime_label_analysis/stage1a_main_distribution.md)
-- **段階1-B 完了**: 形状特徴量 (B-1〜B-5) × 6パターン × 5軸 (15m/30m/1h/4h/1d) + メタスコア3系統
-  - 出力: [`stage1b_meta_analysis.md`](results/regime_label_analysis/stage1b_meta_analysis.md) / [`stage1b_main_distribution.md`](results/regime_label_analysis/stage1b_main_distribution.md)
-- **重要仮説保管**: 「前レジームの継続条件薄れ + 次レジームの兆候なし」構造を §13 重要仮説セクションに記録
-- 新規教訓 L-154〜L-158（post 禁止 / 中央値の罠 / メタ分析駆動 / ドリフト併用必須 / per-event prev_run 必須）
+- §13 v3 検証フロー新仕様確定（段階1 = 素材調達 / 段階2 = 組み合わせ最適化 / 段階3 = 検証採否）
+- 3原則 + **9原則** + 「絞り込まない」境界の明文化（regime_research.md §1〜§7）
+- **規定整備**:
+  - WORKFLOW.md / CLAUDE.md / regime_research.md に「作業完了報告 3点必須」「完了報告必須証跡 4点」追記
+  - regime_research.md 大幅整理（200行以内本体 + archive 退避6本）
+  - L-159 (best 1 自動採用禁止) / L-160 (Claude 主導カテゴリ抽出禁止) / L-161 (完了報告前コード総点検必須) 追記
+- **段階1 全6軸再走完了** (5m/15m/30m/1h/4h/1d):
+  - 1-A メタ + 本実装（**拡張 68 指標** = 旧 48 + A 層 13 + B 層 4 + C 層 3 / 8 カテゴリ）
+  - 1-B メタ + 本実装（20 特徴量 × W 組合せ = 105 系列）
+  - 1-C メタ（147 カラム × 6軸・既存ファイル流用・§5 削除済）
+- **完了レポート + 証跡作成**:
+  - [`stage1_completion_report.md`](results/regime_label_analysis/stage1_completion_report.md)
+  - [`stage1_evidence_log.md`](results/regime_label_analysis/stage1_evidence_log.md)
+
+### 1-A 拡張詳細（v2・68 指標 × 8 カテゴリ）
+
+| カテゴリ | 指標数 | N | 追加内容 |
+|---|---:|---:|---|
+| 1_trend | 18 | 7 | macd_line / macd_signal / macd_hist_change 追加 |
+| 2_momentum | 11 | 5 | momentum_10b / div_rsi14_14b / div_macd_14b 追加 |
+| 3_volatility | 12 | 10 | zscore_return_20b/50b / abs_return_3sigma_20b / donchian_width_pct_20 追加 |
+| 4_adx_dmi | 4 | 14 | di_plus / di_minus 追加（情報落ち分解）|
+| 5_volume | 6 | 6 | 変更なし |
+| 6_priceaction | 11 | 1 | new_high/low_streak_5b / pinbar_top/bottom / bullish/bearish_engulfing 追加 |
+| 7_position | 5 | 1 | donchian_position_20 追加 |
+| 8_mtf（新カテゴリ）| 1 | 1 | mtf_slope_align_3way（短中長 slope 符号一致度・単軸内 MTF 模倣）|
+| **合計** | **68** | — | 1-A 本実装 ★合計 540（v1 419 比 +121）|
 
 ### 現行 v14 判定ロジック（実装中・regime 確定までこの判定で運用）
 
 - v14.4 性能: 24サンプルヒット率 7/24 (29.2%) / 2025年一致率 56.6% / オーバーライド適用率 11.2%
-- 詳細: [`results/vshape_design/v14_judgment_logic.md`](results/vshape_design/v14_judgment_logic.md) / [`results/vshape_design/base_regime_v10_logic.md`](results/vshape_design/base_regime_v10_logic.md)
-- regime_research.md §0「現行 v14 判定ロジック仕様」セクションが正本
+- 詳細: [`archive/regime_research/v14_judgment_spec.md`](archive/regime_research/v14_judgment_spec.md)
+- regime_research.md §8「現行 v14 判定実装」が正本
 
 詳細は **[`regime_research.md`](.claude/memory/regime_research.md) §0 が唯一の正本**。
 
 ---
 
-## 🔴 次のタスク（2026-05-07 改訂8）
+## 🔴 次のタスク（2026-05-08 改訂9）
 
-**§13 段階1-C: 構造的要素分析に着手する。**
+**段階2「組み合わせ最適化」着手前 素描の再評価 → 段階2 本実装**
 
-### 背景
+### 段階1 完了状態
 
-2026-05-06〜07 セッションで段階1-A / 1-B が完了。残るは段階1-C（構造的要素）→ 段階2（判定ロジック設計）→ 段階3（検証・実装・採否）。
+- 1-A: **68 指標 × 6軸** 全並列出力（[`stage1a_meta_analysis.md`](results/regime_label_analysis/stage1a_meta_analysis.md) / [`stage1a_main_distribution.md`](results/regime_label_analysis/stage1a_main_distribution.md)）
+- 1-B: 105 系列 × 6軸 全並列出力（[`stage1b_meta_analysis.md`](results/regime_label_analysis/stage1b_meta_analysis.md) / [`stage1b_main_distribution.md`](results/regime_label_analysis/stage1b_main_distribution.md)）
+- 1-C: 147 カラム × 6軸 全並列出力（[`stage1c_meta_analysis.md`](results/regime_label_analysis/stage1c_meta_analysis.md)・§5 削除済）
 
-### 段階1-C スコープ
+合計実質 **1,920 (指標/特徴量/カラム × 軸) セル**を段階1 で並列保持。
 
-**目的**: ボット運用で取得可能な構造データ（レジサポライン・ピボット・出来高クラスタ等）を切替点周辺で集計する。
+### 段階2 着手前 素描（仮保管・段階1 結果を踏まえて再評価する前提）
 
-⚠️ **取得困難な外部データは対象外**（清算ヒートマップ・板情報等）。
+| 論点 | 仮素描 | 再評価材料 |
+|---|---|---|
+| 探索手順 | 専門家設計起点 + 全探索補完 | 段階1 結果に「圧倒的に強い軸/カテゴリ」が見つかれば専門家設計優位、中位の組み合わせ依存なら全探索寄り |
+| 評価指標 | target_match - others_match の乖離 (pt) 主・F1 補助・6 パターン別個別最適化 | — |
+| 訓練/検証分離 | Walk-forward 6 fold + 時系列 split OOS | 切替点 198 件 / target × 6 fold で各 fold 10 件超を最低基準 |
+| 5m タイミング同期 | merge_asof + ffill（バー完了後参照）| timing offset / 1d バー ffill 期間は実装時に詳細詰め |
+| 5m 解像度評価 | 切替点ベース評価（段階1 と評価軸を揃える）| — |
 
-候補（着手時にメタ分析で詳細化）:
-- レジサポライン（過去 N バー高安・複数回タッチした価格帯）
-- ピボットポイント（クラシック / フィボナッチ）
-- 出来高クラスタ（出来高プロファイル）
-- フィボナッチ・リトレースメント（直近スイング間）
+### 次セッション最初にやること
 
-### 次セッション手順
+1. [`regime_research.md`](.claude/memory/regime_research.md) §1「絶対ルール」+ §3「フロー本体」+ §5「段階2 要点」を再読
+2. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-159 / L-160 / L-161** を再読
+3. [`stage1_completion_report.md`](results/regime_label_analysis/stage1_completion_report.md) を踏まえて段階2 素描を再評価:
+   - 個別指標で圧倒的に強い軸/カテゴリが見つかったか?（→ 専門家設計起点 vs 全探索）
+   - 組み合わせ条件成立件数の事前見積もり（指標の単独発火頻度から計算）
+   - L-141「学習解像度と推論解像度を揃える」を満たす評価設計
+4. 段階2 着手前 素描を確定（GO 待ち）
+5. 段階2 実装着手（コード設計 → 実装 → walk-forward 検証 → 採否判定）
 
-1. WORKFLOW.md と regime_research.md §0 / §13 v3 を読む
-2. 段階1-C のスコープ範囲をまこさんと再確認（取得可能性を1個ずつ確認）
-3. 段階1-C メタ分析を設計（自己相関・分離度・特異性）
-4. 段階1-C 本実装 → 結果提示
-5. 段階2 着手判定（段階1-C 結果次第で段階2 に進む or 1-C 拡張）
+### 重要仮説（段階2 着手時の出発点）
 
-### 段階2 着手時の重要仮説（regime_research.md §13 重要仮説セクション）
-
+[`regime_research.md`](.claude/memory/regime_research.md) §6「重要仮説」参照:
 - 「前レジームの継続条件薄れ + 次レジームの兆候なし」構造
-- 含意 5（ドリフト併用必須）+ prev_run 分け論点
-- **段階1-A と段階1-B で時間軸が異なる**: 1-A は 1h/4h/1d / 1-B は 15m/30m/1h/4h/1d → 段階2 で統合設計が必要
+- 窓なし指標は過去 N バーからのドリフト方向を必ず併用（L-157）
+- per-event テーブルに prev_run カラム必須・短命/通常分け対応（L-158）
+- 段階1-A と段階1-B で時間軸が異なる（段階2 で統合設計）
 
 ### v14.5 の扱い（保留中）
 
@@ -319,23 +356,25 @@ for threshold in candidates:
 - v14.4 に戻すか様子見かは次セッションで判断
 - ボット運用は止まっているので実害なし
 
-### Step 0 セッション開始時に必読(厳守・順番通り)
+### Step 0 セッション開始時に必読（厳守・順番通り）
 
 1. WORKFLOW.md（このファイル・現フェーズ + 次のタスク）
-2. [`regime_research.md`](.claude/memory/regime_research.md) §0（最新の現在地）
-3. [`regime_research.md`](.claude/memory/regime_research.md) §13 v3「3原則」「重要仮説」「フロー本体」
-4. [`results/regime_label_analysis/stage1a_main_distribution.md`](results/regime_label_analysis/stage1a_main_distribution.md)（段階1-A 正本）
-5. [`results/regime_label_analysis/stage1b_main_distribution.md`](results/regime_label_analysis/stage1b_main_distribution.md)（段階1-B 正本）
-6. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-154 / L-155 / L-156 / L-157 / L-158**（最新5大教訓）
-7. [`feedback_writing_style.md`](.claude/memory/feedback_writing_style.md)
+2. [`regime_research.md`](.claude/memory/regime_research.md) §0「現フェーズ」+ §1「絶対ルール」+ §3「フロー本体 v3」
+3. [`stage1_completion_report.md`](results/regime_label_analysis/stage1_completion_report.md)（段階1 全結果サマリー・正本）
+4. [`stage1_evidence_log.md`](results/regime_label_analysis/stage1_evidence_log.md)（証跡・必要時に参照）
+5. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-159 / L-160 / L-161**（最新 3 大違反防止教訓）
+6. [`feedback_writing_style.md`](.claude/memory/feedback_writing_style.md)
 
-### 思考の自衛（v3 3原則の徹底）
+### 思考の自衛（v3 3原則 + 9原則の徹底）
 
-- **post（未来）を判定材料に使わない**（L-154）。新規スクリプトを書くたびにセルフチェック
-- **中央値だけで判定材料を選ばない**（L-155）。Q1/Q3 + 典型形一致率を必ず併記
-- **N・軸・閾値はメタ分析でデータから決める**（L-156）。直感で振らない
+- **post（未来）を判定材料に使わない**（L-154）
+- **中央値だけで判定材料を選ばない**（L-155）。Q1/Q3 + 典型形一致率併記
+- **N・軸・閾値はメタ分析でデータから決める**（L-156）
 - **窓なし指標はドリフト方向を必ず併用**（L-157）
 - **per-event テーブルに prev_run カラム必須**（L-158）
+- **集計表示で best 1 自動採用しない**（L-159・新規スクリプトで `best_*` / `argmax` / `idxmax` キーワード警告）
+- **段階1 で Claude 主導のカテゴリ抽出を行わない**（L-160・「重要発見」「最強指標」を発案で出さない）
+- **完了報告前にコードハードコード総点検必須**（L-161・grep 4種を全関連スクリプトに実行・"no matches" 含めて全件提示）
 
 ---
 

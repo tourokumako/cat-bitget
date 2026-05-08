@@ -139,6 +139,33 @@ def build_indicators_extended(df):
     pivot_low100 = l.rolling(100).min()
     f["pivot_position_100b"] = (c - pivot_low100) / (pivot_high100 - pivot_low100).replace(0, np.nan)
 
+    # ボラ系: Donchian チャネル (20バー高安レンジの幅)
+    donchian_high_20 = h.rolling(20).max()
+    donchian_low_20 = l.rolling(20).min()
+    donchian_denom = (donchian_high_20 - donchian_low_20).replace(0, np.nan)
+    f["donchian_width_pct_20"] = (donchian_high_20 - donchian_low_20) / c * 100
+
+    # 価格位置系: Donchian 位置 (高安レンジ内の現在位置 [0,1])
+    f["donchian_position_20"] = (c - donchian_low_20) / donchian_denom
+
+    # MTF同調系: 短中長 slope の符号一致度 (単軸内 MTF 模倣)
+    ma5 = c.rolling(5).mean()
+    ma20 = c.rolling(20).mean()
+    ma50 = c.rolling(50).mean()
+    slope5 = ma5 - ma5.shift(5)
+    slope20 = ma20 - ma20.shift(20)
+    slope50 = ma50 - ma50.shift(50)
+    sign5 = np.sign(slope5)
+    sign20 = np.sign(slope20)
+    sign50 = np.sign(slope50)
+    align_score = (
+        (sign5 == sign20).astype(int)
+        + (sign20 == sign50).astype(int)
+        + (sign5 == sign50).astype(int)
+    ).astype(float)
+    nan_mask = slope5.isna() | slope20.isna() | slope50.isna()
+    f["mtf_slope_align_3way"] = align_score.where(~nan_mask, np.nan)
+
     return f
 
 

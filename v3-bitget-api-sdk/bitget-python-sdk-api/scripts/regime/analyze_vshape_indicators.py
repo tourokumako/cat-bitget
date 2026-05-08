@@ -174,6 +174,8 @@ def build_indicators(df):
     adx14, di_p, di_m, atr14 = adx_di(h, l, c, 14)
     f["adx14"] = adx14
     f["di_diff"] = di_p - di_m
+    f["di_plus"] = di_p
+    f["di_minus"] = di_m
     f["atr14_pct"] = atr14 / c * 100
     f["realized_vol_20b"] = realized_vol(c, 20)
     f["realized_vol_rank_50b"] = realized_vol(c, 20).rolling(50).rank(pct=True)
@@ -190,6 +192,8 @@ def build_indicators(df):
     macd_line, macd_sig, macd_hist = macd(c)
     f["macd_hist"] = macd_hist
     f["macd_hist_change"] = macd_hist - macd_hist.shift(1)
+    f["macd_line"] = macd_line
+    f["macd_signal"] = macd_sig
     f["momentum_10b"] = (c / c.shift(10) - 1) * 100
 
     # ダイバージェンス

@@ -171,6 +171,30 @@ def attach_all_indicators(labels_df, feat5m, feat1h, feat4h, feat1d):
     return labels_df
 
 
+def attach_all_indicators_dict(labels_df, feat_per_tf):
+    """labels_df の timestamp_utc に対し、可変軸の指標を merge_asof で結合。
+    feat_per_tf: dict[str, pd.DataFrame] 例: {"5m": feat5m, "15m": feat15m, ...}
+    """
+    labels_df = labels_df.copy()
+    ts_offsets = {
+        "5m": pd.Timedelta(minutes=235),
+        "15m": pd.Timedelta(minutes=225),
+        "30m": pd.Timedelta(minutes=210),
+        "1h": pd.Timedelta(hours=3),
+        "4h": pd.Timedelta(0),
+    }
+    for tf, feat_df in feat_per_tf.items():
+        col_name = f"ts_{tf}"
+        if tf == "1d":
+            labels_df[col_name] = labels_df["timestamp_utc"].dt.floor("1D")
+        elif tf in ts_offsets:
+            labels_df[col_name] = labels_df["timestamp_utc"] + ts_offsets[tf]
+        else:
+            raise ValueError(f"Unknown tf: {tf}")
+        labels_df = attach_indicators(labels_df, feat_df, col_name, tf)
+    return labels_df
+
+
 def per_event_window_medians(labels_df, transitions, indicator_cols):
     """各切替点について「前24h中央値・t=0値・後24h中央値」を算出。
     返り値: list[dict] 各切替点 × 各指標カラムの3値。

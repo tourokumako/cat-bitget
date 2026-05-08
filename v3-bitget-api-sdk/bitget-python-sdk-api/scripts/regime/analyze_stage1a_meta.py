@@ -32,7 +32,7 @@ from analyze_transition_indicators import (
     load_labels,
     run_length_encode,
     extract_transitions,
-    attach_all_indicators,
+    attach_all_indicators_dict,
 )
 
 BASE = Path(__file__).parent.parent.parent
@@ -40,7 +40,7 @@ DATA_5M = BASE / "data/BTCUSDT-5m-2021-04-01_03-31_1826d.csv"
 OUT_DIR = BASE / "results/regime_label_analysis"
 OUT_MD = OUT_DIR / "stage1a_meta_analysis.md"
 
-TIMEFRAMES = ["5m", "1h", "4h", "1d"]
+TIMEFRAMES = ["5m", "15m", "30m", "1h", "4h", "1d"]
 AC_THRESHOLDS = [0.7, 0.5, 0.3]
 OVERLAP_THRESHOLDS = [0.3, 0.5, 0.7]
 MAX_LAG = 24
@@ -54,17 +54,24 @@ CATEGORIES = {
         "close_above_cloud", "close_below_cloud",
         "close_vs_st_upper_pct", "close_vs_st_lower_pct",
         "macd_hist",
+        "macd_line", "macd_signal", "macd_hist_change",  # B+A 層追加
     ],
     "2_momentum": [
         "rsi14", "rsi7", "stoch_k", "stoch_d", "williams_r",
         "roc_10", "roc_20", "cci_20",
+        "momentum_10b", "div_rsi14_14b", "div_macd_14b",  # A 層追加
     ],
     "3_volatility": [
         "atr14_pct", "bb_pct_b", "bb_width_pct", "bb_width_rank_50b",
         "close_vs_keltner_upper_pct", "close_vs_keltner_lower_pct",
         "realized_vol_20b", "realized_vol_rank_50b",
+        "zscore_return_20b", "zscore_return_50b", "abs_return_3sigma_20b",  # A 層追加
+        "donchian_width_pct_20",  # C 層追加
     ],
-    "4_adx_dmi": ["adx14", "di_diff"],
+    "4_adx_dmi": [
+        "adx14", "di_diff",
+        "di_plus", "di_minus",  # B 層追加
+    ],
     "5_volume": [
         "volume_rank_50b", "volume_ratio_20b", "obv_slope_10b",
         "close_vs_vwap20_pct", "mfi_14", "cmf_20",
@@ -72,10 +79,17 @@ CATEGORIES = {
     "6_priceaction": [
         "bullish_streak", "bearish_streak", "body_ratio",
         "upper_wick_ratio", "lower_wick_ratio",
+        "new_high_streak_5b", "new_low_streak_5b",  # A 層追加
+        "pinbar_top", "pinbar_bottom",  # A 層追加
+        "bullish_engulfing", "bearish_engulfing",  # A 層追加
     ],
     "7_position": [
         "close_to_high_pct", "close_to_low_pct",
         "pivot_position_50b", "pivot_position_100b",
+        "donchian_position_20",  # C 層追加
+    ],
+    "8_mtf": [
+        "mtf_slope_align_3way",  # C 層追加 (新カテゴリ)
     ],
 }
 ALL_INDICATORS = [c for cat in CATEGORIES.values() for c in cat]
@@ -186,7 +200,7 @@ def pattern_specificity_analysis(labels_attached: pd.DataFrame, transitions: lis
         row = {
             "pattern": f"{ev['prev']}->{ev['cur']}",
             **{c: labels_attached.iloc[t][c] for c in labels_attached.columns
-               if c.endswith(("__5m", "__1h", "__4h", "__1d"))},
+               if c.endswith(tuple(f"__{tf}" for tf in TIMEFRAMES))},
         }
         pattern_rows.append(row)
     df = pd.DataFrame(pattern_rows)
@@ -397,21 +411,22 @@ def main():
     transitions = extract_transitions(runs)
     print(f"  切替点数: {len(transitions)}")
 
-    print("OHLCV resample...")
+    print(f"OHLCV resample ({len(TIMEFRAMES)}軸)...")
     df5m = pd.read_csv(DATA_5M, parse_dates=["timestamp"]).set_index("timestamp").sort_index()
-    df1h = resample_ohlcv(df5m, "1h")
-    df4h = resample_ohlcv(df5m, "4h")
-    df1d = resample_ohlcv(df5m, "1D")
+    all_dfs = {
+        "5m": df5m,
+        "15m": resample_ohlcv(df5m, "15min"),
+        "30m": resample_ohlcv(df5m, "30min"),
+        "1h": resample_ohlcv(df5m, "1h"),
+        "4h": resample_ohlcv(df5m, "4h"),
+        "1d": resample_ohlcv(df5m, "1D"),
+    }
 
     print("指標計算...")
-    feat5m = build_indicators_extended(df5m)
-    feat1h = build_indicators_extended(df1h)
-    feat4h = build_indicators_extended(df4h)
-    feat1d = build_indicators_extended(df1d)
-    features_per_tf = {"5m": feat5m, "1h": feat1h, "4h": feat4h, "1d": feat1d}
+    features_per_tf = {tf: build_indicators_extended(all_dfs[tf]) for tf in TIMEFRAMES if tf in all_dfs}
 
     print("attach...")
-    labels_attached = attach_all_indicators(labels, feat5m, feat1h, feat4h, feat1d)
+    labels_attached = attach_all_indicators_dict(labels, features_per_tf)
 
     print("処理 1: 自己相関分析...")
     ac_df = autocorrelation_analysis(features_per_tf)

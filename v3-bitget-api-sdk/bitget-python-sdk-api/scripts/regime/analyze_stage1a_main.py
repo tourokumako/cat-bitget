@@ -39,7 +39,7 @@ from analyze_transition_indicators import (
     load_labels,
     run_length_encode,
     extract_transitions,
-    attach_all_indicators,
+    attach_all_indicators_dict,
 )
 from analyze_stage1a_meta import (
     label_separation_analysis,
@@ -62,10 +62,11 @@ N_BY_CATEGORY = {
     "5_volume": 6,
     "6_priceaction": 1,  # 窓スキップ
     "7_position": 1,     # 窓スキップ
+    "8_mtf": 1,          # 窓スキップ（slope 派生指標で過去窓不要）
 }
-NO_WINDOW_CATEGORIES = {"6_priceaction", "7_position"}
+NO_WINDOW_CATEGORIES = {"6_priceaction", "7_position", "8_mtf"}
 
-TIMEFRAMES = ["1h", "4h", "1d"]
+TIMEFRAMES = ["5m", "15m", "30m", "1h", "4h", "1d"]
 PATTERNS = ["up->dn", "dn->up", "up->rg", "rg->up", "rg->dn", "dn->rg"]
 PRIORITY_THRESHOLD = 0.3
 CATEGORY_NAMES = {
@@ -76,6 +77,7 @@ CATEGORY_NAMES = {
     "5_volume": "出来高系",
     "6_priceaction": "プライスアクション系",
     "7_position": "価格位置系",
+    "8_mtf": "MTF同調系",
 }
 
 
@@ -193,7 +195,7 @@ def write_md(cohort_df: pd.DataFrame, sep_df: pd.DataFrame, spec_df: pd.DataFram
     lines.append("# 段階1-A 本分析: 切替点 t=0 + 過去 N バー指標分布（全指標）")
     lines.append("")
     lines.append("§13 方針「分析段階では絞り込みしない・全指標で特徴を出す」に従い、")
-    lines.append("**全指標 × 6パターン × 3軸** の分布を出す。")
+    lines.append(f"**全指標 × 6パターン × {len(TIMEFRAMES)}軸** の分布を出す。")
     lines.append("メタ分析スコア（ラベル分離度・パターン特異性）を併記し、")
     lines.append(f"両方 < {PRIORITY_THRESHOLD} の指標は **★** で優先候補を示す。")
     lines.append("採否判定は段階2（判定ロジック設計）で行う。")
@@ -204,7 +206,7 @@ def write_md(cohort_df: pd.DataFrame, sep_df: pd.DataFrame, spec_df: pd.DataFram
     n_table = "\n".join([f"  - {cat}: N={n}{' (窓スキップ・現値のみ)' if cat in NO_WINDOW_CATEGORIES else ''}"
                          for cat, n in N_BY_CATEGORY.items()])
     lines.append(n_table)
-    lines.append("- **時間軸**: 1h / 4h / 1d（5m はメタ処理2-C で最も分離悪い → 除外）")
+    lines.append(f"- **時間軸**: {' / '.join(TIMEFRAMES)}（全6軸並列・絞り込みなし）")
     lines.append("- **切替点**: 直接遷移 198件（blank・同ラベル復帰除外）")
     lines.append("- **post（未来）は使わない**: t=0 値と過去窓のみ")
     lines.append("- **★**: ラベル分離度 < 0.3 **かつ** パターン特異性 < 0.3 の指標（優先候補）")
@@ -324,20 +326,23 @@ def main():
     transitions = extract_transitions(runs)
     print(f"  切替点数: {len(transitions)}")
 
-    print("OHLCV resample + 指標計算...")
+    print(f"OHLCV resample + 指標計算 ({len(TIMEFRAMES)}軸)...")
     df5m = pd.read_csv(DATA_5M, parse_dates=["timestamp"]).set_index("timestamp").sort_index()
-    df1h = resample_ohlcv(df5m, "1h")
-    df4h = resample_ohlcv(df5m, "4h")
-    df1d = resample_ohlcv(df5m, "1D")
-    feat5m = build_indicators_extended(df5m)
-    feat1h = build_indicators_extended(df1h)
-    feat4h = build_indicators_extended(df4h)
-    feat1d = build_indicators_extended(df1d)
+    all_dfs = {
+        "5m": df5m,
+        "15m": resample_ohlcv(df5m, "15min"),
+        "30m": resample_ohlcv(df5m, "30min"),
+        "1h": resample_ohlcv(df5m, "1h"),
+        "4h": resample_ohlcv(df5m, "4h"),
+        "1d": resample_ohlcv(df5m, "1D"),
+    }
+    feat_per_tf = {tf: build_indicators_extended(all_dfs[tf]) for tf in TIMEFRAMES if tf in all_dfs}
 
     print("attach...")
-    labels_attached = attach_all_indicators(labels, feat5m, feat1h, feat4h, feat1d)
+    labels_attached = attach_all_indicators_dict(labels, feat_per_tf)
+    suffix_set = tuple(f"__{tf}" for tf in TIMEFRAMES)
     indicator_cols = [c for c in labels_attached.columns
-                      if c.endswith(("__1h", "__4h", "__1d"))
+                      if c.endswith(suffix_set)
                       and c.rsplit("__", 1)[0] in ALL_INDICATORS]
     print(f"  対象指標カラム数: {len(indicator_cols)}")
 
