@@ -19,15 +19,20 @@ ClaudeはPM・PL・SE・プログラマの全役割を担う。
 - 方向転換時は WORKFLOW のフェーズと照合してから提案する（脇道に逸れない）
 - 議論が行き詰まった・同じ提案を繰り返している・直前2ターン同じ語彙の時は「思考フレーム/目標コミット 自己点検」を実行する（後述）
 - **作業完了報告は 3点必須**（2026-05-08 追加）: ① 完了フラグ + ファイル名 / ② 結果中身のサマリー（数値・上位5-10件・次元保持）/ ③ ファイル提示（リンク）。「ファイルに書いた」だけでは報告完了とみなさない
-- **完了報告必須証跡 4点**（2026-05-08 追加・虚偽報告防止）:
+- **完了報告必須証跡 5点**（2026-05-08 追加 / 5点目 2026-05-09 追加・L-162）:
   1. **コード総点検 grep 結果**（全件・"no matches"含む・関連スクリプト全部）
      - 4種の grep: ① TF endswith/startswith ② TFリスト固定値 ③ カテゴリ固定値 ④ 絞り込み処理（best 1/argmax/nlargest(1)）
   2. **数値の二重提示**（サマリー + 出典ファイル引用・行番号付き）
   3. **成果物ファイルの実体**（チャット側に届く形・パス + 行数 + 更新時刻）
   4. **実行ログ**（コマンド・開始時刻・終了時刻・所要時間・終了コード）
+  5. **絞り込み示唆語彙の自己 grep 結果**（全件・"no matches"含む・チャット出力 + 報告 md ファイル対象）（L-162・2026-05-09 追加）
+     - grep 語彙: 「採用候補」「効く/効かない」「重要」「優先」「不要」「切れる」「残せる」「除外して良い」「使える」「意味がある/ない」
+     - 違反検出時: 数値 + 軸/カテゴリ間比較に表現を置き換えてから報告完了とする
+     - 背景: L-159/L-160 を追加したのに 1 日で再発した事実は教訓追加の限界を示す。「頭で分かっていても漏れる」癖は手続きで矯正する（思考フレーム自己点検 L-136 と同じ思想）
   - 1つでも欠けたら完了とみなさない
   - 「総点検したから違反なし」を grep 結果なしに主張しない
   - 「やった」「完了」を実行ログなしに主張しない
+  - 「絞り込み示唆語彙なし」を grep 結果なしに主張しない（L-162）
   - 「実は完了済み」を主張する場合は該当ターン番号と全文を再提示する
 
 ## 思考フレーム自己点検
@@ -264,26 +269,32 @@ for threshold in candidates:
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-08 改訂9）
+## 🔴 現在のフェーズ（2026-05-10 改訂10）
 
-**フェーズ: §13 v3 段階1 全工程完了 → 段階2 着手前素描の再評価**
-**Priority 個別最適化: regime 確定まで全停止**
+**フェーズ: §13 v3 段階3 連続 2 回不合格 → 思考フレーム自己点検 起動候補**
+**Priority 個別最適化: regime 確定まで全停止（継続）**
 
-### 2026-05-08 セッション成果
+### 2026-05-10 セッション成果
 
-- §13 v3 検証フロー新仕様確定（段階1 = 素材調達 / 段階2 = 組み合わせ最適化 / 段階3 = 検証採否）
-- 3原則 + **9原則** + 「絞り込まない」境界の明文化（regime_research.md §1〜§7）
-- **規定整備**:
-  - WORKFLOW.md / CLAUDE.md / regime_research.md に「作業完了報告 3点必須」「完了報告必須証跡 4点」追記
-  - regime_research.md 大幅整理（200行以内本体 + archive 退避6本）
-  - L-159 (best 1 自動採用禁止) / L-160 (Claude 主導カテゴリ抽出禁止) / L-161 (完了報告前コード総点検必須) 追記
-- **段階1 全6軸再走完了** (5m/15m/30m/1h/4h/1d):
-  - 1-A メタ + 本実装（**拡張 68 指標** = 旧 48 + A 層 13 + B 層 4 + C 層 3 / 8 カテゴリ）
-  - 1-B メタ + 本実装（20 特徴量 × W 組合せ = 105 系列）
-  - 1-C メタ（147 カラム × 6軸・既存ファイル流用・§5 削除済）
-- **完了レポート + 証跡作成**:
-  - [`stage1_completion_report.md`](results/regime_label_analysis/stage1_completion_report.md)
-  - [`stage1_evidence_log.md`](results/regime_label_analysis/stage1_evidence_log.md)
+- **段階1 完了** (前セッション継承・1,920 セル)
+- **軸内 \|r\|>0.9 群化** ([`analyze_intra_axis_correlation.py`](scripts/regime/analyze_intra_axis_correlation.py)・閾値 0.10 で剪定後 1,432 列)
+- **段階2 全工程完了** ([`stage2_combination_search.py`](scripts/regime/stage2_combination_search.py)・k=2 全探索 102 万組 + bootstrap + seed+1 + 最終 30 件 (パターン × M=5))
+- **段階3-1 検証 連続 2 回不合格**:
+  - 1 回目 [`stage3_validate_judgment_set.py`](scripts/regime/stage3_validate_judgment_set.py): 24 サンプル 33.3% / 2025 年 7-8% / 持続中央値 5 バー → 4 項目中 1 項目達成
+  - 2 回目 [`stage3_latch_validate.py`](scripts/regime/stage3_latch_validate.py) (latch N=24): 24 サンプル 12.5% / 持続 44-64 バー → 4 項目中 1 項目達成
+- **規定外フェーズ侵入** (撤回受領済): 段階3-2 を独自に「Replay 評価」と再定義 → regime 確定前の Priority 経済価値評価に侵入 (L-164 記録)
+  - [`stage3_pattern_label_to_regime.py`](scripts/regime/stage3_pattern_label_to_regime.py) + `runner/replay_csv.py` `--regime-csv=PATH` 追加 + Replay 1 回実行 (NET $-3.64/day)
+- **教訓追記**: L-162 (絞り込み示唆語彙禁止) / L-163 (学習目的 vs 検証目的整合性) / L-164 (段階定義は規定確認)
+- **規定強化**: WORKFLOW.md「完了報告必須証跡 4点 → 5点」(自己 grep 追加)
+
+### 段階1+2 成果物 (regime 判定確定すれば段階3 で利用可能)
+
+| 段階 | 出力ファイル |
+|---|---|
+| 段階1 | [stage1a/b/c_*_analysis.md](results/regime_label_analysis/) + [intra_axis_groups.json](results/regime_label_analysis/intra_axis_groups.json) + [pruned_column_list.json](results/regime_label_analysis/pruned_column_list.json) |
+| 段階2 | [stage2_k2_walk_forward.json](results/regime_label_analysis/stage2_k2_walk_forward.json) / [stage2_seed_bootstrap.json](results/regime_label_analysis/stage2_seed_bootstrap.json) / [stage2_seed_plus1.json](results/regime_label_analysis/stage2_seed_plus1.json) / [stage2_final_judgment_set.json](results/regime_label_analysis/stage2_final_judgment_set.json) |
+| 段階3 (不合格) | [stage3_validation_report.md](results/regime_label_analysis/stage3_validation_report.md) / [stage3_latch_validation_report.md](results/regime_label_analysis/stage3_latch_validation_report.md) |
+| 規定外 (撤回) | [stage3_monthly_comparison.csv](results/regime_label_analysis/stage3_monthly_comparison.csv) / [regime_label_daily.csv](results/regime_label_analysis/regime_label_daily.csv) |
 
 ### 1-A 拡張詳細（v2・68 指標 × 8 カテゴリ）
 
@@ -309,51 +320,62 @@ for threshold in candidates:
 
 ---
 
-## 🔴 次のタスク（2026-05-08 改訂9）
+## 🔴 次のタスク（2026-05-10 改訂10）
 
-**段階2「組み合わせ最適化」着手前 素描の再評価 → 段階2 本実装**
+**思考フレーム自己点検 起動（手順 1-5 厳密実行）**
 
-### 段階1 完了状態
+### 起動根拠
 
-- 1-A: **68 指標 × 6軸** 全並列出力（[`stage1a_meta_analysis.md`](results/regime_label_analysis/stage1a_meta_analysis.md) / [`stage1a_main_distribution.md`](results/regime_label_analysis/stage1a_main_distribution.md)）
-- 1-B: 105 系列 × 6軸 全並列出力（[`stage1b_meta_analysis.md`](results/regime_label_analysis/stage1b_meta_analysis.md) / [`stage1b_main_distribution.md`](results/regime_label_analysis/stage1b_main_distribution.md)）
-- 1-C: 147 カラム × 6軸 全並列出力（[`stage1c_meta_analysis.md`](results/regime_label_analysis/stage1c_meta_analysis.md)・§5 削除済）
-
-合計実質 **1,920 (指標/特徴量/カラム × 軸) セル**を段階1 で並列保持。
-
-### 段階2 着手前 素描（仮保管・段階1 結果を踏まえて再評価する前提）
-
-| 論点 | 仮素描 | 再評価材料 |
-|---|---|---|
-| 探索手順 | 専門家設計起点 + 全探索補完 | 段階1 結果に「圧倒的に強い軸/カテゴリ」が見つかれば専門家設計優位、中位の組み合わせ依存なら全探索寄り |
-| 評価指標 | target_match - others_match の乖離 (pt) 主・F1 補助・6 パターン別個別最適化 | — |
-| 訓練/検証分離 | Walk-forward 6 fold + 時系列 split OOS | 切替点 198 件 / target × 6 fold で各 fold 10 件超を最低基準 |
-| 5m タイミング同期 | merge_asof + ffill（バー完了後参照）| timing offset / 1d バー ffill 期間は実装時に詳細詰め |
-| 5m 解像度評価 | 切替点ベース評価（段階1 と評価軸を揃える）| — |
+- regime_research.md §3「連続 2 回不合格 → 思考フレーム自己点検を起動」（規定）
+- 段階3-1 検証 連続 2 回不合格（latch なし / latch あり）
+- 段階1+2+3 を 1 セッション完走したが評価軸 3 種で全部未達 = 構造的問題の可能性
 
 ### 次セッション最初にやること
 
-1. [`regime_research.md`](.claude/memory/regime_research.md) §1「絶対ルール」+ §3「フロー本体」+ §5「段階2 要点」を再読
-2. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-159 / L-160 / L-161** を再読
-3. [`stage1_completion_report.md`](results/regime_label_analysis/stage1_completion_report.md) を踏まえて段階2 素描を再評価:
-   - 個別指標で圧倒的に強い軸/カテゴリが見つかったか?（→ 専門家設計起点 vs 全探索）
-   - 組み合わせ条件成立件数の事前見積もり（指標の単独発火頻度から計算）
-   - L-141「学習解像度と推論解像度を揃える」を満たす評価設計
-4. 段階2 着手前 素描を確定（GO 待ち）
-5. 段階2 実装着手（コード設計 → 実装 → walk-forward 検証 → 採否判定）
+1. **WORKFLOW.md「思考フレーム自己点検」セクション再読**（L33-52・手順 1-5 + 禁則）
+2. **段階3 結果の数値把握**:
+   - [`stage3_validation_report.md`](results/regime_label_analysis/stage3_validation_report.md): latch なし 5 ケース別合格基準
+   - [`stage3_latch_validation_report.md`](results/regime_label_analysis/stage3_latch_validation_report.md): latch あり 5 ケース別
+3. **思考フレーム自己点検 起動**:
+   - 手順 1: いまの議論が暗黙に前提にしているフレームを 3 つ言語化
+   - 手順 2: いま自分が何の問題を解いているのかを 1 行で書く
+   - 手順 3: 試行単位とデプロイ単位を比較する
+   - 手順 4: 各フレームに「これを外したらどう見えるか」を 1 行で書く
+   - 手順 5: 外した結果、議論方向が変わるなら「前提を外して再考したい」と宣言
+4. **禁則遵守**: 手順 2-3 をスキップして手順 1 だけで完了したと判断しない（L-52 警告）
+5. 自己点検結果に基づき次手判定（段階2 戻り / 別アプローチ / 段階1 戻り 等）
 
-### 重要仮説（段階2 着手時の出発点）
+### 自己点検時の参照素材
 
-[`regime_research.md`](.claude/memory/regime_research.md) §6「重要仮説」参照:
-- 「前レジームの継続条件薄れ + 次レジームの兆候なし」構造
-- 窓なし指標は過去 N バーからのドリフト方向を必ず併用（L-157）
-- per-event テーブルに prev_run カラム必須・短命/通常分け対応（L-158）
-- 段階1-A と段階1-B で時間軸が異なる（段階2 で統合設計）
+- [`stage1_completion_report.md`](results/regime_label_analysis/stage1_completion_report.md)
+- [`stage2_final_judgment_set.json`](results/regime_label_analysis/stage2_final_judgment_set.json)
+- [`stage3_validation_report.md`](results/regime_label_analysis/stage3_validation_report.md)
+- [`stage3_latch_validation_report.md`](results/regime_label_analysis/stage3_latch_validation_report.md)
+- [`regime_research.md`](.claude/memory/regime_research.md) §6「重要仮説」（前提を疑うべきか確認）
 
-### v14.5 の扱い（保留中）
+### 自己点検時の問い候補（CC 提示・まこさん戦略判断材料）
+
+| 問い | 検討材料 |
+|---|---|
+| 学習対象「切替点 1 バー」と検証対象「持続区間」のミスマッチ (L-163) | 段階2 で「持続区間」を学習対象に変える案 |
+| 「切替点判定」自体が運用要件と整合しているか | 5m ボット運用は「regime 持続中の判定」が必要・切替点だけでは不十分? |
+| 段階1+2 設計枠組み「指標組合せ → 切替点判定」が問題設定として正しいか | 「regime 検出」より「方向性スコア」の方が運用に合うかもしれない |
+| pruned 1,432 列の素材は活用可能か / 別アプローチで再利用できるか | 段階1+2 で 12+ 時間投下の素材を捨てない案 |
+
+### 教訓再読（次セッション着手前）
+
+- L-159 (best 1 自動採用禁止)
+- L-160 (Claude 主導カテゴリ抽出禁止)
+- L-161 (完了報告前コード総点検必須)
+- L-162 (絞り込み示唆語彙禁止)
+- L-163 (学習目的 vs 検証目的整合性)
+- L-164 (段階定義は規定確認)
+- L-136 (思考フレーム自己点検 起動条件・手順)
+
+### v14.5 の扱い（保留継続）
 
 - 現状 v14.5（trail方式）は不安定状態のまま放置
-- v14.4 に戻すか様子見かは次セッションで判断
+- v14.4 に戻すか様子見かは思考フレーム自己点検後に判断
 - ボット運用は止まっているので実害なし
 
 ### Step 0 セッション開始時に必読（厳守・順番通り）

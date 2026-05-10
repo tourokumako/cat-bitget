@@ -904,6 +904,24 @@ def _build_regime_map_v3(csv_5m_path: str,
     return {pd.Timestamp(idx).normalize(): r for idx, r in zip(regime_df.index, regime_df["regime"])}
 
 
+def _build_regime_map_from_csv(csv_path: str) -> Dict:
+    """外部 csv (timestamp, regime カラム) から regime_map を構築。
+    csv 形式: timestamp (日次) / regime (downtrend/range/uptrend/unknown)
+    """
+    from collections import Counter
+    try:
+        rdf = pd.read_csv(csv_path, parse_dates=["timestamp"])
+    except Exception as e:
+        print(f"[regime] csv ロード失敗: {csv_path}: {e}")
+        return {}
+    if "timestamp" not in rdf.columns or "regime" not in rdf.columns:
+        print(f"[regime] csv に timestamp/regime カラムが必要: {csv_path}")
+        return {}
+    out = {pd.Timestamp(r["timestamp"]).normalize(): r["regime"] for _, r in rdf.iterrows()}
+    print(f"[regime csv] ロード: {len(out)} 日 / 分布: {dict(Counter(out.values()))}")
+    return out
+
+
 def _build_regime_map_hourly(csv_5m_path: str,
                               ma_period: int = 70,
                               slope_lag: int = 5,
@@ -1601,10 +1619,13 @@ def _write_summary_json(out_path: str, csv_path: str, regime_sw: bool,
 
 
 def main(csv_path: str, regime_sw: bool = False, regime_hourly: bool = False,
-         regime_v3: bool = False, lookahead_safe: bool = False) -> None:
+         regime_v3: bool = False, lookahead_safe: bool = False,
+         regime_csv_path: str = None) -> None:
     params = _load_params()
     safe_tag = " / look-ahead SAFE" if lookahead_safe else ""
-    if regime_sw and regime_v3:
+    if regime_sw and regime_csv_path:
+        mode = f"【レジーム切り替えON / 外部CSV: {regime_csv_path}{safe_tag}】"
+    elif regime_sw and regime_v3:
         mode = f"【レジーム切り替えON / 日足v3スコアリング{safe_tag}】"
     elif regime_sw and regime_hourly:
         mode = f"【レジーム切り替えON / 1h+ヒス36h{safe_tag}】"
@@ -1620,7 +1641,10 @@ def main(csv_path: str, regime_sw: bool = False, regime_hourly: bool = False,
     regime_freq = "D"
     if regime_sw:
         from collections import Counter
-        if regime_v3:
+        if regime_csv_path:
+            regime_map_built = _build_regime_map_from_csv(regime_csv_path)
+            regime_days = dict(Counter(v for v in regime_map_built.values() if v != "unknown"))
+        elif regime_v3:
             regime_map_built = _build_regime_map_v3(csv_path, lookahead_safe=lookahead_safe)
             regime_days = dict(Counter(v for v in regime_map_built.values() if v != "unknown"))
         elif regime_hourly:
@@ -1670,10 +1694,17 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} /path/to/BTCUSDT-5m-*.csv [--regime] [--regime-hourly] [--regime-v3] [--regime-safe]")
+        print(f"       Optional: [--regime-csv=PATH]  外部 csv (timestamp/regime カラム) ロード")
         print(f"       {sys.argv[0]} --summary results/replay_*.csv")
         sys.exit(1)
+    regime_csv_path = None
+    for _arg in sys.argv:
+        if _arg.startswith("--regime-csv="):
+            regime_csv_path = _arg.split("=", 1)[1]
+            break
     main(sys.argv[1],
-         regime_sw=("--regime" in sys.argv or "--regime-hourly" in sys.argv or "--regime-v3" in sys.argv),
+         regime_sw=("--regime" in sys.argv or "--regime-hourly" in sys.argv or "--regime-v3" in sys.argv or regime_csv_path is not None),
          regime_hourly="--regime-hourly" in sys.argv,
          regime_v3="--regime-v3" in sys.argv,
-         lookahead_safe="--regime-safe" in sys.argv)
+         lookahead_safe="--regime-safe" in sys.argv,
+         regime_csv_path=regime_csv_path)
