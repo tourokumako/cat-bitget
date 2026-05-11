@@ -2905,23 +2905,295 @@ async function renderRegimeProto() {
   await rpRenderDayTable();
 }
 
+// ============================================================
+// ⑬ レジーム持続分布（連続区間長 run-length）
+// ============================================================
+let RL_DATA = null;
+let RL_CHART_A = null;
+let RL_CHART_B = null;
+
+function rlFmtH(x) {
+  if (x === null || x === undefined || isNaN(x)) return "—";
+  if (x >= 24) return `${x.toFixed(1)}h (${(x/24).toFixed(1)}d)`;
+  return `${x.toFixed(1)}h`;
+}
+
+function rlRenderTable() {
+  if (!RL_DATA) return;
+  const filter = document.getElementById("rl-label-filter").value;
+  const tbody = document.querySelector("#rl-stats-table tbody");
+  tbody.innerHTML = "";
+
+  const sources = [
+    { tag: "A. 4h 教師", data: RL_DATA.source_a },
+    { tag: "B. v14 1h", data: RL_DATA.source_b },
+  ];
+  const labelsToShow = filter === "ALL"
+    ? ["ALL", "uptrend", "downtrend", "range"]
+    : [filter];
+
+  for (const src of sources) {
+    for (const lab of labelsToShow) {
+      const s = src.data.stats[lab];
+      if (!s || !s.n) {
+        tbody.insertAdjacentHTML("beforeend",
+          `<tr><td>${src.tag}</td><td>${lab}</td><td>0</td><td colspan="8">—</td></tr>`);
+        continue;
+      }
+      tbody.insertAdjacentHTML("beforeend", `<tr>
+        <td>${src.tag}</td><td>${lab}</td><td>${s.n}</td>
+        <td>${rlFmtH(s.median_h)}</td><td>${rlFmtH(s.mean_h)}</td>
+        <td>${rlFmtH(s.p25_h)}</td><td>${rlFmtH(s.p75_h)}</td>
+        <td>${rlFmtH(s.p90_h)}</td><td>${rlFmtH(s.p99_h)}</td>
+        <td>${rlFmtH(s.max_h)}</td><td>${rlFmtH(s.min_h)}</td>
+      </tr>`);
+    }
+  }
+}
+
+function rlBuildChartConfig(histogram, label, sourceLabel) {
+  const bins = histogram.bin_labels;
+  const data = histogram[label];
+  return {
+    type: "bar",
+    data: {
+      labels: bins,
+      datasets: [{
+        label: `${sourceLabel} ${label}`,
+        data: data,
+        backgroundColor: label === "uptrend" ? "rgba(46,160,67,0.7)"
+          : label === "downtrend" ? "rgba(207,34,46,0.7)"
+          : label === "range" ? "rgba(132,141,153,0.7)"
+          : "rgba(58,118,200,0.7)",
+        borderColor: "#333",
+        borderWidth: 1,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: true } },
+      scales: {
+        x: { title: { display: true, text: "持続時間 bin" } },
+        y: { title: { display: true, text: "run 数" }, beginAtZero: true },
+      },
+    },
+  };
+}
+
+function rlRenderCharts() {
+  if (!RL_DATA) return;
+  const filter = document.getElementById("rl-label-filter").value;
+  if (RL_CHART_A) RL_CHART_A.destroy();
+  if (RL_CHART_B) RL_CHART_B.destroy();
+  const ctxA = document.getElementById("rl-chart-a");
+  const ctxB = document.getElementById("rl-chart-b");
+  RL_CHART_A = new Chart(ctxA, rlBuildChartConfig(RL_DATA.source_a.histogram, filter, "A: 4h教師"));
+  RL_CHART_B = new Chart(ctxB, rlBuildChartConfig(RL_DATA.source_b.histogram, filter, "B: v14 1h"));
+  document.getElementById("rl-chart-a-title").textContent =
+    `A. ${RL_DATA.source_a.name} (ラベル付き ${RL_DATA.source_a.n_bars_labeled}/${RL_DATA.source_a.n_bars_total})`;
+  document.getElementById("rl-chart-b-title").textContent =
+    `B. ${RL_DATA.source_b.name} (ラベル付き ${RL_DATA.source_b.n_bars_labeled}/${RL_DATA.source_b.n_bars_total})`;
+}
+
+async function renderRunLength() {
+  RL_DATA = await fetchJSON("data/regime_label_run_length.json");
+  document.getElementById("rl-label-filter").addEventListener("change", () => {
+    rlRenderTable();
+    rlRenderCharts();
+  });
+  rlRenderTable();
+  // Chart.js は display:none のタブで dimension=0 となり空描画する。
+  // タブが active になった瞬間に再描画する。
+  const rlBtn = document.querySelector('header nav button[data-tab="run_length"]');
+  if (rlBtn) {
+    rlBtn.addEventListener("click", () => {
+      // クリック後 display:block になってから次フレームで描画
+      requestAnimationFrame(() => rlRenderCharts());
+    });
+  }
+  // 初回も試行（既に表示されていれば描画される）
+  rlRenderCharts();
+}
+
+// ============================================================
+// ⑭ trade × regime 境界 整合性検証
+// ============================================================
+let TC_DATA = null;
+let TC_CHART_NET = null;
+let TC_CHART_PRI = null;
+
+function tcFmtUsd(x) {
+  if (x === null || x === undefined || isNaN(x)) return "—";
+  const sign = x >= 0 ? "+" : "−";
+  return `${sign}$${Math.abs(x).toFixed(2)}`;
+}
+
+function tcFmtPct(x) {
+  if (x === null || x === undefined || isNaN(x)) return "—";
+  return `${x.toFixed(1)}%`;
+}
+
+function tcRenderTables() {
+  if (!TC_DATA) return;
+  const oi = TC_DATA.overall_implied;
+  const os = TC_DATA.overall_strict;
+  const oTbody = document.querySelector("#tc-overall-table tbody");
+  oTbody.innerHTML = `
+    <tr>
+      <td>IMPLIED（主軸）</td><td>${oi.n_total}</td><td>${oi.n_decided}</td>
+      <td>${oi.n_crossing}</td><td>${oi.n_non_crossing}</td>
+      <td><strong>${tcFmtPct(oi.non_crossing_pct)}</strong></td>
+      <td>${oi.n_undetermined}</td>
+    </tr>
+    <tr>
+      <td>STRICT（参考）</td><td>${os.n_total}</td><td>${os.n_decided}</td>
+      <td>${os.n_crossing}</td><td>${os.n_non_crossing}</td>
+      <td>${tcFmtPct(os.non_crossing_pct)}</td>
+      <td>${os.n_unlabeled}</td>
+    </tr>`;
+
+  const netTbody = document.querySelector("#tc-net-table tbody");
+  netTbody.innerHTML = "";
+  for (const status of ["IMPLIED_CROSSING", "IMPLIED_NON_CROSSING", "IMPLIED_UNDETERMINED"]) {
+    const d = TC_DATA.net_dist_implied[status];
+    if (!d || !d.n) {
+      netTbody.insertAdjacentHTML("beforeend",
+        `<tr><td>${status}</td><td>0</td><td colspan="6">—</td></tr>`);
+      continue;
+    }
+    netTbody.insertAdjacentHTML("beforeend", `<tr>
+      <td>${status}</td><td>${d.n}</td>
+      <td>${tcFmtUsd(d.sum)}</td><td>${tcFmtUsd(d.mean)}</td>
+      <td>${tcFmtUsd(d.median)}</td><td>${tcFmtUsd(d.p25)}</td><td>${tcFmtUsd(d.p75)}</td>
+      <td>${tcFmtPct(d.win_rate * 100)}</td>
+    </tr>`);
+  }
+
+  const priTbody = document.querySelector("#tc-priority-table tbody");
+  priTbody.innerHTML = "";
+  for (const r of TC_DATA.by_priority) {
+    priTbody.insertAdjacentHTML("beforeend", `<tr>
+      <td>P${r.key}</td><td>${r.n_trades}</td><td>${r.n_decided}</td>
+      <td>${r.n_crossing}</td><td>${r.n_non_crossing}</td>
+      <td>${tcFmtPct(r.non_crossing_pct)}</td>
+      <td>${tcFmtUsd(r.net_crossing)}</td><td>${tcFmtUsd(r.net_non_crossing)}</td>
+    </tr>`);
+  }
+
+  const holdTbody = document.querySelector("#tc-hold-table tbody");
+  holdTbody.innerHTML = "";
+  for (const r of TC_DATA.by_hold_bucket) {
+    if (r.n === 0) {
+      holdTbody.insertAdjacentHTML("beforeend",
+        `<tr><td>${r.bucket}</td><td>0</td><td colspan="4">—</td></tr>`);
+      continue;
+    }
+    holdTbody.insertAdjacentHTML("beforeend", `<tr>
+      <td>${r.bucket}</td><td>${r.n}</td><td>${r.n_decided ?? 0}</td>
+      <td>${r.n_crossing ?? 0}</td><td>${tcFmtPct(r.crossing_pct)}</td>
+      <td>${tcFmtUsd(r.net_total)}</td>
+    </tr>`);
+  }
+}
+
+function tcRenderCharts() {
+  if (!TC_DATA) return;
+  if (TC_CHART_NET) TC_CHART_NET.destroy();
+  if (TC_CHART_PRI) TC_CHART_PRI.destroy();
+
+  const nd = TC_DATA.net_dist_implied;
+  const ctxNet = document.getElementById("tc-net-chart");
+  TC_CHART_NET = new Chart(ctxNet, {
+    type: "bar",
+    data: {
+      labels: ["CROSSING", "NON_CROSSING", "UNDETERMINED"],
+      datasets: [
+        {
+          label: "mean ($)",
+          data: [nd.IMPLIED_CROSSING.mean ?? 0, nd.IMPLIED_NON_CROSSING.mean ?? 0, nd.IMPLIED_UNDETERMINED.mean ?? 0],
+          backgroundColor: "rgba(58,118,200,0.7)",
+        },
+        {
+          label: "median ($)",
+          data: [nd.IMPLIED_CROSSING.median ?? 0, nd.IMPLIED_NON_CROSSING.median ?? 0, nd.IMPLIED_UNDETERMINED.median ?? 0],
+          backgroundColor: "rgba(46,160,67,0.7)",
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { title: { display: true, text: "net_usd" } } },
+    },
+  });
+
+  const ctxPri = document.getElementById("tc-pri-chart");
+  const labels = TC_DATA.by_priority.map(r => `P${r.key}`);
+  const nonPct = TC_DATA.by_priority.map(r => r.non_crossing_pct ?? 0);
+  const crossPct = TC_DATA.by_priority.map(r => r.crossing_pct ?? 0);
+  TC_CHART_PRI = new Chart(ctxPri, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "non_crossing %", data: nonPct, backgroundColor: "rgba(46,160,67,0.7)" },
+        { label: "crossing %", data: crossPct, backgroundColor: "rgba(207,34,46,0.7)" },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, max: 100, title: { display: true, text: "% of decided" } },
+        x: { stacked: false },
+      },
+    },
+  });
+}
+
+async function renderTradeCrossing() {
+  TC_DATA = await fetchJSON("data/trade_regime_crossing.json");
+  const tcBtn = document.querySelector('header nav button[data-tab="trade_crossing"]');
+  if (tcBtn) {
+    tcBtn.addEventListener("click", () => {
+      requestAnimationFrame(() => tcRenderCharts());
+    });
+  }
+  tcRenderTables();
+  tcRenderCharts();
+}
+
 (async () => {
-  try {
-    await renderProgress();
-    await renderFires();   // この中で regimeData も取得 → renderRegimeStrip も呼ぶ
-    await renderSignals();
-    await renderGroundTruth();
-    await renderTruthCheck();
-    await renderMlCheck();
-    await renderPhase1Features();
-    await renderPhase2Hmm();
-    await renderPhase3Hmm();
-    await renderRecipeCheck();
-    await renderRegimeProto();
-    await renderSamples4h();
-  } catch (e) {
-    console.error(e);
+  // 各 render を独立 try/catch でラップ。1 つ落ちても他は走る。
+  const renders = [
+    ["progress", renderProgress],
+    ["fires", renderFires],
+    ["signals", renderSignals],
+    ["groundTruth", renderGroundTruth],
+    ["truthCheck", renderTruthCheck],
+    ["mlCheck", renderMlCheck],
+    ["phase1Features", renderPhase1Features],
+    ["phase2Hmm", renderPhase2Hmm],
+    ["phase3Hmm", renderPhase3Hmm],
+    ["recipeCheck", renderRecipeCheck],
+    ["regimeProto", renderRegimeProto],
+    ["samples4h", renderSamples4h],
+    ["runLength", renderRunLength],
+    ["tradeCrossing", renderTradeCrossing],
+  ];
+  const failures = [];
+  for (const [name, fn] of renders) {
+    try {
+      await fn();
+    } catch (e) {
+      console.error(`[render:${name}]`, e);
+      failures.push(`${name}: ${e.message}`);
+    }
+  }
+  if (failures.length > 0) {
     document.body.insertAdjacentHTML("afterbegin",
-      `<div style="background:#fee;padding:12px;color:#c00;">${e.message}</div>`);
+      `<div style="background:#fee;padding:12px;color:#c00;font-size:0.85em;">` +
+      `<strong>render warnings (${failures.length}):</strong> ` + failures.join(" / ") + `</div>`);
   }
 })();

@@ -76,40 +76,45 @@ ClaudeはPM・PL・SE・プログラマの全役割を担う。
 
 **背景**: Claude は「達成への思考」より「諦めを丁寧に言語化する思考」に流れやすい癖がある。思考フレーム自己点検（狭さ対策）と二段構えで引き戻す（2026-04-27 教訓）。
 
+## Priority 再構築管理
+
+Priority 再構築フェーズの**設計マトリクス・進捗管理表・検証結果集計表・教訓・試行禁止リスト**はすべて **`.claude/memory/priority_rebuild.md`** が**唯一の正本**。
+WORKFLOW.md には設計詳細・進捗詳細を書かない（重複は不整合の元・regime 研究と同じ管理パターン）。
+セッション開始時・段階遷移時・採否判定時は priority_rebuild.md を読み、更新する。
+
 ## シグナル管理
 
-シグナル候補・レジーム×方向マッピング・検証実績は **`.claude/memory/signal_ledger.md`** が**唯一の正本**。
+シグナル候補・検証実績は **`.claude/memory/signal_ledger.md`** が**唯一の正本**。
 WORKFLOW.md にシグナル個別の状態を書かない（重複は不整合の元）。
 セッション開始時・新規シグナル検証時・Priority 化時は signal_ledger.md を読み、更新する。
+（regime × 方向マッピング部分は凍結中・参照のみ）
 
-## regime 研究管理
+## regime 研究（🧊 凍結中）
 
-regime 判定の総括・判断軸・試行履歴・次タスクの詳細はすべて **`.claude/memory/regime_research.md`** が**唯一の正本**。
-WORKFLOW.md には進捗詳細を書かない（重複は不整合の元・シグナル管理と同じ原則）。
-セッション開始時・新規 regime 試行時・採否判定時は regime_research.md を読み、更新する。
+regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md` §0 に凍結ステータスを明記済。
+**新規調査・新規試作・自己点検の起動は禁止**。素材（1,432 指標列・k=2 探索フレーム）の参照のみ可。
+再開条件: Priority 再構築フェーズで「regime label が必要」と判定された場合のみ。
 
 ---
 
 ## Step 0: セッション開始プロトコル（省略禁止）
 
 ```
-① 目標 $60/day − 現在 $5.97/day = 不足 $54/day
-② 現フェーズ確認（regime研究中 v? 反復 / Priority最適化停止中 を明示）
-③ 現フォーカスレジーム（DOWNTREND）の現状 vs 目標 $60/dt-day
-④ [Step 0 D] 目標: $XX/dt-day / 現状: $YY/dt-day / 理論最大: $ZZ/dt-day → 到達可能性: YES/NO
-   ※ regime 確定前は「判定不能（プロトタイプ段階・Priority 純利益評価は regime 接続後）」と書いてよい
-   ※ この1行が出るまで提案・分析を開始しない
-⑤ [Step 0 E] 直近タスク期待値合計: $AA/dt-day / 残差: $BB/dt-day
-   カバー率 = AA/BB × 100%
-   → カバー率 < 50% の場合: 「既存タスクのみでは目標到達不可能。
-     新 Priority 設計を直近タスク1として再配置を検討」と明示する
-   ※ regime 確定前はこの計算自体スキップ可（Priority 接続後に再計算）
+① 目標 $60/day − 凍結ベースライン $12.34/day = 不足 $47.66/day
+② 現フェーズ確認（Priority 再構築・段階 A-1 / A-2 / A-3 / B / C / D のどこか明示）
+③ 当該段階の前提条件（K 窓 1h/2h/4h/8h・LONG/SHORT 同時・walk-forward 5 fold・MFE/MAE 中央値 + 比）を再確認
+④ [Step 0 D] 段階完了後の $60/day 到達可能性: YES / NO / 試算未済
+   ※ 段階 A-1〜A-2 完了前は「試算未済（段階 B Replay で初めて判定）」と書いてよい
+   ※ この 1 行が出るまで提案・分析を開始しない
+⑤ [Step 0 E] 着手前の目的整合性 3 項目チェック（L-166）:
+   - データ粒度: 検証対象と一致しているか
+   - データカバレッジ: 判断分岐に十分なサンプル数か
+   - 直接性: 目的を直接測れる手段か（代理指標は要警戒）
+   → 1 つでも NO/不明なら、作業着手前に提示して GO 待ち
 ⑥ [Step 0 F] 前セッションで議論が行き詰まった or 同じ提案を繰り返した記録があるか確認。
    ある場合: 思考フレーム/目標コミット 自己点検を 1 回実行してから ⑦ に進む
 ⑦ 今セッションのタスクを優先順位付きで提示 → STOP
 ```
-
-レジーム移行条件: 現レジームが目標達成後のみ（DOWNTREND → RANGE → UPTREND）
 
 ---
 
@@ -145,18 +150,19 @@ WORKFLOW.md には進捗詳細を書かない（重複は不整合の元・シ�
 
 ## 設計思想（絶対不変）
 
-### レジーム切り替え方針（2026-04-21 確定）
-- 日足MA70を基準に downtrend / range / uptrend の3レジームに切り替える
-- 各レジームに方向性の合う Priority を割り当て、個別に最適化・設計する
-- 現状 Priority は「方向性が近いもの」をスタート地点として育てる
-- 最終検証: 365d Replay で GO/NO（ここでの再チューニング禁止）
+### Priority 構築方針（2026-05-11 大方針転換）
+- **regime 判定先行は廃止**（精度天井 + 情報密度不足 + 時間軸ズレで凍結）
+- 5m bar × 1,432 指標 × 未来 MFE/MAE で **Entry 規則を網羅探索**して Priority を構築
+- 既存 P1-P24 は改修せず**ゼロから再設計**
+- 複数 Priority を並立させて**リスク分散**（regime 単位の振り分けではなく独立 Priority）
+- 最終検証: 365d Replay で NET 評価（walk-forward 5 fold）
 
 ### 実装方針
-- 全Priority: 5m足・Priority単位で独立最適化
+- 全 Priority: 5m 足ベース・MTF 指標（5m/15m/30m/1h/4h/1d）を Entry 条件に組込み可
 - ポジションサイズ上限: 0.12 BTC/trade（増加禁止）
-- 上限内でのPriority別配分は自由（例: P23=0.06、P3=0.01）
-- 複数Priority並立の目的: リスク分散。詰まったら「新Priority追加」であり「サイズ増加」ではない
-- 時間帯フィルターは個別Priority最適化では禁止。統合調整フェーズで実施
+- 上限内での Priority 別配分は自由（例: P23=0.06、P3=0.01）
+- 複数 Priority 並立の目的: リスク分散。詰まったら「新 Priority 追加」であり「サイズ増加」ではない
+- 時間帯フィルターは個別 Priority 最適化では禁止。統合調整フェーズで実施
 
 ---
 
@@ -170,7 +176,8 @@ WORKFLOW.md には進捗詳細を書かない（重複は不整合の元・シ�
 | `dashboard/`        | ダッシュボード配信・JSON生成 |
 | `labels/`           | 教師ラベル基盤 |
 | `data/`             | 外部データ取得・テスト |
-| `regime/`           | regime 試作・検証スクリプト |
+| `regime/`           | regime 試作・検証スクリプト（**凍結**・参照のみ） |
+| `priority_rebuild/` | Priority 再構築フェーズ（A-1 ラベル生成・A-2 k=2 探索 等）|
 | `signal_research/`  | シグナル候補検証（`signals/` サブモジュール含む） |
 | `grid_search/`      | レシピ・パラメータ探索 |
 | `hmm/`              | HMM 系（凍結中・参照のみ） |
@@ -183,80 +190,29 @@ WORKFLOW.md には進捗詳細を書かない（重複は不整合の元・シ�
 | サブフォルダ | 用途 |
 |---|---|
 | `replay/`              | Replay 出力（CSV / summary JSON） |
-| `phase_hmm/`           | HMM 系出力 |
-| `regime_research/`     | regime 評価出力 |
+| `phase_hmm/`           | HMM 系出力（凍結） |
+| `regime_research/`     | regime 評価出力（凍結・参照のみ） |
+| `priority_rebuild/`    | Priority 再構築フェーズ出力（A-1 ラベル / A-2 探索結果 等）|
 | `recipe_search/`       | レシピ探索出力 |
 | `grid_search/`         | グリッドサーチ結果 |
-| `vshape_design/`       | v13/v14 V字検出仕様 + 出力 |
+| `vshape_design/`       | v13/v14 V字検出仕様 + 出力（凍結） |
 | `spike_analysis*/`     | スパイク検出（凍結） |
 | `regime_prototype/`    | v1 試作（凍結） |
-| `regime_label_analysis/` | 教師ラベル分布（§13 用） |
+| `regime_label_analysis/` | 教師ラベル分布（凍結・素材として参照）|
 | `charts/`              | 共通チャート |
 
 新スクリプトの書き出し先は `OUT_DIR = REPO_ROOT / "results" / "<カテゴリ>"` で必ずサブフォルダ指定する。
 
 ---
 
-## 改善サイクル（Priority最適化フェーズ用・現在は凍結中）
+## 改善サイクル（旧 Priority 最適化フェーズ用・🧊 凍結中・参照のみ）
 
-**Step 1. 構造把握**
-cat_v9_decider.py（Entry条件）・replay_csv.py（Exit優先順位）・cat_params_v9.json（現在値）を読む。
-CSVにmfe_usd/mae_usd/exit_reason/hold_minが揃っているか確認する。
+> ⚠️ このセクションは**旧フロー**（regime → Priority 振り分け前提）。
+> 2026-05-11 大方針転換で凍結。Priority 再構築フェーズの改善サイクルは段階 A-1〜D（[現フェーズ section](#-現在のフェーズ2026-05-11-改訂11大方針転換) 参照）。
+> 既存 Priority 解体時の参考・グリッドサーチ実装の文法参考として残置。
 
-**Step 2. 結果分析**（グリッドサーチ前・省略禁止）
-
-- **0. ポジション構造**: add_count × exit_reason マトリクスを作る。TIME_EXITが構造的コストか・フィルターで削れるかを1文で言語化してからA/Bへ進む
-- **A. なぜ負けているか**: exit_reason別 件数/NET/avgMFE。MFEとMAEから損失の性質（即逆行 or 長期漂流）を特定する
-
-  **TIME_EXIT分類**:
-  - TYPE I（MFEが小さい・概ね<$5）: Entry品質問題 → フィルター強化（ATR/ADX/RSI）
-  - TYPE II（MFEが大きいが戻った・概ね>$15）: Exit設計問題 → TRAIL/PROFIT_LOCK改善
-  - 採用条件: 「件数削減」ではなく「TIME_EXIT per-trade 平均損失改善 かつ 全体NET改善」で評価
-- **B. なぜ勝てないか**: TIME_EXIT中のMFE/TP比率・TP_FILLEDのMFE余裕を確認
-- **C. 総合判断**: A・Bを並べてどちらを先に解決するか決めてから Step 2.5 へ
-
-> 単位ルール: $/regime-day（= Priority NET ÷ 対象レジーム日数）で集計・提示する。$/total-dayは禁止。
-
-**Step 2.5. シグナル理解の言語化**（グリッドサーチ設計前・省略禁止）
-
-① シグナルが「何を捉えているか」を1文で言語化する
-② 期待する価格挙動を時間軸で定義する（理想TP・許容・崩壊のそれぞれ何分で解決するか）
-③ 「自然な解決時間」と現在のTP幅・TIME_EXITを比較する。乖離が大きければExit全面見直しを優先する
-④ 1日の最大発火スロット数（= 24h ÷ avg_hold）と現状件数/dayを比較し、抑圧要因を特定する
-→ ユーザーに提示してGO待ち ← STOP
-
-**Step 3. 仮説立案**
-損失 vs 成功トレードの指標分布を比較し「その差が損失を説明できるか」を確認する。
-候補パラメータの変更効果（件数増減・NET増減）を事前推定する。根拠なしの仮説は出さない。
-
-**Step 3.5. 仮想シミュレーション**（グリッドサーチ前・省略禁止）
-
-results CSV の per-trade 指標（adx_at_entry / atr_14 / rsi_at_entry 等）を pandas でフィルタして NET を瞬時に推定し、有効な軸・範囲を絞り込んでからグリッドサーチを設計する。
-
-```python
-p = df[df['priority']==TARGET].copy()
-for threshold in candidates:
-    filtered = p[p['adx_at_entry'] >= threshold]
-    print(threshold, filtered['net_usd'].sum() / DT_DAYS)
-```
-
-→ 絞り込み結果を提示してGO待ち ← STOP
-
-**Step 4. グリッドサーチ設計・実行**
-- データ期間: 対象PriorityのターゲットREGIMEが密集した期間を選ぶ
-- Phase 1（方向確認）: 各軸3点（低・中・高）。効かない軸はPhase 2から除外
-- Phase 2（絞り込み）: 有効軸のみ・3〜5点・組み合わせ≤15
-- OOS検証: グリッド後に365d Replay（regime_switch=ON）で $/regime-day > ベースラインを確認
-- 採用基準: ① 365d $/regime-day > ベースライン ② 全体NET改善 ③ per-trade NET > 手数料
-- TP変更時は手数料計算を先に実施（L-40）
-→ grid_search.py更新後、実行コマンドをユーザーに提示 ← STOP
-
-**Step 5. 結果評価** → 上位パターン比較表・推奨Before/After。未達ならStep 3へ ← STOP
-**Step 6. 実装** → diff提示・GO待ち ← STOP
-**Step 7. 最終Replay** → コマンド提示 ← STOP
-**Step 8. 採用判定** → 「採用しますか？」。打ち切り前に未試行軸がないか確認 ← STOP
-**Step 9. baseline更新** → $/regime-day表・$/total-day表を更新。目標との残差を再計算
-**Step 10. Gitコミット** → ユーザーの明示OK後のみ ← STOP
+**Step 1〜10**: 旧フロー（$/regime-day 単位・regime_switch=ON 前提）。**新規実行禁止**。
+詳細は git history（commit fa38ec2 以前）で参照可能。
 
 ---
 
@@ -269,32 +225,45 @@ for threshold in candidates:
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-10 改訂10）
+## 🔴 現在のフェーズ（2026-05-11 改訂11・大方針転換）
 
-**フェーズ: §13 v3 段階3 連続 2 回不合格 → 思考フレーム自己点検 起動候補**
-**Priority 個別最適化: regime 確定まで全停止（継続）**
+**フェーズ: Priority ゼロから再構築 — MTF × 全指標組合せで Entry タイミング精度向上**
+**regime 判定研究: 🧊 凍結**（素材転用のみ・新規調査停止）
 
-### 2026-05-10 セッション成果
+設計詳細・段階別仕様・進捗管理表・検証結果集計表は **[`.claude/memory/priority_rebuild.md`](.claude/memory/priority_rebuild.md) §0〜§7 が唯一の正本**。本ファイルではポインタのみ記載。
 
-- **段階1 完了** (前セッション継承・1,920 セル)
-- **軸内 \|r\|>0.9 群化** ([`analyze_intra_axis_correlation.py`](scripts/regime/analyze_intra_axis_correlation.py)・閾値 0.10 で剪定後 1,432 列)
-- **段階2 全工程完了** ([`stage2_combination_search.py`](scripts/regime/stage2_combination_search.py)・k=2 全探索 102 万組 + bootstrap + seed+1 + 最終 30 件 (パターン × M=5))
-- **段階3-1 検証 連続 2 回不合格**:
-  - 1 回目 [`stage3_validate_judgment_set.py`](scripts/regime/stage3_validate_judgment_set.py): 24 サンプル 33.3% / 2025 年 7-8% / 持続中央値 5 バー → 4 項目中 1 項目達成
-  - 2 回目 [`stage3_latch_validate.py`](scripts/regime/stage3_latch_validate.py) (latch N=24): 24 サンプル 12.5% / 持続 44-64 バー → 4 項目中 1 項目達成
-- **規定外フェーズ侵入** (撤回受領済): 段階3-2 を独自に「Replay 評価」と再定義 → regime 確定前の Priority 経済価値評価に侵入 (L-164 記録)
-  - [`stage3_pattern_label_to_regime.py`](scripts/regime/stage3_pattern_label_to_regime.py) + `runner/replay_csv.py` `--regime-csv=PATH` 追加 + Replay 1 回実行 (NET $-3.64/day)
-- **教訓追記**: L-162 (絞り込み示唆語彙禁止) / L-163 (学習目的 vs 検証目的整合性) / L-164 (段階定義は規定確認)
-- **規定強化**: WORKFLOW.md「完了報告必須証跡 4点 → 5点」(自己 grep 追加)
+### 方針転換の背景（要約）
 
-### 段階1+2 成果物 (regime 判定確定すれば段階3 で利用可能)
+- regime 精度天井（v14 56% / stage3 33%）+ regime label 情報密度低 + 時間軸ズレ（持続 16-28h vs trade 15min）
+- → regime 研究で蓄積した 1,432 指標素材を Priority Entry 規則の最適化に転用
 
-| 段階 | 出力ファイル |
+### 段階別フロー（概要のみ・詳細は priority_rebuild.md §2）
+
+| 段階 | 内容 |
 |---|---|
-| 段階1 | [stage1a/b/c_*_analysis.md](results/regime_label_analysis/) + [intra_axis_groups.json](results/regime_label_analysis/intra_axis_groups.json) + [pruned_column_list.json](results/regime_label_analysis/pruned_column_list.json) |
-| 段階2 | [stage2_k2_walk_forward.json](results/regime_label_analysis/stage2_k2_walk_forward.json) / [stage2_seed_bootstrap.json](results/regime_label_analysis/stage2_seed_bootstrap.json) / [stage2_seed_plus1.json](results/regime_label_analysis/stage2_seed_plus1.json) / [stage2_final_judgment_set.json](results/regime_label_analysis/stage2_final_judgment_set.json) |
-| 段階3 (不合格) | [stage3_validation_report.md](results/regime_label_analysis/stage3_validation_report.md) / [stage3_latch_validation_report.md](results/regime_label_analysis/stage3_latch_validation_report.md) |
-| 規定外 (撤回) | [stage3_monthly_comparison.csv](results/regime_label_analysis/stage3_monthly_comparison.csv) / [regime_label_daily.csv](results/regime_label_analysis/regime_label_daily.csv) |
+| A-1 | 学習データ生成（5m × 1,432 指標 × 未来 MFE/MAE ラベル）|
+| A-2 | k=2 全探索（102 万組）+ walk-forward 5 fold 評価 |
+| A-3 | 結果視認 → Entry 規則設計 |
+| B | 新 Entry 規則 + Exit で 365d Replay 検証 |
+| C | ML 回帰モデル（B 頭打ち時のみ）|
+| D | 最終 Replay → 採否判定 |
+
+### 凍結時点の素材転用一覧
+
+regime 研究は凍結したが、以下の素材は Priority 再構築フェーズで **再利用する**:
+
+| 用途 | 凍結時点の成果物 |
+|---|---|
+| 1,432 列の指標素材 | [pruned_column_list.json](results/regime_label_analysis/pruned_column_list.json) + 計算ロジック [analyze_regime_label_features.py](scripts/regime/analyze_regime_label_features.py) / [analyze_stage1*_meta.py](scripts/regime/) / [shape_features.py](scripts/regime/shape_features.py) |
+| k=2 全探索フレーム | [stage2_combination_search.py](scripts/regime/stage2_combination_search.py) のフレーム流用（評価関数だけ MFE/MAE に差し替え） |
+| MTF 集計ロジック | stage1 の MTF resample / attach コード（5m/15m/30m/1h/4h/1d） |
+| ダッシュボード | タブ⑬ レジーム持続分布 / タブ⑭ trade×境界 整合性検証（参考表示） |
+
+### Priority 再構築フェーズの引き継ぎ素材
+
+- 持続分布（参考）: [regime_label_run_length.md](results/regime_research/regime_label_run_length.md)
+- 4h 教師ラベル median 28h / v14 1h median 16h（regime は時間〜日オーダー）
+- 365d Replay ベースライン: 1,157 trade / NET $4,506 / **$12.34/day** → 目標 $60/day まで 5 倍ギャップ
 
 ### 1-A 拡張詳細（v2・68 指標 × 8 カテゴリ）
 
@@ -310,189 +279,103 @@ for threshold in candidates:
 | 8_mtf（新カテゴリ）| 1 | 1 | mtf_slope_align_3way（短中長 slope 符号一致度・単軸内 MTF 模倣）|
 | **合計** | **68** | — | 1-A 本実装 ★合計 540（v1 419 比 +121）|
 
-### 現行 v14 判定ロジック（実装中・regime 確定までこの判定で運用）
+### regime v14 判定（🧊 凍結時点の参考値）
 
-- v14.4 性能: 24サンプルヒット率 7/24 (29.2%) / 2025年一致率 56.6% / オーバーライド適用率 11.2%
+- v14.4 性能（凍結時点）: 24 サンプルヒット率 7/24 (29.2%) / 2025 年一致率 56.6%
 - 詳細: [`archive/regime_research/v14_judgment_spec.md`](archive/regime_research/v14_judgment_spec.md)
-- regime_research.md §8「現行 v14 判定実装」が正本
+- **新規運用には使用しない**。凍結後の参考データ。
 
-詳細は **[`regime_research.md`](.claude/memory/regime_research.md) §0 が唯一の正本**。
+凍結ステータス・素材転用一覧は **[`regime_research.md`](.claude/memory/regime_research.md) §0** を参照。
 
 ---
 
-## 🔴 次のタスク（2026-05-10 改訂10）
+## 🔴 次のタスク（2026-05-11 改訂11）
 
-**思考フレーム自己点検 起動（手順 1-5 厳密実行）**
+**段階 A-1: 学習データ生成スクリプトの設計 → GO → 実装 → 実行**
 
-### 起動根拠
+詳細仕様（入力・K 窓・ラベル定義・出力先 等）は **[`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §2** が唯一の正本。
 
-- regime_research.md §3「連続 2 回不合格 → 思考フレーム自己点検を起動」（規定）
-- 段階3-1 検証 連続 2 回不合格（latch なし / latch あり）
-- 段階1+2+3 を 1 セッション完走したが評価軸 3 種で全部未達 = 構造的問題の可能性
+### 次セッション最初にやること（順番）
 
-### 次セッション最初にやること
-
-1. **WORKFLOW.md「思考フレーム自己点検」セクション再読**（L33-52・手順 1-5 + 禁則）
-2. **段階3 結果の数値把握**:
-   - [`stage3_validation_report.md`](results/regime_label_analysis/stage3_validation_report.md): latch なし 5 ケース別合格基準
-   - [`stage3_latch_validation_report.md`](results/regime_label_analysis/stage3_latch_validation_report.md): latch あり 5 ケース別
-3. **思考フレーム自己点検 起動**:
-   - 手順 1: いまの議論が暗黙に前提にしているフレームを 3 つ言語化
-   - 手順 2: いま自分が何の問題を解いているのかを 1 行で書く
-   - 手順 3: 試行単位とデプロイ単位を比較する
-   - 手順 4: 各フレームに「これを外したらどう見えるか」を 1 行で書く
-   - 手順 5: 外した結果、議論方向が変わるなら「前提を外して再考したい」と宣言
-4. **禁則遵守**: 手順 2-3 をスキップして手順 1 だけで完了したと判断しない（L-52 警告）
-5. 自己点検結果に基づき次手判定（段階2 戻り / 別アプローチ / 段階1 戻り 等）
-
-### 自己点検時の参照素材
-
-- [`stage1_completion_report.md`](results/regime_label_analysis/stage1_completion_report.md)
-- [`stage2_final_judgment_set.json`](results/regime_label_analysis/stage2_final_judgment_set.json)
-- [`stage3_validation_report.md`](results/regime_label_analysis/stage3_validation_report.md)
-- [`stage3_latch_validation_report.md`](results/regime_label_analysis/stage3_latch_validation_report.md)
-- [`regime_research.md`](.claude/memory/regime_research.md) §6「重要仮説」（前提を疑うべきか確認）
-
-### 自己点検時の問い候補（CC 提示・まこさん戦略判断材料）
-
-| 問い | 検討材料 |
-|---|---|
-| 学習対象「切替点 1 バー」と検証対象「持続区間」のミスマッチ (L-163) | 段階2 で「持続区間」を学習対象に変える案 |
-| 「切替点判定」自体が運用要件と整合しているか | 5m ボット運用は「regime 持続中の判定」が必要・切替点だけでは不十分? |
-| 段階1+2 設計枠組み「指標組合せ → 切替点判定」が問題設定として正しいか | 「regime 検出」より「方向性スコア」の方が運用に合うかもしれない |
-| pruned 1,432 列の素材は活用可能か / 別アプローチで再利用できるか | 段階1+2 で 12+ 時間投下の素材を捨てない案 |
-
-### 教訓再読（次セッション着手前）
-
-- L-159 (best 1 自動採用禁止)
-- L-160 (Claude 主導カテゴリ抽出禁止)
-- L-161 (完了報告前コード総点検必須)
-- L-162 (絞り込み示唆語彙禁止)
-- L-163 (学習目的 vs 検証目的整合性)
-- L-164 (段階定義は規定確認)
-- L-136 (思考フレーム自己点検 起動条件・手順)
-
-### v14.5 の扱い（保留継続）
-
-- 現状 v14.5（trail方式）は不安定状態のまま放置
-- v14.4 に戻すか様子見かは思考フレーム自己点検後に判断
-- ボット運用は止まっているので実害なし
+1. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §0 / §2 / §5 を再読
+2. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-159〜L-166** 再読
+3. **段階 A-1 学習データ生成スクリプトの設計案** を提示（実装前に GO 待ち）
 
 ### Step 0 セッション開始時に必読（厳守・順番通り）
 
-1. WORKFLOW.md（このファイル・現フェーズ + 次のタスク）
-2. [`regime_research.md`](.claude/memory/regime_research.md) §0「現フェーズ」+ §1「絶対ルール」+ §3「フロー本体 v3」
-3. [`stage1_completion_report.md`](results/regime_label_analysis/stage1_completion_report.md)（段階1 全結果サマリー・正本）
-4. [`stage1_evidence_log.md`](results/regime_label_analysis/stage1_evidence_log.md)（証跡・必要時に参照）
-5. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-159 / L-160 / L-161**（最新 3 大違反防止教訓）
-6. [`feedback_writing_style.md`](.claude/memory/feedback_writing_style.md)
-
-### 思考の自衛（v3 3原則 + 9原則の徹底）
-
-- **post（未来）を判定材料に使わない**（L-154）
-- **中央値だけで判定材料を選ばない**（L-155）。Q1/Q3 + 典型形一致率併記
-- **N・軸・閾値はメタ分析でデータから決める**（L-156）
-- **窓なし指標はドリフト方向を必ず併用**（L-157）
-- **per-event テーブルに prev_run カラム必須**（L-158）
-- **集計表示で best 1 自動採用しない**（L-159・新規スクリプトで `best_*` / `argmax` / `idxmax` キーワード警告）
-- **段階1 で Claude 主導のカテゴリ抽出を行わない**（L-160・「重要発見」「最強指標」を発案で出さない）
-- **完了報告前にコードハードコード総点検必須**（L-161・grep 4種を全関連スクリプトに実行・"no matches" 含めて全件提示）
+1. WORKFLOW.md（このファイル・現フェーズ + 次のタスクのポインタ）
+2. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md)（**Priority 再構築の唯一の正本**）
+3. [CLAUDE.md](../CLAUDE.md)（設計思想・現方針）
+4. [lessons_active.md](.claude/memory/lessons_active.md) L-159〜L-166
+5. [feedback_early_objection.md](/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_early_objection.md)
+6. [feedback_writing_style.md](/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_writing_style.md)
 
 ---
 
 ## 試行禁止リスト
 
-### regime判定研究関連
+Priority 再構築・設計関連の禁止事項は **[priority_rebuild.md §6](.claude/memory/priority_rebuild.md) が唯一の正本**。本ファイルには **行動ルール関連のみ**残置。
 
-→ **`.claude/memory/regime_research.md` §6 が正本**。重複を避けるためここでは省略。
-
-### Priority最適化関連（regime確定まで全停止）
-- ❌ Replay組み込み・Priority最適化への着手（regime確定まで全停止）
-- ❌ 1週ラグ運用（regime切替の意味なくなる）
-- ❌ 「regime廃止・Priority個別判定」提案（Phase 1 失敗確定済・L-127）
-- ❌ 既存Priority(P1/P2/P3/P4/P21/P22/P23/P24)の 1m足回帰（CLAUDE.md）
-- ❌ ポジションサイズ増加でスケール（CLAUDE.md）
-- ❌ マルチシンボル化(CLAUDE.md）
-- ❌ ratchet型 Exit（PROFIT_LOCK / TRAIL_EXIT / MFE_DRAWDOWN_CUT）を P23 に追加（L-114）
-
-### 行動ルール関連
+### 行動ルール関連（恒久）
 - ❌ 設計判断を感覚で進める（feedback_quantitative_comparison）
 - ❌ ユーザーの感覚発言を採用根拠化する（同上）
 - ❌ WORKFLOW フェーズと照合せず脇道に逸れた提案を出す（2026-04-27 教訓）
+- ❌ 詳細仕様が来ても目的整合性チェックを省略する（L-165）
+- ❌ 着手前 3 項目チェック（粒度・カバレッジ・直接性）を省略する（L-166）
+
+### regime 研究関連（凍結中）
+
+→ 全般凍結。新規試行禁止。詳細は [priority_rebuild.md §6](.claude/memory/priority_rebuild.md) / [regime_research.md §0](.claude/memory/regime_research.md)。
 
 ---
 
-## 既採用パラメータ（regime確定まで凍結中・解凍は再評価後）
+## 旧 Priority パラメータ（🧊 凍結・参考用・2026-04-22 時点）
 
-regime 判定確定後にゼロから再評価（lookahead-safe + 新regime label）。
+> ⚠️ 旧 Priority(P1/P2/P4/P21/P23/P24) の凍結時パラメータ。Priority 再構築フェーズで**ゼロから再設計**するため**新規利用しない**。
+> 既存ロジックの参考・解体時の比較材料として残置。
+> 当時の 365d Replay NET 合計: $4,506 / $12.34/day（凍結ベースライン・$60/day 目標まで 5 倍ギャップ）
 
-| Priority | 凍結パラメータ | 当時の $/dt-day |
-|---------|--------------|---------------|
-| P21 | TRAIL_RATIO=0.9 / MFE_GATE_PCT=0.04 / TIME_EXIT_MIN=180 / ATR14_MIN=150 | $11.41（look-ahead プレミアム含む） |
-| P2 | TP_PCT=0.006 / MFE_STALE_GATE=3.0 / ATR14_MIN=100 / ATR14_MAX=300 | $4.75（同上） |
-| P23 | TP_PCT=0.012 / HIGH_ADX_THRESH=40 / HIGH_ADX_ATR_MIN=200 / TIME_EXIT_MIN=480 | $21.32（look-ahead プレミアム-$4.98含む・SAFE値 $16.34） |
-| P4 | ATR14_MIN=200 / TP_PCT=0.005 | -$0.67/range-day |
+| Priority | パラメータ |
+|---------|-----------|
+| P2-LONG | TP_PCT=0.006 / ATR14_MIN/MAX=100/300 / MFE_STALE_GATE=3.0 / HOLD_MIN=90 |
+| P23-SHORT | TP_PCT=0.012 / TIME_EXIT_MIN=480 / ADX_MIN/MAX=30/50 / ATR14_MIN=150 / HIGH_ADX_THRESH=40 / STOCH_REVERSE_EXIT_ENABLE=true |
+| P21-SHORT | TRAIL_RATIO=0.9 / MFE_GATE_PCT=0.04 / TIME_EXIT_MIN=180 / SL_PCT=0.02 |
+| P22-SHORT | TIME_EXIT_DOWN_FACTOR=0.4 |
+| P4-LONG | TP_PCT=0.003 / ATR14_MAX=130 |
 
-replay_csv.py: `--regime-safe` 実装済み（コード修正のみ・3関数並走）。本番経路は未対応。
+詳細値は git history（commit fa38ec2 以前）または `config/cat_params_v9.json` を参照。
 
 ---
 
-## Replayコマンド（参考・現在は実行凍結中）
+## Replay コマンド（🧊 旧フロー・参考のみ）
+
+> ⚠️ `--regime` オプション付きの旧 Replay コマンドは凍結中。
+> 新フローの Replay コマンドは段階 B 着手時に新規定義予定。
 
 ```bash
-# 180d グリッドサーチ用
-echo "=====🚀 RUN START $(date) =====" && \
-cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
-python3 runner/grid_search.py data/BTCUSDT-5m-2025-10-03_04-01_combined_180d.csv
-
-# 90d Replay（regime_switch=ON・全Priority）
-echo "=====🚀 RUN START $(date) =====" && \
-cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
-python3 runner/replay_csv.py data/BTCUSDT-5m-2026-01-01_04-01_combined_90d.csv --regime
-
-# 365d OOS検証
+# 365d Replay（旧フロー・参考のみ・実行非推奨）
 echo "=====🚀 RUN START $(date) =====" && \
 cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
 python3 runner/replay_csv.py data/BTCUSDT-5m-2025-04-01_03-31_365d.csv --regime
 ```
 
----
-
-## 確定パラメータ表（凍結中・参考用・2026-04-22時点）
-
-| Priority | パラメータ | 値 |
-|---------|-----------|-----|
-| P2-LONG | P2_TP_PCT | 0.006（2026-04-25採用・$2.32→$4.75） |
-| P2-LONG | P2_ATR14_MIN / ATR14_MAX | 100.0 / 300.0 |
-| P2-LONG | P2_MFE_STALE_GATE_USD / HOLD_MIN | 3.0（2026-04-25採用）/ 90.0 |
-| P23-SHORT | P23_TP_PCT | 0.012 |
-| P23-SHORT | P23_TIME_EXIT_MIN | 480（実効240min via DOWN_FACTOR=0.5） |
-| P23-SHORT | P23_ADX_MIN/MAX | 30.0 / 50.0 |
-| P23-SHORT | P23_ATR14_MIN | 150.0 |
-| P23-SHORT | P23_HIGH_ADX_THRESH / P23_HIGH_ADX_ATR_MIN | 40.0 / 200.0（2026-04-24採用） |
-| P23-SHORT | P23_MFE_STALE_GATE_USD / HOLD_MIN | 4.0 / 30.0 |
-| P23-SHORT | P23_SHORT_PROFIT_LOCK_ENABLE | 0 |
-| P23-SHORT | P23_STOCH_REVERSE_EXIT_ENABLE | true |
-| P23-SHORT | P23_STOCH_EXIT_MFE_GATE | 20.0 |
-| P23-SHORT | P23_STOCH_EXIT_MIN_HOLD | 150.0 |
-| P23-SHORT | P23_STOCH_EXIT_UNREAL_MIN | 0.0 |
-| P21-SHORT | P21_TRAIL_RATIO / P21_MFE_GATE_PCT | 0.9 / 0.04（2026-04-25採用・$7.51→$11.41） |
-| P21-SHORT | P21_TIME_EXIT_MIN | 180（2026-04-24採用・実効90min） |
-| P21-SHORT | P21_SL_PCT | 0.02 |
-| P22-SHORT | P22_TIME_EXIT_DOWN_FACTOR | 0.4 |
-| P4-LONG | P4_TP_PCT | 0.003 |
-| P4-LONG | P4_ATR14_MAX | 130.0 |
+凍結ベースライン: 上記コマンドで得た 1,157 trade / NET $4,506 / $12.34/day（[results/replay/replay_BTCUSDT-5m-2025-04-01_03-31_365d.csv](results/replay/replay_BTCUSDT-5m-2025-04-01_03-31_365d.csv)）
 
 ---
 
 ## 引き継ぎリソース（次セッション必読）
 
+### 必読（現方針）
 - **WORKFLOW.md**（このファイル・現フェーズ + 次のタスクのポインタ）
-- **CLAUDE.md**（v3-bitget-api-sdk/CLAUDE.md・設計思想・絶対不変）
-- **.claude/memory/regime_research.md**（regime 研究の**唯一の正本**・§1〜§12）
-- **.claude/memory/regime_trial_log.md**（v1〜v4 試作版の完全レシピ・視認結果・採否ログ・追記専用）
-- **.claude/memory/lessons_active.md**（直近 41 件・L-103〜L-140・regime 関連は L-126〜L-140）
-- **.claude/memory/lessons_archive.md**（L-102 以前のアーカイブ・必要時のみ）
-- **.claude/memory/signal_ledger.md**（シグナル候補唯一の正本）
-- **archive/workflow/WORKFLOW_20260427.md**（直前の Day 2/3 完了報告・マスタープラン9本詳細）
-- **dashboard/index.html**（⑪タブ regime 試作版・⑫タブ 4h 肉眼判定 UI）
+- **.claude/memory/priority_rebuild.md**（**Priority 再構築の唯一の正本**・設計マトリクス + 進捗 + 結果集計）
+- **CLAUDE.md**（v3-bitget-api-sdk/CLAUDE.md・設計思想・現方針）
+- **.claude/memory/lessons_active.md**（直近・L-159〜L-166 を重点）
+- **.claude/memory/signal_ledger.md**（シグナル候補・regime マッピング部分は凍結中）
+- **~/.claude/projects/.../memory/feedback_early_objection.md**（着手前 3 項目チェック・最新）
+
+### 参照のみ（凍結中）
+- **.claude/memory/regime_research.md**（🧊 凍結・§0 参照のみ）
+- **.claude/memory/regime_trial_log.md**（🧊 凍結・履歴のみ）
+- **.claude/memory/lessons_archive.md**（L-102 以前・必要時のみ）
+- **archive/workflow/WORKFLOW_20260427.md**（凍結前のスナップショット）
+- **dashboard/index.html**（タブ⑪/⑫ regime 試作 / ⑬ レジーム持続分布 / ⑭ trade×境界 整合性検証）

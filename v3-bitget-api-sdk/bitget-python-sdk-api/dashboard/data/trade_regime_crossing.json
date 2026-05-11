@@ -1,0 +1,283 @@
+{
+  "version": "trade_regime_crossing_v1",
+  "input": {
+    "replay_csv": "results/replay/replay_BTCUSDT-5m-2025-04-01_03-31_365d.csv",
+    "n_trades": 1157,
+    "n_4h_labeled_bars": 4745,
+    "n_boundaries": 198
+  },
+  "overall_implied": {
+    "n_total": 1157,
+    "n_decided": 141,
+    "n_undetermined": 1016,
+    "n_crossing": 22,
+    "n_non_crossing": 119,
+    "non_crossing_pct": 84.39716312056737,
+    "crossing_pct": 15.602836879432624
+  },
+  "overall_strict": {
+    "n_total": 1157,
+    "n_decided": 166,
+    "n_unlabeled": 991,
+    "n_crossing": 0,
+    "n_non_crossing": 166,
+    "non_crossing_pct": 100.0,
+    "crossing_pct": 0.0
+  },
+  "net_dist_implied": {
+    "IMPLIED_CROSSING": {
+      "n": 22,
+      "sum": 53.846300000000014,
+      "mean": 2.4475590909090914,
+      "median": 1.37445,
+      "p25": -5.9421,
+      "p75": 18.133499999999998,
+      "min": -55.9837,
+      "max": 60.6523,
+      "win_rate": 0.5454545454545454
+    },
+    "IMPLIED_NON_CROSSING": {
+      "n": 119,
+      "sum": -181.7102999999999,
+      "mean": -1.526977310924369,
+      "median": 1.4266,
+      "p25": -4.4951,
+      "p75": 9.51075,
+      "min": -358.1878,
+      "max": 124.8529,
+      "win_rate": 0.5798319327731093
+    },
+    "IMPLIED_UNDETERMINED": {
+      "n": 1016,
+      "sum": 4634.2678,
+      "mean": 4.561287204724409,
+      "median": 1.9678499999999999,
+      "p25": -0.7383500000000001,
+      "p75": 10.17165,
+      "min": -346.8241,
+      "max": 262.2245,
+      "win_rate": 0.6653543307086615
+    }
+  },
+  "by_priority": [
+    {
+      "key": "1",
+      "n_trades": 138,
+      "n_undetermined": 120,
+      "n_decided": 18,
+      "n_crossing": 0,
+      "n_non_crossing": 18,
+      "non_crossing_pct": 100.0,
+      "crossing_pct": 0.0,
+      "net_crossing": 0.0,
+      "net_non_crossing": -334.0027,
+      "net_undetermined": -73.86189999999999
+    },
+    {
+      "key": "2",
+      "n_trades": 225,
+      "n_undetermined": 201,
+      "n_decided": 24,
+      "n_crossing": 6,
+      "n_non_crossing": 18,
+      "non_crossing_pct": 75.0,
+      "crossing_pct": 25.0,
+      "net_crossing": 7.014199999999995,
+      "net_non_crossing": 124.92530000000001,
+      "net_undetermined": 604.5388
+    },
+    {
+      "key": "4",
+      "n_trades": 86,
+      "n_undetermined": 52,
+      "n_decided": 34,
+      "n_crossing": 9,
+      "n_non_crossing": 25,
+      "non_crossing_pct": 73.52941176470588,
+      "crossing_pct": 26.47058823529412,
+      "net_crossing": -26.382599999999993,
+      "net_non_crossing": -212.6629,
+      "net_undetermined": 219.1023
+    },
+    {
+      "key": "21",
+      "n_trades": 507,
+      "n_undetermined": 468,
+      "n_decided": 39,
+      "n_crossing": 4,
+      "n_non_crossing": 35,
+      "non_crossing_pct": 89.74358974358975,
+      "crossing_pct": 10.256410256410255,
+      "net_crossing": 13.034,
+      "net_non_crossing": 98.0654,
+      "net_undetermined": 1357.3078999999998
+    },
+    {
+      "key": "23",
+      "n_trades": 169,
+      "n_undetermined": 146,
+      "n_decided": 23,
+      "n_crossing": 3,
+      "n_non_crossing": 20,
+      "non_crossing_pct": 86.95652173913044,
+      "crossing_pct": 13.043478260869565,
+      "net_crossing": 60.1807,
+      "net_non_crossing": 181.86550000000003,
+      "net_undetermined": 2110.9361999999996
+    },
+    {
+      "key": "24",
+      "n_trades": 32,
+      "n_undetermined": 29,
+      "n_decided": 3,
+      "n_crossing": 0,
+      "n_non_crossing": 3,
+      "non_crossing_pct": 100.0,
+      "crossing_pct": 0.0,
+      "net_crossing": 0.0,
+      "net_non_crossing": -39.9009,
+      "net_undetermined": 416.24449999999996
+    }
+  ],
+  "by_regime": [
+    {
+      "key": "downtrend",
+      "n_trades": 901,
+      "n_undetermined": 815,
+      "n_decided": 86,
+      "n_crossing": 13,
+      "n_non_crossing": 73,
+      "non_crossing_pct": 84.88372093023256,
+      "crossing_pct": 15.11627906976744,
+      "net_crossing": 80.22890000000001,
+      "net_non_crossing": 404.8562,
+      "net_undetermined": 4072.7829
+    },
+    {
+      "key": "mixed",
+      "n_trades": 14,
+      "n_undetermined": 10,
+      "n_decided": 4,
+      "n_crossing": 1,
+      "n_non_crossing": 3,
+      "non_crossing_pct": 75.0,
+      "crossing_pct": 25.0,
+      "net_crossing": -18.4793,
+      "net_non_crossing": 83.70150000000001,
+      "net_undetermined": 3.8921999999999963
+    },
+    {
+      "key": "range",
+      "n_trades": 72,
+      "n_undetermined": 42,
+      "n_decided": 30,
+      "n_crossing": 8,
+      "n_non_crossing": 22,
+      "non_crossing_pct": 73.33333333333333,
+      "crossing_pct": 26.666666666666668,
+      "net_crossing": -7.903299999999994,
+      "net_non_crossing": -296.36440000000005,
+      "net_undetermined": 215.2101
+    },
+    {
+      "key": "uptrend",
+      "n_trades": 170,
+      "n_undetermined": 149,
+      "n_decided": 21,
+      "n_crossing": 0,
+      "n_non_crossing": 21,
+      "non_crossing_pct": 100.0,
+      "crossing_pct": 0.0,
+      "net_crossing": 0.0,
+      "net_non_crossing": -373.9036,
+      "net_undetermined": 342.3826
+    }
+  ],
+  "by_side": [
+    {
+      "key": "LONG",
+      "n_trades": 449,
+      "n_undetermined": 373,
+      "n_decided": 76,
+      "n_crossing": 15,
+      "n_non_crossing": 61,
+      "non_crossing_pct": 80.26315789473685,
+      "crossing_pct": 19.736842105263158,
+      "net_crossing": -19.3684,
+      "net_non_crossing": -421.74029999999993,
+      "net_undetermined": 749.7792
+    },
+    {
+      "key": "SHORT",
+      "n_trades": 708,
+      "n_undetermined": 643,
+      "n_decided": 65,
+      "n_crossing": 7,
+      "n_non_crossing": 58,
+      "non_crossing_pct": 89.23076923076924,
+      "crossing_pct": 10.76923076923077,
+      "net_crossing": 73.2147,
+      "net_non_crossing": 240.03,
+      "net_undetermined": 3884.4885999999997
+    }
+  ],
+  "by_hold_bucket": [
+    {
+      "bucket": "≤15m",
+      "n": 590,
+      "n_decided": 53,
+      "n_crossing": 7,
+      "crossing_pct": 13.20754716981132,
+      "net_total": 2973.9748
+    },
+    {
+      "bucket": "15-30m",
+      "n": 100,
+      "n_decided": 18,
+      "n_crossing": 2,
+      "crossing_pct": 11.11111111111111,
+      "net_total": 49.82960000000002
+    },
+    {
+      "bucket": "30-60m",
+      "n": 58,
+      "n_decided": 5,
+      "n_crossing": 1,
+      "crossing_pct": 20.0,
+      "net_total": 929.1401
+    },
+    {
+      "bucket": "1-2h",
+      "n": 183,
+      "n_decided": 35,
+      "n_crossing": 7,
+      "crossing_pct": 20.0,
+      "net_total": 592.0580999999999
+    },
+    {
+      "bucket": "2-4h",
+      "n": 190,
+      "n_decided": 26,
+      "n_crossing": 4,
+      "crossing_pct": 15.384615384615385,
+      "net_total": -304.2067999999998
+    },
+    {
+      "bucket": "4-8h",
+      "n": 36,
+      "n_decided": 4,
+      "n_crossing": 1,
+      "crossing_pct": 25.0,
+      "net_total": 265.608
+    },
+    {
+      "bucket": ">8h",
+      "n": 0
+    }
+  ],
+  "judgment_brackets": {
+    "90+": "作戦継続",
+    "70-90": "部分問題",
+    "<=50": "根本見直し"
+  }
+}

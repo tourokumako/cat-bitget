@@ -72,19 +72,18 @@
    - 現在の設計・パラメータ・Replay結果・次のタスクを最新状態に書き直す
    - パス: `bitget-python-sdk-api/WORKFLOW.md`
 
-3. **regime 研究中の場合は `.claude/memory/regime_research.md` を更新する**（⚠️ 毎回必須）
-   - §0 現フェーズ・§2 タイムライン・§3 現行試作版・§5 試行ログ・§12 現在地 を最新状態に書き直す
-   - `regime_trial_log.md` にも新バージョンのエントリを追記する
-   - これを怠ると次セッションの引き継ぎが壊れる（過去に複数回発生）
+3. **Priority 再構築フェーズの進捗を WORKFLOW.md に反映する**
+   - 段階 A-1 / A-2 / A-3 / B / C / D のどこまで進んだか
+   - 残課題・次セッション着手項目
+   - `regime_research.md` は凍結中なので更新不要（再開条件成立時のみ）
 
 **⛔ セッション終了前に以下を必ずチャットに出力する（省略禁止）:**
 ```
 セッション終了チェック:
 [ ] lessons_active.md 更新完了
-[ ] WORKFLOW.md 更新完了
-[ ] regime_research.md 更新完了（regime研究中のみ）
+[ ] WORKFLOW.md 更新完了（Priority 再構築フェーズの進捗反映）
 ```
-→ 3つ全て [ ] に ✓ が入るまでセッション終了を宣言しない。
+→ 2つ全て [ ] に ✓ が入るまでセッション終了を宣言しない。
 
 4. **Git コミットする**（ユーザーの明示 OK なしに commit しない）
 
@@ -113,33 +112,45 @@
 
 | ファイル | 内容 |
 |---------|------|
-| `bitget-python-sdk-api/WORKFLOW.md` | 現在の状態・次のタスク（**唯一の正本**） |
-| `bitget-python-sdk-api/.claude/memory/signal_ledger.md` | **シグナル候補・レジーム×方向マッピング・検証実績の唯一の正本**（51候補マスター） |
-| `bitget-python-sdk-api/.claude/memory/lessons_active.md` | 過去の失敗・再発防止（直近36件・常時参照） |
+| `bitget-python-sdk-api/WORKFLOW.md` | 現在の状態・次のタスク（**唯一の正本**・Priority 再構築フェーズ） |
+| `bitget-python-sdk-api/.claude/memory/lessons_active.md` | 過去の失敗・再発防止（**L-159〜L-166 直近** + 常時参照） |
 | `bitget-python-sdk-api/.claude/memory/lessons_archive.md` | L-102以前のアーカイブ（必要時のみ） |
-| `bitget-python-sdk-api/.claude/memory/project_v9_progress.md` | V9実装進捗（参照用） |
+| `bitget-python-sdk-api/.claude/memory/signal_ledger.md` | シグナル候補・検証実績（参考・regime マッピングは凍結中） |
+| `bitget-python-sdk-api/.claude/memory/regime_research.md` | 🧊 **凍結中**（素材として参照のみ・新規調査禁止） |
 
 ---
 
-## 現在の方針
+## 現在の方針（2026-05-11 大方針転換）
 
-### レジーム切り替え方針（2026-04-21 確定）
-- **日足MA70を基準に downtrend / range / uptrend の3レジームに切り替える**
-- 各レジームに方向性の合う Priority を割り当て、個別に最適化・設計する
-- 現状 Priority は「方向性が近いもの」をスタート地点として育てる
-- 最終検証: 365d Replay で GO/NO（ここでの再チューニング禁止）
+### Priority ゼロから再構築 — MTF × 1,432 指標で Entry 規則を最適化
+
+**旧方針（凍結）**: 日足 MA70 ベース regime 判定 → 既存 Priority(P1-P24) 振り分け
+
+**新方針**:
+- regime 判定研究は**凍結**（v14 56% / stage3 33% の精度天井に対し $60/day 到達への寄与が見えない）
+- 蓄積した素材（1,432 指標列・k=2 探索フレーム）を **Priority Entry 規則の最適化**に転用
+- 既存 P1/P2/P4/P21/P23/P24 は**改修ではなく解体・再設計**
+- 5m bar × 全 1,432 指標 × 未来 MFE/MAE で Entry 規則を網羅探索
+
+### 新フローの骨格（段階 A 〜 D）
+
+- **段階 A-1**: 5y × 5m × 1,432 列 × 未来 MFE/MAE ラベル生成（K=1h/2h/4h/8h・LONG/SHORT 同時）
+- **段階 A-2**: k=2 全探索（102 万組）→ 中央値 + MFE/MAE 比で評価・walk-forward 5 fold
+- **段階 A-3**: 結果視認 → Entry 規則設計
+- **段階 B**: 新 Entry 規則 + Exit で 365d Replay 検証
+- **段階 C**: B 頭打ちなら ML 回帰モデル
+- **段階 D**: 最終 Replay → 採否判定
+
+詳細・現在のステップは [WORKFLOW.md](bitget-python-sdk-api/WORKFLOW.md) を参照。
 
 ### 実装方針
-V9シグナルをベースに、**Priority特性別に最適化**する。
-- **現行標準は 5m足**。既存Priority(P1〜P4/P21〜P24)の 1m足回帰は禁止（エッジゼロ確認済み）
-- 新規Priority・新規シグナルでは、5m が誤検知過多で目標到達を妨げる場合に限り
-  他足（1m除く・3m/15m/1h 等）を検証可。採用条件は ① 手数料計算が正 ② 5m同条件で
-  劣ることをデータで示す ③ analyze_signals.py で干渉率 < 0.3
-- 各Priority: 型は事前定義せず検証結果から決定する（スキャル/スイング分類は廃止）
-- P2: TP=0.0006（現在の検証値）/ P4/P22/P23/P24: TP幅・保有時間はPriority単位で検証して最適化
-- P1/P21: 5m足・MACD(12,26,9)クロス・TRAIL_EXIT設計
 
-詳細な検証結果・パラメータ・次のタスクは WORKFLOW.md を参照。
+- **現行標準は 5m足**。1m 足回帰は禁止（エッジゼロ確認済み）
+- ポジションサイズ上限 0.12 BTC/trade（増加禁止）
+- 新 Priority 候補は型を事前定義せず、k=2 探索結果から発火条件を設計
+- Exit 設計は段階 A 完了後に着手（MFE/MAE 分布から TP/SL 幅を逆算）
+
+詳細な検証結果・パラメータ・次のタスクは [WORKFLOW.md](bitget-python-sdk-api/WORKFLOW.md) を参照。
 
 ---
 

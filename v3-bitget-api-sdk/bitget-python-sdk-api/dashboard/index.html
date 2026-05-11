@@ -23,6 +23,8 @@
     <button data-tab="recipe_check">⑩ レシピ判定検証</button>
     <button data-tab="regime_proto">⑪ レジーム試作</button>
     <button data-tab="samples_4h">⑫ 4h肉眼判定</button>
+    <button data-tab="run_length">⑬ レジーム持続分布</button>
+    <button data-tab="trade_crossing">⑭ trade×境界 整合性</button>
   </nav>
   <small id="source-note"></small>
 </header>
@@ -717,6 +719,148 @@
 
     <div style="margin-top:6px;color:#555;font-size:0.85em;">
       保存先: <code>data/regime_samples_4h.csv</code>（保存ボタンで書き戻し・コピペ不要）
+    </div>
+  </section>
+
+  <section id="run_length" class="tab">
+    <h2>⑬ レジーム持続分布（連続区間長 run-length）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      既存ラベルの「同一ラベルが連続するバー数 × 粒度」を時間単位で集計。<br>
+      A: <strong>4h 教師ラベル（まこさん肉眼・2022-2025）</strong> / B: <strong>v14 自動ラベル 1h（5年）</strong>。<br>
+      run 定義: 時系列順で連続する同ラベル + timestamp 間隔=粒度（4h or 1h）。空ラベル/時間飛びは run 区切り。
+    </p>
+
+    <div style="display:flex;gap:14px;margin-bottom:14px;">
+      <label>ラベル絞り込み:
+        <select id="rl-label-filter">
+          <option value="ALL" selected>全体</option>
+          <option value="uptrend">uptrend</option>
+          <option value="downtrend">downtrend</option>
+          <option value="range">range</option>
+        </select>
+      </label>
+    </div>
+
+    <h3>統計サマリ（時間単位）</h3>
+    <div style="overflow-x:auto;margin-bottom:18px;">
+      <table class="data-table" id="rl-stats-table">
+        <thead><tr>
+          <th>ソース</th><th>ラベル</th><th>run 数</th>
+          <th>median</th><th>mean</th>
+          <th>P25</th><th>P75</th><th>P90</th><th>P99</th>
+          <th>max</th><th>min</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3>ヒストグラム（持続時間 bin × run 数）</h3>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;">
+      <div style="flex:1 1 480px;background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+        <div style="font-weight:bold;margin-bottom:6px;" id="rl-chart-a-title">A. 4h 教師ラベル</div>
+        <div style="height:320px;"><canvas id="rl-chart-a"></canvas></div>
+      </div>
+      <div style="flex:1 1 480px;background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+        <div style="font-weight:bold;margin-bottom:6px;" id="rl-chart-b-title">B. v14 自動ラベル 1h</div>
+        <div style="height:320px;"><canvas id="rl-chart-b"></canvas></div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;background:#f6f8fa;padding:12px;border-radius:6px;font-size:0.85em;line-height:1.7;">
+      <strong>📖 ヒストグラム視認ガイド</strong><br>
+      ・横軸 = 持続時間 bin（≤4h / 4-8h / ... / 1-2w / 2w-1M / &gt;1M）<br>
+      ・縦軸 = その bin に入る run 数。ラベル絞り込みで UP/DT/RG/全体を切替<br>
+      ・「短い区間支配」: 左端（≤4h・4-8h）が高い山・右側がほぼゼロ<br>
+      ・「長い区間支配」: 12-24h〜2-3d に山・右側に尾を引く<br>
+      ・「二峰性」: 左端と中央に両方山 → 短期ノイズ + 長期 regime 混在<br>
+      ・4h 教師 vs v14 1h 比較で分かること：<br>
+      &nbsp;&nbsp;同じ形 → ラベル粒度に依存しない実構造（regime は本物）<br>
+      &nbsp;&nbsp;v14 が左寄り → 自動判定が短期切替を過剰検出している<br>
+      &nbsp;&nbsp;4h 教師の ≤4h 山が低い → 教師は「最低 1 日」を暗黙設定の可能性
+    </div>
+    <div style="margin-top:14px;color:#555;font-size:0.85em;">
+      <strong>判定基準（Frame 1: 単一ラベル方式の限界）</strong>:<br>
+      &nbsp;&nbsp;median 時間〜日オーダー → Frame 1 撤回（単一ラベル方式は妥当）<br>
+      &nbsp;&nbsp;median 分〜時間未満オーダー → Frame 1 有効（限界論復活）<br>
+      <br>
+      生成元: <code>scripts/regime/regime_label_run_length.py</code> →
+      <code>dashboard/data/regime_label_run_length.json</code>
+    </div>
+  </section>
+
+  <section id="trade_crossing" class="tab">
+    <h2>⑭ trade × regime 境界 整合性検証</h2>
+    <p style="color:#555;font-size:0.9em;">
+      365d Replay の各 trade が 4h 教師ラベルの run 切替点を跨いだか判定。<br>
+      <strong>STRICT</strong>: trade 区間 (entry, exit] に boundary timestamp が含まれるか<br>
+      <strong>IMPLIED</strong>: trade entry 直前 24h と exit 直後 24h の labeled バー label 比較（boundary が unlabeled gap に隠れた場合も検出）
+    </p>
+
+    <h3>全体結果サマリ（IMPLIED が主軸）</h3>
+    <div style="overflow-x:auto;margin-bottom:18px;">
+      <table class="data-table" id="tc-overall-table">
+        <thead><tr>
+          <th>判定方式</th><th>n_total</th><th>n_decided</th>
+          <th>CROSSING</th><th>NON_CROSSING</th><th>NON_CROSSING %</th><th>未確定</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3>net_usd 分布（IMPLIED）</h3>
+    <div style="overflow-x:auto;margin-bottom:18px;">
+      <table class="data-table" id="tc-net-table">
+        <thead><tr>
+          <th>分類</th><th>n</th><th>sum</th><th>mean</th><th>median</th><th>P25</th><th>P75</th><th>win rate</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:18px;">
+      <div style="flex:1 1 480px;background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+        <div style="font-weight:bold;margin-bottom:6px;">crossing vs non-crossing net_usd 分布 (mean/median)</div>
+        <div style="height:300px;"><canvas id="tc-net-chart"></canvas></div>
+      </div>
+      <div style="flex:1 1 480px;background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+        <div style="font-weight:bold;margin-bottom:6px;">Priority 別 跨ぎ率</div>
+        <div style="height:300px;"><canvas id="tc-pri-chart"></canvas></div>
+      </div>
+    </div>
+
+    <h3>Priority 別 跨ぎ率テーブル</h3>
+    <div style="overflow-x:auto;margin-bottom:18px;">
+      <table class="data-table" id="tc-priority-table">
+        <thead><tr>
+          <th>Priority</th><th>全 trade</th><th>decided</th>
+          <th>crossing</th><th>non_crossing</th><th>non_crossing %</th>
+          <th>NET cross</th><th>NET non</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3>hold_min バケット × 跨ぎ率</h3>
+    <div style="overflow-x:auto;margin-bottom:18px;">
+      <table class="data-table" id="tc-hold-table">
+        <thead><tr>
+          <th>hold</th><th>n</th><th>decided</th><th>crossing</th><th>crossing %</th><th>NET total</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:18px;background:#f6f8fa;padding:12px;border-radius:6px;font-size:0.85em;line-height:1.7;">
+      <strong>📖 視認ガイド</strong><br>
+      ・「NON_CROSSING %」が高いほど trade は regime 境界を跨いでいない<br>
+      ・90%+ → regime 先行作戦は時間軸的に成立・継続可<br>
+      ・70-90% → 部分問題（条件分岐検討）<br>
+      ・50% 以下 → 根本見直し（regime 先行廃止検討）<br>
+      ・NET cross が NET non と比べて明確に悪い → 「跨ぎが損失要因」仮説裏付け<br>
+      ・UNDETERMINED 比率が高い場合は labeled サンプル数の小ささに留意<br>
+      <br>
+      生成元: <code>scripts/regime/trade_regime_crossing.py</code> →
+      <code>dashboard/data/trade_regime_crossing.json</code>
     </div>
   </section>
 </main>
