@@ -100,7 +100,8 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 ## Step 0: セッション開始プロトコル（省略禁止）
 
 ```
-① 目標 $60/day − 凍結ベースライン $12.34/day = 不足 $47.66/day
+① 合格ライン 月次 ≥ $1,900/月 − 凍結ベースライン $370/月 = 不足 $1,530/月（5.1倍ギャップ）
+   ※ デイリー $60 は目安・日次絶対下限ではない・判定は月次のみ・一次ソース: MEMORY/project_goal.md
 ② 現フェーズ確認（Priority 再構築・段階 A-1 / A-2 / A-3 / B / C / D のどこか明示）
 ③ 当該段階の前提条件（K 窓 1h/2h/4h/8h・LONG/SHORT 同時・walk-forward 5 fold・MFE/MAE 中央値 + 比）を再確認
 ④ [Step 0 D] 段階完了後の $60/day 到達可能性: YES / NO / 試算未済
@@ -289,31 +290,46 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-12 改訂12・A-1 完了）
+## 🔴 次のタスク（2026-05-12 改訂13・Web Claude 分業切替）
 
-**段階 A-2: k=2 全探索（1,024,696 組 × 16 ラベル）の設計 → GO → 実装 → 実行**
+**段階 A-2 大枠設計を Web Claude で詰める → 結論を Claude Code に持ち込んで実装**
 
-段階 A-1 完了状態（2026-05-12 02:12 完了・実行時間 1h28m37s）:
+### 切替の経緯（2026-05-12 セッション末）
+
+Claude Code 側で A-2 設計議論を 1 セッション中に 6 回撤回（中央値固定 / k=2固定 / 信頼度区分 / 月次$1,900判定軸 等）。
+設計議論で context が分断され一貫性を保てない癖が露呈（L-169 / L-171）。
+Web Claude に大枠 L2-L5 を詰めてもらう分業に切替。
+
+### 段階 A-1 完了状態（変更なし）
+
 - train: `results/priority_rebuild/labels_mfe_mae_train_2021_2024.parquet` (394,573 行 / 1.05 GB)
 - test:  `results/priority_rebuild/labels_mfe_mae_test_2025.parquet` (105,120 行 / 0.30 GB)
-- 段階 B 温存: 2026-Q1 25,824 行（parquet 未生成・段階 B Replay 用に元 CSV から再抽出）
+- 段階 B 温存: 2026-Q1 25,824 行（parquet 未生成）
 
-詳細仕様（入力・K 窓・ラベル定義・出力先 等）は **[`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §2** が唯一の正本。
+### 引き継ぎ資料
+
+**[`handoff_to_web_claude.md`](.claude/memory/handoff_to_web_claude.md)** が Web Claude 用 self-contained 引き継ぎ資料の唯一の正本。
+- §0-§14 構成・Web Claude にリポジトリアクセスなし前提
+- §8 に Web Claude に詰めてほしい優先質問 10 個
+- §13 に Claude Code の手戻り癖（別 AI が同じ穴に落ちないため）
 
 ### 次セッション最初にやること（順番）
 
-1. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §0 / §3 / §4 を再読
-2. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-159〜L-167** 再読
-3. **段階 A-2 k=2 全探索の設計案** を提示（実装前に GO 待ち）
+1. [`handoff_to_web_claude.md`](.claude/memory/handoff_to_web_claude.md) を再読
+2. **Web Claude から返ってきた大枠設計（L2/L3/A-2フロー/段階B骨格）を確認**
+3. Claude Code に貼られた Web Claude 結論を [`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §2 に反映
+4. 実装着手前に Step 0 を改めて実行（目的整合性チェック L-166・着手前 3 項目）
+5. 実装フェーズへ
 
 ### Step 0 セッション開始時に必読（厳守・順番通り）
 
 1. WORKFLOW.md（このファイル・現フェーズ + 次のタスクのポインタ）
-2. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md)（**Priority 再構築の唯一の正本**）
-3. [CLAUDE.md](../CLAUDE.md)（設計思想・現方針）
-4. [lessons_active.md](.claude/memory/lessons_active.md) L-159〜L-166
-5. [feedback_early_objection.md](/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_early_objection.md)
-6. [feedback_writing_style.md](/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_writing_style.md)
+2. [`handoff_to_web_claude.md`](.claude/memory/handoff_to_web_claude.md)（**Web Claude 分業の正本**・現セッション末で作成）
+3. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md)（**Priority 再構築の唯一の正本**）
+4. [CLAUDE.md](../CLAUDE.md)（設計思想・現方針・目標表は月次 $1,900 統一済）
+5. [lessons_active.md](.claude/memory/lessons_active.md) **L-168〜L-171 重点**
+6. [feedback_early_objection.md](/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_early_objection.md)
+7. [feedback_writing_style.md](/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_writing_style.md)
 
 ---
 
