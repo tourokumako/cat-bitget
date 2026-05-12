@@ -3164,6 +3164,238 @@ async function renderTradeCrossing() {
   tcRenderCharts();
 }
 
+// ============================================================
+// ⑮ 頭打ち原因分析
+// ============================================================
+let HR_DATA = null;
+const HR_CHARTS = {};
+
+function hrUsd(x) {
+  if (x === null || x === undefined || isNaN(x)) return "—";
+  return (x >= 0 ? "+$" : "−$") + Math.abs(x).toFixed(2);
+}
+function hrPct(x) {
+  if (x === null || x === undefined || isNaN(x)) return "—";
+  return (x * 100).toFixed(3) + "%";
+}
+
+function hrRenderMeta() {
+  const m = HR_DATA.meta;
+  document.getElementById("hr-meta").innerHTML = `
+    生成: ${m.generated_at} / replay: <code>${m.replay_csv}</code> ${m.replay_start.slice(0,10)} → ${m.replay_end.slice(0,10)} / trade=${m.replay_n} / NET=${hrUsd(m.replay_net)} / 月次平均=${hrUsd(m.replay_monthly_avg)}<br>
+    parquet マッチ: ${m.matched_n} / ${m.replay_n} (${m.matched_pct}%) — 2026-Q1 (${m.replay_n - m.matched_n} trade) は parquet 未生成のため除外。合格ライン: 月次 ≥ $${m.pass_line_month}.
+  `;
+}
+
+function hrRenderVerdict() {
+  const v = HR_DATA.verdict;
+  const yn = (b) => b ? "<span style='color:#1a7f37;font-weight:bold;'>YES</span>" : "<span style='color:#cf222e;font-weight:bold;'>NO</span>";
+  document.querySelector("#hr-verdict-table tbody").innerHTML = `
+    <tr><td>Entry 質 random より良い？</td><td>p_mfe_median=${v.p_mfe_vs_random_median}</td><td>${yn(v.entry_quality_ok)}</td></tr>
+    <tr><td>完璧 K=96 Exit で全月 $1,900 達成？</td><td>worst_month=${hrUsd(v.perfect_k96_worst_month)}</td><td>${yn(v.perfect_k96_all_12mo_pass)}</td></tr>
+    <tr><td>いずれかの仮想 Exit で全月 $1,900 達成？</td><td>${v.n_patterns_all_pass} / ${v.n_patterns_total} パターン</td><td>${yn(v.any_pattern_all_12mo_pass)}</td></tr>
+  `;
+  const banner = document.getElementById("hr-verdict-banner");
+  banner.textContent = "暫定判定: " + v.verdict_label;
+  banner.style.background = v.perfect_k96_all_12mo_pass ? "#dafbe1" : "#ffebe9";
+  banner.style.color = v.perfect_k96_all_12mo_pass ? "#1a7f37" : "#cf222e";
+  document.getElementById("hr-verdict-detail").textContent = v.verdict_detail +
+    "（注: 本仕様 §5 マトリクスの機械的マッピング。最終判定は Web Claude/まこさんがダッシュボード視認のうえで決定）";
+}
+
+function hrRenderExit() {
+  const rows = HR_DATA.step1.exit_reason.slice().sort((a, b) => b.net_usd_sum - a.net_usd_sum);
+  document.querySelector("#hr-exit-table tbody").innerHTML = rows.map(r =>
+    `<tr><td>${r.bucket}</td><td>${r.n_trades}</td><td class="${classNum(r.net_usd_sum)}">${hrUsd(r.net_usd_sum)}</td><td>${hrUsd(r.net_usd_median)}</td><td>${hrUsd(r.mfe_minus_net_median)}</td></tr>`
+  ).join("");
+  if (HR_CHARTS.exit) HR_CHARTS.exit.destroy();
+  HR_CHARTS.exit = new Chart(document.getElementById("hr-exit-chart"), {
+    type: "bar",
+    data: {
+      labels: rows.map(r => r.bucket),
+      datasets: [{
+        label: "net_usd_sum ($)",
+        data: rows.map(r => r.net_usd_sum),
+        backgroundColor: rows.map(r => r.net_usd_sum >= 0 ? "rgba(46,160,67,0.7)" : "rgba(207,34,46,0.7)"),
+      }],
+    },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: "y",
+      scales: { x: { title: { display: true, text: "NET USD" } } } },
+  });
+}
+
+function hrRenderLoss() {
+  const allBuckets = [];
+  for (const axis of ["exit_reason", "side", "regime", "priority"]) {
+    for (const r of HR_DATA.step1[axis]) {
+      allBuckets.push({ axis, bucket: r.bucket, n: r.n_trades, loss: r.mfe_minus_net_median });
+    }
+  }
+  allBuckets.sort((a, b) => b.loss - a.loss);
+  if (HR_CHARTS.loss) HR_CHARTS.loss.destroy();
+  HR_CHARTS.loss = new Chart(document.getElementById("hr-loss-chart"), {
+    type: "bar",
+    data: {
+      labels: allBuckets.map(r => `${r.axis}: ${r.bucket}`),
+      datasets: [{
+        label: "MFE − net 取りこぼし中央値 ($)",
+        data: allBuckets.map(r => r.loss),
+        backgroundColor: "rgba(208,135,0,0.7)",
+      }],
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      scales: { y: { title: { display: true, text: "USD" } } } },
+  });
+}
+
+function hrRenderEntry() {
+  const rows = HR_DATA.step2.filter(r => r.K === 24);
+  document.querySelector("#hr-entry-table tbody").innerHTML = rows.map(r =>
+    `<tr><td>${r.K}</td><td>${r.side}</td><td>${r.group}</td><td>${hrPct(r.mfe_pct_median)}</td><td>${hrPct(r.mae_pct_median)}</td><td>${r.ratio_mfe_over_mae ?? "—"}</td><td>${r.n}</td><td>${r.mw_u_pvalue_mfe_vs_random ?? "—"}</td></tr>`
+  ).join("");
+  const groups = ["old_p1_p24", "random_baseline", "all_bar", "top5pct_mfe", "top10pct_mfe", "top20pct_mfe"];
+  const longRow = (g) => rows.find(r => r.side === "LONG" && r.group === g)?.mfe_pct_median ?? 0;
+  const shortRow = (g) => rows.find(r => r.side === "SHORT" && r.group === g)?.mfe_pct_median ?? 0;
+  if (HR_CHARTS.entry) HR_CHARTS.entry.destroy();
+  HR_CHARTS.entry = new Chart(document.getElementById("hr-entry-chart"), {
+    type: "bar",
+    data: {
+      labels: groups,
+      datasets: [
+        { label: "LONG mfe_pct median", data: groups.map(longRow), backgroundColor: "rgba(58,118,200,0.7)" },
+        { label: "SHORT mfe_pct median", data: groups.map(shortRow), backgroundColor: "rgba(207,34,46,0.7)" },
+      ],
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      scales: { y: { title: { display: true, text: "MFE pct (=median)" } } } },
+  });
+}
+
+function hrRenderPos() {
+  const tbody = document.querySelector("#hr-pos-table tbody");
+  const rows = [];
+  for (const r of HR_DATA.step3.trades_per_day) rows.push({ axis: "trades/day", bucket: r.bucket, n: r.n_obs, median: r.median, max: r.max, min: r.min });
+  for (const r of HR_DATA.step3.concurrent_positions) rows.push({ axis: "concurrent (all)", bucket: r.bucket, n: r.n_obs, median: r.median, max: r.max, min: r.min });
+  for (const r of HR_DATA.step3.concurrent_positions_by_side) rows.push({ axis: "concurrent side", bucket: r.bucket, n: r.n_obs, median: r.median, max: r.max, min: r.min });
+  tbody.innerHTML = rows.map(r =>
+    `<tr><td>${r.axis}</td><td>${r.bucket}</td><td>${r.n}</td><td>${r.median}</td><td>${r.max}</td><td>${r.min}</td></tr>`
+  ).join("");
+  const alloc = HR_DATA.step3.priority_x_side_alloc;
+  if (HR_CHARTS.pri) HR_CHARTS.pri.destroy();
+  HR_CHARTS.pri = new Chart(document.getElementById("hr-pri-chart"), {
+    type: "bar",
+    data: {
+      labels: alloc.map(r => r.bucket),
+      datasets: [
+        { label: "net_usd_sum", data: alloc.map(r => r.net_usd_sum), backgroundColor: "rgba(46,160,67,0.7)", yAxisID: "y" },
+        { label: "n_trades", data: alloc.map(r => r.n_trades), backgroundColor: "rgba(58,118,200,0.4)", yAxisID: "y1", type: "line" },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { position: "left", title: { display: true, text: "NET USD" } },
+        y1: { position: "right", title: { display: true, text: "n_trades" }, grid: { drawOnChartArea: false } },
+      },
+    },
+  });
+}
+
+function hrRenderMonthly() {
+  const series = HR_DATA.step4.monthly_series;
+  const passLine = HR_DATA.meta.pass_line_month;
+  // Use union of months across selected patterns
+  const months = new Set();
+  const selected = ["baseline_actual", "perfect_exit_K12", "perfect_exit_K24", "perfect_exit_K48", "perfect_exit_K96"];
+  for (const k of selected) {
+    if (!series[k]) continue;
+    for (const m of Object.keys(series[k])) months.add(m);
+  }
+  const monthLabels = Array.from(months).sort();
+  const colors = {
+    baseline_actual: "rgba(120,120,120,0.9)",
+    perfect_exit_K12: "rgba(58,118,200,0.9)",
+    perfect_exit_K24: "rgba(46,160,67,0.9)",
+    perfect_exit_K48: "rgba(208,135,0,0.9)",
+    perfect_exit_K96: "rgba(207,34,46,0.9)",
+  };
+  const datasets = selected.map(k => ({
+    label: k,
+    data: monthLabels.map(m => series[k] ? (series[k][m] ?? null) : null),
+    borderColor: colors[k],
+    backgroundColor: colors[k],
+    spanGaps: true,
+    tension: 0.15,
+    fill: false,
+  }));
+  datasets.push({
+    label: `合格ライン $${passLine}`,
+    data: monthLabels.map(() => passLine),
+    borderColor: "rgba(207,34,46,0.6)",
+    borderDash: [6, 4],
+    pointRadius: 0,
+    fill: false,
+  });
+  if (HR_CHARTS.monthly) HR_CHARTS.monthly.destroy();
+  HR_CHARTS.monthly = new Chart(document.getElementById("hr-monthly-chart"), {
+    type: "line",
+    data: { labels: monthLabels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { title: { display: true, text: "Monthly NET USD" } } },
+    },
+  });
+
+  // Step4 table: show baseline + perfect + time_exit + top-3 monthly_avg patterns
+  const allRows = HR_DATA.step4.rows;
+  const ranked = allRows.slice().sort((a, b) => b.monthly_avg - a.monthly_avg);
+  const topMonthlyIds = new Set();
+  for (let i = 0, n = 0; i < ranked.length && n < 3; i++) {
+    if (!ranked[i].pattern_id.startsWith("baseline_") && !ranked[i].pattern_id.startsWith("perfect_") && !ranked[i].pattern_id.startsWith("time_exit_")) {
+      topMonthlyIds.add(ranked[i].pattern_id);
+      n++;
+    }
+  }
+  const show = allRows.filter(r =>
+    r.pattern_id.startsWith("baseline_") ||
+    r.pattern_id.startsWith("perfect_exit") ||
+    r.pattern_id.startsWith("time_exit") ||
+    topMonthlyIds.has(r.pattern_id)
+  );
+  document.querySelector("#hr-step4-table tbody").innerHTML = show.map(r =>
+    `<tr>
+      <td>${r.pattern_id}</td>
+      <td>${hrUsd(r.net_sum_total)}</td>
+      <td>${hrUsd(r.monthly_avg)}</td>
+      <td>${hrUsd(r.worst_month_net)}</td>
+      <td>${hrUsd(r.best_month_net)}</td>
+      <td>${r.n_months_above_1900} / ${r.n_months}</td>
+      <td>${r.all_12mo_pass_1900 ? "✅" : "❌"}</td>
+      <td>${r.n_trades_used}</td>
+    </tr>`
+  ).join("");
+}
+
+async function renderHeadroom() {
+  HR_DATA = await fetchJSON("data/headroom_analysis.json");
+  hrRenderMeta();
+  hrRenderVerdict();
+  const renderCharts = () => {
+    hrRenderExit();
+    hrRenderLoss();
+    hrRenderEntry();
+    hrRenderPos();
+    hrRenderMonthly();
+  };
+  const hrBtn = document.querySelector('header nav button[data-tab="headroom"]');
+  if (hrBtn) {
+    hrBtn.addEventListener("click", () => {
+      requestAnimationFrame(renderCharts);
+    });
+  }
+  renderCharts();
+}
+
 (async () => {
   // 各 render を独立 try/catch でラップ。1 つ落ちても他は走る。
   const renders = [
@@ -3181,6 +3413,7 @@ async function renderTradeCrossing() {
     ["samples4h", renderSamples4h],
     ["runLength", renderRunLength],
     ["tradeCrossing", renderTradeCrossing],
+    ["headroom", renderHeadroom],
   ];
   const failures = [];
   for (const [name, fn] of renders) {

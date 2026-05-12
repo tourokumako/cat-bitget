@@ -14,7 +14,8 @@
 | 段階 | 内容 | ステータス |
 |---|---|---|
 | A-1 | 学習データ生成（5m bar × 1,432 指標 × 未来 MFE/MAE ラベル）| **完了**（train 394,573 / test 105,120 / 段階B温存 25,824 行）|
-| A-2 | k=2 探索（旧）→ **大枠 Web Claude 分業中**（2026-05-12〜）| **Web Claude 結論待ち** |
+| **0-α** | **頭打ち原因分析**（auditor 指摘対応・A-2 大枠ドラフト確定の前提）| **完了**（2026-05-12 / 5 ファイル + ⑮ ダッシュボードタブ）|
+| A-2 | 大枠 Web Claude 分業中（**0-α 結果を Web Claude に渡して大枠確定**）| Web Claude 結論待ち |
 | A-3 | 結果視認 + Entry 規則設計 | 未着手 |
 | B | 新 Entry 規則 × Exit で 365d Replay 検証 | 未着手・**Exit 設計も Web Claude 議論対象** |
 | C | ML 回帰モデル（B 頭打ち時のみ）| 未着手・条件付き |
@@ -35,6 +36,18 @@
 3. lessons_active.md **L-168 〜 L-171** を再読（今セッションの手戻り教訓）
 4. **Web Claude の議論結果を確認** → §2 に反映 → 実装フェーズへ
 5. 実装着手前に Step 0 を改めて実行（目的整合性チェック L-166・着手前 3 項目）
+
+**頭打ち原因分析の結果（2026-05-12 完了）**:
+- 仕様書: [headroom_analysis_spec.md](headroom_analysis_spec.md)
+- 成果物: [results/priority_rebuild/headroom_analysis_summary.md](../../results/priority_rebuild/headroom_analysis_summary.md) + step1-4 CSV + ⑮ ダッシュボードタブ
+- データ前提: replay 1,157 trade のうち 733 (63.4%) が parquet test (2025) とマッチ。2026-Q1 の 424 trade は parquet 未生成のため仮想 Exit 分析から除外
+- 判定マトリクス（仕様書 §5）の結果:
+  - Entry 質 random より良い: **YES**（p_mfe_median=0.0032）
+  - 完璧 K=96 Exit で全月 $1,900 達成: **NO**（worst_month=$40.41）
+  - いずれかの仮想 Exit (57パターン) で全月 $1,900 達成: **NO**（0/57）
+- **暫定判定: 構造的限界の可能性** — 完璧 K=96 Exit でも全月 $1,900 不達。Entry 規則そのものの再設計が必要
+- 月次内訳で見えた構造ボトルネック: **2025-09 は matched 4 trade のみ・完璧 Exit でも $40**。月次 Entry 発火数の極端な偏り（4-240 trade/月）が構造的ボトルネック
+- → A-2 大枠ドラフトには **ML を Exit に入れるだけでは届かない** ことを Web Claude に伝達必要。Entry 発火頻度の月次安定化 / 新 Priority 並立 / MTF 組合せ最適化 が必要
 
 ---
 

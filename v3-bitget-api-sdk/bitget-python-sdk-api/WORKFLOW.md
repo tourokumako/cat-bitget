@@ -290,15 +290,17 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-12 改訂13・Web Claude 分業切替）
+## 🔴 次のタスク（2026-05-13 改訂15・頭打ち原因分析 完了 → Web Claude 報告へ）
 
-**段階 A-2 大枠設計を Web Claude で詰める → 結論を Claude Code に持ち込んで実装**
+**段階 0-α 頭打ち原因分析 完了。結果を Web Claude に報告して A-2 大枠ドラフトを確定する。**
 
-### 切替の経緯（2026-05-12 セッション末）
+### 0-α 完了状態（2026-05-12）
 
-Claude Code 側で A-2 設計議論を 1 セッション中に 6 回撤回（中央値固定 / k=2固定 / 信頼度区分 / 月次$1,900判定軸 等）。
-設計議論で context が分断され一貫性を保てない癖が露呈（L-169 / L-171）。
-Web Claude に大枠 L2-L5 を詰めてもらう分業に切替。
+- 5 ファイル: [results/priority_rebuild/headroom_analysis_summary.md](results/priority_rebuild/headroom_analysis_summary.md) + step1-4 CSV
+- ⑮ ダッシュボードタブ: [dashboard/index.html](dashboard/index.html) `data-tab="headroom"` (6 パネル + 判定バナー)
+- スクリプト: [scripts/priority_rebuild/headroom_analysis.py](scripts/priority_rebuild/headroom_analysis.py)
+- **暫定判定: 構造的限界の可能性**（完璧 K=96 Exit でも全月 $1,900 不達 / worst=$40.41 / 0/57 パターン合格）
+- 構造ボトルネック: 月次 Entry 発火数の極端な偏り（4-240 trade/月）。2025-09 は matched 4 trade のみ
 
 ### 段階 A-1 完了状態（変更なし）
 
@@ -308,28 +310,27 @@ Web Claude に大枠 L2-L5 を詰めてもらう分業に切替。
 
 ### 引き継ぎ資料
 
-**[`handoff_to_web_claude.md`](.claude/memory/handoff_to_web_claude.md)** が Web Claude 用 self-contained 引き継ぎ資料の唯一の正本。
-- §0-§14 構成・Web Claude にリポジトリアクセスなし前提
-- §8 に Web Claude に詰めてほしい優先質問 10 個
-- §13 に Claude Code の手戻り癖（別 AI が同じ穴に落ちないため）
+- [handoff_to_web_claude.md](.claude/memory/handoff_to_web_claude.md) — Web Claude 分業の正本
+- [headroom_analysis_spec.md](.claude/memory/headroom_analysis_spec.md) — 頭打ち原因分析 仕様書（0-α 実行仕様）
+- [headroom_analysis_summary.md](results/priority_rebuild/headroom_analysis_summary.md) — **0-α 結果サマリー（Web Claude への報告内容）**
 
 ### 次セッション最初にやること（順番）
 
-1. [`handoff_to_web_claude.md`](.claude/memory/handoff_to_web_claude.md) を再読
-2. **Web Claude から返ってきた大枠設計（L2/L3/A-2フロー/段階B骨格）を確認**
-3. Claude Code に貼られた Web Claude 結論を [`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §2 に反映
-4. 実装着手前に Step 0 を改めて実行（目的整合性チェック L-166・着手前 3 項目）
-5. 実装フェーズへ
+1. このファイル §🔴 を再読
+2. [headroom_analysis_summary.md](results/priority_rebuild/headroom_analysis_summary.md) を Web Claude に共有
+3. Web Claude が「構造的限界の可能性」を踏まえて A-2 大枠ドラフトを更新・確定
+   - 特に「ML を Exit に入れるだけでは届かない」「Entry 発火頻度の月次安定化」「新 Priority 並立」を盛り込めるか
+4. Web Claude 結論を [`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §2 に反映
+5. 実装フェーズ（A-2 探索 or B Replay）へ
 
 ### Step 0 セッション開始時に必読（厳守・順番通り）
 
 1. WORKFLOW.md（このファイル・現フェーズ + 次のタスクのポインタ）
-2. [`handoff_to_web_claude.md`](.claude/memory/handoff_to_web_claude.md)（**Web Claude 分業の正本**・現セッション末で作成）
-3. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md)（**Priority 再構築の唯一の正本**）
-4. [CLAUDE.md](../CLAUDE.md)（設計思想・現方針・目標表は月次 $1,900 統一済）
-5. [lessons_active.md](.claude/memory/lessons_active.md) **L-168〜L-171 重点**
-6. [feedback_early_objection.md](/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_early_objection.md)
-7. [feedback_writing_style.md](/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_writing_style.md)
+2. [`headroom_analysis_summary.md`](results/priority_rebuild/headroom_analysis_summary.md) ★0-α 結果（Web Claude 報告材料）
+3. [`handoff_to_web_claude.md`](.claude/memory/handoff_to_web_claude.md)
+4. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md)
+5. [CLAUDE.md](../CLAUDE.md)
+6. [lessons_active.md](.claude/memory/lessons_active.md) **L-168〜L-172 重点**
 
 ---
 

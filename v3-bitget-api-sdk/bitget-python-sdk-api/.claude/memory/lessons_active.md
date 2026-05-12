@@ -1,4 +1,25 @@
-# lessons_active.md — 直近50件の現役教訓（L-171〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-172〜L-103）
+
+---
+
+### L-172: dashboard 用 JSON 化で pandas NaN を残すと JS の JSON.parse が破綻する（2026-05-12）
+
+**事実:**
+頭打ち原因分析 (⑮ タブ) で `mw_u_pvalue_mae_vs_random` 等の列に NaN が残ったまま `json.dumps(data, ensure_ascii=False)` で書き出した。Python は `allow_nan=True` がデフォルトのため `NaN` トークンを許容するが、JS の `JSON.parse` は JSON 仕様外で拒否 (`SyntaxError: Unexpected token 'N'`)。ブラウザの ⑮ パネルが全パネル空表示になった。
+
+**Why:** Python と JS の JSON 厳格度の違いを知らず、Python 側で valid なら通ると思い込んだ。pandas `df.where(df.notna(), None).to_dict()` も列によっては NaN が残る (浮動小数列は dtype 維持のため Python None ではなく NaN として扱われる) 。
+
+**How to apply:**
+- ブラウザ配信用 JSON は **必ず** `allow_nan=False` を指定する (落ちれば事前検知できる)
+- 加えて再帰的に NaN→None を置換する helper を通す:
+  ```python
+  def clean_nan(o):
+      if isinstance(o, dict): return {k: clean_nan(v) for k, v in o.items()}
+      if isinstance(o, list): return [clean_nan(v) for v in o]
+      if isinstance(o, float) and math.isnan(o): return None
+      return o
+  ```
+- 検証コマンド: `node -e 'JSON.parse(require("fs").readFileSync("path.json","utf8"))'` を完了報告必須証跡 4. に追加 (Python の `json.load` は lenient なので不可)
 
 ---
 

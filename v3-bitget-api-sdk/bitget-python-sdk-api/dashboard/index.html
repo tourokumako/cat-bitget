@@ -25,6 +25,7 @@
     <button data-tab="samples_4h">⑫ 4h肉眼判定</button>
     <button data-tab="run_length">⑬ レジーム持続分布</button>
     <button data-tab="trade_crossing">⑭ trade×境界 整合性</button>
+    <button data-tab="headroom">⑮ 頭打ち原因分析</button>
   </nav>
   <small id="source-note"></small>
 </header>
@@ -861,6 +862,96 @@
       <br>
       生成元: <code>scripts/regime/trade_regime_crossing.py</code> →
       <code>dashboard/data/trade_regime_crossing.json</code>
+    </div>
+  </section>
+
+  <section id="headroom" class="tab">
+    <h2>⑮ 頭打ち原因分析（旧 P1-P24 月次 $370 の構造分解）</h2>
+    <p style="color:#555;font-size:0.9em;">
+      仕様: <code>.claude/memory/headroom_analysis_spec.md</code> / auditor 指摘 1-1（5.1倍楽観）・5-1（頭打ち原因未分離）への対応。<br>
+      1,157 trade を Entry規則 / Exit設計 / Position管理 / 構造的限界 の4軸で分解。仮想 Exit シミュレーションで合格ライン到達余地を測定。
+    </p>
+
+    <div id="hr-meta" style="background:#f6f8fa;padding:10px;border-radius:6px;font-size:0.85em;margin-bottom:14px;"></div>
+
+    <h3>判定サマリー（仕様書 §5 判定マトリクス）</h3>
+    <div style="overflow-x:auto;margin-bottom:18px;">
+      <table class="data-table" id="hr-verdict-table">
+        <thead><tr><th>判定軸</th><th>観測値</th><th>該当</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="hr-verdict-banner" style="padding:14px;border-radius:6px;font-weight:bold;font-size:1.05em;margin-bottom:22px;"></div>
+
+    <h3>パネル1: exit_reason 別 NET 寄与</h3>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;">
+      <div style="flex:1 1 520px;background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+        <div style="height:300px;"><canvas id="hr-exit-chart"></canvas></div>
+      </div>
+      <div style="flex:1 1 420px;">
+        <table class="data-table" id="hr-exit-table">
+          <thead><tr><th>exit_reason</th><th>n</th><th>net_sum</th><th>net_median</th><th>mfe-net 取りこぼし median</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>パネル2: 取りこぼし 量（軸別 mfe_minus_net 中央値）</h3>
+    <div style="background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:18px;">
+      <div style="height:340px;"><canvas id="hr-loss-chart"></canvas></div>
+    </div>
+
+    <h3>パネル3: Entry 質ベンチマーク（K=24 / pct）</h3>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;">
+      <div style="flex:1 1 520px;background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+        <div style="height:320px;"><canvas id="hr-entry-chart"></canvas></div>
+      </div>
+      <div style="flex:1 1 420px;">
+        <table class="data-table" id="hr-entry-table">
+          <thead><tr><th>K</th><th>side</th><th>group</th><th>mfe% median</th><th>mae% median</th><th>ratio</th><th>n</th><th>p (mfe vs random)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3>パネル4: Position（同時保有数・Priority×side 配分）</h3>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;">
+      <div style="flex:1 1 360px;">
+        <table class="data-table" id="hr-pos-table">
+          <thead><tr><th>軸</th><th>bucket</th><th>n</th><th>median</th><th>max</th><th>min</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div style="flex:1 1 460px;background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);">
+        <div style="font-weight:bold;margin-bottom:6px;">Priority × side NET / trade 数</div>
+        <div style="height:300px;"><canvas id="hr-pri-chart"></canvas></div>
+      </div>
+    </div>
+    <div style="background:#fff8e6;padding:10px;border-radius:6px;font-size:0.85em;margin-bottom:18px;">
+      <strong>note:</strong> 撃ち損ね回数（Entry 条件成立だがポジ保持で発火しなかった回数）は Replay ログ非保持のため計測不能。要 replay_csv.py の再実行ログ付き。
+    </div>
+
+    <h3>パネル5: 仮想 Exit シミュレーション 月次 NET</h3>
+    <div style="background:#fff;padding:12px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:14px;">
+      <div style="font-size:0.85em;color:#555;margin-bottom:6px;">
+        baseline (12ヶ月) + perfect_exit_K{12/24/48/96} (9ヶ月・matched subset). 赤線 = 合格ライン $1,900/月.
+      </div>
+      <div style="height:360px;"><canvas id="hr-monthly-chart"></canvas></div>
+    </div>
+    <div style="overflow-x:auto;margin-bottom:18px;">
+      <table class="data-table" id="hr-step4-table">
+        <thead><tr><th>pattern</th><th>net_total</th><th>monthly_avg</th><th>worst</th><th>best</th><th>n_above_$1900</th><th>all_12mo</th><th>n_trades</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <h3>パネル6: 結論</h3>
+    <div id="hr-verdict-detail" style="background:#f6f8fa;padding:14px;border-radius:6px;font-size:0.95em;line-height:1.7;margin-bottom:18px;"></div>
+
+    <div style="margin-top:14px;color:#555;font-size:0.85em;">
+      生成元: <code>scripts/priority_rebuild/headroom_analysis.py</code> →
+      <code>dashboard/data/headroom_analysis.json</code> + 5 ファイル
+      (<code>results/priority_rebuild/headroom_analysis_summary.md</code> ほか)
     </div>
   </section>
 </main>
