@@ -290,9 +290,16 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-13 改訂15・頭打ち原因分析 完了 → Web Claude 報告へ）
+## 🔴 次のタスク（2026-05-13 改訂16・0-β 追加分析 着手）
 
-**段階 0-α 頭打ち原因分析 完了。結果を Web Claude に報告して A-2 大枠ドラフトを確定する。**
+**段階 0-α 頭打ち原因分析 完了 → 0-β 追加分析（構造的限界 vs Entry網羅性不足の切り分け）着手中**
+
+### 0-β 追加分析（着手中・2026-05-13）
+
+- 仕様: [headroom_analysis_addendum_spec.md](.claude/memory/headroom_analysis_addendum_spec.md)
+- 目的: 「構造的限界」と「Entry規則の網羅性不足」を切り分け
+- 4 項目: 月別 trade 数分布 / worst-best 月解剖 / LONG 原因分離 / missed_fire（抽出不可明示）
+- 出力: step5-8 CSV + addendum summary md（ダッシュボード反映省略）
 
 ### 0-α 完了状態（2026-05-12）
 
