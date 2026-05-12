@@ -289,17 +289,22 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-11 改訂11）
+## 🔴 次のタスク（2026-05-12 改訂12・A-1 完了）
 
-**段階 A-1: 学習データ生成スクリプトの設計 → GO → 実装 → 実行**
+**段階 A-2: k=2 全探索（1,024,696 組 × 16 ラベル）の設計 → GO → 実装 → 実行**
+
+段階 A-1 完了状態（2026-05-12 02:12 完了・実行時間 1h28m37s）:
+- train: `results/priority_rebuild/labels_mfe_mae_train_2021_2024.parquet` (394,573 行 / 1.05 GB)
+- test:  `results/priority_rebuild/labels_mfe_mae_test_2025.parquet` (105,120 行 / 0.30 GB)
+- 段階 B 温存: 2026-Q1 25,824 行（parquet 未生成・段階 B Replay 用に元 CSV から再抽出）
 
 詳細仕様（入力・K 窓・ラベル定義・出力先 等）は **[`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §2** が唯一の正本。
 
 ### 次セッション最初にやること（順番）
 
-1. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §0 / §2 / §5 を再読
-2. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-159〜L-166** 再読
-3. **段階 A-1 学習データ生成スクリプトの設計案** を提示（実装前に GO 待ち）
+1. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §0 / §3 / §4 を再読
+2. [`lessons_active.md`](.claude/memory/lessons_active.md) **L-159〜L-167** 再読
+3. **段階 A-2 k=2 全探索の設計案** を提示（実装前に GO 待ち）
 
 ### Step 0 セッション開始時に必読（厳守・順番通り）
 

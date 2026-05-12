@@ -7,23 +7,23 @@
 
 ## §0 現フェーズ・次のタスク
 
-**フェーズ**: 段階 A-1 未着手（学習データ生成スクリプト設計待ち）
+**フェーズ**: 段階 A-1 **完了**（2026-05-12 02:12）/ 段階 A-2 未着手
 
 **段階別ステータス**:
 
 | 段階 | 内容 | ステータス |
 |---|---|---|
-| A-1 | 学習データ生成（5m bar × 1,432 指標 × 未来 MFE/MAE ラベル）| 未着手（次タスク）|
-| A-2 | k=2 全探索（102 万組）+ walk-forward 5 fold 評価 | 未着手 |
+| A-1 | 学習データ生成（5m bar × 1,432 指標 × 未来 MFE/MAE ラベル）| **完了**（train 394,573 / test 105,120 / 段階B温存 25,824 行）|
+| A-2 | k=2 全探索（1,024,696 組）+ 単純 split 1 回 評価 | 未着手（次タスク）|
 | A-3 | 結果視認 + Entry 規則設計 | 未着手 |
 | B | 新 Entry 規則で 365d Replay 検証 | 未着手 |
 | C | ML 回帰モデル（B 頭打ち時のみ）| 未着手・条件付き |
 | D | 最終 Replay + 採否判定 | 未着手 |
 
 **次セッション最初にやること**:
-1. このファイル §0 / §2 / §5 を再読
-2. lessons_active.md L-159 / L-160 / L-161 / L-162 / L-163 / L-165 / L-166 を再読
-3. **段階 A-1 学習データ生成スクリプトの設計案** を提示 → GO 待ち
+1. このファイル §0 / §3.0 / §4 を再読
+2. lessons_active.md L-159 〜 L-167 を再読
+3. **段階 A-2 k=2 全探索の設計案** を提示 → GO 待ち
 4. GO 後に実装 → 実行 → 完了報告（5 点証跡）
 
 ---
@@ -119,10 +119,14 @@ K 窓 × 方向 × MFE/MAE = 4 × 2 × 2 = **16 ラベル/bar**
 
 | 項目 | 値 |
 |---|---|
-| 分割 | walk-forward 5 fold |
-| 各 fold | 4 年 train + 1 年 test（年単位）|
-| 学習に使う期間 | train fold のみ（threshold 中央値 / モデル学習）|
-| 評価期間 | test fold のみ（look-ahead 完全防止）|
+| 分割 | 単純 split 1 回（fold 分割なし・2026-05-11 改訂）|
+| train | 2021-04-01 〜 2024-12-31（3 年 9 ヶ月・全レジーム含む）|
+| test | 2025-01-01 〜 2025-12-31（1 年）|
+| 段階 B 用予備 | 2026-01-01 〜 2026-03-31（A-1/A-2 では未使用・段階 B 365d Replay の out-of-sample 用に温存）|
+| 学習に使う期間 | train のみ（threshold 中央値）|
+| 評価期間 | test のみ（look-ahead 完全防止）|
+
+**改訂理由**: BTC 4 年周期 + 2024 ETF 構造変化を踏まえ、全レジームを含む 4 年通しで学習・1 年でテストするのが最適と判断。「学習 / 探索評価 / Replay 最終検証」の 3 層構造で 2026-Q1 を段階 B out-of-sample に温存。詳細は `review_lens.md` 2026-05-11 方針転換マトリクス参照。
 
 ### §2.6 評価指標
 
@@ -141,11 +145,23 @@ K 窓 × 方向 × MFE/MAE = 4 × 2 × 2 = **16 ラベル/bar**
 
 実行前のテンプレ。実行後にこのセクションを更新する。
 
+### §3.0 A-1 実行手順（3 段階・2026-05-12 追加）
+
+「半日走らせて結果ゴミ」を回避するため、以下の順で動作確認してからフル実行する:
+
+| 順 | コマンド | 期待時間 | 検証内容 | 出力 |
+|---|---|---|---|---|
+| 1 | `python3 scripts/priority_rebuild/build_labels.py --dry-run` | 数秒 | pruned_column_list.json 構造 + カテゴリ × TF 内訳 + 関数 import + 期待集合 1,432 確認（指標計算スキップ）| なし |
+| 2 | `python3 scripts/priority_rebuild/build_labels.py --sample-days 7` | 数分 | 先頭 7 日 (2,016 行) で全処理通過 + 列集合 assert + MTF attach look-ahead 動作確認 | `labels_mfe_mae_sample.parquet` |
+| 3 | `python3 scripts/priority_rebuild/build_labels.py` （引数なし）| 数時間〜半日 | フル 5y 処理 + train/test 2 parquet 出力 | `labels_mfe_mae_train_2021_2024.parquet` + `labels_mfe_mae_test_2025.parquet` |
+
+各段階で失敗があれば次に進まない。1 → 2 → 3 の順を厳守する。
+
 ### §3.1 段階別進捗
 
 | 段階 | 開始日 | 完了日 | 出力ファイル | ステータス |
 |---|---|---|---|---|
-| A-1 ラベル生成 | — | — | `results/priority_rebuild/labels_mfe_mae_5y.parquet` | 未着手 |
+| A-1 ラベル生成 | 2026-05-12 | 2026-05-12 | `labels_mfe_mae_train_2021_2024.parquet` (1.05 GB) + `labels_mfe_mae_test_2025.parquet` (0.30 GB) | **完了** |
 | A-2 k=2 全探索 | — | — | `results/priority_rebuild/k2_search_results.json` | 未着手 |
 | A-3 Entry 規則設計 | — | — | `results/priority_rebuild/entry_rules_draft.md` | 未着手 |
 | B Replay 検証 | — | — | `results/replay/replay_priority_rebuild_*.csv` | 未着手 |

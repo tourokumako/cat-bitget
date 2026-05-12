@@ -1,4 +1,29 @@
-# lessons_active.md — 直近50件の現役教訓（L-166〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-167〜L-103）
+
+---
+
+### L-167: pandas method chain で reset_index 前後の参照ズレに注意（2026-05-12）
+
+**事実:**
+build_labels.py attach_upper_tf で `feat = feat.reset_index().rename(columns={feat.columns[0]: "_close_t"})` と書いた。`feat.columns[0]` は **reset_index 前** の feat の最初の列（最初のデータ列）を指していたため、`timestamp` 列はそのまま残り、float64 のデータ列が `_close_t` に rename された。merge_asof で dtype 不一致 (datetime64 vs float64) で失敗。段階 2 (--sample-days 7) で初検出。dry-run では merge_asof を通らないため検知不可だった。
+
+**ルール:**
+- `df = df.reset_index().rename(columns={df.columns[0]: ...})` のように **method chain 内で評価順序がブレやすい操作**は分割する
+- index を named にしてから reset_index する方が堅牢:
+  ```python
+  df.index.name = "_close_t"
+  df = df.reset_index()
+  ```
+- `feat.columns[0]` のような暗黙的参照は、想定する列が固定されているか確認する
+
+**Why:** Python の式評価では `feat.reset_index()` で新しい DataFrame が返るが、`columns={feat.columns[0]: ...}` の `feat` は元の (reset_index 前) feat を指す。「列位置でアクセスして rename」のような書き方は副作用と評価順序に脆い。
+
+**How to apply:**
+1. rename + reset_index 組合せでは index.name 経由が安全
+2. method chain で同じ変数を 2 度参照する場合、評価タイミングを意識する
+3. 段階 2 (sample) のような中間検証段階は、dry-run で検知できない実行時バグの早期発見に不可欠（3 段階フロー §3.0 の設計妥当性が実証された）
+
+**関連:** priority_rebuild.md §3.0 3 段階実行手順 / build_labels.py attach_upper_tf
 
 ---
 
