@@ -290,16 +290,37 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-13 改訂16・0-β 追加分析 着手）
+## 🔴 次のタスク（2026-05-13 改訂17・0-β 完了 → Web Claude 報告）
 
-**段階 0-α 頭打ち原因分析 完了 → 0-β 追加分析（構造的限界 vs Entry網羅性不足の切り分け）着手中**
+**段階 0-α + 0-β 頭打ち原因分析 完了。両結果を Web Claude に報告して A-2 大枠ドラフトを確定する。**
 
-### 0-β 追加分析（着手中・2026-05-13）
+### 0-β 追加分析 完了状態（2026-05-12）
 
 - 仕様: [headroom_analysis_addendum_spec.md](.claude/memory/headroom_analysis_addendum_spec.md)
-- 目的: 「構造的限界」と「Entry規則の網羅性不足」を切り分け
-- 4 項目: 月別 trade 数分布 / worst-best 月解剖 / LONG 原因分離 / missed_fire（抽出不可明示）
-- 出力: step5-8 CSV + addendum summary md（ダッシュボード反映省略）
+- 成果物: [results/priority_rebuild/headroom_analysis_addendum_summary.md](results/priority_rebuild/headroom_analysis_addendum_summary.md) + step5-8 CSV
+- スクリプト: [scripts/priority_rebuild/headroom_analysis_addendum.py](scripts/priority_rebuild/headroom_analysis_addendum.py)
+- **暫定判定: 構造的限界 + LONG Entry 規則の質低（両方該当）**
+  - worst month の trade 数が極端に少ない: YES（worst 2025-09 = 4 trade / median = 48）
+  - LONG 完璧 K=96 Exit でも合格ライン未達: YES（LONG-only monthly_mean=$1,715 / 月 ≥$1,900 = 3/9 ヶ月）
+- A-2 大枠ドラフトへの追加示唆:
+  - 単純な ML Exit では届かない（worst month の発火数自体が極端に少ない）
+  - regime=range / uptrend で発火する新 Priority の追加が必須
+  - LONG Entry 規則の質改善（取りこぼし削減）
+
+### Web Claude への報告材料（次セッションで Web Claude に共有）
+
+1. [headroom_analysis_summary.md](results/priority_rebuild/headroom_analysis_summary.md) — 0-α 結果（4手順分析）
+2. [headroom_analysis_addendum_summary.md](results/priority_rebuild/headroom_analysis_addendum_summary.md) — 0-β 追加切り分け
+3. [handoff_to_web_claude.md](.claude/memory/handoff_to_web_claude.md) — Web Claude 分業の正本
+
+### 次セッション最初にやること（順番）
+
+1. このファイル §🔴 を再読
+2. 上記 0-α / 0-β サマリーを Web Claude に共有
+3. Web Claude が「構造的限界 + LONG Entry 規則質低」を踏まえて A-2 大枠ドラフトを更新・確定
+   - regime=range / uptrend 新 Priority / LONG 規則改善 を A-2 設計に盛り込む
+4. Web Claude 結論を [priority_rebuild.md](.claude/memory/priority_rebuild.md) §2 に反映
+5. 実装フェーズ（A-2 探索 or B Replay）へ
 
 ### 0-α 完了状態（2026-05-12）
 
@@ -334,10 +355,11 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 1. WORKFLOW.md（このファイル・現フェーズ + 次のタスクのポインタ）
 2. [`headroom_analysis_summary.md`](results/priority_rebuild/headroom_analysis_summary.md) ★0-α 結果（Web Claude 報告材料）
-3. [`handoff_to_web_claude.md`](.claude/memory/handoff_to_web_claude.md)
-4. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md)
-5. [CLAUDE.md](../CLAUDE.md)
-6. [lessons_active.md](.claude/memory/lessons_active.md) **L-168〜L-172 重点**
+3. [`headroom_analysis_addendum_summary.md`](results/priority_rebuild/headroom_analysis_addendum_summary.md) ★0-β 追加切り分け（Web Claude 報告材料）
+4. [`handoff_to_web_claude.md`](.claude/memory/handoff_to_web_claude.md)
+5. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md)
+6. [CLAUDE.md](../CLAUDE.md)
+7. [lessons_active.md](.claude/memory/lessons_active.md) **L-168〜L-172 重点**
 
 ---
 

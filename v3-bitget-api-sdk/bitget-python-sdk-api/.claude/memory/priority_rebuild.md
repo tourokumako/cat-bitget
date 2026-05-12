@@ -15,7 +15,7 @@
 |---|---|---|
 | A-1 | 学習データ生成（5m bar × 1,432 指標 × 未来 MFE/MAE ラベル）| **完了**（train 394,573 / test 105,120 / 段階B温存 25,824 行）|
 | **0-α** | **頭打ち原因分析**（auditor 指摘対応・A-2 大枠ドラフト確定の前提）| **完了**（2026-05-12 / 5 ファイル + ⑮ ダッシュボードタブ）|
-| **0-β** | **頭打ち原因分析 追加分析**（構造的限界 vs Entry網羅性不足の切り分け）| 着手中（2026-05-13）|
+| **0-β** | **頭打ち原因分析 追加分析**（構造的限界 vs Entry網羅性不足の切り分け）| **完了**（2026-05-12 / step5-8 CSV + addendum summary md）|
 | A-2 | 大枠 Web Claude 分業中（**0-α/0-β 結果を Web Claude に渡して大枠確定**）| Web Claude 結論待ち |
 | A-3 | 結果視認 + Entry 規則設計 | 未着手 |
 | B | 新 Entry 規則 × Exit で 365d Replay 検証 | 未着手・**Exit 設計も Web Claude 議論対象** |
@@ -49,6 +49,23 @@
 - **暫定判定: 構造的限界の可能性** — 完璧 K=96 Exit でも全月 $1,900 不達。Entry 規則そのものの再設計が必要
 - 月次内訳で見えた構造ボトルネック: **2025-09 は matched 4 trade のみ・完璧 Exit でも $40**。月次 Entry 発火数の極端な偏り（4-240 trade/月）が構造的ボトルネック
 - → A-2 大枠ドラフトには **ML を Exit に入れるだけでは届かない** ことを Web Claude に伝達必要。Entry 発火頻度の月次安定化 / 新 Priority 並立 / MTF 組合せ最適化 が必要
+
+**頭打ち原因分析 追加分析 0-β の結果（2026-05-12 完了）**:
+- 仕様書: [headroom_analysis_addendum_spec.md](headroom_analysis_addendum_spec.md)
+- 成果物: [results/priority_rebuild/headroom_analysis_addendum_summary.md](../../results/priority_rebuild/headroom_analysis_addendum_summary.md) + step5-8 CSV
+- 判定マトリクス（仕様書 §3）の結果:
+  - worst month の trade 数が極端に少ない: **YES**（worst 2025-09 = 4 trade / matched median = 48 trade）
+  - LONG 完璧 K=96 Exit でも合格ライン未達: **YES**（LONG-only monthly_mean=$1,715 < $1,900 / 月 ≥$1,900 = 3/9 ヶ月）
+  - missed_fire: **判定不能**（Option A 抽出不可明示）
+- **暫定判定: 構造的限界 + LONG Entry 規則の質低（両方該当）**
+- 具体的な失敗構造:
+  - worst month (2025-09) は P4-LONG / regime=range のみ 4 trade（downtrend Priority が一切発火していない）
+  - best month (2025-11) は全 240 trade が regime=downtrend（急落相場依存）
+  - LONG TIME_EXIT 100 trade / -$1,972 / 取りこぼし中央値 $16.77（時間切れ損切で取りこぼし大）
+- → A-2 大枠ドラフトへの追加示唆:
+  - 単純な ML Exit では届かない（worst month の発火数自体が極端に少ない）
+  - **regime=range / uptrend で発火する新 Priority の追加**が必須
+  - **LONG Entry 規則の質改善**（取りこぼし削減のための時間管理 + Entry 条件再設計）
 
 ---
 
