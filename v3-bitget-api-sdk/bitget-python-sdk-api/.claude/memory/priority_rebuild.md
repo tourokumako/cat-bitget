@@ -1,6 +1,19 @@
-# priority_rebuild.md — Priority ゼロから再構築フェーズ 唯一の正本
+# priority_rebuild.md — Priority ゼロから再構築フェーズ (🧊 凍結・旧 framework)
 
-最終更新: 2026-05-11
+> # 🧊 **このファイルは凍結 (2026-05-13・参照のみ)**
+>
+> このファイルは段階 A-1〜D framework 時代の正本 (2026-05-11 作成)。
+> 2026-05-13 に ML pipeline (Phase 0〜7) へ切替済で、A-1〜D framework 自体が廃止。
+> 新セッションでこのファイルを「現在の前提」として引用しない (L-180)。
+>
+> **現方針の正本**:
+> - [../../WORKFLOW.md](../../WORKFLOW.md) — 現フェーズ + 次のタスク (唯一の正本)
+> - [../../../CLAUDE.md](../../../CLAUDE.md) — 設計思想 + Phase 0〜7 骨格
+> - [../../cc_ml_design_spec.md](../../cc_ml_design_spec.md) — ML pipeline 仕様書
+>
+> 中長期的に本ファイルを Phase 0〜7 体系で再構築するかは leak フリー再学習後に判断。
+
+最終更新: 2026-05-11 (凍結マーク: 2026-05-13)
 詳細・履歴は git history および [archive/](../../archive/) 配下を参照。
 
 ---

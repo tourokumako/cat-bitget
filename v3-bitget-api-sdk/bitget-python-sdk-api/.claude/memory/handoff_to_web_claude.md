@@ -1,6 +1,17 @@
-# Web Claude 向け 引き継ぎ資料 — cat-bitget Priority 再構築フェーズ 設計議論
+# Web Claude 向け 引き継ぎ資料 v1 (🧊 凍結・旧 framework)
 
-作成日: 2026-05-12
+> # 🧊 **このファイルは凍結 (2026-05-13・参照のみ)**
+>
+> v1 引き継ぎ (2026-05-12 / A-2 大枠分業議論時)。v4 が最新だが leak で v4 内の Phase 1-7a 数値も無効。
+> 2026-05-13 に ML pipeline (Phase 0〜7) 切替で旧 framework 廃止。
+> 新セッションでこのファイルを「現在の前提」として引用しない (L-180)。
+>
+> **現方針の正本**:
+> - [../../WORKFLOW.md](../../WORKFLOW.md) — 現フェーズ + 次のタスク
+> - [../../../CLAUDE.md](../../../CLAUDE.md) — 設計思想 + Phase 0〜7 骨格
+> - [../../cc_ml_design_spec.md](../../cc_ml_design_spec.md) — ML pipeline 仕様書
+
+作成日: 2026-05-12 (凍結マーク: 2026-05-13)
 作成者: Claude Code (Opus 4.7) → Web Claude へ
 目的: BTC 5m bot の Entry/Exit 全体トレード設計を Web Claude で詰めてもらう
 

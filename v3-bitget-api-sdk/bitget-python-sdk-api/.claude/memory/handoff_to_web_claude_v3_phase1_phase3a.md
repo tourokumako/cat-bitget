@@ -1,8 +1,17 @@
-# Web Claude 引き継ぎ資料 v3 — Phase 1 + Phase 3-a 完了報告
+# Web Claude 引き継ぎ資料 v3 — Phase 1 + Phase 3-a 完了報告 (⛔ leak 由来・数値無効)
 
-作成日: 2026-05-13
-前回引き継ぎ: [handoff_to_web_claude_v2.md](handoff_to_web_claude_v2.md) — A-2 大枠ドラフト確定
-今回の位置付け: v2 で確定した ML 主軸方針に基づき、指示書 [cc_ml_design_spec.md](../../cc_ml_design_spec.md) §5 Phase 1 + Phase 3 の 1 サイクル目を CC が完了。Phase 3-b / Phase 4 への進路判断を Web Claude にレビューしてもらう。
+> # ⛔ **このファイル内の数値・合格判定は全て無効 (2026-05-13)**
+>
+> 本文中の Phase 1 / Phase 3-a 達成数値は fractal j±2 leak 由来 (L-179)。
+> leak 修正コミット `3f64543` (2026-05-13) でコードは修正済だが、本ファイルの数値は再学習が完了するまで無効。
+> 新セッションでこのファイルの数値を「達成済み」として引用しない (L-180)。
+>
+> 詳細: [leak_incident_20260513.md](../../results/priority_rebuild/leak_incident_20260513.md)
+> 現方針: [../../WORKFLOW.md](../../WORKFLOW.md) Phase 0 から再開
+
+作成日: 2026-05-13 (⛔ leak 無効マーク: 2026-05-13 同日)
+前回引き継ぎ: [handoff_to_web_claude_v2.md](handoff_to_web_claude_v2.md) — A-2 大枠ドラフト確定 (🧊 凍結)
+今回の位置付け: v2 で確定した ML 主軸方針に基づき、指示書 [cc_ml_design_spec.md](../../cc_ml_design_spec.md) §5 Phase 1 + Phase 3 の 1 サイクル目を CC が完了したと当時報告したが、**leak 発覚で全数値無効化**。
 
 ---
 

@@ -73,9 +73,9 @@
    - パス: `bitget-python-sdk-api/WORKFLOW.md`
 
 3. **Priority 再構築フェーズの進捗を WORKFLOW.md に反映する**
-   - 段階 A-1 / A-2 / A-3 / B / C / D のどこまで進んだか
+   - ML pipeline Phase 0 (ラベル再生成) / Phase 1〜3 (LightGBM 学習+ハイパラ) / Phase 4 (クラスタリング+Exit) / Phase 5 (Replay) / Phase 6 (本テスト) / Phase 7 (Bot 統合) のどこまで進んだか
    - 残課題・次セッション着手項目
-   - `regime_research.md` は凍結中なので更新不要（再開条件成立時のみ）
+   - `regime_research.md` / `priority_rebuild.md` (旧 A-1〜D framework) は凍結中なので更新不要
 
 **⛔ セッション終了前に以下を必ずチャットに出力する（省略禁止）:**
 ```
@@ -134,23 +134,32 @@
 - 既存 P1/P2/P4/P21/P23/P24 は**改修ではなく解体・再設計**
 - 5m bar × 全 1,432 指標 × 未来 MFE/MAE で Entry 規則を網羅探索
 
-### 新フローの骨格（段階 A 〜 D）
+### ML pipeline フローの骨格（Phase 0 〜 7・2026-05-13 改訂）
 
-- **段階 A-1**: 5y × 5m × 1,432 列 × 未来 MFE/MAE ラベル生成（K=1h/2h/4h/8h・LONG/SHORT 同時）
-- **段階 A-2**: k=2 全探索（102 万組）→ 中央値 + MFE/MAE 比で評価・walk-forward 5 fold
-- **段階 A-3**: 結果視認 → Entry 規則設計
-- **段階 B**: 新 Entry 規則 + Exit で 365d Replay 検証
-- **段階 C**: B 頭打ちなら ML 回帰モデル
-- **段階 D**: 最終 Replay → 採否判定
+> ⚠️ 旧 framework「段階 A-1〜D」は 2026-05-13 ML pipeline 切替で廃止。
+> A-1 → Phase 0 統合 / A-2 (k=2 探索) は ML 不合格時の保険 (cc_ml_design_spec §0) / A-3〜D → Phase 1〜7 に再編。
+> 2026-05-13 leak (fractal j±2 未来参照) 修正完了・Phase 1〜7-a 旧成果は無効・**Phase 0 から再開**。
 
-詳細・現在のステップは [WORKFLOW.md](bitget-python-sdk-api/WORKFLOW.md) を参照。
+- **Phase 0**: ラベル再生成 (5y × 5m × 1,432 指標 × 未来 MFE/MAE・leak フリー)
+- **Phase 1**: LightGBM × 16 ラベル × デフォルトハイパラ
+- **Phase 2**: 精度判定 (仮テスト 2025 月次 $500 以上か)
+- **Phase 3-a/3-b**: ハイパラ調整 (K 窓別 num_leaves)
+- **Phase 4-a**: k-means クラスタリング (Entry 性質分類)
+- **Phase 4-b**: Exit 設計 (cluster × K × side 最適 Exit・データ駆動)
+- **Phase 5/5-b/5-c**: 365d Replay (cap なし → FIFO cap → 質駆動 cap)
+- **Phase 5-d**: ポジションサイズ正解版 (0.12 BTC = 合計上限) で再計算
+- **Phase 5-e**: Funding Rate 控除 (8h 毎・0.01% 概算)
+- **Phase 6-a/6-b**: 本テスト 2026 Q1 (月次 NET ≥ $1,900 全月クリア判定)
+- **Phase 7-a〜e**: Bot 統合 (推論再現性 → ML Decider → run_once_ml → デモ → 本番)
+
+詳細・現在のステップは [WORKFLOW.md](bitget-python-sdk-api/WORKFLOW.md) と [cc_ml_design_spec.md](bitget-python-sdk-api/cc_ml_design_spec.md) を参照。
 
 ### 実装方針
 
 - **現行標準は 5m足**。1m 足回帰は禁止（エッジゼロ確認済み）
-- ポジションサイズ上限 0.12 BTC/trade（増加禁止）
-- 新 Priority 候補は型を事前定義せず、k=2 探索結果から発火条件を設計
-- Exit 設計は段階 A 完了後に着手（MFE/MAE 分布から TP/SL 幅を逆算）
+- ポジションサイズ上限 **合計 0.12 BTC**（1 ポジションあたりではなく合計上限・cap=N なら 1 pos = 0.12/N BTC）
+- 特徴量は 1,432 指標全部投入 (事前絞り込み禁止)
+- Exit 設計は Phase 4-b で cluster × K × side ごとデータ駆動 (Phase 4-b 実測で time_exit N=K×2 bar が支配解だったが leak 修正後再検証)
 
 詳細な検証結果・パラメータ・次のタスクは [WORKFLOW.md](bitget-python-sdk-api/WORKFLOW.md) を参照。
 
@@ -179,8 +188,9 @@
 - ❌ 「$60/day = 100 trade/日」（件数は目標ではない）
 - ❌ 旧記載「$120/day」「15日累計 $1,800」（廃止）
 
-### 段階 B Replay 合格条件
-- 365d Replay で **全 12 ヶ月**が月次 NET ≥ $1,900/月
+### ML pipeline Phase 5/6-b Replay 合格条件
+- 365d Replay で **全 12 ヶ月**が月次 NET ≥ $1,900/月 (Phase 5 = 仮テスト 2025)
+- 本テスト 2026 Q1 (Phase 6-b) で全 3 ヶ月が月次 NET ≥ $1,900/月
 - 単月でも未達なら不合格
 - 通算 NET だけで判定しない
 

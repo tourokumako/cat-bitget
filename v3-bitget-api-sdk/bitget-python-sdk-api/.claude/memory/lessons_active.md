@@ -1,4 +1,39 @@
-# lessons_active.md — 直近50件の現役教訓（L-179〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-181〜L-103）
+
+---
+
+### L-181: 設計転換時の旧記述放置を「毎回やってる」とまこさんに命令で禁止（2026-05-13）
+
+**何が起きたか:**
+2026-05-13 leak 修正セッションで Step 0 ③ の前提条件「walk-forward 5 fold・MFE/MAE 中央値+比」を verify せず読み上げ → まこさん指摘で古い記述発覚。grep sweep したところ WORKFLOW.md / CLAUDE.md / .claude/memory/ 配下に**旧「段階 A-1〜D」framework の残骸が大量に放置**されていた (2026-05-11 大方針転換 + 2026-05-13 ML pipeline 切替時に新方針セクションだけ追加・旧記述未削除)。まこさんから「この古い情報のまま放置するミスは毎回やってる」「二度とやらないで」「これは命令」と禁止された。
+
+**Why:**
+- 設計転換時に「新方針セクションを足したから OK」で完了とみなし、旧方針記述の grep sweep をスキップする癖がある
+- 「他のドキュメントは後で直す」と保留して結果残骸化
+- セッション間で全体整合性チェックがなく、複数セッション通過後に発覚
+
+**How to apply:**
+- [feedback_design_transition_grep_sweep.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_design_transition_grep_sweep.md) (命令) 参照
+- 設計転換が決まったら旧設計の固有名詞を全プロジェクト grep → ヒット 1 件ずつ判定 (削除 / 🧊 注記 / 置換) するまで完了とみなさない
+- 大方針転換コミット直後セッションでは feedback_design_transition_grep_sweep.md を Step 0 で必ず再読
+
+---
+
+### L-180: WORKFLOW/CLAUDE/memory 引用前 実装 verify 必須・L-179 から 1 セッションで別面に再発（2026-05-13）
+
+**何が起きたか:**
+2026-05-13 セッションで L-179 (ML leak チェック) を memory に書いた**直後の次セッション 1 ターン目**に、WORKFLOW.md Step 0 ③ の「walk-forward 5 fold・MFE/MAE 中央値+比」を verify せず読み上げ → まこさん指摘で古い記述発覚。L-179 を書いた直後に「ドキュメント信頼」の穴が別面に再発した。L-179 は特徴量コードの leak チェックを止めただけで、Step 0 で読み上げる前提条件そのものの verify は組み込まれていなかった。
+
+**Why:**
+- L-179 の教訓を「特徴量コード verify」と狭く受け取り、「ドキュメント全般を verify」に拡張しなかった
+- WORKFLOW.md が「セッション開始時必読」リストに入っているため「読んだ = 信頼できる」と扱う癖
+- 教訓追加だけでは「頭で分かっていても漏れる」癖を止められない (L-159/L-160 と同じ構造)
+
+**How to apply:**
+- [feedback_doc_verify_before_quote.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_doc_verify_before_quote.md) 参照
+- WORKFLOW.md / CLAUDE.md / .claude/memory/*.md / 仕様書 (cc_*.md / handoff_*.md) の記述を Step 0 やレポートで引用する前に、必ず実装/直近コミットで grep verify する
+- WORKFLOW.md に Step 0 ⓪ を追加 (本セッションで実装済)
+- 「ドキュメントに書いてあったから引用しました」は理由にならない・実装で verify する責任は引用者にある
 
 ---
 
@@ -75,9 +110,11 @@ Phase 5-c の質駆動採用 (predicted ratio 降順 + cap) を最初 O(N²) で
 
 ---
 
-### L-176: FIFO 採用は仮テスト合格でも本テストで月次未達のリスクがある・質駆動採用で解消（2026-05-13）
+### L-176: FIFO 採用は仮テスト合格でも本テストで月次未達のリスクがある・質駆動採用で解消（2026-05-13・⛔ 数値は leak 由来）
 
-**事実:**
+> ⛔ 本教訓内の具体数値 (12/12 合格・$173k・-$1,708〜-$4,140 等) は L-179 leak 由来。**構造的洞察 (FIFO vs 質駆動の対比) は leak フリー再学習でも再評価して valid なら再記録する。数値の引用は禁止 (L-180)。**
+
+**事実 (⛔ 数値無効):**
 Phase 5-b (FIFO・early-arrival) で仮テスト 2025 は cap=5/10/20 全て 12/12 合格。Phase 6-b の本テスト 2026 Q1 では **2026-02 だけが cap=5/10/20 で全部マイナス** (-$1,708 〜 -$4,140)。no cap だと同月 +$173k で最大利益月。FIFO が「最初に来た負け Entry」を採用して、後の勝ち Entry を逃した。Phase 5-c で質駆動 (predicted MFE/MAE 比 降順) に切り替えたら 3/3 合格。
 
 **Why:** FIFO は時系列順序のみが基準で、Entry の **品質** を一切見ない。仮テストでは品質と時系列がたまたま揃っていたが、本テストで揃わなくなった。
@@ -177,6 +214,9 @@ A-2 設計議論で 1 セッション中に 6 回設計を撤回（閾値辞書�
 ---
 
 ### L-170: 段階間の役割を混同しない（A-2 で月次 NET を判定しようとした失敗）（2026-05-12）
+
+> ⚠️ 「A-2 / 段階 B / 段階 D」は旧 framework (2026-05-13 ML pipeline 切替で廃止・現方針は Phase 0〜7)。
+> 但しこの教訓の**構造的ロジック**（次段階の入力に依存する判定を当該段階で先行させない）は普遍的に valid・Phase 0〜7 にも適用可。
 
 **事実:**
 A-2 設計で「擬似 NET 試算で月次 $1,900 到達見込みを判定」というステップを設計した。しかし A-2 は Entry 規則探索段階で、Exit 設計（TP/SL/トレーリング/時間Exit）は段階 B で行う。Entry だけで月次 NET を判定するのは構造的に不可能（TP/SL 仮置きの擬似試算は偽の Replay）。まこさん指摘で気付き撤回。月次 $1,900 判定は段階 D まで遅延すべき。

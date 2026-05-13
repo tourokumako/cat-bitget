@@ -100,12 +100,21 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 ## Step 0: セッション開始プロトコル（省略禁止）
 
 ```
+⓪ [Step 0 ⓪] **WORKFLOW.md の Step 0 ②/③ 記述を読み上げる前に実装/直近コミットで grep verify する** (L-180):
+   - 「現フェーズ」「段階」名称 → 直近実行スクリプト名 + git log で確認
+   - 「前提条件」「評価軸」「分割方法」各項目 → 該当スクリプト grep で 1 件ずつ確認
+   - 「完了済み」「合格」記述 → leak チェック等で無効化されてないか確認
+   - 不一致あれば作業着手前に提示して GO 待ち
+   - 違反検出時: ドキュメント側を実装準拠に修正してから ① 以降を継続
+   → 1 件でも未確認/不一致があれば、作業着手前に提示して GO 待ち
+   ※ 設計転換コミット直後セッションでは feedback_design_transition_grep_sweep.md (L-181・命令) を再読
 ① 合格ライン 月次 ≥ $1,900/月 − 凍結ベースライン $370/月 = 不足 $1,530/月（5.1倍ギャップ）
    ※ デイリー $60 は目安・日次絶対下限ではない・判定は月次のみ・一次ソース: MEMORY/project_goal.md
-② 現フェーズ確認（Priority 再構築・段階 A-1 / A-2 / A-3 / B / C / D のどこか明示）
-③ 当該段階の前提条件（K 窓 1h/2h/4h/8h・LONG/SHORT 同時・walk-forward 5 fold・MFE/MAE 中央値 + 比）を再確認
-④ [Step 0 D] 段階完了後の $60/day 到達可能性: YES / NO / 試算未済
-   ※ 段階 A-1〜A-2 完了前は「試算未済（段階 B Replay で初めて判定）」と書いてよい
+② 現フェーズ確認（Priority 再構築 ML pipeline・Phase 0=ラベル再生成 / Phase 1=LightGBM 学習 / Phase 2=精度判定 / Phase 3-a/3-b=ハイパラ調整 / Phase 4-a=クラスタリング / Phase 4-b=Exit 設計 / Phase 5/5-b/5-c=Replay / Phase 5-d=POS_SIZE 再計算 / Phase 5-e=Funding 控除 / Phase 6-a/6-b=本テスト / Phase 7-a=Bot 統合準備 / Phase 7-b〜e=Bot 実装/デモ/本番 のどこか明示）
+   ※ 2026-05-13 leak 修正後は Phase 0 (ラベル再生成) から再開・Phase 1〜7-a 旧成果は無効
+③ 当該 Phase の前提条件（K 窓 1h/2h/4h/8h・LONG/SHORT 同時・期間分割: train 2021-04〜2024-12 + valid 末尾10% + 仮テスト 2025 + 本テスト 2026 Q1・評価軸: train RMSE / Entry predicted MFE/MAE 比 / Exit pnl_median）を再確認
+④ [Step 0 D] Phase 完了後の $60/day 到達可能性: YES / NO / 試算未済
+   ※ leak フリー再学習中 (Phase 0〜5 完了前) は「試算未済 (Phase 5-c Replay で初めて判定)」と書いてよい
    ※ この 1 行が出るまで提案・分析を開始しない
 ⑤ [Step 0 E] 着手前の目的整合性 3 項目チェック（L-166）:
    - データ粒度: 検証対象と一致しているか
@@ -163,7 +172,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 - 5m bar × 1,432 指標 × 未来 MFE/MAE で **Entry 規則を網羅探索**して Priority を構築
 - 既存 P1-P24 は改修せず**ゼロから再設計**
 - 複数 Priority を並立させて**リスク分散**（regime 単位の振り分けではなく独立 Priority）
-- 最終検証: 365d Replay で NET 評価（walk-forward 5 fold）
+- 最終検証: 365d Replay で NET 評価（仮テスト 2025 + 本テスト 2026 Q1 単一 chronological holdout・月次 ≥ $1,900 全月クリア）
 
 ### 実装方針
 - 全 Priority: 5m 足ベース・MTF 指標（5m/15m/30m/1h/4h/1d）を Entry 条件に組込み可
@@ -185,7 +194,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 | `labels/`           | 教師ラベル基盤 |
 | `data/`             | 外部データ取得・テスト |
 | `regime/`           | regime 試作・検証スクリプト（**凍結**・参照のみ） |
-| `priority_rebuild/` | Priority 再構築フェーズ（A-1 ラベル生成・A-2 k=2 探索 等）|
+| `priority_rebuild/` | Priority 再構築フェーズ ML pipeline (Phase 0=build_labels / Phase 1-3=run_lgbm_* / Phase 4=run_phase4_* / Phase 5=run_phase5* / Phase 6=本テスト / Phase 7=Bot 統合) |
 | `signal_research/`  | シグナル候補検証（`signals/` サブモジュール含む） |
 | `grid_search/`      | レシピ・パラメータ探索 |
 | `hmm/`              | HMM 系（凍結中・参照のみ） |
@@ -200,7 +209,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 | `replay/`              | Replay 出力（CSV / summary JSON） |
 | `phase_hmm/`           | HMM 系出力（凍結） |
 | `regime_research/`     | regime 評価出力（凍結・参照のみ） |
-| `priority_rebuild/`    | Priority 再構築フェーズ出力（A-1 ラベル / A-2 探索結果 等）|
+| `priority_rebuild/`    | Priority 再構築フェーズ ML pipeline 出力（labels_mfe_mae_*.parquet / ml_phase{1,3_a,3_b,4_a,4_b,5,5_b,5_c,5_d,5_e,6_b}/ / ml_artifacts/ 等）|
 | `recipe_search/`       | レシピ探索出力 |
 | `grid_search/`         | グリッドサーチ結果 |
 | `vshape_design/`       | v13/v14 V字検出仕様 + 出力（凍結） |
@@ -216,7 +225,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 ## 改善サイクル（旧 Priority 最適化フェーズ用・🧊 凍結中・参照のみ）
 
 > ⚠️ このセクションは**旧フロー**（regime → Priority 振り分け前提）。
-> 2026-05-11 大方針転換で凍結。Priority 再構築フェーズの改善サイクルは段階 A-1〜D（[現フェーズ section](#-現在のフェーズ2026-05-11-改訂11大方針転換) 参照）。
+> 2026-05-11 大方針転換で凍結。Priority 再構築フェーズの改善サイクルは ML pipeline Phase 0〜7 ([現フェーズ section](#-現在のフェーズ2026-05-13-改訂2ml-パイプライン-leak-修正完了--phase-1-再学習待ち) 参照)。
 > 既存 Priority 解体時の参考・グリッドサーチ実装の文法参考として残置。
 
 **Step 1〜10**: 旧フロー（$/regime-day 単位・regime_switch=ON 前提）。**新規実行禁止**。
@@ -275,16 +284,30 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 - regime 精度天井（v14 56% / stage3 33%）+ regime label 情報密度低 + 時間軸ズレ（持続 16-28h vs trade 15min）
 - → regime 研究で蓄積した 1,432 指標素材を Priority Entry 規則の最適化に転用
 
-### 段階別フロー（概要のみ・詳細は priority_rebuild.md §2）
+### Phase 別フロー（概要のみ・詳細は [cc_ml_design_spec.md §5](cc_ml_design_spec.md)）
 
-| 段階 | 内容 |
-|---|---|
-| A-1 | 学習データ生成（5m × 1,432 指標 × 未来 MFE/MAE ラベル）|
-| A-2 | k=2 全探索（102 万組）+ walk-forward 5 fold 評価 |
-| A-3 | 結果視認 → Entry 規則設計 |
-| B | 新 Entry 規則 + Exit で 365d Replay 検証 |
-| C | ML 回帰モデル（B 頭打ち時のみ）|
-| D | 最終 Replay → 採否判定 |
+> ⚠️ 旧 framework「段階 A-1〜D」は ML pipeline 切替で 2026-05-13 廃止。
+> A-1 → Phase 0 に統合 / A-2 (k=2 探索) は ML 不合格時の保険として未着手・cc_ml_design_spec §0 / A-3〜D → Phase 1〜7 に再編。
+
+| Phase | 内容 | ステータス (2026-05-13 leak 修正後) |
+|---|---|---|
+| **Phase 0** | ラベル再生成 (5m × 1,432 指標 × 未来 MFE/MAE) | **leak フリー再生成 待ち** |
+| Phase 1 | LightGBM × 16 ラベル × デフォルトハイパラ | 再学習 待ち |
+| Phase 2 | 精度判定 (仮テスト 2025 月次 $500 以上か) | 再実行 待ち |
+| Phase 3-a/3-b | ハイパラ調整 (K 窓別 num_leaves) | 再実行 待ち |
+| Phase 4-a | k-means クラスタリング (Entry 性質分類) | 再実行 待ち |
+| Phase 4-b | Exit 設計 (cluster × K × side 最適 Exit) | 再実行 待ち |
+| Phase 5/5-b/5-c | 365d Replay (cap なし → FIFO cap → 質駆動 cap) | 再実行 待ち |
+| Phase 5-d | ポジションサイズ正解版で再計算 (0.12 BTC = 合計上限) | 再実行 待ち |
+| Phase 5-e | Funding Rate 控除 (8h 毎・0.01%) | 再実行 待ち |
+| Phase 6-a/6-b | 本テスト 2026 Q1 (月次 NET ≥ $1,900 全月) | 再実行 待ち |
+| Phase 7-a | Bot 統合準備 (推論再現性検証) | 再実行 待ち |
+| Phase 7-b | ML Decider 実装 (cat/ml_models.py 等新規) | 未着手 |
+| Phase 7-c | run_once_ml.py 実装 (ALLOW_LIVE_ORDERS=False 維持) | 未着手 |
+| Phase 7-d | デモトレード起動 (paper_trading=True 確認後・**まこさん明示 GO 必須**) | 未着手 |
+| Phase 7-e | デモ結果 → 本番判断 | 未着手 |
+
+ML 不合格時の保険として cc_ml_design_spec.md §0 で k=2 全探索を並走可と明示・未着手。
 
 ### 凍結時点の素材転用一覧
 
@@ -293,7 +316,7 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 | 用途 | 凍結時点の成果物 |
 |---|---|
 | 1,432 列の指標素材 | [pruned_column_list.json](results/regime_label_analysis/pruned_column_list.json) + 計算ロジック [analyze_regime_label_features.py](scripts/regime/analyze_regime_label_features.py) / [analyze_stage1*_meta.py](scripts/regime/) / [shape_features.py](scripts/regime/shape_features.py) |
-| k=2 全探索フレーム | [stage2_combination_search.py](scripts/regime/stage2_combination_search.py) のフレーム流用（評価関数だけ MFE/MAE に差し替え） |
+| k=2 全探索フレーム (🧊) | [stage2_combination_search.py](scripts/regime/stage2_combination_search.py) のフレーム流用（評価関数だけ MFE/MAE に差し替え）— ML pipeline 採用で**実際には未使用**・ML 不合格時の保険として残置 |
 | MTF 集計ロジック | stage1 の MTF resample / attach コード（5m/15m/30m/1h/4h/1d） |
 | ダッシュボード | タブ⑬ レジーム持続分布 / タブ⑭ trade×境界 整合性検証（参考表示） |
 
@@ -327,35 +350,46 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-13 改訂18・ML パイプライン Phase 1〜7-a 完了 → Phase 7-b 着手待ち）
+## 🔴 次のタスク（2026-05-13 改訂19・leak 修正完了 → Phase 0 ラベル再生成から再開待ち）
 
-**ML パイプライン (Phase 1〜6) 完成 + 本テスト 2026 Q1 合格 + Bot 統合準備 (Phase 7-a) 完了。次は Phase 7-b ML Decider 実装。**
+**fractal j±2 leak 修正完了 (コミット `3f64543`)。次は leak 由来成果物の archive 移動 → Phase 0 ラベル再生成 → Phase 1〜7-a 順次再学習。**
 
-### 達成サマリー（2026-05-13）
+### 達成サマリー（⛔ leak 由来・全数値無効・2026-05-13）
 
-| 指示書段階 | 完了 | 主要数値 |
+> 以下は 2026-05-13 leak 発覚前の到達点。fractal j±2 未来参照を学習データに混入させたため、**全数値無効化**。leak フリー再学習後に再評価する。
+> 構造的洞察 (time_exit N=K×2 が支配解 / 質駆動 cap が FIFO より優れる 等) は valid な可能性があるが、**数値裏付けは再学習結果を待つこと**。
+
+| 指示書段階 | 当時報告 (⛔ 無効) | 主要数値 (⛔ 無効) |
 |---|---|---|
-| Phase 1 | ✅ | LightGBM × 16 ラベル × デフォルトハイパラ・51.8 分 |
-| Phase 2 (精度判定) | ✅ | q99 net_quality +80.65pp (ML vs ランダム) |
-| Phase 3-a (一律 num_leaves=15) | ✅ | q99 +99.91pp |
-| **Phase 3-b** (K 窓別 num_leaves) | ✅ | **q99 +110.75pp** ← 採用 ML |
-| Phase 4-a (k-means k=4) | ✅ | C0 中央/C1 LONG長期/C2 SHORT弱/C3 強SHORT |
-| Phase 4-b (Exit 試行) | ✅ | **time_exit N=K×2 bar が支配解** |
-| Phase 5 (no cap Replay) | ✅ | 月次平均 $166k / 12 ヶ月合格 |
-| Phase 5-b (FIFO cap) | ✅ (仮) ❌ (本) | 本テスト 2026-02 で破綻 |
-| **Phase 5-c (質駆動 cap)** | ✅ | **仮 12/12・本 3/3 合格** |
-| Phase 6-a (2026 Q1 ラベル) | ✅ | 25,824 行 × 1,449 col |
-| Phase 6-b (本テスト) | ✅ | 全 cap で 3/3・仮テストの 65-69% 維持 |
-| **Phase 7-a (Bot 統合準備)** | ✅ | 推論再現性 完全 deterministic |
+| Phase 1 | ✅→⛔ | LightGBM × 16 ラベル × デフォルトハイパラ・51.8 分 |
+| Phase 2 (精度判定) | ✅→⛔ | q99 net_quality +80.65pp |
+| Phase 3-a (一律 num_leaves=15) | ✅→⛔ | q99 +99.91pp |
+| Phase 3-b (K 窓別 num_leaves) | ✅→⛔ | q99 +110.75pp (採用 ML だったが leak 由来) |
+| Phase 4-a (k-means k=4) | ✅→⛔ | C0 中央/C1 LONG長期/C2 SHORT弱/C3 強SHORT |
+| Phase 4-b (Exit 試行) | ✅→⛔ | time_exit N=K×2 bar が支配解 (構造洞察として記録) |
+| Phase 5 (no cap Replay) | ✅→⛔ | 月次平均 $166k / 12 ヶ月合格 |
+| Phase 5-b (FIFO cap) | ✅/❌→⛔ | 本テスト 2026-02 で破綻 |
+| Phase 5-c (質駆動 cap) | ✅→⛔ | 仮 12/12・本 3/3 合格 (構造洞察として記録) |
+| Phase 5-d (POS_SIZE 再計算) | ✅→⛔ | cap=1/2/3/5 線形再現 |
+| Phase 5-e (Funding 控除) | ✅→⛔ | 8h 毎 0.01% 概算 |
+| Phase 6-a (2026 Q1 ラベル) | ✅→⛔ | 25,824 行 × 1,449 col |
+| Phase 6-b (本テスト) | ✅→⛔ | 全 cap で 3/3・仮テストの 65-69% 維持 |
+| Phase 7-a (Bot 統合準備) | ✅→⛔ | 推論再現性 deterministic (artifact 自体は leak 由来) |
 
-### Phase 7-a 完了状態（2026-05-13）
+### 次セッション最初にやること（順番・leak フリー再学習開始）
 
-- アーティファクト: [results/priority_rebuild/ml_artifacts/](results/priority_rebuild/ml_artifacts/) (scaler/kmeans/feature_columns/meta)
-- 検証スクリプト: [scripts/priority_rebuild/save_ml_artifacts.py](scripts/priority_rebuild/save_ml_artifacts.py), [scripts/priority_rebuild/verify_ml_inference.py](scripts/priority_rebuild/verify_ml_inference.py)
-- 検証結果: batch/1-row 予測 diff=0.0e+00 / cluster 完全一致 / joblib roundtrip MATCH
-- **完全 deterministic 確認済み** → リアルタイム推論で別結果が出るリスクなし
+1. このファイル §🔴 警告ブロックを再読
+2. [feedback_ml_leak_mandatory_check.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_ml_leak_mandatory_check.md) (L-179) で leak 4 点チェック手順を確認
+3. [feedback_doc_verify_before_quote.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_doc_verify_before_quote.md) (L-180) でドキュメント引用前 verify を確認
+4. [feedback_design_transition_grep_sweep.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_design_transition_grep_sweep.md) (L-181・**命令**) で旧記述 grep sweep を確認
+5. [results/priority_rebuild/leak_incident_20260513.md](results/priority_rebuild/leak_incident_20260513.md) で全 14 件のミス記録 + 修正完了状況を読む
+6. leak 由来成果物 (results/priority_rebuild/labels_mfe_mae_*.parquet, ml_phase*/, ml_artifacts/) を `archive/leak_invalid_20260513/` へ移動
+7. `build_labels.py` で 1,432 指標 × 5y × 5m データを再生成 (**Phase 0**)
+8. Phase 1 LightGBM × 16 ラベル を再学習 → **1 ラベル目完了直後に `feature_importance_top20` を即時 review (L-179 必須)**
+   - fractal ベース列 (dist_to_fib_v2_*, resistance_distance_*, support_distance_*, nearest_level_*) が依然 top にあれば leak 残存 → 即停止
+9. Phase 2 → 7-a を順次再実行 (各 Phase 完了時点で feature_importance / 数値妥当性を review)
 
-### 次セッション (Phase 7-b) のスコープ
+### Phase 7-b 以降（leak フリー再学習で 6-b 合格後・参考）
 
 新規ファイル作成 (既存 V9 には触らない):
 - `cat/ml_models.py` — 16 LightGBM + scaler + kmeans のロード・推論ヘルパー
@@ -364,51 +398,57 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 - `config/cat_params_ml.json` — ML パラメータ (q95 閾値・cluster best Exit map・cap)
 - (Phase 7-c で) `runner/run_once_ml.py` — ML 専用実行エンジン
 
-### 段階 7 全体計画
+### Phase 7 全体計画（leak フリー再学習完了後に再起動）
 
-| 段階 | 内容 | 所要 | 実弾近接度 |
+| Phase | 内容 | 所要 | 実弾近接度 |
 |---|---|---|---|
-| **7-a** (完了) | offline 推論再現性検証 | 完了 | 0 |
-| **7-b** (次) | ML Decider + パラメータ JSON + dry-run | 1-2h | 0 |
-| **7-c** | run_once_ml.py 実装 (ALLOW_LIVE_ORDERS=False で起動可能) | 2-3h | 低 |
-| **7-d** | デモトレード起動 (paper_trading=True 確認後・**まこさん明示 GO 必須**) | 数日 | 中 |
-| **7-e** | デモ結果確認 → 本番判断 | - | 高 |
+| **Phase 0** (次) | ラベル再生成 (leak フリー・build_labels.py) | 2-3h | 0 |
+| Phase 1〜6-b (再実行) | LightGBM 再学習 → Replay → 本テスト | 数日 | 0 |
+| Phase 7-a (再実行) | offline 推論再現性検証 | 1h | 0 |
+| Phase 7-b | ML Decider + パラメータ JSON + dry-run | 1-2h | 0 |
+| Phase 7-c | run_once_ml.py 実装 (ALLOW_LIVE_ORDERS=False で起動可能) | 2-3h | 低 |
+| Phase 7-d | デモトレード起動 (paper_trading=True 確認後・**まこさん明示 GO 必須**) | 数日 | 中 |
+| Phase 7-e | デモ結果確認 → 本番判断 | - | 高 |
 
-### 次セッション最初にやること（順番）
+### 主要参照リソース
 
-1. このファイル §🔴 を再読
-2. [handoff_to_web_claude_v4_phase1_7a.md](.claude/memory/handoff_to_web_claude_v4_phase1_7a.md) で Phase 1-7a 全体把握
-3. [cc_ml_design_spec.md](cc_ml_design_spec.md) の §5 Phase 4-6 (Exit / Position / 本テスト)、§7 怠け防止 を再確認
-4. ALLOW_LIVE_ORDERS / paper_trading の現状をまこさんに確認 (機密パス・私は見ない)
-5. Phase 7-b 設計案提示 → GO 待ち → 着手
-
-### 主要成果物リンク（前セッション分・再利用可）
+**現方針 (有効・再利用可)**:
 
 | パス | 内容 |
 |---|---|
-| [cc_ml_design_spec.md](cc_ml_design_spec.md) | Web Claude が作った ML パイプライン仕様書 |
-| [.claude/memory/handoff_to_web_claude_v3_phase1_phase3a.md](.claude/memory/handoff_to_web_claude_v3_phase1_phase3a.md) | Phase 1-3a 完了報告 |
-| [results/priority_rebuild/ml_phase3_b/](results/priority_rebuild/ml_phase3_b/) | 採用 ML モデル (16 × LightGBM) |
-| [results/priority_rebuild/ml_phase4_b/cluster_best_exit.csv](results/priority_rebuild/ml_phase4_b/cluster_best_exit.csv) | cluster × (K, side) ごとの最良 Exit |
-| [results/priority_rebuild/ml_phase5_c/summary.md](results/priority_rebuild/ml_phase5_c/summary.md) | 質駆動採用 Replay 結果 |
-| [results/priority_rebuild/ml_phase6_b/summary.md](results/priority_rebuild/ml_phase6_b/summary.md) | 本テスト 2026 Q1 結果 |
-| [results/priority_rebuild/ml_artifacts/](results/priority_rebuild/ml_artifacts/) | scaler/kmeans/feature_columns/meta (Bot 統合用) |
+| [cc_ml_design_spec.md](cc_ml_design_spec.md) | Web Claude が作った ML パイプライン仕様書 (現方針) |
+| [results/priority_rebuild/indicator_catalogue.csv](results/priority_rebuild/indicator_catalogue.csv) / [.md](results/priority_rebuild/indicator_catalogue.md) | 1,432 指標カタログ |
+| [results/priority_rebuild/leak_incident_20260513.md](results/priority_rebuild/leak_incident_20260513.md) | Leak Incident 全記録 + 修正完了状況 |
+| [scripts/priority_rebuild/](scripts/priority_rebuild/) | Phase 0〜6 実装スクリプト群 (コード自体は再利用可・出力は再生成必要) |
+
+**⛔ leak 由来・無効 (archive 対象)**:
+
+| パス | 状態 |
+|---|---|
+| [.claude/memory/handoff_to_web_claude_v4_phase1_7a.md](.claude/memory/handoff_to_web_claude_v4_phase1_7a.md) | ⛔ 数値無効・構造洞察は参考 (banner 済) |
+| [memory/project_ml_pipeline_phase1_7a.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/project_ml_pipeline_phase1_7a.md) | ⛔ 数値無効・構造洞察は参考 (banner 済) |
+| results/priority_rebuild/labels_mfe_mae_*.parquet (4 ファイル・1.4GB) | ⛔ leak 由来・再生成必要 |
+| results/priority_rebuild/ml_phase*/ (11 ディレクトリ) | ⛔ 全 Phase 出力・再実行必要 |
+| results/priority_rebuild/ml_artifacts/ | ⛔ 統合用 artifact・再生成必要 |
 
 ### Step 0 セッション開始時に必読（厳守・順番通り）
 
-1. WORKFLOW.md（このファイル・現フェーズ + 次のタスクのポインタ）
-2. [cc_ml_design_spec.md](cc_ml_design_spec.md) **ML パイプライン仕様書**
-3. [.claude/memory/handoff_to_web_claude_v4_phase1_7a.md](.claude/memory/handoff_to_web_claude_v4_phase1_7a.md) **Phase 1-7a 全体まとめ**
-4. [CLAUDE.md](../CLAUDE.md) ⛔絶対禁止 / 提案禁止リスト
-5. [lessons_active.md](.claude/memory/lessons_active.md) **L-173〜L-178 重点 (このセッション追加)**
-6. [.claude/rules/core_rules.md](.claude/rules/core_rules.md) MUST/NEVER
-7. [.claude/rules/exchange_spec.md](.claude/rules/exchange_spec.md) Bitget 発注仕様
+1. WORKFLOW.md（このファイル・現フェーズ + 次のタスクのポインタ・現方針の唯一の正本）
+2. [CLAUDE.md](../CLAUDE.md) ⛔絶対禁止 / 提案禁止リスト + Phase 0〜7 骨格
+3. [cc_ml_design_spec.md](cc_ml_design_spec.md) **ML パイプライン仕様書 (有効)**
+4. **[~/.claude/projects/.../memory/feedback_ml_leak_mandatory_check.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_ml_leak_mandatory_check.md)** L-179 ML leak 4 点チェック必須
+5. **[~/.claude/projects/.../memory/feedback_doc_verify_before_quote.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_doc_verify_before_quote.md)** L-180 ドキュメント引用前 verify 必須
+6. **[~/.claude/projects/.../memory/feedback_design_transition_grep_sweep.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_design_transition_grep_sweep.md)** L-181 設計転換時 旧記述 grep sweep (**命令**)
+7. [results/priority_rebuild/leak_incident_20260513.md](results/priority_rebuild/leak_incident_20260513.md) **leak 全 14 件ミス記録**
+8. [.claude/memory/lessons_active.md](.claude/memory/lessons_active.md) L-179 重点
+9. [.claude/rules/core_rules.md](.claude/rules/core_rules.md) MUST/NEVER
+10. [.claude/rules/exchange_spec.md](.claude/rules/exchange_spec.md) Bitget 発注仕様
 
 ---
 
 ## 試行禁止リスト
 
-Priority 再構築・設計関連の禁止事項は **[priority_rebuild.md §6](.claude/memory/priority_rebuild.md) が唯一の正本**。本ファイルには **行動ルール関連のみ**残置。
+Priority 再構築・設計関連の禁止事項の旧正本 [priority_rebuild.md §6](.claude/memory/priority_rebuild.md) は 2026-05-13 に **🧊 凍結** (旧 A-1〜D framework・参照のみ)。ML pipeline (Phase 0〜7) 体系での禁止事項は [cc_ml_design_spec.md §8](cc_ml_design_spec.md) と本ファイル「行動ルール関連」が現方針の正本。
 
 ### 行動ルール関連（恒久）
 - ❌ 設計判断を感覚で進める（feedback_quantitative_comparison）
@@ -444,7 +484,7 @@ Priority 再構築・設計関連の禁止事項は **[priority_rebuild.md §6](
 ## Replay コマンド（🧊 旧フロー・参考のみ）
 
 > ⚠️ `--regime` オプション付きの旧 Replay コマンドは凍結中。
-> 新フローの Replay コマンドは段階 B 着手時に新規定義予定。
+> 新フローの Replay コマンドは ML pipeline Phase 5 / 6-b 系 (run_phase5*.py / run_phase6_b.py) を使う。
 
 ```bash
 # 365d Replay（旧フロー・参考のみ・実行非推奨）

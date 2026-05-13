@@ -1,8 +1,20 @@
-# Web Claude 引き継ぎ資料 v4 — Phase 1〜7-a 完了報告
+# Web Claude 引き継ぎ資料 v4 — Phase 1〜7-a 完了報告 (⛔ leak 由来・数値無効)
 
-作成日: 2026-05-13
-前回引き継ぎ: [handoff_to_web_claude_v3_phase1_phase3a.md](handoff_to_web_claude_v3_phase1_phase3a.md) — Phase 1 + 3-a 完了報告
-今回の位置付け: Web Claude レビュー → まこさん判断で Phase 3-b 〜 7-a まで一気通貫実装した。**本テスト 2026 Q1 で合格**。次は Phase 7-b ML Decider 実装。
+> # ⛔ **このファイル内の数値・合格判定は全て無効 (2026-05-13)**
+>
+> 本文中の「q99 +110.75pp」「月次平均 $166k」「本テスト 3/3 合格」「12/12 合格」等の数値は、
+> 2026-05-13 に発覚した fractal j±2 未来参照 leak (`structure_features.py:_detect_fractals`) 由来の学習データで出されたもの。
+> leak 修正コミット `3f64543` (2026-05-13) でコードは修正済だが、Phase 1〜7-a の全数値は再学習が完了するまで無効。
+>
+> 新セッションでこのファイルの数値を「達成済み」「合格済み」として引用しない (L-180)。
+> Phase の流れ・実装上の学び (例: time_exit が支配解 / 質駆動 cap が FIFO より優れる) は構造的に valid な部分もあるが、**数値裏付けは leak 修正後の再学習結果を待つこと**。
+>
+> 詳細: [leak_incident_20260513.md](../../results/priority_rebuild/leak_incident_20260513.md)
+> 現方針: [../../WORKFLOW.md](../../WORKFLOW.md) Phase 0 から再開
+
+作成日: 2026-05-13 (⛔ leak 無効マーク: 2026-05-13 同日)
+前回引き継ぎ: [handoff_to_web_claude_v3_phase1_phase3a.md](handoff_to_web_claude_v3_phase1_phase3a.md) — Phase 1 + 3-a 完了報告 (同様 leak 無効)
+今回の位置付け: Web Claude レビュー → まこさん判断で Phase 3-b 〜 7-a まで一気通貫実装した。**本テスト 2026 Q1 で合格**と当時報告したが、**leak 発覚で全数値無効化**。次は leak フリー再学習 → Phase 0 から再開。
 
 ---
 
