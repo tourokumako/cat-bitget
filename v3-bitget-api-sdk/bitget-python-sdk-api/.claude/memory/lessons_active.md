@@ -1,4 +1,55 @@
-# lessons_active.md — 直近50件の現役教訓（L-181〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-183〜L-103）
+
+---
+
+### L-183: Phase 4-a/4-b/6-b で test data に対する fit / idxmax = data snooping 構造（2026-05-13）
+
+**何が起きたか:**
+- Phase 4-a (`run_phase4_a.py:215`): scaler/k-means を test 2025 で fit → クラスタ自体が 2025 に over-fit
+- Phase 4-b (`run_phase4_b.py:330`): `cluster_best_exit` を test 2025 PnL で idxmax 選定 → Exit 規則が 2025 に over-fit
+- Phase 6-b (`run_phase6_b.py:125-127`): **本テスト 2026 Q1 評価時にも test 2025 で再 fit** → クラスタが 2025 over-fit のまま 2026 評価
+- artifact 名 `scaler_test2025.joblib` / `kmeans_k4_test2025.joblib` で test fit を公言・本番運用でもこれをロード
+- Phase 5/5-c/5-d/5-e はすべてこの test-fit artifact を継承
+
+**Phase 6-b 固有の最重要事案 (#13):**
+本テスト評価時に scaler/km を再 fit すると、たとえ artifact が leak フリーでも
+「test fit on train target」と同等の data snooping になる。
+本テスト評価は必ず Phase 4-a で **train fit** した artifact を joblib ロードして
+**transform/predict のみ** で実施。
+v4 §6-b「未見データで 63-69% 維持」の正当性が崩壊した最重要事案。
+
+**Why:**
+- 「test 2025 の予測値を使ってクラスタを作る」のは「予測のクラスタ性質を分析する」発想として自然・しかし Exit 選定/評価に使うと data snooping
+- 名前空間 "test_2025" でデータが流用される構造をスクリプトが互いに前提とし続ける
+- artifact 命名で test data fit を公言しているのに警告がない
+
+**How to apply:**
+- fit / fit_transform / idxmax / argmax は入力が **train (train_2021_2024)** であることを実装で verify
+- test 2025 / test 2026 Q1 入力は transform / predict / 計算後評価のみ (**再 fit 禁止**)
+- 横展開 grep: `grep -rnE '\.fit\(|\.fit_transform\(|idxmax|argmax' scripts/priority_rebuild/` の入力データ全件 review
+- artifact 名は "train_2021_2024" 等 fit データを反映・**"test" 名を禁止**
+- Phase 7-c 起動時に artifact 名を log 出力 → "test" 文字列含むなら起動中止 (checklist 7c.9)
+- 詳細: [.claude/rules/phase_compliance_checklist.md](../rules/phase_compliance_checklist.md) Phase 4-a/4-b/6-b/7-c
+
+---
+
+### L-182: バックテスト採用ロジックで「期間全体ソート」を使うと未来情報 leak 同等のバグ（2026-05-13）
+
+**何が起きたか:**
+- Phase 5-c 質駆動採用 (`run_phase5_c.py:97`) で `df.sort_values("pred_ratio", ascending=False)` と期間全体一括ソート → ループ i は時系列順ではなく品質順
+- ある entry の採用判定で **pred_ratio がより高い未来 entry が既に taken** に入っているため、過去の判断を未来情報で覆す
+- Phase 5-d/5-e がこの leak ロジックを継承 (`run_phase5_d.py:89-118`, `run_phase5_e` は 5-d 出力経由)
+- コメント L237-239 で「異 timestamp の Entry を入れ替えるロジックは含まない」と書きつつ実装は入れ替えている → コメントが実装と矛盾
+
+**Why:**
+- バックテストで「最良の採用ルール」を再現したい誘惑から、期間全体ソートが直感的に書かれた
+- 未来 entry の影響が active カウントに紛れ込む leak は、表面上「採用ループ」が時系列順に見えないだけで検出しづらい
+
+**How to apply:**
+- 採用ロジックは必ず `entry_ts` 昇順ループ + 各 bar 内のみで pred_ratio 優先順位付け
+- ループ中に「未来の何か」を参照する箇所がないかチェックする (active counter は OK だが、未来 entry の存在自体を見ない)
+- L-179 (leak 4 点) + 本 L-182 を Phase 4/5 系のチェックに組み込む
+- 詳細: [.claude/rules/phase_compliance_checklist.md](../rules/phase_compliance_checklist.md) Phase 5 5.1-5.3
 
 ---
 

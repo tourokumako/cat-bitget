@@ -53,7 +53,9 @@ from scripts.regime.analyze_regime_label_features import build_indicators_extend
 from scripts.regime.shape_features import compute_all_features as compute_1b_for_W
 from scripts.regime.structure_features import compute_features_for_N, compute_c2_only
 
-INPUT_CSV = REPO_ROOT / "data" / "BTCUSDT-5m-2021-04-01_03-31_1826d.csv"
+INPUT_CSV = REPO_ROOT / "data" / "BTCUSDT-5m-bitget-2021-04-01_2026-03-31_5y.csv"
+assert "bitget" in str(INPUT_CSV), \
+    f"ML pipeline must use Bitget CSV, got: {INPUT_CSV}"
 PRUNED_JSON = REPO_ROOT / "results" / "regime_label_analysis" / "pruned_column_list.json"
 OUT_DIR = REPO_ROOT / "results" / "priority_rebuild"
 OUT_TRAIN = OUT_DIR / "labels_mfe_mae_train_2021_2024.parquet"

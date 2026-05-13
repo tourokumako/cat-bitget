@@ -242,7 +242,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-13 改訂2・ML パイプライン leak 修正完了 → Phase 1 再学習待ち）
+## 🔴 現在のフェーズ（2026-05-13 改訂3・leak 修正完了 + archive 移動完了 → Phase 0 ラベル再生成待ち）
 
 > # ⚠️ **leak 修正完了 / Phase 1〜7-a 数値は依然として無効** ⚠
 >
@@ -268,7 +268,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 > 1. WORKFLOW.md のこの警告ブロックを再読
 > 2. [feedback_ml_leak_mandatory_check.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_ml_leak_mandatory_check.md) (memory) で leak 4 点チェック手順を確認
 > 3. [results/priority_rebuild/leak_incident_20260513.md](results/priority_rebuild/leak_incident_20260513.md) で全 14 件のミス記録 + 修正完了状況を読む
-> 4. leak 由来の既存成果物 (labels/*.parquet, ml_phase*/, ml_artifacts/) を `archive/leak_invalid_20260513/` へ移動
+> 4. ✅ leak 由来の既存成果物を `archive/leak_invalid_20260513/` へ移動完了 (commit f1948e4)
 > 5. `build_labels.py` で 1,432 指標 × 5y × 5m データを再生成
 > 6. Phase 1 LightGBM × 16 ラベル を再学習 → 1 ラベル目完了直後に `feature_importance_top20` を即時 review (L-179 防止策)
 > 7. Phase 2 → 7-a を順次再実行
@@ -383,8 +383,8 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 3. [feedback_doc_verify_before_quote.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_doc_verify_before_quote.md) (L-180) でドキュメント引用前 verify を確認
 4. [feedback_design_transition_grep_sweep.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_design_transition_grep_sweep.md) (L-181・**命令**) で旧記述 grep sweep を確認
 5. [results/priority_rebuild/leak_incident_20260513.md](results/priority_rebuild/leak_incident_20260513.md) で全 14 件のミス記録 + 修正完了状況を読む
-6. leak 由来成果物 (results/priority_rebuild/labels_mfe_mae_*.parquet, ml_phase*/, ml_artifacts/) を `archive/leak_invalid_20260513/` へ移動
-7. `build_labels.py` で 1,432 指標 × 5y × 5m データを再生成 (**Phase 0**)
+6. ✅ leak 由来成果物を `archive/leak_invalid_20260513/` へ移動完了 (commit f1948e4)
+7. **【次タスク】** `build_labels.py` で 1,432 指標 × 5y × 5m データを再生成 (**Phase 0**)
 8. Phase 1 LightGBM × 16 ラベル を再学習 → **1 ラベル目完了直後に `feature_importance_top20` を即時 review (L-179 必須)**
    - fractal ベース列 (dist_to_fib_v2_*, resistance_distance_*, support_distance_*, nearest_level_*) が依然 top にあれば leak 残存 → 即停止
 9. Phase 2 → 7-a を順次再実行 (各 Phase 完了時点で feature_importance / 数値妥当性を review)
