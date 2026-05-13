@@ -1,4 +1,48 @@
-# lessons_active.md — 直近50件の現役教訓（L-178〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-179〜L-103）
+
+---
+
+### L-179: 未来データ参照 leak が ML パイプライン Phase 1〜7-a の全 14 段階を素通り・本番投入直前で発覚（2026-05-13）
+
+**何が起きたか:**
+Web Claude 仕様書に基づいて構築した ML パイプライン (16 LightGBM + KMeans k=4) で、
+特徴量計算側 (`structure_features.py:_detect_fractals`) が中央バー j で
+j+1, j+2 (未来 2 本) を比較して fractal を確定し、後段の
+`compute_c1_features` / `compute_c4_v2_features` で `is_res[start:i+1]`
+(= j ∈ [start, i]) を参照していた。これにより j = i-1, i の fractal が
+i 行の特徴量に **未来 2 本のデータを含む形で流入**。
+
+Phase 1 → 2 → 3-a → 3-b → 4-a → 4-b → 5 → 5-b → 5-c → 6-a → 6-b → 7-a の
+12 段階 + 5-d / 5-e の 14 段階すべてで leak チェックを行わず、本テスト
+2026 Q1 (out-of-sample) 3/3 合格まで素通り。Phase 7-b 着手直前にまこさんの
+「特徴量に未来データ使ってないか」指示で初めて検証し、feature_importance top7
+(rank 1-7) が全て fractal ベース列 (dist_to_fib_v2_* / resistance_distance_*)
+で占有されていたことを確認。Phase 1〜7-a の全数値は信頼性疑義 = 無効扱い。
+
+**Why:**
+- `structure_features.py:299` の「look-ahead 完全防止 (中央バー j で確定する
+  fractal は j ≤ i-2)」というコメントを verify せずに信頼した
+- Web Claude 仕様書 + CC 実装の役割分担を「責任の分離」と誤認し、構造検証を
+  実装者責任で行わなかった
+- out-of-sample (本テスト 2026 Q1) 合格を「leak なし」の証拠と誤認した
+  (同じ leak 規則が test 側でも漏れていれば偽精度が出る)
+- Phase 3-b で `feature_importance_top20.csv` を保存していたのに review しなかった
+
+**How to apply:**
+- ML 系作業の着手前に必ず `feedback_ml_leak_mandatory_check.md` (memory) の
+  4 点チェック (grep / 使用箇所 verify / timestamp range / feature_importance
+  即時 review) を実行する
+- コードコメントの「look-ahead 防止」表記を信頼しない。実装で守られているか
+  を必ず verify
+- out-of-sample 合格を leak フリーの証拠と誤認しない
+- 詳細は [results/priority_rebuild/leak_incident_20260513.md](../../results/priority_rebuild/leak_incident_20260513.md)
+
+**修正完了 (2026-05-13 セッション末):**
+- `_detect_fractals` を**返り値 4 配列に拡張** (`is_res, is_sup, pivot_high, pivot_low`)、ピボット確定タイミングを j+2 バー後ろシフト
+- `is_res[i]=True` のとき `pivot_high[i] = h[i-2]` → i 時点で確定済みの過去データのみ参照
+- `compute_c1_features` / `compute_c4_v2_features` の使用箇所を `pivot_high/pivot_low` 経由に置換
+- 監査範囲 5 ファイル・4 種 grep で fractal 以外に新規 leak なし確認
+- データ・モデルは依然 leak 由来 → Phase 1 から再学習が必要
 
 ---
 

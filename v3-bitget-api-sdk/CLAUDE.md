@@ -112,8 +112,10 @@
 
 | ファイル | 内容 |
 |---------|------|
-| `bitget-python-sdk-api/WORKFLOW.md` | 現在の状態・次のタスク（**唯一の正本**・Priority 再構築フェーズ） |
-| `bitget-python-sdk-api/.claude/memory/lessons_active.md` | 過去の失敗・再発防止（**L-159〜L-166 直近** + 常時参照） |
+| `bitget-python-sdk-api/WORKFLOW.md` | 現在の状態・次のタスク（**唯一の正本**・現在は **⛔ Phase 1〜7-a leak で無効化**警告ブロックあり）|
+| `~/.claude/projects/.../memory/feedback_ml_leak_mandatory_check.md` | **【最重要】ML 系作業前の leak 4 点チェック必須** (L-179・2026-05-13 fractal j±2 未来参照事案) |
+| `bitget-python-sdk-api/results/priority_rebuild/leak_incident_20260513.md` | Leak 全 14 件ミス記録 + 防止策 (新セッション再開前に必読) |
+| `bitget-python-sdk-api/.claude/memory/lessons_active.md` | 過去の失敗・再発防止（**L-179 最新 + L-159〜L-166 重点** + 常時参照） |
 | `bitget-python-sdk-api/.claude/memory/lessons_archive.md` | L-102以前のアーカイブ（必要時のみ） |
 | `bitget-python-sdk-api/.claude/memory/signal_ledger.md` | シグナル候補・検証実績（参考・regime マッピングは凍結中） |
 | `bitget-python-sdk-api/.claude/memory/regime_research.md` | 🧊 **凍結中**（素材として参照のみ・新規調査禁止） |

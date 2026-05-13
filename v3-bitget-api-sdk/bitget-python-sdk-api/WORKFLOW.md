@@ -112,9 +112,16 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
    - データカバレッジ: 判断分岐に十分なサンプル数か
    - 直接性: 目的を直接測れる手段か（代理指標は要警戒）
    → 1 つでも NO/不明なら、作業着手前に提示して GO 待ち
-⑥ [Step 0 F] 前セッションで議論が行き詰まった or 同じ提案を繰り返した記録があるか確認。
-   ある場合: 思考フレーム/目標コミット 自己点検を 1 回実行してから ⑦ に進む
-⑦ 今セッションのタスクを優先順位付きで提示 → STOP
+⑥ [Step 0 F] **ML 系作業 (学習・推論・特徴量生成) を含む場合は leak 4 点チェック必須** (L-179・~/.claude/projects/.../memory/feedback_ml_leak_mandatory_check.md):
+   - 特徴量計算コードの grep 静的検査 (`.shift(-` / `center=True` / `j+1, j+2` 等の未来 index 参照)
+   - データ流入経路 verify (is_X / fractal / pivot の使用箇所で `j ≤ i-K` フィルタが**実装で**適用されているか)
+   - 学習データの timestamp range 確認 (train が test 期間に侵入していないか)
+   - 1 ラベル目の学習完了直後に feature_importance_top20 を即時 review
+   → 1 つでも未確認/異常があれば、作業着手前に提示して GO 待ち
+   → コードコメントの「look-ahead 防止」を信頼しない。実装で verify
+⑦ [Step 0 G] 前セッションで議論が行き詰まった or 同じ提案を繰り返した記録があるか確認。
+   ある場合: 思考フレーム/目標コミット 自己点検を 1 回実行してから ⑧ に進む
+⑧ 今セッションのタスクを優先順位付きで提示 → STOP
 ```
 
 ---
@@ -226,9 +233,39 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-11 改訂11・大方針転換）
+## 🔴 現在のフェーズ（2026-05-13 改訂2・ML パイプライン leak 修正完了 → Phase 1 再学習待ち）
 
-**フェーズ: Priority ゼロから再構築 — MTF × 全指標組合せで Entry タイミング精度向上**
+> # ⚠️ **leak 修正完了 / Phase 1〜7-a 数値は依然として無効** ⚠
+>
+> 2026-05-13 に発覚した未来データ参照 leak (`structure_features.py:_detect_fractals` の j±2 未来参照) について、**2026-05-13 セッション内で修正完了**。
+>
+> **修正内容** (2026-05-13):
+> - `_detect_fractals` を**返り値 4 配列に拡張** (`is_res, is_sup, pivot_high, pivot_low`) + ピボット確定タイミングを **j+2 バー後ろシフト**
+> - `is_res[i]=True` のとき `pivot_high[i] = h[i-2]` (i 時点で確定済みの過去データのみ参照)
+> - `compute_c1_features` / `compute_c4_v2_features` の使用箇所 (`h[start:end][is_res[start:end]]`) を `pivot_high[start:end][is_res[start:end]]` に置換
+> - 検証: 旧 fractal 検出位置 [3,14,26] → 新 [5,16,28] へ +2 シフト確認 / pivot_high[i] == h[i-2] 完全一致確認
+>
+> **leak 監査範囲** (2026-05-13 実施):
+> - 監査対象 5 ファイル (build_labels.py / shape_features.py / structure_features.py / analyze_regime_label_features.py / analyze_vshape_indicators.py)
+> - 4 種 grep (負shift / center=True / j+1/j+2 / future/forward) + 構造的指標個別 verify (Pivot / Volume Profile / Donchian / Ichimoku 等)
+> - **新規 leak は fractal の下流 2 関数のみ・他は全て leak フリー確認済み**
+>
+> **依然として無効** (再学習が必要):
+> - Phase 1 (LightGBM × 16 ラベル) 〜 7-a (Bot 統合準備) の全成果 — leak 由来データで学習されたため
+> - 仮テスト 2025 / 本テスト 2026 Q1 の月次 PnL / 合格判定
+> - Phase 5-d (ポジションサイズ正解) / 5-e (Funding 控除) — 元数字が leak 由来のため
+>
+> **次セッションでの再開手順**:
+> 1. WORKFLOW.md のこの警告ブロックを再読
+> 2. [feedback_ml_leak_mandatory_check.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_ml_leak_mandatory_check.md) (memory) で leak 4 点チェック手順を確認
+> 3. [results/priority_rebuild/leak_incident_20260513.md](results/priority_rebuild/leak_incident_20260513.md) で全 14 件のミス記録 + 修正完了状況を読む
+> 4. leak 由来の既存成果物 (labels/*.parquet, ml_phase*/, ml_artifacts/) を `archive/leak_invalid_20260513/` へ移動
+> 5. `build_labels.py` で 1,432 指標 × 5y × 5m データを再生成
+> 6. Phase 1 LightGBM × 16 ラベル を再学習 → 1 ラベル目完了直後に `feature_importance_top20` を即時 review (L-179 防止策)
+> 7. Phase 2 → 7-a を順次再実行
+> 8. **「Phase 7-a 完了 → Phase 7-b 着手」の幻の上で再スタートしない** (再学習結果を 1 段ずつ検証)
+
+**フェーズ: Priority ゼロから再構築 — ML パイプライン v2 (leak フリー再構築)**
 **regime 判定研究: 🧊 凍結**（素材転用のみ・新規調査停止）
 
 設計詳細・段階別仕様・進捗管理表・検証結果集計表は **[`.claude/memory/priority_rebuild.md`](.claude/memory/priority_rebuild.md) §0〜§7 が唯一の正本**。本ファイルではポインタのみ記載。

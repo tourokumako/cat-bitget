@@ -42,29 +42,34 @@ N_CANDIDATES = [50, 100, 200]
 # ── C-1: レジサポライン (5点 fractal + タッチ感度) ───────
 
 def _detect_fractals(df: pd.DataFrame):
-    """5点 fractal で resistance/support の局所 pivot を検出。
-    Returns: (is_res, is_sup) — 中央バー j は j±1, j±2 と比較し決定 (j∈[2, n-3])
+    """5点 fractal で resistance/support の局所 pivot を検出 (look-ahead フリー)。
+    Returns: (is_res, is_sup, pivot_high, pivot_low)
+      is_res[i]=True → i バー終了時点で確定済 (実ピーク bar は i-2)
+      pivot_high[i] = h[i-2] (is_res[i]=True のとき)
+    L-179 leak 修正: j バーピボットを j+2 バーで確定として記録し、未来参照を遮断。
     """
     h = df["high"].values
     l = df["low"].values
     n = len(df)
     is_res = np.zeros(n, dtype=bool)
     is_sup = np.zeros(n, dtype=bool)
+    pivot_high = np.full(n, np.nan)
+    pivot_low = np.full(n, np.nan)
     for j in range(2, n - 2):
         if (h[j] > h[j-1] and h[j] > h[j-2] and
             h[j] > h[j+1] and h[j] > h[j+2]):
-            is_res[j] = True
+            is_res[j+2] = True
+            pivot_high[j+2] = h[j]
         if (l[j] < l[j-1] and l[j] < l[j-2] and
             l[j] < l[j+1] and l[j] < l[j+2]):
-            is_sup[j] = True
-    return is_res, is_sup
+            is_sup[j+2] = True
+            pivot_low[j+2] = l[j]
+    return is_res, is_sup, pivot_high, pivot_low
 
 
 def compute_c1_features(df: pd.DataFrame, N: int) -> pd.DataFrame:
     """C-1 全特徴量を1度計算。タッチ感度4水準 × 距離3系列 = 7カラム。"""
-    is_res, is_sup = _detect_fractals(df)
-    h = df["high"].values
-    l = df["low"].values
+    is_res, is_sup, pivot_high, pivot_low = _detect_fractals(df)
     close = df["close"].values
     n = len(df)
 
@@ -76,8 +81,8 @@ def compute_c1_features(df: pd.DataFrame, N: int) -> pd.DataFrame:
     for i in range(N, n):
         start = max(0, i - N + 1)
         end = i + 1
-        res_prices = h[start:end][is_res[start:end]]
-        sup_prices = l[start:end][is_sup[start:end]]
+        res_prices = pivot_high[start:end][is_res[start:end]]
+        sup_prices = pivot_low[start:end][is_sup[start:end]]
         c = close[i]
 
         r_min = None
@@ -300,9 +305,7 @@ def compute_c4_v2_features(df: pd.DataFrame, N: int) -> pd.DataFrame:
     過去 N バー内の最後の swing high と swing low を抽出 → 後勝ちで retracement 方向決定。
     fractal が見つからないバーは NaN。
     """
-    is_res, is_sup = _detect_fractals(df)
-    h = df["high"].values
-    l = df["low"].values
+    is_res, is_sup, pivot_high, pivot_low = _detect_fractals(df)
     c = df["close"].values
     n = len(df)
 
@@ -321,8 +324,8 @@ def compute_c4_v2_features(df: pd.DataFrame, N: int) -> pd.DataFrame:
             continue
         last_res_local = int(win_res_idx[-1])
         last_sup_local = int(win_sup_idx[-1])
-        last_res_p = float(h[start + last_res_local])
-        last_sup_p = float(l[start + last_sup_local])
+        last_res_p = float(pivot_high[start + last_res_local])
+        last_sup_p = float(pivot_low[start + last_sup_local])
         if last_res_p - last_sup_p < 1e-9:
             continue
         rng = last_res_p - last_sup_p
