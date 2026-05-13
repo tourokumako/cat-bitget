@@ -26,3 +26,4 @@ v3-bitget-api-sdk/bitget-python-sdk-api/dashboard/regime_prototype/
 *.bak
 .env
 **/state/
+v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
