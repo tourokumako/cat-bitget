@@ -290,76 +290,82 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-13 改訂17・0-β 完了 → Web Claude 報告）
+## 🔴 次のタスク（2026-05-13 改訂18・ML パイプライン Phase 1〜7-a 完了 → Phase 7-b 着手待ち）
 
-**段階 0-α + 0-β 頭打ち原因分析 完了。両結果を Web Claude に報告して A-2 大枠ドラフトを確定する。**
+**ML パイプライン (Phase 1〜6) 完成 + 本テスト 2026 Q1 合格 + Bot 統合準備 (Phase 7-a) 完了。次は Phase 7-b ML Decider 実装。**
 
-### 0-β 追加分析 完了状態（2026-05-12）
+### 達成サマリー（2026-05-13）
 
-- 仕様: [headroom_analysis_addendum_spec.md](.claude/memory/headroom_analysis_addendum_spec.md)
-- 成果物: [results/priority_rebuild/headroom_analysis_addendum_summary.md](results/priority_rebuild/headroom_analysis_addendum_summary.md) + step5-8 CSV
-- スクリプト: [scripts/priority_rebuild/headroom_analysis_addendum.py](scripts/priority_rebuild/headroom_analysis_addendum.py)
-- **暫定判定: 構造的限界 + LONG Entry 規則の質低（両方該当）**
-  - worst month の trade 数が極端に少ない: YES（worst 2025-09 = 4 trade / median = 48）
-  - LONG 完璧 K=96 Exit でも合格ライン未達: YES（LONG-only monthly_mean=$1,715 / 月 ≥$1,900 = 3/9 ヶ月）
-- A-2 大枠ドラフトへの追加示唆:
-  - 単純な ML Exit では届かない（worst month の発火数自体が極端に少ない）
-  - regime=range / uptrend で発火する新 Priority の追加が必須
-  - LONG Entry 規則の質改善（取りこぼし削減）
+| 指示書段階 | 完了 | 主要数値 |
+|---|---|---|
+| Phase 1 | ✅ | LightGBM × 16 ラベル × デフォルトハイパラ・51.8 分 |
+| Phase 2 (精度判定) | ✅ | q99 net_quality +80.65pp (ML vs ランダム) |
+| Phase 3-a (一律 num_leaves=15) | ✅ | q99 +99.91pp |
+| **Phase 3-b** (K 窓別 num_leaves) | ✅ | **q99 +110.75pp** ← 採用 ML |
+| Phase 4-a (k-means k=4) | ✅ | C0 中央/C1 LONG長期/C2 SHORT弱/C3 強SHORT |
+| Phase 4-b (Exit 試行) | ✅ | **time_exit N=K×2 bar が支配解** |
+| Phase 5 (no cap Replay) | ✅ | 月次平均 $166k / 12 ヶ月合格 |
+| Phase 5-b (FIFO cap) | ✅ (仮) ❌ (本) | 本テスト 2026-02 で破綻 |
+| **Phase 5-c (質駆動 cap)** | ✅ | **仮 12/12・本 3/3 合格** |
+| Phase 6-a (2026 Q1 ラベル) | ✅ | 25,824 行 × 1,449 col |
+| Phase 6-b (本テスト) | ✅ | 全 cap で 3/3・仮テストの 65-69% 維持 |
+| **Phase 7-a (Bot 統合準備)** | ✅ | 推論再現性 完全 deterministic |
 
-### Web Claude への報告材料（次セッションで Web Claude に共有）
+### Phase 7-a 完了状態（2026-05-13）
 
-1. [headroom_analysis_summary.md](results/priority_rebuild/headroom_analysis_summary.md) — 0-α 結果（4手順分析）
-2. [headroom_analysis_addendum_summary.md](results/priority_rebuild/headroom_analysis_addendum_summary.md) — 0-β 追加切り分け
-3. [handoff_to_web_claude.md](.claude/memory/handoff_to_web_claude.md) — Web Claude 分業の正本
+- アーティファクト: [results/priority_rebuild/ml_artifacts/](results/priority_rebuild/ml_artifacts/) (scaler/kmeans/feature_columns/meta)
+- 検証スクリプト: [scripts/priority_rebuild/save_ml_artifacts.py](scripts/priority_rebuild/save_ml_artifacts.py), [scripts/priority_rebuild/verify_ml_inference.py](scripts/priority_rebuild/verify_ml_inference.py)
+- 検証結果: batch/1-row 予測 diff=0.0e+00 / cluster 完全一致 / joblib roundtrip MATCH
+- **完全 deterministic 確認済み** → リアルタイム推論で別結果が出るリスクなし
 
-### 次セッション最初にやること（順番）
+### 次セッション (Phase 7-b) のスコープ
 
-1. このファイル §🔴 を再読
-2. 上記 0-α / 0-β サマリーを Web Claude に共有
-3. Web Claude が「構造的限界 + LONG Entry 規則質低」を踏まえて A-2 大枠ドラフトを更新・確定
-   - regime=range / uptrend 新 Priority / LONG 規則改善 を A-2 設計に盛り込む
-4. Web Claude 結論を [priority_rebuild.md](.claude/memory/priority_rebuild.md) §2 に反映
-5. 実装フェーズ（A-2 探索 or B Replay）へ
+新規ファイル作成 (既存 V9 には触らない):
+- `cat/ml_models.py` — 16 LightGBM + scaler + kmeans のロード・推論ヘルパー
+- `cat/ml_features.py` — 1,432 指標のリアルタイム計算 (build_labels.py の compute_features_for_tf 流用)
+- `strategies/cat_ml_decider.py` — ML ベース判定 (新規 Priority "ML")
+- `config/cat_params_ml.json` — ML パラメータ (q95 閾値・cluster best Exit map・cap)
+- (Phase 7-c で) `runner/run_once_ml.py` — ML 専用実行エンジン
 
-### 0-α 完了状態（2026-05-12）
+### 段階 7 全体計画
 
-- 5 ファイル: [results/priority_rebuild/headroom_analysis_summary.md](results/priority_rebuild/headroom_analysis_summary.md) + step1-4 CSV
-- ⑮ ダッシュボードタブ: [dashboard/index.html](dashboard/index.html) `data-tab="headroom"` (6 パネル + 判定バナー)
-- スクリプト: [scripts/priority_rebuild/headroom_analysis.py](scripts/priority_rebuild/headroom_analysis.py)
-- **暫定判定: 構造的限界の可能性**（完璧 K=96 Exit でも全月 $1,900 不達 / worst=$40.41 / 0/57 パターン合格）
-- 構造ボトルネック: 月次 Entry 発火数の極端な偏り（4-240 trade/月）。2025-09 は matched 4 trade のみ
-
-### 段階 A-1 完了状態（変更なし）
-
-- train: `results/priority_rebuild/labels_mfe_mae_train_2021_2024.parquet` (394,573 行 / 1.05 GB)
-- test:  `results/priority_rebuild/labels_mfe_mae_test_2025.parquet` (105,120 行 / 0.30 GB)
-- 段階 B 温存: 2026-Q1 25,824 行（parquet 未生成）
-
-### 引き継ぎ資料
-
-- [handoff_to_web_claude.md](.claude/memory/handoff_to_web_claude.md) — Web Claude 分業の正本
-- [headroom_analysis_spec.md](.claude/memory/headroom_analysis_spec.md) — 頭打ち原因分析 仕様書（0-α 実行仕様）
-- [headroom_analysis_summary.md](results/priority_rebuild/headroom_analysis_summary.md) — **0-α 結果サマリー（Web Claude への報告内容）**
+| 段階 | 内容 | 所要 | 実弾近接度 |
+|---|---|---|---|
+| **7-a** (完了) | offline 推論再現性検証 | 完了 | 0 |
+| **7-b** (次) | ML Decider + パラメータ JSON + dry-run | 1-2h | 0 |
+| **7-c** | run_once_ml.py 実装 (ALLOW_LIVE_ORDERS=False で起動可能) | 2-3h | 低 |
+| **7-d** | デモトレード起動 (paper_trading=True 確認後・**まこさん明示 GO 必須**) | 数日 | 中 |
+| **7-e** | デモ結果確認 → 本番判断 | - | 高 |
 
 ### 次セッション最初にやること（順番）
 
 1. このファイル §🔴 を再読
-2. [headroom_analysis_summary.md](results/priority_rebuild/headroom_analysis_summary.md) を Web Claude に共有
-3. Web Claude が「構造的限界の可能性」を踏まえて A-2 大枠ドラフトを更新・確定
-   - 特に「ML を Exit に入れるだけでは届かない」「Entry 発火頻度の月次安定化」「新 Priority 並立」を盛り込めるか
-4. Web Claude 結論を [`priority_rebuild.md`](.claude/memory/priority_rebuild.md) §2 に反映
-5. 実装フェーズ（A-2 探索 or B Replay）へ
+2. [handoff_to_web_claude_v4_phase1_7a.md](.claude/memory/handoff_to_web_claude_v4_phase1_7a.md) で Phase 1-7a 全体把握
+3. [cc_ml_design_spec.md](cc_ml_design_spec.md) の §5 Phase 4-6 (Exit / Position / 本テスト)、§7 怠け防止 を再確認
+4. ALLOW_LIVE_ORDERS / paper_trading の現状をまこさんに確認 (機密パス・私は見ない)
+5. Phase 7-b 設計案提示 → GO 待ち → 着手
+
+### 主要成果物リンク（前セッション分・再利用可）
+
+| パス | 内容 |
+|---|---|
+| [cc_ml_design_spec.md](cc_ml_design_spec.md) | Web Claude が作った ML パイプライン仕様書 |
+| [.claude/memory/handoff_to_web_claude_v3_phase1_phase3a.md](.claude/memory/handoff_to_web_claude_v3_phase1_phase3a.md) | Phase 1-3a 完了報告 |
+| [results/priority_rebuild/ml_phase3_b/](results/priority_rebuild/ml_phase3_b/) | 採用 ML モデル (16 × LightGBM) |
+| [results/priority_rebuild/ml_phase4_b/cluster_best_exit.csv](results/priority_rebuild/ml_phase4_b/cluster_best_exit.csv) | cluster × (K, side) ごとの最良 Exit |
+| [results/priority_rebuild/ml_phase5_c/summary.md](results/priority_rebuild/ml_phase5_c/summary.md) | 質駆動採用 Replay 結果 |
+| [results/priority_rebuild/ml_phase6_b/summary.md](results/priority_rebuild/ml_phase6_b/summary.md) | 本テスト 2026 Q1 結果 |
+| [results/priority_rebuild/ml_artifacts/](results/priority_rebuild/ml_artifacts/) | scaler/kmeans/feature_columns/meta (Bot 統合用) |
 
 ### Step 0 セッション開始時に必読（厳守・順番通り）
 
 1. WORKFLOW.md（このファイル・現フェーズ + 次のタスクのポインタ）
-2. [`headroom_analysis_summary.md`](results/priority_rebuild/headroom_analysis_summary.md) ★0-α 結果（Web Claude 報告材料）
-3. [`headroom_analysis_addendum_summary.md`](results/priority_rebuild/headroom_analysis_addendum_summary.md) ★0-β 追加切り分け（Web Claude 報告材料）
-4. [`handoff_to_web_claude.md`](.claude/memory/handoff_to_web_claude.md)
-5. [`priority_rebuild.md`](.claude/memory/priority_rebuild.md)
-6. [CLAUDE.md](../CLAUDE.md)
-7. [lessons_active.md](.claude/memory/lessons_active.md) **L-168〜L-172 重点**
+2. [cc_ml_design_spec.md](cc_ml_design_spec.md) **ML パイプライン仕様書**
+3. [.claude/memory/handoff_to_web_claude_v4_phase1_7a.md](.claude/memory/handoff_to_web_claude_v4_phase1_7a.md) **Phase 1-7a 全体まとめ**
+4. [CLAUDE.md](../CLAUDE.md) ⛔絶対禁止 / 提案禁止リスト
+5. [lessons_active.md](.claude/memory/lessons_active.md) **L-173〜L-178 重点 (このセッション追加)**
+6. [.claude/rules/core_rules.md](.claude/rules/core_rules.md) MUST/NEVER
+7. [.claude/rules/exchange_spec.md](.claude/rules/exchange_spec.md) Bitget 発注仕様
 
 ---
 

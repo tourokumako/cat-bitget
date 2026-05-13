@@ -58,6 +58,7 @@ PRUNED_JSON = REPO_ROOT / "results" / "regime_label_analysis" / "pruned_column_l
 OUT_DIR = REPO_ROOT / "results" / "priority_rebuild"
 OUT_TRAIN = OUT_DIR / "labels_mfe_mae_train_2021_2024.parquet"
 OUT_TEST = OUT_DIR / "labels_mfe_mae_test_2025.parquet"
+OUT_TEST_2026Q1 = OUT_DIR / "labels_mfe_mae_test_2026_q1.parquet"
 OUT_SAMPLE = OUT_DIR / "labels_mfe_mae_sample.parquet"
 
 TIMEFRAMES = ["5m", "15m", "30m", "1h", "4h", "1d"]
@@ -79,6 +80,8 @@ TRAIN_START = pd.Timestamp("2021-04-01")
 TRAIN_END = pd.Timestamp("2024-12-31 23:59:59")
 TEST_START = pd.Timestamp("2025-01-01")
 TEST_END = pd.Timestamp("2025-12-31 23:59:59")
+TEST_2026Q1_START = pd.Timestamp("2026-01-01")
+TEST_2026Q1_END = pd.Timestamp("2026-03-31 23:59:59")
 
 
 def load_5m_bars(path: Path) -> pd.DataFrame:
@@ -286,12 +289,43 @@ def run_full(df5m: pd.DataFrame, pruned_spec: dict) -> None:
     print(f"[done] test:  {OUT_TEST.stat().st_size / 1e9:.2f} GB")
 
 
+def run_test_2026q1(df5m: pd.DataFrame, pruned_spec: dict) -> None:
+    """2026 Q1 だけのラベル parquet を生成 (Phase 6 本テスト用)。既存 train/test を上書きしない。"""
+    feat_per_tf = {}
+    for tf in TIMEFRAMES:
+        df_tf = df5m if tf == "5m" else resample_ohlcv(df5m, RESAMPLE_RULE[tf])
+        print(f"  [feat] {tf}: {len(df_tf):,} bars, 指標計算...")
+        feat_per_tf[tf] = compute_features_for_tf(df_tf)
+        print(f"  [feat] {tf}: {feat_per_tf[tf].shape[1]} cols 算出 (pruned 絞り込み前)")
+
+    print("[attach] MTF 結合 (look-ahead 防止)")
+    bar_with_feats = assemble_features(df5m, feat_per_tf, pruned_spec)
+    validate_columns(bar_with_feats, pruned_spec)
+
+    print("[label] MFE/MAE 計算")
+    labels = compute_mfe_mae_labels(df5m)
+    full = pd.concat([bar_with_feats, labels], axis=1)
+
+    n_before = len(full)
+    full = full.dropna(subset=[f"LONG_MFE_K{K_BARS[-1]}"])
+    print(f"  末尾ラベル欠損行 drop: {n_before - len(full)} 行")
+
+    test_q1 = full.loc[(full.index >= TEST_2026Q1_START) & (full.index <= TEST_2026Q1_END)]
+    print(f"[split] test_2026_q1: {len(test_q1):,} 行 ({test_q1.index.min()} 〜 {test_q1.index.max()})")
+
+    print(f"[write] {OUT_TEST_2026Q1}")
+    test_q1.to_parquet(OUT_TEST_2026Q1, compression="snappy")
+    print(f"[done] {OUT_TEST_2026Q1.stat().st_size / 1e9:.2f} GB")
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="段階 A-1: 5m bar × 1,432 指標 × 16 ラベル parquet 生成")
     p.add_argument("--dry-run", action="store_true",
                    help="pruned 構造 + import + 期待集合 1,432 確認のみ (指標計算スキップ・数秒)")
     p.add_argument("--sample-days", type=int, default=None,
                    help="先頭 N 日のみで全処理 (sample.parquet 出力・数分)")
+    p.add_argument("--test-2026q1", action="store_true",
+                   help="2026-01-01〜2026-03-31 のラベル parquet のみ生成 (Phase 6 本テスト用)")
     return p.parse_args()
 
 
@@ -312,6 +346,8 @@ def main(args: argparse.Namespace) -> None:
         run_dry_run(df5m, pruned_spec)
     elif args.sample_days:
         run_sample(df5m, pruned_spec, args.sample_days)
+    elif args.test_2026q1:
+        run_test_2026q1(df5m, pruned_spec)
     else:
         run_full(df5m, pruned_spec)
 

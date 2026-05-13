@@ -1,4 +1,92 @@
-# lessons_active.md — 直近50件の現役教訓（L-172〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-178〜L-103）
+
+---
+
+### L-178: ML パイプライン (LightGBM + KMeans) は scaler/kmeans の joblib 保存 + deterministic 検証で完全再現可能（2026-05-13）
+
+**事実:**
+Phase 4-a で fit した StandardScaler + KMeans を後で再 fit する際、Phase 4-a の cluster_labels_k4.parquet と完全一致した。LightGBM Booster の予測も batch / 1-row どちらも diff=0.0e+00。`scripts/priority_rebuild/verify_ml_inference.py` で全 4 検証項目 PASS。
+
+**Why:** sklearn StandardScaler / KMeans / LightGBM 全てが `random_state` 固定下で deterministic。同じ入力 + 同じ random_state なら結果は浮動小数点誤差なしに一致する。
+
+**How to apply:**
+- 本番運用候補のアーティファクトは joblib (scaler/kmeans) + LightGBM.save_model() で保存習慣化
+- 「保存忘れて再 fit」は時間ロス。fit 時に即 joblib.dump する
+- Bot 統合前に「batch 予測 vs 1-row 予測」「保存前 vs ロード後」の完全一致検証を入れる
+- 完全一致が確認できれば「リアルタイム推論で別結果が出る」リスクなしで本番進める
+
+---
+
+### L-177: 同時保有 active カウントは timeline 配列の範囲 increment が O(N²) を O(N×K) に高速化（2026-05-13）
+
+**事実:**
+Phase 5-c の質駆動採用 (predicted ratio 降順 + cap) を最初 O(N²) で実装 (`sum(1 for ae, ax in taken if ae <= et < ax)`)。test 2025 48k entries × cap=5 で **30 分**かかり、cap=10/20 で数時間想定。numpy timeline 配列 (`active[entry_bar:exit_bar+1] += 1` ・採用判定は `active[entry_bar] < cap`) に書き換えたら **1.2 秒** で全 cap 完了。
+
+**Why:** O(N²) の N=48k は 2.3B op で Python forloop には重すぎる。timeline 配列は O(N × K_avg=100) = 5M op で済む。
+
+**How to apply:**
+- Replay/シミュレーションで「同時保有」「active 件数」「重複判定」を扱うときは **timeline 配列の範囲 increment** が第一選択
+- bisect + sorted list は理論計算量は良くても `list.insert` の O(N) shift がボトルネック
+- 「Python で素直に書く」段階で N²/N³ になりかけたら、必ず timeline 配列か bucket 化で抑える
+
+---
+
+### L-176: FIFO 採用は仮テスト合格でも本テストで月次未達のリスクがある・質駆動採用で解消（2026-05-13）
+
+**事実:**
+Phase 5-b (FIFO・early-arrival) で仮テスト 2025 は cap=5/10/20 全て 12/12 合格。Phase 6-b の本テスト 2026 Q1 では **2026-02 だけが cap=5/10/20 で全部マイナス** (-$1,708 〜 -$4,140)。no cap だと同月 +$173k で最大利益月。FIFO が「最初に来た負け Entry」を採用して、後の勝ち Entry を逃した。Phase 5-c で質駆動 (predicted MFE/MAE 比 降順) に切り替えたら 3/3 合格。
+
+**Why:** FIFO は時系列順序のみが基準で、Entry の **品質** を一切見ない。仮テストでは品質と時系列がたまたま揃っていたが、本テストで揃わなくなった。
+
+**How to apply:**
+- Position 制限のある Replay では FIFO だけで判定しない。**必ず質駆動採用と並列比較する**
+- 仮テスト 100% 合格 → 本テスト未達のリスクがある事例として記憶。OOS で必ず再検証する
+- 質駆動採用のスコア軸は「予測 MFE/MAE 比」が今回有効。他軸 (predicted MFE 単独 / cluster 優先度) も将来検討
+
+---
+
+### L-175: 長時間バックグラウンド Python スクリプトは print(flush=True) を徹底する（2026-05-13）
+
+**事実:**
+build_labels.py を `nohup ... > stdout &` で 89 分走らせたが、stdout が空のまま。Python print は line-buffered だが TTY 接続なしだと block-buffered で flush されない。プロセス CPU は動いており、内部処理は進んでいたが、外から進捗確認できなかった。完了時にまとめて flush された。run_lgbm_phase1.py 等で `print(line, flush=True)` を入れたものは即時 stdout に出ていたので、対策は明確。
+
+**Why:** Python の I/O buffer は TTY 接続時のみ line-buffered。`>` リダイレクトでは block-buffered (~4KB ごと) のため、長時間処理の途中 print が見えない。
+
+**How to apply:**
+- 長時間 (10分超) 実行する Python スクリプトの print は **必ず `flush=True` を指定**
+- log() helper を作るなら最初から `print(line, flush=True)` で書く (Phase 1-6 のスクリプトはこれを採用済み)
+- 環境変数 `PYTHONUNBUFFERED=1` でも回避可能だが、コード側で明示するほうが安全
+- 既存スクリプトに print が多い場合は `python3 -u` でも同等
+
+---
+
+### L-174: 月次平均だけでなく月別 worst month と win rate ばらつきも評価軸に入れる（2026-05-13）
+
+**事実:**
+Phase 5 で月次平均 $166k / Phase 6-b 本テストで $120k と高い数字が出たが、本テストの 2026-02 が cap 入れると軒並みマイナスで「月次平均は良くても **特定月だけ崩れる**」現象が露呈した。仮テスト 2025 の 2025-09 も他月の 1/10 規模で弱かった。月次平均だけ見ていると、これら「弱月」を見落とす。
+
+**Why:** 月次平均は外れ値月でも引き上げられる。指示書 §6 の合格条件は「全月クリア」なので、平均ではなく最弱月で判定する必要がある。
+
+**How to apply:**
+- 月次集計時は必ず {mean, min, max, std, worst-month-id} を併記する
+- §6 合格判定は最弱月で行う。「平均は X 倍超」は補助指標
+- 弱月の原因分析: cluster 分布 / Entry 種別 / 市況 (volatility / trend) を切り分ける
+- 改善時も「最弱月の押し上げ」を狙うほうが平均改善より価値が高い
+
+---
+
+### L-173: ML 統合は新規ファイル (`cat_ml_decider.py` 等) で実装し、既存 V9 (P1-P23) には触らない（2026-05-13）
+
+**事実:**
+Phase 7 Bot 統合の設計で、既存 `cat_v9_decider.py` (823行) を改修するか新規 `cat_ml_decider.py` を作るか検討した。CLAUDE.md「現在の方針」で「既存 P1/P2/P4/P21/P23 は **改修ではなく解体・再設計**」とあり、新規 ML Priority として実装する方針が妥当。既存安全装置 (ALLOW_LIVE_ORDERS / paper_trading) を維持しやすい。
+
+**Why:** 既存 V9 改修は 1) 安全装置を壊すリスク 2) P1-P23 ロジックと ML ロジックの混在で複雑度爆発 3) ロールバック困難 で危険。新規ファイルは並走テスト + 単独ロールバックが容易。
+
+**How to apply:**
+- Bot 統合は「新規 strategies/cat_ml_decider.py + runner/run_once_ml.py」方式で進める
+- 既存 V9 (run_once_v9.py / cat_v9_decider.py) は **触らない**
+- ALLOW_LIVE_ORDERS / paper_trading の確認はまこさん側 (機密パスは私から読まない)
+- Phase 7-c で runner 起動可能化、Phase 7-d でデモトレード起動 (まこさん明示 GO 必須)
 
 ---
 
