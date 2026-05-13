@@ -1,4 +1,35 @@
-# lessons_active.md — 直近50件の現役教訓（L-183〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-185〜L-103）
+
+---
+
+### L-185: 証跡 verify で importance_type の不一致に注意 — script が 'split' 保存なら verify も 'split'（2026-05-14）
+
+**何が起きたか:**
+Phase 1 Step B 完了後の証跡4 (bit-exact reproducibility) で `LGBMRegressor.feature_importances_` の値が指示書の 「importance_type='gain'」 と一致しないと判定 → MISMATCH。実際には run_lgbm_phase1.py が `importance_type` を指定せず `model.feature_importances_` (デフォルト='split') を保存していた。verify 側が `importance_type='gain'` で再計算したため値が食い違った。
+
+**Why:**
+- 指示書に「gain で検証」と書かれていたが、スクリプトが実際にどの importance_type を使うかを実装 grep せずに従った
+- 'split' (特徴量が分岐に使われた回数) と 'gain' (情報利得) は同じモデルでも値が全く異なる
+
+**How to apply:**
+- feature_importance verify 時は必ずスクリプト側の保存コードを grep して `importance_type` を確認してから verify を実装する
+- LightGBM デフォルトは 'split'。指示書に 'gain' とあれば実装に不一致がないか先に確認する
+
+---
+
+### L-184: sys.exit(0) の直前にモデル保存コードがあっても、sys.exit が先に来るとモデルが保存されない（2026-05-14）
+
+**何が起きたか:**
+run_lgbm_phase1.py の dry-run pause セクションで `sys.exit(0)` (L-227) が `model.booster_.save_model()` (L-235) より前に実行される構造になっていた。1ラベル目の feature_importance 確認用 pause で中断すると、モデルファイルが保存されないまま終了。続きの Step B 実行時に dry-run 証跡が存在しないことに気づいた。
+
+**Why:**
+- コードの見た目上「保存処理がある」と判断し、実行順序 (sys.exit の位置) を確認しなかった
+- pause → 中断 → 継続 という条件分岐で「中断時のみ実行される処理」を保存より前に書いてしまった
+
+**How to apply:**
+- sys.exit / return / break による早期終了の**前に**保存・flush・ログ書き出しが完了しているか必ず確認する
+- 証跡として保存が必要なファイル (model.txt / CSV) は sys.exit より前の行に書く
+- コードレビュー時は「この sys.exit に到達したとき、すでに保存は完了しているか」を 1 行ずつ確認する
 
 ---
 

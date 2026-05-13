@@ -34,7 +34,7 @@
 | 1.1 | 時系列 valid split (末尾 10%) | run_lgbm_phase1.py L151-158 |
 | 1.2 | early_stopping=50 / random_state=42 | 同 L63-64 |
 | 1.3 | 1 ラベル完了直後 feature_importance top20 review (停止) | スクリプトに pause 追加 |
-| 1.4 | fractal ベース列ブラックリスト top20 不在 | dist_to_fib_v2_* / resistance_distance_* / support_distance_* / nearest_level_* |
+| 1.4 | fractal ベース列ブラックリスト 3段階運用 (Defense in Depth・2026-05-14 監査反映) | 対象パターン: `dist_to_fib_v2_*` / `resistance_distance_*` / `support_distance_*` / `nearest_level_*` ／ **(a) top1-20 hit: 即停止 sys.exit(1)・leak 残存疑い・調査必須** ／ (b) top21-50 hit: 記録継続・full_rank.csv に保存・Step B 後にレビュー ／ (c) top51以下: 通常運用 ／ ブラックリスト緩和は実施しない (将来回帰検出機能維持) |
 | 1.5 | lightgbm / sklearn version 記録 | log で出力 |
 
 ## Phase 4-a (k-means)

@@ -242,7 +242,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-13 改訂5・Phase 0 完了 + スペック正本化 + run_lgbm_phase1.py ハイパラ更新済 → Phase 1 Step 0-6 dry-run 待ち）
+## 🔴 現在のフェーズ（2026-05-14 改訂6・Phase 1 完了 → Phase 2 精度判定 着手待ち）
 
 > # ⚠️ **leak 修正完了 / Phase 1〜7-a 数値は依然として無効** ⚠
 >
@@ -289,11 +289,11 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 > ⚠️ 旧 framework「段階 A-1〜D」は ML pipeline 切替で 2026-05-13 廃止。
 > A-1 → Phase 0 に統合 / A-2 (k=2 探索) は ML 不合格時の保険として未着手・cc_ml_design_spec §0 / A-3〜D → Phase 1〜7 に再編。
 
-| Phase | 内容 | ステータス (2026-05-13 leak 修正後) |
+| Phase | 内容 | ステータス (2026-05-14 更新) |
 |---|---|---|
-| **Phase 0** | ラベル再生成 (5m × 1,432 指標 × 未来 MFE/MAE) | **leak フリー再生成 待ち** |
-| Phase 1 | LightGBM × 16 ラベル × デフォルトハイパラ | 再学習 待ち |
-| Phase 2 | 精度判定 (仮テスト 2025 月次 $500 以上か) | 再実行 待ち |
+| **Phase 0** | ラベル再生成 (5m × 1,432 指標 × 未来 MFE/MAE) | ✅ **完了** (2026-05-13 leak フリー) |
+| Phase 1 | LightGBM × 16 ラベル × デフォルトハイパラ | ✅ **完了** (2026-05-14 / 141分 / 全16ラベル異常なし / BL top20=0件) |
+| Phase 2 | 精度判定 (仮テスト 2025 月次 $500 以上か) | **→ 次のタスク** |
 | Phase 3-a/3-b | ハイパラ調整 (K 窓別 num_leaves) | 再実行 待ち |
 | Phase 4-a | k-means クラスタリング (Entry 性質分類) | 再実行 待ち |
 | Phase 4-b | Exit 設計 (cluster × K × side 最適 Exit) | 再実行 待ち |
@@ -350,9 +350,9 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-13 改訂21・Phase 0 完了 + スペック正本化 + run_lgbm_phase1.py 更新 + Step 0-1〜0-5 完了 → Step 0-6 dry-run から再開）
+## 🔴 次のタスク（2026-05-14 改訂22・Phase 1 完了 → Phase 2 精度判定 着手）
 
-**Step 0-6 dry-run (1 ラベル目学習 + leak pause 確認) が次セッション最初のタスク。run_lgbm_phase1.py はハイパラ更新済み・label_distribution_stats.json 生成済み。**
+**Phase 2: predictions_test2025.parquet を使って仮テスト 2025 月次 PnL を推定。月次平均 $500 以上なら Phase 3 へ。**
 
 ### このセッションで完了した事前準備 (2026-05-13)
 
@@ -415,35 +415,40 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 | 補助 | scripts/data/download_bitget_5y.py | Bitget USDT-FUTURES 5y データ取得 + 整合性 verify | データ |
 | 補助 | data/BTCUSDT-5m-bitget-2021-04-01_2026-03-31_5y.csv | Bitget 5y CSV (525,887 rows) | データ |
 
-### 次セッション最初にやること (順番・Step 0-6 dry-run から再開)
+### 次セッション最初にやること (Phase 2: 精度判定)
 
-> **事前準備は完了済み。Step 0-6 から始める。**
-> `label_distribution_stats.json` は `results/priority_rebuild/ml_phase1/` に存在する。
-> `run_lgbm_phase1.py` は更新済み (上記ハイパラ + iter log + early save)。
+> **Phase 1 完了済み。Phase 2 着手。**
+> `predictions_test2025.parquet` は `results/priority_rebuild/ml_phase1/` に存在する (105,120行 × 17列)。
+> `entry_thresholds.json` / `training_summary.csv` も保存済み。
 
 1. WORKFLOW.md §🔴 現在のフェーズ + §次のタスク を再読
-2. [.claude/memory/lessons_active.md](.claude/memory/lessons_active.md) L-179/L-182/L-183 を重点再読
-3. [.claude/rules/phase_compliance_checklist.md](.claude/rules/phase_compliance_checklist.md) Phase 1 セクションを再読
-4. **Step 0-6 dry-run** (= Phase 1 Step A 兼用):
-   ```bash
-   echo "=====🚀 Phase 1 START $(date) =====" && \
-   cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
-   python3 scripts/priority_rebuild/run_lgbm_phase1.py 2>&1 | tee logs/phase1_dry_run_$(date +%Y%m%d_%H%M%S).log
-   ```
-   - 1 ラベル目完了で自動停止 (leak pause)
-   - `feature_importance_top20.csv` が results/priority_rebuild/ml_phase1/ に early save される
-   - **証跡 Step A a〜h を全件チャットに出力する (WORKFLOW.md 規定)**
-   - ブラックリスト top50 確認 / RMSE 動的閾値確認 (label_distribution_stats.json 参照) / top10 意味解説
-5. 問題なければ **Step B (残り 15 ラベル)**:
-   ```bash
-   ALLOW_PHASE1_CONTINUE=1 python3 scripts/priority_rebuild/run_lgbm_phase1.py 2>&1 | tee logs/phase1_step_b_$(date +%Y%m%d_%H%M%S).log
-   ```
-6. Step B 完了後の異常検査 (16ラベル × RMSE/乖離率表) → Phase 2 へ
-7. 動的 verify (持ち越し):
+2. cc_ml_design_spec.md §Phase 2 精度判定基準を確認
+3. **Phase 2: 仮テスト 2025 月次 PnL 推定**
+   - `predictions_test2025.parquet` (MFE/MAE 予測値 × 105,120行) と `labels_mfe_mae_test_2025.parquet` (実際の MFE/MAE) を照合
+   - q90/q95/q99 閾値フィルタで Entry 候補を絞り込み
+   - 楽観的月次 PnL (monthly_pnl_optimistic.csv 参照) と entry_firing_rate.csv を確認
+   - 月次平均 $500 以上 → Phase 3 へ / 未達 → k=2 切り替え協議
+4. 動的 verify (Phase 4 以降用・持ち越し):
    - Phase 4-a 実行後 `ls results/priority_rebuild/ml_phase4_a/*.joblib` (期待: `*train_2021_2024*` のみ・`*test*` 不在)
    - Phase 4-b 実行後 `cluster_best_exit_FROM_TRAIN.csv` の (cluster, K, side, exit_type) unique 列挙
    - Phase 5 実行直前/直後の merge 行数 + 突合
-8. Phase 2 → 7-a を順次再実行
+
+### Phase 1 達成サマリー (✅ 2026-05-14 leak フリー完了)
+
+| 成果物 | 内容 |
+|---|---|
+| 16 LightGBM モデル | results/priority_rebuild/ml_phase1/models/ × 16 ファイル (155KB〜981KB) |
+| predictions_test2025.parquet | 105,120行 × 17列 (16予測値+close) |
+| predictions_train_2021_2024.parquet | 394,753行 × 17列 (Phase 4-a 入力・L-183 対応) |
+| feature_importance_top20.csv | 16ラベル × top20 |
+| training_summary.csv | 16ラベル × train/valid RMSE / best_iter / 判定 (全16✅) |
+| entry_thresholds.json | K窓別 q90/q95/q99 閾値 |
+| label_distribution_stats.json | 16ラベル mean/std/p50/p90/p99 |
+
+- BL top20 ヒット: **全16ラベル 0件** ✅
+- BL top21-50: support_distance_* / nearest_level_touch_count_* が一部出現 → Defense in Depth 記録継続
+- bit-exact 再現性: ✅ (sha256 完全一致・n_jobs=1)
+- 所要時間: ~141 分 (Step A 11分 × 2 + Step B 119分)
 
 ### 達成サマリー（⛔ leak 由来・全数値無効・2026-05-13）
 

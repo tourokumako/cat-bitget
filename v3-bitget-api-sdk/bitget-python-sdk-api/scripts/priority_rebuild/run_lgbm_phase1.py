@@ -221,6 +221,10 @@ def main() -> None:
                 OUT_DIR / "feature_importance_top20.csv", index=False
             )
             log("saved feature_importance_top20.csv (1ラベル目 early save)")
+            # モデルファイルを先に保存 (dry-run 証跡・bit-exact 確認用・sys.exit 前に必須)
+            _model_path_early = MODELS_DIR / f"lgbm_{label}.txt"
+            model.booster_.save_model(str(_model_path_early))
+            log(f"saved model early: {_model_path_early.name}")
             if os.environ.get("ALLOW_PHASE1_CONTINUE") != "1":
                 log("=== STOP: ALLOW_PHASE1_CONTINUE=1 が未設定 ===")
                 log("  feature_importance を review してから ALLOW_PHASE1_CONTINUE=1 python3 ... で継続")
