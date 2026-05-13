@@ -293,7 +293,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 |---|---|---|
 | **Phase 0** | ラベル再生成 (5m × 1,432 指標 × 未来 MFE/MAE) | ✅ **完了** (2026-05-13 leak フリー) |
 | Phase 1 | LightGBM × 16 ラベル × デフォルトハイパラ | ✅ **完了** (2026-05-14 / 141分 / 全16ラベル異常なし / BL top20=0件) |
-| Phase 2 | 精度判定 (仮テスト 2025 月次 $500 以上か) | **→ 次のタスク** |
+| Phase 2 | 精度判定 (仮テスト 2025 で 4 指標合格条件・cc_ml_design_spec §1.6) | **→ 次のタスク** |
 | Phase 3-a/3-b | ハイパラ調整 (K 窓別 num_leaves) | 再実行 待ち |
 | Phase 4-a | k-means クラスタリング (Entry 性質分類) | 再実行 待ち |
 | Phase 4-b | Exit 設計 (cluster × K × side 最適 Exit) | 再実行 待ち |
@@ -352,7 +352,7 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ## 🔴 次のタスク（2026-05-14 改訂22・Phase 1 完了 → Phase 2 精度判定 着手）
 
-**Phase 2: predictions_test2025.parquet を使って仮テスト 2025 月次 PnL を推定。月次平均 $500 以上なら Phase 3 へ。**
+**Phase 2: predictions_test2025.parquet を使って仮テスト 2025 で 4 指標合格条件を判定。全 4 指標 PASS なら Phase 3 へ・1 件以上 FAIL ならまこさん協議 (cc_ml_design_spec §1.6 / 2026-05-14 改訂)。**
 
 ### このセッションで完了した事前準備 (2026-05-13)
 
@@ -423,11 +423,11 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 1. WORKFLOW.md §🔴 現在のフェーズ + §次のタスク を再読
 2. cc_ml_design_spec.md §Phase 2 精度判定基準を確認
-3. **Phase 2: 仮テスト 2025 月次 PnL 推定**
+3. **Phase 2: 仮テスト 2025 で 4 指標合格条件判定 (cc_ml_design_spec §1.6 / 2026-05-14 改訂)**
    - `predictions_test2025.parquet` (MFE/MAE 予測値 × 105,120行) と `labels_mfe_mae_test_2025.parquet` (実際の MFE/MAE) を照合
-   - q90/q95/q99 閾値フィルタで Entry 候補を絞り込み
-   - 楽観的月次 PnL (monthly_pnl_optimistic.csv 参照) と entry_firing_rate.csv を確認
-   - 月次平均 $500 以上 → Phase 3 へ / 未達 → k=2 切り替え協議
+   - q90/q95/q99 閾値 × K12/24/48/96 × LONG/SHORT = 24 組合せ別に評価
+   - 4 指標: ①q99 net_quality (加重平均 > +10pp かつ 20/24 組 > 0) / ②net_quality 最小値 > -50pp / ③valid_rmse/label_std (14/16 ラベル < 1.5) / ④mean_real_MFE/MAE (20/24 組 > 1.0)
+   - 全 4 指標 PASS → Phase 3 へ / 1 件以上 FAIL → まこさん協議 (自動 k=2 切替なし)
 4. 動的 verify (Phase 4 以降用・持ち越し):
    - Phase 4-a 実行後 `ls results/priority_rebuild/ml_phase4_a/*.joblib` (期待: `*train_2021_2024*` のみ・`*test*` 不在)
    - Phase 4-b 実行後 `cluster_best_exit_FROM_TRAIN.csv` の (cluster, K, side, exit_type) unique 列挙
