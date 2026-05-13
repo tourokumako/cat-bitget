@@ -49,7 +49,7 @@ P4B_DIR = REPO_ROOT / "results" / "priority_rebuild" / "ml_phase4_b"
 OUT_DIR = REPO_ROOT / "results" / "priority_rebuild" / "ml_phase5"
 
 SIMS_PATH = P4B_DIR / "exit_simulations.parquet"
-BEST_PATH = P4B_DIR / "cluster_best_exit.csv"
+BEST_PATH = P4B_DIR / "cluster_best_exit_FROM_TRAIN.csv"  # L-183 #4: train で選定された best
 
 THRESHOLD_PASS_MONTHLY = 1900.0  # 指示書 §6 合格ライン
 WITHDRAW_LINE_MONTHLY = 500.0    # 指示書 §1.6 撤退ライン (ML 単独)

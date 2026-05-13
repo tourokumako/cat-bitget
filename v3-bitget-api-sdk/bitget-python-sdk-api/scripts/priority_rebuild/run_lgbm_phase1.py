@@ -32,6 +32,8 @@ run_lgbm_phase1.py — ML Phase 1: LightGBM × 16 ラベル × デフォルト�
 from __future__ import annotations
 
 import json
+import os
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -159,12 +161,14 @@ def main() -> None:
 
     X_train_all = df_train_full.iloc[:n_train][feature_cols]
     X_valid_all = df_train_full.iloc[n_train:][feature_cols]
+    X_train_full = df_train_full[feature_cols]  # Phase 4-a 用 (train + valid 全期間・L-183)
     X_test = df_test[feature_cols]
 
     training_curves: list[tuple] = []
     importance_records: list[tuple] = []
     pred_test = pd.DataFrame(index=df_test.index)
     pred_valid = pd.DataFrame(index=X_valid_all.index)
+    pred_train_all = pd.DataFrame(index=df_train_full.index)  # Phase 4-a 用
 
     for i, label in enumerate(LABEL_COLS, 1):
         t_label = time.time()
@@ -180,6 +184,28 @@ def main() -> None:
         model, curves, importance = train_one_label(label, Xt, yt, Xv, yv, feature_cols)
         training_curves.extend(curves)
         importance_records.extend(importance)
+
+        # Phase 1 leak チェック pause (checklist 1.3 / L-179)
+        if i == 1:
+            log("=== Phase 1 leak チェック pause (1 ラベル目完了) ===")
+            log(f"label: {label} / top20 feature_importance:")
+            for _, rank, feat, val in importance:
+                log(f"  {rank:2d}. {feat}: {val}")
+            blacklist = ["dist_to_fib_v2_", "resistance_distance_", "support_distance_", "nearest_level_"]
+            leak_hits = [(rank, feat) for _, rank, feat, _ in importance
+                         if any(b in feat for b in blacklist)]
+            if leak_hits:
+                log(f"🔴 ブラックリスト top20 ヒット {len(leak_hits)} 件 (L-179):")
+                for rank, feat in leak_hits:
+                    log(f"  rank {rank}: {feat}")
+                log("=== STOP: leak 残存疑い・ALLOW_PHASE1_CONTINUE では bypass 不可 ===")
+                sys.exit(1)
+            log("✅ ブラックリスト top20 0 件")
+            if os.environ.get("ALLOW_PHASE1_CONTINUE") != "1":
+                log("=== STOP: ALLOW_PHASE1_CONTINUE=1 が未設定 ===")
+                log("  feature_importance を review してから ALLOW_PHASE1_CONTINUE=1 python3 ... で継続")
+                sys.exit(0)
+            log("=== ALLOW_PHASE1_CONTINUE=1 確認・継続 ===")
 
         best_iter = model.best_iteration_
         valid_rmse_best = min(c[3] for c in curves)
@@ -199,6 +225,7 @@ def main() -> None:
         # 予測
         pred_valid[label] = model.predict(X_valid_all)
         pred_test[label] = model.predict(X_test)
+        pred_train_all[label] = model.predict(X_train_full)  # Phase 4-a 用 (L-183 data snooping 解消)
         std_t = pred_test[label].std()
         log(f"  test pred: mean={pred_test[label].mean():.4f} std={std_t:.4f}")
         if std_t < 1e-9:
@@ -220,6 +247,13 @@ def main() -> None:
     pred_out["close"] = df_test["close"].values
     pred_out.to_parquet(OUT_DIR / "predictions_test2025.parquet")
     log("saved predictions_test2025.parquet")
+
+    # Phase 4-a 用: train 2021-04〜2024-12 の予測値 (L-183 data snooping 解消)
+    log("=== predict on train 2021-04〜2024-12 (Phase 4-a/4-b 用) ===")
+    pred_train_out = pred_train_all.copy()
+    pred_train_out["close"] = df_train_full["close"].values
+    pred_train_out.to_parquet(OUT_DIR / "predictions_train_2021_2024.parquet")
+    log("saved predictions_train_2021_2024.parquet")
 
     # 予測値ヒストグラム
     fig, axes = plt.subplots(4, 4, figsize=(20, 16))

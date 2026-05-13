@@ -52,9 +52,11 @@ PHASE3B_DIR = REPO_ROOT / "results" / "priority_rebuild" / "ml_phase3_b"
 PHASE4A_DIR = REPO_ROOT / "results" / "priority_rebuild" / "ml_phase4_a"
 OUT_DIR = REPO_ROOT / "results" / "priority_rebuild" / "ml_phase4_b"
 
-PREDICTIONS = PHASE3B_DIR / "predictions_test2025.parquet"
+PREDICTIONS_TRAIN = PHASE3B_DIR / "predictions_train_2021_2024.parquet"  # best 選定用 (L-183 / checklist 4b.1)
+PREDICTIONS_TEST = PHASE3B_DIR / "predictions_test2025.parquet"          # apply 評価用 (best 選定なし)
 THRESHOLDS = PHASE3B_DIR / "entry_thresholds.json"
-CLUSTER_LABELS = PHASE4A_DIR / "cluster_labels_k4.parquet"
+CLUSTER_TRAIN = PHASE4A_DIR / "cluster_labels_train_k4.parquet"          # train 期間クラスタ
+CLUSTER_TEST = PHASE4A_DIR / "cluster_labels_test2025_k4.parquet"        # test 期間クラスタ
 
 K_WINDOWS = (12, 24, 48, 96)
 SIDES = ("LONG", "SHORT")
@@ -70,7 +72,7 @@ TRAILING_PCT_GRID = (0.10, 0.20, 0.30, 0.50)
 
 
 def time_exit_n_bars(k: int) -> tuple[int, ...]:
-    return (max(1, k // 2), k, k * 2)
+    return (max(1, k // 2), k)  # K×2 削除 (予測窓を超える Exit 禁止・checklist 4b.3)
 
 
 TS = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -86,12 +88,12 @@ def log(msg: str) -> None:
         f.write(line + "\n")
 
 
-def load_ohlc_2025() -> tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
-    """1826d CSV から 2025 期間を抽出。numpy array + ts→idx マップを返す。"""
+def load_ohlc_period(start: str, end: str) -> tuple[pd.DataFrame, np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
+    """1826d CSV から 指定期間を抽出。numpy array + ts→idx マップを返す。"""
     df = pd.read_csv(OHLC_CSV, parse_dates=["timestamp"])
     df = df.set_index("timestamp").sort_index()
-    df = df.loc["2025-01-01 00:00:00":"2025-12-31 23:55:00"]
-    log(f"  ohlc 2025: {df.shape} ({df.index[0]} → {df.index[-1]})")
+    df = df.loc[start:end]
+    log(f"  ohlc {start[:10]}〜{end[:10]}: {df.shape} ({df.index[0]} → {df.index[-1]})")
     opens = df["open"].to_numpy(dtype=np.float64)
     highs = df["high"].to_numpy(dtype=np.float64)
     lows = df["low"].to_numpy(dtype=np.float64)
@@ -227,39 +229,21 @@ def compute_pnl(
     return price_pnl - fee
 
 
-def main() -> None:
-    t0 = time.time()
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    log("=== Phase 4-b START ===")
-
-    log("loading OHLC ...")
-    ohlc, opens, highs, lows, closes, ts_to_idx = load_ohlc_2025()
-    log(f"  ts_to_idx size: {len(ts_to_idx):,}")
-
-    log("loading predictions / clusters / thresholds ...")
-    pred = pd.read_parquet(PREDICTIONS)
-    cluster_labels = pd.read_parquet(CLUSTER_LABELS)
-    with open(THRESHOLDS) as f:
-        thresholds = json.load(f)
-    log(f"  pred: {pred.shape} / clusters: {cluster_labels.shape}")
-
-    log("extracting entries ...")
-    df_entries = extract_entries(pred, cluster_labels, thresholds, ts_to_idx)
-    df_entries.to_parquet(OUT_DIR / "entry_candidates.parquet")
-    log(f"saved entry_candidates.parquet ({len(df_entries):,} rows)")
-
-    # Exit シミュレーション
-    log("running exit simulations ...")
-    t_sim = time.time()
-
-    # 結果列: entry の各 row を 11 戦略分複製
+def simulate_all_strategies(
+    df_entries: pd.DataFrame,
+    highs: np.ndarray,
+    lows: np.ndarray,
+    closes: np.ndarray,
+    label: str = "",
+) -> list[dict]:
+    """全 Entry × Exit 戦略グリッド (固定 TP × 4 + Trailing × 4 + Time × 2) でシミュレーション"""
     sim_records: list[dict] = []
     n_entries = len(df_entries)
     n_per_log = max(1, n_entries // 20)
-
+    t_sim = time.time()
     for i, row in enumerate(df_entries.itertuples(index=False), 1):
         if i % n_per_log == 0:
-            log(f"  [{i:,}/{n_entries:,}] ({i/n_entries*100:.1f}%) elapsed={time.time()-t_sim:.1f}s")
+            log(f"  [{label} {i:,}/{n_entries:,}] ({i/n_entries*100:.1f}%) elapsed={time.time()-t_sim:.1f}s")
         entry_price = row.entry_price
         side = row.side
         entry_idx = row.entry_idx
@@ -267,50 +251,38 @@ def main() -> None:
         direction = row.dir
         pred_mfe = row.predicted_MFE
 
-        # A) 固定 TP
         for pct in TP_PCT_GRID:
             xp, xi, hit = simulate_fixed_tp(entry_price, side, entry_idx, K, pct, pred_mfe, highs, lows, closes)
-            sim_records.append(
-                dict(
-                    entry_ts=row.timestamp, K=K, side=side, cluster=row.cluster,
-                    exit_type="fixed_tp", exit_param=pct,
-                    exit_price=xp, exit_idx=xi, hit_tp=hit,
-                    pnl_usd=compute_pnl(entry_price, xp, direction),
-                )
-            )
-        # B) トレーリング
+            sim_records.append(dict(
+                entry_ts=row.timestamp, K=K, side=side, cluster=row.cluster,
+                exit_type="fixed_tp", exit_param=pct,
+                exit_price=xp, exit_idx=xi, hit_tp=hit,
+                pnl_usd=compute_pnl(entry_price, xp, direction),
+            ))
         for retrace in TRAILING_PCT_GRID:
             xp, xi, hit = simulate_trailing(entry_price, side, entry_idx, K, retrace, highs, lows, closes)
-            sim_records.append(
-                dict(
-                    entry_ts=row.timestamp, K=K, side=side, cluster=row.cluster,
-                    exit_type="trailing", exit_param=retrace,
-                    exit_price=xp, exit_idx=xi, hit_tp=hit,
-                    pnl_usd=compute_pnl(entry_price, xp, direction),
-                )
-            )
-        # C) 時間 Exit
+            sim_records.append(dict(
+                entry_ts=row.timestamp, K=K, side=side, cluster=row.cluster,
+                exit_type="trailing", exit_param=retrace,
+                exit_price=xp, exit_idx=xi, hit_tp=hit,
+                pnl_usd=compute_pnl(entry_price, xp, direction),
+            ))
         for n_bars in time_exit_n_bars(K):
             xp, xi, _ = simulate_time_exit(entry_price, entry_idx, n_bars, closes)
-            sim_records.append(
-                dict(
-                    entry_ts=row.timestamp, K=K, side=side, cluster=row.cluster,
-                    exit_type="time_exit", exit_param=n_bars,
-                    exit_price=xp, exit_idx=xi, hit_tp=False,
-                    pnl_usd=compute_pnl(entry_price, xp, direction),
-                )
-            )
+            sim_records.append(dict(
+                entry_ts=row.timestamp, K=K, side=side, cluster=row.cluster,
+                exit_type="time_exit", exit_param=n_bars,
+                exit_price=xp, exit_idx=xi, hit_tp=False,
+                pnl_usd=compute_pnl(entry_price, xp, direction),
+            ))
+    log(f"  [{label}] simulations done ({len(sim_records):,} records, elapsed={time.time()-t_sim:.1f}s)")
+    return sim_records
 
-    log(f"  simulations done ({len(sim_records):,} records, elapsed={time.time()-t_sim:.1f}s)")
-    df_sim = pd.DataFrame(sim_records)
-    df_sim.to_parquet(OUT_DIR / "exit_simulations.parquet")
-    log("saved exit_simulations.parquet")
 
-    # 集計: cluster × (K, side) × exit_type × exit_param → 平均/月次
-    log("aggregating ...")
+def aggregate_results(df_sim: pd.DataFrame, n_months: float) -> pd.DataFrame:
+    """cluster × (K, side) × exit_type × exit_param で集計。月次平均は n_months で除算。"""
     df_sim["entry_ts"] = pd.to_datetime(df_sim["entry_ts"])
     df_sim["month"] = df_sim["entry_ts"].dt.to_period("M").astype(str)
-
     agg = (
         df_sim.groupby(["cluster", "K", "side", "exit_type", "exit_param"], sort=False)
         .agg(
@@ -322,20 +294,77 @@ def main() -> None:
         )
         .reset_index()
     )
-    agg["pnl_monthly_avg"] = agg["pnl_total"] / 12.0
-    agg.to_csv(OUT_DIR / "cluster_exit_pnl_summary.csv", index=False)
-    log("saved cluster_exit_pnl_summary.csv")
+    agg["pnl_monthly_avg"] = agg["pnl_total"] / n_months
+    return agg
 
-    # cluster × (K, side) ごとに最良 Exit
-    best_idx = agg.groupby(["cluster", "K", "side"], sort=False)["pnl_total"].idxmax()
-    df_best = agg.loc[best_idx].reset_index(drop=True)
-    df_best.to_csv(OUT_DIR / "cluster_best_exit.csv", index=False)
-    log("saved cluster_best_exit.csv")
+
+def main() -> None:
+    t0 = time.time()
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    log("=== Phase 4-b START (L-183 data snooping 解消) ===")
+
+    # === ロード: train + test 両期間 ===
+    log("=== load OHLC (train + test) ===")
+    ohlc_tr, opens_tr, highs_tr, lows_tr, closes_tr, ts_to_idx_tr = load_ohlc_period(
+        "2021-04-01 00:00:00", "2024-12-31 23:55:00"
+    )
+    ohlc_te, opens_te, highs_te, lows_te, closes_te, ts_to_idx_te = load_ohlc_period(
+        "2025-01-01 00:00:00", "2025-12-31 23:55:00"
+    )
+
+    log("=== load predictions / clusters / thresholds ===")
+    pred_train = pd.read_parquet(PREDICTIONS_TRAIN)
+    pred_test = pd.read_parquet(PREDICTIONS_TEST)
+    cluster_train = pd.read_parquet(CLUSTER_TRAIN)
+    cluster_test = pd.read_parquet(CLUSTER_TEST)
+    with open(THRESHOLDS) as f:
+        thresholds = json.load(f)
+    log(f"  pred_train: {pred_train.shape}, pred_test: {pred_test.shape}")
+    log(f"  cluster_train: {cluster_train.shape}, cluster_test: {cluster_test.shape}")
+
+    # === Step 1: train で entries + simulate + best 選定 (checklist 4b.1) ===
+    log("=== Step 1: train entries + simulate + best 選定 ===")
+    df_entries_train = extract_entries(pred_train, cluster_train, thresholds, ts_to_idx_tr)
+    df_entries_train.to_parquet(OUT_DIR / "entry_candidates_train.parquet")
+    log(f"saved entry_candidates_train.parquet ({len(df_entries_train):,} rows)")
+
+    sim_train = simulate_all_strategies(df_entries_train, highs_tr, lows_tr, closes_tr, label="train")
+    df_sim_train = pd.DataFrame(sim_train)
+    df_sim_train.to_parquet(OUT_DIR / "exit_simulations_train.parquet")
+    log("saved exit_simulations_train.parquet")
+
+    log("aggregating train ...")
+    n_months_train = (pd.Timestamp("2024-12-31") - pd.Timestamp("2021-04-01")).days / 30.44
+    agg_train = aggregate_results(df_sim_train, n_months_train)
+    agg_train.to_csv(OUT_DIR / "cluster_exit_pnl_summary_train.csv", index=False)
+    log("saved cluster_exit_pnl_summary_train.csv")
+
+    # cluster × (K, side) ごとに最良 Exit (train PnL のみで選定・L-183 #4)
+    best_idx = agg_train.groupby(["cluster", "K", "side"], sort=False)["pnl_total"].idxmax()
+    df_best = agg_train.loc[best_idx].reset_index(drop=True)
+    df_best.to_csv(OUT_DIR / "cluster_best_exit_FROM_TRAIN.csv", index=False)
+    log("saved cluster_best_exit_FROM_TRAIN.csv (train PnL で選定・checklist 4b.1)")
+
+    # === Step 2: test 2025 で entries + simulate + apply (best 選定なし・checklist 4b.2) ===
+    log("=== Step 2: test 2025 entries + simulate + apply (best 選定なし) ===")
+    df_entries_test = extract_entries(pred_test, cluster_test, thresholds, ts_to_idx_te)
+    df_entries_test.to_parquet(OUT_DIR / "entry_candidates.parquet")
+    log(f"saved entry_candidates.parquet ({len(df_entries_test):,} rows)")
+
+    sim_test = simulate_all_strategies(df_entries_test, highs_te, lows_te, closes_te, label="test")
+    df_sim_test = pd.DataFrame(sim_test)
+    df_sim_test.to_parquet(OUT_DIR / "exit_simulations.parquet")
+    log("saved exit_simulations.parquet (test 2025・Phase 5 入力)")
+
+    log("aggregating test 2025 ...")
+    agg_test = aggregate_results(df_sim_test, 12.0)
+    agg_test.to_csv(OUT_DIR / "cluster_exit_pnl_summary.csv", index=False)
+    log("saved cluster_exit_pnl_summary.csv (test 2025 集計・best 選定なし)")
 
     elapsed = time.time() - t0
     log(f"=== Phase 4-b END (elapsed={elapsed/60:.2f} min) ===")
 
-    write_summary(elapsed, df_sim, agg, df_best)
+    write_summary(elapsed, df_sim_test, agg_test, df_best)
 
 
 def write_summary(

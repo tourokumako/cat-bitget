@@ -39,6 +39,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import joblib
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
@@ -48,6 +49,7 @@ from sklearn.preprocessing import StandardScaler
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LABELS_DIR = REPO_ROOT / "results" / "priority_rebuild"
 P3B_DIR = LABELS_DIR / "ml_phase3_b"
+P4A_DIR = LABELS_DIR / "ml_phase4_a"  # artifact (joblib) ロード用
 P4B_DIR = LABELS_DIR / "ml_phase4_b"
 OUT_DIR = LABELS_DIR / "ml_phase6_b"
 
@@ -55,8 +57,10 @@ LABELS_TEST_2026Q1 = LABELS_DIR / "labels_mfe_mae_test_2026_q1.parquet"
 LABELS_TEST_2025 = LABELS_DIR / "labels_mfe_mae_test_2025.parquet"
 MODELS_DIR = P3B_DIR / "models"
 THRESHOLDS_PATH = P3B_DIR / "entry_thresholds.json"
-BEST_EXIT_PATH = P4B_DIR / "cluster_best_exit.csv"
-OHLC_CSV = REPO_ROOT / "data" / "BTCUSDT-5m-2021-04-01_03-31_1826d.csv"
+BEST_EXIT_PATH = P4B_DIR / "cluster_best_exit_FROM_TRAIN.csv"  # L-183 #4: train で選定された best
+OHLC_CSV = REPO_ROOT / "data" / "BTCUSDT-5m-bitget-2021-04-01_2026-03-31_5y.csv"
+assert "bitget" in str(OHLC_CSV), \
+    f"ML pipeline must use Bitget CSV, got: {OHLC_CSV}"
 
 LABEL_COLS = [
     f"{side}_{kind}_K{k}"
@@ -76,6 +80,10 @@ K_CLUSTERS = 4  # Phase 4-a 採用
 RANDOM_STATE = 42
 POSITION_CAPS = (5, 10, 20)
 THRESHOLD_PASS_MONTHLY = 1900.0
+
+# Phase 4-a artifact path (L-183 #13: train で fit したものを load + transform/predict のみ)
+SCALER_PATH = P4A_DIR / "scaler_train_2021_2024.joblib"
+KMEANS_PATH = P4A_DIR / f"kmeans_k{K_CLUSTERS}_train_2021_2024.joblib"
 
 TS = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 LOG_PATH = OUT_DIR / f"phase6b_log_{TS}.txt"
@@ -114,18 +122,20 @@ def build_cluster_features(pred: pd.DataFrame) -> pd.DataFrame:
     return feat.fillna(0.0).replace([np.inf, -np.inf], 0.0)
 
 
-def fit_kmeans_on_2025(scaler_class, k: int) -> tuple:
-    """test 2025 の features で StandardScaler + KMeans を fit。"""
-    log("  loading test 2025 for kmeans fit ...")
-    df25 = pd.read_parquet(LABELS_TEST_2025)
-    # 2025 の予測値: Phase 3-b の predictions_test2025.parquet を直接使う
-    pred25 = pd.read_parquet(P3B_DIR / "predictions_test2025.parquet")
-    feat25 = build_cluster_features(pred25)
-    scaler = scaler_class()
-    Xs = scaler.fit_transform(feat25.values)
-    km = KMeans(n_clusters=k, random_state=RANDOM_STATE, n_init=10)
-    km.fit(Xs)
-    log(f"  kmeans fit on 2025 done (k={k} inertia={km.inertia_:.0f})")
+def load_phase4a_artifacts() -> tuple:
+    """Phase 4-a の train で fit した scaler + km を joblib ロード (L-183 #13 解消)
+
+    旧実装 (fit_kmeans_on_2025): test 2025 で再 fit → out-of-sample 評価が偽 (L-183 #13)
+    新実装: train fit 済みの joblib をロード → 2026 Q1 評価は transform/predict のみ
+    artifact 名 "test" 文字列禁止 (checklist 4a.4 / 7c.9 先行実装)
+    """
+    for p in [SCALER_PATH, KMEANS_PATH]:
+        assert "test" not in p.name, f"ABORT: test-named artifact detected: {p}"
+    log(f"  loading scaler: {SCALER_PATH.name}")
+    scaler = joblib.load(SCALER_PATH)
+    log(f"  loading kmeans: {KMEANS_PATH.name}")
+    km = joblib.load(KMEANS_PATH)
+    log(f"  loaded train-fit artifacts (kmeans k={km.n_clusters} inertia={km.inertia_:.0f})")
     return scaler, km
 
 
@@ -231,9 +241,9 @@ def main() -> None:
     pred26.to_parquet(OUT_DIR / "predictions_2026q1.parquet")
     log(f"saved predictions_2026q1.parquet ({pred26.shape})")
 
-    # 3. KMeans (test 2025 で fit)
-    log("fitting kmeans on test 2025 features ...")
-    scaler, km = fit_kmeans_on_2025(StandardScaler, K_CLUSTERS)
+    # 3. Phase 4-a artifact (train fit) をロード・2026 Q1 に apply のみ (L-183 #13)
+    log("loading Phase 4-a artifacts (train fit) ...")
+    scaler, km = load_phase4a_artifacts()
     feat26 = build_cluster_features(pred26)
     Xs26 = scaler.transform(feat26.values)
     clusters_26 = km.predict(Xs26)

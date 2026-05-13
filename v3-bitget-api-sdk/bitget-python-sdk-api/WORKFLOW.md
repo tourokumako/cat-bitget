@@ -242,7 +242,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-13 改訂3・leak 修正完了 + archive 移動完了 → Phase 0 ラベル再生成待ち）
+## 🔴 現在のフェーズ（2026-05-13 改訂4・Phase 0 leak フリー再生成完了 + 並行タスク 1-5 改修完了 → Phase 1 LightGBM 学習着手待ち）
 
 > # ⚠️ **leak 修正完了 / Phase 1〜7-a 数値は依然として無効** ⚠
 >
@@ -350,9 +350,55 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-13 改訂19・leak 修正完了 → Phase 0 ラベル再生成から再開待ち）
+## 🔴 次のタスク（2026-05-13 改訂20・Phase 0 完了 + 並行タスク 1-5 改修完了 → Phase 1 LightGBM 学習着手待ち）
 
-**fractal j±2 leak 修正完了 (コミット `3f64543`)。次は leak 由来成果物の archive 移動 → Phase 0 ラベル再生成 → Phase 1〜7-a 順次再学習。**
+**Phase 0 leak フリーラベル生成完了。並行タスク 1-5 (Phase 1〜7-a 改修) 完了。次は Phase 1 LightGBM × 16 ラベル 学習 (1 ラベル目で leak チェック pause)。**
+
+### Phase 0 達成サマリー (✅ 2026-05-13 leak フリー完了)
+
+| ラベル parquet | 行数 | サイズ | 期間 |
+|---|---|---|---|
+| labels_mfe_mae_train_2021_2024.parquet | 394,753 | 1.02 GB | 2021-04-01 07:55:00 〜 2024-12-31 23:55:00 |
+| labels_mfe_mae_test_2025.parquet | 105,120 | 0.30 GB | 2025-01-01 00:00:00 〜 2025-12-31 23:55:00 |
+| labels_mfe_mae_test_2026_q1.parquet | 25,823 | 0.07 GB | 2026-01-01 00:00:00 〜 2026-03-31 15:50:00 |
+
+- 指標列 1,432 完全一致 / fractal 修正後・3 期間とも 5min ギャップで完全分離
+- 入力 CSV: `data/BTCUSDT-5m-bitget-2021-04-01_2026-03-31_5y.csv` (Bitget USDT-FUTURES history-candles から取得・525,887 rows)
+- 旧 Binance CSV は data/ に残置 (凍結 regime 研究 25 ファイルの実績保持)
+
+### 並行タスク 1-5 改修完了内容 (commit 予定)
+
+| タスク | ファイル | 内容 | 解消 |
+|---|---|---|---|
+| 1 | run_lgbm_phase1.py | 1 ラベル目完了直後 feature_importance top20 review + 2 段階 gate (leak hit / ALLOW gate) | L-179 物理化 |
+| 2 | run_lgbm_phase1.py / run_lgbm_phase3_b.py | train 期間 predictions_train_2021_2024.parquet 追加保存 | Phase 4-a 入力 |
+| 2 | run_phase4_a.py | fit/apply 分離 (train で fit, test は transform/predict のみ) + artifact 名 train_2021_2024 | L-183 #3 |
+| 2 | run_phase4_b.py | cluster_best_exit 選定を train PnL で idxmax + TIME_EXIT_GRID K×2 削除 + test apply 分離 | L-183 #4 |
+| 3 | run_phase5.py | BEST_PATH を cluster_best_exit_FROM_TRAIN.csv に変更 | パス整合 |
+| 3 | run_phase5_c.py | sort_values を entry_ts 昇順 + 同 timestamp 内 pred_ratio 降順 | L-182 |
+| 4 | run_phase6_b.py | scaler/km の再 fit 削除 → Phase 4-a artifact (joblib) load + "test" 文字列禁止 assertion + OHLC_CSV を Bitget 新 CSV に切替 | L-183 #13 |
+| 5 | save_ml_artifacts.py | Phase 4-a artifact コピー方式に転換 + 命名 assertion | L-183 #13 後段 |
+| 5 | verify_ml_inference.py | artifact パス → train_2021_2024 + "test" 文字列禁止 assertion + 比較先を cluster_labels_test2025_k4 に修正 | L-183 検証 |
+| 補助 | .claude/rules/phase_compliance_checklist.md | Phase 0/1/4-a/4-b/5/5-d/5-e/6-b/7-c のチェックリスト + 暫定値テーブル | 正本化 |
+| 補助 | scripts/data/download_bitget_5y.py | Bitget USDT-FUTURES 5y データ取得 + 整合性 verify | データ |
+| 補助 | data/BTCUSDT-5m-bitget-2021-04-01_2026-03-31_5y.csv | Bitget 5y CSV (525,887 rows) | データ |
+
+### 次セッション最初にやること (順番・Phase 1 着手)
+
+1. WORKFLOW.md (このファイル) §🔴 現在のフェーズ + §次のタスク を再読
+2. [.claude/memory/lessons_active.md](.claude/memory/lessons_active.md) L-179 (leak 4 点) / L-182 (期間全体ソート leak) / L-183 (data snooping) を重点再読
+3. [.claude/rules/phase_compliance_checklist.md](.claude/rules/phase_compliance_checklist.md) Phase 1 セクションを再読
+4. **Bitget Maker fee 実値確認** (まこさん側依頼中・確定後 ML pipeline 全置換)
+5. **Phase 1 着手**: `python3 scripts/priority_rebuild/run_lgbm_phase1.py`
+   - 1 ラベル目完了で自動停止 (leak pause)
+   - feature_importance top20 を review
+   - ブラックリスト (`dist_to_fib_v2_*` / `resistance_distance_*` / `support_distance_*` / `nearest_level_*`) が含まれてない確認
+   - 問題なければ `ALLOW_PHASE1_CONTINUE=1 python3 scripts/priority_rebuild/run_lgbm_phase1.py` で残り 15 ラベル続行
+6. 動的 verify (持ち越し):
+   - Phase 4-a 実行後 `ls results/priority_rebuild/ml_phase4_a/*.joblib` (期待: `*train_2021_2024*` のみ・`*test*` 不在)
+   - Phase 4-b 実行後 `cluster_best_exit_FROM_TRAIN.csv` の (cluster, K, side, exit_type) unique 列挙
+   - Phase 5 実行直前/直後の merge 行数 + 突合
+7. Phase 2 → 7-a を順次再実行
 
 ### 達成サマリー（⛔ leak 由来・全数値無効・2026-05-13）
 
@@ -376,18 +422,9 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 | Phase 6-b (本テスト) | ✅→⛔ | 全 cap で 3/3・仮テストの 65-69% 維持 |
 | Phase 7-a (Bot 統合準備) | ✅→⛔ | 推論再現性 deterministic (artifact 自体は leak 由来) |
 
-### 次セッション最初にやること（順番・leak フリー再学習開始）
+### 旧「次セッション最初にやること」(leak フリー再学習開始版) は完了
 
-1. このファイル §🔴 警告ブロックを再読
-2. [feedback_ml_leak_mandatory_check.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_ml_leak_mandatory_check.md) (L-179) で leak 4 点チェック手順を確認
-3. [feedback_doc_verify_before_quote.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_doc_verify_before_quote.md) (L-180) でドキュメント引用前 verify を確認
-4. [feedback_design_transition_grep_sweep.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/feedback_design_transition_grep_sweep.md) (L-181・**命令**) で旧記述 grep sweep を確認
-5. [results/priority_rebuild/leak_incident_20260513.md](results/priority_rebuild/leak_incident_20260513.md) で全 14 件のミス記録 + 修正完了状況を読む
-6. ✅ leak 由来成果物を `archive/leak_invalid_20260513/` へ移動完了 (commit f1948e4)
-7. **【次タスク】** `build_labels.py` で 1,432 指標 × 5y × 5m データを再生成 (**Phase 0**)
-8. Phase 1 LightGBM × 16 ラベル を再学習 → **1 ラベル目完了直後に `feature_importance_top20` を即時 review (L-179 必須)**
-   - fractal ベース列 (dist_to_fib_v2_*, resistance_distance_*, support_distance_*, nearest_level_*) が依然 top にあれば leak 残存 → 即停止
-9. Phase 2 → 7-a を順次再実行 (各 Phase 完了時点で feature_importance / 数値妥当性を review)
+→ Phase 0 完了 + 並行タスク 1-5 改修完了。新版 §「次セッション最初にやること (順番・Phase 1 着手)」を上記参照。
 
 ### Phase 7-b 以降（leak フリー再学習で 6-b 合格後・参考）
 

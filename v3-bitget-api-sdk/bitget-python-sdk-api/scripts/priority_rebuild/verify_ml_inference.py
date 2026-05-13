@@ -8,15 +8,15 @@ Phase 3-b/4-a の出力と完全一致するか確認する。
 検証項目:
   1. LightGBM 16 モデルを ml_phase3_b/models/ からロード
   2. test 2025 ラベル parquet で予測 → predictions_test2025.parquet と一致
-  3. scaler/kmeans アーティファクトで cluster 判定 → cluster_labels_k4.parquet と一致
+  3. scaler/kmeans (train fit・L-183 #13 解消) で cluster 判定 → cluster_labels_test2025_k4 と一致
   4. 1 bar ずつ predict と batch predict が同一結果か (LightGBM の deterministic 確認)
 
 入力:
   results/priority_rebuild/labels_mfe_mae_test_2025.parquet
   results/priority_rebuild/ml_phase3_b/models/lgbm_<label>.txt × 16
   results/priority_rebuild/ml_phase3_b/predictions_test2025.parquet
-  results/priority_rebuild/ml_phase4_a/cluster_labels_k4.parquet
-  results/priority_rebuild/ml_artifacts/{scaler,kmeans,feature_columns}.{joblib,json}
+  results/priority_rebuild/ml_phase4_a/cluster_labels_test2025_k4.parquet
+  results/priority_rebuild/ml_artifacts/scaler_train_2021_2024.joblib + kmeans_k4_train_2021_2024.joblib + feature_columns.json
 
 出力 (stdout のみ・パス/数値の検証結果):
   各検証項目の MATCH / MISMATCH レポート
@@ -103,9 +103,15 @@ def main() -> None:
         for label, d in sorted(max_diffs.items(), key=lambda x: -x[1])[:5]:
             print(f"     {label}: {d:.4e}")
 
-    print("\n[5] cluster prediction via saved scaler + kmeans ...")
-    scaler = joblib.load(ARTIFACTS / "scaler_test2025.joblib")
-    km = joblib.load(ARTIFACTS / "kmeans_k4_test2025.joblib")
+    print("\n[5] cluster prediction via saved scaler + kmeans (train fit / L-183 #13) ...")
+    SCALER_PATH = ARTIFACTS / "scaler_train_2021_2024.joblib"
+    KMEANS_PATH = ARTIFACTS / "kmeans_k4_train_2021_2024.joblib"
+    # assertion: artifact 名に "test" 文字列禁止 (checklist 7c.9 先行実装)
+    for p in [SCALER_PATH, KMEANS_PATH]:
+        assert "test" not in p.name, f"ABORT: test-named artifact: {p}"
+    print(f"  loading: {SCALER_PATH.name} + {KMEANS_PATH.name}")
+    scaler = joblib.load(SCALER_PATH)
+    km = joblib.load(KMEANS_PATH)
     with open(ARTIFACTS / "feature_columns.json") as f:
         feature_cols_26 = json.load(f)
     feat_26 = build_cluster_features(pred_new)
@@ -113,10 +119,11 @@ def main() -> None:
     Xs = scaler.transform(feat_26.values)
     clusters_new = km.predict(Xs)
 
-    clusters_p4a = pd.read_parquet(P4A_DIR / "cluster_labels_k4.parquet")["cluster"].values
+    # 比較対象: Phase 4-a の cluster_labels_test2025_k4.parquet (train fit を test に apply した結果)
+    clusters_p4a = pd.read_parquet(P4A_DIR / "cluster_labels_test2025_k4.parquet")["cluster"].values
     match = (clusters_new == clusters_p4a).all()
     if match:
-        print(f"  ✅ cluster MATCH (n={len(clusters_new)}, all equal)")
+        print(f"  ✅ cluster MATCH vs cluster_labels_test2025_k4 (n={len(clusters_new)}, all equal)")
     else:
         diff = (clusters_new != clusters_p4a).sum()
         print(f"  ❌ cluster MISMATCH ({diff}/{len(clusters_new)} differ)")

@@ -182,12 +182,14 @@ def main() -> None:
 
     X_train_all = df_train_full.iloc[:n_train][feature_cols]
     X_valid_all = df_train_full.iloc[n_train:][feature_cols]
+    X_train_full = df_train_full[feature_cols]  # Phase 4-a 用 (train + valid 全期間・L-183)
     X_test = df_test[feature_cols]
 
     training_curves: list[tuple] = []
     importance_records: list[tuple] = []
     pred_test = pd.DataFrame(index=df_test.index)
     pred_valid = pd.DataFrame(index=X_valid_all.index)
+    pred_train_all = pd.DataFrame(index=df_train_full.index)  # Phase 4-a 用
 
     for i, label in enumerate(LABEL_COLS, 1):
         t_label = time.time()
@@ -222,6 +224,7 @@ def main() -> None:
         # 予測
         pred_valid[label] = model.predict(X_valid_all)
         pred_test[label] = model.predict(X_test)
+        pred_train_all[label] = model.predict(X_train_full)  # Phase 4-a 用 (L-183 data snooping 解消)
         std_t = pred_test[label].std()
         log(f"  test pred: mean={pred_test[label].mean():.4f} std={std_t:.4f}")
         if std_t < 1e-9:
@@ -243,6 +246,13 @@ def main() -> None:
     pred_out["close"] = df_test["close"].values
     pred_out.to_parquet(OUT_DIR / "predictions_test2025.parquet")
     log("saved predictions_test2025.parquet")
+
+    # Phase 4-a 用: train 2021-04〜2024-12 の予測値 (L-183 data snooping 解消)
+    log("=== predict on train 2021-04〜2024-12 (Phase 4-a/4-b 用) ===")
+    pred_train_out = pred_train_all.copy()
+    pred_train_out["close"] = df_train_full["close"].values
+    pred_train_out.to_parquet(OUT_DIR / "predictions_train_2021_2024.parquet")
+    log("saved predictions_train_2021_2024.parquet")
 
     # 予測値ヒストグラム
     fig, axes = plt.subplots(4, 4, figsize=(20, 16))

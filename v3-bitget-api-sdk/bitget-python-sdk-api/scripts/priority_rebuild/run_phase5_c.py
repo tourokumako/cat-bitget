@@ -86,15 +86,19 @@ def join_trades_with_predictions(
 
 
 def replay_quality_priority(df: pd.DataFrame, cap: int) -> pd.DataFrame:
-    """質駆動採用: predicted ratio 降順で、Entry 時点 active < cap なら採用。
+    """時系列順採用 + 同 timestamp 内 pred_ratio 優先 (L-182 fix)
 
-    高速化: 5m bar timeline 上に active カウント numpy 配列を持ち、
-    各 entry で entry_bar 時点の active を O(1) で参照、採用時は範囲 increment。
-    全体 O(N × K_avg) → 48k × ~平均100bar = 5M op (~数秒)。
+    旧実装: 期間全体 pred_ratio 降順ソート → ループが時系列順でなく、未来 entry が
+            active に紛れて過去の判断を覆す = 未来情報 leak 同等のバグ。
+    新実装: entry_ts 昇順 (= 時系列順) + 同 timestamp 内のみ pred_ratio 降順 (優先度)。
+            active カウントは過去採用 entry のみで構成され、未来情報を参照しない。
+
+    高速化: 5m bar timeline 上に active カウント numpy 配列を持ち、O(N × K_avg)。
     """
     df = df.copy()
     df = df.dropna(subset=["pred_ratio"]).reset_index(drop=True)
-    df = df.sort_values("pred_ratio", ascending=False).reset_index(drop=True)
+    # entry_ts 昇順 (時系列) + 同 timestamp 内 pred_ratio 降順 (同時刻複数候補時の優先度)
+    df = df.sort_values(["entry_ts", "pred_ratio"], ascending=[True, False]).reset_index(drop=True)
 
     base_ts = pd.Timestamp(df["entry_ts"].min())
     df["entry_bar"] = ((df["entry_ts"] - base_ts).dt.total_seconds() / 300).astype(int)
@@ -235,8 +239,8 @@ def write_summary(elapsed: float, df_m25: pd.DataFrame, df_m26: pd.DataFrame) ->
 
     md.append("\n## 注記\n\n")
     md.append("- FIFO 採用との比較は monthly_pnl.csv (Phase 5-b/6-b) と並べて確認\n")
-    md.append("- 質駆動ルール: 「現実運用で同 timestamp に複数候補がある場合の優先度」を明示化\n")
-    md.append("- 異 timestamp の Entry を入れ替えるロジックは含まない (現実運用上の制約)\n")
+    md.append("- 採用順序: entry_ts 昇順 (時系列) + 同 timestamp 内のみ pred_ratio 降順 (L-182 fix)\n")
+    md.append("- 過去の判断を未来情報で覆さない実装 (旧版の期間全体ソートは leak バグだった)\n")
 
     with open(OUT_DIR / "summary.md", "w") as f:
         f.write("".join(md))

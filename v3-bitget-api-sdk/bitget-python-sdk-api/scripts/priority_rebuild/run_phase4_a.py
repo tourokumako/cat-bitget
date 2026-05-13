@@ -45,6 +45,7 @@ import numpy as np
 import pandas as pd
 
 matplotlib.use("Agg")
+import joblib
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
@@ -55,7 +56,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = REPO_ROOT / "results" / "priority_rebuild" / "ml_phase3_b"
 OUT_DIR = REPO_ROOT / "results" / "priority_rebuild" / "ml_phase4_a"
 
-PREDICTIONS = SRC_DIR / "predictions_test2025.parquet"
+PREDICTIONS_TRAIN = SRC_DIR / "predictions_train_2021_2024.parquet"  # fit 用 (L-183 / checklist 4a.1)
+PREDICTIONS_TEST = SRC_DIR / "predictions_test2025.parquet"          # apply 用 (transform/predict のみ)
 THRESHOLDS = SRC_DIR / "entry_thresholds.json"
 
 LABEL_COLS = [
@@ -193,75 +195,93 @@ def main() -> None:
     log(f"src: {SRC_DIR}")
     log(f"out: {OUT_DIR}")
 
-    pred = pd.read_parquet(PREDICTIONS)
-    log(f"predictions loaded: {pred.shape}")
+    # L-183 data snooping 解消: train で fit, test は transform/predict のみ
+    log("=== load predictions (train fit / test apply) ===")
+    pred_train = pd.read_parquet(PREDICTIONS_TRAIN)
+    pred_test = pd.read_parquet(PREDICTIONS_TEST)
+    log(f"  pred_train: {pred_train.shape}  pred_test: {pred_test.shape}")
     with open(THRESHOLDS) as f:
         thresholds = json.load(f)
     log(f"thresholds loaded: K windows={list(thresholds.keys())}")
 
-    feat = build_features(pred)
-    log(f"features: {feat.shape} cols={feat.columns.tolist()[:5]}...")
-    assert feat.shape[1] == 26, f"expected 26 features, got {feat.shape[1]}"
+    log("=== build features ===")
+    feat_train = build_features(pred_train).fillna(0.0).replace([np.inf, -np.inf], 0.0)
+    feat_test = build_features(pred_test).fillna(0.0).replace([np.inf, -np.inf], 0.0)
+    log(f"  feat_train: {feat_train.shape}  feat_test: {feat_test.shape}")
+    assert feat_train.shape[1] == 26, f"expected 26 features (train), got {feat_train.shape[1]}"
+    assert feat_test.shape[1] == 26, f"expected 26 features (test), got {feat_test.shape[1]}"
 
-    # NaN チェック (MFE/MAE 比は分母 0 の可能性) → 大量にあれば log
-    nan_cnt = feat.isna().sum().sum()
-    if nan_cnt > 0:
-        log(f"  ⚠️ NaN count in features: {nan_cnt} (rows with any NaN: {feat.isna().any(axis=1).sum()})")
-    feat = feat.fillna(0.0)  # MFE/MAE 比の inf は内部で別途処理されてるはず
-    feat = feat.replace([np.inf, -np.inf], 0.0)
-
-    # 標準化
+    # 標準化: train で fit, test は transform のみ (L-183)
+    log("=== scaler (fit on train・apply to test) ===")
     scaler = StandardScaler()
-    Xs = scaler.fit_transform(feat.values)
-    log(f"scaled: mean~{Xs.mean():.3e} std~{Xs.std():.3f}")
+    Xs_train = scaler.fit_transform(feat_train.values)
+    Xs_test = scaler.transform(feat_test.values)
+    log(f"  Xs_train: mean~{Xs_train.mean():.3e} std~{Xs_train.std():.3f}")
+    log(f"  Xs_test:  mean~{Xs_test.mean():.3e} std~{Xs_test.std():.3f}")
 
-    feat_out = feat.copy()
-    feat_out["close"] = pred["close"].values
+    # artifact 保存 (checklist 4a.4: "test" 文字列禁止)
+    joblib.dump(scaler, OUT_DIR / "scaler_train_2021_2024.joblib")
+    log("saved scaler_train_2021_2024.joblib")
+
+    # features.parquet は train 版 (Phase 4-b で best_exit 選定に使う)
+    feat_out = feat_train.copy()
+    feat_out["close"] = pred_train["close"].values
     feat_out.to_parquet(OUT_DIR / "features.parquet")
-    log("saved features.parquet")
+    log("saved features.parquet (train period)")
 
-    # K-means × k=4/6/8
-    clusters_dict: dict[int, np.ndarray] = {}
+    # K-means × k=4/6/8: train で fit, test は predict のみ
+    clusters_train_dict: dict[int, np.ndarray] = {}
+    clusters_test_dict: dict[int, np.ndarray] = {}
     silhouette_records = []
     for k in K_CLUSTERS_LIST:
-        log(f"--- k-means k={k} ---")
+        log(f"--- k-means k={k} (fit on train) ---")
         t_k = time.time()
         km = KMeans(n_clusters=k, random_state=RANDOM_STATE, n_init=10)
-        clusters = km.fit_predict(Xs)
-        clusters_dict[k] = clusters
+        clusters_train = km.fit_predict(Xs_train)
+        clusters_test = km.predict(Xs_test)
+        clusters_train_dict[k] = clusters_train
+        clusters_test_dict[k] = clusters_test
         log(f"  inertia={km.inertia_:.0f} elapsed={time.time()-t_k:.1f}s")
 
-        # シルエットスコア (サンプル)
+        # シルエットスコア (train サンプル)
         rng = np.random.default_rng(RANDOM_STATE)
-        idx = rng.choice(len(Xs), min(SILHOUETTE_SAMPLE_N, len(Xs)), replace=False)
-        sil = silhouette_score(Xs[idx], clusters[idx])
+        idx = rng.choice(len(Xs_train), min(SILHOUETTE_SAMPLE_N, len(Xs_train)), replace=False)
+        sil = silhouette_score(Xs_train[idx], clusters_train[idx])
         silhouette_records.append({"k": k, "silhouette": float(sil), "inertia": float(km.inertia_)})
-        log(f"  silhouette (n={SILHOUETTE_SAMPLE_N})={sil:.4f}")
+        log(f"  silhouette train (n={SILHOUETTE_SAMPLE_N})={sil:.4f}")
 
-        # 保存
-        df_cl = pd.DataFrame({"cluster": clusters}, index=pred.index)
-        df_cl.to_parquet(OUT_DIR / f"cluster_labels_k{k}.parquet")
-        log(f"  saved cluster_labels_k{k}.parquet")
+        # artifact 保存 (checklist 4a.4: "test" 名禁止)
+        joblib.dump(km, OUT_DIR / f"kmeans_k{k}_train_2021_2024.joblib")
+        log(f"  saved kmeans_k{k}_train_2021_2024.joblib")
+
+        # cluster labels: train + test 両方保存
+        pd.DataFrame({"cluster": clusters_train}, index=pred_train.index).to_parquet(
+            OUT_DIR / f"cluster_labels_train_k{k}.parquet"
+        )
+        pd.DataFrame({"cluster": clusters_test}, index=pred_test.index).to_parquet(
+            OUT_DIR / f"cluster_labels_test2025_k{k}.parquet"
+        )
+        log(f"  saved cluster_labels_train_k{k}.parquet + cluster_labels_test2025_k{k}.parquet")
 
     pd.DataFrame(silhouette_records).to_csv(OUT_DIR / "silhouette_scores.csv", index=False)
     log("saved silhouette_scores.csv")
 
-    # 各クラスタの統計
+    # 各クラスタの統計 (train ベース)
     all_stats = []
-    for k, clusters in clusters_dict.items():
-        s = stats_per_cluster(feat, clusters, k, thresholds)
+    for k, clusters in clusters_train_dict.items():
+        s = stats_per_cluster(feat_train, clusters, k, thresholds)
         all_stats.append(s)
     df_stats = pd.concat(all_stats, ignore_index=True)
     df_stats.to_csv(OUT_DIR / "cluster_stats.csv", index=False)
     log("saved cluster_stats.csv")
 
-    # PCA 2D 可視化
-    plot_pca(Xs, clusters_dict, OUT_DIR / "cluster_pca_viz.png")
+    # PCA 2D 可視化 (train ベース)
+    plot_pca(Xs_train, clusters_train_dict, OUT_DIR / "cluster_pca_viz.png")
     log("saved cluster_pca_viz.png")
 
-    # 各 k のレーダーチャート
-    for k, clusters in clusters_dict.items():
-        plot_radar(feat, clusters, k, OUT_DIR / f"cluster_radar_k{k}.png")
+    # 各 k のレーダーチャート (train ベース)
+    for k, clusters in clusters_train_dict.items():
+        plot_radar(feat_train, clusters, k, OUT_DIR / f"cluster_radar_k{k}.png")
         log(f"saved cluster_radar_k{k}.png")
 
     elapsed = time.time() - t0
