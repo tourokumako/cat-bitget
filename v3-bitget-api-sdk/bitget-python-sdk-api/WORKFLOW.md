@@ -242,7 +242,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-13 改訂4・Phase 0 leak フリー再生成完了 + 並行タスク 1-5 改修完了 → Phase 1 LightGBM 学習着手待ち）
+## 🔴 現在のフェーズ（2026-05-13 改訂5・Phase 0 完了 + スペック正本化 + run_lgbm_phase1.py ハイパラ更新済 → Phase 1 Step 0-6 dry-run 待ち）
 
 > # ⚠️ **leak 修正完了 / Phase 1〜7-a 数値は依然として無効** ⚠
 >
@@ -350,9 +350,41 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-13 改訂20・Phase 0 完了 + 並行タスク 1-5 改修完了 → Phase 1 LightGBM 学習着手待ち）
+## 🔴 次のタスク（2026-05-13 改訂21・Phase 0 完了 + スペック正本化 + run_lgbm_phase1.py 更新 + Step 0-1〜0-5 完了 → Step 0-6 dry-run から再開）
 
-**Phase 0 leak フリーラベル生成完了。並行タスク 1-5 (Phase 1〜7-a 改修) 完了。次は Phase 1 LightGBM × 16 ラベル 学習 (1 ラベル目で leak チェック pause)。**
+**Step 0-6 dry-run (1 ラベル目学習 + leak pause 確認) が次セッション最初のタスク。run_lgbm_phase1.py はハイパラ更新済み・label_distribution_stats.json 生成済み。**
+
+### このセッションで完了した事前準備 (2026-05-13)
+
+| 項目 | 内容 |
+|---|---|
+| exchange_spec.md | Bitget USDT-FUTURES BTCUSDT スペック正本化 (Maker 0.00014 確定) |
+| phase_compliance_checklist.md | §未確定項目 Maker fee 行を確定値に更新 / §5.4 更新 / §5.6 削除 |
+| CLAUDE.md | 必読リストに exchange_spec.md 追加 |
+| WORKFLOW.md | Maker fee 確認ステップを削除 (確定済) |
+| run_lgbm_phase1.py | ハイパラ更新 (下記) + per-label iter log + early save |
+| label_distribution_stats.json | 16ラベル分布算出 → results/priority_rebuild/ml_phase1/ 保存済 |
+| Step 0-1〜0-5 | 全完了 (引用/整合性 verify/scan_leak/checklist更新/分布算出) |
+
+#### run_lgbm_phase1.py 更新内容 (2026-05-13)
+
+| パラメータ | 旧値 | 新値 |
+|---|---|---|
+| learning_rate | 0.05 | 0.02 |
+| n_estimators | 2000 | 5000 |
+| n_jobs | -1 | 1 (再現性・懸念10) |
+| min_data_in_leaf | (なし) | 100 |
+| feature_fraction | (なし) | 0.7 |
+| bagging_fraction | (なし) | 0.8 |
+| bagging_freq | (なし) | 5 |
+| reg_lambda | (なし) | 0.1 |
+| bagging_seed | (なし) | 42 |
+| data_random_seed | (なし) | 42 |
+| feature_fraction_seed | (なし) | 42 |
+
+追加機能:
+- per-label `lgbm_{label}_iteration_log.csv` 保存 (bit-exact 再現性確認用)
+- 1 ラベル目完了時に `feature_importance_top20.csv` を early save (dry-run 証跡用)
 
 ### Phase 0 達成サマリー (✅ 2026-05-13 leak フリー完了)
 
@@ -383,22 +415,35 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 | 補助 | scripts/data/download_bitget_5y.py | Bitget USDT-FUTURES 5y データ取得 + 整合性 verify | データ |
 | 補助 | data/BTCUSDT-5m-bitget-2021-04-01_2026-03-31_5y.csv | Bitget 5y CSV (525,887 rows) | データ |
 
-### 次セッション最初にやること (順番・Phase 1 着手)
+### 次セッション最初にやること (順番・Step 0-6 dry-run から再開)
 
-1. WORKFLOW.md (このファイル) §🔴 現在のフェーズ + §次のタスク を再読
-2. [.claude/memory/lessons_active.md](.claude/memory/lessons_active.md) L-179 (leak 4 点) / L-182 (期間全体ソート leak) / L-183 (data snooping) を重点再読
+> **事前準備は完了済み。Step 0-6 から始める。**
+> `label_distribution_stats.json` は `results/priority_rebuild/ml_phase1/` に存在する。
+> `run_lgbm_phase1.py` は更新済み (上記ハイパラ + iter log + early save)。
+
+1. WORKFLOW.md §🔴 現在のフェーズ + §次のタスク を再読
+2. [.claude/memory/lessons_active.md](.claude/memory/lessons_active.md) L-179/L-182/L-183 を重点再読
 3. [.claude/rules/phase_compliance_checklist.md](.claude/rules/phase_compliance_checklist.md) Phase 1 セクションを再読
-4. **Bitget Maker fee 実値確認** (まこさん側依頼中・確定後 ML pipeline 全置換)
-5. **Phase 1 着手**: `python3 scripts/priority_rebuild/run_lgbm_phase1.py`
+4. **Step 0-6 dry-run** (= Phase 1 Step A 兼用):
+   ```bash
+   echo "=====🚀 Phase 1 START $(date) =====" && \
+   cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api && \
+   python3 scripts/priority_rebuild/run_lgbm_phase1.py 2>&1 | tee logs/phase1_dry_run_$(date +%Y%m%d_%H%M%S).log
+   ```
    - 1 ラベル目完了で自動停止 (leak pause)
-   - feature_importance top20 を review
-   - ブラックリスト (`dist_to_fib_v2_*` / `resistance_distance_*` / `support_distance_*` / `nearest_level_*`) が含まれてない確認
-   - 問題なければ `ALLOW_PHASE1_CONTINUE=1 python3 scripts/priority_rebuild/run_lgbm_phase1.py` で残り 15 ラベル続行
-6. 動的 verify (持ち越し):
+   - `feature_importance_top20.csv` が results/priority_rebuild/ml_phase1/ に early save される
+   - **証跡 Step A a〜h を全件チャットに出力する (WORKFLOW.md 規定)**
+   - ブラックリスト top50 確認 / RMSE 動的閾値確認 (label_distribution_stats.json 参照) / top10 意味解説
+5. 問題なければ **Step B (残り 15 ラベル)**:
+   ```bash
+   ALLOW_PHASE1_CONTINUE=1 python3 scripts/priority_rebuild/run_lgbm_phase1.py 2>&1 | tee logs/phase1_step_b_$(date +%Y%m%d_%H%M%S).log
+   ```
+6. Step B 完了後の異常検査 (16ラベル × RMSE/乖離率表) → Phase 2 へ
+7. 動的 verify (持ち越し):
    - Phase 4-a 実行後 `ls results/priority_rebuild/ml_phase4_a/*.joblib` (期待: `*train_2021_2024*` のみ・`*test*` 不在)
    - Phase 4-b 実行後 `cluster_best_exit_FROM_TRAIN.csv` の (cluster, K, side, exit_type) unique 列挙
    - Phase 5 実行直前/直後の merge 行数 + 突合
-7. Phase 2 → 7-a を順次再実行
+8. Phase 2 → 7-a を順次再実行
 
 ### 達成サマリー（⛔ leak 由来・全数値無効・2026-05-13）
 

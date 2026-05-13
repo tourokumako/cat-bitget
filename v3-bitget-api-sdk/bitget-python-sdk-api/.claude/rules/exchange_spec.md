@@ -1,5 +1,49 @@
 # exchange_spec.md — Bitget 発注仕様・安全基準
 
+## Bitget USDT-FUTURES BTCUSDT スペック (一次ソース・2026-05-13確定)
+
+### 手数料
+
+| 種別 | 適用値 | 標準値 | 備考 |
+|---|---|---|---|
+| Maker fee | 0.014% (0.00014) | 0.02% (0.0002) | BGB割引等適用後・剥落で標準復帰 |
+| Taker fee | 0.042% (0.00042) | 0.06% (0.0006) | 同上 |
+
+### 注文単位
+
+| 項目 | 値 |
+|---|---|
+| 最小注文サイズ (quantityMultiplier) | 0.0001 BTC |
+| 最小注文額 (minOrderAmount) | 5 USDT |
+| Tick size (priceMultiplier) | 0.1 USDT |
+
+### Funding
+
+| 項目 | 値 |
+|---|---|
+| 精算間隔 (fundInterval) | 8 時間 |
+| 精算時刻 (UTC) | 00:00 / 08:00 / 16:00 |
+| 精算時刻 (JST) | 09:00 / 17:00 / 翌01:00 |
+
+### 制限・運用
+
+| 項目 | 値 |
+|---|---|
+| マージンモード | isolated (hedge_mode 維持) |
+| 最大レバレッジ | 125x (v2 API) |
+| 最大同時保有数 (maxPositionNum) | 200 |
+| 定期メンテナンス | 火/水/木 05:00-08:00 UTC |
+
+> ⚠️ メンテナンス時間帯はリトライ機構必須 (run_once_ml.py / Phase 7-c 要件)
+
+### 出典
+
+- 公式 API: `GET /api/v2/mix/market/contracts?productType=usdt-futures&symbol=BTCUSDT`
+- 公式 doc: Bitget Beginner's Guide — Understanding Futures Fees / Funding Rate
+- 適用値: まこさん発注画面確認 (2026-05-13)
+
+---
+
 ## 安全装置（2重ガード）
 
 | 装置 | 場所 | 制御者 |

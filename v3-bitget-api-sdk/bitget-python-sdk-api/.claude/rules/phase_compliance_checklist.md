@@ -7,9 +7,9 @@
 
 ## 未確定項目 (暫定値で正本化・確定後置換)
 
-| 項目 | 確定方法 | 暫定値 | 確定後タスク |
+| 項目 | 確定方法 | 確定値 / 暫定値 | 確定後タスク |
 |---|---|---|---|
-| Maker fee 実値 | まこさん Bitget 管理画面確認 | **0.0002 (0.02% = VIP 0 想定)** | ML pipeline 全スクリプト一斉置換 |
+| ~~Maker fee 実値~~ | ~~まこさん Bitget 管理画面確認~~ | **✅ 確定: 0.00014 (適用) / 0.0002 (標準・剥落復帰時)** 出典: exchange_spec.md L7 (2026-05-13) | ~~ML pipeline 全スクリプト一斉置換~~ → Phase 1〜6-b スクリプトは既に 0.00014 実装済 |
 | Funding rate 動的化 | Bitget API funding-history endpoint | 0.0001 (0.01%/8h 固定) | Phase 5-e 改修 |
 | Slippage 一般 | 実運用ログから推定 | 0.005% 全約定加算 | Phase 7-e デモ結果から実測値置換 |
 
@@ -65,9 +65,8 @@
 | 5.1 | **採用ループは時系列順 (entry_ts 昇順)** | run_phase5_c.py 改修・5-d/5-e に伝播 (L-182) |
 | 5.2 | 同 timestamp 内のみ pred_ratio 優先順位付け | コード review |
 | 5.3 | 過去の判断を後から覆さない | コード review |
-| 5.4 | Maker fee = **0.0002 暫定**・実値確定後に置換 (未確定項目) | run_lgbm_phase1.py L70 等 全箇所一斉 |
+| 5.4 | Maker fee = **0.00014 (適用確定) / 0.0002 (標準・剥落復帰時)** ・出典 exchange_spec.md L7 | Phase 1〜6-b スクリプト全て 0.00014 実装済 (grep 確認済 2026-05-13) |
 | 5.5 | **wick 乖離 vs TP_PCT レンジ重ね合わせ分析実施** | 補正 1 の inline 分析・p95 ≤ 0.05% 確認 |
-| 5.6 | **Maker fee 0.02% 暫定 / 実値確定後に置換** | 未確定項目テーブル参照 |
 
 ## Phase 5-d (Position size 再計算)
 

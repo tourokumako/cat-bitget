@@ -64,7 +64,7 @@ META_COLS = ["close"]  # timestamp は DatetimeIndex
 VALID_RATIO = 0.10
 RANDOM_STATE = 42
 EARLY_STOPPING_ROUNDS = 50
-N_ESTIMATORS = 2000
+N_ESTIMATORS = 5000
 
 THRESHOLD_QUANTILES = [0.90, 0.95, 0.99]
 
@@ -97,11 +97,19 @@ def train_one_label(
     params = dict(
         objective="regression",
         metric="rmse",
-        learning_rate=0.05,
+        learning_rate=0.02,
+        min_data_in_leaf=100,
+        feature_fraction=0.7,
+        bagging_fraction=0.8,
+        bagging_freq=5,
+        reg_lambda=0.1,
         n_estimators=N_ESTIMATORS,
         random_state=RANDOM_STATE,
+        bagging_seed=42,
+        data_random_seed=42,
+        feature_fraction_seed=42,
         verbose=-1,
-        n_jobs=-1,
+        n_jobs=1,  # 再現性最優先 (懸念10)
     )
     evals: dict = {}
     model = lgb.LGBMRegressor(**params)
@@ -185,6 +193,13 @@ def main() -> None:
         training_curves.extend(curves)
         importance_records.extend(importance)
 
+        # per-label iteration log 保存 (bit-exact 再現性確認用・懸念10)
+        iter_df = pd.DataFrame(
+            [(it, tr, vl) for _, it, tr, vl in curves],
+            columns=["iter", "train_rmse", "valid_rmse"]
+        )
+        iter_df.to_csv(OUT_DIR / f"lgbm_{label}_iteration_log.csv", index=False)
+
         # Phase 1 leak チェック pause (checklist 1.3 / L-179)
         if i == 1:
             log("=== Phase 1 leak チェック pause (1 ラベル目完了) ===")
@@ -201,6 +216,11 @@ def main() -> None:
                 log("=== STOP: leak 残存疑い・ALLOW_PHASE1_CONTINUE では bypass 不可 ===")
                 sys.exit(1)
             log("✅ ブラックリスト top20 0 件")
+            # 1ラベル目時点の feature_importance を early save (dry-run 証跡用)
+            pd.DataFrame(importance_records, columns=["label", "rank", "feature", "importance"]).to_csv(
+                OUT_DIR / "feature_importance_top20.csv", index=False
+            )
+            log("saved feature_importance_top20.csv (1ラベル目 early save)")
             if os.environ.get("ALLOW_PHASE1_CONTINUE") != "1":
                 log("=== STOP: ALLOW_PHASE1_CONTINUE=1 が未設定 ===")
                 log("  feature_importance を review してから ALLOW_PHASE1_CONTINUE=1 python3 ... で継続")
