@@ -11,6 +11,8 @@
 - [ ] この指示書は前の指示書・正本 (WORKFLOW.md / cc_ml_design_spec.md / phase_compliance_checklist.md) と矛盾しないか
 - [ ] 「公式 source: results/.../phaseX_summary.json」を指示書本文または完了報告テンプレートに明記したか
       (WORKFLOW.md「公式判定 source の定義」準拠・2026-05-14 監査#8 必須 3)
+- [ ] この指示書を `.claude/instructions/日付_タスク名.md` として保存し commit する指示を、CC 投げ文に含めたか
+      (指示書をチャット一時テキストで垂れ流さず、後から参照可能な状態を必ず作る・対話ルール19)
 
 ## チェック B: CC の完了報告を受け取った時
 
