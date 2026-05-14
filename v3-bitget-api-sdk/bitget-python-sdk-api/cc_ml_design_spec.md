@@ -115,24 +115,31 @@ audit#2 (Phase 2 実行前監査) で指摘されていた spec 欠陥への対�
 - spec 改訂時は対応スクリプトの該当箇所を同タスク内で改修すること (実装漏れによる手計算依存を防止)
 - 背景: 2026-05-14 監査#8 で run_phase2_precision.py が案 G (commit b14be88) の §1.6 改訂を反映していなかった事案 (Phase 2 完了報告の改訂後 spec PASS は手計算)
 
-### 1.6.2 絶対閾値 drift 対処方針 (2026-05-14 audit#9 確定)
+### 1.6.2 絶対閾値 drift 対処方針 (2026-05-15 改訂・audit#9 固定維持確定 → rolling 365日採用へ撤回)
 
-train で学習した固定 q99 閾値を test に適用する方式を維持する (rolling キャリブレーションは採用しない)。
+**経緯**: 2026-05-14 audit#9 で「固定維持 + K96 SHORT q99 除外」を確定したが、
+2026-05-15 セッションにてまこさん明示指示「どんな市場でも対応させる」を受けて
+Web Claude が audit#9 確定を撤回し、rolling 365日方式を採用した（まこさん明示承認）。
 
-**理由**:
-- rolling は §1.6.1 メタルール抵触の疑い (Phase 2 実行結果確定後に閾値算出方式を変える形になる)
-- 信号品質の全面低下 (8 組合せ中 8 組で net_quality 低下・K24 LONG はマイナス転落)
-- ハイブリッド (組合せ別の固定/rolling 使い分け) は selection bias 構造のため却下
+**採用内容**: train 固定 q99 → 各時点 t-1 以前 365 日の rolling q99
+- 実装: `shift(1).rolling(365*288).quantile(0.99)` (look-ahead leak verify 済)
+- スクリプト: `scripts/priority_rebuild/run_phase4b_phase5_rolling_option5.py`
 
-**K96 SHORT q99 の扱い**:
+**未解消の留意事項（audit#9 で挙がっていた懸念・rolling 採用後も残る）**:
+- 信号品質の全面低下: rolling 適用で 8 組合せの net_quality が固定 refit 後比で低下・K24 LONG はマイナス転落
+- §1.6.1 メタルール（Phase 実行結果確定後の基準変更）抵触の疑い
+- ハイブリッド却下理由（組合せ別固定/rolling 使い分け = selection bias 構造）は、rolling 全採用でも類似の設計選択として懸念が残る
+
+**K96 SHORT q99 の扱い（rolling 採用後も no-trade 除外維持）**:
 - test 2025 で発火 0 件 (BTC 価格 2.4 倍上昇に伴う予測値 % 圧縮により test 予測値 ratio の最大 2.39 < train q99 閾値 3.05・数学的に発火不可能)
 - → **no-trade で除外**
 - 除外による損失: 年 $169,400 (q99 全体の 9.6%)
 - 全 12 ヶ月で月次 $1,900 維持は継続 (audit#3 で検証済)
 
-**spec 追記のみ・実装側無変更**:
-- 本方針は現状スクリプトの動作 (固定閾値で test 適用) をそのまま明文化するもの
-- run_phase2_precision.py 等のスクリプト改修は発生しない (rolling を導入しないため)
+**audit#12 (2026-05-15)**:
+- rolling 採用後の Phase 4-b/5 実行で、trailing exit が MFE スカラーを直接 PnL に流用する leak が発覚
+- rolling 自体の問題ではなく Exit 実装の問題。Phase 5 の月次 PnL 数値は無効
+- 詳細: `false_positive_incident_policy.md` §3 #6
 
 ---
 
