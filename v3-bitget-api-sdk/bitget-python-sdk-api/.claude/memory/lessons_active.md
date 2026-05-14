@@ -168,6 +168,63 @@ v4 §6-b「未見データで 63-69% 維持」の正当性が崩壊した最重�
 
 ---
 
+### L-183: §8 違反 (K12 LONG refit) - test 結果を見て学習データを変更 (2026-05-14)
+
+**何が起きたか:** Phase 3 短期試行で「audit#3 K12 LONG MFE_lift -9.99%」を発見 → K12 LONG のみ num_leaves=15 で refit (commit d9d322c)。MFE_lift -9.99% は **test 2025** の数値 (net_quality_24combinations.csv 由来)・train では +364.97% で正反対。test 結果を見て学習データを変更 = §8「テスト結果を見てから学習データで再学習する際、テスト結果を直接参照しない」直接抵触。監査#7 で発覚。
+
+**Why:**
+- audit#3 の「K12 LONG MFE_lift マイナス」を train 由来問題と誤認
+- 数値の出所 (train か test か) を着手前に確認しなかった
+
+**How to apply:**
+- ML 関連の数値を引用する前に出所 (train / test / refit 前後) をパスまで確認
+- `feedback_pre_execution_premise_check.md` 4 項目を着手前に通す
+- §8 違反かどうかを学習データ変更前に必ず確認
+
+---
+
+### L-184: spec/script 乖離 - 案 G で spec を改訂したが script を改修せず手計算で補完 (2026-05-14)
+
+**何が起きたか:** 案 G (commit b14be88) で §1.6 指標 1 を「q99 8 組合せ加重 + 6/8 positive」に改訂したが、run_phase2_precision.py の改修が案 G タスクに含まれず。元 Phase 2 / 案 Z の自動判定は旧 spec (24 組合せ加重 + 20 positive) で実行され FAIL。両完了報告は手計算で「改訂後 spec PASS」を提示・公式判定 source と認識されていた。監査#8 で発覚。
+
+**Why:**
+- spec 改訂タスクに対応する script 改修が連動していなかった
+- 完了報告の手計算を「公式判定」と扱う暗黙慣行
+
+**How to apply:**
+- spec 改訂時は対応 script の grep verify を同タスクに含める
+- 公式判定 source は `phaseX_summary.json` (script 出力) のみ・完了報告内手計算は「参考」と明記 (WORKFLOW.md 「公式判定 source の定義」)
+- L-179 拡張 (ML leak 限定 → spec/実装一般整合性) を本日適用済
+
+---
+
+### L-185: ファイル名一意化 - フォルダ違い同名でチャット添付時に取り違え多発 (2026-05-14)
+
+**何が起きたか:** `ml_phase2_rerun_prerefit/net_quality_24combinations.csv` と `ml_phase2_rerun_postrefit/net_quality_24combinations.csv` (同名・フォルダ違い) でチャット添付時に Web Claude が取り違え 3 回発生。チャット添付ではフォルダ階層が失われるため、ファイル名だけで識別可能であるべき。
+
+**How to apply:**
+- 比較・対照される成果物 (prerefit/postrefit・複数 k・複数 option) はファイル名末尾に識別子付与
+- 例: `*_PREREFIT.csv` / `*_POSTREFIT.csv` / `*_DRIFT.csv`
+- 「注意力で防ぐ」のではなく「命名規則で物理的に防ぐ」
+- 詳細: WORKFLOW.md 「成果物ファイル名の一意化ルール」 (2026-05-14 追加)
+
+---
+
+### L-186: 着手前 premise check 4 項目 (2026-05-14)
+
+**何が起きたか:** 詳細な指示書 (監査済/Web Claude レビュー済/まこさん GO 済 三段書き) を受領した時、「手順をなぞれば責任を果たした」と錯覚し、指示書自体の前提を疑う動作を省略していた。L-183 (§8 違反 K12 LONG refit) / L-184 (spec/script 乖離) はいずれも着手前 verify で防げた。
+
+**How to apply (毎タスク Step 0 着手前に 1 行ずつ宣言):**
+1. 指示書が当然視している判定が script 自動か手計算か
+2. 数値の出所 (train / test / 間接参照のどれか)
+3. 指示書の前提 X はデータ Y で verify できるか
+4. 必読ファイル引用 (Step 0-1) と指示書の論理的整合 (機械的に貼るだけでなく内容照合)
+
+1〜4 のいずれかに疑義があれば着手前にチャットで提示して GO 待ち。
+詳細: `~/.claude/projects/.../memory/feedback_pre_execution_premise_check.md`
+
+---
+
 ### L-181: 設計転換時の旧記述放置を「毎回やってる」とまこさんに命令で禁止（2026-05-13）
 
 **何が起きたか:**
@@ -237,6 +294,16 @@ Phase 1 → 2 → 3-a → 3-b → 4-a → 4-b → 5 → 5-b → 5-c → 6-a → 
   を必ず verify
 - out-of-sample 合格を leak フリーの証拠と誤認しない
 - 詳細は [results/priority_rebuild/leak_incident_20260513.md](../../results/priority_rebuild/leak_incident_20260513.md)
+
+**2026-05-14 拡張 (監査#8 必須 5)**: L-179 の「実装で verify」原則は ML leak 限定ではなく、
+**spec / 実装の一般的整合性に適用する**。
+- spec 改訂時は必ず対応スクリプトの該当箇所を grep verify する (例: 案 G 改訂時に
+  run_phase2_precision.py L72-73 を grep して値が反映されたか確認)
+- 完了報告の「PASS / 合格」表記を信頼せず、`phaseX_summary.json` の `overall_pass` を
+  実物で verify する (WORKFLOW.md「公式判定 source」準拠)
+- 背景: 2026-05-14 監査#8 で run_phase2_precision.py が案 G (commit b14be88) の §1.6
+  改訂を反映していなかった事案を発見 (元 Phase 2 + 案 Z で 2 度 implementation gap が
+  気づかれずに通過していた)
 
 **修正完了 (2026-05-13 セッション末):**
 - `_detect_fractals` を**返り値 4 配列に拡張** (`is_res, is_sup, pivot_high, pivot_low`)、ピボット確定タイミングを j+2 バー後ろシフト

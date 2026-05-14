@@ -68,14 +68,16 @@ K_WINDOWS = [12, 24, 48, 96]
 SIDES = ["LONG", "SHORT"]
 QUANTILES = ["q90", "q95", "q99"]
 
-# 4 指標合格基準 (cc_ml_design_spec §1.6)
+# 4 指標合格基準 (cc_ml_design_spec §1.6 / 案G commit b14be88 改訂後 spec)
+# 2026-05-14 監査#8 で旧 spec (24 組合せ加重・positive 20) の実装漏れが発覚し
+# 案 G implementation gap 補完として改訂後 spec (q99 8 組合せ加重・positive 6) に整合
 CRITERION_1_WEIGHTED_AVG_MIN = 10.0
-CRITERION_1_POSITIVE_MIN = 20
+CRITERION_1_POSITIVE_MIN = 6   # 改訂後 spec: q99 8 組合せ中 6 組以上で > 0
 CRITERION_2_NET_QUALITY_MIN = -50.0
 CRITERION_3_RMSE_RATIO_MAX = 1.5
 CRITERION_3_PASS_COUNT = 14
 CRITERION_4_MFE_MAE_RATIO_MIN = 1.0
-CRITERION_4_PASS_COUNT = 20
+CRITERION_4_PASS_COUNT = 6     # 改訂後 spec: q99 8 組合せ中 6 組以上で > 1.0
 
 # 旧 leak 由来実績 (参考値・cc_phase2_execute.md Step 0-5)
 OLD_LEAK_REFERENCE = {
@@ -197,37 +199,42 @@ def compute_rmse_sanity(label_stats, train_summary):
 
 
 def judge_criteria(df_nq, df_rmse):
-    """4 指標 PASS/FAIL 判定."""
-    # 指標 1: weighted avg net_quality (q99 only, 24 組合せ全体)
-    # spec: "q99 net_quality (24 組合せ件数加重平均)" + "24 組合せ中 20 組以上で > 0"
-    #       -> 24 組合せは q90/q95/q99 × K × side のすべて (注記より)
-    df_all = df_nq.dropna(subset=["net_quality_pp"])
-    if len(df_all) == 0:
+    """4 指標 PASS/FAIL 判定 (cc_ml_design_spec §1.6 案 G 改訂後 spec 準拠)."""
+    # 指標 1 / 4 共通: q99 のみ 8 組合せに絞り込み (改訂後 spec)
+    df_q99 = df_nq[df_nq["q"] == "q99"].dropna(subset=["net_quality_pp"]).copy()
+    if len(df_q99) == 0:
         return {}, {}
-    weighted_sum = (df_all["net_quality_pp"] * df_all["n_fire"]).sum()
-    total_fire = df_all["n_fire"].sum()
+    # 24 組合せ全体は補助 lens として保持 (補完計算用)
+    df_all = df_nq.dropna(subset=["net_quality_pp"])
+
+    # 指標 1: q99 8 組合せ加重 net_quality > +10pp かつ 6/8 以上 positive
+    weighted_sum = (df_q99["net_quality_pp"] * df_q99["n_fire"]).sum()
+    total_fire = df_q99["n_fire"].sum()
     weighted_avg = weighted_sum / total_fire if total_fire > 0 else float("nan")
-    n_positive = int((df_all["net_quality_pp"] > 0).sum())
-    n_combos = len(df_all)
+    n_positive = int((df_q99["net_quality_pp"] > 0).sum())
+    n_combos = len(df_q99)
 
     c1_avg_pass = bool(weighted_avg > CRITERION_1_WEIGHTED_AVG_MIN)
     c1_pos_pass = bool(n_positive >= CRITERION_1_POSITIVE_MIN)
     c1_pass = c1_avg_pass and c1_pos_pass
 
-    # 指標 2: net_quality 最小値 > -50pp
-    min_nq = float(df_all["net_quality_pp"].min())
-    min_row = df_all.loc[df_all["net_quality_pp"].idxmin()]
+    # 指標 2: net_quality 最小値 > -50pp (q99 8 組合せのみ・改訂後 spec)
+    min_nq = float(df_q99["net_quality_pp"].min())
+    min_row = df_q99.loc[df_q99["net_quality_pp"].idxmin()]
     c2_pass = bool(min_nq > CRITERION_2_NET_QUALITY_MIN)
 
     # 指標 3: 16 ラベル中 14 以上で valid_rmse / label_std < 1.5
     n_rmse_pass = int(df_rmse["pass"].sum())
     c3_pass = bool(n_rmse_pass >= CRITERION_3_PASS_COUNT)
 
-    # 指標 4: 24 組合せ中 20 以上で mean_real_MFE / mean_real_MAE > 1.0
+    # 指標 4: q99 8 組合せ中 6 以上で mean_real_MFE / mean_real_MAE > 1.0
+    # df_all は 24 組合せ全体に mfe_mae_ratio を付加 (CSV 出力用・補完計算用)
     df_all = df_all.assign(
         mfe_mae_ratio=df_all["filtered_mean_real_MFE"] / df_all["filtered_mean_real_MAE"]
     )
-    n_mfe_mae_pass = int((df_all["mfe_mae_ratio"] > CRITERION_4_MFE_MAE_RATIO_MIN).sum())
+    df_q99 = df_all[df_all["q"] == "q99"]
+    n_mfe_mae_pass = int((df_q99["mfe_mae_ratio"] > CRITERION_4_MFE_MAE_RATIO_MIN).sum())
+    n_mfe_mae_total = len(df_q99)
     c4_pass = bool(n_mfe_mae_pass >= CRITERION_4_PASS_COUNT)
 
     summary = {
@@ -260,7 +267,7 @@ def judge_criteria(df_nq, df_rmse):
         },
         "criterion_4_mfe_mae_ratio": {
             "n_pass": n_mfe_mae_pass,
-            "n_total": int(len(df_all)),
+            "n_total": n_mfe_mae_total,
             "threshold_ratio": CRITERION_4_MFE_MAE_RATIO_MIN,
             "threshold_count": CRITERION_4_PASS_COUNT,
             "pass": c4_pass,

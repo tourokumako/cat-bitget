@@ -219,3 +219,20 @@ Python warnings: なし (集計コードは inline python -c で実行・no warn
 1. Web Claude が事前 verify 4 項目の数値を独立評価
 2. まこさん最終 GO
 3. Phase 4-a (k-means クラスタリング) 着手指示書発行
+
+---
+
+## 2026-05-14 追記: 実装漏れ訂正 (監査#8 発覚)
+
+案 G (commit b14be88) で §1.6 指標 1 を「q99 8 組合せ加重 + 6/8 positive」に改訂したが、
+**`scripts/priority_rebuild/run_phase2_precision.py` の改修が案 G タスクに含まれていなかった**。
+
+結果:
+- 元 Phase 2 (commit 0ffd326) も案 Z (refit 後 Phase 2 再判定) もスクリプト自動判定は旧 spec (24 組合せ加重 / 20 positive) のまま実行され、両方とも自動判定 FAIL
+- 「改訂後 spec で PASS」は両完了報告内の手計算による補完評価で示されていた
+- 2026-05-14 監査#8 で発覚
+
+訂正:
+- `2026-05-14_phase2_script_fix_and_structural.md` (本日タスク) でスクリプト改修を実施
+- 改修後の自動判定で refit 前/後とも 4 指標 ALL PASS を確認
+- 監査#8 判定: スクリプト改修は §1.6.1 メタルール違反ではない (基準変更ではなく実装整合化・案 G の implementation gap 補完)

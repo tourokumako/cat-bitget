@@ -19,6 +19,17 @@ ClaudeはPM・PL・SE・プログラマの全役割を担う。
 - 方向転換時は WORKFLOW のフェーズと照合してから提案する（脇道に逸れない）
 - 議論が行き詰まった・同じ提案を繰り返している・直前2ターン同じ語彙の時は「思考フレーム/目標コミット 自己点検」を実行する（後述）
 - **作業完了報告は 3点必須**（2026-05-08 追加）: ① 完了フラグ + ファイル名 / ② 結果中身のサマリー（数値・上位5-10件・次元保持）/ ③ ファイル提示（リンク）。「ファイルに書いた」だけでは報告完了とみなさない
+- **成果物ファイル名の一意化ルール**（2026-05-14 追加・まこさん指摘）:
+  - 比較・対照される成果物 (prerefit/postrefit・複数 k・複数 option・複数 Phase など) は、ファイル名そのものに識別子を含める。フォルダ名だけでの区別は禁止
+  - NG: `ml_phase2_rerun_prerefit/net_quality_24combinations.csv` と `ml_phase2_rerun_postrefit/net_quality_24combinations.csv` (同名・フォルダ違い)
+  - OK: `net_quality_24combinations_PREREFIT.csv` / `net_quality_24combinations_POSTREFIT.csv` (識別子をファイル名末尾に付与)
+  - 理由: チャット添付時にフォルダ階層が失われ、同名ファイルの取り違えが発生するため (2026-05-14 セッション中に 3 回発生)
+  - 適用範囲: **今後生成する全成果物**。既存ファイルは遡及リネーム不要だが、チャット提示時は識別子付きでリネームコピーして提示
+- **公式判定 source の定義**（2026-05-14 追加・監査#8 必須3）:
+  - Phase X の合否の公式 source は `results/.../phase{X}_summary.json` (スクリプト出力) のみ
+  - 完了報告内の手計算・補完評価は「参考」表記とし、「公式」「公式判定」「公式記録」の語を使用しない
+  - 完了報告には冒頭に「公式 source: results/.../phaseX_summary.json」を必ず明記する
+  - 背景: 2026-05-14 監査#8 で「Phase 2 改訂後 spec PASS」が script 改修されないまま手計算で補完されていた事案を防止
 - **完了報告必須証跡 5点**（2026-05-08 追加 / 5点目 2026-05-09 追加・L-162）:
   1. **コード総点検 grep 結果**（全件・"no matches"含む・関連スクリプト全部）
      - 4種の grep: ① TF endswith/startswith ② TFリスト固定値 ③ カテゴリ固定値 ④ 絞り込み処理（best 1/argmax/nlargest(1)）
@@ -242,7 +253,29 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-14 改訂7・Phase 4-a 完了 → Phase 4-b Exit 設計 着手待ち）
+## 🔴 現在のフェーズ（2026-05-14 改訂8・Phase 4-a 検証段階 + 絶対閾値 drift 対処方針確定待ち）
+
+> ⚠️ **本日セッションで Phase 4-a 採否判定が複層化・Phase 4-b 着手前に対処方針確定が必要**
+>
+> 本日 (2026-05-14) のセッションで以下が判明:
+> 1. Phase 4-a k=3 採用後の k=2 vs k=3 比較で train/test 安定性に問題 (max_diff 35-44pp)
+> 2. 入力正規化で k=2 のみ要警戒帯 (16.15pp) に到達・k≥3 は失敗水準
+> 3. clustering 廃止後の選択肢 1/4/5/6/7 評価で **K96 SHORT q99 で train→test 絶対閾値 drift により発火 0 件問題** 発覚 (全選択肢共通)
+> 4. **§8 違反 (K12 LONG refit が test 結果 audit#3 -9.99% を直接参照) 発覚** (監査#7)
+> 5. **run_phase2_precision.py が案 G 改訂後 spec を未実装** だった (監査#8・本日改修済)
+> 6. 絶対閾値 drift 対処方針評価で案 a (rolling 365) のみ §8 適合・ただし Phase 2 指標 1 が 9.13pp で改訂後 spec FAIL ライン (>10pp) を割る
+>
+> **次のタスク (まこさん判断必須)**:
+> - **A**: 固定 q99 維持・Phase 2 PASS 維持・K96 SHORT 実用不可能を選択肢 7 (SHORT cluster) or 1 (per-entry) で代替
+> - **B**: rolling 365 採用・発火復活・Phase 2 指標 1 が 9.13pp で FAIL ライン割る (§1.6.1 と齟齬の可能性)
+> - **C**: ハイブリッド (組合せ別に固定/rolling 使い分け)
+> - **加えて**: K12 LONG refit (§8 違反) の維持/撤回判断
+>
+> **判断後**: 選択肢 5 vs 7 確定 → Phase 4-b 着手指示書発行
+
+---
+
+## 🔴 旧現フェーズ表記 (2026-05-14 改訂7・参考)
 
 > # ⚠️ **leak 修正完了 / Phase 1〜7-a 数値は依然として無効** ⚠
 >
@@ -359,6 +392,37 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 - **新規運用には使用しない**。凍結後の参考データ。
 
 凍結ステータス・素材転用一覧は **[`regime_research.md`](.claude/memory/regime_research.md) §0** を参照。
+
+---
+
+## 2026-05-14 セッション成果物一覧 (Phase 4-a 検証 + 構造改善)
+
+| 指示書 / 完了報告 | 内容 |
+|---|---|
+| `2026-05-14_phase4a_k2_revisit.md` + completion | k=2 vs k=3 比較 (k=2 stability 優位だが両方 35-44pp) |
+| `2026-05-14_phase4a_normalize_reselect.md` + completion | 入力正規化 + k=2〜6 再選定 (k=2 のみ 16.15pp で要警戒帯) |
+| `2026-05-14_clustering_alternatives_eval.md` + completion | 選択肢 1/4/5/6/7 評価 + K96 SHORT q99 test 0 件問題発覚 |
+| `2026-05-14_phase2_revalidate_post_refit.md` + completion | refit 後 Phase 2 再判定 (§8 違反発覚) |
+| `2026-05-14_phase2_script_fix_and_structural.md` + completion | run_phase2_precision.py 改修 + 構造改善 5 項目 |
+| `2026-05-14_filename_uniqueness_rule.md` + completion | ファイル名一意化ルール (`*_PREREFIT.csv` 等) |
+| `2026-05-14_threshold_drift_eval.md` + completion | 絶対閾値 drift 対処方針評価 (rolling 365 で +9.13pp) |
+
+| ルール / 教訓 | 内容 |
+|---|---|
+| WORKFLOW.md 「成果物ファイル名の一意化ルール」 | 比較される成果物は識別子付与 |
+| WORKFLOW.md 「公式判定 source の定義」 | phaseX_summary.json のみが公式 |
+| cc_ml_design_spec.md §1.6.1 末尾「公式判定 source ルール」 | spec 改訂時 script 改修連動必須 |
+| `.claude/rules/web_claude_self_check.md` (新規) | Web Claude 用 チェック A/B |
+| `results/priority_rebuild/spec_script_consistency_20260514.md` | 7 項目 consistency check (2 未実装) |
+| memory `feedback_pre_execution_premise_check.md` (新規) | 着手前 4 項目 verify |
+| lessons_active.md L-183〜L-186 | §8 違反・spec/script 乖離・ファイル名・premise check |
+| run_phase2_precision.py 改修 | CRITERION_1/4 → 6 + df_q99 抽出 (案 G 改訂後 spec 実装) |
+
+## セッション未確定事項 (次セッション最優先)
+
+1. K12 LONG refit 維持/撤回 (§8 違反対応)
+2. 絶対閾値 drift 対処 A/B/C 選択
+3. Phase 4-b 設計選択肢 (選択肢 5 vs 7 vs 1) 確定
 
 ---
 
