@@ -53,7 +53,8 @@
 | 4b.1 | **cluster_best_exit 選定は train PnL のみ** (test 2025 PnL 禁止) | `PREDICTIONS = predictions_train.parquet` |
 | 4b.2 | test 2025 / 2026 Q1 は apply のみ (best 選定なし) | コード review |
 | 4b.3 | time_exit グリッドを K まで制限 (K×2 禁止) | `TIME_EXIT_GRID = (K//2, K)` |
-| 4b.4 | TP 約定モデル: bar high >= tp_price + 0.01% buffer | `simulate_fixed_tp` 改修 |
+| 4b.4 | TP 約定モデル (固定 TP): bar high >= tp_price + 0.01% buffer | `simulate_fixed_tp` 改修 |
+| 4b.4-b | TP 約定モデル (予測 MFE 中央値ベース): cluster ごとに pred_MFE 中央値 × X% を TP_PCT 候補に追加 (audit#3 懸念4 / K12 LONG mechanism 対応・2026-05-14 案G で追加) | `simulate_predicted_mfe_tp` 新規実装 |
 | 4b.5 | Trailing: bar 内 low 先・high 後 想定 | `simulate_trailing` 改修 |
 | 4b.6 | entry_price = bar i+1 open ± 0.005% | `extract_entries` 改修 |
 | 4b.7 | slippage 0.005% 全約定加算 | `compute_pnl` 改修 |
