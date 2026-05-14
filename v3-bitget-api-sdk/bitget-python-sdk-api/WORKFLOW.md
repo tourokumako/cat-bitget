@@ -45,6 +45,11 @@ ClaudeはPM・PL・SE・プログラマの全役割を担う。
   - 「やった」「完了」を実行ログなしに主張しない
   - 「絞り込み示唆語彙なし」を grep 結果なしに主張しない（L-162）
   - 「実は完了済み」を主張する場合は該当ターン番号と全文を再提示する
+- **指示書のファイル保管義務**（2026-05-14 追加・まこさん複数回指摘）:
+  - CC に指示書を発行する際は、チャットに投げ文を出すだけでなく、必ず「この指示書を `.claude/instructions/日付_タスク名.md` として保存し commit せよ」を CC 投げ文に含める
+  - 目的: 後から「どのタスクでどんな指示書だったか」を参照できる状態を必ず作る
+  - 三重化で担保: ① memory ② web_claude_self_check.md チェックA ③ 本ルール
+  - 新規タスクの指示書を書く前に、CC に過去の同種指示書 (`.claude/instructions/` 配下) を見せてもらう、またはまこさんから添付を受け、フォーマット・粒度・前回の問いの立て方を確認してから書く
 
 ## 思考フレーム自己点検
 
@@ -256,7 +261,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-14 改訂8・Phase 4-a 検証段階 + 絶対閾値 drift 対処方針確定待ち）
+## 🔴 現在のフェーズ（2026-05-14 改訂9・Phase 4-a 完了確定 + 選択肢 5 vs 7 再評価待ち）
 
 > ⚠️ **本日セッションで Phase 4-a 採否判定が複層化・Phase 4-b 着手前に対処方針確定が必要**
 >
@@ -424,12 +429,15 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 | memory `feedback_pre_execution_premise_check.md` (新規) | 着手前 4 項目 verify |
 | lessons_active.md L-183〜L-186 | §8 違反・spec/script 乖離・ファイル名・premise check |
 | run_phase2_precision.py 改修 | CRITERION_1/4 → 6 + df_q99 抽出 (案 G 改訂後 spec 実装) |
+| `2026-05-14_session_handoff_v5.md` + completion | セッション引き継ぎメモ + drift 確定 spec 明文化 |
+| `handoff_to_web_claude_v5_session_20260514.md` | 次セッション向け handoff メモ (7 セクション) |
+| **整合性修正 cb56a2d + 7c6b5ef** | L-181 違反解消: 旧 次のタスク 降格 + priority_rebuild.md 唯一の正本 表記廃止 |
 
-## セッション未確定事項 (次セッション最優先)
+## セッション確定事項（全件解消・次セッションへの未確定事項なし）
 
-1. K12 LONG refit 維持/撤回 (§8 違反対応)
-2. 絶対閾値 drift 対処 A/B/C 選択
-3. Phase 4-b 設計選択肢 (選択肢 5 vs 7 vs 1) 確定
+1. ✅ K12 LONG refit (commit d9d322c) **維持**確定 (audit#7 影響限定的)
+2. ✅ 絶対閾値 drift = **固定維持 + K96 SHORT q99 除外**確定 (audit#9)
+3. ✅ 次のタスク = **選択肢 5 vs 7 の再評価** (監査経路を通す・handoff §3 参照)
 
 ---
 
