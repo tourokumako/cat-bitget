@@ -1,4 +1,88 @@
-# lessons_active.md — 直近50件の現役教訓（L-185〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-190〜L-103）
+
+---
+
+### L-190: spec 改訂時はメタルールを同時導入して precedent 防止する（2026-05-14）
+
+**何が起きたか:**
+Phase 2 で 24 組合せ加重 +8.72pp で 1.28pp 不足 FAIL。spec §1.6 を「q99 8 組合せ加重」に改訂すれば +20.58pp で PASS 化。
+監査エージェント (audit#3) が指摘: 単純 spec 改訂は post-hoc rationalization (事後合理化) で Phase 6-b でも同パターン (基準緩和) が再演されるリスク。
+
+**Why:**
+- 合格基準を結果確認後に変更する慣行ができると、最終 Phase 6-b の「月次 NET ≥ $1,900 全 3 ヶ月」も実行後に緩和される precedent になる
+- audit#2 で既に指摘されていた spec 欠陥への遅延対応として正当化できる場合でも、メタルール明示なしの改訂は危険
+
+**How to apply:**
+- spec 改訂が必要なときは同時にメタルール (§1.6.1) を導入: 「Phase 実行前に基準確定・実行後の緩和禁止」
+- 例外 (今回の遅延補正) は「最後の例外」として明示・適用範囲を明記
+- Phase 6-b 等の最終 Phase には特に lock 文言を WORKFLOW.md に追記 (cap・Exit・$1,900 全 3 ヶ月)
+
+---
+
+### L-189: ハイパラ調整は構造的問題を解けない・Phase 4-b 設計で根本対処せよ（2026-05-14）
+
+**何が起きたか:**
+Phase 2 FAIL 受けて Phase 3 短期試行 (K 窓別 num_leaves)。24 組合せ加重 +8.72 → +9.86 (+1.14・閾値未達)。改訂後 spec (q99 8 組合せ加重) では +20.58 → +18.50 (悪化)。K12 LONG q99 のみ大幅改善 (+20pp) だが K24 SHORT q99 大幅悪化 (-26pp)。K48/K96 系・K96 SHORT q99 構造的逆行は完全に不変。
+
+**Why:**
+- 新 Phase 1 が既に旧 Phase 3-a 相当のハイパラ (lr=0.02・min_data_in_leaf=100・feature_fraction=0.7・bagging 等) で学習されており改善余地が小さい
+- K96 SHORT q99 の暴騰局面集中 (2025-01/09 で 75% 集中) はハイパラとは独立な構造的問題 → regime 検知 (Phase 4-a) が必要
+- K12 LONG MFE_lift マイナスは MFE 絶対値不足の問題 → TP 設計 (Phase 4-b) が必要
+
+**How to apply:**
+- Phase 3 ハイパラ調整は「微改善が見込めれば試す」程度・期待値を高く設定しない
+- 構造的問題 (K96 SHORT 暴騰時逆行・K12 LONG 低 MFE) は Phase 4-a (cluster) / Phase 4-b (Exit) で対処
+- 部分採用 (1 ラベルだけ別ハイパラ) は可能・bit-exact 再現性を確保する設計で残り 14 ラベル無影響を担保
+
+---
+
+### L-188: 部分採用 (1 ラベル別ハイパラ) で他 14 ラベル bit-exact 同一性を assertion で担保（2026-05-14）
+
+**何が起きたか:**
+Phase 3 trial で K12 LONG q99 net_quality が +20pp 大幅改善発見 → 「他は触らず K12 LONG MFE/MAE のみ num_leaves=15 で再学習」を採用したい。実装時に他 14 ラベル predictions が bit-exact 同一であることを保証する必要があった。
+
+**Why:**
+- 部分採用は「特定ラベルだけ改善・他は触らない」が前提
+- 実装ミスで他のラベル predictions まで変えてしまうと「現行 Phase 1 を維持」という採用前提が崩れる
+- 副作用検証なしで採用すると Phase 4-a クラスタリングの再現性も崩れる
+
+**How to apply:**
+- 部分採用スクリプトに「他 N ラベル bit-exact 同一」の assertion を埋め込む (`assert refit_test[lab].equals(p1_test[lab])`)
+- 完了後 verify でも別途 grep / pandas equals で再確認 (二重チェック)
+- 完了報告に「14 untouched ラベル + close 完全 bit-exact 同一」を明示
+
+---
+
+### L-187: 監査懸念に対する「入力段階解消」と「Exit 段階対処」の使い分け（2026-05-14）
+
+**何が起きたか:**
+Step 1-2 で監査懸念1 (K12 LONG MFE_lift マイナス) を mechanism 分析 → ML が「低ボラ・直近高値帯・上昇継続中」を選好。Phase 3 trial で num_leaves=15 だと MFE_lift -9.99% → +46.07% (+56pp 改善・低ボラ選好構造的解消)。これは「入力段階解消」(ML 自体の選好を変える) の例。一方 K96 SHORT q99 暴騰局面集中は num_leaves で変わらず → 「時期別 no-trade フィルタ (Phase 4-a/4-b)」が必要。
+
+**Why:**
+- 監査懸念には性質が異なる 2 種類ある:
+  - (A) ML 自体の偏り (低ボラ選好等) → ハイパラ/特徴量で「入力段階解消」可能
+  - (B) 市場局面固有の問題 (暴騰時 SHORT 誤発火等) → ML 出力後の「Exit/フィルタ段階対処」が必要
+
+**How to apply:**
+- 監査懸念を 2 種類に分類して対処レベルを選ぶ
+- (A) は Phase 1/3 で構造的解消・(B) は Phase 4-a (cluster 分離) / 4-b (Exit 制限) で対処
+- 「ハイパラ調整で全部解決できる」前提を持たない
+
+---
+
+### L-186: silhouette 評価で size_ratio (min/max) を併用して退化分割を排除（2026-05-14）
+
+**何が起きたか:**
+Phase 4-a k-means で k=2〜8 silhouette 評価。k=6 以降は silhouette がそれなりに高い (0.46/0.43/0.40) が cluster sizes の min/max ratio が 0.006 (= 933 行 vs 158,721 行) で 1 cluster が極端に小さい退化分割になっていた。silhouette だけで採用すると見落とす。
+
+**Why:**
+- silhouette score は globally good な分離度を見る指標で、極小 cluster が他から離れていれば高得点になりうる
+- 実用 (Phase 4-b で各 cluster に Exit を設計) には「全 cluster にサンプル数が確保されている」ことが必要
+
+**How to apply:**
+- silhouette 評価には必ず min/max size ratio を併記する
+- 採用候補は size_ratio ≥ 0.05 (= 全 cluster 5% 以上) のものに限定してから silhouette 最大を選ぶ
+- 退化分割 (1 cluster < 1%) は採用候補から除外
 
 ---
 

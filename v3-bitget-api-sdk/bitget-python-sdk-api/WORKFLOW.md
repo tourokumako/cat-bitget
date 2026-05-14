@@ -242,7 +242,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-14 改訂6・Phase 1 完了 → Phase 2 精度判定 着手待ち）
+## 🔴 現在のフェーズ（2026-05-14 改訂7・Phase 4-a 完了 → Phase 4-b Exit 設計 着手待ち）
 
 > # ⚠️ **leak 修正完了 / Phase 1〜7-a 数値は依然として無効** ⚠
 >
@@ -292,11 +292,12 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 | Phase | 内容 | ステータス (2026-05-14 更新) |
 |---|---|---|
 | **Phase 0** | ラベル再生成 (5m × 1,432 指標 × 未来 MFE/MAE) | ✅ **完了** (2026-05-13 leak フリー) |
-| Phase 1 | LightGBM × 16 ラベル × デフォルトハイパラ | ✅ **完了** (2026-05-14 / 141分 / 全16ラベル異常なし / BL top20=0件) |
-| Phase 2 | 精度判定 (仮テスト 2025 で 4 指標合格条件・cc_ml_design_spec §1.6) | **→ 次のタスク** |
-| Phase 3-a/3-b | ハイパラ調整 (K 窓別 num_leaves) | 再実行 待ち |
-| Phase 4-a | k-means クラスタリング (Entry 性質分類) | 再実行 待ち |
-| Phase 4-b | Exit 設計 (cluster × K × side 最適 Exit) | 再実行 待ち |
+| Phase 1 | LightGBM × 16 ラベル × デフォルトハイパラ | ✅ **完了** (2026-05-14 / 141 分 / 全 16 ラベル異常なし / BL top20=0 件) |
+| Phase 1-refit | K12 LONG num_leaves=15 部分採用 (監査懸念1 入力段階解消) | ✅ **完了** (2026-05-14 / 23.5 分 / +0.70pp 上方修正・採用判定 PASS / commit d9d322c) |
+| Phase 2 | 精度判定 (仮テスト 2025 で 4 指標合格条件・改訂後 spec) | ✅ **完了** (2026-05-14 / 改訂後 spec PASS q99 加重 +21.28pp / 7/8 positive / commit 0ffd326 + d9d322c) |
+| Phase 3 trial | 短期試行 (K 窓別 num_leaves・案 G 検証) | ✅ **完了** (2026-05-14 / パターン B 改善小・改訂後 spec で悪化 / 案 G 正当性確定 / commit a5dad18) |
+| Phase 4-a | k-means クラスタリング (Entry 性質分類) | ✅ **完了** (2026-05-14 / 1.45 分 / k=3 採用 silhouette 0.510 / 全 cluster K12 LONG q99 ≥100 / K96 SHORT q99 全 cluster trade 可 / commit b88b9fa) |
+| Phase 4-b | Exit 設計 (cluster × K × side 最適 Exit) | **→ 次のタスク** |
 | Phase 5/5-b/5-c | 365d Replay (cap なし → FIFO cap → 質駆動 cap) | 再実行 待ち |
 | Phase 5-d | ポジションサイズ正解版で再計算 (0.12 BTC = 合計上限) | 再実行 待ち |
 | Phase 5-e | Funding Rate 控除 (8h 毎・0.01%) | 再実行 待ち |
@@ -361,7 +362,31 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 
 ---
 
-## 🔴 次のタスク（2026-05-14 改訂22・Phase 1 完了 → Phase 2 精度判定 着手）
+## 🔴 次のタスク（2026-05-14 改訂23・Phase 4-a 完了 → Phase 4-b Exit 設計 着手）
+
+**Phase 4-b: cluster × K × side ごとの最適 Exit (固定 TP / トレーリング / 時間 Exit) をデータ駆動で選択。**
+**phase_compliance §4b.4-b Exit 約定率 ≥ 12% 必達 / 採用 ML: Phase 1 + K12 LONG refit / 採用クラスタ: k=3 / 入力: predictions_train_2021_2024_k12long_refit.parquet + predictions_test2025_clustered.parquet。**
+
+### 主要参照リソース (Phase 4-b 着手指示書発行時)
+
+| パス | 内容 |
+|---|---|
+| .claude/instructions/2026-05-14_phase4a_clustering_completion.md | Phase 4-a 完了報告 (k=3 採用根拠・cluster 性質・サンプル数チェック) |
+| .claude/instructions/2026-05-14_phase1_k12long_refit_completion.md | K12 LONG refit 完了報告 (採用判定 PASS) |
+| results/priority_rebuild/ml_phase4_a/cluster_profile.csv | 16 予測値 × 3 cluster 平均 |
+| results/priority_rebuild/ml_phase4_a/predictions_test2025_clustered.parquet | test 2025 cluster 付き予測値 |
+| results/priority_rebuild/ml_phase4_a/scaler_train_2021_2024.joblib | StandardScaler artifact |
+| results/priority_rebuild/ml_phase4_a/kmeans_k3_train_2021_2024.joblib | KMeans artifact |
+
+### Phase 4-b 留意事項 (Phase 4-a 完了報告から)
+
+1. **cluster 1 test 不均衡**: train 48.7% → test 4.5% で大幅縮小 (2025 年は低ボラ SHORT 有利局面が train 期間より稀) → cluster 1 ベース戦略の Phase 5 月次合計影響を要監視
+2. **K96 SHORT q99 構造的問題**: train ベース全 cluster trade 可だが test 2025 で 2025-01/09 暴騰局面集中で逆行 → 時期別 no-trade 検討も必要
+3. **K12 LONG num_leaves=15 効果**: 全 cluster で q99 サンプル数 ≥ 100 確保
+
+---
+
+## 旧 次のタスク (Phase 2・参考)
 
 **Phase 2: predictions_test2025.parquet を使って仮テスト 2025 で 4 指標合格条件を判定。全 4 指標 PASS なら Phase 3 へ・1 件以上 FAIL ならまこさん協議 (cc_ml_design_spec §1.6 / 2026-05-14 改訂)。**
 
