@@ -45,7 +45,7 @@
 | 4a.2 | scaler / km の joblib 保存 (artifact 名に "train" 含む) | `scaler_train_2021_2024.joblib` 等 |
 | 4a.3 | valid / test 2025 / test 2026 Q1 への apply は transform/predict のみ (再 fit 禁止) | コード review |
 | 4a.4 | **artifact 名禁止: `*test2025*` / `*test_2025*` / `*test*` 含むファイル名禁止** | `ls ml_phase4_a/*.joblib \| grep -i test` がゼロ件 |
-| 4a.5 | **K96 SHORT q99 フォールバック処理** (2026-05-14 案G で追加) | Phase 4-a クラスタリングで K96 SHORT q99 (1,660件) が独立 cluster に分離されない場合・または混在 cluster の実 MFE/MAE 比 < 1.0 の場合: 当該 cluster を no-trade で除外 / フォールバック発動時の年損失見込み: $169,400 (q99 全体の 9.6%)・全12ヶ月で $1,900 確保継続 (Web Claude 独立評価 2026-05-14) / 出典: results/priority_rebuild/ml_phase2/k96_short_q99_exclusion_scenario.csv |
+| 4a.5 | **K96 SHORT q99 フォールバック処理** (2026-05-14 案G で追加・audit#9 で発動条件拡張) | 以下のいずれかで当該 cluster / 組合せを no-trade 除外: ① Phase 4-a クラスタリングで K96 SHORT q99 (1,660件) が独立 cluster に分離されない / ② 混在 cluster の実 MFE/MAE 比 < 1.0 / **③ test 発火が 0 件 (2026-05-14 audit#9 見落とし F 追加・K96 SHORT q99 で MFE/MAE 比未定義時の漏れを補完)** / フォールバック発動時の年損失見込み: $169,400 (q99 全体の 9.6%)・全12ヶ月で $1,900 確保継続 (Web Claude 独立評価 2026-05-14) / 出典: results/priority_rebuild/ml_phase2/k96_short_q99_exclusion_scenario.csv + cc_ml_design_spec.md §1.6.2 |
 
 ## Phase 4-b (Exit シミュレーション)
 

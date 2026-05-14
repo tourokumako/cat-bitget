@@ -265,13 +265,17 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 > 5. **run_phase2_precision.py が案 G 改訂後 spec を未実装** だった (監査#8・本日改修済)
 > 6. 絶対閾値 drift 対処方針評価で案 a (rolling 365) のみ §8 適合・ただし Phase 2 指標 1 が 9.13pp で改訂後 spec FAIL ライン (>10pp) を割る
 >
-> **次のタスク (まこさん判断必須)**:
-> - **A**: 固定 q99 維持・Phase 2 PASS 維持・K96 SHORT 実用不可能を選択肢 7 (SHORT cluster) or 1 (per-entry) で代替
-> - **B**: rolling 365 採用・発火復活・Phase 2 指標 1 が 9.13pp で FAIL ライン割る (§1.6.1 と齟齬の可能性)
-> - **C**: ハイブリッド (組合せ別に固定/rolling 使い分け)
-> - **加えて**: K12 LONG refit (§8 違反) の維持/撤回判断
+> **本セッション確定事項 (2026-05-14 audit#7/#8/#9)**:
+> - K12 LONG refit (commit d9d322c) **維持**確定 (audit#7 → 案 Z で影響限定的確認)
+> - Phase 2 正式判定 = **改訂後 spec で 4 指標 ALL PASS** (audit#8 → 案 A で script 改修済)
+> - 絶対閾値 drift 対処 = **固定維持 + K96 SHORT q99 除外** 確定 (audit#9 → rolling/ハイブリッド却下)
+>   - cc_ml_design_spec.md §1.6.2 で明文化済 / phase_compliance_checklist.md §4a.5 拡張済 (test 発火 0 件追加)
 >
-> **判断後**: 選択肢 5 vs 7 確定 → Phase 4-b 着手指示書発行
+> **次のタスク**: **選択肢 5 vs 7 の再評価** (前提: 固定維持 + K96 SHORT q99 除外・**監査経路を通す**・audit#9 明記)
+>
+> **次セッション着手前必読**: [handoff_to_web_claude_v5_session_20260514.md](.claude/instructions/handoff_to_web_claude_v5_session_20260514.md) (経緯・本題・宿題を集約)
+>
+> **未処理の宿題**: 完了報告テンプレに train→test 変化表必須化 (audit#9 懸念 2) / spec/script consistency 未実装 2 項目 (audit#8) / 統計的有意性疑問の組合せ (audit#9 見落とし E)
 
 ---
 
