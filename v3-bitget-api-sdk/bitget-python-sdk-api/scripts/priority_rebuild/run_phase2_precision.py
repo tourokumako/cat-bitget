@@ -32,6 +32,7 @@ Phase 2 精度判定 (4 指標合格条件・cc_ml_design_spec §1.6 commit b14b
 # 5. Entry threshold = entry_thresholds.json (Phase 1 で生成済) を使用
 """
 
+import argparse
 import json
 import sys
 import warnings
@@ -44,12 +45,23 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LABELS_TEST = REPO_ROOT / "results" / "priority_rebuild" / "labels_mfe_mae_test_2025.parquet"
 PHASE1_DIR = REPO_ROOT / "results" / "priority_rebuild" / "ml_phase1"
-PREDS_TEST = PHASE1_DIR / "predictions_test2025.parquet"
-ENTRY_THRESHOLDS = PHASE1_DIR / "entry_thresholds.json"
-LABEL_DIST_STATS = PHASE1_DIR / "label_distribution_stats.json"
-TRAINING_SUMMARY = PHASE1_DIR / "training_summary.csv"
 
-OUT_DIR = REPO_ROOT / "results" / "priority_rebuild" / "ml_phase2"
+# CLI args (Phase 3 trial 等を評価する場合に上書き)
+_parser = argparse.ArgumentParser()
+_parser.add_argument("--phase-dir", type=str, default=str(PHASE1_DIR),
+                     help="predictions/thresholds/training_summary が入るディレクトリ (default: ml_phase1)")
+_parser.add_argument("--output-dir", type=str,
+                     default=str(REPO_ROOT / "results" / "priority_rebuild" / "ml_phase2"),
+                     help="評価結果の出力先 (default: ml_phase2)")
+_args = _parser.parse_args()
+PHASE_DIR = Path(_args.phase_dir)
+PREDS_TEST = PHASE_DIR / "predictions_test2025.parquet"
+ENTRY_THRESHOLDS = PHASE_DIR / "entry_thresholds.json"
+TRAINING_SUMMARY = PHASE_DIR / "training_summary.csv"
+# label_distribution_stats は train データ stats なので常に Phase 1 を参照
+LABEL_DIST_STATS = PHASE1_DIR / "label_distribution_stats.json"
+
+OUT_DIR = Path(_args.output_dir)
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 K_WINDOWS = [12, 24, 48, 96]
