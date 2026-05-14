@@ -41,7 +41,7 @@
 
 | # | チェック項目 | verify 方法 |
 |---|---|---|
-| 4a.1 | **fit は train 2021-04〜2024-12 のみ** (test 2025 禁止) | `PREDICTIONS = predictions_train_2021_2024.parquet` |
+| 4a.1 | **fit は train 2021-04〜2024-12 のみ** (test 2025 禁止) | `PREDICTIONS = predictions_train_2021_2024_k12long_refit.parquet` (K12 LONG num_leaves=15 部分採用版・2026-05-14) |
 | 4a.2 | scaler / km の joblib 保存 (artifact 名に "train" 含む) | `scaler_train_2021_2024.joblib` 等 |
 | 4a.3 | valid / test 2025 / test 2026 Q1 への apply は transform/predict のみ (再 fit 禁止) | コード review |
 | 4a.4 | **artifact 名禁止: `*test2025*` / `*test_2025*` / `*test*` 含むファイル名禁止** | `ls ml_phase4_a/*.joblib \| grep -i test` がゼロ件 |

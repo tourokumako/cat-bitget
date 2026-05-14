@@ -35,7 +35,7 @@
 - `SHORT_MAE(K)` = max(high[t+1..t+K]) − close[t]
 
 ラベルデータファイル:
-- train: `results/priority_rebuild/labels_mfe_mae_train_2021_2024.parquet`（394,573 行）
+- train: `results/priority_rebuild/labels_mfe_mae_train_2021_2024.parquet`（394,753 行）
 - test（仮テスト）: `results/priority_rebuild/labels_mfe_mae_test_2025.parquet`（105,120 行）
 - 本テスト: 2026-01-01 〜 2026-03-31 データ（25,824 行・温存中）
 
@@ -61,7 +61,7 @@ BTC 4 年周期（2024 年半減期）と 2024 年以降の価格上昇を踏ま
 
 | 期間 | 行数 | 用途 | 市場フェーズ |
 |---|---|---|---|
-| 2021-04 〜 2024-12 | 394,573 | 学習 | バブル→暴落→回復→上昇開始（全フェーズ網羅）|
+| 2021-04 〜 2024-12 | 394,753 | 学習 | バブル→暴落→回復→上昇開始（全フェーズ網羅）|
 | 2025-01 〜 2025-12 | 105,120 | 仮テスト（ハイパラ調整で何度見ても OK）| 上昇継続 |
 | 2026-01 〜 2026-03 | 25,824 | 本テスト（最後に 1 回だけ）| 上昇継続 |
 
@@ -293,7 +293,7 @@ CSV/md だけの報告は採用判定に使わない。
 
 | ファイル | 用途 |
 |---|---|
-| `results/priority_rebuild/labels_mfe_mae_train_2021_2024.parquet` | 学習データ（394,573 行）|
+| `results/priority_rebuild/labels_mfe_mae_train_2021_2024.parquet` | 学習データ（394,753 行）|
 | `results/priority_rebuild/labels_mfe_mae_test_2025.parquet` | 仮テストデータ（105,120 行）|
 | 2026 Q1 データ（温存中） | 本テストデータ（25,824 行）|
 | `indicator_catalogue.csv` | 指標カタログ（1,432 指標）|
