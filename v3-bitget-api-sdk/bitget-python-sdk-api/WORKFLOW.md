@@ -461,7 +461,7 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 > ⚠️ **この記述は旧 Phase 4-b 直行パス（Phase 4-a 完了 → Phase 4-b 着手）を想定したもの。**
 > 2026-05-14 セッション末の drift 対処確定 (固定維持 + K96 SHORT q99 除外) 後、
 > 次のタスクは **「選択肢 5 vs 7 の再評価」** に更新済み (§🔴 現在のフェーズ L273 参照)。
-> 本セクションは旧経緯の参考記録として保持する。Phase 4-b 着手時は L274 の最新指示を使うこと。
+> 本セクションは旧経緯の参考記録として保持する。Phase 4-b 着手時は L273 の最新指示を使うこと。
 
 **Phase 4-b: cluster × K × side ごとの最適 Exit (固定 TP / トレーリング / 時間 Exit) をデータ駆動で選択。**
 **phase_compliance §4b.4-b Exit 約定率 ≥ 12% 必達 / 採用 ML: Phase 1 + K12 LONG refit / 採用クラスタ: k=3 / 入力: predictions_train_2021_2024_k12long_refit.parquet + predictions_test2025_clustered.parquet。**
