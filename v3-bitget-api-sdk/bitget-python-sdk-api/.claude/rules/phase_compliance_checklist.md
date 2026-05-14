@@ -45,6 +45,7 @@
 | 4a.2 | scaler / km の joblib 保存 (artifact 名に "train" 含む) | `scaler_train_2021_2024.joblib` 等 |
 | 4a.3 | valid / test 2025 / test 2026 Q1 への apply は transform/predict のみ (再 fit 禁止) | コード review |
 | 4a.4 | **artifact 名禁止: `*test2025*` / `*test_2025*` / `*test*` 含むファイル名禁止** | `ls ml_phase4_a/*.joblib \| grep -i test` がゼロ件 |
+| 4a.5 | **K96 SHORT q99 フォールバック処理** (2026-05-14 案G で追加) | Phase 4-a クラスタリングで K96 SHORT q99 (1,660件) が独立 cluster に分離されない場合・または混在 cluster の実 MFE/MAE 比 < 1.0 の場合: 当該 cluster を no-trade で除外 / フォールバック発動時の年損失見込み: $169,400 (q99 全体の 9.6%)・全12ヶ月で $1,900 確保継続 (Web Claude 独立評価 2026-05-14) / 出典: results/priority_rebuild/ml_phase2/k96_short_q99_exclusion_scenario.csv |
 
 ## Phase 4-b (Exit シミュレーション)
 
@@ -55,6 +56,12 @@
 | 4b.3 | time_exit グリッドを K まで制限 (K×2 禁止) | `TIME_EXIT_GRID = (K//2, K)` |
 | 4b.4 | TP 約定モデル (固定 TP): bar high >= tp_price + 0.01% buffer | `simulate_fixed_tp` 改修 |
 | 4b.4-b | TP 約定モデル (予測 MFE 中央値ベース): cluster ごとに pred_MFE 中央値 × X% を TP_PCT 候補に追加 (audit#3 懸念4 / K12 LONG mechanism 対応・2026-05-14 案G で追加) | `simulate_predicted_mfe_tp` 新規実装 |
+
+**月別 Exit 約定率必達ライン (2026-05-14 Web Claude 評価)**:
+- 2025-12 が年最弱月 (楽観 PnL $16,933・8.9 倍)
+- Phase 6-b $1,900 死守には Exit 約定率 ≥ **12%** が必達
+- TP 約定 + トレーリング + 時間 Exit の合計で 12% を確保すること
+- 12% 未達なら Phase 4-b cluster_best_exit 再選定または Exit type 拡張要
 | 4b.5 | Trailing: bar 内 low 先・high 後 想定 | `simulate_trailing` 改修 |
 | 4b.6 | entry_price = bar i+1 open ± 0.005% | `extract_entries` 改修 |
 | 4b.7 | slippage 0.005% 全約定加算 | `compute_pnl` 改修 |

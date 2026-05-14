@@ -277,3 +277,30 @@ cc_ml_design_spec §1.6 不合格時の対応:
 注: §1.6 指標1 の positive 件数基準も連動改訂 (24組合せ20以上 → 8組合せ6以上)。
 q99 8組合せ実測 = 7/8 positive (= K96 SHORT q99 のみ negative・他 7 組全部 > 0)。
 6/8 基準クリア → 公式 PASS。
+
+### 8 組合せ別 net_quality (公式記録)
+
+| K | side | n_fire | net_quality | 判定 |
+|---:|---|---:|---:|---|
+| 12 | LONG | 1,660 | +16.06pp | ✅ positive |
+| 12 | SHORT | 2,023 | +10.97pp | ✅ positive |
+| 24 | LONG | 1,322 | +6.02pp | ✅ positive |
+| 24 | SHORT | 1,967 | +28.63pp | ✅ positive |
+| 48 | LONG | 3,601 | +33.72pp | ✅ positive |
+| 48 | SHORT | 2,323 | +27.71pp | ✅ positive |
+| 96 | LONG | 5,133 | +23.37pp | ✅ positive |
+| 96 | SHORT | 1,660 | **-8.22pp** | ❌ **negative** |
+
+加重平均: +20.58pp (閾値 +10pp) ✅
+positive 件数: 7/8 (閾値 6/8) ✅
+出典: [results/priority_rebuild/ml_phase2/net_quality_24combinations.csv](../../results/priority_rebuild/ml_phase2/net_quality_24combinations.csv)
+
+### K96 SHORT q99 構造的問題 (記録)
+
+- 旧 leak 由来 MFE/MAE 比 = 0.986
+- 新 leak-free MFE/MAE 比 = 0.986 (完全同値)
+- → leak と独立な構造的逆行
+- 月別分布: 2025-01 (n=700・42.2%) + 2025-09 (n=549・33.1%) = 75.3% 集中
+- 2025-09 で MFE/MAE = 0.778 (最悪逆行)
+- Phase 4-a/4-b で対処必須 (フォールバック spec は [phase_compliance §4a.5](../rules/phase_compliance_checklist.md) 参照)
+- フォールバック発動時の年損失見込み: $169,400 (q99 全体の 9.6%)・全12ヶ月で $1,900 確保継続
