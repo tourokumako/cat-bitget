@@ -264,29 +264,26 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-14 改訂9・Phase 4-a 完了確定 + 選択肢 5 vs 7 再評価待ち）
+## 🔴 現在のフェーズ（2026-05-14 改訂10・Phase 4-b 着手中）
 
-> ⚠️ **本日セッションで Phase 4-a 採否判定が複層化・Phase 4-b 着手前に対処方針確定が必要**
+> **本日 (2026-05-14) の確定事項 (audit#7/#8/#9 + まこさん承認)**:
+> 1. Phase 4-a k=3 採用後の k=2 vs k=3 比較で train/test 安定性に問題 → k=2 で clustering 廃止・選択肢 5 採用
+> 2. K96 SHORT q99 で train→test 絶対閾値 drift により発火 0 件問題発覚 (全選択肢共通)
+> 3. §8 違反 (K12 LONG refit) 発覚・解消済 (commit d9d322c)
+> 4. run_phase2_precision.py が案 G 改訂後 spec を未実装だった → 改修済 (audit#8)
+> 5. rolling 365 日採用時: Phase 2 指標 1 が 9.13pp (FAIL ライン 10pp 割れ) の事実を確認
 >
-> 本日 (2026-05-14) のセッションで以下が判明:
-> 1. Phase 4-a k=3 採用後の k=2 vs k=3 比較で train/test 安定性に問題 (max_diff 35-44pp)
-> 2. 入力正規化で k=2 のみ要警戒帯 (16.15pp) に到達・k≥3 は失敗水準
-> 3. clustering 廃止後の選択肢 1/4/5/6/7 評価で **K96 SHORT q99 で train→test 絶対閾値 drift により発火 0 件問題** 発覚 (全選択肢共通)
-> 4. **§8 違反 (K12 LONG refit が test 結果 audit#3 -9.99% を直接参照) 発覚** (監査#7)
-> 5. **run_phase2_precision.py が案 G 改訂後 spec を未実装** だった (監査#8・本日改修済)
-> 6. 絶対閾値 drift 対処方針評価で案 a (rolling 365) のみ §8 適合・ただし Phase 2 指標 1 が 9.13pp で改訂後 spec FAIL ライン (>10pp) を割る
->
-> **本セッション確定事項 (2026-05-14 audit#7/#8/#9)**:
+> **確定事項 (2026-05-14・改訂10)**:
 > - K12 LONG refit (commit d9d322c) **維持**確定 (audit#7 → 案 Z で影響限定的確認)
 > - Phase 2 正式判定 = **改訂後 spec で 4 指標 ALL PASS** (audit#8 → 案 A で script 改修済)
-> - 絶対閾値 drift 対処 = **固定維持 + K96 SHORT q99 除外** 確定 (audit#9 → rolling/ハイブリッド却下)
->   - cc_ml_design_spec.md §1.6.2 で明文化済 / phase_compliance_checklist.md §4a.5 拡張済 (test 発火 0 件追加)
+> - 絶対閾値 drift 対処 = **rolling 365 日採用**（まこさん明示承認・2026-05-14）
+>   - 理由: BTC 価格 train→test で 2.4 倍・固定閾値では 2025 年に発注ほぼゼロ・月次 $1,900 達成に市場適応が必須
+>   - audit#9「固定維持 + K96 SHORT q99 除外」確定は**本承認で撤回**
+>   - look-ahead leak verify 済 (`shift(1).rolling(365*288).quantile(0.99)`)
+> - **選択肢 5 採用確定**（K × side × q-level・19 有効組合せ）
 >
-> **次のタスク**: **選択肢 5 vs 7 の再評価** (前提: 固定維持 + K96 SHORT q99 除外・**監査経路を通す**・audit#9 明記)
->
-> **次セッション着手前必読**: [handoff_to_web_claude_v5_session_20260514.md](.claude/instructions/handoff_to_web_claude_v5_session_20260514.md) (経緯・本題・宿題を集約)
->
-> **未処理の宿題**: 完了報告テンプレに train→test 変化表必須化 (audit#9 懸念 2) / spec/script consistency 未実装 2 項目 (audit#8) / 統計的有意性疑問の組合せ (audit#9 見落とし E)
+> **現在**: **Phase 4-b 着手中**（Exit 設計 + Phase 5 Replay）
+> 指示書: [.claude/instructions/2026-05-14_rolling_phase4b_phase5.md](.claude/instructions/2026-05-14_rolling_phase4b_phase5.md)
 
 ---
 
