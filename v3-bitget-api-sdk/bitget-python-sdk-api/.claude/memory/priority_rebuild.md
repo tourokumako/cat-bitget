@@ -315,7 +315,7 @@ regime 研究で蓄積した教訓は **Priority 再構築フェーズでも継�
 
 ### 必読（現フェーズ）
 
-- このファイル（priority_rebuild.md）— Priority 再構築の唯一の正本
+- ~~このファイル（priority_rebuild.md）~~ — 🧊 旧 A-1〜D framework・凍結・参照のみ
 - [WORKFLOW.md](../../WORKFLOW.md) — 現フェーズ + 次のタスクのポインタ
 - [CLAUDE.md](../../../CLAUDE.md) — 設計思想・現方針
 - [lessons_active.md](lessons_active.md) — L-159〜L-166 重点

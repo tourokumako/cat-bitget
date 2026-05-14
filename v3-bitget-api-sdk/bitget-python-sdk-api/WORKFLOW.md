@@ -89,9 +89,12 @@ ClaudeはPM・PL・SE・プログラマの全役割を担う。
 
 ## Priority 再構築管理
 
-Priority 再構築フェーズの**設計マトリクス・進捗管理表・検証結果集計表・教訓・試行禁止リスト**はすべて **`.claude/memory/priority_rebuild.md`** が**唯一の正本**。
-WORKFLOW.md には設計詳細・進捗詳細を書かない（重複は不整合の元・regime 研究と同じ管理パターン）。
-セッション開始時・段階遷移時・採否判定時は priority_rebuild.md を読み、更新する。
+> 🧊 priority_rebuild.md (旧 A-1〜D framework) は 2026-05-13 ML pipeline 切替で廃止・参照のみ。
+
+ML pipeline (Phase 0〜7) の**仕様・合否基準・設計確定事項**の正本は以下の 3 ファイル:
+- **[cc_ml_design_spec.md](cc_ml_design_spec.md)** — Phase 別設計仕様・合否基準・drift 対処方針
+- **[WORKFLOW.md](WORKFLOW.md)** (本ファイル) — 現フェーズ + 次のタスク + セッション確定事項
+- **[.claude/rules/phase_compliance_checklist.md](.claude/rules/phase_compliance_checklist.md)** — Phase 別着手前チェックリスト
 
 ## シグナル管理
 
@@ -314,7 +317,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 **フェーズ: Priority ゼロから再構築 — ML パイプライン v2 (leak フリー再構築)**
 **regime 判定研究: 🧊 凍結**（素材転用のみ・新規調査停止）
 
-設計詳細・段階別仕様・進捗管理表・検証結果集計表は **[`.claude/memory/priority_rebuild.md`](.claude/memory/priority_rebuild.md) §0〜§7 が唯一の正本**。本ファイルではポインタのみ記載。
+設計詳細・段階別仕様は **[cc_ml_design_spec.md](cc_ml_design_spec.md)** が正本。進捗・確定事項は本ファイル (WORKFLOW.md)、着手前チェックは **[phase_compliance_checklist.md](.claude/rules/phase_compliance_checklist.md)** を参照。(priority_rebuild.md は旧 A-1〜D framework・凍結・参照のみ)
 
 ### 方針転換の背景（要約）
 
@@ -697,7 +700,9 @@ python3 runner/replay_csv.py data/BTCUSDT-5m-2025-04-01_03-31_365d.csv --regime
 
 ### 必読（現方針）
 - **WORKFLOW.md**（このファイル・現フェーズ + 次のタスクのポインタ）
-- **.claude/memory/priority_rebuild.md**（**Priority 再構築の唯一の正本**・設計マトリクス + 進捗 + 結果集計）
+- **cc_ml_design_spec.md**（ML pipeline 仕様・合否基準・確定方針の正本）
+- **.claude/rules/phase_compliance_checklist.md**（Phase 別着手前チェックリスト）
+- ~~.claude/memory/priority_rebuild.md~~（🧊 旧 A-1〜D framework・凍結・参照のみ）
 - **CLAUDE.md**（v3-bitget-api-sdk/CLAUDE.md・設計思想・現方針）
 - **.claude/memory/lessons_active.md**（直近・L-159〜L-166 を重点）
 - **.claude/memory/signal_ledger.md**（シグナル候補・regime マッピング部分は凍結中）
