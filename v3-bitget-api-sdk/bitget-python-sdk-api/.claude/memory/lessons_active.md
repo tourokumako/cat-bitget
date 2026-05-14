@@ -1,4 +1,19 @@
-# lessons_active.md — 直近50件の現役教訓（L-190〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-191〜L-103）
+
+---
+
+### L-191: ガバナンス文書は配置だけでなく必読リスト・完了報告テンプレ・CC feedback への参照接続が必須（2026-05-15）
+
+**何が起きたか:**
+false_positive_incident_policy.md（150行）と web_claude_self_check.md 新版（140行）を制定したが、WORKFLOW.md / CLAUDE.md の必読リスト・完了報告必須証跡・CC feedback (feedback_pre_execution_premise_check.md) への参照が組み込まれていなかった。ファイルが存在しても参照点がなければ「誰も読まない文書」になる。
+
+**Why:**
+- ガバナンス文書は「参照される仕組み」がないと機能しない（L-159/L-160 を追加して1日で再発した前例と同構造）
+- false_positive_incident_policy.md §6 自体に「各ファイルに参照を実際に追加する」と書かれていた
+
+**How to apply:**
+- 新規ガバナンス文書を配置したら、同一コミットで WORKFLOW.md 必読リスト / CLAUDE.md 必読表 / feedback_pre_execution_premise_check.md への参照・要点転記まで完了させる
+- 「正本化時に追加作業も実施・まこさん確認」を完了条件に含める
 
 ---
 
