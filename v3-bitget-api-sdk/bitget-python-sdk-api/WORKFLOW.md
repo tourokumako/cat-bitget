@@ -30,7 +30,7 @@ ClaudeはPM・PL・SE・プログラマの全役割を担う。
   - 完了報告内の手計算・補完評価は「参考」表記とし、「公式」「公式判定」「公式記録」の語を使用しない
   - 完了報告には冒頭に「公式 source: results/.../phaseX_summary.json」を必ず明記する
   - 背景: 2026-05-14 監査#8 で「Phase 2 改訂後 spec PASS」が script 改修されないまま手計算で補完されていた事案を防止
-- **完了報告必須証跡 5点**（2026-05-08 追加 / 5点目 2026-05-09 追加・L-162）:
+- **完了報告必須証跡 8点**（2026-05-08 追加 / 5点目 2026-05-09 追加・L-162 / 7点目・8点目 2026-05-15 追加・false_positive_incident_policy.md §5A/B）:
   1. **コード総点検 grep 結果**（全件・"no matches"含む・関連スクリプト全部）
      - 4種の grep: ① TF endswith/startswith ② TFリスト固定値 ③ カテゴリ固定値 ④ 絞り込み処理（best 1/argmax/nlargest(1)）
   2. **数値の二重提示**（サマリー + 出典ファイル引用・行番号付き）
@@ -43,6 +43,12 @@ ClaudeはPM・PL・SE・プログラマの全役割を担う。
   6. **個別組合せ/クラスタの train→test 変化表**（2026-05-14 追加・audit#9 懸念2）
      - 形式: 組合せ名 / train 値 / test 値 / 差 (pp) / test 件数
      - 適用: 組合せ比較・設計選択を含む完了報告に必須（Phase 4-b 系タスク等）
+  7. **異常値スメルテスト結果**（false_positive_incident_policy.md §5A・2026-05-15 追加）
+     - 以下 4 条件を全て確認した結果を1行で報告：① 勝率 / ② 月次 NET / ③ IS-OOS Sharpe 比 / ④ 最大 DD
+     - いずれか 1 つでも ① > 70% / ② > $3,800 / ③ > 3 倍乖離 / ④ < 月次 NET の 10% に該当したら「合格」と書かず「**異常値・要調査**」と書く
+  8. **全工程の未来参照 verify（変数の因果性宣言）**（false_positive_incident_policy.md §5B・2026-05-15 追加）
+     - PnL・判定計算式（Entry / Exit / Replay 全工程）の入力変数を列挙し、「各変数が推論時点 t で因果的に存在するか」を 1 行ずつ宣言する
+     - 変数名 grep だけでは名前変更で素通りするため、因果性の宣言が必須（例: `mfe_te[i]` が test_MFE_K12 を参照しているか確認）
   - 1つでも欠けたら完了とみなさない
   - 「総点検したから違反なし」を grep 結果なしに主張しない
   - 「やった」「完了」を実行ログなしに主張しない
@@ -650,6 +656,8 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 8. [.claude/memory/lessons_active.md](.claude/memory/lessons_active.md) L-179 重点
 9. [.claude/rules/core_rules.md](.claude/rules/core_rules.md) MUST/NEVER
 10. [.claude/rules/exchange_spec.md](.claude/rules/exchange_spec.md) Bitget 発注仕様
+11. **[.claude/rules/false_positive_incident_policy.md](.claude/rules/false_positive_incident_policy.md)** **【最重大・CC/Web Claude 共通正本】虚偽達成・虚偽報告インシデント方針** — 類型 A〜G（look-ahead leak / バックテストトリック / 多重検定 / レジーム依存 / 計算ミス / proxy 偽装 / 読んだふり）・発見時強制手順・防止関所 7 つ（2026-05-15 制定）
+12. [.claude/rules/web_claude_self_check.md](.claude/rules/web_claude_self_check.md) 読了ゲート・第〇原則・チェック A/B/C（新版 140 行・audit#12/14 反映・2026-05-15 更新）
 
 ---
 

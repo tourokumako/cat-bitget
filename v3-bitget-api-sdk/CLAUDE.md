@@ -120,6 +120,8 @@
 | `bitget-python-sdk-api/.claude/rules/exchange_spec.md` | Bitget USDT-FUTURES スペック正本 (手数料・最小単位・Funding時刻・メンテ時間) |
 | `bitget-python-sdk-api/.claude/memory/signal_ledger.md` | シグナル候補・検証実績（参考・regime マッピングは凍結中） |
 | `bitget-python-sdk-api/.claude/memory/regime_research.md` | 🧊 **凍結中**（素材として参照のみ・新規調査禁止） |
+| `bitget-python-sdk-api/.claude/rules/false_positive_incident_policy.md` | **【最重大・CC/Web Claude 共通正本】虚偽達成・虚偽報告インシデント方針** — 類型 A〜G・発見時強制手順・防止関所 7 つ（2026-05-15 制定） |
+| `bitget-python-sdk-api/.claude/rules/web_claude_self_check.md` | Web Claude 読了ゲート・チェック A/B/C（新版 140 行・audit#12/14 反映・2026-05-15 更新） |
 
 ---
 
