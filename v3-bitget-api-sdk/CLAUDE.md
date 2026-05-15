@@ -16,6 +16,12 @@
 
 ## ⛔ 絶対禁止（NEVER）
 
+- **【最大級・Prime Directive】本番運用で再現不可能な実装の使用禁止**
+  バックテスト・学習・Replay・PnL計算・採用判定など、すべての工程において、本番運用の推論時点 t で因果的に取得不可能な値を計算式・判定式・採用ロジックに使用することを禁止する。
+  使えない例: MFE/MAE等の保有期間中最大値、K本後の値、期間全体集計値、test 結果を見て決めたパラメータ
+  使える例: shift(1)で当該時点を除外した過去集計、過去発生イベントのフラグ、train だけで決めた定数
+  判定基準と詳細: `.claude/rules/false_positive_incident_policy.md` §0
+  違反は同 §2 類型 A として最重大インシデント扱い。
 - `ALLOW_LIVE_ORDERS=False` を True に変更しない（ユーザーのみ）
 - `paper_trading` フラグをコードで変更しない
 - `config/bitget_keys.json` の中身をログ・画面に出力しない
