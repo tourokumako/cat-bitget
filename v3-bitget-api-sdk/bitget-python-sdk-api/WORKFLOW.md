@@ -1,5 +1,25 @@
 # WORKFLOW.md — cat-bitget 作業フロー
 
+---
+
+## 🛑 2 大絶対規定（プロジェクト全期間で常に有効・各 Phase 着手前に必ず確認）
+
+本プロジェクトには、Phase に依存せず常に守るべき 2 つの最大級の禁止事項がある。これらに違反した実装・成果物は、いかなる Phase 進行・指示書内容にも優先して無効とする。
+
+### 1. Prime Directive — 本番運用で再現不可能な実装の絶対禁止
+本番運用の推論時点 t において、その変数の値が因果的に確定済みで、かつ実際の取引システムから取得可能であるものだけを、計算式・判定式・採用ロジックに使用できる。
+詳細: `.claude/rules/false_positive_incident_policy.md` §0-1
+違反は同 §2 類型 A（look-ahead leak）として最重大インシデント扱い。
+
+### 2. ポジション上限 0.12 BTC 合計厳守
+任意の時点 t において、保有中の全ポジションの合計 BTC サイズが 0.12 BTC を超えてはならない。1 ポジあたりではなく合計上限。各ポジの配分は柔軟（強い combo に多く、弱い combo に少なく等）。
+詳細: `.claude/rules/false_positive_incident_policy.md` §0-2
+違反は同 §2 類型 H（運用上限逸脱）として最重大インシデント扱い。
+
+各 Phase の着手前および完了報告時に、両規定への適合を verify すること。
+
+---
+
 > 過去版・歴史的記録: [archive/workflow/](archive/workflow/)
 > - [WORKFLOW_20260427.md](archive/workflow/WORKFLOW_20260427.md) — 直前の Day 2/3 完了報告・本セッション総括・マスタープラン9本・古い Priority ステータス
 > - [WORKFLOW_20260422.md](archive/workflow/WORKFLOW_20260422.md) — 2026-04-22 時点スナップショット

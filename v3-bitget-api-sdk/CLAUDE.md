@@ -20,8 +20,13 @@
   バックテスト・学習・Replay・PnL計算・採用判定など、すべての工程において、本番運用の推論時点 t で因果的に取得不可能な値を計算式・判定式・採用ロジックに使用することを禁止する。
   使えない例: MFE/MAE等の保有期間中最大値、K本後の値、期間全体集計値、test 結果を見て決めたパラメータ
   使える例: shift(1)で当該時点を除外した過去集計、過去発生イベントのフラグ、train だけで決めた定数
-  判定基準と詳細: `.claude/rules/false_positive_incident_policy.md` §0
+  判定基準と詳細: `.claude/rules/false_positive_incident_policy.md` §0-1
   違反は同 §2 類型 A として最重大インシデント扱い。
+- **【最大級・第二絶対規定】ポジション上限 0.12 BTC 合計厳守**
+  任意の時点 t で保有中の全ポジションの合計 BTC サイズが 0.12 BTC を超えてはならない。1 ポジあたりではなく合計上限。
+  各ポジの個別サイズは combo 別・予測強度別で柔軟に配分してよい（例: 強い combo に 0.04 BTC、弱い combo に 0.01 BTC）。合計が 0.12 BTC 以内であることのみが絶対制約。
+  実装は全エントリー時点で `sum(active_position_btc) ≤ 0.12` を verify する義務を負う。
+  違反は `.claude/rules/false_positive_incident_policy.md` §2 類型 H として最重大インシデント扱い。
 - `ALLOW_LIVE_ORDERS=False` を True に変更しない（ユーザーのみ）
 - `paper_trading` フラグをコードで変更しない
 - `config/bitget_keys.json` の中身をログ・画面に出力しない
