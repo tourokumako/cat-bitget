@@ -596,19 +596,38 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 | 補助 | scripts/data/download_bitget_5y.py | Bitget USDT-FUTURES 5y データ取得 + 整合性 verify | データ |
 | 補助 | data/BTCUSDT-5m-bitget-2021-04-01_2026-03-31_5y.csv | Bitget 5y CSV (525,887 rows) | データ |
 
-### 次セッション最初にやること (Phase 2: 精度判定)
+### 次セッション最初にやること (Phase 0 v3 Step 3d: フル実行)
 
-> **Phase 1 完了済み。Phase 2 着手。**
-> `predictions_test2025.parquet` は `results/priority_rebuild/ml_phase1/` に存在する (105,120行 × 17列)。
-> `entry_thresholds.json` / `training_summary.csv` も保存済み。
+> **2026-05-19 PM-EVE セッション更新: Phase 0 v3 Step 1-6 完了・Step 3d (フル実行) 着手待ち。**
+> 旧 Phase 1〜7-a (16 ラベル USD 絶対値版) は archive 済・無効化。
+> `build_labels_pct.py` 実装完了・dry-run + sample-3d 通過済。
+> Phase 0 Step 3d で `labels_mfe_mae_pct_*.parquet` 3 ファイルを生成 (8-12h 想定)。
 
 1. WORKFLOW.md §🔴 現在のフェーズ + §次のタスク を再読
-2. cc_ml_design_spec.md §Phase 2 精度判定基準を確認
-3. **Phase 2: 仮テスト 2025 で 4 指標合格条件判定 (cc_ml_design_spec §1.6 / 2026-05-14 改訂)**
-   - `predictions_test2025.parquet` (MFE/MAE 予測値 × 105,120行) と `labels_mfe_mae_pct_test_2025.parquet` (実際の MFE/MAE pct) を照合 ※ 旧版 `labels_mfe_mae_test_2025.parquet` は archive 済 (2026-05-19)
-   - q90/q95/q99 閾値 × K12/24/48/96 × LONG/SHORT = 24 組合せ別に評価
-   - 4 指標: ①q99 net_quality (加重平均 > +10pp かつ 20/24 組 > 0) / ②net_quality 最小値 > -50pp / ③valid_rmse/label_std (14/16 ラベル < 1.5) / ④mean_real_MFE/MAE (20/24 組 > 1.0)
-   - 全 4 指標 PASS → Phase 3 へ / 1 件以上 FAIL → まこさん協議 (自動 k=2 切替なし)
+2. **[handoff_to_web_claude_v13_session_20260519.md](.claude/instructions/handoff_to_web_claude_v13_session_20260519.md) を読了** (最新セッション引き継ぎ)
+3. **Phase 0 v3 Step 3d: フル実行**
+   - コマンド: `python3 scripts/priority_rebuild/build_labels_pct.py` (working dir = bitget-python-sdk-api)
+   - 想定実行時間: 8〜12 時間 (525,887 行 × 1,462 指標 × 6 TF × 28 ラベル)
+   - 出力: `results/priority_rebuild/labels_mfe_mae_pct_{train_2021_2024,test_2025,test_2026_q1}.parquet`
+   - background 実行推奨: `nohup python3 ... > log_build_labels_pct.txt 2>&1 &`
+4. **Step 3d 完了後の作業 (Phase 0 完了報告):**
+   - 期間別 parquet 行数 verify (期待: 末尾 K=288 drop 適用後 train 394,465 / 仮 test 104,832 / 本 test 25,535)
+   - 全 28 ラベル統計値 (mean / std / min / max) per K × side × MFE/MAE
+   - メンテ時間帯 flag 行数の期間別実測 (期待 5.35%)
+   - 計算結果サンプル (各 K 上位 5 行)
+   - **completion report 作成**: `.claude/instructions/2026-05-19_ml_implementation_phase0_1_completion_phase0.md`
+   - audit report ([.claude/audits/2026-05-19_phase0_audit_report.md](.claude/audits/2026-05-19_phase0_audit_report.md)) の Step 3d 後追記項目を埋める
+5. **Phase 1 (LightGBM 学習) 着手判定:**
+   - Web Claude レビュー → Phase 1 指示書発注待ち
+   - Phase 1 学習対象 = 1,462 - 48 (USD 絶対値 blacklist) = **1,414 feature**
+   - blacklist リスト: [phase_compliance_checklist.md §Phase -1](.claude/rules/phase_compliance_checklist.md)
+   - B-15 3 系列並列 (RMSE / 直接 PnL / Sharpe maximizing) 実装
+
+### 旧 Phase 2 精度判定タスク (⛔ 2026-05-19 無効化)
+
+> ⛔ 旧 Phase 1〜7-a の predictions_test2025.parquet 等は leak 由来 + USD 絶対値で無効化済。
+> Phase 0 v3 Step 3d 完了 → Phase 1 (新 LightGBM 学習) 着手後に新 predictions_test2025.parquet が生成される。
+> 旧 Phase 2 4 指標判定 (q99 net_quality 等) は新 Phase 1 完了後に再評価。
 4. 動的 verify (Phase 4 以降用・持ち越し):
    - Phase 4-a 実行後 `ls results/priority_rebuild/ml_phase4_a/*.joblib` (期待: `*train_2021_2024*` のみ・`*test*` 不在)
    - Phase 4-b 実行後 `cluster_best_exit_FROM_TRAIN.csv` の (cluster, K, side, exit_type) unique 列挙

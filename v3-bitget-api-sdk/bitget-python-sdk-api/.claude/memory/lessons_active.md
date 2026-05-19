@@ -1,4 +1,83 @@
-# lessons_active.md — 直近50件の現役教訓（L-191〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-195〜L-103）
+
+---
+
+### L-195: gitignore は「親ディレクトリ全体 ignore + 子ファイル例外」では機能しない（2026-05-19）
+
+**何が起きたか:**
+pruned_column_list.json (`results/regime_label_analysis/` 配下) を git 管理化するため `.gitignore` に `!path/to/file` 例外を 1 行追加。しかし `git check-ignore -v` で確認すると依然として ignore されたまま。Git 公式仕様 (https://git-scm.com/docs/gitignore) で「It is not possible to re-include a file if a parent directory of that file is excluded」と明記されていた。
+
+**Why:** Git は parent directory 全体を ignore すると、その内部を scan しないため、子ファイルの `!` 例外指定は無視される。
+
+**How to apply:**
+- ディレクトリ全体 ignore + 内部の特定ファイル例外が必要なときは、4 行構造で書く:
+  ```
+  parent_dir/*                      ← 中身全 ignore (ディレクトリスキャンは可能)
+  !parent_dir/sub_dir/              ← sub_dir を ignore 除外
+  parent_dir/sub_dir/*              ← sub_dir 内全 ignore
+  !parent_dir/sub_dir/target_file   ← target_file のみ ignore 除外
+  ```
+- `git check-ignore -v <path>` で必ず動作確認する (出力の `.gitignore:line:pattern` が `!` 行を指していれば OK)
+- 旧構造のままでは「修正したつもり・実際は動いていない」状態になる類型 G に近い
+
+**関連:** [.gitignore L15-19](../../../.gitignore)
+
+---
+
+### L-194: 選択肢の併置は「楽な道を選ばせる構造」を生む — 原則違反の判定では単一推奨を断言する（2026-05-19）
+
+**何が起きたか:**
+Phase 0 Step 4 (USD 絶対値系 feature blacklist) で 3 つの選択肢を提示した:
+- A: pct 化追加 (情報保持・実装コスト中・推奨)
+- B: シンプル全除外 (情報落ち・実装コスト最小)
+- C: 一部のみ pct 化 (中間案)
+
+ユーザーから「面倒だからって不正を働こうとしてる?」と指摘を受けた。価格非依存性違反 (USD 絶対値 feature を学習に流す) は false_positive_incident_policy §2 類型 H 近接の不正であり、A 以外を選択肢として並べた時点で「楽な道 = 不正の余地」を提供していた。
+
+**Why:**
+- 「実装コスト」「面倒」を理由にした逃げ道を選択肢として並べると、PM 判断責任を放棄しているのと同義
+- 慎重派の選択肢を併記する意図 (PM 視点で「決めつけない」配慮) が、結果的に「楽な道を選ばせる構造」になる
+- 原則違反 (価格非依存性 / leak / 第二絶対規定等) の判定では、選択肢併置 = 不正容認
+
+**How to apply:**
+- 原則違反 (`false_positive_incident_policy.md` 類型 A〜H 該当案件) では、**PM 推奨 1 つを断言**する
+- 「慎重派の代替案」は選択肢ではなく、本文中で「採用不可・理由」として明示する
+- 「PM 推奨 + 反対意見併記」の構造 ではなく「PM 推奨断言 + 採用不可選択肢の根拠」の構造を採る
+- memory `feedback_design_judgment_owner` (設計探索でまこさん判断不能時は Claude が推奨方針を断言する) と整合
+
+**関連:** Phase 0 Step 4 / commit 6803a60
+
+---
+
+### L-193: スクリプト OUT_DIR はリポジトリ内の絶対パスを正確に書く（2026-05-16）
+
+**何が起きたか:**
+棚卸しスクリプトの `OUT` パスを `RESULTS` 変数（`v3-bitget-api-sdk/.../results/priority_rebuild`）から導出せず、リポジトリルート直下の `results/priority_rebuild/inventory_2026_05_16` にハードコードした。生成後まこさんに指摘されて発覚し、`mv` で正しい場所に移動した。
+
+**Why:** スクリプト執筆時に `RESULTS` 変数（正しいパス）と `OUT` 変数（間違ったパス）が分かれており、`OUT` を `RESULTS / "inventory_..."` と定義すべきところを独立したパスで書いてしまった。
+
+**How to apply:**
+- 出力先パスは `RESULTS` 等の既定変数から相対的に定義する（`OUT = RESULTS / "inventory_YYYYMMDD"`）
+- 絶対パスをハードコードする場合は `v3-bitget-api-sdk/bitget-python-sdk-api/results/` 配下であることを先に確認する
+- 実行直後に `ls` で出力先を確認してからチャット報告する
+
+---
+
+### L-192: 類型H インシデント — POSITION_BTC を per-trade に掛けると cap=none 時に上限の N 倍超過（2026-05-15）
+
+**何が起きたか:**
+`run_phase4b_phase5_rolling_option5.py` (v2) で `POSITION_BTC=0.12` を全エントリーに直接掛けた実装が動いていた。cap=none・19 combo 同時発火で合計 **2.28 BTC（規定 0.12 BTC の 19 倍）**。v2 の Phase 5 PnL $186,769 はこの位置違反による 19× スケールが全体を占め、実質的に無意味な数字だった。修正 (v3) で動的サイジング `size = remaining / n_sim` に変更し `sum_verify_max = 0.12000000 ✅`。修正後の正直な Phase 5 PnL = **-$985.35（全12ヶ月不合格）**。
+
+**Why:**
+- CLAUDE.md に「合計上限 0.12 BTC」と明文記載されていたが、実装の sum verify がなかった
+- per-trade と aggregate を混同する誘惑: 「1 ポジ = 0.12 BTC」という書き方が自然に出やすい
+- 完了報告に `sum_verify_max` 実測値を含めるチェックがなかった
+
+**How to apply:**
+- ポジションサイジングを実装したら必ず `assert sum_verify_max <= MAX_TOTAL_BTC + 1e-10` を実行時 assertion に入れる
+- Phase 4-b/5 系の完了報告に「各時刻 t での sum(active_btc) の最大値」を必ず明記する
+- 「0.12 BTC」と書かれた定数が「per-trade」か「aggregate」かを着手前に明示的に確認する
+- `false_positive_incident_policy.md` §0-2 / §2 類型 H 参照
 
 ---
 
