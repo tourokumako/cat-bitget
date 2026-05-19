@@ -190,10 +190,15 @@ def build_indicators(df):
     f["stoch_d"] = sd
     f["williams_r"] = williams_r(h, l, c, 14)
     macd_line, macd_sig, macd_hist = macd(c)
-    f["macd_hist"] = macd_hist
-    f["macd_hist_change"] = macd_hist - macd_hist.shift(1)
-    f["macd_line"] = macd_line
-    f["macd_signal"] = macd_sig
+    f["macd_hist"] = macd_hist                                  # USD scale (2026-05-19 blacklist 対象・互換のため残置)
+    f["macd_hist_change"] = macd_hist - macd_hist.shift(1)      # USD scale (2026-05-19 blacklist 対象・互換のため残置)
+    f["macd_line"] = macd_line                                  # USD scale (2026-05-19 blacklist 対象・互換のため残置)
+    f["macd_signal"] = macd_sig                                 # USD scale (2026-05-19 blacklist 対象・互換のため残置)
+    # pct 化版 (2026-05-19 追加・価格非依存性 #4・close 正規化)
+    f["macd_line_pct"] = macd_line / c * 100
+    f["macd_signal_pct"] = macd_sig / c * 100
+    f["macd_hist_pct"] = macd_hist / c * 100
+    f["macd_hist_change_pct"] = (macd_hist - macd_hist.shift(1)) / c * 100
     f["momentum_10b"] = (c / c.shift(10) - 1) * 100
 
     # ダイバージェンス

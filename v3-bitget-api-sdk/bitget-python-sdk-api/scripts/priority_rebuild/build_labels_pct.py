@@ -1,4 +1,4 @@
-"""build_labels_pct.py — Phase 0: 5m bar × 1,432 指標 × 28 MFE/MAE (pct) ラベル を生成
+"""build_labels_pct.py — Phase 0: 5m bar × 1,462 指標 × 28 MFE/MAE (pct) ラベル を生成
 
 目的: Phase 1 LightGBM 学習用 parquet を pct 化 + 28 ラベル + メンテ除外フラグで生成する。
 
@@ -10,6 +10,11 @@
   3. メンテ時間帯フラグ列追加: 火/水/木 05-08 UTC (exchange_spec.md 定期メンテ)
      学習時に df[~df.is_maintenance] でフィルタ可能。
   4. 出力ファイル名: labels_mfe_mae_pct_*.parquet (旧版と共存)
+  5. USD 絶対値系 8 ファミリー × 6 TF = 48 feature の pct 化版 5 ファミリー × 6 TF = 30 feature 新規追加
+     (close_vs_tenkan_pct / macd_line_pct / macd_signal_pct / macd_hist_pct / macd_hist_change_pct)
+     旧 USD 絶対値版 (sma_20/50, ichimoku_kijun/tenkan, macd_line/signal/hist/hist_change) は
+     phase_compliance_checklist.md Phase -1 で blacklist 適用・Phase 1 学習時に drop。
+     最終学習対象: 1,462 - 48 (blacklist) = 1,414 feature。
 
 実行モード:
   --dry-run         : 構造 + import + 期待集合 1,432 確認のみ (指標計算スキップ・数秒)
@@ -26,7 +31,7 @@
   - results/priority_rebuild/labels_mfe_mae_pct_test_2025.parquet
   - results/priority_rebuild/labels_mfe_mae_pct_test_2026_q1.parquet
   - results/priority_rebuild/labels_mfe_mae_pct_sample.parquet  (--sample-days)
-  列構成: timestamp(index) + close + 1,432 指標 + 28 ラベル + is_maintenance = 1,462 列
+  列構成: timestamp(index) + close + 1,462 指標 + 28 ラベル + is_maintenance = 1,492 列
 
 ラベル定義 (K=6/12/24/48/96/144/288 bar = 30min/1h/2h/4h/8h/12h/24h):
   - LONG_MFE_pct_K{K}  = (max(high[t+1..t+K]) - close[t]) / close[t] × 100
@@ -197,7 +202,7 @@ def validate_columns(df: pd.DataFrame, pruned_spec: dict) -> None:
             f"  missing ({len(missing)}, head 10): {sorted(missing)[:10]}\n"
             f"  extra   ({len(extra)}, head 10):   {sorted(extra)[:10]}"
         )
-    print(f"[assert OK] 指標列 {len(expected)} 完全一致 (1,432 期待)")
+    print(f"[assert OK] 指標列 {len(expected)} 完全一致 (1,462 期待・pct 化 30 件追加後・USD 絶対値 48 件は Phase 1 で blacklist drop)")
 
 
 def compute_mfe_mae_labels_pct(df5m: pd.DataFrame) -> pd.DataFrame:
@@ -243,8 +248,8 @@ def run_dry_run(df5m: pd.DataFrame, pruned_spec: dict) -> None:
         cat_total = sum(len(pruned_spec[cat][tf]["all"]) for tf in TIMEFRAMES)
         print(f"  {cat}: {per_tf} (total {cat_total})")
 
-    if len(expected) != 1432:
-        raise RuntimeError(f"期待集合の総数が 1,432 と不一致: {len(expected)}")
+    if len(expected) != 1462:
+        raise RuntimeError(f"期待集合の総数が 1,462 と不一致: {len(expected)}")
 
     print(f"[dry-run] K_BARS: {K_BARS} → {len(K_BARS) * 4} ラベル (LONG/SHORT × MFE/MAE × {len(K_BARS)}K)")
     print(f"[dry-run] メンテ時間帯除外: weekdays={MAINTENANCE_WEEKDAYS} hours={MAINTENANCE_HOURS}")
@@ -288,7 +293,11 @@ def run_sample(df5m: pd.DataFrame, pruned_spec: dict, sample_days: int) -> None:
 
     full = add_maintenance_flag(full)
     n_maint = int(full["is_maintenance"].sum())
-    print(f"  メンテ時間帯 flag: {n_maint:,} 行 ({n_maint / len(full) * 100:.2f}%)")
+    if len(full) > 0:
+        print(f"  メンテ時間帯 flag: {n_maint:,} 行 ({n_maint / len(full) * 100:.2f}%)")
+    else:
+        print(f"  メンテ時間帯 flag: 0 行 (sample 期間が K={K_BARS[-1]} 末尾 drop で全行消失・sample-days を増やす)")
+        return
 
     full.to_parquet(OUT_SAMPLE, compression="snappy")
     print(f"[sample] write: {OUT_SAMPLE} ({len(full):,} 行 / {OUT_SAMPLE.stat().st_size / 1e6:.1f} MB)")

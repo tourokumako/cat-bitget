@@ -66,6 +66,7 @@ def build_indicators_extended(df):
     fifty2_low = l.rolling(52).min()
     senkou_b = (fifty2_high + fifty2_low) / 2
     f["close_vs_kijun_pct"] = (c - f["ichimoku_kijun"]) / f["ichimoku_kijun"] * 100
+    f["close_vs_tenkan_pct"] = (c - f["ichimoku_tenkan"]) / f["ichimoku_tenkan"] * 100  # 2026-05-19 追加・価格非依存性 #4
     f["close_above_cloud"] = ((c > senkou_a) & (c > senkou_b)).astype(int)
     f["close_below_cloud"] = ((c < senkou_a) & (c < senkou_b)).astype(int)
 

@@ -13,7 +13,57 @@
 | Funding rate 動的化 | Bitget API funding-history endpoint | 0.0001 (0.01%/8h 固定) | Phase 5-e 改修 |
 | Slippage 一般 | 実運用ログから推定 | 0.005% 全約定加算 | Phase 7-e デモ結果から実測値置換 |
 
-## Phase 0 (build_labels.py)
+## Phase -1 (Phase 0 着手前 verify・2026-05-19 追加)
+
+価格非依存性 #4 (USD 絶対値系 feature blacklist) の機械的固定リスト。
+build_labels_pct.py で生成された parquet の指標列 1,462 から、Phase 1 学習スクリプトが本リストの 48 列を drop してから学習する義務。
+
+### USD 絶対値系 blacklist (確定 48 feature)
+
+| ファミリー (base 名) | 計算式 / 単位 | TF 数 | 代替 pct 指標 (既存・追加後) |
+|---|---|---:|---|
+| `sma_20` | `c.rolling(20).mean()` (絶対 USD) | 6 | `close_vs_sma20_pct` (既存) |
+| `sma_50` | `c.rolling(50).mean()` (絶対 USD) | 6 | `close_vs_sma50_pct` (既存) |
+| `ichimoku_kijun` | `(26h_max+26l_min)/2` (絶対 USD) | 6 | `close_vs_kijun_pct` (既存) |
+| `ichimoku_tenkan` | `(9h_max+9l_min)/2` (絶対 USD) | 6 | `close_vs_tenkan_pct` (2026-05-19 追加) |
+| `macd_line` | EMA12-EMA26 (USD scale) | 6 | `macd_line_pct = macd_line/c*100` (2026-05-19 追加) |
+| `macd_signal` | macd_line の EMA9 (USD scale) | 6 | `macd_signal_pct = macd_sig/c*100` (2026-05-19 追加) |
+| `macd_hist` | macd_line - macd_signal (USD scale) | 6 | `macd_hist_pct = macd_hist/c*100` (2026-05-19 追加) |
+| `macd_hist_change` | macd_hist.diff(1) (USD scale) | 6 | `macd_hist_change_pct` (2026-05-19 追加) |
+| **合計** | | | **48 件除外** + 30 件 pct 追加 |
+
+ファイル名規則: `{base}__{tf}` 形式。例: `sma_20__5m`, `macd_line__1h` 等。
+
+### 学習対象 feature 数
+
+- pruned_column_list.json 期待集合: **1,462** (旧 1,432 + 30 pct 追加)
+- blacklist drop 後の Phase 1 学習対象: **1,462 - 48 = 1,414 feature**
+
+### Phase 1 学習スクリプト側の verify 義務
+
+- 学習開始前に Phase -1 blacklist リストを load し、`X = df.drop(columns=BLACKLIST_COLS)` を実行
+- 完了報告で「blacklist drop 件数 = 48」「学習対象 feature 数 = 1,414」を明示
+- feature_importance top20 に blacklist 由来 (sma_20, sma_50, ichimoku_kijun, ichimoku_tenkan, macd_line, macd_signal, macd_hist, macd_hist_change) のいずれかが混入 → 即 STOP・blacklist drop 漏れとして調査
+
+### 経緯
+
+- 2026-05-19 セッションで価格非依存性 6 項目を web_claude_self_check.md L107-114 に固定化
+- 旧 1,432 指標カタログ (build_labels.py 出力) は USD 絶対値系 48 を含んでいた
+- 学習期間 ($30k-$60k) と本番期間 ($100k-$150k) の BTC 価格レンジ乖離により、絶対値ベースの決定木分岐 (`sma_20 > $48,000` 等) は本番で機能しないことが明確
+- 除外のみだと macd 系の情報落ち → pct 化で情報保持しつつ価格非依存性を満たす設計
+- ichimoku_kijun は `close_vs_kijun_pct` が既存だったが、ichimoku_tenkan / macd 系 4 つは pct 版なし → 5 ファミリー × 6 TF = 30 件を新規追加
+
+### Phase 5 leak verify で追加 blacklist 候補 (要 Step 5 確認)
+
+| 候補 | 理由 | Step 5 で確認 |
+|---|---|---|
+| `realized_vol_20b` | close ベース std か returns ベース std か未確認 | `realized_vol()` 関数中身 grep・USD scale なら追加 blacklist |
+| `bollinger` の `bw` 戻り値 | `bb_width_pct` 名だが実装 verify 必要 | `bollinger()` 関数中身 grep |
+| `obv_slope_10b` | OBV (volume 累積) slope・volume scale 依存 | volume scale の安定性確認 |
+
+---
+
+## Phase 0 (build_labels.py / build_labels_pct.py)
 
 | # | チェック項目 | verify 方法 |
 |---|---|---|

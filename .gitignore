@@ -12,7 +12,11 @@ config/bitget_keys.json
 # データ・結果・モデル（容量大・再生成可能）
 # ※ dashboard/data/ はダッシュボード表示用なので除外しない
 v3-bitget-api-sdk/bitget-python-sdk-api/data/
-v3-bitget-api-sdk/bitget-python-sdk-api/results/
+v3-bitget-api-sdk/bitget-python-sdk-api/results/*
+# 例外: ML pipeline の設計 input ファイル (5 スクリプトが依存・再現性のため git 管理)
+!v3-bitget-api-sdk/bitget-python-sdk-api/results/regime_label_analysis/
+v3-bitget-api-sdk/bitget-python-sdk-api/results/regime_label_analysis/*
+!v3-bitget-api-sdk/bitget-python-sdk-api/results/regime_label_analysis/pruned_column_list.json
 v3-bitget-api-sdk/bitget-python-sdk-api/models/
 # regime_prototype は試作版出力（80MB超・再生成可・scripts/regime/regime_classifier_prototype.py で生成）
 v3-bitget-api-sdk/bitget-python-sdk-api/dashboard/regime_prototype/
