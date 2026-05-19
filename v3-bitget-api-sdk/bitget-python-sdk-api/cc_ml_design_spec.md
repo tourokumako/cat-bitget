@@ -20,24 +20,27 @@
 
 ### 1.1 ラベル（= ML に予測させる対象）
 
-16 個全部を予測対象とする:
+28 個全部を予測対象とする (2026-05-19 v3 改訂・旧 16 ラベル USD 絶対値版は archive):
 
-- K 窓: K=12（1h）/ K=24（2h）/ K=48（4h）/ K=96（8h）
+- K 窓: K=6（30min）/ K=12（1h）/ K=24（2h）/ K=48（4h）/ K=96（8h）/ K=144（12h）/ K=288（24h）
 - 方向: LONG / SHORT
-- MFE / MAE
+- MFE / MAE (pct ベース・BTC 価格非依存)
 
-各足（5m bar）ごとに 16 個の数値を予測するモデルを作る。
+各足（5m bar）ごとに 28 個の数値を予測するモデルを作る。
 
-ラベル定義:
-- `LONG_MFE(K)` = max(high[t+1..t+K]) − close[t]
-- `LONG_MAE(K)` = close[t] − min(low[t+1..t+K])
-- `SHORT_MFE(K)` = close[t] − min(low[t+1..t+K])
-- `SHORT_MAE(K)` = max(high[t+1..t+K]) − close[t]
+ラベル定義 (pct ベース・close[t] で正規化・BTC 価格非依存):
+- `LONG_MFE_pct_K{K}`  = (max(high[t+1..t+K]) − close[t]) / close[t] × 100
+- `LONG_MAE_pct_K{K}`  = (close[t] − min(low[t+1..t+K])) / close[t] × 100
+- `SHORT_MFE_pct_K{K}` = (close[t] − min(low[t+1..t+K])) / close[t] × 100
+- `SHORT_MAE_pct_K{K}` = (max(high[t+1..t+K]) − close[t]) / close[t] × 100
 
-ラベルデータファイル:
-- train: `results/priority_rebuild/labels_mfe_mae_train_2021_2024.parquet`（394,753 行）
-- test（仮テスト）: `results/priority_rebuild/labels_mfe_mae_test_2025.parquet`（105,120 行）
-- 本テスト: 2026-01-01 〜 2026-03-31 データ（25,824 行・温存中）
+旧 USD 絶対値ラベル (`LONG_MFE(K) = max(high) − close` 等) は 2026-05-19 廃止 (価格非依存性違反・web_claude_self_check.md §価格非依存性 #1)。
+
+ラベルデータファイル (pct 版・`build_labels_pct.py` で生成):
+- train: `results/priority_rebuild/labels_mfe_mae_pct_train_2021_2024.parquet`
+- test（仮テスト）: `results/priority_rebuild/labels_mfe_mae_pct_test_2025.parquet`
+- 本テスト: `results/priority_rebuild/labels_mfe_mae_pct_test_2026_q1.parquet`
+- 旧 USD 絶対値版 (4 ファイル) は `results/priority_rebuild/archive/` へ移動済 (leak 由来 + USD 絶対値で無効化・2026-05-19)
 
 ### 1.2 特徴量（= ML への入力）
 
@@ -329,9 +332,10 @@ CSV/md だけの報告は採用判定に使わない。
 
 | ファイル | 用途 |
 |---|---|
-| `results/priority_rebuild/labels_mfe_mae_train_2021_2024.parquet` | 学習データ（394,753 行）|
-| `results/priority_rebuild/labels_mfe_mae_test_2025.parquet` | 仮テストデータ（105,120 行）|
-| 2026 Q1 データ（温存中） | 本テストデータ（25,824 行）|
+| `results/priority_rebuild/labels_mfe_mae_pct_train_2021_2024.parquet` | 学習データ（pct ラベル × 28・`build_labels_pct.py` 生成）|
+| `results/priority_rebuild/labels_mfe_mae_pct_test_2025.parquet` | 仮テストデータ（pct ラベル × 28）|
+| `results/priority_rebuild/labels_mfe_mae_pct_test_2026_q1.parquet` | 本テストデータ（pct ラベル × 28）|
+| `results/priority_rebuild/archive/labels_mfe_mae_*.parquet` | ⛔ 旧版 USD 絶対値・leak 由来 (2026-05-19 archive・参照のみ) |
 | `indicator_catalogue.csv` | 指標カタログ（1,432 指標）|
 
 ---

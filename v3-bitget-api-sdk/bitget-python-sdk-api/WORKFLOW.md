@@ -257,7 +257,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 | `replay/`              | Replay 出力（CSV / summary JSON） |
 | `phase_hmm/`           | HMM 系出力（凍結） |
 | `regime_research/`     | regime 評価出力（凍結・参照のみ） |
-| `priority_rebuild/`    | Priority 再構築フェーズ ML pipeline 出力（labels_mfe_mae_*.parquet / ml_phase{1,3_a,3_b,4_a,4_b,5,5_b,5_c,5_d,5_e,6_b}/ / ml_artifacts/ 等）|
+| `priority_rebuild/`    | Priority 再構築フェーズ ML pipeline 出力（labels_mfe_mae_pct_*.parquet / ml_phase{1,3_a,3_b,4_a,4_b,5,5_b,5_c,5_d,5_e,6_b}/ / ml_artifacts/ / archive/ 等）|
 | `recipe_search/`       | レシピ探索出力 |
 | `grid_search/`         | グリッドサーチ結果 |
 | `vshape_design/`       | v13/v14 V字検出仕様 + 出力（凍結） |
@@ -290,7 +290,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-15 改訂11・Phase 4-b/5 実行済み・trailing exit leak 要修正）
+## 🔴 現在のフェーズ（2026-05-16 改訂13・ML 棚卸し11ファイル完了・web_claude_role.md 配置完了）
 
 > **確定事項 (2026-05-14・改訂10)**:
 > - K12 LONG refit (commit d9d322c) **維持**確定
@@ -299,26 +299,46 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 >   - look-ahead leak verify 済 (`shift(1).rolling(365*288).quantile(0.99)`)
 > - **選択肢 5 採用確定**（K × side × q-level・19 有効組合せ）
 >
-> **Phase 4-b / Phase 5 実行済み (2026-05-14・commit 2e5fdc9)**:
-> - スクリプト: `scripts/priority_rebuild/run_phase4b_phase5_rolling_option5.py`
-> - Phase 4-b 成果物: `results/priority_rebuild/ml_phase4_b/cluster_best_exit_option5.csv` (19行)
-> - Phase 5 月次 PnL: `results/priority_rebuild/ml_phase5/monthly_pnl_option5.csv` (12行・全月 ≥$1,900)
+> **⚠️ Phase 4-b/5 v2 = 類型H インシデント (ポジション上限違反) で無効化 (2026-05-15)**:
+> - v2 スクリプトが `POSITION_BTC=0.12` を全エントリーに直接掛け → 19 combo 同時発火で合計 **2.28 BTC（規定の 19 倍）**
+> - v2 成果物は `_position_violation` サフィックスにリネーム済み（results/ 配下 4 ファイル）
+> - 詳細: `false_positive_incident_policy.md` §3 #8
 >
-> ⚠️ **audit#12 (trailing exit leak) により Phase 5 PnL 数値は無効**:
-> - trailing exit が MFE スカラーを直接 PnL に流用 → $6,499/day・勝率 90.4%（目標の 108 倍）
-> - Phase 4-b の trailing exit シミュレーションも同様の漏れがある可能性（要確認）
-> - 詳細: `false_positive_incident_policy.md` §3 #6
+> **Phase 4-b/5 v3 実行済み (2026-05-15)**:
+> - スクリプト: `scripts/priority_rebuild/run_phase4b_phase5_rolling_option5_v3.py`
+> - 修正1: trailing exit → `sim_trailing_1btc()` (raw per 1 BTC・POSITION_BTC 乗算なし)
+> - 修正2: 動的ポジションサイジング `size = remaining / n_sim`（aggregate ≤ 0.12 BTC 保証）
+> - **sum_verify_max = 0.12000000 BTC ✅ (§0-2 assertion 通過)**
+> - Phase 4-b 成果物: `results/priority_rebuild/ml_phase4_b/cluster_best_exit_option5_v3.csv` (19行)
+> - Phase 5 結果: **total PnL = -$985.35（全12ヶ月マイナス → Phase 5 不合格）**
+>   - no_trade (position_limit): 86.2% (70,146件) がポジション枠不足でブロック
+>   - 根本原因: K96 combo が 8h 保有し続け 0.12 BTC を独占 → 後続発火が全滅
+>   - 公式 source: `results/priority_rebuild/ml_phase5/phase5_summary_v3.json`
+>
+> **Priority vs ML 1432 棚卸し完了 (2026-05-15)**:
+> - 完了報告: `.claude/instructions/2026-05-15_priority_vs_ml_stocktake_completion.md`
+> - 未学習指標 8件中 5件が Priority の主軸: RCI(7/9/52)・RSI(21)・RSI_slope・BB_slope・Stoch(5m)
+> - まこさん仮説「ML が手動 Priority より狭い範囲しか学習していない」→ **定量的に確認**
 >
 > **ガバナンス文書整備完了 (2026-05-15・commit a8aa804)**:
 > - `.claude/rules/false_positive_incident_policy.md` 正本配置（150行）
 > - `.claude/rules/web_claude_self_check.md` 最新版（140行）に更新
-> - WORKFLOW.md / CLAUDE.md / feedback_pre_execution_premise_check.md に参照・要点転記
+>
+> **ML 完全棚卸し完了 (2026-05-16)**:
+> - 出力先: `results/priority_rebuild/inventory_2026_05_16/` (11ファイル)
+> - 指示書: `.claude/instructions/2026-05-16_ml_current_state_inventory.md`
+> - 完了報告: `.claude/instructions/2026-05-16_ml_current_state_inventory_completion.md`
+> - commit: d44e48b
+> - 主要実測値: Phase 5 v3 -$985.35 / 0/12ヶ月合格 / ML カバレッジ 未学習8件 / 1432指標 145ファミリー
+>
+> **ガバナンス文書追加 (2026-05-16)**:
+> - `.claude/rules/web_claude_role.md` (v2・278行) 配置 / commit 60d34ca
 >
 > **次のタスク**:
-> 1. Phase 4-b の trailing exit シミュレーション実装を verify（audit#12 波及範囲確認）
-> 2. trailing exit 修正後に Phase 4-b / Phase 5 を再実行
-> 3. audit#11: Web Claude による月次 PnL 独立再集計（修正後）
-> 指示書: [.claude/instructions/2026-05-14_rolling_phase4b_phase5.md](.claude/instructions/2026-05-14_rolling_phase4b_phase5.md)
+> 1. **Web Claude が棚卸し11ファイルを読む**: `results/priority_rebuild/inventory_2026_05_16/` を同期 → Layer 1+2 計画書ドラフト着手
+> 2. **特徴量追加判断**: build_labels.py に RSI(21)/RSI_slope/BB_slope/stoch_5m/RCI(7/9/52) を追加するか → まこさん判断
+> 3. **Phase 0 再実行**: 特徴量追加確定後 → Phase 1〜5 再実行
+> 4. **Layer 1+2 計画書**: 棚卸し + 特徴量追加方針が揃ったら Web Claude が計画書ドラフト
 
 ---
 
@@ -377,11 +397,11 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 | Phase 2 | 精度判定 (仮テスト 2025 で 4 指標合格条件・改訂後 spec) | ✅ **完了** (2026-05-14 / 改訂後 spec PASS q99 加重 +21.28pp / 7/8 positive / commit 0ffd326 + d9d322c) |
 | Phase 3 trial | 短期試行 (K 窓別 num_leaves・案 G 検証) | ✅ **完了** (2026-05-14 / パターン B 改善小・改訂後 spec で悪化 / 案 G 正当性確定 / commit a5dad18) |
 | Phase 4-a | k-means クラスタリング (Entry 性質分類) | ✅ **完了** (2026-05-14 / 1.45 分 / k=3 採用 silhouette 0.510 / 全 cluster K12 LONG q99 ≥100 / K96 SHORT q99 全 cluster trade 可 / commit b88b9fa) |
-| Phase 4-b | Exit 設計 (cluster × K × side 最適 Exit) | ⚠️ **実行済み・audit#12 trailing exit leak 波及範囲確認 待ち** (commit 2e5fdc9) |
-| Phase 5/5-b/5-c | 365d Replay (cap なし → FIFO cap → 質駆動 cap) | ⚠️ **実行済み・audit#12 により値無効・trailing exit 修正後に再実行** |
-| Phase 5-d | ポジションサイズ正解版で再計算 (0.12 BTC = 合計上限) | 再実行 待ち |
-| Phase 5-e | Funding Rate 控除 (8h 毎・0.01%) | 再実行 待ち |
-| Phase 6-a/6-b | 本テスト 2026 Q1 (月次 NET ≥ $1,900 全月) | 再実行 待ち |
+| Phase 4-b | Exit 設計 (cluster × K × side 最適 Exit) | ⚠️ **v3 実行済み・trailing exit 修正・ただし Phase 5 v3 不合格のため設計見直し必要** |
+| Phase 5/5-b/5-c | 365d Replay (cap なし → FIFO cap → 質駆動 cap) | ❌ **v3 不合格 (total PnL -$985・全12ヶ月マイナス)・特徴量追加後に再実行** |
+| Phase 5-d | ポジションサイズ正解版で再計算 (0.12 BTC = 合計上限) | ✅ **v3 に統合済み** (aggregate ≤ 0.12 BTC の dynamic sizing) |
+| Phase 5-e | Funding Rate 控除 (8h 毎・0.01%) | 再実行 待ち (Phase 5 合格後) |
+| Phase 6-a/6-b | 本テスト 2026 Q1 (月次 NET ≥ $1,900 全月) | 再実行 待ち (Phase 5 合格後) |
 | Phase 7-a | Bot 統合準備 (推論再現性検証) | 再実行 待ち |
 | Phase 7-b | ML Decider 実装 (cat/ml_models.py 等新規) | 未着手 |
 | Phase 7-c | run_once_ml.py 実装 (ALLOW_LIVE_ORDERS=False 維持) | 未着手 |
@@ -541,13 +561,19 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 - per-label `lgbm_{label}_iteration_log.csv` 保存 (bit-exact 再現性確認用)
 - 1 ラベル目完了時に `feature_importance_top20.csv` を early save (dry-run 証跡用)
 
-### Phase 0 達成サマリー (✅ 2026-05-13 leak フリー完了)
+### Phase 0 旧版サマリー (⛔ 2026-05-19 archive・USD 絶対値 + leak 由来で無効化)
 
-| ラベル parquet | 行数 | サイズ | 期間 |
+旧 USD 絶対値 + 16 ラベル版 (build_labels.py 出力・2026-05-13 生成) は以下の理由で 2026-05-19 archive 行き:
+- 価格非依存性違反 (USD 絶対値ラベル・BTC 価格変動で分布シフト)
+- fractal leak (L-179) 由来の数値も含む
+
+| 旧 parquet (archive 済) | 行数 | サイズ | 期間 |
 |---|---|---|---|
-| labels_mfe_mae_train_2021_2024.parquet | 394,753 | 1.02 GB | 2021-04-01 07:55:00 〜 2024-12-31 23:55:00 |
-| labels_mfe_mae_test_2025.parquet | 105,120 | 0.30 GB | 2025-01-01 00:00:00 〜 2025-12-31 23:55:00 |
-| labels_mfe_mae_test_2026_q1.parquet | 25,823 | 0.07 GB | 2026-01-01 00:00:00 〜 2026-03-31 15:50:00 |
+| archive/labels_mfe_mae_train_2021_2024.parquet | 394,753 | 1.02 GB | 2021-04-01 07:55:00 〜 2024-12-31 23:55:00 |
+| archive/labels_mfe_mae_test_2025.parquet | 105,120 | 0.30 GB | 2025-01-01 00:00:00 〜 2025-12-31 23:55:00 |
+| archive/labels_mfe_mae_test_2026_q1.parquet | 25,823 | 0.07 GB | 2026-01-01 00:00:00 〜 2026-03-31 15:50:00 |
+
+**新版 (Phase 0 v3・実行待ち)**: `build_labels_pct.py` で pct ラベル × 28 + メンテ時間帯フラグ + K_BARS=[6,12,24,48,96,144,288] で再生成。出力: `labels_mfe_mae_pct_*.parquet`。
 
 - 指標列 1,432 完全一致 / fractal 修正後・3 期間とも 5min ギャップで完全分離
 - 入力 CSV: `data/BTCUSDT-5m-bitget-2021-04-01_2026-03-31_5y.csv` (Bitget USDT-FUTURES history-candles から取得・525,887 rows)
@@ -579,7 +605,7 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 1. WORKFLOW.md §🔴 現在のフェーズ + §次のタスク を再読
 2. cc_ml_design_spec.md §Phase 2 精度判定基準を確認
 3. **Phase 2: 仮テスト 2025 で 4 指標合格条件判定 (cc_ml_design_spec §1.6 / 2026-05-14 改訂)**
-   - `predictions_test2025.parquet` (MFE/MAE 予測値 × 105,120行) と `labels_mfe_mae_test_2025.parquet` (実際の MFE/MAE) を照合
+   - `predictions_test2025.parquet` (MFE/MAE 予測値 × 105,120行) と `labels_mfe_mae_pct_test_2025.parquet` (実際の MFE/MAE pct) を照合 ※ 旧版 `labels_mfe_mae_test_2025.parquet` は archive 済 (2026-05-19)
    - q90/q95/q99 閾値 × K12/24/48/96 × LONG/SHORT = 24 組合せ別に評価
    - 4 指標: ①q99 net_quality (加重平均 > +10pp かつ 20/24 組 > 0) / ②net_quality 最小値 > -50pp / ③valid_rmse/label_std (14/16 ラベル < 1.5) / ④mean_real_MFE/MAE (20/24 組 > 1.0)
    - 全 4 指標 PASS → Phase 3 へ / 1 件以上 FAIL → まこさん協議 (自動 k=2 切替なし)
@@ -669,7 +695,7 @@ regime 研究は凍結したが、以下の素材は Priority 再構築フェー
 |---|---|
 | [.claude/memory/handoff_to_web_claude_v4_phase1_7a.md](.claude/memory/handoff_to_web_claude_v4_phase1_7a.md) | ⛔ 数値無効・構造洞察は参考 (banner 済) |
 | [memory/project_ml_pipeline_phase1_7a.md](~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/memory/project_ml_pipeline_phase1_7a.md) | ⛔ 数値無効・構造洞察は参考 (banner 済) |
-| results/priority_rebuild/labels_mfe_mae_*.parquet (4 ファイル・1.4GB) | ⛔ leak 由来・再生成必要 |
+| results/priority_rebuild/archive/labels_mfe_mae_*.parquet (3 ファイル・1.4GB) | ⛔ leak 由来 + USD 絶対値・2026-05-19 archive 済 (`labels_mfe_mae_pct_*.parquet` で再生成必要・build_labels_pct.py) |
 | results/priority_rebuild/ml_phase*/ (11 ディレクトリ) | ⛔ 全 Phase 出力・再実行必要 |
 | results/priority_rebuild/ml_artifacts/ | ⛔ 統合用 artifact・再生成必要 |
 
