@@ -53,13 +53,60 @@ build_labels_pct.py で生成された parquet の指標列 1,462 から、Phase
 - 除外のみだと macd 系の情報落ち → pct 化で情報保持しつつ価格非依存性を満たす設計
 - ichimoku_kijun は `close_vs_kijun_pct` が既存だったが、ichimoku_tenkan / macd 系 4 つは pct 版なし → 5 ファミリー × 6 TF = 30 件を新規追加
 
-### Phase 5 leak verify で追加 blacklist 候補 (要 Step 5 確認)
+### Step 5 leak verify 結果 (2026-05-19 完了・全パターン clear)
 
-| 候補 | 理由 | Step 5 で確認 |
+#### 5.1 shift(-N) 未来参照 grep
+
+| 対象 | 検出箇所 | 判定 |
 |---|---|---|
-| `realized_vol_20b` | close ベース std か returns ベース std か未確認 | `realized_vol()` 関数中身 grep・USD scale なら追加 blacklist |
-| `bollinger` の `bw` 戻り値 | `bb_width_pct` 名だが実装 verify 必要 | `bollinger()` 関数中身 grep |
-| `obv_slope_10b` | OBV (volume 累積) slope・volume scale 依存 | volume scale の安定性確認 |
+| `build_labels.py` L200-201 | `fut_max_high = h.shift(-K).rolling(K).max()` 等 | ✅ ラベル側 (推論時に X に含めない・L-154) |
+| `build_labels_pct.py` L219-220 | 同上 (pct 化版) | ✅ ラベル側 |
+| `scripts/regime/` 配下全 .py | 検出 0 件 | ✅ feature 側 leak なし |
+| `headroom_analysis*.py` L50/L315 | `close.shift(-96)` 等 | ⚠️ Phase 5 後の別解析 (ML pipeline スコープ外) |
+
+#### 5.2 L-128 MA70 ルックアヘッド pattern (resample + 当日含む集計)
+
+| 対象 | 検証内容 | 判定 |
+|---|---|---|
+| `build_labels_pct.py` `attach_upper_tf` (L142-160) | `merge_asof(direction="backward")` + 5m close 時刻 vs 上位 TF close 時刻 (= bar_start + freq) | ✅ L-128 修正済構造 |
+| `resample()` を使う regime 系スクリプト (ml_regime_classifier.py 等) | 全て regime 凍結対象 (WORKFLOW.md §regime 研究) | ✅ Phase 0 影響なし |
+
+#### 5.3 L-179 fractal j±2 未来参照 (2026-05-13 leak 修正)
+
+| 対象 | 検証内容 | 判定 |
+|---|---|---|
+| `structure_features.py` `_detect_fractals` (L44-67) | judge: `h[j] > h[j±1] and h[j] > h[j±2]` / 記録: `is_res[j+2] = True`, `pivot_high[j+2] = h[j]` | ✅ 確定遅延構造 (i 時点で is_res[i]=True は i-2 バーピーク確定の意・推論時には過去情報のみ参照) |
+| `structure_features.py` `compute_c4_v2_features` (L302+) | 同 fractal 検出ロジックを使用・docstring L304「look-ahead 完全防止 (中央バー j で確定する fractal は j ≤ i-2)」 | ✅ L-179 修正済 |
+
+#### 5.4 その他の未来 index アクセス pattern
+
+| 対象 | 検証内容 | 判定 |
+|---|---|---|
+| `shape_features.py` L151, L167 `win[j+1]` | `win = l[i-W+1:i+1]` の window 内ローカル index j+1 = 時系列上 max `l[i]` (現在まで)・結果は `out[i]` に記録 | ✅ leak なし (window 内ローカル参照) |
+| `structure_features.py` L195 `bin_volume[hi+1]` | hi は volume bin index (時系列ではない) | ✅ leak なし |
+| `structure_features.py` L224-226, L262-263 `l/h/v[i-N+1:i+1]` | 過去 N バー window slice | ✅ 過去のみ |
+
+#### 5.5 center=True rolling (未来参照含む集計)
+
+| 対象 | 結果 |
+|---|---|
+| 全 feature scripts (scripts/regime/, scripts/priority_rebuild/) | `center=True` 検出 **0 件** ✅ |
+
+#### 5.6 USD scale verify (Step 4 と並行・bollinger/realized_vol/obv)
+
+| 候補 | 実装 | 判定 |
+|---|---|---|
+| `realized_vol(c, 20)` | `np.log(c/c.shift()).rolling(20).std() * 100` | ✅ pct (log return std × 100) |
+| `bollinger(c, 20)` の `bw` 戻り値 (= bb_width_pct) | `(upper - lower) / ma * 100` | ✅ pct |
+| `bollinger(c, 20)` の `pct_b` 戻り値 (= bb_pct_b) | `(c - lower) / (upper - lower)` | ✅ 0-1 ratio |
+| `obv(c, v)` → `obv_slope_10b` | sign × volume の cumsum diff / 10 | ⚠️ volume scale (BTC 価格非依存だが取引所成長で長期変動可能性)・Phase 1 で feature_importance top20 出現時に再確認 |
+
+#### Phase 0 着手判定: ✅ 全 leak verify pass
+
+- 類型 A (look-ahead leak) 該当 0 件
+- L-128 / L-179 同型再発なし
+- 価格非依存性違反 (USD 絶対値) は 48 feature を Phase -1 blacklist で除外 + 30 pct 化追加で代替済
+- 残り 1 件の watch 対象 (`obv_slope_10b` volume scale) は Phase 1 feature_importance review に持ち越し
 
 ---
 
