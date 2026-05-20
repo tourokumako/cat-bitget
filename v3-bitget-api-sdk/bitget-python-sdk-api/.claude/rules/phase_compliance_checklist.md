@@ -1,6 +1,6 @@
 # phase_compliance_checklist.md — Phase 別現実整合性チェックリスト
 
-最終更新: 2026-05-13
+最終更新: 2026-05-20
 参照: WORKFLOW.md / CLAUDE.md / core_rules.md / exchange_spec.md / lessons_active.md L-179/L-182/L-183
 
 各 Phase 着手前に全項目を verify。1 件でも NG なら GO 不可。
@@ -10,7 +10,7 @@
 | 項目 | 確定方法 | 確定値 / 暫定値 | 確定後タスク |
 |---|---|---|---|
 | ~~Maker fee 実値~~ | ~~まこさん Bitget 管理画面確認~~ | **✅ 確定: 0.00014 (適用) / 0.0002 (標準・剥落復帰時)** 出典: exchange_spec.md L7 (2026-05-13) | ~~ML pipeline 全スクリプト一斉置換~~ → Phase 1〜6-b スクリプトは既に 0.00014 実装済 |
-| Funding rate 動的化 | Bitget API funding-history endpoint | 0.0001 (0.01%/8h 固定) | Phase 5-e 改修 |
+| ~~Funding rate 動的化~~ | ~~Bitget API funding-history endpoint~~ | **✅ 確定: median (p50) = +0.0002%/8h (baseline) / p95 = 0.01%/8h (stress)** 出典: history-fund-rate API 91 intervals (2026-05-20・audit#19・sha256:3be5d64c) | ~~Phase 5-e 改修~~ → 改訂済 (2026-05-20) |
 | Slippage 一般 | 実運用ログから推定 | 0.005% 全約定加算 | Phase 7-e デモ結果から実測値置換 |
 
 ## Phase -1 (Phase 0 着手前 verify・2026-05-19 追加)
@@ -187,8 +187,8 @@ build_labels_pct.py で生成された parquet の指標列 1,462 から、Phase
 | # | チェック項目 | verify 方法 |
 |---|---|---|
 | 5e.1 | Funding 8h 境界判定 (entry_ts, exit_ts] | `count_funding_events` L75-95 |
-| 5e.2 | LONG = -funding / SHORT = +funding | `apply_funding` L127-128 |
-| 5e.3 | 0.01%/8h 固定が許容 (未確定項目) | Bitget funding-history 取得後置換 |
+| 5e.2 | LONG = -funding / SHORT = +funding (median 正値 → LONG 払い) | `apply_funding` L127-128 |
+| 5e.3 | **median (p50) = +0.0002%/8h を baseline (月次 $1,900 合格判定基準) / p95 = 0.01%/8h を stress test 参考値** | 出典: history-fund-rate API 91 intervals 2026-04-20〜05-20 (2026-05-20・audit#19・sha256:3be5d64c) — 旧「0.01%/8h 固定」廃止・まこさん承認 (2026-05-20) |
 
 ## Phase 6-b (本テスト 2026 Q1)
 
@@ -212,3 +212,11 @@ build_labels_pct.py で生成された parquet の指標列 1,462 から、Phase
 | 7c.7 | placePosTpsl TP/SL ペア整合性 | exchange_spec.md |
 | 7c.8 | offline 推論 = online 推論 (artifact deterministic) | verify_ml_inference.py |
 | 7c.9 | **起動時に artifact 名を log 出力 → "test" 文字列含むなら起動中止** | `if "test" in artifact_filename: sys.exit("ABORT: test-named artifact detected")` |
+
+## Phase 7-d (paper trading テスト)
+
+| # | チェック項目 | verify 方法 |
+|---|---|---|
+| 7d.1 | **maxMarketOrderQty 単位 confirm**: Demo API で `close_market_order(size=0.024)` を実発注し accept を確認 | paper trading (Demo API) 実発注テスト — reject の場合は size=0.022 BTC 以下で再試行し単位を推定 |
+
+**背景**: contracts API `maxMarketOrderQty=220` の単位 (BTC vs lots) が確定不能 / lots 単位なら 220×0.0001=0.022 BTC < 0.024 BTC → 緊急 close 時 reject リスク ❌ / 出典: audit#19 監査結論 条件 3 (2026-05-20) / `_pending_phase7d_requirements.md` を本セクション統合後に削除済 (2026-05-20)

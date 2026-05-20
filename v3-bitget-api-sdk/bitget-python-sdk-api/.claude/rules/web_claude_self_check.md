@@ -97,13 +97,13 @@ Web Claude は **まこさんの実資金を市場に晒す BOT の設計指示�
 - [ ] **検証範囲が実際の使用範囲をカバーしているか。** verify 対象のセル数・組合せ数が後段 Phase の実使用範囲と一致しているか（2026-05-15: 発火数 verify は 8 組合せだったが Phase 5 は 19 組合せ使用）
 - [ ] 指示書を `.claude/instructions/日付_タスク名.md` として保存し commit する指示を CC 投げ文に含めたか
 - [ ] **本番再現性 7 項目 verify (exchange_spec.md・memory ルール 23 対応・2026-05-19 追加)**: 設計提案・指示書発行前に以下 7 項目を 1 行ずつ verify した内容をチャットに提示したか:
-  1. 最小注文サイズ 0.0001 BTC (per-position サイズが BTC 単位で 0.0001 以上か算術 verify・組み合わせ MAX_ADDS × n_sim ごとに最悪値で verify)
-  2. 最小注文額 5 USDT (BTC 価格依存・per-position × BTC 価格 ≥ 5 USDT・学習期間最低値 + 想定下落幅で stress test)
-  3. Tick size 0.1 USDT (指値価格丸めロジック verify)
+  1. 最小注文サイズ 0.0001 BTC (per-position サイズが BTC 単位で 0.0001 以上か算術 verify・組み合わせ MAX_ADDS × n_sim ごとに最悪値で verify) / 出典: contracts API `minTradeNum`=0.0001 (2026-05-20・audit#19・sha256:e556b6)
+  2. 最小注文額 5 USDT (BTC 価格依存・per-position × BTC 価格 ≥ 5 USDT・学習期間最低値 + 想定下落幅で stress test) / 出典: contracts API `minTradeUSDT`=5 (2026-05-20・audit#19・sha256:e556b6)
+  3. Tick size 0.1 USDT (指値価格丸めロジック verify) / 出典: contracts API `priceEndStep`=1, `pricePlace`=1 → 0.1 USDT (2026-05-20・audit#19・sha256:e556b6)
   4. Maker 指値 TTL 3 本 (15 分) + 同一 side pending 禁止 (add 速度制約・add トリガ条件が TTL 制約と矛盾しないか verify)
   5. SL 設定は add_count ≥ 2 のみ (MAX_ADDS=1 combo の Exit 設計は SL なしで time_exit / TP のみ運用)
   6. **メンテ時間帯 = なし (24/7 取引・公式ガイド 2026-01-08 確認済)**。個別アナウンスは Support > Maintenance を都度確認。Bot 起動時に最新アナウンス取得を実装に含める (Phase 7-c 要件)。**旧記述「火/水/木 05:00-08:00 UTC」は出典なき Claude 想定値で削除済 (L-196 参照)**
-  7. **Maker 剥落 stress test**: 適用値 0.014% (verify 済) と ⚠️ 想定剥落値 0.02% (出典未確認・stress 用暫定値・要 verify) の両方で月次 NET ≥ $1,900 全月クリア。剥落値の公式 source 確定は audit#19 対象
+  7. **Maker 剥落 stress test**: 適用値 0.014% (verify 済) と ✅ 標準値 makerFeeRate=0.02% (0.0002) / takerFeeRate=0.06% (0.0006) の両方で月次 NET ≥ $1,900 全月クリア / 出典: contracts API (2026-05-20・audit#19・sha256:e556b6)
   (2026-05-19: MAX_ADDS{1,2,3,5,8,10} を最小単位 0.0001 BTC verify なしに並べた事案。最小単位を割る組み合わせを検知できなかった。再発させない。)
 - [ ] **価格非依存性 verify (2026-05-19 追加)**: ラベル定義・特徴量・Exit パラメータ・cluster 入力ベクトル・add トリガすべてが BTC 価格絶対値に依存しない (% / 比率 / 無次元 / BTC 単位) で表現されているか verify したか:
   1. **ラベル定義**: MFE/MAE を USD 絶対値ではなく pct ベース (MFE_pct = (MFE / close) × 100) で表現しているか。`LONG_MFE = max(high) - close` のような USD 絶対値定義のまま学習させていないか
