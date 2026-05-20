@@ -6,32 +6,34 @@
 
 | 種別 | 適用値 | 標準値 | 備考 |
 |---|---|---|---|
-| Maker fee | 0.014% (0.00014) ✅ まこさん発注画面確認 (2026-05-20) | ⚠️ 0.02% (0.0002) — 出典未確認・Claude 想定値・stress test 用暫定使用・audit#19 対象 | BGB割引等適用後・剥落で標準復帰 |
-| Taker fee | 0.042% (0.00042) ✅ まこさん発注画面確認 (2026-05-20) | ⚠️ 0.06% (0.0006) — 出典未確認・Claude 想定値・stress test 用暫定使用・audit#19 対象 | 同上 |
+| Maker fee | 0.014% (0.00014) ✅ まこさん発注画面確認 (2026-05-20) | 0.02% (0.0002) ✅ contracts API `makerFeeRate` (2026-05-20・audit#19) | BGB割引等適用後・剥落で標準復帰 |
+| Taker fee | 0.042% (0.00042) ✅ まこさん発注画面確認 (2026-05-20) | 0.06% (0.0006) ✅ contracts API `takerFeeRate` (2026-05-20・audit#19) | 同上 |
 
 ### 注文単位
 
 | 項目 | 値 |
 |---|---|
-| 最小注文サイズ (quantityMultiplier) | 0.0001 BTC |
-| 最小注文額 (minOrderAmount) | 5 USDT |
-| Tick size (priceMultiplier) | 0.1 USDT |
+| 最小注文サイズ (quantityMultiplier) | 0.0001 BTC ✅ contracts API `minTradeNum`+`sizeMultiplier` (2026-05-20・audit#19) |
+| 最小注文額 (minOrderAmount) | 5 USDT ✅ contracts API `minTradeUSDT` (2026-05-20・audit#19) |
+| Tick size (priceMultiplier) | 0.1 USDT ✅ contracts API `priceEndStep`=1, `pricePlace`=1 → 10^(-1) × 1 = 0.1 USDT (2026-05-20・audit#19) |
 
 ### Funding
 
 | 項目 | 値 |
 |---|---|
-| 精算間隔 (fundInterval) | 8 時間 |
-| 精算時刻 (UTC) | 00:00 / 08:00 / 16:00 |
+| 精算間隔 (fundInterval) | 8 時間 ✅ contracts API `fundInterval`=8 + Bitget Beginner's Guide |
+| 精算時刻 (UTC) | 00:00 / 08:00 / 16:00 ✅ Bitget Beginner's Guide |
 | 精算時刻 (JST) | 09:00 / 17:00 / 翌01:00 |
+| **Funding rate (実測 30 日 2026-04-20〜2026-05-20 UTC)** | mean=-0.000208%/8h / median=0.0002%/8h / p05=-0.0141% / p25=-0.0052% / p75=0.0063% / p95=0.0100% / min=-0.0198% / max=0.0100% / count=91 ✅ history-fund-rate API (2026-05-20・audit#19・sha256:3be5d64c) |
+| Funding rate — Phase 5-e 運用設計 | **p50 (0.0002%/8h) を baseline、p95 (0.01%/8h) を stress test** (旧「0.01% 一律固定」は削除・2026-05-20 まこさん承認) |
 
 ### 制限・運用
 
 | 項目 | 値 |
 |---|---|
-| マージンモード | isolated (hedge_mode 維持) |
-| 最大レバレッジ | 125x (v2 API) |
-| 最大同時保有数 (maxPositionNum) | 200 |
+| マージンモード | isolated (hedge_mode 維持) ✅ contracts API `supportMarginCoins`=['USDT'] + V9 SDK `marginMode=isolated` 動作確認済 (2026-05-20・audit#19) |
+| 最大レバレッジ | **150x** ✅ contracts API `maxLever`=150 (2026-05-20・audit#19) — ⚠️ 旧記述 125x は誤り・訂正済 |
+| 最大同時保有数 (maxPositionNum) | **150** ✅ contracts API `maxPositionNum`=150 (2026-05-20・audit#19) — ⚠️ 旧記述 200 は誤り・訂正済 |
 | 定期メンテナンス | なし (24/7 取引) ✅ 公式ガイド「中断のない年中無休の取引」(Bitget 株式無期限先物完全ガイド・2026-01-08・2026-05-20 まこさん確認) |
 
 > 個別アナウンスは Support > Maintenance (https://www.bitget.com/support/sections/12508313404950) を都度確認。Bot 起動時は最新アナウンス取得を実装に含める (Phase 7-c 要件)。
@@ -42,10 +44,15 @@
 | 項目 | 出典 | 状態 |
 |---|---|---|
 | Maker/Taker 適用値 | まこさん発注画面確認 (2026-05-20) | ✅ verify 済 |
-| Maker/Taker 標準値 | ⚠️ 出典なし・Claude 想定値 | ⚠️ audit#19 対象 |
-| 最小注文 / 最小注文額 / Tick size / 最大レバ / マージンモード / 最大同時保有 | 公式 API `GET /api/v2/mix/market/contracts` (response 例保存未実施) | ⚠️ audit#19 対象 |
-| Funding 8h 間隔 | Bitget Beginner's Guide — Understanding Futures Fees / Funding Rate | ✅ verify 済 |
-| Funding 0.01% rate | ⚠️ phase_compliance L13 暫定値・出典なし | ⚠️ audit#19 対象 |
+| Maker/Taker 標準値 | contracts API `makerFeeRate`/`takerFeeRate` (2026-05-20・audit#19・sha256:e556b6) + まこさんスクショ取得待ち (Step 3 独立確認用) | ✅ API verify 済・スクショ取得待ち |
+| 最小注文 (0.0001 BTC) | contracts API `minTradeNum`=0.0001, `sizeMultiplier`=0.0001 (2026-05-20・audit#19) | ✅ verify 済 |
+| 最小注文額 (5 USDT) | contracts API `minTradeUSDT`=5 (2026-05-20・audit#19) | ✅ verify 済 |
+| Tick size (0.1 USDT) | contracts API `priceEndStep`=1, `pricePlace`=1 → 0.1 USDT (2026-05-20・audit#19) | ✅ verify 済 |
+| 最大レバ **150x** (旧 125x 訂正) | contracts API `maxLever`=150 (2026-05-20・audit#19) | ✅ verify 済・旧値訂正 |
+| マージンモード isolated | contracts API `supportMarginCoins`=['USDT'] + V9 SDK 動作確認 (2026-05-20・audit#19) | ✅ verify 済 |
+| 最大同時保有 **150** (旧 200 訂正) | contracts API `maxPositionNum`=150 (2026-05-20・audit#19) | ✅ verify 済・旧値訂正 |
+| Funding 8h 間隔 | Bitget Beginner's Guide — Understanding Futures Fees / Funding Rate + contracts API `fundInterval`=8 | ✅ verify 済 |
+| Funding rate 実測分布 | history-fund-rate API 91 intervals 2026-04-20〜05-20 (audit#19・sha256:3be5d64c) | ✅ verify 済 |
 | 取引時間 24/7 | 公式ガイド Bitget 株式無期限先物完全ガイド (2026-01-08・2026-05-20 まこさん確認) | ✅ verify 済 |
 | 定期メンテ (旧記述) | ⛔ Claude 想定値・削除済 (2026-05-20・L-196 参照) | ⛔ |
 
