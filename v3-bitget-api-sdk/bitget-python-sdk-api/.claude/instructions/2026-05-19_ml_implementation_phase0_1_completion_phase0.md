@@ -18,6 +18,7 @@
 | 28 ラベル統計 (mean/std/min/max/p50/p99) | ✅ 全 84 行 (3 期間 × 28 ラベル) を [label_stats.csv](../../results/priority_rebuild/phase0_v3_stats/label_stats.csv) に出力 |
 | K 別サンプル 5 行 | ✅ K=6/12/24/48/96/144/288 の 7 ファイル出力 |
 | Phase 1 着手判定材料 | ✅ 揃った → Web Claude レビュー待ち |
+| Step 1 max_ts_verify.json による物理整合性確認 | ✅ high/low ベース独立再計算で公式値と diff < 1e-6 一致 (2026-05-21) |
 
 **Phase 0 v3 主要条件クリア。§3.3 に留意点 2 件 (異常値スメル ⚠️) あり・反映済。Phase 1 着手判定を Web Claude に持ち越す。**
 
@@ -115,7 +116,7 @@ Phase 0 は PnL 計算なしのため勝率/月次NET/Sharpe/DD は出ない。*
 |---|---|
 | K 増加で分布が単調拡大するか | ✅ K6 std=0.38 → K288 std=2.30 単調増 |
 | min 値が極端な負値でないか (例: -100%) | ✅ 全 K で min > -1.1% (BTC 価格制限相場での lower bound として妥当) |
-| max 値が非現実的でないか (例: > 100%) | ⚠️ train K288 全 4 ラベル max 値: LONG_MFE = 40.70% / LONG_MAE = 34.01% / SHORT_MFE = 34.01% / SHORT_MAE = 40.70% (対称性で LONG_MFE = SHORT_MAE / LONG_MAE = SHORT_MFE 一致)。該当日付特定は §3.3.1 (本タスク 2026-05-20 追加) 参照 |
+| max 値が非現実的でないか (例: > 100%) | ⚠️ train K288 全 4 ラベル max 値: LONG_MFE = 40.70% / LONG_MAE = 34.01% / SHORT_MFE = 34.01% / SHORT_MAE = 40.70% (対称性で LONG_MFE = SHORT_MAE / LONG_MAE = SHORT_MFE 一致)。該当日付特定は §3.3.1 (本タスク 2026-05-20 追加) 参照 / 発生 ts と high/low ベース独立再計算は [max_ts_verify.json](../../results/priority_rebuild/phase0_v3_stats/max_ts_verify.json) 参照 |
 | LONG_MFE と LONG_MAE の対称性破れがないか | ✅ train で LONG_MAE > LONG_MFE 一貫 (下落バイアス整合) |
 | 期間別 mean の連続性 (train → test_2025 → test_2026_q1 で大きく飛ばないか) | ⚠️ test_2026_q1 SHORT_MFE_K288 mean = 2.319 が train (2.302) より若干高い・2026 Q1 が弱気だったため SHORT 順行が train を上回っている (BTC 価格レンジ変化に伴うものではなく方向性の問題) |
 
