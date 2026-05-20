@@ -353,6 +353,16 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 > 3. 優先 3: **Phase 1 着手指示書発注** (14 ラベル独立回帰モデル前提・学習内容 v3 §B-15 準拠・RMSE + 直接 PnL + Sharpe maximizing custom objective 並列・監査経路 audit#18 で custom objective 数式 verify)
 >
 > **2026-05-20 新規教訓**: L-199 (添付ファイル mojibake 検知義務・bit-exact 解釈)
+>
+> **2026-05-21 セッション完了事項 (改訂15)**:
+> - **max_ts_verify.json 生成** (commit `4df8924`): `scripts/priority_rebuild/phase0_v3_max_ts_verify.py` を新規作成・実行。raw CSV の high/low から K288 max を独立再計算し公式 label_stats.csv 値と diff=0.0 (bit-exact) 確認。win_bars=288 アサーション通過。overall_pass=true。
+> - **Phase 0 完了報告 §0/§3.3 追記** (同 commit): §0 サマリーに max_ts_verify.json 確認行追加・§3.3 max 行末尾にリンク追記。
+> - **Phase 0 正式クローズ**: 全 verify 項目クリア。異常値スメル 2 件は既知イベント (2021-05-19 Black Wednesday) と完全一致で懸念なし。
+>
+> **次セッション優先順位 (handoff v16 §3 + 本セッション完了状況)**:
+> 1. ✅ Phase 0 完了レビュー — **正式クローズ済** (max_ts_verify.json diff=0.0 / commit 4df8924)
+> 2. 優先 1: Phase 0 v3 spec sweep — cc_ml_design_spec.md / phase_compliance_checklist.md / ml_axis_catalog.md の「16/28 ラベル」→「14 ラベル独立学習」機械反映 + Funding 0.01% 固定 → median baseline (light 枠 80-120 行)
+> 3. 優先 2: Phase 1 着手指示書発注 (14 ラベル独立回帰モデル・学習内容 v3 §B-15 準拠・RMSE + 直接 PnL + Sharpe 並列・監査経路 audit#18 で custom objective 数式 verify)
 
 ---
 
