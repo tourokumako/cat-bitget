@@ -1,4 +1,26 @@
-# lessons_active.md — 直近50件の現役教訓（L-198〜L-105）
+# lessons_active.md — 直近50件の現役教訓（L-199〜L-105）
+
+---
+
+### L-199: 添付ファイル mojibake (UTF-8 → Latin-1) 検知義務 — bit-exact 保存指示の解釈 (2026-05-20)
+
+**何が起きたか:**
+Web Claude から「添付 2 ファイルを bit-exact で上書き保存」指示を受領した際、添付 (handoff_v16・learning_design_v3) が UTF-8 → Latin-1 mojibake (例: 「セッション」→「ã»ãã·ã§ã³」) で到達。最初の検知で 1 ファイル目 (handoff_v16) を mojibake と報告したが、2 ファイル目 (learning_design_v3) を「正常」と誤検知して報告した。次ターンで気付き訂正したが、まこさんに 2 回再貼付の手間をかけさせた。
+
+**Why:**
+1. 「ファイル内容は一字一句変更しない」(bit-exact) という指示を機械的に解釈すると、mojibake のまま保存してしまい既存リポジトリ (proper UTF-8 日本語) と不整合を生む。bit-exact の本旨は「CC 側で意図的に改変しない」であって「送信経路で壊れたデータを凍結する」ことではない。
+2. 添付ファイル複数件のエンコーディング sanity check を 1 件ずつ順次実施したため、2 ファイル目の検知漏れが発生。
+
+**How to apply:**
+1. **bit-exact 上書き / 保存タスク受領時の事前 verify**: 添付ファイル全件を **同時に** sanity check する。
+   - 既存類似ファイル (例: 過去 handoff の `file` コマンド出力) と encoding が一致するか
+   - head 3-5 行が proper Japanese で読めるか
+   - mojibake パターン (`ã` `»` `¥` 等の連続) が出ていないか
+2. **mojibake 検知時の対応**: 機械的保存を中断・まこさんに再提供 (チャット欄に proper UTF-8 で貼付) を依頼する。「bit-exact」の解釈を明示説明する。
+3. **複数添付の検知**: 1 件ずつではなく全件同時に検知・報告する (見落とし防止)。
+4. 対応経路: web_claude_self_check.md チェック B (完了報告受領時) に「添付ファイルの encoding sanity check 義務」を追加検討 (Web Claude 側でも CC 提示ファイルが proper UTF-8 か verify)。
+
+**関連:** `.claude/instructions/2026-05-20_learning_design_v3_and_handoff_v16_save_completion.md` §5 (経緯記録) / commit `e5bcd5b` / 既存 handoff `file` 出力 = `Unicode text, UTF-8 text` (比較基準)
 
 ---
 

@@ -341,6 +341,18 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 > 4. **Layer 1+2 計画書**: 棚卸し + 特徴量追加方針が揃ったら Web Claude が計画書ドラフト
 >
 > **Phase 0 v3 メンテ flag (28,152 bar・5.35%) の扱い (2026-05-20 確定)**: parquet 内 `is_maintenance` 列は残置 (再生成コスト 2h40m 回避)。ただし Phase 5 Replay 以降では **使わない** (Bitget は 24/7 取引・L-196 参照)。Phase 5 設計時に「メンテ flag 不使用」を明示する。
+>
+> **2026-05-20 セッション完了事項 (改訂14)**:
+> - **Phase 0 v3 完了報告 5 点訂正** (commit `3b9f486`): §3.3 K288 max 数値訂正 (LONG_MFE=40.70%/LONG_MAE=34.01% 等・公式 source label_stats.csv 直接引用) + §3.3.1 新規追加 (K288 max 該当日付 = 2021-05-19 BTC 大暴落 "Black Wednesday" と完全一致) + §1 起点 23:55 verify (build_labels_pct.py L208-225 + L324 で説明) + §2 メンテ flag L-196 注記
+> - **学習内容 v3 + handoff v16 保存** (commit `e5bcd5b`): `.claude/memory/learning_design_v3.md` + `.claude/instructions/handoff_to_web_claude_v16_session_20260520.md` 新規追加 (exchange_spec.md 準拠化済)
+> - **14 ラベル B 案採用確定** (commit `53debce`): 学習内容 v3 / handoff v16 を 14 ラベル版に上書き + Phase 0 §7.2 確定文化 (対称性 LONG_MFE_pct_K ≡ SHORT_MAE_pct_K bit-exact 確認・学習時間半減)
+>
+> **次セッション優先順位 (handoff v16 §3 参照)**:
+> 1. 優先 1: Phase 0 完了レビュー (実質完了済・commit `3b9f486` で異常値スメル ⚠️ 2 件反映済 + K288 max 日付特定済 + 起点 23:55 原因特定済)
+> 2. 優先 2: Phase 0 v3 spec sweep 本体 — cc_ml_design_spec.md / WORKFLOW.md / phase_compliance_checklist.md / ml_axis_catalog.md の **「16/28 ラベル」→「14 ラベル独立学習」機械反映** + Funding 0.01% 固定 → median baseline (light 枠 80-120 行・memory ルール 24 / L-198)
+> 3. 優先 3: **Phase 1 着手指示書発注** (14 ラベル独立回帰モデル前提・学習内容 v3 §B-15 準拠・RMSE + 直接 PnL + Sharpe maximizing custom objective 並列・監査経路 audit#18 で custom objective 数式 verify)
+>
+> **2026-05-20 新規教訓**: L-199 (添付ファイル mojibake 検知義務・bit-exact 解釈)
 
 ---
 
