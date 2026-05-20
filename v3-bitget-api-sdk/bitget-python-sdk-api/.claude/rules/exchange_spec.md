@@ -55,7 +55,7 @@
 | Funding rate 実測分布 | history-fund-rate API 91 intervals 2026-04-20〜05-20 (audit#19・sha256:3be5d64c) | ✅ verify 済 |
 | 取引時間 24/7 | 公式ガイド Bitget 株式無期限先物完全ガイド (2026-01-08・2026-05-20 まこさん確認) | ✅ verify 済 |
 | 定期メンテ (旧記述) | ⛔ Claude 想定値・削除済 (2026-05-20・L-196 参照) | ⛔ |
-| posLimit 0.2 | v1 docs HTML: "percentage of positions by single trader" = OI 比率 (2026-05-20・audit#19 followup) | ✅ verify 済 |
+| posLimit 0.2 | v1 docs HTML: "percentage of positions by single trader" = OI 比率 (2026-05-20・audit#19 followup) / ⚠️ Bitget Support 記事「Platform OI × 0.5 × ratio threshold = 10%」は Cloudflare ブロックで独立 confirm 不可 (audit#19 監査報告・2026-05-20) / 我々 0.12 BTC は <<0.001% OI で完全非バインディング | ⚠️ 注記あり |
 | buyLimitPriceRatio 0.05 | v1 docs HTML: "Buy price limit ratio" = マーク価格±5% 以内 (2026-05-20・audit#19 followup) | ✅ verify 済 |
 | sellLimitPriceRatio 0.05 | v1 docs HTML: "Sell price limit ratio" = マーク価格±5% 以内 (2026-05-20・audit#19 followup) | ✅ verify 済 |
 | feeRateUpRatio 0.005 | v1 docs HTML: "Rate of increase in handling fee, 0.005 means 0.5%" (2026-05-20・audit#19 followup) | ✅ verify 済 |
@@ -71,7 +71,7 @@
 
 | フィールド | 値 | 意味 | 単位 | 設計影響 |
 |---|---|---|---|---|
-| posLimit | 0.2 | プラットフォーム OI に対する単一トレーダーの保有率上限 | OI 比率 | 0.12 BTC は非バインディング（OI の 0.001% 未満） |
+| posLimit | 0.2 | V1 docs: 単一トレーダーの OI 保有率上限 (20%) / ⚠️ Support 記事「OI×0.5×ratio=10%」は Cloudflare ブロックで独立 confirm 不可 | OI 比率 | 0.12 BTC は 20%/10% いずれでも完全非バインディング (<<0.001% OI) |
 | maxMarketOrderQty | 220 | 単一マーケット注文の最大数量 | BTC | 非バインディング (close 0.12 BTC << 220 BTC) |
 | maxOrderQty | 1200 | 単一指値注文の最大数量 | BTC | 非バインディング (entry 0.024 BTC << 1200 BTC) |
 | maxSymbolOrderNum | 200 | BTCUSDT 同時アクティブ注文数上限 | 件数 | 非バインディング (最大 3 件程度) |

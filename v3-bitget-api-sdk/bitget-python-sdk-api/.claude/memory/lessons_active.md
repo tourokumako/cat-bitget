@@ -14,6 +14,11 @@ L-180（ドキュメント引用前実装 verify 必須）はコード実装と 
 1. `exchange_spec.md` に値を追記・参照する際は、**出典（✅ = 公式確認済 / ⚠️ = Claude 想定値・要 verify）を必ず明記する**。出典なき値は ⚠️ + 「要 verify」タグを付け、audit 対象として明示する。
 2. `web_claude_self_check.md` の本番再現性チェック (#1〜#7) や `phase_compliance_checklist.md` の数値を「合格済」と評価する前に、その数値が `exchange_spec.md` で ✅ verify 済か ⚠️ 暫定値かを必ず確認する。⚠️ のものは「暫定値・audit 対象」として扱い「合格済」とは書かない。
 3. Bitget 個別メンテナンスは Support > Maintenance (https://www.bitget.com/support/sections/12508313404950) を都度確認。Bot 起動時に最新アナウンス取得を実装に含める（Phase 7-c 要件）。
+4. **field 名と値の不整合 (別 field の値を誤記) も同型として扱う**:
+   - 例: 旧 `exchange_spec.md`「最大同時保有数 (maxPositionNum) | **200**」— field 名 `maxPositionNum` は正しく参照したが、値「200」は別 field `maxSymbolOrderNum` の値だった。実 API では `maxPositionNum`=**150**。
+   - 「field 名は正しく参照したが、値が別 field のもの」という混在パターンは、単純な Claude 補完（出典なし）とは異なる見落とし方をする。
+   - 検出策: spec 更新時に field 名と値の対応を API response 生 JSON (例: `bitget_contracts_btcusdt_20260520.json`) で 1 行 1 件 verify する。「field 名で値を引いた」vs「別の field の値を書いた」かどうかを照合する。
+   - 出典: audit#19 follow-up 監査報告 §F (2026-05-20)・L-197 新設は over-classification と判定済
 
 **関連:** `exchange_spec.md` (修正済・2026-05-20) / `web_claude_self_check.md` 見落とし再発記録 #11 / `false_positive_incident_policy.md` §2 類型 G
 
