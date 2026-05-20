@@ -120,6 +120,7 @@
 1. 最小注文 0.0001 BTC / 2. 最小注文額 5 USDT / 3. Tick 0.1 USDT
 4. Maker TTL 3 本 + 同一 side pending 禁止 / 5. SL は add_count ≥ 2 のみ
 6. メンテ 火/水/木 05-08 UTC / 7. Maker 剥落 0.014%/0.02% stress
+※ 2026-05-20 訂正済・L-196 参照: #6「火/水/木 05-08 UTC」は出典なき Claude 想定値・Bitget は 24/7 取引・exchange_spec.md 修正済
 
 ### §1.7 手動 Priority スタートライン (web_claude_role.md §1.7・commit 済)
 
@@ -198,6 +199,7 @@ CC commit 先: `.claude/instructions/2026-05-19_ml_implementation_phase0_1.md`
 3. **23 軸 First Principles 6 項目** (self_check addendum チェック A)
 
 省略 = 重大インシデント (類型 G + 類型 H 近接・false_positive_incident_policy §4 手順起動)
+※ 2026-05-20 訂正済・L-196 参照: 本番再現性 #6「火/水/木 05-08 UTC」は出典なき Claude 想定値・Bitget は 24/7 取引・exchange_spec.md + web_claude_self_check.md 修正済
 
 ### §4.2 デザイン責任を持つ (確認質問乱発禁止)
 

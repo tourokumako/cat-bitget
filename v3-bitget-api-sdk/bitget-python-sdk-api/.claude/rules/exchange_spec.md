@@ -6,8 +6,8 @@
 
 | 種別 | 適用値 | 標準値 | 備考 |
 |---|---|---|---|
-| Maker fee | 0.014% (0.00014) | 0.02% (0.0002) | BGB割引等適用後・剥落で標準復帰 |
-| Taker fee | 0.042% (0.00042) | 0.06% (0.0006) | 同上 |
+| Maker fee | 0.014% (0.00014) ✅ まこさん発注画面確認 (2026-05-20) | ⚠️ 0.02% (0.0002) — 出典未確認・Claude 想定値・stress test 用暫定使用・audit#19 対象 | BGB割引等適用後・剥落で標準復帰 |
+| Taker fee | 0.042% (0.00042) ✅ まこさん発注画面確認 (2026-05-20) | ⚠️ 0.06% (0.0006) — 出典未確認・Claude 想定値・stress test 用暫定使用・audit#19 対象 | 同上 |
 
 ### 注文単位
 
@@ -32,15 +32,22 @@
 | マージンモード | isolated (hedge_mode 維持) |
 | 最大レバレッジ | 125x (v2 API) |
 | 最大同時保有数 (maxPositionNum) | 200 |
-| 定期メンテナンス | 火/水/木 05:00-08:00 UTC |
+| 定期メンテナンス | なし (24/7 取引) ✅ 公式ガイド「中断のない年中無休の取引」(Bitget 株式無期限先物完全ガイド・2026-01-08・2026-05-20 まこさん確認) |
 
-> ⚠️ メンテナンス時間帯はリトライ機構必須 (run_once_ml.py / Phase 7-c 要件)
+> 個別アナウンスは Support > Maintenance (https://www.bitget.com/support/sections/12508313404950) を都度確認。Bot 起動時は最新アナウンス取得を実装に含める (Phase 7-c 要件)。
+> ⚠️ **削除した旧記述「火/水/木 05:00-08:00 UTC」は出典なき Claude 想定値だった (2026-05-20 発覚・L-196 参照)**
 
-### 出典
+### 出典 (項目別)
 
-- 公式 API: `GET /api/v2/mix/market/contracts?productType=usdt-futures&symbol=BTCUSDT`
-- 公式 doc: Bitget Beginner's Guide — Understanding Futures Fees / Funding Rate
-- 適用値: まこさん発注画面確認 (2026-05-13)
+| 項目 | 出典 | 状態 |
+|---|---|---|
+| Maker/Taker 適用値 | まこさん発注画面確認 (2026-05-20) | ✅ verify 済 |
+| Maker/Taker 標準値 | ⚠️ 出典なし・Claude 想定値 | ⚠️ audit#19 対象 |
+| 最小注文 / 最小注文額 / Tick size / 最大レバ / マージンモード / 最大同時保有 | 公式 API `GET /api/v2/mix/market/contracts` (response 例保存未実施) | ⚠️ audit#19 対象 |
+| Funding 8h 間隔 | Bitget Beginner's Guide — Understanding Futures Fees / Funding Rate | ✅ verify 済 |
+| Funding 0.01% rate | ⚠️ phase_compliance L13 暫定値・出典なし | ⚠️ audit#19 対象 |
+| 取引時間 24/7 | 公式ガイド Bitget 株式無期限先物完全ガイド (2026-01-08・2026-05-20 まこさん確認) | ✅ verify 済 |
+| 定期メンテ (旧記述) | ⛔ Claude 想定値・削除済 (2026-05-20・L-196 参照) | ⛔ |
 
 ---
 

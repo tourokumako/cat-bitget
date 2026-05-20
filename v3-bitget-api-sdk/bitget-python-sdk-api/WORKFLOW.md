@@ -339,6 +339,8 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 > 2. **特徴量追加判断**: build_labels.py に RSI(21)/RSI_slope/BB_slope/stoch_5m/RCI(7/9/52) を追加するか → まこさん判断
 > 3. **Phase 0 再実行**: 特徴量追加確定後 → Phase 1〜5 再実行
 > 4. **Layer 1+2 計画書**: 棚卸し + 特徴量追加方針が揃ったら Web Claude が計画書ドラフト
+>
+> **Phase 0 v3 メンテ flag (28,152 bar・5.35%) の扱い (2026-05-20 確定)**: parquet 内 `is_maintenance` 列は残置 (再生成コスト 2h40m 回避)。ただし Phase 5 Replay 以降では **使わない** (Bitget は 24/7 取引・L-196 参照)。Phase 5 設計時に「メンテ flag 不使用」を明示する。
 
 ---
 

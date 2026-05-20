@@ -1,4 +1,21 @@
-# lessons_active.md — 直近50件の現役教訓（L-195〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-196〜L-103）
+
+---
+
+### L-196: 外部仕様（取引所スペック）を「出典なし」のまま正本扱いした — 出典 verify 手続きの欠落（2026-05-20）
+
+**何が起きたか:**
+`exchange_spec.md` L35 に「定期メンテナンス 火/水/木 05:00-08:00 UTC」と記述し、複数セッションにわたって `web_claude_self_check.md` 本番再現性チェック #6「合格済」として書き続けた。まこさんが Bitget 公式ガイド「Bitget 株式無期限先物完全ガイド (2026-01-08)」の「中断のない年中無休の取引」という記述を引用したことでインシデントが発覚。実際の Bitget は 24/7 取引であり、削除した「火/水/木 05:00-08:00 UTC」は出典が存在しない Claude 想定値だった。`false_positive_incident_policy.md` §2 類型 G（虚偽報告）に該当。
+
+**Why:**
+L-180（ドキュメント引用前実装 verify 必須）はコード実装と WORKFLOW/CLAUDE 等の内部文書記述の乖離を防ぐための手続きであり、**取引所スペック（外部仕様）の一次ソース verify 手続きが存在しなかった**。「exchange_spec.md に書いてある = verify 済」という誤認が成立し、出典なき Claude 想定値が何度も「合格済」として引用された。
+
+**How to apply:**
+1. `exchange_spec.md` に値を追記・参照する際は、**出典（✅ = 公式確認済 / ⚠️ = Claude 想定値・要 verify）を必ず明記する**。出典なき値は ⚠️ + 「要 verify」タグを付け、audit 対象として明示する。
+2. `web_claude_self_check.md` の本番再現性チェック (#1〜#7) や `phase_compliance_checklist.md` の数値を「合格済」と評価する前に、その数値が `exchange_spec.md` で ✅ verify 済か ⚠️ 暫定値かを必ず確認する。⚠️ のものは「暫定値・audit 対象」として扱い「合格済」とは書かない。
+3. Bitget 個別メンテナンスは Support > Maintenance (https://www.bitget.com/support/sections/12508313404950) を都度確認。Bot 起動時に最新アナウンス取得を実装に含める（Phase 7-c 要件）。
+
+**関連:** `exchange_spec.md` (修正済・2026-05-20) / `web_claude_self_check.md` 見落とし再発記録 #11 / `false_positive_incident_policy.md` §2 類型 G
 
 ---
 
