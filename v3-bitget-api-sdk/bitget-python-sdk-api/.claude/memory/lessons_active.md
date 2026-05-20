@@ -1,4 +1,24 @@
-# lessons_active.md — 直近50件の現役教訓（L-196〜L-103）
+# lessons_active.md — 直近50件の現役教訓（L-198〜L-105）
+
+---
+
+### L-198: 指示書サイズ規律違反 — 機械的タスクに full 版 376 行を適用 (2026-05-20)
+
+**何が起きたか:**
+audit#19 後続反映タスク (機械的反映のみ・新規判断ゼロ・新規 verify ゼロ) に対し、376 行の full 版指示書を作成。まこさんから「軽微な修正に対して膨大なトークン消費」と指摘され、修正中止 + テンプレ正本化タスクに切替。
+
+**Why:**
+全タスクに full フォーマット (option5v7h_reeval.md・376 行) を一律適用していた。機械的反映タスク (転記・マーク更新・統合) でも全ガード A-I 列挙・物理証跡 6 点・完了報告必須証跡 7 点を要求していた。タスクの重さに応じてサイズを使い分ける運用ルールがなかった。
+
+**How to apply:**
+- 指示書発行前に「新規判断 / 新規 verify / 新規ガード追加があるか」を判定
+- なければ light 枠 (80-120 行・`.claude/templates/instruction_template_light.md`)
+- あれば full 枠 (300-400 行・`.claude/templates/instruction_template_full.md`)
+- 監査 follow-up / 再設計レベル (150-250 行) は light を膨らませて対応
+- 3 経路で固定: memory ルール 24 + `web_claude_role.md §1.5.5` + 本 lesson L-198
+- 世代交代後も発火するように lessons 全件読み込み (handoff 読了ゲート) で検知
+
+**関連:** `web_claude_role.md §1.5.5` / `.claude/templates/instruction_template_light.md` / `.claude/templates/instruction_template_full.md`
 
 ---
 
