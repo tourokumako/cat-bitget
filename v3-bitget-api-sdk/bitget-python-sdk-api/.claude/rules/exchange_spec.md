@@ -55,6 +55,34 @@
 | Funding rate 実測分布 | history-fund-rate API 91 intervals 2026-04-20〜05-20 (audit#19・sha256:3be5d64c) | ✅ verify 済 |
 | 取引時間 24/7 | 公式ガイド Bitget 株式無期限先物完全ガイド (2026-01-08・2026-05-20 まこさん確認) | ✅ verify 済 |
 | 定期メンテ (旧記述) | ⛔ Claude 想定値・削除済 (2026-05-20・L-196 参照) | ⛔ |
+| posLimit 0.2 | v1 docs HTML: "percentage of positions by single trader" = OI 比率 (2026-05-20・audit#19 followup) | ✅ verify 済 |
+| buyLimitPriceRatio 0.05 | v1 docs HTML: "Buy price limit ratio" = マーク価格±5% 以内 (2026-05-20・audit#19 followup) | ✅ verify 済 |
+| sellLimitPriceRatio 0.05 | v1 docs HTML: "Sell price limit ratio" = マーク価格±5% 以内 (2026-05-20・audit#19 followup) | ✅ verify 済 |
+| feeRateUpRatio 0.005 | v1 docs HTML: "Rate of increase in handling fee, 0.005 means 0.5%" (2026-05-20・audit#19 followup) | ✅ verify 済 |
+| openCostUpRatio 0.01 | v1 docs HTML: "Percentage of increase in opening cost, 0.01 means 1%" (2026-05-20・audit#19 followup) | ✅ verify 済 |
+| maxMarketOrderQty 220 | 単一マーケット注文最大量 220 BTC (Go SDK struct + web search・2026-05-20・audit#19 followup) | ✅ verify 済 |
+| maxOrderQty 1200 | 単一指値注文最大量 1200 BTC (Go SDK struct + web search・2026-05-20・audit#19 followup) | ✅ verify 済 |
+| maxSymbolOrderNum 200 | BTCUSDT 同時アクティブ注文数上限 200 件 (web search Bitget FAQ・2026-05-20・audit#19 followup) | ✅ verify 済 |
+| maxProductOrderNum 1000 | USDT-FUTURES 全体同時注文数上限 1000 件 (web search Bitget FAQ・2026-05-20・audit#19 followup) | ✅ verify 済 |
+
+---
+
+## contracts API 追加フィールド（audit#19 follow-up・2026-05-20 確定）
+
+| フィールド | 値 | 意味 | 単位 | 設計影響 |
+|---|---|---|---|---|
+| posLimit | 0.2 | プラットフォーム OI に対する単一トレーダーの保有率上限 | OI 比率 | 0.12 BTC は非バインディング（OI の 0.001% 未満） |
+| maxMarketOrderQty | 220 | 単一マーケット注文の最大数量 | BTC | 非バインディング (close 0.12 BTC << 220 BTC) |
+| maxOrderQty | 1200 | 単一指値注文の最大数量 | BTC | 非バインディング (entry 0.024 BTC << 1200 BTC) |
+| maxSymbolOrderNum | 200 | BTCUSDT 同時アクティブ注文数上限 | 件数 | 非バインディング (最大 3 件程度) |
+| maxProductOrderNum | 1000 | USDT-FUTURES 全体同時注文数上限 | 件数 | 非バインディング |
+| buyLimitPriceRatio | 0.05 | 買い指値のマーク価格からの最大乖離 | 比率 | 非バインディング (±0.01% << 5%) |
+| sellLimitPriceRatio | 0.05 | 売り指値のマーク価格からの最大乖離 | 比率 | 非バインディング (±0.01% << 5%) |
+| feeRateUpRatio | 0.005 | 手数料増加係数（ペナルティ時） | 比率 (0.5%) | 通常運用で非発動 |
+| openCostUpRatio | 0.01 | 開設コスト増加係数（ペナルティ時） | 比率 (1%) | 通常運用で非発動 |
+
+> F1-F8 は全て非バインディング。Phase 7-d 着手前 posLimit 確認済 ✅  
+> 詳細分析: `results/exchange_api/api_docs/field_meaning_verify.md`
 
 ---
 
