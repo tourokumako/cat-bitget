@@ -573,7 +573,7 @@ Calibration / Conformal prediction / 予測区間 / SHAP / Permutation importanc
 **確定値（D固定・exchange_spec.mdより）**:
 - Maker: 0.014%
 - Taker: 0.042%
-- Funding Rate: 8h毎0.01%（Phase 5-eで控除済）
+- Funding Rate: **median +0.0002%/8h baseline**（月次 NET ≥ $1,900 合格判定基準）/ p95 0.01%/8h stress（参考値） / LONG 払い・SHORT 受取（exchange_spec.md audit#19・sha256:3be5d64c・2026-05-20 確定）
 - スリッページ: Maker指値前提で未モデル化
 
 **戦略**: D（固定）

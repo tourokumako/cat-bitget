@@ -124,7 +124,7 @@ build_labels_pct.py で生成された parquet の指標列 1,462 から、Phase
 | 0.8 | timestamp 連続性 verify (5min ギャップ以外ゼロ) | download_bitget_5y.py の verify_integrity 通過 |
 | 0.9 | ML pipeline (build_labels.py / run_phase*) の INPUT_CSV が Bitget 新 CSV (`*-bitget-*`) を指していることを起動時 assertion で verify | `assert "bitget" in str(INPUT_CSV)` 例: build_labels.py L57 |
 
-## Phase 1 (LightGBM × 16 label)
+## Phase 1 (LightGBM × 14 ラベル独立)
 
 | # | チェック項目 | verify 方法 |
 |---|---|---|

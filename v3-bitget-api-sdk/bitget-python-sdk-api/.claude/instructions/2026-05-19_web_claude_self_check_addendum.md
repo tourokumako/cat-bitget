@@ -1,3 +1,16 @@
+⛔ archive: v2 系・v3 化で機械反映済 (2026-05-20 まこさん承認・本指示書は 2026-05-19 発行当時の追記内容を凍結)。
+正本は `.claude/memory/learning_design_v3.md` (exchange_spec.md 準拠化済・2026-05-20 確定)。
+本ファイル内の以下数値は v3 で更新済 (本ファイルは参照禁止・履歴のみ):
+- メンテ時間帯 火/水/木 05-08 UTC → メンテなし (24/7・exchange_spec.md L37)
+- Funding 8h 毎 0.01% → median +0.0002%/8h baseline / p95 0.01%/8h stress (audit#19)
+- n_sim 上限 718/359/239/143/89/71 → 150/75/50/30/18/15 (maxPositionNum=150 反映)
+- 最大レバ 125x → 150x (audit#19)
+- maxPositionNum 200 → 150 (audit#19)
+- 削除類型 11 種 → 10 種 (旧 #10 メンテ時間帯混入を削除)
+- 28 ラベル独立 → 14 ラベル独立 (対称性活用・LONG×K=7×{MFE,MAE}・Phase 0 v3 §3.2 bit-exact 確認済)
+
+---
+
 # 【タスク】web_claude_self_check.md に「本番再現性 7 項目」「価格非依存性」を追記
 
 ## メタ情報
