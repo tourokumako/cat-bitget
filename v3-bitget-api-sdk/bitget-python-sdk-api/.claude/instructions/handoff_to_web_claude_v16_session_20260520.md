@@ -12,16 +12,16 @@ v14 §0.1〜§0.6 + v15 §0.7 / §0.8 を継承。本 v16 で **新規追加**:
 
 ### §0.9 (本セッションで判明) 「ML 設計を古い情報のまま進めた」事故と訂正
 
-開始時の Web Claude memory に古い情報(16 ラベル / K=12/24/48/96 / Funding 0.01% 固定 / メンテ時間帯あり / n_sim 上限 718 / 削除類型 11 種)が残置しており、まこさんから「すべてやり直し」「ML 設計を古い情報のまま進めた」「28 軸でやれと言った(→ 23 軸の打ち間違い)」と指摘。
+開始時の Web Claude memory に古い情報（16 ラベル / K=12/24/48/96 / Funding 0.01% 固定 / メンテ時間帯あり / n_sim 上限 718 / 削除類型 11 種）が残置しており、まこさんから「すべてやり直し」「ML 設計を古い情報のまま進めた」「28 軸でやれと言った（→ 23 軸の打ち間違い）」と指摘。
 
 **経緯**:
-1. コア 5 本 + 関連 15 本(合計 20 本・7,328 行)を全文 view で読了ゲート通過
+1. コア 5 本 + 関連 15 本（合計 20 本・7,328 行）を全文 view で読了ゲート通過
 2. まこさんが学習内容 v3 (修正版) を提示・「メンテはナシ」のみ訂正済 + 「exchange_spec.md が正・学習内容を合わせろ」と指示
 3. Web Claude が学習内容 v3 と exchange_spec.md の矛盾箇所 7 件を洗い出してまこさんに確認
 4. まこさん OK → 7 件機械反映で学習内容 v3 完成版確定
 5. memory #28 を学習内容 v3 完成版に合わせて update
 
-**対応**: 次セッション開始時に **memory が古くても学習内容 v3 文書 + handoff v16 を優先参照**。memory と正本文書が矛盾したら正本文書を優先(self_check §「知識として持っているのに起動されない」L174 同型再発防止)。
+**対応**: 次セッション開始時に **memory が古くても学習内容 v3 文書 + handoff v16 を優先参照**。memory と正本文書が矛盾したら正本文書を優先（self_check §「知識として持っているのに起動されない」L174 同型再発防止）。
 
 ---
 
@@ -50,9 +50,12 @@ v14 §0.1〜§0.6 + v15 §0.7 / §0.8 を継承。本 v16 で **新規追加**:
 - Phase 別優先順位 (Phase 0-1〜Phase 6-7)
 - 手動 Priority スタートライン到達 verify 表
 
+**追加確定 (本セッション・2026-05-20 まこさん承認)**:
+- **A-4 ラベル数 = 14** (28 → 14・対称性活用): LONG_MFE_pct_K ≡ SHORT_MAE_pct_K / LONG_MAE_pct_K ≡ SHORT_MFE_pct_K の数学的恒等式・Phase 0 v3 §3.2 bit-exact 一致確認済・学習時間半減・情報量同等。Phase 5 Replay 時に Funding 非対称性 (median +0.0002%/8h・LONG 払い・SHORT 受取) を方向別に適用。
+
 ### §1.2 exchange_spec.md は正本・触らない (まこさん明示指示)
 
-学習内容 v3 と exchange_spec.md の整合性は「exchange_spec.md が正・学習内容を合わせる」が確定方針。今後 exchange_spec.md の数値(Funding / 最大同時保有 / 最大レバ等)を学習内容 v3 側から再判断・再議題化しない。
+学習内容 v3 と exchange_spec.md の整合性は「exchange_spec.md が正・学習内容を合わせる」が確定方針。今後 exchange_spec.md の数値（Funding / 最大同時保有 / 最大レバ等）を学習内容 v3 側から再判断・再議題化しない。
 
 ### §1.3 memory #28 更新 (本セッション)
 
@@ -89,7 +92,7 @@ v15 §3.1 継承。Phase 0 v3 Step 3d (`build_labels_pct.py` フル実行・8-12
 
 ### §3.2 優先 2: Phase 0 v3 spec sweep 本体 (v14 §3.2 / v15 §3.2 継承)
 
-cc_ml_design_spec.md / WORKFLOW.md / phase_compliance_checklist.md の **「16 ラベル」→「28 ラベル」機械反映**が未完。
+cc_ml_design_spec.md / WORKFLOW.md / phase_compliance_checklist.md の **「16 ラベル」→「14 ラベル独立学習 (対称性活用)」機械反映**が未完。
 
 **追加修正対象 (本セッション学習内容 v3 確定で発生)**:
 - cc_ml_design_spec.md §5 Phase 5-e Funding は v15 で更新済 (median baseline) → 学習内容 v3 と整合済
@@ -101,13 +104,13 @@ cc_ml_design_spec.md / WORKFLOW.md / phase_compliance_checklist.md の **「16 �
 
 ### §3.3 優先 3: Phase 1 着手指示書発注
 
-Phase 0 完了レビュー合格後 → **学習内容 v3 §B-15 準拠**で Phase 1 (28 ラベル LightGBM 学習) 指示書発注。
+Phase 0 完了レビュー合格後 → **学習内容 v3 §B-15 準拠**で Phase 1 (**14 ラベル LightGBM 学習・対称性活用**) 指示書発注。
 
 **学習内容 v3 で確定済の Phase 1 要件**:
 - B-15 目的関数: RMSE + 直接 PnL (NET_PnL_pct) + Sharpe maximizing custom objective を **Phase 1 から並列実装**
 - B-9 ハイパラ Optuna: num_leaves={7,15,31,63,127} × max_depth={3,5,7,10,-1} × min_data_in_leaf={50,100,200,500}
 - B-12 特徴量変換: Fractional diff / PCA / Wavelet / MTF 4 方式 (監査経路で比較)
-- 28 ラベル独立回帰モデル (旧 16 ラベル版は archive)
+- **14 ラベル独立回帰モデル** (LONG_MFE / LONG_MAE × K=7 = 14 個・SHORT 側は LONG 側予測値を流用・Phase 0 v3 §3.2 で対称性 bit-exact 一致確認済・旧 16 ラベル版および旧 28 ラベル独立案は archive)
 
 監査経路 (audit#18) で custom objective 数式 verify を経由 (handoff v13 §3.4 継承)。
 

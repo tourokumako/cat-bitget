@@ -211,14 +211,18 @@ ts,                  LONG_MFE_K288, LONG_MAE_K288, SHORT_MFE_K288, SHORT_MAE_K28
 
 blacklist 48 列の詳細: [phase_compliance_checklist.md Phase -1](../rules/phase_compliance_checklist.md)
 
-### §7.2 ラベル数の選択肢 (Web Claude 判断領域)
+### §7.2 ラベル数の選択肢 (Web Claude 判断完了・2026-05-20 まこさん承認)
+
+**確定: B 案 14 ラベル採用**
 
 | 案 | ラベル数 | 学習モデル数 | 状態 |
 |---|---:|---:|---|
-| A. 元定義通り 28 ラベル | 28 | 28 | 却下 (冗長) |
-| **B. 対称性活用 14 ラベル** | **14** | **14** | **採用 (Web Claude PM 2026-05-20 確定)** |
+| A. 元定義通り 28 ラベル | 28 | 28 | ⛔ 不採用 (冗長・学習時間倍増・情報量同じ) |
+| **B. 対称性活用 14 ラベル** | **14** | **14** | **✅ 採用** (§3.2 対称性 bit-exact 確認済・学習時間半減・情報量同等) |
 
-**確定根拠**: §3.2 の対称性 (`LONG_MFE_pct_K{K} == SHORT_MAE_pct_K{K}` / `LONG_MAE_pct_K{K} == SHORT_MFE_pct_K{K}`) が公式 source [label_stats.csv](../../results/priority_rebuild/phase0_v3_stats/label_stats.csv) 全 84 行 (3 期間 × 全 7 K × 全統計値 mean/std/min/max/p50/p99) で完全一致確認済。数学的恒等式 (max_high − close = SHORT エントリーの最大逆行) の実装が正確に保存されていることを物理 view で verify。Phase 1 は 14 LightGBM モデルで実装。
+採用根拠: §3.2 で全 K・全 3 期間で LONG_MFE_pct_K ≡ SHORT_MAE_pct_K / LONG_MAE_pct_K ≡ SHORT_MFE_pct_K の対称性 bit-exact (diff=0.0000e+00) 確認済。SHORT 側予測値は LONG 側予測値を流用 (推論時)。Phase 5 Replay 時に Funding 非対称性 (median +0.0002%/8h・LONG 払い・SHORT 受取) を方向別適用。
+
+Phase 1 着手指示書は 14 ラベル独立回帰モデル前提で発行する。
 
 ### §7.3 残課題 (Phase 1 持ち越し)
 

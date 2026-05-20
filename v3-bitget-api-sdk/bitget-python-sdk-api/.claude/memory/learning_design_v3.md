@@ -34,7 +34,7 @@ web_claude_role §1.5 / §1.6 / §1.7 準拠・デザイン責任 / 23 軸の存
 | A-1 Entry 指標 | A 全投入 | 1432 指標 + 業界カタログ拡張 (TA-Lib / pandas-ta / Murphy / Lopez de Prado) |
 | A-2 Exit 指標 | A 全投入 + B 探索 | 業界カタログ 16 サブカテゴリから 12 種以上 (手動 Priority Exit 12 種をスタートライン到達確認用に参照のみ) |
 | A-3 閾値・パラメータ | A 全投入 + C 学習 | パラメータ違い並列展開 + 閾値は LightGBM 自動分割 + D-γ 統合 (location_prev / entry_risk_score を特徴量化) |
-| A-4 時間軸 K | B 探索 | K = {6, 12, 24, 48, 96, 144, 288} 並列 = 28 ラベル (保有時間上限 1 日内) |
+| A-4 時間軸 K | B 探索 | K = {6, 12, 24, 48, 96, 144, 288} 並列 = **14 ラベル** (対称性活用・LONG_MFE_pct_K ≡ SHORT_MAE_pct_K / LONG_MAE_pct_K ≡ SHORT_MFE_pct_K の数学的恒等式・Phase 0 v3 §3.2 bit-exact 一致確認済・保有時間上限 1 日内) |
 | A-5 時間足 bar | A 全投入 | 6 TF (5m/15m/30m/1h/4h/1d) + 1w/1M 追加 = 8 TF (3m は Layer 2 検討・1m は禁止) |
 | A-6 MAX_ADDS / 配分 | B + C 学習 + 制約セット | 下記 verify 済バリエーション |
 | A-7 サイジング | D 上限固定 + B + C | 合計 0.12 BTC 固定・per-position は BTC=$30k stress test で 0.000167 BTC 以上 + 配分 8 方式並列 |
@@ -67,7 +67,7 @@ web_claude_role §1.5 / §1.6 / §1.7 準拠・デザイン責任 / 23 軸の存
 | 8 | n_sim ≤ **18** | 0.000167 〜 0.015 BTC | ✅ | あり |
 | 10 | n_sim ≤ **15** | 0.000167 〜 0.012 BTC | ✅ | あり |
 
-n_sim 上限の根拠: exchange_spec.md L36 `maxPositionNum=150`(取引所物理上限・audit#19 確定)。総ポジション数 = MAX_ADDS × n_sim が 150 を超えると物理的に発注不可。
+n_sim 上限の根拠: exchange_spec.md L36 `maxPositionNum=150`（取引所物理上限・audit#19 確定）。総ポジション数 = MAX_ADDS × n_sim が 150 を超えると物理的に発注不可。
 
 ---
 
@@ -163,5 +163,11 @@ n_sim 上限の根拠: exchange_spec.md L36 `maxPositionNum=150`(取引所物理
 | 9 | 制約セット | MAX_ADDS × n_sim ≤ 718 | MAX_ADDS × n_sim ≤ 150 | 同上 |
 | 10 | B-8 cap | (物理上限言及なし) | MAX_ADDS × n_sim ≤ 150 絶対遵守を追記 | 同上 |
 | 11 | 削除類型 | 11 種 (#10 メンテ時間帯混入 / #11 価格依存違反) | 10 種 (旧 #10 削除・旧 #11 を #10 に繰り上げ) | exchange_spec.md L37 |
+| 12 | A-4 ラベル数 | 28 ラベル独立学習 | **14 ラベル独立学習** (対称性活用) | Phase 0 v3 §3.2 bit-exact 一致確認・2026-05-20 まこさん承認 |
 
 23 軸振り分け表の構造・MAX_ADDS バリエーション表構造・per-add 配分 6 方式・add トリガ条件・Phase 別優先順位・スタートライン到達 verify は変更なし。
+
+**ラベル数の補足 (2026-05-20 まこさん承認・14 ラベル採用)**:
+- v3 提示時点では「28 ラベル」と書かれていたが、Phase 0 v3 §3.2 で対称性 (LONG_MFE_pct_K ≡ SHORT_MAE_pct_K / LONG_MAE_pct_K ≡ SHORT_MFE_pct_K) が bit-exact 確認され、14 ラベル独立学習で同情報量・学習時間半減が判明。
+- 採用方針: **14 ラベル独立回帰モデル**（LONG_MFE / LONG_MAE × K=7 = 14 個・SHORT 側は LONG 側の予測値を流用）
+- Phase 5 Replay 時に Funding 非対称性 (median +0.0002%/8h・LONG 払い・SHORT 受取) を方向別に適用 (ラベル予測段階では関係なし)
