@@ -264,23 +264,89 @@ learning_design_v4 v5 + cc_ml_design_spec §1.5.1 整合で **Triple Barrier + M
 
 ---
 
-## §7 次セッション CC への最初の指示 (= 本ファイル読了後にやること)
+## §7 新セッション CC への Quick Start (= 本ファイル読了後にやること・混乱防止版)
 
-1. **本 handoff v22 を物理 view 完了 (機械的証跡)**:
-   - `wc -l .claude/instructions/handoff_to_cc_v22_session_20260522.md`
-   - Read ツールで全文 view
-   - §0.30〜§0.35 + §4.38〜§4.42 を最優先で頭に固定
-2. **次タスク (§3.1 Phase 0 改修指示書 v3.1 実装着手) 着手前に必読**:
-   - 上記 §4.42 リストの 13 ファイル全部 (機械的証跡 3 点遵守)
-   - 特に **technical_analysis_knowledge_base.md v3 (1691 行)** + **Phase 0 改修指示書 v3.1 (576 行)** + **Phase 1 学習方法再設計指示書 v1 (429 行)** は必読
-3. **§3.1 Phase 0 改修指示書 v3.1 実装** または **まこさん指示の確認**
-4. **未 commit 成果物の commit 範囲をまこさんに確認**
-5. **CC 同型バイアス再演 累積 36+ 件 を毎ターン警戒**:
-   - L-200 + L-201 自己縛りルール遵守 (機械的証跡 3 点 + WebSearch 能動活用)
-   - cc_role §1.4 + handoff v20-v22 全件 を毎ターン再読
-   - 業界経験閾値の **bool ハードコード単独 → 禁止** (3 層併存必須)
-   - 設計判断時に **WebSearch / WebFetch を能動的に活用** (cc_role §1.0 義務)
-   - **Gemini 等外部見解** をまこさんから貼ってもらう (即興解釈より信頼)
+### ★ 結論: 最初にやることは **build_labels_pct.py の L48-50 削除** ★
+
+```
+次セッションでやること = Phase 0 改修指示書 v3.1 を順番通り実装するだけ
+   ↓
+ファイル: .claude/instructions/2026-05-22_phase0_v4_rebuild_instruction.md (576 行)
+   ↓
+最初の 1 手 = scripts/priority_rebuild/build_labels_pct.py の L48-50 削除 (L-196 メンテフラグ・約 5 分)
+```
+
+### 全体ロードマップ (シンプル版)
+
+```
+[Phase 0 改修・約 4-6 時間] ← まずここ
+   ファイル: 2026-05-22_phase0_v4_rebuild_instruction.md (576 行)
+   ↓ 5 ファイル改修 + Triple Barrier ラベル生成
+   ↓ parquet 3 種 (約 2316-3016 列 + 56 ラベル列) 生成
+   ↓
+[Phase 1 学習方法再設計・約 3-4 週間] ← Phase 0 完了後
+   ファイル: 2026-05-22_phase1_layer_inversion_instruction.md (429 行)
+   ↓ 6 案並列 + Purged K-Fold + DSR
+   ↓ 採用案決定 or Layer 3 投入
+```
+
+### 新セッション 最初の 5 ターン (具体シナリオ)
+
+| Turn | やること | 所要 |
+|---|---|---|
+| **1** | Step 0 セッション開始: 本 handoff v22 (289 行) を Read 全文 view + `wc -l` 引用 | 5 分 |
+| **2** | Step 0-1 必読ファイル引用: Phase 0 指示書 v3.1 §Step 0-1 a-g + ナレッジベース v3 §I + cc_ml_design_spec §1.5.1 | 10 分 |
+| **3** | Step 0-2 実装 verify: `grep -nE "K_BARS\|TIMEFRAMES\|MAINTENANCE_" scripts/priority_rebuild/build_labels_pct.py` + 既存 1462 列確認 + `pip install mlfinlab` | 10 分 |
+| **4** | **Step 1: L-196 メンテフラグ削除 (build_labels_pct.py L48-50/L103-104/L228-238 削除)** + commit | 30 分 |
+| **5** | Step 2: 4 ファイル同時改修着手 (まず `compute_triple_barrier_labels()` skeleton 実装 + smoke 1 ヶ月で動作確認) | 1 時間 |
+
+→ ここまで **約 1.5-2 時間** で Phase 0 改修の最初の山を越える。
+
+### 実装する 5 ファイル (Phase 0)
+
+| # | ファイル | 改修内容 |
+|---|---|---|
+| 1 | `scripts/priority_rebuild/build_labels_pct.py` (既存・改修) | L-196 メンテフラグ削除 + TIMEFRAMES 1w/1M 追加 + **compute_triple_barrier_labels() 新規実装** |
+| 2 | `scripts/regime/analyze_regime_label_features.py` (既存・改修) | `build_indicators_extended()` 拡張 (新規指標約 100 + 業界カタログ + Divergence bool + cat_v9 共通フィルタ + Funding rate 等) |
+| 3 | `scripts/regime/shape_features.py` (既存・改修) | 145 ファミリー TF 欠落補完 |
+| 4 | `scripts/regime/structure_features.py` (既存・改修) | SMC bool + Supply/Demand Zone + Candlestick 62 種 |
+| 5 | `results/regime_label_analysis/pruned_column_list.json` (既存・改訂) | 約 2316-3016 列の集合定義に拡張 |
+
+詳細は **Phase 0 指示書 v3.1 §6 実装手順** 参照。
+
+### 必読ファイル優先順位 (時短版)
+
+| 優先 | ファイル | 行数 | 役割 |
+|---|---|---|---|
+| **1 (最重要)** | 本 handoff v22 | 289 | 何をやるか・全体像 |
+| **2** | **Phase 0 改修指示書 v3.1** | **576** | **実装する手順・最初に読む** |
+| **3** | ナレッジベース v3 §I (閾値設計論) | 約 200 | 業界知見・3 層併存設計 |
+| **4** | cc_ml_design_spec §1.5.1 | 約 30 | Phase 1 合格基準 (Phase 0 完了後に使う) |
+| **5 (Phase 0 完了後)** | Phase 1 指示書 v1 | 429 | Phase 1 学習方法 (Phase 0 完了後に読む・**今は不要**) |
+| 補助 | learning_design_v4 v5 | 377 | 設計図 (Layer 配分逆転反映済) |
+| 補助 | lessons_active L-201 | (1 件分) | WebSearch 能動活用義務 |
+
+### 「迷子」防止 FAQ
+
+| Q | A |
+|---|---|
+| 次セッションは Phase 0 と Phase 1 のどっち? | **Phase 0 から**。Phase 0 で生成する 56 ラベル列 parquet が Phase 1 の前提 |
+| 最初に開くファイルは? | `2026-05-22_phase0_v4_rebuild_instruction.md` (Phase 0 改修指示書 v3.1) |
+| 最初に手を入れるファイルは? | `scripts/priority_rebuild/build_labels_pct.py` (L48-50 削除) |
+| ナレッジベース v3 (1691 行) は全部読むの? | **No**。§I 閾値設計論 (約 200 行) のみ Phase 0 着手前に読む。残りは設計判断時にリファレンス |
+| Phase 1 指示書 (429 行) は今読む? | **No**。Phase 0 完了後に読む |
+| commit はいつ? | Step 1 完了時 + Step 2 完了時 + Phase 0 全体完了時 + Phase 1 各案完了時 |
+| Layer 配分逆転とは? | Triple Barrier + Meta-Labeling + Walk-forward CV を Layer 3 → Layer 1 前倒し (詳細は learning_design_v4 v5 §4 + Phase 1 指示書 §2) |
+
+### CC 同型バイアス 36+ 件警戒 (毎ターン)
+
+- L-200 + L-201 自己縛りルール遵守:
+  - 「読んだ」「verify した」と書く前に機械的証跡 3 点 (`wc -l` + Read 全文 view + 該当行引用)
+  - **設計判断前に WebSearch を最低 1 回実行** (cc_role §1.0 義務)
+  - 業界経験閾値の **bool ハードコード単独 → 禁止** (3 層併存必須)
+  - **Gemini 等外部見解** をまこさんから貼ってもらう (即興解釈より信頼)
+- 「箇条書きをコピーで処理した気になる」を再演しない
+- 「定番だから」「効率的に」を理由にしない
 
 ---
 
