@@ -252,6 +252,40 @@ def build_indicators_extended(df):
             for _name in ("line", "signal", "hist", "hist_change"):
                 f[f"macd_{_name}_pct_{_tag}"] = pd.Series(np.nan, index=c.index)
 
+    # Phase 0 v3.1 Step 4 §2.2 #15 Chandelier Exit (2026-05-22・+12 列)
+    # CE_long = Highest High(22) - 3×ATR(22) / CE_short = Lowest Low(22) + 3×ATR(22)
+    # USD 絶対値は pruned 登録せず・距離 pct のみ登録 (price 非依存性遵守)
+    _tr22 = pd.concat([h - l, (h - c.shift()).abs(), (l - c.shift()).abs()], axis=1).max(axis=1)
+    _atr22 = _tr22.ewm(alpha=1 / 22, adjust=False).mean()
+    _ce_long = h.rolling(22).max() - 3 * _atr22
+    _ce_short = l.rolling(22).min() + 3 * _atr22
+    f["dist_to_ce_long_pct"] = (c - _ce_long) / c * 100
+    f["dist_to_ce_short_pct"] = (_ce_short - c) / c * 100
+
+    # Phase 0 v3.1 Step 4 §2.2 #16 Fib Extension (2026-05-22・+18 列)
+    # rolling 50 bar swing range × {1.27, 1.61, 2.61}・swing_high 起点
+    _swing_h_50 = h.rolling(50).max()
+    _swing_l_50 = l.rolling(50).min()
+    _swing_range = _swing_h_50 - _swing_l_50
+    for _ext_pct in (127, 161, 261):
+        _ratio = (_ext_pct / 100.0) - 1.0  # 1.27 → 0.27 above swing_high
+        _level = _swing_h_50 + _swing_range * _ratio
+        f[f"dist_to_fib_ext_{_ext_pct}_pct"] = (_level - c) / c * 100
+
+    # Phase 0 v3.1 Step 4 §2.3 #18 KDJ J 線 (2026-05-22・+18 列)
+    # J = 3K - 2D (Stoch K/D 既存)・3 層 (連続 value + 連続 zscore + Adaptive bool)
+    if "stoch_k" in f.columns and "stoch_d" in f.columns:
+        _kdj_j = 3 * f["stoch_k"] - 2 * f["stoch_d"]
+        f["kdj_j_value"] = _kdj_j
+        _kdj_mean = _kdj_j.rolling(100, min_periods=20).mean()
+        _kdj_std = _kdj_j.rolling(100, min_periods=20).std()
+        f["kdj_j_zscore_100b"] = (_kdj_j - _kdj_mean) / _kdj_std.replace(0, np.nan)
+        f["kdj_j_overbought_adaptive_z2"] = (f["kdj_j_zscore_100b"] > 2).astype(np.int8)
+    else:
+        f["kdj_j_value"] = pd.Series(np.nan, index=c.index)
+        f["kdj_j_zscore_100b"] = pd.Series(np.nan, index=c.index)
+        f["kdj_j_overbought_adaptive_z2"] = pd.Series(0, index=c.index, dtype=np.int8)
+
     # Phase 0 v3.1 Step 4 §2.2 #13 BB Squeeze + Band Walk (2026-05-22・+30 列)
     # 3 層併存 (連続値 + Adaptive bool + 自己実現的 bool)
     try:
