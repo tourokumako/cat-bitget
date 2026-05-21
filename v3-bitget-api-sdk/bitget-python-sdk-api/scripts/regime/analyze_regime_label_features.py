@@ -252,6 +252,21 @@ def build_indicators_extended(df):
             for _name in ("line", "signal", "hist", "hist_change"):
                 f[f"macd_{_name}_pct_{_tag}"] = pd.Series(np.nan, index=c.index)
 
+    # Phase 0 v3.1 Step 4 §2.1 #11 Divergence bool 簡略実装 (2026-05-22・+36 列)
+    # Regular Bull (反転示唆): price 下落 + osc 上昇 / Regular Bear: price 上昇 + osc 下落
+    # Hidden は pivot 検出が必要なため Phase 4-b で再評価候補 (簡略実装では Regular のみ)
+    _div_N = 14
+    _oscs = ["rsi14", "stoch_k", "macd_hist_pct"]
+    _pc = c - c.shift(_div_N)
+    for _osc_name in _oscs:
+        if _osc_name in f.columns:
+            _oc = f[_osc_name] - f[_osc_name].shift(_div_N)
+            f[f"div_{_osc_name}_reg_bull_{_div_N}b"] = ((_pc < 0) & (_oc > 0)).astype(np.int8)
+            f[f"div_{_osc_name}_reg_bear_{_div_N}b"] = ((_pc > 0) & (_oc < 0)).astype(np.int8)
+        else:
+            f[f"div_{_osc_name}_reg_bull_{_div_N}b"] = pd.Series(0, index=c.index, dtype=np.int8)
+            f[f"div_{_osc_name}_reg_bear_{_div_N}b"] = pd.Series(0, index=c.index, dtype=np.int8)
+
     return f
 
 
