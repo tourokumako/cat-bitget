@@ -8,6 +8,8 @@
 >
 > **2026-05-21 追加凍結事由**: Web Claude が ML 設計担当 → 機械照合担当へ降格 (handoff v18/v19)。本ファイルの「§10 期待する成果物 Web Claude → まこさん → CC」フローを含む Web Claude 主導記述は全て二重に無効。最新 handoff は `handoff_to_cc_v19_session_20260521.md` (宛先 = CC)。
 >
+> **2026-05-21 追加注記 (旧表記の無効化)**: 本ファイル L35 / L263 の「**0.12 BTC/trade**」表記は false_positive_incident_policy §0-2 制定 (2026-05-15) 前の旧表記。現役正本は **cc_ml_design_spec §4 (合計 0.12 BTC 厳守・保有中の全ポジション合計上限)** であり、「1 trade あたり」ではない。本ファイル本文は凍結扱いで改訂しないが、本注記で旧表記を無効化する。
+>
 > **現方針の正本**:
 > - [../../WORKFLOW.md](../../WORKFLOW.md) — 現フェーズ + 次のタスク
 > - [../../../CLAUDE.md](../../../CLAUDE.md) — 設計思想 + Phase 0〜7 骨格

@@ -193,13 +193,23 @@ Entry 時の 14 予測値パターンで Entry の性質を分類し、性質ご
 
 | 項目 | 設定 |
 |---|---|
-| 1 回のサイズ | 固定 0.12 BTC |
-| 同時保有数 | 上限なし |
-| LONG/SHORT 同時保有 | 許可（hedge_mode 活用）|
-| 追加エントリー（add） | 許可（Replay で効果を確認）|
-| ナンピン | 追加エントリーとして処理（ML が再度「いける」と判断した場合）|
+| ポジションサイズ上限 | **合計 0.12 BTC 厳守** (保有中の全ポジション合計上限・1 ポジあたりではない・false_positive §0-2 第二絶対規定) |
+| per-position サイズ | ≥ 0.0001 BTC (Bitget minTradeNum・exchange_spec.md) かつ ≥ 0.000167 BTC (BTC=$30k stress test・learning_design_v4 A-7.4) |
+| 配分方針 | 合計 0.12 BTC 内で combo 別・cluster 別・予測強度別に柔軟配分 (例: 強い combo に 0.04 BTC・弱い combo に 0.01 BTC) |
+| 同時保有数 (cap) | データ駆動で確定 (Phase 5-d 系で再選定)・cap=N なら 1 pos = 0.12/N BTC が標準だが配分は柔軟可 |
+| **cap カウント方法 (B-8 / D-ζ.10)** | **合算カウント** (LONG + SHORT を合計 0.12 BTC で 1 つの枠として管理・hedge_mode で LONG/SHORT 同時保有時も合計上限を守る・別カウント / Net exposure は採用しない) |
+| LONG/SHORT 同時保有 | 許可 (hedge_mode 活用・ただし合算 cap で合計 0.12 BTC を超えない) |
+| 追加エントリー (add) | 許可 (合計 0.12 BTC を超えない範囲・Replay で効果確認) |
+| ナンピン | 追加エントリーとして処理 (ML が再度「いける」と判断した場合・合計上限内) |
 
-Position の制限（同時保有上限等）は、統合 Replay の結果を見てから追加する（データ駆動）。
+**実装義務**: 全エントリー時点で `sum(active_position_btc) ≤ 0.12` を verify (false_positive §0-2)。
+Position の最適 cap・最適配分は統合 Replay (Phase 5-c〜5-d) の結果から確定する (データ駆動)。
+
+**cap カウント方法の判断根拠 (2026-05-21 確定)**:
+- 候補 3 案: 合算 / 別 / Net exposure
+- 「別カウント」(LONG 0.12 + SHORT 0.12 = 合計 0.24) は false_positive §0-2 違反 (合計が定義)
+- 「Net exposure」(LONG 0.12 - SHORT 0.10 = Net 0.02 で枠余裕扱い) は理論的だが、hedge_mode で LONG/SHORT 同時清算リスク発生時の実エクスポージャーが残る危険
+- → **合算カウント** が §0-2 文言整合かつ安全側
 
 ---
 
