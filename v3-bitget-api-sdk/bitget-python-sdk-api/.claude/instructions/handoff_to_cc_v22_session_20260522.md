@@ -264,24 +264,31 @@ learning_design_v4 v5 + cc_ml_design_spec §1.5.1 整合で **Triple Barrier + M
 
 ---
 
-## §7 新セッション CC への Quick Start (= 本ファイル読了後にやること・混乱防止版)
+## §7 新セッション CC への Quick Start (= 本ファイル読了後にやること・2026-05-22 23:XX 更新版)
 
-### ★ 結論: 最初にやることは **build_labels_pct.py の L48-50 削除** ★
+### ★ 結論: **Step 1 + Step 2 完了済**・**Step 3 (Triple Barrier 統合実装) から開始** ★
 
 ```
-次セッションでやること = Phase 0 改修指示書 v3.1 を順番通り実装するだけ
+現セッション (2026-05-22 セッション末) で Step 1 + Step 2 完了:
+  - commit e9a5822: build_triple_barrier_labels.py を archive 移動 (B 案・統合方針)
+  - commit ba627d9: L-196 メンテフラグ削除 4 ファイル一括
+     (build_labels_pct.py + run_lgbm_phase1a_rmse.py + run_lgbm_phase1c_multiclass.py + aggregate_phase0_stats.py)
+
+新セッションでやること = Phase 0 改修指示書 v3.1 の Step 3 以降:
    ↓
-ファイル: .claude/instructions/2026-05-22_phase0_v4_rebuild_instruction.md (576 行)
-   ↓
-最初の 1 手 = scripts/priority_rebuild/build_labels_pct.py の L48-50 削除 (L-196 メンテフラグ・約 5 分)
+最初の 1 手 = build_labels_pct.py に `compute_triple_barrier_labels()` 統合実装
+              (旧 build_triple_barrier_labels.py の numpy ロジック流用・約 100 行・約 1 時間)
 ```
 
 ### 全体ロードマップ (シンプル版)
 
 ```
-[Phase 0 改修・約 4-6 時間] ← まずここ
+[Phase 0 改修・残り 約 3-5 時間] ← 新セッションはここから
    ファイル: 2026-05-22_phase0_v4_rebuild_instruction.md (576 行)
-   ↓ 5 ファイル改修 + Triple Barrier ラベル生成
+   ↓ Step 3: build_labels_pct.py に compute_triple_barrier_labels() 統合実装 (約 1 時間)
+   ↓ Step 4: 他 4 ファイル改修 (analyze_regime_label_features.py + shape_features.py +
+   ↓          structure_features.py + pruned_column_list.json・約 2-4 時間)
+   ↓ Step 5: smoke 3 ヶ月 + CP1 監査 + full build
    ↓ parquet 3 種 (約 2316-3016 列 + 56 ラベル列) 生成
    ↓
 [Phase 1 学習方法再設計・約 3-4 週間] ← Phase 0 完了後
@@ -290,17 +297,33 @@ learning_design_v4 v5 + cc_ml_design_spec §1.5.1 整合で **Triple Barrier + M
    ↓ 採用案決定 or Layer 3 投入
 ```
 
-### 新セッション 最初の 5 ターン (具体シナリオ)
+### 新セッション 最初の 5 ターン (具体シナリオ・Step 1/2 完了済反映)
 
 | Turn | やること | 所要 |
 |---|---|---|
-| **1** | Step 0 セッション開始: 本 handoff v22 (289 行) を Read 全文 view + `wc -l` 引用 | 5 分 |
+| **1** | Step 0 セッション開始: 本 handoff v22 (290+ 行) を Read 全文 view + `wc -l` 引用 + §7 確認 (Step 1/2 完了済) | 5 分 |
 | **2** | Step 0-1 必読ファイル引用: Phase 0 指示書 v3.1 §Step 0-1 a-g + ナレッジベース v3 §I + cc_ml_design_spec §1.5.1 | 10 分 |
-| **3** | Step 0-2 実装 verify: `grep -nE "K_BARS\|TIMEFRAMES\|MAINTENANCE_" scripts/priority_rebuild/build_labels_pct.py` + 既存 1462 列確認 + `pip install mlfinlab` | 10 分 |
-| **4** | **Step 1: L-196 メンテフラグ削除 (build_labels_pct.py L48-50/L103-104/L228-238 削除)** + commit | 30 分 |
-| **5** | Step 2: 4 ファイル同時改修着手 (まず `compute_triple_barrier_labels()` skeleton 実装 + smoke 1 ヶ月で動作確認) | 1 時間 |
+| **3** | Step 0-2 実装 verify: archive 確認 (`ls scripts/priority_rebuild/archive/build_triple_barrier_labels_20260521.py`) + メンテフラグ削除確認 (`grep -nE "MAINTENANCE_\|add_maintenance" scripts/priority_rebuild/build_labels_pct.py` → 0 件) + `pip install mlfinlab` | 10 分 |
+| **4** | **Step 3 着手: build_labels_pct.py に `compute_triple_barrier_labels()` 統合実装** (旧 archive の numpy ロジック流用: TP_MULT=2.0/SL_MULT=1.5/SL 優先/STOP 5-80%) + smoke 1 ヶ月 で 56 ラベル列生成確認 + commit | 1 時間 |
+| **5** | Step 4: 他 4 ファイル改修着手 (analyze_regime_label_features.py の `build_indicators_extended()` 拡張から開始・新規指標 8 件追加) | 1 時間 |
 
-→ ここまで **約 1.5-2 時間** で Phase 0 改修の最初の山を越える。
+→ ここまで **約 2.5-3 時間** で Phase 0 改修の Step 3-4 の山を越える。残り Step 5 (smoke + CP1 監査 + full build) は別ターンで。
+
+### 完了済タスク (現セッション 2026-05-22)
+
+- ✅ Step 1: `build_triple_barrier_labels.py` archive 移動 (commit `e9a5822`・B 案統合方針確定)
+- ✅ Step 2: L-196 メンテフラグ削除 4 ファイル一括 (commit `ba627d9`)
+  - build_labels_pct.py: MAINTENANCE_WEEKDAYS / MAINTENANCE_HOURS 定数削除 + add_maintenance_flag() 関数削除 + 全呼び出し箇所削除
+  - run_lgbm_phase1a_rmse.py L58: DROP_COLS_OTHER から "is_maintenance" 削除
+  - run_lgbm_phase1c_multiclass.py L44: 同上
+  - aggregate_phase0_stats.py: maintenance 集計部分削除 + maintenance_flag.json 出力削除
+
+### 残タスク (新セッションで実施)
+
+- [ ] **Step 3**: build_labels_pct.py に `compute_triple_barrier_labels()` 統合実装 (旧 archive の numpy ロジック流用・約 100 行・約 1 時間)
+- [ ] **Step 4**: 他 4 ファイル改修 (analyze_regime_label_features.py + shape_features.py + structure_features.py + pruned_column_list.json・約 2-4 時間)
+- [ ] **Step 5**: smoke 3 ヶ月 + CP1 監査 (`/audit`) + full build (約 4-6 時間)
+- [ ] **Phase 1**: Phase 1 学習方法再設計指示書 v1 実装 (約 3-4 週間)
 
 ### 実装する 5 ファイル (Phase 0)
 
