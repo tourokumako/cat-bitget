@@ -167,6 +167,31 @@ def build_indicators_extended(df):
     nan_mask = slope5.isna() | slope20.isna() | slope50.isna()
     f["mtf_slope_align_3way"] = align_score.where(~nan_mask, np.nan)
 
+    # Phase 0 v3.1 Step 4 §2.1 #1 A-1 欠損指標補完 (2026-05-22)
+    # RCI 4 種 (cat/indicators.py calculate_rci 流用) + RSI(21) + RSI_slope + BB_slope
+    from cat.indicators import calculate_rci
+
+    # RCI(7) / RCI(9) / RCI(26) / RCI(52)
+    for w in (7, 9, 26, 52):
+        f[f"rci_{w}"] = calculate_rci(c, w)
+
+    # RSI(21) — build_indicators の rsi14/rsi7 と同じ Wilder EMA パターン
+    delta = c.diff()
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+    avg_gain_21 = gain.ewm(alpha=1 / 21, adjust=False).mean()
+    avg_loss_21 = loss.ewm(alpha=1 / 21, adjust=False).mean()
+    rs_21 = avg_gain_21 / avg_loss_21.replace(0, np.nan)
+    f["rsi21"] = 100 - (100 / (1 + rs_21))
+
+    # RSI_slope (rsi14 14 bar 変化・既存 rsi14 列前提)
+    if "rsi14" in f.columns:
+        f["rsi14_slope_14b"] = f["rsi14"] - f["rsi14"].shift(14)
+
+    # BB_slope (bb_width_pct 20 bar 変化・既存 bb_width_pct 列前提)
+    if "bb_width_pct" in f.columns:
+        f["bb_width_slope_20b"] = f["bb_width_pct"] - f["bb_width_pct"].shift(20)
+
     return f
 
 

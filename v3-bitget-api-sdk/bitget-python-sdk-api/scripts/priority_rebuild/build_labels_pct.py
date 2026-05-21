@@ -211,7 +211,7 @@ def validate_columns(df: pd.DataFrame, pruned_spec: dict) -> None:
             f"  missing ({len(missing)}, head 10): {sorted(missing)[:10]}\n"
             f"  extra   ({len(extra)}, head 10):   {sorted(extra)[:10]}"
         )
-    print(f"[assert OK] 指標列 {len(expected)} 完全一致 (1,462 期待・pct 化 30 件追加後・USD 絶対値 48 件は Phase 1 で blacklist drop)")
+    print(f"[assert OK] 指標列 {len(expected)} 完全一致 (1,515 期待・Phase 0 v3.1 Step 4 §2.1 #1 で +53・USD 絶対値 48 件は Phase 1 で blacklist drop)")
 
 
 def compute_mfe_mae_labels_pct(df5m: pd.DataFrame) -> pd.DataFrame:
@@ -327,8 +327,8 @@ def run_dry_run(df5m: pd.DataFrame, pruned_spec: dict) -> None:
         cat_total = sum(len(pruned_spec[cat][tf]["all"]) for tf in TIMEFRAMES)
         print(f"  {cat}: {per_tf} (total {cat_total})")
 
-    if len(expected) != 1462:
-        raise RuntimeError(f"期待集合の総数が 1,462 と不一致: {len(expected)}")
+    if len(expected) != 1515:
+        raise RuntimeError(f"期待集合の総数が 1,515 と不一致: {len(expected)} (Phase 0 v3.1 Step 4 §2.1 #1 で +53)")
 
     print(f"[dry-run] K_BARS: {K_BARS} → {len(K_BARS) * 4} MFE/MAE ラベル + {len(K_BARS) * 4} Triple Barrier ラベル = {len(K_BARS) * 8} 合計")
     print(f"[dry-run] Triple Barrier: TP_MULT={TP_MULT} SL_MULT={SL_MULT} (RR={TP_MULT}:{SL_MULT}) encoding={LABEL_SL}/{LABEL_TIME}/{LABEL_TP} (SL/TIME/TP)")
