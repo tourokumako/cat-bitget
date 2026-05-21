@@ -83,7 +83,7 @@ CC が ML 知見ベースで以下を確定:
 |---|---|---|---|
 | 1 | 新 Path A 改 (Entry/Exit 両側修正) で進めるか | YES (ML 知見ベース判断) | **未確定** |
 | 2 | Step 1 (Entry Binary・1 週) から段階実装で良いか | YES (smoke で物理証跡判定) | **未確定** |
-| 3 | ChatGPT 独立検証を新 Path A 改着手前に通すか | YES (CC 同型バイアス回避) | **未確定** |
+| 3 | ~~ChatGPT~~ **Claude 監査モード `/audit`** (auditor_template.md ベース) を新 Path A 改着手前に通すか | YES (CC 同型バイアス回避・ChatGPT はまこさん課金外で使用不可・2026-05-21 セッション末確定) | **未確定** |
 | 4 | 未 commit 成果物 (Phase 1-c smoke + 軸監査タスク + handoff v17/v18) の commit 範囲 | (まこさん指示) | **未確定** |
 
 ---
@@ -148,9 +148,11 @@ CC 推奨:
 - §2.3 handoff v17/v18: 通常 commit
 - §2.3 handoff v19 (本ファイル): commit
 
-### §3.2 (将来) ChatGPT 独立検証
+### §3.2 (将来) Claude 監査モード `/audit` (旧記述「ChatGPT 独立検証」・2026-05-21 セッション末訂正)
 
 §0.15 #3 で CC が能動的に依頼を提案。「Entry 学習構造選択 (Binary Classification vs Direction Multiclass vs LambdaMART)」は ML 設計の重要判断・CC 同型バイアス回避のため独立検証推奨。
+
+**訂正**: ChatGPT はまこさん課金外で使用不可 → **Claude 監査モード `/audit`** (auditor_template.md ベースのサブエージェント・WORKFLOW.md §監査エージェント) を使用する。ただし監査エージェントも同じ Claude 訓練ベースで同型バイアスを共有する可能性あり (auditor_template.md L24 警告)・それでも CC 単独 + まこさんの 2 者よりは独立性が増す。
 
 ### §3.3 (将来) Phase 0-1 軸実装監査タスクの扱い
 
@@ -168,6 +170,8 @@ handoff v18 §3.0 で「最優先」とされていたが、本セッション�
 WORKFLOW.md L353/L365/L648 に「16 ラベル」「直接 PnL + Sharpe maximizing custom objective」等の旧記述残存。Phase 0 v3 spec sweep 時に「Phase 1-c 着手指示書発注時に現フェーズ更新でまとめて反映」と判断したが、Phase 1-c smoke NO-GO + 新 Path A 改方針転換でさらに古くなった。
 
 次セッション CC が Path A 改着手指示書発注時にまとめて更新する想定。
+
+**2026-05-21 セッション末 解消済**: CC が WORKFLOW.md §🔴現在のフェーズ 改訂16 を追加 + 887→373 行スリム化実施 (L350-L887 を `archive/workflow/WORKFLOW_archive_20260521.md` に全文移動)。旧 L353/L365/L648 は archive 内 (L4/L16/L299 対応) に保存・本体側は改訂16 が現役。
 
 ### §3.5 (将来継承) Phase 7-d 着手前 maxMarketOrderQty paper trading test
 
@@ -192,7 +196,7 @@ handoff v18 §0.11 / §4.22 で「Web Claude 設計担当外し・機械照合�
 **対策**:
 - 毎ターン §0.13 を再読
 - 「23 軸書いてあるから」「Layer 配分通り」と思った瞬間に立ち止まる
-- ChatGPT 独立検証を能動的に活用
+- **Claude 監査モード `/audit`** (auditor_template.md ベースのサブエージェント・WORKFLOW.md §監査エージェント) を能動的に活用 (ChatGPT 等外部 AI はまこさん課金外で使用不可・2026-05-21 セッション末確定)
 - まこさんに長文出す前に必ず確認
 
 ### §4.27 (本セッション §0.14) Entry 学習の構造的問題は事実・対策は推測
@@ -223,7 +227,7 @@ Phase 1-a/1-b/1-c 物理証跡 3 連続は **Entry 学習が機能していな�
 - ✅ 「この実装は月次 NET ≥ $1,900 達成にどう貢献するか?」を 1 行で説明できる
 - ❌ 「learning_design_v3 §X.10 に書いてあるから」「23 軸の Layer 1 ④ だから」を理由にする
 
-判断できないなら ChatGPT 独立検証を通す。
+判断できないなら **Claude 監査モード `/audit`** を通す (ChatGPT はまこさん課金外で使用不可・2026-05-21 訂正)。
 
 ### §4.29 (本セッション後半) Entry 側 + Exit 側を **常に両方** 考える
 

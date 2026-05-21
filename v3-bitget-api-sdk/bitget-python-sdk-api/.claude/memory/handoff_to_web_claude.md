@@ -6,6 +6,8 @@
 > 2026-05-13 に ML pipeline (Phase 0〜7) 切替で旧 framework 廃止。
 > 新セッションでこのファイルを「現在の前提」として引用しない (L-180)。
 >
+> **2026-05-21 追加凍結事由**: Web Claude が ML 設計担当 → 機械照合担当へ降格 (handoff v18/v19)。本ファイルの「§10 期待する成果物 Web Claude → まこさん → CC」フローを含む Web Claude 主導記述は全て二重に無効。最新 handoff は `handoff_to_cc_v19_session_20260521.md` (宛先 = CC)。
+>
 > **現方針の正本**:
 > - [../../WORKFLOW.md](../../WORKFLOW.md) — 現フェーズ + 次のタスク
 > - [../../../CLAUDE.md](../../../CLAUDE.md) — 設計思想 + Phase 0〜7 骨格

@@ -10,7 +10,7 @@
 - **既存Priority(P1/P2/P3/P4/P21/P22/P23/P24)の 1m足回帰**：1m MACD はエッジゼロ確認済み・手数料負け確定。これら既存Priorityを 1m に戻す提案は禁止。
   ※ 新規Priority・新規シグナルでは 1m/3m/15m/1h 等の他足検証は許容（手数料計算・エッジ証明を伴うこと）
 - **マルチシンボル化（ETH/SOL等の追加）**：ユーザーが明示的に却下。提案禁止。
-- **ポジションサイズを「固定値」として計算・提案する**：0.024 BTC は現在の検証サイズであり固定ではない。上限0.12 BTC/trade内でPriority別に自由に配分できる（例: P23=0.06、P3=0.01）。$60/day計算時はこの配分最適化を織り込む。
+- **ポジションサイズを「固定値」として計算・提案する**：0.024 BTC は現在の検証サイズであり固定ではない。上限0.12 BTC/trade内でPriority別に自由に配分できる（例: P23=0.06、P3=0.01）。月次 NET ≥ $1,900 全月クリア達成計算時はこの配分最適化を織り込む。
 
 ---
 
@@ -37,7 +37,9 @@
 ## AI行動ルール（MUST）
 
 ### 目標達成へのコミットメント
-- 目標$60/dayに対して、あらゆる手段を講じてコミットする
+- まこさんが掲げた目標（**月次 NET ≥ $1,900 全月クリア達成**）に対して、あらゆる手段を尽くして全力でコミットし、目標達成すること（cc_role.md §1.0 と整合・$60/day はデイリー参考値・判定基準ではない）
+- 「あらゆる手段」: 自分の知見だけに頼らない / web 検索・WebFetch・業界カタログ・学術文献・OSS 実装・最新研究を能動的に活用 / 過去事例調査 / 監査経路 (ChatGPT 等独立第三者 AI) を遠慮なく使う / 知らない領域は「知らない」と正直に言って調べる
+- 「全力でコミット」: 目標を下げる方向の提案をしない / 「現実的な落とし所」を出す前に目標達成案を最低 1 つ出す / 達成への思考に集中し、達成できない理由の整理に時間を使わない
 
 ### 提案を出す前に毎回・例外なく実行すること
 
@@ -83,8 +85,8 @@
    - 現在の設計・パラメータ・Replay結果・次のタスクを最新状態に書き直す
    - パス: `bitget-python-sdk-api/WORKFLOW.md`
 
-3. **Priority 再構築フェーズの進捗を WORKFLOW.md に反映する**
-   - ML pipeline Phase 0 (ラベル再生成) / Phase 1〜3 (LightGBM 学習+ハイパラ) / Phase 4 (クラスタリング+Exit) / Phase 5 (Replay) / Phase 6 (本テスト) / Phase 7 (Bot 統合) のどこまで進んだか
+3. **ML pipeline Phase 進捗を WORKFLOW.md に反映する** (旧表記「Priority 再構築フェーズ」)
+   - ML pipeline Phase 0 (ラベル再生成 14 ラベル独立) / Phase 1〜3 (LightGBM 学習+ハイパラ) / Phase 4 (クラスタリング+Exit) / Phase 5 (Replay) / Phase 6 (本テスト) / Phase 7 (Bot 統合) のどこまで進んだか
    - 残課題・次セッション着手項目
    - `regime_research.md` / `priority_rebuild.md` (旧 A-1〜D framework) は凍結中なので更新不要
 
@@ -92,7 +94,7 @@
 ```
 セッション終了チェック:
 [ ] lessons_active.md 更新完了
-[ ] WORKFLOW.md 更新完了（Priority 再構築フェーズの進捗反映）
+[ ] WORKFLOW.md 更新完了（ML pipeline Phase 進捗反映・旧表記「Priority 再構築フェーズ」）
 ```
 → 2つ全て [ ] に ✓ が入るまでセッション終了を宣言しない。
 
@@ -124,6 +126,9 @@
 | ファイル | 内容 |
 |---------|------|
 | `bitget-python-sdk-api/WORKFLOW.md` | 現在の状態・次のタスク（**唯一の正本**・現在は **⛔ Phase 1〜7-a leak で無効化**警告ブロックあり）|
+| `bitget-python-sdk-api/.claude/instructions/handoff_to_cc_v19_session_20260521.md` | **【最新 handoff・宛先 CC】** 2026-05-21 ML 設計担当 Web Claude → CC 完全移譲 / Phase 1-c smoke NO-GO / Entry/Exit 両側学習方法改善議論 / CC 同型バイアス 5 件記録 |
+| `bitget-python-sdk-api/.claude/rules/cc_role.md` | **【最重要・CC 役割定義】** CC = 実装担当 + ML 設計担当兼務 (2026-05-21 移譲)・思考プロセス・対話プロトコル・標準フロー (2026-05-21 新規作成) |
+| `bitget-python-sdk-api/.claude/rules/web_claude_role.md` | Web Claude = 機械照合担当 (2026-05-21 降格・冒頭ブロック必読)・旧 ML 設計担当時の参考記述 |
 | `~/.claude/projects/.../memory/feedback_ml_leak_mandatory_check.md` | **【最重要】ML 系作業前の leak 4 点チェック必須** (L-179・2026-05-13 fractal j±2 未来参照事案) |
 | `bitget-python-sdk-api/results/priority_rebuild/leak_incident_20260513.md` | Leak 全 14 件ミス記録 + 防止策 (新セッション再開前に必読) |
 | `bitget-python-sdk-api/.claude/memory/lessons_active.md` | 過去の失敗・再発防止（**L-179 最新 + L-159〜L-166 重点** + 常時参照） |
@@ -131,8 +136,8 @@
 | `bitget-python-sdk-api/.claude/rules/exchange_spec.md` | Bitget USDT-FUTURES スペック正本 (手数料・最小単位・Funding時刻・メンテ時間) |
 | `bitget-python-sdk-api/.claude/memory/signal_ledger.md` | シグナル候補・検証実績（参考・regime マッピングは凍結中） |
 | `bitget-python-sdk-api/.claude/memory/regime_research.md` | 🧊 **凍結中**（素材として参照のみ・新規調査禁止） |
-| `bitget-python-sdk-api/.claude/rules/false_positive_incident_policy.md` | **【最重大・CC/Web Claude 共通正本】虚偽達成・虚偽報告インシデント方針** — 類型 A〜G・発見時強制手順・防止関所 7 つ（2026-05-15 制定） |
-| `bitget-python-sdk-api/.claude/rules/web_claude_self_check.md` | Web Claude 読了ゲート・チェック A/B/C（新版 140 行・audit#12/14 反映・2026-05-15 更新） |
+| `bitget-python-sdk-api/.claude/rules/false_positive_incident_policy.md` | **【最重大・CC/Web Claude 共通正本】虚偽達成・虚偽報告インシデント方針** — 類型 A〜H・発見時強制手順・防止関所 7 つ（2026-05-15 制定） |
+| `bitget-python-sdk-api/.claude/rules/web_claude_self_check.md` | **読了ゲート・チェック A/B/C** (2026-05-21 以降 CC が ML 設計担当として継承使用・冒頭注記参照) |
 
 ---
 
@@ -143,7 +148,7 @@
 **旧方針（凍結）**: 日足 MA70 ベース regime 判定 → 既存 Priority(P1-P24) 振り分け
 
 **新方針**:
-- regime 判定研究は**凍結**（v14 56% / stage3 33% の精度天井に対し $60/day 到達への寄与が見えない）
+- regime 判定研究は**凍結**（v14 56% / stage3 33% の精度天井に対し合格ライン月次 NET ≥ $1,900 全月クリア達成への寄与が見えない）
 - 蓄積した素材（1,432 指標列・k=2 探索フレーム）を **Priority Entry 規則の最適化**に転用
 - 既存 P1/P2/P4/P21/P23/P24 は**改修ではなく解体・再設計**
 - 5m bar × 全 1,432 指標 × 未来 MFE/MAE で Entry 規則を網羅探索
@@ -155,8 +160,8 @@
 > 2026-05-13 leak (fractal j±2 未来参照) 修正完了・Phase 1〜7-a 旧成果は無効・**Phase 0 から再開**。
 
 - **Phase 0**: ラベル再生成 (5y × 5m × 1,432 指標 × 未来 MFE/MAE・leak フリー)
-- **Phase 1**: LightGBM × 16 ラベル × デフォルトハイパラ
-- **Phase 2**: 精度判定 (仮テスト 2025 月次 $500 以上か)
+- **Phase 1**: LightGBM × **14 ラベル独立学習** (対称性活用・LONG_MFE/MAE × K=7・SHORT は Phase 5 で流用) × デフォルトハイパラ
+- **Phase 2**: 精度判定 (仮テスト 2025 月次 NET ≥ $1,900 全月クリア)
 - **Phase 3-a/3-b**: ハイパラ調整 (K 窓別 num_leaves)
 - **Phase 4-a**: k-means クラスタリング (Entry 性質分類)
 - **Phase 4-b**: Exit 設計 (cluster × K × side 最適 Exit・データ駆動)
