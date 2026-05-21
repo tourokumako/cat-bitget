@@ -16,7 +16,7 @@ Phase 1-b: 簡易 PnL チェック (naive Exit で売買シミュレーション
   ↓ 合格 (12 ヶ月中 6+ ヶ月プラス + 年間 NET プラス)
 audit#18: custom objective 数式 verify
   ↓ 数式承認
-Phase 1-c: 直接 PnL / Sharpe custom objective で 14 ラベル再学習
+Phase 1-c: Triple Barrier multiclass + EV フィルタ (RMSE 14 流用 + 新規 7 モデル)
   ↓ 合格 (14 中 12+ で PnL/Sharpe 版 ≥ RMSE 版)
 Phase 2: B-9 Optuna ハイパラ探索
   ↓ §1.6 4 指標全 PASS
@@ -88,50 +88,59 @@ light 枠 80-120 行
 
 ---
 
-## §2 Phase 1-c: 直接 PnL / Sharpe custom objective (+ audit#18 経由)
+## §2 Phase 1-c: Triple Barrier multiclass + EV フィルタ (audit#18 完了済)
 
-### §2.1 audit#18 (着手前・独立監査経路)
+### §2.1 audit#18 (2026-05-21 完了済・本書き換えで反映)
 
-custom objective の grad / hess 数式を独立監査エージェントが verify。
-- 直接 PnL objective の grad / hess
-- Sharpe maximizing objective の grad / hess
-- LightGBM custom objective 実装 (loss → grad → hess) の正しさ
+audit#18 で PnL/Sharpe maximizing custom objective の grad/hess を verify したところ、**barrier hit が non-smooth (TP/SL/TIME のいずれが先に touch するかが離散的) で grad/hess が未定義**と判定。ChatGPT 独立検証でも同結論。
 
-audit 不合格 → 数式修正 → 再 audit
+→ A 案 (Triple Barrier 3-class multiclass + EV フィルタ) に切替・Sharpe maximizing は Phase 2 以降 smoothing 設計後に再 audit (まこさん 2026-05-21 再承認)。
 
 ### §2.2 学習内容
 
-| 目的関数 | 14 ラベル | モデル数 |
+| 目的関数 | 内訳 | モデル数 |
 |---|---|---|
-| RMSE (Phase 1-a 流用) | 14 | 14 |
-| 直接 PnL (NET_PnL_pct maximizing) | 14 | 14 |
-| Sharpe maximizing | 14 | 14 |
-| **合計** | | **42 モデル** |
+| RMSE (Phase 1-a 流用・新規学習なし) | K={6,12,24,48,96,144,288} × {MFE, MAE} = 14 | **14 (流用)** |
+| Triple Barrier 3-class multiclass (新規) | K={6,12,24,48,96,144,288} 各 K で 1 multiclass | **7 (新規)** |
+| **合計** | | **21 モデル** |
 
-ハイパラは Phase 1-a と同じデフォルト固定。Optuna は Phase 2。
+Triple Barrier ラベル定義 (各 K 別):
+- bar t の close 時に LONG entry を仮定し、K bars 以内に以下のどれが先に起きるか:
+  - **TP**: high が `close × (1 + TP_pct/100)` 到達 (TP_pct = pred_MFE × 0.8 想定)
+  - **SL**: low が `close × (1 - SL_pct/100)` 到達 (SL_pct = pred_MAE 想定)
+  - **TIME**: K bars 経過まで未到達 → time out
+- 3 クラス {0: SL, 1: TIME, 2: TP} で multiclass softmax
+
+ハイパラは Phase 1-a と同じデフォルト固定。Optuna は Phase 2。**Sharpe maximizing は Phase 2 以降に延期** (smoothing 設計後)。
 
 ### §2.3 出力
 
-- 42 モデルの予測値 (test 2025)
-- 3 目的関数 × 14 ラベル別の RMSE / PnL / Sharpe 評価表
-- 同一ラベルでの 3 目的関数比較表
+- 21 モデルの予測値 (test 2025):
+  - RMSE 14 ラベル: 連続値 (Phase 1-a 流用)
+  - Triple Barrier 7 K: 各 K の **softmax 確率** (P_SL, P_TIME, P_TP)
+- **EV フィルタ**: 各 K で `EV = P_TP × MFE_target − P_SL × MAE_target`・EV > 閾値で Entry シグナル成立
+- RMSE 連続値 vs Triple Barrier+EV のラベル別比較表
 
 ### §2.4 合格基準
 
 | # | 指標 | 基準 |
 |---|---|---|
-| 1 | PnL 版予測値の月次 NET 中央値 | 14 中 12 以上で RMSE 版 ≥ |
-| 2 | Sharpe 版予測値の月次 PnL std | 14 中 12 以上で RMSE 版 < |
-| 3 | leak 4 点チェック | 全 PASS (L-179) |
+| 1 | Triple Barrier multiclass logloss (valid) | **< 0.95** (uninformed baseline = log(3) ≈ 1.10 の 86%) |
+| 2 | TP クラス Precision (P_TP > 0.5 のサブセット) | **7 K 中 5 以上で > 0.4** |
+| 3 | EV フィルタ適用後の simulated PnL | **12 ヶ月中 8 ヶ月以上プラス** (K=12 主判定・閾値 EV > 0) |
+| 4 | leak 4 点チェック | **全 PASS** (L-179) |
 
 ### §2.5 不合格時の改善フロー
 
 | 不合格パターン | 原因仮説 | 戻り先 |
 |---|---|---|
-| PnL 版が RMSE 版を下回る | custom objective 数式バグ / 学習が逆方向 | **audit#18 再実施** (数式 verify やり直し) |
-| Sharpe 版で std 増加 | Sharpe 計算粒度不適切 | Sharpe 目的関数のウィンドウ調整 (1 回まで) |
-| leak FAIL | 特徴量設計に未来参照混入 | **Phase 0 v3 Step 5 へ戻る** (build_labels_pct.py / 特徴量計算スクリプト再 verify) |
-| 全 14 ラベルで 3 目的関数とも性能低い | Phase 1-a 時点で学習素材が悪い | **Phase 1-a 立て直し協議** |
+| logloss ≥ 0.95 | 3-class 分布が偏り (TIME 支配) / 特徴量不足 | Triple Barrier の TP/SL 閾値見直し (1 回まで・pred_MFE × 0.5 等) |
+| Precision > 0.4 が 5 K 未満 | TP クラス予測が困難 / barrier 設計不適切 | barrier 閾値再設計 (1 回まで) |
+| simulated PnL < 8 ヶ月プラス | EV フィルタ閾値不適切 | 閾値 (EV > 0 → EV > 0.1%) で再 simulation (1 回まで) |
+| leak FAIL | 特徴量設計に未来参照混入 | **Phase 0 v3 Step 5 へ戻る** (build_labels_pct.py 再 verify) |
+| 全指標 FAIL | Phase 1-a 時点で学習素材が悪い | **Phase 1-a 立て直し協議** |
+
+**注**: Sharpe maximizing 系の不具合は本フェーズでは扱わない (Phase 2 以降に延期)。smoothing 設計が必要なら **Phase 2 で再 audit**。
 
 ### §2.6 指示書サイズ
 
@@ -403,7 +412,7 @@ full 枠 × 7 (5-a 〜 5-g 各サブフェーズ別)
 |---|---|---|---|---|
 | 1-a | ✅ RMSE 14 ラベル | rmse_ratio < 1.5 が 12+/14 + leak 全 PASS | 数時間 | 立て直し協議 |
 | 1-b | ❌ Replay のみ | 12 ヶ月中 6+ ヶ月プラス + 年間 NET プラス | 4-8h | 1-a or 1-c |
-| 1-c | ✅ +PnL/Sharpe | 14 中 12+ で PnL/Sharpe 版 ≥ RMSE 版 | 2-3 日 | audit#18 or 1-a |
+| 1-c | ✅ +Triple Barrier multiclass + EV | logloss / Precision / simulated PnL / leak の 4 指標 | 2-3 日 | 1-a or Phase 2 smoothing 再 audit |
 | 2 | ✅ Optuna ハイパラ | §1.6 4 指標全 PASS | 3-5 日 | 1-c or 1-a |
 | 3-a | ✅ アルゴ比較 | LightGBM 最良 | 2-3 日 | 1-c |
 | 3-b | ✅ cluster | cluster 分離 + match > 50% | 1-2 日 | cluster なし設計協議 |
@@ -431,7 +440,7 @@ full 枠 × 7 (5-a 〜 5-g 各サブフェーズ別)
    (目的関数再設計)
 
 
-[audit#18 再実施] ← 1-c PnL/Sharpe 数式バグ
+[Phase 2 で smoothing 設計再 audit] ← Sharpe 着手時
 
 [Phase 3-b 戻る] ← 4-b-1 cluster 不整合
 [Phase 4-b 戻る] ← 5/6 不合格 (Exit 再設計)

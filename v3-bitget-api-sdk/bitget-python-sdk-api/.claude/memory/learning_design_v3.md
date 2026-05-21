@@ -45,7 +45,7 @@ web_claude_role §1.5 / §1.6 / §1.7 準拠・デザイン責任 / 23 軸の存
 | B-12 特徴量変換 | A 全投入 + B 探索 | Fractional diff (d=0.3/0.5) + PCA + Wavelet 追加 + MTF 4 方式 (ffill / 5m rolling / アンカー補間 / 複数特徴量分解) を監査経路で比較 |
 | B-13 Entry ratio 閾値 | B + C 学習 | rolling 365日 q90/95/99 (現状) + cluster 別独立 quantile 並列 + Triple Barrier (Layer 3) |
 | B-14 学習データ範囲 | D 期間固定 + B 探索 | 期間分割は固定 (train 2021-04〜2024-12 / 仮 test 2025 / 本 test 2026 Q1) + Walk-forward / Purged K-fold / CPCV を Layer 3 で探索 |
-| B-15 目的関数 | D 主目的固定 + B 探索 | 合格 = 月次 NET ≥ $1,900 全月固定 / train 目的関数は RMSE + 直接 PnL (NET_PnL_pct) + Sharpe maximizing custom objective を Phase 1 から並列実装 |
+| B-15 目的関数 | D 主目的固定 + B 探索 | 合格 = 月次 NET ≥ $1,900 全月固定 / train 目的関数は RMSE + Triple Barrier 3 クラス multiclass + EV フィルタを並列実装 (Sharpe maximizing は Phase 2 以降に延期・barrier hit non-smooth で grad/hess 未定義のため・audit#18 2026-05-21) |
 | D-α 発火頻度 | C 学習 | 他軸従属変数・per-day 最低限ライン ≥ 10 件制約 (L-117 教訓) |
 | D-γ Entry 位置 | A-3 統合 | location_prev / entry_risk_score を A-3 内で特徴量化 |
 | D-δ 時間帯曜日 | B 探索 (Layer 2 統合フェーズ) | 統合フェーズで時間帯発火分布可視化 → フィルタ探索 (個別 Priority 最適化禁止・WORKFLOW §設計思想 L230 遵守) |
@@ -108,7 +108,7 @@ n_sim 上限の根拠: exchange_spec.md L36 `maxPositionNum=150`（取引所物�
 
 | Phase | 着手軸 | 目的 |
 |---|---|---|
-| Phase 0-1 | A-1 / A-3 / A-4 / A-5 / B-12 / B-14 / B-15 (RMSE + 直接 PnL 並列) | 組み合わせ探索空間の確立 + ラベル pct 化 + leak verify 機械化 |
+| Phase 0-1 | A-1 / A-3 / A-4 / A-5 / B-12 / B-14 / B-15 (RMSE 完了 + Triple Barrier multiclass + EV フィルタ Phase 1-c 着手) | 組み合わせ探索空間の確立 + ラベル pct 化 + leak verify 機械化 |
 | Phase 2 | B-9 (基本ハイパラ・Optuna 主導) | LightGBM 基本ハイパラ確定 |
 | Phase 3 | B-10 / B-11 (cluster k=3/k=4 並列 + 入力 B 案) | アルゴ主軸 + cluster 入力拡張 |
 | Phase 4-b | A-2 (Exit 12 種) / B-13 (rolling + cluster 別 quantile 並列) | Exit 候補拡張 + ratio 閾値探索 |
@@ -164,6 +164,7 @@ n_sim 上限の根拠: exchange_spec.md L36 `maxPositionNum=150`（取引所物�
 | 10 | B-8 cap | (物理上限言及なし) | MAX_ADDS × n_sim ≤ 150 絶対遵守を追記 | 同上 |
 | 11 | 削除類型 | 11 種 (#10 メンテ時間帯混入 / #11 価格依存違反) | 10 種 (旧 #10 削除・旧 #11 を #10 に繰り上げ) | exchange_spec.md L37 |
 | 12 | A-4 ラベル数 | 28 ラベル独立学習 | **14 ラベル独立学習** (対称性活用) | Phase 0 v3 §3.2 bit-exact 一致確認・2026-05-20 まこさん承認 |
+| 13 | B-15 目的関数 | RMSE + 直接 PnL + Sharpe custom objective 並列 | **RMSE 回帰 + Triple Barrier 3 クラス multiclass + EV フィルタ並列** (Sharpe は Phase 2 以降に延期) | audit#18 (2026-05-21・barrier hit non-smooth で grad/hess 未定義) + ChatGPT 独立検証で同結論・まこさん 2026-05-21 再承認 |
 
 23 軸振り分け表の構造・MAX_ADDS バリエーション表構造・per-add 配分 6 方式・add トリガ条件・Phase 別優先順位・スタートライン到達 verify は変更なし。
 
