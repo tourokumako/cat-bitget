@@ -203,6 +203,55 @@ def build_indicators_extended(df):
     if "macd_hist" in f.columns:
         f["macd_hist_slope_5b"] = f["macd_hist"] - f["macd_hist"].shift(5)
 
+    # Phase 0 v3.1 Step 4 §2.1 #8 A-3 パラメータ並列展開 (2026-05-22・+96 列)
+    import ta as _ta
+
+    # RSI parallel: rsi9 / rsi28 (rsi21 は §2.1 #1 で対応済・rsi14/rsi7 は build_indicators 既存)
+    _delta = c.diff()
+    _gain = _delta.clip(lower=0)
+    _loss = -_delta.clip(upper=0)
+    for _w in (9, 28):
+        _ag = _gain.ewm(alpha=1 / _w, adjust=False).mean()
+        _al = _loss.ewm(alpha=1 / _w, adjust=False).mean()
+        _rs = _ag / _al.replace(0, np.nan)
+        f[f"rsi{_w}"] = 100 - (100 / (1 + _rs))
+
+    # ADX parallel: adx7 / adx21 (build_indicators の adx14 と並列)
+    # ta library は data size < window の時 IndexError → 安全に NaN 列で埋める (sample 用)
+    for _w in (7, 21):
+        try:
+            f[f"adx{_w}"] = _ta.trend.ADXIndicator(high=h, low=l, close=c, window=_w).adx()
+        except (IndexError, ValueError):
+            f[f"adx{_w}"] = pd.Series(np.nan, index=c.index)
+
+    # BB parallel: window=10 / 50 (build_indicators の window=20 と並列・pct 化)
+    for _w in (10, 50):
+        try:
+            _bb = _ta.volatility.BollingerBands(close=c, window=_w)
+            _upper = _bb.bollinger_hband()
+            _lower = _bb.bollinger_lband()
+            _width = _upper - _lower
+            f[f"bb_width_pct_w{_w}"] = (_width / c) * 100
+            f[f"bb_pct_b_w{_w}"] = (c - _lower) / _width.replace(0, np.nan)
+        except (IndexError, ValueError):
+            f[f"bb_width_pct_w{_w}"] = pd.Series(np.nan, index=c.index)
+            f[f"bb_pct_b_w{_w}"] = pd.Series(np.nan, index=c.index)
+
+    # MACD parallel: 短期 (5,13,5) + 長期 (19,39,9)・全 pct 化 (price 非依存性)
+    for _tag, (_fast, _slow, _sig) in [("short", (5, 13, 5)), ("long", (19, 39, 9))]:
+        try:
+            _m = _ta.trend.MACD(close=c, window_fast=_fast, window_slow=_slow, window_sign=_sig)
+            _line = _m.macd()
+            _sig_ser = _m.macd_signal()
+            _hist = _m.macd_diff()
+            f[f"macd_line_pct_{_tag}"] = (_line / c) * 100
+            f[f"macd_signal_pct_{_tag}"] = (_sig_ser / c) * 100
+            f[f"macd_hist_pct_{_tag}"] = (_hist / c) * 100
+            f[f"macd_hist_change_pct_{_tag}"] = ((_hist - _hist.shift(1)) / c) * 100
+        except (IndexError, ValueError):
+            for _name in ("line", "signal", "hist", "hist_change"):
+                f[f"macd_{_name}_pct_{_tag}"] = pd.Series(np.nan, index=c.index)
+
     return f
 
 
