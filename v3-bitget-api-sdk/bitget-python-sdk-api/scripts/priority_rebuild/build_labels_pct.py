@@ -1,6 +1,7 @@
-"""build_labels_pct.py — Phase 0: 5m bar × 1,462 指標 × 28 MFE/MAE (pct) ラベル を生成
+"""build_labels_pct.py — Phase 0: 5m bar × 1,462 指標 × 56 ラベル (28 MFE/MAE pct + 28 Triple Barrier) を生成
 
-目的: Phase 1 LightGBM 学習用 parquet を pct 化 + 28 ラベルで生成する (メンテ除外フラグは 2026-05-22 削除済・L-196 整合)。
+目的: Phase 1 LightGBM 学習用 parquet を pct 化 + 56 ラベルで生成する (メンテ除外フラグは 2026-05-22 削除済・L-196 整合)。
+Triple Barrier ラベル 28 列は Phase 1 v5 Layer 配分逆転 (案 e Triple Barrier multiclass + 案 f Meta-Labeling) の基盤。
 
 旧 build_labels.py との差分:
   1. K_BARS: [12, 24, 48, 96] → [6, 12, 24, 48, 96, 144, 288] (4 → 7 K = 16 → 28 ラベル)
@@ -30,7 +31,17 @@
   - results/priority_rebuild/labels_mfe_mae_pct_test_2025.parquet
   - results/priority_rebuild/labels_mfe_mae_pct_test_2026_q1.parquet
   - results/priority_rebuild/labels_mfe_mae_pct_sample.parquet  (--sample-days)
-  列構成: timestamp(index) + close + 1,462 指標 + 28 ラベル = 1,491 列 (is_maintenance 2026-05-22 削除)
+  列構成: timestamp(index) + close + 1,462 指標 + 28 MFE/MAE ラベル + 28 Triple Barrier ラベル = 1,519 列
+
+Triple Barrier ラベル定義 (AFML Ch.3 準拠・+1 TP first / 0 TIME first / -1 SL first):
+  - triple_barrier_label_{LONG,SHORT}_K{K} × K=7 = 14 列 (3-class encoding)
+  - meta_label_{LONG,SHORT}_K{K}          × K=7 = 14 列 (1 if TP first else 0・NaN は維持)
+  TP/SL barrier (旧 archive/build_triple_barrier_labels_20260521.py 流用):
+    LONG  TP: high[t+j] ≥ close[t] × (1 + atr14_pct[t] × TP_MULT / 100)
+    LONG  SL: low[t+j]  ≤ close[t] × (1 - atr14_pct[t] × SL_MULT / 100)
+    SHORT TP: low[t+j]  ≤ close[t] × (1 - atr14_pct[t] × TP_MULT / 100)
+    SHORT SL: high[t+j] ≥ close[t] × (1 + atr14_pct[t] × SL_MULT / 100)
+  両 hit 時は同 bar 内 argmax 先・同位なら SL 優先 (保守的・Phase 1-b と同方針)
 
 ラベル定義 (K=6/12/24/48/96/144/288 bar = 30min/1h/2h/4h/8h/12h/24h):
   - LONG_MFE_pct_K{K}  = (max(high[t+1..t+K]) - close[t]) / close[t] × 100
@@ -55,6 +66,7 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -88,6 +100,11 @@ FREQ_TD = {
 W_CANDIDATES = [10, 20, 50]
 N_CANDIDATES = [50, 100, 200]
 K_BARS = [6, 12, 24, 48, 96, 144, 288]
+
+# Triple Barrier ラベル (旧 archive/build_triple_barrier_labels_20260521.py 流用・2026-05-21 まこさん確定)
+TP_MULT = 2.0
+SL_MULT = 1.5
+LABEL_SL, LABEL_TIME, LABEL_TP = -1, 0, 1
 
 TRAIN_START = pd.Timestamp("2021-04-01")
 TRAIN_END = pd.Timestamp("2024-12-31 23:59:59")
@@ -217,6 +234,89 @@ def compute_mfe_mae_labels_pct(df5m: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def _build_triple_barrier_for_k_side(
+    K: int,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    atr_pct: np.ndarray,
+    side: str,
+    tp_mult: float,
+    sl_mult: float,
+) -> np.ndarray:
+    """1 K × 1 side の Triple Barrier ラベル配列 (AFML Ch.3 準拠 +1/0/-1)。
+
+    末尾 K bars と atr_pct が NaN の bar (= 初期 14 bars) は NaN を返す → dropna 対象。
+    両 hit 時は同 bar 内 argmax 先・同位なら SL 優先 (保守的・archive 実装と同方針)。
+    """
+    n = len(close)
+    labels = np.full(n, np.nan, dtype=np.float32)
+    if side == "LONG":
+        tp_price = close * (1 + atr_pct * tp_mult / 100.0)
+        sl_price = close * (1 - atr_pct * sl_mult / 100.0)
+    elif side == "SHORT":
+        tp_price = close * (1 - atr_pct * tp_mult / 100.0)
+        sl_price = close * (1 + atr_pct * sl_mult / 100.0)
+    else:
+        raise ValueError(f"side must be 'LONG' or 'SHORT', got {side!r}")
+    for i in range(n - K):
+        tp = tp_price[i]
+        sl = sl_price[i]
+        if np.isnan(tp) or np.isnan(sl):
+            continue
+        if side == "LONG":
+            tp_hit = high[i + 1 : i + 1 + K] >= tp
+            sl_hit = low[i + 1 : i + 1 + K] <= sl
+        else:
+            tp_hit = low[i + 1 : i + 1 + K] <= tp
+            sl_hit = high[i + 1 : i + 1 + K] >= sl
+        tp_any = tp_hit.any()
+        sl_any = sl_hit.any()
+        if not tp_any and not sl_any:
+            labels[i] = LABEL_TIME
+        elif tp_any and not sl_any:
+            labels[i] = LABEL_TP
+        elif sl_any and not tp_any:
+            labels[i] = LABEL_SL
+        else:
+            tp_first = int(tp_hit.argmax())
+            sl_first = int(sl_hit.argmax())
+            labels[i] = LABEL_SL if sl_first <= tp_first else LABEL_TP
+    return labels
+
+
+def compute_triple_barrier_labels(df: pd.DataFrame) -> pd.DataFrame:
+    """K=7 × LONG/SHORT × {triple_barrier_label, meta_label} = 28 ラベル列を生成。
+
+    旧 scripts/priority_rebuild/archive/build_triple_barrier_labels_20260521.py の numpy ロジックを
+    LONG/SHORT 対称に拡張・encoding を AFML Ch.3 準拠 (+1/0/-1) に統一。
+    meta_label = (triple_barrier_label == TP).astype(float) ・NaN は維持 (Phase 1 で dropna 用)。
+
+    入力 df は close / high / low / atr14_pct__5m 列を含むこと (assert で verify)。
+    末尾 K bars 末尾 + atr 初期 NaN bars は NaN ラベル → 後段 dropna で除外。
+    """
+    for required in ("close", "high", "low", "atr14_pct__5m"):
+        if required not in df.columns:
+            raise KeyError(f"compute_triple_barrier_labels: 必須列 {required!r} なし")
+    out = pd.DataFrame(index=df.index)
+    close = df["close"].to_numpy(dtype=np.float64)
+    high = df["high"].to_numpy(dtype=np.float64)
+    low = df["low"].to_numpy(dtype=np.float64)
+    atr_pct = df["atr14_pct__5m"].to_numpy(dtype=np.float64)
+    for K in K_BARS:
+        for side in ("LONG", "SHORT"):
+            tb = _build_triple_barrier_for_k_side(
+                K, close, high, low, atr_pct, side, TP_MULT, SL_MULT,
+            )
+            tb_col = f"triple_barrier_label_{side}_K{K}"
+            meta_col = f"meta_label_{side}_K{K}"
+            out[tb_col] = tb
+            meta = (tb == LABEL_TP).astype(np.float32)
+            meta[np.isnan(tb)] = np.nan
+            out[meta_col] = meta
+    return out
+
+
 def run_dry_run(df5m: pd.DataFrame, pruned_spec: dict) -> None:
     """pruned_spec 構造 + 関数 import + 期待集合 1,432 を確認 (指標計算スキップ・数秒)。"""
     expected = expected_indicator_columns(pruned_spec)
@@ -230,7 +330,8 @@ def run_dry_run(df5m: pd.DataFrame, pruned_spec: dict) -> None:
     if len(expected) != 1462:
         raise RuntimeError(f"期待集合の総数が 1,462 と不一致: {len(expected)}")
 
-    print(f"[dry-run] K_BARS: {K_BARS} → {len(K_BARS) * 4} ラベル (LONG/SHORT × MFE/MAE × {len(K_BARS)}K)")
+    print(f"[dry-run] K_BARS: {K_BARS} → {len(K_BARS) * 4} MFE/MAE ラベル + {len(K_BARS) * 4} Triple Barrier ラベル = {len(K_BARS) * 8} 合計")
+    print(f"[dry-run] Triple Barrier: TP_MULT={TP_MULT} SL_MULT={SL_MULT} (RR={TP_MULT}:{SL_MULT}) encoding={LABEL_SL}/{LABEL_TIME}/{LABEL_TP} (SL/TIME/TP)")
     print(f"[dry-run] メンテ時間帯除外: なし (L-196 整合・Bitget 24/7 取引)")
 
     print(f"[dry-run] 関数 import 確認:")
@@ -262,9 +363,20 @@ def run_sample(df5m: pd.DataFrame, pruned_spec: dict, sample_days: int) -> None:
     print("[label] MFE/MAE pct 計算 (28 ラベル)")
     labels = compute_mfe_mae_labels_pct(df_small)
     full = pd.concat([bar_with_feats, labels], axis=1)
+
+    print("[label] Triple Barrier 計算 (28 ラベル・LONG/SHORT × K=7 × {triple_barrier, meta})")
+    df_for_tb = pd.concat(
+        [full[["close", "atr14_pct__5m"]], df_small[["high", "low"]]], axis=1
+    )
+    tb_labels = compute_triple_barrier_labels(df_for_tb)
+    full = pd.concat([full, tb_labels], axis=1)
+
     n_before = len(full)
-    full = full.dropna(subset=[f"LONG_MFE_pct_K{K_BARS[-1]}"])
-    print(f"  末尾ラベル欠損行 drop: {n_before - len(full)} 行")
+    full = full.dropna(subset=[
+        f"LONG_MFE_pct_K{K_BARS[-1]}",
+        f"triple_barrier_label_LONG_K{K_BARS[-1]}",
+    ])
+    print(f"  末尾ラベル + Triple Barrier 初期 atr NaN 行 drop: {n_before - len(full)} 行")
 
     if len(full) == 0:
         print(f"  sample 期間が K={K_BARS[-1]} 末尾 drop で全行消失・sample-days を増やす")
@@ -291,9 +403,19 @@ def run_full(df5m: pd.DataFrame, pruned_spec: dict) -> None:
     labels = compute_mfe_mae_labels_pct(df5m)
     full = pd.concat([bar_with_feats, labels], axis=1)
 
+    print("[label] Triple Barrier 計算 (28 ラベル・LONG/SHORT × K=7 × {triple_barrier, meta})")
+    df_for_tb = pd.concat(
+        [full[["close", "atr14_pct__5m"]], df5m[["high", "low"]]], axis=1
+    )
+    tb_labels = compute_triple_barrier_labels(df_for_tb)
+    full = pd.concat([full, tb_labels], axis=1)
+
     n_before = len(full)
-    full = full.dropna(subset=[f"LONG_MFE_pct_K{K_BARS[-1]}"])
-    print(f"  末尾ラベル欠損行 drop: {n_before - len(full)} 行 (K={K_BARS[-1]} 末尾 24h)")
+    full = full.dropna(subset=[
+        f"LONG_MFE_pct_K{K_BARS[-1]}",
+        f"triple_barrier_label_LONG_K{K_BARS[-1]}",
+    ])
+    print(f"  末尾ラベル + Triple Barrier 初期 atr NaN 行 drop: {n_before - len(full)} 行 (K={K_BARS[-1]} 末尾 24h + atr 初期 14 bars)")
 
     train = full.loc[(full.index >= TRAIN_START) & (full.index <= TRAIN_END)]
     test = full.loc[(full.index >= TEST_START) & (full.index <= TEST_END)]
@@ -325,9 +447,19 @@ def run_test_2026q1(df5m: pd.DataFrame, pruned_spec: dict) -> None:
     labels = compute_mfe_mae_labels_pct(df5m)
     full = pd.concat([bar_with_feats, labels], axis=1)
 
+    print("[label] Triple Barrier 計算 (28 ラベル・LONG/SHORT × K=7 × {triple_barrier, meta})")
+    df_for_tb = pd.concat(
+        [full[["close", "atr14_pct__5m"]], df5m[["high", "low"]]], axis=1
+    )
+    tb_labels = compute_triple_barrier_labels(df_for_tb)
+    full = pd.concat([full, tb_labels], axis=1)
+
     n_before = len(full)
-    full = full.dropna(subset=[f"LONG_MFE_pct_K{K_BARS[-1]}"])
-    print(f"  末尾ラベル欠損行 drop: {n_before - len(full)} 行 (K={K_BARS[-1]} 末尾 24h)")
+    full = full.dropna(subset=[
+        f"LONG_MFE_pct_K{K_BARS[-1]}",
+        f"triple_barrier_label_LONG_K{K_BARS[-1]}",
+    ])
+    print(f"  末尾ラベル + Triple Barrier 初期 atr NaN 行 drop: {n_before - len(full)} 行 (K={K_BARS[-1]} 末尾 24h + atr 初期 14 bars)")
 
     test_q1 = full.loc[(full.index >= TEST_2026Q1_START) & (full.index <= TEST_2026Q1_END)]
     print(f"[split] test_2026_q1: {len(test_q1):,} 行 ({test_q1.index.min()} 〜 {test_q1.index.max()})")
@@ -338,9 +470,9 @@ def run_test_2026q1(df5m: pd.DataFrame, pruned_spec: dict) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Phase 0: 5m bar × 1,432 指標 × 28 ラベル (pct) parquet 生成")
+    p = argparse.ArgumentParser(description="Phase 0: 5m bar × 1,462 指標 × 56 ラベル (28 MFE/MAE pct + 28 Triple Barrier) parquet 生成")
     p.add_argument("--dry-run", action="store_true",
-                   help="pruned 構造 + import + 期待集合 1,432 確認のみ (指標計算スキップ・数秒)")
+                   help="pruned 構造 + import + 期待集合 1,462 確認のみ (指標計算スキップ・数秒)")
     p.add_argument("--sample-days", type=int, default=None,
                    help="先頭 N 日のみで全処理 (sample.parquet 出力・数分)")
     p.add_argument("--test-2026q1", action="store_true",
