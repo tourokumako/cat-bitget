@@ -1,0 +1,55 @@
+# feature_blacklist_v3.txt — USD 絶対値系 48 列 (Phase -1 確定・2026-05-19)
+# 出典: .claude/rules/phase_compliance_checklist.md §Phase -1
+# 列名規則: {base}__{tf}  (base 8 ファミリー × 6 TF = 48 列)
+# 学習スクリプトは X.drop(columns=BLACKLIST_COLS) で除外する義務 (本ファイル load → 48 件 assertion)
+# 各列は build_labels_pct.py で USD 絶対値スケールで計算されるため、価格非依存性 #1 違反 (学習期間 $30k-$60k と本番 $100k-$150k のレンジ乖離で決定木分岐が機能しない)
+# 代替 pct 指標 30 列を別途追加済 (close_vs_tenkan_pct__* / macd_line_pct__* 等・本ファイルでは drop 対象外)
+
+ichimoku_kijun__1d
+ichimoku_kijun__1h
+ichimoku_kijun__15m
+ichimoku_kijun__30m
+ichimoku_kijun__4h
+ichimoku_kijun__5m
+ichimoku_tenkan__1d
+ichimoku_tenkan__1h
+ichimoku_tenkan__15m
+ichimoku_tenkan__30m
+ichimoku_tenkan__4h
+ichimoku_tenkan__5m
+macd_hist__1d
+macd_hist__1h
+macd_hist__15m
+macd_hist__30m
+macd_hist__4h
+macd_hist__5m
+macd_hist_change__1d
+macd_hist_change__1h
+macd_hist_change__15m
+macd_hist_change__30m
+macd_hist_change__4h
+macd_hist_change__5m
+macd_line__1d
+macd_line__1h
+macd_line__15m
+macd_line__30m
+macd_line__4h
+macd_line__5m
+macd_signal__1d
+macd_signal__1h
+macd_signal__15m
+macd_signal__30m
+macd_signal__4h
+macd_signal__5m
+sma_20__1d
+sma_20__1h
+sma_20__15m
+sma_20__30m
+sma_20__4h
+sma_20__5m
+sma_50__1d
+sma_50__1h
+sma_50__15m
+sma_50__30m
+sma_50__4h
+sma_50__5m

@@ -1,0 +1,33 @@
+# Phase 1-a LightGBM RMSE 学習デフォルトハイパラ
+# 出典: .claude/instructions/2026-05-21_phase1a_lgbm_rmse.md §4.2
+# 注: Phase 2 で Optuna 探索対象 (本ファイル固定値は Phase 1-a 専用)
+
+lightgbm:
+  objective: regression       # RMSE (LightGBM 標準・bug リスク最小)
+  metric: rmse
+  boosting_type: gbdt
+  num_leaves: 31              # デフォルト
+  max_depth: -1               # 無制限 (デフォルト)
+  min_data_in_leaf: 20        # デフォルト
+  learning_rate: 0.05
+  feature_fraction: 0.9
+  bagging_fraction: 0.8
+  bagging_freq: 5
+  n_estimators: 1000
+  early_stopping_rounds: 50
+  random_state: 42            # 再現性
+  bagging_seed: 42
+  feature_fraction_seed: 42
+  data_random_seed: 42
+  verbose: -1
+  n_jobs: 1                   # bit-exact 再現性 (Phase 0 v3 と同方針)
+
+paths:
+  parquet_train: results/priority_rebuild/labels_mfe_mae_pct_train_2021_2024.parquet
+  parquet_test_2025: results/priority_rebuild/labels_mfe_mae_pct_test_2025.parquet
+  blacklist: configs/feature_blacklist_v3.txt
+  output_dir: results/priority_rebuild/ml_phase1a_rmse
+
+split:
+  valid_ratio: 0.2            # 末尾 20% を valid
+  purge_bars: 288             # 最大 K (288) 分 train 末尾 drop で valid leak 防止
