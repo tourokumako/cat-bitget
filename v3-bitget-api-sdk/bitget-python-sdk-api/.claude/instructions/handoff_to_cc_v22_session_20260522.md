@@ -264,20 +264,66 @@ learning_design_v4 v5 + cc_ml_design_spec §1.5.1 整合で **Triple Barrier + M
 
 ---
 
-## §7 新セッション CC への Quick Start (= 本ファイル読了後にやること・2026-05-22 23:XX 更新版)
+## §7 新セッション CC への Quick Start (= 本ファイル読了後にやること・2026-05-22 04:XX 更新版・autonomous 進捗反映)
 
-### ★ 結論: **Step 1 + Step 2 完了済**・**Step 3 (Triple Barrier 統合実装) から開始** ★
+### ★ 結論: **Step 1〜3 完了 + Step 4 9/20 カテゴリ完了 (+329 列)**・**残 11 カテゴリ + Step 5 から開始** ★
 
 ```
-現セッション (2026-05-22 セッション末) で Step 1 + Step 2 完了:
-  - commit e9a5822: build_triple_barrier_labels.py を archive 移動 (B 案・統合方針)
-  - commit ba627d9: L-196 メンテフラグ削除 4 ファイル一括
-     (build_labels_pct.py + run_lgbm_phase1a_rmse.py + run_lgbm_phase1c_multiclass.py + aggregate_phase0_stats.py)
+現セッション (2026-05-22 autonomous mode・まこさん「残りは私の確認なしで進めて」) で進めた完了内容:
 
-新セッションでやること = Phase 0 改修指示書 v3.1 の Step 3 以降:
-   ↓
-最初の 1 手 = build_labels_pct.py に `compute_triple_barrier_labels()` 統合実装
-              (旧 build_triple_barrier_labels.py の numpy ロジック流用・約 100 行・約 1 時間)
+Step 1 (commit e9a5822): build_triple_barrier_labels.py を archive 移動
+Step 2 (commit ba627d9): L-196 メンテフラグ削除 4 ファイル一括
+Step 3 (commit b080dbc): build_labels_pct.py に compute_triple_barrier_labels() 統合・28 ラベル追加
+Step 4 進行中 (commit 3bc24c1 / f9aedd5 / 139dad1 / c23f7c2 / 8c90283 / 5c89d94 / 4032cce):
+  - §2.1 #1 A-1 欠損指標 8 件 (+53)
+  - §2.1 #2 まこさん発振系 3 件 (+18)
+  - §2.1 #5 145 ファミリー TF 欠落補完 (+48)
+  - §2.1 #8 A-3 パラメータ並列展開 RSI/ADX/BB/MACD (+96)
+  - §2.1 #11 Divergence bool 簡略 (Regular のみ・+36)
+  - §2.2 #13 BB Squeeze + Band Walk (+30)
+  - §2.2 #15 Chandelier Exit (+12)
+  - §2.2 #16 Fib Extension (+18)
+  - §2.3 #18 KDJ J 線 (+18)
+合計: pruned 1,462 → 1,791 (+329 列・約 22% 増)・parquet 1,491 → 1,848 cols (= 1 + 1791 + 56 ラベル)
+
+新セッション CC は残 Step 4 (11 カテゴリ) + Step 5 から再開:
+```
+
+### Step 4 残 11 カテゴリ (次セッション再開対象)
+
+| カテゴリ | 内容 | 困難度・依存 |
+|---|---|---|
+| §2.1 #3 | 業界カタログ pandas-ta-classic 100+ 件 (+100-300) | **要 `pandas-ta-classic` install** (PEP 668 で blocked・venv 必要) |
+| §2.1 #4 | 1w/1M MTF (+290 想定・実態 +410 1d セット転用) | **要 sample-days ≥ 365**・smoke 30d では 1w/1M データ不足で動作確認不能 |
+| §2.1 #6 | Fractional differentiation (+60) | **要 `mlfinlab` install** (PEP 668 で blocked・venv or 自前実装) |
+| §2.1 #7 | PCA (+20-50) | sklearn PCA・train fit / test apply (Phase 0 内 train/test/Q1 別 fit) |
+| §2.1 #9 | cat_v9 共通フィルタ + Priority bool + 閾値距離 (+100-150) | cat_v9_decider.py grep + 閾値再現・cat_params_v9.json 参照必要 |
+| §2.1 #10 | MTF 4 方式選定 (0・選定のみ) | CP1 監査委ね |
+| §2.2 #12 | Funding rate (+10-15) | **要 history-fund-rate API fetch** + Bitget API 8h 接続 |
+| §2.2 #14 | SMC Order Block + FVG + BOS (+25-50) | **要 `smart-money-concepts` install** (PEP 668 で blocked) |
+| §2.3 #17 | Supply/Demand Zone (+10-20) | swing 検出ベース実装・複雑 |
+| §2.3 #19 | Open Interest (+5-10) | **要 Bitget API verify + fetch** |
+| §2.3 #20 | Candlestick 62 種 (+62) | **要 `pandas-ta-classic` install** (PEP 668 で blocked) |
+
+### ライブラリ install ブロッカー解決方法 (次セッション最優先)
+
+```bash
+# PEP 668 (externally-managed-environment) 回避: venv 推奨
+cd /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api
+python3 -m venv .venv
+source .venv/bin/activate
+pip install mlfinlab pandas-ta-classic smart-money-concepts
+
+# 以降は .venv 経由で build_labels_pct.py 実行
+```
+
+### Step 5 (Step 4 完了後) — まこさん GO 必須
+
+```
+[Step 5-a] smoke 3 ヶ月 (sample-days 90・約 5-10 分)
+[Step 5-b] CP1 監査依頼 (Claude /audit・指示書 §9・7 項目)
+[Step 5-c] full build (train 2021-04〜2024-12 + test 2025 + test 2026 Q1・約 8-12 時間)
+[Step 5-d] 完了報告 (指示書 §8 機械的証跡 8 点 + L-200 3 点)
 ```
 
 ### 全体ロードマップ (シンプル版)
@@ -309,19 +355,24 @@ learning_design_v4 v5 + cc_ml_design_spec §1.5.1 整合で **Triple Barrier + M
 
 → ここまで **約 2.5-3 時間** で Phase 0 改修の Step 3-4 の山を越える。残り Step 5 (smoke + CP1 監査 + full build) は別ターンで。
 
-### 完了済タスク (現セッション 2026-05-22)
+### 完了済タスク (現セッション 2026-05-22・autonomous 含む)
 
-- ✅ Step 1: `build_triple_barrier_labels.py` archive 移動 (commit `e9a5822`・B 案統合方針確定)
+- ✅ Step 1: `build_triple_barrier_labels.py` archive 移動 (commit `e9a5822`)
 - ✅ Step 2: L-196 メンテフラグ削除 4 ファイル一括 (commit `ba627d9`)
-  - build_labels_pct.py: MAINTENANCE_WEEKDAYS / MAINTENANCE_HOURS 定数削除 + add_maintenance_flag() 関数削除 + 全呼び出し箇所削除
-  - run_lgbm_phase1a_rmse.py L58: DROP_COLS_OTHER から "is_maintenance" 削除
-  - run_lgbm_phase1c_multiclass.py L44: 同上
-  - aggregate_phase0_stats.py: maintenance 集計部分削除 + maintenance_flag.json 出力削除
+- ✅ Step 3: build_labels_pct.py に `compute_triple_barrier_labels()` 統合・56 ラベル列生成 (commit `b080dbc`)
+- ✅ Step 4 §2.1 #1 A-1 欠損指標 8 件 (commit `3bc24c1`・+53)
+- ✅ Step 4 §2.1 #2 まこさん発振系 3 件 (commit `f9aedd5`・+18)
+- ✅ Step 4 §2.1 #5 145 ファミリー TF 欠落補完 (commit `139dad1`・+48)
+- ✅ Step 4 §2.1 #8 A-3 パラメータ並列 RSI/ADX/BB/MACD (commit `c23f7c2`・+96)
+- ✅ Step 4 §2.1 #11 Divergence bool 簡略 (commit `8c90283`・+36)
+- ✅ Step 4 §2.2 #13 BB Squeeze + Band Walk (commit `5c89d94`・+30)
+- ✅ Step 4 §2.2 #15/#16 + §2.3 #18 Chandelier + Fib Ext + KDJ (commit `4032cce`・+48)
+
+合計: pruned 1,462 → **1,791** (+329 列)・parquet 1,491 → **1,848 cols** (smoke 30d verify pass)
 
 ### 残タスク (新セッションで実施)
 
-- [ ] **Step 3**: build_labels_pct.py に `compute_triple_barrier_labels()` 統合実装 (旧 archive の numpy ロジック流用・約 100 行・約 1 時間)
-- [ ] **Step 4**: 他 4 ファイル改修 (analyze_regime_label_features.py + shape_features.py + structure_features.py + pruned_column_list.json・約 2-4 時間)
+- [ ] **Step 4 残 11 カテゴリ** (上記 Step 4 残カテゴリ表参照・約 2-4 時間+ライブラリ install 解決)
 - [ ] **Step 5**: smoke 3 ヶ月 + CP1 監査 (`/audit`) + full build (約 4-6 時間)
 - [ ] **Phase 1**: Phase 1 学習方法再設計指示書 v1 実装 (約 3-4 週間)
 
