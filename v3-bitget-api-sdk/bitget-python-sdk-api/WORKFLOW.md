@@ -299,9 +299,43 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-21 改訂17・本セッション後半 = 書類整理 + WORKFLOW スリム化 + learning_design_v4 新規作成 + 監査 #20 で V4.1 化 + auditor_template 本セッション変更全反映 完了）
+## 🔴 現在のフェーズ（2026-05-22 改訂18・前セッション継続 = §3.0 cc_ml_design_spec §4 改訂 + phase_flow_v4 確定版 977 行 + 書類整理 35 ファイル完了）
 
-> **【現在の正本ブロック・改訂17・2026-05-21 セッション末】**
+> **【現在の正本ブロック・改訂18・2026-05-22 セッション末】**
+>
+> ### 本セッション (handoff v20 受領後) 完了事項
+>
+> #### 1. 未 commit 整理 (handoff v19 §2 残課題)
+> - `6510231`: Phase 0/1-a/1-b/1-c smoke 実行ログ 7 件
+> - `91317c5`: priority_rebuild scripts 3 件 (Phase 0 集計 + option5 v2/v3)
+> - `c16005f`: 過去 audits + 指示書 一括 (audit15/16/19 + 13 指示書 + modified 3)
+> - `9638c26`: audit17 phase_a §0.13 #1 違反成果物 (記録として保持)
+>
+> #### 2. §3.0 cc_ml_design_spec §4 改訂 (前提タスク・learning_design_v4 §8)
+> - `7872559`: cc_ml_design_spec.md §4 全面改訂 + pm_review_template.md L35 旧表記訂正 + handoff_to_web_claude.md (凍結) 注記追加
+> - 「1 回のサイズ 固定 0.12 BTC」→「合計 0.12 BTC 厳守」+ cap カウント = **合算カウント** 確定 (B-8 / D-ζ.10)
+> - 全エントリー時点で `sum(active_position_btc) ≤ 0.12` verify 実装義務
+>
+> #### 3. phase_flow_v4_with_recovery.md 全面書き直し (試作 7 回 → 確定版)
+> - `6d06425`: phase_flow_v4 新規作成 (888 行) + V3 archive 移動
+> - `f540c1e`: A 案修正反映 (888 → 977 行・+89 行)
+>   - phase_compliance_checklist.md (222 行) + false_positive_incident_policy.md (225 行) 全文 view → 整合性総点検 → A 案 8 件修正
+>
+> ### CC 同型バイアス再演 8 件 (本セッション・累積 18 件)
+>
+> handoff v19 §0.13 (5 件) + handoff v20 §0.26 (5 件) + 本セッション (8 件) = **累積 18 件**。詳細は lessons_active.md L-200 + handoff v21 §0 参照。
+>
+> ### 次セッション CC 優先順位 (handoff v21 §3 参照)
+>
+> 1. **優先 1 (最優先)**: §3.1 Phase 0 改修指示書発注 (build_labels_pct.py 改修・1432 → 約 2000-2500 列・約 3-6 時間)
+> 2. **優先 2**: §3.2 Phase 1 並列学習 3 案 (約 1-2 週間) + CP2 分岐判定
+> 3. **優先 3 (将来)**: Phase 2 着手前 smoothing 設計再 audit / Phase 7-d 着手前 maxMarketOrderQty paper trading test
+
+---
+
+> ### 🧊 改訂17 ブロック (履歴・参照用)
+
+> **【旧正本ブロック・改訂17・2026-05-21 セッション末】**
 >
 > ### 本セッション後半 (handoff v19 受領後) 完了事項
 >

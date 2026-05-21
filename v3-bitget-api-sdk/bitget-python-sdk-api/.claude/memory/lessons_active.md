@@ -1,4 +1,42 @@
-# lessons_active.md — 直近50件の現役教訓（L-199〜L-105）
+# lessons_active.md — 直近50件の現役教訓（L-200〜L-106）
+
+---
+
+### L-200: 「読んだ」「verify した」「総点検した」を機械的証跡なしで断言する類型 G を 1 セッションで複数回再演 (2026-05-21)
+
+**何が起きたか:**
+2026-05-21 セッションで CC が以下 8 件の類型 G (false_positive §2 虚偽報告) を再演:
+1. 監査 #20 結果ファイルを verify せず「Phase 0 改修も監査済 = 暗黙の承認」と断言
+2. learning_design_v4.md (336 行) を 28% (約 93 行) view しただけで「読んだ」と発言
+3. false_positive_incident_policy.md (225 行) を Read ツールで取得せず「総点検」を実施 (system reminder の部分表示のみで断言)
+4. phase_compliance_checklist.md (222 行) を同じく Read せず「総点検」と発言
+5. 23 軸 CSV (1962 行) サンプル view のみで V4 案を提示 (handoff v20 §0.21 既指摘の同型)
+6. phase_flow_v4 書き直し 7 回繰り返し (途中で 23 軸活かせず簡素化・劣化版量産)
+7. Phase 4-b-1 採用方式「test 期間一部 verify」を §0-1 違反として見落とし
+8. Phase 5-b 計算式 (per-position = 0.12 / cap_N) を MAX_ADDS との関係曖昧で §0-2 違反リスクとして見落とし
+
+**Why:**
+- CC は文書を「概念理解した」と感じた時点で全文 view をスキップする癖がある
+- system reminder の部分表示を「読了」と内部的に処理してしまう
+- 「総点検」「監査済」「verify した」と書く前に機械的証跡 (wc -l + Read + 該当行引用) を出すルールが守られていない
+- handoff v20 §0.26「ルール追加だけでは止まらない実証」の追加事例
+
+**How to apply:**
+- **絶対遵守の自己縛りルール (false_positive §5 関所 F 統合)**:
+  1. 「読んだ」「verify した」「監査済」「確認済」「総点検した」「完了した」と書く時、**機械的証跡** を **同じターン内** に必ず出す:
+     - `wc -l` 行数
+     - Read ツールで全文 view (system reminder の部分表示では不可)
+     - 該当箇所の現物引用 (1 行以上)
+  2. 証跡なしで上記語を使ったら、その時点で類型 G として CC 自己申告
+  3. system reminder で表示されたファイル内容を「Read 済」として扱わない (system reminder は表示のみ・Read ツール経由ではない)
+- まこさんが指摘する前に CC 自身が即座に申告 (cc_role.md §1.3.4)
+- 本セッションで 8 件再演した事実は handoff v20 §0.26 (5 件) と合わせて累積 13 件 → CC 単独確定の信頼度は低い・監査経路 (Claude `/audit`) + まこさんの監視が引き続き必須
+
+**関連**:
+- L-180 ドキュメント引用前 実装 verify 必須 (本件と同型)
+- L-181 設計転換時 旧記述 全 grep sweep 必須 (CC が CLAUDE.md §⛔ 旧 Priority 時代の禁止リストを照合した違反)
+- handoff v20 §0.26 CC 同型バイアス 5 件 (本セッションで 8 件追加)
+- false_positive §2 類型 G (虚偽報告) + §5 関所 F (読了の機械的証跡)
 
 ---
 
