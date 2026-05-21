@@ -192,6 +192,17 @@ def build_indicators_extended(df):
     if "bb_width_pct" in f.columns:
         f["bb_width_slope_20b"] = f["bb_width_pct"] - f["bb_width_pct"].shift(20)
 
+    # Phase 0 v3.1 Step 4 §2.1 #2 まこさん発振系 3 件 (2026-05-22・+18 列)
+    # RSI ROC 5 bar (RSI 自体が pct なので diff = 変化率)
+    if "rsi14" in f.columns:
+        f["rsi14_roc_5b"] = f["rsi14"] - f["rsi14"].shift(5)
+    # Stoch K-D 差分 (cross 検出用)
+    if "stoch_k" in f.columns and "stoch_d" in f.columns:
+        f["stoch_kd_diff"] = f["stoch_k"] - f["stoch_d"]
+    # MACD ヒストグラム slope 5 bar
+    if "macd_hist" in f.columns:
+        f["macd_hist_slope_5b"] = f["macd_hist"] - f["macd_hist"].shift(5)
+
     return f
 
 
