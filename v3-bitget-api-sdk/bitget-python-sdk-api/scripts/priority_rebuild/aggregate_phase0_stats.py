@@ -5,8 +5,9 @@ results/priority_rebuild/phase0_v3_stats/ に出力する:
 
 - row_count_verify.json : 期間別行数 + 期待値との差分
 - label_stats.csv       : 28 ラベル統計 (mean/std/min/max) per period × K × side × MFE/MAE
-- maintenance_flag.csv  : メンテ時間帯 flag 行数 期間別実測 + 比率
 - sample_rows_K{K}.csv  : 各 K の先頭 5 行サンプル (ラベル列のみ)
+
+注記: maintenance_flag 集計は 2026-05-22 削除済 (L-196 整合・Bitget 24/7 取引)。
 """
 from __future__ import annotations
 
@@ -49,10 +50,9 @@ def label_cols() -> list[str]:
 def main() -> None:
     print(f"[start] {pd.Timestamp.now()}")
     row_verify = {}
-    maint = {}
     stats_rows = []
 
-    cols_needed = label_cols() + ["is_maintenance"]
+    cols_needed = label_cols()  # is_maintenance 2026-05-22 削除 (L-196 整合)
 
     for name, path in PERIODS.items():
         print(f"[load] {name}: {path}")
@@ -66,13 +66,6 @@ def main() -> None:
             "file_size_bytes": path.stat().st_size,
         }
         print(f"  rows: {n_rows:,} (expected {exp:,}, diff {n_rows - exp:+})")
-
-        n_maint = int(df["is_maintenance"].sum())
-        maint[name] = {
-            "rows": n_rows,
-            "maintenance_rows": n_maint,
-            "maintenance_pct": round(n_maint / n_rows * 100, 4),
-        }
 
         for col in label_cols():
             ser = df[col]
@@ -99,9 +92,7 @@ def main() -> None:
     Path(OUT_DIR / "row_count_verify.json").write_text(
         json.dumps(row_verify, indent=2, ensure_ascii=False)
     )
-    Path(OUT_DIR / "maintenance_flag.json").write_text(
-        json.dumps(maint, indent=2, ensure_ascii=False)
-    )
+    # maintenance_flag.json 出力は 2026-05-22 削除 (L-196 整合)
     pd.DataFrame(stats_rows).to_csv(OUT_DIR / "label_stats.csv", index=False)
 
     print(f"[done] {pd.Timestamp.now()}")

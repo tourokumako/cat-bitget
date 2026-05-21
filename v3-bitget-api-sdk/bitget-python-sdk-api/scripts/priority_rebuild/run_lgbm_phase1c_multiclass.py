@@ -38,10 +38,10 @@ from utils.leak_check import (  # noqa: E402
 
 CONFIG_PATH = REPO_ROOT / "configs" / "phase1c_multiclass.yaml"
 
-# Phase 1-a 流用の drop 列 (28 ラベル列 + close + is_maintenance)
+# Phase 1-a 流用の drop 列 (28 ラベル列 + close)
 LONG_LABELS = [f"LONG_{side}_pct_K{K}" for side in ["MFE", "MAE"] for K in [6, 12, 24, 48, 96, 144, 288]]
 SHORT_LABELS = [f"SHORT_{side}_pct_K{K}" for side in ["MFE", "MAE"] for K in [6, 12, 24, 48, 96, 144, 288]]
-DROP_COLS_OTHER = ["close", "is_maintenance"]
+DROP_COLS_OTHER = ["close"]  # is_maintenance 2026-05-22 削除 (L-196 整合・Bitget 24/7 取引)
 
 
 def log_line(log_f, msg: str) -> None:

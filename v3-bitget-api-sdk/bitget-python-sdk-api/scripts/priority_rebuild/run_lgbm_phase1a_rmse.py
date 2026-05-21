@@ -55,7 +55,7 @@ LABEL_COLS_DROP_SHORT = (
     [f"SHORT_MFE_pct_K{K}" for K in LEARN_K_WINDOWS]
     + [f"SHORT_MAE_pct_K{K}" for K in LEARN_K_WINDOWS]
 )
-DROP_COLS_OTHER = ["close", "is_maintenance"]
+DROP_COLS_OTHER = ["close"]  # is_maintenance 2026-05-22 削除 (L-196 整合・Bitget 24/7 取引)
 
 
 def load_config() -> dict:

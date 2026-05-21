@@ -1,14 +1,13 @@
 """build_labels_pct.py — Phase 0: 5m bar × 1,462 指標 × 28 MFE/MAE (pct) ラベル を生成
 
-目的: Phase 1 LightGBM 学習用 parquet を pct 化 + 28 ラベル + メンテ除外フラグで生成する。
+目的: Phase 1 LightGBM 学習用 parquet を pct 化 + 28 ラベルで生成する (メンテ除外フラグは 2026-05-22 削除済・L-196 整合)。
 
 旧 build_labels.py との差分:
   1. K_BARS: [12, 24, 48, 96] → [6, 12, 24, 48, 96, 144, 288] (4 → 7 K = 16 → 28 ラベル)
   2. ラベル定義: USD 絶対値 → pct ベース ((MFE / close) × 100)
      学習期間 BTC 価格 ($30k〜$100k) と本番価格 ($100k〜$150k) の乖離による分布シフトを排除。
      正本ルール: web_claude_self_check.md §価格非依存性 #1。
-  3. メンテ時間帯フラグ列追加: 火/水/木 05-08 UTC (exchange_spec.md 定期メンテ)
-     学習時に df[~df.is_maintenance] でフィルタ可能。
+  3. ~~メンテ時間帯フラグ列~~ → **2026-05-22 削除** (L-196 整合・Bitget は 24/7 取引・公式ガイド「中断のない年中無休の取引」確認済)
   4. 出力ファイル名: labels_mfe_mae_pct_*.parquet (旧版と共存)
   5. USD 絶対値系 8 ファミリー × 6 TF = 48 feature の pct 化版 5 ファミリー × 6 TF = 30 feature 新規追加
      (close_vs_tenkan_pct / macd_line_pct / macd_signal_pct / macd_hist_pct / macd_hist_change_pct)
@@ -31,7 +30,7 @@
   - results/priority_rebuild/labels_mfe_mae_pct_test_2025.parquet
   - results/priority_rebuild/labels_mfe_mae_pct_test_2026_q1.parquet
   - results/priority_rebuild/labels_mfe_mae_pct_sample.parquet  (--sample-days)
-  列構成: timestamp(index) + close + 1,462 指標 + 28 ラベル + is_maintenance = 1,492 列
+  列構成: timestamp(index) + close + 1,462 指標 + 28 ラベル = 1,491 列 (is_maintenance 2026-05-22 削除)
 
 ラベル定義 (K=6/12/24/48/96/144/288 bar = 30min/1h/2h/4h/8h/12h/24h):
   - LONG_MFE_pct_K{K}  = (max(high[t+1..t+K]) - close[t]) / close[t] × 100
@@ -44,10 +43,7 @@ look-ahead 防止:
   - merge_asof(direction="backward") を 5m close 時刻 vs 上位 TF close 時刻 で適用
   - MFE/MAE ラベルは正解側のため Phase 1 学習で X に含めない (L-154 / L-179)
 
-メンテ時間帯フラグ:
-  - is_maintenance = True: 火/水/木 (weekday=1/2/3) の hour ∈ {5, 6, 7} (= 05:00-07:59 UTC)
-  - 出典: exchange_spec.md `定期メンテナンス 火/水/木 05:00-08:00 UTC`
-  - 行は drop せず・後段 (Phase 1 学習スクリプト) で df[~df.is_maintenance] フィルタ
+メンテ時間帯フラグ: 2026-05-22 削除 (L-196 整合・Bitget は 24/7 取引・出典なき Claude 想定値だった「火/水/木 05-08 UTC」は誤り)
 
 検証:
   - assert: 実 parquet の指標列集合 == pruned_column_list.json の (cat, tf, base) 展開集合
@@ -99,10 +95,6 @@ TEST_START = pd.Timestamp("2025-01-01")
 TEST_END = pd.Timestamp("2025-12-31 23:59:59")
 TEST_2026Q1_START = pd.Timestamp("2026-01-01")
 TEST_2026Q1_END = pd.Timestamp("2026-03-31 23:59:59")
-
-MAINTENANCE_WEEKDAYS = [1, 2, 3]
-MAINTENANCE_HOURS = [5, 6, 7]
-
 
 def load_5m_bars(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -225,19 +217,6 @@ def compute_mfe_mae_labels_pct(df5m: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def add_maintenance_flag(df: pd.DataFrame) -> pd.DataFrame:
-    """火/水/木 05-08 UTC の bar に is_maintenance=True フラグを追加。
-    Bitget 定期メンテ (exchange_spec.md)・Phase 1 学習時に df[~df.is_maintenance] で除外。
-    行は drop しない (統計記録 + 後段切替柔軟性のため)。
-    """
-    df = df.copy()
-    df["is_maintenance"] = (
-        df.index.weekday.isin(MAINTENANCE_WEEKDAYS) &
-        df.index.hour.isin(MAINTENANCE_HOURS)
-    )
-    return df
-
-
 def run_dry_run(df5m: pd.DataFrame, pruned_spec: dict) -> None:
     """pruned_spec 構造 + 関数 import + 期待集合 1,432 を確認 (指標計算スキップ・数秒)。"""
     expected = expected_indicator_columns(pruned_spec)
@@ -252,17 +231,13 @@ def run_dry_run(df5m: pd.DataFrame, pruned_spec: dict) -> None:
         raise RuntimeError(f"期待集合の総数が 1,462 と不一致: {len(expected)}")
 
     print(f"[dry-run] K_BARS: {K_BARS} → {len(K_BARS) * 4} ラベル (LONG/SHORT × MFE/MAE × {len(K_BARS)}K)")
-    print(f"[dry-run] メンテ時間帯除外: weekdays={MAINTENANCE_WEEKDAYS} hours={MAINTENANCE_HOURS}")
+    print(f"[dry-run] メンテ時間帯除外: なし (L-196 整合・Bitget 24/7 取引)")
 
     print(f"[dry-run] 関数 import 確認:")
     for fn in [build_indicators_extended, compute_1b_for_W, compute_features_for_N, compute_c2_only]:
         print(f"  {fn.__module__}.{fn.__name__}")
 
     print(f"[dry-run] 5m bar 行数: {len(df5m):,} (期間: {df5m.index.min()} 〜 {df5m.index.max()})")
-
-    n_maint = int((df5m.index.weekday.isin(MAINTENANCE_WEEKDAYS) &
-                   df5m.index.hour.isin(MAINTENANCE_HOURS)).sum())
-    print(f"[dry-run] メンテ時間帯該当 bar (全期間): {n_maint:,} ({n_maint / len(df5m) * 100:.2f}%)")
 
     print(f"[dry-run] OK: 構造確認完了 (実計算なし)")
 
@@ -291,12 +266,8 @@ def run_sample(df5m: pd.DataFrame, pruned_spec: dict, sample_days: int) -> None:
     full = full.dropna(subset=[f"LONG_MFE_pct_K{K_BARS[-1]}"])
     print(f"  末尾ラベル欠損行 drop: {n_before - len(full)} 行")
 
-    full = add_maintenance_flag(full)
-    n_maint = int(full["is_maintenance"].sum())
-    if len(full) > 0:
-        print(f"  メンテ時間帯 flag: {n_maint:,} 行 ({n_maint / len(full) * 100:.2f}%)")
-    else:
-        print(f"  メンテ時間帯 flag: 0 行 (sample 期間が K={K_BARS[-1]} 末尾 drop で全行消失・sample-days を増やす)")
+    if len(full) == 0:
+        print(f"  sample 期間が K={K_BARS[-1]} 末尾 drop で全行消失・sample-days を増やす")
         return
 
     full.to_parquet(OUT_SAMPLE, compression="snappy")
@@ -324,16 +295,10 @@ def run_full(df5m: pd.DataFrame, pruned_spec: dict) -> None:
     full = full.dropna(subset=[f"LONG_MFE_pct_K{K_BARS[-1]}"])
     print(f"  末尾ラベル欠損行 drop: {n_before - len(full)} 行 (K={K_BARS[-1]} 末尾 24h)")
 
-    full = add_maintenance_flag(full)
-    n_maint_total = int(full["is_maintenance"].sum())
-    print(f"  メンテ時間帯 flag (全期間): {n_maint_total:,} 行 ({n_maint_total / len(full) * 100:.2f}%)")
-
     train = full.loc[(full.index >= TRAIN_START) & (full.index <= TRAIN_END)]
     test = full.loc[(full.index >= TEST_START) & (full.index <= TEST_END)]
-    print(f"[split] train: {len(train):,} 行 ({train.index.min()} 〜 {train.index.max()}) "
-          f"maintenance={int(train['is_maintenance'].sum()):,}")
-    print(f"[split] test:  {len(test):,} 行 ({test.index.min()} 〜 {test.index.max()}) "
-          f"maintenance={int(test['is_maintenance'].sum()):,}")
+    print(f"[split] train: {len(train):,} 行 ({train.index.min()} 〜 {train.index.max()})")
+    print(f"[split] test:  {len(test):,} 行 ({test.index.min()} 〜 {test.index.max()})")
 
     print(f"[write] {OUT_TRAIN}")
     train.to_parquet(OUT_TRAIN, compression="snappy")
@@ -364,11 +329,8 @@ def run_test_2026q1(df5m: pd.DataFrame, pruned_spec: dict) -> None:
     full = full.dropna(subset=[f"LONG_MFE_pct_K{K_BARS[-1]}"])
     print(f"  末尾ラベル欠損行 drop: {n_before - len(full)} 行 (K={K_BARS[-1]} 末尾 24h)")
 
-    full = add_maintenance_flag(full)
-
     test_q1 = full.loc[(full.index >= TEST_2026Q1_START) & (full.index <= TEST_2026Q1_END)]
-    print(f"[split] test_2026_q1: {len(test_q1):,} 行 ({test_q1.index.min()} 〜 {test_q1.index.max()}) "
-          f"maintenance={int(test_q1['is_maintenance'].sum()):,}")
+    print(f"[split] test_2026_q1: {len(test_q1):,} 行 ({test_q1.index.min()} 〜 {test_q1.index.max()})")
 
     print(f"[write] {OUT_TEST_2026Q1}")
     test_q1.to_parquet(OUT_TEST_2026Q1, compression="snappy")
