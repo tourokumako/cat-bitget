@@ -1,0 +1,1963 @@
+Step 1: 23 軸候補の一覧化,,軸 A-1 Entry 指標（深掘り）,軸 A-2 Exit 指標,軸 A-3 閾値 / パラメータ,軸 A-4 時間軸（予測ホライズン K）,軸 A-5 時間足（特徴量集計周期 bar）,軸 A-6 add 数 / 配分,軸 A-7 ポジションサイジング / 配分,軸 B-8 同時保有数（cap）,軸 B-9 発火条件の組み合わせ深さ,軸 B-10 学習アルゴリズム,軸 B-11 クラスタリング手法,軸 B-12 特徴量変換,軸 B-13 Entry ratio 閾値の決定方法,軸 B-14 学習データ範囲・サンプリング,軸 B-15 目的関数 / 不確実性定量化,軸 D-α シグナル発火頻度（密度）,軸 D-δ 時間帯・曜日フィルタ,軸 D-ε 市況フィルタ（regime / volatility state）,軸 D-ζ マルチサイド（LONG/SHORT 同時保有）,軸 D-η 手数料モデル,軸 D-θ 発注タイプ
+"Step 1: 23 軸候補の一覧化
+
+A. まこさん明示 7 軸
+A-1　Entry 指標　エントリー判定に使う指標（RSI / MACD / Stoch 等）
+A-2　Exit 指標　ポジション解消の判断材料となる指標
+A-3　閾値 / パラメータ　指標が発火する条件値（ADX ≥ 30 等）と指標自体の計算パラメータ（period=21 等）
+A-4　時間軸　予測ホライズン K（何時間先までの値動きを予測するか・K=12/24/48/96 等）
+A-5　時間足　特徴量を計算する周期 / bar（5m / 15m / 30m / 1h / 4h / 1d / 1w / 1M）
+A-6　add 数 / 配分　同一 Priority 内での追加エントリー（add）回数と per-add のサイズ配分
+A-7　ポジションサイジング / 配分　個別ポジションの BTC サイズ・combo 別配分（合計 0.12 BTC 内）
+
+
+B. 私が追加した 8 軸
+B-8　同時保有数（cap）　同時に保有できるポジション数の上限（FIFO / 質駆動 / 動的等）
+B-9　発火条件の組み合わせ深さ　多変量 AND 段数（決定木 num_leaves・max_depth で制御）
+B-10　学習アルゴリズム　LightGBM / XGBoost / Neural Net / 強化学習 / MiniROCKET 等
+B-11　クラスタリング手法　k-means / GMM-HMM / UMAP+HDBSCAN / Spectral 等の Entry 性質分類手法
+B-12　特徴量変換　生値 / log / 差分 / 比率 / Z-score / rolling rank / Wavelet 等の前処理
+B-13　Entry ratio 閾値の決定方法　静的 q90/q95/q99 / rolling N 日 / cluster 別独立 / 強化学習動的最適化
+B-14　学習データ範囲・サンプリング　train 期間 / Walk-forward / Expanding window / SMOTE 等
+B-15　目的関数 / 不確実性定量化　MFE/MAE 比 / Sharpe / Sortino / Calibration / SHAP / 予測区間
+
+D. 対話で出てきた追加候補 8 軸
+D-α　シグナル発火頻度（密度）　per-dt-day の発火件数・L-117 のフィルタ戦略はこれに依存
+D-β　保有期間中の管理　add トリガ条件 / 部分決済（scale-out） / per-add 動的サイズ変化
+D-γ　エントリー位置フィルタ　location_prev・直近 N 本レンジ内の位置（高値圏 Entry 抑制）
+D-δ　時間帯・曜日フィルタ　アジア / 欧州 / 米国セッション / 曜日 / 月初月末 等
+D-ε　市況フィルタ（regime / volatility state）事前 regime フィルタ（凍結中だが軸として存在）vs 事後 cluster 分類
+D-ζ　マルチサイド（LONG/SHORT 同時保有）hedge_mode 活用・LONG/SHORT 同時保有時の net exposure 管理
+D-η　手数料モデル　Maker / Taker 選択 / 板深さ / スリッページ / Funding
+D-θ　発注タイプ　成行 / 指値 / Stop / OCO / 不約定リスクのモデル化
+
+",サマライズ,"§A-1.1 軸の定義
+ML（機械学習）が Entry 判定の入力として参照する指標群。指標値そのもの・指標から派生した特徴量・複数指標の組み合わせを含む。
+§A-1.2 現状 ML 学習範囲（1432 指標カタログ・145 ファミリー
+カテゴリ 1-A: 指標値・推移（66 ファミリー / 348 列）
+トレンド / モメンタム / ボラティリティ / 出来高 / プライスアクション / MTF 整合 等の標準的なテクニカル指標群。
+主要ファミリー: 
+adx14 / atr14_pct / bb_pct_b / bb_width_pct / bb_width_rank_50b / cmf_20 / di_diff / di_minus / di_plus / div_macd_14b / div_rsi14_14b / donchian_position_20 / donchian_width_pct_20 / ichimoku_kijun / ichimoku_tenkan / macd_hist / macd_hist_change / macd_line / macd_signal / mfi_14 / momentum_10b / mtf_slope_align_3way / obv_slope_10b / pinbar_top / pinbar_bottom / pivot_position_100b / pivot_position_50b / realized_vol_20b / realized_vol_rank_50b / roc_10 / roc_20 / rsi14 / rsi7 / sma_20 / sma_50 / stoch_k（1d のみ） / volume_rank_50b / volume_ratio_20b / williams_r（1d のみ）/ zscore_return_20b / zscore_return_50b 等
+ローソク足パターン:
+ bearish_engulfing / bullish_engulfing / bearish_streak / bullish_streak / body_ratio / lower_wick_ratio / upper_wick_ratio / new_high_streak_5b / new_low_streak_5b
+位置系: 
+close_to_high_pct / close_to_low_pct / close_above_cloud / close_below_cloud / close_vs_ema200_pct / close_vs_ema20_pct / close_vs_ema50_pct / close_vs_keltner_lower_pct / close_vs_keltner_upper_pct / close_vs_kijun_pct / close_vs_sma20_pct / close_vs_sma50_pct / close_vs_st_lower_pct / close_vs_st_upper_pct / close_vs_vwap20_pct
+
+＝＝＝＝＝＝＝＝＝＝＝＝
+カテゴリ 1-B: 値動きの形（20 ファミリー / 347 列）
+W 期間窓内の値動きパターン（V 字 / W 字 / M 字 / 倒立 V 字 等）と方向転換回数・swing 距離。
+ファミリー: 
+avg_body_ratio_W / avg_lower_wick_ratio_W / avg_upper_wick_ratio_W / bars_since_new_high_W / bars_since_new_low_W / bars_since_swing_high_W / bars_since_swing_low_W / body_direction_flips_W / direction_flips_W / inverted_v_in_W / m_shape_in_W / max_consecutive_new_highs_W / max_consecutive_new_lows_W / new_high_in_W / new_low_in_W / significant_wick_count_W / swing_high_dist_pct_W / swing_low_dist_pct_W / v_shape_in_W / w_shape_in_W
+
+＝＝＝＝＝＝＝＝＝＝＝＝
+カテゴリ 1-C: 構造的要素（59 ファミリー / 737 列）
+サポート / レジスタンス・Fibonacci（フィボナッチ・黄金比ベースの価格水準）・Pivot Point（ピボット・前日 OHLC から計算する支持/抵抗）・Volume Profile（VAH/VAL/POC・出来高ベースの価格水準）。
+Pivot 系: 
+dist_to_PP_pct / dist_to_R1_pct / dist_to_R2_pct / dist_to_S1_pct / dist_to_S2_pct / pivot_zone
+Fibonacci 系: 
+dist_to_fib_382_pct / dist_to_fib_500_pct / dist_to_fib_618_pct / dist_to_fib_786_pct / dist_to_fib_v2_382_pct / dist_to_fib_v2_500_pct / dist_to_fib_v2_618_pct / dist_to_fib_v2_786_pct / nearest_fib_distance_pct / nearest_fib_v2_distance_pct
+Volume Profile 系: 
+dist_to_VAH_pct（N=50/100/200 × b=020/050/100 の 9 パターン）/ dist_to_VAL_pct（同 9 パターン）/ dist_to_POC_pct / inside_value_area（同 9 パターン）
+サポレジ系:
+ nearest_level_distance_pct / nearest_level_touch_count（N=50/100/200 × t=030/050/100/200 の 12 パターン）/ resistance_distance_pct / support_distance_pct
+時間軸（time frame・特徴量集計周期）
+現状 6 軸: 5m / 15m / 30m / 1h / 4h / 1d
+🚨 1w（週足）/ 1M（月足）は未投入（CC 棚卸し §10 で False 確認済）","§A-2.1 軸の定義　ポジション解消の判断材料となる指標群
+§A-2.2 現状 ML 学習範囲　Phase 4-b で cluster × K × side ごとに最適 Exit 選定（固定 TP / トレーリング / 時間 Exit の 3 候補）
+§A-2.3 Phase 4-b v3 採用結果（実データ）　time_exit 16 / fixed_tp 3 / trailing 0 の構造的問題
+§A-2.4 手動 Priority カバー範囲（11 種類以上）cat_params_v9.json + cat_v9_decider.py から抽出
+§A-2.5 業界カタログ 16 サブカテゴリ　価格固定 / トレーリング / 時間 / 含み益 / 含み損 / 動的 / 指標反転 / 構造 / ボラ / 出来高 / 統計 / 複合 / ML 系 / ポートフォリオ / スケール / ヘッジ
+§A-2.6 cc_ml_design_spec §3.2 第 2 弾候補（3 種）ATR 連動 SL / MFE 比例 Exit / Stale 検知
+§A-2.7 D-β-2（部分決済 scale-out）統合　Step 3 で A-2 に統合された D-β-2 を組み込む
+§A-2.8 trailing exit ゼロ採用問題　Phase 4-b v3 で trailing が 0 件採用 → 構造的に機能していない
+§A-2.9 絞り込み戦略　A 全投入 + B 探索試行（Step 4 確定済）
+§A-2.10 Layer 担当　Layer 1 ① / Layer 2 ① + ⑤","§A-3.1 軸の定義　「指標発火条件の閾値」と「指標自体の計算パラメータ」の 2 種類
+§A-3.2 現状 ML 学習範囲　LightGBM 決定木が自動で閾値分割を学習・パラメータ違い指標は 1432 に並列展開
+§A-3.3 手動 Priority カバー範囲（全閾値・全パラメータ）cat_params_v9.json + cat_v9_decider.py から抽出（P1〜P24 + 共通フィルタ）
+§A-3.4 ML 学習対象としての閾値分割（決定木仕様）LightGBM の num_leaves / max_depth / min_data_in_leaf の現状値
+§A-3.5 別閾値 2 件・部分 5 件の閾値ズレ詳細　ADX(14)・MACD(12,26,9)・ATR(14) 絶対値 等の手動値 vs ML 学習帯
+§A-3.6 派生特徴量による手動閾値の組み込み案　A 案（フラグ化）/ B 案（後処理フィルタ）/ C 案（cluster 入力に追加）
+§A-3.7 D-β-1 add トリガ閾値統合　Step 3 で A-3 に統合された D-β-1 の閾値部分
+§A-3.8 絞り込み戦略　A 全投入（パラメータ）+ C ML 学習対象（閾値）（Step 4 確定済）
+§A-3.9 Layer 担当　Layer 1 ④（パラメータ並列展開）+ Layer 1 ① / Layer 2（閾値派生特徴量追加判断）","§A-4.1 軸の定義　ML が何時間先までの MFE/MAE を予測するか（K = 何 5m bar 先まで）
+§A-4.2 現状 ML 学習範囲　K=12 / 24 / 48 / 96（1h / 2h / 4h / 8h）
+§A-4.3 各 K の Phase 5 v3 月次 PnL 寄与　K96 系の支配的 train PnL → no_trade 86.2% の主因
+§A-4.4 K=24 LONG/SHORT q99 欠落・K=96 q99 除外の経緯　19 combo の欠落 5 件の意味
+§A-4.5 保有時間上限 1 日制約　K=288 までが設計範囲（まこさん明示）
+§A-4.6 追加候補 K　K=6（30 分）/ K=144（12h）/ K=288（24h）
+§A-4.7 K 別の Exit との整合　各 K で適切な Exit 時間が変わる（軸 A-2 と連動）
+§A-4.8 絞り込み戦略　B 探索試行（Step 4 確定済）
+§A-4.9 Layer 担当　Layer 1 ③（K 窓見直し）","§A-5.1 軸の定義　特徴量を計算する bar の周期。保有時間（K）とは別軸
+§A-5.2 現状 ML 学習範囲　6 軸（5m / 15m / 30m / 1h / 4h / 1d）・1432 指標のうち各軸のカバー数
+§A-5.3 各時間軸の指標カバー状況　ファミリー数の不均衡（5m に 1-A の bb_pct_b ない等）
+§A-5.4 1w / 1M 軸の未投入　まこさん明示「値動きの大きな流れ参照のため週・月含めて全領域 OK」
+§A-5.5 MTF 展開方式の論点　ffill / 5m rolling / アンカー補間 / 複数特徴量分解（監査依頼予定の論点）
+§A-5.6 L-141 解像度問題　過去事案の再発防止策
+§A-5.7 1w / 1M 追加時の rolling window 計算可否　学習データ期間 3.7 年で計算困難な指標がある
+§A-5.8 1m / 3m 軸の扱い　CLAUDE.md §⛔ 提案禁止リスト「1m 足回帰禁止」
+§A-5.9 絞り込み戦略　A 全投入（Step 4 確定済）
+§A-5.10 Layer 担当　Layer 1 ④","§A-6.1 軸の定義　同一 Priority 内の追加エントリー（add）回数と per-add のサイズ配分
+§A-6.2 現状 ML 学習範囲　cc_ml_design_spec §4 で MAX_ADDS が Priority 別固定値・ML 学習対象ではない
+§A-6.3 手動 Priority カバー範囲　cat_params_v9.json から抽出（Priority 別 MAX_ADDS）
+§A-6.4 add トリガ条件（D-β-1 統合）　価格逆行幅 / 時間経過 / 指標再発火 / 含み益確認
+§A-6.5 per-add サイズ配分パターン　等分 / 逓増 / 逓減 / 動的（予測強度依存）
+§A-6.6 業界カタログ（ピラミッディング戦略）　Turtle Trader / Martingale / Anti-Martingale 等
+§A-6.7 Phase 5 v3 での add 実態　no_trade 86.2% の中で add がどの程度発生していたか
+§A-6.8 絞り込み戦略　B 探索試行 + C ML 学習対象（Step 4 確定済）
+§A-6.9 Layer 担当　Layer 2","§A-7.1 軸の定義　個別ポジションの BTC サイズと combo 別配分
+§A-7.2 第二絶対規定（事前固定 D）合計 0.12 BTC 厳守・絶対不変
+§A-7.3 現状 ML 学習範囲　Phase 5 v3 = remaining / n_sim 動的サイジング
+§A-7.4 cc_ml_design_spec §4 の矛盾残存「1 回のサイズ 固定 0.12 BTC」記述問題（handoff §F-1）
+§A-7.5 手動 Priority サイジング　cat_params_v9.json から抽出（Priority 別固定サイズ）
+§A-7.6 サイジング方式カタログ　一律 / 予測強度比例 / Kelly / Risk parity / Volatility-targeting / cluster 別固定 / 過去パフォーマンス重み付け
+§A-7.7 業界カタログ参照　Van K. Tharp / Edward Thorp Kelly / Bridgewater Risk parity 等
+§A-7.8 過去類型 H 違反事案　L-192 v2 が 2.28 BTC 計上（規定の 19 倍）
+§A-7.9 D-β-3 per-add 動的サイズ統合　Step 3 で A-7 に統合された決定変数
+§A-7.10 ハイレバ問題（凍結ベースライン主軸の構造的弱点）leverage = 25x で 1 トレード破滅リスク
+§A-7.11 絞り込み戦略　D 事前固定（0.12 BTC 上限）+ B 探索試行（配分方式）+ C ML 学習対象（動的係数）§A-7.12 Layer 担当　Layer 2 ②","§B-8.1 軸の定義　同時に保有できるポジション数の上限
+§B-8.2 現状 ML 学習範囲　明示的 cap なし・0.12 BTC + min_size の物理制約のみ
+§B-8.3 Phase 5 v3 で見えた構造問題　no_trade_position_limit 70,146（86.2%）= cap が事実上 K96 LONG 1 件で塞がれている
+§B-8.4 cap の選択肢静的　 cap=1/2/3/5/10/∞ / FIFO / 質駆動 / 動的（ボラ・時間帯・予測強度依存）
+§B-8.5 業界カタログ　Portfolio Diversification の Optimal N / Markowitz / Litterman
+§B-8.6 hedge_mode との関連　LONG/SHORT 同時保有時の cap カウント方法
+§B-8.7 A-4 / A-7 との連動　K96 系切り捨て + サイジング方式変更で cap 問題がどう変わるか
+§B-8.8 絞り込み戦略　B 探索試行（Step 4 確定済）
+§B-8.9 Layer 担当　Layer 1 ②（損 combo 切り捨て連動）+ Layer 2（cap 動的化）","§B-9.1 軸の定義　ML（決定木）が学習する AND 条件の段数（複数指標の組み合わせ複雑さ）
+§B-9.2 現状 ML 学習範囲　LightGBM num_leaves=31（K12 LONG refit のみ 15）/ max_depth=-1（無制限）/ min_data_in_leaf=100
+§B-9.3 ハイパラ単体の影響　num_leaves / max_depth / min_data_in_leaf の各役割
+§B-9.4 過学習リスクとの関係　L-189「ハイパラ限界」教訓
+§B-9.5 Phase 3 で確認された事実　K12 LONG refit 採用根拠（num_leaves=15 で改善）
+§B-9.6 他アルゴリズムでの「深さ」　XGBoost / Neural Net / MiniROCKET での組み合わせ深さ概念
+§B-9.7 業界カタログ参照　Tree-based ML の標準推奨範囲
+§B-9.8 絞り込み戦略　C ML 学習対象（Step 4 確定済）
+§B-9.9 Layer 担当　Layer 3（ハイパラ最適化）","§B-10.1 軸の定義　ML（機械学習）の予測モデルとして何を使うか
+§B-10.2 現状 ML 学習範囲　LightGBM（Gradient Boosting Decision Tree）× 16 ラベル独立回帰
+§B-10.3 LightGBM 採用の経緯　当初から採用・他アルゴ未試行
+§B-10.4 アルゴリズム候補カタログ　Tree 系 / Linear 系 / SVM / Neural Net / 時系列特化 / 強化学習 / ハイブリッド
+§B-10.5 各アルゴの BTC 5m 短期予測における適合度　入力次元 1432 + ラベル 16 + train 39 万行という現状にどう適合するか
+§B-10.6 MiniROCKET（時系列特化）の特殊性　handoff §F 候補・未試行記録
+§B-10.7 強化学習（X2）の cc_ml_design_spec 内位置づけ　audit#16 で評価過小指摘・実装回避バイアス対象
+§B-10.8 アンサンブル戦略　複数アルゴ同時走らせて voting / stacking する方式
+§B-10.9 業界カタログ参照　Kaggle 競技 / Quant 文献 / Lopez de Prado 推奨
+§B-10.10 絞り込み戦略　B 探索試行（Step 4 確定済）
+§B-10.11 Layer 担当　Layer 3（アルゴ多様化）","§B-11.1 軸の定義　Entry 候補を性質ごとにグループ分けする手法
+§B-11.2 現状 ML 学習範囲　StandardScaler + KMeans k=3・16 予測値ベクトル入力
+§B-11.3 cluster_profile 構造的発見　cluster が「ボラレベル」を分類している・「LONG/SHORT 方向性」を分類していない
+§B-11.4 k=3 採用根拠の verify　silhouette=0.510・size_ratio=0.159・WORKFLOW.md L390 と整合
+§B-11.5 cluster サンプル数の偏り　test_2025 で cluster 1 が 4707 件（4.5%）・既知懸念
+§B-11.6 クラスタリング手法カタログ　k-means / GMM / HMM / Hierarchical / DBSCAN / HDBSCAN / Spectral / UMAP+HDBSCAN / SOM
+§B-11.7 入力ベクトル設計の代替案　16 予測値ベクトル / + 1432 指標 / + 派生特徴量 / 別軸入力
+§B-11.8 D-ε 市況フィルタとの併用　事前 regime フィルタ + 事後 cluster の二段構成
+§B-11.9 業界カタログ参照　金融データのクラスタリング先行研究§B-11.10 絞り込み戦略B 探索試行（Step 4 確定済）
+§B-11.11 Layer 担当　Layer 1（手法見直し）+ Layer 2","§B-12.1 軸の定義　生の指標値を ML 入力用に変換する処理
+§B-12.2 現状 ML 学習範囲　1432 指標カタログ内で既に行われている変換（pct / rank / streak 等）
+§B-12.3 変換タイプカタログ　生値 / log / 差分 / 比率 / Z-score / rolling rank / 標準化 / Wavelet / PCA
+§B-12.4 1432 指標で既に行われている変換　カテゴリ 1-A の命名規約（_pct / _rank_50b / _streak / _change 等）から逆引き
+§B-12.5 MTF 展開方式（核心論点・監査依頼予定）　ffill / 5m rolling / アンカー補間 / 複数特徴量分解 の 4 方式比較
+§B-12.6 L-141 解像度問題との関連　同名特徴量の意味取り違え事故防止
+§B-12.7 未投入の変換　業界 quant で標準だが 1432 にない変換（Wavelet / PCA / Calibration 等）
+§B-12.8 Lopez de Prado 推奨の Fractional Differentiation　定常性と memory のトレードオフ・金融時系列特有の前処理
+§B-12.9 絞り込み戦略　A 全投入（変換済特徴量）+ B 探索試行（MTF 展開方式）（Step 4 確定済）
+§B-12.10 Layer 担当　Layer 1 ④ + 監査経路","§B-13.1 軸の定義　ML が予測した MFE/MAE 比（ratio）を Entry 発火判定する閾値の決定方法
+§B-13.2 現状 ML 学習範囲　rolling 365日 q90/q95/q99 加重採用（cc_ml_design_spec §1.6 案G）
+§B-13.3 案G 採用の経緯　絶対閾値 drift 問題への対処（2026-05-15 改訂11）
+§B-13.4 q-band 構造　q90-q95 / q95-q99 / q99 の 3 帯域・combo 別採否
+§B-13.5 Phase 4-b v3 で見えた構造問題　K24 LONG/SHORT q99 欠落・K96 SHORT q95-q99 test 0 件
+§B-13.6 閾値決定方法カタログ　静的 / rolling / cluster 別独立 / 強化学習動的 / 適応的（Online learning
+）
+§B-13.7 A-3 軸との関係　「指標値の閾値」と「ML 予測値の閾値」は別軸（Step 3 で論証済）
+§B-13.8 業界カタログ参照　Triple Barrier Method（Lopez de Prado）等
+§B-13.9 絞り込み戦略　B 探索試行 + C ML 学習対象（Step 4 確定済）
+§B-13.10 Layer 担当　Layer 1 ① / Layer 3","§B-14.1 軸の定義　ML が学習するデータの期間・分割・サンプリング戦略
+§B-14.2 現状 ML 学習範囲　train 2021-04〜2024-12 / 仮 test 2025 / 本 test 2026 Q1（cc_ml_design_spec §1.4 で D 固定）
+§B-14.3 各期間の行数　train 394,753 / 仮 test 105,120 / 本 test 25,823（SUMMARY.md §1）
+§B-14.4 期間分割の構造的妥当性　5 年弱 train + 1 年 valid + Q1 test の特性
+§B-14.5 §8 違反防止構造　本 test 2026 Q1 を見て学習を変える行為は L-183 違反
+§B-14.6 サンプリング戦略カタログ　全件 / random / time-based / Walk-forward / Purged K-fold / Combinatorial Purged CV / SMOTE / class balancing
+§B-14.7 Walk-forward の構造　時系列特有・最も実運用に近い評価方式
+§B-14.8 Lopez de Prado 推奨の CPCV　Combinatorial Purged Cross Validation・金融時系列特化
+§B-14.9 サンプル偏り対応　regime シフト（cluster 1 サンプル少問題と類似）
+§B-14.10 業界カタログ参照　Kaggle 系時系列 CV・Numerai overlap 対応
+§B-14.11 絞り込み戦略　D 事前固定（期間分割）+ B 探索試行（サンプリング戦略）（Step 4 確定済）
+§B-14.12 Layer 担当　Layer 3（Walk-forward 等の発展的 CV）","§B-15.1 軸の定義　ML が「何を最大化 / 最小化するように学習するか」+ 予測の信頼度をどう測るか
+§B-15.2 現状 ML 学習範囲　LightGBM 回帰の RMSE 最小化 + Phase 5 で月次 NET 評価（D 事前固定）
+§B-15.3 train 時の目的関数 vs Phase 5 評価指標　階層構造（train: RMSE / valid: RMSE+Phase 2 / Phase 5: 月次 NET）
+§B-15.4 合格ライン（D 事前固定）　月次 NET ≥ $1,900 全月クリア
+§B-15.5 目的関数カタログ　MSE/RMSE / MAE / Huber / Quantile loss / Sharpe / Sortino / Calmar / Expectancy
+§B-15.6 不確実性定量化カタログ　Calibration / Conformal prediction / 予測区間 / SHAP / Permutation importance§
+B-15.7 audit#16 で評価過小指摘の領域　不確実性定量化が cc_ml_design_spec で過小評価
+§B-15.8 業界カタログ参照　Lopez de Prado / Conformal Prediction 系文献
+§B-15.9 絞り込み戦略　D 事前固定（主目的）+ B 探索試行（補助指標・不確実性）（Step 4 確定済）
+§B-15.10 Layer 担当　Layer 3（不確実性定量化）","§D-α.1 軸の定義　per-dt-day の発火件数・取引頻度の決定変数
+§D-α.2 現状 ML 学習範囲　Entry ratio 閾値（B-13）と組み合わせ深さ（B-9）の関数として暗黙的に決まる
+§D-α.3 L-117 / L-116 教訓　発火件数が少ないシグナルでフィルタを掛けると NET 悪化
+§D-α.4 Phase 5 v3 実態　no_trade 86.2% / 実 executed は SUMMARY 未記載
+§D-α.5 発火頻度カタログ　高頻度（HFT 系）/ 中頻度（デイトレ系）/ 低頻度（スイング系）
+§D-α.6 質と頻度のトレードオフ　高質低頻度 vs 中質中頻度 vs 低質高頻度
+§D-α.7 業界カタログ参照　Renaissance Technologies / Citadel 系の発火頻度設計
+§D-α.8 絞り込み戦略　C ML 学習対象（Step 4 確定済・独立決定変数ではなく他軸の関数）
+§D-α.9 Layer 担当　Layer 1 ① / Layer 2","§D-δ.1 軸の定義　アジア / 欧州 / 米国セッション・曜日・月初月末等の時間帯ベースフィルタ
+§D-δ.2 現状 ML 学習範囲　未投入（WORKFLOW.md §設計思想 L230 で「個別 Priority 最適化では禁止」明文）
+§D-δ.3 WORKFLOW.md §設計思想 L230 制約　統合フェーズで実施するルール・現状は適用不可
+§D-δ.4 時間帯カタログ　UTC 時間帯 / セッション / 曜日 / 月初月末 / 月次 ATH 接近期 等
+§D-δ.5 仮想通貨市場の特性　24/7/365 営業・株式市場のセッション概念とは異なる
+§D-δ.6 BTC/USDT 特有の時間帯影響　Funding Rate 計算時刻（8h 毎）/ 米国先物オープン / 欧州オープン
+§D-δ.7 業界カタログ参照　株式系の Sell in May / 月末リバランス / 個別の crypto 時間帯研究
+§D-δ.8 絞り込み戦略　B 探索試行・ただし統合フェーズ Layer 2 以降（Step 4 確定済）
+§D-δ.9 Layer 担当　Layer 2 統合フェーズ","§D-ε.1 軸の定義　事前 regime / volatility state でそもそも Entry を出すか判定する事前フィルタ
+§D-ε.2 現状 ML 学習範囲　未投入（regime 研究は凍結中・WORKFLOW.md L140-144）
+§D-ε.3 regime 研究の凍結経緯　userMemories の研究履歴・MA70 ルックアヘッド / 教師あり学習限界 / 教師なし ML 検討中
+§D-ε.4 B-11 クラスタリングとの構造的差異　事前判定（D-ε）vs 事後分類（B-11）
+§D-ε.5 regime / volatility state カタログ　3 状態（DOWN/RANGE/UP）/ 4 状態 / ボラ高低 / マルチ次元 state
+§D-ε.6 regime 判定手法　MA / ADX / ATR / Hurst / HMM / UMAP+HDBSCAN
+§D-ε.7 教師ラベル vs 教師なしのアプローチ　userMemories § Current state より
+§D-ε.8 B-11 入力ベクトル B 案との関係　B 案（LONG/SHORT 差分追加）で代替可能か
+§D-ε.9 業界カタログ参照　Hamilton 1989 Markov regime / GMM-HMM / 時系列 state space モデル
+§D-ε.10 絞り込み戦略　B 探索試行・Layer 2 以降（Step 4 確定済）
+§D-ε.11 Layer 担当　Layer 2 以降（凍結解除判断）","§D-ζ.1 軸の定義　LONG と SHORT を同時保有できるか・hedge_mode の運用設計
+§D-ζ.2 現状 ML 学習範囲　cc_ml_design_spec §4 で許可・hedge_mode 採用（D 事前固定）
+§D-ζ.3 hedge_mode の構造　Bitget の hedge_mode 仕様（exchange_spec.md）
+§D-ζ.4 同時保有のシナリオ　純 hedge / ペアトレード / 同時両建てによる net exposure 0
+§D-ζ.5 B-8 cap との連動　LONG/SHORT 同時保有時の cap カウント方法
+§D-ζ.6 A-7 サイジングとの連動　合計 0.12 BTC 上限の LONG/SHORT 配分
+§D-ζ.7 マルチサイド戦略カタログ　純 hedge / Delta-neutral / ペアトレード / market making 系
+§D-ζ.8 業界カタログ参照　Statistical Arbitrage / 板両建て戦略
+§D-ζ.9 絞り込み戦略　D 事前固定（許可ルール）+ C ML 学習対象（動的活用）（Step 4 確定済）
+§D-ζ.10 Layer 担当　Layer 2 / Layer 3","§D-η.1 軸の定義　取引コスト構造（手数料・スリッページ・Funding Rate）
+§D-η.2 現状 ML 学習範囲　exchange_spec.md 確定値・Phase 5 評価で控除済（D 事前固定）
+§D-η.3 手数料体系　Maker 0.014% / Taker 0.042%（要 exchange_spec.md verify）
+§D-η.4 Funding Rate 控除モデル　8h 毎 0.01% 想定（Phase 5-e）
+§D-η.5 スリッページ　Maker 指値前提で未モデル化
+§D-η.6 板情報の影響　スプレッド・板の厚み
+§D-η.7 業界カタログ参照　Bitget 公式仕様・Binance / Bybit との比較
+§D-η.8 絞り込み戦略　D 事前固定（Step 4 確定済）
+§D-η.9 Layer 担当　Phase 7 Bot 統合 / 本番運用後の見直し","§D-θ.1 軸の定義　注文の種類（成行 / 指値 / Stop / OCO 等）
+§D-θ.2 現状 ML 学習範囲　Maker 指値前提（D 事前固定・D-η 連動）
+§D-θ.3 発注タイプカタログ　成行 / 指値 / Stop / Stop-Limit / OCO / Iceberg / TWAP
+§D-θ.4 各発注タイプの特性　手数料・約定確実性・スリッページの 3 軸比較
+§D-θ.5 Bitget での利用可能発注タイプ　exchange_spec.md / Bitget API 仕様
+§D-θ.6 Maker 指値の不約定リスク　D-η §D-η.5 の継続論点
+§D-θ.7 Bot 統合段階の執行戦略　Phase 7 領域
+§D-θ.8 業界カタログ参照　HFT / Market Making 系の発注戦略
+§D-θ.9 絞り込み戦略　D 事前固定（Maker 指値）+ B 探索試行（Layer 3 執行最適化）（Step 4 確定済）
+§D-θ.10 Layer 担当　Phase 7 Bot 統合 / Layer 3"
+"Step 2: カテゴリ分け
+カテゴリ　　　　　　　想定する役割
+I. シグナル定義　　　　Entry / Exit の判定条件を構成する要素
+II. 時間設計　　　　　予測ホライズン・特徴量集計周期・発火頻度
+III. ポジション設計　　サイズ・配分・add・cap・同時保有
+IV. フィルタ　　　　　位置・時間帯・市況・サイド組み合わせ
+V. 学習設計　　　　アルゴリズム・特徴量変換・クラスタリング・データ範囲・目的関数
+VI. 執行設計　　　　手数料・発注タイプ・スリッページ
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+23 軸を構造的役割で 6 カテゴリに分類。
+
+I. シグナル定義（Entry / Exit を構成する要素）
+A-1　Entry 指標　—
+A-2　Exit 指標　—
+A-3　閾値 / パラメータ
+
+II. 時間設計
+A-4　時間軸（予測ホライズン K）—
+A-5　時間足（特徴量集計周期 bar）—
+D-α　シグナル発火頻度（密度）V（学習設計）にも関与
+
+III. ポジション設計
+A-6　add 数 / 配分　III 主
+A-7　ポジションサイジング / 配分　III 主
+B-8　同時保有数（cap）　III 主
+D-β　保有期間中の管理（add トリガ・部分決済 等）　III 主・I にも関与（Exit シグナル要素）
+D-ζ　マルチサイド（LONG/SHORT 同時保有）　III 主
+
+IV. フィルタ
+D-γ　エントリー位置フィルタ（location_prev 等）　I にも関与（Entry 判定の一部）
+D-δ　時間帯・曜日フィルタ　—
+D-ε　市況フィルタ（regime / volatility state）　V（クラスタリング）と密接
+
+V. 学習設計
+B-9　発火条件の組み合わせ深さ　V 主
+B-10　学習アルゴリズム　V 主
+B-11　クラスタリング手法　V 主・IV と密接
+B-12　特徴量変換V 主
+B-13Entry ratio 閾値の決定方法　V 主・I-A-3 と被る可能性あり（Step 3 で判定）
+B-14　学習データ範囲・サンプリング　V 主
+B-15　目的関数 / 不確実性定量化　V 主
+
+VI. 執行設計
+D-η　手数料モデル　VI 主
+D-θ　発注タイプ（成行 / 指値 / Stop / OCO）　VI 主
+
+＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+カテゴリ別軸数集計
+I. シグナル定義　3　Layer 1（Entry）/ Layer 2（Exit）
+II. 時間設計　3　Layer 1
+III. ポジション設計　5　Layer 2
+IV. フィルタ　3　Layer 2（D-δ は統合フェーズ・WORKFLOW.md §設計思想 L230 準拠）
+V. 学習設計　7　Layer 1〜3
+VI. 執行設計　2　Phase 7（Bot 統合）
+
+
+",深堀り,"§A-1.5 未学習 8 件の 1432 不在確認（実データ突合せ）深堀り
+未学習指標1432 ファミリーリストでの状況
+Stochastic(14,3) K　　stoch_k（1d のみ・1 列）→ 5m/15m/30m/1h/4h で不在
+Stochastic(14,3) D　　stoch_d というファミリーが存在しない → 全 TF で不在
+RSI(21)　　rsi14（6 TF）と rsi7（4 TF）のみ → rsi21 が全 TF で不在
+RSI slope（diff-3）　　rsi の傾き / 差分系ファミリーが存在しない → 不在
+BB middle slope　　bb_pct_b（2 TF）/ bb_width_pct（6 TF）はあるが、中心線そのもの・傾きが独立ファミリーとして 不在RCI(7) / RCI(9) / RCI(52)　　rci 系ファミリーが 1432 にゼロ → 完全不在
+ADX spike（3bar diff）　　adx14（6 TF）と di_diff / di_minus / di_plus はあるが、ADX 差分・スパイク検知系が 不在
+
+§A-1.6 まこさん発振系（3 種）の 1432 との照合
+まこさん発振系　　1432 ファミリーでの代替候補　　判定
+RSI レートオブチェンジ（RSI の変化率）　roc_10（ROC・Rate of Change・3 TF）/ roc_20（5 TF）あるが、これは価格の ROC で RSI の ROC ではない　　代替不可・新規追加が必要
+MACD ヒストグラムスロープ　macd_hist_change（6 TF）が macd_hist の変化 = ヒストグラムスロープに近い　　既存ファミリーで部分カバー・厳密な slope と一致するか要 verify
+Stoch %K-%D 差分　stoch_d が全 TF で不在のため、K-D 差分も計算不可　　代替不可・新規追加が必要（stoch_d 追加とセット）
+
+§A-1.7 業界カタログ追加候補（🚧 未取得）
+業界カタログ網羅作業（軸 1 + 軸 2 同時）で確定。対象：
+
+TA-Lib（約 158 種類）
+pandas-ta（約 130 種類）
+tulipindicators（約 100 種類以上）
+Backtrader 内蔵指標
+QuantConnect 標準指標
+TradingView 標準指標
+Wikipedia「テクニカル分析」カテゴリ
+主要教科書（Murphy / Kaufman / Pardo 等）
+Lopez de Prado 等の現代 quant 文献
+
+各指標について「1432 既存と重複か新規か」「Tradable horizon（intraday/daily/weekly 適用可否）」を判定して追加候補リスト化。
+
+§A-1.8 MTF（Multi Time Frame）拡張: 1w / 1M 軸の追加
+
+現状: 5m / 15m / 30m / 1h / 4h / 1d の 6 軸
+追加: 1w / 1M を 8 軸目・9 軸目として追加
+適用方法: 1w/1M で特徴量計算 → 5m bar に ffill（フォワードフィル）展開（L-141 解像度問題回避・既存 MTF 流儀と統一）
+ただし MTF 展開方式そのものは監査依頼予定の論点（ffill / 5m rolling / アンカー補間 / 複数特徴量分解 の 4 通り存在）
+追加見込みファミリー数: 既存 145 ファミリーのうち rolling window 系で計算可能なものを 1w/1M で展開 → 約 +50〜100 ファミリー × 2 軸 = +100〜200 列追加
+
+§A-1.9 絞り込み戦略
+A 全投入（Step 4 確定済）
+根拠: cc_ml_design_spec §8「特徴量の事前絞り込み禁止」明文。
+具体実施：
+
+既存 1432 指標を全投入（変更なし）
+未学習 8 件を追加（RCI 3 種 / RSI(21) / RSI slope / BB middle slope / Stoch K(全 TF)/D / ADX spike）
+別閾値 2 件・部分 5 件は「指標は既にある」ため追加実装はパラメータ違いの並列特徴量として（例: adx14 に加えて adx7・adx21 も追加・閾値帯を ML が自動分割）
+まこさん発振系 3 種を追加（RSI ROC / Stoch K-D 差分 / MACD ヒストグラム slope は macd_hist_change で代替可否要 verify）
+1w / 1M MTF 軸を追加（既存ファミリーの 1w/1M 展開）
+業界カタログ網羅結果から重複しない新規指標を追加（🚧 未取得・後段で確定）
+
+最終的な ML 学習範囲は 1432 → 約 2000〜2500 列を見込む。
+
+§A-1.10 Layer 担当
+Layer 1 ④（未学習指標追加 + ML 再学習・最優先）
+実施内容:
+
+build_labels.py（Phase 0 ラベル生成スクリプト）に未学習 8 件 + まこさん発振系 3 種 + 業界カタログ追加分 + 1w/1M MTF 拡張を組み込む
+Phase 0 から再実行
+Phase 1〜5 を順次再実行
+再実行後の Phase 5 月次 NET で目標達成可能性を再評価
+
+","軸 A-2 Exit 指標（深掘り）
+§A-2.1 軸の定義
+ポジション解消の判断材料となる指標群。Entry 指標と独立した研究領域として扱う。Exit シグナルは「価格条件」「時間条件」「指標条件」「含み益条件」「含み損条件」「複合条件」のいずれかで発火する。
+
+§A-2.2 現状 ML 学習範囲（Phase 4-b 第 1 弾 3 候補）
+cc_ml_design_spec §3.1 で定義された 3 候補：
+Exit 方式　仕組み　学習パラメータ
+固定 TP（fixed_tp）　予測 MFE（最大含み益・Maximum Favorable Excursion）の　 X% で利確X（% of pred MFE）
+トレーリング（trailing）　高値追従・反転で利確　反転幅 %
+時間 Exit（time_exit）　N 分経過で強制決済　N（minutes・K の倍数）
+
+各 cluster × K × side ごとに train PnL idxmax（最大値となる組み合わせ）で 1 つ採用。
+§A-2.3 Phase 4-b v3 採用結果（実データ・07_phase4b_exits.csv より）
+19 combo の exit_type 分布:
+exit_type　採用 combo 数　train PnL 合計
+time_exit　16　$2,668,698
+fixed_tp　3　$129,420
+trailing0$　0
+
+fixed_tp 採用 3 combo の内訳:
+K12 SHORT q95-q99
+K12 SHORT q90-q95
+K24 LONG q90-q95（train $102k で主役）
+
+time_exit 採用 16 combo の train PnL TOP: K96 LONG q95-q99（$747k）→ test で 8h 保有 = K96（8 時間）×288 本/日 で 0.12 BTC 枠を独占 → no_trade 86.2% の主因
+
+§A-2.4 手動 Priority カバー範囲（11 種類以上・cat_params_v9.json + cat_v9_decider.py より）
+Exit 種別　該当 Priority　パラメータ
+TP_PCT（固定 % TP）　P1〜P4 / P21〜P24（全 Priority）　0.4%〜1.2% の Priority 別
+SL_PCT（固定 % SL）　LONG 共通 / P3 / P21 / SHORT 共通　1.5%〜5%
+TIME_EXIT_MIN（時間切れ）　全 Priority　150〜480 分
+TIME_EXIT_DOWN_FACTOR（持続トレンド時短縮）　LONG / SHORT / P22　0.4〜0.5
+MFE_STALE_GATE + HOLD_MIN（含み益が一定時間動かない時 Exit）　P1 / P2 / P3 / P21 / P22 / P23　$0.5〜$12 / 30〜90 分
+MFE_GATE_PCT（TRAIL 活性化条件）P21　5%
+TRAIL_RATIO（トレーリング幅）　P21　　0.8
+PROFIT_LOCK_ARM_USD + LOCK_USD（含み益固定水準ロック）　LONG / P22 / P23　　$15 / $6
+STOCH_REVERSE_EXIT（Stoch 逆クロスで Exit）P23MFE_GATE=$20 / MIN_HOLD=150 分SHORT_RSI_EXIT（RSI 逆転で Exit）P24 / SHORT 共通　RSI_THRESH=50 / SLOPE_MAX=0 / ADX_MAX=12 / MIN_HOLD=1 分
+TP_BB_RATIO + TP_MIN_PCT（BB 幅基準動的 TP）P21　1.0 / 0.03%
+TP_ADX_BOOST + ADX_FACTOR（ADX 応じた TP 拡縮）全体共通（現在 disable）—
+
+現状の ML 学習対象 3 種 vs 手動 Priority 11 種以上 = 8 種類以上が ML 未学習。
+§A-2.5 業界カタログ 16 サブカテゴリ（🚧 業界網羅作業で確定）
+サブカテゴリ　　想定要素
+価格ベース固定 Exit　固定 TP（% / pip / dollar） / 固定 SL / Risk:Reward 比固定 / Bracket order
+トレーリング系　%トレーリング / ATR トレーリング（Chandelier Exit）/ Parabolic SAR / Volatility-based trailing / High-water mark trailing
+時間ベース　固定時間 Exit / バー数 Exit / 時間帯 Exit（market close）/ 曜日 Exit
+含み益ベース　Break-even（建値 SL 移動）/ Profit lock / MFE-based exit / Profit target ladder（段階利確）
+含み損ベース　MAE stop / Acceleration SL / 含み損早期カット
+動的 Exit　Stale detection / Slippage trigger / Momentum decay
+指標ベース反転 Exit　RSI reversal / Stoch reversal / MACD reversal / BB タッチ / EMA cross / ADX decay / Pivot reversal
+構造ベース　S/R touch / Trendline break / Channel break / Pivot point / Fibonacci retrace
+ボラベース　Volatility expansion exit / Volatility contraction exit / ATR multiplier-based stop
+出来高ベース　Volume spike exit / Volume divergence exit / Order flow reversal
+統計ベース　Z-score reversion exit / Mean reversion threshold / BB Z-score
+複合 Exit　Multiple condition AND/OR / First-hit Exit / Conditional cascadeML 系 ExitTriple Barrier Method（Lopez de Prado）/ Meta-labeling / 強化学習 terminal policy / Exit value prediction
+ポートフォリオレベル Exit　Drawdown limit / Volatility-targeting forced close / Correlation-based hedge close
+ピラミッディング/スケール Exit　Scale-out（部分決済）/ Pyramiding exit
+ヘッジ系　Opposite-side entry as hedge / Reduce-position partial exit
+
+参照する主要文献（網羅作業時）:
+Van K. Tharp ""Trade Your Way to Financial Freedom""（Position Sizing + Exit 正本）
+Perry Kaufman ""Trading Systems and Methods""（Exit 章）
+Robert Pardo ""The Evaluation and Optimization of Trading Strategies""
+Curtis Faith ""Way of the Turtle""
+Linda Raschke ""Street Smarts""
+Chuck LeBeau & David Lucas ""Computer Analysis of the Futures Markets""（Chandelier Exit 出所）
+Lopez de Prado ""Advances in Financial Machine Learning""（Triple Barrier・Meta-labeling）
+Andreas Clenow ""Trading Evolved"" / ""Following the Trend""
+
+§A-2.6 cc_ml_design_spec §3.2 第 2 弾候補（未学習・3 種）
+仕様書に既に提示されているが未実装：
+Exit 方式　仕組み
+ATR 連動 SL　ボラティリティに応じた損切り幅
+MFE 比例 Exit　含み益がピークの X% に戻ったら利確
+Stale 検知　一定時間動きなしで決済
+
+§A-2.7 D-β-2 部分決済（scale-out）統合
+Step 3 の判定で D-β（保有期間中の管理）を分解し、D-β-2（部分決済）を A-2 に統合。
+部分決済の構造：
+・ポジションの一部だけ Exit する条件
+・残ポジションは継続保有
+・段階利確（Profit target ladder）と同質
+・業界カタログ「ピラミッディング/スケール Exit」サブカテゴリに該当
+・現状の ML 学習対象に含まれない（all-or-nothing Exit のみ）
+
+§A-2.8 trailing exit ゼロ採用問題（構造的発見）
+Phase 4-b v3 で trailing が 19 combo 中 0 件採用。これは構造的問題：
+観点　　分析
+採用判定　train PnL idxmax（最大値）で 3 候補から 1 つ選ぶ
+trailing 不採用の意味　全 19 combo で trailing の train PnL が fixed_tp / time_exit より低かった
+仮説 1　trailing 候補のパラメータ範囲が狭すぎる（反転幅 % の探索範囲が不十分）
+仮説 2　trailing と時系列特性の相性が悪い（BTC 5m の値動きの粒度で機能しない）
+仮説 3　train PnL idxmax 採用方式自体が trailing を不当に過小評価している（trailing は test 期間で本領発揮するが train では数値化しにくい）
+仮説 4　trailing 候補の実装に bug がある（不採用が必然的 = データの問題ではなく実装の問題）
+→ Layer 1 ① で trailing 自体を再評価する必要がある（前提として実装 verify）
+
+§A-2.9 絞り込み戦略
+A 全投入（指標カタログ）+ B 探索試行（Exit 方式の組み合わせ）（Step 4 確定済）
+具体実施:
+1.Exit シグナルとして使う指標カタログは A-1 と同じ集合（A 全投入）
+2.Exit 方式は B 探索試行:
+・第 1 弾 3 候補（fixed_tp / trailing / time_exit）
+・第 2 弾 3 候補（ATR 連動 SL / MFE 比例 / Stale 検知）
+・手動 Priority Exit 8 種類以上を ML 学習対象に追加（STOCH_REVERSE_EXIT / SHORT_RSI_EXIT / MFE_STALE / TRAIL_RATIO / PROFIT_LOCK / TP_BB_RATIO / TIME_EXIT_DOWN_FACTOR / TP_ADX_BOOST）
+・業界カタログ追加 Exit（🚧 後段で確定）
+3.採用判定方式の見直し（trailing ゼロ採用問題への対応）:
+・train PnL idxmax 採用 → train PnL + train Sharpe + test 期間一部 verify の複合採用へ変更検討
+・cluster × K × side 別の Exit ではなく、複数 Exit の組み合わせ（first-hit / cascade）も探索対象に
+4.部分決済（scale-out）の追加: 段階利確構造を Exit 候補に組み込む
+
+§A-2.10 Layer 担当
+Layer　内容
+Layer 1 ①（最優先）　trailing 不採用の構造的原因究明 + Exit 候補に手動 Priority 8 種類以上を追加 + train PnL idxmax 採用方式の見直し
+Layer 2 ①（X1 Exit を予測対象に追加）第 2 弾 3 候補を Phase 4-b 学習対象に追加
+Layer 2 ⑤（指標ベース動的 Exit）業界カタログ追加 Exit + 部分決済（scale-out）を ML 学習対象に追加","軸 A-3 閾値 / パラメータ（深掘り）
+§A-3.1 軸の定義
+軸 A-3 は 2 種類の決定変数を含む：
+種類意味例A-3-a パラメータ指標自体の計算パラメータRSI の period=21 / MACD の fast=12 slow=26 signal=9 / BB の window=20 / ADX の window=14A-3-b 発火閾値指標値が満たすべき条件値ADX ≥ 30 / RSI > 65 / Stoch K-D ギャップ > 0.3
+両者は構造的に別物だが、cat_params_v9.json では同じ JSON 設定として並列に置かれているため、軸として 1 つにまとめている。
+§A-3.2 現状 ML 学習範囲
+A-3-a パラメータ側
+1432 指標カタログには特定パラメータの指標値が並列で展開済：
+指標1432 でカバー済パラメータRSIperiod=14（rsi14・6 TF）/ period=7（rsi7・4 TF）Stochwindow=14 smooth=3（stoch_k・1d のみ）MACDfast=12 slow=26 signal=9（macd_line / macd_signal / macd_hist の 6 TF）ADXwindow=14（adx14・6 TF）ATRwindow=14（atr14_pct・5 TF）BBwindow=20（bb_pct_b・2 TF・bb_width_pct・6 TF）EMAwindow=20 / 50 / 200（close_vs_ema*_pct シリーズ）SMAwindow=20 / 50（sma_20 / sma_50）
+パラメータ違い（例: rsi21 / adx7 / adx21 / bb_window_50）は基本的に未投入。
+A-3-b 発火閾値側
+LightGBM の決定木が自動で閾値分割を学習する：
+
+各特徴量を任意の閾値で分割（例: ADX > 27.3 / RSI < 62.1 等、データ駆動で決定）
+分割の解像度は num_leaves（葉の数）で制御
+1 葉に至る経路長 = AND 条件の段数（特徴量の組み合わせ深さ）
+
+つまり ML が学習する閾値帯は手動 Priority の特定閾値（例: ADX ≥ 30 ぴったり）を必ず使うとは限らない。
+§A-3.3 手動 Priority カバー範囲（全閾値・全パラメータ）
+共通フィルタ（LONG/SHORT 共通）
+項目閾値location_prev（直近 20 本レンジ内位置）LONG ≤ 0.9 / SHORT ≤ 0.9entry_risk_score（20 本 close 標準偏差 / close）LONG ≤ 0.3398 / SHORT ≤ 0.3398 / LONG ≥ 0.0007
+P1 LONG（MACD ゴールデンクロス）
+項目閾値MACD パラメータfast=12 / slow=26 / signal=9ADX≥ 30.0ATR60 ≤ ATR ≤ 9999
+P2 LONG（Stoch ゴールデンクロス）
+項目閾値Stoch K-D ギャップ> 0.3RSI short（period=21）≥ 45.0ADX≥ 30.0 / [40, 50) 除外ATR100 ≤ ATR ≤ 300
+P3 LONG（Stoch GC・P23 ミラー）
+項目閾値BB middle slope> 10.0ADX30 ≤ ADX < 50ATR≥ 250
+P4 LONG（プルバック後順張り）
+項目閾値プルバック検出 lookback10 本EMA 許容誤差0.05%BB middle slope（現在値）≥ 20.0BB middle slope（5 本平均）≥ 15.0RSI short≤ 60.0ADX[20, 25) 除外ATR≥ 150
+P21 SHORT（MACD デッドクロス）
+項目閾値ATR150 ≤ ATR ≤ 9999TP_BB_RATIO1.0TP_MIN_PCT0.03%MFE_GATE_PCT（TRAIL 活性化）5%TRAIL_RATIO0.8
+P22 SHORT（RCI デッドクロス + BB 上限タッチ）
+項目閾値RCI(7) / RCI(9)デッドクロスRCI(52)> 55.0BB 上限タッチ許容誤差0.12%BB middle slope≤ -20.0（厳格化）/ ≤ 0.02（緩和）ADX≥ 22.0
+P23 SHORT（Stoch デッドクロス・凍結ベースライン主軸）
+項目閾値Stoch D-K ギャップ> 0.3BB middle slope< -10.0ADX30 ≤ ADX < 50ATR≥ 150ADX 高位ゲートadx < 40 または atr_14 ≥ 200STOCH_REVERSE_EXIT MFE_GATE$20
+P24 SHORT（RSI 過熱 + Stoch 過熱）
+項目閾値RSI short（period=21）> 65.0RSI slope（diff_n=3）< 0.0BB middle slope< 50.0Stoch K> 60.0ATR≥ 30.0RSI 逆転 ExitRSI_THRESH=50 / SLOPE_MAX=0 / ADX_MAX=12
+合計 約 50 個の発火閾値 + 約 10 個の指標計算パラメータが手動 Priority に存在。
+§A-3.4 ML 学習対象としての閾値分割（決定木仕様）
+LightGBM の現状ハイパラ（SUMMARY.md §2 より）：
+ハイパラ現状値意味num_leaves31（K12 LONG refit のみ 15）1 木あたり最大葉数 = 最大組み合わせ数n_estimators5000（実際の best_iter は 20〜462 で early stopping）木の本数max_depth-1（無制限・ただし num_leaves で実質制約）木の深さmin_data_in_leaf1001 葉あたり最小データ数（過剰深化抑制）learning_rateデフォルト or 設定値（02_phase1_models.csv で要確認）学習率
+16 ラベル × 5000 木 × 31 葉 = 約 2.5M 通りの暗黙的閾値分割を ML は学習している。
+§A-3.5 別閾値 2 件・部分 5 件の閾値ズレ詳細（CC 棚卸し §9）
+別閾値 2 件
+指標1432 該当列手動 Priority 閾値ML 学習帯ADX(14)adx14（6 TF）各 Priority で ≥ 22 / ≥ 30 / [30, 50) / [20, 25) 除外 等LightGBM が train データから自動分割（具体閾値は feature_importance + tree dump で要 verify）MACD(12,26,9)macd_line / macd_signal / macd_hist（6 TF）クロスアップ / クロスダウン（=2 列の比較）ML は macd_line と macd_signal を個別特徴量として扱い、クロス判定そのものは派生特徴量化されていない
+部分 5 件
+指標1432 該当列手動 Priority の使われ方カバーされている部分欠落部分ATR(14) 絶対値atr14_pct（pct 形式）絶対 USD 値 ≥ 150 等pct 形式の相対値絶対値ベース閾値EMA(20) 絶対値close_vs_ema20_pct（pct 形式）絶対 close ≥ ema20 × 1.0005 等pct 形式の相対乖離絶対価格比較BB upper band タッチbb_pct_b（2 TF のみ）/ bb_width_pctタッチ判定（high ≥ bb_upper × 0.9988）タッチ近傍値1432 では 1h / 1d のみ・5m に bb_pct_b 不在Location（20bar range）close_to_high_pct / close_to_low_pct（6 TF）location_prev ≤ 0.9（前バーシフト版）現在値版前バーシフト版entry_risk_scorerealized_vol_20b（5 TF）等≤ 0.3398（標準偏差 / close）ボラ系の代替指標entry_risk_score そのもの
+§A-3.6 派生特徴量による手動閾値の組み込み案
+ML が手動 Priority の特定閾値を必ず使うとは限らない問題への 3 案：
+案内容メリットデメリットA 派生特徴量フラグ化is_adx_ge_30 / is_rsi_le_60 等のブール特徴量を 1432 に追加ML が手動 Priority 経験知を直接学習可能1432 が手動 Priority の枠に縛られる懸念（cc_ml_design_spec §8 原則と一部抵触）B 後処理フィルタML 出力後の Entry 判定段階で手動 Priority 閾値ベースのフィルタを重ねるML 学習範囲を狭めない後処理が複雑化・パラメータが増えるC cluster 入力に閾値フラグ追加k-means cluster 分類の入力に手動 Priority 閾値フラグを混ぜるcluster が手動 Priority 知見を含む分類になるcluster 設計が複雑化・Phase 4-a の挙動が変わる
+私の現時点の推奨: A 案 + B 案の併用。理由：
+
+A 案で「手動 Priority 知見を ML に伝える」+ B 案で「ML が無視しても安全弁として機能」の二重構造
+C 案は cluster の方向性問題（直近の発見）と絡んで設計が複雑になりすぎる
+ただし A 案単独だと cc_ml_design_spec §8「事前絞り込み禁止」原則との抵触懸念がある → 監査経路に出して判断
+
+§A-3.7 D-β-1 add トリガ閾値統合
+Step 3 の判定で D-β（保有期間中の管理）を分解し、D-β-1（add トリガ条件）の閾値部分を A-3 に統合。
+add トリガ条件の閾値構造：
+例構造価格逆行幅 add含み損 ≥ X% で add時間経過 add前回 entry から N 分経過で add指標再発火 add元 Entry 指標が再度発火（例: stoch_k 再 GC）で add含み益確認 add含み益 ≥ Y% 達成後に追従 add
+これらの閾値（X / N / Y / 再発火条件）は ML 学習対象（C）として扱う。
+§A-3.8 絞り込み戦略
+A 全投入（パラメータ違い）+ C ML 学習対象（閾値帯）（Step 4 確定済）
+具体実施:
+
+パラメータ違い指標を 1432 に並列追加:
+
+rsi: period=7（既存）/ 14（既存）/ 21（追加） + その他試行（28, 42 等）
+adx: window=14（既存）+ window=7（追加）/ window=21（追加）
+bb: window=20（既存）+ window=10 / window=50（追加）
+macd: 標準（既存）+ fast=5 slow=13 signal=5（短期版）/ fast=19 slow=39 signal=9（長期版）
+他、業界カタログから追加候補
+
+
+閾値帯は LightGBM の自動分割に委ねる:
+
+num_leaves / max_depth は B-9 軸（組み合わせ深さ）で探索
+
+
+手動 Priority 閾値派生特徴量の追加判断（A/B/C 案いずれを採用するか）:
+
+監査経路を通して決定
+
+
+add トリガ閾値:
+
+Layer 2 領域として ML 学習対象に組み込む
+
+
+
+§A-3.9 Layer 担当
+Layer内容Layer 1 ④（最優先・パラメータ並列展開）rsi21 / adx7 / adx21 / bb_window_10/50 / macd 別パラメータ 等を 1432 に追加 → Phase 0 再実行Layer 1 ①（手動閾値派生特徴量の追加判断）A/B/C 案のいずれを採用するか監査経路で決定Layer 2（add トリガ閾値の ML 学習対象化）D-β-1 統合分の ML 学習組み込みLayer 3（LightGBM ハイパラ最適化）num_leaves / max_depth / min_data_in_leaf の探索","軸 A-4 時間軸（予測ホライズン K）（深掘り）
+§A-4.1 軸の定義
+ML が予測する「未来窓」の長さ。K = 5m bar 数で、K=12 なら 12 本先まで（= 1 時間先）の MFE（最大含み益）/ MAE（最大逆行幅）を予測する。
+Entry シグナル発火時点 t に対して、t+1 〜 t+K の範囲で：
+
+LONG_MFE = max(high[t+1..t+K]) - close[t]
+LONG_MAE = close[t] - min(low[t+1..t+K])
+SHORT_MFE / MAE は符号反転
+
+§A-4.2 現状 ML 学習範囲
+K5m bar 数時間12121 時間24242 時間48484 時間96968 時間
+4 つの K 窓 × LONG/SHORT 2 方向 × MFE/MAE 2 種類 = 16 ラベル（軸 A-1 の現状 ML 学習対象）。
+§A-4.3 各 K の Phase 5 v3 月次 PnL 寄与（実データ・構造的問題）
+handoff §A-1 / SUMMARY.md §8 + 07_phase4b_exits.csv より：
+Ktrain PnL TOP combo構造的問題K=12（K12 LONG refit + K12 SHORT q95-q99 fixed_tp 等で構成）短期予測・採用 combo は機能K=24K24 LONG q90-q95（fixed_tp $102k）等fixed_tp 採用 1 件のみ・他は time_exitK=48主に time_exit 採用4 時間保有 → ポジ枠占有K=96K96 LONG q95-q99（time_exit $747k）= 全 19 combo の train PnL TOP8 時間保有 = 0.12 BTC 枠の独占 → no_trade 86.2% の主因
+構造的発見: K96 が train PnL で最大値を取るため idxmax 採用方式で支配的になるが、実 Replay では 8 時間保有が他 combo の発火を物理的に塞ぐ。これは Layer 1 ② の損 combo 切り捨て・cap 設計（B-8）・サイジング（A-7）と密接に絡む構造問題。
+§A-4.4 K=24 LONG/SHORT q99 欠落・K=96 q99 除外の経緯（19 combo 欠落 5 件の意味）
+07_phase4b_exits.csv から判明した欠落:
+理論 combo採否理由K=12 LONG/SHORT × 3 q-band = 6 combo全 6 採用—K=24 LONG × q90-q95, q95-q99 / SHORT × q90-q95, q95-q994 採用K24 LONG q99 / K24 SHORT q99 が 欠落（理由要 verify・Phase 4-b 採用判定で除外）K=24 LONG/SHORT × q99 = 2 combo0 採用上記の通り欠落K=48 LONG/SHORT × 3 q-band = 6 combo全 6 採用—K=96 LONG × q90-q95, q95-q99 / SHORT × q90-q953 採用K96 LONG q99 欠落・K96 SHORT q99 / q95-q99 欠落（除外確定+test 0 件）
+理論 24 combo - 欠落 5 = 採用 19 combo。
+K96 SHORT q95-q99 が「test 0 件」だった理由は K96 SHORT q95-q99 の発火が test 期間にゼロだったと推定（要 verify）。
+§A-4.5 保有時間上限 1 日制約（まこさん明示・プロジェクト不変条件）
+まこさん明示（2026-05-16）:
+
+「このトレード BOT は長くて 1 日単位で動いてほしいと考えている。長期保有であればわざわざトレード BOT を使わず、手動で良いという思想がある」
+
+→ K の上限 = 288（24h = 288 本の 5m bar）。これを超える予測ホライズンは設計範囲外。
+ただし: 軸 A-5（時間足）は週・月含めて全領域 OK。保有時間（K）と特徴量参照時間軸（bar）は別軸。
+§A-4.6 追加候補 K
+K 候補時間採用根拠K=630 分スキャル領域・現状 K=12 より短期。Phase 5 v3 で K12 SHORT fixed_tp が機能している事実から、より短期で機能する可能性K=121 時間維持K=242 時間維持（ただし LONG/SHORT q99 欠落の原因要 verify）K=484 時間維持K=968 時間要検討（K96 LONG q95-q99 が no_trade 86% の主因 → 損 combo 切り捨て候補）K=14412 時間追加候補・保有時間上限内K=28824 時間追加候補・保有時間上限内（オーバーナイト〜デイトレ境界）
+handoff §E-0 Layer 1 ③ で提案された K 窓見直し
+
+「K=24 除外・K=6 / K=144 追加」
+
+の根拠は K=24 LONG/SHORT q99 が欠落して機能していない点。ただし K=24 完全除外ではなく、q-band 別に採否判定すべきで、Step 5 の軸 B-13（Entry ratio 閾値の決定方法）と連動して扱う。
+§A-4.7 K 別の Exit との整合（軸 A-2 連動）
+各 K で適切な Exit 時間が変わる：
+K適切な time_exit 上限適切な fixed_tp 範囲K=6（30 分）TIME_EXIT ≤ 30 分TP_PCT 0.1〜0.3%K=12（1h）TIME_EXIT ≤ 60 分TP_PCT 0.2〜0.5%K=24（2h）TIME_EXIT ≤ 120 分TP_PCT 0.3〜0.7%K=48（4h）TIME_EXIT ≤ 240 分TP_PCT 0.5〜1.0%K=96（8h）TIME_EXIT ≤ 480 分TP_PCT 0.8〜1.5%K=144（12h）TIME_EXIT ≤ 720 分TP_PCT 1.0〜2.0%K=288（24h）TIME_EXIT ≤ 1440 分TP_PCT 1.5〜3.0%
+現状の Phase 4-b は Exit パラメータが K に応じてスケールしていない可能性あり（要 verify・07_phase4b_exits.csv の time_exit_N / fixed_tp_pct を K 別に確認）。
+§A-4.8 絞り込み戦略
+B 探索試行（Step 4 確定済）
+具体実施:
+
+K=6（30 分）/ K=144（12h）/ K=288（24h）を追加してラベル数を 16 → 28 に拡張
+
+K=6 LONG/SHORT × MFE/MAE = 4 ラベル追加
+K=144 LONG/SHORT × MFE/MAE = 4 ラベル追加
+K=288 LONG/SHORT × MFE/MAE = 4 ラベル追加
+
+
+Phase 0 ラベル生成スクリプト（build_labels.py）で K=6 / K=144 / K=288 を追加実装
+Phase 1 で 28 ラベル学習
+Phase 4-a / 4-b で 7 K × 2 side × 3 q-band = 理論 42 combo に拡張
+K=24 LONG/SHORT q99 欠落の原因究明（欠落のままでよい / 救出すべきかを Phase 2 / Phase 3 で判定）
+K=96 LONG q95-q99 の損 combo 切り捨て判定（Layer 1 ② で実施）
+
+§A-4.9 Layer 担当
+Layer内容Layer 1 ③（K 窓見直し）K=6 / K=144 / K=288 追加 + K=24 欠落原因究明 + K=96 q95-q99 切り捨て判定Layer 1 ②（損 combo 切り捨て）K96 LONG q95-q99 を含む損 combo の削除Layer 2（K 別 Exit パラメータの最適化）各 K に適切な TIME_EXIT / fixed_tp 範囲を学習対象に組み込む","軸 A-5 時間足（特徴量集計周期 bar）（深掘り）
+§A-5.1 軸の定義
+特徴量を計算する bar（足）の周期。同じ指標（例: RSI）でも、5m 足で計算した値と 1h 足で計算した値は別の特徴量として扱う。
+保有時間（軸 A-4 の K）とは別軸：
+
+軸 A-4 = 保有時間（最大 1 日制約あり・K ≤ 288）
+軸 A-5 = 特徴量参照時間軸（週・月含めて全領域 OK・まこさん明示 2026-05-16）
+
+§A-5.2 現状 ML 学習範囲（10_indicator_families.md より）
+時間足bar 周期1432 でのカバー5m5 分✅ 中核15m15 分✅30m30 分✅1h1 時間✅4h4 時間✅1d1 日✅1w1 週間❌ 未投入（CC 棚卸し §10 で False 確認済）1M1 ヶ月❌ 未投入（同上）1m1 分❌（CLAUDE.md §⛔ 1m 足回帰禁止）3m3 分❌（未投入）
+§A-5.3 各時間軸の指標カバー状況（不均衡）
+1432 ファミリーリストから抽出した不均衡:
+不均衡パターン例意味全 6 TF カバーadx14 / atr14_pct（atr14_pct は 5 TF）/ macd_hist / rsi14 / bb_width_pct 等標準的（多くのファミリー）1d のみstoch_k / williams_r5m / 15m / 30m / 1h / 4h の stoch_k が全 TF 不在（未学習 8 件の根拠）2 TF のみbb_pct_b（1d / 1h のみ）5m / 15m / 30m / 4h で BB pct b 不在一部 TF 不在momentum_10b（3 TF: 1h / 30m / 4h）/ roc_10（3 TF）/ stoch_k（1 TF）短期 / 長期で抜けありrsi21 全 TF 不在—rsi14（6 TF）/ rsi7（4 TF）のみ・rsi21 全 TF で不在rci 全 TF 不在—RCI ファミリーが 1432 にゼロ
+→ 同じ指標でも時間足ごとに抜けがあり、ML が学習する MTF（マルチタイムフレーム）の整合性に穴がある。
+§A-5.4 1w / 1M 軸の未投入（追加候補）
+まこさん明示（2026-05-16）:
+
+「値動きの大きな流れを見るために週や月を参照はするので、値動き予測でその時間軸を外せと言っているわけではない」
+
+→ 特徴量参照軸として 1w / 1M を追加。ただし保有時間としては適用しない（軸 A-4 で K ≤ 288 制約）。
+追加見込みファミリー数:
+カテゴリ既存 145 ファミリー × 1w・1M 拡張可能数追加列数（推定）1-A既存 66 ファミリーの大半は 1w/1M で計算可能約 +120 列（66 × 2 軸 - 一部除外）1-B既存 20 ファミリー（W 期間窓系）は 1w/1M で計算可能だが期間不足懸念約 +30〜40 列1-C既存 59 ファミリー（サポレジ / Fib / Pivot 系）は 1w/1M で意味がある約 +50 列合計—約 +200〜300 列（1432 → 1632〜1732）
+§A-5.5 MTF 展開方式の論点（監査依頼予定）
+1w / 1M を追加する際に、書き方が 4 通り存在:
+#方式値の更新頻度中身長所短所1ffill（現流儀）週/月境界のみ確定した週/月の統計計算明確・既存流儀週内/月内で値が古くなる25m 上 rolling5 分ごと直近 1 週間スライディング鮮度が常に最新L-141 系の罠・既存流儀と非整合3アンカー線形補間5 分ごと先週値と今週進行中の値を時間で線形補間鮮度向上 + 不連続性緩和「進行中の今週の値」が leak 寸前で要注意4複数特徴量で分解5 分ごと「先週確定値」「今週進行中値」「経過時間比率」を別列にML に判断材料を渡す列数が増える
+→ どれが最適かは判定不能・監査経路に出して独立評価を依頼予定。
+§A-5.6 L-141 解像度問題（過去事案の再発防止策）
+過去事案（lessons_active.md L-141）:
+
+regime 判定研究で「4h で学習・1h で推論」を実施
+特徴量 slope_8b（8 bar 前との差）が 4h では 32 時間前との差、1h では 8 時間前との差で 同名なのに別物
+一致率 44.9% まで崩壊 → ffill 方式に直して 63.6% に回復（+18.7pt）
+
+再発防止策:
+
+1w/1M で計算した値を 5m bar にffill 展開で配る（やり方 B）
+5m データで rolling(2016) のような書き方は 禁止（やり方 A）
+列名に時間軸サフィックス（_1w, _1M）を明示して取り違え防止
+
+ただし §A-5.5 の 4 方式の比較・最終判断は監査経路を経る。ffill は「初期実装」として採用しつつ、Layer 1 ④ の段階で他方式の比較学習が望ましい。
+§A-5.7 1w / 1M 追加時の rolling window 計算可否
+学習データ期間 = 2021-04〜2024-12 = 3.7 年 = 約 195 週 = 約 45 ヶ月
+指標タイプ1w 計算可否1M 計算可否rolling 20 本系（bb_width_pct / atr14 等）✅ 計算可能（20 週 / 20 ヶ月分のデータあり）△（20 ヶ月分は妥当だが warmup 期間で初期データ消費）rolling 50 本系（sma_50 等）△（50 週分はギリ・warmup 期間消費）❌（45 ヶ月では 50 ヶ月 rolling 計算不可）rolling 100/200 本系（VAH/VAL 系の N=100/200）❌（100 週は 1.9 年 = ギリ）❌比較的長期の SMA200 / EMA200 系❌（200 週 = 3.85 年で train 期間ぎりぎり）❌
+→ 1w で計算可能な指標は rolling window ≤ 50 程度に限定。1M で計算可能な指標は rolling window ≤ 20 程度に限定。
+ただし業界カタログ追加分は「rolling window 短め」「カウント系」を中心に選定すれば 1w/1M 拡張に問題は出にくい。
+§A-5.8 1m / 3m 軸の扱い
+時間足採用判定根拠1m不採用CLAUDE.md §⛔ 提案禁止リスト「1m 足回帰禁止」（手数料負け確認済）3m保留明文で禁止されていないが、5m より細かい時間軸での手数料負け懸念が同様にある
+3m を追加するか否かは Layer 2 以降の検討事項。Layer 1 では現状 6 TF + 1w / 1M で 8 TF カバー を目標。
+§A-5.9 絞り込み戦略
+A 全投入（Step 4 確定済）
+具体実施:
+
+現状 6 TF（5m / 15m / 30m / 1h / 4h / 1d）を維持
+1w / 1M を追加（rolling window ≤ 50 / ≤ 20 の制約内で）
+各時間軸の指標カバー不均衡（stoch_k が 1d のみ・bb_pct_b が 2 TF のみ 等）を 均一化（全 8 TF カバー化）
+列名規約: {指標名}_{時間軸} で統一（既存流儀踏襲・例: bb_pct_b_1w / rsi_21_1M）
+MTF 展開方式: ffill 初期採用 + Layer 1 ④ で 4 方式比較（監査経由）
+
+§A-5.10 Layer 担当
+Layer内容Layer 1 ④（時間足拡張）1w / 1M 軸を 1432 ファミリーに追加 + 既存ファミリーの TF カバー不均衡解消 + ffill 展開実装 + 監査経由で MTF 4 方式比較Layer 2（3m 軸追加検討）5m より細かい時間軸の効果検証Layer 3（時系列モデル）MTF を時系列モデル（LSTM / Transformer / MiniROCKET）の入力として活用","軸 A-6 add 数 / 配分（深掘り）
+§A-6.1 軸の定義
+同一 Priority（または同一 combo）内で**追加エントリー（add）**を行う回数と、各 add のサイズ配分。
+「add」= 既存ポジションを保有したまま、同方向に新規エントリーを追加すること。1 つの Priority 発火で複数回 Entry することで、平均建値の調整・利益拡大・損切り平均化が狙える。
+A-7 ポジションサイジングとの違い:
+
+A-7 = 1 つのポジションの BTC サイズ（個別ポジション単位）
+A-6 = 同一 Priority 内で何回 add するか + per-add のサイズ配分（時系列的な拡張）
+
+§A-6.2 現状 ML 学習範囲
+cc_ml_design_spec §4 では：
+
+「1 回のサイズ 固定 0.12 BTC」
+
+と記述されているが、handoff §F-1 で矛盾残存として指摘済（CLAUDE.md「合計 0.12 BTC」と矛盾）。
+→ add 数 / 配分は現状 ML 学習対象に含まれていない。Priority 別固定値として hardcode されている。
+§A-6.3 手動 Priority カバー範囲（cat_params_v9.json から抽出）
+PriorityMAX_ADDSper-add サイズP1（MACD LONG）1単発のみP2（Stoch LONG）5等分（仕様要 verify）P3（Stoch LONG ミラー）1単発のみP4（プルバック LONG）5等分（仕様要 verify）P21（MACD SHORT）1単発のみP22（RCI SHORT）5等分（仕様要 verify）P23（Stoch SHORT・凍結ベースライン主軸）5等分（仕様要 verify）P24（RSI SHORT）5等分（仕様要 verify）
+パターン: スキャル系（P1 / P3 / P21）は MAX_ADDS=1、平均建値型（P2 / P4 / P22 / P23 / P24）は MAX_ADDS=5。
+§A-6.4 add トリガ条件（D-β-1 統合・Step 3 で軸 A-6 に統合された決定変数）
+add をいつ発火させるかの条件:
+トリガタイプ構造例価格逆行幅 add含み損 ≥ X% で add含み損 0.3% / 0.5% / 1.0% 等時間経過 add前回 entry から N 分経過で add30 分 / 60 分 / 120 分指標再発火 add元 Entry 指標が再度発火で addstoch_k 再 GC / MACD 再クロス含み益確認 add含み益 ≥ Y% 達成後に追従 add含み益 0.5% / 1.0% 等複合 add上記 AND/OR 組み合わせ価格逆行 + 時間経過 + 指標再発火
+現状の手動 Priority: cat_v9_decider.py での add 条件は cooldown_min（クールダウン時間）以上経過 + 元 Entry 条件再発火（要 verify）。トリガ条件の詳細パラメータが ML 学習対象になっていない。
+§A-6.5 per-add サイズ配分パターン
+配分方式構造メリットデメリット等分（現状）全 add 同サイズシンプル・予測可能平均建値調整効果限定逓増（Anti-Martingale 系）add 回数が増えるほど大きく含み益方向で利益拡大含み損方向で破滅リスク逓減（Martingale 系）add 回数が増えるほど小さくリスク低減平均建値調整効果限定予測強度依存（動的）ML 予測 ratio に比例質の高い add で大きく / 低い add で小さく実装複雑・ML 出力の安定性に依存Kelly 比例各 add で Kelly criterion 適用理論最適Kelly 計算前提（勝率・payoff）が必要Volatility-targeted各 add で ATR / ボラに反比例リスク均一化短期ボラ変動に追従しすぎる懸念
+§A-6.6 業界カタログ（ピラミッディング戦略）
+戦略出所構造Turtle ピラミッディングCurtis Faith ""Way of the Turtle""含み益方向に逓減 add（最大 4 ユニット）+ N=20 ATR ベースのトリガMartingale統計学含み損方向に倍々 add（破滅リスク高い・通常非推奨）Anti-MartingaleVan K. Tharp含み益方向に倍々 add（含み益ロック後の上乗せ）Kelly fractionalEdward ThorpKelly criterion を fraction（例: 0.5 Kelly）に絞る・破滅回避Risk parityBridgewater Associates各 add でリスク寄与を均等化Volatility targetingAQR / Man AHL各 add で目標ボラに調整
+§A-6.7 Phase 5 v3 での add 実態（要 verify・未取得）
+CC 棚卸し SUMMARY.md §8 では:
+
+no_trade_position_limit: 70,146（86.2%）
+no_trade_min_size: 581
+実 executed 件数 = ?
+
+→ add がどの程度発生していたかは SUMMARY.md には記載なし。08_phase5_monthly_combo.csv の中身を読まないと不明。
+仮説: no_trade 86% が K96 LONG q95-q99（8h 保有）の支配で生じているため、他 combo の add 機会が物理的に潰されている可能性が高い。つまり add 数 / 配分の最適化以前に、cap（軸 B-8）と K 構成（軸 A-4）の問題が支配的。
+§A-6.8 絞り込み戦略
+B 探索試行 + C ML 学習対象（Step 4 確定済）
+具体実施:
+
+MAX_ADDS の探索（B 探索）:
+
+現状 1 / 5 の二択 → 1 / 2 / 3 / 5 / 8 / 10 を比較学習
+
+
+add トリガ条件の ML 学習対象化（C）:
+
+価格逆行幅 / 時間経過 / 指標再発火 / 含み益確認 / 複合の各タイプを Phase 4-b に追加候補として組み込み
+閾値（X / N / Y）は cluster × K × side 別に ML が最適値を学習
+
+
+per-add サイズ配分の探索（B 探索）:
+
+等分（現状）/ 逓増 / 逓減 / 予測強度依存 / Kelly fractional / Volatility-targeted を比較学習
+
+
+業界カタログのピラミッディング戦略を追加候補に:
+
+Turtle ピラミッディング / Anti-Martingale を ML 学習対象に組み込み
+
+
+A-7 / B-8 との連動:
+
+合計 0.12 BTC 上限内で add 数 × per-add サイズが満たされる制約を組み込み
+cap（同時保有数）と整合させる（add で合計ポジ数増加するため）
+
+
+
+§A-6.9 Layer 担当
+Layer内容Layer 2 ②（動的ポジサイズ）MAX_ADDS 探索 + per-add サイズ配分の比較学習 + A-7 連動Layer 2 ⑤（指標ベース動的 Exit と連動）add トリガ条件の ML 学習対象化（Entry シグナル定義と同質の構造）Layer 1 ②（損 combo 切り捨て連動）no_trade 86% の主因解消後に add の実態を再評価","軸 A-7 ポジションサイジング / 配分（深掘り）
+§A-7.1 軸の定義
+個別ポジション 1 つあたりの BTC サイズと、複数 combo（cluster × K × side × q-band）が同時に発火する場合の配分方式。
+A-6 add 数 / 配分との違い:
+
+A-6 = 同一 Priority 内で時系列的に複数 entry する場合の管理（add）
+A-7 = 1 つ 1 つのポジションのサイズ + 複数 combo 並列発火時の配分
+
+§A-7.2 第二絶対規定（事前固定 D）
+合計ポジション上限 = 0.12 BTC（CLAUDE.md §⛔ / false_positive_incident_policy §0-2 / WORKFLOW.md §🛑）
+
+LONG / SHORT 合算（hedge_mode 採用で両建て可だが合計枠は共通）
+全 combo 合算
+全 add 合算
+全 Priority 合算
+絶対不変・上書き不可
+
+過去類型 H 違反:
+
+L-192: v2 で 2.28 BTC 計上（規定の 19 倍）→ 重大インシデント
+
+§A-7.3 現状 ML 学習範囲（Phase 5 v3 = 動的サイジング）
+Phase 5 v3 採用方式（handoff §A-3 + cc_ml_design_spec §4）:
+size = remaining / n_sim
+
+remaining = 0.12 BTC - 現在保有合計
+n_sim = 同時刻に発火している combo 数
+結果: 1 combo あたり remaining ÷ 同時発火数
+
+実態の問題: K96 LONG q95-q99（8h time_exit）が長時間ポジ枠を占有 → remaining が常に小さい → 後続 combo が min_size（最小取引量）以下になって no_trade min_size でブロック → no_trade min_size: 581 件発生（SUMMARY.md §8）
+§A-7.4 cc_ml_design_spec §4 の矛盾残存（handoff §F-1）
+cc_ml_design_spec §4 L192:
+
+「1 回のサイズ 固定 0.12 BTC」
+
+CLAUDE.md / WORKFLOW.md / false_positive_incident_policy:
+
+「合計 0.12 BTC」
+
+→ 「1 回」vs「合計」で矛盾。handoff §F-1 で未解決として明示。
+仕様書改訂が必要（cc_ml_design_spec §4 を「合計」に統一）。本軸を進める前提として、まこさん最終確認を経て改訂すべき。
+§A-7.5 手動 Priority サイジング（cat_params_v9.json から抽出）
+cat_params_v9.json に Priority 別の固定サイズが定義されているはずだが、本軸の正本数値は実コードベース（CC 経由）verify が必要。
+仕様レベルでは:
+
+単発 Priority（P1 / P3 / P21）: MAX_ADDS=1 で 1 サイズ
+平均建値型（P2 / P4 / P22 / P23 / P24）: MAX_ADDS=5 で per-add サイズ × 5 が合計
+
+現状の手動 Priority と ML サイジングの整合:
+
+手動: Priority 別固定（combo に依らず）
+ML（Phase 5 v3）: combo 動的（remaining / n_sim）
+両者は構造が違うため、Bot 統合（Phase 7）で再調整必要
+
+§A-7.6 サイジング方式カタログ
+#方式構造長所短所1一律サイズ（現状の手動 Priority 系）全 combo 同じ BTC サイズシンプル・予測可能質の高い combo に重み付けできない2remaining / n_sim（現状 Phase 5 v3）残り枠 ÷ 同時発火数0.12 BTC 上限を自動遵守K96 系の長時間占有で remaining 小・後続 min_size 割れ3予測強度比例pred MFE/MAE 比に比例高 ratio combo に重み付けML 出力の安定性に依存・極端な値で破滅リスク4Kelly criterionf* = (bp - q) / b（勝率 p・払戻 b・敗率 q）理論最適・長期 NET 最大化勝率 / payoff の事前推定誤差で破滅・通常 fractional Kelly（0.25〜0.5 倍）5Risk parity各 combo のリスク寄与を均等化リスク分散が体系的ボラ推定に依存・短期変動に過敏6Volatility-targetingATR / 過去ボラに反比例リスク均一化短期ボラ変動に追従しすぎ7cluster 別固定cluster 0 = X BTC / cluster 1 = Y BTC / cluster 2 = Z BTCcluster の質に応じた配分cluster の質を事前評価する必要・cluster 分類の安定性に依存8過去パフォーマンス重み付け直近 N 日の各 combo train PnL に比例データ駆動過剰最適化リスク・rolling 採用なら緩和可
+§A-7.7 業界カタログ参照
+出所戦略Van K. Tharp ""Trade Your Way to Financial Freedom""Position Sizing 正本・R-multiple ベース管理Edward Thorp ""Beat the Dealer"" / ""A Man for All Markets""Kelly criterion の数学的根拠Ralph Vince ""Portfolio Management Formulas""Optimal-f（Kelly 派生・市場特化）Bridgewater Associates ""Engineering Targeted Returns and Risks""Risk parity の制度的実装AQR / Man AHL 公開論文Volatility targeting の institutional 実装Marcos Lopez de Prado ""Advances in Financial Machine Learning"" Ch.10ML 出力ベースの動的サイジングAndreas Clenow ""Trading Evolved""Volatility-targeting + Trend-following の組み合わせ
+§A-7.8 過去類型 H 違反事案（L-192）
+
+事案: v2 が 2.28 BTC 計上（規定の 19 倍）
+発見経緯: 監査経路で検出
+原因: 配分計算の bug + 合計上限 assertion 不在
+対策: sum_verify_max_btc という per-tick assertion を全 Replay スクリプトに必須化
+現状: SUMMARY.md §8 で sum_verify_max_btc: 0.12 ✅（§0-2 assertion 通過）
+
+本軸を改訂する際の物理的関所:
+
+全サイジング方式実装で per-tick max BTC assertion 必須
+全 Replay の完了報告に sum_verify_max_btc 数値を必須記載
+
+§A-7.9 D-β-3 per-add 動的サイズ統合（Step 3 で軸 A-7 に統合）
+per-add のサイズが add 回数依存で変化するパターン:
+配分構造0.12 BTC 上限内での例等分（現状）全 add 同サイズMAX_ADDS=5 で 0.024 BTC × 5逓増add 回数増で大きく0.01 / 0.02 / 0.025 / 0.03 / 0.035 BTC（合計 0.12）逓減add 回数増で小さく0.035 / 0.03 / 0.025 / 0.02 / 0.01 BTC（合計 0.12）予測強度依存各 add 時点の ML 出力 ratio に比例動的・上限内自動調整Kelly fractional各 add 時点で Kelly criterion 適用動的
+§A-7.10 ハイレバ問題（凍結ベースライン主軸の構造的弱点）
+exchange_spec.md より:
+
+BTC/USDT 先物 leverage = 25x（プロジェクト標準値）
+0.12 BTC × 25 = 3.0 BTC 相当の名目エクスポージャ
+
+構造的リスク:
+
+1 トレードで価格が逆行 4% で証拠金完全消失
+5m bar で 4% 値動きは BTC ボラ環境では十分起こりうる
+ハイレバ前提でのサイジング戦略は通常の equity 投資戦略（Tharp / Thorp）と前提が異なる
+
+ハイレバ環境特有の追加考慮:
+
+liquidation price からの安全マージン
+Funding Rate 8h 毎控除（0.01% 想定・Phase 5-e）
+維持証拠金率の monitoring
+
+これらは Layer 2 以降の本格的なポジサイジング学習で組み込む必要がある。
+§A-7.11 絞り込み戦略
+D 事前固定（0.12 BTC 上限）+ B 探索試行（配分方式）+ C ML 学習対象（動的係数）（Step 4 確定済）
+具体実施:
+
+D 事前固定:
+
+合計 0.12 BTC 上限は不変
+全実装で per-tick max BTC assertion 必須
+cc_ml_design_spec §4 の「1 回」記述を「合計」に統一改訂（前提タスク）
+
+
+B 探索試行（配分方式の比較学習）:
+
+一律 / remaining ÷ n_sim（現状）/ 予測強度比例 / Kelly fractional / Risk parity / Volatility-targeting / cluster 別固定 / 過去パフォーマンス重み付け の 8 方式を Layer 2 で比較
+比較指標: 月次 NET / max DD（最大ドローダウン）/ Sharpe / Calmar
+
+
+C ML 学習対象（動的係数）:
+
+採用した方式内の係数（例: Kelly の fractional 倍率 / Volatility-targeting の目標ボラ値）は cluster × K × side ごとに ML が最適値を学習
+
+
+D-β-3 per-add 動的サイズ（C）:
+
+per-add の配分パターンも ML 学習対象に組み込み
+
+
+ハイレバ環境特有の制約:
+
+liquidation 距離・Funding 控除・維持証拠金率を assertion に追加
+
+
+
+§A-7.12 Layer 担当
+Layer内容前提タスク（Layer 1 ④ 前）cc_ml_design_spec §4「1 回 vs 合計」矛盾の解消（仕様書改訂）Layer 2 ②（動的ポジサイズ）8 サイジング方式の比較学習 + per-add 配分パターン探索 + cluster 別配分Layer 2 ③（マルチタイム整理と連動）K96 系の長時間占有問題への対応（A-4 + B-8 と連動）Layer 3（不確実性ベース）Kelly fractional / Calibration ベースの動的サイジング","軸 B-8 同時保有数（cap）（深掘り）
+§B-8.1 軸の定義
+同時に保有できるポジション数の上限。combo 単位の cap（同じ combo を複数同時に保有できるか）と全体 cap（全 combo 合算で何ポジまで）の 2 レベルがある。
+A-7 サイジングとの違い:
+
+A-7 = 1 ポジションのサイズ + 配分方式（BTC 量）
+B-8 = ポジション数の上限（カウント）
+
+両者は連動: cap を増やせばサイジングが小さくなり、cap を減らせばサイジングが大きくなる（0.12 BTC 上限内）。
+§B-8.2 現状 ML 学習範囲
+明示的 cap 設定なし。0.12 BTC 上限と min_size（Bitget 最小取引量・0.001 BTC 想定）の物理制約のみで暗黙的に cap が決まる。
+理論最大同時保有数 = 0.12 BTC ÷ min_size = 120 ポジション（理論上）
+実態: Phase 5 v3 では remaining / n_sim 動的サイジング採用 + 長時間 time_exit で remaining が常に小さい → 事実上 cap = K96 LONG 1 件 + αで塞がれている状態。
+§B-8.3 Phase 5 v3 で見えた構造問題
+SUMMARY.md §8 より:
+項目件数割合no_trade_position_limit70,14686.2%no_trade_min_size5810.7%実 executed不明（要 verify・08_phase5_monthly_combo.csv）残り 13.1%
+no_trade_position_limit 86.2% の意味:
+
+86% の発火タイミングで「既にポジ枠が埋まっている」ためエントリーできなかった
+主因: K96 LONG q95-q99（8 時間保有 time_exit）が 1 度発火すると 96 本（8 時間）ポジ枠を占有
+1 日 = 288 本中、K96 系が 1 回発火するだけで 96 本 = 33% の時間がブロックされる
+複数の K96 系が同時発火すれば残り時間も塞がれる
+
+**つまり cap が事実上「K96 LONG が発火している限り 0」**になっている状態。
+§B-8.4 cap の選択肢
+#方式構造長所短所1暗黙制約のみ（現状）0.12 BTC + min_size 物理制約シンプルK96 系で枠塞ぎ問題発生2静的 cap=N全 combo 合算で N 件まで予測可能質の高い combo を排除する可能性3combo 別 cap各 combo に独立 cap（K96 LONG: 1 / K12 LONG: 3 等）K96 系の枠塞ぎ抑制パラメータが増える4side 別 capLONG 全合算 / SHORT 全合算で各 N 件hedge 構造を制御LONG/SHORT 不均衡時に対応困難5FIFO（古いポジ自動 Exit）新規発火時に最古ポジを強制 Exit常に新規発火を受け入れ古いポジが利確前に強制決済される6質駆動（低 ratio ポジを自動 Exit）新規発火時に低 ratio ポジを Exit質の高いポジを優先ratio 比較ロジックが複雑7動的 cap（ボラ依存）高ボラ時は cap を絞る / 低ボラ時は緩める市況適応パラメータ多数・ML 学習対象8動的 cap（時間帯依存）アジア / 欧州 / 米国セッションで cap 変えるセッション特性に対応D-δ 統合フェーズの議論9動的 cap（予測強度依存）高 ratio combo が来たら既存低 ratio を退出質駆動の発展形退出ロジック複雑
+§B-8.5 業界カタログ
+出所戦略関連性Harry Markowitz ""Portfolio Selection""（1952）Modern Portfolio Theory・Optimal N 分散分散効果は N=10〜30 で頭打ち（古典理論）Black-Litterman modelBayesian 統合の最適配分各 combo を「資産」として cap 配分Risk parity（Bridgewater）各ポジのリスク寄与均等化A-7 と同質・cap 視点では「リスク寄与上位 N に絞る」Quantitative trading literature（Lopez de Prado 等）「Trading Frequency vs Trade Quality」のトレードオフcap 拡大 = 取引頻度増 = 質低下リスクMarket Making 系maximum_position_count（高頻度取引の標準パラメータ）HFT 領域では cap は核心パラメータ
+→ ハイレバ環境（25x）+ 単一シンボル BTC/USDT という制約下では、業界カタログの分散戦略はそのまま適用できない。combo 別 cap + 質駆動 / 動的 cap が実用的候補。
+§B-8.6 hedge_mode との関連
+cc_ml_design_spec §4「LONG/SHORT 同時保有許可」前提:
+cap のカウント方法構造例合算カウントLONG + SHORT を合算で N 件LONG 2 + SHORT 1 = 3 件で cap=3 ヒット別カウントLONG / SHORT 別に N 件ずつLONG cap=3 / SHORT cap=3 で独立Net exposure ベース合計 BTC 量で判定LONG 0.06 + SHORT 0.04 = net LONG 0.02 → BTC 量制約
+現状の Phase 5 v3 がどちらの方法でカウントしているかは要 verify（cap ロジックの実装次第）。
+§B-8.7 A-4（K 構成）/ A-7（サイジング）との連動
+Layer 1 ② の損 combo 切り捨て後の cap 問題変化:
+シナリオcap 問題の変化K96 LONG q95-q99 切り捨てno_trade_position_limit が大幅減少（86% → 推定 50% 以下）K96 系全切り捨てno_trade_position_limit が更に減少サイジング方式変更（一律 → cluster 別固定 等）remaining / n_sim 連鎖反応が緩和され cap 余裕増MAX_ADDS 増加（A-6 軸）cap 圧迫増（合計ポジ数増えるため）
+→ B-8 は単独軸として最適化するのではなく、A-4 / A-6 / A-7 と連動して設計すべき。
+§B-8.8 絞り込み戦略
+B 探索試行（Step 4 確定済）
+具体実施:
+
+Layer 1 ② 損 combo 切り捨て後に B-8 の実態を再評価:
+
+K96 LONG q95-q99 切り捨てだけで no_trade_position_limit がどこまで改善するか実 Replay で測定
+これだけで合格ライン到達なら B-8 軸の優先度は下がる
+
+
+cap 方式の比較学習（Layer 2）:
+
+静的 cap=N / combo 別 cap / 質駆動 / 動的 cap（ボラ依存）を比較
+比較指標: 月次 NET / 取引頻度 / 質（勝率 / payoff ratio）
+
+
+hedge_mode カウント方法の確定:
+
+合算 vs 別カウント vs Net exposure のどれを採用するか cc_ml_design_spec §4 改訂で明記
+
+
+A-4 / A-6 / A-7 との同時最適化:
+
+cap 単独探索ではなく、K 構成・add 数・サイジング方式と組み合わせた格子探索
+
+
+
+§B-8.9 Layer 担当
+Layer内容Layer 1 ②（損 combo 切り捨て・最優先）K96 LONG q95-q99 切り捨てによる cap 問題改善幅の測定Layer 2 ②（動的ポジサイズと連動）cap 方式の比較学習 + サイジング連動探索Layer 2 ③（マルチタイム整理）K 構成 × cap の同時最適化前提タスク（cc_ml_design_spec §4 改訂時）hedge_mode カウント方法の明文化
+","軸 B-9 発火条件の組み合わせ深さ（深掘り）
+§B-9.1 軸の定義
+ML（機械学習）が学習する AND 条件の段数。1 つの Entry シグナルを発火させるために、何個の指標条件を組み合わせるかの複雑さ。
+決定木（LightGBM）の場合、1 葉に至る経路長 = AND 条件の段数。例:
+
+経路長 3 = 3 つの条件の AND（例: ADX > 27 AND RSI < 65 AND BB_width_pct > 0.5）
+経路長 7 = 7 つの条件の AND（より複雑なパターン）
+
+手動 Priority と比較:
+
+手動 Priority = 各 Priority で固定 3〜7 条件の AND（hardcode）
+ML = データ駆動で複雑度を自動学習
+
+§B-9.2 現状 ML 学習範囲（SUMMARY.md §2 + WORKFLOW.md より）
+ハイパラ現状値役割num_leaves31（K12 LONG refit のみ 15）1 木あたり最大葉数 = 最大経路パターン数max_depth-1（無制限）木の深さ制限なし（実質 num_leaves で制約）min_data_in_leaf1001 葉あたり最小データ数（過剰深化抑制）n_estimators5000（実 best_iter: 20〜462）木の本数learning_rateデフォルト 0.1（推定・02_phase1_models.csv で要 verify）学習率
+16 ラベル × 5000 木 × 31 葉 = 約 2.5M 通りの暗黙的ルールを学習する仕様。
+§B-9.3 ハイパラ単体の影響
+ハイパラ増やすと減らすとnum_leaves複雑度↑・過学習リスク↑・train RMSE↓・valid RMSE は U 字単純化・汎化↑・train RMSE↑max_depth同上（num_leaves と関連）同上min_data_in_leaf過学習抑制・汎化↑細かい分岐可・過学習リスク↑n_estimators学習量↑（early stopping で実質制御）学習不十分リスクlearning_rate早く収束・局所最適化リスクゆっくり収束・最適点到達精度↑
+§B-9.4 過学習リスクとの関係（L-189「ハイパラ限界」教訓）
+L-189 の教訓:
+
+ハイパラチューニングだけで合格ラインに届かなかった
+「深さ」だけを増やしても、特徴量空間が狭ければ汎化性能は上がらない
+→ 特徴量追加（軸 A-1）と並行しないとハイパラ単独の効果は限定的
+
+現状の RMSE/std 比率（SUMMARY.md §2）:
+
+16 ラベル全て < 1.5（範囲 1.17〜1.39）
+Phase 2 指標 3 で 16/16 PASS
+
+→ 数値上は過学習の兆候は出ていない（train と valid の乖離は許容範囲）。ただし汎化性能（test 期間）が train を大きく下回る事実（Phase 5 v3 = -$985）は別問題。
+§B-9.5 Phase 3 で確認された事実（K12 LONG refit 採用根拠）
+05_phase3_trial.md より:
+試行結果パターン B（K12/K24: num_leaves=15 / K48/K96: num_leaves=31）改訂後 spec で -2.78pp 悪化 → FAIL案 G（K12 LONG のみ num_leaves=15）+0.70pp 上方修正 → 確定済・commit d9d322c
+判明事実:
+
+K12 LONG という特定ラベルだけ num_leaves=15 が有利
+他 15 ラベルは num_leaves=31 のまま
+ラベルごとに最適 num_leaves が異なる可能性
+
+§B-9.6 他アルゴリズムでの「深さ」概念
+アルゴリズム「深さ」に対応する概念現状投入LightGBM（現状）num_leaves / max_depth✅XGBoostmax_depth / max_leaves❌ 未投入CatBoostdepth❌ 未投入Random Forestmax_depth❌ 未投入Neural Net（MLP）hidden_layers の段数 + units❌ 未投入LSTM / Transformer層数 + attention heads❌ 未投入MiniROCKETkernel 数（10,000 が標準）❌ 未投入強化学習（DQN / PPO 等）policy network の深さ❌ 未投入
+軸 B-10（学習アルゴリズム）と連動: アルゴリズム自体を変えれば「深さ」概念も変わる。
+§B-9.7 業界カタログ参照（Tree-based ML の標準推奨範囲）
+出所推奨範囲LightGBM 公式ドキュメントnum_leaves ≤ 2^(max_depth)、典型値 31〜127Kaggle 競技解説（Microsoft の Guolin Ke 他）num_leaves=31 がデフォルトで多くのタスクで OKLopez de Prado ""Advances in Financial Machine Learning""金融時系列は overfitting しやすいため num_leaves は控えめ推奨AutoML 系（H2O / AutoGluon）ハイパラ探索範囲: num_leaves 7〜127 / max_depth 3〜12
+→ 現状の num_leaves=31 / max_depth=-1 は標準範囲内。本格的なハイパラ最適化は Optuna / Hyperopt 等の体系的探索が必要。
+§B-9.8 絞り込み戦略
+C ML 学習対象（Step 4 確定済）
+具体実施:
+
+ラベル別の num_leaves 最適値探索:
+
+16 ラベル × num_leaves={7, 15, 31, 63, 127} の格子探索
+各ラベルで valid RMSE 最小値を採用
+現状の K12 LONG refit（num_leaves=15）と他ラベル一律 31 という構成を再評価
+
+
+max_depth の明示制約導入検討:
+
+現状 -1（無制限）→ max_depth={3, 5, 7, 10, -1} の比較
+過学習抑制が必要な兆候があれば導入
+
+
+min_data_in_leaf の最適化:
+
+現状 100 → {50, 100, 200, 500} の比較
+サンプル数が小さい cluster（cluster 1 = 4707 件）での挙動を verify
+
+
+learning_rate と n_estimators のセット最適化:
+
+learning_rate={0.01, 0.05, 0.1} × n_estimators={1000, 5000, 10000} の組み合わせ
+
+
+ハイパラ最適化フレームワーク導入:
+
+Optuna / Hyperopt の Bayesian 最適化
+探索空間を明示化して再現可能性確保
+
+
+
+§B-9.9 Layer 担当
+Layer内容Layer 3（最適化深掘り）ラベル別 num_leaves / max_depth / min_data_in_leaf の体系的探索・Optuna 等フレームワーク導入Layer 1 ④ 後の検証段階特徴量追加後の Phase 1 再学習で K12 LONG refit が引き続き有効か再評価","軸 B-10 学習アルゴリズム（深掘り）
+§B-10.1 軸の定義
+ML（機械学習）の予測モデルとして何を使うか。同じ入力データ（1432 指標）+ 同じラベル（16 個の MFE/MAE）でも、アルゴリズムが変われば学習結果が変わる。
+§B-10.2 現状 ML 学習範囲
+LightGBM（Gradient Boosting Decision Tree・勾配ブースティング決定木）
+
+16 ラベルそれぞれを独立に回帰モデルとして学習
+ハイパラは §B-9 参照（num_leaves=31 / max_depth=-1 / min_data_in_leaf=100 / n_estimators=5000）
+best_iter は 20〜462（early stopping で実質決定）
+他アルゴリズムは 一度も試行されていない（cc_ml_design_spec §1.3 で LightGBM 固定）
+
+§B-10.3 LightGBM 採用の経緯
+
+cc_ml_design_spec §1.3 で当初から LightGBM 採用
+採用理由（推定）: Tabular（表形式）データ + 大規模特徴量に対する標準的選択・高速学習・特徴量重要度の解釈性
+他アルゴリズムとの比較試行は 行われていない
+これは軸 B-10 の絞り込み戦略 B 探索試行が事前絞り込みされてしまった状態（cc_ml_design_spec §8 原則と一部抵触）
+
+§B-10.4 アルゴリズム候補カタログ
+Tree 系
+アルゴ特徴投入状況LightGBM（現状）高速・大規模 OK・解釈性高✅XGBoostLightGBM の前世代・若干遅いが安定性高❌CatBoostカテゴリ特徴量に強い・LightGBM 後発❌Random Forestバギング・解釈性最高・過学習に強い❌Extra TreesRandom Forest の分散版❌
+Linear 系
+アルゴ特徴投入状況Ridge / Lasso / ElasticNet線形回帰 + 正則化・解釈性最高❌LASSO で特徴量選択 → 後段でほかアルゴ特徴量選択前処理として使う方式❌
+SVM 系
+アルゴ特徴投入状況SVR（Support Vector Regression）カーネル法で非線形対応❌
+Neural Net 系
+アルゴ特徴投入状況MLP（多層パーセプトロン）Tabular でも稼働可・解釈性低❌TabNetTabular 特化 Transformer❌LSTM時系列特化・系列入力前提❌GRULSTM の軽量版❌TransformerAttention ベース・長距離依存 OK❌Temporal Fusion Transformer時系列予測特化 Transformer❌
+時系列特化
+アルゴ特徴投入状況MiniROCKET（handoff §F 候補）ランダム畳み込みカーネル 10,000 個・超高速・時系列分類で実績❌ 未試行HIVE-COTE多モデル統合・SOTA だが計算重い❌InceptionTimeCNN ベース時系列特化❌
+強化学習（RL）系
+アルゴ特徴投入状況DQN（Deep Q-Network）離散行動空間・Bot 統合段階で評価対象❌PPO（Proximal Policy Optimization）連続行動空間・サイジング動的最適化❌SAC（Soft Actor-Critic）連続行動 + entropy 最大化❌Triple Barrier + Meta-labeling（Lopez de Prado）ML 予測 + RL ハイブリッド❌
+ハイブリッド
+アルゴ特徴投入状況ルールベース + ML手動 Priority + ML 補正・現状の方針に近い△ Bot 統合段階の対象Stacking複数モデルの出力を別モデルで統合❌Voting複数モデルの多数決❌Boosting on residualsLightGBM 残差を別モデルで予測❌
+§B-10.5 各アルゴの BTC 5m 短期予測における適合度
+アルゴ適合度根拠LightGBM（現状）✅ 高1432 次元 Tabular + 39 万行で標準的選択XGBoost / CatBoost✅ 高LightGBM の代替・比較対象として有効Random Forest✅ 中過学習耐性ベンチマークとして有効Linear（Ridge）△線形では BTC 値動きの非線形性を捉えにくい・ベンチマークとして使えるSVR△39 万行 × 1432 次元では計算重く実用性低MLP / TabNet✅ 中〜高Tabular 上で勝てる可能性あり・実装コスト中LSTM / Transformer△〜✅入力を時系列化（5m 連続バー）すれば力を発揮・現状の特徴量 + ラベル構造を再設計必要MiniROCKET✅ 高（推定）時系列特化・10,000 カーネルで Tabular ML を上回る実績多数・計算高速強化学習△報酬設計（PnL ベース）と環境構築が必要・Bot 統合段階の選択肢
+§B-10.6 MiniROCKET（時系列特化）の特殊性
+handoff §F + memory ルール「§F 候補・未試行記録」より:
+
+ROCKET = RandOm Convolutional KErnel Transform
+MiniROCKET = ROCKET の高速化版・10,000 カーネルで時系列を変換 → Ridge 回帰で予測
+時系列分類タスクで SOTA に近い性能・計算は LightGBM より高速の場合あり
+入力構造: 単一時系列 → 10,000 次元特徴量
+本プロジェクトへの適用: 5m close / volume / 他指標の連続バーを時系列入力として与える設計必要
+現状の Tabular 構造（t 時点の 1432 特徴量）とは別の入力構造になる
+
+未試行記録の意味: handoff §F で「未試行候補として記録済」とされており、Layer 3 で具体的に試行する余地あり。
+§B-10.7 強化学習（X2）の cc_ml_design_spec 内位置づけ
+cc_ml_design_spec 内で X1（ML 予測）と X2（強化学習）の区別あり:
+
+X1 = 現状の LightGBM 予測装置
+X2 = 強化学習（未実装）
+
+audit#16 指摘:
+
+X2 強化学習の評価が cc_ml_design_spec で過小評価されている
+実装回避バイアスの典型例（私が陥りやすい構造的バイアス・§1.4）
+
+Layer 3 で X2 を本格検討する場合の前提:
+
+報酬設計（月次 NET ベース vs Sharpe ベース vs PnL ベース）
+状態空間定義（1432 指標 + 現ポジ状態）
+行動空間定義（Entry / Exit / Hold / サイジング動的化）
+
+§B-10.8 アンサンブル戦略
+複数アルゴを同時走らせて結果を統合する方式:
+方式構造期待効果Voting（多数決）複数モデルの予測値を平均過学習抑制 / 安定性向上Weighted averaging重み付き平均（valid 性能で重み付け）Voting の発展形Stacking第 1 段モデルの出力を第 2 段モデル（meta-learner）で統合性能上振れ可能性Boosting on residualsLightGBM 残差を別アルゴで予測LightGBM の弱点補完
+→ 各アルゴ単独で評価する前にアンサンブルに進むのは早計。Layer 3 でアルゴ多様化を確立してから検討。
+§B-10.9 業界カタログ参照
+出所推奨Kaggle 競技（M5 / Numerai 等）LightGBM / XGBoost / CatBoost の三大 GBDT + NN アンサンブルが定番Lopez de Prado ""Advances in Financial Machine Learning""金融時系列特有の overfitting 抑制・Walk-forward + Purged K-fold + Meta-labeling 推奨Numerai（クラウド ソーシング型 quant）アンサンブル必須・単一アルゴ非推奨Two Sigma / Renaissance Technologies 系公開資料多モデル併用が institutional 標準MiniROCKET 論文（Dempster et al., 2021）時系列分類で SOTA に近い・計算 50x 高速
+§B-10.10 絞り込み戦略
+B 探索試行（Step 4 確定済）
+具体実施:
+
+第 1 弾（Layer 3 初期）: XGBoost / CatBoost を LightGBM と並列で走らせて比較
+第 2 弾（Layer 3 中期）: MiniROCKET の試行（handoff §F 未試行候補）
+第 3 弾（Layer 3 後期）: Neural Net 系（MLP / TabNet）の試行
+第 4 弾（Bot 統合段階）: 強化学習 X2 の本格検討
+アンサンブル: 個別アルゴで合格ラインに届かない場合に検討
+比較指標: 各ラベルの valid RMSE / RMSE/std 比率 + Phase 5 月次 NET
+
+§B-10.11 Layer 担当
+Layer内容Layer 3 第 1 弾（アルゴ多様化）LightGBM vs XGBoost vs CatBoost の比較学習Layer 3 第 2 弾（時系列特化）MiniROCKET 試行Layer 3 第 3 弾（NN 系）MLP / TabNet 試行本番運用後 / Bot 統合強化学習 X2 / アンサンブル戦略","軸 B-11 クラスタリング手法（深掘り）
+§B-11.1 軸の定義
+ML が予測した Entry 候補を、性質ごとにグループ分け（cluster 分類）する手法。同じ Entry シグナル発火でも、市況・予測値の組み合わせで「どの cluster に属するか」が変わり、cluster ごとに最適 Exit / サイジングを変える設計に使う。
+cc_ml_design_spec §1.5 で定義された ML pipeline の core component。
+§B-11.2 現状 ML 学習範囲
+StandardScaler + KMeans k=3
+項目内容前処理StandardScaler（平均 0・標準偏差 1 に標準化）アルゴリズムKMeans（Lloyd algorithm）クラスタ数 k3入力16 予測値ベクトル（K12/24/48/96 × LONG/SHORT × MFE/MAE）出力cluster_id ∈ {0, 1, 2}採用根拠size_ratio ≥ 0.05 縛り後の silhouette score 最大
+§B-11.3 cluster_profile 構造的発見（06_phase4a_clusters.md より）
+clusterLONG_MFE_K12SHORT_MFE_K12LONG vs SHORT解釈0225.5227.5ほぼ対称中ボラ局面185.996.6ほぼ対称低ボラ局面2404.3467.2ほぼ対称高ボラ局面
+構造的問題: cluster は「ボラレベル（低 / 中 / 高）」で分類されているが、「LONG が有利な局面 / SHORT が有利な局面」は分類されていない。
+これは Layer 1+2 の設計議論で重要:
+
+現状の cluster は side（LONG/SHORT）非感受
+LONG 有利 / SHORT 有利の市況を区別したいなら入力ベクトル設計を変える必要
+例: LONG_MFE - SHORT_MFE の差分 / LONG_MFE - LONG_MAE の差分 を入力に追加
+
+§B-11.4 k=3 採用根拠の verify
+06_phase4a_clusters.md の size_ratio チェック表より:
+ksilhouettesize_ratio_min_over_max採用判定20.50750.5111候補30.51000.1593採用（silhouette 最大 + size_ratio ≥ 0.05 縛り通過）40.48330.0618silhouette 低下50.46720.0355size_ratio 縛り脱落60.46110.0059同上70.43290.0059同上80.39660.0068同上
+→ WORKFLOW.md L390「k=3 採用 silhouette 0.510」と整合。L-186 退化分割排除（size_ratio ≥ 0.05）が機能している。
+§B-11.5 cluster サンプル数の偏り（既知懸念）
+test_2025 cluster 分布:
+
+cluster 0: 71,030（67.6%）
+cluster 1: 4,707（4.5%）
+cluster 2: 29,383（28.0%)
+
+cluster 1（低ボラ）のサンプル数が極端に少ない。これは WORKFLOW.md L513 で既知懸念として記録されている。
+train 期間（2021-04〜2024-12）のサンプル分布:
+
+cluster 0: 172,091
+cluster 1: 192,065
+cluster 2: 30,597
+
+train と test の cluster 分布が大きく違う（train で cluster 1 多 → test で cluster 1 少）= 市況のシフト。
+→ k-means が固定クラスタを学習した結果、test 期間で cluster 1 が少なくなり、cluster 1 専用 Exit パラメータが活躍する場面が減る。
+K12 LONG q99 サンプル数（全 cluster ≥100 確認・06 末尾）:
+
+cluster 0: 1,415 / cluster 1: 817 / cluster 2: 1,716 → 統計的有意性は確保
+
+§B-11.6 クラスタリング手法カタログ
+#手法構造長所短所投入状況1K-means（現状）重心ベース・球状クラスタ前提シンプル・高速・解釈性球状でない分布に弱い・k 事前指定✅2GMM（Gaussian Mixture）ガウシアン混合分布確率的所属・楕円分布 OK局所最適に陥りやすい❌3GMM-HMMGMM の状態遷移モデル時系列構造を捉える学習コスト高❌（regime 研究で候補だった）4Hierarchical（Ward / Complete / Average）階層クラスタリング階層構造可視化大規模データで遅い❌5DBSCAN密度ベースクラスタ数自動・ノイズ検出パラメータ感度高❌6HDBSCANDBSCAN の階層版パラメータロバスト計算重い❌7UMAP + HDBSCAN次元削減 + 密度クラスタ高次元データに強い解釈性低い❌（regime 研究で試行候補）8Spectral Clusteringグラフラプラシアン非球状 OK大規模で遅い❌9SOM（自己組織化マップ）ニューラルネット系可視化解釈性中❌10Affinity Propagationmessage passingk 自動計算重い❌
+§B-11.7 入力ベクトル設計の代替案
+現状: 16 予測値ベクトル（K12/24/48/96 × LONG/SHORT × MFE/MAE）
+案入力ベクトル期待効果現状（A 案）16 予測値そのままボラレベル分類B 案16 予測値 + LONG/SHORT 差分（4 個追加）LONG/SHORT 方向性も分類対象にC 案16 予測値 + MFE/MAE 比 ratio（8 個追加）期待 PnL 比率を分類対象にD 案1432 指標の一部（代表 50〜100 個）+ 16 予測値市況も同時に分類対象にE 案完全 1432 指標のみ（予測値なし）市況純粋分類（regime に近い）F 案UMAP で 1432 → 低次元化 → 密度クラスタ高次元データの自然な構造抽出
+→ B 案（LONG/SHORT 差分追加）は構造的発見への直接的対応。Layer 1 で試行価値高い。
+§B-11.8 D-ε 市況フィルタとの併用（事前 + 事後の二段構成）
+Step 3 で残った D-ε（市況フィルタ）と B-11 は併用可能:
+段階役割事前（D-ε）regime / volatility state でそもそも Entry を出すか否か判定事後（B-11）Entry 候補が出た後、cluster 分類で Exit / サイジングを変える
+regime 研究は凍結中（WORKFLOW.md L140-144）だが、Layer 2 以降で B-11 の手法見直しと並行して再評価可能。
+§B-11.9 業界カタログ参照（金融データのクラスタリング先行研究）
+出所推奨Lopez de Prado ""Advances in Financial Machine Learning"" Ch.4Hierarchical Risk Parity 系・clustering 重要性強調Cont (2001) ""Empirical properties of asset returns""金融時系列の stylized facts → クラスタ化前提に影響HMM 系金融文献（Hamilton 1989 ほか）Markov regime switching・状態遷移考慮Pole ""Statistical Arbitrage""クラスタベースのペアトレード戦略Numerai 系の現代 quant 公開資料k-means / GMM の併用が多数
+→ 金融時系列特有の「状態遷移」を捉える HMM 系・GMM 系が時系列に強い。k-means は静的分類なので時系列の側面を捉えにくい。
+§B-11.10 絞り込み戦略
+B 探索試行（Step 4 確定済）
+具体実施:
+
+入力ベクトル設計の比較（Layer 1 で最優先）:
+
+A 案（現状 16 予測値）vs B 案（+ LONG/SHORT 差分） vs C 案（+ ratio）
+構造的発見「方向性を分類していない」への直接対応として B 案優先
+
+
+クラスタリング手法の比較（Layer 1 後半 〜 Layer 2）:
+
+KMeans（現状）vs GMM vs Hierarchical vs HDBSCAN
+比較指標: silhouette / size_ratio / cluster 別 Phase 5 月次 NET
+
+
+k 値の再探索（手法変更後に必要）:
+
+各手法で k={2, 3, 4, 5, 6} を size_ratio ≥ 0.05 縛りで再評価
+
+
+D-ε との併用試行（Layer 2 以降）:
+
+regime 研究の凍結解除 / 再評価
+事前 + 事後の二段構成
+
+
+cluster 1 サンプル少問題の対応:
+
+rolling window で cluster 再学習（市況シフト追従）
+またはサンプル数縛り（cluster 1 ≥ N% を保つよう k 動的調整）
+
+
+
+§B-11.11 Layer 担当
+Layer内容Layer 1（入力ベクトル + 手法見直し）B 案（LONG/SHORT 差分追加）試行 + KMeans vs GMM vs HDBSCAN 比較Layer 2（D-ε との併用）事前 regime フィルタの再評価・凍結解除判断Layer 2（cluster サンプル偏り対応）rolling 再学習 / サンプル数縛りLayer 3（時系列構造）GMM-HMM / Markov regime switching の本格導入","軸 B-12 特徴量変換（深掘り）
+§B-12.1 軸の定義
+生の指標値を ML 入力用に変換する処理。同じ生データ（OHLCV）でも、変換方法を変えれば別の特徴量になる。
+例: BTC 終値 50,000 → 終値の log（10.82）/ 直近 5m 差分（+50）/ 過去 20 本 Z-score（+1.5）/ rolling rank（0.85）は、それぞれ別の特徴量。
+§B-12.2 現状 ML 学習範囲
+1432 指標カタログ内で既に変換済の特徴量が並列で展開されている（10_indicator_families.md の命名規約から逆引き可能）：
+変換タイプ1432 内の例生値 absolutesma_20 / sma_50 / ichimoku_kijun / ichimoku_tenkan / macd_line / macd_signal / macd_hist絶対値からの pct（相対化）atr14_pct / bb_width_pct / close_vs_ema20_pct / close_vs_ema50_pct / close_vs_sma20_pct / momentum_10b / close_to_high_pct / close_to_low_pct / donchian_width_pct_20 / 各種 dist_to_*_pctrolling rankbb_width_rank_50b / volume_rank_50b / realized_vol_rank_50bstreak（連続回数）bearish_streak / bullish_streak / new_high_streak_5b / new_low_streak_5b / max_consecutive_new_highs_W / max_consecutive_new_lows_Wbars_since（経過バー数）bars_since_new_high_W / bars_since_new_low_W / bars_since_swing_high_W / bars_since_swing_low_W差分・変化macd_hist_change / obv_slope_10bZ-scorezscore_return_20b / zscore_return_50b / abs_return_3sigma_20b比率 / 構造比body_ratio / lower_wick_ratio / upper_wick_ratio方向反転カウントdirection_flips_W / body_direction_flips_Wパターン認識（バイナリ）bullish_engulfing / bearish_engulfing / pinbar_top / pinbar_bottom / v_shape_in_W / w_shape_in_W / inverted_v_in_W / m_shape_in_WMTF 整合性mtf_slope_align_3way
+→ 1432 指標は単純な生値だけでなく、多様な変換が既に施されている。
+§B-12.3 変換タイプカタログ（業界標準）
+変換構造1432 投入状況用途生値（absolute）値そのまま✅ 一部価格・指標値log 変換log(x)△ 一部（明示的 log 列なし）スケール圧縮差分（1 次・diff_n）x[t] - x[t-n]△ 一部（macd_hist_change 等）速度 / モメンタム2 次差分差分の差分❌加速度比率x[t] / x[t-n] - 1△ pct 系で部分カバー成長率標準化（StandardScaler）(x - μ) / σ△ zscore 系で部分カバースケール統一MinMax(x - min) / (max - min)❌0-1 正規化Robust scaling(x - median) / IQR❌外れ値耐性Z-scorerolling 標準化✅ zscore_return_20b / 50b動的標準化Quantile transform分位点変換❌分布の正規化rolling rank過去 N 本での順位✅ rank_50b 系相対位置Fractional differentiation部分次数の差分❌ 未投入定常性 + memory の両立（Lopez de Prado 推奨）Wavelet 分解周波数成分分解❌多解像度分析PCA（主成分分析）直交軸変換❌次元削減・無相関化Polynomial featuresx^2, x*y 等❌非線形性付与Lag featuresx[t-1], x[t-2], ...△ macd_hist_change の前段時系列構造
+§B-12.4 1432 指標で既に行われている変換の網羅
+§B-12.2 + §B-12.3 の対照から、業界標準で 1432 に未投入の変換:
+未投入変換投入価値明示的 log 変換（指標値の log）中（スケール圧縮効果は pct 系で代替されている部分あり）Fractional differentiation（Lopez de Prado）高（金融時系列特有・定常性確保 + memory 保持）Wavelet 分解中（多解像度・LSTM/Transformer 系に並走する場合）PCA / ICA中（次元削減・1432 → 例えば 100 主成分）Polynomial features低（決定木は polynomial 不要）Robust scaling中（外れ値耐性）Quantile transform中（分布の正規化・LightGBM では効果限定的）
+§B-12.5 MTF 展開方式（核心論点・監査依頼予定）
+1w / 1M 軸を 1432 に追加する際の展開方式（軸 A-5 の §A-5.5 で論点提起済）:
+#方式値の更新頻度中身長所短所1ffill（現流儀）週/月境界のみ確定した週/月の統計計算明確・既存流儀週内/月内で値が古くなる25m 上 rolling5 分ごと直近 1 週間スライディング鮮度が常に最新L-141 系の罠・既存流儀と非整合3アンカー線形補間5 分ごと先週値と今週進行中の値を時間で線形補間鮮度向上 + 不連続性緩和「進行中の今週の値」が leak 寸前で要注意4複数特徴量で分解5 分ごと「先週確定値」「今週進行中値」「経過時間比率」を別列にML に判断材料を渡す列数が増える
+最適解の判定: 私の知見では判定不能。監査経路に出して独立評価を依頼予定。
+§B-12.6 L-141 解像度問題との関連
+過去事案（lessons_active.md L-141）:
+
+「4h で学習・1h で推論」で同名特徴量が別物の意味になり、一致率 44.9% まで崩壊
+ffill 方式で 63.6% まで回復
+
+1w / 1M 追加時の予防策:
+
+列名規約: {指標名}_{時間軸}（例: bb_pct_b_1w）で時間軸を明示
+1w / 1M で計算 → 5m に ffill 展開（既存 1432 流儀と統一）を初期実装として採用
+ただし §B-12.5 の 4 方式比較を Layer 1 ④ で並行実施（監査経由）
+
+§B-12.7 未投入の変換（追加候補）
+最優先候補:
+変換追加効果実装コストFractional differentiation金融時系列特有・定常性 + memory 両立中（Lopez de Prado ライブラリ参照）Wavelet 分解多解像度分析・短期 + 長期同時中PCA / ICA次元削減・1432 → 100〜200 主成分低（scikit-learn 標準）
+中優先候補:
+変換追加効果Robust scaling外れ値耐性Quantile transform分布正規化明示的 log 変換スケール圧縮
+§B-12.8 Lopez de Prado 推奨の Fractional Differentiation
+""Advances in Financial Machine Learning"" Ch.5:
+問題意識:
+
+金融時系列は通常非定常（trend あり）→ ML が直接学習しにくい
+1 次差分で定常化すると、価格の memory（記憶）が完全に失われる
+→ Fractional differentiation（部分次数差分）で 定常性 + memory の両立
+
+実装:
+
+d ∈ (0, 1) の連続パラメータで差分次数を指定
+d=1 → 通常の 1 次差分
+d=0 → 生値
+d=0.3〜0.5 程度が金融時系列で実用的（ティッカーごと最適 d を ADF test で探索）
+
+本プロジェクトへの適用:
+
+1432 指標のうち、生値系（sma_20 / ichimoku_kijun / macd_line 等）に Fractional differentiation を適用
+既存 pct 系は既に相対化済みなので追加効果限定的
+
+§B-12.9 絞り込み戦略
+A 全投入（変換済特徴量）+ B 探索試行（MTF 展開方式）（Step 4 確定済）
+具体実施:
+
+既存 1432 指標は維持（A 全投入）
+未投入変換の追加（A 全投入 + Layer 1 ④）:
+
+Fractional differentiation 系 列を 1432 に追加
+PCA 主成分を補助特徴量として追加（次元削減効果は LightGBM で限定的だが、可視化・解釈に有用）
+Wavelet 分解（時系列モデル試行時）
+
+
+MTF 展開方式の比較学習（B 探索試行 + 監査経由）:
+
+ffill / 5m rolling / アンカー補間 / 複数特徴量分解 の 4 方式
+比較指標: 同一指標の方式違い列を並列投入して feature_importance + Phase 5 月次 NET で比較
+監査依頼予定: どの方式が最適か独立評価
+
+
+L-141 再発防止策の徹底:
+
+列名規約 {指標名}_{時間軸} で時間軸明示
+leak verify を Phase 0 再実行時に必須化
+
+
+
+§B-12.10 Layer 担当
+Layer内容Layer 1 ④（特徴量追加）Fractional differentiation 系列追加 + PCA 補助列 + 1w/1M MTF 拡張（ffill 初期実装）監査経路（Layer 1 ④ と並行）MTF 展開方式 4 通りの最適解判定（私の知見では判定不能）Layer 2（時系列モデル試行時）Wavelet 分解の追加検討Layer 3（アルゴ多様化と連動）MiniROCKET 等で時系列構造を変換 → 別軸の特徴量空間
+
+軸 B-12 終わり。
+次は 軸 B-13 Entry ratio 閾値の決定方法に進みます。同じ構造で深掘り。想定分量は 60〜80 行。
+OK なら軸 B-13 の確認に進みます。あなたの入力: OKOK19:19Claudeが返答しました: 軸 B-13 Entry ratio 閾値の決定方法（深掘り・書く前の確認）軸 B-13 Entry ratio 閾値の決定方法（深掘り・書く前の確認）
+これから書く内容：
+節内容§B-13.1 軸の定義ML が予測した MFE/MAE 比（ratio）を Entry 発火判定する閾値の決定方法§B-13.2 現状 ML 学習範囲rolling 365日 q90/q95/q99 加重採用（cc_ml_design_spec §1.6 案G）§B-13.3 案G 採用の経緯絶対閾値 drift 問題への対処（2026-05-15 改訂11）§B-13.4 q-band 構造q90-q95 / q95-q99 / q99 の 3 帯域・combo 別採否§B-13.5 Phase 4-b v3 で見えた構造問題K24 LONG/SHORT q99 欠落・K96 SHORT q95-q99 test 0 件§B-13.6 閾値決定方法カタログ静的 / rolling / cluster 別独立 / 強化学習動的 / 適応的（Online learning）§B-13.7 A-3 軸との関係「指標値の閾値」と「ML 予測値の閾値」は別軸（Step 3 で論証済）§B-13.8 業界カタログ参照Triple Barrier Method（Lopez de Prado）等§B-13.9 絞り込み戦略B 探索試行 + C ML 学習対象（Step 4 確定済）§B-13.10 Layer 担当Layer 1 ① / Layer 3","軸 B-13 Entry ratio 閾値の決定方法（深掘り）
+§B-13.1 軸の定義
+ML が予測した MFE/MAE 比（ratio）を Entry 発火判定する閾値の決定方法。
+Entry 判定式:
+
+LONG: pred_LONG_MFE(K) ÷ pred_LONG_MAE(K) ≥ ratio_threshold
+SHORT: pred_SHORT_MFE(K) ÷ pred_SHORT_MAE(K) ≥ ratio_threshold
+
+ratio_threshold をどう決めるか = この軸の決定変数。
+A-3「閾値/パラメータ」との違い（Step 3 論証済）:
+
+A-3 = 生指標値に対する閾値（例: ADX ≥ 30）
+B-13 = ML 予測値の比に対する閾値（例: pred_MFE/pred_MAE が q99 以上）
+
+§B-13.2 現状 ML 学習範囲
+rolling 365 日 q90/q95/q99 加重採用（cc_ml_design_spec §1.6 案G）
+項目内容閾値帯q90 / q95 / q99 の 3 quantile計算窓rolling 365 日採用方式q99 加重採用（Phase 5 v3）補助 lensq90 / q95 は記録のみ・合格条件不算入q-band 構造q90-q95 / q95-q99 / q99 の 3 帯域
+各 K × side × q-band で combo を構成 → 理論最大 4K × 2side × 3qband = 24 combo（実採用 19 combo）
+§B-13.3 案G 採用の経緯（2026-05-15 改訂11）
+問題: 絶対閾値（例: ratio ≥ 1.5）を train 期間で固定すると、市況変化で test 期間に閾値到達数が大きく変動 = drift 問題。
+対処: rolling 365 日 quantile に切り替え。市況変化に追従して閾値帯が自動更新される。
+cc_ml_design_spec §1.6 改訂前後:
+
+改訂前: 絶対閾値固定（4 指標で算出された候補値を train 期間で確定）
+改訂後（案G・現状）: rolling 365 日 q90/q95/q99 加重
+
+handoff §A-5 / lessons_active 関連 L 番号 で記録。
+§B-13.4 q-band 構造（07_phase4b_exits.csv より）
+q-band意味q99 帯ratio が rolling 365日 q99 以上のサンプル（上位 1% の質）q95-q99 帯ratio が q95〜q99 のサンプル（上位 1〜5% の質）q90-q95 帯ratio が q90〜q95 のサンプル（上位 5〜10% の質）
+combo 別採否: Phase 4-b で各 combo（cluster × K × side × q-band）が train PnL ベースで個別評価される。
+§B-13.5 Phase 4-b v3 で見えた構造問題（実データ・07_phase4b_exits.csv）
+問題 combo状態K24 LONG q99欠落（理由要 verify・Phase 4-b 採用判定で除外）K24 SHORT q99同上欠落K96 LONG q99同上欠落K96 SHORT q99除外確定K96 SHORT q95-q99test 0 件（test 期間にこの帯域の発火がゼロ）
+→ 理論 24 combo - 欠落 5 = 採用 19 combo
+構造的問題:
+
+K24 LONG/SHORT q99 が欠落している理由が不明
+K96 SHORT q95-q99 が test で全く発火しない = q99 閾値の安定性に疑問
+rolling 365日 q99 が 少数サンプル領域で不安定化する可能性
+
+§B-13.6 閾値決定方法カタログ
+#方式構造長所短所1静的絶対閾値（改訂前）train 期間で固定値単純・解釈容易drift 問題2rolling N 日 quantile（現状 案G）rolling 窓内 quantiledrift 自動追従窓サイズ依存・少数サンプルで不安定3cluster 別独立 quantilecluster ごとに独立 q99cluster 性質に適応cluster 分類安定性に依存4adaptive online learning直近 N サンプルで動的更新リアルタイム適応過敏応答・bug 起点になりやすい5強化学習動的最適化報酬最大化で閾値学習理論最適実装重い・解釈性低6Triple Barrier Method（Lopez de Prado）TP/SL/Time 同時設定で 3 値クラス分類化金融時系列に特化ML pipeline 全体再設計必要7Quantile Regression Forest 直接予測quantile そのものを ML 予測対象にデータ駆動計算重い・解釈性低8Hybrid（rolling + cluster 別）§3 と §2 の併用両者の長所組み合わせパラメータ多数
+§B-13.7 A-3 軸との関係（Step 3 論証の再掲）
+A-3「閾値/パラメータ」と B-13「Entry ratio 閾値の決定方法」は構造的に別軸：
+
+A-3 適用対象 = 生指標値（ADX / RSI / Stoch 等）
+B-13 適用対象 = ML 予測値の比
+
+ただし「閾値帯の決定方法」（静的 vs rolling vs cluster 別）はどちらにも適用可能なメタ要素。両軸で同じ方式を採用するか・別方式にするかは独立判定。
+§B-13.8 業界カタログ参照
+出所内容Lopez de Prado ""Advances in Financial Machine Learning"" Ch.3Triple Barrier Method・TP/SL/Time の同時 labeling・現状の MFE/MAE 比方式の上位互換候補Lopez de Prado Ch.3 同Meta-labeling・ベース signal の上に「これは取るべきか否か」の 2 段目 ML を載せるQuantile Regression（Koenker 2005）分布の特定 quantile を直接予測Numerai 系公開資料rolling quantile + ensemble で安定性確保Bayesian online learning閾値を確率分布として持つ
+→ Triple Barrier Method + Meta-labeling は現状の MFE/MAE 比方式の構造的代替候補。Layer 3 で本格検討する余地。
+§B-13.9 絞り込み戦略
+B 探索試行 + C ML 学習対象（Step 4 確定済）
+具体実施:
+
+K24 LONG/SHORT q99 欠落の原因究明（Layer 1 ①・最優先）:
+
+欠落理由が「採用判定で除外」か「サンプル数不足」か verify
+救出すべきかの判定（救出 = 月次 NET 改善寄与あるか）
+
+
+K96 SHORT q95-q99 test 0 件問題の対応:
+
+損 combo 切り捨て（Layer 1 ②）と連動
+q99 閾値の安定性検証
+
+
+rolling 窓サイズの探索（B 探索試行）:
+
+現状 365 日 → 90 日 / 180 日 / 730 日 の比較
+短い窓 = 追従性高い / 安定性低い のトレードオフ
+
+
+cluster 別独立 quantile の試行（B 探索試行）:
+
+cluster × K × side ごとに独立 quantile を計算
+各 cluster 内のサンプル数（cluster 1 = 4707）で q99 が安定するか要検証
+
+
+Triple Barrier Method の試行（Layer 3）:
+
+現状の MFE/MAE 比方式と並列に Lopez de Prado 方式を試行
+ラベル設計から再構築する大規模変更
+
+
+Meta-labeling の試行（Layer 3）:
+
+ベース ML（現状 LightGBM 回帰）+ 2 段目 ML（採用判定）
+
+
+
+§B-13.10 Layer 担当
+Layer内容Layer 1 ①（欠落 combo 究明）K24 LONG/SHORT q99 欠落原因 verify + 救出判定Layer 1 ②（損 combo 切り捨て）K96 SHORT q95-q99 を含む test 不発火 combo の取り扱いLayer 1 後半（rolling 窓・cluster 別探索）rolling 窓サイズ + cluster 別独立 quantile の比較学習Layer 3（Triple Barrier / Meta-labeling）Lopez de Prado 系の本格導入検討"," B-14 学習データ範囲・サンプリング（深掘り）
+§B-14.1 軸の定義
+ML が学習するデータの期間設定・分割方法・サンプリング戦略。同じ ML pipeline でも、データ範囲とサンプリング方法が変われば学習結果が変わる。
+§B-14.2 現状 ML 学習範囲（cc_ml_design_spec §1.4 で D 事前固定）
+区分期間用途train2021-04 〜 2024-12LightGBM 学習（valid は末尾 10% で early stopping）仮 test2025-01 〜 2025-12ハイパラ調整 OK（何度見ても良い）本 test2026-01 〜 2026-03最後に 1 回のみ評価（§8 違反厳禁）
+期間分割は cc_ml_design_spec §1.4 で D 事前固定（変更不可）。
+§B-14.3 各期間の行数（SUMMARY.md §1 + 実データ）
+区分行数sha256 先頭train（2021-04〜2024-12）394,75342def9bfc920仮 test（2025）105,1203cdb4f876922本 test（2026 Q1）25,82397b8b00003c4
+ラベル 16 個の NaN / Inf / 負値: train で全 0 件（leak フリー学習の前提を満たす）。
+§B-14.4 期間分割の構造的妥当性
+観点評価train 期間長約 3.7 年（2021-04〜2024-12）= 機械学習として十分な期間仮 test 期間長1 年（2025）= 季節性 / regime シフトを 1 サイクル含む本 test 期間長3 ヶ月（2026 Q1）= 短い・季節性 1 種類のみカバー期間の連続性連続（gap なし）直近性本 test が 2026 Q1 = 現在から見て最も直近
+懸念: 本 test 3 ヶ月は短い。月次 NET ≥ $1,900 全月クリアの「全月」が 3 月分しかない。仮 test 12 ヶ月で十分検証された上で本 test 3 ヶ月で最終判定する設計。
+§B-14.5 §8 違反防止構造（L-183 教訓）
+cc_ml_design_spec §8 原則:
+
+本 test 2026 Q1 を見て学習を変える行為は §8 違反
+L-183 で過去事案: test を見て学習を変えた（test fit）
+
+現状の防止構造:
+
+本 test は最後の最後に 1 回だけ評価
+仮 test 2025 で全ての調整を行う
+false_positive_incident_policy 類型 A〜H で構造的防止
+
+§B-14.6 サンプリング戦略カタログ
+#戦略構造投入状況1全件（現状）train 期間内の全サンプルを使用✅2random samplingランダムに N% 抽出❌3time-based 分割train / valid を時系列順に分割△（末尾 10% を valid に切る方式は採用）4Walk-forward（時系列 CV）train 窓を時系列にスライドしながら多回学習❌ 未投入5Expanding windowtrain 窓を拡大しながら多回学習❌6Purged K-fold（Lopez de Prado）K-fold + ラベル overlap の purge❌7Combinatorial Purged CV（CPCV）（Lopez de Prado）K-fold の組み合わせ + purge + embargo❌8SMOTE（Synthetic Minority Over-sampling）少数クラス合成❌（本質的には回帰だが cluster 1 少問題に応用可）9class balancing多数クラスを downsample / 少数を upsample❌10regime-based stratifiedregime ごとにサンプル数調整❌
+§B-14.7 Walk-forward の構造
+時系列特有・最も実運用に近い評価方式:
+[Window 1] train: 2021-04〜2022-03 / test: 2022-04〜2022-06
+[Window 2] train: 2021-04〜2022-06 / test: 2022-07〜2022-09
+[Window 3] train: 2021-04〜2022-09 / test: 2022-10〜2022-12
+...
+[Window N] train: 2021-04〜2024-09 / test: 2024-10〜2024-12
+長所:
+
+実運用に近い（最新データで再学習しながら未来を予測）
+各 window で test 期間が違うため、regime シフトの影響を平均化
+単一 train/test 分割よりロバスト
+
+短所:
+
+計算コスト高（N 回学習必要）
+ハイパラ調整が各 window で必要
+
+§B-14.8 Lopez de Prado 推奨の CPCV
+""Advances in Financial Machine Learning"" Ch.7:
+問題意識:
+
+通常の K-fold CV は時系列データに使うと leak が起きる（fold 間の overlap）
+Walk-forward は test サンプル数が限定的（1 期間のみ）
+
+CPCV の構造:
+
+N folds の組み合わせを大量に作成
+fold 間で purge（ラベル overlap 期間を削除）
+fold 境界で embargo（買い時間を設けて leak 防止）
+多数の組み合わせで test 評価 → 統計的安定性
+
+本プロジェクトへの適用余地:
+
+5m bar × 39 万行は CPCV 適用に十分なサンプル数
+ラベル K=12〜96 → overlap 期間が 1〜8 時間 → purge / embargo 期間に組み込み
+Layer 3 で本格検討
+
+§B-14.9 サンプル偏り対応（regime シフト）
+軸 B-11 で見えた問題:
+
+train 期間で cluster 1 が 192,065 件（多）→ test 2025 で 4,707 件（少）
+市況シフトで cluster 構成が変わる
+
+対応案:
+
+Walk-forward で最新データに重み付け
+直近期間のサンプルを upsample
+regime-based stratified サンプリング
+rolling 再学習（cluster + ML を最新データで再 fit）
+
+§B-14.10 業界カタログ参照
+出所推奨Kaggle 時系列競技（M5 / Optiver / Numerai）Walk-forward CV が定番・Random K-fold は禁忌Lopez de Prado Ch.7Purged K-fold + CPCV・金融時系列特化Bergmeir & Benitez (2012) ""On the use of cross-validation for time series predictor evaluation""時系列 CV の体系的レビューTwo Sigma 系 ML 公開資料Walk-forward + Purged CV のハイブリッドAutoML 系（H2O AutoML）Time series mode で自動 Walk-forward
+§B-14.11 絞り込み戦略
+D 事前固定（期間分割）+ B 探索試行（サンプリング戦略）（Step 4 確定済）
+具体実施:
+
+期間分割は D 固定:
+
+train 2021-04〜2024-12 / 仮 test 2025 / 本 test 2026 Q1 不変
+cc_ml_design_spec §1.4 改訂は §8 違反リスクのため避ける
+
+
+サンプリング戦略の B 探索（Layer 3）:
+
+現状（全件 + 末尾 10% valid）vs Walk-forward vs Purged K-fold vs CPCV
+比較指標: 各方式での valid 性能 + 本 test 期間外（2026 Q2 以降）での実運用検証
+
+
+regime シフト対応:
+
+rolling 365 日 quantile（軸 B-13）と整合
+Walk-forward と組み合わせで対応
+
+
+本 test 期間の拡張検討（cc_ml_design_spec 改訂課題）:
+
+現状 3 ヶ月 → 6 ヶ月 / 12 ヶ月への拡張案
+ただし「現在から最も直近」要件と「全月クリア検証期間」のトレードオフ
+これは Layer 2 以降の戦略議論
+
+
+
+§B-14.12 Layer 担当
+Layer内容Layer 3（CV 発展）Walk-forward + Purged K-fold + CPCV の試行Layer 2（rolling 再学習）cluster + ML の最新データ再 fit 方式の検討本番運用後（cc_ml_design_spec 改訂）本 test 期間拡張の戦略議論","軸 B-15 目的関数 / 不確実性定量化（深掘り）
+§B-15.1 軸の定義
+2 つの決定変数を含む:
+種類意味B-15-a 目的関数ML が「何を最大化 / 最小化するように学習するか」（loss function）B-15-b 不確実性定量化予測値の信頼度・分散・キャリブレーション（予測がどれだけ確からしいか）
+§B-15.2 現状 ML 学習範囲
+B-15-a 目的関数:
+
+LightGBM 回帰モード
+標準 loss = RMSE（Root Mean Squared Error・二乗誤差平方根）
+16 ラベルそれぞれ独立に最小化
+
+B-15-b 不確実性定量化:
+
+未実装（cc_ml_design_spec で言及なし）
+audit#16 で評価過小指摘あり
+
+§B-15.3 train 時の目的関数 vs Phase 5 評価指標（階層構造）
+段階評価指標意味train（Phase 1）RMSE 最小化予測値の誤差最小化valid（Phase 1）valid RMSE + Phase 2 4 指標過学習回避 + 構造的健全性Phase 4-a / 4-btrain PnL idxmaxExit パラメータ選定Phase 5 評価（最終）月次 NET ≥ $1,900 全月クリア合格ライン（D 事前固定）
+構造的問題:
+
+train 時の目的関数（RMSE）と最終評価（月次 NET）が乖離
+RMSE 最小化が必ずしも月次 NET 最大化につながらない（実際 Phase 5 v3 = -$985）
+直接 月次 NET を最大化する目的関数を組み込めば改善余地あり
+
+§B-15.4 合格ライン（D 事前固定）
+CLAUDE.md §目標 + WORKFLOW.md §目標コミット自己点検:
+項目値主目的月次 NET（手数料・スリッページ・Funding 控除後）閾値≥ $1,900 / 月全期間条件全月クリア（仮 test 12 ヶ月 + 本 test 3 ヶ月 = 15 ヶ月すべて）設計姿勢合格ライン超えマージン厚く・ジャスト達成設計禁止
+これは D 事前固定（変更不可）。
+§B-15.5 目的関数カタログ
+#目的関数構造投入可否1MSE / RMSE（現状）二乗誤差✅2MAE（Mean Absolute Error）絶対値誤差・外れ値耐性❌3Huber lossMSE + MAE のハイブリッド❌4Quantile loss特定 quantile を予測（軸 B-13 連動）❌5LogCoshHuber 系・滑らかな外れ値耐性❌6Asymmetric lossLONG/SHORT 別の非対称ペナルティ❌7直接 PnL 最大化trade PnL を loss に組み込む❌ 未投入8Sharpe Ratio 最大化リターン / リスク比率❌9Sortino Ratiodownside risk のみペナルティ❌10Calmar Ratioリターン / 最大 DD❌11Expectancy(勝率 × 平均勝ち) - (敗率 × 平均負け)❌12Kelly criterion 最大化Kelly に従って成長率最大化❌13Custom loss（ML 出力 + Bot 統合考慮）Position サイジング + Exit 連動❌
+→ 直接 PnL / Sharpe / Sortino / Calmar 系は LightGBM の custom objective として実装可能。Layer 3 で検討。
+§B-15.6 不確実性定量化カタログ
+#手法構造投入可否1Calibration（信頼度補正）予測確率の歪み補正❌2Conformal prediction統計的に保証された予測区間❌3Quantile Regression Forest予測値の quantile を直接予測❌4Bayesian Neural Network予測の分布を出力❌5Bootstrap aggregation多数の予測値の分散で不確実性❌6MC Dropout（Monte Carlo Dropout）Dropout を推論時にも有効化❌7SHAP（SHapley Additive exPlanations）各特徴量の寄与度を Shapley 値で計算❌8Permutation importance特徴量を shuffle して性能低下度を測定△ feature_importance に類似9Local Interpretable Model-agnostic Explanations（LIME）局所線形近似による説明❌10Confidence interval（信頼区間）予測値の上下限❌
+→ Calibration + Conformal prediction + SHAP は audit#16 で評価過小指摘のあった領域。Layer 3 で導入余地。
+§B-15.7 audit#16 で評価過小指摘の領域
+監査経路 audit#16 で指摘:
+
+cc_ml_design_spec で 不確実性定量化の重要性が過小評価
+「予測値の信頼度を測らずに Entry 判定する」現状の構造的弱点
+提案役割: Calibration / SHAP / 予測区間を ML pipeline に組み込む
+
+これは私（Web Claude）の構造的バイアス「実装回避バイアス」（§1.4 / role.md）の典型例。実装が重い不確実性定量化が後回しにされている。
+§B-15.8 業界カタログ参照
+出所推奨Lopez de Prado ""Advances in Financial Machine Learning"" Ch.10Meta-labeling + Calibration で予測信頼度を活用Vovk et al. ""Algorithmic Learning in a Random World""Conformal prediction の標準的扱いNumerai 公開資料Meta-model で予測信頼度を統合Brei et al. (2019) ""Probabilistic Forecasts""確率予測の統計的評価方法LightGBM 公式（custom objective）直接 PnL / Sharpe 最大化の実装可能性
+§B-15.9 絞り込み戦略
+D 事前固定（主目的）+ B 探索試行（補助指標・不確実性）（Step 4 確定済）
+具体実施:
+
+D 主目的不変:
+
+月次 NET ≥ $1,900 全月クリア（CLAUDE.md §目標）
+設計姿勢: マージン厚く・ジャスト達成設計禁止
+
+
+train 目的関数の探索（B 探索試行・Layer 3）:
+
+現状 RMSE → MAE / Huber / Quantile loss / Asymmetric loss / 直接 PnL 最大化 の比較
+比較指標: 各 loss での Phase 5 月次 NET 改善幅
+
+
+不確実性定量化の導入（Layer 3・audit#16 提案）:
+
+第 1 弾: Calibration + Permutation importance（既存 feature_importance の発展）
+第 2 弾: SHAP（特徴量寄与度の詳細分析）
+第 3 弾: Conformal prediction（統計的予測区間）
+
+
+不確実性を使った Entry 判定（Layer 3 後半）:
+
+高信頼度予測のみ Entry / 低信頼度予測はスキップ
+軸 B-13（Entry ratio 閾値）と連動
+
+
+Sharpe / Sortino / Calmar の補助評価（Layer 2 以降）:
+
+月次 NET だけでなくリスク指標も補助監視
+Phase 5 完了報告に組み込み
+
+
+
+§B-15.10 Layer 担当
+Layer内容Layer 2 ⑤（Calibration）第 1 弾 Calibration の組み込みLayer 3 前半（不確実性 + 目的関数）SHAP / Conformal prediction / custom loss（直接 PnL 最大化）Layer 3 後半（不確実性ベース Entry 判定）高信頼度 only Entry の試行Phase 5 評価強化（継続課題）Sharpe / Sortino / Calmar / Max DD の補助監視","軸 D-α シグナル発火頻度（密度）（深掘り）
+§D-α.1 軸の定義
+per-dt-day（1 日あたり）のシグナル発火件数。Bot の取引頻度を決める要素。
+§D-α.2 現状 ML 学習範囲
+独立した決定変数ではない。以下 3 軸の関数として暗黙的に決まる:
+影響軸影響の方向B-13 Entry ratio 閾値閾値を上げる（q99）→ 頻度減 / 下げる（q90）→ 頻度増B-9 組み合わせ深さnum_leaves 増 → 詳細パターン捕捉 → 頻度減 / 減 → 粗パターン → 頻度増A-1 Entry 指標指標を増やす → AND 条件で頻度減 / 減らす → 頻度増
+つまり D-α は他軸の最適化結果として現れる従属変数。
+§D-α.3 L-117 / L-116 教訓
+lessons_active.md より:
+L-116: 発火件数と質のトレードオフは構造的。両立は容易ではない。
+L-117: 発火件数が少ないシグナルに per-trade 指標フィルタを掛けると 絶対 NET を悪化させる。
+
+例: 元 30 件発火 / 勝率 60% → フィルタで 10 件残り / 勝率 70% にしても、絶対 NET は減る場合が多い
+フィルタは「質を上げる」が「機会損失も増やす」
+
+→ 発火頻度の最低限ライン（例: per-dt-day ≥ N 件）を確保した上で質を改善する設計が必要。
+§D-α.4 Phase 5 v3 実態
+SUMMARY.md §8 より:
+項目件数no_trade_position_limit70,146（86.2%）no_trade_min_size581（0.7%）実 executed不明（SUMMARY 未記載・08_phase5_monthly_combo.csv で要 verify）
+仮計算: 全 81,358 サンプル（推定） - no_trade 70,727 = 約 10,631 件が実 executed の可能性
+→ test 2025 = 1 年 = 365 日 で割ると 約 29 件 / 日（仮定）
+ただしこれは「ポジ枠が空いていれば発火していた件数」ではなく「実際に Entry できた件数」。発火候補（潜在シグナル）はもっと多い。
+§D-α.5 発火頻度カタログ
+頻度帯per-day 発火数想定戦略超高頻度（HFT・High Frequency Trading）1000+ 件レイテンシ勝負・本プロジェクト対象外高頻度（quant 系）100〜1000 件分単位スキャル中心中頻度（デイトレ系）10〜100 件スキャル + デイトレ混合低頻度（スイング系）1〜10 件数時間〜1 日保有超低頻度（ポジション系）< 1 件 / 日数日〜数週間保有・本プロジェクト対象外
+本プロジェクトの目標 = 中頻度（10〜100 件/日 想定）。
+§D-α.6 質と頻度のトレードオフ
+パターン構造月次 NET の特性高質低頻度q99 + 多条件 AND・10 件/日個別期待値高 / 件数少 → NET 上振れ困難中質中頻度q95 + 中条件・50 件/日バランス型低質高頻度q90 + 少条件・200 件/日個別期待値低 / 件数多 → 手数料負け懸念
+月次 NET ≥ $1,900 達成への構造的考察:
+想定計算1 件あたり期待 PnL = $5 / 日 30 件 / 月 20 日稼働5 × 30 × 20 = $3,000 → 達成1 件あたり期待 PnL = $2 / 日 50 件 / 月 20 日稼働2 × 50 × 20 = $2,000 → ジャスト1 件あたり期待 PnL = $10 / 日 10 件 / 月 20 日稼働10 × 10 × 20 = $2,000 → ジャスト
+→ 月次 NET ≥ $1,900 + マージン厚く（ジャスト禁止）の前提で、1 件期待値 × 月発火数 ≥ $3,800 が必要。
+§D-α.7 業界カタログ参照
+出所設計Renaissance Technologies（Medallion Fund）中〜高頻度・1 日 数万件レベル（株式市場全体）Citadel Securities高頻度マーケットメイクTwo Sigma中頻度・統計的アービトラージAQR Capital低頻度・factor investing個人 quant 系（Numerai 等）中〜低頻度・週次調整
+→ 仮想通貨 5m bar 単一シンボル = 中頻度デイトレ帯が標準的選択。
+§D-α.8 絞り込み戦略
+C ML 学習対象（Step 4 確定済）
+具体実施:
+
+発火頻度の最低限ライン設定（Layer 1 ②）:
+
+L-117 教訓踏まえ、per-dt-day ≥ N 件を制約として組み込む
+N の値は実 Replay で決定（仮: ≥ 10 件 / 日）
+
+
+B-13 Entry ratio 閾値の探索と連動:
+
+q90 / q95 / q99 の組み合わせで発火頻度を制御
+各 q-band での月次 NET と発火頻度の同時最適化
+
+
+質と頻度のトレードオフを Phase 5 評価指標に追加:
+
+月次 NET だけでなく、月次取引件数 + 1 件あたり期待値を補助指標化
+異常値スメル（勝率 70% 超）と組み合わせて構造的健全性 verify
+
+
+発火頻度のラベル別分析（Layer 1 ① の前提作業）:
+
+各 K × side × q-band の発火頻度を Phase 5 監視ダッシュボードに追加
+K96 LONG q95-q99 のような長時間ポジが per-day 件数を制約していないか可視化
+
+
+
+§D-α.9 Layer 担当
+Layer内容Layer 1 ①（Exit + 損 combo 切り捨て連動）発火頻度の実態可視化・最低限ライン設定Layer 1 ②（損 combo 切り捨て）K96 LONG q95-q99 切り捨てによる発火頻度改善幅の測定Layer 2（質と頻度の同時最適化）Phase 5 評価指標に取引件数・1 件期待値追加","軸 D-δ 時間帯・曜日フィルタ（深掘り）
+§D-δ.1 軸の定義
+時間帯・曜日・月内の位置（月初 / 月末）等、時刻に依存するフィルタで Entry 発火可否を制御する。
+具体例:
+
+UTC 時間帯（00:00〜23:00 の特定時間でのみ Entry 許可）
+アジア / 欧州 / 米国セッション区分
+曜日（月〜日）
+月初 / 月末 / 月中
+Funding Rate 計算時刻周辺（8h 毎・UTC 00:00 / 08:00 / 16:00）
+ATH（過去最高値）接近期 / 暴落後リバウンド期
+
+§D-δ.2 現状 ML 学習範囲
+未投入。理由は WORKFLOW.md §設計思想 L230 で明文禁止:
+
+「時間帯フィルターは個別 Priority 最適化では禁止。統合調整フェーズで実施」
+
+→ Layer 1 / 個別 Priority 最適化段階では適用不可。Layer 2 統合フェーズ以降の課題。
+§D-δ.3 WORKFLOW.md §設計思想 L230 制約
+禁止理由の構造的背景:
+
+個別 Priority ごとに時間帯を最適化すると、Priority 間で時間帯が分裂・統合困難
+全 Priority 統合状態で時間帯フィルタを設計するのが構造的に正しい
+早期の時間帯最適化は overfitting の典型例（特定期間に強い時間帯を見つけてもtest 期間で再現しない）
+
+→ Layer 2 の Bot 統合段階で全 combo 統合状態で評価。
+§D-δ.4 時間帯カタログ
+カテゴリ要素UTC 時間（24h）0:00 / 1:00 / ... / 23:00 の hour-of-dayセッション区分アジア（00:00-08:00 UTC）/ 欧州（08:00-16:00 UTC）/ 米国（16:00-24:00 UTC）曜日月 / 火 / 水 / 木 / 金 / 土 / 日月内位置月初（1-5 日）/ 月中（10-20 日）/ 月末（25-末日）月次イベント月初リバランス / 米国雇用統計（第 1 金曜）/ FOMC 週Funding 関連Funding 計算時刻前後（UTC 00:00 / 08:00 / 16:00）価格イベントATH 接近期 / 暴落後リバウンド期 / 連続陽線・陰線期曜日 × 時間帯月曜アジア / 金曜米国 等の 84 通り
+§D-δ.5 仮想通貨市場の特性
+観点株式市場仮想通貨市場（BTC/USDT 先物）営業時間平日 09:30-16:00（NYSE）等24/7/365週末取引なしありセッション概念明確（市場ごとに開閉）緩い（参加者が地理的に分散）Funding Rateなしあり（8h 毎・本プロジェクト Phase 5-e 控除）
+→ 株式系の時間帯研究はそのまま適用できない。仮想通貨特有の研究が必要。
+§D-δ.6 BTC/USDT 特有の時間帯影響
+過去の仮想通貨研究で報告されている時間帯影響:
+時間帯報告されている特性アジア時間（特に深夜 UTC）板薄・slippage 大・spike 起きやすい米国先物オープン（CME Futures・UTC 23:00 月-金）ボラ上昇欧州オープン（UTC 08:00）出来高増加週末（土日）出来高減少・板薄・スパイク注意Funding 計算時刻直前（UTC 00:00 / 08:00 / 16:00 の数分前）ポジション調整による短期歪み月末 / 四半期末機関投資家のリバランス影響
+→ これらは 報告されている特性であり、本プロジェクトのデータで再現するかは別途検証必要。
+§D-δ.7 業界カタログ参照
+出所内容Caporale & Plastun (2019) ""Calendar anomalies in cryptocurrency markets""仮想通貨の曜日効果・月内効果Aharon & Qadan (2018) ""The Day-of-the-Week Effect in Bitcoin""BTC 曜日効果（月曜・金曜の影響）Funding Rate 関連研究（Binance / Bitget の公開データ）8h 周期の系統的影響株式系古典: Sell in May / January Effect / Turn-of-the-Month仮想通貨にそのまま適用は懐疑的個人 quant 系の crypto bot 公開資料アジア深夜 spike 戦略 / 米国オープン avoid 戦略 等
+§D-δ.8 絞り込み戦略
+B 探索試行・ただし統合フェーズ Layer 2 以降（Step 4 確定済）
+具体実施（Layer 2 統合フェーズ）:
+
+第 1 弾: 全 combo 統合状態での時間帯発火分布の可視化:
+
+採用 19 combo（または改訂後 combo）の hour-of-day / 曜日別 PnL 分布
+異常な偏り（特定時間帯で大損 / 大勝）の検出
+
+
+第 2 弾: フィルタ候補の探索:
+
+時間帯（hour-of-day）/ 曜日 / Funding 時刻周辺 / 週末 の 4 種類を独立に試行
+比較指標: 月次 NET 改善幅 + Sharpe / Calmar
+
+
+第 3 弾: フィルタ組み合わせ:
+
+単独フィルタで効果ありの時間帯軸を組み合わせ
+overfitting verify（仮 test 2025 と本 test 2026 Q1 の両方で再現するか）
+
+
+時間帯フィルタの特徴量化:
+
+フィルタとして使うのではなく、ML 入力特徴量として組み込む案
+hour-of-day / day-of-week を sin/cos 変換して周期性を表現
+これなら個別 Priority 最適化禁止に抵触せず Layer 1 から組み込み可能（要 WORKFLOW.md §設計思想 L230 解釈確認）
+
+
+
+§D-δ.9 Layer 担当
+Layer内容Layer 2 統合フェーズ（最優先）全 combo 統合状態での時間帯発火分布可視化 → フィルタ候補探索Layer 2 後半（フィルタ採用判定）仮 test 2025 / 本 test 2026 Q1 での再現性 verifyWORKFLOW.md §設計思想 L230 解釈確認（前提タスク）時間帯特徴量化（フィルタではなく入力）が L230 に抵触するか確認","軸 D-ε 市況フィルタ（regime / volatility state）（深掘り）
+§D-ε.1 軸の定義
+事前（Entry 発火前）に regime（相場局面）や volatility state（ボラ状態）を判定し、特定の市況では Entry そのものを抑制するフィルタ。
+例:
+
+DOWNTREND（下降トレンド）中は LONG Entry 全停止
+高ボラ局面のみ Entry 許可
+RANGE 中は Entry 縮小
+
+§D-ε.2 現状 ML 学習範囲
+未投入。regime 研究は凍結中（WORKFLOW.md L140-144）。
+§D-ε.3 regime 研究の凍結経緯（userMemories § Purpose & context より）
+段階試行内容結果MA70 ベース最適化教師ありモデルルックアヘッド bug（L-128）で無効化教師あり学習各種特徴量で 3 状態分類スコア上限 30〜40%（L-129）で頭打ち人間ラベル（M_dom）使用月次 80% 閾値を超過唯一機能・ただし人間判定依存機械のみレシピ月次 80% 閾値未達最大 53%Ichimoku 追加ほぼ改善なし—Funding Rate 追加過学習・過集中不採用フラクタル特徴量本番投入直前look-ahead leak 発覚（Phase 1-7a 全段階で見落とし）現状Gaussian HMM → GMM-HMM → UMAP+HDBSCAN教師なし ML 系で再構築検討中
+→ regime 単独 ML としては行き詰まり。Layer 2 以降で凍結解除判断する余地はあるが、優先度は低い。
+§D-ε.4 B-11 クラスタリングとの構造的差異
+観点D-ε（事前 regime フィルタ）B-11（事後 cluster 分類）適用タイミングEntry 候補が出る前に判定Entry 候補が出た後に分類適用対象Entry を出すか / 出さないかExit パラメータをどう変えるか失敗時の影響Entry 機会の損失Exit が不適切凍結状況凍結中（regime 研究の歴史的背景）稼働中（k-means k=3）
+→ 両者は併用可能だが、構造的に独立。
+§D-ε.5 regime / volatility state カタログ
+カテゴリ状態数例3 状態3DOWNTREND / RANGE / UPTREND4 状態4+ ボラ高低（上昇高ボラ / 下降高ボラ / レンジ低ボラ 等）ボラのみ2低ボラ / 高ボラボラ 3 区分3低 / 中 / 高マルチ次元 stateN（トレンド方向 × ボラレベル × 出来高レベル）連続値 state∞regime score（0-1 連続値・確率的所属）
+§D-ε.6 regime 判定手法
+#手法入力試行状況1MA（移動平均）ベースclose vs MA70 等✅ 試行済・MA70 ルックアヘッド bug で無効化2ADX ベースadx14 値で trend / range 判定△（特徴量としては 1432 に投入済）3ATR ベースatr14 で高低ボラ判定△（同上）4Hurst 指数自己相関の構造❌ 未試行5HMM（Hidden Markov Model）状態遷移確率❌ 試行中（userMemories § On the horizon）6GMM-HMMGMM の状態遷移❌ 試行中（pomegranate ライブラリ候補）7UMAP + HDBSCAN次元削減 + 密度クラスタ❌ Stage 3 候補8Markov regime switching線形 + マルコフ切替❌9Change point detection統計的変化点検出❌
+§D-ε.7 教師ラベル vs 教師なしのアプローチ
+userMemories より:
+教師あり（凍結中）:
+
+人間ラベル M_dom 必須 → 主観性・更新コスト
+機械のみレシピでは閾値未達
+
+教師なし（現状検討中）:
+
+Stage 1: Gaussian HMM
+Stage 2: GMM-HMM（pomegranate）
+Stage 3: UMAP + HDBSCAN
+
+→ 教師なし ML 系は本プロジェクト全体の道 B 完走後の本番運用と並行で再評価。
+§D-ε.8 B-11 入力ベクトル B 案との関係
+軸 B-11 §B-11.7 B 案: 16 予測値 + LONG/SHORT 差分（4 個追加）を cluster 入力に。
+B 案で D-ε が代替可能か?:
+
+B 案で cluster が LONG/SHORT 方向性を分類するようになれば、事後 cluster で「LONG 有利市況 / SHORT 有利市況」を分類できる
+これが事実上、事前 regime フィルタと同等の機能を果たす可能性
+→ B 案で D-ε の必要性が大幅に下がる可能性
+
+確証はないが、Layer 1 で B 案を試行 → 結果次第で D-ε の優先度を判定するのが現実的。
+§D-ε.9 業界カタログ参照
+出所内容Hamilton (1989) ""A New Approach to the Economic Analysis of Nonstationary Time Series and the Business Cycle""Markov regime switching の正本Hardy (2001) Mixture model for asset returnsGMM 系の金融応用Filippou et al. (2018) ""Forecasting in the Presence of Heteroskedasticity""時変ボラの状態空間モデルAng & Bekaert (2002) ""Regime Switches in Interest Rates""金利の regime switchingChristoffersen et al. (2012) ""Crash Insurance""テールリスク regime
+§D-ε.10 絞り込み戦略
+B 探索試行・Layer 2 以降（Step 4 確定済）
+具体実施:
+
+Layer 1 で B-11 B 案試行 → 結果次第で D-ε 優先度判定:
+
+B 案（LONG/SHORT 差分追加 cluster）で月次 NET 改善が十分なら D-ε は不要
+不十分なら D-ε 凍結解除を検討
+
+
+凍結解除する場合の出発点:
+
+教師なし ML 系（Gaussian HMM / GMM-HMM）から開始
+教師あり（人間ラベル M_dom）は復活させない（主観性・更新コスト）
+
+
+事前フィルタとして使うか・特徴量として使うか:
+
+事前フィルタ = Entry 抑制 → 機会損失リスク（L-117 教訓）
+特徴量 = ML 入力に regime 確率を追加 → 軸 A-1 / B-12 と統合
+
+
+B-11 / 軸 A-1 との重複回避:
+
+1432 指標に既に trend / volatility 系列がある（adx14 / atr14_pct / realized_vol_rank_50b 等）
+regime 判定は実質的にこれらを使った ML 内部処理に既に含まれている可能性
+
+
+
+§D-ε.11 Layer 担当
+Layer内容Layer 1（B-11 B 案試行と連動）B 案結果次第で D-ε 優先度判定Layer 2 以降（凍結解除判断）教師なし ML 系（HMM / GMM-HMM / UMAP+HDBSCAN）の本格再評価本番運用後（regime 研究続行）Stage 1〜3 完走","軸 D-ζ マルチサイド（LONG/SHORT 同時保有）（深掘り）
+§D-ζ.1 軸の定義
+LONG ポジションと SHORT ポジションを同時に保有できるか、できる場合にどう運用するか。
+
+単一サイド型: 同時刻には LONG または SHORT のどちらか一方のみ保有可
+マルチサイド型: LONG と SHORT を同時保有可能（hedge_mode）
+
+§D-ζ.2 現状 ML 学習範囲
+cc_ml_design_spec §4 でマルチサイド許可（hedge_mode 採用）= D 事前固定。
+
+LONG combo と SHORT combo が同時刻に発火した場合、両方 Entry 可能
+合計サイズは 0.12 BTC 上限（第二絶対規定・両建て合算）
+ML 自体は LONG / SHORT を独立に学習（16 ラベルの half は LONG・half は SHORT）
+
+§D-ζ.3 hedge_mode の構造（exchange_spec.md 確認待ち）
+Bitget の hedge_mode 仕様（一般論）:
+項目内容取引所モードone-way mode（単一サイド）vs hedge mode（両建て可）本プロジェクトhedge mode 採用（cc_ml_design_spec §4）証拠金両建て時の証拠金扱いは取引所仕様依存（要 exchange_spec.md verify）強制決済LONG / SHORT の liquidation price は独立Funding RateLONG / SHORT 別に発生（8h 毎・Phase 5-e 控除モデル）
+§D-ζ.4 同時保有のシナリオ
+シナリオ構造目的純 hedgeLONG 0.06 + SHORT 0.06 で net 0一時的ヘッジ・ボラ消失待ちペアトレードLONG combo A + SHORT combo B の同時発火独立 ML 予測の結果として両建て不均衡両建てLONG 0.08 + SHORT 0.04 = net LONG 0.04主方向 + 逆方向リスクヘッジ順次両建て先に LONG Entry → 後で SHORT Entry 追加元 LONG の損切りを SHORT で部分回収自然消化別 combo が同時刻発火 → 結果的に両建てML 予測の独立性の帰結
+→ 本プロジェクトでは自然消化型が中心（ML 予測の独立性によって生じる）。意図的な hedge / ペアトレードは未実装。
+§D-ζ.5 B-8 cap との連動
+軸 B-8 §B-8.6 で論点提起した cap カウント方法:
+方式LONG/SHORT 同時保有時の扱い合算カウントLONG 2 + SHORT 1 = 3 件で cap=3 ヒット別カウントLONG cap=3 / SHORT cap=3 で独立Net exposure ベース合計 BTC 量で判定（hedge 効果考慮）
+現状の Phase 5 v3 がどちらの方法か = 要 verify。実装次第で no_trade 86.2% の解釈が変わる。
+§D-ζ.6 A-7 サイジングとの連動
+合計 0.12 BTC 上限の LONG / SHORT 配分:
+方式構造長所短所共通枠（現状）LONG + SHORT 合算で 0.12 BTCシンプル主方向のサイズが小さくなる別枠LONG 0.06 + SHORT 0.06 で各独立両建て可能性高いサイズ縛りで主方向効果限定動的配分ML 予測強度に応じて LONG / SHORT 配分動的化質駆動実装複雑
+→ 第二絶対規定（合計 0.12 BTC 上限）の解釈次第。CLAUDE.md / false_positive_incident_policy §0-2 は「合計」と明記しているため、共通枠が正規解釈。
+§D-ζ.7 マルチサイド戦略カタログ
+戦略構造出所純 hedge主方向に対して同サイズ逆方向リスク管理基本Delta-neutraloption / future で net delta = 0volatility tradingStatistical Arbitrage相関高い 2 銘柄でペアトレードLopez de Prado / PoleMarket Making買いと売り両方の指値を出して spread 取りHFT 系Calendar spread異なる満期の両建て商品先物系順張り + 逆張りハイブリッド短期逆張り + 長期順張りの両建て個人 quant 系
+→ 本プロジェクト（単一シンボル BTC/USDT 先物 + 5m bar）では:
+
+Statistical Arbitrage は別シンボル必要（マルチシンボル化禁止のため不可）
+Market Making は高頻度系・対象外
+純 hedge / 順張り + 逆張りハイブリッドが現実的選択肢
+
+§D-ζ.8 業界カタログ参照
+出所内容Avellaneda & Lee (2010) ""Statistical Arbitrage in the U.S. Equities Market""StatArb 古典Pole ""Statistical Arbitrage""クラスタベースペアトレードMarcos Lopez de Prado ""Machine Learning for Asset Managers""Hierarchical Risk Parity・両建て配分AQR / Renaissance 系公開資料net exposure 制御
+§D-ζ.9 絞り込み戦略
+D 事前固定（許可ルール）+ C ML 学習対象（動的活用）（Step 4 確定済）
+具体実施:
+
+D 固定部分:
+
+hedge_mode 許可ルール不変
+合計 0.12 BTC 上限不変
+
+
+C ML 学習対象部分（Layer 2 以降）:
+
+LONG / SHORT 配分を ML 予測強度に応じて動的化
+cluster × K × side ごとに hedge 活用パターンを学習
+
+
+B-8 cap カウント方法の確定（前提タスク）:
+
+cc_ml_design_spec §4 改訂で「合算 / 別 / net exposure」のいずれかを明文化
+
+
+意図的 hedge 戦略の試行（Layer 3）:
+
+純 hedge / Delta-neutral 系の本格導入検討
+ただし単一シンボル制約下では効果限定的
+
+
+
+§D-ζ.10 Layer 担当
+Layer内容前提タスク（cc_ml_design_spec §4 改訂時）B-8 cap カウント方法の明文化Layer 2 ②（動的ポジサイズと連動）LONG / SHORT 動的配分の比較学習Layer 3（意図的 hedge 戦略）純 hedge / Delta-neutral 系の本格導入","軸 D-η 手数料モデル（深掘り）
+§D-η.1 軸の定義
+取引コスト構造の決定変数。以下 3 要素を含む:
+要素内容取引手数料Maker / Taker の手数料率Funding Rate8h 毎の Funding 控除（先物特有）スリッページ約定価格と表示価格の乖離
+これらは Phase 5 月次 NET 計算で控除対象。控除後の NET が合格ライン ≥ $1,900 を満たすかが評価軸。
+§D-η.2 現状 ML 学習範囲
+D 事前固定（cc_ml_design_spec / exchange_spec.md に従い、Phase 5 で控除モデル組み込み済）。
+Phase 5 v3 の控除実施:
+
+取引手数料: Maker / Taker 別に控除
+Funding Rate: 8h 毎控除
+スリッページ: Maker 指値前提のためゼロモデル化
+
+§D-η.3 手数料体系（exchange_spec.md 想定値・要 verify）
+Bitget BTC/USDT 先物の標準手数料:
+種別手数料率適用Maker（指値・板に乗る注文）0.014%（想定）約定時に板に乗っていた注文Taker（成行・板を取る注文）0.042%（想定）約定時に板を取りに行った注文
+→ Maker = Taker の 約 1/3。Maker 指値前提で Bot 設計するメリットが大きい。
+0.12 BTC × 25x leverage × 0.014% = 1 トレードあたり Maker 手数料約 $0.0042 / USD 価値ベース計算で要 verify。
+§D-η.4 Funding Rate 控除モデル（Phase 5-e）
+項目内容発生頻度8 時間毎（UTC 00:00 / 08:00 / 16:00）想定レート0.01% / 8h（年率換算 約 11%）計算ポジションサイズ × Funding Rate × 8h あたり 1 回方向LONG / SHORT で支払い / 受け取りが逆控除Phase 5 で month-end 集計時に控除
+保有時間 1 日（最大）での Funding 影響:
+
+24h で最大 3 回 Funding 発生
+0.01% × 3 = 0.03% の Funding コスト（LONG 主体時）
+0.12 BTC × 50,000 USD/BTC × 0.03% = $1.8 / 1 サイクル最大
+
+→ 月次 NET ≥ $1,900 達成のためには、Funding コストを上回る期待値が必要。
+§D-η.5 スリッページ（Maker 指値前提・現状未モデル化）
+観点現状指値約定スリッページゼロ（指値価格 = 約定価格）成行約定本プロジェクトでは原則使わない不約定リスク指値が約定しない可能性は現状未モデル化
+未モデル化の影響:
+
+実運用で「Bot が指値を出したが板の変動で約定せず、その後不利な価格で約定する」リスクあり
+バックテスト = 完全約定前提 → 実運用差異が出る可能性
+これは Layer 3 / Phase 7 Bot 統合段階の検証課題
+
+§D-η.6 板情報の影響
+観点影響スプレッドMaker 指値の妥当性に影響（タイト時 = 約定しやすい / ワイド時 = 不利）板の厚み0.12 BTC × 25x の名目エクスポージャ = 約 $150k 規模・通常時 BTC/USDT の板で吸収可能急変動時板飛び / fat finger スパイクで指値不約定リスク
+→ 通常時は板の厚みが十分で問題なし。急変動時のリスクは Layer 3 で検証。
+§D-η.7 業界カタログ参照
+取引所MakerTaker備考Bitget（本プロジェクト）0.014%（想定）0.042%（想定）要 exchange_spec.md verifyBinance Futures0.02%0.04%標準比較対象Bybit0.01%0.06%Maker 安いdYdX0.02%0.05%DEXOKX0.02%0.05%—
+→ Bitget は Maker 手数料が業界トップクラスに安い。本プロジェクトの選定理由として妥当。
+§D-η.8 絞り込み戦略
+D 事前固定（Step 4 確定済）
+具体実施:
+
+exchange_spec.md 確定値の遵守:
+
+Maker 0.014% / Taker 0.042% / Funding 8h 毎 0.01% を Phase 5 控除モデルで適用
+値そのものは取引所仕様に従う・変更不可
+
+
+不約定リスクモデル化の検討（Layer 3）:
+
+Maker 指値の不約定率を過去板データから推定
+Phase 5 月次 NET に不約定ロスを組み込み
+
+
+板情報を特徴量に追加検討（Layer 3 / Bot 統合）:
+
+スプレッド・板の厚みを ML 入力に追加
+軸 A-1 / B-12 と統合
+
+
+
+§D-η.9 Layer 担当
+Layer内容D 事前固定（現状）Phase 5 控除モデルで継続適用Layer 3（不約定リスクモデル化）Maker 指値の不約定率推定Phase 7 Bot 統合（執行戦略）板情報を Bot 判断に組み込み本番運用後（実運用差異検証）バックテスト vs 実運用の手数料・Funding 差異モニタリング","軸 D-θ 発注タイプ（深掘り）
+§D-θ.1 軸の定義
+取引所に出す注文の種類。同じ Entry / Exit シグナルでも、発注タイプによって手数料・約定確実性・スリッページが変わる。
+§D-θ.2 現状 ML 学習範囲
+Maker 指値前提（D 事前固定・軸 D-η §D-η.5 と連動）。
+
+全 Entry / Exit を Maker 指値で発注
+Maker 手数料 0.014%（Taker 0.042% より約 1/3）を前提に Phase 5 月次 NET を計算
+不約定リスクは現状未モデル化
+
+§D-θ.3 発注タイプカタログ
+#発注タイプ構造Maker/Taker1成行（Market）即座に板を取って約定Taker2指値（Limit）指定価格で板に乗るMaker（約定時）3Post-only 指値（PostOnly Limit）板に乗らない場合キャンセルMaker 確実4Stop（Stop Market）価格条件成立で成行発動Taker5Stop-Limit価格条件成立で指値発動Maker（約定時）6Trailing Stopトレーリング StopTaker7OCO（One Cancels Other）TP 指値 + SL Stop の同時発注Mixed8Iceberg大口注文の分割発注Maker9TWAP（Time-Weighted Average Price）時間分散発注Mixed10VWAP（Volume-Weighted Average Price）出来高比例発注Mixed
+§D-θ.4 各発注タイプの特性比較
+発注タイプ手数料約定確実性スリッページ用途成行高（Taker）100%あり（板状態次第）緊急 Exit / 急変動時指値低（Maker）不確実なし（指値価格 = 約定）Entry / 通常 ExitPost-only 指値低（Maker 確実）板状態次第・拒否ありえるなしより確実な MakerStop（成行）高（Taker）高いありSL 確実発動Stop-Limit低（Maker）不確実（指値部分）なしSL を Maker で約定OCOMixed自動切替ありTP/SL 同時管理
+→ 不約定リスクを許容するなら指値（Maker）、確実性を取るなら成行（Taker）。本プロジェクトは指値前提で月次 NET を計算しているため、不約定発生時の構造的影響を Layer 3 で検証必要。
+§D-θ.5 Bitget での利用可能発注タイプ（exchange_spec.md / Bitget API 仕様）
+Bitget の USDT-M 先物で利用可能（標準的）:
+発注タイプBitget 利用可否成行✅指値✅Post-only 指値✅Stop（Trigger Order）✅Stop-Limit✅Trailing Stop✅OCO✅（Plan Order 系で実装可能）Iceberg△（API 経由要件確認）
+→ 本プロジェクトで使う候補: 指値（Maker・通常 Entry/Exit）/ Stop（緊急 SL）/ OCO（TP + SL 同時管理）。
+§D-θ.6 Maker 指値の不約定リスク（軸 D-η §D-η.5 継続論点）
+観点リスク通常時板の厚みが十分・スプレッドタイト → 不約定率低急変動時板飛び・スパイクで指値到達せず不約定ML 予測との乖離Bot が「Entry 推奨」と判断した瞬間に価格が動いて指値約定せず、その後不利な価格で Entry することになるPhase 5 評価への影響現状は完全約定前提・実運用差異が出る可能性
+Layer 3 での検証案:
+
+過去板データから不約定率を推定
+不約定発生時の代替アクション（指値再発注 / 成行切替 / Entry キャンセル）を比較
+不約定モデルを Phase 5 控除に組み込み
+
+§D-θ.7 Bot 統合段階の執行戦略（Phase 7 領域）
+WORKFLOW.md / cc_ml_design_spec の Phase 7 = Bot 統合段階で扱う:
+戦略要素内容発注タイプ選定各 Entry / Exit に対し成行 / 指値 / Stop の選定指値価格決定現在価格からの offset / 板のベスト bid-ask 連動キャンセル戦略N 秒で約定しない指値をキャンセルするか維持するか不約定後のリトライリトライ回数・価格調整幅
+§D-θ.8 業界カタログ参照
+出所内容Almgren & Chriss ""Optimal execution of portfolio transactions""実行戦略の正本Cartea, Jaimungal, Penalva ""Algorithmic and High-Frequency Trading""HFT 系発注戦略Bertsimas & Lo ""Optimal control of execution costs""実行コスト最小化Bitget / Binance API ドキュメント各取引所の発注タイプ仕様
+§D-θ.9 絞り込み戦略
+D 事前固定（Maker 指値前提）+ B 探索試行（Layer 3 執行最適化）（Step 4 確定済）
+具体実施:
+
+D 固定部分:
+
+Layer 1 / Layer 2 では Maker 指値前提を維持
+Phase 5 月次 NET 計算は現状の控除モデルで継続
+
+
+Layer 3 で B 探索:
+
+不約定率モデル化 + 代替アクション戦略の比較
+Stop / OCO の本格採用検討
+実運用差異モニタリング
+
+
+緊急時の成行切替検討（Layer 3 / Phase 7）:
+
+急変動時の SL を成行発動にする選択肢
+Taker 手数料 0.042% を払っても損失抑制を優先するかの判定
+
+
+
+§D-θ.10 Layer 担当
+Layer内容D 事前固定（現状）Maker 指値前提で Layer 1 / 2 進行Layer 3（執行最適化）不約定率モデル化 + 代替アクション戦略Phase 7 Bot 統合（実装）発注タイプ選定ロジックの実装本番運用後（差異検証）バックテスト vs 実運用の約定率・スリッページ差異モニタリング"
+,,,・,,,,,,,,,,,,,,,,,,,

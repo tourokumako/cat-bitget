@@ -83,10 +83,11 @@ def check_top1_dominance(fi_top20: pd.DataFrame, label: str, threshold: float = 
 
 
 def check_label_correlation(label_df: pd.DataFrame, learn_labels: Iterable[str], threshold: float = 0.99) -> dict:
-    """学習対象 14 ラベル間の |corr| > threshold ペアを検出.
+    """学習対象ラベル間の |corr| > threshold ペアを検出.
 
-    対称性 (SHORT vs LONG) は事前に drop してあるので、本来は |corr| > 0.99 は出ないはず。
-    出るなら設計欠陥 (例: K6 と K12 で同じ高値が支配等)。
+    Phase 1-a: 14 ラベル独立回帰 (LONG_MFE/MAE × K=7) で対称性 drop 済
+    Phase 1-c: Triple Barrier 3 K (6/12/24) の int カテゴリラベル間で相関測定
+    出るなら設計欠陥 (例: K6 と K12 で同じ barrier touch ばかりなど)。
     """
     sub = label_df.loc[:, list(learn_labels)].dropna()
     if len(sub) < 100:
@@ -102,6 +103,30 @@ def check_label_correlation(label_df: pd.DataFrame, learn_labels: Iterable[str],
     return {
         "status": "PASS" if not violations else "FAIL",
         "threshold": threshold,
+        "violations": violations,
+    }
+
+
+def check_future_ref_multiclass(fi_top20: pd.DataFrame, K: int) -> dict:
+    """Phase 1-c multiclass 用: top20 列名に未来参照疑い + Triple Barrier ラベル自体の混入なし.
+
+    multiclass では K ごとの top20 = 3 class 平均の importance (LightGBM 標準は class 別ではなく
+    overall gain なので 1 column for top20)。本関数は K=6/12/24 のいずれを対象としても OK。
+    """
+    violations = []
+    # `_future` `_lookahead` `_ahead` の混入
+    for col in fi_top20["feature"].tolist():
+        if any(p.search(col) for p in FUTURE_REF_PATTERNS):
+            violations.append({"col": col, "reason": "future/lookahead/ahead suffix"})
+        # 学習対象 K 窓のラベル列が混入していないか (本来 drop されているはず)
+        if any(p.search(col) for p in LABEL_K_PATTERNS):
+            violations.append({"col": col, "reason": "学習対象 K 窓と一致する suffix (ラベル混入疑い)"})
+        # Triple Barrier ラベル自体の混入検出
+        if col.startswith("triple_barrier_K"):
+            violations.append({"col": col, "reason": "Triple Barrier ラベル列が特徴量に混入 (drop_cols 漏れ)"})
+    return {
+        "K": K,
+        "status": "PASS" if not violations else "FAIL",
         "violations": violations,
     }
 

@@ -1,0 +1,51 @@
+# Phase 1-c Triple Barrier multiclass 学習ハイパラ
+# 出典: .claude/instructions/2026-05-21_phase1c_triple_barrier_multiclass.md §4.4
+# Stage 1 (build_triple_barrier_labels) で K=6/12/24 のみ健全 → 案 α 採用 (まこさん 2026-05-21 承認)
+
+lightgbm:
+  objective: multiclass
+  num_class: 3              # {0: SL, 1: TIME, 2: TP}
+  metric: multi_logloss
+  boosting_type: gbdt
+  num_leaves: 31
+  max_depth: -1
+  min_data_in_leaf: 20
+  learning_rate: 0.05
+  feature_fraction: 0.9
+  bagging_fraction: 0.8
+  bagging_freq: 5
+  n_estimators: 1000
+  early_stopping_rounds: 50
+  random_state: 42
+  bagging_seed: 42
+  feature_fraction_seed: 42
+  data_random_seed: 42
+  verbose: -1
+  n_jobs: 1                 # bit-exact 再現性
+
+paths:
+  features_train: results/priority_rebuild/labels_mfe_mae_pct_train_2021_2024.parquet
+  features_test: results/priority_rebuild/labels_mfe_mae_pct_test_2025.parquet
+  tb_labels_train: results/priority_rebuild/ml_phase1c_triple_barrier/labels_triple_barrier_train_2021_2024.parquet
+  tb_labels_test: results/priority_rebuild/ml_phase1c_triple_barrier/labels_triple_barrier_test_2025.parquet
+  blacklist: configs/feature_blacklist_v3.txt
+  output_dir: results/priority_rebuild/ml_phase1c_triple_barrier
+
+split:
+  valid_ratio: 0.2
+  purge_bars: 288           # 最大 K (Phase 1-a と同様・288 bars=24h 分 train 末尾 purge)
+
+# 案 α (まこさん 2026-05-21 承認・Stage 1 健全性判定結果)
+# 学習対象: 短期 K=6/12/24 のみ (長期 K=48+ は TIME クラス消滅で除外)
+k_targets:
+  - 6
+  - 12
+  - 24
+
+# Stage 1 barrier multiplier (健全 3 K で採用確定)
+barrier:
+  tp_mult: 2.0
+  sl_mult: 1.5
+
+# Precision 計算閾値
+precision_threshold: 0.5    # P_TP > 0.5 のサブセットで TP クラス Precision を測る
