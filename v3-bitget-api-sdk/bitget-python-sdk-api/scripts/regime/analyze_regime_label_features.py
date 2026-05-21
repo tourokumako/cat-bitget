@@ -252,6 +252,28 @@ def build_indicators_extended(df):
             for _name in ("line", "signal", "hist", "hist_change"):
                 f[f"macd_{_name}_pct_{_tag}"] = pd.Series(np.nan, index=c.index)
 
+    # Phase 0 v3.1 Step 4 §2.2 #13 BB Squeeze + Band Walk (2026-05-22・+30 列)
+    # 3 層併存 (連続値 + Adaptive bool + 自己実現的 bool)
+    try:
+        _bb20 = _ta.volatility.BollingerBands(close=c, window=20)
+        _bb_upper = _bb20.bollinger_hband()
+        _bb_lower = _bb20.bollinger_lband()
+        f["close_vs_bb_upper_dist_pct"] = (c - _bb_upper) / c * 100
+        f["close_vs_bb_lower_dist_pct"] = (c - _bb_lower) / c * 100
+    except (IndexError, ValueError):
+        f["close_vs_bb_upper_dist_pct"] = pd.Series(np.nan, index=c.index)
+        f["close_vs_bb_lower_dist_pct"] = pd.Series(np.nan, index=c.index)
+
+    if "bb_width_pct" in f.columns:
+        f["bb_bw_rolling_p20_100b"] = f["bb_width_pct"].rolling(100, min_periods=20).quantile(0.20)
+        f["bb_squeeze_adaptive_p20"] = (f["bb_width_pct"] < f["bb_bw_rolling_p20_100b"]).astype(np.int8)
+        # 自己実現的閾値 5% (BTC 実測適合・ナレッジベース v3 §I.6.2 整合・10% は削除済)
+        f["bb_squeeze_sf_5pct"] = (f["bb_width_pct"] < 5.0).astype(np.int8)
+    else:
+        f["bb_bw_rolling_p20_100b"] = pd.Series(np.nan, index=c.index)
+        f["bb_squeeze_adaptive_p20"] = pd.Series(0, index=c.index, dtype=np.int8)
+        f["bb_squeeze_sf_5pct"] = pd.Series(0, index=c.index, dtype=np.int8)
+
     # Phase 0 v3.1 Step 4 §2.1 #11 Divergence bool 簡略実装 (2026-05-22・+36 列)
     # Regular Bull (反転示唆): price 下落 + osc 上昇 / Regular Bear: price 上昇 + osc 下落
     # Hidden は pivot 検出が必要なため Phase 4-b で再評価候補 (簡略実装では Regular のみ)
