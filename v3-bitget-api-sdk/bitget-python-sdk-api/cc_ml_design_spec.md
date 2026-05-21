@@ -76,6 +76,25 @@ BTC 4 年周期（2024 年半減期）と 2024 年以降の価格上昇を踏ま
 3. **特徴量重要度チェック**: 上位 20 指標を報告。1 個の指標に極端に依存していたら危険信号
 4. **連続足の間引き再計算**: 仮テスト結果確認時に、連続して同じ判定の足を間引いて成績を再計算。間引き後も成績維持されるか確認
 
+### 1.5.1 Phase 1 合格基準 5 指標 (2026-05-22 v5 Layer 配分逆転で追加・learning_design_v4 v5 §4 整合)
+
+Phase 1 で 6 案並列学習 (a 14 ラベル RMSE / b Entry Binary / c Direction Multiclass / d Ranking LambdaRank / e Triple Barrier multiclass / f Meta-Labeling 2 段階) + Walk-forward Purged K-Fold 5 fold (mlfinlab.cross_validation.PurgedKFold) を実施し、以下 5 指標で合格判定:
+
+| # | 指標 | 合格閾値 | 根拠 |
+|---|---|---|---|
+| 1 | **entropy lift** | **> 10%** | Lopez de Prado *AFML* Ch.3 (< 10% で meta-labeling 投入推奨域・Phase 1-c smoke 6.04% は投入域・false_positive §2 類型 E/G リスク回避済) |
+| 2 | **TP Precision** | **> 0.5** | 信頼度 50% 以上 (ベースライン 50% 超え必須) |
+| 3 | **Direction Accuracy** (案 c のみ) | **> 0.55** | LONG/SHORT 方向当たり率 (5% 以上有意性) |
+| 4 | **Simulated PnL** (12 ヶ月) | 12 ヶ月中 **8+ ヶ月プラス** + 年間 NET ≥ **$500** | §1.6 Phase 2 基準 ($1,900/月) より暫定的に緩い (Position size 未確定・Phase 4-b/5 で Position 設計後に再評価) |
+| 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | Bailey + Lopez de Prado 2014 (SSRN 2460551)・selection bias 補正後 (100+ grid 試行記録義務) |
+
+**Layer 3 投入条件 (Layer 配分逆転 v5 厳格化)**:
+- **6 案いずれか上記 5 指標 ALL PASS** → 採用案で Phase 2 進行
+- **6 案ベストでも 5 指標未達** → **即** Layer 3 残存タスク投入 (CPCV / Class balancing / Focal loss / custom loss / アルゴ多様化 XGBoost CatBoost MiniROCKET)
+- **「ベスト案で Phase 2 進行して判定」は禁止** (Phase 1 未達 → Phase 2 改善保証なし)
+
+**§1.6.1 メタルール整合**: 本 §1.5.1 合格基準は Phase 1 実行前に最終確定済 (2026-05-22 v5)。実行後の緩和 (例: entropy lift > 5%・DSR > 0.5) は許容しない。
+
 ### 1.6 撤退ライン
 
 **仮テスト（2025 年）で以下 4 指標を判定し、1 件以上 FAIL → ML 単独要協議**

@@ -1,0 +1,289 @@
+# handoff_to_cc_v22_session_20260522
+
+セッション: 2026-05-22 (handoff v21 受領後・**Layer 配分逆転 (B') 確定**・ナレッジベース v3 1691 行 + 指示書 2 本 (Phase 0 v3.1 + Phase 1 v5) 作成)
+作成者: CC (本セッション末・ML 設計担当兼務・cc_role.md v1)
+保存先: `.claude/instructions/handoff_to_cc_v22_session_20260522.md`
+宛先: 次セッションの CC
+
+handoff v21 (前任) からの継続。本 v22 では **Layer 配分逆転** 確定 + **業界知識統合 (WebSearch 54 件 + Gemini 2 件)** + **3 層併存閾値設計** + **6 案並列 Phase 1 学習計画** を記録 + 本セッション CC 同型バイアス再演 9 件を最優先警戒項目として記録。
+
+---
+
+## §0 前提認識 (handoff v14-v21 全件継承 + 本 v22 で重大追加)
+
+### §0.30 (本セッション・最重要・絶対警戒) CC 同型バイアス再演 9 件 (累積 27+ 件 → 36+ 件)
+
+handoff v21 §0.27 累積 18 件 + 本セッション 9 件 (TF 欠落 / A-3 閾値派生 / A-4 K=7 verify 漏れ / rci_26 漏れ / 共通フィルタ既存実装認識ゼロ / 4 ファイル同時改修見落とし / メンテフラグ L-181 違反 / CSV §A-3.6 A/B/C 案乖離・即興定義 / 設計思想欠落 (パラメータ vs 閾値・MTF コンフルエンス) / Web 調査ゼロ実行) = **累積 36+ 件**。
+
+**まこさん指摘で発覚した重大欠陥**:
+- handoff v21 §3.1 「7 項目」を機械的コピー → 設計思想欠落 (パラメータ vs 閾値の本質未理解)
+- 業界経験閾値 (BB Squeeze 10% / KDJ 110/-10) を「定番だから」でハードコード → cc_ml_design_spec §1.2 + §8 違反
+- Layer 配分逆転 (V4.1 監査 #20 で「Entry Binary + Direction Multiclass を Layer 3 → Layer 1」) を **「目的関数 3 案並列追加」と中途半端に解釈** → Triple Barrier + Meta-Labeling + Walk-forward CV は依然 Layer 3 のまま
+
+**対策 (L-200 + 新規 L-201)**:
+- 「読んだ」「verify した」「監査済」「総点検した」と書く前に **機械的証跡 3 点** (`wc -l` + Read 全文 view + 該当行引用) 必須
+- **設計判断時に「これは何を解決するか・本質は何か」を能動的に問う** (cc_role §1.0「あらゆる手段を尽くす」+ §1.3.3「怠けた思想排除」)
+- **WebSearch / WebFetch を能動的に活用** (本セッションで 54 件実行・cc_role §1.0 義務化済) + **Gemini 等外部見解を尊重** (まこさんが貼った Gemini 見解は私の即興解釈より遥かに信頼できる)
+- まこさんの「分からない」「整理して」「真剣に取り組め」は **字面通り** 受け取る (cc_role §3.3 翻訳禁止)
+
+### §0.31 (本セッション完了) Phase 0 改修指示書 v3.1 確定 (Triple Barrier ラベル同時生成・5 ファイル同時改修)
+
+**ファイル**: `.claude/instructions/2026-05-22_phase0_v4_rebuild_instruction.md` (576 行)
+
+**変遷**:
+| 版 | 行数 | 内容 |
+|---|---|---|
+| v1 | 270 | 破棄 (handoff v21 箇条書きコピー・cat_v9 grep ゼロ・累積 70% 誤り) |
+| v2 | 459 | cat_v9 grep + L-196 メンテフラグ + 4 ファイル同時改修・WebSearch 6 件 |
+| v3 | 507 | 業界 5 系統分類 + 3 層併存設計 + 閾値 4 大分類 + WebSearch 42 件 + Gemini 2 件 |
+| **v3.1** | **576** | **Triple Barrier ラベル 28 列同時生成 (mlfinlab.labeling)** + compute_triple_barrier_labels 実装 + 56 ラベル列 parquet schema + mlfinlab パッケージ依存追加 |
+
+**改修対象 5 ファイル**:
+- `pruned_column_list.json` (約 2316-3016 列の集合定義に拡張)
+- `scripts/regime/analyze_regime_label_features.py` (1-A 指標カタログ + 系統別分類)
+- `scripts/regime/shape_features.py` (1-B TF 補完)
+- `scripts/regime/structure_features.py` (1-C SMC + Supply/Demand + Candlestick 62 種)
+- `scripts/priority_rebuild/build_labels_pct.py` (TIMEFRAMES 1w/1M 追加 + メンテフラグ削除 (L-196) + **compute_triple_barrier_labels 実装** + 56 ラベル列)
+
+**期待結果**: 1432 + 約 800-1500 特徴量 + 28 既存ラベル + **28 Triple Barrier ラベル** = **約 2316-3016 列**
+
+### §0.32 (本セッション完了) Phase 1 学習方法再設計指示書 v1 確定 (Layer 配分逆転 (B') 確定版)
+
+**ファイル**: `.claude/instructions/2026-05-22_phase1_layer_inversion_instruction.md` (429 行・新規)
+
+**Layer 配分逆転の核心**: Triple Barrier + Meta-Labeling + Walk-forward Purged K-Fold + Ranking LambdaRank を **Layer 3 → Layer 1 前倒し**:
+
+| 案 | 内容 | Layer (v4.1) | Layer (v5・確定) |
+|---|---|---|---|
+| a | 14 ラベル独立 RMSE (流用) | Layer 1 | Layer 1 |
+| b | Entry Binary Classification | Layer 1 (V4.1 昇格) | Layer 1 |
+| c | Direction Multiclass | Layer 1 (V4.1 昇格) | Layer 1 |
+| **d** | **Ranking LambdaRank** (新規) | (未含) | **Layer 1** |
+| **e** | **Triple Barrier multiclass** (AFML Ch.3) | Layer 3 | **Layer 1 前倒し** |
+| **f** | **Meta-Labeling 2 段階** (AFML Ch.3) | Layer 3 | **Layer 1 前倒し** (案 e 完了後 sequential) |
+| 全案共通 | **Walk-forward Purged K-Fold 5 fold** (mlfinlab) | Layer 3 (B-14) | **Phase 1 から導入** |
+
+**Phase 1 合格基準 5 指標 (cc_ml_design_spec §1.5.1 整合)**:
+1. entropy lift > 10% (AFML Ch.3 推奨閾値)
+2. TP Precision > 0.5
+3. Direction Accuracy > 0.55 (案 c のみ)
+4. Simulated PnL: 12 ヶ月中 8+ プラス + 年 NET ≥ $500
+5. Walk-forward CV Sharpe (DSR 補正) > 1.0 (Bailey + Lopez de Prado 2014)
+
+**Layer 3 投入条件厳格化 (v5)**: 6 案ベストでも 5 指標 ALL PASS 未達 → **即** Layer 3 残存タスク投入 (「ベスト案で Phase 2 進行」禁止)
+
+**リソース計画**: 3 並列 (CPU 競合 + メモリ 30-45 GB)・全 5 fold × 6 案 = 約 20 時間 (約 1 日)・Phase 1 期間 3-4 週 (実装期間主因)
+
+### §0.33 (本セッション完了) ナレッジベース v3 確定 (1691 行・WebSearch 54 件 + Gemini 2 件統合)
+
+**ファイル**: `.claude/memory/technical_analysis_knowledge_base.md` (1691 行・v1 450 → v2 1528 → v3 1691)
+
+**章構成**:
+- §0-§12: 基礎 (Gemini #1/#2 + 業界 5 系統 + 5 分足 + MTF + AFML + Funding + MVRV + SOPR 等)
+- §A-§D: 個別辞典 (RSI/MACD/ADX/ATR/BB/Stoch/Ichimoku/Fib/VP/Pivot/RCI/Williams + キャンドル + チャートパターン + Wyckoff + SMC + ML for Trading)
+- §E: Phase 0 改修 20 カテゴリ統合ガイド
+- **§I: 閾値設計論** (4 大分類 + Adaptive 設計 + Multi-Threshold Ensemble + DSR + ML 閾値処理 + Phase 別データ駆動再検討フロー・本セッション追加)
+- §F: 出典 54 + 15 = **69 件 URL**
+- §G/§H: 改訂履歴 + 今後の追加調査候補
+
+**閾値 4 大分類** (本セッション体系化):
+- (1) 自己実現的閾値 (RSI 70/30 / Fib 61.8% / round numbers) → **維持**
+- (2) 計算式由来閾値 (BB 2σ / Z-Score ±2) → 連続値で表現
+- (3) 業界経験閾値 (BB 10% / KDJ 110/-10 / ADX 25) → **データ駆動再検討・段階廃止**
+- (4) Adaptive/データ駆動閾値 (rolling quantile / Z-score / regime-conditional) → **推奨設計**
+
+**3 層併存設計**: 各特徴量で (1) 連続値 + (2) Adaptive bool + (3) 自己実現的 bool の 3 層を parquet に併存・Phase 1 feature_importance で 3 層別効果測定・Phase 4-b で業界経験 bool 段階廃止
+
+### §0.34 (本セッション完了) learning_design_v4 → v5 改訂 (Layer 配分逆転反映)
+
+**ファイル**: `.claude/memory/learning_design_v4.md` (336 → 377 行・+41 行)
+
+**修正箇所**:
+- §3 振り分け表 B-13/B-14/B-15: Layer 1 前倒し明示
+- §4 Layer 1 タスク: 「Layer 1 (Layer 配分逆転・2026-05-22 v5)」セクション新規追加 (案 d/e/f + Walk-forward + 5 指標 + Layer 3 投入条件厳格化 + リソース計画)
+- §6 Layer 3 タスク縮小: B-13/B-14/B-15 の Triple Barrier 等を Layer 1 移行明示・残存タスク (CPCV / Class balancing / custom loss) 明示
+- §11 着手フロー: 6 案並列 + Purged K-Fold 5 fold + CP2 分岐判定厳格化 + Phase 1 期間 2-3 週 → 3-4 週
+- §12 改訂履歴: v5 追加 (7 件修正反映)
+
+### §0.35 (本セッション完了) cc_ml_design_spec §1.5.1 追加 (Phase 1 合格基準正式化)
+
+**ファイル**: `cc_ml_design_spec.md` (380 → 399 行・+19 行)
+
+**§1.5.1 Phase 1 合格基準 5 指標**:
+- entropy lift / TP Precision / Direction Accuracy / Simulated PnL / DSR の数値閾値正式化
+- §1.6.1 メタルール整合 (実行後緩和禁止)
+- Layer 3 投入条件 (6 案ベストでも 5 指標未達 → 即投入) 厳格化
+
+---
+
+## §1 本セッション commit 履歴 (予定)
+
+| commit | 内容 | ファイル数 |
+|---|---|---|
+| (予定 1) | technical_analysis_knowledge_base.md v1 (450 行) 新規 + Phase 0 改修指示書 v1 (270 行) 新規 | 2 |
+| (予定 2) | ナレッジベース v2 (1528 行・WebSearch 42 件統合) + 指示書 v2 (459 行) 改訂 | 2 |
+| (予定 3) | ナレッジベース v3 (1691 行・§I 閾値設計論追加) + 指示書 v3 (507 行) 改訂 | 2 |
+| (予定 4) | Layer 配分逆転 (B') 確定: learning_design_v4 → v5 (377 行) + cc_ml_design_spec §1.5.1 追加 (399 行) + 指示書 v3.1 (576 行・Triple Barrier 28 列) + Phase 1 指示書 v1 (429 行・新規) | 4 |
+| (予定 5) | セッション終了処理: lessons_active L-201 追加 + WORKFLOW.md 改訂 19 + 本 handoff v22 | 3 |
+
+合計 commit 5 件・約 13 ファイル変更
+
+---
+
+## §2 本セッション 未 commit 成果物 (commit 範囲判断待ち)
+
+なし (全成果物 commit 予定 / セッション終了処理 3 件を本 v22 commit に統合予定)
+
+ただし `results/` ディレクトリは CLAUDE.md「コミット禁止」対象で意図的に除外。
+
+---
+
+## §3 pending tasks (次セッション CC への優先順位)
+
+### §3.1 (最優先) Phase 0 改修指示書 v3.1 実装着手
+
+**内容**: Phase 0 改修指示書 v3.1 (576 行) に従って 5 ファイル同時改修 + Triple Barrier ラベル生成
+
+**実装手順 (指示書 §6 整合)**:
+1. L-196 違反 メンテフラグ削除 (Step 1)
+2. 4 ファイル同時改修 (Step 2) + Triple Barrier ラベル
+3. smoke test 3 ヶ月 (Step 3)
+4. CP1 監査依頼 (指示書 §9・Claude `/audit` 経由)
+5. full build (Step 4・約 4-6 時間)
+6. 完了報告 (指示書 §8)
+
+**期待結果**: 約 2316-3016 列の parquet 3 種 (train + 仮 test 2025 + 本 test 2026 Q1)
+
+### §3.2 (優先 2) Phase 1 学習方法再設計指示書 v1 実装着手
+
+**内容**: Phase 0 v3.1 完了後・Phase 1 学習方法再設計指示書 v1 (429 行) に従って 6 案並列 + Purged K-Fold + DSR
+
+**実装手順 (指示書 §6 整合)**:
+1. Phase 0 v3.1 完了確認 (Step 0-2)
+2. mlfinlab + Purged K-Fold runner 実装 (Step 2)
+3. 6 案個別実装 (Step 3) — 案 a → b/c → d → e → f sequential
+4. smoke test Fold 0 1-2 ヶ月 (Step 4)
+5. CP2 監査依頼 (指示書 §9・7 項目)
+6. full 5 fold × 6 案実行 (Step 6・約 20 時間)
+7. §4.1 採用判定 or Layer 3 投入
+
+**期待結果**: 6 案 × 5 fold × 5 指標 = 30 学習結果 + DSR + 合格判定
+
+### §3.3 (将来) Phase 4-b 設計再 audit + DSR + Adaptive 閾値最適化
+
+ナレッジベース v3 §I.7.3 整合で DSR + walk-forward Adaptive 閾値最適化を Phase 4-b 全グリッドサーチに統合。
+
+### §3.4 (将来継承) Phase 7-d 着手前 maxMarketOrderQty paper trading test
+
+v15-v21 から継承。phase_compliance_checklist.md Phase 7-d セクション記録済。
+
+---
+
+## §4 次セッション CC への警告 (handoff v14-v21 全件継承 + 本 v22 新規)
+
+### §4.38 (本セッション §0.30) CC 同型バイアス再演 **累積 36+ 件**・WebSearch 能動活用が唯一の打開策
+
+handoff v19 §0.13 (5 件) + handoff v20 §0.26 (5 件) + handoff v21 §0.27 (8 件) + 本 §0.30 (9 件) = 累積 **27+ 件**:
+
+**唯一の打開策 (本セッション学習)**:
+- **WebSearch / WebFetch を能動活用** (cc_role §1.0 義務・本セッション 54 件実行で初めて業界知見統合)
+- **Gemini 等外部見解をまこさんから貼ってもらう** (即興解釈より遥かに信頼できる)
+- **cat_v9 / config / 既存実装を毎タスク冒頭で全 Read** (grep で済ませない)
+- **設計判断時に「これは何を解決するか・本質は何か」を能動的に問う** (cc_role §1.0 + §1.3.3 整合)
+
+### §4.39 (本セッション §0.31) Phase 0 改修指示書 v3.1 確定・Triple Barrier ラベル同時生成必須
+
+build_labels_pct.py に **compute_triple_barrier_labels** 実装 (mlfinlab.labeling 経由・28 ラベル列追加・合計 56 ラベル列) が **Phase 1 学習方法再設計 v5 の前提**。Phase 0 で省略すると Phase 1 で Triple Barrier 案 e/f が実装不可。
+
+### §4.40 (本セッション §0.32) Layer 配分逆転 (B') 確定・6 案並列 + Walk-forward CV
+
+learning_design_v4 v5 + cc_ml_design_spec §1.5.1 整合で **Triple Barrier + Meta-Labeling + Walk-forward Purged K-Fold + Ranking LambdaRank を Layer 1 前倒し**。**「学習方法そのもの」を 6 案並列検証する** ことで entropy lift 6.04% (Phase 1-c smoke・AFML Ch.3 投入域) の根本解決を狙う。
+
+**Layer 3 投入条件厳格化**: 6 案ベストでも 5 指標 ALL PASS 未達 → 即 Layer 3 投入 (CPCV + Class balancing / Focal loss + custom loss + アルゴ多様化)。
+
+### §4.41 (本セッション §0.33) ナレッジベース v3 §I 閾値設計論・3 層併存必須
+
+業界経験閾値 (BB 10% / KDJ 110/-10 / ADX 25) を **bool ハードコード単独 → 禁止** (cc_ml_design_spec §1.2 + §8 違反)。3 層併存 ((1) 連続値 + (2) Adaptive bool + (3) 自己実現的 bool) 必須。
+
+**DSR (Deflated Sharpe Ratio・Bailey + Lopez de Prado 2014) 採用**: Phase 4-b/5/6 で Standard Sharpe maximizing **禁止**。mlfinlab.backtest_statistics.DSR 経由実装。
+
+### §4.42 (本セッション総括) Phase 0 改修着手前必読リスト (機械的証跡必須・本 v22 で 13 件に拡張)
+
+| ファイル | 行数 | 役割 |
+|---|---|---|
+| `WORKFLOW.md` | 約 500 行 | 現フェーズ・改訂19 ブロック・次タスク優先順位 |
+| `learning_design_v4.md` **v5** | 377 行 | **Layer 配分逆転反映** (本 v22 で確定) |
+| `phase_flow_v4_with_recovery.md` | 977 行 | 各 Phase 学習内容詳細 |
+| `cc_ml_design_spec.md` **§1.5.1 追加版** | 399 行 | **Phase 1 合格基準 5 指標数値正式化** (本 v22 で確定) |
+| `cc_role.md` | 336 行 | CC 役割定義 (§1.4 同型バイアス + §1.6 23 軸 + §3.6 専門用語) |
+| `false_positive_incident_policy.md` | 225 行 | §0-1 / §0-2 + §2 類型 A〜H + §5 関所 A〜G |
+| `phase_compliance_checklist.md` | 222 行 | Phase 別 verify 項目リスト |
+| `auditor_template.md` | 520 行 | Claude `/audit` 監査エージェント用 (CP1〜CP5 で起動) |
+| `10_indicator_families.md` | 174 行 | 1432 指標 145 ファミリーリスト |
+| `lessons_active.md` | 約 1980 行 | 本 v22 で **L-201 追加** + 累積教訓 |
+| **`technical_analysis_knowledge_base.md` v3** | **1691 行** | **業界知識統合 (WebSearch 54 件 + Gemini 2 件) + 閾値設計論** (本 v22 で確定) |
+| **`2026-05-22_phase0_v4_rebuild_instruction.md` v3.1** | **576 行** | **Phase 0 改修指示書** (Triple Barrier ラベル同時生成・本 v22 で確定) |
+| **`2026-05-22_phase1_layer_inversion_instruction.md` v1** | **429 行** | **Phase 1 学習方法再設計指示書** (6 案並列・本 v22 で新規) |
+| 本 handoff v22 | (本ファイル) | 宛先 = 次セッション CC |
+
+---
+
+## §5 セッション履歴サマリ (本セッション 2026-05-22)
+
+| 時刻概算 | 出来事 |
+|---|---|
+| 開始 | handoff v21 受領 → まこさん「続き」確認 → CC が Step 0 セッション開始プロトコル実行 |
+| 序盤 | Phase 0 改修指示書 v1 (270 行) 作成 → まこさん「TF 欠落」「A-3 閾値派生」指摘 |
+| 序盤 | Gemini 見解 #1 (パラメータ vs 閾値) 受領 → CC「基礎中の基礎・既知だが起動できなかった」反省 |
+| 中盤 | Gemini 見解 #2 (MTF + 複数指標) 受領 → 同型反省・WebSearch 能動活用に転換 |
+| 中盤 | まこさん「君が検索して知識を集積できないの？」指摘 → cc_role §1.0 違反気づき・WebSearch 6 件実行 |
+| 中盤 | まこさん「指示書を書き直す前に学んだことをまとめて」指示 → ナレッジベース v1 (450 行) 作成 |
+| 中盤 | まこさん「全力で調べて辞典レベルで」→ WebSearch 7 ラウンド × 6 件 = 42 件追加実行 → ナレッジベース v2 (1528 行) 作成 |
+| 中盤 | Phase 0 改修指示書 v2 (459 行) → v3 (507 行・3 層併存) 改訂 |
+| 後半 | まこさん「閾値ハードコード」指摘 → cc_ml_design_spec §1.2 + §8 違反気づき・WebSearch 12 件追加 |
+| 後半 | ナレッジベース v3 §I 閾値設計論 追加 (1691 行) + 指示書 v3.1 (576 行・Triple Barrier ラベル) 改訂 |
+| 後半 | まこさん「学習方法問題は方向性確認」指摘 (Q1-Q5) → Layer 配分逆転 (B') 確定 |
+| 終盤 | learning_design_v4 → v5 (377 行) + cc_ml_design_spec §1.5.1 追加 (399 行) + Phase 1 学習方法再設計指示書 v1 (429 行) 作成 |
+| 終盤 | まこさん「切る」 → セッション終了処理 3 件 (lessons_active L-201 / WORKFLOW 改訂19 / 本 handoff v22) |
+
+---
+
+## §6 改訂履歴
+
+| バージョン | 日付 | 内容 |
+|---|---|---|
+| v14 | 2026-05-20 | Phase 0 v3 完了報告レビュー + L-196 緊急訂正 |
+| v15 | 2026-05-20 | audit#19 全工程完了 + L-198 指示書サイズ規律 |
+| v16 | 2026-05-20 | 学習内容 v3 確定 (exchange_spec.md 準拠化) |
+| v17 | 2026-05-21 | Phase 0-1a/1b 完了 + audit#18 + v3 §B-15 書き換え + Phase 1-c 発注 |
+| v18 | 2026-05-21 | Phase 1-c smoke NO-GO + Web Claude 役割降格 + Phase 0-1 軸実装監査タスク発注 |
+| v19 | 2026-05-21 | ML 設計担当 Web Claude → CC 完全移譲確定 + Entry/Exit 両側学習方法改善議論 + CC 同型バイアス 5 件記録 |
+| v20 | 2026-05-21 後半 | 書類整理 11 件 + WORKFLOW.md スリム化 + learning_design_v4.md 新規 + 監査 #20 で V4.1 化 |
+| v21 | 2026-05-21 | §3.0 cc_ml_design_spec §4 改訂 + phase_flow_v4_with_recovery.md 確定版 977 行 + CC 同型バイアス 8 件 |
+| **v22** | **2026-05-22** | **Layer 配分逆転 (B') 確定 + ナレッジベース v3 1691 行 (WebSearch 54 件 + Gemini 2 件統合) + 閾値設計論 4 大分類 + 3 層併存設計 + Phase 0 改修指示書 v3.1 (576 行・Triple Barrier ラベル同時生成) + Phase 1 学習方法再設計指示書 v1 (429 行・新規・6 案並列 + Walk-forward CV + DSR + 合格基準 5 指標) + learning_design_v4 → v5 (377 行) + cc_ml_design_spec §1.5.1 (399 行) + CC 同型バイアス 9 件記録 (累積 36+)** |
+
+---
+
+## §7 次セッション CC への最初の指示 (= 本ファイル読了後にやること)
+
+1. **本 handoff v22 を物理 view 完了 (機械的証跡)**:
+   - `wc -l .claude/instructions/handoff_to_cc_v22_session_20260522.md`
+   - Read ツールで全文 view
+   - §0.30〜§0.35 + §4.38〜§4.42 を最優先で頭に固定
+2. **次タスク (§3.1 Phase 0 改修指示書 v3.1 実装着手) 着手前に必読**:
+   - 上記 §4.42 リストの 13 ファイル全部 (機械的証跡 3 点遵守)
+   - 特に **technical_analysis_knowledge_base.md v3 (1691 行)** + **Phase 0 改修指示書 v3.1 (576 行)** + **Phase 1 学習方法再設計指示書 v1 (429 行)** は必読
+3. **§3.1 Phase 0 改修指示書 v3.1 実装** または **まこさん指示の確認**
+4. **未 commit 成果物の commit 範囲をまこさんに確認**
+5. **CC 同型バイアス再演 累積 36+ 件 を毎ターン警戒**:
+   - L-200 + L-201 自己縛りルール遵守 (機械的証跡 3 点 + WebSearch 能動活用)
+   - cc_role §1.4 + handoff v20-v22 全件 を毎ターン再読
+   - 業界経験閾値の **bool ハードコード単独 → 禁止** (3 層併存必須)
+   - 設計判断時に **WebSearch / WebFetch を能動的に活用** (cc_role §1.0 義務)
+   - **Gemini 等外部見解** をまこさんから貼ってもらう (即興解釈より信頼)
+
+---
+
+以上。
+
+**本 handoff v22 は CC (= 次セッションの私) 宛て**。Layer 配分逆転 (B') 確定 + 業界知識統合 (WebSearch 54 件) + 3 層併存閾値設計 + 6 案並列 Phase 1 学習計画 を反映した最新版。

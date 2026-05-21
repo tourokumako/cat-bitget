@@ -90,9 +90,9 @@ T5 (発火フィルタ・後付け除外)
 | B-10 学習アルゴ | B 探索 | 第 1 弾 XGBoost / CatBoost + 第 2 弾 MiniROCKET + 第 3 弾 MLP / TabNet + **第 4 弾 X2 強化学習** (audit#16 過小評価指摘・実装回避バイアス対策) | **Layer 3 第 1-4 弾** + 本番 / Bot 統合 (X2) |
 | B-11 cluster | B 探索 | **B 案 (LONG/SHORT 差分 4 個追加・16→20 次元)** で cluster 構造的問題「方向性を分類していない」直接対応 + KMeans vs GMM vs HDBSCAN 比較 | **Layer 1 (B 案最優先)** + Layer 2 + Layer 3 |
 | B-12 特徴量変換 | A 全投入 + B 探索 | **Fractional differentiation (d=0.3/0.5・Lopez de Prado 推奨) + PCA 補助列** + Wavelet 追加 (Layer 2) + MTF 4 方式 (ffill / 5m rolling / アンカー補間 / 複数特徴量分解) 監査比較 | **Layer 1 ④** + 監査経路 + Layer 2 + Layer 3 |
-| B-13 Entry ratio 閾値 | B + C 学習 | rolling 365 日 q90/95/99 (現状) + cluster 別独立 quantile 並列 + **K24 LONG/SHORT q99 欠落原因究明 + 救出判定** + Triple Barrier / Meta-labeling (Layer 3) | **Layer 1 ① (最優先)** + Layer 1 ② + Layer 1 後半 + **Layer 3 (Triple Barrier / Meta-labeling)** |
-| B-14 学習データ範囲 | D 期間固定 + B 探索 | 期間分割固定 (train 2021-04〜2024-12 / 仮 test 2025 / 本 test 2026 Q1) + Walk-forward / Purged K-fold / CPCV を Layer 3 で探索 + Class balancing / Focal loss / regime-based stratified サンプリング | **Layer 3** + Layer 2 (rolling 再学習) + 本番運用後 |
-| B-15 目的関数 | D 主目的固定 + B 探索 | 合格 = 月次 NET ≥ $1,900 全月固定 / train 目的関数 = RMSE + Triple Barrier 3 クラス multiclass + EV フィルタ並列実装 (audit#18 確定) / **Layer 2 ⑤ Calibration** + **Layer 3 前半 SHAP / Conformal prediction / custom loss (直接 PnL / Sharpe / Direction Multiclass / Asymmetric loss 等)** + **Layer 3 後半 高信頼度 only Entry** | Layer 2 ⑤ + **Layer 3 前半/後半** |
+| B-13 Entry ratio 閾値 | B + C 学習 | rolling 365 日 q90/95/99 (現状) + cluster 別独立 quantile 並列 + **K24 LONG/SHORT q99 欠落原因究明 + 救出判定** + **Triple Barrier / Meta-Labeling (Layer 1 前倒し・2026-05-22 v5)** | **Layer 1 ① (最優先)** + Layer 1 ② + **Layer 1 (Layer 配分逆転・案 e/f)** |
+| B-14 学習データ範囲 | D 期間固定 + B 探索 | 期間分割固定 (train 2021-04〜2024-12 / 仮 test 2025 / 本 test 2026 Q1) + **Walk-forward Purged K-Fold 5 fold を Phase 1 から導入 (Layer 1 前倒し・2026-05-22 v5)** + CPCV は Layer 3 + Class balancing / Focal loss / regime-based stratified サンプリング | **Layer 1 (Phase 1 から Purged K-Fold)** + Layer 2 (rolling 再学習) + Layer 3 (CPCV) |
+| B-15 目的関数 | D 主目的固定 + B 探索 | 合格 = 月次 NET ≥ $1,900 全月固定 / **train 目的関数 = 6 案並列 (RMSE / Binary / Multiclass / Ranking LambdaRank / Triple Barrier multiclass / Meta-Labeling 2 段階・2026-05-22 v5 Layer 配分逆転)** + Layer 2 ⑤ Calibration + Layer 3 前半 SHAP / Conformal prediction / custom loss (直接 PnL / Sharpe / Asymmetric loss 等) + Layer 3 後半 高信頼度 only Entry | **Layer 1 (6 案並列・2026-05-22 v5)** + Layer 2 ⑤ + **Layer 3 前半/後半** |
 | D-α 発火頻度 | C 学習 | 他軸従属変数・per-day 最低限ライン ≥ 10 件制約 (L-117 教訓) + 発火頻度実態可視化 | Layer 1 ① / Layer 1 ② / Layer 2 |
 | D-γ Entry 位置 | A-3 統合 | location_prev / entry_risk_score を A-3 内で特徴量化 | A-3 内 |
 | D-δ 時間帯曜日 | B 探索 (統合) | 統合フェーズで時間帯発火分布可視化 → フィルタ探索 (個別最適化禁止・WORKFLOW.md §設計思想 L230 遵守) | **Layer 2 統合フェーズ** |
@@ -143,14 +143,43 @@ T5 (発火フィルタ・後付け除外)
 - **B-11.11**: 入力ベクトル B 案 (LONG/SHORT 差分 4 個追加・16→20 次元) + KMeans vs GMM vs HDBSCAN 比較 (cluster が「方向性を分類していない」構造的問題への直接対応)
 
 ### Layer 1 (監査 #20 で追加・Entry 学習方法選択肢並列・Layer 3 → Layer 1 昇格)
-- **Entry Binary Classification (バイナリ分類・1/0 直接学習)**: 各 bar に「Entry すべきか (1/0)」ラベル・LightGBM Binary objective・class balancing 適用
-- **Direction Multiclass (3 クラス分類・LONG/SHORT/Flat)**: LONG_MFE_pct > 閾値 → LONG / SHORT_MFE_pct > 閾値 → SHORT / どちらも閾値未満 → Flat・LightGBM Multiclass objective・hedge_mode 整合
-- **既存 14 ラベル独立 RMSE 学習** (Phase 1-a 完了済・流用) を含めて 3 案を Phase 1 並列実装
-- **判定**: 3 案を Phase 1-b smoke (naive Exit) で simulated PnL 12 ヶ月中 6+ ヶ月プラス + 年間 NET プラス基準 (phase_flow §1.5 同型) で比較
-- **採否ロジック**:
-  - 14 ラベル独立 RMSE 単独 (現状 Phase 1-a) より改善があれば Layer 1 として採用 (= Layer 3 投入回避)
-  - 改善なければ Layer 3 (Triple Barrier multiclass + Meta-labeling 2 段階) 投入
-- **根拠**: Lopez de Prado *AFML* Ch.3 「primary model lift < 10% なら meta-labeling 投入推奨」+ Phase 1-c smoke entropy lift 6.04% (実測再計算・監査 #20 訂正後) が投入域
+- **案 a (14 ラベル独立 RMSE)**: Phase 1-a 既存方式の特徴量拡張版で再学習 (流用ベースライン)
+- **案 b (Entry Binary Classification・1/0 直接学習)**: 各 bar に「Entry すべきか (1/0)」ラベル・LightGBM Binary objective・class balancing 適用
+- **案 c (Direction Multiclass・3 クラス分類・LONG/SHORT/Flat)**: LONG_MFE_pct > 閾値 → LONG / SHORT_MFE_pct > 閾値 → SHORT / どちらも閾値未満 → Flat・LightGBM Multiclass objective・hedge_mode 整合
+- 3 案を Phase 1 並列実装 (監査 #20・2026-05-21)
+
+### Layer 1 (Layer 配分逆転・2026-05-22 v5・Triple Barrier + Meta-Labeling + Walk-forward CV + Ranking を Layer 3 → Layer 1 前倒し)
+
+まこさん指摘「学習方法が悪い」を反映した真の Layer 配分逆転。Layer 1 で **6 案並列**実装 + **Walk-forward Purged K-Fold 5 fold** + **DSR (Deflated Sharpe Ratio)** 採用:
+
+- **案 d (新規・Ranking LambdaRank)**: LightGBM `objective='lambdarank'`・MFE_pct ランキング上位 N% のみ Entry 採用・Stefan Jansen *Machine Learning for Algorithmic Trading* Ch.12-13 整合
+- **案 e (新規・Triple Barrier multiclass・Lopez de Prado AFML Ch.3)**: TP/SL/TIME 3 クラスラベル必要 → **Phase 0 改修指示書 v3.1 で同時生成** (28 ラベル列追加・56 ラベル列合計)・LightGBM Multiclass objective
+- **案 f (新規・Meta-Labeling 2 段階・Lopez de Prado AFML Ch.3)**: 案 e の primary model 完了後 sequential 実装・secondary model で「primary 予測の correctness」予測 → precision 改善 + F1-score + Sharpe 向上 (Hudson & Thames mlfinlab 整合)
+- **Walk-forward Purged K-Fold 5 fold** (Lopez de Prado AFML Ch.7 推奨・全 6 案で必須・mlfinlab.cross_validation.PurgedKFold 経由実装)
+- **DSR 採用** (Bailey + Lopez de Prado 2014・SSRN 2460551・selection bias 補正・100+ grid 試行記録義務)
+
+### Phase 1 合格基準 5 指標数値 (cc_ml_design_spec §1.6 と並列追加・2026-05-22 v5)
+
+| # | 指標 | 合格閾値 | 根拠 |
+|---|---|---|---|
+| 1 | **entropy lift** | **> 10%** | AFML Ch.3 (< 10% で meta-labeling 投入推奨域・Phase 1-c smoke 6.04% は投入域) |
+| 2 | **TP Precision** | **> 0.5** | 信頼度 50% 以上 (ベースライン 50% 超え必須) |
+| 3 | **Direction Accuracy** (案 c) | **> 0.55** | LONG/SHORT 当たり率 (5% 以上有意性) |
+| 4 | **Simulated PnL** | 12 ヶ月中 8+ ヶ月プラス + 年間 NET ≥ $500 | cc_ml_design_spec §1.6 整合 (Position size 未確定なので暫定基準) |
+| 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | 本テスト相当 (selection bias 補正後) |
+
+### Layer 3 投入条件厳格化 (2026-05-22 v5)
+
+- **6 案いずれか上記 5 指標 ALL PASS** → 採用案で Phase 2 進行
+- **6 案ベストでも 5 指標未達** → **即** Layer 3 投入 (現状 B-13.10 / B-14.12 / B-15.10 Layer 3 残存タスク = CPCV / Class balancing Focal loss / custom loss)
+- **「ベスト案で Phase 2 進行して判定」は禁止** (Phase 1 未達 → Phase 2 改善保証なし)
+
+### Phase 1 リソース計画 (2026-05-22 v5)
+
+- **並列度**: 3 並列 (CPU 競合 + メモリ制約)
+- **メモリ**: 30-45 GB (各案 10-15 GB × 3 並列)
+- **学習時間**: 5 fold × 6 案 = 約 20 時間 (約 1 日)
+- **Phase 1 全体期間**: 約 3-4 週 (ラベル設計 1 週 + 実装 1-2 週 + 学習 1 日 + CP2 監査 + 結果分析 1 週)
 
 ### 監査経路 (Layer 1 ④ と並行)
 - **B-12.10**: MTF 展開方式 4 通り (ffill / 5m rolling / アンカー補間 / 複数特徴量分解) の最適解判定
@@ -173,15 +202,17 @@ T5 (発火フィルタ・後付け除外)
 
 ---
 
-## §6 Layer 3 タスク確定リスト
+## §6 Layer 3 タスク確定リスト (2026-05-22 v5・Layer 配分逆転で縮小)
+
+> ⚠️ **2026-05-22 v5 Layer 配分逆転**: 旧 Layer 3 の B-13.10 / B-14.12 / B-15.10 のうち、**Triple Barrier + Meta-Labeling + Walk-forward Purged K-Fold** は Layer 1 (§4) に前倒し済。Layer 3 残存は以下のみ。
 
 - **B-9.9**: ラベル別 num_leaves / max_depth / min_data_in_leaf の Optuna 探索
 - **B-10.11**: 第 1 弾 XGBoost / CatBoost 比較 → 第 2 弾 MiniROCKET → 第 3 弾 MLP / TabNet → 第 4 弾 X2 強化学習 (本番運用後 / Bot 統合)
 - **B-11.11**: GMM-HMM / Markov regime switching
 - **B-12.10**: MiniROCKET 等で時系列構造変換
-- **B-13.10**: Triple Barrier / Meta-labeling (Lopez de Prado 系の本格導入)
-- **B-14.12**: Walk-forward + Purged K-fold + CPCV
-- **B-15.10**: 前半 SHAP / Conformal prediction / custom loss (直接 PnL / Sharpe / Direction Multiclass / Asymmetric loss) + 後半 高信頼度 only Entry
+- **B-13.10**: ~~Triple Barrier / Meta-Labeling~~ **(Layer 1 v5 へ前倒し済)**・残存タスク = cluster 別独立 quantile の精緻化
+- **B-14.12**: ~~Walk-forward Purged K-Fold~~ **(Layer 1 v5 へ前倒し済)**・残存タスク = **CPCV (Combinatorial Purged CV)** + Class balancing / Focal loss / regime-based stratified サンプリング
+- **B-15.10**: ~~6 案目的関数並列~~ **(Layer 1 v5 へ前倒し済)**・残存タスク = 前半 SHAP / Conformal prediction / custom loss (直接 PnL / Sharpe / Asymmetric loss) + 後半 高信頼度 only Entry
 - **D-ζ.10**: 純 hedge / Delta-neutral 系
 - **D-η.9**: 不約定リスクモデル化
 - **D-θ.10**: 執行最適化
@@ -276,17 +307,26 @@ T5 (発火フィルタ・後付け除外)
   - cc_ml_design_spec §4 改訂 (「1 回」→「合計」+ cap カウント方法明文化)
   - Phase 0 改修 (8 指標 + まこさん発振系 3 件 + 1w/1M MTF + Fractional differentiation + PCA + パラメータ並列展開・1432 → 約 2000-2500 列・約 3-6 時間)
    ↓ CP1 (Phase 0 改修完了・列数 verify + leak 4 点チェック)
-[Layer 1 タスク並列・約 2-3 週間 (監査 #20 で Entry 学習方法選択肢並列追加)]
+[Layer 1 タスク並列・約 3-4 週間 (2026-05-22 v5 Layer 配分逆転・6 案並列 + Walk-forward CV)]
   - Layer 1 ①: A-2 trailing 究明 + A-3 派生特徴量監査 + B-13 K24 q99 欠落究明 + D-α 発火頻度可視化
   - Layer 1 ②: A-4 K96 切り捨て + B-8 K96 LONG 切り捨て + B-13 K96 SHORT 切り捨て
   - Layer 1 ③: A-4 K=6/144/288 追加
-  - Layer 1 ④: A-1 特徴量拡張 (前提タスクと統合) + A-3 パラメータ並列 (同) + A-5 1w/1M (同) + B-12 Fractional (同)
+  - Layer 1 ④: A-1 特徴量拡張 (前提タスクと統合・約 800-1500 列追加) + A-3 パラメータ並列 (同) + A-5 1w/1M (同) + B-12 Fractional (同)
   - Layer 1 (B-11): B 案 LONG/SHORT 差分追加 + 手法比較
-  - **Layer 1 (監査 #20 追加): Entry Binary Classification + Direction Multiclass + 14 ラベル独立 RMSE を Phase 1 並列学習** (約 1 週間追加)
-   ↓ CP2 (Phase 1 再学習・3 案 (RMSE / Binary / Direction Multiclass) × 特徴量空間拡張版 を物理証跡対比レビュー・entropy lift / TP precision / Direction accuracy / simulated PnL の 4 指標で比較・「特徴量で改善か・ラベルで改善か・両方か」を分離検証)
-   ↓ 分岐判定:
-     ↳ Binary or Direction Multiclass が RMSE 単独より明確に改善 → 採用案で Phase 2 進行
-     ↳ 3 案とも Phase 1-b 合格基準 (12 ヶ月中 6+ ヶ月プラス + 年間 NET プラス) 未達 → **Layer 3 投入** (Triple Barrier multiclass + Meta-labeling 2 段階・Lopez de Prado AFML Ch.3 推奨)
+  - **Layer 1 (監査 #20 + v5 Layer 配分逆転): 6 案並列 Phase 1 学習** (約 3-4 週間):
+    - 案 a (14 ラベル独立 RMSE・流用)
+    - 案 b (Entry Binary Classification)
+    - 案 c (Direction Multiclass)
+    - **案 d (Ranking LambdaRank・v5 新規)**
+    - **案 e (Triple Barrier multiclass・Layer 3 → Layer 1 前倒し・v5)**
+    - **案 f (Meta-Labeling 2 段階・案 e 完了後 sequential・v5)**
+    - **Walk-forward Purged K-Fold 5 fold** (全案で必須・mlfinlab.cross_validation.PurgedKFold・Layer 3 → Layer 1 前倒し)
+    - **3 並列実行** (CPU 競合 + メモリ制約 30-45 GB)・学習時間 約 20 時間 (約 1 日)
+   ↓ CP2 (Phase 1 6 案 × Purged K-Fold 5 fold 物理証跡対比・5 指標合格判定 (entropy lift / TP Precision / Direction Accuracy / Simulated PnL / DSR))
+   ↓ 分岐判定 (Layer 3 投入条件厳格化・v5):
+     ↳ 6 案いずれか上記 5 指標 ALL PASS → 採用案で Phase 2 進行
+     ↳ 6 案ベストでも 5 指標未達 → **即** Layer 3 残存タスク投入 (CPCV + Class balancing / Focal loss + custom loss + アルゴ多様化)
+     ↳ 「ベスト案で Phase 2 進行して判定」は禁止 (Phase 1 未達 → Phase 2 改善保証なし・v5 厳格化)
 [Phase 2-3 (v3 phase_flow §3-4 通り)]
   - Phase 2: B-9 4 指標判定 (合格基準 cc_ml_design_spec §1.6)
   - Phase 3-a / 3-b: cluster 入力 B 案 + KMeans vs GMM vs HDBSCAN 比較
@@ -326,6 +366,7 @@ T5 (発火フィルタ・後付け除外)
 |---|---|---|
 | 2026-05-21 | v4 | 初版 (CC ML 設計担当移譲後・23 軸 §X.10 整合再構築・Web Claude ドラフト 5 タスク構造採用・handoff v19 §0.14 Entry 学習問題対応マップ追加・v3 archive 移動完了) |
 | 2026-05-21 | v4.1 | **監査 #20 (Claude 監査エージェント) で 3 件懸念指摘 → 5 箇所修正反映**: ① §9 entropy lift 2.2% → 6.04% 訂正 (false_positive §2 類型 E/G リスク回避) / ② §9「§X.10 確定 Layer 担当 = Layer 3 に従う」削除 + CSV 両論併記を事実として明記 (handoff v19 §0.13 #4 教条主義再演回避) / ③ §4 Layer 1 に Entry Binary Classification + Direction Multiclass 並列追加 (Lopez de Prado *AFML* Ch.3 推奨閾値・entropy lift 6.04% は meta-labeling 投入域) / ④ §11 着手フロー CP2 にラベル変更版並列実装 + 分岐判定追加 / ⑤ §10 修正履歴に監査 #20 反映 4 件追加 |
+| 2026-05-22 | **v5** | **Layer 配分逆転確定 (まこさん指摘「学習方法が悪い」最終反映・3 案 → 6 案並列)**: ① §3 振り分け表 B-13/B-14/B-15 を Layer 1 前倒し (Triple Barrier + Meta-Labeling + Walk-forward Purged K-Fold + Ranking LambdaRank) / ② §4 Layer 1 タスクに「Layer 配分逆転 v5」セクション追加 (案 d/e/f + Walk-forward CV + Phase 1 合格基準 5 指標数値 + Layer 3 投入条件厳格化 + リソース計画 3 並列 30-45 GB) / ③ §6 Layer 3 タスク縮小 (B-13/B-14/B-15 の Triple Barrier 等を Layer 1 へ移行・残存は CPCV / Class balancing / custom loss / SHAP / Conformal prediction) / ④ §11 着手フロー大幅修正 (6 案並列 + Purged K-Fold 5 fold + CP2 分岐判定厳格化 + Phase 1 期間 2-3 週 → 3-4 週) / ⑤ ナレッジベース v3 §I 閾値設計論 + 3 層併存設計 (連続値 + Adaptive + 自己実現的) を Phase 1 ml 設計と整合 / ⑥ DSR (Deflated Sharpe Ratio・Bailey + Lopez de Prado 2014) 採用 (Phase 4-b/5/6 必須) / ⑦ Triple Barrier ラベル生成は Phase 0 改修指示書 v3.1 で同時実装 (build_labels_pct.py compute_triple_barrier_labels 追加・28 ラベル列追加・合計 56 ラベル列) |
 
 ---
 

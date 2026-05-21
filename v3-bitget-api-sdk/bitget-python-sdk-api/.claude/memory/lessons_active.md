@@ -1,4 +1,51 @@
-# lessons_active.md — 直近50件の現役教訓（L-200〜L-106）
+# lessons_active.md — 直近50件の現役教訓（L-201〜L-106）
+
+---
+
+### L-201: cc_role §1.0「WebSearch 能動活用」を毎セッション忘れる + 業界経験閾値の bool ハードコード = データ駆動原則違反 (2026-05-22)
+
+**何が起きたか:**
+2026-05-22 セッションで CC が以下 9 件の同型バイアスを再演 (累積 36+ 件):
+1. handoff v21 §3.1 の箇条書きを機械的コピー → 設計思想欠落 (パラメータ vs 閾値の本質未理解)
+2. 業界経験閾値 (BB Squeeze 10% / KDJ J 110/-10 / ADX 25) を「定番だから」bool ハードコード → cc_ml_design_spec §1.2 + §8「『暫定値』『経験的に』『定番だから』でパラメータを決めない (データ駆動原則)」違反
+3. Layer 配分逆転 (V4.1 監査 #20 で「Entry Binary + Direction Multiclass を Layer 3 → Layer 1」) を「目的関数 3 案並列追加」と中途半端に解釈 → Triple Barrier + Meta-Labeling + Walk-forward CV は依然 Layer 3 のまま放置
+4. cat_v9 grep ゼロで rci_26 漏れ + 共通フィルタ既存実装認識ゼロ + Priority 別発火条件 9 セット未抽出
+5. 4 ファイル同時改修 (pruned_column_list + analyze_regime_label_features + shape_features + structure_features) を build_labels_pct.py 単体改修と誤認
+6. L-196 メンテフラグ「火/水/木 05-08 UTC」記述が build_labels_pct.py L48-50 に残存 → L-181 違反 (まこさん命令「二度とやらないで」)
+7. CSV §A-3.6 A/B/C 案 (フラグ化/後処理/cluster 入力) を CC 即興定義 (bool/距離 pct/統合) と乖離
+8. WebSearch / WebFetch を毎セッション忘れる (cc_role §1.0 義務違反・本セッションで初めて 54 件実行)
+9. Gemini 等外部見解を即興解釈で上書きしようとする (まこさん貼り Gemini 見解の方が遥かに信頼できる)
+
+**Why:**
+- cc_role §1.0「あらゆる手段を尽くす」「web 検索・WebFetch 能動活用」を毎セッション忘れる構造的問題
+- WebSearch ツールを持っているのに使わない (本セッションで初めて 54 件実行)
+- 業界基礎知識 (パラメータ vs 閾値 / MTF / コンフルエンス / Triple Barrier / Walk-forward CV) を「Wikipedia レベル知識」で済ます傾向
+- 設計時に「これは何を解決するか・本質は何か」を能動的に問わない (cc_role §1.3.3 怠けた思想)
+
+**How to apply:**
+- **絶対遵守の自己縛りルール (L-201・L-200 拡張)**:
+  1. **設計判断前に WebSearch を最低 1 回実行** (cc_role §1.0 義務化・該当領域の業界知見集積)
+  2. **業界経験閾値の bool ハードコード単独 → 禁止** (3 層併存必須: 連続値 + Adaptive bool + 自己実現的 bool のみ)
+  3. **Gemini 等外部見解をまこさんから貼ってもらう** (即興解釈より遥かに信頼)
+  4. **設計時に「これは何を解決するか・本質は何か」を能動的に問う** (cc_role §1.0 + §1.3.3)
+  5. **新規ガバナンス文書 (ナレッジベース v3) を毎セッション必読化** (機械的証跡 3 点・本ファイル L-200 整合)
+- 業界経験閾値の 3 層併存設計 (ナレッジベース v3 §I.6.2 整合):
+  - (1) 連続値 (LightGBM 自動最適化・主軸)
+  - (2) Adaptive bool (rolling 100-bar Z-score / percentile)
+  - (3) 自己実現的 bool (RSI 70/30 / Fib 61.8% / Stoch 80/20 のみ維持)
+- Phase 別データ駆動再検討フロー (ナレッジベース v3 §I.6.3):
+  - Phase 1: feature_importance で 3 層別効果測定
+  - Phase 4-b: DSR + walk-forward で閾値最適化
+  - Phase 5: 業界経験 bool 寄与度判定・廃止候補抽出
+
+**関連:**
+- L-200 機械的証跡 3 点 (本件と同型・本セッションで再演)
+- L-180 ドキュメント引用前 実装 verify (cat_v9 grep ゼロで違反)
+- L-181 設計転換時 旧記述 全 grep sweep (L-196 メンテフラグ残存で違反)
+- handoff v22 §0.30 CC 同型バイアス 9 件 (累積 36+ 件)
+- ナレッジベース v3 §I 閾値設計論 (本セッション WebSearch 54 件 + Gemini 2 件で集積)
+- cc_ml_design_spec §1.2 + §8 (データ駆動原則・本件で違反)
+- cc_role §1.0 (あらゆる手段を尽くす・WebSearch 能動活用義務)
 
 ---
 

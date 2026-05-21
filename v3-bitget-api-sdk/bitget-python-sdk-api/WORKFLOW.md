@@ -299,9 +299,59 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-22 改訂18・前セッション継続 = §3.0 cc_ml_design_spec §4 改訂 + phase_flow_v4 確定版 977 行 + 書類整理 35 ファイル完了）
+## 🔴 現在のフェーズ（2026-05-22 改訂19・**Layer 配分逆転 (B') 確定** + 業界知識統合 + 3 層併存閾値設計）
 
-> **【現在の正本ブロック・改訂18・2026-05-22 セッション末】**
+> **【現在の正本ブロック・改訂19・2026-05-22 セッション末】**
+>
+> ### 本セッション (handoff v21 受領後) 完了事項
+>
+> #### 1. ナレッジベース v3 確定 (technical_analysis_knowledge_base.md・1691 行)
+> - v1 (450 行) → v2 (1528 行) → v3 (1691 行)
+> - WebSearch 54 件 + Gemini 見解 2 件統合
+> - §A-§D 個別辞典 (RSI/MACD/ADX/ATR/BB/Stoch/Ichimoku/Fib/VP/Pivot/RCI/Williams + キャンドル + Wyckoff + SMC + AFML)
+> - **§I 閾値設計論** (4 大分類: 自己実現的 / 計算式由来 / 業界経験 / Adaptive + DSR + 3 層併存設計)
+> - §F 出典 69 件 URL
+>
+> #### 2. Phase 0 改修指示書 v3.1 確定 (576 行・Triple Barrier ラベル同時生成)
+> - 5 ファイル同時改修 (pruned_column_list + 4 .py)
+> - 約 2316-3016 列 (1432 既存 + 800-1500 新規特徴量 + 28 既存ラベル + **28 Triple Barrier ラベル**)
+> - L-196 メンテフラグ削除 (L-181 違反訂正)
+> - 業界 5 系統分類 + 3 層併存閾値設計
+> - mlfinlab パッケージ依存追加
+>
+> #### 3. Phase 1 学習方法再設計指示書 v1 新規作成 (429 行・Layer 配分逆転 (B') 確定版)
+> - **6 案並列**: 案 a (14 ラベル RMSE) + 案 b (Binary) + 案 c (Multiclass) + **案 d (Ranking LambdaRank)** + **案 e (Triple Barrier multiclass)** + **案 f (Meta-Labeling 2 段階)**
+> - **Walk-forward Purged K-Fold 5 fold** (mlfinlab.cross_validation・Layer 3 → Layer 1 前倒し)
+> - **DSR (Deflated Sharpe Ratio・Bailey + Lopez de Prado 2014) 採用** (selection bias 補正)
+> - **合格基準 5 指標数値** (entropy lift > 10% / TP Precision > 0.5 / Direction Accuracy > 0.55 / Simulated PnL 8+ 月プラス + 年 $500 / DSR > 1.0)
+> - **Layer 3 投入条件厳格化** (6 案ベストでも 5 指標未達 → 即 Layer 3)
+> - リソース計画 (3 並列・30-45 GB・約 20 時間)
+>
+> #### 4. learning_design_v4 → v5 改訂 (377 行・+41 行)
+> - §3 振り分け表 B-13/B-14/B-15 Layer 1 前倒し明示
+> - §4 「Layer 1 (Layer 配分逆転・2026-05-22 v5)」セクション新規追加
+> - §6 Layer 3 タスク縮小
+> - §11 着手フロー大幅修正
+>
+> #### 5. cc_ml_design_spec §1.5.1 追加 (399 行・+19 行)
+> - Phase 1 合格基準 5 指標数値正式化
+> - §1.6.1 メタルール整合 (実行後緩和禁止)
+>
+> ### CC 同型バイアス再演 9 件 (本セッション・累積 36+ 件)
+>
+> handoff v21 §0.27 累積 18 件 + 本セッション 9 件 = **累積 36+ 件**。詳細は lessons_active.md L-201 + handoff v22 §0.30 参照。
+>
+> ### 次セッション CC 優先順位 (handoff v22 §3 参照)
+>
+> 1. **優先 1 (最優先)**: §3.1 **Phase 0 改修指示書 v3.1 実装着手** (5 ファイル同時改修 + Triple Barrier ラベル + L-196 メンテフラグ削除・約 4-6 時間)
+> 2. **優先 2**: §3.2 **Phase 1 学習方法再設計指示書 v1 実装着手** (6 案並列 + Purged K-Fold 5 fold + DSR・約 3-4 週間)
+> 3. **優先 3 (将来)**: Phase 4-b 設計再 audit + DSR + Adaptive 閾値最適化 / Phase 7-d 着手前 maxMarketOrderQty paper trading test
+
+---
+
+> ### 🧊 改訂18 ブロック (履歴・参照用)
+
+> **【旧正本ブロック・改訂18・2026-05-22 セッション末】**
 >
 > ### 本セッション (handoff v20 受領後) 完了事項
 >
