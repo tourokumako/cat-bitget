@@ -1,0 +1,45 @@
+[2026-05-21T06:22:02Z] START phase1c_multiclass  out_dir=results/priority_rebuild/ml_phase1c_triple_barrier_smoke
+[2026-05-21T06:22:02Z] lgbm=4.6.0  pandas=2.2.3
+[2026-05-21T06:22:02Z]   features: results/priority_rebuild/labels_mfe_mae_pct_train_2021_2024.parquet
+[2026-05-21T06:22:19Z]   labels:   results/priority_rebuild/ml_phase1c_triple_barrier/labels_triple_barrier_train_2021_2024.parquet
+[2026-05-21T06:22:32Z]   merged shape=(394561, 1495)
+[2026-05-21T06:22:32Z]   features: results/priority_rebuild/labels_mfe_mae_pct_test_2025.parquet
+[2026-05-21T06:22:34Z]   labels:   results/priority_rebuild/ml_phase1c_triple_barrier/labels_triple_barrier_test_2025.parquet
+[2026-05-21T06:22:35Z]   merged shape=(105120, 1495)
+[2026-05-21T06:22:35Z] train ts: 2021-04-01 23:55:00 .. 2024-12-31 23:55:00
+[2026-05-21T06:22:35Z] test  ts: 2025-01-01 00:00:00 .. 2025-12-31 23:55:00
+[2026-05-21T06:22:35Z] feature count = 1414 (期待 1414)
+[2026-05-21T06:22:45Z]   train rows=315,360 valid rows=78,913 purge=288
+[2026-05-21T06:22:45Z] K_targets = [12]
+[2026-05-21T06:22:45Z] --- training K=12 ---
+[100]	train's multi_logloss: 0.963663	valid's multi_logloss: 1.03243
+[2026-05-21T06:38:31Z]   K=12 done | best_iter=127 valid_logloss=1.0322 elapsed=945.3s top1=realized_vol_rank_50b__15m top1_pct=0.1968
+[2026-05-21T06:38:31Z]   top20 features:
+[2026-05-21T06:38:31Z]     rank= 1 imp=    23,929.6 realized_vol_rank_50b__15m
+[2026-05-21T06:38:31Z]     rank= 2 imp=    16,883.3 realized_vol_rank_50b__30m
+[2026-05-21T06:38:31Z]     rank= 3 imp=    10,767.9 swing_high_dist_pct_W_W50__5m
+[2026-05-21T06:38:31Z]     rank= 4 imp=     7,986.2 swing_low_dist_pct_W_W20__5m
+[2026-05-21T06:38:31Z]     rank= 5 imp=     7,869.4 realized_vol_20b__5m
+[2026-05-21T06:38:31Z]     rank= 6 imp=     5,869.7 donchian_width_pct_20__5m
+[2026-05-21T06:38:31Z]     rank= 7 imp=     4,807.2 swing_high_dist_pct_W_W10__15m
+[2026-05-21T06:38:31Z]     rank= 8 imp=     4,383.6 donchian_width_pct_20__15m
+[2026-05-21T06:38:31Z]     rank= 9 imp=     4,235.3 volume_ratio_20b__5m
+[2026-05-21T06:38:31Z]     rank=10 imp=     4,130.7 bars_since_new_high_W_W50__30m
+[2026-05-21T06:38:31Z]     rank=11 imp=     4,117.9 close_vs_keltner_lower_pct__5m
+[2026-05-21T06:38:31Z]     rank=12 imp=     4,049.4 close_vs_keltner_upper_pct__5m
+[2026-05-21T06:38:31Z]     rank=13 imp=     3,217.7 bb_width_pct__1d
+[2026-05-21T06:38:31Z]     rank=14 imp=     2,995.2 realized_vol_20b__1d
+[2026-05-21T06:38:31Z]     rank=15 imp=     2,946.3 di_plus__30m
+[2026-05-21T06:38:31Z]     rank=16 imp=     2,784.8 bars_since_swing_high_W_W50__30m
+[2026-05-21T06:38:31Z]     rank=17 imp=     2,759.3 avg_upper_wick_ratio_W_W50__1d
+[2026-05-21T06:38:31Z]     rank=18 imp=     2,711.0 swing_low_dist_pct_W_W10__5m
+[2026-05-21T06:38:31Z]     rank=19 imp=     2,673.7 pivot_position_100b__5m
+[2026-05-21T06:38:31Z]     rank=20 imp=     2,461.9 volume_ratio_20b__4h
+[2026-05-21T06:38:31Z]   precision (P>0.5) per class: SL=0.5144 TIME=0.4565 TP=0.2364
+[2026-05-21T06:38:31Z] check_4_label_correlation: SKIP
+[2026-05-21T06:38:31Z] STOP 条件該当:
+[2026-05-21T06:38:31Z]   - K=12: logloss=1.0322 ≥ 0.95
+[2026-05-21T06:38:31Z] END phase1c_multiclass  out_dir=results/priority_rebuild/ml_phase1c_triple_barrier_smoke
+
+=== DONE ===
+out_dir = results/priority_rebuild/ml_phase1c_triple_barrier_smoke

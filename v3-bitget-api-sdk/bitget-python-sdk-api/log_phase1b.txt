@@ -1,0 +1,24 @@
+[2026-05-21T02:54:11Z] START phase1b_simple_pnl
+[2026-05-21T02:54:11Z] cwd=/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api repo_root=/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api
+[2026-05-21T02:54:11Z] loading predictions: results/priority_rebuild/ml_phase1a_rmse/predictions_test_2025.parquet
+[2026-05-21T02:54:11Z]   shape=(105120, 14) ts 2025-01-01 00:00:00 .. 2025-12-31 23:55:00
+[2026-05-21T02:54:11Z] loading atr14_pct__5m from labels parquet
+[2026-05-21T02:54:11Z] loading OHLC: data/BTCUSDT-5m-bitget-2021-04-01_2026-03-31_5y.csv
+[2026-05-21T02:54:12Z]   OHLC 2025 rows=105,120 (期待 105,120)
+[2026-05-21T02:54:12Z] ATR all median = 0.136197
+[2026-05-21T02:54:12Z] --- simulate K=6 ---
+[2026-05-21T02:54:12Z]   K=6 done in 0.1s | n_trades=2,597 active_max=7 sum_btc_max=0.0700
+[2026-05-21T02:54:12Z]   K=6 judgment: FAIL (plus_months=0/12 annual_net=-994.69 entries/day=7.12)
+[2026-05-21T02:54:12Z] --- simulate K=12 ---
+[2026-05-21T02:54:12Z]   K=12 done in 0.1s | n_trades=2,207 active_max=12 sum_btc_max=0.1200
+[2026-05-21T02:54:12Z]   K=12 judgment: FAIL (plus_months=1/12 annual_net=-825.13 entries/day=6.10)
+[2026-05-21T02:54:12Z] --- simulate K=24 ---
+[2026-05-21T02:54:12Z]   K=24 done in 0.1s | n_trades=1,825 active_max=12 sum_btc_max=0.1200
+[2026-05-21T02:54:13Z]   K=24 judgment: FAIL (plus_months=6/12 annual_net=-364.33 entries/day=5.08)
+[2026-05-21T02:54:13Z] ATR dominance: entry_median=0.135113 all_median=0.136197 X=0.9920
+[2026-05-21T02:54:13Z] GO judgment: NO-GO
+[2026-05-21T02:54:13Z] recovery_path: Phase 1-c へ進む (PnL/Sharpe で改善見込み・annual_net マイナス or plus_months<6)
+[2026-05-21T02:54:13Z] END phase1b_simple_pnl total elapsed=1.6s
+
+=== DONE ===
+out_dir = results/priority_rebuild/ml_phase1b_simple_pnl

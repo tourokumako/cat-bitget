@@ -1,0 +1,24 @@
+[start] 2026-05-20 07:08:17.070138 mode=full
+[load] /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/data/BTCUSDT-5m-bitget-2021-04-01_2026-03-31_5y.csv
+  5m rows: 525,887 (2021-04-01 00:00:00 〜 2026-03-31 23:50:00)
+[load] /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/results/regime_label_analysis/pruned_column_list.json
+  [feat] 5m: 525,887 bars, 指標計算...
+  [feat] 5m: 281 cols 算出 (pruned 絞り込み前)
+  [feat] 15m: 175,296 bars, 指標計算...
+  [feat] 15m: 281 cols 算出 (pruned 絞り込み前)
+  [feat] 30m: 87,648 bars, 指標計算...
+  [feat] 30m: 281 cols 算出 (pruned 絞り込み前)
+  [feat] 1h: 43,824 bars, 指標計算...
+  [feat] 1h: 281 cols 算出 (pruned 絞り込み前)
+  [feat] 4h: 10,956 bars, 指標計算...
+  [feat] 4h: 281 cols 算出 (pruned 絞り込み前)
+  [feat] 1d: 1,826 bars, 指標計算...
+  [feat] 1d: 281 cols 算出 (pruned 絞り込み前)
+[attach] MTF 結合 (look-ahead 防止)
+[assert OK] 指標列 1462 完全一致 (1,462 期待・pct 化 30 件追加後・USD 絶対値 48 件は Phase 1 で blacklist drop)
+[label] MFE/MAE pct 計算 (28 ラベル)
+  末尾ラベル欠損行 drop: 575 行 (K=288 末尾 24h)
+[split] test_2026_q1: 25,631 行 (2026-01-01 00:00:00 〜 2026-03-30 23:50:00) maintenance=1,332
+[write] /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/results/priority_rebuild/labels_mfe_mae_pct_test_2026_q1.parquet
+[done] 0.08 GB
+[end] elapsed: 0 days 01:19:10.139514

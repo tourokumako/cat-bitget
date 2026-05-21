@@ -1,0 +1,343 @@
+[2026-05-21T00:53:35Z] START phase1a_rmse  out_dir=results/priority_rebuild/ml_phase1a_rmse
+[2026-05-21T00:53:35Z] cwd=/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api repo_root=/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api
+[2026-05-21T00:53:35Z] lgbm=4.6.0  pandas=2.2.3  numpy=2.2.5
+[2026-05-21T00:53:44Z] train rows=394,561 test_2025 rows=105,120
+[2026-05-21T00:53:44Z] train ts: 2021-04-01 23:55:00 .. 2024-12-31 23:55:00
+[2026-05-21T00:53:44Z] test_2025 ts: 2025-01-01 00:00:00 .. 2025-12-31 23:55:00
+[2026-05-21T00:53:44Z] blacklist drop count = 48
+[2026-05-21T00:53:44Z] feature count = 1414 (期待 1414)
+[2026-05-21T00:53:58Z] split: train_df rows=315,360 valid_df rows=78,913 purge_bars=288
+[2026-05-21T00:53:58Z] labels_to_train = ['LONG_MFE_pct_K6', 'LONG_MFE_pct_K12', 'LONG_MFE_pct_K24', 'LONG_MFE_pct_K48', 'LONG_MFE_pct_K96', 'LONG_MFE_pct_K144', 'LONG_MFE_pct_K288', 'LONG_MAE_pct_K6', 'LONG_MAE_pct_K12', 'LONG_MAE_pct_K24', 'LONG_MAE_pct_K48', 'LONG_MAE_pct_K96', 'LONG_MAE_pct_K144', 'LONG_MAE_pct_K288']
+[2026-05-21T00:53:58Z] hparams = {"objective": "regression", "metric": "rmse", "boosting_type": "gbdt", "num_leaves": 31, "max_depth": -1, "min_data_in_leaf": 20, "learning_rate": 0.05, "feature_fraction": 0.9, "bagging_fraction": 0.8, "bagging_freq": 5, "n_estimators": 1000, "random_state": 42, "bagging_seed": 42, "feature_fraction_seed": 42, "data_random_seed": 42, "n_jobs": 1, "verbose": -1}
+[2026-05-21T00:53:58Z] --- training LONG_MFE_pct_K6 ---
+[100]	train's rmse: 0.315781	valid's rmse: 0.267241
+[2026-05-21T01:00:18Z]   done in 379.5s | train_rmse=0.32467 valid_rmse=0.26640 ratio=0.9013 best_iter=67 top1=atr14_pct__5m top1_pct=0.6275
+[2026-05-21T01:00:18Z]   top20 features:
+[2026-05-21T01:00:18Z]     rank= 1  imp=    57,551.7  atr14_pct__5m
+[2026-05-21T01:00:18Z]     rank= 2  imp=    15,760.3  close_vs_st_upper_pct__5m
+[2026-05-21T01:00:18Z]     rank= 3  imp=     4,013.5  close_vs_st_lower_pct__5m
+[2026-05-21T01:00:18Z]     rank= 4  imp=     1,135.3  close_vs_keltner_lower_pct__5m
+[2026-05-21T01:00:18Z]     rank= 5  imp=     1,130.4  pivot_position_100b__5m
+[2026-05-21T01:00:18Z]     rank= 6  imp=     1,109.2  avg_lower_wick_ratio_W_W50__30m
+[2026-05-21T01:00:18Z]     rank= 7  imp=     1,066.2  dist_to_VAH_pct_N200_b100_va60_N200__15m
+[2026-05-21T01:00:18Z]     rank= 8  imp=     1,061.3  close_vs_keltner_upper_pct__5m
+[2026-05-21T01:00:18Z]     rank= 9  imp=     1,058.5  rsi14__5m
+[2026-05-21T01:00:18Z]     rank=10  imp=       983.5  stoch_k__1d
+[2026-05-21T01:00:18Z]     rank=11  imp=       853.1  dist_to_R2_pct_c2__5m
+[2026-05-21T01:00:18Z]     rank=12  imp=       779.9  bars_since_new_high_W_W10__5m
+[2026-05-21T01:00:18Z]     rank=13  imp=       743.2  max_consecutive_new_lows_W_W10__4h
+[2026-05-21T01:00:18Z]     rank=14  imp=       700.2  avg_upper_wick_ratio_W_W10__1d
+[2026-05-21T01:00:18Z]     rank=15  imp=       694.8  avg_upper_wick_ratio_W_W10__15m
+[2026-05-21T01:00:18Z]     rank=16  imp=       639.1  dist_to_VAH_pct_N200_b100_va80_N200__30m
+[2026-05-21T01:00:18Z]     rank=17  imp=       630.4  dist_to_VAH_pct_N200_b050_va70_N200__5m
+[2026-05-21T01:00:18Z]     rank=18  imp=       620.3  mfi_14__5m
+[2026-05-21T01:00:18Z]     rank=19  imp=       600.5  close_to_high_pct__15m
+[2026-05-21T01:00:18Z]     rank=20  imp=       591.1  avg_body_ratio_W_W20__15m
+[2026-05-21T01:00:18Z] --- training LONG_MFE_pct_K12 ---
+[2026-05-21T01:05:36Z]   done in 316.8s | train_rmse=0.45491 valid_rmse=0.38520 ratio=0.9230 best_iter=46 top1=atr14_pct__5m top1_pct=0.6457
+[2026-05-21T01:05:36Z]   top20 features:
+[2026-05-21T01:05:36Z]     rank= 1  imp=   106,803.2  atr14_pct__5m
+[2026-05-21T01:05:36Z]     rank= 2  imp=    22,768.2  close_vs_st_upper_pct__5m
+[2026-05-21T01:05:36Z]     rank= 3  imp=     4,897.1  close_vs_st_lower_pct__5m
+[2026-05-21T01:05:36Z]     rank= 4  imp=     3,602.6  avg_lower_wick_ratio_W_W50__30m
+[2026-05-21T01:05:36Z]     rank= 5  imp=     2,859.0  dist_to_VAH_pct_N200_b100_va80_N200__1h
+[2026-05-21T01:05:36Z]     rank= 6  imp=     2,616.0  dist_to_VAH_pct_N200_b050_va70_N200__1h
+[2026-05-21T01:05:36Z]     rank= 7  imp=     2,556.0  dist_to_VAH_pct_N200_b100_va60_N200__15m
+[2026-05-21T01:05:36Z]     rank= 8  imp=     2,023.1  close_vs_st_upper_pct__4h
+[2026-05-21T01:05:36Z]     rank= 9  imp=     2,008.8  stoch_k__1d
+[2026-05-21T01:05:36Z]     rank=10  imp=     1,599.1  pivot_position_100b__5m
+[2026-05-21T01:05:36Z]     rank=11  imp=     1,528.9  bars_since_new_high_W_W20__1h
+[2026-05-21T01:05:36Z]     rank=12  imp=     1,471.0  avg_upper_wick_ratio_W_W10__1d
+[2026-05-21T01:05:36Z]     rank=13  imp=     1,454.1  rsi14__5m
+[2026-05-21T01:05:36Z]     rank=14  imp=     1,434.0  dist_to_POC_pct_N200_b100_N200__15m
+[2026-05-21T01:05:36Z]     rank=15  imp=     1,387.2  realized_vol_20b__1h
+[2026-05-21T01:05:36Z]     rank=16  imp=     1,376.8  dist_to_VAH_pct_N100_b020_va70_N100__4h
+[2026-05-21T01:05:36Z]     rank=17  imp=     1,317.6  close_vs_keltner_lower_pct__5m
+[2026-05-21T01:05:36Z]     rank=18  imp=     1,298.6  pivot_position_50b__4h
+[2026-05-21T01:05:36Z]     rank=19  imp=     1,240.5  bars_since_new_low_W_W50__1h
+[2026-05-21T01:05:36Z]     rank=20  imp=     1,153.7  bb_width_pct__1d
+[2026-05-21T01:05:36Z] --- training LONG_MFE_pct_K24 ---
+[2026-05-21T01:11:00Z]   done in 322.6s | train_rmse=0.64210 valid_rmse=0.54999 ratio=0.9446 best_iter=29 top1=atr14_pct__5m top1_pct=0.6037
+[2026-05-21T01:11:00Z]   top20 features:
+[2026-05-21T01:11:00Z]     rank= 1  imp=   174,051.6  atr14_pct__5m
+[2026-05-21T01:11:00Z]     rank= 2  imp=    26,147.6  close_vs_st_upper_pct__5m
+[2026-05-21T01:11:00Z]     rank= 3  imp=    10,420.9  dist_to_VAH_pct_N200_b050_va60_N200__1h
+[2026-05-21T01:11:00Z]     rank= 4  imp=    10,213.8  dist_to_VAH_pct_N200_b050_va70_N200__1h
+[2026-05-21T01:11:00Z]     rank= 5  imp=     8,511.6  dist_to_VAH_pct_N200_b100_va60_N200__15m
+[2026-05-21T01:11:00Z]     rank= 6  imp=     7,616.3  bars_since_new_low_W_W50__5m
+[2026-05-21T01:11:00Z]     rank= 7  imp=     7,195.0  close_vs_st_upper_pct__4h
+[2026-05-21T01:11:00Z]     rank= 8  imp=     4,965.3  atr14_pct__30m
+[2026-05-21T01:11:00Z]     rank= 9  imp=     4,739.9  avg_upper_wick_ratio_W_W10__1d
+[2026-05-21T01:11:00Z]     rank=10  imp=     4,545.1  dist_to_VAH_pct_N100_b020_va70_N100__4h
+[2026-05-21T01:11:00Z]     rank=11  imp=     4,185.6  bars_since_new_high_W_W50__15m
+[2026-05-21T01:11:00Z]     rank=12  imp=     3,622.2  dist_to_POC_pct_N50_b050_N50__30m
+[2026-05-21T01:11:00Z]     rank=13  imp=     3,523.8  realized_vol_20b__1h
+[2026-05-21T01:11:00Z]     rank=14  imp=     3,060.6  dist_to_VAL_pct_N100_b050_va70_N100__15m
+[2026-05-21T01:11:00Z]     rank=15  imp=     2,688.6  dist_to_VAH_pct_N200_b100_va60_N200__1h
+[2026-05-21T01:11:00Z]     rank=16  imp=     2,669.1  avg_upper_wick_ratio_W_W50__15m
+[2026-05-21T01:11:00Z]     rank=17  imp=     2,584.4  close_vs_st_lower_pct__5m
+[2026-05-21T01:11:00Z]     rank=18  imp=     2,582.4  pivot_position_100b__5m
+[2026-05-21T01:11:00Z]     rank=19  imp=     2,515.9  bars_since_new_high_W_W10__30m
+[2026-05-21T01:11:00Z]     rank=20  imp=     2,479.0  avg_lower_wick_ratio_W_W20__15m
+[2026-05-21T01:11:00Z] --- training LONG_MFE_pct_K48 ---
+[2026-05-21T01:15:32Z]   done in 271.0s | train_rmse=0.92327 valid_rmse=0.77892 ratio=0.9676 best_iter=16 top1=atr14_pct__5m top1_pct=0.5037
+[2026-05-21T01:15:32Z]   top20 features:
+[2026-05-21T01:15:32Z]     rank= 1  imp=   244,269.2  atr14_pct__5m
+[2026-05-21T01:15:32Z]     rank= 2  imp=    53,549.1  dist_to_VAH_pct_N200_b050_va60_N200__1h
+[2026-05-21T01:15:32Z]     rank= 3  imp=    25,069.5  avg_upper_wick_ratio_W_W10__1d
+[2026-05-21T01:15:32Z]     rank= 4  imp=    16,912.5  bars_since_new_low_W_W50__5m
+[2026-05-21T01:15:32Z]     rank= 5  imp=    16,269.2  close_vs_st_upper_pct__4h
+[2026-05-21T01:15:32Z]     rank= 6  imp=    16,110.7  dist_to_VAH_pct_N200_b100_va60_N200__15m
+[2026-05-21T01:15:32Z]     rank= 7  imp=    11,492.8  dist_to_VAL_pct_N100_b050_va60_N100__15m
+[2026-05-21T01:15:32Z]     rank= 8  imp=    10,130.0  dist_to_VAH_pct_N100_b020_va70_N100__4h
+[2026-05-21T01:15:32Z]     rank= 9  imp=     9,377.9  realized_vol_20b__1h
+[2026-05-21T01:15:32Z]     rank=10  imp=     9,332.1  atr14_pct__1h
+[2026-05-21T01:15:32Z]     rank=11  imp=     9,213.3  bb_width_rank_50b__1h
+[2026-05-21T01:15:32Z]     rank=12  imp=     8,784.8  dist_to_VAL_pct_N200_b100_va60_N200__5m
+[2026-05-21T01:15:32Z]     rank=13  imp=     8,191.5  avg_upper_wick_ratio_W_W50__5m
+[2026-05-21T01:15:32Z]     rank=14  imp=     7,568.5  avg_upper_wick_ratio_W_W50__1h
+[2026-05-21T01:15:32Z]     rank=15  imp=     7,290.2  close_vs_keltner_upper_pct__1d
+[2026-05-21T01:15:32Z]     rank=16  imp=     6,909.8  nearest_fib_distance_pct_N200_N200__4h
+[2026-05-21T01:15:32Z]     rank=17  imp=     6,694.3  dist_to_VAH_pct_N200_b050_va70_N200__1h
+[2026-05-21T01:15:32Z]     rank=18  imp=     6,079.6  dist_to_POC_pct_N50_b050_N50__4h
+[2026-05-21T01:15:32Z]     rank=19  imp=     5,995.1  macd_signal_pct__15m
+[2026-05-21T01:15:32Z]     rank=20  imp=     5,681.1  dist_to_POC_pct_N200_b100_N200__4h
+[2026-05-21T01:15:32Z] --- training LONG_MFE_pct_K96 ---
+[2026-05-21T01:20:02Z]   done in 269.1s | train_rmse=1.20859 valid_rmse=1.07705 ratio=0.9744 best_iter=19 top1=atr14_pct__1h top1_pct=0.1789
+[2026-05-21T01:20:02Z]   top20 features:
+[2026-05-21T01:20:02Z]     rank= 1  imp=   156,006.6  atr14_pct__1h
+[2026-05-21T01:20:02Z]     rank= 2  imp=   134,823.0  atr14_pct__5m
+[2026-05-21T01:20:02Z]     rank= 3  imp=   111,963.5  dist_to_VAH_pct_N200_b050_va60_N200__1h
+[2026-05-21T01:20:02Z]     rank= 4  imp=   100,581.9  realized_vol_20b__1h
+[2026-05-21T01:20:02Z]     rank= 5  imp=    48,686.2  bars_since_new_low_W_W50__30m
+[2026-05-21T01:20:02Z]     rank= 6  imp=    38,537.9  atr14_pct__4h
+[2026-05-21T01:20:02Z]     rank= 7  imp=    37,928.0  avg_upper_wick_ratio_W_W10__1d
+[2026-05-21T01:20:02Z]     rank= 8  imp=    30,369.6  close_vs_st_upper_pct__4h
+[2026-05-21T01:20:02Z]     rank= 9  imp=    29,013.3  close_vs_st_lower_pct__4h
+[2026-05-21T01:20:02Z]     rank=10  imp=    25,102.9  nearest_level_touch_count_N50_t200_N50__1d
+[2026-05-21T01:20:02Z]     rank=11  imp=    19,491.6  bars_since_new_low_W_W50__1h
+[2026-05-21T01:20:02Z]     rank=12  imp=    18,775.9  avg_upper_wick_ratio_W_W50__1h
+[2026-05-21T01:20:02Z]     rank=13  imp=    17,949.4  dist_to_VAL_pct_N100_b020_va70_N100__30m
+[2026-05-21T01:20:02Z]     rank=14  imp=    16,604.3  dist_to_VAH_pct_N50_b020_va60_N50__1d
+[2026-05-21T01:20:02Z]     rank=15  imp=    16,013.4  dist_to_POC_pct_N50_b100_N50__4h
+[2026-05-21T01:20:02Z]     rank=16  imp=    15,517.3  adx14__30m
+[2026-05-21T01:20:02Z]     rank=17  imp=    14,474.9  stoch_k__1d
+[2026-05-21T01:20:02Z]     rank=18  imp=    13,750.8  bars_since_new_high_W_W10__4h
+[2026-05-21T01:20:02Z]     rank=19  imp=    13,650.1  bars_since_new_high_W_W50__1d
+[2026-05-21T01:20:02Z]     rank=20  imp=    12,730.8  bars_since_new_high_W_W50__1h
+[2026-05-21T01:20:02Z] --- training LONG_MFE_pct_K144 ---
+[2026-05-21T01:24:31Z]   done in 268.9s | train_rmse=1.43068 valid_rmse=1.31264 ratio=0.9875 best_iter=18 top1=atr14_pct__1h top1_pct=0.1756
+[2026-05-21T01:24:31Z]   top20 features:
+[2026-05-21T01:24:31Z]     rank= 1  imp=   215,382.3  atr14_pct__1h
+[2026-05-21T01:24:31Z]     rank= 2  imp=   211,372.3  realized_vol_20b__1h
+[2026-05-21T01:24:31Z]     rank= 3  imp=   130,566.7  dist_to_VAH_pct_N200_b050_va60_N200__1h
+[2026-05-21T01:24:31Z]     rank= 4  imp=    76,242.2  atr14_pct__30m
+[2026-05-21T01:24:32Z]     rank= 5  imp=    67,536.7  avg_upper_wick_ratio_W_W10__1d
+[2026-05-21T01:24:32Z]     rank= 6  imp=    54,813.9  bars_since_new_high_W_W50__1h
+[2026-05-21T01:24:32Z]     rank= 7  imp=    50,198.6  bars_since_new_low_W_W50__30m
+[2026-05-21T01:24:32Z]     rank= 8  imp=    45,216.8  nearest_level_touch_count_N50_t200_N50__1d
+[2026-05-21T01:24:32Z]     rank= 9  imp=    41,892.0  close_vs_st_upper_pct__1h
+[2026-05-21T01:24:32Z]     rank=10  imp=    41,172.8  bars_since_new_low_W_W50__1h
+[2026-05-21T01:24:32Z]     rank=11  imp=    36,714.0  dist_to_POC_pct_N50_b100_N50__4h
+[2026-05-21T01:24:32Z]     rank=12  imp=    33,183.8  atr14_pct__5m
+[2026-05-21T01:24:32Z]     rank=13  imp=    32,492.2  close_vs_ema200_pct__4h
+[2026-05-21T01:24:32Z]     rank=14  imp=    31,292.3  cmf_20__1d
+[2026-05-21T01:24:32Z]     rank=15  imp=    29,623.4  lower_wick_ratio__1d
+[2026-05-21T01:24:32Z]     rank=16  imp=    27,732.1  close_vs_st_upper_pct__1d
+[2026-05-21T01:24:32Z]     rank=17  imp=    25,470.6  avg_lower_wick_ratio_W_W20__1d
+[2026-05-21T01:24:32Z]     rank=18  imp=    25,203.4  close_vs_st_lower_pct__4h
+[2026-05-21T01:24:32Z]     rank=19  imp=    25,081.3  avg_upper_wick_ratio_W_W50__15m
+[2026-05-21T01:24:32Z]     rank=20  imp=    25,057.8  atr14_pct__4h
+[2026-05-21T01:24:32Z] --- training LONG_MFE_pct_K288 ---
+[2026-05-21T01:28:42Z]   done in 249.9s | train_rmse=2.28087 valid_rmse=1.86134 ratio=1.0104 best_iter=3 top1=realized_vol_20b__1h top1_pct=0.1326
+[2026-05-21T01:28:42Z]   top20 features:
+[2026-05-21T01:28:42Z]     rank= 1  imp=   143,973.9  realized_vol_20b__1h
+[2026-05-21T01:28:42Z]     rank= 2  imp=    95,220.0  atr14_pct__30m
+[2026-05-21T01:28:42Z]     rank= 3  imp=    91,040.4  dist_to_VAH_pct_N200_b020_va80_N200__4h
+[2026-05-21T01:28:42Z]     rank= 4  imp=    76,707.8  bars_since_new_high_W_W50__1h
+[2026-05-21T01:28:42Z]     rank= 5  imp=    72,217.5  bars_since_new_high_W_W20__1d
+[2026-05-21T01:28:42Z]     rank= 6  imp=    66,861.7  close_vs_st_upper_pct__1h
+[2026-05-21T01:28:42Z]     rank= 7  imp=    57,778.6  bars_since_new_high_W_W50__4h
+[2026-05-21T01:28:42Z]     rank= 8  imp=    53,114.4  avg_upper_wick_ratio_W_W10__1d
+[2026-05-21T01:28:42Z]     rank= 9  imp=    50,700.2  avg_lower_wick_ratio_W_W20__1d
+[2026-05-21T01:28:42Z]     rank=10  imp=    48,316.4  close_vs_ema200_pct__15m
+[2026-05-21T01:28:42Z]     rank=11  imp=    48,308.5  dist_to_VAH_pct_N200_b050_va60_N200__1h
+[2026-05-21T01:28:42Z]     rank=12  imp=    42,259.3  bars_since_new_high_W_W50__1d
+[2026-05-21T01:28:42Z]     rank=13  imp=    38,148.2  avg_upper_wick_ratio_W_W20__1d
+[2026-05-21T01:28:42Z]     rank=14  imp=    36,954.5  dist_to_fib_618_pct_N200_N200__1d
+[2026-05-21T01:28:42Z]     rank=15  imp=    36,378.0  cmf_20__1d
+[2026-05-21T01:28:42Z]     rank=16  imp=    30,901.9  nearest_level_touch_count_N100_t030_N100__1d
+[2026-05-21T01:28:42Z]     rank=17  imp=    26,580.3  avg_upper_wick_ratio_W_W50__1h
+[2026-05-21T01:28:42Z]     rank=18  imp=    25,842.9  bars_since_new_low_W_W50__30m
+[2026-05-21T01:28:42Z]     rank=19  imp=    22,396.3  avg_upper_wick_ratio_W_W50__1d
+[2026-05-21T01:28:42Z]     rank=20  imp=    21,915.1  dist_to_VAH_pct_N100_b100_va80_N100__4h
+[2026-05-21T01:28:42Z] --- training LONG_MAE_pct_K6 ---
+[100]	train's rmse: 0.330533	valid's rmse: 0.307878
+[2026-05-21T01:33:46Z]   done in 303.3s | train_rmse=0.34353 valid_rmse=0.30728 ratio=0.9190 best_iter=61 top1=atr14_pct__5m top1_pct=0.4905
+[2026-05-21T01:33:46Z]   top20 features:
+[2026-05-21T01:33:46Z]     rank= 1  imp=    53,117.3  atr14_pct__5m
+[2026-05-21T01:33:46Z]     rank= 2  imp=    20,733.2  close_vs_st_upper_pct__5m
+[2026-05-21T01:33:46Z]     rank= 3  imp=     7,364.8  close_vs_st_lower_pct__5m
+[2026-05-21T01:33:46Z]     rank= 4  imp=     4,948.4  close_vs_keltner_upper_pct__5m
+[2026-05-21T01:33:46Z]     rank= 5  imp=     3,701.3  avg_body_ratio_W_W10__15m
+[2026-05-21T01:33:46Z]     rank= 6  imp=     3,390.4  avg_upper_wick_ratio_W_W50__30m
+[2026-05-21T01:33:46Z]     rank= 7  imp=     1,668.9  bearish_streak__30m
+[2026-05-21T01:33:46Z]     rank= 8  imp=     1,540.8  direction_flips_W_W50__15m
+[2026-05-21T01:33:46Z]     rank= 9  imp=     1,518.4  nearest_fib_distance_pct_N200_N200__5m
+[2026-05-21T01:33:46Z]     rank=10  imp=     1,412.9  dist_to_fib_v2_382_pct_N50_N50__15m
+[2026-05-21T01:33:46Z]     rank=11  imp=     1,271.8  close_to_low_pct__4h
+[2026-05-21T01:33:46Z]     rank=12  imp=     1,248.0  realized_vol_rank_50b__1h
+[2026-05-21T01:33:46Z]     rank=13  imp=       961.3  avg_lower_wick_ratio_W_W10__15m
+[2026-05-21T01:33:46Z]     rank=14  imp=       867.6  dist_to_VAL_pct_N50_b100_va60_N50__15m
+[2026-05-21T01:33:46Z]     rank=15  imp=       811.9  close_to_low_pct__5m
+[2026-05-21T01:33:46Z]     rank=16  imp=       782.9  pivot_position_100b__30m
+[2026-05-21T01:33:46Z]     rank=17  imp=       778.8  adx14__5m
+[2026-05-21T01:33:46Z]     rank=18  imp=       749.2  bars_since_new_low_W_W20__1d
+[2026-05-21T01:33:46Z]     rank=19  imp=       714.0  avg_lower_wick_ratio_W_W20__5m
+[2026-05-21T01:33:46Z]     rank=20  imp=       701.3  bb_width_pct__1d
+[2026-05-21T01:33:46Z] --- training LONG_MAE_pct_K12 ---
+[100]	train's rmse: 0.445821	valid's rmse: 0.448152
+[2026-05-21T01:38:59Z]   done in 312.0s | train_rmse=0.46353 valid_rmse=0.44710 ratio=0.9371 best_iter=67 top1=atr14_pct__5m top1_pct=0.5623
+[2026-05-21T01:38:59Z]   top20 features:
+[2026-05-21T01:38:59Z]     rank= 1  imp=   125,925.4  atr14_pct__5m
+[2026-05-21T01:38:59Z]     rank= 2  imp=    18,817.6  close_vs_st_upper_pct__5m
+[2026-05-21T01:38:59Z]     rank= 3  imp=     9,569.8  avg_upper_wick_ratio_W_W50__5m
+[2026-05-21T01:38:59Z]     rank= 4  imp=     8,991.6  avg_upper_wick_ratio_W_W50__30m
+[2026-05-21T01:38:59Z]     rank= 5  imp=     8,757.6  close_to_low_pct__4h
+[2026-05-21T01:38:59Z]     rank= 6  imp=     7,453.3  bearish_streak__30m
+[2026-05-21T01:38:59Z]     rank= 7  imp=     5,695.4  close_vs_keltner_upper_pct__5m
+[2026-05-21T01:38:59Z]     rank= 8  imp=     4,723.3  avg_upper_wick_ratio_W_W20__15m
+[2026-05-21T01:38:59Z]     rank= 9  imp=     3,888.4  avg_upper_wick_ratio_W_W50__15m
+[2026-05-21T01:38:59Z]     rank=10  imp=     3,842.5  bars_since_new_high_W_W10__5m
+[2026-05-21T01:38:59Z]     rank=11  imp=     3,552.4  avg_body_ratio_W_W10__15m
+[2026-05-21T01:38:59Z]     rank=12  imp=     3,176.1  realized_vol_rank_50b__1h
+[2026-05-21T01:38:59Z]     rank=13  imp=     3,003.4  close_vs_st_lower_pct__5m
+[2026-05-21T01:38:59Z]     rank=14  imp=     2,867.7  adx14__1h
+[2026-05-21T01:38:59Z]     rank=15  imp=     2,859.7  avg_lower_wick_ratio_W_W10__15m
+[2026-05-21T01:38:59Z]     rank=16  imp=     2,573.8  direction_flips_W_W20__30m
+[2026-05-21T01:38:59Z]     rank=17  imp=     2,266.4  bars_since_new_high_W_W50__30m
+[2026-05-21T01:38:59Z]     rank=18  imp=     2,258.4  body_ratio__1h
+[2026-05-21T01:38:59Z]     rank=19  imp=     1,867.5  avg_lower_wick_ratio_W_W50__30m
+[2026-05-21T01:38:59Z]     rank=20  imp=     1,841.7  max_consecutive_new_lows_W_W10__4h
+[2026-05-21T01:38:59Z] --- training LONG_MAE_pct_K24 ---
+[2026-05-21T01:43:33Z]   done in 272.7s | train_rmse=0.68717 valid_rmse=0.63803 ratio=0.9482 best_iter=28 top1=atr14_pct__5m top1_pct=0.5562
+[2026-05-21T01:43:33Z]   top20 features:
+[2026-05-21T01:43:33Z]     rank= 1  imp=   231,996.8  atr14_pct__5m
+[2026-05-21T01:43:33Z]     rank= 2  imp=    36,207.8  avg_upper_wick_ratio_W_W50__5m
+[2026-05-21T01:43:33Z]     rank= 3  imp=    22,561.3  avg_upper_wick_ratio_W_W50__30m
+[2026-05-21T01:43:33Z]     rank= 4  imp=    16,298.0  avg_body_ratio_W_W50__5m
+[2026-05-21T01:43:33Z]     rank= 5  imp=    11,656.0  atr14_pct__15m
+[2026-05-21T01:43:33Z]     rank= 6  imp=    10,662.5  avg_upper_wick_ratio_W_W50__15m
+[2026-05-21T01:43:33Z]     rank= 7  imp=     9,920.9  avg_body_ratio_W_W20__1d
+[2026-05-21T01:43:33Z]     rank= 8  imp=     9,640.8  bars_since_new_high_W_W50__15m
+[2026-05-21T01:43:33Z]     rank= 9  imp=     8,243.8  bars_since_new_high_W_W20__5m
+[2026-05-21T01:43:33Z]     rank=10  imp=     7,298.0  bearish_streak__30m
+[2026-05-21T01:43:33Z]     rank=11  imp=     6,832.1  close_to_low_pct__4h
+[2026-05-21T01:43:33Z]     rank=12  imp=     6,572.9  close_vs_st_upper_pct__5m
+[2026-05-21T01:43:33Z]     rank=13  imp=     5,964.5  dist_to_VAL_pct_N100_b050_va70_N100__4h
+[2026-05-21T01:43:33Z]     rank=14  imp=     5,383.3  bars_since_new_high_W_W10__4h
+[2026-05-21T01:43:33Z]     rank=15  imp=     5,299.3  avg_body_ratio_W_W50__30m
+[2026-05-21T01:43:33Z]     rank=16  imp=     5,048.9  bars_since_new_high_W_W50__1h
+[2026-05-21T01:43:33Z]     rank=17  imp=     4,788.6  support_distance_pct_N50_N50__4h
+[2026-05-21T01:43:33Z]     rank=18  imp=     4,394.1  adx14__1h
+[2026-05-21T01:43:33Z]     rank=19  imp=     4,246.1  nearest_level_touch_count_N100_t050_N100__4h
+[2026-05-21T01:43:33Z]     rank=20  imp=     4,072.4  avg_lower_wick_ratio_W_W50__30m
+[2026-05-21T01:43:33Z] --- training LONG_MAE_pct_K48 ---
+[2026-05-21T01:47:47Z]   done in 253.4s | train_rmse=1.05099 valid_rmse=0.91681 ratio=0.9814 best_iter=9 top1=atr14_pct__5m top1_pct=0.3375
+[2026-05-21T01:47:47Z]   top20 features:
+[2026-05-21T01:47:47Z]     rank= 1  imp=   183,391.3  atr14_pct__5m
+[2026-05-21T01:47:47Z]     rank= 2  imp=    89,374.6  atr14_pct__15m
+[2026-05-21T01:47:47Z]     rank= 3  imp=    41,154.1  avg_upper_wick_ratio_W_W50__30m
+[2026-05-21T01:47:47Z]     rank= 4  imp=    40,604.5  dist_to_VAL_pct_N50_b100_va60_N50__1h
+[2026-05-21T01:47:47Z]     rank= 5  imp=    17,401.8  bb_width_pct__30m
+[2026-05-21T01:47:47Z]     rank= 6  imp=    17,080.1  close_vs_sma50_pct__4h
+[2026-05-21T01:47:47Z]     rank= 7  imp=    16,705.4  avg_lower_wick_ratio_W_W50__30m
+[2026-05-21T01:47:47Z]     rank= 8  imp=    16,491.7  dist_to_POC_pct_N100_b100_N100__4h
+[2026-05-21T01:47:47Z]     rank= 9  imp=    15,548.5  max_consecutive_new_lows_W_W20__1h
+[2026-05-21T01:47:47Z]     rank=10  imp=    13,230.3  avg_upper_wick_ratio_W_W50__1d
+[2026-05-21T01:47:47Z]     rank=11  imp=    12,340.8  bars_since_new_high_W_W20__5m
+[2026-05-21T01:47:47Z]     rank=12  imp=    12,159.4  avg_body_ratio_W_W10__4h
+[2026-05-21T01:47:47Z]     rank=13  imp=    11,996.7  bars_since_new_high_W_W50__1h
+[2026-05-21T01:47:47Z]     rank=14  imp=     9,710.8  bars_since_new_low_W_W50__1h
+[2026-05-21T01:47:47Z]     rank=15  imp=     9,319.3  dist_to_POC_pct_N50_b100_N50__1h
+[2026-05-21T01:47:47Z]     rank=16  imp=     8,458.4  dist_to_VAL_pct_N200_b020_va60_N200__1h
+[2026-05-21T01:47:47Z]     rank=17  imp=     8,369.8  dist_to_fib_382_pct_N50_N50__1d
+[2026-05-21T01:47:47Z]     rank=18  imp=     6,853.7  avg_upper_wick_ratio_W_W20__1h
+[2026-05-21T01:47:47Z]     rank=19  imp=     6,658.5  dist_to_VAL_pct_N100_b020_va60_N100__4h
+[2026-05-21T01:47:47Z]     rank=20  imp=     6,611.1  lower_wick_ratio__4h
+[2026-05-21T01:47:47Z] --- training LONG_MAE_pct_K96 ---
+[2026-05-21T01:52:27Z]   done in 279.3s | train_rmse=1.17795 valid_rmse=1.24253 ratio=0.9718 best_iter=34 top1=atr14_pct__15m top1_pct=0.1794
+[2026-05-21T01:52:27Z]   top20 features:
+[2026-05-21T01:52:27Z]     rank= 1  imp=   299,857.7  atr14_pct__15m
+[2026-05-21T01:52:27Z]     rank= 2  imp=   244,512.7  atr14_pct__5m
+[2026-05-21T01:52:27Z]     rank= 3  imp=    99,055.0  avg_body_ratio_W_W10__1d
+[2026-05-21T01:52:27Z]     rank= 4  imp=    96,297.0  avg_lower_wick_ratio_W_W10__1d
+[2026-05-21T01:52:27Z]     rank= 5  imp=    89,694.9  bars_since_new_high_W_W50__30m
+[2026-05-21T01:52:27Z]     rank= 6  imp=    85,259.1  atr14_pct__4h
+[2026-05-21T01:52:27Z]     rank= 7  imp=    82,458.7  dist_to_VAL_pct_N100_b050_va70_N100__4h
+[2026-05-21T01:52:27Z]     rank= 8  imp=    68,354.3  dist_to_POC_pct_N100_b100_N100__4h
+[2026-05-21T01:52:27Z]     rank= 9  imp=    61,975.0  bars_since_new_low_W_W50__1h
+[2026-05-21T01:52:27Z]     rank=10  imp=    60,485.1  dist_to_VAL_pct_N50_b100_va60_N50__1h
+[2026-05-21T01:52:27Z]     rank=11  imp=    60,178.9  dist_to_fib_382_pct_N50_N50__1d
+[2026-05-21T01:52:27Z]     rank=12  imp=    58,433.6  pivot_position_100b__1d
+[2026-05-21T01:52:27Z]     rank=13  imp=    55,861.5  bars_since_swing_low_W_W50__1h
+[2026-05-21T01:52:27Z]     rank=14  imp=    54,084.8  atr14_pct__1h
+[2026-05-21T01:52:27Z]     rank=15  imp=    50,408.1  support_distance_pct_N100_N100__1d
+[2026-05-21T01:52:27Z]     rank=16  imp=    45,156.4  bars_since_new_low_W_W50__4h
+[2026-05-21T01:52:27Z]     rank=17  imp=    43,744.7  bars_since_new_high_W_W50__1h
+[2026-05-21T01:52:27Z]     rank=18  imp=    39,958.0  lower_wick_ratio__4h
+[2026-05-21T01:52:27Z]     rank=19  imp=    38,200.2  bars_since_new_low_W_W20__1d
+[2026-05-21T01:52:27Z]     rank=20  imp=    37,256.6  avg_upper_wick_ratio_W_W10__4h
+[2026-05-21T01:52:27Z] --- training LONG_MAE_pct_K144 ---
+[2026-05-21T01:56:58Z]   done in 270.1s | train_rmse=1.45477 valid_rmse=1.52961 ratio=0.9977 best_iter=23 top1=support_distance_pct_N100_N100__1d top1_pct=0.129
+[2026-05-21T01:56:58Z]   top20 features:
+[2026-05-21T01:56:58Z]     rank= 1  imp=   287,418.8  support_distance_pct_N100_N100__1d
+[2026-05-21T01:56:58Z]     rank= 2  imp=   204,658.8  atr14_pct__4h
+[2026-05-21T01:56:58Z]     rank= 3  imp=   182,080.3  avg_body_ratio_W_W10__1d
+[2026-05-21T01:56:58Z]     rank= 4  imp=   125,956.0  atr14_pct__1h
+[2026-05-21T01:56:58Z]     rank= 5  imp=   123,653.0  pivot_position_100b__1d
+[2026-05-21T01:56:58Z]     rank= 6  imp=   120,556.9  bars_since_new_low_W_W50__1h
+[2026-05-21T01:56:58Z]     rank= 7  imp=   116,176.3  bars_since_new_high_W_W50__30m
+[2026-05-21T01:56:58Z]     rank= 8  imp=   109,357.7  avg_upper_wick_ratio_W_W10__4h
+[2026-05-21T01:56:58Z]     rank= 9  imp=   100,581.3  adx14__1d
+[2026-05-21T01:56:58Z]     rank=10  imp=    98,203.7  dist_to_VAL_pct_N100_b050_va70_N100__4h
+[2026-05-21T01:56:58Z]     rank=11  imp=    95,364.9  upper_wick_ratio__1d
+[2026-05-21T01:56:58Z]     rank=12  imp=    85,055.8  dist_to_VAL_pct_N100_b020_va60_N100__4h
+[2026-05-21T01:56:58Z]     rank=13  imp=    84,343.8  dist_to_VAH_pct_N100_b100_va60_N100__4h
+[2026-05-21T01:56:58Z]     rank=14  imp=    77,680.0  dist_to_VAL_pct_N100_b050_va60_N100__4h
+[2026-05-21T01:56:58Z]     rank=15  imp=    75,410.9  bars_since_new_high_W_W50__4h
+[2026-05-21T01:56:58Z]     rank=16  imp=    70,050.0  avg_lower_wick_ratio_W_W10__1d
+[2026-05-21T01:56:58Z]     rank=17  imp=    70,038.8  avg_upper_wick_ratio_W_W50__15m
+[2026-05-21T01:56:58Z]     rank=18  imp=    69,603.3  bars_since_new_high_W_W20__1h
+[2026-05-21T01:56:58Z]     rank=19  imp=    67,102.1  avg_lower_wick_ratio_W_W50__1h
+[2026-05-21T01:56:58Z]     rank=20  imp=    64,516.6  atr14_pct__5m
+[2026-05-21T01:56:58Z] --- training LONG_MAE_pct_K288 ---
+[2026-05-21T02:01:08Z]   done in 248.4s | train_rmse=2.68890 valid_rmse=2.09307 ratio=1.0181 best_iter=1 top1=support_distance_pct_N100_N100__1d top1_pct=0.2107
+[2026-05-21T02:01:08Z]   top20 features:
+[2026-05-21T02:01:08Z]     rank= 1  imp=   166,517.0  support_distance_pct_N100_N100__1d
+[2026-05-21T02:01:08Z]     rank= 2  imp=    87,246.6  avg_lower_wick_ratio_W_W20__1d
+[2026-05-21T02:01:08Z]     rank= 3  imp=    75,687.3  bars_since_new_high_W_W20__1h
+[2026-05-21T02:01:08Z]     rank= 4  imp=    55,294.3  avg_body_ratio_W_W10__1d
+[2026-05-21T02:01:08Z]     rank= 5  imp=    50,943.6  atr14_pct__15m
+[2026-05-21T02:01:08Z]     rank= 6  imp=    50,316.3  realized_vol_rank_50b__1h
+[2026-05-21T02:01:08Z]     rank= 7  imp=    48,164.5  adx14__1d
+[2026-05-21T02:01:08Z]     rank= 8  imp=    30,875.4  macd_line_pct__1d
+[2026-05-21T02:01:08Z]     rank= 9  imp=    30,245.9  dist_to_fib_382_pct_N50_N50__1d
+[2026-05-21T02:01:08Z]     rank=10  imp=    29,818.9  dist_to_fib_786_pct_N200_N200__1d
+[2026-05-21T02:01:08Z]     rank=11  imp=    24,747.4  bars_since_new_low_W_W50__1h
+[2026-05-21T02:01:08Z]     rank=12  imp=    21,718.0  avg_body_ratio_W_W50__1h
+[2026-05-21T02:01:08Z]     rank=13  imp=    21,317.2  support_distance_pct_N200_N200__1d
+[2026-05-21T02:01:08Z]     rank=14  imp=    16,340.7  support_distance_pct_N50_N50__4h
+[2026-05-21T02:01:08Z]     rank=15  imp=    16,204.5  avg_upper_wick_ratio_W_W50__1d
+[2026-05-21T02:01:08Z]     rank=16  imp=    14,473.1  close_vs_ema50_pct__1h
+[2026-05-21T02:01:08Z]     rank=17  imp=    13,409.3  body_ratio__1d
+[2026-05-21T02:01:08Z]     rank=18  imp=    12,538.5  close_vs_sma20_pct__1d
+[2026-05-21T02:01:08Z]     rank=19  imp=    12,519.7  close_vs_st_upper_pct__1d
+[2026-05-21T02:01:08Z]     rank=20  imp=    11,908.3  bb_width_pct__1d
+[2026-05-21T02:01:08Z] check_4_label_correlation: PASS
+[2026-05-21T02:01:08Z] rmse_ratio<1.5 count = 14/14
+[2026-05-21T02:01:08Z] END phase1a_rmse  out_dir=results/priority_rebuild/ml_phase1a_rmse
+
+=== DONE ===
+out_dir = results/priority_rebuild/ml_phase1a_rmse
+log = results/priority_rebuild/ml_phase1a_rmse/execution_log.txt

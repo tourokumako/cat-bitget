@@ -1,0 +1,41 @@
+[2026-05-21T00:44:46Z] START phase1a_rmse  out_dir=results/priority_rebuild/ml_phase1a_rmse_smoke
+[2026-05-21T00:44:46Z] cwd=/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api repo_root=/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api
+[2026-05-21T00:44:46Z] lgbm=4.6.0  pandas=2.2.3  numpy=2.2.5
+[2026-05-21T00:44:58Z] train rows=394,561 test_2025 rows=105,120
+[2026-05-21T00:44:58Z] train ts: 2021-04-01 23:55:00 .. 2024-12-31 23:55:00
+[2026-05-21T00:44:58Z] test_2025 ts: 2025-01-01 00:00:00 .. 2025-12-31 23:55:00
+[2026-05-21T00:44:58Z] blacklist drop count = 48
+[2026-05-21T00:44:58Z] feature count = 1414 (期待 1414)
+[2026-05-21T00:45:12Z] split: train_df rows=315,360 valid_df rows=78,913 purge_bars=288
+[2026-05-21T00:45:12Z] labels_to_train = ['LONG_MFE_pct_K6']
+[2026-05-21T00:45:12Z] hparams = {"objective": "regression", "metric": "rmse", "boosting_type": "gbdt", "num_leaves": 31, "max_depth": -1, "min_data_in_leaf": 20, "learning_rate": 0.05, "feature_fraction": 0.9, "bagging_fraction": 0.8, "bagging_freq": 5, "n_estimators": 1000, "random_state": 42, "bagging_seed": 42, "feature_fraction_seed": 42, "data_random_seed": 42, "n_jobs": 1, "verbose": -1}
+[2026-05-21T00:45:12Z] --- training LONG_MFE_pct_K6 ---
+[100]	train's rmse: 0.315781	valid's rmse: 0.267241
+[2026-05-21T00:50:29Z]   done in 316.0s | train_rmse=0.32467 valid_rmse=0.26640 ratio=0.9013 best_iter=67 top1=atr14_pct__5m top1_pct=0.6275
+[2026-05-21T00:50:29Z]   top20 features:
+[2026-05-21T00:50:29Z]     rank= 1  imp=    57,551.7  atr14_pct__5m
+[2026-05-21T00:50:29Z]     rank= 2  imp=    15,760.3  close_vs_st_upper_pct__5m
+[2026-05-21T00:50:29Z]     rank= 3  imp=     4,013.5  close_vs_st_lower_pct__5m
+[2026-05-21T00:50:29Z]     rank= 4  imp=     1,135.3  close_vs_keltner_lower_pct__5m
+[2026-05-21T00:50:29Z]     rank= 5  imp=     1,130.4  pivot_position_100b__5m
+[2026-05-21T00:50:29Z]     rank= 6  imp=     1,109.2  avg_lower_wick_ratio_W_W50__30m
+[2026-05-21T00:50:29Z]     rank= 7  imp=     1,066.2  dist_to_VAH_pct_N200_b100_va60_N200__15m
+[2026-05-21T00:50:29Z]     rank= 8  imp=     1,061.3  close_vs_keltner_upper_pct__5m
+[2026-05-21T00:50:29Z]     rank= 9  imp=     1,058.5  rsi14__5m
+[2026-05-21T00:50:29Z]     rank=10  imp=       983.5  stoch_k__1d
+[2026-05-21T00:50:29Z]     rank=11  imp=       853.1  dist_to_R2_pct_c2__5m
+[2026-05-21T00:50:29Z]     rank=12  imp=       779.9  bars_since_new_high_W_W10__5m
+[2026-05-21T00:50:29Z]     rank=13  imp=       743.2  max_consecutive_new_lows_W_W10__4h
+[2026-05-21T00:50:29Z]     rank=14  imp=       700.2  avg_upper_wick_ratio_W_W10__1d
+[2026-05-21T00:50:29Z]     rank=15  imp=       694.8  avg_upper_wick_ratio_W_W10__15m
+[2026-05-21T00:50:29Z]     rank=16  imp=       639.1  dist_to_VAH_pct_N200_b100_va80_N200__30m
+[2026-05-21T00:50:29Z]     rank=17  imp=       630.4  dist_to_VAH_pct_N200_b050_va70_N200__5m
+[2026-05-21T00:50:29Z]     rank=18  imp=       620.3  mfi_14__5m
+[2026-05-21T00:50:29Z]     rank=19  imp=       600.5  close_to_high_pct__15m
+[2026-05-21T00:50:29Z]     rank=20  imp=       591.1  avg_body_ratio_W_W20__15m
+[2026-05-21T00:50:29Z] check_4_label_correlation: SKIP
+[2026-05-21T00:50:29Z] END phase1a_rmse  out_dir=results/priority_rebuild/ml_phase1a_rmse_smoke
+
+=== DONE ===
+out_dir = results/priority_rebuild/ml_phase1a_rmse_smoke
+log = results/priority_rebuild/ml_phase1a_rmse_smoke/execution_log.txt
