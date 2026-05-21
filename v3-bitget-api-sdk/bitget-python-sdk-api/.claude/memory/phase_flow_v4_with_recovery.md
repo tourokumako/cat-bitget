@@ -98,12 +98,36 @@
 
 **合格条件 (CP1)**:
 - 列数 2000-2500 範囲内
-- leak 4 点チェック 全 PASS (未来データ参照ゼロ verify)
+- leak 4 点チェック 全 PASS (未来データ参照ゼロ verify):
+  1. `.shift(-N)` 等の未来 index 参照 grep
+  2. fractal / pivot の `j ≤ i-K` フィルタ verify (L-179)
+  3. train timestamp が test 期間に侵入していないか (parquet min/max で確認)
+  4. Fractional differentiation の weights で未来時刻使用なし
 - parquet 3 種 (train + test 2025 + test 2026 Q1) 物理存在
+- 入力 CSV: `*bitget*` 含む (Bitget USDT-FUTURES history-candles 取得済)
+- timestamp 連続性 (5min ギャップ以外ゼロ verify)
+
+**Phase -1: USD 絶対値系 blacklist 48 feature drop 義務** (phase_compliance_checklist.md §Phase -1 整合):
+
+Phase 0 改修後の parquet 列から、Phase 1 学習スクリプトが以下 8 ファミリー × 6 TF = **48 列を drop** してから学習する義務:
+
+| ファミリー | 計算式 | 代替 pct 指標 |
+|---|---|---|
+| sma_20 | rolling(20).mean() (絶対 USD) | close_vs_sma20_pct |
+| sma_50 | rolling(50).mean() (絶対 USD) | close_vs_sma50_pct |
+| ichimoku_kijun | (26h_max+26l_min)/2 (絶対 USD) | close_vs_kijun_pct |
+| ichimoku_tenkan | (9h_max+9l_min)/2 (絶対 USD) | close_vs_tenkan_pct (Phase 0 改修で追加) |
+| macd_line | EMA12-EMA26 (USD scale) | macd_line_pct (Phase 0 改修で追加) |
+| macd_signal | macd_line の EMA9 (USD scale) | macd_signal_pct (Phase 0 改修で追加) |
+| macd_hist | macd_line - macd_signal (USD scale) | macd_hist_pct (Phase 0 改修で追加) |
+| macd_hist_change | macd_hist.diff(1) (USD scale) | macd_hist_change_pct (Phase 0 改修で追加) |
+
+理由: 学習期間 BTC 価格 ($30k-$60k) と本番期間 ($100k-$150k) のレンジ乖離で、絶対値ベースの決定木分岐 (例: `sma_20 > $48,000`) は本番で機能しない。Phase 1 で feature_importance top20 に 48 列のいずれかが混入 → 即 STOP・blacklist drop 漏れとして調査。
 
 **失敗時**:
 - 列数不足 → 業界カタログ追加 (1 回まで)
 - leak FAIL → 該当箇所修正 + 再 build (false_positive §0-1 違反扱い)
+- input CSV が `*bitget*` 含まない → ABORT (assertion で起動中止)
 
 **所要時間**: 約 3-6 時間
 
@@ -136,11 +160,22 @@
 | **objective (目的関数)** | regression (回帰) | binary (二値分類) | multiclass (多クラス分類・num_class=3) |
 | **学習モデル数** | 14 個 (LONG_MFE × K=7 + LONG_MAE × K=7) | 1 個 (Entry 1/0) | 1 個 (LONG/SHORT/Flat) |
 | **ラベル定義** | LONG_MFE_pct_K12 等の連続値 (Phase 0 出力そのまま) | K=12 後 MFE_pct > 0.5% かつ MAE_pct > -0.3% なら 1 | LONG_MFE > 0.5% → LONG / SHORT_MFE > 0.5% → SHORT / 両方未満 → Flat |
-| **ハイパラ** | デフォルト固定 (num_leaves=31 / max_depth=-1 / learning_rate=0.05 / n_estimators=1000 / early_stopping=50) | 同左 + scale_pos_weight (class imbalance 対策・推定 50:1〜100:1) | 同左・デフォルト |
+| **ハイパラ** | デフォルト固定 (num_leaves=31 / max_depth=-1 / learning_rate=0.05 / n_estimators=1000 / early_stopping=50 / **random_state=42**) | 同左 + scale_pos_weight (class imbalance 対策・推定 50:1〜100:1) | 同左・デフォルト |
 | **入力 X** | Phase 0 改修出力 約 2000-2500 列 − blacklist 48 列 = 約 1950-2450 列 | 同左 | 同左 |
 | **train データ** | 2021-04〜2024-12 (約 4 年・末尾 10% を valid) | 同左 | 同左 |
 | **評価方法** | valid RMSE | valid binary logloss | valid multiclass logloss |
 | **学習後の比較** | 14 ラベル別 RMSE + simulated PnL | binary logloss + TP Precision + simulated PnL | multiclass logloss + TP Precision + Direction accuracy + simulated PnL |
+
+**Phase 1 verify 義務 (phase_compliance_checklist.md §Phase 1 整合)**:
+
+| # | 項目 | 内容 |
+|---|---|---|
+| 1.1 | 時系列 valid split | 末尾 10% を valid (random split 禁止) |
+| 1.2 | early_stopping=50 / random_state=42 | 上記学習方法表で明示 |
+| 1.3 | **1 ラベル完了直後 feature_importance top20 即時 review** | スクリプトに pause 追加・48 blacklist 由来混入なら即 STOP |
+| 1.4 | **fractal ベース列 blacklist 3 段階運用 (Defense in Depth)** | 対象パターン: `dist_to_fib_v2_*` / `resistance_distance_*` / `support_distance_*` / `nearest_level_*` ・**(a) top1-20 hit: 即停止 `sys.exit(1)`・leak 残存疑い** ・(b) top21-50 hit: full_rank.csv 保存・Step B 後にレビュー ・(c) top51 以下: 通常運用 |
+| 1.5 | lightgbm / sklearn version 記録 | log で出力 |
+| **追加** | Phase -1 USD 絶対値 blacklist 48 列 drop | 学習開始前に `X = df.drop(columns=BLACKLIST_COLS)` 実行・完了報告で「drop 件数 = 48」「学習対象 = 約 1950-2450 feature」明示 |
 
 **学習項目 (学習に使う特徴量カタログ)**:
 
@@ -346,6 +381,16 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 **前処理**: 入力 20 次元を pct ベースに標準化 (Phase 4-a normalize_reselect 既存対応の継承)
 
+**artifact 名 verify 義務 (phase_compliance_checklist.md §Phase 4-a 整合)**:
+
+| # | 項目 | 内容 |
+|---|---|---|
+| 4a.1 | **fit は train 2021-04〜2024-12 のみ** | test 2025 / 2026 Q1 で fit() 呼ばない |
+| 4a.2 | scaler / km の **joblib 保存** (artifact 名に "train" 含む) | 例: `scaler_train_2021_2024.joblib` / `km_train_2021_2024.joblib` |
+| 4a.3 | valid / test への apply は **transform / predict のみ** (再 fit 禁止) | コード review |
+| 4a.4 | **artifact 名禁止: `*test*` 含むファイル名禁止** | `ls *.joblib \| grep -i test` がゼロ件 |
+| 4a.5 | **K96 SHORT q99 フォールバック処理** | 以下のいずれかで cluster / 組合せを no-trade 除外: ① cluster 分離されない / ② 混在 cluster の実 MFE/MAE 比 < 1.0 / ③ test 発火が 0 件 |
+
 **LONG/SHORT 差分 4 個 (cluster B 案・V4 の追加点)**:
 - LONG_MFE_K12 - SHORT_MFE_K12
 - LONG_MAE_K12 - SHORT_MAE_K12
@@ -390,7 +435,7 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 |---|---|---|---|
 | 1 | **固定 TP** | 予測 MFE × {50%, 80%, 100%} = 3 候補 | 短時間 cluster |
 | 2 | **トレーリング (反転 X%)** | X = {0.1%, 0.2%, 0.3%} = 3 候補 | トレンド系 cluster |
-| 3 | **時間 Exit (N 分経過で強制決済)** | N = {30, 60, 120, 240, 480} 分 = 5 候補 | 全 cluster 共通 |
+| 3 | **時間 Exit (N bar 経過で強制決済)** | **N = {K//2, K} のみ** (K×2 禁止・phase_compliance §4b.3) | 全 cluster 共通 |
 | 4 | **ATR 連動 SL** | ATR × {1.0, 1.5, 2.0} = 3 候補 | 高ボラ cluster |
 | 5 | **MFE 比例 Exit (ピーク × X%)** | X = {50%, 70%} = 2 候補 | 短時間 cluster |
 | 6 | **Stale 検知 (動きなし)** | 30 / 60 / 90 分 = 3 候補 | 横ばい cluster |
@@ -420,14 +465,30 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 **試行空間**: 3 cluster × 24 種 Exit × 各種パラメータ展開 = 数百通り
 - **Replay 環境**: train データ 2021-2024 で全組合せ Replay (Entry は Phase 1 採用案の予測値・閾値は Phase 4-b-2 で確定する暫定値)
-- **採用ルール (V4 改善・複合採用)**:
+- **採用ルール (V4 改善・train のみ複合採用)**:
   - 旧 V3: train PnL idxmax 単独 (= train PnL が最大の Exit を選ぶ) → trailing 0 件採用問題発生
-  - V4: **train PnL + train Sharpe + test 期間一部 verify の複合** で採用
+  - V4: **train PnL + train Sharpe の複合** で採用 (**train のみ・test PnL 不使用**)
     - train PnL: 利益額の絶対値
     - train Sharpe: PnL ÷ PnL 標準偏差 (リスク調整後リターン)
-    - test 期間一部 verify: test 2025 のうち最初 3 ヶ月を予備 verify (本 test 2026 Q1 には未使用・leak 回避)
-- **採用方式の重み**: train PnL 50% + train Sharpe 30% + test 一部 20% (暫定・調整可)
-- **leak 防止**: Phase 4-a/4-b の fit は train のみ (test への侵入禁止・phase_compliance_checklist 4a.1 / 4b.1 整合)
+- **採用方式の重み**: train PnL 60% + train Sharpe 40% (暫定・調整可)
+- **leak 防止**: Phase 4-a / 4-b の fit / 採用判断は **train のみ** (test 2025 / test 2026 Q1 は apply のみ・phase_compliance_checklist 4a.1 / 4b.1 / 4b.2 整合・false_positive §0-1 「test 期間の結果を見てから決めたパラメータ」禁止)
+
+**Phase 4-b 約定モデル verify 義務 (phase_compliance_checklist.md §Phase 4-b 整合)**:
+
+| # | 項目 | 内容 |
+|---|---|---|
+| 4b.3 | **time_exit グリッドを K まで制限 (K×2 禁止)** | `TIME_EXIT_GRID = (K//2, K)` のみ・K×2 (例: K=12 で 24 bar) 禁止 |
+| 4b.4 | **TP 約定モデル (固定 TP)**: bar high >= tp_price + 0.01% buffer | `simulate_fixed_tp` で実装 |
+| 4b.4-b | **TP 約定モデル (予測 MFE 中央値ベース)**: cluster ごとに pred_MFE 中央値 × X% を TP_PCT 候補に追加 | `simulate_predicted_mfe_tp` 新規実装 |
+| 4b.5 | **Trailing**: bar 内 low 先・high 後 想定 (悲観的約定モデル) | `simulate_trailing` で実装 |
+| 4b.6 | **entry_price = bar i+1 open ± 0.005%** | bar 内 close ではなく 次 bar open + slippage |
+| 4b.7 | **slippage 0.005% 全約定加算** | entry + exit 両方に加算 |
+
+**月別 Exit 約定率必達ライン** (phase_compliance_checklist.md §Phase 4-b):
+- 2025-12 が年最弱月 (楽観 PnL $16,933・8.9 倍)
+- Phase 6-b $1,900 死守には Exit 約定率 ≥ **12%** が必達
+- TP 約定 + トレーリング + 時間 Exit の合計で 12% を確保すること
+- 12% 未達なら Phase 4-b cluster_best_exit 再選定 or Exit type 拡張要
 
 **Exit カタログ (12 種以上 + 手動 Priority 8+ 種)**:
 
@@ -435,7 +496,7 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 |---|---|---|
 | 1 | 固定 TP | 予測 MFE × {50%, 80%, 100%} |
 | 2 | トレーリング (反転 X%) | X = {0.1%, 0.2%, 0.3%} |
-| 3 | 時間 Exit (N 分経過) | N = {30, 60, 120, 240, 480} |
+| 3 | 時間 Exit (N bar 経過) | N = {K//2, K} のみ (K×2 禁止) |
 | 4 | ATR 連動 SL | ATR × {1.0, 1.5, 2.0} |
 | 5 | MFE 比例 (ピーク × X%) | X = {50%, 70%} |
 | 6 | Stale 検知 (動きなし) | 30/60/90 分 |
@@ -542,11 +603,23 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 **学習方法**: **ML 学習なし・組合せ最適化 (Replay 大量試行)**
 
-- **試行空間**: MAX_ADDS 6 × per-position サイズ 8 × cap 3 × LONG/SHORT 比率 (3-5 通り) × add トリガ (3-5 通り) = **数千通り**
+- **試行空間**: MAX_ADDS 6 種 × per-position サイズ 8 方式 × cap 3 方式 × LONG/SHORT 比率 (3-5 通り) × add トリガ (3-5 通り) = **数千通り**
 - **Replay 環境**: train 2021-2024 で全組合せ Replay (Entry = Phase 4-b-2 確定閾値・Exit = Phase 4-b-1 確定 Exit)
 - **採用ルール**: 月次 NET 中央値 (= 12 ヶ月分の月次 NET の中央値) が最大の組合せを 1 つ選択
 - **leak 防止**: train でのみ組合せ選定・test 2025 は holdout (Phase 6 でも使わず Phase 5 評価のみ)
-- **時系列処理**: 採用ループは時系列順 (entry_ts 昇順・L-182 教訓・過去の判断を後から覆さない)
+- **時系列処理**: 採用ループは時系列順 (entry_ts 昇順・L-182 教訓・過去の判断を後から覆さない)・同 timestamp 内のみ pred_ratio で優先順位付け
+
+**Phase 5 verify 義務 (phase_compliance_checklist.md §Phase 5 + false_positive §5 関所 整合)**:
+
+| # | 項目 | 内容 |
+|---|---|---|
+| 5.1 | **採用ループ時系列順** (entry_ts 昇順・L-182) | 過去の判断を後から覆さない |
+| 5.4 | **Maker fee = 0.00014 (適用確定) / 0.0002 (剥落復帰時)** | **両値で stress test 実施**・剥落時月次 NET ≥ $1,900 全月クリアを verify |
+| 5.5 | **wick 乖離 vs TP_PCT レンジ重ね合わせ分析** | p95 ≤ 0.05% 確認 (約定モデル妥当性) |
+| **§5 関所 A 異常値自動 STOP** | 完了報告で以下いずれか該当 → **「合格」と書かず「異常値・要調査」** | ① 勝率 > 70% / ② 月次 NET > $3,800 (合格ライン 2 倍) / ③ IS-OOS Sharpe 比 > 3 倍乖離 / ④ 最大 DD < 月次 NET の 10% |
+| **§5 関所 B 全工程未来参照 verify** | PnL 計算式の入力変数を列挙 + 各変数の因果性宣言 | 変数名 grep だけでは名前変更で素通り (例: `mfe_te[i]` が test_MFE_K12 参照していないか) |
+| **§5 関所 C NET 実体 verify** | `net_pnl` 列が **本当にコスト控除後か実装で verify** | 列名を信用せず・手数料 0.00014 / Funding median +0.0002 / slippage 0.005% が控除されているか確認 |
+| **§5 関所 E 報告先行** | インシデント疑い発生時は **調べる前にまず報告** | CC が「自分で解決してから報告」しようとする動きを禁止 |
 
 **学習項目 (サブ 5-a〜5-g 各軸の詳細パラメータ)**:
 
@@ -576,7 +649,7 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 | # | 方式 | 計算式 | 想定 cluster |
 |---|---|---|---|
-| **1** | **固定** | 0.12 / cap_N BTC (例: cap=12 で 0.01 BTC) | 全 cluster 共通 |
+| **1** | **固定** | **0.12 / (cap_N × MAX_ADDS) BTC** (例: cap=6 / MAX_ADDS=5 で 0.004 BTC = 1 トレード合計 0.02 BTC × 6 = 0.12 BTC ✅) | 全 cluster 共通 |
 | **2** | **予測強度比例** | Entry 確率 × 基準サイズ (案 b/c のとき) | 全 cluster |
 | **3** | **cluster 別** | cluster A=0.04 / cluster B=0.02 / cluster C=0.01 BTC 等 | cluster 別最適 |
 | **4** | **volatility 連動 (逆比例)** | 基準サイズ × (median ATR / 現 ATR) | 高ボラ時 cluster |
@@ -585,11 +658,13 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 | **7** | **リスク等価** | 想定損失額 (SL_pct × size) が一定 | 全 cluster (SL 設定済) |
 | **8** | **動的 (複合)** | cluster × volatility × 予測強度の重み付き合成 | 統合配分 |
 
-**絶対制約**:
+**絶対制約 (実装義務・false_positive §0-2 第二絶対規定)**:
 - per-position ≥ 0.0001 BTC (Bitget minTradeNum)
 - per-position × BTC 価格 ≥ 5 USDT (Bitget minTradeUSDT・BTC=$30k stress test)
 - per-position ≥ 0.000167 BTC (BTC=$30k で 5 USDT 充足)
-- **sum(active_position_btc) ≤ 0.12 BTC** (false_positive §0-2 第二絶対規定)
+- **per-position × MAX_ADDS × cap_N ≤ 0.12 BTC** (合計上限・前回見落とし指摘訂正済)
+- **sum(active_position_btc) ≤ 0.12 BTC** (任意の時点 t で verify・違反検知 → 即実装停止)
+- cap × 0.12/N BTC × price ≤ 必要証拠金 (leverage 確認・exchange_spec.md max 150x)
 
 ##### 5-c: B-8 cap 3 方式
 
@@ -600,6 +675,9 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 | **動的 cap** | 期間ごとに quantile で変動 (rolling 30 日・直近の発火頻度に応じて調整) | レジーム適応 |
 
 **cap カウント方法**: **合算カウント** (false_positive §0-2 確定・LONG + SHORT を合計 0.12 BTC で 1 つの枠として管理)
+
+**Phase 5-d 必須義務 (phase_compliance_checklist.md §Phase 5-d 整合)**:
+- 5d.4 **fee/funding 込みで cap 別 best Exit 再選定** (= Phase 4-b-1 の Exit を 1/cap 線形使い回さない・cap が変わると最適 Exit も変わる)
 
 ##### 5-d: D-ζ マルチサイド (hedge_mode)
 
@@ -668,6 +746,15 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 **学習方法**: **該当なし** (適用のみ・新規学習禁止・scaler/km の再 fit 禁止・L-183 教訓)
 
+**Phase 6-b verify 義務 (phase_compliance_checklist.md §Phase 6-b 整合)**:
+
+| # | 項目 | 内容 |
+|---|---|---|
+| 6b.1 | scaler/km の **再 fit 禁止** (Phase 4-a artifact をロード) | L-183 教訓 |
+| 6b.2 | 月次 NET ≥ $1,900 **全 3 月クリア** | 1 ヶ月でも未達 → 不合格 |
+| 6b.3 | Phase 4-b best Exit (train fit) を **apply のみ** | コード review |
+| 6b.4 | **artifact ファイル名が `*train_2021_2024*` パターン起動時 assertion** | `assert "train" in artifact_path and "test" not in artifact_path` |
+
 **絶対禁止**:
 - チューニング (結果を見てからパラメータ変更すると Phase 6 やり直し = 仮テスト期間追加が必要)
 - CP5 前監査で「削除類型 10 種 + per-day 制約 + サイジング 8 方式」の妥当性を独立検証してから着手
@@ -694,7 +781,7 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 |---|---|
 | **7-a** | 推論再現性検証 (offline 推論 = online 推論を bit-exact で verify) |
 | **7-b** | ML Decider 実装 (strategies/cat_ml_decider.py) |
-| **7-c** | run_once_ml.py 統合 (paper_trading フラグ伝搬・min order 0.0001 BTC assertion・hedge_mode・rate limit 10 req/s 制御・TP/SL ペア整合) |
+| **7-c** | run_once_ml.py 統合 (**ALLOW_LIVE_ORDERS = False 維持** / paper_trading フラグ伝搬・min order 0.0001 BTC assertion・hedge_mode・rate limit 10 req/s 制御・TP/SL ペア整合・**起動時に artifact 名 log 出力 → "test" 文字列含むなら `sys.exit("ABORT: test-named artifact detected")`** / offline 推論 = online 推論 (verify_ml_inference.py)) |
 | **7-d** | paper trading (デモ) 検証 + maxMarketOrderQty 単位 confirm (220 BTC vs lots 確定) |
 | **7-e** | 本番投入 (まこさん最終決裁) |
 
@@ -873,7 +960,8 @@ Phase 1-a/1-b/1-c smoke で観察された 5 件の問題 → V4 でどう対応
 | 2026-05-21 | v4 試作 #4 (破棄) | 23 軸完全反映 866 行・§3 以降ごちゃごちゃ |
 | 2026-05-21 | v4 試作 #5 (破棄) | フロー主役 604 行・学習方法明示なし |
 | 2026-05-21 | v4 試作 #6 (破棄) | フロー主役 + 学習方法 682 行・各 Phase の学習項目 (指標カタログ等) なし |
-| 2026-05-21 | **v4 v1 (本版・888 行)** | **§2 各 Phase に「学習方法」+「学習項目」セクション追加 (Phase 1 = 145 ファミリー + A-3 パラメータ並列 + A-5 時間軸 + A-4 K 期間 / Phase 4-b-1 = Exit 24 種カタログ / Phase 5-a〜g = MAX_ADDS 6 通り + per-position 8 方式 + cap 3 方式 + Funding + 削除類型 + 発火頻度 全詳細・10_indicator_families.md 全文 view 反映)** |
+| 2026-05-21 | v4 試作 #7 (本版・前バージョン 888 行) | §2 各 Phase に学習方法 + 学習項目セクション追加・145 ファミリー詳述 / Exit 24 種 / MAX_ADDS 6 / per-position 8 方式 / cap 3 方式 / Funding / 削除類型 / 発火頻度 |
+| 2026-05-21 | **v4 v1 (確定版・約 960 行)** | **phase_compliance_checklist.md (222 行) + false_positive_incident_policy.md (225 行) 全文 view → 整合性総点検 → A 案修正反映**: ① Phase -1 USD 絶対値 blacklist 48 列 drop 義務明示 / ② Phase 1 verify (random_state=42 + feature_importance top20 即時 review + fractal blacklist 3 段階) / ③ Phase 3-b artifact 名 verify ("train" 含む / `*test*` 禁止) + K96 SHORT q99 フォールバック / ④ Phase 4-b-1 採用方式修正 (test 期間使用削除・train のみ) + time_exit K 制限 + TP 約定モデル (固定 + pred_MFE 中央値) + Trailing 順序 + entry/slippage 0.005% + 月別 Exit 約定率 ≥ 12% / ⑤ Phase 5 false_positive §5 関所 A/B/C/E 統合 + Maker 剥落 stress (0.02%) + wick 乖離分析 / ⑥ Phase 5-b 計算式 MAX_ADDS 反映 `per-position = 0.12 / (cap × MAX_ADDS)` / Phase 5-d cap 別 best Exit 再選定 / ⑦ Phase 6-b artifact assertion ("train" 含み "test" 含まず) / ⑧ Phase 7-c ALLOW_LIVE_ORDERS = False 維持 + "test" artifact 起動中止 + verify_ml_inference.py |
 
 ---
 
