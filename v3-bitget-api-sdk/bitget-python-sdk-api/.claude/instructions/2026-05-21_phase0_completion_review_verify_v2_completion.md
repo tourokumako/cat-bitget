@@ -77,7 +77,7 @@
 
 ## §4 git commit 情報 (必須証跡 #3)
 
-commit hash: (下記 git 操作後に確定)
+commit hash: `4df8924`
 
 変更ファイル:
 - `scripts/priority_rebuild/phase0_v3_max_ts_verify.py` (新規)

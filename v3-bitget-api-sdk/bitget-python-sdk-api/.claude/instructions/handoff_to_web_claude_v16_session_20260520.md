@@ -77,19 +77,38 @@ v14 §0.1〜§0.6 + v15 §0.7 / §0.8 を継承。本 v16 で **新規追加**:
 
 ## §3 pending tasks (次セッション優先順位固定)
 
-### §3.1 優先 1: Phase 0 v3 Step 3d フル実行 (未着手なら) or 完了レビュー本体 (完了済なら)
+### §3.1 優先 1: Phase 0 完了レビュー本体（Web Claude セルフ実行・公式 source 物理 view 義務）
 
-v15 §3.1 継承。Phase 0 v3 Step 3d (`build_labels_pct.py` フル実行・8-12h 想定) の現状確認:
-- 実行済なら → Phase 0 完了レビュー本体に進む (公式 source 物理 view 義務・v14 §4.9 / v15 §4.13)
-- 未実行なら → コマンド実行 (handoff v13 §3.1 参照)
+#### Step 0: まこさんへ公式 source 同期依頼
 
-レビュー観点 (v14 §3.3 / v15 §3.1 継承):
-- 行数差分 (起点 07:55 → 23:55 / 終点 03-31 15:50 → 03-30 23:50 各 192 bars) の実装上の理由
-- K288 max 35-40% の該当日付特定
-- ラベル対称性 (LONG_MFE_pct = SHORT_MAE_pct) の公式 source 実物 verify
-- 異常値スメル ⚠️ 2 件が §0 サマリ「全条件クリア」に反映されていない問題
-- メンテ flag 不使用前提でのレビュー
+セッション開始時、以下 5 ファイルを /mnt/project/ に同期するようまこさんに依頼:
+- results/priority_rebuild/labels_mfe_mae_pct_train_2021_2024.parquet
+- results/priority_rebuild/labels_mfe_mae_pct_test_2025.parquet
+- results/priority_rebuild/labels_mfe_mae_pct_test_2026_q1.parquet
+- results/priority_rebuild/phase0_v3_stats/label_stats.csv
+- results/priority_rebuild/phase0_v3_stats/sample_rows_K{006,012,024,048,096,144,288}.csv
 
+同期前に判定出力しない（v14 §0.6 同型インシデント再発防止）。
+
+#### Step 1: 5 観点レビュー（観点ごとに判定基準・公式 source・合否を明記）
+
+| # | 観点 | 物理 view 対象 | 判定基準 | 合格条件 |
+|---|---|---|---|---|
+| 1 | 行数差分（train 394,561 / 仮 test 105,120 / 本 test 25,631 が想定通りか） | parquet 3 ファイル `df.shape` | Phase 0 完了報告 §1 と一致 | 完全一致 |
+| 2 | ラベル対称性 (LONG_MFE_pct_K ≡ SHORT_MAE_pct_K / LONG_MAE_pct_K ≡ SHORT_MFE_pct_K) | sample_rows_K012.csv 等 7 ファイル | 全 K で diff=0.0000e+00 | 7/7 K で bit-exact 一致 |
+| 3 | 異常値スメル ⚠️ 2 件評価<br>(a) train K288 LONG_MFE max = 35.8% / SHORT_MAE max = 40.7%<br>(b) test_2026_q1 SHORT_MFE_K288 mean = 2.319 > train (2.302) | label_stats.csv | (a) BTC 24h で 35-40% 動いた日が実在するか実データで確認 / (b) 2026 Q1 弱気相場での SHORT 順行整合性 | 両件とも合理的説明あり |
+| 4 | メンテ flag 不使用前提 | parquet 内 is_maintenance 列存在確認 | 列は残置・Phase 5 では参照しない設計 | 列存在 ✅・Phase 5 で参照する記述なし |
+| 5 | 14 ラベル化準備 | Phase 0 完了報告 §7.2（commit 53debce 確定文） | B 案 14 ラベル採用確定文が反映済 | §7.2 に「✅ 採用」記述 |
+
+#### Step 2: 合否判定
+
+5 観点 ALL ✅ → **Phase 0 完了レビュー合格・Phase 1 着手 GO**
+1 件でも NG → CC へ修正依頼 + handoff v17 へ繰り越し
+
+#### Step 3: 合格時の次タスク
+
+- §3.2 spec sweep（16 ラベル → 14 ラベル機械反映）と並行 or 順次実行
+- §3.3 Phase 1 着手指示書発注（14 ラベル LightGBM 学習・学習内容 v3 §B-15 準拠）
 ### §3.2 優先 2: Phase 0 v3 spec sweep 本体 (v14 §3.2 / v15 §3.2 継承)
 
 cc_ml_design_spec.md / WORKFLOW.md / phase_compliance_checklist.md の **「16 ラベル」→「14 ラベル独立学習 (対称性活用)」機械反映**が未完。

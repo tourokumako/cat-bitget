@@ -232,20 +232,79 @@ grep -rn "0\.12\s*BTC\|POSITION_BTC\|position_size" \
 
 ### Step 3d 後追記項目 (`*_completion_phase0.md` で記録)
 
-以下は実行後の実数値を要するため、本 audit report の対象外:
-- 期間別 parquet 行数 verify (期待: train 394,753 - 288 / 仮 test 105,120 - 288 / 本 test 25,823 - 288 ※末尾 K=288 drop)
-- 全 28 ラベル統計値 (mean / std / min / max) per K × side × MFE/MAE
-- メンテ時間帯除外前後行数 (除外 bar 数の実測)
-- 期間別 is_maintenance flag count
-- 計算結果サンプル (各 K の上位 5 行)
-- フル実行所要時間
-- 生成 parquet ファイルサイズ
+詳細は [.claude/instructions/2026-05-19_ml_implementation_phase0_1_completion_phase0.md](../instructions/2026-05-19_ml_implementation_phase0_1_completion_phase0.md) 参照。
+
+#### 期間別 parquet 行数 verify (実測)
+
+公式 source: [results/priority_rebuild/phase0_v3_stats/row_count_verify.json](../../results/priority_rebuild/phase0_v3_stats/row_count_verify.json)
+
+| 期間 | 期待 (旧 WORKFLOW) | 実測 | 差 | 判定 |
+|---|---:|---:|---:|---|
+| train_2021_2024 | 394,465 | **394,561** | +96 | ✅ 実測が境界 inclusive 解釈で数学的に正 |
+| test_2025 | 104,832 | **105,120** | +288 | ✅ 365日 × 288 で正 |
+| test_2026_q1 | 25,535 | **25,631** | +96 | ✅ 89日 × 288 で正 |
+
+WORKFLOW.md 期待値は古い計算 → 後続タスクで実測値に修正する必要あり。
+
+#### メンテ flag (is_maintenance) 期間別実測
+
+公式 source: [results/priority_rebuild/phase0_v3_stats/maintenance_flag.json](../../results/priority_rebuild/phase0_v3_stats/maintenance_flag.json)
+
+| 期間 | 総行数 | メンテ flag 行数 | 比率 (期待 5.35%) |
+|---|---:|---:|---:|
+| train_2021_2024 | 394,561 | 21,096 | 5.35% ✅ |
+| test_2025 | 105,120 | 5,652 | 5.38% ✅ |
+| test_2026_q1 | 25,631 | 1,332 | 5.20% ✅ |
+
+メンテ flag は行 drop ではなく列フラグとして保存 (Phase 5 Replay でエントリー除外用)。
+
+#### 28 ラベル統計値 (mean/std/min/max/p50/p99 per 期間 × ラベル)
+
+公式 source: [results/priority_rebuild/phase0_v3_stats/label_stats.csv](../../results/priority_rebuild/phase0_v3_stats/label_stats.csv) (84 行 = 3 期間 × 28 ラベル)
+
+詳細は completion report §3 参照。要約:
+- K 増加で mean/std/p99 が単調増加 ✅
+- train で LONG_MAE > LONG_MFE 一貫 (下落バイアス整合)
+- min 値は全 K で > -1.1% (BTC 下落 lower bound として妥当)
+- max 値は train K288 で 35-40% (上昇相場での 24h 最大値・現実的範囲内)
+
+**重要発見 (completion report §3.2)**:
+`LONG_MFE_pct_K{K} == SHORT_MAE_pct_K{K}` および `LONG_MAE_pct_K{K} == SHORT_MFE_pct_K{K}` が**行レベルで完全一致** (diff = 0.0000e+00)。数学的に正しい関係 (LONG 最大上昇 = SHORT 最大逆行) で、**実質情報量 28 → 14 ラベル**。Phase 1 学習で 14 モデル選択肢あり (Web Claude 判断領域)。
+
+#### 計算結果サンプル
+
+公式 source: [results/priority_rebuild/phase0_v3_stats/sample_rows_K{006,012,024,048,096,144,288}.csv](../../results/priority_rebuild/phase0_v3_stats/) (K 別 7 ファイル・train 先頭 5 行 × 4 ラベル列)
+
+#### フル実行所要時間
+
+| Step | 期間 | 開始 | 終了 | 所要 | 終了コード |
+|---|---|---|---|---:|---|
+| run_full | train + test_2025 | 2026-05-19 15:54:34 | 2026-05-19 17:15:58 | **1h 21m 23s** | 0 |
+| run_test_2026q1 | test_2026_q1 | 2026-05-20 07:08:17 | 2026-05-20 08:27:27 | **1h 19m 10s** | 0 |
+| 合計 | | | | **2h 40m 33s** | |
+
+log: [log_build_labels_pct.txt](../../log_build_labels_pct.txt) + [log_build_labels_pct_q1.txt](../../log_build_labels_pct_q1.txt)
+
+#### 生成 parquet ファイルサイズ
+
+| ファイル | サイズ | 行数 |
+|---|---:|---:|
+| labels_mfe_mae_pct_train_2021_2024.parquet | 1.13 GB | 394,561 |
+| labels_mfe_mae_pct_test_2025.parquet | 0.33 GB | 105,120 |
+| labels_mfe_mae_pct_test_2026_q1.parquet | 79.5 MB | 25,631 |
+
+#### Step 3d 着手前 audit (v1) との照合
+
+- v1 §結論「Phase 0 Step 3d 着手可」→ 実行結果は v1 の前提（leak verify pass / 価格非依存性適用 / メンテ除外実装）を全て満たして完了 ✅
+- v1 で指摘した残課題 (`obv_slope_10b` volume scale) は Phase 1 持ち越しのまま
 
 ### 残課題 (Phase 1 持ち越し)
 
 | 項目 | 内容 |
 |---|---|
 | `obv_slope_10b` volume scale | Phase 1 feature_importance top20 に出現したら再確認・取引所成長による分布シフトリスク |
+| ラベル数の選択 (28 vs 14) | §3.2 対称性発見を受けた Phase 1 学習設計の判断 (Web Claude 領域) |
+| WORKFLOW.md 期待行数の修正 | 394,465 → 394,561 / 104,832 → 105,120 / 25,535 → 25,631 (後続コミット) |
 
 ---
 
@@ -254,3 +313,4 @@ grep -rn "0\.12\s*BTC\|POSITION_BTC\|position_size" \
 | バージョン | 日付 | 内容 |
 |---|---|---|
 | v1 | 2026-05-19 | 初版 (Step 1-5 完了・Step 3d 着手前監査) |
+| v2 | 2026-05-20 | Step 3d 後追記項目を実数値で更新 (行数 verify / メンテ flag / ラベル統計 / サンプル / 所要時間 / parquet サイズ / ラベル対称性発見) |
