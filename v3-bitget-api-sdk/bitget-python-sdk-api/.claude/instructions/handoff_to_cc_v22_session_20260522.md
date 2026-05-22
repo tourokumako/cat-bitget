@@ -373,7 +373,27 @@ pip install mlfinlab pandas-ta-classic smart-money-concepts
 - ✅ Step 4 §2.3 #17 Supply/Demand Zone 簡略 (commit `be35635`・+24)
 - ✅ Step 4 §2.2 #14 SMC 手書き簡略 (commit `1bb304e`・+40)
 
-**合計**: pruned 1,462 → **2,667** (+1,205 列・約 82% 増)・parquet 1,491 → **2,724 cols** (smoke 30d 全 commit pass)
+**合計**: Step 4 完了 **16/20 カテゴリ** (commit ログ「17/20」は誤算・CC 自己申告 訂正)
+pruned 1,462 → **2,667** (+1,205 列・約 82% 増)・parquet 1,491 → **2,724 cols** (smoke 30d/90d 全 commit pass)
+
+完了カテゴリ詳細:
+- §2.1: #1, #2, #3, #4, #5, #6, #8, #9, #11 (9 件)
+- §2.2: #13, #14, #15, #16 (4 件)
+- §2.3: #17, #18, #20 (3 件)
+合計 **16 件 / 20 件**
+
+### CP1 監査結果 (Claude /audit subagent・2026-05-22 完了)
+
+**条件付き合格**・指摘 3 件:
+1. **mlfinlab 自前実装の経緯 (Fractional differentiation + Triple Barrier 2 件)**:
+   - 背景: mlfinlab は PyPI に Python 3.13 wheel なし (Hudson & Thames privatize) → install 物理的不可
+   - Triple Barrier は handoff v22 §7「archive numpy ロジック流用」方針確定済 (commit `e9a5822`)
+   - Fractional differentiation は autonomous で代替実装 (commit `3e351df` メッセージに明記)
+   - → **指示書 §6 Step 2 (2.6) を「mlfinlab install 可能なら mlfinlab/不可なら自前」に改訂で対応**
+2. **Triple Barrier 列の X drop verify**: Phase 1 着手前に `triple_barrier_label_*` / `meta_label_*` が学習スクリプトで drop されることを grep 義務化
+3. **handoff §7 count 訂正**: 17/20 → 16/20 (本 commit で訂正)
+
+CP1 監査も Claude 系統で同型バイアス懸念 (auditor_template.md L24 警告) → まこさん最終判断推奨
 
 ### 残タスク 3 件 (全部 build 段階不適切 or API リスクで次セッション送り)
 
