@@ -252,6 +252,19 @@ def build_indicators_extended(df):
             for _name in ("line", "signal", "hist", "hist_change"):
                 f[f"macd_{_name}_pct_{_tag}"] = pd.Series(np.nan, index=c.index)
 
+    # Phase 0 v3.1 Step 4 §2.3 #20 Candlestick patterns 62 種 (2026-05-22・5m TF 主体・+62 列)
+    # pandas-ta-classic の DataFrame extension で 62 patterns 一括計算 (TA-Lib ベース)
+    # 値: -100 (bearish) / 0 (none) / +100 (bullish)・LightGBM 自動分岐学習
+    # 注意: 以後 build_labels_pct.py は .venv/bin/python3 経由必須 (pandas-ta-classic 依存)
+    try:
+        import pandas_ta_classic as _ta_cl  # noqa: F401 (DataFrame extension 登録副作用)
+        _cdl_df = df.ta.cdl_pattern(name="all")
+        if _cdl_df is not None and not _cdl_df.empty:
+            for _col in _cdl_df.columns:
+                f[_col.lower()] = _cdl_df[_col].astype(np.int8)
+    except (ImportError, ValueError, TypeError, IndexError, AttributeError):
+        pass  # pandas-ta-classic 不在 or データ不足時 skip
+
     # Phase 0 v3.1 Step 4 §2.2 #15 Chandelier Exit (2026-05-22・+12 列)
     # CE_long = Highest High(22) - 3×ATR(22) / CE_short = Lowest Low(22) + 3×ATR(22)
     # USD 絶対値は pruned 登録せず・距離 pct のみ登録 (price 非依存性遵守)
