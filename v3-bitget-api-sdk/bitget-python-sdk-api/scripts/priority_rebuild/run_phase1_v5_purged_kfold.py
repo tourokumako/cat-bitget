@@ -67,7 +67,7 @@ LABEL_PREFIXES: Tuple[str, ...] = (
 )
 EXPECTED_LABEL_COUNT = 56
 
-# Phase 1 合格基準 5 指標 (cc_ml_design_spec §1.5.1 / 指示書 §4)
+# Phase 1 合格基準 5 指標 (cc_ml_design_spec §1.5.1 v5.1 / 指示書 §4)
 PASS_ENTROPY_LIFT = 0.10
 PASS_TP_PRECISION = 0.50
 PASS_DIRECTION_ACC = 0.55
@@ -75,16 +75,26 @@ PASS_SIM_PNL_MONTHS = 8
 PASS_SIM_PNL_YEAR_USD = 500.0
 PASS_DSR_ZSCORE = 1.0
 
+# v5.1: 8 組合せ評価 (K=12/24/48/96 × LONG/SHORT) + 6+ 組合せ ALL PASS 合格判定
+K_DEFAULT_LIST: Tuple[int, ...] = (12, 24, 48, 96)
+SIDES_DEFAULT: Tuple[str, ...] = ("LONG", "SHORT")
+COMBINATION_PASS_COUNT_REQUIRED = 6  # cc_ml_design_spec §1.5.1 v5.1: 8 組合せ中 6 以上で ALL PASS
+
+# train/valid 乖離 warning 閾値 (指示書 §4.2 W1/W2)
+WARN_TRAIN_RMSE_LABEL_STD_RATIO = 0.10  # train_rmse / label_std < 0.10 で leak 疑い
+WARN_VALID_TRAIN_RATIO = 3.0  # valid_rmse > train_rmse * 3.0 で overfit/leak 疑い
+
 
 @dataclass
 class FoldMetrics:
-    """fold 単位の 4 指標 (DSR は aggregate で算出するためここには含めない)."""
+    """fold 単位の 4 指標 + 警告 (DSR は aggregate で算出するためここには含めない・v5.1 拡張)."""
 
     case_name: str
     fold_idx: int
     K: int
+    side: str  # v5.1: "LONG" / "SHORT"
     entropy_lift: float
-    tp_precision: float
+    tp_precision: float  # 正解 = triple_barrier_label_{LONG,SHORT}_K{K} == +1
     direction_accuracy: Optional[float]
     sim_pnl_months_positive: int
     sim_pnl_year_usd: float
@@ -95,14 +105,21 @@ class FoldMetrics:
     train_end: str
     test_start: str
     test_end: str
+    # v5.1: train/valid RMSE + label_std (W1/W2 警告計算用・regression のみ)
+    train_rmse: Optional[float] = None
+    valid_rmse: Optional[float] = None
+    label_std: Optional[float] = None
+    warnings: List[str] = field(default_factory=list)
     extra: Dict[str, float] = field(default_factory=dict)
 
 
 @dataclass
-class CaseSummary:
-    """5 fold 統合 + DSR + §4.1 合格判定."""
+class CombinationSummary:
+    """1 組合せ (K × side) 内の 5 fold 統合 + 組合せ単位 pass 判定."""
 
     case_name: str
+    K: int
+    side: str
     n_folds: int
     entropy_lift_mean: float
     tp_precision_mean: float
@@ -113,10 +130,23 @@ class CaseSummary:
     fold_sharpe_variance: float
     dsr_zscore: float
     dsr_probability: float
-    dsr_n_trials: int
     pass_per_metric: Dict[str, bool]
     all_pass: bool
-    layer3_investigation_needed: bool
+    warnings: List[str] = field(default_factory=list)
+
+
+@dataclass
+class CaseSummary:
+    """8 組合せ統合 + §4.1 v5.1 合格判定 (6+ 組合せ ALL PASS)."""
+
+    case_name: str
+    n_combinations: int  # 通常 8 (K=4 × side=2)
+    combinations: Dict[str, Dict] = field(default_factory=dict)  # key: "K12_LONG" 等
+    n_combinations_all_pass: int = 0
+    all_pass_combinations: List[str] = field(default_factory=list)
+    meets_6plus_criteria: bool = False  # 6 組合せ以上で ALL PASS なら合格
+    dsr_n_trials: int = 6  # Phase 1 v5.1 は 6 案並列 (Phase 4-b-2 で grid 拡張時に更新)
+    layer3_investigation_needed: bool = True
 
 
 def get_blacklist_columns(df: pd.DataFrame) -> List[str]:
@@ -290,8 +320,9 @@ def compute_fold_metrics(
     case_name: str,
     fold_idx: int,
     K: int,
-    y_true: np.ndarray,
-    y_pred: np.ndarray,
+    side: str,
+    y_true_tp_first: np.ndarray,
+    y_pred_tp_first: np.ndarray,
     y_prob: Optional[np.ndarray],
     num_classes: int,
     returns_per_trade: pd.Series,
@@ -299,40 +330,94 @@ def compute_fold_metrics(
     test_range: Tuple[pd.Timestamp, pd.Timestamp],
     n_train: int,
     n_test: int,
-    is_direction_case: bool = False,
+    direction_y_true: Optional[np.ndarray] = None,
+    direction_y_pred: Optional[np.ndarray] = None,
+    train_rmse: Optional[float] = None,
+    valid_rmse: Optional[float] = None,
+    label_std: Optional[float] = None,
     extra: Optional[Dict[str, float]] = None,
 ) -> FoldMetrics:
-    """fold 単位の 4 指標 + Sharpe を計算 (DSR は aggregate で)."""
+    """fold 単位の 4 指標 + Sharpe + W1/W2 警告を計算 (DSR は aggregate で・v5.1).
+
+    Args:
+        side: "LONG" / "SHORT" (v5.1 で 8 組合せ評価対応)
+        y_true_tp_first: TP first 正解 (triple_barrier_label_{side}_K{K} == +1 を 0/1 化)
+        y_pred_tp_first: case 別 0/1 化済 (caller responsibility):
+            - 案 a: (予測 MFE / |予測 MAE|) >= 1.5
+            - 案 b: predict_proba > 0.5
+            - 案 c: LONG class prob > 0.4 (LONG 側) / SHORT class prob > 0.4 (SHORT 側)
+            - 案 d: 予測強度 top 10%
+            - 案 e: +1 class prob > 0.4
+            - 案 f: Primary +1 ∧ Secondary > 0.6
+        y_prob: entropy_lift 計算用 (regression は None → entropy_lift=NaN)
+        num_classes: entropy_lift 計算用 (regression は 0 or 1)
+        direction_y_true/direction_y_pred: 案 c のみ・multiclass 3-way 正解と予測
+        train_rmse/valid_rmse/label_std: W1/W2 警告計算用 (regression のみ)
+    """
+    warnings: List[str] = []
+
     # 1. entropy lift
     if y_prob is not None and num_classes >= 2:
-        e_lift = compute_entropy_lift(y_true, y_prob, num_classes)
+        e_lift = compute_entropy_lift(y_true_tp_first.astype(int), y_prob, num_classes)
     else:
         e_lift = float("nan")
 
-    # 2. TP precision (TP first = 0/1 と仮定; 案 a は caller 側で binarize)
-    if len(y_pred) == 0 or np.sum(y_pred) == 0:
+    # 2. TP Precision (TP first 正解 vs case 別 0/1 化予測・全案統一)
+    if len(y_pred_tp_first) == 0 or int(np.sum(y_pred_tp_first)) == 0:
         tp_p = 0.0
     else:
-        tp_p = float(precision_score(y_true, y_pred, zero_division=0.0))
+        tp_p = float(
+            precision_score(
+                y_true_tp_first.astype(int),
+                y_pred_tp_first.astype(int),
+                zero_division=0.0,
+            )
+        )
 
-    # 3. Direction accuracy (案 c のみ)
-    direction_acc = (
-        float(accuracy_score(y_true, y_pred)) if is_direction_case else None
-    )
+    # 3. Direction Accuracy (案 c のみ・別 array で渡される)
+    if direction_y_true is not None and direction_y_pred is not None:
+        direction_acc = float(accuracy_score(direction_y_true, direction_y_pred))
+    else:
+        direction_acc = None
 
     # 4. Simulated PnL
     months_pos, year_usd = compute_simulated_pnl(returns_per_trade)
 
-    # fold Sharpe (DSR 入力用・aggregate で 5 fold variance を sr_variance に渡す)
+    # fold Sharpe (DSR 入力用)
     if not returns_per_trade.empty and len(returns_per_trade) >= 2:
         fold_sharpe = float(sharpe_ratio(returns_per_trade.values))
     else:
         fold_sharpe = float("nan")
 
+    # W1/W2 警告検出 (指示書 §4.2)
+    if (
+        train_rmse is not None
+        and label_std is not None
+        and label_std > 0
+    ):
+        ratio_w1 = train_rmse / label_std
+        if ratio_w1 < WARN_TRAIN_RMSE_LABEL_STD_RATIO:
+            warnings.append(
+                f"W1: train_rmse/label_std = {ratio_w1:.4f} < "
+                f"{WARN_TRAIN_RMSE_LABEL_STD_RATIO} (leak suspicion・L-179 fractal 教訓)"
+            )
+    if (
+        train_rmse is not None
+        and valid_rmse is not None
+        and train_rmse > 0
+    ):
+        ratio_w2 = valid_rmse / train_rmse
+        if ratio_w2 > WARN_VALID_TRAIN_RATIO:
+            warnings.append(
+                f"W2: valid_rmse/train_rmse = {ratio_w2:.2f} > "
+                f"{WARN_VALID_TRAIN_RATIO} (overfit/leak suspicion)"
+            )
+
     return FoldMetrics(
         case_name=case_name,
         fold_idx=fold_idx,
         K=K,
+        side=side,
         entropy_lift=float(e_lift),
         tp_precision=tp_p,
         direction_accuracy=direction_acc,
@@ -345,6 +430,10 @@ def compute_fold_metrics(
         train_end=str(train_range[1]),
         test_start=str(test_range[0]),
         test_end=str(test_range[1]),
+        train_rmse=train_rmse,
+        valid_rmse=valid_rmse,
+        label_std=label_std,
+        warnings=warnings,
         extra=extra or {},
     )
 
@@ -379,49 +468,53 @@ def save_fold_results(
     return out_dir
 
 
-def aggregate_to_summary(
+def _mean_clean(values: Iterable[float]) -> float:
+    """NaN / None を除いた平均."""
+    clean = [
+        v for v in values
+        if v is not None and not (isinstance(v, float) and np.isnan(v))
+    ]
+    return float(np.mean(clean)) if clean else float("nan")
+
+
+def aggregate_combination_to_summary(
     case_name: str,
+    K: int,
+    side: str,
     fold_metrics: List[FoldMetrics],
     returns_all_folds: pd.Series,
     n_trials: int,
-    out_base: Path = OUT_BASE,
-) -> CaseSummary:
-    """5 fold 統合 + DSR 算出 + §4.1 合格判定 → phase1_v5_summary.json 追記.
+) -> CombinationSummary:
+    """1 組合せ (K × side) の 5 fold 統合 + DSR + 組合せ単位 pass 判定 (v5.1).
 
     Args:
-        fold_metrics: 5 fold 分の FoldMetrics
-        returns_all_folds: 5 fold 統合した trade returns (DSR 計算用)
-        n_trials: DSR selection bias 補正のための過去 grid 試行数
-            (Phase 1 v5 では 6 案 = 6・grid search も実行する場合は試行総数)
+        fold_metrics: この組合せ内の 5 fold 分の FoldMetrics
+        returns_all_folds: 同組合せの 5 fold 統合 trade returns
+        n_trials: DSR selection bias 補正用 (case 単位で全組合せ共通)
     """
     if not fold_metrics:
-        raise ValueError("fold_metrics is empty")
+        raise ValueError(f"fold_metrics empty for case={case_name} K={K} side={side}")
 
-    def _mean(values: Iterable[float]) -> float:
-        clean = [
-            v for v in values if v is not None and not (isinstance(v, float) and np.isnan(v))
-        ]
-        return float(np.mean(clean)) if clean else float("nan")
+    e_lift_mean = _mean_clean(m.entropy_lift for m in fold_metrics)
+    tp_p_mean = _mean_clean(m.tp_precision for m in fold_metrics)
+    direction_vals = [m.direction_accuracy for m in fold_metrics
+                      if m.direction_accuracy is not None]
+    direction_mean = _mean_clean(direction_vals) if direction_vals else None
+    months_mean = _mean_clean(m.sim_pnl_months_positive for m in fold_metrics)
+    year_usd_mean = _mean_clean(m.sim_pnl_year_usd for m in fold_metrics)
+    fold_sharpe_mean = _mean_clean(m.fold_sharpe for m in fold_metrics)
 
-    e_lift_mean = _mean([m.entropy_lift for m in fold_metrics])
-    tp_p_mean = _mean([m.tp_precision for m in fold_metrics])
-    direction_vals = [m.direction_accuracy for m in fold_metrics if m.direction_accuracy is not None]
-    direction_mean = _mean(direction_vals) if direction_vals else None
-    months_mean = _mean([m.sim_pnl_months_positive for m in fold_metrics])
-    year_usd_mean = _mean([m.sim_pnl_year_usd for m in fold_metrics])
-    fold_sharpe_mean = _mean([m.fold_sharpe for m in fold_metrics])
-    fold_sharpe_var = float(
-        np.var(
-            [m.fold_sharpe for m in fold_metrics if not np.isnan(m.fold_sharpe)],
-            ddof=1,
-        )
-    ) if len([m for m in fold_metrics if not np.isnan(m.fold_sharpe)]) >= 2 else float("nan")
+    valid_sharpes = [m.fold_sharpe for m in fold_metrics if not np.isnan(m.fold_sharpe)]
+    fold_sharpe_var = (
+        float(np.var(valid_sharpes, ddof=1)) if len(valid_sharpes) >= 2 else float("nan")
+    )
 
-    # DSR (5 fold 統合 returns + fold-Sharpe variance を sr_variance に渡す)
+    # DSR (組合せ単位・5 fold 統合 returns + fold-Sharpe variance を sr_variance に)
     if (
         not returns_all_folds.empty
         and len(returns_all_folds) >= 30
         and not np.isnan(fold_sharpe_var)
+        and fold_sharpe_var > 0
     ):
         dsr_result = compute_dsr_from_returns(
             returns=returns_all_folds.values,
@@ -434,9 +527,11 @@ def aggregate_to_summary(
         dsr_z = float("nan")
         dsr_p = float("nan")
 
-    # §4.1 合格判定 (5 指標 ALL PASS = 1 件でも未達 → Layer 3 投入)
+    # 組合せ単位 5 指標 pass 判定
     passes = {
-        "entropy_lift": bool(e_lift_mean > PASS_ENTROPY_LIFT),
+        "entropy_lift": bool(
+            np.isnan(e_lift_mean) or e_lift_mean > PASS_ENTROPY_LIFT
+        ),  # regression (NaN) は entropy_lift 適用外として PASS 扱い
         "tp_precision": bool(tp_p_mean > PASS_TP_PRECISION),
         "direction_accuracy": bool(
             direction_mean is None or direction_mean > PASS_DIRECTION_ACC
@@ -449,8 +544,13 @@ def aggregate_to_summary(
     }
     all_pass = all(passes.values())
 
-    summary = CaseSummary(
+    # 全 fold の警告を収集 (組合せ単位)
+    all_warnings = [w for m in fold_metrics for w in m.warnings]
+
+    return CombinationSummary(
         case_name=case_name,
+        K=K,
+        side=side,
         n_folds=len(fold_metrics),
         entropy_lift_mean=e_lift_mean,
         tp_precision_mean=tp_p_mean,
@@ -461,34 +561,92 @@ def aggregate_to_summary(
         fold_sharpe_variance=fold_sharpe_var,
         dsr_zscore=dsr_z,
         dsr_probability=dsr_p,
-        dsr_n_trials=n_trials,
         pass_per_metric=passes,
         all_pass=all_pass,
-        layer3_investigation_needed=not all_pass,
+        warnings=all_warnings,
     )
 
-    # JSON 追記
+
+def aggregate_8_combinations_to_summary(
+    case_name: str,
+    combination_results: Dict[Tuple[int, str], Tuple[List[FoldMetrics], pd.Series]],
+    n_trials: int = 6,
+    out_base: Path = OUT_BASE,
+) -> CaseSummary:
+    """8 組合せ統合 + §4.1 v5.1 合格判定 (6+ 組合せ ALL PASS) → phase1_v5_summary.json 追記.
+
+    Args:
+        combination_results: dict[(K, side)] -> (fold_metrics_list, returns_series)
+            通常 K=12/24/48/96 × side="LONG"/"SHORT" = 8 組合せ
+        n_trials: DSR selection bias 補正用 (Phase 1 v5.1 = 6 案・Phase 4-b-2 で拡張)
+        out_base: 出力先 (phase1_v5_summary.json 配置)
+
+    cc_ml_design_spec §1.5.1 v5.1 合格判定:
+    - 8 組合せ中 COMBINATION_PASS_COUNT_REQUIRED (6) 以上で 5 指標 ALL PASS → 採用案
+    - 6 未満 → Layer 3 投入判定
+    """
+    if not combination_results:
+        raise ValueError(f"combination_results empty for case={case_name}")
+
+    combinations_dict: Dict[str, Dict] = {}
+    all_pass_combos: List[str] = []
+    n_all_pass = 0
+
+    for (K, side), (fold_metrics, returns_series) in combination_results.items():
+        combo_key = f"K{K}_{side}"
+        combo_summary = aggregate_combination_to_summary(
+            case_name=case_name,
+            K=K,
+            side=side,
+            fold_metrics=fold_metrics,
+            returns_all_folds=returns_series,
+            n_trials=n_trials,
+        )
+        combinations_dict[combo_key] = {
+            "summary": asdict(combo_summary),
+            "fold_metrics": [asdict(m) for m in fold_metrics],
+        }
+        if combo_summary.all_pass:
+            n_all_pass += 1
+            all_pass_combos.append(combo_key)
+
+    meets_criteria = n_all_pass >= COMBINATION_PASS_COUNT_REQUIRED
+
+    case_summary = CaseSummary(
+        case_name=case_name,
+        n_combinations=len(combination_results),
+        combinations=combinations_dict,
+        n_combinations_all_pass=n_all_pass,
+        all_pass_combinations=all_pass_combos,
+        meets_6plus_criteria=meets_criteria,
+        dsr_n_trials=n_trials,
+        layer3_investigation_needed=not meets_criteria,
+    )
+
+    # phase1_v5_summary.json 追記
     out_base.mkdir(parents=True, exist_ok=True)
     summary_path = out_base / "phase1_v5_summary.json"
     if summary_path.exists():
         full = json.loads(summary_path.read_text(encoding="utf-8"))
     else:
-        full = {"cases": {}}
-    full["cases"][case_name] = {
-        "summary": asdict(summary),
-        "fold_metrics": [asdict(m) for m in fold_metrics],
-    }
+        full = {"cases": {}, "meta": {
+            "spec_version": "v5.1",
+            "combination_pass_count_required": COMBINATION_PASS_COUNT_REQUIRED,
+            "K_default_list": list(K_DEFAULT_LIST),
+            "sides_default": list(SIDES_DEFAULT),
+        }}
+    full["cases"][case_name] = asdict(case_summary)
     full["updated_at"] = pd.Timestamp.now().isoformat()
     summary_path.write_text(
         json.dumps(full, indent=2, default=str), encoding="utf-8"
     )
 
-    return summary
+    return case_summary
 
 
 def _self_check() -> int:
-    """import smoke + 簡易 API verify (CI 不要・stand-alone 動作確認)."""
-    print("=== run_phase1_v5_purged_kfold.py self_check ===")
+    """import smoke + 簡易 API verify (v5.1 対応・CI 不要・stand-alone 動作確認)."""
+    print("=== run_phase1_v5_purged_kfold.py self_check (v5.1) ===")
     cv = prepare_purged_cv(n_splits=5)
     print(f"PurgedWalkForwardCV: {cv}")
 
@@ -502,26 +660,112 @@ def _self_check() -> int:
     assert n_folds >= 1, "No folds generated"
     print(f"split smoke OK ({n_folds} folds)")
 
-    # FoldMetrics dataclass smoke
-    fm = FoldMetrics(
-        case_name="smoke",
+    # v5.1 compute_fold_metrics smoke (regression case_a 想定)
+    y_true_tb = rng.integers(0, 2, size=100).astype(int)  # triple_barrier 正解
+    y_pred_tp = rng.integers(0, 2, size=100).astype(int)  # case 別 0/1 化済
+    returns_dummy = pd.Series(
+        rng.normal(0.005, 0.02, size=50),
+        index=pd.date_range("2021-04-02", periods=50, freq="6h"),
+    )
+    fm = compute_fold_metrics(
+        case_name="smoke_a",
         fold_idx=0,
         K=12,
-        entropy_lift=0.15,
-        tp_precision=0.55,
-        direction_accuracy=None,
-        sim_pnl_months_positive=9,
-        sim_pnl_year_usd=600.0,
-        fold_sharpe=1.2,
-        n_train=300,
+        side="LONG",
+        y_true_tp_first=y_true_tb,
+        y_pred_tp_first=y_pred_tp,
+        y_prob=None,
+        num_classes=0,
+        returns_per_trade=returns_dummy,
+        train_range=(idx[0], idx[399]),
+        test_range=(idx[400], idx[499]),
+        n_train=400,
         n_test=100,
-        train_start="2021-04-01",
-        train_end="2021-04-02",
-        test_start="2021-04-02",
-        test_end="2021-04-03",
+        train_rmse=0.5,
+        valid_rmse=0.6,
+        label_std=2.0,  # ratio_w1 = 0.5/2.0 = 0.25 > 0.10 → W1 出ない
     )
-    print(f"FoldMetrics dataclass smoke OK: {fm.case_name}")
+    print(f"FoldMetrics v5.1 smoke OK: case={fm.case_name} K={fm.K} side={fm.side} "
+          f"tp_precision={fm.tp_precision:.3f} warnings={fm.warnings}")
+
+    # W1 警告検出 smoke (train_rmse 異常低)
+    fm_w1 = compute_fold_metrics(
+        case_name="smoke_w1",
+        fold_idx=0,
+        K=12,
+        side="LONG",
+        y_true_tp_first=y_true_tb,
+        y_pred_tp_first=y_pred_tp,
+        y_prob=None,
+        num_classes=0,
+        returns_per_trade=returns_dummy,
+        train_range=(idx[0], idx[399]),
+        test_range=(idx[400], idx[499]),
+        n_train=400,
+        n_test=100,
+        train_rmse=0.05,  # ratio_w1 = 0.05/2.0 = 0.025 < 0.10 → W1 出る
+        valid_rmse=0.20,  # ratio_w2 = 0.20/0.05 = 4.0 > 3.0 → W2 も出る
+        label_std=2.0,
+    )
+    assert any("W1" in w for w in fm_w1.warnings), "W1 not triggered"
+    assert any("W2" in w for w in fm_w1.warnings), "W2 not triggered"
+    print(f"W1/W2 warning smoke OK: {fm_w1.warnings}")
+
+    # aggregate_8_combinations_to_summary smoke (2 組合せ・実 IO 副作用なし)
+    fm_combo_a = [
+        FoldMetrics(
+            case_name="smoke_agg", fold_idx=i, K=12, side="LONG",
+            entropy_lift=float("nan"), tp_precision=0.55,
+            direction_accuracy=None, sim_pnl_months_positive=10,
+            sim_pnl_year_usd=600.0, fold_sharpe=1.5,
+            n_train=300, n_test=100,
+            train_start=str(idx[0]), train_end=str(idx[399]),
+            test_start=str(idx[400]), test_end=str(idx[499]),
+        )
+        for i in range(5)
+    ]
+    fm_combo_b = [
+        FoldMetrics(
+            case_name="smoke_agg", fold_idx=i, K=24, side="SHORT",
+            entropy_lift=float("nan"), tp_precision=0.30,  # FAIL (< 0.50)
+            direction_accuracy=None, sim_pnl_months_positive=10,
+            sim_pnl_year_usd=600.0, fold_sharpe=1.5,
+            n_train=300, n_test=100,
+            train_start=str(idx[0]), train_end=str(idx[399]),
+            test_start=str(idx[400]), test_end=str(idx[499]),
+        )
+        for i in range(5)
+    ]
+    returns_a = pd.Series(
+        rng.normal(0.005, 0.02, size=60),
+        index=pd.date_range("2021-04-02", periods=60, freq="6h"),
+    )
+    returns_b = pd.Series(
+        rng.normal(0.005, 0.02, size=60),
+        index=pd.date_range("2021-04-02", periods=60, freq="6h"),
+    )
+    # 実 IO 回避: 一時 out_base で実行
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        case_summary = aggregate_8_combinations_to_summary(
+            case_name="smoke_agg",
+            combination_results={
+                (12, "LONG"): (fm_combo_a, returns_a),
+                (24, "SHORT"): (fm_combo_b, returns_b),
+            },
+            n_trials=6,
+            out_base=Path(tmp),
+        )
+    print(
+        f"aggregate smoke OK: n_combinations={case_summary.n_combinations} "
+        f"n_all_pass={case_summary.n_combinations_all_pass} "
+        f"meets_6plus={case_summary.meets_6plus_criteria}"
+    )
+    assert case_summary.n_combinations == 2
+    assert case_summary.meets_6plus_criteria is False  # 2 組合せのみ・6 未満
+
     print(f"OUT_BASE: {OUT_BASE}")
+    print("=== self_check PASS ===")
     return 0
 
 
