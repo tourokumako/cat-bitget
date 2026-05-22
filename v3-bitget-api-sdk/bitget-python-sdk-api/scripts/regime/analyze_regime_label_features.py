@@ -252,6 +252,20 @@ def build_indicators_extended(df):
             for _name in ("line", "signal", "hist", "hist_change"):
                 f[f"macd_{_name}_pct_{_tag}"] = pd.Series(np.nan, index=c.index)
 
+    # Phase 0 v3.1 Step 4 §2.2 #14 SMC 手書き簡略 (2026-05-22・+40 列)
+    # smart-money-concepts ライブラリ PyPI 不存在のため手書き実装:
+    # - BOS (Break of Structure): rolling 20 bar の high/low break
+    # - FVG (Fair Value Gap): 3 bar pattern (i: low > i-2: high など)
+    # - Order Block displacement pct: 直近 swing からの移動 pct
+    # 厳密な SMC (joshyattridge/smart-money-concepts) は Phase 4-b で再評価候補
+    _rh20_smc = h.rolling(20, min_periods=5).max()
+    _rl20_smc = l.rolling(20, min_periods=5).min()
+    f["bos_up_bool"] = (c > _rh20_smc.shift(1)).astype(np.int8)
+    f["bos_down_bool"] = (c < _rl20_smc.shift(1)).astype(np.int8)
+    f["fvg_up_bool"] = (l > h.shift(2)).astype(np.int8)
+    f["fvg_down_bool"] = (h < l.shift(2)).astype(np.int8)
+    f["ob_displacement_up_pct"] = ((c - _rl20_smc.shift(1)) / c * 100).clip(lower=0)
+
     # Phase 0 v3.1 Step 4 §2.3 #17 Supply/Demand Zone 簡略 (2026-05-22・+24 列)
     # rolling 50 bar swing high/low をベースに Supply/Demand 距離 + zone 幅
     # 厳密な swing 検出 (pivot fractal) は Phase 4-b で再評価候補
