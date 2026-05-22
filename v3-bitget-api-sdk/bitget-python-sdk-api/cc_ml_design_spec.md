@@ -91,7 +91,7 @@ Phase 1 で 6 案並列学習 (a 14 ラベル RMSE / b Entry Binary / c Directio
 | 2 | **TP Precision** | **> 0.5** | 信頼度 50% 以上 (ベースライン 50% 超え必須)・正解 = `triple_barrier_label_{LONG,SHORT}_K{K}` == +1 |
 | 3 | **Direction Accuracy** (案 c のみ) | **> 0.55** | LONG/SHORT 方向当たり率 (5% 以上有意性) |
 | 4 | **Simulated PnL** (12 ヶ月) | 12 ヶ月中 **8+ ヶ月プラス** + 年間 NET ≥ **$500** | §1.6 Phase 2 基準 ($1,900/月) より暫定的に緩い (Position size 未確定・Phase 4-b/5 で Position 設計後に再評価) |
-| 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | Bailey + Lopez de Prado 2014 (SSRN 2460551)・selection bias 補正後 (n_trials = 6 案・Phase 4-b-2 で grid 拡張時に n_trials 拡大) |
+| 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | Bailey + Lopez de Prado 2014 (SSRN 2460551)・selection bias 補正後 (n_trials = **48 = 6 案 × 8 組合せ**・2026-05-22 Step G CP2 監査 C1 反映で 6 → 48 に拡張・Phase 4-b-2 で grid 拡張時にさらに拡大) |
 
 **合格判定ルール (v5.1 厳格化・§1.6 撤退ライン同構造)**:
 - **6 案いずれか × 8 組合せ中 6+ 組合せで 5 指標 ALL PASS** → 採用案で Phase 2 進行

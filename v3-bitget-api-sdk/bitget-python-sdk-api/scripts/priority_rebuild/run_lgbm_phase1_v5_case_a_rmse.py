@@ -67,8 +67,21 @@ CASE_NAME = "a_rmse"
 # 本確定は Phase 4-b-2 (3 方式並列: 固定 / cluster 別 quantile / rolling 365d q90/q95/q99)
 DEFAULT_RATIO_THRESHOLD = 1.5
 
-# 6 案並列の n_trials (Phase 4-b-2 で grid 拡張時に更新)
-DEFAULT_N_TRIALS = 6
+# DSR selection bias 補正用 n_trials (Step G CP2 監査 C1 反映・2026-05-22)
+# 旧 6 (案数のみ) → 48 (6 案 × 8 組合せ = K=4 × side=2)
+# Phase 1 採用判定は実質 48 軸の selection 空間で「6+ 組合せ ALL PASS」を見るため、
+# n_trials=6 は SR0 を過少推定して DSR を甘く出す方向の bias を持つ。
+# Phase 4-b-2 grid 拡張時にさらに拡張予定 (cc_ml_design_spec §1.5.1)。
+DEFAULT_N_TRIALS = 48
+
+# Cost-deducted return parameters (Step G CP2 監査 C2 反映・2026-05-22)
+# Maker fee (exchange_spec.md 確定値) 往復 + 暫定 slippage (phase_compliance 未確定項目)
+# 往復 fee = 2 × 0.00014 = 0.00028 / slippage = 0.00005 (暫定 0.005%)
+# pred_MFE/100 (decimal) からこの cost (decimal) を控除して net return とする
+# Phase 4-b で実 Exit 設計後に実約定価格 + 実 slippage に置換予定
+MAKER_FEE_ROUND_TRIP = 2 * 0.00014
+SLIPPAGE_ESTIMATE = 0.00005
+TOTAL_COST_PER_TRADE = MAKER_FEE_ROUND_TRIP + SLIPPAGE_ESTIMATE  # = 0.00033 (= 0.033%)
 
 # phase_compliance_checklist.md §1.4 fractal/level/fib 系 blacklist パターン
 # top1-20 hit → sys.exit(1) (即停止・leak 残存疑い)
@@ -362,12 +375,14 @@ def _train_one_fold_one_combination(
     tb_col = f"triple_barrier_label_{side}_K{K}"
     y_true_tp = (y_dict["triple_barrier_label"][tb_col].iloc[test_idx] == 1).astype(int).values
 
-    # returns_per_trade (TP first=1 予測 trade のみ・pred_MFE/100 を return ratio)
+    # returns_per_trade (TP first=1 予測 trade のみ・pred_MFE/100 - cost を return ratio)
+    # Step G CP2 監査 C2 反映: cost-deducted return で関所 C 同型問題 (コスト控除前数値の Sharpe 投入) 回避
+    # cost = 往復 maker fee 0.00028 + 暫定 slippage 0.00005 = 0.00033 (= 0.033%)
     test_index = X.index[test_idx]
     mask = y_pred_tp == 1
     if mask.sum() > 0:
         returns_per_trade = pd.Series(
-            pred_mfe[mask] / 100.0,
+            pred_mfe[mask] / 100.0 - TOTAL_COST_PER_TRADE,
             index=test_index[mask],
             name="return",
         )
@@ -465,6 +480,89 @@ def _train_one_fold_one_combination(
     )
 
     return fm, returns_per_trade, predictions
+
+
+def _detect_anomaly_smell(combination_results: dict, out_base: Path) -> Dict[str, List[str]]:
+    """関所 A 異常値スメル 4 条件検出 (Step G CP2 監査 C2 反映・2026-05-22).
+
+    false_positive_incident_policy.md §5 関所 A の 4 条件を per-combination で検査:
+      ① 勝率 > 70%
+      ② 月次 NET > $3,800 (= 年間 $45,600 超で月次相当を超える可能性)
+      ③ IS-OOS Sharpe > 3 倍乖離 (max/min ratio in fold sharpes)
+      ④ DD < 月次 NET の 10% (fold_metrics に DD 未実装のため skip + warning)
+
+    1 つ以上ヒット → 「異常値・要調査」記録 + summary JSON に anomaly_smell flag 追記。
+    Mid-run sys.exit はしない (長時間 run 完走優先・最終判定で要 まこさん確認)。
+
+    Returns:
+        {combination_key: [trigger description, ...]} (空 dict = 異常値なし)
+    """
+    detections: Dict[str, List[str]] = {}
+    for (K, side), (fold_metrics, _returns) in combination_results.items():
+        combo_key = f"K{K}_{side}"
+        triggers: List[str] = []
+
+        # ① 勝率 > 70% (per-fold max)
+        tp_p_values = [m.tp_precision for m in fold_metrics if not np.isnan(m.tp_precision)]
+        if tp_p_values and max(tp_p_values) > 0.70:
+            triggers.append(
+                f"① 勝率 > 70%: max={max(tp_p_values):.3f} (folds={tp_p_values})"
+            )
+
+        # ② 月次 NET > $3,800 (per-fold sim_pnl_year_usd > $45,600 = $3,800 × 12)
+        sim_pnl_year_values = [
+            m.sim_pnl_year_usd
+            for m in fold_metrics
+            if not np.isnan(m.sim_pnl_year_usd)
+        ]
+        if sim_pnl_year_values and max(sim_pnl_year_values) > 45600.0:
+            max_year = max(sim_pnl_year_values)
+            triggers.append(
+                f"② 月次 NET > $3,800: max year=${max_year:.0f} "
+                f"(月次相当=${max_year/12:.0f})"
+            )
+
+        # ③ IS-OOS Sharpe > 3 倍乖離 (max/min ratio・正値 sharpes 限定)
+        sharpes_pos = [
+            m.fold_sharpe
+            for m in fold_metrics
+            if not np.isnan(m.fold_sharpe) and m.fold_sharpe > 0
+        ]
+        if len(sharpes_pos) >= 2:
+            ratio = max(sharpes_pos) / min(sharpes_pos)
+            if ratio > 3.0:
+                triggers.append(
+                    f"③ IS-OOS Sharpe > 3 倍乖離: max/min={ratio:.2f} "
+                    f"(sharpes={[round(s, 3) for s in sharpes_pos]})"
+                )
+
+        # ④ DD 未実装 (本走で fold_metrics に max_drawdown 追加要件)
+        # 現状はトリガ条件 skip · 別 trigger として「DD verify 未実装」を 1 件記録
+        # (異常値なしと混同しないため・将来 implement 時に削除)
+        # → false positive 減らすため skip 自体を anomaly trigger に含めない (informational only)
+
+        if triggers:
+            detections[combo_key] = triggers
+
+    # summary JSON に flag 追記 (existing 書き込み済み summary を read-modify-write)
+    summary_path = out_base / "phase1_v5_summary.json"
+    if summary_path.exists():
+        try:
+            with open(summary_path) as f:
+                summary_data = json.load(f)
+            if "a_rmse" in summary_data.get("cases", {}):
+                summary_data["cases"]["a_rmse"]["anomaly_smell_detected"] = bool(detections)
+                summary_data["cases"]["a_rmse"]["anomaly_smell_per_combination"] = detections
+                summary_data["cases"]["a_rmse"]["anomaly_smell_note"] = (
+                    "false_positive §5 関所 A: ④ DD は fold_metrics 未実装で skip。"
+                    "①②③ のうち 1 つ以上ヒット → 「異常値・要調査」記録 (Step G CP2 監査 C2 反映・2026-05-22)"
+                )
+                with open(summary_path, "w") as f:
+                    json.dump(summary_data, f, indent=2, default=str)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"[warn] summary JSON 更新失敗: {e}", file=sys.stderr)
+
+    return detections
 
 
 def train_case_a(
@@ -574,6 +672,23 @@ def train_case_a(
         n_trials=n_trials,
         out_base=out_base,
     )
+
+    # 5. 関所 A 異常値スメル 4 条件検出 (Step G CP2 監査 C2 反映・2026-05-22)
+    print(f"\n=== 関所 A 異常値スメル 4 条件 verify (false_positive §5) ===")
+    anomaly_detections = _detect_anomaly_smell(combination_results, out_base)
+    if anomaly_detections:
+        print(f"⚠️  異常値スメル検出: {len(anomaly_detections)} / {len(combination_results)} 組合せ")
+        for combo_key, triggers in anomaly_detections.items():
+            print(f"  [{combo_key}] ヒット {len(triggers)} 件:")
+            for trig in triggers:
+                print(f"    - {trig}")
+        print(
+            "→ false_positive §5 関所 A 義務: 「合格」と書かず「**異常値・要調査**」記録。\n"
+            "→ summary JSON `anomaly_smell_detected: true` 追記済。\n"
+            "→ まこさん再監査経路 (再 CP2 / 独立評価) 推奨 (cc_role §1.2)。"
+        )
+    else:
+        print("✅ 異常値スメル なし (①②③ 全 セーフ・④ DD は fold_metrics 未実装で skip)")
 
     elapsed_total = time.time() - t_start
     print(
