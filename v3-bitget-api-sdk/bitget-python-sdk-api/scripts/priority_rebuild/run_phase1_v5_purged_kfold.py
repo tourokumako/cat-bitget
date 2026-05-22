@@ -295,7 +295,7 @@ def compute_simulated_pnl(
     position_size_btc: float = 0.024,
     btc_price_avg: float = 50000.0,
 ) -> Tuple[int, float]:
-    """naive simulated PnL.
+    """naive simulated PnL (旧式・Step H まで使用・Step I 以降は v2 推奨).
 
     returns_per_trade: trade ごとの return ratio (pct/100 not %), index は trade timestamp.
 
@@ -314,6 +314,111 @@ def compute_simulated_pnl(
     position_usd = position_size_btc * btc_price_avg
     year_usd = float(returns_per_trade.sum() * position_usd)
     return months_positive, year_usd
+
+
+# Step I-2.3 改修: Phase 4-b 仕様の最小スコープ部分を Phase 1 評価式に前倒し
+# 仕様書 v2.1 §7.1 参照
+# Step G CP2 監査 C2 反映 + CP3.5 監査 C1/C2 反映
+DEFAULT_COST_PER_TRADE = 0.00033  # = 往復 maker fee 0.00028 + 暫定 slippage 0.00005
+DEFAULT_POSITION_SIZE_BTC = 0.024
+DEFAULT_BTC_PRICE_AVG = 50000.0
+VALID_METHODS_V2: Tuple[str, ...] = ("fixed_tp", "time_exit")
+
+
+def compute_simulated_pnl_v2(
+    tp_hit_prob: pd.Series,
+    tp_pct: float,
+    sl_pct: float,
+    time_exit_return_median: float,
+    method: str,
+    pred_MFE: Optional[pd.Series] = None,
+    cost_per_trade: float = DEFAULT_COST_PER_TRADE,
+    position_size_btc: float = DEFAULT_POSITION_SIZE_BTC,
+    btc_price_avg: float = DEFAULT_BTC_PRICE_AVG,
+) -> Tuple[int, float, Dict[str, float]]:
+    """Phase 4-b 前倒し簡易評価式 (仕様書 v2.1 §7.1・統計式近似・bar-level 不使用).
+
+    旧式 (compute_simulated_pnl) との差分:
+    - TP 約定率を 100% 想定 → tp_hit_prob (Classifier 出力 0-1) で重み付け
+    - TP 価格を pred_MFE 由来 → 固定 TP_PCT (定数) に変更 (3 重楽観仮定 (1)(3) を物理的に解消)
+    - method 別計算 (fixed_tp / time_exit) で 2 並列評価可能
+
+    Args:
+        tp_hit_prob: §2 Classifier 出力 (Series・index=trade timestamp・値=0-1 確率)
+        tp_pct: §3 固定 TP_PCT (% 単位・例: 0.5 = 0.5%)
+        sl_pct: §3 固定 SL_pct (% 単位・例: 0.5)
+        time_exit_return_median: §5 train 期間 median (% 単位・artifact からロード)
+        method: "fixed_tp" or "time_exit"
+        pred_MFE: 未使用 (PnL 計算には流入しない・Classifier 特徴量にのみ使用・引数として残置・診断目的)
+        cost_per_trade: 往復 fee + slippage (0.00033 = 0.033%)
+        position_size_btc: per-position サイズ (0.024 = 0.024 BTC = 0.12/5 暫定)
+        btc_price_avg: BTC 平均価格 (= position_usd 換算用・50000)
+
+    Returns:
+        months_positive: トレードがあった月のうちプラス月数
+        year_usd: 年間 NET ($)
+        diagnostics: 計算詳細 (mean return / cost / method 等)
+    """
+    if method not in VALID_METHODS_V2:
+        raise ValueError(
+            f"method must be one of {VALID_METHODS_V2}, got: {method}"
+        )
+    if tp_hit_prob.empty:
+        return 0, 0.0, {
+            "method": method,
+            "n_trades": 0,
+            "mean_return": 0.0,
+            "cost_per_trade": cost_per_trade,
+            "tp_pct": tp_pct,
+            "sl_pct": sl_pct,
+            "time_exit_return_median": time_exit_return_median,
+        }
+    if not isinstance(tp_hit_prob.index, pd.DatetimeIndex):
+        raise TypeError("tp_hit_prob.index must be DatetimeIndex")
+
+    # 各 method の return per trade (decimal ratio・pct/100)
+    if method == "fixed_tp":
+        # 期待値式: E[return] = p × TP - (1-p) × SL - cost
+        # TP_PCT / SL_pct は事前固定定数 (pred_MFE 由来なし・3 重楽観 (1)(3) 解消)
+        returns_per_trade = (
+            tp_hit_prob * (tp_pct / 100.0)
+            - (1.0 - tp_hit_prob) * (sl_pct / 100.0)
+            - cost_per_trade
+        )
+    elif method == "time_exit":
+        # 期待値式: return = time_exit_return_median - cost (定数 broadcast)
+        # tp_hit_prob 不使用・time_exit_return_median は train 期間定数 (regime ロバスト median)
+        returns_per_trade = pd.Series(
+            (time_exit_return_median / 100.0) - cost_per_trade,
+            index=tp_hit_prob.index,
+            name=f"return_v2_{method}",
+        )
+    # 月次集計
+    monthly = returns_per_trade.groupby(
+        returns_per_trade.index.to_period("M")
+    ).sum()
+    months_positive = int((monthly > 0).sum())
+    position_usd = position_size_btc * btc_price_avg
+    year_usd = float(returns_per_trade.sum() * position_usd)
+
+    diagnostics: Dict[str, float] = {
+        "n_trades": int(len(returns_per_trade)),
+        "mean_return": float(returns_per_trade.mean()),
+        "std_return": float(returns_per_trade.std()) if len(returns_per_trade) > 1 else 0.0,
+        "tp_hit_prob_mean": float(tp_hit_prob.mean()),
+        "tp_hit_prob_std": float(tp_hit_prob.std()) if len(tp_hit_prob) > 1 else 0.0,
+        "tp_pct": tp_pct,
+        "sl_pct": sl_pct,
+        "time_exit_return_median": time_exit_return_median,
+        "cost_per_trade": cost_per_trade,
+        "position_size_btc": position_size_btc,
+        "btc_price_avg": btc_price_avg,
+        # method はファイル末尾に str で配置するため別途
+    }
+    # method を str として diagnostics に追加 (Dict[str, float] 型違反だが返却用)
+    diagnostics_with_method: Dict[str, object] = dict(diagnostics)
+    diagnostics_with_method["method"] = method
+    return months_positive, year_usd, diagnostics_with_method  # type: ignore[return-value]
 
 
 def compute_fold_metrics(

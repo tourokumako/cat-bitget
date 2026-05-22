@@ -7,6 +7,48 @@
 
 ---
 
+### L-210: Phase 4-b 前倒し評価式実装で smoke 関所 A ② 0/8 達成 — Step I 設計が機能している定量実証 (2026-05-23)
+
+**何が起きたか:**
+L-208 で「評価式の暫定過大評価」が Step H 異常値スメル 6/8 ヒットの主因 (7-8 割支配) と判定された。CP3 監査で案 Y (Phase 4-b 前倒し設計) 採用が確定。本セッション (2026-05-23 同日続編) で Step I-1 仕様書 v2 + v2.1 確定 → CP3.5 監査で Critical 2 + Major 5 + Minor 4 指摘 → 全件反映で v2.1 → I-2.1〜I-2.4 順次実装 → smoke で **anomaly_smell_detected: False (0/8 達成)** を確認した。
+
+具体数値 (sample K=12 LONG / 2 fold):
+- 旧式 K=12 LONG max month_pnl = $4,298 (関所 A ② ヒット)
+- 新式 fixed_tp method test_pnl_year = $-1,138 〜 $-4,296 (月次相当 $-95 〜 $-358)
+- 新式 time_exit method test_pnl_year = $-2,061 (月次相当 $-172)
+
+「3 重楽観仮定 (TP 約定率 100% + slippage 0 + TP 価格 = MFE ピーク) を取り除いた評価式は smoke で正直に赤字を出した」が、これは Step I の核心目標 (= 評価式が現実的な値を返す状態) の達成を意味する。
+
+**Why:**
+- 旧式 `pred_MFE/100 - cost` 設計は TP 約定率 100% × TP 価格 = MFE ピークの 3 重楽観仮定を内包し、Step H で K=96 SHORT $84,185/月 (合格ライン $1,900 の 44 倍) を出していた
+- 新式 `compute_simulated_pnl_v2` (`run_phase1_v5_purged_kfold.py` L319-449) は:
+  (a) tp_hit_prob (Classifier 出力 0-1 確率) で TP 約定率を重み付け
+  (b) 固定 TP_PCT (定数) で TP 価格を pred_MFE 由来から切り離し (3 重楽観 (1)(3) 物理的解消)
+  (c) method (fixed_tp / time_exit) 2 並列で sim_pnl 計算
+- CP3.5 監査で論理破綻 (C1 trailing 数式) + pred_MFE 残存 (C2) を本走前 blocker として指摘・全件反映 → 評価式が「正直」に動作するようになった
+- smoke の sample 89 日 / 2 fold / 浅学習でも関所 A ② 達成 = 設計の方向性が正しい
+
+**How to apply:**
+- **設計修正の効果は smoke 段階で観察可能な指標で verify する**: 関所 A 4 条件 (異常値スメル) は full 期間 / 多 fold を待たずに smoke で初動 verify できる・Step I の方向性確認に活用
+- **monitoring 指標として「異常値スメル件数」を継続採用**: anomaly_smell_detected=False が Step I-3 本走 (full 4 年 / 5 fold) でも維持されれば「評価式信頼性回復」達成 → Phase 2 進行判定の前提が整う
+- **smoke 赤字 = 設計が機能していない、と誤読しない** (L-208 整合): smoke で全 method 赤字でも、これは「3 重楽観仮定なしで sample 89 日では TP 約定率 30% × TP 0.5% では cost を回収できない」という正直な計算結果。full 4 年で TP_hit_prob が安定して高くなる組合せ (K=96 SHORT 等の高ボラ trade) で改善期待
+- **「異常値スメル 0/8 達成 = 合格」ではない**: §8.1 関所 A 達成は評価式信頼性回復の前提条件・本来の合格判定 (§4.1 v5.1 6+ 組合せ ALL PASS) は別軸。Step I-3 本走で再評価
+
+**関連:**
+- L-208 評価式暫定過大評価 (本件で解消・直接的解決の実証)
+- L-209 Major 後送り判断 (本セッション CP3.5 で全件反映 → 再演阻止)
+- L-207 test カバレッジ穴 (本件で unit test 5/5 PASS で再演防止)
+- cc_role §1.5 (CP3.5 監査推奨を CC 単独判断で却下せず全件採用 → 物理的に L-209 阻止)
+- 仕様書 v2.1: `.claude/instructions/2026-05-23_phase4b_forward_design_spec.md` (612 行)
+- 実装 (4 ファイル):
+  - run_tp_hit_classifier.py (684 行・I-2.1)
+  - compute_phase4b_train_constants.py (458 行・I-2.2)
+  - run_phase1_v5_purged_kfold.py (873 行・I-2.3 で compute_simulated_pnl_v2 追加・unit test 5/5 PASS)
+  - run_lgbm_phase1_v5_case_a_v2.py (597 行・I-2.4・新規・既存 case_a 保護)
+- 公式 source: `results/priority_rebuild/ml_phase1_v5/_case_a_v2/case_a_v2_summary_*.json` (smoke 結果・anomaly_smell_detected: false)
+
+---
+
 ### L-209: CC 同型バイアス「Major 後送り判断」= 自分で範囲狭めて OK 判定する癖の再演 (CP3 監査で発覚・2026-05-23)
 
 **何が起きたか:**

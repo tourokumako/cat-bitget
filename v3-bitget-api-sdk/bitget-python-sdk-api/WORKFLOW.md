@@ -299,9 +299,110 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-23 改訂26・**Phase 1 v5.1 Step H 本走 80 学習完走 → 不合格 + 異常値スメル 6/8 + CP3 監査で評価式暫定性確定**・Step I = Phase 4-b 前倒し設計着手準備）
+## 🔴 現在のフェーズ（2026-05-23 改訂27・**Step I-1 仕様書 v2.1 確定 + CP3.5 監査 + I-2.1〜I-2.4 実装完了 + smoke 関所 A ② 0/8 達成**・Step I-2.5 以降 + Step I-3 本走準備）
 
-> **【現在の正本ブロック・改訂26・2026-05-23 セッション末】**
+> **【現在の正本ブロック・改訂27・2026-05-23 セッション末 (改訂26 同日続編)】**
+>
+> ### 本セッション (改訂26 同日続編・2026-05-23 03:30 〜 04:20) 完了事項
+>
+> #### 1. Step I-1 仕様書 v2 → v2.1 確定 (CP3.5 監査 1 回目反映 + parquet 制約反映)
+> - **v1 → v2 改訂**: CP3.5 監査 (Plan サブエージェント) で Critical 2 + Major 5 + Minor 4 + B 系 4 全 15 件指摘 → 全件 100% 反映で v2 確定
+>   - **C1**: §6 method (b) trailing 数式論理破綻 → Step I スコープから除外 (Phase 4-b-1 本確定で別 Classifier と統合再投入)
+>   - **C2**: §7.1 改修コードに pred_MFE 由来楽観仮定残存 → TP 価格を pred_MFE 由来から **固定 TP_PCT grid (定数)** に変更 (3 重楽観仮定 (1)(3) 物理的解消)
+>   - **M1-M5 / B1-B4 / m1-m4**: 全件反映 (詳細は仕様書 §12 改訂サマリー参照)
+> - **v2 → v2.1 微修正** (parquet 制約発見): parquet に open/high/low 不在 → §2.1 ラベル定義を既存 `{side}_MFE_pct_K{K}` 流用に変更 (option δ・数学的等価変換)
+> - 公式 source: `.claude/instructions/2026-05-23_phase4b_forward_design_spec.md` (612 行)
+> - まこさん指摘で「監査推奨 100% 採用ケースは再監査不要」を §10.2 で明文化 → CC 自己 verify (機械 grep) で 15 件全反映確認
+>
+> #### 2. I-2.1: TP 約定率 Classifier 実装 + smoke 完走
+> - **`scripts/priority_rebuild/run_tp_hit_classifier.py`** (新規・684 行)
+> - 8 組合せ (K × side) × 5 fold = 40 学習設計 (TP_PCT 特徴量化で 1 model 統合)
+> - TP_PCT grid: (0.3, 0.5, 0.8, 1.2, 1.8, 2.5) % 6 段階
+> - smoke (sample K=12 LONG TP_PCT=(0.3, 0.5, 0.8) / 2 fold / n_estimators=50):
+>   - **AUC fold 0=0.7205 / fold 1=0.6920** (受け入れ基準 ≥ 0.55 を大幅超過 ✅)
+>   - Brier 0.221 (基準 ≤ 0.25 PASS) / Calibration max dev 0.18 fold 0 (基準 ≤ 0.10 超過・smoke 浅学習由来・full で改善見込み)
+>   - 51 秒で完走
+>   - phase_compliance §1.4 Z 案ガード正常動作 (2 件 hit → 物理 verify 全 PASS → 続行)
+>
+> #### 3. I-2.2: time_exit_return_median artifact 生成
+> - **`scripts/priority_rebuild/compute_phase4b_train_constants.py`** (新規・458 行)
+> - N grid: (K//2, K) のみ (K×2 禁止・phase_compliance §4b.3)
+> - median 化採用 (M3 反映・mean 比較で regime ロバスト性確認: K=12 LONG N=12 で mean -0.019% vs median -0.001%)
+> - smoke 1 秒完走・artifact 2 ファイル + INDEX 生成
+> - 月別歪度 verify (§5.6・|skew| > 1.0 で warning)
+>
+> #### 4. I-2.3: compute_simulated_pnl_v2 関数追加 + unit test 5/5 PASS
+> - `scripts/priority_rebuild/run_phase1_v5_purged_kfold.py` (773 → 873 行・+100 行)
+> - 旧式 compute_simulated_pnl は backward compat で残置
+> - 新式 compute_simulated_pnl_v2: method=fixed_tp / time_exit 2 並列対応
+> - unit test 5 件 (fixed_tp 数式 / time_exit 数式 / 空入力 / 不正 method raise / 旧式 backward compat) 全 PASS
+>
+> #### 5. I-2.4: case_a v2 (2 method 並列・grid idxmax 集約) + smoke
+> - **`scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_v2.py`** (新規・597 行)
+> - 別ファイル化判断 (既存 case_a 保護・Step F-H 動作確認済を維持)
+> - I-2.1 predictions parquet + I-2.2 medians artifact をロードして 2 method × 各 grid で sim_pnl 計算
+> - train PnL idxmax で grid 集約 (M2 反映)
+> - smoke 結果 (sample K=12 LONG / 2 fold):
+>   - **🎯 anomaly_smell_detected: False (0/8 達成・関所 A ②)** ✅
+>   - 旧式 K=12 LONG max month_pnl $4,298 → 新式 month_pnl $-95 〜 $-358 (現実レンジ)
+>   - 3 重楽観仮定除去で評価式が「正直」に動作することを定量実証
+>
+> #### 6. lessons L-210 新規追加
+> - **L-210**: Phase 4-b 前倒し評価式実装で smoke 関所 A ② 0/8 達成 — Step I 設計が機能している定量実証
+>   - 含む内容: smoke 赤字 = 設計が機能していない、と誤読しないこと / monitoring 指標として「異常値スメル件数」を継続採用
+>
+> ### 次セッション CC 優先順位 (Step I-2.5 以降 + Step I-3 本走準備)
+>
+> 1. **優先 1 — Step I-2.5: runner v5.2 拡張 (約 0.5-1 日)**
+>    - case_a v2 では簡易版を内蔵実装済 → 必要なら正式に runner v5.2 として `FoldMetrics` に method 別 sim_pnl 保持を追加
+>    - もしくは case_a v2 内蔵版を維持 (runner には影響しない設計)
+> 2. **優先 2 — Step I-2.6/I-2.7: 受け入れ基準 §8 verify (約 0.5 日)**
+>    - §8.1 関所 A ② 0/8: smoke で達成済 → full でも継続確認
+>    - §8.2 TP 約定率モデル品質 (full 4 年で AUC / Brier / Calibration 再評価)
+>    - §8.3 月次 NET 分布の現実性
+> 3. **優先 3 — Step I-2.8: 集約ロジック unit test (約 0.5-1 日)**
+>    - `_aggregate_grid_idxmax` (case_a v2) を単独 unit test 化
+>    - edge case (empty grid / 同点 idxmax) verify
+> 4. **優先 4 — Step I-3: 本走 (約 4-6 時間 3 並列 + 1 日判定)**
+>    - run_tp_hit_classifier --full (40 Classifier 学習・推定 4-5 時間 3 並列)
+>    - compute_phase4b_train_constants --full (16 artifact 生成・推定 5 分)
+>    - case_a v2 --full (推定 30-60 分・predictions + medians を merge)
+>    - §4.1 v5.1 判定 (method 別 5 指標 + 6+ 組合せ ALL PASS 集計)
+> 5. **優先 5 (将来) — Step G Major M2 + M3 統合**:
+>    - M2: entropy_lift NaN 自動 PASS 修正 (Spearman 相関代替)
+>    - M3: importance dominance 50% → 30% 厳格化 + merge_asof boundary verify
+>
+> ### 引き継ぎリソース (新セッション Step 0 で必読・3 層構造)
+>
+> #### Layer 1 (毎セッション必読)
+> - handoff v28 (本セッション末作成・find で動的取得)
+> - WORKFLOW.md 改訂27 active ブロック (本ブロック)
+> - CLAUDE.md (Layer 2 パス修正済・改訂22 ベース)
+> - lessons_active.md 直近 5 件 (**L-210 最新** + L-209 + L-208 + L-207 + L-206)
+>
+> #### Layer 2 (Step I-2.5+ / Step I-3 着手時)
+> - **Step I-1 仕様書 v2.1**: `.claude/instructions/2026-05-23_phase4b_forward_design_spec.md` (612 行)
+> - 実装 4 ファイル:
+>   - `scripts/priority_rebuild/run_tp_hit_classifier.py` (684 行・I-2.1)
+>   - `scripts/priority_rebuild/compute_phase4b_train_constants.py` (458 行・I-2.2)
+>   - `scripts/priority_rebuild/run_phase1_v5_purged_kfold.py` (873 行・I-2.3 拡張)
+>   - `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_v2.py` (597 行・I-2.4)
+> - 既存 case_a (Step F-H 動作確認済): `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_rmse.py` (785 行・触らない・Step F-H 比較用)
+>
+> #### データ・環境
+> - parquet 3 種 + .venv311 (mlfinpy 0.1.2 / sklearn 1.8.0 / lightgbm 4.6.0 / scipy 1.17.1)
+> - smoke 出力 (新規):
+>   - `results/priority_rebuild/ml_phase1_v5/_tp_hit_classifier/` (I-2.1)
+>   - `results/priority_rebuild/ml_phase1_v5/_phase4b_train_constants/` (I-2.2)
+>   - `results/priority_rebuild/ml_phase1_v5/_case_a_v2/` (I-2.4)
+
+---
+
+## 🧊 改訂26 ブロック (履歴・参照用)
+
+### 🔴 旧フェーズヘッダ (2026-05-23 改訂26・**Phase 1 v5.1 Step H 本走 80 学習完走 → 不合格 + 異常値スメル 6/8 + CP3 監査で評価式暫定性確定**・Step I = Phase 4-b 前倒し設計着手準備)
+
+> **【旧正本ブロック・改訂26・2026-05-23 セッション末】**
 >
 > ### 本セッション (改訂25 同日続編・2026-05-22 23:00 〜 2026-05-23 03:30) 完了事項
 >
