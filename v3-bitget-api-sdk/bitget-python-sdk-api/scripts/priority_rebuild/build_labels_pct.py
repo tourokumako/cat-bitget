@@ -86,8 +86,8 @@ OUT_TEST = OUT_DIR / "labels_mfe_mae_pct_test_2025.parquet"
 OUT_TEST_2026Q1 = OUT_DIR / "labels_mfe_mae_pct_test_2026_q1.parquet"
 OUT_SAMPLE = OUT_DIR / "labels_mfe_mae_pct_sample.parquet"
 
-TIMEFRAMES = ["5m", "15m", "30m", "1h", "4h", "1d"]
-RESAMPLE_RULE = {"5m": "5min", "15m": "15min", "30m": "30min", "1h": "1h", "4h": "4h", "1d": "1D"}
+TIMEFRAMES = ["5m", "15m", "30m", "1h", "4h", "1d", "1w", "1M"]
+RESAMPLE_RULE = {"5m": "5min", "15m": "15min", "30m": "30min", "1h": "1h", "4h": "4h", "1d": "1D", "1w": "1W", "1M": "1ME"}
 FREQ_TD = {
     "5m": pd.Timedelta(minutes=5),
     "15m": pd.Timedelta(minutes=15),
@@ -95,6 +95,8 @@ FREQ_TD = {
     "1h": pd.Timedelta(hours=1),
     "4h": pd.Timedelta(hours=4),
     "1d": pd.Timedelta(days=1),
+    "1w": pd.Timedelta(weeks=1),
+    "1M": pd.Timedelta(days=30),  # 1M 近似 (実際 28-31 日・確定時刻計算用)
 }
 
 W_CANDIDATES = [10, 20, 50]
@@ -211,7 +213,7 @@ def validate_columns(df: pd.DataFrame, pruned_spec: dict) -> None:
             f"  missing ({len(missing)}, head 10): {sorted(missing)[:10]}\n"
             f"  extra   ({len(extra)}, head 10):   {sorted(extra)[:10]}"
         )
-    print(f"[assert OK] 指標列 {len(expected)} 完全一致 (1,853 期待・§2.1 #1+53/#2+18/#5+48/#8+96/#11+36 + §2.2 #13+30/#15+12/#16+18 + §2.3 #18+18/#20+62・以後 .venv 必須・USD 絶対値 48 件は Phase 1 で blacklist drop)")
+    print(f"[assert OK] 指標列 {len(expected)} 完全一致 (2,363 期待・§2.1 #1+53/#2+18/#4+510/#5+48/#8+96/#11+36 + §2.2 #13+30/#15+12/#16+18 + §2.3 #18+18/#20+62・以後 .venv 必須・1w/1M は full build 必要・USD 絶対値 48 件は Phase 1 で blacklist drop)")
 
 
 def compute_mfe_mae_labels_pct(df5m: pd.DataFrame) -> pd.DataFrame:
@@ -327,8 +329,8 @@ def run_dry_run(df5m: pd.DataFrame, pruned_spec: dict) -> None:
         cat_total = sum(len(pruned_spec[cat][tf]["all"]) for tf in TIMEFRAMES)
         print(f"  {cat}: {per_tf} (total {cat_total})")
 
-    if len(expected) != 1853:
-        raise RuntimeError(f"期待集合の総数が 1,853 と不一致: {len(expected)} (§2.1 #1+53/#2+18/#5+48/#8+96/#11+36 + §2.2 #13+30/#15+12/#16+18 + §2.3 #18+18/#20+62)")
+    if len(expected) != 2363:
+        raise RuntimeError(f"期待集合の総数が 2,363 と不一致: {len(expected)} (§2.1 #1+53/#2+18/#4+510/#5+48/#8+96/#11+36 + §2.2 #13+30/#15+12/#16+18 + §2.3 #18+18/#20+62)")
 
     print(f"[dry-run] K_BARS: {K_BARS} → {len(K_BARS) * 4} MFE/MAE ラベル + {len(K_BARS) * 4} Triple Barrier ラベル = {len(K_BARS) * 8} 合計")
     print(f"[dry-run] Triple Barrier: TP_MULT={TP_MULT} SL_MULT={SL_MULT} (RR={TP_MULT}:{SL_MULT}) encoding={LABEL_SL}/{LABEL_TIME}/{LABEL_TP} (SL/TIME/TP)")
