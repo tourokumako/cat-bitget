@@ -252,6 +252,30 @@ def build_indicators_extended(df):
             for _name in ("line", "signal", "hist", "hist_change"):
                 f[f"macd_{_name}_pct_{_tag}"] = pd.Series(np.nan, index=c.index)
 
+    # Phase 0 v3.1 Step 4 §2.1 #3 業界カタログ追加 (2026-05-22・ta library 経由・+80 列想定)
+    # pandas-ta-classic で 200+ 個別選定は工数大のため、ta library (既使用) で代表 10 indicator 選定。
+    # 全 8 TF で計算・try/except で size 不足対応。
+    _industry_indicators = [
+        ("trix_14", lambda: _ta.trend.TRIXIndicator(close=c, window=14).trix()),
+        ("aroon_up_25", lambda: _ta.trend.AroonIndicator(high=h, low=l, window=25).aroon_up()),
+        ("aroon_down_25", lambda: _ta.trend.AroonIndicator(high=h, low=l, window=25).aroon_down()),
+        ("vortex_pos_14", lambda: _ta.trend.VortexIndicator(high=h, low=l, close=c, window=14).vortex_indicator_pos()),
+        ("vortex_neg_14", lambda: _ta.trend.VortexIndicator(high=h, low=l, close=c, window=14).vortex_indicator_neg()),
+        ("tsi_25_13", lambda: _ta.momentum.TSIIndicator(close=c, window_slow=25, window_fast=13).tsi()),
+        ("uo_7_14_28", lambda: _ta.momentum.UltimateOscillator(high=h, low=l, close=c, window1=7, window2=14, window3=28).ultimate_oscillator()),
+        ("ao", lambda: _ta.momentum.AwesomeOscillatorIndicator(high=h, low=l).awesome_oscillator()),
+        ("ppo", lambda: _ta.momentum.PercentagePriceOscillator(close=c, window_slow=26, window_fast=12, window_sign=9).ppo()),
+        ("ulcer_index_14", lambda: _ta.volatility.UlcerIndex(close=c, window=14).ulcer_index()),
+        ("force_index_13", lambda: _ta.volume.ForceIndexIndicator(close=c, volume=v, window=13).force_index()),
+        ("eom_14", lambda: _ta.volume.EaseOfMovementIndicator(high=h, low=l, volume=v, window=14).ease_of_movement()),
+        ("nvi", lambda: _ta.volume.NegativeVolumeIndexIndicator(close=c, volume=v).negative_volume_index()),
+    ]
+    for _name, _fn in _industry_indicators:
+        try:
+            f[_name] = _fn()
+        except (IndexError, ValueError, AttributeError):
+            f[_name] = pd.Series(np.nan, index=c.index)
+
     # Phase 0 v3.1 Step 4 §2.1 #6 Fractional differentiation 自前実装 (2026-05-22・+64 列)
     # Lopez de Prado AFML Ch.5: w_0 = 1 / w_k = -w_{k-1} × (d - k + 1) / k
     # past-only weighted sum (look-ahead 防止・各 i で過去 N bar のみ参照)
