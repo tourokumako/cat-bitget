@@ -1,3 +1,5 @@
 
-# Python virtual environment (Phase 0 v3.1 mlfinlab/pandas-ta-classic install 用・2026-05-22)
+# Python virtual environment (Phase 0 v3.1 pandas-ta-classic install 用・2026-05-22)
 .venv/
+# Python 3.11 venv (Step C・mlfinpy + timeseriescv install 用・2026-05-22 mlfinlab PyPI 削除対応)
+.venv311/

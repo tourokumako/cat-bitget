@@ -30,7 +30,7 @@ handoff v20 §0.26 #5 で「Entry 学習駄目 → 特徴量拡張」と CC が�
 
 ## 着手前必読 (省略禁止・L-179/L-180/L-181)
 
-1. **`technical_analysis_knowledge_base.md` v3 §D ML for Trading** (Triple Barrier / Meta-Labeling / Fractional Diff / Sample Weights / CPCV / mlfinlab / Stefan Jansen)
+1. **`technical_analysis_knowledge_base.md` v3 §D ML for Trading** (Triple Barrier / Meta-Labeling / Fractional Diff / Sample Weights / CPCV / mlfinpy + timeseriescv [旧 mlfinlab・2026-05-22 PyPI 削除 + closed-source 化判明・代替に切替] / Stefan Jansen)
 2. **`learning_design_v4.md` v5 §4 Layer 1 (Layer 配分逆転)** (案 a/b/c/d/e/f + Walk-forward + 合格基準 5 指標 + Layer 3 投入条件)
 3. **`cc_ml_design_spec.md` §1.5.1** (Phase 1 合格基準 5 指標数値)
 4. **Phase 0 改修指示書 v3.1** (Triple Barrier ラベル生成仕様 + 56 ラベル列 parquet schema)
@@ -71,13 +71,28 @@ print(f'Total labels: {len(mfe_mae_cols) + len(tb_cols)} (expected 56)')
 print(f'Total columns: {len(df.columns)} (expected ~2316-3016)')
 "
 
-# (2) mlfinlab パッケージ verify
+# (2) mlfinpy + timeseriescv パッケージ verify (2026-05-22 mlfinlab PyPI 削除 + closed-source 化対応・open-source 代替に切替)
 python -c "
-import mlfinlab
-from mlfinlab.cross_validation import PurgedKFold
-from mlfinlab.backtest_statistics import DSR
-print(f'mlfinlab version: {mlfinlab.__version__}')
-print('PurgedKFold + DSR import OK')
+import mlfinpy, timeseriescv
+print(f'mlfinpy 0.1.2 OK (CPCV / Triple Barrier / Meta-Labeling / Fractional Diff / Sample Weights)')
+print(f'timeseriescv 0.2 OK (PurgedWalkForwardCV / CombPurgedKFoldCV)')
+# Triple Barrier + Meta-Labeling (mlfinpy.labeling.labeling)
+from mlfinpy.labeling.labeling import get_events, get_bins, add_vertical_barrier, barrier_touched, triple_barriers
+print('mlfinpy Triple Barrier + Meta-Labeling import OK')
+# Walk-forward Purged CV (timeseriescv が Phase 1 v5 主用・Combinatorial は Layer 3)
+from timeseriescv.cross_validation import PurgedWalkForwardCV, CombPurgedKFoldCV
+print('timeseriescv PurgedWalkForwardCV + CombPurgedKFoldCV import OK')
+# Combinatorial Purged K-Fold (mlfinpy 内・CPCV 用・Layer 3 残存)
+from mlfinpy.cross_validation import CombinatorialPurgedKFold, ml_cross_val_score, ml_get_train_times
+print('mlfinpy CombinatorialPurgedKFold + ml_cross_val_score import OK')
+# Fractional Diff (mlfinpy.util.frac_diff・Phase 0 改修 Step 4 §2.1 #6 で自前実装済・互換性確認用)
+import mlfinpy.util.frac_diff as fd
+print(f'mlfinpy.util.frac_diff OK: {[x for x in dir(fd) if not x.startswith(\"_\")][:5]}')
+# Sample Weights (Phase 4-b / Phase 5 で活用予定)
+from mlfinpy.sample_weights import get_weights_by_return, get_weights_by_time_decay
+print('mlfinpy Sample Weights (return + time_decay) import OK')
+# DSR は mlfinpy 未実装 → 自前実装 (Bailey + Lopez de Prado 2014 SSRN 2460551・scripts/priority_rebuild/dsr.py)
+print('DSR: 自前実装必要 (mlfinpy 未実装・scripts/priority_rebuild/dsr.py で実装予定)')
 "
 
 # (3) Phase -1 blacklist 64 列 verify (Phase 1 学習で drop 義務・1w/1M MTF 拡張で 48 → 64 列)
@@ -94,7 +109,7 @@ print(f'Blacklist columns to drop: {len(blacklist_cols)} (expected 64)')
 **期待**:
 - 56 ラベル列存在 (28 MFE/MAE + 28 Triple Barrier/Meta)
 - 総列数 2,724 (実測・指示書 §0-2 で +1,205 列 = 2,667 + Triple Barrier 28 + meta 28 + α)
-- mlfinlab 1.6.0+ インストール済
+- mlfinpy 0.1.2 + timeseriescv 0.2 + scikit-learn 1.8.0 + lightgbm 4.6.0 + numpy 1.26.4 + pandas 2.3.3 (Step C 完了済・.venv311 配置・2026-05-22 mlfinlab → mlfinpy 切替)
 - Blacklist 64 列存在 (Phase 1 で drop・8 family × 8 TF・1w/1M MTF 拡張で 48 → 64)
 
 ---
@@ -167,7 +182,7 @@ print(f'Blacklist columns to drop: {len(blacklist_cols)} (expected 64)')
 | ラベル | **`triple_barrier_label_LONG_K{K}` × K=7** (Phase 0 改修 v3.1 で生成済・+1/-1/0) + LONG/SHORT 統合学習 |
 | モデル数 | K=7 期間別 7 個 (K 別に分離学習・特徴量重要度比較用) |
 | Entry 判定 | TP first 確率 (+1) > 0.4 で買う |
-| 根拠 | Lopez de Prado *AFML* Ch.3 + Hudson & Thames mlfinlab |
+| 根拠 | Lopez de Prado *AFML* Ch.3 + mlfinpy (旧 mlfinlab open-source 代替・baobach/mlfinpy・AFML 直接実装) |
 
 ### §2.6 案 f (Meta-Labeling 2 段階・案 e 完了後 sequential)
 
@@ -179,24 +194,30 @@ print(f'Blacklist columns to drop: {len(blacklist_cols)} (expected 64)')
 | Entry 判定 | Primary が +1 予測 AND Secondary が「正解」予測 > 0.6 で買う |
 | 期待効果 | **Precision 改善** + F1-score + Sharpe 向上 (Lopez de Prado AFML Ch.3) |
 
-## §3 Walk-forward Purged K-Fold 5 fold 設計 (mlfinlab.cross_validation 経由)
+## §3 Walk-forward Purged K-Fold 5 fold 設計 (timeseriescv.PurgedWalkForwardCV 主用 + mlfinpy.cross_validation 補助)
 
 ```python
-from mlfinlab.cross_validation import PurgedKFold
-
-# train 2021-04〜2024-12 (約 380k 行) を 5 fold に分割
+from timeseriescv.cross_validation import PurgedWalkForwardCV
+# train 2021-04〜2024-12 (約 380k 行) を 5 fold walk-forward 分割
 # - Purged: t1 (vertical barrier 時刻) が test fold に侵入する train サンプルを除外
 # - Embargo: test fold 後の N bar (= 1% = 約 3800 bar) を train から除外
-cv = PurgedKFold(n_splits=5, samples_info_sets=df['t1'], pct_embargo=0.01)
-for fold_idx, (train_idx, test_idx) in enumerate(cv.split(X)):
+cv = PurgedWalkForwardCV(n_splits=5, n_test_splits=1, min_train_splits=2)
+# t1 (vertical barrier 時刻) と eval_times (label 確定時刻) を渡す
+for fold_idx, (train_idx, test_idx) in enumerate(cv.split(
+    X, pred_times=df['pred_time'], eval_times=df['t1']
+)):
     X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
     y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
     model = LGBMClassifier(**params)
     model.fit(X_train, y_train)
-    # 評価指標計算 (entropy lift / Precision / Direction Accuracy / Simulated PnL / DSR)
+    # 評価指標計算 (entropy lift / Precision / Direction Accuracy / Simulated PnL / DSR 自前)
+
+# Layer 3 で CPCV (Combinatorial Purged K-Fold) 必要時:
+# from mlfinpy.cross_validation import CombinatorialPurgedKFold
+# cv_cpcv = CombinatorialPurgedKFold(n_splits=5, n_test_splits=2, samples_info_sets=df['t1'], pct_embargo=0.01)
 ```
 
-**Embargo の意義**: Triple Barrier ラベルは vertical barrier (K bar 後) まで価格推移を見るため、test fold の最後の K bar 分は train fold の最初の K bar 情報と overlap → information leakage。Embargo で防止。
+**Embargo の意義**: Triple Barrier ラベルは vertical barrier (K bar 後) まで価格推移を見るため、test fold の最後の K bar 分は train fold の最初の K bar 情報と overlap → information leakage。Embargo で防止。timeseriescv の `PurgedWalkForwardCV` は `pred_times` + `eval_times` を受け取り Purging を自動処理する設計 (mlfinlab `PurgedKFold` の `samples_info_sets` と同等)。
 
 **全 6 案 × 5 fold = 30 回学習** の物理証跡を完了報告に含める。
 
@@ -210,7 +231,7 @@ for fold_idx, (train_idx, test_idx) in enumerate(cv.split(X)):
 | 2 | **TP Precision** | **> 0.5** | TP first 予測の precision (案 a は MFE/MAE 比 ≥ 1.5 を TP first proxy) |
 | 3 | **Direction Accuracy** (案 c) | **> 0.55** | 案 c のみ・LONG/SHORT/Flat の方向当たり率 |
 | 4 | **Simulated PnL (12 ヶ月)** | 12 ヶ月中 8+ ヶ月プラス + 年間 NET ≥ $500 | naive Exit (TP 1% / SL 0.5% / TIME K bar) で簡易 Replay |
-| 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | mlfinlab.backtest_statistics.DSR 経由・5 fold trial 統計補正 |
+| 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | 自前 DSR 実装 (Bailey + Lopez de Prado 2014 SSRN 2460551・mlfinpy/timeseriescv 未実装・scripts/priority_rebuild/dsr.py で実装・skew + kurtosis + 試行数補正) |
 
 ### §4.1 合格判定ルール (Layer 3 投入条件厳格化・v5)
 
@@ -255,8 +276,9 @@ for fold_idx, (train_idx, test_idx) in enumerate(cv.split(X)):
 
 ```
 [Step 1] Phase 0 改修 v3.1 完了確認 (Step 0-2 で verify)
-[Step 2] mlfinlab セットアップ + Purged K-Fold runner 実装
-  - run_phase1_v5_purged_kfold.py: 共通 CV runner (各案を呼び出し)
+[Step 2] mlfinpy + timeseriescv セットアップ + Purged K-Fold runner 実装 + 自前 DSR 実装
+  - run_phase1_v5_purged_kfold.py: 共通 CV runner (各案を呼び出し・timeseriescv.PurgedWalkForwardCV 主用)
+  - dsr.py: 自前 DSR 実装 (Bailey + Lopez de Prado 2014・scripts/priority_rebuild/dsr.py)
 [Step 3] 6 案 (a-f) 個別実装
   - run_lgbm_phase1_v5_case_a_rmse.py
   - run_lgbm_phase1_v5_case_b_binary.py
@@ -289,7 +311,7 @@ print(f'Label columns (must NOT be in X): {len(label_cols)} (expected 56)')
 
 # (2) Purged K-Fold の Embargo verify
 # Triple Barrier vertical barrier (K bar) が test fold に侵入する train サンプルを除外
-# mlfinlab.cross_validation.PurgedKFold が自動処理 (パラメータ samples_info_sets で t1 渡す必要)
+# timeseriescv.PurgedWalkForwardCV が自動処理 (parameters: pred_times + eval_times = t1)
 
 # (3) Phase -1 blacklist 64 列 drop verify (case_*.py 全部で実施)
 grep -nE "BLACKLIST_FAMILIES|drop.*sma_20|drop.*ichimoku_kijun" scripts/priority_rebuild/run_lgbm_phase1_v5_*.py
@@ -350,7 +372,7 @@ verify FAIL → false_positive §2 類型 A (look-ahead leak) として STOP・�
 | 失敗内容 | 対応 |
 |---|---|
 | Phase 0 v3.1 ラベル数 ≠ 56 | Phase 0 v3.1 再実行 (compute_triple_barrier_labels 実装漏れ) |
-| mlfinlab インストール失敗 | pip install mlfinlab + 依存パッケージ (statsmodels / scikit-learn ≥ 1.0) |
+| mlfinpy インストール失敗 | pip install mlfinpy timeseriescv scikit-learn lightgbm + 依存補完 (statsmodels / numba / matplotlib は mlfinpy 経由自動 install) ・mlfinpy 0.1.2 は scikit-learn を依存に含めずバグあり (別途 install 必須) |
 | メモリ不足 (>45 GB) | 並列度 3 → 2 に削減 / Fractional Diff列削減 / PCA 強化で列数縮小 |
 | Walk-forward CV 学習 timeout (> 1 日) | 並列度上げる (3 → 4) / hyperparameter 削減 / smoke で fold 1 のみで先行判定 |
 | **6 案 5 指標 ALL FAIL** | **Layer 3 残存タスク即投入** (CPCV / Class balancing / Focal loss / custom loss / アルゴ多様化) |
@@ -371,11 +393,11 @@ Phase 1 (parquet 学習のみ) では直接適用なし。**Simulated PnL 計算
 
 ### ガード C: L-179 fractal j±2 leak 同型再発検知
 
-Phase 0 v3.1 ラベル生成 (mlfinlab Triple Barrier) が j ≤ i 構造 (vertical barrier は t+K で future) を維持していること verify。**Phase 1 学習で X には含めない** (label only)。
+Phase 0 v3.1 ラベル生成 (自前 Triple Barrier 実装・build_labels_pct.py L290 compute_triple_barrier_labels・mlfinlab API 互換) が j ≤ i 構造 (vertical barrier は t+K で future) を維持していること verify。**Phase 1 学習で X には含めない** (label only)。
 
 ### ガード D: L-180 ドキュメント引用前 実装 verify
 
-「learning_design_v4 v5 に書いてあるから」を理由にしない。各案実装前に mlfinlab API + Phase 0 v3.1 parquet schema を grep で実装 verify。
+「learning_design_v4 v5 に書いてあるから」を理由にしない。各案実装前に mlfinpy + timeseriescv API (旧 mlfinlab 想定箇所) + Phase 0 v3.1 parquet schema を grep で実装 verify。
 
 ### ガード E: L-181 設計転換時 旧記述 grep sweep
 
@@ -402,8 +424,8 @@ grep -rn "3 案並列\|3 案 (RMSE / Binary / Multiclass)\|Triple Barrier.*Layer
 
 ## CC への注意
 
-- **6 案実装の優先順位**: 案 a (流用ベースライン) を最初に動作確認 → 案 b/c (派生ラベル) → 案 d (LambdaRank・新規) → 案 e (Triple Barrier・mlfinlab) → 案 f (Meta-Labeling・案 e 後)
-- **mlfinlab API の習熟**: ナレッジベース v3 §D.6 + GitHub hudson-and-thames/mlfinlab + AFML Ch.3/5/7 を参照 (CC 単独で実装試行錯誤しない)
+- **6 案実装の優先順位**: 案 a (流用ベースライン) を最初に動作確認 → 案 b/c (派生ラベル) → 案 d (LambdaRank・新規) → 案 e (Triple Barrier・mlfinpy.labeling.get_events) → 案 f (Meta-Labeling・mlfinpy.labeling.get_bins・案 e 後)
+- **mlfinpy + timeseriescv API の習熟**: ナレッジベース v3 §D.6 + GitHub baobach/mlfinpy + GitHub sam31415/timeseriescv + AFML Ch.3/5/7 を参照 (CC 単独で実装試行錯誤しない)・mlfinlab (closed-source) は API リファレンスとしてのみ参照
 - **Triple Barrier の barrier 倍率** (Phase 0 v3.1 で 2.0×ATR 固定) は Phase 4-b で Adaptive 化検討 (Phase 1 では固定値で評価)
 - **5 fold 学習時間 20 時間** は中断不可ではない (各 fold 独立保存 + resume 可能設計)
 - **CC 同型バイアス 27+ 件 警戒**: 「案 a 採用すれば OK」「3 案で十分」等の **学習方法そのものを軽視する翻訳** を再発させない (handoff v20 §0.26 #5 同型)
