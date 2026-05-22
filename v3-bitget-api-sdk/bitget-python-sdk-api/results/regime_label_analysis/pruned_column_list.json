@@ -114,9 +114,11 @@
         "di_plus",
         "dist_to_ce_long_pct",
         "dist_to_ce_short_pct",
+        "dist_to_demand_50b_pct",
         "dist_to_fib_ext_127_pct",
         "dist_to_fib_ext_161_pct",
         "dist_to_fib_ext_261_pct",
+        "dist_to_supply_50b_pct",
         "div_macd_14b",
         "div_macd_hist_pct_reg_bear_14b",
         "div_macd_hist_pct_reg_bull_14b",
@@ -210,6 +212,7 @@
         "vortex_neg_14",
         "vortex_pos_14",
         "williams_r",
+        "zone_range_50b_pct",
         "zscore_return_20b",
         "zscore_return_50b"
       ]
@@ -266,9 +269,11 @@
         "di_plus",
         "dist_to_ce_long_pct",
         "dist_to_ce_short_pct",
+        "dist_to_demand_50b_pct",
         "dist_to_fib_ext_127_pct",
         "dist_to_fib_ext_161_pct",
         "dist_to_fib_ext_261_pct",
+        "dist_to_supply_50b_pct",
         "div_macd_14b",
         "div_macd_hist_pct_reg_bear_14b",
         "div_macd_hist_pct_reg_bull_14b",
@@ -362,6 +367,7 @@
         "vortex_neg_14",
         "vortex_pos_14",
         "williams_r",
+        "zone_range_50b_pct",
         "zscore_return_20b",
         "zscore_return_50b"
       ]
@@ -418,9 +424,11 @@
         "di_plus",
         "dist_to_ce_long_pct",
         "dist_to_ce_short_pct",
+        "dist_to_demand_50b_pct",
         "dist_to_fib_ext_127_pct",
         "dist_to_fib_ext_161_pct",
         "dist_to_fib_ext_261_pct",
+        "dist_to_supply_50b_pct",
         "div_macd_14b",
         "div_macd_hist_pct_reg_bear_14b",
         "div_macd_hist_pct_reg_bull_14b",
@@ -514,6 +522,7 @@
         "vortex_neg_14",
         "vortex_pos_14",
         "williams_r",
+        "zone_range_50b_pct",
         "zscore_return_20b",
         "zscore_return_50b"
       ]
@@ -570,9 +579,11 @@
         "di_plus",
         "dist_to_ce_long_pct",
         "dist_to_ce_short_pct",
+        "dist_to_demand_50b_pct",
         "dist_to_fib_ext_127_pct",
         "dist_to_fib_ext_161_pct",
         "dist_to_fib_ext_261_pct",
+        "dist_to_supply_50b_pct",
         "div_macd_14b",
         "div_macd_hist_pct_reg_bear_14b",
         "div_macd_hist_pct_reg_bull_14b",
@@ -666,6 +677,7 @@
         "vortex_neg_14",
         "vortex_pos_14",
         "williams_r",
+        "zone_range_50b_pct",
         "zscore_return_20b",
         "zscore_return_50b"
       ]
@@ -722,9 +734,11 @@
         "di_plus",
         "dist_to_ce_long_pct",
         "dist_to_ce_short_pct",
+        "dist_to_demand_50b_pct",
         "dist_to_fib_ext_127_pct",
         "dist_to_fib_ext_161_pct",
         "dist_to_fib_ext_261_pct",
+        "dist_to_supply_50b_pct",
         "div_macd_14b",
         "div_macd_hist_pct_reg_bear_14b",
         "div_macd_hist_pct_reg_bull_14b",
@@ -818,6 +832,7 @@
         "vortex_neg_14",
         "vortex_pos_14",
         "williams_r",
+        "zone_range_50b_pct",
         "zscore_return_20b",
         "zscore_return_50b"
       ]
@@ -873,9 +888,11 @@
         "di_plus",
         "dist_to_ce_long_pct",
         "dist_to_ce_short_pct",
+        "dist_to_demand_50b_pct",
         "dist_to_fib_ext_127_pct",
         "dist_to_fib_ext_161_pct",
         "dist_to_fib_ext_261_pct",
+        "dist_to_supply_50b_pct",
         "div_macd_14b",
         "div_macd_hist_pct_reg_bear_14b",
         "div_macd_hist_pct_reg_bull_14b",
@@ -969,6 +986,7 @@
         "vortex_neg_14",
         "vortex_pos_14",
         "williams_r",
+        "zone_range_50b_pct",
         "zscore_return_20b",
         "zscore_return_50b"
       ]
@@ -1024,9 +1042,11 @@
         "di_plus",
         "dist_to_ce_long_pct",
         "dist_to_ce_short_pct",
+        "dist_to_demand_50b_pct",
         "dist_to_fib_ext_127_pct",
         "dist_to_fib_ext_161_pct",
         "dist_to_fib_ext_261_pct",
+        "dist_to_supply_50b_pct",
         "div_macd_14b",
         "div_macd_hist_pct_reg_bear_14b",
         "div_macd_hist_pct_reg_bull_14b",
@@ -1120,6 +1140,7 @@
         "vortex_neg_14",
         "vortex_pos_14",
         "williams_r",
+        "zone_range_50b_pct",
         "zscore_return_20b",
         "zscore_return_50b"
       ]
@@ -1175,9 +1196,11 @@
         "di_plus",
         "dist_to_ce_long_pct",
         "dist_to_ce_short_pct",
+        "dist_to_demand_50b_pct",
         "dist_to_fib_ext_127_pct",
         "dist_to_fib_ext_161_pct",
         "dist_to_fib_ext_261_pct",
+        "dist_to_supply_50b_pct",
         "div_macd_14b",
         "div_macd_hist_pct_reg_bear_14b",
         "div_macd_hist_pct_reg_bull_14b",
@@ -1271,6 +1294,7 @@
         "vortex_neg_14",
         "vortex_pos_14",
         "williams_r",
+        "zone_range_50b_pct",
         "zscore_return_20b",
         "zscore_return_50b"
       ]

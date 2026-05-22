@@ -252,6 +252,15 @@ def build_indicators_extended(df):
             for _name in ("line", "signal", "hist", "hist_change"):
                 f[f"macd_{_name}_pct_{_tag}"] = pd.Series(np.nan, index=c.index)
 
+    # Phase 0 v3.1 Step 4 §2.3 #17 Supply/Demand Zone 簡略 (2026-05-22・+24 列)
+    # rolling 50 bar swing high/low をベースに Supply/Demand 距離 + zone 幅
+    # 厳密な swing 検出 (pivot fractal) は Phase 4-b で再評価候補
+    _rh50_sd = h.rolling(50, min_periods=10).max()
+    _rl50_sd = l.rolling(50, min_periods=10).min()
+    f["dist_to_supply_50b_pct"] = (_rh50_sd - c) / c * 100
+    f["dist_to_demand_50b_pct"] = (c - _rl50_sd) / c * 100
+    f["zone_range_50b_pct"] = (_rh50_sd - _rl50_sd) / c * 100
+
     # Phase 0 v3.1 Step 4 §2.1 #9 cat_v9 共通フィルタ + 主要閾値距離 pct (2026-05-22・+56 列)
     # cat/indicators.py compute_indicators の location_prev / entry_risk_score / entry_ok_long を再現
     # + RSI 70/30, Stoch 80/20, ADX 25 の閾値距離 pct (自己実現的閾値・データ駆動再検討用)
