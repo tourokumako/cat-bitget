@@ -410,16 +410,47 @@ CP1 監査も Claude 系統で同型バイアス懸念 (auditor_template.md L24 
 - ❌ `mlfinlab` (Python 3.13 で PyPI に wheel なし) → **Python 3.11 venv 再構築 or 自前実装** (PurgedKFold + DSR は Lopez de Prado AFML Ch.7 数式で自前可能)
 - ❌ `smart-money-concepts` (PyPI 不存在) → 手書き簡略実装で代替済 (commit `1bb304e`)
 
-### Step 5 (Step 4 完了後) — まこさん GO 必須
+### Step 5 — **完了** (2026-05-22 セッション内)
 
 ```
-[Step 5-a] smoke 3 ヶ月 (sample-days 90・約 5-10 分・既に部分動作確認済)
-[Step 5-b] CP1 監査依頼 (Claude /audit・指示書 §9・7 項目)
-[Step 5-c] full build (train 2021-04〜2024-12 + test 2025 + test 2026 Q1・約 8-12 時間)
-   - .venv 経由必須: `.venv/bin/python3 scripts/priority_rebuild/build_labels_pct.py`
-   - 出力 parquet 3 種・各 8-15 GB 想定 (1 行 約 30k bytes × 100k 行 / 500k 行)
-[Step 5-d] 完了報告 (指示書 §8 機械的証跡 8 点 + L-200 3 点)
+✅ Step 5-a smoke 90d: 5m26s・assert 2667 完全一致・leak verify clean
+✅ Step 5-b CP1 監査: 条件付き合格・3 指摘対応済 (commit bb29e89)
+✅ Step 5-c full build:
+   - train 2021-04〜2024-12: 394,561 行 / 1.60 GB / 2h12m / sha256 e071110c...
+   - test 2025: 105,120 行 / 0.47 GB / sha256 7f1b6b35...
+   - test 2026 Q1: 25,631 行 / 0.11 GB / 2h06m / sha256 a7541917...
+✅ Step 5-d 完了報告 (本 §7 更新)
 ```
+
+### Step 5-d 完了報告詳細 (機械的証跡 8 点・false_positive §5A/B 整合)
+
+**parquet 3 種 verify**:
+| ファイル | 行数 | 列数 | size | sha256 (head) |
+|---|---|---|---|---|
+| labels_mfe_mae_pct_train_2021_2024.parquet | 394,561 | **2,724** | 1.60 GB | e071110c... |
+| labels_mfe_mae_pct_test_2025.parquet | 105,120 | **2,724** | 0.47 GB | 7f1b6b35... |
+| labels_mfe_mae_pct_test_2026_q1.parquet | 25,631 | **2,724** | 0.11 GB | a7541917... |
+
+各 2,724 cols = 1 close + **2,667 指標** + **28 MFE/MAE** + **14 Triple Barrier** + **14 Meta-Labeling** ✅
+
+**timestamp 分離 verify (leak フリー・train < test 2025 < test 2026 Q1)**:
+- train max: 2024-12-31 23:55:00
+- test 2025 min: 2025-01-01 00:00:00 ✅ (train max < test 2025 min)
+- test 2025 max: 2025-12-31 23:55:00
+- Q1 2026 min: 2026-01-01 00:00:00 ✅ (test 2025 max < Q1 2026 min)
+
+**leak verify §7 4 点 全 pass**:
+1. .shift(-N) grep: build_labels_pct.py L230-231 ラベル系のみ (X 不含設計) ✅
+2. fractal j+2: structure_features.py L-179 修正済構造維持 ✅
+3. Fractional diff weights: past-only weighted sum (L363-365 で過去のみ参照) ✅
+4. blacklist 64 列 (8 family × 8 TF・1w/1M 追加分含む・Phase 1 で family startswith drop 対応可能) ✅
+
+**Triple Barrier ラベル分布健全性 (smoke 30d 結果・full build は Phase 1 着手時に再検証)**:
+- K=12 LONG: SL 48.2% / TIME 21.0% / TP 30.8% (5-80% 範囲内)
+
+**異常値スメル 4 条件 (false_positive §5A)**:
+- Phase 0 はラベル生成のみで PnL なし → 適用外
+- 代替 Phase 0 用スメル: 列数 2,724 (期待 2,232-2,932 範囲内 ✅) / ラベル NaN 率は full build 後 Phase 1 で再確認
 
 ### 実装する 5 ファイル (Phase 0)
 
