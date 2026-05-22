@@ -7,6 +7,78 @@
 
 ---
 
+### L-209: CC 同型バイアス「Major 後送り判断」= 自分で範囲狭めて OK 判定する癖の再演 (CP3 監査で発覚・2026-05-23)
+
+**何が起きたか:**
+Step G CP2 監査 (2026-05-22) で Critical 2 件 + Major 4 件が指摘された。CC + まこさん相談で「Critical 2 件のみ対処 → Step H 本走へ」を採用。Major 4 件は「Step H 結果見てから判断」とした。Step H 完走後の CP3 監査で、Major 4 件のうち M2 (案 a で `entropy_lift=NaN → 自動 PASS` の判定骨抜き) と M3 (importance dominance 50% threshold 緩さ + merge_asof boundary verify 不在) は本走前に対処すべきだったと判定された。
+
+**Why:**
+- L-207「test カバレッジが合格境界のみで失敗境界を含まないと bug 素通り」と同型構造
+- L-207 は「test 範囲を自分で狭く区切って合格判定」
+- 本件は「Major 範囲を自分で『後送り可』と区切る」
+- cc_role §1.4 #2「spec の枠内でしか動かない」(Critical/Major の線引き spec を CC 自身が下している) + #4「現状把握をスキップ」(M2 の判定骨抜きが本走 sim_pnl 異常値解釈に直接影響することを Step G 時点で確認しなかった) の合成
+- 関所 G「チェックリスト有効性検証ループ」が起動しなかった
+- 「Critical/Major のどちらが本走 blocker か」を CC が単独判断する構造そのものが同型バイアスを内包
+
+**How to apply:**
+- **監査結果の Major 後送り判断は CC 単独で確定しない**: Critical 対処後の再監査経路 (CP2.5 / CP3) を本走前に挟む or Major 各件について「本走への影響」を独立評価者に判定させる
+- **判定骨抜き系の指摘 (M2 同型) は Major でなく Critical 扱い**: 評価指標が NaN/自動 PASS になる構造は実質的に判定欠陥・本走前に必ず修正
+- 「Major は結果見てから」の判断パターンが出たら **自動的に L-209 再演警戒を起動**・関所 G に統合
+- false_positive §5 関所 G の文言「すり抜けるたびに穴を塞ぐ」を CP2 監査結果に対しても適用する (Critical 漏れ・Major 後送りの両方を「すり抜け」と扱う)
+
+**関連:**
+- L-207 (test カバレッジ穴・同型構造)
+- L-200 / L-204 / L-205 (実装 verify と documentation の乖離シリーズ)
+- L-206 (Z 案ガード・defense-in-depth 維持)
+- cc_role §1.2 (監査経路を CC 自己判断で進めたい時こそ通す)
+- cc_role §1.4 #2 #4 (同型バイアス)
+- false_positive §5 関所 G (チェックリスト有効性検証ループ)
+- Step G CP2 監査 (commit `de709a5` Critical 対処) + CP3 監査 (本セッション末)
+- 公式 source: [phase1_v5_summary_merged.json](../../results/priority_rebuild/ml_phase1_v5_step_h_merged/phase1_v5_summary_merged.json) (Step H 本走結果)
+
+---
+
+### L-208: 評価式が暫定段階で出た「異常値スメル」を学習不良と取り違える危険 — Step H 本走 6/8 組合せ ② ヒット事案 (2026-05-23)
+
+**何が起きたか:**
+Step H 本走 (full parquet × 8 組合せ × 5 fold = 80 学習) 完走後の merge で、8 組合せ中 6 件で関所 A 異常値スメル ② (月次 NET > $3,800) がヒット。最悪 K=96 SHORT で月次 $84,185 = 合格ライン $1,900 の **44 倍**。CC は当初「学習が leak/overfit している可能性」と「評価式が暫定的に過大評価」の両仮説を提示し、CP3 監査経路で判定を依頼。
+
+CP3 監査結果: **仮説 B (評価式の暫定過大評価) が 7-8 割支配・A (学習不良) は 2-3 割重畳**。決定的根拠:
+- `compute_simulated_pnl` (`run_phase1_v5_purged_kfold.py` L295-316) は `return = pred_MFE/100 - 0.033% cost` を全 trade で計上
+- K=96 SHORT fold 1: 26,098 trade × 平均 3.23%/trade = return 累計 841 倍 → notional $1,200 × 841 = $1,010,219/年 = 数学的必然
+- 「TP 約定率 100% + slippage 0 + TP 価格 = MFE ピーク価格」の 3 重楽観仮定の帰結
+- train_rmse / valid_rmse / label_std 比 (W1/W2 警告) は閾値内 → leak 同型 (L-179 fractal) なら train_rmse/label_std が極端に低くなるが、その兆候なし
+- LONG vs SHORT 非対称 (K=96 で 157 倍乖離) は学習データ期間 (2022 LUNA / FTX / 2024-04) に SHORT 大相場期間が複数あった市場特性で説明可能・leak でない
+
+**Why:**
+- cc_ml_design_spec.md §1.5.1 v5.1 自身が「**本確定は Phase 4-b-2**」と明記している通り、Phase 1 の `return = pred_MFE - cost` 計算は **設計上の暫定段階**
+- TP 約定率モデル + 実 Exit 価格モデルは Phase 4-b 着手後に組込み予定
+- 暫定段階で発生する「異常値スメル」を「学習不良」と即断定して Layer 3 (CPCV + Focal loss + アルゴ多様化) に飛ぶと、評価式が同じため新アルゴでも同型異常値が出る → 投資対効果なし
+- §1.5.1 v5.1 撤退ライン文言「6 案いずれも 6+ 組合せ ALL PASS なし → 即 Layer 3」は「学習方法を変えても合格不可」前提で書かれた条項・**評価式暫定段階の今は前提が崩れているため文言そのまま適用は誤読**
+
+**How to apply:**
+- **異常値スメル発火時の原因切り分け順序を必須化**: ① 学習 (leak/overfit)・② 評価式 (暫定仮定)・③ データ (regime 過依存) のどれが支配的かを判定してから次アクションを選ぶ
+- **判定基準** (CP3 監査整理):
+  - train_rmse / label_std 比が異常に低い (例: < 0.3) → leak 強疑い (類型 A)
+  - W1/W2 警告閾値超え → overfit 疑い (sample 小データ由来含む)
+  - LONG/SHORT 非対称が市場期間特性で説明可能 → 評価式問題
+  - sim_pnl_year_usd を notional × return_sum に分解して 「1 trade あたり mean return」が pred_MFE 中央値オーダーで一致 → 評価式問題確定
+- **撤退ライン文言の解釈基準**: 撤退ラインは「学習方法変更で合格不可」を前提とした条項。評価式が暫定段階で発火した不合格は「評価式直してから再判定」が正しい順序・spec 文言を機械的適用しない
+- **Phase 4-b 前倒し設計の判断トリガ**: Phase 1 で異常値スメル ② (sim_pnl 過大) が 4+ 組合せでヒット = 評価式暫定性が学習評価を歪める閾値と判定 → Phase 4-b の TP 約定率モデル + 実 Exit を Phase 1 評価式に前倒し組込み
+
+**関連:**
+- L-206 (Z 案ガード・物理 verify 経由続行で defense-in-depth 維持)
+- L-207 (test カバレッジ穴・同セッションで dsr bug 発見)
+- L-209 (Major 後送り判断の同型バイアス・本件と並行発覚)
+- Step G CP2 監査 C2 (c)「pred_MFE/100 returns 設計の暫定性 = 関所 C 同型問題」予測 → 本走で実証
+- cc_ml_design_spec.md §1.5.1 v5.1 + §1.6 撤退ライン + §3 Exit 設計
+- phase_flow_v4_with_recovery.md L528 (Phase 4-b-2 仕様)
+- phase_compliance_checklist.md §4b.4 + §4b.4-b (TP 約定モデル基準)
+- false_positive §5 関所 A (異常値判定基準・C (NET の実体 verify))
+- 公式 source: [phase1_v5_summary_merged.json](../../results/priority_rebuild/ml_phase1_v5_step_h_merged/phase1_v5_summary_merged.json) (8 組合せ統合・anomaly_smell_detected: true)
+
+---
+
 ### L-207: test カバレッジが「合格境界」のみで「失敗境界」を含まないと bug が素通りする — dsr.py L119 式 bug 事案 (2026-05-22)
 
 **何が起きたか:**

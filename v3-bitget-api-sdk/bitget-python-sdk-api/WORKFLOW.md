@@ -299,7 +299,103 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-22 改訂25・**Phase 1 v5.1 Step F 本走 smoke 完走 + dsr.py L119 隠れ bug 修正**・Step G CP2 監査着手準備）
+## 🔴 現在のフェーズ（2026-05-23 改訂26・**Phase 1 v5.1 Step H 本走 80 学習完走 → 不合格 + 異常値スメル 6/8 + CP3 監査で評価式暫定性確定**・Step I = Phase 4-b 前倒し設計着手準備）
+
+> **【現在の正本ブロック・改訂26・2026-05-23 セッション末】**
+>
+> ### 本セッション (改訂25 同日続編・2026-05-22 23:00 〜 2026-05-23 03:30) 完了事項
+>
+> #### 1. Step G CP2 監査 Critical 2 件対処 (commit `de709a5`)
+> - C1: `DEFAULT_N_TRIALS` 6 → 48 (= 6 案 × 8 組合せ・selection bias 過少推定補正)
+> - C2 (a): cost-deducted return (`pred_MFE/100 - 0.033%`・往復 maker fee + 暫定 slippage)
+> - C2 (b): 関所 A 異常値検出を case_a 集計段階に追加 (`_detect_anomaly_smell()`・summary JSON に flag 追記・mid-run sys.exit せず最終判定で要再監査)
+> - cc_ml_design_spec.md §1.5.1 v5.1 同記述更新
+>
+> #### 2. Step H 本走 3 並列実行完走 (P1=133 min / P2=101 min / P3=101 min・並列で 2.2 時間)
+> - P1: K={12, 24} × LONG/SHORT (4 組合せ・out_base `ml_phase1_v5_step_h_p1/`)
+> - P2: K=48 × LONG/SHORT (2 組合せ・out_base `ml_phase1_v5_step_h_p2/`)
+> - P3: K=96 × LONG/SHORT (2 組合せ・out_base `ml_phase1_v5_step_h_p3/`)
+> - merge script `scripts/priority_rebuild/merge_step_h_summaries.py` (218 行) で 3 summary を統合 → `ml_phase1_v5_step_h_merged/phase1_v5_summary_merged.json`
+>
+> #### 3. Step H 統合判定 (§4.1 v5.1)
+> - **n_combinations: 8 / 8 ✅** (P1+P2+P3 完全結合)
+> - **n_combinations_all_pass: 0** ❌ (5 指標 ALL PASS 組合せ ゼロ)
+> - **meets_6plus_criteria: False** (撤退ライン抵触)
+> - **layer3_investigation_needed: True**
+> - **anomaly_smell_detected: True (6/8 組合せ)**:
+>   - K=12 LONG: ② 月次相当 $4,298
+>   - K=12 SHORT: ② $17,088
+>   - K=24 LONG: ② $9,002
+>   - K=24 SHORT: ②③ $30,572 + Sharpe 3.39 倍乖離
+>   - K=48 LONG: セーフ ($2,998)
+>   - K=48 SHORT: ② $46,810
+>   - K=96 LONG: セーフ ($534)
+>   - **K=96 SHORT: ②③ $84,185 + Sharpe 14.28 倍乖離** (最悪・合格ライン 44 倍超)
+> - 公式 source: [`results/priority_rebuild/ml_phase1_v5_step_h_merged/phase1_v5_summary_merged.json`](results/priority_rebuild/ml_phase1_v5_step_h_merged/phase1_v5_summary_merged.json)
+>
+> #### 4. CP3 監査 (Plan サブエージェント独立評価) 完了
+> - **判断 1 (異常値原因)**: 仮説 B (評価式の暫定過大評価) が 7-8 割支配・A (学習不良) は 2-3 割重畳
+>   - 決定的根拠: `compute_simulated_pnl` の `return = pred_MFE/100 - cost` 設計で「TP 約定率 100% + slippage 0 + TP 価格 = MFE ピーク価格」3 重楽観仮定
+>   - K=96 SHORT fold 1 数値分解: 26,098 trade × 平均 3.23%/trade = return 累計 841 倍 = 数学的必然
+>   - train_rmse / label_std 比正常 + LONG/SHORT 非対称が市場期間特性 (LUNA / FTX / 2024-04 暴落) で説明可 → leak でない
+> - **判断 2 (次アクション)**: **案 Y (Phase 4-b 前倒し設計) 採用**・案 X (Layer 3 即投入) は不採用
+>   - 理由: 評価式が暫定段階で出た不合格を「学習方法変えれば合格」前提の撤退ライン文言で即 Layer 3 するのは誤読 → 評価式を Phase 4-b-2 仕様まで前倒し実装してから再判定
+> - **判断 3 (Step G Major 後送り)**: Major 4 件中 **M2 + M3 は本走前に対処すべきだった**
+>   - L-207「test カバレッジ穴」同型バイアス再演
+>
+> #### 5. lessons L-208 + L-209 新規追加
+> - **L-208**: 評価式が暫定段階で出た異常値スメルを学習不良と取り違える危険 (原因切り分け順序 ①学習/②評価式/③データ 必須化・撤退ライン文言の解釈基準・Phase 4-b 前倒しトリガ基準)
+> - **L-209**: CC 同型バイアス「Major 後送り判断」= 自分で範囲狭めて OK 判定する癖の再演 (CP3 監査で発覚・関所 G に「Critical 漏れ + Major 後送り = すり抜け扱い」統合)
+>
+> #### 6. memory feedback 新規追加
+> - **`~/.claude/projects/.../memory/feedback_plain_language.md`**: 専門用語多用禁止・例え話で補足・固有名詞最小化 (まこさん指摘「専門用語が多くよくわからない」反映)
+>
+> ### 次セッション CC 優先順位 (Step I = Phase 4-b 前倒し設計着手)
+>
+> 1. **優先 1 — Step I-1: Phase 4-b 前倒し設計仕様書作成 (約 1-2 日)**
+>    - 設計ベース: `phase_flow_v4_with_recovery.md` L528 周辺 + `phase_compliance_checklist.md` §4b.4 + §4b.4-b
+>    - 含むべき項目:
+>      (a) TP 約定率モデル (別 LightGBM Classifier: `P(future_high >= entry × (1+TP_PCT))`)
+>      (b) 実 TP 価格モデル (`pred_MFE × X%` or cluster 別 quantile)
+>      (c) trailing exit 暫定モデル (高値追従・反転で利確)
+>      (d) time exit 暫定モデル (N 分経過で強制決済)
+>      (e) 3 方式並列 (固定 TP / トレーリング / 時間 Exit) で Phase 1 評価式に組込み
+>      (f) `compute_simulated_pnl` 改修方針 (pred_MFE 全額計上 → 約定率モデル乗算)
+> 2. **優先 2 — Step I-2: 実装 + smoke test (約 1-2 週間)**
+>    - 改修後 case_a smoke で異常値スメル ② が消えることを verify (sample 89 日で月次 NET < $3,800 を目標)
+>    - K=96 SHORT で sim_pnl_year_usd が $1,000,000 → $20,000-50,000 オーダーに縮小することを期待
+> 3. **優先 3 — Step I-3: Step H 再走 (約 2-3 時間・3 並列)**
+>    - 改修後 8 組合せ × 5 fold で再走し「真の」§4.1 判定
+>    - 6+ 組合せ ALL PASS → Phase 2 進行 / 未達 → 案 X (Layer 3) or 案 Z (案 b-f) 検討
+> 4. **優先 4 — Step G Major 4 件のうち M2 + M3 を本実装に統合**:
+>    - M2: 案 a で `entropy_lift=NaN → 自動 PASS` の判定骨抜きを修正 (regression 代替指標 = Spearman 相関等)
+>    - M3: importance dominance 50% → 30% に厳格化 + merge_asof boundary verify ロジック追加
+>
+> ### 引き継ぎリソース (新セッション Step 0 で必読・3 層構造)
+>
+> #### Layer 1 (毎セッション必読)
+> - handoff v27 (本セッション末作成・find で動的取得)
+> - WORKFLOW.md 改訂26 active ブロック (本ブロック)
+> - CLAUDE.md (Layer 2 パス修正済・改訂22 ベース)
+> - lessons_active.md 直近 5 件 (**L-209 最新** + L-208 + L-207 + L-206 + L-205)
+>
+> #### Layer 2 (Step I 着手時)
+> - **CP3 監査結果** (本ブロック §4 + L-208 / L-209)
+> - **phase_flow_v4_with_recovery.md** L528 周辺 (Phase 4-b-2 既存設計)
+> - **phase_compliance_checklist.md** §4b.4 + §4b.4-b (TP 約定モデル基準)
+> - **technical_analysis_knowledge_base.md** §I.6.3 (Phase 別データ駆動再検討フロー)
+> - 実装: `run_phase1_v5_purged_kfold.py` (`compute_simulated_pnl` L295-316 が改修中心) + `run_lgbm_phase1_v5_case_a_rmse.py` (L382-388 returns_per_trade)
+> - merge script: `merge_step_h_summaries.py` (Step I-3 再走時に再利用)
+>
+> #### データ・環境
+> - parquet 3 種 + .venv311 (mlfinpy 0.1.2 / sklearn 1.8.0 / lightgbm 4.6.0 / scipy 1.17.1)
+> - Step H 結果: `results/priority_rebuild/ml_phase1_v5_step_h_p{1,2,3}/` + `ml_phase1_v5_step_h_merged/`
+
+---
+
+## 🧊 改訂25 ブロック (履歴・参照用)
+
+### 🔴 旧フェーズヘッダ(2026-05-22 改訂25・**Phase 1 v5.1 Step F 本走 smoke 完走 + dsr.py L119 隠れ bug 修正**・Step G CP2 監査着手準備）
 
 > **【現在の正本ブロック・改訂25・2026-05-22 セッション後半】**
 >
