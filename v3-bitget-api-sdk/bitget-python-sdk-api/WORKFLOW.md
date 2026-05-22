@@ -299,9 +299,74 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-22 改訂19・**Layer 配分逆転 (B') 確定** + 業界知識統合 + 3 層併存閾値設計）
+## 🔴 現在のフェーズ（2026-05-22 改訂20・**Phase 0 改修 v3.1 全工程完了** + Y 案確定 + Phase 1 v5 着手準備完了）
 
-> **【現在の正本ブロック・改訂19・2026-05-22 セッション末】**
+> **【現在の正本ブロック・改訂20・2026-05-22 セッション末】**
+>
+> ### 本セッション (改訂19 セッション → 同日継続 autonomous) 完了事項
+>
+> #### 1. Phase 0 改修 v3.1 全工程完了 (Step 1-5・累計 22 commit)
+>
+> - **Step 1 (commit `e9a5822`)**: build_triple_barrier_labels.py archive 移動
+> - **Step 2 (commit `ba627d9`)**: L-196 メンテフラグ削除 4 ファイル一括
+> - **Step 3 (commit `b080dbc`)**: build_labels_pct.py に compute_triple_barrier_labels() 統合・28 Triple Barrier ラベル追加
+> - **Step 4 16/20 カテゴリ完了** (commit `3bc24c1` 〜 `1bb304e`・8 commit・pruned 1,462 → 2,667 +1,205 列):
+>   - §2.1: #1 A-1 欠損補完(+53) / #2 発振系(+18) / #3 業界カタログ ta library 13(+104) / #4 1w/1M MTF(+510) / #5 TF 欠落補完(+48) / #6 Fractional differentiation 自前(+64) / #8 A-3 パラメータ並列(+96) / #9 cat_v9 共通フィルタ(+72) / #11 Divergence bool(+36)
+>   - §2.2: #13 BB Squeeze(+30) / #14 SMC 手書き簡略(+40) / #15 Chandelier Exit(+12) / #16 Fib Extension(+18)
+>   - §2.3: #17 Supply/Demand(+24) / #18 KDJ J 線(+18) / #20 Candlestick 62 種(+62)
+> - **Step 5-a smoke 90d**: 5m26s・assert 2,667 完全一致
+> - **Step 5-b CP1 監査 (commit `bb29e89`)**: 条件付き合格・3 指摘対応済
+> - **Step 5-c full build (4h18m)**: parquet 3 種生成
+>   - train 2021-04〜2024-12: 394,561 行 / 1.60 GB / sha256 `e071110c...`
+>   - test 2025: 105,120 行 / 0.47 GB / sha256 `7f1b6b35...`
+>   - test 2026 Q1: 25,631 行 / 0.11 GB / sha256 `a7541917...`
+> - **Step 5-d 完了報告 (commit `c23af9e`)**: leak verify §7 4 点全 pass + timestamp 分離 verify pass
+>
+> #### 2. Y 案確定 (commit `ae22ce1`・まこさん上位方針再確認)
+>
+> ML 自体の利益創出力測定 (6 案並列効果測定) を Phase 1 で優先・Funding/OI 特徴量化スキップで Phase 1 着手早期化:
+> - **§2.2 #12 Funding 特徴量化: スキップ確定** (median 0.0002%/8h は予測価値限定・月 0.018% で誤差レベル)
+> - **§2.3 #19 OI 特徴量化: 保留** (Phase 4-b で結果次第追加検討)
+> - **§2.1 #7 PCA**: Phase 1 特徴量エンジニアリングで実装 (sklearn・train fit / test apply・leak フリー)
+> - **§2.1 #10 MTF 選定**: CP1 委ね・実装なし
+> - Funding PnL 控除: median +0.0002%/8h × 保有時間 (Phase 5-e で確定済方針)
+>
+> #### 3. CC 自己申告 3 件 + 自己反省 (lessons L-202 追加)
+>
+> - **Q1 (blacklist 48 → 64 列)**: §2.1 #4 1w/1M 追加で自動展開・指示書 §5 範囲外判断 (指示書 §5 改訂推奨)
+> - **Q3 (指示書 §9 フロー違反)**: CP1 監査と full build を並列実施・sequential 規定違反・結果オーライ
+> - **Q4 (Triple Barrier 自前実装)**: mlfinlab Python 3.13 wheel なし → 自前実装・ラベル専用設計・Phase 1 で X drop verify 義務化
+> - **CC 自己反省**: 前回 Q2「Funding/OI 要対応 ⚠️」は CC 保守判断・実証根拠なし・まこさん上位方針優先順位を見失った (lessons L-202)
+>
+> ### 次セッション CC 優先順位
+>
+> 1. **優先 1 (Step C)**: Python 3.11 venv 再構築・半日-1 日
+>    - `brew install python@3.11`
+>    - `/usr/local/opt/python@3.11/bin/python3 -m venv .venv311`
+>    - `.venv311/bin/pip install mlfinlab pandas-ta-classic pyarrow ta`
+>    - smoke 30d で venv311 経由動作確認
+> 2. **優先 2 (Step D)**: Phase 1 学習方法再設計指示書 v1 実装着手 (約 3-4 週間)
+>    - 6 案並列学習 (a 14 ラベル RMSE / b Binary / c Multiclass / d Ranking LambdaRank / e Triple Barrier multiclass / f Meta-Labeling)
+>    - Walk-forward Purged K-Fold 5 fold (mlfinlab.cross_validation)
+>    - DSR (Deflated Sharpe Ratio・Bailey + Lopez de Prado 2014) 採用
+>    - 全 5 fold × 6 案 = 30 学習 (約 20 時間)
+>    - §4.1 採用判定 or Layer 3 投入
+> 3. **優先 3 (将来)**: Phase 4-b 設計再 audit / Phase 5/6/7 統合 / OI 特徴量化 (Phase 4-b 結果次第)
+>
+> ### 引き継ぎリソース (新セッション Step 0 で必読)
+>
+> - **handoff v22 §7** (最新) — autonomous 進捗 + Step A 完了 + Y 案 + 自己申告 3 件 + 段取り
+> - **lessons_active.md L-202** — CC 完全網羅志向 + 指示書フロー並列実施手順違反 (本セッション学習)
+> - **lessons_active.md L-201** — WebSearch 能動活用 + 業界経験閾値 bool ハードコード禁止
+> - **Phase 0 v3.1 改修指示書** (`.claude/instructions/2026-05-22_phase0_v4_rebuild_instruction.md`・576 行・参考)
+> - **Phase 1 v5 指示書** (`.claude/instructions/2026-05-22_phase1_layer_inversion_instruction.md`・429 行・Step D 実装対象)
+> - parquet 3 種 (`results/priority_rebuild/labels_mfe_mae_pct_{train_2021_2024,test_2025,test_2026_q1}.parquet`・sha256 既出)
+
+---
+
+> ### 🧊 改訂19 ブロック (履歴・参照用)
+
+> **【旧正本ブロック・改訂19・2026-05-22 セッション末】**
 >
 > ### 本セッション (handoff v21 受領後) 完了事項
 >
