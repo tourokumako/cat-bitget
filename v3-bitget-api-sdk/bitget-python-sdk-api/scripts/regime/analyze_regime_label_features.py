@@ -252,6 +252,37 @@ def build_indicators_extended(df):
             for _name in ("line", "signal", "hist", "hist_change"):
                 f[f"macd_{_name}_pct_{_tag}"] = pd.Series(np.nan, index=c.index)
 
+    # Phase 0 v3.1 Step 4 §2.1 #6 Fractional differentiation 自前実装 (2026-05-22・+64 列)
+    # Lopez de Prado AFML Ch.5: w_0 = 1 / w_k = -w_{k-1} × (d - k + 1) / k
+    # past-only weighted sum (look-ahead 防止・各 i で過去 N bar のみ参照)
+    def _fracdiff_weights(d, threshold=1e-4, max_size=2000):
+        wts = [1.0]
+        for _k in range(1, max_size):
+            _wk = -wts[-1] * (d - _k + 1) / _k
+            if abs(_wk) < threshold:
+                break
+            wts.append(_wk)
+        return np.array(wts)
+
+    def _fracdiff_series(series, d, threshold=1e-4):
+        _w = _fracdiff_weights(d, threshold)
+        _n = len(_w)
+        _arr = series.to_numpy(dtype=np.float64)
+        if _n >= len(_arr):
+            return pd.Series(np.nan, index=series.index)
+        _w_rev = _w[::-1]  # w[0] が最新・w[k] が k bar 過去 → reverse して dot 内積
+        _result = np.full(len(_arr), np.nan)
+        for _i in range(_n - 1, len(_arr)):
+            _window = _arr[_i - _n + 1 : _i + 1]
+            if not np.isnan(_window).any():
+                _result[_i] = np.dot(_w_rev, _window)
+        return pd.Series(_result, index=series.index, dtype=np.float32)
+
+    for _d in (0.3, 0.5):
+        _d_tag = int(_d * 10)
+        for _series_name, _series in [("close", c), ("high", h), ("low", l), ("volume", v)]:
+            f[f"fracdiff_{_series_name}_d{_d_tag}"] = _fracdiff_series(_series, _d)
+
     # Phase 0 v3.1 Step 4 §2.3 #20 Candlestick patterns 62 種 (2026-05-22・5m TF 主体・+62 列)
     # pandas-ta-classic の DataFrame extension で 62 patterns 一括計算 (TA-Lib ベース)
     # 値: -100 (bearish) / 0 (none) / +100 (bullish)・LightGBM 自動分岐学習
