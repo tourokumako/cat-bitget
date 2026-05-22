@@ -355,11 +355,9 @@ pip install mlfinlab pandas-ta-classic smart-money-concepts
 
 → ここまで **約 2.5-3 時間** で Phase 0 改修の Step 3-4 の山を越える。残り Step 5 (smoke + CP1 監査 + full build) は別ターンで。
 
-### 完了済タスク (現セッション 2026-05-22・autonomous 含む)
+### 完了済タスク (現セッション 2026-05-22・autonomous + 起床後継続)
 
-- ✅ Step 1: `build_triple_barrier_labels.py` archive 移動 (commit `e9a5822`)
-- ✅ Step 2: L-196 メンテフラグ削除 4 ファイル一括 (commit `ba627d9`)
-- ✅ Step 3: build_labels_pct.py に `compute_triple_barrier_labels()` 統合・56 ラベル列生成 (commit `b080dbc`)
+- ✅ Step 1-3 (commit `e9a5822` / `ba627d9` / `b080dbc`)
 - ✅ Step 4 §2.1 #1 A-1 欠損指標 8 件 (commit `3bc24c1`・+53)
 - ✅ Step 4 §2.1 #2 まこさん発振系 3 件 (commit `f9aedd5`・+18)
 - ✅ Step 4 §2.1 #5 145 ファミリー TF 欠落補完 (commit `139dad1`・+48)
@@ -367,14 +365,41 @@ pip install mlfinlab pandas-ta-classic smart-money-concepts
 - ✅ Step 4 §2.1 #11 Divergence bool 簡略 (commit `8c90283`・+36)
 - ✅ Step 4 §2.2 #13 BB Squeeze + Band Walk (commit `5c89d94`・+30)
 - ✅ Step 4 §2.2 #15/#16 + §2.3 #18 Chandelier + Fib Ext + KDJ (commit `4032cce`・+48)
+- ✅ Step 4 §2.3 #20 Candlestick 62 種 (commit `28c1b31`・+62・要 .venv pandas-ta-classic)
+- ✅ Step 4 §2.1 #4 1w/1M MTF (commit `f700e84`・+510)
+- ✅ Step 4 §2.1 #6 Fractional differentiation 自前実装 (commit `3e351df`・+64)
+- ✅ Step 4 §2.1 #3 業界カタログ ta library 13 indicators (commit `dbacd9e`・+104)
+- ✅ Step 4 §2.1 #9 cat_v9 共通フィルタ + 主要閾値距離 pct (commit `a101a3c`・+72)
+- ✅ Step 4 §2.3 #17 Supply/Demand Zone 簡略 (commit `be35635`・+24)
+- ✅ Step 4 §2.2 #14 SMC 手書き簡略 (commit `1bb304e`・+40)
 
-合計: pruned 1,462 → **1,791** (+329 列)・parquet 1,491 → **1,848 cols** (smoke 30d verify pass)
+**合計**: pruned 1,462 → **2,667** (+1,205 列・約 82% 増)・parquet 1,491 → **2,724 cols** (smoke 30d 全 commit pass)
 
-### 残タスク (新セッションで実施)
+### 残タスク 3 件 (全部 build 段階不適切 or API リスクで次セッション送り)
 
-- [ ] **Step 4 残 11 カテゴリ** (上記 Step 4 残カテゴリ表参照・約 2-4 時間+ライブラリ install 解決)
-- [ ] **Step 5**: smoke 3 ヶ月 + CP1 監査 (`/audit`) + full build (約 4-6 時間)
-- [ ] **Phase 1**: Phase 1 学習方法再設計指示書 v1 実装 (約 3-4 週間)
+| カテゴリ | 理由 | 次セッション着手内容 |
+|---|---|---|
+| §2.1 #7 PCA | build 段階で train/test/Q1 別 fit 複雑 (leak リスク) | Phase 1 特徴量エンジニアリングとして実装 (sklearn PCA・train fit / test apply) |
+| §2.2 #12 Funding rate | Bitget API fetch autonomous で外部 call リスク | Bitget history-fund-rate API endpoint 経由 fetch + parquet merge |
+| §2.3 #19 Open Interest | 同 API リスク | Bitget OI API endpoint verify + fetch |
+| §2.1 #10 MTF 選定 | CP1 監査委ね・実装なし | CP1 監査結果で 1 案選定 |
+
+### ライブラリ install ブロッカー残り (Phase 1 着手前に対処)
+
+- ✅ `pandas-ta-classic` (venv 経由 install 済)
+- ❌ `mlfinlab` (Python 3.13 で PyPI に wheel なし) → **Python 3.11 venv 再構築 or 自前実装** (PurgedKFold + DSR は Lopez de Prado AFML Ch.7 数式で自前可能)
+- ❌ `smart-money-concepts` (PyPI 不存在) → 手書き簡略実装で代替済 (commit `1bb304e`)
+
+### Step 5 (Step 4 完了後) — まこさん GO 必須
+
+```
+[Step 5-a] smoke 3 ヶ月 (sample-days 90・約 5-10 分・既に部分動作確認済)
+[Step 5-b] CP1 監査依頼 (Claude /audit・指示書 §9・7 項目)
+[Step 5-c] full build (train 2021-04〜2024-12 + test 2025 + test 2026 Q1・約 8-12 時間)
+   - .venv 経由必須: `.venv/bin/python3 scripts/priority_rebuild/build_labels_pct.py`
+   - 出力 parquet 3 種・各 8-15 GB 想定 (1 行 約 30k bytes × 100k 行 / 500k 行)
+[Step 5-d] 完了報告 (指示書 §8 機械的証跡 8 点 + L-200 3 点)
+```
 
 ### 実装する 5 ファイル (Phase 0)
 
