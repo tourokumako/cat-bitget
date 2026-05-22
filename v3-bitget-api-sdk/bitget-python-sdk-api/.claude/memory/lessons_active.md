@@ -1,4 +1,56 @@
-# lessons_active.md — 直近50件の現役教訓（L-202〜L-107）
+# lessons_active.md — 直近50件の現役教訓（L-203〜L-107）
+
+---
+
+### L-203: 外部ライブラリの実態調査不足 — handoff の自己申告を WebSearch verify せず鵜呑み・L-201 再演 (2026-05-22)
+
+**何が起きたか:**
+2026-05-22 セッション後半 (Step C venv311 構築 + Phase 1 v5 指示書修正) で以下が判明:
+
+1. **mlfinlab は PyPI 削除済 + closed-source 化** (Hudson & Thames が "All Rights Reserved" license 化・Business/Enterprise 商業ライセンスのみ提供)
+2. handoff v22 Q4 自己申告「mlfinlab Python 3.13 wheel なし → 自前実装」の根拠認識は誤り (実態は **商業化による PyPI 削除**)
+3. Phase 0 v3.1 で Triple Barrier を自前実装した判断は **結果的に正解** だったが、CC は誤った根拠 (Python 3.13 wheel なし) で判断していた
+4. Step 3 (pip install mlfinlab) が失敗するまで CC は実態を確認せず、handoff の自己申告を鵜呑みにしていた
+5. WebSearch 能動活用 (cc_role §1.0 義務 + L-201 教訓) を本セッション後半でようやく履行・mlfinpy + timeseriescv + 自前 DSR への切替方針を確定
+6. Phase 1 v5 指示書 18 hit を mlfinlab → mlfinpy + timeseriescv に修正 (12 Edit)
+
+**Why:**
+- L-201「WebSearch 能動活用義務」を 1 週間以内に再演 (cc_role §1.0 義務違反の再発・「ルール追加だけでは効かない」実証ループ・handoff v20 §0.26 同型)
+- 外部依存パッケージの状態確認を「handoff の自己申告」で済ます癖がある
+- 「Python 3.13 wheel なし」という説明は妥当に見えるため、CC は実態確認をスキップした
+- mlfinlab は AFML 公式実装で著名なため、CC の暗黙的前提「PyPI で install 可能」が外れる可能性を疑わなかった
+- pip install が失敗した時点で初めて WebFetch で PyPI と GitHub を確認 (本来はもっと早く確認すべき)
+
+**How to apply:**
+- **絶対遵守の自己縛りルール (L-201 + L-203 拡張・3 経路で固定)**:
+  1. **外部ライブラリの import を指示書に書く前に PyPI で実存確認** (WebFetch `https://pypi.org/project/<name>/`・404 なら代替検討開始)
+  2. **handoff の自己申告 (特に外部ライブラリ・パッケージ依存関連) は WebSearch + WebFetch で実態 verify してから引用** (cc_role §1.3.1 「読んでいない文書を読んだと言う」の同型・自己申告を鵜呑みは類型 G リスク)
+  3. **install 試行は機能 verify までセット**: pip install 成功 → import 動作確認 → 主要関数 import 確認まで実行 (`pip install OK` だけで「動く」と判断しない)
+- **mlfinlab → mlfinpy + timeseriescv 切替の知見** (将来再利用):
+  - mlfinpy 0.1.2 (PyPI 公開・open-source・AFML 直接実装): Triple Barrier / Meta-Labeling / CombinatorialPurgedKFold / Fractional Diff / Sample Weights カバー
+  - timeseriescv 0.2 (PyPI 公開・open-source): PurgedWalkForwardCV / CombPurgedKFoldCV (mlfinpy 補完)
+  - DSR (Deflated Sharpe Ratio) は両者未実装 → 自前実装 (Bailey + Lopez de Prado 2014 SSRN 2460551)
+  - mlfinpy 0.1.2 は scikit-learn を依存に含めずバグあり (別途 install 必須)
+  - mlfinpy 制約: numpy < 2.0 (numba 0.60.0 経由) / pandas 2.x (pandas 3.0 と非互換)
+- **WebSearch / WebFetch 利用タイミング** (cc_role §1.0 義務化):
+  - 外部ライブラリ依存を含む指示書を書く前
+  - install 失敗時 (即 web で原因確認・pip search や stackoverflow 待ちしない)
+  - 業界ベストプラクティス (例: AFML Ch.X 実装) を引用する前
+  - 新規ガバナンス文書 (例: technical_analysis_knowledge_base v3) 作成前
+- **handoff の自己申告ラベル付け** (cc_role §1.3.4 拡張):
+  - 自己申告に「実証根拠あり (✅ verify 済)」「推測 (⚠️ 要 verify)」を明示する
+  - 次セッション CC が自己申告を引用する際は ⚠️ ラベル付きを WebSearch verify してから引用する義務
+
+**関連:**
+- L-201 cc_role §1.0「WebSearch 能動活用」を毎セッション忘れる + データ駆動原則違反 (1 週間以内の再演)
+- L-202 CC 完全網羅志向の保守判断 (本セッション同型・実証根拠不足の判断)
+- L-200 機械的証跡 3 点 (本件で同型・「Python 3.13 wheel なし」を機械的証跡なしで引用)
+- L-196 外部仕様 (取引所スペック) の出典 verify (本件は外部ライブラリ版・同型)
+- cc_role §1.0 (あらゆる手段を尽くす・WebSearch 能動活用義務)
+- cc_role §1.3.1 (読んでいない文書を読んだと言う・類型 G)
+- cc_role §1.3.4 (発見時の自己申告義務)
+- handoff v22 §7 (Q4 自己申告の根拠認識誤り)
+- handoff v23 §X (次セッション・mlfinpy + timeseriescv + 自前 DSR 切替反映予定)
 
 ---
 

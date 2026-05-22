@@ -299,9 +299,66 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-22 改訂20・**Phase 0 改修 v3.1 全工程完了** + Y 案確定 + Phase 1 v5 着手準備完了）
+## 🔴 現在のフェーズ（2026-05-22 改訂21・**Step C 完了** + Phase 1 v5 指示書 mlfinpy 切替 + Step D 着手準備完了）
 
-> **【現在の正本ブロック・改訂20・2026-05-22 セッション末】**
+> **【現在の正本ブロック・改訂21・2026-05-22 セッション末】**
+>
+> ### 本セッション (改訂20 セッション → 同日継続) 完了事項
+>
+> #### 1. blacklist 48 → 64 列反映 (commit `ef0e26d`)
+> - L-202 Q1 自己申告反映 (1w/1M MTF 拡張で 8 family × 8 TF = 64 列)
+> - Phase 1 v5 指示書 6 箇所 + phase_compliance_checklist.md 13 箇所更新
+> - 学習対象 feature 数: 1,414 → **2,604** (実 parquet 2,724 - 56 ラベル - 64 blacklist)
+>
+> #### 2. Step C 完了 (commit `560122e`)
+> - brew install python@3.11 → Python 3.11.15 (.venv311 構築・.gitignore 済)
+> - mlfinpy 0.1.2 / timeseriescv 0.2 / scikit-learn 1.8.0 / lightgbm 4.6.0 / pandas-ta-classic 0.6.20 / pyarrow 24.0.0 / ta 0.11.0 install
+> - 機能 verify 全 pass (Triple Barrier / Meta-Labeling / PurgedWalkForwardCV / CombinatorialPurgedKFold / Fractional Diff / Sample Weights)
+> - parquet 読み込み verify OK (test_2026_q1: 25,631 × 2,724)
+>
+> #### 3. 重大発見: mlfinlab PyPI 削除 + closed-source 化 (commit `560122e`)
+> - **mlfinlab は PyPI 削除済**・GitHub `hudson-and-thames/mlfinlab` は "All Rights Reserved" license (Hudson & Thames が Business/Enterprise 商業ライセンスのみ提供)
+> - handoff v22 Q4「Python 3.13 wheel なし → 自前実装」の根拠認識は誤り (**実態は商業化による PyPI 削除**)
+> - 代替確定: **mlfinpy** (PyPI 公開・open-source・AFML 直接実装・`baobach/mlfinpy`) + **timeseriescv** (Walk-forward Purged CV・`sam31415/timeseriescv`) + **自前 DSR**
+> - Phase 1 v5 指示書 18 hit → mlfinpy + timeseriescv に修正 (12 Edit・残存 8 件は経緯/API リファレンスとして意図的に保持)
+> - WebSearch 能動活用義務 (cc_role §1.0 + L-201) を本セッション後半でようやく履行・L-201 1 週間以内再演
+>
+> #### 4. lessons L-203 追加 (mlfinlab 実態調査不足・L-201 再演)
+> - 外部依存パッケージの状態確認を handoff の自己申告で済ます癖を矯正
+> - 外部ライブラリ import を指示書に書く前に PyPI 実存確認義務
+> - install 試行は機能 verify までセット (`pip install OK` だけで「動く」と判断しない)
+>
+> ### 次セッション CC 優先順位 (Step D 着手)
+>
+> 1. **優先 1 (dsr.py 自前実装・1-2 時間)**: Bailey + Lopez de Prado 2014 SSRN 2460551
+>    - 数式: DSR = (SR - SR*) / sigma_SR (skew + kurtosis + 試行数補正・Euler-Mascheroni constant)
+>    - 配置: `scripts/priority_rebuild/dsr.py`
+>    - test ケース: scipy / numpy ベース・100+ grid 試行記録の selection bias 補正
+> 2. **優先 2 (Phase 1 v5 実装着手・約 3-4 週間)**: Phase 1 v5 指示書 §6 実装手順 Step 2 以降
+>    - run_phase1_v5_purged_kfold.py (共通 CV runner・timeseriescv.PurgedWalkForwardCV 主用)
+>    - case_a (14 ラベル RMSE) / case_b (Binary) / case_c (Multiclass) / case_d (LambdaRank) / case_e (Triple Barrier・mlfinpy.labeling.get_events) / case_f (Meta-Labeling・mlfinpy.labeling.get_bins・case_e 後 sequential)
+>    - smoke test (Fold 0・1-2 ヶ月・1 時間以内)
+>    - CP2 監査 (Claude `/audit` 経由・7 項目)
+>    - full 5 fold × 6 案 = 30 学習 (約 20 時間・3 並列・メモリ 30-45 GB)
+>    - §4.1 採用判定 or Layer 3 投入 (6 案ベストでも 5 指標未達なら即 Layer 3)
+> 3. **優先 3 (将来)**: Phase 4-b 設計再 audit / Phase 5/6/7 統合 / OI 特徴量化 (Phase 4-b 結果次第)
+>
+> ### 引き継ぎリソース (新セッション Step 0 で必読)
+>
+> - **handoff v23** (本セッション末作成予定) — Step C 完了 + mlfinpy 切替 + dsr.py 実装方針 + Step D 着手詳細
+> - **lessons_active.md L-203** — mlfinlab PyPI 削除 + WebSearch 能動活用義務再確認 (本セッション学習)
+> - **lessons_active.md L-202** — CC 完全網羅志向 + 指示書フロー並列実施手順違反
+> - **lessons_active.md L-201** — WebSearch 能動活用 + 業界経験閾値 bool ハードコード禁止
+> - **Phase 1 v5 指示書 (mlfinpy 切替版)** (`.claude/instructions/2026-05-22_phase1_layer_inversion_instruction.md`・約 440 行・commit `560122e`)
+> - **phase_compliance_checklist.md §Phase -1** (blacklist 64 列反映済・commit `ef0e26d`)
+> - parquet 3 種 (`results/priority_rebuild/labels_mfe_mae_pct_{train_2021_2024,test_2025,test_2026_q1}.parquet`・sha256 既出)
+> - **.venv311 環境** (Step C 完了・gitignore 済・mlfinpy + timeseriescv + scikit-learn + lightgbm + 依存パッケージ install 済)
+
+---
+
+> ### 🧊 改訂20 ブロック (履歴・参照用)
+
+> **【旧正本ブロック・改訂20・2026-05-22 セッション末】**
 >
 > ### 本セッション (改訂19 セッション → 同日継続 autonomous) 完了事項
 >
