@@ -299,53 +299,85 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-22 改訂22・**Step D 優先 1 (dsr.py) 完了** + 必読リスト 3 層構造化 + lessons L-204 追加 + 履歴 archive 移送）
+## 🔴 現在のフェーズ（2026-05-22 改訂23・**Phase 1 v5.1 設計確定 + Step 2/D 完了** = runner v5.1 拡張完成・Step E (case_a) 着手準備）
 
-> **【現在の正本ブロック・改訂22・2026-05-22 セッション末】**
+> **【現在の正本ブロック・改訂23・2026-05-22 セッション末】**
 >
-> ### 本セッション (改訂21 同日後半) 完了事項
+> ### 本セッション (改訂22 同日後半・継続) 完了事項
 >
-> #### 1. Step D 優先 1 完了 (commit `5918456`・dsr.py 自前実装)
-> - `scripts/priority_rebuild/dsr.py` (204 行・paper Eq. 5/9 paper-faithful 実装)
-> - `scripts/priority_rebuild/test_dsr.py` (204 行・10/10 PASS)
-> - Bailey + Lopez de Prado 2014 (SSRN 2460551) 実装
-> - 公開 API: `compute_dsr_from_returns` / `compute_dsr_from_stats` / `expected_max_sharpe` / `sigma_sr_estimate` / `sharpe_ratio`
-> - **両形式出力**: `dsr_zscore` (cc_ml_design_spec §1.5.1「DSR > 1.0」整合) + `dsr_probability` (paper-canonical・CDF 適用後・[0,1])
-> - excess kurtosis 採用 (scipy.stats.kurtosis(fisher=True) 整合)
-> - **重大発見**: marti.ai 2018 検証データ 0.8997 は paper 数式から再現不可と判定 (paper-faithful 正解 p ≈ 1.0・記事の手計算誤り)
+> #### 1. Step 2 完了 (commit `6412cf1`・共通 Purged K-Fold runner 初版)
+> - `scripts/priority_rebuild/run_phase1_v5_purged_kfold.py` (529 行・新規)
+> - timeseriescv.PurgedWalkForwardCV ラッパ + t1 vertical barrier runtime 算出 (parquet 未保存・index + K × 5min)
+> - Phase -1 blacklist 64 列 + 56 ラベル列を物理 drop (Prime Directive §0-1)
+> - dsr.py 統合 (5 fold aggregate で DSR 算出・sr_variance = fold_sharpe variance)
+> - sample parquet 実機 verify: blacklist drop 64 ✅ / label drop 56 ✅ / X shape (25345, 2604) ✅
 >
-> #### 2. ドキュメント整理 (3 層構造化・本セッション末)
-> - **WORKFLOW.md 履歴**: 改訂20-15 ブロック (313 行) を `archive/workflow/WORKFLOW_archive_20260522.md` 移送 (672 → 369 行・-45%)
-> - **lessons_active.md**: L-152〜L-99 (約 1000 行) を `lessons_archive.md` 移送 (2099 → 1141 行・-46%)
-> - **web_claude_role.md**: 本体 (477 行) を `.claude/rules/archive/web_claude_role_v3.1_20260522.md` 移送・参照スタブ化 (35 行)
-> - **CLAUDE.md 必読リスト 3 層構造化**: Layer 1 (毎セッション必読 ~700 行) / Layer 2 (タスク特有) / Layer 3 (リファレンス) に分離・handoff バージョン hardcode 撤廃 (find で最新取得運用)
-> - **3 追加資料 Layer 2 組み込み** (まこさん指示): `phase_flow_v4_with_recovery.md` (ML 学習〜リリース全フロー・977 行) / `technical_analysis_knowledge_base.md` (テクニカル辞典・1691 行) / `CAT−指標マトリックス__一覧.csv` (23 軸深掘り資料・1962 行)
+> #### 2. Phase 1 v5.1 設計確定 + Step A-C 完了 (commit `eff0aff`・spec/指示書/CLAUDE.md 修正)
+> まこさん Q1/Q2/Q3 議論 (3 ファイル `learning_design_v4` / `phase_flow_v4_with_recovery` / `technical_analysis_knowledge_base` Read 後) で **Phase 1 v5 → v5.1 厳格化**確定:
+> - **Q1 Entry 閾値**: 1.5 = phase_flow_v4 L151 既定 (旧 V3 比較ベースライン・改善期待しない明示)・本確定は **Phase 4-b-2 (3 方式並列)**・TP first 正解は **`triple_barrier_label_{LONG,SHORT}_K{K}` == +1** 全案統一
+> - **Q2 train/valid 警告**: W1 (`train_rmse/label_std < 0.10`) + W2 (`valid_rmse > train_rmse × 3.0`) を warning ログ追加 (L-179 leak 補完層)
+> - **Q3 評価単位厳格化**: K=12 LONG 単独 → **8 組合せ (K=12/24/48/96 × LONG/SHORT)・6+ 組合せで 5 指標 ALL PASS** (cc_ml_design_spec §1.6 撤退ライン同構造整合)
 >
-> #### 3. lessons L-204 追加
-> - system reminder で auto-load される正本を Read せず「読了済」と内部処理 (L-200 関所 F 違反同型)
-> - handoff バージョン hardcode 不整合 (L-181 同型違反)
-> - 3 経路で固定化: ① Step 0 機械的証跡を system reminder ファイルにも適用 / ② find で最新 handoff 取得 / ③ 必読 3 層構造化で負荷軽減
+> 修正ファイル (3 件):
+> - cc_ml_design_spec.md §1.5.1 v5.1 (8 組合せ + 6+ 合格判定 + §1.6.1 メタルール例外承認内)
+> - Phase 1 v5 指示書 §2-§5 全面修正 (16/8 model × 5 fold = 260 学習・約 28-30 時間)
+> - CLAUDE.md L142/146/147 パス hardcode 不整合修正 (L-204 追加事案)
 >
-> ### 次セッション CC 優先順位 (Step D 優先 2 着手)
+> #### 3. Step D 完了 (commit `06dd10d`・runner v5.1 拡張)
+> - `run_phase1_v5_purged_kfold.py` 529 → 773 行 (+244 行)
+> - `FoldMetrics` 拡張 (`side` / `train_rmse` / `valid_rmse` / `label_std` / `warnings: List[str]`)
+> - `CombinationSummary` dataclass 新規 (1 組合せ K × side 5 fold 統合 + DSR + pass 判定)
+> - `CaseSummary` 全面再設計 (8 組合せ統合 + 6+ ALL PASS 判定 + `meets_6plus_criteria`)
+> - `compute_fold_metrics` 拡張 (`y_true_tp_first` / `y_pred_tp_first` 引数化・W1/W2 警告検出)
+> - `aggregate_combination_to_summary` + `aggregate_8_combinations_to_summary` 新規 (旧 `aggregate_to_summary` 廃止)
+> - `_self_check` v5.1 拡張: timeseriescv split / compute_fold_metrics / W1/W2 warning / 2 組合せ aggregate 全 PASS
 >
-> 1. **優先 1**: Phase 1 v5 §6 実装手順 Step 2 以降 (約 3-4 週間)
->    - `run_phase1_v5_purged_kfold.py` (共通 CV runner・timeseriescv.PurgedWalkForwardCV 主用)
->    - case_a (14 ラベル RMSE) / case_b (Binary) / case_c (Multiclass) / case_d (LambdaRank) / case_e (Triple Barrier・mlfinpy) / case_f (Meta-Labeling・mlfinpy)
->    - **dsr.py 統合** (sr_variance 集約は 100+ grid 試行記録から計算)
->    - smoke test (Fold 0・1-2 ヶ月・1 時間以内)
->    - CP2 監査 (`/audit` 経由・7 項目)
->    - full 5 fold × 6 案 = 30 学習 (約 20 時間・3 並列・30-45 GB)
->    - §4.1 採用判定 or Layer 3 投入
-> 2. **優先 2 (将来)**: Phase 4-b 設計再 audit / Phase 5/6/7 統合 / OI 特徴量化
+> #### 4. lessons L-205 新規 + L-204 拡張
+> - **L-205**: ドキュメント引用前 実装 verify 漏れ + 早計自己申告 (1.5 を CC 独断値と即時自己申告したが phase_flow_v4 L151 既定値だった・L-180 同型再演)
+> - **L-204 拡張**: CLAUDE.md L142/146/147 Layer 2 パス hardcode 不整合事案を追加 (handoff バージョン hardcode と同型「文書間参照リンク切れ」)
+>
+> ### 次セッション CC 優先順位 (Step E 着手)
+>
+> 1. **優先 1 — Step E (案 a 実装・約 1-2 日)**: `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_rmse.py` 新規 (約 320-380 行)
+>    - 16 model (LONG/SHORT × MFE/MAE × K={12,24,48,96}) × 5 fold = **80 学習** (v5.1 設計)
+>    - runner v5.1 を import: `load_parquet_with_blacklist` / `compute_fold_metrics` / `aggregate_8_combinations_to_summary`
+>    - case 別 0/1 化ルール: 予測 MFE / |予測 MAE| ≥ 1.5 (phase_flow_v4 L151 既定)
+>    - TP first 正解: `triple_barrier_label_{LONG,SHORT}_K{K}` == +1
+>    - phase_compliance_checklist §1.4 ガード: 1 ラベル目 (K=12 LONG_MFE) feature_importance top20 review (top1-20 hit → sys.exit(1))
+>    - W1/W2 警告ログ (smoke 段階で運用確認)
+> 2. **優先 2 — Step F smoke test (約 1 時間)**: Fold 0 + K=12 LONG のみで動作確認・メモリ消費実測
+> 3. **優先 3 — Step G CP2 監査依頼** (`/audit` 経由・7 項目)
+> 4. **優先 4 — Step H full 8 組合せ実行** (約 28-30 時間・3 並列で 10-13 時間)
+> 5. **その後**: 案 b-f 順次実装 → §4.1 採用判定 or Layer 3 投入
 >
 > ### 引き継ぎリソース (新セッション Step 0 で必読)
 >
-> - **handoff v24** (本セッション末作成) — Step D 優先 1 完了 + 整理 + Step D 優先 2 着手詳細
-> - **lessons_active.md L-204 (最新)** — system reminder 鵜呑み + handoff hardcode 不整合 (本セッション学習)
+> - **handoff v25** (本セッション末作成) — Step 2/A-C/D 完了 + v5.1 設計確定経緯 + Step E 着手詳細
+> - **lessons_active.md L-205 (最新)** — ドキュメント引用前 verify 漏れ・L-180 同型再演
+> - **lessons_active.md L-204 拡張** — CLAUDE.md パス hardcode 不整合追加事案
+> - **runner v5.1** (`scripts/priority_rebuild/run_phase1_v5_purged_kfold.py`・773 行・commit `06dd10d`)
 > - **dsr.py + test_dsr.py** (`scripts/priority_rebuild/`・commit `5918456`)
-> - **Phase 1 v5 指示書** (`.claude/instructions/2026-05-22_phase1_layer_inversion_instruction.md`・440 行・mlfinpy 切替版)
-> - **.venv311 環境** (Step C 完了・mlfinpy + timeseriescv + scikit-learn + lightgbm + scipy + 依存全 install 済)
+> - **Phase 1 v5 指示書 v5.1** (`.claude/instructions/2026-05-22_phase1_layer_inversion_instruction.md`・8 組合せ + W1/W2 + 260 学習版・commit `eff0aff`)
+> - **cc_ml_design_spec.md §1.5.1 v5.1** (commit `eff0aff`)
+> - **CLAUDE.md** Layer 2 パス修正済 (`.claude/memory/phase_flow_v4_with_recovery.md` / `technical_analysis_knowledge_base.md` / `CAT−指標マトリックス - 一覧.csv`)
+> - **.venv311 環境** (Step C 完了・mlfinpy 0.1.2 + timeseriescv 0.2 + scikit-learn 1.8.0 + lightgbm 4.6.0 + scipy 1.17.1)
 > - **parquet 3 種** (`results/priority_rebuild/labels_mfe_mae_pct_{train_2021_2024,test_2025,test_2026_q1}.parquet`)
+
+---
+
+> ### 🧊 改訂22 ブロック (履歴・参照用・2026-05-22 セッション末で改訂23 に上書き)
+>
+> **【旧正本ブロック・改訂22・2026-05-22 セッション末】** — Step D 優先 1 (dsr.py) 完了 + 必読リスト 3 層構造化 + lessons L-204 追加 + 履歴 archive 移送
+>
+> 主な完了事項:
+> 1. Step D 優先 1 (commit `5918456`): dsr.py 自前実装 (Bailey + Lopez de Prado 2014 SSRN 2460551・204 行)・test 10/10 PASS
+> 2. ドキュメント整理 3 層構造化 (WORKFLOW 672 → 369 行 / lessons 2099 → 1141 行 / web_claude_role 477 → 35 行参照スタブ / CLAUDE.md 必読リスト 3 層化 + handoff hardcode 撤廃)
+> 3. lessons L-204 追加 (system reminder auto-load 鵜呑み + handoff hardcode 不整合)
+>
+> 次セッション優先順位 (旧版・本改訂23 で更新済):
+> - 優先 1: Phase 1 v5 §6 実装手順 Step 2 以降 → **改訂23 で Step 2/A-C/D 完了済 + Step E 着手準備**
+>
+> 詳細は `archive/workflow/WORKFLOW_archive_20260522.md` 経由参照 (改訂23 セッション末にて archive 移送)。
 
 ---
 

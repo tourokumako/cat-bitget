@@ -1,13 +1,46 @@
-# lessons_active.md — 現役教訓 (2026-05-02 以降・L-203〜L-153 + 新規 L-204 以降)
+# lessons_active.md — 現役教訓 (2026-05-02 以降・L-203〜L-153 + 新規 L-205 以降)
 
 > **構造 (2026-05-22 改訂22 で再整理)**:
-> - active = 2026-05-02 以降の教訓 (L-203〜L-153 + 新規追加 L-204 以降・約 1140 行)
+> - active = 2026-05-02 以降の教訓 (L-205〜L-153 + 新規追加 L-206 以降・約 1200 行)
 > - [archive](lessons_archive.md) = L-152 以前 (2026-05-01 以前の Phase 1〜7-a / regime 研究時代教訓・約 2515 行)
 > - **Step 0 では active 直近 5 件のみ全文読了で十分**。残りは必要時参照。
 
 ---
 
-### L-204: system reminder で auto-load される正本を Read せず「読了済」と内部処理 + handoff バージョン hardcode 不整合 — L-200 / L-181 同日再演 (2026-05-22)
+### L-205: ドキュメント引用前 実装 verify 漏れ + 早計自己申告 — L-180 同型再演 (2026-05-22)
+
+**何が起きたか:**
+2026-05-22 セッション (Phase 1 v5 §6 Step 3 案 a 設計議論) で、まこさん Q1「Entry 判定の閾値 1.5 の根拠」に対し、CC は cc_ml_design_spec §2 を grep で確認し「閾値は学習データからデータ駆動で決定 (人間が事前に決めない)」記述を発見 → 「**1.5 は CC 独断値・cc_ml_design_spec §2 と矛盾・修正必要**」と早計自己申告した (cc_role §1.3.4 発見時自己申告義務に基づく即時報告)。
+
+しかしまこさんから「念のため learning_design_v4 / phase_flow_v4_with_recovery / technical_analysis_knowledge_base を読んでみて」と指示を受け、3 ファイル grep + Read 後に **phase_flow_v4_with_recovery.md L151 に「予測 MFE / 予測 MAE ≥ 1.5 で買う・改善期待しない・比較用ベースライン」と明示記載**されていることが判明。1.5 は CC 独断値ではなく phase_flow_v4 既定値で、Phase 4-b-2 で本確定する旧 V3 方式の比較ベースライン暫定値だった。
+
+**Why:**
+- CC は cc_ml_design_spec §2 (1 ファイル) のみ確認し「矛盾あり」と判断・早計自己申告した
+- Phase 1 v5 指示書 §2.1「閾値 1.5 (cc_ml_design_spec §2 整合)」の「整合」を実装 verify する際、参照元として **phase_flow_v4_with_recovery.md (Phase 別 spec 詳細・977 行)** を確認しなかった
+- L-180「ドキュメント引用前 実装 verify 必須」は「コード実装の verify」を主軸にしているが、**設計判断の根拠記述は複数ドキュメントに分散している**ことを軽視した
+- まこさんが 3 ファイル名を具体的に指示するまで CC は phase_flow_v4 を参照しなかった (Layer 2 必読リストには記載済だが CC 内部処理で省略)
+
+**How to apply:**
+- **設計閾値・パラメータ・判定式の根拠 verify は最低 3 ファイル grep を義務化**:
+  1. cc_ml_design_spec.md (ML 設計仕様正本)
+  2. **`.claude/memory/phase_flow_v4_with_recovery.md` (Phase 別実装詳細・閾値の暫定値/本確定値の Phase 分離記述あり)**
+  3. **`.claude/memory/technical_analysis_knowledge_base.md` (§I 閾値設計論・4 大分類 + Phase 別データ駆動再検討フロー)**
+- 自己申告は **3 ファイル grep 後に行う** (cc_role §1.3.4 発見時自己申告義務 ↔ 早計自己申告の防止のため両立)
+- 「閾値が CC 独断か既定値か」「閾値の本確定 Phase はどこか」「閾値の業界分類 (自己実現的 / 計算式由来 / 業界経験 / Adaptive) は何か」の 3 軸で確認
+- 早計自己申告した場合は次ターンで訂正報告し L-205 同型として記録 (本セッションで実施済)
+- 連動策: CLAUDE.md Layer 2 必読リストに本 3 ファイル組合せを明示済 (L142/146/147・本セッションでパス hardcode 修正済・L-204 拡張事案)
+
+**関連:**
+- L-180 ドキュメント引用前 実装 verify (本件と同型・対象が「実装」から「設計根拠記述」に拡張)
+- L-200 機械的証跡 3 点 (本件で「読んだフリ」ではないが「**読んでない/不十分**」事案・Layer 2 必読 3 ファイル中 1 ファイルのみ読了)
+- L-204 system reminder auto-load 鵜呑み (本件は逆方向・auto-load されない Layer 2 ファイル参照漏れ + CLAUDE.md hardcode 不整合で発見遅延)
+- cc_role §1.3.4 発見時自己申告義務 (本件で早計発動・3 ファイル verify 後に発動すべき)
+- phase_flow_v4_with_recovery.md L151 (1.5 = 比較ベースライン明示) / L528 (Phase 4-b-2 本確定)
+- technical_analysis_knowledge_base.md §I.6.3 (Phase 別データ駆動再検討フロー)
+
+---
+
+### L-204: system reminder で auto-load される正本を Read せず「読了済」と内部処理 + handoff バージョン hardcode 不整合 (CLAUDE.md Layer 2 パス hardcode 含む) — L-200 / L-181 同日再演 (2026-05-22 / 2026-05-22 セッション末追記)
 
 **何が起きたか:**
 2026-05-22 セッション後半 (改訂22 整理タスク前) で、まこさんから「最近セッション開始プロトコルで以下資料を読まなくなった (cc_role / web_claude_self_check / false_positive / cc_ml_design_spec / exchange_spec / learning_design_v4 / lessons_active / WORKFLOW / CLAUDE)」と指摘を受けた。本セッション冒頭の Step 0 でも以下 4 ファイルを **完全に読み逃し** で進行:
@@ -39,9 +72,20 @@
   - lessons L-152〜L-99 を `lessons_archive.md` 移送 (2099 → 1141 行)
   - web_claude_role.md 本体を `.claude/rules/archive/web_claude_role_v3.1_20260522.md` 移送 (477 → 35 行・参照スタブ化)
 
+**追加事案 (2026-05-22 セッション末・L-205 経由で発覚):**
+CLAUDE.md Layer 2 必読リスト L142/146/147 でも同型の hardcode 不整合が判明:
+- L142 `bitget-python-sdk-api/phase_flow_v4_with_recovery.md` → 実体 `bitget-python-sdk-api/.claude/memory/phase_flow_v4_with_recovery.md`
+- L146 `bitget-python-sdk-api/technical_analysis_knowledge_base.md` → 実体 `.claude/memory/technical_analysis_knowledge_base.md`
+- L147 `CAT−指標マトリックス__一覧.csv` (アンダースコア 2 個) → 実体 `.claude/memory/CAT−指標マトリックス - 一覧.csv` (ハイフン + 半角スペース)
+
+これら 3 件は L-205 (1.5 閾値根拠 verify) でまこさんから「3 ファイル読んでみて」と指示された際に **CLAUDE.md 記載パスでファイルが見つからない**ことで発覚 → find で実体パス特定 → CLAUDE.md 修正 (commit `eff0aff`)。
+
+**構造的に同型**: handoff バージョン hardcode (本件本文) と CLAUDE.md Layer 2 パス hardcode (本追加事案) は「**文書間の参照リンクが切れて気づかない**」癖の異なる発現。**対策**: 必読リストは具体的パスではなく find / glob で動的取得運用 (handoff は既に find 運用化済・本件 3 ファイルは固定パスのため修正版で対応 + 将来ファイル移動時の sync 更新を仕組み化検討要)。
+
 **関連:**
 - L-200 機械的証跡 3 点 (本件と完全同型・「system reminder の部分表示を読了として扱わない」関所 F 違反)
 - L-181 設計転換時 旧記述 全 grep sweep (handoff バージョン更新で CLAUDE.md sync を忘れる同型・「二度とやらないで」命令違反)
+- **L-205 (本セッション末追加)**: 1.5 閾値根拠 verify で本追加事案 (Layer 2 パス hardcode 不整合) 発覚
 - L-203 / L-201 / L-202 「ルール追加だけでは効かない」実証ループ (本件で 4 件目)
 - false_positive §2 類型 G (読んだフリ) + §5 関所 F (読了の機械的証跡)
 - web_claude_self_check.md 読了ゲート (本件で構造的に守れていない実証)
