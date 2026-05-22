@@ -76,24 +76,35 @@ BTC 4 年周期（2024 年半減期）と 2024 年以降の価格上昇を踏ま
 3. **特徴量重要度チェック**: 上位 20 指標を報告。1 個の指標に極端に依存していたら危険信号
 4. **連続足の間引き再計算**: 仮テスト結果確認時に、連続して同じ判定の足を間引いて成績を再計算。間引き後も成績維持されるか確認
 
-### 1.5.1 Phase 1 合格基準 5 指標 (2026-05-22 v5 Layer 配分逆転で追加・learning_design_v4 v5 §4 整合)
+### 1.5.1 Phase 1 合格基準 5 指標 (2026-05-22 v5 Layer 配分逆転で追加・2026-05-22 後半 v5.1 8 組合せ評価厳格化・learning_design_v4 v5 §4 整合)
 
-Phase 1 で 6 案並列学習 (a 14 ラベル RMSE / b Entry Binary / c Direction Multiclass / d Ranking LambdaRank / e Triple Barrier multiclass / f Meta-Labeling 2 段階) + Walk-forward Purged K-Fold 5 fold (mlfinlab.cross_validation.PurgedKFold) を実施し、以下 5 指標で合格判定:
+Phase 1 で 6 案並列学習 (a 14 ラベル RMSE / b Entry Binary / c Direction Multiclass / d Ranking LambdaRank / e Triple Barrier multiclass / f Meta-Labeling 2 段階) + Walk-forward Purged K-Fold 5 fold (`timeseriescv.PurgedWalkForwardCV`・mlfinlab は 2026-05-22 PyPI 削除済・L-203) を実施し、以下 5 指標で合格判定:
+
+**評価単位 (v5.1 で 8 組合せ厳格化・§1.6 整合)**:
+- **8 組合せ = K=12/24/48/96 × LONG/SHORT** で各案 5 指標を算出
+- **TP first 正解は全案統一**: `triple_barrier_label_LONG_K{K}` == +1 (LONG) / `triple_barrier_label_SHORT_K{K}` == +1 (SHORT)・Phase 0 v3.1 生成済
+- 案ごとの 0/1 化ルール (案 a=予測 MFE/MAE 比 ≥ 1.5・phase_flow_v4 L151 既定 / 案 b=proba > 0.5 / 案 c=class proba > 0.4 / 案 d=top N% / 案 e=+1 proba > 0.4 / 案 f=Primary +1 ∧ Secondary > 0.6) は Phase 1 のベンチマーク用 default 値・**本確定は Phase 4-b-2 (3 方式並列)**
 
 | # | 指標 | 合格閾値 | 根拠 |
 |---|---|---|---|
 | 1 | **entropy lift** | **> 10%** | Lopez de Prado *AFML* Ch.3 (< 10% で meta-labeling 投入推奨域・Phase 1-c smoke 6.04% は投入域・false_positive §2 類型 E/G リスク回避済) |
-| 2 | **TP Precision** | **> 0.5** | 信頼度 50% 以上 (ベースライン 50% 超え必須) |
+| 2 | **TP Precision** | **> 0.5** | 信頼度 50% 以上 (ベースライン 50% 超え必須)・正解 = `triple_barrier_label_{LONG,SHORT}_K{K}` == +1 |
 | 3 | **Direction Accuracy** (案 c のみ) | **> 0.55** | LONG/SHORT 方向当たり率 (5% 以上有意性) |
 | 4 | **Simulated PnL** (12 ヶ月) | 12 ヶ月中 **8+ ヶ月プラス** + 年間 NET ≥ **$500** | §1.6 Phase 2 基準 ($1,900/月) より暫定的に緩い (Position size 未確定・Phase 4-b/5 で Position 設計後に再評価) |
-| 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | Bailey + Lopez de Prado 2014 (SSRN 2460551)・selection bias 補正後 (100+ grid 試行記録義務) |
+| 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | Bailey + Lopez de Prado 2014 (SSRN 2460551)・selection bias 補正後 (n_trials = 6 案・Phase 4-b-2 で grid 拡張時に n_trials 拡大) |
 
-**Layer 3 投入条件 (Layer 配分逆転 v5 厳格化)**:
-- **6 案いずれか上記 5 指標 ALL PASS** → 採用案で Phase 2 進行
-- **6 案ベストでも 5 指標未達** → **即** Layer 3 残存タスク投入 (CPCV / Class balancing / Focal loss / custom loss / アルゴ多様化 XGBoost CatBoost MiniROCKET)
+**合格判定ルール (v5.1 厳格化・§1.6 撤退ライン同構造)**:
+- **6 案いずれか × 8 組合せ中 6+ 組合せで 5 指標 ALL PASS** → 採用案で Phase 2 進行
+- **6 案いずれも 6+ 組合せ ALL PASS なし** → **即** Layer 3 残存タスク投入 (CPCV / Class balancing / Focal loss / custom loss / アルゴ多様化 XGBoost CatBoost MiniROCKET)
 - **「ベスト案で Phase 2 進行して判定」は禁止** (Phase 1 未達 → Phase 2 改善保証なし)
+- **「K=12 LONG 1 組合せだけで合格扱い」は禁止** (Phase 5 8 組合せ Replay で全月クリア要件と整合させるため・§1.6 整合)
 
-**§1.6.1 メタルール整合**: 本 §1.5.1 合格基準は Phase 1 実行前に最終確定済 (2026-05-22 v5)。実行後の緩和 (例: entropy lift > 5%・DSR > 0.5) は許容しない。
+**Phase 1 評価設計のフェーズ分離**:
+- **Phase 1**: 案間比較 (default 0/1 化閾値で 8 組合せ × 5 指標) — `triple_barrier_label` 正解統一で公平
+- **Phase 4-b-2**: Entry 閾値本確定 (3 方式並列: 固定 / cluster 別 quantile / rolling 365 日 q90/q95/q99)・phase_flow_v4 L528
+- **Phase 4-b 全般**: cluster × K × side × 閾値 grid で **DSR + walk-forward** 最適化 (technical_analysis_knowledge_base §I.6.3 整合)
+
+**§1.6.1 メタルール整合 (v5.1 修正の許容根拠)**: 本 §1.5.1 v5.1 修正 (8 組合せ厳格化 + TP first 正解統一 + 合格判定ルール厳格化) は Phase 1 実行**前**に行う構造的整合補正であり、audit#3 反映と同型 (§1.6 §1.6.1 注記「audit#2 で指摘された spec 欠陥への対応」)。実行後の緩和 (例: entropy lift > 5%・DSR > 0.5・5+ 組合せで合格) は許容しない。
 
 ### 1.6 撤退ライン
 

@@ -139,12 +139,12 @@
 | タスク | 読むファイル |
 |---|---|
 | ML 学習着手 (Phase 1 等) | `cc_ml_design_spec.md` + `.claude/memory/learning_design_v4.md` (内容は v5 化済) + `~/.claude/projects/.../memory/feedback_ml_leak_mandatory_check.md` + `results/priority_rebuild/leak_incident_20260513.md` |
-| Phase 着手 (各 Phase 共通) | `bitget-python-sdk-api/.claude/rules/phase_compliance_checklist.md` の該当 Phase 行 + `bitget-python-sdk-api/phase_flow_v4_with_recovery.md` (ML 学習〜リリースまでの全フロー詳細・977 行) |
+| Phase 着手 (各 Phase 共通) | `bitget-python-sdk-api/.claude/rules/phase_compliance_checklist.md` の該当 Phase 行 + `bitget-python-sdk-api/.claude/memory/phase_flow_v4_with_recovery.md` (ML 学習〜リリースまでの全フロー詳細・977 行) |
 | 重大設計判断・指示書発行・完了報告受領 | `cc_role.md` §1.5/§1.6/§1.7 + `web_claude_self_check.md` チェック A/B/C |
 | 取引所スペック引用 | `bitget-python-sdk-api/.claude/rules/exchange_spec.md` (audit#19 確定値) |
 | 監査依頼 (`/audit`) | `bitget-python-sdk-api/.claude/rules/auditor_template.md` |
-| テクニカル指標・閾値設計判断 | `bitget-python-sdk-api/technical_analysis_knowledge_base.md` (本プロジェクト製テクニカル辞典・§A-D 個別 + §I 閾値設計論・1691 行) |
-| 23 軸深掘り (ML 設計判断時) | `CAT−指標マトリックス__一覧.csv` (1962 行・古い情報混在・参照のみ・23 軸構成要素カタログ) |
+| テクニカル指標・閾値設計判断 | `bitget-python-sdk-api/.claude/memory/technical_analysis_knowledge_base.md` (本プロジェクト製テクニカル辞典・§A-D 個別 + §I 閾値設計論・1691 行) |
+| 23 軸深掘り (ML 設計判断時) | `bitget-python-sdk-api/.claude/memory/CAT−指標マトリックス - 一覧.csv` (164 KB・古い情報混在・参照のみ・23 軸構成要素カタログ) |
 | シグナル設計 | `bitget-python-sdk-api/.claude/memory/signal_ledger.md` (regime マッピングは凍結) |
 
 ### Layer 3 — リファレンス (検索 + 引用 verify)

@@ -139,59 +139,66 @@ print(f'Blacklist columns to drop: {len(blacklist_cols)} (expected 64)')
 | 項目 | 内容 |
 |---|---|
 | 目的関数 | `objective='regression'` (RMSE) |
-| ラベル | LONG_MFE_pct_K{6,12,24,48,96,144,288} (7 ラベル) + LONG_MAE_pct_K{...} (7 ラベル) = 14 ラベル独立 |
-| モデル数 | 14 個 |
-| Entry 判定 | LONG_MFE / LONG_MAE 比 ≥ 1.5 で買う (cc_ml_design_spec §2 整合) |
-| 役割 | **比較ベースライン** (Phase 1-a 既存方式の特徴量拡張版で再学習) |
+| ラベル | LONG_MFE_pct × K{12,24,48,96} + LONG_MAE_pct × K{12,24,48,96} + SHORT_MFE_pct × K{12,24,48,96} + SHORT_MAE_pct × K{12,24,48,96} = **16 モデル独立** (v5.1 で SHORT 学習を追加・8 組合せ評価対応) |
+| モデル数 | 16 個 × 5 fold = 80 学習 |
+| Entry 0/1 化 (Phase 1 ベンチマーク) | `予測 MFE / |予測 MAE| ≥ 1.5` で TP first 予測 (phase_flow_v4_with_recovery.md L151 既定値「改善期待しない・比較用ベースライン」・閾値本確定は **Phase 4-b-2** (phase_flow_v4 L528 「3 方式並列」)) |
+| TP first 正解 (全案統一) | `triple_barrier_label_LONG_K{K}` == +1 (LONG) / `triple_barrier_label_SHORT_K{K}` == +1 (SHORT)・Phase 0 v3.1 生成済 |
+| 役割 | **比較ベースライン** (旧 V3 方式再現・cc_ml_design_spec §2 「閾値は学習データからデータ駆動で決定」は Phase 4-b-2 で本確定・Phase 1 はベンチマーク評価) |
 
 ### §2.2 案 b (Entry Binary Classification)
 
 | 項目 | 内容 |
 |---|---|
 | 目的関数 | `objective='binary'` (LightGBM Binary) |
-| ラベル | K=12 後 MFE_pct > 0.5% かつ MAE_pct > -0.3% → 1 / それ以外 → 0 (新規派生) |
-| モデル数 | 1 個 |
+| ラベル | K={12,24,48,96} × LONG/SHORT 別 = **8 組合せ別ラベル** (v5.1 で 8 組合せ拡張)・各組合せで「K bar 後 MFE_pct > 0.5% かつ MAE_pct > -0.3% → 1 / それ以外 → 0」(新規派生) |
+| モデル数 | 8 個 × 5 fold = 40 学習 |
 | ハイパラ | scale_pos_weight (class imbalance 対策・推定 50:1〜100:1) |
-| Entry 判定 | Entry 確率 > 0.5 で買う |
+| Entry 0/1 化 | Entry 確率 > 0.5 で 1 |
+| TP first 正解 (全案統一) | `triple_barrier_label_{LONG,SHORT}_K{K}` == +1 |
 
 ### §2.3 案 c (Direction Multiclass)
 
 | 項目 | 内容 |
 |---|---|
-| 目的関数 | `objective='multiclass'` (num_class=3) |
-| ラベル | LONG_MFE > 0.5% → LONG (1) / SHORT_MFE > 0.5% → SHORT (2) / どちらも未満 → Flat (0) (新規派生) |
-| モデル数 | 1 個 |
-| Entry 判定 | LONG 確率 > 0.4 で買い / SHORT 確率 > 0.4 で売り |
+| 目的関数 | `objective='multiclass'` (num_class=3・LONG/SHORT/Flat 同時学習) |
+| ラベル | K={12,24,48,96} 別の **4 ラベル** (v5.1 で K 別拡張)・各 K で「LONG_MFE_pct_K{K} > 0.5% → LONG (1) / SHORT_MFE_pct_K{K} > 0.5% → SHORT (2) / どちらも未満 → Flat (0)」(新規派生) |
+| モデル数 | 4 個 (K 別) × 5 fold = 20 学習 (LONG/SHORT 同時 multiclass で 1 モデル / K) |
+| Entry 0/1 化 (LONG/SHORT 別評価) | LONG 確率 > 0.4 → LONG 1 / SHORT 確率 > 0.4 → SHORT 1 — 8 組合せ評価は K 別 × {LONG/SHORT} で別個に precision 算出 |
+| TP first 正解 (全案統一) | `triple_barrier_label_{LONG,SHORT}_K{K}` == +1 |
 
 ### §2.4 案 d (Ranking LambdaRank・新規)
 
 | 項目 | 内容 |
 |---|---|
 | 目的関数 | `objective='lambdarank'` (LightGBM Learning to Rank) |
-| ラベル | MFE_pct ランキング (高い順 0〜100) を quantile bin (5 段階) |
-| モデル数 | 1 個 |
+| ラベル | K={12,24,48,96} × {LONG,SHORT} 別 = **8 ラベル** (v5.1 で 8 組合せ拡張)・各組合せで {LONG_MFE_pct_K{K} / SHORT_MFE_pct_K{K}} のランキング (高い順 0〜100) を quantile bin (5 段階) |
+| モデル数 | 8 個 × 5 fold = 40 学習 |
 | group 設定 | 1 日 (288 bar) ごとに group_id (LambdaRank の query group) |
-| Entry 判定 | **予測強度上位 N% のみ実行** (N = 5/10/20 で grid search) |
+| Entry 0/1 化 | **予測強度上位 N% のみ実行** (N = 10 default・Phase 4-b-2 で N grid {5/10/20} 拡張) |
+| TP first 正解 (全案統一) | `triple_barrier_label_{LONG,SHORT}_K{K}` == +1 |
 | 根拠 | Stefan Jansen *Machine Learning for Algorithmic Trading* Ch.12-13 (Learning to Rank for trading) |
 
 ### §2.5 案 e (Triple Barrier multiclass・Layer 3 → Layer 1 前倒し)
 
 | 項目 | 内容 |
 |---|---|
-| 目的関数 | `objective='multiclass'` (num_class=3) |
-| ラベル | **`triple_barrier_label_LONG_K{K}` × K=7** (Phase 0 改修 v3.1 で生成済・+1/-1/0) + LONG/SHORT 統合学習 |
-| モデル数 | K=7 期間別 7 個 (K 別に分離学習・特徴量重要度比較用) |
-| Entry 判定 | TP first 確率 (+1) > 0.4 で買う |
+| 目的関数 | `objective='multiclass'` (num_class=3・+1/-1/0) |
+| ラベル | `triple_barrier_label_LONG_K{K}` × K={12,24,48,96} (4 ラベル) + `triple_barrier_label_SHORT_K{K}` × K={12,24,48,96} (4 ラベル) = **8 ラベル** (v5.1 で 8 組合せ拡張・LONG/SHORT 別モデル学習) (Phase 0 改修 v3.1 で生成済) |
+| モデル数 | 8 個 (K × LONG/SHORT 別) × 5 fold = 40 学習 |
+| Entry 0/1 化 | TP first 確率 (+1) > 0.4 で 1 |
+| TP first 正解 (全案統一・自己整合) | `triple_barrier_label_{LONG,SHORT}_K{K}` == +1 (本案ではラベル自体が正解と一致・対角線評価) |
 | 根拠 | Lopez de Prado *AFML* Ch.3 + mlfinpy (旧 mlfinlab open-source 代替・baobach/mlfinpy・AFML 直接実装) |
 
 ### §2.6 案 f (Meta-Labeling 2 段階・案 e 完了後 sequential)
 
 | 項目 | 内容 |
 |---|---|
-| Primary model | 案 e (Triple Barrier multiclass) の結果を流用 |
-| Secondary model | **「primary 予測の correctness」予測** = `meta_label_LONG_K{K}` (Phase 0 v3.1 で生成済・1/0) |
+| Primary model | 案 e (Triple Barrier multiclass) の K={12,24,48,96} × {LONG,SHORT} = 8 モデル予測を流用 |
+| Secondary model | **「primary 予測の correctness」予測** = `meta_label_LONG_K{K}` × 4 + `meta_label_SHORT_K{K}` × 4 = **8 ラベル** (Phase 0 v3.1 生成済・1/0) |
 | 目的関数 | `objective='binary'` (Secondary model) |
-| Entry 判定 | Primary が +1 予測 AND Secondary が「正解」予測 > 0.6 で買う |
+| モデル数 | 8 個 (K × LONG/SHORT 別) × 5 fold = 40 学習 |
+| Entry 0/1 化 | Primary が +1 予測 ∧ Secondary が「正解」予測 > 0.6 で 1 |
+| TP first 正解 (全案統一) | `triple_barrier_label_{LONG,SHORT}_K{K}` == +1 |
 | 期待効果 | **Precision 改善** + F1-score + Sharpe 向上 (Lopez de Prado AFML Ch.3) |
 
 ## §3 Walk-forward Purged K-Fold 5 fold 設計 (timeseriescv.PurgedWalkForwardCV 主用 + mlfinpy.cross_validation 補助)
@@ -219,28 +226,53 @@ for fold_idx, (train_idx, test_idx) in enumerate(cv.split(
 
 **Embargo の意義**: Triple Barrier ラベルは vertical barrier (K bar 後) まで価格推移を見るため、test fold の最後の K bar 分は train fold の最初の K bar 情報と overlap → information leakage。Embargo で防止。timeseriescv の `PurgedWalkForwardCV` は `pred_times` + `eval_times` を受け取り Purging を自動処理する設計 (mlfinlab `PurgedKFold` の `samples_info_sets` と同等)。
 
-**全 6 案 × 5 fold = 30 回学習** の物理証跡を完了報告に含める。
+**評価する K**: K=12 (1h) / K=24 (2h) / K=48 (4h) / K=96 (8h) の **4 K**・cc_ml_design_spec §1.6 の「8 組合せ = K=12/24/48/96 × LONG/SHORT」と整合 (v5.1 厳格化・旧版 K=12 単独例示を拡張)。各 K で `eval_times = index + K * 5min` を渡す。
 
-## §4 合格基準 5 指標 (cc_ml_design_spec §1.5.1 整合)
+**v5.1 学習総数 (8 組合せ評価)**:
+| 案 | モデル数 (K × side × MFE/MAE) | 5 fold | 計 |
+|---|---:|---:|---:|
+| a (regression) | 16 (LONG/SHORT × MFE/MAE × K=4) | 5 | **80** |
+| b (binary) | 8 (K=4 × LONG/SHORT) | 5 | **40** |
+| c (multiclass) | 4 (K=4・LONG/SHORT 同時) | 5 | **20** |
+| d (lambdarank) | 8 (K=4 × LONG/SHORT) | 5 | **40** |
+| e (triple_barrier multiclass) | 8 (K=4 × LONG/SHORT) | 5 | **40** |
+| f (meta_labeling binary) | 8 (K=4 × LONG/SHORT・案 e 後) | 5 | **40** |
+| **合計** | — | — | **260 学習** (旧 v5「30 学習」を訂正) |
 
-各案について 5 fold 平均値で判定:
+**全 6 案 × 4 K × LONG/SHORT 評価**の物理証跡を完了報告に含める。
+
+## §4 合格基準 5 指標 (cc_ml_design_spec §1.5.1 v5.1 整合)
+
+各案 × 各組合せ (K=12/24/48/96 × LONG/SHORT = 8 組合せ) について 5 fold 平均値で判定:
 
 | # | 指標 | 合格閾値 | 計算方法 |
 |---|---|---|---|
-| 1 | **entropy lift** | **> 10%** | `1 - valid_logloss / log(num_classes)` (各案の num_classes に応じて計算) |
-| 2 | **TP Precision** | **> 0.5** | TP first 予測の precision (案 a は MFE/MAE 比 ≥ 1.5 を TP first proxy) |
+| 1 | **entropy lift** | **> 10%** | `1 - valid_logloss / log(num_classes)` (各案の num_classes に応じて計算・案 a regression は NaN・aggregate skip) |
+| 2 | **TP Precision** | **> 0.5** | **TP first 正解 = `triple_barrier_label_{LONG,SHORT}_K{K}` == +1** (全案統一)・案ごとの 0/1 化ルールで予測を binarize して precision_score 計算 |
 | 3 | **Direction Accuracy** (案 c) | **> 0.55** | 案 c のみ・LONG/SHORT/Flat の方向当たり率 |
 | 4 | **Simulated PnL (12 ヶ月)** | 12 ヶ月中 8+ ヶ月プラス + 年間 NET ≥ $500 | naive Exit (TP 1% / SL 0.5% / TIME K bar) で簡易 Replay |
 | 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | 自前 DSR 実装 (Bailey + Lopez de Prado 2014 SSRN 2460551・mlfinpy/timeseriescv 未実装・scripts/priority_rebuild/dsr.py で実装・skew + kurtosis + 試行数補正) |
 
-### §4.1 合格判定ルール (Layer 3 投入条件厳格化・v5)
+### §4.1 合格判定ルール (Layer 3 投入条件厳格化・v5.1)
 
-- **6 案いずれか上記 5 指標 ALL PASS** → 採用案で Phase 2 進行
-- **6 案ベストでも 5 指標未達** → **即** Layer 3 残存タスク投入 (CPCV + Class balancing / Focal loss + custom loss + アルゴ多様化)
+- **6 案いずれか × 8 組合せ中 6+ 組合せで 5 指標 ALL PASS** → 採用案で Phase 2 進行 (cc_ml_design_spec §1.6 撤退ライン同構造)
+- **6 案いずれも 6+ 組合せ ALL PASS なし** → **即** Layer 3 残存タスク投入 (CPCV + Class balancing / Focal loss + custom loss + アルゴ多様化)
 - **「ベスト案で Phase 2 進行して判定」は禁止** (Phase 1 未達 → Phase 2 改善保証なし)
-- §1.6.1 メタルール整合: 実行後の基準緩和 (entropy lift > 5% 等) 禁止
+- **「K=12 LONG 1 組合せだけ合格」は禁止** (Phase 5 8 組合せ Replay の全月 $1,900 クリア要件と整合させるため)
+- cc_ml_design_spec §1.6.1 メタルール整合: 実行後の基準緩和 (entropy lift > 5% / 5+ 組合せで合格扱い等) 禁止
 
-## §5 リソース計画 (3 並列・30-45 GB)
+### §4.2 train/valid 乖離 warning (v5.1 追加・leak/overfit 補完層・L-179 教訓)
+
+各 fold 完了後に以下を warning ログ + completion report に記録 (sys.exit はせず実行継続):
+
+| # | 条件 | 意味 |
+|---|---|---|
+| W1 | `train_rmse / label_std < 0.10` | label leak 疑い (L-179 fractal leak 教訓) |
+| W2 | `valid_rmse > train_rmse * 3.0` | leak/overfit 疑い (regression 一般 overfit pattern) |
+
+phase_compliance_checklist §1.4 blacklist 3 段階 (top1-20 即停止 / top21-50 記録継続 / top51+ 通常) と併用。
+
+## §5 リソース計画 (3 並列・30-45 GB・v5.1 8 組合せで学習総数 260)
 
 ### §5.1 並列度
 
@@ -250,16 +282,19 @@ for fold_idx, (train_idx, test_idx) in enumerate(cv.split(
 | メモリ | 1 案 10-15 GB × 3 並列 = **30-45 GB** (通常 PC 32-64 GB で実現可能) |
 | 依存 | 案 f (Meta-Labeling) は案 e 完了待ち sequential |
 
-### §5.2 実行スケジュール
+### §5.2 実行スケジュール (v5.1・260 学習)
 
 ```
-[Fold 0] 並列 3: a, b, c → 約 100 分 (a がボトルネック)
-[Fold 0] 並列 3: d, e, (idle) → 約 60 分
-[Fold 0] sequential: f → 約 60 分
-[Fold 0 total]: 約 220 分 ≈ 4 時間
+v5 (旧・30 学習) は K=12 LONG 単独評価想定で約 20 時間。
+v5.1 (新・260 学習) は K=12/24/48/96 × LONG/SHORT = 8 組合せ評価で約 1.5-2x。
 
-[Fold 1-4 同様] × 4 = 約 16 時間
-[全 5 fold total]: 約 20 時間 (約 1 日)
+[Fold 0] 並列 3: a (16 model), b (8 model), c (4 model) → 約 150-180 分
+[Fold 0] 並列 3: d (8 model), e (8 model), (idle) → 約 90 分
+[Fold 0] sequential: f (8 model) → 約 90 分
+[Fold 0 total]: 約 330-360 分 ≈ 5.5-6 時間
+
+[Fold 1-4 同様] × 4 = 約 22-24 時間
+[全 5 fold total]: 約 28-30 時間 (約 1.2 日)
 ```
 
 ### §5.3 Phase 1 期間 (3-4 週)
@@ -268,7 +303,7 @@ for fold_idx, (train_idx, test_idx) in enumerate(cv.split(
 |---|---|
 | ラベル設計 + データ準備 (Phase 0 v3.1 完了後) | 約 1 週 |
 | 6 案実装 (run_lgbm_phase1_v5_case_*.py + purged_kfold runner) | 約 1-2 週 |
-| 学習実行 (上記 20 時間) | 約 1 日 |
+| 学習実行 (約 28-30 時間・v5.1 8 組合せ) | 約 1.2 日 |
 | CP2 監査 + 結果分析 | 約 1 週 |
 | **合計** | **約 3-4 週** |
 
