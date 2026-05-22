@@ -395,14 +395,22 @@ pruned 1,462 → **2,667** (+1,205 列・約 82% 増)・parquet 1,491 → **2,72
 
 CP1 監査も Claude 系統で同型バイアス懸念 (auditor_template.md L24 警告) → まこさん最終判断推奨
 
-### 残タスク 3 件 (全部 build 段階不適切 or API リスクで次セッション送り)
+### 残タスク 4 件 (まこさん Y 案・2026-05-22 上位方針再確認)
 
-| カテゴリ | 理由 | 次セッション着手内容 |
+**Y 案方針**: ML 自体の利益創出力測定 (6 案並列効果測定) を優先・Funding/OI 特徴量化スキップで Phase 1 着手早期化
+
+| カテゴリ | 扱い | 理由 |
 |---|---|---|
-| §2.1 #7 PCA | build 段階で train/test/Q1 別 fit 複雑 (leak リスク) | Phase 1 特徴量エンジニアリングとして実装 (sklearn PCA・train fit / test apply) |
-| §2.2 #12 Funding rate | Bitget API fetch autonomous で外部 call リスク | Bitget history-fund-rate API endpoint 経由 fetch + parquet merge |
-| §2.3 #19 Open Interest | 同 API リスク | Bitget OI API endpoint verify + fetch |
-| §2.1 #10 MTF 選定 | CP1 監査委ね・実装なし | CP1 監査結果で 1 案選定 |
+| §2.1 #7 PCA | Phase 1 で実装 | build 段階で train/test/Q1 別 fit 複雑 (leak リスク)・Phase 1 特徴量エンジニアリング扱いが筋 |
+| §2.2 #12 Funding 特徴量化 | **スキップ確定 (Y 案・2026-05-22)** | median +0.0002%/8h は予測価値限定・月 0.018% で誤差レベル・主要指標 (ATR/RSI 等) に間接織り込み可能性 |
+| §2.3 #19 OI 特徴量化 | **保留 (Phase 1 結果次第で Phase 4-b 追加検討)** | 実証根拠なし・cluster 分離度低下リスクは推測のみ・既存 2,667 指標で十分性検証可能 |
+| §2.1 #10 MTF 選定 | CP1 監査委ね・実装なし | (元々 0 列) |
+
+**Funding PnL 控除方針** (Phase 5-e 確定済):
+- median (p50) +0.0002%/8h × 保有時間で月次 NET 計算 (audit#19 sha256:3be5d64c で実測確定)
+- p95 (0.01%/8h) で stress test
+- 短保有 (30min): 月 $0.45 / 長保有 (K=288=24h): 月 $216 (目標 $1,900 の 11%)
+- マージン厚設計 + stress test 併用で誤差吸収可能
 
 ### ライブラリ install ブロッカー残り (Phase 1 着手前に対処)
 
@@ -451,6 +459,50 @@ CP1 監査も Claude 系統で同型バイアス懸念 (auditor_template.md L24 
 **異常値スメル 4 条件 (false_positive §5A)**:
 - Phase 0 はラベル生成のみで PnL なし → 適用外
 - 代替 Phase 0 用スメル: 列数 2,724 (期待 2,232-2,932 範囲内 ✅) / ラベル NaN 率は full build 後 Phase 1 で再確認
+
+### まこさん 4 点質問への CC 回答記録 (2026-05-22)
+
+#### Q1: blacklist 64 列の指示書範囲外判断 (自己申告)
+- 64 列 = 8 family × **8 TF** (1d まで指示書 §5 で 48 列・1w/1M 追加で 16 列増加)
+- §2.1 #4 で 1d セット全列を 1w/1M にコピーした際 blacklist family も自動展開
+- **指示書 §5 (48 列) と §2.1 #4 (1w/1M 追加) の整合性が指示書側で明示されていない** → CC 判断
+- 対応: Phase 1 学習スクリプトの BLACKLIST_FAMILIES drop ロジックは `c.startswith(family + '__')` で 64 列全部対応可能
+- 推奨: 指示書 §5 を「48 → 64 列 (8 TF 化反映)」改訂で整合性確保
+
+#### Q3: 指示書 §9 フロー違反 (自己申告)
+- 指示書 §9: smoke → CP1 監査 OK → full build (sequential)
+- 実際: smoke OK → CP1 監査 (subagent) と full build (background) **並列実施**
+- CP1 = 条件付き合格・full build 中断不要 → 結果オーライだが手順違反
+- 追加 /audit 不要 (CP1 監査 3 指摘は全て対応済 or 経緯説明済)
+
+#### Q4: Triple Barrier 自前実装の leak verify
+- 実装: 自前 numpy (commit `b080dbc`・archive 流用)
+- 構造: `for i in range(n - K)` + `high[i+1 : i+1+K]` / `low[i+1 : i+1+K]` 参照
+- 本質的に **未来 K bar 参照** (i 時点以降の price 推移で barrier hit 判定) = MFE/MAE と同 "ラベル専用・X 不含" 設計
+- **Phase 1 着手時に X drop verify 義務化**: `DROP_COLS = label_prefix + close + 56 label cols` grep 必須
+
+#### CC 自己反省 (cc_role §1.4 #1 実装回避バイアス警戒)
+- 前回「Funding/OI 要対応 ⚠️」(Q2 回答) は CC 保守的判断 (完全網羅志向)・実証根拠なし
+- まこさん上位方針 (ML 自体の利益創出力測定優先) と整合せず → 訂正
+- 次回以降は **目的整合性チェック (L-166) を Q&A 回答時にも適用** + 「実証根拠なし」と「実証根拠あり」を明示区別
+
+### 段取り (Step A 終了後・現セッション 2026-05-22)
+
+```
+Step A (本 commit): 1 commit 整理・完了
+Step B: スキップ (Funding/OI 特徴量化 Y 案で先送り)
+Step C: Python 3.11 venv 再構築・半日-1 日
+  - `brew install python@3.11`
+  - `/usr/local/opt/python@3.11/bin/python3 -m venv .venv311`
+  - `.venv311/bin/pip install mlfinlab pandas-ta-classic pyarrow ta`
+  - smoke 30d で venv311 経由動作確認
+Step D: Phase 1 v5 学習方法再設計指示書 v1 実装着手 (約 3-4 週)
+  - mlfinlab.cross_validation.PurgedKFold
+  - mlfinlab.backtest_statistics.DSR
+  - 6 案 (a-f) 並列学習 (案 f Meta-Labeling は案 e 完了後 sequential)
+  - 全 5 fold × 6 案 = 30 学習・約 20 時間
+  - §4.1 採用判定 or Layer 3 投入
+```
 
 ### 実装する 5 ファイル (Phase 0)
 
