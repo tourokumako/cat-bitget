@@ -16,33 +16,33 @@
 ## Phase -1 (Phase 0 着手前 verify・2026-05-19 追加)
 
 価格非依存性 #4 (USD 絶対値系 feature blacklist) の機械的固定リスト。
-build_labels_pct.py で生成された parquet の指標列 1,462 から、Phase 1 学習スクリプトが本リストの 48 列を drop してから学習する義務。
+build_labels_pct.py で生成された parquet (Phase 0 v3.1 で 2,724 列・実測) から、Phase 1 学習スクリプトが本リストの 64 列 (1w/1M MTF 拡張で 48 → 64) を drop してから学習する義務。
 
-### USD 絶対値系 blacklist (確定 48 feature)
+### USD 絶対値系 blacklist (確定 64 feature・8 family × 8 TF・2026-05-22 1w/1M MTF 拡張で 48 → 64)
 
 | ファミリー (base 名) | 計算式 / 単位 | TF 数 | 代替 pct 指標 (既存・追加後) |
 |---|---|---:|---|
-| `sma_20` | `c.rolling(20).mean()` (絶対 USD) | 6 | `close_vs_sma20_pct` (既存) |
-| `sma_50` | `c.rolling(50).mean()` (絶対 USD) | 6 | `close_vs_sma50_pct` (既存) |
-| `ichimoku_kijun` | `(26h_max+26l_min)/2` (絶対 USD) | 6 | `close_vs_kijun_pct` (既存) |
-| `ichimoku_tenkan` | `(9h_max+9l_min)/2` (絶対 USD) | 6 | `close_vs_tenkan_pct` (2026-05-19 追加) |
-| `macd_line` | EMA12-EMA26 (USD scale) | 6 | `macd_line_pct = macd_line/c*100` (2026-05-19 追加) |
-| `macd_signal` | macd_line の EMA9 (USD scale) | 6 | `macd_signal_pct = macd_sig/c*100` (2026-05-19 追加) |
-| `macd_hist` | macd_line - macd_signal (USD scale) | 6 | `macd_hist_pct = macd_hist/c*100` (2026-05-19 追加) |
-| `macd_hist_change` | macd_hist.diff(1) (USD scale) | 6 | `macd_hist_change_pct` (2026-05-19 追加) |
-| **合計** | | | **48 件除外** + 30 件 pct 追加 |
+| `sma_20` | `c.rolling(20).mean()` (絶対 USD) | 8 | `close_vs_sma20_pct` (既存) |
+| `sma_50` | `c.rolling(50).mean()` (絶対 USD) | 8 | `close_vs_sma50_pct` (既存) |
+| `ichimoku_kijun` | `(26h_max+26l_min)/2` (絶対 USD) | 8 | `close_vs_kijun_pct` (既存) |
+| `ichimoku_tenkan` | `(9h_max+9l_min)/2` (絶対 USD) | 8 | `close_vs_tenkan_pct` (2026-05-19 追加) |
+| `macd_line` | EMA12-EMA26 (USD scale) | 8 | `macd_line_pct = macd_line/c*100` (2026-05-19 追加) |
+| `macd_signal` | macd_line の EMA9 (USD scale) | 8 | `macd_signal_pct = macd_sig/c*100` (2026-05-19 追加) |
+| `macd_hist` | macd_line - macd_signal (USD scale) | 8 | `macd_hist_pct = macd_hist/c*100` (2026-05-19 追加) |
+| `macd_hist_change` | macd_hist.diff(1) (USD scale) | 8 | `macd_hist_change_pct` (2026-05-19 追加) |
+| **合計** | | | **64 件除外** (8 family × 8 TF・2026-05-22 1w/1M 追加で +16) + 30 件 pct 追加 |
 
 ファイル名規則: `{base}__{tf}` 形式。例: `sma_20__5m`, `macd_line__1h` 等。
 
 ### 学習対象 feature 数
 
 - pruned_column_list.json 期待集合: **1,462** (旧 1,432 + 30 pct 追加)
-- blacklist drop 後の Phase 1 学習対象: **1,462 - 48 = 1,414 feature**
+- blacklist drop 後の Phase 1 学習対象: **2,724 (Phase 0 v3.1 後) - 56 ラベル - 64 blacklist = 2,604 feature** (旧 Phase 0 v3 時点は 1,414)
 
 ### Phase 1 学習スクリプト側の verify 義務
 
 - 学習開始前に Phase -1 blacklist リストを load し、`X = df.drop(columns=BLACKLIST_COLS)` を実行
-- 完了報告で「blacklist drop 件数 = 48」「学習対象 feature 数 = 1,414」を明示
+- 完了報告で「blacklist drop 件数 = 64」「学習対象 feature 数 = 2,604」を明示
 - feature_importance top20 に blacklist 由来 (sma_20, sma_50, ichimoku_kijun, ichimoku_tenkan, macd_line, macd_signal, macd_hist, macd_hist_change) のいずれかが混入 → 即 STOP・blacklist drop 漏れとして調査
 
 ### 経緯
@@ -52,6 +52,7 @@ build_labels_pct.py で生成された parquet の指標列 1,462 から、Phase
 - 学習期間 ($30k-$60k) と本番期間 ($100k-$150k) の BTC 価格レンジ乖離により、絶対値ベースの決定木分岐 (`sma_20 > $48,000` 等) は本番で機能しないことが明確
 - 除外のみだと macd 系の情報落ち → pct 化で情報保持しつつ価格非依存性を満たす設計
 - ichimoku_kijun は `close_vs_kijun_pct` が既存だったが、ichimoku_tenkan / macd 系 4 つは pct 版なし → 5 ファミリー × 6 TF = 30 件を新規追加
+- **2026-05-22 Phase 0 v3.1 改修**: §2.1 #4 で 1w/1M MTF 拡張時に 1d セット全列をコピー → blacklist 8 family も自動展開 → 48 列 (6 TF) → 64 列 (8 TF) に拡大 (L-202 Q1 自己申告反映)
 
 ### Step 5 leak verify 結果 (2026-05-19 完了・全パターン clear)
 

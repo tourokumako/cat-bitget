@@ -80,22 +80,22 @@ print(f'mlfinlab version: {mlfinlab.__version__}')
 print('PurgedKFold + DSR import OK')
 "
 
-# (3) Phase -1 blacklist 48 列 verify (Phase 1 学習で drop 義務)
+# (3) Phase -1 blacklist 64 列 verify (Phase 1 学習で drop 義務・1w/1M MTF 拡張で 48 → 64 列)
 python -c "
 BLACKLIST_FAMILIES = ['sma_20', 'sma_50', 'ichimoku_kijun', 'ichimoku_tenkan',
                        'macd_line', 'macd_signal', 'macd_hist', 'macd_hist_change']
 import pandas as pd
 df = pd.read_parquet('results/priority_rebuild/labels_mfe_mae_pct_train_2021_2024.parquet')
 blacklist_cols = [c for c in df.columns if any(c.startswith(f + '__') for f in BLACKLIST_FAMILIES)]
-print(f'Blacklist columns to drop: {len(blacklist_cols)} (expected 48)')
+print(f'Blacklist columns to drop: {len(blacklist_cols)} (expected 64)')
 "
 ```
 
 **期待**:
 - 56 ラベル列存在 (28 MFE/MAE + 28 Triple Barrier/Meta)
-- 総列数 約 2316-3016
+- 総列数 2,724 (実測・指示書 §0-2 で +1,205 列 = 2,667 + Triple Barrier 28 + meta 28 + α)
 - mlfinlab 1.6.0+ インストール済
-- Blacklist 48 列存在 (Phase 1 で drop)
+- Blacklist 64 列存在 (Phase 1 で drop・8 family × 8 TF・1w/1M MTF 拡張で 48 → 64)
 
 ---
 
@@ -291,7 +291,7 @@ print(f'Label columns (must NOT be in X): {len(label_cols)} (expected 56)')
 # Triple Barrier vertical barrier (K bar) が test fold に侵入する train サンプルを除外
 # mlfinlab.cross_validation.PurgedKFold が自動処理 (パラメータ samples_info_sets で t1 渡す必要)
 
-# (3) Phase -1 blacklist 48 列 drop verify (case_*.py 全部で実施)
+# (3) Phase -1 blacklist 64 列 drop verify (case_*.py 全部で実施)
 grep -nE "BLACKLIST_FAMILIES|drop.*sma_20|drop.*ichimoku_kijun" scripts/priority_rebuild/run_lgbm_phase1_v5_*.py
 # 期待: 全 6 案で blacklist drop コード存在
 ```
@@ -336,7 +336,7 @@ verify FAIL → false_positive §2 類型 A (look-ahead leak) として STOP・�
 監査依頼内容 (7 項目):
 (1) Purged K-Fold 5 fold の Embargo 設定妥当性 (Triple Barrier vertical barrier との整合)
 (2) DSR (Deflated Sharpe Ratio) 計算の Selection bias 補正妥当性 (試行数記録 + 100+ grid 試行)
-(3) 6 案間の比較妥当性 (各案で同じ Phase -1 blacklist 48 列 drop + 同じ Purged K-Fold split)
+(3) 6 案間の比較妥当性 (各案で同じ Phase -1 blacklist 64 列 drop + 同じ Purged K-Fold split)
 (4) 合格基準 5 指標の判定厳格性 (5 指標 ALL PASS = 1 件でも未達 → 不合格・§1.6.1 メタルール整合)
 (5) Meta-Labeling 2 段階の leak 不在 (Primary 予測を Secondary 学習に使う際の future-look 検証)
 (6) Phase 1-c smoke entropy lift 6.04% との比較 (v5 で >10% 達成可能か・案別)
@@ -361,7 +361,7 @@ verify FAIL → false_positive §2 類型 A (look-ahead leak) として STOP・�
 ### ガード A: §0-1 Prime Directive (false_positive §0-1)
 
 Phase 1 学習で使う全変数について「本番運用の推論時点 t で因果的に取得可能か」1 行ずつ宣言:
-- 特徴量 X: Phase 0 で生成された 約 2200-2900 列 - blacklist 48 = 約 2152-2852 列 (全部 t 時点で取得可能・leak フリー)
+- 特徴量 X: Phase 0 で生成された 2,724 列 (実測) - blacklist 64 = 2,660 学習対象列 (全部 t 時点で取得可能・leak フリー)
 - ラベル y: 56 ラベル列のいずれか (案別に選択・**学習で X に含めない**)
 - Walk-forward CV split: PurgedKFold が train_idx/test_idx を分離 + Embargo で leak 防止
 
