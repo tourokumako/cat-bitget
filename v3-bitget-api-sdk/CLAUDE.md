@@ -121,23 +121,40 @@
 
 ---
 
-## セッション開始時に必ず読むこと
+## セッション開始時に必ず読むこと (3 層構造・2026-05-22 改訂22)
 
-| ファイル | 内容 |
-|---------|------|
-| `bitget-python-sdk-api/WORKFLOW.md` | 現在の状態・次のタスク（**唯一の正本**・現在は **⛔ Phase 1〜7-a leak で無効化**警告ブロックあり）|
-| `bitget-python-sdk-api/.claude/instructions/handoff_to_cc_v19_session_20260521.md` | **【最新 handoff・宛先 CC】** 2026-05-21 ML 設計担当 Web Claude → CC 完全移譲 / Phase 1-c smoke NO-GO / Entry/Exit 両側学習方法改善議論 / CC 同型バイアス 5 件記録 |
-| `bitget-python-sdk-api/.claude/rules/cc_role.md` | **【最重要・CC 役割定義】** CC = 実装担当 + ML 設計担当兼務 (2026-05-21 移譲)・思考プロセス・対話プロトコル・標準フロー (2026-05-21 新規作成) |
-| `bitget-python-sdk-api/.claude/rules/web_claude_role.md` | Web Claude = 機械照合担当 (2026-05-21 降格・冒頭ブロック必読)・旧 ML 設計担当時の参考記述 |
-| `~/.claude/projects/.../memory/feedback_ml_leak_mandatory_check.md` | **【最重要】ML 系作業前の leak 4 点チェック必須** (L-179・2026-05-13 fractal j±2 未来参照事案) |
-| `bitget-python-sdk-api/results/priority_rebuild/leak_incident_20260513.md` | Leak 全 14 件ミス記録 + 防止策 (新セッション再開前に必読) |
-| `bitget-python-sdk-api/.claude/memory/lessons_active.md` | 過去の失敗・再発防止（**L-179 最新 + L-159〜L-166 重点** + 常時参照） |
-| `bitget-python-sdk-api/.claude/memory/lessons_archive.md` | L-102以前のアーカイブ（必要時のみ） |
-| `bitget-python-sdk-api/.claude/rules/exchange_spec.md` | Bitget USDT-FUTURES スペック正本 (手数料・最小単位・Funding時刻・メンテ時間) |
-| `bitget-python-sdk-api/.claude/memory/signal_ledger.md` | シグナル候補・検証実績（参考・regime マッピングは凍結中） |
-| `bitget-python-sdk-api/.claude/memory/regime_research.md` | 🧊 **凍結中**（素材として参照のみ・新規調査禁止） |
-| `bitget-python-sdk-api/.claude/rules/false_positive_incident_policy.md` | **【最重大・CC/Web Claude 共通正本】虚偽達成・虚偽報告インシデント方針** — 類型 A〜H・発見時強制手順・防止関所 7 つ（2026-05-15 制定） |
-| `bitget-python-sdk-api/.claude/rules/web_claude_self_check.md` | **読了ゲート・チェック A/B/C** (2026-05-21 以降 CC が ML 設計担当として継承使用・冒頭注記参照) |
+> ⚠️ **L-200 / L-204 警告**: system reminder で auto-load されるファイル (本 CLAUDE.md / WORKFLOW.md / cc_role.md / web_claude_self_check.md / false_positive_incident_policy.md / exchange_spec.md / phase_compliance_checklist.md) も、**Read tool で全文 view + 機械的証跡 (wc -l + 0/25/50/75/100% 引用 + 1 行要約)** を Step 0 で取り直すこと。「system reminder で表示されている = 読了済」と内部処理する違反は L-200 / L-204 で禁止。
+
+### Layer 1 — 毎セッション必読 (~700 行・読了ゲート機械的証跡対象)
+
+| ファイル | 内容 | 取得方法 |
+|---------|------|------|
+| `bitget-python-sdk-api/WORKFLOW.md` | 現フェーズ・次のタスク (改訂N active ブロック・履歴は archive) | Read 全文 |
+| `v3-bitget-api-sdk/CLAUDE.md` (本ファイル) | 提案禁止・目標・必読リスト・セッション終了チェック | Read 全文 |
+| `bitget-python-sdk-api/.claude/instructions/handoff_to_cc_v*_session_*.md` の **最新 vN** | 前セッション引き継ぎ。最新取得コマンド: `find .claude/instructions -name 'handoff_to_cc_v*_session_*.md' \| sort -V \| tail -1` | Read 全文 |
+| `bitget-python-sdk-api/.claude/memory/lessons_active.md` **直近 5 件のみ** (現時点: L-204〜L-200) | 最新教訓・本セッション着手前に読む | Read 先頭 ~300 行のみ |
+
+### Layer 2 — タスク特有 (該当タスク時のみ精読)
+
+| タスク | 読むファイル |
+|---|---|
+| ML 学習着手 (Phase 1 等) | `cc_ml_design_spec.md` + `.claude/memory/learning_design_v4.md` (内容は v5 化済) + `~/.claude/projects/.../memory/feedback_ml_leak_mandatory_check.md` + `results/priority_rebuild/leak_incident_20260513.md` |
+| Phase 着手 (各 Phase 共通) | `bitget-python-sdk-api/.claude/rules/phase_compliance_checklist.md` の該当 Phase 行 + `bitget-python-sdk-api/phase_flow_v4_with_recovery.md` (ML 学習〜リリースまでの全フロー詳細・977 行) |
+| 重大設計判断・指示書発行・完了報告受領 | `cc_role.md` §1.5/§1.6/§1.7 + `web_claude_self_check.md` チェック A/B/C |
+| 取引所スペック引用 | `bitget-python-sdk-api/.claude/rules/exchange_spec.md` (audit#19 確定値) |
+| 監査依頼 (`/audit`) | `bitget-python-sdk-api/.claude/rules/auditor_template.md` |
+| テクニカル指標・閾値設計判断 | `bitget-python-sdk-api/technical_analysis_knowledge_base.md` (本プロジェクト製テクニカル辞典・§A-D 個別 + §I 閾値設計論・1691 行) |
+| 23 軸深掘り (ML 設計判断時) | `CAT−指標マトリックス__一覧.csv` (1962 行・古い情報混在・参照のみ・23 軸構成要素カタログ) |
+| シグナル設計 | `bitget-python-sdk-api/.claude/memory/signal_ledger.md` (regime マッピングは凍結) |
+
+### Layer 3 — リファレンス (検索 + 引用 verify)
+
+| ファイル | 用途 |
+|---|---|
+| `bitget-python-sdk-api/.claude/rules/false_positive_incident_policy.md` | 類型 A-H・関所 A-G・§0-1 Prime Directive / §0-2 0.12 BTC 合計厳守 (本ファイル §⛔ にダイジェスト統合済・引用時のみ本体 verify) |
+| `bitget-python-sdk-api/.claude/memory/lessons_archive.md` | 古い lessons archive (必要時のみ・Layer 1 で L-204〜L-200 が読了済なら基本不要) |
+| `bitget-python-sdk-api/.claude/rules/web_claude_role.md` | Web Claude (機械照合担当・降格) 冒頭注記のみ参照・本体は archive 参照 |
+| `bitget-python-sdk-api/.claude/memory/regime_research.md` | 🧊 凍結中・素材参照のみ |
 
 ---
 

@@ -299,9 +299,59 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-22 改訂21・**Step C 完了** + Phase 1 v5 指示書 mlfinpy 切替 + Step D 着手準備完了）
+## 🔴 現在のフェーズ（2026-05-22 改訂22・**Step D 優先 1 (dsr.py) 完了** + 必読リスト 3 層構造化 + lessons L-204 追加 + 履歴 archive 移送）
 
-> **【現在の正本ブロック・改訂21・2026-05-22 セッション末】**
+> **【現在の正本ブロック・改訂22・2026-05-22 セッション末】**
+>
+> ### 本セッション (改訂21 同日後半) 完了事項
+>
+> #### 1. Step D 優先 1 完了 (commit `5918456`・dsr.py 自前実装)
+> - `scripts/priority_rebuild/dsr.py` (204 行・paper Eq. 5/9 paper-faithful 実装)
+> - `scripts/priority_rebuild/test_dsr.py` (204 行・10/10 PASS)
+> - Bailey + Lopez de Prado 2014 (SSRN 2460551) 実装
+> - 公開 API: `compute_dsr_from_returns` / `compute_dsr_from_stats` / `expected_max_sharpe` / `sigma_sr_estimate` / `sharpe_ratio`
+> - **両形式出力**: `dsr_zscore` (cc_ml_design_spec §1.5.1「DSR > 1.0」整合) + `dsr_probability` (paper-canonical・CDF 適用後・[0,1])
+> - excess kurtosis 採用 (scipy.stats.kurtosis(fisher=True) 整合)
+> - **重大発見**: marti.ai 2018 検証データ 0.8997 は paper 数式から再現不可と判定 (paper-faithful 正解 p ≈ 1.0・記事の手計算誤り)
+>
+> #### 2. ドキュメント整理 (3 層構造化・本セッション末)
+> - **WORKFLOW.md 履歴**: 改訂20-15 ブロック (313 行) を `archive/workflow/WORKFLOW_archive_20260522.md` 移送 (672 → 369 行・-45%)
+> - **lessons_active.md**: L-152〜L-99 (約 1000 行) を `lessons_archive.md` 移送 (2099 → 1141 行・-46%)
+> - **web_claude_role.md**: 本体 (477 行) を `.claude/rules/archive/web_claude_role_v3.1_20260522.md` 移送・参照スタブ化 (35 行)
+> - **CLAUDE.md 必読リスト 3 層構造化**: Layer 1 (毎セッション必読 ~700 行) / Layer 2 (タスク特有) / Layer 3 (リファレンス) に分離・handoff バージョン hardcode 撤廃 (find で最新取得運用)
+> - **3 追加資料 Layer 2 組み込み** (まこさん指示): `phase_flow_v4_with_recovery.md` (ML 学習〜リリース全フロー・977 行) / `technical_analysis_knowledge_base.md` (テクニカル辞典・1691 行) / `CAT−指標マトリックス__一覧.csv` (23 軸深掘り資料・1962 行)
+>
+> #### 3. lessons L-204 追加
+> - system reminder で auto-load される正本を Read せず「読了済」と内部処理 (L-200 関所 F 違反同型)
+> - handoff バージョン hardcode 不整合 (L-181 同型違反)
+> - 3 経路で固定化: ① Step 0 機械的証跡を system reminder ファイルにも適用 / ② find で最新 handoff 取得 / ③ 必読 3 層構造化で負荷軽減
+>
+> ### 次セッション CC 優先順位 (Step D 優先 2 着手)
+>
+> 1. **優先 1**: Phase 1 v5 §6 実装手順 Step 2 以降 (約 3-4 週間)
+>    - `run_phase1_v5_purged_kfold.py` (共通 CV runner・timeseriescv.PurgedWalkForwardCV 主用)
+>    - case_a (14 ラベル RMSE) / case_b (Binary) / case_c (Multiclass) / case_d (LambdaRank) / case_e (Triple Barrier・mlfinpy) / case_f (Meta-Labeling・mlfinpy)
+>    - **dsr.py 統合** (sr_variance 集約は 100+ grid 試行記録から計算)
+>    - smoke test (Fold 0・1-2 ヶ月・1 時間以内)
+>    - CP2 監査 (`/audit` 経由・7 項目)
+>    - full 5 fold × 6 案 = 30 学習 (約 20 時間・3 並列・30-45 GB)
+>    - §4.1 採用判定 or Layer 3 投入
+> 2. **優先 2 (将来)**: Phase 4-b 設計再 audit / Phase 5/6/7 統合 / OI 特徴量化
+>
+> ### 引き継ぎリソース (新セッション Step 0 で必読)
+>
+> - **handoff v24** (本セッション末作成) — Step D 優先 1 完了 + 整理 + Step D 優先 2 着手詳細
+> - **lessons_active.md L-204 (最新)** — system reminder 鵜呑み + handoff hardcode 不整合 (本セッション学習)
+> - **dsr.py + test_dsr.py** (`scripts/priority_rebuild/`・commit `5918456`)
+> - **Phase 1 v5 指示書** (`.claude/instructions/2026-05-22_phase1_layer_inversion_instruction.md`・440 行・mlfinpy 切替版)
+> - **.venv311 環境** (Step C 完了・mlfinpy + timeseriescv + scikit-learn + lightgbm + scipy + 依存全 install 済)
+> - **parquet 3 種** (`results/priority_rebuild/labels_mfe_mae_pct_{train_2021_2024,test_2025,test_2026_q1}.parquet`)
+
+---
+
+> ### 🧊 改訂21 ブロック (履歴・参照用)
+
+> **【旧正本ブロック・改訂21・2026-05-22 セッション末】**
 >
 > ### 本セッション (改訂20 セッション → 同日継続) 完了事項
 >
@@ -356,317 +406,14 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-> ### 🧊 改訂20 ブロック (履歴・参照用)
 
-> **【旧正本ブロック・改訂20・2026-05-22 セッション末】**
->
-> ### 本セッション (改訂19 セッション → 同日継続 autonomous) 完了事項
->
-> #### 1. Phase 0 改修 v3.1 全工程完了 (Step 1-5・累計 22 commit)
->
-> - **Step 1 (commit `e9a5822`)**: build_triple_barrier_labels.py archive 移動
-> - **Step 2 (commit `ba627d9`)**: L-196 メンテフラグ削除 4 ファイル一括
-> - **Step 3 (commit `b080dbc`)**: build_labels_pct.py に compute_triple_barrier_labels() 統合・28 Triple Barrier ラベル追加
-> - **Step 4 16/20 カテゴリ完了** (commit `3bc24c1` 〜 `1bb304e`・8 commit・pruned 1,462 → 2,667 +1,205 列):
->   - §2.1: #1 A-1 欠損補完(+53) / #2 発振系(+18) / #3 業界カタログ ta library 13(+104) / #4 1w/1M MTF(+510) / #5 TF 欠落補完(+48) / #6 Fractional differentiation 自前(+64) / #8 A-3 パラメータ並列(+96) / #9 cat_v9 共通フィルタ(+72) / #11 Divergence bool(+36)
->   - §2.2: #13 BB Squeeze(+30) / #14 SMC 手書き簡略(+40) / #15 Chandelier Exit(+12) / #16 Fib Extension(+18)
->   - §2.3: #17 Supply/Demand(+24) / #18 KDJ J 線(+18) / #20 Candlestick 62 種(+62)
-> - **Step 5-a smoke 90d**: 5m26s・assert 2,667 完全一致
-> - **Step 5-b CP1 監査 (commit `bb29e89`)**: 条件付き合格・3 指摘対応済
-> - **Step 5-c full build (4h18m)**: parquet 3 種生成
->   - train 2021-04〜2024-12: 394,561 行 / 1.60 GB / sha256 `e071110c...`
->   - test 2025: 105,120 行 / 0.47 GB / sha256 `7f1b6b35...`
->   - test 2026 Q1: 25,631 行 / 0.11 GB / sha256 `a7541917...`
-> - **Step 5-d 完了報告 (commit `c23af9e`)**: leak verify §7 4 点全 pass + timestamp 分離 verify pass
->
-> #### 2. Y 案確定 (commit `ae22ce1`・まこさん上位方針再確認)
->
-> ML 自体の利益創出力測定 (6 案並列効果測定) を Phase 1 で優先・Funding/OI 特徴量化スキップで Phase 1 着手早期化:
-> - **§2.2 #12 Funding 特徴量化: スキップ確定** (median 0.0002%/8h は予測価値限定・月 0.018% で誤差レベル)
-> - **§2.3 #19 OI 特徴量化: 保留** (Phase 4-b で結果次第追加検討)
-> - **§2.1 #7 PCA**: Phase 1 特徴量エンジニアリングで実装 (sklearn・train fit / test apply・leak フリー)
-> - **§2.1 #10 MTF 選定**: CP1 委ね・実装なし
-> - Funding PnL 控除: median +0.0002%/8h × 保有時間 (Phase 5-e で確定済方針)
->
-> #### 3. CC 自己申告 3 件 + 自己反省 (lessons L-202 追加)
->
-> - **Q1 (blacklist 48 → 64 列)**: §2.1 #4 1w/1M 追加で自動展開・指示書 §5 範囲外判断 (指示書 §5 改訂推奨)
-> - **Q3 (指示書 §9 フロー違反)**: CP1 監査と full build を並列実施・sequential 規定違反・結果オーライ
-> - **Q4 (Triple Barrier 自前実装)**: mlfinlab Python 3.13 wheel なし → 自前実装・ラベル専用設計・Phase 1 で X drop verify 義務化
-> - **CC 自己反省**: 前回 Q2「Funding/OI 要対応 ⚠️」は CC 保守判断・実証根拠なし・まこさん上位方針優先順位を見失った (lessons L-202)
->
-> ### 次セッション CC 優先順位
->
-> 1. **優先 1 (Step C)**: Python 3.11 venv 再構築・半日-1 日
->    - `brew install python@3.11`
->    - `/usr/local/opt/python@3.11/bin/python3 -m venv .venv311`
->    - `.venv311/bin/pip install mlfinlab pandas-ta-classic pyarrow ta`
->    - smoke 30d で venv311 経由動作確認
-> 2. **優先 2 (Step D)**: Phase 1 学習方法再設計指示書 v1 実装着手 (約 3-4 週間)
->    - 6 案並列学習 (a 14 ラベル RMSE / b Binary / c Multiclass / d Ranking LambdaRank / e Triple Barrier multiclass / f Meta-Labeling)
->    - Walk-forward Purged K-Fold 5 fold (mlfinlab.cross_validation)
->    - DSR (Deflated Sharpe Ratio・Bailey + Lopez de Prado 2014) 採用
->    - 全 5 fold × 6 案 = 30 学習 (約 20 時間)
->    - §4.1 採用判定 or Layer 3 投入
-> 3. **優先 3 (将来)**: Phase 4-b 設計再 audit / Phase 5/6/7 統合 / OI 特徴量化 (Phase 4-b 結果次第)
->
-> ### 引き継ぎリソース (新セッション Step 0 で必読)
->
-> - **handoff v22 §7** (最新) — autonomous 進捗 + Step A 完了 + Y 案 + 自己申告 3 件 + 段取り
-> - **lessons_active.md L-202** — CC 完全網羅志向 + 指示書フロー並列実施手順違反 (本セッション学習)
-> - **lessons_active.md L-201** — WebSearch 能動活用 + 業界経験閾値 bool ハードコード禁止
-> - **Phase 0 v3.1 改修指示書** (`.claude/instructions/2026-05-22_phase0_v4_rebuild_instruction.md`・576 行・参考)
-> - **Phase 1 v5 指示書** (`.claude/instructions/2026-05-22_phase1_layer_inversion_instruction.md`・429 行・Step D 実装対象)
-> - parquet 3 種 (`results/priority_rebuild/labels_mfe_mae_pct_{train_2021_2024,test_2025,test_2026_q1}.parquet`・sha256 既出)
+## 📚 履歴 archive 参照
 
----
+WORKFLOW.md は 2026-05-22 改訂22 で再スリム化 (672 → 358 行・履歴 313 行を archive 移動):
 
-> ### 🧊 改訂19 ブロック (履歴・参照用)
-
-> **【旧正本ブロック・改訂19・2026-05-22 セッション末】**
->
-> ### 本セッション (handoff v21 受領後) 完了事項
->
-> #### 1. ナレッジベース v3 確定 (technical_analysis_knowledge_base.md・1691 行)
-> - v1 (450 行) → v2 (1528 行) → v3 (1691 行)
-> - WebSearch 54 件 + Gemini 見解 2 件統合
-> - §A-§D 個別辞典 (RSI/MACD/ADX/ATR/BB/Stoch/Ichimoku/Fib/VP/Pivot/RCI/Williams + キャンドル + Wyckoff + SMC + AFML)
-> - **§I 閾値設計論** (4 大分類: 自己実現的 / 計算式由来 / 業界経験 / Adaptive + DSR + 3 層併存設計)
-> - §F 出典 69 件 URL
->
-> #### 2. Phase 0 改修指示書 v3.1 確定 (576 行・Triple Barrier ラベル同時生成)
-> - 5 ファイル同時改修 (pruned_column_list + 4 .py)
-> - 約 2316-3016 列 (1432 既存 + 800-1500 新規特徴量 + 28 既存ラベル + **28 Triple Barrier ラベル**)
-> - L-196 メンテフラグ削除 (L-181 違反訂正)
-> - 業界 5 系統分類 + 3 層併存閾値設計
-> - mlfinlab パッケージ依存追加
->
-> #### 3. Phase 1 学習方法再設計指示書 v1 新規作成 (429 行・Layer 配分逆転 (B') 確定版)
-> - **6 案並列**: 案 a (14 ラベル RMSE) + 案 b (Binary) + 案 c (Multiclass) + **案 d (Ranking LambdaRank)** + **案 e (Triple Barrier multiclass)** + **案 f (Meta-Labeling 2 段階)**
-> - **Walk-forward Purged K-Fold 5 fold** (mlfinlab.cross_validation・Layer 3 → Layer 1 前倒し)
-> - **DSR (Deflated Sharpe Ratio・Bailey + Lopez de Prado 2014) 採用** (selection bias 補正)
-> - **合格基準 5 指標数値** (entropy lift > 10% / TP Precision > 0.5 / Direction Accuracy > 0.55 / Simulated PnL 8+ 月プラス + 年 $500 / DSR > 1.0)
-> - **Layer 3 投入条件厳格化** (6 案ベストでも 5 指標未達 → 即 Layer 3)
-> - リソース計画 (3 並列・30-45 GB・約 20 時間)
->
-> #### 4. learning_design_v4 → v5 改訂 (377 行・+41 行)
-> - §3 振り分け表 B-13/B-14/B-15 Layer 1 前倒し明示
-> - §4 「Layer 1 (Layer 配分逆転・2026-05-22 v5)」セクション新規追加
-> - §6 Layer 3 タスク縮小
-> - §11 着手フロー大幅修正
->
-> #### 5. cc_ml_design_spec §1.5.1 追加 (399 行・+19 行)
-> - Phase 1 合格基準 5 指標数値正式化
-> - §1.6.1 メタルール整合 (実行後緩和禁止)
->
-> ### CC 同型バイアス再演 9 件 (本セッション・累積 36+ 件)
->
-> handoff v21 §0.27 累積 18 件 + 本セッション 9 件 = **累積 36+ 件**。詳細は lessons_active.md L-201 + handoff v22 §0.30 参照。
->
-> ### 次セッション CC 優先順位 (handoff v22 §3 参照)
->
-> 1. **優先 1 (最優先)**: §3.1 **Phase 0 改修指示書 v3.1 実装着手** (5 ファイル同時改修 + Triple Barrier ラベル + L-196 メンテフラグ削除・約 4-6 時間)
-> 2. **優先 2**: §3.2 **Phase 1 学習方法再設計指示書 v1 実装着手** (6 案並列 + Purged K-Fold 5 fold + DSR・約 3-4 週間)
-> 3. **優先 3 (将来)**: Phase 4-b 設計再 audit + DSR + Adaptive 閾値最適化 / Phase 7-d 着手前 maxMarketOrderQty paper trading test
-
----
-
-> ### 🧊 改訂18 ブロック (履歴・参照用)
-
-> **【旧正本ブロック・改訂18・2026-05-22 セッション末】**
->
-> ### 本セッション (handoff v20 受領後) 完了事項
->
-> #### 1. 未 commit 整理 (handoff v19 §2 残課題)
-> - `6510231`: Phase 0/1-a/1-b/1-c smoke 実行ログ 7 件
-> - `91317c5`: priority_rebuild scripts 3 件 (Phase 0 集計 + option5 v2/v3)
-> - `c16005f`: 過去 audits + 指示書 一括 (audit15/16/19 + 13 指示書 + modified 3)
-> - `9638c26`: audit17 phase_a §0.13 #1 違反成果物 (記録として保持)
->
-> #### 2. §3.0 cc_ml_design_spec §4 改訂 (前提タスク・learning_design_v4 §8)
-> - `7872559`: cc_ml_design_spec.md §4 全面改訂 + pm_review_template.md L35 旧表記訂正 + handoff_to_web_claude.md (凍結) 注記追加
-> - 「1 回のサイズ 固定 0.12 BTC」→「合計 0.12 BTC 厳守」+ cap カウント = **合算カウント** 確定 (B-8 / D-ζ.10)
-> - 全エントリー時点で `sum(active_position_btc) ≤ 0.12` verify 実装義務
->
-> #### 3. phase_flow_v4_with_recovery.md 全面書き直し (試作 7 回 → 確定版)
-> - `6d06425`: phase_flow_v4 新規作成 (888 行) + V3 archive 移動
-> - `f540c1e`: A 案修正反映 (888 → 977 行・+89 行)
->   - phase_compliance_checklist.md (222 行) + false_positive_incident_policy.md (225 行) 全文 view → 整合性総点検 → A 案 8 件修正
->
-> ### CC 同型バイアス再演 8 件 (本セッション・累積 18 件)
->
-> handoff v19 §0.13 (5 件) + handoff v20 §0.26 (5 件) + 本セッション (8 件) = **累積 18 件**。詳細は lessons_active.md L-200 + handoff v21 §0 参照。
->
-> ### 次セッション CC 優先順位 (handoff v21 §3 参照)
->
-> 1. **優先 1 (最優先)**: §3.1 Phase 0 改修指示書発注 (build_labels_pct.py 改修・1432 → 約 2000-2500 列・約 3-6 時間)
-> 2. **優先 2**: §3.2 Phase 1 並列学習 3 案 (約 1-2 週間) + CP2 分岐判定
-> 3. **優先 3 (将来)**: Phase 2 着手前 smoothing 設計再 audit / Phase 7-d 着手前 maxMarketOrderQty paper trading test
-
----
-
-> ### 🧊 改訂17 ブロック (履歴・参照用)
-
-> **【旧正本ブロック・改訂17・2026-05-21 セッション末】**
->
-> ### 本セッション後半 (handoff v19 受領後) 完了事項
->
-> #### 1. 書類整理 11 件 (handoff v20 §0.17)
-> - A-a/b/c: cc_ml_design_spec.md (作成者表記 + Phase 1 Step 4 + §10 報告フロー)
-> - A-2: `.claude/rules/cc_role.md` **新規作成 366 行** (CC 役割定義・web_claude_role v3 反転)
-> - A-1: web_claude_role.md v3.1 (冒頭に降格注記)
-> - A-d: auditor_template.md (L24 同型バイアス警告 + 14 ラベル化)
-> - A-e: memory/handoff_to_web_claude.md (凍結マーク追加)
-> - B-1: web_claude_self_check.md (CC 兼用注記)
-> - B-2: CLAUDE.md (必読リスト 4 件追加 + 14 ラベル化 + 目標表記 cc_role §1.0 整合)
-> - C-1: 本 WORKFLOW.md 改訂16
-> - F-1: MEMORY.md index + role_transition_20260521.md 新規 (memory 配下・git 管理外)
-> - C-3: phase_compliance_checklist.md verify only (旧記述 0 hit ✅)
->
-> #### 2. WORKFLOW.md スリム化 (handoff v20 §0.18)
-> - 887 → **373 行 (-58%)**
-> - 履歴 538 行を `archive/workflow/WORKFLOW_archive_20260521.md` に全文移動
->
-> #### 3. §設計思想 ML pipeline 用語化 (handoff v20 §0.19)
-> - L217 「Priority 構築方針 / 実装方針」(P1-P24 ゼロから再設計) → ML pipeline 用語 + **合計 0.12 BTC 厳守** (false_positive §0-2) 明示
-> - CLAUDE.md L88/L97 + WORKFLOW.md L124/L163 関連 3 箇所も整理
->
-> #### 4. 目標表記 cc_role §1.0 整合 (handoff v20 §0.20)
-> - CLAUDE.md L40/L13/L149 + WORKFLOW.md L38/L109-118/L164/L519/L839 (合計 8 箇所)
-> - 目標 $60/day → **月次 NET ≥ $1,900 全月クリア達成** + 「あらゆる手段」「全力でコミット」中身明記
->
-> #### 5. learning_design_v4.md 新規作成 (handoff v20 §0.21/§0.22)
-> - 23 軸 CSV 全文 view 完了で V3 全面再構築
-> - 構成: 23 軸 → 5 学習タスク (T1-T5) 分解 + Layer 1〜3 割り付け + §X.10 明示
-> - learning_design_v3.md → `.claude/memory/archive/learning_design_v3_20260521.md` archive
-> - V4 = 296 行 (初版)
->
-> #### 6. ChatGPT → Claude 監査モード `/audit` 訂正 (handoff v20 §0.23)
-> - まこさん明示「私チャッピーに課金してない・Claude の監査モードでやるしかない」
-> - 3 ファイル 11 箇所訂正 (現役 / 未来用記述のみ・過去歴史記録は保持)
->
-> #### 7. auditor_template.md 本セッション変更全反映 (handoff v20 §0.24)
-> - 15 箇所修正 (473 → 520 行・+47 行)
-> - Phase 構成更新 (14 ラベル / k=3 / Phase 2 = §1.6 4 指標 / 合計 0.12 BTC 厳守)
-> - 完了報告必須証跡 5 点 → 8 点 (false_positive §5A/B 整合)
-> - CC 同型バイアス 7 件全列挙
-> - 参照ファイルリスト更新 (cc_role / learning_design_v4 / CSV 1962 行 / handoff v19 等)
->
-> #### 8. 監査 #20 実施 → V4.1 へ 5 箇所修正 (handoff v20 §0.25)
-> - Claude 監査モード `/audit` で general-purpose subagent 起動
-> - 3 件懸念指摘:
->   - 懸念 1: entropy lift 数値誤記 (旧 2.2% → 実測 **6.04%**・計算式 `1 − 1.0322/ln(3) = 0.0604`・false_positive §2 類型 E/G リスク)
->   - 懸念 2: §X.10 = Layer 3 教条主義 (CSV B-13.10 両論併記・handoff v19 §0.13 #4 再演)
->   - 懸念 3: Entry 学習根本問題温存 (handoff v19 §0.13 #5 再演・Lopez de Prado *AFML* Ch.3 推奨閾値 < 10% は meta-labeling 投入域)
-> - 5 箇所修正反映:
->   1. §9 entropy lift 2.2% → 6.04% 訂正
->   2. §9「§X.10 確定 Layer 3 に従う」削除 + 判断軸「数値根拠 + Lopez de Prado 閾値」変更
->   3. §4 Layer 1 に **Entry Binary Classification + Direction Multiclass を 14 ラベル独立 RMSE と Layer 1 並列追加** (Layer 3 → Layer 1 昇格)
->   4. §11 着手フロー CP2 に分岐判定追加 (3 案物理証跡対比 → 採用案 or Layer 3 投入)
->   5. §10/§12 改訂履歴に監査 #20 反映 5 件追加
-> - V4 = 296 → **V4.1 = 336 行 (+40 行)**
->
-> #### 9. handoff v20 作成 (本セッション末)
-> - `.claude/instructions/handoff_to_cc_v20_session_20260521.md` 新規 (宛先 CC)
-> - 本セッション全成果物 + CC 同型バイアス再演 5 件 + 次セッション CC 優先順位を記録
->
-> ### 次セッション CC 優先順位 (handoff v20 §3 参照)
->
-> 1. **優先 1 (前提タスク)**: cc_ml_design_spec §4 改訂 (「1 回」→「合計」明文化 + B-8 cap カウント方法明文化)
-> 2. **優先 2 (Phase 0 改修)**: build_labels_pct.py 改修指示書発注 (8 指標 + まこさん発振系 + 1w/1M MTF + Fractional differentiation + PCA + パラメータ並列展開・1432 → 約 2000-2500 列・約 3-6 時間) + CP1 Claude 監査モード `/audit` 経由独立検証
-> 3. **優先 3 (Layer 1 着手)**: Phase 1 並列学習 (Entry Binary + Direction Multiclass + 14 ラベル独立 RMSE 3 案・約 1 週間) + CP2 物理証跡対比 → 採用案 or Layer 3 投入分岐
-> 4. **優先 4 (将来)**: Phase 2 着手前 smoothing 設計再 audit (Sharpe maximizing 復活検討) / Phase 7-d 着手前 maxMarketOrderQty paper trading test
->
-> ### CC 同型バイアス再演 5 件記録 (handoff v20 §0.26)
->
-> handoff v19 §0.13 (1 週間前指摘 5 件) + cc_role.md §1.4 (7 件定義) を受けたにもかかわらず、本セッションでも再演:
-> - #3 確認質問乱発 (AskUserQuestion 3 ターン連続)
-> - #4 教条主義 (V4 §9「§X.10 = Layer 3」)
-> - #5 まこさん発言翻訳 (Entry 学習駄目 → 特徴量拡張)
-> - 計算ミス (entropy lift 2.2% 誤記)
-> - 専門用語括弧書き違反 (まこさんから「文章がよくわからない」指摘)
->
-> → **ルール追加だけでは止まらない実証**。次セッション CC は本ブロックを最優先で警戒。
-
----
-
-> ### 🧊 改訂16 ブロック (履歴・参照用)
-
-> **【現在の正本ブロック・改訂16・2026-05-21 セッション末】**
->
-> 以下が現状の状態:
->
-> ### Phase 進捗 (本セッション 2026-05-21 完了事項)
-> - **Phase 0 v3 spec sweep 完了** (commit `22e75a9`): cc_ml_design_spec.md / phase_compliance_checklist.md / ml_axis_catalog.md の「16/28 ラベル → 14 ラベル独立学習」機械反映 + Funding 0.01% 固定 → median baseline (audit#19 確定値) 反映
-> - **Phase 1-a 14 ラベル LightGBM RMSE 学習完了** (commit `9d99dbb`): 67 分・rmse_ratio 14/14 ✅・ただし top1 = atr14_pct__5m 33-65% dominance (ボラ予測のみ機能)
-> - **phase_flow_v3_with_recovery 保管** (commit `57f92d1`): Phase 1-b 以降の全 Phase フロー + 失敗時改善フロー
-> - **Phase 1-b 簡易 PnL チェック → NO-GO** (commit `2f01a98`): SL hit が TP の 1.78 倍・time order 未学習・12 ヶ月中 6+ ヶ月プラス基準未達
-> - **audit#18 起票 → A 案切替** (commit `5890622`): ChatGPT 独立検証で「PnL/Sharpe maximizing custom objective は barrier hit non-smooth で grad/hess 未定義」確定 → Triple Barrier 3 クラス multiclass + EV フィルタ に切替・Sharpe maximizing は Phase 2 以降 smoothing 設計後に再 audit・learning_design_v3.md §B-15 + phase_flow_v3 §2 同期書き換え
-> - **Phase 1-c Triple Barrier multiclass smoke 実行 → NO-GO** (未 commit): K=12 単独・15 分 45 秒・logloss 1.0322 ≥ 0.95 (uninformed baseline log(3)≈1.10 から entropy lift 2.2%) / TP Precision 0.2364 ≤ 0.4 → Entry 学習問題が示唆された
->
-> ### ML 設計担当 Web Claude → CC 完全移譲 (handoff v18/v19 でまこさん決定)
-> - **2026-05-21 移譲**: Web Claude が 2026-05-15〜2026-05-19 で構造的バイアス由来のミス (視野狭窄・押し付け・確認質問乱発・デザイン責任転送) を 4 回繰り返したため、まこさん決定
-> - **Web Claude = 機械照合担当** (文書整合性 / grep sweep / 旧記述検出のみ)
-> - **CC = 実装担当 + ML 設計担当兼務**
-> - **新規ガバナンス文書**: `.claude/rules/cc_role.md` (CC 役割定義・v1) / `.claude/rules/web_claude_role.md` v3.1 (降格注記追加)
-> - **handoff v19** (`.claude/instructions/handoff_to_cc_v19_session_20260521.md`): 宛先 CC・§0.13 CC 同型バイアス 5 件記録・§0.14 Entry/Exit 両側学習方法改善議論到達点・§0.15 未確定 4 件
->
-> ### Entry/Exit 両側学習方法改善議論 (handoff v19 §0.14・新 Path A 改)
-> 観察された事実 (Phase 1-a/1-b/1-c 物理証跡 3 連続):
-> 1. 1432 指標で **ボラ予測のみ機能** (top1 = atr14_pct__5m 33-65% dominance)
-> 2. SL hit が TP の 1.78 倍 (Phase 1-b・時間順序未学習)
-> 3. multiclass logloss が entropy baseline からほぼ改善なし (lift 2.2%・Phase 1-c)
->
-> → Entry 学習問題が示唆 (Exit 側のみではない)
->
-> CC 提案 = **新 Path A 改** (Entry Binary Classification + Direction Multiclass + Exit Triple Barrier + Meta-labeling + Walk-forward CV) を Layer 1 で並行実装 (4-5 週想定)。まこさん判断待ち (handoff v19 §0.15)。
->
-> ### 2026-05-21 セッション後半 書類整理 11 件 (本セッション完了)
-> - **A グループ (現役正本不整合)**: cc_ml_design_spec.md (作成者表記 + Phase 1 Step 4 + §10 報告フロー) / auditor_template.md (同型バイアス警告 + 戦略リード + Phase 1 表 + L461) / .claude/memory/handoff_to_web_claude.md (凍結マーク追加)
-> - **B グループ (役割定義)**: web_claude_role.md (v3.1 冒頭ブロック追加) / cc_role.md (新規 366 行)
-> - **C グループ (セルフチェック)**: web_claude_self_check.md (冒頭注記・CC 兼用ルール) / CLAUDE.md (セッション開始時必読リスト更新)
-> - **D グループ (進捗反映)**: 本ブロック (WORKFLOW.md §🔴 現在のフェーズ 改訂16) / CLAUDE.md L161 (16 ラベル → 14 ラベル) / auditor_template.md 14 ラベル化
-> - **F グループ (memory)**: role_transition_20260521.md 新規作成 + MEMORY.md index 追加
-> - **G グループ (grep sweep)**: 「Web Claude が ML 設計」関連記述 55 件検出 → カテゴリ分け (現役正本 5 件のみ整理 + 過去指示書 / handoff / 監査依頼書は歴史的記録として保持)
->
-> ### 未 commit 成果物 10 ファイル (handoff v19 §2・本セッション末で commit 判断)
-> - Phase 1-c smoke 関連 5 ファイル (commit 推奨)
-> - 軸監査タスク 2 ファイル (§0.13 #1 違反成果物・白紙化検討中・まこさん判断)
-> - handoff v17/v18/v19 + 本セッション書類整理 11 件 (通常 commit)
->
-> ### 次セッション CC 優先順位 (handoff v19 §3 / §7 参照)
-> 1. 優先 1: handoff v19 §0.15 未確定 4 件のうち、まこさん指示で着手項目を確定
->    - #1 新 Path A 改 (Entry/Exit 両側修正) で進めるか
->    - #2 Step 1 (Entry Binary・1 週) から段階実装で良いか
->    - #3 ChatGPT 独立検証を新 Path A 改着手前に通すか
->    - #4 未 commit 成果物の commit 範囲
-> 2. 優先 2: 新 Path A 改採用なら指示書発注 → Entry Binary Classification smoke 実装
-> 3. 優先 3 (将来): Phase 2 着手前 smoothing 設計再 audit (Sharpe maximizing 復活検討・learning_design_v3 §B-15 修正履歴 #13)
->
-> ---
-> ### 🧊 改訂15 ブロック以前 (履歴・archive 移動済・参照用)
->
-> 改訂15 以前の旧現フェーズブロック (改訂13/14/15/7) / 旧次のタスク (Phase 4-a 改訂23・Phase 2 = 238 行) / 試行禁止リスト / 旧 Priority パラメータ凍結 / Replay コマンド (旧フロー) / 引き継ぎリソース (旧版) は **2026-05-21 スリム化** で [archive/workflow/WORKFLOW_archive_20260521.md](archive/workflow/WORKFLOW_archive_20260521.md) (538 行) に全文保存。過去指示書 / handoff / 監査依頼書からの行番号参照 (例: 元 L353/L365/L546-560/L648) は archive ファイル内で対応 (元 L350 = archive L1・以降 L350+x = archive L1+x)。
-
----
-
-## 📚 履歴セクション スリム化記録 (2026-05-21)
-
-本ファイル WORKFLOW.md は 2026-05-21 にスリム化:
-- **旧**: 887 行 (履歴 538 行 = 60% 占有)
-- **新**: 約 360 行 (現役のみ・履歴は archive)
-- **削減効果**: -60%
-
-スリム化理由 (CC 判断 2026-05-21):
-1. 読了ゲート負荷大 (cc_role.md §1.6 / web_claude_self_check.md 読了ゲート)
-2. 改訂16 で上書きされた旧現フェーズや Phase 2 時点の旧タスクが残置
-3. 次の改訂17/18 で更に膨張する構造を回避
-
-archive ファイル内訳:
-| 範囲 (archive 内) | 行数 | 内容 |
+| archive ファイル | 範囲 | 行数 |
 |---|---|---|
-| L1-L74 | 74 | 🔴 旧現フェーズ表記 (改訂13/14/15) |
-| L75-L192 | 118 | 🔴 旧現フェーズ表記 (改訂7) |
-| L193-L225 | 33 | 2026-05-14 セッション成果物一覧 |
-| L226-L463 | 238 | 🧊 旧次のタスク (Phase 4-a 改訂23・Phase 2) |
-| L464-L538 | 75 | 試行禁止リスト / 旧 Priority パラメータ凍結 / Replay コマンド / 引き継ぎリソース (旧版) |
+| [archive/workflow/WORKFLOW_archive_20260522.md](archive/workflow/WORKFLOW_archive_20260522.md) | 改訂20 / 19 / 18 / 17 / 16 / 15 表記 | ~250 |
+| [archive/workflow/WORKFLOW_archive_20260521.md](archive/workflow/WORKFLOW_archive_20260521.md) | 改訂13 / 14 / 15 / 7 + 試行禁止リスト + 旧 Priority パラメータ + Replay コマンド (旧フロー) + 引き継ぎリソース (旧版) | 538 |
+
+履歴セクションの読了は **次セッション着手判断には不要**。現フェーズ判定で過去経緯を参照したい時に該当 archive を find で開く。
