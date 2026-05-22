@@ -7,6 +7,39 @@
 
 ---
 
+### L-211: VS Code 強制終了で background `tee` 経由プロセスが SIGPIPE 詰まりで 2 時間半ハング — Step I-3.1 3 並列実行事案 (2026-05-23)
+
+**何が起きたか:**
+Step I-3.1 (tp_hit_classifier --full 3 並列) を `python ... 2>&1 | tee log_file | tail -50` パターンで `Bash run_in_background=true` 起動。約 2 時間半後 (07:30 JST) にまこさん起床して状況確認したところ、3 プロセス全てが CPU TIME = 5:30 のまま停止 (起動から 2:44 経過しているのに 5 分の CPU time のみ蓄積)。output ファイル mtime も 04:46 のまま更新なし (= "RUN START" の 58 byte のみ)。
+
+VS Code 強制終了 (まこさん操作) で **tee コマンドが kill** され、Python の stdout (pipe で tee に書く側) が **SIGPIPE 詰まり** (= reader 不在で write block) で凍結したと推定。Python は最初の 5 分 (parquet load + 初期処理) は CPU 使用したが、stdout を tee に大きく書こうとした時点で永久ブロック。
+
+**Why:**
+- `python ... 2>&1 | tee log | tail -50` の pipe chain は VS Code の terminal セッション (= claude code Bash の親プロセス) に依存する構造だった
+- VS Code 強制終了 → terminal セッション kill → tee/tail kill → Python の stdout の reader が消失 → Python は write block (デフォルトは SIGPIPE で terminate するが、claude code の Bash 内で何らかの handle が SIGPIPE を block していた可能性)
+- nohup していない・disown していない・`python -u` (unbuffered) でもないため、stdout buffer が満ちると write が block する条件が複数重なっていた
+- 「Bash run_in_background は OS から detach されている」と思い込んでいたが、実際は claude code セッションの subprocess group に紐付いていた
+
+**How to apply:**
+- **長時間実行 background プロセスは VS Code 強制終了から守る** ため、以下 3 点セットを必須化:
+  1. `python -u` (unbuffered stdout = SIGPIPE 詰まり回避 + 早期 flush で進捗可視化)
+  2. `> log_file 2>&1` (tee 経由禁止 = 中継 process 不在で詰まらない)
+  3. `nohup ... & disown` (親プロセス死亡から完全独立 = OS init 親に re-parent)
+- **進捗診断は output mtime ではなく CPU TIME で確認**: `ps aux` の TIME 列が経過時間と乖離 (例: 経過 2 時間で CPU TIME 5 分) なら write block 強疑い
+- **VS Code/claude code 強制終了時の事後 verify**: まこさん操作で session 終了した場合、即座に 3 並列プロセスの CPU TIME と mtime を確認し、ハング検出時は kill して再起動
+- **再起動時の判定**: 既に書かれた output が < 100 byte ならゼロから再起動・> 1MB なら resume 可能性を検討 (今回は < 100 byte で全 kill 妥当)
+- **claude code 仕様の理解修正**: Bash `run_in_background=true` は claude code セッションに紐付くため、claude code/VS Code 終了で death の可能性あり。**真の detach は `nohup ... & disown` が必要**
+
+**関連:**
+- L-203 / L-201 「外部ライブラリ・OS 挙動の実態調査不足」シリーズ (本件は OS process tree + claude code Bash の挙動)
+- L-205 / L-200 「機械的証跡」シリーズ (本件で「output mtime のみで生死判断」誤りに気付かず 2 時間半放置)
+- cc_role §1.0 業界知見能動活用 (本件後の修正で nohup + disown + python -u を Best Practice として導入)
+- false_positive §2 類型 G (虚偽報告) を防ぐ意味で「進捗確認は CPU TIME + mtime + log size の三点」を明文化
+- 修正後の Step I-3.1 起動コマンド: handoff v29 §3 参照
+- 公式 source: 04:46 起動 → 07:30 ハング検出 / kill 完了 / memory 6.5GB 解放
+
+---
+
 ### L-210: Phase 4-b 前倒し評価式実装で smoke 関所 A ② 0/8 達成 — Step I 設計が機能している定量実証 (2026-05-23)
 
 **何が起きたか:**

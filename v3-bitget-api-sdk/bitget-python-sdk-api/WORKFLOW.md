@@ -299,9 +299,85 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-23 改訂27・**Step I-1 仕様書 v2.1 確定 + CP3.5 監査 + I-2.1〜I-2.4 実装完了 + smoke 関所 A ② 0/8 達成**・Step I-2.5 以降 + Step I-3 本走準備）
+## 🔴 現在のフェーズ（2026-05-23 改訂28・**Step I-2.8 unit test 10/10 PASS + I-2.6/I-2.7 §8 verify 完了 + I-3.2 完了 + merge スクリプト作成完了 + I-3.1 ハング → kill → PC 再起動待ち**・Step I-3.1 再起動が次タスク）
 
-> **【現在の正本ブロック・改訂27・2026-05-23 セッション末 (改訂26 同日続編)】**
+> **【現在の正本ブロック・改訂28・2026-05-23 セッション後半 + 緊急中継】**
+>
+> ### 本セッション (改訂27 同日続編・2026-05-23 04:25 〜 07:35) 完了事項
+>
+> #### 1. I-2.8 集約ロジック unit test 完了 ✅
+> - **`scripts/priority_rebuild/test_aggregate_grid_idxmax.py`** (新規・270 行)
+> - 10 test cases (L-207 失敗境界 5 件含む: empty / tied / 全zero / 空ts / NaN)
+> - **10/10 PASS** (`python test_aggregate_grid_idxmax.py` 経由・約 3 秒)
+> - NaN edge case test 10 で現実装の隠れた問題 (`np.argmax` が NaN を最大扱い) を document として保護
+>
+> #### 2. I-2.6/I-2.7 受け入れ基準 §8 verify 完了 ✅
+> - §8.1 関所 A: smoke `anomaly_smell_detected: False` (1/1 ・full 8 組合せで継続 verify 必要)
+> - §8.2 TP Classifier: AUC 0.7062 ✅ / Brier 0.2216 ✅ / Calibration 0.1362 ❌ (smoke 浅学習由来・full で改善期待・許容 12% まで)
+> - §8.3 月次 NET 分布: smoke N=4・median $-171.73 / range $-358 〜 $-94 (現実レンジ・L-210 整合「smoke 赤字 ≠ 設計欠陥」)
+> - §8.4 leak verify 6 項目: (i)/(ii)/(iii)/(v)/(vi) ✅ / (iv) slippage 0.005% 解釈 = 往復扱い (まこさん GO 取得済・現値継承 → Phase 4-b-1 本確定で再評価)
+> - §8.5 リカバリ: 関所 A 達成済 → 不要 / Calibration full 走で再判定 / slippage Phase 4-b-1 で再設計
+>
+> #### 3. I-3.2 完了 ✅ (5 秒完走)
+> - **`scripts/priority_rebuild/compute_phase4b_train_constants.py --full`**: 16 artifact + INDEX 生成
+> - K=12 N=6: ±0.0034% / K=24 N=24: ±0.0103% / K=96 N=96: ±0.0268% (LONG/SHORT 対称)
+> - 警告: 全 16 ファイルで §5.6 月別歪度 > 1.0 (regime 過依存懸念・Phase 4-b-1 で cluster 別 median 化予定)
+> - 出力: [`results/priority_rebuild/ml_phase1_v5/_phase4b_train_constants/`](results/priority_rebuild/ml_phase1_v5/_phase4b_train_constants/)
+>
+> #### 4. merge_step_i_summaries.py 作成完了 ✅ (動作未検証)
+> - **`scripts/priority_rebuild/merge_step_i_summaries.py`** (新規・453 行)
+> - P1/P2/P3 case_a_v2 summary + tp_hit_classifier predictions + time_exit_index を merge → §4.1 v5.1 判定 (4 指標)
+> - 4 指標: TP Precision > 0.5 / Simulated PnL (12 ヶ月中 8+ 月 + 年間 NET ≥ $500) / DSR > 1.0 (n_trials=16) / entropy lift > 10% (案 a 自動 PASS)
+> - method 別 (fixed_tp / time_exit) で 6+ 組合せ ALL PASS あれば Phase 2 進行
+> - **動作確認は I-3.1/I-3.3 完了後**
+>
+> #### 5. I-3.1 ハング → kill 事案 (L-211・2026-05-23 04:46-07:35)
+> - **発生**: tp_hit_classifier --full × 3 並列を `python ... | tee log | tail` 経由で起動 → VS Code 強制終了で tee/tail が kill → Python の stdout SIGPIPE 詰まり → 2 時間半ハング
+> - **検出**: 07:30 JST にまこさんからの状況確認 → CPU TIME = 5:30 のまま停止 / output mtime 04:46 のまま発見
+> - **対応**: kill 30267 / 30278 / 30286 → memory 13GB → 6.5GB 解放
+> - **教訓**: lessons L-211 追加・修正後の起動コマンドは `python -u` + `> log 2>&1` + `nohup` + `disown` 必須
+>
+> ### 次セッション CC 優先順位 (PC 再起動後)
+>
+> 1. **優先 1 — Step I-3.1 再起動 (PC 再起動後・新 claude code session)**
+>    - 修正後コマンド (handoff v29 §3 参照): `python -u` + `nohup` + `disown` + `> log 2>&1`
+>    - 推定: 1.5 - 2 時間 3 並列
+> 2. **優先 2 — Step I-3.3 case_a_v2 --full 3 並列 (30-60 分)**
+> 3. **優先 3 — Step I-3.4 merge_step_i_summaries.py 実行 + §4.1 判定**
+> 4. **優先 4 — Step I-3.5 CP4 監査依頼 (`/audit` サブエージェント・関所 D 必須)**
+> 5. **優先 5 — セッション終了処理** (lessons L-212+ + WORKFLOW 改訂29 + handoff v30)
+>
+> ### 引き継ぎリソース (3 層構造)
+>
+> #### Layer 1 (毎セッション必読)
+> - **handoff v29 (緊急中継版)**: `.claude/instructions/handoff_to_cc_v29_session_20260523_emergency.md` (本セッション末作成)
+> - WORKFLOW.md 改訂28 active ブロック (本ブロック)
+> - CLAUDE.md (Layer 2 パス修正済・改訂22 ベース)
+> - lessons_active.md 直近 5 件 (**L-211 最新** + L-210 + L-209 + L-208 + L-207)
+>
+> #### Layer 2 (Step I-3 着手時)
+> - Step I-1 仕様書 v2.1: `.claude/instructions/2026-05-23_phase4b_forward_design_spec.md` (612 行)
+> - 実装 6 ファイル (本セッションで完成・触らない):
+>   - `scripts/priority_rebuild/run_tp_hit_classifier.py` (684 行・I-2.1)
+>   - `scripts/priority_rebuild/compute_phase4b_train_constants.py` (458 行・I-2.2)
+>   - `scripts/priority_rebuild/run_phase1_v5_purged_kfold.py` (873 行・I-2.3)
+>   - `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_v2.py` (597 行・I-2.4)
+>   - `scripts/priority_rebuild/test_aggregate_grid_idxmax.py` (270 行・I-2.8 新規)
+>   - `scripts/priority_rebuild/merge_step_i_summaries.py` (453 行・I-3.4 新規)
+>
+> #### データ・環境
+> - parquet 3 種 + .venv311 (mlfinpy 0.1.2 / sklearn 1.8.0 / lightgbm 4.6.0 / scipy 1.17.1)
+> - I-3.2 artifact (済): `_phase4b_train_constants/time_exit_return_median_train_2021_2024_*.json` (16 個 + INDEX)
+> - I-3.1 出力ディレクトリ (空・再起動後生成): `_tp_hit_classifier_p{1,2,3}/`
+> - I-3.3 出力ディレクトリ (空・再起動後生成): `_case_a_v2_p{1,2,3}/`
+
+---
+
+## 🧊 改訂27 ブロック (履歴・参照用)
+
+### 🔴 旧フェーズヘッダ (2026-05-23 改訂27・**Step I-1 仕様書 v2.1 確定 + CP3.5 監査 + I-2.1〜I-2.4 実装完了 + smoke 関所 A ② 0/8 達成**・Step I-2.5 以降 + Step I-3 本走準備)
+
+> **【旧正本ブロック・改訂27・2026-05-23 セッション末 (改訂26 同日続編)】**
 >
 > ### 本セッション (改訂26 同日続編・2026-05-23 03:30 〜 04:20) 完了事項
 >
