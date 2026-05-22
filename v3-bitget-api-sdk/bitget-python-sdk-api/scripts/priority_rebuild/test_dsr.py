@@ -48,13 +48,14 @@ def test_paper_eq5_eq9_extreme_case() -> None:
     """Paper-faithful check at extreme inputs (also used as marti.ai 2018 case):
     SR=2.5, N=100, T=1250, V[SR]=0.5, skew=-3, excess_kurt=10.
 
-    Hand-derivation from paper Eq. 5 / Eq. 9 (independently verified):
+    Hand-derivation from paper Eq. 5 / Eq. 9 with excess_kurt → (g4+2)/4
+    (equivalent to total kurt g4_tot=13 → (g4_tot-1)/4=3):
       SR0      = sqrt(0.5) * ((1-gamma)*Phi^-1(0.99) + gamma*Phi^-1(1-1/(100e)))
                = 0.7071 * (0.4228*2.32635 + 0.5772*2.68021) ≈ 1.78941
-      inner    = 1 - (-3)*2.5 + (10-1)/4 * 2.5^2 = 22.5625
-      sigma_SR = sqrt(22.5625 / 1249) ≈ 0.13440
-      z        = (2.5 - 1.78941) / 0.13440 ≈ 5.287
-      p        ≈ Phi(5.287) ≈ 1.0 (highly significant; ~6.3e-8 in upper tail)
+      inner    = 1 - (-3)*2.5 + (10+2)/4 * 2.5^2 = 27.25
+      sigma_SR = sqrt(27.25 / 1249) ≈ 0.14771
+      z        = (2.5 - 1.78941) / 0.14771 ≈ 4.811
+      p        ≈ Phi(4.811) ≈ 1.0 (highly significant; ~7.5e-7 in upper tail)
 
     Note: marti.ai 2018 blog cites p=0.8997 for these inputs but that value
     cannot be reproduced from the paper's published formulas; the blog's
@@ -73,11 +74,11 @@ def test_paper_eq5_eq9_extreme_case() -> None:
     assert _approx_equal(result.sr_expected_max, 1.78941, tol=1e-4), (
         f"SR*={result.sr_expected_max}, expected 1.78941"
     )
-    assert _approx_equal(result.sigma_sr, 0.13440, tol=1e-4), (
-        f"sigma_SR={result.sigma_sr}, expected 0.13440"
+    assert _approx_equal(result.sigma_sr, 0.14771, tol=1e-4), (
+        f"sigma_SR={result.sigma_sr}, expected 0.14771"
     )
-    assert _approx_equal(result.dsr_zscore, 5.287, tol=1e-2), (
-        f"DSR_z={result.dsr_zscore}, expected 5.287"
+    assert _approx_equal(result.dsr_zscore, 4.811, tol=1e-2), (
+        f"DSR_z={result.dsr_zscore}, expected 4.811"
     )
     assert result.dsr_probability > 0.99999, (
         f"DSR_p={result.dsr_probability}, expected > 0.99999 (highly significant)"
@@ -90,10 +91,11 @@ def test_paper_eq5_eq9_extreme_case() -> None:
 
 
 def test_sigma_sr_normal_distribution_case() -> None:
-    """For normal returns: skew=0, excess_kurt=0 => inner = 1 - SR^2/4.
-    For SR=1, T=101: sigma = sqrt((1 - 0.25) / 100) = sqrt(0.0075) ≈ 0.08660."""
+    """For normal returns: skew=0, excess_kurt=0 => inner = 1 + 0.5*SR^2.
+    Matches Lo (2002) closed-form Var(SR_hat) = (1 + 0.5*SR^2)/T for Gaussian.
+    For SR=1, T=101: sigma = sqrt((1 + 0.5) / 100) = sqrt(0.015) ≈ 0.12247."""
     sigma = sigma_sr_estimate(sr_hat=1.0, skewness=0.0, excess_kurt=0.0, sample_size=101)
-    expected = math.sqrt(0.75 / 100)
+    expected = math.sqrt(1.5 / 100)
     assert _approx_equal(sigma, expected, tol=1e-9), (
         f"sigma_SR normal case: {sigma}, expected {expected}"
     )

@@ -7,6 +7,43 @@
 
 ---
 
+### L-207: test カバレッジが「合格境界」のみで「失敗境界」を含まないと bug が素通りする — dsr.py L119 式 bug 事案 (2026-05-22)
+
+**何が起きたか:**
+Step F 本走 smoke 1 回目 (sample 5 fold) で `dsr.py` `sigma_sr_estimate` が `ValueError: sigma_SR denominator non-positive (-0.194571)` で crash。fold 3 で SR=4.19・skew=0.74・excess_kurt=1.44 → `inner = 1 - skew·SR + (excess_kurt - 1)/4 · SR² = -0.195`。
+
+調査の結果、`dsr.py` L119 の式 `(excess_kurt - 1.0) / 4.0` は **Bailey-Lopez de Prado 2014 / Mertens 2002 の正本形式 `(γ₄ - 1)/4` の γ₄ が「総 kurtosis」(Pearson β₂・Gaussian で 3) を前提**にしているが、`dsr.py` は `scipy.stats.kurtosis(fisher=True)` (= excess kurt・Gaussian で 0) を渡しており、パラメータと式がミスマッチ。Gaussian (excess_kurt=0) で `(0-1)/4 = -0.25` → `inner = 1 - 0 - 0.25·SR²` → **SR > 2 で常に負値** (= 分散として不成立)。Lo (2002) closed form `Var(SR̂) = (1 + 0.5·SR²)/T` と一致しない。
+
+修正: `(excess_kurt + 2.0) / 4.0` (等価: `total_kurt = excess_kurt + 3 → (total_kurt - 1)/4 = (excess_kurt + 2)/4`)・Lo (2002) と一致確認。test 10/10 PASS 維持・smoke 再走で 1.3 分完走。
+
+**Why:**
+- `test_dsr.py` の Gaussian ケース (`test_sigma_sr_normal_distribution_case`) は **SR=1 でのみ test**。`inner = 1 - 0.25·1² = 0.75 > 0` で PASS してしまい、SR > 2 の失敗境界をテストしなかった
+- `test_paper_eq5_eq9_extreme_case` (SR=2.5・skew=-3・excess_kurt=10) は **大きな負 skew が inner を救う特殊ケース** (1 + 7.5 + 2.25·6.25 = 22.56 で正値) → bug を素通り
+- 「10/10 PASS」を実装 verify 証跡として WORKFLOW.md / handoff に記載していたため、本走 smoke crash 前に bug を検出できなかった
+- L-200 機械的証跡 3 点 (wc -l + Read + 該当行引用) は守られていたが、「test 内容自体の妥当性」を verify する手続きが欠落していた
+
+**How to apply:**
+- **数値式の test は「失敗境界 (raise する境界)」を必ず含める**:
+  - 例: dsr.py なら Gaussian 連続入力 (SR=0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0) で sigma が単調増加することを assertion
+  - 「raise しない正常境界」だけでなく「raise する異常境界」の両方を test に書く
+- **「test PASS」を bug 不在証跡として引用する前に test カバレッジを目視確認**:
+  - 引数の取りうる範囲のうち test 済範囲を 1 行で要約
+  - 範囲外で raise が想定される値 (= 失敗境界) があるかチェック
+- **業界既知の closed-form (Lo 2002 等) と数値一致 sanity check を sanity test として追加**:
+  - 数式実装の test は paper の hand-derivation だけでなく、独立 closed-form (簡単な特殊例) で cross-check
+  - dsr.py で言えば Gaussian (skew=0, excess_kurt=0) で `sigma = sqrt((1 + 0.5·SR²)/(T-1))` と一致するか
+- **連動策**: cc_role §1.0「業界知見能動活用」を「test 設計時にも適用」 — Lo (2002) を WebSearch すれば変数定義の誤解 (excess vs total) は事前に気付けた可能性が高い
+
+**関連:**
+- L-180 / L-200 / L-204 / L-205 「実装 verify と documentation の乖離」シリーズ (本件は test 内容自体の乖離・新規 layer)
+- L-206 (本セッション・smoke crash で発覚した連鎖事象)
+- cc_role §1.0 (業界知見能動活用)
+- false_positive §2 類型 E (計算ミス)・§5 関所 G (チェックリスト有効性検証ループ)
+- 修正 commit: pending (本セッション末)
+- 公式 source: [phase1_v5_summary.json](../../results/priority_rebuild/ml_phase1_v5/phase1_v5_summary.json) (smoke 再走後・2026-05-22T22:55:00)
+
+---
+
 ### L-206: ブラックリストガードを保守一辺倒で運用すると false positive で物理進行不能になる — Z 案 (物理 verify 経由続行) 改訂で defense-in-depth 維持 (2026-05-22)
 
 **何が起きたか:**

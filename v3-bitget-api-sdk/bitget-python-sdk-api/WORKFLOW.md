@@ -299,7 +299,66 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-22 改訂24・**Phase 1 v5.1 Step E (case_a) 実装完了 + Z 案ガード改訂**・Step F 本走 smoke 着手準備）
+## 🔴 現在のフェーズ（2026-05-22 改訂25・**Phase 1 v5.1 Step F 本走 smoke 完走 + dsr.py L119 隠れ bug 修正**・Step G CP2 監査着手準備）
+
+> **【現在の正本ブロック・改訂25・2026-05-22 セッション後半】**
+>
+> ### 本セッション (改訂24 同日続編) 完了事項
+>
+> #### 1. Step F 本走 smoke 完走 (1.3 分・sample 5 fold)
+> - 実行: `--smoke --n-estimators 300 --n-splits 5` (sample.parquet / K=12 LONG・3 fold 生成 = min_train_splits=2 仕様通り)
+> - **Z 案ガード本来環境で正常動作確認** ✅ (handoff v26 §1.4・hit 2 列 → 物理 verify 4 項目 PASS → 警告 + 続行)
+> - 公式 source: [`results/priority_rebuild/ml_phase1_v5/phase1_v5_summary.json`](results/priority_rebuild/ml_phase1_v5/phase1_v5_summary.json) (167 行・2026-05-22T22:55:00)
+> - 結果: 5 指標未達 (smoke 1 組合せで合格不可・想定通り)・`tp_precision_mean=0.448` / `sim_pnl_year_usd_mean=$14,186` / `fold_sharpe_mean=7.99` / `dsr_zscore=-62.03`
+> - **異常値スメル ③ 該当** (fold sharpe={4.37, 15.66, 3.96} で乖離) ・**統計有意性なし** (sample 89 日 × 3 fold) ・Step H 本走で再評価必須
+> - fold 1 で W2 警告 (`valid_rmse/train_rmse=5.28 > 3.0`) → 物理 leak verify PASS のため **overfit と判定** (leak ではない・sample 小データ由来)
+>
+> #### 2. dsr.py L119 算術 bug 発見・修正 (handoff v26 未記載の隠れ bug)
+> - smoke 1 回目 (`fold 3` 集約段階) で `ValueError: sigma_SR denominator non-positive (-0.194571)` crash
+> - **根本原因**: Bailey-Lopez de Prado 2014 / Mertens 2002 形式 `(γ₄ - 1)/4` の **γ₄ は総 kurtosis (Gaussian で 3) を前提** だが、dsr.py は `scipy.stats.kurtosis(fisher=True)` (excess kurt・Gaussian で 0) を渡しており、Gaussian 入力 SR > 2 で `inner < 0` で確実に crash する設計欠陥
+> - **修正**: `(excess_kurt - 1.0) / 4.0` → `(excess_kurt + 2.0) / 4.0` (等価: `total_kurt = excess_kurt + 3 → (total_kurt - 1)/4 = (excess_kurt + 2)/4`)
+> - Lo (2002) closed form `Var(SR̂) = (1 + 0.5·SR²)/T` (Gaussian) と一致確認
+> - `test_dsr.py` 2 ケース期待値再計算: Gaussian sigma = `sqrt(1.5/100)` (旧 `sqrt(0.75/100)`) / extreme case sigma_SR=0.14771・z=4.811 (旧 0.13440・5.287)
+> - **test 10/10 PASS 維持**・smoke 再走 1.3 分完走 (Step F 達成)
+>
+> #### 3. lessons L-207 新規追加
+> - **L-207**: test カバレッジが「合格境界」のみで「失敗境界」を含まないと bug 素通り — 数値式 test は失敗境界 (raise 境界) を必ず含める
+>
+> ### 次セッション CC 優先順位 (Step G CP2 監査着手)
+>
+> 1. **優先 1 — Step G: CP2 監査 (`/audit` または Plan サブエージェント・約 30-60 分)**
+>    - 監査対象: Phase 1 v5.1 案 a 実装 + Z 案ガード改訂 + 本走 smoke 結果 + **dsr.py L119 bug 修正の数学的妥当性 (新規)**
+>    - 監査項目 (handoff v26 §3.2 の 9 項目 + dsr fix):
+>      - 1-9: handoff v26 §3.2 列挙
+>      - 10. **(新規)** dsr.py L119 修正の Bailey-Lopez de Prado 原典との整合性 (γ₄ 総 kurt 解釈の妥当性)
+>      - 11. **(新規)** test_dsr.py 期待値再計算の独立 verify (Lo 2002 closed form との一致)
+>      - 12. **(新規)** 異常値スメル ③ (sample sharpe 乖離) の Step H 本走前の原因仮説評価
+> 2. **優先 2 — Step H: full 8 組合せ実行 (CP2 OK 後・約 5-6 時間 / 3 並列 2 時間)**
+> 3. **その後**: 案 b-f 順次実装 (約 3-4 週間)
+>
+> ### 引き継ぎリソース (新セッション Step 0 で必読・3 層構造)
+>
+> #### Layer 1 (毎セッション必読)
+> - **handoff v26** (改訂24 セッション末作成・find で動的取得) — 主要記述は本改訂25 で更新済 (Step F smoke 完走 + dsr fix)
+> - WORKFLOW.md 改訂25 active ブロック (本ブロック)
+> - CLAUDE.md (Layer 2 パス修正済・改訂22 ベース)
+> - lessons_active.md 直近 5 件 (**L-207 最新** + L-206 + L-205 + L-204 拡張 + L-203)
+>
+> #### Layer 2 (Step G 着手時)
+> - smoke 結果: `results/priority_rebuild/ml_phase1_v5/phase1_v5_summary.json` (167 行) + `smoke_run_20260522T225341.log` (54 行)
+> - dsr fix: `scripts/priority_rebuild/dsr.py` (204 行・L119 修正済) + `test_dsr.py` (205 行・10/10 PASS)
+> - case_a: `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_rmse.py` (720 行) + runner v5.1 (773 行) + verify_top20 (490 行)
+> - Phase 1 v5 指示書 v5.1 / cc_ml_design_spec.md §1.5.1 v5.1 / phase_compliance §1.4 Z 案
+>
+> #### データ・環境
+> - parquet 3 種 + .venv311 (mlfinpy 0.1.2 / sklearn 1.8.0 / lightgbm 4.6.0 / scipy 1.17.1)
+> - smoke 出力: `results/priority_rebuild/ml_phase1_v5/_early_fi_for_guard_review/`
+
+---
+
+## 🧊 改訂24 ブロック (履歴・参照用)
+
+### 🔴 旧フェーズヘッダ(2026-05-22 改訂24・**Phase 1 v5.1 Step E (case_a) 実装完了 + Z 案ガード改訂**・Step F 本走 smoke 着手準備）
 
 > **【現在の正本ブロック・改訂24・2026-05-22 セッション末】**
 >

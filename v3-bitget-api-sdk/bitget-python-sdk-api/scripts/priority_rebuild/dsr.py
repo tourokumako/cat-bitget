@@ -15,7 +15,10 @@ Formulas (paper Eqs. 5, 9):
                           +     gamma  * Phi^-1(1 - 1/(N*e)) )
 
     DSR_z  = (SR_hat - SR0) * sqrt(T - 1)
-             / sqrt(1 - gamma_3 * SR_hat + (gamma_4 - 1) / 4 * SR_hat^2)
+             / sqrt(1 - gamma_3 * SR_hat + (gamma_4 + 2) / 4 * SR_hat^2)
+                              # ^ gamma_4 is EXCESS kurtosis (Fisher); the paper
+                              # writes (g4_tot - 1)/4 with TOTAL kurtosis g4_tot
+                              # = excess + 3, so (g4_tot - 1)/4 = (excess + 2)/4.
 
     DSR_p  = Phi(DSR_z)                # paper-canonical (probabilistic) form
 
@@ -112,11 +115,16 @@ def expected_max_sharpe(sr_variance: float, n_trials: int) -> float:
 def sigma_sr_estimate(sr_hat: float, skewness: float, excess_kurt: float, sample_size: int) -> float:
     """Eq. 9 denominator: Mertens-form standard error of SR estimate.
 
-    sigma_hat(SR) = sqrt( (1 - g3*SR + (g4-1)/4 * SR^2) / (T - 1) )
+    Bailey-Lopez de Prado 2014 / Mertens 2002 form (with TOTAL kurtosis g4_tot):
+        sigma_hat(SR) = sqrt( (1 - g3*SR + (g4_tot - 1)/4 * SR^2) / (T - 1) )
+
+    We pass excess kurtosis (Fisher) here; conversion: g4_tot = excess_kurt + 3,
+    so (g4_tot - 1)/4 = (excess_kurt + 2)/4. For Gaussian (excess_kurt=0) this
+    reduces to (1 + 0.5*SR^2)/(T-1) = Lo (2002) closed form.
     """
     if sample_size < 2:
         raise ValueError(f"sample_size must be >= 2, got {sample_size}")
-    inner = 1.0 - skewness * sr_hat + (excess_kurt - 1.0) / 4.0 * sr_hat**2
+    inner = 1.0 - skewness * sr_hat + (excess_kurt + 2.0) / 4.0 * sr_hat**2
     if inner <= 0:
         raise ValueError(
             f"sigma_SR denominator non-positive ({inner:.6f}). "
