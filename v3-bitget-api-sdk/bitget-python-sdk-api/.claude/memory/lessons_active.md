@@ -1,9 +1,48 @@
-# lessons_active.md — 現役教訓 (2026-05-02 以降・L-203〜L-153 + 新規 L-205 以降)
+# lessons_active.md — 現役教訓 (2026-05-02 以降・L-203〜L-153 + 新規 L-206 以降)
 
 > **構造 (2026-05-22 改訂22 で再整理)**:
-> - active = 2026-05-02 以降の教訓 (L-205〜L-153 + 新規追加 L-206 以降・約 1200 行)
+> - active = 2026-05-02 以降の教訓 (L-206〜L-153 + 新規追加 L-207 以降・約 1320 行)
 > - [archive](lessons_archive.md) = L-152 以前 (2026-05-01 以前の Phase 1〜7-a / regime 研究時代教訓・約 2515 行)
 > - **Step 0 では active 直近 5 件のみ全文読了で十分**。残りは必要時参照。
+
+---
+
+### L-206: ブラックリストガードを保守一辺倒で運用すると false positive で物理進行不能になる — Z 案 (物理 verify 経由続行) 改訂で defense-in-depth 維持 (2026-05-22)
+
+**何が起きたか:**
+2026-05-22 セッション後半 (Phase 1 v5.1 案 a smoke 実行中) で phase_compliance §1.4 ブラックリストガード (`dist_to_fib_v2_*` / `resistance_distance_*` / `support_distance_*` / `nearest_level_*` 4 パターン) が発動・top1-20 hit で `sys.exit(1)` で停止。CC は 2 仮説 (leak 残存 / false positive) を立て、Plan エージェント独立監査 + 物理 leak verify 4 項目セット (lag-1 shift 不変性 + 末尾 K bars NaN + 二重 N サフィックス内外一致 + importance dominance) を実装・実行。
+
+sample 89 日 4 件 + full 4 年 1 件 (support_distance) 計 5 件で全 4 verify PASS。さらに **sample で top20 入りした 4 件は full では top20 外** = sample レジーム過依存 (類型 D 時代依存) と確定。一方 phase_compliance §1.4 旧運用「ブラックリスト緩和は実施しない・top1-20 hit 即停止」では false positive (本物の強い予測子) でも sys.exit され Phase 1 全 8 組合せ × 6 案実装が物理的に進行不能になる構造問題があった。
+
+Z 案 (改訂後運用) を確定:
+- (a-1) hit 検出 → 物理 verify 4 項目セット **全 PASS** → 警告ログ + `full_rank.csv` 記録 + 続行可
+- (a-2) **1 項目でも FAIL/SKIP** → 即停止 sys.exit(1)・調査必須
+- (b) top21-50 hit / (c) top51以下 は旧運用継続
+- ブラックリストパターン自体の緩和は実施しない (将来回帰検出機能維持・defense-in-depth)
+
+**Why:**
+- ブラックリストガード設計の初期意図は「L-179 fractal leak 再発検知の保守」(2026-05-13)
+- ただし「false positive (= 本物の強い予測子) でも一律 sys.exit」は **業界知見と整合する強い予測子の学習を完全に封じる** 副作用がある
+- sample 89 日のような **短期間データ単独で「top20 入り → leak 残存疑い」と判定** するロジックは類型 D regime 過依存を検出できず・full 4 年で別の特徴量に置き換わる前提を持っていなかった
+- L-179 当時の防衛は妥当だったが、運用期間 9 日 (2026-05-13 → 2026-05-22) で false positive 事象に直面 → 物理 verify 経路で安全に通す改訂が必要
+
+**How to apply:**
+- **ブラックリストガードは「停止 vs 緩和」の二択でなく「物理 verify 経由続行」を選択肢に加える** (false_positive §5 関所 G「すり抜けるたびに穴を塞ぐ」整合)
+- 新規 verify ロジック実装時の **TF-aware (MTF resampling 自然挙動考慮)** 設計義務化:
+  - 5m bar 単位で MTF (1h/4h 等) 特徴量を扱う場合、lag-1 shift 不変性の expected pct_diff = bar_minutes / TF_minutes (例: 4h → 5/240 = 2.08%)
+  - 単純「95% 以上変化で PASS」判定は 5m TF のみに妥当・MTF 非対応で false WARN を出す
+- 監査エージェント (Plan) を **自己判断で進めたくなった時こそ通す** (cc_role §1.2)・本セッション初期に CC は (γ) ガード OFF を独断提案し監査経由で軌道修正できた
+- 異常値スメル smoke 結果 (sharpe=6.417・sim_pnl=$8689/年 / fold 1 のみ) は短期間 (sample 89 日・n_estimators=30 浅学習) 由来のため統計的有意性なし・本走 (full parquet 5 fold) で再評価必須
+- ブラックリストパターン自体の緩和 (除外) は実施しない (将来の真の leak 再混入時の検出機能維持)
+
+**関連:**
+- L-179 fractal j±2 leak (本ガード設計の起源・2026-05-13)
+- L-180 ドキュメント引用前 実装 verify (本件で監査経由 verify 完了)
+- L-200 機械的証跡 3 点 (本件で物理 verify 4 項目 + JSON 保存で適用)
+- L-205 早計自己申告 (本件初期 CC が「γ ガード OFF」を独断提案して監査で軌道修正・同型バイアス)
+- false_positive_incident_policy §0-1 Prime Directive / §2 類型 A / §5 関所 G
+- phase_compliance_checklist §1.4 (2026-05-22 Z 案改訂・3 段階運用)
+- 新規ツール: `scripts/priority_rebuild/verify_top20_features_leak.py` (物理 verify 4 項目 + TF-aware lag-1)
 
 ---
 

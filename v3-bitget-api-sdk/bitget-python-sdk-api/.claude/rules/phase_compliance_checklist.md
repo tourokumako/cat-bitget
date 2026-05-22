@@ -132,7 +132,7 @@ build_labels_pct.py で生成された parquet (Phase 0 v3.1 で 2,724 列・実
 | 1.1 | 時系列 valid split (末尾 10%) | run_lgbm_phase1.py L151-158 |
 | 1.2 | early_stopping=50 / random_state=42 | 同 L63-64 |
 | 1.3 | 1 ラベル完了直後 feature_importance top20 review (停止) | スクリプトに pause 追加 |
-| 1.4 | fractal ベース列ブラックリスト 3段階運用 (Defense in Depth・2026-05-14 監査反映) | 対象パターン: `dist_to_fib_v2_*` / `resistance_distance_*` / `support_distance_*` / `nearest_level_*` ／ **(a) top1-20 hit: 即停止 sys.exit(1)・leak 残存疑い・調査必須** ／ (b) top21-50 hit: 記録継続・full_rank.csv に保存・Step B 後にレビュー ／ (c) top51以下: 通常運用 ／ ブラックリスト緩和は実施しない (将来回帰検出機能維持) |
+| 1.4 | fractal ベース列ブラックリスト 3段階運用 (Defense in Depth・2026-05-14 監査反映・2026-05-22 Z 案改訂) | 対象パターン: `dist_to_fib_v2_*` / `resistance_distance_*` / `support_distance_*` / `nearest_level_*` ／ **(a) top1-20 hit: 物理 leak verify 4 項目セット (`verify_top20_features_leak.py` の (i) lag-1 shift 不変性・(ii) 末尾 K bars NaN pattern・(iii) 二重 N サフィックス内外一致・(iv) importance gain single<50%) を同 fold 内で実行**：(a-1) **全 4 項目 PASS** → 警告ログ + `_early_fi_for_guard_review/` に top20 保存 + `full_rank.csv` に hit 列の rank/importance 追記 + 続行可 (false positive 確定・本物の強い予測子と判定) ／ (a-2) **1 項目でも FAIL or SKIP** → 即停止 sys.exit(1)・leak 残存疑い・調査必須 ／ (b) top21-50 hit: 記録継続・full_rank.csv に保存・Step B 後にレビュー ／ (c) top51以下: 通常運用 ／ ブラックリストパターン自体の緩和は実施しない (将来回帰検出機能維持・defense-in-depth) ／ 改訂根拠: 2026-05-22 Plan エージェント独立監査結果・false_positive_incident_policy §5 関所 G「すり抜けるたびに穴を塞ぐ」整合・sample 89 日で検出された 4 件は full 4 年で top20 外 (類型 D regime 過依存) と確定済 |
 | 1.5 | lightgbm / sklearn version 記録 | log で出力 |
 
 ## Phase 4-a (k-means)

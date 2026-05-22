@@ -299,9 +299,91 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-22 改訂23・**Phase 1 v5.1 設計確定 + Step 2/D 完了** = runner v5.1 拡張完成・Step E (case_a) 着手準備）
+## 🔴 現在のフェーズ（2026-05-22 改訂24・**Phase 1 v5.1 Step E (case_a) 実装完了 + Z 案ガード改訂**・Step F 本走 smoke 着手準備）
 
-> **【現在の正本ブロック・改訂23・2026-05-22 セッション末】**
+> **【現在の正本ブロック・改訂24・2026-05-22 セッション末】**
+>
+> ### 本セッション (改訂23 同日続編) 完了事項
+>
+> #### 1. Step E (case_a 実装) 完了
+> - **`scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_rmse.py`** (新規・637 行・commit pending)
+> - 16 model (LONG/SHORT × MFE/MAE × K={12,24,48,96}) × 5 fold = 80 学習設計
+> - TP first 0/1 化: `pred_MFE / max(pred_MAE, 1e-6) >= 1.5` (phase_flow_v4 L151 既定・LONG/SHORT 共通)
+> - TP first 正解: `triple_barrier_label_{side}_K{K} == +1` (全案統一)
+> - train/valid 分離: Purged train_idx 末尾 10% を valid + embargo assert
+> - feature_importance 全 16 model 保存 (Phase 2 ハイパラ調整参照用)
+> - runner v5.1 統合 (W1/W2 警告 + DSR 連携 + 8 組合せ aggregate)
+> - CLI: `--smoke / --full / --parquet 明示 / --k / --side / --n-splits / --min-train-splits` 全揃い
+>
+> #### 2. 物理 leak verify ツール実装
+> - **`scripts/priority_rebuild/verify_top20_features_leak.py`** (新規・446 行・commit pending)
+> - 4 verify 項目: (i) lag-1 shift 不変性 **TF-aware** (5m/15m/30m/4h 各 TF の expected pct_diff = 5/TF_min を ±50% で許容) / (ii) 末尾 K bars NaN pattern / (iii) 二重 N サフィックス内外一致 / (iv) importance gain single < 50%
+> - sample.parquet (25k 行) + full train_2021_2024.parquet (394k 行) で実行・JSON 保存
+>
+> #### 3. Plan エージェント独立監査 + 重大発見
+> - sample 89 日で検出された 4 件 (`dist_to_fib_v2_382`, `resistance_distance`, `dist_to_fib_v2_500`, `nearest_level_touch_count`) は **full 4 年で top20 外**
+> - **sample = レジーム過依存 (false_positive §2 類型 D 時代依存) 確定**
+> - full 4 年で新検出 1 件 (`support_distance_pct_N100_N100__5m`) も物理 verify 全 PASS
+> - full top20 トップは `atr14_pct__5m` / `close_vs_st_upper_pct__5m` / `bb_bw_rolling_p20_100b__15m` / `dist_to_VAH_pct_N200_b100_va80_N200__1h` 等の **業界知見整合の強い予測子**
+>
+> #### 4. phase_compliance §1.4 Z 案改訂 (3 段階運用・正本改訂)
+> - **`.claude/rules/phase_compliance_checklist.md` §1.4** (改訂・commit pending)
+> - 旧: top1-20 hit → 即 sys.exit(1)・調査必須・緩和不可
+> - 新: (a-1) hit 検出 → 物理 verify 4 項目全 PASS → 警告ログ + full_rank 記録 + 続行可 / (a-2) 1 項目でも FAIL/SKIP → 即停止 / ブラックリストパターン自体の緩和は実施しない (将来回帰検出機能維持・defense-in-depth)
+> - 案 a `_check_fractal_leak` ロジック拡張 (verify セット呼出 + 全 PASS 続行・smoke で動作確認 ✅)
+>
+> #### 5. lessons L-206 新規追加
+> - **L-206**: ブラックリストガードを保守一辺倒で運用すると false positive で物理進行不能・Z 案 (物理 verify 経由続行) 改訂で defense-in-depth 維持
+>
+> ### ⚠️ 異常値スメル (次セッション要再評価)
+>
+> smoke (sample 89 日・n_estimators=30・1 fold) で **sharpe=6.417・sim_pnl_year_usd=$8689** という異常値検出。ただし統計的有意性なし (短期間 + 浅学習)。**Step F 本走 (full parquet 5 fold / n_estimators=300+) で再評価必須**。出続けたら類型 D regime 過依存等の調査要 (関所 A 異常値判定基準: sharpe > 3 倍乖離 / month NET > $3,800)。
+>
+> ### 次セッション CC 優先順位 (Step F 本走 smoke 着手)
+>
+> 1. **優先 1 — Step F: 本走 smoke (約 30-60 分)**
+>    - 設定: `--parquet sample または train_2021_2024.parquet / --k 12 --side LONG / --n-splits 5 / --n-estimators 300`
+>    - Z 案ガード警告ログ + 続行を本来環境で確認
+>    - **異常値スメル 4 条件 verify** (sharpe / month NET / IS-OOS / DD)
+>    - メモリ消費実測 (1 model 10-15 GB 想定)
+> 2. **優先 2 — Step G: CP2 監査 (`/audit` 経由・指示書 §9 の 7 項目)**
+>    - Z 案改訂後の整合性 + smoke 結果妥当性
+> 3. **優先 3 — Step H: full 8 組合せ実行 (約 5-6 時間 / 3 並列 2 時間)**
+>    - case_a 完走 → §4.1 採用判定 or Layer 3 投入決定
+> 4. **その後**: 案 b-f 順次実装 (約 3-4 週間)
+>
+> ### 引き継ぎリソース (新セッション Step 0 で必読・3 層構造)
+>
+> #### Layer 1 (毎セッション必読)
+> - **handoff v26** (本セッション末作成・find で動的取得)
+> - WORKFLOW.md 改訂24 active ブロック (本ブロック)
+> - CLAUDE.md (Layer 2 パス修正済・改訂22 ベース)
+> - lessons_active.md 直近 5 件 (**L-206 最新** + L-205 + L-204 拡張 + L-203 + L-202)
+>
+> #### Layer 2 (Step F 着手時)
+> - **Phase 1 v5 指示書 v5.1** (`.claude/instructions/2026-05-22_phase1_layer_inversion_instruction.md`)
+> - **cc_ml_design_spec.md §1.5.1 v5.1**
+> - **`.claude/memory/phase_flow_v4_with_recovery.md`** (L151 1.5 既定 / L528 Phase 4-b-2 本確定)
+> - **`.claude/memory/technical_analysis_knowledge_base.md`** §I.6.3 (Phase 別データ駆動再検討フロー)
+> - **case_a スクリプト** (`scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_rmse.py`・637 行)
+> - **verify_top20 ツール** (`scripts/priority_rebuild/verify_top20_features_leak.py`・446 行)
+> - **runner v5.1** (`scripts/priority_rebuild/run_phase1_v5_purged_kfold.py`・773 行)
+> - **dsr.py + test_dsr.py** (`scripts/priority_rebuild/`)
+> - **phase_compliance §1.4 Z 案** (`.claude/rules/phase_compliance_checklist.md`)
+>
+> #### データ・環境
+> - **parquet 3 種** (`results/priority_rebuild/labels_mfe_mae_pct_{train_2021_2024,test_2025,test_2026_q1}.parquet`)
+> - **.venv311 環境** (mlfinpy 0.1.2 + timeseriescv 0.2 + scikit-learn 1.8.0 + lightgbm 4.6.0 + scipy 1.17.1)
+> - **smoke 出力**: `results/priority_rebuild/ml_phase1_v5/_early_fi_for_guard_review/` (fi_top20 + full_rank csv)
+> - **leak verify JSON**: `results/priority_rebuild/leak_verify_*.json` (sample + full 計 3 件)
+
+---
+
+## 🧊 改訂23 ブロック (履歴・参照用)
+
+### 🔴 旧フェーズヘッダ(2026-05-22 改訂23・**Phase 1 v5.1 設計確定 + Step 2/D 完了** = runner v5.1 拡張完成・Step E (case_a) 着手準備)
+
+> **【旧正本ブロック・改訂23・2026-05-22 セッション末】**
 >
 > ### 本セッション (改訂22 同日後半・継続) 完了事項
 >
