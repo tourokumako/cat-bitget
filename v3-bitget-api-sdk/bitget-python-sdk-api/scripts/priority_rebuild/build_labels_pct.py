@@ -213,7 +213,7 @@ def validate_columns(df: pd.DataFrame, pruned_spec: dict) -> None:
             f"  missing ({len(missing)}, head 10): {sorted(missing)[:10]}\n"
             f"  extra   ({len(extra)}, head 10):   {sorted(extra)[:10]}"
         )
-    print(f"[assert OK] 指標列 {len(expected)} 完全一致 (2,531 期待・§2.1 #1+53/#2+18/#3+104/#4+510/#5+48/#6+64/#8+96/#11+36 + §2.2 #13+30/#15+12/#16+18 + §2.3 #18+18/#20+62・以後 .venv 必須・USD 絶対値 48 件は Phase 1 で blacklist drop)")
+    print(f"[assert OK] 指標列 {len(expected)} 完全一致 (2,603 期待・§2.1 #1+53/#2+18/#3+104/#4+510/#5+48/#6+64/#8+96/#9+72/#11+36 + §2.2 #13+30/#15+12/#16+18 + §2.3 #18+18/#20+62・以後 .venv 必須・USD 絶対値 48 件は Phase 1 で blacklist drop)")
 
 
 def compute_mfe_mae_labels_pct(df5m: pd.DataFrame) -> pd.DataFrame:
@@ -329,8 +329,8 @@ def run_dry_run(df5m: pd.DataFrame, pruned_spec: dict) -> None:
         cat_total = sum(len(pruned_spec[cat][tf]["all"]) for tf in TIMEFRAMES)
         print(f"  {cat}: {per_tf} (total {cat_total})")
 
-    if len(expected) != 2531:
-        raise RuntimeError(f"期待集合の総数が 2,531 と不一致: {len(expected)} (§2.1 #1+53/#2+18/#3+104/#4+510/#5+48/#6+64/#8+96/#11+36 + §2.2 #13+30/#15+12/#16+18 + §2.3 #18+18/#20+62)")
+    if len(expected) != 2603:
+        raise RuntimeError(f"期待集合の総数が 2,603 と不一致: {len(expected)} (§2.1 #1+53/#2+18/#3+104/#4+510/#5+48/#6+64/#8+96/#9+72/#11+36 + §2.2 #13+30/#15+12/#16+18 + §2.3 #18+18/#20+62)")
 
     print(f"[dry-run] K_BARS: {K_BARS} → {len(K_BARS) * 4} MFE/MAE ラベル + {len(K_BARS) * 4} Triple Barrier ラベル = {len(K_BARS) * 8} 合計")
     print(f"[dry-run] Triple Barrier: TP_MULT={TP_MULT} SL_MULT={SL_MULT} (RR={TP_MULT}:{SL_MULT}) encoding={LABEL_SL}/{LABEL_TIME}/{LABEL_TP} (SL/TIME/TP)")

@@ -252,6 +252,46 @@ def build_indicators_extended(df):
             for _name in ("line", "signal", "hist", "hist_change"):
                 f[f"macd_{_name}_pct_{_tag}"] = pd.Series(np.nan, index=c.index)
 
+    # Phase 0 v3.1 Step 4 §2.1 #9 cat_v9 共通フィルタ + 主要閾値距離 pct (2026-05-22・+56 列)
+    # cat/indicators.py compute_indicators の location_prev / entry_risk_score / entry_ok_long を再現
+    # + RSI 70/30, Stoch 80/20, ADX 25 の閾値距離 pct (自己実現的閾値・データ駆動再検討用)
+    _rh20 = h.rolling(20, min_periods=1).max()
+    _rl20 = l.rolling(20, min_periods=1).min()
+    _loc_denom = (_rh20 - _rl20).replace(0, np.nan)
+    f["location_prev_20b"] = ((c - _rl20) / _loc_denom).shift(1).fillna(0.5)
+    _vola_20 = c.rolling(20, min_periods=5).std()
+    f["entry_risk_score_20b"] = (_vola_20 / c).clip(lower=0)
+    # cat_v9 default 閾値 (cat/indicators.py L84-86)
+    f["entry_ok_long_v9_bool"] = (
+        (f["location_prev_20b"] <= 0.9)
+        & (f["entry_risk_score_20b"] <= 0.3398)
+        & (f["entry_risk_score_20b"] >= 0.0007)
+    ).astype(np.int8)
+    # SHORT 側は対称想定 (location 高 + 同 risk 範囲)
+    f["entry_ok_short_v9_bool"] = (
+        (f["location_prev_20b"] >= 0.1)
+        & (f["entry_risk_score_20b"] <= 0.3398)
+        & (f["entry_risk_score_20b"] >= 0.0007)
+    ).astype(np.int8)
+
+    # 主要閾値距離 pct (連続値・自己実現的閾値の連続値併存・LightGBM 分岐学習用)
+    if "rsi14" in f.columns:
+        f["rsi14_dist_70_pct"] = (f["rsi14"] - 70.0) / 70.0 * 100
+        f["rsi14_dist_30_pct"] = (f["rsi14"] - 30.0) / 30.0 * 100
+    else:
+        f["rsi14_dist_70_pct"] = pd.Series(np.nan, index=c.index)
+        f["rsi14_dist_30_pct"] = pd.Series(np.nan, index=c.index)
+    if "stoch_k" in f.columns:
+        f["stoch_k_dist_80_pct"] = (f["stoch_k"] - 80.0) / 80.0 * 100
+        f["stoch_k_dist_20_pct"] = (f["stoch_k"] - 20.0) / 20.0 * 100
+    else:
+        f["stoch_k_dist_80_pct"] = pd.Series(np.nan, index=c.index)
+        f["stoch_k_dist_20_pct"] = pd.Series(np.nan, index=c.index)
+    if "adx14" in f.columns:
+        f["adx14_dist_25_pct"] = (f["adx14"] - 25.0) / 25.0 * 100
+    else:
+        f["adx14_dist_25_pct"] = pd.Series(np.nan, index=c.index)
+
     # Phase 0 v3.1 Step 4 §2.1 #3 業界カタログ追加 (2026-05-22・ta library 経由・+80 列想定)
     # pandas-ta-classic で 200+ 個別選定は工数大のため、ta library (既使用) で代表 10 indicator 選定。
     # 全 8 TF で計算・try/except で size 不足対応。
