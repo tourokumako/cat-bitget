@@ -299,9 +299,106 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-23 改訂29・**Step I-3.1〜I-3.5 完走 (順次実行) + CP4 監査 CONDITIONAL NO-GO + 全 8 組合せ 0/16 ALL PASS**・案 W+V+Critical-1+Critical-2 採用 vs 案 X 直行のまこさん cold head 判断が次タスク）
+## 🔴 現在のフェーズ（2026-05-24 改訂30・**Step I-4.1 case_a_v2_v3 Critical-1 修正完了 + smoke verify + commit 572e0b8**・次タスク = Step I-4.2 Critical-2 (dsr.py ガード) → 案 W (SL_PCT grid 拡張) → 案 V (K96 除外) → Step I-3 再走）
 
-> **【現在の正本ブロック・改訂29・2026-05-23 セッション末（10 時間越え長丁場・改訂28 同日続編）】**
+> **【現在の正本ブロック・改訂30・2026-05-24 セッション末（前セッション続編・案 A 採用後 fresh head 実装）】**
+>
+> ### 本セッション (2026-05-24・前セッション 547019a の続編) 完了事項
+>
+> #### 1. Step 0 セッション開始プロトコル + 引き継ぎ verify
+> - 読了ゲート通過 (機械的証跡): WORKFLOW 改訂29 / CLAUDE.md / handoff v30 / lessons L-212a/b/c / CP5 監査結果 / 仕様書 v1 / cc_role.md / web_claude_role.md / false_positive_incident_policy.md / phase_compliance_checklist.md / exchange_spec.md / core_rules.md / web_claude_self_check.md
+> - **重大発見**: WORKFLOW 改訂29 active のままで案 A 採用記録が WORKFLOW/lessons/memory どこにもない・CC 独断進行疑い浮上 → まこさんから前セッション末メッセージ共有で「案 A 採用 GO 取得済」確認・**WORKFLOW.md 改訂30 未更新が引き継ぎミスの根本原因** (L-213 候補)
+>
+> #### 2. Step I-4.1.0 CP5 監査結果反映 → 仕様書 v2 確定 (462 行・v1 417 + 45 行)
+> - **「機械的反映」同型バイアス事案**: CC が「CP5 監査 9 件 100% 反映」と宣言 → まこさん「ちゃんと考えてよ」指摘 → CC 独立評価で 3 件 (M1/M3/C2) 修正提示
+>   - **M1 fold 数 3→5**: L-209 再演リスク認識した上で「比較継続性優先で別タスク化」根拠明記
+>   - **M3 実行時間基準**: 監査者「< 10 秒」(楽観値) を Step I-3.3 実測 (15-25 秒) ベースで「< 40 秒」に CC 独立修正
+>   - **C2 ガード閾値**: 監査者 0.05% 保持 + 「現実には発動しない」safety net 注記追加
+> - heading に v2 ラベル付け + §8 改訂サマリーに v2 行追加完了
+>
+> #### 3. Step I-4.1.3 実装 (3 ファイル改修 + 1 ファイル新規作成・+734 / -23 行)
+> - **`run_phase1_v5_purged_kfold.py`** L380-415 (compute_simulated_pnl_v2 改修):
+>   - fixed_tp に M2 対称ガード (tp_pct ≤ 0.0 で raise・dummy 渡し検出)
+>   - time_exit を Critical-1 で予測装置化 (`r[i] = p × TP_PCT + (1-p) × median - cost`)
+>   - C2 ガード追加 (TP_PCT ≒ median 重複は raise)
+> - **`run_lgbm_phase1_v5_case_a_v2_v3.py`** 新規 600 行 (既存 case_a_v2 から cp + 4 箇所改修):
+>   - 識別子リネーム (CASE_NAME_V3 / OUT_BASE_V3 / train_case_a_v2_v3)
+>   - time_exit grid を N 2 grid → N × TP_PCT 12 grid に拡張
+>   - 実 tp_hit_prob ロード (旧 dummy 0.5) + C2 ガード skip + warning
+> - **`merge_step_i_summaries.py`** L162-176 改修:
+>   - returns 再構成式を予測装置化 (compute_simulated_pnl_v2 と同数式)
+>   - DSR docstring 更新 (constant-return 前提コメント修正)
+>
+> #### 4. smoke verify (sample K=12 LONG / 5 秒完走)
+> - 公式 source: [`results/priority_rebuild/ml_phase1_v5/_case_a_v2_v3/case_a_v2_v3_summary_labels_mfe_mae_pct_sample.json`](results/priority_rebuild/ml_phase1_v5/_case_a_v2_v3/case_a_v2_v3_summary_labels_mfe_mae_pct_sample.json)
+> - **Critical-1 修正の核心効果実証**:
+>   - fold 0: fixed_tp $-1,138 / **time_exit $13,608 (best_tp_pct=0.5)**
+>   - fold 1: fixed_tp $-996 / **time_exit $13,679 (best_tp_pct=0.5)**
+>   - fold 内分散非ゼロ ✅ (旧式は全 fold 同一値・L-212c 解消)
+>   - best_tp_pct=0.5 記録 ✅ (旧式は null/dummy 0.0)
+> - **関所 A セーフ**: anomaly_smell_detected=False (月次相当 $1,134 < 合格ライン 2 倍 $3,800)
+> - **受け入れ基準 9 点 全 PASS** (絞り込み示唆語彙 grep 該当なし / 全工程未来参照 verify pass / 実行時間 5 秒/組合せ << 40 秒)
+>
+> #### 5. git commit (572e0b8 / 4 files / +734 / -23)
+> - 内訳: 仕様書 v2 (+45) / runner v5.1 改修 (+24/-8) / case_a_v2_v3 新規 (+612) / merge 改修 (+13/-2) / smoke log は results/ で commit 対象外
+>
+> #### 6. lessons L-213 新規追加 (本セッション末)
+> - **L-213**: 「機械的反映」同型バイアス再演 + 案 A 採用記録漏れ + WORKFLOW 改訂30 未更新 — セッション終了処理の構造的穴
+>
+> ### 次セッション CC 優先順位 (Step I-4.2 Critical-2 着手)
+>
+> 1. **優先 1 — Step I-4.2 Critical-2 修正 (約 0.5 日)**:
+>    - dsr.py L115-134 に input contract + ガード追加 (`std < 1e-12` で `DSRResult(nan, ...)` + auto-PASS 禁止)
+>    - test_dsr.py に `test_sigma_sr_constant_returns_case` 追加 (回帰検出)
+>    - merge_step_i_summaries.py の `dsr_pass` ロジック改修 (Sortino / 月次黒字率代替判定)
+> 2. **優先 2 — Step I-4.3 案 W 実装 (約 1-2 日)**:
+>    - run_lgbm_phase1_v5_case_a_v2_v3.py の SL_PCT grid 拡張 (0.3-0.8 → 0.3-1.5%)
+>    - TP_PCT grid 上限拡張 (2.5 → 3.5%)
+>    - smoke + 関所 A verify
+> 3. **優先 3 — Step I-4.4 案 V 実装 (約 0.5 日)**:
+>    - merge_step_i_summaries.py の判定対象を 6 組合せ (K=12,24,48) に限定
+>    - K=96 LONG/SHORT を別レンズ評価 (Secondary Filter 候補)
+> 4. **優先 4 — Step I-4.5 Step I-3 再走 (約 1-2 時間・1 並列順次)**:
+>    - 修正後 case_a_v2_v3 で 8 組合せ × 2 method 再評価
+>    - §4.1 v5.1 判定再実行
+> 5. **優先 5 — Step I-4.6 CP6 監査 (関所 D 必須)**:
+>    - 修正後 0/16 から改善幅と Phase 2 進行可否判定
+> 6. **優先 6 — セッション終了処理** (lessons L-214+ + WORKFLOW 改訂31 + handoff v32)
+>
+> ### 引き継ぎリソース (3 層構造)
+>
+> #### Layer 1 (毎セッション必読)
+> - **handoff v31** (本セッション末作成): `.claude/instructions/handoff_to_cc_v31_session_20260524_step_i4_1_done.md`
+> - WORKFLOW.md 改訂30 active ブロック (本ブロック)
+> - CLAUDE.md (改訂22 ベース)
+> - lessons_active.md 直近 5 件 (**L-213 → L-212c → L-212b → L-212a → L-211**)
+>
+> #### Layer 2 (Step I-4.2 着手時)
+> - 仕様書 v2: `.claude/instructions/2026-05-23_step_i4_1_case_a_v2_v3_critical1_spec.md` (462 行)
+> - CP5 監査結果: `.claude/instructions/2026-05-23_step_i4_1_critical1_cp5_audit_report.md` (131 行)
+> - 実装ファイル (本セッションで commit 済・572e0b8):
+>   - `scripts/priority_rebuild/run_phase1_v5_purged_kfold.py` (改修済)
+>   - `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_v2_v3.py` (600 行・新規)
+>   - `scripts/priority_rebuild/merge_step_i_summaries.py` (改修済)
+> - Step I-4.2 改修対象:
+>   - `scripts/priority_rebuild/dsr.py` L115-134 (sigma_sr_estimate input contract + ガード)
+>   - `scripts/priority_rebuild/test_dsr.py` (回帰検出 test 追加)
+>   - `scripts/priority_rebuild/merge_step_i_summaries.py` (dsr_pass ロジック改修)
+>
+> #### データ・環境
+> - parquet 3 種 + .venv311 (mlfinpy 0.1.2 / sklearn 1.8.0 / lightgbm 4.6.0 / scipy 1.17.1)
+> - smoke 出力: `results/priority_rebuild/ml_phase1_v5/_case_a_v2_v3/case_a_v2_v3_summary_labels_mfe_mae_pct_sample.json`
+> - 前セッションまでの artifact (Step I-3.1〜I-3.4 完走分・触らない・案 W/V 実装後 再走で書き換え):
+>   - `_tp_hit_classifier_p{1,2,3}/` (76+33+28 MB)
+>   - `_phase4b_train_constants/` (16 個 + INDEX)
+>   - `_case_a_v2_p{1,2,3}/` (旧版・Step I-3.5 比較用に保持)
+>   - `_step_i_merged/phase1_v5_step_i_summary_merged.json` (旧版 0/16 判定・案 W/V 実装後 再走で更新)
+
+---
+
+## 🧊 改訂29 ブロック (履歴・参照用)
+
+> **【旧正本ブロック・改訂29・2026-05-23 セッション末（10 時間越え長丁場・改訂28 同日続編）】**
 >
 > ### 本セッション (改訂28 同日続編・2026-05-23 07:35 〜 22:00) 完了事項
 >
