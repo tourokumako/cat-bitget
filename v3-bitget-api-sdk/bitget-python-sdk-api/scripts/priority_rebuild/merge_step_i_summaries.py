@@ -2,21 +2,16 @@
 
 P1: K={12,24} × LONG/SHORT (4 組合せ)
 P2: K=48 × LONG/SHORT (2 組合せ)
-P3: K=96 × LONG/SHORT (2 組合せ・案 V で Secondary Filter に分離)
+P3: K=96 × LONG/SHORT (2 組合せ)
 
-統合後 8 組合せ × 2 method (fixed_tp / time_exit) を読み込み、Primary 6 組合せ
-(K=12, 24, 48 × LONG/SHORT) で §4.1 v5.1 判定 (cc_ml_design_spec §1.5.1 v5.1):
+統合後 8 組合せ × 2 method (fixed_tp / time_exit) で §4.1 v5.1 判定 (cc_ml_design_spec §1.5.1 v5.1):
 - TP Precision > 0.5 (time_exit method は不適用 → 自動 PASS)
 - Simulated PnL: 12 ヶ月中 8+ ヶ月プラス + 年間 NET ≥ $500
-- DSR > 1.0 (n_trials = 12 = 6 組合せ × 2 method・案 V で 16 → 12)
+- DSR > 1.0 (n_trials = 16 = 8 組合せ × 2 method)
 - entropy lift > 10% (案 a では NaN 自動 PASS 継承・M2 後送り問題は別タスク)
 
-K=96 LONG/SHORT は別レンズ (Secondary Filter) で評価 (5m bot 運用要件と 8h 予測
-ホライズン乖離・案 V 2026-05-26): raw 数値は `secondary_filter_evaluation` フィールドに
-出力し CP6 監査の根拠定量化に使用する。
-
-採用判定 (Primary 6 組合せ基準):
-- method (fixed_tp) または (time_exit) のいずれかで 6 組合せ ALL PASS → Phase 2 進行
+採用判定:
+- method (fixed_tp) または (time_exit) のいずれかで 6+ 組合せ ALL PASS → Phase 2 進行
 - 4-5 組合せ → Step G Major M2 + M3 統合 → 再 smoke (まこさん最終判断)
 - 0-3 組合せ → 案 X (Layer 3) or 案 Z (案 b-f) (まこさんレビュー必須)
 
@@ -64,15 +59,6 @@ EXPECTED_COMBINATIONS = [
     "K96_LONG", "K96_SHORT",
 ]
 
-# 案 V (2026-05-26・Step I-4.4): K=96 は 5m bot 運用要件 (即時 Exit ループ) と
-# 8h 予測ホライズン乖離で Primary 判定対象から除外・別レンズ (Secondary Filter) で評価
-# 出力 JSON 互換のため `meets_6plus_criteria` / `meets_6plus_any_method` のキー名は維持し、
-# 意味を「Primary 6 組合せ ALL PASS」に再定義する (下流 dataclass / WORKFLOW 文言互換)
-K_PRIMARY_FILTER = [12, 24, 48]
-K_SECONDARY = [96]
-PRIMARY_COMBINATIONS = [f"K{k}_{side}" for k in K_PRIMARY_FILTER for side in ("LONG", "SHORT")]
-SECONDARY_COMBINATIONS = [f"K{k}_{side}" for k in K_SECONDARY for side in ("LONG", "SHORT")]
-
 # §4.1 v5.1 合格閾値 (cc_ml_design_spec §1.5.1 v5.1)
 THRESHOLD_TP_PRECISION = 0.5
 THRESHOLD_MONTHS_POSITIVE = 8
@@ -80,8 +66,8 @@ THRESHOLD_SIM_PNL_YEAR_USD = 500.0
 THRESHOLD_DSR = 1.0
 THRESHOLD_ENTROPY_LIFT = 0.10
 
-# DSR n_trials (spec v2.1 §6.3・案 V で 16 → 12 = 6 組合せ × 2 method)
-DSR_N_TRIALS = 12
+# DSR n_trials (spec v2.1 §6.3)
+DSR_N_TRIALS = 16  # 8 組合せ × 2 method
 DSR_SR_VARIANCE = 1.0  # cross-trial variance (default unit variance)
 
 # Cost (compute_simulated_pnl_v2 default)
@@ -375,30 +361,15 @@ def merge_and_evaluate(
     missing = [c for c in EXPECTED_COMBINATIONS if c not in merged]
     extra = [c for c in merged if c not in EXPECTED_COMBINATIONS]
 
-    # 案 V (2026-05-26・Step I-4.4): method_summary は PRIMARY (6 組合せ) 限定集計
-    # 既存キー名 (`meets_6plus_criteria` / `n_combinations_all_pass`) は下流互換のため維持し、
-    # 意味を「Primary 6 組合せ ALL PASS」「Primary 内 ALL PASS 数」に再定義
     method_summary: Dict[str, dict] = {}
-    secondary_summary: Dict[str, dict] = {}
     for method in ("fixed_tp", "time_exit"):
-        primary_pass = sorted(
-            ck for ck in PRIMARY_COMBINATIONS
-            if ck in merged and merged[ck]["evaluation"][method]["combo_all_pass"]
-        )
-        secondary_pass = sorted(
-            ck for ck in SECONDARY_COMBINATIONS
-            if ck in merged and merged[ck]["evaluation"][method]["combo_all_pass"]
-        )
+        all_pass_combos = [
+            ck for ck, d in merged.items() if d["evaluation"][method]["combo_all_pass"]
+        ]
         method_summary[method] = {
-            "n_combinations_all_pass": len(primary_pass),
-            "all_pass_combinations": primary_pass,
-            "meets_6plus_criteria": len(primary_pass) >= 6,
-            "primary_total": len(PRIMARY_COMBINATIONS),
-        }
-        secondary_summary[method] = {
-            "n_combinations_all_pass": len(secondary_pass),
-            "all_pass_combinations": secondary_pass,
-            "secondary_total": len(SECONDARY_COMBINATIONS),
+            "n_combinations_all_pass": len(all_pass_combos),
+            "all_pass_combinations": sorted(all_pass_combos),
+            "meets_6plus_criteria": len(all_pass_combos) >= 6,
         }
 
     meets_6plus_any = any(m["meets_6plus_criteria"] for m in method_summary.values())
@@ -423,17 +394,6 @@ def merge_and_evaluate(
         "missing_combinations": missing,
         "extra_combinations": extra,
         "method_summary": method_summary,
-        "secondary_filter_evaluation": secondary_summary,
-        "filter_design": {
-            "primary_K": K_PRIMARY_FILTER,
-            "secondary_K": K_SECONDARY,
-            "primary_combinations": PRIMARY_COMBINATIONS,
-            "secondary_combinations": SECONDARY_COMBINATIONS,
-            "reason": (
-                "案 V (Step I-4.4): K=96 は 5m bot 運用要件 (即時 Exit ループ) と "
-                "8h 予測ホライズン乖離で Primary 判定対象から除外・別レンズ評価"
-            ),
-        },
         "meets_6plus_any_method": meets_6plus_any,
         "n_combinations_all_pass_max": n_combinations_all_pass_max,
         "next_action": next_action,
