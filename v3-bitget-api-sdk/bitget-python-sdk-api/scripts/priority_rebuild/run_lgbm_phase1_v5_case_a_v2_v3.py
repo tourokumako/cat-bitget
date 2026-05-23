@@ -59,8 +59,8 @@ from run_lgbm_phase1_v5_case_a_rmse import (  # noqa: E402
 CASE_NAME_V3 = "a_rmse_v2_v3"
 
 # 仕様書 §3.2 grid
-TP_PCT_GRID: Tuple[float, ...] = (0.3, 0.5, 0.8, 1.2, 1.8, 2.5, 3.0, 3.5)
-SL_PCT_GRID: Tuple[float, ...] = (0.3, 0.5, 0.8, 1.0, 1.2, 1.5)
+TP_PCT_GRID: Tuple[float, ...] = (0.3, 0.5, 0.8, 1.2, 1.8, 2.5)
+SL_PCT_GRID: Tuple[float, ...] = (0.3, 0.5, 0.8)
 N_RATIOS: Tuple[float, ...] = (0.5, 1.0)
 
 OUT_BASE_V3 = OUT_BASE / "_case_a_v2_v3"
