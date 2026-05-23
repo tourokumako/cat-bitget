@@ -380,19 +380,41 @@ def compute_simulated_pnl_v2(
     if method == "fixed_tp":
         # 期待値式: E[return] = p × TP - (1-p) × SL - cost
         # TP_PCT / SL_pct は事前固定定数 (pred_MFE 由来なし・3 重楽観 (1)(3) 解消)
+        # M2: tp_pct 必須 (対称ガード・dummy 0.0 渡し検出・L-181 設計転換時旧経路混入防止)
+        if tp_pct is None or tp_pct <= 0.0:
+            raise ValueError(
+                "fixed_tp method requires positive tp_pct (M2 対称ガード)"
+            )
         returns_per_trade = (
             tp_hit_prob * (tp_pct / 100.0)
             - (1.0 - tp_hit_prob) * (sl_pct / 100.0)
             - cost_per_trade
         )
     elif method == "time_exit":
-        # 期待値式: return = time_exit_return_median - cost (定数 broadcast)
-        # tp_hit_prob 不使用・time_exit_return_median は train 期間定数 (regime ロバスト median)
-        returns_per_trade = pd.Series(
-            (time_exit_return_median / 100.0) - cost_per_trade,
-            index=tp_hit_prob.index,
-            name=f"return_v2_{method}",
+        # Critical-1 修正 (L-212c): 旧式 (定数 broadcast) は naive baseline で fold 内分散ゼロ
+        # 新式 E[return] = p × TP_PCT + (1-p) × time_exit_median - cost (予測装置化)
+        # tp_hit_prob[i] が線形係数 (TP_PCT - time_exit_median)/100 で returns に伝播
+        # M2: tp_pct 必須 (dummy 0.0 渡し禁止)
+        if tp_pct is None or tp_pct <= 0.0:
+            raise ValueError(
+                "time_exit method requires positive tp_pct "
+                "(Critical-1 修正・L-212c 予測装置化)"
+            )
+        # C2: TP_PCT ≒ median 重複ガード (naive baseline 再演グリッド除外・safety net)
+        # 現実には Step I-3.2 実測 median ≦ 0.03% で発動しない想定
+        if abs((tp_pct / 100.0) - (time_exit_return_median / 100.0)) < 5e-4:
+            raise ValueError(
+                f"time_exit naive baseline 再演リスク: "
+                f"|tp_pct - time_exit_return_median| = "
+                f"{abs(tp_pct - time_exit_return_median):.4f}% < 0.05% "
+                f"(C2 ガード)"
+            )
+        returns_per_trade = (
+            tp_hit_prob * (tp_pct / 100.0)
+            + (1.0 - tp_hit_prob) * (time_exit_return_median / 100.0)
+            - cost_per_trade
         )
+        returns_per_trade.name = f"return_v2_{method}"
     # 月次集計
     monthly = returns_per_trade.groupby(
         returns_per_trade.index.to_period("M")

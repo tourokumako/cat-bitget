@@ -1,9 +1,10 @@
 # 2026-05-23_step_i4_1_case_a_v2_v3_critical1_spec.md — Critical-1 修正設計仕様書
 
 **起案**: CC (2026-05-23 22:45・改訂29 続編)
-**宛先**: CC 自身 (Step I-4.1 実装担当・明日 fresh head)
-**版**: v1 (CP5 監査前ドラフト)
-**前身**: handoff v30 §1.4 CP4 監査 Critical-1 / 仕様書 v2.1 §6 time_exit method
+**改訂**: CC (2026-05-24・CP5 監査結果 9 件 + CC 独立評価 3 件 反映)
+**宛先**: CC 自身 (Step I-4.1 実装担当)
+**版**: v2 (CP5 監査結果 Critical 2 / Major 4 / Minor 3 = 9 件反映 + CC 独立評価 3 件 = M1 根拠明記 / M3 実測ベース修正 / C2 注記追加)
+**前身**: handoff v30 §1.4 CP4 監査 Critical-1 / 仕様書 v2.1 §6 time_exit method / CP5 監査結果 (`2026-05-23_step_i4_1_critical1_cp5_audit_report.md`)
 **目的**: Step I-3.4 §4.1 v5.1 判定で全 8 組合せ time_exit method が **fold 内完全同一値 (= naive baseline)** を出した構造的欠陥を解消し、time_exit method を**予測装置**として復活させる
 **位置づけ**: cc_role.md §1.5.5 で **full 寄り (250-350 行)**・新規設計判断 + 新規 verify 含む
 **読了ゲート**: WORKFLOW Step 0 / handoff v30 / lessons L-212c 通過済 (2026-05-23 22:30 機械的証跡記録)
@@ -73,8 +74,10 @@ test_probs_dummy = pd.Series(0.5, index=test_ts)
 |---|---|---|
 | ① 学習不良 (overfit / regime 過依存) | 10-15% | 範囲外 (案 X / 案 Z 領域) |
 | (2a) fixed_tp 評価式暫定 (TP_PCT grid 狭さ等) | 40-50% | 範囲外 (案 W で対応) |
-| **(2b) time_exit naive baseline** | **25-30%** | **本仕様書で解消** |
+| **(2b) time_exit naive baseline** | **25-30% (下限 0 件可能性併記)** | **本仕様書で解消** |
 | ③ データ regime 過依存 | 10-15% | 範囲外 (案 V K96 除外で軽減) |
+
+**寄与率出典**: CP4 監査推定 (CC 独立再算出未実施)・case_a_v2_v3 単独効果の下限は 0 件改善可能性も併存。
 
 本仕様書単独の改善期待値: **25-30%** (case_a_v2 のうち 8 fold = 半数の構造的 PASS 不可能を解消)。1 週間並列実施で 4 案合計 75-95% 寄与をカバーすることで 6+ 組合せ ALL PASS 到達を狙う。
 
@@ -90,6 +93,7 @@ test_probs_dummy = pd.Series(0.5, index=test_ts)
 - Critical-2 dsr.py ガード (Step I-4.2)
 - 案 W SL_PCT grid 拡張 (Step I-4.3)
 - 案 V K=96 除外 (Step I-4.4)
+- **fold 数 3 → 5 是正** (Phase 1 v5.1 仕様 5 fold vs case_a_v2 実装 3 fold のズレ・別タスク I-4.X で対応・**根拠**: 本タスク内で fold 数変更すると Step I-3 の前回結果 (3 fold) と比較不能となり Critical-1 修正単独の効果測定が不可能になるため・**L-209 Major 後送り再演リスク認識済**・前回結果との比較継続性を優先する独立判断)
 - Phase 4-b-1 本確定 (cluster 別最適化 / DSR walk-forward / 24 種 Exit 網羅)
 
 ---
@@ -108,6 +112,18 @@ test_probs_dummy = pd.Series(0.5, index=test_ts)
 | `cost_per_trade` (= 0.00033) | ✅ 可 | exchange_spec.md 確定値 |
 
 未来参照変数なし。L-179 / L-212c 同型再演リスクなし。
+
+### §1.1.5 評価式の予測装置性宣言 (L-212c 関所 B 拡張・CP5 監査 C1 反映)
+
+各 method の評価式が「予測モデル出力 (tp_hit_prob) を直接消費する経路を持つか」を明示:
+
+| method | 予測モデル出力の消費経路 | fold 内 returns 分散保証 |
+|---|---|---|
+| **fixed_tp** | `tp_hit_prob[i]` が線形係数 `(TP_PCT + SL_pct)/100` で `returns_per_trade[i]` に伝播 | `std(p) > 0` で `Var(r) > 0` |
+| **time_exit (修正後)** | `tp_hit_prob[i]` が線形係数 `(TP_PCT - time_exit_median)/100` で `returns_per_trade[i]` に伝播 | `std(p) > 0` かつ `TP_PCT ≠ time_exit_median` で `Var(r) > 0` |
+| time_exit (旧式・naive baseline) | **消費経路なし** (定数 returns・予測装置として機能不能) | Var(r) = 0 ❌ |
+
+両 method とも「予測モデル出力が評価結果に直接影響する」経路を持つ → §4.1 v5.1 4 指標 ALL PASS 判定の対象として並立可能。
 
 ### §1.2 leak 防止
 
@@ -173,8 +189,6 @@ Var(r[i]) = (tp_hit_prob.std())² × (TP_PCT - time_exit_median)² / 100²
 
 tp_hit_prob.std() > 0 (Step I-2.1 smoke で確認済・mean=0.4-0.6 / std=0.1-0.2 範囲) かつ TP_PCT ≠ time_exit_median である限り、Var(r[i]) > 0 が保証される。
 
-DSR 計算 (`mean / std`) が正常動作 → Critical-2 dsr.py × 定数 returns 相互作用 (L-212b) も解消方向に作用。
-
 ---
 
 ## §3 修正対象ファイル
@@ -195,19 +209,38 @@ elif method == "time_exit":
 ```python
 elif method == "time_exit":
     # 期待値式: E[return] = p × TP_PCT + (1-p) × time_exit_median - cost (予測装置化)
-    # tp_pct パラメータを必須化 (旧式 dummy 0.0 渡しは禁止)
-    if tp_pct <= 0.0:
+    # M2: tp_pct パラメータを必須化 + fixed_tp 対称ガード
+    if tp_pct is None or tp_pct <= 0.0:
         raise ValueError(
             "time_exit method requires positive tp_pct (Critical-1 修正・L-212c)"
+        )
+    # C2: TP_PCT ≒ median 重複ガード (naive baseline 再演グリッド除外)
+    if abs((tp_pct / 100.0) - (time_exit_return_median / 100.0)) < 5e-4:
+        raise ValueError(
+            f"time_exit naive baseline 再演リスク: "
+            f"|tp_pct - time_exit_return_median| = "
+            f"{abs(tp_pct - time_exit_return_median):.4f}% < 0.05% (C2 ガード)"
         )
     returns_per_trade = (
         tp_hit_prob * (tp_pct / 100.0)
         + (1.0 - tp_hit_prob) * (time_exit_return_median / 100.0)
         - cost_per_trade
     )
+
+# fixed_tp method 側にも M2 対称ガード追加
+elif method == "fixed_tp":
+    if tp_pct is None or tp_pct <= 0.0:
+        raise ValueError(
+            "fixed_tp method requires positive tp_pct (M2 対称ガード)"
+        )
+    # ... 既存 fixed_tp ロジック ...
 ```
 
-ガード追加: `tp_pct <= 0.0` で `raise ValueError` (旧式 dummy 渡し検出 + L-181 設計転換時の旧経路混入防止)。
+ガード追加:
+- **M2** `tp_pct is None or tp_pct <= 0.0` で `raise ValueError` (旧式 dummy 0.0 渡し検出 + L-181 設計転換時の旧経路混入防止・**fixed_tp / time_exit 両 method 対称適用**)
+- **C2** `abs(tp_pct - time_exit_return_median) < 0.05%` で `raise ValueError` (TP_PCT grid と train 期間 median の数値的重複による naive baseline 再演リスク防止・CP5 監査新規穴-α 反映)
+  - **CC 独立評価 (現実的発動率)**: Step I-3.2 公式 source 実測値 = median ≈ 0.003%-0.027% (K=12〜96 全 16 件)・TP_PCT grid = 0.3%〜2.5% (6 段階)・最小差分 = TP_PCT 0.3% - median 0.027% = **0.27%** で全 grid 安全範囲
+  - C2 ガードは「safety net として保持・現実には発動しない」性質 (将来 median が極端な regime で 0.25% を超える場合の防護壁)・本走時に warning ログ自体が出ないのが期待動作
 
 ### §3.2 case_a_v2_v3 新規ファイル (既存 case_a_v2 保護)
 
@@ -266,6 +299,10 @@ class MethodFoldMetrics:
 
 grid 数の変化: time_exit は 2 → **12** (N 2 × TP_PCT 6) / fixed_tp は 18 のまま / 合計 30 grid/組合せ。
 calc コスト: 1 fold あたり sim_pnl 計算 30 回 (旧 20 回の 1.5 倍・smoke で実測 < 10 秒/組合せ想定)。
+
+**C2 ガード適用後の有効 grid 数**: TP_PCT grid (0.3, 0.5, 0.8, 1.2, 1.8, 2.5%) のうち |TP_PCT - time_exit_median| < 0.05% に該当する組合せは skip される (例: K12_LONG fold 0 N=12 median=0.0034% → TP_PCT=0.3% で skip)。期待される有効 grid 数: 10-12 grid/組合せ。
+
+**実装メモ (m3)**: `_aggregate_grid_idxmax` を 12 grid (= N 2 × TP_PCT 6) に対応・既存 unit test `test_aggregate_grid_idxmax.py` の 10 テストが 12 grid 入力でも PASS することを verify (NaN edge case + 同点 idxmax の境界 test ケース 1 件追加推奨)。
 
 ### §3.3 merge_step_i_summaries.py L162-176 改修
 
@@ -326,9 +363,16 @@ smoke 完走後の `anomaly_smell_per_combination` で month_pnl > $3,800 件数
 
 case_a_v2_v3 単独効果 (Critical-1 のみ・案 W/V 不実施) では time_exit method の sim_pnl 値変動 + DSR 計算正常化が期待される。0-3 組合せの改善幅を観察 → 案 W/V/Critical-2 と並列実施で総合 6+ ALL PASS を狙う。
 
-### §4.4 完了報告必須証跡 8 点
+### §4.4 完了報告必須証跡 9 点 (M3 で 8 → 9 拡張)
 
-WORKFLOW.md §作業完了報告 8 点全部 (grep 結果 / 数値二重提示 / ファイル実体 / 実行ログ / 絞り込み示唆語彙 / train→test 変化表 / 異常値スメルテスト / 全工程未来参照 verify) を case_a_v2_v3 完了報告で提示。
+WORKFLOW.md §作業完了報告 8 点全部 (grep 結果 / 数値二重提示 / ファイル実体 / 実行ログ / 絞り込み示唆語彙 / train→test 変化表 / 異常値スメルテスト / 全工程未来参照 verify) + **本仕様書追加 1 点 = 計 9 点**:
+
+9. **30 grid 実測時間機械的証跡** (M3 反映 + CC 独立評価で実測ベースに修正)
+   - smoke (sample K=12 LONG / 1 fold) で `ps -o pid,rss,etime,cpu,command` 出力 → per-組合せ実測時間 + RSS ピーク
+   - 受け入れ基準: **per-組合せ < 40 秒** (Step I-3.3 case_a_v2 実測 15-25 秒 × 1.5 倍 = 23-37 秒・余裕 3 秒)
+   - 根拠 (CC 独立評価): Step I-3.3 case_a_v2 (20 grid) 実測 P1 54 秒 / P2 42 秒 / P3 89 秒 = per-組合せ 15-25 秒・本仕様書 30 grid (1.5 倍) で per-組合せ 23-37 秒見込み・full 走 8 組合せ × 3 fold ≈ 1600 秒 = 27 分以内に収まる外挿根拠
+   - 監査者推奨値「< 10 秒」は Step I-3.3 実測を考慮しない楽観値のため CC 独立判断で 40 秒に修正
+   - 違反検出時: grid 数削減 (C2 ガード対象拡大 or N grid を {K} のみに縮小) を仕様書 v3 で検討
 
 ---
 
@@ -411,6 +455,7 @@ CP5 監査 (`/audit` または Plan サブエージェント) で以下を独立
 | 版 | 日付 | 内容 |
 |---|---|---|
 | v1 | 2026-05-23 22:45 | 初版・CP4 監査 Critical-1 反映・CP5 監査前ドラフト |
+| **v2** | **2026-05-24** | **CP5 監査結果 9 件 100% 反映**: C1 (§1.1.5 予測装置性宣言新設) / C2 (§3.1 TP_PCT ≒ median 重複ガード追加) / M1 (§0.4 fold 数 3→5 非スコープ明示) / M2 (§3.1 ガード強化 + fixed_tp 対称化) / M3 (§4.4 完了報告証跡 9 点目追加) / M4 (§0.3 寄与率下限 0 件併記) / m1 (§2.4 末尾 Critical-2 言及削除) / m2 (§0.3 寄与率出典明記) / m3 (§3.2 実装メモ追加) |
 
 ---
 

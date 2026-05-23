@@ -163,17 +163,31 @@ def reconstruct_returns_for_fold(
         returns = p * (tp_pct / 100.0) - (1 - p) * (sl_pct / 100.0) - cost_per_trade
         return returns
     elif method == "time_exit":
+        # Critical-1 修正 (L-212c): 旧式 (定数 broadcast) は naive baseline で fold 内分散ゼロ
+        # 新式 r[i] = p[i] × TP_PCT/100 + (1 - p[i]) × median_pct/100 - cost (予測装置化)
+        # tp_hit_prob[i] が線形係数 (TP_PCT - median_pct)/100 で returns に伝播
         N = fold_summary.get("best_N")
-        if N is None:
+        tp_pct = fold_summary.get("best_tp_pct")  # NEW: case_a_v2_v3 で記録された tp_pct
+        if N is None or tp_pct is None:
             return None
         median_pct = time_exit_medians.get((K, side, N))
         if median_pct is None:
             return None
-        n_test = fold_summary.get("n_test", 0)
-        if n_test < 2:
+        df = predictions_df[
+            (predictions_df["K"] == K)
+            & (predictions_df["side"] == side)
+            & (predictions_df["fold_idx"] == fold_idx)
+            & (predictions_df["TP_PCT"] == tp_pct)
+        ]
+        if df.empty:
             return None
-        ret_const = (median_pct / 100.0) - cost_per_trade
-        return np.full(n_test, ret_const, dtype=float)
+        p = df["tp_hit_prob"].to_numpy()
+        returns = (
+            p * (tp_pct / 100.0)
+            + (1.0 - p) * (median_pct / 100.0)
+            - cost_per_trade
+        )
+        return returns
     else:
         return None
 
@@ -183,7 +197,8 @@ def compute_fold_sharpe_dsr(
 ) -> Tuple[float, float]:
     """fold-level Sharpe (per-trade scale) + DSR z-score.
 
-    constant-return series (= time_exit method) の場合は std=0 → Sharpe inf 扱い → NaN を返す.
+    Critical-1 修正後: 両 method (fixed_tp / time_exit) で returns 分散非ゼロが期待値。
+    旧 time_exit 設計の定数 returns case (std=0) は L-212b ガード方向だが、安全側で NaN 返却を維持。
     """
     if returns is None or len(returns) < 2:
         return float("nan"), float("nan")
