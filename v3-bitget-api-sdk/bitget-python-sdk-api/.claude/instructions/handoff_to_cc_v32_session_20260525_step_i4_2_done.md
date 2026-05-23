@@ -16,12 +16,16 @@ Step 0 で handoff v31 §2 を伝聞で読み「3 択提示」→ まこさん�
 
 ### 1.1 Step I-4.2 Critical-2 修正 (commit dd80661 / 5 files +230 / -2)
 
-#### dsr.py 改修 (L-212b 4 項目の (1))
+**起案者 verify (改善 1・項目数照合)**: L-212b「How to apply」**全 4 項目を網羅 ✅** + 追加 1 ファイル (integration test 新規 = phase_compliance §1.6 で要求された統合 test 階層化の物理実装)
+
+#### dsr.py 改修 (L-212b (1))
+- **signature** (改善 2・現実装と一致 ✅): `compute_dsr_from_returns(returns, n_trials, sr_variance) -> DSRResult` (handoff v31 §2 の擬似 `sigma_sr_estimate(returns)` は実装と不一致だったが、本 v32 では現実装 signature で記載・実装位置も独立判断で `compute_dsr_from_returns` 入口に確定済)
 - `import sys` 追加
 - `compute_dsr_from_returns` 入口で `std<1e-12` ガード追加 + nan 返却 + `[info]` log
 - docstring に input contract 明記 (auto-PASS 禁止・別レンズ Sortino/月次黒字率)
 
 #### test_dsr.py 失敗境界 test 2 件追加 (L-212b (2))
+- **signature** (改善 2・現実装と一致 ✅): `compute_dsr_from_returns(returns=, n_trials=, sr_variance=)` + `sigma_sr_estimate(sr_hat=, skewness=, excess_kurt=, sample_size=)` で test 記述
 - `test_compute_dsr_from_returns_constant_returns_case`: 定数 returns で nan 返却 verify
 - `test_sigma_sr_extreme_sr_case`: SR=10⁶ で `inner ≤ 0` raise verify
 - **12/12 PASS**
@@ -31,12 +35,14 @@ Step 0 で handoff v31 §2 を伝聞で読み「3 択提示」→ まこさん�
 - `test_dsr_merge_interaction.py` で「定数 returns → DSR nan → dsr_pass=False → Sortino/月次黒字率代替判定」経路の full coverage 義務
 
 #### merge_step_i_summaries.py 改修 (L-212b (4))
+- **signature** (改善 2・現実装と一致 ✅): `evaluate_fold(fold_summary, method, predictions_df, time_exit_medians) -> dict` + `compute_fold_sharpe_dsr(returns, n_trials) -> Tuple[float, float]`
 - `evaluate_fold` の dsr_pass を「nan → 月次黒字率代替判定 (`THRESHOLD_MONTHS_POSITIVE=8`)」に変更
 - `dsr_judgment_method` を fold result に追加 ("dsr_zscore" or "alt_months_positive")
 - auto-PASS 禁止 (Neyman-Pearson 整合): nan で無条件 PASS は出さない
 - **追加発見 bug 修正**: `compute_fold_sharpe_dsr` の std ガード閾値を `<= 0` → `< 1e-12` に統一 (dsr.py 整合・浮動小数点誤差 2.18e-19 がガードすり抜けて sharpe 異常値 4.5×10¹⁵ 発生していた)
 
 #### test_dsr_merge_interaction.py 新規 (125 行・**6/6 PASS**)
+- **signature** (改善 2・現実装と一致 ✅): `from dsr import compute_dsr_from_returns` + `from merge_step_i_summaries import THRESHOLD_DSR, THRESHOLD_MONTHS_POSITIVE, compute_fold_sharpe_dsr`
 - `test_constant_returns_dsr_nan_path`: integration verify
 - `test_compute_dsr_from_returns_constant_returns_direct`: dsr.py 直叩き verify
 - `test_normal_returns_dsr_zscore_path`: 通常経路 verify
@@ -245,6 +251,66 @@ Step 0 で handoff v31 §2 を伝聞で読み「3 択提示」→ まこさん�
   - `_phase4b_train_constants/` (16 個 + INDEX 2)
   - `_case_a_v2_p{1,2,3}/` (旧版・Step I-4.5 比較用に保持)
   - `_step_i_merged/phase1_v5_step_i_summary_merged.json` (旧版 0/16 判定)
+
+---
+
+## §8 起案者自己 verify Q&A (改善 7・L-214・2026-05-25 追加)
+
+**目的**: 次セッション CC が本 handoff だけを伝聞で読んで Step I-4.3 を着手できる状態か、起案者 (本セッション CC) が自問形式で完備性 verify。
+
+### Q1: Step I-4.3 案 W で改修するファイルは?
+A: `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_v2_v3.py` の 1 ファイルのみ (§2 Step I-4.3 改修対象に明記)
+
+### Q2: 改修内容は具体的に何を変えるか? (grid 定義のリストを書き換え)
+A:
+1. SL_PCT grid: `[0.3, 0.5, 0.8]` → `[0.3, 0.5, 0.8, 1.0, 1.2, 1.5]` (3 → 6 grid)
+2. TP_PCT grid: `[0.3, 0.5, 0.8, 1.2, 1.8, 2.5]` → `[0.3, 0.5, 0.8, 1.2, 1.8, 2.5, 3.0, 3.5]` (6 → 8 grid)
+3. 結果: fixed_tp grid 18 → 48 (3 × 16・C2 ガード適用後 40-46 有効想定)
+4. smoke で関所 A 異常値スメル 0/8 維持を verify
+
+### Q3: 案 W は単独で commit するか、案 V と合わせて commit するか?
+A: **案 W 単独で commit 推奨** (L-5「1 ターン 1 変更」整合・差分のレビュー粒度を保つ)。案 V (K=96 除外・merge_step_i_summaries.py 改修) は別 commit。
+
+### Q4: 案 W 着手前に必読の lessons / ルールは?
+A:
+- `lessons_active.md` 直近 5 件 (L-214 → L-213 → L-212c → L-212b → L-212a) を **本文全文** 読了 (改善 8・SessionStart hook で auto-load される)
+- `cc_role.md` §1.4.5 (`.claude/audits/` 保管 + 監査別セッション化・改善 6/9・新規)
+- `cc_role.md` §1.5.5 (「機械的反映」表現厳格化・改善 5・新規)
+- WORKFLOW.md 改訂31 active + CP 監査一覧表
+
+### Q5: 案 W 完了後、案 V → Step I-3 再走 → CP6 監査の順序で正しいか?
+A: ✅ 正しい (§5 残タスク順序表整合・案 W/V は独立着手可だが Step I-3 再走には両方完了が必要)
+
+### Q6: CP6 監査の起動方法は?
+A: **別 claude code セッションで起動** (cc_role §1.4.5・改善 9 適用):
+1. CC が依頼書を `.claude/audits/inputs/2026-XX-XX_step_i4_5_cp6_audit_request.md` に作成
+2. まこさんが別 claude code セッションを起動し Plan サブエージェント実行
+3. 結果を `.claude/audits/2026-XX-XX_step_i4_5_cp6_audit_report.md` に保存
+4. メインセッション再開時に CC が結果読み込み・反映 (L-213 機械的反映回避プロセス通す)
+
+### Q7: Step I-3 再走の起動コマンドは? (L-211/L-212a 整合)
+A: `nohup .venv311/bin/python -u scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_v2_v3.py --full > log_step_i3_rerun.log 2>&1 & disown` で 1 並列順次 (L-212a: 16GB RAM × 0.5 / 8GB per process = 並列度上限 1)
+
+### Q8: 本セッション Critical-2 修正 (commit dd80661) の verify はいつ・どこで実施?
+A: **Step I-4.5 Step I-3 再走時に本走 verify** (smoke を本セッション省略した分の補填):
+- 修正後 case_a_v2_v3 で 8 組合せ × 2 method × 3 fold × 48 grid (案 W 拡張後) を再走
+- merge 出力に `dsr_judgment_method` フィールドが含まれることを確認
+- 旧 9 件 warning (SR=-2×10¹⁵) が消えることを確認
+- 定数 returns fold で `dsr_judgment_method = "alt_months_positive"` かつ `dsr_pass` が auto-PASS でないことを確認
+
+### Q9: 残り改善 (handoff テンプレ更新等) はどう進めるか?
+A: 本 handoff v32 で改善 1/2/5/7 を全部適用済 → handoff v33 作成時は本 v32 を template として参照。CLAUDE.md / cc_role / handoff テンプレ更新は次セッションで余裕があれば実施 (hook で改善 4/8 は実質カバー済なので緊急性低)。
+
+### Q10: 「機械的反映」表現を使いそうになったら?
+A: 即立ち止まり、cc_role §1.5.5 の「使用条件厳格化」リストで対象が禁止に該当しないか自己 verify。CP 監査結果反映 / lessons L-XX 項目転記 / 仕様書転記時の判断項目 はすべて禁止 → 「設計判断を含む反映」と書き直して CC 独立評価プロセスへ。
+
+---
+
+## §9 起案者完備性宣言 (改善 7 verify 通過)
+
+起案者 (本セッション CC) が Q1-Q10 を自答 ✅・次セッション CC が本 handoff だけを読んで Step I-4.3 着手可能と判定。
+
+L-214 全 9 項目網羅 ✅ (改善 1) + handoff v32 内 signature 全て現実装と一致 ✅ (改善 2) + 起案者自己 verify Q&A 通過 ✅ (改善 7) + cc_role §1.5.5「機械的反映」厳格化反映済 ✅ (改善 5)。
 
 ---
 
