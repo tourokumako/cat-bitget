@@ -7,6 +7,63 @@
 
 ---
 
+### L-214: 引き継ぎ伝言ゲーム化 + `.claude/audits/` 保管ルール消失 + 監査同セッション化による同型バイアス共有 — Step I-4.2 着手前混乱事案 (2026-05-25)
+
+**何が起きたか:**
+本セッション開始直後、まこさん「進めて」指示に対し CC が handoff v31 §2 (Critical-2 修正方針) を伝聞で読み、「3 択提示 (CC 独立評価 / 機械的反映 / CP6 監査先行)」を提示。まこさんから「資料読んだ？セッション切り替えすぎて、引き継ぎ内容が伝言ゲームになってない？」指摘。CP5 監査レポート + 仕様書 v2 + lessons L-212b 原本読了で乖離発見:
+
+1. **handoff v31 §2 が L-212b の不完全要約** (起案者 = 前セッション CC = 私):
+   - (1) dsr.py コード例の signature 不一致 (擬似 `sigma_sr_estimate(returns)` vs 実装 `(sr_hat, ...)`)
+   - (2) test_dsr.py の `extreme_sr_case` 抜け
+   - (3) **統合 test 階層化義務が完全に欠落**
+   - (4) Sortino / 月次黒字率代替判定が「nan → False」のみで完全実装でない
+2. **CP4/CP5/CP6 取り違え**:
+   - CP4 = Step I-3.5 (Critical-2 修正策発見・L-212b として記録) ・**ファイル化なし** (handoff v30 §1.4 概要のみ)
+   - CP5 = Step I-4.1.1 (Critical-1 仕様書 v1 監査) ・ファイル化済だが `.claude/instructions/` に混入
+   - CP6 = CC が「Critical-2 修正に必要」と誤判断 (実際は CP4 で既に方針確定済)
+3. **`.claude/audits/` 保管ルール消失** (本件の真の根源):
+   - 過去ルール: 監査結果は `.claude/audits/2026-XX-XX_<task>_audit_report.md` に保管 (audit15-19 で 5 件保管済 + `.claude/audits/inputs/` 入力分離)
+   - 消失タイミング: 2026-05-21 Web Claude → CC 移譲時に cc_role.md 新規作成・**`.claude/audits/` 保管ルールが転記されず消失**
+   - 結果: CP3.5/CP4 がファイル化されず handoff 概要のみ・CP5 が `.claude/instructions/` に混入 → 伝言ゲーム発生
+4. **「機械的反映」表現借用 (L-213 同型再演・本セッション内 30 分後)**:
+   - cc_role §1.5.5「機械的反映 = light テンプレ OK」を「CP4 結果を機械的に反映 = 仕様書も CP6 も不要」と誤読
+   - L-213 を本セッション内でもう一度演じた
+
+最終的に L-212b 全文読了 + CC 独立 verify で乖離 4 件発見 → Step I-4.2 (dsr.py / test_dsr.py / phase_compliance / merge / integration test) 4 ファイル改修 + 新規 1 ファイル = commit dd80661 完了。**integration test 作成時に追加 bug 発見** (`compute_fold_sharpe_dsr` の std ガード閾値が dsr.py と不一致 `std <= 0` vs `std < 1e-12` で浮動小数点誤差 2.18e-19 がガードすり抜け) → 同 commit で修正。
+
+**Why:**
+- handoff v31 §2 起案者 (前セッション CC = 私) が L-212b 全 4 項目を 3 項目に縮めた = **L-213「機械的反映」の起案版**
+- 本セッション CC (= 私) が伝聞ベース判断 (CLAUDE.md「lessons_active.md 直近 5 件読了」を見出しだけで済ませた・L-180 違反)
+- `.claude/audits/` 保管ルールが 2026-05-21 cc_role 新規作成時に転記漏れ → CP 監査結果のファイル化が機械的に行われなくなった = 構造的穴
+- 監査が同一セッション内で起動される現状 = メインセッションの判断バイアスを Plan サブエージェントが共有 → cc_role §1.4 #3 同型バイアス回避経路として機能不全
+
+**How to apply (改善 9 件・万全化):**
+
+| # | 改善 | 反映先 | 優先度 |
+|---|---|---|---|
+| 1 | handoff §2 で lessons L-XX 引用時、項目数照合 + 末尾「全 N 項目網羅 ✅」明記 | handoff テンプレ | 高 |
+| 2 | 擬似コード signature が現実装と不一致なら明示・「実装は CC 独立判断」と書く | handoff テンプレ | 高 |
+| 3 | WORKFLOW.md に「CP1〜CPN 監査一覧 + 保管パス」表追加 | WORKFLOW.md | 高 |
+| 4 | CLAUDE.md Layer 1 必読に「該当タスクの直近 CP 監査レポート」追加 | CLAUDE.md | 中 |
+| 5 | 「機械的反映」表現を「CP 監査結果反映」「lessons 項目転記」に使用禁止明記 | cc_role §1.5.5 | 中 |
+| 6 | **`.claude/audits/` 保管ルール復元** (本件根源対策) + 過去 CP3.5/CP4/CP5 をファイル化・移動 | cc_role / 過去ファイル | **最優先** |
+| 7 | handoff 起案者が「次セッション CC が伝聞だけで動けるか」自己 verify | handoff テンプレ | 高 |
+| 8 | CLAUDE.md Layer 1 lessons 直近 5 件を「本文全文 + 0/25/50/75/100% 引用」を機械的証跡対象に追加 | CLAUDE.md | 高 |
+| 9 | **監査立ち上げは別 claude code セッションで実施** (同型バイアス回避) | cc_role / WORKFLOW | **最優先** |
+
+本セッションでは改善 6 (CP5 移動 + cc_role 追記) + 改善 9 (cc_role 追記) + 改善 3 (WORKFLOW.md 表追加) を実施。残り改善 1/2/4/5/7/8 は次セッション以降で随時反映 (handoff v32 §X に記載)。
+
+**関連:**
+- L-213「機械的反映」同型バイアス (本件で再演・cc_role §1.5.5 表現借用)
+- L-180 ドキュメント引用前 実装 verify (本件で違反継続)
+- L-200 / L-204 / L-205 機械的証跡シリーズ (本件で lessons 本文飛ばし違反)
+- cc_role §1.4 #3 同型バイアス警戒 (本件で監査同セッション化問題を発見)
+- cc_role §1.4 #4 現状把握スキップ (本件で 3 回繰り返した)
+- false_positive §5 関所 G (本件で「読了ゲートの穴」を可視化・改善 8 で塞ぐ)
+- 公式 source: commit dd80661 (Step I-4.2 Critical-2 修正) / 過去 CP4 監査記録 = handoff v30 §1.4 + L-212b 本文
+
+---
+
 ### L-213: 「機械的反映」同型バイアス再演 + セッション終了処理の構造的穴 (案 A 採用記録漏れ + WORKFLOW 改訂30 未更新) — Step I-4.1 仕様書 v2 反映事案 (2026-05-24)
 
 **何が起きたか:**

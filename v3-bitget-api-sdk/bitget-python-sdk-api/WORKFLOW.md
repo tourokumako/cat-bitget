@@ -299,9 +299,107 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-24 改訂30・**Step I-4.1 case_a_v2_v3 Critical-1 修正完了 + smoke verify + commit 572e0b8**・次タスク = Step I-4.2 Critical-2 (dsr.py ガード) → 案 W (SL_PCT grid 拡張) → 案 V (K96 除外) → Step I-3 再走）
+## 🔴 現在のフェーズ（2026-05-25 改訂31・**Step I-4.2 Critical-2 修正完了 (dsr ガード + 月次黒字率代替判定 + integration test) + commit dd80661**・次タスク = Step I-4.3 案 W (SL_PCT/TP grid 拡張) → 案 V (K96 除外) → Step I-3 再走）
 
-> **【現在の正本ブロック・改訂30・2026-05-24 セッション末（前セッション続編・案 A 採用後 fresh head 実装）】**
+> **【現在の正本ブロック・改訂31・2026-05-25 セッション末（Step I-4.2 完了 + 引き継ぎ伝言ゲーム化事案 L-214 + ルール消失復元）】**
+>
+> ### 本セッション (2026-05-25・前セッション 572e0b8 の続編) 完了事項
+>
+> #### 1. Step I-4.2 Critical-2 修正 (commit dd80661)
+> - dsr.py: `compute_dsr_from_returns` に `std<1e-12` ガード追加 + input contract docstring (+29 行)
+> - test_dsr.py: 失敗境界 test 2 件追加 (`constant_returns_case` / `extreme_sr_case`・**12/12 PASS**) (+38 行)
+> - phase_compliance §1.6: 「複数 script interaction edge case verify」義務追加 (+1 行)
+> - merge_step_i_summaries.py: dsr_pass を nan → 月次黒字率代替判定 (`THRESHOLD_MONTHS_POSITIVE=8`) に変更 + `dsr_judgment_method` を fold result に追加 + std ガード閾値を dsr.py 整合 (`1e-12`) に統一 (+18 / -2 行)
+> - test_dsr_merge_interaction.py 新規 (125 行・**6/6 PASS**): 複数 script 相互作用 integration test
+> - **追加発見 bug**: integration test 作成時に `compute_fold_sharpe_dsr` の std ガード閾値 (`<= 0`) が dsr.py (`< 1e-12`) と不一致 → 浮動小数点誤差 2.18e-19 がガードすり抜けて sharpe 異常値 (4.5×10¹⁵) 発生 → 同 commit で統一修正
+> - 公式 source: smoke verify は Step I-4.5 で 8 組合せ一括 verify (CC 独立判断・本セッションは unit + integration test 18 件で実装信頼性確保)
+>
+> #### 2. 引き継ぎ伝言ゲーム化事案 (L-214) + ルール消失復元
+> - **混乱経緯**: 本セッション開始直後、handoff v31 §2 を伝聞で読み「3 択提示」→ まこさん「資料読んだ？伝言ゲームになってない？」指摘 → L-212b 原本読了で乖離 4 件発見 (handoff v31 §2 が L-212b 4 項目を不完全要約・CP4/CP5/CP6 取り違え)
+> - **根本原因**: `.claude/audits/` 保管ルールが 2026-05-21 cc_role 新規作成時に転記漏れで消失 → CP3.5/CP4 がファイル化されず handoff 概要のみ・CP5 が `.claude/instructions/` に混入
+> - **改善 9 件**: handoff §2 項目数照合 / 擬似 signature 不一致明示 / WORKFLOW CP 監査一覧表 / Layer 1 必読に CP 監査追加 / 「機械的反映」表現厳格化 / **`.claude/audits/` 保管復元 (改善 6)** / handoff 起案者自己 verify / Layer 1 lessons 本文全文 / **監査立ち上げ別セッション化 (改善 9)** → L-214 で記録
+>
+> #### 3. 本セッション内で実施した改善 (3 件)
+> - **改善 6 実体**: CP5 監査結果を `.claude/instructions/` → `.claude/audits/` に移動
+> - **cc_role §1.4.5 追加**: 「監査結果保管 (.claude/audits/) + 監査立ち上げ別セッション化」ルールを cc_role に明記
+> - **WORKFLOW §CP 監査一覧表**: 後述「## CP 監査一覧 (改訂31 新設・2026-05-25)」セクションを新設
+>
+> #### 4. 残り改善 (6 件) は handoff v32 §X で次セッションに継承
+> - 改善 1 (handoff §2 項目数照合) / 改善 2 (signature 不一致明示) / 改善 4 (Layer 1 必読に CP 監査追加) / 改善 5 (「機械的反映」厳格化) / 改善 7 (handoff 起案者自己 verify) / 改善 8 (Layer 1 lessons 本文全文化)
+> - 過去 CP 監査の後追いファイル化: CP3.5 (handoff v28 から) + CP4 (handoff v30 §1.4 + L-212b から)
+>
+> ### 次セッション CC 優先順位 (Step I-4.3 着手)
+>
+> 1. **優先 1 — Step I-4.3 案 W 実装 (約 1-2 日)**:
+>    - `run_lgbm_phase1_v5_case_a_v2_v3.py` の SL_PCT grid 拡張 (0.3-0.8 → 0.3-1.5%)
+>    - TP_PCT grid 上限拡張 (2.5 → 3.5%)
+>    - smoke + 関所 A verify
+> 2. **優先 2 — Step I-4.4 案 V 実装 (約 0.5 日)**:
+>    - `merge_step_i_summaries.py` の判定対象を 6 組合せ (K=12,24,48) に限定
+>    - K=96 LONG/SHORT を別レンズ評価 (Secondary Filter 候補)
+> 3. **優先 3 — Step I-4.5 Step I-3 再走 (1-2 時間・1 並列順次・L-212a 整合)**:
+>    - 修正後 case_a_v2_v3 で 8 組合せ × 2 method × 3 fold × 30 grid を再走
+>    - 起動コマンド: `nohup python -u ... > log 2>&1 & disown` (L-211 整合)
+>    - **本セッション Critical-2 修正 (dsr_judgment_method 等) の本走 verify 機会**
+> 4. **優先 4 — Step I-4.6 CP6 監査** (関所 D 必須・**別セッション起動**・改善 9 適用):
+>    - 修正後 0/16 から改善幅と Phase 2 進行可否判定
+>    - 4 案合計 (Critical-1 + Critical-2 + 案 W + 案 V) の寄与率実証 (CP4 推定 75-95% 合計範囲)
+>    - 結果ファイル: `.claude/audits/2026-XX-XX_step_i4_5_cp6_audit_report.md`
+> 5. **優先 5 — L-214 改善 1/2/4/5/7/8 反映** (CLAUDE.md / cc_role / handoff テンプレ更新)
+> 6. **優先 6 — 過去 CP 監査の後追いファイル化** (CP3.5 / CP4)
+> 7. **優先 7 — セッション終了処理** (lessons L-215+ + WORKFLOW 改訂32 + handoff v33)
+>
+> ### 引き継ぎリソース (3 層構造)
+>
+> #### Layer 1 (毎セッション必読)
+> - **handoff v32** (本セッション末作成): `.claude/instructions/handoff_to_cc_v32_session_20260525_step_i4_2_done.md`
+> - WORKFLOW.md 改訂31 active ブロック (本ブロック) + CP 監査一覧表
+> - CLAUDE.md (改訂22 ベース)
+> - lessons_active.md 直近 5 件 (**L-214 → L-213 → L-212c → L-212b → L-212a**)
+> - **cc_role.md §1.4.5 (新規・本セッション追加・`.claude/audits/` 保管 + 別セッション化)**
+>
+> #### Layer 2 (Step I-4.3 着手時)
+> - 仕様書 v2 (Step I-4.1 用・参考): `.claude/instructions/2026-05-23_step_i4_1_case_a_v2_v3_critical1_spec.md`
+> - CP5 監査結果 (Step I-4.1 用・新位置): `.claude/audits/2026-05-23_step_i4_1_critical1_cp5_audit_report.md`
+> - 実装ファイル (本セッション commit dd80661 + 前セッション commit 572e0b8 = Step I-4.1 + I-4.2 完成):
+>   - `scripts/priority_rebuild/dsr.py` (Step I-4.2 改修済)
+>   - `scripts/priority_rebuild/test_dsr.py` (12/12 PASS)
+>   - `scripts/priority_rebuild/test_dsr_merge_interaction.py` (6/6 PASS・新規)
+>   - `scripts/priority_rebuild/merge_step_i_summaries.py` (Step I-4.1 + I-4.2 改修済)
+>   - `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_v2_v3.py` (Step I-4.1 で新規・案 W 改修対象)
+>
+> #### データ・環境
+> - parquet 3 種 + .venv311 (mlfinpy 0.1.2 / sklearn 1.8.0 / lightgbm 4.6.0 / scipy 1.17.1)
+> - 前セッション artifact (Step I-3.1〜I-3.4・案 W/V 実装後 再走で書き換え)
+> - 本セッション artifact なし (smoke は Step I-4.5 で実施)
+
+---
+
+## CP 監査一覧 (改訂31 新設・2026-05-25・L-214 改善 3 反映)
+
+| CP | 実施日 | 対象タスク | 結果ファイル | 主要結論 |
+|---|---|---|---|---|
+| CP1 | (要遡及調査) | (要遡及調査) | — | — |
+| CP2 | 2026-05-22 | Step G ML pipeline 検証 | `.claude/audits/2026-05-22_audit_routeB_records.md` (要 grep verify) | Critical 2 + Major 4 (一部反映) |
+| CP3 | 2026-05-23 | Step H 異常値スメル 6/8 ヒット | `.claude/audits/` 内 (要 grep verify) | 案 Y (Phase 4-b 前倒し) 採用 |
+| CP3.5 | 2026-05-23 | Step I-1 仕様書 v2.1 | **未ファイル化 (handoff v28 内記載のみ・後追い起案推奨)** | Critical 2 + Major 5 + Minor 4 |
+| CP4 | 2026-05-23 | Step I-3.5 §4.1 v5.1 判定 (0/16 ALL PASS) | **未ファイル化 (handoff v30 §1.4 + L-212b 本文に記録・後追い起案推奨)** | **CONDITIONAL NO-GO** / Critical-1 (time_exit naive) + Critical-2 (DSR 設計階層誤認) / 案 A 推奨 (1 週間並列 4 タスク) |
+| CP5 | 2026-05-23 | Step I-4.1 仕様書 v1 (Critical-1 修正) | `.claude/audits/2026-05-23_step_i4_1_critical1_cp5_audit_report.md` ✅ (2026-05-25 移動済) | CONDITIONAL GO / Critical 2 + Major 4 + Minor 3 = 9 件 (v2 で全件反映済) |
+| CP6 | (Step I-4.5 完了後・別セッションで起動) | Step I-3 再走後の §4.1 判定再評価 | `.claude/audits/2026-XX-XX_step_i4_5_cp6_audit_report.md` (将来) | 未実施 |
+
+**運用ルール (改訂31)**:
+- 監査実施時は本表に追記 (実施日 / 対象 / 結果パス / 主要結論)
+- 監査結果ファイルは必ず `.claude/audits/2026-XX-XX_<task>_cpN_audit_report.md` (cc_role §1.4.5)
+- 監査立ち上げは別 claude code セッションで実施 (cc_role §1.4.5・同型バイアス回避)
+- セッション終了処理のチェックリストに「CP 監査一覧表の更新」を追加 (省略禁止)
+
+---
+
+## 🧊 改訂30 ブロック (履歴・参照用)
+
+### 🔴 旧フェーズヘッダ（2026-05-24 改訂30・**Step I-4.1 case_a_v2_v3 Critical-1 修正完了 + smoke verify + commit 572e0b8**・次タスク = Step I-4.2 Critical-2 (dsr.py ガード) → 案 W (SL_PCT grid 拡張) → 案 V (K96 除外) → Step I-3 再走）
+
+> **【旧正本ブロック・改訂30・2026-05-24 セッション末（前セッション続編・案 A 採用後 fresh head 実装）】**
 >
 > ### 本セッション (2026-05-24・前セッション 547019a の続編) 完了事項
 >
