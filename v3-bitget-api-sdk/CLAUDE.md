@@ -127,19 +127,21 @@
 
 ### Layer 1 — 毎セッション必読 (~700 行・読了ゲート機械的証跡対象)
 
+> **【2026-05-26 重大改訂】** `handoff_to_cc_v*` は廃止 (伝言ゲーム化経路の物理排除・L-216)。前セッション引き継ぎは **WORKFLOW.md 改訂N active ブロックに集約**。learning_design_v4.md は phase_flow_v4_with_recovery.md に統合し archive 移動。
+
 | ファイル | 内容 | 取得方法 |
 |---------|------|------|
-| `bitget-python-sdk-api/WORKFLOW.md` | 現フェーズ・次のタスク (改訂N active ブロック・履歴は archive) | Read 全文 |
+| `bitget-python-sdk-api/WORKFLOW.md` | 現フェーズ・次のタスク・本セッション完了事項・引き継ぎリソース (改訂N active ブロック・履歴は archive) | Read 全文 |
 | `v3-bitget-api-sdk/CLAUDE.md` (本ファイル) | 提案禁止・目標・必読リスト・セッション終了チェック | Read 全文 |
-| `bitget-python-sdk-api/.claude/instructions/handoff_to_cc_v*_session_*.md` の **最新 vN** | 前セッション引き継ぎ。最新取得コマンド: `find .claude/instructions -name 'handoff_to_cc_v*_session_*.md' \| sort -V \| tail -1` | Read 全文 |
-| `bitget-python-sdk-api/.claude/memory/lessons_active.md` **直近 5 件のみ** (現時点: L-204〜L-200) | 最新教訓・本セッション着手前に読む | Read 先頭 ~300 行のみ |
+| `bitget-python-sdk-api/.claude/memory/phase_flow_v4_with_recovery.md` | **ML 学習フロー正本** (Phase 0〜7 / 6 案並列 + Walk-forward Purged K-Fold 5 fold + DSR + 5 指標) | Read 全文 |
+| `bitget-python-sdk-api/.claude/memory/lessons_active.md` **直近 5 件のみ** | 最新教訓・本セッション着手前に読む | Read 先頭 ~300 行のみ |
 
 ### Layer 2 — タスク特有 (該当タスク時のみ精読)
 
 | タスク | 読むファイル |
 |---|---|
-| ML 学習着手 (Phase 1 等) | `cc_ml_design_spec.md` + `.claude/memory/learning_design_v4.md` (内容は v5 化済) + `~/.claude/projects/.../memory/feedback_ml_leak_mandatory_check.md` + `results/priority_rebuild/leak_incident_20260513.md` |
-| Phase 着手 (各 Phase 共通) | `bitget-python-sdk-api/.claude/rules/phase_compliance_checklist.md` の該当 Phase 行 + `bitget-python-sdk-api/.claude/memory/phase_flow_v4_with_recovery.md` (ML 学習〜リリースまでの全フロー詳細・977 行) |
+| ML 学習着手 (Phase 1 等) | `cc_ml_design_spec.md` + `~/.claude/projects/.../memory/feedback_ml_leak_mandatory_check.md` + `results/priority_rebuild/leak_incident_20260513.md` (※ learning_design_v4.md は phase_flow_v4 §2/§3 に統合済・原本は `archive/learning_design_v4_20260526.md`) |
+| Phase 着手 (各 Phase 共通) | `bitget-python-sdk-api/.claude/rules/phase_compliance_checklist.md` の該当 Phase 行 + `bitget-python-sdk-api/.claude/memory/phase_flow_v4_with_recovery.md` (= Layer 1 必読・ML 学習正本) |
 | 重大設計判断・指示書発行・完了報告受領 | `cc_role.md` §1.5/§1.6/§1.7 + `web_claude_self_check.md` チェック A/B/C |
 | 取引所スペック引用 | `bitget-python-sdk-api/.claude/rules/exchange_spec.md` (audit#19 確定値) |
 | 監査依頼 (`/audit`) | `bitget-python-sdk-api/.claude/rules/auditor_template.md` |

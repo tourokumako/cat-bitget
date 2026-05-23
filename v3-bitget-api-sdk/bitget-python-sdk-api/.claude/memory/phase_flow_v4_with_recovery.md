@@ -136,21 +136,29 @@ Phase 0 改修後の parquet 列から、Phase 1 学習スクリプトが以下 
 
 ---
 
-### Phase 1: Entry の学習を 3 案並列でやって最良案を選ぶ (最重要)
+### Phase 1: Entry の学習を 6 案並列でやって最良案を選ぶ (最重要・v5 Layer 配分逆転・2026-05-22 確定)
 
-**何を学習するか**: 「**Entry すべきかどうか**」を 3 通りの違うやり方で学習し、どれが一番うまく予測できるか比較する。
+**何を学習するか**: 「**Entry すべきかどうか**」を 6 通りの違うやり方で学習し、どれが一番うまく予測できるか比較する。
 
-**なぜ 3 案並列か**:
+**なぜ 6 案並列か**:
 - 旧 V3 では「14 個のラベル予測 → 比率計算 → 閾値で Entry」という入れ子方式で、Entry 学習が破綻していた (entropy lift 6.04% = ランダムとほぼ同等)
-- そこで V4 では「特徴量を拡張するだけで治るか」「ラベル自体を変えれば治るか」を**分離して測る**ために 3 案並列
+- そこで V4 で「特徴量を拡張するだけで治るか」「ラベル自体を変えれば治るか」を**分離して測る**ために 3 案並列を確定
+- **2026-05-22 v5 Layer 配分逆転**: まこさん指摘「学習方法が悪い」を反映し、旧 Layer 3 だった案 d (Ranking LambdaRank) + 案 e (Triple Barrier multiclass) + 案 f (Meta-Labeling 2 段階) を Layer 1 に前倒し → **6 案並列確定**
 
-**3 案の中身**:
+**6 案の中身**:
 
 | 案 | やり方 | 出力 | Entry 判定 | 役割 |
 |---|---|---|---|---|
 | **案 a (比較用)** | 14 ラベル独立で MFE/MAE を回帰予測 (旧 V3 方式) | 14 個の予測値 (連続値) | 予測 MFE / 予測 MAE ≥ 1.5 で買う | **改善期待しない・比較用ベースライン** |
 | **案 b (本命 1)** | 「Entry すべきか」を 1 か 0 で **直接バイナリ学習** | Entry 確率 (0〜1) | Entry 確率 > 0.5 で買う | 入れ子方式 (回帰→比率) を廃止 |
 | **案 c (本命 2)** | 「LONG / SHORT / Flat」の **3 クラス分類** で学習 | LONG/SHORT/Flat の確率 | LONG 確率 > 0.4 で買い / SHORT 確率 > 0.4 で売り | 方向性を 1 段階で直接学習 |
+| **案 d (v5 新規・Ranking LambdaRank)** | LightGBM `objective='lambdarank'`・MFE_pct ランキング上位 N% のみ Entry | trade ごとの ranking score | ランキング上位 N% のみ採用 | Stefan Jansen *Machine Learning for Algorithmic Trading* Ch.12-13 整合 |
+| **案 e (v5 新規・Triple Barrier multiclass・Lopez de Prado AFML Ch.3)** | TP/SL/TIME 3 クラスラベル (Phase 0 v3.1 で 28 ラベル列生成済) を LightGBM Multiclass で学習 | TP/SL/TIME の確率 | TP 確率 > 閾値で Entry | Lopez de Prado AFML Ch.3 推奨手法 |
+| **案 f (v5 新規・Meta-Labeling 2 段階・Lopez de Prado AFML Ch.3)** | 案 e の primary 完了後 sequential 実装・secondary で「primary 予測の correctness」予測 | 採用 / 見送りの確率 | secondary が「採用」と判定したものだけ Entry | precision 改善 + F1-score + Sharpe 向上 (Hudson & Thames mlfinlab 整合) |
+
+**全 6 案共通 (v5 必須)**:
+- **Walk-forward Purged K-Fold 5 fold** (Lopez de Prado AFML Ch.7 推奨・mlfinpy.cross_validation.PurgedKFold 経由実装・Layer 3 → Layer 1 前倒し)
+- **DSR (Deflated Sharpe Ratio) 採用** (Bailey + Lopez de Prado 2014・SSRN 2460551・selection bias 補正・100+ grid 試行記録義務)
 
 **学習方法**:
 
@@ -264,19 +272,25 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 **14 ラベル独立**: K=7 × {LONG_MFE_pct, LONG_MAE_pct} = 14 (SHORT は対称性で流用・Phase 5 で SHORT 側適用)
 
-**学習後の比較指標 (CP2 で 4 指標物理証跡対比)**:
+**学習後の比較指標 (CP2 で 5 指標物理証跡対比・v5 厳格化・2026-05-22)**:
 
-| 指標 | 意味 | 合格基準 |
-|---|---|---|
-| entropy lift | ランダム比較で情報量がどれだけ増えたか | 案 a 比で改善 |
-| TP Precision | Entry シグナルのうち TP に到達した比率 | > 0.4 |
-| Direction accuracy | LONG / SHORT の方向当たり率 (案 c のみ) | > 0.55 |
-| simulated PnL | 簡易ルールで Replay した PnL (12 ヶ月分) | 12 ヶ月中 6+ プラス + 年間 NET プラス |
+| # | 指標 | 合格閾値 | 根拠 |
+|---|---|---|---|
+| 1 | **entropy lift** | **> 10%** | AFML Ch.3 (< 10% で meta-labeling 投入推奨域・Phase 1-c smoke 6.04% は投入域) |
+| 2 | **TP Precision** | **> 0.5** | 信頼度 50% 以上 (ベースライン 50% 超え必須) |
+| 3 | **Direction Accuracy** (案 c のみ) | **> 0.55** | LONG/SHORT 当たり率 (5% 以上有意性) |
+| 4 | **Simulated PnL** | 12 ヶ月中 8+ ヶ月プラス + 年間 NET ≥ $500 | cc_ml_design_spec §1.6 整合 (Position size 未確定なので暫定基準) |
+| 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | 本テスト相当 (selection bias 補正後) |
 
-**分岐判定 (CP2)**:
-- 案 b or 案 c が案 a より明確改善 → 採用案で Phase 2 進行
-- 3 案合格 → 最良案を選定
-- **3 案とも未達** → **Layer 3 投入** (Triple Barrier multiclass + Meta-labeling 2 段階)
+**分岐判定 (CP2・v5 厳格化)**:
+- **6 案いずれか 5 指標 ALL PASS** → 採用案で Phase 2 進行
+- **6 案ベストでも 5 指標未達** → **即** Layer 3 残存タスク投入 (CPCV + Class balancing / Focal loss + custom loss + アルゴ多様化)
+- **「ベスト案で Phase 2 進行して判定」は禁止** (Phase 1 未達 → Phase 2 改善保証なし・v5 厳格化)
+
+**Phase 1 リソース計画 (v5)**:
+- 並列度 3 (CPU 競合 + メモリ制約 30-45 GB)
+- 学習時間 約 20 時間 (5 fold × 6 案 = 約 1 日)
+- Phase 1 全体期間: 約 3-4 週間 (ラベル設計 1 週 + 実装 1-2 週 + 学習 1 日 + CP2 監査 + 結果分析 1 週)
 
 **所要時間**: 約 1-2 週間
 
@@ -845,17 +859,19 @@ Phase 1 で案 a/b/c 全て不合格なら、Entry 学習を 2 段階構成に�
    ↓ 約 3-6 時間
    ↓ CP1 監査 (列数 + leak 4 点)
    ↓
-[Phase 1] 並列学習 3 案 (案 a + 案 b + 案 c)
-   ↓ 約 1-2 週間
-   ↓ CP2 監査 (4 指標で 3 案比較 → 分岐)
+[Phase 1] 並列学習 6 案 (案 a + 案 b + 案 c + 案 d + 案 e + 案 f・v5)
+          + Walk-forward Purged K-Fold 5 fold + DSR 補正
+   ↓ 約 3-4 週間 (5 fold × 6 案 = 約 20 時間学習 + CP2 監査 + 分析)
+   ↓ CP2 監査 (5 指標で 6 案比較 → 分岐)
    ↓
    ┌─────分岐─────┐
    │              │
-   案 a/b/c 改善あり   3 案とも未達
+   6 案いずれか      6 案ベストでも
+   5 指標 ALL PASS   5 指標未達
    ↓              ↓
-   採用案で進行       Layer 3 投入
-                  (Triple Barrier
-                  + Meta-labeling)
+   採用案で進行       即 Layer 3 残存タスク投入
+                  (CPCV + Class balancing
+                  + custom loss + アルゴ多様化)
    ↓              ↓
    └──────合流──────┘
    ↓
@@ -923,24 +939,24 @@ Phase 1 で案 a/b/c 全て不合格なら、Entry 学習を 2 段階構成に�
 | **D-η** 手数料 | Maker 0.014% (適用) + Funding median | D 固定 |
 | **D-θ** 発注タイプ | Maker 指値前提 + 不約定モデル化 | D 固定 + Phase 7 |
 
-### §5.3 Entry 学習問題 5 件への対応マップ
+### §5.3 Entry 学習問題 5 件への対応マップ (v5 Layer 配分逆転反映・2026-05-22)
 
-Phase 1-a/1-b/1-c smoke で観察された 5 件の問題 → V4 でどう対応するか:
+Phase 1-a/1-b/1-c smoke で観察された 5 件の問題 → V4 v5 でどう対応するか:
 
-| 問題 | V4 第一弾 (Layer 1) | 第二弾 (Layer 2-3) |
+| 問題 | V4 v5 第一弾 (Layer 1) | 残存 Layer 3 |
 |---|---|---|
-| top1 atr14 が 33-65% 支配 | Phase 0 で特徴量拡張 + Phase 3-b cluster B 案 (LONG/SHORT 差分) | Layer 3 Direction Multiclass / Asymmetric loss |
-| SL hit が TP の 1.78 倍 | Phase 4-b-1 Exit 採用方式見直し + Phase 4-b-2 K96 切り捨て | Layer 3 Triple Barrier + Meta-labeling |
-| entropy lift 6.04% (閾値 10% 未満) | **Phase 1 で Entry Binary + Direction Multiclass 並列追加** (= §2 案 b / 案 c) | Layer 3 custom loss + Meta-labeling 2 段階 |
-| class imbalance (98% 負例) | (Layer 1 では対応せず・案 b で scale_pos_weight のみ) | Layer 3 Class balancing / Focal loss |
-| 末尾 10% valid のみ | (Layer 1 では対応せず) | Layer 3 Walk-forward + Purged K-fold + CPCV |
+| top1 atr14 が 33-65% 支配 | Phase 0 で特徴量拡張 + Phase 3-b cluster B 案 (LONG/SHORT 差分) + **案 c Direction Multiclass** | アルゴ多様化 (XGBoost/CatBoost/MiniROCKET) / Asymmetric loss |
+| SL hit が TP の 1.78 倍 | Phase 4-b-1 Exit 採用方式見直し + Phase 4-b-2 K96 切り捨て + **案 e Triple Barrier multiclass + 案 f Meta-Labeling** | (Layer 1 で前倒し済) |
+| entropy lift 6.04% (閾値 10% 未満) | **Phase 1 で案 b Entry Binary + 案 c Direction Multiclass + 案 d Ranking LambdaRank + 案 e Triple Barrier + 案 f Meta-Labeling 並列実装** (Layer 3 → Layer 1 前倒し) | custom loss / SHAP / Conformal prediction (前半) + 高信頼度 only Entry (後半) |
+| class imbalance (98% 負例) | 案 b で scale_pos_weight + **案 e/f で Triple Barrier 3 クラス分類により実質緩和** | Class balancing / Focal loss / regime-based stratified サンプリング |
+| 末尾 10% valid のみ | **Walk-forward Purged K-Fold 5 fold (mlfinpy.cross_validation.PurgedKFold) を全 6 案で必須** (Layer 3 → Layer 1 前倒し) | CPCV (Combinatorial Purged CV) |
 
 ### §5.4 CP1〜CP5 (Claude 監査モード `/audit` 連携)
 
 | CP | 着手前 | 監査内容 |
 |---|---|---|
 | **CP1** | Phase 1 着手前 | Phase 0 改修出力 (列数 + leak 4 点) |
-| **CP2** | Phase 2 着手前 | Phase 1 並列 3 案物理証跡対比 + 分岐判定 |
+| **CP2** | Phase 2 着手前 | Phase 1 並列 **6 案** × Purged K-Fold 5 fold 物理証跡対比 + **5 指標** (entropy lift / TP Precision / Direction Accuracy / Simulated PnL / DSR) 判定・Layer 3 投入条件厳格化 (v5) |
 | **CP3** | Phase 3-b 着手前 | KMeans vs GMM vs HDBSCAN の本プロジェクト適合性 |
 | **CP4** | Phase 5 着手前 | Entry-Exit 整合性 review (前回 -$985 同型再発検知) |
 | **CP5** | Phase 6 着手前 | 削除類型 10 種 + per-day 制約 + サイジング 8 方式の妥当性 |
@@ -962,16 +978,20 @@ Phase 1-a/1-b/1-c smoke で観察された 5 件の問題 → V4 でどう対応
 | 2026-05-21 | v4 試作 #6 (破棄) | フロー主役 + 学習方法 682 行・各 Phase の学習項目 (指標カタログ等) なし |
 | 2026-05-21 | v4 試作 #7 (本版・前バージョン 888 行) | §2 各 Phase に学習方法 + 学習項目セクション追加・145 ファミリー詳述 / Exit 24 種 / MAX_ADDS 6 / per-position 8 方式 / cap 3 方式 / Funding / 削除類型 / 発火頻度 |
 | 2026-05-21 | **v4 v1 (確定版・約 960 行)** | **phase_compliance_checklist.md (222 行) + false_positive_incident_policy.md (225 行) 全文 view → 整合性総点検 → A 案修正反映**: ① Phase -1 USD 絶対値 blacklist 48 列 drop 義務明示 / ② Phase 1 verify (random_state=42 + feature_importance top20 即時 review + fractal blacklist 3 段階) / ③ Phase 3-b artifact 名 verify ("train" 含む / `*test*` 禁止) + K96 SHORT q99 フォールバック / ④ Phase 4-b-1 採用方式修正 (test 期間使用削除・train のみ) + time_exit K 制限 + TP 約定モデル (固定 + pred_MFE 中央値) + Trailing 順序 + entry/slippage 0.005% + 月別 Exit 約定率 ≥ 12% / ⑤ Phase 5 false_positive §5 関所 A/B/C/E 統合 + Maker 剥落 stress (0.02%) + wick 乖離分析 / ⑥ Phase 5-b 計算式 MAX_ADDS 反映 `per-position = 0.12 / (cap × MAX_ADDS)` / Phase 5-d cap 別 best Exit 再選定 / ⑦ Phase 6-b artifact assertion ("train" 含み "test" 含まず) / ⑧ Phase 7-c ALLOW_LIVE_ORDERS = False 維持 + "test" artifact 起動中止 + verify_ml_inference.py |
+| 2026-05-26 | **v5 整合更新 (本プロジェクトの正本一本化反映)** | learning_design_v4 §10 #19/#20 + handoff v22 で 2026-05-22 確定済の **v5 Layer 配分逆転** を本書に反映: ① §2 Phase 1 を 3 案並列 → **6 案並列** (案 a/b/c + 案 d Ranking LambdaRank + 案 e Triple Barrier multiclass + 案 f Meta-Labeling 2 段階) に拡張・Walk-forward Purged K-Fold 5 fold + DSR 必須化 / ② 学習後比較指標 4 → **5 指標** (entropy lift > 10% / TP Precision > 0.5 / Direction Accuracy > 0.55 / Simulated PnL / DSR > 1.0) + Layer 3 投入条件厳格化 / ③ §4 全体フロー俯瞰 (案 a+b+c → 6 案) / ④ §5.3 Entry 学習問題対応マップ (Layer 3 → Layer 1 前倒し済) / ⑤ §5.4 CP2 監査内容 (5 指標 + Purged K-Fold) / **handoff_to_cc_v* 廃止と並行で本書を正本に一本化** (learning_design_v4 は archive 移動) |
 
 ---
 
-## §7 詳細参照ガイド
+## §7 関連ファイル
 
-本ファイルは「フロー主役・分かりやすく版」。詳細な設計仕様は以下を参照:
+本ファイルは **本プロジェクトの学習フロー正本** (2026-05-26 一本化・handoff_to_cc_v* 廃止と並行)。詳細な設計仕様 / 役割 / 関所は以下を参照:
 
-- **learning_design_v4.md** (336 行): 設計図本体・23 軸振り分け表・Layer タスク確定リスト
 - **cc_ml_design_spec.md**: ML pipeline 仕様・合否基準
 - **cc_role.md**: CC 役割定義・23 軸 First Principles
-- **false_positive_incident_policy.md**: leak 防止・ポジション上限厳守
+- **false_positive_incident_policy.md**: leak 防止・ポジション上限厳守 / 関所 A-G
+- **phase_compliance_checklist.md**: Phase 別 verify 義務
+- **WORKFLOW.md**: 現フェーズ + 次タスク + セッション完了事項 (handoff_to_cc_v* 廃止後の単一正本)
+- ~~**learning_design_v4.md**~~: 2026-05-26 `archive/learning_design_v4_20260526.md` に移送 (本書 §2/§3 に統合)
+- ~~**handoff_to_cc_v\*.md**~~: 2026-05-26 `.claude/instructions/archive/handoff/` に一括移送 (伝言ゲーム化経路を物理排除)
 
 ---

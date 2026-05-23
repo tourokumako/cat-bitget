@@ -7,6 +7,93 @@
 
 ---
 
+### L-216: handoff_to_cc_v* 廃止 + WORKFLOW.md 単一正本化 + learning_design_v4 統合 — 伝言ゲーム化経路の物理排除事案 (2026-05-26)
+
+**何が起きたか:**
+本セッションで案 W/V 目的逸脱 (L-215) 発覚 + 過去 5 セッション分の設計逸脱 (Phase 1 v5 = 6 案並列確定済を案 a 1 案のみで進行) 発覚 → まこさん「handoff_to_cc_v 系の引き継ぎ資料作成しないほうがいいんじゃないの？ WORKFLOW のみの運用にすれば？」提案 → CC 独立評価で構造的に正しいと判定 → 6 ステップで構造再構築:
+
+1. handoff_to_cc_v19〜v32 全 14 件を `.claude/instructions/archive/handoff/` に移送
+2. learning_design_v4.md を `.claude/memory/archive/learning_design_v4_20260526.md` に移送 (phase_flow_v4 §2/§3 に統合済)
+3. phase_flow_v4_with_recovery.md を v5 整合に更新 (3 案 → 6 案 + Walk-forward Purged K-Fold 5 fold + DSR + 5 指標反映)
+4. CLAUDE.md Layer 1 必読リスト更新 (handoff 削除 + phase_flow_v4 追加)
+5. cc_role.md §1.4.6 (目的整合性ゲート・L-215) + §1.4.7 (handoff 廃止) 新規追加
+6. WORKFLOW.md セッション終了処理セクション新設 (改訂N+1 active 構造 + archive 切り出しルール) + 改訂32 active 新設
+
+**Why:**
+- 起案 CC = 読み手 CC = 同じ Claude (cc_role §1.4 #3 同型バイアス) → 書いた側の局所判断 (スコープ縮小 / 評価式集中) を読み手も素通り
+- L-213 (機械的反映同型バイアス・2026-05-24) + L-214 (引き継ぎ伝言ゲーム化・2026-05-25) + L-215 (5 セッション設計逸脱・2026-05-26) で **3 回連続再演**
+- L-214 改善 9 件 (項目数照合・signature 整合・「機械的反映」表現禁止・起案者自己 verify Q&A 等) の形式チェック強化では構造的に止まらない実証
+- 文書間の食い違い (learning_design_v4 v5 = 6 案並列 vs phase_flow_v4 v4 v1 = 3 案並列) を発見する関所もなく、正本一本化が未実施
+- handoff_to_cc_v* を介在させる構造そのものが伝言ゲームを生む = **構造そのものを廃止しない限り再発する**
+
+**How to apply:**
+- **handoff_to_cc_v\* は今後作成しない** (cc_role §1.4.7 明記)
+- 引き継ぎ情報 (本セッション完了事項 / 次セッション CC 優先順位 / 引き継ぎリソース 3 層構造) は **WORKFLOW.md 改訂N active ブロックに集約**
+- セッション終了処理 (WORKFLOW.md §セッション終了処理):
+  1. lessons_active.md 更新 (L-XX 追加)
+  2. WORKFLOW.md 改訂 N+1 active 新設 + 改訂 N を 🧊 履歴に降格
+  3. WORKFLOW.md 改訂 N-5 以前を `archive/workflow/` に移送 (肥大化抑制・1147 行超えたら強制実施)
+  4. git commit
+- 学習フロー正本は **phase_flow_v4_with_recovery.md に一本化** (v5 整合更新済・977 行→約 1010 行)
+- learning_design_v4.md は廃止 (archive 保存・引用のみ可)
+
+**関連:**
+- L-213 / L-214 / L-215 (3 回連続再演事案)
+- cc_role §1.4.6 目的整合性ゲート (L-215 対策)
+- cc_role §1.4.7 handoff 廃止 (本件・L-216 対策)
+- cc_role §1.4 #3 同型バイアス (本件で根本構造として確認)
+- false_positive §5 関所 G「すり抜けるたびに穴を塞ぐ」(本件で形式チェック層を捨てて構造変更で塞ぐ)
+- 公式 source: 本セッション末 commit (構造再構築) + `archive/handoff/` 14 件 + `archive/learning_design_v4_20260526.md`
+
+---
+
+### L-215: Phase 1 v5 設計逸脱 5 セッション継続 — 案 a 単独実装で 6 案並列を放置・目的整合性ゲート欠落事案 (2026-05-26)
+
+**何が起きたか:**
+本セッションで案 W (TP/SL grid 拡張) + 案 V (K=96 除外) を実装 → CC 独立評価で目的逸脱と認め revert → Step I-4.5 本走完了で関所 A 8/8 異常値スメル ヒット (合格ライン 20 倍超え)。まこさんから「Phase 1 = Entry AI が機能するか測るだけなのに、なぜここまで難航する? 5 セッションも使ってる」指摘 → `learning_design_v4.md` + `phase_flow_v4_with_recovery.md` + handoff v19-v32 全件読了で発覚:
+
+- 2026-05-22 v22 で **Phase 1 v5 = 6 案並列確定** (案 a/b/c + 案 d Ranking LambdaRank + 案 e Triple Barrier multiclass + 案 f Meta-Labeling 2 段階 + Walk-forward Purged K-Fold 5 fold + DSR 補正)
+- 実装は **案 a (V3 14 ラベル独立 RMSE) のみ** で v23-v32 (= Step C-I 5 セッション) を回し続けた
+- CP3 監査 (v27・2026-05-23) 結論「評価式暫定過大評価 7-8 割支配」→ 「案 a の評価式直す方が先」と判断 → 案 b/c/d/e/f 実装スコープから完全に外れた
+- 5 セッション分のトークン・時間が Phase 1 v5 進捗ゼロで消費
+
+**Why (構造的原因 6 件):**
+
+1. **スコープ縮小 (v22 → v26)**: v22 で 6 案計画確定・v23-v25 で環境構築・v26 で「Step E = 案 a 実装」とだけ書き、案 b/c/d/e/f の Step F/G/H/I/J 予定が明示されなかった → 次セッション CC は「Step F は案 a の smoke の続き」と解釈
+2. **CP3 監査誤判定 (v27)**: 「評価式暫定過大評価 7-8 割支配」結論を根拠に「案 b/c/d/e/f は不要・案 a の評価式直せば PASS」と暗黙判断 → 監査は同型バイアス Claude で根本問題 (案 a entropy lift 6.04% = ランダム同等) を素通り
+3. **タスク階層化による大目的喪失 (v28-v32)**: Step I-1 → I-2 → I-3 → I-4.1 → I-4.2 → I-4.3 と階層が深まり、handoff §2「次タスク」が前セッション局所判断を継承。大目的 (Phase 1 v5 = 6 案並列) が階層化で見えなくなった
+4. **同型バイアス §1.4 #3 機能不全**: 起案 CC = 読み手 CC で書いた側のスコープ縮小をそのまま継承
+5. **目的整合性ゲート欠落**: L-214 改善 9 件 (項目数・signature・機械的反映禁止・起案者自己 verify Q&A) は形式チェック中心・「現タスクが現フェーズ目的に貢献するか?」を verify するゲートが存在しない
+6. **正本間の食い違い発見遅延**: learning_design_v4 v5 (6 案並列・2026-05-22 更新) vs phase_flow_v4 v4 v1 (3 案並列・2026-05-21 更新漏れ) を発見する仕組みなし
+
+**How to apply:**
+
+#### 改善 1: 目的整合性ゲート (cc_role §1.4.6 新設)
+セッション開始時 + 新タスク着手前に CC は以下 5 項目を 1 行ずつチャットに書き出す義務:
+1. 最終目標: 月次 NET ≥ $1,900 全月クリア
+2. 現フェーズ: Phase X (phase_flow_v4 §2 で定義された Phase X 目的を 1 文で)
+3. 現タスク分類: T1 Entry AI 評価 / T2 Entry 質分類 / T3 Exit 設計 / T4 ポジション配分 / T5 発火フィルタ / 環境整備 / 監査 / etc.
+4. 目的整合判定: 現タスクが現フェーズ目的に貢献するか (YES/NO + 1 行根拠)
+5. NO の場合: 着手前にチャットで正面確認 (まこさん向け確認は逸脱検出として許可)
+
+#### 改善 2: 学習フロー正本一本化 (本セッション L-216 で実施)
+phase_flow_v4_with_recovery.md を v5 整合に更新 + learning_design_v4.md archive 移動 + Layer 1 必読化
+
+#### 改善 3: 新類型 I「設計逸脱インシデント」を false_positive §2 に追加検討
+- 定義: 明文化された ML 設計を、実装が N セッション以上スコープ縮小したまま継続
+- 発見方法: セッション開始時の目的整合性ゲート (改善 1) + 正本一本化 (改善 2)
+- 既存類型 H (運用上限逸脱) との違い: 数値上限ではなく**設計仕様の逸脱**
+
+**関連:**
+- L-213 機械的反映同型バイアス (本件と同型構造・形式チェックでは止まらない)
+- L-214 引き継ぎ伝言ゲーム化 (本件で 3 回目の同型再演)
+- L-216 handoff 廃止 + WORKFLOW 単一正本化 (本件の構造的再発防止策)
+- cc_role §1.4 #2「spec の枠内でしか動かない」+ #3 同型バイアス + #4「現状把握スキップ」(本件で合成起動)
+- false_positive §5 関所 G「すり抜けるたびに穴を塞ぐ」(形式チェック層では塞げない穴を発見)
+- 公式 source: handoff v22 (Phase 1 v5 = 6 案並列確定) vs handoff v26 (Step E 案 a 単独実装着手) の乖離 + Step I-4.5 本走 [`case_a_v2_v3_summary_labels_mfe_mae_pct_train_2021_2024.json`](../../results/priority_rebuild/ml_phase1_v5/_case_a_v2_v3/case_a_v2_v3_summary_labels_mfe_mae_pct_train_2021_2024.json) (関所 A 8/8 異常値スメル ヒット)
+
+---
+
 ### L-214: 引き継ぎ伝言ゲーム化 + `.claude/audits/` 保管ルール消失 + 監査同セッション化による同型バイアス共有 — Step I-4.2 着手前混乱事案 (2026-05-25)
 
 **何が起きたか:**

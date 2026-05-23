@@ -299,7 +299,122 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-25 改訂31・**Step I-4.2 Critical-2 修正完了 (dsr ガード + 月次黒字率代替判定 + integration test) + commit dd80661**・次タスク = Step I-4.3 案 W (SL_PCT/TP grid 拡張) → 案 V (K96 除外) → Step I-3 再走）
+## セッション終了処理 (2026-05-26 確定・handoff_to_cc_v* 廃止後・L-216)
+
+> **【2026-05-26 重大改訂】** handoff_to_cc_v* は廃止 (L-213/L-214/L-215 で 3 回連続再演した「伝言ゲーム化」経路の物理排除・cc_role §1.4.7)。引き継ぎ情報は **WORKFLOW.md 改訂N active ブロックに集約**。
+
+### セッション終了時に必ず実施 (省略禁止・順序厳守)
+
+1. **lessons_active.md 更新** (本セッション固有教訓のみ・L-XX 追加)
+2. **WORKFLOW.md 改訂 N+1 active 新設** (本セクション以下「現在のフェーズ」ブロックを書き換え) + **改訂 N を 🧊 履歴に降格**
+   - 改訂 N+1 active には以下を必ず含める:
+     - **本セッション完了事項** (commit ハッシュ + 変更ファイル + 主要結論)
+     - **次セッション CC 優先順位** (タスク列挙・想定時間)
+     - **引き継ぎリソース 3 層構造** (Layer 1 毎セッション必読 / Layer 2 タスク特有 / Layer 3 リファレンス)
+     - **CP 監査一覧表更新** (CP 実施時)
+     - **目的整合性 1 行宣言** (cc_role §1.4.6・「次タスクが現フェーズの目的に貢献する根拠」)
+3. **WORKFLOW.md 肥大化対策**: 改訂 N-5 以前の 🧊 履歴ブロックを `archive/workflow/WORKFLOW_改訂N-5_YYYYMMDD.md` に移送 (1147 行超えたら強制実施)
+4. **git commit** (上記 1-3 まとめて)
+
+### handoff_to_cc_v* 廃止の根拠
+
+- 起案 CC = 読み手 CC = 同じ Claude (同型バイアス §1.4 #3) で書いた側の局所判断 (スコープ縮小 / 評価式集中 / etc.) を読み手も素通り
+- L-213 (機械的反映同型バイアス) / L-214 (引き継ぎ伝言ゲーム化) / L-215 (5 セッション設計逸脱) で 3 回連続再演
+- 改善 1-9 件の形式チェック強化では構造的に止まらない実証
+- 過去 handoff v19-v32 は `.claude/instructions/archive/handoff/` に履歴保存 (引用可)
+
+参照: cc_role §1.4.6 目的整合性ゲート / cc_role §1.4.7 handoff 廃止 / lessons_active.md L-215/L-216 / phase_flow_v4_with_recovery.md §6 v5 整合更新
+
+---
+
+## 🔴 現在のフェーズ（2026-05-26 改訂32・**handoff_to_cc_v\* 廃止 + WORKFLOW 単一正本化 + phase_flow_v4 v5 整合更新 + Step I-4.5 本走完了で異常値スメル 8/8 ヒット (= L-215 設計逸脱事案発覚)**・次タスク = Phase 1 v5 6 案並列実装 (案 b/c/d/e/f 着手))
+
+> **【現在の正本ブロック・改訂32・2026-05-26 セッション末（5 セッション分の設計逸脱発覚 + 構造的再発防止策完了）】**
+>
+> ### 本セッション (2026-05-26) 完了事項
+>
+> #### 1. Step I-4.5 本走完了 (Critical-1/2 修正後 + 案 W/V revert 後 + 旧 grid)
+> - 案 W (TP/SL grid 拡張) と 案 V (K=96 除外) を一度実装 (commit 5ceb004, e3d92ef) → CC 独立評価で **目的逸脱** と認め revert (commit aabed9d, 1bd2c6f)
+> - Step I-4.5 本走 (`run_lgbm_phase1_v5_case_a_v2_v3.py --full` / 1.5 分完走 / 8 組合せ × 2 method × 3 fold) → **関所 A 8/8 異常値スメル ヒット** (合格ライン 20 倍超え・false_positive §5 関所 A 自動 STOP)
+> - 公式 source: [`case_a_v2_v3_summary_labels_mfe_mae_pct_train_2021_2024.json`](results/priority_rebuild/ml_phase1_v5/_case_a_v2_v3/case_a_v2_v3_summary_labels_mfe_mae_pct_train_2021_2024.json)
+> - Critical-1/2 修正で評価式は予測装置化したが、依然として現実的でない巨額数値 = **評価式に追加問題残存 (Phase 4-b 領域)**
+>
+> #### 2. 過去 5 セッション分の設計逸脱発覚 (L-215 級事案)
+> - 2026-05-22 v22 で **Phase 1 v5 = 6 案並列確定** (案 a/b/c + 案 d Ranking LambdaRank + 案 e Triple Barrier multiclass + 案 f Meta-Labeling 2 段階 + Walk-forward Purged K-Fold 5 fold + DSR)
+> - **実装は案 a (V3 14 ラベル独立 RMSE) のみ** で v23-v32 (= Step C-I 5 セッション) を回し続けた
+> - CP3 監査 (v27) 結論「評価式暫定過大評価 7-8 割支配」を根拠に「案 a の評価式直す方が先」と判断 → 案 b/c/d/e/f 実装スコープから完全に外れた
+> - 本セッション終盤で `learning_design_v4.md` + `phase_flow_v4_with_recovery.md` 全文読了で発覚
+> - **5 セッション分のトークン・時間が Phase 1 v5 進捗ゼロで消費**
+>
+> #### 3. 構造的再発防止策完了 (handoff 廃止 + WORKFLOW 単一正本化)
+> - **handoff_to_cc_v19〜v32 全 14 件を `.claude/instructions/archive/handoff/` に移送** (伝言ゲーム化経路の物理排除)
+> - **`learning_design_v4.md` を `.claude/memory/archive/learning_design_v4_20260526.md` に移送** (phase_flow_v4 §2/§3 に統合済)
+> - **`phase_flow_v4_with_recovery.md` を v5 整合に更新** (3 案 → 6 案 + Walk-forward Purged K-Fold 5 fold + DSR + 5 指標反映)
+> - **CLAUDE.md Layer 1 必読リスト更新** (handoff 削除 + phase_flow_v4 追加)
+> - **cc_role.md §1.4.6 (目的整合性ゲート・L-215) + §1.4.7 (handoff 廃止・L-216) 新規追加**
+> - **WORKFLOW.md セッション終了処理セクション新設** (本セクション)
+> - **lessons L-215/L-216 追加**
+>
+> #### 4. 目的整合性 1 行宣言 (cc_role §1.4.6)
+> - **次タスク** = Phase 1 v5 残り 5 案 (案 b/c/d/e/f) の並列実装着手
+> - **現フェーズ目的への貢献根拠** = Phase 1 v5 (Entry AI が 6 案並列 + 5 指標で機能するか測る) の本来の実装スコープに復帰 (案 a 単独 → 6 案並列・5 セッション分の設計逸脱を回収)
+>
+> ### 次セッション CC 優先順位
+>
+> 1. **優先 1 — Phase 1 v5 残り 5 案実装着手** (約 3-4 週間想定・learning_design_v4 archive §11 着手フロー v5 整合):
+>    - 案 b: Entry Binary Classification (LightGBM binary objective + scale_pos_weight + entry_label = (MFE > X% and MAE > -Y%) ? 1 : 0)
+>    - 案 c: Direction Multiclass (LightGBM multiclass num_class=3・LONG/SHORT/Flat)
+>    - 案 d: Ranking LambdaRank (LightGBM objective='lambdarank'・MFE_pct ランキング)
+>    - 案 e: Triple Barrier multiclass (Phase 0 v3.1 で生成済 28 ラベル列使用・LightGBM Multiclass)
+>    - 案 f: Meta-Labeling 2 段階 (案 e primary → secondary で採用 / 見送り判定)
+>    - Walk-forward Purged K-Fold 5 fold (mlfinpy.cross_validation.PurgedKFold) 全案で必須
+>    - DSR > 1.0 補正必須
+> 2. **優先 2 — Step I-4.5 異常値スメル 8/8 の原因切り分け (Phase 4-b 領域)**:
+>    - 案 a 評価式の暫定問題は Critical-1/2 修正後も残存 → 評価式の現実性は Phase 4-b 完了後に正しく測れる
+>    - 案 a の Simulated PnL 単独評価は一旦保留 (5 指標のうち 1 つ・他 4 指標は別測定)
+> 3. **優先 3 — 案 a の残り 4 指標 (entropy lift / TP Precision / Direction Accuracy / DSR) 抽出** (= 案 a の Phase 1 v5 5 指標 verify 完成):
+>    - 既存 case_a_v2_p1/p2/p3 + case_a_v2_v3 artifact から抽出可能
+>    - 案 b〜f 学習結果と比較するベースライン値として保存
+> 4. **優先 4 — CP6 監査 (関所 D 必須・別セッション起動・cc_role §1.4.5 適用)** (Phase 1 v5 6 案並列学習完了後)
+> 5. **優先 5 — セッション終了処理** (lessons L-217+ + WORKFLOW 改訂33 active 新設 + 改訂32 履歴降格)
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (毎セッション必読・~700 行・読了ゲート機械的証跡対象)
+> - **WORKFLOW.md 改訂32 active** (本ブロック)
+> - **CLAUDE.md** (改訂22 ベース・Layer 1 必読リスト更新済)
+> - **phase_flow_v4_with_recovery.md** (ML 学習正本・v5 整合更新済)
+> - **lessons_active.md 直近 5 件** (L-216 → L-215 → L-214 → L-213 → L-212c)
+> - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.7** (同型バイアス + 監査別セッション化 + 目的整合性ゲート + handoff 廃止)
+>
+> #### Layer 2 (Phase 1 v5 着手時)
+> - `cc_ml_design_spec.md`: ML pipeline 仕様・合否基準
+> - `phase_compliance_checklist.md`: Phase 別 verify 義務
+> - `archive/learning_design_v4_20260526.md`: 設計確定経緯 (引用のみ)
+> - 既存案 a 実装ファイル (参考):
+>   - `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_rmse.py` (637 行・案 a 原型)
+>   - `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_v2.py` (597 行・案 a v2)
+>   - `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_v2_v3.py` (629 行・案 a v3・Critical-1/2 修正済)
+>   - `scripts/priority_rebuild/run_phase1_v5_purged_kfold.py` (873 行・Purged K-Fold 共通 runner)
+>   - `scripts/priority_rebuild/build_labels_pct.py` (Triple Barrier ラベル 28 列生成済・案 e/f 用)
+>   - `scripts/priority_rebuild/dsr.py` (241 行・DSR 自前実装・test 12/12 PASS)
+>
+> #### Layer 3 (リファレンス・必要時参照)
+> - `false_positive_incident_policy.md`: 関所 A-G + 類型 A-H + §0-1/0-2
+> - `exchange_spec.md`: Bitget USDT-FUTURES BTCUSDT スペック (audit#19 確定値)
+> - `lessons_archive.md`: L-152 以前 (Phase 1〜7-a / regime 研究時代教訓)
+> - `archive/handoff/handoff_to_cc_v19〜v32`: 過去 handoff 履歴 (廃止前・引用のみ)
+>
+> #### データ・環境
+> - parquet 3 種 (train_2021_2024 / test_2025 / test_2026_q1) + .venv311 (mlfinpy 0.1.2 / sklearn 1.8.0 / lightgbm 4.6.0 / scipy 1.17.1)
+> - tp_hit_classifier 統合 predictions parquet: `_tp_hit_classifier/tp_hit_classifier_predictions_train_2021_2024.parquet` (136.7 MB・本セッション生成)
+> - 案 a 全 artifact (Step I-3.1〜I-4.5 完走分・案 b/c/d/e/f 着手後も保持)
+
+---
+
+## 🧊 改訂31 ブロック (履歴・参照用)
+
+### 🔴 旧フェーズヘッダ（2026-05-25 改訂31・**Step I-4.2 Critical-2 修正完了 (dsr ガード + 月次黒字率代替判定 + integration test) + commit dd80661**・次タスク = Step I-4.3 案 W (SL_PCT/TP grid 拡張) → 案 V (K96 除外) → Step I-3 再走）
 
 > **【現在の正本ブロック・改訂31・2026-05-25 セッション末（Step I-4.2 完了 + 引き継ぎ伝言ゲーム化事案 L-214 + ルール消失復元）】**
 >
