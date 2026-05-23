@@ -1077,6 +1077,9 @@ Phase 1-a/1-b/1-c smoke で観察された 5 件の問題 → V4 v5 でどう対
 - **false_positive_incident_policy.md**: leak 防止・ポジション上限厳守 / 関所 A-G
 - **phase_compliance_checklist.md**: Phase 別 verify 義務
 - **WORKFLOW.md**: 現フェーズ + 次タスク + セッション完了事項 (handoff_to_cc_v* 廃止後の単一正本)
+- **`.claude/rules/exchange_spec.md`**: Bitget USDT-FUTURES BTCUSDT スペック (audit#19 確定値・手数料 / 最小注文 / Tick / Funding / レバ上限 / 各種制約) — 本番再現性 7 項目 verify の出典
+- **`.claude/memory/technical_analysis_knowledge_base.md`**: 本プロジェクト製テクニカル辞典 (§A-D 個別指標解説 + §I 閾値設計論・1691 行) — テクニカル指標・閾値設計判断時の参照
+- **`.claude/memory/CAT−指標マトリックス - 一覧.csv`**: 23 軸構成要素カタログ + 1432 指標完全リスト + 各軸の絞り込み戦略 (A 全投入 / B 探索 / C ML 学習 / D 事前固定) — ML 設計判断時の素材リスト (cc_role §1.6 整合)
 - ~~**learning_design_v4.md**~~: 2026-05-26 `archive/learning_design_v4_20260526.md` に移送 (本書 §2/§3 に統合)
 - ~~**handoff_to_cc_v\*.md**~~: 2026-05-26 `.claude/instructions/archive/handoff/` に一括移送 (伝言ゲーム化経路を物理排除)
 
