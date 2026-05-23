@@ -327,7 +327,7 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-26 改訂32・**handoff_to_cc_v\* 廃止 + WORKFLOW 単一正本化 + phase_flow_v4 v5 整合更新 + Step I-4.5 本走完了で異常値スメル 8/8 ヒット (= L-215 設計逸脱事案発覚)**・次タスク = Phase 1 v5 6 案並列実装 (案 b/c/d/e/f 着手))
+## 🔴 現在のフェーズ（2026-05-26 改訂32・**handoff_to_cc_v\* 廃止 + WORKFLOW 単一正本化 + phase_flow_v4 v5/v6 整合更新 + Phase 1 評価軸 5→3 指標 Exit 非依存化 (L-217) + Step I-4.5 本走で異常値スメル 8/8 ヒット (= L-215 設計逸脱事案発覚)**・次タスク = Phase 1 v6 6 案並列実装 (案 b/c/d/e/f 着手・3 指標 Exit 非依存判定))
 
 > **【現在の正本ブロック・改訂32・2026-05-26 セッション末（5 セッション分の設計逸脱発覚 + 構造的再発防止策完了）】**
 >
@@ -355,9 +355,17 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 > - **WORKFLOW.md セッション終了処理セクション新設** (本セクション)
 > - **lessons L-215/L-216 追加**
 >
-> #### 4. 目的整合性 1 行宣言 (cc_role §1.4.6)
-> - **次タスク** = Phase 1 v5 残り 5 案 (案 b/c/d/e/f) の並列実装着手
-> - **現フェーズ目的への貢献根拠** = Phase 1 v5 (Entry AI が 6 案並列 + 5 指標で機能するか測る) の本来の実装スコープに復帰 (案 a 単独 → 6 案並列・5 セッション分の設計逸脱を回収)
+> #### 4. Phase 1 評価軸 Exit 非依存 3 指標化 (v6 改訂・L-217)
+> - まこさん指摘「Entry のみで良し悪しの判定ってできるものなの？」を受けた CC 独立評価で v5 5 指標構成が **Entry 単独評価と Trading 評価を混在** させる構造的矛盾を発見
+> - **Phase 1 評価軸を 5 指標 → 3 指標 Exit 非依存**に絞る (entropy lift > 10% / TP Precision > 0.5・TP_PCT 固定値 / Direction Accuracy > 0.55 (案 c のみ))
+> - **Simulated PnL / DSR を Phase 5 合格条件に移動** (Trading 評価のため正しい配置・本丸 NET 基準とは別レンズ)
+> - phase_flow_v4 v6 改訂で正本反映 (§2 Phase 1 / §4 全体フロー俯瞰 / §5.4 CP2 監査内容 / §6 改訂履歴)
+> - lessons L-217 追加 (本件・L-215 の根本要因解明)
+> - これにより過去 5 セッション (Step F-I・Simulated PnL 評価式改修) を Phase 1 で実施した構造問題 (Phase 4-b 領域の Phase 1 混入) が解消方向 = Phase 1 v6 は Exit 抜きで完結可能
+>
+> #### 5. 目的整合性 1 行宣言 (cc_role §1.4.6)
+> - **次タスク** = Phase 1 v6 残り 5 案 (案 b/c/d/e/f) の並列実装着手
+> - **現フェーズ目的への貢献根拠** = Phase 1 v6 (Entry AI が 6 案並列 + **3 指標 Exit 非依存** で機能するか測る) の本来の実装スコープに復帰 (案 a 単独 → 6 案並列・5 セッション分の設計逸脱を回収・Exit に依存しない純粋 Entry 評価で完結)
 >
 > ### 次セッション CC 優先順位
 >
@@ -383,8 +391,8 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 > #### Layer 1 (毎セッション必読・~700 行・読了ゲート機械的証跡対象)
 > - **WORKFLOW.md 改訂32 active** (本ブロック)
 > - **CLAUDE.md** (改訂22 ベース・Layer 1 必読リスト更新済)
-> - **phase_flow_v4_with_recovery.md** (ML 学習正本・v5 整合更新済)
-> - **lessons_active.md 直近 5 件** (L-216 → L-215 → L-214 → L-213 → L-212c)
+> - **phase_flow_v4_with_recovery.md** (ML 学習正本・v6 Exit 非依存化更新済)
+> - **lessons_active.md 直近 5 件** (L-217 → L-216 → L-215 → L-214 → L-213)
 > - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.7** (同型バイアス + 監査別セッション化 + 目的整合性ゲート + handoff 廃止)
 >
 > #### Layer 2 (Phase 1 v5 着手時)

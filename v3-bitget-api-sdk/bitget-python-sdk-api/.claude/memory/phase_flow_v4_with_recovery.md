@@ -296,22 +296,26 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 **14 ラベル独立**: K=7 × {LONG_MFE_pct, LONG_MAE_pct} = 14 (SHORT は対称性で流用・Phase 5 で SHORT 側適用)
 
-**学習後の比較指標 (CP2 で 5 指標物理証跡対比・v5 厳格化・2026-05-22)**:
+**学習後の比較指標 (CP2 で 3 指標物理証跡対比・v6 Exit 非依存化・2026-05-26)**:
 
-| # | 指標 | 合格閾値 | 根拠 |
-|---|---|---|---|
-| 1 | **entropy lift** | **> 10%** | AFML Ch.3 (< 10% で meta-labeling 投入推奨域・Phase 1-c smoke 6.04% は投入域) |
-| 2 | **TP Precision** | **> 0.5** | 信頼度 50% 以上 (ベースライン 50% 超え必須) |
-| 3 | **Direction Accuracy** (案 c のみ) | **> 0.55** | LONG/SHORT 当たり率 (5% 以上有意性) |
-| 4 | **Simulated PnL** | 12 ヶ月中 8+ ヶ月プラス + 年間 NET ≥ $500 | cc_ml_design_spec §1.6 整合 (Position size 未確定なので暫定基準) |
-| 5 | **Walk-forward CV Sharpe (DSR 補正)** | **DSR > 1.0** | 本テスト相当 (selection bias 補正後) |
+> **【v6 重大改訂】** v5 では 5 指標だったが、Simulated PnL / DSR は **Exit シミュレーション必須** で「Entry のみで純粋に判定できない」構造的矛盾を発見 (L-217)。Phase 1 = Entry AI 単独評価の目的に整合させるため **Exit 非依存の 3 指標に絞る**。Simulated PnL / DSR は **Phase 5 合格条件** に移動 (Trading 評価のため正しい配置)。
 
-**分岐判定 (CP2・v5 厳格化)**:
-- **6 案いずれか 5 指標 ALL PASS** → 採用案で Phase 2 進行
-- **6 案ベストでも 5 指標未達** → **即** Layer 3 残存タスク投入 (CPCV + Class balancing / Focal loss + custom loss + アルゴ多様化)
-- **「ベスト案で Phase 2 進行して判定」は禁止** (Phase 1 未達 → Phase 2 改善保証なし・v5 厳格化)
+| # | 指標 | 合格閾値 | 根拠 | Exit 依存性 |
+|---|---|---|---|---|
+| 1 | **entropy lift** | **> 10%** | AFML Ch.3 (< 10% で meta-labeling 投入推奨域・Phase 1-c smoke 6.04% は投入域) | ✅ 非依存 (予測モデル単独で測定可) |
+| 2 | **TP Precision** (TP_PCT 固定値で測定) | **> 0.5** | 信頼度 50% 以上 (ベースライン 50% 超え必須)・TP_PCT は固定 0.5% 等で割り切る | ⚠️ 半依存 (TP_PCT 固定なら Entry 単独) |
+| 3 | **Direction Accuracy** (案 c のみ) | **> 0.55** | LONG/SHORT 当たり率 (5% 以上有意性) | ✅ 非依存 (方向当てだけで測定可) |
 
-**Phase 1 リソース計画 (v5)**:
+**Phase 1 で測らない指標 (Phase 5 で評価)**:
+- ~~Simulated PnL~~ → Phase 5 合格条件 (仮 test 2025 月次 NET ≥ $1,900 全 12 ヶ月クリア) に移動
+- ~~DSR (Walk-forward CV Sharpe 補正)~~ → Phase 5 合格条件に追加移動
+
+**分岐判定 (CP2・v6 Exit 非依存化)**:
+- **6 案いずれか 3 指標 ALL PASS** → 採用案で Phase 2 進行 (ハイパラ最適化)
+- **6 案ベストでも 3 指標未達** → **即** Layer 3 残存タスク投入 (CPCV + Class balancing / Focal loss + custom loss + アルゴ多様化)
+- **「ベスト案で Phase 2 進行して判定」は禁止** (Phase 1 未達 → Phase 2 改善保証なし・v5 厳格化継承)
+
+**Phase 1 リソース計画 (v5 継承)**:
 - 並列度 3 (CPU 競合 + メモリ制約 30-45 GB)
 - 学習時間 約 20 時間 (5 fold × 6 案 = 約 1 日)
 - Phase 1 全体期間: 約 3-4 週間 (ラベル設計 1 週 + 実装 1-2 週 + 学習 1 日 + CP2 監査 + 結果分析 1 週)
@@ -809,8 +813,12 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 **絶対制約 (false_positive §0-2 第二絶対規定)**:
 全エントリー時点で `sum(active_position_btc) ≤ 0.12` を実装で verify。違反検知 → 即実装停止。
 
-**合格条件 (本丸第 1 段)**:
-仮 test 2025 で月次 NET ≥ $1,900 **全 12 ヶ月クリア** (実行前確定・実行後緩和禁止)
+**合格条件 (本丸第 1 段・v6 で Phase 1 から移動した指標も含む)**:
+
+1. **月次 NET ≥ $1,900 全 12 ヶ月クリア** (仮 test 2025・実行前確定・実行後緩和禁止) — 本丸合格判定
+2. **DSR > 1.0** (Walk-forward CV Sharpe 補正・Bailey + Lopez de Prado 2014・selection bias 補正後・Phase 1 v5 → v6 で移動)
+3. **Simulated PnL 12 ヶ月中 8+ ヶ月プラス + 年間 NET ≥ $500** (Phase 1 v5 → v6 で移動・本丸 NET 基準とは別レンズで verify)
+4. **異常値スメル 0/8** (false_positive §5 関所 A 自動 STOP: 月次 NET > $3,800 / 勝率 > 70% / IS-OOS Sharpe 比 > 3 倍乖離 / 最大 DD < 月次 NET 10% に 1 つも該当しない)
 
 **失敗時**:
 - 1-3 ヶ月未達 → 削除類型強化 (1 回まで) → Layer 2 投入 (D-δ 時間帯 / D-ε regime / Exit 第 2 弾 / Calibration)
@@ -934,14 +942,17 @@ Phase 1 で案 a/b/c 全て不合格なら、Entry 学習を 2 段階構成に�
    ↓ CP1 監査 (列数 + leak 4 点)
    ↓
 [Phase 1] 並列学習 6 案 (案 a + 案 b + 案 c + 案 d + 案 e + 案 f・v5)
-          + Walk-forward Purged K-Fold 5 fold + DSR 補正
+          + Walk-forward Purged K-Fold 5 fold
    ↓ 約 3-4 週間 (5 fold × 6 案 = 約 20 時間学習 + CP2 監査 + 分析)
-   ↓ CP2 監査 (5 指標で 6 案比較 → 分岐)
+   ↓ CP2 監査 (3 指標 Exit 非依存で 6 案比較 → 分岐・v6)
    ↓
    ┌─────分岐─────┐
    │              │
    6 案いずれか      6 案ベストでも
-   5 指標 ALL PASS   5 指標未達
+   3 指標 ALL PASS   3 指標未達
+   (entropy lift /  (Exit 非依存指標)
+    TP Precision /
+    Direction Acc)
    ↓              ↓
    採用案で進行       即 Layer 3 残存タスク投入
                   (CPCV + Class balancing
@@ -1030,7 +1041,7 @@ Phase 1-a/1-b/1-c smoke で観察された 5 件の問題 → V4 v5 でどう対
 | CP | 着手前 | 監査内容 |
 |---|---|---|
 | **CP1** | Phase 1 着手前 | Phase 0 改修出力 (列数 + leak 4 点) |
-| **CP2** | Phase 2 着手前 | Phase 1 並列 **6 案** × Purged K-Fold 5 fold 物理証跡対比 + **5 指標** (entropy lift / TP Precision / Direction Accuracy / Simulated PnL / DSR) 判定・Layer 3 投入条件厳格化 (v5) |
+| **CP2** | Phase 2 着手前 | Phase 1 並列 **6 案** × Purged K-Fold 5 fold 物理証跡対比 + **3 指標 Exit 非依存** (entropy lift > 10% / TP Precision > 0.5 / Direction Accuracy > 0.55) 判定・Simulated PnL / DSR は Phase 5 で評価 (v6 で Phase 1 から移動・Entry AI 単独評価への整合) |
 | **CP3** | Phase 3-b 着手前 | KMeans vs GMM vs HDBSCAN の本プロジェクト適合性 |
 | **CP4** | Phase 5 着手前 | Entry-Exit 整合性 review (前回 -$985 同型再発検知) |
 | **CP5** | Phase 6 着手前 | 削除類型 10 種 + per-day 制約 + サイジング 8 方式の妥当性 |
@@ -1053,6 +1064,7 @@ Phase 1-a/1-b/1-c smoke で観察された 5 件の問題 → V4 v5 でどう対
 | 2026-05-21 | v4 試作 #7 (本版・前バージョン 888 行) | §2 各 Phase に学習方法 + 学習項目セクション追加・145 ファミリー詳述 / Exit 24 種 / MAX_ADDS 6 / per-position 8 方式 / cap 3 方式 / Funding / 削除類型 / 発火頻度 |
 | 2026-05-21 | **v4 v1 (確定版・約 960 行)** | **phase_compliance_checklist.md (222 行) + false_positive_incident_policy.md (225 行) 全文 view → 整合性総点検 → A 案修正反映**: ① Phase -1 USD 絶対値 blacklist 48 列 drop 義務明示 / ② Phase 1 verify (random_state=42 + feature_importance top20 即時 review + fractal blacklist 3 段階) / ③ Phase 3-b artifact 名 verify ("train" 含む / `*test*` 禁止) + K96 SHORT q99 フォールバック / ④ Phase 4-b-1 採用方式修正 (test 期間使用削除・train のみ) + time_exit K 制限 + TP 約定モデル (固定 + pred_MFE 中央値) + Trailing 順序 + entry/slippage 0.005% + 月別 Exit 約定率 ≥ 12% / ⑤ Phase 5 false_positive §5 関所 A/B/C/E 統合 + Maker 剥落 stress (0.02%) + wick 乖離分析 / ⑥ Phase 5-b 計算式 MAX_ADDS 反映 `per-position = 0.12 / (cap × MAX_ADDS)` / Phase 5-d cap 別 best Exit 再選定 / ⑦ Phase 6-b artifact assertion ("train" 含み "test" 含まず) / ⑧ Phase 7-c ALLOW_LIVE_ORDERS = False 維持 + "test" artifact 起動中止 + verify_ml_inference.py |
 | 2026-05-26 | **v5 整合更新 (本プロジェクトの正本一本化反映)** | learning_design_v4 §10 #19/#20 + handoff v22 で 2026-05-22 確定済の **v5 Layer 配分逆転** を本書に反映: ① §2 Phase 1 を 3 案並列 → **6 案並列** (案 a/b/c + 案 d Ranking LambdaRank + 案 e Triple Barrier multiclass + 案 f Meta-Labeling 2 段階) に拡張・Walk-forward Purged K-Fold 5 fold + DSR 必須化 / ② 学習後比較指標 4 → **5 指標** (entropy lift > 10% / TP Precision > 0.5 / Direction Accuracy > 0.55 / Simulated PnL / DSR > 1.0) + Layer 3 投入条件厳格化 / ③ §4 全体フロー俯瞰 (案 a+b+c → 6 案) / ④ §5.3 Entry 学習問題対応マップ (Layer 3 → Layer 1 前倒し済) / ⑤ §5.4 CP2 監査内容 (5 指標 + Purged K-Fold) / **handoff_to_cc_v* 廃止と並行で本書を正本に一本化** (learning_design_v4 は archive 移動) |
+| 2026-05-26 | **v6 Phase 1 評価軸 Exit 非依存化 (構造的矛盾の解消・L-217)** | まこさん指摘「Entry のみで良し悪しの判定ってできるものなの？」を受けた CC 独立評価で v5 の 5 指標構成が「Entry AI 単独評価」と「Trading 評価 (Exit 必須)」を混在させる構造的矛盾を発見: ① Phase 1 評価軸を **5 指標 → 3 指標 Exit 非依存** に絞る (entropy lift > 10% / TP Precision > 0.5・TP_PCT 固定値 / Direction Accuracy > 0.55 (案 c のみ)) / ② Simulated PnL / DSR を Phase 5 合格条件に移動 (Trading 評価のため正しい配置・本丸 NET 基準とは別レンズで verify) / ③ §4 全体フロー俯瞰 + §5.4 CP2 監査内容を 3 指標化 / ④ 過去 5 セッション分の Step I (Simulated PnL 評価式改修) は L-215 設計逸脱事案 (Phase 4-b 領域を Phase 1 で先行実装した構造問題) を裏付け |
 
 ---
 

@@ -7,6 +7,56 @@
 
 ---
 
+### L-217: Phase 1 評価軸 5 指標の構造的矛盾発見 — Entry 単独評価と Trading 評価の混在事案 (2026-05-26)
+
+**何が起きたか:**
+L-215/L-216 で構造再構築 (handoff 廃止 + phase_flow_v4 v5 整合更新) 完了後、まこさん指摘「Entry のみで良し悪しの判定ってできるものなの？」を受けて Phase 1 v5 5 指標を CC 独立再評価。**5 指標のうち 3 つが Exit シミュレーション必須**で「Entry AI 単独評価」と「Trading 評価」を混在させる構造的矛盾を発見:
+
+| 指標 | Entry のみで測れるか |
+|---|---|
+| entropy lift > 10% | ✅ 非依存 (予測モデル単独) |
+| TP Precision > 0.5 | ⚠️ 半依存 (TP_PCT 固定なら Entry 単独) |
+| Direction Accuracy > 0.55 (案 c のみ) | ✅ 非依存 (方向当てのみ) |
+| **Simulated PnL** (12 ヶ月 8+ プラス + 年 $500) | ❌ **Exit シミュレーション必須** |
+| **DSR > 1.0** (Walk-forward CV Sharpe 補正) | ❌ **Exit シミュレーション必須** |
+
+過去 5 セッション (Step F-I・case_a_v2 / v2_v3 評価式改修・tp_hit_classifier 10 時間学習) は **Simulated PnL を Phase 1 で測ろうとして Exit 簡素化に費やした結果**・本セッション本走で関所 A 8/8 異常値スメル ヒット (L-215) = Exit 簡素化の限界が露呈。
+
+**Why:**
+- ML 業界標準 (Lopez de Prado AFML 等) は Phase 1 = 予測精度評価 (entropy / accuracy / precision / recall / F1) と Phase 5 = Trading 評価 (Sharpe / Max DD / NET 等) を **階層分離**
+- v5 設計 (5 指標) は「Entry AI 評価」「Trading 評価」を同一階層に混ぜていた
+- 結果: Exit 簡素化で済ませようとしたが Trading 評価の精度要件 (異常値スメル回避・現実的 Exit シミュレーション) を満たせず 5 セッション浪費
+- これは L-215 (設計逸脱 5 セッション継続) の **根本要因**でもある (Phase 4-b 領域を Phase 1 で先行実装した構造問題)
+
+**How to apply (v6 修正反映):**
+
+#### 修正 1: Phase 1 評価軸を Exit 非依存 3 指標に絞る
+- entropy lift > 10%
+- TP Precision > 0.5 (TP_PCT 固定値で割り切り・Phase 4-b 完了前でも測定可)
+- Direction Accuracy > 0.55 (案 c のみ)
+
+#### 修正 2: Simulated PnL / DSR を Phase 5 合格条件に移動
+- Phase 5 合格条件を 1 つ → 4 つに拡張:
+  1. 月次 NET ≥ $1,900 全 12 ヶ月クリア (本丸合格判定)
+  2. DSR > 1.0 (Walk-forward CV Sharpe 補正)
+  3. Simulated PnL 12 ヶ月中 8+ プラス + 年間 NET ≥ $500 (本丸 NET 基準とは別レンズ)
+  4. 異常値スメル 0/8 (false_positive §5 関所 A)
+
+#### 修正 3: phase_flow_v4 v6 改訂で正本反映
+- §2 Phase 1「学習後の比較指標」を 5 → 3 指標化
+- §4 全体フロー俯瞰の Phase 1 分岐判定を 3 指標化
+- §5.4 CP2 監査内容を 3 指標化
+- §6 改訂履歴に v6 行追加
+
+**関連:**
+- L-215 設計逸脱 5 セッション継続 (本件の構造的兆候・Phase 4-b 領域を Phase 1 で実装した結果)
+- L-216 handoff 廃止 + WORKFLOW 単一正本化 (本件の発見前提・正本一本化で見つかった矛盾)
+- cc_role §1.4 #2「spec の枠内でしか動かない」(過去 5 セッション CC が v5 5 指標を疑わなかった)
+- ML 業界標準 (Lopez de Prado *AFML* / Stefan Jansen *Machine Learning for Algorithmic Trading*): Phase 別評価軸の階層分離
+- 公式 source: phase_flow_v4_with_recovery.md §6 改訂履歴 v6 行 / 本セッション commit (v6 反映)
+
+---
+
 ### L-216: handoff_to_cc_v* 廃止 + WORKFLOW.md 単一正本化 + learning_design_v4 統合 — 伝言ゲーム化経路の物理排除事案 (2026-05-26)
 
 **何が起きたか:**
