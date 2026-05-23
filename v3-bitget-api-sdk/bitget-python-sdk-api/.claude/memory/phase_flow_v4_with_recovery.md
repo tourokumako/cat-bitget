@@ -70,6 +70,13 @@
 
 ### Phase 0 改修: 特徴量を増やす + ラベルを再生成
 
+**実行状況 (2026-05-26 時点)**: ✅ **完了**
+- parquet 3 種生成済: `results/priority_rebuild/labels_mfe_mae_pct_{sample, train_2021_2024, test_2025, test_2026_q1}.parquet` (sample 109 MB / train 1.5 GB / test_2025 469 MB / test_2026_q1 112 MB)
+- 列数: 2,724 列 (本文記載「2,000-2,500 列」目安に対し追加実装で 2,724 列着地)
+- ラベル: MFE/MAE × LONG/SHORT × K=7 = 28 列 + **Triple Barrier × LONG/SHORT × K=7 = 14 列** + **Meta-Label × LONG/SHORT × K=7 = 14 列** = 計 56 ラベル列
+- Phase -1 blacklist: USD 絶対値系 64 列 (1w/1M MTF 拡張で 48 → 64) → Phase 1 学習スクリプトが drop
+- 実行スクリプト: `scripts/priority_rebuild/build_labels_pct.py`
+
 **何を学習するか**: **学習はしない**。次の Phase 1 で使う「特徴量データ + 正解ラベル」を作るだけ。
 
 **学習方法**: **該当なし** (Phase 0 は parquet 生成のみ・ML 学習なし)
@@ -138,6 +145,14 @@ Phase 0 改修後の parquet 列から、Phase 1 学習スクリプトが以下 
 
 ### Phase 1: Entry の学習を 6 案並列でやって最良案を選ぶ (最重要・v5 Layer 配分逆転・2026-05-22 確定)
 
+**実行状況 (2026-05-26 時点)**:
+- 案 a: ✅ **学習済** (3 版実装・case_a_rmse / case_a_v2 / case_a_v2_v3・Step F-I で 5 セッション分の評価式改修を含む)
+- 案 b/c/d/e/f: ❌ **未実装** (L-215 設計逸脱事案・本来 2026-05-22 v22 時点で 6 案並列確定だったが案 a 1 案のみで 5 セッション継続)
+- Walk-forward Purged K-Fold: ⚠️ **3 fold で実装済** (P1/P2/P3 別・v5 で 5 fold 必須に変更されたが未対応)
+- DSR 補正: ✅ **実装済** (`scripts/priority_rebuild/dsr.py` 241 行・test 12/12 PASS・Critical-2 修正で integration test 6/6 PASS も追加)
+- 5 指標判定: ⚠️ **Simulated PnL のみ測定済**・残り 4 指標 (entropy lift / TP Precision / Direction Accuracy / DSR) は **案 a でも未抽出**
+- Step I-4.5 本走結果: **関所 A 8/8 異常値スメル ヒット** (false_positive §5 関所 A 自動 STOP・要原因切り分け・Phase 4-b 領域)
+
 **何を学習するか**: 「**Entry すべきかどうか**」を 6 通りの違うやり方で学習し、どれが一番うまく予測できるか比較する。
 
 **なぜ 6 案並列か**:
@@ -147,14 +162,23 @@ Phase 0 改修後の parquet 列から、Phase 1 学習スクリプトが以下 
 
 **6 案の中身**:
 
-| 案 | やり方 | 出力 | Entry 判定 | 役割 |
-|---|---|---|---|---|
-| **案 a (比較用)** | 14 ラベル独立で MFE/MAE を回帰予測 (旧 V3 方式) | 14 個の予測値 (連続値) | 予測 MFE / 予測 MAE ≥ 1.5 で買う | **改善期待しない・比較用ベースライン** |
-| **案 b (本命 1)** | 「Entry すべきか」を 1 か 0 で **直接バイナリ学習** | Entry 確率 (0〜1) | Entry 確率 > 0.5 で買う | 入れ子方式 (回帰→比率) を廃止 |
-| **案 c (本命 2)** | 「LONG / SHORT / Flat」の **3 クラス分類** で学習 | LONG/SHORT/Flat の確率 | LONG 確率 > 0.4 で買い / SHORT 確率 > 0.4 で売り | 方向性を 1 段階で直接学習 |
-| **案 d (v5 新規・Ranking LambdaRank)** | LightGBM `objective='lambdarank'`・MFE_pct ランキング上位 N% のみ Entry | trade ごとの ranking score | ランキング上位 N% のみ採用 | Stefan Jansen *Machine Learning for Algorithmic Trading* Ch.12-13 整合 |
-| **案 e (v5 新規・Triple Barrier multiclass・Lopez de Prado AFML Ch.3)** | TP/SL/TIME 3 クラスラベル (Phase 0 v3.1 で 28 ラベル列生成済) を LightGBM Multiclass で学習 | TP/SL/TIME の確率 | TP 確率 > 閾値で Entry | Lopez de Prado AFML Ch.3 推奨手法 |
-| **案 f (v5 新規・Meta-Labeling 2 段階・Lopez de Prado AFML Ch.3)** | 案 e の primary 完了後 sequential 実装・secondary で「primary 予測の correctness」予測 | 採用 / 見送りの確率 | secondary が「採用」と判定したものだけ Entry | precision 改善 + F1-score + Sharpe 向上 (Hudson & Thames mlfinlab 整合) |
+| 案 | やり方 | 出力 | Entry 判定 | 役割 | **学習状況** |
+|---|---|---|---|---|---|
+| **案 a (比較用)** | 14 ラベル独立で MFE/MAE を回帰予測 (旧 V3 方式) | 14 個の予測値 (連続値) | 予測 MFE / 予測 MAE ≥ 1.5 で買う | **改善期待しない・比較用ベースライン** | ✅ **学習済** (case_a_rmse 637 行 / case_a_v2 597 行 / case_a_v2_v3 629 行・8 組合せ × 3 fold × 14 ラベル = 336 model) |
+| **案 b (本命 1)** | 「Entry すべきか」を 1 か 0 で **直接バイナリ学習** | Entry 確率 (0〜1) | Entry 確率 > 0.5 で買う | 入れ子方式 (回帰→比率) を廃止 | ❌ **未実装** |
+| **案 c (本命 2)** | 「LONG / SHORT / Flat」の **3 クラス分類** で学習 | LONG/SHORT/Flat の確率 | LONG 確率 > 0.4 で買い / SHORT 確率 > 0.4 で売り | 方向性を 1 段階で直接学習 | ❌ **未実装** (旧 V3 `run_lgbm_phase1c_multiclass.py` は別物・V4 用は未着手) |
+| **案 d (v5 新規・Ranking LambdaRank)** | LightGBM `objective='lambdarank'`・MFE_pct ランキング上位 N% のみ Entry | trade ごとの ranking score | ランキング上位 N% のみ採用 | Stefan Jansen *Machine Learning for Algorithmic Trading* Ch.12-13 整合 | ❌ **未実装** |
+| **案 e (v5 新規・Triple Barrier multiclass・Lopez de Prado AFML Ch.3)** | TP/SL/TIME 3 クラスラベル (Phase 0 v3.1 で 28 ラベル列生成済) を LightGBM Multiclass で学習 | TP/SL/TIME の確率 | TP 確率 > 閾値で Entry | Lopez de Prado AFML Ch.3 推奨手法 | ⚠️ **ラベル列生成済 (28 列)・学習スクリプト未実装** |
+| **案 f (v5 新規・Meta-Labeling 2 段階・Lopez de Prado AFML Ch.3)** | 案 e の primary 完了後 sequential 実装・secondary で「primary 予測の correctness」予測 | 採用 / 見送りの確率 | secondary が「採用」と判定したものだけ Entry | precision 改善 + F1-score + Sharpe 向上 (Hudson & Thames mlfinlab 整合) | ⚠️ **meta_label 列生成済 (14 列)・学習スクリプト未実装** |
+
+**案 a 学習内容の詳細** (✅ 学習済・本来は比較用ベースライン):
+- **入力 (X)**: 5 分足 × 2,604 feature (Phase 0 出力 2,724 列 - blacklist 64 列 - ラベル 56 列)
+- **正解 (y)**: 14 ラベル独立 (LONG_MFE_pct_K{6,12,24,48,96,144,288} + LONG_MAE_pct_K{...} = 7+7 ラベル・SHORT は対称性で流用)
+- **学習データ**: train 2021-04 〜 2024-12 (約 4 年・約 394k 行)
+- **objective**: LightGBM regression (連続値予測)
+- **学習パターン**: 8 組合せ (K × side) × 3 fold (P1/P2/P3 分散・本来 v5 では 5 fold) × 14 ラベル = **336 model**
+- **artifact**: `results/priority_rebuild/ml_phase1_v5/_case_a_v2_p{1,2,3}/` + `_case_a_v2_v3/`
+- **Entry 判定**: 予測 MFE / 予測 MAE ≥ 1.5 で買う (Simulated PnL 評価式で消費)
 
 **全 6 案共通 (v5 必須)**:
 - **Walk-forward Purged K-Fold 5 fold** (Lopez de Prado AFML Ch.7 推奨・mlfinpy.cross_validation.PurgedKFold 経由実装・Layer 3 → Layer 1 前倒し)
@@ -301,6 +325,8 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 ### Phase 2: ハイパラ最適化
 
+**実行状況 (2026-05-26 時点)**: ❌ **未着手** (Phase 1 v5 6 案並列完了が前提・案 a 単独では Phase 2 進行禁止・cc_ml_design_spec §1.6 整合)
+
 **何を学習するか**: Phase 1 で採用した案 (a or b or c) のハイパラ (= LightGBM の調整パラメータ) を Optuna で最適化する。
 
 **入力**: Phase 1 採用案のモデル + 学習データ
@@ -342,6 +368,8 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 ### Phase 3-a: アルゴ比較 (LightGBM vs XGBoost vs CatBoost)
 
+**実行状況 (2026-05-26 時点)**: ❌ **未着手**
+
 **何を学習するか**: LightGBM 以外のアルゴが優位かどうかを同条件で比較する。
 
 **入力**: Phase 2 のハイパラ確定後のデータ
@@ -372,6 +400,8 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 ---
 
 ### Phase 3-b: クラスタリング (T2 Entry の質分類)
+
+**実行状況 (2026-05-26 時点)**: ❌ **未着手**
 
 **何を学習するか**: T1 の Entry 予測値を **性質別 3 グループ** (cluster) に分類する。
 
@@ -432,6 +462,42 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 ---
 
 ### Phase 4-b-1: Exit 設計 (T3・cluster 別最適 Exit)
+
+**実行状況 (2026-05-26 時点)**:
+- 本体 (cluster 別最適 Exit 組合せ最適化): ❌ **未着手** (Phase 3-b cluster 完了が前提・現状 Phase 1 v5 6 案並列も未完)
+- **補助モデル (Phase 1 評価式で先行使用・Step I で前倒し実装)**:
+  - **tp_hit_classifier** ✅ **学習済** (詳細下記)
+  - **time_exit_return_median artifact** ✅ **生成済** (詳細下記)
+
+#### 補助モデル 1: tp_hit_classifier (TP 約定率予測・✅ 学習済)
+
+**何のために作ったか**: Phase 1 案 a の評価式 (Simulated PnL `r[i] = p[i] × TP_PCT + (1-p[i]) × median - cost`) で `p[i]` (= TP に到達する確率) を提供する補助モデル。本来 Phase 4-b 領域だが Step I で前倒し実装。
+
+**学習内容**:
+- **入力 (X)**: 5 分足 × 2,604 feature + **TP_PCT (特徴量化・(0.3, 0.5, 0.8, 1.2, 1.8, 2.5) % の 6 段階)**
+- **正解 (y)**: 各時点で TP_PCT に到達したか (1/0・実際の bar high/low と TP_PCT を比較して算出)
+- **学習データ**: train 2021-04 〜 2024-12 (約 4 年)
+- **objective**: LightGBM binary classification
+- **学習パターン**: 8 組合せ (K=12/24/48/96 × LONG/SHORT) × 5 fold = **40 学習設計** (TP_PCT 特徴量化で 1 model 統合 = 1 AI が全 TP_PCT 6 段階に対応)
+- **artifact**: `results/priority_rebuild/ml_phase1_v5/_tp_hit_classifier_p{1,2,3}/tp_hit_classifier_predictions_train_2021_2024.parquet` (P1 76 MB + P2 33 MB + P3 28 MB) + 本セッションで統合 `_tp_hit_classifier/tp_hit_classifier_predictions_train_2021_2024.parquet` (136.7 MB)
+- **学習時間**: **10 時間 13 分** (Step I-3.1・当初 3 並列で swap 42 GB thrashing → kill → 1 並列順次に切替・L-211/L-212a 教訓)
+- **結果指標**: AUC 0.78-0.88 (全件大幅クリア・基準 ≥ 0.55) / Brier 0.07-0.20 (全件クリア・基準 ≤ 0.25) / Calibration max dev 一部 0.13-0.21 (SHORT 側に集中・基準 ≤ 0.10) / **スクリプト判定 5/8 PASS**
+
+**将来の再利用**: 案 e (Triple Barrier multiclass) / 案 f (Meta-Labeling) の primary model 入力としても流用可能 (TP 約定確率 ≒ Triple Barrier の TP クラス確率)。
+
+#### 補助モデル 2: time_exit_return_median artifact (✅ 生成済)
+
+**何のために作ったか**: time_exit method (時間切れ Exit) の returns 算出で「TP に到達しなかった trade の return 期待値」を提供する定数 (train 期間中央値)。
+
+**生成内容**:
+- **K × side × N の組合せ**: K=12/24/48/96 × LONG/SHORT × N (= K/2, K) = **16 組合せ**
+- **算出方法**: train 2021-04 〜 2024-12 の各 (K, side, N) について、N bar 後の return_pct の中央値を計算
+- **artifact**: `results/priority_rebuild/ml_phase1_v5/_phase4b_train_constants/time_exit_return_median_*.json` (16 個 + INDEX 2)
+- **生成時間**: 約 5 秒 (Step I-3.2)
+- **数値例**: K=12 N=6: ±0.0034% / K=24 N=24: ±0.0103% / K=96 N=96: ±0.0268% (LONG/SHORT 対称)
+- **警告**: 全 16 ファイルで月別歪度 > 1.0 (regime 過依存懸念・Phase 4-b 本実装時に cluster 別 median 化予定)
+
+---
 
 **何を学習するか**: 各 cluster に対する **最適 Exit 方式** をデータから選ぶ。LightGBM の fit() は使わず、**組合せ最適化**で全試行する。
 
@@ -541,6 +607,8 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 ### Phase 4-b-2: Entry 閾値 (= どの予測値強度で Entry するか)
 
+**実行状況 (2026-05-26 時点)**: ❌ **未着手**
+
 **何を学習するか**: Entry を発火させる閾値を **3 方式並列** で試して最良を選ぶ。
 
 **入力**: Phase 1 採用案の予測値 + Phase 3-b の cluster ID
@@ -608,6 +676,8 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 ---
 
 ### Phase 5: ポジション設計 (T4・本丸第 1 段・サブ 7 つ)
+
+**実行状況 (2026-05-26 時点)**: ❌ **未着手**
 
 **何を学習するか**: ポジションサイズ・cap・配分・Funding・削除類型を **組合せ最適化** で確定する。仮 test 2025 で月次 NET ≥ $1,900 全 12 ヶ月クリアが本丸の合格判定。
 
@@ -756,6 +826,8 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 ### Phase 6: 本テスト (本丸第 2 段・1 回限り・チューニング禁止)
 
+**実行状況 (2026-05-26 時点)**: ❌ **未着手**
+
 **何を学習するか**: **学習はしない**。Phase 5 で確定した全パラメータをそのまま 2026 Q1 (25,631 行) に **1 回だけ** 適用して、汎化性能を最終確認。
 
 **学習方法**: **該当なし** (適用のみ・新規学習禁止・scaler/km の再 fit 禁止・L-183 教訓)
@@ -786,6 +858,8 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 ---
 
 ### Phase 7-a〜e: Bot 統合 → デモ → 本番
+
+**実行状況 (2026-05-26 時点)**: ❌ **未着手**
 
 **何を学習するか**: 学習はしない。実装と検証のみ (a〜e で段階実施)。
 
