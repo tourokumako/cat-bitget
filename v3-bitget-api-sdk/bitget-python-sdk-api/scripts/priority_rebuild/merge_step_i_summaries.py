@@ -208,7 +208,10 @@ def compute_fold_sharpe_dsr(
         return float("nan"), float("nan")
     mean = float(np.mean(arr))
     std = float(np.std(arr, ddof=1))
-    if std <= 0 or not np.isfinite(std):
+    # L-212b 整合: dsr.py 側ガード閾値 (std < 1e-12) と統一
+    # 浮動小数点誤差 (2.18e-19 等) で std <= 0 ガードすり抜け → sharpe 異常値発生を防ぐ
+    # (test_dsr_merge_interaction.py で発見・複数 script 相互作用 bug の根本対策)
+    if std < 1e-12 or not np.isfinite(std):
         return float("nan"), float("nan")
     sharpe = mean / std
     try:
@@ -266,7 +269,17 @@ def evaluate_fold(
     sim_pnl_pass = (months_pos >= THRESHOLD_MONTHS_POSITIVE) and (
         test_sim_pnl_year >= THRESHOLD_SIM_PNL_YEAR_USD
     )
-    dsr_pass = (not np.isnan(dsr_z)) and (dsr_z >= THRESHOLD_DSR)
+    # L-212b / Critical-2: DSR 適用不可 (nan) のとき月次黒字率で代替判定
+    # (Sortino は定数 returns で意味なし・月次黒字率を採用)
+    # 閾値は sim_pnl_pass と同じ THRESHOLD_MONTHS_POSITIVE = 8 月 (12 ヶ月中)
+    # = 「予測装置として機能不能だが、月次健全性で代替評価」(暫定 PASS・Phase 4-b で再評価必須)
+    # auto-PASS 禁止 (L-212b 原文・Neyman-Pearson 整合): nan で無条件 PASS は出さない
+    if np.isnan(dsr_z):
+        dsr_pass = months_pos >= THRESHOLD_MONTHS_POSITIVE
+        dsr_judgment_method = "alt_months_positive"
+    else:
+        dsr_pass = dsr_z >= THRESHOLD_DSR
+        dsr_judgment_method = "dsr_zscore"
     entropy_pass = True  # 案 a NaN 自動 PASS 継承
 
     all_pass = bool(tp_prec_pass and sim_pnl_pass and dsr_pass and entropy_pass)
@@ -281,6 +294,7 @@ def evaluate_fold(
         "fold_sharpe": (None if np.isnan(fold_sharpe) else float(fold_sharpe)),
         "dsr_zscore": (None if np.isnan(dsr_z) else float(dsr_z)),
         "dsr_pass": bool(dsr_pass),
+        "dsr_judgment_method": dsr_judgment_method,  # L-212b: "dsr_zscore" or "alt_months_positive"
         "entropy_lift": None,
         "entropy_pass_auto": True,
         "all_pass": all_pass,

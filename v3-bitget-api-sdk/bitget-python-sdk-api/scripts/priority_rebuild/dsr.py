@@ -50,6 +50,7 @@ Validation example (marti.ai 2018, reproducing paper):
 from __future__ import annotations
 
 import math
+import sys
 from dataclasses import dataclass
 
 import numpy as np
@@ -178,6 +179,14 @@ def compute_dsr_from_returns(
 ) -> DSRResult:
     """DSR from a returns array; skew/kurt/SR estimated from sample.
 
+    Input contract (L-212b / Critical-2):
+        returns must have std(ddof=1) >= 1e-12.
+        定数 returns (std≈0) は DSR 適用不可。
+        呼び出し側は dsr_zscore=nan を FAIL 扱いとし、別レンズ
+        (Sortino / 月次黒字率) で代替判定すること。
+        auto-PASS は禁止 (定数で負 returns は確定的失敗 = strong FAIL
+        evidence であって PASS の対象ではない・Neyman-Pearson 整合)。
+
     Args:
         returns: 1-D array of per-period returns.
         n_trials: N, number of independent trials in the grid search.
@@ -188,6 +197,26 @@ def compute_dsr_from_returns(
     if r.ndim != 1:
         raise ValueError(f"returns must be 1-D, got shape {r.shape}")
     t = r.shape[0]
+    # L-212b ガード: 定数 returns → DSR 適用不可・nan 返却で呼び出し側 FAIL 扱い
+    std_r = float(np.std(r, ddof=1)) if t >= 2 else 0.0
+    if std_r < 1e-12:
+        print(
+            f"[info] DSR skipped: std={std_r:.2e} < 1e-12 "
+            f"(constant returns・Sortino/月次黒字率で代替判定)",
+            file=sys.stderr,
+        )
+        return DSRResult(
+            dsr_zscore=float("nan"),
+            dsr_probability=float("nan"),
+            sr_hat=float("nan"),
+            sr_expected_max=float("nan"),
+            sigma_sr=float("nan"),
+            skew=float("nan"),
+            excess_kurtosis=float("nan"),
+            sample_size=int(t),
+            n_trials=int(n_trials),
+            sr_variance=float(sr_variance),
+        )
     sr = sharpe_ratio(r, ddof=1)
     g3 = float(scipy_skew(r, bias=False))
     g4 = float(scipy_kurtosis(r, fisher=True, bias=False))

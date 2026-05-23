@@ -133,6 +133,42 @@ def test_compute_dsr_from_returns_normal_random() -> None:
     )
 
 
+def test_compute_dsr_from_returns_constant_returns_case() -> None:
+    """L-212b / Critical-2 ガード verify:
+    定数 returns (std<1e-12) で DSR は nan 返却・raise しない・auto-PASS 禁止。"""
+    returns = np.full(100, 0.001, dtype=np.float64)  # 全部同じ値 (std=0)
+    result = compute_dsr_from_returns(returns=returns, n_trials=10, sr_variance=0.1)
+    # std=0 で DSR 適用不可・nan 返却 (raise しない)
+    assert math.isnan(result.dsr_zscore), (
+        f"DSR z-score must be nan for constant returns, got {result.dsr_zscore}"
+    )
+    assert math.isnan(result.dsr_probability), (
+        f"DSR probability must be nan for constant returns, got {result.dsr_probability}"
+    )
+    assert math.isnan(result.sr_hat), (
+        f"sr_hat must be nan for constant returns, got {result.sr_hat}"
+    )
+    # 呼び出し側で dsr_pass=False になることを保証 (auto-PASS 禁止)
+    dsr_pass = (not math.isnan(result.dsr_zscore)) and (result.dsr_zscore >= 1.0)
+    assert dsr_pass is False, (
+        "auto-PASS 禁止違反: 定数 returns で dsr_pass=True になっている"
+    )
+
+
+def test_sigma_sr_extreme_sr_case() -> None:
+    """L-212b / Critical-2: SR=10⁶ の極端値で inner ≤ 0 → raise ValueError (graceful fail).
+    過去事案 (handoff v30 §1.3): time_exit 定数化で SR=-2×10¹⁵ → sigma_SR inner 巨大負値で
+    9 件 warning。本 test で raise 経路が graceful fail を保証することを verify。"""
+    # 正 skew + 大 SR で inner = 1 - skew*SR + (kurt+2)/4 * SR² の中間項が支配
+    # → inner < 0 で ValueError raise
+    try:
+        sigma_sr_estimate(sr_hat=1e6, skewness=2.0, excess_kurt=-3.0, sample_size=100)
+    except ValueError as e:
+        assert "non-positive" in str(e), f"想定外の error message: {e}"
+        return
+    raise AssertionError("sigma_sr_estimate did not raise on extreme SR (1e6)")
+
+
 def test_sharpe_ratio_basic() -> None:
     """SR = mean / std."""
     r = np.array([0.01, 0.02, -0.01, 0.015, -0.005], dtype=np.float64)
@@ -184,6 +220,8 @@ def run_all() -> None:
         test_sigma_sr_normal_distribution_case,
         test_sigma_sr_raises_on_non_positive_inner,
         test_compute_dsr_from_returns_normal_random,
+        test_compute_dsr_from_returns_constant_returns_case,  # L-212b / Critical-2
+        test_sigma_sr_extreme_sr_case,  # L-212b / Critical-2
         test_sharpe_ratio_basic,
         test_dsr_result_as_dict_completeness,
         test_expected_max_sharpe_rejects_invalid_inputs,
