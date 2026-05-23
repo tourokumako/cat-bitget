@@ -299,9 +299,96 @@ regime 判定研究は 2026-05-11 に凍結。`.claude/memory/regime_research.md
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-23 改訂28・**Step I-2.8 unit test 10/10 PASS + I-2.6/I-2.7 §8 verify 完了 + I-3.2 完了 + merge スクリプト作成完了 + I-3.1 ハング → kill → PC 再起動待ち**・Step I-3.1 再起動が次タスク）
+## 🔴 現在のフェーズ（2026-05-23 改訂29・**Step I-3.1〜I-3.5 完走 (順次実行) + CP4 監査 CONDITIONAL NO-GO + 全 8 組合せ 0/16 ALL PASS**・案 W+V+Critical-1+Critical-2 採用 vs 案 X 直行のまこさん cold head 判断が次タスク）
 
-> **【現在の正本ブロック・改訂28・2026-05-23 セッション後半 + 緊急中継】**
+> **【現在の正本ブロック・改訂29・2026-05-23 セッション末（10 時間越え長丁場・改訂28 同日続編）】**
+>
+> ### 本セッション (改訂28 同日続編・2026-05-23 07:35 〜 22:00) 完了事項
+>
+> #### 1. Step I-3.1 tp_hit_classifier --full 完走 (3 並列 → 1 並列に切替・10 時間 13 分)
+> - 当初 P1+P2+P3 3 並列で起動 → 各プロセス RSS 8 GB → 16GB マシン物理 RAM 超過 → swap 42 GB thrashing 発生 (L-211 別側面・L-212a 候補)
+> - 2 並列も全 UN ステート → 全 kill → swap 自動縮小 (43 GB → 2 GB)
+> - P1 単独 (K=12,24・4 組合せ × 3 fold) 308 分 → P2 単独 (K=48・2 組合せ × 3 fold) 149 分 → P3 単独 (K=96・2 組合せ × 3 fold) 151 分
+> - 累計 608 分 = 10 時間 13 分 (3 並列理論 2-3 時間想定 → 約 4 倍コスト)
+> - **スクリプト判定 5/8 PASS** (K12_SHORT + K24_LONG + K48_LONG + K48_SHORT + K96_LONG・AUC 0.78-0.88 全件大幅クリア・Brier 0.07-0.20 全件クリア・Calib 一部 0.13-0.21 で SHORT 側に集中)
+> - 公式 source: `results/priority_rebuild/ml_phase1_v5/_tp_hit_classifier_p{1,2,3}/tp_hit_classifier_summary_train_2021_2024.json`
+>
+> #### 2. Step I-3.3 case_a_v2 --full 完走 (P1/P2/P3 順次・各 1 分以下・LightGBM 再学習なし)
+> - P1 (K=12,24) 54 秒・P2 (K=48) 42 秒・P3 (K=96) 89 秒 = 計約 3 分 (handoff v29 推定 30-60 分の 1/60)
+> - P1+P2 = 関所 A セーフ (anomaly_smell_detected: False・6/6 組合せ)
+> - **P3 = 関所 A ② ヒット 2 件** (K96_LONG fixed_tp max year=$218,126 月次相当 $18,177 / K96_SHORT fixed_tp max year=$256,206 月次相当 $21,350・合格ライン $1,900 の 9.5-11.2 倍)
+> - L-208 Step H「6/8 ヒット 44 倍最悪」と比較すると **2/8 ヒット 11 倍最悪に大幅改善** (3 重楽観仮定除去の効果実証)
+> - 公式 source: `results/priority_rebuild/ml_phase1_v5/_case_a_v2_p{1,2,3}/case_a_v2_summary_*.json`
+>
+> #### 3. Step I-3.4 merge_step_i_summaries.py + §4.1 v5.1 判定完了
+> - 公式 source: [phase1_v5_step_i_summary_merged.json](results/priority_rebuild/ml_phase1_v5/_step_i_merged/phase1_v5_step_i_summary_merged.json)
+> - **fixed_tp ALL PASS: 0/8** / **time_exit ALL PASS: 0/8** = **全 8 組合せ 0/16 ALL PASS** ❌
+> - `meets_6plus_any_method: False` / 撤退ライン文言「6+ 組合せ ALL PASS 未達 → 案 X (Layer 3) or 案 Z (案 b-f) — まこさんレビュー必須」適用
+> - 失格理由: 全 fold で Sim PnL 赤字 ($-200K 〜 $-300K/年・time_exit でも $-22K 〜 -41K) → sim_pnl_pass=false → ALL fail
+> - 追加発覚: dsr.py 9 件 warning (`sigma_SR denominator non-positive (SR = -2×10¹⁵ 等)`・L-207 同型・L-212b 候補・time_exit returns 定数化との相互作用 edge case)
+>
+> #### 4. Step I-3.5 CP4 監査 (Plan サブエージェント独立評価) 完了
+> - **監査結論: CONDITIONAL NO-GO** (Critical 2 件修正してから次フェーズ判断)
+> - **Critical-1 (新発覚)**: time_exit 評価設計が「予測装置」になっていない (naive baseline)・`merge_step_i_summaries.py` L162-176 で全 trade に train 中央値由来の単一定数を割り当てる構造 → 24 fold すべてで time_exit returns が fold 内完全同一値 → 16 fold 中 8 fold が構造的に PASS 不可能 (寄与率 25-30%)
+> - **Critical-2**: DSR bug は「設計階層の役割誤認」(まこさん仮説のガード追加で不十分・統計理論として定数 returns で auto-PASS は誤り)
+> - **原因切り分け寄与率**: ① 学習不良 10-15% / (2a) fixed_tp 評価式暫定 40-50% / (2b) time_exit naive baseline 25-30% / ③ データ regime 過依存 10-15%
+> - **案推奨**: 案 W (SL_PCT grid 拡張 1-2 日) + 案 V (K96 除外 0.5 日) + Critical-1 修正 (case_a_v2_v3・1-2 日) + Critical-2 修正 (dsr.py ガード + 判定階層整理 0.5 日) を **1 週間並列**実施 → それでも 0/16 なら案 Z の e (meta-labeling) 投入 (K96 fold0 部分成功を Secondary Filter として活用)・**案 X 単独直行は時期尚早**
+> - CC 同型バイアス健全に機能した証跡: 監査が CC 整理と異なる結論を 3 件 (Critical-1 / Critical-2 / 案 W+V+Critical 修正先行) 出している
+>
+> #### 5. lessons L-212a/b/c 新規追加 (本セッション末)
+> - **L-212a**: 16GB マシンの並列受け入れ能力限界 (3 並列で swap 42GB thrashing 再発・L-211 別側面) → 並列度 = (RAM × 0.5) / 1 プロセス推定 RSS で機械的算出ルール
+> - **L-212b**: dsr.py × merge time_exit 定数化の相互作用 edge case (L-207 同型・統合 test 階層化義務) → input contract 明文化 + ガード追加 + integration test 必須化
+> - **L-212c**: time_exit 評価設計が naive baseline で 0/16 出すまで気付かなかった (関所 B「変数の因果性宣言」→「評価式の予測装置性宣言」拡張) → CP X.5 監査経路を本走前に必須化
+>
+> ### 次セッション CC 優先順位 (明日 fresh head・まこさん cold head 判断後着手)
+>
+> 1. **優先 1 — まこさん判断: 監査推奨 vs 案 X 直行 (CC 判断不可・cold head 必須)**
+>    - 案 A (監査推奨): Critical-1 (case_a_v2_v3 time_exit 予測装置化・1-2 日) + Critical-2 (dsr.py ガード・0.5 日) + 案 W (SL_PCT grid 拡張・1-2 日) + 案 V (K96 除外・0.5 日) を 1 週間並列 → 結果に応じて案 Z の e (meta-labeling) 投入
+>    - 案 B: 案 X (Layer 3 投入・CPCV + Focal loss + アルゴ多様化・2-3 週間) 単独直行
+>    - 案 C: CC が見落とした選択肢 (まこさん発案)
+> 2. **優先 2 — 採用案実装 (1-3 週間)**: 案 A なら 1 週間並列 / 案 B なら 2-3 週間直行
+> 3. **優先 3 — 再評価 (Step I-3 再走 or 案 X 完了後の評価)**
+> 4. **優先 4 — Phase 2 進行判定 or 次の撤退ライン適用判定**
+> 5. **優先 5 — セッション終了処理** (lessons L-213+ + WORKFLOW 改訂30 + handoff v31)
+>
+> ### 引き継ぎリソース (3 層構造)
+>
+> #### Layer 1 (毎セッション必読)
+> - **handoff v30** (本セッション末作成予定): `.claude/instructions/handoff_to_cc_v30_session_20260523_cp4_audit.md`
+> - WORKFLOW.md 改訂29 active ブロック (本ブロック)
+> - CLAUDE.md (改訂22 ベース)
+> - lessons_active.md 直近 5 件 (**L-212c → L-212b → L-212a → L-211 → L-210**)
+>
+> #### Layer 2 (案採用後の実装着手時)
+> - **CP4 監査結果 (本ブロック §4 + Plan サブエージェント出力チャット・公式 source あり)**
+> - Step I-1 仕様書 v2.1: `.claude/instructions/2026-05-23_phase4b_forward_design_spec.md` (612 行)
+> - 実装 6 ファイル (本セッションまで完成・触らない):
+>   - `scripts/priority_rebuild/run_tp_hit_classifier.py` (684 行)
+>   - `scripts/priority_rebuild/compute_phase4b_train_constants.py` (458 行)
+>   - `scripts/priority_rebuild/run_phase1_v5_purged_kfold.py` (873 行)
+>   - `scripts/priority_rebuild/run_lgbm_phase1_v5_case_a_v2.py` (597 行)
+>   - `scripts/priority_rebuild/test_aggregate_grid_idxmax.py` (270 行)
+>   - `scripts/priority_rebuild/merge_step_i_summaries.py` (453 行)
+> - 案採用後の改修対象ファイル:
+>   - Critical-1: `merge_step_i_summaries.py` L162-176 (time_exit returns 再構成式 予測装置化)
+>   - Critical-2: `scripts/priority_rebuild/dsr.py` L115-134 (sigma_sr_estimate input contract + ガード)
+>   - 案 W: `run_lgbm_phase1_v5_case_a_v2.py` (TP_PCT grid / SL_PCT grid 拡張)
+>   - 案 V: `merge_step_i_summaries.py` (K=96 除外 + 6 組合せで再判定)
+>
+> #### データ・環境
+> - parquet 3 種 + .venv311 (mlfinpy 0.1.2 / sklearn 1.8.0 / lightgbm 4.6.0 / scipy 1.17.1)
+> - Step I-3.1 artifact (済): `_tp_hit_classifier_p{1,2,3}/tp_hit_classifier_predictions_train_2021_2024.parquet` (P1=76MB / P2=33MB / P3=28MB)
+> - Step I-3.2 artifact (済): `_phase4b_train_constants/time_exit_return_median_*.json` (16 個 + INDEX 2)
+> - Step I-3.3 artifact (済): `_case_a_v2_p{1,2,3}/case_a_v2_summary_*.json`
+> - Step I-3.4 artifact (済): `_step_i_merged/phase1_v5_step_i_summary_merged.json` (公式 source)
+
+---
+
+## 🧊 改訂28 ブロック (履歴・参照用)
+
+### 🔴 旧フェーズヘッダ（2026-05-23 改訂28・**Step I-2.8 unit test 10/10 PASS + I-2.6/I-2.7 §8 verify 完了 + I-3.2 完了 + merge スクリプト作成完了 + I-3.1 ハング → kill → PC 再起動待ち**・Step I-3.1 再起動が次タスク）
+
+> **【旧正本ブロック・改訂28・2026-05-23 セッション後半 + 緊急中継】**
 >
 > ### 本セッション (改訂27 同日続編・2026-05-23 04:25 〜 07:35) 完了事項
 >

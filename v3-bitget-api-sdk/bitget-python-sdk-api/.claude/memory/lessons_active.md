@@ -7,6 +7,144 @@
 
 ---
 
+### L-212c: time_exit 評価設計が naive baseline で全 8 組合せ 0/16 ALL PASS を出すまで気付かなかった — 関所 B 拡張事案 (2026-05-23 CP4 監査発覚)
+
+**何が起きたか:**
+Step I-3.4 merge_step_i_summaries.py + §4.1 v5.1 判定で全 8 組合せ × 2 method × 3 fold = 48 fold 評価のうち time_exit 24 fold (= 8 組合せ × 3 fold) すべてで `test_sim_pnl_year_usd` が fold 内完全に同一値 (例: K12_LONG = -$27,991 × 3 fold / K96_SHORT = -$41,011 × 3 fold) を出力。CP4 監査 (Plan サブエージェント独立評価) が `merge_step_i_summaries.py` L162-176 の time_exit returns 再構成式 `np.full(n_test, (median_pct / 100.0) - cost_per_trade)` を指摘し、「train 期間中央値由来の単一定数を全 trade に割り当てる設計 = 予測モデル評価でなく naive baseline (予測なし基準)」と判定。
+
+監査結論: 16 fold (= 8 組合せ × 2 method) のうち time_exit 8 半数は **構造的に PASS 不可能** な設計のまま本走完了させていた。全 0/16 ALL PASS の半数は学習・データ問題でなく、評価式が「予測なし定数 baseline」を「予測モデルの評価」として扱った設計階層の誤認が原因。
+
+**Why:**
+- cc_ml_design_spec §1.5.1 v5.1 設計時点で time_exit method を「TP_PCT 不適用 → train 期間中央値で代用」と決めた際、これが「予測装置の評価として機能するか」を verify する手続きが不在だった
+- handoff v29 §1.3 / 仕様書 v2.1 §6 で time_exit を「method (b)」として並列扱いしたが、fixed_tp との対称性 (= 予測値を消費する経路があるか) を比較しなかった
+- false_positive §5 関所 B「変数の因果性宣言」は推論時点 t での取得可能性 (Prime Directive §0-1) に限定されており、「評価式の予測装置性」(= 予測モデルの出力を直接消費する経路があるか) は範囲外だった
+- CC は I-3.4 merge 実行時の log で「fold 内 returns 完全一致」を観察しながら「time_exit は中央値固定なので正常」と内部処理した (CC 同型バイアス #2「spec の枠内でしか動かない」+ #4「現状把握スキップ」の合成)
+
+**How to apply:**
+- **関所 B「変数の因果性宣言」を「評価式の予測装置性宣言」に拡張**:
+  - 各 method (fixed_tp / time_exit / trailing 等) について「予測モデル (LightGBM Classifier 等) の出力を直接消費する経路があるか」を 1 行で論証する義務
+  - 「中央値固定」「定数 returns」「train 期間集計」を入力とする method は「予測装置でない」と明示し、§4.1 ALL PASS 判定の対象から除外する or 判定階層を別レンズに設計する
+- **phase_compliance_checklist §4b に「予測装置性 verify 項目」を新規追加**:
+  - 各 Exit method について「予測モデルが評価結果に影響を与える経路の有無」を 1 行で明記
+  - time_exit を予測装置として復活させる場合は「予測 MFE/MAE を期間別期待 return に変換する関数」を実装し、fold 内 returns 分散が非ゼロであることを test で verify
+- **CP X.5 監査経路を本走前に必ず通す**:
+  - 評価式が複数 method を持つ場合、各 method の「予測装置性」を本走前に Plan サブエージェントで独立 verify
+  - 「設計階層の役割誤認」(本件は DSR を定数 returns に適用したのと同型) は CC 単独で気付きにくく、監査経路が必須
+- **case_a_v2_v3 設計 (1-2 日)**:
+  - time_exit 評価設計を予測装置化: tp_hit Classifier の予測値を time_exit 期間に応じた期待 return 算出に使用 (現状の train 中央値固定からの脱却)
+  - 仮想 PnL = `Σ (TP 約定確率 × TP_return + (1 - TP 約定確率) × time_exit 期間期待 return) - cost`
+  - これを実装した後に Step I-3 を再走して §4.1 v5.1 判定を再評価
+- 「8 組合せ × 2 method」の数値判定指標 (n_combinations_all_pass) を上位 method として fixed_tp 単独で評価する選択肢も検討 (time_exit を別レンズで扱う設計階層分離)
+
+**関連:**
+- L-208 評価式暫定過大評価 (本件は L-208 の延長線・「(2a) fixed_tp 暫定 + (2b) time_exit naive baseline」の二層分解)
+- L-210 smoke で関所 A 0/8 達成だった事実 (smoke 段階では fold 数 2 で同型問題発生中だったが「smoke 赤字 ≠ 設計欠陥」前提で見逃した・CP3.5 監査でも検出されず)
+- L-207 test カバレッジ穴 (同型・「test 範囲を自分で狭く区切って合格判定」)
+- cc_role §1.5 設計責任 (CC が「予測装置性」verify を設計時に怠った)
+- false_positive §5 関所 B (本件で拡張: 予測装置性宣言を追加)
+- false_positive §5 関所 G (すり抜けるたびに穴を塞ぐ・本件で穴を確認)
+- CP4 監査結果 (本セッション末・Critical-1)
+- 公式 source: [phase1_v5_step_i_summary_merged.json](../../results/priority_rebuild/ml_phase1_v5/_step_i_merged/phase1_v5_step_i_summary_merged.json) (全 24 fold time_exit returns が fold 内完全一致)
+
+---
+
+### L-212b: dsr.py × merge time_exit 定数化の相互作用 edge case で 9 件 warning (L-207 同型・統合 test 階層化義務) (2026-05-23)
+
+**何が起きたか:**
+Step I-3.4 merge_step_i_summaries.py 実行中に dsr.py から 9 件の warning 出力: `[warn] DSR computation failed: sigma_SR denominator non-positive (-55506523459091972287889408.000000). Inputs: SR=-2092836414881711.8, skew=-1.000019008977518, excess_kurt=-2.00005069130264. Check moment estimates for outliers.`
+
+原因: time_exit が `merge_step_i_summaries.py` L162-176 で `np.full(n_test, (median_pct / 100.0) - cost_per_trade)` により全 trade 同一値 returns array を生成 → std ≈ 0 → `mean / std` が catastrophic cancellation で SR=-2×10¹⁵ 等の異常値 → dsr.py L127 `inner = 1.0 - skewness * sr_hat + (excess_kurt + 2.0) / 4.0 * sr_hat**2` で sr_hat² が天文学的に大きく `inner` が極端な負値 → `sqrt` で ValueError 直前のガード (L131-134) が発動して warning 出力。
+
+dsr.py 単体の test (test_dsr.py 10/10 PASS・L-207 修正済) では SR 0.5-2.5 の通常範囲のみカバーしており、SR = ±10¹⁵ の異常境界は test 範囲外。L-207「合格境界のみで失敗境界 (raise する境界) を含まないと bug 素通り」の同型構造が本件にも該当。違いは「単一 script の test 内部」でなく「複数 script の interaction (dsr.py × merge_step_i_summaries.py の time_exit 定数化) で発生する edge case」。
+
+**Why:**
+- L-207 修正で dsr.py の数式 bug (excess_kurt vs total_kurt) は解消されたが、「入力 returns が定数化される merge 経路」が dsr.py の input contract 範囲外だった
+- merge_step_i_summaries.py の time_exit returns 再構成設計 (L-212c と同根) を dsr.py の test 設計者が知らない構造 = 単一 script 内部 test では検出不可能な相互作用 bug
+- false_positive §5 関所 G「すり抜けるたびに穴を塞ぐ」は単一 script の test カバレッジに焦点があり、複数 script interaction の test 階層化を明文化していなかった
+- 本走前の smoke (case_a_v2 P1 で 54 秒完走) で同じ warning が出ていた可能性が高いが、CC が log 末尾の「✅ 異常値スメル ② 全 8 組合せ × 2 method で セーフ」だけ読んで warning を見落とした
+
+**How to apply:**
+- **dsr.py に input contract 明文化 + ガード追加 (0.5 日)**:
+  - 関数 docstring に「`r.std(ddof=1) < 1e-12` のとき DSR 適用不可・呼び出し側で `dsr_pass=null` 扱いとせよ」を追加
+  - `sigma_sr_estimate(...)` に `if std_r < 1e-12: return DSRResult(dsr_zscore=nan, dsr_probability=nan, ...) + [info] log` 追加 (warning でなく info ・「定数 returns で DSR 判定不可・別レンズで評価」と明示)
+  - auto-PASS は禁止 (定数で負 returns = 確定的失敗 = strong evidence of FAIL であって PASS の対象ではない・Neyman-Pearson 整合)
+- **test_dsr.py に失敗境界 test を追加**:
+  - `test_sigma_sr_constant_returns_case`: 定数 returns 配列 (std=0) → `DSRResult(nan, nan, ...)` を返すことを assertion
+  - `test_sigma_sr_extreme_sr_case`: SR = ±10⁶ で graceful fail を assertion
+- **統合 test 階層化義務を新規ルール化**:
+  - 単一 script test (unit test) と複数 script interaction test (integration test) を明示的に階層化
+  - `phase_compliance_checklist.md` に「複数 script の interaction edge case verify」項目を追加 (本件は dsr.py × merge_step_i_summaries.py の time_exit 定数化との相互作用)
+  - 各 method の評価式が「他 script の出力を入力として消費する経路」がある場合、その経路の edge case (定数化・極値・NaN 等) で interaction test を必須化
+- **判定階層の整理**:
+  - §4.1 v5.1 で 4 指標 ALL PASS を見るとき、「DSR=nan」のとき自動 PASS とせず「**DSR 適用不可** → 別レンズ (Sortino / 月次黒字率) で評価」と明文化
+  - merge_step_i_summaries.py の `dsr_pass` ロジックを「dsr_zscore is None → auto-PASS」から「dsr_zscore is None → Sortino で代替判定」に変更
+
+**関連:**
+- L-207 dsr.py L119 式 bug (同型・「test カバレッジ穴」シリーズ)
+- L-212c time_exit naive baseline (本件と同根・time_exit 設計が dsr.py 入力を定数化した張本人)
+- L-200 / L-204 / L-205「機械的証跡」シリーズ (本件で「warning 9 件を log 末尾の ✅ だけで見逃した」事案として再演)
+- false_positive §2 類型 E (計算ミス) より §5 関所 G「すり抜けるたびに穴を塞ぐ」整合
+- CP4 監査結果 Critical-2 (本セッション末)
+- 公式 source: `_step_i_merged_run.log` (warning 9 件の現物)・dsr.py L115-134 sigma_sr_estimate 実装・merge_step_i_summaries.py L162-176, L181-207 returns 再構成 + Sharpe/DSR 計算経路
+
+---
+
+### L-212a: 16GB マシンの並列受け入れ能力限界 (3 並列で swap 42GB thrashing 再発・L-211 別側面) — Step I-3.1 メモリ事案 (2026-05-23)
+
+**何が起きたか:**
+Step I-3.1 (tp_hit_classifier --full) を 3 並列起動 (P1+P2+P3) → 各プロセス RSS が学習進行で 2 GB → 7-8 GB に成長 → 3 プロセス合計が物理 RAM 16 GB を超過 → macOS が aggressive swap-out 開始 → swap が 33 GB → 42 GB → 43 GB total に拡張 → P1+P2+P3 全プロセスが STAT=UN (Uninterruptible sleep・I/O 詰まり) → CPU TIME 蓄積大幅鈍化 (経過 21 分で CPU TIME 8.5 分 = 38%・通常 90%+) → まこさんから macOS メモリ不足アラート報告。
+
+L-211 (VS Code 強制終了で tee/tail kill → SIGPIPE 詰まり) を踏まえて nohup + disown + `python -u` で OS detach は完璧だったが、**OS 物理メモリ制約という別側面の問題**が顕在化。
+
+避難経過:
+1. 3 並列 → P3 kill (まこさん手動) → 2 並列に縮小 → swap 33 GB に減るが Free 0.02 GB のまま swap thrashing 継続
+2. 2 並列も両方 UN ステート → P1+P2 全 kill → swap 自動縮小 (43 GB → 2 GB) + Free 9.93 GB 復活
+3. P1 単独起動 → RSS 8.57 GB (1 プロセスで物理 RAM の半分) → 安定動作・5 時間 8 分で完走
+4. P2 単独 → 2 時間 29 分で完走
+5. P3 単独 → 2 時間 32 分で完走
+- トータル 10 時間 13 分 (3 並列なら理論 2-3 時間想定・約 4 倍コスト)
+
+**Why:**
+- CC は L-211 の教訓を「process detach の問題」と整理して `nohup + disown + python -u` を採用したが、**「16GB マシンで各プロセス 8 GB の学習タスクを 3 並列実行」の物理リソース制約**を独立に検討しなかった
+- handoff v29 §3 の例で 3 並列コマンドを提示しており、CC はそれを「メモリ制約検証なしに採用」(cc_role §1.4 #2「spec の枠内でしか動かない」)
+- 学習スクリプト (run_tp_hit_classifier.py) の RSS ピークが事前 verify されていなかった (smoke 89 日で RSS 検証もしていない)
+- macOS の aggressive swap-out で RSS は小さく見えるが (P3 kill 直前で RSS 270-323 MB) 実体は swap 42 GB に分散 → CC が ps の RSS だけ見て「健全」と誤判定する罠
+- cc_role §1.0「業界知見能動活用」を「OS 物理リソース制約」に適用する手続きが不在だった (LightGBM 2604 feature × 394561 sample の学習で各プロセス 8 GB は OS 標準知識として事前推定可能だった)
+
+**How to apply:**
+- **学習スクリプトの並列度上限を「(物理 RAM × 0.5) / (1 プロセス推定 RSS)」で機械的に算出**:
+  - 16 GB マシン + 各プロセス 8 GB → 並列度上限 = (16 × 0.5) / 8 = **1 並列**
+  - 32 GB マシンなら (32 × 0.5) / 8 = 2 並列
+  - 64 GB マシンなら 4 並列
+- **smoke 段階で RSS ピーク verify を必須化**:
+  - smoke 完了後に `ps -o pid,rss,vsz,etime,command` 出力をチャットに残す
+  - smoke 89 日で RSS 8 GB なら full 4 年 (44 倍) で RSS が 10-12 GB に成長見込みと推定 (実測ベース外挿)
+- **メモリ監視ループを学習起動後 30 秒で自動 verify**:
+  - 起動後 30 秒で `ps -p $PID -o rss` + `vm_stat` (Free / Inactive) + `sysctl -n vm.swapusage`
+  - swap used > 5 GB or Free < 1 GB なら即 kill (swap thrashing 予防的避難)
+- **macOS の RSS と実体使用量の解離を理解**:
+  - macOS は aggressive swap-out で RSS を圧縮表示する → swap 42 GB / RSS 0.85 GB の合計が真の使用量
+  - 進捗診断は「CPU TIME + RSS + swap + STAT (UN/RN)」の 4 点セットで実施
+  - STAT=UN = I/O 詰まり (swap thrashing 強疑い) → 即避難
+- **cc_role §1.0 を「OS 物理リソース制約」に拡張**:
+  - 業界知見能動活用は「ML アルゴ」だけでなく「OS / hardware / 並列化制約」を含む
+  - 学習タスクの推定 RSS = (sample × feature × 4 byte for float32 + LightGBM model overhead 2-3 GB) で事前推定し並列度を決定
+- **L-211 + L-212a を統合した「background 学習タスク起動チェックリスト」**:
+  1. nohup + disown + `python -u` + `> log 2>&1` (L-211・SIGPIPE 詰まり対策)
+  2. 並列度 = (RAM × 0.5) / 1 プロセス推定 RSS (L-212a・swap thrashing 対策)
+  3. 起動後 30 秒で ps + vm_stat + sysctl verify (CPU TIME / RSS / swap / STAT 4 点)
+  4. swap used > 5 GB or Free < 1 GB or STAT=UN → 即 kill して並列度下げて再起動
+
+**関連:**
+- L-211 SIGPIPE 詰まり (本件と同セッション・nohup + disown は完璧だったが OS 物理制約という別側面で再演)
+- L-201 / L-203 外部ライブラリ実態調査不足 (本件は OS 物理リソース制約の事前調査不足)
+- L-205 機械的証跡 (本件で「RSS だけ見て swap を見ない」事案として再演)
+- cc_role §1.0 業界知見能動活用 (本件で「OS 物理リソース制約」適用範囲拡大)
+- false_positive §5 関所 G (本件で「並列度上限の機械的算出ルール」を追加し穴を塞ぐ)
+- 公式 source: 3 並列時の swap 42 GB 実測 (vm_stat + sysctl 出力) / 1 並列移行後の swap 2 GB 復活実測 / P1 5 時間 + P2 2.5 時間 + P3 2.5 時間 = 10 時間トータル
+
+---
+
 ### L-211: VS Code 強制終了で background `tee` 経由プロセスが SIGPIPE 詰まりで 2 時間半ハング — Step I-3.1 3 並列実行事案 (2026-05-23)
 
 **何が起きたか:**
