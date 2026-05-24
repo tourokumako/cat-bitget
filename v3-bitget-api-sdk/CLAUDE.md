@@ -146,8 +146,7 @@
 | 取引所スペック引用 | `bitget-python-sdk-api/.claude/rules/exchange_spec.md` (audit#19 確定値) |
 | 監査依頼 (`/audit`) | `bitget-python-sdk-api/.claude/rules/auditor_template.md` |
 | テクニカル指標・閾値設計判断 | `bitget-python-sdk-api/.claude/memory/technical_analysis_knowledge_base.md` (本プロジェクト製テクニカル辞典・§A-D 個別 + §I 閾値設計論・1691 行) |
-| **目標達成設計・Phase 設計判断 (= 上位正本)** (2026-05-26 新規) | `bitget-python-sdk-api/cc_target_pathway_design.md` (月 $1,900 到達設計レシピ・5.1× gap 分解 5 レバー + Phase 4-c 新規追加 + Phase 4-b 単体先行検証フロー + 検証順序改訂提案・L-219) |
-| **業界相場・戦略レバー値見積もり (= 数値根拠)** (2026-05-26 新規) | `bitget-python-sdk-api/.claude/memory/industry_benchmark_knowledge_base.md` (業界相場・経験則ナレッジ・5.1× gap 分解 5 レバー定量根拠 + Phase 別合格基準 PnL 紐付け手法 + BTC 5m 業界実証・WebSearch 18 件統合) |
+| **業界相場・戦略レバー値見積もり (= 数値根拠)** (2026-05-26 新規) | `bitget-python-sdk-api/.claude/memory/industry_benchmark_knowledge_base.md` (業界相場・経験則ナレッジ・5 レバー定量根拠 + Phase 別合格基準 PnL 紐付け手法 + BTC 5m 業界実証・WebSearch 18 件統合) |
 | 23 軸深掘り (ML 設計判断時) | `bitget-python-sdk-api/.claude/memory/CAT−指標マトリックス - 一覧.csv` (164 KB・古い情報混在・参照のみ・23 軸構成要素カタログ) |
 | シグナル設計 | `bitget-python-sdk-api/.claude/memory/signal_ledger.md` (regime マッピングは凍結) |
 
