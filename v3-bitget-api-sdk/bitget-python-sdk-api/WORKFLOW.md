@@ -412,25 +412,30 @@ Critical/Major 判定を伴わない確認程度はこちら。
 > - 結果 artifact: `results/priority_rebuild/ml_phase1_v5/_case_{b,c,d,e,f}_*/case_*_summary_*.json` (規約上 commit 禁止 = git untracked)
 > - log: `results/priority_rebuild/ml_phase1_v5/_logs/log_case_{b,c,d,e,f}_{smoke,full}.log` (12 ファイル・本セッション中盤に project root から移動)
 >
-> ### 次セッション CC 優先順位
+> ### 次セッション CC 優先順位 (2026-05-26 セッション末更新・4 箇所改訂版整合)
 >
-> 1. **優先 1 — 現状把握 verify (絶対遵守・最優先)**:
->    - `feedback_current_state_verify_before_design.md` (auto-memory) 確認
->    - `grep -n "現フェーズ\|凍結\|大方針転換" WORKFLOW.md CLAUDE.md`
+> 1. **優先 1 — 現状把握 verify + 業界整合 verify (絶対遵守・最優先・L-220 同型再演防止)**:
+>    - **auto-memory 2 件必読**: `feedback_current_state_verify_before_design.md` + `feedback_trade_ml_knowledge_gap.md` (= 最重要マーク)
+>    - `grep -n "現フェーズ\|凍結\|大方針転換" WORKFLOW.md CLAUDE.md` で現状把握
 >    - 「凍結ベースライン $370 / 手動 Priority 凍結 / ML pipeline 現役」再確認
->    - **これを出さずに設計提案・実装に着手するの絶対禁止** (= L-220 同型再演防止)
-> 2. **優先 2 — 監査結果 §10 補足メモ Read**:
->    - `.claude/audits/2026-05-26_phase1_v6_6cases_methodology_audit_report.md` §10
->    - phase_flow_v4 の gap (5 レバー観点) + 次セッションで取り組むべき問い 6 件確認
-> 3. **優先 3 — phase_flow_v4 改善議論 (本セッション失敗の正しい再構築)**:
->    - 5 レバー観点で各 Phase の合格基準を再評価 (`industry_benchmark_knowledge_base.md` §2 参照)
->    - Phase 4-c (Regime filter) 新規追加是非
->    - 検証順序改訂 (Phase 4-b 単体先行検証)
->    - Phase 5 マージン要件 (DSR 50% degradation → 月 $3,800 化)
->    - Position sizing 動的化 (Half-Kelly + cluster 強度別)
-> 4. **優先 4 — Phase 4-b 単体検証 or Phase 1 v6 Layer 3 投入** (改善議論結果次第):
->    - Phase 4-b 単体検証なら: **Phase 1 v6 案 e predictions を Entry 信号として使用** (手動 Priority NG)
->    - Phase 1 v6 Layer 3 投入なら: 監査結果 §5 改善方向性 7 件反映 (案 f AFML 修正 / B-10 多様化 / 正則化 / CPCV / etc.)
+>    - **設計提案・実装に着手する前に上記 verify を機械的証跡で出す** (= 出さずに進めるの絶対禁止)
+> 2. **優先 2 — phase_flow_v4 改善案 (4 箇所改訂版) を本体に反映**:
+>    - 参照: `.claude/memory/phase_flow_v4_reorder_proposal.md` (= 第 2 版・4 箇所改訂版・確定済)
+>    - 改訂内容 (4 箇所のみ・順序変更なし):
+>      1. Phase 4-c (Regime filter) 新規追加
+>      2. Phase 4-a を独立工程化 (cluster 間相関 < 0.3 要件)
+>      3. Phase 5 合格ライン 2 倍 (月 $1,900 → $3,800・DSR 50% degradation 想定)
+>      4. Phase 5-d 動的化 (Half-Kelly + cluster 強度別配分)
+>    - 反映先: `phase_flow_v4_with_recovery.md` 本体 + `cc_ml_design_spec.md` 整合改訂 + `phase_compliance_checklist.md` 整合改訂
+>    - 各フェーズの判定方法は **業界標準と同じ** (= 進捗 verify のみ・月の売上判定は Phase 5 Replay で一括)
+> 3. **優先 3 — Phase 1 v6 Layer 3 投入** (= 監査結果 §5 改善方向性 7 件反映):
+>    - 案 f AFML 修正 (cross-validated primary predictions) / B-10 アルゴ多様化 / 正則化強化 / CPCV / ROC AUC
+>    - 既存 untracked スクリプト (`run_lgbm_phase1_v5_case_b/c/d/e/f.py`) を Layer 3 仕様で修正してから commit
+> 4. **優先 4 — trade_ml_pipeline_knowledge_base.md 新設 (= 私の理解度不足への根本対策・L-220 対策)**:
+>    - **新規ファイル**: `.claude/memory/trade_ml_pipeline_knowledge_base.md`
+>    - 内容: ML pipeline 業界標準フロー + 各フェーズの判定方法 + 5 レバー業界実装パターン + Lopez de Prado AFML / Stefan Jansen MLfAT chapter 別核心 + Hudson & Thames mlfinlab 機能 + Crypto futures algo trading 業界実例
+>    - 構築方法: WebSearch 30 件 + WebFetch + 教科書知識統合 (= industry_benchmark KB と同パターン)
+>    - 数セッションかけて構築する大きな仕事。優先 2/3 と並行 or 着手後
 > 5. **優先 5 — セッション終了処理** (lessons + WORKFLOW 改訂34 + 改訂33 履歴降格)
 >
 > ### 引き継ぎリソース 3 層構造
@@ -438,10 +443,12 @@ Critical/Major 判定を伴わない確認程度はこちら。
 > #### Layer 1 (毎セッション必読・読了ゲート機械的証跡対象)
 > - **WORKFLOW.md 改訂33 active** (本ブロック)
 > - **CLAUDE.md** (Layer 2 更新済・industry_benchmark_knowledge_base 行追加)
-> - **phase_flow_v4_with_recovery.md** (ML 学習正本・改善議論対象)
+> - **phase_flow_v4_with_recovery.md** (ML 学習正本・改訂対象)
+> - **`.claude/memory/phase_flow_v4_reorder_proposal.md`** (= 4 箇所改訂版・第 2 版・確定済・次セッションで本体反映)
 > - **lessons_active.md 直近 5 件** (L-220 → L-218 → L-217 → L-216 → L-215)
-> - **cc_role.md §1.4 / §1.4.5 (改善 10 追加) / §1.4.6 / §1.4.7**
+> - **cc_role.md §1.4 / §1.4.5 (改善 10 追加) / §1.4.6 (§1.4.6.1 業界整合 verify 追加) / §1.4.7**
 > - **`feedback_current_state_verify_before_design.md`** (auto-memory・最重要マーク・auto-load)
+> - **`feedback_trade_ml_knowledge_gap.md`** (auto-memory・最重要マーク・auto-load・ML pipeline 設計提案前の業界整合 verify 義務)
 >
 > #### Layer 2 (改善議論着手時)
 > - **`.claude/memory/industry_benchmark_knowledge_base.md`**: 5 レバー定量根拠 + Phase 別合格基準 PnL 紐付け業界手法 (本セッション成果・維持)

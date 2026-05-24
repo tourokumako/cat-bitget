@@ -142,6 +142,24 @@ CC も Claude 系統 → Web Claude と同型のバイアスを持つ。`web_cla
 
 書かずに着手 = L-215 違反として記録。形式チェック全部通過しても目的逸脱は防げない原則を毎セッション再確認。
 
+#### §1.4.6.1 ML pipeline / トレード関連設計提案前の業界整合 verify (L-220 + 2026-05-26 追加)
+
+ML pipeline / トレード関連の設計提案 (= 新工程追加 / 検証順序変更 / 合格基準改訂 / レバー値見積もり / Phase 別判定方法設計 / etc.) を出す前に、上記 5 項目に加えて以下 4 項目を機械的証跡で出す義務:
+
+6. **業界標準フロー verify**: 該当領域の業界標準を WebSearch で能動調査した結果を引用 (記憶ベース禁止)
+7. **教科書 chapter 引用**: Lopez de Prado AFML / Stefan Jansen MLfAT / Hudson & Thames mlfinlab blog の該当 chapter / 該当 blog 記事を引用
+8. **独自構造の業界整合判定**: 業界標準と異なる構造を提案する場合、「業界標準は X だが、本提案では Y にする。理由は Z」と 1 行で説明
+9. **統計指標と PnL 指標の分離**: 提案する合格基準が統計指標 (entropy_lift / TP Precision 等) なのか PnL 指標 (月次 NET) なのかを明示・混同禁止
+
+書かずに ML pipeline / トレード関連設計を提案 = L-220 違反として記録。
+
+事案 (L-220): 2026-05-26 セッションで CC が以下を連続失敗:
+- Phase 4-b 単体先行検証 (= 「お金が生まれる場所を先に確認」) を業界整合 verify せず提案 → 全削除
+- 各フェーズで数値目標で縛る (= TP Precision > 0.5 等) 改訂を 7 箇所提案 → 業界標準は「全工程通してから Phase 5 Replay で一括判定」 → 3 箇所削除
+- Phase 4-b の「学習内容」と「既存暫定 Exit」の差分を即答できず
+
+参照: [[feedback_trade_ml_knowledge_gap]] (auto-memory・最重要) / [[feedback_current_state_verify_before_design]] (auto-memory・最重要) / L-220
+
 事案: 2026-05-22 v22 で Phase 1 v5 = 6 案並列確定したのに 2026-05-26 まで案 a (1 案) のみ実装で 5 セッション浪費 (L-215 + L-216 事案)。
 
 参照: lessons_active.md L-215 / phase_flow_v4_with_recovery.md §2 Phase 1 / cc_role §1.4 #2/#3/#4
