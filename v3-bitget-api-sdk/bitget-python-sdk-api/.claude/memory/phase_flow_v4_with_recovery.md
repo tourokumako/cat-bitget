@@ -66,6 +66,71 @@
 
 ---
 
+## §1.5 各フェーズの verify 枠組み + Phase 5 Replay 位置付け (v7 改訂で新設)
+
+> **v7 改訂 (2026-05-26)**: 本セクションは `reorder_proposal.md` §2 + 本セッション議論を経て確定した「各フェーズで何を確認するか」と「Phase 5 Replay の位置付け」の枠組みを正本化したもの。**旧 §2 各 Phase 合格基準 (TP Precision > 0.5 / entropy_lift > 10% 等の売上数値目標縛り) は廃止**。各フェーズの判定軸は **業界標準の一般的 ML 品質チェック (= 進捗 verify) のみ**。
+
+### §1.5.1 各フェーズ完了 verify (= 業界標準の一般的 ML 品質チェック・11 項目)
+
+各 Phase 完了時に以下 11 項目を verify し、**全項目クリアしたら次の工程へ進める**。売上数値 (TP precision / 月次 NET 等) で合否判定する旧 spec は廃止 (= reorder_proposal §2 業界標準フローと整合)。
+
+| # | チェック項目 | 内容 |
+|---|---|---|
+| 1 | **データ整合性** | 列数・期間・行数が想定通り / parquet が壊れてないか |
+| 2 | **leak チェック** | 未来データを過去のフリで使ってないか (false_positive §0-1 Prime Directive) |
+| 3 | **学習収束** | early_stopping が正しく機能 / 学習過程が安定 / エラーなく完了 |
+| 4 | **artifact 整備** | 命名規則 (= 「test」文字列禁止等・phase_compliance §4a.4) / ファイル保存正常 |
+| 5 | **feature_importance レビュー** | 上位 20 指標が 1 個に極端に偏ってないか / leak 由来の指標 (Phase -1 blacklist 64 列) 混入なし |
+| 6 | **予測値分布** | 全部同じ値出してないか / ヒストグラム形状が異常でないか |
+| 7 | **過学習サイン** | train と test の loss 乖離が極端でないか (例: 案 c K=96 fold 0 で 6.4 倍乖離は要警戒) |
+| 8 | **class imbalance** | positive_rate が極端 (1% 以下 / 99% 以上) でないか |
+| 9 | **評価指標の妥当性** | 学習 label と評価 label が同一で self-evaluation になってないか (例: 案 e Caveat) |
+| 10 | **ハイパラの妥当性** | default で動いてるか / 規約値からの逸脱がないか |
+| 11 | **false_positive 関所 A-G 通過** | 異常値スメル (Phase 5 のみ) / Prime Directive (§0-1) / 0.12 BTC 厳守 (§0-2) / 等 |
+
+**追加 verify** (Phase 別固有項目): 各 Phase 固有の verify は `phase_compliance_checklist.md` の該当 Phase セクション参照 (例: Phase 1 の §1.4 fractal blacklist 3 段階運用 / Phase 4-a の §4a.5 K96 SHORT q99 フォールバック処理 / 等)。
+
+### §1.5.2 Phase 5 Replay の位置付け (= 改善サイクルの起点)
+
+Phase 5 Replay は **一発勝負の合否判定ではない**。**結果を見て該当フェーズに戻って調整する反復サイクルの起点**。
+
+```
+[Phase 0 → 1 → 2 → 3 → 4 → 5] まで全部通す (各 Phase 完了 verify 11 項目クリア)
+       ↓
+[Phase 5 Replay] = 月の売上の実測 + 各フェーズ改善余地の判定材料
+       ↓
+   ┌─────分析─────┐
+   ↓                ↓
+月 $3,800 達成      未達 (= どこに改善余地?)
+   ↓                ↓
+Phase 6 本テスト   ┌─改善余地が cluster 並立 → Phase 4-a へ戻る
+                   ├─改善余地が Exit 設計 → Phase 4-b へ戻る
+                   ├─改善余地が Entry 信号 → Phase 1 へ戻る
+                   ├─Regime filter 投入 → Phase 4-c 新規 (保留候補)
+                   └─Position sizing 再調整 → Phase 5-d へ戻る
+       ↓
+再度 Phase 5 Replay (反復)
+```
+
+**反復サイクルの判断軸**:
+- Phase 5 Replay 結果で **どのフェーズに改善余地が大きいか** を分析
+- 該当フェーズに戻って調整 (= 数値目標で縛らず・Layer 2/3 投入候補も検討)
+- 再度 Phase 5 Replay で実測 → 達成まで反復
+
+**注意点**:
+- **売上の数字が見えるのは Phase 5 Replay 以降のみ**
+- 各フェーズ途中で「予測精度 0.5 達成」「期待値 proxy ≥ $X」等の数値目標で縛らない (= reorder_proposal §2 業界標準フロー整合)
+- Phase 5 Replay 未達でも「全工程やり直し」ではなく **該当フェーズに戻って調整** の反復サイクル
+
+### §1.5.3 §1.5 の根拠ファイル
+
+- `reorder_proposal.md` §2 (業界標準フロー: 全工程通してから Phase 5 Replay で月の売上を一括判定・各フェーズ verify は進捗確認のみ)
+- `industry_benchmark_knowledge_base.md` §3 (Phase 別合格基準を PnL に紐付ける業界手法 + DSR live degradation 50% マージン)
+- `cc_ml_design_spec.md` §7 怠け防止 (= 必須報告項目・本セクションの 11 項目チェックと整合)
+- 本セッション議論 (2026-05-26・「売上数値で縛る判定は不要・各フェーズ verify は業界標準の一般的 ML 品質チェック」確定)
+
+---
+
 ## §2 Phase ごとの学習内容 (本書の主役)
 
 ### Phase 0 改修: 特徴量を増やす + ラベルを再生成
@@ -403,7 +468,9 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 
 ---
 
-### Phase 3-b: クラスタリング (T2 Entry の質分類)
+### Phase 3-b / Phase 4-a: クラスタリング・cluster 並立 (T2 Entry の質分類)
+
+> **改訂 v7 (2026-05-26)**: 本工程は cluster 並立評価の核として **Phase 4-a に独立工程化** (reorder_proposal.md §3 改善 2 反映)。cluster 並立の品質要件 (cluster 間相関 < 0.3 + cluster 別 Sharpe > 0.5) を合格条件 CP3 に追加。下位仕様ファイル (cc_ml_design_spec.md / phase_compliance_checklist.md) 整合改訂は別タスクで実施。
 
 **実行状況 (2026-05-26 時点)**: ❌ **未着手**
 
@@ -452,9 +519,11 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 - cluster B = 長く保有する Entry (大 TP・大 SL)
 - cluster C = 高ボラ Entry (タイトな SL 必須)
 
-**合格条件 (CP3)**:
+**合格条件 (CP3・改訂 v7 で cluster 並立品質要件追加)**:
 - cluster 間で Entry 性質が分離 (= cluster 別の実 MFE/MAE 比に明確差)
 - train/test で cluster 分布が乖離しない (一致率 > 50%)
+- **cluster 間の収益パターン相関 (Pearson 相関係数) < 0.3** (= 3 つが独立した収益源・改訂 v7・reorder_proposal §3 改善 2)
+- **各 cluster の月次 Sharpe > 0.5** (= 全 cluster が独立に収益貢献・改訂 v7・同上)
 
 **失敗時**: 分離弱 → 入力次元を 4 → 8 拡張 / 分布乖離 → rolling 365 日 cluster fit / k=3 性能低 → cluster なし設計協議
 
@@ -733,18 +802,24 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 | 価格逆行幅 X% | 価格が逆行 (LONG なら下落) で X% を超えたら add | A-6.9 |
 | 含み益 / 含み損閾値 | 含み損 -X% で add (反発期待) or 含み益 +X% で add (トレンド乗り) | A-6.9 探索 |
 
-##### 5-b: A-7 per-position サイジング 8 方式
+##### 5-b: A-7 per-position サイジング (改訂 v7 で動的主軸化・8 方式並列比較)
 
-| # | 方式 | 計算式 | 想定 cluster |
-|---|---|---|---|
-| **1** | **固定** | **0.12 / (cap_N × MAX_ADDS) BTC** (例: cap=6 / MAX_ADDS=5 で 0.004 BTC = 1 トレード合計 0.02 BTC × 6 = 0.12 BTC ✅) | 全 cluster 共通 |
-| **2** | **予測強度比例** | Entry 確率 × 基準サイズ (案 b/c のとき) | 全 cluster |
-| **3** | **cluster 別** | cluster A=0.04 / cluster B=0.02 / cluster C=0.01 BTC 等 | cluster 別最適 |
-| **4** | **volatility 連動 (逆比例)** | 基準サイズ × (median ATR / 現 ATR) | 高ボラ時 cluster |
-| **5** | **Kelly 基準** | 期待リターン × 勝率 / リスク (Kelly criterion) | 高確信 entry |
-| **6** | **half-Kelly (安全側)** | Kelly の半分 | 中確信 entry |
-| **7** | **リスク等価** | 想定損失額 (SL_pct × size) が一定 | 全 cluster (SL 設定済) |
-| **8** | **動的 (複合)** | cluster × volatility × 予測強度の重み付き合成 | 統合配分 |
+> **改訂 v7 (2026-05-26)**: Position sizing の主軸を **「Half-Kelly + Volatility targeting + cluster 強度別配分」の動的合成 (= 方式 8 ★)** に変更 (reorder_proposal.md §3 改善 4 反映・industry_benchmark_knowledge_base.md §2.5 整合)。残り 7 方式は比較ベースライン。
+> - **方式 6 Half-Kelly**: Kelly criterion (= 最適賭け額) の半分・業界 sweet spot (75% 成長率維持 / 50% volatility 削減・MacLean / Sanegre / Zhao / Ziemba 2004)
+> - **方式 4 Volatility targeting**: 基準サイズ × (median ATR / 現 ATR) = 揺れが大きいときは小さく
+> - **方式 3 cluster 強度別**: 予測強い cluster に多め (例: 0.04 BTC) / 弱い cluster に少なめ (例: 0.01 BTC)・合計 0.12 BTC 厳守
+> - **方式 8 動的 (複合) ★主軸**: 上記 3 つの重み付き合成
+
+| # | 方式 | 計算式 | 想定 cluster | 改訂 v7 位置付け |
+|---|---|---|---|---|
+| **1** | **固定** | **0.12 / (cap_N × MAX_ADDS) BTC** (例: cap=6 / MAX_ADDS=5 で 0.004 BTC = 1 トレード合計 0.02 BTC × 6 = 0.12 BTC ✅) | 全 cluster 共通 | 比較ベースライン |
+| **2** | **予測強度比例** | Entry 確率 × 基準サイズ (案 b/c のとき) | 全 cluster | 比較ベースライン |
+| **3** | **cluster 別** | cluster A=0.04 / cluster B=0.02 / cluster C=0.01 BTC 等 | cluster 別最適 | **主軸 8 の構成要素** |
+| **4** | **volatility 連動 (逆比例)** | 基準サイズ × (median ATR / 現 ATR) | 高ボラ時 cluster | **主軸 8 の構成要素** |
+| **5** | **Kelly 基準** | 期待リターン × 勝率 / リスク (Kelly criterion) | 高確信 entry | 比較ベースライン |
+| **6** | **half-Kelly (安全側)** | Kelly の半分 | 中確信 entry | **主軸 8 の構成要素** |
+| **7** | **リスク等価** | 想定損失額 (SL_pct × size) が一定 | 全 cluster (SL 設定済) | 比較ベースライン |
+| **8** | **動的 (複合)** ★主軸 | cluster × volatility × half-Kelly の重み付き合成 | 統合配分 | **★ 改訂 v7 主軸 (改善 4 反映)** |
 
 **絶対制約 (実装義務・false_positive §0-2 第二絶対規定)**:
 - per-position ≥ 0.0001 BTC (Bitget minTradeNum)
@@ -813,12 +888,12 @@ nearest_level_distance_pct / nearest_level_touch_count (N=50/100/200 × t=030/05
 **絶対制約 (false_positive §0-2 第二絶対規定)**:
 全エントリー時点で `sum(active_position_btc) ≤ 0.12` を実装で verify。違反検知 → 即実装停止。
 
-**合格条件 (本丸第 1 段・v6 で Phase 1 から移動した指標も含む)**:
+**合格条件 (本丸第 1 段・改訂 v7 でマージン要件強化)**:
 
-1. **月次 NET ≥ $1,900 全 12 ヶ月クリア** (仮 test 2025・実行前確定・実行後緩和禁止) — 本丸合格判定
+1. **月次 NET ≥ $3,800 全 12 ヶ月クリア** (仮 test 2025・実行前確定・実行後緩和禁止) — 本丸合格判定 **★ 改訂 v7: $1,900 → $3,800 (Bailey + Lopez de Prado 2014 DSR live degradation 30-70% 想定・本番で半減して Phase 6-b で月 $1,900 死守)・reorder_proposal §3 改善 3 反映・industry_benchmark_knowledge_base.md §3.2 整合**
 2. **DSR > 1.0** (Walk-forward CV Sharpe 補正・Bailey + Lopez de Prado 2014・selection bias 補正後・Phase 1 v5 → v6 で移動)
 3. **Simulated PnL 12 ヶ月中 8+ ヶ月プラス + 年間 NET ≥ $500** (Phase 1 v5 → v6 で移動・本丸 NET 基準とは別レンズで verify)
-4. **異常値スメル 0/8** (false_positive §5 関所 A 自動 STOP: 月次 NET > $3,800 / 勝率 > 70% / IS-OOS Sharpe 比 > 3 倍乖離 / 最大 DD < 月次 NET 10% に 1 つも該当しない)
+4. **異常値スメル 0/8** (false_positive §5 関所 A 自動 STOP: **月次 NET > $7,600 (= 改訂 v7 合格ライン $3,800 の 2 倍に連動更新)** / 勝率 > 70% / IS-OOS Sharpe 比 > 3 倍乖離 / 最大 DD < 月次 NET 10% に 1 つも該当しない)
 
 **失敗時**:
 - 1-3 ヶ月未達 → 削除類型強化 (1 回まで) → Layer 2 投入 (D-δ 時間帯 / D-ε regime / Exit 第 2 弾 / Calibration)
@@ -964,7 +1039,7 @@ Phase 1 で案 a/b/c 全て不合格なら、Entry 学習を 2 段階構成に�
    ↓ 3-5 日
    ↓
 [Phase 3-a] アルゴ比較 (LightGBM vs XGBoost vs CatBoost)
-[Phase 3-b] クラスタリング (k=3・20 次元入力)
+[Phase 3-b / Phase 4-a (cluster 並立・改訂 v7 で独立工程化)] クラスタリング (k=3・20 次元入力・cluster 間相関 < 0.3 + cluster 別 Sharpe > 0.5 品質要件)
    ↓ CP3 監査
    ↓
 [Phase 4-b-1] Exit 設計 (12+ 種 × cluster 別最適化)
@@ -972,16 +1047,27 @@ Phase 1 で案 a/b/c 全て不合格なら、Entry 学習を 2 段階構成に�
    ↓
 [★ CP4 ゲート] Entry-Exit 整合性 review
    ↓
-[Phase 5] ポジション設計 (5-a〜5-g)
+[Phase 5] ポジション設計 (5-a〜5-g・改訂 v7 で sizing 主軸 = Half-Kelly + Volatility + cluster 強度別)
    ↓ 1-2 週間
-   ↓ 仮 test 2025 月次 NET ≥ $1,900 全 12 ヶ月
+   ↓ ★ 改訂 v7: 仮 test 2025 月次 NET ≥ **$3,800** 全 12 ヶ月 (= live degradation 50% 想定マージン)
    ↓ CP5 監査
    ↓
 [Phase 6] 本テスト 2026 Q1 (1 回限り)
-   ↓ 月次 NET ≥ $1,900 全 3 ヶ月
+   ↓ 月次 NET ≥ $1,900 全 3 ヶ月 (= 最終合格判定)
    ↓
 [Phase 7-a〜e] Bot 統合 → デモ → 本番投入
 ```
+
+---
+
+### 改訂 v7: Phase 4-c (Regime filter) — 保留候補
+
+> **改訂 v7 (2026-05-26)**: reorder_proposal.md §3 改善 1 で「Phase 4-b と Phase 5 の間に Phase 4-c (Regime filter) を新規追加 (= 1.3× 効果)」が提案されたが、まこさん判断で **現状の改訂 2/3/4 のみで一度試して、Phase 5 Replay で目標未達なら追加投入する候補** に保留。
+>
+> - **想定手法**: HMM (隠れマルコフモデル) or 200-day MA (移動平均) filter or jump model
+> - **業界実証範囲**: 1.1-1.6× (中央値 1.3×・industry_benchmark_knowledge_base.md §2.4)
+> - **素材**: 凍結中 `regime_research.md` 素材を Phase 4-c に転用可能
+> - **投入条件**: Phase 5 Replay で全 12 ヶ月 NET ≥ $3,800 未達のとき・5 レバー再見積もり時に並行検討
 
 ---
 
@@ -1011,7 +1097,7 @@ Phase 1 で案 a/b/c 全て不合格なら、Entry 学習を 2 段階構成に�
 | **B-8** cap | 3 方式並列・合算カウント | Phase 5-c |
 | **B-9** 組合せ深さ | num_leaves / max_depth 等 | Phase 2 |
 | **B-10** 学習アルゴ | LightGBM 主軸 + XGBoost / CatBoost / MiniROCKET | Phase 3-a |
-| **B-11** cluster | k=3 + B 案 (LONG/SHORT 差分追加) | Phase 3-b |
+| **B-11** cluster | k=3 + B 案 (LONG/SHORT 差分追加) + cluster 間相関 < 0.3 + cluster 別 Sharpe > 0.5 (改訂 v7 で品質要件追加) | Phase 3-b / **Phase 4-a (改訂 v7 で独立工程化)** |
 | **B-12** 特徴量変換 | Fractional / PCA / MTF 4 方式 | Phase 0 改修 |
 | **B-13** Entry ratio 閾値 | rolling + cluster 別 quantile | Phase 4-b-2 |
 | **B-14** 学習データ範囲 | train 2021-2024 / 仮 test 2025 / 本 test 2026 Q1 (固定) | 全 Phase 制約 |
@@ -1065,6 +1151,7 @@ Phase 1-a/1-b/1-c smoke で観察された 5 件の問題 → V4 v5 でどう対
 | 2026-05-21 | **v4 v1 (確定版・約 960 行)** | **phase_compliance_checklist.md (222 行) + false_positive_incident_policy.md (225 行) 全文 view → 整合性総点検 → A 案修正反映**: ① Phase -1 USD 絶対値 blacklist 48 列 drop 義務明示 / ② Phase 1 verify (random_state=42 + feature_importance top20 即時 review + fractal blacklist 3 段階) / ③ Phase 3-b artifact 名 verify ("train" 含む / `*test*` 禁止) + K96 SHORT q99 フォールバック / ④ Phase 4-b-1 採用方式修正 (test 期間使用削除・train のみ) + time_exit K 制限 + TP 約定モデル (固定 + pred_MFE 中央値) + Trailing 順序 + entry/slippage 0.005% + 月別 Exit 約定率 ≥ 12% / ⑤ Phase 5 false_positive §5 関所 A/B/C/E 統合 + Maker 剥落 stress (0.02%) + wick 乖離分析 / ⑥ Phase 5-b 計算式 MAX_ADDS 反映 `per-position = 0.12 / (cap × MAX_ADDS)` / Phase 5-d cap 別 best Exit 再選定 / ⑦ Phase 6-b artifact assertion ("train" 含み "test" 含まず) / ⑧ Phase 7-c ALLOW_LIVE_ORDERS = False 維持 + "test" artifact 起動中止 + verify_ml_inference.py |
 | 2026-05-26 | **v5 整合更新 (本プロジェクトの正本一本化反映)** | learning_design_v4 §10 #19/#20 + handoff v22 で 2026-05-22 確定済の **v5 Layer 配分逆転** を本書に反映: ① §2 Phase 1 を 3 案並列 → **6 案並列** (案 a/b/c + 案 d Ranking LambdaRank + 案 e Triple Barrier multiclass + 案 f Meta-Labeling 2 段階) に拡張・Walk-forward Purged K-Fold 5 fold + DSR 必須化 / ② 学習後比較指標 4 → **5 指標** (entropy lift > 10% / TP Precision > 0.5 / Direction Accuracy > 0.55 / Simulated PnL / DSR > 1.0) + Layer 3 投入条件厳格化 / ③ §4 全体フロー俯瞰 (案 a+b+c → 6 案) / ④ §5.3 Entry 学習問題対応マップ (Layer 3 → Layer 1 前倒し済) / ⑤ §5.4 CP2 監査内容 (5 指標 + Purged K-Fold) / **handoff_to_cc_v* 廃止と並行で本書を正本に一本化** (learning_design_v4 は archive 移動) |
 | 2026-05-26 | **v6 Phase 1 評価軸 Exit 非依存化 (構造的矛盾の解消・L-217)** | まこさん指摘「Entry のみで良し悪しの判定ってできるものなの？」を受けた CC 独立評価で v5 の 5 指標構成が「Entry AI 単独評価」と「Trading 評価 (Exit 必須)」を混在させる構造的矛盾を発見: ① Phase 1 評価軸を **5 指標 → 3 指標 Exit 非依存** に絞る (entropy lift > 10% / TP Precision > 0.5・TP_PCT 固定値 / Direction Accuracy > 0.55 (案 c のみ)) / ② Simulated PnL / DSR を Phase 5 合格条件に移動 (Trading 評価のため正しい配置・本丸 NET 基準とは別レンズで verify) / ③ §4 全体フロー俯瞰 + §5.4 CP2 監査内容を 3 指標化 / ④ 過去 5 セッション分の Step I (Simulated PnL 評価式改修) は L-215 設計逸脱事案 (Phase 4-b 領域を Phase 1 で先行実装した構造問題) を裏付け |
+| 2026-05-26 | **v7 月 $1,900 達成設計反映 (reorder_proposal.md 改善 2/3/4 反映・改善 1 Phase 4-c は保留候補) + §1.5 verify 枠組み新設** | reorder_proposal.md (議論を経て 7 箇所 → 4 箇所 → まこさん判断で改善 1 保留して 3 箇所反映) で確定した内容を本ファイル正本に反映: ① **改善 2**: Phase 3-b cluster セクションを Phase 4-a (cluster 並立) に独立工程化注記 + 品質要件追加 (cluster 間相関 < 0.3 + 各 cluster 月次 Sharpe > 0.5) ・industry_benchmark_knowledge_base.md §2.3 整合 / ② **改善 3**: Phase 5 合格条件 月次 NET $1,900 → $3,800 (Bailey + Lopez de Prado 2014 DSR live degradation 30-70% 想定・本番で半減して Phase 6-b で月 $1,900 死守・industry_benchmark_knowledge_base.md §3.2 整合) + 異常値スメル閾値 $3,800 → $7,600 連動更新 / ③ **改善 4**: Phase 5-d Position sizing 主軸を「Half-Kelly + Volatility targeting + cluster 強度別配分」の動的合成 (方式 8) に変更・残り 7 方式は比較ベースライン化・industry_benchmark_knowledge_base.md §2.5 整合 / ④ **改善 1 (Phase 4-c Regime filter) は保留**: §4 全体フロー末尾に注記追加・Phase 5 不合格時の追加投入候補・凍結 regime_research.md 素材転用可能 / ⑤ §4 全体フロー俯瞰図 Phase 順序 + 合格ライン更新 / ⑥ §5.2 23 軸 B-11 cluster の担当 Phase に Phase 4-a 追加 + 品質要件追記 / ⑦ **§1.5 各フェーズの verify 枠組み + Phase 5 Replay 位置付け 新設** (= 業界標準の一般的 ML 品質チェック 11 項目 + 売上数値目標縛り廃止 + Phase 5 Replay = 改善サイクル起点・反復サイクル図・本セッション議論で確定した認識を正本化) / **下位仕様ファイル (cc_ml_design_spec.md / phase_compliance_checklist.md) 整合改訂は別タスクで実施** |
 
 ---
 

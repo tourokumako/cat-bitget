@@ -299,7 +299,7 @@ cat-bitget の context:
 
 ---
 
-## §5 cat-bitget レシピへの示唆 (実践)
+## §5 cat-bitget へのキャリブレーション
 
 ### 5.1 5.1× 達成の現実的経路
 
@@ -317,58 +317,7 @@ cat-bitget の context:
 
 **Phase 4-c (Regime filter) は新規 Phase 追加が必要**。現 phase_flow_v4_with_recovery.md には明示 Phase なし。
 
-### 5.2 Phase 4-b 単体検証のアプローチ
-
-§2.2 で「Exit 改善が単独で 1.3-2.0×」= **最大の単一レバー**。Phase 4-b 単体検証を先行することの正当性:
-
-**検証方法 (3 候補)**:
-
-1. **ナイーブ Entry + Exit grid search**:
-   - Entry = ランダム or 単一指標 (RSI 30 以下) で発火
-   - Exit grid (TP_PCT / SL_PCT / TIME_EXIT) を網羅探索
-   - → Exit 設計の上限性能を可視化
-   - 限界: ナイーブ Entry なので best Entry 時の Exit 効果は別
-
-2. **手動 Priority Entry + Exit 最適化**:
-   - Entry = cat_v9 P1-P24 (= 凍結ベースライン月 $370 の Entry 信号)
-   - Exit を Triple Barrier ベースで最適化
-   - → 「現 Entry のままで Exit 改善で月 $370 → 月 $630 (= 1.7×) に届くか」を実証
-   - 利点: cat-bitget の実 Entry 信号で Exit 効果を直接測定可能
-
-3. **Phase 1 v6 案 e (entropy_lift 6/8 PASS) + Exit 最適化**:
-   - Phase 1 完走済の case_e triple_barrier predictions を Entry として使用
-   - Exit を別途 grid search
-   - → Phase 1 を本格再開する前に Phase 4-b の上限を見る
-
-**推奨**: **(2) 手動 Priority Entry + Exit 最適化** が最も意味のある検証
-- 既存実 Entry で Exit 改善の直接効果を測定 = ベースライン月 $370 からの上振れを実証
-- Phase 1 を待たずに Phase 4-b の現実性が確認できる
-- もし Phase 4-b で 1.7× 出ない場合 = Phase 1 を頑張っても無駄打ち判定可
-
-### 5.3 検証順序の改訂提案
-
-**現 phase_flow_v4 の順序**:
-Phase 0 (label) → Phase 1 (Entry 学習) → Phase 2 (精度判定) → Phase 3-a/b (ハイパラ) → Phase 4-a (cluster) → Phase 4-b (Exit) → Phase 5 (Replay)
-
-**改訂提案**:
-1. **Phase 0**: 完了済 (現状維持)
-2. **Phase 4-b 単体先行検証** (NEW・1-2 セッション):
-   - 手動 Priority Entry + Exit grid search
-   - 凍結ベースライン月 $370 → 月 $630+ (1.7×) が出るか?
-   - NG なら根本見直し / OK なら次段へ
-3. **Phase 4-a 単体検証** (NEW・1 セッション):
-   - cluster=3 並立 (LONG/SHORT × cluster) で cluster 間相関 < 0.3 達成可能か
-   - cluster 間相関で並立効果 (1.5×) の現実性確認
-4. **Phase 1 v6 再開** (= Layer 3 投入 / case f 修正 / アルゴ多様化):
-   - 監査結果 (NO-GO + PIVOT) の修正反映
-   - Phase 4-b 検証で Exit 改善余地が確認できた前提で Entry 学習
-5. **Phase 4-c 新規追加** (= Regime filter):
-   - HMM or 200-day MA filter 投入
-6. **Phase 5-d (sizing)** + **Phase 5 (Replay)**:
-   - Half-Kelly + 5 レバー統合
-7. **Phase 6-b (本テスト)**: 全 3 ヶ月 NET ≥ $1,900
-
-**目的**: 各レバーの現実性を **早期に独立検証** + **どこで挫折するか** を可視化する。Phase 1 を頑張ってから「Phase 4-b で死亡」を防ぐ。
+> **§5.2 + §5.3 削除済 (2026-05-26)**: 監査 CC が起草した「Phase 4-b 単体検証 3 候補」(手動 Priority Entry 前提誤認含む) + 「検証順序改訂提案 7 ステップ」は、KB の役割 (= 業界相場の事実データ + キャリブレーション) を超えた cat-bitget 固有レシピ提案だったため削除。レシピ設計は phase_flow_v4_with_recovery.md 改訂議論で扱う。
 
 ---
 

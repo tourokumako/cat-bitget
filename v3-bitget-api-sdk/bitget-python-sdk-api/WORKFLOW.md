@@ -358,7 +358,94 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-26 改訂33・**監査依頼書テンプレ整備 (L-218) + Phase 1 v6 6 案監査受領 (Verdict NO-GO + PIVOT) + 目標達成設計レシピ起草 → L-180 違反 partial revert (L-220) + industry_benchmark KB 維持 + 監査結果 §10 補足メモ追加**・次タスク = 現状把握 verify → phase_flow_v4 改善議論 + Phase 1 v6 Layer 3 投入 or Phase 4-b 単体検証）
+## 🔴 現在のフェーズ（2026-05-26 改訂34・**phase_flow_v4 v7 改訂完了 (reorder_proposal §3 改善 2/3/4 反映・Phase 4-a 独立工程化 + Phase 5 合格ライン $3,800 + Phase 5-d 動的合成主軸化 + Phase 4-c 保留) + §1.5 verify 枠組み新設 (= 業界標準の一般的 ML 品質チェック 11 項目 + Phase 5 Replay = 改善サイクル起点) + industry KB §5.2-5.3 削除 + L-222 追加**・次タスク = Phase 1 v6 残作業 = 案 f AFML 標準実装修正 + full 完走 + 案 e predictions parquet 保存）
+
+> **【現在の正本ブロック・改訂34・2026-05-26 セッション末（phase_flow_v4 v7 反映議論完了 + 認識合致 + セッション終了処理）】**
+>
+> ### 本セッション (2026-05-26 後半) 完了事項
+>
+> #### 1. phase_flow_v4_with_recovery.md v7 改訂 (reorder_proposal.md §3 改善 2/3/4 反映)
+> - **改善 2**: Phase 3-b / Phase 4-a (cluster 並立) 独立工程化注記 + 品質要件追加 (cluster 間相関 < 0.3 + cluster 別月次 Sharpe > 0.5)
+> - **改善 3**: Phase 5 合格条件 月次 NET $1,900 → **$3,800** (DSR live degradation 50% 想定マージン・本番で半減して Phase 6-b で月 $1,900 死守) + 異常値スメル閾値 $3,800 → $7,600 連動更新
+> - **改善 4**: Phase 5-d Position sizing 主軸を「Half-Kelly + Volatility targeting + cluster 強度別配分」の動的合成 (方式 8) に変更・残り 7 方式は比較ベースライン化
+> - **改善 1 (Phase 4-c Regime filter) は保留**: §4 全体フロー末尾に注記追加・Phase 5 不合格時の追加投入候補・凍結 regime_research.md 素材転用可
+> - §4 全体フロー俯瞰図 + §5.2 23 軸 B-11 cluster 更新
+>
+> #### 2. phase_flow_v4_with_recovery.md §1.5 verify 枠組み + Phase 5 Replay 位置付け 新設 (= 本セッション議論の核心)
+> - **§1.5.1 各フェーズ完了 verify = 業界標準の一般的 ML 品質チェック 11 項目** (データ整合性 / leak / 学習収束 / artifact / feature_importance / 予測値分布 / 過学習サイン / class imbalance / 評価指標妥当性 / ハイパラ妥当性 / false_positive 関所通過)
+> - **§1.5.2 Phase 5 Replay の位置付け = 改善サイクルの起点** (= 一発勝負の合否判定ではなく結果を見て該当フェーズに戻る反復サイクル) + 反復図
+> - **§1.5.3 根拠ファイル参照** (reorder_proposal §2 / industry KB §3 / cc_ml_design_spec §7 / 本セッション議論)
+> - **売上数値で縛る判定は廃止** (= 旧 5 指標 / 3 指標を Phase 1 等の判定基準として使わない・reorder_proposal §2 業界標準整合)
+>
+> #### 3. industry_benchmark_knowledge_base.md §5.2 + §5.3 削除 (= 監査 CC のレシピ提案部分)
+> - §5.2 「Phase 4-b 単体検証 3 候補」(手動 Priority 前提誤認含む) 全削除
+> - §5.3 「検証順序の改訂提案 7 ステップ」全削除
+> - §5 タイトル「cat-bitget レシピへの示唆 (実践)」→「cat-bitget へのキャリブレーション」変更
+> - §5.1 5 レバー責任値分担表 + §6-§8 (知識ギャップ / 改訂履歴 / 出典 47 件) は維持
+>
+> #### 4. lessons L-222 追加 (本セッション議論の構造的混乱事案 + 改善 6 件)
+> - 「監査ベース改訂を CC が独自議論で再演」事案 (= L-220 + L-221 同型再演)
+> - 改善 6 件: Step 0 で reorder_proposal 等確認 / テンプレ応答禁止 / 翻訳バイアス対策 / PM 視点定義 / 振り子防止 / 応答短縮 + 平易な言葉
+>
+> ### 次セッション CC 優先順位
+>
+> 1. **優先 1 — Step 0 プロトコル + 現状把握 verify (絶対遵守・L-222 対策含む)**:
+>    - `feedback_current_state_verify_before_design.md` (auto-memory) 確認
+>    - **`git log --oneline -10` + `ls -lat .claude/memory/ | head -20` で別セッション成果物確認** (= L-222 改善 1)
+>    - 「凍結ベースライン $370 / 手動 Priority 凍結 / ML pipeline 現役 / phase_flow_v4 v7 が正本」再確認
+>    - これらを出さずに設計提案・実装着手禁止
+> 2. **優先 2 — Phase 1 v6 残作業 (= 学習未完了 + artifact 未整備の解消)**:
+>    - **案 f (Meta-Labeling) AFML 標準実装修正** (cross-validated primary predictions・sklearn `cross_val_predict` パターン・コード ~50-100 行) + full 完走 (1-2 時間・1 並列)
+>    - **案 e (Triple Barrier multiclass) predictions parquet 保存追加** (コード ~10-20 行) + 再実行 (60-90 分・1 並列)
+>    - 各 case 完了 verify (= phase_flow_v4 §1.5.1 一般 ML 品質チェック 11 項目)
+> 3. **優先 3 — 下位仕様ファイル v7 整合改訂 (Phase 1 v6 完了後)**:
+>    - `cc_ml_design_spec.md`: §3 直前に Phase 4-a (cluster 並立) 新設 + §4 Position sizing 主軸明示 + §5 Phase 5 $3,800 + §6 採否判定段階別化
+>    - `phase_compliance_checklist.md`: §Phase 4-a に 4a.6/4a.7 (cluster 品質要件) + §Phase 5-d に 5d.5 (動的合成検証) + §Phase 5 注記 (合格条件は phase_flow_v4 v7 整合)
+> 4. **優先 4 — Phase 2 着手判断 (Phase 1 v6 完了後)**:
+>    - Phase 1 v6 採用案決定 (= 売上数値判定廃止のため相対比較で最良案選定・別議論)
+>    - Phase 2 ハイパラ最適化着手
+> 5. **優先 5 — セッション終了処理** (= lessons + WORKFLOW 改訂 35 + 改訂 34 履歴降格)
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (毎セッション必読・読了ゲート機械的証跡対象)
+> - **WORKFLOW.md 改訂 34 active** (本ブロック)
+> - **CLAUDE.md**
+> - **phase_flow_v4_with_recovery.md** (v7・§1.5 verify 枠組み新設・1173 行)
+> - **lessons_active.md 直近 5 件** (L-222 → L-221 → L-220 → L-218 → L-217)
+> - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 / §1.4.7**
+> - **`feedback_current_state_verify_before_design.md`** (auto-memory・最重要)
+>
+> #### Layer 2 (Phase 1 v6 残作業 + 改善議論時)
+> - **`reorder_proposal.md` 第 2 版** (commit `3b30334`・改訂 4 箇所のうち 3 件反映済・改善 1 Phase 4-c 保留)
+> - **`industry_benchmark_knowledge_base.md`** (v1・§5.2-5.3 削除済・5 レバー業界相場 + 出典 47 件)
+> - **`technical_analysis_knowledge_base.md`** (v2・1691 行・個別指標辞典 + AFML/mlfinlab + 閾値設計論)
+> - **監査結果 + §10 補足メモ** (`2026-05-26_phase1_v6_6cases_methodology_audit_report.md`・567 行)
+> - **`cc_ml_design_spec.md`** (= v7 整合改訂対象・410 行) / **`phase_compliance_checklist.md`** (= 同・224 行)
+>
+> #### Layer 3 (リファレンス・必要時参照)
+> - `false_positive_incident_policy.md`: 関所 A-G + 類型 A-H + §0-1/§0-2
+> - `exchange_spec.md`: Bitget USDT-FUTURES BTCUSDT スペック
+> - `lessons_archive.md`: L-152 以前
+> - 既存 Phase 1 v6 実装 (案 a/b/c/d/e/f script + summary JSON・案 b/c/d/e full 完走 + 案 f smoke のみ)
+>
+> #### データ・環境
+> - parquet 3 種 (train_2021_2024 / test_2025 / test_2026_q1) + `.venv311`
+> - Phase 1 v6 5 案実装 script (commit `294a79f` 済・案 b/c/d/e/f)
+> - **案 e predictions parquet**: ❌ **未生成** (case_e に保存追加 + 再実行必要・60-90 分)
+> - **案 f**: smoke のみ・full 未実行 (AFML 標準実装修正後 full 走行)
+> - log: `results/priority_rebuild/ml_phase1_v5/_logs/log_case_*.log`
+>
+> ### 目的整合性 1 行宣言 (cc_role §1.4.6)
+>
+> - **次タスク** = (1) Step 0 + 現状把握 verify (L-222 改善 1 含む) → (2) Phase 1 v6 残作業 (案 f AFML 修正 + case_e predictions parquet 保存) → (3) 下位仕様 v7 整合改訂 → (4) Phase 2 着手判断
+> - **現フェーズ目的への貢献根拠** = phase_flow_v4 v7 + §1.5 で確定した「全工程通してから Phase 5 Replay で月の売上一括判定」業界標準フローに従い、Phase 1 v6 の残作業 (= 学習未完了 + artifact 未整備) を解消して Phase 2 着手準備を整える。L-222 同型再演防止のため Step 0 で reorder_proposal / WORKFLOW 改訂 34 を必読化。
+
+---
+
+## 🧊 改訂33 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-26 改訂33・**監査依頼書テンプレ整備 (L-218) + Phase 1 v6 6 案監査受領 (Verdict NO-GO + PIVOT) + 目標達成設計レシピ起草 → L-180 違反 partial revert (L-220) + industry_benchmark KB 維持 + 監査結果 §10 補足メモ追加**・次タスク = 現状把握 verify → phase_flow_v4 改善議論 + Phase 1 v6 Layer 3 投入 or Phase 4-b 単体検証）
 
 > **【現在の正本ブロック・改訂33・2026-05-26 セッション末（監査受領 + 目標達成設計試行と部分巻き戻し + 再発防止策完了）】**
 >
