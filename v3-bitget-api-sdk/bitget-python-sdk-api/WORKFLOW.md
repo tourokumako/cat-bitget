@@ -399,9 +399,18 @@ Critical/Major 判定を伴わない確認程度はこちら。
 > - 最重要マークで MEMORY.md に index → 次セッション SessionStart hook で auto-load
 > - 内容: ML pipeline 設計議論・提案前に「現役戦略 / 凍結対象 / 現フェーズ」を grep + Read で機械的証跡として出す
 >
-> #### 7. lessons L-218 + L-220 追加 (L-219 は欠番)
+> #### 7. lessons L-218 + L-220 + L-221 追加 (L-219 は欠番)
 > - L-218: 監査依頼書 auditor 宣言ブロック未整備事案
-> - L-220: 設計議論時の現状把握 verify 不足事案 (partial revert 経緯含む)
+> - L-220: 設計議論時の現状把握 verify 不足事案 (partial revert 経緯含む・auditor session 側事案)
+> - L-221: メインセッション CC の Phase 1 v6 6 案実装プロセス欠陥事案 (目的整合性ゲート 5 連続書き忘れ + Phase 境界喪失 + sweep 自己目的化)
+>
+> #### 8. Phase 1 v6 5 案実装 + smoke + full 完走 (commit `294a79f`・本セッション前半・auditor 起動前)
+> - 5 ファイル: `scripts/priority_rebuild/run_lgbm_phase1_v5_case_{b,c,d,e,f}_*.py` (5 案分・2,905 行)
+> - 案 b/c/d/e: full 完走 (train_2021_2024 / 8 組合せ × 3 fold)・案 f: smoke のみ (full 未実行)
+> - smoke v1 fix: 案 c (Flat=0% + column index swap → class_to_col 動的解決) / 案 d (LightGBM 10000 row/query hard limit → 日次グループ 288 bar)
+> - 5 案結果: いずれも TP precision 0.30-0.45 で頭打ち → 0/8 ALL PASS / 案 e の entropy_lift (K=24/48/96 で 0.20-0.35) が最良
+> - 結果 artifact: `results/priority_rebuild/ml_phase1_v5/_case_{b,c,d,e,f}_*/case_*_summary_*.json` (規約上 commit 禁止 = git untracked)
+> - log: `results/priority_rebuild/ml_phase1_v5/_logs/log_case_{b,c,d,e,f}_{smoke,full}.log` (12 ファイル・本セッション中盤に project root から移動)
 >
 > ### 次セッション CC 優先順位
 >
@@ -450,8 +459,10 @@ Critical/Major 判定を伴わない確認程度はこちら。
 >
 > #### データ・環境
 > - parquet 3 種 (train_2021_2024 / test_2025 / test_2026_q1) + .venv311
-> - Phase 1 v6 6 案実装 untracked script (= Layer 3 投入時に修正してから commit)
+> - Phase 1 v6 5 案実装 script (commit `294a79f` 済・案 b/c/d/e/f) → Layer 3 投入時に修正
 > - **案 e predictions**: `results/priority_rebuild/ml_phase1_v5/_case_e_triple_barrier/predictions_train_2021_2024.parquet` (Phase 4-b 単体検証 Entry 信号候補)
+>   - ⚠️ **重要・未生成警告**: 現 `case_e_triple_barrier.py` 実装は summary JSON のみ出力で **predictions parquet 未保存**。Phase 4-b 単体検証着手前に case_e に predictions 保存追加 + 再実行 (60-90 分・1 並列順次) が必要。
+> - log: `results/priority_rebuild/ml_phase1_v5/_logs/log_case_*.log` (12 ファイル・5 案実施時のログ保管場所)
 >
 > ### 目的整合性 1 行宣言 (cc_role §1.4.6)
 >
