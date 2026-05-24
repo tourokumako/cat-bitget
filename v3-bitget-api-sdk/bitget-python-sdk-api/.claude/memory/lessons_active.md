@@ -7,6 +7,61 @@
 
 ---
 
+### L-219: 目標達成レシピ (Target Pathway) なしで Phase 1 を回した構造的欠陥事案 (2026-05-26)
+
+**何が起きたか:**
+2026-05-26 Phase 1 v6 6 案監査完了後、まこさん指摘「目標達成するための、phase_flow_v4 のフローに不具合や改善すべき点が多々あるってこと?」を受けて、phase_flow_v4_with_recovery.md を「ML 開発手順」としては整理されているが「月 $1,900 達成設計」としては gap だらけ と判定。具体的問題:
+
+1. **目標 → 各 Phase の数値写像が無い**: Phase 1 PASS → 月 NET 寄与いくらかが未定義
+2. **Phase 4-b (お金が生まれる場所) が後段**: Phase 1 を完璧にしても Phase 4-b で死亡するリスク
+3. **5.1× ($370 → $1,900) gap の分解が無い**: 各レバー (Entry / Exit / cluster / regime / sizing) で何倍狙うかの設計なし
+4. **Regime filter が独立 Phase に存在しない**: Phase 1 の Triple Barrier label に暗黙埋め込みのみ
+5. **手動 Priority → ML の橋渡し設計が無い**: 「ML やれば届く」前提だけある
+
+過去 5 セッション浪費 (L-215) の根本原因は本問題。Phase 1 評価軸 (entropy_lift / TP Precision / Direction Accuracy) は予測精度評価で月次 NET と直結していない。
+
+**Why:**
+- ML 業界標準 (Lopez de Prado AFML / Stefan Jansen MLfAT) は「目標到達ロジック設計 → ML 手順実装」の順序
+- cat-bitget は ML 手順 (phase_flow_v4) を先に整備したが、その上位「目標到達設計」が無いまま走った
+- 結果: Phase 1 内で何度も評価軸を変える (L-217 で 5 指標 → 3 指標化等)・5 セッション浪費・各 Phase の必要条件が「月 NET 寄与」から逆算されない
+- これは cc_role §1.4 #4 (現状把握をスキップして改善議論に走る) + spec 枠内バイアス (#2) の典型
+
+**How to apply (修正 1-5):**
+
+#### 修正 1: cc_target_pathway_design.md (新規・本レシピ) を作成
+- 月 $370 → $1,900 = **5.1× gap の分解** (5 レバー: Entry 1.4× / Exit 1.7× / 並立 1.5× / Regime 1.3× / Sizing 1.2× = 5.57×)
+- 各レバーの担当 Phase + 現状ステータス可視化
+- 各 Phase の必要条件を「月 NET 寄与」から逆算
+- 検証順序の改訂提案 (Phase 4-b 単体先行検証 → Phase 4-a 検証 → Phase 1 再開)
+- Phase 4-c (Regime filter) 新規追加提案
+
+#### 修正 2: industry_benchmark_knowledge_base.md (新規) を作成
+- WebSearch 18 件 + 業界文献統合
+- 5 レバーの定量根拠 (業界実証範囲)
+- BTC 5m bar 戦略の業界相場
+- Phase 別合格基準 PnL 紐付け手法
+- DSR (live degradation 30-70%) 反映で Phase 5 マージン要件改訂
+
+#### 修正 3: 検証順序の改訂 (Phase 4-b 単体先行検証)
+- 手動 Priority Entry + Triple Barrier Exit grid で「凍結 $370 → $630 (1.7×)」出るか早期検証
+- 1-2 セッションで Phase 4-b の現実性確認 → Phase 1 を頑張ってから死亡を防ぐ
+- PASS なら続行 / FAIL なら根本見直し
+
+#### 修正 4: Phase 1 v6 の処置
+- 保留 (アーカイブはしない・将来 Phase 4-b 検証後に再着手)
+- 監査結果 NO-GO + PIVOT 反映は Phase 1 再開時
+- Phase 4-b 単体検証 PASS 確認まで Phase 1 改修コード書かない (L-215 同型再演防止)
+
+#### 修正 5: 文書ヒエラルキー再整理
+- 上位: CLAUDE.md / WORKFLOW.md / **cc_target_pathway_design.md (新規・上位正本)**
+- 中位: cc_ml_design_spec.md / phase_flow_v4_with_recovery.md
+- 下位: phase_compliance_checklist.md
+- cc_ml_design_spec.md / phase_flow_v4 は本レシピ確定後に整合改訂
+
+**参照**: cc_target_pathway_design.md / industry_benchmark_knowledge_base.md / [[L-215]] (5 セッション設計逸脱の根本要因) / [[L-217]] (Phase 1 評価軸 Exit 非依存 3 指標化・本問題の表層対処) / [[L-218]] (監査依頼書テンプレ・並行整備)
+
+---
+
 ### L-218: 監査依頼書の auditor 宣言ブロック未整備による auditor session 誤認事案 (2026-05-26)
 
 **何が起きたか:**
