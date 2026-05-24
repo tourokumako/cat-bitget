@@ -358,7 +358,111 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-26 改訂32・**handoff_to_cc_v\* 廃止 + WORKFLOW 単一正本化 + phase_flow_v4 v5/v6 整合更新 + Phase 1 評価軸 5→3 指標 Exit 非依存化 (L-217) + Step I-4.5 本走で異常値スメル 8/8 ヒット (= L-215 設計逸脱事案発覚)**・次タスク = Phase 1 v6 6 案並列実装 (案 b/c/d/e/f 着手・3 指標 Exit 非依存判定))
+## 🔴 現在のフェーズ（2026-05-26 改訂33・**監査依頼書テンプレ整備 (L-218) + Phase 1 v6 6 案監査受領 (Verdict NO-GO + PIVOT) + 目標達成設計レシピ起草 → L-180 違反 partial revert (L-220) + industry_benchmark KB 維持 + 監査結果 §10 補足メモ追加**・次タスク = 現状把握 verify → phase_flow_v4 改善議論 + Phase 1 v6 Layer 3 投入 or Phase 4-b 単体検証）
+
+> **【現在の正本ブロック・改訂33・2026-05-26 セッション末（監査受領 + 目標達成設計試行と部分巻き戻し + 再発防止策完了）】**
+>
+> ### 本セッション (2026-05-26) 完了事項
+>
+> #### 1. 監査依頼書テンプレ整備 (L-218・commit `56ca797`)
+> - `.claude/audits/inputs/_template.md` 新設
+> - 冒頭に「⚠️ auditor 宣言ブロック」(auto-load 上書き + 即実行手順 + 禁止事項)
+> - cc_role §1.4.5 改善 10 追加 (テンプレ使用必須 + 宣言ブロック削除禁止 + 依頼書パス明示必須)
+> - WORKFLOW.md §監査エージェント 改訂 (経路 A CP 大型監査 / 経路 B 軽い意見聞き)
+>
+> #### 2. Phase 1 v6 6 案監査受領 (commit `744a21e`)
+> - 監査依頼書: `.claude/audits/inputs/2026-05-26_phase1_v6_6cases_methodology_audit_request.md`
+> - 監査結果: `.claude/audits/2026-05-26_phase1_v6_6cases_methodology_audit_report.md`
+> - **Verdict: NO-GO + PIVOT 混合判定**
+> - 改善方向性 7 件 (案 f AFML 標準実装 / B-10 アルゴ多様化 / 正則化強化 / CPCV / ROC AUC / B-15 拡張 / プロセス対策)
+>
+> #### 3. 目標達成設計レシピ起草 → partial revert (L-220・commit `adf62ab` → `da471c1`)
+> - まこさん指摘「目標達成するための、phase_flow_v4 のフローに不具合や改善すべき点が多々あるってこと?」を受けて起草
+> - `cc_target_pathway_design.md` (5.1× gap 分解 5 レバー) + `phase_flow_v5_design_proposal.md` 新設
+> - **L-180 違反**: 「Phase 4-b 単体検証で手動 Priority Entry (P1-P24) を使う」と書いた → CLAUDE.md L174「P1-P24 は解体・再設計」verify せず
+> - まこさん指摘「ML に変更してるんだよ。めちゃくちゃだな」で発覚
+> - **partial revert**: cc_target_pathway_design.md + phase_flow_v5_design_proposal.md + 元 L-219 削除
+>
+> #### 4. industry_benchmark_knowledge_base.md 維持
+> - WebSearch 18 件 + 業界文献統合・出典 URL 47 件明記
+> - 5 レバー定量根拠 (Entry 1.1-1.6× / Exit 1.3-2.0× / 並立 1.2-1.8× / Regime 1.1-1.6× / Sizing 1.1-1.3×)
+> - 月次 NET 業界相場 + Phase 別合格基準 PnL 紐付け業界手法 + BTC 5m 業界実証
+> - ML / 手動 Priority 区別と無関係の事実データ → 維持
+>
+> #### 5. 監査結果 §10 補足メモ追加 (commit `744a21e`)
+> - 監査本体 §1-§9 は触らず、末尾に §10「メインセッション CC による補足メモ」追記
+> - 次セッション着手前必須 / 取り組むべき問い / Phase 4-b 単体検証の Entry 信号選択 (**案 e predictions 推奨**) 明示
+> - 監査の独立性維持しつつ、本セッションで失った積み上げの問題意識を次セッションに引き継ぐ
+>
+> #### 6. 同型再演防止策 (feedback memory)
+> - `feedback_current_state_verify_before_design.md` (auto-memory) 新設
+> - 最重要マークで MEMORY.md に index → 次セッション SessionStart hook で auto-load
+> - 内容: ML pipeline 設計議論・提案前に「現役戦略 / 凍結対象 / 現フェーズ」を grep + Read で機械的証跡として出す
+>
+> #### 7. lessons L-218 + L-220 追加 (L-219 は欠番)
+> - L-218: 監査依頼書 auditor 宣言ブロック未整備事案
+> - L-220: 設計議論時の現状把握 verify 不足事案 (partial revert 経緯含む)
+>
+> ### 次セッション CC 優先順位
+>
+> 1. **優先 1 — 現状把握 verify (絶対遵守・最優先)**:
+>    - `feedback_current_state_verify_before_design.md` (auto-memory) 確認
+>    - `grep -n "現フェーズ\|凍結\|大方針転換" WORKFLOW.md CLAUDE.md`
+>    - 「凍結ベースライン $370 / 手動 Priority 凍結 / ML pipeline 現役」再確認
+>    - **これを出さずに設計提案・実装に着手するの絶対禁止** (= L-220 同型再演防止)
+> 2. **優先 2 — 監査結果 §10 補足メモ Read**:
+>    - `.claude/audits/2026-05-26_phase1_v6_6cases_methodology_audit_report.md` §10
+>    - phase_flow_v4 の gap (5 レバー観点) + 次セッションで取り組むべき問い 6 件確認
+> 3. **優先 3 — phase_flow_v4 改善議論 (本セッション失敗の正しい再構築)**:
+>    - 5 レバー観点で各 Phase の合格基準を再評価 (`industry_benchmark_knowledge_base.md` §2 参照)
+>    - Phase 4-c (Regime filter) 新規追加是非
+>    - 検証順序改訂 (Phase 4-b 単体先行検証)
+>    - Phase 5 マージン要件 (DSR 50% degradation → 月 $3,800 化)
+>    - Position sizing 動的化 (Half-Kelly + cluster 強度別)
+> 4. **優先 4 — Phase 4-b 単体検証 or Phase 1 v6 Layer 3 投入** (改善議論結果次第):
+>    - Phase 4-b 単体検証なら: **Phase 1 v6 案 e predictions を Entry 信号として使用** (手動 Priority NG)
+>    - Phase 1 v6 Layer 3 投入なら: 監査結果 §5 改善方向性 7 件反映 (案 f AFML 修正 / B-10 多様化 / 正則化 / CPCV / etc.)
+> 5. **優先 5 — セッション終了処理** (lessons + WORKFLOW 改訂34 + 改訂33 履歴降格)
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (毎セッション必読・読了ゲート機械的証跡対象)
+> - **WORKFLOW.md 改訂33 active** (本ブロック)
+> - **CLAUDE.md** (Layer 2 更新済・industry_benchmark_knowledge_base 行追加)
+> - **phase_flow_v4_with_recovery.md** (ML 学習正本・改善議論対象)
+> - **lessons_active.md 直近 5 件** (L-220 → L-218 → L-217 → L-216 → L-215)
+> - **cc_role.md §1.4 / §1.4.5 (改善 10 追加) / §1.4.6 / §1.4.7**
+> - **`feedback_current_state_verify_before_design.md`** (auto-memory・最重要マーク・auto-load)
+>
+> #### Layer 2 (改善議論着手時)
+> - **`.claude/memory/industry_benchmark_knowledge_base.md`**: 5 レバー定量根拠 + Phase 別合格基準 PnL 紐付け業界手法 (本セッション成果・維持)
+> - **`.claude/audits/2026-05-26_phase1_v6_6cases_methodology_audit_report.md`**: 監査結果 §1-§9 + §10 補足メモ (次セッション着手前必須事項)
+> - **`.claude/audits/inputs/_template.md`**: 監査依頼書テンプレ (L-218・auditor 宣言ブロック)
+> - **`.claude/audits/inputs/2026-05-26_phase1_v6_6cases_methodology_audit_request.md`**: 旧形式依頼書 (auditor 宣言ブロック以前)
+> - `cc_ml_design_spec.md`: ML pipeline 仕様・合否基準 (改善議論で改訂候補)
+> - `phase_compliance_checklist.md`: Phase 別 verify 義務 (改善議論で改訂候補)
+>
+> #### Layer 3 (リファレンス・必要時参照)
+> - `false_positive_incident_policy.md`: 関所 A-G + 類型 A-H + §0-1/0-2
+> - `exchange_spec.md`: Bitget USDT-FUTURES BTCUSDT スペック (audit#19 確定値)
+> - `lessons_archive.md`: L-152 以前
+> - 既存 Phase 1 v5 実装 (案 a/b/c/d/e/f script + summary JSON・案 a/b/c/d/e 完走 + 案 f smoke)
+>
+> #### データ・環境
+> - parquet 3 種 (train_2021_2024 / test_2025 / test_2026_q1) + .venv311
+> - Phase 1 v6 6 案実装 untracked script (= Layer 3 投入時に修正してから commit)
+> - **案 e predictions**: `results/priority_rebuild/ml_phase1_v5/_case_e_triple_barrier/predictions_train_2021_2024.parquet` (Phase 4-b 単体検証 Entry 信号候補)
+>
+> ### 目的整合性 1 行宣言 (cc_role §1.4.6)
+>
+> - **次タスク** = (1) 現状把握 verify → (2) 監査結果 §10 補足メモ Read → (3) phase_flow_v4 改善議論 (5 レバー観点) → (4) Phase 4-b 単体検証 or Phase 1 v6 Layer 3 投入
+> - **現フェーズ目的への貢献根拠** = 本セッションで partial revert された「目標達成設計」を、**正しい現状把握** (= ML pipeline が現役・手動 Priority は凍結) の上で再構築する。L-220 同型再演を防ぐため、設計議論前に必ず現状 verify を機械的証跡で出す。
+
+---
+
+## 🧊 改訂32 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-26 改訂32・**handoff_to_cc_v\* 廃止 + WORKFLOW 単一正本化 + phase_flow_v4 v5/v6 整合更新 + Phase 1 評価軸 5→3 指標 Exit 非依存化 (L-217) + Step I-4.5 本走で異常値スメル 8/8 ヒット (= L-215 設計逸脱事案発覚)**・次タスク = Phase 1 v6 6 案並列実装 (案 b/c/d/e/f 着手・3 指標 Exit 非依存判定))
 
 > **【現在の正本ブロック・改訂32・2026-05-26 セッション末（5 セッション分の設計逸脱発覚 + 構造的再発防止策完了）】**
 >

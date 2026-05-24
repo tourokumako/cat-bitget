@@ -7,6 +7,64 @@
 
 ---
 
+### L-220: 設計議論時の現状把握 verify 不足事案 + partial revert (2026-05-26)
+
+> **L-219 は partial revert で欠番** (commit `da471c1` で削除済・元 L-219 は「目標達成レシピ起草記録」だったが、レシピ本体が手動 Priority 前提誤認で削除されたため lesson も削除)
+
+**何が起きたか:**
+2026-05-26 Phase 1 v6 6 案監査完了後、まこさん指摘「目標達成するための、phase_flow_v4 のフローに不具合や改善すべき点が多々あるってこと?」を受けて、CC が phase_flow_v4 改善議論に着手。3 ファイルを新設:
+
+1. `industry_benchmark_knowledge_base.md` (WebSearch 18 件・業界相場 KB) ← 維持
+2. `cc_target_pathway_design.md` (目標達成レシピ・5 レバー分解) ← **★ ここで前提誤認**
+3. `phase_flow_v5_design_proposal.md` (議論用 v5 改訂案) ← 同前提
+
+cc_target_pathway_design.md §5.2 で「Phase 4-b 単体検証に手動 Priority Entry (P1-P24) を使う」と書いた。まこさん指摘「P1-P24 は旧手動の Entry ロジックだろ。ML に変更してる。めちゃくちゃだな」で発覚:
+
+- CLAUDE.md L174「P1-P24 は **解体・再設計**」
+- cc_role §1.7「手動 Priority は **スタートライン参照のみ**・凍結対象」
+- = 手動 Priority は **凍結中**で「現役 Entry 信号」ではない
+- CC は記憶ベースで「手動 Priority Entry」と書き、**verify せず**
+
+結果: commit `adf62ab` を partial revert (commit `da471c1`):
+- 削除: cc_target_pathway_design.md / phase_flow_v5_design_proposal.md / 元 L-219
+- 維持: industry_benchmark_knowledge_base.md (= 事実データ・ML/手動と無関係)
+- 維持: 監査結果 (有効) + 監査依頼書テンプレ (L-218・無関係)
+
+その後、監査結果ファイル末尾に **§10 補足メモ** 追加 (commit `744a21e`) で次セッション着手前必須事項を明示。
+
+**Why:**
+- cc_role §1.4 #4 (現状把握をスキップして改善議論に走る) の同型再演
+- L-180 (ドキュメント引用前 実装 verify 必須) 違反
+- false_positive §2 類型 G (虚偽報告) に近い粗さ
+- 設計議論のテンポを優先して、機械的 verify を後回しにした
+
+**How to apply (修正 1-4):**
+
+#### 修正 1: `feedback_current_state_verify_before_design.md` (auto-memory) 新設
+- 最重要マークで MEMORY.md に index 追加済 (auto-load 経路)
+- 内容: ML pipeline 設計議論・提案前に「現役戦略 / 凍結対象 / 現フェーズ」を grep + Read で機械的証跡として出す。記憶ベースで決め打ち禁止
+- 設計提案文書に必ず冒頭「現状把握 verify」セクションを置く義務
+
+#### 修正 2: 監査結果に §10 補足メモ追加 (commit 744a21e)
+- 監査結果ファイル末尾に「メインセッション CC による補足メモ」追加
+- 監査本体 §1-§9 には触らない (= 監査の独立性維持)
+- 次セッション着手前必須事項明示 (現状把握 verify / failure mode 確認 / 5 レバー担当 Phase 再確認)
+- 監査結果は次セッションで必ず Read されるため、L-219 lesson より到達率が高い
+
+#### 修正 3: Phase 4-b 単体検証の Entry 信号は ML pipeline 整合で
+- **手動 Priority Entry (= 凍結対象) NG**
+- **Phase 1 v6 案 e predictions (= ML pipeline 整合) を使う**
+- artifact: `results/priority_rebuild/ml_phase1_v5/_case_e_triple_barrier/predictions_train_2021_2024.parquet`
+
+#### 修正 4: 5 レバー分解の業界経験則は事実データとして維持
+- `industry_benchmark_knowledge_base.md` (WebSearch 18 件・出典 47 件) は ML/手動の区別と無関係
+- 次回設計議論時に **正しい現状把握** の上で再構築する材料として保持
+- Entry 改善 1.1-1.6× / Exit 改善 1.3-2.0× / 戦略並立 1.2-1.8× / Regime filter 1.1-1.6× / Position sizing 1.1-1.3× の業界実証範囲
+
+**参照**: feedback_current_state_verify_before_design.md (auto-memory・最重要) / commit `da471c1` (partial revert) / commit `744a21e` (監査結果保管 + §10) / [[L-180]] (doc verify before quote) / [[L-184]] (pre execution premise check) / cc_role §1.4 #4 / cc_role §1.7
+
+---
+
 ### L-218: 監査依頼書の auditor 宣言ブロック未整備による auditor session 誤認事案 (2026-05-26)
 
 **何が起きたか:**
