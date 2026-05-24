@@ -113,6 +113,17 @@ CC も Claude 系統 → Web Claude と同型のバイアスを持つ。`web_cla
 - 結果ファイル (`.claude/audits/`) を介してメインセッション再開時に CC が読み込み・反映 (L-213 機械的反映回避プロセス通す)
 - 例外: 軽い意見聞き (Critical/Major 判断を伴わない確認程度) はメインセッション内 Agent 起動可
 
+#### 監査依頼書テンプレート使用必須 (改善 10・2026-05-26 追加・L-218)
+
+- **新規監査依頼書は `.claude/audits/inputs/_template.md` を必ず雛形に使う** (コピーして `2026-XX-XX_<task>_cpN_audit_request.md` にリネーム + 中身埋め)
+- テンプレ冒頭の **「⚠️ auditor 宣言ブロック」を必ず含める** (auto-load される CLAUDE.md/cc_role.md/lessons_active.md/MEMORY.md は監査では参考のみ・着手前必読は依頼書記載 N 件のみ・即 Plan agent 起動・確認質問禁止 等を auditor session の CC に明示するブロック)
+- まこさんの呼びかけ文には**依頼書フルパスを明示**:
+  - ✅ `監査してほしい .claude/audits/inputs/2026-XX-XX_<task>_cpN_audit_request.md`
+  - ❌ `監査してほしい` 単独 (auditor session の CC が依頼書を推測する手間が発生)
+- テンプレ自体 (`_template.md`) は編集禁止・構造維持
+
+**背景 (L-218 事案)**: 2026-05-26 Phase 1 v6 6 案監査依頼で、依頼書末尾に「まこさんが別セッションで Plan 起動してください」と書かれていただけで、auditor 宣言ブロックがなかったため、auditor session の CC (= まこさんが新規セッションで開いた CC) が自分を「main session の CC」と誤認し、「メインの CC が監査するのは同型バイアスでマズい」と確認質問を発した。依頼書冒頭に auditor 宣言ブロックがあれば即 Plan agent 起動できた。
+
 #### WORKFLOW.md 改訂 31 以降の CP 監査一覧表との連携 (改善 3)
 - 監査実施時は WORKFLOW.md の「CP 監査一覧」表に追記 (実施日 / 対象タスク / 結果ファイルパス / 主要結論)
 - 表の更新を「セッション終了処理」のチェックリストに追加 (省略禁止)

@@ -7,6 +7,47 @@
 
 ---
 
+### L-218: 監査依頼書の auditor 宣言ブロック未整備による auditor session 誤認事案 (2026-05-26)
+
+**何が起きたか:**
+2026-05-26 Phase 1 v6 6 案方法論監査依頼で、まこさんが別 Claude Code セッションを新規起動して「監査してほしい <依頼書パス>」と呼びかけた。auditor session の CC (= 新規セッションで開いた CC) は依頼書を読了したが、依頼書冒頭に「あなた = auditor session の CC」と明示するブロックがなく、SessionStart hook で auto-load される CLAUDE.md / cc_role.md / lessons_active.md / MEMORY.md / phase_compliance_checklist.md 等の main session 用 context に引っ張られて自分を「main session の CC」と誤認。「メインの CC が監査するのは同型バイアスでマズいのでは?」と確認質問を発した。本来は即 Plan サブエージェントを起動して監査に入るべき。
+
+依頼書末尾には「まこさんが別 Claude Code セッションを開いて Plan サブエージェントを起動してください」と書いてあったが、これは **まこさん向け作業指示**で **auditor 側 (= auditor session の CC) 向けの「あなたが auditor です」明示** がなかった。
+
+**Why:**
+- SessionStart hook は main session / auditor session を区別せず、すべての session で CC main 用 context を auto-load する
+- auditor session の CC は「自分が auditor」と認識する手がかりがゼロ
+- cc_role §1.4.5 改善 9 (監査立ち上げ別セッション化) はルールとして文書化されていたが、auditor session 側に届く形 (= 依頼書冒頭) で明示されていなかった
+- これは形式チェック (文書化) だけでは止まらない構造的欠陥 (= L-215 同型・形式 vs 物理ゲートの差)
+
+**How to apply (改善 10・テンプレ整備):**
+
+#### 修正 1: 依頼書テンプレに「auditor 宣言ブロック」を組み込む
+- `.claude/audits/inputs/_template.md` (新規) を雛形として整備済 (2026-05-26)
+- 冒頭に「⚠️ auditor 宣言ブロック」を必須セクションとして配置:
+  - あなた = auditor session の CC
+  - auto-load される正本は参考のみ・着手前必読は本依頼書記載 N 件のみ
+  - 即 Plan agent 起動 + 結果ファイル Write までの即実行手順
+  - 確認質問禁止 + main/auditor 再確認質問禁止
+- テンプレ自体は編集禁止・構造維持
+
+#### 修正 2: cc_role §1.4.5 にテンプレ使用必須を明文化
+- 新規監査依頼書は `_template.md` を必ず雛形に使用
+- 「auditor 宣言ブロック」削除禁止
+- まこさんの呼びかけ文に依頼書フルパス明示必須 (auditor session が依頼書推測する手間排除)
+
+#### 修正 3: WORKFLOW.md §監査エージェントを経路 A (CP 大型監査) / 経路 B (軽い意見聞き) に分離
+- 経路 A = 別セッション + テンプレ宣言ブロック + Plan agent 起動 (Critical/Major 判定伴う本格監査)
+- 経路 B = メインセッション内 Agent 起動可 (確認程度)
+
+#### 修正 4 (将来オプション): auditor session 用 SessionStart hook 分岐
+- `.claude/audits/inputs/` 配下に未処理依頼書があるとき auto-load を最小化 + auditor 宣言を出す hook
+- 今回は修正 1-3 で十分・必要が出たら検討
+
+**参照**: cc_role §1.4.5 改善 10 / WORKFLOW.md §監査エージェント 経路 A・B / `.claude/audits/inputs/_template.md`
+
+---
+
 ### L-217: Phase 1 評価軸 5 指標の構造的矛盾発見 — Entry 単独評価と Trading 評価の混在事案 (2026-05-26)
 
 **何が起きたか:**
