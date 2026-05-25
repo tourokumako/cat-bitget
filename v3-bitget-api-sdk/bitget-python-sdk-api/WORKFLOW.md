@@ -392,17 +392,21 @@ Critical/Major 判定を伴わない確認程度はこちら。
 >    - cc_role §1.4.6 / §1.4.6.1 起動
 >    - **`cc_entry_logic_self_study.md` v6 全文 view** (= 2485 行・前セッション完成・必読)
 >
-> 2. **優先 2 — 🎯 工程 2-7 詳細詰め (= 設計確定) に進む** (= 案 B 学習完了したので、次は学習成果を実際の設計に反映):
+> 2. **優先 2 — 🎯 工程 2-7 詳細詰め (= 設計確定) = 「1 工程ずつまこさんと議論で詰める」確定** (2026-05-25 セッション末でまこさん指示):
+>    - **進め方確定** (= まこさん指示):
+>      - CC 単独で「最適改善フロー」を出さない (= L-220 同型違反回避)
+>      - 1 工程ずつ議論で詰める協働形式 = **CC = 学習成果から業界整合候補 + トレードオフ提示 / まこさん = 経験・戦略判断・最終決裁 / 実データ検証 = Phase 1 学習 + Phase 5 Replay で答え合わせ**
+>      - 各工程で cc_role §1.4.6.1 9 項目チェック (= 業界整合 verify) を機械的証跡で出す義務 (= L-228 改善 2)
+>      - feedback_no_options_during_discussion = 議論中は AskUserQuestion / 選択肢 A/B/C を出さず自然な対話形式
 >    - **工程 1 (regime)** = 固定ルール (ADX + DI 差) MVP の verify + 次段 HMM ML 化検討
->    - **工程 2 (Entry 候補生成)** = 業界標準シグナル組合せ (= テクニカル全体カバー網羅) で固定ロジック確定
+>    - **工程 2 (Entry 候補生成)** = 業界標準シグナル組合せ (= テクニカル全体カバー網羅) で固定ロジック確定 (= スタートライン超え設計の議論密度高)
 >    - **工程 3 (Entry ML)** = 案 g (= §18.5 異種 Stacking + Meta-Labeling 3 段) を Phase 1 v7 として実装計画
 >    - **工程 4 (Position Sizing)** = 動的合成方式 8 (Half-Kelly + Vol target + HRP/HERC + Thompson Sampling) 確定
 >    - **工程 5 (Exit ML)** = PPO 主軸 + Chandelier/Wilder Stop 比較 + Partial TP + ATR Trailing
 >    - **工程 6 (Risk 管理)** = TIPP + Dynamic Deleveraging + regime 別 CVaR
 >    - **工程 7 (Online 監視)** = ADWIN/KSWIN/PH + River + Champion-Challenger + Shadow + 3 階層 observability
->    - 順序: まこさんとの議論で 1 工程ずつ / または 工程 1-2 (= 固定ロジック先行) → 工程 3-4 → 工程 5-7 のセット詰め
->    - 1-3 セッション規模 (= 工程グループ別に分割可能)
->    - 各工程で cc_role §1.4.6.1 9 項目チェック (= 業界整合 verify) を機械的証跡で出す義務
+>    - 開始工程はまこさん判断 (= 候補: 工程 1 軽量 MVP verify / 工程 2 スタートライン超え議論密度高)
+>    - 1 工程あたり 1-2 セッション目安 (= 議論深度次第)
 >
 > 3. **優先 3 — 工程確定後の実装着手** (= Phase 0 v4 → Phase 1 v7 → Phase 2-7)
 > 4. **優先 4 — 本番運用に向けた Phase 7-c/7-d/7-e 実装** (= 運用層実装)
