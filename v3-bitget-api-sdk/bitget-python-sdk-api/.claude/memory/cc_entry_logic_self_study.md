@@ -1,8 +1,8 @@
-# cc_entry_logic_self_study.md — CC エントリーロジック自己学習資料 v4
+# cc_entry_logic_self_study.md — CC エントリーロジック自己学習資料 v5
 
-作成: 2026-05-25 (CC・v1) / 改訂 2026-05-27 (v2) / 改訂 2026-05-25 (v3) / 改訂 2026-05-25 (v4)
+作成: 2026-05-25 (CC・v1) / 改訂 2026-05-27 (v2) / 改訂 2026-05-25 (v3) / 改訂 2026-05-25 (v4) / 改訂 2026-05-25 (v5)
 位置付け: まこさん命令 (2026-05-25) 「指標、閾値、時間の使い方を勉強しなおして」を受けた CC の学習資料。
-状態: **v4 (= 領域 1-5 完成)**。WORKFLOW 改訂37 active 優先 2 = 案 B 学習継続 = 領域 5 (組合せ手法) を v4 §18 として追加。WebSearch 14 件 + AFML Ch.6 (Ensemble) / Ch.16 (Asset Allocation) + Lopez de Prado 2016 (HRP 原論文 SSRN 2708678) + Raffinot 2018 (HERC) + Hudson & Thames meta-labeling repo + Riskfolio-Lib + PyPortfolioOpt + arxiv 4 件 (Diversity 2407.12996 / FinRL Contest 2501.10709 / Hybrid Ensemble 2512.15738 / GAS Blending 2411.03035) + Viola-Jones cascade theory 引用。残り = 領域 6-7 を v5 として追加予定。
+状態: **v5 (= 領域 1-6 完成・約 86% 完成)**。WORKFLOW 改訂38 active 優先 2 = 案 B 学習継続 = 領域 6 (リスク管理) を v5 §19 として追加。WebSearch 8 件 + GARCH-family (TGARCH/EGARCH/CGARCH) + EWMA + HAR-RV + Chandelier Exit (ChartSchool) + Wilder Volatility Stop + LuxAlgo ATR + CPPI/TIPP (Wikipedia + QuantPedia + Core AXA-IM + Grokipedia) + Kelly criterion (Altrady + LBank + OSL + CMC + Substack) + Pyramiding (QuantStrategy + TradersPost + Forextester + FasterCapital + hoc-trade) + CVaR (MDPI 2026 + arxiv 2406.00610 + Riskfolio-Lib + Stan Uryasev) + Time-Series Momentum (CFA + AlphaArchitect + CME Group + ScienceDirect S1386418116301379 + CXO Advisory) + ML 動的 Stop (arxiv 2506.22055 + ScienceDirect 2025 RL+LSTM+XGBoost + Springer 2025) + GARCH crypto (Springer Future Business Journal 2025 + Medium + arxiv 2010.07402) 引用。残り = 領域 7 を v6 として追加予定。
 
 ---
 
@@ -684,20 +684,19 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 3. **regime 不在の致命性**: Phase 1 v6 全滅の根本原因 = regime context を入力に入れていない → HMM/GMM で工程 1 出力を独立に与える必要 (§14.6)
 4. **MTF 整合の欠落**: 現状 5m 単独学習 → 4h regime + 1h setup + 5m entry の 3 層構造が業界標準 (§13.2 Transformer / §14.6 HMM どちらでも MTF 入力で性能向上)
 
-### 15.2 残り 2 領域 (= 次セッション以降 WORKFLOW 改訂37 優先 2 残り・v4 で領域 5 完成)
+### 15.2 残り 1 領域 (= 次セッション WORKFLOW 改訂38 優先 2 残り・v5 で領域 6 完成)
 
 - ~~**領域 3 (ML 特徴量設計)**~~ → **v3 §16 で完成** (Fractional Differentiation / スケーリング / 特徴量選択 / 出来高系 / 板情報系)
 - ~~**領域 4 (ML 評価方法)**~~ → **v3 §17 で完成** (Walk-Forward / Purged K-Fold / CPCV / Embargo / DSR / PBO / Pipeline leak 防止 / Concept drift)
 - ~~**領域 5 (ML 組合せ手法)**~~ → **v4 §18 で完成** (階層 Stacking / Cascade / HRP+HERC+NCO / Meta-Labeling 多段詳細)
-- **領域 6 (リスク管理)**: §14.5 で Kelly 網羅・残り = Volatility targeting 詳細 (= Garch-DCC / Vol Forecast) / Stop-loss 業界手法 (= ATR-based / Chandelier / Volatility-Stop) / Drawdown control (= CPPI / TIPP) / Position scaling
+- ~~**領域 6 (リスク管理)**~~ → **v5 §19 で完成** (Volatility targeting / Stop-loss 業界手法 / Drawdown control TIPP / Position scaling Kelly + Pyramiding / 補強 risk measure)
 - **領域 7 (監視・運用)**: §17.8 で部分網羅・残り = Online learning (= incremental LightGBM / River) / A/B testing (= multi-armed bandit) / Champion-Challenger 構造 / Shadow deployment
 
-### 15.3 次セッションの推奨着手順位 (v4 完成 → 次は領域 6-7)
+### 15.3 次セッションの推奨着手順位 (v5 完成 → 次は領域 7 → 工程詳細詰め)
 
-1. **領域 6 (リスク管理)** を先行: 工程 4 Position Sizing + 工程 5 Exit ML の損切設計確立
-2. **領域 7 (監視・運用)** を並行 or 後段: 工程 7 Online 監視の業界標準確立 + 全 Phase 統合監視
-3. 各領域 WebSearch 10-20 件 + 教科書 chapter 引用 (cc_role §1.4.6.1) を継続
-4. 領域 6-7 完成後 → 工程 2-7 詳細詰め (= WORKFLOW 改訂37 active 優先 3) に進む
+1. **領域 7 (監視・運用)** を v6 として追加: 工程 7 Online 監視の業界標準確立 + 全 Phase 統合監視
+2. WebSearch 10-20 件 + 教科書 chapter 引用 (cc_role §1.4.6.1) を継続
+3. 領域 7 完成後 → 工程 2-7 詳細詰め (= WORKFLOW 改訂38 active 優先 3) に進む
 
 ### 15.4 cat-bitget 設計判断の確定事項 (v3 学習成果から拡張)
 
@@ -724,6 +723,16 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 - **工程 3 + 工程 4 接続 (= §18.4)**: Meta-Labeling 多段詳細 = primary (= 異種 stacking) → secondary (= 確率 calibrate + Half-Kelly に投入) → tertiary 候補 (= regime 別 secondary を分離学習・案 f 失敗の構造的補正)
 - **多様性 verify (= §18.1)**: base learner 間の予測 correlation を r < 0.6 に維持 (= arxiv 2512.15738 実証ベンチマーク)。同一アルゴ (全 LightGBM) で stack しても効果薄を Phase 1 v6 6 案全滅で実証済 (L-223 + L-224)
 - **業界整合性 (= §18.5)**: HRP は OOS で Mean-Variance 比 robust だが、crypto 単一資産 (BTC) では 1/N (= buy-and-hold) に劣後事例あり (Quantopian 実証) → cat-bitget では「cluster × Exit type」の strategy combination に HRP/HERC を適用する位置付け (= asset allocation でなく strategy allocation)
+
+#### v5 (= 領域 6) の追加確定事項
+- **工程 4 (Position Sizing) 業界整合 verify (= §19.1 + §19.4)**: phase_flow_v4 v7 改善 4 動的合成方式 8 (= Half-Kelly + Vol target + cluster 強度別) は業界 default 範囲内・Quarter-Kelly 比較追加候補・cluster 強度別配分は §18.3 HRP/HERC で robust 化候補と統合
+- **工程 5 (Exit ML) 業界比較ベースライン拡張 (= §19.2)**: PPO 主軸維持 + **Chandelier Exit (N=288 5m / M=2.5 crypto 調整) + Wilder Volatility Stop (N=84 / M=2.0) + Fixed % Stop (= 旧 Priority baseline)** の 3 比較を Phase 4-b に追加候補。Partial TP + ATR Trailing (= 50% fixed TP + 50% ATR trail) を組合せ追加
+- **工程 6 (Risk 管理) レイヤー新設 (= §19.3)**: **TIPP drawdown floor (X=0.9・MDD < 10% target)** + **Dynamic Deleveraging (= drawdown / vol spike / regime trigger の OR)**。CPPI は whipsaw リスクで見送り
+- **Phase 5 / 6-b 合格判定多重防御 (= §19.5)**: 月次 NET ≥ $1,900 全月クリア (必達) + DSR > 0.95 + PBO < 0.5 (v3) + **Calmar > 2.0 + CVaR_95 < $X/月 + Sortino > 1.5** (v5) の多重防御
+- **Volatility Targeting 主軸 (= §19.1)**: σ_target = 年率 10-15% (= crypto base annual vol 60-80% から 0.15-0.25x deleveraging) + HAR-RV baseline + EGARCH(1,1) で leverage effect 補強・0.5x-2.0x clip
+- **MAX_ADDS 業界整合**: 旧 Priority MAX_ADDS=5 (= 平均建値型 pyramiding) は業界 default 上端 3-5 ✅・**層 size は progressively 縮小**が業界推奨 (= 現状均等 size の可能性あり要 verify)・Volatility-Adjusted Pyramiding (= ATR で layer 間隔調整) を Phase 7-c 候補
+- **0.12 BTC 合計上限制約**: vol targeting / TIPP / HRP / Half-Kelly / Pyramiding 全層で得られる weight が 0.12 を超えても **必ず clip** (= CLAUDE.md §0-2 絶対規定・全リスク管理手法で義務)
+- **regime 別 risk measure 動的閾値 (= MDPI 2026 業界推奨)**: down regime で CVaR / Calmar 厳しめ・range regime で緩め → 工程 1 regime 出力と工程 6 risk threshold を動的接続
 
 ---
 
@@ -1590,6 +1599,385 @@ HRP + Mean-Variance のハイブリッド:
 
 ---
 
+## §19 ML リスク管理 (WORKFLOW 改訂38 領域 6・業界カタログ)
+
+> v5 追記 (2026-05-25)。**「保有期間中の損失をどう抑え、ポジションサイズをどう動的に調整するか」の業界カタログ**。Phase 1 v6 6 案全滅で確定した 6 軸多様性欠落 (= L-226 §18.5 = ボラ ML 欠陥 / アルゴ多様性 / bar 種別 / cascade 不在 / strategy allocation 固定 / Meta-Labeling 同型) の上に、本領域は **工程 4 (Position Sizing) + 工程 5 (Exit ML) + 工程 6 (Risk 管理)** の損失抑制レイヤーを業界整合で固める。CLAUDE.md §0-2 (= ポジション 0.12 BTC 合計上限) と整合した「合計内での動的配分」「volatility-aware deleveraging」「Maximum DD floor」を中心に整理。
+
+### §19.1 Volatility Targeting (= ボラ目標で動的レバ調整)
+
+#### 業界の根本構造
+
+**volatility targeting** = 「ポートフォリオの ex-ante 年率ボラを一定値 (= σ_target) に保つよう、ボラ予測値に反比例してレバを調整する」業界 default 手法 ([CFA Institute 2019 The Impact of Volatility Targeting](https://rpc.cfainstitute.org/research/cfa-digest/2019/07/dig-v49-7-2) / [ScienceDirect S1386418116301379](https://www.sciencedirect.com/science/article/abs/pii/S1386418116301379)):
+
+```
+weight_t = (σ_target / σ_predicted_t) × base_weight
+```
+
+- σ_target = 例: 年率 10% (= [CME Group improving TSM](https://www.cmegroup.com/education/files/improving-time-series-momentum-strategies.pdf) で portfolio target 10%)
+- σ_predicted_t = t 時点のボラ予測 (= GARCH / EWMA / HAR-RV)
+- レバ範囲 = 通常 0.5x - 2.0x で clip (= 過剰レバ防止)
+
+#### 業界実証 (= Time-Series Momentum との接続)
+
+[ScienceDirect Time series momentum and volatility scaling](https://www.sciencedirect.com/science/article/abs/pii/S1386418116301379): 「**TSM 戦略の profitability は volatility scaling に driven されている**・vol scaling なしの TSM = buy-and-hold と同等」を実証。[AlphaArchitect Time Series Momentum Refresh](https://alphaarchitect.com/time-series-momentum-aka-trend-following-the-historical-evidence/) + [CME Group Improving TSM](https://www.cmegroup.com/education/files/improving-time-series-momentum-strategies.pdf): 12-month TSM の annualized Sharpe = 0.76 (volatility-scaled) で trend-following 業界 default。
+
+#### Volatility 予測手法の業界比較 (= §14.3 の補強)
+
+| 手法 | 業界実証 (BTC) | 業界推奨 |
+|---|---|---|
+| **EWMA (λ=0.94)** | 簡易・短期反応高 | baseline (= RiskMetrics 由来) |
+| **GARCH (1,1)** | persistence > 0.7・shock sensitivity 9-37% | 業界 default |
+| **EGARCH** | **BTC で最良** (= Asymmetric leverage effect 捕捉) | crypto 推奨 |
+| **TGARCH** | BTC で 1 位 ([Springer 2025 Future Business Journal](https://link.springer.com/article/10.1186/s43093-025-00568-w)) | crypto 第 2 候補 |
+| **HAR-RV** | daily / weekly / monthly RV 重ね回帰・1-day RMSE 280 (GARCH 335 超え) | 業界実証あり |
+| **LSTM / CNN-LSTM** | 全 horizon で GARCH 超え (intraday 含む) | ML 系優位 |
+
+出典: [Forecasting Crypto Volatility with GARCH Models (Medium)](https://medium.com/@yavuzakbay/forecasting-crypto-volatility-with-garch-models-6a67822d1273) / [RAUSP Management Journal crypto returns volatility](https://www.emerald.com/rausp/article/60/1/220/1276890/Cryptocurrency-price-returns-volatility-modeling) / [Hybrid intraday Bitcoin volatility (ScienceDirect 2025)](https://www.sciencedirect.com/science/article/abs/pii/S106294082500066X) / [Bitcoin Spot & Option Markets Horserace (arxiv 2010.07402)](https://arxiv.org/pdf/2010.07402)
+
+#### α + β ≈ 1 = Near-IGARCH (= 業界実証)
+
+[Springer 2025](https://link.springer.com/article/10.1186/s43093-025-00568-w) + 業界教科書: BTC で α (= shock sensitivity) 9-37% + β (= persistence) > 0.7 → α + β ≈ 1 で **near-IGARCH (= 単位根性)** = volatility shock の影響が **極めて長期持続**。volatility regime の遷移を捕捉できない GARCH(1,1) のみでは BTC の長期 vol pattern を学習困難 → EGARCH (= leverage effect) または HAR-RV (= cascade memory) が業界推奨。
+
+#### cat-bitget 適用判断 (= 工程 4 + 工程 6 主軸候補)
+
+- **工程 4 (Position Sizing) の必須入力**: σ_target = 年率 10-15% (= crypto は 60-80% annual vol で baseline → 0.15-0.25x deleveraging 目安)
+- **σ_predicted_t 主軸**: HAR-RV を baseline (= §14.3 整合) + EGARCH(1,1) で leverage effect 補強候補
+- **0.12 BTC 合計上限制約との整合**: vol targeting で得られる weight が 0.12 BTC を超えても **必ず clip** (= CLAUDE.md §0-2 絶対規定)
+- **既存 Half-Kelly との接続**: Half-Kelly (= §14.5) で個別 strategy size + vol targeting で portfolio 全体 deleveraging の **2 段構造** = 業界 default ([CME Group TSM](https://www.cmegroup.com/education/files/improving-time-series-momentum-strategies.pdf))
+- **注意 (= 業界実証)**: [CXO Advisory Volatility Scaling momentum](https://www.cxoadvisory.com/volatility-effects/volatility-scaling-for-momentum-strategies/): 過度の vol scaling は **Sharpe 改善せず・ボラ高時の deleveraging で profitable trend を取り損ねる事例あり** → cat-bitget では 0.5x-2.0x で clip + drawdown trigger 併用が業界整合
+
+### §19.2 Stop-Loss 業界手法 (= ATR-based / Chandelier / Volatility-Stop / ML 動的)
+
+#### 業界 4 主流手法
+
+| 手法 | 計算式 | 業界用途 |
+|---|---|---|
+| **ATR Trailing Stop (= Chandelier Exit)** | `Stop = Highest_High(N) - ATR(N) × M` | Chuck LeBeau 発・最普及・trend-following default |
+| **Wilder Volatility Stop** | `Stop = Close - ATR(N) × M` (より tight) | Welles Wilder 発・active trading 向き |
+| **Fixed % Stop** | `Stop = Entry × (1 - SL_PCT)` | 業界保守 default・cat-bitget 旧 Priority 構造 |
+| **ML 動的 Stop** | XGBoost/LSTM/PPO で動的予測 | 業界実証あり (= [SD 2025 RL+LSTM+XGBoost](https://www.sciencedirect.com/science/article/abs/pii/S1568494625003400)) |
+
+#### Chandelier Exit 業界 default パラメータ ([ChartSchool](https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-overlays/chandelier-exit) + [StratBase.ai](https://stratbase.ai/en/blog/average-true-range-trailing-stop))
+
+| パラメータ | 業界推奨 | cat-bitget 5m 接続 |
+|---|---|---|
+| **lookback N** | 22 (= 1 ヶ月分・daily) | 5m: N=288 (= 1 日) or N=576 (= 2 日) |
+| **ATR multiplier M** | **3.0** (= 業界 sweet spot・profit factor 1.61) | crypto 高 vol → M=2.0-2.5 候補 |
+| **trail 方向** | LONG は最高高値から下降・SHORT は最低安値から上昇 | 同様 |
+| **再計算** | each bar で ATR 再計算 (= dynamic) | trending 中の premature exit 防止 |
+
+#### Wilder Volatility Stop ([StratBase.ai](https://stratbase.ai/en/blog/average-true-range-trailing-stop))
+
+- N=7 / M=2.0 が業界 default (= 短期 + tight)
+- BTC 4H 実証: Wilder (7, 2.0) は **短期 trade で profit/trade 高い**・**長期 trend で pullback に shake out されやすい**
+- Chandelier (22, 3.0) は **長期 trend に強い**・**短期で profit/trade 劣る** → 戦略 horizon に応じて選択
+
+#### Multiplier 選定の業界目安
+
+| Multiplier | 業界用途 |
+|---|---|
+| **1.5× ATR** | 短期 / 低 vol 環境 |
+| **2.0× ATR** | swing trading 4H chart default |
+| **3.0× ATR** | trend-following daily chart default (= 最普及) |
+| **4.0×+** | 長期 trend follow / 高 vol (= crypto BTC で要検討) |
+
+[LuxAlgo 5 ATR Stop-Loss Strategies](https://www.luxalgo.com/blog/5-atr-stop-loss-strategies-for-risk-control/): 5 つの ATR ベース戦略 (= fixed multiplier / dynamic / regime-aware / volatility band / hybrid) を実装比較
+
+#### Partial Take-Profit + ATR Trailing の組合せ (= 業界 default パターン)
+
+業界推奨 ([StratBase.ai](https://stratbase.ai/en/blog/average-true-range-trailing-stop)):
+
+1. **50% を fixed target で利確** (= 例 2:1 risk-reward = 利確 = 2 × SL)
+2. **残り 50% を ATR trailing stop で hold** → 大トレンドに乗る
+3. 結果 = profit lock + tail capture の両立
+
+cat-bitget Phase 4-b 既存 12 種 Exit (= TP_PCT / TIME_EXIT / TRAIL_RATIO / etc.) の中で `TRAIL_RATIO` が ATR ベースか定率かは要 verify。業界整合形は ATR ベース。
+
+#### ML 動的 Stop-Loss (= 業界実証)
+
+[ScienceDirect 2025 Crypto DRL with LSTM XGBoost feature selection](https://www.sciencedirect.com/science/article/abs/pii/S1568494625003400): **XGBoost で feature 選別 → DDQN (Double Deep Q-Network) + LSTM/BiLSTM で trading signal 生成** → key trading metric 改善。動的 stop-loss を ML で予測する業界実証あり。
+
+[LSTM+XGBoost arxiv 2506.22055](https://arxiv.org/pdf/2506.22055): BTC/ETH/Doge/LTC で LSTM (temporal) + XGBoost (非線形 + sentiment / macro auxiliary) hybrid model 評価。R² ~0.98 を Gradient Boosting / XGBoost で達成 ([Springer 2025 ML crypto trading optimization](https://link.springer.com/article/10.1007/s44163-025-00519-y))。
+
+[Stop-Loss 動的調整 (Medium DappFort)](https://www.dappfort.com/blog/machine-learning-models-for-predictive-crypto-trading-lstm-and-reinforcement-learning/): ML で **volatility cluster ごとに stop-loss 個別最適化** → 単一 SL_PCT より drawdown 削減。
+
+#### cat-bitget 適用判断 (= 工程 5 Exit ML 主軸候補)
+
+- **業界整合形 (= phase_flow_v4 v7 改善 4 主軸 1 + 比較 N 構造に追加)**:
+  - 主軸 = PPO (= §13.4 + §14.7 + 78% success rate)
+  - 比較 1 = Chandelier Exit (N=288 5m / M=2.5 crypto 高 vol 調整) — **新規追加候補**
+  - 比較 2 = Wilder Volatility Stop (N=84 / M=2.0) — **新規追加候補**
+  - 比較 3 = Fixed % Stop (= 旧 Priority 構造 / 現状 SL_PCT) — 維持 baseline
+- **Partial TP + ATR Trailing**: Phase 4-b 既存 12 種 Exit の TRAIL_RATIO + TP_PCT の組合せパターンに「50%TP_PCT 固定 + 50%ATR trailing」を追加候補
+- **ML 動的 (Phase 1 v7+)**: XGBoost で stop-loss 確率予測 (= §14.7) のサブ候補
+
+### §19.3 Drawdown Control (= CPPI / TIPP / Max DD constraint)
+
+#### CPPI (Constant Proportion Portfolio Insurance) ([Wikipedia](https://en.wikipedia.org/wiki/Constant_proportion_portfolio_insurance) + [QuantPedia Introduction to CPPI](https://quantpedia.com/introduction-to-cppi-constant-proportion-portfolio-insurance/) + [QuantifiedStrategies CPPI Position Sizing](https://www.quantifiedstrategies.com/constant-proportion-portfolio-insurance-cppi-position-sizing/))
+
+##### 基本構造
+
+```
+Floor    = 例 80% × initial_capital (= 損失上限 20%)
+Cushion  = Portfolio_t - Floor
+Risky_t  = m × Cushion       (m = multiplier・典型 3-5)
+Safe_t   = Portfolio_t - Risky_t
+```
+
+- m × Cushion でリスク資産 weight を動的調整
+- 損失で Cushion が縮小 → 自動的に risky deleveraging
+- 利益で Cushion が拡大 → 自動的に risky leveraging
+- **floor 触れる前に risky weight 0 に収束 = drawdown protection**
+
+##### 業界の弱点 (= Buy-High Sell-Low 構造)
+
+[Wikipedia CPPI](https://en.wikipedia.org/wiki/Constant_proportion_portfolio_insurance): 「**Compared to a bond + call strategy, the drawback of the CPPI is that it follows a buy high sell low strategy. Volatility will hurt the performance of the investment, and once the strategy has deleveraged, it never recovers.**」 = whipsaw 環境で trade-off 大。
+
+#### TIPP (Time Invariant Portfolio Protection・Estep & Kritzman 1988)
+
+[Grokipedia CPPI](https://grokipedia.com/page/Constant_proportion_portfolio_insurance) + [Core AXA-IM CPPI/TIPP](https://core.axa-im.com/investment-strategies/multi-asset/insights/understanding-portfolio-insurance-management-cppitipp) + [QuantPedia TIPP](https://quantpedia.com/time-invariant-portfolio-protection/):
+
+CPPI 拡張 = **floor を peak portfolio value × X% (= 動的高水位線) に追従**:
+
+```
+Floor_t = max(Floor_{t-1}, X% × Portfolio_t)     # ratchet up
+Cushion_t = Portfolio_t - Floor_t
+Risky_t = m × Cushion_t
+```
+
+- 利益が出ると floor も上昇 (= 利益保護)
+- Max DD を **(1 - X%)** 以内に確率的に維持
+- 業界相場: X = 0.8-0.95 (= drawdown 上限 5-20%)
+
+#### Max DD Constraint + CVaR (= 業界数理整理)
+
+[Riskfolio-Lib HCPortfolio docs](https://riskfolio-lib.readthedocs.io/en/latest/hcportfolio.html) + [Portfolio Optimization Book Alt Risk Measures](https://portfoliooptimizationbook.com/book/10.2-alternative-risk-measures.html) + [scikit-portfolio CVaR](https://scikit-portfolio.github.io/scikit-portfolio/efficient_cvar/):
+
+| risk measure | 業界用途 | crypto 適性 |
+|---|---|---|
+| **Max DD (= MDD)** | tail risk 直接測定 | ✅ crypto 必須 ([Amberdata Crypto Portfolio](https://blog.amberdata.io/crypto-portfolio-optimization-balancing-risk-and-return-in-a-dynamic-market)) |
+| **CVaR (= Expected Shortfall)** | tail loss の期待値 (= VaR 超え時の平均損失) | ✅ crypto 業界推奨 ([MDPI 2026 CVaR crypto regime](https://www.mdpi.com/2227-7072/14/3/53)) |
+| **Sortino Ratio** | downside semi-deviation でリターン除算 | ✅ crypto fat-tailed return に対応 |
+| **Calmar Ratio** | annualized return / MDD | ✅ tail risk 重視 crypto 向き |
+
+##### CVaR 制約付き portfolio optimization の業界実証
+
+[arxiv 2406.00610 Robust Covariance + CVaR Constraints](https://arxiv.org/html/2406.00610v1): CVaR 制約 portfolio optimization の robust 化 ([Stan Uryasev CVaR Algorithms](https://www2.mathematik.hu-berlin.de/~romisch/SP01/Uryasev.pdf) の発展)
+
+[MDPI 2026 CVaR Crypto Regime](https://www.mdpi.com/2227-7072/14/3/53): 「**Effective CVaR-based portfolio management in cryptocurrency markets requires a regime- and tail-depth-dependent approach**」= 単一 CVaR 制約より regime 別 CVaR 制約が業界推奨。
+
+[Amberdata Crypto Portfolio](https://blog.amberdata.io/crypto-portfolio-optimization-balancing-risk-and-return-in-a-dynamic-market): 「Calmar Ratio + MDD = crypto portfolio tail risk 評価の業界 default + VaR + CVaR で liquidation event 確率視点」を併用が業界 best practice。
+
+#### Dynamic Deleveraging (= 動的 leverage 削減)
+
+業界実装パターン (= 上記 3 手法の統合):
+
+1. **drawdown trigger**: 直近 N 日 drawdown > X% → leverage 0.5x (= half-cut)
+2. **vol spike trigger**: realized_vol > μ + 2σ → leverage 0.5x (= §19.1 vol targeting 整合)
+3. **regime trigger**: regime 判定 (= 工程 1 出力) で down/volatile regime → leverage 0.5x
+4. **複合**: 上記 3 trigger を OR 結合 → 「**deleveraged_weight = base_weight × min(triggers)**」
+
+#### cat-bitget 適用判断 (= 工程 6 Risk 管理 主軸候補)
+
+- **TIPP 主軸候補 (= drawdown floor 動的 ratchet)**:
+  - X = 0.9 (= MDD < 10% 目標) または X = 0.85 (= MDD < 15%)
+  - m = 3-5 (= multiplier・cushion による risky weight 拡大率)
+  - **0.12 BTC 合計上限と整合**: TIPP で得られる weight が 0.12 を超えても **必ず clip** (= CLAUDE.md §0-2 絶対規定)
+- **CVaR 制約 (= Phase 5 / 6-b 合格判定追加候補)**:
+  - 月次 NET ≥ $1,900 (= 現状必達) + DSR > 0.95 + PBO < 0.5 (= L-225 §17.4-5) + **CVaR_95 < $X (= 月次損失下限)** で多重防御
+  - regime 別 CVaR (= MDPI 2026 業界推奨) で「down regime での CVaR 厳しめ・range regime で緩め」の動的閾値
+- **Dynamic Deleveraging**:
+  - drawdown trigger: 直近 30 日 DD > 10% → leverage 0.5x
+  - vol spike trigger: realized_vol_5m / realized_vol_30d > 2.0 → leverage 0.5x
+  - regime trigger: 工程 1 出力 = down/volatile → leverage 0.5x
+- **CPPI は見送り (= whipsaw リスク)**: crypto 高 vol で buy-high-sell-low 構造が deleverage 損失累積 → TIPP の方が業界整合
+
+### §19.4 Position Scaling (= Kelly criterion 詳細 + Pyramiding + Scale-in / Scale-out)
+
+#### Kelly criterion 業界詳細 (= §14.5 の補強)
+
+##### 業界数式 (= Bitcoin 高 vol 環境調整)
+
+```
+f* = (b × p - q) / b     # 標準 Kelly
+b  = expected_win / expected_loss   # reward/risk ratio
+p  = win_rate
+q  = 1 - p
+```
+
+##### Half / Quarter / One-Tenth Kelly の業界相場
+
+[Altrady Kelly Crypto](https://www.altrady.com/blog/risk-management/kelly-criterion-crypto-position-sizing) + [LBank Kelly Crypto Risk Management](https://www.lbank.com/explore/mastering-the-kelly-criterion-for-smarter-crypto-risk-management) + [Medium Kelly Crypto](https://medium.com/@tmapendembe_28659/kelly-criterion-for-crypto-traders-a-modern-approach-to-volatile-markets-a0cda654caa9) + [OSL Kelly Bet Crypto](https://www.osl.com/hk-en/academy/article/what-is-the-kelly-bet-size-criterion-and-how-to-use-it-in-crypto-trading) + [CMC Kelly Crypto Academy](https://coinmarketcap.com/academy/article/what-is-the-kelly-bet-size-criterion-and-how-to-use-it-in-crypto-trading):
+
+| Fraction | 業界推奨 | crypto 高 vol 適性 |
+|---|---|---|
+| **Full Kelly (1.0×f*)** | ❌ 非推奨 (= DD 50-80%) | 致命的 |
+| **Half Kelly (0.5×f*)** | ✅ プロ業界 default | 成長率 ~75% Full + DD ~50% 削減 |
+| **Quarter Kelly (0.25×f*)** | ✅ crypto 推奨 | 推定誤差バッファ最大 |
+| **One-Tenth Kelly (0.10×f*)** | ✅ ultra-conservative / 大規模資金 | プロ業界 10-25% Full 多用 |
+
+「**Most professional traders use between 25% and 50% of the Kelly recommendation, also known as Quarter-Kelly or Half-Kelly**」 ([Altrady](https://www.altrady.com/blog/risk-management/kelly-criterion-crypto-position-sizing)) = phase_flow_v4 v7 改善 4 で Half-Kelly 採用は業界整合内、crypto 高 vol 考慮で Quarter-Kelly も視野。
+
+##### Stephen Perrenod Bitcoin Kelly ([Substack](https://stephenperrenod.substack.com/p/kelly-criterion-for-bitcoin))
+
+Bitcoin 特有の Kelly 適用: long-term mean reversion + log-return 分布の skewness 補正 → 通常 Kelly より厳格な fraction 推奨 (= 業界保守姿勢)。
+
+#### Pyramiding 戦略 (= 利益再投資型 scale-in) 
+
+[QuantStrategy.io Pyramiding Strategy Ultimate Guide](https://quantstrategy.io/blog/the-ultimate-guide-to-pyramiding-strategy-in-trading/) + [QuantStrategy Mathematics of Pyramiding](https://quantstrategy.io/blog/the-mathematics-of-pyramiding-calculating-position-sizes/) + [QuantStrategy Pyramid Trending](https://quantstrategy.io/blog/pyramid-trading-for-trending-markets-strategies-for/) + [TradersPost Pyramiding Guide](https://blog.traderspost.io/article/pyramiding-trading-strategies-guide):
+
+##### 基本構造
+
+- 「**勝ち pos に追加・負け pos には追加しない**」 = mathematical "Zero-Risk" 原則
+- pyramiding 各層は **progressively 縮小** (= 例: 第 1 層 100% → 第 2 層 50% → 第 3 層 25%)
+- 業界 default 層数: 3-5 (= 5+ は overhead 大)
+
+##### Volatility-Adjusted Pyramiding (= BTC 高 vol 対応)
+
+[QuantStrategy Pyramid Trending](https://quantstrategy.io/blog/pyramid-trading-for-trending-markets-strategies-for/): 「**During a Bitcoin bull run, traders often use Volatility-Adjusted Pyramiding because of the high intraday swings, with layers added further apart to avoid being stopped out by noise**」= ATR で layer 間隔を動的調整。
+
+#### Scale-in / Scale-out 業界実装
+
+[hoc-trade Coinmonks Medium Scale-in/out](https://medium.com/coinmonks/scale-in-and-scale-out-of-crypto-trades-with-powerful-risk-management-trading-academy-891e5366d517) + [FasterCapital Scaling In Pyramiding](https://www.fastercapital.com/content/Scaling-In--Step-by-Step--Scaling-In-Techniques-for-Pyramiding.html) + [Forextester Scale Out & In Guide](https://forextester.com/blog/scale-out-and-scale-in-trading/):
+
+| 手法 | 仕組み | 業界用途 |
+|---|---|---|
+| **Scale-in** (= 段階 entry) | 価格レベル / vol / TF 整合で順次 entry | DCA (= dollar-cost averaging) 整合 |
+| **Scale-out** (= 段階 exit) | TP_PCT 層ごとに partial close | profit lock + tail capture (= §19.2 整合) |
+| **Rule-based** | 固定 trigger (= 例: 10 bps ごと) | static / 単純 |
+| **Model-driven** | ATR / vol / ML 確率で動的 layer | dynamic / 業界 trend |
+
+> 「As trading moves increasingly toward automation, static, rule-based scaling (e.g., adding every 10 basis points) is being replaced by dynamic, model-driven approaches.」 ([Forextester](https://forextester.com/blog/scale-out-and-scale-in-trading/))
+
+#### Bitcoin Futures 特有の Position Sizing
+
+[FasterCapital Scaling In](https://www.fastercapital.com/content/Scaling-In--Step-by-Step--Scaling-In-Techniques-for-Pyramiding.html): 「**Futures trading is inherently geared towards position sizing strategies because of the high leverage and capital efficiency it provides; pyramiding in futures allows you to maximize this capital efficiency, but it requires a deep understanding of tick values and contract specifications**」= cat-bitget の MAX_ADDS=5 (= 平均建値型 add) は業界整合。
+
+#### cat-bitget 適用判断 (= 工程 4 Position Sizing 詳細詰め候補)
+
+- **phase_flow_v4 v7 改善 4 (= 動的合成方式 8 = Half-Kelly + Vol target + cluster 強度別配分) の業界整合 verify**:
+  - Half-Kelly は業界 default 範囲内 ✅
+  - 「cluster 強度別配分」は HRP / HERC で robust 化候補 (= §18.3 L-226 整合)
+  - crypto 高 vol 環境で Quarter-Kelly も視野 (= 推定誤差バッファ大)
+- **MAX_ADDS=5 (= 旧 Priority 平均建値型) の業界整合**:
+  - Pyramiding 層数 3-5 業界 default の上端 ✅
+  - **層 size は progressively 縮小**が業界推奨 → 現状の旧 Priority MAX_ADDS は均等 size の可能性あり (= 要 verify)
+  - Volatility-Adjusted Pyramiding (= ATR で layer 間隔調整) を Phase 7-c 実装候補
+- **Scale-out 強化**: §19.2 partial TP + ATR trailing と整合 → Phase 4-b 既存 12 種 Exit に「50% TP_PCT 固定 + 50% ATR trail」追加候補
+- **0.12 BTC 合計上限制約**: pyramiding 全層合計 ≤ 0.12 BTC 必須 (= CLAUDE.md §0-2)・層数 × layer_size 設計義務
+
+### §19.5 補強リスク測度 (= Sortino / Calmar / CVaR / DSR 統合)
+
+#### 業界主要 risk-adjusted return 指標 (= Phase 5 / 6-b 評価強化候補)
+
+| 指標 | 計算式 | 業界用途 |
+|---|---|---|
+| **Sharpe Ratio** | `(R - Rf) / σ` | 業界 default・対称 vol 仮定 |
+| **Sortino Ratio** | `(R - Rf) / σ_downside` | downside semi-deviation のみ・**crypto fat-tail に対応** |
+| **Calmar Ratio** | `Annualized Return / MDD` | **tail risk 重視 crypto 推奨** |
+| **DSR (Deflated Sharpe)** | Bailey & LdP 2014 (= §17.4) | 多重検定 + 非正規性補正 |
+| **CVaR (Expected Shortfall)** | tail loss 期待値 | regime 別 CVaR が crypto 業界推奨 (= MDPI 2026) |
+| **MAR Ratio** | Annualized Return / MAR (= Min Acceptable Return) | 下方リスク (= Calmar 拡張) |
+
+#### crypto 業界推奨の risk measure 組合せ
+
+[Amberdata Crypto Portfolio](https://blog.amberdata.io/crypto-portfolio-optimization-balancing-risk-and-return-in-a-dynamic-market): 「**For crypto portfolios, the Calmar Ratio and Maximum Drawdown become critical for assessing tail risk, while Value at Risk (VaR) and Conditional VaR (CVaR) provide probabilistic views of potential losses during liquidation events**」
+
+業界 best practice:
+1. **Return 評価**: Annualized Return + Sharpe + Sortino
+2. **Tail risk**: MDD + Calmar + CVaR_95
+3. **多重検定補正**: DSR + PBO (= §17.4 + §17.5)
+4. **regime 別**: regime up / range / down で別途 risk measure 評価
+
+#### Riskfolio-Lib + scikit-portfolio + portfoliooptimizationbook の業界実装
+
+| ライブラリ | 提供 risk measure | 業界使用度 |
+|---|---|---|
+| **Riskfolio-Lib** | HRP + HERC + 20+ risk measures (= CVaR / EVaR / CDaR / WR) | 業界 default ([Riskfolio-Lib](https://riskfolio-lib.readthedocs.io/)) |
+| **scikit-portfolio** | mean-CVaR + 効率的フロンティア (= CVaR) | sklearn 互換 ([scikit-portfolio CVaR](https://scikit-portfolio.github.io/scikit-portfolio/efficient_cvar/)) |
+| **portfoliooptimizationbook** | 11.2 + 10.2 章で alternative risk measures 体系化 | 教科書 ([Portfolio Opt Book](https://portfoliooptimizationbook.com/book/10.2-alternative-risk-measures.html)) |
+
+#### cat-bitget 適用判断 (= Phase 5 / 6-b 合格判定多重防御)
+
+- **現状必達**: 月次 NET ≥ $1,900 全月クリア (= CLAUDE.md / project_goal)
+- **v3 領域 4 追加候補 (= L-225)**: DSR > 0.95 + PBO < 0.5
+- **v5 領域 6 追加候補**:
+  - **Calmar Ratio > 2.0** (= annualized return が MDD の 2 倍以上・crypto 業界推奨水準)
+  - **CVaR_95 < $X/月** (= 月次損失 95% tail < 上限・regime 別閾値)
+  - **Sortino > 1.5** (= downside risk-adjusted return)
+- **多重防御の論理**: 月次 NET だけでは「単月偶然合格」リスク残存 → DSR + PBO + Calmar + CVaR で本番投入リスク多重防御
+
+### §19.6 領域 6 まとめ: 7 工程接続 + cat-bitget 設計判断調査ノート
+
+#### 7 工程接続マトリックス (= リスク管理レイヤー追加)
+
+| 工程 | リスク管理の改善方向 | 業界整合手法 |
+|---|---|---|
+| 1 regime | regime 別 risk measure 閾値 (= CVaR / Calmar 動的) | §19.3 + MDPI 2026 |
+| 2 Entry 候補生成 | (= 直接接続なし・固定ロジック) | — |
+| 3 Entry ML | 統計指標 (= §17.6) + DSR_train | §17.4 (v3) |
+| **4 Position Sizing** | **Half-Kelly + Vol Targeting + HRP/HERC + 0.12 BTC clip** | §19.1 + §19.4 + §18.3 |
+| **5 Exit ML** | **PPO 主軸 + Chandelier Exit + Wilder Stop + ML 動的 SL** | §19.2 + §14.7 |
+| **6 Risk 管理** | **TIPP drawdown floor + Dynamic Deleveraging + CVaR 制約** | §19.3 |
+| 7 Online 監視 | drawdown trigger + vol spike alert (= 領域 7 で詳細) | 領域 7 |
+
+#### Phase 1 v6 6 案全滅の構造的原因 → リスク管理欠落の補強整理
+
+L-226 §18.5 で確定した 6 軸多様性欠落に **第 7 軸 = リスク管理レイヤー不在** を追加:
+
+| # | 原因 | 補強領域 | v5 学習成果 |
+|---|---|---|---|
+| 1 | ボラ予測 ML 設計欠陥 | L-223 | §13.1 + §14.6 |
+| 2 | アルゴ多様性ゼロ | L-224 + arxiv 2512.15738 | §18.1 |
+| 3 | bar 種別多様性ゼロ | L-225 + §16.1 | §16.1 |
+| 4 | cascade 構造不在 | v4 §18.2 | §18.2 |
+| 5 | strategy allocation 機械固定 | v4 §18.3 | §18.3 |
+| 6 | Meta-Labeling 同型 | L-223 + §13.5 + v4 §18.4 | §18.4 |
+| **7** | **リスク管理レイヤー不在 (= vol targeting / TIPP / 動的 SL 不在)** | **v5 §19 新規** | **§19.1-§19.4** |
+
+→ 工程 4-6 のリスク管理レイヤーが業界実装パターン (= vol targeting + TIPP + 動的 SL + Half-Kelly + HRP) を採用していなかった構造的補強原因を v5 で整理。
+
+#### cat-bitget 設計判断調査ノート (= v5 学習成果)
+
+> ⚠️ 以下は **学習資料の調査ノート位置付け**。実際の設計確定は WORKFLOW 改訂38 active の優先 3 (= 工程 2-7 詳細詰め) で別途実施 (cc_role §1.5)。
+
+##### v5 (= 領域 6) の追加確定事項
+
+- **工程 4 (Position Sizing) 業界整合 verify**:
+  - phase_flow_v4 v7 改善 4 動的合成方式 8 (= Half-Kelly + Vol target + cluster 強度別) は業界整合 ✅
+  - crypto 高 vol で **Quarter-Kelly 候補** (= 推定誤差バッファ大) — 比較追加候補
+  - cluster 強度別配分 → **HRP/HERC で robust 化** (= L-226 §18.3 整合)
+- **工程 5 (Exit ML) 業界比較ベースライン拡張**:
+  - 主軸 PPO 維持 (= §13.4 78% success rate)
+  - 比較 1 = **Chandelier Exit (N=288 5m / M=2.5 crypto 調整)** — 新規追加
+  - 比較 2 = **Wilder Volatility Stop (N=84 / M=2.0)** — 新規追加
+  - 比較 3 = Fixed % Stop (= 旧 Priority 構造) — 維持 baseline
+  - Partial TP + ATR Trailing (= 50% fixed TP + 50% ATR trail) を Phase 4-b に追加
+- **工程 6 (Risk 管理) レイヤー新設**:
+  - **TIPP drawdown floor** (= X=0.9・MDD < 10% target)
+  - **Dynamic Deleveraging** (= drawdown / vol spike / regime trigger の OR)
+  - CPPI は見送り (= whipsaw リスク)
+- **Phase 5 / 6-b 合格判定多重防御 (= L-225 + v5 統合)**:
+  - 必達 = 月次 NET ≥ $1,900 全月クリア
+  - 追加 = DSR > 0.95 + PBO < 0.5 (v3)
+  - **追加 = Calmar > 2.0 + CVaR_95 < $X/月 + Sortino > 1.5** (v5) — crypto 業界推奨
+- **0.12 BTC 合計上限との整合**:
+  - vol targeting / TIPP / HRP で得られる weight が 0.12 を超えても **必ず clip** (= CLAUDE.md §0-2 絶対規定)
+  - pyramiding 全層合計 ≤ 0.12 BTC 必須
+- **regime 別 risk measure** (= MDPI 2026 業界推奨):
+  - down regime で CVaR 閾値厳しめ / range regime で緩め
+  - 工程 1 regime 出力と工程 6 risk threshold を動的接続
+
+#### 関連 lessons + 関連 memory
+
+- L-223 (= ボラ予測 ML 設計欠陥) / L-224 (= アルゴリズム多様性) / L-225 (= 領域 3-4) / L-226 (= 領域 5) — v5 学習の直接動機
+- cc_role §1.4.6.1 9 項目 (= ML pipeline 設計提案前の業界整合 verify) — 本領域学習で 6-9 番を蓄積
+- feedback_trade_ml_knowledge_gap (= 業界標準理解不足) — v5 で補強進展 (= 領域 6 まで業界カタログ構築済・残り = 領域 7)
+- CLAUDE.md §0-2 (= 0.12 BTC 合計上限) — 全リスク管理手法で clip 義務
+- phase_flow_v4 v7 改善 4 (= 動的合成方式 8) — Half-Kelly + Vol target + cluster 強度別の業界整合 verify 済
+
+---
+
 ## §11 改訂履歴
 
 | 版 | 日付 | 内容 |
@@ -1598,6 +1986,7 @@ HRP + Mean-Variance のハイブリッド:
 | v2 | 2026-05-27 | §13 ML 学習方法 (6 章) + §14 ML 学習項目 (8 章) + §15 総合所見 追加・WebSearch 14 件 + AFML Ch.3/6 + Oxford-Man + Hudson & Thames mlfinlab + arxiv 8 件 引用 |
 | v3 | 2026-05-25 | **§16 ML 特徴量設計 (7 節) + §17 ML 評価方法 (9 節) 追加**・§15.2-15.4 を v3 完成状態に更新 (= 残り 5 領域 → 残り 3 領域)・WebSearch 16 件 + AFML Ch.2 (情報駆動 bars) / Ch.5 (Fractional Diff) / Ch.7 (Purged K-Fold + CPCV) / Ch.8 (MDI/MDA/SFI) / Ch.14 (DSR) + Bailey & Lopez de Prado 2014 (DSR / PBO) + MLfAT Ch.4 (Alpha Factor Research) + Hudson & Thames mlfinlab + arxiv 5 件 (microstructure 2602.00776 / 2506.05764 / Frontiers 2026 / MDPI 2026 / shap-select 2410.06815) 引用 |
 | v4 | 2026-05-25 | **§18 ML 組合せ手法 (5 節) 追加**・§15.2-15.4 を v4 完成状態に更新 (= 残り 3 領域 → 残り 2 領域)・WebSearch 14 件 + AFML Ch.6 (Ensemble) / Ch.16 (Asset Allocation) + Lopez de Prado 2016 (HRP 原論文 SSRN 2708678) + Raffinot 2018 (HERC) + Hudson & Thames meta-labeling repo (GitHub) + Riskfolio-Lib + PyPortfolioOpt + arxiv 4 件 (Diversity 2407.12996 / FinRL Contest 2501.10709 / Hybrid Ensemble 2512.15738 / GAS Blending 2411.03035) + Viola-Jones cascade theory (Wikipedia + Grokipedia) 引用・**Phase 1 v6 6 案全滅の構造的原因を 6 軸多様性欠落に整理 (= v1-v4 統合)** ・Phase 1 v7 候補「案 g」設計判断調査ノートを §18.5 に確立 |
+| v5 | 2026-05-25 | **§19 ML リスク管理 (6 節) 追加**・§15.2-15.4 を v5 完成状態に更新 (= 残り 2 領域 → 残り 1 領域)・WebSearch 8 件 + GARCH-family (TGARCH/EGARCH/CGARCH・Springer Future Business Journal 2025) + EWMA / HAR-RV + Chandelier Exit (ChartSchool + StratBase.ai + LuxAlgo 5 ATR Stop-Loss) + Wilder Volatility Stop + CPPI / TIPP (Wikipedia + Grokipedia + QuantPedia + Core AXA-IM) + Kelly criterion (Altrady + LBank + OSL + CMC + Stephen Perrenod) + Pyramiding (QuantStrategy 4 篇 + TradersPost + Forextester + FasterCapital + hoc-trade Medium) + CVaR (MDPI 2026 regime-tail-dependent crypto + arxiv 2406.00610 + Riskfolio-Lib + Stan Uryasev) + Time-Series Momentum + Vol Scaling (CFA Institute 2019 + AlphaArchitect + CME Group + ScienceDirect S1386418116301379 + CXO Advisory) + ML 動的 Stop (arxiv 2506.22055 LSTM+XGBoost + ScienceDirect 2025 DRL+LSTM+XGBoost feature selection + Springer 2025 ML crypto trading) + Amberdata Crypto Portfolio 引用・**6 軸多様性欠落に「第 7 軸 = リスク管理レイヤー不在」追加整理**・cat-bitget 設計判断調査ノートに v5 8 項目追加 |
 
 ---
 

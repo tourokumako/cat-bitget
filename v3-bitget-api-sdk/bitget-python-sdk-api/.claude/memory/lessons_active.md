@@ -7,6 +7,63 @@
 
 ---
 
+### L-227: cc_entry_logic_self_study.md v5 完成 — ML 知識領域 6 (リスク管理) の業界カタログ整理 + 6 軸多様性欠落に「第 7 軸 = リスク管理レイヤー不在」追加 + Phase 5/6-b 合格判定多重防御 v5 候補 (Calmar/CVaR/Sortino) 確立 (2026-05-25)
+
+**何が起きたか:**
+
+WORKFLOW 改訂38 active 優先 2 (= 案 B 学習継続) として、cc_entry_logic_self_study.md v4 (= 1610 行) を v5 (= 1999 行・+389 行) に拡張。WebSearch 8 件 + GARCH-family (TGARCH/EGARCH/CGARCH・Springer Future Business Journal 2025) + EWMA / HAR-RV + Chandelier Exit (ChartSchool + StratBase.ai + LuxAlgo 5 ATR Stop-Loss) + Wilder Volatility Stop + CPPI / TIPP (Wikipedia + Grokipedia + QuantPedia + Core AXA-IM) + Kelly criterion (Altrady + LBank + OSL + CMC + Stephen Perrenod Substack) + Pyramiding (QuantStrategy 4 篇 + TradersPost + Forextester + FasterCapital + hoc-trade Medium) + CVaR (MDPI 2026 regime-tail-dependent crypto + arxiv 2406.00610 + Riskfolio-Lib + Stan Uryasev) + Time-Series Momentum + Vol Scaling (CFA Institute 2019 + AlphaArchitect + CME Group + ScienceDirect S1386418116301379 + CXO Advisory) + ML 動的 Stop (arxiv 2506.22055 LSTM+XGBoost + ScienceDirect 2025 DRL+LSTM+XGBoost feature selection + Springer 2025 ML crypto trading) + Amberdata Crypto Portfolio を引用して、ChatGPT 7 工程フレーム範囲の ML 知識 7 領域のうち領域 6 を完了。残り = 領域 7 を v6 で追加予定。
+
+#### 学習成果のポイント
+
+1. **§19.1 Volatility Targeting**: σ_target / σ_predicted で動的レバ調整・**ScienceDirect S1386418116301379 で「TSM 戦略の profitability は volatility scaling に driven されている・vol scaling なしの TSM = buy-and-hold と同等」実証**。CME Group 業界 default = annualized 10% target。crypto 高 vol で 0.5x-2.0x clip 必須。BTC は α + β ≈ 1 (= near-IGARCH・shock の影響が極めて長期持続) → EGARCH (= leverage effect) または HAR-RV (= cascade memory) が業界推奨
+
+2. **§19.2 Stop-Loss 業界 4 主流手法**: Chandelier Exit (= Chuck LeBeau・lookback 22 / multiplier 3.0 = profit factor 1.61 sweet spot) / Wilder Volatility Stop (= 短期 active trading 向き・N=7/M=2.0) / Fixed % Stop (= 旧 Priority baseline) / ML 動的 (= ScienceDirect 2025 DRL+LSTM+XGBoost feature selection で業界実証あり)。**業界推奨パターン = 50% fixed TP + 50% ATR trailing の組合せ**でprofit lock + tail capture 両立
+
+3. **§19.3 Drawdown Control**: CPPI (= 構造的に whipsaw 環境で「buy high sell low」の trade-off 大 → cat-bitget 見送り) vs **TIPP (= floor が peak portfolio × X% に ratchet up・X=0.9 で MDD < 10% 目標)** が業界整合的。Dynamic Deleveraging (= drawdown / vol spike / regime trigger の OR で leverage 0.5x cut) を併用候補。**CVaR_95 制約 + regime 別閾値** (= MDPI 2026 業界推奨) で「down regime で厳しめ / range regime で緩め」の動的接続
+
+4. **§19.4 Position Scaling**: Kelly criterion 業界相場 = Half-Kelly (= プロ業界 default・成長率 ~75% Full + DD ~50% 削減) または Quarter-Kelly (= crypto 推奨・推定誤差バッファ最大)。プロ業界の 10-25% Full Kelly 多用は phase_flow_v4 v7 改善 4 Half-Kelly と整合。Pyramiding 層数 3-5 業界 default = MAX_ADDS=5 整合・ただし **層 size は progressively 縮小**が業界推奨 (= 旧 Priority MAX_ADDS が均等 size か要 verify)。Volatility-Adjusted Pyramiding (= ATR で layer 間隔調整) を Phase 7-c 候補
+
+5. **§19.5 補強リスク測度**: 月次 NET ≥ $1,900 (= 現状必達) + DSR > 0.95 + PBO < 0.5 (v3) + **Calmar > 2.0 + CVaR_95 < $X/月 + Sortino > 1.5** (v5・crypto 業界推奨) の多重防御。Amberdata 業界整合 = Calmar + MDD で tail risk + VaR + CVaR で liquidation event 確率視点を併用
+
+6. **§19.6 6 軸多様性欠落に第 7 軸追加**: L-226 §18.5 で確定した 6 軸 (= ボラ ML 欠陥 / アルゴ多様性 / bar 種別 / cascade 不在 / strategy allocation 固定 / Meta-Labeling 同型) に **第 7 軸 = リスク管理レイヤー不在 (= vol targeting / TIPP / 動的 SL 不在)** を追加整理。工程 4-6 のリスク管理レイヤーが業界実装パターンを採用していなかった構造的補強原因を v5 で整理
+
+**Why (= 学習が必要だった構造的理由):**
+
+- L-226 改善 1 (= 残り 2 領域継続) を実施
+- v4 (= 領域 1-5・アルゴ + 予測対象 + 特徴量 + 評価 + 組合せ手法) だけでは「**保有期間中の損失抑制と動的サイズ調整**」の業界実装パターン不足
+- Phase 1 v6 6 案全滅の構造的原因として 6 軸整理済だったが、リスク管理レイヤー不在の補強原因が未整理 → 第 7 軸として整理
+- 残り 1 領域 (= 監視運用) の学習に進む前提として領域 6 を確立
+- CLAUDE.md §0-2 (= 0.12 BTC 合計上限) と業界手法 (= vol targeting / TIPP / HRP / Kelly / Pyramiding) を統合的に整理して、工程 4-6 詳細詰めに進む準備を完了
+
+**How to apply (改善 1 件):**
+
+#### 改善 1: 次セッションで残り 1 領域 (7) を v6 として追加
+
+- **領域 7 (監視運用)** を v6 として完成 (= 案 B 学習完了):
+  - **Online learning** (= incremental LightGBM / River / scikit-multiflow) の業界実装パターン
+  - **A/B testing** (= multi-armed bandit / Thompson Sampling) の業界実装
+  - **Champion-Challenger 構造** (= 旧モデル vs 新モデル並走 → 段階的切替) の業界手法
+  - **Shadow deployment** (= 本番影響ゼロでの新モデル評価) の業界実装
+  - **§17.8 で部分網羅済** (= KL/Wasserstein/Page-Hinkley) → 残り = 上記 4 領域
+  - WebSearch 10-20 件 + MLfAT Ch.5/Ch.8-10 + Hudson & Thames mlfinlab + Online learning ライブラリ docs (= scikit-multiflow / river) 引用必須 (= cc_role §1.4.6.1)
+- 1 セッション規模 (= 領域 7 単独で完成)
+- 領域 7 完成後 → WORKFLOW 改訂38 active 優先 3 (= 工程 2-7 詳細詰め) に進む
+
+**関連:**
+
+- L-226 (= 前セッション・領域 5 完成・本セッション学習の直接動機)
+- L-225 (= 領域 3-4 完成)
+- L-224 (= アルゴ多様性ゼロ + 領域 1-2 完成)
+- L-223 (= ボラ ML 設計欠陥 + phase_flow_v4 v7 破綻判断・本セッション学習の根本動機)
+- cc_role §1.5 デザイン責任 (= §19.6 設計判断調査ノート位置・確定は工程 2-7 詳細詰めで別途)
+- cc_role §1.4.6.1 9 項目 (= ML pipeline / トレード関連設計提案前の業界整合 verify・本セッション学習で 6-9 を引き続き蓄積)
+- feedback_trade_ml_knowledge_gap (= CC のトレード ML 業界標準理解不足・本 lesson で改善 1 件進展・領域 6 で完成度 6/7 = 約 86%)
+- CLAUDE.md §0-2 (= 0.12 BTC 合計上限) — v5 で全リスク管理手法に clip 義務として統合整理
+- phase_flow_v4 v7 改善 4 (= 動的合成方式 8 = Half-Kelly + Vol target + cluster 強度別) — v5 で業界整合 verify 済
+- 公式 source: 本セッション末 commit (= cc_entry_logic_self_study.md v5 + L-227 + WORKFLOW 改訂39 active)
+
+---
+
 ### L-226: cc_entry_logic_self_study.md v4 完成 — ML 知識領域 5 (組合せ手法) の業界カタログ整理 + Phase 1 v6 6 案全滅の構造的原因を 6 軸多様性欠落に整理 + Phase 1 v7 候補「案 g」設計判断調査ノート確立 (2026-05-25)
 
 **何が起きたか:**
