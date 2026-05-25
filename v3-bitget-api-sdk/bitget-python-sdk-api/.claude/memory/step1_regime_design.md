@@ -51,7 +51,7 @@
 
 | カテゴリ | 指標 base 名 | 数 |
 |---|---|---|
-| ベース (= 業界 default) | zscore_return_20b, realized_vol_20b | 2 |
+| ベース (= 業界 default・必須) | log_returns, rolling_volatility | 2 |
 | トレンド・方向性 | adx14, di_plus, di_minus | 3 |
 | 移動平均線 | close_vs_sma20_pct, close_vs_sma50_pct, close_vs_ema200_pct | 3 |
 | 一目均衡表 | close_vs_tenkan_pct, close_vs_kijun_pct | 2 |
@@ -143,8 +143,8 @@ fold 境界 (= train データを 5 等分):
 
 ```
 [ベース系] (12 列)
-  zscore_return_20b__5m, ..., zscore_return_20b__1d
-  realized_vol_20b__5m, ..., realized_vol_20b__1d
+  log_returns__5m, ..., log_returns__1d
+  rolling_volatility__5m, ..., rolling_volatility__1d
 
 [トレンド系 - 方向性] (18 列)
   adx14__5m, adx14__15m, adx14__30m, adx14__1h, adx14__4h, adx14__1d
@@ -194,12 +194,19 @@ fold 境界 (= train データを 5 等分):
 
 ## 3. 入力データの詳細
 
-### 3.1 既存データの再利用
+### 3.1 既存データの再利用 + 新規生成
 
 Phase 0 v3.1 (= 過去フローの実装) で既に 8 時間軸 (= 5m/15m/30m/1h/4h/1d/1w/1M) × 多指標が生成済 (= 2,724 列の parquet データ)。工程 1 では:
 
 - 6 時間軸 (= 5m/15m/30m/1h/4h/1d) を使用 (= 1w / 1M は使わない)
-- 上記 §2.2 の 14 指標を抽出 → 84 列の入力行列を作成
+- §2.2 の 14 指標のうち **12 指標 (= 既存・再利用)**: adx14 / di_plus / di_minus / close_vs_sma20_pct / close_vs_sma50_pct / close_vs_ema200_pct / close_vs_tenkan_pct / close_vs_kijun_pct / rsi14 / macd_hist_pct / atr14_pct / bb_width_pct → Phase 0 v3.1 既存 parquet から抽出
+- §2.2 の 14 指標のうち **2 指標 (= 新規生成が必要)**: log_returns / rolling_volatility → Phase 0 v3.1 に存在しないため新規生成 (= 業界 default 必須として採用するため・まこさん 2026-05-25 OK 内容に整合)
+
+**新規生成内容**:
+- log_returns: `ln(close_t / close_{t-1})` (= 対数リターン・1 期間)
+- rolling_volatility: 過去 20 期間の log_returns の標準偏差
+- 6 時間軸分 (= log_returns__{5m, 15m, 30m, 1h, 4h, 1d} + rolling_volatility__{5m, 15m, 30m, 1h, 4h, 1d} = 12 列追加)
+- 生成スクリプトの出力先: Phase 0 v3.1 既存 parquet に追加列として統合・または工程 1 用に別 parquet として出力
 
 データファイル:
 - `results/priority_rebuild/labels_mfe_mae_pct_train_2021_2024.parquet` (= train・1.5 GB)
@@ -347,15 +354,16 @@ def update_regime(hmm_prediction: int) -> int | None:
 ## 6. 実装手順 (= 新セッション CC が着手する順序)
 
 1. **環境準備**: `.venv311/bin/pip install hmmlearn` で hmmlearn インストール → `pip freeze > requirements_step1.txt` で記録
-2. **データ抽出スクリプト作成**: Phase 0 v3.1 parquet から 84 列 (= §2.2 の 14 指標 × 6 時間軸) を抽出 + NaN 行 drop
-3. **学習スクリプト作成**:
+2. **新規指標生成スクリプト作成**: log_returns + rolling_volatility を 6 時間軸分計算 (= 12 列追加) → Phase 0 v3.1 既存 parquet に統合 or 工程 1 用別 parquet 出力 (= §3.1 新規生成内容)
+3. **データ抽出スクリプト作成**: 統合 parquet から 84 列 (= §2.2 の 14 指標 × 6 時間軸) を抽出 + NaN 行 drop
+4. **学習スクリプト作成**:
    - RobustScaler + HMM (= §2.4 のハイパーパラメータ) のパイプライン
    - mlfinpy.PurgedKFold で 5 fold 学習評価 (= §2.6)
-4. **状態ラベル付けスクリプト作成**: §2.7 の機械的ルール + 妥当性チェック
-5. **artifact 保存**: §2.10 の命名規則 + 保存先で 4 種類のファイル出力
-6. **本番運用スクリプト作成**: §5.1 + §5.2 のオンライン推論 + ヒステリシス
-7. **視認チェック (= まこさんレビュー)**: 過去 12 ヶ月のチャート上で命名が肉眼判定と一致するか確認
-8. 視認チェック OK なら工程 2 の議論に進む・NG なら入力特徴量見直し
+5. **状態ラベル付けスクリプト作成**: §2.7 の機械的ルール + 妥当性チェック
+6. **artifact 保存**: §2.10 の命名規則 + 保存先で 4 種類のファイル出力
+7. **本番運用スクリプト作成**: §5.1 + §5.2 のオンライン推論 + ヒステリシス
+8. **視認チェック (= まこさんレビュー)**: 過去 12 ヶ月のチャート上で命名が肉眼判定と一致するか確認
+9. 視認チェック OK なら工程 2 の議論に進む・NG なら入力特徴量見直し
 
 ---
 
