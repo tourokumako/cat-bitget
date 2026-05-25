@@ -42,6 +42,7 @@ import numpy as np
 import pandas as pd
 
 import lightgbm as lgb
+from sklearn.model_selection import TimeSeriesSplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from run_phase1_v5_purged_kfold import (  # noqa: E402
@@ -77,6 +78,11 @@ TRIPLE_BARRIER_MAP = {-1.0: CLASS_SL, 0.0: CLASS_TIME, 1.0: CLASS_TP}
 
 # Secondary (binary meta-labeler) 設定 — cc_ml_design_spec L86 案 f
 SECONDARY_PROBA_THRESHOLD = 0.6
+
+# AFML Ch.3 (Lopez de Prado) + Hudson & Thames mlfinlab 標準実装:
+# Primary を inner TimeSeriesSplit で out-of-fold predict → Secondary 学習データ生成
+# (in-sample contamination 防止・監査 §6 提案 1 反映・2026-05-25 修正)
+INNER_CV_N_SPLITS = 3
 
 LGBM_PARAMS_PRIMARY: Dict[str, object] = {
     "objective": "multiclass",
@@ -197,6 +203,51 @@ def _get_primary_entry_mask(
     return pred_proba[:, col_tp] > proba_threshold
 
 
+def _generate_oof_primary_entry_mask(
+    X_tr: pd.DataFrame,
+    y_tb_tr: pd.Series,
+    n_estimators: int,
+    proba_threshold: float = PRIMARY_PROBA_THRESHOLD,
+    n_inner_splits: int = INNER_CV_N_SPLITS,
+) -> np.ndarray:
+    """Inner TimeSeriesSplit で Primary out-of-fold predict → entry mask 生成.
+
+    AFML Ch.3 + Hudson & Thames mlfinlab 標準: Primary を CV out-of-fold で
+    predict することで、Secondary 学習データを primary in-sample contamination
+    から保護する (= primary が secondary の学習データを「未来情報」として
+    見ない構造)。
+
+    最初の inner fold の train_size 未満は predict 不能 (TimeSeriesSplit 仕様)
+    のため False mask = primary entry 対象外 (安全側) として扱う。
+    """
+    n = len(X_tr)
+    oof_p_tp = np.full(n, np.nan, dtype=np.float64)
+
+    tscv = TimeSeriesSplit(n_splits=n_inner_splits)
+
+    for inner_train_idx, inner_test_idx in tscv.split(X_tr):
+        train_idx_fit, valid_idx_fit = _build_train_valid_split(
+            inner_train_idx, VALID_TAIL_FRACTION
+        )
+        X_inner_fit = X_tr.iloc[train_idx_fit]
+        y_inner_fit = y_tb_tr.iloc[train_idx_fit]
+        X_inner_va = X_tr.iloc[valid_idx_fit]
+        y_inner_va = y_tb_tr.iloc[valid_idx_fit]
+        X_inner_te = X_tr.iloc[inner_test_idx]
+
+        inner_model, inner_class_to_col = _train_primary_multiclass(
+            X_inner_fit, y_inner_fit, X_inner_va, y_inner_va, n_estimators
+        )
+
+        if CLASS_TP in inner_class_to_col:
+            inner_proba = inner_model.predict_proba(X_inner_te)
+            col_tp = inner_class_to_col[CLASS_TP]
+            oof_p_tp[inner_test_idx] = inner_proba[:, col_tp]
+
+    # NaN (= 最初の inner fold 前) は False (= primary entry 対象外)
+    return np.where(np.isnan(oof_p_tp), False, oof_p_tp > proba_threshold)
+
+
 def _train_secondary_binary(
     X_train_filtered: pd.DataFrame,
     y_train_filtered: pd.Series,
@@ -308,8 +359,12 @@ def _process_fold_combo(
             full_rank_dir=early_fi_dir,
         )
 
-    # Primary entry mask (train + test)
-    primary_entry_train = _get_primary_entry_mask(primary_model, class_to_col, X_tr)
+    # Primary entry mask:
+    # - train: OOF (inner TimeSeriesSplit) で in-sample contamination 回避 (AFML 標準)
+    # - valid/test: final primary model (train_inner 全体で fit) で predict
+    primary_entry_train = _generate_oof_primary_entry_mask(
+        X_tr, y_tb_tr, n_estimators
+    )
     primary_entry_valid = _get_primary_entry_mask(primary_model, class_to_col, X_va)
     primary_entry_test = _get_primary_entry_mask(primary_model, class_to_col, X_te)
 

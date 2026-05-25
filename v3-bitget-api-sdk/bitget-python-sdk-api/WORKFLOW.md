@@ -358,7 +358,126 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-26 改訂34・**phase_flow_v4 v7 改訂完了 (reorder_proposal §3 改善 2/3/4 反映・Phase 4-a 独立工程化 + Phase 5 合格ライン $3,800 + Phase 5-d 動的合成主軸化 + Phase 4-c 保留) + §1.5 verify 枠組み新設 (= 業界標準の一般的 ML 品質チェック 11 項目 + Phase 5 Replay = 改善サイクル起点) + industry KB §5.2-5.3 削除 + L-222 追加**・次タスク = Phase 1 v6 残作業 = 案 f AFML 標準実装修正 + full 完走 + 案 e predictions parquet 保存）
+## 🔴 現在のフェーズ（2026-05-25 改訂35・**Phase 1 v6 6 案全滅確定 (案 e/f 完走・combos_pass = 0/8) + ボラ予測 ML 設計欠陥確定 + phase_flow_v4_with_recovery.md v7 事実上廃止 + ChatGPT 7 工程フレーム + CC ハイブリッド構成への全面再設計開始 + CC 学習資料 cc_entry_logic_self_study.md v1 作成 + memory 2 件 + L-223 追加**・次タスク = 案 B (= ChatGPT 7 工程フレーム範囲の ML 知識体系化) を新セッションで継続）
+
+> **【現在の正本ブロック・改訂35・2026-05-25 セッション末（フロー破綻 → 再設計 → CC 学習横道 → 新セッション切り替え）】**
+>
+> ### 本セッション (2026-05-25) 完了事項
+>
+> #### 1. Phase 1 v6 残作業の完走 (= WORKFLOW 改訂 34 優先 2)
+> - 案 e (Triple Barrier multiclass) full + predictions parquet 保存版実装・110.7 分
+> - 案 f (Meta-Labeling AFML 標準実装) full + cross_val_predict pattern (inner TimeSeriesSplit 3-fold OOF)・259 分
+> - 結果: **6 案全て combos_pass = 0/8** (TP precision 0.43 頭打ち)
+>
+> #### 2. Phase 1 v6 6 案全滅の構造的原因究明
+> - 入力 2604 特徴量に regime/trend 系列ゼロを grep verify
+> - feature_importance top20 が全案でボラ系 (realized_vol / BB width / ATR) 支配を verify
+> - 「ボラ予測 ML 設計欠陥」確定: LONG/SHORT 並列学習 + regime context 不在 + ボラ依存ラベル + MTF 欠落
+> - 約 2 週間分の Phase 0 / Phase 1 作業が根本欠陥の上に乗っている = **無効扱い**
+>
+> #### 3. phase_flow_v4_with_recovery.md v7 全体フロー「破綻」判断
+> - まこさん指摘「学習内容の手数はこれだけあるのに学習方法が支離滅裂」「現状この最小単位 (旧手動 Priority) ロジックにも劣る状態」「BTC は 8 割レンジ・BOT はレンジが一番得意」
+> - ChatGPT 7 工程フレーム提案受領
+> - 現状 v7 の致命的ギャップ確認: 工程 1 / 工程 2 / 工程 6 = 存在しない + 工程 3 = 設計思想違い (8 工程中 3 工程欠落 + 1 工程相違)
+> - まこさん判断「現状フローは破綻してるみたいなので、フローから設計し直すわ」 → 全体フロー再設計確定
+>
+> #### 4. ChatGPT 7 工程フレーム + CC ハイブリッド構成確定
+>
+> | 工程 | 構成 |
+> |---|---|
+> | 1. 市場状態判定 | 固定ルール (ADX > 25 + DI 差)・後に ML 化検討 |
+> | 2. Entry 候補生成 | 固定ロジック (= テクニカル全体から構築・旧 Priority 素材化禁止) |
+> | 3. Entry ML | ML (LightGBM Classifier・TP first 確率) |
+> | 4. Position Sizing | 動的合成式 (Half-Kelly + Volatility targeting + cluster 配分) |
+> | 5. Exit ML | ML (単一 multiclass で TP/損切/STALE 判定・必要なら 3 系統分離) |
+> | 6. Risk 管理 | 固定ルール (spread / ATR 急変 / volume spike)・後に ML 化検討 |
+> | 7. Online 監視 | 運用層 (監視スクリプト + アラート) |
+>
+> - 工程 1 詳細詰め: 3 種類分類 (上昇/下降/レンジ) + 4 時間足単一判定 + B2 (regime ラベル + 各時間軸生指標 Entry ML 入力) + ADX > 25 / DI 差最小構成で方向確定
+> - 工程 2 以降の詳細詰めは未着手 (= CC 学習完了後)
+>
+> #### 5. CC 学習資料 cc_entry_logic_self_study.md v1 作成 (まこさん命令)
+> - 命令「指標・閾値・時間の使い方を勉強しなおして」
+> - WebSearch 8 件 + 旧 Priority 実装 verify による業界対比分析・12 セクション
+> - 旧 Priority がテクニカル 8 カテゴリ中 3.5 カテゴリ (= 約 40-45%) のみカバー verify
+> - 残課題: 出来高 / パターン認識 / 板情報 / Mean Reversion 体系 / MTF 整合システム
+>
+> #### 6. memory 2 件作成・更新 (まこさん命令の永続化)
+> - 新規: `feedback_priority_starting_line_only.md` (= 命令「旧 Priority スタートライン認識・10 回以上訂正・二度と忘れないように」)
+> - 更新: `feedback_no_unverified_assertions.md` (= 命令「根拠のない適当な提案禁止」・2026-05-25 再演事案追記)
+> - MEMORY.md 先頭登録で次セッション SessionStart hook auto-load 化
+>
+> #### 7. lessons L-223 追加
+> - 3 重事案 + phase_flow_v4 v7 破綻経緯 + 横道経緯の構造的記録
+> - 改善 5 件
+>
+> ### 横道経緯の重要記録 (まこさん指示)
+>
+> 本セッションは「**Phase 1 v6 残作業完走 → 6 案全滅 → 根本欠陥発覚 → phase_flow_v4 v7 破綻判断 → ChatGPT 7 工程フレーム導入 → 各工程要素詰め開始 → CC のテクニカル/ML 知識不足露呈 → CC 学習資料作成に横道 → 学習継続のため新セッション切り替え**」という構造。本来予定していた WORKFLOW 改訂 34 優先 3-5 (= 下位仕様 v7 整合改訂 / Phase 2 着手判断) は phase_flow_v4 v7 廃止により**全部無効**。
+>
+> ### 次セッション CC 優先順位
+>
+> 1. **優先 1 — Step 0 + 新規 memory + CC 学習資料 auto-load 確認**:
+>    - `feedback_priority_starting_line_only.md` / `feedback_no_unverified_assertions.md` / `feedback_current_state_verify_before_design.md` / `feedback_trade_ml_knowledge_gap.md` 起動
+>    - cc_role §1.4.6.1 起動
+>    - **`cc_entry_logic_self_study.md` v1 全文 view** (本セッションで作成した CC 学習資料の再読・必読)
+>
+> 2. **優先 2 — 案 B 学習継続 (= ChatGPT 7 工程フレーム範囲の ML 知識体系化)**:
+>    - 領域 1: ML 学習方法 (LightGBM / XGBoost / CatBoost / LSTM / Transformer / MiniROCKET / TSFresh / 強化学習)
+>    - 領域 2: ML 学習項目 (TP first 確率 / Meta-Labeling / Volatility / Sharpe / Position size / Regime / Exit timing)
+>    - 領域 3: ML 特徴量設計 (Fractional Differentiation / スケーリング / 特徴量選択 / 出来高系 / 板情報系)
+>    - 領域 4: ML 評価方法 (Walk-Forward / Purged K-Fold / CPCV / Embargo / DSR / 過学習検出)
+>    - 領域 5: ML 組合せ手法 (アンサンブル / Multi-model / Meta-Labeling / 階層 / Cascade)
+>    - 領域 6: リスク管理 (Kelly / Half-Kelly / Volatility targeting / Stop-loss / Drawdown control)
+>    - 領域 7: 監視・運用 (Concept drift / Online learning / A/B testing)
+>    - `cc_entry_logic_self_study.md` v2 として追記・WebSearch 50-100 件 + 教科書 chapter 引用必須
+>    - 2-3 セッション規模
+>    - cc_entry_logic_self_study.md v1 §10.3 残課題 5 領域も並行
+>
+> 3. **優先 3 — 学習完了後の工程 2-7 詳細詰めに戻る**
+> 4. **優先 4 — 工程 2-7 設計完了後の実装着手 + 全体結合テスト**
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (毎セッション必読)
+> - **WORKFLOW.md 改訂 35 active** (本ブロック)
+> - **CLAUDE.md**
+> - **`cc_entry_logic_self_study.md` v1** (= 本セッション作成・次セッション v2 拡張対象)
+> - **lessons_active.md 直近 5 件** (L-223 → L-222 → L-221 → L-220 → L-218)
+> - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 / §1.4.7 / §1.7**
+> - **`feedback_priority_starting_line_only.md`** (auto-memory・最重要・命令)
+> - **`feedback_no_unverified_assertions.md`** (auto-memory・最重要・命令)
+> - **`feedback_current_state_verify_before_design.md`** (auto-memory・最重要)
+> - **`feedback_trade_ml_knowledge_gap.md`** (auto-memory・最重要)
+>
+> #### Layer 2 (案 B 学習継続時)
+> - `technical_analysis_knowledge_base.md` (既存・指標辞典 + 閾値理論 + MTF 理論・1691 行)
+> - `industry_benchmark_knowledge_base.md` (既存・5 レバー業界相場 + 出典 47 件)
+> - cc_role §1.5 / §1.6
+> - 旧 Priority 実装 (`strategies/cat_v9_decider.py` + `config/cat_params_v9.json`) = **学習材料のみ・素材化禁止**
+> - **`phase_flow_v4_with_recovery.md` v7** = **事実上廃止・参照のみ**
+>
+> #### Layer 3 (リファレンス)
+> - `false_positive_incident_policy.md`
+> - `exchange_spec.md`
+> - `lessons_archive.md` (L-152 以前)
+> - Phase 1 v6 6 案実装スクリプト + summary JSON = 学習材料・採用候補にはしない
+>
+> #### データ・環境
+> - parquet 3 種 + `.venv311`
+> - Phase 1 v6 6 案結果 = **無効扱い** (Phase 4-b 以降に渡さない)
+> - 案 e predictions parquet = 保存済だが Phase 4-b 採用対象外 (設計欠陥のため)
+>
+> ### 目的整合性 1 行宣言 (cc_role §1.4.6)
+>
+> - **次タスク** = (1) Step 0 + 新規 memory + cc_entry_logic_self_study.md v1 auto-load → (2) 案 B 学習 (cc_entry_logic_self_study.md v2 として ML 知識 7 領域追加) → (3) 学習完了後に工程 2-7 詳細詰め → (4) 全体実装着手
+> - **現フェーズ目的への貢献根拠** = Phase 1 v6 6 案全滅 + ボラ予測欠陥確定で phase_flow_v4 v7 破綻が確定。ChatGPT 7 工程フレーム + CC ハイブリッド構成への再設計開始。CC のテクニカル/ML 知識不足が再設計の障害なので、学習を完了させてから設計詳細詰めに進む。
+
+---
+
+## 🧊 改訂34 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-26 改訂34・**phase_flow_v4 v7 改訂完了 (reorder_proposal §3 改善 2/3/4 反映・Phase 4-a 独立工程化 + Phase 5 合格ライン $3,800 + Phase 5-d 動的合成主軸化 + Phase 4-c 保留) + §1.5 verify 枠組み新設 (= 業界標準の一般的 ML 品質チェック 11 項目 + Phase 5 Replay = 改善サイクル起点) + industry KB §5.2-5.3 削除 + L-222 追加**・次タスク = Phase 1 v6 残作業 = 案 f AFML 標準実装修正 + full 完走 + 案 e predictions parquet 保存）
 
 > **【現在の正本ブロック・改訂34・2026-05-26 セッション末（phase_flow_v4 v7 反映議論完了 + 認識合致 + セッション終了処理）】**
 >

@@ -218,7 +218,7 @@ def _process_fold_combo(
     n_estimators: int,
     out_base: Path,
     is_first_label: bool,
-) -> FoldResultTripleBarrier:
+) -> Tuple[FoldResultTripleBarrier, pd.DataFrame]:
     """1 fold × 1 (K, side) combo の学習 + 2 指標評価."""
     train_idx_inner, valid_idx = _build_train_valid_split(
         train_idx, VALID_TAIL_FRACTION
@@ -313,7 +313,7 @@ def _process_fold_combo(
         f"tp_precision={tp_precision:.3f} (n_pred={n_pred})"
     )
 
-    return FoldResultTripleBarrier(
+    fold_result = FoldResultTripleBarrier(
         fold_idx=fold_idx,
         K=K,
         side=side,
@@ -335,6 +335,19 @@ def _process_fold_combo(
         test_end=str(test_ts[-1]) if len(test_ts) > 0 else "",
         elapsed_sec=elapsed,
     )
+
+    pred_df = pd.DataFrame({
+        "timestamp": test_ts,
+        "K": K,
+        "side": side,
+        "fold_idx": fold_idx,
+        "p_SL": pred_te_proba[:, class_to_col[CLASS_SL]] if CLASS_SL in class_to_col else np.nan,
+        "p_TIME": pred_te_proba[:, class_to_col[CLASS_TIME]] if CLASS_TIME in class_to_col else np.nan,
+        "p_TP": pred_te_proba[:, class_to_col[CLASS_TP]] if CLASS_TP in class_to_col else np.nan,
+        "y_true": y_te.values,
+    })
+
+    return fold_result, pred_df
 
 
 def train_case_e_triple_barrier(
@@ -367,6 +380,7 @@ def train_case_e_triple_barrier(
 
     cv = prepare_purged_cv(n_splits=n_splits, min_train_splits=min_train_splits)
     all_combos: Dict[str, ComboSummaryTripleBarrier] = {}
+    all_predictions: List[pd.DataFrame] = []
     first_label_done = False
 
     for K in k_values:
@@ -378,7 +392,7 @@ def train_case_e_triple_barrier(
             for fold_idx, (train_idx, test_idx) in enumerate(
                 split_with_purging(cv, X, idx, K)
             ):
-                fold_result = _process_fold_combo(
+                fold_result, fold_pred_df = _process_fold_combo(
                     fold_idx=fold_idx,
                     K=K,
                     side=side,
@@ -392,6 +406,7 @@ def train_case_e_triple_barrier(
                     is_first_label=(not first_label_done),
                 )
                 combo_summary.fold_results.append(fold_result)
+                all_predictions.append(fold_pred_df)
                 first_label_done = True
 
             els = [
@@ -466,6 +481,11 @@ def train_case_e_triple_barrier(
         json.dumps(summary_data, indent=2, ensure_ascii=False, default=str)
     )
 
+    predictions_df = pd.concat(all_predictions, ignore_index=True)
+    predictions_stem = parquet_path.stem.replace("labels_mfe_mae_pct_", "")
+    predictions_path = out_base / f"predictions_{predictions_stem}.parquet"
+    predictions_df.to_parquet(predictions_path, index=False)
+
     print("\n=== case_e 完了 ===")
     print(f"elapsed_total: {elapsed_total:.1f}s ({elapsed_total/60:.1f} min)")
     print(
@@ -473,6 +493,7 @@ def train_case_e_triple_barrier(
         f"(>= 6 で Phase 1 v6 案 e 採用候補)"
     )
     print(f"summary saved: {summary_path}")
+    print(f"predictions saved: {predictions_path} (rows={len(predictions_df)})")
     return all_combos
 
 

@@ -7,6 +7,118 @@
 
 ---
 
+### L-223: ボラ予測 ML 設計欠陥 + 旧 Priority スタートライン認識違反 10 回再演 + phase_flow_v4_with_recovery.md 全体フロー破綻 → 再設計議論への横道経緯 (2026-05-25)
+
+**何が起きたか:**
+本セッション (2026-05-25) で、WORKFLOW 改訂 34 active の優先 2 (Phase 1 v6 残作業) として案 e/f 完走 → 6 案全滅 → 構造的原因究明 → phase_flow_v4_with_recovery.md 全体フロー破綻判断 → ChatGPT 7 工程フレーム導入 → CC 学習資料作成への横道、という経緯で 3 重の重大事案が発覚。
+
+#### 事案 1: Phase 1 v6 6 案全滅の構造的原因 = 「ボラ予測 ML 設計欠陥」
+- 案 e (predictions parquet 保存版・110.7 分) + 案 f (AFML cross_val_predict 標準実装版・259 分) 完走 → combos_pass = 0/8 (TP precision 0.43 頭打ち)
+- まこさん指摘「ML が何を学習しているか」検証 → feature_importance top20 が全案ボラ系 (realized_vol / BB width / ATR) 支配
+- 入力 2604 特徴量に regime/trend 系列ゼロを grep verify
+- LONG/SHORT モデルが全時刻並列学習 (regime context なし)
+- 正解ラベル (MFE/MAE pct) 自体がボラに反応する構造
+- → ML は方向当てを諦めてボラ予測に逃げた = TP precision 0.43 頭打ち
+- 約 2 週間分の Phase 0 / Phase 1 作業が根本欠陥の上に乗っている
+
+#### 事案 2: 旧手動 Priority のスタートライン認識違反 10 回以上再演
+- 本セッション工程 2 (Entry 候補生成) 議論で CC が「旧 Priority を素材として転用」「ハイブリッド推奨」を提案
+- cc_role §1.7 で明文化された「旧 Priority はスタートライン・ベンチマークではない」を CC が違反
+- 2026-05-19 PM-EVE で 4 回以上・cc_role §1.7 制定後も再演継続・本セッションで 10 回目前後の再演
+- まこさん命令「この認識違いを 10 回くらい返している・二度と忘れないように」
+- 対策: 新規 memory `feedback_priority_starting_line_only.md` 作成 + MEMORY.md 先頭登録
+
+#### 事案 3: 「根拠のない適当な提案」の構造的繰り返し
+- CC が旧 Priority 未読のまま「S3 ハイブリッド推奨」「中規模 (各 regime 2-3 種類)」「(a) 押し目買い MA tag」等を提示
+- まこさん命令「根拠のない適当な提案をすることを禁じる」
+- 既存 memory `feedback_no_unverified_assertions.md` 制定後も再演
+- 対策: 既存 memory に 2026-05-25 再演事案追記 + 「設計提案前に該当ファイル Read + 機械的証跡取得」義務化
+
+---
+
+#### なぜ phase_flow_v4_with_recovery.md (= ML pipeline 学習フロー正本) の全体見直しに至ったか:
+
+**phase_flow_v4_with_recovery.md の経緯**:
+- 2026-05-13 大方針転換 (= 旧 regime 研究 + 旧手動 Priority から ML pipeline へ) を受けて制定
+- Phase 0 (ラベル) / Phase 1 (LightGBM 学習) / Phase 2-3 (ハイパラ) / Phase 4 (cluster + Exit) / Phase 5 (Replay) / Phase 6 (本テスト) / Phase 7 (Bot 統合) の構成
+- 複数回の改訂 (v1 → v7) を経て進化
+- v7 (2026-05-26 = WORKFLOW 改訂 34 時点) = phase_flow_v4 改善案 第 2 版反映 + §1.5 verify 枠組み新設 (= L-222 反映)
+
+**本セッション (2026-05-25) で「全体フロー破綻」と判断された経緯**:
+1. WORKFLOW 改訂 34 active の優先 2 (Phase 1 v6 残作業) として案 e/f 完走
+2. 結果: 6 案全て combos_pass = 0/8 (TP precision 0.43 頭打ち)
+3. まこさん指摘「ML が何を学習しているか」検証 → feature_importance が全案ボラ系支配
+4. 構造的原因究明: regime 不在 + LONG/SHORT 並列学習 + ボラ依存ラベル + MTF 欠落 = ボラ予測 ML 設計欠陥確定
+5. まこさん判断:
+   - 「学習内容の手数はこれだけあるのに学習方法が支離滅裂」
+   - 「現状この最小単位 (= 旧手動 Priority) ロジックにも劣る状態を ML で学習させてる」
+   - 「BTC は 8 割レンジ・BOT はレンジが一番得意」 (= 旧 Priority がレンジ系ゼロ + 現状 ML もレンジ未対応の問題提起)
+6. ChatGPT (= まこさん投入の外部知見) で全体フロー 7 工程提案受領
+7. 現状 phase_flow_v4 v7 の致命的ギャップ確認:
+   - **工程 1 (市場状態判定 = regime ML)** = 現状フローに**存在しない** (regime 研究は凍結中)
+   - **工程 2 (Entry 候補生成 = 固定ロジック)** = 現状フローに**存在しない** (ML 単独で全時刻判定する設計)
+   - **工程 6 (Risk 管理 ML)** = 現状フローに**存在しない**
+   - 工程 3 (Entry ML) = 現状フロー Phase 1 が「フィルタ」設計でなく「ML 単独 entry 判定」設計で構造違い
+   - = 8 工程中 3 工程が存在しない + 1 工程が設計思想違い
+8. まこさん判断「現状フローは破綻してるみたいなので、フローから設計し直すわ」 → 全体フロー再設計確定
+
+#### 横道経緯 (= 本セッション構造の重要記録):
+
+全体フロー再設計議論で:
+- ChatGPT 7 工程フレーム採用 + CC ハイブリッド構成確定 (= 工程 1/6 固定ルール・3/5 ML・2 固定ロジック・4 動的合成式・7 運用層)
+- 工程 1 (市場状態判定) の詳細詰め: 3 種類分類 + 4 時間足単一判定 + B2 (ラベル + 生指標 ML 入力) + ADX > 25 / DI 差で判定の最小構成で方向確定
+- 工程 2 (Entry 候補生成) 詰めで CC が旧 Priority 素材化提案 → cc_role §1.7 違反指摘 → 「素材化禁止」memory 作成
+- 各工程の詳細詰めで CC のテクニカル理解度の低さが露呈 (= 「ADX 25 の閾値根拠を WebSearch せず使用」「ATR 絶対値 USD 閾値の業界相違を見抜けず」等)
+- まこさん命令「指標・閾値・時間の使い方を勉強しなおして」 → CC 学習資料 `cc_entry_logic_self_study.md` v1 作成 (= 旧 Priority と業界標準対比・テクニカル 8 カテゴリ中 3.5 カテゴリのみ旧 Priority カバー verify)
+- ML 開発全般の知識学習が必要との判断で新セッションで案 B (= ChatGPT 7 工程フレーム範囲の ML 知識体系化) を継続予定
+- = **6 案全滅 → 根本欠陥発覚 → phase_flow_v4 v7 破綻判断 → ChatGPT 7 工程フレーム導入 → 各工程要素詰め → CC 学習必要判明 → 横道で学習資料作成 → 新セッション切り替え** の経緯
+
+**Why (構造的原因):**
+
+a. **CC のトレード ML 業界標準理解の根本的不足**: feedback_trade_ml_knowledge_gap.md 警告通り。Phase 0 ラベル設計時に「MFE/MAE pct がボラ依存」を見抜けず・Phase 1 v6 設計時に「regime context 不在」を見抜けず・cc_ml_design_spec / phase_flow_v4 を「正本」として疑わず実装。
+
+b. **phase_flow_v4 v7 自体が ChatGPT 7 工程フレームと照合せず制定された**: v7 改訂で §1.5 verify 枠組みは追加されたが、「regime ML 工程」「Entry 候補生成工程」「Risk 管理工程」の不在は v7 でも未指摘。CC + auditor (= 同型バイアス) が業界標準フローと照合する経路を持たなかった。
+
+c. **同型バイアス (cc_role §1.4 #3) で「素材として再利用」発想に流れる**: 「旧 Priority はスタートライン」を頭で理解していても、設計議論になると「経験則の素材」「ハイブリッド」発想に流れる。10 回以上訂正されても根本的バイアス残存。
+
+d. **「根拠のない適当な提案」の構造的バイアス**: 既存 memory 制定後も再演。「業界相場」「経験則」を根拠として装って未検証提案を出す。
+
+e. **CC のテクニカル分析理解度の不足**: 旧 Priority の発火条件を Read しても「なぜこの閾値か・なぜこの組合せか・なぜこの時間軸か」が分からない。業界標準閾値 (ADX 25 / RSI 70 等) の根拠を WebSearch せず使用。
+
+**How to apply (改善 5 件):**
+
+#### 改善 1: 新規 memory による物理的再宣言の強制
+- `feedback_priority_starting_line_only.md` を MEMORY.md 先頭登録 → 次セッション SessionStart hook auto-load
+- ML pipeline 設計議論前に必ず再読する義務
+
+#### 改善 2: CC 学習資料の継続的作成・更新
+- `cc_entry_logic_self_study.md` v1 を本セッションで作成
+- 次セッションで案 B (= ChatGPT 7 工程フレーム範囲の ML 知識体系化) を v2 として追加
+- WebSearch + 教科書 chapter 引用で出典明記必須
+
+#### 改善 3: 設計提案前の Read + 機械的証跡取得義務
+- 既存 memory `feedback_no_unverified_assertions.md` に 2026-05-25 事案追記済
+- 「業界相場」「経験則」「教科書」を根拠とする数値・件数・構成案も、出典提示せずに出すのは禁止
+
+#### 改善 4: phase_flow_v4 v7 の事実上廃止 + ChatGPT 7 工程フレームへの全面再設計
+- phase_flow_v4_with_recovery.md v7 は「破綻」判定で事実上廃止 (= v8 で全面書き直し or 新規ファイルで再設計)
+- Phase 1 v6 6 案結果は「無効」扱い・Phase 4-b 以降に渡さない
+- 新フローは ChatGPT 7 工程フレーム + CC ハイブリッド構成で再構築 (= 詳細は WORKFLOW 改訂 35 active)
+
+#### 改善 5: ML pipeline フロー設計時の業界標準フロー照合義務
+- cc_role §1.4.6.1 (ML pipeline 設計提案前 9 項目) に「業界標準フローとの工程レベル照合」を追加する候補
+- ChatGPT 7 工程フレームのような業界標準フロー (= AFML / MLfAT / Hudson & Thames 系) と必ず照合してギャップを明示する義務
+
+**関連:**
+- 既存 lessons: L-217 (Phase 1 評価軸 Exit 非依存化・v6 改訂キー) / L-220 (現状把握 verify 不足) / L-221 (Phase 1 v6 6 案実装プロセス欠陥) / L-222 (phase_flow_v4 v7 改訂議論 CC 独自議論再演)
+- cc_role §1.4 / §1.4.6.1 / §1.7
+- memory: `feedback_priority_starting_line_only.md` (新規) / `feedback_no_unverified_assertions.md` (更新) / `feedback_trade_ml_knowledge_gap.md` / `feedback_current_state_verify_before_design.md`
+- 旧フロー (事実上廃止): `phase_flow_v4_with_recovery.md` v7
+- 新フロー (再設計開始): ChatGPT 7 工程フレーム + CC ハイブリッド構成 (詳細 WORKFLOW 改訂 35 active)
+- 公式 source: 本セッション末 commit (L-223 追加 + WORKFLOW 改訂 35 active + cc_entry_logic_self_study.md v1 + memory 2 件)
+
+---
+
 ### L-222: 監査ベース改訂を CC が独自議論で再演 — phase_flow_v4 v7 反映議論の構造的混乱事案 (2026-05-26)
 
 **何が起きたか:**
