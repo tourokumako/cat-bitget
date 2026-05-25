@@ -7,6 +7,58 @@
 
 ---
 
+### L-226: cc_entry_logic_self_study.md v4 完成 — ML 知識領域 5 (組合せ手法) の業界カタログ整理 + Phase 1 v6 6 案全滅の構造的原因を 6 軸多様性欠落に整理 + Phase 1 v7 候補「案 g」設計判断調査ノート確立 (2026-05-25)
+
+**何が起きたか:**
+
+WORKFLOW 改訂37 active 優先 2 (= 案 B 学習継続) として、cc_entry_logic_self_study.md v3 (= 1255 行) を v4 (= 1610 行・+355 行) に拡張。WebSearch 14 件 + AFML Ch.6 (Ensemble Methods) / Ch.16 (Asset Allocation) + Lopez de Prado 2016 (HRP 原論文 SSRN 2708678) + Raffinot 2018 (HERC) + Hudson & Thames meta-labeling GitHub repo + Riskfolio-Lib + PyPortfolioOpt + arxiv 4 件 (Diversity 2407.12996 / FinRL Contest 2501.10709 / Hybrid Ensemble 2512.15738 / GAS Blending 2411.03035) + Viola-Jones cascade theory を引用して、ChatGPT 7 工程フレーム範囲の ML 知識 7 領域のうち領域 5 を完了。残り = 領域 6-7 を v5 で追加予定。
+
+#### 学習成果のポイント
+
+1. **§18.1 階層 Stacking**: GBDT (LightGBM/XGBoost) + DL (GRU/Transformer) + 線形系の **異種 base learner + Logistic Regression meta-learner** が業界 default。arxiv 2512.15738 で **architecture diversity (60.14%) > dataset diversity (52.80%) + 同一アーキ間 r > 0.6 correlation** を実証 → Phase 1 v6 6 案全滅 (= 全 LightGBM・架構多様性ゼロ) の構造的根拠を業界実証で確定 (L-224 の補強)
+2. **§18.2 Cascade 多段 Filter**: Viola-Jones に由来する「**早期 reject + 段階的に高 cost classifier**」構造。crypto 5m bot は典型的に該当 (= 全 bar の数 % のみ entry 候補)。LuxAlgo 実証で false positive 30% 削減。3-4 段が業界目安 (= 段数増で total recall 低下)
+3. **§18.3 HRP / HERC / NCO**: Lopez de Prado 2016 (SSRN 2708678) で **MVO の OOS underperformance** を克服。crypto 単一資産 (BTC) では HRP 直接適用は限界事例あり (= Bitcoin hold > HRP 3y 実証) → **strategy allocation (= cluster × Exit type × side 288 戦略) への転用**が cat-bitget での妥当な位置付け。実装は Riskfolio-Lib / PyPortfolioOpt / mlfinlab で業界 default
+4. **§18.4 Meta-Labeling 多段詳細**: 案 f 失敗の核心は **primary も secondary も同型 LightGBM** だった構造。業界正攻法 = primary 多様化 (= 異種 stacking + regime 入力 + LONG/SHORT 分離 + MTF) + secondary は別アーキ + **Probability Calibration** (Platt / Isotonic) で size 投入前処理。tertiary 段 (= regime 別 secondary) で MoE 構造拡張可能
+5. **§18.5 6 軸多様性欠落の整理**: Phase 1 v6 6 案全滅の構造的原因を v1-v4 学習成果統合で 6 軸 (= ボラ ML 設計欠陥 / アルゴ多様性 / bar 種別 / cascade 不在 / strategy allocation 機械固定 / Meta-Labeling 同型) に整理。各軸の業界整合手法を v4 までで全てカタログ化済
+6. **案 g (Phase 1 v7 候補) 設計判断調査ノート**: §18.5 で 4 段 cascade (= 工程 2 固定 + 工程 3 異種 stacking + Meta-Labeling secondary + 工程 4 HRP/HERC) の構成を整理。計算コスト 7 時間 / 1 セッション規模で実行可能
+
+**Why (= 学習が必要だった構造的理由):**
+
+- L-225 改善 1 (= 残り 3 領域継続) を実施
+- v3 (= 領域 1-4・アルゴ + 予測対象 + 特徴量 + 評価方法) だけでは「**複数学習器をどう組合せるか**」の設計判断材料不足
+- 残り 2 領域 (= リスク管理 / 監視運用) の学習に進む前提として領域 5 を確立
+- Phase 1 v6 6 案全滅の構造的原因を 6 軸の多様性欠落として整理し、工程 2-7 詳細詰めに進む準備を完了
+
+**How to apply (改善 1 件):**
+
+#### 改善 1: 次セッションで残り 2 領域 (6/7) を v5 として追加
+
+- **領域 6 (リスク管理)** を先行 (= 工程 4 + 工程 5 損切設計直結):
+  - Volatility targeting 詳細 (= Garch-DCC / Vol Forecast / EWMA)
+  - Stop-loss 業界手法 (= ATR-based / Chandelier / Volatility-Stop / Trailing Stop)
+  - Drawdown control (= CPPI / TIPP / dynamic deleveraging)
+  - Position scaling 業界手法
+- **領域 7 (監視・運用)** を並行 or 後段 (= 工程 7 Online 監視直結):
+  - Online learning (= incremental LightGBM / River)
+  - A/B testing (= multi-armed bandit / Champion-Challenger)
+  - Shadow deployment
+  - §17.8 で KL/Wasserstein/Page-Hinkley は部分網羅済
+- 各領域 WebSearch 10-20 件 + 教科書 chapter 引用必須 (= cc_role §1.4.6.1)
+- 1-2 セッション規模 (= 領域 6 で 1 セッション・領域 7 で 1 セッション)
+- 領域 6-7 完成後 → WORKFLOW 改訂37 active 優先 3 (= 工程 2-7 詳細詰め) に進む
+
+**関連:**
+
+- L-225 (= 前セッション・領域 3-4 完成・本セッション学習の直接動機)
+- L-224 (= アルゴリズム多様性ゼロ + 領域 1-2 完成)
+- L-223 (= ボラ ML 設計欠陥 + phase_flow_v4 v7 破綻判断・本セッション学習の根本動機)
+- cc_role §1.5 デザイン責任 (= §18.5 設計判断調査ノート位置・確定は工程 2-7 詳細詰めで別途)
+- cc_role §1.4.6.1 9 項目 (= ML pipeline / トレード関連設計提案前の業界整合 verify・本セッション学習で 6-9 を引き続き蓄積)
+- feedback_trade_ml_knowledge_gap (= CC のトレード ML 業界標準理解不足・本 lesson で改善 1 件進展・領域 5 で完成度 5/7 = 約 71%)
+- 公式 source: 本セッション末 commit (= cc_entry_logic_self_study.md v4 + L-226 + WORKFLOW 改訂38 active)
+
+---
+
 ### L-225: cc_entry_logic_self_study.md v3 完成 — ML 知識領域 3 (特徴量設計) + 領域 4 (評価方法) の業界カタログ整理 + Phase 0 v4 特徴量拡張候補 + Phase 5/6-b 合格判定追加候補 (DSR/PBO) (2026-05-25)
 
 **何が起きたか:**

@@ -358,73 +358,72 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-25 改訂37・**cc_entry_logic_self_study.md v3 完成 (= ML 知識領域 3 特徴量設計 + 領域 4 評価方法 業界カタログ整理・727 → 1255 行・+528 行・WebSearch 16 件 + AFML Ch.2/5/7/8/14 + Bailey & LdP 2014 DSR/PBO + MLfAT Ch.4 + Hudson & Thames mlfinlab + arxiv microstructure 5 件 引用 + L-225 追加) + cat-bitget 設計判断確定事項 6 件追加 (= Phase 0 v4 特徴量拡張候補 / CPCV 検証強化候補 / Phase 5・6-b DSR>0.95+PBO<0.5 多重防御候補 / scaler leak Pipeline 義務化 / 統計指標 vs PnL 指標物理分離維持)**・次タスク = 案 B 学習継続 = 残り 3 領域 (5/6/7) を v4 として追加・領域 5 (組合せ手法) 先行）
+## 🔴 現在のフェーズ（2026-05-25 改訂38・**cc_entry_logic_self_study.md v4 完成 (= ML 知識領域 5 組合せ手法 業界カタログ整理・1255 → 1610 行・+355 行・WebSearch 14 件 + AFML Ch.6/16 + Lopez de Prado 2016 (HRP 原論文 SSRN 2708678) + Raffinot 2018 (HERC) + Hudson & Thames meta-labeling repo + Riskfolio-Lib + PyPortfolioOpt + arxiv 4 件 (Diversity/FinRL/Hybrid/GAS) + Viola-Jones cascade theory 引用 + L-226 追加) + Phase 1 v6 6 案全滅の構造的原因を 6 軸多様性欠落に整理 (= v1-v4 統合) + Phase 1 v7 候補「案 g」設計判断調査ノート確立 (§18.5)**・次タスク = 案 B 学習継続 = 残り 2 領域 (6/7) を v5 として追加・領域 6 (リスク管理) 先行）
 
-> **【現在の正本ブロック・改訂37・2026-05-25 セッション末（案 B 学習領域 3-4 完成）】**
+> **【現在の正本ブロック・改訂38・2026-05-25 セッション末（案 B 学習領域 5 完成・領域 5/7 = 約 71% 完成）】**
 >
 > ### 本セッション (2026-05-25) 完了事項
 >
-> #### 1. cc_entry_logic_self_study.md v3 完成 (= WORKFLOW 改訂36 active 優先 2 = 案 B 学習継続)
-> - v2 (727 行) → **v3 (1255 行・+528 行)** に拡張
-> - **§16 ML 特徴量設計 (7 節)**: 価格バー設計 (AFML Ch.2 情報駆動 bars) / Fractional Differentiation (AFML Ch.5) / スケーリング (tree vs NN + leak 防止) / 特徴量選択 (AFML Ch.8 MDI/MDA/SFI + Boruta/SHAP/MI) / 出来高系 (OBV/VWAP/Volume Profile) / 板情報系 (OBI/Taker Ratio/VPIN/Funding/OI) / 7 工程接続
-> - **§17 ML 評価方法 (9 節)**: Walk-Forward (rolling vs expanding) / Purged K-Fold (AFML Ch.7) / CPCV (AFML Ch.7 + ScienceDirect 2024) / DSR (AFML Ch.14 + Bailey & LdP 2014) / PBO (Bailey 2014 + pypbo) / 統計指標 vs PnL 指標分離 (cc_role §1.4.6.1 #9) / data leak 防止 (Pipeline + TimeSeriesSplit) / concept drift (KL/Wasserstein/Page-Hinkley) / 7 工程接続
-> - **§15.2-15.4 更新**: 残り 5 領域 → 残り 3 領域・v3 設計判断確定事項 6 件追加
-> - WebSearch 16 件 + AFML Ch.2/5/7/8/14 + Bailey & LdP 2014 (DSR/PBO 原論文 2 件) + MLfAT Ch.4 + Hudson & Thames mlfinlab + arxiv 5 件 (microstructure 2602.00776 / 2506.05764 / Frontiers 2026 / MDPI 2026 / shap-select 2410.06815) 引用
+> #### 1. cc_entry_logic_self_study.md v4 完成 (= WORKFLOW 改訂37 active 優先 2 = 案 B 学習継続)
+> - v3 (1255 行) → **v4 (1610 行・+355 行)** に拡張
+> - **§18 ML 組合せ手法 (5 節)**: 階層 Stacking (AFML Ch.6 + 異種 base learner + Logistic Regression meta + OOF Purged K-Fold) / Cascade 多段 Filter (Viola-Jones 由来・LuxAlgo false positive 30% 削減実証) / HRP + HERC + NCO (Lopez de Prado 2016 SSRN 2708678 + Raffinot 2018 + Riskfolio-Lib + PyPortfolioOpt) / Meta-Labeling 多段詳細 (Hudson & Thames repo + Probability Calibration Platt/Isotonic + tertiary 段 MoE 拡張) / 7 工程接続 + Phase 1 v7「案 g」設計判断調査ノート
+> - **§15.2-15.4 更新**: 残り 3 領域 → 残り 2 領域・v4 設計判断確定事項 6 件追加
+> - WebSearch 14 件 + AFML Ch.6 (Ensemble) / Ch.16 (Asset Allocation) + Lopez de Prado 2016 (HRP 原論文) + Raffinot 2018 (HERC) + Hudson & Thames meta-labeling repo + Riskfolio-Lib + PyPortfolioOpt + arxiv 4 件 (Diversity 2407.12996 / FinRL Contest 2501.10709 / Hybrid Ensemble 2512.15738 / GAS Blending 2411.03035) + Viola-Jones cascade theory 引用
 >
-> #### 2. cat-bitget 改善方向の業界整合 verify 完了 (§16.7 + §17.9 + §15.4)
-> - **工程 3 入力強化候補 5 件**: (a) Volume bar 並行入力 / (b) Fractional Diff MTF 24 特徴量追加 / (c) 出来高系 48 特徴量追加 / (d) microstructure 10-15 特徴量追加 / (e) Clustered MDA で 2604 → 500-1000 削減
-> - **Phase 1 v6 6 案全滅の補強要因 第 3 (= bar 種別多様性ゼロ・全 5m time bar 固定) を verify** (L-223 ボラ ML 設計欠陥 + L-224 アルゴ多様性ゼロ に並ぶ)
-> - **Phase 5/6-b 合格判定追加候補**: 月次 NET ≥ $1,900 全月クリア (= 現状必達) + **DSR > 0.95** + **PBO < 0.5** で本番投入リスク多重防御
-> - **Phase 1 v7 候補**: CPCV (= C(6,2) = 15 paths) を案 e ベースで再評価 → backtest paths 分布 robustness 強化
-> - **scaler leak 防止**: Pipeline + TimeSeriesSplit で fold 毎 fit 義務化 (= 現状 implementation grep verify 要)
-> - **混合禁止再確認**: Phase 1-3 統計指標 / Phase 5-6-b PnL 指標 + DSR + PBO の **物理分離維持**
+> #### 2. Phase 1 v6 6 案全滅の構造的原因を 6 軸多様性欠落に整理 (§18.5)
+> - 軸 1 ボラ ML 設計欠陥 (L-223) / 軸 2 アルゴ多様性ゼロ (L-224 + arxiv 2512.15738 で「architecture diversity > dataset diversity・同一アーキ r > 0.6」業界実証) / 軸 3 bar 種別多様性ゼロ (L-225 / §16.1) / **軸 4 cascade 構造不在 (v4 §18.2 新規)** / **軸 5 strategy allocation 機械的固定 (v4 §18.3 新規)** / **軸 6 Meta-Labeling 案 f primary も secondary も同型 (L-223 + §18.4 で多段詳細)**
+> - v4 で軸 2/4/5/6 の業界カタログ確立 → 工程 2-7 詳細詰めで再設計可能な状態に
 >
-> #### 3. lessons L-225 追加
-> - cc_entry_logic_self_study.md v3 完成 + 学習成果 7 ポイント + 次セッション残り 3 領域 (5/6/7) 継続計画
+> #### 3. Phase 1 v7 候補「案 g」設計判断調査ノート確立 (§18.5)
+> - **段 1 (工程 2)**: 固定ロジック (= 業界標準 ATR/ADX/RSI シグナル組合せ) で高 recall 候補生成
+> - **段 2 (工程 3 primary)**: LightGBM + XGBoost + GRU 異種 stacking + Logistic Regression meta + regime 入力 + LONG/SHORT 分離 + MTF + OOF Purged K-Fold
+> - **段 3 (工程 3 secondary)**: XGBoost or MLP (= primary とは異種) で板情報系 + Funding Rate + OI ROC を入力・Platt/Isotonic calibration
+> - **段 4 (工程 4)**: HRP/HERC で strategy allocation + Half-Kelly 個別 size + 0.12 BTC 合計 clip
+> - **多様性 verify 義務**: base learners predict correlation r < 0.6 (arxiv 2512.15738 準拠)
+> - **計算コスト**: 約 7 時間 / 1 セッション規模
+>
+> #### 4. lessons L-226 追加
+> - cc_entry_logic_self_study.md v4 完成 + 学習成果 6 ポイント + 次セッション残り 2 領域 (6/7) 継続計画
 >
 > ### 次セッション CC 優先順位
 >
-> 1. **優先 1 — Step 0 + 新規 memory + cc_entry_logic_self_study.md v3 auto-load 確認**:
+> 1. **優先 1 — Step 0 + cc_entry_logic_self_study.md v4 auto-load 確認**:
 >    - `feedback_priority_starting_line_only.md` / `feedback_no_unverified_assertions.md` / `feedback_current_state_verify_before_design.md` / `feedback_trade_ml_knowledge_gap.md` 起動
 >    - cc_role §1.4.6 / §1.4.6.1 起動
->    - **`cc_entry_logic_self_study.md` v3 全文 view** (= 1255 行・本セッション完成・必読)
+>    - **`cc_entry_logic_self_study.md` v4 全文 view** (= 1610 行・本セッション完成・必読)
 >
-> 2. **優先 2 — 案 B 学習継続 (= 残り 3 領域・cc_entry_logic_self_study.md v4 として追加)**:
->    - **領域 5 (組合せ手法) を先行**: 工程 3 + 工程 4 接続直結
->      - 階層 stacking (= GBDT + DL + RL の出力を meta-learner で統合)
->      - Cascade (= 多段 filter で偽信号削減)
->      - Hierarchical Risk Parity (Lopez de Prado 2016)
->      - Meta-Labeling 多段詳細
->    - **領域 6 (リスク管理) を並行**: 工程 4 + 工程 5 損切設計直結
->      - Volatility targeting 詳細 (Garch-DCC / Vol Forecast)
->      - Stop-loss 業界手法 (ATR-based / Chandelier / Volatility-Stop)
->      - Drawdown control (CPPI / TIPP) + Position scaling
->    - **領域 7 (監視・運用)** 最後: §17.8 で部分網羅済 (KL/Wasserstein/Page-Hinkley) → 残り = Online learning (incremental LightGBM / River) / A/B testing (multi-armed bandit) / Champion-Challenger / Shadow deployment
+> 2. **優先 2 — 案 B 学習継続 (= 残り 2 領域・cc_entry_logic_self_study.md v5 として追加)**:
+>    - **領域 6 (リスク管理) を先行**: 工程 4 + 工程 5 損切設計直結
+>      - Volatility targeting 詳細 (Garch-DCC / Vol Forecast / EWMA)
+>      - Stop-loss 業界手法 (ATR-based / Chandelier / Volatility-Stop / Trailing Stop)
+>      - Drawdown control (CPPI / TIPP / dynamic deleveraging)
+>      - Position scaling 業界手法
+>    - **領域 7 (監視・運用)** を並行 or 後段: §17.8 で部分網羅済 (KL/Wasserstein/Page-Hinkley) → 残り = Online learning (incremental LightGBM / River) / A/B testing (multi-armed bandit) / Champion-Challenger / Shadow deployment
 >    - 各領域 WebSearch 10-20 件 + 教科書 chapter 引用必須 (cc_role §1.4.6.1)
->    - 1-2 セッション規模 (= 領域 5 で 1 セッション・領域 6-7 で 1 セッション)
+>    - 1-2 セッション規模 (= 領域 6 で 1 セッション・領域 7 で 1 セッション)
 >
-> 3. **優先 3 — 学習完了後の工程 2-7 詳細詰め (= 設計確定)**
+> 3. **優先 3 — 学習完了後 (= 領域 6-7 完成後) の工程 2-7 詳細詰め (= 設計確定)**
 > 4. **優先 4 — 工程 2-7 設計確定後の実装着手 + 全体結合テスト**
-> 5. **優先 5 — セッション終了処理** (lessons + WORKFLOW 改訂38 + git commit)
+> 5. **優先 5 — セッション終了処理** (lessons + WORKFLOW 改訂39 + git commit)
 >
 > ### 引き継ぎリソース 3 層構造
 >
 > #### Layer 1 (毎セッション必読)
-> - **WORKFLOW.md 改訂37 active** (本ブロック)
+> - **WORKFLOW.md 改訂38 active** (本ブロック)
 > - **CLAUDE.md**
-> - **`cc_entry_logic_self_study.md` v3** (= 本セッション完成・1255 行・次セッション v4 拡張対象)
-> - **lessons_active.md 直近 5 件** (L-225 → L-224 → L-223 → L-222 → L-221)
+> - **`cc_entry_logic_self_study.md` v4** (= 本セッション完成・1610 行・次セッション v5 拡張対象)
+> - **lessons_active.md 直近 5 件** (L-226 → L-225 → L-224 → L-223 → L-222)
 > - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 / §1.4.7 / §1.5 / §1.7**
 > - **`feedback_priority_starting_line_only.md`** (auto-memory・最重要・命令)
 > - **`feedback_no_unverified_assertions.md`** (auto-memory・最重要・命令)
 > - **`feedback_current_state_verify_before_design.md`** (auto-memory・最重要)
 > - **`feedback_trade_ml_knowledge_gap.md`** (auto-memory・最重要)
 >
-> #### Layer 2 (案 B 学習継続時 = 領域 5-7)
-> - **AFML (Lopez de Prado 2018)** Ch.6 Ensemble Methods (= 領域 5 主軸) / Ch.4 Sample Weights / Ch.16 Machine Learning Asset Allocation (= 領域 5 + 領域 6)
-> - **MLfAT (Stefan Jansen 2020)** Ch.5 Strategy Evaluation / Ch.8-10 Backtest 設計 (= 領域 6 + 領域 7) / Ch.20-22 Reinforcement Learning (= 領域 5 multi-model)
-> - **Lopez de Prado 2016 "Building Diversified Portfolios that Outperform Out-of-Sample"** (= HRP 原論文・領域 5/6)
-> - **Hudson & Thames mlfinlab blog + portfoliolab** (= 領域 5-7 業界実装パターン)
+> #### Layer 2 (案 B 学習継続時 = 領域 6-7)
+> - **AFML (Lopez de Prado 2018)** Ch.4 Sample Weights (= 領域 6 関連) / Ch.16 Machine Learning Asset Allocation (= 領域 6) / Ch.5 (drawdown control)
+> - **MLfAT (Stefan Jansen 2020)** Ch.5 Strategy Evaluation / Ch.8-10 Backtest 設計 (= 領域 6 + 領域 7) / Ch.20-22 Reinforcement Learning
+> - **Hudson & Thames mlfinlab blog + portfoliolab** (= 領域 6-7 業界実装パターン)
+> - **`scikit-multiflow` + `river`** (= Online learning 業界 default ライブラリ・領域 7)
 > - `technical_analysis_knowledge_base.md` (既存・1691 行) / `industry_benchmark_knowledge_base.md` (既存・420 行)
 > - cc_role §1.5 / §1.6
 > - 旧 Priority 実装 (`strategies/cat_v9_decider.py` + `config/cat_params_v9.json`) = **学習材料のみ・素材化禁止**
@@ -442,8 +441,19 @@ Critical/Major 判定を伴わない確認程度はこちら。
 >
 > ### 目的整合性 1 行宣言 (cc_role §1.4.6)
 >
-> - **次タスク** = (1) Step 0 + cc_entry_logic_self_study.md v3 全文 view auto-load → (2) 案 B 学習継続 = 残り 3 領域 (5/6/7) を v4 として追加・領域 5 先行 → (3) 学習完了後に工程 2-7 詳細詰め → (4) 実装着手
-> - **現フェーズ目的への貢献根拠** = WORKFLOW 改訂36 active で確定した「学習完了後に工程 2-7 詳細詰めに進む」方針に従い、v3 (= 領域 3-4) 完成済 → 次は v4 (= 領域 5-7) で残り 3 領域を完成させて工程詳細詰めに進む準備を整える。L-225 改善 1 で領域 5 を先行 (= 工程 3 + 工程 4 接続直結)。
+> - **次タスク** = (1) Step 0 + cc_entry_logic_self_study.md v4 全文 view auto-load → (2) 案 B 学習継続 = 残り 2 領域 (6/7) を v5 として追加・領域 6 先行 → (3) 学習完了後に工程 2-7 詳細詰め → (4) 実装着手
+> - **現フェーズ目的への貢献根拠** = WORKFLOW 改訂37 active で確定した「学習完了後に工程 2-7 詳細詰めに進む」方針に従い、v4 (= 領域 5) 完成済 → 次は v5 (= 領域 6-7) で残り 2 領域を完成させて工程詳細詰めに進む準備を整える。L-226 改善 1 で領域 6 を先行 (= 工程 4 + 工程 5 損切設計直結)。
+
+---
+
+## 🧊 改訂37 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-25 改訂37・**cc_entry_logic_self_study.md v3 完成 (= ML 知識領域 3 特徴量設計 + 領域 4 評価方法 業界カタログ整理・727 → 1255 行・+528 行・WebSearch 16 件 + AFML Ch.2/5/7/8/14 + Bailey & LdP 2014 DSR/PBO + MLfAT Ch.4 + Hudson & Thames mlfinlab + arxiv microstructure 5 件 引用 + L-225 追加) + cat-bitget 設計判断確定事項 6 件追加 (= Phase 0 v4 特徴量拡張候補 / CPCV 検証強化候補 / Phase 5・6-b DSR>0.95+PBO<0.5 多重防御候補 / scaler leak Pipeline 義務化 / 統計指標 vs PnL 指標物理分離維持)**・次タスク = 案 B 学習継続 = 残り 3 領域 (5/6/7) を v4 として追加・領域 5 (組合せ手法) 先行）
+
+> **【旧正本ブロック・改訂37・2026-05-25 セッション末（案 B 学習領域 3-4 完成）】**
+>
+> 本ブロック詳細は改訂38 active 本文 + lessons L-225 参照。
+> v3 (1255 行) + L-225 + WORKFLOW 改訂37 を commit 012f47e で固定。
 
 ---
 

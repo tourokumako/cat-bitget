@@ -1,8 +1,8 @@
-# cc_entry_logic_self_study.md — CC エントリーロジック自己学習資料 v3
+# cc_entry_logic_self_study.md — CC エントリーロジック自己学習資料 v4
 
-作成: 2026-05-25 (CC・v1) / 改訂 2026-05-27 (v2) / 改訂 2026-05-25 (v3)
+作成: 2026-05-25 (CC・v1) / 改訂 2026-05-27 (v2) / 改訂 2026-05-25 (v3) / 改訂 2026-05-25 (v4)
 位置付け: まこさん命令 (2026-05-25) 「指標、閾値、時間の使い方を勉強しなおして」を受けた CC の学習資料。
-状態: **v3 (= 領域 1-4 完成)**。WORKFLOW 改訂36 active 優先 2 = 案 B 学習継続 = 領域 3 (特徴量設計) + 領域 4 (評価方法) を v3 §16 + §17 として追加。WebSearch 16 件 + AFML Ch.2/5/6/7/8/14 + MLfAT Ch.4 + Bailey & Lopez de Prado 2014 (DSR/PBO) + Hudson & Thames mlfinlab blog + arxiv 5 件 引用。残り = 領域 5-7 を v4 として追加予定。
+状態: **v4 (= 領域 1-5 完成)**。WORKFLOW 改訂37 active 優先 2 = 案 B 学習継続 = 領域 5 (組合せ手法) を v4 §18 として追加。WebSearch 14 件 + AFML Ch.6 (Ensemble) / Ch.16 (Asset Allocation) + Lopez de Prado 2016 (HRP 原論文 SSRN 2708678) + Raffinot 2018 (HERC) + Hudson & Thames meta-labeling repo + Riskfolio-Lib + PyPortfolioOpt + arxiv 4 件 (Diversity 2407.12996 / FinRL Contest 2501.10709 / Hybrid Ensemble 2512.15738 / GAS Blending 2411.03035) + Viola-Jones cascade theory 引用。残り = 領域 6-7 を v5 として追加予定。
 
 ---
 
@@ -684,20 +684,20 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 3. **regime 不在の致命性**: Phase 1 v6 全滅の根本原因 = regime context を入力に入れていない → HMM/GMM で工程 1 出力を独立に与える必要 (§14.6)
 4. **MTF 整合の欠落**: 現状 5m 単独学習 → 4h regime + 1h setup + 5m entry の 3 層構造が業界標準 (§13.2 Transformer / §14.6 HMM どちらでも MTF 入力で性能向上)
 
-### 15.2 残り 3 領域 (= 次セッション以降 WORKFLOW 改訂36 優先 2 残り・v3 で領域 3-4 完成)
+### 15.2 残り 2 領域 (= 次セッション以降 WORKFLOW 改訂37 優先 2 残り・v4 で領域 5 完成)
 
 - ~~**領域 3 (ML 特徴量設計)**~~ → **v3 §16 で完成** (Fractional Differentiation / スケーリング / 特徴量選択 / 出来高系 / 板情報系)
 - ~~**領域 4 (ML 評価方法)**~~ → **v3 §17 で完成** (Walk-Forward / Purged K-Fold / CPCV / Embargo / DSR / PBO / Pipeline leak 防止 / Concept drift)
-- **領域 5 (ML 組合せ手法)**: §13.5 で部分網羅・残り = 階層 stacking / Cascade / Hierarchical Risk Parity / Meta-Labeling 多段詳細
+- ~~**領域 5 (ML 組合せ手法)**~~ → **v4 §18 で完成** (階層 Stacking / Cascade / HRP+HERC+NCO / Meta-Labeling 多段詳細)
 - **領域 6 (リスク管理)**: §14.5 で Kelly 網羅・残り = Volatility targeting 詳細 (= Garch-DCC / Vol Forecast) / Stop-loss 業界手法 (= ATR-based / Chandelier / Volatility-Stop) / Drawdown control (= CPPI / TIPP) / Position scaling
 - **領域 7 (監視・運用)**: §17.8 で部分網羅・残り = Online learning (= incremental LightGBM / River) / A/B testing (= multi-armed bandit) / Champion-Challenger 構造 / Shadow deployment
 
-### 15.3 次セッションの推奨着手順位 (v3 完成 → 次は領域 5-7)
+### 15.3 次セッションの推奨着手順位 (v4 完成 → 次は領域 6-7)
 
-1. **領域 5 (組合せ手法)** を先行: 工程 3 + 工程 4 接続 (= Meta-Labeling 多段 / Hierarchical) の業界標準確立
-2. **領域 6 (リスク管理)** を並行: 工程 4 Position Sizing + 工程 5 Exit ML の損切設計確立
-3. **領域 7 (監視・運用)** は最後: 工程 7 Online 監視の業界標準確立 + 全 Phase 統合監視
-4. 各領域 WebSearch 10-20 件 + 教科書 chapter 引用 (cc_role §1.4.6.1) を継続
+1. **領域 6 (リスク管理)** を先行: 工程 4 Position Sizing + 工程 5 Exit ML の損切設計確立
+2. **領域 7 (監視・運用)** を並行 or 後段: 工程 7 Online 監視の業界標準確立 + 全 Phase 統合監視
+3. 各領域 WebSearch 10-20 件 + 教科書 chapter 引用 (cc_role §1.4.6.1) を継続
+4. 領域 6-7 完成後 → 工程 2-7 詳細詰め (= WORKFLOW 改訂37 active 優先 3) に進む
 
 ### 15.4 cat-bitget 設計判断の確定事項 (v3 学習成果から拡張)
 
@@ -716,6 +716,14 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 - **Phase 0 v4 拡張候補**: time bar 5m + Volume bar (= BTC 出来高 X BTC 毎) 並行入力 + Fractional Diff + 出来高系 + microstructure
 - **scaler leak 防止 (= §17.7)**: Pipeline + TimeSeriesSplit で fold 毎 fit を全 Phase 実装義務化 (= 現状の implementation grep verify 要)
 - **混合禁止再確認 (= §17.6 + cc_role §1.4.6.1 #9)**: Phase 1-3 = 統計指標 / Phase 5-6-b = PnL 指標 + DSR + PBO の **物理分離維持**
+
+#### v4 (= 領域 5) の追加確定事項
+- **工程 3 アーキ強化 (= §18.1)**: LightGBM (= 現案 e ベース) + XGBoost + 1 種類の DL (= TFT / GRU いずれか) の **異種 3 base learner + Logistic Regression meta-learner** の階層 Stacking 構造を Phase 1 v7 候補に。out-of-fold prediction は Purged K-Fold ベースで生成し leak 防止
+- **工程 3 + 工程 5 接続 (= §18.2)**: Cascade 多段 Filter で偽信号削減。段 1 = LightGBM 高 recall (= 全 entry 候補捕捉)・段 2 = XGBoost 高 precision (= 偽信号 reject)・段 3 = Meta-Labeling secondary で size 決定。各段の閾値は train 内で grid search・採用は OOF (out-of-fold) 性能で判断
+- **工程 4 配分強化 (= §18.3)**: phase_flow_v4 v7 改善 4 動的合成方式 8 (= Half-Kelly + Vol target + cluster 強度別) に **HRP / HERC で cluster 内配分を robust 化** する候補。NCO (Nested Clustered Optimization) は cluster 数 ≥ 12 で過剰最適化リスク低減
+- **工程 3 + 工程 4 接続 (= §18.4)**: Meta-Labeling 多段詳細 = primary (= 異種 stacking) → secondary (= 確率 calibrate + Half-Kelly に投入) → tertiary 候補 (= regime 別 secondary を分離学習・案 f 失敗の構造的補正)
+- **多様性 verify (= §18.1)**: base learner 間の予測 correlation を r < 0.6 に維持 (= arxiv 2512.15738 実証ベンチマーク)。同一アルゴ (全 LightGBM) で stack しても効果薄を Phase 1 v6 6 案全滅で実証済 (L-223 + L-224)
+- **業界整合性 (= §18.5)**: HRP は OOS で Mean-Variance 比 robust だが、crypto 単一資産 (BTC) では 1/N (= buy-and-hold) に劣後事例あり (Quantopian 実証) → cat-bitget では「cluster × Exit type」の strategy combination に HRP/HERC を適用する位置付け (= asset allocation でなく strategy allocation)
 
 ---
 
@@ -1236,6 +1244,352 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 
 ---
 
+## §18 ML 組合せ手法 (WORKFLOW 改訂37 領域 5・業界カタログ)
+
+> v4 追記 (2026-05-25)。**「複数の学習器・複数の予測層・複数の戦略をどう組み合わせるか」の業界カタログ**。Phase 1 v6 案 a-f が **全 LightGBM・全 5m time bar・全 LONG/SHORT 並列学習** = 多様性ゼロで全滅した事案 (L-223 + L-224) を受けて、業界の「アンサンブル多様性確保」「多段 cascade」「階層的配分」「Meta-Labeling 多段化」の 4 軸を整理。ChatGPT 7 工程フレームの工程 3 (Entry ML アーキ) + 工程 4 (Position Sizing 配分) + 工程 5 (Exit ML 統合) に直結。
+
+### §18.1 階層 Stacking (= 異種アルゴリズムの meta-learner 統合)
+
+#### 業界 3 系統の組合せ手法 (再掲・AFML Ch.6 + 業界実装)
+
+| 手法 | 仕組み | 多様性源 | 業界用途 |
+|---|---|---|---|
+| **Bagging** (Bootstrap Aggregating) | 同型 base learner を bootstrap sample で並列学習・平均 | データ多様性 | Random Forest |
+| **Boosting** | 逐次的に前モデルの誤差を補正 | bias 低減 | LightGBM / XGBoost / CatBoost |
+| **Stacking (= 階層 Stacking)** | 異種アルゴ (= GBDT + DL + RL) の OOF (out-of-fold) 予測を meta-learner で統合 | **アーキテクチャ多様性** | プロ Quant 標準 |
+| **Blending** | Stacking の簡易版 (= holdout set 1 つで meta 学習) | 同上 | 計算軽量 |
+| **Bayesian Model Averaging (BMA)** | 各モデルに事後確率 weight を付けて平均 | 確率的 weighting | non-stationary 環境向き |
+
+#### Stacking の業界実装パターン
+
+##### Level 0 (= base learners・異種で並列学習)
+
+業界推奨の base learner 組合せ (= ensemble diversity 確保):
+
+1. **GBDT 系** (= LightGBM / XGBoost / CatBoost): tabular 入力の予測力高・速い
+2. **時系列 DL 系** (= GRU / LSTM / Transformer / TFT): long-range pattern 捕捉
+3. **時系列特化 ML** (= MiniROCKET / TSFresh): 時系列分類の SOTA
+4. **線形系** (= Logistic Regression / Ridge): bias 低・robust なベースライン
+5. **RL 系** (= PPO の確率出力): 動的状況適応
+
+##### Level 1 (= meta-learner・予測を統合)
+
+業界推奨の meta-learner 選択:
+
+| meta-learner | 業界用途 | 弱点 |
+|---|---|---|
+| **Logistic Regression** | 業界 default・線形 weighting・解釈容易 | 非線形相互作用無視 |
+| **Ridge / Lasso** | base learner 過多時の正則化 | weight が小さくなりすぎる傾向 |
+| **XGBoost / RF (= meta)** | 非線形 weighting | 過学習リスク |
+| **NN (= MLP・1-2 hidden)** | 高表現力 | データ要件大 |
+
+##### Out-of-Fold (OOF) Prediction の必須性
+
+- **stacking で最重要の leak 防止構造**: meta-learner は base learner が **見ていないデータ** の予測で学習する義務
+- 実装: `sklearn.model_selection.cross_val_predict` または mlfinlab の Purged K-Fold OOF
+- **時系列固有 (cat-bitget 該当)**: 通常の `cross_val_predict` (= random shuffle) は時系列で leak → **Purged K-Fold + Embargo** で OOF を生成必須 (= §17.2 整合)
+
+#### 教科書整合 + 出典
+
+- AFML **Ch.6 Ensemble Methods**: Lopez de Prado「Combining diverse learners can improve robustness, mitigate overfitting, and extract persistent patterns from noisy financial time series」を引用 ([Ensemble Methods ML Wikipedia](https://en.wikipedia.org/wiki/Ensemble_learning) + [Baeldung CS](https://www.baeldung.com/cs/bagging-boosting-stacking-ml-ensemble-models) + [MachineLearningMastery](https://machinelearningmastery.com/demystifying-ensemble-methods-boosting-bagging-and-stacking-explained/))
+- [Stacking Ensembles XGBoost/LightGBM/CatBoost (Medium・Stephen Echessa)](https://medium.com/@stevechesa/stacking-ensembles-combining-xgboost-lightgbm-and-catboost-to-improve-model-performance-d4247d092c2e): 業界 default 構成・10-20% accuracy gain on tabular
+- [Stacking Ensemble Learning Combining XGBoost/LightGBM/CatBoost/AdaBoost + RF meta (ResearchGate 397047638)](https://www.researchgate.net/publication/397047638): meta = Random Forest 構造の業界実証
+- [Bitcoin Stacking Ensemble (MDPI Math 2022・10/8/1307)](https://www.mdpi.com/2227-7390/10/8/1307): LSTM + GRU stacking で BTC 次 30 分 price prediction
+- [arxiv 2512.15738 Hybrid Quantum-Classical Ensemble S&P500](https://arxiv.org/pdf/2512.15738): **architecture diversity (= 60.14%) > dataset diversity (= 52.80%)** + **同一アーキ間 correlation r > 0.6** を実証 → cat-bitget の Phase 1 v6 6 案 (= 全 LightGBM) 全滅の構造的根拠
+- [arxiv 2411.03035 GAS Blending](https://arxiv.org/html/2411.03035v1): Genetic Algorithm 生成 Alpha + Sentiment で BTC trend prediction の blending ensemble
+- [arxiv 2501.10709 FinRL Contest 2023-2024](https://arxiv.org/pdf/2501.10709): RL ensemble で stock / crypto trading の risk-return trade-off 強化
+- [Stacking GAS + LightGBM 解説 (johal.in 2025)](https://johal.in/ensemble-learning-methods-xgboost-and-lightgbm-stacking-for-improved-predictive-accuracy-2025/): 10-15% accuracy uplift via meta-learning
+
+#### Phase 1 v6 6 案との関係
+
+- 案 a-f は **全 LightGBM** (= §13.1 + L-224 で確定) → architecture diversity ゼロ
+- arxiv 2512.15738 の実証「same architecture between r > 0.6 correlation → ensemble 効果薄」と整合 → 案 a-f は stacking しても本質改善困難な構造
+- 案 f Meta-Labeling 失敗も同型: primary も secondary も同じ LightGBM → secondary が primary の盲点を補えない (= QuantConnect [Meta-Labeling not a silver bullet](https://www.quantconnect.com/forum/discussion/14706/why-meta-labeling-is-not-a-silver-bullet/) 整合)
+
+#### cat-bitget 適用判断 (= 工程 3 Entry ML アーキ強化候補・Phase 1 v7 案)
+
+- **Level 0 (= base learners) 業界推奨 3 種**:
+  1. **LightGBM** (= 現案 e ベース・高速・大規模) — 維持
+  2. **XGBoost** (= Sharpe / DD で LightGBM 優位事例・§13.1 + Data Moves Me 実証) — 追加候補
+  3. **GRU or TFT (= DL 系 1 種)** — 追加候補 (= 学習時間 vs 効果検証して片方採用)
+- **Level 1 (= meta-learner)**: Logistic Regression を default。理由 = 線形 weighting + 解釈容易 + base learners が GBDT 中心で非線形性は既に捕捉済
+- **OOF 生成**: Purged K-Fold 5 fold + Embargo K bar (= §17.2 整合) で leak 防止
+- **多様性 verify 義務**: 採用前に base learners の予測 correlation r を測定 → r > 0.6 → 同型バイアスとして diversification 失敗 → 別 base 検討
+- **Phase 1 v7 候補規模**: 1 base learner × 110 分 (= 案 e) × 3 base + meta 学習 30 分 = 約 7 時間 / 1 セッション規模で実行可能
+
+### §18.2 Cascade / 多段 Filter (= 偽信号の段階削減)
+
+#### 業界の根本構造 (= Viola-Jones cascade に由来する金融応用)
+
+Cascade は「**accuracy が高く必要だが大半の入力は negative**」状況で「**早期 reject + 段階的に高 cost classifier を適用**」する設計。crypto 5m bot の Entry 判定は典型的にこの構造:
+
+- 全 5m bar の中で「ML が long/short 候補」と判定するのは数 % のみ
+- 偽信号を後段で reject する方が「全段で同じ厳しさ」より計算効率 + precision 高い
+
+#### Viola-Jones Cascade 業界数値 (= 金融転用の基礎)
+
+| 段数 | 役割 | 業界実証 (face detection) |
+|---|---|---|
+| 段 1 | 高 recall・低 cost (= 2 feature) | FN ~0% / FP 40% — **95% の negative を即 reject** |
+| 段 2-3 | 中 recall・中 cost | 残り negative の大半を reject |
+| 段 N (= 38) | 最高 precision・最大 cost | total cascade detection rate 90% (= 各段 99.7% で連乗) |
+
+#### 金融機械学習への転用パターン
+
+| Cascade 段 | 役割 | base learner 例 |
+|---|---|---|
+| 段 1 (= candidate gen) | 高 recall・低 cost・大半の bar を reject | 固定ロジック (= ATR > threshold + ADX > 25 等)・cat-bitget 工程 2 (Entry 候補生成) |
+| 段 2 (= primary ML) | 中 recall・中 cost・false positive 削減 | LightGBM (= 高速・OOF 予測) |
+| 段 3 (= secondary ML) | 高 precision・高 cost・最終確定 | XGBoost or Meta-Labeling secondary (= §18.4) |
+| 段 4 (= size 決定) | 高 precision・size 確率を出力 | Half-Kelly / HRP cluster 配分 (= §18.3) |
+
+#### 業界実証 (= 偽信号削減効果)
+
+- [Ensemble Learning Cuts False Positives 30% (LuxAlgo)](https://www.luxalgo.com/blog/ensemble-learning-for-chart-patterns/): ensemble methods で false positive 30% 削減・risk management 強化
+- [Cascading Classifiers Wikipedia](https://en.wikipedia.org/wiki/Cascading_classifiers): cascade 構造の業界 default 解説
+- [Cascading Classifiers — Grokipedia](https://grokipedia.com/page/Cascading_classifiers): 多段 reject 構造の数式
+- [Classifier Cascade ScienceDirect Topic](https://www.sciencedirect.com/topics/computer-science/classifier-cascade): industry survey
+- [Saugata Paul Medium — Bagging/Boosting/Stacking/Cascading](https://medium.com/@saugata.paul1010/ensemble-learning-bagging-boosting-stacking-and-cascading-classifiers-in-machine-learning-9c66cb271674): Python SKLEARN + MLEXTEND 実装比較
+
+#### Phase 1 v6 6 案との関係
+
+- 案 a-f は **単段 (= ML 単独 entry 判定)** → cascade 構造なし
+- 案 f Meta-Labeling は **2 段 (= primary + secondary)** だが、両段とも同じ LightGBM・regime 不在ラベル → cascade の多様性効果なし
+- 「TP precision 0.43 頭打ち」(= L-223) は cascade 段数不足の補強原因として整理可能
+
+#### cat-bitget 適用判断 (= 工程 2 + 工程 3 + 工程 4 接続候補)
+
+- **3 段 cascade 構造案**:
+  - **段 1 (= 工程 2 Entry 候補生成)**: 固定ロジック (= 旧 Priority カバー範囲 + 業界標準 ATR/ADX/RSI シグナル組合せ) で全 bar の数 % まで絞る・高 recall 目標
+  - **段 2 (= 工程 3 primary ML)**: LightGBM (= 案 e 構造) で段 1 残りを binary 分類 (= TP first 確率)・false positive 削減目標
+  - **段 3 (= 工程 3 secondary ML)**: XGBoost or Meta-Labeling secondary で段 2 残りを確率 calibrate・最高 precision 目標
+- **閾値設計**: 各段の threshold は train fold で grid search・採用は OOF 性能 (= 全段通った後の TP precision + entropy_lift) で判断
+- **計算コスト**: 段 1 高速・段 2-3 は段 1 残り bar のみ実行 → 全段単独実行より低コスト
+- **業界注意**: cascade の総 detection rate = 各段 detection rate の連乗 → 段数増やすほど total recall 低下 → 段数 3-4 を上限目安
+
+### §18.3 Hierarchical Risk Parity (HRP) + HERC + NCO (= Lopez de Prado 2016+2018)
+
+#### 業界の根本問題 (= Markowitz Curse)
+
+Mean-Variance Optimization (MVO・1952) の構造的欠陥:
+
+1. **数値不安定**: 共分散行列の逆行列計算が条件数悪 → 小さな入力変化で weight 激変
+2. **集中**: 数銘柄に weight 集中・分散効果 minimal
+3. **OOS underperformance**: IS で min variance でも OOS で高 variance ([Wikipedia HRP](https://en.wikipedia.org/wiki/Hierarchical_Risk_Parity) + [Finexus Markowitz Curse](https://api.finexus.net/api/news/events/a4a54b61-d80a-47c9-897c-b301d4d799bb/html))
+
+#### HRP の 3 ステップ (Lopez de Prado 2016・SSRN 2708678 原論文)
+
+1. **Hierarchical Tree Clustering** (= 階層クラスタリング):
+   - 相関行列 → 距離行列 (= `sqrt(0.5 * (1 - corr))`) → linkage で dendrogram 構築
+   - linkage 方式: single (= default) / complete / ward
+2. **Matrix Seriation / Quasi-Diagonalization** (= 共分散行列の並べ替え):
+   - 似た資産が隣接するように行列を並べ替え
+   - block-diagonal 構造に近づける
+3. **Recursive Bisection** (= 再帰二分配分):
+   - dendrogram を再帰的に 2 分割
+   - 各分割で **inverse variance weighting** (= 各 cluster の variance に反比例) で weight 配分
+
+**特徴**: 共分散行列の逆行列を計算しない → 特異・近特異行列でも動作可能 ([Wikipedia](https://en.wikipedia.org/wiki/Hierarchical_Risk_Parity))
+
+#### 業界実証 (= MVO 比較)
+
+- [Lopez de Prado 2016 SSRN 2708678](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2708678): 「**HRP delivers lower out-of-sample variance than CLA, even though min variance is CLA's optimization objective**」 — IS 性能と OOS 性能の逆転
+- [Finexus Markowitz Curse Article](https://api.finexus.net/api/news/events/a4a54b61-d80a-47c9-897c-b301d4d799bb/html): MVO は IS で min vol だが OOS で高 vol・HRP が OOS best
+- [ResearchGate 379202955 Theoretical Evidence](https://www.researchgate.net/publication/379202955): HRP の Markowitz curse 解決の理論的根拠
+- [ScienceDirect HRP Real World Analysis](https://www.sciencedirect.com/science/article/abs/pii/S0167739X25000391): 効率的実装 + 実環境分析
+- [Quantopian HRP vs Diversification](https://www.quantopian.com/posts/hierarchical-risk-parity-comparing-various-portfolio-diversification-techniques): 各種 diversification 比較
+
+#### crypto 適用の実証 (= 重要な限界事例)
+
+- [ScienceDirect S154461232030177X (Beyond Risk Parity・crypto)](https://www.sciencedirect.com/science/article/abs/pii/S154461232030177X): crypto portfolio に HRP 適用・MVO より robust
+- [PyPortfolioOpt Crypto HRP Tutorial (alexeygolev.blog)](https://alexeygolev.blog/hierarchical-risk-parity-hrp-for-crypto-portfolio-optimisation/): Python 実装事例
+- **限界事例**: 「**Bitcoin hold outperformed HRP variants over 3 years**」 — 単一資産優位な期間では HRP は overhead になる ([ResearchGate Beyond Risk Parity](https://www.researchgate.net/publication/340893952))
+
+#### HERC (Hierarchical Equal Risk Contribution・Raffinot 2018)
+
+HRP の発展形 ([Hudson & Thames HERC](https://hudsonthames.org/beyond-risk-parity-the-hierarchical-equal-risk-contribution-algorithm/)):
+
+1. Hierarchical Clustering で cluster 構造構築
+2. **最適 cluster 数** を gap statistic 等で決定
+3. **Top-Down 再帰**: dendrogram を上から再帰的に分割・各 cluster に **Equal Risk Contribution** で配分
+4. cluster 内は naive risk parity (= HRP と同)
+
+**HRP との差**: cluster の境界を明示的に決める (HRP は暗黙的 bisection)・cluster 数を gap statistic で最適化
+
+#### NCO (Nested Clustered Optimization・Lopez de Prado 2019)
+
+HRP + Mean-Variance のハイブリッド:
+
+1. agglomerative hierarchical clustering で cluster 化
+2. **各 cluster 内で Mean-Variance optimization** (= 小さい共分散行列で実行・stable)
+3. **cluster 間は equal weight** または別の Mean-Variance
+4. 結合して最終 weight
+
+**特徴**: 共分散行列が大きい (= N > 50 等) ときに stable / NCO は HRP + HERC より MVO 寄り
+
+#### 実装ライブラリ (= 業界標準)
+
+| ライブラリ | 提供手法 | 業界使用度 |
+|---|---|---|
+| **PyPortfolioOpt** | HRP + Black-Litterman + 効率的フロンティア | 業界 default ([GitHub](https://github.com/PyPortfolio/PyPortfolioOpt) + [Docs](https://pyportfolioopt.readthedocs.io/en/stable/_modules/pypfopt/hierarchical_portfolio.html)) |
+| **Riskfolio-Lib** | HRP + HERC + NCO + 20+ risk measures | 業界推奨 ([Docs HCPortfolio](https://riskfolio-lib.readthedocs.io/en/latest/hcportfolio.html) + [Medium 解説](https://medium.com/@orenji.eirl/hierarchical-risk-parity-with-python-and-riskfolio-lib-c0e60b94252e)) |
+| **mlfinlab (Hudson & Thames)** | HRP + HERC + NCO + AFML 全 chapter 実装 | AFML 公式 ([mlfinlab](https://hudsonthames.org/mlfinlab/) + [HERC blog](https://hudsonthames.org/beyond-risk-parity-the-hierarchical-equal-risk-contribution-algorithm/)) |
+| **HierPortfolios (R)** | HRP + HERC + NCO + variants | R 業界 default ([CRAN](https://cran.r-project.org/web/packages/HierPortfolios/HierPortfolios.pdf)) |
+
+#### cat-bitget 適用判断 (= 工程 4 Position Sizing 配分強化候補)
+
+- **重要な認識**: cat-bitget は **BTC 単一資産** → HRP の本来用途 (= multi-asset diversification) に直接適用不可
+- **転用案**: **「cluster × Exit type × side」を strategy として扱い、strategy allocation に HRP/HERC を適用**:
+  - phase_flow_v4 v7 改善 4 の動的合成方式 8 で cluster 数 12 × Exit type 12 × side 2 = 288 strategy
+  - 288 strategy の return covariance を計算 → HERC で cluster 化 → 上位 N 戦略に資金配分
+- **HRP vs HERC vs NCO 選定**:
+  - 戦略数 ≥ 50 → HERC 推奨 (= cluster 数最適化)
+  - 戦略数 < 50 → HRP で十分
+  - 共分散行列不安定 → NCO で cluster 内 MVO 安定化
+- **業界整合判定**: 業界標準は asset allocation 用途だが、本提案は strategy allocation に転用 → 異種用途への適用 → Phase 4-a cluster 出力との接続で別途 verify 要
+- **既存 Half-Kelly との関係**: Half-Kelly = strategy 単位の確率ベース size / HRP = portfolio 単位の risk parity → **二段構造で併用可能** (= HRP で配分 ratio → Half-Kelly で各 strategy size 上限 clip)
+
+### §18.4 Meta-Labeling 多段詳細 (= §13.5 の深掘り)
+
+#### Meta-Labeling の業界 5 利点 (= multistage 整合)
+
+[Wikipedia Meta-Labeling](https://en.wikipedia.org/wiki/Meta-Labeling) + [Hudson & Thames Meta-Labeling GitHub](https://github.com/hudson-and-thames/meta-labeling) + [Hudson & Thames Triple Barrier paper](https://hudsonthames.org/does-meta-labeling-add-to-signal-efficacy-triple-barrier-method/) + [WhatWorksInTrading Substack](https://whatworksintrading.substack.com/p/meta-labeling-the-technique-that):
+
+1. **Direction と Sizing の分離**: primary が方向 (= LONG/SHORT/0)・secondary が size 確率 → 同時最適化の非効率を回避
+2. **False Positive 削減**: secondary が primary の低 confidence bet を filter
+3. **Sharpe / max DD 改善**: 業界実証 (= AFML Ch.3 + Hudson & Thames 検証)
+4. **Adaptability**: regime 変化に primary より柔軟に対応 (= secondary が「いつ primary を信じるか」を学習)
+5. **Modular Architecture**: primary / secondary / sizing を独立開発 → team / iteration が並列化可能
+
+#### 多段構造の業界拡張パターン
+
+##### 2 段 (= AFML 標準・Phase 1 v6 案 f が試行)
+
+- 段 1 (primary): direction prediction (LONG/SHORT/0)
+- 段 2 (secondary): primary の正誤確率 → size
+
+##### 3 段 (= 業界拡張・cat-bitget Phase 1 v7 候補)
+
+- 段 1 (primary・direction): LightGBM + XGBoost stacking (= §18.1)
+- 段 2 (secondary・confidence): Meta-Labeling で primary の正誤確率
+- 段 3 (tertiary・regime adaption): regime 別 secondary を分離学習 (= 工程 1 regime 出力 × secondary で MoE 構造)
+
+##### 4 段 (= 完全 cascade・将来検討)
+
+- 段 1 (= 工程 2): 固定 Entry 候補生成
+- 段 2 (= 工程 3 primary): direction
+- 段 3 (= 工程 3 secondary): confidence
+- 段 4 (= 工程 4): HRP/HERC で size 配分
+
+#### 段 1 primary の品質確保 (= 案 f 失敗の構造的補正)
+
+[QuantConnect Meta-Labeling not silver bullet](https://www.quantconnect.com/forum/discussion/14706/why-meta-labeling-is-not-a-silver-bullet/) 整合:
+
+- **primary が悪いと meta も救えない** (= 案 f 失敗の核心)
+- 案 f は primary も secondary も同じ LightGBM + 同じ regime 不在ラベルで学習 → 同型バイアス
+- **業界正攻法**: primary を **多様化** (= 工程 1 regime 入力追加 + LONG/SHORT 分離学習 + MTF 整合 + 異種 stacking) → secondary は「primary の盲点」を見れる構造を作る
+
+#### Probability Calibration (= secondary 出力の size 投入前処理)
+
+業界必須 ([Hudson & Thames Meta-Labeling repo](https://github.com/hudson-and-thames/meta-labeling)):
+
+- secondary の出力 probability は raw LightGBM 出力で **過信** または **過小評価** の傾向あり
+- 業界対応:
+  - **Platt Scaling**: sigmoid で再 fit (= `sklearn.calibration.CalibratedClassifierCV(method='sigmoid')`)
+  - **Isotonic Regression**: 非パラメトリック単調変換 (= `method='isotonic'`)
+- 既存 §17.1 / §17.2 の **Purged K-Fold** で fold 毎に calibration 学習 (= leak 防止)
+
+#### Information Advantage の業界定義
+
+[Hudson & Thames paper](https://hudsonthames.org/wp-content/uploads/2022/04/Does-Meta-Labeling-Add-to-Signal-Efficacy.pdf):
+
+- secondary が「primary が **十分活用できなかった情報**」を捕捉できれば information advantage 確立
+- 業界実証で MA crossover を primary に LightGBM secondary を載せると Sharpe + max DD 改善
+- ただし「primary が既に optimal」(= 簡単な構造のみで強い予測) では secondary の improvement marginal
+
+#### cat-bitget 適用判断 (= Phase 1 v7 候補・案 f の構造的補正版)
+
+- **段 1 primary (= 工程 3 main)**:
+  - LightGBM + XGBoost stacking (= §18.1) + **regime 入力** (= 工程 1 出力) + **LONG/SHORT 分離学習** + **MTF 整合** (= §16)
+  - 出力: direction (LONG/SHORT/0)
+- **段 2 secondary (= 工程 3 confidence)**:
+  - 別アーキ (= 推奨は MLP or XGBoost・LightGBM とは異種) で primary の **盲点情報** (= 出来高系 + microstructure + order book imbalance = §16.5-§16.6) を入力
+  - 出力: 0/1 確率 (= TP 到達確率)
+  - Platt / Isotonic で calibration
+- **段 3 tertiary (= 工程 4 入力)**:
+  - calibrated secondary 確率 → Half-Kelly + HRP/HERC cluster 配分 (= §18.3) で size 決定
+  - 0.12 BTC 合計上限制約で clip (= CLAUDE.md §0-2 絶対規定)
+- **業界整合 verify**:
+  - 統計指標 (= Phase 1-3) = primary entropy_lift + secondary AUC + calibration (= Brier score)
+  - PnL 指標 (= Phase 5-6-b) = 月次 NET ≥ $1,900 + DSR + PBO
+  - 混合禁止 (= §17.6 + cc_role §1.4.6.1 #9)
+
+### §18.5 領域 5 まとめ: 7 工程接続 + cat-bitget 設計判断調査ノート
+
+#### 7 工程接続マトリックス
+
+| 工程 | 組合せ手法の改善方向 | 業界整合手法 |
+|---|---|---|
+| 1 regime | HMM/GMM 単体 → ML 化 (= HMM + LightGBM 分類の stacking) | §13 + §14.6 |
+| 2 Entry 候補生成 | cascade 段 1 として配置 (= 固定ロジックで高 recall) | §18.2 |
+| **3 Entry ML** | **異種 stacking (= LightGBM + XGBoost + DL) + Logistic Regression meta + Meta-Labeling 2-3 段** | §18.1 + §18.4 |
+| 4 Position Sizing | Half-Kelly + Vol target + **HRP/HERC で strategy allocation** | §18.3 + phase_flow_v4 v7 改善 4 |
+| 5 Exit ML | PPO (= RL) + XGBoost (= scale-out 確率) の **ensemble or cascade** | §13.4 + §18.1 |
+| 6 Risk 管理 | 固定ルール (= ML 統合保留) | §14.8 |
+| 7 Online 監視 | concept drift + champion-challenger + A/B testing (= 領域 7 で詳細) | 領域 7 |
+
+#### Phase 1 v6 6 案全滅の構造的原因 (= v1-v4 学習成果統合)
+
+| # | 原因 | 補強領域 | v4 学習成果 |
+|---|---|---|---|
+| 1 | ボラ予測 ML 設計欠陥 (= regime 不在 + LONG/SHORT 並列 + ボラ依存ラベル) | L-223 | §13.1 + §14.6 |
+| 2 | アルゴリズム多様性ゼロ (= 全 LightGBM) | L-224 + arxiv 2512.15738 | **§18.1 stacking 異種 base 確立** |
+| 3 | bar 種別多様性ゼロ (= 全 5m time bar) | L-225 + §16.1 | §16.1 (v3 で確立済) |
+| 4 | cascade 構造不在 (= ML 単段 entry 判定) | **v4 §18.2 新規** | **§18.2 cascade 多段確立** |
+| 5 | strategy allocation の機械的固定 (= Phase 4-a cluster の risk parity 配分なし) | **v4 §18.3 新規** | **§18.3 HRP/HERC 適用候補確立** |
+| 6 | Meta-Labeling 失敗 (= 案 f primary も secondary も同型) | L-223 + §13.5 | **§18.4 多段詳細で primary 多様化要件確立** |
+
+→ Phase 1 v6 6 案全滅の構造的原因 = **6 軸の多様性欠落**。v4 で軸 2/4/5/6 の業界カタログ確立 → 工程 2-7 詳細詰めで再設計可能
+
+#### cat-bitget Phase 1 v7 設計判断調査ノート (= v4 学習で見えた候補)
+
+> ⚠️ 以下は **学習資料の調査ノート位置付け**。実際の設計確定は WORKFLOW 改訂37 active 優先 3 (= 工程 2-7 詳細詰め) で別途実施 (cc_role §1.5)。
+
+##### 案 g (= 異種 Stacking + Meta-Labeling 3 段・Phase 1 v7 主軸候補)
+
+- **段 1 (= Cascade 段 1・工程 2)**: 固定ロジック (= 業界標準シグナル組合せ・cc_role §1.7 旧 Priority 経験則 + 業界標準 ATR/ADX/RSI フィルタ) で全 bar の数 % まで絞る
+- **段 2 (= 工程 3 primary)**: LightGBM + XGBoost + GRU (= 3 種 stacking) + Logistic Regression meta
+  - 入力: 既存 2604 feature + Fractional Diff 24 + 出来高系 48 + microstructure 10-15 (= §16) + regime ラベル (= 工程 1 固定ルール出力)
+  - LONG/SHORT 分離学習 + MTF (= 5m/15m/1h/4h confluence)
+  - OOF prediction は Purged K-Fold 5 fold + Embargo K bar
+  - 出力: direction (LONG/SHORT/0)
+- **段 3 (= 工程 3 secondary・Meta-Labeling)**: XGBoost or MLP (= primary とは異種)
+  - 入力: primary 段の盲点情報 (= 板情報系 microstructure + Funding Rate 時系列入力化 + OI ROC)
+  - 出力: 0/1 確率 (= TP 到達確率)
+  - Platt + Isotonic で calibration → Brier score で verify
+- **段 4 (= 工程 4 sizing)**: HRP/HERC で strategy allocation + Half-Kelly で個別 size + 0.12 BTC 合計 clip
+- **評価 (= 工程 3 統計指標)**: entropy_lift + TP precision + DSR_train (= §17.4 + §17.6)
+- **評価 (= 工程 5-6-b PnL 指標)**: 月次 NET ≥ $1,900 全月 + DSR > 0.95 + PBO < 0.5 (= §17.4 + §17.5)
+- **計算コスト見積**: 段 2 3 種 × 各 110 分 + 段 3 secondary 60 分 + meta 30 分 = 約 7 時間 / 1 セッション規模
+
+##### 多様性 verify 義務 (= 採用前必須)
+
+- base learners の predict correlation r を fold 内で measure → r > 0.6 → diversification 失敗 → 別 base 検討
+- arxiv 2512.15738 ベンチマーク準拠
+
+##### CPCV + DSR + PBO で robustness 強化 (= §17.3-§17.5 整合)
+
+- Phase 1 v7 評価フローに CPCV (= C(6,2) = 15 paths) を追加候補
+- 採用判定に DSR > 0.95 + PBO < 0.5 を併用 (= 月次 NET だけでは「偶然」リスク残存)
+
+#### 関連 lessons + 関連 memory
+
+- L-223 (= ボラ予測 ML 設計欠陥) / L-224 (= アルゴリズム多様性ゼロ) / L-225 (= 領域 3-4 完成) — v4 学習の直接動機
+- cc_role §1.4.6.1 9 項目 (= ML pipeline 設計提案前の業界整合 verify) — 本領域学習で 6-9 番を蓄積
+- feedback_trade_ml_knowledge_gap (= 業界標準理解不足) — v4 で補強完了 (= 領域 5 まで業界カタログ構築済)
+
+---
+
 ## §11 改訂履歴
 
 | 版 | 日付 | 内容 |
@@ -1243,6 +1597,7 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 | v1 | 2026-05-25 | 初版・WebSearch 8 件 + 旧 Priority 実装 verify による分析 |
 | v2 | 2026-05-27 | §13 ML 学習方法 (6 章) + §14 ML 学習項目 (8 章) + §15 総合所見 追加・WebSearch 14 件 + AFML Ch.3/6 + Oxford-Man + Hudson & Thames mlfinlab + arxiv 8 件 引用 |
 | v3 | 2026-05-25 | **§16 ML 特徴量設計 (7 節) + §17 ML 評価方法 (9 節) 追加**・§15.2-15.4 を v3 完成状態に更新 (= 残り 5 領域 → 残り 3 領域)・WebSearch 16 件 + AFML Ch.2 (情報駆動 bars) / Ch.5 (Fractional Diff) / Ch.7 (Purged K-Fold + CPCV) / Ch.8 (MDI/MDA/SFI) / Ch.14 (DSR) + Bailey & Lopez de Prado 2014 (DSR / PBO) + MLfAT Ch.4 (Alpha Factor Research) + Hudson & Thames mlfinlab + arxiv 5 件 (microstructure 2602.00776 / 2506.05764 / Frontiers 2026 / MDPI 2026 / shap-select 2410.06815) 引用 |
+| v4 | 2026-05-25 | **§18 ML 組合せ手法 (5 節) 追加**・§15.2-15.4 を v4 完成状態に更新 (= 残り 3 領域 → 残り 2 領域)・WebSearch 14 件 + AFML Ch.6 (Ensemble) / Ch.16 (Asset Allocation) + Lopez de Prado 2016 (HRP 原論文 SSRN 2708678) + Raffinot 2018 (HERC) + Hudson & Thames meta-labeling repo (GitHub) + Riskfolio-Lib + PyPortfolioOpt + arxiv 4 件 (Diversity 2407.12996 / FinRL Contest 2501.10709 / Hybrid Ensemble 2512.15738 / GAS Blending 2411.03035) + Viola-Jones cascade theory (Wikipedia + Grokipedia) 引用・**Phase 1 v6 6 案全滅の構造的原因を 6 軸多様性欠落に整理 (= v1-v4 統合)** ・Phase 1 v7 候補「案 g」設計判断調査ノートを §18.5 に確立 |
 
 ---
 
