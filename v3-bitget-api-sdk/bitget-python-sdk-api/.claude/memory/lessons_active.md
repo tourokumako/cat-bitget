@@ -7,6 +7,62 @@
 
 ---
 
+### L-225: cc_entry_logic_self_study.md v3 完成 — ML 知識領域 3 (特徴量設計) + 領域 4 (評価方法) の業界カタログ整理 + Phase 0 v4 特徴量拡張候補 + Phase 5/6-b 合格判定追加候補 (DSR/PBO) (2026-05-25)
+
+**何が起きたか:**
+
+WORKFLOW 改訂36 active 優先 2 (= 案 B 学習継続) として、cc_entry_logic_self_study.md v2 (= 727 行) を v3 (= 1255 行・+528 行) に拡張。WebSearch 16 件 + AFML Ch.2 (情報駆動 bars) / Ch.5 (Fractional Differentiation) / Ch.7 (Purged K-Fold + CPCV) / Ch.8 (MDI/MDA/SFI) / Ch.14 (DSR) + Bailey & Lopez de Prado 2014 (DSR/PBO) + MLfAT Ch.4 + Hudson & Thames mlfinlab + arxiv microstructure 5 件 (2602.00776 / 2506.05764 / Frontiers 2026 / MDPI 2026 / shap-select 2410.06815) を引用して、ChatGPT 7 工程フレーム範囲の ML 知識 7 領域のうち領域 3-4 を完了。
+
+#### 学習成果のポイント
+
+1. **§16.1 価格バー設計**: time bar (5m 固定・現状 cat-bitget) は AFML Ch.2 で「サンプリング歪み」と指摘あり。Volume / Dollar / Imbalance bars が ML 入力として優位。Phase 1 v6 6 案全滅の補強要因として **bar 種別多様性ゼロ** を確定 (= L-223 ボラ ML 設計欠陥 + L-224 アルゴ多様性ゼロ に並ぶ第 3 の原因)
+2. **§16.2 Fractional Differentiation**: AFML Ch.5 で「整数差分 (= returns) はメモリー完全喪失」を実証。最小 d で stationarity 達成しつつメモリー保持する FFD が業界最適。cat-bitget Phase 0 v3 入力 2604 特徴量に FFD 系列が含まれていない可能性 (= grep verify 要)
+3. **§16.4 特徴量選択**: MDI (= LightGBM 既定) は IS bias + substitution effect の二重 bug。AFML Ch.8 推奨は **Clustered MDA**。Phase 1 v6 の feature_importance top20 = ボラ系支配 (= L-223) も MDI ベース → Clustered MDA で再 verify する余地あり
+4. **§16.5-16.6 出来高系 + microstructure**: 旧 Priority 完全欠落領域。**cat-bitget の最大の伸びしろ**。OBI L=5,10,20 / Taker Ratio / Funding Rate 時系列入力化 / OI ROC / VPIN 等を Phase 0 v4 で追加候補。arxiv 4 件 (microstructure crypto perpetual 5m / 1s freq) で業界実証あり
+5. **§17.3 CPCV**: Walk-Forward Purged K-Fold 5 fold (= 現状 Phase 1 v6) を CPCV (= C(6,2) = 15 paths) に拡張で **PBO 最低 / DSR 最高** ([ScienceDirect 2024 synthetic environment 実証](https://www.sciencedirect.com/science/article/abs/pii/S0950705124011110))
+6. **§17.4-17.5 DSR + PBO**: 月次 NET ≥ $1,900 全月クリア (= cc_role / CLAUDE.md 必達) の判定に **DSR > 0.95 + PBO < 0.5** を併用候補。「12 ヶ月クリアでも偶然」のリスクを多重防御 (Bailey & Lopez de Prado 2014 / pypbo 実装)
+7. **§17.6 統計指標 vs PnL 指標分離**: cc_role §1.4.6.1 #9 と整合。Phase 1-3 = 統計指標 (entropy_lift / TP precision / DSR_train) / Phase 5-6-b = PnL 指標 (月次 NET / DSR_test / PBO) の **物理分離維持** を再確認
+
+**Why (= 学習が必要だった構造的理由):**
+
+- L-224 改善 1 (= 残り 5 領域継続) を実施
+- v2 (= 領域 1-2 アルゴ + 予測対象) だけでは ML 設計判断材料不足 → 入力側 (= 特徴量) + 検証側 (= 評価方法) の業界カタログが必要
+- 残り 3 領域 (= 組合せ手法 / リスク管理 / 監視運用) の学習に進む前提として領域 3-4 を確立
+- Phase 1 v6 6 案全滅の構造的原因として「bar 種別多様性ゼロ + 出来高/microstructure 不在 + MDI bias + 単一 CV path」も補強要因として verify
+
+**How to apply (改善 1 件):**
+
+#### 改善 1: 次セッションで残り 3 領域 (5-7) を v4 として追加
+
+- **領域 5 (組合せ手法)** 先行 (= 工程 3 + 工程 4 接続直結):
+  - 階層 stacking (= GBDT + DL + RL の出力を meta-learner で統合)
+  - Cascade (= 多段 filter で偽信号削減)
+  - Hierarchical Risk Parity (Lopez de Prado 2016)
+  - Meta-Labeling 多段詳細 (= primary 多様化 → secondary 統合)
+- **領域 6 (リスク管理)** 並行 (= 工程 4 + 工程 5 損切設計直結):
+  - Volatility targeting 詳細 (= Garch-DCC / Vol Forecast)
+  - Stop-loss 業界手法 (= ATR-based / Chandelier / Volatility-Stop)
+  - Drawdown control (= CPPI / TIPP)
+  - Position scaling 業界手法
+- **領域 7 (監視・運用)** 最後 (= 工程 7 Online 監視直結):
+  - Online learning (= incremental LightGBM / River)
+  - A/B testing (= multi-armed bandit / Champion-Challenger)
+  - Shadow deployment
+  - §17.8 で部分網羅済 (= KL/Wasserstein/Page-Hinkley)
+- 各領域 WebSearch 10-20 件 + 教科書 chapter 引用必須 (= cc_role §1.4.6.1 #6-9)
+- 1-2 セッション規模 (= 領域 5 で 1 セッション・領域 6-7 で 1 セッション)
+
+**関連:**
+
+- L-224 (= 前セッション・領域 1-2 完成・本セッション学習の直接動機)
+- L-223 (= ボラ予測 ML 設計欠陥 + phase_flow_v4 v7 破綻判断・本セッション学習の根本動機)
+- cc_role §1.5 デザイン責任 (= §15.4 設計判断は調査ノート位置・確定は工程 2-7 詳細詰めで別途)
+- cc_role §1.4.6.1 (= ML pipeline / トレード関連設計提案前の業界整合 verify 9 項目・本セッション学習で 6-9 を引き続き蓄積)
+- feedback_trade_ml_knowledge_gap (= CC のトレード ML 業界標準理解不足・本 lesson で改善 1 件進展・領域 3-4 で base まで構築)
+- 公式 source: 本セッション末 commit (= cc_entry_logic_self_study.md v3 + L-225 + WORKFLOW 改訂37 active)
+
+---
+
 ### L-224: cc_entry_logic_self_study.md v2 完成 — ML 知識領域 1 (学習方法) + 領域 2 (学習項目) の業界カタログ整理 + Phase 1 v6 6 案全滅の補強原因 verify + 7 工程アルゴ選定調査ノート (2026-05-27)
 
 **何が起きたか:**

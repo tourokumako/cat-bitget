@@ -1,8 +1,8 @@
-# cc_entry_logic_self_study.md — CC エントリーロジック自己学習資料 v1
+# cc_entry_logic_self_study.md — CC エントリーロジック自己学習資料 v3
 
-作成: 2026-05-25 (CC)
+作成: 2026-05-25 (CC・v1) / 改訂 2026-05-27 (v2) / 改訂 2026-05-25 (v3)
 位置付け: まこさん命令 (2026-05-25) 「指標、閾値、時間の使い方を勉強しなおして」を受けた CC の学習資料。
-状態: v1 (WebSearch 8 件 + 旧 Priority 実装 verify による初版・追加学習で改訂継続)
+状態: **v3 (= 領域 1-4 完成)**。WORKFLOW 改訂36 active 優先 2 = 案 B 学習継続 = 領域 3 (特徴量設計) + 領域 4 (評価方法) を v3 §16 + §17 として追加。WebSearch 16 件 + AFML Ch.2/5/6/7/8/14 + MLfAT Ch.4 + Bailey & Lopez de Prado 2014 (DSR/PBO) + Hudson & Thames mlfinlab blog + arxiv 5 件 引用。残り = 領域 5-7 を v4 として追加予定。
 
 ---
 
@@ -684,28 +684,555 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 3. **regime 不在の致命性**: Phase 1 v6 全滅の根本原因 = regime context を入力に入れていない → HMM/GMM で工程 1 出力を独立に与える必要 (§14.6)
 4. **MTF 整合の欠落**: 現状 5m 単独学習 → 4h regime + 1h setup + 5m entry の 3 層構造が業界標準 (§13.2 Transformer / §14.6 HMM どちらでも MTF 入力で性能向上)
 
-### 15.2 残り 5 領域 (= 次セッション以降 WORKFLOW 改訂 35 active 優先 2 残り)
+### 15.2 残り 3 領域 (= 次セッション以降 WORKFLOW 改訂36 優先 2 残り・v3 で領域 3-4 完成)
 
-- **領域 3 (ML 特徴量設計)**: Fractional Differentiation (AFML Ch.5) / スケーリング / 特徴量選択 / 出来高系 / 板情報系
-- **領域 4 (ML 評価方法)**: Walk-Forward / Purged K-Fold (AFML Ch.7) / CPCV / Embargo / DSR (AFML Ch.14) / 過学習検出
-- **領域 5 (ML 組合せ手法)**: §13.5 で部分網羅・残り = 階層 / Cascade / 多段 stacking 詳細
-- **領域 6 (リスク管理)**: §14.5 で Kelly 網羅・残り = Volatility targeting 詳細 / Stop-loss / Drawdown control の業界標準
-- **領域 7 (監視・運用)**: Concept drift / Online learning / A/B testing — 業界標準は KL divergence / Wasserstein / Page-Hinkley test 等
+- ~~**領域 3 (ML 特徴量設計)**~~ → **v3 §16 で完成** (Fractional Differentiation / スケーリング / 特徴量選択 / 出来高系 / 板情報系)
+- ~~**領域 4 (ML 評価方法)**~~ → **v3 §17 で完成** (Walk-Forward / Purged K-Fold / CPCV / Embargo / DSR / PBO / Pipeline leak 防止 / Concept drift)
+- **領域 5 (ML 組合せ手法)**: §13.5 で部分網羅・残り = 階層 stacking / Cascade / Hierarchical Risk Parity / Meta-Labeling 多段詳細
+- **領域 6 (リスク管理)**: §14.5 で Kelly 網羅・残り = Volatility targeting 詳細 (= Garch-DCC / Vol Forecast) / Stop-loss 業界手法 (= ATR-based / Chandelier / Volatility-Stop) / Drawdown control (= CPPI / TIPP) / Position scaling
+- **領域 7 (監視・運用)**: §17.8 で部分網羅・残り = Online learning (= incremental LightGBM / River) / A/B testing (= multi-armed bandit) / Champion-Challenger 構造 / Shadow deployment
 
-### 15.3 次セッションの推奨着手順位
+### 15.3 次セッションの推奨着手順位 (v3 完成 → 次は領域 5-7)
 
-1. **領域 3-4 (特徴量 + 評価方法)** を先行: 工程 3 (Entry ML) の再設計に直結する基礎知識
-2. **領域 5 (組合せ)** はその後: §13.5 で半分カバー済
-3. **領域 6-7** は工程 4-7 の詳細詰めと並行可能
+1. **領域 5 (組合せ手法)** を先行: 工程 3 + 工程 4 接続 (= Meta-Labeling 多段 / Hierarchical) の業界標準確立
+2. **領域 6 (リスク管理)** を並行: 工程 4 Position Sizing + 工程 5 Exit ML の損切設計確立
+3. **領域 7 (監視・運用)** は最後: 工程 7 Online 監視の業界標準確立 + 全 Phase 統合監視
+4. 各領域 WebSearch 10-20 件 + 教科書 chapter 引用 (cc_role §1.4.6.1) を継続
 
-### 15.4 cat-bitget 設計判断の確定事項 (v2 学習成果から)
+### 15.4 cat-bitget 設計判断の確定事項 (v3 学習成果から拡張)
 
-> ⚠️ 以下は **学習資料の調査ノート位置付け**。実際の設計確定は WORKFLOW 改訂 35 active の優先 3 (= 工程 2-7 詳細詰め) で別途実施 (cc_role §1.5 デザイン責任)。
+> ⚠️ 以下は **学習資料の調査ノート位置付け**。実際の設計確定は WORKFLOW 改訂36 active の優先 3 (= 工程 2-7 詳細詰め) で別途実施 (cc_role §1.5 デザイン責任)。
 
+#### v2 (= 領域 1-2) の確定事項
 - **工程 3 (Entry ML) ベース**: Triple Barrier multiclass (= 案 e 構造) + LightGBM / XGBoost stacking + Meta-Labeling 二段化 + regime 入力 + LONG/SHORT 分離 + MTF
 - **工程 4 (Position Sizing)**: phase_flow_v4 v7 改善 4 動的合成方式 8 (= Half-Kelly + Vol target + cluster 強度別配分) を維持
 - **工程 5 (Exit ML)**: PPO (= RL) 主軸 + XGBoost (= scale-out 確率) サブ
 - **工程 1 (regime)**: 固定ルール (= ADX + DI 差) で MVP・後段で HMM ML 化検討
+
+#### v3 (= 領域 3-4) の追加確定事項
+- **工程 3 入力強化 (= §16.7)**: (a) Volume bar 並行入力 / (b) Fractional Diff MTF 24 特徴量 / (c) 出来高系 48 特徴量 (= OBV / VWAP dist / Volume Profile HVN / Volume Z-score / Chaikin) / (d) microstructure 10-15 特徴量 (= OBI L=5,10,20 / Taker Ratio / Bid-Ask Spread / Funding Rate 時系列入力化 / OI ROC) / (e) Clustered MDA で 2604 → 500-1000 削減
+- **工程 3 評価強化 (= §17.3)**: CPCV (= C(6,2) = 15 paths) を案 e ベースで再評価 → Sharpe 分布 + backtest paths robustness 強化
+- **Phase 5 / 6-b 合格判定追加 (= §17.4 + §17.5)**: 月次 NET ≥ $1,900 全月クリア (= 現状必達) + **DSR > 0.95** + **PBO < 0.5** で本番投入リスク多重防御
+- **Phase 0 v4 拡張候補**: time bar 5m + Volume bar (= BTC 出来高 X BTC 毎) 並行入力 + Fractional Diff + 出来高系 + microstructure
+- **scaler leak 防止 (= §17.7)**: Pipeline + TimeSeriesSplit で fold 毎 fit を全 Phase 実装義務化 (= 現状の implementation grep verify 要)
+- **混合禁止再確認 (= §17.6 + cc_role §1.4.6.1 #9)**: Phase 1-3 = 統計指標 / Phase 5-6-b = PnL 指標 + DSR + PBO の **物理分離維持**
+
+---
+
+## §16 ML 特徴量設計 (WORKFLOW 改訂36 領域 3・業界カタログ)
+
+> v3 追記 (2026-05-XX)。**「何を入力として ML に渡すか」の業界カタログ**。Phase 1 v6 6 案全滅の補強原因として §13.1 (= 全 LightGBM・アルゴ多様性ゼロ) を確定したが、本章では **入力側の構造的欠陥** = MTF 整合不在 / 出来高系不在 / 板情報系不在 / 価格バー = 5m time bar 固定 を業界カタログで整理する。ChatGPT 7 工程の工程 3 (Entry ML) 入力設計に直結。
+
+### §16.1 価格バー設計 (AFML Ch.2・time bar 以外の選択肢)
+
+#### 業界 5 種
+
+| バー種別 | サンプリング条件 | 業界用途 |
+|---|---|---|
+| **Time bars** | 固定時間 (= 5m / 1h 等) | 業界標準・実装容易・現状 cat-bitget |
+| **Tick bars** | 固定 tick 数 (= N 件の trade 毎) | 流動性変動の正規化 |
+| **Volume bars** | 固定 volume (= N BTC 毎) | 情報密度の均一化 |
+| **Dollar bars** | 固定 dollar (= N USDT 毎) | 価格変動による情報量歪み吸収 |
+| **Imbalance bars (TIB/VIB/DIB)** | buy/sell imbalance が閾値超え | **情報到達タイミング検出** |
+
+#### 教科書整合 + 出典
+
+- AFML **Ch.2 Financial Data Structures**: 「time bars はサンプリング歪み (= 流動性低時間帯の情報希薄 / 高流動性時間帯の情報過剰) を持つ」を実証。Volume / Dollar bars は returns 分布が time bars より正規分布に近く ML 入力として優位。Imbalance bars は「order flow の異常 (= 新情報到来) を early detect」する設計
+- [Information-driven bars 解説 (Medium)](https://medium.com/data-science/information-driven-bars-for-financial-machine-learning-imbalance-bars-dda9233058f0): TIB は buy/sell tick 数の imbalance が閾値超えでサンプル / VIB / DIB は volume / dollar 単位での imbalance 検出 — 「市場が新情報を受けて方向転換する **直前** を捕捉」できる
+- [Beyond the Clock (MQL5)](https://www.mql5.com/en/articles/22063): Activity bars + Imbalance bars の Python / MQL5 実装例
+
+#### Phase 1 v6 6 案との関係
+
+- 案 a-f は **全て time bar (5m 固定)**・bar 種別の多様性ゼロ
+- TP precision 0.43 頭打ちの背景に「5m time bar 固定で情報希薄時間帯のノイズを学習対象に混ぜている」可能性
+- 業界実証: Volume / Dollar bars は同じアルゴでも返り値分布が改善され ML 精度向上事例多数
+
+#### cat-bitget 適用判断 (= 工程 3 入力 + Phase 0 ラベル再生成候補)
+
+- **主軸候補**: time bar 5m + Volume bar (= BTC 出来高 X BTC 毎) の **並行入力** → ML が両方を見て情報量重み付け可能に
+- **Imbalance bar は次段**: 5m bot 運用要件 (= 推論レイテンシ) に合うかは要検討。bot 起動時に Bitget WebSocket trade stream の subscribe + リアルタイム集計が必要
+- **Phase 0 ラベル再生成**: Triple Barrier (= §14.1) を **time bar + volume bar の両方** で生成して比較する設計検討候補
+
+### §16.2 Fractional Differentiation (AFML Ch.5・stationarity vs memory)
+
+#### 業界の根本問題
+
+| 系列 | 定常性 | メモリー保持 | ML 入力としての適性 |
+|---|---|---|---|
+| **生価格 (= raw close)** | ❌ 非定常 (= 単位根) | ✅ 完全保持 | ❌ ML が cointegration 学習困難 |
+| **整数 1 階差分 (= returns)** | ✅ 定常 | ❌ 完全喪失 (= 過去価格情報なし) | △ メモリー喪失で予測力低下 |
+| **Fractional Differentiation (FFD・d ∈ [0,1])** | ✅ 定常 (最小 d で達成) | ✅ 最大保持 (= 元系列との相関高) | ✅ 業界最適 |
+
+#### 教科書整合 + 出典
+
+- AFML **Ch.5 Fractionally Differentiated Features** ([O'Reilly](https://www.oreilly.com/library/view/advances-in-financial/9781119482086/c05.xhtml)): 「price series は long-memory を持つ。returns に変換するとメモリーは完全に失われ ML の予測力を低下させる。**最小の non-integer d で定常性を達成** することでメモリー保持しつつ ML 入力に使える」
+- [mlfinlab Fractional Differentiation 実装](https://random-docs.readthedocs.io/en/latest/implementations/frac_diff.html): Fixed-Width Window Fracdiff (= FFD) と Expanding Window Fracdiff の 2 実装。FFD は計算コスト低く本番運用向き
+- [Hudson & Thames blog](https://hudsonthames.org/fractional-differentiation/): d の決定方法 = ADF (Augmented Dickey-Fuller) test で stationarity を p < 0.05 で達成する最小 d を探索
+- [Feature Engineering for ML — Stationarity Without Memory Loss (MQL5)](https://www.mql5.com/en/articles/22014): MetaTrader 5 + MQL5 で FFD 実装解説
+
+#### Phase 1 v6 6 案との関係
+
+- 案 a-f の入力 2604 特徴量に **fractional differentiated price 系列が含まれていない** (= grep verify 要)
+- 既存特徴量は returns ベース (= log return / pct change) → メモリー喪失構造
+- → ML が「価格の長期トレンド」を学習できず regime context 不在の補強原因
+
+#### cat-bitget 適用判断 (= 工程 3 入力強化)
+
+- **追加候補**: `fracdiff_close_5m_d{0.3,0.4,0.5}` を Phase 0 ラベル再生成時に MTF 8 TF (= 5m/15m/30m/1h/2h/4h/1d/1w) で展開 → 24 特徴量追加
+- **d 値選定**: BTC 5m close で ADF test → p < 0.05 を達成する最小 d を grid search (= 0.1, 0.2, 0.3, 0.4, 0.5)
+- **実装ライブラリ**: `mlfinlab.features.fracdiff` または `fracdiff` (PyPI・Daniel Saito) のいずれか
+
+### §16.3 特徴量スケーリング (tree vs NN・data leakage 対策)
+
+#### 業界判断マトリックス
+
+| アルゴ | スケーリング必要性 | 推奨手法 | 理由 |
+|---|---|---|---|
+| **LightGBM / XGBoost / CatBoost** | ❌ **不要** (= 木が閾値分割するため scale 非依存) | (適用しない) | 業界標準 |
+| **GRU / LSTM / Transformer** | ✅ **必要** (= gradient 安定化) | StandardScaler / RobustScaler | 業界標準 |
+| **k-means / GMM / HMM** | ✅ **必要** (= 距離ベース) | StandardScaler | 業界標準 |
+| **RL (PPO/SAC)** | ✅ **必要** (= NN 内部) | StandardScaler | 業界標準 |
+
+#### スケーリング手法の業界使い分け
+
+| 手法 | 業界用途 |
+|---|---|
+| **StandardScaler** ((x-μ)/σ) | 業界 default・正規分布近似のデータ向け |
+| **MinMaxScaler** ((x-min)/(max-min)) | 範囲限定 0-1 必要時 (= NN 出力近似) |
+| **RobustScaler** ((x-median)/IQR) | **外れ値多い時 (= crypto returns)** ・業界推奨 |
+| **QuantileTransformer** (= rank ベース) | 強い非線形変換許容時 |
+
+#### Data Leakage 必須回避ルール
+
+- **絶対禁止**: `scaler.fit(全データ).transform(train + test)` → 「scaler の fit に test data の統計量が混入」= leak
+- **正しい順序**: `scaler.fit(train).transform(train)` → `scaler.transform(test)`
+- **Pipeline 推奨**: `sklearn.pipeline.Pipeline([('scaler', StandardScaler()), ('model', LGBMClassifier())])` でフォールドごと自動 fit
+- **時系列固有**: `TimeSeriesSplit` (= time-aware CV) で fold 分割すれば train ⊆ past / test ⊆ future が保証される
+
+#### 教科書整合 + 出典
+
+- [Feature Scaling Pitfalls (ML Journey)](https://mljourney.com/feature-scaling-issues-with-tree-based-vs-linear-models/): tree 系は閾値分割で scale 非依存・NN / k-means / 距離ベース手法のみスケーリング必要
+- [scikit-learn Common Pitfalls 11.1](https://scikit-learn.org/stable/common_pitfalls.html): `fit_transform` の誤用パターン解説
+- [Data Leakage in Preprocessing (Towards Data Science)](https://towardsdatascience.com/data-leakage-in-preprocessing-explained-a-visual-guide-with-code-examples-33cbf07507b7/): 視覚的 leakage 解説
+- [How to Avoid Data Leakage (MachineLearningMastery)](https://machinelearningmastery.com/data-preparation-without-data-leakage/): preprocessing 全般での leak 防止
+- [The Impact of Feature Scaling (arxiv 2506.08274)](https://arxiv.org/html/2506.08274v1): regression / classification での scaling 効果実証
+
+#### cat-bitget 適用判断 (= 工程 3 / 工程 4 / 工程 5)
+
+- **工程 3 主軸 (LightGBM)**: スケーリング不要 (= 現状継続)
+- **工程 3 サブ (Transformer / GRU)**: RobustScaler 必須 (= crypto returns の外れ値耐性)
+- **工程 4 動的合成 (Half-Kelly + Vol target)**: スケーリング不要 (= 確率 / 比率の合成)
+- **工程 5 (PPO/SAC)**: StandardScaler 必須 (= NN 内部)
+- **Pipeline 整備**: Phase 0 で `sklearn.pipeline` でフォールド毎 scaler fit を実装義務化
+
+### §16.4 特徴量選択 (AFML Ch.8・MDI / MDA / SFI + Boruta / SHAP)
+
+#### 業界 4 系統
+
+| 手法 | 仕組み | 業界用途 | 弱点 |
+|---|---|---|---|
+| **MDI (Mean Decrease Impurity)** | tree 内の impurity 減少量を集計 (in-sample) | LightGBM 既定 `feature_importance` | substitution effect (= 相関 feature で過小評価) / IS bias |
+| **MDA (Mean Decrease Accuracy)** | feature shuffle → OOS metric 低下量 (out-of-sample) | model-agnostic・業界推奨 | substitution effect / shuffle cost 高 |
+| **SFI (Single Feature Importance)** | 1 feature のみで学習 → CV score (out-of-sample) | substitution effect 回避 | 相互作用無視 |
+| **Clustered MDA / MDI** | MDA / MDI の前に feature clustering | substitution effect 解消 | clustering 自体に判断 |
+
+#### 補完手法 (= AFML 外・業界実装)
+
+| 手法 | 仕組み | 業界用途 |
+|---|---|---|
+| **Boruta** | shadow features (= shuffle 版) と原 features を比較 → 統計的に有意な features のみ採用 | wrapper 手法・業界標準 |
+| **SHAP (Shapley Additive)** | game theory 由来・各 feature の marginal contribution | 解釈性 + 選択両用 |
+| **shap-select** (2024 arxiv) | SHAP value + regression で軽量選択 | 大規模 feature 向け |
+| **Mutual Information** | feature と target の相互情報量 | non-linear 関係も検出 |
+| **MRMR (Max Relevance Min Redundancy)** | MI ベース・冗長性最小化 | 業界実装 (HISEL) |
+
+#### 教科書整合 + 出典
+
+- AFML **Ch.8 Feature Importance** ([mlfinlab MDI/MDA/SFI 解説](https://www.mlfinlab.com/en/latest/feature_importance/afm.html)): 3 つの手法を comparison。「MDI は IS bias・MDA は substitution effect」を実証 → **Clustered MDA** を推奨
+- AFML **Ch.6 Ensemble Methods** + Clustered Feature Importance presentation (Lopez de Prado): substitution effect を hierarchical clustering で解消
+- [Boruta + SHAP (BorutaShap)](https://medium.com/analytics-vidhya/is-this-the-best-feature-selection-algorithm-borutashap-8bc238aa1677): Boruta の RF を XGBoost に置き換え + SHAP で statistical significance 判定
+- [Boruta in Financial Distress Prediction (ACM)](https://dl.acm.org/doi/10.1145/3584202.3584298): MLP + GA のハイブリッドモデルで Boruta が予測精度向上
+- [Mutual Information for Feature Selection (Elements of FML)](https://joaodmrodrigues.github.io/elements-financial-machine-learning/information%20theory/mutual%20information/feature%20selection/feature%20importance/2021/02/06/mutal_information_and_feature_selection.html): MI ベース手法の理論 + 実装
+- [shap-select (arxiv 2410.06815)](https://arxiv.org/html/2410.06815v1): SHAP value + regression で軽量 feature selection
+
+#### Phase 1 v6 6 案との関係
+
+- 案 a-f は LightGBM `feature_importance` (= MDI) のみで feature importance を verify → **MDI bias + substitution effect で本物の重要 feature を見逃した可能性**
+- 「feature_importance top20 がボラ系支配」(= L-223) の判定も MDI ベース → MDA / Clustered MDA で再 verify する余地あり
+
+#### cat-bitget 適用判断 (= 工程 3 ハイパラチューニング + 学習対象削減)
+
+- **主軸採用**: Clustered MDA で 2604 特徴量を 500-1000 に削減候補
+- **サブ採用**: Boruta + SHAP で stability selection 並走
+- **業界実証 (microstructure)**: [arxiv 2506.05764 microstructure](https://arxiv.org/html/2506.05764v2) は **stability selection + SHAP + purged walk-forward** で BTC microstructure 9 measures を選別
+- **Phase 1 v7 候補**: 既存 feature_importance を Clustered MDA で再評価 → top 200-500 のみで再学習 → entropy_lift / TP precision 改善余地検証
+
+### §16.5 出来高系特徴量 (= 旧 Priority 完全欠落領域)
+
+#### 業界カタログ
+
+| 指標 | 業界用途 | BTC 5m 業界実証 |
+|---|---|---|
+| **OBV (On-Balance Volume)** | 累積買売圧力 | 業界使用あり (= momentum confirmation) |
+| **VWAP (Volume Weighted Avg Price)** | 機関的 benchmark / mean reversion | crypto 業界実証あり (= 5m / 1h で使用) |
+| **Volume Profile** | 価格帯別出来高分布 → S/R 自動検出 | High Volume Node (HVN) / Low Volume Node (LVN) で support / resistance |
+| **Volume Surge / Z-score** | 異常出来高検出 | breakout の補助確認 |
+| **Chaikin Oscillator** | 出来高 + 価格の組合せ momentum | 業界使用あり (= LightGBM input としても) |
+| **Accumulation/Distribution Line** | money flow 検出 | 業界使用あり |
+
+#### 教科書整合 + 出典
+
+- [Volume Analysis Mastery (Tickrad 2025)](https://www.tickrad.com/blog/volume-analysis-mastery-institutional-footprints-2025): Volume Profile + HVN/LVN で institutional footprint 検出
+- [VWAP in Crypto 2025 (Mudrex)](https://mudrex.com/learn/vwap-in-crypto/): 9 powerful tips and strategies — daily VWAP / weekly VWAP / session VWAP の使い分け
+- [Bitcoin AI Prediction (PMC 2025)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12058735/): RSI / OBV / Chaikin Oscillator は **feature importance ≈ 0** だった事例 (= ML が出来高系を学習困難な可能性も示唆)
+- [VWAP Deep Learning Execution (arxiv 2502.13722)](https://arxiv.org/html/2502.13722v1): crypto market での VWAP execution に DL を適用
+
+#### Phase 1 v6 6 案との関係 + 旧 Priority との関係
+
+- §9.1 (v1) で実証: **旧 Priority は出来高系をゼロカバー**
+- Phase 0 特徴量カタログ (1432 → 2604 拡張後) でも出来高系の比率は薄い (= grep verify 要)
+- → 工程 3 Entry ML 入力に出来高系を追加することで「予測対象の多様性」(= §15.1) を実現可能
+
+#### cat-bitget 適用判断 (= 工程 3 入力強化・Phase 0 v4 候補)
+
+- **追加候補 (= Phase 0 v4 で実装)**:
+  - `obv__{5m,15m,1h,4h}` + `obv_slope__{5m,1h}` (= 既存 1 件のみだったら拡張)
+  - `vwap_dist_pct__{5m,15m,1h,4h}` (= close と VWAP の % 乖離)
+  - `volume_profile_hvn_dist__{1h,4h}` (= 直近 N 時間の HVN まで何 % か)
+  - `volume_zscore_20__{5m,15m,1h}` (= 20 bar 平均からの偏差)
+  - `chaikin_osc__{5m,1h}` (= 既存可能性あり・verify)
+- **MTF 拡張**: 8 TF × 6 family = 48 特徴量追加候補
+- **注意**: PMC 2025 実証で OBV / Chaikin = importance 0 だった事例あり → cat-bitget BTC 5m で feature importance を再 verify してから採用判定
+
+### §16.6 板情報系特徴量 (= microstructure・旧 Priority 完全欠落領域 + Phase 0 完全欠落領域)
+
+#### 業界カタログ (= cat-bitget Phase 0 v4 で最大の伸びしろ候補)
+
+| 指標 | 業界用途 | 計算式 |
+|---|---|---|
+| **Bid-Ask Spread** | 流動性 + spread cost 推定 | `(ask - bid) / mid` |
+| **Order Book Imbalance (OBI)** | 短期 mid-price 予測 | `(bid_vol - ask_vol) / (bid_vol + ask_vol)` |
+| **Cumulative Depth Imbalance** | 深さ別 imbalance | 上記を level L=5,10,20 で集計 |
+| **Trade Imbalance** | 直近 N trade の buy/sell 偏差 | `(buy_vol - sell_vol) / total_vol` |
+| **Taker Ratio** | 直近 N trade の taker 比率 | `taker_vol / total_vol` (= aggressive flow) |
+| **VPIN (Volume-Synchronized PIN)** | 注文 toxicity (= informed trader 比率) | volume bucket 内の order flow imbalance / total volume |
+| **Funding Rate** | perpetual 特有・long/short 圧力 | Bitget 8h 精算値・現状 cat-bitget は単一 baseline 値で扱い |
+| **Open Interest (OI)** | 全市場ポジション規模 | Bitget Public API |
+| **OI Delta / OI ROC** | OI 変化率 | 短期反転 / breakout 補助 |
+
+#### 業界実証 (= BTC 5m / perpetual)
+
+- [Order Book Imbalance Cryptocurrency (Towards Data Science)](https://towardsdatascience.com/price-impact-of-order-book-imbalance-in-cryptocurrency-markets-bf39695246f6/): OBI が high のとき市場注文増加 + price move predict 力あり
+- [OBI Predict Price Moves (Medium)](https://medium.com/@thewealthacademyyt/how-order-book-imbalances-predict-price-moves-before-they-happen-crystal-ball-series-part-2-fd9fc66f86a5): 短期 mid-price move の先行指標
+- [Nowcasting BTC Crash Risk (PMC)](https://pmc.ncbi.nlm.nih.gov/articles/PMC10040314/): order imbalance で crash risk nowcast
+- [Microstructure ML (arxiv 2506.05764)](https://arxiv.org/html/2506.05764v2): 9 microstructure measures × stability selection + SHAP + purged walk-forward で BTC + 5 alts に適用 (300 万 minute-level obs)
+- [Explainable Patterns (arxiv 2602.00776)](https://arxiv.org/html/2602.00776v1): BTC/LTC/ETC/ENJ/ROSE で order book features の SHAP dependence shapes が cross-asset で stable (= Binance Futures perpetual 1s freq・2022-01〜2025-10)
+- [Microstructure Alpha (Frontiers 2026)](https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2026.1811716/abstract): hierarchical learning + cross-asset transfer
+- [Cryptocurrency Perpetual Futures (MDPI 2026)](https://www.mdpi.com/2227-7072/14/5/103): 26 exchanges / 812 symbols で funding rate correlation + arbitrage prevalence + volatility persistence
+- [BTC Futures High-Frequency (ScienceDirect 2025)](https://www.sciencedirect.com/science/article/pii/S2214845025001188): BTC futures market microstructure 検証
+- [hftbacktest Tutorial](https://hftbacktest.readthedocs.io/en/latest/tutorials/Market%20Making%20with%20Alpha%20-%20Order%20Book%20Imbalance.html): market making 戦略で OBI alpha 使用
+
+#### cat-bitget 現状 verify (= 機械的証跡)
+
+- Phase 0 特徴量カタログ (1432 + Phase 0 v3 補強 2604) に **OBI / Cumulative Depth / VPIN / Taker Ratio / OI Delta はゼロ** (= 推定・要 grep verify)
+- Funding Rate は `exchange_spec.md` で 8h baseline 値として扱うが、ML 入力としては未使用 (= 静的固定値運用)
+- → **微細構造系は cat-bitget の最大の伸びしろ領域**
+
+#### cat-bitget 適用判断 (= 工程 3 入力 + Phase 0 v4 必須拡張)
+
+- **データ取得**: Bitget WebSocket API (= `books5` / `books15` depth subscribe) で order book snapshot + trade stream を取得
+- **Phase 0 v4 追加候補 (= 業界実証多い順)**:
+  1. `book_imbalance_L{5,10,20}__1s_avg_5m` (= 1s 板スナップから 5m 集約) — 高優先度
+  2. `taker_ratio__{1m,5m,15m}` (= aggressive flow proxy) — 高優先度
+  3. `bid_ask_spread_bps__5m_avg` (= 流動性 proxy) — 中優先度
+  4. `funding_rate_8h` + `funding_rate_delta_24h` (= 既存 baseline 値を時系列入力化) — 中優先度
+  5. `open_interest__{1h,4h}` + `oi_roc_1h__{5m,1h}` (= Bitget Public API) — 中優先度
+  6. `vpin_bucket_50__1h` (= 業界実装 mlfinlab.microstructural_features) — 低優先度 (= 実装重い)
+- **業界整合**: arxiv 2602.00776 + 2506.05764 + Frontiers 2026 + MDPI 2026 の 4 件で BTC/perpetual 5m / 1s freq 実証あり
+- **Phase 7-c 実装影響**: bot 起動時に Bitget WebSocket 2-3 streams + 1s 集計が必要 (= 推論レイテンシ余裕は十分・5m bot)
+
+### §16.7 領域 3 まとめ: 7 工程接続 + 設計判断調査ノート
+
+| 工程 | 特徴量設計の改善方向 |
+|---|---|
+| 1 regime | HMM/GMM 入力に MTF (= 4h+1d) + ATR/ADX/realized_vol 統合 |
+| 2 Entry 候補生成 | (固定ロジック・特徴量設計対象外) |
+| **3 Entry ML** | **(a) Volume bar 並行入力 / (b) Fractional Diff 24 特徴量追加 / (c) 出来高系 48 特徴量追加 / (d) microstructure 10-15 特徴量追加 / (e) Clustered MDA で 2604 → 500-1000 削減** |
+| 4 Position Sizing | volatility prediction 特徴量 (= HAR-RV 入力) を強化 |
+| 5 Exit ML | PPO 入力に order book imbalance + taker ratio + position 含み益 % を含める |
+| 6 Risk 管理 | spread / OI delta / VPIN を固定ルール閾値で使う |
+| 7 Online 監視 | feature distribution drift detection (= §17.8 で別途) |
+
+> ⚠️ 上記は **学習資料の調査ノート位置付け**。設計確定は WORKFLOW 改訂36 active 優先 3 (= 工程 2-7 詳細詰め) で別途実施 (cc_role §1.5)。
+
+---
+
+## §17 ML 評価方法 (WORKFLOW 改訂36 領域 4・業界カタログ)
+
+> v3 追記 (2026-05-XX)。**「どう検証して合格判定するか」の業界カタログ**。Phase 1 v6 6 案全滅で feature_importance 上位 = ボラ系支配と確認できたが (= L-223)、本章では **検証フロー側の業界標準** = Purged K-Fold / CPCV / DSR / PBO を整理。cc_role §1.4.6.1 #9 (= 統計指標と PnL 指標の分離) の業界実装パターンを確立する。
+
+### §17.1 Walk-Forward 検証 (rolling vs expanding)
+
+#### 業界 2 方式
+
+| 方式 | window 設計 | 業界用途 | 弱点 |
+|---|---|---|---|
+| **Expanding Window** | train 始点固定・末尾を段階的に拡張 | 「全履歴を活用」必要時 | 古い regime の影響残留 |
+| **Rolling Window** | train を固定長で前進 | 「直近 N 期間」が予測力高い時 (= regime 変化対応) | 古い情報の完全喪失 |
+
+#### Embargo の併用 (= AFML Ch.7 推奨)
+
+- train end と test start の間に N% の embargo gap を入れる
+- 理由: serial correlation で label が test 領域に染み出すのを防ぐ (= leakage 防止)
+- 業界相場: 1-5% embargo (= データサイズに応じて)
+
+#### 教科書整合 + 出典
+
+- [Walk-Forward Optimization (Grokipedia)](https://grokipedia.com/page/Walk_forward_optimization): 概念全般
+- [Walk-Forward CVCL (Quant Beckman)](https://www.quantbeckman.com/p/with-code-walk-forward-cvcl-optimization): 実装コード付き
+- [Walk-Forward Modeling (Alpha Scientist)](https://alphascientist.com/walk_forward_model_building.html): 株式予測での実装例
+- [Walk-Forward + XGBoost (QuantInsti)](https://blog.quantinsti.com/walk-forward-optimization-python-xgboost-stock-prediction/): Python + XGBoost 実装
+- [Walk-Forward Limitations (QuantInsti)](https://blog.quantinsti.com/walk-forward-optimization-introduction/): 弱点 (= regime shift に反応的 / 計算重い)
+
+#### Phase 1 v6 6 案との関係
+
+- 案 a-f は **Walk-Forward Purged K-Fold 5 fold** を採用 (= phase_flow_v4 v7 §1.5)
+- 単一 train/valid/test split より業界整合・leak 防止構造あり
+- ただし fold = 5 のみで CPCV (= 後述 §17.3) の多パス検証は未採用
+
+#### cat-bitget 適用判断 (= 工程 3 Entry ML / 工程 5 Exit ML 検証)
+
+- **主軸維持**: Walk-Forward Purged K-Fold 5 fold (= 現状継続)
+- **embargo 値**: 5m × Phase 0 ラベル K=24/48/96 → embargo = K bar (= 2h-8h) で設定
+- **検討候補**: rolling vs expanding は cat-bitget 5y データ規模 (= 525,600 bar) なら **expanding** で十分 (= 過去 4 年累積 + 直近 1 年で valid)
+
+### §17.2 Purged K-Fold Cross-Validation (AFML Ch.7)
+
+#### 業界の根本問題
+
+- 通常の K-Fold CV は random shuffle で fold 分割 → 時系列で「未来→過去」順序の混乱 + label overlap で leak
+- 金融データ特有: label 形成時間 (= TP/SL/time exit 到達まで) が train fold と test fold で overlap する
+
+#### Purging の手順 (AFML Ch.7・Lopez de Prado 2017)
+
+1. test fold を選択
+2. test fold 内 sample の label 形成時間 (= start_time ~ end_time) を識別
+3. **train fold から、label 形成時間が test fold の時間範囲と overlap する sample を除去** (= purge)
+4. 残った train fold で fit / test fold で score
+
+#### Embargo の追加
+
+- purge だけでは「indirect leak」(= test event の市場反応が train fold sample に影響) を防げない
+- → test fold の後ろに N% embargo gap を追加して train fold から除外
+- 業界相場: 1-5% (= cat-bitget 5y データなら 1 fold ≈ 1y → embargo ≈ 18-90 day)
+
+#### 教科書整合 + 出典
+
+- [Purged Cross-Validation (Wikipedia)](https://en.wikipedia.org/wiki/Purged_cross-validation): 概念 + Lopez de Prado 2017 起源
+- [Purging + Embargo Tutorial (Medium)](https://antonio-velazquez-bustamante.medium.com/kfold-cross-validation-with-purging-and-embargo-the-ultimate-cross-validation-technique-for-time-2d656ea6f476): 実装解説
+- [CV in Finance (QuantInsti)](https://blog.quantinsti.com/cross-validation-embargo-purging-combinatorial/): purging / embargo / combinatorial の業界整合解説
+- [10 Reasons ML Funds Fail (GARP)](https://www.garp.org/hubfs/Whitepapers/a1Z1W0000054x6lUAA.pdf): Lopez de Prado 2018 — 多重検定 / 検証不適切 / leak 等 ML fund 失敗 10 要因
+- [AFML notes (Reasonable Deviations)](https://reasonabledeviations.com/notes/adv_fin_ml/): AFML 各章のサマリ
+
+#### Phase 1 v6 6 案との関係
+
+- 案 a-f で Purged K-Fold 5 fold + embargo を採用済 → leak 防止構造は業界整合
+- ただし「fold 数 5」「embargo 値」が業界相場と整合か再 verify 余地あり
+
+#### cat-bitget 適用判断 (= 工程 3 / 工程 5 検証主軸維持)
+
+- **現状 (= Phase 1 v6) を維持**: Walk-Forward Purged K-Fold 5 fold + embargo K bar
+- **追加検討**: embargo 値の sensitivity test (= K, 2K, 3K で score 差) → 適正値確定
+
+### §17.3 CPCV (Combinatorial Purged Cross-Validation・AFML Ch.7)
+
+#### 業界の根本問題
+
+- 通常の K-Fold CV (= Purged 版も含む) は **single-path testing** = 1 つの train/test 順序のみ
+- 真の Sharpe 分布は推定できず・PBO (= 後述 §17.5) を低くできない
+
+#### CPCV の手順
+
+1. N 個の groups に分割 (= 通常 N=6-10)
+2. k 個の groups を test に充てる組合せ全列挙 (= C(N, k) 通り)
+3. 各組合せで purge + embargo した後 fit / score
+4. → 複数 backtest paths の分布が得られる → robust statistical inference 可能
+
+#### 業界実証
+
+- [CPCV Wikipedia](https://en.wikipedia.org/wiki/Purged_cross-validation): CPCV は Bailey & Lopez de Prado 2014 で提案
+- [Combinatorial Purged CV (Quant Beckman)](https://www.quantbeckman.com/p/with-code-combinatorial-purged-cross): 実装コード付き
+- [CPCV for DRL (Towards AI)](https://towardsai.net/p/l/combinatorial-purgedkfold-cross-validation-for-deep-reinforcement-learning): Deep RL に CPCV を適用
+- [Backtest Overfitting Comparison (ScienceDirect 2024)](https://www.sciencedirect.com/science/article/abs/pii/S0950705124011110): out-of-sample testing methods の synthetic environment 比較 → **CPCV が PBO 最低・DSR 最高**
+- [SSRN Insights (Scribd)](https://www.scribd.com/document/725401650/SSRN-id4778909): CPCV 概要
+
+#### cat-bitget 適用判断 (= Phase 1 v7 検討候補)
+
+- **検討候補**: 案 e (= Triple Barrier multiclass) を CPCV 6 groups / k=2 で再評価 → backtest paths 分布の標準偏差を report
+- **計算コスト**: CPCV は C(6,2) = 15 paths → 案 e 単独 110 分 × 15 ≈ 27 時間 = 1 セッション規模・実行可能
+- **業界整合 verify**: ScienceDirect 2024 の synthetic environment 実証で CPCV 優位 → 採用判断材料あり
+
+### §17.4 Deflated Sharpe Ratio (DSR・AFML Ch.14)
+
+#### 業界の根本問題
+
+- 通常の Sharpe Ratio は 2 つの inflation を持つ:
+  1. **Selection bias**: 多数試行から best を選ぶと Sharpe が過大評価される
+  2. **Non-Normality**: returns 分布が正規 (skewness 0 / kurtosis 3) でないと SR の標準誤差が過小評価
+- → Sharpe ≥ 1.0 でも DSR < 0.5 なら「偶然の産物」可能性大
+
+#### DSR 計算式 (Bailey & Lopez de Prado 2014)
+
+- DSR = Z(SR_observed, SR_expected_chance, σ_SR, skewness, kurtosis, N_trials, T)
+- 入力:
+  - 観測 Sharpe (= SR)
+  - returns の skewness / kurtosis (= 非正規性補正)
+  - 試行数 N (= 多重検定補正)
+  - 期間長 T
+- 出力: DSR = P(SR が偶然でないか) — 業界閾値 = DSR > 0.95 で合格
+
+#### 教科書整合 + 出典
+
+- [DSR Wikipedia](https://en.wikipedia.org/wiki/Deflated_Sharpe_ratio): 概念 + Bailey & Lopez de Prado 2014
+- [Bailey & LdP 2014 SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551): 原論文
+- [Deflating Sharpe Ratio SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2465675): 計算式詳細
+- [DSR PDF (Bailey + Lopez de Prado)](https://pdfs.semanticscholar.org/c215/d0a2064ce1a3565d276475abc84305418f0f.pdf): 数式 + 実装ガイド
+- [DSR Tutorial (Medium Balaena Quant)](https://medium.com/balaena-quant-insights/deflated-sharpe-ratio-dsr-33412c7dd464): 平易解説
+
+#### ONC (Optimal Number of Clusters・実効試行数推定)
+
+- DSR の入力 N (= 試行数) は「実効的に独立な試行数」を要求 (= 単純 grid search 全数では過大)
+- Lopez de Prado は ONC algorithm で「類似戦略を unsupervised clustering で集約 → cluster 数 = 実効 N」を提案
+
+#### Phase 1 v6 6 案との関係
+
+- 案 a-f は DSR 評価未実施 (= phase_flow_v4 v7 §1.5 に DSR 項目あるが具体実装は未 verify)
+- 「TP precision 0.43 頭打ち + combos_pass 0/8」は DSR 計算しても合格水準に届かない可能性大
+
+#### cat-bitget 適用判断 (= Phase 5 Replay 合格判定追加)
+
+- **追加候補**: 月次 NET ≥ $1,900 (= cc_role / CLAUDE.md 必達) の判定に **DSR > 0.95** を併用
+- **理由**: 月次 12 ヶ月クリアでも DSR < 0.95 なら「偶然による達成可能性」が残る → 本番投入リスク
+- **実装**: `pyfolio` / `quantstats` / mlfinlab.backtest_statistics.DeflatedSharpeRatio で計算可
+
+### §17.5 PBO (Probability of Backtest Overfitting・Bailey 2014)
+
+#### 業界の根本問題
+
+- 多数 strategy configuration を grid search で試すと「best が偶然」の確率が増加
+- 学術界では「論文の半数以上が backtest overfit」(= Bailey 2014 — pseudo-mathematics) と批判
+
+#### PBO 計算手順 (CSCV: Combinatorially Symmetric Cross-Validation)
+
+1. backtest 期間を N submatrices に分割 (= 通常 N=16)
+2. C(N, N/2) 通りの train/test 組合せ全列挙
+3. 各組合せで in-sample best 戦略を選択 → out-of-sample rank 計算
+4. OOS rank が median (= 中央値) 未満の確率 = **PBO**
+5. 業界閾値: PBO < 0.5 で合格・< 0.2 で robust
+
+#### 教科書整合 + 出典
+
+- [PBO 原論文 (SSRN)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2326253): Bailey, Borwein, Lopez de Prado, Zhu 2013
+- [Pseudo-Mathematics Bailey 2014 PDF](https://www.davidhbailey.com/dhbpapers/backtest-prob.pdf): 強烈な業界批判 + PBO の理論
+- [Pseudo-Math (Scholarworks)](https://scholarworks.wmich.edu/math_pubs/40/): 学術版
+- [pypbo GitHub](https://github.com/esvhd/pypbo): Python 実装 (= MIT license)
+- [SDM Bailey paper](https://sdm.lbl.gov/oapapers/ssrn-id2507040-bailey.pdf): Statistical Overfitting and Backtest Performance
+
+#### Phase 1 v6 6 案との関係
+
+- 案 a-f は **6 案 × 8 combo = 48 試行** → PBO 計算未実施
+- 48 試行は CSCV N=16 で評価可能規模
+
+#### cat-bitget 適用判断 (= Phase 5 / 6-b 合格判定追加)
+
+- **追加候補**: Phase 5 365d Replay (= 12 ヶ月クリア判定) に **PBO < 0.5** を併用
+- **理由**: 多数 cluster × Exit type の grid search を実施するため、最終採用前に overfitting 確率を verify する義務
+- **実装**: `pypbo` ライブラリ (PyPI) または mlfinlab.backtest_statistics
+
+### §17.6 統計指標 vs PnL 指標の分離 (= cc_role §1.4.6.1 #9 整合)
+
+#### 業界の根本ルール
+
+| 指標カテゴリ | 役割 | 業界使用フェーズ |
+|---|---|---|
+| **統計指標** (entropy_lift / TP precision / log_loss / AUC) | 学習中の **進捗 verify** + leak 検出 | Phase 1-3 (= 学習 + ハイパラ) |
+| **PnL 指標** (月次 NET / Sharpe / DSR / max DD / Sortino) | **本格判定** + 本番投入可否判定 | Phase 5-6-b (= Replay + 本テスト) |
+
+#### cc_role §1.4.6.1 #9 との連携
+
+- 提案する合格基準が **統計指標 / PnL 指標 / 混合のいずれか** を明示する義務
+- 混合した瞬間に L-220 同型違反として記録
+
+#### 業界実装パターン
+
+- Phase 1-3 で TP precision / entropy_lift / DSR_train で進捗 verify
+- Phase 4-5 で月次 NET / Sharpe / DSR_test / PBO で本格判定
+- 「TP precision > 0.5 なら採用」のような **統計指標で本格判定** は禁止 (= L-220 事案)
+
+#### cat-bitget 適用判断 (= 全 Phase 共通)
+
+- **Phase 1 v6 評価軸 (= entropy_lift / TP precision / log_loss / AUC / OOS metric 5 指標)** は統計指標として正しい (= L-217 改訂で Exit シミュ排除済)
+- **Phase 5 / 6-b 合格判定** は月次 NET ≥ $1,900 + DSR + PBO の **PnL 指標主軸**に維持
+- **混合禁止**: 「Phase 1 で月次 NET 推定」「Phase 5 で TP precision で打ち切り」は L-220 同型で禁止
+
+### §17.7 データリーク防止 (= scaler / TimeSeriesSplit / Pipeline)
+
+#### 業界の必須回避リスト (= cat-bitget 既存 L-179 fractal leak / L-181 価格依存性 verify と同型)
+
+| leak 種類 | 発生原因 | 防止方法 |
+|---|---|---|
+| **Scaler leak** | `scaler.fit(全データ)` で test 統計量混入 | `Pipeline + TimeSeriesSplit` で fold 毎 fit |
+| **Time leak** | random shuffle CV で 未来→過去 順序破壊 | `TimeSeriesSplit` または Purged K-Fold |
+| **Label leak** | label 形成時間が test fold と overlap | Purging (= §17.2) |
+| **Indirect leak** | test event の市場反応が train sample に影響 | Embargo (= §17.2) |
+| **Future feature** | `shift(-N)` / `center=True` rolling | grep + 静的解析 (= L-179 経験) |
+
+#### 教科書整合 + 出典
+
+- [scikit-learn Common Pitfalls 11](https://scikit-learn.org/stable/common_pitfalls.html): 公式 leak 防止
+- [Data Leakage Visual Guide (Towards Data Science)](https://towardsdatascience.com/data-leakage-in-preprocessing-explained-a-visual-guide-with-code-examples-33cbf07507b7/): 視覚解説
+- [Avoid Data Leakage (MachineLearningMastery)](https://machinelearningmastery.com/data-preparation-without-data-leakage/): preprocessing 全般
+- [Understanding Data Leakage (NBD Lite)](https://www.nb-data.com/p/understanding-data-leakage-in-machine): NBD #12
+
+#### cat-bitget 適用判断 (= 全 Phase 共通 + cc_role §1.4 #4 警戒)
+
+- **既存 feedback_ml_leak_mandatory_check.md** (= L-179 fractal leak 由来) と整合
+- **Phase 0 v4 拡張時の追加 verify**: 出来高系 / microstructure 追加時に必ず 4 leak チェック (= L-179 feedback 4 項目) を実施
+- **scaler の fold 毎 fit**: Phase 1 v7 改修候補 (= 現状の implementation を grep verify 要)
+
+### §17.8 概念 drift 検出 (= 工程 7 Online 監視・運用層)
+
+#### 業界 3 系統
+
+| 手法 | 仕組み | 業界用途 |
+|---|---|---|
+| **KL Divergence** | 訓練分布 P vs 本番分布 Q の情報量差 | feature distribution drift 検出 |
+| **Wasserstein Distance** | 分布間 optimal transport cost | KL より外れ値耐性高い |
+| **Page-Hinkley Test** | 平均変化検出 (= sequential) | online 単変量モニタ |
+
+#### 業界実装パターン
+
+- 推論時に feature distribution を訓練時と比較 → drift 検出時に alert / 再学習トリガ
+- 業界相場: 1 週間に 1 回 drift verify / 月 1 で feature importance re-evaluation
+
+#### cat-bitget 適用判断 (= Phase 7-c / 7-d 実装候補)
+
+- **次段検討**: bot 運用後 1 ヶ月で feature distribution が 5% 以上 KL drift したら alert
+- **実装**: scikit-multiflow / river ライブラリで実装可
+
+### §17.9 領域 4 まとめ: 7 工程 + 全 Phase 接続
+
+| 工程 / Phase | 評価方法主軸 | 業界整合手法 |
+|---|---|---|
+| Phase 1 (学習・統計指標) | Walk-Forward Purged K-Fold 5 fold + embargo | AFML Ch.7 |
+| Phase 1 v7 候補 | CPCV (= C(6,2) = 15 paths) で robustness 強化 | AFML Ch.7 + ScienceDirect 2024 |
+| Phase 5 (Replay・PnL 指標) | 月次 NET ≥ $1,900 全月クリア (現状) + **DSR > 0.95 + PBO < 0.5** | AFML Ch.14 + Bailey 2014 |
+| Phase 6-b (本テスト) | 同 Phase 5 + 単月未達ゼロ (現状) + DSR + PBO | 同上 |
+| 工程 3 Entry ML | Purged K-Fold + Clustered MDA で feature 選択 | AFML Ch.7-8 |
+| 工程 5 Exit ML | RL の場合は Walk-Forward + 各 fold で PPO 再学習 | 業界 RL 評価標準 |
+| 工程 7 Online 監視 | KL divergence + Page-Hinkley | scikit-multiflow / river |
+
+> ⚠️ 上記は **学習資料の調査ノート位置付け**。設計確定は WORKFLOW 改訂36 active 優先 3 (= 工程 2-7 詳細詰め) で別途実施 (cc_role §1.5)。
 
 ---
 
@@ -715,6 +1242,7 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 |---|---|---|
 | v1 | 2026-05-25 | 初版・WebSearch 8 件 + 旧 Priority 実装 verify による分析 |
 | v2 | 2026-05-27 | §13 ML 学習方法 (6 章) + §14 ML 学習項目 (8 章) + §15 総合所見 追加・WebSearch 14 件 + AFML Ch.3/6 + Oxford-Man + Hudson & Thames mlfinlab + arxiv 8 件 引用 |
+| v3 | 2026-05-25 | **§16 ML 特徴量設計 (7 節) + §17 ML 評価方法 (9 節) 追加**・§15.2-15.4 を v3 完成状態に更新 (= 残り 5 領域 → 残り 3 領域)・WebSearch 16 件 + AFML Ch.2 (情報駆動 bars) / Ch.5 (Fractional Diff) / Ch.7 (Purged K-Fold + CPCV) / Ch.8 (MDI/MDA/SFI) / Ch.14 (DSR) + Bailey & Lopez de Prado 2014 (DSR / PBO) + MLfAT Ch.4 (Alpha Factor Research) + Hudson & Thames mlfinlab + arxiv 5 件 (microstructure 2602.00776 / 2506.05764 / Frontiers 2026 / MDPI 2026 / shap-select 2410.06815) 引用 |
 
 ---
 
