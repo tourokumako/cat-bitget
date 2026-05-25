@@ -358,76 +358,91 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-25 改訂40・**🎉 cc_entry_logic_self_study.md v6 完成 = 案 B 学習 100% 完了 (= ML 知識領域 7 監視運用 業界カタログ整理・1999 → 2485 行・+486 行・WebSearch 12 件 + River (arxiv 2012.04740 + JMLR 2021) + scikit-multiflow ADWIN/DDM/EDDM/KSWIN + Page-Hinkley (River + GeeksforGeeks + datadriftR) + Incremental LightGBM/XGBoost (Medium Data Science Collective + OpenReview Online GBDT・58.2x-974.3x 高速化) + Multi-Armed Bandit + Thompson Sampling (arxiv 1111.1797 + 1911.05309 Adaptive Portfolio + 2108.06812 Batched + Daheekwon Dynamic TS) + Contextual Bandit LinUCB (arxiv 1305.2415 + 1902.07802 AdaLinUCB + ScienceDirect S0957417423001781) + Shadow deployment (SE-ML + AWS SageMaker + JFrog Qwak + Dataconomy 2025 + ML Journey + Databricks) + Champion-Challenger (DataRobot + H2O MLOps + Snowflake + Clarifai + Dagshub + Medium Fraidoon) + AWS SageMaker Dynamic A/B Testing + Production ML Monitoring 3 階層 (Galileo + Durapid + WetransCloud + Fiddler + Monte Carlo + KDnuggets + DevOps Roles) + crypto online learning (arxiv 2510.08068 Multi-Agent Bitcoin + 2201.04699 Recurrent RL + 2303.07925 Deep Incremental + Frontiers Predicting Bitcoin AI) + Hudson & Thames mlfinlab + Galileo MLOps Guide 引用 + L-228 追加) + 7 軸多様性欠落に第 8 軸 = 運用層 (drift detection / online learning / 動的切替) 設計不在追加 + Phase 7-c/7-d/7-e 運用層設計判断調査ノート v6 7 項目確立 (§20.7)**・次タスク = 工程 2-7 詳細詰め (= 設計確定) に進む）
+## 🔴 現在のフェーズ（2026-05-25 改訂41・**工程 1 (相場の状態判定・レジーム判定) 詳細設計確定 + step1_regime_design.md v2 完成 (= 実装詳細 11 項目全確定) + 経緯サマリ自動 load 仕組み化 (= current_redesign_context.md + SessionStart hook) + 設計提案前 4 問形式義務 (= feedback_writing_style.md) + 対話文義務 (= feedback_plain_language.md) + 業界実証 WebSearch verify 済 14 指標 × 6 時間軸 = 84 次元入力 + HMM 教師なし学習 + Walk-Forward Purged K-Fold 5 fold + オンライン Viterbi 100 時間窓 + L-229 追加**・次タスク = まこさん判断 (= 工程 1 実装着手 or 工程 2 詳細詰め)）
 
-> **【現在の正本ブロック・改訂40・2026-05-25 セッション末（🎉 案 B 学習 100% 完了 = 領域 7/7 完成・次フェーズ = 工程 2-7 詳細詰め）】**
+> **【現在の正本ブロック・改訂41・2026-05-25 セッション末（工程 1 詳細設計確定）】**
 >
 > ### 本セッション (2026-05-25) 完了事項
 >
-> #### 1. cc_entry_logic_self_study.md v6 完成 (= WORKFLOW 改訂39 active 優先 2 = 案 B 学習継続完了)
-> - v5 (1999 行) → **v6 (2485 行・+486 行)** に拡張
-> - **§20 ML 監視運用 (7 節)**: Concept Drift Detection 拡張 (= KL/Wasserstein/PH + ADWIN/DDM/EDDM/KSWIN 8 手法体系化 + 3 階層 drift) / Online Learning (= River + Incremental LightGBM/XGBoost 5-10 分 update + Cold start hybrid framework + crypto online learning 業界実証) / A/B Testing + MAB + Thompson Sampling (= Beta-Bernoulli posterior + Adaptive Portfolio 業界実証 + AWS SageMaker Dynamic A/B) / Champion-Challenger (= Shadow→Canary 1%→Ramp 5/20/50%→Full 100% 5 段階 + gating criteria + auto-rollback) / Shadow Deployment (= 本番影響ゼロ predict + log only + AWS SageMaker 業界 default + 2025 serverless trends) / Production ML Monitoring 3 階層 (= Infrastructure + Data + Model + Business 4 軸 + INFO/WARN/CRITICAL alert) / 7 工程接続 + 設計判断調査ノート
-> - **§15.2-15.4 更新**: 残り 1 領域 → 残り 0 領域・**v6 設計判断確定事項 7 件追加 + 案 B 学習完了宣言**
-> - WebSearch 12 件 + 業界ライブラリ (River + scikit-multiflow + Riskfolio-Lib + PyPortfolioOpt + mlfinlab) + 教科書 (AFML / MLfAT / Hudson & Thames) + arxiv 12 件 (= crypto online learning 4 件 + TS / LinUCB 6 件 + drift 2 件) + 業界 MLOps platform (DataRobot + H2O + Snowflake + AWS SageMaker + Fiddler + Galileo + Monte Carlo + Databricks) 引用
+> #### 1. 工程 1 (相場の状態判定・レジーム判定) 詳細設計確定
 >
-> #### 2. 7 軸多様性欠落に第 8 軸 = 運用層設計不在追加 (§20.7)
-> - L-227 7 軸 (= ボラ ML 欠陥 / アルゴ多様性 / bar 種別 / cascade 不在 / strategy allocation 固定 / Meta-Labeling 同型 / リスク管理レイヤー不在) に追加
-> - **第 8 軸**: drift detection / online learning / Thompson Sampling 動的 weighting / Champion-Challenger / Shadow / 3 階層 observability レイヤーが旧 Priority + Phase 1 v6 で全欠落 → 工程 7 運用層業界実装パターン整理
-> - **旧 Priority / Phase 1 v6 は static model + 固定 weight + 手動切替** で non-stationary crypto に対応不能の構造的欠陥を業界整合で整理
+> `step1_regime_design.md` v1 → v2 (= 実装詳細 11 項目全確定・新セッション CC が即実装着手できるレベル):
 >
-> #### 3. Phase 7-c/7-d/7-e 運用層設計判断調査ノート v6 7 項目確立 (§20.7)
-> - **Phase 7-c 実装基盤**: drift detector 3 種並走 (ADWIN + KSWIN + PH) + River + Incremental LightGBM/XGBoost ハイブリッド + 各推論時 1 sample drift update + 週次 incremental + 半年 from scratch
-> - **Phase 7-d Shadow deployment**: 新 model を Demo API で 4 週間以上 paper trading + 仮想 PnL log + 月次 NET / DSR / PBO / Calmar 全達成 → Canary 移行
-> - **Phase 7-e Champion-Challenger 段階 rollout**: 1% → 5% → 20% → 50% → 100% の 5 段階 ramp + gating criteria 未達 auto-rollback + 0.12 BTC 横断 clip
-> - **Thompson Sampling 動的 weighting**: 動的合成方式 8 の cluster 強度別配分を online TS で update + HRP/HERC (= §18.3) と並走候補
-> - **3 階層 observability + business metric**: Infrastructure + Data + Model + Business 4 軸 + INFO/WARN/CRITICAL 3 段 alert + CRITICAL で自動 deleveraging
+> - 判定間隔 1 時間 / ヒステリシス連続 2 回 (= 2 時間相当) / 3 種類分類 (= 上昇 / 下落 / レンジ)
+> - HMM (Hidden Markov Model) 教師なし学習 (= covariance_type=full / n_iter=100 / tol=0.01 / random_state=42)
+> - 入力 14 指標 × 6 時間軸 = 84 次元 (= ベース 2 + トレンド方向性 3 + 移動平均 3 + 一目均衡表 2 + モメンタム 2 + ボラ 2・業界実証 WebSearch verify 済)
+> - 業界実証 verify で log_returns (= zscore_return_20b 代替) + rolling_volatility (= realized_vol_20b 代替) を追加発見 (= 業界 default として必須)
+> - 前処理 RobustScaler を Pipeline で fold 毎 fit / NaN は学習時 drop (= 約 5% 削除)
+> - 評価 Walk-Forward + Purged K-Fold 5 fold / purge 24 時間 / embargo 24 時間 / mlfinpy.PurgedKFold 使用
+> - 状態ラベル付け = 1h DI 差中央値で機械的命名 + 妥当性チェック (= レンジの ADX が他より低い)
+> - 本番運用 = オンライン Viterbi スライディング窓 100 時間・predict + predict_proba 両方使用
+> - 入力ベクトル並び順 = カテゴリ → 指標 → 時間軸
+> - artifact = joblib (HMM/Scaler) + JSON (状態ラベル/サマリ)・命名 `hmm_train_2021_2024.joblib` 等・保存先 `results/regime_step1/`
+> - ライブラリ = 既存 `.venv311` 継承 + hmmlearn 0.3.x 新規インストール
 >
-> #### 4. lessons L-228 追加
-> - cc_entry_logic_self_study.md v6 完成 + 案 B 学習 100% 完了 + 学習成果 7 ポイント + 改善 2 件 (= 次セッション 工程詳細詰め + cc_role §1.4.6.1 9 項目完全運用化)
+> #### 2. 経緯サマリ + 仕組み化 (= L-229 4 段階構造的失敗の再演防止)
+>
+> 本セッション中に CC が 4 段階の構造的失敗 (= 経緯理解不足 / 学習資産引用フリ / 振り子の極端さ / 凍結対象再演) でまこさん 4 回介入させた事案を受けた仕組み化:
+>
+> - **`.claude/memory/current_redesign_context.md` 新規作成**: 「なぜ今フロー改善・ML 内容見直しをしているのか」を 1 ページに整理・専門用語に () 説明
+> - **`~/.claude/settings.json` の SessionStart hook 更新**: `current_redesign_context.md` 全文を自動表示・新セッション CC が即座に経緯を把握
+> - **`feedback_writing_style.md` (auto-memory) に 4 問形式義務追記**: 問 1 各知見の採否 / 問 2 学習資産機械的列挙 / 問 3 前ターン差分・振り子検知 / 問 4 凍結対象再演チェック (= CLAUDE.md §現在の方針 + memory grep 結果)
+> - **`feedback_plain_language.md` (auto-memory) に対話文義務追記**: メモ文と対話文の区別・まこさんとのチャットは常に対話文で書く義務
+>
+> #### 3. 業界実証 WebSearch verify
+>
+> BTC HMM regime detection で「log_returns + rolling_volatility」が業界 default として追加発見:
+> - Preprints 202603.0831 (= BTC HMM 3 状態研究 2024-2026)
+> - QuantInsti (= regime adaptive trading Python guide)
+> - PickMyTrade 2026 (= Regime Detection 2026 Guide)
+> - JDMDC / ResearchGate (= K-Means + HMM ベース regime 研究)
+> - 計 10 件 WebSearch 引用済
+>
+> #### 4. lessons L-229 追加
+> - 4 段階構造的失敗 + 改善 4 件 (= 4 問形式 + 対話文 + 経緯サマリ + 工程 2 以降の同型再演防止)
 >
 > ### 次セッション CC 優先順位
 >
-> 1. **優先 1 — Step 0 + cc_entry_logic_self_study.md v6 auto-load 確認**:
->    - `feedback_priority_starting_line_only.md` / `feedback_no_unverified_assertions.md` / `feedback_current_state_verify_before_design.md` / `feedback_trade_ml_knowledge_gap.md` 起動
->    - cc_role §1.4.6 / §1.4.6.1 起動
->    - **`cc_entry_logic_self_study.md` v6 全文 view** (= 2485 行・前セッション完成・必読)
+> 1. **優先 1 — Step 0 + 経緯サマリ + step1_regime_design.md v2 auto-load 確認**:
+>    - SessionStart hook で `current_redesign_context.md` が自動表示される (= 経緯サマリ・即座に把握)
+>    - 表示内容を Step 0 で必ず読む
+>    - `step1_regime_design.md` v2 (= 工程 1 実装設計書) を view + 全文把握
+>    - **設計提案前 4 問形式義務** (= feedback_writing_style.md) + **対話文義務** (= feedback_plain_language.md) を再宣言
 >
-> 2. **優先 2 — 🎯 工程 2-7 詳細詰め (= 設計確定) = 「1 工程ずつまこさんと議論で詰める」確定** (2026-05-25 セッション末でまこさん指示):
->    - **進め方確定** (= まこさん指示):
->      - CC 単独で「最適改善フロー」を出さない (= L-220 同型違反回避)
->      - 1 工程ずつ議論で詰める協働形式 = **CC = 学習成果から業界整合候補 + トレードオフ提示 / まこさん = 経験・戦略判断・最終決裁 / 実データ検証 = Phase 1 学習 + Phase 5 Replay で答え合わせ**
->      - 各工程で cc_role §1.4.6.1 9 項目チェック (= 業界整合 verify) を機械的証跡で出す義務 (= L-228 改善 2)
->      - feedback_no_options_during_discussion = 議論中は AskUserQuestion / 選択肢 A/B/C を出さず自然な対話形式
->    - **工程 1 (regime)** = 固定ルール (ADX + DI 差) MVP の verify + 次段 HMM ML 化検討
->    - **工程 2 (Entry 候補生成)** = 業界標準シグナル組合せ (= テクニカル全体カバー網羅) で固定ロジック確定 (= スタートライン超え設計の議論密度高)
->    - **工程 3 (Entry ML)** = 案 g (= §18.5 異種 Stacking + Meta-Labeling 3 段) を Phase 1 v7 として実装計画
->    - **工程 4 (Position Sizing)** = 動的合成方式 8 (Half-Kelly + Vol target + HRP/HERC + Thompson Sampling) 確定
->    - **工程 5 (Exit ML)** = PPO 主軸 + Chandelier/Wilder Stop 比較 + Partial TP + ATR Trailing
->    - **工程 6 (Risk 管理)** = TIPP + Dynamic Deleveraging + regime 別 CVaR
->    - **工程 7 (Online 監視)** = ADWIN/KSWIN/PH + River + Champion-Challenger + Shadow + 3 階層 observability
->    - 開始工程はまこさん判断 (= 候補: 工程 1 軽量 MVP verify / 工程 2 スタートライン超え議論密度高)
->    - 1 工程あたり 1-2 セッション目安 (= 議論深度次第)
+> 2. **優先 2 — 🎯 まこさん判断: 工程 1 実装着手 or 工程 2 詳細詰め**:
 >
-> 3. **優先 3 — 工程確定後の実装着手** (= Phase 0 v4 → Phase 1 v7 → Phase 2-7)
-> 4. **優先 4 — 本番運用に向けた Phase 7-c/7-d/7-e 実装** (= 運用層実装)
-> 5. **優先 5 — セッション終了処理** (lessons + WORKFLOW 改訂41 + git commit)
+>    - **選択肢 A: 工程 1 実装着手** (= step1_regime_design.md v2 §6 実装手順に従って 8 ステップ)
+>      - hmmlearn インストール → データ抽出 → 学習 → 状態ラベル付け → artifact 保存 → 本番運用スクリプト → 視認チェック
+>      - 1-2 セッション規模・視認チェックでまこさん介入必要
+>    - **選択肢 B: 工程 2 (Entry 候補生成・固定ロジック) 詳細詰め**
+>      - 業界標準シグナル組合せ (= テクニカル全体カバー網羅)
+>      - 旧 Priority はスタートライン参照のみ・素材化禁止 (= feedback_priority_starting_line_only)
+>      - 1-2 セッション規模・議論密度高
+>    - 開始時点でまこさん判断を確認
+>
+> 3. **優先 3 — 工程 2-7 詳細詰め継続** (= A/B どちらでも結局工程 2 以降は必要)
+> 4. **優先 4 — 全工程確定後の実装着手 + Phase 5 Replay 結果評価**
+> 5. **優先 5 — セッション終了処理** (= lessons + WORKFLOW 改訂42 + git commit)
 >
 > ### 引き継ぎリソース 3 層構造
 >
 > #### Layer 1 (毎セッション必読)
-> - **WORKFLOW.md 改訂40 active** (本ブロック)
+> - **WORKFLOW.md 改訂41 active** (本ブロック)
+> - **`current_redesign_context.md`** (= 経緯サマリ・SessionStart hook で自動表示)
+> - **`step1_regime_design.md` v2** (= 工程 1 実装設計書・11 項目全確定)
 > - **CLAUDE.md**
-> - **`cc_entry_logic_self_study.md` v6** (= 前セッション完成・2485 行・**案 B 学習 100% 完成版・全 7 領域カタログ**)
-> - **lessons_active.md 直近 5 件** (L-228 → L-227 → L-226 → L-225 → L-224)
+> - **lessons_active.md 直近 5 件** (= L-229 → L-228 → L-227 → L-226 → L-225)
 > - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 / §1.4.7 / §1.5 / §1.7**
+> - **`feedback_writing_style.md`** (auto-memory・**4 問形式義務追加版**・最重要)
+> - **`feedback_plain_language.md`** (auto-memory・**対話文義務追加版**・最重要)
 > - **`feedback_priority_starting_line_only.md`** (auto-memory・最重要・命令)
 > - **`feedback_no_unverified_assertions.md`** (auto-memory・最重要・命令)
 > - **`feedback_current_state_verify_before_design.md`** (auto-memory・最重要)
-> - **`feedback_trade_ml_knowledge_gap.md`** (auto-memory・最重要・**v6 で業界標準理解は補強完了 → 今後は学習成果の実設計反映 verify が主軸**)
+> - **`feedback_trade_ml_knowledge_gap.md`** (auto-memory・最重要)
 >
-> #### Layer 2 (工程 2-7 詳細詰め時)
-> - **`cc_entry_logic_self_study.md` v6** §13-§20 (= 全 7 領域 業界カタログ + cat-bitget 設計判断調査ノート)
->   - 工程 1 詰め時: §14.6 + §17.8 (= 旧) / §20.1 (= 新)
+> #### Layer 2 (工程 1 実装 or 工程 2-7 詳細詰め時)
+> - **`cc_entry_logic_self_study.md` v6** §13-§20 (= 全 7 領域業界カタログ・2485 行)
+>   - 工程 1 実装時: §14.6 + §16 + §17 + §20.1
 >   - 工程 2 詰め時: §1-§9 (= 旧 Priority 対比) + 関連業界シグナル全カテゴリ
 >   - 工程 3 詰め時: §13 + §14 + §16 + §17 + §18 (= 案 g 主軸)
 >   - 工程 4 詰め時: §14.5 + §18.3 + §19.4 + §20.3 (= Thompson Sampling)
@@ -437,7 +452,7 @@ Critical/Major 判定を伴わない確認程度はこちら。
 > - `technical_analysis_knowledge_base.md` (既存・1691 行) / `industry_benchmark_knowledge_base.md` (既存・420 行)
 > - cc_role §1.5 / §1.6
 > - **旧 Priority 実装** (`strategies/cat_v9_decider.py` + `config/cat_params_v9.json`) = **学習材料のみ・素材化禁止** (= feedback_priority_starting_line_only)
-> - `phase_flow_v4_with_recovery.md` v7 = **事実上廃止・参照のみ** (= L-223)
+> - `phase_flow_v4_with_recovery.md` v7 = **廃止判定済・素材参照のみ** (= L-223)
 >
 > #### Layer 3 (リファレンス)
 > - `false_positive_incident_policy.md`
@@ -446,13 +461,26 @@ Critical/Major 判定を伴わない確認程度はこちら。
 > - Phase 1 v6 6 案実装スクリプト + summary JSON = 学習材料・採用候補にはしない
 >
 > #### データ・環境
-> - parquet 3 種 + `.venv311`
+> - parquet 3 種 (= Phase 0 v3.1 既存データ再利用) + `.venv311`
 > - Phase 1 v6 6 案結果 = **無効扱い** (= L-223)
 >
 > ### 目的整合性 1 行宣言 (cc_role §1.4.6)
 >
-> - **次タスク** = (1) Step 0 + cc_entry_logic_self_study.md v6 全文 view auto-load → (2) 🎯 **工程 2-7 詳細詰め (= 設計確定) に進む** (= 案 B 学習完了したので、学習成果を実設計に反映) → (3) 工程確定後に実装着手 (Phase 0 v4 → Phase 1 v7 → Phase 2-7) → (4) Phase 7-c/7-d/7-e 運用層実装
-> - **現フェーズ目的への貢献根拠** = WORKFLOW 改訂39 active で確定した「案 B 学習完了後に工程 2-7 詳細詰めに進む」方針に従い、v6 (= 領域 7 監視運用) 完成済 → **案 B 学習完了 (= 7/7 = 100%)**。次は学習成果 (= cc_entry_logic_self_study.md v6 の §13-§20 業界カタログ + cat-bitget 設計判断調査ノート) を工程 2-7 の **設計確定** に反映する段階。L-228 改善 1 で順序候補確定・各工程で cc_role §1.4.6.1 9 項目 verify 必須 (改善 2)。
+> - **次タスク** = (1) Step 0 + 経緯サマリ + step1_regime_design.md v2 auto-load → (2) 🎯 まこさん判断: 工程 1 実装着手 or 工程 2 詳細詰め → (3) 4 問形式義務を機械的運用 → (4) 工程 2-7 詳細詰め継続 → (5) 全工程確定後の実装着手 + Phase 5 Replay
+> - **現フェーズ目的への貢献根拠** = WORKFLOW 改訂40 active で確定した「工程 2-7 詳細詰め (= 設計確定)」方針の第 1 工程として工程 1 (レジーム判定) の詳細設計を完了。新セッション CC が即実装着手できるレベルに到達。L-229 4 問形式義務 + 対話文義務 + 経緯サマリ自動 load で構造的失敗の再演を防止する仕組みも整備済。
+
+---
+
+## 🧊 改訂40 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-25 改訂40・**🎉 cc_entry_logic_self_study.md v6 完成 = 案 B 学習 100% 完了・次タスク = 工程 2-7 詳細詰め (= 設計確定) に進む**）
+
+> **【旧正本ブロック・改訂40・2026-05-25 セッション末（🎉 案 B 学習 100% 完了 = 領域 7/7 完成）】**
+>
+> 本ブロック詳細は改訂41 active 本文 + lessons L-228 参照。
+> v6 (2485 行) + L-228 + WORKFLOW 改訂40 active を commit 8eafc66 で固定。
+
+---
 
 ---
 
