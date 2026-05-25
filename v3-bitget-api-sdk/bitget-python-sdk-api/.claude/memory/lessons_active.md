@@ -7,6 +7,50 @@
 
 ---
 
+### L-224: cc_entry_logic_self_study.md v2 完成 — ML 知識領域 1 (学習方法) + 領域 2 (学習項目) の業界カタログ整理 + Phase 1 v6 6 案全滅の補強原因 verify + 7 工程アルゴ選定調査ノート (2026-05-27)
+
+**何が起きたか:**
+
+WORKFLOW 改訂 35 active 優先 2 (= 案 B 学習継続) として、cc_entry_logic_self_study.md v1 (= 旧 Priority 業界対比・346 行) を v2 (= 727 行・+381 行) に拡張。WebSearch 14 件 + AFML Ch.3 (Triple Barrier + Meta-Labeling) / AFML Ch.6 (Ensemble) / Oxford-Man Institute 2020 / Hudson & Thames mlfinlab / arxiv 8 件を引用して、ChatGPT 7 工程フレーム範囲の ML 知識 7 領域のうち領域 1-2 を完了。
+
+#### 学習成果のポイント
+
+1. **§13.1 GBDT 系**: Phase 1 v6 案 a-f が **全 LightGBM** (= アルゴリズム多様性ゼロ) を verify → 6 案全滅の補強原因として確定 (= L-223 ボラ予測 ML 設計欠陥に並ぶ第 2 の原因)。業界実証で XGBoost が momentum 戦略の Sharpe / DD で LightGBM 優位の事例あり → 工程 3 主軸 = LightGBM + XGBoost stacking 候補
+2. **§13.5 アンサンブル + Meta-Labeling**: 案 f Meta-Labeling 失敗原因 = primary も secondary も同じ LightGBM + 同じ regime 不在ラベル → AFML Ch.3 構造は正しいが周辺の品質確保が前提
+3. **§14.6 Regime 予測**: 工程 1 (regime) の業界 ML 化候補 = HMM (= Viterbi で動的遷移) 確定。現状の固定ルール (= ADX > 25 + DI 差) は MVP 位置
+4. **§14.7 Exit timing**: 工程 5 (Exit ML) の業界主軸 = PPO (= RL・78% success rate vs LSTM 28%) 確定。サブ = XGBoost (= scale-out 確率予測・E-mini S&P 500 業界実証あり)
+5. **§15 総合所見**: cat-bitget 改善方向 4 点整理 = アルゴ多様性 / 予測対象多様性 / regime 不在 / MTF 欠落
+
+**Why (= 学習が必要だった構造的理由):**
+
+- L-223 改善 2 (= CC 学習資料の継続的作成) を実施
+- Phase 1 v6 6 案全滅後の再設計議論で CC のテクニカル/ML 知識不足が露呈 (= L-223 横道経緯)
+- 学習資料 v1 (= 旧 Priority 業界対比のみ) だけでは ML 設計判断材料不足 → 業界アルゴカタログ + 業界予測対象カタログが必要
+- 残り 5 領域 (= 特徴量設計 / 評価方法 / 組合せ / リスク管理 / 監視運用) の学習に進む前提として領域 1-2 を確立
+
+**How to apply (改善 1 件):**
+
+#### 改善 1: 次セッションで残り 5 領域 (3-7) を継続 (= cc_entry_logic_self_study.md v3 として追加)
+
+- **領域 3 (特徴量設計)** + **領域 4 (評価方法)** を先行 (= 工程 3 Entry ML の再設計に直結)
+  - 領域 3: Fractional Differentiation (AFML Ch.5) / スケーリング / 特徴量選択 / 出来高系 / 板情報系
+  - 領域 4: Walk-Forward / Purged K-Fold (AFML Ch.7) / CPCV / Embargo / DSR (AFML Ch.14) / 過学習検出
+- **領域 5 (組合せ)**: §13.5 で半分カバー済 → 残り = 階層 / Cascade / 多段 stacking 詳細
+- **領域 6 (リスク管理)**: §14.5 で Kelly 網羅済 → 残り = Volatility targeting 詳細 / Stop-loss / Drawdown control
+- **領域 7 (監視・運用)**: Concept drift / Online learning / A/B testing — KL divergence / Wasserstein / Page-Hinkley test
+- 各領域で WebSearch 10-20 件 + AFML/MLfAT/mlfinlab chapter 引用必須 (= cc_role §1.4.6.1 9 項目)
+- 2-3 セッション規模
+
+**関連:**
+
+- L-223 (= 前セッション・ボラ予測 ML 設計欠陥 + phase_flow_v4 v7 破綻判断・本セッション学習の動機)
+- cc_role §1.5 デザイン責任 (= 学習成果の §15.4 設計判断は調査ノート位置・確定は工程 2-7 詳細詰めで別途)
+- cc_role §1.4.6.1 (= ML pipeline / トレード関連設計提案前の業界整合 verify 9 項目・本セッション学習で 6-9 を全項目満たす素材を蓄積)
+- feedback_trade_ml_knowledge_gap (= CC のトレード ML 業界標準理解不足・本 lesson で改善 1 件進展)
+- 公式 source: 本セッション末 commit (= cc_entry_logic_self_study.md v2 + L-224 + WORKFLOW 改訂 36 active + 改訂 30-23 archive 移送)
+
+---
+
 ### L-223: ボラ予測 ML 設計欠陥 + 旧 Priority スタートライン認識違反 10 回再演 + phase_flow_v4_with_recovery.md 全体フロー破綻 → 再設計議論への横道経緯 (2026-05-25)
 
 **何が起きたか:**

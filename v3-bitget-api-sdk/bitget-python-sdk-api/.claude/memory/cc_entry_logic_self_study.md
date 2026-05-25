@@ -329,11 +329,392 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 
 ---
 
+## §13 ML 学習方法 (WORKFLOW 改訂35 領域 1・業界アルゴリズムカタログ)
+
+> v2 追記 (2026-05-27)。ChatGPT 7 工程フレームの工程 3 (Entry ML) / 工程 5 (Exit ML) / 工程 4 (Position Sizing) の **アルゴリズム選定** に直接効く知識。Phase 1 v6 案 a-f (= GBDT 系のみ) が頭打ちした原因の 1 つは「アルゴリズムの多様性不足」も含まれるため、業界カタログ全体を整理する。
+
+### §13.1 GBDT 系 (LightGBM / XGBoost / CatBoost)
+
+#### 業界用途と差分
+
+| アルゴ | 強み | 弱み | cat-bitget Phase 1 v6 採用状況 |
+|---|---|---|---|
+| **LightGBM** | 訓練速度最速・低メモリ・大規模対応 | 浅い木で過学習傾向 | ✅ 案 a-f 全案で使用 |
+| **XGBoost** | 正則化強い・Sharpe / DD が LightGBM より優位 (momentum 比較) | 訓練速度やや遅・メモリ消費大 | ❌ 未使用 |
+| **CatBoost** | カテゴリ特徴量を自前処理 (= one-hot 不要)・過学習防止強 | 数値特徴量主体だと旨味少ない | ❌ 未使用 |
+
+#### 教科書整合 + 出典
+
+- Lopez de Prado AFML **Ch.6 Ensemble Methods**: bagging (= bootstrap aggregating・複数サンプルで variance 低減) と boosting (= 逐次的に弱学習器の誤差を補正・bias 低減) の使い分け。
+- LightGBM vs XGBoost の momentum 戦略比較 ([Data Moves Me](https://www.datamovesme.com/blog/what-happens-when-you-swap-out-xgboost-a-6model-momentum-showdown)): CAGR / total return は同等だが、Sharpe は XGBoost 優位・max DD は XGBoost が浅い。
+
+#### Phase 1 v6 6 案全滅との関係 (cc_entry_logic_self_study §0.1 経緯)
+
+- 案 a-f は **全て LightGBM** で実装。アルゴリズム多様性ゼロ。
+- 「ボラ予測 ML 設計欠陥」の根本原因は regime context 不在 / LONG-SHORT 並列学習だが、アルゴリズム多様性 (= XGBoost / CatBoost 並走) も Phase 1 v6 では未試行。
+- 業界実証として XGBoost + LightGBM のアンサンブルは「単独アルゴより drawdown 浅い」事例が多い (AFML Ch.6)。
+
+#### cat-bitget 適用判断 (= 工程 3 候補)
+
+- **工程 3 (Entry ML) のメインアルゴ候補**: LightGBM (高速・大規模対応) + XGBoost (Sharpe 優位) のアンサンブル
+- **CatBoost は保留**: cat-bitget は数値特徴量主体 (= 1432 指標) でカテゴリ特徴量少ない → CatBoost の旨味が薄い
+- **Hyperparameter range の業界相場** (= AFML / mlfinlab blog 整合):
+  - `num_leaves`: 15-127 (= cat-bitget Phase 1 v6 は 15-31 中心)
+  - `learning_rate`: 0.01-0.1
+  - `min_child_samples`: 20-100
+  - `early_stopping_rounds`: 50-200
+
+### §13.2 時系列深層学習 (LSTM / GRU / Transformer / TCN)
+
+#### 業界用途と業界実証
+
+| アルゴ | 強み | 弱み | BTC 5m 業界実証 |
+|---|---|---|---|
+| **LSTM** | 長期依存性捕捉・時系列定番 | 訓練遅・データ要求大 | MSE 6.25 (GRU より悪) |
+| **GRU** | LSTM より高速・パラメータ少 | 長期依存性で LSTM に劣る場合あり | MSE 4.67 (LSTM 超え) |
+| **Transformer** | Attention で long-range pattern 捕捉 | データ要求さらに大・計算重 | TimeXer-Exog で MSE 89% 改善 (70日 horizon) |
+| **TCN** (Temporal Convolutional Network) | RNN より並列化容易 | Bitcoin での実証研究少 | 限定的 |
+
+#### 業界研究 (2025)
+
+- **GRU > LSTM (Bitcoin daily)**: [Springer 2025](https://link.springer.com/chapter/10.1007/978-981-97-8946-7_13) GRU MSE 4.67 vs LSTM 6.25 / 2 層 + Adam + dropout 0.2 + batch 32 + 20 epochs。
+- **Transformer**: [TimeXer / EMAT / TFT](https://www.mdpi.com/2079-8954/13/6/474) on-chain + テクニカル指標統合で BTC 予測 / [Bitcoin Greed Index 組合せ](https://ietresearch.onlinelibrary.wiley.com/doi/full/10.1049/blc2.70017) で性能向上。
+- **Hybrid (Transformer + GRU)**: [arxiv 2504.17079](https://arxiv.org/pdf/2504.17079) で long-range + short-term の両方捕捉。
+
+#### Overfitting 対策 (業界標準)
+
+- Dropout 0.2 (= 訓練時に 20% neuron をランダム無効化)
+- L2 正則化 (= 重みの 2 乗ペナルティ)
+- 5-fold cross validation (Walk-Forward / Purged が時系列推奨)
+
+#### cat-bitget 適用判断 (= 工程 3 / 工程 5 候補)
+
+- **データ量**: 5y × 5m × 24h × 12 = **525,600 bar** = 深層学習に十分 (Transformer は 100k+ で安定)
+- **業界研究の限界**: BTC 研究は daily / hourly 中心で **5min intraday の業界実証は少ない** → cat-bitget で先行ケースになる可能性
+- **採用候補**: 工程 3 のセカンダリ (= GBDT と並走) で GRU / Transformer (TFT) を試す。工程 5 (Exit ML) でも LSTM/Transformer は dynamic exit timing で実証あり (§14.7 参照)
+- **見送り**: TCN は BTC 研究蓄積が薄いため保留
+
+### §13.3 時系列特化 ML (MiniROCKET / TSFresh / sktime)
+
+#### 業界用途と特徴
+
+| アルゴ | 用途 | 業界実証 |
+|---|---|---|
+| **MiniROCKET** | 時系列分類の SOTA (= state-of-the-art・最新最良) | UCR 108 datasets で ROCKET の 75x 高速・accuracy 同等 / 109 datasets を 10 分以内で訓練・テスト |
+| **TSFresh** | 自動特徴量抽出 (794 features・63 methods) | 統計的 hypothesis test ベース feature selection 内蔵 |
+| **TSFEL** | TSFresh と並ぶ自動特徴量ライブラリ | finance / healthcare で実証 |
+
+#### 教科書整合 + 出典
+
+- **MiniROCKET 原論文**: [arxiv 2012.08791](https://arxiv.org/abs/2012.08791) / [GitHub angus924](https://github.com/angus924/minirocket) — random convolutional kernel で時系列を transform して linear classifier で分類
+- **TSFresh 原論文**: [ScienceDirect](https://www.sciencedirect.com/science/article/pii/S0925231218304843) / [GitHub blue-yonder](https://github.com/blue-yonder/tsfresh) — Scalable Hypothesis tests で自動特徴量選択
+
+#### cat-bitget 適用判断 (= 工程 3 / 特徴量設計補強)
+
+- **MiniROCKET**: 工程 3 (Entry ML) のセカンダリ候補。GBDT / Transformer と並走して時系列分類タスクとして Entry 候補を分類。BTC 5m 業界実証は薄いが、UCR データセット全般で SOTA = crypto でも有望
+- **TSFresh**: cat-bitget の既存 1432 指標を補完する自動特徴量抽出として併用候補。**ただし leak チェック (= shift(-N) / future window) 必須** (feedback_ml_leak_mandatory_check.md)。794 features の中に未来参照が混入していないか実装 verify が義務
+- **採用優先度**: TSFresh 中 / MiniROCKET 中の保留 (= 工程 2-7 詳細詰めで再評価)
+
+### §13.4 強化学習 (RL: DQN / PPO / A2C / SAC)
+
+#### 業界用途と性能 (2025 実証)
+
+| アルゴ | 業界実証 (crypto 2025) | 用途 |
+|---|---|---|
+| **DQN** | 限定・離散行動向け | Entry 方向の binary 判定 |
+| **PPO** | **2025 最多採用** (general-purpose) / 78% success rate (risk control・LSTM 28% 比較) | Position sizing / 連続行動 |
+| **A2C** | PPO の代替 | 連続行動 |
+| **SAC** | extreme vol で **94% annualized return** (DQN -12% 比較) | 高ボラ環境 |
+
+#### 教科書整合 + 出典
+
+- **PPO 適用例**: [SSRN paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5662930) BTC/ETH/SPY で long/flat/short positioning 学習 / transaction cost + vol risk penalty
+- **比較研究**: [MDPI Systems 14-1-111](https://www.mdpi.com/2079-8954/14/1/111) PPO / A2C / DQN の attention layer 付き比較
+- **Exit timing / Position sizing 適用**: LSTM / PPO / DQN / Actor-Critic で SL/TP 学習 + risk control
+
+#### cat-bitget 適用判断 (= 工程 4 / 工程 5 候補)
+
+- **工程 5 (Exit ML) 主軸候補**: PPO で「保有継続 / TP / SL / 時間切れ」の連続行動学習。業界実証あり (= 78% success rate)
+- **工程 4 (Position Sizing) サブ候補**: SAC は extreme vol で 94% annualized return が魅力だが、phase_flow_v4 v7 §改善 4 で「Half-Kelly + Volatility targeting + cluster 強度別配分」(= 動的合成方式) を主軸に決定済 → **SAC は補強候補 (= 動的合成出力を SAC で微調整)**
+- **DQN は見送り**: 連続行動苦手・SAC/PPO に劣後
+- **データ要件**: RL は環境シミュレーション必要 → cat-bitget の Phase 5 Replay 環境を活用可能
+
+### §13.5 アンサンブル + Meta-Labeling (AFML Ch.3 + Ch.6 中核)
+
+#### Ensemble の業界 3 系統 (AFML Ch.6)
+
+| 手法 | 仕組み | 用途 |
+|---|---|---|
+| **Bagging** (Bootstrap Aggregating) | bootstrap sample で多数の弱学習器を訓練・平均で variance 低減 | Random Forest |
+| **Boosting** | 逐次的に前モデルの誤差を補正・bias 低減 | LightGBM / XGBoost / CatBoost |
+| **Stacking** | 複数の異種アルゴ (GBDT + DL + RL) の出力を meta-learner で統合 | プロ Quant 標準 |
+
+#### Meta-Labeling (AFML Ch.3 pg.50 中核技術)
+
+[Lopez de Prado 2017 (Guggenheim Partners + Cornell)](https://en.wikipedia.org/wiki/Meta-Labeling) で発表された **二段構成**:
+
+1. **Primary model**: トレード方向 (LONG/SHORT/0) を予測 — 既存ロジック / 既存 ML どちらも可
+2. **Secondary (meta) model**: Primary の予測が正しいか (= 取引するか / size をどうするか) を予測
+
+**目的**:
+- Direction と Sizing の判断を分離 (= 同時学習の非効率を解消)
+- False positive を抑制 (= primary の出力を二段目で filter)
+
+**業界実証**:
+- [Hudson & Thames 検証](https://hudsonthames.org/does-meta-labeling-add-to-signal-efficacy-triple-barrier-method/): Triple Barrier + Meta-Labeling で primary 単独より Sharpe 改善
+- [QuantConnect 注記](https://www.quantconnect.com/forum/discussion/14706/why-meta-labeling-is-not-a-silver-bullet/): Meta-Labeling は万能ではない (= primary が悪いと meta も救えない)
+
+#### Phase 1 v6 案 f との関係
+
+- 案 f は Meta-Labeling pattern (= secondary が primary の正誤を予測) だが combos_pass = 0/8 (TP precision 0.43 頭打ち)
+- **失敗原因**: primary も secondary も同じ LightGBM + 同じ regime 不在ラベルで学習 → primary が悪い場合 meta も救えない実証
+- 案 f の sklearn `cross_val_predict` pattern は AFML 標準実装通り (= 構造は正しい)
+
+#### cat-bitget 適用判断 (= 工程 3 + 工程 4 統合候補)
+
+- **工程 3 + 工程 4 を Meta-Labeling で接続**: primary (= 工程 3 Entry ML) → secondary (= 工程 4 Position Sizing の「取引するか / size どうするか」)
+- **採用条件**: primary を多様化 (= 工程 1 regime 入力追加 + LONG/SHORT 分離学習 + MTF 整合) してから Meta-Labeling 再導入 → primary の品質確保が前提
+- **Stacking**: 工程 3 で LightGBM + XGBoost + (オプション GRU/Transformer) を stacking する候補
+
+### §13.6 領域 1 まとめ: ChatGPT 7 工程への当てはめ
+
+| 工程 | 主軸アルゴ候補 | サブ候補 | 業界根拠 |
+|---|---|---|---|
+| 1 市場状態判定 (regime) | HMM / GMM (= §14.6) | k-means + LightGBM 分類 | 業界実証あり (BTC 2024-26) |
+| 2 Entry 候補生成 | 固定ロジック (= 業界標準シグナル組合せ) | N/A (= ML 化保留) | テクニカル全体ベース・cc_role §1.7 |
+| 3 Entry ML | LightGBM + XGBoost stacking | GRU / Transformer (TFT) / MiniROCKET | AFML Ch.6 + 業界実証 |
+| 4 Position Sizing | 動的合成 (Half-Kelly + Vol target + cluster) | SAC で微調整 | phase_flow_v4 v7 改善 4 |
+| 5 Exit ML | PPO (RL) | LSTM + XGBoost (= scale-out 確率) | RL 業界実証 78% success |
+| 6 Risk 管理 | 固定ルール (= spread / ATR / volume) | N/A (= ML 化保留) | 業界実装パターン |
+| 7 Online 監視 | 運用層 | concept drift detector | §14 で別途検討 |
+
+---
+
+## §14 ML 学習項目 (WORKFLOW 改訂35 領域 2・予測対象カタログ)
+
+> v2 追記 (2026-05-27)。「**何を予測するか**」の業界カタログ。Phase 1 v6 6 案全滅の本質は「ラベル設計 (= MFE/MAE pct の方向不一致) + 学習方法 (= LONG/SHORT 並列・regime 不在) 」の組合せ欠陥。本章で予測対象の業界標準を整理して、工程 3-5 のラベル / 目的関数を再設計可能にする。
+
+### §14.1 方向予測 (= TP first 確率) — Triple Barrier Method
+
+#### 業界標準 (AFML Ch.3)
+
+[Lopez de Prado AFML Ch.3](https://www.newsletter.quantreo.com/p/the-triple-barrier-labeling-of-marco) で確立した **3 つの barrier** によるラベル生成:
+
+| Barrier | 設定 | ラベル |
+|---|---|---|
+| Upper (TP) | `entry × (1 + tp_pct)` | **+1** (利確到達) |
+| Lower (SL) | `entry × (1 - sl_pct)` | **-1** (損切到達) |
+| Vertical (time) | K bar 経過 | **0** (時間切れ・中立) |
+
+**3 つのバリアのどれが最初にヒットしたか** で 3 クラス分類問題に帰着 ([Hudson & Thames 詳細](https://hudsonthames.org/does-meta-labeling-add-to-signal-efficacy-triple-barrier-method/) / [mlfin.py 実装](https://mlfinpy.readthedocs.io/en/latest/Labelling.html))。
+
+#### 業界優位性
+
+- 「**実トレードの意思決定をミラーリング**」(= TP/SL は実装可能・MFE/MAE はバックテスト固有)
+- ノイズ多い市場 (= crypto 5m) で ML の signal 検出力が高い
+- Phase 1 v6 案 e で採用済 (multiclass 実装)
+
+#### Phase 1 v6 案 e との関係
+
+- 案 e は Triple Barrier multiclass を実装 → entropy_lift K=24/48/96 で 0.20-0.35 (= 6 案中最良)
+- **だが combos_pass = 0/8**: 理由は §13.1 で論じた regime 不在 + LONG/SHORT 並列学習 + MTF 欠落
+- Triple Barrier 自体は業界標準で正しい・**周辺の設計を直せば再利用可能**
+
+#### cat-bitget 適用判断
+
+- **工程 3 (Entry ML) の主ラベル**: Triple Barrier multiclass を維持
+- **改善方向**: TP/SL bar 単位を K (= 1h/2h/4h/8h) 別に固定するのでなく、`entry × atr_pct` で動的に設定する業界拡張あり (= ATR-based dynamic barrier)
+
+### §14.2 Meta-Labeling (= entry/skip + size 二値判定)
+
+§13.5 で論じた **secondary model のラベル設計**。
+
+#### ラベル定義 (AFML Ch.3)
+
+- Primary が +1 (LONG) を出した時刻に、**実際に TP 到達したか** を 0/1 ラベル化
+- Secondary はこれを classifier で予測 (= primary が正しい確率)
+- 出力を Half-Kelly に渡して size 決定
+
+#### cat-bitget 適用判断
+
+- §13.5 で論じた通り「工程 3 + 工程 4 接続用ラベル」として採用候補
+- **採用前提**: primary (= 工程 3 Entry ML) の品質確保
+
+### §14.3 Volatility 予測 (= GARCH / HAR-RV / ML)
+
+#### 業界 3 系統
+
+| 手法 | 仕組み | BTC 業界実証 |
+|---|---|---|
+| **GARCH (1,1)** | 古典統計 (= conditional variance) | 1-day RMSE ~335 |
+| **HAR-RV** | 日次・週次・月次の RV を重ね回帰 | 1-day RMSE 280 (GARCH 超え) |
+| **LSTM / CNN-LSTM** | 深層時系列 | 全 horizon で GARCH 超え (intraday も) |
+| **XGBoost / MLP** | GBDT / MLP | 競合・HAR と同水準 |
+
+#### 業界実証
+
+- [Modern Finance 2025](https://mf-journal.com/article/view/370) crypto vol で deep learning > GARCH
+- [Springer Asia-Pacific FM 2024](https://link.springer.com/article/10.1007/s10690-024-09510-6) HAR + sentiment + ML horserace で HAR-RV 優位を再確認
+- [arxiv 2202.08962](https://arxiv.org/pdf/2202.08962) intraday vol 予測で commonality (= 横断的共通因子) 重要
+
+#### cat-bitget 適用判断 (= 工程 4 入力)
+
+- **工程 4 (Position Sizing) の必須入力**: Half-Kelly + Volatility targeting (= phase_flow_v4 v7 改善 4) で vol 予測値が必要
+- **採用候補**: HAR-RV を baseline (= 軽量・解釈可能) + LightGBM/LSTM で補強
+- **実装**: 1432 指標の中に realized_vol_5m / realized_vol_1h / realized_vol_4h を既に含む → これを HAR-RV 構造で組み合わせる工程を追加
+
+### §14.4 Sharpe / Sortino 直接最適化
+
+#### 業界実装 (Decision-Focused Learning)
+
+[Oxford-Man Institute 2020 paper](https://www.oxford-man.ox.ac.uk/wp-content/uploads/2020/06/Deep-Learning-for-Portfolio-Optimisation.pdf) で確立した **end-to-end** 手法:
+
+1. Returns 予測を経由しない
+2. Portfolio weights を直接予測
+3. Loss function = **-Sharpe ratio** (= negative Sharpe を最小化)
+
+#### 業界実証
+
+- [arxiv 2005.13665](https://arxiv.org/pdf/2005.13665) Sharpe 直接最適化で従来 (= MV optimization) 超え
+- [Cryptocurrency Portfolio NN](https://arxiv.org/pdf/2310.01148) crypto multi-asset で Sharpe 最大化
+- [arxiv 2503.13544](https://arxiv.org/html/2503.13544v3) Deep Ensembles で robust portfolio
+
+#### cat-bitget 適用判断 (= 工程 4 / Phase 4-a cluster 配分)
+
+- **工程 4 サブ手法候補**: Half-Kelly 主軸の cluster 別配分を Sharpe 直接最適化 NN で導出
+- **採用条件**: cluster 数 (= 12 程度) が安定した後に追加検討。現状は phase_flow_v4 v7 改善 4 の動的合成方式が主軸
+
+### §14.5 Position size 直接予測 (= Kelly / Half-Kelly + ML 補正)
+
+#### Kelly criterion (AFML / Modern PM の中核)
+
+**式**: `f* = (b × p - q) / b`
+
+| 記号 | 意味 |
+|---|---|
+| `f*` | 最適 fraction (= 資金の何 % を賭けるか) |
+| `b` | 賠率 (= reward / risk = 平均利益 / 平均損失) |
+| `p` | 勝率 |
+| `q` | 負け率 = 1-p |
+
+#### Full / Half / Quarter Kelly
+
+| 比率 | 業界推奨 | 特性 |
+|---|---|---|
+| Full | ❌ 非推奨 | 最速成長だが DD 50-80% |
+| Half (0.5×f*) | ✅ 最多採用 | 成長率 ~75% Full 比 + DD 約 50% 削減 |
+| Quarter (0.25×f*) | ✅ crypto vol 推奨 | 推定誤差バッファ最大 |
+
+#### データ要件
+
+- **最低 50-100 trades** で p / b を統計的に有意化
+- Phase 1 v6 案 e で発火 4,000-15,000 件/年 → データ要件は十分
+
+#### cat-bitget 適用判断 (= 工程 4 主軸)
+
+- **phase_flow_v4 v7 §改善 4 で確定済**: Half-Kelly + Volatility targeting + cluster 強度別配分の **動的合成方式 8**
+- **業界整合**: crypto は vol が高い → Quarter Kelly が業界推奨だが、cat-bitget は cluster で分散させる前提で Half-Kelly 採用は妥当
+- **0.12 BTC 合計上限制約**: Kelly が示す最適 size が 0.12 BTC を超えても **clip 必須** (= CLAUDE.md §0-2 絶対規定)
+
+### §14.6 Regime 予測 (= HMM / GMM / ML 分類)
+
+#### 業界 3 系統
+
+| 手法 | 仕組み | 強み |
+|---|---|---|
+| **HMM** (Hidden Markov Model) | 観測価格から隠れ状態 (regime) を Viterbi で推定 | 動的 regime 遷移確率を学習 |
+| **GMM** (Gaussian Mixture Model) | 静的 clustering で returns を multivariate Gaussian の混合で fit | 解釈容易・EM で推定 |
+| **k-means** | 静的 clustering (= GMM の特殊解) | 最軽量 |
+| **ML 分類** (LightGBM/SVM) | regime を教師ラベル化して supervised | 特徴量自由度高 |
+
+#### 業界実証 (BTC 2024-2026)
+
+- [Preprints 202603.0831](https://www.preprints.org/manuscript/202603.0831) BTC で HMM / Markov 適用・vol regime と structural breaks 検出
+- [QuantStart QSTrader](https://www.quantstart.com/articles/market-regime-detection-using-hidden-markov-models-in-qstrader/) GaussianHMM で high/low vol regime 検出
+- [LSEG Devportal](https://developers.lseg.com/en/article-catalog/article/market-regime-detection) HMM / GMM の業界比較
+
+#### cat-bitget 適用判断 (= 工程 1 = 現状固定ルール → ML 化候補)
+
+- **現状 (= WORKFLOW 改訂 35 active 確定)**: 工程 1 は 4 時間足単一判定 + ADX > 25 / DI 差の **固定ルール** (= MVP)
+- **次段 ML 化候補**: HMM (= 業界実証あり・Viterbi で動的遷移) を採用候補
+- **GMM / k-means**: 業界実装パターンの 1 つだが Phase 1 v6 6 案で k-means / GMM 由来の cluster 特徴量が学習対象に混入していなかった経緯 → 工程 1 で独立に学習させる構造に直す
+
+### §14.7 Exit timing 予測 (= ML による動的 Exit)
+
+#### 業界 4 手法
+
+| 手法 | 業界実証 |
+|---|---|
+| **XGBoost 確率予測** | [Trend Exhaustion 確率 > 70% で 33% scale-out](https://quantstrategy.io/blog/machine-learning-for-exit-optimization-predicting-the-best/) (E-mini S&P 500・5y tick data) |
+| **LSTM 時系列予測** | [Predicting SL/TP Signal](https://blog.quantinsti.com/predicting-sl-tp-signal-machine-learning-project-sunanda/) で LSTM を SL/TP 予測に多用 |
+| **RL (PPO)** | scale-out sequence を学習 (= §13.4) |
+| **多段 grid-search + vol-based market timing** | TP/SL grid + vol 信号併用 |
+
+#### 業界実証の核心
+
+- 「**adaptability**」が ML 優位点: 固定 % ルールでは捕捉できない trend exhaustion / regime shift を ML が real-time 検出
+- 業界 success rate: PPO で 78% (risk control) / LSTM 28% という差 (= §13.4 実証)
+
+#### cat-bitget 適用判断 (= 工程 5 主軸)
+
+- **主軸候補**: PPO (= §13.4 で論じた・78% success rate)
+- **サブ候補**: XGBoost で scale-out 確率予測 (= 業界実証あり・Phase 1 v6 の GBDT インフラ再利用可能)
+- **既存暫定 Exit との関係**: Phase 4-b の time_exit / TP_PCT / SL_PCT / TRAIL_RATIO 等 12 種は **業界比較ベースライン** として残す (= phase_flow_v4 v7 改善 4 同型・主軸 1 + 比較 N 構造)
+
+### §14.8 7 工程との対応マトリックス (= 領域 2 まとめ)
+
+| 工程 | 主予測対象 | ラベル | 業界手法 | cat-bitget 採用候補 |
+|---|---|---|---|---|
+| 1 regime | regime 状態 (= up/down/range) | 4h 足 regime ラベル | HMM / GMM / ADX-based 固定 | 固定ルール (= ADX > 25 + DI 差・MVP) → 次段 HMM |
+| 2 Entry 候補生成 | (= 予測ではなく固定ロジック) | N/A | 業界標準シグナル組合せ | 固定 (= cc_role §1.7) |
+| 3 Entry ML | TP first 確率 | Triple Barrier multiclass (+1/-1/0) | AFML Ch.3 | 案 e ベース + 工程 1 入力追加 + LONG/SHORT 分離 + MTF |
+| 4 Position Sizing | size (BTC) | Half-Kelly target (= cluster × vol × Kelly) | Kelly criterion + Vol targeting | phase_flow_v4 v7 改善 4 動的合成方式 8 |
+| 5 Exit ML | Exit timing / dynamic SL/TP | multiclass (TP/SL/time/trail) | PPO / XGBoost / LSTM | PPO 主軸 + XGBoost サブ |
+| 6 Risk 管理 | spread / ATR 急変 / vol spike | N/A (= 固定ルール) | 業界標準 (= post-trade filter) | 固定ルール |
+| 7 Online 監視 | concept drift / 過学習 alarm | N/A (= 運用層) | drift detection (KL / Wasserstein) | §15 で別途検討 |
+
+---
+
+## §15 領域 1-2 の総合所見 (= 残り 5 領域への接続)
+
+### 15.1 領域 1-2 学習で見えた cat-bitget の改善方向
+
+1. **アルゴリズム多様性**: Phase 1 v6 案 a-f が **全 LightGBM** → XGBoost / GRU / Transformer / RL の並走必要 (§13.1 / §13.2 / §13.4)
+2. **予測対象多様性**: 現状 MFE/MAE pct + Triple Barrier multiclass のみ → Meta-Labeling / Volatility / Exit timing 等への展開必要 (§14.1-§14.7)
+3. **regime 不在の致命性**: Phase 1 v6 全滅の根本原因 = regime context を入力に入れていない → HMM/GMM で工程 1 出力を独立に与える必要 (§14.6)
+4. **MTF 整合の欠落**: 現状 5m 単独学習 → 4h regime + 1h setup + 5m entry の 3 層構造が業界標準 (§13.2 Transformer / §14.6 HMM どちらでも MTF 入力で性能向上)
+
+### 15.2 残り 5 領域 (= 次セッション以降 WORKFLOW 改訂 35 active 優先 2 残り)
+
+- **領域 3 (ML 特徴量設計)**: Fractional Differentiation (AFML Ch.5) / スケーリング / 特徴量選択 / 出来高系 / 板情報系
+- **領域 4 (ML 評価方法)**: Walk-Forward / Purged K-Fold (AFML Ch.7) / CPCV / Embargo / DSR (AFML Ch.14) / 過学習検出
+- **領域 5 (ML 組合せ手法)**: §13.5 で部分網羅・残り = 階層 / Cascade / 多段 stacking 詳細
+- **領域 6 (リスク管理)**: §14.5 で Kelly 網羅・残り = Volatility targeting 詳細 / Stop-loss / Drawdown control の業界標準
+- **領域 7 (監視・運用)**: Concept drift / Online learning / A/B testing — 業界標準は KL divergence / Wasserstein / Page-Hinkley test 等
+
+### 15.3 次セッションの推奨着手順位
+
+1. **領域 3-4 (特徴量 + 評価方法)** を先行: 工程 3 (Entry ML) の再設計に直結する基礎知識
+2. **領域 5 (組合せ)** はその後: §13.5 で半分カバー済
+3. **領域 6-7** は工程 4-7 の詳細詰めと並行可能
+
+### 15.4 cat-bitget 設計判断の確定事項 (v2 学習成果から)
+
+> ⚠️ 以下は **学習資料の調査ノート位置付け**。実際の設計確定は WORKFLOW 改訂 35 active の優先 3 (= 工程 2-7 詳細詰め) で別途実施 (cc_role §1.5 デザイン責任)。
+
+- **工程 3 (Entry ML) ベース**: Triple Barrier multiclass (= 案 e 構造) + LightGBM / XGBoost stacking + Meta-Labeling 二段化 + regime 入力 + LONG/SHORT 分離 + MTF
+- **工程 4 (Position Sizing)**: phase_flow_v4 v7 改善 4 動的合成方式 8 (= Half-Kelly + Vol target + cluster 強度別配分) を維持
+- **工程 5 (Exit ML)**: PPO (= RL) 主軸 + XGBoost (= scale-out 確率) サブ
+- **工程 1 (regime)**: 固定ルール (= ADX + DI 差) で MVP・後段で HMM ML 化検討
+
+---
+
 ## §11 改訂履歴
 
 | 版 | 日付 | 内容 |
 |---|---|---|
 | v1 | 2026-05-25 | 初版・WebSearch 8 件 + 旧 Priority 実装 verify による分析 |
+| v2 | 2026-05-27 | §13 ML 学習方法 (6 章) + §14 ML 学習項目 (8 章) + §15 総合所見 追加・WebSearch 14 件 + AFML Ch.3/6 + Oxford-Man + Hudson & Thames mlfinlab + arxiv 8 件 引用 |
 
 ---
 
