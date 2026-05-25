@@ -358,83 +358,82 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-25 改訂39・**cc_entry_logic_self_study.md v5 完成 (= ML 知識領域 6 リスク管理 業界カタログ整理・1610 → 1999 行・+389 行・WebSearch 8 件 + GARCH-family (TGARCH/EGARCH/CGARCH・Springer 2025) + EWMA + HAR-RV + Chandelier Exit (ChartSchool/StratBase.ai/LuxAlgo) + Wilder Volatility Stop + CPPI/TIPP (Wikipedia/QuantPedia/Core AXA-IM) + Kelly criterion (Altrady/LBank/OSL/CMC/Perrenod) + Pyramiding (QuantStrategy 4 篇/TradersPost/Forextester/FasterCapital/hoc-trade) + CVaR (MDPI 2026/arxiv 2406.00610/Riskfolio-Lib/Uryasev) + TSM Vol Scaling (CFA 2019/AlphaArchitect/CME Group/ScienceDirect S1386418116301379/CXO) + ML 動的 Stop (arxiv 2506.22055/ScienceDirect 2025/Springer 2025) + Amberdata 引用 + L-227 追加) + 6 軸多様性欠落に第 7 軸 = リスク管理レイヤー不在追加 + Phase 5/6-b 多重防御 v5 候補 (Calmar > 2.0 / CVaR_95 / Sortino > 1.5) 確立 (§19.5)**・次タスク = 案 B 学習継続 = 残り 1 領域 (7) を v6 として追加・領域 7 (監視運用)）
+## 🔴 現在のフェーズ（2026-05-25 改訂40・**🎉 cc_entry_logic_self_study.md v6 完成 = 案 B 学習 100% 完了 (= ML 知識領域 7 監視運用 業界カタログ整理・1999 → 2485 行・+486 行・WebSearch 12 件 + River (arxiv 2012.04740 + JMLR 2021) + scikit-multiflow ADWIN/DDM/EDDM/KSWIN + Page-Hinkley (River + GeeksforGeeks + datadriftR) + Incremental LightGBM/XGBoost (Medium Data Science Collective + OpenReview Online GBDT・58.2x-974.3x 高速化) + Multi-Armed Bandit + Thompson Sampling (arxiv 1111.1797 + 1911.05309 Adaptive Portfolio + 2108.06812 Batched + Daheekwon Dynamic TS) + Contextual Bandit LinUCB (arxiv 1305.2415 + 1902.07802 AdaLinUCB + ScienceDirect S0957417423001781) + Shadow deployment (SE-ML + AWS SageMaker + JFrog Qwak + Dataconomy 2025 + ML Journey + Databricks) + Champion-Challenger (DataRobot + H2O MLOps + Snowflake + Clarifai + Dagshub + Medium Fraidoon) + AWS SageMaker Dynamic A/B Testing + Production ML Monitoring 3 階層 (Galileo + Durapid + WetransCloud + Fiddler + Monte Carlo + KDnuggets + DevOps Roles) + crypto online learning (arxiv 2510.08068 Multi-Agent Bitcoin + 2201.04699 Recurrent RL + 2303.07925 Deep Incremental + Frontiers Predicting Bitcoin AI) + Hudson & Thames mlfinlab + Galileo MLOps Guide 引用 + L-228 追加) + 7 軸多様性欠落に第 8 軸 = 運用層 (drift detection / online learning / 動的切替) 設計不在追加 + Phase 7-c/7-d/7-e 運用層設計判断調査ノート v6 7 項目確立 (§20.7)**・次タスク = 工程 2-7 詳細詰め (= 設計確定) に進む）
 
-> **【現在の正本ブロック・改訂39・2026-05-25 セッション末（案 B 学習領域 6 完成・領域 6/7 = 約 86% 完成）】**
+> **【現在の正本ブロック・改訂40・2026-05-25 セッション末（🎉 案 B 学習 100% 完了 = 領域 7/7 完成・次フェーズ = 工程 2-7 詳細詰め）】**
 >
 > ### 本セッション (2026-05-25) 完了事項
 >
-> #### 1. cc_entry_logic_self_study.md v5 完成 (= WORKFLOW 改訂38 active 優先 2 = 案 B 学習継続)
-> - v4 (1610 行) → **v5 (1999 行・+389 行)** に拡張
-> - **§19 ML リスク管理 (6 節)**: Volatility Targeting (GARCH-family / EWMA / HAR-RV + near-IGARCH 業界実証) / Stop-Loss 業界 4 主流手法 (Chandelier Exit N=22/M=3.0 sweet spot + Wilder Volatility Stop N=7/M=2.0 + Fixed % + ML 動的) / Drawdown Control (CPPI 見送り + TIPP X=0.9 主軸 + Dynamic Deleveraging OR + regime 別 CVaR) / Position Scaling (Kelly Half/Quarter 業界相場 + Pyramiding 層数 3-5 + Volatility-Adjusted Pyramiding) / 補強 risk measure (Calmar > 2.0 + CVaR_95 + Sortino > 1.5・crypto 業界推奨) / 7 工程接続 + 設計判断調査ノート
-> - **§15.2-15.4 更新**: 残り 2 領域 → 残り 1 領域・v5 設計判断確定事項 8 件追加
-> - WebSearch 8 件 + GARCH-family (Springer Future Business Journal 2025 + Medium + arxiv 2010.07402) + Stop-Loss (ChartSchool + StratBase.ai + LuxAlgo + Corporate Finance + Netpicks + TradingView + Pineify + QuantifiedStrategies) + CPPI/TIPP (Wikipedia + Grokipedia + QuantPedia + Core AXA-IM + arxiv 1305.5915) + Kelly (Altrady + LBank + OSL + CMC + Stephen Perrenod + tradesearcher) + Pyramiding (QuantStrategy 4 篇 + TradersPost + Forextester + FasterCapital + hoc-trade Medium) + CVaR (MDPI 2026 + arxiv 2406.00610 + Riskfolio-Lib + scikit-portfolio + Stan Uryasev + Amberdata + portfoliooptimizationbook) + TSM Vol Scaling (CFA Institute 2019 + AlphaArchitect + CME Group + ScienceDirect S1386418116301379 + CXO + arxiv 1904.04912) + ML 動的 Stop (arxiv 2506.22055 + ScienceDirect 2025 DRL+LSTM+XGBoost + Springer 2025 + DappFort) 引用
+> #### 1. cc_entry_logic_self_study.md v6 完成 (= WORKFLOW 改訂39 active 優先 2 = 案 B 学習継続完了)
+> - v5 (1999 行) → **v6 (2485 行・+486 行)** に拡張
+> - **§20 ML 監視運用 (7 節)**: Concept Drift Detection 拡張 (= KL/Wasserstein/PH + ADWIN/DDM/EDDM/KSWIN 8 手法体系化 + 3 階層 drift) / Online Learning (= River + Incremental LightGBM/XGBoost 5-10 分 update + Cold start hybrid framework + crypto online learning 業界実証) / A/B Testing + MAB + Thompson Sampling (= Beta-Bernoulli posterior + Adaptive Portfolio 業界実証 + AWS SageMaker Dynamic A/B) / Champion-Challenger (= Shadow→Canary 1%→Ramp 5/20/50%→Full 100% 5 段階 + gating criteria + auto-rollback) / Shadow Deployment (= 本番影響ゼロ predict + log only + AWS SageMaker 業界 default + 2025 serverless trends) / Production ML Monitoring 3 階層 (= Infrastructure + Data + Model + Business 4 軸 + INFO/WARN/CRITICAL alert) / 7 工程接続 + 設計判断調査ノート
+> - **§15.2-15.4 更新**: 残り 1 領域 → 残り 0 領域・**v6 設計判断確定事項 7 件追加 + 案 B 学習完了宣言**
+> - WebSearch 12 件 + 業界ライブラリ (River + scikit-multiflow + Riskfolio-Lib + PyPortfolioOpt + mlfinlab) + 教科書 (AFML / MLfAT / Hudson & Thames) + arxiv 12 件 (= crypto online learning 4 件 + TS / LinUCB 6 件 + drift 2 件) + 業界 MLOps platform (DataRobot + H2O + Snowflake + AWS SageMaker + Fiddler + Galileo + Monte Carlo + Databricks) 引用
 >
-> #### 2. 6 軸多様性欠落に第 7 軸 = リスク管理レイヤー不在追加 (§19.6)
-> - L-226 6 軸 (= ボラ ML 欠陥 / アルゴ多様性 / bar 種別 / cascade 不在 / strategy allocation 固定 / Meta-Labeling 同型) に追加
-> - **第 7 軸**: vol targeting / TIPP / 動的 SL / regime 別 CVaR レイヤーが Phase 1 v6 6 案で未採用 → 工程 4-6 リスク管理レイヤー業界実装パターン整理
+> #### 2. 7 軸多様性欠落に第 8 軸 = 運用層設計不在追加 (§20.7)
+> - L-227 7 軸 (= ボラ ML 欠陥 / アルゴ多様性 / bar 種別 / cascade 不在 / strategy allocation 固定 / Meta-Labeling 同型 / リスク管理レイヤー不在) に追加
+> - **第 8 軸**: drift detection / online learning / Thompson Sampling 動的 weighting / Champion-Challenger / Shadow / 3 階層 observability レイヤーが旧 Priority + Phase 1 v6 で全欠落 → 工程 7 運用層業界実装パターン整理
+> - **旧 Priority / Phase 1 v6 は static model + 固定 weight + 手動切替** で non-stationary crypto に対応不能の構造的欠陥を業界整合で整理
 >
-> #### 3. Phase 5 / 6-b 多重防御 v5 候補確立 (§19.5)
-> - 必達 = 月次 NET ≥ $1,900 全月クリア (CLAUDE.md / project_goal)
-> - v3 (L-225) = DSR > 0.95 + PBO < 0.5
-> - **v5 追加 = Calmar > 2.0 + CVaR_95 < $X/月 + Sortino > 1.5** (crypto 業界推奨水準・Amberdata 業界整合)
-> - **regime 別 CVaR 動的閾値** (MDPI 2026 業界推奨) で down regime 厳しめ / range regime 緩め
+> #### 3. Phase 7-c/7-d/7-e 運用層設計判断調査ノート v6 7 項目確立 (§20.7)
+> - **Phase 7-c 実装基盤**: drift detector 3 種並走 (ADWIN + KSWIN + PH) + River + Incremental LightGBM/XGBoost ハイブリッド + 各推論時 1 sample drift update + 週次 incremental + 半年 from scratch
+> - **Phase 7-d Shadow deployment**: 新 model を Demo API で 4 週間以上 paper trading + 仮想 PnL log + 月次 NET / DSR / PBO / Calmar 全達成 → Canary 移行
+> - **Phase 7-e Champion-Challenger 段階 rollout**: 1% → 5% → 20% → 50% → 100% の 5 段階 ramp + gating criteria 未達 auto-rollback + 0.12 BTC 横断 clip
+> - **Thompson Sampling 動的 weighting**: 動的合成方式 8 の cluster 強度別配分を online TS で update + HRP/HERC (= §18.3) と並走候補
+> - **3 階層 observability + business metric**: Infrastructure + Data + Model + Business 4 軸 + INFO/WARN/CRITICAL 3 段 alert + CRITICAL で自動 deleveraging
 >
-> #### 4. cat-bitget 設計判断調査ノート v5 8 項目追加 (§15.4)
-> - **工程 4 業界整合 verify**: phase_flow_v4 v7 改善 4 動的合成方式 8 (Half-Kelly + Vol target + cluster 強度別) は業界 default 範囲内 ✅ + Quarter-Kelly 比較候補 + HRP/HERC 統合 (= L-226 §18.3)
-> - **工程 5 業界比較ベースライン拡張**: PPO 主軸 + Chandelier Exit (N=288 5m / M=2.5 crypto 調整) + Wilder Volatility Stop (N=84 / M=2.0) + Fixed % Stop の 3 比較 + Partial TP + ATR Trailing (50/50)
-> - **工程 6 レイヤー新設**: TIPP X=0.9 (MDD < 10%) + Dynamic Deleveraging (drawdown/vol spike/regime trigger OR)
-> - **Volatility Targeting**: σ_target = 年率 10-15% + HAR-RV baseline + EGARCH(1,1) 補強・0.5x-2.0x clip
-> - **MAX_ADDS 業界整合**: 旧 Priority MAX_ADDS=5 業界 default 上端 ✅ + 層 size progressively 縮小要 verify + Volatility-Adjusted Pyramiding 候補
-> - **0.12 BTC 合計上限**: 全リスク管理手法で clip 義務 (CLAUDE.md §0-2)
-> - **regime 別 risk measure 動的閾値** (= 工程 1 出力と工程 6 動的接続)
->
-> #### 5. lessons L-227 追加
-> - cc_entry_logic_self_study.md v5 完成 + 学習成果 6 ポイント + 次セッション残り 1 領域 (7) 継続計画
+> #### 4. lessons L-228 追加
+> - cc_entry_logic_self_study.md v6 完成 + 案 B 学習 100% 完了 + 学習成果 7 ポイント + 改善 2 件 (= 次セッション 工程詳細詰め + cc_role §1.4.6.1 9 項目完全運用化)
 >
 > ### 次セッション CC 優先順位
 >
-> 1. **優先 1 — Step 0 + cc_entry_logic_self_study.md v5 auto-load 確認**:
+> 1. **優先 1 — Step 0 + cc_entry_logic_self_study.md v6 auto-load 確認**:
 >    - `feedback_priority_starting_line_only.md` / `feedback_no_unverified_assertions.md` / `feedback_current_state_verify_before_design.md` / `feedback_trade_ml_knowledge_gap.md` 起動
 >    - cc_role §1.4.6 / §1.4.6.1 起動
->    - **`cc_entry_logic_self_study.md` v5 全文 view** (= 1999 行・本セッション完成・必読)
+>    - **`cc_entry_logic_self_study.md` v6 全文 view** (= 2485 行・前セッション完成・必読)
 >
-> 2. **優先 2 — 案 B 学習継続 = 領域 7 監視運用を v6 として追加 (= 案 B 学習完了)**:
->    - **Online learning** (= incremental LightGBM / River / scikit-multiflow) の業界実装パターン
->    - **A/B testing** (= multi-armed bandit / Thompson Sampling) の業界実装
->    - **Champion-Challenger 構造** (= 旧モデル vs 新モデル並走 → 段階的切替) の業界手法
->    - **Shadow deployment** (= 本番影響ゼロでの新モデル評価) の業界実装
->    - §17.8 で部分網羅済 (= KL/Wasserstein/Page-Hinkley) → 残り上記 4 領域
->    - WebSearch 10-20 件 + MLfAT Ch.5/Ch.8-10 + Hudson & Thames mlfinlab + scikit-multiflow / river ライブラリ docs 引用必須 (cc_role §1.4.6.1)
->    - 1 セッション規模 (= 領域 7 単独で完成)
+> 2. **優先 2 — 🎯 工程 2-7 詳細詰め (= 設計確定) に進む** (= 案 B 学習完了したので、次は学習成果を実際の設計に反映):
+>    - **工程 1 (regime)** = 固定ルール (ADX + DI 差) MVP の verify + 次段 HMM ML 化検討
+>    - **工程 2 (Entry 候補生成)** = 業界標準シグナル組合せ (= テクニカル全体カバー網羅) で固定ロジック確定
+>    - **工程 3 (Entry ML)** = 案 g (= §18.5 異種 Stacking + Meta-Labeling 3 段) を Phase 1 v7 として実装計画
+>    - **工程 4 (Position Sizing)** = 動的合成方式 8 (Half-Kelly + Vol target + HRP/HERC + Thompson Sampling) 確定
+>    - **工程 5 (Exit ML)** = PPO 主軸 + Chandelier/Wilder Stop 比較 + Partial TP + ATR Trailing
+>    - **工程 6 (Risk 管理)** = TIPP + Dynamic Deleveraging + regime 別 CVaR
+>    - **工程 7 (Online 監視)** = ADWIN/KSWIN/PH + River + Champion-Challenger + Shadow + 3 階層 observability
+>    - 順序: まこさんとの議論で 1 工程ずつ / または 工程 1-2 (= 固定ロジック先行) → 工程 3-4 → 工程 5-7 のセット詰め
+>    - 1-3 セッション規模 (= 工程グループ別に分割可能)
+>    - 各工程で cc_role §1.4.6.1 9 項目チェック (= 業界整合 verify) を機械的証跡で出す義務
 >
-> 3. **優先 3 — 学習完了後 (= 領域 7 完成後) の工程 2-7 詳細詰め (= 設計確定)**
-> 4. **優先 4 — 工程 2-7 設計確定後の実装着手 + 全体結合テスト**
-> 5. **優先 5 — セッション終了処理** (lessons + WORKFLOW 改訂40 + git commit)
+> 3. **優先 3 — 工程確定後の実装着手** (= Phase 0 v4 → Phase 1 v7 → Phase 2-7)
+> 4. **優先 4 — 本番運用に向けた Phase 7-c/7-d/7-e 実装** (= 運用層実装)
+> 5. **優先 5 — セッション終了処理** (lessons + WORKFLOW 改訂41 + git commit)
 >
 > ### 引き継ぎリソース 3 層構造
 >
 > #### Layer 1 (毎セッション必読)
-> - **WORKFLOW.md 改訂39 active** (本ブロック)
+> - **WORKFLOW.md 改訂40 active** (本ブロック)
 > - **CLAUDE.md**
-> - **`cc_entry_logic_self_study.md` v5** (= 本セッション完成・1999 行・次セッション v6 拡張対象)
-> - **lessons_active.md 直近 5 件** (L-227 → L-226 → L-225 → L-224 → L-223)
+> - **`cc_entry_logic_self_study.md` v6** (= 前セッション完成・2485 行・**案 B 学習 100% 完成版・全 7 領域カタログ**)
+> - **lessons_active.md 直近 5 件** (L-228 → L-227 → L-226 → L-225 → L-224)
 > - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 / §1.4.7 / §1.5 / §1.7**
 > - **`feedback_priority_starting_line_only.md`** (auto-memory・最重要・命令)
 > - **`feedback_no_unverified_assertions.md`** (auto-memory・最重要・命令)
 > - **`feedback_current_state_verify_before_design.md`** (auto-memory・最重要)
-> - **`feedback_trade_ml_knowledge_gap.md`** (auto-memory・最重要)
+> - **`feedback_trade_ml_knowledge_gap.md`** (auto-memory・最重要・**v6 で業界標準理解は補強完了 → 今後は学習成果の実設計反映 verify が主軸**)
 >
-> #### Layer 2 (案 B 学習継続時 = 領域 7)
-> - **MLfAT (Stefan Jansen 2020)** Ch.5 Strategy Evaluation / Ch.8-10 Backtest 設計 / Ch.20-22 Reinforcement Learning (= 領域 7 監視運用関連)
-> - **AFML (Lopez de Prado 2018)** Ch.16 Asset Allocation (= 領域 7 monitoring 関連) + 全 Phase 共通参照
-> - **Hudson & Thames mlfinlab blog + portfoliolab** (= 領域 7 業界実装パターン)
-> - **`scikit-multiflow` + `river`** (= Online learning 業界 default ライブラリ・領域 7 主軸)
-> - **multi-armed bandit / Thompson Sampling** ライブラリ (= contextualbandits / mab-tools 候補)
+> #### Layer 2 (工程 2-7 詳細詰め時)
+> - **`cc_entry_logic_self_study.md` v6** §13-§20 (= 全 7 領域 業界カタログ + cat-bitget 設計判断調査ノート)
+>   - 工程 1 詰め時: §14.6 + §17.8 (= 旧) / §20.1 (= 新)
+>   - 工程 2 詰め時: §1-§9 (= 旧 Priority 対比) + 関連業界シグナル全カテゴリ
+>   - 工程 3 詰め時: §13 + §14 + §16 + §17 + §18 (= 案 g 主軸)
+>   - 工程 4 詰め時: §14.5 + §18.3 + §19.4 + §20.3 (= Thompson Sampling)
+>   - 工程 5 詰め時: §13.4 + §14.7 + §19.2
+>   - 工程 6 詰め時: §19.3 + §19.5
+>   - 工程 7 詰め時: §20 全節
 > - `technical_analysis_knowledge_base.md` (既存・1691 行) / `industry_benchmark_knowledge_base.md` (既存・420 行)
 > - cc_role §1.5 / §1.6
-> - 旧 Priority 実装 (`strategies/cat_v9_decider.py` + `config/cat_params_v9.json`) = **学習材料のみ・素材化禁止**
-> - `phase_flow_v4_with_recovery.md` v7 = **事実上廃止・参照のみ**
+> - **旧 Priority 実装** (`strategies/cat_v9_decider.py` + `config/cat_params_v9.json`) = **学習材料のみ・素材化禁止** (= feedback_priority_starting_line_only)
+> - `phase_flow_v4_with_recovery.md` v7 = **事実上廃止・参照のみ** (= L-223)
 >
 > #### Layer 3 (リファレンス)
 > - `false_positive_incident_policy.md`
@@ -448,8 +447,19 @@ Critical/Major 判定を伴わない確認程度はこちら。
 >
 > ### 目的整合性 1 行宣言 (cc_role §1.4.6)
 >
-> - **次タスク** = (1) Step 0 + cc_entry_logic_self_study.md v5 全文 view auto-load → (2) 案 B 学習継続 = 残り 1 領域 (7) を v6 として追加 (= 案 B 学習完了) → (3) 学習完了後に工程 2-7 詳細詰め → (4) 実装着手
-> - **現フェーズ目的への貢献根拠** = WORKFLOW 改訂38 active で確定した「学習完了後に工程 2-7 詳細詰めに進む」方針に従い、v5 (= 領域 6 リスク管理) 完成済 → 次は v6 (= 領域 7 監視運用) で案 B 学習完了させて工程詳細詰めに進む準備を整える。L-227 改善 1 で領域 7 単独で 1 セッション規模・MLfAT Ch.5/8-10 + scikit-multiflow / river 引用必須。
+> - **次タスク** = (1) Step 0 + cc_entry_logic_self_study.md v6 全文 view auto-load → (2) 🎯 **工程 2-7 詳細詰め (= 設計確定) に進む** (= 案 B 学習完了したので、学習成果を実設計に反映) → (3) 工程確定後に実装着手 (Phase 0 v4 → Phase 1 v7 → Phase 2-7) → (4) Phase 7-c/7-d/7-e 運用層実装
+> - **現フェーズ目的への貢献根拠** = WORKFLOW 改訂39 active で確定した「案 B 学習完了後に工程 2-7 詳細詰めに進む」方針に従い、v6 (= 領域 7 監視運用) 完成済 → **案 B 学習完了 (= 7/7 = 100%)**。次は学習成果 (= cc_entry_logic_self_study.md v6 の §13-§20 業界カタログ + cat-bitget 設計判断調査ノート) を工程 2-7 の **設計確定** に反映する段階。L-228 改善 1 で順序候補確定・各工程で cc_role §1.4.6.1 9 項目 verify 必須 (改善 2)。
+
+---
+
+## 🧊 改訂39 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-25 改訂39・**cc_entry_logic_self_study.md v5 完成 (= ML 知識領域 6 リスク管理 業界カタログ整理・1610 → 1999 行・+389 行・WebSearch 8 件 + GARCH-family + EWMA + HAR-RV + Chandelier Exit + Wilder Volatility Stop + CPPI/TIPP + Kelly criterion + Pyramiding + CVaR + TSM Vol Scaling + ML 動的 Stop + Amberdata 引用 + L-227 追加) + 6 軸多様性欠落に第 7 軸 = リスク管理レイヤー不在追加 + Phase 5/6-b 多重防御 v5 候補 (Calmar > 2.0 / CVaR_95 / Sortino > 1.5) 確立 (§19.5)**・次タスク = 案 B 学習継続 = 残り 1 領域 (7) を v6 として追加・領域 7 (監視運用)）
+
+> **【旧正本ブロック・改訂39・2026-05-25 セッション末（案 B 学習領域 6 完成・領域 6/7 = 約 86% 完成）】**
+>
+> 本ブロック詳細は改訂40 active 本文 + lessons L-227 参照。
+> v5 (1999 行) + L-227 + WORKFLOW 改訂39 を commit 9ac3ea7 で固定。
 
 ---
 

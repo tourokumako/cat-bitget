@@ -7,6 +7,73 @@
 
 ---
 
+### L-228: 🎉 cc_entry_logic_self_study.md v6 完成 = 案 B 学習 100% 完了 — ML 知識領域 7 (監視運用) の業界カタログ整理 + 7 軸多様性欠落に「第 8 軸 = 運用層 (drift detection / online learning / 動的切替) 設計不在」追加 + Phase 7-c/7-d/7-e 運用層設計判断調査ノート v6 7 項目確立 (2026-05-25)
+
+**何が起きたか:**
+
+WORKFLOW 改訂39 active 優先 2 (= 案 B 学習継続) として、cc_entry_logic_self_study.md v5 (= 1999 行) を v6 (= 2485 行・+486 行) に拡張。WebSearch 12 件 + River (arxiv 2012.04740 + JMLR 2021) + scikit-multiflow drift detection (ADWIN + DDM + EDDM + KSWIN) + Page-Hinkley (River PageHinkley + GeeksforGeeks + datadriftR) + Incremental LightGBM/XGBoost (Medium Data Science Collective + OpenReview Online GBDT・58.2x-974.3x 高速化実証) + Multi-Armed Bandit + Thompson Sampling (arxiv 1111.1797 + 1911.05309 Adaptive Portfolio + 2108.06812 Batched + Daheekwon Dynamic TS) + Contextual Bandit LinUCB (arxiv 1305.2415 + 1902.07802 AdaLinUCB + ScienceDirect S0957417423001781) + Shadow deployment (SE-ML + AWS SageMaker + JFrog Qwak + Dataconomy 2025 + ML Journey + Databricks) + Champion-Challenger (DataRobot + H2O MLOps + Snowflake + Clarifai + Dagshub + Medium Fraidoon) + AWS SageMaker Dynamic A/B Testing + Production ML Monitoring 3 階層 (Galileo + Durapid + WetransCloud + Fiddler + Monte Carlo + KDnuggets + DevOps Roles) + crypto online learning (arxiv 2510.08068 Multi-Agent Bitcoin + 2201.04699 Recurrent RL + 2303.07925 Deep Incremental Financial + Frontiers Predicting Bitcoin AI) + Hudson & Thames mlfinlab + Galileo MLOps Guide を引用して、ChatGPT 7 工程フレーム範囲の ML 知識 7 領域のうち**領域 7 を完了 = 案 B 学習完了 (7/7 = 100%)**。
+
+#### 学習成果のポイント
+
+1. **§20.1 Concept Drift Detection 拡張**: §17.8 既存 (KL/Wasserstein/Page-Hinkley) に **ADWIN (= Adaptive Windowing・delta=0.002) + DDM (= 予測誤差率 monitor・PAC learning 前提) + EDDM (= 連続 2 誤差間距離 monitor・gradual drift 強化) + KSWIN (= KS 統計検定・分布仮定なし)** を追加して 8 手法を 3 カテゴリ (= 分布比較 / 誤差ベース / 適応窓 / 逐次変化点) に体系化。Production ML での **3 階層 drift** (= Data drift / Concept drift / Model performance drift) で cat-bitget 工程 3 / 5 / 6 に接続
+
+2. **§20.2 Online Learning**: **River (= 業界 default・scikit-multiflow + creme 統合) + Incremental LightGBM/XGBoost (= warm start で 58.2x-974.3x 高速化・5-10 分で update)** のハイブリッドが業界実装パターン。Cold start 問題は hybrid framework (= 初期 batch + 増分学習) で対応 (arxiv 2305.09907)。crypto online learning は **extreme volatility + regulatory announcement で static model 陳腐化早い** → online learning + frequent retraining が業界必須 (arxiv 2510.08068 Multi-Agent Bitcoin)
+
+3. **§20.3 A/B Testing + Multi-Armed Bandit + Thompson Sampling**: classical A/B / MAB / **Thompson Sampling (= Beta-Bernoulli posterior sampling・業界推奨)** / UCB / LinUCB / Contextual Bandit の業界カタログ整理。**arxiv 1911.05309 Adaptive Portfolio で「複数 trading strategy を arm 化 → TS で online portfolio choice」実証**。AWS SageMaker Dynamic A/B Testing で TS-based Champion-Challenger 業界 default 実装
+
+4. **§20.4 Champion-Challenger**: Shadow → Canary 1% → Ramp 5/20/50% → Full 100% の **5 段階 ramp** が業界 default フロー。各 stage で gating criteria (= 月次 NET ≥ $1,900 / DSR > 0.95 / PBO < 0.5 / Calmar > 2.0) 未達で **auto-rollback**。DataRobot + H2O MLOps + Snowflake で実装パターン業界共通
+
+5. **§20.5 Shadow Deployment**: 全本番 traffic を 新 model に複製・predict + log のみ (= 実発注なし) で本番影響ゼロ検証。AWS SageMaker / Databricks で実装業界 default。2025 trends = serverless shadow + advanced observability platform 統合 + bias detection + ethical AI validation。Phase 7-d 実装直結
+
+6. **§20.6 Production ML Monitoring 3 階層**: **Infrastructure (Prometheus + Grafana) + Data (Great Expectations + Monte Carlo) + Model (Fiddler + Arize + WhyLabs)** の 3 観測層 + Business metric layer (= 月次 NET / DD / Calmar) の 4 軸統合。「**data quality issues が algorithm 問題より多い model failure 原因**」(= IBM 2023 study・年 $12.9M 損失) で Data observability が第一の関所
+
+7. **§20.7 第 8 軸追加**: L-227 §19.6 確定 7 軸多様性欠落に **第 8 軸 = 運用層 (= drift detection / online learning / 動的切替) 設計不在** を追加整理。旧 Priority / Phase 1 v6 は **static model + 固定 weight + 手動切替** で non-stationary crypto 市場に対応不能の構造的欠陥を業界整合で整理
+
+**Why (= 学習が必要だった構造的理由):**
+
+- L-227 改善 1 (= 残り 1 領域継続) を実施
+- v5 (= 領域 1-6・アルゴ + 予測対象 + 特徴量 + 評価 + 組合せ + リスク管理) だけでは「**本番投入後にモデル劣化を検知し再学習・切替・撤退を自動運用するレイヤー**」の業界実装パターン不足
+- crypto 高 vol + non-stationary 環境では static model が陳腐化早く、運用層なしで本番投入は資金毀損リスク大
+- 工程 7 (Online 監視) の業界整合 verify なしで Phase 7-c/7-d/7-e (= Bot 統合 + デモ + 本番) 設計に進むことは不可能
+- 領域 7 完成で案 B 学習 100% 完了 → 工程 2-7 詳細詰め (= 設計確定) に進む準備完了
+
+**How to apply (改善 2 件):**
+
+#### 改善 1: 次セッションで工程 2-7 詳細詰め (= 設計確定) に進む = 案 B 学習成果を実際の設計に反映
+
+- 案 B 学習で確立した 7 領域の業界カタログ + cat-bitget 設計判断調査ノートを統合して **工程 2-7 の設計確定** を実施 (= WORKFLOW 改訂40 active 優先 3)
+- 順序候補:
+  - 工程 1 (regime) = 固定ルール (ADX + DI 差) MVP の verify + 次段 HMM ML 化検討
+  - 工程 2 (Entry 候補生成) = 業界標準シグナル組合せ (テクニカル全体カバー網羅) で固定ロジック確定
+  - 工程 3 (Entry ML) = 案 g (= §18.5 異種 Stacking + Meta-Labeling 3 段) を Phase 1 v7 として実装計画
+  - 工程 4 (Position Sizing) = 動的合成方式 8 (Half-Kelly + Vol target + HRP/HERC + Thompson Sampling) 確定
+  - 工程 5 (Exit ML) = PPO 主軸 + Chandelier/Wilder Stop 比較 + Partial TP + ATR Trailing
+  - 工程 6 (Risk 管理) = TIPP + Dynamic Deleveraging + regime 別 CVaR
+  - 工程 7 (Online 監視) = ADWIN/KSWIN/PH + River + Champion-Challenger + Shadow + 3 階層 observability
+- 工程確定後 → 実装着手 (= Phase 0 v4 → Phase 1 v7 → Phase 2-7)
+- 1-3 セッション規模 (= 工程 1-2 で 1 セッション・工程 3-4 で 1 セッション・工程 5-7 で 1 セッション程度の見込み)
+
+#### 改善 2: cc_role §1.4.6.1 9 項目チェックの完全運用化
+
+- 案 B 学習完了で「業界標準理解不足」(= feedback_trade_ml_knowledge_gap) は補強済 → 今後の設計提案で **cc_role §1.4.6.1 #6-9 (= 業界標準フロー verify / 教科書 chapter 引用 / 独自構造の業界整合判定 / 統計指標と PnL 指標分離)** を毎回機械的証跡で出す
+- 工程詳細詰めで「過去 5 セッション浪費」(= L-215) を再演しないため、設計提案前に学習資料の該当 § を grep + 該当節を再 view → 機械的証跡として提示
+
+**関連:**
+
+- L-227 (= 前セッション・領域 6 完成・本セッション学習の直接動機)
+- L-226 (= 領域 5 完成)
+- L-225 (= 領域 3-4 完成)
+- L-224 (= アルゴ多様性ゼロ + 領域 1-2 完成)
+- L-223 (= ボラ ML 設計欠陥 + phase_flow_v4 v7 破綻判断・本セッション学習の根本動機)
+- cc_role §1.5 デザイン責任 (= §20.7 設計判断調査ノート位置・確定は工程 2-7 詳細詰めで別途)
+- cc_role §1.4.6.1 9 項目 (= ML pipeline / トレード関連設計提案前の業界整合 verify・本セッション学習で 6-9 を完全蓄積)
+- feedback_trade_ml_knowledge_gap (= CC のトレード ML 業界標準理解不足・本 lesson で **改善完了 = 領域 7/7 = 100%**)
+- CLAUDE.md §0-2 (= 0.12 BTC 合計上限) — v6 で運用層も全 model 横断 clip 義務として統合整理
+- phase_flow_v4 v7 改善 4 (= 動的合成方式 8) — v6 で Thompson Sampling 動的 weighting と並走候補として整理
+- 公式 source: 本セッション末 commit (= cc_entry_logic_self_study.md v6 + L-228 + WORKFLOW 改訂40 active)
+
+---
+
 ### L-227: cc_entry_logic_self_study.md v5 完成 — ML 知識領域 6 (リスク管理) の業界カタログ整理 + 6 軸多様性欠落に「第 7 軸 = リスク管理レイヤー不在」追加 + Phase 5/6-b 合格判定多重防御 v5 候補 (Calmar/CVaR/Sortino) 確立 (2026-05-25)
 
 **何が起きたか:**

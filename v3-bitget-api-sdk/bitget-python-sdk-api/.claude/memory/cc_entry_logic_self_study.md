@@ -1,8 +1,8 @@
-# cc_entry_logic_self_study.md — CC エントリーロジック自己学習資料 v5
+# cc_entry_logic_self_study.md — CC エントリーロジック自己学習資料 v6
 
-作成: 2026-05-25 (CC・v1) / 改訂 2026-05-27 (v2) / 改訂 2026-05-25 (v3) / 改訂 2026-05-25 (v4) / 改訂 2026-05-25 (v5)
+作成: 2026-05-25 (CC・v1) / 改訂 2026-05-27 (v2) / 改訂 2026-05-25 (v3) / 改訂 2026-05-25 (v4) / 改訂 2026-05-25 (v5) / 改訂 2026-05-25 (v6)
 位置付け: まこさん命令 (2026-05-25) 「指標、閾値、時間の使い方を勉強しなおして」を受けた CC の学習資料。
-状態: **v5 (= 領域 1-6 完成・約 86% 完成)**。WORKFLOW 改訂38 active 優先 2 = 案 B 学習継続 = 領域 6 (リスク管理) を v5 §19 として追加。WebSearch 8 件 + GARCH-family (TGARCH/EGARCH/CGARCH) + EWMA + HAR-RV + Chandelier Exit (ChartSchool) + Wilder Volatility Stop + LuxAlgo ATR + CPPI/TIPP (Wikipedia + QuantPedia + Core AXA-IM + Grokipedia) + Kelly criterion (Altrady + LBank + OSL + CMC + Substack) + Pyramiding (QuantStrategy + TradersPost + Forextester + FasterCapital + hoc-trade) + CVaR (MDPI 2026 + arxiv 2406.00610 + Riskfolio-Lib + Stan Uryasev) + Time-Series Momentum (CFA + AlphaArchitect + CME Group + ScienceDirect S1386418116301379 + CXO Advisory) + ML 動的 Stop (arxiv 2506.22055 + ScienceDirect 2025 RL+LSTM+XGBoost + Springer 2025) + GARCH crypto (Springer Future Business Journal 2025 + Medium + arxiv 2010.07402) 引用。残り = 領域 7 を v6 として追加予定。
+状態: **🎉 v6 (= 領域 1-7 完成・案 B 学習 100% 完了)**。WORKFLOW 改訂39 active 優先 2 = 案 B 学習継続 = 領域 7 (監視運用) を v6 §20 として追加。WebSearch 12 件 + River (= scikit-multiflow + creme 統合) + scikit-multiflow ADWIN/DDM/EDDM/KSWIN + Page-Hinkley + Incremental LightGBM/XGBoost + Multi-Armed Bandit + Thompson Sampling (arxiv 1111.1797 + 1911.05309 Adaptive Portfolio + 2108.06812 Batched) + Contextual Bandit LinUCB (arxiv 1305.2415 + 1902.07802 AdaLinUCB) + Shadow deployment (SE-ML + AWS SageMaker + JFrog Qwak + Dataconomy 2025) + Champion-Challenger (DataRobot + H2O MLOps + Snowflake) + Production ML Monitoring 3 階層 (Galileo + Durapid + Fiddler + Monte Carlo + KDnuggets) + crypto online learning (arxiv 2510.08068 Multi-Agent Bitcoin + 2201.04699 Recurrent RL + 2303.07925 Deep Incremental Financial) + Hudson & Thames mlfinlab 引用。**案 B (= ChatGPT 7 工程フレーム範囲の ML 知識 7 領域カタログ化) 完了 = 次フェーズ = 工程 2-7 詳細詰め (= 設計確定) に進む準備完了**。
 
 ---
 
@@ -684,19 +684,27 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 3. **regime 不在の致命性**: Phase 1 v6 全滅の根本原因 = regime context を入力に入れていない → HMM/GMM で工程 1 出力を独立に与える必要 (§14.6)
 4. **MTF 整合の欠落**: 現状 5m 単独学習 → 4h regime + 1h setup + 5m entry の 3 層構造が業界標準 (§13.2 Transformer / §14.6 HMM どちらでも MTF 入力で性能向上)
 
-### 15.2 残り 1 領域 (= 次セッション WORKFLOW 改訂38 優先 2 残り・v5 で領域 6 完成)
+### 15.2 案 B 学習完了 (= 7/7 = 100%・v6 で領域 7 完成)
 
 - ~~**領域 3 (ML 特徴量設計)**~~ → **v3 §16 で完成** (Fractional Differentiation / スケーリング / 特徴量選択 / 出来高系 / 板情報系)
 - ~~**領域 4 (ML 評価方法)**~~ → **v3 §17 で完成** (Walk-Forward / Purged K-Fold / CPCV / Embargo / DSR / PBO / Pipeline leak 防止 / Concept drift)
 - ~~**領域 5 (ML 組合せ手法)**~~ → **v4 §18 で完成** (階層 Stacking / Cascade / HRP+HERC+NCO / Meta-Labeling 多段詳細)
 - ~~**領域 6 (リスク管理)**~~ → **v5 §19 で完成** (Volatility targeting / Stop-loss 業界手法 / Drawdown control TIPP / Position scaling Kelly + Pyramiding / 補強 risk measure)
-- **領域 7 (監視・運用)**: §17.8 で部分網羅・残り = Online learning (= incremental LightGBM / River) / A/B testing (= multi-armed bandit) / Champion-Challenger 構造 / Shadow deployment
+- ~~**領域 7 (監視・運用)**~~ → **v6 §20 で完成** (Concept Drift Detection 拡張 / Online Learning / A/B Testing + Multi-Armed Bandit + Thompson Sampling / Champion-Challenger / Shadow deployment / Production ML Monitoring 3 階層)
 
-### 15.3 次セッションの推奨着手順位 (v5 完成 → 次は領域 7 → 工程詳細詰め)
+### 15.3 次セッションの推奨着手順位 (= 案 B 学習完了 → 工程 2-7 詳細詰めへ)
 
-1. **領域 7 (監視・運用)** を v6 として追加: 工程 7 Online 監視の業界標準確立 + 全 Phase 統合監視
-2. WebSearch 10-20 件 + 教科書 chapter 引用 (cc_role §1.4.6.1) を継続
-3. 領域 7 完成後 → 工程 2-7 詳細詰め (= WORKFLOW 改訂38 active 優先 3) に進む
+1. **🎉 案 B (= ChatGPT 7 工程フレーム範囲の ML 知識体系化) 完了** = 領域 1-7 全 7/7 完成
+2. **次フェーズ = WORKFLOW 改訂40 active 優先 3 = 工程 2-7 詳細詰め (= 設計確定)** に進む
+3. 工程詳細詰めの順序候補:
+   - 工程 1 (regime) = 固定ルール (ADX + DI 差) MVP の verify + 次段 HMM ML 化検討
+   - 工程 2 (Entry 候補生成) = 業界標準シグナル組合せ (= テクニカル全体カバー網羅) で固定ロジック確定
+   - 工程 3 (Entry ML) = 案 g (= §18.5 異種 Stacking + Meta-Labeling 3 段) を Phase 1 v7 として実装計画
+   - 工程 4 (Position Sizing) = 動的合成方式 8 (= Half-Kelly + Vol target + HRP/HERC + Thompson Sampling) 確定
+   - 工程 5 (Exit ML) = PPO 主軸 + Chandelier/Wilder Stop 比較 + Partial TP + ATR Trailing
+   - 工程 6 (Risk 管理) = TIPP + Dynamic Deleveraging + regime 別 CVaR
+   - 工程 7 (Online 監視) = ADWIN/KSWIN/PH + River + Champion-Challenger + Shadow + 3 階層 observability
+4. 工程確定後 → 実装着手 (= Phase 0 v4 → Phase 1 v7 → Phase 2-7) に進む
 
 ### 15.4 cat-bitget 設計判断の確定事項 (v3 学習成果から拡張)
 
@@ -733,6 +741,15 @@ CC のテクニカル理解度が低い (= 既存 [technical_analysis_knowledge_
 - **MAX_ADDS 業界整合**: 旧 Priority MAX_ADDS=5 (= 平均建値型 pyramiding) は業界 default 上端 3-5 ✅・**層 size は progressively 縮小**が業界推奨 (= 現状均等 size の可能性あり要 verify)・Volatility-Adjusted Pyramiding (= ATR で layer 間隔調整) を Phase 7-c 候補
 - **0.12 BTC 合計上限制約**: vol targeting / TIPP / HRP / Half-Kelly / Pyramiding 全層で得られる weight が 0.12 を超えても **必ず clip** (= CLAUDE.md §0-2 絶対規定・全リスク管理手法で義務)
 - **regime 別 risk measure 動的閾値 (= MDPI 2026 業界推奨)**: down regime で CVaR / Calmar 厳しめ・range regime で緩め → 工程 1 regime 出力と工程 6 risk threshold を動的接続
+
+#### v6 (= 領域 7) の追加確定事項
+- **工程 7 (Online 監視) 主軸確立 (= §20.1)**: **ADWIN + KSWIN + Page-Hinkley の 3 種類並走** で drift detection・ADWIN = LightGBM/XGBoost prediction monitor / KSWIN = 入力 feature 分布 monitor / Page-Hinkley = 月次 NET / 勝率の累積偏差 monitor
+- **Online learning 基盤 (= §20.2)**: **River (= scikit-multiflow と creme 統合・業界 default) + Incremental LightGBM/XGBoost (= warm start で 5-10 分 update・58.2x-974.3x 高速化)** のハイブリッド。週次 incremental + 半年 from scratch 再学習
+- **動的 weighting (= §20.3)**: **Thompson Sampling (Beta-Bernoulli)** で cluster × Exit type × side 戦略の online weighting。phase_flow_v4 v7 改善 4 動的合成方式 8 の cluster 強度別配分を online 化。HRP/HERC (= §18.3) と並走候補 (= HRP で risk constraint + TS で reward exploration)
+- **Champion-Challenger 段階 rollout (= §20.4)**: Shadow → Canary 1% → Ramp 5/20/50% → Full 100% の 5 段階 ramp + 各 stage gating criteria (= 月次 NET ≥ $1,900 / DSR > 0.95 / PBO < 0.5 / Calmar > 2.0) 未達で auto-rollback
+- **Shadow deployment (= §20.5)**: Phase 7-d で新 model を Demo API で 4 週間以上 paper trading + 仮想 PnL log + 月次 NET 達成判定 → Canary 移行
+- **3 階層 observability + business metric (= §20.6)**: Infrastructure (= Bitget API latency + process memory) + Data (= feature null / drift) + Model (= prediction drift) + Business (= 月次 NET / DD / Calmar) の 4 軸 + INFO/WARN/CRITICAL 3 段 alert + CRITICAL で自動 deleveraging
+- **第 8 軸追加 (= §20.7)**: L-227 §19.6 確定 7 軸多様性欠落に **第 8 軸 = 運用層 (= drift detection / online learning / 動的切替) 設計不在** を追加。旧 Priority / Phase 1 v6 は static model + 固定 weight + 手動切替で non-stationary crypto 市場に対応不能の構造的欠陥を整理
 
 ---
 
@@ -1978,6 +1995,474 @@ L-226 §18.5 で確定した 6 軸多様性欠落に **第 7 軸 = リスク管�
 
 ---
 
+## §20 ML 監視運用 (WORKFLOW 改訂39 領域 7・業界カタログ)
+
+> v6 追記 (2026-05-25)。**「本番投入後にモデル劣化を検知し、再学習・切替・撤退を自動運用するレイヤー」の業界カタログ**。L-227 で確定した残り 1 領域 (= 領域 7) を本章で完成させ、案 B (= ChatGPT 7 工程フレーム範囲の ML 知識 7 領域カタログ化) を **7/7 = 100% 完了** する。§17.8 で部分網羅した KL/Wasserstein/Page-Hinkley を §20.1 で拡張統合し、Online learning / A/B testing / Champion-Challenger / Shadow deployment / Production ML monitoring の 5 領域を追加。ChatGPT 7 工程フレームの **工程 7 (Online 監視)** に直結。Phase 7-c / 7-d / 7-e (= Bot 統合 + デモ + 本番) の運用層実装設計に直接効く。
+
+### §20.1 Concept Drift Detection 拡張 (= §17.8 統合 + 業界主要手法網羅)
+
+#### 業界 3 カテゴリ + 主要 8 手法
+
+| カテゴリ | 手法 | 仕組み | 業界用途 |
+|---|---|---|---|
+| **分布比較** | KL Divergence | 訓練分布 P vs 本番分布 Q の情報量差 | feature distribution drift 検出 |
+| **分布比較** | Wasserstein Distance | 分布間 optimal transport cost | KL より外れ値耐性高い・離散/連続両対応 |
+| **分布比較** | **KSWIN** (Kolmogorov-Smirnov Windowing) | KS 統計検定で分布変化検出・**分布仮定なし** | 業界推奨・[scikit-multiflow KSWIN](https://scikit-multiflow.readthedocs.io/en/stable/api/generated/skmultiflow.drift_detection.KSWIN.html) |
+| **誤差ベース** | **DDM** (Drift Detection Method) | model 予測誤差率の monitoring・PAC learning モデル前提 | 業界 default・[scikit-multiflow DDM](https://scikit-multiflow.readthedocs.io/en/stable/api/generated/skmultiflow.drift_detection.DDM.html) |
+| **誤差ベース** | **EDDM** (Early DDM) | 連続 2 誤差間の平均距離 monitoring・gradual drift 検出強化 | DDM 補完・[scikit-multiflow EDDM](https://scikit-multiflow.readthedocs.io/en/stable/api/generated/skmultiflow.drift_detection.EDDM.html) |
+| **適応窓** | **ADWIN** (Adaptive Windowing) | 可変サイズ sliding window で earlier vs recent 統計差を検出 | 業界 default・[scikit-multiflow ADWIN](https://scikit-multiflow.readthedocs.io/en/stable/api/generated/skmultiflow.drift_detection.ADWIN.html) |
+| **逐次変化点** | **Page-Hinkley (PH)** | CUSUM 系・累積偏差が閾値超で alert・**1 sample ずつ処理 (= memoryless)** | online 単変量モニタ・[River PageHinkley](https://riverml.xyz/dev/api/drift/PageHinkley/) |
+| **逐次変化点** | CUSUM / EWMA control chart | 古典統計品質管理・累積/指数平均 | infrastructure observability 系 |
+
+#### Page-Hinkley の業界実装核心
+
+[GeeksforGeeks Page-Hinkley](https://www.geeksforgeeks.org/artificial-intelligence/page-hinkley-method/) + [Akira's Blog Change Detection](https://akiraaptx.blog/2017/02/15/change-detection-for-time-series-signals/) + [R Page-Hinkley datadriftR](https://search.r-project.org/CRAN/refmans/datadriftR/html/PageHinkley.html):
+
+```
+m_t = sum_{i=1}^{t} (x_i - mean_t - δ)    # 累積偏差 (δ = 許容ドリフト)
+M_t = min(m_1, ..., m_t)                   # 累積最小
+PH_t = m_t - M_t                            # 累積最小からの増加幅
+alert if PH_t > λ                           # λ = 業界相場 50-100 (= 感度パラメータ)
+```
+
+**特徴**:
+- 1 sample 処理で stream 全体保存不要 → real-time / low memory に最適
+- 「**fraud detection / system health tracking で業界 default**」 ([GeeksforGeeks](https://www.geeksforgeeks.org/artificial-intelligence/page-hinkley-method/))
+- 弱点 = 分布全体でなく **平均値変化のみ** 検出 → 分布形状変化 (= 分散増 / skewness 変化) は別手法 (= KSWIN / Wasserstein) と併用必須
+
+#### ADWIN の業界実装核心
+
+[scikit-multiflow ADWIN](https://scikit-multiflow.readthedocs.io/en/stable/api/generated/skmultiflow.drift_detection.ADWIN.html) + [Medium Wang model drift](https://medium.com/@jwang.ml/model-drift-detection-100a35a5edfa):
+
+- window を 2 sub-window に分割・各 sub-window の平均値差が Hoeffding bound 超えた瞬間に「drift 確認 + window shrink」
+- **delta (= 信頼度パラメータ)**: 業界 default 0.002 (= 0.2% false alarm rate)
+- 強み = **可変 window size で gradual + abrupt 両方検出可能**
+- 弱み = メモリ消費 (= window 保持) で高頻度更新時にやや重い
+
+#### DDM vs EDDM の業界使い分け ([Medium Model Drift](https://medium.com/@jwang.ml/model-drift-detection-100a35a5edfa))
+
+| 手法 | 検出が得意 | パラメータ |
+|---|---|---|
+| DDM | **abrupt** drift (= 急変) | warning_level=2σ / drift_level=3σ |
+| EDDM | **gradual** drift (= 緩変) | alpha=0.95 (= warning) / beta=0.90 (= drift) |
+
+業界 best practice: DDM + EDDM 並走で abrupt + gradual 両カバー
+
+#### KL / Wasserstein の数式詳細
+
+| 手法 | 数式 | 業界使用パターン |
+|---|---|---|
+| **KL Divergence** | `D_KL(P\|\|Q) = Σ P(x) log(P(x)/Q(x))` | 非対称 (P=訓練 / Q=本番)・**Q(x)=0 で発散** → smoothing 必須 |
+| **Wasserstein** | `W_p(P,Q) = inf E[\|X-Y\|^p]^(1/p)` (optimal transport) | 対称・外れ値耐性高・連続分布で勾配ベース最適化可能 |
+| **Maximum Mean Discrepancy (MMD)** | RKHS 距離 (kernel ベース) | **高次元** 入力で頑健・WebSearch 関連で多用 |
+
+#### Production ML での 3 階層 drift 整理 ([Galileo MLOps Guide](https://galileo.ai/blog/mlops-operationalizing-machine-learning) + [Towards Data Science Model Drift](https://towardsdatascience.com/how-to-detect-model-drift-in-mlops-monitoring-7a039c22eaf9/) + [DevOps Roles Drift Strategies](https://www.devopsroles.com/ultimate-strategies-master-mlops-model-drift)):
+
+1. **Data drift** (= 入力分布変化): KSWIN / KL / Wasserstein で入力 feature 分布の本番 vs 訓練 比較
+2. **Concept drift** (= 入力↔出力関係変化): DDM / EDDM / PH で予測誤差率の monitoring
+3. **Model performance drift** (= business metric 劣化): Sharpe / 月次 NET / Calmar / DD の sliding window comparison
+
+→ cat-bitget 接続: 1 = 工程 3 特徴量 / 2 = 工程 3 + 5 ML 予測 / 3 = 工程 6 Risk 管理 / Phase 5-6-b PnL 指標
+
+#### cat-bitget 適用判断 (= 工程 7 Online 監視 主軸候補)
+
+- **主軸**: **ADWIN + KSWIN + Page-Hinkley の 3 種類並走**
+  - ADWIN = 工程 3 LightGBM/XGBoost 予測精度の sliding monitor (= delta=0.002)
+  - KSWIN = 入力 feature 分布 (= realized_vol / ATR / OBI 等の主要 10-20 feature) の本番 vs 訓練比較
+  - Page-Hinkley = 月次 NET / 勝率の累積偏差 monitor (= λ=100 から start)
+- **業界ライブラリ採用**: [River](https://riverml.xyz/) を主軸 (= scikit-multiflow と creme 統合・業界 default)
+- **alert 多段化**: warning → drift confirmed → auto-rollback or 再学習トリガ
+- **Phase 7-c / 7-d 実装影響**: bot 起動時に drift detector 3 種を init → 各推論時に 1 sample ずつ update → alert 検出時に既存 §20.4 Champion-Challenger 構造へ切替
+
+### §20.2 Online Learning / Incremental Models (= River + scikit-multiflow + Incremental Boosting)
+
+#### 業界 3 系統
+
+| 系統 | 仕組み | 業界ライブラリ |
+|---|---|---|
+| **Streaming ML フレームワーク** | 1 sample ずつ partial_fit | **River** (= 業界 default・creme + scikit-multiflow 統合) / scikit-multiflow / Vowpal Wabbit |
+| **Incremental GBDT** | 既存 model に新規 boosting round 追加 (= warm start) | LightGBM / XGBoost (= 業界実証あり) |
+| **Online DL** | mini-batch SGD で online update | PyTorch / TensorFlow (= 標準) |
+
+#### River 業界実装核心
+
+[River arxiv 2012.04740](https://arxiv.org/pdf/2012.04740) + [JMLR River 2021](https://www.jmlr.org/papers/volume22/20-1380/20-1380.pdf) + [Medium Nehal Incremental](https://nehalaggarwal.medium.com/incremental-online-learning-using-river-a9df031615b0) + [Medium Virajdatt Streaming](https://kvirajdatt.medium.com/incremental-machine-learning-for-streaming-data-with-river-part-1-f0131459e85b):
+
+- 「**creme + scikit-multiflow merge → River**」(= 2021)・現状 streaming ML 業界 default
+- API = sklearn と類似だが **`learn_one(x, y)` + `predict_one(x)`** で 1 sample 単位
+- 提供 model:
+  - Linear (= Logistic Regression / Perceptron)
+  - Tree (= Hoeffding Tree / Adaptive Random Forest)
+  - Ensemble (= ARF / SRP・Streaming Random Patches)
+  - Neighbor (= kNN-Window / SAM-kNN)
+  - Drift-aware (= ADWIN-Bagging / Leveraging Bagging)
+- **time-series 自己適応**: 「non-stationary 環境で target value 変化に自動 adapt」(= [River 公式](https://riverml.xyz/0.11.1/))
+
+#### scikit-multiflow との関係
+
+[scikit-multiflow](https://scikit-multiflow.readthedocs.io/) は **River の前身の 1 つ** (= 2018-2021)。現在は River に統合済だが、API 互換性のため scikit-multiflow 単体使用も業界に残存。drift detector (= ADWIN/DDM/EDDM/KSWIN) は scikit-multiflow.drift_detection module で API 提供。
+
+#### Incremental LightGBM / XGBoost ([Medium Data Science Collective](https://medium.com/data-science-collective/incremental-learning-in-lightgbm-and-xgboost-9641c2e68d4b) + [Medium Kiran XGBoost](https://medium.com/@kirankumar_61999/incremental-learning-with-xgboost-a77bcb71e20b) + [GitHub ylogx XGBoost Incremental](https://gist.github.com/ylogx/53fef94cc61d6a3e9b3eb900482f41e0))
+
+##### LightGBM incremental
+
+```python
+# 初回学習
+model = lgb.train(params, train_data, num_boost_round=100)
+# 増分学習 (新データで boost round 継続)
+model = lgb.train(params, new_train_data,
+                  num_boost_round=20,
+                  init_model=model)  # 既存 model を warm start
+```
+
+- 業界実証: 「**1 sample 追加で 58.2x 高速化** (LightGBM)・**974.3x 高速化** (XGBoost)」 ([OpenReview Online GBDT](https://openreview.net/pdf?id=8G2CvYlfjw))
+- 5-10 分で update 完了 ([Medium Data Science Collective](https://medium.com/data-science-collective/incremental-learning-in-lightgbm-and-xgboost-9641c2e68d4b))
+
+##### XGBoost incremental
+
+```python
+model = xgb.train(params, dtrain, num_boost_round=100)
+model = xgb.train(params, new_dtrain,
+                  num_boost_round=20,
+                  xgb_model=model)  # 既存 model を warm start
+```
+
+#### Online learning + Drift detection 統合パターン
+
+業界 default ([Galileo MLOps](https://galileo.ai/blog/mlops-operationalizing-machine-learning)):
+
+1. **drift detector** (= §20.1) が alert
+2. **warning level**: monitoring 強化 (= alert 履歴蓄積)
+3. **drift confirmed level**: incremental learning で warm start update or 完全再学習
+4. **performance verify**: §20.5 Shadow deployment で旧 model と並走比較
+5. **採用判定**: §20.4 Champion-Challenger で段階的切替
+
+#### Cold start 問題と業界対応
+
+[arxiv 2305.09907 Incremental Outlier Detection](https://arxiv.org/pdf/2305.09907): 「real-time modeling は cold start 問題を抱える (= 初期データ不足で誤分類率高) → **hybrid framework** (= 初期 batch 訓練 + 増分学習) で解決」
+
+cat-bitget 接続: Phase 1-3 で初期 batch 学習 (= 5 年データ) → Phase 7-d 以降で online 増分学習を継続
+
+#### crypto online learning の業界実証
+
+[arxiv 2510.08068 Adaptive Multi-Agent Bitcoin Trading](https://arxiv.org/pdf/2510.08068) + [arxiv 2201.04699 Recurrent RL Crypto Agent](https://arxiv.org/pdf/2201.04699) + [arxiv 2303.07925 Deep Incremental Financial Temporal Tabular](https://arxiv.org/pdf/2303.07925) + [Frontiers Predicting Bitcoin AI](https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2025.1519805/full):
+
+- crypto は extreme volatility + regulatory announcements + macroeconomic shifts で **static model が陳腐化早い** → online learning + frequent retraining が業界必須
+- echo state network + recurrent RL での online transfer learning が BTC perpetual swap intraday trading で実証
+- Multi-Agent LLM-based reflection で **continual self-improvement** 構造が 2025 trend
+
+#### cat-bitget 適用判断 (= 工程 7 主軸候補)
+
+- **主軸**: **River + Incremental LightGBM/XGBoost のハイブリッド**
+  - River: Hoeffding Tree + ADWIN-Bagging で **drift 自動対応** の secondary monitor (= primary model と並走・predict 比較)
+  - Incremental LightGBM/XGBoost: 工程 3 primary model を **週次 / 月次** で warm start update (= 5-10 分で完了)
+- **再学習トリガ**: drift detector alert → incremental update (= 月 1 回 baseline + drift alert で臨時)
+- **完全再学習**: 半年 / 年次で from scratch 再学習 (= 5 年データ全部使う) + walk-forward verify
+- **Phase 7-c / 7-d 実装影響**: River と LightGBM/XGBoost を同 process に同居・推論時に両者の predict 一致率を Monitor (= concept drift early signal)
+
+### §20.3 A/B Testing + Multi-Armed Bandit + Thompson Sampling
+
+#### 業界 3 系統
+
+| 手法 | 仕組み | 業界用途 |
+|---|---|---|
+| **Classical A/B** | traffic 50/50 (= fixed split) + 統計検定で 比較 | 単純比較・サンプル数大要 |
+| **Multi-Armed Bandit (MAB)** | exploration/exploitation balance で動的 traffic 配分 | sample 効率高・後悔最小化 |
+| **Thompson Sampling** | Bayesian 事後分布から確率 sampling で arm 選択 | **業界推奨**・[arxiv 1111.1797](https://arxiv.org/pdf/1111.1797) |
+| **UCB / LinUCB** | confidence bound でリスク調整 arm 選択 | linear context 入力可能 |
+| **Contextual Bandit** | 状況 context (= 入力 feature) で arm 選択 | regime / vol / time-of-day で動的 |
+
+#### Thompson Sampling の業界数式
+
+[arxiv 1111.1797 Analysis of Thompson Sampling](https://arxiv.org/pdf/1111.1797) + [GitHub multi-armed thompson](https://github.com/tbagnoli/multi_armed_thompson) + [Daheekwon Dynamic TS PDF](https://daheekwon.github.io/pdfs/dynamicTS.pdf):
+
+```
+for each arm i:
+    sample θ_i ~ Beta(α_i, β_i)    # Bernoulli reward の事後分布
+choose arm = argmax(θ_i)
+observe reward r ∈ {0, 1}
+update: α_i += r, β_i += (1-r)
+```
+
+- **continuous reward**: Beta → Normal 事後分布に拡張 (= Gaussian Thompson Sampling)
+- 業界優位性: 「**arm 数増加に robust + parameter 不要 + Bayesian regret bound 最適**」
+- batched 拡張: [arxiv 2108.06812 Batched Thompson Sampling](https://arxiv.org/pdf/2108.06812) で複数 sample 同時処理
+
+#### Adaptive Portfolio via Thompson Sampling
+
+[arxiv 1911.05309 Adaptive Portfolio Multi-armed Bandit Thompson Sampling](https://arxiv.org/pdf/1911.05309): 「**複数の古典 trading strategy を arm として bandit framework に投入** → Thompson Sampling で online portfolio choice → arm performance のトレードオフを最大化」を実証
+
+→ cat-bitget 接続: 工程 3 + 5 で複数 ML model (= LightGBM / XGBoost / GRU の各 cluster 出力) を arm 化 → Thompson Sampling で動的 weighting
+
+#### Contextual Bandit + LinUCB
+
+[arxiv 1305.2415 Exponentiated Gradient LinUCB](https://arxiv.org/pdf/1305.2415) + [ScienceDirect S0957417423001781 Contextual Combinatorial Bandit Portfolio](https://www.sciencedirect.com/science/article/abs/pii/S0957417423001781) + [arxiv 1902.07802 AdaLinUCB](https://arxiv.org/pdf/1902.07802) + [NumberAnalytics Contextual Bandits Guide](https://www.numberanalytics.com/blog/contextual-bandits-machine-learning-guide):
+
+- **LinUCB**: 「linear connection between context features and reward + UCB ベース exploration」(= optimism in face of uncertainty)
+- 業界実証: 「**supervised adaptive decision tree で candidate portfolio pool → LinUCB で update rule 学習**」(= institutional + individual trader 向き)
+- **Parallel LinUCB / Parallel LinTS**: 2025 trend = batch action selection で **diversity 確保 + regret burn-in 最小化**
+
+→ cat-bitget 接続: 工程 1 regime 出力 (= up/range/down) を context として LinUCB で「regime × strategy」配分の動的最適化
+
+#### Dynamic A/B Testing for ML Models on AWS SageMaker
+
+[AWS Blog Dynamic A/B Testing SageMaker](https://aws.amazon.com/blogs/machine-learning/dynamic-a-b-testing-for-machine-learning-models-with-amazon-sagemaker-mlops-projects/): 「**Thompson Sampling で Challenger variant 選択確率が outperform に応じて自動上昇** → 動的 Champion-Challenger 切替」を業界 default 実装として提供
+
+#### crypto trading での A/B testing 実証
+
+[Medium Adrian Keller 7 Years Crypto ML](https://medium.com/@laostjen/machine-learning-models-that-actually-work-in-crypto-trading-78a6735b5639): 「ML production crypto trading 7 年経験 → **foundation (= data / strategy / risk) が weak だと ML が損失を amplify する**」 = A/B testing は ML 単独でなく portfolio 全体の foundation を verify する設計が必須
+
+[MDPI 14/5/761 Bayesian vs Evolutionary Crypto Perpetual](https://www.mdpi.com/2227-7390/14/5/761): 「**crypto は noisy non-stationary objective landscape** → 通常 ML benchmark の Bayesian optimization が機能しにくい」 = bandit ベース動的選択が業界整合
+
+#### cat-bitget 適用判断 (= 工程 7 Online 監視 + 工程 4 Position Sizing 接続)
+
+- **採用候補**: **Thompson Sampling (Beta-Bernoulli) で多 cluster × Exit type × side 戦略の動的 weighting**
+  - phase_flow_v4 v7 改善 4 動的合成方式 8 (= Half-Kelly + Vol target + cluster 強度別) の cluster 強度別配分を Thompson Sampling で online update 化
+  - L-226 §18.3 HRP/HERC との関係: HRP/HERC = 戦略間 risk parity / TS = 戦略間 reward maximize → **両者並走候補** (= HRP で risk constraint + TS で reward exploration)
+- **次段拡張**: Contextual LinUCB で工程 1 regime 出力を context 化 → regime ↔ strategy 動的接続
+- **Phase 7-c / 7-d 実装影響**: Thompson Sampling の posterior 更新 (= α/β counter) は in-memory + persistent (= state file) で実装軽量
+
+### §20.4 Champion-Challenger 構造 (= 並走 → 段階的切替の業界標準フロー)
+
+#### 業界フロー ([DataRobot MLOps Champion-Challenger](https://www.datarobot.com/blog/introducing-mlops-champion-challenger-models/) + [H2O MLOps Champion-Challenger](https://docs.h2o.ai/mlops/v0.64.0/py-client/py-client-examples/champion-challenger-deployment) + [Snowflake ML Champion-Challenger Retraining](https://www.snowflake.com/en/developers/guides/ml-champion-challenger-model-deployment/) + [Minitab Champion-Challenger](https://support.minitab.com/en-us/model-ops/import-and-deploy-models/use-champion-challenger-models-in-a-deployment/))
+
+```
+[Champion: 現本番 model]   ←→   [Challenger 1, 2, 3, ...: 新候補]
+       ↓ all traffic                   ↓ shadow / partial traffic
+       実行・PnL 確定                  並走・metric 比較
+                                           ↓
+                                  Challenger > Champion 検出
+                                           ↓
+                              traffic split 1% → 5% → 20% → 50% → 100%
+                                           ↓
+                                  Challenger が新 Champion 昇格
+                                  旧 Champion を fallback 化
+```
+
+#### Traffic Split 業界 default ([Clarifai AI Deployment](https://www.clarifai.com/blog/ai-model-deployment-strategies) + [Dagshub Model Deployment](https://dagshub.com/blog/model-deployment-types-strategies-and-best-practices/) + [Medium Fraidoon Evaluation Strategies](https://medium.com/@fraidoonomarzai99/deployment-evaluation-strategies-in-mlops-c208585aa3bd))
+
+| stage | Challenger traffic | gating criteria |
+|---|---:|---|
+| Shadow | 0% (= log only) | drift / performance metrics ≥ Champion |
+| Canary | 1% | error rate / latency / PnL ≥ Champion 信頼区間下端 |
+| Ramp 1 | 5% | 同上 + Sharpe / Sortino 改善 |
+| Ramp 2 | 20% | 同上 + 月次 NET 改善 |
+| Ramp 3 | 50% | 同上 + DSR / PBO 改善 |
+| Full | 100% | Challenger 採用・旧 Champion fallback 化 |
+
+各 stage で gating criteria 未達 → auto-rollback (= 旧 Champion 復帰)
+
+#### Champion-Challenger と A/B / MAB の関係
+
+- **Classical A/B**: 単純 fixed split + 統計検定 (= 50/50 で N sample 確保)
+- **Multi-Armed Bandit (= TS / UCB)**: 動的 split で sample 効率最大化
+- **Champion-Challenger**: **deployment process** (= shadow → canary → ramp) 自体が業界 default フロー
+- → 業界 best practice: Champion-Challenger フローの **各 stage 内で A/B or MAB を実施**
+
+#### Production deployment 業界標準 ([Galileo MLOps](https://galileo.ai/blog/mlops-operationalizing-machine-learning))
+
+「**Shadow deploy → controlled canary rollout → statistically rigorous online experiments → post-launch Champion-Challenger with automated rollback**」 = 全段ガード経路
+
+#### cat-bitget 適用判断 (= 工程 7 主軸候補)
+
+- **採用フロー**:
+  1. **Shadow**: 新 model を Phase 7-d 開発環境で並走 (= 本番 paper_trading=False / Demo API 経由)
+  2. **Canary 1%**: 新 model の signal を 1/100 frequency でのみ実発注 (= 旧 model 99/100)
+  3. **Ramp 5/20/50%**: 月次 NET / Sharpe / Sortino / DD 改善で段階拡大
+  4. **Full 100%**: 採用判定 → 旧 model を fallback として state 保持
+- **gating criteria 具体値 (= cat-bitget Phase 6-b 整合)**:
+  - 月次 NET ≥ $1,900 維持
+  - DSR > 0.95 維持 (= L-225 §17.4)
+  - PBO < 0.5 維持 (= L-225 §17.5)
+  - Calmar > 2.0 (= L-227 §19.5)
+  - 連続 N week 未達 → auto-rollback
+- **0.12 BTC 合計上限制約**: 並走中も全 model の合計 ≤ 0.12 BTC 必須 (= CLAUDE.md §0-2 絶対規定)
+- **Phase 7-c / 7-d 実装影響**: state file に Champion / Challenger 両 model の orderId / position を物理分離保存 → 各 model の PnL を独立集計
+
+### §20.5 Shadow Deployment (= 本番影響ゼロでの新モデル評価)
+
+#### 業界の根本構造
+
+[SE-ML Shadow Deployment](https://se-ml.github.io/best_practices/04-shadow_models_prod/) + [JFrog Shadow vs Canary](https://www.qwak.com/post/shadow-deployment-vs-canary-release-of-machine-learning-models) + [Dataconomy Shadow Deployment 2025](https://dataconomy.com/2025/03/07/what-is-shadow-deployment/) + [Deepchecks Glossary Shadow Deployment](https://www.deepchecks.com/glossary/shadow-deployment/) + [ML Journey Shadow Mode](https://mljourney.com/shadow-mode-deployment-for-ml-model-testing/) + [DhiWise Shadow Deployment Guide](https://www.dhiwise.com/post/risk-free-production-testing-shadow-deployment):
+
+```
+全本番 traffic → 旧 Champion model (= 実発注 + 実 PnL)
+            ↘
+              新 Challenger model (= predict + log のみ・実発注なし)
+              
+比較: Champion 予測 vs Challenger 予測 + 仮想 PnL
+```
+
+- 「**実 traffic で実行 + 本番影響ゼロ**」(= 新 model の predict と仮想 PnL は log のみ)
+- skew 検出: training vs production data 統計差 ([SE-ML](https://se-ml.github.io/best_practices/04-shadow_models_prod/))
+- regulatory compliance: bias detection + ethical AI validation も shadow で実施 ([Dataconomy 2025](https://dataconomy.com/2025/03/07/what-is-shadow-deployment/))
+
+#### AWS SageMaker Shadow Deployment ([AWS Blog Shadow ML SageMaker](https://aws.amazon.com/blogs/machine-learning/deploy-shadow-ml-models-in-amazon-sagemaker/) + [AWS Blog SageMaker Shadow Testing](https://aws.amazon.com/blogs/machine-learning/minimize-the-production-impact-of-ml-model-updates-with-amazon-sagemaker-shadow-testing/) + [Databricks Model Serving Shadow](https://community.databricks.com/t5/machine-learning/model-serving-shadow-deployment-azure/td-p/68066)):
+
+- production traffic duplicate → 旧 + 新 両 model に送る + 全 request / prediction を log
+- monitoring overhead: 旧 + 新 両 environment 監視で **データ処理 2 倍**
+- 2025 trends: serverless shadow architecture + real-time perf optimization + advanced observability platform 統合
+
+#### Shadow vs Canary の業界整理 ([JFrog Qwak](https://www.qwak.com/post/shadow-deployment-vs-canary-release-of-machine-learning-models))
+
+| 観点 | Shadow | Canary |
+|---|---|---|
+| 実発注 | ❌ なし (= log only) | ✅ 部分発注 (= 1-5%) |
+| 本番影響 | ゼロ | 部分 (= 失敗で部分損害) |
+| 検証深度 | predict 比較・仮想 PnL | 実 PnL 検証 |
+| 業界用途 | **採用前 risk-free 検証** | **採用後 gradual rollout** |
+| 順序 | 1 番目 | 2 番目 (= Shadow PASS 後) |
+
+#### cat-bitget 適用判断 (= 工程 7 主軸候補・Phase 7-d 実装)
+
+- **採用フロー**:
+  1. **Shadow stage 1 (= 開発環境)**: 新 model を Demo API (paper_trading=True) で実 5m bar 入力 + 仮想 PnL log のみ
+  2. **Shadow stage 2 (= 本番並走 log only)**: 本番 API (paper_trading=False・但し新 model の signal は実発注しない) で本番 5m bar 同期入力 + 仮想 PnL log
+  3. **Shadow PASS 判定**: 4 週間以上の Shadow で月次 NET ≥ $1,900 + DSR > 0.95 + PBO < 0.5 + Calmar > 2.0 達成
+  4. → Canary 1% (= §20.4 Champion-Challenger フロー) へ
+- **Shadow log 内容**:
+  - 各 bar の entry signal (= 出した / 出さなかった)
+  - 各 signal の仮想 entry price / size / Exit timing / Exit price / 仮想 PnL
+  - 旧 Champion との signal 一致率 / 差分理由
+- **0.12 BTC 合計上限制約**: Shadow stage では実発注なし → 制約非適用・但し仮想 PnL も 0.12 BTC clip 同条件で計算
+- **Phase 7-d 実装影響**: state file に shadow_predictions.jsonl を append・本番 trade との完全物理分離
+
+### §20.6 Production ML Monitoring (= 3 階層観測 + business metrics)
+
+#### 業界 3 階層 ([Galileo MLOps](https://galileo.ai/blog/mlops-operationalizing-machine-learning) + [Durapid MLOps Monitoring](https://durapid.com/blog/mlops-model-monitoring-how-to-track-model-drift-and-performance-in-production/) + [WetransCloud MLOps Observability](https://wetranscloud.com/blog/mlops-observability-model-performance) + [Fiddler ML Monitoring](https://www.fiddler.ai/ml-model-monitoring/ml-model-monitoring-best-practices))
+
+| 階層 | 監視対象 | 業界 default ツール |
+|---|---|---|
+| **Infrastructure observability** | CPU / memory / latency / queue depth | Prometheus + Grafana |
+| **Data observability** | schema / null rate / value distribution | Great Expectations / Monte Carlo |
+| **Model observability** | prediction distribution / drift score / business KPI | Fiddler / Arize / WhyLabs / 自前 |
+
+「これら 3 層で **what / why / how to fix** の full visibility 確保」 ([Galileo MLOps](https://galileo.ai/blog/mlops-operationalizing-machine-learning))
+
+#### Data Quality の業界実証
+
+[Monte Carlo MLOps Monitoring](https://www.montecarlodata.com/blog-mlops-engineer-and-model-monitoring/) + [KDnuggets Model Drift MLOps](https://www.kdnuggets.com/2023/05/managing-model-drift-production-mlops.html): 「**data quality issues が algorithm 問題より多い model failure 原因** + IBM 2023 study では poor data quality で年 $12.9M 損失」 = 監視の **第一の関所は Data observability**
+
+#### 4 critical monitoring techniques ([Monte Carlo](https://www.montecarlodata.com/blog-mlops-engineer-and-model-monitoring/))
+
+1. **Statistical performance monitoring** (= accuracy / precision / recall / F1 / AUC drift)
+2. **Drift detection** (= §20.1 統合)
+3. **Data quality monitoring** (= schema / null / outlier rate)
+4. **Business KPI monitoring** (= revenue / conversion / cost saving = cat-bitget では 月次 NET)
+
+#### Business metric layer の業界整理 ([Fiddler](https://www.fiddler.ai/ml-model-monitoring/ml-model-monitoring-best-practices) + [arxiv 2007.06299 Monitoring Production Explainability](https://arxiv.org/pdf/2007.06299))
+
+- Statistical model metric (= AUC / log_loss) と Business metric (= 売上 / NET) が **乖離する事例多発**
+- 「**model のみ良くて business 悪化**」 = 監視の盲点
+- 業界 best practice: model metric + business metric の両方を log + 乖離 alert
+
+#### cat-bitget 適用判断 (= 工程 7 全 Phase 統合監視)
+
+- **Infrastructure observability** (= Phase 7-c / 7-d / 7-e):
+  - API rate limit (= Bitget 10 req/s) の余裕監視
+  - latency (= 推論 + 発注 RTT)
+  - process memory / CPU (= 5m bot で軽量目標)
+  - WebSocket connection health (= microstructure 入力時・§16.6)
+- **Data observability** (= 全 Phase):
+  - 入力 5m bar の null / outlier 検出
+  - 1432 / 2604 特徴量の分布 monitor (= KSWIN 連携・§20.1)
+  - Funding Rate / Bitget API stream の健全性
+- **Model observability** (= 工程 3 + 5 + 6):
+  - LightGBM/XGBoost の prediction distribution drift (= ADWIN・§20.1)
+  - TP first 確率 distribution の sliding histogram
+  - Half-Kelly 出力 size の分布 monitor
+  - PPO 確率の entropy monitor (= exploration vs exploitation balance)
+- **Business metric** (= 必達):
+  - 月次 NET (= 全月 ≥ $1,900・CLAUDE.md / project_goal)
+  - 日次 NET sliding (= 異常検知)
+  - 勝率 sliding (= 50-60% range)
+  - DD (= MDD < 10-15% target・§19.3)
+  - Sharpe / Sortino / Calmar (= L-227 §19.5)
+- **alert 多段化**:
+  - INFO (= drift warning / 単月未達)
+  - WARN (= drift confirmed / 連続 2 週未達)
+  - CRITICAL (= 急変 / 連続 1 ヶ月未達 / DD 15% 超え → 自動 deleveraging)
+
+### §20.7 領域 7 まとめ: 7 工程接続 + cat-bitget 設計判断調査ノート + **案 B 学習完了宣言**
+
+#### 7 工程接続マトリックス (= 監視運用レイヤー全工程適用)
+
+| 工程 | 監視・運用の改善方向 | 業界整合手法 |
+|---|---|---|
+| 1 regime | regime label drift monitor (= HMM 状態 transition probability の sliding 比較) | §20.1 ADWIN |
+| 2 Entry 候補生成 | 候補発火頻度の drift monitor (= time-of-day distribution) | §20.1 KSWIN |
+| 3 Entry ML | **prediction distribution drift + feature distribution drift + incremental update** | §20.1 + §20.2 |
+| 4 Position Sizing | **Half-Kelly 出力 size + Thompson Sampling で動的 weighting** | §19.4 + §20.3 |
+| 5 Exit ML | PPO probability entropy monitor + Champion-Challenger で新 Exit model 試行 | §20.4 |
+| 6 Risk 管理 | DD / vol spike / regime trigger の OR 監視 (= §19.3 整合) + business metric layer | §19.3 + §20.6 |
+| **7 Online 監視** | **全工程の drift detection + Online update + A/B/MAB + Shadow + Champion-Challenger + 3 階層 observability** | **§20.1-§20.6 全章** |
+
+#### cat-bitget Phase 7-c / 7-d / 7-e 運用層設計判断調査ノート (= v6 学習成果)
+
+> ⚠️ 以下は **学習資料の調査ノート位置付け**。実際の設計確定は WORKFLOW 改訂40 active の優先 3 (= 工程 2-7 詳細詰め) で別途実施 (cc_role §1.5 デザイン責任)。
+
+##### v6 (= 領域 7) の追加確定事項
+
+- **Phase 7-c 実装基盤**:
+  - **drift detector 3 種並走** (= ADWIN + KSWIN + Page-Hinkley) を bot init で起動
+  - **River + Incremental LightGBM/XGBoost** ハイブリッドで online learning 基盤
+  - 各推論時に 1 sample drift update + 週次 incremental retrain + 半年 from scratch retrain
+- **Phase 7-d Shadow deployment**:
+  - 新 model の signal を Demo API で 4 週間以上 paper trading 検証
+  - Shadow log で月次 NET ≥ $1,900 + DSR + PBO + Calmar 全て達成 → Canary 1% へ
+- **Phase 7-e Champion-Challenger 段階 rollout**:
+  - 1% → 5% → 20% → 50% → 100% の 5 段階 ramp
+  - 各 stage で gating criteria 未達 → auto-rollback
+  - 0.12 BTC 合計上限を Champion + Challenger 全 model 横断で守る
+- **Thompson Sampling 動的 weighting**:
+  - 工程 4 動的合成方式 8 (= Half-Kelly + Vol target + cluster 強度別) の cluster 強度別配分を online TS で update
+  - HRP/HERC (= §18.3) と並走候補 (= HRP で risk constraint + TS で reward exploration)
+- **3 階層 observability + business metric 統合**:
+  - Infrastructure (= Bitget API latency / process memory) + Data (= 1432 feature null / drift) + Model (= prediction drift) + Business (= 月次 NET / DD / Calmar)
+  - INFO / WARN / CRITICAL 3 段 alert + CRITICAL で自動 deleveraging
+
+##### Phase 1 v6 6 案全滅の構造的原因 → 監視運用レイヤー欠落の補強整理
+
+L-227 §19.6 で確定した 7 軸多様性欠落に **第 8 軸 = 運用層 (= drift detection / online learning / 動的切替) 設計不在** を追加:
+
+| # | 原因 | 補強領域 | v6 学習成果 |
+|---|---|---|---|
+| 1 | ボラ予測 ML 設計欠陥 | L-223 | §13.1 + §14.6 |
+| 2 | アルゴ多様性ゼロ | L-224 + arxiv 2512.15738 | §18.1 |
+| 3 | bar 種別多様性ゼロ | L-225 + §16.1 | §16.1 |
+| 4 | cascade 構造不在 | v4 §18.2 | §18.2 |
+| 5 | strategy allocation 機械固定 | v4 §18.3 | §18.3 |
+| 6 | Meta-Labeling 同型 | L-223 + v4 §18.4 | §18.4 |
+| 7 | リスク管理レイヤー不在 | v5 §19 | §19.1-§19.4 |
+| **8** | **運用層 (= drift detection / online learning / 動的切替) 設計不在** | **v6 §20 新規** | **§20.1-§20.6** |
+
+→ 旧 Priority / Phase 1 v6 は「static model + 固定 weight + 手動切替」で **non-stationary crypto 市場で陳腐化早い** 構造的欠陥。v6 で運用層 (= drift 自動検出 + online incremental update + Thompson Sampling 動的 weighting + Champion-Challenger 段階切替 + Shadow 検証 + 3 階層 observability) の業界実装パターンを確立。
+
+#### 関連 lessons + 関連 memory
+
+- L-223 (= ボラ予測 ML 設計欠陥) / L-224 (= アルゴ多様性) / L-225 (= 領域 3-4) / L-226 (= 領域 5) / L-227 (= 領域 6) — v6 学習の直接動機
+- cc_role §1.4.6.1 9 項目 (= ML pipeline 設計提案前の業界整合 verify) — 本領域学習で 6-9 番を蓄積
+- feedback_trade_ml_knowledge_gap (= 業界標準理解不足) — **v6 で完全補強 (= 7/7 = 100%)**
+- CLAUDE.md §0-2 (= 0.12 BTC 合計上限) — 運用層でも全 model 横断 clip 義務
+
+#### 🎉 案 B 学習完了宣言 (= 7/7 = 100%)
+
+**案 B (= ChatGPT 7 工程フレーム範囲の ML 知識体系化) 完了**:
+
+- 領域 1 (ML 学習方法・§13・v2) ✅
+- 領域 2 (ML 学習項目・§14・v2) ✅
+- 領域 3 (ML 特徴量設計・§16・v3) ✅
+- 領域 4 (ML 評価方法・§17・v3) ✅
+- 領域 5 (ML 組合せ手法・§18・v4) ✅
+- 領域 6 (ML リスク管理・§19・v5) ✅
+- **領域 7 (ML 監視運用・§20・v6) ✅** ← **本セッション完成**
+
+総計: WebSearch 84 件 + 教科書引用 (AFML / MLfAT / mlfinlab / pypbo / River / scikit-multiflow / Riskfolio-Lib / PyPortfolioOpt 等) + arxiv 30+ 件 + 業界ライブラリ docs 多数。
+
+これにより WORKFLOW 改訂39 active 優先 2 (= 案 B 学習継続) を完遂し、**次は WORKFLOW 改訂40 active 優先 3 (= 工程 2-7 詳細詰め = 設計確定)** に進む準備が整った。
+
+---
+
 ## §11 改訂履歴
 
 | 版 | 日付 | 内容 |
@@ -1987,6 +2472,7 @@ L-226 §18.5 で確定した 6 軸多様性欠落に **第 7 軸 = リスク管�
 | v3 | 2026-05-25 | **§16 ML 特徴量設計 (7 節) + §17 ML 評価方法 (9 節) 追加**・§15.2-15.4 を v3 完成状態に更新 (= 残り 5 領域 → 残り 3 領域)・WebSearch 16 件 + AFML Ch.2 (情報駆動 bars) / Ch.5 (Fractional Diff) / Ch.7 (Purged K-Fold + CPCV) / Ch.8 (MDI/MDA/SFI) / Ch.14 (DSR) + Bailey & Lopez de Prado 2014 (DSR / PBO) + MLfAT Ch.4 (Alpha Factor Research) + Hudson & Thames mlfinlab + arxiv 5 件 (microstructure 2602.00776 / 2506.05764 / Frontiers 2026 / MDPI 2026 / shap-select 2410.06815) 引用 |
 | v4 | 2026-05-25 | **§18 ML 組合せ手法 (5 節) 追加**・§15.2-15.4 を v4 完成状態に更新 (= 残り 3 領域 → 残り 2 領域)・WebSearch 14 件 + AFML Ch.6 (Ensemble) / Ch.16 (Asset Allocation) + Lopez de Prado 2016 (HRP 原論文 SSRN 2708678) + Raffinot 2018 (HERC) + Hudson & Thames meta-labeling repo (GitHub) + Riskfolio-Lib + PyPortfolioOpt + arxiv 4 件 (Diversity 2407.12996 / FinRL Contest 2501.10709 / Hybrid Ensemble 2512.15738 / GAS Blending 2411.03035) + Viola-Jones cascade theory (Wikipedia + Grokipedia) 引用・**Phase 1 v6 6 案全滅の構造的原因を 6 軸多様性欠落に整理 (= v1-v4 統合)** ・Phase 1 v7 候補「案 g」設計判断調査ノートを §18.5 に確立 |
 | v5 | 2026-05-25 | **§19 ML リスク管理 (6 節) 追加**・§15.2-15.4 を v5 完成状態に更新 (= 残り 2 領域 → 残り 1 領域)・WebSearch 8 件 + GARCH-family (TGARCH/EGARCH/CGARCH・Springer Future Business Journal 2025) + EWMA / HAR-RV + Chandelier Exit (ChartSchool + StratBase.ai + LuxAlgo 5 ATR Stop-Loss) + Wilder Volatility Stop + CPPI / TIPP (Wikipedia + Grokipedia + QuantPedia + Core AXA-IM) + Kelly criterion (Altrady + LBank + OSL + CMC + Stephen Perrenod) + Pyramiding (QuantStrategy 4 篇 + TradersPost + Forextester + FasterCapital + hoc-trade Medium) + CVaR (MDPI 2026 regime-tail-dependent crypto + arxiv 2406.00610 + Riskfolio-Lib + Stan Uryasev) + Time-Series Momentum + Vol Scaling (CFA Institute 2019 + AlphaArchitect + CME Group + ScienceDirect S1386418116301379 + CXO Advisory) + ML 動的 Stop (arxiv 2506.22055 LSTM+XGBoost + ScienceDirect 2025 DRL+LSTM+XGBoost feature selection + Springer 2025 ML crypto trading) + Amberdata Crypto Portfolio 引用・**6 軸多様性欠落に「第 7 軸 = リスク管理レイヤー不在」追加整理**・cat-bitget 設計判断調査ノートに v5 8 項目追加 |
+| **v6** | 2026-05-25 | **§20 ML 監視運用 (7 節) 追加** = **案 B 学習完了 (= 7/7 = 100%)** ・§15.2-15.4 を v6 完成状態に更新 (= 残り 1 領域 → 残り 0 領域)・WebSearch 12 件 + River (arxiv 2012.04740 + JMLR 2021) + scikit-multiflow (ADWIN + DDM + EDDM + KSWIN) + Page-Hinkley (River PageHinkley + GeeksforGeeks + datadriftR) + Incremental LightGBM/XGBoost (Medium Data Science Collective + OpenReview Online GBDT) + Multi-Armed Bandit + Thompson Sampling (arxiv 1111.1797 + arxiv 1911.05309 Adaptive Portfolio + arxiv 2108.06812 Batched + Daheekwon Dynamic TS) + Contextual Bandit LinUCB (arxiv 1305.2415 + arxiv 1902.07802 AdaLinUCB + ScienceDirect S0957417423001781) + Shadow deployment (SE-ML + AWS SageMaker + JFrog Qwak + Dataconomy 2025 + ML Journey + Databricks) + Champion-Challenger (DataRobot + H2O MLOps + Snowflake + Clarifai + Dagshub + Medium Fraidoon) + AWS SageMaker Dynamic A/B Testing + Production ML Monitoring 3 階層 (Galileo + Durapid + WetransCloud + Fiddler + Monte Carlo + KDnuggets + DevOps Roles) + crypto online learning (arxiv 2510.08068 Multi-Agent Bitcoin + arxiv 2201.04699 Recurrent RL + arxiv 2303.07925 Deep Incremental Financial + Frontiers Predicting Bitcoin AI) + Hudson & Thames mlfinlab + Galileo MLOps Guide 引用・**7 軸多様性欠落に「第 8 軸 = 運用層 (= drift detection / online learning / 動的切替) 設計不在」追加整理**・cat-bitget 設計判断調査ノートに v6 7 項目追加・**案 B (= ChatGPT 7 工程フレーム範囲の ML 知識 7 領域カタログ化) を完了宣言** |
 
 ---
 
