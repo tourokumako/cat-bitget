@@ -358,7 +358,130 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-27 改訂44・**ML pipeline 設計議論決着 + 6 工程 → 8 工程拡張 ([1.5] regime ensemble + [2.5] cluster 分類 新規追加) + ml_pipeline_baseline_v1.md v2 改訂完了 + L-232 追加** + 次セッション = 各フローの設計書・指示書を詰める）
+## 🔴 現在のフェーズ（2026-05-27 改訂45・**工程 [1.5] regime ensemble 詳細設計 6 サブセクション完成 (= §6.1.1-6.1.6) + CP1 監査 PIVOT 反映完了 (= ml_pipeline_baseline v2.1 → v2.8) + cc_role §1.4.6.1 改善 10/11/12 追加 (= Anti-業界フレーム逃避ゲート) + L-233 追加** + 次セッション = [1.5] regime ensemble 実装着手）
+
+> **【現在の正本ブロック・改訂45・2026-05-27 セッション末（[1.5] 詳細設計完成・CP1 監査 PIVOT 反映完了・実装着手前 GO 状態）】**
+>
+> ### 本セッション (2026-05-27 追作業) 完了事項
+>
+> #### 1. [1.5] regime ensemble 詳細設計 6 サブセクション完成 ✅ (= ml_pipeline_baseline v2.1 → v2.8)
+>
+> | サブセクション | 内容 |
+> |---|---|
+> | §6.1.1 評価方法 4 段階 | Stage 1 (= 内部スコア + Brier/ECE/reliability + 3 判定器予測誤差 Pearson 相関) / Stage 2 (= 視認 + 統計検定) / Stage 3 (= [4] Exit 完成後 v15 単独 vs ensemble 2 段階比較) / Stage 4 (= 8 工程合算後 Phase 5 Replay) |
+> | §6.1.2 HMM 再調整方針 | v15 ベース大幅変更なし・改善は ensemble で取る |
+> | §6.1.3 固定ルール判定器 | 6 指標 × scoring + weighted vote + ATR_pct 価格非依存化 (= CP1 監査 C2 修正) |
+> | §6.1.4 k-means 判定器 | 4 特徴量 + k ∈ {2,3,4,5} elbow + silhouette data-driven |
+> | §6.1.5 ensemble 機構 | soft voting + isotonic regression キャリブレーション + Walk-Forward GridSearchCV 初期重み (= CP1 監査 C1 / M2 修正) |
+> | §6.1.6 出力仕様 | 6 列追記 + `merge_asof(direction="backward")` causal alignment + `assert no look-ahead` (= CP1 監査 M3 修正) |
+>
+> #### 2. CP1 監査経路実施完了 ✅
+>
+> - 監査依頼書: `.claude/audits/inputs/2026-05-27_step15_regime_ensemble_design_cp1_audit_request.md`
+> - 監査結果: `.claude/audits/2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md`
+> - Verdict: **PIVOT** (= Critical 2 + Major 3 + Minor 2 件・全 7 件採用支持で反映完了)
+> - プロセス欠陥対策 P1 反映: cc_role §1.4.6.1 改善 10/11/12 追加
+>
+> #### 3. cc_role.md §1.4.6.1 改善 10/11/12 追加 ✅ (= Anti-業界フレーム逃避ゲート)
+>
+> - 10. cat-bitget 固有 verify (= 業界 standard 採用時に cat-bitget 過去事例 1 行 verify 必須)
+> - 11. 判定器/レバーの予測誤差相関 verify (= ensemble 提案時に無相関 verify 必須)
+> - 12. 暫定値・閾値の data-driven 経路宣言 (= 「実装後 verify 必要」だけでは弱い)
+>
+> #### 4. lessons L-233 追加 ✅
+>
+> 本セッション完了事項 + CC 失敗パターン (= L-232 違反 9-10 回再演 / 振り子の極端さ L-222 再演 / WebSearch 事後対応 / 価格非依存性違反 L-179 同型) + 改善ルール 5 件 (= cc_role §1.4.6.1 改善 10/11/12 機械的運用 / CP 監査経路継続 / WebSearch 機械的運用 / 振り子の極端さ自己検出 / 信頼問題対応プロトコル)。
+>
+> ### 本セッション CC 失敗パターン (= L-230 / L-231 / L-232 同型再演継続)
+>
+> 1. **雑な言い切り癖 9 回**: 全部 AND 提案 / 短期 K 振り子 / ATR 絶対値 (= L-179 同型)
+> 2. **文章わかりづらい指摘 10 回連続**: 専門用語多用継続 (= 「scoring」「ensemble」「キャリブレーション」を補足なし使用)
+> 3. **振り子の極端さ (= L-222 再演)**: 短期 K に絞る → 復元 = 180 度ひっくり返し
+> 4. **WebSearch 事後対応**: 固定ルール提案で WebSearch 省略 → まこさん「全部 AND 絶対駄目」指摘で scoring 構造修正
+>
+> 詳細は lessons L-233 参照。
+>
+> ### 次セッション CC 優先順位 (= まこさん指示「新セッションではレジーム実装」)
+>
+> 1. **優先 1 — Step 0 + 新規ファイル auto-load 確認**:
+>    - WORKFLOW.md 改訂45 active (= 本ブロック)
+>    - lessons L-233 (= 本セッション失敗パターン + 改善ルール)
+>    - `ml_pipeline_baseline_v1.md` v2.8 (= [1.5] 詳細設計 6 サブセクション)
+>    - CP1 監査結果: `.claude/audits/2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md`
+>    - cc_role.md §1.4.6.1 改善 10/11/12 (= Anti-業界フレーム逃避ゲート)
+>
+> 2. **優先 2 — [1.5] regime ensemble 実装着手** (= 詳細設計済 + 監査 PIVOT → GO 状態):
+>    - **HMM** (= v15 既存・微調整のみ): isotonic regression キャリブレーション追加
+>    - **固定ルール判定器** (= 新規実装): 6 指標 × scoring + weighted vote + ATR_pct 価格非依存化 + isotonic キャリブレーション
+>    - **k-means 判定器** (= 新規実装): 4 特徴量 + k ∈ {2,3,4,5} elbow + silhouette data-driven + Gaussian kernel 確率化 + isotonic
+>    - **ensemble 機構** (= 新規実装): soft voting + Walk-Forward Purged K-Fold 5 fold + GridSearchCV (= 重み grid 64 通り + 等重み)
+>    - **出力仕様** (= 新規実装): 6 列追記 + `merge_asof(direction="backward")` + `assert no look-ahead`
+>    - **保存場所**: `results/regime_step1/regime_predictions_{train_2021_2024, test_2025, test_2026_q1}.parquet`
+>
+> 3. **優先 3 — Stage 1 + Stage 2 評価** (= 実装後すぐ):
+>    - Stage 1 内部スコア (= log-likelihood / BIC / silhouette / Brier / ECE / 3 判定器予測誤差 Pearson 相関)
+>    - Stage 2 視認 + 統計検定 (= まこさん月単位視認 + 各状態収益性検定 + 既存特徴量相関)
+>    - まこさん視認 OK が出るまで調整・最低 10 回 (= feedback_regime_visual_check 整合)
+>    - Stage 3 PnL 早期判定は [4] Exit 完成後に持ち越し
+>
+> 4. **優先 4 — 次工程 ([2] Entry ML) 詳細設計** (= [1.5] Stage 1+2 通過後):
+>    - 56 ラベル並列学習 (= 揺れ幅 28 + 決着 28・全 7 ホライズン)
+>    - LightGBM Multi-output
+>    - feature_importance / target importance で各ホライズン寄与 verify
+>    - CP2 監査依頼
+>
+> 5. **優先 5 — セッション終了処理** (= lessons + WORKFLOW 改訂46 + git commit)
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (毎セッション必読・読了ゲート対象)
+> - **WORKFLOW.md 改訂45 active** (本ブロック)
+> - **CLAUDE.md**
+> - **`ml_pipeline_baseline_v1.md` v2.8** (= [1.5] 詳細設計 6 サブセクション完成 + CP1 監査反映完了)
+> - **`current_redesign_context.md`** (= 経緯サマリ・SessionStart hook 自動表示)
+> - **`priority_v9_trade_logic_analysis.md` v2** (= 旧 Priority 構造分析)
+> - **`technical_analysis_knowledge_base.md`** (= テクニカル辞典・1691 行)
+> - **`industry_benchmark_knowledge_base.md`** (= 業界相場・5 レバー定量根拠)
+> - **lessons_active.md 直近 5 件** (= L-233 → L-232 → L-231 → L-230 → L-229)
+> - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 (= 改善 10/11/12 追加済) / §1.4.7 / §1.5 / §1.5.5 / §1.7**
+> - **`feedback_cat_v9_no_modification.md`** (auto-memory・最重要・命令)
+> - **`feedback_baseup_before_design_discussion.md`** (auto-memory・最重要・命令)
+> - **`feedback_cc_low_perspective_narrow_view.md`** (auto-memory・最重要・命令)
+> - **`feedback_priority_starting_line_only.md`** (auto-memory・最重要・命令)
+> - **`feedback_writing_style.md`** / **`feedback_plain_language.md`** (auto-memory・最重要)
+> - **`feedback_no_unverified_assertions.md`** (auto-memory・最重要・命令)
+> - **`feedback_trade_ml_knowledge_gap.md`** (auto-memory・最重要)
+>
+> #### Layer 2 (タスク特有・実装時参照)
+> - HMM 既存実装: `scripts/priority_rebuild/train_hmm_regime.py` + `results/regime_step1/` artifact 4 件
+> - 固定ルール: KB §A.3 ADX + §A.4 ATR (= atr14_pct 価格非依存) + §A.5 BB + 一目均衡表
+> - k-means: 過去 Phase 4-a k-means 設計 (= 構造的継承) + scikit-learn KMeans
+> - ensemble: scikit-learn VotingClassifier + IsotonicRegression + GridSearchCV
+> - CP1 監査結果: `.claude/audits/2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md` (= 改善方向性 7 件 + Sources 30 件参照)
+>
+> #### Layer 3 (リファレンス)
+> - `false_positive_incident_policy.md` (= §0-1 Prime Directive + §0-2 0.12 BTC 厳守)
+> - `exchange_spec.md` (= Bitget API 仕様)
+> - `phase_compliance_checklist.md` (= §-1 USD 絶対値 blacklist + Phase 別 verify)
+> - `lessons_archive.md` (= L-152 以前)
+> - **`seven_step_framework.md`** (⛔ 破綻判定済・参照用)
+> - **`chatgpt_seven_step_origin.md`** (⛔ 破綻判定済・参照用)
+>
+> #### データ・環境
+> - parquet 3 種 (= Phase 0 v3.1 既存・train_2021_2024 + test_2025 + test_2026_q1・**56 ラベル全て生成済 verify 済**)
+> - `.venv311` (= hmmlearn 0.3.3 + mlfinpy 0.1.2 + lightgbm 4.6.0 + scikit-learn IsotonicRegression / KMeans)
+> - 旧 Priority 実績: 月 $370 (= cat-bitget **唯一の実利資産**・スタートライン参照・cat_v9 改造禁止)
+>
+> ### 目的整合性 1 行宣言 (cc_role §1.4.6)
+>
+> - **次タスク** = (1) Step 0 + 新規ファイル auto-load → (2) [1.5] regime ensemble 実装着手 (= HMM 既存 + 固定ルール + k-means + ensemble + 出力 6 列) → (3) Stage 1+2 評価 → (4) [2] Entry ML 詳細設計 + CP2 監査 → (5) Phase 5 Replay 検証
+> - **現フェーズ目的への貢献根拠** = 本セッションで [1.5] 詳細設計 6 サブセクション + CP1 監査反映完了 (= v2.8) を達成。次セッションは実装着手で「設計 → 実装 → 検証」の経路に乗る。これが完了すれば月次 NET ≥ $1,900 全月クリア判定 という最終目標への直線経路に乗る。
+
+---
+
+## 🧊 改訂44 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-27 改訂44・**ML pipeline 設計議論決着 + 6 工程 → 8 工程拡張 ([1.5] regime ensemble + [2.5] cluster 分類 新規追加) + ml_pipeline_baseline_v1.md v2 改訂完了 + L-232 追加** + 次セッション = 各フローの設計書・指示書を詰める）
 
 > **【現在の正本ブロック・改訂44・2026-05-27 セッション末（議論決着・実装着手前段）】**
 >

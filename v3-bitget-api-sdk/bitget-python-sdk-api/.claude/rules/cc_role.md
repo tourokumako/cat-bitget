@@ -150,6 +150,9 @@ ML pipeline / トレード関連の設計提案 (= 新工程追加 / 検証順�
 7. **教科書 chapter 引用**: Lopez de Prado AFML / Stefan Jansen MLfAT / Hudson & Thames mlfinlab blog の該当 chapter / 該当 blog 記事を引用
 8. **独自構造の業界整合判定**: 業界標準と異なる構造を提案する場合、「業界標準は X だが、本提案では Y にする。理由は Z」と 1 行で説明
 9. **統計指標と PnL 指標の分離**: 提案する合格基準が統計指標 (entropy_lift / TP Precision 等) なのか PnL 指標 (月次 NET) なのかを明示・混同禁止
+10. **cat-bitget 固有 verify** (= 2026-05-27 CP1 監査 P1 追加・Anti-業界フレーム逃避ゲート): 業界 standard を採用する各設計判断について、「cat-bitget 過去事例 (= cat_v9 経験値 / v15 HMM 実測 / 過去 Phase 5 Replay) で類似条件の lift を 1 行 verify」。verify できない場合「業界 standard 採用根拠なし → data-driven で決める」と書く
+11. **判定器/レバーの予測誤差相関 verify**: ensemble / multi-strategy / multi-indicator scoring を提案する場合、「各構成要素の予測誤差が無相関か」の verify (= [KB §2.3 Square Root Rule 前提]) を必ず添える・相関 > 0.5 ならレバー寄与は減じる方向に試算
+12. **暫定値・閾値の data-driven 経路宣言**: 「暫定 N」のような数値を設計に含める場合、実装着手時にどの fold データ / どの統計値 (= 25th percentile 等) で決定するかの経路を併記・「実装後 verify 必要」だけでは経路として弱い
 
 書かずに ML pipeline / トレード関連設計を提案 = L-220 違反として記録。
 

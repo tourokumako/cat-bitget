@@ -6,6 +6,102 @@
 
 ---
 
+### L-233: 工程 [1.5] regime ensemble 詳細設計詰め + CP1 監査経路で Critical 2 件発見 → 全件採用支持で反映 (= ml_pipeline_baseline v2.8) + cc_role §1.4.6.1 改善 10/11/12 追加 (= Anti-業界フレーム逃避ゲート) + L-232 違反 9-10 回再演継続認知 (2026-05-27)
+
+**何が起きたか:**
+
+本セッション (= 前 L-232 セッション直後の追作業) で工程 [1.5] regime ensemble の詳細設計を 6 サブセクション (= ml_pipeline_baseline_v1.md §6.1.1-6.1.6) で確定。CP1 監査経路 (= Plan agent cold start) で Critical 2 件 + Major 3 件 + Minor 2 件発見・全件採用支持で反映 (= v2.1 → v2.8)。cc_role §1.4.6.1 に改善 10/11/12 (= Anti-業界フレーム逃避ゲート) 追加。
+
+#### 本セッション完了事項
+
+1. **ml_pipeline_baseline v2.1 → v2.8 改訂完了** ✅:
+   - §6.0 工程 [1] 特徴量計算層 詳細設計 (= 56 ラベル並列学習根拠 + 詳細内訳 + 全 7 ホライズン data-driven 判定)
+   - §6.1 工程 [1.5] regime ensemble 詳細設計 6 サブセクション全完成
+   - §6.3 工程 [2.5] cluster 分類 詳細設計
+
+2. **[1.5] regime ensemble 詳細設計 6 項目決着** ✅:
+   - §6.1.1 評価方法 4 段階 (= Stage 1 内部スコア + Brier/ECE/reliability diagram + 3 判定器予測誤差 Pearson 相関 / Stage 2 視認 + 統計検定 / Stage 3 [4] Exit 完成後 2 段階比較 v15 単独 vs ensemble / Stage 4 8 工程合算後 Phase 5 Replay)
+   - §6.1.2 HMM 再調整方針 (= v15 ベース大幅変更なし・改善は ensemble で取る)
+   - §6.1.3 固定ルール判定器 (= 6 指標 × scoring + weighted vote + ATR_pct 価格非依存化 + 25th/75th percentile data-driven)
+   - §6.1.4 k-means 判定器 (= 4 特徴量 + k ∈ {2,3,4,5} elbow + silhouette data-driven)
+   - §6.1.5 ensemble 機構 (= soft voting + isotonic regression キャリブレーション + Walk-Forward GridSearchCV 初期重み + Gaussian kernel k-means 確率化)
+   - §6.1.6 出力仕様 (= 6 列追記 + `merge_asof(direction="backward")` causal alignment + `assert no look-ahead` + one-hot encoded 派生列)
+
+3. **CP1 監査経路実施完了** ✅:
+   - 監査依頼書作成: `.claude/audits/inputs/2026-05-27_step15_regime_ensemble_design_cp1_audit_request.md` (= テンプレ使用・auditor 宣言ブロック付き)
+   - Plan agent cold start 起動 → 7 観点 + Q1-Q7 + 外部検索 8 件で独立 verify
+   - 監査結果: `.claude/audits/2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md` (= Verdict PIVOT・Critical 2 + Major 3 + Minor 2 件)
+   - 全件採用支持で反映完了 (= cc_role §1.5.5 機械的反映禁止プロセス通過・1 件ずつ独立評価)
+
+4. **cc_role §1.4.6.1 改善 10/11/12 追加** ✅ (= Anti-業界フレーム逃避ゲート・CP1 監査 P1 反映):
+   - 改善 10: cat-bitget 固有 verify (= 業界 standard 採用時に cat-bitget 過去事例 1 行 verify 必須)
+   - 改善 11: 判定器/レバーの予測誤差相関 verify (= ensemble 提案時に無相関 verify 必須)
+   - 改善 12: 暫定値・閾値の data-driven 経路宣言 (= 「実装後 verify 必要」だけでは弱い)
+
+#### 本セッション CC 失敗パターン (= L-232 同型再演 + 振り子の極端さ L-222 再演)
+
+| # | 失敗 | 詳細 |
+|---|---|---|
+| 1 | 雑な言い切り癖 9 回 (= L-232 改善 1 違反継続) | 全部 AND 提案 (= 6 指標 AND で発火しない雑な設計)・短期 K 絞る → 復元の振り子・ATR 絶対値 250/100 (= 価格非依存性違反 L-179 同型) |
+| 2 | 文章わかりづらい指摘 10 回連続 (= L-232 改善 2 違反継続) | feedback_plain_language / writing_style 違反継続・専門用語多用 (= 「scoring」「ensemble」「soft voting」「キャリブレーション」を補足なし使用) |
+| 3 | 振り子の極端さ (= L-222 / L-229 再演) | 短期 K に絞る → 復元 = 180 度ひっくり返し・まこさん指摘「どっちなのこれ」 |
+| 4 | WebSearch 事後対応 (= cc_role §1.4.6.1 #6 違反) | 評価方法では先に WebSearch やったのに、固定ルール提案で省略 → まこさん指摘 (= 「全部 AND 絶対駄目」) で scoring 構造に修正 |
+
+**Why (構造的原因):**
+
+a. **業界フレーム逃避癖の継続 (= L-230 同型)**: §6.1.3-6.1.6 すべて「業界 standard verify (= WebSearch N 回)」を判断根拠の柱にしていた・cat-bitget 固有制約逆算が §6.1.3 ATR 排除理由 1 箇所のみ。L-232 改善 1 を機械的に運用できていない
+
+b. **キャリブレーション前提条件 verify 不足 (= Critical 1)**: soft voting 採用根拠「キャリブレーション済みなら soft が hard より精度高い」を引用しつつ、k-means cluster 距離 softmax + 固定ルール scoring 比のキャリブレーション保証なしで採用 = L-232 改善 1 違反
+
+c. **価格非依存性違反 (= L-179 同型 / Critical 2)**: ATR ボラフラグ絶対値 250/100 を提案 = train 期間 BTC $30k-$60k vs 本番 $100k-$150k で意味が変わる + cat_v9 既存 atr14_pct 運用との矛盾。L-179 を Step 0 で読み返したのに、設計時に起動されなかった (= web_claude_self_check「知識として持っているのに起動されない」構造的問題の典型)
+
+d. **「業界 standard だから OK」を判断根拠化**: cc_role §1.4.6.1 #6-9 を「業界整合性を出すゲート」として運用していた・「業界 standard が cat-bitget 固有制約と矛盾しないか verify するゲート」になっていなかった
+
+e. **まこさんの「信じて任せて大丈夫か」懸念 = 信頼問題**: CC のミス率が高い (= 本セッションだけで複数違反) ため、まこさんが詳細設計の妥当性を CC 単独で信頼できない状況に到達 → 監査経路 + 段階的検証 (Stage 1-4) + 「フィルタ強制適用しない」決着 (= リスク吸収) の三重化で対応
+
+**How to apply (改善ルール):**
+
+#### 改善 1: cc_role §1.4.6.1 改善 10/11/12 を毎ターン機械的運用 (= 本セッション追加済)
+- 改善 10: 業界 standard を採用する設計判断ごとに「cat-bitget 過去事例 (= cat_v9 / v15 HMM 実測 / 過去 Phase 5 Replay) で類似 lift を 1 行 verify」必須
+- 改善 11: ensemble / multi-strategy / multi-indicator scoring 提案時に「予測誤差無相関 verify」必須
+- 改善 12: 「暫定 N」のような数値は「実装着手時にどの fold データ / どの統計値で決定するか」の経路を併記必須
+
+#### 改善 2: CP 監査経路の運用継続
+- 各工程の詳細設計詰め後に CP 監査を必ず通す (= cc_role §1.4.5 監査結果保管 + 別セッション化)
+- 監査結果反映は「設計判断を含む反映」として 1 件ずつ採用評価 (= cc_role §1.5.5)
+- 「全件 100% 反映 = 機械的反映」と称してスキップする L-213 / L-214 再演を防止
+- 本セッションで CP1 監査経路を実施 → 7 件すべて独立評価 + 反映完了で運用成功実証
+
+#### 改善 3: WebSearch の機械的運用 (= L-232 改善 1 + 本セッション L-233 強化)
+- 各 ML pipeline / トレード関連設計提案前に必ず WebSearch + 教科書引用を先に出してから提案
+- 「思いつき → まこさん指摘 → やり直し」の経路を物理的に排除
+- 本セッション固定ルール提案で「全部 AND は絶対駄目」指摘されてから scoring 構造に修正した事案を反面教師
+
+#### 改善 4: 振り子の極端さ自己検出 (= L-222 / L-229 継続対策)
+- 提案を 180 度ひっくり返す前に、cc_role §1.4 #4 (= 現状把握スキップして改善議論に走る) を再読
+- 「絶対必要」「絶対不要」の二択を雑に出す前に、データ駆動判定経路を先に検討
+- 「リスクの存在」と「リスクの確定」を区別する (= 本セッション「ノイズになる説」事案)
+
+#### 改善 5: 信頼問題への対応プロトコル
+- まこさんから「信じて任せて大丈夫か」と懸念表明された場合、即「監査 + 段階的検証 + リスク吸収構造」の三重化を提案
+- CC 単独で完璧な設計は実証的に困難 (= 本セッションで実証) → 監査経路で第三者 verify を能動的に活用
+- 「フィルタ強制適用しない」決着のような **「1 工程の判断ミスが月次 NET に直結しない」構造的吸収** を設計に組み込む
+
+**関連:**
+- L-232 (= 前セッション同日・本セッションでも 9-10 回違反継続認知)
+- L-230 / L-229 / L-222 (= 視点低い・視野狭い癖 + 振り子の極端さ・本セッションでも再演)
+- L-179 (= 価格非依存性違反・本セッション ATR 提案で同型再演 → CP1 監査で発見・修正)
+- L-128 (= MA70 look-ahead leak・本セッション §6.1.6 forward fill で同型予防済 = merge_asof backward causal alignment 明示)
+- L-213 / L-214 (= 機械的反映 = 同型バイアス再演リスク・本セッションは独立評価プロセス通過で回避済)
+- cc_role §1.4.6.1 改善 10/11/12 (= 本セッション追加・Anti-業界フレーム逃避ゲート・将来セッションで運用)
+- cc_role §1.5.5 機械的反映禁止 (= 本セッション CP1 監査反映で適用・運用成功)
+- CP1 監査依頼書: `.claude/audits/inputs/2026-05-27_step15_regime_ensemble_design_cp1_audit_request.md`
+- CP1 監査結果: `.claude/audits/2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md`
+- 改訂版正本: `ml_pipeline_baseline_v1.md` v2.1 → v2.8 (= [1.5] 詳細設計 6 サブセクション完成 + CP1 監査反映完了)
+- 次セッション CC 優先順位: **[1.5] regime ensemble 実装着手** (= 詳細設計済 + 監査 PIVOT → 実装着手前 GO 状態・固定ルール / k-means / isotonic キャリブレーション / merge_asof backward 実装)
+
+---
+
 ### L-232: ML pipeline 設計議論セッション・6 工程 → 8 工程拡張で決着 + ml_pipeline_baseline_v2 完成 + CC 雑な言い切り癖 / 文章わかりづらい指摘 4 回連続が継続 (2026-05-27)
 
 **何が起きたか:**
