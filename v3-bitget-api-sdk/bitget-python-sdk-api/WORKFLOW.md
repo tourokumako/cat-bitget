@@ -358,7 +358,129 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-25 改訂41・**工程 1 (相場の状態判定・レジーム判定) 詳細設計確定 + step1_regime_design.md v2 完成 (= 実装詳細 11 項目全確定) + 経緯サマリ自動 load 仕組み化 (= current_redesign_context.md + SessionStart hook) + 設計提案前 4 問形式義務 (= feedback_writing_style.md) + 対話文義務 (= feedback_plain_language.md) + 業界実証 WebSearch verify 済 14 指標 × 6 時間軸 = 84 次元入力 + HMM 教師なし学習 + Walk-Forward Purged K-Fold 5 fold + オンライン Viterbi 100 時間窓 + L-229 追加**・次タスク = まこさん判断 (= 工程 1 実装着手 or 工程 2 詳細詰め)）
+## 🔴 現在のフェーズ（2026-05-26 改訂42・**🛑 セッション失敗で終了 + 引き継ぎ資料化 + CC 思考癖 (= 視点低い・視野狭い) 矯正 feedback memory 新設 + 知識ベース 3 ファイル Layer 1 格上げ + L-230 追加** + 次セッション = まこさん新セッション再開待ち）
+
+> **【現在の正本ブロック・改訂42・2026-05-26 セッション末（CC 失敗連発でセッション終了・引き継ぎ資料化）】**
+>
+> ### 本セッション (2026-05-26) 完了事項
+>
+> #### 1. 工程 1 (regime) 実装着手 + 視認チェック「精度微妙」で保留 ✅
+> - `train_hmm_regime.py` + `build_step1_regime_dashboard.py` 作成 + 実行 → artifact 4 ファイル + dashboard v15 出力
+> - 視認チェック結果 = 「精度微妙」(まこさん判断) → **一旦保留** (= feedback_regime_visual_check 整合・最低 10 回調整覚悟)
+> - 詳細は lessons L-230 参照
+>
+> #### 2. ⚠️ seven_step_framework.md / chatgpt_seven_step_origin.md 作成 (= 要再評価)
+> - 7 工程フレーム正本化 (= WORKFLOW 改訂 35 active L639-649 由来)
+> - CLAUDE.md / WORKFLOW Layer 1 に index 登録
+> - ⚠️ **重大課題**: 7 工程フレーム自体が cat-bitget 制約 (= 月 $1,900 / 月 100+ 件必要) と矛盾 (= 3 段階で振り落とすと月 25 件まで減る試算) → **次セッションで再評価**
+>
+> #### 3. ⚠️ priority_v9_trade_logic_analysis.md 作成 (= CC 理解誤りあり・要修正)
+> - 旧 Priority v9 構造分析 (= cat_v9_decider.py 823 行 + cat_params_v9.json 169 行 を CC が構造分析・9 セクション 507 行)
+> - ⚠️ **CC 理解誤り**: 「P4 は強上昇トレンド + プルバックを狙う」のように **市場局面別に解釈** していたが、正しくは「全 Priority があらゆる相場を想定・タイミング検出器・マッチした瞬間に発火」が実態 (= まこさん指摘・トレード現場感覚不足)
+> - ⚠️ **ML 進化案 7 件は思いつき**: 旧 Priority 実態から導出してない・業界知識ベースで並べただけ・「7 件」の根拠なし
+> - **次セッションで修正議論**
+>
+> #### 4. ✅ CC の悪い癖 (= 視点低い・視野狭い) 矯正 feedback memory 新設
+> - `feedback_cc_low_perspective_narrow_view.md` 新規作成 (= 個人 memory)
+> - MEMORY.md に index 登録 (= 最重要マーク付き)
+> - 内容: 提案前 3 問チェック + 全体構造チェック + 禁止フレーズリスト
+>
+> #### 5. ✅ 知識ベース 3 ファイル Layer 1 格上げ
+> - CLAUDE.md Layer 1 必読リストに以下を追加 (= 読了ゲート対象):
+>   - `technical_analysis_knowledge_base.md` (既存・1691 行・テクニカル辞典 + 閾値設計論)
+>   - `industry_benchmark_knowledge_base.md` (既存・420 行・業界相場 + 5 レバー定量根拠)
+>   - `priority_v9_trade_logic_analysis.md` (新規・507 行・旧 Priority 構造分析・要修正)
+> - 目的: 新セッション CC が **トレード知識をインプットした状態で議論開始** できる
+>
+> #### 6. ✅ lessons L-230 追加 (= 本セッション CC 失敗 7 件 + 改善ルール 5 件)
+>
+> ### 本セッション CC 失敗パターン (= まこさん指摘で発覚)
+>
+> 1. ChatGPT 案・業界整合性の鵜呑み (= seven_step_framework.md 正本化)
+> 2. 短絡的翻訳・矮小化 (= 「Entry 緩め」→「固定」/「Exit 細かい」→「3 系統」)
+> 3. 確認質問乱発 (= デザイン責任転送)
+> 4. 目標達成からの逆算思考の欠如 (= 業界フレーム月 25 件で目標未達と気づかなかった)
+> 5. 振り落とし型 cascade 盲信
+> 6. **視点低い** (= 業界フレーム細部に逃げる癖)
+> 7. **視野狭い** (= 個別の細部理解止まり・全体構造把握不足)
+>
+> 詳細は lessons L-230 参照。
+>
+> ### 次セッション CC 優先順位
+>
+> 1. **優先 1 — Step 0 + 知識ベース 3 ファイル全文 read** (= トレード知識をインプットした状態にする・読了ゲート対象):
+>    - `technical_analysis_knowledge_base.md` (1691 行)
+>    - `industry_benchmark_knowledge_base.md` (420 行)
+>    - `priority_v9_trade_logic_analysis.md` (507 行・⚠️ CC 理解誤り要修正・修正対象)
+>    - その他 Layer 1 必読 (= CLAUDE.md / WORKFLOW.md / lessons_active.md 直近 5 件・cc_role.md 等)
+>
+> 2. **優先 2 — feedback_cc_low_perspective_narrow_view.md の運用宣言** (= 毎ターン提案前に 3 問チェック + 全体構造チェック + 禁止フレーズ確認・違反検出時の即 STOP)
+>
+> 3. **優先 3 — priority_v9_trade_logic_analysis.md の CC 理解誤り修正議論**:
+>    - 「市場局面別解釈」→「タイミング検出器・全相場想定」に修正
+>    - まこさんと議論しながら CC の理解を深める (= 修正反映 → v2 へ)
+>    - ML 進化案 7 件は **白紙化** → 旧 Priority 実態から再導出
+>
+> 4. **優先 4 — seven_step_framework.md の再評価**:
+>    - cat-bitget 制約 (= 件数確保) と矛盾するフレームをどうするか議論
+>    - 7 工程フレーム自体を捨てるか・大幅修正するか・部分修正するか
+>    - 旧 Priority 構造 + cat-bitget 制約 (= 月 $1,900 / 0.12 BTC / 5 分足) から逆算した新フローを CC が独自設計
+>
+> 5. **優先 5 — 工程 2 議論再開** (= 優先 3-4 の議論結果を踏まえて):
+>    - 必要 Entry 件数 × 1 件 NET の **戦略タイプ別シナリオ** 確定 (= スキャル / 中期 / 長期保持の選択)
+>    - その上で Entry / Exit / Position Sizing の構造設計
+>
+> 6. **優先 6 — 工程 1 視認チェック「精度微妙」のフォロー**:
+>    - 一旦保留中・優先 5 の構造確定後に再開
+>    - feedback_regime_visual_check (= 最低 10 回調整覚悟) 整合・早計に廃案しない
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (毎セッション必読・読了ゲート対象)
+> - **WORKFLOW.md 改訂42 active** (本ブロック)
+> - **CLAUDE.md** (= Layer 1 必読リスト更新済・3 知識ベース追加)
+> - **`current_redesign_context.md`** (= 経緯サマリ・SessionStart hook で自動表示)
+> - **`technical_analysis_knowledge_base.md`** (= テクニカル辞典・1691 行・**2026-05-26 Layer 1 格上げ**)
+> - **`industry_benchmark_knowledge_base.md`** (= 業界相場・420 行・**2026-05-26 Layer 1 格上げ**)
+> - **`priority_v9_trade_logic_analysis.md`** (= 旧 Priority 構造分析・507 行・**2026-05-26 新設**・⚠️ CC 理解誤り要修正)
+> - **`seven_step_framework.md`** (⚠️ 要再評価・cat-bitget 制約矛盾発覚)
+> - **`step1_regime_design.md` v2.2** (= 工程 1 実装設計書・実装済・保留中)
+> - **lessons_active.md 直近 5 件** (= L-230 → L-229 → L-228 → L-227 → L-226)
+> - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 / §1.4.7 / §1.5 / §1.7**
+> - **`feedback_cc_low_perspective_narrow_view.md`** (auto-memory・**新規・最重要・命令**・2026-05-26)
+> - **`feedback_priority_starting_line_only.md`** (auto-memory・最重要・命令)
+> - **`feedback_writing_style.md`** (auto-memory・最重要)
+> - **`feedback_plain_language.md`** (auto-memory・最重要)
+> - **`feedback_no_unverified_assertions.md`** (auto-memory・最重要・命令)
+> - **`feedback_current_state_verify_before_design.md`** (auto-memory・最重要)
+> - **`feedback_no_options_during_discussion.md`** (auto-memory)
+>
+> #### Layer 2 (タスク特有)
+> - 工程 1 修正時: `step1_regime_design.md` v2.2 + `train_hmm_regime.py` + `build_step1_regime_dashboard.py` + `dashboard/regime_prototype/predictions_v15_*` + `feedback_regime_visual_check.md`
+> - 工程 2-7 議論時: `cc_entry_logic_self_study.md` v6 §13-§20 (= 全 7 領域業界カタログ・⚠️ 業界フレーム逃避リスクあり・参考のみ)
+> - 旧 Priority 詳細議論時: `strategies/cat_v9_decider.py` (823 行) + `config/cat_params_v9.json` (169 行) + `priority_v9_trade_logic_analysis.md`
+>
+> #### Layer 3 (リファレンス)
+> - `false_positive_incident_policy.md`
+> - `exchange_spec.md`
+> - `lessons_archive.md` (L-152 以前)
+> - `chatgpt_seven_step_origin.md` (= ChatGPT 提案要約・⚠️ 要再評価・参考のみ)
+>
+> #### データ・環境
+> - parquet 3 種 (= Phase 0 v3.1 既存・train_2021_2024 + test_2025 + test_2026_q1)
+> - `.venv311` (= hmmlearn 0.3.3 + mlfinpy 0.1.2 + lightgbm 4.6.0 + 他)
+> - 旧 Priority 実績: 月 $370 (= cat-bitget **唯一の実利資産**・スタートライン参照・構造的継承 OK)
+>
+> ### 目的整合性 1 行宣言 (cc_role §1.4.6)
+>
+> - **次タスク** = (1) Step 0 + 知識ベース 3 ファイル全文 read → (2) feedback_cc_low_perspective_narrow_view.md 運用宣言 → (3) priority_v9_trade_logic_analysis.md の CC 理解誤り修正 → (4) seven_step_framework.md 再評価 → (5) 工程 2 議論再開 → (6) 工程 1 視認チェック再開
+> - **現フェーズ目的への貢献根拠** = 本セッションで CC が業界フレーム逃避・視点低い・視野狭い癖を連発し、cat-bitget 制約と矛盾するフレームを「正本」化してしまった。次セッションでこれを修正し、旧 Priority 実態 + cat-bitget 制約逆算で新フローを CC が独自設計する必要がある。トレード知識を Layer 1 格上げ + CC 矯正 feedback memory 新設で運用ルールを強化した。
+
+---
+
+## 🧊 改訂41 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-25 改訂41・**工程 1 (相場の状態判定・レジーム判定) 詳細設計確定 + step1_regime_design.md v2 完成 (= 実装詳細 11 項目全確定) + 経緯サマリ自動 load 仕組み化 (= current_redesign_context.md + SessionStart hook) + 設計提案前 4 問形式義務 (= feedback_writing_style.md) + 対話文義務 (= feedback_plain_language.md) + 業界実証 WebSearch verify 済 14 指標 × 6 時間軸 = 84 次元入力 + HMM 教師なし学習 + Walk-Forward Purged K-Fold 5 fold + オンライン Viterbi 100 時間窓 + L-229 追加**・次タスク = まこさん判断 (= 工程 1 実装着手 or 工程 2 詳細詰め)）
 
 > **【現在の正本ブロック・改訂41・2026-05-25 セッション末（工程 1 詳細設計確定）】**
 >
@@ -369,9 +491,9 @@ Critical/Major 判定を伴わない確認程度はこちら。
 > `step1_regime_design.md` v1 → v2 (= 実装詳細 11 項目全確定・新セッション CC が即実装着手できるレベル):
 >
 > - 判定間隔 1 時間 / ヒステリシス連続 2 回 (= 2 時間相当) / 3 種類分類 (= 上昇 / 下落 / レンジ)
-> - HMM (Hidden Markov Model) 教師なし学習 (= covariance_type=full / n_iter=100 / tol=0.01 / random_state=42)
+> - HMM (Hidden Markov Model) 教師なし学習 (= covariance_type=diag / n_iter=100 / tol=0.01 / random_state=42 ・ step1_regime_design.md v2.1 で diag に変更・過学習防止)
 > - 入力 14 指標 × 6 時間軸 = 84 次元 (= ベース 2 + トレンド方向性 3 + 移動平均 3 + 一目均衡表 2 + モメンタム 2 + ボラ 2・業界実証 WebSearch verify 済)
-> - 業界実証 verify で log_returns (= zscore_return_20b 代替) + rolling_volatility (= realized_vol_20b 代替) を追加発見 (= 業界 default として必須)
+> - 業界実証 verify で log_returns + rolling_volatility をベース指標として確定 (= 業界 default として必須・Phase 0 v3.1 に存在しないため新規生成必要・step1_regime_design.md v2.2 §2.12 整合)
 > - 前処理 RobustScaler を Pipeline で fold 毎 fit / NaN は学習時 drop (= 約 5% 削除)
 > - 評価 Walk-Forward + Purged K-Fold 5 fold / purge 24 時間 / embargo 24 時間 / mlfinpy.PurgedKFold 使用
 > - 状態ラベル付け = 1h DI 差中央値で機械的命名 + 妥当性チェック (= レンジの ADX が他より低い)
@@ -429,6 +551,7 @@ Critical/Major 判定を伴わない確認程度はこちら。
 > #### Layer 1 (毎セッション必読)
 > - **WORKFLOW.md 改訂41 active** (本ブロック)
 > - **`current_redesign_context.md`** (= 経緯サマリ・SessionStart hook で自動表示)
+> - **`seven_step_framework.md`** (= 7 工程フレーム全体構成正本・各 step{N}_*.md 詳細設計書の上位文書・2026-05-26 新設)
 > - **`step1_regime_design.md` v2** (= 工程 1 実装設計書・11 項目全確定)
 > - **CLAUDE.md**
 > - **lessons_active.md 直近 5 件** (= L-229 → L-228 → L-227 → L-226 → L-225)

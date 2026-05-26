@@ -1,6 +1,6 @@
 # なぜ今フロー改善・ML 内容見直しをしているのか (経緯サマリ)
 
-最終更新: 2026-05-25
+最終更新: 2026-05-26
 位置付け: 新セッション開始時に CC (Claude Code・実装担当 AI) が即座に「何をやっているか」を理解するためのファイル。
 このファイルは SessionStart hook (セッション開始時に自動実行されるコマンド) で必ず読み込まれる。
 
@@ -118,12 +118,15 @@ CC のトレード ML 業界標準の理解度が浅いことが原因で過去�
 - 判定間隔: 1 時間ごと (= 5 分足 BOT でも環境認識は上位足で行う・業界 MTF (Multi Time Frame・複数時間軸) 設計に整合)
 - 切替の慣性: 連続 2 回同じ判定が出てから切替 (= 2 時間ヒステリシス相当)
 - 分類数: 3 種類 (上昇 / 下落 / レンジ)
-- アルゴリズム: HMM (Hidden Markov Model・隠れマルコフモデル・相場の隠れた状態を確率的に推定する手法) を採用
-- 入力 (= 特徴量):
+- アルゴリズム: HMM (Hidden Markov Model・隠れマルコフモデル・相場の隠れた状態を確率的に推定する手法) を採用・covariance_type=diag (= 過学習防止・step1_regime_design.md v2.1 で full から変更)
+- 入力 (= 特徴量・14 指標 × 6 時間軸 = 84 次元・詳細は step1_regime_design.md v2.2 §2.2):
   - 6 時間軸 (5 分 / 15 分 / 30 分 / 1 時間 / 4 時間 / 日足)
-  - トレンド系 (ADX / DI+ / DI- / SMA との位置)
-  - モメンタム系 (RSI / MACD / Stochastic)
-  - ボラティリティ系 (ATR / Bollinger Band 幅 / 実現ボラティリティ)
+  - ベース系 (log_returns, rolling_volatility) ← 業界 default 必須・Phase 0 v3.1 に存在しないため新規生成
+  - トレンド方向性 (ADX14 / DI+ / DI-)
+  - 移動平均線 (close_vs_sma20_pct / close_vs_sma50_pct / close_vs_ema200_pct)
+  - 一目均衡表 (close_vs_tenkan_pct / close_vs_kijun_pct)
+  - モメンタム (RSI14 / MACD ヒストグラム pct)
+  - ボラティリティ (ATR14 pct / Bollinger Band 幅 pct)
 - 前処理: RobustScaler (= 外れ値に強いスケーリング) を Pipeline で fold 毎 fit (= データリーク防止)
 - 学習評価: Walk-Forward + Purged K-Fold 5 fold
 - 出力: 3 状態 (上昇 / 下落 / レンジ) の確率

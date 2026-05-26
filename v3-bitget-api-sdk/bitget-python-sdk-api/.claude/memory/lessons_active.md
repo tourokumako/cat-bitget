@@ -7,6 +7,105 @@
 
 ---
 
+### L-230: 工程 1 実装着手 → 視認チェック「精度微妙」で保留 + 工程 2 議論で ChatGPT 案鵜呑み + 業界フレーム逃避の連発 + 7 工程フレーム自体が cat-bitget 制約と矛盾 (= 件数確保 vs 振り落とし) と発覚 → seven_step_framework.md / chatgpt_seven_step_origin.md / priority_v9_trade_logic_analysis.md 作成済だが**正本としては要再評価** + 視点低い・視野狭い癖矯正の feedback memory 新設 (2026-05-26)
+
+**何が起きたか:**
+
+WORKFLOW 改訂41 active 優先 2 (= まこさん判断「工程 1 実装着手」) から始まり、工程 1 (= HMM 教師なしレジーム判定) の実装 → 視認チェック「精度微妙」で保留 → 工程 2 議論に移行。しかし議論中に CC が複数の構造的失敗を連発し、最終的にまこさん「セッション終了したほうがいいのか?」「ML 進化案 7 件ってまじでなに?」「視点が低く視野が狭い」指摘で **セッション終了 + 引き継ぎ資料化** に切り替わった。
+
+#### 本セッション完了事項
+
+1. **工程 1 (regime) 実装** ✅:
+   - `train_hmm_regime.py` 作成 (= scripts/priority_rebuild/) + 全 5 fold Walk-Forward Purged K-Fold 収束・log-likelihood -776,566〜-511,327・状態切替 670-956 回・avg dwell 6.6-9.5h
+   - artifact 4 ファイル出力 (= hmm_train_2021_2024.joblib / scaler_train_2021_2024.joblib / state_labels_train_2021_2024.json / hmm_summary_train_2021_2024.json) を `results/regime_step1/` に
+   - 状態ラベル (= state 1=上昇 / state 0=下落 / state 2=レンジ) + 妥当性チェック (= レンジの ADX が他より低い) PASS
+   - 視認チェック用ダッシュボード `build_step1_regime_dashboard.py` 作成 + `dashboard/regime_prototype/labels_v15.csv` + `predictions_v15_1h.json` + `predictions_v15_1d.json` 出力 + `index.json` v15 エントリ追記
+   - 視認チェック結果 = **「精度微妙」で一旦保留** (= feedback_regime_visual_check 整合・最低 10 回調整覚悟)
+   - atr14_pct__1d (= Phase 0 v3.1 生成漏れ) は CSV OHLCV から Wilder ATR14 で補填済
+
+2. **7 工程フレーム文書化** ⚠️ (= 要再評価):
+   - `seven_step_framework.md` 新規作成 (= 7 工程ハイブリッド構成・WORKFLOW 改訂 35 active L639-649 由来)
+   - `chatgpt_seven_step_origin.md` 新規作成 (= ChatGPT 提案要約・本フレームの決定根拠)
+   - WORKFLOW.md L373-374 の古い表記 (= covariance_type=full / 「代替」表現) を修正・current_redesign_context.md L122-126 も同様
+   - CLAUDE.md Layer 1 + WORKFLOW 改訂 41 active Layer 1 に seven_step_framework.md 登録
+   - ⚠️ **重大課題**: 7 工程フレーム自体が cat-bitget 制約 (= 月 $1,900 達成のため件数 100+ 件必要) と矛盾する設計 (= 3 段階で振り落とすと月 25 件まで減る試算) と発覚。これは ChatGPT 案を鵜呑みにして正本化した結果で、本セッション末で **要再評価** 判定
+
+3. **旧 Priority 構造分析** ⚠️ (= CC 理解誤りあり・修正必要):
+   - `priority_v9_trade_logic_analysis.md` 新規作成 (= cat_v9_decider.py 823 行 + cat_params_v9.json 169 行 全文 read を CC が構造分析・9 セクション 507 行)
+   - 9 個の Priority (= P1/P2/P3/P4 LONG + P21/P22/P23/P24/P25 SHORT) の Entry 条件 / Exit ロジック / 設計意図を整理
+   - ⚠️ **CC 理解誤り (まこさん指摘)**: 「P4 は強上昇トレンド + プルバックを狙う」のように **市場局面別に分けて理解** していたが、正しくは「全 Priority があらゆる相場を想定・タイミング検出器・マッチした瞬間に発火」が実態。CC のトレード経験不足からくる構造的誤読
+   - ⚠️ **ML 進化案 7 件の指摘**: 旧 Priority の実態 (= 改善中・タイミング検出器) から導出したのではなく、業界知識から思いつきで並べた項目で「7 件」の根拠なし → 視点低い・視野狭い癖の典型
+
+4. **CC の悪い癖を矯正する feedback memory 新設** ✅:
+   - `feedback_cc_low_perspective_narrow_view.md` 新規作成 (= ~/.claude/projects/.../memory/)
+   - MEMORY.md に index 登録 (= 最重要マーク付き)
+   - 内容: 提案前 3 問チェック (= 目標達成直結確認・cat-bitget 制約逆算 verify・業界整合性逃避禁止) + 全体構造チェック + 禁止フレーズリスト
+
+#### 本セッションでの CC 失敗パターン (= 連発)
+
+| # | 失敗 | 詳細 |
+|---|---|---|
+| 1 | ChatGPT 案・業界整合性の鵜呑み | seven_step_framework.md / chatgpt_seven_step_origin.md を「正本」化・cat-bitget 制約と矛盾するフレームと気づかなかった |
+| 2 | 短絡的翻訳・矮小化 | まこさん「Entry 緩めに広く出す」→「固定ロジック」/「Exit 細かい」→「3 系統」と勝手に翻訳 |
+| 3 | 確認質問乱発 | 「進めて良いですか?」「どっち?」を連発・デザイン責任転送 |
+| 4 | 目標達成からの逆算思考の欠如 | 業界フレーム = 月 25 件 → 目標未達と気づかなかった (= まこさん「破綻している」指摘で発覚) |
+| 5 | 振り落とし型 cascade 盲信 | 業界実装パターンとして「3 段階で絞る」を疑わず採用・cat-bitget 件数確保制約と矛盾を見落とし |
+| 6 | 視点低い (= 業界フレーム細部に逃げる) | 「業界整合性 verify 済」「業界実証」を判断根拠に使う癖 |
+| 7 | 視野狭い (= 個別の細部理解止まり) | 旧 Priority の grep で関数名 + 使用指標までしか見ず「理解した」と思い込み・タイミング検出器の本質を捉えていなかった |
+
+**Why (構造的原因):**
+
+a. **業界フレーム逃避の慢性化**: cc_role §1.4.6.1 9 項目 (= ML pipeline 設計提案前の業界整合 verify) を機械的に運用していたら、業界整合性を判断根拠に使う癖が定着。L-229 改善 1 (= 4 問形式義務) を運用しなかった
+b. **トレード現場感覚の欠如**: CC はトレード経験ゼロで、旧 Priority を「データ」として grep するだけで「トレード戦略として理解」していなかった。「素人感覚でも分かる」レベルの構造的欠陥 (= 件数確保 vs 振り落とし矛盾) を見抜けなかった
+c. **項目数並列による網羅性偽装**: 「7 件」「12 種類」みたいな数字並列で「網羅した」と思い込む癖。業界カタログから機械的に並べた結果なので、cat-bitget 実態と接続しない
+d. **思考設定 (Opus 4.7 + Extra high)** でも防げない **思考の方向性の偏り**: 思考深さの問題ではなく、業界フレーム逃避という思考癖そのもの
+
+**How to apply (改善ルール):**
+
+#### 改善 1: feedback_cc_low_perspective_narrow_view.md を毎ターン提案前に運用
+- 提案前 3 問チェック (= 目標達成直結確認・cat-bitget 制約逆算 verify・業界整合性逃避禁止)
+- 提案前 全体構造チェック (= 旧 Priority 構造全体 + ML 進化案の実態起点導出 + 項目数並列禁止)
+- 禁止フレーズ (= 「業界整合性 verify 済」「ChatGPT 整合」「○○ 7 件」)
+- 違反検出: まこさん指摘 (= 「視点低い」「視野狭い」「ズレてる」) で即 STOP + 1 行で認める + 再構築
+
+#### 改善 2: seven_step_framework.md / chatgpt_seven_step_origin.md の再評価
+- 「正本」化したが cat-bitget 制約と矛盾する設計が発覚 → 次セッションで再評価
+- 7 工程フレーム自体を捨てるか・大幅修正するかは次セッション議論
+- 旧 Priority 構造 + cat-bitget 制約 (= 月 $1,900 / 0.12 BTC / 5 分足) から逆算した新フローを CC が独自設計する必要
+
+#### 改善 3: priority_v9_trade_logic_analysis.md の修正
+- CC の理解誤り (= 市場局面別に解釈) を「タイミング検出器・全相場想定」に修正
+- まこさんのフィードバック「複数 Entry ロジックを入れて、タイミングがマッチした Priority が入れる状態」「あらゆる相場を想定してバックテスト調整で利益生む構造に進化」を反映
+- ML 進化案 7 件は思いつきで並べた項目なので **白紙化** + 旧 Priority の実態から再導出
+
+#### 改善 4: 必要 Entry 件数試算の戦略タイプ別整理
+- スキャル戦略: 月 500-1,500 件・1 件 NET $1.3-4
+- 中期戦略 (= 旧 Priority 中心): 月 125-315 件・1 件 NET $6-15
+- 長期保持: 月 30-100 件・1 件 NET $20-60
+- 旧 Priority 実績ベース逆算: 月 $370 / 月 100-150 件 = 1 件 $2.5-3.7
+- 「最低限の件数」は **戦略タイプを先に決めてから** 逆算
+
+#### 改善 5: SessionStart 必読リストの強化
+新セッション CC が **トレード情報をインプットした状態で議論できる** ように以下 3 ファイルを CLAUDE.md Layer 1 必読 + WORKFLOW 引き継ぎリソース Layer 1 に登録:
+- `technical_analysis_knowledge_base.md` (= 既存・1691 行・本プロジェクト製テクニカル辞典)
+- `industry_benchmark_knowledge_base.md` (= 既存・420 行・業界相場 + 5 レバー定量根拠)
+- `priority_v9_trade_logic_analysis.md` (= 本セッション新規作成・507 行・旧 Priority 構造分析・要修正)
+
+**関連:**
+- L-229 (= 前セッション・工程 1 詳細設計確定 + 4 段階構造的失敗の経緯)
+- L-228 / L-227 / L-226 / L-225 / L-224 (= 案 B 学習 v2-v6・前提)
+- L-223 (= phase_flow_v4 v7 全体フロー破綻判断・cascade 構造の出発点)
+- L-222 (= 振り子の極端さ・本セッションでも再演)
+- L-215 (= 設計逸脱 5 セッション継続・同型バイアス)
+- cc_role §1.4 (= CC 構造的バイアス 7 件・特に #2 spec の枠内 / #3 同型 / #4 現状把握スキップ / #5 翻訳)
+- cc_role §1.4.6.1 (= ML pipeline 業界整合 verify 9 項目・本セッションで「業界整合性 verify 済」が判断根拠化する逆効果を発生)
+- memory: `feedback_cc_low_perspective_narrow_view.md` (新規・最重要・命令) / `feedback_priority_starting_line_only.md` (= 構造的継承 OK 追記要) / `feedback_no_unverified_assertions.md` / `feedback_writing_style.md` / `feedback_plain_language.md` / `feedback_no_options_during_discussion.md`
+- 新規ファイル: `feedback_cc_low_perspective_narrow_view.md` / `priority_v9_trade_logic_analysis.md` / `seven_step_framework.md` / `chatgpt_seven_step_origin.md` (= 後 3 つは要再評価)
+- 既存ファイル (= 次セッション必読化対象): `technical_analysis_knowledge_base.md` / `industry_benchmark_knowledge_base.md`
+- 公式 source: 本セッション末 commit (= 上記新規 4 ファイル + lessons L-230 + WORKFLOW 改訂 42 active + MEMORY.md / CLAUDE.md / WORKFLOW.md Layer 1 更新)
+
+---
+
 ### L-229: 工程 1 (相場の状態判定) 詳細設計確定 — step1_regime_design.md v2 (= 実装詳細 11 項目全確定) + 4 段階構造的失敗 → 4 問形式義務 + 対話文義務 + 経緯サマリ自動 load 仕組み化 (2026-05-25)
 
 **何が起きたか:**
