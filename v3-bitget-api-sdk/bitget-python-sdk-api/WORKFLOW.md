@@ -358,9 +358,123 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-26 改訂43・**🛑 セッション失敗で終了 (= 2 セッション連続・CC 連続再演 4 件) + 6 工程フロー暫定ベース案 ml_pipeline_baseline_v1.md 文書化 + feedback memory 2 件新設 (cat_v9 改造禁止 / 設計議論前ベースアップ義務) + priority_v9_trade_logic_analysis v2 書き直し (= Replay 365 日データ起点 4 軸) + seven_step_framework / chatgpt_seven_step_origin 「破綻判定済・参照用」降格 + L-231 追加** + 次セッション = まこさん新セッション再開待ち）
+## 🔴 現在のフェーズ（2026-05-27 改訂44・**ML pipeline 設計議論決着 + 6 工程 → 8 工程拡張 ([1.5] regime ensemble + [2.5] cluster 分類 新規追加) + ml_pipeline_baseline_v1.md v2 改訂完了 + L-232 追加** + 次セッション = 各フローの設計書・指示書を詰める）
 
-> **【現在の正本ブロック・改訂43・2026-05-26 セッション末（CC 連続再演 4 件でセッション失敗・6 工程フロー暫定ベース案として固定）】**
+> **【現在の正本ブロック・改訂44・2026-05-27 セッション末（議論決着・実装着手前段）】**
+>
+> ### 本セッション (2026-05-27) 完了事項
+>
+> #### 1. 8 工程フロー決着 ✅
+>
+> 6 工程 → 8 工程に拡張 + 各工程の決着事項を確定:
+>
+> | 工程 | 内容 | 主要決着 |
+> |---|---|---|
+> | [1] 特徴量計算層 | 既存 1462 指標 + MTF | 追加なし |
+> | **[1.5] regime 判定** (新規) | 複数判定器 ensemble | HMM + 固定ルール + k-means の束ね・フィルタ強制適用しない |
+> | [2] Entry ML | LightGBM Multi-output | 56 ラベル並列学習 (= 揺れ幅 28 + 決着 28) |
+> | **[2.5] cluster 分類** (新規) | k-means | 3-5 グループ自動分け・グループ別 Exit/Sizing で戦略並立 1.5× |
+> | [3] Sizing + add | Kelly 基準 | cap=5・add は cluster 別固定 (= 暫定 C・バックテスト調整) |
+> | [4] Exit 多層 ML | 階層構造 (3 段階) | 初期保護 → 損益分岐点保護 → トレーリング + cluster 別優先順位 |
+> | [5] Risk 管理 | 固定ルール | ATR/volume/spread 急変で全停止 + 0.12 BTC 上限強制 |
+> | [6] 運用監視 | drift 検知 + 段階的対応 | 軽微 alert / 中度サイズ縮小 / 重度自動停止 |
+>
+> #### 2. ml_pipeline_baseline_v1.md v2 改訂完了 ✅
+>
+> - 全文書き換え・8 工程フロー反映
+> - 5.1× レバー寄与見積追加 (= KB §2.6 ケース B 中央値 5.57× → 月 $2,060)
+> - 設計思想 §3.4-3.7 新規追加 (= regime/cluster 独立工程化根拠 / ラベル設計反省 / 危険度指標 / Exit 階層構造根拠)
+> - WebSearch 業界実証出典 7 件追加
+>
+> #### 3. Web Claude 指摘 3 件への対応完了 ✅
+>
+> - ① Exit 重点設計 → 工程 [4] で階層構造 + cluster 別優先順位として反映
+> - ② cluster 分類組み込み → 独立工程 [2.5] として確定
+> - ③ regime 予測 → 独立工程 [1.5] + 複数判定器 ensemble として確定
+>
+> #### 4. lessons L-232 追加 ✅
+>
+> 本セッション完了事項 + CC 失敗パターン (= 雑な言い切り癖継続 / 文章わかりづらい 4 回連続 / 「下降相場 99%」誤読 / V9 特徴量化矮小化) + 改善ルール 4 件 (= 雑な言い切り自己検出 / 文章修正対応 / 数字解釈 cat-bitget 固有性 verify / 翻訳禁止徹底)。
+>
+> ### 本セッション CC 失敗パターン (= L-230 / L-231 同型再演継続)
+>
+> 1. **雑な言い切り癖**: regime 独立工程化を「業界実証 1.3×」だけで推奨 → 即取り下げ
+> 2. **文章わかりづらい指摘 4 回連続**: feedback_plain_language / writing_style 違反継続
+> 3. **「下降相場 99%」誤読**: V9 ロジック固有の結果を一般化
+> 4. **V9 を特徴量化と矮小化**: 「V9 を ML 学習内容の参考」を CC が翻訳して読み違え
+>
+> 詳細は lessons L-232 参照。
+>
+> ### 次セッション CC 優先順位 (= まこさん指示)
+>
+> 1. **優先 1 — Step 0 + 新規ファイル auto-load 確認**:
+>    - `ml_pipeline_baseline_v1.md` v2 (= 本セッション改訂・8 工程フロー)
+>    - lessons L-232 (= 本セッション失敗パターン + 改善ルール)
+>    - Layer 1 必読 (= CLAUDE.md / WORKFLOW.md / lessons 直近 5 件 / cc_role.md / feedback memory 群)
+>
+> 2. **優先 2 — 各フローの設計書・指示書を詰める** (= まこさん指示):
+>    - 8 工程 (= [1] / [1.5] / [2] / [2.5] / [3] / [4] / [5] / [6]) ごとに設計書 (= 実装仕様レベル) + 実装指示書を作成
+>    - 議論決着事項を実装可能なレベルまで詳細化
+>    - cat-bitget 固有制約 (= 0.12 BTC 上限・5 分足・Bitget API 仕様) を実装に反映
+>
+> 3. **優先 3 — 実装着手** (= 設計書・指示書確定後):
+>    - Phase 0 ラベル拡張 (= 必要なら) / [1.5] regime ensemble 実装 / [2.5] cluster 分類実装 等
+>    - Phase 5 Replay 検証 → 月次 NET 評価
+>
+> 4. **優先 4 — セッション終了処理** (= lessons + WORKFLOW 改訂45 + git commit)
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (毎セッション必読・読了ゲート対象)
+> - **WORKFLOW.md 改訂44 active** (本ブロック)
+> - **CLAUDE.md**
+> - **`ml_pipeline_baseline_v1.md` v2** (= 本セッション改訂・8 工程フロー正本)
+> - **`current_redesign_context.md`** (= 経緯サマリ・SessionStart hook で自動表示)
+> - **`priority_v9_trade_logic_analysis.md` v2** (= 旧 Priority 構造分析)
+> - **`technical_analysis_knowledge_base.md`** (= テクニカル辞典・1691 行)
+> - **`industry_benchmark_knowledge_base.md`** (= 業界相場・5 レバー定量根拠)
+> - **lessons_active.md 直近 5 件** (= L-232 → L-231 → L-230 → L-229 → L-228)
+> - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 / §1.4.7 / §1.5 / §1.7**
+> - **`feedback_cat_v9_no_modification.md`** (auto-memory・最重要・命令)
+> - **`feedback_baseup_before_design_discussion.md`** (auto-memory・最重要・命令)
+> - **`feedback_cc_low_perspective_narrow_view.md`** (auto-memory・最重要・命令)
+> - **`feedback_priority_starting_line_only.md`** (auto-memory・最重要・命令)
+> - **`feedback_writing_style.md`** / **`feedback_plain_language.md`** (auto-memory・最重要)
+> - **`feedback_no_unverified_assertions.md`** (auto-memory・最重要・命令)
+> - **`feedback_trade_ml_knowledge_gap.md`** (auto-memory・最重要)
+>
+> #### Layer 2 (タスク特有)
+> - 設計書・指示書作成時: 各工程の業界実装パターン (= `cc_entry_logic_self_study.md` v6 の該当章 + WebSearch)
+> - 工程 [1.5] regime: `train_hmm_regime.py` + `build_step1_regime_dashboard.py` + KB §13.4 (HMM/GMM)
+> - 工程 [2] Entry ML: `build_labels_pct.py` (= Phase 0 v3.1) + `run_lgbm_phase1_v5_case_f_meta_labeling.py`
+> - 工程 [2.5] cluster: 過去 Phase 4-a の k-means 設計
+> - 工程 [4] Exit: 旧 Priority 12 種類 Exit (= cat_params_v9.json) + KB §19.2 階層構造
+> - データ分析時: `results/replay/replay_BTCUSDT-5m-2025-04-01_03-31_365d.csv` (= 1,157 trades)
+>
+> #### Layer 3 (リファレンス)
+> - `false_positive_incident_policy.md`
+> - `exchange_spec.md` (= Bitget API 仕様)
+> - `lessons_archive.md` (L-152 以前)
+> - **`seven_step_framework.md`** (⛔ 破綻判定済・参照用)
+> - **`chatgpt_seven_step_origin.md`** (⛔ 破綻判定済・参照用)
+>
+> #### データ・環境
+> - parquet 3 種 (= Phase 0 v3.1 既存・train_2021_2024 + test_2025 + test_2026_q1)
+> - `.venv311` (= hmmlearn 0.3.3 + mlfinpy 0.1.2 + lightgbm 4.6.0)
+> - 旧 Priority 実績: 月 $370 (= cat-bitget **唯一の実利資産**・スタートライン参照・cat_v9 改造禁止)
+>
+> ### 目的整合性 1 行宣言 (cc_role §1.4.6)
+>
+> - **次タスク** = (1) Step 0 + 新規ファイル auto-load → (2) 各フローの設計書・指示書を詰める → (3) 設計書確定後の実装着手 → (4) Phase 5 Replay 検証
+> - **現フェーズ目的への貢献根拠** = 本セッションで 8 工程フローの議論決着 (= ml_pipeline_baseline_v2 完成) を達成。次セッションは決着事項を実装可能レベルの設計書・指示書に展開する作業。これが完了すれば実装着手 → Phase 5 Replay 検証 → 月次 NET ≥ $1,900 全月クリア判定 という最終目標への直線経路に乗る。
+
+---
+
+## 🧊 改訂43 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-26 改訂43・**🛑 セッション失敗で終了 (= 2 セッション連続・CC 連続再演 4 件) + 6 工程フロー暫定ベース案 ml_pipeline_baseline_v1.md 文書化 + feedback memory 2 件新設 (cat_v9 改造禁止 / 設計議論前ベースアップ義務) + priority_v9_trade_logic_analysis v2 書き直し (= Replay 365 日データ起点 4 軸) + seven_step_framework / chatgpt_seven_step_origin 「破綻判定済・参照用」降格 + L-231 追加** + 次セッション = まこさん新セッション再開待ち）
+
+> **【改訂43 履歴ブロック・2026-05-26 セッション末（CC 連続再演 4 件でセッション失敗・6 工程フロー暫定ベース案として固定）】**
 >
 > ### 本セッション (2026-05-26 second half) 完了事項
 >

@@ -6,6 +6,82 @@
 
 ---
 
+### L-232: ML pipeline 設計議論セッション・6 工程 → 8 工程拡張で決着 + ml_pipeline_baseline_v2 完成 + CC 雑な言い切り癖 / 文章わかりづらい指摘 4 回連続が継続 (2026-05-27)
+
+**何が起きたか:**
+
+WORKFLOW 改訂43 active 優先 1-5 を実施。前セッション L-231 失敗 (= 連続再演 4 件) から立て直し、議論を段階的に進めて 6 工程 → 8 工程に拡張・ml_pipeline_baseline v2 として全文改訂で決着。Web Claude 指摘 3 件 (= Exit 重点 / cluster 組み込み / regime 再検討) も反映。
+
+#### 本セッション完了事項
+
+1. **8 工程フロー決着** ✅:
+   - 6 工程 → 8 工程に拡張: [1] 特徴量 → [1.5] regime 判定 (= 新規) → [2] Entry ML → [2.5] cluster 分類 (= 新規) → [3] Sizing + add → [4] Exit 多層 → [5] Risk 管理 → [6] 運用監視
+   - 各工程の学習目標 / ラベル / 入出力 / 制約を決着事項として確定
+
+2. **主要決着事項**:
+   - **[1.5] regime 判定**: 複数判定器 ensemble (= HMM + 固定ルール + k-means の束ね)・フィルタとして強制適用しない
+   - **[2] Entry ML**: 56 ラベル並列学習 (= 揺れ幅 28 + 決着 28)・MFE/MAE 単独だった過去 Phase 1 失敗の修正
+   - **[2.5] cluster 分類**: k-means で 3-5 グループ自動分け・グループ別 Exit / Sizing で戦略並立 1.5× レバー
+   - **[3] Position Sizing + add**: Kelly 基準 (= 信頼度 × 過去成績 × ボラ)・cap=5 (= 1 ポジ最大 0.024 BTC)・add は cluster 別固定 (= 暫定 C・バックテストで調整)
+   - **[4] Exit 多層 ML**: 階層構造 (= 3 段階・初期保護 → 損益分岐点保護 → トレーリング) + cluster 別優先順位
+   - **[5] Risk 管理**: 固定ルール (= ATR / volume / spread 急変で全停止 + 0.12 BTC 上限強制)
+   - **[6] 運用監視**: drift 検知 + 段階的対応 (= 軽微 alert / 中度サイズ縮小 / 重度自動停止)
+
+3. **ml_pipeline_baseline_v1.md v2 改訂完了** ✅:
+   - 全文書き換え・8 工程フロー反映・5.1× レバー寄与見積追加 (= KB §2.6 ケース B 中央値 5.57×)
+   - WebSearch 業界実証出典 7 件追加 (= RegimeNAS / RegimeFolio / Triple Barrier 2025 等)
+
+#### 本セッション CC 失敗パターン (= L-230 / L-231 同型再演継続)
+
+| # | 失敗 | 詳細 |
+|---|---|---|
+| 1 | 雑な言い切り癖 (= 業界実証だけを根拠) | regime 独立工程化を「業界実証 1.3×」だけで推奨 → まこさん指摘 (= 過去 ML 失敗・低精度フィルタはマイナス) で即取り下げ |
+| 2 | 文章わかりづらい指摘 4 回連続 | feedback_plain_language / writing_style 違反・専門用語多用・整理不足 (= 「loose coupling」「ensemble」「Kelly」を補足なし使用) |
+| 3 | 「下降相場 99%」誤読 | V9 ロジック固有の結果を BTC 5 分足の一般特性と誤読・まこさん指摘で訂正 |
+| 4 | V9 を「特徴量化」と矮小化 | まこさん「V9 を ML 学習内容の参考にする」発言を CC が「V9 発火条件を bool 列化」と読み違え・feedback_cat_v9_no_modification 同型違反 |
+
+**Why (構造的原因):**
+
+a. **業界フレーム逃避癖の継続**: KB §2.4「業界実証 1.3×」だけを判断根拠に使い、過去 ML 失敗 (= v14 56% / stage3 33%) や cat-bitget 制約を最初に考慮できなかった (= feedback_cc_low_perspective_narrow_view §2.3 禁止フレーズ違反)
+
+b. **専門用語切替の不徹底**: feedback_plain_language は読了済みだが、実際の文章生成で「loose coupling」「ensemble」「Kelly criterion」等を補足なしで使う癖が継続。「わかりづらい」指摘が 4 回続いてから初めて修正に動く
+
+c. **数字の自然な解釈による誤読**: Replay 365 日「99% 下降相場集中」をデータの事実と捉えて「BTC 5 分足の特性」と一般化・実際は V9 ロジック固有の結果
+
+d. **まこさん発言の自分解釈による翻訳**: 「V9 を ML 学習内容の参考」を「V9 を特徴量化」と勝手に翻訳・cc_role §3.3 翻訳禁止違反
+
+**How to apply (改善ルール):**
+
+#### 改善 1: 雑な言い切りパターンの自己検出
+- 「業界実証 N×」「業界主流」だけを判断根拠にした提案を出す前に、cat-bitget 過去事例 (= 失敗例含む) を 1 行 verify
+- 提案前自問: 「この提案が即取り下げになる cat-bitget 固有事情はないか?」
+- まこさん指摘で即取り下げになるパターンは、提案前に自分で気づける構造的問題
+
+#### 改善 2: 文章わかりづらい指摘への対応
+- まこさんから「わかりづらい」と言われた瞬間、専門用語を全部リストアップして補足する
+- 「ensemble」「Kelly」「regime」等の固有名詞は補足必須・例え話で補完
+- 「整理されてない・混在してる」指摘で構造を直してから再提示
+- 提案前に自分で読み返して「ML 知識ゼロの人にも分かるか」を 1 行 verify
+
+#### 改善 3: 数字解釈の cat-bitget 固有性 verify
+- Replay / 実績数値を引用する前に「これは現行ロジック特有か・一般法則か」を 1 行 verify
+- 「下降相場 99%」のような数値は **V9 ロジックの結果** = 新 ML pipeline の前提に使えない
+
+#### 改善 4: 翻訳禁止の徹底 (= cc_role §3.3)
+- まこさん発言を CC が「自分の言葉で言い直す」前に、字面通り受け取って Read back する
+- 解釈に複数候補ある場合は確認質問 1 つだけ出す
+- 「V9 を ML 学習内容の参考」 → 字面通り = 学習構造の参考であって特徴量化ではない
+
+**関連:**
+- L-231 (= 前セッション・連続再演 4 件・本セッションで雑な言い切り癖が継続)
+- L-230 (= 視点低い・視野狭い癖・feedback_cc_low_perspective_narrow_view 新設の根拠)
+- cc_role §3.3 翻訳禁止 / §3.6 専門用語説明義務 / §1.4 構造的バイアス 7 件
+- feedback_plain_language / feedback_writing_style / feedback_cc_low_perspective_narrow_view / feedback_baseup_before_design_discussion
+- 新規・改訂ファイル: `ml_pipeline_baseline_v1.md` v2 (= 6 工程 → 8 工程拡張)
+- 次セッション CC 優先順位: 各フローの設計書・指示書を詰める (= まこさん指示)
+
+---
+
 ### L-231: ML pipeline 設計議論セッションで CC が連続再演 (= 4 件) でセッション失敗 → 6 工程フロー暫定ベース案として ml_pipeline_baseline_v1.md 文書化 + feedback memory 2 件新設 (feedback_cat_v9_no_modification / feedback_baseup_before_design_discussion) + priority_v9_trade_logic_analysis v2 書き直し (= Replay 365 日データ起点 4 軸) + seven_step_framework / chatgpt_seven_step_origin 「破綻判定済・参照用」降格 (2026-05-26)
 
 **何が起きたか:**
