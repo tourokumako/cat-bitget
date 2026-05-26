@@ -134,8 +134,8 @@
 | `bitget-python-sdk-api/WORKFLOW.md` | 現フェーズ・次のタスク・本セッション完了事項・引き継ぎリソース (改訂N active ブロック・履歴は archive) | Read 全文 |
 | `v3-bitget-api-sdk/CLAUDE.md` (本ファイル) | 提案禁止・目標・必読リスト・セッション終了チェック | Read 全文 |
 | `bitget-python-sdk-api/.claude/memory/phase_flow_v4_with_recovery.md` | **ML 学習フロー正本** (Phase 0〜7 / 6 案並列 + Walk-forward Purged K-Fold 5 fold + DSR + 5 指標) | Read 全文 |
-| `bitget-python-sdk-api/.claude/memory/seven_step_framework.md` | **7 工程フレーム全体構成正本** (= 各 step{N}_*.md 詳細設計書の上位文書・2026-05-26 新設・WORKFLOW 改訂 35 active L639-649 由来) ⚠️ L-230 で要再評価判定 (= cat-bitget 制約と矛盾発覚) | Read 全文 |
-| `bitget-python-sdk-api/.claude/memory/priority_v9_trade_logic_analysis.md` | **旧 Priority v9 トレードロジック構造分析** (= cat-bitget 唯一の実利資産・最低スタートライン・cat_v9_decider.py 823 行 + cat_params_v9.json 169 行を CC が構造分析・2026-05-26 新設・⚠️ L-230 で CC 理解誤り判明 (= 市場局面別解釈ではなくタイミング検出器・全相場想定が実態) → 次セッションで修正必要) | Read 全文 |
+| `bitget-python-sdk-api/.claude/memory/priority_v9_trade_logic_analysis.md` | **旧 Priority v9 トレードロジック構造分析** (= cat-bitget 唯一の実利資産・最低スタートライン・cat_v9_decider.py 823 行 + cat_params_v9.json 169 行を CC が構造分析・2026-05-26 v2 で Replay 365 日データ起点で書き直し済) ⚠️ [[feedback_cat_v9_no_modification]] = 改造対象ではない | Read 全文 |
+| `bitget-python-sdk-api/.claude/memory/ml_pipeline_baseline_v1.md` | **ML pipeline 暫定ベース案 v1** (= 2026-05-26 セッション末・6 工程ドラフト・議論のスタート点・確定事項ではない) | Read 全文 |
 | `bitget-python-sdk-api/.claude/memory/technical_analysis_knowledge_base.md` | **テクニカル辞典 + 閾値設計論** (1691 行・§A-D 個別指標 + §I 閾値設計論・トレード議論前のインプット必須・2026-05-26 Layer 1 格上げ・L-230) | Read 全文 |
 | `bitget-python-sdk-api/.claude/memory/industry_benchmark_knowledge_base.md` | **業界相場 + 5 レバー定量根拠** (420 行・出典 47 件・Phase 別合格基準 PnL 紐付け手法・BTC 5m 業界実証・トレード議論前のインプット必須・2026-05-26 Layer 1 格上げ・L-230) | Read 全文 |
 | `bitget-python-sdk-api/.claude/memory/lessons_active.md` **直近 5 件のみ** | 最新教訓・本セッション着手前に読む | Read 先頭 ~300 行のみ |
@@ -162,6 +162,8 @@
 | `bitget-python-sdk-api/.claude/memory/lessons_archive.md` | 古い lessons archive (必要時のみ・Layer 1 で L-204〜L-200 が読了済なら基本不要) |
 | `bitget-python-sdk-api/.claude/rules/web_claude_role.md` | Web Claude (機械照合担当・降格) 冒頭注記のみ参照・本体は archive 参照 |
 | `bitget-python-sdk-api/.claude/memory/regime_research.md` | 🧊 凍結中・素材参照のみ |
+| `bitget-python-sdk-api/.claude/memory/seven_step_framework.md` | ⛔ 破綻判定済 (= 2026-05-26 L-230)・参照用 (cat-bitget 制約矛盾発覚) |
+| `bitget-python-sdk-api/.claude/memory/chatgpt_seven_step_origin.md` | ⛔ 破綻判定済 (= 2026-05-26 L-230)・参照用 (= 7 工程フレームの ChatGPT 出典) |
 
 ---
 

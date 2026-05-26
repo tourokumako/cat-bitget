@@ -3,6 +3,95 @@
 > **構造 (2026-05-22 改訂22 で再整理)**:
 > - active = 2026-05-02 以降の教訓 (L-206〜L-153 + 新規追加 L-207 以降・約 1320 行)
 > - [archive](lessons_archive.md) = L-152 以前 (2026-05-01 以前の Phase 1〜7-a / regime 研究時代教訓・約 2515 行)
+
+---
+
+### L-231: ML pipeline 設計議論セッションで CC が連続再演 (= 4 件) でセッション失敗 → 6 工程フロー暫定ベース案として ml_pipeline_baseline_v1.md 文書化 + feedback memory 2 件新設 (feedback_cat_v9_no_modification / feedback_baseup_before_design_discussion) + priority_v9_trade_logic_analysis v2 書き直し (= Replay 365 日データ起点 4 軸) + seven_step_framework / chatgpt_seven_step_origin 「破綻判定済・参照用」降格 (2026-05-26)
+
+**何が起きたか:**
+
+WORKFLOW 改訂42 active 優先 1-5 (= Step 0 + 知識ベース 3 ファイル Read + 工程 2 議論再開 + 工程 1 視認チェック保留中フォロー + 7 工程フレーム再評価) を実施しようとしたが、CC が以下 4 件の連続再演で議論不能状態に陥り、まこさん「ポンコツすぎ・どうしたらいいの」「破綻してるの? 不安定な状態で議論できるの?」指摘でセッション失敗判定 → 暫定ベース案文書化 + feedback memory 強化で終了。
+
+#### 本セッション完了事項
+
+1. **整合性解消** ✅: seven_step_framework.md + chatgpt_seven_step_origin.md を「破綻判定済・参照用」に降格 + CLAUDE.md Layer 1 から外し Layer 3 へ移動 (= 「正本」フラグと L-230 破綻判定の矛盾解消)
+
+2. **priority_v9_trade_logic_analysis.md v1 → v2 書き直し** ✅:
+   - §4.5「市場局面別」表 → 「指標 AND 条件パターン検出器」+ Replay 365 日 Priority 別実績表に置換
+   - §5「業界カタログ 7 件思いつき」→ Replay データ起点 4 軸 (regime カバレッジ拡張 / Exit 早期化 / 単価上げ / LONG 系修正) に書き直し
+   - §6「件数試算」→ データ起点 4 経路寄与見積 (合計 +$1,230-1,630/月)
+   - §8「CC 理解状態」→ 誤読経緯 + 事実記録 + 次作業候補
+
+3. **feedback memory 2 件新設** ✅:
+   - `feedback_cat_v9_no_modification.md` (= cat_v9 は ML スタートライン参照素材であり改造対象ではない・Replay データから具体改造案を出した瞬間に違反)
+   - `feedback_baseup_before_design_discussion.md` (= 設計議論前 KB Read + WebSearch 必須・記憶ベース断定発言禁止)
+   - MEMORY.md index 追加済
+
+4. **ml_pipeline_baseline_v1.md 新規作成** ✅: まこさん提示の 6 工程ドラフトを暫定ベース案として記録 (= 議論のスタート点・確定事項ではない・1 字 1 句一致義務)
+
+5. **CLAUDE.md Layer 1 必読リスト更新** ✅: ml_pipeline_baseline_v1.md 追加 + priority_v9_trade_logic_analysis.md v2 反映
+
+#### 本セッションでの CC 失敗パターン (= 連続再演)
+
+| # | 失敗 | 詳細 |
+|---|---|---|
+| 1 | cat_v9 改造発想 | feedback_cat_v9_no_modification を書いた直後の発言で P1 SL_PCT 5% → 1% / P23 BB ミドル上昇転換 Exit 追加 等の具体改造案を提案 → まこさん「cat_v9_decider.py を改善するわけではない・何回この説明させるんだよ」で訂正 |
+| 2 | 「議論やめて聞くだけ」提案 | cc_role §1.5 デザイン責任放棄を申し出る → まこさん「は?」で訂正 |
+| 3 | 「Entry ML 精度上げやすい」記憶ベース断定 | KB 未読のまま「Entry ML > Exit ML」と断定 → KB §2.2 では「Exit 改善の方が PnL 寄与大」で逆方向 → feedback_no_unverified_assertions 違反 → feedback_baseup_before_design_discussion 新設 |
+| 4 | 業界整合修正案で 7 工程フレーム再提案 | cc_entry_logic_self_study v6 §13.6 / §14.8 (= 7 工程フレーム前提) を引用源として使い、本セッション冒頭で「破綻判定済」に降格したフレームを復活 → まこさん「これ最初の案で却下したやつじゃん」で訂正 |
+
+**Why (構造的原因):**
+
+a. **メモリ書いた直後の違反パターン**: feedback memory を作成しても、直後の発言で内在化できず違反する。記憶機構が機能していない or 提案前 memory grep 確認の運用が機械的に通っていない
+
+b. **引用源の前提を見抜けない**: cc_entry_logic_self_study v6 が 7 工程フレーム前提で書かれていることを CC は把握していたが、引用時に「業界整合の各工程実装」を取りに行ったつもりが、フレーム自体を引きずってきた (= feedback_design_transition_grep_sweep L-181 違反の再演)
+
+c. **設計議論で能動的論点を出すと毎回業界カタログ並列 / フレーム逃避 / 抽象論に流れる**: cc_role §1.5 デザイン責任を引き受けようとすると、CC の「視点低い・視野狭い」癖が起動し、業界カタログから機械的に並列で論点を並べる癖が再演する
+
+d. **ベースアップ作業 (= KB Read + WebSearch) を実施しても引用源の妥当性 verify が抜ける**: KB を Read しても、その引用源自体の前提 (= 7 工程フレーム前提など) を見抜けず鵜呑みにする
+
+**How to apply (改善ルール):**
+
+#### 改善 1: 提案前 memory grep 確認の機械的運用
+- 設計議論で発言を出す前に、関連 feedback memory 全件 (= feedback_cat_v9_no_modification / feedback_baseup_before_design_discussion / feedback_cc_low_perspective_narrow_view / feedback_priority_starting_line_only / feedback_no_unverified_assertions 等) を Grep で再読 → 違反していないか 1 行ずつ verify
+- 機械的に通さない (= 「読んだつもり」)・チャットに verify 結果を 1 行出してから発言
+
+#### 改善 2: 引用源の前提 verify 義務
+- KB / メモリ / 仕様書を引用する前に、引用源自体の「前提条件」「位置付け」「破綻判定の有無」を verify
+- 例: cc_entry_logic_self_study v6 は 7 工程フレーム前提 → 引用時はフレーム部分を引きずらない・各工程の実装パターン部分のみ抽出
+- feedback_design_transition_grep_sweep (L-181 命令) と統合運用
+
+#### 改善 3: 設計議論時の制約強化
+- 1 ターン 1 論点 (= 並列で複数論点を並べない)
+- 表で整理する前にプレーンテキストで結論を 1 行書く (= 表は「項目数で網羅した気になる癖」の温床)
+- 「業界整合」「KB 引用」を判断根拠として使う前に、cat-bitget 制約 (= 0.12 BTC / 5 分足 / 月 $1,900 / 件数 or 単価) からの逆算を 1 行書く
+
+#### 改善 4: 次セッション CC の暫定ベース案運用
+- ml_pipeline_baseline_v1.md を「確定」と扱わず「議論のスタート点」として運用
+- 6 工程フローを 1 工程ずつ詰める (= [1] → [6] の順) ・並列で全工程議論しない
+- 各工程の議論前に該当 KB § Read + WebSearch ベースアップ実施
+
+#### 改善 5: 次セッション開始時の必読強化
+- ml_pipeline_baseline_v1.md (新規・Layer 1)
+- feedback_cat_v9_no_modification (新規・MEMORY auto-load)
+- feedback_baseup_before_design_discussion (新規・MEMORY auto-load)
+- L-231 (本 lesson)
+- これらを読んだ上で初めて議論再開可
+
+**関連:**
+- L-230 (= 前セッション・7 工程フレーム破綻判定 + 視点低い・視野狭い癖 feedback memory 新設・本セッションで 4 件再演)
+- L-229 / L-228 / L-227 / L-226 (= 過去 4 セッション・案 B 学習 v2-v6)
+- L-216 (= handoff_to_cc_v* 廃止・WORKFLOW.md 単一正本化)
+- L-215 (= 設計逸脱 5 セッション継続・同型バイアス・本セッションも同型)
+- L-181 (= 設計転換時 旧記述全 grep sweep・本セッションで再演)
+- cc_role §1.4 #2 (= spec 枠内) / #3 (= 同型バイアス) / #4 (= 現状把握スキップ) / #5 (= 翻訳) / #7 (= 確認質問乱発)
+- cc_role §1.4.6 / §1.4.6.1 (= 目的整合性ゲート + ML pipeline 業界整合 verify) - 本セッションで運用失敗
+- cc_role §1.5 デザイン責任 - 本セッションで「議論やめて聞くだけ」提案で違反
+- 新規 memory: feedback_cat_v9_no_modification / feedback_baseup_before_design_discussion
+- 新規ファイル: ml_pipeline_baseline_v1.md
+- 公式 source: 本セッション末 commit (上記新規 3 ファイル + priority_v9_trade_logic_analysis v2 + seven_step_framework 降格 + chatgpt_seven_step_origin 降格 + CLAUDE.md Layer 1 更新 + L-231 + WORKFLOW 改訂43 active + MEMORY.md index 更新)
+
+---
 > - **Step 0 では active 直近 5 件のみ全文読了で十分**。残りは必要時参照。
 
 ---

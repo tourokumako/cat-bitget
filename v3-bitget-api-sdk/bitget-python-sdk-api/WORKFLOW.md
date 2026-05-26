@@ -358,7 +358,118 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-26 改訂42・**🛑 セッション失敗で終了 + 引き継ぎ資料化 + CC 思考癖 (= 視点低い・視野狭い) 矯正 feedback memory 新設 + 知識ベース 3 ファイル Layer 1 格上げ + L-230 追加** + 次セッション = まこさん新セッション再開待ち）
+## 🔴 現在のフェーズ（2026-05-26 改訂43・**🛑 セッション失敗で終了 (= 2 セッション連続・CC 連続再演 4 件) + 6 工程フロー暫定ベース案 ml_pipeline_baseline_v1.md 文書化 + feedback memory 2 件新設 (cat_v9 改造禁止 / 設計議論前ベースアップ義務) + priority_v9_trade_logic_analysis v2 書き直し (= Replay 365 日データ起点 4 軸) + seven_step_framework / chatgpt_seven_step_origin 「破綻判定済・参照用」降格 + L-231 追加** + 次セッション = まこさん新セッション再開待ち）
+
+> **【現在の正本ブロック・改訂43・2026-05-26 セッション末（CC 連続再演 4 件でセッション失敗・6 工程フロー暫定ベース案として固定）】**
+>
+> ### 本セッション (2026-05-26 second half) 完了事項
+>
+> #### 1. 整合性解消 ✅
+> - seven_step_framework.md / chatgpt_seven_step_origin.md = 冒頭に「⛔ 破綻判定済・参照用」明記
+> - CLAUDE.md Layer 1 必読リストから seven_step_framework.md を削除 → Layer 3 (リファレンス) に降格
+> - 「正本」フラグと L-230 破綻判定の矛盾解消
+>
+> #### 2. priority_v9_trade_logic_analysis.md v1 → v2 書き直し ✅
+> - §4.5 = 「市場局面別」誤読表 → 「指標 AND 条件パターン検出器」+ Replay 365 日 Priority 別実績表に置換
+> - §5 = 「業界カタログ 7 件思いつき」→ Replay データ起点 4 軸 (regime カバレッジ拡張 / Exit 早期化 / 単価上げ / LONG 系修正) に書き直し
+> - §6 = 件数試算 → データ起点 4 経路寄与見積 (合計 +$1,230-1,630/月)
+> - §8 = CC 理解状態 → 誤読経緯 + 事実記録 + 次作業候補
+>
+> #### 3. feedback memory 2 件新設 ✅
+> - `feedback_cat_v9_no_modification.md` (= cat_v9 は ML スタートライン参照素材であり改造対象ではない・Replay データから具体改造案を出した瞬間に違反)
+> - `feedback_baseup_before_design_discussion.md` (= 設計議論前 KB Read + WebSearch 必須・記憶ベース断定発言禁止)
+> - MEMORY.md index 追加済 (= 最重要・命令マーク)
+>
+> #### 4. ml_pipeline_baseline_v1.md 新規作成 ✅ (= 暫定ベース案文書化)
+> - まこさん提示の 6 工程ドラフトを暫定ベース案として 1 字 1 句一致で記録
+> - 議論のスタート点・確定事項ではない・CC が「確定」と扱うことを禁止
+> - 議論未確定事項を §4 で明示 (= 次セッションで詰める対象)
+> - 設計思想 (= Entry/Exit 密接関係・マルチタスク学習理想・連鎖学習現実落とし所) を §3 で記録
+>
+> #### 5. lessons L-231 追加 ✅ (= 本セッション失敗 4 件 + 改善ルール 5 件)
+>
+> ### 本セッション CC 失敗パターン (= 連続再演)
+>
+> 1. **cat_v9 改造発想** (= feedback_cat_v9_no_modification を書いた直後の発言で違反)
+> 2. **「議論やめて聞くだけ」提案** (= cc_role §1.5 デザイン責任放棄)
+> 3. **「Entry ML 精度上げやすい」記憶ベース断定** (= feedback_no_unverified_assertions 違反)
+> 4. **業界整合修正案で 7 工程フレーム再提案** (= L-230 破綻判定済 + 本セッション冒頭で降格作業したフレームを復活)
+>
+> 詳細は lessons L-231 参照。
+>
+> ### 次セッション CC 優先順位
+>
+> 1. **優先 1 — Step 0 + 新規ファイル auto-load 確認**:
+>    - **`ml_pipeline_baseline_v1.md`** (= 本セッション新設・6 工程暫定ベース案・必読)
+>    - **`feedback_cat_v9_no_modification.md`** (auto-memory・最重要・命令・本セッション新設)
+>    - **`feedback_baseup_before_design_discussion.md`** (auto-memory・最重要・命令・本セッション新設)
+>    - **`priority_v9_trade_logic_analysis.md` v2** (= 本セッション書き直し・Replay データ起点 4 軸)
+>    - **lessons L-231** (= 本セッション失敗パターン + 改善ルール)
+>    - その他 Layer 1 必読 (= CLAUDE.md / WORKFLOW.md / lessons 直近 5 件 / cc_role.md / feedback memory 群)
+>
+> 2. **優先 2 — 6 工程暫定ベース案を 1 工程ずつ詳細詰め**:
+>    - 順序: [1] 特徴量計算層 → [2] Entry ML → [3] Position Sizing ML → [4] Exit 多層 ML → [5] Risk 管理 → [6] 運用監視
+>    - 各工程で議論前に該当 KB § Read + WebSearch ベースアップ実施 (= [[feedback_baseup_before_design_discussion]] 整合)
+>    - 1 ターン 1 論点 (= 並列複数論点禁止・[[feedback_cc_low_perspective_narrow_view]] 整合)
+>    - cat_v9 改造発想に流れたら即 STOP (= [[feedback_cat_v9_no_modification]] 整合)
+>
+> 3. **優先 3 — 各工程の学習対象 / 特徴量 / ラベル / 評価指標を確定**
+>
+> 4. **優先 4 — 設計確定後の実装着手**
+>
+> 5. **優先 5 — セッション終了処理** (lessons + WORKFLOW 改訂44 + git commit)
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (毎セッション必読・読了ゲート対象)
+> - **WORKFLOW.md 改訂43 active** (本ブロック)
+> - **CLAUDE.md** (= Layer 1 必読リスト更新済)
+> - **`ml_pipeline_baseline_v1.md`** (= 本セッション新設・暫定ベース案・6 工程フロー)
+> - **`current_redesign_context.md`** (= 経緯サマリ・SessionStart hook で自動表示)
+> - **`priority_v9_trade_logic_analysis.md` v2** (= 本セッション書き直し)
+> - **`technical_analysis_knowledge_base.md`** (= テクニカル辞典・1691 行)
+> - **`industry_benchmark_knowledge_base.md`** (= 業界相場・420 行)
+> - **`step1_regime_design.md` v2.2** (= 工程 1 実装設計書・保留中)
+> - **lessons_active.md 直近 5 件** (= L-231 → L-230 → L-229 → L-228 → L-227)
+> - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 / §1.4.7 / §1.5 / §1.7**
+> - **`feedback_cat_v9_no_modification.md`** (auto-memory・**新規・最重要・命令**・2026-05-26)
+> - **`feedback_baseup_before_design_discussion.md`** (auto-memory・**新規・最重要・命令**・2026-05-26)
+> - **`feedback_cc_low_perspective_narrow_view.md`** (auto-memory・最重要・命令)
+> - **`feedback_priority_starting_line_only.md`** (auto-memory・最重要・命令)
+> - **`feedback_writing_style.md`** (auto-memory・最重要)
+> - **`feedback_plain_language.md`** (auto-memory・最重要)
+> - **`feedback_no_unverified_assertions.md`** (auto-memory・最重要・命令)
+> - **`feedback_current_state_verify_before_design.md`** (auto-memory・最重要)
+> - **`feedback_no_options_during_discussion.md`** (auto-memory)
+> - **`feedback_trade_ml_knowledge_gap.md`** (auto-memory・最重要)
+>
+> #### Layer 2 (タスク特有)
+> - 6 工程詳細詰め時: `cc_entry_logic_self_study.md` v6 (= ⚠️ 7 工程フレーム前提で書かれている点に注意・引用時はフレーム部分を引きずらない・各工程の業界実装パターン部分のみ抽出)
+> - 工程 1 議論時: `step1_regime_design.md` v2.2 + `train_hmm_regime.py` + `build_step1_regime_dashboard.py`
+> - データ分析時: `results/replay/replay_BTCUSDT-5m-2025-04-01_03-31_365d.csv` (= 1,157 trades・累計 NET $4,506)
+>
+> #### Layer 3 (リファレンス)
+> - `false_positive_incident_policy.md`
+> - `exchange_spec.md`
+> - `lessons_archive.md` (L-152 以前)
+> - **`seven_step_framework.md`** (⛔ 破綻判定済・参照用)
+> - **`chatgpt_seven_step_origin.md`** (⛔ 破綻判定済・参照用)
+>
+> #### データ・環境
+> - parquet 3 種 (= Phase 0 v3.1 既存・train_2021_2024 + test_2025 + test_2026_q1)
+> - `.venv311` (= hmmlearn 0.3.3 + mlfinpy 0.1.2 + lightgbm 4.6.0 + 他)
+> - 旧 Priority 実績: 月 $370 (= cat-bitget **唯一の実利資産**・スタートライン参照・構造的継承 OK・cat_v9 改造禁止)
+>
+> ### 目的整合性 1 行宣言 (cc_role §1.4.6)
+>
+> - **次タスク** = (1) Step 0 + 新規ファイル auto-load → (2) ml_pipeline_baseline_v1.md ベースに 6 工程暫定ベース案を 1 工程ずつ詳細詰め → (3) 各工程の学習対象 / 特徴量 / ラベル / 評価指標確定 → (4) 設計確定後の実装着手
+> - **現フェーズ目的への貢献根拠** = 本セッションで CC が連続再演 4 件 (= cat_v9 改造発想 / デザイン責任放棄 / 記憶ベース断定 / 7 工程フレーム再提案) を起こしたが、暫定ベース案 ml_pipeline_baseline_v1.md として 6 工程フローを文書化 + feedback memory 2 件新設で再演防止策を強化 + priority_v9_trade_logic_analysis v2 で Replay データ起点 4 軸の事実記録を残した。次セッションは新規ファイル auto-load で CC が暫定ベース案から議論を出発させ、各工程を 1 ターン 1 論点で詰める形に進める。
+
+---
+
+## 🧊 改訂42 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-26 改訂42・**🛑 セッション失敗で終了 + 引き継ぎ資料化 + CC 思考癖 (= 視点低い・視野狭い) 矯正 feedback memory 新設 + 知識ベース 3 ファイル Layer 1 格上げ + L-230 追加** + 次セッション = まこさん新セッション再開待ち）
 
 > **【現在の正本ブロック・改訂42・2026-05-26 セッション末（CC 失敗連発でセッション終了・引き継ぎ資料化）】**
 >
