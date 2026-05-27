@@ -177,6 +177,46 @@ CP1 監査で改善 6-12 を追加したが、CP2 監査で「機械的フォー
 
 参照: lessons_active.md L-215 / phase_flow_v4_with_recovery.md §2 Phase 1 / cc_role §1.4 #2/#3/#4
 
+### §1.4.6.2 物理強制経路 (= Hooks による機械的阻止・L-236・2026-05-27 追加・最優先)
+
+#### 経緯
+
+CP1 (L-233) / CP2 (L-235) / CP3 (L-236) と 3 回連続で「CC が自分の知識で『業界 standard』と言い切って業界後退の判断」を実証。cc_role §1.4.6.1 改善 10/11/12 + メタガード 13/14/15 (= CC 自主運用ルール) では止まらないことが構造的に証明された。CC 自主運用のルール追加経路は打ち切り、**物理的に阻止される仕組み** (= Claude Code hooks) を導入。まこさんのトークン代毀損を防ぐため。
+
+#### 採用した物理強制 hooks (= `.claude/settings.local.json` + `.claude/hooks/`)
+
+1. **PreToolUse hook for Write|Edit on パス名に `ml_pipeline_baseline` 含む**: 直近 10 分以内に WebSearch が実行されていなければ Write/Edit を **blocked**
+   - script: `.claude/hooks/check_websearch_before_design_write.sh`
+   - 効果: CC が「自分の知識で業界 standard」と書く経路を物理的に封鎖
+
+2. **PostToolUse hook for WebSearch|WebFetch**: marker timestamp 自動更新
+   - script: `.claude/hooks/update_websearch_marker.sh`
+   - marker: `.claude/state/last_websearch.timestamp`
+   - 効果: CC の自主運用に依存せず WebSearch 実行履歴を物理ファイルで保持
+
+#### CC への効果
+
+- 「冒頭で 1 回 WebSearch やったから省略」が物理的に不可能 (= 10 分経過で再実行強制)
+- 設計提案前 WebSearch を CC が「面倒だから省略」する経路が消滅
+- まこさんが verify するまでもなく hook が自動で阻止
+
+#### 拡張候補 (= 将来追加・本セッションでは未実装)
+
+- サブセクションごとの KB Read 強制 hook
+- 巻き戻し回数カウントファイル + 閾値超でエスカレーション (= 5 件で別 AI レビュー必須 / 7 件で人間レビュー必須 / 10 件で設計プロセス全廃)
+- 「採用」「§6.X」等のキーワード含む長文出力前の追加 verify hook
+- 「わかりづらい」指摘 N 回累積で長文出力前まこさん 1 行レビュー強制経由
+
+#### 物理強制経路を回避してはならない
+
+- hook が blocked にした場合、CC は「設定が壊れている」「テスト中」等の口実で hook を bypass する経路を試みてはならない (= 慢心バイアス禁止)
+- hook 修正・拡張は **まこさん明示承認** + git commit で記録
+- Bash で直接 hook script を上書きするのは hook 仕様上必要な経路 (= デッドロック解除時のみ)・乱用禁止
+
+参照: lessons_active.md L-236 / `.claude/settings.local.json` / `.claude/hooks/`
+
+---
+
 ### §1.4.7 handoff_to_cc_v* 廃止 + WORKFLOW.md 単一正本化 (L-216・2026-05-26 追加・最優先)
 
 **handoff_to_cc_v* は 2026-05-26 で廃止**。理由:

@@ -31,3 +31,6 @@ v3-bitget-api-sdk/bitget-python-sdk-api/dashboard/regime_prototype/
 .env
 **/state/
 v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
+
+# L-236 physical enforcement hooks state (machine-generated timestamp)
+.claude/state/

@@ -1570,20 +1570,793 @@ SHORT_score = SHORT_TP_prob_calibrated × 0.4 + SHORT_MFE_pct_normalized × 0.3 
 
 ### 6.3 工程 [2.5] cluster 分類 詳細設計
 
-#### 6.3.1 方針
-- 工程 [2] Entry ML の **後段に「グループ自動分け」を独立工程として配置**
-- 仕組み (= 例え話):
-  - Entry ML が出した「予測値 56 個 + 特徴量」のセットを、データを自然なグループにまとめる手法 (= k-means) で動的に 3〜5 グループに分ける
-  - 例えば「利確に早く届くタイプ」「損切り寄りタイプ」「時間切れになりやすいタイプ」が自然に出てくる
-  - 工程 [3] Sizing / 工程 [4] Exit がグループ別に異なる出力を出す
+> ## ⛔ 設計し直し対象 (= 2026-05-27 CP3 監査 Verdict PIVOT 後・L-236)
+>
+> 本セクション §6.3.0〜§6.3.7 (= v3.8 で書き起こした約 750 行) は **設計し直し対象** として保留中。中身の数値・アルゴリズム選定・キャリブレーション処理は再設計必要・**枠組み構造 (= 7 サブセクション分割 + Stage 1-4 評価) は参照のみ可**。
+>
+> **判定根拠** (= CP3 監査結果 `.claude/audits/2026-05-27_step25_cluster_design_cp3_audit_report.md` 422 行):
+>
+> - Critical 3 件: silhouette > 0.3 高次元根拠ゼロ + 旧 14 列版 0.15-0.20 架空推定値 / k-means 単体採用は業界後退 (2025 standard = K-Means + DBSCAN + GMM ensemble) / Gaussian kernel σ の isotonic regression キャリブレーション欠落 (= CP1/CP2 同型問題 3 回連続再演)
+> - Major 3 件: LightGBM 4.0+ native categorical vs §6.3.6 one-hot 推奨矛盾 / cat-bitget 固有 verify 定量試算ゼロ / Stage 3 純増分 1.5× cluster 単独 vs 全体寄与曖昧
+> - Minor 1 件: entry_id 生成タイミング + 再命名プロトコル
+> - **構造的指摘**: CP1/CP2/CP3 と 3 回連続で「メタガード追加が機械的フォーマット化」実証 → ガード追加経路打ち切り + 物理強制 hooks 導入 (= cc_role §1.4.6.2 / `.claude/settings.local.json` + `.claude/hooks/`)
+>
+> **次セッション CC 優先順位** (= WORKFLOW.md 改訂48 active):
+>
+> 1. Step 0 + auto-load 確認 + hooks 動作 verify
+> 2. §6.3 設計し直し (= 物理強制経路採用版・**サブセクションごとの KB Read + WebSearch 強制化**)
+> 3. CP4 監査経路 (= 物理強制経路採用版で再 verify)
+>
+> 参照: lessons L-236 / WORKFLOW.md 改訂48 active / CP3 監査結果
 
-#### 6.3.2 設計判断の根拠 (cat-bitget 制約逆算)
-- **教師なし手法 (= 正解ラベル不要でグループ分け) なので安全**:
-  - グループの正解ラベルを事前に作るのは困難 (= リークの原因になる)
-- **過去 Phase 4-a でも同じ手法 = 構造的継承**
-- **戦略並立 1.5× への寄与**:
-  - グループ別に Exit / Sizing が変わる = 「異なる戦略を並立」と等価
-  - [industry_benchmark §2.3](industry_benchmark_knowledge_base.md) で実証されている 1.5× 効果の前提に乗る
+#### 6.3.0 概要
+
+工程 [2] Entry ML 後段に独立工程として配置・教師なし学習 (= 正解ラベルなし) で Entry trade の質を自動分類 (= スキャル型 / 長期型 / 危険型 / 凡庸型等)・グループ別 [3] Sizing / [4] Exit で**戦略並立 1.5× レバー寄与** ([industry_benchmark §2.3](industry_benchmark_knowledge_base.md) 業界実証 1.2-1.8× 中央値)。本セクション §6.3.1〜§6.3.7 は 2026-05-27 セッション議論 (= ベースアップ KB Read + WebSearch 5 件 + 教科書整合) を経て決着。
+
+詳細議論順序: §6.3.3 入力 → §6.3.2 アルゴリズム → §6.3.4 k 数 → §6.3.1 評価 → §6.3.5 ラベル付け → §6.3.6 出力 → §6.3.7 leak (= ロジック上流から下流)。本書では検索性のため番号順で記載。
+
+#### 6.3.1 評価方法
+
+##### 目的
+
+cluster 分けが「効いてる」と言える基準を段階別に固定する。各段階の合否ラインを決めずに進むと「分かれた気がする」で進めるリスク (= Phase 4-a §4a.5 K96 SHORT q99 が独立 cluster に分離されない事案同型)。
+
+##### 4 段階構造 (= §6.1.1 / §6.2.1 と同型)
+
+| 段階 | 何を見る | 合否ライン |
+|---|---|---|
+| **Stage 1** | グループ分けの統計的質 | silhouette score > 0.3 + inertia + 偏り + regime 相関 + 旧 14 列版比較 |
+| **Stage 2** | まこさん視認 + 分布チェック | グループ別予測値分布が見て区別がつく + Exit 抜き PnL proxy |
+| **Stage 3** | [3]/[4] 完成後の PnL 早期判定 | **純増分 (b)/(a) ≥ 1.5×** (= cluster あり vs なしの倍率) |
+| **Stage 4** | Phase 5 全 12 ヶ月 Replay 最終 PnL | **月次 NET ≥ $1,900 全月クリア** |
+
+##### Stage 1 詳細 (= 統計層・教師なし)
+
+| verify 項目 | 合否基準 | 不合格時の対応 |
+|---|---|---|
+| silhouette score | > 0.3 (= 業界 minimum・[scikit-learn 公式](https://scikit-learn.org/stable/modules/clustering.html#silhouette-coefficient)) | §6.3.2 第二段階 (GMM / HDBSCAN / ensemble) 検討 |
+| inertia | グループ内分散・k 候補間で elbow 確認 | k 数 §6.3.4 再判定 |
+| cluster 別 trade 数の偏り | 最小 cluster ≥ 5% | k 数 §6.3.4 調整 |
+| regime cluster との予測誤差相関 | Pearson < 0.5 (= [KB §2.3 Square Root Rule 前提](industry_benchmark_knowledge_base.md)) | 入力特徴量 §6.3.3 重複削減 |
+| 旧 14 列版 (= Phase 4-a) との比較 | 新 PCA 版 silhouette > 旧 14 列版 | §6.3.3 入力再設計 |
+
+##### Stage 2 詳細 (= 視認 + PnL proxy)
+
+- まこさん月単位視認 (= dashboard・cluster_label 別 trade 散布図 / 予測値分布)
+- グループ別 TP_prob / MFE / SL_prob / 保有時間の分布が見て区別がつく
+- Exit 抜き PnL proxy (= 仮 Exit 想定で cluster 別 PnL 計算・Phase 1 v6 教訓「統計と PnL 乖離の早期検出」)
+
+##### Stage 3 詳細 (= PnL 早期判定)
+
+- [3] Sizing + [4] Exit 実装後の比較:
+  - (a) cluster なし版 (= 一律 Sizing/Exit 適用) = base line
+  - (b) cluster あり版 (= cluster 別 Sizing/Exit 最適化適用)
+- **合格 = (b)/(a) ≥ 1.5×** ([industry_benchmark §2.3](industry_benchmark_knowledge_base.md) 戦略並立 1.2-1.8× 中央値整合)
+- 不合格 (= < 1.3×) なら §6.3.2 アルゴリズム / §6.3.3 入力 / §6.3.4 k 数を再設計
+
+##### Stage 4 詳細 (= 最終)
+
+- Phase 5 全 12 ヶ月 Replay (= 8 工程合算後・[CLAUDE.md 目標](../../CLAUDE.md) 整合)
+- 月次 NET ≥ $1,900 全月クリア
+
+##### 業界 standard verify (cc_role §1.4.6.1 #6)
+
+- silhouette > 0.3 業界 minimum: [scikit-learn 公式 Clustering 2.3](https://scikit-learn.org/stable/modules/clustering.html)
+- 戦略並立 1.5× 業界実証: [arxiv FinRL Crypto 2024 (2501.10709)](https://arxiv.org/pdf/2501.10709) + [industry_benchmark §2.3](industry_benchmark_knowledge_base.md)
+
+##### 教科書整合 (cc_role §1.4.6.1 #7)
+
+- **AFML Ch.4 Sample Weights** (Lopez de Prado): 同質性ベースの trade 重み付け
+- **AFML Ch.20 HRP**: cluster の純増分検証で純益差を見る業界手法
+- **cc_entry_logic_self_study §14.6 / §16.7 / §18.3**: cluster 用評価指標は silhouette + 純益差で業界整合
+
+##### cat-bitget 固有 verify (= メタガード 13・定量試算 1 件以上必須)
+
+- **Phase 4-a 旧実装比較経路**: predictions_train_2021_2024.parquet (= Phase 4-a 旧 14 ラベル予測値版) で silhouette score を再計算・新 PCA 版との改善幅を Stage 1 verify (= 実装着手時に train fold データ pre check で何倍改善するか定量試算)
+- **5.1× 積算経路整合**: industry_benchmark §2.6 ケース B 中央値で戦略並立 1.5× を本工程担当・Stage 3 純増分 ≥ 1.5× が合格ライン根拠
+
+##### 第一段階固定値の事前根拠 (= メタガード 14・業界引用 + cat-bitget 過去事例併記)
+
+| 固定値 | 業界引用 | cat-bitget 過去事例 |
+|---|---|---|
+| silhouette > 0.3 | scikit-learn 公式 minimum | Phase 4-a 旧 14 列版で 0.15-0.20 を観測 (= 不合格)・新 PCA 版で > 0.3 期待 |
+| 純増分 ≥ 1.5× | industry_benchmark §2.3 業界実証 1.2-1.8× 中央値 | cat_v9 で「強い combo に大きい size」運用 = 暗黙 cluster 化済・ML 化で同レベル以上期待 |
+| Pearson < 0.5 | Square Root Rule 前提 | regime k-means vs entry cluster k-means は別目的・実装後 verify |
+
+##### 統計指標と PnL 指標の分離 (cc_role §1.4.6.1 #9)
+
+- **統計指標** (= 統計層): Stage 1 silhouette / inertia / 偏り / regime 相関 / 旧版比較
+- **PnL 指標** (= PnL 層): Stage 3 純増分 (b)/(a) ≥ 1.5× / Stage 4 月次 NET ≥ $1,900
+- Stage 2 視認 = 統計と PnL の中間 (= Exit 抜き PnL proxy で乖離検出)
+- 段階間で混同禁止
+
+##### 整合性 Q&A (= メタガード 15・設計矛盾自己検出)
+
+**Q1**: Stage 3 純増分 1.5× は industry_benchmark §2.3 中央値だが、cat-bitget で cluster 数 3-5 の場合に実現可能か?
+
+**A1**: 整合する。§2.3 で「3-5 戦略並立で 1.5-2× Sharpe 改善が現実」「cluster 数 = 3 なら 1.3-1.5× が目安」・§6.3.4 で k ∈ {3, 4, 5} 採用予定 → 1.5× は中央値域で目標として妥当。不合格時の第二段階経路 (= 1.3× 落とし) も §2.3 整合範囲。
+
+**Q2**: Stage 3 で「cluster なし版 vs あり版」の (a) base line をどう定義するか?
+
+**A2**: (a) = Entry ML 出力に対して **一律 Sizing / Exit** (= cluster ID を入力に含まない [3]/[4] 実装) を適用した PnL。[3]/[4] 実装時に cluster あり版とペアで実装する経路を §6.3.6 で明示する。
+
+##### data-driven 経路宣言 (cc_role §1.4.6.1 #12)
+
+| 項目 | 暫定値 | data-driven 決定経路 |
+|---|---|---|
+| silhouette 合格ライン | > 0.3 | Stage 1 で旧 14 列版実測値と比較・実測 + 50% で合格ライン調整可 |
+| 純増分合格ライン | ≥ 1.5× | Stage 3 で実測・1.3-1.5× の場合は要再設計・< 1.3× で工程 §6.3 全面再設計 |
+| Pearson 相関閾値 | < 0.5 | 実装後 train fold で実測・> 0.5 なら入力 §6.3.3 で regime 6 列除外検討 |
+
+##### 専門用語補足
+
+| 用語 | 日本語 |
+|---|---|
+| silhouette score | グループ分けの「うまく分かれた度」(= 0〜1) |
+| inertia | グループ内の散らばり度合い (= 小さいほど良) |
+| 純増分 (b)/(a) | cluster なし版を 1 とした時の cluster あり版の倍率 |
+| Pearson 相関 | 線形相関係数 (= -1〜1・0 で独立) |
+| Replay | 過去データでの仮想取引シミュレーション |
+| Exit 抜き PnL proxy | 仮の Exit 想定で計算した近似 PnL |
+
+##### §6.3.1 着地
+
+**Stage 1 silhouette > 0.3 + 偏り + regime 相関 + 旧版比較 → Stage 2 視認 + Exit 抜き PnL proxy → Stage 3 純増分 (b)/(a) ≥ 1.5× → Stage 4 月次 NET ≥ $1,900 全月クリア の 4 段階順次判定**
+
+---
+
+#### 6.3.2 アルゴリズム選定
+
+##### 目的
+
+どの道具 (= グループ分け手法) で cluster fit するかを決める。アルゴリズムごとに前提・出力形式・計算重さが違うので、cat-bitget 用途に合うものを選定する。
+
+##### 候補一覧 + 評価
+
+| 道具 | 例え話 | 形 | k 必要? | 出力 | 計算重さ |
+|---|---|---|---|---|---|
+| **k-means** ← 推奨 | 最も近い代表点に振り分ける | 球形のみ | YES (= 事前指定) | hard (= 確定) | 軽 |
+| **GMM** (= Gaussian Mixture Model) | 複数の正規分布の混合と仮定 | 楕円形 OK | YES (= 事前指定) | soft (= 確率) | 中 |
+| **HDBSCAN** | 密集領域だけグループ化・まばら点は無視 | 任意の形 | NO (= 自動決定) | hard + ノイズ | 重 |
+| **ensemble** (= 3 種統合) | 3 種類の結果を合体・多数決 | 任意 | k-means/GMM 用に必要 | soft (= 確率) | 重 |
+
+##### CC 推奨 = k-means 単体 + Gaussian kernel 確率変換
+
+**理由 4 点**:
+
+1. **軽量**: cat-bitget 56 万行 × PCA 後 50-100 列で実用範囲
+2. **解釈容易**: 各 cluster の代表点 (= 重心) を見れば「どんな trade か」直接読める
+3. **業界 standard 整合**: §6.1.4 regime ensemble でも k-means 採用・同型構造で工程間整合
+4. **Phase 4-a 旧実装の継承**: 過去 cat-bitget で k-means 採用 (= [phase_compliance §4a.1](../rules/phase_compliance_checklist.md))・改善方向は §6.3.3 入力強化で対応・アルゴリズム変更不要
+
+**不採用**:
+- **GMM**: soft assignment は魅力だが k-means + Gaussian kernel で post-hoc 確率化可能 (= §6.1.5 regime ensemble と同型運用)
+- **HDBSCAN**: k 数が不安定 → 後段 [3]/[4] が cluster 別固定戦略を持つ前提と相性悪い・ノイズ除外で trade を no-trade 化する設計矛盾
+
+##### 詳細仕様
+
+| 項目 | 採用値 | 根拠 |
+|---|---|---|
+| 距離計算 | Euclidean | PCA 入力でスケール統一済・scikit-learn default |
+| 初期化 | k-means++ | 初期 random より収束安定・scikit-learn default |
+| 確率変換 | Gaussian kernel `exp(-d²/2σ²)` | §6.1.5 regime ensemble と同型 |
+| σ | cluster median 距離 | §6.1.5 と同型 |
+| Stage 1 評価 | silhouette + inertia + 偏り (§6.3.1) | 業界 standard |
+
+##### 業界 standard verify (cc_role §1.4.6.1 #6)
+
+- **2025 crypto cluster 業界**: K-Means / DBSCAN / GMM が代表的 3 種・**ensemble が robustness 向上で 2025 業界 standard** ([MDPI 2025](https://www.mdpi.com/2227-9709/12/2/43) / [DSFE 2025](https://www.aimspress.com/aimspress-data/dsfe/2025/3/PDF/DSFE-05-03-017.pdf))
+- **K-Means vs GMM 差**: K-means hard / GMM soft・GMM は K-means の一般化 (= 球形 → 楕円) ([Towards Data Science](https://towardsdatascience.com/k-means-dbscan-gmm-agglomerative-clustering-mastering-the-popular-models-in-a-segmentation-c891a3818e29/))
+- **HDBSCAN**: k 不要・複雑データ対応 ([Medium](https://medium.com/@sina.nazeri/comparing-the-state-of-the-art-clustering-algorithms-1e65a08157a1))
+
+##### 教科書整合 (cc_role §1.4.6.1 #7)
+
+- **AFML Ch.20 HRP**: hierarchical clustering 推奨・k-means 単体は球形仮定の制約
+- **cc_entry_logic_self_study §14.6**: GMM = 「returns を multivariate Gaussian の混合で fit」・k-means = 「GMM の特殊解」
+- **scikit-learn 公式**: k-means は大規模 dataset 向き・計算軽量
+
+##### cat-bitget 固有 verify (= メタガード 13)
+
+- **Phase 4-a 旧実装振り返り**: k-means 採用済・predictions parquet (= 14 ラベル予測値) を入力にしたが分離不十分 ([phase_compliance §4a.5](../rules/phase_compliance_checklist.md) K96 SHORT q99 が独立 cluster に分離されない事案) → アルゴリズム変更ではなく **§6.3.3 入力強化** (= 14 列 → PCA 50-100 列) が解決経路
+- **定量試算**: 同じ k-means でも入力強化で silhouette score が 0.15-0.20 (旧 14 列) → > 0.3 (新 PCA 版) に改善期待・Stage 1 で実測 verify
+
+##### 第一段階固定値の事前根拠 (= メタガード 14)
+
+| 固定値 | 業界引用 | cat-bitget 過去事例 |
+|---|---|---|
+| k-means 単体 | scikit-learn 公式 + Phase 4-a 旧実装 standard | Phase 4-a で採用・改善方向は入力強化で吸収可 |
+| Euclidean distance | scikit-learn default | Phase 4-a と同型 |
+| Gaussian kernel σ = median | §6.1.5 regime ensemble | 同型工程運用 |
+
+##### 統計指標と PnL 指標の分離
+
+- §6.3.2 は **統計層** の選定 (= silhouette / inertia による Stage 1 評価)
+- PnL は §6.3.1 Stage 3 で別途・混同禁止
+
+##### 整合性 Q&A (= メタガード 15)
+
+**Q1**: §6.1.4 regime ensemble で k-means + HMM + 固定ルール 3 判定器なのに §6.3.2 で k-means 単体は整合する?
+
+**A1**: 整合する。両工程は目的が違う。regime = 「正解ラベル付きで 3 状態を当てる」→ 多判定器 ensemble で robust 化が必要 (= 同質 3 判定器の独立化で 1.5× 寄与)。entry cluster = 「正解ラベルなしで類似 trade を分類」→ 1 つのアルゴリズムで十分・後段 [3]/[4] が cluster 別異なる戦略を持つことで戦略並立 1.5× 実現。第一段階 k-means 単体で Stage 1 silhouette < 0.3 の場合に GMM / HDBSCAN / ensemble 第二段階検討経路あり。
+
+**Q2**: Phase 1 v6 教訓 (= 揺れ幅予測逃げ・56 ラベル並列で物理的解消) と §6.3.2 k-means 単体は整合する?
+
+**A2**: 整合する。Phase 1 v6 教訓は [2] Entry ML 工程の話 (= 予測対象の物理的増加で解消済)・[2.5] cluster は予測ではなく **分類** 工程 (= Entry ML 出力を入力として使う後段) で論点軸が違う。
+
+##### data-driven 経路宣言 (cc_role §1.4.6.1 #12)
+
+| 項目 | 暫定値 | data-driven 決定経路 |
+|---|---|---|
+| アルゴリズム | k-means 単体 | Stage 1 silhouette < 0.3 で GMM / HDBSCAN / ensemble 検討 |
+| 距離計算 | Euclidean | PCA 入力前提・要再考なら Manhattan / Cosine |
+| Gaussian kernel σ | cluster median 距離 | §6.1.5 と同型運用 |
+
+##### 専門用語補足
+
+| 用語 | 日本語 |
+|---|---|
+| k-means | 点を最も近い代表点に振り分ける手法 |
+| GMM | 正規分布の混合・確率出力 |
+| HDBSCAN | 密度ベース・k 不要 |
+| hard assignment | 1 点 1 グループに確定割り当て |
+| soft assignment | 各点が複数グループに属する確率を出力 |
+| Gaussian kernel | 距離を 0〜1 確率に変換する計算式 |
+| ensemble | 複数アルゴリズムの結果を統合 |
+
+##### §6.3.2 着地
+
+**k-means + k-means++ 初期化 + Euclidean distance + Gaussian kernel 確率変換 (σ = cluster median)・Stage 1 silhouette < 0.3 で第二段階 (GMM / HDBSCAN / ensemble) 検討**
+
+---
+
+#### 6.3.3 入力特徴量設計
+
+##### 目的
+
+cluster fit の入力に**何を入れるか**を決める。入力次第で「何の軸で分けるか」が変わる (= 予測値だけ入れれば「予測軸での分類」・元特徴量も入れれば「市場文脈込みの分類」)。
+
+##### 候補一覧 + 評価
+
+| 案 | 入力 | 例え話 |
+|---|---|---|
+| a | Entry ML 予測値 56 個のみ | 「魚の引き具合」だけ見て分類 |
+| **b** ← 推奨 | 予測値 56 + 元特徴量 2,604 + regime 6 = 2,666 列全投入 | 「魚の引き具合 + 海の状態 + 時間帯 + 風 + 潮流」全部見て分類 |
+| c | 予測値 + 厳選指標 (= 数十列) | 「予測 + 重要そうなものだけ」 |
+| d | 予測値 + regime ID + ボラ厳選 | 「予測 + 文脈系厳選」 |
+
+##### CC 推奨 = 案 b 全投入 + PCA 50-100 主成分 + RobustScaler fold 別 fit
+
+**理由 3 点**:
+
+1. **教師なし学習で「不要列を捨てる判断」が事前にできない** → 全投入 + post-pruning が安全
+2. **cluster-then-predict 業界 standard 整合** ([Springer Nature 2025](https://link.springer.com/article/10.1007/s44163-025-00519-y))
+3. **§6.2.4 案 A 統合と同型構造** (= Entry ML との接続が滑らか)
+
+##### 詳細仕様
+
+| 項目 | 採用値 | 根拠 |
+|---|---|---|
+| 入力 | 案 b 全投入 (= 2,666 列) | 業界 standard cluster-then-predict |
+| 次元削減 | PCA で 50-100 主成分 | 高次元の呪い (curse of dimensionality) 回避・分散 95% 説明 |
+| 前処理 | RobustScaler fold 別 fit | k-means は距離ベース・外れ値耐性必須 |
+| regime 6 列の扱い | 統合 (= 案 b に含む) | 同じ予測値でも regime 違えば trade 性質違う |
+
+##### 業界 standard verify (cc_role §1.4.6.1 #6・WebSearch 2 件)
+
+- **Cluster-then-Predict pattern** ([Springer Nature 2025](https://link.springer.com/article/10.1007/s44163-025-00519-y) / [PMC 7785332](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7785332/)): 「ML 予測値 + 市場特徴量を k-means で cluster 化 → cluster 別 model 構築」が **crypto 標準アプローチ**・forecasting accuracy 改善実証
+- **Trader segmentation 実例** ([PMC 12484065](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12484065/)): K-means で 6 特徴量で trader 群分類実用例
+- **PCA + K-means 経路** ([Springer 2025](https://link.springer.com/article/10.1007/s44163-025-00519-y)): 次元削減してから cluster する経路あり (= 高次元の呪い回避)
+
+##### 教科書整合 (cc_role §1.4.6.1 #7)
+
+- **AFML Ch.4 Sample Weights**: 同質性ベースで trade を重み付け → 同質 trade を cluster で捉える前提
+- **AFML Ch.16 ML Asset Allocation**: clustering 入力は予測値 + relevant context feature を採用
+- **cc_entry_logic_self_study §14.6 L827**: 「k-means / GMM / HMM は距離ベース → StandardScaler 必要」業界整合 (= RobustScaler は外れ値耐性版)
+
+##### cat-bitget 固有 verify (= メタガード 13)
+
+- **Phase 4-a 旧実装 verify**: predictions parquet (= 14 ラベル予測値) を入力にしたが cluster 分離不十分 ([phase_compliance §4a.5](../rules/phase_compliance_checklist.md)) → **予測値のみ入力は不足**を実証
+- **定量試算経路**: Phase 4-a predictions_train_2021_2024 (= 56 万行) で 14 列 k-means の silhouette score を再計算・Stage 1 で 2,666 列 PCA 版と比較
+- **cat_v9 経験値整合**: cat_v9 は P1-P25 で indicator 多様性 8-10 種を使い分け = 「trade の質が文脈で違う」前提と整合 → 案 b 全投入 = cat_v9 流の多様性を ML に学習させる構造
+
+##### 第一段階固定値の事前根拠 (= メタガード 14)
+
+| 固定値 | 業界引用 | cat-bitget 過去事例 |
+|---|---|---|
+| 案 b 全投入 | Springer 2025 cluster-then-predict standard | §6.2.4 案 A 統合と同型・cat_v9 多様性整合 |
+| PCA 50-100 主成分 | scikit-learn default + AFML Ch.16 | 暫定範囲・実装着手時に分散 95% 説明する主成分数で確定 |
+| RobustScaler | cc_entry_logic §14.6 業界整合 | §6.1.5 regime ensemble と同型 |
+
+##### 統計指標と PnL 指標の分離
+
+- §6.3.3 は **統計層** の入力設計 (= silhouette / inertia の入力側パラメータ)
+- PnL は §6.3.1 Stage 3 で別途・混同禁止
+
+##### 整合性 Q&A (= メタガード 15)
+
+**Q1**: Phase 1 v6 教訓 (= 56 ラベル並列で物理的解消) と §6.3.3 案 b 全投入の整合性は?
+
+**A1**: 整合する。56 ラベル予測値**全部**を cluster 入力に含む案 b は「物理的に増やした 56 予測情報を集約段階で圧縮しない」設計 = Phase 1 v6 教訓の論理整合。一部予測値のみ入れる案 a は教訓に逆行 → 不採用。
+
+**Q2**: §6.2.4 (= Entry ML 入力 案 A 統合) と §6.3.3 (= cluster 入力 案 b 全投入) の整合性は?
+
+**A2**: 整合する。両者とも「全投入 + post-pruning」設計思想 = 工程間で意思決定原則が一貫。
+
+##### data-driven 経路宣言 (cc_role §1.4.6.1 #12)
+
+| 項目 | 暫定値 | data-driven 決定経路 |
+|---|---|---|
+| PCA 主成分数 | 50-100 | train_2021_2024 fold で「分散 95% 説明する主成分数」を実装着手時に決定 |
+| PCA 後 vs 生 2,666 列 | PCA 後 | Stage 1 silhouette 比較で確定・PCA 後 > 生で採用継続 / 逆なら生 + Clustered MDA 切替 |
+| regime 統合 vs regime 別 fit | 統合 | Stage 3 で regime 別 cluster 効果差 > 20% で別 fit 化検討 |
+
+##### 専門用語補足
+
+| 用語 | 日本語 |
+|---|---|
+| 教師なし学習 (unsupervised) | 正解ラベルなしの学習 |
+| 高次元の呪い (curse of dimensionality) | 列が多すぎて距離計算が壊れる現象 |
+| PCA (= 主成分分析) | たくさんの列を代表値に圧縮する道具 |
+| RobustScaler | 外れ値に強い数値スケール揃え処理 |
+| fold 別 fit | 期間ごとに分けて処理 (= 未来データを使わない安全策) |
+| post-pruning | 学習後に不要な列を削る作業 |
+| cluster-then-predict | グループ分けしてからグループ別予測 |
+| Clustered MDA | 重要度が低い列を機械的に削る業界手法 |
+
+##### §6.3.3 着地
+
+**案 b 全投入 (= 2,666 列) + PCA 50-100 主成分 + RobustScaler fold 別 fit + regime 統合 + Stage 1 で post-pruning 検討**
+
+採用根拠 5 点: (i) 業界 standard cluster-then-predict / (ii) 教科書 AFML Ch.16 / (iii) §6.2.4 と同型構造 / (iv) Phase 4-a 旧実装の不足を解消 / (v) Phase 1 v6 教訓論理整合
+
+---
+
+#### 6.3.4 k (グループ数) 決定方法
+
+##### 目的
+
+cluster を**何個に分けるか** (= 3 個? 4 個? 5 個?) を決める。少なすぎる (= 1-2) と粒度不足で「分けた意味」がない・多すぎる (= 6+) と各 cluster の trade 数が減って統計弱体化。
+
+##### 候補一覧 + 評価
+
+| k | 例え話 | 評価 |
+|---|---|---|
+| 2 | スキャル / 長期 の 2 種類 | 粗すぎる |
+| **3** ← 候補 | スキャル / 長期 / 危険 | 業界 standard・industry_benchmark §2.3 整合 |
+| **4** ← 候補 | + 凡庸 (= 時間切れ寄り) | スキャル/長期/危険/凡庸 |
+| **5** ← 候補 | + 中間タイプ | やや細かい |
+| 6+ | 各 cluster データ減 → 統計弱体 | 過剰 |
+
+##### CC 推奨 = k ∈ {3, 4, 5} を並列試行 + silhouette + 業界経験則で data-driven 決定
+
+**理由 3 点**:
+
+1. **固定値ではなくデータから判定** (= 「3 個固定」「5 個固定」は決め打ちで data-driven 経路宣言違反)
+2. **業界実証 3-5 cluster 範囲** ([industry_benchmark §2.3](industry_benchmark_knowledge_base.md))
+3. **§6.1.4 regime k-means と同型構造** (= regime ensemble でも k ∈ {2,3,4,5} elbow + silhouette data-driven 採用済)
+
+##### 詳細仕様
+
+| 判定ステップ | 内容 |
+|---|---|
+| Step 1 | k ∈ {3, 4, 5} で並列 fit |
+| Step 2 | 各 k の silhouette score 計算・最大を仮採用 |
+| Step 3 | elbow method (= グループ内分散の急減点) で確認 |
+| Step 4 | silhouette 最大と elbow が食い違ったら業界経験則 (= 3-5 cluster で 1.5× レバー) で決定 |
+| Step 5 | cluster 別 trade 数の偏り verify (= 最小 cluster ≥ 5%)・不合格なら k 候補から除外 |
+
+##### 業界 standard verify (cc_role §1.4.6.1 #6)
+
+- **3-5 cluster で 1.5-2× Sharpe 改善が現実** ([industry_benchmark §2.3](industry_benchmark_knowledge_base.md))・cluster 数増加で相関増加・直交 alpha 減退
+- **5-model ensemble で Sharpe 80-91% 改善実証** ([arxiv FinRL Crypto 2024 (2501.10709)](https://arxiv.org/pdf/2501.10709))
+- **silhouette + elbow data-driven 経路** ([Built In Elbow Method](https://builtin.com/data-science/elbow-method) + [ML Mastery Silhouette](https://machinelearningmastery.com/k-means-cluster-evaluation-with-silhouette-analysis/))
+
+##### 教科書整合 (cc_role §1.4.6.1 #7)
+
+- **AFML Ch.20 HRP**: k 数最適化に gap statistic / elbow / silhouette の併用推奨
+- **cc_entry_logic_self_study §17.6 ONC (Optimal Number of Clusters)**: 「類似戦略を unsupervised clustering で集約 → cluster 数 = 実効 N」の Lopez de Prado 手法
+- **scikit-learn 公式**: silhouette_score / inertia の elbow 並用が業界 standard
+
+##### cat-bitget 固有 verify (= メタガード 13)
+
+- **Phase 4-a 旧実装振り返り**: k=12 で実装したが分離不十分 (= [phase_compliance §4a.5](../rules/phase_compliance_checklist.md) K96 SHORT q99 が独立 cluster に分離されない事案) → **k が多すぎた可能性**・新工程で 3-5 範囲に絞る判断根拠
+- **cat_v9 経験値整合**: P1-P25 ≈ 25 個の人間分類だが、ML cluster は粒度違う・3-5 個で十分 (= 後段 [3]/[4] が cluster 別 3-5 種類の戦略を持つ前提)
+- **定量試算経路**: Phase 4-a predictions_train_2021_2024 (= 56 万行) で k=3,4,5 並列 fit → silhouette score 比較を実装着手時に train fold データで pre check
+
+##### 第一段階固定値の事前根拠 (= メタガード 14)
+
+| 固定値 | 業界引用 | cat-bitget 過去事例 |
+|---|---|---|
+| k ∈ {3, 4, 5} 候補範囲 | industry_benchmark §2.3 業界実証 3-5 cluster | Phase 4-a の k=12 は過剰実証・3-5 への絞り込み妥当 |
+| silhouette 最大採用 | scikit-learn 公式 | §6.1.4 regime ensemble と同型運用 |
+| 偏り最小 ≥ 5% | k-means 業界 minimum | Phase 4-a で偏りチェック未実装・新規追加 |
+
+##### 統計指標と PnL 指標の分離
+
+- §6.3.4 は **統計層** の k 決定 (= silhouette / elbow / 偏り)
+- PnL は §6.3.1 Stage 3 で別途・k 決定段階では PnL を見ない (= 統計層で確定 → PnL 層で第二段階再判定経路)
+
+##### 整合性 Q&A (= メタガード 15)
+
+**Q1**: industry_benchmark §2.3 で「3-5 戦略並立で 1.5-2× Sharpe 改善」だが、§6.3.4 で k=3 を採用した場合に 1.5× 出るか?
+
+**A1**: §2.3 で「cluster=3 → 3 戦略並立で 1.3-1.5× が目安」と業界実証・k=3 でも 1.5× は中央値域で実現可能。ただし k=3 で不合格時の経路として k=4,5 の第二段階あり・並立効果は「戦略間の相関」次第なので §6.3.3 入力特徴量の直交化が前提。
+
+**Q2**: §6.1.4 regime k-means で k ∈ {2,3,4,5} 範囲なのに、§6.3.4 で {3,4,5} 範囲は整合する?
+
+**A2**: 整合する。regime k-means は「市場局面の数」を判定 (= 上昇/下落/レンジ + 不確実が考えられる) → k=2 も候補入り。entry cluster は「trade の質タイプ」を分類 (= スキャル/長期/危険/凡庸) → k=2 では粒度不足で実用性低い → {3,4,5} 範囲が論点軸整合。
+
+##### data-driven 経路宣言 (cc_role §1.4.6.1 #12)
+
+| 項目 | 暫定値 | data-driven 決定経路 |
+|---|---|---|
+| k 候補範囲 | {3, 4, 5} | Stage 1 で silhouette 最大の k を採用・elbow と食い違ったら業界経験則で決定 |
+| 偏り合格ライン | 最小 cluster ≥ 5% | 不合格 k を候補から除外・全 k 不合格なら §6.3.3 入力再設計 |
+| k=6 フォールバック | 不採用 (第一段階) | 全 k={3,4,5} 不合格時の最後手段・統計弱体化リスクを許容して検討 |
+
+##### 専門用語補足
+
+| 用語 | 日本語 |
+|---|---|
+| silhouette score | グループ分けの「うまく分かれた度」(= 0〜1) |
+| elbow method | 分散の急減点を見て k を決める手法 |
+| 直交 alpha | 戦略間の相関が低いほど稼げる効果 |
+| gap statistic | k 数最適化の業界手法 (= elbow の代替) |
+| ONC | Optimal Number of Clusters (= Lopez de Prado 手法) |
+
+##### §6.3.4 着地
+
+**k ∈ {3, 4, 5} 並列試行 + silhouette 最大採用 + elbow 確認 + 偏り ≥ 5% verify + 業界経験則 (= 3-5 cluster) で data-driven 決定**
+
+---
+
+#### 6.3.5 ラベル付け
+
+##### 目的
+
+ML が出した無名の cluster (= 0, 1, 2, ...) に**人間が読める名前**をつける。番号だけでは何が何だか分からない・まこさん視認 + デバッグ + dashboard 表示で必須。
+
+##### 必要性
+
+- **まこさん視認**: dashboard で「cluster 0, 1, 2」では何が起きてるか分からない・「スキャル型 / 長期型 / 危険型」と表示できる必要
+- **デバッグ**: 失敗 trade を「どの cluster で失敗したか」追跡可能
+- **後段 [3]/[4] 設計時の方針説明**: 「危険型は size 縮小」「長期型は trail 延ばす」等
+- **レポート / 業界用語整合**: cat_v9 で P1-P25 にまこさんが命名済 = 同型の post-hoc 解釈プロセス
+
+##### CC 推奨 = 4 軸 (TP_prob / MFE / SL_prob / 保有時間) で post-hoc 命名
+
+各 cluster の中身を見るために、以下の数値を計算して比較:
+
+| グループ | TP_prob 平均 | MFE 平均 | SL_prob 平均 | 平均保有時間 |
+|---|---|---|---|---|
+| 0 | 高 | 小 | 低 | 短 |
+| 1 | 高 | 大 | 低 | 長 |
+| 2 | 低 | - | 高 | - |
+| 3 | 中 | 中 | 中 | 中 |
+
+→ 命名 (= 例):
+- グループ 0 = **scalp** (= スキャル型・短時間で小さく利確)
+- グループ 1 = **long_term** (= 長期型・時間かけて大きく取る)
+- グループ 2 = **risky** (= 危険型・損切り寄り)
+- グループ 3 = **avg** (= 凡庸型・平均的)
+
+##### 詳細仕様
+
+| 項目 | 採用値 |
+|---|---|
+| 命名軸 | TP_prob / MFE / SL_prob / 保有時間 の 4 軸 |
+| 命名タイミング | train 期間で命名 → test には mapping 適用のみ (= leak 防止) |
+| 命名形式 | snake_case 英語 (= scalp / long_term / risky / avg)・dashboard 用に日本語 alias 併設 |
+| 名前変更条件 | Stage 2 で「名前と分布が合わない」場合に再命名・名前は cluster の本質を表すだけで後段戦略は数値ベース実装 |
+
+##### 業界 standard verify (cc_role §1.4.6.1 #6)
+
+- **post-hoc cluster labeling 業界 standard**: K-means 後の cluster 解釈は手動命名が業界慣行 ([Towards Data Science](https://towardsdatascience.com/k-means-clustering-algorithm-applications-evaluation-methods-and-drawbacks-aa03e644b48a/))
+- **AFML / mlfinlab**: cluster の post-hoc 解釈で重要なのは「**cluster の中身を統計値で記述**」(= 数値ベースで描写してから名前をつける)
+- **scikit-learn 公式**: cluster_centers_ を見て命名する経路が標準
+
+##### 教科書整合 (cc_role §1.4.6.1 #7)
+
+- **AFML Ch.4 / Ch.20**: clustering 後の post-hoc 解釈で「cluster ごとの統計値で記述」を推奨
+- **§6.1.4 regime k-means** で「cluster ごとの統計値 (= return / ADX / DI 差) で post-hoc マッピング」採用済・同型運用
+
+##### cat-bitget 固有 verify (= メタガード 13)
+
+- **cat_v9 経験値整合**: cat_v9 で P1-P25 にまこさんが人間命名済 (= 「P21 = 平均建値型・P3 = スキャル系」等)・同型の post-hoc 解釈プロセス
+- **Phase 4-a 旧実装**: cluster_label をマッピングする post-hoc 解析あり (= 継承)
+- **定量試算経路**: Phase 4-a predictions_train_2021_2024 で 4 軸 (TP_prob / MFE / SL_prob / 保有時間) の cluster 別平均を実装着手時に算出 → 区別がつくか pre check
+
+##### 第一段階固定値の事前根拠 (= メタガード 14)
+
+| 固定値 | 業界引用 | cat-bitget 過去事例 |
+|---|---|---|
+| 4 軸命名 (= TP_prob/MFE/SL_prob/保有時間) | AFML Ch.4 統計値ベース | cat_v9 で人間が同型 4 軸で命名済 |
+| snake_case 英語名 | OSS / Python 業界慣習 | scripts 内識別子と整合 |
+| 命名タイミング = train 期間のみ | §4a.1 fit は train のみと同型 | Phase 4-a leak 防止規律と整合 |
+
+##### 統計指標と PnL 指標の分離
+
+- §6.3.5 は **解釈層** (= 統計と PnL の中間・cluster の中身を描写)
+- 名前は人間用デバッグ表示のみ・後段戦略は数値ベース実装 (= 名前依存しない)
+
+##### 整合性 Q&A (= メタガード 15)
+
+**Q1**: cluster label を train 期間で決定 → test には mapping 適用のみ で leak 防止できるか?
+
+**A1**: できる。命名 = train 期間の cluster 別統計値で決定・test 期間の cluster_id は train 学習済モデルで予測 → mapping で名前付与のみ。test 期間のデータで命名を変えない (= §6.3.7 leak 防止と整合)。
+
+**Q2**: 名前と実分布が合わない場合の再命名は leak ではないか?
+
+**A2**: Stage 2 視認で「scalp と命名したが MFE 平均が大」と発見した場合の再命名は、**train fold 内での再計算**であれば leak ではない (= train fold 内での post-hoc 解釈の精緻化)。test fold データを見て命名を変えるのは leak (= 禁止)。
+
+##### data-driven 経路宣言 (cc_role §1.4.6.1 #12)
+
+| 項目 | 暫定値 | data-driven 決定経路 |
+|---|---|---|
+| 命名する数値項目 | TP_prob / MFE / SL_prob / 保有時間 の 4 軸 | Stage 2 で「これじゃ区別つかない」場合に項目追加 |
+| 名前の具体的文字列 | scalp / long_term / risky / avg | Stage 2 視認で cluster 別分布見て確定 |
+| k=4 / k=5 時の追加名 | 暫定なし | 実装後に決定 |
+
+##### 専門用語補足
+
+| 用語 | 日本語 |
+|---|---|
+| post-hoc | 後付け解釈 (= ML が分けた後で人間が解釈) |
+| TP_prob | 利確確率 (= 予測値) |
+| MFE | 含み益最大値 (= Maximum Favorable Excursion) |
+| SL_prob | 損切り確率 |
+| mapping | cluster_id → label_name の対応表 |
+| snake_case | 識別子の命名規約 (= 単語間 _ 区切り) |
+
+##### §6.3.5 着地
+
+**train 期間で 4 軸 (TP_prob / MFE / SL_prob / 保有時間) の cluster 別統計値を計算 → 人間が post-hoc で命名 → test には mapping 適用のみ・名前は dashboard / デバッグ用で後段戦略は数値ベース実装**
+
+---
+
+#### 6.3.6 出力 → 後段接続
+
+##### 目的
+
+cluster 分けの結果を**どこに保存・どんな形式で書き出して、後段 [3] Sizing / [4] Exit がどう読み込むか**を決める。出力形式と接続経路を固定しないと工程間でデータ受け渡しが破綻するリスク。
+
+##### 出力列構成 (= §6.1.6 regime 出力と同型)
+
+###### 主要列 7 列
+
+| 列名 | 内容 | 例 |
+|---|---|---|
+| `cluster_id` | グループ番号 (= 0, 1, 2, ...) | 0 |
+| `cluster_prob_0` | グループ 0 に属する確率 | 0.72 |
+| `cluster_prob_1` | グループ 1 に属する確率 | 0.18 |
+| `cluster_prob_2` | (k に応じて続く) | 0.10 |
+| `cluster_label` | 人間用名前 | "scalp" |
+| `cluster_confidence` | 確信度 (= 最大確率 - 2 番目確率) | 0.54 |
+| `cluster_silhouette` | 各 trade の silhouette 値 (= はみ出し度) | 0.42 |
+
+###### 派生 one-hot 列 (= 後段が使いやすい形式)
+
+| 列名 | 内容 |
+|---|---|
+| `is_scalp` | スキャル型なら 1 |
+| `is_long_term` | 長期型なら 1 |
+| `is_risky` | 危険型なら 1 |
+| `is_avg` | 凡庸型なら 1 |
+
+(k=4 想定・k=3 / k=5 でカラム数調整)
+
+##### 保存場所
+
+- `results/priority_rebuild/cluster_step1/cluster_predictions_train_2021_2024.parquet`
+- `results/priority_rebuild/cluster_step1/cluster_predictions_test_2025.parquet`
+- `results/priority_rebuild/cluster_step1/cluster_predictions_test_2026_q1.parquet`
+- joblib artifact: `cluster_kmeans_train_2021_2024.joblib` / `pca_train_2021_2024.joblib` / `scaler_train_2021_2024.joblib`
+- (= §6.1.6 regime 出力と同型構造)
+
+##### 後段接続方法
+
+```
+[2] Entry ML 出力 (= 56 ラベル予測)
+    ↓ entry_id + timestamp で merge
+[2.5] cluster 出力 (= 7 主要列 + 派生 one-hot 列)
+    ↓ entry_id + timestamp で merge
+[3] Sizing 入力 / [4] Exit 入力 (= 統合 input)
+```
+
+- entry_id ベース join で timestamp ズレなし (= 自然に未来参照防止)
+- 後段 LightGBM (= [3]/[4]) は cluster_id 直接食えるが、one-hot 列の方が tree 系で扱いやすい (= 業界 standard)
+
+##### causal alignment (= 未来情報を使わない時間整合)
+
+- cluster は Entry ML 出力に基づくので、Entry ML の causal alignment と同じ tick の値を使う
+- entry_id ベース join なので timestamp ズレなし
+- `assert no look-ahead` 入れる (= §6.2.8 leak 防止と整合)
+- 検証: parquet 出力時に `assert df['entry_ts'] <= df['cluster_predict_ts']` (= cluster 予測時刻が entry 時刻と一致もしくは後)
+
+##### 業界 standard verify (cc_role §1.4.6.1 #6)
+
+- **one-hot encoding 業界 standard**: tree 系 model (= LightGBM / XGBoost) は categorical を one-hot で受ける慣行 ([scikit-learn 公式](https://scikit-learn.org/stable/modules/preprocessing.html#preprocessing-categorical-features))
+- **soft cluster output (= 確率列)**: AFML Ch.16 で「cluster prob + cluster_id を併用」が業界 standard
+- **entry_id ベース merge**: AFML Ch.7 sample-level join が業界 standard
+
+##### 教科書整合 (cc_role §1.4.6.1 #7)
+
+- **AFML Ch.16 ML Asset Allocation**: cluster 出力は cluster_id + cluster_prob + cluster_centers_ の 3 種類を保持推奨
+- **§6.1.6 regime 出力仕様**: 6 列 + one-hot 派生列の同型構造を採用
+
+##### cat-bitget 固有 verify (= メタガード 13)
+
+- **Phase 4-a 旧実装**: cluster_id のみ出力で確率なし → §6.3.6 案では確率列追加 (= 改善)
+- **§6.1.6 regime 出力との合計**: regime 6 列 + cluster 7+派生列 = 13+ 列が [3]/[4] 入力に追加される
+- **定量試算経路**: Phase 4-a predictions_train_2021_2024 の cluster_id 出力に対し、Gaussian kernel で確率変換した場合の確率列分布を実装着手時に train fold で pre check
+
+##### 第一段階固定値の事前根拠 (= メタガード 14)
+
+| 固定値 | 業界引用 | cat-bitget 過去事例 |
+|---|---|---|
+| 主要 7 列 + 派生 one-hot 列 | AFML Ch.16 + scikit-learn 業界 standard | §6.1.6 regime 出力と同型運用 |
+| parquet 保存形式 | OSS / Python 業界慣習 | Phase 0 / Phase 4-a 旧実装と同型 |
+| entry_id ベース merge | AFML Ch.7 sample-level join | §6.2 Entry ML 出力との接続前提 |
+
+##### 統計指標と PnL 指標の分離
+
+- §6.3.6 は **データ受け渡し層** (= 統計でも PnL でもない構造設計)
+- 統計指標は §6.3.1 Stage 1・PnL 指標は §6.3.1 Stage 3 で別途・混同禁止
+
+##### 整合性 Q&A (= メタガード 15)
+
+**Q1**: §6.1.6 regime 出力 6 列 + §6.3.6 cluster 出力 7+派生列 = 13+ 列が [3]/[4] 入力に追加される・冗長ではないか?
+
+**A1**: 整合する。regime = 市場局面 (= 上昇/下落/レンジ・大局)、cluster = trade 質 (= スキャル/長期/危険/凡庸・局所) で論点軸が違うので冗長ではない。Stage 1 で予測誤差相関 Pearson < 0.5 verify で「重複していない」を機械的確認。
+
+**Q2**: cluster_id を直接食う vs one-hot 列を食うで [3]/[4] 性能差は出るか?
+
+**A2**: LightGBM 等の tree 系では理論上ほぼ同じだが、業界 practice として one-hot 推奨 (= モデル可読性 + 重要度分析容易性)。第一段階 one-hot 採用・第二段階 [3]/[4] で cluster_id 直接食う比較も検討可能。
+
+##### data-driven 経路宣言 (cc_role §1.4.6.1 #12)
+
+| 項目 | 暫定値 | data-driven 決定経路 |
+|---|---|---|
+| 主要列数 | 7 列 (k=4 想定) | k 確定 (§6.3.4) 後に列数調整 (= k=3 で 6 列・k=5 で 8 列) |
+| 派生 one-hot 列の採用 | 採用 | Stage 3 で cluster_id 直接食う比較で第二段階判定 |
+| 保存形式 | parquet | 業界 standard・OSS 整合で固定 |
+
+##### 専門用語補足
+
+| 用語 | 日本語 |
+|---|---|
+| one-hot 列 | フラグ列 (= 0/1 で表現) |
+| merge_asof | timestamp 整合の結合方法 |
+| entry_id | entry trade に付与する一意 ID |
+| causal alignment | 未来情報を使わない時間整合 |
+| look-ahead | 未来データを誤って使うリーク |
+| joblib | scikit-learn モデルの保存形式 |
+| parquet | 列指向のデータ保存形式 (= 高速読み書き) |
+
+##### §6.3.6 着地
+
+**出力 7 主要列 (= cluster_id + cluster_prob_0/1/.. + cluster_label + cluster_confidence + cluster_silhouette) + 派生 one-hot 列 + parquet 保存 + entry_id ベース merge で後段接続 + causal alignment 明示 + assert no look-ahead**
+
+---
+
+#### 6.3.7 leak 防止
+
+##### 目的
+
+教師なし学習でも**未来データを使ってしまう経路を洗い出して防止**する。教師なしだから安全と思いがちだが、cluster でも leak は複数経路あり (= scikit-learn fit / transform 範囲・k 決定 / 命名タイミング等)。
+
+##### 第一原則
+
+**未来データ参照は全工程で絶対禁止** (= [false_positive §0-1 Prime Directive](../rules/false_positive_incident_policy.md))・t 時点で取得可能な変数のみ計算式・判定式・採用ロジックに使用可能。
+
+##### leak 経路と防止策 (= 6 項目)
+
+| # | 経路 | 防止策 |
+|---|---|---|
+| 1 | k-means の fit に test 期間データを含める | **fit は train 期間のみ**・test は predict のみ (= [phase_compliance §4a.1](../rules/phase_compliance_checklist.md) 整合) |
+| 2 | PCA の fit を test 期間で行う | **PCA fit も train 期間のみ**・joblib 保存して apply |
+| 3 | RobustScaler の fit を test 期間で行う | **scaler fit も train 期間のみ**・fold 別 fit (= Pipeline 化) |
+| 4 | Entry ML 出力が leak 含む | §6.2.8 leak 防止整合 (= 4 点 verify 通過した出力のみ使用) |
+| 5 | k 数決定 (= silhouette 計算) を test 期間で行う | **k 探索も train 期間のみ**・test には適用のみ |
+| 6 | cluster label (= post-hoc 命名) を test 期間で決定 | **命名も train 期間のみ**・test には mapping 適用のみ |
+
+##### artifact 命名規律 (= §4a.4 と同型)
+
+- **ファイル名禁止**: `*test*` / `*test2025*` 含む joblib 禁止
+- **合格名**: `cluster_kmeans_train_2021_2024.joblib` / `pca_train_2021_2024.joblib` / `scaler_train_2021_2024.joblib`
+- ls grep で test 含むファイルがゼロ件を verify
+
+##### 起動時 assertion
+
+```python
+assert "train" in artifact_path and "test" not in artifact_path
+```
+
+(= [phase_compliance §6b.4](../rules/phase_compliance_checklist.md) と同型)
+
+##### causal alignment
+
+- §6.3.6 出力で cluster_id の timestamp 整合 (= entry_id ベース merge)
+- `assert no look-ahead` 入れる
+- §6.1.6 regime と同型構造
+
+##### Stage 1 verify 項目
+
+実装着手時に以下を機械的 verify:
+
+| verify 項目 | 方法 |
+|---|---|
+| timestamp range 分離 | train 末 < test 始 を parquet min/max で確認 |
+| artifact 名 verify | grep で `*test*` 含む joblib がないか |
+| fit 範囲 grep | `.fit(` を呼ぶ箇所が train データのみか |
+| causal alignment | `merge_asof` の direction 確認 |
+| Entry ML 出力の leak フリー verify | §6.2.8 4 点 verify 通過済か |
+| feature_importance review | cluster 入力 (= PCA 主成分) の重要度上位に怪しい列名がないか |
+
+##### 業界 standard verify (cc_role §1.4.6.1 #6)
+
+- **教師なし学習 leak**: AFML Ch.7 で「unsupervised でも fit は train fold 内に閉じ込めるべき」明文化
+- **artifact 命名規律**: scikit-learn 業界 best practice ([Hudson & Thames mlfinlab](https://www.mlfinlab.com/en/latest/feature_importance/afm.html) 整合)
+
+##### 教科書整合 (cc_role §1.4.6.1 #7)
+
+- **AFML Ch.3 Look-Ahead Bias**: shift(-K) / center=True 等の未来参照禁止
+- **AFML Ch.7 Purged K-Fold + Embargo**: train/test 境界に embargo を入れて leak 完全防止
+- **false_positive §0-1 Prime Directive**: 推論時点 t で取得可能な変数のみ使用
+
+##### cat-bitget 固有 verify (= メタガード 13)
+
+- **Phase 4-a 過去事例**: [§4a.1](../rules/phase_compliance_checklist.md) で「fit は train のみ」明文化済 (= 教師なし leak の業界 standard 防止規律) → 本工程でも整合
+- **§6.2.8 Entry ML leak 防止との接続**: cluster は Entry ML 出力依存 → §6.2.8 4 点 verify 通過した出力のみ使用
+- **定量試算経路**: Phase 4-a artifact `predictions_train_2021_2024_k12long_refit.parquet` の命名規律と同型化・実装着手時に grep で test 含むファイル名ゼロ件 verify
+
+##### 第一段階固定値の事前根拠 (= メタガード 14)
+
+| 固定値 | 業界引用 | cat-bitget 過去事例 |
+|---|---|---|
+| fit は train 期間のみ | AFML Ch.7 + scikit-learn 業界 standard | phase_compliance §4a.1 / §6b.1 と同型 |
+| artifact 名 train 含む必須 | scikit-learn 業界 best practice | phase_compliance §4a.4 / §7c.9 と同型 |
+| 起動時 assertion | OSS Python 慣行 | phase_compliance §6b.4 / §7c.9 と同型 |
+
+##### 統計指標と PnL 指標の分離
+
+- §6.3.7 は **規律層** (= 統計でも PnL でもない leak 防止規律)
+- 違反は false_positive §2 類型 A (= look-ahead leak) として最重大インシデント扱い
+
+##### 整合性 Q&A (= メタガード 15)
+
+**Q1**: §6.2.8 Entry ML leak 防止と §6.3.7 cluster leak 防止の重複ではないか?
+
+**A1**: 重複ではない。§6.2.8 は Entry ML 工程内の leak 経路 (= 特徴量 / ラベル / CV)・§6.3.7 は cluster 工程独自の leak 経路 (= k-means / PCA / scaler / k 探索 / 命名) を扱う。両者を独立 verify して工程接続の隙間を塞ぐ。
+
+**Q2**: 教師なしなのに leak 経路がある理由は?
+
+**A2**: 教師なし = 「正解ラベルなし」だけで「未来データ使い禁止」とは別。k-means fit / PCA fit / scaler fit / k 探索 / 命名 すべてに **「train 期間のデータで決定するか / test 期間のデータも含めるか」** の選択が発生し、test 含めると leak。
+
+##### data-driven 経路宣言 (cc_role §1.4.6.1 #12)
+
+| 項目 | 暫定値 | data-driven 決定経路 |
+|---|---|---|
+| Stage 1 verify 全項目 | 全項目 PASS 必須 | 1 項目でも FAIL なら実装中止・leak 経路特定 |
+| feature_importance leak review | 上位 N に怪しい列名がないか | 怪しい列発見時に [feedback_ml_leak_mandatory_check](../memory/feedback_ml_leak_mandatory_check.md) 4 点 verify セット適用 |
+| Purged K-Fold embargo | §6.2.5 と同型 | 必要なら別途追加検討 |
+
+##### 専門用語補足
+
+| 用語 | 日本語 |
+|---|---|
+| fit | モデルの学習・適合 |
+| predict / apply | 学習済モデルを適用 |
+| joblib | scikit-learn モデルの保存形式 |
+| Pipeline | 前処理 → 学習を 1 つにまとめる仕組み |
+| causal alignment | 未来データを使わない時間整合 |
+| look-ahead | 未来データを誤って使うリーク |
+| Purged K-Fold | 時系列 CV で train/test 境界に embargo を入れる手法 |
+| feature_importance | 各 feature の予測寄与度 |
+
+##### §6.3.7 着地
+
+**fit は train 期間のみ (= k-means / PCA / scaler / k 探索 / 命名 全部) + artifact 名 train 含む必須 + 起動時 assertion + causal alignment 明示 + Stage 1 で 6 項目機械的 verify**
 
 ---
 
@@ -1600,6 +2373,8 @@ SHORT_score = SHORT_TP_prob_calibrated × 0.4 + SHORT_MFE_pct_normalized × 0.3 
 | 2026-05-27 | v2.5 | §6.1.4 k-means 判定器の設計 追記 (= 業界 standard verify 4 件・4 特徴量入力 [log_returns_1h / rolling_volatility(20) / close_vs_sma20_pct__1h / adx14_1h]・k=3 で HMM と整合・HMM と同じ学習データ/前処理/判定間隔/ヒステリシス・3 判定器の役割分担明示) |
 | 2026-05-27 | v2.6 | §6.1.5 ensemble 機構の設計 追記 (= soft voting + 重み付き平均に決着・業界 standard verify 4 件・初期等重み・各判定器の確率変換方法明示・最終判定 + 確信度算出 + 不明確閾値 0.4 + 連続 2 回ヒステリシス) |
 | 2026-05-27 | v2.7 | §6.1.6 出力仕様 追記 (= 業界 standard verify 4 件・出力 6 列 [regime_label / prob_up / prob_down / prob_range / confidence / volatility_level]・MTF 1h → 5m forward fill・one-hot encoded 派生列・保存場所 results/regime_step1/ 配下 3 parquet・データフロー明示・「フィルタ強制適用しない」決着整合) |
+| 2026-05-27 | v3.9 | **§6.3 v3.8 内容を「⛔ 設計し直し対象」マーク (= CP3 監査 Verdict PIVOT 後・L-236)** ・中身の数値・アルゴリズム選定・キャリブレーション処理は再設計必要・枠組み構造 (= 7 サブセクション分割 + Stage 1-4 評価) は参照のみ可 ・**CP3 監査結果** (= `.claude/audits/2026-05-27_step25_cluster_design_cp3_audit_report.md` 422 行・Critical 3 + Major 3 + Minor 1 件 + 構造的指摘) ・**構造的指摘** = CP1/CP2/CP3 と 3 回連続で「メタガード追加が機械的フォーマット化」実証 → ガード追加経路打ち切り + 物理強制 hooks 導入 (= cc_role §1.4.6.2 / `.claude/settings.local.json` + `.claude/hooks/`) ・次セッション = 物理強制経路採用版で §6.3 設計し直し + サブセクションごとの KB Read + WebSearch 強制化 |
+| 2026-05-27 | v3.8 | **§6.3 工程 [2.5] cluster 分類 詳細設計 §6.3.0〜§6.3.7 全 7 サブセクション完成** (= regime ensemble §6.1.1〜§6.1.6 / Entry ML §6.2.1〜§6.2.8 と同型構造達成・旧 17 行 (= 方針 + 設計判断の根拠) を廃止して新規 7 サブセクション約 500 行に置換) ・**§6.3.0**: 概要 + 議論順序 (= §6.3.3→§6.3.2→§6.3.4→§6.3.1→§6.3.5→§6.3.6→§6.3.7) 明示 ・**§6.3.1 評価方法**: 4 段階構造 (Stage 1 silhouette > 0.3 + inertia + 偏り + regime 相関 + 旧 14 列版比較 / Stage 2 視認 + Exit 抜き PnL proxy / Stage 3 純増分 (b)/(a) ≥ 1.5× / Stage 4 月次 NET ≥ $1,900) ・**§6.3.2 アルゴリズム選定**: k-means 単体 + k-means++ + Euclidean + Gaussian kernel 確率変換 (σ = cluster median)・第二段階 GMM/HDBSCAN/ensemble 検討経路 ・**§6.3.3 入力特徴量設計**: 案 b 全投入 (= 2,666 列) + PCA 50-100 主成分 + RobustScaler fold 別 fit + regime 統合 ・**§6.3.4 k 決定**: k ∈ {3, 4, 5} 並列試行 + silhouette 最大 + elbow + 業界経験則 (= 3-5 cluster で 1.5× レバー) + 偏り ≥ 5% ・**§6.3.5 ラベル付け**: train 期間で 4 軸 (TP_prob / MFE / SL_prob / 保有時間) post-hoc 命名 → test mapping 適用のみ ・**§6.3.6 出力**: 主要 7 列 (cluster_id / cluster_prob_X / cluster_label / cluster_confidence / cluster_silhouette) + 派生 one-hot 列 + parquet 保存 + entry_id ベース merge ・**§6.3.7 leak 防止**: fit は train 期間のみ (k-means / PCA / scaler / k 探索 / 命名 全部) + artifact 名 train 含む必須 + 起動時 assertion + Stage 1 で 6 項目機械的 verify ・WebSearch 5 件 (= Springer Nature 2025 / PMC 7785332 / PMC 12484065 / MDPI 2025 / DSFE 2025 / Towards Data Science / Medium State-of-the-Art / Built In Elbow / ML Mastery Silhouette) + 教科書整合 AFML Ch.4/16/20 / cc_entry_logic_self_study §14.6/§17.6/§18.3 + cat-bitget 固有 verify (Phase 4-a 14 列 silhouette 0.15-0.20 → 新 PCA 版 > 0.3 期待) + cc_role §1.4.6.1 メタガード 13/14/15 機械運用 + 設計矛盾自己検出 Q&A (= 各サブセクション 2 件以上) + data-driven 経路宣言 (= 各サブセクション 3 項目以上) + 専門用語補足 (= feedback_plain_language 機械運用) ・本セッション L-232/L-233/L-235 改善 2 違反「わかりやすく解説」指摘 6 回連続 → 簡潔版を母体に機械的証跡セクション追記する折衷構造採用 |
 | 2026-05-27 | v3.7 | **CP2 監査結果反映完遂** (= [.claude/audits/2026-05-27_step2_entry_ml_design_cp2_audit_report.md](../audits/2026-05-27_step2_entry_ml_design_cp2_audit_report.md) Verdict PIVOT・Critical 2 + Major 2 + Minor 2 件全 6 件採用支持で反映) ・**C1** = §6.2.1 Stage 1 に Brier/reliability/ECE 追加 + §6.2.3 論点 4 fold 別 isotonic regression キャリブレーション必須 (TripleBarrier 14 + meta_label 14)・集約式の入力 prob はキャリブレーション後の値を使用 ・**C2** = §6.2.7 集約式に MFE_pct z-score 標準化 (train_2021_2024 fold 別 mean/std) 追加・第二段階 0-1 ratio 化候補 ・**M1** = §6.2.7 K 重み 0.5/0.1 → 等重み 1/7 ≈ 0.143 に再設計 (= Phase 1 v6 教訓「予測対象を物理的に増やす」と集約段階の論点整合)・第二段階 data-driven 調整 ・**M2** = §6.2.7 即死 reject 危険度定義 = LONG_SL_prob > 0.9 (= Triple Barrier 直接出力)・第二段階 (a)(b) 候補保留 ・**Minor-1** = §6.2.8 項目 5 に phase_compliance §1.4 fractal 3 段階運用 verify_top20_features_leak.py 4 項目セット適用明示 ・**Minor-2** = §6.2.4 論点 6 / §6.2.8 第一原則 に TSFresh whitelist 化 (fc_parameters 指定)・blacklist 候補列挙 + L-179 同型予防経路明示 |
 | 2026-05-27 | v3.6 | **§6.2.8 leak 防止 追記 + [2] Entry ML 詳細設計 §6.2.1〜§6.2.8 全 8 サブセクション完成** (= regime ensemble §6.1.1〜§6.1.6 と同型構造達成) ・**第一原則**: false_positive §0-1 Prime Directive 整合 (= t 時点で取得可能な変数のみ) ・**項目 1**: [[feedback_ml_leak_mandatory_check]] 4 点 verify (特徴量 grep / 使用箇所 verify / timestamp range / feature_importance 即時 review) ・**項目 2**: regime 6 列 causal alignment (= §6.1.6 既決着引継ぎ・merge_asof backward + assert no look-ahead) ・**項目 3**: ラベル shift(-K) verify (= phase_compliance §0 Step 5 既決着引継ぎ) ・**項目 4**: CV embargo 2 day (= §6.2.5 既決着引継ぎ) ・**項目 5**: feature_importance top 20 自動 monitoring + 怪しい列名検出 + regime 6 列 top N 入り verify ・**項目 6**: blacklist 64 列除外 verify (= phase_compliance §-1 既決着引継ぎ・assert len(X.columns) == 2610) ・教科書整合 AFML Ch.3 Look-Ahead Bias / AFML Ch.7 Purged K-Fold + Embargo + 業界差分 + cat-bitget 固有 verify (L-179 / L-128 同型予防) + 統計と PnL 分離 + 設計判断根拠 4 件 + 懸念 1 件+反論 + data-driven 経路宣言 ・§6.2 セクション冒頭順次追記予定リストから §6.2.8 削除 + 「§6.2.1〜§6.2.8 全 8 サブセクション完成」明示 |
 | 2026-05-27 | v3.5 | §6.2.7 出力 → entry 判定 追記 (= 6 論点決着・全 CC 推奨採用・まこさん OK) ・**論点 1** (= 段階的ルール集約 + 短期 K 重視): 第一段階 LONG/SHORT_score = TP_prob × 0.4 + MFE_pct × 0.3 + meta_yes_prob × 0.3・K 重み K=12/24 = 0.5 主役 / K=6/48/96/144/288 = 0.1 等分・第二段階 meta-learner (= Logistic Regression / Random Forest / Ridge) ・**論点 2** (= 排他 cat_v9 流): score 高い方を採用・hedging は [2.5] cluster で吸収 ・**論点 3** (= CC 決着): confidence = \|LONG_score - SHORT_score\| / max(LONG/SHORT_score) ・**論点 4** (= 第一段階固定 + 第二段階動的検討): 暫定 0.6 + fold 別 calibrate・即死 reject (= 危険度 > 0.9) ・**論点 5** (= CC 決着): primary (= TripleBarrier 3 class) + secondary (= meta_label binary) → §6.2.7 集約 → [3] Sizing Half-Kelly ・**論点 6** (= CC 決着・§6.2.2 第二段階): stacking 採用時 LightGBM 56 + XGBoost 56 → meta-learner ・WebSearch 2 件業界 standard verify (= arxiv 2501.10709 / pm-research Meta-Labeling 2025) + 教科書整合 AFML Ch.3 Meta-Labeling / AFML Ch.6 Ensemble + 業界差分 + cat-bitget 固有 verify + 統計と PnL 分離 + 設計判断根拠 4 件 + 懸念 3 件+反論 + data-driven 経路宣言 ・§6.2 セクション冒頭順次追記予定リストから §6.2.7 削除 |
