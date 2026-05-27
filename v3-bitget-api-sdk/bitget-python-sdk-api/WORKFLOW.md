@@ -358,9 +358,149 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-27 改訂46・**工程 [1.5] regime ensemble 実装完遂 (= Stage B-G 全実装 + 8 スクリプト新規) + target v1→v2 改訂 (= 未来予測→過去描写) + k-means v1→v2→v3 経緯 + accuracy 0.46→0.65 / Brier 0.29→0.16 / ECE 0.26→0.15 達成 + まこさん視認「結構改善」確認 + Stage 3 まで regime 調整保留決着 + dashboard v16 生成 + L-234 追加** + 次セッション = [2] Entry ML 詳細設計議論 + CP2 監査依頼書作成）
+## 🔴 現在のフェーズ（2026-05-27 改訂47・**工程 [2] Entry ML 詳細設計 §6.2.1〜§6.2.8 全 8 サブセクション完成 + CP2 監査 Verdict PIVOT 全 6 件 (= Critical 2 + Major 2 + Minor 2) 採用反映完遂 + cc_role §1.4.6.1 メタガード 13/14/15 追加 + L-235 追加** + 次セッション = [2] Entry ML 実装着手）
 
-> **【現在の正本ブロック・改訂46・2026-05-27 セッション末（[1.5] 実装完遂 + Stage 1 評価完了 + 視認チェック実施 + Stage 3 まで regime 調整保留決着）】**
+> **【現在の正本ブロック・改訂47・2026-05-27 セッション末（[2] Entry ML 詳細設計 §6.2.X 完成 + CP2 監査全件反映完遂）】**
+>
+> ### 本セッション (2026-05-27 改訂46 active → 改訂47 active) 完了事項
+>
+> #### 1. 工程 [2] Entry ML 詳細設計 §6.2.1〜§6.2.8 全 8 サブセクション完成 ✅
+>
+> | サブセクション | 内容 | まこさん判断 |
+> |---|---|---|
+> | §6.2.1 評価方法 | 4 段階構造 (Stage 1 統計 / Stage 2 視認+PnL proxy / Stage 3 PnL早期 / Stage 4 最終) | CC 決着 |
+> | §6.2.2 アルゴリズム選定 | LightGBM 56 個独立並列 + 第二段階 stacking | OK |
+> | §6.2.3 ラベル設計詳細 | TP/SL K 別 multiplier (案 C 採用)・class_weight + 不足時 SMOTE | 判断 1 = 案 C / 判断 2 = CC 推奨 |
+> | §6.2.4 入力特徴量設計 | 案 A 統合 + 全投入 + MTF integrated + 前処理なし | 判断 = 案 A 統合 |
+> | §6.2.5 CV 設計 | 5 fold + embargo 2 day + Purged K-Fold + CPCV 第二段階保留 | CC 決着 |
+> | §6.2.6 ハイパラ探索 | Optuna 30 trials + 3 系統別 tune + L1/L2 正則化 | CC 決着 |
+> | §6.2.7 出力 → entry 判定 | ルール集約 + 等重み (= CP2 反映後) + 排他 + threshold 0.6 | 6 件全 CC 推奨採用 |
+> | §6.2.8 leak 防止 | 4 点 verify + causal alignment + assert | CC 決着 |
+>
+> #### 2. CP2 監査経路実施完了 ✅
+>
+> - 監査依頼書: `.claude/audits/inputs/2026-05-27_step2_entry_ml_design_cp2_audit_request.md` (= 323 行・テンプレ使用 + auditor 宣言ブロック付き)
+> - Plan agent cold start 起動 → 7 観点 + Q1-Q7 + 外部検索 8 件で独立 verify
+> - 監査結果: `.claude/audits/2026-05-27_step2_entry_ml_design_cp2_audit_report.md` (= 365 行・Verdict PIVOT・Critical 2 + Major 2 + Minor 2 件)
+> - 全 6 件採用支持で反映完了 (= cc_role §1.5.5 機械的反映禁止プロセス通過・1 件ずつ独立評価)
+>
+> #### 3. CP2 監査結果反映完遂 ✅ (= ml_pipeline_baseline v3.6 → v3.7)
+>
+> - **C1**: §6.2.1 Stage 1 に Brier/reliability/ECE 追加 + §6.2.3 fold 別 isotonic regression キャリブレーション必須・集約式は calibrated 値使用
+> - **C2**: §6.2.7 集約式に MFE_pct z-score 標準化 (= train fold 別) 追加
+> - **M1**: §6.2.7 K 重み 0.5/0.1 → 等重み 1/7 ≈ 0.143 (= Phase 1 v6 教訓論点整合)
+> - **M2**: §6.2.7 即死 reject 危険度 = LONG_SL_prob > 0.9
+> - **Minor-1**: §6.2.8 項目 5 に phase_compliance §1.4 fractal 3 段階運用適用明示
+> - **Minor-2**: §6.2.4 / §6.2.8 に TSFresh whitelist 化 (= fc_parameters 指定)・L-179 同型予防経路
+>
+> #### 4. cc_role §1.4.6.1 メタガード 13/14/15 追加 ✅ (= CP2 監査 P1 反映)
+>
+> - 13: 機械的フォーマット化検出 (= 定量試算 1 件以上必須)
+> - 14: 第一段階固定値の事前根拠厳格化 (= 業界引用 + cat-bitget 過去事例 併記必須)
+> - 15: 設計矛盾自己検出 (= Phase 1 v6 教訓と論点 Y の整合性 Q&A 必須)
+>
+> #### 5. lessons L-235 追加 ✅
+>
+> 本セッション完了事項 + CC 失敗パターン 3 件 + 改善ルール 4 件 (= メタガード機械運用 / 専門用語補足機械運用 / 機械的反映禁止拡張 / 設計矛盾自己検出 Q&A 必須化)
+>
+> ### 本セッション CC 失敗パターン (= L-232 / L-233 同型再演継続)
+>
+> 1. わかりやすく解説指摘 5 回連続 (= L-232/L-233 改善 2 違反継続)
+> 2. §6.2 設計が CP1 監査同型問題を完全再演 (= cc_role §1.4.6.1 改善 6-12 を機械的フォーマット化で網羅性偽装)
+> 3. 短期 K 重視 0.5/0.1 で Phase 1 v6 教訓論点矛盾 (= L-222/L-229 振り子の極端さ + L-230 複合)
+>
+> 詳細は lessons L-235 参照。
+>
+> ### 次セッション CC 優先順位 (= まこさん指示「実装着手」)
+>
+> 1. **優先 1 — Step 0 + auto-load 確認**:
+>    - WORKFLOW.md 改訂47 active (= 本ブロック)
+>    - lessons L-235 (= 本セッション失敗パターン + 改善ルール 4 件)
+>    - `ml_pipeline_baseline_v1.md` v3.7 (= §6.2.X 全完成 + CP2 反映済)
+>    - `cc_role.md` §1.4.6.1 メタガード 13/14/15 (= 新規追加・毎ターン機械運用)
+>    - CP2 監査結果ファイル
+>
+> 2. **優先 2 — [2] Entry ML 実装着手**:
+>    - LightGBM 56 個独立並列学習 (= MultiOutputRegressor encapsulate)
+>    - 入力特徴量 2,604 + regime 6 = 2,610 列 (= 案 A 統合)
+>    - fold 別 isotonic regression キャリブレーション (= TripleBarrier 14 + meta_label 14)
+>    - MFE_pct z-score 標準化 (= train fold 別 mean/std)
+>    - K 別 multiplier (= 短期 K cat_v9 流 / 長期 K AFML 流 / 中間遷移)
+>    - Walk-Forward Purged K-Fold 5 fold + embargo 2 day
+>    - Optuna 30 trials + 3 系統別 tune + L1/L2 正則化
+>    - ルール集約 (= TP_prob × 0.4 + MFE_pct_normalized × 0.3 + meta_yes_prob × 0.3) + 等重み 1/7
+>    - threshold 0.6 + 即死 reject (= LONG_SL_prob > 0.9)
+>    - leak 4 点 verify + verify_top20_features_leak.py + assert len(X.columns) == 2610
+>    - cc_role §1.4.6.1 メタガード 13/14/15 機械運用
+>
+> 3. **優先 3 — Stage 1 内部スコア評価** (= 実装直後):
+>    - 56 ラベル個別 RMSE/F1/AUC/Precision/Recall + Brier/reliability/ECE
+>    - feature_importance top 20 review (= 4 点 leak verify + regime 6 列上位 N% 入り verify)
+>    - 56 ラベル間予測相関 (= > 0.95 で冗長 verify)
+>
+> 4. **優先 4 — Stage 2 視認 + Exit 抜き PnL proxy** (= Stage 1 後):
+>    - まこさん月単位視認
+>    - 旧 Priority v9 P1-P25 発火位置 overlap 分析
+>    - entry direction 分布 + 月 275 件 verify
+>    - Exit 抜き PnL proxy = TP_Precision × TP_gain - (1-TP) × SL_loss - fee
+>
+> 5. **優先 5 — セッション終了処理** (= lessons + WORKFLOW 改訂48 + git commit)
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (= 毎セッション必読・読了ゲート対象)
+> - **WORKFLOW.md 改訂47 active** (= 本ブロック)
+> - **CLAUDE.md**
+> - **`ml_pipeline_baseline_v1.md` v3.7** (= §6.2.X 全完成 + CP2 反映済)
+> - **`current_redesign_context.md`**
+> - **`priority_v9_trade_logic_analysis.md` v2**
+> - **`technical_analysis_knowledge_base.md`**
+> - **`industry_benchmark_knowledge_base.md`**
+> - **lessons_active.md 直近 5 件** (= L-235 → L-234 → L-233 → L-232 → L-231)
+> - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 / §1.4.6.1.A メタガード 13/14/15 (= 新規) / §1.4.7 / §1.5 / §1.5.5 / §1.7**
+> - **feedback_cat_v9_no_modification.md / feedback_baseup_before_design_discussion.md / feedback_cc_low_perspective_narrow_view.md / feedback_priority_starting_line_only.md** (= auto-memory・最重要・命令)
+> - **feedback_writing_style.md / feedback_plain_language.md / feedback_no_unverified_assertions.md / feedback_trade_ml_knowledge_gap.md** (= auto-memory・最重要)
+>
+> #### Layer 2 (= タスク特有・実装時参照)
+> - CP2 監査結果: `.claude/audits/2026-05-27_step2_entry_ml_design_cp2_audit_report.md`
+> - CP1 監査結果: `.claude/audits/2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md`
+> - regime artifact: `results/regime_step1/` (= regime_predictions_*.parquet 3 種 + joblib 4 種 + json 5 種)
+> - regime 実装 8 スクリプト: `scripts/priority_rebuild/regime_*.py` + `scripts/dashboard/build_step15_ensemble_dashboard.py`
+> - Phase 0 v3.1 既存 parquet (= 56 ラベル + 1,462 指標 + MTF 8 TF・blacklist 64 除外後)
+> - cc_ml_design_spec.md (= Phase 別仕様・合否基準)
+> - LightGBM 業界 standard / mlfinpy PurgedKFold / sklearn IsotonicRegression / Optuna TPE
+>
+> #### Layer 3 (= リファレンス)
+> - `false_positive_incident_policy.md` (= §0-1 Prime Directive + §0-2 0.12 BTC 厳守)
+> - `exchange_spec.md` (= Bitget API 仕様)
+> - `phase_compliance_checklist.md` (= §-1 USD 絶対値 blacklist + §1.4 fractal 3 段階運用)
+> - `lessons_archive.md` (= L-152 以前)
+>
+> #### データ・環境
+> - parquet 3 種 (= Phase 0 v3.1 既存・56 ラベル全生成済)
+> - `.venv311` (= hmmlearn 0.3.3 / mlfinpy 0.1.2 / lightgbm 4.6.0 / scikit-learn 1.8.0 / optuna 必要)
+> - regime 出力 (= [2] Entry ML 入力情報として使用)
+> - 旧 Priority 実績: 月 $370 (= cat-bitget **唯一の実利資産**・Stage 3 base line・cat_v9 改造禁止)
+>
+> ### CP 監査一覧表更新 (= 改善 3 整合)
+>
+> | 実施日 | 対象タスク | 監査区分 | 結果ファイル | 主要結論 |
+> |---|---|---|---|---|
+> | 2026-05-27 | 工程 [1.5] regime ensemble 詳細設計 | CP1 | `.claude/audits/2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md` | PIVOT・Critical 2 + Major 3 + Minor 2 件全 7 件採用支持 |
+> | 2026-05-27 | 工程 [2] Entry ML 詳細設計 §6.2.X | CP2 | `.claude/audits/2026-05-27_step2_entry_ml_design_cp2_audit_report.md` | PIVOT・Critical 2 + Major 2 + Minor 2 件全 6 件採用支持 + cc_role §1.4.6.1 メタガード 13/14/15 追加 |
+>
+> ### 目的整合性 1 行宣言 (= cc_role §1.4.6)
+>
+> - **次タスク** = (1) Step 0 + auto-load → (2) [2] Entry ML 実装 + Stage 1 → (3) Stage 2 視認 + PnL proxy → (4) [2.5]/[3]/[4] 実装 → (5) Stage 3 PnL 早期判定 (= 旧 Priority v9 月 $370 vs ML パイプライン純増分 ≥ 5.1× 判定) → (6) Phase 5 Replay 検証
+> - **現フェーズ目的への貢献根拠** = 本セッションで [2] Entry ML 詳細設計 §6.2.X 全完成 + CP2 監査全件反映 + メタガード 13/14/15 追加で次セッション実装着手 GO 状態到達。実装完成 → Stage 3 経由で月次 NET ≥ $1,900 全月クリア判定 の直線経路に乗る。
+
+---
+
+## 🧊 改訂46 ブロック (履歴・参照用)
+
+### 旧フェーズヘッダ（2026-05-27 改訂46・**工程 [1.5] regime ensemble 実装完遂 (= Stage B-G 全実装 + 8 スクリプト新規) + target v1→v2 改訂 (= 未来予測→過去描写) + k-means v1→v2→v3 経緯 + accuracy 0.46→0.65 / Brier 0.29→0.16 / ECE 0.26→0.15 達成 + まこさん視認「結構改善」確認 + Stage 3 まで regime 調整保留決着 + dashboard v16 生成 + L-234 追加** + 次セッション = [2] Entry ML 詳細設計議論 + CP2 監査依頼書作成）
+
+> **【旧 active ブロック・改訂46・2026-05-27 セッション末（[1.5] 実装完遂 + Stage 1 評価完了 + 視認チェック実施 + Stage 3 まで regime 調整保留決着）】**
 >
 > ### 本セッション (2026-05-27 改訂45 active 続き = 実装) 完了事項
 >
