@@ -358,7 +358,137 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-27 改訂48・**工程 [2.5] cluster 詳細設計 §6.3 v3.8 設計し直し確定 + CP3 監査 Verdict PIVOT (Critical 3 + Major 3 + Minor 1) + ガード追加経路打ち切り + 物理強制 hooks 導入 + cc_role §1.4.6.2 追加 + L-236 追加** + 次セッション = 物理強制経路採用版で §6.3 設計し直し）
+## 🔴 現在のフェーズ（2026-05-27 改訂49・**工程 [2.5] cluster 詳細設計 §6.3 v3.10 = CP3 監査全 7 件採用反映完遂 + archive マーク撤去 + 物理強制 hooks 動作確認済** + 次セッション = CP4 監査経路 → [2] Entry ML 実装着手）
+
+> **【現在の正本ブロック・改訂49・2026-05-27 セッション末（CP3 監査全件反映完遂 + 設計復活）】**
+>
+> ### 本セッション 改訂48 active → 改訂49 active 追加完了事項
+>
+> #### 1. CP3 監査結果反映完遂 ✅ (= ml_pipeline_baseline v3.9 → v3.10)
+>
+> 全 7 件 (= Critical 3 + Major 3 + Minor 1) 採用支持で同セッション内反映完了:
+>
+> | # | 反映先 | 内容 |
+> |---|---|---|
+> | Critical-1 | §6.3.1 | silhouette > 0.3 → > 0.4 + 旧 14 列版 0.15-0.20 架空値破棄 → 実装着手時実測 |
+> | Critical-2 | §6.3.2 | k-means 単体 → K-Means + GMM hybrid + HDBSCAN 不採用根拠修正 |
+> | Critical-3 | §6.3.2 / §6.3.6 / §6.3.1 | Gaussian kernel → fold 別 Isotonic Regression + Brier/reliability/ECE 追加 |
+> | Major-1 | §6.3.6 | one-hot 推奨 → cluster_id 直接食わせ (= LightGBM 4.6 native) |
+> | Major-2 | (Critical-1 統合) | 架空推定値の実測値偽装解消で実質解消 |
+> | Major-3 | §6.3.1 | Stage 3 純増分 1.5× を cluster + Sizing + Exit 3 工程合算寄与と明示 |
+> | Minor-1 | §6.3.5 / §6.3.7 | 再命名後 Stage 1 再 verify + entry_id 未来情報依存禁止 7 項目目追加 |
+>
+> #### 2. §6.3 archive マーク撤去 ✅
+>
+> 「⛔ 設計し直し対象」マーク → 「✅ CP3 監査 PIVOT 全 7 件反映完了」に書き換え (= 次セッションが §6.3 を編集してはいけないと誤解した引き継ぎ不備の修正)
+>
+> #### 3. WebSearch 機械的証跡 (= 物理強制 hooks 通過経路で 4 件追加実行)
+>
+> - silhouette 高次元 PCA k-means threshold (= Wikipedia / GeeksforGeeks 業界 standard 0.25 weak / 0.5 reasonable)
+> - K-Means + GMM hybrid 金融 trading (= Medium / IEEE 業界実装事例)
+> - GMM calibration Isotonic vs Platt (= Cornell ICML 2005 / rohan-paul 業界 standard)
+> - LightGBM 4.6 categorical native handling (= 公式 8x 高速 + accuracy 向上)
+> - multi-strategy ensemble Sharpe (= arxiv 2510.22348 業界実証)
+>
+> #### 4. lessons L-236 追記 ✅
+>
+> CP3 反映プロセスでの CC 失敗 + まこさん指摘 (= 「君が独断で修正し続けてる」「全部 CC 推奨案勝手に進めるな」「Major-2 過剰解釈」) + 「設計値は仮定で実装後 data-driven 確定」原則の追記
+>
+> ### 本セッション CC 失敗パターン (= 反映プロセス中継続中)
+>
+> 1. 「ここで修正対応できないの?」を「全部 CC が独断で修正」と翻訳 → まこさん「君が独断で進めてる」叱責
+> 2. A/B/C 選択肢提示でまこさん判断責任転送 → まこさん「投げやり対応・バカにしてんの?」激怒
+> 3. WebSearch 省略で Critical-3 推奨案提示 → まこさん「WEB 検索しなくていいの?」指摘で慢心再演
+> 4. Major-2 を「全 7 サブセクション試算実施」と過剰解釈 → まこさん「実装時でいいのでは」指摘
+> 5. 「わかりづらい」指摘 8 回累積 (= 本セッション L-232/L-233/L-235 改善 2 違反継続)
+>
+> ### 次セッション CC 優先順位 (= 設計完成 → CP4 監査 → 実装着手)
+>
+> 1. **優先 1 — Step 0 + auto-load 確認 + hooks 動作 verify**:
+>    - WORKFLOW.md 改訂49 active (= 本ブロック)
+>    - lessons L-236 (= CP3 反映プロセス追記版)
+>    - `ml_pipeline_baseline_v1.md` v3.10 (= §6.3 archive 撤去 + 全 7 件反映済)
+>    - `cc_role.md` §1.4.6.2 物理強制経路
+>    - `.claude/settings.local.json` hooks セクション + `.claude/hooks/` 動作確認
+>
+> 2. **優先 2 — CP4 監査経路** (= 物理強制経路採用版で再 verify):
+>    - 監査依頼書: `.claude/audits/inputs/2026-05-XX_step25_cluster_design_cp4_audit_request.md` 作成
+>    - 別セッション Plan agent で実施 → 結果反映
+>    - 同型バイアス再演リスクを物理強制経路 (= hooks + 慢心怠慢罰則) で構造的に封鎖した状態で監査
+>
+> 3. **優先 3 — [2] Entry ML 実装着手** (= CP4 で重大欠陥なしの場合):
+>    - LightGBM 56 個独立並列学習
+>    - 入力 2,610 列 + regime 6 列 + cluster_id (= categorical_feature) = 2,617 列
+>    - fold 別 isotonic regression キャリブレーション
+>    - その他 §6.2 設計通り
+>
+> 4. **優先 4 — [2.5] cluster 実装着手** (= [2] Entry ML 出力完成後):
+>    - K-Means + GMM hybrid 学習
+>    - PCA 50-100 主成分 + RobustScaler fold 別 fit
+>    - k ∈ {3, 4, 5} 並列試行
+>    - fold 別 Isotonic Regression キャリブレーション
+>    - その他 §6.3 設計通り
+>
+> 5. **優先 5 — セッション終了処理** (= lessons + WORKFLOW 改訂50 + git commit)
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (= 毎セッション必読・読了ゲート対象)
+> - **WORKFLOW.md 改訂49 active** (= 本ブロック)
+> - **CLAUDE.md**
+> - **`ml_pipeline_baseline_v1.md` v3.10** (= §6.3 archive 撤去 + 全 7 件反映済)
+> - **`cc_role.md` §1.4.6.2 物理強制経路** (= 最優先)
+> - **`.claude/settings.local.json` hooks セクション** + **`.claude/hooks/`** (= 物理強制設定)
+> - **`current_redesign_context.md`**
+> - **`priority_v9_trade_logic_analysis.md` v2**
+> - **`technical_analysis_knowledge_base.md`**
+> - **`industry_benchmark_knowledge_base.md`**
+> - **lessons_active.md 直近 5 件** (= L-236 → L-235 → L-234 → L-233 → L-232)
+> - **cc_role.md §1.4 / §1.4.5 / §1.4.6 / §1.4.6.1 / §1.4.6.1.A / §1.4.6.2 / §1.4.7 / §1.5 / §1.5.5 / §1.7**
+> - **feedback_cat_v9_no_modification.md / feedback_baseup_before_design_discussion.md / feedback_cc_low_perspective_narrow_view.md / feedback_priority_starting_line_only.md** (= auto-memory・最重要・命令)
+> - **feedback_writing_style.md / feedback_plain_language.md / feedback_no_unverified_assertions.md / feedback_trade_ml_knowledge_gap.md** (= auto-memory・最重要)
+>
+> #### Layer 2 (= タスク特有・CP4 監査 + 実装時参照)
+> - CP3 監査結果: `.claude/audits/2026-05-27_step25_cluster_design_cp3_audit_report.md`
+> - CP2 監査結果: `.claude/audits/2026-05-27_step2_entry_ml_design_cp2_audit_report.md`
+> - CP1 監査結果: `.claude/audits/2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md`
+> - regime artifact: `results/regime_step1/`
+> - Phase 0 v3.1 既存 parquet
+> - Phase 4-a 旧実装 artifact: `predictions_train_2021_2024_k12long_refit.parquet` (= silhouette 実測値計算用)
+>
+> #### Layer 3 (= リファレンス)
+> - `false_positive_incident_policy.md`
+> - `exchange_spec.md`
+> - `phase_compliance_checklist.md`
+> - `lessons_archive.md`
+>
+> #### データ・環境
+> - parquet 3 種 (= Phase 0 v3.1 既存)
+> - `.venv311`
+> - 旧 Priority 実績: 月 $370 (= cat-bitget 唯一の実利資産・Stage 3 base line)
+>
+> ### CP 監査一覧表更新
+>
+> | 実施日 | 対象タスク | 監査区分 | 結果ファイル | 主要結論 |
+> |---|---|---|---|---|
+> | 2026-05-27 | 工程 [1.5] regime ensemble 詳細設計 | CP1 | `.claude/audits/2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md` | PIVOT・Critical 2 + Major 3 + Minor 2 件全 7 件採用支持 |
+> | 2026-05-27 | 工程 [2] Entry ML 詳細設計 §6.2.X | CP2 | `.claude/audits/2026-05-27_step2_entry_ml_design_cp2_audit_report.md` | PIVOT・Critical 2 + Major 2 + Minor 2 件全 6 件採用支持 + cc_role §1.4.6.1 メタガード 13/14/15 追加 |
+> | 2026-05-27 | 工程 [2.5] cluster 分類 詳細設計 §6.3.X | CP3 | `.claude/audits/2026-05-27_step25_cluster_design_cp3_audit_report.md` | PIVOT・Critical 3 + Major 3 + Minor 1 件全 7 件採用支持 (= 同セッション内反映完遂・archive マーク撤去) + 構造的指摘で cc_role §1.4.6.2 物理強制経路追加 + 物理強制 hooks 導入 |
+>
+> ### 目的整合性 1 行宣言 (= cc_role §1.4.6)
+>
+> - **次タスク** = (1) Step 0 + auto-load + hooks 動作確認 → (2) CP4 監査経路 → (3) [2] Entry ML 実装着手 → (4) [2.5] cluster 実装着手 → (5) Stage 3 PnL 早期判定 → (6) Phase 5 Replay 検証
+> - **現フェーズ目的への貢献根拠** = 本セッションで CP3 監査全 7 件反映完遂 + 物理強制 hooks 動作確認済 + 設計復活で次セッション CP4 監査経路へ即進める状態到達。物理強制経路で「自分の知識内で設計」を物理的に封鎖した状態で進める。
+
+---
+
+## 🧊 改訂48 ブロック (履歴・参照用)
+
+(= §6.3 v3.8 設計し直し確定 + 物理強制 hooks 導入 + cc_role §1.4.6.2 追加・改訂49 で同セッション内 CP3 反映完遂 + archive マーク撤去・改訂48 内容は L-236 参照)
+
+---
+
+## 🧊 旧現在のフェーズ（2026-05-27 改訂48・**工程 [2.5] cluster 詳細設計 §6.3 v3.8 設計し直し確定 + CP3 監査 Verdict PIVOT (Critical 3 + Major 3 + Minor 1) + ガード追加経路打ち切り + 物理強制 hooks 導入 + cc_role §1.4.6.2 追加 + L-236 追加** + 次セッション = 物理強制経路採用版で §6.3 設計し直し）
 
 > **【現在の正本ブロック・改訂48・2026-05-27 セッション末（[2.5] cluster §6.3 v3.8 → 設計し直し + 物理強制経路導入）】**
 >

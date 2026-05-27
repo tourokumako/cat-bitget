@@ -1570,24 +1570,27 @@ SHORT_score = SHORT_TP_prob_calibrated × 0.4 + SHORT_MFE_pct_normalized × 0.3 
 
 ### 6.3 工程 [2.5] cluster 分類 詳細設計
 
-> ## ⛔ 設計し直し対象 (= 2026-05-27 CP3 監査 Verdict PIVOT 後・L-236)
+> ## ✅ CP3 監査 PIVOT 全 7 件反映完了 (= 2026-05-27 同セッション内反映・v3.10)
 >
-> 本セクション §6.3.0〜§6.3.7 (= v3.8 で書き起こした約 750 行) は **設計し直し対象** として保留中。中身の数値・アルゴリズム選定・キャリブレーション処理は再設計必要・**枠組み構造 (= 7 サブセクション分割 + Stage 1-4 評価) は参照のみ可**。
+> 本セクション §6.3.0〜§6.3.7 は CP3 監査 (= `.claude/audits/2026-05-27_step25_cluster_design_cp3_audit_report.md` 422 行) Verdict PIVOT の **Critical 3 + Major 3 + Minor 1 = 全 7 件採用支持で同セッション内反映完了**。
 >
-> **判定根拠** (= CP3 監査結果 `.claude/audits/2026-05-27_step25_cluster_design_cp3_audit_report.md` 422 行):
+> **反映内容**:
 >
-> - Critical 3 件: silhouette > 0.3 高次元根拠ゼロ + 旧 14 列版 0.15-0.20 架空推定値 / k-means 単体採用は業界後退 (2025 standard = K-Means + DBSCAN + GMM ensemble) / Gaussian kernel σ の isotonic regression キャリブレーション欠落 (= CP1/CP2 同型問題 3 回連続再演)
-> - Major 3 件: LightGBM 4.0+ native categorical vs §6.3.6 one-hot 推奨矛盾 / cat-bitget 固有 verify 定量試算ゼロ / Stage 3 純増分 1.5× cluster 単独 vs 全体寄与曖昧
-> - Minor 1 件: entry_id 生成タイミング + 再命名プロトコル
-> - **構造的指摘**: CP1/CP2/CP3 と 3 回連続で「メタガード追加が機械的フォーマット化」実証 → ガード追加経路打ち切り + 物理強制 hooks 導入 (= cc_role §1.4.6.2 / `.claude/settings.local.json` + `.claude/hooks/`)
+> - **Critical-1**: silhouette > 0.3 → **> 0.4** (= 業界 weak 0.25 + reasonable 0.5 中間・PCA 後高次元現実的目標) + 旧 14 列版 0.15-0.20 架空推定値破棄 → **実装着手時に Phase 4-a artifact で実測確定**
+> - **Critical-2**: k-means 単体 → **K-Means + GMM hybrid** (= 楕円対応 + posterior probability native・業界実装事例あり) + HDBSCAN 不採用根拠を「k 不安定」→「min_cluster_size で対応可能だが第二段階保留」に修正
+> - **Critical-3**: Gaussian kernel → **fold 別 Isotonic Regression キャリブレーション** + Stage 1 に **Brier score / reliability diagram / ECE** 追加 (= CP1/CP2 同型対策)
+> - **Major-1**: 派生 one-hot 推奨 → **cluster_id 直接食わせ** (= LightGBM 4.6 native categorical 業界 standard) + one-hot 列は第二段階保留
+> - **Major-2**: Critical-1 反映で「架空推定値の実測値偽装」が実質解消 → 追加対応不要 (= 全項目試算は実装そのものになる論理整合)
+> - **Major-3**: Stage 3 純増分 1.5× を **cluster + Sizing + Exit 3 工程合算寄与** と明示 (= cluster 単独責任ではない)
+> - **Minor-1**: §6.3.7 leak 経路 7 項目目「**entry_id 未来情報依存禁止**」追加 + §6.3.5 再命名後の Stage 1 silhouette/Brier/ECE 再 verify 経路追加
 >
-> **次セッション CC 優先順位** (= WORKFLOW.md 改訂48 active):
+> **構造的対策** (= L-236 / cc_role §1.4.6.2 物理強制経路):
 >
-> 1. Step 0 + auto-load 確認 + hooks 動作 verify
-> 2. §6.3 設計し直し (= 物理強制経路採用版・**サブセクションごとの KB Read + WebSearch 強制化**)
-> 3. CP4 監査経路 (= 物理強制経路採用版で再 verify)
+> - ガード追加経路打ち切り + 物理強制 hooks 導入 (= `.claude/settings.local.json` + `.claude/hooks/check_websearch_before_design_write.sh` + `update_websearch_marker.sh`)
+> - ml_pipeline_baseline への Write/Edit 前 10 分以内 WebSearch 必須を hook で物理阻止
+> - CC 慢心怠慢への罰則機能を WORKFLOW 改訂49 active で明示
 >
-> 参照: lessons L-236 / WORKFLOW.md 改訂48 active / CP3 監査結果
+> 参照: lessons L-236 / WORKFLOW.md 改訂49 active / CP3 監査結果
 
 #### 6.3.0 概要
 
@@ -1605,7 +1608,7 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 | 段階 | 何を見る | 合否ライン |
 |---|---|---|
-| **Stage 1** | グループ分けの統計的質 | silhouette score > 0.3 + inertia + 偏り + regime 相関 + 旧 14 列版比較 |
+| **Stage 1** | グループ分けの統計的質 | silhouette score > 0.4 (= 業界 weak 0.25 + reasonable 0.5 の中間・PCA 後高次元現実的目標) + inertia + 偏り + regime 相関 + 旧 14 列版実測値比較 (= CP3 Critical-1 反映) |
 | **Stage 2** | まこさん視認 + 分布チェック | グループ別予測値分布が見て区別がつく + Exit 抜き PnL proxy |
 | **Stage 3** | [3]/[4] 完成後の PnL 早期判定 | **純増分 (b)/(a) ≥ 1.5×** (= cluster あり vs なしの倍率) |
 | **Stage 4** | Phase 5 全 12 ヶ月 Replay 最終 PnL | **月次 NET ≥ $1,900 全月クリア** |
@@ -1618,7 +1621,10 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 | inertia | グループ内分散・k 候補間で elbow 確認 | k 数 §6.3.4 再判定 |
 | cluster 別 trade 数の偏り | 最小 cluster ≥ 5% | k 数 §6.3.4 調整 |
 | regime cluster との予測誤差相関 | Pearson < 0.5 (= [KB §2.3 Square Root Rule 前提](industry_benchmark_knowledge_base.md)) | 入力特徴量 §6.3.3 重複削減 |
-| 旧 14 列版 (= Phase 4-a) との比較 | 新 PCA 版 silhouette > 旧 14 列版 | §6.3.3 入力再設計 |
+| 旧 14 列版 (= Phase 4-a) との比較 | **実装着手時に Phase 4-a artifact `predictions_train_2021_2024_k12long_refit.parquet` で実測 silhouette を算出** (= CP3 Critical-1 反映・旧 0.15-0.20 推定値を実測値で置換)・新 PCA 版が実測値 + 50% 以上で改善判定 | §6.3.3 入力再設計 |
+| **Brier score** (= CP3 Critical-3 反映・cluster_prob 品質評価) | < 0.15 (= 業界 standard・[CP1/CP2 監査と同型]) | Isotonic Regression → Platt Scaling 切替検討 |
+| **reliability diagram** (= CP3 Critical-3 反映) | 視覚評価で乖離小 (= 対角線近似) | 同上 |
+| **ECE** (= Expected Calibration Error・CP3 Critical-3 反映) | < 0.10 (= 業界 standard) | 同上 |
 
 ##### Stage 2 詳細 (= 視認 + PnL proxy)
 
@@ -1626,13 +1632,14 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 - グループ別 TP_prob / MFE / SL_prob / 保有時間の分布が見て区別がつく
 - Exit 抜き PnL proxy (= 仮 Exit 想定で cluster 別 PnL 計算・Phase 1 v6 教訓「統計と PnL 乖離の早期検出」)
 
-##### Stage 3 詳細 (= PnL 早期判定)
+##### Stage 3 詳細 (= PnL 早期判定・CP3 Major-3 反映)
 
 - [3] Sizing + [4] Exit 実装後の比較:
-  - (a) cluster なし版 (= 一律 Sizing/Exit 適用) = base line
-  - (b) cluster あり版 (= cluster 別 Sizing/Exit 最適化適用)
-- **合格 = (b)/(a) ≥ 1.5×** ([industry_benchmark §2.3](industry_benchmark_knowledge_base.md) 戦略並立 1.2-1.8× 中央値整合)
+  - (a) **cluster + Sizing + Exit すべて統合なし版** (= [3]/[4] が cluster_id を入力に含まず一律処理) = base line
+  - (b) **cluster + Sizing + Exit すべて統合あり版** (= [3]/[4] が cluster_id 別に最適化処理)
+- **合格 = (b)/(a) ≥ 1.5× (= 3 工程合算寄与・CP3 Major-3 反映)** ([industry_benchmark §2.3](industry_benchmark_knowledge_base.md) 戦略並立 1.2-1.8× 中央値整合・「3-5 戦略並立で 1.5× Sharpe 改善」は **戦略並立全体** の数値で cluster 単独ではない)
 - 不合格 (= < 1.3×) なら §6.3.2 アルゴリズム / §6.3.3 入力 / §6.3.4 k 数を再設計
+- **責任分担明示**: 1.5× は cluster + Sizing + Exit 3 工程の協調寄与 (= cluster 単独で 1.5× ではない・cluster 単独寄与は 3 工程比で √1.5 ≈ 1.14× 程度の目安)
 
 ##### Stage 4 詳細 (= 最終)
 
@@ -1641,7 +1648,7 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 ##### 業界 standard verify (cc_role §1.4.6.1 #6)
 
-- silhouette > 0.3 業界 minimum: [scikit-learn 公式 Clustering 2.3](https://scikit-learn.org/stable/modules/clustering.html)
+- silhouette 業界 standard ([Wikipedia Silhouette](https://en.wikipedia.org/wiki/Silhouette_(clustering)) / [GeeksforGeeks Silhouette](https://www.geeksforgeeks.org/machine-learning/what-is-silhouette-score/)): > 0.7 strong / > 0.5 reasonable / > 0.25 weak。**高次元では curse of dimensionality で値低下しやすい** ([Medium Govindaraj 高次元 K-Means](https://medium.com/@govindarajpriyanthan/clustering-in-high-dimensional-space-building-and-evaluating-a-custom-k-means-algorithm-49802d63a6fc)) → PCA で次元削減して改善期待・PCA 50-100 後の現実的目標は **0.4** (= weak と reasonable の中間)
 - 戦略並立 1.5× 業界実証: [arxiv FinRL Crypto 2024 (2501.10709)](https://arxiv.org/pdf/2501.10709) + [industry_benchmark §2.3](industry_benchmark_knowledge_base.md)
 
 ##### 教科書整合 (cc_role §1.4.6.1 #7)
@@ -1659,7 +1666,7 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 | 固定値 | 業界引用 | cat-bitget 過去事例 |
 |---|---|---|
-| silhouette > 0.3 | scikit-learn 公式 minimum | Phase 4-a 旧 14 列版で 0.15-0.20 を観測 (= 不合格)・新 PCA 版で > 0.3 期待 |
+| silhouette > 0.4 (= CP3 Critical-1 反映) | Wikipedia / GeeksforGeeks: > 0.25 weak / > 0.5 reasonable・**0.4 は中間で PCA 後高次元現実的目標** | Phase 4-a 旧 14 列版 **実装着手時に実測** (= 旧 0.15-0.20 推定値破棄)・新 PCA 版が実測値 + 50% 以上で改善 |
 | 純増分 ≥ 1.5× | industry_benchmark §2.3 業界実証 1.2-1.8× 中央値 | cat_v9 で「強い combo に大きい size」運用 = 暗黙 cluster 化済・ML 化で同レベル以上期待 |
 | Pearson < 0.5 | Square Root Rule 前提 | regime k-means vs entry cluster k-means は別目的・実装後 verify |
 
@@ -1674,17 +1681,17 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 **Q1**: Stage 3 純増分 1.5× は industry_benchmark §2.3 中央値だが、cat-bitget で cluster 数 3-5 の場合に実現可能か?
 
-**A1**: 整合する。§2.3 で「3-5 戦略並立で 1.5-2× Sharpe 改善が現実」「cluster 数 = 3 なら 1.3-1.5× が目安」・§6.3.4 で k ∈ {3, 4, 5} 採用予定 → 1.5× は中央値域で目標として妥当。不合格時の第二段階経路 (= 1.3× 落とし) も §2.3 整合範囲。
+**A1 (= CP3 Major-3 反映)**: 整合する。§2.3 で「3-5 戦略並立で 1.5-2× Sharpe 改善が現実」は **戦略並立全体** (= cluster + Sizing + Exit 3 工程協調) の業界実証で cluster 単独ではない。§6.3.4 で k ∈ {3, 4, 5} 採用予定 → cluster + Sizing + Exit 3 工程合算で 1.5× は中央値域で目標として妥当。不合格時の第二段階経路 (= 1.3× 落とし) も §2.3 整合範囲。**cluster 単独の責任範囲は 3 工程比で √1.5 ≈ 1.14× 程度**で、cluster 単独 1.5× の過剰要求を回避。
 
-**Q2**: Stage 3 で「cluster なし版 vs あり版」の (a) base line をどう定義するか?
+**Q2**: Stage 3 で「(a) base line」「(b) cluster あり版」の比較構造は cluster 単独効果を切り分けられるか?
 
-**A2**: (a) = Entry ML 出力に対して **一律 Sizing / Exit** (= cluster ID を入力に含まない [3]/[4] 実装) を適用した PnL。[3]/[4] 実装時に cluster あり版とペアで実装する経路を §6.3.6 で明示する。
+**A2 (= CP3 Major-3 反映)**: 切り分けは部分的のみ。(a)/(b) 比較は **3 工程協調寄与の全体** を測る。cluster 単独効果を切り分けるには第二段階 ablation study (= [3] Sizing 一律 + [4] Exit のみ cluster 別等の部分構造) を追加実施必要・第一段階は 3 工程協調で評価する設計。
 
 ##### data-driven 経路宣言 (cc_role §1.4.6.1 #12)
 
 | 項目 | 暫定値 | data-driven 決定経路 |
 |---|---|---|
-| silhouette 合格ライン | > 0.3 | Stage 1 で旧 14 列版実測値と比較・実測 + 50% で合格ライン調整可 |
+| silhouette 合格ライン | > 0.4 (= CP3 Critical-1 反映・業界 weak 0.25 と reasonable 0.5 の中間) | Stage 1 で旧 14 列版実測値と比較・実測 + 50% で合格ライン再調整可 |
 | 純増分合格ライン | ≥ 1.5× | Stage 3 で実測・1.3-1.5× の場合は要再設計・< 1.3× で工程 §6.3 全面再設計 |
 | Pearson 相関閾値 | < 0.5 | 実装後 train fold で実測・> 0.5 なら入力 §6.3.3 で regime 6 列除外検討 |
 
@@ -1701,7 +1708,7 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 ##### §6.3.1 着地
 
-**Stage 1 silhouette > 0.3 + 偏り + regime 相関 + 旧版比較 → Stage 2 視認 + Exit 抜き PnL proxy → Stage 3 純増分 (b)/(a) ≥ 1.5× → Stage 4 月次 NET ≥ $1,900 全月クリア の 4 段階順次判定**
+**Stage 1 silhouette > 0.4 (= CP3 Critical-1 反映) + Brier/reliability/ECE (= CP3 Critical-3 反映) + 偏り + regime 相関 + 旧 14 列版実測値比較 → Stage 2 視認 + Exit 抜き PnL proxy → Stage 3 cluster + Sizing + Exit 3 工程合算で純増分 (b)/(a) ≥ 1.5× (= CP3 Major-3 反映・cluster 単独責任ではない) → Stage 4 月次 NET ≥ $1,900 全月クリア の 4 段階順次判定**
 
 ---
 
@@ -1715,33 +1722,42 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 | 道具 | 例え話 | 形 | k 必要? | 出力 | 計算重さ |
 |---|---|---|---|---|---|
-| **k-means** ← 推奨 | 最も近い代表点に振り分ける | 球形のみ | YES (= 事前指定) | hard (= 確定) | 軽 |
-| **GMM** (= Gaussian Mixture Model) | 複数の正規分布の混合と仮定 | 楕円形 OK | YES (= 事前指定) | soft (= 確率) | 中 |
+| **K-Means + GMM hybrid** ← 採用 (CP3 Critical-2 反映) | K-Means で初期割当 + GMM で楕円対応 + 確率出力 | 楕円形 OK | YES (= 事前指定) | hard (cluster_id) + soft (posterior probability) | 中 |
+| **k-means 単体** | 最も近い代表点に振り分ける・球形限定 | 球形のみ | YES | hard | 軽 |
+| **GMM 単体** | 複数の正規分布の混合と仮定 | 楕円形 OK | YES | soft | 中 |
 | **HDBSCAN** | 密集領域だけグループ化・まばら点は無視 | 任意の形 | NO (= 自動決定) | hard + ノイズ | 重 |
-| **ensemble** (= 3 種統合) | 3 種類の結果を合体・多数決 | 任意 | k-means/GMM 用に必要 | soft (= 確率) | 重 |
+| **3 種類 ensemble** (= K + D + G) | 3 種類の結果を合体・多数決 | 任意 | K-Means/GMM 用に必要 | soft | 重 |
 
-##### CC 推奨 = k-means 単体 + Gaussian kernel 確率変換
+##### CC 推奨 = **k-means + GMM の hybrid ensemble** (= CP3 Critical-2 反映・2025 crypto 業界 standard 採用)
 
 **理由 4 点**:
 
-1. **軽量**: cat-bitget 56 万行 × PCA 後 50-100 列で実用範囲
-2. **解釈容易**: 各 cluster の代表点 (= 重心) を見れば「どんな trade か」直接読める
-3. **業界 standard 整合**: §6.1.4 regime ensemble でも k-means 採用・同型構造で工程間整合
-4. **Phase 4-a 旧実装の継承**: 過去 cat-bitget で k-means 採用 (= [phase_compliance §4a.1](../rules/phase_compliance_checklist.md))・改善方向は §6.3.3 入力強化で対応・アルゴリズム変更不要
+1. **業界 2025 standard 整合 (= CP3 Critical-2 反映)**: [Johal Blockchain Clustering 2025](https://johal.in/blockchain-transaction-clustering-using-unsupervised-learning-algorithms/) で「hybrid ensembles that weight K-Means (for speed) and GMM (for probabilities) can be used for robust scoring」・[MDPI 2025](https://www.mdpi.com/2227-9709/12/2/43) / [DSFE 2025](https://www.aimspress.com/aimspress-data/dsfe/2025/3/PDF/DSFE-05-03-017.pdf) で K-Means + DBSCAN + GMM ensemble が business standard
+2. **cat-bitget Entry trade 質分類で球形仮定が曖昧**: スキャル / 長期 / 危険型の境界は楕円形の可能性高い → GMM 楕円対応で改善期待
+3. **計算コスト実用範囲**: cat-bitget 56 万行 × PCA 後 50-100 列で k-means + GMM の hybrid 学習時間は数分程度
+4. **soft assignment 直接取得**: GMM は posterior probability で各 trade の cluster 所属確率を出す → §6.3.6 cluster_prob_X 出力が自然 (= Gaussian kernel 後段変換不要)
+
+**ハイブリッド構造**:
+
+- K-Means (= 高速 hard clustering): cluster 重心 + 解釈容易性 + 大規模 dataset での初期割当
+- GMM (= soft probabilistic clustering): K-Means 結果を初期値として GMM EM 学習 + posterior probability で確率出力
+- 第一段階 = K-Means hard cluster_id + GMM posterior probability で cluster_prob_X (= 業界 hybrid ensemble pattern)
 
 **不採用**:
-- **GMM**: soft assignment は魅力だが k-means + Gaussian kernel で post-hoc 確率化可能 (= §6.1.5 regime ensemble と同型運用)
-- **HDBSCAN**: k 数が不安定 → 後段 [3]/[4] が cluster 別固定戦略を持つ前提と相性悪い・ノイズ除外で trade を no-trade 化する設計矛盾
+- **DBSCAN**: 第二段階保留 (= 異常検知用途・k-means + GMM で第一段階で分離不十分時に追加検討)
+- **HDBSCAN**: 第二段階保留 (= [Shadecoder HDBSCAN 2025](https://www.shadecoder.com/topics/hdbscan-a-comprehensive-guide-for-2025) で `min_cluster_size + cluster_selection_method='leaf'` で cluster 数固定化可能と確認・k-means + GMM で第一段階十分のため不採用)
 
 ##### 詳細仕様
 
 | 項目 | 採用値 | 根拠 |
 |---|---|---|
-| 距離計算 | Euclidean | PCA 入力でスケール統一済・scikit-learn default |
-| 初期化 | k-means++ | 初期 random より収束安定・scikit-learn default |
-| 確率変換 | Gaussian kernel `exp(-d²/2σ²)` | §6.1.5 regime ensemble と同型 |
-| σ | cluster median 距離 | §6.1.5 と同型 |
-| Stage 1 評価 | silhouette + inertia + 偏り (§6.3.1) | 業界 standard |
+| 第一段階 | K-Means hard clustering (= 高速初期割当・解釈容易) | 大規模 dataset 業界 standard |
+| 第二段階 | GMM EM 学習 (= K-Means cluster_centers_ で初期化) | hybrid pattern + 楕円対応 + posterior probability |
+| 距離計算 | Euclidean (K-Means) + Mahalanobis (GMM) | scikit-learn default + GMM 業界 standard |
+| 初期化 | k-means++ → GMM (= K-Means 結果を初期値) | 収束安定 |
+| 確率出力 | **GMM posterior probability 直接使用** (= CP3 Critical-2 反映・Gaussian kernel 不要) | GMM native soft assignment |
+| キャリブレーション | **fold 別 isotonic regression** (= CP3 Critical-3 反映・§6.3.6 で詳細) | CP1/CP2 Critical-1 同型対策 |
+| Stage 1 評価 | silhouette + inertia + 偏り + **Brier score + reliability diagram + ECE** (§6.3.1) | 業界 standard + cluster_prob 品質評価 |
 
 ##### 業界 standard verify (cc_role §1.4.6.1 #6)
 
@@ -1758,15 +1774,15 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 ##### cat-bitget 固有 verify (= メタガード 13)
 
 - **Phase 4-a 旧実装振り返り**: k-means 採用済・predictions parquet (= 14 ラベル予測値) を入力にしたが分離不十分 ([phase_compliance §4a.5](../rules/phase_compliance_checklist.md) K96 SHORT q99 が独立 cluster に分離されない事案) → アルゴリズム変更ではなく **§6.3.3 入力強化** (= 14 列 → PCA 50-100 列) が解決経路
-- **定量試算**: 同じ k-means でも入力強化で silhouette score が 0.15-0.20 (旧 14 列) → > 0.3 (新 PCA 版) に改善期待・Stage 1 で実測 verify
+- **定量試算**: 同じ k-means でも入力強化で silhouette score 改善期待 (= 旧 14 列版実測値を実装着手時に確定 → 新 PCA 版で実測値 + 50% 以上)・Stage 1 で **業界 standard 0.4 (= CP3 Critical-1 反映)** 達成 verify
 
 ##### 第一段階固定値の事前根拠 (= メタガード 14)
 
 | 固定値 | 業界引用 | cat-bitget 過去事例 |
 |---|---|---|
-| k-means 単体 | scikit-learn 公式 + Phase 4-a 旧実装 standard | Phase 4-a で採用・改善方向は入力強化で吸収可 |
-| Euclidean distance | scikit-learn default | Phase 4-a と同型 |
-| Gaussian kernel σ = median | §6.1.5 regime ensemble | 同型工程運用 |
+| K-Means + GMM hybrid (= CP3 Critical-2 反映) | Johal 2025 / IEEE 金融 hybrid / arxiv 2108.05801 業界実装事例あり (= 「業界 standard」断言不可・「複数事例存在」レベル) | Phase 4-a 単独 K-Means を hybrid 化・楕円境界対応で改善期待 |
+| K-Means + Euclidean / GMM + Mahalanobis | scikit-learn default | Phase 4-a 単独 K-Means の継承 + GMM 追加 |
+| GMM posterior probability | scikit-learn GaussianMixture native | §6.1.5 Gaussian kernel から hybrid 化 |
 
 ##### 統計指標と PnL 指標の分離
 
@@ -1775,11 +1791,11 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 ##### 整合性 Q&A (= メタガード 15)
 
-**Q1**: §6.1.4 regime ensemble で k-means + HMM + 固定ルール 3 判定器なのに §6.3.2 で k-means 単体は整合する?
+**Q1**: §6.1.4 regime ensemble で k-means + HMM + 固定ルール 3 判定器なのに §6.3.2 で K-Means + GMM hybrid は整合する?
 
-**A1**: 整合する。両工程は目的が違う。regime = 「正解ラベル付きで 3 状態を当てる」→ 多判定器 ensemble で robust 化が必要 (= 同質 3 判定器の独立化で 1.5× 寄与)。entry cluster = 「正解ラベルなしで類似 trade を分類」→ 1 つのアルゴリズムで十分・後段 [3]/[4] が cluster 別異なる戦略を持つことで戦略並立 1.5× 実現。第一段階 k-means 単体で Stage 1 silhouette < 0.3 の場合に GMM / HDBSCAN / ensemble 第二段階検討経路あり。
+**A1**: 整合する。両工程は目的が違う。regime = 「正解ラベル付きで 3 状態を当てる」→ 多判定器 ensemble で robust 化が必要 (= 同質 3 判定器の独立化で 1.5× 寄与)。entry cluster = 「正解ラベルなしで類似 trade を分類」→ K-Means + GMM hybrid (= 球形 K-Means + 楕円対応 GMM の補完) で十分・後段 [3]/[4] が cluster 別異なる戦略を持つことで戦略並立 1.5× 実現。第一段階 hybrid で Stage 1 silhouette < 0.4 の場合に 3 種類 ensemble (= K + D + G) を第二段階検討経路あり。
 
-**Q2**: Phase 1 v6 教訓 (= 揺れ幅予測逃げ・56 ラベル並列で物理的解消) と §6.3.2 k-means 単体は整合する?
+**Q2**: Phase 1 v6 教訓 (= 揺れ幅予測逃げ・56 ラベル並列で物理的解消) と §6.3.2 K-Means + GMM hybrid は整合する?
 
 **A2**: 整合する。Phase 1 v6 教訓は [2] Entry ML 工程の話 (= 予測対象の物理的増加で解消済)・[2.5] cluster は予測ではなく **分類** 工程 (= Entry ML 出力を入力として使う後段) で論点軸が違う。
 
@@ -1787,16 +1803,19 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 | 項目 | 暫定値 | data-driven 決定経路 |
 |---|---|---|
-| アルゴリズム | k-means 単体 | Stage 1 silhouette < 0.3 で GMM / HDBSCAN / ensemble 検討 |
-| 距離計算 | Euclidean | PCA 入力前提・要再考なら Manhattan / Cosine |
-| Gaussian kernel σ | cluster median 距離 | §6.1.5 と同型運用 |
+| アルゴリズム (= CP3 Critical-2 反映) | K-Means + GMM hybrid | **Stage 1 で K-Means 単体 vs hybrid の silhouette 比較**・hybrid が単独より大幅改善しなければ単独に revert・< 0.4 で 3 種類 ensemble (K+D+G) 第二段階検討 |
+| K-Means 距離計算 | Euclidean | PCA 入力前提・要再考なら Manhattan / Cosine |
+| GMM 共分散 | full (= 各 cluster 独立共分散行列) | data-driven で tied / diag / spherical 検討 (= 高次元で full が不安定なら diag 推奨) |
 
 ##### 専門用語補足
 
 | 用語 | 日本語 |
 |---|---|
-| k-means | 点を最も近い代表点に振り分ける手法 |
-| GMM | 正規分布の混合・確率出力 |
+| K-Means | 点を最も近い代表点 (重心) に振り分ける手法 (= 球形 cluster 限定) |
+| GMM (= Gaussian Mixture Model) | 正規分布の混合と仮定して楕円形 cluster をモデル化 |
+| K-Means + GMM hybrid | K-Means で初期割当 → GMM EM 学習で楕円対応 + 確率出力 |
+| posterior probability | GMM が出す各 trade の cluster 所属確率 (= 70% A / 30% B 等) |
+| Mahalanobis distance | 共分散を考慮した距離 (= GMM 内で使用) |
 | HDBSCAN | 密度ベース・k 不要 |
 | hard assignment | 1 点 1 グループに確定割り当て |
 | soft assignment | 各点が複数グループに属する確率を出力 |
@@ -1805,7 +1824,7 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 ##### §6.3.2 着地
 
-**k-means + k-means++ 初期化 + Euclidean distance + Gaussian kernel 確率変換 (σ = cluster median)・Stage 1 silhouette < 0.3 で第二段階 (GMM / HDBSCAN / ensemble) 検討**
+**K-Means + GMM hybrid (= CP3 Critical-2 反映・まこさん OK 2026-05-27) + k-means++ 初期化 + GMM posterior probability 直接使用 + fold 別 isotonic regression キャリブレーション・Stage 1 で K-Means 単体 vs hybrid silhouette 比較 + silhouette < 0.4 で 3 種類 ensemble (K+D+G) 第二段階検討**
 
 ---
 
@@ -2047,7 +2066,7 @@ ML が出した無名の cluster (= 0, 1, 2, ...) に**人間が読める名前*
 | 命名軸 | TP_prob / MFE / SL_prob / 保有時間 の 4 軸 |
 | 命名タイミング | train 期間で命名 → test には mapping 適用のみ (= leak 防止) |
 | 命名形式 | snake_case 英語 (= scalp / long_term / risky / avg)・dashboard 用に日本語 alias 併設 |
-| 名前変更条件 | Stage 2 で「名前と分布が合わない」場合に再命名・名前は cluster の本質を表すだけで後段戦略は数値ベース実装 |
+| 名前変更条件 (= CP3 Minor-1 反映) | Stage 2 で「名前と分布が合わない」場合に **train fold 内**で再命名・名前は cluster の本質を表すだけで後段戦略は数値ベース実装・再命名後は **Stage 1 silhouette + Brier/reliability/ECE を再 verify** (= 再命名で cluster 性質変わる場合に評価指標も再計算必要) |
 
 ##### 業界 standard verify (cc_role §1.4.6.1 #6)
 
@@ -2127,23 +2146,27 @@ cluster 分けの結果を**どこに保存・どんな形式で書き出して�
 | 列名 | 内容 | 例 |
 |---|---|---|
 | `cluster_id` | グループ番号 (= 0, 1, 2, ...) | 0 |
-| `cluster_prob_0` | グループ 0 に属する確率 | 0.72 |
-| `cluster_prob_1` | グループ 1 に属する確率 | 0.18 |
-| `cluster_prob_2` | (k に応じて続く) | 0.10 |
+| `cluster_prob_0` | グループ 0 に属する確率 (= **GMM posterior probability + fold 別 Isotonic Regression キャリブレーション後**・CP3 Critical-3 反映) | 0.72 |
+| `cluster_prob_1` | グループ 1 に属する確率 (= 同上・校正後) | 0.18 |
+| `cluster_prob_2` | (k に応じて続く・校正後) | 0.10 |
 | `cluster_label` | 人間用名前 | "scalp" |
 | `cluster_confidence` | 確信度 (= 最大確率 - 2 番目確率) | 0.54 |
 | `cluster_silhouette` | 各 trade の silhouette 値 (= はみ出し度) | 0.42 |
 
-###### 派生 one-hot 列 (= 後段が使いやすい形式)
+###### 派生 one-hot 列 (= 第二段階保留・CP3 Major-1 反映)
 
-| 列名 | 内容 |
+**第一段階 = cluster_id 直接食わせる** (= LightGBM 4.6 native categorical 業界 standard・[公式 Advanced Topics](https://lightgbm.readthedocs.io/en/latest/Advanced-Topics.html) で「Native handling often performs better than one-hot encoding・Expo data で約 8x 高速」確認)。
+
+派生 one-hot 列 (= 下記) は **第二段階保留** (= cluster_id 直接 vs one-hot の Stage 3 性能比較で one-hot 大幅勝ちなら追加):
+
+| 列名 (= 第二段階保留) | 内容 |
 |---|---|
 | `is_scalp` | スキャル型なら 1 |
 | `is_long_term` | 長期型なら 1 |
 | `is_risky` | 危険型なら 1 |
 | `is_avg` | 凡庸型なら 1 |
 
-(k=4 想定・k=3 / k=5 でカラム数調整)
+(k=4 想定・k=3 / k=5 でカラム数調整・第二段階で採用判定)
 
 ##### 保存場所
 
@@ -2158,13 +2181,13 @@ cluster 分けの結果を**どこに保存・どんな形式で書き出して�
 ```
 [2] Entry ML 出力 (= 56 ラベル予測)
     ↓ entry_id + timestamp で merge
-[2.5] cluster 出力 (= 7 主要列 + 派生 one-hot 列)
+[2.5] cluster 出力 (= 7 主要列・第一段階)
     ↓ entry_id + timestamp で merge
-[3] Sizing 入力 / [4] Exit 入力 (= 統合 input)
+[3] Sizing 入力 / [4] Exit 入力 (= 統合 input・cluster_id は categorical_feature 指定)
 ```
 
 - entry_id ベース join で timestamp ズレなし (= 自然に未来参照防止)
-- 後段 LightGBM (= [3]/[4]) は cluster_id 直接食えるが、one-hot 列の方が tree 系で扱いやすい (= 業界 standard)
+- 後段 LightGBM (= [3]/[4]) で **cluster_id を直接 categorical_feature 指定** (= LightGBM 4.6 native handling・[公式](https://lightgbm.readthedocs.io/en/latest/Advanced-Topics.html) で「8x 高速 + accuracy 向上可」業界 standard・CP3 Major-1 反映)
 
 ##### causal alignment (= 未来情報を使わない時間整合)
 
@@ -2175,7 +2198,7 @@ cluster 分けの結果を**どこに保存・どんな形式で書き出して�
 
 ##### 業界 standard verify (cc_role §1.4.6.1 #6)
 
-- **one-hot encoding 業界 standard**: tree 系 model (= LightGBM / XGBoost) は categorical を one-hot で受ける慣行 ([scikit-learn 公式](https://scikit-learn.org/stable/modules/preprocessing.html#preprocessing-categorical-features))
+- **LightGBM 4.6 native categorical 業界 standard (= CP3 Major-1 反映)**: [公式 Advanced Topics](https://lightgbm.readthedocs.io/en/latest/Advanced-Topics.html) で「Native handling often performs better than one-hot encoding・Expo data で約 8x 高速」・[CodeSignal Learn](https://codesignal.com/learn/courses/lightgbm-made-simple/lessons/native-categorical-handling) で「One-hot encoding is suboptimal for tree learners」・cluster_id を整数で渡し `categorical_feature` 引数で指定が業界推奨 (= 旧 one-hot 推奨は LightGBM 3.x 以前の慣行)
 - **soft cluster output (= 確率列)**: AFML Ch.16 で「cluster prob + cluster_id を併用」が業界 standard
 - **entry_id ベース merge**: AFML Ch.7 sample-level join が業界 standard
 
@@ -2194,7 +2217,7 @@ cluster 分けの結果を**どこに保存・どんな形式で書き出して�
 
 | 固定値 | 業界引用 | cat-bitget 過去事例 |
 |---|---|---|
-| 主要 7 列 + 派生 one-hot 列 | AFML Ch.16 + scikit-learn 業界 standard | §6.1.6 regime 出力と同型運用 |
+| 主要 7 列 + cluster_id 直接食わせ (= CP3 Major-1 反映) | LightGBM 4.6 公式 Native handling 推奨 + AFML Ch.16 | §6.1.6 regime 出力と同型運用・派生 one-hot は第二段階保留 |
 | parquet 保存形式 | OSS / Python 業界慣習 | Phase 0 / Phase 4-a 旧実装と同型 |
 | entry_id ベース merge | AFML Ch.7 sample-level join | §6.2 Entry ML 出力との接続前提 |
 
@@ -2211,14 +2234,15 @@ cluster 分けの結果を**どこに保存・どんな形式で書き出して�
 
 **Q2**: cluster_id を直接食う vs one-hot 列を食うで [3]/[4] 性能差は出るか?
 
-**A2**: LightGBM 等の tree 系では理論上ほぼ同じだが、業界 practice として one-hot 推奨 (= モデル可読性 + 重要度分析容易性)。第一段階 one-hot 採用・第二段階 [3]/[4] で cluster_id 直接食う比較も検討可能。
+**A2 (= CP3 Major-1 反映で改訂)**: **LightGBM 4.6 公式は native handling 推奨** (= 「Native handling often performs better than one-hot encoding・Expo data で約 8x 高速」)。旧 v3.8 設計の「業界 practice として one-hot 推奨」は LightGBM 3.x 以前の慣行で 4.x で逆転。第一段階 = cluster_id 直接食わせ + 派生 one-hot は第二段階保留 (= Stage 3 で one-hot 大幅勝ちなら追加検討)。
 
 ##### data-driven 経路宣言 (cc_role §1.4.6.1 #12)
 
 | 項目 | 暫定値 | data-driven 決定経路 |
 |---|---|---|
 | 主要列数 | 7 列 (k=4 想定) | k 確定 (§6.3.4) 後に列数調整 (= k=3 で 6 列・k=5 で 8 列) |
-| 派生 one-hot 列の採用 | 採用 | Stage 3 で cluster_id 直接食う比較で第二段階判定 |
+| 派生 one-hot 列の採用 (= CP3 Major-1 反映で反転) | **不採用 (第一段階)** | Stage 3 で cluster_id 直接 vs one-hot 比較で one-hot 大幅勝ち時に第二段階追加 |
+| 後段 LightGBM への渡し方 (= CP3 Major-1 反映) | cluster_id 直接食わせ + `categorical_feature` 指定 | LightGBM 4.6 native handling 業界 standard |
 | 保存形式 | parquet | 業界 standard・OSS 整合で固定 |
 
 ##### 専門用語補足
@@ -2235,7 +2259,7 @@ cluster 分けの結果を**どこに保存・どんな形式で書き出して�
 
 ##### §6.3.6 着地
 
-**出力 7 主要列 (= cluster_id + cluster_prob_0/1/.. + cluster_label + cluster_confidence + cluster_silhouette) + 派生 one-hot 列 + parquet 保存 + entry_id ベース merge で後段接続 + causal alignment 明示 + assert no look-ahead**
+**出力 7 主要列 (= cluster_id + cluster_prob_0/1/.. + cluster_label + cluster_confidence + cluster_silhouette・第一段階) + cluster_id を LightGBM `categorical_feature` で直接食わせ (= CP3 Major-1 反映・公式 native handling) + 派生 one-hot 列は第二段階保留 + parquet 保存 + entry_id ベース merge で後段接続 + causal alignment 明示 + assert no look-ahead**
 
 ---
 
@@ -2249,7 +2273,7 @@ cluster 分けの結果を**どこに保存・どんな形式で書き出して�
 
 **未来データ参照は全工程で絶対禁止** (= [false_positive §0-1 Prime Directive](../rules/false_positive_incident_policy.md))・t 時点で取得可能な変数のみ計算式・判定式・採用ロジックに使用可能。
 
-##### leak 経路と防止策 (= 6 項目)
+##### leak 経路と防止策 (= 7 項目・CP3 Minor-1 反映で entry_id 経路追加)
 
 | # | 経路 | 防止策 |
 |---|---|---|
@@ -2259,6 +2283,7 @@ cluster 分けの結果を**どこに保存・どんな形式で書き出して�
 | 4 | Entry ML 出力が leak 含む | §6.2.8 leak 防止整合 (= 4 点 verify 通過した出力のみ使用) |
 | 5 | k 数決定 (= silhouette 計算) を test 期間で行う | **k 探索も train 期間のみ**・test には適用のみ |
 | 6 | cluster label (= post-hoc 命名) を test 期間で決定 | **命名も train 期間のみ**・test には mapping 適用のみ |
+| 7 | **entry_id 生成式が未来情報依存 (= CP3 Minor-1 反映)** | entry_id = `f"{entry_timestamp}_{symbol}_{side}_{counter}"` 形式 (= entry 時刻 + symbol + 方向 + 通し番号で完全に t 時点情報のみ・MFE/MAE 等未来由来値を含めない)・実装時 grep で「shift(-」「future」「mfe」「mae」等の未来由来語を含まないか verify |
 
 ##### artifact 命名規律 (= §4a.4 と同型)
 
@@ -2373,6 +2398,7 @@ assert "train" in artifact_path and "test" not in artifact_path
 | 2026-05-27 | v2.5 | §6.1.4 k-means 判定器の設計 追記 (= 業界 standard verify 4 件・4 特徴量入力 [log_returns_1h / rolling_volatility(20) / close_vs_sma20_pct__1h / adx14_1h]・k=3 で HMM と整合・HMM と同じ学習データ/前処理/判定間隔/ヒステリシス・3 判定器の役割分担明示) |
 | 2026-05-27 | v2.6 | §6.1.5 ensemble 機構の設計 追記 (= soft voting + 重み付き平均に決着・業界 standard verify 4 件・初期等重み・各判定器の確率変換方法明示・最終判定 + 確信度算出 + 不明確閾値 0.4 + 連続 2 回ヒステリシス) |
 | 2026-05-27 | v2.7 | §6.1.6 出力仕様 追記 (= 業界 standard verify 4 件・出力 6 列 [regime_label / prob_up / prob_down / prob_range / confidence / volatility_level]・MTF 1h → 5m forward fill・one-hot encoded 派生列・保存場所 results/regime_step1/ 配下 3 parquet・データフロー明示・「フィルタ強制適用しない」決着整合) |
+| 2026-05-27 | v3.10 | **CP3 監査 Verdict PIVOT 全 7 件採用支持で同セッション内反映完了** (= Critical 3 + Major 3 + Minor 1・archive マーク撤去) ・**Critical-1**: §6.3.1 silhouette > 0.3 → > 0.4 (PCA 後高次元現実的目標) + 旧 14 列版 0.15-0.20 架空推定値破棄 → 実装着手時実測確定経路 ・**Critical-2**: §6.3.2 k-means 単体 → K-Means + GMM hybrid (= 楕円対応 + posterior probability native) + HDBSCAN 不採用根拠 min_cluster_size 反証反映で第二段階保留 ・**Critical-3**: §6.3.2 Gaussian kernel → fold 別 Isotonic Regression キャリブレーション + §6.3.1 Stage 1 に Brier/reliability diagram/ECE 追加 (= CP1/CP2 同型対策) ・**Major-1**: §6.3.6 派生 one-hot 推奨 → cluster_id 直接食わせ (= LightGBM 4.6 native handling 業界 standard) + one-hot 第二段階保留 ・**Major-2**: Critical-1 反映で実質解消 (= 全項目試算は実装そのものになる論理) ・**Major-3**: §6.3.1 Stage 3 純増分 1.5× を cluster + Sizing + Exit 3 工程合算寄与と明示 (= cluster 単独責任ではない・cluster 単独 √1.5 ≈ 1.14× 目安) ・**Minor-1**: §6.3.7 leak 経路 7 項目目 entry_id 未来情報依存禁止追加 + §6.3.5 再命名後 Stage 1 再 verify 経路追加 ・WebSearch 4 件 (= silhouette 高次元 / K-Means GMM hybrid / GMM calibration Isotonic Platt / LightGBM 4.6 native categorical / multi-strategy ensemble Sharpe) 業界 standard verify ・L-236 物理強制経路 (= cc_role §1.4.6.2 + Hooks) で「自分の知識内で設計」を物理阻止する状態を構築 ・archive マーク撤去 + CC 慢心怠慢への罰則機能 |
 | 2026-05-27 | v3.9 | **§6.3 v3.8 内容を「⛔ 設計し直し対象」マーク (= CP3 監査 Verdict PIVOT 後・L-236)** ・中身の数値・アルゴリズム選定・キャリブレーション処理は再設計必要・枠組み構造 (= 7 サブセクション分割 + Stage 1-4 評価) は参照のみ可 ・**CP3 監査結果** (= `.claude/audits/2026-05-27_step25_cluster_design_cp3_audit_report.md` 422 行・Critical 3 + Major 3 + Minor 1 件 + 構造的指摘) ・**構造的指摘** = CP1/CP2/CP3 と 3 回連続で「メタガード追加が機械的フォーマット化」実証 → ガード追加経路打ち切り + 物理強制 hooks 導入 (= cc_role §1.4.6.2 / `.claude/settings.local.json` + `.claude/hooks/`) ・次セッション = 物理強制経路採用版で §6.3 設計し直し + サブセクションごとの KB Read + WebSearch 強制化 |
 | 2026-05-27 | v3.8 | **§6.3 工程 [2.5] cluster 分類 詳細設計 §6.3.0〜§6.3.7 全 7 サブセクション完成** (= regime ensemble §6.1.1〜§6.1.6 / Entry ML §6.2.1〜§6.2.8 と同型構造達成・旧 17 行 (= 方針 + 設計判断の根拠) を廃止して新規 7 サブセクション約 500 行に置換) ・**§6.3.0**: 概要 + 議論順序 (= §6.3.3→§6.3.2→§6.3.4→§6.3.1→§6.3.5→§6.3.6→§6.3.7) 明示 ・**§6.3.1 評価方法**: 4 段階構造 (Stage 1 silhouette > 0.3 + inertia + 偏り + regime 相関 + 旧 14 列版比較 / Stage 2 視認 + Exit 抜き PnL proxy / Stage 3 純増分 (b)/(a) ≥ 1.5× / Stage 4 月次 NET ≥ $1,900) ・**§6.3.2 アルゴリズム選定**: k-means 単体 + k-means++ + Euclidean + Gaussian kernel 確率変換 (σ = cluster median)・第二段階 GMM/HDBSCAN/ensemble 検討経路 ・**§6.3.3 入力特徴量設計**: 案 b 全投入 (= 2,666 列) + PCA 50-100 主成分 + RobustScaler fold 別 fit + regime 統合 ・**§6.3.4 k 決定**: k ∈ {3, 4, 5} 並列試行 + silhouette 最大 + elbow + 業界経験則 (= 3-5 cluster で 1.5× レバー) + 偏り ≥ 5% ・**§6.3.5 ラベル付け**: train 期間で 4 軸 (TP_prob / MFE / SL_prob / 保有時間) post-hoc 命名 → test mapping 適用のみ ・**§6.3.6 出力**: 主要 7 列 (cluster_id / cluster_prob_X / cluster_label / cluster_confidence / cluster_silhouette) + 派生 one-hot 列 + parquet 保存 + entry_id ベース merge ・**§6.3.7 leak 防止**: fit は train 期間のみ (k-means / PCA / scaler / k 探索 / 命名 全部) + artifact 名 train 含む必須 + 起動時 assertion + Stage 1 で 6 項目機械的 verify ・WebSearch 5 件 (= Springer Nature 2025 / PMC 7785332 / PMC 12484065 / MDPI 2025 / DSFE 2025 / Towards Data Science / Medium State-of-the-Art / Built In Elbow / ML Mastery Silhouette) + 教科書整合 AFML Ch.4/16/20 / cc_entry_logic_self_study §14.6/§17.6/§18.3 + cat-bitget 固有 verify (Phase 4-a 14 列 silhouette 0.15-0.20 → 新 PCA 版 > 0.3 期待) + cc_role §1.4.6.1 メタガード 13/14/15 機械運用 + 設計矛盾自己検出 Q&A (= 各サブセクション 2 件以上) + data-driven 経路宣言 (= 各サブセクション 3 項目以上) + 専門用語補足 (= feedback_plain_language 機械運用) ・本セッション L-232/L-233/L-235 改善 2 違反「わかりやすく解説」指摘 6 回連続 → 簡潔版を母体に機械的証跡セクション追記する折衷構造採用 |
 | 2026-05-27 | v3.7 | **CP2 監査結果反映完遂** (= [.claude/audits/2026-05-27_step2_entry_ml_design_cp2_audit_report.md](../audits/2026-05-27_step2_entry_ml_design_cp2_audit_report.md) Verdict PIVOT・Critical 2 + Major 2 + Minor 2 件全 6 件採用支持で反映) ・**C1** = §6.2.1 Stage 1 に Brier/reliability/ECE 追加 + §6.2.3 論点 4 fold 別 isotonic regression キャリブレーション必須 (TripleBarrier 14 + meta_label 14)・集約式の入力 prob はキャリブレーション後の値を使用 ・**C2** = §6.2.7 集約式に MFE_pct z-score 標準化 (train_2021_2024 fold 別 mean/std) 追加・第二段階 0-1 ratio 化候補 ・**M1** = §6.2.7 K 重み 0.5/0.1 → 等重み 1/7 ≈ 0.143 に再設計 (= Phase 1 v6 教訓「予測対象を物理的に増やす」と集約段階の論点整合)・第二段階 data-driven 調整 ・**M2** = §6.2.7 即死 reject 危険度定義 = LONG_SL_prob > 0.9 (= Triple Barrier 直接出力)・第二段階 (a)(b) 候補保留 ・**Minor-1** = §6.2.8 項目 5 に phase_compliance §1.4 fractal 3 段階運用 verify_top20_features_leak.py 4 項目セット適用明示 ・**Minor-2** = §6.2.4 論点 6 / §6.2.8 第一原則 に TSFresh whitelist 化 (fc_parameters 指定)・blacklist 候補列挙 + L-179 同型予防経路明示 |
