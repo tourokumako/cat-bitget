@@ -6,6 +6,122 @@
 
 ---
 
+### L-234: 工程 [1.5] regime ensemble 実装完遂 (Stage B-G 7 ファイル新規) + target v1→v2 改訂 (= 未来予測→過去描写) + k-means v1→v2→v3 経緯 (= HMM 重複→方向音痴→独立+方向) + accuracy 0.46→0.65 / Brier 0.29→0.16 / ECE 0.26→0.15 達成 + まこさん視認「結構改善」確認 + Stage 3 まで regime 調整保留 (2026-05-27 セッション末)
+
+**何が起きたか:**
+
+WORKFLOW 改訂45 active 優先 2 (= [1.5] regime ensemble 実装着手) を実行。Stage B-G の 7 ファイル (= rule / kmeans / hmm_calibrate / ensemble / output_5m / stage1_evaluate / target_labels 共通モジュール) を新規作成・3 dataset (train/test_2025/test_2026_q1) で学習・評価まで完遂。途中で 2 つの構造的問題に当たり改訂で対処:
+
+1. **target 設計問題 (= v1→v2)**: 当初 target = 「将来 4h log_return 3 クラス」を採用 → accuracy 0.46 で頭打ち。「未来予測タスクは EMH に近い・regime 判定の本質 = 現状描写」とまこさん指摘で確認 → target を「過去 24h log_return 3 クラス」に変更 → accuracy 0.46 → 0.65 に大幅改善
+2. **k-means 特徴量選定問題 (= v1→v2→v3)**:
+   - v1 (= log_returns / rolling_volatility / sma20 / adx14) は HMM 84 次元と完全重複 → ensemble 効果薄い (= kmeans×hmm 予測誤差相関 0.69-0.75 で CP1 監査基準超過)
+   - v2 (= volume_ratio / stoch_k / donchian_position / hour_of_day) で HMM 独立化を試みたが「方向情報」を含まない特徴量だけ選んだため k-means が方向音痴に (= cluster 0 と 1 の DI diff がほぼ同じ -0.38 vs -1.15)
+   - v3 (= obv_slope_10b / streak_diff = bullish-bearish / zscore_return_20b / donchian_position_20) で HMM 独立 + 方向情報を両立 → k=4 採用・cluster 0 DI diff -16.7 / cluster 2 DI diff +16.6 で方向分離復活
+
+#### 本セッション完了事項
+
+1. **Stage B-G 全実装完了 (= 8 ファイル)** ✅:
+   - `scripts/priority_rebuild/regime_rule_classifier.py` (= Stage B 固定ルール 6 指標 scoring)
+   - `scripts/priority_rebuild/regime_target_labels.py` (= target 共通モジュール・v2 = 過去 24h)
+   - `scripts/priority_rebuild/regime_kmeans_classifier.py` (= Stage C k-means・v3 特徴量)
+   - `scripts/priority_rebuild/regime_hmm_calibrate.py` (= Stage D HMM v15 + isotonic)
+   - `scripts/priority_rebuild/regime_ensemble.py` (= Stage E ensemble GridSearchCV)
+   - `scripts/priority_rebuild/regime_output_5m.py` (= Stage F 5m grid + merge_asof backward)
+   - `scripts/priority_rebuild/regime_stage1_evaluate.py` (= Stage G Brier/ECE/Pearson 相関)
+   - `scripts/dashboard/build_step15_ensemble_dashboard.py` (= v16 dashboard data 生成)
+
+2. **artifact 全 dataset 3 種出力完了** ✅:
+   - `results/regime_step1/regime_predictions_{train_2021_2024, test_2025, test_2026_q1}.parquet` (= 5m grid × 10 列・最終出力 6 列 + 派生 4 列)
+   - rule / kmeans / hmm_calibrated 各 dataset 3 種 parquet
+   - ensemble_weights / kmeans / scaler / isotonic joblib artifact
+
+3. **主要評価結果**:
+   - **ensemble best f1_macro = 0.6557** (vs equal-weight 0.5990 = +0.06 改善・GridSearchCV 意味あり)
+   - **ensemble accuracy = 0.6533** (= 「常に range」prior 22.5% から 3 倍)
+   - **ensemble Brier = 0.16** (= 業界 standard < 0.15 を train でほぼクリア)
+   - **ensemble ECE = 0.15** (= 同上)
+   - **best 重み**: rule=2.0 / kmeans=0.5 / hmm=0.5 (= rule_classifier 主導・v1 の HMM 主導から逆転)
+   - **3 判定器予測誤差 Pearson 相関**: rule×km 0.33 / rule×hmm 0.44 / **km×hmm 0.42** (test_2025 のみ 0.61・他 < 0.5 で CP1 監査基準クリア・v1 の 0.69-0.75 から劇的改善)
+   - **causal alignment**: 全 dataset で look-ahead violations = 0 ✅
+
+4. **dashboard v16 生成** ✅:
+   - `dashboard/regime_prototype/labels_v16.csv` + `predictions_v16_{1h,1d}.json` + `index.json` v16 エントリ
+   - まこさん視認チェック実施 → 「結構改善されてる」確認・気になる箇所 1-4 (= 明らかな誤判定 / 切替遅速 / 特定期間悪化等) はあるが Stage 3 (= Exit 完成後 PnL 早期判定) まで進めてから調整判定する判断
+
+5. **regime 判定の役割整理 (= まこさん議論経由)**:
+   - regime 判定 = 「後段 ML への状況情報供給」(= 未来予測ではない・現状描写)
+   - 完璧 (= accuracy 100%) は不要・robust 設計 (= フィルタ強制適用しない決着) で後段が confidence 重み付け
+   - 最終合否 = Stage 3 PnL 比較 (= v15 単独 vs ensemble 純増分 (b)/(a) ≥ 1.3×) で量的判定
+
+#### 本セッション CC 失敗パターン (= L-230 / L-231 / L-232 / L-233 同型再演)
+
+| # | 失敗 | 詳細 | 同型 |
+|---|---|---|---|
+| 1 | target 設計で「未来予測」を選択 | regime 判定の本質 (= 現状描写) を理解せず future 4h log_return を target に → accuracy 0.46 頭打ち・まこさん指摘で過去描写へ転換 | feedback_cc_low_perspective_narrow_view (= 業界フレーム逃避癖) |
+| 2 | k-means v2 で「HMM 独立」だけ追って方向情報忘れ | feedback_cc_low_perspective_narrow_view §1.4 #4 違反・「ある軸を満たすために別の軸を犠牲にする」癖 | L-222 振り子の極端さ |
+| 3 | isotonic キャリブレーションが target 不均衡で機能不全 → ensemble 入力 raw 確率に切替 | CP1 監査 C1「isotonic 後 soft voting」設計から外れる独断判断・要レビュー | E1 独断・cc_role §1.5 デザイン責任内なれど影響大 |
+| 4 | GridSearchCV を Walk-Forward CV ではなく train 全期間 1 回で簡略化 | CP1 監査 M2 部分準拠・実装現実性で選択・要レビュー | E3 独断 |
+| 5 | dashboard server 起動忘れ → まこさん「接続拒否」報告 | 「学習やっておいて」の指示で出力までは進めたが視認確認の経路を完結させなかった | プロセス完結忘れ |
+
+#### CC 独断・要レビュー項目 35+ 件 (= 各スクリプト冒頭コメントに集約)
+
+- **target_labels**: T1 (horizon 24h) / T2 (閾値 ±0.5%) / T3 (1h grid alignment) / T4 (1 calibrator)
+- **rule_classifier**: R1 (BB slope N=10) / R2 (一目雲なし→kijun 代替) / R3 (不明確閾値 3.0) / R4 (価格 vs MA 近接性 ±0.5%) / R5 (DI クロス < 1.0) / R6 (ヒステリシス 2 連続) / R7 (vol percentile train 全期間) / R8 (BB ミドル傾き %化)
+- **kmeans_classifier**: K1 (最頻 k 決定法) / K2 (Gaussian σ = cluster median) / K3 (post-hoc ラベル ADX+DI) / K4 (k > 3 ラベルマッピング)・+ tie-break k=3 優先ロジック (= range cluster 必須担保)
+- **hmm_calibrate**: H1 (state→英語マッピング) / H2 (isotonic target = 過去 24h) / H3 (1 calibrator)
+- **ensemble**: E1 (raw 確率使用・isotonic 後ではない) / E2 (target = 過去 24h・scorer = f1_macro) / E3 (GridSearchCV train 全期間 1 回) / E4 (不明確閾値 confidence < 0.05) / E5 (ヒステリシス 2 連続)
+- **output_5m**: F1 (NaN → unclear) / F2 (5m index = bar close 時刻前提)
+
+**Why (構造的原因):**
+
+a. **regime 判定の役割理解不足**: 当初は「accuracy を上げること」「未来予測精度を上げること」が目標と内部処理していた。まこさんの「ほぼ確実に当てる」発言から議論で「regime 判定 = 現状描写・PnL 直接生まないが後段 ML への入力情報」と整理した時点で target 設計の根本ミスが見えた。設計議論段階で本質を確認しなかった
+
+b. **「業界フレーム逃避」の継続 (= L-230 再演)**: target 設計で「業界 default = future log_return」を採用したのが思考の発端・cat-bitget 固有 (= regime の本質的役割) からの逆算ができなかった
+
+c. **「振り子の極端さ」(= L-222 / L-229 / L-232 / L-233 再演)**: k-means v1 (HMM 重複) → v2 (HMM 独立だが方向音痴) → v3 (独立+方向) の 3 段階・v1 の問題を直そうとして「HMM 独立」のみ追って方向情報を捨てた = まこさん feedback_cc_low_perspective_narrow_view §2.3 禁止「目標達成からの逆算ではなく業界フレームを判断根拠化」と同型
+
+d. **isotonic キャリブレーション設計の独断**: CP1 監査 C1 で「isotonic 後 soft voting」を採用したが target 不均衡で機能不全・ensemble 入力を raw 確率に切替えた判断は実装現実性で選んだ・設計書から外れるが PIVOT 妥当
+
+**How to apply (改善ルール):**
+
+#### 改善 1: 設計提案前に「タスク性質」を明示する義務
+- 「これは予測タスクか描写タスクか」「現状記述か未来予測か」を最初に書く
+- regime / cluster / risk 等の「状況把握工程」では描写タスクが基本
+- entry / exit / sizing 等の「予測 → 行動工程」では予測タスク
+- 提案前自問: 「この target は工程の役割と整合しているか?」
+
+#### 改善 2: 特徴量選定時の 2 軸チェック (= k-means v2 失敗教訓)
+- ① **独立性**: 他判定器との情報源重複 (= 入力カテゴリ + 共通計算式) を verify
+- ② **目的整合性**: 工程の目的 (= 方向判定なら方向情報・ボラ判定ならボラ情報) を verify
+- どちらか欠ければ改訂・両方満たすまで提案しない
+- 「片方の軸を満たすため他方を犠牲にしてないか」を能動的に確認
+
+#### 改善 3: target 設計が複数項目に影響することの認識
+- target は isotonic キャリブレーション / ensemble GridSearchCV / accuracy 解釈の根幹
+- 一度決めると後工程に深く影響 → 設計初期段階で能動議論
+- target 候補を 2-3 案出して比較する習慣 (= 業界 default を即採用しない)
+
+#### 改善 4: dashboard 等のプロセス完結
+- 「学習やっておいて」「データ生成しておいて」の指示は「まこさんが視認確認できる状態」までを完遂と定義
+- 出力 parquet → dashboard data → server 起動 までを 1 ステップとして扱う
+- 中断する場合は server 起動コマンドを必ず最後に提示
+
+**関連:**
+- L-233 (= 前タスク CP1 監査経路 + cc_role §1.4.6.1 改善 10/11/12 追加・本セッションで運用実証)
+- L-232 (= 雑な言い切り癖 + 文章わかりづらい指摘 10 回連続・本セッションでも残存)
+- L-230 (= 業界フレーム逃避癖 + 視点低い視野狭い癖・本セッション target v1 / k-means v2 で再演)
+- L-222 (= 振り子の極端さ・k-means v1→v2→v3 経緯で再演 3 セッション目)
+- cc_role §1.4.6 / §1.4.6.1 / §1.5 デザイン責任 / §3.3 翻訳禁止 (= まこさん「ほぼ確実に当てる」字面通り受け取り議論で本質整理)
+- feedback_cc_low_perspective_narrow_view (= 改善 1/2 で運用継続)
+- feedback_no_unverified_assertions (= 「accuracy が低い」と即断する前に target 設計の妥当性 verify する習慣)
+- 新規ファイル: scripts/priority_rebuild/regime_*.py (= 7 件) + scripts/dashboard/build_step15_ensemble_dashboard.py
+- 出力 artifact: results/regime_step1/ (= regime_predictions_*.parquet 3 種 + joblib 4 種 + json 報告 5 種)
+- dashboard: dashboard/regime_prototype/labels_v16.csv + predictions_v16_*.json
+- 公式 source: 本セッション末 commit (= 上記新規 + lessons L-234 + WORKFLOW 改訂46 active)
+- 次セッション CC 優先順位: [2] Entry ML 詳細設計議論 + CP2 監査依頼書作成
+
+---
+
 ### L-233: 工程 [1.5] regime ensemble 詳細設計詰め + CP1 監査経路で Critical 2 件発見 → 全件採用支持で反映 (= ml_pipeline_baseline v2.8) + cc_role §1.4.6.1 改善 10/11/12 追加 (= Anti-業界フレーム逃避ゲート) + L-232 違反 9-10 回再演継続認知 (2026-05-27)
 
 **何が起きたか:**
