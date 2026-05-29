@@ -6,6 +6,149 @@
 
 ---
 
+### L-237: 工程 [2] Entry ML baseline + Optuna tune + Step 6 集約完遂 + §6.2.7 集約式 scale mismatch 問題発覚 (= CP2 監査で見逃し) + MFE 直接予測業界実証困難 verify + SHORT 偏り構造的問題判明 (2026-05-28 〜 2026-05-29 セッション)
+
+**何が起きたか:**
+
+工程 [2] Entry ML の baseline 実装 (= 56 ラベル × 3 fold = 168 学習・約 8.3 時間) + Stage 1 統計指標 review + Optuna ハイパラ tune (= 3 系統 × 30 trials・6.93 時間) + Step 6 §6.2.7 集約式 + threshold + 即死 reject 実装 + 5 variant (= original / A / B / C / D / E) 比較を完遂。検証過程で **仕様書 §6.2.7 集約式に scale mismatch 設計欠陥** が発覚・CP2 監査で見逃された問題。MFE 直接予測の業界実証困難性も WebSearch verify で確認。
+
+#### 本セッション完了事項
+
+1. **baseline 168/168 完走** ✅ (= 約 8.3 時間・PC sleep で 2 回中断 + skip 機能で復帰)
+2. **Stage 1 統計指標 review 完了** ✅: 回帰 R² 中央値 -0.044 (= ランダム以下) / 多クラス accuracy 47.6% (= ランダム +14.3pt ✅) / 2 値 AUC 0.522 (= ランダム +2.1pt △) / leak verify blacklist 0 件 ✅ / suspicious 89 件 (= fractal/level/fib 系) / regime engagement 17.3%
+3. **Optuna tune 完走** ✅ (= 6.93 時間・回帰 47.9 分 / 多クラス 324.7 分 / 2 値 42.3 分・改善幅 0.07% - 1.9% で小)
+4. **ml_pipeline_baseline 全体読了** ✅ (= §1 8 工程フロー / §2 目標達成試算 5.57× / §3 設計思想 / §6.0 特徴量計算層 / §6.1 regime / §6.3 cluster の §6.2 以外を読了)
+5. **Step 6 集約スクリプト + 5 variant 比較完遂** ✅:
+   - original (= z-score・偏り重): 5,988 entry / LONG:SHORT 287:5,701 / NET proxy -$5,735
+   - A (= [0,1] clip + 重み変更なし): **80 entry** (= threshold 0.6 突破ほぼゼロ)
+   - B (= [0,1] clip + MFE 重み下げ): 93 entry
+   - C (= A + threshold 0.4): 69,692 entry (= 月 2,581 件・過剰)
+   - D (= B + threshold 0.4): 82,439 entry
+   - **E (= data-driven threshold 0.477)**: **7,424 entry** (= 月 275 件目標達成 ✅ + LONG:SHORT 348:7,076 = SHORT 偏り依然)
+
+#### 重要発見 1: §6.2.7 集約式の scale mismatch 設計欠陥 (= CP2 監査で見逃し)
+
+**問題**:
+仕様書 §6.2.7 集約式 `LONG_score = TP_prob × 0.4 + MFE_pct_normalized × 0.3 + meta_yes × 0.3` で、TP_prob / meta_yes は 0-1 確率 (= 標準偏差 0.15) / MFE_normalized は z-score (= 標準偏差 1.0) で **標準偏差が 6 倍乖離**。重み 0.4/0.3/0.3 だけ揃えても **MFE_normalized が集約スコアの 97% を支配** する状態。
+
+**業界 verify** (= WebSearch 2 件):
+- [ScienceDirect Score Normalization](https://www.sciencedirect.com/topics/computer-science/score-normalization): 「異なる scale の feature を足し算すると biased influence」業界実証済典型問題
+- [Codecademy Normalization](https://www.codecademy.com/article/normalization): z-score は平均揃えるが [0,1] 範囲には押し込めない・業界 standard は Min-Max Scaling
+- 仕様書 §6.2.7 で「**第二段階で 0-1 ratio 化検討**」既明示経路 → 第一段階で逸脱
+
+**CP2 監査で見逃された理由**:
+仕様書 v3.7 で「**CP2 監査 C2 反映: MFE_pct を z-score 標準化 (= scale 整合確保)**」と書かれていたが、これは「平均揃え」のみで「標準偏差揃え」は未検証。CP2 監査も「scale 整合済」と素通り・「重み 0.4/0.3/0.3 と振れ幅 6 倍差の組合せがどう作用するか」までは verify されていなかった。
+
+#### 重要発見 2: MFE 直接予測は業界実証で困難 (= 業界 verify 済)
+
+**baseline 結果**: 揺れ幅 MFE/MAE 回帰の R² 中央値 = **-0.044** (= ランダム以下)
+
+**業界 verify** (= WebSearch 2 件):
+- [CDAR Berkeley Drawdown](https://cdar.berkeley.edu/sites/default/files/drawdown2016_2.pdf): 「Maximum drawdown has **inherent path dependency** → poses significant computational challenges」
+- [arxiv 2309.04507 Drawdown VAE](https://arxiv.org/pdf/2309.04507): 「heavy-tailed return outcomes have a major influence on the drawdowns」
+- [arxiv 1905.05237 Sustainable Investing Cross-Section](https://arxiv.org/pdf/1905.05237): Non-linear models > linear だが完全予測不可能
+
+**主因 3 つ**:
+1. **path-dependent (= 経路依存)**: K=12 bar の max(high) は経路次第で大きく変動
+2. **heavy-tail noise**: MFE 分布が正規分布から外れて極端な値が支配
+3. **K bar 最大値 = noise 累積**: 12 個分の noise が累積して学習困難
+
+**結論**: 仕様書 §3.5「56 ラベル並列で揺れ幅予測逃げを構造的に防ぐ」設計仮説の **半分検証成功** (= Triple Barrier 多クラス +14.3pt acc / MFE 自体は業界実証通り困難)。
+
+#### 重要発見 3: threshold 0.6 は [0,1] range で厳しすぎ → data-driven 業界 standard 整合
+
+**業界実証** (= WebSearch 1 件):
+- [Medium Saurav 2026 Quantile-Based Signal Logic](https://medium.com/@writeronepagecode/algorithmic-trading-frameworks-implementing-quantile-based-signal-logic-ep8-365-9a38ac23d514): 業界 2026 standard = quantile-based entry signal
+- [tandfonline 2026 data-adaptive threshold calibration](https://www.tandfonline.com/doi/full/10.1080/00949655.2026.2623120): data-driven threshold calibration の業界研究
+- [ResearchGate Dynamic Calibration Decision Thresholds](https://www.researchgate.net/publication/399020862): 95th percentile が balanced operating point・±1-2% guardrails under drift
+
+**E variant 実装結果**:
+- threshold = max(LONG_score, SHORT_score) の **96.86% percentile = 0.4766** (= 月 275 件確保ラインから逆算)
+- 月別 entry 件数 = 275 (= 仕様書 §2 目標達成 ✅)
+- 業界 standard の 95th percentile 整合
+
+#### 重要発見 4: SHORT 偏り 1:20 は scale 整合だけでは解消しない構造的問題
+
+E variant (= scale 整合 + threshold data-driven) でも LONG:SHORT = **348:7,076 = 1:20** で偏り変わらず。
+
+**原因**: 個別 ML 予測 (= Triple Barrier 多クラス + meta_label binary) 自体が下落相場 (= fold 1 = 2023-07〜2024-04) で SHORT 側に高確率を出す構造 → 集約スコアも SHORT 主導。
+
+**仕様書既明示の対処経路**:
+- §6.2.4 案 B = regime 別 model 分離 (= Stage 1 で regime 間 accuracy 差 > 30% で発動・第二段階条件)
+- §6.3.5 案 P = [2.5] cluster で「危険型/下落相場型」cluster に集約 → [3] Sizing で size 抑制
+
+#### 重要発見 5: PC sleep / shutdown が複数回中断発生 (= caffeinate 必須)
+
+本セッション中 background job 中断 3 回:
+- baseline 1 回目: 61% で中断
+- baseline 2 回目: 88% で中断
+- baseline 予測値再走: 27% で中断 + 74% で中断
+
+復帰: skip 機能 (= metrics.json + predictions.parquet 存在で skip) で残作業のみ実行可能。caffeinate -i -w {PID} で sleep 抑制必須。
+
+#### CC 失敗パターン (= 本セッション中)
+
+| # | 失敗 | 詳細 |
+|---|---|---|
+| 1 | smoke で「Triple Barrier 14 + meta_label 14 = 28 ラベル不在」誤検出 | 私の grep フィルタ ('TripleBarrier' CamelCase) が間違い・正しくは 'triple_barrier_label' snake_case |
+| 2 | baseline スクリプトで predictions parquet 保存忘れ | smoke 段階で省略 → Step 6 着手時に再走必要発覚 |
+| 3 | run_in_background で working directory が初期化されること見落とし | 1 回目 baseline 即座失敗 (= 相対パス解決不能) |
+| 4 | 「わかりやすく解説」指摘 11 回累積継続 | feedback_plain_language / writing_style 違反継続・統計用語 (z-score / 標準偏差) 多用 |
+| 5 | §6.2.7 scale mismatch 問題発覚時の対処方針誤り | 「scale 揃え (= [0,1] clip) だけ」で threshold 0.6 維持 → entry ほぼ 0 になった (= [0,1] range で 0.6 厳しすぎ) → C/D/E variant 追加必要 |
+| 6 | ml_pipeline_baseline 全体未読のまま Step 6 推奨 | まこさん指摘「フロー読んだ?」で発覚・§6.0/§6.1/§6.3 未読 |
+
+**Why (構造的原因):**
+
+a. **smoke で省略した結果出力が本走で必要になるパターン**: smoke = 動作確認用と割り切ったが、後段工程 (= Step 6 集約) で必要な出力を smoke 段階で含めていなかった。
+
+b. **scale mismatch 問題は CP2 監査同型バイアスで素通り**: 「CP2 監査で C2 反映済」を信頼 → 第一段階の scale 整合性を再 verify せず実装。
+
+c. **PC sleep / shutdown 想定不足**: caffeinate の起動を CC が忘れる経路で 3 回中断。
+
+d. **「わかりやすく解説」11 回累積でも統計用語使用継続**: L-232/L-233/L-235/L-236/L-236-B + 本セッション 11 回で改善 2 違反継続。
+
+**How to apply (改善ルール):**
+
+#### 改善 1: smoke / 本走の出力範囲明示
+- smoke スクリプト設計時に「smoke で省略する出力」「本走で必須の出力」を docstring に明示
+
+#### 改善 2: §6.2.7 scale mismatch 問題の仕様書反映
+- ml_pipeline_baseline v3.10 → v3.11 で §6.2.7 集約式に scale mismatch 問題注記追加
+- 第一段階を [0,1] clip + data-driven threshold (= E variant) に書き直し
+
+#### 改善 3: PC sleep 抑制の hook 化候補
+- background job 開始前に caffeinate -i -w {PID} を自動起動するラッパー or hook
+
+#### 改善 4: 例え話 + 統計用語抜きの徹底
+- 「わかりやすく解説」指摘 N 回累積後は statistical jargon (= z-score / 標準偏差 / 分散 / quantile) を **完全に禁止語** として運用
+
+#### 改善 5: 仕様書全体読了の Step 0 強化
+- ml_pipeline_baseline は工程ごとに長大 (= §6.2 単独で 1,013 行)
+- 工程提案前に「全体読了済」を確認質問する経路
+
+**関連:**
+- L-236-A / L-236-B (= CP3 監査 + 反映プロセス)
+- L-235 (= CP2 監査 + メタガード) → 本件で scale mismatch 見逃し発覚
+- L-233 (= CP1 同型問題)
+- L-220 (= 業界フレーム逃避癖)
+- L-179 (= fractal j+2 leak)
+- ml_pipeline_baseline_v1.md §6.2 / §6.2.7 / §3.5 / §6.2.1 Stage 2 (d)
+- 本セッション artifact:
+  - `scripts/priority_rebuild/run_phase2_entry_ml_smoke.py` (= 新規・smoke)
+  - `scripts/priority_rebuild/run_phase2_entry_ml_baseline.py` (= 新規・本走 + skip)
+  - `scripts/priority_rebuild/run_phase2_stage1_review.py` (= 新規・統計指標集計)
+  - `scripts/priority_rebuild/run_phase2_optuna_tune.py` (= 新規・ハイパラ tune)
+  - `scripts/priority_rebuild/run_phase2_entry_aggregator.py` (= 新規・original 集約)
+  - `scripts/priority_rebuild/run_phase2_entry_aggregator_compare.py` (= 新規・5 variant 比較)
+  - `results/priority_rebuild/ml_phase2_baseline/` (= 168 fold/label + summary + leak verify)
+  - `results/priority_rebuild/ml_phase2_optuna/best_params_per_task.json` (= ハイパラ tune 結果)
+  - `results/priority_rebuild/ml_phase2_entry_E/` (= 月 275 件達成 E variant)
+  - `results/priority_rebuild/ml_phase2_entry_compare/comparison_summary.md`
+
+**次セッション CC 優先順位**: 案 P (= [2.5] cluster 実装・§6.3 詳細設計済) または 案 Q (= §6.2.4 案 B regime 別 model 分離・大幅手戻り) の判断を仰ぐ・採用案で実装着手。
+
+---
+
 ### L-236-B: CP3 監査全 7 件採用反映完遂 (= 同セッション内反映) + 反映プロセス CC 失敗 5 件 + 「設計値は仮定で実装後 data-driven 確定」原則明示 (2026-05-27 セッション末 = L-236-A の続編)
 
 **何が起きたか:**

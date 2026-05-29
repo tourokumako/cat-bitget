@@ -1224,6 +1224,28 @@
 
 #### 6.2.7 出力 → entry 判定
 
+> ## ⚠️ 2026-05-29 セッション検証で scale mismatch 設計欠陥発覚 (= L-237)
+>
+> CP2 監査で「MFE_pct を z-score 標準化 (= scale 整合確保)」と書かれたが、**z-score は平均揃えのみで標準偏差揃えはしない**。第一段階集約式 `LONG_score = TP_prob × 0.4 + MFE_normalized × 0.3 + meta_yes × 0.3` で TP_prob / meta_yes (= 0-1 確率・標準偏差 0.15) と MFE_normalized (= z-score・標準偏差 1.0) の振れ幅が **6 倍乖離** → MFE_normalized が集約スコアの 97% を支配状態。
+>
+> **業界 verify** (= [ScienceDirect Score Normalization](https://www.sciencedirect.com/topics/computer-science/score-normalization) / [Codecademy Normalization](https://www.codecademy.com/article/normalization)): 異なる scale の特徴量を足し算する際は **min-max scaling [0,1] 範囲が業界 standard**。z-score は scale 整合不十分。
+>
+> **MFE 予測自体が業界実証で困難** (= [CDAR Berkeley](https://cdar.berkeley.edu/sites/default/files/drawdown2016_2.pdf) path-dependent + [arxiv 2309.04507](https://arxiv.org/pdf/2309.04507) heavy-tail): baseline で R² 中央値 -0.044 (= ランダム以下)・MFE は集約への寄与小さくすべき。
+>
+> **第一段階改訂 (= 業界 standard 整合)**:
+> ```
+> MFE_pct_normalized = clip(MFE_pct / MFE_pct_train_p95, 0, 1)  # min-max scaling
+> threshold = data-driven (= 月 275 件確保する quantile から逆算・暫定 0.477)  # 業界 standard 95th percentile 整合
+> ```
+> 重み 0.4/0.3/0.3 維持 (= 仕様書通り) + MFE [0,1] 化で本来意図通り作用。
+>
+> **検証結果** (= 2026-05-29 セッション・5 variant 比較):
+> - original (= z-score・偏り重): 5,988 entry / LONG:SHORT 287:5,701
+> - **E (= [0,1] clip + data-driven threshold 0.477)**: **7,424 entry / 月 275 件達成** ✅ + LONG:SHORT 348:7,076
+> - SHORT 偏り 1:20 は scale 整合だけでは解消しない構造的問題 (= 個別 ML 予測が下落相場で SHORT 偏り) → §6.2.4 案 B (regime 別 model 分離) or §6.3 cluster で対処
+>
+> 参照: lessons_active.md L-237 / `results/priority_rebuild/ml_phase2_entry_E/` / `results/priority_rebuild/ml_phase2_entry_compare/`
+
 ##### 業界 standard verify (= cc_role §1.4.6.1 改善 6・本セッション 2026-05-27 WebSearch 2 件機械運用)
 
 - **集約パターン業界 3 系統** ([arxiv 2501.10709 Revisiting Ensemble Methods 2025](https://arxiv.org/html/2501.10709v1)): majority voting / weighted soft voting / rule-based threshold
@@ -2389,6 +2411,7 @@ assert "train" in artifact_path and "test" not in artifact_path
 
 | 日付 | 版 | 内容 |
 |---|---|---|
+| 2026-05-29 | v3.11 | **§6.2.7 scale mismatch 設計欠陥注記追加 (= L-237)** ・CP2 監査見逃し問題発覚: 「MFE_pct z-score 標準化 = scale 整合確保」と書かれていたが、z-score は平均揃えのみで標準偏差揃えはしない → TP_prob / meta_yes (= 標準偏差 0.15) と MFE_normalized (= 標準偏差 1.0) で 6 倍乖離 → MFE が集約スコア 97% 支配 ・第一段階を [0,1] clip + data-driven threshold (= 業界 standard min-max scaling + 95th percentile 整合) に書き直し提案 ・MFE 直接予測の業界実証困難性 verify (= [CDAR Berkeley](https://cdar.berkeley.edu/sites/default/files/drawdown2016_2.pdf) path-dependent + [arxiv 2309.04507](https://arxiv.org/pdf/2309.04507) heavy-tail・baseline R² 中央値 -0.044 ランダム以下) ・Step 6 完遂で 5 variant 比較 → E variant (= [0,1] clip + data-driven threshold 0.477) で月 275 件達成 ✅ ・SHORT 偏り 1:20 は scale 整合だけで解消しない構造的問題 → §6.2.4 案 B (regime 別 model 分離) or §6.3 cluster で対処経路 ・WebSearch 5 件業界 verify (= ScienceDirect/Codecademy score normalization・CDAR/arxiv MFE 困難・Medium/tandfonline/ResearchGate data-driven threshold) ・本セッション完成 artifact: 168 fold/label baseline + Optuna best_params + 5 variant 比較 |
 | 2026-05-26 | v1 | 初版作成 (= 6 工程ドラフト・議論のスタート点) |
 | 2026-05-27 | v2 | 6 工程 → 8 工程拡張 (= [1.5] regime + [2.5] cluster 新規追加)・各工程の学習目標 / ラベル / 入出力 / 制約を決着事項として確定・5.1× レバー寄与見積追加 (= ケース B 中央値 5.57×)・WebSearch 業界実証出典追加 |
 | 2026-05-27 | v2.1 | §6 工程別詳細設計書 セクション新設 (= 旧 §6 改訂履歴を §7 に繰り下げ)・[1.5] regime 詳細追記 = (1) 評価方法 4 段階 + (2) HMM 再調整方針 (= 本セッション中盤決着事項) |

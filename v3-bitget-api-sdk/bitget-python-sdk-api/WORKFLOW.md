@@ -358,7 +358,144 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-27 改訂49・**工程 [2.5] cluster 詳細設計 §6.3 v3.10 = CP3 監査全 7 件採用反映完遂 + archive マーク撤去 + 物理強制 hooks 動作確認済** + 次セッション = CP4 監査経路 → [2] Entry ML 実装着手）
+## 🔴 現在のフェーズ（2026-05-29 改訂50・**工程 [2] Entry ML baseline 168/168 完走 + Optuna tune 完走 + Step 6 集約完遂 + §6.2.7 集約式 scale mismatch 設計欠陥発覚 (= L-237) + E variant で月 275 件達成** + 次セッション = [2.5] cluster 実装 (= 案 P・§6.3 詳細設計済) OR §6.2.4 案 B regime 別 model 分離 (= 案 Q) のまこさん判断 → 採用案で実装着手）
+
+> **【現在の正本ブロック・改訂50・2026-05-29 セッション末（工程 [2] Entry ML 完遂 + §6.2.7 scale mismatch 設計欠陥発覚）】**
+>
+> ### 本セッション (2026-05-28 〜 2026-05-29 改訂49 active → 改訂50 active) 完了事項
+>
+> #### 1. 工程 [2] Entry ML baseline 168/168 完走 ✅ (= 約 8.3 時間・skip 機能で 2 回中断復帰)
+>
+> - 56 ラベル × 3 fold = 168 学習・LightGBM default
+> - 入力: Phase 0 v3.1 既存 parquet (= 2,604 列) + regime 8 列 = 2,612 列
+> - 出力: `results/priority_rebuild/ml_phase2_baseline/{label}_fold{i}/` (= metrics.json + feature_importance_top20.csv + calibrator.joblib + predictions.parquet)
+>
+> #### 2. Stage 1 統計指標 review 完了 ✅
+>
+> | 系統 | 結果 | 判定 |
+> |---|---|---|
+> | 回帰 (= 揺れ幅 28) | R² 中央値 -0.044 | ❌ ランダム以下 (= 業界実証通り MFE 困難) |
+> | 多クラス (= Triple Barrier 14) | accuracy 平均 47.6% | ✅ ランダム +14.3pt |
+> | 2 値 (= meta_label 14) | AUC 平均 0.522 | △ ランダム +2.1pt |
+> | leak verify | blacklist 0 件 | ✅ |
+> | regime engagement | 17.3% | ⚠️ 30% 未満 |
+>
+> #### 3. Optuna ハイパラ tune 完走 ✅ (= 6.93 時間・3 系統 × 30 trials)
+>
+> - 回帰: 47.9 分 / num_leaves=118 / lr=0.028 / max_depth=4 / reg_lambda=0.91
+> - 多クラス: 324.7 分 / num_leaves=127 / lr=0.012 / max_depth=-1
+> - 2 値: 42.3 分 / num_leaves=124 / lr=0.025 / reg_alpha=0.83
+> - 改善幅: 0.07% - 1.9% で小 (= LightGBM default が既に robust)
+> - 出力: `results/priority_rebuild/ml_phase2_optuna/best_params_per_task.json`
+>
+> #### 4. Step 6 §6.2.7 集約スクリプト + 5 variant 比較完遂 ✅
+>
+> | variant | entry 件数 | 月平均 | LONG:SHORT | NET proxy |
+> |---|---|---|---|---|
+> | original (z-score) | 5,988 | 285 | 287:5,701 | -$5,735 |
+> | A ([0,1] clip + 重み変更なし + threshold 0.6) | 80 | 3 | 0:80 | -$536 |
+> | B ([0,1] clip + MFE 重み下げ + threshold 0.6) | 93 | 3.4 | 0:93 | -$374 |
+> | C (= A + threshold 0.4) | 69,692 | 2,581 | 12,087:57,605 | -$51,913 |
+> | D (= B + threshold 0.4) | 82,439 | 3,053 | 18,945:63,494 | -$61,408 |
+> | **E (= [0,1] clip + data-driven threshold 0.477)** | **7,424** | **275** ✅ | 348:7,076 | -$6,221 |
+>
+> #### 5. §6.2.7 集約式 scale mismatch 設計欠陥発覚 (= L-237)
+>
+> CP2 監査で「MFE_pct z-score 標準化 = scale 整合確保」と書かれていたが、z-score は平均揃えのみで標準偏差揃えはしない → TP_prob / meta_yes (= 標準偏差 0.15) と MFE_normalized (= 標準偏差 1.0) で 6 倍乖離 → MFE が集約スコア 97% 支配。E variant ([0,1] clip + data-driven threshold) で業界 standard 整合実証。
+>
+> 仕様書 `ml_pipeline_baseline_v1.md` §6.2.7 に注記追加 + §7 改訂履歴 v3.11 で詳細記録済。
+>
+> #### 6. WebSearch 5 件業界 verify 実施 (= cc_role §1.4.6.1 改善 6 整合)
+>
+> - [ScienceDirect Score Normalization](https://www.sciencedirect.com/topics/computer-science/score-normalization): scale mismatch 問題業界実証
+> - [Codecademy Normalization](https://www.codecademy.com/article/normalization): min-max scaling 業界 standard
+> - [CDAR Berkeley Drawdown](https://cdar.berkeley.edu/sites/default/files/drawdown2016_2.pdf): MFE path-dependent 業界実証困難
+> - [arxiv 2309.04507 Drawdown VAE](https://arxiv.org/pdf/2309.04507): heavy-tail
+> - [Medium Saurav 2026 Quantile-Based Signal](https://medium.com/@writeronepagecode/algorithmic-trading-frameworks-implementing-quantile-based-signal-logic-ep8-365-9a38ac23d514): quantile-based threshold 業界 2026 standard
+>
+> ### 本セッション CC 失敗パターン (= L-237 改善 1-5 で対処)
+>
+> 1. smoke で grep フィルタ CamelCase 誤り (= 'TripleBarrier' vs 'triple_barrier_label')
+> 2. baseline スクリプトで predictions parquet 保存忘れ → Step 6 再走必要
+> 3. run_in_background の working directory 初期化見落とし
+> 4. 「わかりやすく解説」指摘 11 回累積継続 (= 統計用語 z-score 多用)
+> 5. §6.2.7 scale 問題対処方針誤り (= [0,1] clip だけで threshold 維持 → entry ほぼ 0)
+> 6. ml_pipeline_baseline 全体未読のまま Step 6 推奨
+>
+> ### 次セッション CC 優先順位
+>
+> 1. **優先 1 — Step 0 + auto-load 確認 + caffeinate 起動経路の hook 化検討**:
+>    - WORKFLOW.md 改訂50 active (= 本ブロック)
+>    - lessons L-237 (= 本セッション 5 重要発見 + CC 失敗 6 件 + 改善 5 件)
+>    - `ml_pipeline_baseline_v1.md` v3.11 (= §6.2.7 scale mismatch 注記追加)
+>    - `.claude/settings.local.json` hooks + caffeinate 起動 hook 追加検討
+>
+> 2. **優先 2 — まこさん判断仰ぐ: 案 P or 案 Q**:
+>    - **案 P** (= 仕様書順): [2.5] cluster 実装 (= §6.3 詳細設計済) → SHORT 偏り は cluster で「危険型」分類 → [3] Sizing で size 抑制経路
+>    - **案 Q** (= §6.2.4 案 B): regime 別 model 分離 (= 4 倍学習量・約 32 時間) → SHORT 偏り抜本対処
+>    - CC 推奨: 案 P (= 仕様書順・cluster で自動解消経路あり)
+>
+> 3. **優先 3 — 採用案で実装着手**:
+>    - 案 P 採用時: `scripts/priority_rebuild/run_phase2_cluster_classifier.py` 新規 (= K-Means + GMM hybrid + PCA 50-100 主成分 + RobustScaler fold 別 fit + Isotonic Regression キャリブレーション・§6.3 詳細設計通り)
+>    - 案 Q 採用時: `scripts/priority_rebuild/run_phase2_entry_ml_baseline.py` 改修 (= regime 別 4 model 分離) + 再走 (= 約 32 時間)
+>
+> 4. **優先 4 — Step 5b (= Optuna best_params で baseline 再走) は保留**:
+>    - 改善幅 0.07% - 1.9% で小・優先度低
+>    - Stage 3 PnL で不合格時に戻る経路 (= 仕様書 §6.2.6 第二段階保留経路)
+>
+> 5. **優先 5 — セッション終了処理** (= lessons + WORKFLOW 改訂51 + git commit)
+>
+> ### 引き継ぎリソース 3 層構造
+>
+> #### Layer 1 (= 毎セッション必読・読了ゲート対象)
+> - **WORKFLOW.md 改訂50 active** (= 本ブロック)
+> - **CLAUDE.md**
+> - **`ml_pipeline_baseline_v1.md` v3.11** (= §6.2.7 scale mismatch 注記追加)
+> - **`cc_role.md` §1.4.6.2 物理強制経路**
+> - **`.claude/settings.local.json` hooks セクション** + **`.claude/hooks/`**
+> - **lessons_active.md 直近 5 件** (= L-237 → L-236-B → L-236-A → L-235 → L-234)
+> - **feedback_*.md (auto-memory)**: cat_v9_no_modification / baseup_before_design_discussion / cc_low_perspective_narrow_view / priority_starting_line_only / writing_style / plain_language / no_unverified_assertions / trade_ml_knowledge_gap
+>
+> #### Layer 2 (= タスク特有・案 P 採用時)
+> - `ml_pipeline_baseline_v1.md` §6.3 (= cluster 詳細設計・CP3 監査全件反映済)
+> - `results/priority_rebuild/ml_phase2_entry_E/entry_signals_all_folds.parquet` (= cluster 入力)
+> - `results/priority_rebuild/ml_phase2_baseline/*/predictions.parquet` (= 168 個・cluster 入力)
+> - Phase 4-a artifact: `predictions_train_2021_2024_k12long_refit.parquet` (= silhouette 実測値計算用)
+>
+> #### Layer 3 (= リファレンス)
+> - `false_positive_incident_policy.md`
+> - `exchange_spec.md`
+> - `phase_compliance_checklist.md`
+> - `lessons_archive.md`
+>
+> #### データ・環境
+> - parquet 3 種 (= Phase 0 v3.1 既存)
+> - regime artifact (= `results/regime_step1/regime_predictions_*.parquet` 3 種)
+> - `.venv311` + lightgbm 4.6.0 + optuna 4.8.0 + mlfinpy 0.1.2 + tabulate 0.10.0
+> - 旧 Priority 実績: 月 $370 (= cat-bitget 唯一の実利資産・Stage 3 base line)
+>
+> ### CP 監査一覧表 (= 本セッション CP 監査なし・継続)
+>
+> | 実施日 | 対象タスク | 監査区分 | 結果ファイル | 主要結論 |
+> |---|---|---|---|---|
+> | 2026-05-27 | 工程 [1.5] regime ensemble 詳細設計 | CP1 | `.claude/audits/2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md` | PIVOT・全 7 件採用支持 |
+> | 2026-05-27 | 工程 [2] Entry ML 詳細設計 §6.2.X | CP2 | `.claude/audits/2026-05-27_step2_entry_ml_design_cp2_audit_report.md` | PIVOT・全 6 件採用支持 (= ただし scale mismatch 問題見逃し・L-237 で発覚) |
+> | 2026-05-27 | 工程 [2.5] cluster 分類 詳細設計 §6.3.X | CP3 | `.claude/audits/2026-05-27_step25_cluster_design_cp3_audit_report.md` | PIVOT・全 7 件採用支持 |
+>
+> ### 目的整合性 1 行宣言 (= cc_role §1.4.6)
+>
+> - **次タスク** = (1) Step 0 + auto-load 確認 → (2) 案 P / 案 Q まこさん判断 → (3) 採用案で実装着手 → (4) Stage 3 PnL 早期判定経路へ
+> - **現フェーズ目的への貢献根拠** = 本セッションで工程 [2] Entry ML 完遂 (= baseline + Optuna + Step 6 集約) + 設計欠陥 (= scale mismatch) 発覚 + 業界 standard 整合解決経路 verify。次セッションで cluster (= 案 P) または regime 別 model 分離 (= 案 Q) で SHORT 偏り対処 → Stage 3 PnL で全工程合算評価 → Phase 5 Replay で月次 NET ≥ $1,900 全月クリア目標達成判定経路。
+
+---
+
+## 🧊 改訂49 ブロック (履歴・参照用)
+
+(= 工程 [2.5] cluster 詳細設計 CP3 監査全 7 件採用反映完遂 + §6.3 archive マーク撤去 + 物理強制 hooks 動作確認済・改訂50 で工程 [2] Entry ML 完遂 + §6.2.7 scale mismatch 設計欠陥発覚 + E variant 月 275 件達成・改訂49 内容は L-236-B 参照)
+
+---
+
+## 🧊 旧現在のフェーズ（2026-05-27 改訂49・**工程 [2.5] cluster 詳細設計 §6.3 v3.10 = CP3 監査全 7 件採用反映完遂 + archive マーク撤去 + 物理強制 hooks 動作確認済** + 次セッション = CP4 監査経路 → [2] Entry ML 実装着手）
 
 > **【現在の正本ブロック・改訂49・2026-05-27 セッション末（CP3 監査全件反映完遂 + 設計復活）】**
 >
