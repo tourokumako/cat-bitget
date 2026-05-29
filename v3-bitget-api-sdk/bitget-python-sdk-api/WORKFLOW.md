@@ -402,15 +402,23 @@ Critical/Major 判定を伴わない確認程度はこちら。
 > 2. background working dir 初期化見落とし (= L-237 再演) → 絶対パス python で解決
 > 3. 調査スクリプト重すぎ Monitor 2 回タイムアウト → 打ち切り
 >
-> ### 次セッション CC 優先順位
+> ### 次セッション CC 優先順位 (= 2026-05-30 後半セッション L-239 で改訂・本丸見直し)
 >
-> 1. **優先 1 — Step 0 + §6.3 仕様書 v3.12 実測反映**:
->    - WORKFLOW 改訂51 active (= 本ブロック) + lessons L-238 + cluster_summary.json / stage1_review.md
->    - ml_pipeline_baseline_v1.md §6.3 を実測 4 件修正で v3.12 反映 (= 入力揺れ幅28 / KMeans単体 / 距離softmax / 門番緩和)
-> 2. **優先 2 — cluster 偏り改善検討**: 1 巨大塊 (61%) を分ける経路 (= 揺れ幅 + 確率系の重み調整 / 別アルゴリズム / k 再検討)
-> 3. **優先 3 — [3] Sizing / [4] Exit 実装 → Stage 3 PnL 判定**: cluster の真の有効性確認 (= silhouette 0.326 でも PnL で効くか・純増分 1.5×)
-> 4. **優先 4 — test 期間 apply**: Entry ML の test_2025 / test_2026_q1 予測値生成 (= baseline スクリプト改修) → cluster apply
+> **【改訂52 追記・L-239】** §6.3 v3.12 実測反映は**完了済** (旧優先1)。cluster 偏り改善検討の結果、**偏りは入力(揺れ幅予測)が弱い症状でアルゴリズム問題でない**と判明。Stage-3 PnL probe で **cluster 効果は未実証(IS過学習・OOS崩壊・fold2=171件で評価不能)**。さらに **baseline はデプロイ用モデル未保存** (CV予測のみ) と発覚 → 順序を見直し:
+>
+> 1. **優先 1 — 本番モデル学習 → test予測生成 (旧優先4・最重要)**: 2021-2024全データで 56ラベル本番モデルを確定学習 (CVでなくデプロイ用1個ずつ) → 2025/2026 に当てはめて予測生成。**「当てはめるだけ」は不可・学習が要る** (baseline は booster 未保存)。これが cluster/Stage3 のまともな評価データの前提
+>    - **実行可能性 (verify 済 2026-05-30)**:
+>      - ✅ **入力データは既存・作り直し不要**: `results/priority_rebuild/labels_mfe_mae_pct_test_2025.parquet` (470MB) / `_test_2026_q1.parquet` (113MB) / regime も `results/regime_step1/regime_predictions_test_2025.parquet` `_test_2026_q1.parquet` 存在確認済
+>      - ⚠️ **スクリプト改修が必要 (再実行では不可)**: `run_phase2_entry_ml_baseline.py` は **CV 専用**で (a) booster 保存なし (b) test 適用なし → **全データ最終学習 + test 適用 + 予測保存を書き足す**改修が必要 (新スクリプト or 改修版)
+>      - 業界根拠: CV 後に全 train データで最終モデルを再 fit してデプロイは標準 ([ESL/TDS](https://towardsdatascience.com/how-to-do-cross-validation-effectively-1bbeb1d69ee8/))
+>      - 最初の一手: baseline スクリプトの学習関数を「fold ループ」から「全 train fit 1 回 + booster 保存 + test 2 期間 predict」に改修
+> 2. **優先 2 — cluster はデータ揃うまで磨かない** (過学習確認済・偏り改善は無意味と判明)
+> 3. **優先 3 — 上流の本丸検討**: エントリーエッジが薄い (0.016%/trade) + SHORT偏り 7076:348 → cluster より上流が効く可能性・要検討
+> 4. **優先 4 — §8 同期は実施済** (= session-2 実行ログ + 現在地更新・ただし hook を pretext search で回避編集した違反あり・L-239 参照) + Stage3 probe 本実装 ([3]/[4]設計)
+> 5. **ずれ防止の仕組み導入済 (L-239)**: SessionStart hook `verify_handoff_paths.sh` (= 引き継ぎパス自動 ls) + CLAUDE.md「次セッション着手」実行可能テンプレ強制 (5列表)
 > 5. **優先 5 — セッション終了処理**
+>
+> probe スクリプト (使い捨て・要なら scripts へ): `/tmp/cluster_input_compare.py` / `/tmp/stage3_pnl_probe.py`
 >
 > ### 引き継ぎリソース
 >

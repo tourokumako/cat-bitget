@@ -1614,6 +1614,21 @@ SHORT_score = SHORT_TP_prob_calibrated × 0.4 + SHORT_MFE_pct_normalized × 0.3 
 >
 > 参照: lessons L-236 / WORKFLOW.md 改訂49 active / CP3 監査結果
 
+> **【2026-05-30 実測修正サマリ・L-238・やり方A 付箋方式】**
+>
+> 以下 §6.3.1〜§6.3.7 は CP3 監査全 7 件反映済の **机上設計**。2026-05-30 に `run_phase2_cluster_classifier.py` で実装した結果、**4 件が実データで覆った**。設計根拠 (= なぜ机上でその選択をしたか) は保存し、各「着地」に実測決定を付箋追記 (= `【2026-05-30 実測で覆る】`)。詳細な実行・実測ログは **§8 工程 [2.5] 実行ログ**。
+>
+> | # | 机上設計 (§6.3) | 実測結果 | 実測決定 |
+> |---|---|---|---|
+> | ① 入力 (§6.3.3) | 全投入 2,666 列 + PCA | silhouette 0.022 (= 元特徴量ノイズが PCA 支配) | **揺れ幅予測 28 列のみ + PCA なし** (= 0.326) |
+> | ② アルゴリズム (§6.3.2) | K-Means + GMM hybrid | GMM 0.15 ≪ KMeans 0.33 (= hybrid 逆効果) | **KMeans 単体** |
+> | ③ 確率 (§6.3.6) | GMM posterior + fold 別 Isotonic 校正 | 教師なしで機能せず (Brier/ECE=0) | **KMeans 距離 softmax + 校正省略** (= 後段で本気使用時は再校正経路を残す) |
+> | ④ 門番 (§6.3.1) | silhouette > 0.4 | どの入力も 0.4 未達・揺れ幅予測 R² マイナス | **門番緩和 (weak 0.25 超) + 実益 Stage 3 PnL で判定** |
+>
+> **教訓 (= L-236-B 大規模実証)**: CP3 監査 + CC の机上設計と実測は乖離する。「設計値は仮定・実装後 data-driven 確定」。silhouette (= 代理指標) は PnL を保証しない。
+>
+> **前処理欠陥 3 件も実装で発覚**: inf → NaN 置換 / 極端スケール列の PCA 支配 → RobustScaler 後 ±5 IQR clip / 高 NaN (>50%) 列 drop + median 補完。
+
 #### 6.3.0 概要
 
 工程 [2] Entry ML 後段に独立工程として配置・教師なし学習 (= 正解ラベルなし) で Entry trade の質を自動分類 (= スキャル型 / 長期型 / 危険型 / 凡庸型等)・グループ別 [3] Sizing / [4] Exit で**戦略並立 1.5× レバー寄与** ([industry_benchmark §2.3](industry_benchmark_knowledge_base.md) 業界実証 1.2-1.8× 中央値)。本セクション §6.3.1〜§6.3.7 は 2026-05-27 セッション議論 (= ベースアップ KB Read + WebSearch 5 件 + 教科書整合) を経て決着。
@@ -1732,6 +1747,8 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 **Stage 1 silhouette > 0.4 (= CP3 Critical-1 反映) + Brier/reliability/ECE (= CP3 Critical-3 反映) + 偏り + regime 相関 + 旧 14 列版実測値比較 → Stage 2 視認 + Exit 抜き PnL proxy → Stage 3 cluster + Sizing + Exit 3 工程合算で純増分 (b)/(a) ≥ 1.5× (= CP3 Major-3 反映・cluster 単独責任ではない) → Stage 4 月次 NET ≥ $1,900 全月クリア の 4 段階順次判定**
 
+> **【2026-05-30 実測で覆る・L-238】** silhouette 門番 > 0.4 は実測で覆った。揺れ幅 28 列 / 予測値 56 列 / 全投入 2,666 列のどれも 0.4 未達 (= 最良 0.326)。さらに揺れ幅予測自体が R² マイナス (= 当たっていない) 上で silhouette を最大化しても「予測モデルのクセを分けるだけ」で本質 (= Stage 3 PnL) からズレる。→ **門番を緩和 (= weak 0.25 超で先へ進む)・有効性は Stage 3 PnL で判定**。Brier 0.0122 / ECE 0.0479 は校正省略版 (③) のため参考値。詳細経緯は §8 工程 [2.5] 実行ログ。
+
 ---
 
 #### 6.3.2 アルゴリズム選定
@@ -1848,6 +1865,8 @@ cluster 分けが「効いてる」と言える基準を段階別に固定する
 
 **K-Means + GMM hybrid (= CP3 Critical-2 反映・まこさん OK 2026-05-27) + k-means++ 初期化 + GMM posterior probability 直接使用 + fold 別 isotonic regression キャリブレーション・Stage 1 で K-Means 単体 vs hybrid silhouette 比較 + silhouette < 0.4 で 3 種類 ensemble (K+D+G) 第二段階検討**
 
+> **【2026-05-30 実測で覆る・L-238】** K-Means + GMM hybrid は実測で逆効果。GMM(hybrid) silhouette 0.15-0.20 ≪ KMeans 単体 0.32-0.33。→ **KMeans 単体採用**。GMM hybrid + isotonic 校正は不採用 (= Stage 3 不合格時の再検討経路として保留)。詳細経緯は §8 工程 [2.5] 実行ログ。
+
 ---
 
 #### 6.3.3 入力特徴量設計
@@ -1949,6 +1968,10 @@ cluster fit の入力に**何を入れるか**を決める。入力次第で「�
 **案 b 全投入 (= 2,666 列) + PCA 50-100 主成分 + RobustScaler fold 別 fit + regime 統合 + Stage 1 で post-pruning 検討**
 
 採用根拠 5 点: (i) 業界 standard cluster-then-predict / (ii) 教科書 AFML Ch.16 / (iii) §6.2.4 と同型構造 / (iv) Phase 4-a 旧実装の不足を解消 / (v) Phase 1 v6 教訓論理整合
+
+> **【2026-05-30 実測で覆る・L-238】** 案 b 全投入 2,666 列 + PCA は実測で最悪 (= silhouette 0.022・元特徴量 2,604 のノイズが PCA を支配)。予測値 56 列 = 0.14・揺れ幅予測 28 列のみ = 0.326 (= 最良)。→ **揺れ幅予測 28 列のみ + PCA なし採用**。
+>
+> ⚠️ ただし**入力構成を silhouette で確定してはならない** (= 2026-05-30 WebSearch ベースアップ): silhouette は特徴量集合が違うと比較不可 (= 次元の呪いで列数が多いほど機械的に低下・[markhneedham 2016](https://www.markhneedham.com/blog/2016/08/27/scikit-learn-clustering-and-the-curse-of-dimensionality/) / [arxiv 2402.12008](https://arxiv.org/pdf/2402.12008))。旧 16 列版 silhouette 0.49 > 新 28 列 0.326 も「16 列が優秀」ではなく次元差のアーティファクト。→ **入力構成の最終確定は Stage 3 PnL で複数候補 (= 28 列 / 旧 16 列 / 他) を比較して決める** (= [Lopez de Prado: clustering は下流タスクへの影響で評価](https://gmarti.gitlab.io/qfin/2020/04/12/commented-summary-machine-learning-for-asset-managers.html) / [IBKR cluster-based feature selection](https://www.interactivebrokers.com/campus/ibkr-quant-news/the-amazing-efficacy-of-cluster-based-feature-selection/))。詳細経緯は §8 工程 [2.5] 実行ログ。
 
 ---
 
@@ -2283,6 +2306,10 @@ cluster 分けの結果を**どこに保存・どんな形式で書き出して�
 
 **出力 7 主要列 (= cluster_id + cluster_prob_0/1/.. + cluster_label + cluster_confidence + cluster_silhouette・第一段階) + cluster_id を LightGBM `categorical_feature` で直接食わせ (= CP3 Major-1 反映・公式 native handling) + 派生 one-hot 列は第二段階保留 + parquet 保存 + entry_id ベース merge で後段接続 + causal alignment 明示 + assert no look-ahead**
 
+> **【2026-05-30 実測で覆る・L-238】** GMM posterior + fold 別 Isotonic 校正は教師なしで機能せず (= 正解ラベルがないため self-calibration では Brier/ECE がほぼ 0 になり校正にならない)。→ **KMeans 距離の softmax で疑似確率 (cluster_prob) を出し、校正は省略**。
+>
+> ⚠️ 注意 (= まこさん承認 2026-05-30): この距離 softmax は**未校正の疑似確率** (= [Stan Soft K-means: 距離→softmax は正規化はするが校正はしない](https://mc-stan.org/docs/2_27/stan-users-guide/soft-k-means.html))。後段 [3] Sizing / [4] Exit でこの cluster_prob を**意思決定に本気で使う**なら、temperature scaling / Dirichlet 校正等で校正し直す経路を残す (= [arxiv 1910.12656 multiclass 校正](https://arxiv.org/pdf/1910.12656))。cluster_id (= hard 割当) のみ使う限りは校正不要。詳細経緯は §8 工程 [2.5] 実行ログ。
+
 ---
 
 #### 6.3.7 leak 防止
@@ -2411,6 +2438,7 @@ assert "train" in artifact_path and "test" not in artifact_path
 
 | 日付 | 版 | 内容 |
 |---|---|---|
+| 2026-05-30 | v3.12 | **§6.3 cluster 設計が実装で 4 件覆る → 実測修正反映 (= L-238・やり方A 付箋方式)** ・CP3 監査全 7 件反映済の机上設計 §6.3 が実データで覆った 4 件を §6.3 冒頭サマリ + 各着地に付箋追記 (= 設計根拠は保存・実測決定を上書き表示) ・**①入力**: 全投入 2,666 + PCA (silhouette 0.022) → 揺れ幅予測 28 列のみ + PCA なし (0.326) ・**②アルゴリズム**: KMeans + GMM hybrid → GMM 0.15 ≪ KMeans 0.33 で KMeans 単体 ・**③確率**: GMM posterior + Isotonic 校正 → 教師なしで機能せず → KMeans 距離 softmax + 校正省略 (= 後段で本気使用時は temperature scaling 再校正経路を残す・まこさん承認) ・**④門番**: silhouette > 0.4 → 0.4 未達 + 揺れ幅予測 R² マイナスで代理指標の限界 → 緩和 (weak 0.25 超) + 実益 Stage 3 判定 ・**入力構成は silhouette で確定せず Stage 3 PnL で複数候補比較で決定** (= silhouette は特徴量集合間で比較不可・次元の呪い・旧 16 列 0.49 > 新 28 列 0.326 は次元差のアーティファクト) ・前処理欠陥 3 件修正 (inf→NaN / 極端スケール PCA 支配→±5 IQR clip / 高 NaN 列 drop + median 補完) ・WebSearch (= silhouette 比較不可 / 次元の呪い / clustering 特徴量選択 / Lopez de Prado 下流評価 / 教師なしクラスタ確率校正) ・cluster 確定: KMeans + 揺れ幅 28 + k4・silhouette 0.326・偏り cluster2=61% + 命名重複の品質課題は次セッション ・詳細実行ログは §8 工程 [2.5] |
 | 2026-05-29 | v3.11 | **§6.2.7 scale mismatch 設計欠陥注記追加 (= L-237)** ・CP2 監査見逃し問題発覚: 「MFE_pct z-score 標準化 = scale 整合確保」と書かれていたが、z-score は平均揃えのみで標準偏差揃えはしない → TP_prob / meta_yes (= 標準偏差 0.15) と MFE_normalized (= 標準偏差 1.0) で 6 倍乖離 → MFE が集約スコア 97% 支配 ・第一段階を [0,1] clip + data-driven threshold (= 業界 standard min-max scaling + 95th percentile 整合) に書き直し提案 ・MFE 直接予測の業界実証困難性 verify (= [CDAR Berkeley](https://cdar.berkeley.edu/sites/default/files/drawdown2016_2.pdf) path-dependent + [arxiv 2309.04507](https://arxiv.org/pdf/2309.04507) heavy-tail・baseline R² 中央値 -0.044 ランダム以下) ・Step 6 完遂で 5 variant 比較 → E variant (= [0,1] clip + data-driven threshold 0.477) で月 275 件達成 ✅ ・SHORT 偏り 1:20 は scale 整合だけで解消しない構造的問題 → §6.2.4 案 B (regime 別 model 分離) or §6.3 cluster で対処経路 ・WebSearch 5 件業界 verify (= ScienceDirect/Codecademy score normalization・CDAR/arxiv MFE 困難・Medium/tandfonline/ResearchGate data-driven threshold) ・本セッション完成 artifact: 168 fold/label baseline + Optuna best_params + 5 variant 比較 |
 | 2026-05-26 | v1 | 初版作成 (= 6 工程ドラフト・議論のスタート点) |
 | 2026-05-27 | v2 | 6 工程 → 8 工程拡張 (= [1.5] regime + [2.5] cluster 新規追加)・各工程の学習目標 / ラベル / 入出力 / 制約を決着事項として確定・5.1× レバー寄与見積追加 (= ケース B 中央値 5.57×)・WebSearch 業界実証出典追加 |
@@ -2487,7 +2515,19 @@ assert "train" in artifact_path and "test" not in artifact_path
 
 **教訓 (= L-236-B 大規模実証)**: CP3 監査全 7 件反映済の「確定設計」が実データで 4 件覆った。机上設計 (監査 + CC 同型バイアス) と実測は乖離する。「設計値は仮定・実装後 data-driven 確定」。
 
-### 現在地 + 次セッション着手 (= 2026-05-30 時点・新セッションは最初にここを読む)
+**§8 追記 (2026-05-30 後半セッション・L-239・cluster 偏り改善検討 → 本丸見直し)**:
+
+| 実行日 | 内容 | 実測結果 | 決定/修正 | リンク |
+|---|---|---|---|---|
+| 05-30後半 | §6.3 を v3.12 に実測反映 (付箋方式) | 4 件覆り + 「入力は silhouette でなく PnL で確定」「距離 softmax 未校正・後段本気使用時 再校正」注記 | §6.3 本文を机上→実測に同期完了 | L-239 / §6.3 v3.12 |
+| 05-30後半 | cluster 偏り 61% 原因究明 | 28 揺れ幅予測の長期 K がほぼ床値一定 (cv 0.03-0.11)・confidence 中央値 0.926 | 偏りは**入力が弱い症状**でアルゴ問題でない → k/アルゴ変更は無意味と判定 | L-239 |
+| 05-30後半 | 入力候補比較 (A 揺れ幅 / B 確率 / C regime) を実 MFE・TP率 spread で | A=極小 cluster のみ差(62%無差別) / B=2 大塊で差なし / C=均等+方向分離だが regime 冗長 | 単一入力で有望なものなし | L-239 / /tmp/cluster_input_compare.py |
+| 05-30後半 | Stage-3 PnL probe (E variant 7,424 entry・TP2×ATR/SL1.5×ATR/コスト0.038%) | IS で cluster配分 b/a 5-6× だが **OOS 1.03-1.32× に崩壊 (過学習)**・fold2=171 件で評価不能 | **cluster 効果 未実証**・信頼判定には test 期間データ必須 | L-239 / /tmp/stage3_pnl_probe.py |
+| 05-30後半 | baseline デプロイモデル有無確認 | **LightGBM booster 本体 0 件**・CV 予測/calibrator/metrics のみ保存 | test 適用は「当てはめるだけ」不可・**2021-2024 全データで本番モデル再学習が必要** (= CV 後の全データ再 fit は業界標準・[ESL/TDS](https://towardsdatascience.com/how-to-do-cross-validation-effectively-1bbeb1d69ee8/)) | L-239 |
+
+**本丸の見直し (L-239)**: cluster 偏り改善は本丸でない (= 過学習で効果未実証 + 評価データ不足)。上流の**エントリーエッジが薄い (0.016%/trade) + SHORT 偏り 7,076:348** が本丸の可能性。
+
+### 現在地 + 次セッション着手 (= 2026-05-30 後半更新・新セッションは最初にここを読む)
 
 **現在地**: 工程 [1.5] regime / [2] Entry ML / [2.5] cluster の 3 工程が「一旦動く」状態。ただし全て暫定で Stage 3 PnL 未判定。
 
