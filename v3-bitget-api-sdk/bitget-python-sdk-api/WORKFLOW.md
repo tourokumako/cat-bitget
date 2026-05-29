@@ -358,9 +358,90 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-29 改訂50・**工程 [2] Entry ML baseline 168/168 完走 + Optuna tune 完走 + Step 6 集約完遂 + §6.2.7 集約式 scale mismatch 設計欠陥発覚 (= L-237) + E variant で月 275 件達成** + 次セッション = [2.5] cluster 実装 (= 案 P・§6.3 詳細設計済) OR §6.2.4 案 B regime 別 model 分離 (= 案 Q) のまこさん判断 → 採用案で実装着手）
+## 🔴 現在のフェーズ（2026-05-30 改訂51・**工程 [2.5] cluster 分類 実装 (= 案 P) → §6.3 設計が実装で 4 件覆る (= 入力全投入→揺れ幅28 / GMM hybrid→KMeans単体 / GMM posterior→距離softmax / silhouette門番0.4緩和) + 前処理欠陥 3 件修正 (inf/極端スケールPCA支配/NaN) → KMeans+揺れ幅28+k4 で cluster 確定 (silhouette 0.326・偏り大+命名重複の品質課題あり) + L-238** + 次セッション = §6.3 仕様書 v3.12 実測反映 → cluster 偏り改善 → [3] Sizing / [4] Exit 実装で Stage 3 PnL 判定）
 
-> **【現在の正本ブロック・改訂50・2026-05-29 セッション末（工程 [2] Entry ML 完遂 + §6.2.7 scale mismatch 設計欠陥発覚）】**
+> **【現在の正本ブロック・改訂51・2026-05-30 セッション末（工程 [2.5] cluster 実装 + §6.3 設計大規模実測修正）】**
+>
+> ### 本セッション (2026-05-29 〜 2026-05-30 改訂50 active → 改訂51 active) 完了事項
+>
+> #### 1. 工程 [2.5] cluster 分類スクリプト新規実装 ✅
+>
+> - `scripts/priority_rebuild/run_phase2_cluster_classifier.py` 新規 (= --smoke / --pred-only / --mfe-only モード)
+> - 入力組み立て: 168 predictions から 56 予測値 + 元特徴量 2,604 + regime 6 を entry_id ベース merge
+> - スコープ: train_2021_2024 out-of-fold (3 fold 集約 236,736 bar)・test 期間 apply は Entry ML test 予測未生成のため次タスク
+>
+> #### 2. §6.3 設計が実装で 4 件覆る (= L-238・CP3 監査確定事項の実測修正)
+>
+> | # | 設計 (§6.3) | 実測 | 修正 |
+> |---|---|---|---|
+> | 1 | 入力 = 全投入 2,666 + PCA | silhouette 0.022 | 揺れ幅予測 28 のみ + PCA なし → 0.326 |
+> | 2 | K-Means + GMM hybrid | GMM 0.15 << KMeans 0.33 | KMeans 単体採用 |
+> | 3 | GMM posterior + Isotonic 校正 | 教師なしで Brier/ECE=0 機能せず | KMeans 距離 softmax + 校正省略 |
+> | 4 | silhouette > 0.4 門番 | どの入力も 0.4 未達・揺れ幅予測 R² マイナス | 門番緩和 (weak 0.25 超) + 実益 Stage 3 で判定 |
+>
+> #### 3. 前処理欠陥 3 件修正 ✅
+>
+> - inf 値 → `replace([inf,-inf], nan)` 追加
+> - 極端スケール PCA 1 主成分支配 (silhouette 0.90 偽分離) → RobustScaler 後 ±5 IQR clip (WebSearch 業界 verify 済)
+> - NaN 多数 (1,572 列・月足/週足 warmup) → 高 NaN >50% 列 drop + median imputation
+>
+> #### 4. KMeans + 揺れ幅28 + k=4 で cluster 確定 ✅ (= 品質課題あり)
+>
+> - silhouette 0.326 (= weak 0.25 超・reasonable 0.5 未満)
+> - 偏り: cluster 2 が 61% (144,759 件) + 他 3 つ 7-24%・1 巨大塊 + 3 小塊
+> - 命名重複 (risky 1 + long_term 3)・揺れ幅入力で TP 確率ベース命名が機能せず
+> - cluster_id は数値で後段使用 (§6.3.5 名前はデバッグ用) → Stage 3 には進める
+>
+> #### 重要発見: 「設計値は仮定で実装後 data-driven 確定」(L-236-B) の大規模実証
+>
+> CP3 監査全 7 件反映済の確定設計 §6.3 が、実データで入力/アルゴリズム/確率/門番の 4 件覆った。机上設計 (CP3 監査 + CC 同型バイアス) で「全投入が良い」「GMM hybrid が良い」を決めていたが実測で逆。silhouette (代理指標) 追求は揺れ幅予測 R² マイナス上では本質 (Stage 3 PnL) からズレる。
+>
+> ### 本セッション CC 失敗パターン (= L-238)
+>
+> 1. 入力対象集合を WebSearch なしで断定 → まこさん「WEB検索してベースアップした状態?」指摘
+> 2. background working dir 初期化見落とし (= L-237 再演) → 絶対パス python で解決
+> 3. 調査スクリプト重すぎ Monitor 2 回タイムアウト → 打ち切り
+>
+> ### 次セッション CC 優先順位
+>
+> 1. **優先 1 — Step 0 + §6.3 仕様書 v3.12 実測反映**:
+>    - WORKFLOW 改訂51 active (= 本ブロック) + lessons L-238 + cluster_summary.json / stage1_review.md
+>    - ml_pipeline_baseline_v1.md §6.3 を実測 4 件修正で v3.12 反映 (= 入力揺れ幅28 / KMeans単体 / 距離softmax / 門番緩和)
+> 2. **優先 2 — cluster 偏り改善検討**: 1 巨大塊 (61%) を分ける経路 (= 揺れ幅 + 確率系の重み調整 / 別アルゴリズム / k 再検討)
+> 3. **優先 3 — [3] Sizing / [4] Exit 実装 → Stage 3 PnL 判定**: cluster の真の有効性確認 (= silhouette 0.326 でも PnL で効くか・純増分 1.5×)
+> 4. **優先 4 — test 期間 apply**: Entry ML の test_2025 / test_2026_q1 予測値生成 (= baseline スクリプト改修) → cluster apply
+> 5. **優先 5 — セッション終了処理**
+>
+> ### 引き継ぎリソース
+>
+> #### Layer 1 (= 毎セッション必読)
+> - WORKFLOW.md 改訂51 active (= 本ブロック) / CLAUDE.md / cc_role.md §1.4.6.1 (業界 verify) / §1.4.6.2 (物理強制 hooks)
+> - lessons L-238 → L-237 → L-236-B → L-236 → L-235
+> - `ml_pipeline_baseline_v1.md` §6.3 (= 実測 4 件修正待ち・v3.11 時点は机上設計)
+> - feedback_*.md (= baseup_before_design_discussion / cc_low_perspective_narrow_view / writing_style / plain_language)
+>
+> #### Layer 2 (= cluster タスク特有)
+> - `scripts/priority_rebuild/run_phase2_cluster_classifier.py` (= 本セッション実装・3 モード)
+> - `results/priority_rebuild/cluster_step1/` (= cluster_predictions / summary / stage1_review / artifact)
+> - `results/priority_rebuild/ml_phase2_baseline/*/predictions.parquet` (= 168 個・cluster 入力元)
+> - `results/priority_rebuild/ml_phase1_k12long_refit/predictions_train_2021_2024_k12long_refit.parquet` (= 旧 16 列 silhouette 比較用)
+>
+> #### データ・環境
+> - `.venv311` + lightgbm 4.6 + scikit-learn (KMeans/GMM/PCA/RobustScaler/IsotonicRegression/SimpleImputer)
+> - background job は絶対パス python (`"$SDK/.venv311/bin/python3"`) + caffeinate -i 必須 (= L-237/L-238 再演防止)
+> - 旧 Priority 実績: 月 $370 (= Stage 3 base line)
+>
+> ### 目的整合性 1 行宣言 (= cc_role §1.4.6)
+> - **次タスク** = §6.3 仕様書実測反映 → cluster 偏り改善 → [3]/[4] 実装 → Stage 3 PnL 判定 → Phase 5 Replay で月次 NET ≥ $1,900 判定
+> - **現フェーズ目的への貢献** = cluster (= 工程 [2.5]) で trade 質分類 → 後段 Sizing/Exit で戦略並立 1.5× レバー → SHORT 偏り対処 (= 危険型 cluster で size 抑制) → 月次 NET 目標達成経路
+>
+> ---
+>
+> ## 🧊 改訂50 ブロック (履歴・参照用)
+>
+> (= 工程 [2] Entry ML baseline 168/168 + Optuna tune + Step 6 集約完遂 + §6.2.7 scale mismatch 発覚 + E variant 月 275 件達成・改訂50 内容は L-237 参照)
+
+> **【🧊 旧正本ブロック・改訂50・2026-05-29 セッション末（工程 [2] Entry ML 完遂 + §6.2.7 scale mismatch 設計欠陥発覚）】**
 >
 > ### 本セッション (2026-05-28 〜 2026-05-29 改訂49 active → 改訂50 active) 完了事項
 >

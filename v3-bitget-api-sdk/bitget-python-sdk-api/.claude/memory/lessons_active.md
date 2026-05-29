@@ -6,6 +6,82 @@
 
 ---
 
+### L-238: 工程 [2.5] cluster 分類 実装 (= 案 P) で §6.3 設計が実装で大規模に覆る (= 入力 / アルゴリズム / 確率 / silhouette 門番の 4 件) + 前処理欠陥 3 件発覚 (= inf / 極端スケール PCA 支配 / NaN 多数) + 「設計値は仮定で実装後 data-driven 確定」原則 (L-236-B) の大規模実証 (2026-05-29 〜 2026-05-30 セッション)
+
+**何が起きたか:**
+
+WORKFLOW 改訂50 active の案 P (= [2.5] cluster 実装) をまこさん採用 → `run_phase2_cluster_classifier.py` 新規実装。§6.3 詳細設計 (= CP3 監査全 7 件反映済 v3.10) 通りに実装したが、smoke + 本走で **§6.3 設計が実測で次々覆った**。最終的に「シンプル KMeans + 揺れ幅予測 28 列 + k=4・silhouette 0.326」で cluster 確定 (= ただし偏り大 + 命名重複の品質課題あり)。Stage 3 PnL 判定は [3]/[4] 未実装のため次セッション。
+
+#### §6.3 設計が実測で覆った 4 件 (= CP3 監査確定事項の修正)
+
+| # | 設計 (§6.3) | 実測結果 | 修正 |
+|---|---|---|---|
+| 1 | 入力 = 全投入 2,666 列 + PCA (§6.3.3) | silhouette **0.022** (= ほぼ分離なし)・元特徴量 2,604 のノイズが PCA 支配 | **揺れ幅予測 28 列のみ + PCA なし** で silhouette 0.326 |
+| 2 | K-Means + GMM hybrid (§6.3.2) | GMM silhouette 0.15-0.20 << KMeans 0.32-0.33 (= hybrid 逆効果) | **KMeans 単体採用** |
+| 3 | GMM posterior + fold 別 Isotonic 校正 (§6.3.6) | 教師なしで Brier/ECE=0.0 (= self-calibration 機能せず) | **KMeans 距離 softmax で疑似確率・校正省略** |
+| 4 | silhouette > 0.4 門番 (§6.3.1) | どの入力でも 0.4 未達 (最良 0.326)・揺れ幅予測は R² マイナス (= 当たってない) で silhouette 追求自体が目的 (Stage 3 PnL) からズレ | **門番 0.4 緩和 (weak 0.25 超で先進む)・実益 Stage 3 で判定** |
+
+#### 前処理欠陥 3 件 (= 設計 §6.3.3 「RobustScaler」だけでは不足・実装で発覚)
+
+1. **inf 値**: 元特徴量に inf 含む列あり・SimpleImputer は inf を埋めない → smoke で fold 0 期間に inf なく素通り・本走別期間で発覚リスク → `replace([inf,-inf], nan)` 追加
+2. **極端スケール列の PCA 支配**: RobustScaler は中心/スケールは外れ値耐性だが変換後の極端値は巨大なまま残る → PCA 1 主成分が分散 95% 支配 → silhouette 0.90 の **偽分離** (= 異常値スメルテストで検出) → WebSearch 業界 verify (= QuantileTransformer or clip) → RobustScaler 後 ±5 IQR clip 追加で解消
+3. **NaN 多数**: 元特徴量 1,572 列が NaN 含む (中央値 186 列/行・月足 1M / 週足 W50 系 warmup) → 高 NaN (>50%) 列 drop + median imputation 追加
+
+#### CC 失敗パターン (= 本セッション中)
+
+| # | 失敗 | 詳細 |
+|---|---|---|
+| 1 | 入力対象集合を記憶ベースで断定 | 「採用 entry のみ対象」と WebSearch なしで断言 → まこさん「WEB検索してベースアップした状態?」指摘 → WebSearch で「小サンプル robustness 懸念」判明・「全候補で fit」に修正 |
+| 2 | background working directory 初期化見落とし (= L-237 失敗 3 の再演) | smoke を run_in_background=true で投げて `.venv311/bin/activate` 相対パス解決不能 exit 127 → 絶対パス python で解決 |
+| 3 | 調査スクリプト重すぎて放置 | 39 万行 × 2,418 列 RobustScaler が Monitor 2 回タイムアウト → 打ち切り (= 原因は smoke 結果から既に確定していた) |
+| 4 | silhouette 0.90 偽分離を一旦見逃しかけ | ただし L-237 異常値スメルテストで「合格と書かず異常報告」を実行・PCA 1 主成分 95% から偽分離と特定 |
+
+**Why (構造的原因):**
+
+a. **机上設計 (CP3 監査確定) と実装の乖離**: §6.3 は CP3 監査で Critical 3 + Major 3 + Minor 1 = 全 7 件反映した「確定設計」だったが、実データに当てると入力/アルゴリズム/確率/門番の 4 件が覆った。L-236-B「設計値は仮定で実装後 data-driven 確定」原則の大規模実証。CP3 監査も CC も同型バイアスで「全投入が良い」「GMM hybrid が良い」を机上で決めていた。
+
+b. **silhouette (代理指標) 追求の罠**: cluster の真の目的は Stage 3 PnL 改善。silhouette は統計的分離度の代理。揺れ幅予測が当たってない (R² マイナス) 上で silhouette を最大化しても「予測モデルのクセを分けるだけ」。代理指標を門番にすると本質を見失う (= 思考フレーム自己点検の領域)。
+
+c. **設計の前処理記述が粗い**: §6.3.3「RobustScaler」だけでは inf / 極端スケール / NaN に対応できず、実装で 3 件の前処理追加が必要だった。設計時に実データの分布を見ていない。
+
+**How to apply (改善ルール):**
+
+#### 改善 1: 設計の実装前に「実データ 1 サンプルで前処理 dry-run」
+- 入力特徴量の NaN 率 / inf 有無 / スケール分布を実装着手時に必ず確認 (= 設計の「RobustScaler」等を鵜呑みにしない)
+- 本セッションは smoke で初めて inf / PCA 支配が発覚 → 設計段階で実データ確認していれば前倒しできた
+
+#### 改善 2: 統計指標 (silhouette) を門番にする設計は「代理指標の限界」を明示
+- silhouette / Brier 等の統計門番は「実益 (PnL) の代理」と明記し、未達でも実益で判定する経路を設計に残す
+- 本セッションの silhouette 0.4 厳守は、当たってない予測値の上では無意味だった
+
+#### 改善 3: background job は絶対パス python + caffeinate を機械的習慣化 (= L-237 再演防止)
+- `"$SDK/.venv311/bin/python3" "$SDK/script"` の絶対パス形式 + caffeinate -i を background job のテンプレ化
+
+#### 改善 4: 重い調査スクリプトはサンプル行で先に当たりをつける
+- 39 万行全 load 前に sample 2 万行で分散 top 等を確認 → 重い全 load を避ける
+
+**残課題 (= 次セッション):**
+
+1. **cluster 品質改善**: 偏り大 (= cluster 2 が 61%・1 巨大塊 + 3 小塊) + 命名重複 (= long_term × 3)・揺れ幅予測のみだと大半が似た値で 1 塊化
+2. **[3] Sizing / [4] Exit 実装 → Stage 3 PnL 判定** (= cluster の真の有効性確認・silhouette 0.326 でも PnL で効くか)
+3. **test 期間 (2025 / 2026 Q1) への apply**: Entry ML の test 予測値が未生成 → baseline スクリプトで test 期間予測生成が必要
+4. **§6.3 仕様書の実測修正反映**: 入力 = 揺れ幅 28 / KMeans 単体 / 距離 softmax / 門番緩和 を v3.12 で反映
+
+**関連:**
+- L-237 (= 工程 [2] Entry ML 完遂・MFE 予測 R² マイナス = 揺れ幅予測当たらない・本件の silhouette 代理指標問題の前提)
+- L-236-B (= 「設計値は仮定で実装後 data-driven 確定」原則・本件で大規模実証)
+- L-236 (= CP3 監査 PIVOT + 物理強制 hooks)
+- ml_pipeline_baseline_v1.md §6.3 (= 本件で 4 件覆った確定設計)
+- 本セッション artifact:
+  - `scripts/priority_rebuild/run_phase2_cluster_classifier.py` (= 新規・--smoke / --pred-only / --mfe-only モード)
+  - `results/priority_rebuild/cluster_step1/cluster_predictions_train_2021_2024.parquet` (= KMeans + 揺れ幅28 + k4 確定版)
+  - `results/priority_rebuild/cluster_step1/cluster_summary.json` + `stage1_review.md`
+  - artifact: cluster_kmeans / scaler / imputer / (gmm/pca/calibrator は mfe_only では未使用)
+
+**次セッション CC 優先順位**: §6.3 仕様書 v3.12 実測修正反映 → cluster 偏り改善検討 → [3] Sizing / [4] Exit 実装で Stage 3 PnL 判定経路へ
+
+---
+
 ### L-237: 工程 [2] Entry ML baseline + Optuna tune + Step 6 集約完遂 + §6.2.7 集約式 scale mismatch 問題発覚 (= CP2 監査で見逃し) + MFE 直接予測業界実証困難 verify + SHORT 偏り構造的問題判明 (2026-05-28 〜 2026-05-29 セッション)
 
 **何が起きたか:**
