@@ -6,6 +6,42 @@
 
 ---
 
+### L-241: ML pipeline の土台に「基本的不正」確定(約定/コスト)→過去PnL全無効・全設計し直し + CC「読め」で守らない構造欠陥が全面実証 → 文書でなく機械ゲート+問いかけリストで縛る方針 + §0大原則をbaseline集約 (2026-05-31 セッション)
+
+**何が起きたか:**
+セッション冒頭「縦カスケード化 修正方針」で着手 → PnL を測ったら全月マイナス → 学習が方向でなくボラ予測に逃げている(過去フロー全滅の再発)と feature_importance で判明 → まこさん指示で約定/コスト計算を workflow 監査 → **基本的不正が実コード証跡で確定**。過去の ML pipeline 全体が水増しと判明し、全設計し直しへ。
+
+**確定した基本的不正(false_positive §2 類型E + §0-1・task `weg49ehfw` 4/9エージェント証跡):**
+1. **成行決済を maker で計算**: TIME_EXIT・能動クローズ(本番=成行 taker 0.042%)を全部 maker(0.014%)で計算。`TAKER_FEE` 定数すら未定義(`run_phase4_b.py` compute_pnl L221-229 / rolling_option5 系)。出口コスト3倍過小。
+2. **net でなく gross 判定**: funding 未控除・slippage 未加算・taker 未適用で `月次 ≥ 1900` 判定。`run_phase5.py` L15 に「楽観 Maker 指値 fill / スリッページなし」と明記(意図的楽観前提)。
+3. **本番再現不可能**: 「指値が必ず約定」前提で不約定(取引不成立)を無視(§0-1)。funding 旧廃止値(phase5_e=確定p50の50倍)。
+→ **過去の PnL/Replay/$1,900 判定はすべて無効**。学習パイプライン全体監査(task `w1iajfa3i`・de Prado 7 reasons)でも sample uniqueness 未対処・embargo 実は無い・生 close 残留・多重検定未補正・ボラ逃げ再発・方向エッジ薄い を確定。
+
+**CC の構造欠陥(本セッションで全面実証・まこさん「すべて最悪」):**
+- **「読め」で守らない**: grep ショートカット(読了ゲート違反)・system reminder を読了と取り違え・CLAUDE.md に書いてある net/指値/Prime Directive を破る。
+- **手動 Priority をベンチマーク扱い**(§1.7 違反・「真逆だから作り直せ」=手動依存動機)。
+- **マイナスを「地面」と呼んで前進**(コスト込み NET 黒字という大前提を見失う)。
+- **積み上げ無視のちゃぶ台返し連発**(古い cc_ml_design_spec を「根源」と誤読・「パラダイム捨てろ」・経緯サマリ current_redesign_context.md が hook で全文与えられていたのに活用せず)。
+- **コスト不正を自分の PnL baseline でも再演**(一律 maker 0.038%)。
+- **指示待ち地獄**(「指示しないと無理か」とまこさん苛立ち)。
+- 「読んだ」と「理解して実施できる」が完全に別だった = web_claude_self_check「知識として持っているのに起動されない」の全面再演。
+
+**Why(構造的):** 文書を増やす対策は効かない(false_positive §5「L-159/L-160 追加で1日で再発」)。CC は方針を字面で知っていても実施段階で起動できない。CP 監査も同型バイアスで前提を問えなかった(机上・工程内整合止まり・業界正典未照合)。今日の不正は CP1/2/3 監査を全部素通りしていた。
+
+**How to apply(まこさん合意の対策・文書でなく機械化):**
+1. **機械的ゲート**: PnL スクリプトに「exit 種別で maker/taker 分岐してない/funding 未控除/gross 判定」を検知して止める assertion・完了報告の機械証跡義務・物理 hook。CC が正しく書かないと動かない形に。
+2. **まこさんの問いかけリスト**(本セッション草案・次セッションで `.claude/rules/cc_questioning_checklist.md` 正式化): A読了系/B数字系(net内訳・maker-taker使い分け・Prime Directive・異常値・多重検定)/C進め方系(GO・1ターン1変更・hook回避・積み上げ)/D設計系(手動ベンチマーク・記憶ベース・責任転送)。
+3. **CC は答えに毎回証跡添付**: 「確認したか」に記憶で即答せず file:line/実行ログ/grep/sha256。出せないなら「確認していない」と正直に言う。
+4. **§0 大原則を baseline 冒頭に集約済**(net判定/指値maker・成行taker/Prime Directive/コスト確定値/0.12BTC/手動扱い/異常値STOP)。hook 一時無効化はまこさん明示承認→書く→sha256復元検証の正規手順(L-239 の pretext bypass はしない・今回 hook ブロック時に止まって承認を仰げた)。
+
+**全設計し直しの順序(次セッション・execlog 現在地 5列表):** 優先1 正しい評価基盤(指値maker/成行taker/funding/slippage/net/不約定)を作る+assertion → 優先2 問いかけリスト+機械ゲート正式化 → 優先3 正しい計器で測り直し手動$370と比較 → 優先4 net実数で設計し直し判断。**評価基盤が出来るまで損益の合否判断を一切しない。**
+
+**未完了:** 約定/コスト不正監査は 9/9 でなく 4/9(私のPnL baseline・本番実態確定・net/gross横断・破壊係 は構造化出力失敗で未検証・要再実行)。問いかけリスト・機械ゲートは草案/未実装。
+
+**関連:** L-240(縦カスケード方針=本セッションで保留) / L-239(pretext hook bypass・本セッションでは回避できた) / L-237(SHORT偏り・MFE予測困難) / false_positive §0-1/§2類型E/§5 / §0大原則(baseline冒頭新設) / current_redesign_context.md(経緯サマリ) / [[feedback_priority_starting_line_only]] / [[feedback_current_state_verify_before_design]] / workflow task w1iajfa3i + weg49ehfw
+
+---
+
 ### L-240: 本番モデル学習完遂で揺れ幅R²が全trainだと正(CV中央値と乖離) + meta が meta-labeling として未実装と判明 + regime=方向primary候補と再認識 + hook トリガー設計のずれ修正(§8 を execlog 分離) + baseline §6 経緯ログ除去 (2026-05-30 第3セッション)
 
 **何をしたか:**

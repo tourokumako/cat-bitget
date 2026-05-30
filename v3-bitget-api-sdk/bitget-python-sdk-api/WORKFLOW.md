@@ -358,9 +358,31 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-30 改訂53・**本番モデル学習完遂(56 booster+test予測・優先1完遂) + baseup設計詰め直し(meta は meta-labeling 未実装/regime=方向primary候補/entry予測対象=Triple Barrier/揺れ幅R²全trainだと正) + §8実行ログを ml_pipeline_execlog.md に分離 + baseline §6 経緯ログ除去** + 次セッション = 設計整理(meta/regime/cluster/§6.2.7) → /audit → cluster作り直し → 後段レバー）
+## 🔴 現在のフェーズ（2026-05-31 改訂54・**ML pipeline の土台に基本的不正確定(約定/コスト・成行をmakerで計算・gross判定・指値必ず約定・funding未控除)→過去PnL/Replay/$1,900判定すべて無効・全設計し直し + §0大原則をbaseline集約 + CC構造欠陥実証→機械ゲート+問いかけリストで縛る方針** + 次セッション = まず正しい評価基盤を作る）
 
-> **【現在の正本ブロック・改訂53・2026-05-30 第3セッション末】**
+> **【現在の正本ブロック・改訂54・2026-05-31 セッション末】**
+> **⚠️ ML pipeline の現在地・次セッション着手の正本は [`ml_pipeline_execlog.md`](.claude/memory/ml_pipeline_execlog.md)（新セッション最初に読む・2026-05-31 全面更新済）。本ブロックは要約。**
+>
+> ### 本セッション (改訂53 active → 改訂54 active) 完了事項
+> 1. **基本的不正の確定**(workflow `weg49ehfw`/`w1iajfa3i`・実コード証跡): 約定モデル(成行を maker で計算・`TAKER_FEE` 未定義)/gross 判定/指値必ず約定/funding 未控除/sample uniqueness 未対処/embargo 実は無い/生 close 残留 → **過去の PnL・Replay・$1,900 判定はすべて無効**(false_positive §2類型E+§0-1)
+> 2. **§0 大原則を baseline 冒頭に追記**(net判定/指値maker・成行taker/Prime Directive/コスト確定値/0.12BTC/手動扱い/異常値STOP)。hook 一時無効化はまこさん承認→sha256復元検証の正規手順
+> 3. **execlog 全面更新**(現在地=全設計し直し・旧現在地は無効マーク・縦カスケード方針に覆りbanner)
+> 4. **プロセス変更合意**: CC は「読め」で守らない構造欠陥が全面実証 → **機械ゲート(assertion/完了報告証跡義務/物理hook)+ まこさんの問いかけリスト + CC が答えに証跡添付**、で縛る
+> 5. lessons **L-241** 追記
+>
+> ### 次セッション CC 優先順位 → **`ml_pipeline_execlog.md` 末尾「現在地 + 次セッション着手」(5列表)参照**（優先1=正しい評価基盤を作る・二重管理しない）
+>
+> ### 引き継ぎリソース（新セッション必読）
+> - **`ml_pipeline_execlog.md`（最初に読む・2026-05-31 現在地）** / `ml_pipeline_baseline_v1.md` **§0 大原則** / 本 WORKFLOW 改訂54 / lessons **L-241** / CLAUDE.md
+>
+> ### ⚠️ 最重要警告
+> 過去の `ml_phase2_production` / Phase5 系の PnL・$1,900 判定を「効いている根拠」に使わない（コスト不正で全無効）。**正しい評価基盤が出来るまで損益の合否判断を一切しない。**
+>
+> ---
+>
+> ## 🧊 改訂53 ブロック（履歴・参照用）
+>
+> **【🧊 旧正本ブロック・改訂53・2026-05-30 第3セッション末】**
 > **⚠️ ML pipeline の現在地・次セッション着手・実行ログの正本は [`ml_pipeline_execlog.md`](.claude/memory/ml_pipeline_execlog.md)（新セッション最初に読む）。本ブロックはプロジェクト全体フェーズ管理の要約。**
 >
 > ### 本セッション (改訂51 active → 改訂53 active) 完了事項

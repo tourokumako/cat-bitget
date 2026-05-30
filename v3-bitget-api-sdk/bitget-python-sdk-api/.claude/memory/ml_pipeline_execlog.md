@@ -31,6 +31,24 @@
 - 業界の正しい meta-labeling = **primary（方向シグナル {-1,0,1}）→ meta（その候補を採用/棄却するゲート + sizing）の二段カスケード**。meta は primary が発火したサンプルのみで「その bet が勝ったか」を学習（[Hudson&Thames](https://hudsonthames.org/does-meta-labeling-add-to-signal-efficacy-triple-barrier-method/) / AFML Ch.3）。
 - **regime が方向 primary の有力候補**だが、現状は入力特徴量の 8 列に薄められている（baseline での engagement 17.3%）。regime を primary に昇格 → entry ML/meta を採用ゲートにする案が業界整合（ただし regime 先行型に近づく懸念 + data verify 要）。
 
+> ⚠️ **【2026-05-31 後半で覆った・この方針では進めない】** 下記「縦カスケード化」方針は実装着手後に前提が崩れた。①PnL を測ったら全月マイナス ②学習が方向でなくボラ予測に逃げている（過去フロー全滅の再発）③**約定/コスト計算に基本的な不正が確定（成行決済を maker で計算・gross を net と偽る・指値必ず約定の非現実仮定・funding 未控除）→ 過去の PnL/Replay/$1,900 判定はすべて無効**。**→ 全設計し直し。まず正しい評価基盤を作るのが先**（下の §1.9 と現在地参照）。この縦カスケード方針自体は評価基盤が正しくなってから再判断する（破棄ではなく保留）。
+
+**2026-05-31 合意した修正方針（まこさん合意済・実装着手 → ⚠️後半で覆り・保留）**:
+
+論点①〜④を「縦のカスケード（primary→secondary meta-labeling）への組み直し」で一本化。実行順序を 3 段で合意。
+
+**実行順序（合意）**:
+1. **メタラベリング接続を直す（前段→後段の縦化）＋ cluster 入力差し替え**（= 工程 [2] の作り直し + [2.5] cluster 最小版）
+   - 前段（primary）= **方向当て（TB 3 分類）を主役に確定**。**regime は方向 primary に昇格させない**（regime 先行型 = 類型 D 回避・業界でも regime は「モデル/サイズを切り替える条件役」が標準 [QuantInsti](https://blog.quantinsti.com/regime-adaptive-trading-python/)）→ 論点② は「regime=条件役」で決着。
+   - 後段（secondary meta）= **primary が発火（買い/売り予測）したバーのみ**で「その賭けが勝ったか」を学習＝採用ゲート + sizing。現 meta_label（全 bar 独立 binary・[build_labels_pct.py:316](../../scripts/priority_rebuild/build_labels_pct.py#L316)）の使い方を置換 → 論点①。
+   - **揺れ幅（MFE/MAE 回帰）は entry 判定から外す**（§6.2.7 の 97% 支配欠陥）。TP 設定（ATR/realized vol）に転用 → 論点③。
+   - **cluster（[2.5]）入力を揺れ幅 28 → TB 決着確率（質軸）に差し替え**（regime 除外）。ただし**磨かず最小版でつなぐだけ**（効果未実証・L-239）→ 論点④。
+2. **工程 [3] Sizing・[4] Exit を実装＆学習 → 全工程つないで Stage 3 PnL を見る**
+   - ⚠️ **この損益は「合格判定」でなく「感度測定」**（どの工程を上げると NET が伸びるかを測る）。各工程が荒削りなので **$1,900 未達が前提・低くても廃案にしない**（L-238 統計指標早計判断の再発防止）。
+3. **損益を見てから 1〜4 をブラッシュアップ**（効く工程に的を絞る・本丸は後段レバー Exit 1.7× / 並立 1.5× / サイズ 1.2×・L-239）。
+
+**業界 verify（2026-05-31 WebSearch）**: メタラベリング = primary（方向・recall 重視・**弱くて可**）→ secondary（誤検出フィルタ + sizing）。「後段の性能は前段の精度に依存・**前段がゼロエッジだと機能しない**」（[Meta-Labeling Wikipedia](https://en.wikipedia.org/wiki/Meta-Labeling) / [mlfinlab tb_meta_labeling](https://random-docs.readthedocs.io/en/latest/implementations/tb_meta_labeling.html)）。現状 regime 0.65 / TB acc 0.49（+0.16pt）= **弱いがエッジあり → リレー可**。meta AUC 0.51 は前段条件付け不在が原因（1 で改善見込み・**未検証**）。
+
 ---
 
 ## 1. 工程別 実行ログ（時系列）
@@ -72,6 +90,42 @@
 ---
 
 ## 2. 現在地 + 次セッション着手（新セッションは最初にここを読む）
+
+**現在地（2026-05-31 セッション末・最重要・前回までの前提が崩れた）**:
+
+⚠️ **今日、ML pipeline の土台に「基本的な不正」が確定した（workflow 監査・実コード証跡）**:
+- **約定モデルの不正**: TIME_EXIT・能動クローズ（本番は成行 taker 0.042%）を全部 maker（0.014%）で計算。`TAKER_FEE` 定数すら未定義（`run_phase4_b.py` compute_pnl L221-229 / rolling_option5 系）。
+- **net でなく gross 判定**: funding 未控除・slippage 未加算・taker 未適用の値で `月次 net_pnl ≥ 1900` 判定。`run_phase5.py` に「楽観 Maker 指値 fill / スリッページなし」と明記。
+- **本番再現不可能**: 「指値が必ず約定」前提で不約定（取引不成立）を無視。funding 旧廃止値/未控除（phase5_e は確定 p50 の50倍）。
+- → **過去の PnL / Replay / $1,900 判定はすべて無効・信用できない**（水増し）。false_positive §2 類型E + §0-1。
+
+**結論: 全設計し直し（まこさん判断）**:
+- 0 章「縦カスケード化 修正方針」は、評価が水増しだった前提が崩れたため**保留**（破棄でなく評価基盤が正しくなってから再判断）。
+- **まず正しい評価基盤（PnL/Replay エンジン）を作るのが最優先**: 指値maker/成行taker 使い分け・funding 控除・slippage・不約定モデル・net 判定。これが無いと過去も未来も判定不能。
+- 正しい計器で測り直して**本当の net 現在地（手動 Priority 月$370 より上か下か）**を出してから Entry/Exit/cluster/縦カスケード を実数で再判断。
+
+**今日の整備（完了）**:
+- **§0 大原則を baseline 冒頭に追記**（net判定 / 指値maker・成行taker / Prime Directive / コスト確定値 / 0.12BTC / 手動扱い / 異常値STOP）。散在大前提を集約。hook 一時無効化（まこさん承認）→書く→sha256 復元検証済。
+- **プロセス変更の合意**: CC は「読め」で守らない構造欠陥が全面実証（grep ショートカット / 手動ベンチマーク扱い / マイナスを地面と呼ぶ / 積み上げ無視ちゃぶ台返し連発 / コスト不正を自分の PnL でも再演）。文書を増やす対策は効かない（false_positive §5）。→ **機械的ゲート（assertion / 完了報告の機械証跡義務 / 物理hook）+ まこさんの問いかけリスト + CC が答えに毎回証跡添付**、で縛る方向。
+
+**監査結果（workflow・実コード証跡）**:
+- 学習パイプライン全体監査（de Prado 7 reasons）: task `w1iajfa3i`（方向エッジ薄い・ボラ逃げ再発・sample uniqueness 未対処・embargo 実は無い・生 close 残留・多重検定未補正）
+- 約定/コスト不正監査: task `weg49ehfw`（上記）。ただし 9 中 5 エージェント構造化出力失敗＝**私の PnL baseline・本番実態確定・net/gross 横断・破壊係 は未検証・要再実行**。
+
+**次セッション CC 優先順位（5 列表・全部やり直しの新・本丸）**:
+
+| 優先 | 使う/直すファイル(パス) | 入力データ | 存在✅ | 最初の一手 | 完了条件 |
+|---|---|---|---|---|---|
+| 1 評価基盤を正す | `scripts/priority_rebuild/run_phase4_b.py` compute_pnl(L221-229) + PnL/Replay 全般 | 本番約定実態(exchange_spec.md・§0.2) | ✅ コード存在 | compute_pnl を exit 種別で maker/taker 分岐・funding/slippage 控除・不約定モデル・net 判定に直す + **コスト検証 assertion を埋める** | 正しい計器で動く + assertion 稼働 |
+| 2 問いかけリスト+機械ゲート 正式化 | `.claude/rules/cc_questioning_checklist.md`(新規) + PnL assertion | 本セッション問いかけリスト草案 | — | 問いかけリスト確定 + assertion/hook 化 | まこさんレビューOK + ゲート稼働 |
+| 3 正しい計器で現在地測定 | 評価基盤 + `ml_phase2_production/` 既存予測 | 正しいコストモデル | ✅ 予測生成済 | 既存 Entry を正しい net で測り **手動 $370 と比較** | 本当の net 現在地が出る |
+| 4 設計し直し判断 | （議論 + baseline §0 遵守） | 優先3 の net 実数 | — | net 実数を見て Entry/Exit/cluster/縦カスケード を再判断 | 方向確定 |
+
+**⚠️ 次セッションへの最重要警告**: 過去の `ml_phase2_production` / Phase5 系の PnL 数値・$1,900 判定を「効いている根拠」に使わない（コスト不正で全無効）。**正しい評価基盤（優先1）が出来るまで、損益に関する一切の合否判断をしない**。問いかけリスト草案の詳細は本セッションのチャット参照。
+
+---
+
+**↓ 以下は 2026-05-30 時点の旧現在地（上の不正発覚で前提が無効・参照のみ）**
 
 **現在地（2026-05-30 第3セッション末）**:
 - 工程 [1.5] regime / [2] Entry ML / [2.5] cluster の 3 工程が「一旦動く」（暫定・Stage 3 PnL 未判定）。

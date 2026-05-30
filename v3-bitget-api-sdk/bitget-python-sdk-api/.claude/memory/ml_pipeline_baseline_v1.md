@@ -7,6 +7,48 @@
 
 ---
 
+## §0. 大原則 (絶対遵守・全工程の設計・評価・採用判定に優先・違反は false_positive_incident_policy インシデント扱い)
+
+> 散在していた大前提をここに集約 (2026-05-31)。出典: CLAUDE.md / exchange_spec.md / false_positive_incident_policy.md / current_redesign_context.md。
+> これらに反する設計・計算・判定は最重大インシデント。各工程の設計・スクリプト・採用判定は本 §0 を満たしてから先に進む。
+
+### §0.0 思想 (なぜ §0 が最優先か)
+- 未達 ($1,900 に届かない) は正直に出せば**資金を溶かさない** (まこさんが「本番に出さない」と正しく判断できる)。
+- **水増し (gross を net と偽る・コスト過小・成行を maker で計算) だけが、実資金を毀損する最重大不正** (false_positive §1)。
+- ゆえに「良く見せる計算」「マイナスを地面と呼んで前進」を禁止する。マイナスはマイナスと出す。
+
+### §0.1 net 利益で判定する
+- **net = 売上 (粗利) − 全コスト (手数料 maker/taker・slippage・funding) = 最終手取り**。
+- 目標「月次 NET ≥ $1,900」は、この**手取り**が $1,900 という意味。gross (コスト控除前) での判定は禁止 (類型E)。
+- **列名が `net_pnl` でも実体がコスト控除後か必ず verify** (関所C)。
+- 合格 = **全月**が net ≥ $1,900 (単月未達は不合格・通算 NET だけで判定しない)。
+
+### §0.2 指値 maker 基本・成行 taker は正しく計上 (本番約定実態・exchange_spec.md)
+- エントリー = 指値 post_only (maker 0.014%)。**不約定 (指値が約定せず TTL 3本=15分でキャンセル) は取引不成立としてモデル化**する。
+- TP 決済 = placePosTpsl 指値 (maker)。SL 決済 = placePosTpsl 指値 (maker・add_count≥2)。
+- **TIME_EXIT・能動クローズ (時間切れ・急変・トレーリング決済) = close_market_order 成行 (taker 0.042%)** で計上する。
+- 「全決済 maker」は禁止。成行になる決済を maker で安く計算したら不正 (類型E)。
+- 手動 P23 も TP=指値maker / 能動クローズ=成行taker と使い分けている。
+
+### §0.3 本番再現性 (Prime Directive・false_positive §0-1)
+- 推論時点 t で因果的に取得不可能な値 (MFE/MAE 等の保有期間中最大値・K本後の値・期間全体集計・test 結果で決めた値) を計算・判定に使わない。
+- 「指値が必ず約定する」等、本番で再現できない仮定を置かない。
+
+### §0.4 コスト確定値 (exchange_spec.md・audit#19)
+- maker 0.014% (0.00014) / taker 0.042% (0.00042) / slippage 0.005% / funding median +0.0002%/8h (LONG払い・SHORT受取・p95=0.01% は stress 参考)。
+
+### §0.5 ポジション上限 (false_positive §0-2)
+- ポジションサイズ上限 **合計 0.12 BTC** (1 ポジションあたりではなく合計上限・cap=N なら 1 pos = 0.12/N BTC)。
+- 任意の時点 t で `sum(active_position_btc) ≤ 0.12` を verify。
+
+### §0.6 手動 Priority の扱い (feedback_priority_starting_line_only)
+- スタートライン参照のみ。ベンチマーク・ベース・素材転用 禁止。テクニカル全体から独立に設計する。
+
+### §0.7 異常値 STOP (関所A)
+- 勝率 > 70% / 月次 NET > $3,800 / IS-OOS Sharpe 比 > 3倍乖離 / 最大DD < 月次NETの10% のいずれかは「合格」と呼ばず虚偽達成調査 (§4) に入る。
+
+---
+
 ## 1. 8 工程フロー (= 2026-05-27 セッション決着・1 字 1 句一致義務)
 
 ```
