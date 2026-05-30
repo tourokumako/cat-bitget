@@ -6,6 +6,39 @@
 
 ---
 
+### L-240: 本番モデル学習完遂で揺れ幅R²が全trainだと正(CV中央値と乖離) + meta が meta-labeling として未実装と判明 + regime=方向primary候補と再認識 + hook トリガー設計のずれ修正(§8 を execlog 分離) + baseline §6 経緯ログ除去 (2026-05-30 第3セッション)
+
+**何をしたか:**
+- 本番モデル学習スクリプト新規 `run_phase2_entry_ml_production.py`(全train fit + booster保存 + test2期間予測・56ラベル・5.7h・leak4点pass・異常値該当なし) → 優先1完遂(cluster/Stage3 評価データ確保)
+- まこさん指示「学習前ベースアップして学習内容が目標に正しいか確認」で揺れ幅/meta/regime/フロー意図を業界本文verifyで詰め直し
+- §8実行ログを `ml_pipeline_execlog.md` に分離 + baseline §6 から経緯ログ除去(設計記述のみに)
+
+**発見(data/業界verify済):**
+1. **揺れ幅MFE/MAE回帰R²は全train学習だと正**: test中央値+0.05(20/28正・短期K6-48が+0.05〜0.20・長期K288のみ負)。CV中央値-0.044と乖離 → **「CV中央値だけで"当たらない"と設計判断するのは誤り・本番条件(全train)で再確認要」**。top特徴 atr14_pct = ボラ駆動(業界整合)
+2. **meta は meta-labeling として未実装**: AUC中央値0.509(ほぼランダム)。cat-bitget の meta_label は全bar独立学習(primary発火サンプル条件なし)・集約スコア加重一項(ゲートでない)・**前段primary不在**。業界=primary(方向{-1,0,1})→meta(採用ゲート+sizing)の二段カスケード(AFML Ch.3 / Hudson&Thames 本文verify)
+3. **regime([1.5])は方向シグナルを持つが入力特徴量8列に薄められている**(engagement17.3%)。regimeを方向primaryに昇格→entry/metaを採用ゲートにする案が業界整合(regime先行型懸念+data verify要)
+4. **entry予測対象の業界standard=Triple Barrier分類**(MQL5/QuantStrategy本文「magnitude回帰はROC対角線=無価値」)。揺れ幅はentry集約から外しTP=ATR/realized vol。**これら設計変更は/audit検証待ち**
+5. **フロー意図=連鎖学習**(横並び独立モデル+特徴量連鎖)で業界のprimary→metaカスケードになっていない。regime=方向軸/cluster=質軸・cluster入力にregime入れない(冗長・L-238)
+
+**CC失敗/まこさん指摘:**
+- 「揺れ幅は当たらない」断定が言い過ぎ(CV中央値だけで判断)→本番R²正で覆る([[feedback_no_unverified_assertions]])
+- 2択をまこさんに投げて判断責任転送→「なんで私に選ばせる?WEB検索で根拠示して選べ」(cc_role §1.5)
+- 設計経緯(§3.5 揺れ幅逃げ防止)を読まず「揺れ幅外す」断定→読んで自分の提案が設計反転と判明
+- **hook トリガー設計のずれをまこさんが指摘**:「提案前ベースアップ」が意図なのに「ファイル編集前」がトリガー→追記のために検索の本末転倒。物理hookで「チャット提案前」は捕捉不可(技術限界)→§8をexeclog分離で意図整合(設計確定=baseline §6のみgate)
+- hookブロック時 pretext WebSearch でバイパスせず(L-239厳守)・正規のhook一時無効化(§1.4.6.2)で移送
+
+**構造改善(本セッション実施):**
+- §8 → `ml_pipeline_execlog.md` 分離(新セッション最初に読む正本・hook対象外・記録追記がgateされない)
+- baseline = 設計フロー+設計記述のみ / execlog = 実測・経緯ログ+現在地+フロー意図
+- CLAUDE Layer1 + verify_handoff_paths.sh(SessionStart) を execlog 参照に更新
+- baseline §6 から経緯ドラマ(付箋/scale mismatch発覚/§7生ログ)除去・設計値据え置き
+
+**次セッション(execlog 現在地+次着手 参照):** 設計整理(meta カスケード化/regime primary化/cluster質軸/§6.2.7反転) → /audit → cluster作り直し(入力=Triple Barrier) → 後段レバー(Exit/並立/Sizing)=本丸。**宿題: 「cluster結果の見方+どうすべきか」提案が未完**
+
+**関連:** L-239 / L-237 / L-238 / [[feedback_no_unverified_assertions]] / [[feedback_baseup_before_design_discussion]] / ml_pipeline_execlog.md / commit 5943505 + 02ea92b
+
+---
+
 ### L-239: cluster 偏り改善検討 → 「偏りは入力(揺れ幅予測)が弱い症状」と判明 + Stage-3 PnL probe で cluster 効果未実証(過学習) + デプロイ用モデル未保存発覚(優先4は再学習必要) + §6.3 v3.12 実測反映完了 + CC「学習済み・当てはめるだけ」誤断定 (2026-05-30 セッション後半)
 
 **何をしたか:**

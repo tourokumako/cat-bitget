@@ -76,6 +76,7 @@
 **現在地（2026-05-30 第3セッション末）**:
 - 工程 [1.5] regime / [2] Entry ML / [2.5] cluster の 3 工程が「一旦動く」（暫定・Stage 3 PnL 未判定）。
 - **本番モデル学習完了**（56 booster + test 2 期間予測・`ml_phase2_production/`）→ cluster/Stage3 の評価データは揃った。
+- **構造整備完了**: §8 → 本 execlog 分離 + baseline §6 経緯ログ除去（設計記述と実測ログの分離完成・hook 意図整合・新セッション誤解防止導線）。
 - **設計の本丸論点が baseup で浮上（0 章）**: ① meta が meta-labeling として未実装（primary→meta カスケードでなく集約一項の誤用・AUC 0.509） ② regime を方向 primary に昇格するか ③ entry 集約 §6.2.7 を決着主軸に反転（/audit 検証待ち） ④ cluster 入力を Triple Barrier 質軸に。これらは相互に絡む。
 
 **最重要認識（L-239 + baseup）**: 本丸は Entry 精緻化でなく **後段レバー（Exit/並立/Sizing）の掛け算**（Entry 単独は業界実証 1.6×=月$592 で大幅未達・industry_benchmark §2.6）。

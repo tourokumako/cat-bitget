@@ -358,9 +358,27 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-30 改訂51・**工程 [2.5] cluster 分類 実装 (= 案 P) → §6.3 設計が実装で 4 件覆る (= 入力全投入→揺れ幅28 / GMM hybrid→KMeans単体 / GMM posterior→距離softmax / silhouette門番0.4緩和) + 前処理欠陥 3 件修正 (inf/極端スケールPCA支配/NaN) → KMeans+揺れ幅28+k4 で cluster 確定 (silhouette 0.326・偏り大+命名重複の品質課題あり) + L-238** + 次セッション = §6.3 仕様書 v3.12 実測反映 → cluster 偏り改善 → [3] Sizing / [4] Exit 実装で Stage 3 PnL 判定）
+## 🔴 現在のフェーズ（2026-05-30 改訂53・**本番モデル学習完遂(56 booster+test予測・優先1完遂) + baseup設計詰め直し(meta は meta-labeling 未実装/regime=方向primary候補/entry予測対象=Triple Barrier/揺れ幅R²全trainだと正) + §8実行ログを ml_pipeline_execlog.md に分離 + baseline §6 経緯ログ除去** + 次セッション = 設計整理(meta/regime/cluster/§6.2.7) → /audit → cluster作り直し → 後段レバー）
 
-> **【現在の正本ブロック・改訂51・2026-05-30 セッション末（工程 [2.5] cluster 実装 + §6.3 設計大規模実測修正）】**
+> **【現在の正本ブロック・改訂53・2026-05-30 第3セッション末】**
+> **⚠️ ML pipeline の現在地・次セッション着手・実行ログの正本は [`ml_pipeline_execlog.md`](.claude/memory/ml_pipeline_execlog.md)（新セッション最初に読む）。本ブロックはプロジェクト全体フェーズ管理の要約。**
+>
+> ### 本セッション (改訂51 active → 改訂53 active) 完了事項
+> 1. **本番モデル学習完遂**（`scripts/priority_rebuild/run_phase2_entry_ml_production.py` 新規・全train fit + 56 booster保存 + test 2期間予測・leak4点pass）→ cluster/Stage3 評価データ確保（優先1完遂）
+> 2. **baseup 設計詰め直し**（揺れ幅R²全trainだと正 / meta は meta-labeling 未実装 / regime=方向primary候補 / entry予測対象=Triple Barrier）→ 設計変更は **/audit 検証待ち**
+> 3. **構造整備**: §8 → `ml_pipeline_execlog.md` 分離 + baseline §6 経緯ログ除去 + hook 意図整合（設計確定=baseline §6 のみ WebSearch gate）
+> 4. commit 5943505 / 02ea92b
+>
+> ### 次セッション CC 優先順位 → **`ml_pipeline_execlog.md` 末尾「現在地 + 次セッション着手」（5列表）参照**（二重管理しない）
+>
+> ### 引き継ぎリソース（新セッション必読）
+> - **`ml_pipeline_execlog.md`（最初に読む・経緯+現在地+次着手+フロー意図）** / 本 WORKFLOW 改訂53 / CLAUDE.md / lessons L-240
+>
+> ---
+>
+> ## 🧊 改訂51 ブロック（履歴・参照用）
+>
+> **【🧊 旧正本ブロック・改訂51・2026-05-30 セッション末（工程 [2.5] cluster 実装 + §6.3 設計大規模実測修正）】**
 >
 > ### 本セッション (2026-05-29 〜 2026-05-30 改訂50 active → 改訂51 active) 完了事項
 >
