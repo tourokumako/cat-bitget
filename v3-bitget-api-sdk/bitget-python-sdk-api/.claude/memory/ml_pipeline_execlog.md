@@ -87,6 +87,72 @@
 
 **フロー意図に照らした cluster の次の方向（2026-05-30 baseup・未確定・提案中）**: cluster は「質軸」なので、入力は**揺れ幅でなく Triple Barrier 予測（TP/SL/TIME 決着確率＝質そのもの）**にするのが筋（揺れ幅はボラ系で regime と冗長 + 当たらない）。regime は cluster 入力に入れない（0 章）。ただし有効性は Stage 3 PnL でしか確定しない。← **まこさん指示の「cluster 結果の見方 + どうすべきか」提案は本セッション未完了（次の宿題）**。
 
+### 工程横断: 評価基盤（約定/コストモデル）の実態把握（2026-05-31 本セッション・発注フロー精読）
+
+| 実行日 | 内容 | 実測/事実（実コード・推測排し精読） | 決定/設計原則 | リンク |
+|---|---|---|---|---|
+| 2026-05-31 | 本番発注フロー精読（run_once_v9.py / replay_csv.py） | **replay_csv.py（手動v9・$370 を出したエンジン）= 約定/コスト正しい**: ①指値 maker entry（`close±0.01%`・L1352）②**不約定モデルあり**（TTL=2bar・`low≤limit`(LONG)/`high≥limit`(SHORT)で約定判定・未到達は取引不成立・L1126-1135）③決済 fee 分岐（`exit_rate = maker if TP_FILLED else taker`＝**TP=maker / SL・TIME・能動クローズ=taker**・L375-379）④**funding・slippage 未控除**（grep 0件）。**run_once_v9.py（本番）**: 指値TTL=**3bar**（L31・replayは2bar）/ SL=placePosTpsl指値（L341）/ 能動クローズ=close_market成行（L374）/ ⚠️ net記録 L130 は能動クローズを `maker×2` で過小計上（実発注は成行taker） | **正しい約定/コストモデルは replay_csv.py に既存** → ML pipeline（run_phase4_b）は「無条件約定＋全maker」で二重に過小＝コスト不正の正体。**評価基盤修正 = ゼロから作らず ML を replay_csv の仕様に合わせる**。$370 も funding/slippage 未控除なので、公平比較には両方に §0.4 funding を同条件で足す（地面が少し下がる） | replay_csv.py L375-379 / L1126-1135 / L1352 ・ run_once_v9.py L31 / L130 / L341 / L374 |
+
+**設計原則（最低限遵守・まこさん指示 2026-05-31）**: ML pipeline は手動時代（run_once_v9.py / replay_csv.py）の約定/コスト仕様を最低限守る:
+- 指値 maker entry + **不約定モデル**（指値が TTL 内に到達しなければ取引不成立として扱う・「指値が必ず約定」禁止）
+- 決済コスト分岐: **TP=maker指値 / SL・TIME・能動クローズ=taker成行**（「全決済 maker」禁止・§0.2）
+- $370 と比較する時は両方に funding / slippage を同条件で適用（地面と現在地を同じ計器で測る）
+
+### 工程横断: 病巣診断と修正順序の確定（2026-05-31・前セッション監査4エージェント + 本セッション統合）
+
+**病巣は2つ重なる（独立4エージェント監査が同じ核心へ収束）**:
+- **(A) エッジ源の欠如**: OHLCV テクニカルのみで 5分足の方向にエッジがほぼ無い。423 特徴に方向を生む **order flow / funding / OI / 板情報（OBI/CVD）が1列も無い**。Triple Barrier モデルの上位特徴量が LONG/SHORT とも全部ボラ系（realized_vol / bb_width / body_ratio / adx＝強さで方向でない）＝**「揺れ幅予測への逃げ」が過去フロー全滅と同型で再発**。
+- **(B) 評価の楽観化**: コスト過小（全maker）/ sample uniqueness 未適用（AFML #5・K=288 で隣接ラベル窓重複 **99.65%** → OOS 過大評価）/ 「embargo 288」は実体 purge のみ（用語取り違え）/ 生 close 残留（非定常・本番価格レンジで分割無効）/ DSR 現パイプラインから外れ機能せず・PBO 未実装。**すべて数字を実態より良く見せる方向**。
+
+**実証（前セッション Stage3 実測）**: 1取引 粗利 **+0.0101% < 往復コスト 0.038%** → 全15ヶ月マイナス。TP38% : SL48% ≒ 1.5 : 2.0 = **ランダムウォーク幾何 = 方向エッジゼロ**の裏付け。純方向勝率 52.76% / 方向 AUC ≈ 0.50。※純方向 AUC の正面検証は一度も実行されないまま本番学習していた。
+
+**後段レバーの前提（CC の見落とし訂正）**: industry §2.6 の掛け算（Exit 1.7× × 並立 1.5× × Sizing 1.2× = 5.57×）は **Entry が最低限の方向エッジ >1.0× を持つ前提**。Entry が <1.0×（コスト負け）なら後段レバーを掛けても黒字化しない。→ **後段 [3]Sizing / [4]Exit の詳細設計は「Entry にエッジが在る」確認の後**（「後段設計を先に」は誤り）。
+
+**修正順序（監査総意・確定）**: **① 評価を正直にする**（コスト taker/funding 込み・sample uniqueness weight・生 close 除去・embargo 正しく・DSR/PBO 再接続）→ **② 方向エッジが在るか正面確認**（純方向 AUC 実測 + 方向源データ funding/OI/板情報を1列でも足して効くか）→ **③ エッジ確認後にパイプライン作り直す**（縦カスケード）。後段設計は③に含まれ②の後。
+
+**認識（確定・まこさんの直感が正しい）**: 方法（LightGBM / purged walk-forward CV / leak 防止 / pct 化）は業界標準で正しい。だが**枠組み（テクニカルのみ・5分足で方向当て）に方向エッジが構造的に無い**。「方法」でなく「枠組み」の問題。
+
+### 工程横断: 本セッション学習サマリ（設計修正の素材一式・2026-05-31・CC が自ら網羅棚卸し）
+
+**A. 設計修正の骨子（baseline §6 対応・GO 後に §6 へ反映）**:
+
+| §6 | 実証済み欠陥 | 修正方向 |
+|---|---|---|
+| 横断評価（§6.1.1/§6.2.1 Stage群） | コスト過小 / uniqueness未 / embargo実はpurge / 生close / DSR外PBO無 | **replay_csv 仕様に合わせ正しい計器化**（taker/funding/不約定 + uniqueness weight + 正embargo + fracdiff d* + DSR/PBO 再接続） |
+| 入力（§6.0/§6.2.4） | 方向源データ 0 列 | **(A) 方向源（funding/OI/OBI/CVD）追加・効くか検証** ← 本丸 |
+| Entry集約（§6.2.3/§6.2.7） | 揺れ幅 97%支配 / meta 全bar独立（縦カスケード未実装） | 揺れ幅を TP 設定へ転用 / **primary方向→secondary採用ゲートの縦カスケード** |
+| cluster（§6.3） | 入力 揺れ幅・効果未実証 | TB 質軸・最小版 |
+| regime（§6.1） | engagement 17% | 条件役維持・lag 対策 |
+| [3]Sizing/[4]Exit（§6.4/6.5 未設計） | 詳細設計なし | **エッジ確認後**に設計（後段レバーは Entry>1.0× 前提） |
+
+**B. 3 KB 全文読了の設計素材**:
+- cc_entry §18.5/§20.7: Phase1 v6 全滅 = **8 軸多様性欠落**（①ボラML欠陥 ②アルゴ多様性0[全LightGBM] ③bar種別0[全5m time] ④cascade不在 ⑤strategy配分機械固定 ⑥Meta-Labeling同型[primary悪いと救えない] ⑦リスク管理レイヤー不在 ⑧運用層不在）
+- industry §2.6: 5 レバー掛け算 = Entry 1.4× × Exit 1.7× × 並立 1.5× × regime 1.3× × Sizing 1.2× = 5.57×。**全レバー Entry>1.0× 前提**（Entry単独頼り=$592 大幅未達）
+- 方向源 order flow: raw alpha 30秒 0.42bps 極小 → 単独の儲け源でなく **執行用シグナル**が業界位置づけ（足しても alpha 小・コスト負けリスクあり＝「足せば勝てる」でなく「効くか検証する設計」に）
+
+**C. 監査 Major の設計直結項目（前セッション・証跡付き）**:
+- sample uniqueness 未適用（窓重複 99.65%）→ AFML Ch.4 uniqueness weighting + sequential bootstrap
+- 「embargo 288」は実体 **purge のみ**（用語取り違え）→ 正しい embargo を実装
+- 生 close（std $19,247・非定常）残留・「close>$48,000」分割は本番$100k超で無効 → fracdiff d* を **ADF 最小 d 探索**（d ハードコード廃止）
+- SHORT 偏り 1:20 は **2023 下落相場由来**（SHORT 65% が 2023・in-sample でも勝っていない）= 類型 D 時代依存
+- 5 分 time bar 固定を無自覚に既定値化 → 情報ドリブンバー（volume/dollar/imbalance）未検討
+
+**D. 2026 WebSearch verify（4 本）**:
+- Triple Barrier は meta-labeling と tandem が 2026 も標準 / ensemble-HMM 2024-26 OOS で DD 半減・walk-forward 必須 / Half-Quarter Kelly 標準・rising vol→smaller position / RL(SAC) exit が volatile regime で Sharpe>2.0（traditional 0.8-1.2）
+
+**E. CC が未だ理解していない項目（次セッションで埋める・正直な棚卸し）**:
+- 指値 maker の実際の約定率（→「指値で取れる利益 / 成行に回る割合」を見積もれない）
+- 指値約定モデルの作り方（約定確率の業界モデル化手法を知らない）
+- 残り未検証の不正（本番実態の確定・net/gross 横断・今日生成したスクリプトは未検証のまま）
+
+### 工程横断: 評価基盤の設計詳細 完成（2026-05-31 本セッション末）
+
+**今セッション完了**: 評価基盤（§0.8 原則）の**詳細設計を baseline §6 直前に新設**（A 約定/コスト + C-F mlfinlab 活用 + leak/regime・各項目に既知答えテスト）。約定/コスト不正の真因を実コードで確定: ①ML が replay_csv の正しいモデルを継承せず（全maker・無条件約定）②**replay_csv 自体も楽観3点**（TP を SL より先に判定 [replay_csv.py L1254-1281]・gap 無視・touch 約定）→ **$370 の地面も楽観値**。
+
+**方針確定（まこさん合意）**: 計器は ML pipeline の当たり前の基礎（ごく一部）→ **監査でなく既知答えテスト**（コインフリップ→net負 等・数学的事実）で検証。テスト pass を正しさの証明とし、まこさんはテスト結果だけ見る（技術不要）。**計器が正しい ≠ 戦略が良い**（計器は「正直に測る」担保のみ・儲かるかは別）。
+
+**次セッション着手**: 評価エンジン実装 **A→C→D→E→F→leak/regime** を1項目ずつ実装 + 既知答えテスト全 pass。mlfinlab 活用（`sampling`/`cross_validation`/`backtest_statistics`/`features`）。`ml_phase2_production` 予測データで **再学習不要**。見積もり 2-4セッション。**詳細仕様は baseline §6 冒頭「評価基盤 詳細設計」参照**。
+
 ---
 
 ## 2. 現在地 + 次セッション着手（新セッションは最初にここを読む）

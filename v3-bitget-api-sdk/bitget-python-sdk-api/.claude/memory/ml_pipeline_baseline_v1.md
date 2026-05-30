@@ -47,6 +47,23 @@
 ### §0.7 異常値 STOP (関所A)
 - 勝率 > 70% / 月次 NET > $3,800 / IS-OOS Sharpe 比 > 3倍乖離 / 最大DD < 月次NETの10% のいずれかは「合格」と呼ばず虚偽達成調査 (§4) に入る。
 
+### §0.8 評価の健全性 — PnL を測る「正しい計器」（2026-05-31 約定/コスト不正インシデントを契機に新設・WebSearch verify 済）
+
+> **🚨 経緯（忘却厳禁）**: ML pipeline が §0.2 の**指値約定モデル（不約定・成行 taker）を実装せず**、entry を無条件約定・全決済を maker で計算していた（[run_phase4_b.py](../../scripts/priority_rebuild/run_phase4_b.py) compute_pnl）→ 過去の PnL・Replay・$1,900 判定はすべて無効（false_positive §2 類型 E）。**§0.1/§0.2 は既に正しく書いてあったのに実装が守らなかった**＝文書では守られない。手動時代 [replay_csv.py](../../runner/replay_csv.py) に正しい約定モデルが在り、ML はこれを最低限継承する。**下記はすべて実装 assertion で物理強制する**（L-241/L-242・cc_role §1.4.6.2）。
+
+全工程の Stage 3/4 PnL 評価は以下の業界標準計器で測る（出典は本節末）:
+
+1. **指値約定 + net（最重要・§0.1/§0.2 再掲）**: entry/TP/SL = 指値 **maker**・**不約定（TTL 内に価格未到達）は取引不成立**（カウントしない）/ TIME・能動クローズ = 成行 **taker** / 判定は **net**（手数料 maker/taker・slippage・funding 全控除後）。「指値必ず約定」「全決済 maker」「gross を net と呼ぶ」は禁止。指値 fill 判定は「価格が limit を貫通したら約定」が業界標準（hftbacktest）。
+2. **コスト現実化**: round-trip all-in = crypto futures **0.15-0.30%**（業界相場）。§0.4 確定値（maker 0.014% / taker 0.042% / slippage 0.005% / funding median +0.0002%/8h）。**8h 超保有は funding 必ず控除**。保守検証 **「fee 2 倍で黒字なら本番黒字」**。
+3. **sample uniqueness + sequential bootstrap**（AFML Ch.4）: overlapping label を temporal uniqueness で重み付け（K=288 窓重複 99.65% の冗長補正）+ sequential bootstrap で各 sample の uniqueness を強制 → **OOS 過大評価（intra-estimator overlap）を断つ**。
+4. **purge + embargo（別物・混同禁止）**（AFML Ch.7）: purge = label horizon が test と重なる train を除去 / embargo = test 直後の train label を時間窓で除外。「embargo 288」を **purge のみで済ませない**（= inter-fold leakage 対処）。
+5. **多重検定補正 DSR/PBO**（Bailey & López de Prado 2014）: DSR = selection bias + non-normality 補正で「真のスキルか確率」/ PBO = OOS で median 未満になる確率。**CPCV が PBO 最低・DSR 最高**（ScienceDirect 2024）。合格 = 全月 net ≥ $1,900 + **DSR > 0.95 + PBO < 0.5**。
+6. **non-stationarity / survivorship / look-ahead**: 生 close は非定常 → fracdiff（d* を ADF 最小 d 探索・ハードコード禁止）。**survivorship は年 17-22% の return inflation**（Coinbase Institutional）。look-ahead = 同足 close で同足 entry 判断。regime 時代依存（SHORT 偏り 2023 由来 = 類型 D）。
+
+**比較の地面**: 手動 Priority $370 も funding/slippage 未控除 → 公平比較は両方を同条件で再計算する。
+
+> 出典（2026-05-31 WebSearch）: [StratBase realistic fees](https://stratbase.ai/en/blog/backtest-realistic-fees) / [hftbacktest order fill](https://hftbacktest.readthedocs.io/en/py-v2.1.0/order_fill.html) / [Bailey & LdP DSR (SSRN 2460551)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2460551) / [AFML 10 reasons ML funds fail (uniqueness/purge/embargo)](https://www.garp.org/hubfs/Whitepapers/a1Z1W0000054x6lUAA.pdf) / [CoinAPI survivorship 17-22%](https://www.coinapi.io/blog/how-to-eliminate-survivorship-bias-in-crypto-backtesting) / [ScienceDirect CPCV/DSR/PBO 2024](https://www.sciencedirect.com/science/article/abs/pii/S0950705124011110)
+
 ---
 
 ## 1. 8 工程フロー (= 2026-05-27 セッション決着・1 字 1 句一致義務)
@@ -240,6 +257,33 @@
 ## 6. 工程別詳細設計書 (= 2026-05-27 セッション中盤以降決着事項を都度追記)
 
 > 各工程の決着事項を **都度追記**。後でまとめて書かない (= 記入ミス防止・まこさん指示 2026-05-27)。
+
+### 評価基盤 詳細設計（全工程共通・§0.8 の実装仕様・2026-05-31 新設）
+
+> §0.8（評価の健全性・原則）の **実装仕様**。全工程の Stage 3/4 PnL 評価はこのエンジンで測る。各項目に **既知答えテスト**を付け、テスト pass を計器の正しさの証明とする（監査でなく数学的事実で検証・L-242）。DSR/PBO/uniqueness/sequential bootstrap/PurgedKFold/fracdiff は **mlfinlab 既存実装を活用**（車輪の再発明をしない・2026-05-31 WebSearch verify）。約定/コスト計器と leak/regime チェックのみ自前。
+
+#### A. 約定・コストモデル（自前・replay_csv 準拠 + 楽観3点是正）
+
+- **Entry 約定**: シグナル bar `i`（close 確定後）→ bar `i+1` で指値 `limit=close_i×(1∓0.0001)`。bar `j`(i+1≤j≤i+**TTL=3**) で LONG:`low_j≤limit` / SHORT:`high_j≥limit` で約定（価格=limit・maker）。TTL内未到達=**取引不成立（記録しない）**。
+- **Exit（replay_csv 楽観3点是正）**: ①**SL を TP より先に判定**（同bar両到達は不利側先着）②**gap反映**=SL飛び越えは `min(sl,open_j)`(LONG) 約定 ③touch でなく保守fill。TP=指値 maker / SL・TIME・能動クローズ=成行 taker + slippage。
+- **コスト**: entry=maker / exit=maker(TP) or taker(SL/TIME/能動) / slippage 0.005%（成行のみ）/ funding=保有中の8h境界ごと `size×mark×rate`（§0.4）。**net=gross−全コスト**。
+- **0.12 BTC**: 任意 t で `sum(active)≤0.12` を assert（§0.5）。
+- **既知答えテスト**: T1 コインフリップ→net≒−往復コスト（負）/ T2 limit不到達→entry 0件 / T3 同bar TP・SL両到達→**SL記録** / T4 gap→open約定 / T5 8h超保有→funding控除。
+
+#### C〜F + leak/regime（mlfinlab 活用 + 自前チェック）
+
+| # | §0.8 | 実装 | 既知答えテスト（pass=正しさ証明） |
+|---|---|---|---|
+| C uniqueness | ③ | `mlfinlab.sampling` average uniqueness→sample_weight + sequential bootstrap | 全ラベル同一区間→weight=1/N / weight適用後 OOS 低下（過大評価剥がれ） |
+| D purge+embargo | ④ | `mlfinlab.cross_validation.PurgedKFold` | leak注入→purge後に精度低下 / 全fold で train末<test始 を assert |
+| E fracdiff | ⑥ | `mlfinlab.features.fracdiff` d*=ADF 最小d / 生close 除外 | fracdiff後 ADF 定常(p<0.05) / 生close 閾値が test 価格域で無効を検出 |
+| F DSR/PBO | ⑤ | `mlfinlab.backtest_statistics` DSR(N=ONC実効戦略数) + CSCV PBO・合格=月次net+DSR>0.95+PBO<0.5 | ランダム多数→best選んでもDSR低 / N過少→DSR過大を検出 |
+| leak | ⑥ | 自前 grep `shift(-)`/`center=True`/未来index + 因果性1行宣言 | 入力1bar shiftで予測不変→未来参照疑い |
+| regime 類型D | ⑥ | 自前 全期間使用 + 年別/regime別 成績分散 | 2023除外で SHORT エッジ消失→時代依存 |
+
+#### 実装順序
+
+A → C → D → E → F → leak/regime を1項目ずつ実装+テスト pass。`ml_phase2_production` 予測データで回す（**再学習不要**・軽い）。次セッションから着手。各項目完了時に既知答えテスト全 pass を確認してから次へ。
 
 ### 6.0 工程 [1] 特徴量計算層 詳細設計
 
@@ -2464,6 +2508,8 @@ assert "train" in artifact_path and "test" not in artifact_path
 
 | 日付 | 版 | 内容 |
 |---|---|---|
+| 2026-05-31 | v3.14 | **§6 冒頭「評価基盤 詳細設計（全工程共通）」新設** = §0.8 の実装仕様。A 約定/コスト計器（replay_csv 準拠 + 楽観3点[TP先着/gap無視/touch約定]是正）+ C-F（**mlfinlab 活用**: `sampling` uniqueness/sequential bootstrap・`cross_validation` PurgedKFold・`backtest_statistics` DSR-PBO・`features` fracdiff）+ leak/regime。**各項目に既知答えテスト**（T1-T5 等・監査でなく数学的事実で検証・L-242）。実装順序 A→C→D→E→F→leak/regime・`ml_phase2_production` で再学習不要。WebSearch verify（mlfinlab 実装 / hftbacktest fill）|
+| 2026-05-31 | v3.13 | **§0.8「評価の健全性 — PnL を測る正しい計器」新設**（約定/コスト不正インシデント契機）= 業界標準 6 点（①指値約定+net ②コスト現実化 round-trip 0.15-0.30%・fee 2倍検証 ③sample uniqueness+sequential bootstrap ④purge+embargo 別物 ⑤DSR>0.95+PBO<0.5・CPCV ⑥non-stationarity+survivorship 17-22%+look-ahead）+ **文書でなく実装 assertion で物理強制**方針（L-241/L-242）。WebSearch 4 本 verify（StratBase / hftbacktest / Bailey&LdP DSR / AFML 10 reasons / CoinAPI survivorship / ScienceDirect CPCV 2024）。**§0.1/§0.2 は元々正しく実装が守らなかった＝文書追加でなく実装側の問題が本質** |
 | 2026-05-30 | v3.12 | §6.3 cluster 設計が実装で 4 件覆る → 実測修正反映（①入力 全投入PCA→揺れ幅28 ②アルゴ GMM hybrid→KMeans単体 ③確率 Isotonic→距離softmax ④門番 0.4→緩和）。現設計は §6.3 冒頭サマリ・**実測経緯/数値変遷は `ml_pipeline_execlog.md` 工程 [2.5]** |
 | 2026-05-29 | v3.11 | §6.2.7 scale mismatch 設計欠陥注記追加（z-score 6倍乖離→MFE 97%支配）→ [0,1] clip + data-driven threshold に改訂・E variant で月 275 件達成。**実測経緯/業界 verify は `ml_pipeline_execlog.md` 工程 [2]** |
 | 2026-05-26 | v1 | 初版作成 (= 6 工程ドラフト・議論のスタート点) |
