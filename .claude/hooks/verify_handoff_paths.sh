@@ -1,6 +1,6 @@
 #!/bin/bash
 # L-239 ずれ防止: 新セッション開始時に「次セッション着手」ブロックの参照パスを自動 ls チェック。
-# WORKFLOW.md 🔴 active ブロック + ml_pipeline_baseline §8「現在地+次セッション着手」から
+# WORKFLOW.md 🔴 active ブロック + ml_pipeline_execlog.md「現在地+次セッション着手」から
 # results/ scripts/ data/ .claude/ 配下の .parquet/.py/.md/.json/.csv/.joblib パスを抽出 → 存在確認。
 # ❌欠落があれば、引き継ぎ記述が古い/思い込みの疑い → 着手前に疑う (= 学習済み誤断定・データ再作成の無駄を防ぐ)。
 SDK="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api"
@@ -25,8 +25,8 @@ def block(path, start_pat, end_pat=None):
 
 # WORKFLOW active ブロック (🔴 現在のフェーズ → 次の 🧊 改訂N ブロック)
 wf = block(f"{SDK}/WORKFLOW.md", r"🔴 現在のフェーズ", r"🧊 改訂\d+ ブロック")
-# ml_pipeline §8 現在地+次セッション着手 (末尾まで)
-ml = block(f"{SDK}/.claude/memory/ml_pipeline_baseline_v1.md", r"現在地 \+ 次セッション着手")
+# ml_pipeline_execlog 現在地+次セッション着手 (末尾まで・2026-05-30 §8 分離で baseline→execlog)
+ml = block(f"{SDK}/.claude/memory/ml_pipeline_execlog.md", r"現在地 \+ 次セッション着手")
 text = wf + "\n" + ml
 
 pat = r'(?:results|scripts|data|\.claude)/[A-Za-z0-9_./{}*-]+\.(?:parquet|py|md|json|csv|joblib)'

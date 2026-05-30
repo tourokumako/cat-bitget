@@ -2464,82 +2464,14 @@ assert "train" in artifact_path and "test" not in artifact_path
 | 2026-05-27 | v2.8 | **CP1 監査 (= 2026-05-27_step15_regime_ensemble_design_cp1_audit_report.md) 結果反映** (= Verdict PIVOT・Critical 2 + Major 3 + Minor 2 件全 7 件採用支持 + プロセス欠陥対策 P1 cc_role §1.4.6.1 改善 10/11/12 追加): §6.1.1 Stage 1 内部スコアに Brier score / reliability diagram / ECE + 3 判定器予測誤差 Pearson 相関 追加 (= 観点 1 / Q5 改善 1) / §6.1.1 Stage 3 を v15 単独 + ensemble の 2 段階比較に変更 (= M1) / §6.1.1 Stage 3 合格基準を純増分 (b)/(a) 評価に変更 / §6.1.3 ATR 絶対値 250/100 を ATR_pct 25th/75th percentile data-driven に変更 (= C2 価格非依存性違反修正) / §6.1.4 k=3 事前決め打ちを k ∈ {2,3,4,5} elbow + silhouette data-driven に変更 (= m2) / §6.1.5 確率変換に isotonic regression キャリブレーション追加・k-means は Gaussian kernel 経由 (= C1 soft voting 前提条件 verify) / §6.1.5 初期等重みを Walk-Forward + GridSearchCV data-driven に変更 (= M2) / §6.1.6 forward fill を merge_asof(direction="backward") causal alignment 明示 + assert no look-ahead 追加 (= M3 look-ahead leak 防止) |
 
 ---
+## 8. 工程別 実行ログ → `ml_pipeline_execlog.md` に分離 (2026-05-30)
 
-## 8. 工程別 実行ログ (= 設計 §6 の実装・実測・改善の時系列記録)
-
-> **この資料の 3 層構造 (2026-05-30 新設・まこさん指示)**:
-> - **§6 = 設計の正本** (= 各工程を「どう作るか」・議論決着 + CP 監査反映)
-> - **§7 = 文書改訂履歴** (= このドキュメント自体の版管理)
-> - **§8 = 実装の実行・実測・改善ログ** (= 設計を「実際に作って動かしたら何が起きたか」・時系列)
+> **実行ログ・実測・現在地・次セッション着手は [`ml_pipeline_execlog.md`](ml_pipeline_execlog.md) に分離した** (まこさん指示・新セッション誤解防止)。
 >
-> **業界整合** ([ML experiment tracking best practices](https://kiroframe.com/experiment-tracking-in-machine-learning/) / [production ML decision documentation](https://palospublishing.com/best-practices-for-documenting-production-ml-decisions/) / [arxiv 2511.21354](https://arxiv.org/html/2511.21354v2)): 実験ログは「実行内容 + 実測メトリクス + 決定の根拠・検討した代替案 + 次アクション」を記録する。特に **decision log (なぜその選択をしたか・トレードオフ・検討した代替案)** が再現性と将来参照で最重要。
+> **理由**:
+> - ① 新セッションが「経緯」を最初に読む導線を明確化 (誤解なく建設的に議論を始めるため)
+> - ② 設計確定 (本ファイル §6) の編集だけ WebSearch hook で gate し、記録・整理の追記は gate しない (= 提案前ベースアップという hook 本来の意図に整合・「追記のために検索」の本末転倒を解消)
 >
-> **運用ルール**:
-> - 新セッションは **§8 末尾の「現在地 + 次セッション着手」を最初に読む** → 今どの工程で何が確定し次に何をやるか即把握
-> - 各エントリは 1〜数行サマリ + 詳細リンク (= lessons L-XXX / results/*/summary.json / WORKFLOW 改訂N)・生データは §8 に書かずリンク先に置く (肥大化防止)
-> - 設計 §6 が実装で覆ったら、§6 本文を直す前に **まず §8 に「設計 X → 実測 Y → 修正 Z」を記録** (= 経緯保存)・§6 反映は別途バージョン上げ
-
-### 工程 [1.5] regime ensemble (= 相場の状態判定)
-
-| 実行日 | 内容 | 実測結果 | 決定/修正 | リンク |
-|---|---|---|---|---|
-| 〜2026-05-27 | Stage B-G 実装 (8 script 新規) + target v1→v2 (未来予測→過去描写) + k-means v1→v2→v3 | ensemble v3: accuracy 0.46→0.65 / Brier 0.29→0.16 / ECE 0.26→0.15 / 3 判定器予測誤差相関 0.69→0.42 (CP1 基準クリア) | まこさん視認「結構改善」確認・Stage 3 まで regime 調整保留 | L-234 / §6.1 |
-
-**現状**: regime 判定は実装済・accuracy 0.65 で一旦確定 (Stage 3 PnL で再調整余地)。
-
-### 工程 [2] Entry ML (= Entry 判定の機械学習)
-
-| 実行日 | 内容 | 実測結果 | 決定/修正 | リンク |
-|---|---|---|---|---|
-| 2026-05-28〜29 | baseline 168 学習 (56 ラベル × 3 fold・LightGBM default・8.3h) | 回帰 (揺れ幅) R² 中央値 **-0.044** (ランダム以下) / 多クラス (Triple Barrier) acc 47.6% (+14.3pt ✅) / 2 値 (meta) AUC 0.522 (+2.1pt △) | MFE 直接予測は業界実証で困難 (path-dependent + heavy-tail) と verify・揺れ幅予測は当たらない確定 | L-237 / §6.2 |
-| 2026-05-29 | Optuna tune (3 系統 × 30 trials・6.93h) | 改善幅 0.07-1.9% で小 | LightGBM default が既に robust・tune 保留 (Stage 3 不合格時に戻る) | L-237 |
-| 2026-05-29 | Step 6 集約 + 5 variant 比較 | §6.2.7 集約式に **scale mismatch 設計欠陥**発覚 (CP2 監査見逃し): MFE z-score が集約スコア 97% 支配 | E variant ([0,1] clip + data-driven threshold 0.477) で月 275 件達成 ✅・SHORT 偏り 1:20 は scale 整合だけでは解消せず → cluster (案 P) で対処へ | L-237 / §6.2.7 注記 |
-
-**現状**: Entry ML baseline 完遂・E variant で月 275 件確保。揺れ幅予測 R² マイナス + SHORT 偏り 1:20 が積み残し課題。
-
-### 工程 [2.5] cluster 分類 (= Entry trade の質をグループ分け・案 P)
-
-| 実行日 | 内容 | 実測結果 | 決定/修正 | リンク |
-|---|---|---|---|---|
-| 2026-05-29〜30 | `run_phase2_cluster_classifier.py` 新規実装・§6.3 設計通り (全投入 2,666 + PCA + KMeans+GMM hybrid + Isotonic 校正) | smoke で **silhouette 0.90 偽分離**発覚 (PCA 1 主成分が分散 95% 支配) | 前処理欠陥 3 件修正: ① inf→NaN ② 極端スケール PCA 支配 → RobustScaler 後 ±5 IQR clip (WebSearch verify) ③ NaN 多数 → 高 NaN>50% 列 drop + median 補完 | L-238 |
-| 2026-05-30 | 入力 3 パターン比較 (cap100・3 fold) | 全投入 2,666 列: **0.022** / 予測値 56 列: 0.14 / 揺れ幅予測 28 列: **0.326** (KMeans) | 設計 §6.3.3「全投入が良い」が実測で覆る → **揺れ幅予測 28 のみ**採用 (= §6.3.3 data-driven 経路発動) | L-238 |
-| 2026-05-30 | アルゴリズム比較 | GMM(hybrid) 0.15 << KMeans 単体 0.33 | 設計 §6.3.2「GMM hybrid」逆効果 → **KMeans 単体**採用・確率は GMM posterior+Isotonic (教師なしで Brier/ECE=0 機能せず) → **KMeans 距離 softmax + 校正省略** | L-238 |
-| 2026-05-30 | silhouette 門番判定 | どの入力も 0.4 未達 (最良 0.326)・揺れ幅予測 R² マイナス上で silhouette 追求は本質 (Stage 3 PnL) からズレ | 設計 §6.3.1「門番 0.4」緩和 (weak 0.25 超で先進む) + **実益 Stage 3 で判定**にまこさん合意 | L-238 |
-| 2026-05-30 | **cluster 確定** (KMeans + 揺れ幅 28 + k=4) | silhouette **0.326** / 偏り: cluster2=61% (1 巨大塊) + 他 3 つ 7-24% / 命名重複 (risky 1 + long_term 3) | cluster_id 出力済 (= 数値で後段使用)・偏り大 + 命名重複の品質課題は次セッション | L-238 / cluster_summary.json / stage1_review.md |
-
-**§6.3 設計が実装で覆った 4 件 (= CP3 監査確定事項 → 実測修正)**:
-1. 入力: 全投入 2,666 + PCA → **揺れ幅予測 28 のみ + PCA なし**
-2. アルゴリズム: K-Means + GMM hybrid → **KMeans 単体**
-3. 確率: GMM posterior + Isotonic 校正 → **KMeans 距離 softmax + 校正省略**
-4. 門番: silhouette > 0.4 → **緩和 (weak 0.25 超) + 実益 Stage 3 判定**
-
-**教訓 (= L-236-B 大規模実証)**: CP3 監査全 7 件反映済の「確定設計」が実データで 4 件覆った。机上設計 (監査 + CC 同型バイアス) と実測は乖離する。「設計値は仮定・実装後 data-driven 確定」。
-
-**§8 追記 (2026-05-30 後半セッション・L-239・cluster 偏り改善検討 → 本丸見直し)**:
-
-| 実行日 | 内容 | 実測結果 | 決定/修正 | リンク |
-|---|---|---|---|---|
-| 05-30後半 | §6.3 を v3.12 に実測反映 (付箋方式) | 4 件覆り + 「入力は silhouette でなく PnL で確定」「距離 softmax 未校正・後段本気使用時 再校正」注記 | §6.3 本文を机上→実測に同期完了 | L-239 / §6.3 v3.12 |
-| 05-30後半 | cluster 偏り 61% 原因究明 | 28 揺れ幅予測の長期 K がほぼ床値一定 (cv 0.03-0.11)・confidence 中央値 0.926 | 偏りは**入力が弱い症状**でアルゴ問題でない → k/アルゴ変更は無意味と判定 | L-239 |
-| 05-30後半 | 入力候補比較 (A 揺れ幅 / B 確率 / C regime) を実 MFE・TP率 spread で | A=極小 cluster のみ差(62%無差別) / B=2 大塊で差なし / C=均等+方向分離だが regime 冗長 | 単一入力で有望なものなし | L-239 / /tmp/cluster_input_compare.py |
-| 05-30後半 | Stage-3 PnL probe (E variant 7,424 entry・TP2×ATR/SL1.5×ATR/コスト0.038%) | IS で cluster配分 b/a 5-6× だが **OOS 1.03-1.32× に崩壊 (過学習)**・fold2=171 件で評価不能 | **cluster 効果 未実証**・信頼判定には test 期間データ必須 | L-239 / /tmp/stage3_pnl_probe.py |
-| 05-30後半 | baseline デプロイモデル有無確認 | **LightGBM booster 本体 0 件**・CV 予測/calibrator/metrics のみ保存 | test 適用は「当てはめるだけ」不可・**2021-2024 全データで本番モデル再学習が必要** (= CV 後の全データ再 fit は業界標準・[ESL/TDS](https://towardsdatascience.com/how-to-do-cross-validation-effectively-1bbeb1d69ee8/)) | L-239 |
-
-**本丸の見直し (L-239)**: cluster 偏り改善は本丸でない (= 過学習で効果未実証 + 評価データ不足)。上流の**エントリーエッジが薄い (0.016%/trade) + SHORT 偏り 7,076:348** が本丸の可能性。
-
-### 現在地 + 次セッション着手 (= 2026-05-30 後半更新・新セッションは最初にここを読む)
-
-**現在地**: 工程 [1.5] regime / [2] Entry ML / [2.5] cluster の 3 工程が「一旦動く」状態。ただし全て暫定で Stage 3 PnL 未判定。
-
-**積み残し課題**:
-- 工程 [2]: 揺れ幅予測 R² マイナス (= 当たらない) + SHORT 偏り 1:20
-- 工程 [2.5]: cluster 偏り大 (1 塊 61%) + 命名重複・silhouette 0.326 (weak)
-
-**次セッション CC 優先順位** (= WORKFLOW 改訂51 active と同期):
-1. **§6.3 仕様書 v3.12 実測反映** (= 上記 4 件覆りを §6.3 本文に反映・現状 §6.3 は机上設計のまま)
-2. **cluster 偏り改善検討** (= 1 巨大塊 61% を分ける・揺れ幅+確率の重み調整 / k 再検討 / 別アルゴリズム)
-3. **[3] Sizing / [4] Exit 実装 → Stage 3 PnL 判定** (= cluster の真の有効性確認・純増分 1.5×・ここで初めて「役に立つか」が分かる)
-4. **test 期間 (2025/2026Q1) apply** (= Entry ML の test 予測値生成が前提・baseline スクリプト改修)
-5. 最終: Phase 5 Replay で月次 NET ≥ $1,900 全月クリア判定
-
-**未着手の後段工程**: [3] Sizing / [4] Exit / [6] リスク管理 / [7] 運用監視 (= §1 8 工程フロー参照・設計詳細は未着手)
+> **3 層構造 (分離後)**:
+> - **本ファイル `ml_pipeline_baseline_v1.md` = 設計の正本** (§1-§7)・WebSearch hook 対象
+> - **`ml_pipeline_execlog.md` = 実装の実行・実測・現在地ログ + フロー意図** (旧 §8)・hook 対象外・**新セッションは最初にこれを読む**

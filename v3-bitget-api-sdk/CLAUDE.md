@@ -90,12 +90,12 @@
    - 残課題・次セッション着手項目
    - `regime_research.md` / `priority_rebuild.md` (旧 A-1〜D framework) は凍結中なので更新不要
 
-4. **`ml_pipeline_baseline_v1.md` §8 実行ログを更新する**（工程の実装・実測・設計修正があったセッションのみ）
-   - §8 に時系列 1 エントリ追加：**実行内容 + 実測値 + 決定/修正 + リンク**（生データは書かず lessons L-XXX / results/*/summary.json へのリンクで・肥大化防止）
-   - **設計 §6 が実装で覆ったら、§6 本文を直す前にまず §8 に「設計 X → 実測 Y → 修正 Z」を経緯記録**（= 設計通りにやらなかった理由を必ず追える状態に）
-   - §8 末尾の「現在地 + 次セッション着手」を最新化（= 新セッションが最初に読む正本・WORKFLOW 改訂N と同期）
-   - パス: `bitget-python-sdk-api/.claude/memory/ml_pipeline_baseline_v1.md`
-   - この資料の 3 層構造：§6=設計の正本 / §7=文書改訂履歴 / §8=実装の実行・実測・改善ログ
+4. **`ml_pipeline_execlog.md` 実行ログ + 現在地を更新する**（工程の実装・実測・設計修正があったセッションのみ）
+   - 実行ログに時系列 1 エントリ追加：**実行内容 + 実測値 + 決定/修正 + リンク**（生データは書かず lessons L-XXX / results/*/summary.json へのリンクで・肥大化防止）
+   - **設計 §6 (baseline) が実装で覆ったら、§6 本文を直す前にまず execlog に「設計 X → 実測 Y → 修正 Z」を経緯記録**（= 設計通りにやらなかった理由を必ず追える状態に）
+   - execlog 末尾の「現在地 + 次セッション着手」を最新化（= 新セッションが最初に読む正本・WORKFLOW 改訂N と同期）
+   - パス: `bitget-python-sdk-api/.claude/memory/ml_pipeline_execlog.md`
+   - **3 層分離 (2026-05-30)**：`ml_pipeline_baseline_v1.md` §6=設計の正本 / §7=文書改訂履歴（WebSearch hook 対象）｜ `ml_pipeline_execlog.md`=実装の実行・実測・現在地ログ + フロー意図（hook 対象外・新セッション最初に読む）
    - **【L-239 実行可能テンプレ強制】「次セッション着手」は必ず以下5列の表で書く**（曖昧記述＝ずれ＝トークン浪費を物理的に防ぐ）:
      | 優先 | 使う/直すファイル(パス) | 入力データ(パス) | 存在✅ | 最初の一手(具体コマンド/関数) | 完了条件 |
      - 「パス」「最初の一手」「完了条件」が埋まっていないタスクは**引き継ぎ未完成**（commit/終了を宣言しない）
@@ -108,7 +108,7 @@
 セッション終了チェック:
 [ ] lessons_active.md 更新完了
 [ ] WORKFLOW.md 更新完了（ML pipeline Phase 進捗反映・旧表記「Priority 再構築フェーズ」）
-[ ] ml_pipeline_baseline §8 実行ログ更新完了（工程の実装・実測・設計修正があった場合・なければ「該当なし」と明記）
+[ ] ml_pipeline_execlog.md 実行ログ + 現在地更新完了（工程の実装・実測・設計修正があった場合・なければ「該当なし」と明記）
 ```
 → 3つ全て [ ] に ✓ が入るまでセッション終了を宣言しない。
 
@@ -149,7 +149,8 @@
 | `v3-bitget-api-sdk/CLAUDE.md` (本ファイル) | 提案禁止・目標・必読リスト・セッション終了チェック | Read 全文 |
 | `bitget-python-sdk-api/.claude/memory/phase_flow_v4_with_recovery.md` | **ML 学習フロー正本** (Phase 0〜7 / 6 案並列 + Walk-forward Purged K-Fold 5 fold + DSR + 5 指標) | Read 全文 |
 | `bitget-python-sdk-api/.claude/memory/priority_v9_trade_logic_analysis.md` | **旧 Priority v9 トレードロジック構造分析** (= cat-bitget 唯一の実利資産・最低スタートライン・cat_v9_decider.py 823 行 + cat_params_v9.json 169 行を CC が構造分析・2026-05-26 v2 で Replay 365 日データ起点で書き直し済) ⚠️ [[feedback_cat_v9_no_modification]] = 改造対象ではない | Read 全文 |
-| `bitget-python-sdk-api/.claude/memory/ml_pipeline_baseline_v1.md` | **ML pipeline 暫定ベース案 v1** (= 2026-05-26 セッション末・6 工程ドラフト・議論のスタート点・確定事項ではない) | Read 全文 |
+| **`bitget-python-sdk-api/.claude/memory/ml_pipeline_execlog.md`** | **【新セッション最初に読む】実行ログ + 現在地 + 次セッション着手 + フロー意図** (= 旧 baseline §8 を分離・2026-05-30・経緯理解の起点・誤解防止) | Read 全文 |
+| `bitget-python-sdk-api/.claude/memory/ml_pipeline_baseline_v1.md` | **ML pipeline 設計の正本** (= §1-§7・工程の「どう作るか」・WebSearch hook 対象・§8 実行ログは execlog.md に分離) | Read 全文 |
 | `bitget-python-sdk-api/.claude/memory/technical_analysis_knowledge_base.md` | **テクニカル辞典 + 閾値設計論** (1691 行・§A-D 個別指標 + §I 閾値設計論・トレード議論前のインプット必須・2026-05-26 Layer 1 格上げ・L-230) | Read 全文 |
 | `bitget-python-sdk-api/.claude/memory/industry_benchmark_knowledge_base.md` | **業界相場 + 5 レバー定量根拠** (420 行・出典 47 件・Phase 別合格基準 PnL 紐付け手法・BTC 5m 業界実証・トレード議論前のインプット必須・2026-05-26 Layer 1 格上げ・L-230) | Read 全文 |
 | `bitget-python-sdk-api/.claude/memory/lessons_active.md` **直近 5 件のみ** | 最新教訓・本セッション着手前に読む | Read 先頭 ~300 行のみ |
