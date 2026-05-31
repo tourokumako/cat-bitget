@@ -260,7 +260,9 @@
 
 ### 評価基盤 詳細設計（全工程共通・§0.8 の実装仕様・2026-05-31 新設）
 
-> §0.8（評価の健全性・原則）の **実装仕様**。全工程の Stage 3/4 PnL 評価はこのエンジンで測る。各項目に **既知答えテスト**を付け、テスト pass を計器の正しさの証明とする（監査でなく数学的事実で検証・L-242）。DSR/PBO/uniqueness/sequential bootstrap/PurgedKFold/fracdiff は **mlfinlab 既存実装を活用**（車輪の再発明をしない・2026-05-31 WebSearch verify）。約定/コスト計器と leak/regime チェックのみ自前。
+> §0.8（評価の健全性・原則）の **実装仕様**。全工程の Stage 3/4 PnL 評価はこのエンジンで測る。各項目に **既知答えテスト**を付け、テスト pass を計器の正しさの証明とする（監査でなく数学的事実で検証・L-242）。
+>
+> ⚠️ **【2026-05-31 修正・WebSearch verify】mlfinlab は除外し全項目を自前実装する**（旧記述「mlfinlab 既存実装を活用」を撤回）。理由（検証済・記憶でない）: ① mlfinlab(Hudson & Thames) は **全権利留保・商用は有償ライセンス必須**（実弾商用ボットで使用不可）② **Python 3.7〜3.9 世代で 3.11 非対応**（本 venv=3.11.15・2023 から保守停止）→ 入れると本番 venv(lightgbm 4.6/numpy 1.26/sklearn 1.8) を壊すリスク。代替 mlfinpy(MIT・3.11) は v0.1.2(2024-10)・**Alpha**・約19ヶ月更新なし → 計器の心臓部に未成熟依存は入れない。**アルゴリズムは AFML Ch.4 等の公開知識**（教科書の式を実装するのは合法）→ 約定/コスト計器（A）と同様、**自前実装 + 既知答えテスト**で正しさを数学的に証明する。E(fracdiff)/F(DSR/PBO) は項目ごとに「自前 or 保守された軽量単機能ライブラリ」を選び直す。出典: [mlfinlab 商用ライセンス](https://hudsonthames.org/mlfinlab/) / [mlfinpy PyPI(Alpha)](https://pypi.org/project/mlfinpy/)。
 
 #### A. 約定・コストモデル（自前・replay_csv 準拠 + 楽観3点是正）
 
@@ -272,14 +274,15 @@
 
 #### C〜F + leak/regime（mlfinlab 活用 + 自前チェック）
 
-| # | §0.8 | 実装 | 既知答えテスト（pass=正しさ証明） |
-|---|---|---|---|
-| C uniqueness | ③ | `mlfinlab.sampling` average uniqueness→sample_weight + sequential bootstrap | 全ラベル同一区間→weight=1/N / weight適用後 OOS 低下（過大評価剥がれ） |
-| D purge+embargo | ④ | `mlfinlab.cross_validation.PurgedKFold` | leak注入→purge後に精度低下 / 全fold で train末<test始 を assert |
-| E fracdiff | ⑥ | `mlfinlab.features.fracdiff` d*=ADF 最小d / 生close 除外 | fracdiff後 ADF 定常(p<0.05) / 生close 閾値が test 価格域で無効を検出 |
-| F DSR/PBO | ⑤ | `mlfinlab.backtest_statistics` DSR(N=ONC実効戦略数) + CSCV PBO・合格=月次net+DSR>0.95+PBO<0.5 | ランダム多数→best選んでもDSR低 / N過少→DSR過大を検出 |
-| leak | ⑥ | 自前 grep `shift(-)`/`center=True`/未来index + 因果性1行宣言 | 入力1bar shiftで予測不変→未来参照疑い |
-| regime 類型D | ⑥ | 自前 全期間使用 + 年別/regime別 成績分散 | 2023除外で SHORT エッジ消失→時代依存 |
+| # | §0.8 | 実装（自前・mlfinlab 除外） | 状態 | 既知答えテスト（pass=正しさ証明） |
+|---|---|---|---|---|
+| A 約定/コスト | ①② | `eval_engine.py`（指値maker+不約定TTL3+SL先着/gap/保守fill+taker/slippage/funding+0.12assert） | ✅ 完成・T1-T5 全pass(commit 66de850) | T1 コインフリップ→net負 / T2 不約定0件 / T3 両到達→SL / T4 gap→open / T5 funding控除 |
+| C uniqueness | ③ | `sample_uniqueness.py`（AFML Ch.4 自前: concurrency→average uniqueness→sample_weight + sequential bootstrap） | ✅ 完成・C1-C5 全pass | C1 同一区間→ū=1/N / C2 重なりなし→1.0 / C3 部分重なり手計算 / C4 実効N<<N / C5 seq>std debiasing |
+| D purge+embargo | ④ | 自前 PurgedKFold + embargo（purge=label horizon が test と重なる train 除去 / embargo=test 直後を時間窓除外・別物） | ⬜ 未着手 | leak注入→purge後に精度低下 / 全fold で train末<test始 を assert |
+| E fracdiff | ⑥ | 自前 or 保守された単機能ライブラリ（`fracdiff` 等）・d*=ADF 最小d / 生close 除外 | ⬜ 未着手（項目時に選定） | fracdiff後 ADF 定常(p<0.05) / 生close 閾値が test 価格域で無効を検出 |
+| F DSR/PBO | ⑤ | 自前（Bailey & LdP 式）DSR(N=実効戦略数) + CSCV PBO・合格=月次net+DSR>0.95+PBO<0.5 | ⬜ 未着手 | ランダム多数→best選んでもDSR低 / N過少→DSR過大を検出 |
+| leak | ⑥ | 自前 grep `shift(-)`/`center=True`/未来index + 因果性1行宣言 | ⬜ 未着手 | 入力1bar shiftで予測不変→未来参照疑い |
+| regime 類型D | ⑥ | 自前 全期間使用 + 年別/regime別 成績分散 | ⬜ 未着手 | 2023除外で SHORT エッジ消失→時代依存 |
 
 #### 実装順序
 
@@ -2508,6 +2511,7 @@ assert "train" in artifact_path and "test" not in artifact_path
 
 | 日付 | 版 | 内容 |
 |---|---|---|
+| 2026-05-31 | v3.15 | **mlfinlab 除外・全項目 自前実装に修正**（v3.14 の「mlfinlab 活用」撤回）。WebSearch verify: mlfinlab=商用有償ライセンス必須 + Python 3.11 非対応(保守停止) / mlfinpy=Alpha・19ヶ月更新なし → 計器の心臓部に未成熟依存を入れない・アルゴリズムは AFML Ch.4 公開知識を自前実装。**項目A 完成**(`eval_engine.py`・約定/コスト・T1-T5 全pass・commit 66de850) + **項目C 完成**(`sample_uniqueness.py`・AFML Ch.4・C1-C5 全pass)。§6 C-F テーブルに実装ファイル名 + 状態列(✅/⬜)追加。出典: hudsonthames.org/mlfinlab / pypi.org/project/mlfinpy |
 | 2026-05-31 | v3.14 | **§6 冒頭「評価基盤 詳細設計（全工程共通）」新設** = §0.8 の実装仕様。A 約定/コスト計器（replay_csv 準拠 + 楽観3点[TP先着/gap無視/touch約定]是正）+ C-F（**mlfinlab 活用**: `sampling` uniqueness/sequential bootstrap・`cross_validation` PurgedKFold・`backtest_statistics` DSR-PBO・`features` fracdiff）+ leak/regime。**各項目に既知答えテスト**（T1-T5 等・監査でなく数学的事実で検証・L-242）。実装順序 A→C→D→E→F→leak/regime・`ml_phase2_production` で再学習不要。WebSearch verify（mlfinlab 実装 / hftbacktest fill）|
 | 2026-05-31 | v3.13 | **§0.8「評価の健全性 — PnL を測る正しい計器」新設**（約定/コスト不正インシデント契機）= 業界標準 6 点（①指値約定+net ②コスト現実化 round-trip 0.15-0.30%・fee 2倍検証 ③sample uniqueness+sequential bootstrap ④purge+embargo 別物 ⑤DSR>0.95+PBO<0.5・CPCV ⑥non-stationarity+survivorship 17-22%+look-ahead）+ **文書でなく実装 assertion で物理強制**方針（L-241/L-242）。WebSearch 4 本 verify（StratBase / hftbacktest / Bailey&LdP DSR / AFML 10 reasons / CoinAPI survivorship / ScienceDirect CPCV 2024）。**§0.1/§0.2 は元々正しく実装が守らなかった＝文書追加でなく実装側の問題が本質** |
 | 2026-05-30 | v3.12 | §6.3 cluster 設計が実装で 4 件覆る → 実測修正反映（①入力 全投入PCA→揺れ幅28 ②アルゴ GMM hybrid→KMeans単体 ③確率 Isotonic→距離softmax ④門番 0.4→緩和）。現設計は §6.3 冒頭サマリ・**実測経緯/数値変遷は `ml_pipeline_execlog.md` 工程 [2.5]** |
