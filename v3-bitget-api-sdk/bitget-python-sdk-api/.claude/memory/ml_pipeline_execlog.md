@@ -153,9 +153,47 @@
 
 **次セッション着手**: 評価エンジン実装 **A→C→D→E→F→leak/regime** を1項目ずつ実装 + 既知答えテスト全 pass。mlfinlab 活用（`sampling`/`cross_validation`/`backtest_statistics`/`features`）。`ml_phase2_production` 予測データで **再学習不要**。見積もり 2-4セッション。**詳細仕様は baseline §6 冒頭「評価基盤 詳細設計」参照**。
 
+### 工程横断: 評価基盤 全6項目 実装完了（2026-05-31 第3セッション・1セッションで A〜F+leak/regime 完走）
+
+**完了サマリ**: baseline §6「評価基盤 詳細設計」の全項目を**自前実装 + 既知答えテスト全 pass** で完成。各テストは「答えが数学的に分かりきった問題」で計器の正しさを証明（L-242・まこさんはテスト結果だけ見れば良い）。
+
+| 項目 | 実装ファイル | 既知答えテスト | commit |
+|---|---|---|---|
+| A 約定/コスト | `eval_engine.py` | T1-T5（コインフリップ→net負/不約定0件/両到達→SL/gap→open/funding控除）5/5 | 66de850 |
+| C uniqueness | `sample_uniqueness.py` | C1-C5（同一窓→ū=1/N/重なりなし→1.0/部分手計算/実効N=1/seq>std）5/5 | a0de94a |
+| D purge+embargo | `purged_kfold.py` | D1-D5（purge後重なり0[素朴160]/embargo窓0/train末<test始/完全分割/リーク注入naive0.82→purged0.45）6/6 | f991582 |
+| E fracdiff | `frac_diff.py` | E1-E6（d=0恒等/d=1=1階差/重み既知/生close非定常→d*=0.35定常/記憶保持corr0.42/生close閾値本番退化）6/6 | 0db306f |
+| F DSR/PBO | `dsr_pbo.py` | F1-F6（ノイズbest DSR0.94/N過少→過大/本物1.0/N増単調低下/ノイズPBO≈0.50[8seed]/本物エッジPBO0.0）6/6 | b8a4d8d |
+| leak/regime | `leak_regime_check.py` | L1-L3/R1-R2（クリーンleak0/shift(-1)検出/静的スキャン/2023だけ時代依存/全年頑健）5/5 | 7ab373a |
+
+**重要な設計修正（mlfinlab 除外・WebSearch verify）**: baseline §6 は当初「mlfinlab 活用」だったが、検証の結果 mlfinlab(H&T) は **商用有償ライセンス必須 + Python 3.7-3.9 で 3.11 非対応・2023 保守停止**、代替 mlfinpy は MIT/3.11 だが **Alpha・19ヶ月更新なし** → **計器の心臓部に未成熟依存を入れない**判断で全項目自前実装（アルゴリズムは AFML Ch.4/5/7/8 + Bailey&LdP の公開知識・教科書実装は合法）。baseline §6 v3.15 に反映。
+
+**CC の実装プロセス（本セッション・健全だった点）**: 各項目で①既知答えテスト先行 ②fail 時は推測でなく原因診断（T1=エントリー選択バイアス / D5=リークがブロック境界に希釈 / F5=パラメータ実験で実装正当性確認後にテスト修正 / R1=判定基準が端値で脆い）③エンジンを直すかテストを直すかを切り分けて報告。物理 hook（§1.4.6.2）が baseline 編集を 2 回ブロック→WebSearch 再実行で正規通過（bypass せず）。
+
+**⚠️ 計器が正しい ≠ 戦略が良い**: 評価基盤は「正直に net を測る」担保のみ。net がプラスとは限らない（方向エッジは別問題・優先3 で実測判明する）。
+
 ---
 
 ## 2. 現在地 + 次セッション着手（新セッションは最初にここを読む）
+
+**【2026-05-31 第3セッション末 更新・最新】評価基盤 全6項目 完成（A/C/D/E/F/leak-regime・既知答えテスト全 pass）**:
+- 「正しい計器」が揃った（net を正直に測る土台）。実装ファイル6本 + テスト6本・commit 66de850〜7ab373a。詳細は §1 末尾「評価基盤 全6項目 実装完了」。
+- mlfinlab は商用有償+3.11非対応で除外確定 → 全項目自前実装（baseline §6 v3.15）。
+- **次セッション着手 = 優先3（計器を実データに繋ぐ）**: 下の旧 5列表の優先1（評価基盤を正す）は**完了**。新優先は ①計器を `ml_phase2_production` 予測 + 手動$370 に適用し**本当の net 現在地**を出す ②cc_questioning_checklist.md 新規（旧優先2・未着手）。
+- **新 5列表（2026-05-31 第3セッション末）**:
+
+| 優先 | 使う/直すファイル(パス) | 入力データ | 存在✅ | 最初の一手 | 完了条件 |
+|---|---|---|---|---|---|
+| 1 計器を実データに繋ぐ | `scripts/priority_rebuild/eval_engine.py` 等6本 + 新規 driver | `ml_phase2_production/`(予測) + 5m OHLC + funding | ✅ 予測/OHLC 存在 | production の Entry シグナルを eval_engine で約定/コスト込み net 集計 → 月次 net を A の計器で算出 | 本当の net 現在地が出る（手動$370 と同条件比較） |
+| 2 手動$370 を同条件で測り直す | `runner/replay_csv.py` 実績 + eval_engine | 手動 Priority trade ログ | △ 要確認 | $370 に funding/slippage を同条件適用（地面を同じ計器で） | 公平比較の地面が出る |
+| 3 設計し直し判断 | （議論 + baseline §0 遵守） | 優先1/2 の net 実数 | — | net 実数を見て Entry/Exit/cluster/縦カスケード を再判断 | 方向確定 |
+| 4 問いかけリスト+機械ゲート | `.claude/rules/cc_questioning_checklist.md`(新規) | 問いかけリスト草案 | — | 問いかけリスト確定 + assertion/hook 化 | まこさんレビューOK |
+
+⚠️ **計器が正しい ≠ 戦略が良い**。優先1 の net がマイナスでも計器の不具合ではない（方向エッジは別問題・L-238 早計判断禁止）。
+
+---
+
+**↓ 以下は本セッション開始時点の現在地（評価基盤完成で優先1は達成済・参照のみ）**
 
 **現在地（2026-05-31 セッション末・最重要・前回までの前提が崩れた）**:
 
