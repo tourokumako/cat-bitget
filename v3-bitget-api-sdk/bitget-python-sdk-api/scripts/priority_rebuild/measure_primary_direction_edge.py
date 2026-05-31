@@ -171,9 +171,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--period", default="test_2025", choices=list(LABELS_PARQUET))
     ap.add_argument("--k", type=int, default=12)
+    ap.add_argument("--tp-mult", type=float, default=2.0,
+                    help="TP barrier 倍率（既定2.0=production・スキャル幾何は小さく）")
+    ap.add_argument("--sl-mult", type=float, default=1.5,
+                    help="SL barrier 倍率（既定1.5=production・スキャル幾何は大きく）")
     ap.add_argument("--smoke", type=int, default=None,
                     help="先頭 N signals のみ（動作確認用）")
     args = ap.parse_args()
+    # 幾何を probe 用に上書き（⚠️ 既存モデルは production 幾何 2.0/1.5 用に学習済・粗い当たり確認）
+    global TP_MULT, SL_MULT
+    TP_MULT, SL_MULT = args.tp_mult, args.sl_mult
 
     print("=" * 70)
     print(f"primary 方向 純エッジ測定 | period={args.period} K={args.k} "
@@ -190,7 +197,7 @@ def main():
     print("-" * 70)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    tag = f"{args.period}_K{args.k}" + (f"_smoke{args.smoke}" if args.smoke else "")
+    tag = f"{args.period}_K{args.k}_tp{TP_MULT}sl{SL_MULT}" + (f"_smoke{args.smoke}" if args.smoke else "")
     out = OUT_DIR / f"summary_{tag}.json"
     out.write_text(json.dumps(res, indent=2, ensure_ascii=False))
     print(f"[出力] {out}")
