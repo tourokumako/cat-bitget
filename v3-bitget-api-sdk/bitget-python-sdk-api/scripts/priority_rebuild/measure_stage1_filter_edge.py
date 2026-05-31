@@ -43,7 +43,9 @@ LABELS = {
     "test_2025": REPO / "results" / "priority_rebuild" / "labels_mfe_mae_pct_test_2025.parquet",
     "test_2026_q1": REPO / "results" / "priority_rebuild" / "labels_mfe_mae_pct_test_2026_q1.parquet",
 }
-FEATS = ["rsi14__5m", "bb_pct_b__5m", "adx14__5m", "atr14_pct__5m"]
+FEATS = ["rsi14__5m", "bb_pct_b__5m", "adx14__5m", "atr14_pct__5m",
+         "stoch_k__5m", "close_vs_sma20_pct__1h", "di_plus__5m", "di_minus__5m",
+         "close_vs_sma20_pct__5m"]
 SIZE_BTC = 0.024
 
 
@@ -56,11 +58,22 @@ def load_bars():
 
 
 def setups(feat: pd.DataFrame, a) -> dict:
-    """固定ルールで LONG/SHORT セットアップ該当 bar の mask を返す。"""
+    """固定ルールで各セットアップ該当 bar の mask を返す（原理ベース・標準閾値）。"""
     rsi, bbp, adx = feat["rsi14__5m"], feat["bb_pct_b__5m"], feat["adx14__5m"]
-    long_m = (rsi < a.rsi_lo) & (bbp < a.bb_lo) & (adx < a.adx_max)
-    short_m = (rsi > a.rsi_hi) & (bbp > a.bb_hi) & (adx < a.adx_max)
-    return {"LONG_mr": (long_m, ee.LONG), "SHORT_mr": (short_m, ee.SHORT)}
+    stoch, h1 = feat["stoch_k__5m"], feat["close_vs_sma20_pct__1h"]
+    dip, dim, sma5 = feat["di_plus__5m"], feat["di_minus__5m"], feat["close_vs_sma20_pct__5m"]
+    # 基本 mean-reversion（v1）
+    L_mr = (rsi < a.rsi_lo) & (bbp < a.bb_lo) & (adx < a.adx_max)
+    S_mr = (rsi > a.rsi_hi) & (bbp > a.bb_hi) & (adx < a.adx_max)
+    # + Stoch(20/80) + MTF（1h が支持方向）confluence
+    L_mrc = L_mr & (stoch < 20) & (h1 > 0)
+    S_mrc = S_mr & (stoch > 80) & (h1 < 0)
+    # トレンド追随（ADX>25・押し目/戻り・cc_entry §9.1 手動も順張り使用）
+    L_tf = (adx > 25) & (dip > dim) & (sma5 > 0) & (rsi > 40) & (rsi < 65)
+    S_tf = (adx > 25) & (dim > dip) & (sma5 < 0) & (rsi > 35) & (rsi < 60)
+    return {"LONG_mr": (L_mr, ee.LONG), "SHORT_mr": (S_mr, ee.SHORT),
+            "LONG_mr+c": (L_mrc, ee.LONG), "SHORT_mr+c": (S_mrc, ee.SHORT),
+            "LONG_tf": (L_tf, ee.LONG), "SHORT_tf": (S_tf, ee.SHORT)}
 
 
 def measure_set(name, mask, side, feat, bars, a) -> dict:
@@ -115,8 +128,7 @@ def main():
 
     print("=" * 70)
     print(f"手① 段1固定ロジック edge | period={a.period} K={a.k} 幾何 TP×{a.tp_mult}/SL×{a.sl_mult}")
-    print(f"setup: LONG rsi<{a.rsi_lo}&bbp<{a.bb_lo}&adx<{a.adx_max} / "
-          f"SHORT rsi>{a.rsi_hi}&bbp>{a.bb_hi}&adx<{a.adx_max}")
+    print("setups: mr(基本 RSI/BB/ADX) / mr+c(+Stoch20/80 +1h支持) / tf(ADX>25 トレンド追随押し目)")
     print("=" * 70)
 
     bars = load_bars()
