@@ -281,8 +281,8 @@
 | D purge+embargo | ④ | `purged_kfold.py`（自前 PurgedKFold + embargo・AFML Ch.7: purge=label窓が test と重なる train 除去 / embargo=test 直後を時間窓除外・別物） | ✅ 完成・D1-D5 全pass | D1 purge後 重なり0(素朴は160) / D2 embargo窓 train0 / D3 train末<test始 / D4 test完全分割 / D5 リーク注入→naive 0.82→purged 0.45 精度低下 |
 | E fracdiff | ⑥ | `frac_diff.py`（自前 AFML Ch.5 固定幅窓 + statsmodels.adfuller・`fracdiff` パッケージは未インストールで自前選択）・d*=ADF 最小d をグリッド探索（ハードコード禁止）/ 生close 除外 | ✅ 完成・E1-E6 全pass | E1 d=0恒等 / E2 d=1=1階差 / E3 重み既知 / E4 生close非定常→d*=0.35で定常 / E5 記憶保持(corr0.42 vs returns0.04) / E6 生close閾値が本番域で退化→log-fracdiff両域定常 |
 | F DSR/PBO | ⑤ | `dsr_pbo.py`（自前 Bailey & LdP 式・scipy.statsのみ）DSR(N=試行数・expected_max_sharpe deflation) + CSCV PBO・合格=月次net+DSR>0.95+PBO<0.5 | ✅ 完成・F1-F6 全pass | F1 ノイズbest→DSR0.94<0.95 / F2 N過少(50→2)→DSR過大 / F3 本物→DSR1.0 / F4 N増でDSR単調低下 / F5 ノイズPBO≈0.50(8seed) / F6 本物エッジ→PBO0.0 |
-| leak | ⑥ | 自前 grep `shift(-)`/`center=True`/未来index + 因果性1行宣言 | ⬜ 未着手 | 入力1bar shiftで予測不変→未来参照疑い |
-| regime 類型D | ⑥ | 自前 全期間使用 + 年別/regime別 成績分散 | ⬜ 未着手 | 2023除外で SHORT エッジ消失→時代依存 |
+| leak | ⑥ | `leak_regime_check.py`（自前 静的 grep shift(-)/center=True/未来index + 因果性テスト=時点t截断で特徴不変か） | ✅ 完成・L1-L3 全pass | L1 クリーン→leak0 / L2 shift(-1)→leak検出 / L3 静的スキャン 危険検出・クリーン0 |
+| regime 類型D | ⑥ | `leak_regime_check.py`（自前 全期間使用 + 年別成績分散・ベスト期除外でエッジ崩壊率判定） | ✅ 完成・R1-R2 全pass | R1 エッジが1年だけ→時代依存検出 / R2 全年エッジ→非検出 |
 
 #### 実装順序
 
