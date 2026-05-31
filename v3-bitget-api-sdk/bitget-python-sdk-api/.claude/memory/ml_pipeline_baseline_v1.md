@@ -646,6 +646,27 @@ A → C → D → E → F → leak/regime を1項目ずつ実装+テスト pass�
 
 ### 6.2 工程 [2] Entry ML 詳細設計
 
+> ## 🔴 §6.2 設計改訂（2026-05-31・Entry エンジン修正・ガワだけ→正しい仕組み・まこさんGO・**追記履歴**）
+>
+> **経緯・現在地は [`ml_pipeline_execlog.md`](ml_pipeline_execlog.md) 工程[2]「Entry エンジン 修正計画」を最初に読む。** 本改訂は §6.2.3/§6.2.7 の旧設計（揺れ幅 z-score 97%支配の加重和・meta を全bar独立 binary の集約一項に誤用＝AUC 0.509）を**空っぽ実装（業界の名前だけ真似て中の仕組み未実装）**と確定し、正しい仕組みに差し替える。**旧 §6.2.1-§6.2.8 本文は履歴として残置**（数値は無効・参照のみ）。
+>
+> **大前提**: 手動 cat_v9 は初歩 OHLCV のみで net 黒字。ML net マイナスは ML 設計の不具合（[[feedback_ml_defect_not_data]]・L-243）。新データ（板/order flow）は足さない＝既存 OHLCV の使い方を直す。
+>
+> **修正 4 手（6軸 §18.5 逐語 file:line・`entry_fix_6axis_gate.md` 義務）**:
+>
+> | 手 | 軸 | §18.5（cc_entry_logic_self_study.md:行） | 正しい仕組み | 業界 verify（2026-05-31 WebSearch） |
+> |---|---|---|---|---|
+> | ① 段1 固定ロジック | 軸4 | :1574「cascade 構造不在」 | 手動が使う"種類"の品質シグナル（oversold/BB touch/ADX）で**高 recall** 絞り→ML 段。手動レシピのコピー禁止・テクニカル基本シグナルで独立設計（[[feedback_priority_starting_line_only]]） | rule-based filter を ML 前段に置くのは「高 recall（entry 取りこぼさず）+ 偽陽性削減」の確立パターン |
+> | ② primary 方向 | 軸1 | :1571「ボラ予測 ML 設計欠陥」 | 方向主役を Triple Barrier 3分類・**LONG/SHORT 分離学習**。揺れ幅予測は捨てず**方向スコアから外し**サイジング/TP-SL へ（§14.3/14.5/14.7） | separate long/short モデル並走が有効・**揺れ幅=magnitude は方向でなく size/SL に使うのが robust**（高ボラ→小 size） |
+> | ③ メタ 縦カスケード | 軸6 | :1576「Meta-Labeling 失敗（primary も secondary も同型）」 | secondary=**別アーキ**・**primary 発火サンプルのみ**で勝敗学習・盲点情報（②で外した揺れ幅+出来高+MTF・全 OHLCV）入力・出力=**採用ゲート+size**。§6.2.7 集約一項を置換 | meta=primary(side・別モデル)→悪い signal を filter（成功確率高い候補のみ採用） |
+> | ④ 異種 stacking | 軸2 | :1572「アルゴ多様性ゼロ」 | 後段精緻化（土台のエッジ確認後） | architecture diversity が ensemble 効果の源・同型は r>0.6 で効果薄 |
+>
+> **業界 verify 出典**: [Hudson&Thames meta-labeling](https://hudsonthames.org/does-meta-labeling-add-to-signal-efficacy-triple-barrier-method/) / [MQL5 Labeling Blueprint](https://www.mql5.com/en/articles/18864) / [Springer 2025 info-driven bars+TB+DL](https://link.springer.com/article/10.1186/s40854-025-00866-w) / [QuantStrategy: vol→SL/size](https://quantstrategy.io/blog/using-predictive-ai-to-optimize-stop-loss-placement-and/) / [BlockchainCouncil 2026 vol→sizing](https://www.blockchain-council.org/cryptocurrency/risk-management-with-ai-in-crypto-trading-volatility-forecasting-position-sizing-stop-loss-automation/) / [Nature 2025 rule+ML hybrid](https://www.nature.com/articles/s41598-025-16370-1)
+>
+> **最初の一手**: 手②の核（primary 方向・LONG/SHORT 分離・揺れ幅除外）→ `eval_engine.py` で純方向 net を手動 $370 と同条件比較（既存 `ml_phase2_production` 予測・再学習なし）。
+>
+> **⚠️ 具体値（閾値・重み・段1 条件・stacking base 選定）は measurement-pending**（最初の一手の実測後に data-driven 確定）。
+
 > §6.2.1 〜 §6.2.8 全 8 サブセクション完成 (= regime ensemble §6.1.1〜§6.1.6 と同型構造)。
 
 #### 6.2.1 評価方法 (= 4 段階・regime ensemble §6.1.1 と同型構造)
@@ -2511,6 +2532,7 @@ assert "train" in artifact_path and "test" not in artifact_path
 
 | 日付 | 版 | 内容 |
 |---|---|---|
+| 2026-05-31 | v3.16 | **§6.2 冒頭に「Entry エンジン修正」改訂バナー追記（追記履歴・旧 §6.2.1-8 本文は残置）**。旧 §6.2.3/§6.2.7 を空っぽ実装（揺れ幅 z-score 97%支配の加重和・meta を全bar独立 binary 集約一項に誤用＝AUC 0.509）と確定し、正しい仕組み（修正 4 手＝軸4 段1固定ロジック / 軸1 primary 方向 TB3分類+LONG/SHORT分離+揺れ幅を size/TP-SL へ / 軸6 メタ縦カスケード primary発火のみ+別アーキ+盲点情報 / 軸2 stacking 後段）に差し替え。WebSearch 4 件で 4 手の業界整合 verify（separate L/S 有効・vol→size/SL・meta=別primary→filter・rule前段 cascade・architecture diversity）。経緯/最初の一手は execlog 工程[2]「Entry エンジン 修正計画」。具体値は measurement-pending |
 | 2026-05-31 | v3.15 | **mlfinlab 除外・全項目 自前実装に修正**（v3.14 の「mlfinlab 活用」撤回）。WebSearch verify: mlfinlab=商用有償ライセンス必須 + Python 3.11 非対応(保守停止) / mlfinpy=Alpha・19ヶ月更新なし → 計器の心臓部に未成熟依存を入れない・アルゴリズムは AFML Ch.4 公開知識を自前実装。**項目A 完成**(`eval_engine.py`・約定/コスト・T1-T5 全pass・commit 66de850) + **項目C 完成**(`sample_uniqueness.py`・AFML Ch.4・C1-C5 全pass)。§6 C-F テーブルに実装ファイル名 + 状態列(✅/⬜)追加。出典: hudsonthames.org/mlfinlab / pypi.org/project/mlfinpy |
 | 2026-05-31 | v3.14 | **§6 冒頭「評価基盤 詳細設計（全工程共通）」新設** = §0.8 の実装仕様。A 約定/コスト計器（replay_csv 準拠 + 楽観3点[TP先着/gap無視/touch約定]是正）+ C-F（**mlfinlab 活用**: `sampling` uniqueness/sequential bootstrap・`cross_validation` PurgedKFold・`backtest_statistics` DSR-PBO・`features` fracdiff）+ leak/regime。**各項目に既知答えテスト**（T1-T5 等・監査でなく数学的事実で検証・L-242）。実装順序 A→C→D→E→F→leak/regime・`ml_phase2_production` で再学習不要。WebSearch verify（mlfinlab 実装 / hftbacktest fill）|
 | 2026-05-31 | v3.13 | **§0.8「評価の健全性 — PnL を測る正しい計器」新設**（約定/コスト不正インシデント契機）= 業界標準 6 点（①指値約定+net ②コスト現実化 round-trip 0.15-0.30%・fee 2倍検証 ③sample uniqueness+sequential bootstrap ④purge+embargo 別物 ⑤DSR>0.95+PBO<0.5・CPCV ⑥non-stationarity+survivorship 17-22%+look-ahead）+ **文書でなく実装 assertion で物理強制**方針（L-241/L-242）。WebSearch 4 本 verify（StratBase / hftbacktest / Bailey&LdP DSR / AFML 10 reasons / CoinAPI survivorship / ScienceDirect CPCV 2024）。**§0.1/§0.2 は元々正しく実装が守らなかった＝文書追加でなく実装側の問題が本質** |
