@@ -358,7 +358,36 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-31 改訂56・**評価基盤 全6項目 完成（A/C/D/E/F/leak-regime・自前実装+既知答えテスト全pass・mlfinlab除外）+ Entry修正 6軸ゲート設置（§18.5由来・強制ロード）+ 大前提固定（手動黒字→ML マイナスは設計不具合・データのせいにするな）→ 次セッション = 6軸ゲートに沿った Entry 設計欠陥修正（軸1から）**）
+## 🔴 現在のフェーズ（2026-05-31 改訂57・**Entry エンジン修正に着手「ガワだけ→正しい仕組み」で4手を設計(baseline §6.2)+ 偵察 probe(手②/手③/horizon/幾何/手①)を再学習なしで実測 → Entry 単体は per-trade net ≈ break-even を確定・儲けレバーは Exit と判明 → 次セッション = Exit(出口)設計から**）
+
+> **【現在の正本ブロック・改訂57・2026-05-31 本セッション末】**
+> **⚠️ ML pipeline の現在地・次セッション着手の正本は [`ml_pipeline_execlog.md`](.claude/memory/ml_pipeline_execlog.md) §2 現在地（新セッション最初に読む・本セッション経緯 + 次=Exit の5列表）。本ブロックは要約。**
+>
+> ### 本セッション（改訂56 → 改訂57）完了事項（全 commit 済）
+> 1. **設計再診断（A〜E 前提整理・execlog 記録）**: 問題は「3工程 vs 1工程」でなく「業界の名前だけ真似て中の仕組み未実装（ガワだけ）」と確定（meta-labeling/regime/cluster/§6.2.7 空っぽ）。本番実装制約（増分計算・指値maker・新データ足さない）を設計時から織込む原則を固定。
+> 2. **Entry 修正4手を baseline §6.2 改訂バナーに反映**（軸4 段1固定 / 軸1 primary方向 / 軸6 メタ縦カスケード / 軸2 stacking後段・WebSearch4件で業界整合 verify・§7 v3.16）。
+> 3. **偵察 probe 実測（全て eval_engine・再学習なし・commit 済3スクリプト）**: 手② 純方向 AUC0.54-0.58 net負 / 手③ メタ門番 構造実装(net正方向だが届かず・二段目AUC0.52) / horizon(K6最強でも net最悪) / 幾何(勝率0.29→0.60 上がるが net不変) / 手① 固定ルール(勝率0.40→0.55-0.61 だが break-even境目)。
+> 4. **🔴 偵察 最終結論**: **Entry 単体は どう切っても per-trade net ≈ break-even**。儲けレバーは Entry でなく **Exit**（固定TPで勝ちを切っている＝出口で取り切れていない・industry §2.2 Exit 1.7×）。Entry break-even は後段レバーが乗る土台として十分。
+>
+> ### 次セッション CC 優先順位 → **`ml_pipeline_execlog.md` §2「次セッション着手」5列表参照**
+> - **優先1 = Exit probe**（新規 `measure_exit_edge.py`・eval_engine コスト定数流用・ATRトレーリング・break-even の良エントリーに載せ net 黒字化するか）
+> - 優先2 = 手動$370 を正しい計器で測り直し（地面確認・利益源 entry/exit/add 分解）
+> - 優先3 = 土台確定→本建設（手①+Exit を段構造化→primary/メタ/サイジング→Replay 月次）
+>
+> ### 引き継ぎリソース（新セッション必読・3層）
+> - **Layer 1**: `ml_pipeline_execlog.md` §2 現在地（本セッション経緯+次=Exit）/ lessons **L-244 / L-243** / CLAUDE.md / WORKFLOW 改訂57
+> - **Layer 2**: baseline §6.2 改訂バナー（Entry 修正4手）/ `entry_fix_6axis_gate.md` / industry_benchmark §2.2（Exit 1.7×）/ cc_entry §14.7（Exit 手法）
+> - **生成物（commit 済）**: `scripts/priority_rebuild/measure_primary_direction_edge.py` / `measure_meta_gate_edge.py` / `measure_stage1_filter_edge.py` / `eval_engine.py`（計器）
+>
+> ### 目的整合性 1 行宣言（cc_role §1.4.6）
+> 次タスク Exit = industry の最大レバー（1.7×）を break-even エントリーに載せ per-trade net を黒字化 → 月次 NET ≥ $1,900 達成経路の本丸。
+>
+> ### ⚠️ 最重要警告
+> 次セッションは **Entry を再 probe しない**（break-even 確定済・L-244）。**Exit から**。Exit が黒字に乗らなければ後段レバー（並立/サイジング）や一段大きい設計見直しへ（有限で区切る・**大前提でコミット維持・データ/枠組みのせいにしない**）。
+>
+> ---
+>
+> ## 🧊 改訂56 ブロック（履歴・参照用）（2026-05-31 第3セッション末・評価基盤 全6項目 完成 + Entry修正 6軸ゲート設置 + 大前提固定・旧現役）
 
 > **【現在の正本ブロック・改訂56・2026-05-31 第3セッション末】**
 > **⚠️ ML pipeline の現在地・次セッション着手の正本は [`ml_pipeline_execlog.md`](.claude/memory/ml_pipeline_execlog.md)（新セッション最初に読む・§2 現在地 = 6軸リフレーム）。本ブロックは要約。**

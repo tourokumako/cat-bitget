@@ -265,7 +265,36 @@ regime / Entry の方向エッジ / meta-labeling ——どれも空っぽ。CC 
 
 ## 2. 現在地 + 次セッション着手（新セッションは最初にここを読む）
 
-**【2026-05-31 第3セッション末 更新・最新】評価基盤 全6項目 完成（A/C/D/E/F/leak-regime・既知答えテスト全 pass）**:
+**【2026-05-31 本セッション（改訂56後）末・最新・新セッションはここを最初に読む】**
+
+**本セッション結論（一行）**: Entry エンジンを「ガワだけ→正しい仕組み」で作り直し、4手＋偵察で実測 → **Entry 単体（ML / 手動式固定ルール / 強化版）は どう切っても per-trade net ≈ break-even**。儲けのレバーは Entry でなく **Exit（出口）**と判明。次は Exit 設計。
+
+**本セッション経緯（時系列・詳細は §1 各実測ブロック・全 commit 済）**:
+1. **設計再診断（A〜E 前提整理）**: 問題は「3工程 vs 1工程」でなく「業界の名前だけ真似て中の仕組み未実装（ガワだけ）」。meta-labeling / regime / cluster / §6.2.7 すべて空っぽ実装と確定。本番実装制約（増分計算・指値maker・新データ足さない）を設計時から織込む原則を固定。
+2. **着手＝Entry エンジンから**（増幅装置 regime/cluster の前に掛ける元のエッジを測る）。3KB全文 + WebSearch でベースアップ。修正4手を baseline §6.2 改訂バナーに反映（軸4 段1固定 / 軸1 primary方向 / 軸6 メタ縦カスケード / 軸2 stacking後段）。
+3. **実測（全て eval_engine・再学習なし・既存予測/特徴量流用）**:
+   - **手② 純方向**: AUC 0.54-0.58（弱エッジ実在）だが per-trade net 負。
+   - **手③ メタ門番（構造実装）**: net を正方向に動かすが届かない・二段目 AUC 0.52。**構造的発見**＝一段目が同 OHLCV 特徴量を既に全部使用済 → OHLCV 内で ML を重ねても上乗せ限定（§18.4）。手動エッジは"特徴量"でなく"特定の固定ルールの形"。
+   - **horizon probe**: K6 が方向最強(AUC0.58)も net 最悪・全K負。
+   - **幾何 probe**: 利確タイトで勝率 0.29→0.60 上がるが net 不変 → **幾何は土台レバーでない**（弱信号は障壁で勝率/儲けを入替えるだけ・平均不変）。
+   - **手① 固定ルール（手動式 mean-reversion）**: 勝率 0.40→0.55-0.61 **大幅上昇＝本物の精度**。だが net は break-even 境目（2026Q1 SHORT +0.23）。
+   - **手① v2 強化（Stoch/MTF/トレンド追随）**: break-even 超えず。
+4. **🔴 偵察 最終結論**: Entry は **break-even が天井**（業界一致・5分 entry 方向は弱）。勝率は出ている（良い場所を選べている）が**固定TPで勝ちを切っている＝出口で取り切れていない**。→ **儲けは Exit で作る**（industry Exit 1.7× が最大レバー・手動 cat_v9 が12種 Exit を持つ理由）。Entry break-even は後段レバーが乗る土台として十分。
+5. **生成物（commit 済）**: `measure_primary_direction_edge.py`（手②/horizon/幾何）/ `measure_meta_gate_edge.py`（手③）/ `measure_stage1_filter_edge.py`（手①）。出力 `results/priority_rebuild/primary_direction_edge/summary_*.json`。
+
+**次セッション着手（5列表・Exit へ工程転換）**:
+
+| 優先 | 使う/直すファイル(パス) | 入力データ | 存在✅ | 最初の一手 | 完了条件 |
+|---|---|---|---|---|---|
+| 1 Exit probe | 新規 `scripts/priority_rebuild/measure_exit_edge.py`（eval_engine コスト定数流用・ATRトレーリング simulator） | 手① mean-reversion セットアップ + bars(CSV) | ✅ セットアップ/bars 存在 | break-even の良エントリー(勝率0.55-0.61)に **ATRトレーリング出口**(固定TP外す・trail M×ATR・保有延長12→48)を載せ per-trade net が黒字に乗るか測る。trail/保有 数点。未来非参照(fill+1以降) | トレーリングで net がプラスに乗るか判定 |
+| 2 手動$370 地面確認 | `runner/replay_csv.py` / `strategies/cat_v9_decider.py` | 手動 entry | ✅ コード存在 | 手動 $370 を正しい計器(eval_engine 同条件)で測り直し + 利益源(entry/exit/add)を分解 | 真の地面が出る |
+| 3 土台確定→本建設 | （Exit 黒字なら） | Exit付き結果 | — | 手①エントリー + Exit を段構造に確定 → primary/メタ/サイジング載せ → Replay 月次 net | 月次 net 測定経路確立 |
+
+⚠️ 偵察は締めた（Entry break-even 確認・stop ルール通り）。Exit が黒字に乗らなければ後段レバー（並立/サイジング）や一段大きい設計見直しへ（有限で区切る・大前提でコミット維持・データ/枠組みのせいにしない）。
+
+---
+
+**【2026-05-31 第3セッション末 更新・🧊 旧（本セッションで Entry 実測まで超過）】評価基盤 全6項目 完成（A/C/D/E/F/leak-regime・既知答えテスト全 pass）**:
 - 「正しい計器」が揃った（net を正直に測る土台）。実装ファイル6本 + テスト6本・commit 66de850〜7ab373a。詳細は §1 末尾「評価基盤 全6項目 実装完了」。
 - mlfinlab は商用有償+3.11非対応で除外確定 → 全項目自前実装（baseline §6 v3.15）。
 **🚨 大前提（まこさん指摘・毎回再演・L-243 / [[feedback_ml_defect_not_data]]）**: 手動 cat_v9 は初歩 OHLCV ロジックのみで net 黒字（月$370）→ ML が net マイナスは **ML 設計の不具合**が原因。「エッジが無い」「order flow が要る」「枠組み barren」「5分足方向は無理」とデータ/枠組み/市場のせいにする診断は**禁止（excuse-making・恥）**。手動黒字＝このデータでエッジ実在・捕捉可能の存在証明。ML が手動スタートライン（cc_role §1.7）を下回る＝設計欠陥確定。
