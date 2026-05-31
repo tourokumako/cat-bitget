@@ -358,9 +358,29 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-31 改訂55・**評価基盤の設計詳細完成（§0.8 正しい計器の原則 + §6 評価基盤詳細設計 A-F+leak/regime・各項目に既知答えテスト・mlfinlab活用）+ 約定/コスト不正の真因確定（ML が replay_csv 継承せず + replay_csv 自体も楽観3点→$370も楽観）→ 次セッション = 評価エンジン実装 A→F**）
+## 🔴 現在のフェーズ（2026-05-31 改訂56・**評価基盤 全6項目 完成（A/C/D/E/F/leak-regime・自前実装+既知答えテスト全pass・mlfinlab除外）+ Entry修正 6軸ゲート設置（§18.5由来・強制ロード）+ 大前提固定（手動黒字→ML マイナスは設計不具合・データのせいにするな）→ 次セッション = 6軸ゲートに沿った Entry 設計欠陥修正（軸1から）**）
 
-> **【現在の正本ブロック・改訂55・2026-05-31 セッション末（第2セッション）】**
+> **【現在の正本ブロック・改訂56・2026-05-31 第3セッション末】**
+> **⚠️ ML pipeline の現在地・次セッション着手の正本は [`ml_pipeline_execlog.md`](.claude/memory/ml_pipeline_execlog.md)（新セッション最初に読む・§2 現在地 = 6軸リフレーム）。本ブロックは要約。**
+>
+> ### 本セッション (改訂55 → 改訂56) 完了事項
+> 1. **評価基盤 全6項目 完成**: A 約定/コスト(`eval_engine.py`) / C uniqueness(`sample_uniqueness.py`) / D purge+embargo(`purged_kfold.py`) / E fracdiff(`frac_diff.py`) / F DSR+PBO(`dsr_pbo.py`) / leak-regime(`leak_regime_check.py`)。**全項目自前実装 + 既知答えテスト全pass**（commit 66de850〜7ab373a）。mlfinlab は商用有償+Python3.11非対応で除外確定（WebSearch verify・baseline §6 v3.15）。
+> 2. **Entry修正 6軸ゲート設置**: `entry_fix_6axis_gate.md` 新規（§18.5「6軸多様性欠落」を ✅/⬜ チェックリスト化）+ SessionStart 強制ロード（`force_read_ml_design.sh ③`）+ 引用前置義務。各軸は「捨てる/外す」でなく「役割を正す/多様性を足す」（軸1=揺れ幅は捨てずサイジング/TP-SL/フィルタへ・WebSearch+§14.3/14.5/14.7 verify）。commit feb0864。
+> 3. **大前提固定**: 手動 cat_v9 が初歩 OHLCV のみで net 黒字 → ML net マイナスは **ML 設計の不具合**（データ/枠組み/エッジ不在のせいにする excuse-making 禁止）。6軸ゲート冒頭 + auto-memory `feedback_ml_defect_not_data` + L-243 に固定。commit 2087b77。
+>
+> ### 次セッション CC 優先順位 → **`ml_pipeline_execlog.md` §2「現在地 + 次セッション着手」5列表（6軸リフレーム）参照**（優先1=軸1 ボラ逃げ是正から）
+>
+> ### 引き継ぎリソース（新セッション必読）
+> - **`ml_pipeline_execlog.md` §2 現在地（6軸リフレーム）** / **`entry_fix_6axis_gate.md`（強制ロード・大前提+6軸）** / `cc_entry_logic_self_study.md` §18.5・§14.3/14.5/14.7・§1-9 / lessons **L-243 / L-242** / auto-memory **feedback_ml_defect_not_data**
+>
+> ### ⚠️ 最重要警告
+> net マイナスを「計器/データ/エッジ/order flow のせいにしない」（大前提）。原因は 6軸のどこが閉じてないか。現モデル(`ml_phase2_production`)は6軸欠落のまま＝net 測定は判断材料にならない（先送り）。計器は 6軸修正の各段を測る道具。
+>
+> ---
+>
+> ## 🧊 改訂55 ブロック（履歴・参照用）
+>
+> **【🧊 旧正本ブロック・改訂55・2026-05-31 セッション末（第2セッション）】**
 > **⚠️ ML pipeline の現在地・次セッション着手の正本は [`ml_pipeline_execlog.md`](.claude/memory/ml_pipeline_execlog.md)（新セッション最初に読む・末尾「設計詳細完成」+「現在地」）。本ブロックは要約。**
 >
 > ### 本セッション (改訂54 active → 改訂55 active) 完了事項
