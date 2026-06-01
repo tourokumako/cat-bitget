@@ -358,9 +358,42 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-05-31 改訂57・**Entry エンジン修正に着手「ガワだけ→正しい仕組み」で4手を設計(baseline §6.2)+ 偵察 probe(手②/手③/horizon/幾何/手①)を再学習なしで実測 → Entry 単体は per-trade net ≈ break-even を確定・儲けレバーは Exit と判明 → 次セッション = Exit(出口)設計から**）
+## 🔴 現在のフェーズ（2026-06-02 改訂58・**方針転換＝ラチェット（固定審判 score.py で「数字が上がった変更だけ残す」PDCA）に切替・手動の正直な地面 月$355/採点$173 確定・要件定義書1枚集約・次=v1 戦略を §4.6 照合で設計→実装→採点**）
 
-> **【現在の正本ブロック・改訂57・2026-05-31 本セッション末】**
+> **【現在の正本ブロック・改訂58・2026-06-02】**
+> **⚠️ 新セッションは SessionStart 強制 cat ① `cat_requirements.md`（要件定義書）→ `ml_pipeline_execlog.md §2 現在地` → `.claude/ratchet/ledger.md` を最初に読む。本ブロックは要約。**
+>
+> ### 本セッション（改訂57 → 改訂58）完了事項（commit 済）
+> 1. **方針転換＝ラチェット**: 業界手法の名前だけ実装（ガワ）を測って判断する従来法を廃し、**選手(戦略)と審判(固定 score.py)を分離・数字が上がった変更＋コードだけ残す PDCA**へ。採用判定は CC でなく数字。execlog §1「方針転換」+ §2 現在地。
+> 2. **審判 `score.py` + 計器 `eval_engine`**（既知答えテスト9/9・**SL を taker→maker 修正**: run_once L320-348 で TP/SL とも placePosTpsl 指値 maker）。
+> 3. **手動の正直な地面 確定**（既存 replay を score.py で再計測・slippage/funding 込み）: **月$355（通し）/ $173（採点 2025-04〜12）**。全月≥$1,900 は 0/12。これが ML が超える対象。
+> 4. **配管確認**: coinflip 戦略 → −$268（明確マイナス）でラチェット配管 OK。
+> 5. **要件定義書 `cat_requirements.md` 新規**（標準4部構成: 立ち位置 / 業務 As-Is-To-Be / 機能 / 非機能 + ハード制約14 H1-H14 + 運用ガイド）。要件散在が misses 根因 → 集約。SessionStart 強制 cat① + Layer1 表追加。
+> 6. **B/A 運用確定**: B(インシデント級=leak/コスト/過剰適合)はコード assert で物理停止・まこさんチェック不要 / A(設計値)は実装前報告→数字判定。
+> 7. **1m/3m 禁止 撤回**（ML実証あれば可・CLAUDE.md）。
+> 8. commit: `eccbc04`（ラチェット土台）/ `9b3e143`（強制読込）。
+>
+> ### 次セッション CC 優先順位
+> 1. **v1 戦略の詳細設計（A・§4.6 H1-H14 照合付き）を報告 → まこさん確認**: entry→exit 通し / LONG/SHORT別 LightGBM / 勝敗(Triple Barrier)ラベル / 材料=手動の勝ち筋(stoch・bb傾き・adx・atr・位置)+MTF複数足・コンフルエンス / 出口 固定maker(将来ML) / 閾値ツマミ。
+> 2. **実装**（B の ⬜要追加 assert を入れる: leak train<test / 価格非依存 / 採点期間隔離 / 最小注文 / 異常値STOP）→ **score.py 採点（2025-04〜12）→ ledger 記録**。−$268(coinflip) と +$173(手動) のどこに出るか。
+> 3. 1周 ≤ 約5分・数字が上がった変更だけ残す・封印 2026Q1 は触らない。
+>
+> ### 引き継ぎリソース（3層）
+> - **Layer1（強制cat①〜）**: `cat_requirements.md`（要件定義書・最初に読む）/ `ml_pipeline_execlog.md §2 現在地` / `.claude/ratchet/ledger.md`（E0-E1記録）
+> - **Layer2**: `scripts/priority_rebuild/`(eval_engine / score.py / strat_coinflip) / `cat_v9_decider.py`・`cat_params_v9.json`（手動の勝ち筋・参照のみ改造禁止）/ `priority_v9_trade_logic_analysis.md`
+> - **Layer3**: KB(technical / industry / cc_entry) / false_positive / exchange_spec
+>
+> ### 目的整合性 1 行宣言（cc_role §1.4.6）
+> 次タスク v1 = 手動の勝ち筋（コンフルエンス × regime）を ML で捉え、正しい計器で手動 $173 を超えるか測る → 月次 $1,900 への土台。
+>
+> ### ⚠️ 最重要警告
+> 「読んだ」≠「適用」。全設計は §4.6 H1-H14 に1項目ずつ照合してから着手。B はコード assert で止める（まこさんに見張らせない）。CC の確信ありげな出力は数字で検証するまで信じない（L-245）。
+>
+> ---
+>
+> ## 🧊 改訂57 ブロック（履歴・参照用）（2026-05-31・Entry 偵察 break-even 確定・旧現役）
+
+> **【🧊 旧正本ブロック・改訂57・2026-05-31 本セッション末】**
 > **⚠️ ML pipeline の現在地・次セッション着手の正本は [`ml_pipeline_execlog.md`](.claude/memory/ml_pipeline_execlog.md) §2 現在地（新セッション最初に読む・本セッション経緯 + 次=Exit の5列表）。本ブロックは要約。**
 >
 > ### 本セッション（改訂56 → 改訂57）完了事項（全 commit 済）
