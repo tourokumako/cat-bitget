@@ -145,6 +145,7 @@
 
 | ファイル | 内容 | 取得方法 |
 |---------|------|------|
+| **`bitget-python-sdk-api/.claude/rules/cat_requirements.md`** | **【最初に読む・要件定義書】CC の立ち位置 / 業務 As-Is To-Be / 機能 / 非機能 / ハード制約 14 (H1-H14) / 運用ガイド・全設計は §4.6 に照合** (2026-06-02 新規・SessionStart 強制 cat ①) | Read 全文 |
 | `bitget-python-sdk-api/WORKFLOW.md` | 現フェーズ・次のタスク・本セッション完了事項・引き継ぎリソース (改訂N active ブロック・履歴は archive) | Read 全文 |
 | `v3-bitget-api-sdk/CLAUDE.md` (本ファイル) | 提案禁止・目標・必読リスト・セッション終了チェック | Read 全文 |
 | `bitget-python-sdk-api/.claude/memory/phase_flow_v4_with_recovery.md` | **ML 学習フロー正本** (Phase 0〜7 / 6 案並列 + Walk-forward Purged K-Fold 5 fold + DSR + 5 指標) | Read 全文 |
