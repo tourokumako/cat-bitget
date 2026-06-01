@@ -26,6 +26,9 @@
 | P24 | SHORT | RSI 高位 + Stoch 高位反転 | RSI + Stoch | 5 |
 | P25 | SHORT | ADX スパイク順張り | ADX + BB | 1 |
 
+> **【2026-06-01 追記・まこさん明言】現稼働設定 (`config/cat_params_v9.json`) で有効なのは `ENABLE_P23_SHORT: true` の 1 個のみ・他 8 個は false。これは「P23 から順番に1つずつ調整していく過程で、他を一時的にオフにしているだけ」であり、特別な意味はない（「P23 だけにエッジがある」という意味ではない）。**
+> したがって「手動の地面」の基準は、複数 Priority 混在で生成された 365 日 replay (`results/replay/replay_BTCUSDT-5m-2025-04-01_03-31_365d.csv`・1,157 trade・§4.5 実績表) とする。ML が超える対象もこの replay 基準（正しい計器 `eval_engine` で測り直した正直 net＝12ヶ月通し 月平均 $354／採点期間 2025-04〜12 で 月平均 $172・`scripts/priority_rebuild/score.py` 実測・2026-06-01）。
+
 ### 1.2 判定順序 (= 排他的・先勝ち)
 
 `check_entry_priority()` 内で以下の順番に判定し、最初に条件を満たした Priority が採用される (1 bar で 1 Priority のみ発火):
@@ -518,3 +521,4 @@ TP_FEE_FLOOR / TP_ADX_BOOST / TP_PCT_CLAMP で「手数料保証」「ADX 強い
 |---|---|---|
 | 2026-05-26 | v1 | 初版作成 (= cat_v9_decider.py + cat_params_v9.json 全文 read を基に CC が構造分析・⚠️ 誤読あり) |
 | 2026-05-26 | v2 | CC 理解誤り訂正 + Replay 365 日データ起点で書き直し: §4.5 (市場局面別 → 指標 AND 条件パターン検出器・実データ表) + §5 (業界カタログ 7 件 → データ起点 4 軸: regime カバレッジ / Exit 早期化 / 単価上げ / LONG 系修正) + §6 (件数試算 → データ起点 4 経路寄与見積) + §8 (CC 理解状態 → 誤読経緯と事実記録) |
+| 2026-06-01 | v3 | §1.1 に追記: 現稼働 params は P23 のみ有効＝調整途中で他を一時オフにしただけ・特別な意味なし（まこさん明言）。手動の地面基準は複数 Priority 混在 replay（`score.py` 実測 net 月平均 $354／採点期間 $172）と明記。本セッションで CC が実コード `cat_v9_decider.py` + `cat_params_v9.json` を初めて精読（要約でなく原本）して確認 |

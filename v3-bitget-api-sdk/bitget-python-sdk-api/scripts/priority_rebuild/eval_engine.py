@@ -27,8 +27,8 @@ eval_engine.py — 評価基盤 項目A: 約定・コスト計器（自前・rep
     ① SL を TP より先に判定（同 bar 両到達は不利側=SL 先着）
     ② gap 反映: SL 飛び越えは min(sl,open_j)(LONG) / max(sl,open_j)(SHORT) で約定
     ③ touch でなく保守 fill（exit 判定は entry bar の次 bar から開始）
-    TP=指値 maker / SL・TIME・能動クローズ=成行 taker + slippage。
-  - コスト: entry=maker / exit=maker(TP) or taker(SL/TIME/能動) / slippage 0.005%(成行のみ) /
+    TP・SL=指値 maker（placePosTpsl・run_once_v9.py L320-348 executePrice=triggerPrice）/ TIME・能動クローズ=成行 taker + slippage。
+  - コスト: entry=maker / exit=maker(TP・SL) or taker(TIME/能動クローズ) / slippage 0.005%(成行のみ) /
     funding=保有中の 8h 境界(00/08/16 UTC)ごとに direction×size×mark×rate。net=gross−全コスト。
   - 0.12 BTC: 任意 t で sum(active)≤0.12 を assert（§0.5・assert_position_cap）。
 
@@ -57,7 +57,9 @@ LONG = 1
 SHORT = -1
 
 # Exit 種別 → 成行か否か（成行なら taker + slippage）
-_TAKER_REASONS = {"SL", "TIME", "ACTIVE"}
+# TP/SL は placePosTpsl 指値（maker）= run_once_v9.py L320-348 で executePrice=triggerPrice 確認済（手動は手数料負け回避で maker 優先）。
+# 成行 taker は TIME(時間切れ) と能動クローズ(ACTIVE: トレーリング/MFE_STALE/STOCH_REVERSE 等 close_market) のみ。
+_TAKER_REASONS = {"TIME", "ACTIVE"}
 
 
 @dataclass
