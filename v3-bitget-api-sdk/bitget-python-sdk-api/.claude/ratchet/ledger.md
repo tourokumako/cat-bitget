@@ -17,6 +17,7 @@
 - **方法**: 既存 365日 replay の売買記録を score.py に通す（`replay_csv.py` は実行せず＝保護ファイル）
 - **結果**: 12ヶ月通し 月平均 **$354**（合計 $4,254）／ 採点期間 2025-04〜12 月平均 **$172** ／ 封印 2026-01〜03 月平均 $901。月次は −$144〜+$1,896 でバラつき・利益99%が下落5ヶ月・全月≥$1,900 は **0/12**。
 - **原因究明**: 手動の稼ぎは下落 regime 集中（SHORT 継続）。LONG(P1/P4) は下げ期で負け（−$453/−$30）＝ regime 依存。
+- **⚠️ P23単独 と 地面$172 の関係（最重要前提・2026-06-04 確定）**: ライブ Bot（`cat_v9_decider`+固定params）は `ENABLE_P23_SHORT` のみ有効（手動時代に Priority を1つずつ調整し P23 まで仕上げた段階）。**ただし地面 $172/$354 は別物＝「全Priorityをオンにした状態」（replay `--regime --regime-safe`＝regime切り替えの全部入り）で測った数字**。2026-06-04 にV9全部入りを再実行→既存地面と **sha256 一致＋score.py $172.68** で確定。**「P23単独の数字」ではなく V9 全設計の実力**（全Priority動かしてもこれ・利益は下落集中・全月$1,900は **0/9**・上げ/レンジPriorityは寄与ほぼなし）。詳細 auto-memory [[manual_v9_p23_only_reason]]。
 - **採用/破棄**: 採用（ベースライン確定＝超える対象）
 - **再現**: `python3 scripts/priority_rebuild/score.py results/replay/replay_BTCUSDT-5m-2025-04-01_03-31_365d.csv --start 2025-04-01 --end 2025-12-31`
 
@@ -58,3 +59,13 @@
 - **判定**: **採用**（数字が上がった: −$897→−$430。TP/SL 1:1 を残す）。手動 +$172 には未達。
 - **次の一手（E4）**: 方向問題。SHORT を生かす／regime で下落時に SHORT を選ばせる。
 - **再現**: `python3 scripts/priority_rebuild/strat_v1.py`（SIDE_PARAMS tp/sl=0.010）→ score.py（上に同じ）
+
+## E4: V9ベース ML メタフィルタ（勝率で採用/見送り）+ MTF（2026-06-05）— 破棄
+- **方針転換**: v1（ゼロからML）を破棄 → **V9を踏襲（候補＝V9 / Exit＝V9）しハードコード部分だけML化**（[[policy_v9_base_ml_unlock]]・GO 2026-06-04）。
+- **前提訂正（重要）**: 地面 $172/$354 は「P23単独」でなく**V9全部入り（regime切替・全Priority）の数字**と確定（sha256一致＋score.py $172.68）。5年暖機データで採点期間は **$149.50/月**（365d版$172.68との差は2025-04のregime暖機差・他月一致）。比較は同源5年の $149.50。詳細 [[manual_v9_p23_only_reason]] / [[v9_priority_styles]]。
+- **変更(A)**: V9全部入りの各候補に LightGBM で「勝つか(net>0)」を予測し prob≥θ で採用。特徴量＝5m指標(atr/bb_slopeはpct化=H6)+MTF(15m/30m/1h/4h・leak-safe)+regime+side+priority。`scripts/priority_rebuild/strat_v9_ml.py`新規（V9本体不変）。学習<2025-04/採点2025-04〜12/封印除外・embargo・leak assert。
+- **結果(採点2025-04〜12)**: AUC **0.673**（選別力あり・MTFも top15 で効く）。だが net は θ↑で**悪化**：取る全部 **$149.50** / θ0.65 **$83.5** / θ0.70 $12.3。地面を超えず。
+- **原因究明（data確定）**: corr(ml_prob, net_usd)=**−0.027**（無相関）。低prob群(勝率0.43)が net+$620、avg_net は prob下位50%$3.61 vs 上位50%$0.54（低probが7倍）。**勝率最大化は大勝ちを切る＝edge逆行**。根本＝①ラベルが勝率(net金額でない) ②**スタイル違いPriorityを1モデルに混ぜた**（P21スキャル小勝ち＋P23ポジション大勝ち）。
+- **判定**: **破棄**（数字が上がらない・θ↑で下がる）。安価に「勝率メタ・スタイル混在は間違い」を確定＝ラチェット機能。
+- **改善（次の一手・合意方向）**: **Priority（スタイル）別にML化・Entry/Exitをセットでnet最適化・予測対象は勝率でなくnet金額**（出口を同サイズに揃えれば勝率≈net）。MTF入力。詳細 `.claude/ratchet/session_log_20260605.md`。
+- **再現**: replay全5年(`--regime --regime-safe`)→`strat_v9_ml.py`→`score.py results/priority_rebuild/ratchet/trades_v9_score_unfiltered.csv --start 2025-04-01 --end 2025-12-31`（θ掃引は ml_prob 列）。

@@ -1,3 +1,10 @@
+> ⚠️ **【2026-06-05 破棄・このv1設計は過去のもの・履歴/参照のみ】**
+> - v1（単段 Triple Barrier・全bar無差別）は **E2 −$897(破棄) / E3 −$430(SHORT死亡)** で破棄。過去 Phase1 v6 全滅(8軸欠落)の再演（L-246）。
+> - その後 **V9踏襲ML** に方針転換（[[policy_v9_base_ml_unlock]]・まこさんGO 2026-06-04）。E4（V9候補に勝率メタ+MTF）も **破棄**（勝率とnet無相関 corr−0.027・スタイル混在・ledger E4）。
+> - **現方針 ＝ V9踏襲・Priority(スタイル)別ML・Entry/Exitをセットで net最適化・予測対象は勝率でなく net金額**（出口を同サイズに揃えれば勝率≈net）。
+> - 最新の経緯・設計・学びは **`.claude/ratchet/session_log_20260605.md`** ＋ `ledger.md` E2-E4 ＋ lessons L-246/L-247 ＋ auto-memory [[v9_priority_styles]] / [[manual_v9_p23_only_reason]] を参照。
+> - 以下の v1 設計記述は**履歴（参照のみ・上書きせず保存）**。**現方針の設計書 ＝ `.claude/ratchet/strat_v9ml_design.md`**（V9踏襲ML・Priority別・Entry/Exitセット・net目的）。
+
 # strat_v1 詳細設計（A・ratchet E2「最初の本物の戦略」）
 
 作成: 2026-06-04

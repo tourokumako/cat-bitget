@@ -283,7 +283,19 @@ regime / Entry の方向エッジ / meta-labeling ——どれも空っぽ。CC 
 
 ## 2. 現在地 + 次セッション着手（新セッションは最初にここを読む）
 
-**【2026-06-04 最新・新セッションはここを最初に読む】**
+**【2026-06-05 最新・新セッションはここを最初に読む】**
+
+- **まず読む**: `.claude/ratchet/session_log_20260605.md`（今日の全経緯・V9構造/MLラチェット方法/E4失敗/学び）＋ `v9_priority_styles.md`(auto-memory) ＋ lessons L-247。
+- **大前提訂正**: 地面 $172/$354 ＝ **V9全部入り（regime切替・全Priority）の数字**（P23単独でない・sha256一致＋score.py $172.68 で確定）。5年暖機版は採点 **$149.50**。ライブBotはP23単独（手動で1つずつ調整しP23まで）。詳細 [[manual_v9_p23_only_reason]]。
+- **V9構造（CCが読めなかった核心）**: **Priorityごとにスタイルを変えて設計**（MAX_ADDS=1=スキャル小勝ち / 5=平均建値ポジション大勝ち）。詳細 [[v9_priority_styles]]。
+- **E4（`strat_v9_ml.py`・破棄）**: V9候補に勝率二値メタ＋MTF → AUC 0.673 だが net 超えず。原因＝corr(prob,net)=−0.027（勝率とnet無相関）＋**スタイル違いPriorityを1モデルに混ぜた**。
+- **現方針の設計書（正本）** ＝ **`.claude/ratchet/strat_v9ml_design.md`**（V9踏襲ML・§1方針確定/§5未確定/§6最初の一手）。旧v1設計は `strat_v1_design.md`（破棄バナー付き・履歴）。
+- **次の一手（合意・未着手）**: **Priority（スタイル）別に Entry閾値+採用+Exitパラメータをセットで net最適化**（予測対象は勝率でなく**net金額**・MTF入力・出口を同サイズに揃えれば勝率≈net）。§4.6照合で設計(A)報告→実装。RLは小データ過学習リスクで保留（業界裏取り済）。
+- **地面**: 採点 $172(365d)/$149.50(5年暖機) ／ coinflip −$268 ／ v1 E3 −$430。
+
+---
+
+**【2026-06-04・新セッションはここを最初に読む】**
 
 - **まず読む**: `.claude/ratchet/session_log_20260604.md`（今日の全経緯・CC の失敗・現在地・歯止め4点）＋ lessons L-246。
 - **今日やったこと（ratchet E2/E3）**: v1 戦略 `scripts/priority_rebuild/strat_v1.py` 実装 → 採点期間2025-04〜12 で **E2（LONG TP0.6/SL2・SHORT TP0.8/SL2）月−$897（破棄）→ E3（TP/SL 対称1.0%）月−$430（採用だが SHORT 完全死亡・全LONG）**。ledger E2/E3 記録。
