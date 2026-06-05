@@ -70,6 +70,14 @@ net(審判) / 月平均 / NET日次 / 勝率 / 最大DD / 最大連敗 / 日次�
 | **結果一覧（書類・人が確認）** | `results/priority_rebuild/ratchet/report_<名前>.txt` | report.py が実行ごとに保存する結果全文（A–I）。まこさんが開いて確認するのはこれ |
 | 実装（候補生成/学習） | `scripts/priority_rebuild/gen_p23_candidates.py` / `train_p23_entry.py` | V9不変・自己検査つき |
 
+### §3.1 保管運用ルール（2026-06-05 まこさん確定・ratchet直下を散らかさない）
+
+- **ratchet 直下 = 現役のみ**（現役入力 ＋ 最新実験の出力だけ）。過去実験の出力は `results/priority_rebuild/ratchet/archive/` へ退避する。
+- **生CSV（`trades_*`・売買記録）= 上書き / 最新のみ直下**。重い・再現は ledger のコマンドで再生成できる中間生成物。各実験後、前実験の生CSVは archive へ move。
+- **記録（`report_*.txt` / `*_learned_params.json`）= E番号付きで残す**（履歴を消さない）。例: `report_trades_E08_*.txt` / `p23_learned_params_E08.json`。report.py は入力CSV名から自動命名するので、**戦略スクリプトの出力CSV名に E番号(E08等)を入れれば report も自動でE番号付き**になる（ledger の実験番号と1対1で対応＝後から探せる）。
+- **現役入力（消さない・直下常駐）**: `trades_p23_full_test.csv`（地面＝V9手書きP23 $1943・比較の相手）/ `p23_candidates_*.csv`（学習素材）。
+- **手順**: 新実験を回す前に、前実験の `trades_*`・記録を `archive/` へ move → 新実験を直下に出力 → 採点 → 分析。
+
 ## §4 毎セッション実行チェックリスト（この順で回す）
 
 ```

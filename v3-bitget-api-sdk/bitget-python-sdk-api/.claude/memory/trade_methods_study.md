@@ -62,3 +62,22 @@
 ## 5. 細部が必要になったら（都度深掘りの作法）
 
 個別手法を実装する段で、**その手法だけ** WebSearch で深掘りする：計算式の厳密版・パラメータの選び方・信頼度統計・cat-bitget 5m での実例。本ノートは静的辞書ではなく、「次に何をどこまで調べるか」を決める地図として使う。
+
+---
+
+## 6. Entry と Exit は連動する（独立に最適化しない）★2026-06-05 核心
+
+出典: まこさん検索（Binance Academy / FOREX.com 要旨）＋ WebSearch（[Triple Barrier de Prado](https://deepwiki.com/quantopian/mlfinlab/6.3-triple-barrier-method) / [MTF pullback](https://tradeciety.com/how-to-perform-a-multiple-time-frame-analysis) / [joint entry-exit](https://www.quantifiedstrategies.com/entry-and-exit-rules-trading-plan/)）
+
+- **Entry と Exit は強い相関。独立に最適化しない**。勝率とリスクリワード(RR)はトレードオフ：**期待値 = 勝率 × 平均利益 − 敗率 × 平均損失**。Entry 精度が上がると損切りを狭くでき RR↑／Entry 精度が低いと損切り広く→TP 遠く→勝率低下。
+- **順張り（P23＝戻り売り）**: Exit は「トレンド終了まで引っ張る」（伸びを待つ）。Entry が遅れる（ダマシ回避）と利幅が狭まり RR が変わる。
+- **逆張り（レンジ）**: Exit は反対端で即決済・損切りタイト（コツコツドカン回避）。
+- **★ ラベル（"伸びた／勝ち" の定義）＝ Exit が決める**（Triple Barrier・de Prado）: TP・SL・時間 の3バリアのどれに先に当たるかでラベル化。**Exit 設定（TP/SL/時間）を変えるとラベルが変わる → 入口判別の学習結果も変わる**。＝入口判別は Exit を決めて初めて学習できる＝**Entry/Exit はセット**（これが「セットで調整」の数学的な意味）。
+- **入口判別（戻り売りが "伸びる" か）に効く材料**: ① **MTF コンフルエンス**（上位足 15m/30m/1h/4h の下降の揃い・揃うと質↑/件数↓＝最有力・V9 は 5m 単独で欠落＝伸びしろ） ② トレンド強度（ADX・bb傾き） ③ 戻りの深さ・位置（stoch・RSI・バンド内位置） ④ ボラ（ATR%） ⑤ モメンタム（ret_5・rsi_slope）。
+- **検証順序**: **Entry/Exit をセットで調整して土台を固める → その後 add（増し玉）を検証**。add は土台の上の増し玉なので、土台が動くと評価できない（まこさん 2026-06-05）。
+
+### 6.1 ML化のアプローチ 2路線（まこさん 2026-06-05 共有・読込）
+
+- **B 教師あり（＝現方針・ratchet で採用中）**: Entry 条件から「次の逆シグナル／損切りまでの**最大利益幅**（例 ATR の N 倍）」をラベルに XGBoost/LightGBM（時系列は LSTM 等）。＝我々の **MFE/payoff 予測・Triple Barrier と同一路線**。データ量に合い 1 手ずつ ratchet で回せる。
+- **A 強化学習（RL）**: 市場=環境／AI=エージェントで、状態(価格・SMA・RSI・ボラ)→行動(Buy/Sell/Hold)→**報酬(実損益 or Sharpe・コスト/DD はペナルティ)** を直接最適化（PPO・Stable-Baselines3・OpenAI Gym）。**Entry/Exit/add を統合最適化する本命**だが、**小データ過学習リスク大**（純 net 報酬は少数大勝ちに過剰適合 → Sharpe 等リスク調整報酬で緩和）→ **将来候補**（土台が固まり統合最適化したくなったら）。
+- **共通の必須設計**: ① MTF 特徴量（1h/日足のマクロトレンドでダマシ減）② **取引コスト（手数料/slippage/funding）を報酬・シミュに必ず組込み**（高頻度の手数料負け防止）③ regime（ボラ）切分けを状態変数に入れ過学習防止。出典: まこさん検索（OpenAI Gym/Stable-Baselines3/PPO）＋ [RL trading](https://blog.quantinsti.com/reinforcement-learning-trading/) / [Sharpe報酬 arXiv2506.04358](https://arxiv.org/pdf/2506.04358)。
