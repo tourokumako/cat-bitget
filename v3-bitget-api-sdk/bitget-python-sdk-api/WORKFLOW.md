@@ -358,7 +358,33 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-06-05 改訂60・**E5 filter破棄→E6 V9踏襲ML本実装(自己検査✅)→AI負け・精密診断で「単発赤字/利益はadd/bb傾き逆較正＝大勝ち切り」特定・分析基盤1本化(report.py+analysis_playbook)・次=E7 下げの強さを金額で効かせる**）
+## 🔴 現在のフェーズ（2026-06-05 改訂61・**E7帯サイジング破棄→新理解で原因やり直し→E8a ラベル「勝つか」→「伸びるか」でAUC0.73・θ0.5でscore.py$2931＝V9手書き$1943の1.5倍＝V9超え射程・P23設計意図/Entry-Exit連動/ML2路線を記録・次=E8a-2 θ選定穏当化でV9超え正式取得**）
+
+> **【現在の正本ブロック・改訂61・2026-06-05】**
+> **⚠️ 新セッションは最初に `.claude/ratchet/ledger.md`（E7-E8a）→ `.claude/ratchet/strat_v9ml_design.md §8-10`（P23設計意図/E8設計）→ `.claude/ratchet/analysis_playbook.md`（分析手順）→ `.claude/memory/trade_methods_study.md §6`（Entry/Exit連動）→ lessons L-249 を読む。本ブロックは要約。**
+>
+> ### 本セッション（改訂60→61）完了事項（commit 92b58c1）
+> 1. **E7（帯サイジング・破棄）**: V9手書きP23に bb傾き×ATR% 帯でサイズを振った→ score.py $852（V9$1943から−$1091）。原因＝Entry/Exitを切り離し量だけ振った＝**連動無視・検証順序飛ばし**・儲け頭$1918を薄くした（測定無効）。`size_by_band_p23.py`。
+> 2. **新理解で原因/改善やり直し**（まこさん指摘「理解した上で分析・原因・改善に変化があるはず」）: **Entry/Exit連動＝ラベルはExitが決める(Triple Barrier)・検証順序=Entry/Exitセット→add**。P23再分析: 伸びた225件+$5798 / 伸びない255件−$3780（外す価値）/ Exit取り逃し$9126。
+> 3. **E8a（`train_p23_entry_E8.py`・方向採用）**: ラベルを○×(勝つか net>0)→「**伸びるか(mfe価格%≥0.8)**」に変更（変更はラベルのみ・特徴量5m+MTFはE6踏襲）。**AUC 0.594→0.733 / θ*0.66で$1877(V9に僅差負け)だが θ0.5でscore.py $2931(V9の1.5倍)・θ0.45-0.6広域でV9超え**。MTF top12に6個・逆較正解消。
+> 4. **記録**: P23設計意図(strat_v9ml_design §8・戻り売り/具体数値は手段で柔軟) / Entry-Exit連動(trade_methods §6・期待値=勝率×平均利益−敗率×平均損失) / ML2路線 B教師あり・A RL(§9) / E8設計(§10) / 保管運用ルール(playbook §3.1・生CSV上書き/記録E番号/過去はarchive)。lessons L-249。
+>
+> ### 次セッション着手（ratchet・E8a-2→E8b）
+> | 優先 | 使う/直すファイル | 入力データ | 存在 | 最初の一手 | 完了条件 |
+> |---|---|---|---|---|---|
+> | 1 | `scripts/priority_rebuild/train_p23_entry_E8.py`(θ選定改修) | `results/priority_rebuild/ratchet/p23_candidates_typeonly.csv` | ✅ | **θ*選定を学習側で穏当化**（現=学習net合計最大→0.66が保守的すぎ。avg×件数 or 学習net曲線プラトー。**テスト覗き見=類型C禁止**） | score.py で V9$1943 超えを正式取得（θ0.5付近で$2900射程） |
+> | 2 | 同(Exit改修・新規可) | 同 | ✅ | **E8b: Exit数値(TP/time)をV9近傍で振りセット最適化** | 取り逃し$9126回収・net さらに増 |
+> - 地面: V9手書きP23(採点) **$1943** / 全Priority $172。判定=`score.py`。**1ターン1変更・封印2026Q1不参照・V9本体不変(importのみ)**。
+>
+> ### 新セッションが読む文書（順）
+> 1. `.claude/ratchet/ledger.md`(E7-E8a) 2. `.claude/ratchet/strat_v9ml_design.md §8-10` 3. `.claude/ratchet/analysis_playbook.md` 4. `.claude/memory/trade_methods_study.md §6` 5. `lessons_active.md` L-249/L-248 6. Layer1(cat_requirements §8/cc_role/false_positive/CLAUDE/本WORKFLOW)
+>
+> ### 最重要警告
+> ① CCはコードの数字を「意図」と取り違える(P23閾値誤解・L-247/249)→**数値を意図と断定せずまこさん確認**。② 分析やり直しは文言修正でなく**データで実際に**。③ Entry/Exitはセット(ラベルはExitが決める)・順序=セット→add。④ **tool call直前に余計な文字(「court」等)を付けない**([[feedback-no-extra-text-before-toolcall]]・本セッション6回以上破壊)。⑤ θ選定で**テスト覗き見(類型C)禁止**。
+>
+> ---
+
+## 🧊 改訂60 ブロック（履歴・参照用）（2026-06-05・E5 filter破棄→E6 V9踏襲ML→AI負け・精密診断・分析基盤1本化）
 
 > **【現在の正本ブロック・改訂60・2026-06-05】**
 > **⚠️ 新セッションは最初に `.claude/ratchet/session_log_20260605.md`（§7が本セッション全経緯）→ `.claude/ratchet/ledger.md`（E0-E6）→ `.claude/ratchet/analysis_playbook.md`（分析手順）→ lessons L-248/L-247 を読む。本ブロックは要約。**
