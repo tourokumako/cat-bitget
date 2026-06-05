@@ -358,7 +358,34 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 ---
 
-## 🔴 現在のフェーズ（2026-06-04 改訂59・**v1実装→E2破棄/E3採用も SHORT死亡・診断で「全bar無差別＝過去Phase1 v6の8軸欠落 再演」判明・CCのループ/欺き(L-246)・トレード手法ノート整備・次=設計図に戻らず ratchetで小変更1つずつ**）
+## 🔴 現在のフェーズ（2026-06-05 改訂60・**E5 filter破棄→E6 V9踏襲ML本実装(自己検査✅)→AI負け・精密診断で「単発赤字/利益はadd/bb傾き逆較正＝大勝ち切り」特定・分析基盤1本化(report.py+analysis_playbook)・次=E7 下げの強さを金額で効かせる**）
+
+> **【現在の正本ブロック・改訂60・2026-06-05】**
+> **⚠️ 新セッションは最初に `.claude/ratchet/session_log_20260605.md`（§7が本セッション全経緯）→ `.claude/ratchet/ledger.md`（E0-E6）→ `.claude/ratchet/analysis_playbook.md`（分析手順）→ lessons L-248/L-247 を読む。本ブロックは要約。**
+>
+> ### 本セッション（改訂59→60）完了事項
+> 1. **E5（`strat_v9ml_p23.py`・破棄）**: P23のみ net金額回帰filter。Spearman+0.115だが filterは削るだけで地面未達・破棄。
+> 2. **E6（`gen_p23_candidates.py` + `train_p23_entry.py`）**: 型だけで候補50,328件をV9のadd/exitで独立前向きsim（**自己検査=本物 `replay_csv.run()` と1232件$2558.80で1円一致✅**・V9不変importのみ）→ ○×分類。**V9手書きP23 $1943 vs AI $1346=負け**。ledger E6。
+> 3. **精密診断（report.py）**: ①**単発(add無)赤字−$497・利益は全部add育ち(add2-5で+$1991)** ②**bb傾き逆較正**=急な下げ(bb≤−30 +$1982)にAI最低prob0.448=大勝ち切り。○×は勝率最大化でfat-tail切る(E4の罠再現)。学習値=`p23_ml_learned_params.json`(EDGE_ADX[25,50]等)。
+> 4. **分析基盤1本化**（まこさん指摘=結果散らばり）: `report.py`(A-I・Sharpe等・日本語・`report_*.txt`自動保存) + `analysis_playbook.md`(分析の唯一正本・PDCA+業界標準バッテリー+保管場所カタログ・WebSearch裏取り) + `cat_requirements §8`組込み(毎セッション実行)。
+>
+> ### 次セッション着手（ratchet・E7）
+> | 優先 | 使う/直すファイル | 入力データ | 存在 | 最初の一手 | 完了条件 |
+> |---|---|---|---|---|---|
+> | 1 | `train_p23_entry.py`(改修・新規別ファイル可) | `results/priority_rebuild/ratchet/p23_candidates_typeonly.csv` | ✅ | 目的を○×でなく**net金額/payoff**に（fat-tail対策・bb≤−30の大勝ちを切らない）or 下げregime土台 | `score.py` で V9手書き$1943 超え or 原因を3分類で記録 |
+> - 自信度サイジングは**○×-confidence順だと逆効果**（bb逆較正）。net金額/payoffで。
+> - 地面: 採点 全Priority$172 / V9手書きP23(test独立)$1943。判定=`score.py` + `report.py`(原因3分類)。
+> - 1周≤目安・**1ターン1変更**・封印2026Q1触らない・**V9本体不変(importのみ)**。
+>
+> ### 新セッションが読む文書（順）
+> 1. `.claude/ratchet/session_log_20260605.md`(§7=本セッション全経緯) 2. `.claude/ratchet/ledger.md`(E0-E6) 3. `.claude/ratchet/analysis_playbook.md`(分析手順) 4. `lessons_active.md` L-248/L-247 5. `.claude/ratchet/strat_v9ml_design.md`(設計) 6. Layer1(cat_requirements §8/cc_role/false_positive/CLAUDE/本WORKFLOW)
+>
+> ### 最重要警告
+> CCはトレード設計意図をコードから読めず外し続ける(L-247/L-248・10往復訂正)。**P23のML化は「最初に入るか抽出ML化・add/出口はV9のまま・目的はnet金額」が確定形**。間引きもゼロ設計も違う。説明は平易に。
+>
+> ---
+
+## 🧊 改訂59 ブロック（履歴・参照用）（2026-06-04 改訂59・**v1実装→E2破棄/E3採用も SHORT死亡・診断で「全bar無差別＝過去Phase1 v6の8軸欠落 再演」判明・CCのループ/欺き(L-246)・トレード手法ノート整備・次=設計図に戻らず ratchetで小変更1つずつ**）
 
 > **【現在の正本ブロック・改訂59・2026-06-04】**
 > **⚠️ 新セッションは最初に `.claude/ratchet/session_log_20260604.md` → `ml_pipeline_execlog.md §2 現在地`（2026-06-04ブロック）→ lessons L-246 を読む。詳細はそちら。本ブロックは要約。**

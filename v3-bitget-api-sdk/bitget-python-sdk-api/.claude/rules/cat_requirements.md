@@ -154,7 +154,7 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 ### 8.1 セッション開始時に読む順
 1. **本要件定義書**（cat_requirements.md）＝ 全体像・制約・PDCA
 2. **ml_pipeline_execlog.md §2 現在地** ＝ 今どこ・次に何をするか
-3. **`.claude/ratchet/ledger.md`** ＝ PDCA 実験ログ（直近の数字）
+3. **`.claude/ratchet/ledger.md`** ＝ PDCA 実験ログ（直近の数字）／ **`.claude/ratchet/analysis_playbook.md`** ＝ 分析・原因究明の唯一の正本（毎周 Check 工程はこの手順で実行）
 4. Layer1 必読: CLAUDE.md / WORKFLOW.md / cc_role.md / false_positive_incident_policy.md / **exchange_spec.md（Bitget 仕様）**
 
 ### 8.2 ファイル・データの地図
@@ -182,6 +182,7 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 1. **設計(A)報告**: 変更内容を §4.6 ハード制約に1項目ずつ照合して詳細報告 → まこさん確認
 2. **実装**: §4.6 の `⬜要追加` を含む B（ハード制約）を **assert で埋め込む**（違反→停止＝偽の数字を出さない）
 3. **採点**: `score.py`（固定審判）で採点期間(2025-04〜12) net を測る
-4. **記録**: `ledger.md` に 結果 + 原因究明 + 改善
+3.5. **分析**: `report.py` で [`analysis_playbook.md`](../ratchet/analysis_playbook.md) **§2 分析バッテリー**（成績指標・スライス・較正）を実行 → 原因を §2.4 **ドローダウン3分類（戦略/執行/regime）** ＋ §2.6 チェックリストで特定（誤診=逆効果・業界標準）
+4. **記録**: `ledger.md` に 結果 + 原因究明（**3分類を明記**）+ 改善
 5. **判定**: 数字が上がれば残す・上がらなければ破棄（A のツマミは数字が弾く）。**封印期間(2026Q1)は触らない**（過剰適合検出用）
 6. 繰り返し（1周 ≤ 約5分）

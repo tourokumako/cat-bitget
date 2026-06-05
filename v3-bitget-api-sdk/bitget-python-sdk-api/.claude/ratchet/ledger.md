@@ -69,3 +69,24 @@
 - **判定**: **破棄**（数字が上がらない・θ↑で下がる）。安価に「勝率メタ・スタイル混在は間違い」を確定＝ラチェット機能。
 - **改善（次の一手・合意方向）**: **Priority（スタイル）別にML化・Entry/Exitをセットでnet最適化・予測対象は勝率でなくnet金額**（出口を同サイズに揃えれば勝率≈net）。MTF入力。詳細 `.claude/ratchet/session_log_20260605.md`。
 - **再現**: replay全5年(`--regime --regime-safe`)→`strat_v9_ml.py`→`score.py results/priority_rebuild/ratchet/trades_v9_score_unfiltered.csv --start 2025-04-01 --end 2025-12-31`（θ掃引は ml_prob 列）。
+
+## E5: V9ベース ML（Priority別・net金額目的）P23 SHORT（2026-06-05）— 方向採用 / filter破棄
+- **変更(A)**: E4 の根本2点を直す。①ラベル＝勝率二値(net>0) → **net_usd の金額**（LightGBM 回帰・**Huber 損失**で fat-tail 過学習抑制・WebSearch裏取り de Prado）②全Priority混在 → **P23 SHORT のみ**で学習（混ぜない）。特徴量＝E4同様(5m指標pct化＋MTF 15m/30m/1h/4h leak-safe＋regime)・Exit＝V9のまま(net_usd)・期間 学習<2025-04(embargo)/採点2025-04〜12/封印2026Q1不参照。新規 `strat_v9ml_p23.py`（E4 strat_v9_ml.py は上書きせず・凍結）。
+- **事前シム事実**: P23＝学習219件/採点97件・**勝率0.433なのに採点net$916**（avg$9.45・上位5件262/198/190/154/151）＝fat-tail が最も鮮明な手法。
+- **結果(採点2025-04〜12・score.py 正式)**: **Spearman(予測net,実net)=+0.115**（E4の corr −0.027 から**反転**＝net順位の選別力あり）。P23無filter $884.4(97件・avg$9.1) / net目的filter(θ=0) $577.5(21件・**avg$27.5＝3倍**)。
+- **判定**: **方向＝採用**（net金額目的＋Priority別でE4の根本欠陥が反転・1件あたりnet3倍）。**filter適用＝破棄**（総net $884→$577と減る＝最大の稼ぎ手から削るので当然・事前報告通り）。
+- **原因究明/学び**: E4失敗＝①勝率ラベル ②スタイル混在 の両方を閉じたら順位相関が負→正に。**de Prado通り「方向(side)とサイジングの分離」が正しく、netの使い道はfilter(削る)でなくsizing(厚み配分)**。P23単独 $884/9mo≈$98/mo は地面$172未満（部分集合）。score.py月平均$221はP23稼働4ヶ月のみの平均（9ヶ月ベースで誤読しない）。
+- **正直な注記**: 学習N=219・best_iter=749＝過学習気味・OOS Spearman+0.115は弱い。E6で sample weight / 時系列CV / robust 化。
+- **次の一手(E6)**: **予測netでサイジング**（0.12 BTC内・予測大の手を厚く・de Prado ECDF）。正の順位相関を増幅して無filter $884 超えを狙う。効けば他Priority展開。
+- **再現**: `python3 scripts/priority_rebuild/strat_v9ml_p23.py` → `score.py results/priority_rebuild/ratchet/trades_v9ml_p23_{unfiltered,filtered}.csv --start 2025-04-01 --end 2025-12-31`
+
+## E6: P23「最初に入るか」ML化（型で候補拡大→○×分類→V9手書きと勝負）（2026-06-05）— AI負け / 次=サイジング
+- **方針（まこさん合意）**: P23の型(stochデッドクロス+陰線)だけで候補を広げ（数字閾値を外す）、各候補を**V9のadd/exit込みで独立前向きシミュレーション**してnetラベル化。**最初に入るかだけML化**・add/出口はV9のまま（大勝ち構造を壊さない）。当てさせるのは金額でなく**○×(net>0)分類**（E5金額回帰が弱かった+WebSearch裏取り 分類>回帰）。
+- **生成物**: `gen_p23_candidates.py`（新規・V9本体不変・import のみ）。**自己検査=自作連続シミュ 1232件$2558.80 が本物 replay_csv.run() と1円も違わず一致✅**（移植正しさを機械的に担保）。候補: full(V9閾値)2045件 +$5747 / **typeonly(型だけ)50,328件 −$32,819 勝率0.339**（広げると大損＝V9が絞る理由・ML余地）。
+- **変更(A)**: `train_p23_entry.py`（新規）。typeonly で LightGBM 二値(net>0)学習・特徴量=入口指標(atr/bb_slope pct化=H6)+MTF・結果列除外(H2)・過学習対策(num_leaves15/min_child100/L1L2/scale_pos_weight)・θ*は学習側でnet最大化(test覗き見回避)。
+- **結果(採点2025-04〜12・score.py)**: テストAUC **0.594**(弱いが選別力あり)。**V9手書きfull $1942.6(481件)** vs **AI選択θ*0.56 $1346.4(1223件)** → **AI負け(−$596)**。θ掃引: θ0.6で592件avg$2.80 / **θ0.7で30件avg$11.57(V9のavg$4を上回る)**。
+- **原因究明（ML設計の問題・データのせいにしない）**: ①**θ*を「学習netの合計最大」で選んだ→数を取りすぎ**(1223件)。V9は少数481件を高品質に絞るのが強み。②filterのみ(全件同サイズ0.024)では、AIの確率順でV9手書き481件の総netを超える部分集合を作れない(typeonly正部分も$1659<$1942)。③**だが高確率域(θ0.7)はavg$11.57でV9($4)を上回る=AIは自信のある場面は実際V9より上手**。→ filterでなく**自信度でサイズを振る(de Prado)**が筋。
+- **判定**: **破棄（filterのみは負け）**。だが安価に「○×filterのみではV9手書きを超えられない/高確率域は高品質=サイジング余地」を確定＝ラチェット機能。AUCは E5金額回帰(Spearman+0.11)より明確に改善。
+- **精密診断（report.py・後追い確定）**: ①**単発(add無)は−$497・利益は全部add育ち**（add2-5で+$1991） ②**bb傾き逆較正**＝一番儲かる急な下げ(bb≤−30 +$1982)にAI最低prob0.448＝大勝ちを捨てる正体。○×は勝率最大化でfat-tail(大勝ち)を切る（E4の罠がbb傾きで再現）。学習値=`p23_ml_learned_params.json`（EDGE_ADX[25,50]＝V9の30は手前を取りこぼし）。
+- **改善（次の一手E7・訂正）**: 自信度サイジングは**bb逆較正のため逆効果**（大勝ちを小さく張る）→ **下げの強さ(bb≤−30)を勝率でなく net金額(payoff)で効かせる** / 下げregimeを土台に固定しその中でML。比較は連続運用+cap(deployable)に揃える。
+- **再現**: `python3 scripts/priority_rebuild/gen_p23_candidates.py`（要GP・約1h・自己検査付）→ `python3 scripts/priority_rebuild/train_p23_entry.py`（数分）。

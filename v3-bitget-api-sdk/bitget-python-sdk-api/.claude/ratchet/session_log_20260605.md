@@ -90,3 +90,52 @@ V9 Entry = 9セットアップ（5m指標のAND・`cat_v9_decider.py`）。Exit 
 | 記録 | 本ログ / ledger E4 / lessons L-247 / `v9_priority_styles.md`(auto-memory) | — |
 
 V9本体（cat_v9_decider.py / cat_params_v9.json / run_once_v9.py / replay_csv.py）は一切変更していない。
+
+---
+
+## 7. このセッション続き（2026-06-05 PM）— E5 filter(負け) → E6 V9踏襲ML本実装 → 分析基盤1本化
+
+> 記録目的: 経緯を抜け漏れなく残し、次セッションが誤解なく引き継ぐ（まこさん指示）。CCはトレード意図をコードから読めないので、設計確定経緯・実装・結果・診断・次の手を全部固定する。
+
+### 7.1 設計確定（まこさんと多数往復で確定。CCは何度も外したので確定形を固定）
+- **対象**: P23 SHORT（**ポジション型・買い増し(add)で大勝ち**。データ確定: add平均2.1/最大5・勝率46%だが大勝ちで稼ぐ・**スキャルではない**）。
+- **ML化する所**: 「**最初に入るか**」だけ。**add（買い増し）と出口はV9のまま**（大勝ち構造を壊さない）。
+- **ML化する閾値（抽出）**: P23コードの人が手で置いた数字＝gap0.3 / ADX30-50 / ATR≥150(→%化) / bb傾き<-10 / high_adx複合（出口TP1.2%等は次段）。**型(stochデッドクロス+陰線)は残す**。
+- **学習方法**: 型だけで候補を広げ（閾値AND外す）→生指標を決定木に渡しnetで判定（=閾値ANDを木のsplitに置換・cat_requirements §6）。**金額回帰でなく○×(net>0)分類**（E5金額回帰が弱い+WebSearch裏取り 分類>回帰・fat-tail）。
+- **⚠️ CCが繰り返し外した点（次セッション再演防止）**: ①「V9を間引く(後段フィルタ=E4/E5)」②「regimeゼロ設計で作り直す」——**両方違う**。正解は「**V9の固定閾値を抽出してML化・型/add/出口はV9のまま**」。まこさん10往復以上訂正。
+
+### 7.2 E5（`strat_v9ml_p23.py`・破棄）
+P23のみ・net金額**回帰**(Huber)でfilter。Spearman(予測,実net)=+0.115（E4の−0.027から反転=方向は正）だがfilterは削るだけで総net減・地面未達 → **破棄**。学び: filterのみ・金額回帰は弱い。
+
+### 7.3 E6（`gen_p23_candidates.py` + `train_p23_entry.py`）= 本実装
+- **gen（候補engine・V9不変importのみ）**: P23の型だけで候補50,328件（閾値外す＝V9が捨てた場面も）。各候補を**V9のadd/exitで独立前向きsim**（run()のloop移植・`_check_exits_replay`等import）。
+  - **自己検査✅**: 連続モードが本物 `replay_csv.run()` と **1232件 net$2558.80 で1円一致**（移植の正しさを機械的に証明）。
+  - 候補: full(V9閾値)2045件+$5747 / typeonly(型だけ)50,328件 −$32,819 勝率0.339（広げると大損＝V9が絞る理由＝ML余地）。
+- **train（○×分類）**: 特徴量=入口指標(atr/bb_slope pct化)+MTF・結果列除外(leak)・過学習対策・θ*は学習側net最大。
+  - **結果（採点2025-04〜12・score.py）**: AUC0.594 / **V9手書きfull $1943(481件) vs AI θ0.56 $1346(1223件)=AI負け(−$596)**。
+
+### 7.4 精密診断（report.py・**負けの核心を特定**）
+- **① 単発(add無)は赤字**: 0.024サイズ(add1) 1122件 **−$497**。**利益は全部 買い増しが育った取引**（add2-5で+$1991）。＝P23の利益は入口の瞬間でなく「下げが続いて買い増せるか」。
+- **② bb傾き 逆較正（核心）**: 一番儲かる急な下げ **bb≤−30 が+$1982** なのに、AIの平均prob **0.448（最低）**。上げ(0+)に最高prob0.509。**AIが大勝ち(下げ継続)を捨てる正体**。
+- **原因**: ○×(勝つか)は勝率最大化で**fat-tail(大勝ち)を切る**＝E4の罠がbb傾きで再現（急な下げは勝率36%だが1発が大きい→○×は「勝率低い=避ける」）。
+- **AIが学習した値**（`p23_ml_learned_params.json`）: EDGE_ADX[25,50]（V9は30→25-30取りこぼし）/ EDGE_ATR%[0.3,0.7] / EDGE_BB≤−30。θ0.56・AUC0.594。
+
+### 7.5 分析基盤の1本化（まこさん指摘＝結果が散らばる）
+- `report.py`（新規・分析ツール）: A全体(Sharpe/Sortino/PF/Recovery含む)/B優先度/C出口/D サイズ・add/E ベスト悪/F月別(+AI vs V9)/F2-4 月別×出口・サイズ・1日あたり/G指標帯×prob×net/H確率較正/I MFE-MAE。**日本語表記・結果を `report_<名前>.txt` に自動保存**（まこさんが開いて確認する書類）。
+- `analysis_playbook.md`（新規・**分析の唯一の正本**）: PDCA工程＋業界標準バッテリー（ドローダウン3分類/データスライス/較正/MRP/原因チェックリスト・WebSearch裏取り）＋**結果データ保管場所カタログ**＋毎セッションチェックリスト。`cat_requirements §8`組込み（毎セッション実行）。
+
+### 7.6 次の一手（E7・合意方向）
+- **下げの強さ(bb≤−30)を勝率でなく「金額の大きさ(payoff)」で効かせる**。○×confidence順のサイジングは**逆効果**（bb逆較正でAIが大勝ちを低prob化）→ net金額/payoffベース、または下げregimeを土台に固定しその中でML。
+- 地面: 採点 全Priority$172 / P23単独≈$98(9mo) / V9手書きP23(test独立)$1943。判定=score.py + report.py(原因3分類)。
+
+### 7.7 このセッションの生成物
+| 種別 | パス | 状態 |
+|---|---|---|
+| 候補engine | `scripts/priority_rebuild/gen_p23_candidates.py` | 自己検査✅・V9不変 |
+| 学習 | `scripts/priority_rebuild/train_p23_entry.py` | ○×分類+学習値JSON出力 |
+| E5(破棄・土台) | `scripts/priority_rebuild/strat_v9ml_p23.py` | net回帰filter |
+| 分析ツール | `scripts/priority_rebuild/report.py` | A-I・書類自動保存 |
+| 分析正本 | `.claude/ratchet/analysis_playbook.md` | PDCA+バッテリー+カタログ |
+| 記録 | ledger E5/E6 / lessons L-248 / 本ログ §7 | — |
+
+V9本体（cat_v9_decider.py / cat_params_v9.json / run_once_v9.py / replay_csv.py / score.py / eval_engine.py）は一切変更していない（importのみ）。
