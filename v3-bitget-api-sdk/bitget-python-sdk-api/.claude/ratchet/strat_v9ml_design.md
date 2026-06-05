@@ -3,7 +3,7 @@
 作成: 2026-06-05
 位置付け: **現方針の設計書（正本）**。v1（E2/E3破棄）・E4（勝率メタ・破棄）の後に確定した「V9踏襲ML」の設計。ratchet で1手ずつ実装 → `score.py` の net で判定。
 出典: `session_log_20260605.md` / `ledger.md` E2-E4 / [[policy_v9_base_ml_unlock]] / [[v9_priority_styles]] / [[manual_v9_p23_only_reason]] / `cat_requirements.md §4.6` / WebSearch（net最適化・2026-06-05）
-ステータス: **方針=確定 / 具体パラメータ=未確定（§5・実装前にまこさん確認）**
+ステータス: **方針=確定 / 現主軸=§10.3 E8b（Entry × Exit セット閾値調整・グリッド）／ θ足切り路線(E8a/E8a-2)=破棄 ／ 判定に §11 目標逆算(件数×avg)を組込み ／ 具体パラメータ=未確定（実装前にまこさん確認）**
 
 ---
 
@@ -31,7 +31,7 @@
 ## §4 §4.6 ハード制約 H1-H14 照合（E4と共通・再掲）
 | # | 制約 | 扱い |
 |---|---|---|
-| H1 | 合計0.12BTC | 0.024固定・eval_engine cap enforce ✅ |
+| H1 | 合計0.12BTC | E8b=0.024固定で充足。**⬜ E9 可変サイズ(Kelly)＋add では任意 t で sum(active_btc)≤0.12 を eval_engine.assert_position_cap で enforce・addごと再verify（§10.6）。サイズ振り後の net は cap 適用経路でのみ合否判定** |
 | H2 | leak/再現性 | 特徴量はt時点取得可・MTFはbackward merge・ラベル(未来Exit)は教師のみ・train末<採点始 assert＋embargo ⬜実装時 |
 | H3 | net判定 | score.py ✅ |
 | H4 | コスト確定値 | V9 Exit(replay)＋eval_engine定数 ✅ |
@@ -136,28 +136,81 @@
 
 ---
 
-## §10 E8 設計（Entry × Exit セット・データ駆動・2026-06-05）
+## §10 E8b 設計（入口の期待値予測 × Exit 数値グリッド）
 
-### 10.1 根拠データ（V9手書きP23 採点480件・地面$2,018 を再分析）
-- **「伸びる/伸びない」で結果がくっきり割れる**: 伸びた(MFEピーク≥$15) 225件 **+$5,798** / 伸びない 255件 **−$3,780**。→ **伸びない255件を入口で外す価値＝$3,780**。
-- **入口指標の伸び予測力（Spearman 指標vs MFE）**: ret_5 **−0.29**（直近が下がる戻り売りほど伸びる）/ RSI −0.23 / ATR% +0.21 / stoch_k・bb傾き・ADX 0.17〜0.18。**単独は弱いがコンフルエンス向き**。stoch_gap・rsi_slope は≈0。
-- **Exit 取り逃し**: 含み益ピーク合計 **$11,143** vs 実net **$2,018**（差 $9,126）＝伸びた玉を取り切れていない。
+> 出典 KB=[entry_exit_relationship_kb.md](../memory/entry_exit_relationship_kb.md)。本 §10 は設計レビュー（critical5/major8/minor7）反映版。
+> **★E8b スコープ（段階化・まこさんGO 2026-06-05）**: E8b は「**入口の期待値予測（MTF・net回帰）× Exit の数値（TP/TIME/MFE系）グリッド**」を**学習期間で**最適化し採点期間で判定するまで。**サイズ可変(Kelly)・add(逆ピラミッド)・regime切替Exit・トレーリング/分割利確は E9+ に分離**（理由: V9 P23 にトレーリング無し／E7 サイズ単独失敗／regime分類器未実装で採点期間最適化は過適合（類型D）／土台→add の検証順序）。KB の原則は §10.5/§10.6 に**保持**し実装は段階的。
 
-### 10.2 設計（status: 草案・実装前にまこさん確認）
-- **候補**: P23 型（typeonly で広げる or full）。**side=SHORT・add/出口の型はV9のまま**。
-- **★ラベル**: 「**伸びるか**（MFEピーク ≥ 閾値 の二値、または net金額）」。**E6 の『勝つか(net>0)』とは違う**＝伸びた大勝ち玉は全部○になり **fat-tail を切らない**（E6の罠回避）。ラベルは Exit 設定で決まる（Triple Barrier）。
-- **特徴量**: 入口5m指標（ret_5 / RSI / ATR% / stoch / bb傾き / ADX / bb_width・pct化=H6）＋ **MTF（15m/30m/1h/4h・leak-safe backward merge＝V9に無い・伸びしろ）**。
-- **モデル**: LightGBM。伸びる玉を予測 → 伸びない255件を絞る。
-- **Exit**: まず V9 のまま固定で入口判別の効果を測る → 次に Exit 数値（TP/time）を V9 近傍で振ってセット最適化（取り逃し$9,126回収）。
-- **判定**: `score.py` の net（地面 V9手書き $1,943 超え）。
+### 10.1 設計の核（不変の原理）
+**NET = 期待値 × 取引数。期待値 = 勝率×平均勝ち − 負け率×平均負け。Entry も Exit も単独では NET を決められない**（KB §1）。**理論的背骨＝Triple Barrier（KB §9）: Exit 設定を変えると ML のラベルが変わる ＝ Entry と Exit は分離不能・セットで設計**。入口の質（期待値）に応じた出口の方向性（**原理。E8b実装範囲=§10.4／E9+範囲=§10.5/§10.6**）:
 
-### 10.3 段取り（1ターン1変更・検証順序）
-1. **E8a**: Exit=V9固定 ＋ 入口判別ML（伸びる玉を絞る）→ net 測定。
-2. **E8b**: Exit 数値（TP/time）を振ってセット最適化 → net。
-3. （土台確定後）**E9 add方式**（シグナル再発火 vs 価格%ナンピン）。
+| 入口の期待値 | Exit（E8b＝数値で実装） | サイズ（E9+） | add（E9+） |
+|---|---|---|---|
+| **高い** | TP遠く・TimeExit長・MFE失速ゲート緩 | 大 | 可（**regimeゲート通過時のみ**・逆ピラミッド） |
+| **低い** | TP近く・早Exit | 小 / 見送り | 不可 |
 
-### 10.4 §4.6 H1-H14 照合（要点・⬜=実装時 assert）
-- **H2 leak**: 特徴量は t 時点取得可・MTF backward merge・ラベル(未来Exit)は教師のみ・⬜ train末<採点始 assert＋embargo。
-- **H6 価格非依存**: pct化（⬜ select 時 USD 絶対値除外）。
-- **H8 期間分割**: 学習<2025-04 / 採点2025-04〜12 / 封印2026Q1 不参照（⬜ assert）。
-- **H1/H9**: size 0.024固定（cap内）・≥0.0001 ✅。**H12** 異常値STOP（⬜採点後）。**H13** judge固定 ✅。
+### 10.2 根拠データ（V9手書き P23 採点480件・cap非適用の独立評価値）
+- 伸びた(MFEピーク **価格%≥0.8%**) 225件 +$5,798 / 伸びない 255件 −$3,780。
+- 入口指標の伸び予測力（Spearman・⚠️**要再verify**）: ret_5 −0.29 / RSI −0.23 / ATR% +0.21 / stoch_k・bb傾き・ADX 0.17-0.18（単独弱・コンフルエンス向き）。
+- 取り逃し: 含み益ピーク合計 $11,143 vs 実net $2,018（差 $9,126）。⚠️ MFE 回収は gap の **30-60% が現実線**（80%は楽観・KB §4）。MFE capture 率を計測指標化（§10.7）。
+- **地面の定義（固定）**: **$1,942.64 ＝ V9手書きP23 採点期間(2025-04〜12)合計net・独立評価(同時保有cap未適用)**。
+
+### 10.3 ML が学習するもの（＝入口の期待値＝実出口 net）
+- **ラベル**: 各入口候補を**選んだ Exit 設定の実出口（Triple Barrier）で前向き sim した net・単発(add=1)**（KB §9・design §5①）。⚠️ **MFEピークでラベルしない**（Prime Directive・KB §3/§4）。E8.py の二値「伸びるか(mfe_move_pct)」ラベルは継承しない（θ足切り破棄路線）。
+- **前向き sim の所在**: `train_p23_entry_E8b.py` 側（V9 SHORT `_step` 移植）に持ち、Exit グリッドの各セルを引数で渡し net 再計算（役割分担は §10.8）。
+- **特徴量（入口5m生指標・H6 pct化・V9閾値は焼き込まない）**: adx, atr_pct, bb_slope_pct, stoch_k, stoch_d, stoch_gap, rsi, rsi_slope, ret_5, bb_width ＋ MTF（15m/30m/1h/4h・leak-safe backward）。結果列除外（H2 assert）。
+- **モデル**: LightGBM 回帰（予測 net＝期待値）。過学習対策 num_leaves小/min_child/L1L2/学習期間のみ/embargo。
+
+### 10.4 Exit 数値グリッド × 期待値（E8b の中核）
+- **振る Exit（V9 P23 が持つ種別の数値のみ）**: `TP_PCT∈{0.8,1.0,1.2(V9),1.5,1.8}%` ／ `TIME_EXIT_MIN∈{240,360,480(V9),720,960}` ／ `MFE_STALE_GATE/HOLD`（V9=4.0/30 中心の数点）。`STOCH_REVERSE/PROFIT_LOCK` は当面 V9 固定。「すぐ近く」＝V9 値の **±2 段**。
+- ⚠️ **トレーリング・分割利確は P23 に存在しない → E8b スコープ外**（E9+・KB §10/§11 は一般原則で即適用しない）。**regime切替 Exit も E9+**（regime分類器未実装・採点期間最適化は類型D・当面 MTF で木に学ばせる）。
+- **期待値帯 × Exit セルの最適化**: 予測 net を**学習期間**の分位（三分位）で帯に切り、各帯に Exit グリッドを当て、各帯×各セルの net を**学習期間 purged k-fold**で測り帯ごと最良セルを選ぶ。閾値・グリッド境界は**学習期間 data-driven**（採点期間 覗き見禁止＝類型C）。
+- **leak-safe**: Exit 判定は確定 bar 値のみ・発火は次 bar 以降。バリア幅(k×σ)とポジション数量は用語区別。
+
+### 10.5 サイズ（原理保持・実装は E9+）
+- KB §12/§13: fractional Kelly（25-50%）・**確信度は校正してから**マッピング・**負期待値=0**・リスク調整後 NET（Sharpe/maxDD）で評価。
+- **E8b では size 固定 0.024**（＝cap非適用の技術検証値・deployable net ではない）。予測 net→size 変換（校正経路 or 帯別 b/p/q）と **cap enforce 評価は E9 で確定**。
+
+### 10.6 add（原理保持・実装は E9）
+- KB §14-17: 勝ちにのみ・**負けナンピン（averaging down）絶対禁止**・逆ピラミッド（初回最大・逓減・3-4レベル）・各add確認シグナルでearn・addごと全体stop前進・**regimeゲート先（強トレンド+出来高のみ・RANGE抑制）**・集約上限 H1（addごと sum≤0.12 再verify）・単独建てと expectancy 比較監査。
+- **E8b では add 分離（単発 add=1 で土台 net を測る）**。add 寄与は E9 で add 有無比較（gen の add 発火を E8b では無効化する引数）。
+- ⚠️ 旧記述「価格%ナンピン」訂正: P23 SHORT で価格下落＝**利益方向の add（ピラミッディング）**を指す。逆行への買い増し（ナンピン）ではない。
+
+### 10.7 判定（毎周回 と 最終封印 を物理分離）
+- **毎周回（iteration 中・封印は見ない）**: ① `score.py` net（採点 2025-04〜12）／② **全採点 9 ヶ月を分母固定し各月 net を個別表示・全月 ≥ $1,900 を AND 判定**（欠損月=net$0 埋め・**monthly_avg 平均は参考のみ**）／③ §11 逆算（件数×avg）／④ 較正（期待値帯別 実net・MFE capture 率・report H）／⑤ 異常値STOP(H12)・前回比較（trade_analysis_methods_kb.md）。
+- **最終封印（1回のみ・全月クリア確定後）**: 2026Q1 で DSR>0.95 / PBO<0.5 を1回だけ確認 → 以後 2026Q1 は封印消費（iteration 中は不参照）。DSR/PBO は**採点期間の IS/OOS リターン分布で算出**（封印データ不要）。
+- **探索の記録**: 探索した組合せ総数と採用数を ledger に記録（多重検定＝類型C 検出）。
+- **順序**（KB §21）: ①Entry エッジ（コスト勝ち >1.0×）→ ②Exit 最適化 → ③add（E9）。**過剰セグメント化警告**（KB §22・各バケット 50-100+ トレード・薄いと Kelly over-size）。
+
+### 10.8 実装・H照合
+- **役割分担（一意化）**: `gen_p23_candidates.py` ＝ 候補の entry 点（entry_time/特徴量）を出す（**Exit は付けない**・V9 本体不変）。`train_p23_entry_E8b.py`（**新規**・E8.py の θ足切り分類は流用しない）＝ 前向き sim（V9 SHORT `_step` 移植）＋ Exit グリッドループ ＋ 期待値回帰 ＋ 学習期間 k-fold 最適化 ＋ score。出力 `trades_p23_E08b_*.csv` / `report_trades_p23_E08b_*.txt` / ledger E8b。
+- **要実装（⬜）**: DSR/PBO 計算関数（封印1回評価）／ 全月 AND assert 関所（欠損月$0 埋め 9 行）／ 探索数記録欄。
+- **H照合**: H2 leak（特徴量 t 時点・MTF backward・ラベルは実出口net教師のみ・MFEピーク不使用・`assert train末<採点始`＋embargo）／ H6 pct化・blacklist（phase_compliance §-1 接続）／ H8 学習<2025-04・採点2025-04〜12・封印不参照 assert ／ **H1（E8b は 0.024 固定で充足・⬜ E9 可変サイズ/add では cap enforce 経路で再verify）** ／ H9 ≥0.0001 ／ H12 異常値STOP（採点後）／ H13 judge固定。
+
+---
+
+## §11 目標からの逆算（必達の 件数 × avg net）
+
+**月次 NET ≥ $1,900 ＝ 日 $63.3（÷30）。** 全設計はこの逆算を判定軸に持つ（`score.py` net だけで満足しない）。
+⚠️ **合否は monthly_avg（平均）でない**。score.py の平均は trade のある月だけで分母を取るため、下落集中の戦略を虚偽合格させる（類型E）。**合否＝全採点 9 ヶ月の個別 net ≥ $1,900 の AND**（欠損月=$0・§10.7）。下表は必要 avg の目安（参考）。
+
+| 月間トレード数（日次） | 必要 avg net/件 |
+|---|---|
+| 30（日1） | $63.3 |
+| 60（日2） | $31.7 |
+| 90（日3） | $21.1 |
+| 150（日5） | $12.7 |
+| 300（日10） | $6.3 |
+
+- **手数料下限（赤字回避の最低）**: size 0.024 BTC＝往復 maker fee $0.67 ／ 0.12 BTC＝$3.36。**avg net がこれ未満は論外**（OL-40）。
+- **現状 V9手書き P23**: 採点9ヶ月 481件＝**月53件・avg $4.0**（月$216）。月$1,900には avg $36（9倍）or 件数9倍が必要。サイズ上限 0.12（5倍）でも avg $20・月$1,060＝**P23単独では未達**（industry §2.6「Entry単独不可・多レバー必須」）。
+- **段階の位置づけ**: 今は P23 で **Entry × Exit セットの土台の天井**を測る段階。土台を最大化 → その後 多Priority / Exit / サイジング / 並立の多レバーで目標へ（industry §2.6 ケースB＝5レバー中央値で 5.57×）。
+- **判定への組み込み**: 各実験の report に「月換算 件数 × avg net」を表示し、$1,900 ラインへの距離を毎回見る（**件数を削ると目標から遠ざかる**のを可視化）。逆算・手数料計算の詳細は [trade_analysis_methods_kb.md](../memory/trade_analysis_methods_kb.md)。
+
+---
+
+## §12 関連（分析・運用ルールの正本の所在）
+
+- データ分析手法・前後比較の鉄則（知識）＝ [trade_analysis_methods_kb.md](../memory/trade_analysis_methods_kb.md)
+- PDCA 手順（実行）＝ [analysis_playbook.md](analysis_playbook.md)
+- 経緯・失敗・教訓（ログ）＝ session_log / ledger（**設計書には書かない**）

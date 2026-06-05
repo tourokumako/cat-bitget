@@ -132,14 +132,20 @@ def main():
     if len(np.unique(y[is_te.values])) > 1:
         _log(f"[score] テストAUC={roc_auc_score(y[is_te.values], pte):.4f}")
 
-    # θ* = 学習側で「採用候補の net 合計」最大化（test 覗き見しない＝類型C回避）
+    # θ* = 検証スライス（モデルが直接フィットしていない学習内 hold-out 15%・dva と同一行）で選定
+    #   理由: 学習フィット部で選ぶと過剰最適化で高θ(慎重すぎ)化＝E8a θ0.66 僅差負けの原因(E8a-2)
+    #   穏当化: val-net が最大の95%以内に収まる安定ゾーン(プラトー)の中央値θを採る
+    #   test は一切覗かない（類型C回避）。H2: 検証スライスは学習期間内(全て2025-04前)＝leakなし
     tr_df = ty[is_tr].reset_index(drop=True); tr_df["p"] = ptr
-    best_th, best_net = 0.5, -1e18
-    for th in np.round(np.arange(0.30, 0.81, 0.02), 2):
-        s = tr_df.loc[tr_df["p"] >= th, "net_usd"].sum()
-        if s > best_net:
-            best_net, best_th = s, th
-    _log(f"[θ*] 学習で net 最大 → θ*={best_th}（学習net ${best_net:.0f}）")
+    va_df = tr_df.iloc[cut:].copy()                       # = dva と同一行（hold-out 15%）
+    cand = [(th, va_df.loc[va_df["p"] >= th, "net_usd"].sum(), int((va_df["p"] >= th).sum()))
+            for th in np.round(np.arange(0.30, 0.81, 0.02), 2)]
+    val_max = max(c[1] for c in cand)
+    assert val_max > 0, "検証スライスで net>0 のθが無い＝モデルが OOS で機能せず"
+    plateau = sorted(c[0] for c in cand if c[1] >= 0.95 * val_max and c[2] > 0)
+    best_th = plateau[len(plateau) // 2]                  # プラトー中央値＝穏当なθ
+    best_net = next(c[1] for c in cand if c[0] == best_th)
+    _log(f"[θ*] 検証スライス選定 → θ*={best_th}（val-net ${best_net:.0f} / プラトー {len(plateau)}点・E8a-2）")
 
     # テスト適用 + 採点比較（score.py）
     te_df = ty[is_te].reset_index(drop=True); te_df["p"] = pte

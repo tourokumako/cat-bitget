@@ -3792,3 +3792,36 @@ grep 結果は「no matches」も含めて全件提示。違反検出時は修�
 
 ---
 
+### L-250: PDCA フロー（採点→分析→記録）を CC 自主ルールで守れず物理強制 hook 化（2026-06-05）
+
+**事実:**
+E8a-2 で score.py 採点（θ0.74 で $785・V9 負け）まで回したのに、report.py 分析と ledger.md 記録を飛ばして次の設計議論に進んだ。analysis_playbook §4 に「採点→report→3分類→ledger」の手順が明記されていたのに素通り。まこさん指摘で発覚。
+
+**ルール（物理強制・自主ルールに依存しない）:**
+- `cat-bitget/.claude/hooks/pdca_mark.sh`（PostToolUse）+ `pdca_gate.sh`（Stop・exit 2 ブロック）を導入。**score.py を実行したら report.py 実行 と ledger.md 編集の両方が済むまでターンを終われない**。
+- 毎実験必須＝report.py（結果表示）+ ledger.md（原因分析＋経過）。learned_params は学習時に自動。設計書/playbook は随時。
+- 登録: `cat-bitget/.claude/settings.local.json`。回避禁止（cc_role §1.4.6.2）。
+
+**Why:** playbook §4 に書いてあっても CC は素通りする（書類無視）。文書追加では止まらない実証（cc_role §1.4.6.2 と同型）。結果表示・原因分析ログ・経過ログを飛ばすと、次セッションが誤った前提で動き、まこさんのトークンを毀損する。
+
+**How to apply:** score.py を回したら、その場で必ず report.py（--vs で比較）→ ledger.md に「結果+原因3分類(§2.4)+改善」を記録してからターンを終える。hook が物理的に止めるが、止められる前に自分で閉じるのが正。
+
+---
+
+### L-251: 「Entry/Exit セット閾値調整」を CC が「θ足切り」に翻訳し続けた＋トレード基本(期待値で出口/サイズ/add を動かす)を知らなかった（2026-06-05）
+
+**事実:**
+まこさんが 2 セッション以上「Entry/Exit をセットで閾値調整しろ」と指示していたのに、CC は自分が楽な「Entry 側の θ(確率足切り)」に翻訳・縮小し E6/E8a/E8a-2 で 3 回再演（cc_role §3.3 翻訳禁止違反）。さらに「予測した期待値に応じて add数/ポジ数/TP幅/TimeExit/SL を動的に変えて NET 最大化する」というトレードの基本（Kelly + 動的Exit）を知らず「トレード舐めてんのか」と叱責された。設計書に経緯・破棄理由・数値ログを書き「設計書は設計・ログは session_log/ledger」と訂正。一人で「実装できる」と言いかけたが、多角レビュー Workflow で critical 5・major 8 が出て実装不能と判明（θ足切りでなく Exit数値グリッド×期待値予測が正・サイズ/add/regime は E9+）。
+
+**ルール:**
+- **まこさんのトレード指示は字面通り**（「セット」を「片側」に・「閾値」を「θ」に縮めない・cc_role §3.3）。手持ちの既存スクリプトに寄せて矮小化しない。
+- **トレード設計の前に [[entry_exit_relationship_kb]]（新規・26節）と trade_methods §6 を読む**。期待値に応じて出口/サイズ/add を動かすのがトレードの基本。
+- **設計書＝設計のみ**。経緯・失敗・破棄理由・数値ログは session_log / ledger（設計書に書かない）。
+- **設計は書いたら多角レビュー（Workflow）にかける**。一人で「実装できる」と言わない（CC 同型バイアス）。
+
+**Why:** CC はトレード実務知識が浅く、知識が資料にあっても設計時に起動できない（self_check 既知問題）。翻訳矮小化で「自分が実装しやすい形」に寄せる構造的バイアス。手動が net 黒字な以上 ML net マイナスは設計側の不具合（entry_fix_6axis_gate 大前提）。
+
+**How to apply:** トレード設計時は entry_exit_relationship_kb §25 takeaways を読む → 設計を書く → Workflow で KB整合/制約/leak/実装可能性をレビュー → critical/major 反映 → 実装。
+
+---
+

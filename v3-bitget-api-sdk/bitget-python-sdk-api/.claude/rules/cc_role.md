@@ -183,7 +183,9 @@ CP1 監査で改善 6-12 を追加したが、CP2 監査で「機械的フォー
 
 CP1 (L-233) / CP2 (L-235) / CP3 (L-236) と 3 回連続で「CC が自分の知識で『業界 standard』と言い切って業界後退の判断」を実証。cc_role §1.4.6.1 改善 10/11/12 + メタガード 13/14/15 (= CC 自主運用ルール) では止まらないことが構造的に証明された。CC 自主運用のルール追加経路は打ち切り、**物理的に阻止される仕組み** (= Claude Code hooks) を導入。まこさんのトークン代毀損を防ぐため。
 
-#### 採用した物理強制 hooks (= `.claude/settings.local.json` + `.claude/hooks/`)
+#### 採用した物理強制 hooks (= `cat-bitget/.claude/settings.local.json` + `cat-bitget/.claude/hooks/`)
+
+> ⚠️ **2026-06-05 実態確認で訂正**: hook の正本は **リポジトリ直下 `cat-bitget/.claude/`**（`bitget-python-sdk-api/.claude/` 配下ではない・旧記述は誤り）。Stop hook 登録も同 settings.local.json。PDCA 物理強制 hook（pdca_mark.sh / pdca_gate.sh）も同所。
 
 1. **PreToolUse hook for Write|Edit on パス名に `ml_pipeline_baseline` 含む**: 直近 10 分以内に WebSearch が実行されていなければ Write/Edit を **blocked**
    - script: `.claude/hooks/check_websearch_before_design_write.sh`

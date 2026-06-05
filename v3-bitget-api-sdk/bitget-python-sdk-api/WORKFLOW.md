@@ -2,6 +2,18 @@
 
 ---
 
+## 🔴 現在地（2026-06-05・ratchet 運用が現役）
+
+> 旧 8 工程フロー（改訂31/36・Step I 等・本ファイル後半）は凍結。**現役は ratchet PDCA**（`.claude/ratchet/`）。セッション開始時の現在地・次タスクは以下を読む（cat_requirements §8.1）:
+> - `.claude/ratchet/session_log_20260605.md`（最新セッション経緯・§8）／ `ledger.md`（PDCA 実験 E0-E8a-2）／ `strat_v9ml_design.md`（設計正本・§10 E8b）／ `analysis_playbook.md`（分析手順）
+>
+> **現在地**: E8a-2（θ足切り）破棄 → **E8b 設計確定**（入口の**期待値予測 × Exit 数値グリッド**・strat_v9ml_design §10・設計レビュー critical5/major8 反映済）。
+> **次タスク（実装・未着手）**: `gen_p23_candidates.py` を entry 点のみに改修 ＋ `train_p23_entry_E8b.py` 新規（前向き sim ＋ Exit グリッド ＋ 期待値回帰 ＋ 学習期間 k-fold）。サイズ可変/add/regime切替/トレーリングは E9+。判定＝全 9 ヶ月 AND（欠損月$0）＋ §11 逆算。
+> **新規 KB**: `entry_exit_relationship_kb.md`（Entry/Exit 関係性 26節）／ `trade_analysis_methods_kb.md`（結果分析）。
+> **物理強制 hook**: score.py 採点後に report.py + ledger 記録が済むまでターン終了不可（`cat-bitget/.claude/hooks/pdca_gate.sh`・L-250）。
+
+---
+
 ## 🛑 2 大絶対規定（プロジェクト全期間で常に有効・各 Phase 着手前に必ず確認）
 
 本プロジェクトには、Phase に依存せず常に守るべき 2 つの最大級の禁止事項がある。これらに違反した実装・成果物は、いかなる Phase 進行・指示書内容にも優先して無効とする。

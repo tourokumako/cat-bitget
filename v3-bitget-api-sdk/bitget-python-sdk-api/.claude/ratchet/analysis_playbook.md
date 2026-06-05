@@ -80,6 +80,22 @@ net(審判) / 月平均 / NET日次 / 勝率 / 最大DD / 最大連敗 / 日次�
 
 ## §4 毎セッション実行チェックリスト（この順で回す）
 
+### §4.0 ⛔ 物理強制（hook・CC の意思に依存しない・2026-06-05 まこさん矯正指示）
+
+**score.py で採点したら、report.py（結果表示）と ledger.md（記録）を書くまでターンを終われない**（Stop hook `pdca_gate.sh` が exit 2 でブロック）。CC 自主ルール（本 §4）では素通りした実証（2026-06-05・E8a-2 で score.py だけ回して report/ledger を飛ばした）を受けた物理化。
+
+**更新頻度（何を毎回・何を随時か）**:
+| 書類 | いつ | 方法 |
+|---|---|---|
+| `report_*.txt`（結果一覧A〜I） | **毎実験・必須**（hook強制） | score.py 後に report.py で自動生成 |
+| `ledger.md`（全記録） | **毎実験・必須**（hook強制） | 結果+原因3分類+改善を手で1エントリ |
+| `*_learned_params_*.json`（AIの値） | 学習した実験のみ | train が自動出力 |
+| `strat_v9ml_design.md`（設計書） | 方針・段取りが変わった時だけ | 手で更新 |
+| `analysis_playbook.md`（本書・分析手法） | 分析手順を足した時だけ | 手で更新 |
+
+- 仕組み: `cat-bitget/.claude/hooks/pdca_mark.sh`（旗管理・PostToolUse）+ `pdca_gate.sh`（Stop ブロック）・登録は `cat-bitget/.claude/settings.local.json`。
+- 旗を下ろす操作: report.py 実行 / ledger.md 編集。**回避（設定無効化・口実 bypass）禁止**（cc_role §1.4.6.2）。
+
 ```
 1. 新しい売買記録 CSV を score.py で採点（月次 net・地面 $172 と比較）
    python3 scripts/priority_rebuild/score.py <trades.csv> --start 2025-04-01 --end 2025-12-31
