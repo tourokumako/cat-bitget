@@ -153,7 +153,7 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 
 ### 8.1 セッション開始時に読む順
 1. **本要件定義書**（cat_requirements.md）＝ 全体像・制約・PDCA
-2. **ml_pipeline_execlog.md §2 現在地** ＝ 今どこ・次に何をするか
+2. **`WORKFLOW.md` 改訂N active ＋ `.claude/ratchet/session_log_*.md`（最新）＋ `.claude/ratchet/analysis_playbook.md`** ＝ 今どこ・次に何をするか（**ratchet が現役**。※`ml_pipeline_execlog.md` は旧8工程フローの記録・参照のみ）
 3. **`.claude/ratchet/ledger.md`** ＝ PDCA 実験ログ（直近の数字）／ **`.claude/ratchet/analysis_playbook.md`** ＝ 分析・原因究明の唯一の正本（毎周 Check 工程はこの手順で実行）
 4. Layer1 必読: CLAUDE.md / WORKFLOW.md / cc_role.md / false_positive_incident_policy.md / **exchange_spec.md（Bitget 仕様）**
 
