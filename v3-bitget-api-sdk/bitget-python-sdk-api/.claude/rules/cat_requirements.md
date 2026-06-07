@@ -91,7 +91,7 @@ regime（相場状態：上げ/下げ/横ばい）/ MFE・MAE（保有中の最�
 | F9 | HRP 配分 / 情報ドリブンバー | 高度化 | 将来 |
 
 ### 3.2 データ要件
-5m OHLCV 5年（2021-04〜2026-03）/ 1432指標 + MTF 8足 / 教師ラベル（Triple Barrier）/ 分割: 学習 2021-04〜2025-03・採点 2025-04〜12・封印 2026Q1。
+5m OHLCV 5年（2021-04〜2026-03）/ 1432指標 + MTF 8足 / 教師ラベル（Triple Barrier）/ 分割: **学習 2021-04-01〜2024-12-31・embargo 2025-01〜03（leak 防止の緩衝・学習にも採点にも使わない）・採点 2025-04〜12・封印 2026Q1**。
 
 ### 3.3 外部連携
 Bitget API（candles / place-order / place-tpsl-order / single-position / cancel-order / symbol-price）・demo は `paptrading` ヘッダ。
@@ -120,7 +120,7 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 | H5 | 約定モデル | entry 指値maker(close×(1∓0.0001))・TTL3・不約定=不成立 ／ 出口 TP・SL=指値maker・TIME/能動=成行taker+slip | exchange_spec / run_once_v9 L242-385 | ✅ eval_engine.simulate_trade + score.py |
 | H6 | 価格非依存 | %/比率/BTC単位のみ・USD絶対値の閾値/ラベル禁止 | phase_compliance §-1 / L-179 | ⬜ **E8b 学習スクリプトで assert**＝feature 名 blacklist + pct check（学習側・特徴量は売買記録に出ない） |
 | H7 | 足の標準 | **5m が現行標準**。1m/3m は **ML 結果で有効と出れば有効化可**（旧「1m/3m 禁止」は ML 転向前のルールにつき**撤回**・2026-06-02 まこさん）。採用は score.py の net 実証で判断 | まこさん 2026-06-02（CLAUDE ⛔ 旧記述を上書き） | check（採用は実証） |
-| H8 | 期間分割 | 学習〜2025-03 / 採点 2025-04〜12 / 封印 2026Q1（iteration中触れない）/ embargo | ratchet 合意 | ⬜ **E8b 学習スクリプトで assert**＝train<2025-04・採点2025-04〜12・封印不参照（学習側で期間を物理分離） |
+| H8 | 期間分割 | **学習 2021-04-01〜2024-12-31 / embargo 2025-01〜03（leak 防止・どちらにも使わない）/ 採点 2025-04〜12 / 封印 2026Q1（iteration中触れない）** | ratchet 合意 | ⬜ **E8b 学習スクリプトで assert**＝`学習末≤2024-12-31`・embargo 2025Q1 を学習/採点とも除外・採点2025-04〜12・封印不参照（学習側で期間を物理分離） |
 | H9 | 最小注文 | 0.0001 BTC / 5 USDT / tick 0.1 / per-pos ≥ 0.000167 BTC | exchange_spec | ✅ `score.assert_min_order`（size<0.0001 BTC / 額<5 USDT は採点拒否・既知答えテスト担保） |
 | H10 | サイズ固定値扱い禁止 | 0.024 は比較用のみ・0.12内で配分 | CLAUDE ⛔ | check + H1 |
 | H11 | 合格ライン / 地面 | 合格=全月 net≥$1,900+DSR>0.95/PBO<0.5 ／ 地面=手動 採点$172・通し$354 | CLAUDE §目標 / ledger E0.1 | ✅ score.py |

@@ -2,14 +2,22 @@
 
 ---
 
-## 🔴 現在地（2026-06-05・ratchet 運用が現役）
+## 🔴 現在地（2026-06-07・改訂62・ratchet 運用が現役）
 
-> 旧 8 工程フロー（改訂31/36・Step I 等・本ファイル後半）は凍結。**現役は ratchet PDCA**（`.claude/ratchet/`）。セッション開始時の現在地・次タスクは以下を読む（cat_requirements §8.1）:
-> - `.claude/ratchet/session_log_20260605.md`（最新セッション経緯・§8）／ `ledger.md`（PDCA 実験 E0-E8a-2）／ `strat_v9ml_design.md`（設計正本・§10 E8b）／ `analysis_playbook.md`（分析手順）
+> 旧 8 工程フローは凍結。**現役は ratchet PDCA**（`.claude/ratchet/`）。
+> **⚠️ 新セッションは最初に `.claude/ratchet/session_log_20260607.md` §5（CC が犯した間違い11件＋根本原因＋確定事項）を読む。同じ間違いを繰り返さない。** 次に `strat_v9ml_design.md`（§0 目的・§10 E8b 設計・§10.13 学習フロー）／ `ledger.md`（E0.2 正しい地面・INC-1）／ `cat_requirements.md`（§6.1 予算0.12・§8.2 文書マップ）／ `analysis_playbook.md`。
 >
-> **現在地**: E8a-2（θ足切り）破棄 → **E8b 設計確定**（入口の**期待値予測 × Exit 数値グリッド**・strat_v9ml_design §10・設計レビュー critical5/major8 反映済）。
-> **次タスク（実装・未着手）**: `gen_p23_candidates.py` を entry 点のみに改修 ＋ `train_p23_entry_E8b.py` 新規（前向き sim ＋ Exit グリッド ＋ 期待値回帰 ＋ 学習期間 k-fold）。サイズ可変/add/regime切替/トレーリングは E9+。判定＝全 9 ヶ月 AND（欠損月$0）＋ §11 逆算。
-> **新規 KB**: `entry_exit_relationship_kb.md`（Entry/Exit 関係性 26節）／ `trade_analysis_methods_kb.md`（結果分析）。
+> ### 本セッション（改訂61→62・2026-06-07）完了事項
+> 1. **0.12 予算上限インシデント根絶**: 旧地面 $1,943 は独立モードで同時保有 0.6 BTC（予算5倍）の楽観値＝無効と判明（CC が「0.024固定で0.12以内✅」と虚偽報告・類型H/G）。審判 `score.py` に **H1(時系列cap)/H9(最小注文)/H12(異常値)** を物理ゲート化（boundary・fail-fast・既知答えテスト 15/15）。違反データは二度と net を出せない。ledger INC-1。
+> 2. **正しい地面 確定 = $925.73**（cap遵守・連続モード・`measure_p23_ground_capped.py`・同時保有 max 0.12 をコードが証明）。旧 $1,943 無効。ledger E0.2。
+> 3. **文書管理を cat_requirements §8.2 に一本化** ＋ 予算0.12の正しい理解を §6.1/§6.2 に強制読込。
+> 4. **E8b 設計書を業界標準13章で全面改訂**（§0 目的＝手動ロジックの調整可能な数字を ML で場面別学習し地面$925.73 超え／§10.4 ML調整対象[Entry指標期間・閾値・Exit種類=トレーリング/分割含む]／§10.8 学習方法[Entry A閾値/B期間・Exit B1場面最適/B2逐次]／§10.13 学習フロー[ML パイプライン0-10・0-5完了/6以降新規]）。期間分割是正（**学習〜2024-12-31＋embargo 2025-01〜03＋採点2025-04〜12**）。
+>
+> ### 次セッション着手（E8b 実装）
+> - **ステップ4 ラベル修正**（E8a「伸びるか」二値 → 実出口 net 連続モード）＋ **5 期間分割修正**（`TRAIN_END`→2024-12-31・embargo 2025Q1）＋ **6 Entry/Exit セット学習**（§10.13・§10.8）。`train_p23_entry_E8b.py` 新規。0-3 は既存流用。
+> - 判定 = 連続モード(cap遵守) `score.py` NET が地面 **$925.73** 超え・全月 AND・§11 逆算。
+> - ⚠️ **session_log_20260607 §5 の間違い11件を再演しない**: Entry/Exit はセット（順序・段階分けしない）／Exit 手法はトレーリング・分割含む／学習方法は網羅／**設計書を Read して引用してから書く**／勝手にスクリプト作らない（GO 待ち）。
+>
 > **物理強制 hook**: score.py 採点後に report.py + ledger 記録が済むまでターン終了不可（`cat-bitget/.claude/hooks/pdca_gate.sh`・L-250）。
 
 ---
