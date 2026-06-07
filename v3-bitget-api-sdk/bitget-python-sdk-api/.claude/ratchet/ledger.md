@@ -1,5 +1,7 @@
 # ratchet ledger — PDCA 全記録（結果 / 原因究明 / 改善 / 修正 をすべて残す）
 
+> **この文書に書くもの／書かないもの**（[cat_requirements §8.2 文書マップ](../rules/cat_requirements.md) が正本）: 書く＝実験ごとの 結果／原因 3 分類／改善／採用 or 破棄。書かない＝設計の長文（→ strat_v9ml_design）・知識辞典（→ KB）。
+
 > **まこさんとの取り決め（2026-06-01 確定）**:
 > - **審判（味見の機械）** = `scripts/priority_rebuild/score.py`（固定・`eval_engine` コスト・既知答えテスト pass 済）。全戦略はこれを通す以外に net を出せない。
 > - **採点期間** = 2025-04〜2025-12（学習禁止）／**封印** = 2026-01〜03（過剰適合検出用・iteration 中は触れない・物理分離）。
@@ -119,3 +121,23 @@
 - **判定**: **破棄**（数字が下がった）。安価に「**検証スライス単独θ選定は分布シフトで外す／θ足切り方式は本戦略と構造的に不適**」を確定＝ラチェット機能。
 - **改善（次の一手）**: 【E8a-3】**purged k-fold CV**で複数学習窓の平均netからθを決め「θ方式の頑健な天井」を確定（1窓の地合い偏りを平均で消す・覗き見なし）。→ その天井を手に【本筋】**θ足切りを卒業し AIの『伸びる確率』でサイズを連続配分（崖をなくす・de Prado・設計書§5①/§9）**へ移行。E7サイジング失敗(地合い分位でサイズ→全体縮小)とは別物（AUC0.733の確率を使う）。
 - **再現**: `python3 scripts/priority_rebuild/train_p23_entry_E8.py` → `score.py results/priority_rebuild/ratchet/trades_p23_E08_ai_test.csv --start 2025-04-01 --end 2025-12-31`／分析 `report.py 同CSV --vs trades_p23_full_test.csv`（→ report_trades_p23_E08_ai_test.txt）。事後θ掃引は `trades_p23_E08_all_scored.csv` の p列。
+
+## ⚠️ INC-1: 地面 $1,943 が 0.12 BTC 合計上限を5倍超(0.6 BTC)で測られた楽観値（false_positive §0-2 類型H）→ 審判に cap 物理ゲート（2026-06-07・発見者まこさん）
+- **発見**: E8b 着手前に同時保有「合計」サイズを実測 → 地面 `trades_p23_full_test.csv`($1,943) = **0.60 BTC（規定0.12の5倍）**・179箇所超過 / E8a `trades_p23_E08_ai_test.csv` = **0.24 BTC（2倍）**・6箇所超過。`gen_p23_candidates.py` が候補を**独立前向きsim**し同時保有を制限しないため。＝本番で発注不可能な楽観値。
+- **類型**: false_positive §2 **類型H（運用上限逸脱）** ＋ CCの **類型G（虚偽報告）**（「0.024固定で0.12以内✅」と確認せず報告）。§3 事案8（2.28BTC・19倍）の再演。
+- **原因究明（3分類＝執行・但しインシデント）**: `eval_engine.assert_position_cap`（既知答えテスト pass 済の検証済み安全装置）が**存在したのに ratchet 審判 `score.py` が呼んでいなかった**＝配線漏れ（§3 共通構造）。加えて CC が false_positive を Read tool で読まず auto-load 頼みで §0-2 を雑に扱った。
+- **改善（物理ゲート実装）**: `score.py` に時系列スイープ cap ゲートを追加（売買記録の同時保有合計が 0.12 超なら採点拒否・`sys.exit`）。上限値は `eval_engine.POSITION_CAP_BTC`（検証済み定数）を使用。実証: 地面CSV→STOP(exit1) / 既知答えテスト 9/9 維持 / cap以内通過・cap超STOP のユニット確認。
+- **波及（信頼性疑義）**: **地面 $1,943 は無効**（cap違反で採点不能）。E5〜E8a の「地面超え」判定は全て無効な楽観地面の上だった。E0 の手動 replay（逐次運用）も LONG+SHORT 同時保有で 0.12 超の可能性 → 要再測。
+- **次**: cap を守った逐次運用で V9手書きP23 の**正しい地面を測り直す** → 確定後に E8b。
+- **判定**: 安全装置を物理化（採用）。既存実験の net は信頼性疑義として扱い直す。lessons L-250 / false_positive §3 表 #9 に記録。
+- **続報（H1-H14 物理強制 完了・2026-06-07）**: まこさん指示で cat_requirements §4.6 の全ハード制約を物理化。審判 `score.py` の入口 `assert_hard_constraints` に **H1(時系列cap)/H9(最小注文)/H12(異常値)** を集約（boundary・fail-fast・WebSearch=FIA/MiFID II pre-trade risk checks + defensive programming invariant 準拠）。`eval_engine` に最小注文定数(MIN_ORDER_BTC/USDT)追加。既知答えテストに H1時系列/H9/H12 を恒久組込み＝**15/15 pass**。H2(leak)/H6(価格非依存)/H8(期間分割) は売買記録に出ないため E8b 学習スクリプトで assert（§4.6 明記）。次=cap 適用で地面測り直し。
+
+## E0.2: P23 正しい地面 確定（cap遵守・連続モード・2026-06-07・INC-1 の是正）
+- **背景**: INC-1 で旧地面 $1,943（独立モード・同時保有 0.6 BTC）が予算 0.12 違反の楽観値と判明。V9 本来の逐次運用（連続モード = `replay_csv.run()` と件数・net 一致が自己検査済）で測り直し。
+- **方法**: `measure_p23_ground_capped.py`（新規・`gen.run_continuous` import・V9 本体不変）。各時点の同時保有「合計」を実測 assert（≤0.12）→ cap ゲート付き score.py で二重採点。
+- **物理検証（コードが証明）**: 同時保有合計 **max = 0.1200 BTC**（add5 の瞬間・予算ちょうど）。全期間 ≤ 0.12 を実測で確認（CC の主張でなく数字）。
+- **結果（採点 2025-04〜12・score.py）**: 月平均 **$102.86**（合計 **$925.73**）・265 件・勝率 37%・Sharpe 1.70・PF 1.32・最大DD $752。月別: 04 +73 / 05 −457 / 06 +192 / 07 −245 / 08 −127 / 09 +102 / 10 +608 / 11 +702 / 12 +79。全月 ≥ $1,900 は 0/9。
+- **原因究明（3分類）= ① 戦略の性質**（不正でない）: 損失源＝時間切れ −$2,161・含み益失速 −$833（伸びない戻り売りが死ぬ）／稼ぎ＝TP +$2,671・ストキャス反転 +$1,313。**単発(add無) −$624 赤字・add 育ちで稼ぐ**（0.096 で +$644）＝§8.0 の損小利大・add 依存を実データで再確認。
+- **波及（信頼性是正）**: 旧 $1,943 は無効。**E5〜E8a の「$1,943 超え」競争は楽観地面の上だった**。今後の超える地面＝**$925.73**（cap 遵守・deployable）。
+- **判定**: 正しい地面 確定（採用）。E8b はこの **$925.73 を cap 遵守で超える**のが目標（§11 逆算は月 $1,900＝全 Priority 多レバー前提は不変）。
+- **再現**: `python3 scripts/priority_rebuild/measure_p23_ground_capped.py` → `score.py results/priority_rebuild/ratchet/trades_p23_ground_capped.csv --start 2025-04-01 --end 2025-12-31`

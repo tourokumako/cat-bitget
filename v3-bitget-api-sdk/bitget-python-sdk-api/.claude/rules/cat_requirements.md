@@ -113,18 +113,18 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 
 | # | 要件 | 値 / 内容 | 出典 | 強制方法 |
 |---|---|---|---|---|
-| H1 | ポジション合計上限 | 任意 t で `sum(active_btc) ≤ 0.12 BTC`（合計） | CLAUDE §0-2 / 類型H | ✅ `eval_engine.assert_position_cap` |
-| H2 | leak なし / 本番再現性 | t で取得可能な値のみ・特徴量に未来参照なし・出口判定は次bar以降 | CLAUDE §0-1 / 類型A / L-179 | ⬜要追加（grep ゲート + `assert train末<test始`） |
+| H1 | ポジション合計上限 | 任意 t で `sum(active_btc) ≤ 0.12 BTC`（合計） | CLAUDE §0-2 / 類型H | ✅ `score.assert_hard_constraints`（売買記録の**時系列**cap・違反は採点拒否・既知答えテスト担保）＋ `eval_engine.assert_position_cap`（点版） |
+| H2 | leak なし / 本番再現性 | t で取得可能な値のみ・特徴量に未来参照なし・出口判定は次bar以降 | CLAUDE §0-1 / 類型A / L-179 | ⬜ **E8b 学習スクリプト(`train_p23_entry_E8b.py`)で assert**＝特徴量 grep(`.shift(-`/`center=True`) + `assert train末<採点始` + embargo（売買記録に出ない＝boundary 違い・審判では不可） |
 | H3 | net 判定（gross 禁止） | 全コスト控除後で判定 | false_positive §0.1 / 類型E | ✅ score.py / eval_engine |
 | H4 | コスト確定値 | maker 0.00014 / taker 0.00042 / slippage 0.00005 / funding +0.000002(8h) | exchange_spec audit#19 | ✅ eval_engine 定数 |
 | H5 | 約定モデル | entry 指値maker(close×(1∓0.0001))・TTL3・不約定=不成立 ／ 出口 TP・SL=指値maker・TIME/能動=成行taker+slip | exchange_spec / run_once_v9 L242-385 | ✅ eval_engine.simulate_trade + score.py |
-| H6 | 価格非依存 | %/比率/BTC単位のみ・USD絶対値の閾値/ラベル禁止 | phase_compliance §-1 / L-179 | ⬜要追加（pct check + blacklist） |
+| H6 | 価格非依存 | %/比率/BTC単位のみ・USD絶対値の閾値/ラベル禁止 | phase_compliance §-1 / L-179 | ⬜ **E8b 学習スクリプトで assert**＝feature 名 blacklist + pct check（学習側・特徴量は売買記録に出ない） |
 | H7 | 足の標準 | **5m が現行標準**。1m/3m は **ML 結果で有効と出れば有効化可**（旧「1m/3m 禁止」は ML 転向前のルールにつき**撤回**・2026-06-02 まこさん）。採用は score.py の net 実証で判断 | まこさん 2026-06-02（CLAUDE ⛔ 旧記述を上書き） | check（採用は実証） |
-| H8 | 期間分割 | 学習〜2025-03 / 採点 2025-04〜12 / 封印 2026Q1（iteration中触れない）/ embargo | ratchet 合意 | ⬜要追加（2025のみload + assert） |
-| H9 | 最小注文 | 0.0001 BTC / 5 USDT / tick 0.1 / per-pos ≥ 0.000167 BTC | exchange_spec | ⬜要追加（size assert） |
+| H8 | 期間分割 | 学習〜2025-03 / 採点 2025-04〜12 / 封印 2026Q1（iteration中触れない）/ embargo | ratchet 合意 | ⬜ **E8b 学習スクリプトで assert**＝train<2025-04・採点2025-04〜12・封印不参照（学習側で期間を物理分離） |
+| H9 | 最小注文 | 0.0001 BTC / 5 USDT / tick 0.1 / per-pos ≥ 0.000167 BTC | exchange_spec | ✅ `score.assert_min_order`（size<0.0001 BTC / 額<5 USDT は採点拒否・既知答えテスト担保） |
 | H10 | サイズ固定値扱い禁止 | 0.024 は比較用のみ・0.12内で配分 | CLAUDE ⛔ | check + H1 |
 | H11 | 合格ライン / 地面 | 合格=全月 net≥$1,900+DSR>0.95/PBO<0.5 ／ 地面=手動 採点$172・通し$354 | CLAUDE §目標 / ledger E0.1 | ✅ score.py |
-| H12 | 異常値STOP | 勝率>70% / 月NET>$3,800 / IS-OOS Sharpe>3倍 / DD<月NET10% → 調査 | false_positive 関所A | ⬜要追加 |
+| H12 | 異常値STOP | 勝率>70% / 月NET>$3,800 / IS-OOS Sharpe>3倍 / DD<月NET10% → 調査 | false_positive 関所A | ✅ `score.score の anomaly`（勝率>70% / 月>$3,800 / DD<合計5% を採点後に「異常値・要調査」強制表示・既知答えテスト担保。IS-OOS は学習側） |
 | H13 | judge 固定 | score.py/eval_engine は実験で改造しない・改造時は既知答えテスト再pass | ratchet 合意 | ✅ test 9/9 |
 | H14 | 発注フラグ | ALLOW_LIVE_ORDERS=False / paper_trading / run_once・replay 無確認実行禁止 | CLAUDE ⛔ / core_rules | check |
 
@@ -142,6 +142,20 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 - 後段レバー（Exit/並立/サイジング）は **Entry が >1.0×（コスト勝ち）**の土台の上に乗る（industry §2.6）。
 - **手数料負け回避＝maker 優先**（手動の根幹・entry/出口とも指値・成行は能動クローズのみ）。
 
+### §6.1 予算 0.12 BTC の正しい理解（★CC が繰り返し誤解・毎セッション読んで"理解"する・2026-06-07）
+
+**0.12 BTC は「予算（財布）」**。任意の時点 t で、保有中の **全建玉の size を合計** して 0.12 を超えない（CLAUDE §0-2）。
+- **1建玉あたりでなく「合計」**。配分は柔軟（強い所に厚く・弱い所に薄く・例: P23 に 0.06 ＋ 別 Priority に 0.04）。
+- **add はサイドごとに積み立てる**: 同じサイド（SHORT/LONG）でシグナル再発火 → 新建玉でなく **既存建玉に積み増し**（size 増・建値は平均）。決済は積み立てた **合計 size を一括**で。
+- ❌ **CC が繰り返す誤解（禁止）**: 「1ポジ 0.12」／「P23 単独 add5＝0.12 だから cap を守る」（＝予算を1つで全部使う状態を"守る"と誤認）／「同時保有は1つ」を曖昧に使う。
+- ✅ **正**: 全 Priority の全建玉を足して 0.12。P23 単独 add5＝0.12 は「P23 に予算を全振り」した状態で、他 Priority を同時に動かせば予算オーバー。実装は `score.assert_hard_constraints` が各時点の合計を実測し 0.12 超で採点拒否（物理強制・H1）。
+
+### §6.2 全 Priority 調整が本筋（P23 は最初の1つ・2026-06-07）
+
+- ML 調整の対象は **V9 の全 Priority（P1〜P25）の Entry/Exit ロジックのセット**。1 つずつ調整していく。
+- **P23 は出発点（最初の1つ）**。P23 で「Entry × Exit セットの調整のやり方」を確立 → 全 Priority に展開。**P23 が全てではない**。
+- 予算 0.12 は全 Priority の建玉合計への制約 → 複数 Priority 同時稼働時はサイズを配分（§6.1）。
+
 ## §7 使い方・改訂ルール
 - **全設計/実装は着手前に §4.6 を1項目ずつ照合**し照合結果を出す。`⬜要追加` の assert は実装時にコード化し済んだら ✅ に。
 - §5（設計パラメータ）は実装前に報告・数字で判定。
@@ -157,7 +171,24 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 3. **`.claude/ratchet/ledger.md`** ＝ PDCA 実験ログ（直近の数字）／ **`.claude/ratchet/analysis_playbook.md`** ＝ 分析・原因究明の唯一の正本（毎周 Check 工程はこの手順で実行）
 4. Layer1 必読: CLAUDE.md / WORKFLOW.md / cc_role.md / false_positive_incident_policy.md / **exchange_spec.md（Bitget 仕様）**
 
-### 8.2 ファイル・データの地図
+### 8.2 文書マップ＆更新ルール（★どの文書に何を書くか＝唯一の正本・2026-06-07 確定）
+
+> **混乱防止（2026-06-07）**: 「設計の決定事項」と「経緯・失敗・教訓（ログ）」を別の文書に書き分ける。混在させると CC が毎回誤読して的外れな修正を繰り返す（L-247/L-249）。役割記述が 3 箇所（本 §8.2 / strat_v9ml_design §12 / analysis_playbook §3）に散在していたのを**本表に一本化**。他の 2 箇所は本表を参照する。
+
+| 文書 | 書くもの（役割） | 書かないもの | 更新タイミング |
+|---|---|---|---|
+| **cat_requirements.md**（本書・**起点／正**） | 要件・ハード制約 H1-H14・**本文書マップ**・運用ガイド | 実験結果・経緯・設計の細部 | 出典（CLAUDE 等）が変わった時のみ |
+| **strat_v9ml_design.md** | **設計の決定事項**（現方針・P23 構造・E8b 設計） | 経緯・失敗・教訓・L 番号・「誰が誤解したか」（→ ログへ） | 方針・段取りが変わった時 |
+| **ledger.md** | 実験ごとの 結果／原因 3 分類／改善／採用 or 破棄 | 設計の長文・知識辞典 | 毎実験（hook 強制） |
+| **session_log_YYYYMMDD.md** | その日の経緯・学び・失敗の物語 | 設計の決定事項（→ 設計書へ） | セッション毎 |
+| **analysis_playbook.md** | 分析の手順（Check 工程） | 実験結果・設計 | 分析手順を足した時 |
+| **lessons_active.md** | 教訓 L-XX | — | セッション毎 |
+| **WORKFLOW.md** | 現フェーズ・次タスク・引き継ぎ（改訂 N active） | 設計の細部・知識辞典 | セッション毎 |
+| **KB 各種**（technical / industry / trade_methods 等） | 知識（辞典レベル） | 実験結果・設計 | 知識を足した時 |
+
+**徹底の仕掛け**: 本書は SessionStart 強制ロード（強制 cat ①）→ 本表が毎回読まれる。各文書の冒頭に「この文書に書くもの／書かないもの（cat_requirements §8.2 参照）」を 1 行明記。判断に迷ったら本表が優先。
+
+### 8.2.1 ファイル・データの地図（ありか）
 **.md（資料・正本）**
 - ルール: `CLAUDE.md`(最上位) / `cc_role.md`(CC役割) / `false_positive_incident_policy.md`(インシデント) / `exchange_spec.md`(**Bitget 仕様**: 手数料・最小注文・funding・発注API) / `core_rules.md` / **本書 `cat_requirements.md`(要件)**
 - 現在地/設計: `ml_pipeline_execlog.md`(現在地・次着手) / `ml_pipeline_baseline_v1.md`(旧8工程設計・参照) / `WORKFLOW.md`(フェーズ)

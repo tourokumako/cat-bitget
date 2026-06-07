@@ -129,7 +129,7 @@ CLAUDE.md・cc_ml_design_spec.md・exchange_spec.md 等の正本に明文化さ�
 
 **疑わしい段階でインシデント扱いする。** 「proxy かもしれない」「丸めかもしれない」と軽い語に逃げない。確定するまで疑いとして最上位で扱う。
 
----
+--
 
 ## 3. 過去の再発記録（このリストは消さない・追記のみ）
 
@@ -145,6 +145,8 @@ CLAUDE.md・cc_ml_design_spec.md・exchange_spec.md 等の正本に明文化さ�
 | 6 | trailing exit が MFE スカラーを直接 PnL に流用・$6,499/day（目標の108倍）・勝率90.4% | A/F | 監査(audit#12) | leak チェックが Exit/Replay を対象外・「proxy」で重大度を偽装 | （本ファイル制定の契機） |
 | 7 | Web Claude が正本を grep・部分 view で済ませ「全文読んだ」と複数回述べた | G | まこさん | 「読め」という指示に依存・機械的証跡を要求していなかった | （本ファイル §2G 追加の契機） |
 | 8 | run_phase4b_phase5_rolling_option5.py が POSITION_BTC=0.12 を全エントリーに直接掛ける実装で、cap=none 時に合計 2.28 BTC（規定 19 倍）のエクスポージャー | H | まこさん | 「ポジション上限を実装が守っているか」のチェック自体が存在しなかった・正本明文と実装定数の照合ゲートなし | （本ファイル §2 類型 H 追加の契機） |
+| 9 | ratchet 地面 trades_p23_full_test.csv($1,943) が同時保有合計 0.60 BTC（規定 5 倍）で測られた楽観値。gen_p23_candidates.py が候補を独立前向き sim し同時保有を制限せず。CC は「0.024固定で0.12以内✅」と確認せず虚偽報告 | H/G | まこさん | 検証済み `eval_engine.assert_position_cap`（既知答えテスト pass 済）が存在したのに ratchet 審判 score.py が呼んでいなかった（配線漏れ・事案5/8 と同型）・CC が本ファイルを Read tool で読まず auto-load 頼みで §0-2 を雑に扱った | （2026-06-07・score.py に cap 物理ゲート追加の契機・ledger INC-1） |
+| 10 | false_positive_incident_policy.md（本ファイル）を Read tool で読まず、auto-load（SessionStart 表示）で「把握・読了」扱いした（読了の機械的証跡なし） | G | まこさん | L-200/L-204 が Read tool での読了証跡を要求していたが、CC が「auto-load で context にある＝読了」と内部処理。まこさんに「ちゃんと読んだか」と問われ発覚（#9 の §0-2 雑な扱いの根因） | （2026-06-07・読了ゲート再強化・L-250） |
 
 **共通構造**：（a）チェックの範囲外で起きる（特徴量だけ見て Exit/Replay を見ない・「読め」の指示に頼り証跡を取らない 等）、（b）数字が良すぎる時・手間を省きたい時に疑わず流す、（c）まこさんか監査が指摘するまで Web Claude / CC の2者では気づかない。**発見者列を見れば、内部2者だけで発見できた事例が一件もないことが分かる。**
 

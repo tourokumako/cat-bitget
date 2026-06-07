@@ -51,7 +51,9 @@ SLIPPAGE = 0.00005           # 0.005% 成行のみ
 FUNDING_RATE_8H = 0.000002   # +0.0002%/8h median（LONG 払い・SHORT 受取）
 ENTRY_LIMIT_OFFSET = 0.0001  # 指値 = close×(1∓0.0001)
 DEFAULT_TTL = 3              # 指値 TTL 本数（15分）
-POSITION_CAP_BTC = 0.12      # 合計上限（§0.5）
+POSITION_CAP_BTC = 0.12      # 合計上限（§0.5・H1）
+MIN_ORDER_BTC = 0.0001       # 最小注文サイズ（H9・exchange_spec audit#19 contracts API minTradeNum）
+MIN_ORDER_USDT = 5.0         # 最小注文額（H9・exchange_spec audit#19 contracts API minTradeUSDT）
 
 LONG = 1
 SHORT = -1

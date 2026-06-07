@@ -205,6 +205,49 @@ def test_position_cap() -> None:
     _check("CAP 合計 0.13 BTC → AssertionError", over, "0.13 BTC で例外送出")
 
 
+def test_score_gates() -> None:
+    """審判 score.py の boundary ゲート（H1 時系列cap / H9 最小注文 / H12 異常値）を既知答えで担保。"""
+    import pandas as pd
+    import score as sc
+
+    def _stops(df) -> bool:
+        try:
+            sc.assert_hard_constraints(df)
+            return False
+        except SystemExit:
+            return True
+
+    # H1 時系列: 6本同時 0.024×6=0.144 BTC → STOP
+    over = pd.DataFrame({"entry_time": ["2025-04-01 10:00"] * 6, "exit_time": ["2025-04-01 11:00"] * 6,
+                         "size_btc": [0.024] * 6, "entry_price": [80000.0] * 6})
+    _check("H1 同時保有合計 0.144 BTC → STOP", _stops(over), "0.12 超で採点拒否")
+    # H9: 最小注文サイズ未満
+    sz_bad = pd.DataFrame({"entry_time": ["2025-04-01 10:00"], "exit_time": ["2025-04-01 11:00"],
+                           "size_btc": [0.00005], "entry_price": [80000.0]})
+    _check("H9 size 0.00005 < 0.0001 BTC → STOP", _stops(sz_bad), "最小注文サイズ未満")
+    # H9: 最小注文額未満（0.0001×40000=4 < 5 USDT）
+    usd_bad = pd.DataFrame({"entry_time": ["2025-04-01 10:00"], "exit_time": ["2025-04-01 11:00"],
+                            "size_btc": [0.0001], "entry_price": [40000.0]})
+    _check("H9 注文額 4 < 5 USDT → STOP", _stops(usd_bad), "最小注文額未満")
+    # 正常: cap以内・最小注文OK → 通過
+    ok = pd.DataFrame({"entry_time": ["2025-04-01 10:00", "2025-04-01 12:00"],
+                       "exit_time": ["2025-04-01 11:00", "2025-04-01 13:00"],
+                       "size_btc": [0.024, 0.024], "entry_price": [80000.0, 80000.0]})
+    _check("正常(cap以内・最小注文OK) → 通過", not _stops(ok), "健全な記録は通る（過検出しない）")
+    # H12 異常値: 勝率100% → anomaly 非空 / 勝率50% → 空
+    win = pd.DataFrame([dict(entry_time=pd.Timestamp("2025-04-01 10:00") + pd.Timedelta(hours=2 * i),
+                             exit_time=pd.Timestamp("2025-04-01 11:00") + pd.Timedelta(hours=2 * i),
+                             side="SHORT", size_btc=0.024, entry_price=80000.0, exit_price=79000.0,
+                             exit_reason="TP_FILLED") for i in range(10)])
+    _check("H12 勝率100% → 異常値フラグ", len(sc.score(win).get("anomaly", [])) > 0, "高勝率を検出")
+    mix = pd.DataFrame([dict(entry_time=pd.Timestamp("2025-04-01 10:00") + pd.Timedelta(hours=2 * i),
+                             exit_time=pd.Timestamp("2025-04-01 11:00") + pd.Timedelta(hours=2 * i),
+                             side="SHORT", size_btc=0.024, entry_price=80000.0,
+                             exit_price=(79000.0 if i % 2 == 0 else 81000.0),
+                             exit_reason="TP_FILLED") for i in range(10)])
+    _check("H12 勝率50% → 異常値なし（過検出せず）", len(sc.score(mix).get("anomaly", [])) == 0, "健全は素通り")
+
+
 def main() -> int:
     print("=" * 60)
     print("eval_engine.py 既知答えテスト T1-T5（計器の正しさ＝数学的事実で証明）")
@@ -219,8 +262,10 @@ def main() -> int:
     test_t4_gap_fills_at_open()
     print("\n[T5] 8h 超保有 → funding 控除")
     test_t5_funding()
-    print("\n[補助] 0.12 BTC 上限 assert")
+    print("\n[補助] 0.12 BTC 上限 assert（eval_engine 点版）")
     test_position_cap()
+    print("\n[審判ゲート] H1 時系列cap / H9 最小注文 / H12 異常値（score.py boundary・H1-H14 物理強制）")
+    test_score_gates()
 
     n_pass = sum(1 for _, ok, _ in _results if ok)
     n_total = len(_results)

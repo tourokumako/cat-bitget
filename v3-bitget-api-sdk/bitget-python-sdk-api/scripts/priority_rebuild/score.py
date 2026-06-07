@@ -52,10 +52,62 @@ def _funding_for_trade(entry_ts: pd.Timestamp, exit_ts: pd.Timestamp,
     return cost
 
 
+def assert_position_cap(df: pd.DataFrame, cap_btc: float = ee.POSITION_CAP_BTC) -> None:
+    """【物理強制・false_positive §0-2 / 類型 H】同時保有の合計サイズが cap を超えたら採点を拒否して停止。
+
+    本番で発注不可能（合計 0.12 BTC 超）な楽観記録を、審判が二度と net 化しないための関所。
+    事案8(2026-05-15・合計2.28BTC) / 2026-06-07(地面 独立評価0.6BTC) の再演を物理的に封じる。
+    1 ポジあたりでなく「保有中の全ポジションの合計」を時系列で見る（§0-2 の定義）。
+    """
+    d = df.copy()
+    et = pd.to_datetime(d["entry_time"]).tolist()
+    xt = pd.to_datetime(d["exit_time"]).tolist()
+    sz = d["size_btc"].astype(float).tolist()
+    events = [(et[i], sz[i]) for i in range(len(d))] + [(xt[i], -sz[i]) for i in range(len(d))]
+    events.sort(key=lambda x: (x[0], x[1]))  # 同時刻は exit(マイナス) を先に処理
+    cur = mx = 0.0
+    mxt = None
+    for t, s in events:
+        cur = round(cur + s, 9)
+        if cur > mx:
+            mx = cur
+            mxt = t
+    if mx > cap_btc + 1e-9:
+        sys.exit(
+            f"[STOP・false_positive §0-2 違反] 同時保有の合計サイズ {mx:.4f} BTC > 上限 {cap_btc} BTC"
+            f"（最初の超過 {mxt}）。\n"
+            f"この売買記録は本番で発注不可能な楽観値です（1 ポジでなく合計上限）。\n"
+            f"同時保有合計を {cap_btc} BTC 以内に収めた記録で出し直してください。採点を拒否します。"
+        )
+
+
+def assert_min_order(df: pd.DataFrame) -> None:
+    """【物理強制・H9 / exchange_spec audit#19】最小注文 0.0001 BTC かつ 5 USDT 未満の発注が無いか。
+    記録上の size_btc で下限を見る（per-add 下限は学習側で別途）。"""
+    sz = df["size_btc"].astype(float)
+    ep = df["entry_price"].astype(float)
+    n_btc = int((sz < ee.MIN_ORDER_BTC - 1e-12).sum())
+    if n_btc:
+        sys.exit(f"[STOP・H9 違反] size_btc < {ee.MIN_ORDER_BTC} BTC（最小注文サイズ）が {n_btc} 件。本番で発注不可。")
+    n_usd = int((sz * ep < ee.MIN_ORDER_USDT - 1e-9).sum())
+    if n_usd:
+        sys.exit(f"[STOP・H9 違反] 注文額 size×price < {ee.MIN_ORDER_USDT} USDT（最小注文額）が {n_usd} 件。本番で発注不可。")
+
+
+def assert_hard_constraints(df: pd.DataFrame) -> None:
+    """【物理強制・boundary validation】審判の入口で、売買記録から検証できるハード制約(invariant)を
+    fail-fast で一括チェック。金融システムの作法: 違反は graceful recovery せず即停止
+    （FIA/MiFID II pre-trade risk checks・defensive programming の invariant・state 不明での継続は禁止）。
+    売買記録に現れない H2(leak)/H6(価格非依存)/H8(train末<採点始) は学習スクリプト側で assert（boundary 違い）。"""
+    assert_position_cap(df)   # H1: 同時保有合計 ≤ 0.12 BTC
+    assert_min_order(df)      # H9: 最小注文 0.0001 BTC / 5 USDT
+
+
 def score(df: pd.DataFrame) -> dict:
     df = df.copy()
     df["entry_time"] = pd.to_datetime(df["entry_time"])
     df["exit_time"] = pd.to_datetime(df["exit_time"])
+    assert_hard_constraints(df)  # ★ 採点前に全ハード制約ゲートを通す（boundary・fail-fast・H13 審判の正しさの一部）
     df["dir"] = np.where(df["side"].str.upper() == "LONG", 1, -1)
 
     recomputed = []
@@ -89,9 +141,23 @@ def score(df: pd.DataFrame) -> dict:
     if "net_usd" in df.columns:
         selfcheck["csv_net_total"] = float(df["net_usd"].sum())  # CSV(slippage/funding 抜き)の net
 
+    # 異常値スメル（H12・false_positive §5 関所A）: 該当したら main で「異常値・要調査」を強制表示し「合格」と書かせない
+    win_rate = float((df["net"] > 0).mean()) if len(df) else 0.0
+    max_monthly = float(monthly["net_usd"].max()) if len(monthly) else 0.0
+    eq = df.sort_values("exit_time")["net"].cumsum()
+    max_dd = float((eq.cummax() - eq).max()) if len(df) else 0.0
+    anomaly = []
+    if win_rate > 0.70:
+        anomaly.append(f"勝率 {win_rate*100:.1f}% > 70%")
+    if max_monthly > 3800:
+        anomaly.append(f"月次 net 最大 ${max_monthly:.0f} > $3,800（合格ライン $1,900 の2倍）")
+    if total > 0 and max_dd < total * 0.05:
+        anomaly.append(f"最大DD ${max_dd:.0f} < 合計 net の5%（出来すぎ・DD ほぼ無し）")
+    # 注: IS/OOS Sharpe 比（§5 関所A③）は採点期間のみの score 単体では算出不可 → 学習側で別途検証
+
     return {"monthly": monthly, "n_months": n_months, "total": total,
             "monthly_avg": total / n_months if n_months else 0.0,
-            "n_trades": len(df), "selfcheck": selfcheck,
+            "n_trades": len(df), "selfcheck": selfcheck, "anomaly": anomaly,
             "slippage_total": float(df["slippage"].sum()),
             "funding_total": float(df["funding"].sum())}
 
@@ -122,6 +188,12 @@ def main():
     print("-" * 64)
     print(f"★ 月平均 net = ${res['monthly_avg']:.2f}/月   （合計 ${res['total']:.2f}）")
     print("-" * 64)
+    if res.get("anomaly"):
+        print("⚠️ 異常値・要調査（H12・false_positive §5 関所A）:")
+        for _a in res["anomaly"]:
+            print(f"   - {_a}")
+        print("   → 「合格」と書かず原因調査（leak / 過剰適合 / 集計ミスの疑い）。")
+        print("-" * 64)
     sc = res["selfcheck"]
     if "csv_net_total" in sc:
         print(f"[自己検算] gross 最大差 ${sc.get('gross_diff_max', float('nan')):.4f} / "
