@@ -188,15 +188,17 @@ WEB検索（[neuravest](https://www.neuravest.net/a-machine-learning-approach-to
 - **期間分割（H8）**: 学習 2021-04-01〜**2024-12-31** ／ **embargo 2025-01〜03**（leak 防止の緩衝・学習にも採点にも使わない）／ 採点 2025-04〜12 ／ **封印 2026Q1（iteration 中 不参照）**。
 - **制約**: `assert 学習末 ≤ 2024-12-31`・embargo 2025Q1 を学習/採点とも除外・採点開始 2025-04 を assert。
 
-### 10.6 特徴量
-- **5m 入口指標（pct 化・H6）**: adx, atr_pct, bb_slope_pct, stoch_k, stoch_d, stoch_gap, rsi, rsi_slope, ret_5, bb_width（複数期間版を含む＝10.4 の指標期間）。
-- **MTF（leak-safe backward merge・過去の確定上位足）**: 15m/30m/1h/4h の上記指標。
-- **制約**: 結果列（net/exit 等）を特徴量に入れない（H2 assert）・USD 絶対値 blacklist（H6）。
+### 10.6 特徴量（★軸1「ボラ逃げ」回避・2026-06-08 改訂・E8b第1回違反を受けて）
+- **方向の主役 ＝ regime 系（下げの方向・強さ・継続性）**: bb_slope_pct（中心線の向き）, adx, stoch_k, stoch_d, stoch_gap（戻りの高さ＝売り場）, rsi, rsi_slope, ret_5 ＋ MTF(15m/30m/1h/4h の下げ揃い)。複数期間版を含む（木が有効期間を選ぶ）。
+- **⚠️ ATR（揺れ幅）は entry 方向スコアの主役にしない（軸1）**: atr_pct は方向判定の特徴量から**外し**、サイジング入力 or コスト見合いフィルタへ役割を移す（**捨てない＝軸1「役割を正す」**）。bb_width も同じくボラ系として方向主役から外す。
+- **MTF（leak-safe backward merge・過去の確定上位足）**: 15m/30m/1h/4h の上記 regime 系。
+- **制約**: 結果列（net/exit 等）を特徴量に入れない（H2 assert）・USD 絶対値 blacklist（H6）・**学習後に feature importance で揺れ幅(ATR/bb_width)系が上位を支配しないことを確認（軸1 受け入れ条件①・支配したら設計やり直し）**。
 
-### 10.7 ラベル
-- **Exit 学習用**: 各場面で各 Exit 候補を前向き sim した **実出口 net**（add 込み連続モード）→ net 最大の Exit を教師（or net を回帰）。
-- **Entry 学習用**: 選んだ Exit での実出口 net（伸びる戻り売りか）。
+### 10.7 ラベル（★軸1「ボラ逃げ」回避・2026-06-08 改訂・E8b第1回違反を受けて）
+- **Entry 学習用 ＝ 方向ベース（ボラ依存にしない）**: 「この戻り売りが**再下落して下げで稼げたか（＝方向が当たったか）**」を ○×。具体 = 実出口が利益方向（再下落＝TP到達/下げ継続）か否か。
+- ⚠️ **「net 金額の大きさ＝伸びるか」をラベルにしない**: 高ボラ場面ほど net が伸びる＝**ボラ依存ラベル＝軸1違反**。E8b 第1回はこれで ATR(揺れ幅)が feature importance を支配し地面に負けた（ledger E8b）。
 - ⚠️ **MFE ピークでラベルしない**（Prime Directive・H2）。
+- **Exit 学習用（6-2・後段）**: 各 Exit 候補を前向き sim した実出口 net → net 最大の Exit を教師。
 
 ### 10.8 手法・モデル
 - **教師あり（LightGBM・現方針）**。RL（DQN/PPO）は土台後（§9・小データ過学習を抑えてから Entry/Exit/add 統合最適化）。
@@ -259,6 +261,7 @@ WEB検索（[neuravest](https://www.neuravest.net/a-machine-learning-approach-to
 | 日付 | 変更 | 誰 |
 |---|---|---|
 | 2026-06-07 | 旧 §10（期待値予測×帯×k-fold）破棄 → 業界標準13章構成で全面改訂。TP/TIMEExit/Entry指標期間を ML 調整対象に追加。地面 $925.73(cap遵守) に是正 | CC（まこさん指示） |
+| 2026-06-08 | ★軸1(ボラ逃げ)回避に改訂。E8b第1回がATR(揺れ幅)支配でボラ逃げ違反・地面$925.73に負け($655)→ §10.6 特徴量(ATR/bb_widthを方向の主役から外しサイジング/フィルタへ・regime系を主役)・§10.7 ラベル(net金額=ボラ依存→「方向が当たったか」)を軸1準拠に。entry_fix_6axis_gate §軸1 受け入れ条件①②③の照合義務を明記 | CC（まこさん指示・E8b違反を受けて） |
 
 ---
 

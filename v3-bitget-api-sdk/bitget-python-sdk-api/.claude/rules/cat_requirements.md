@@ -127,6 +127,8 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 | H12 | 異常値STOP | 勝率>70% / 月NET>$3,800 / IS-OOS Sharpe>3倍 / DD<月NET10% → 調査 | false_positive 関所A | ✅ `score.score の anomaly`（勝率>70% / 月>$3,800 / DD<合計5% を採点後に「異常値・要調査」強制表示・既知答えテスト担保。IS-OOS は学習側） |
 | H13 | judge 固定 | score.py/eval_engine は実験で改造しない・改造時は既知答えテスト再pass | ratchet 合意 | ✅ test 9/9 |
 | H14 | 発注フラグ | ALLOW_LIVE_ORDERS=False / paper_trading / run_once・replay 無確認実行禁止 | CLAUDE ⛔ / core_rules | check |
+| H15 | **Entry ボラ逃げ禁止（軸1・設計前チェック）** | Entry の方向スコアで揺れ幅(ATR/ボラ)が支配的でない／ラベルがボラ依存(net金額・MFEの大きさ)でなく**方向ベース**／ボラ系はサイジング・フィルタへ役割を移す | entry_fix_6axis_gate §軸1 / ledger E8b・L-252 | ⬜ **設計報告の前に entry_fix_6axis_gate §軸1 ①②③を照合し結果を提示**（① 揺れ幅が方向スコアで非支配 ② LONG/SHORT 分離 ③ ボラ系がサイジング/TP-SL/フィルタに接続）＋ 学習後 feature importance で揺れ幅が上位非支配を確認。**Entry 設計は H15 を通すまで報告しない** |
+| H16 | **過去失敗の不再演 ＋ 1ターン1変更（設計前チェック）** | ① この設計変更は **1つ**か（複数混ぜない＝PDCA 1ターン1変更）② **過去に破棄した失敗**（lessons 直近・6軸・破棄した E）を繰り返していないか | analysis_playbook §1 PDCA / lessons / L-252 | ⬜ **設計報告の前に①②を照合し結果を提示**。実装は Workflow 経由（cc_role §1.4.6.3 の設計レビュー CC＝最初の段）で物理強制・違反なら実装に入らず差し戻し。**Workflow は暴走防止（ループ最大2回・重い実行を毎ラウンド回さない・進捗監視・照合は今回範囲のみ）を守る** |
 
 ---
 
