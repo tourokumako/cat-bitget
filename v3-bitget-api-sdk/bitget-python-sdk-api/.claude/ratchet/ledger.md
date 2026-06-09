@@ -189,3 +189,13 @@
 - **改善（次の一手・要まこさん相談）**: 連続回帰の破綻＋ボラ逃げ。見直し候補＝(a)ラベルのボラ依存対策(net金額→ボラ正規化net) (b)出口値の与え方(回帰でなく場面別最適Exit分類) (c)add前提を壊さない出口値範囲（保有下限を上げる/add考慮）。
 - **生成物**: `train_p23_entry_E9.py`(出口値連続学習) / `e9_design.md`(詳細設計書) / trades_p23_E09_ai.csv / report_trades_p23_E09_ai.txt / p23_learned_params_E09.json。
 - **再現**: `cd bitget-python-sdk-api && python3 scripts/priority_rebuild/train_p23_entry_E9.py --smoke`（計算量実測・規模確認）→ `--confirm-scale`（本番）→ `score.py`/`report.py --vs trades_p23_ground_capped.csv`。
+
+## E0.3: P23 地面 測り直し（部分決済 scale out ＋ 買い増し・固定等分）— 2026-06-09・採用（ML最適化前の素の土台）
+- 変更(A): V9 P23 に 部分決済（V9 TP を保有ロット数で等分・途中刻み＋最後はV9通常出口）＋ 買い増し（案B＝部分決済で枠が空けばV9発火で再add・Bitget merge実態）を入れて地面測定。固定等分（最適化しない素の土台）。measure_p23_ground_scaleout.py（V9/gen/score を import のみ・改造なし）。自己検査＝部分決済OFFが現地面 $925.73 に完全一致（移植は正しい）。
+- 結果（採点2025-04〜12・score.py・full costs・cap0.12✅）: 月平均 $37.60 ・ 合計 $338 ・ 481件。月別 04+22/05−457/06+218/07−148/08−118/09+73/10+298/11+478/12−28 ・ 全月≥$1,900 は 0/9。比較 旧ベース（部分決済なし・一括決済）= $926 ・ 265件。
+- 原因究明（3分類＝① 戦略の性質・不正でない）: 部分決済（等分の早利確）が 下げ continuation の大勝ちを途中で切って小さくした。10月 V9 +$608(49件) vs 案B +$298(88件)・大勝ち月ほど削れる。MFE帯＝伸びない玉(MFE<15)178件 −$2,202 ／ 伸びた玉(MFE30-60)183件 +$2,112。出口＝利確TP毎月プラス・時間切れ毎月出血。件数は 265→481 に増えたが伸びない玉が増え net は下がった。
+- 改善（次の一手）: 部分決済の刻み方（何分割・どの幅・残りをどう伸ばすか）を 固定等分でなく ML の学習対象にする（伸びない玉は早く刻む・伸びる玉は残す＝Exit 柔軟性を上げて net を上げる＝まこさんの設計意図）。$338 はその ML 学習の素の土台（出発点・到達点でない）。
+- 判定: 採用（部分決済の機構を入れた素のベース確定 = $338・固定等分・ML最適化前）。固定等分で旧$926より低いのは最適化前だから当然で、部分決済を否定する材料ではない。次＝刻み方を ML 学習。
+- 生成物: trades_p23_E03_ground_scaleout.csv / report_trades_p23_E03_ground_scaleout.txt（過去実験出力は archive へ・直下＝現役のみ・§3.1）。
+- 再現: python3 scripts/priority_rebuild/measure_p23_ground_scaleout.py --warmup-start 2025-01-01 → score.py 同csv --start 2025-04-01 --end 2025-12-31 → report.py 同 --vs trades_p23_ground_capped.csv。
+- 経緯・失敗・設計意図の詳細 ＝ session_log_20260609.md §10（文書マップ §8.2：ログは session_log・ledger は結果/原因/改善/判定のみ）。

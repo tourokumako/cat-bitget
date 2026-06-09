@@ -43,3 +43,13 @@ echo "   引用なし・軸に紐づかない手は却下対象。6軸すべて 
 echo ""
 echo "⚠️ 全設計/実装は cat_requirements.md §4.6 ハード制約（H1〜H14）に1項目ずつ照合してから着手する。"
 echo ""
+echo "--- ⑤ analysis_playbook.md §3.1（保管運用ルール・ratchet直下を散らかさない・成果物のE番号命名）---"
+PLAYBOOK="$SDK/.claude/ratchet/analysis_playbook.md"
+if [ -f "$PLAYBOOK" ]; then
+  awk '/^### §3\.1/{f=1} f&&/^## /{exit} f{print}' "$PLAYBOOK"
+else
+  echo "❌ 欠落: $PLAYBOOK"
+fi
+echo ""
+echo "⚠️ 実験の出力CSV/記録は E番号(ledger の実験番号)を名前に入れる → report も自動で E番号付き。過去実験の出力は results/priority_rebuild/ratchet/archive/ へ退避。直下=現役のみ。新実験前に前実験の出力を archive へ move（§3.1）。"
+echo ""
