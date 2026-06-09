@@ -15,5 +15,6 @@ echo "  3. session_log_最新.md（前回の経緯・失敗）"
 echo "  4. analysis_playbook.md（PDCA 分析手順）"
 echo "  5. ledger.md（PDCA 実験記録）"
 echo "  6. strat_v9ml_design.md（設計の正本）"
+echo "  7. lessons_active.md（教訓・直近 L-259＝今日の失敗 を必ず読む）"
 echo "→ grep や表示だけでは解除されません。Read tool で開いてください。"
 exit 0

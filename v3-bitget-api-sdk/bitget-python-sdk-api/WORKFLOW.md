@@ -2,19 +2,24 @@
 
 ---
 
-## 🔴 現在地（2026-06-10・改訂68＝戦略＋P23改善ロードマップの大枠を確定／次＝ロードマップ1回目の実装）
+## 🔴 現在地（2026-06-10・改訂69＝読了強制hook稼働＋WORKFLOW/設計書整理＋1回目ラベル T=0.905%確定／次＝ロードマップ1回目の実装）
 
-> **⚠️ 新セッションが最初に読む（この順）**:
-> 1. `cat_requirements.md §6.2`（戦略＝V9 全 Priority の Entry/Exit を ML で値調整して net 最大化・P23 が最初の1つ・値は §5 でまこさん承認）
-> 2. `strat_v9ml_design.md §10.17`（P23 改善ロードマップ＝学習の順番と刻み方）
-> 3. `.claude/ratchet/ledger.md E0.3`（地面 $338＝部分決済＋買い増し固定等分・ML最適化前の素の土台）
-> 4. `lessons L-258`（CC の文章がひどくトークン浪費）／ memory `feedback_trade_terms_writing`（文章ルール）
+> **⚠️ 新セッションが最初に読む**: 読了強制 hook で必読6本（cat_requirements・WORKFLOW・session_log最新・analysis_playbook・ledger・strat_v9ml_design）を **Read tool で実際に読むまで Bash/Edit/Write は物理 block** される（表示・grep では解除されない）。特に下記を誤解しない:
+> 1. `strat_v9ml_design.md §10.17`（P23 改善ロードマップ＋★**1回目ラベル＝伸びるか（方向・下落 MFE% ≥ T=0.905%）・net金額にしない**）
+> 2. `cat_requirements.md §6.2`（戦略＝V9 全 Priority の Entry/Exit を ML 値調整・P23 が最初の1つ・値は §5 でまこさん承認）／ §4.6 H15（ボラ逃げ禁止）
+> 3. `.claude/ratchet/ledger.md E0.3`（地面 **$338**＝部分決済＋買い増し固定等分・ML最適化前の素の土台。**旧 $925.73 は連続モード=日1件の誤った地面・無効**＝session_log §8）
+> 4. `lessons L-259`（今日CCが必読を読まず暴走・読了強制hook導入）／ L-258（文章ルール）／ memory `feedback_trade_terms_writing`
 >
-> **本セッション完了（commit）**: ① 戦略を `cat_requirements §6.2` に明記 ② P23 改善ロードマップを `strat_v9ml_design §10.17` に確定（順番＝1回目 Entry閾値＋Exit値セット → 2 部分決済 → 3 MTF → 4 regime → 5 サイズ/add ／ 刻み方＝Entry の閾値は木に全部渡す・Exit は少数から刻む・Entry/Exit のセット保つ・report で決める・細部は柔軟に調整）③ 文章ルールを memory に記録（`feedback_trade_terms_writing`）。WORKFLOW.md が誤って改訂66 に巻き戻っていたのを改訂67 へ restore して改訂68 へ。
+> **本セッション完了（commit d57be33）**: ① **読了強制 hook 3つ稼働**（record_read/require_read_before_work/reset_read_log・必読6本をRead toolで読むまで作業block・番人メタ確認pass・読んだフリ物理防止・session_log §9）② **WORKFLOW.md 2740→514行・strat_v9ml_design.md 387→328行に整理**（旧履歴=改訂61-31／破棄設計=§10.15 E8c・§10.16 E9 を archive移送）③ **1回目ラベルを実測確定＝伸びるか（方向・前向き96本下落 MFE% ≥ T、T=0.905%＝学習勝ち玉中央値×0.65・data由来）**を §10.17 に記載・「予測対象は net金額」の矛盾を解消（net金額ラベルは E8b第1回/E9 でボラ逃げ破棄・H15）。※前セッション改訂68＝戦略を §6.2・ロードマップを §10.17 に確定。
 >
-> **次セッション着手（ロードマップ1回目）**: Entry の閾値（bb傾き・ADX・ATR・stoch）＋ Exit の値（TP・SL・TIME_EXIT・MFE_STALE・STOCH_REVERSE・RSI_REVERSE・PROFIT_LOCK）を、固定値 → 場面別に **セットで学習**（予測対象は net 金額・出口は E9 の連続回帰でなく場面別の分類）。着手前に §5 設計パラメータ（入力・ラベル・採点）をまこさんと詰める。地面 E0.3 $338 を超えるか score.py で測る。1ターン1変更。
+> **次セッション着手（ロードマップ1回目・§10.17）**: P23 Entry/Exit セット学習で地面 $338 超えを狙う。
+> - **ラベル＝伸びるか（方向・保有96本内に下落 MFE% ≥ 0.905%）。⚠️ net金額にしない**（ボラ逃げ・H15・E8b第1回/E9 で破棄済）。
+> - **Entry＝bb傾き・ADX・stoch・MTF の生値を決定木に全部渡す。件数を増やす＝θ足切りしない**（入口選別は fat-tail で地面に勝てない＝E5/E6/E8a-2/E8c で実証）。**ATR は方向の主役にしない**（H15・除外して feature importance で非支配を確認）。
+> - **Exit＝出血源（時間切れ・含み益失速＝report E0.3）から少数を場面別に**最適化。全部一気はしない（E9 で破綻）。
+> - 採点＝score.py で地面 E0.3 $338 と比較（学習〜2024-12／embargo 2025Q1／採点2025-04〜12／封印2026Q1）。1ターン1変更。
+> - **着手前に §5 設計パラメータ（特徴量・ラベル・Exit候補・採点）を実測を添えてまこさんに報告して決める**（値は CC が勝手に決めない・封じ込め session_log §9.3）。
 >
-> **⚠️ CCへの警告（本セッション）**: 文章がひどく（CC の造語・独特な略語／トレード用語の無駄な日本語化／漠然／確認の繰り返し）、1回目の学習内容を確定するだけで10往復以上トークンを浪費した（L-258）。トレード用語はそのまま・CC の造語だけやめる・1項目ずつ確定・簡潔（`feedback_trade_terms_writing`）。担保は仕組み（score.py 数字／独立レビュー／まこさん承認ゲート）。
+> **⚠️ CCへの警告**: 今日CCは新セッション必読（session_log §8/§9・analysis_playbook・設計正本）を読まず暴走し、勝手な値（T=0.208% 誤り）・確認乱発・読んだフリでトークンを大量浪費しまこさんの精神を深く傷つけた（L-259）。→ 読了強制hookで物理防止。担保はCCの決意でなく**仕組み（score.py数字／独立レビュー／番人メタ確認／まこさん承認ゲート／read_log）**。
 
 ---
 

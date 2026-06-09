@@ -10,8 +10,8 @@ STATE_DIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 LOG="$STATE_DIR/read_log.txt"
 
 # 必読6本（部分一致キーワード・session_log は最新の日付を含むので "session_log" でマッチ）
-REQUIRED=("cat_requirements" "WORKFLOW" "session_log" "analysis_playbook" "ledger.md" "strat_v9ml_design")
-LABEL=("cat_requirements.md(要件)" "WORKFLOW.md(現在地)" "session_log_最新(前回経緯)" "analysis_playbook.md(PDCA分析手順)" "ledger.md(PDCA実験記録)" "strat_v9ml_design.md(設計正本)")
+REQUIRED=("cat_requirements" "WORKFLOW" "session_log" "analysis_playbook" "ledger.md" "strat_v9ml_design" "lessons_active")
+LABEL=("cat_requirements.md(要件)" "WORKFLOW.md(現在地)" "session_log_最新(前回経緯)" "analysis_playbook.md(PDCA分析手順)" "ledger.md(PDCA実験記録)" "strat_v9ml_design.md(設計正本)" "lessons_active.md(教訓・直近L-259=今日の失敗)")
 
 missing=()
 for idx in "${!REQUIRED[@]}"; do
