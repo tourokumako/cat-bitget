@@ -113,9 +113,31 @@
 - `TP_PCT_CLAMP_ENABLE=1`: TP の上限をクランプ
 - 実効 tp_pct は `TPSL_CTX` イベントとして JSON ログに必ず出力する
 
+## ★ポジションの持ち方・決済方法（Bitget 公式・CC が exchange_spec を誤解した点の訂正・2026-06-09）
+
+> ⚠️ **CC 誤解の経緯（L-255・二度と繰り返さない）**: CC は本ファイル下の「placePosTpsl の `pos_profit`/`pos_loss` = ポジション全体に対する TP/SL」だけを見て「**決済はポジ全体のみ・TP/SL は1つ・部分決済できない**」と思い込み、「P23 は同サイドで複数建玉を同時に持てる／日10件は無理」と**間違った設計判断**をした。実際は下記の通り（Bitget 公式で確認・2026-06-09 WebFetch）。**この章を決済設計の起点にし、placePosTpsl の1行だけで早合点しない。**
+
+### (1) 同サイドのポジションは1つに統合（merge・平均建値）— 複数同時建玉は不可
+- hedge_mode: BTCUSDT で **LONG と SHORT を別々に各1ポジ**（同時最大2ポジ）。
+- **同じサイドへの追加発注（add・買い増し）は、新しい別建玉でなく既存ポジに統合され、平均建値（`openPriceAvg`）になる**（公式: "new positions in the same direction are merged" / "consolidated entry price derived from the averaging of multiple entry prices"）。
+- ＝**同じ SHORT を独立した複数建玉として同時には持てない**。P23（SHORT）は取引所上 常に1ポジ。add は平均建値の積み上げ（順張りピラミッディング・価格逆行に買い増すナンピンではない）。V9: MAX_ADDS=5・unit 0.024 ずつ・add5 で size 0.12。
+
+### (2) 決済は「全体」も「部分」もできる（★部分決済・段階利確 scale out が可能）
+- **1つのポジションに複数の TP/SL を設定でき、ポジションの一部だけを段階的に決済（partial close / scale out）できる**（公式例: 1 BTC ロングに対し TP-A 0.5 BTC@$81,000 ／ TP-B 0.5 BTC@$82,000 ／ SL-C 1 BTC@$75,000）。
+- 制約: **TP 注文の合計 ≤ ポジション量**・個別 TP ≤ 利確可能量。TP/SL は最大 **20 個/回**。
+- 手動でも一部だけ決済可（例: 0.1 BTC だけ閉じて残り保持）・**Reduce-only** 注文（既存ポジを減らす方向のみ）。
+- ＝**add で積み上げた1ポジを、複数の TP で段階利確（こまめに刻む）できる**。これが「大勝ち（add で伸ばす）も 小勝ち（部分利確で刻む）も両取り・1日10件以上」の取引所的な裏付け。連続モード（1ポジを一括決済・部分決済を使わない）は件数を抑える＝設計思想を反映しない測り方（L-255）。
+
+### (3) 出典（Bitget 公式・2026-06-09 WebFetch 確認）
+- 部分ポジション TP/SL（複数 TP・段階決済 scale out）: www.bitget.com/support/articles/12560603846567
+- hedge/one-way・同方向 merge・平均建値: www.bitget.com/support/articles/12560603817602
+- 用語集（Average position price = ポジションの平均価格）: www.bitget.com/support/articles/12560603809455
+
+---
+
 ## クローズ仕様
 
-- 能動クローズ: `close_market_order()`（マーケット）
+- 能動クローズ: `close_market_order()`（マーケット）。**※全体クローズだけでなく size 指定で部分クローズ可（上記「ポジションの持ち方・決済方法」(2)）**
 - CLOSE直前に pos 再照会、ゼロなら NO_POSITION で正常終了
 - CLOSE後に pos 再照会、残存があれば EXIT_PENDING で終了
 
@@ -251,6 +273,7 @@
 | size | 不要（pos_profit/pos_loss は省略可） |
 
 - `pos_profit` / `pos_loss`: ポジション全体に対する TP/SL（size 不要）
+  - **※⚠️ CC 誤解防止（L-255）: これは「ポジ全体を1つの TP/SL で閉じる」planType にすぎない。Bitget は部分決済・複数 TP（段階利確 scale out・最大20個・size 指定）も可能。`pos_profit`=唯一の決済方法と早合点しない（→上の「★ポジションの持ち方・決済方法」(2)）。**
 - executePrice = triggerPrice → 指値執行（maker確保）
 - `code` が "00000" 以外 → STOP
 
