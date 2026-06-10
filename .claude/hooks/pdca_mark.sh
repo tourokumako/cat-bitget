@@ -25,6 +25,7 @@ if tn == "Bash":
     # python(3) で実際に score.py/report.py を実行する形のみ検知（grep/echo/別行言及では誤爆しない）
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score\.py", cmd):
         touch(need_report); touch(need_ledger)
+        rm(os.path.join(state, "playbook_fresh"))  # ②score.py起点: 次の採点前に analysis_playbook 再読を強制
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*report\.py", cmd):
         rm(need_report)
 elif tn in ("Edit", "Write", "MultiEdit"):

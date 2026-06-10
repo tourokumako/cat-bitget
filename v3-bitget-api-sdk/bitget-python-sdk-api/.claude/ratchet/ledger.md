@@ -199,3 +199,22 @@
 - 生成物: trades_p23_E03_ground_scaleout.csv / report_trades_p23_E03_ground_scaleout.txt（過去実験出力は archive へ・直下＝現役のみ・§3.1）。
 - 再現: python3 scripts/priority_rebuild/measure_p23_ground_scaleout.py --warmup-start 2025-01-01 → score.py 同csv --start 2025-04-01 --end 2025-12-31 → report.py 同 --vs trades_p23_ground_capped.csv。
 - 経緯・失敗・設計意図の詳細 ＝ session_log_20260609.md §10（文書マップ §8.2：ログは session_log・ledger は結果/原因/改善/判定のみ）。
+
+## E10: P23 出口2分岐（伸びる=粘る/伸びない=早切り・θ足切りなし・連続モード）— 2026-06-10・破棄（入口広げすぎ・伸びない玉大量出血）
+- **変更(A・1テーマ=出口2分岐)**: `train_p23_exit_2class.py` 新規（gen import のみ・改造なし）。入口=θ足切りなし（型バー全部 61111）。木の「伸びるか」(下落MFE%≥T=0.905%・軸1方向ラベル)確率の学習中央値で出口を2分岐: 伸びる(prob≥中央値)=base(TP1.2%/Time480/SL5%・粘らせる) / 伸びない=cut(TP0.6%/Time120/SL2%・早切り)。TP/SL/Time セット(de Prado)。連続モード(cap0.12)採点。地面=$925.73(E0.2・部分決済なし・1回目は部分決済しない＝まこさん 2026-06-10)。
+- **結果(採点2025-04〜12・score.py)**: AI 3508件 月平均 **−$564** 合計 **−$5080** vs 地面 $925.73 → **大敗(−$6006)**。全月マイナス(11月のみ+327)。OOS AUC 0.674・vol_share **0.0**(軸1クリア)・leak なし(make_features 実コード検証＋番人 pass・Web Claude レビュー指摘 make_features 未来参照→無しと確定)。
+- **原因究明(analysis_playbook §2.4=① 戦略欠陥)**: θ足切りをやめ型バー全部入れた→連続3508件(地面の13倍)。**伸びない玉(含み益ピーク<5)2484件 −$11,427**(取り逃し率454%)が壊滅的出血／伸びた玉(>15)は+$8,490 だが圧倒される。出口別=**含み益失速(MFE_STALE)が毎月−$1000〜1500で最大出血**(2分岐 cut で変えなかった)。指標帯=ADX0-20(1419件−$2514)・ATR%0-0.2低ボラ(2915件−$4750)・bb傾き上向き(1759件−$2648)＝**V9の固い閾値が弾いていた低ボラ・横ばい玉が大量混入**。重要特徴top=entry_weekday/entry_hour(時間・曜日依存＝類型D regime過依存疑い)。§2.6: 誤ラベル無/分布シフト小(IS≈OOS)/leak無/fat-tail有(伸びた玉+$8490)/出口2分岐は伸びない玉を救えず(件数膨大でコスト+小損が積もる)。
+- **学び**: 入口を絞ると fat-tail大勝ちを切る(E8c)／絞らない(θ足切りなし)と伸びない玉が大量出血(E10)＝**両方負ける**。出口2分岐だけでは入口の伸びない玉を救えない。
+- **改善(次の一手・要まこさん相談)**: (a)入口を「全部」でなく適度に絞る(V9固い閾値の一部で低ボラ・横ばいを弾く) (b)伸びない側の出口をもっと厳しく(含み益失速を伸びない側で早く切る) (c)サイジング(伸びる玉に厚く・伸びない玉を薄く＝伸びない玉の損を小さく)。
+- **判定**: **破棄**(地面に大敗)。安く「θ足切りなし＋出口2分岐は伸びない玉大量で負ける」を確定＝ラチェット機能。軸1ボラ逃げは回避(vol_share0.0)＝設計プロセスは健全。
+- **生成物**: train_p23_exit_2class.py / trades_p23_exit2class.csv / report_trades_p23_exit2class.txt / p23_learned_params_exit2class.json。
+- **再現**: `python3 scripts/priority_rebuild/train_p23_exit_2class.py` → `score.py results/priority_rebuild/ratchet/trades_p23_exit2class.csv --start 2025-04-01 --end 2025-12-31` → `report.py 同 --vs trades_p23_ground_capped.csv`。
+
+## E11: P23 Exit TP/SL 場面別学習（多クラス分類・net 最大の組を教師・TimeExit固定480・入口θ足切りなし）— 2026-06-10・スモークのみ（本番未実行・設計見直し）
+- **変更(A・1テーマ=Exit を場面別に学習)**: `train_p23_exit_grid.py` 新規（E10 ベース改修・gen import のみ・V9 不変）。各建玉に最適な TP/SL の組を場面別に多クラス分類（net 最大の組を教師＝net 基準・MFE% でない）。グリッド=TP{0.6,1.0,1.5%}×SL{0.5,1.0,2.0%}=9組・TimeExit 固定480・R:R 自由。入口=θ足切りなし（全型バー61111）。特徴量=E10 と同じ（複数期間 方向系＋MTF・ボラ系除外）。
+- **結果（スモークのみ・本番未実行）**: 学習型バー302本×9組で教師ラベル（各建玉の前向き sim net 最大の組）= **78%が組0（最小 TP0.6/SL0.5）に偏る**・全9組 net マイナス（単独 sim avg −$0.96〜−$1.25）・best_iter=1（多クラス underfit）。本番（全学習型バー約45000×9≈40万 sim・約1-2時間）は回さず。
+- **原因究明（analysis_playbook §2.4＝① 戦略欠陥）**: ① **場面別性が弱い**（78%組0＝指標の組み合わせ×閾値で最適 Exit がほぼ変わらない＝場面別 ML の価値が低い兆候）② **θ足切りなしで伸びない玉が大量＝どの Exit 組でも net マイナス**（Exit 単独では入口の伸びない玉を救えない・E10 と同構造）。§2.6: 入口未選別が核心。
+- **改善（次の一手・★ML でやる・Optuna はやらない）**: **Entry を「TP できるか（net プラス）」で学習**（E10 で木は「伸びるか MFE%0.905」を +0.31 当てるが「TP できる net」は −0.08 ＝Entry が利確できるタイミングを学習できていない）。Entry × Exit をセットで・しょぼい試行で諦めず網羅的に。⚠️ まこさんが出した「手動ロジックで Optuna 閾値最適化」は ML の劣化版の例（＝CC の ML 実装がそれ以下にしょぼいという指摘）であって方針ではない（CC 誤読・session_log / L-263）。
+- **判定**: 本番未実行・保留（スモークで場面別性が弱いと判明 → 設計を Entry×Exit セットに見直し）。CC が9組・Entry 未学習のしょぼい試行で早計結論→撤回（経緯 session_log / L-263）。
+- **生成物**: `train_p23_exit_grid.py`（本番未実行のため trades/report なし）。
+- **再現（スモーク）**: `python3.13 scripts/priority_rebuild/train_p23_exit_grid.py --smoke`（⚠️ lightgbm/optuna は **python3.13＝/usr/local/lib/python3.13** にあり・`.venv` と `python3`(=3.11) には無い）。

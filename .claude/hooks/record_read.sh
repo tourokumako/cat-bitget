@@ -18,5 +18,10 @@ except Exception:
 
 if [ -n "$fp" ]; then
   echo "$fp" >> "$LOG"
+  # ②score.py起点ゲート: analysis_playbook を Read したら「再読済み」marker を立てる。
+  #   score.py 実行で pdca_mark.sh が消す＝採点ごとに再読を強制（require_playbook_before_score.sh が判定）。
+  case "$fp" in
+    *analysis_playbook*) : > "$STATE_DIR/playbook_fresh" ;;
+  esac
 fi
 exit 0

@@ -2,7 +2,34 @@
 
 ---
 
-## 🔴 現在地（2026-06-10・改訂69＝読了強制hook稼働＋WORKFLOW/設計書整理＋1回目ラベル T=0.905%確定／次＝ロードマップ1回目の実装）
+## 🔴 現在地（2026-06-10深夜・改訂71＝hook改善＋E10根本分析(prob×net −0.08)＋Exit場面別ML スモークで見込み見えにくい→★Optuna誤読→次は ML で Entry「TPできるか」×Exit セット・CC の ML 実装の甘さ是正が大前提）
+
+> **⚠️ 新セッションが最初に読む（この順）**:
+> 1. `.claude/ratchet/session_log_20260610.md` **§7**（本日午後の全経緯・**§7.2 E10根本分析(prob×net −0.08)**・**§7.4 ★Optuna誤読**・**§7.5 次セッション**）
+> 2. `lessons L-263`（★**CC は ML/最適化/設計のインプット甘い・ガワ実装**／しょぼい試行で天井早計結論→撤回／**Optuna は ML の劣化版の例＝方針でない**）／ `L-262`（E10 出口2分岐 大敗）
+> 3. `.claude/ratchet/ledger.md` **E11**（Exit場面別ML・スモークで78%組0・本番未実行）／ **E10**（出口2分岐 −$5080）
+>
+> **本セッション（改訂70→71・2026-06-10 終日）完了**:
+> - 午前: E10（P23 出口2分岐）大敗（AI 3508件 −$5080 vs 地面$925.73）・破棄（ledger E10）。
+> - 午後〜夜: ① **hook 改善**（count/court 弾きは hook 不可と確定／**analysis_playbook を score.py 起点で再読強制を実装・テスト・4ファイル**＝require_playbook_before_score.sh ＋ record_read/pdca_mark/settings）② **E10 根本分析**（WEB検索ベースアップ → objective mismatch。**prob×net 較正実測 = Spearman −0.08 無相関 / prob×MFE% +0.31**＝木は「伸びるか(浅いMFE0.905)」は当てるが net に繋がらない）③ **Exit TP/SL 場面別学習**（train_p23_exit_grid.py）実装→スモーク（9組・Entry未学習）で78%組0→CC が「天井」と早計結論→撤回。
+>
+> **⚠️ まこさんの最重要指摘（次セッションが必ず踏まえる）**:
+> 1. **CC は ML/最適化/設計のインプットが甘く・ガワだけで中身を伴ってない実装をしている**（cat_requirements §1.1「過去ML化＝ガワで手動$370すら超えられず」の再演）。→ **設計・実装の前に ML の正しい知識を WebSearch/教科書(de Prado AFML/Jansen)でインプットし中身を理解してから書く**（lessons L-263）。「この手法は何を最適化し・何を前提にし・何で失敗するか」を1行で言えないなら実装に入らない。
+> 2. **しょぼい試行（9組・Entry未学習・スモーク302本）で「天井」「見込み薄」を結論づけるな**（網羅的・最低10候補・feedback_exhaustive_search / ten_trials_minimum）。
+> 3. **★ML でやる（Optuna はやらない）**。まこさんが「手動ロジックで Optuna 閾値最適化したほうが精度高くできる」を出したのは **ML の劣化版(Optuna)の例＝「CC の ML がそれ以下にしょぼい・ガワ」という指摘**であって方針転換ではない（CC が誤読し賛成・設計まで出した＝cc_role §1.4 #5 翻訳ミス）。
+>
+> **次セッション着手（ML で・この順）**:
+> 1. **ML/設計の知識を正しくインプット**（WebSearch/教科書・ガワ脱却）。「Entry を net 基準で学習する正しい方法」「Triple Barrier / meta-labeling の中身」「fat-tail を切らない選別」等を中身まで理解。
+> 2. **Entry を「TP できるか（net プラス）」で学習 × Exit セット**を設計（E10 で木は「伸びるか」は +0.31 当てるが「TP できる net」は −0.08＝Entry が利確タイミングを選べていない）。過去 E8c の「絞ると fat-tail 切る」を避ける形で・網羅的に・しょぼい試行で諦めない。
+> 3. **git commit（未実施・まこさん OK 後）**: train_p23_exit_grid.py / hook 4ファイル（require_playbook_before_score.sh・record_read.sh・pdca_mark.sh・settings.local.json）/ ledger E11 / session_log §7 / lessons L-263 / strat_v9ml_design §10.17.1。
+>
+> **地面**: $925.73（E0.2・連続モード・部分決済なし・1回目）。判定=score.py。**設計の正本**: strat_v9ml_design §10.17.1。
+> **⚠️ 実行環境**: lightgbm/optuna は **python3.13（/usr/local/lib/python3.13）**・`.venv` と `python3`(=3.11) には無い（次セッションが実行で迷わないよう）。
+> **⚠️ CCへの警告**: 本セッションで CC は ① まこさんの「Optuna は劣化版の例」を「方針転換」と誤読し賛成・設計まで出した（翻訳ミス cc_role §1.4 #5）② しょぼい試行で「天井」と早計結論（矮小化）③ ML 理解が甘くガワ実装。担保は決意でなく仕組み（読了hook/score.py数字/独立レビュー/まこさん承認）＋ **設計前の知識インプット**。
+
+---
+
+## 🧊 改訂69 ブロック（履歴・参照用）（2026-06-10・読了強制hook稼働＋WORKFLOW/設計書整理＋1回目ラベル T=0.905%確定）
 
 > **⚠️ 新セッションが最初に読む**: 読了強制 hook で必読6本（cat_requirements・WORKFLOW・session_log最新・analysis_playbook・ledger・strat_v9ml_design）を **Read tool で実際に読むまで Bash/Edit/Write は物理 block** される（表示・grep では解除されない）。特に下記を誤解しない:
 > 1. `strat_v9ml_design.md §10.17`（P23 改善ロードマップ＋★**1回目ラベル＝伸びるか（方向・下落 MFE% ≥ T=0.905%）・net金額にしない**）

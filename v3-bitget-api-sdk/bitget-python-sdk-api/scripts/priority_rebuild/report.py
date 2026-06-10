@@ -109,16 +109,24 @@ def main():
     dd2 = _grp(d, "size_btc"); dd2["平均買増"] = d.groupby("size_btc")["add_count"].mean().round(2)
     print(dd2.rename_axis("サイズ").to_string())
 
-    # ===== E. ベスト / ワースト =====
-    cols = [c for c in ["entry_time", "side", "priority", "exit_reason", "hold_min", "net_usd"] if c in d.columns]
-    _cjp = {"entry_time": "日時", "side": "方向", "priority": "優先度", "exit_reason": "出口理由", "hold_min": "保有分", "net_usd": "純益"}
+    # ===== E. ベスト / ワースト（入った時の指標値＝閾値の組み合わせ付き・ベスト/ワースト10）=====
+    _ind = ["adx_at_entry", "bb_mid_slope_at_entry", "stoch_k_at_entry", "stoch_d_at_entry", "atr_14", "rsi_at_entry"]
+    cols = [c for c in ["entry_time", "exit_reason", "hold_min", "add_count", "net_usd"] if c in d.columns] \
+        + [c for c in _ind if c in d.columns]
+    _cjp = {"entry_time": "日時", "exit_reason": "出口理由", "hold_min": "保有分", "add_count": "add数", "net_usd": "純益",
+            "adx_at_entry": "ADX", "bb_mid_slope_at_entry": "bb傾き", "stoch_k_at_entry": "stochK",
+            "stoch_d_at_entry": "stochD", "atr_14": "ATR", "rsi_at_entry": "RSI"}
     def _disp(t):
+        t = t.copy()
+        for c in _ind + ["hold_min", "net_usd"]:
+            if c in t.columns: t[c] = t[c].round(1)
         t = t.rename(columns=_cjp)
-        if "方向" in t.columns: t["方向"] = t["方向"].map(SIDE_JP).fillna(t["方向"])
         if "出口理由" in t.columns: t["出口理由"] = t["出口理由"].map(EXIT_JP).fillna(t["出口理由"])
         return t
-    print("\n  E. ベスト5"); print(_disp(d.nlargest(5, "net_usd")[cols]).to_string(index=False))
-    print("     ワースト5"); print(_disp(d.nsmallest(5, "net_usd")[cols]).to_string(index=False))
+    print("\n  E. ベスト10（指標値＝入った時の閾値の組み合わせ・V9閾値: ADX30-50/bb傾き<-10/ATR≥150 と対比）")
+    print(_disp(d.nlargest(10, "net_usd")[cols]).to_string(index=False))
+    print("     ワースト10")
+    print(_disp(d.nsmallest(10, "net_usd")[cols]).to_string(index=False))
 
     # ===== F. 月別（+AI vs V9）=====
     print("\n  F. 月別 純益（審判）")
