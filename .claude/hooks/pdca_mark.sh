@@ -21,11 +21,17 @@ except Exception:
     sys.exit(0)
 tn = d.get("tool_name", "")
 ti = d.get("tool_input", {}) or {}
+need_score = os.path.join(state, "pdca_need_score")
 if tn == "Bash":
     cmd = ti.get("command", "") or ""
+    # 実験スクリプト実行 → 審判(score.py)を通すまでターン終了不可（2026-06-12 E24 素通り事案・まこさん指示）
+    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_)[A-Za-z0-9_]*\.py", cmd):
+        touch(need_score)
     # python(3) で実際に score.py/report.py を実行する形のみ検知（grep/echo/別行言及では誤爆しない）
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score\.py", cmd):
-        touch(need_report); touch(need_ledger); touch(need_analyze)
+        rm(need_score); touch(need_report); touch(need_ledger); touch(need_analyze)
+    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*precheck\.py", cmd):
+        rm(need_score)  # precheck も審判系の門（FAIL=採点温存で止まる正規ルート・2026-06-12）
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*report\.py", cmd):
         rm(need_report)
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*analyze\.py", cmd):

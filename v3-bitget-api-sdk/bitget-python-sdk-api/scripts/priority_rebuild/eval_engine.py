@@ -114,6 +114,7 @@ def simulate_trade(
     taker: float = TAKER_FEE,
     slippage: float = SLIPPAGE,
     funding_rate_8h: float = FUNDING_RATE_8H,
+    entry_type: str = "maker",  # "maker"=指値 TTL（既定・従来動作） / "taker"=次バー open 成行（2026-06-12 E24・まこさん GO）
 ) -> TradeResult | None:
     """1 トレードを約定・コストモデルでシミュレートし net を返す。
 
@@ -129,23 +130,31 @@ def simulate_trade(
 
     # ── Entry 約定（指値 maker・TTL 内・未到達は取引不成立）──────────────────
     sig_close = float(closes[signal_idx])
-    if direction == LONG:
-        limit = sig_close * (1.0 - ENTRY_LIMIT_OFFSET)
+    if entry_type == "taker":
+        # 成行 entry: 次バー open で必ず約定（taker fee + slippage 不利方向・TTL/不約定なし）
+        if signal_idx + 1 >= n:
+            return None
+        fill_idx = signal_idx + 1
+        raw_open = float(opens[fill_idx])
+        entry_price = raw_open * (1.0 + slippage) if direction == LONG else raw_open * (1.0 - slippage)
     else:
-        limit = sig_close * (1.0 + ENTRY_LIMIT_OFFSET)
+        if direction == LONG:
+            limit = sig_close * (1.0 - ENTRY_LIMIT_OFFSET)
+        else:
+            limit = sig_close * (1.0 + ENTRY_LIMIT_OFFSET)
 
-    fill_idx = None
-    for j in range(signal_idx + 1, min(signal_idx + 1 + ttl, n)):
-        if direction == LONG and lows[j] <= limit:
-            fill_idx = j
-            break
-        if direction == SHORT and highs[j] >= limit:
-            fill_idx = j
-            break
-    if fill_idx is None:
-        return None  # 取引不成立（§6 A: 記録しない）
+        fill_idx = None
+        for j in range(signal_idx + 1, min(signal_idx + 1 + ttl, n)):
+            if direction == LONG and lows[j] <= limit:
+                fill_idx = j
+                break
+            if direction == SHORT and highs[j] >= limit:
+                fill_idx = j
+                break
+        if fill_idx is None:
+            return None  # 取引不成立（§6 A: 記録しない）
 
-    entry_price = limit  # 指値約定＝limit 価格（maker）
+        entry_price = limit  # 指値約定＝limit 価格（maker）
 
     # ── TP / SL 価格 ────────────────────────────────────────────────────────
     if direction == LONG:
@@ -191,7 +200,7 @@ def simulate_trade(
     # ── コスト計算 ──────────────────────────────────────────────────────────
     gross = size_btc * (exit_price - entry_price) * direction
 
-    fee_entry = entry_price * size_btc * maker  # entry は常に指値 maker
+    fee_entry = entry_price * size_btc * (taker if entry_type == "taker" else maker)
     exit_is_taker = exit_reason in _TAKER_REASONS
     exit_fee_rate = taker if exit_is_taker else maker
     fee_exit = exit_price * size_btc * exit_fee_rate
