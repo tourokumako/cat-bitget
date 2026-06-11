@@ -6,7 +6,9 @@
 
 役割: 売買記録CSVを食わせると整理された結果一覧を出すだけ（戦略ロジックなし・replay呼ばない=安全）。
   - 公式 net / NET/day / 月別 は score.py（固定審判・改造しない）から取得
-  - 内訳(B〜I)は CSV の engine net_usd（= gross - maker/taker fee。slippage/funding は審判が別途加算）で集計
+  - 内訳（A リスク指標・B〜L）は**全節 審判式**（score.py と同じコスト式・現行計器・funding 除く）で行単位に再計算して集計
+    ⚠️ 旧仕様（CSV の net_usd 列をそのまま集計）は E0.4 trail maker 化以降 P21 の trail 行が旧計器の値になり
+    誤表示だった（2026-06-12 まこさん指摘「間違った数字を出すレポートはゴミ以下」→ 全節を審判式に統一）
 出力: A全体 / B優先度別 / C出口理由別 / D サイズ・add別 / E ベスト・ワースト / F月別(+AI vs V9) /
       G指標帯別 / H予測確率帯別(p列があれば) / I MFE/MAE別
 """
@@ -17,6 +19,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import score as judge                                    # 固定審判（import のみ）
+import eval_engine as ee                                 # 確定コスト定数（import のみ・改造禁止）
 pd.set_option("display.width", 200); pd.set_option("display.max_columns", 30)
 SIDE_JP = {"LONG": "買い", "SHORT": "売り"}
 EXIT_JP = {"TP_FILLED": "利確(TP)", "SL_FILLED": "損切(SL)", "TIME_EXIT": "時間切れ", "MFE_STALE_CUT": "含み益失速",
@@ -45,6 +48,22 @@ def _band(s, edges, labels):
     return pd.cut(s, bins=edges, labels=labels, right=False)
 
 
+def _judge_cols(t):
+    """審判（score.py）と同じ式で gross/手数料/slip/net を行単位に再計算し、内訳用の列を上書きする。
+    CSV の net_usd は「生成時の計器」の値＝E0.4（trail maker 化）以降 trail 行が旧値のため表示に使わない。"""
+    t = t.copy()
+    mk = getattr(judge, "MAKER_EXIT_REASONS", {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT"})
+    dirn = t["side"].map({"LONG": 1, "SHORT": -1}).fillna(-1)
+    tk = (~t["exit_reason"].isin(mk)).astype(float)
+    t["_gross"] = (t["exit_price"] - t["entry_price"]) * t["size_btc"] * dirn
+    t["_fee"] = t["entry_price"] * t["size_btc"] * ee.MAKER_FEE \
+        + t["exit_price"] * t["size_btc"] * (tk * ee.TAKER_FEE + (1 - tk) * ee.MAKER_FEE)
+    t["_slip"] = t["exit_price"] * t["size_btc"] * ee.SLIPPAGE * tk
+    t["_netj"] = t["_gross"] - t["_fee"] - t["_slip"]
+    t["net_usd"] = t["_netj"]; t["gross_usd"] = t["_gross"]; t["fee_usd"] = t["_fee"] + t["_slip"]
+    return t
+
+
 def _grp(d, by, net="net_usd"):
     g = d.groupby(by, observed=True)
     out = pd.DataFrame({"件数": g.size(), "純益": g[net].sum().round(0),
@@ -61,13 +80,15 @@ def main():
     d = _load(a.csv, a.start, a.end)
     if not len(d):
         print("空CSV"); return
+    d_raw = d.copy()                                     # 審判（score.py）には CSV 原本を渡す
+    d = _judge_cols(d)                                   # 内訳は全節 審判式（現行計器）で集計
     has_p = "p" in d.columns
     name = Path(a.csv).name
     out_path = Path(a.csv).with_name(f"report_{Path(a.csv).stem}.txt")   # 結果一覧を書類保存
     _rf = open(out_path, "w", encoding="utf-8"); _orig = sys.stdout; sys.stdout = _Tee(_orig, _rf)
 
     # ===== A. 全体サマリー =====
-    r = judge.score(d)                                   # 公式 net / 月別
+    r = judge.score(d_raw)                               # 公式 net / 月別（原本で採点）
     days = max(1, (d["exit_time"].max() - d["entry_time"].min()).days)
     eq = d.sort_values("exit_time")["net_usd"].cumsum()
     dd = (eq.cummax() - eq).max()
@@ -87,7 +108,7 @@ def main():
     print(f"  A. 全体  トレード数 {len(d)} / 粗利 ${d['gross_usd'].sum():.0f} / 手数料 ${d['fee_usd'].sum():.0f}"
           f"（{d['fee_usd'].sum()/max(1,abs(d['gross_usd'].sum()))*100:.0f}% ・ ${d['fee_usd'].mean():.2f}/件）")
     print(f"         純益(審判) ${r['total']:.0f} / 月平均 ${r['monthly_avg']:.0f} / 日次純益 ${r['total']/days:.2f}"
-          f" / 計器純益 ${d['net_usd'].sum():.0f}")
+          f" / 内訳net(審判式・funding除く) ${d['net_usd'].sum():.0f}")
     print(f"         勝率 {(d['net_usd']>0).mean()*100:.1f}% / 最大DD ${dd:.0f} / 最大連敗 {int(streak)} / 日次最悪 ${daily.min():.0f}")
     print(f"         Sharpe {sharpe:.2f} / Sortino {sortino:.2f} / Profit Factor {pf:.2f} / Recovery {recov:.2f}（日次USD純益・年率365）")
 
@@ -132,7 +153,7 @@ def main():
     print("\n  F. 月別 純益（審判）")
     mo = r["monthly"].copy().rename(columns={"net_usd": "純益", "n": "件数"}).rename_axis("月"); mo["純益"] = mo["純益"].round(0)
     if a.vs:
-        v = _load(a.vs, a.start, a.end); rv = judge.score(v)
+        v = _load(a.vs, a.start, a.end); rv = judge.score(v); v = _judge_cols(v)
         cmp = pd.DataFrame({"AI純益": r["monthly"]["net_usd"].round(0), "AI件数": r["monthly"]["n"],
                             "V9純益": rv["monthly"]["net_usd"].round(0), "V9件数": rv["monthly"]["n"]}).fillna(0).rename_axis("月")
         print(cmp.to_string()); print(f"   合計  AI ${r['total']:.0f}({len(d)}件)  vs  V9 ${rv['total']:.0f}({len(v)}件)  → 差 ${r['total']-rv['total']:+.0f}")
@@ -189,6 +210,46 @@ def main():
         gm["取り逃し率%"] = (100 * (1 - d.groupby("_mfe", observed=True)["net_usd"].mean() /
                                     d.groupby("_mfe", observed=True)["mfe_usd"].mean())).round(0)
         print("   " + gm.to_string().replace("\n", "\n   "))
+
+    # ===== J. コスト分解（審判式・出口別・②執行の判定材料・2026-06-12 まこさん承認）=====
+    dj = d                                                # 全節 審判式に統一済み（_judge_cols）
+    print("\n  J. コスト分解（審判式＝現行計器・funding除く・gross黒字なのにnet赤=②執行＝手数料負け）")
+    gj = dj.groupby("exit_reason")
+    jt = pd.DataFrame({"件数": gj.size(), "gross": gj["_gross"].sum().round(0), "手数料": gj["_fee"].sum().round(0),
+                       "slip": gj["_slip"].sum().round(0), "net": gj["_netj"].sum().round(0)})
+    print(jt.rename(index=EXIT_JP).rename_axis("出口理由").to_string())
+    print(f"   合計: gross ${dj['_gross'].sum():,.0f} / 手数料 ${dj['_fee'].sum():,.0f}"
+          f"（gross比 {dj['_fee'].sum()/max(1e-9, abs(dj['_gross'].sum()))*100:.0f}%）"
+          f" / slip ${dj['_slip'].sum():,.0f} / net ${dj['_netj'].sum():,.0f}")
+
+    # ===== K. 期待値4要素（勝率×平均勝ち−負率×平均負け・trade_analysis_methods_kb §1）=====
+    def _exp_row(t, label):
+        win = t[t["_netj"] > 0]; los = t[t["_netj"] <= 0]
+        wr = len(win) / max(1, len(t))
+        aw = float(win["_netj"].mean()) if len(win) else 0.0
+        al = abs(float(los["_netj"].mean())) if len(los) else 0.0
+        return {"集団": label, "件数": len(t), "勝率%": round(wr * 100, 1), "平均勝ち$": round(aw, 2),
+                "平均負け$": round(al, 2), "期待値$/件": round(wr * aw - (1 - wr) * al, 2),
+                "コスト$/件": round(float((t["_fee"] + t["_slip"]).mean()), 2),
+                "gross$/件": round(float(t["_gross"].mean()), 2)}
+    rows_k = [_exp_row(dj, "今回")]
+    if a.vs:
+        vj = v                                            # _judge_cols 済み
+        rows_k.append(_exp_row(vj, "ベースライン"))
+    print("\n  K. 期待値4要素（どのレバーが動いたかを特定・--vs でベースライン比較）")
+    print("   " + pd.DataFrame(rows_k).set_index("集団").to_string().replace("\n", "\n   "))
+
+    # ===== L. 限界分解（--vs 時のみ・追加/削除した玉だけの採算・件数レバーの事前/事後ゲート）=====
+    if a.vs:
+        vset = set(v["entry_time"]); dset = set(d["entry_time"])
+        print("\n  L. 限界分解（ベースラインとの集合差・breakeven倍率=平均gross÷往復コスト・<1=手数料負け確定/<1.5=危険域）")
+        for lbl, t in (("追加した玉", dj[~dj["entry_time"].isin(vset)]), ("削った玉", vj[~vj["entry_time"].isin(dset)])):
+            if not len(t):
+                print(f"   {lbl}: なし"); continue
+            ag = float(t["_gross"].mean()); ac = float((t["_fee"] + t["_slip"]).mean())
+            be = ag / ac if ac > 0 else float("inf")
+            print(f"   {lbl}: {len(t)}件 / gross ${t['_gross'].sum():,.0f} / net ${t['_netj'].sum():,.0f}"
+                  f" / 平均gross ${ag:.2f}/件 / 往復コスト ${ac:.2f}/件 / breakeven倍率 {be:.2f}")
 
     sys.stdout = _orig; _rf.close()
     print(f"\n[保存] この結果一覧を書類化 → {out_path}（IDEで開いて確認できます）")

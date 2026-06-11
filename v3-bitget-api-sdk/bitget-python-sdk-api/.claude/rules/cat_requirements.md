@@ -180,11 +180,15 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 
 ## §8 運用ガイド（セッション開始時に読む・新セッション orientation）
 
-### 8.1 セッション開始時に読む順
-1. **本要件定義書**（cat_requirements.md）＝ 全体像・制約・PDCA
-2. **`WORKFLOW.md` 改訂N active ＋ `.claude/ratchet/session_log_*.md`（最新）＋ `.claude/ratchet/analysis_playbook.md`** ＝ 今どこ・次に何をするか（**ratchet が現役**。※`ml_pipeline_execlog.md` は旧8工程フローの記録・参照のみ）
-3. **`.claude/ratchet/ledger.md`** ＝ PDCA 実験ログ（直近の数字）／ **`.claude/ratchet/analysis_playbook.md`** ＝ 分析・原因究明の唯一の正本（毎周 Check 工程はこの手順で実行）
-4. Layer1 必読: CLAUDE.md / WORKFLOW.md / cc_role.md / false_positive_incident_policy.md / **exchange_spec.md（Bitget 仕様）**
+### 8.1 セッション開始時に読む順（2026-06-12 まこさん指示で 7本→3本にスリム化・読了強制 hook と同期）
+1. **本要件定義書**（cat_requirements.md）＝ 全体像・制約 H1-H16・PDCA
+2. **`WORKFLOW.md` 改訂N active** ＝ 今どこ・次に何をするか（現在地5行・詳細は ledger）
+3. **`.claude/ratchet/ledger.md`** ＝ PDCA 実験ログ（直近の数字・原因3分類・採用/破棄）
+
+> 外した4本（読了強制で効果なしの実証・トークン浪費）: session_log（WORKFLOW+ledger と重複）／
+> analysis_playbook（手順は report.py A〜L / analyze.py N1〜N6 / precheck.py P0〜P3 ＋ pdca_gate hook に物理化済・手順を**足す**時だけ開く）／
+> strat_v9ml_design（設計作業時のみ・Layer 2）／ lessons_active（4,118行・教訓は hook/ツールに物理化する方針 L-236・必要時 grep）。
+> ※`ml_pipeline_execlog.md` は旧8工程フローの記録・参照のみ。CLAUDE.md / cc_role 等は auto-load。
 
 ### 8.2 文書マップ＆更新ルール（★どの文書に何を書くか＝唯一の正本・2026-06-07 確定）
 
@@ -195,10 +199,10 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 | **cat_requirements.md**（本書・**起点／正**） | 要件・ハード制約 H1-H14・**本文書マップ**・運用ガイド | 実験結果・経緯・設計の細部 | 出典（CLAUDE 等）が変わった時のみ |
 | **strat_v9ml_design.md** | **設計の決定事項**（現方針・P23 構造・E8b 設計） | 経緯・失敗・教訓・L 番号・「誰が誤解したか」（→ ログへ） | 方針・段取りが変わった時 |
 | **ledger.md** | 実験ごとの 結果／原因 3 分類／改善／採用 or 破棄 | 設計の長文・知識辞典 | 毎実験（hook 強制） |
-| **session_log_YYYYMMDD.md** | その日の経緯・学び・失敗の物語 | 設計の決定事項（→ 設計書へ） | セッション毎 |
+| **session_log_YYYYMMDD.md** | その日の経緯・学び・失敗の物語（**異常・方針転換があった日のみ詳細。通常日は ledger へのポインタ数行で可**＝時短④ まこさん承認 2026-06-12） | 設計の決定事項（→ 設計書へ） | セッション毎 |
 | **analysis_playbook.md** | 分析の手順（Check 工程） | 実験結果・設計 | 分析手順を足した時 |
 | **lessons_active.md** | 教訓 L-XX | — | セッション毎 |
-| **WORKFLOW.md** | 現フェーズ・次タスク・引き継ぎ（改訂 N active） | 設計の細部・知識辞典 | セッション毎 |
+| **WORKFLOW.md** | 現フェーズ・次タスク・引き継ぎ（改訂 N active・**現在地は5行程度＝詳細は ledger 参照**＝時短④ まこさん承認 2026-06-12） | 設計の細部・知識辞典 | セッション毎 |
 | **KB 各種**（technical / industry / trade_methods 等） | 知識（辞典レベル） | 実験結果・設計 | 知識を足した時 |
 
 **徹底の仕掛け**: 本書は SessionStart 強制ロード（強制 cat ①）→ 本表が毎回読まれる。各文書の冒頭に「この文書に書くもの／書かないもの（cat_requirements §8.2 参照）」を 1 行明記。判断に迷ったら本表が優先。

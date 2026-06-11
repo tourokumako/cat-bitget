@@ -70,10 +70,215 @@ def find_type_bars(df: pd.DataFrame) -> np.ndarray:
     return np.where(cross)[0]
 
 
+def phase2_oof():
+    """Phase 2: 教師 CSV から 場面特徴量 → 「入って net>0 か」符号二値＋|net|重みを purged k-fold OOF で検証。
+    実行は python3.13（lightgbm）。採点期間は一切触らない。
+    事前宣言の運用: prob > 0.5 で入る（手置き θ なし・|net| 重み付き二値で「期待 net プラス」の定義）。
+    停止条件: 較正（prob 分位 × 実 net）が壊れている／vol_share ≥ 0.5（H15①）なら採点に進まず報告して停止。"""
+    import lightgbm as lgb                      # noqa: F401（python3.13 のみ）
+    from sklearn.metrics import roc_auc_score
+    from scipy.stats import spearmanr
+    import train_p23_size_E13 as e13            # 特徴量基盤（E13 と同一群・import のみ）
+    import train_p23_entry_E8b as e8b           # build_multiperiod / OHLCV パス
+    import ratchet_guards as rg                 # 番人（vol_share 可視化）
+
+    assert OUT_TEACHER.exists(), f"教師 CSV が無い: {OUT_TEACHER}（先に Phase 1 を実行）"
+    te = pd.read_csv(OUT_TEACHER)
+    entry_ts = pd.to_datetime(te["entry_time"])
+    assert entry_ts.max() <= TRAIN_END, "H8 違反: 教師に学習期間外の entry（停止）"
+    print(f"[load] 教師 {len(te)} 玉（V9 通過 {int(te['v9_pass'].sum())} / 見送り {int((~te['v9_pass']).sum())}）")
+
+    # ---- 場面特徴量（E13 と同一群 ＋ ret1h/ret4h・E19 phase2 と同じ流儀）----
+    ohlcv = pd.read_csv(e8b.OHLCV)
+    ohlcv["timestamp"] = pd.to_datetime(ohlcv["timestamp"])
+    mp = e8b.build_multiperiod(ohlcv)
+    vol = e13.build_vol_feats(ohlcv)
+    # ⚠️ leak 修正（2026-06-12）: 特徴量は entry_time（fill バー j＝close が決定時点で未来）でなく
+    #    sig_time（シグナルバー i＝注文を出す時点で閉じた足）で引く。fill バー基準は類型 A（look-ahead）。
+    Xt = e13.make_features_e13(te["sig_time"], mp, vol, ohlcv)
+    c_idx = ohlcv.set_index("timestamp")["close"].sort_index()
+    for nb, name in ((12, "ret1h"), (48, "ret4h")):
+        r = (c_idx.pct_change(nb) * 100.0)      # 過去 close のみ（H2）
+        Xt[name] = r.reindex(pd.to_datetime(te["sig_time"].values)).values
+    print(f"[特徴量] {Xt.shape[1]} 列（E13 同一群 + ret1h/ret4h・sig_time 基準＝シグナルバー確定値）")
+
+    # ---- ラベル・重み（E12/E13 の型: 符号ラベル・金額は重み・H15）----
+    net = te["net_judge"].to_numpy(dtype=float)
+    y = (net > 0).astype(int)
+    clip = float(np.quantile(np.abs(net), 0.99))
+    w = np.minimum(np.abs(net), clip)
+    print(f"[ラベル] 件数勝率 {y.mean()*100:.1f}%・重み p99 クリップ ${clip:.2f}"
+          f"（重み付き勝ちマス {w[y == 1].sum() / w.sum() * 100:.1f}%）")
+
+    # ---- purged k-fold（玉単位・E19 と同じ）----
+    exit_ts = entry_ts + pd.to_timedelta(te["hold_min"], unit="m")
+    oof = np.full(len(te), np.nan)
+    folds = []
+    for fi, (ti, vi, (v0, v1)) in enumerate(e13.purged_folds(entry_ts, exit_ts, 5)):
+        if len(ti) < 500 or len(vi) < 100 or len(np.unique(y[ti])) < 2:
+            continue
+        m = e13.fit_weighted(Xt.iloc[ti], y[ti], w[ti], Xt.iloc[vi], y[vi], w[vi])
+        p = m.predict(Xt.iloc[vi], num_iteration=m.best_iteration)
+        oof[vi] = p
+        auc = roc_auc_score(y[vi], p) if len(np.unique(y[vi])) > 1 else float("nan")
+        sp = spearmanr(p, net[vi])
+        folds.append({"fold": fi, "val": f"{v0.date()}〜{v1.date()}", "n": int(len(vi)),
+                      "auc": round(float(auc), 4), "spearman": round(float(sp.statistic), 4),
+                      "best_iter": int(m.best_iteration)})
+        print(f"[fold{fi}] val {v0.date()}〜{v1.date()} n{len(vi)} AUC={auc:.4f} "
+              f"Spearman(prob,net)={sp.statistic:+.4f} best_iter={m.best_iteration}")
+    assert folds, "有効 fold 0"
+    has = ~np.isnan(oof)
+    auc_all = roc_auc_score(y[has], oof[has])
+    sp_all = spearmanr(oof[has], net[has])
+    print(f"[OOF全体] AUC={auc_all:.4f} / Spearman(prob,net)={sp_all.statistic:+.4f} / 充足 {has.mean()*100:.0f}%")
+
+    # ---- 較正（prob 10分位 × 実 net・壊れていたら停止）----
+    d = pd.DataFrame({"prob": oof[has], "net": net[has], "win": y[has],
+                      "year": pd.to_datetime(te["sig_time"]).dt.year.to_numpy()[has],
+                      "v9": te["v9_pass"].to_numpy()[has]})
+    d["dec"] = pd.qcut(d["prob"], 10, labels=False, duplicates="drop")
+    cal = d.groupby("dec").agg(n=("net", "size"), prob_min=("prob", "min"), win=("win", "mean"),
+                               avg_net=("net", "mean"), sum_net=("net", "sum"))
+    print("\n[較正] OOF prob 10分位 × 実net（avg_net が分位とともに上がるか）:")
+    print(cal.round(3).to_string())
+
+    # ---- OOF 方策（事前宣言: prob>0.5 で入る）・V9 床との比較・年別 ----
+    take = d[d["prob"] > 0.5]
+    v9t = d[d["v9"]]
+    print(f"\n[OOF 方策] prob>0.5: 採用 {len(take)} 玉 / net ${take['net'].sum():,.1f}"
+          f" ／ V9 床(同集合): {len(v9t)} 玉 / ${v9t['net'].sum():,.1f}"
+          f" ／ 全玉: {len(d)} 玉 / ${d['net'].sum():,.1f}")
+    print("  年別（ML 方策 / V9 床）:")
+    for yy in sorted(d["year"].unique()):
+        a = take[take["year"] == yy]
+        b = v9t[v9t["year"] == yy]
+        print(f"    {yy}: ML {len(a):>5}件 ${a['net'].sum():>9,.1f} / V9 {len(b):>5}件 ${b['net'].sum():>9,.1f}")
+    drop_v9 = d[d["v9"] & (d["prob"] <= 0.5)]
+    add_new = d[~d["v9"] & (d["prob"] > 0.5)]
+    print(f"  入替の中身: V9 玉を落とした {len(drop_v9)} 玉（net ${drop_v9['net'].sum():,.1f} を放棄）"
+          f" / 見送り玉を拾った {len(add_new)} 玉（net ${add_new['net'].sum():,.1f}）")
+
+    # ---- ボラ支配チェック（H15①）＋ 重要特徴 ----
+    cut = int(len(Xt) * 0.85)
+    m_full = e13.fit_weighted(Xt.iloc[:cut], y[:cut], w[:cut], Xt.iloc[cut:], y[cut:], w[cut:])
+    vr = rg.report_vol_importance(dict(zip(m_full.feature_name(), m_full.feature_importance("gain"))))
+    imp = pd.Series(m_full.feature_importance("gain"), index=Xt.columns).sort_values(ascending=False)
+    print(f"\n[ボラ寄与] vol_share={vr['vol_share']}（停止 0.5・H15①）")
+    print("[重要特徴 top12]\n" + imp.head(12).to_string())
+
+    # ---- 出力（OOF prob は後段の連続モード wrapper 検証で使う）----
+    import json
+    oof_csv = OUT_TEACHER.parent / "p21_entry_E21_oof.csv"
+    pd.DataFrame({"bar_i": te["bar_i"], "entry_time": te["entry_time"], "prob": oof,
+                  "net_judge": net, "v9_pass": te["v9_pass"]}).to_csv(oof_csv, index=False)
+    out = {"folds": folds, "oof_auc": round(float(auc_all), 4),
+           "oof_spearman": round(float(sp_all.statistic), 4),
+           "calibration": json.loads(cal.round(4).to_json(orient="index")),
+           "policy_take": {"n": int(len(take)), "net": round(float(take["net"].sum()), 1)},
+           "vol_share": vr["vol_share"],
+           "top_features": {k: round(float(v), 1) for k, v in imp.head(12).to_dict().items()}}
+    outp = OUT_TEACHER.parent / "p21_entry_E21_oof.json"
+    outp.write_text(json.dumps(out, ensure_ascii=False, indent=1))
+    print(f"\n[出力] {oof_csv}\n[出力] {outp}")
+    print("→ 次: OOF 結果をまこさんに報告 → 較正/vol_share が健全なら連続モード wrapper×年別（2024 非劣化）→ 採点1回")
+
+
+def phase3_score():
+    """Phase 3: 本番採点（1回・まこさん GO 2026-06-12）＋対照実験（予測逆転・源泉検証）。
+    学習＝教師（学習期間のみ）全体・時系列85/15で early stopping → 採点期間（2025-04〜12）の
+    型バーに prob 適用 → prob>0.5 のみ entry（検証済み連続モード wrapper）→ trades CSV。
+    正式判定は score.py（このスクリプトは CSV を出すだけ）。実行は python3.13（lightgbm）。"""
+    import lightgbm as lgb                      # noqa: F401（python3.13 のみ）
+    import train_p23_size_E13 as e13
+    import train_p23_entry_E8b as e8b
+    import measure_p21_mlgate_E21 as mw         # 連続モード wrapper（自己検査2本 済）
+
+    score_start = pd.Timestamp("2025-04-01")
+    score_end = pd.Timestamp("2025-12-31 23:59:59")
+    out_csv = OUT_TEACHER.parent / "trades_p21_E21_mlgate.csv"
+
+    te = pd.read_csv(OUT_TEACHER)
+    assert pd.to_datetime(te["entry_time"]).max() <= TRAIN_END, "H8 違反: 教師に学習期間外（停止）"
+
+    # ---- 特徴量（OOF と同一・sig_time 基準）----
+    ohlcv = pd.read_csv(e8b.OHLCV)
+    ohlcv["timestamp"] = pd.to_datetime(ohlcv["timestamp"])
+    mp = e8b.build_multiperiod(ohlcv)
+    vol = e13.build_vol_feats(ohlcv)
+    c_idx = ohlcv.set_index("timestamp")["close"].sort_index()
+
+    def feats(times: pd.Series) -> pd.DataFrame:
+        X = e13.make_features_e13(times, mp, vol, ohlcv)
+        for nb, name in ((12, "ret1h"), (48, "ret4h")):
+            X[name] = (c_idx.pct_change(nb) * 100.0).reindex(pd.to_datetime(times.values)).values
+        return X
+
+    Xt = feats(te["sig_time"])
+    net = te["net_judge"].to_numpy(dtype=float)
+    y = (net > 0).astype(int)
+    clip = float(np.quantile(np.abs(net), 0.99))
+    w = np.minimum(np.abs(net), clip)
+    cut = int(len(Xt) * 0.85)
+    m = e13.fit_weighted(Xt.iloc[:cut], y[:cut], w[:cut], Xt.iloc[cut:], y[cut:], w[cut:])
+    print(f"[学習] 教師 {len(Xt)} 玉（学習期間のみ）・best_iter={m.best_iteration}")
+
+    # ---- 採点期間の候補（型バー）に prob 適用 ----
+    base = rc._load_params()
+    p21 = dict(base)
+    for k in list(p21):
+        if k.startswith("ENABLE_P") and k.endswith(("_LONG", "_SHORT")):
+            p21[k] = (k == "ENABLE_P21_SHORT")
+    print(f"[load] OHLCV preload: {gen.OHLCV_CSV.name}")
+    df, _ = rc.preload(str(gen.OHLCV_CSV), p21)
+    ts_a = df["timestamp_ms"].to_numpy(dtype=np.int64)
+    arrs = (ts_a, df["close"].to_numpy(dtype=float),
+            df["high_raw"].to_numpy(dtype=float), df["low_raw"].to_numpy(dtype=float))
+    bars = find_type_bars(df)
+    bts = pd.to_datetime(ts_a[bars], unit="ms")
+    bars_w = bars[(bts >= score_start) & (bts <= score_end)]
+    print(f"[候補] 採点期間の型バー {len(bars_w)} 本")
+    Xs = feats(pd.Series(pd.to_datetime(ts_a[bars_w], unit="ms")))
+    prob = m.predict(Xs, num_iteration=m.best_iteration)
+    allow = {int(b) for b, p in zip(bars_w, prob) if p > 0.5}
+    inv = {int(b) for b, p in zip(bars_w, prob) if p <= 0.5}
+    print(f"[ゲート] prob>0.5: {len(allow)} / {len(bars_w)} 本（逆＝対照用 {len(inv)} 本）")
+
+    # ---- 連続モード（採点期間のみ・window 外は allow に無く自動 veto）----
+    p21_open = dict(p21)
+    p21_open["P21_ATR14_MIN"] = 0
+    d, s, v = mw.run_continuous(df, arrs, p21_open, lambda i: int(i) not in allow)
+    d = pd.DataFrame(d)
+    et = pd.to_datetime(d["entry_time"]).values
+    xt = pd.to_datetime(d["exit_time"]).values
+    assert all(et[k + 1] >= xt[k] for k in range(len(d) - 1)), "同時保有を検出（停止）"
+    d.to_csv(out_csv, index=False)
+    jsum = sum(judge_net(-1, float(r.entry_price), float(r.exit_price), float(r.size_btc), str(r.exit_reason))
+               for r in d.itertuples())
+    print(f"[MLゲート] トレード {len(d)} 件 / judge式 ${jsum:,.1f} → {out_csv.name}")
+    print("  （正式数字は score.py。地面 $2,697.32 / 912件・E0.4）")
+
+    # ---- 対照実験（予測逆転・源泉検証・judge式の参考値）----
+    d2, _, _ = mw.run_continuous(df, arrs, p21_open, lambda i: int(i) not in inv)
+    d2 = pd.DataFrame(d2)
+    j2 = sum(judge_net(-1, float(r.entry_price), float(r.exit_price), float(r.size_btc), str(r.exit_reason))
+             for r in d2.itertuples()) if len(d2) else 0.0
+    print(f"[対照実験] prob≤0.5（逆）: {len(d2)} 件 / judge式 ${j2:,.1f}（本命より良ければ ML 寄与なし）")
+    print("→ 次: score.py で正式採点（1回）→ report.py → ledger 記録 → まこさん報告")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--smoke", action="store_true", help="候補先頭500件のみ・ファイル出力なし")
+    ap.add_argument("--oof", action="store_true", help="Phase 2: OOF 学習（python3.13・教師 CSV 必須）")
+    ap.add_argument("--score", action="store_true", help="Phase 3: 本番採点用 CSV 生成＋対照実験（python3.13）")
     args = ap.parse_args()
+    if args.oof:
+        phase2_oof()
+        return
+    if args.score:
+        phase3_score()
+        return
 
     base = rc._load_params()
     p21 = dict(base)

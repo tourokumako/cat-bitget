@@ -27,3 +27,10 @@ P21 をやり切る方針（まこさん）の下、E19（Exit 値の場面別�
 - results: p21_exit_menu_E19_teacher.csv / p21_exit_E19_oof.json / p21_exit_E19_oof_pairs.csv / trades_p21_E20_floor{015,02,025}.csv / report_trades_p21_E20_floor02.txt
 - 審判: score.py（E0.4・MAKER_EXIT_REASONS に TRAIL_EXIT・既知答え15/15）
 - hook: .claude/hooks/forbid_fixed_value_tuning.sh
+
+## 5. 再開セッション後半（E21 完結＋分析の物理化・2026-06-12）
+- **E21 完結=破棄**: 採点 $1,409 vs 地面 $2,697（−$1,288）。敗因=②執行（手数料負け・追加1,347玉 breakeven 0.55）。本番モデルが採点期間全 3,205 本 prob>0.5＝ゲート退化。leak（fill バー特徴量）を自己検出し sig_time 修正（E13/E19 波及検証は宿題）。詳細 ledger E21。
+- **report.py 全節 審判式に修正**（まこさん「間違った数字を出すレポートはゴミ以下」）: 内訳 A〜I が旧計器 net_usd を集計していた誤表示を _judge_cols で統一＋J コスト分解/K 期待値4要素/L 限界分解(breakeven) 新設。P21 系レポート4本再生成。
+- **分析の物理化（まこさん「手抜き分析できない仕組み」「手数料負けを事前に計算しろ」「すべての抜け穴を塞げ」）**: ①precheck.py=採点前ゲート（E21 を FAIL=ドリフト31.7pt で止められたことを実証）②analyze.py=採点後深掘り N1〜N6 ③hook: require_precheck_before_score.sh 新設・pdca_gate に analyze 必須追加。採用済み4本（P21地面/E16/E13/P23地面）の一斉コスト監査=全て健全（利確系 breakeven 4.7〜50・FAIL ゼロ）。
+- **必読スリム化（まこさん「効果の無い文書は削除」）**: 読了強制 7本→3本（cat_requirements/WORKFLOW/ledger）。lessons(4,118行)・analysis_playbook（採点前再読ゲートごと）・session_log・strat_v9ml_design を外す（読了強制で効果なしの実証ベース）。cat_requirements §8.1 同期・残骸 sweep 済。
+- 教訓: L-268。次着手は WORKFLOW 改訂74c（並立配分制御の設計＋E13/E19 波及検証＋parquet キャッシュ）。

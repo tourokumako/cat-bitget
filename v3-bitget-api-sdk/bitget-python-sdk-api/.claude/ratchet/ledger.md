@@ -336,6 +336,19 @@
 - **改善（次の一手）**: ATR 床の価格非依存化（USD 150 → ATR% 床・候補 {0.15, 0.20, 0.25%}）を**新地面 $2,697** の上で学習期間比較 → 1案だけ採点。
 - **再現**: `python3 scripts/priority_rebuild/score.py results/priority_rebuild/ratchet/trades_p21_E16_ground.csv --start 2025-04-01 --end 2025-12-31`。
 
+## E21: P21 Entry 判定の ML 置き換え（型=MACD デッドクロスのみ残し・固い閾値は木へ・prob>0.5 ゲート）— 2026-06-12・破棄（採点 $1,409 vs 地面 $2,697＝−$1,288・ゲートが採点期間で全玉素通しに退化）
+- **変更(A・まこさん GO)**: P21 Entry の門番（ATR14≥150 USD 床）を ML ゲートに置換。型バー（MACD デッドクロス・閾値なし・学習期間 15,967 本）を候補化し、LightGBM（ラベル=V9 Exit 前向き sim の net>0 符号・重み=|net| p99 クリップ・特徴量=E13 群+MTF+ret1h/4h・**sig_time 基準**）の prob>0.5 で入る。Exit/サイズ 0.06/add なし=V9 不変（H16 1変更）。`train_p21_entry_E21.py`（--teacher/--oof/--score）+`measure_p21_mlgate_E21.py`（連続モード wrapper）。
+- **自己検査（4本 PASS）**: ①judge 式＝score.py と $1 以内一致 ②独立 sim＝地面と同一 entry 2,492 件 net 完全一致 ③素 wrapper＝地面 4,175 件完全一致 ④床を params→veto 層に移しても完全一致。
+- **⚠️ 途中インシデント（類型A・CC 自己検出・報告先行）**: Phase 2 の特徴量を fill バー（entry_time）で引いており fill バー close が混入（AUC 0.8026 の偽数字・bb_pctb_10 が gain 6倍支配）→ sig_time（シグナルバー確定値）に修正して再実行。**同じ規約（make_features_e13 を entry_time で引く）の E13/E19 にも混入疑い＝信頼性疑義として扱い直し未了（次セッション課題）**。
+- **学習期間の実測（修正後）**: Phase1 独立 sim=見送り集団 11,038 件に +$8,004/4年（2024 は +$292 と薄い）。OOF AUC 0.6486・Spearman +0.39・較正ほぼ単調・vol_share 0.534（>0.5 停止基準ヒット→ATR は P21 のコスト見合いフィルタ＝軸1の許容役割(c)としてまこさん判断で続行）。連続モード（OOF prob ゲート・自己検査済 wrapper）= 地面 $9,676 → $17,322（+79%・2024 +$190 非劣化でゲート通過）。
+- **結果（採点 2025-04〜12・score.py・1回）**: **2,234 件 $1,409.06（月 $156.56）vs 地面 912 件 $2,697.32 → 負け −$1,288・破棄**。H12 勝率 87.7% 表示（P21 trail 構造・地面 93.2% と同質・leak/集計の疑い低）。
+- **原因究明（3分類＝① 戦略/ML 設計・類型D 色）**: **本番モデル（85/15 早停止で best_iter=10 の浅い木）の prob が採点期間の全 3,205 本で >0.5 ＝ゲートが1本も切らず「型バー全部入り」に退化**（対照実験=prob≤0.5 側 0 件で機械的に確認）。OOF では下位 5.5% を切って機能していたが、浅い最終モデル＋2025 の特徴量分布シフト（高価格・低 ATR%）で全玉が高 prob 側へ。型バー全部入りの 2025 は $1,409 で V9 床に負け（出血源=MFE<5 の無順行玉 1,759 件・report I）。学習期間の +$7,645 の大半は 2022-23（V9 床がほぼ取引しない年）の regime 由来で 2025 に持続せず。
+- **原因究明 追補（まこさん指摘→gross/コスト分解・正しい主因は ② 執行=手数料負け）**: 地面＝gross $4,399／手数料 $1,683（gross比38%）／net $2,697 ⇔ E21＝gross $5,867／手数料 **$4,373（75%）**／net $1,408。**追加した 1,347 玉は gross +$1,539 と方向は合っているのに、avg gross +$1.1/件 ＜ 往復コスト ≈$2/件 で net −$1,266 ＝ 手数料負け**。V9 と共通の 887 玉は net $2,674（地面とほぼ同一＝壊していない）。失速カット損は 53→234 件 −$6,610 に増加（戦略損の上乗せ）。**ATR150 床の正体＝「手数料の壁を超える値幅がある玉だけ通すフィルタ」**。CC は trade_analysis_methods_kb §0.3（gross/net 分離）・§1（期待値分解）を読まず採点後まで分解せず「分布シフト」と誤説明（恥・再発防止は下記改善とlessons）。
+- **確定知見**: ① P21 の件数増は「床を厳しく」（E20 −$628）も「床を外して ML ゲート」（E21 −$1,288）も負け＝**V9 の ATR150 床は 2025 地合いで上下どちらに動かしても悪化する適値**。② prob>0.5 固定 cutoff は OOF で binding でも本番モデルの浅さ・分布シフトで non-binding になり得る（ゲートの汎化を OOF だけで信じない）。③ 採点期間での cutoff 再調整は類型C＝やらない。④ P21 単独レバーは E19（Exit）・E20（床%化）・E21（Entry ML）で3连続クローズ。
+- **改善（次の一手・要まこさん相談）**: (a) **並立配分制御 wrapper（E18 確定知見・P23+P21 の予算事前分割）**で合算柱へ（goal_block 候補B） (b) E13/E19 の fill バー特徴量混入の扱い直し（波及検証）。
+- **生成物**: train_p21_entry_E21.py / measure_p21_mlgate_E21.py / p21_entry_E21_teacher.csv / p21_entry_E21_oof.{csv,json} / trades_p21_E21_mlgate{,_train}.csv / report_trades_p21_E21_mlgate.txt。
+- **再現**: `python3 train_p21_entry_E21.py` → `python3.13 同 --oof` → `python3 measure_p21_mlgate_E21.py` → `python3.13 同 --score` → `score.py results/priority_rebuild/ratchet/trades_p21_E21_mlgate.csv --start 2025-04-01 --end 2025-12-31`。
+
 ## E20: P21 ATR 床の価格非依存化（USD 150 → ATR% 床・veto 層）— 2026-06-12・破棄（採点 −$628・仮説が旧計器由来だった）
 - **変更(A)**: Entry シグナル時点の atr_14/close×100 が床未満なら発注しない veto 層（`measure_p21_atrfloor_E20.py`・V9 不変・rc.run() の処理順を 1 対 1 複製した wrapper 連続モード）。候補 {0.15, 0.20, 0.25%} を事前宣言・選定ルール=学習期間 net 最大 AND 2024 非劣化。
 - **自己検査**: veto なし wrapper ＝ 地面 CSV **4,175 件完全一致✅**（entry/exit/reason/net）・同時保有 1 ポジ実測（H1）。

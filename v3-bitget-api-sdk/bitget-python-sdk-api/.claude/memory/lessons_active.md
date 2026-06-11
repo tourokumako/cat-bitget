@@ -6,6 +6,17 @@
 
 ---
 
+### L-268: 手抜き分析・誤計器レポート・読ませても効かない必読 → 分析を道具と hook に物理化（report 審判式統一・precheck 採点前ゲート・analyze 深掘り強制・必読 7本→3本） (2026-06-12)
+
+**何が起きたか:** ① report.py 内訳が CSV の net_usd（trail=taker 旧計器）をそのまま集計し誤った数字を表示（まこさん「間違った数字を出すレポートはゴミ以下」）→全節を審判式 _judge_cols に統一＋J コスト分解/K 期待値4要素/L 限界分解を新設。② E21 の敗因を「分布シフト」と誤分類（J 節を見ず・KB 読了直後なのに）→正しくは②執行=手数料負け（追加1,347玉 平均gross $1.14 < 往復コスト $2.08・breakeven 0.55）。③ その失格サインは採点前に学習期間データだけで出せた（ドリフト 31.7pt・precheck 後付け実証）のに採点1回を浪費。
+
+**Why:** 「読ませる・決意」では分析の質は上がらない（KB 読了直後にしょぼい分析の実証）。数字の抽出を機械化しゲートで強制するしかない（L-236/L-259 と同構造）。L-40（TP_PCT 事前手数料計算義務）が TP 以外の出口・入口選別の変更に拡張されていなかった。
+
+**How to apply:**
+- 採点前: precheck.py（P0 条件一覧/P1 出口別コスト整合/P2 breakeven/P3 ドリフト・FAIL=breakeven<1.0 or ドリフト≥20pt）PASS なしでは require_precheck_before_score.sh が score.py を block。入口を変えるレバーは地面 train CSV も保存し --vs 必須。
+- 採点後: report.py（A〜L 審判式）＋ analyze.py（N1〜N6）＋ ledger 記録まで pdca_gate がターン終了を block。
+- 必読は効果実証ベースで 3本（cat_requirements/WORKFLOW/ledger）。lessons・analysis_playbook は道具/hook に物理化して grep 参照に降格。
+
 ### L-267: CC が複数セッションにわたり固定値調整（手置き候補値スイープ）にドリフトしてトークンを浪費→まこさんがセッション強制終了→ forbid_fixed_value_tuning.sh で物理禁止（レバーは ML 場面別学習で実装する） (2026-06-12)
 
 **何が起きたか:** E20（ATR床 {0.15,0.20,0.25} 手置き候補スイープ→採点−$628 破棄）等、「候補値を手で並べて比較して1つ選ぶ」型の実験を複数セッションで繰り返した（L-261=固定値グリッドへの3回ドリフト の再演）。まこさんがセッションを強制終了し、hook を導入: scripts/priority_rebuild/*.py への Write/Edit で「大文字定数＝数値2個以上のタプル/リスト」を含み lightgbm を使わないものを block。

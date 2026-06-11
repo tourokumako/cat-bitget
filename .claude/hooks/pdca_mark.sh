@@ -10,6 +10,7 @@ import sys, json, os, re
 state = os.environ["PDCA_STATE"]
 need_report = os.path.join(state, "pdca_need_report")
 need_ledger = os.path.join(state, "pdca_need_ledger")
+need_analyze = os.path.join(state, "pdca_need_analyze")
 def touch(p): open(p, "w").close()
 def rm(p):
     try: os.remove(p)
@@ -24,10 +25,11 @@ if tn == "Bash":
     cmd = ti.get("command", "") or ""
     # python(3) で実際に score.py/report.py を実行する形のみ検知（grep/echo/別行言及では誤爆しない）
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score\.py", cmd):
-        touch(need_report); touch(need_ledger)
-        rm(os.path.join(state, "playbook_fresh"))  # ②score.py起点: 次の採点前に analysis_playbook 再読を強制
+        touch(need_report); touch(need_ledger); touch(need_analyze)
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*report\.py", cmd):
         rm(need_report)
+    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*analyze\.py", cmd):
+        rm(need_analyze)  # 深掘りバッテリー N1〜N6 実行で旗が下りる（2026-06-12 まこさん「手抜き分析できない仕組み」）
 elif tn in ("Edit", "Write", "MultiEdit"):
     fp = ti.get("file_path", "") or ""
     if fp.endswith("ledger.md"):

@@ -17,9 +17,15 @@ GOAL="$STATE_DIR/goal_block.md"
 
 input=$(cat)
 
-# 必読6本（部分一致キーワード・session_log は最新の日付を含むので "session_log" でマッチ）
-REQUIRED=("cat_requirements" "WORKFLOW" "session_log" "analysis_playbook" "ledger.md" "strat_v9ml_design" "lessons_active")
-LABEL=("cat_requirements.md(要件)" "WORKFLOW.md(現在地)" "session_log_最新(前回経緯)" "analysis_playbook.md(PDCA分析手順)" "ledger.md(PDCA実験記録)" "strat_v9ml_design.md(設計正本)" "lessons_active.md(教訓・直近L-259=今日の失敗)")
+# 必読3本（2026-06-12 まこさん指示「読ませても効果の無い文書は削除」で 7本→3本にスリム化）
+#   外した4本と理由（読了強制に効果なしの実証・内容は道具/hook に物理化済み or 重複）:
+#   - lessons_active(4118行・最大の浪費): 教訓は hook/ツールで物理強制する方針が正(L-236)・読んでも再演の実証多数。必要時 grep 参照
+#   - analysis_playbook: 分析手順は report.py A〜L / analyze.py N1〜N6 / precheck.py P0〜P3 + pdca_gate に物理化済み。
+#     E21 のしょぼい分析は再読ゲート通過後に起きた＝読ませても効かない実証（採点前再読ゲートも同時撤去）
+#   - session_log: WORKFLOW 現在地5行 + ledger と重複（時短④でスリム化済み）
+#   - strat_v9ml_design: 設計作業の時だけ読む(Layer 2)。設計書照合は複数 CC チェック(cc_role §1.4.6.3)が物理担当
+REQUIRED=("cat_requirements" "WORKFLOW" "ledger.md")
+LABEL=("cat_requirements.md(要件・H制約)" "WORKFLOW.md(現在地)" "ledger.md(PDCA実験記録の正本)")
 
 missing=()
 for idx in "${!REQUIRED[@]}"; do
