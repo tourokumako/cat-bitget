@@ -109,6 +109,12 @@ net(審判) / 月平均 / NET日次 / 勝率 / 最大DD / 最大連敗 / 日次�
 - 仕組み: `cat-bitget/.claude/hooks/pdca_mark.sh`（旗管理・PostToolUse）+ `pdca_gate.sh`（Stop ブロック）・登録は `cat-bitget/.claude/settings.local.json`。
 - 旗を下ろす操作: report.py 実行 / ledger.md 編集。**回避（設定無効化・口実 bypass）禁止**（cc_role §1.4.6.2）。
 
+**2026-06-12 拡張（まこさん合意・「最低ライン分析≠分析のゴール」の物理化）**:
+- **precheck.py も審判の門**: FAIL で閉じる場合も report/analyze/ledger/5つの問い を飛ばせない（旗が立つ）。
+- **report.py は --vs 必須**（KB §0 前後比較）。--vs なし実行は旗が残る。真の初回のみ、まこさん GO を得て `state/no_baseline_approved` を作成（1回で消費・GO なし作成は類型G）。
+- **analyze.py N7〜N9 追加**: N7 必要勝率と不足量（損益分岐勝率 vs 実際・pt差）／ N8 負け玉の解剖（entry特徴の勝負中央値比較・月別集中・SL玉の正体）／ N9 出口効率（勝ち玉 MFE 捕捉率 vs 業界基準 0.6-0.75＝入口/出口どちらが問題かの自動切り分け）。
+- **5つの問いゲート**: ledger の E エントリに【問1 レバー】【問2 不足量】【問3 負け集中】【問4 過去接続】【問5 次仮説】の5見出し全部を含む編集があるまでターン終了不可。N1〜N9 は数字の抽出（最低ライン）であり、5つの問いに答えるまでが分析。中身の質はまこさんの30秒チェックが担保（浅ければ「浅い」で差し戻し）。
+
 ```
 1. 新しい売買記録 CSV を score.py で採点（月次 net・地面 $172 と比較）
    python3 scripts/priority_rebuild/score.py <trades.csv> --start 2025-04-01 --end 2025-12-31

@@ -1,15 +1,17 @@
 #!/bin/bash
 # Stop: PDCA 未閉じならターン終了をブロック（analysis_playbook §4 物理強制・2026-06-05 まこさん矯正指示）
-# score.py 採点後に report.py 分析 と ledger.md 記録 が無ければ exit 2 で終了を拒否し、
-# CC に未済項目を返す（report.py 実行 / ledger.md 編集で旗が下りれば次の Stop で通過）。
+# score.py/precheck.py（審判の門）の後に report(--vs)・analyze・ledger 記録・5つの問い が無ければ
+# exit 2 で終了を拒否し、CC に未済項目を返す（2026-06-12 まこさん合意で --vs / 5q を追加）。
 STATE="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 MISS=""
-[ -f "$STATE/pdca_need_score" ] && MISS="${MISS}・score.py 採点（審判）が未実行（実験スクリプトを回したのに審判を通っていない）\n"
+[ -f "$STATE/pdca_need_score" ] && MISS="${MISS}・審判（score.py または precheck.py）が未実行（実験スクリプトを回したのに審判を通っていない）\n"
 [ -f "$STATE/pdca_need_report" ] && MISS="${MISS}・report.py 分析(結果一覧 A〜L)が未実行\n"
-[ -f "$STATE/pdca_need_analyze" ] && MISS="${MISS}・analyze.py 深掘り(N1時間構造/N2交差/N3系列/N4ドリフト/N5bootstrap/N6個別読み)が未実行\n"
+[ -f "$STATE/pdca_need_vs" ] && MISS="${MISS}・report.py が --vs（前回ベースライン比較・KB §0 前後比較）なしで実行された。--vs <前回CSV> 付きで再実行せよ。真にベースラインが無い初回のみ、まこさん GO を得て state/no_baseline_approved を作成（GO なしの作成は類型G）\n"
+[ -f "$STATE/pdca_need_analyze" ] && MISS="${MISS}・analyze.py 深掘り(N1〜N9: 時間構造/交差/系列/ドリフト/bootstrap/個別読み/必要勝率/負け解剖/出口効率)が未実行\n"
 [ -f "$STATE/pdca_need_ledger" ] && MISS="${MISS}・ledger.md への記録(結果+原因3分類+改善)が未実行\n"
+[ -f "$STATE/pdca_need_5q" ] && MISS="${MISS}・ledger に 5つの問いが未記入: 【問1 レバー】(期待値4要素のどれが何pt動いたか)【問2 不足量】(あと何がいくら足りないか・数値)【問3 負け集中】(特徴・期間・出口)【問4 過去接続】(どの E と同じ/違う構造か)【問5 次仮説】(学習期間で検証可能な形で1つ)。5見出し全部を含む編集で旗が下りる\n"
 if [ -n "$MISS" ]; then
-  printf "⛔ PDCA未閉じ(analysis_playbook §4)。score.py 採点後は必ず以下を実行してから終了せよ:\n%b結果表示・原因分析ログ・経過ログは絶対に飛ばさない(まこさん矯正指示 2026-06-05)。\n" "$MISS" >&2
+  printf "⛔ PDCA未閉じ(analysis_playbook §4)。審判を通したら必ず以下を済ませてから終了せよ:\n%b最低ライン分析(N1〜N9)は数字の抽出にすぎない。5つの問いに答えるまでが分析(まこさん 2026-06-12)。\n" "$MISS" >&2
   exit 2
 fi
 exit 0
