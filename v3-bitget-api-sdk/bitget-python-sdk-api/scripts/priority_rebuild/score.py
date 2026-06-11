@@ -34,9 +34,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import eval_engine as ee  # noqa: E402  確定コスト定数 + funding 境界計算（検証済み計器）
 
 # TP_FILLED と SL_FILLED は placePosTpsl 指値（maker）= run_once_v9.py L320-348 で executePrice=triggerPrice 確認済
-# （手動は手数料負け回避で entry/exit とも maker 優先）。成行 taker は TIME / TRAIL_EXIT / MFE_STALE_CUT /
+# （手動は手数料負け回避で entry/exit とも maker 優先）。成行 taker は TIME / MFE_STALE_CUT /
 # STOCH_REVERSE 等の能動クローズ（close_market_order）のみ。
-MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED"}
+# TRAIL_EXIT（P1/P21 トレーリング）は 2026-06-12 まこさん決定で maker に変更:
+#   本番執行 = SL と同じ placePosTpsl（triggerPrice=executePrice の指値）を trail 水準でバーごとに更新する方式。
+#   live エンジン（run_once_v9.py）に trail は未実装（grep 0件・P21 未稼働）で、taker 計上は replay 側の仮定だった。
+#   live の損益 CSV も fee=maker×2 計上（run_once_v9.py L130-131）。すり抜けリスクの扱いは SL maker（E0.1 承認）と同前提。
+MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT"}
 
 
 def _funding_for_trade(entry_ts: pd.Timestamp, exit_ts: pd.Timestamp,
