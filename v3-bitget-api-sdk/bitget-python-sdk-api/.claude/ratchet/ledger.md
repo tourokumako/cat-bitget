@@ -292,3 +292,22 @@
 - **判定**: score.py の数字は上がった（ratchet 基準では採用相当）。**サイズ運用に関わるためまこさん確認待ち**（採用宣言しない）。
 - **生成物**: measure_p21_thick_E16.py / compose_p21_sized_E16.py / trades_p21_E16_thick.csv / trades_p21_E16_sized.csv / report_trades_p21_E16_sized.txt。
 - **再現**: `python3 scripts/priority_rebuild/measure_p21_thick_E16.py` → `python3 scripts/priority_rebuild/compose_p21_sized_E16.py --emit 1` → `score.py results/priority_rebuild/ratchet/trades_p21_E16_sized.csv --start 2025-04-01 --end 2025-12-31`。
+
+## E17: P1 LONG 単独の地面測定（連続モード・cap遵守）— 2026-06-12・破棄（柱にならない・採点期間 全月マイナス）
+- **変更**: なし（測定のみ）。`measure_p1_ground_E17.py`（E16 と同じ replay_csv.run() 直呼び・V9 不変）。自己検査4点 PASS（全3,413件 priority=1／LONG／size max 0.06／同時保有 max 0.0600）。
+- **結果（採点 2025-04〜12・score.py）**: **全月マイナス・合計 −$1,612.95（月平均 −$179.22）**・523件・勝率 69.4%・PF 0.53・最大DD $1,527。手数料 $1,787＝粗利 $329 の 543%。
+- **参考（学習期間・score.py）**: 月平均 +$22.24（$1,001/45ヶ月・勝率 78.1%）。
+- **原因究明（3分類＝③ regime 依存）**: P1（MACD ゴールデンクロスの LONG スキャル・trail 主出口）は上昇地合いのみ機能。V9 の regime 切替（uptrend のみ ON・全体地図 +$625/4年）が**赤字から守っていた**＝P21（切替が利益を 1/9 に削っていた）と正反対。regime 割当の価値は Priority ごとに正負どちらもある（P24=割当が損・P21=割当が損・P1=割当が得、の3例で確定）。
+- **救済不成立の確認**: 採点期間は上昇帯（ret4h>0）のみプラス（+$150/208件）だが、学習期間は全帯プラスで下落帯 +$791 が最大 → 学習期間から「上昇帯フィルタ」を選定する根拠が無い（採点期間を見て選ぶのは類型C）→ フィルタ救済は採用しない。
+- **判定**: **破棄**（単独柱として不成立）。P1 を使うなら regime/文脈の条件付き運用のみだが、その条件は学習期間から導けないため当面凍結。確定知見＝地図上プラスの2本（P21/P1）のうち単独で立つ柱は P21 だけ。
+- **生成物**: measure_p1_ground_E17.py / trades_p1_E17_ground.csv / report_trades_p1_E17_ground.txt。
+- **再現**: `python3 scripts/priority_rebuild/measure_p1_ground_E17.py` → `score.py results/priority_rebuild/ratchet/trades_p1_E17_ground.csv --start 2025-04-01 --end 2025-12-31`。
+
+## E18: P23+P21 SHORT 並立の実測 — 2026-06-12・採点不能（cap 違反 0.228-0.264 BTC・混成 add）＝「並立には配分制御の実装が必要」と確定
+- **変更**: なし（測定のみ）。`measure_p23p21_E18.py`＝ENABLE_P23_SHORT＋ENABLE_P21_SHORT 両 ON・他 OFF・regime_switch=False で replay_csv.run()。
+- **結果**: 全期間 4,768件（P21 3,550／P23 1,218）・同時保有合計 **max 0.264 BTC（採点期間でも 0.228）＞ 予算 0.12** → **score.py が採点拒否（H1 物理ゲート正常動作・偽の数字を出さず停止）**。
+- **原因究明（3分類＝② 執行・実装仕様）**: replay（=V9 実装）は同サイドポジ保有中に**別 Priority のシグナルが来ると既存ポジへの add として積む**（unit は新シグナル側の P*_POSITION_SIZE_BTC・max_adds はポジ側 Priority の件数判定・サイズ合計はチェックなし）。実測＝size>0.12 の玉 239件は全て P23 名義 add3-5＝P23 ポジに P21 の 0.06 が混成 add され最大 0.264 まで膨張。
+- **確定知見**: §6.2 の「複数 Priority 並立」は **V9 を素のまま並べるだけでは成立しない**（混成 add で予算超過）。並立を成立させる設計候補（次の設計対象）: (a) ポジ保有中は別 Priority シグナルを見送る排他ルール (b) 混成 add の unit を予算内に制御 (c) Priority への予算事前分割（例: P23 に 0.06=unit 0.012×5・P21 に 0.06 → 合計常に ≤0.12）。いずれも V9 不変の wrapper 層で実装し学習期間で比較してから採点。
+- **判定**: 採点不能（記録のみ）。物理ゲートが「本番で発注不可能な構成」を数字が出る前に止めた＝関所の実証。
+- **生成物**: measure_p23p21_E18.py / trades_p23p21_E18.csv（cap 違反・採点不可の記録用）。
+- **再現**: `python3 scripts/priority_rebuild/measure_p23p21_E18.py` → score.py（採点拒否を確認）。
