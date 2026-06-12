@@ -30,6 +30,7 @@ from __future__ import annotations
 import sys
 import copy
 import json
+import hashlib
 import pathlib
 from decimal import Decimal
 import numpy as np
@@ -209,8 +210,45 @@ def _partial_now_net(pos, close_p, ts_ms, df, arrays, i):
     return realized + rest
 
 
+# ── P4 発火配列（前計算＋disk キャッシュ・速度最適化 2026-06-12）──────────────────
+def _fire_cache_path(df, params):
+    n = len(df)
+    h = hashlib.sha256()
+    h.update(str(n).encode())
+    h.update(str(int(df.at[0, "timestamp_ms"])).encode())
+    h.update(str(int(df.at[n - 1, "timestamp_ms"])).encode())
+    h.update(json.dumps(params, sort_keys=True, default=str).encode())
+    return RAT / f"p4_fire_arr_P{PRIORITY}_{h.hexdigest()[:16]}.npy"
+
+
+def build_fire_arr(df, params):
+    """fire_arr[i]=(check_entry_priority(i,df,params)==PRIORITY) を1回だけ評価し disk キャッシュ。
+
+    値は V9 の本物 check_entry_priority を呼んだ結果と完全同一（再実装しない・cat_v9 不変）。
+    発火はポジ状態に依存しない（df+params のみ）ので collect/運用/対照 の全パスで共有でき、
+    毎バー×複数パスの再計算（プロファイル実測でボトルネック 98%＝check_entry_priority）を1回に削減。
+    キャッシュ鍵 = バー数 + 期間 + params 全体（どの変化でも別鍵）。万一 stale でも自己検査
+    （collect が地面と件数・net 一致 assert）が即 FAIL する＝間違った採点は構造的に出ない。
+    """
+    cp = _fire_cache_path(df, params)
+    if cp.exists():
+        fa = np.load(cp)
+        if len(fa) == len(df):
+            _log(f"[fire] キャッシュ HIT {cp.name}（{int(fa.sum())}発火）")
+            return fa
+    n = len(df)
+    _log(f"[fire] P4 発火配列を構築（全{n}バー・初回のみ・check_entry_priority を1回ずつ）...")
+    fa = np.zeros(n, dtype=bool)
+    for i in range(rc.CANDLE_WARMUP, n):
+        if check_entry_priority(i, df, params) == PRIORITY:
+            fa[i] = True
+    np.save(cp, fa)
+    _log(f"[fire] 構築完了 {int(fa.sum())}発火 / 保存 {cp.name}")
+    return fa
+
+
 # ── 連続モード本体（collect=教師収集 / model=運用）───────────────────────────────
-def run_loop(df, arrays, bar_ms, initial_fn, M=None, model=None, feat_cols=None,
+def run_loop(df, arrays, bar_ms, fire_arr, M=None, model=None, feat_cols=None,
              collect=False, invert=False):
     ts_a, cl_a, hi_a, lo_a = arrays
     state = {"pos": None, "pending": None, "trades": []}
@@ -305,8 +343,10 @@ def run_loop(df, arrays, bar_ms, initial_fn, M=None, model=None, feat_cols=None,
                 pos = None
 
         # 7. エントリー / ADD（部分利確で枠が空けば V9 発火で再 add）
-        fire_add = (check_entry_priority(i, df, _PARAMS) == PRIORITY)
-        want_initial = (pos is None and pending is None and initial_fn(i))
+        #    fire_arr[i]=(check_entry_priority(i)==PRIORITY) を前計算済み（値は V9 本物と同一・位置依存なし）
+        fire_i = bool(fire_arr[i])
+        fire_add = fire_i
+        want_initial = (pos is None and pending is None and fire_i)
         if (fire_add and pos is not None) or want_initial:
             if pos is not None:
                 if len(pos["_lots"]) >= int(_PARAMS.get("MAX_ADDS_BY_PRIORITY", {}).get(str(PRIORITY), 5)):
@@ -386,10 +426,10 @@ def main():
               df["high_raw"].to_numpy(), df["low_raw"].to_numpy())
     ohlcv = pd.read_csv(e8b.OHLCV); ohlcv["timestamp"] = pd.to_datetime(ohlcv["timestamp"])
     _log(f"[load] bars={len(df)}")
-    fire_fn = lambda i: (check_entry_priority(i, df, _PARAMS) == PRIORITY)
+    fire_arr = build_fire_arr(df, _PARAMS)
 
     # ---- 自己検査: 教師収集パス（ML 発動なし＝V9 軌道）が地面と一致 ----
-    base_trades, snaps, _ = run_loop(df, arrays, bar_ms, fire_fn, collect=True)
+    base_trades, snaps, _ = run_loop(df, arrays, bar_ms, fire_arr, collect=True)
     g = pd.read_csv(GROUND)
     bsum, gsum = sum(float(t["net_usd"]) for t in base_trades), float(g["net_usd"].sum())
     _log(f"[自己検査] 教師パス: {len(base_trades)}件/${bsum:.2f} vs 地面CSV {len(g)}件/${gsum:.2f}")
@@ -479,10 +519,10 @@ def main():
         sc = t[(t["entry_time"] >= SC_START) & (t["entry_time"] < SC_END)].reset_index(drop=True)
         return judge.score(sc), t
 
-    trades, _, nact = run_loop(df, arrays, bar_ms, fire_fn, M=M, model=m_full, feat_cols=feat_cols)
+    trades, _, nact = run_loop(df, arrays, bar_ms, fire_arr, M=M, model=m_full, feat_cols=feat_cols)
     r, tdf = _score(trades)
     tdf.to_csv(RAT / "trades_p4_E26_hold.csv", index=False)
-    inv_trades, _, _ = run_loop(df, arrays, bar_ms, fire_fn, M=M, model=m_full, feat_cols=feat_cols, invert=True)
+    inv_trades, _, _ = run_loop(df, arrays, bar_ms, fire_arr, M=M, model=m_full, feat_cols=feat_cols, invert=True)
     r_inv, _ = _score(inv_trades)
     g["entry_time"] = pd.to_datetime(g["entry_time"]); g["exit_time"] = pd.to_datetime(g["exit_time"])
     gsc = g[(g["entry_time"] >= SC_START) & (g["entry_time"] < SC_END)].reset_index(drop=True)

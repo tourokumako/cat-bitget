@@ -447,3 +447,34 @@
 - **判定**: **閉じる**（採点不使用・温存）。次の LONG は「形で入って出口で稼ぐ」系（E23 残課題の保有中スナップ学習等）or regime 条件づけからまこさんと設計。
 - **生成物**: strat_long_E25.py / trades_long_E25_q{90,95}.csv / long_E25_learned_params.json（全特徴量62列・fold記録・較正・選抜サマリ） / report_trades_long_E25_q95.txt / analysis_trades_long_E25_q95.txt。
 - **再現**: `python3.13 scripts/priority_rebuild/strat_long_E25.py [--smoke]` → `python3 scripts/priority_rebuild/precheck.py results/priority_rebuild/ratchet/trades_long_E25_q95.csv`。
+
+## E26: P4 保有中 Exit policy ML（3アクション=持つ/部分利確/全降り・E23 oracle 天井を保有中経路で取りに行く）— 2026-06-12・破棄（20分固定切りに退化＝改悪・CSV玉単位で add5消滅/TP半減/平均勝ち$20→$12・手動V9のほうが上）
+- ⚠️ **訂正（まこさん指摘・CSV玉単位で再分析）**: 当初「採用（地面更新・ML寄与あり）」は誤判定。集計 net（−201 vs 地面 −681）だけ見て玉単位を見なかった。CSV を見ると **全降り166件の保有が四分位すべて20分＝動ける最初のバーで全部切る「20分固定タイムストップ」に退化**（fold AUC 0.49〜0.58＝選別力ゼロが既に赤旗）。**add5 9→0消滅・TP 82→50半減・平均勝ち $20.04→$12.12**。地面は add2(−$281)/add3(−$647)の半端玉が TIME_EXIT で死ぬのが出血源で **add4(+$156)/add5(+$124)は黒字**＝E26 は伸びる玉も半端玉も区別せず全切りし黒字玉まで潰した。net の"改善"は早切りでエクスポージャーを減らした degenerate＝改善でなく**改悪**。まこさんが禁じた「単純な時間切り」に退化。**判定=破棄・手動V9のほうが strategy として上**。
+- **変更(A・まこさん GO・1テーマ=P4 Exit 側を保有中学習)**: `train_p4_hold_E26.py`（V9/審判/eval_engine/E14・E0.3 機構 不変・LONG 移植のみ自前）。保有20分以降の各バーで {A0 持つ／A1 1ロット部分利確／A2 全降り} の net 最大アクションを multiclass 学習。net は rc._record_trade のみ（自作 net なし）。特徴量=市場（方向系+ボラ pct+MTF）+保有経路 POS_STATE。**＋本セッションの実作業=速度最適化**: 本番が運用2パスで未完走（16分超）→ プロファイルで真因＝`check_entry_priority`（毎バー×全パスで pandas 行アクセス・cumtime 98%）と特定 → **fire_arr（P4 発火配列）を1回だけ評価し disk キャッシュ・全パス共有**（cat_v9 不変＝本物を呼ぶだけ・値同一・教師/net 不変）→ 完走。next_step の (a) `_forward_remaining_net` numpy化/(c) 部分利確 sim 限定は**実測で無関係（トップ18外）と判明し却下**。
+- **結果（採点 2025-04〜12・score.py 審判式）**: 自己検査 ✅ 教師パス 969件/$-1977.67=地面一致（最適化が軌道を変えていない）。vol_share 0.135（H15健全・top=adx_30m/adx_4h/stoch_k_4h/age_min）。fold AUC(降りvs持つ) 0.49〜0.58。**AI 237件／月−$22.40／合計 −$201.6（実運用 部分4・全降り607＝ほぼ「持つ/全降り」の早切りに収束）／対照(prob逆転) −$523.9／地面 P4 E22 211件/−$681.2（月−$76）→ AI 勝ち +$479.6・ML寄与あり**。
+- **原因究明（3分類）= ①戦略 主＋②regime**: 止血は効いた（時間切れ111件→19件・出血本体を早切りに変換）が net は黒字に届かず。**J コスト分解が核心**: ML_EXIT 166件 gross−$480＋**taker 手数料$365+slip$33→net −$877**／TP 50件 +$926／合計 gross +$298 だが**手数料$462（gross比155%）**で net −$201。**N9 出口効率 中央値0.79（業界0.6-0.75 超＝正常）＝直すべきは入口側**。N8 負け玉=**高ADX entry（25.1 vs 勝ち19.3・差+5.8）**。precheck **ドリフト FAIL 46.6pt**（ATR% 帯：学習61%が>0.4 の高ボラ／採点14%＝P4 entry の高ボラ学習/低ボラ採点・entry 不変ゆえ地面も同じ＝E26 固有でない）。
+- **確定知見**: ① E26 は P4 の止血として地面を更新（−$76→−$22/月・ML寄与あり・非fat-tail で E14 の勝ち玉巻き込みは起きず予測通り）だが **P4 は依然 net マイナス＝LONG 柱にならず**。② **新発見＝保有中早切りを taker で大量に打つと手数料の壁**（ML_EXIT 166件 手数料$398・gross比155%）＝止血の net 効果の大半をコストが食う。maker 撤退（指値）or 件数を絞らないと黒字化しない（指値撤退は約定保証なし＝要設計）。③ N9 出口効率正常＋N8 高ADX負け＋precheck ドリフト＝**P4 も壁は入口/regime 側**（E17/E22/E25 の「LONG は regime 条件が先・入口の工夫は後」と完全一致）。④ 部分利確 A1 は教師でも実運用でもほぼ不採用（2%/4件）＝P4 では「持つ vs 全降り」の二択が実質。
+- **5つの問い（分析の締め・precheck はドリフト FAIL 46.6pt／公式 score は script 内 judge.score で算出済・--already-scored で gate 記録）**:
+  - 【問1 レバー】保有中 Exit policy。実運用は「全降り607・部分4」＝早切り（止血）に収束。期待値/件 −$3.23（地面）→ **−$0.85（K 節・+$2.38改善）**。動いたのは「時間切れ大損→早切り小損」への置換。
+  - 【問2 不足量】N7 必要勝率 48.3%／実際 44.7%＝**3.6pt 不足**（等価: 平均負けを $11.35→$9.81 に縮める or 平均勝ちを $12.13→$14.03 に伸ばす）。月で +$22.40 黒字化に不足。
+  - 【問3 負け集中】J 節 ML_EXIT の **taker 手数料$398**（止血のコスト）＋ MFE<5 の118件 −$1,227（伸びない玉）。N8: 高ADX(25.1)・月別 2025-10(30件)/11/05/12 に集中。
+  - 【問4 過去接続】E14（P23 早逃げ −$194）と違い P4 非fat-tail で net は改善（構造差を見て試した判断は正しかった）。だが N9 正常+N8 高ADX負け = **E17/E22/E25 と同一の「LONG 入口が壁」**。Exit を磨いても入口が高ADX で負け続ける。
+  - 【問5 次仮説】①止血の執行を taker→maker（指値撤退）化で手数料$398→~$130 規模に下げられれば net 黒字化の射程（要・約定保証の設計）。②より本筋＝P4 entry の regime/ADX 条件（高ADX を入口で外す・E25 問5 と同じ regime 条件づけ）。覗き見採点はしない。
+- **判定**: **採用（P4 止血の最良版＝地面 −$76→−$22/月に更新・ML寄与あり・速度最適化で完走可能に）。但し P4 は net マイナスで LONG 柱は未達**。次は止血の maker 化 or 入口の regime/ADX 条件（N8/N9/precheck が指す入口側）をまこさんと設計。
+- **生成物**: train_p4_hold_E26.py（fire_arr 前計算＋キャッシュ追加） / trades_p4_E26_hold.csv / p4_learned_params_E26.json / p4_fire_arr_P4_2da21dde188598be.npy（発火キャッシュ） / report_trades_p4_E26_hold.txt / analysis_trades_p4_E26_hold_score.txt / precheck_trades_p4_E26_hold_train.txt（ドリフト FAIL）。
+- **再現**: `python3.13 scripts/priority_rebuild/train_p4_hold_E26.py [--smoke]`（初回 fire 構築~5分・以降キャッシュ HIT）→ `report.py trades_p4_E26_hold.csv --start 2025-04-01 --end 2025-12-31 --vs trades_p4_E22_ground.csv` → `analyze.py trades_p4_E26_hold_score.csv --train trades_p4_E26_hold_train.csv --candles data/BTCUSDT-5m-2021-04-01_03-31_1826d_V9FULL_safe.csv`。
+
+## E27: P4 メタラベリング（一次=V9押し目・二次=ポジ単位net>0予測・Entry厳選・Exit V9固定）— 2026-06-12・破棄（Phase1 判別力○ AUC 0.653 だが Phase2 cut=採点7件の near-inaction・入口選別で P4 net は黒字化せず）
+- **変更(A・まこさん GO・E26 の反省=Exit切り離しの逆＝正しいメタラベリング構造)**: `train_p4_meta_E27.py` 新規。一次=V9 P4 押し目（fire_arr・Exit も V9 不変＝1ターン1変更）。ラベル=ポジション単位 net>0（V9 実 Exit で利確に辿り着いたか・自作 net 禁止・add数ラベルは不安定で不採用）。特徴=entry サイン時点の上位足 regime 主役（MTF）+5m 押し目+複数期間（ボラ系は方向主役にしない H15）。二次=LightGBM 二値・purged k-fold（ポジ単位・embargo 1day）・weight=|net|・class_weight。自己検査=collect が地面 969件/$-1977.67 一致 ✅（V9 軌道不変・969ポジ収集）。
+- **結果（Phase1・学習期間526ポジ OOF・採点なし）**: **OOF AUC 0.653**（fold 0.637/0.609/0.663/0.596/**0.511**）＝判別力○（E23 の「entry 時点予測不能」と違い 0.5 を明確に超え・E8 P23 の 0.59-0.73 同等域）。**上位足 regime（adx_4h/adx_1h/stoch_k_30m/bb_pctb_30m）が importance 上位＝「上位足が鍵」仮説が的中**。vol_share 0.135（H15 健全）。prob 5分位: 勝率 0.40→0.49→0.56→0.67→0.76 単調（較正○）だが net は下位2分位(qbin0/1) **−$875 大出血**・上位3分位は小さい（最高prob群でも net −$0.41/件）。
+- **原因究明（3分類・Phase1段階）= ①戦略**: 判別力は立ったが、net で見ると「勝率は当たるが net+ に届かない」（E4 の勝率/net 乖離・最高prob群が net+ に偏らない）。cut（低prob 見送り）の余地はある（学習期間 net −906→−31）。だが fold4（直近 2024-10-30〜）AUC 0.511＝採点期間で判別力が落ちる懸念（regime ドリフト・E25「学習で立つが採点で負け」を警戒）。
+- **結果（Phase2・cut 閾値=学習 OOF kept-net 最大化→運用→採点）**: 閾値 **prob≥0.701**（学習 採用132本/$+56 vs 全取り526本/$−907）。**採点 AI 7件/月−$11.96/合計 −$71.8（score.py 確定）／対照(prob<閾値で入る) 209件/−$705.3／地面 211件/−$681.2**。⚠️ **degenerate**: 採点7件（9ヶ月中3ヶ月0件・add4の1件−$59で吹き飛ぶ）＝「ほぼ取引しないから損も小さい」near-inaction（E26 と同型）。precheck ドリフト FAIL 57.8pt。
+- **5つの問い（Phase2 確定）**:
+  - 【問1 レバー】メタラベリング二次 prob（一次=V9押し目・Exit固定・E26 の逆＝正しい構造）。Phase1 判別力 OOF AUC 0.653 は本物（上位足 regime 効く）。だが Phase2 で cut すると採点7件＝near-inaction に退化。
+  - 【問2 不足量】**使える cut 閾値が存在しない**。学習 OOF net 最大の0.701 は上位25%過適合→採点7件/−$71.8。緩い閾値は件数出るが net マイナス（Phase1 で net+ は qbin2 のみ・上位群も net+ に届かず）。黒字化に必要なエッジが採点地合いに不在。
+  - 【問3 負け集中】採点7件中 add4 の1件 −$59 で吹き飛ぶ。3ヶ月(2025-05/06/09)は0件。precheck ドリフト 57.8pt（cut で環境差拡大）。
+  - 【問4 過去接続】E22 地面・E25 新入口・E27 メタ選別 の3度とも「P4(LONG) は採点地合いにエッジ無し・入口選別では作れない」。E26（Exit早切り）と E27（Entry選別）で P4 を ML 黒字化する2方向を潰した。
+  - 【問5 次仮説】P4 単独の net 黒字化は入口でも出口でも不成立＝打ち止め。$1,900 はエッジが実在する柱（P21）側＋サイズで組む（goal_block 通り）。P4 を使うなら中身でなく「いつ P4 を ON にするか」の上位 regime ゲートだが、採点期2025 は P4 不利が地面で確定。
+- **判定**: **破棄**（Phase2 cut=採点7件の near-inaction・degenerate。判別力(AUC 0.653)は本物だが入口選別で P4 net は黒字化しない。CSV 玉単位で degenerate を捕捉し E26 のような誤判定は回避）。
+- **生成物**: train_p4_meta_E27.py / p4_meta_E27_phase1.json。
+- **再現**: `python3.13 scripts/priority_rebuild/train_p4_meta_E27.py [--smoke]`（fire キャッシュ HIT・採点なし・OOF AUC を出す）。

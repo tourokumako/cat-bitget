@@ -205,6 +205,7 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 | **analysis_playbook.md** | 分析の手順（Check 工程） | 実験結果・設計 | 分析手順を足した時 |
 | **lessons_active.md** | 教訓 L-XX | — | セッション毎 |
 | **WORKFLOW.md** | 現フェーズ・次タスク・引き継ぎ（改訂 N active・**現在地は5行程度＝詳細は ledger 参照**＝時短④ まこさん承認 2026-06-12） | 設計の細部・知識辞典 | セッション毎 |
+| **`.claude/state/next_step.md`**（**新セッションの起点・SessionStart 全文表示**） | 次セッションの起点1枚＝①本筋 ②今セッションの確定(ledger E番号参照) ③やってはいけないこと ④数字の出典 | 履歴（→ ledger/WORKFLOW 改訂）・確定知見の重複（→ ledger） | **毎セッション末に上書き**（最新1枚・pdca_gate で物理強制・§8.3） |
 | **KB 各種**（technical / industry / trade_methods 等） | 知識（辞典レベル） | 実験結果・設計 | 知識を足した時 |
 
 **徹底の仕掛け**: 本書は SessionStart 強制ロード（強制 cat ①）→ 本表が毎回読まれる。各文書の冒頭に「この文書に書くもの／書かないもの（cat_requirements §8.2 参照）」を 1 行明記。判断に迷ったら本表が優先。
@@ -228,7 +229,10 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 ### 8.3 ログ更新タイミング
 - **各実験後**: `ledger.md` に1行（変更(A) / 結果(月平均・最悪月・$1900達成月数) / 原因究明 / 改善 / 採用 or 破棄）
 - **制約変更・設計が覆った時**: 本書 + 出典を更新（出典が正）
-- **セッション末**: `ml_pipeline_execlog.md §2 現在地` + `WORKFLOW.md` 改訂 + `lessons_active.md`
+- **セッション末（恒久・物理強制）**: ① **`.claude/state/next_step.md` を上書き更新**（毎回上書き=最新の起点1枚・SessionStart で全文表示。記載必須＝①次セッションの本筋 ②今セッションの確定=ledger E番号を参照 ③やってはいけないこと ④数字の出典）② `WORKFLOW.md` 改訂（現在地5行）③ `lessons_active.md`（教訓 L-XX）。
+  - ⚠️ **物理強制（pdca_mark/pdca_gate・2026-06-12 まこさん指示）**: ledger.md を編集した（=実験を記録した）セッションは、**next_step.md を上記必須項目込みで上書きするまでターン終了不可**（pdca_need_next_step 旗）。
+  - 役割分離: next_step=最新の起点（上書き）／ ledger=実験の確定（追記）／ lessons=教訓（追記）／ WORKFLOW=現在地+改訂履歴。**確定知見は next_step 上書き前に ledger へ記録済みであること**（上書きで失われない）。
+  - （`ml_pipeline_execlog.md` は旧8工程フローの記録＝廃止・参照のみ・セッション末更新の対象外。）
 
 ### 8.4 改善（PDCA）フロー
 1. **設計(A)報告**: 変更内容を §4.6 ハード制約に1項目ずつ照合して詳細報告 → まこさん確認

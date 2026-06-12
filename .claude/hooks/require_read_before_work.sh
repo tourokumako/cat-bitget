@@ -81,6 +81,11 @@ if [ ${#missing2[@]} -gt 0 ]; then
   echo "   戦略照合: この議論/実験が §6.2 のどの Priority の特性 × どのレバー（Entry/Exit/サイズ）の" >&2
   echo "   net 最大化かを1行で書く。器=全 Priority の合算であり、部品単体に \$1,900 の桁を要求して" >&2
   echo "   Priority 改善を切り捨てるのは誤適用（2026-06-12 LONG 柱すり替え事案）。" >&2
+  echo "" >&2
+  echo "★次セッションの本筋（まこさん確定 2026-06-12・goal_block の候補/戦略照合はこれを写経）:" >&2
+  echo "   下げ相場の LONG でも稼げる状態にする＝下げ相場の反発を add で伸ばさず短く取る LONG を" >&2
+  echo "   V9 P4 の枠を超えて設計（P4 改善案から議論）。打ち切り禁止。E26/E27 破棄（中身いじりでは下げ相場で稼げず）。" >&2
+  echo "   詳細は next_step.md（SessionStart 表示）と goal_block.md 冒頭の引き継ぎ前提。" >&2
   exit 2
 fi
 exit 0

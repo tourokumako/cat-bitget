@@ -20,6 +20,7 @@ need_analyze = os.path.join(state, "pdca_need_analyze")
 need_score = os.path.join(state, "pdca_need_score")
 need_vs = os.path.join(state, "pdca_need_vs")
 need_5q = os.path.join(state, "pdca_need_5q")
+need_next_step = os.path.join(state, "pdca_need_next_step")
 no_baseline = os.path.join(state, "no_baseline_approved")
 def touch(p): open(p, "w").close()
 def rm(p):
@@ -58,6 +59,9 @@ elif tn in ("Edit", "Write", "MultiEdit"):
     fp = ti.get("file_path", "") or ""
     if fp.endswith("ledger.md"):
         rm(need_ledger)
+        # ledger を更新した＝実験を記録した → 次セッションの起点 next_step.md を上書き更新するまで
+        # ターン終了不可（2026-06-12 まこさん指示・引き継ぎ漏れの物理強制）。next_step.md 編集で下りる。
+        touch(need_next_step)
         # 5つの問いが全部含まれる編集なら need_5q を下ろす（形だけ防止は まこさん30秒チェックが担保）
         payload = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
         for e in (ti.get("edits", []) or []):
@@ -65,5 +69,13 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         tokens = ["【問1 レバー】", "【問2 不足量】", "【問3 負け集中】", "【問4 過去接続】", "【問5 次仮説】"]
         if all(t in payload for t in tokens):
             rm(need_5q)
+    if fp.endswith("next_step.md"):
+        # 次セッションの起点を上書き更新 → 旗を下ろす。ただし記載必須項目（本筋/やってはいけない/出典）を
+        # 含む編集の時だけ（薄い1文字編集で旗を消す＝引き継ぎ空洞化を防ぐ・中身の質はまこさん30秒チェック）。
+        ns = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
+        for e in (ti.get("edits", []) or []):
+            ns += e.get("new_string", "") or ""
+        if all(t in ns for t in ("本筋", "やってはいけない", "出典")):
+            rm(need_next_step)
 '
 exit 0

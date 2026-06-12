@@ -106,11 +106,12 @@
 **⛔ セッション終了前に以下を必ずチャットに出力する（省略禁止）:**
 ```
 セッション終了チェック:
+[ ] .claude/state/next_step.md 上書き更新完了（次セッションの起点・SessionStart 表示・必須＝①本筋 ②今セッションの確定=ledger E番号参照 ③やってはいけないこと ④数字の出典。毎回上書き=最新1枚。ledger 編集後は pdca_gate が物理強制・cat_requirements §8.3）
 [ ] lessons_active.md 更新完了
-[ ] WORKFLOW.md 更新完了（ML pipeline Phase 進捗反映・旧表記「Priority 再構築フェーズ」）
-[ ] ml_pipeline_execlog.md 実行ログ + 現在地更新完了（工程の実装・実測・設計修正があった場合・なければ「該当なし」と明記）
+[ ] WORKFLOW.md 更新完了（現在地5行・改訂N active）
+[ ] ml_pipeline_execlog.md（旧8工程フローの記録＝廃止・参照のみ＝原則「該当なし」）
 ```
-→ 3つ全て [ ] に ✓ が入るまでセッション終了を宣言しない。
+→ 全て [ ] に ✓ が入るまでセッション終了を宣言しない。
 
 4. **Git コミットする**（ユーザーの明示 OK なしに commit しない）
 
