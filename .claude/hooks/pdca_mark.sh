@@ -34,7 +34,8 @@ ti = d.get("tool_input", {}) or {}
 if tn == "Bash":
     cmd = ti.get("command", "") or ""
     # 実験スクリプト実行 → 審判(score.py/precheck.py)を通すまでターン終了不可（2026-06-12 E24 素通り事案）
-    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_)[A-Za-z0-9_]*\.py", cmd):
+    # ただし --smoke は採点しない検証ステップ（自己検査・規模確認）なので need_score を立てない（2026-06-12 まこさん・smoke で永久未閉じ事案）
+    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_)[A-Za-z0-9_]*\.py", cmd) and "--smoke" not in cmd:
         touch(need_score)
     # python(3) で実際に score.py/report.py を実行する形のみ検知（grep/echo/別行言及では誤爆しない）
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score\.py", cmd):

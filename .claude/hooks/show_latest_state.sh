@@ -9,6 +9,24 @@ R="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-p
 RATCHET="$R/results/priority_rebuild/ratchet"
 SCRIPTS="$R/scripts/priority_rebuild"
 
+NEXT="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/next_step.md"
+if [ -f "$NEXT" ]; then
+  echo "=================================================================="
+  echo "★ 次の一手（前セッションが残した GO 待ちの具体設計＝ここを起点に。WORKFLOW 散文から推測しない・2026-06-12）"
+  echo "=================================================================="
+  cat "$NEXT"
+  echo ""
+  echo "=================================================================="
+fi
+
+echo "=== 過去の失敗例を「やらない理由」にしない（まこさん強制・2026-06-12・CC が毎回再演）==="
+echo "  過去 E で失敗した手法でも、構造・状況が違えば試す。「E○○ で失敗したから外す/やらない」は"
+echo "  禁止判断（思考停止の却下）。同じ構造・状況で全く同じ設定の場合のみ避け、その場合も差分を1行で示す。"
+echo "  ・例: E15(P23=fat-tail で部分決済が大勝ちを削り失敗)を理由に、P4(非fat-tail・伸びた玉に取り逃し)の"
+echo "    部分決済を外すのは誤り＝構造が違う。E14(P23 早逃げ −\$194)も P4 は非fat-tail で前提が違う。"
+echo "  ・既存結果(N9 出口効率 0.95=正常 等)を「だから余地なし」と却下に使わない。別の側面(E23 oracle +\$1,547)を見る。"
+echo "  → 設計で手法を外す/避ける時は『どの E と構造・状況がどう同一か』を1行で言えなければ外さない。"
+echo ""
 echo "=== 設計の最重要前提（CC が毎回起動できず的外れになる・2026-06-12）==="
 echo "  理想は Entry/Exit を一連の取引としてセットで net 最大化。分けるのは CC の都合で本来は不可分。"
 echo "  ・メタラベリング = 今のラチェットの正体: 仮 Exit(TP/SL/TIME/失速)を固定 → その Exit に辿り着いて"

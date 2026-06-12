@@ -2,7 +2,25 @@
 
 ---
 
-## 🔴 現在地（2026-06-12 深夜2・改訂77＝P4 Exit 学習の設計議論が不完了で終了・物理化3点を追加・★次セッション=P4 の「Exit のさせ方」を学習する設計から）
+## 🔴 現在地（2026-06-12 改訂78＝E26「P4 保有中 Exit policy ML」実装済み・自己検査✅・本番が遅く未完走＝★次セッション=速度最適化から）
+
+> **⚠️ 新セッションが最初に読む**: SessionStart hook `show_latest_state.sh` 冒頭の **next_step.md**（GO 済み設計骨子＋現在の進捗＋速度最適化の具体策が集約・ここを起点にする）。
+>
+> **本セッション確定（E26）**:
+> - **E26 ＝ P4 の Exit を ML で利益最大化**（保有中の各バーで {持つ／1ロット部分利確／全降り} の3アクションから net 最大を学習＝メタラベリング/保有中判定・E23 oracle 天井 +$1,547 を取りに行く）。設計骨子はまこさん GO 済み（next_step.md）。
+> - **実装 `train_p4_hold_E26.py`・自己検査 ✅**（教師パス 969件/$-1977.67 = 地面 trades_p4_E22_ground.csv 完全一致＝LONG 移植正しい）。ボラ寄与 0.10（H15 健全・重要特徴は方向/regime/MTF 系）。smoke（自己検査・教師・fold・本学習）まで通る。
+> - ⛔ **本番（全ポジ採点）が遅すぎて未完走**（CPU 16分超で停止）。ボトルネック＝部分利確の前向き sim（snapshot ごとに rc._check_exits_replay の pandas 参照）＋運用2パスのバー毎 predict。**採点・対照実験・ledger 結果は未取得**。
+> - **思想の物理化（まこさん指示）**: ①「過去の失敗を却下理由にしない・構造が違えば試す」を show_latest_state.sh に追加 ②next_step.md 新設＋SessionStart 冒頭表示（状況把握の旅をしない）。
+> - **hook 改善**: pdca_mark.sh で `--smoke` は need_score を立てない（smoke で永久未閉じ事案）。⚠️ 待機/wait コマンド文字列に審判名（score.py/precheck.py）を入れると pdca_mark が誤反応＝入れない。
+> - P4 地面の5つの問いは ledger E22(P4) に記録済み。
+>
+> **★次セッション着手（next_step.md が正本・この順）**:
+> 1. **速度最適化**（採点到達の前提）: (a) `_forward_remaining_net` の df 参照を numpy 化（P4 の TP/SL/PROFIT_LOCK/TIME を rc._check_exits_replay を呼ばず numpy 直接判定・V9 一致 assert）(b) 運用 predict を held bar まとめてバッチ化 (c) 部分利確 sim を「≥2ロット かつ含み益>0」snapshot に限定。
+> 2. 最適化後 smoke で自己検査再確認（969件/$-1977.67 維持）→ 本番 → **precheck.py（採点前 breakeven 検査）→ PASS なら score.py** → report.py --vs → analyze.py → ledger 5問。
+> 3. ⚠️ E14/E19/E23 で「Exit 値の entry 時点学習は不成立」だったが、E26 は**保有中の経路**を使う点・P4 が非 fat-tail な点が違う（過去失敗を却下理由にしない＝構造差を見て試す）。smoke の fold AUC は 80ポジで 0.50 だったが本番（全ポジ）で本当の選別力を見る。
+> **地面（不変）**: P4 単独=採点 月−$76（trades_p4_E22_ground.csv）／P21=$2,697.32（trail maker 前提）／P23系=$925.73。判定=score.py。
+
+## 🧊 改訂77 ブロック（履歴・参照用）（2026-06-12 深夜2・P4 Exit 学習の設計議論が不完了で終了・物理化3点を追加・★次セッション=P4 の「Exit のさせ方」を学習する設計から）
 
 > **⚠️ 新セッションが最初に読む（この順）**:
 > 1. **SessionStart hook `show_latest_state.sh` の冒頭表示**（今回新設）＝計器/最新スクリプト/最新CSV/レポートの更新日時＋「Entry/Exit はセット・メタラベリング=今の正体・Exit値の entry 時点学習は不成立→保有中判定」の前提。**ここを見れば最新がどれか・前提が分かる**（記憶で推測しない）。
