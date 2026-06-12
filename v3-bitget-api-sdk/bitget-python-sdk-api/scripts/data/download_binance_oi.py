@@ -10,12 +10,13 @@ source: https://data.binance.vision/data/futures/um/daily/metrics/BTCUSDT/BTCUSD
 無認証 public archive。価格=Binance spot proxy ／ OI=Binance futures（市場全体のセンチメント代理・microstructure）。
 """
 from __future__ import annotations
+import argparse
 import io
 import time
 import urllib.error
 import urllib.request
 import zipfile
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -25,6 +26,7 @@ OUT_PATH = REPO_ROOT / "data" / "oi_BTCUSDT_5y.csv"
 BASE = "https://data.binance.vision/data/futures/um/daily/metrics/BTCUSDT"
 START = date(2021, 4, 1)
 END = date(2024, 12, 31)
+# 採点2025 延長（2026-06-12 まこさん GO）: --start 2025-01-01 --end 2025-12-31 で取得し既存 CSV にマージ。
 
 
 def fetch_day(d: date):
@@ -38,11 +40,20 @@ def fetch_day(d: date):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--start", default=START.isoformat())
+    ap.add_argument("--end", default=END.isoformat())
+    ap.add_argument("--merge", action="store_true", help="既存 OUT_PATH に追記マージ（上書きしない）")
+    args = ap.parse_args()
+    start = datetime.strptime(args.start, "%Y-%m-%d").date()
+    end = datetime.strptime(args.end, "%Y-%m-%d").date()
+    print(f"取得範囲: {start} 〜 {end} / merge={args.merge}", flush=True)
+
     rows = []
     missing = 0
-    d = START
+    d = start
     i = 0
-    while d <= END:
+    while d <= end:
         try:
             df = fetch_day(d)
             rows.append(df)
@@ -74,6 +85,13 @@ def main():
     })
     out = out.dropna(subset=["oi_btc"]).drop_duplicates(subset=["time"]).sort_values("time").reset_index(drop=True)
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    if args.merge and OUT_PATH.exists():
+        prev = pd.read_csv(OUT_PATH)
+        prev["time"] = pd.to_datetime(prev["time"])
+        n_prev = len(prev)
+        out = (pd.concat([prev, out], ignore_index=True)
+               .drop_duplicates(subset=["time"]).sort_values("time").reset_index(drop=True))
+        print(f"  マージ: 既存 {n_prev:,} 行 + 新規 → 合計 {len(out):,} 行", flush=True)
     out.to_csv(OUT_PATH, index=False)
     print(f"\n取得完了: {len(out):,} 行（{out.time.min()} 〜 {out.time.max()}）欠損日 {missing}")
     print(f"  OI(BTC) 範囲: {out.oi_btc.min():,.0f} 〜 {out.oi_btc.max():,.0f}")

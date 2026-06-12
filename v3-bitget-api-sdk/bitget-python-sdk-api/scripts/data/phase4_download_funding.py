@@ -23,7 +23,7 @@ OUT_PATH = REPO_ROOT / "data" / "funding_rate_BTCUSDT_5y.csv"
 BASE = "https://fapi.binance.com"
 SYMBOL = "BTCUSDT"
 START_DT = datetime(2020, 1, 1, tzinfo=timezone.utc)
-END_DT   = datetime(2025, 1, 1, tzinfo=timezone.utc)
+END_DT   = datetime(2026, 1, 1, tzinfo=timezone.utc)   # 採点2025 延長（2026-06-12 まこさん GO・全範囲再取得で上書き）
 
 
 def fetch(start_ms: int) -> list[dict]:

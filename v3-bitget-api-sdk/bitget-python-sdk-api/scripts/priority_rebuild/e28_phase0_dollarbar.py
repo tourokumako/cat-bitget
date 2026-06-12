@@ -88,23 +88,33 @@ def add_fr(db):
 
 
 def add_oi(db):
-    """OI(5分・Binance futures)を asof 整合し、直近1h の OI 変化率 oi_chg を付ける（leak-safe）。
-    OI急減（oi_chg が大きく負）＝レバレッジ勢の強制清算が枯渇した合図（microstructure）。"""
+    """OI/taker(5分・Binance futures)を asof 整合（backward＝leak-safe・時刻 t 以前の最後の値）。
+    付ける列（すべて t 時点で取得可能・未来参照なし）:
+      oi_chg   = 直近1h の OI 変化率（crude 版・参照のみ）
+      oi_3h    = 過去3h の OI 累積変化率（大幅減＝清算 flush があった指標）
+      oi_recent= 直近30分の OI 変化率（今もう減っていない＝flush が止まった指標）
+      taker_ls = taker 買い/売り比（低い＝投げ売り・逆張り有利の需給歪み）"""
     oi = pd.read_csv(OI_CSV)
     oi["time"] = pd.to_datetime(oi["time"])
     oi = oi[oi.oi_btc > 0].sort_values("time").reset_index(drop=True)
     oi_t = oi.time.to_numpy("datetime64[ns]")
     oi_v = oi.oi_btc.to_numpy(float)
+    tls_v = oi.taker_ls.to_numpy(float)
 
-    def asof(times):
+    def asof(times, vals):
         idx = np.searchsorted(oi_t, times, side="right") - 1
-        idx = np.clip(idx, 0, len(oi_v) - 1)
-        return oi_v[idx]
+        idx = np.clip(idx, 0, len(vals) - 1)
+        return vals[idx]
 
     t_now = db.ts.to_numpy("datetime64[ns]")
-    t_prev = (db.ts - pd.Timedelta(hours=1)).to_numpy("datetime64[ns]")
-    oi_now, oi_prev = asof(t_now), asof(t_prev)
-    db["oi_chg"] = (oi_now - oi_prev) / oi_prev
+    oi_now = asof(t_now, oi_v)
+    oi_1h = asof((db.ts - pd.Timedelta(hours=1)).to_numpy("datetime64[ns]"), oi_v)
+    oi_3h = asof((db.ts - pd.Timedelta(hours=3)).to_numpy("datetime64[ns]"), oi_v)
+    oi_30m = asof((db.ts - pd.Timedelta(minutes=30)).to_numpy("datetime64[ns]"), oi_v)
+    db["oi_chg"] = (oi_now - oi_1h) / oi_1h
+    db["oi_3h"] = (oi_now - oi_3h) / oi_3h
+    db["oi_recent"] = (oi_now - oi_30m) / oi_30m
+    db["taker_ls"] = asof(t_now, tls_v)
     return db
 
 
@@ -179,21 +189,33 @@ def main():
 
     dev = db_tr.dev_z
     thr_d1 = dev.rolling(PCT_WIN, min_periods=200).quantile(0.01)
-    thr_d5 = dev.rolling(PCT_WIN, min_periods=200).quantile(0.05)
     price_q1 = (dev <= thr_d1) & (dev.shift(1) > thr_d1.shift(1))    # 行き過ぎ 1%ile cross-in（基準）
-    oversold_zone = dev <= thr_d5                                     # 行き過ぎ 5%ile ゾーン（文脈）
-    oic = db_tr.oi_chg
-    thr_o5 = oic.rolling(PCT_WIN, min_periods=200).quantile(0.05)
-    thr_o1 = oic.rolling(PCT_WIN, min_periods=200).quantile(0.01)
-    oi_drop5 = (oic <= thr_o5) & (oic.shift(1) > thr_o5.shift(1))     # OI急減 5%ile cross-in
-    oi_drop1 = (oic <= thr_o1) & (oic.shift(1) > thr_o1.shift(1))     # OI急減 1%ile cross-in
     at_lows = db_tr.close < db_tr.sma
+
+    # ── 案1 OI枯渇点：3h 大幅 flush が既に起き、かつ今もう減っていない（停止＝清算枯渇） ──
+    #   crude 版（oi_drop=減った瞬間に発火＝落ちるナイフ）と差別化：flush の「あと」「止まり」で入る。
+    thr_o3 = db_tr.oi_3h.rolling(PCT_WIN, min_periods=200).quantile(0.05)   # 3h OI 累積減の下側5%ile
+    flushed = db_tr.oi_3h <= thr_o3                                          # 大幅 flush 済み
+    stopped = db_tr.oi_recent >= 0                                           # 直近30分はもう減っていない
+    oi_depleted = flushed & stopped                                         # 枯渇点 state
+    oi_dep_in = oi_depleted & (~oi_depleted.shift(1).fillna(False))        # state への cross-in（重複発火抑制）
+
+    # ── 案2 taker投げ売りゾーン：taker_ls が下側分位（投げ売り過熱）= 逆張り確認フィルタ ──
+    #   ★確定（2026-06-12 E28 Step2）: 当初設計の「転換 cross-in」standalone は不発。
+    #   効いたのは「taker_ls が下側ゾーン（売り手が成行で投げ売っている最中）に price_q1 が重なる」＝逆張りフィルタ。
+    #   q0.20〜0.40 の広範囲で +1.0〜1.3/件（基準+0.294 の3-4倍）・レース率+4〜12pt・2022反転・逆方向(taker≥上側)は劣化＝方向性確認。
+    #   ⚠️ 分位は学習期間で選んだ代表値（類型C 回避＝Phase 1 で木に閾値を学習させる・固定値スイープしない§6.2）。
+    tls = db_tr.taker_ls
+    thr_t20 = tls.rolling(PCT_WIN, min_periods=200).quantile(0.20)
+    thr_t25 = tls.rolling(PCT_WIN, min_periods=200).quantile(0.25)
+    tls_z20 = tls <= thr_t20
+    tls_z25 = tls <= thr_t25
 
     entries = [
         ("price_q1(基準・OIなし)", price_q1),
-        ("oi_drop5_atlows", oi_drop5 & at_lows),
-        ("oi_drop5_x_oversold(OI急減+急落)", oi_drop5 & oversold_zone),
-        ("oi_drop1_atlows(最強flush)", oi_drop1 & at_lows),
+        ("案1 OI枯渇点 standalone(不発・記録)", oi_dep_in & at_lows),
+        ("案2f price_q1×taker投げ売りzone q0.20", price_q1 & tls_z20),
+        ("案2f price_q1×taker投げ売りzone q0.25", price_q1 & tls_z25),
     ]
     results, all_recs = {}, []
     for label, mask in entries:
@@ -225,9 +247,9 @@ def main():
     if hit:
         for k, r in sorted(hit, key=lambda x: -x[1]["exp_net"]):
             print(f"  ✅ {k}: {r['exp_net']:+.3f}/件・{r['filled']}件・年別 {r['yr_net']}")
-        print("  → 情報バー版で素エッジ反転。件数・年別の頑健性と FR フィルタ寄与を見て Phase 1 / Step 2(OI) へ。")
+        print("  → 確定(Step2): OI枯渇=不発／taker投げ売りzone フィルタが基準+0.294 を +1.0〜1.3 に上乗せ。次=Phase 1(taker_ls 特徴量化)。")
     else:
-        print("  なし＝情報バー＋行き過ぎ分位＋FR でも 5m 由来の素エッジは立たず（OI=Step 2 が次の梃子）。")
+        print("  なし＝情報バー＋行き過ぎ分位＋需給フィルタでも 5m 由来の素エッジは立たず。")
     print("=" * 88)
 
 
