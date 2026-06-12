@@ -478,3 +478,19 @@
 - **判定**: **破棄**（Phase2 cut=採点7件の near-inaction・degenerate。判別力(AUC 0.653)は本物だが入口選別で P4 net は黒字化しない。CSV 玉単位で degenerate を捕捉し E26 のような誤判定は回避）。
 - **生成物**: train_p4_meta_E27.py / p4_meta_E27_phase1.json。
 - **再現**: `python3.13 scripts/priority_rebuild/train_p4_meta_E27.py [--smoke]`（fire キャッシュ HIT・採点なし・OOF AUC を出す）。
+
+## E28: 下げ相場 LONG を V9 P4 の枠を超えて設計（情報バー/microstructure 路線・2026-06-12・進行中・採点なし＝Phase 0 素エッジ）
+- **背景**: P4(上昇押し目買い)は下げ相場に不適(E22/E26/E27)。下げ相場の反発で稼ぐ LONG を新規設計。Phase 0=素エッジ測定（eval_engine per-trade・コスト+funding 控除後・学習期間 2021-04〜2024-12 のみ・採点2025 不参照・**score.py 月次採点でない**＝連続モードは Phase 2）。設計=strat_v9ml_design §10.19/§10.19.10。判定計器=per-trade「利確vs損切りレース率 vs 無エッジ基準 SL/(TP+SL)」（勝率は小TP・広SLで機械的に上がるため無効）。
+- **変更(A)・段階**:
+  - 時間足・素朴版（`e28_phase0_rebound_edge.py`）: 反発確認スキャル40分（rsi_crossback/green/stoch）→ capitulation+確認（深さ勾配）→ スイング(4h/12h/24h)。
+  - 情報バー版（`e28_phase0_dollarbar.py`）: ドルバー(close×volume 累積・de Prado・48本/日)＋行き過ぎ分位(ボラ調整 MA 乖離 dev_z 下側1%ile)＋ATR×1.75 maker TP＋構造SL(直近安値下)＋時間切れ4h。FR フィルタ・OI急減 を追加検証。
+- **結果**:
+  - 時間足・素朴版＝**素エッジなし**。反発は MFE≈MAE の対称ノイズ（黒字月 1/45・レース率<無エッジ基準）。capitulation+確認は深い21件だけ in-sample で+、1段広げると消失・深い2hフラッシュは悪化。スイングも R:R 不利(浅い反発<広いSL)で net マイナス・2024 陥落。
+  - 情報バー版＝**前進**。ドルバー＋行き過ぎ1%ile ＝ **+$0.294/件・352件・レース率 34.9% > 無エッジ基準 32.1%・2024 +$191(直近最強)**。naive 時間足の no-edge が情報バーで方向の非対称に反転（唯一の確定した薄い正のエッジ）。出口(ATR×1.75 maker＋構造SL)が勝率37%でも正の歪み。
+  - FR フィルタ(z>1 拒否)＝逆効果(+0.29→+0.03・利益玉を削る)。OI急減(Binance futures 5min・取得済)＝price-only を超えず（全 OI 入口でレース率<無エッジ基準・「OI急減+急落」combo は −$0.58）。
+- **原因究明(3分類=①戦略/データ性質)**: LONG の方向エッジは「本当の極端(行き過ぎ1%ile)」だけに薄く存在。手動 LONG も元々マイナス(要件§1.1)＝存在証明が無い領域で地の非対称が弱い(BTC 下落速・上昇緩)。情報バー化で初めて薄い正のエッジ。OI が効かないのは発火が清算カスケードの最中(枯渇点でない)の仮説。
+- **改善(次の一手)**: 案1 OI 枯渇（3h OI 大幅減→停止/陽線で入る＝カスケード中でなく枯渇点）＋案2 taker 投げ売り枯渇（taker_ls 極端→転換）で microstructure が +0.29 に上乗せできるか決着。ダメなら Phase 1（+0.29 をメタラベリング＋マクロフィルタで増幅・2022/2023 の負けを分離）。
+- **採用/破棄**: **進行中（採点まだ・温存）**。確定=ドルバー行き過ぎ1%ile +$0.294/件（薄い・要 Phase1 増幅）。時間足素朴版・FR フィルタ・OI急減(crude)は不採用。
+- **データ取得（恒久・再利用可）**: `data/oi_BTCUSDT_5y.csv`(Binance futures metrics・OI/L-S 5min・2021-04〜2024-12・`download_binance_oi.py`)／`data/funding_rate_BTCUSDT_5y.csv`(既存・〜2024-12)。採点2025 は FR/OI 延長取得が宿題。価格=Binance spot 5m(既存)。
+- **生成物**: e28_phase0_rebound_edge.py / e28_phase0_dollarbar.py / scripts/data/{download_binance_oi.py,phase4_probe_binance_oi.py} / e28_phase0_{rebound,capit,widen,swing,dollarbar}_trades.csv / oi_BTCUSDT_5y.csv。
+- **再現**: `python3 scripts/priority_rebuild/e28_phase0_dollarbar.py`（ドルバー+行き過ぎ分位+FR+OI・per-trade 素エッジ）。
