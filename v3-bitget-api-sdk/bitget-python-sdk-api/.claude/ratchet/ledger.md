@@ -591,3 +591,13 @@
 - **改善(次の一手・L-274 道具を疑う)**: E28 の勝ち筋を移植＝①**行き過ぎの相対分位**（固定 pctB でなくレンジ中心からの乖離 rolling quantile の最 extreme＝本当の行き過ぎだけ）②**情報バー(ドルバー)** ③**microstructure**（taker_ls 投げ売り枯渇＝LONG 底）④**LONG 中心**（SHORT 構造的に弱い）。まこさん相談 → 1案。
 - **判定**: **破棄（ナイーブ版 no-edge）**。安く「固定閾値MR/両サイド/時間足/レンジ広げ は不成立・確定レンジ厳守必要・LONG非対称」を確定＝ラチェット機能。**レンジ打ち切りでない**（iteration1・E28 も naive→refine で成立）。
 - **再現**: `python3.13 scripts/priority_rebuild/e33_phase0_range_meanrev.py [--smoke]`。CSV: `e33_phase0_range_meanrev_trades.csv`（6185件）。
+
+## E34 Phase 0: レンジ逆張り 相対分位 ∩ taker投げ売り枯渇（LONG単発・2026-06-13・per-trade・採点なし＝学習期間素エッジ）— 継続（固定値の素朴版＝作り込みの出発点・"破棄"でない・まこさん 2026-06-13）
+- **背景**: E33（固定閾値MR）no-edge を受け、E28 で下げ相場LONGに効いた2道具（行き過ぎ相対分位＋taker投げ売り枯渇）をレンジに移植。設計書 `.claude/ratchet/e34_design.md`（Peterson hypothesis-driven 構成・まこさん GO 2026-06-13＝以後の設計書フォーマット確定）。
+- **変更(A)**: `e34_range_zscore_taker.py` 新規。Indicators: SMA20/std20/dev_z=(close−SMA20)/std20/ATR14/ADX14/taker_ls(asof backward)。Signals: S1 dev_z≤学習q0.05 cross-in／S2 taker_ls≤学習q0.25（投げ売り過熱）／S3 ADX14≤25。Rules: maker指値LONG size0.024／**TP=中心SMA20価格に固定指値**(tp_pct=(sma20−close)/close＝案A本番再現優先)／SL=1.5×ATR14／時間切れ4h／1ポジ単発／コスト床0.20%。学習〜2024-12のみ・eval_engine per-trade（改造禁止）。分位は a priori 単一（プラトーは forbid_fixed_value_tuning hook で要 GO のため外し・頑健性は年別＋Phase2）。
+- **結果(学習・全件)**: **3変種すべて no-edge（exp_net<0・全年マイナス）**。S1単独 −0.380/件(8416件・レース率51.2% vs 基準51.3%＝±0)／S1∩S2 −0.260/件(2780件・+0.9pt)／S1∩S2∩S3[本命] −0.322/件(907件・レース率56.3% vs 基準55.7%＝+0.6pt・gross+9だが手数料299で net負け)。⚠️ smoke(::5・N182)は +0.248 と出たが全件で反転（L-265 部分抽出の幸運・全件確認で回避）。
+- **原因究明(3分類=① 戦略/データ性質)**: レース率が無エッジ基準とほぼ同じ（+0.6〜0.9pt）＝方向エッジが立たず gross 薄+を手数料が食う「形（小TP・広SL）」シグネチャ＝E33 と同型。**部品の寄与は実在**（S1 ±0→S2 で +0.9pt→S3 でレース率↑＝taker/ADX は無力でないが弱い）。診断: **E28 で効いた recipe は「ドルバー（情報バー）＋行き過ぎ1%ile（深い極値）＋ATR×1.75 TP」**。E34 は 5m時間足＋q0.05（浅い）＝E33 が死んだ素地のまま＝E28 の効いた2要素（情報バー・深い極値）を未移植。TP=中心固定はレンジ幅が狭くコスト床で 1833/859/345 件棄却＝レンジは TP がコスト割れしやすい。
+- **改善(次の一手)**: ① #1 を E28 recipe へ refine＝**ドルバー＋行き過ぎ深い分位(1%ile)＋ATR比例TP** に差し替え（E28 の実証に最も近い・最短で決着）／② #2 Gemini バンドウォーク回避（固定2.5σ＋バンド非拡大＋出来高減）／③ #3 VWAP 中心。まこさん相談 → 1案。
+- **判定**: **ベース v1・継続（破棄でない・まこさん 2026-06-13）**。レンジBOTは「まずベースを作って改善する」もの＝適当な固定値で一発エッジは立たない前提。E34（相対分位∩taker∩ADX・TP中心・SL・時間切れの一式）を**レンジBOT のベース v1** とし、連続モード score.py で月次 net の地面を出す→損の出所（TP=中心のコスト割れ・浅い極値・固定値）を改善レバーで1つずつ ratchet（E32b の地面→レバー・E28 と同じ流儀）。per-trade ○×での切り捨てはしない。
+- **生成物**: e34_range_zscore_taker.py / e34_design.md / e34_range_zscore_taker_trades.csv(12103件)。
+- **再現**: `python3 scripts/priority_rebuild/e34_range_zscore_taker.py [--smoke]`。

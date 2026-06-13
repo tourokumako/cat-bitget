@@ -24,8 +24,10 @@ input=$(cat)
 #     E21 のしょぼい分析は再読ゲート通過後に起きた＝読ませても効かない実証（採点前再読ゲートも同時撤去）
 #   - session_log: WORKFLOW 現在地5行 + ledger と重複（時短④でスリム化済み）
 #   - strat_v9ml_design: 設計作業の時だけ読む(Layer 2)。設計書照合は複数 CC チェック(cc_role §1.4.6.3)が物理担当
-REQUIRED=("cat_requirements" "WORKFLOW" "ledger.md")
-LABEL=("cat_requirements.md(要件・H制約)" "WORKFLOW.md(現在地)" "ledger.md(PDCA実験記録の正本)")
+# 2026-06-13 まこさん指示: cat_requirements を必読から外す（セッション開始時に読んでもインプットされない実証）。
+#   → just-in-time（設計書を書く瞬間に exchange_spec ★決済方法 + cat_requirements を強制）に移管＝require_spec_read_before_design.sh。
+REQUIRED=("WORKFLOW" "ledger.md")
+LABEL=("WORKFLOW.md(現在地)" "ledger.md(PDCA実験記録の正本)")
 
 missing=()
 for idx in "${!REQUIRED[@]}"; do
@@ -82,10 +84,8 @@ if [ ${#missing2[@]} -gt 0 ]; then
   echo "   net 最大化かを1行で書く。器=全 Priority の合算であり、部品単体に \$1,900 の桁を要求して" >&2
   echo "   Priority 改善を切り捨てるのは誤適用（2026-06-12 LONG 柱すり替え事案）。" >&2
   echo "" >&2
-  echo "★次セッションの本筋（まこさん確定 2026-06-12・goal_block の候補/戦略照合はこれを写経）:" >&2
-  echo "   下げ相場の LONG でも稼げる状態にする＝下げ相場の反発を add で伸ばさず短く取る LONG を" >&2
-  echo "   V9 P4 の枠を超えて設計（P4 改善案から議論）。打ち切り禁止。E26/E27 破棄（中身いじりでは下げ相場で稼げず）。" >&2
-  echo "   詳細は next_step.md（SessionStart 表示）と goal_block.md 冒頭の引き継ぎ前提。" >&2
+  echo "★次セッションの本筋・今セッションの確定・やってはいけないことは next_step.md（SessionStart で全文表示）が正本。" >&2
+  echo "   それを起点に goal_block の候補/天井/戦略照合を書く（前セッション固有の handoff をここ/hook に焼き込まない＝古くなって誤誘導する・2026-06-13）。" >&2
   exit 2
 fi
 exit 0

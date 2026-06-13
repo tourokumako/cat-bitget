@@ -15,20 +15,19 @@ cat > "$STATE_DIR/goal_block.md" <<'EOF'
 > ⚠️ 下は前セッションの引き継ぎ前提。新セッションはこれを踏まえ、本欄に目標逆算ブロックを Write し直すこと
 > （必須見出しが揃うまで Bash/Edit/Write はブロックされる＝前提を読んでから自分で逆算する）。
 
-## 引き継ぎ前提（2026-06-12・次セッションの本筋）
-- 本筋＝**下げ相場の LONG でも稼げる状態にする**（打ち切り禁止）。「P4 打ち止め・P21 へ」は今セッション CC の逃げ・誤り。
-- まこさん確定方針＝**下げ相場の反発（オーバーソールド・急落後の戻り）を add で伸ばさず短く取る LONG を、V9 P4 の枠を超えて設計**する。
-- E26（P4 Exit policy ML）/ E27（P4 メタラベリング Entry 選別）は破棄＝V9 P4 の中身いじりでは下げ相場で稼げない
-  （V9 P4＝上昇トレンドの押し目買いで下げ相場に不適・E27 で判別力 AUC 0.653 は立った）。
-- 起点＝**P4 の改善案から話し合う**（実験前に議論）。詳細は next_step.md（SessionStart 表示）と ledger E26・E27。
+## 引き継ぎ前提
+- 本筋・今セッションの確定・やってはいけないこと・数字の出典は **next_step.md（SessionStart で全文表示）が正本**。
+  そちらを起点に、本欄へ目標逆算ブロック（大目標/器の現在値/ギャップ/候補/天井/選定/3行ゲート/届く構成/戦略照合）を Write し直す。
+- ⚠️ ここに前セッション固有の handoff を焼き込まない（hook に焼くと古くなって誤誘導する＝2026-06-13 P4 stale 事案）。最新は常に next_step.md。
 EOF
 
 echo "=== [読了強制ゲート 有効] ==="
-echo "必読3本を Read tool で実際に開くまで、Bash/Edit/Write は block されます（読んだふり防止・2026-06-12 §8.1 で 7→3 にスリム化・require_read_before_work と一致）:"
-echo "  1. cat_requirements.md（要件・H制約・PDCA）"
-echo "  2. WORKFLOW.md（現在地・次タスク）"
-echo "  3. ledger.md（PDCA 実験記録の正本・直近の数字/原因/採否）"
+echo "必読2本を Read tool で実際に開くまで、Bash/Edit/Write は block されます（読んだふり防止・2026-06-13 §8.1 で cat_requirements を just-in-time へ移し 3→2・require_read_before_work と一致）:"
+echo "  1. WORKFLOW.md（現在地・次タスク）"
+echo "  2. ledger.md（PDCA 実験記録の正本・直近の数字/原因/採否）"
 echo "→ grep や表示だけでは解除されません。Read tool で開いてください。"
+echo "★ cat_requirements.md / exchange_spec.md（決済方法）は『設計書を書く瞬間』に強制 read（just-in-time・require_spec_read_before_design.sh）。"
+echo "   理由: セッション開始時に読んでもインプットされない実証（まこさん 2026-06-13・add/決済を毎回誤解）。"
 echo "（補助＝必要時のみ: 設計=strat_v9ml_design / 分析手順=analysis_playbook / 教訓=lessons_active を grep 参照）"
 echo ""
 echo "=== [目標逆算ゲート 有効・WORKFLOW Step 0 ④] ==="
