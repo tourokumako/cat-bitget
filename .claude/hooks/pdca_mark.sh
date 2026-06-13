@@ -22,6 +22,8 @@ need_vs = os.path.join(state, "pdca_need_vs")
 need_5q = os.path.join(state, "pdca_need_5q")
 need_next_step = os.path.join(state, "pdca_need_next_step")
 no_baseline = os.path.join(state, "no_baseline_approved")
+diagnostic_active = os.path.join(state, "pdca_diagnostic_active")   # 診断ラウンド（採点しない・2026-06-13）
+score_bg_pending = os.path.join(state, "pdca_score_bg_pending")     # バックグラウンド実験 実行中（2026-06-13）
 def touch(p): open(p, "w").close()
 def rm(p):
     try: os.remove(p)
@@ -39,14 +41,29 @@ if tn == "Bash":
     #  - --smoke: 採点しない検証ステップ（自己検査・規模確認）（2026-06-12 まこさん・smoke で永久未閉じ事案）
     #  - --no-score: 設計上採点なしの工程（メタラベリング Phase1=OOF 診断のみ・採点は別工程 Phase2 の score.py）。
     #    （2026-06-12 まこさん承認・E28 Phase1 OOF で永久未閉じ事案＝Phase1 は連続モード変換前で score.py 適用外）
-    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_)[A-Za-z0-9_]*\.py", cmd) and "--smoke" not in cmd and "--no-score" not in cmd:
-        touch(need_score)
-    # python(3) で実際に score.py/report.py を実行する形のみ検知（grep/echo/別行言及では誤爆しない）
-    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score\.py", cmd):
-        rm(need_score); touch(need_report); touch(need_ledger); touch(need_analyze); touch(need_5q)
-    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*precheck\.py", cmd):
-        # precheck も審判系の門。FAIL=閉じる場合も 分析・記録・5つの問い を飛ばせない（2026-06-12 まこさん）
-        rm(need_score); touch(need_report); touch(need_ledger); touch(need_analyze); touch(need_5q)
+    _is_exp = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_)[A-Za-z0-9_]*\.py", cmd))
+    if _is_exp:
+        if "--diagnostic" in cmd:
+            # 診断（採点しない・cap実態/規模確認等）→ PDCA 連鎖を一切要求しない（2026-06-13・診断CSVは
+            # cap で report/score が STOP＝不能ループに陥る事案の防止）。次の通常実験で解除。
+            touch(diagnostic_active)
+        elif "--smoke" in cmd or "--no-score" in cmd:
+            pass   # 既存: 採点しない検証ステップ（自己検査・規模確認・Phase1 OOF 等）
+        else:
+            rm(diagnostic_active)        # 通常実験＝診断状態を解除（採点を要求するラウンド）
+            touch(need_score)
+            if ti.get("run_in_background"):
+                touch(score_bg_pending)  # バックグラウンド実行中は審判催促を抑制（2026-06-13・長時間 replay 待ち）
+    # python(3) で実際に score.py/precheck.py を実行する形のみ検知（grep/echo/別行言及では誤爆しない）
+    _is_judge = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score\.py", cmd)) or \
+                bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*precheck\.py", cmd))
+    if _is_judge:
+        # score.py / precheck.py（審判の門）。FAIL=閉じる場合も 分析・記録・5つの問い を飛ばせない（2026-06-12）
+        rm(need_score); rm(score_bg_pending)
+        if os.path.exists(diagnostic_active):
+            pass   # 診断ラウンド中の採点＝PDCA 連鎖を立てない（不能ループ防止・2026-06-13）
+        else:
+            touch(need_report); touch(need_ledger); touch(need_analyze); touch(need_5q)
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*report\.py", cmd):
         rm(need_report)
         # --vs（前回比較・KB §0）必須。無しは need_vs 旗（初回のみ no_baseline_approved で免除・1回で消費）
@@ -79,6 +96,6 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         for e in (ti.get("edits", []) or []):
             ns += e.get("new_string", "") or ""
         if all(t in ns for t in ("本筋", "やってはいけない", "出典")):
-            rm(need_next_step)
+            rm(need_next_step); rm(score_bg_pending); rm(diagnostic_active)   # セッション境界の安全側クリア
 '
 exit 0

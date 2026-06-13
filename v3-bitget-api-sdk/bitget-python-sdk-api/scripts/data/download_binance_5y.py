@@ -76,13 +76,15 @@ def _zip_to_rows(zip_path: Path) -> list[list]:
                     if not r or not r[0].lstrip("-").isdigit():
                         continue
                     raw = int(r[0])
-                    # Binance Vision: 2024年以前=ms (13桁), 2025年以降=μs (16桁) になっている
-                    if raw > 1e16:
-                        ts_sec = raw / 1e6  # microseconds
-                    elif raw > 1e13:
-                        ts_sec = raw / 1e3  # milliseconds (legacy)
+                    # Binance Vision: 2024年以前=ms (13桁・約1.7e12), 2025年以降=μs (16桁・約1.7e15)
+                    # ⚠️ 旧 threshold 1e16 は高すぎ（μs 1.7e15 < 1e16）→ ms扱いで全行スキップ＝0行のバグ。
+                    # 1e14 を境に μs/ms を分離（2026-06-13 修正・cat_requirements §8.2.1.1）。
+                    if raw > 1e14:
+                        ts_sec = raw / 1e6  # microseconds (16桁・2025+)
+                    elif raw > 1e11:
+                        ts_sec = raw / 1e3  # milliseconds (13桁・≤2024)
                     else:
-                        ts_sec = raw / 1e3
+                        ts_sec = raw        # seconds
                     try:
                         ts = datetime.utcfromtimestamp(ts_sec).strftime("%Y-%m-%d %H:%M:%S")
                     except (ValueError, OSError):

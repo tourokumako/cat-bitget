@@ -226,6 +226,17 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 **出力データ**
 - `results/replay/*.csv`(手動replay＝地面) / `results/priority_rebuild/labels_*.parquet`(5m+1432指標+ラベル) / `results/priority_rebuild/ratchet/`(ledger・trades_*.csv・score出力) / `ml_phase2_production/`(旧予測＝ガワ・参照のみ・効いている根拠に使わない)
 
+#### 8.2.1.1 5m足データの取得・期間延長手順（★今後の期間後ろ倒し/延長で迷わない・2026-06-13 確定）
+
+> 経緯: 検証期間を2ヶ月後ろ倒しする際、採点の5m足がどの取引所由来か・どう延長するかで迷った。次回以降のために確定手順を残す。
+
+1. **採点の正本5m足 = Binance Spot 由来**（`https://data.binance.vision/data/spot/monthly/klines/BTCUSDT/5m`）。正本ファイル＝`data/BTCUSDT-5m-...V9FULL_safe.csv`（6列 timestamp/open/high/low/close/volume）。**"V9FULL_safe" はCSVの加工でなく、replay 実行時の `--regime-safe`（lookahead_safe=True）フラグの呼称**。素のOHLCVと同一（base 1826d と完全一致を実測確認）。
+2. ⚠️ **ファイル名に `bitget` が付く足は別物**（同じ 2026-03-15 のバーで価格・出来高が違う＝Bitget先物。例: Bitget O=71176.1/vol76.75 vs Binance O=71211.95/vol55.23）。**採点に使うのは Binance Spot 系列だけ**。連結・延長は必ず Binance Spot で揃える（Bitget足を混ぜると段差）。
+3. **価格とコストは別系統**：価格系列＝Binance Spot ／ 手数料・funding・slippage＝**Bitget先物の確定値**（`eval_engine` 定数・exchange_spec audit#19・H4）。この前提は全実験共通＝混同しない。
+4. **取得スクリプト = `scripts/data/download_binance_5y.py`**（Binance Vision の月次ZIPを取得・統合）。⚠️ **既知バグ: 2025年以降のタイムスタンプはμs（16桁・約1.7e15）だが、本体のμs判定が `raw > 1e16` で高すぎ→ms扱いになり全行スキップ＝0行**（2024年以前msは通る）。本体未修正の間は下記5の延長スクリプトを使う。正しい判定＝**1e14 を境にμs(/1e6)/ms(/1e3)を分離**（`parse_raw_ts`）。
+5. **期間延長の4ステップ**（手本＝`scripts/data/extend_binance_to_202605.py`）: ①該当月のzipを取得（download_binance_5y.py のDL部 or 手動）→ ②μs対応parse（`parse_raw_ts`）で既存正本に連結 → ③**連続性チェック**（5分グリッド欠損数・境界バーの価格連続・重複0）→ ④**新ファイルを別名で保存**（既存は温存＝旧期間の比較が壊れない）。
+   - 既存の5分gap 5ヶ所（2021-04/08/09・2023-03）は元データ由来で採点窓の外＝無害（毎回出る・新規欠損と混同しない）。
+
 ### 8.3 ログ更新タイミング
 - **各実験後**: `ledger.md` に1行（変更(A) / 結果(月平均・最悪月・$1900達成月数) / 原因究明 / 改善 / 採用 or 破棄）
 - **制約変更・設計が覆った時**: 本書 + 出典を更新（出典が正）
