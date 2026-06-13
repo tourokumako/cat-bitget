@@ -140,9 +140,13 @@
 
 > ⚠️ **L-200 / L-204 警告**: system reminder で auto-load されるファイル (本 CLAUDE.md / WORKFLOW.md / cc_role.md / web_claude_self_check.md / false_positive_incident_policy.md / exchange_spec.md / phase_compliance_checklist.md) も、**Read tool で全文 view + 機械的証跡 (wc -l + 0/25/50/75/100% 引用 + 1 行要約)** を Step 0 で取り直すこと。「system reminder で表示されている = 読了済」と内部処理する違反は L-200 / L-204 で禁止。
 
-### Layer 1 — 毎セッション必読 (~700 行・読了ゲート機械的証跡対象)
+### Layer 1 — 毎セッション必読
 
+> **⚠️【2026-06-12 スリム化・cat_requirements §8.1 が正本＝下表に優先】** 毎セッション Read 強制（読了ゲート）は **3本のみ＝① cat_requirements.md ② WORKFLOW.md ③ ledger.md**（require_read_before_work.sh / reset_read_log.sh と一致）。下の旧10本テーブルは **8工程フロー時代の名残・参照のみ**（phase_flow_v4 / ml_pipeline_execlog / ml_pipeline_baseline_v1 は旧フロー＝廃止／technical・industry KB はトレード議論時のみ Layer 2 扱い）。**毎セッション全文必読ではない**。設計=strat_v9ml_design、分析手順=analysis_playbook、教訓=lessons_active は必要時に開く。
+>
 > **【2026-05-26 重大改訂】** `handoff_to_cc_v*` は廃止 (伝言ゲーム化経路の物理排除・L-216)。前セッション引き継ぎは **WORKFLOW.md 改訂N active ブロックに集約**。learning_design_v4.md は phase_flow_v4_with_recovery.md に統合し archive 移動。
+
+> 🧊 下表は旧10本（8工程フロー時代）の履歴。現役の毎セッション必読は上記3本（§8.1）。
 
 | ファイル | 内容 | 取得方法 |
 |---------|------|------|

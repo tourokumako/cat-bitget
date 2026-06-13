@@ -582,3 +582,12 @@
 - **【問4 過去接続】**: E32(素朴合算 cap0.264違反)の是正版。cap停止で max0.12 厳守。E13/E14(P23大勝ちを削ると負け)と整合＝21→23 で P21早出しが P23積み上げを削り微減。移植は E6(gen.run_continuous 自己検査)の流儀を踏襲し rc.run 一致で担保。
 - **【問5 次仮説】**: 合算$616.55 を **サイジング(confidence でメリハリ・E13型) or 件数増(MTF) or 他Priority並立** で増やせるか。各レバーに「全期間ロバスト性ゲート(E30)」＝学習各年＋新採点で符号一致を採用条件に。あと$1,283 は単レバーでなく多レバーの積み上げ。
 - **再現**: `python3 scripts/priority_rebuild/measure_ground_combined_E32b.py`（`--selfcheck-only` で自己検査のみ・`--no-score` で採点不要）→ `precheck.py <csv> --authorize <csv名>` → `score.py <csv> --start 2025-06-01 --end 2026-02-28`。CSV: trades_p21p23_E32b_{2321,2123}_capstop.csv。
+
+## E33 Phase 0: レンジ両サイド平均回帰 素エッジ（2026-06-13・per-trade・採点なし＝学習期間素エッジ）— 破棄（ナイーブ版 no-edge・E28流の道具refineが次・レンジ打ち切りでない）
+- **背景**: V9 にレンジ専用ロジック無し（レンジ regime 寄与ほぼなし・ledger L22）。全月$1,900 の壁＝SHORT 柱は下げ相場でしか稼げず**レンジ月が空く**。レンジで稼ぐ平均回帰の存在証明（学習 2021-04〜2024-12・per-trade・採点/封印 不参照・E28 流）。まこさん GO 2026-06-13。
+- **変更(A)**: `e33_phase0_range_meanrev.py` 新規。V9 daily regime 流用（lookahead_safe＝range=日足 ADX<20 ∩ BB幅<6%）・5m BB(20)/RSI(9)/ATR(14) leak-safe・両サイド MR（LONG=pctB≤0.05∩RSI≤30 / SHORT=pctB≥0.95∩RSI≥70）・出口 TP=ATR×1.0/SL=ATR×1.2/時間切れ2h・コスト床0.20%除外。判定=per-trade「利確vs損切りレース率 vs 無エッジ基準 SL/(TP+SL)」・eval_engine（改造せず import）。
+- **結果(学習・全件)**: **6変種すべて no-edge**（exp_net<0・レース率≈無エッジ基準54.5%）。range LONG(BB∩RSI) −0.368/件・239件・レース率56.1%(基準54.5%＝**+1.6ptのみ**)・年別{21:−58,22:−69,23:+4,24:+35}。range SHORT −0.981/件（**非対称＝SHORT弱**）。BB単独(RSI無)はさらに悪化＝RSI寄与小。非trend(range+mixed)に広げると大出血（LONG −$1,726/SHORT −$1,551）＝**確定レンジ厳守が必要だが厳守でもエッジ無し**。コスト床で約2/3除外（レンジ=狭く TP がコスト割れ）。⚠️ smoke(::7・N35) は +0.119 と出たが全件で反転（L-265 独立sim の幸運・全件確認で回避）。
+- **原因究明(3分類=① 戦略/データ性質・excuse でなく測定結果)**: レース率がほぼ無エッジ基準＝**固定閾値の素朴 MR に方向エッジが立たない**（E28 と同型＝naive 時間足は no-edge）。非対称(LONG>SHORT)は BTC の下落速/上昇緩（要件§1.1）と整合。レンジ自体が希少（range=64日/約1370日・学習5m 14400本）＝**寄与天井も小さい懸念**（add-on 想定）。
+- **改善(次の一手・L-274 道具を疑う)**: E28 の勝ち筋を移植＝①**行き過ぎの相対分位**（固定 pctB でなくレンジ中心からの乖離 rolling quantile の最 extreme＝本当の行き過ぎだけ）②**情報バー(ドルバー)** ③**microstructure**（taker_ls 投げ売り枯渇＝LONG 底）④**LONG 中心**（SHORT 構造的に弱い）。まこさん相談 → 1案。
+- **判定**: **破棄（ナイーブ版 no-edge）**。安く「固定閾値MR/両サイド/時間足/レンジ広げ は不成立・確定レンジ厳守必要・LONG非対称」を確定＝ラチェット機能。**レンジ打ち切りでない**（iteration1・E28 も naive→refine で成立）。
+- **再現**: `python3.13 scripts/priority_rebuild/e33_phase0_range_meanrev.py [--smoke]`。CSV: `e33_phase0_range_meanrev_trades.csv`（6185件）。

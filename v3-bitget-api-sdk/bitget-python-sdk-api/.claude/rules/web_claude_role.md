@@ -19,8 +19,8 @@
 
 ## 本体記述の参照
 
-本ファイル旧 v3.1 (477 行・§1〜§7) は 2026-05-22 改訂22 で archive 移動:
-- [`archive/web_claude_role_v3.1_20260522.md`](archive/web_claude_role_v3.1_20260522.md)
+本ファイル旧 v3.1 (477 行・§1〜§7) は 2026-05-22 改訂22 で archive 移動（2026-06-13 auto-load 軽量化で `rules/archive/` → `.claude/archive_rules/` へ移送＝毎セッション全文ロードを停止）:
+- `.claude/archive_rules/web_claude_role_v3.1_20260522.md`（旧 `rules/archive/web_claude_role_v3.1_20260522.md`）
 
 `§1.5 デザイン責任範囲` / `§1.6 23 軸の存在理由` / `§1.7 手動 Priority の位置づけ` / `§2 思考プロセス` / `§3 対話プロトコル` / `§4 設計タスク標準フロー` の各項目は **CC が継承済** ([`cc_role.md`](cc_role.md) §1.5/§1.6/§1.7/§2/§3/§4)。Web Claude 用記述として参照する必要は通常ない。
 
