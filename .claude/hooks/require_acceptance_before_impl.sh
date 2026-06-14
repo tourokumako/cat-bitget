@@ -51,7 +51,14 @@ case "$FILE" in
      exit 2 ;;
 esac
 
-# 5) 承認(内容指紋一致)確認
+# 5) 機械照合用の部品リスト(DESIGN_CONTRACT)が在るか（書き忘れ防止＝明文化できる範囲を機械で漏れなく）
+if ! grep -q "DESIGN_CONTRACT" "$LIST"; then
+  echo "🔒 [受け入れ条件ゲート] $LIST に機械照合用の部品リスト(DESIGN_CONTRACT ブロック)がありません。" >&2
+  echo "やること(自然言語)に加え、実装と機械照合できる部品リスト(DESIGN_CONTRACT の json: impl_file / self_check_calls / must_combine)を必ず書いてください。" >&2
+  exit 2
+fi
+
+# 6) 承認(内容指紋一致)確認
 if [ ! -f "$APPROVED" ]; then
   echo "🔒 [受け入れ条件ゲート] 未承認です。リストを提示し、まこさんに『bash .claude/hooks/approve_impl.sh』を実行してもらってください。" >&2
   echo "$GUIDE" >&2

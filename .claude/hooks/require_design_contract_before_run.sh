@@ -17,6 +17,7 @@
 BASE="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api"
 RATCHET="$BASE/.claude/ratchet"
 VERIFY="$BASE/scripts/priority_rebuild/verify_design_contract.py"
+ACC="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md"   # 受け入れ条件リストの contract も照合対象に
 
 INPUT=$(cat)
 
@@ -40,7 +41,10 @@ HIT_MD=$(printf '%s' "$PYS" | python3 -c "
 import sys, os, re, json, glob
 run = set(x.strip() for x in sys.stdin if x.strip())
 ratchet = '$RATCHET'
-for md in glob.glob(os.path.join(ratchet, '*.md')):
+mds = glob.glob(os.path.join(ratchet, '*.md')) + ['$ACC']
+for md in mds:
+    if not os.path.exists(md):
+        continue
     try:
         t = open(md, encoding='utf-8').read()
     except Exception:
