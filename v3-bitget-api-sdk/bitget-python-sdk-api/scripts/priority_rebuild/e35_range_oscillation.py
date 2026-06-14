@@ -48,8 +48,10 @@ import eval_engine as ee                    # noqa: E402  確定コスト定数 
 import e34_range_zscore_taker as e34v1      # noqa: E402  CSV / add_indicators（taker は呼ばない）
 import e34_range_base as e34b               # noqa: E402  add_analysis_features（stoch 等）
 import e35_box                              # noqa: E402  箱 3列×3足（leak/H6 assert 内蔵）
+import verify_design_contract as _vdc       # noqa: E402  設計↔実装 自己チェック（設計書の部品リストを読む）
 
 RATCHET = ROOT / "results" / "priority_rebuild" / "ratchet"
+DESIGN_MD = ROOT / ".claude" / "ratchet" / "e35_design.md"   # 入口組み立ての唯一の正（設計書 DESIGN_CONTRACT）
 TRAIN_END = e34v1.TRAIN_END                 # 2025-01-01（W 分位・診断の学習境界・H8）
 SC_START = pd.Timestamp("2025-06-01")       # 採点窓 開始（新窓・taker 実被覆内）
 SCORE_END = pd.Timestamp("2026-01-01")      # 採点窓 終了（2025-12-31 まで）
@@ -85,36 +87,68 @@ def add_choppiness(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# ── 設計↔実装 自己チェック（設計書の部品リストで入口を組み立てる・部品が欠けたらプログラムが自分で停止）──
+def _entry_contract() -> dict:
+    """設計書 e35_design.md の DESIGN_CONTRACT(must_combine) を読む＝入口組み立ての唯一の正。"""
+    c = _vdc.extract_contract(open(DESIGN_MD, encoding="utf-8").read())
+    if not c or "must_combine" not in c:
+        raise RuntimeError(f"[設計↔実装ゲート] e35_design.md に DESIGN_CONTRACT(must_combine) が無い: {DESIGN_MD}")
+    return c["must_combine"]
+
+
+def _assemble_signals(components: dict, must_combine: dict) -> dict:
+    """設計書 must_combine の通りに合成シグナル（range_ok/long_entry/short_entry）を AND 組み立てる。
+    設計が要求した成分が components に無ければ即停止＝設計通りに実装しないと動かない（自己チェック・類型G物理防止）。"""
+    built, pending = {}, dict(must_combine)
+    for _ in range(len(pending) + 1):
+        progressed = False
+        for sym, parts in list(pending.items()):
+            srcs = [components.get(p, built.get(p)) for p in parts]
+            if any(s is None for s in srcs):
+                continue
+            res = srcs[0]
+            for s in srcs[1:]:
+                res = res & s
+            built[sym] = res
+            del pending[sym]
+            progressed = True
+        if not pending:
+            return built
+        if not progressed:
+            missing = {sym: [p for p in parts if p not in components and p not in built]
+                       for sym, parts in pending.items()}
+            raise RuntimeError(
+                "[設計↔実装ゲート・自己チェック] 設計書 DESIGN_CONTRACT が要求する成分が実装に無い → "
+                f"{missing}。設計通りに実装してから実行（プログラムが自分で停止）。")
+    return built
+
+
 def _build_signals_for_tf(df: pd.DataFrame, tf: str, w_lo: float, w_hi: float) -> dict:
-    """1 足分（tf）の入口系列（bool Series 辞書）。反転確認は緩めた版（oversold で上向き）。"""
+    """1 足分（tf）の入口系列（bool Series 辞書）。合成（range_ok/long_entry/short_entry）は設計書の部品リスト通りに組み立てる。"""
     sup = df[e35_box.sup_col(tf)]
     res = df[e35_box.res_col(tf)]
     chop = df["chop"]; adx = df["adx"]; k = df["stoch_k"]
 
     in_box = sup.notna() & (sup > 0) & res.notna() & (res > 0)
     W = sup + res
-    chop_ok = chop > CI_THRESH
-    adx_ok = adx < ADX_MAX
-    w_ok = in_box & (W >= w_lo) & (W <= w_hi)
-    range_ok = chop_ok & adx_ok & in_box & w_ok
-
-    low_zone = in_box & (sup <= ZONE_FRAC * W)
-    up_zone = in_box & (res <= ZONE_FRAC * W)
-    # ★緩めた反転確認（クロスの瞬間一致でなく「oversold/overbought で %K が上/下を向いた」状態）
-    long_rev = (k < 30) & (k > k.shift(1))
-    short_rev = (k > 70) & (k < k.shift(1))
-
-    long_entry = range_ok & low_zone & long_rev
-    short_entry = range_ok & up_zone & short_rev
-
     fill = lambda s: s.fillna(False)
-    return {
-        "chop_ok": fill(chop_ok), "adx_ok": fill(adx_ok), "in_box": fill(in_box),
-        "w_ok": fill(w_ok), "range_ok": fill(range_ok),
-        "low_zone": fill(low_zone), "up_zone": fill(up_zone),
-        "long_rev": fill(long_rev), "short_rev": fill(short_rev),
-        "long_entry": fill(long_entry), "short_entry": fill(short_entry), "W": W,
+
+    # base 成分を計算（jm_ok=Jump Model は未実装＝設計書が要求するなら _assemble_signals が停止する）
+    components = {
+        "chop_ok": fill(chop > CI_THRESH),
+        "adx_ok": fill(adx < ADX_MAX),
+        "in_box": fill(in_box),
+        "w_ok": fill(in_box & (W >= w_lo) & (W <= w_hi)),
+        "low_zone": fill(in_box & (sup <= ZONE_FRAC * W)),
+        "up_zone": fill(in_box & (res <= ZONE_FRAC * W)),
+        # 反転確認（oversold/overbought で %K が反転）
+        "long_rev": fill((k < 30) & (k > k.shift(1))),
+        "short_rev": fill((k > 70) & (k < k.shift(1))),
     }
+    # ★設計書 DESIGN_CONTRACT の部品リスト通りに合成（成分が欠けたら停止＝設計通りに実装しないと動かない）
+    built = _assemble_signals(components, _entry_contract())
+
+    return {**components, **built, "W": W}
 
 
 def _w_band(df: pd.DataFrame, tf: str, tr_mask: pd.Series) -> tuple:

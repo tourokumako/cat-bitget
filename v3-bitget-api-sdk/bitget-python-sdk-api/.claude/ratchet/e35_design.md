@@ -109,6 +109,28 @@
 
 出典: exchange_spec.md ★決済方法 / cat_requirements §6.1・§6.1.1・§4.6・§8.4 / E34 ledger（iter1-3・dev_z両窓再現・レジサポ過剰適合・steep-down 偏重）/ feedback_scalp_daytrade_frequency_floor / Peterson（braverock.com）。
 
+## §12 DESIGN_CONTRACT（機械可読・実装と機械照合）
+
+> 目的: CC が設計に時間をかけても実装で核心成分を抜く虚偽（類型G・例: E35 で RANGE_OK の Jump Model を実装から欠落）を物理検出する。
+> 2層で守る:
+> ① プログラム内の自己チェック＝実装(impl_file)は実行時に下記 must_combine を `_entry_contract()` で読み、`_assemble_signals()` で部品リスト通りに入口を組み立てる。設計が要求する成分（jm_ok 等）を計算していなければ実行時に自停止する（最強・どう起動しても走る）。
+> ② 外側の hook＝戦略を python 実行する直前に `verify_design_contract.py` が「①の自己チェック配線（self_check_calls）が外されていないか」を確認し、外されていれば実行をブロックする。
+> **まこさんは設計 GO 時に下記 must_combine を §5.2 と突き合わせて見る**（CC が contract を改ざんしたら設計書面で発覚する）。
+> 成分名は実装の変数名と一致させる: chop_ok=Choppiness>61.8 / adx_ok=ADX<上限 / jm_ok=Jump Model regime=range（research C4/C5） / in_box=箱内 / w_ok=W正常帯 / low_zone/up_zone=端ゾーン / long_rev/short_rev=反転確認。
+
+```json
+{
+  "impl_file": "scripts/priority_rebuild/e35_range_oscillation.py",
+  "design_ref": "e35_design.md §5.2 Signals",
+  "self_check_calls": ["_entry_contract(", "_assemble_signals("],
+  "must_combine": {
+    "range_ok": ["chop_ok", "adx_ok", "jm_ok", "in_box", "w_ok"],
+    "long_entry": ["range_ok", "low_zone", "long_rev"],
+    "short_entry": ["range_ok", "up_zone", "short_rev"]
+  }
+}
+```
+
 ベースアップ（2026-06-14 WebSearch＋KB）:
 - regime 判定: Choppiness Index>61.8=レンジ（横ばい検出はADXより向く）／ADX<25／Hurst<0.5=平均回帰（lagging）の合議。「trend-follow はレンジで bleed・MR は強トレンドで壊滅」（tradingview QuantRegime / choppinessindex.com / quantneuraledge Hurst）。
 - MR レンジ戦略: グリッド/両方向オシレーション＝レンジの標準・z-score>|2|・中心回帰で利確。落とし穴＝crypto は S/R をオーバーシュート→反転確認必須・コスト/slip/局面別を必ず織込（3commas / luxalgo / backtestme）。
