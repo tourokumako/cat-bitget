@@ -618,3 +618,44 @@
 - **生成物**: e34_range_base.py / trades_e34_range_base_score.csv(264件) / _train.csv / _noadd_score.csv(--vs baseline) / report_/analysis_/precheck_ trades_e34_range_base*.txt。
 - **再現**: `python3 e34_range_base.py` ＋ `--no-add` → `report.py ..._score.csv --vs ..._noadd_score.csv` / `analyze.py ..._score.csv --train ..._train.csv`。
 - **再現**: `python3 scripts/priority_rebuild/e34_range_base.py` → `precheck.py trades_e34_range_base_train.csv --authorize trades_e34_range_base.csv` → `report.py trades_e34_range_base.csv --start 2025-06-01 --end 2025-12-31`。
+
+## E34 iteration-1: 入口の再定義（S1 cross-in→S1' ゾーン滞在 ＋ S4 非急落フィルタ・2026-06-14）— 地面を更新せず（ratchet=現状ベース維持・改善は継続・アジャイル）
+- **変更(A・入口だけ・出口/add/cap 不変=H16）**: `e34_range_base.py` 改修（複数CCチェック Workflow でレビュー＝verdict pass・blocking 0）。① S1 cross-in → **S1' ゾーン滞在**（dev_z≤学習q0.05 を割っている間ずっと＝df.dev_z≤z_thr）② **S4 非急落フィルタ追加**＝bb_mid_slope_pct≥学習q0.25（最も急な下げ帯を除外・iteration-0 N8「急落除外で knife 回避」を物理化）。bb_mid_slope_pct=(sma−sma.shift5)/sma×100＝**価格非依存（H6・USD生値の学習$40k帯→採点$100k帯ズレを回避）**。SLOPE_Q=0.25 は a priori 単一・将来 ML 化。`--entry crossin|dwell|dwell_s4` で §7 寄与分解／`--diagnostic` で学習期間 発火ファネル＋帯別 per-trade（採点しない）。
+- **結果（連続モード・report.py 審判式・採点窓 2025-06〜2025-12＝taker 実被覆内）＝§7 寄与分解**:
+  - **crossin（iteration-0 再現）: −$513／264件／勝率31.1%** ＝ iteration-0 と完全一致（リファクタ忠実性 OK）。
+  - **dwell（ゾーン滞在のみ・S4なし）: −$583／357件／勝率38.7%**（add 機構が初稼働＝cap0.12到達・add分布{1:240,2:89,3:21,4:6,5:1}）。crossin より **−$70 悪化**。
+  - **dwell_s4［本命］: −$693／295件／勝率33.2%／PF0.50／月平均−$99／全7ヶ月マイナス**。dwell より **−$110 悪化**＝iteration-0 比 **−$180 悪化**。precheck FAIL（全体 breakeven −0.82・gross −$0.31<コスト$0.38）。但し TP_FILLED breakeven 11.11＝TP エッジは実在（iteration-0 と同じ＝中心回帰に届けば高利益）。
+- **原因究明（3分類＝① 戦略性質・leak/cap/H6/コストは Workflow で潰し済）＝両レバーとも逆効果**:
+  - **ゾーン滞在（add活性化）が逆効果の機序**: D表 add別 mean＝0.024 −0.58／0.048 −0.91／**0.072 −10.49／0.096 −19.85／0.120 −23.98**＝add1-2は軽微だが **add3以上が暴発**（続落中にゾーン滞在で深く積み増し→平均建値↓が戻りに間に合わず全建玉SL＝N8の add 増幅が連続モードで実証）。件数増（264→357）も勝率増（31→39%）も net を救わない。
+  - **S4（急落除外）が逆効果＝iteration-0 N8 が誤診**: S4 が除外した62件は集計 **+$110（avg +$1.77）＝唯一の黒字部分集合**・残り295件は avg −$2.35。gross も dwell −$209 → dwell_s4 −$396 と悪化。**深い売られすぎ（steep-down）こそ mean-reversion の稼ぎ場（add が戻りを掴む）で、S4 はそれを削っていた**。iteration-0 の「急落=falling-knife=出血源」は cross-in 単発の挙動の誤読（連続モード+add では steep-down が edge）。
+  - **根本（不変）**: SL 196件 −$1,386 vs TP 94件 +$675＝SL:TP ≈ 2:1（勝率33%・必要49.8%＝不足16.6pt・iteration-0と同等）＝**5m LONG MR の方向エッジが立たない**（E33/E34 Phase0 と同型）。
+- **多角チェック（analysis_playbook §2.0・analyze N0-N9）**: N0 件数/日1.39（S4 が dwell の件数増を削り戻す）／N7 不足16.6pt（改善せず）／N8 勝ち玉 bb_slope −34.9 vs 負け玉 −42.9（**両方 steep-down＝勝ち玉も急落帯**＝S4 で一律除外は筋悪）／N9 MFE捕捉0.57（中心TP がやや早い）。
+- **【主張】** dwell_s4 は件数/日1.39・地面 −$693（iteration-0 −$513 比 **−$180**）＝入口の再定義（ゾーン滞在＋S4）は **ratchet で地面を更新せず＝現状ベース crossin −$513 を維持**（アジャイルの1イテレーション＝戦略は継続）。学び＝① 負エッジに件数増は効かず add3+ 暴発（−$363）② S4 は誤診（除外した steep-down +$110 が唯一の黒字玉）。これを iteration-2（add 深さ cap）の入力にする。
+- **5つの問い（analysis_playbook §4）**:
+  - 【問1 レバー】入口の再定義＝2レバーを §7 で分解（期待値4要素＝件数・勝率・平均勝ち・平均負け）。crossin→dwell: 件数 264→357（+93・ゾーン滞在の件数増）・勝率 31.1→38.7%（+7.6pt）・**期待値/件 −1.94→−1.63（per-trade はむしろ改善）**。だが **負のエッジ×件数増で総 net は −513→−583 と悪化**（負け戦略は件数を増やすほど総損失が増える）。add3以上(28件)−$363 は dwell 内の集中出血だが平均は他玉が相殺。dwell→dwell_s4: 件数 357→295・勝率 38.7→33.2%（−5.5pt）・**期待値/件 −1.63→−2.35（S4 が steep-down の黒字玉を削り per-trade 悪化）**・net −583→−693。＝動いた主因は (crossin→dwell)「件数」、(dwell→dwell_s4)「勝率＋平均負け」（S4 が稼ぎ頭を除外）。
+  - 【問2 不足量】N7 必要勝率 49.8% vs 実 33.2% ＝**不足 16.6pt**（iteration-0 16.4pt から改善せず）。等価＝平均負け $7.05→$3.53 半減 or 平均勝ち $7.10→$14.17 倍化。
+  - 【問3 負け集中】SL 196件(66.4%) −$1,386・median bb_slope −42.79/atr%0.10/rsi32.6・全月 SL −150〜−250。**add3以上(28件)が −$363**。負け月 top 2025-06(34)/07(33)/09(31)。
+  - 【問4 過去接続】E33/E34 Phase0 と同じ「5m LONG MR の方向エッジ不在」。iteration-0 N8「急落除外で改善」を §7 で**反証＝誤診**（急落=稼ぎ場）。E15(P23 切る系)/E8a-2 と同型の「除外したら稼ぎ頭が消える」構造。
+  - 【問5 次仮説】「dwell（ゾーン滞在）＋ **MAX_ADDS=2** にすると add3+ 暴発(−$363)が消え crossin −$513 を超える」。学習期間で add別 net 分布＋add≤2 制限の連続モード net を採点窓を見ずに先に検証可能（1ターン1変更・要 GO）。
+- **★leak でない注記（次セッションが H8 境界を誤読しないため・Workflow 不正チェック CC 推奨）**: 診断の学習末バー signal が forward-sim で 2025-01 の保有窓を参照するのは signal に対し**因果的未来＝leak でない**（H8 embargo 境界を leak と誤認して手を入れない）。
+- **判定（アジャイル・ratchet）**: iteration-1 の入口再定義（zone-dwell+S4）は **地面を超えなかった**（−$693 ＞ iteration-0 −$513 の損）→ ratchet で**現状ベース crossin −$513 を維持**（超えた分だけ残す＝今回は残さない）。これは**戦略の破棄でなく1イテレーションの結果**で、ベース e34_range_base は継続・改善を続ける（L-278・アジャイル）。§7 分解の学び（add 深さ・S4 誤診・方向エッジ）を iteration-2 の入力にする。--entry 3モードは再現用に保持。
+- **改善（次の一手・iteration-2 候補・1つずつ・要まこさん GO）**: データが指す筋＝(a) **add 深さ cap（MAX_ADDS=2）**＝D表で add1-2は軽微・3+が暴発＝機械的（regime非依存）に暴発玉を断つ（degenerate でないか N0/玉分解で確認）。(b) **出口側**＝N9 MFE捕捉0.57＝中心の手前で部分利確（scale out・設計書 改善①）。(c) ⛔ S4 はもう足さない（誤診確定）／深い極値 q0.01 もダメ（N8）。(d) 根本=方向エッジ不在は **E28流の道具差し替え（ドルバー/情報バー＋ATR比例TP）**＝より大きいピボット。
+- **生成物**: e34_range_base.py（--entry/--diagnostic 追加）/ trades_e34_range_base_{crossin,dwell,dwell_s4}{,_score,_train}.csv / report_/precheck_/analysis_ trades_e34_range_base_dwell_s4*.txt。iteration-0 出力は archive/e34_iteration0/。
+- **再現**: `python3 scripts/priority_rebuild/e34_range_base.py --diagnostic`（発火ファネル）／ `--entry {crossin,dwell,dwell_s4}`（§7 各モード）→ `precheck.py ..._dwell_s4_train.csv --authorize ..._dwell_s4_score.csv` → `report.py ..._dwell_s4_score.csv --vs ..._crossin_score.csv --start 2025-06-01 --end 2025-12-31`。
+
+## E34 iteration-2: add 深さ cap（MAX_ADDS 5→2・dwell入口・2026-06-14）— 採用＝新ベース −$506（軌道を改善・依然 net マイナス）
+- **変更(A・1変更・複数CCチェック Workflow verdict pass/blocking0）**: `e34_range_base.py` の MAX_ADDS を固定5から引数 `--max-adds`（既定5＝既存再現不変）に。入口/出口/merge/cap0.12停止/コスト式は iteration-1 から不変（レビューで byte 確認）。狙い＝iteration-1 §7 D表の「add3以上が −10〜−24/件で暴発（続落中の深い積み増しで全建玉SL・−$363）」を機械的（regime非依存）に断つ。測定＝`--entry dwell --max-adds 2`。cap0.12 は add 深さ cap と独立に常時有効（max_adds は exposure を増やせない・レビュー確認）。
+- **結果（audited・report.py・採点窓 2025-06〜12）**: **純益 −$506／361件／勝率37.1%／PF0.70／月平均 −$72／最大DD$516**。出口 SL226件 −1708／TP130件 +1188／TIME5件 +15。add分布{1:1678, 2:698}（cap2＝max size0.048）。**2025-11 が初の黒字月 +$47**。precheck FAIL（全体 breakeven −0.81・gross −$0.31<コスト$0.39）／TP_FILLED breakeven 13.50（TP エッジ実在）。
+- **§7 比較（add 深さの寄与）**: crossin(現ベース) −$513 ／ dwell(max5) −$583 ／ **dwell_max2 −$506**。per-trade＝crossin −1.94／dwell −1.63／dwell_s4 −2.35／**dwell_max2 −1.40（最良）**。＝add 深さ cap が dwell の add3+ 暴発を断ち、dwell −583 → −506（+$77）・現ベース crossin を +$7 微更新。
+- **原因究明（3分類＝① 戦略性質・leak/cap/コストは Workflow で潰し済）**: add 深さ cap は「効いたレバー」＝add3+ の巨大損（averaged 大玉の全SL）が消え per-trade が改善。但し総 net は横ばい（−506≈−513）＝**負のエッジ×件数**（361件）の構造は不変。＝input+add 調整の天井 ≈ −$510 に到達。
+- **多角チェック（analysis_playbook §2.0・analyze N0-N9）**: N0 件数/日1.70（crossin 並・dwell_s4 1.39 から回復）／N7 必要勝率45.6% vs 実37.1%＝**不足8.5pt（iteration-1 16.6pt から半減）**／N9 MFE捕捉0.66（正常域＝直すべきは入口側）。
+- **【主張】** dwell_max2（add深さcap=2）は件数/日1.70・地面 −$506＝**現ベース crossin −$513 を微更新（+$7）し E34 最良＝採用（新ベース）**。add深さ cap は add3+ 暴発を断ち per-trade −1.63→−1.40・必要勝率不足 16.6→8.5pt・PF0.50→0.70・DD703→516・2025-11 初の黒字月＝**軌道を明確に改善**。但し依然 net マイナス（precheck FAIL）＝残る 8.5pt は方向エッジ＝次は入口の道具差し替え（E28流）。
+- **5つの問い（analysis_playbook §4）**:
+  - 【問1 レバー】add 深さ cap（MAX_ADDS 5→2・dwell入口・1レバー）。期待値4要素: dwell(max5,−583)→max2(−506)＝件数 357→361（横ばい）・勝率 38.7→37.1%・**per-trade −1.63→−1.40（平均負けが縮小＝add3+ の巨大損が消滅）**。crossin(−513) 比 per-trade −1.94→−1.40。PF 0.50→0.70・DD 703→516。動いた主因＝「平均負け」（add3+ 暴発の除去）。
+  - 【問2 不足量】N7 必要勝率45.6% vs 実37.1% ＝**不足8.5pt**（iteration-1 16.6pt から半減＝大幅前進）。等価＝平均負け $7.54→$5.31 or 平均勝ち $9.00→$12.77。N5 bootstrap は依然マイナス側（net/件 負）。
+  - 【問3 負け集中】SL 226件(62.6%) −1708・median bb_slope −48.87・atr%0.10・rsi32.4。負け月 top 2025-07(40)/11(38)/06(37)。**add3以上の巨大損(−10〜−24/件)は消滅**（cap2＝max size0.048）。
+  - 【問4 過去接続】add 深さ cap は iteration-1 §7 D表（add3+ 暴発）への直接対処＝効いた。crossin/dwell/dwell_s4/dwell_max2 の4点で「**input+add 調整の天井 ≈ −$510（per-trade −1.40 が最良）**」が確定（負エッジ×件数で総 net 横ばい）。E33/E34 Phase0 の「方向エッジ不在」が依然 binding。
+  - 【問5 次仮説】N9 出口効率0.66=正常→「直すべきは入口側＝方向エッジ」。次仮説＝「5m 時間足を E28流の情報バー（ドルバー）＋行き過ぎ深い分位＋反転確認 に替えると per-trade(−1.40) が正へ・残り8.5pt の方向当たりが埋まる」。学習期間 per-trade で E28 recipe を測れば採点前に検証可（大ピボット・要設計プレゼン）。
+- **判定（ratchet・アジャイル）**: iteration-2（add深さ cap=MAX_ADDS2）＝**採用・新ベース −$506**（crossin から微更新＋軌道を明確に改善＝超えた分を残す）。複数CCチェック Workflow verdict pass・blocking0。次の binding＝方向エッジ＝入口の道具差し替え（E28流 情報バー）。
+- **生成物**: e34_range_base.py（--max-adds 追加）/ trades_e34_range_base_dwell_max2{,_score,_train}.csv / report_/precheck_/analysis_ trades_e34_range_base_dwell_max2*.txt。
+- **再現**: `python3 scripts/priority_rebuild/e34_range_base.py --entry dwell --max-adds 2` → `precheck.py ..._dwell_max2_train.csv --authorize ..._dwell_max2_score.csv` → `report.py ..._dwell_max2_score.csv --vs ..._crossin_score.csv --start 2025-06-01 --end 2025-12-31` → `analyze.py ..._dwell_max2_score.csv --train ..._dwell_max2_train.csv`。

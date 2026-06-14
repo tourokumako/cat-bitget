@@ -26,13 +26,22 @@ H 制約照合（§4.6）:
   H9 最小注文 … unit 0.024 BTC ≥ 0.0001・1ポジ size ≥ unit（score.assert_min_order も物理ゲート）。
   H10 サイズ … unit 0.024 は比較用・cap 0.12 内。
   H15 ボラ逃げ … ラベル=方向（中心回帰の到達・二値）・ボラ(ATR)は SL/保有時間のみ・LONG 単独。
-  H16 1ターン1変更 … ベース v1 を1本（add・部分決済は本番運用の正しい一式＝複数レバーでなく正しい器）。
+       iteration-1 S4 は bb_mid_slope_pct（中心の傾き＝方向/trend の除外）＝ボラ(ATR)でなく方向系＝H15 適合。
+  H16 1ターン1変更 … iteration-1 は「入口の再定義」のみ（S1'ゾーン滞在＋S4・出口/add/cap 不変）。
+       S1'とS4の2要素は --entry crossin/dwell/dwell_s4 の §7 寄与分解で件数増と急落除外を切り分け（源泉検証）。
+
+iteration-1（2026-06-14・入口の再定義・まこさん GO）: S1 cross-in → S1' ゾーン滞在（割っている間ずっと＝件数増＋
+  保有中の続落で add 再発火＝平均建値↓）＋ S4 非急落フィルタ（bb_mid_slope_pct ≥ 学習分位＝最も急な下げ帯を除外
+  ＝N8 の falling-knife を回避）。出口/add/cap は不変（H16・入口だけ）。寄与分解は --entry で crossin/dwell/dwell_s4 を比較。
 
 使い方:
-  python3 scripts/priority_rebuild/e34_range_base.py [--no-add] [--smoke N]
-    → trades_e34_range_base.csv（全期間・採点用）+ trades_e34_range_base_train.csv（学習<2025-01・precheck 用）
-  precheck.py trades_e34_range_base_train.csv --authorize trades_e34_range_base.csv
-  score.py trades_e34_range_base.csv --start 2025-06-01 --end 2026-02-28   ← これが地面
+  python3 scripts/priority_rebuild/e34_range_base.py [--entry crossin|dwell|dwell_s4] [--max-adds N] [--diagnostic] [--no-add] [--smoke N]
+    --max-adds N … add の最大段数（iteration-2＝深い add の暴発を断つ・既定5で既存再現は不変）。例: --entry dwell --max-adds 2
+    --diagnostic … 学習期間の発火ファネル＋bb_slope帯別 per-trade（採点しない・N8/問5 を採点窓を見ずに検証）
+    既定 --entry dwell_s4（iteration-1 本命＝ゾーン滞在 ∩ S4非急落）/ crossin=iteration-0再現 / dwell=ゾーン滞在のみ（S4なし）
+    → trades_e34_range_base_<entry>.csv（全期間）+ _<entry>_score.csv（採点窓）+ _<entry>_train.csv（precheck）
+  precheck.py trades_e34_range_base_dwell_s4_train.csv --authorize trades_e34_range_base_dwell_s4_score.csv
+  score.py trades_e34_range_base_dwell_s4_score.csv --start 2025-06-01 --end 2025-12-31   ← これが地面（taker 実被覆内）
 """
 from __future__ import annotations
 import argparse
@@ -62,6 +71,7 @@ ENTRY_OFFSET = ee.ENTRY_LIMIT_OFFSET   # LONG 指値 = close×(1−0.0001)
 COST_FLOOR = e34v1.COST_FLOOR    # 0.0020（中心が avg×(1+床) 未満は TP 不武装）
 SL_ATR_K = e34v1.SL_ATR_K        # 1.5
 HOLD_5M = e34v1.HOLD_5M          # 48 本（4h・初回 entry 起点）
+SLOPE_Q = 0.25                   # iteration-1 S4 非急落: bb_mid_slope_pct の学習下側分位（a priori 単一・将来 ML 化・hook L-267）
 PRIORITY = 34                    # E34 識別子（precheck P0 表示用）
 TRAIN_END = e34v1.TRAIN_END      # 2025-01-01（分位の学習境界・H8）
 SC_START = pd.Timestamp("2025-06-01")   # 新窓 採点開始（地面）
@@ -82,7 +92,8 @@ def add_analysis_features(df):
     """report.py / analyze.py の帯分析が読む V9 系特徴量（E34 戦略は未使用＝分析スライス専用・leak-safe）。
     bb_mid_slope/bb_width/RSI/Stoch/ret_5 を当該足までで計算（未来参照なし）。"""
     c, h, l = df.close, df.high, df.low
-    df["bb_mid_slope"] = df["sma"] - df["sma"].shift(5)                    # 中心(SMA20)の5バー傾き（USD）
+    df["bb_mid_slope"] = df["sma"] - df["sma"].shift(5)                    # 中心(SMA20)の5バー傾き（USD・analyze帯分析の互換・戦略未使用）
+    df["bb_mid_slope_pct"] = (df["sma"] - df["sma"].shift(5)) / df["sma"] * 100   # ★iteration-1 S4 戦略用＝価格非依存（H6・学習$40k帯→採点$100k帯で不変）
     df["bb_width"] = (4 * df["std"]) / df["sma"] * 100                     # BB 幅 %
     df["ret_5"] = c.pct_change(5)
     delta = c.diff()                                                       # RSI14
@@ -119,6 +130,7 @@ def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
         "dev_z_at_entry": round(float(pos["devz_entry"]), 3) if np.isfinite(pos["devz_entry"]) else None,
         "taker_ls_at_entry": round(float(pos["taker_entry"]), 4) if np.isfinite(pos["taker_entry"]) else None,
         "bb_mid_slope_at_entry": round(float(pos["f_bbslope"]), 4) if np.isfinite(pos["f_bbslope"]) else None,
+        "bb_mid_slope_pct_at_entry": round(float(pos["f_bbslope_pct"]), 5) if np.isfinite(pos["f_bbslope_pct"]) else None,
         "bb_width_at_entry": round(float(pos["f_bbwidth"]), 5) if np.isfinite(pos["f_bbwidth"]) else None,
         "stoch_k_at_entry": round(float(pos["f_stochk"]), 2) if np.isfinite(pos["f_stochk"]) else None,
         "stoch_d_at_entry": round(float(pos["f_stochd"]), 2) if np.isfinite(pos["f_stochd"]) else None,
@@ -133,7 +145,7 @@ def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
     })
 
 
-def run(df, enable_add: bool):
+def run(df, enable_add: bool, max_adds: int):
     """連続モード LONG ループ。merge（同サイド1ポジ・平均建値）+ cap 停止 add + 単一TP中心回帰。"""
     n = len(df)
     ts = df["ts"].to_numpy()
@@ -143,8 +155,9 @@ def run(df, enable_add: bool):
     adx = df["adx"].to_numpy(float); devz = df["dev_z"].to_numpy(float)
     taker = df["taker_ls"].to_numpy(float)
     entry_sig = df["entry_sig"].to_numpy(bool)
-    # 分析スライス用 V9 系特徴量（戦略は未使用・記録のみ）
+    # 分析スライス用 V9 系特徴量（bbslope_pct のみ戦略 S4 で使用・他は記録のみ）
     bbslope = df["bb_mid_slope"].to_numpy(float); bbwidth = df["bb_width"].to_numpy(float)
+    bbslope_pct = df["bb_mid_slope_pct"].to_numpy(float)   # ★S4 戦略用（H6・記録）
     stochk = df["stoch_k"].to_numpy(float); stochd = df["stoch_d"].to_numpy(float)
     rsi = df["rsi"].to_numpy(float); rsislope = df["rsi_slope"].to_numpy(float)
     ret5 = df["ret_5"].to_numpy(float)
@@ -173,7 +186,7 @@ def run(df, enable_add: bool):
                                "last_fill_idx": i,   # ★直近 fill bar（出口を fill の次 bar 以降に限る・H2）
                                "sl_price": sl, "atr_entry": atri,
                                "adx_entry": adx[i], "devz_entry": devz[i], "taker_entry": taker[i],
-                               "f_bbslope": bbslope[i], "f_bbwidth": bbwidth[i],
+                               "f_bbslope": bbslope[i], "f_bbslope_pct": bbslope_pct[i], "f_bbwidth": bbwidth[i],
                                "f_stochk": stochk[i], "f_stochd": stochd[i],
                                "f_rsi": rsi[i], "f_rsislope": rsislope[i], "f_ret5": ret5[i],
                                "max_high": hi, "min_low": li}
@@ -224,7 +237,7 @@ def run(df, enable_add: bool):
         if entry_sig[i] and pending is None:
             if pos is None:
                 pending = {"limit": ci * (1.0 - ENTRY_OFFSET), "placed_idx": i}
-            elif enable_add and pos["add_count"] < MAX_ADDS:
+            elif enable_add and pos["add_count"] < max_adds:
                 pending = {"limit": ci * (1.0 - ENTRY_OFFSET), "placed_idx": i}
 
     # ── 期間末 強制クローズ（成行）──────────────────────────────────────────────
@@ -246,14 +259,75 @@ def _verify_cap(add_events, close_events):
     return mx
 
 
+def run_diagnostic(df, z_thr, taker_thr, slope_thr):
+    """iteration-1 診断（採点しない・学習 <2025-01）: ① 発火ファネル（各 signal が何件に削るか）
+    ② bb_slope 帯別 per-trade レース率/net（eval_engine per-trade・e34v1.measure）。
+    N8『負け玉ほど深い売られすぎ＝深さでなく slope/trend の除外が要る』＋問5『S4 非急落で falling-knife が減るか』を
+    採点窓を見ずに学習期間で検証する（H8・覗き見なし）。"""
+    tr_mask = df.ts < TRAIN_END
+    devz = df.dev_z
+    s1_dwell = (devz <= z_thr)                                   # S1' ゾーン滞在（割っている間ずっと）
+    s1_crossin = s1_dwell & (devz.shift(1) > z_thr)             # iteration-0 cross-in（瞬間・参考）
+    s2 = df.taker_ls <= taker_thr
+    s3 = df.adx <= e34v1.ADX_MAX
+    s4 = df.bb_mid_slope_pct >= slope_thr
+
+    def cnt(m):
+        return int((m.fillna(False) & tr_mask).sum())
+
+    base_n = int(tr_mask.sum())
+    print("\n  ── ① 発火ファネル（学習 <2025-01・採点しない・各 signal が何件に削るか）──")
+    print(f"    学習バー総数                                : {base_n:>8,}")
+    print(f"    S1' ゾーン滞在 dev_z≤q{e34v1.Z_Q}={z_thr:+.2f}              : {cnt(s1_dwell):>8,}   [参考 iteration-0 cross-in: {cnt(s1_crossin):,}]")
+    print(f"    ∩ S2 taker_ls≤q{e34v1.TAKER_Q}={taker_thr:.3f}                  : {cnt(s1_dwell & s2):>8,}")
+    print(f"    ∩ S3 ADX{e34v1.ADX_N}≤{e34v1.ADX_MAX}                         : {cnt(s1_dwell & s2 & s3):>8,}   ← dwell（S4 なし）")
+    print(f"    ∩ S4 非急落 slope_pct≥q{SLOPE_Q}={slope_thr:+.4f}     : {cnt(s1_dwell & s2 & s3 & s4):>8,}   ← dwell_s4［本命］")
+    cut = cnt(s1_dwell & s2 & s3) - cnt(s1_dwell & s2 & s3 & s4)
+    base_dwell = cnt(s1_dwell & s2 & s3)
+    ratio = f"{cut / base_dwell:.1%}" if base_dwell else "n/a"
+    print(f"    （S4 が除外する急落バー: {cut:,} 本 = dwell の {ratio}）")
+
+    # ── ② bb_slope 帯別 per-trade（S4 前 base=dwell∩S2∩S3 を slope で2分・eval_engine per-trade）──
+    df = df.copy()
+    df["pos"] = np.arange(len(df))
+    opens = df.open.to_numpy(float); highs = df.high.to_numpy(float)
+    lows = df.low.to_numpy(float); closes = df.close.to_numpy(float)
+    tss = df.ts.to_numpy(); n = len(df)
+    base = (s1_dwell & s2 & s3).fillna(False) & tr_mask
+    fired = df[base].copy()
+    print("\n  ── ② bb_slope 帯別 per-trade（S4 妥当性＝急落帯が出血源か・eval_engine per-trade・学習期間）──")
+    print("     ※ per-trade 単発sim＝連続モード(merge/add)の実約定数とは母集団が別。S4除外帯が出血源かの方向確認用（件数/netを連続モードの実数と同一視しない）。")
+    groups = [
+        ("S4除外帯  slope_pct< thr（急落・falling-knife 仮説）", fired[fired.bb_mid_slope_pct < slope_thr]),
+        ("S4通過帯  slope_pct≥ thr（非急落・横ばい）        ", fired[fired.bb_mid_slope_pct >= slope_thr]),
+        ("（参考）base 全体 dwell∩S2∩S3                    ", fired),
+    ]
+    for label, g in groups:
+        r, _ = e34v1.measure(label, g, opens, highs, lows, closes, tss, n)
+        if r is None:
+            print(f"    {label}: 約定 0 件")
+            continue
+        edge = r["tp_race"] - r["rw_bench"]
+        print(f"    {label}: 約定{r['filled']:>5} / net/件{r['exp_net']:+.3f} / 勝率{r['winrate']:.1%}"
+              f" / レース率{r['tp_race']:.1%} vs 基準{r['rw_bench']:.1%}（差{edge:+.1%}） / 年別{r['yr_net']}")
+    print("\n  → 判定の見方: S4除外帯の net/件・レース率が S4通過帯より明確に悪ければ S4 は妥当（急落帯=出血源を除外）。")
+    print("     差が小さければ S4 は件数を削るだけ＝ゾーン滞在を活かし S4 を緩める/外す（連続モードで源泉検証）。")
+    print("=" * 92)
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--entry", choices=["crossin", "dwell", "dwell_s4"], default="dwell_s4",
+                    help="§7 寄与分解の入口モード: crossin=iteration-0再現 / dwell=ゾーン滞在のみ / dwell_s4=+S4非急落［本命］")
+    ap.add_argument("--diagnostic", action="store_true",
+                    help="学習期間の発火ファネル＋bb_slope帯別 per-trade（採点しない・N8/問5 を採点窓を見ずに検証）")
     ap.add_argument("--no-add", action="store_true", help="add を無効化（§7 コンポーネント評価：入口のみ vs 入口+add）")
+    ap.add_argument("--max-adds", type=int, default=MAX_ADDS, help="add の最大段数（iteration-2＝深い add の暴発を断つ・既定5で既存再現は不変・cap0.12 は別の上限で常に有効）")
     ap.add_argument("--smoke", type=int, default=0, help="先頭 N バーだけで動作確認（0=全期間）")
     a = ap.parse_args()
 
     print("=" * 92)
-    print(f"[E34 ベース v1] レンジ逆張り 連続モード LONG（add{'OFF' if a.no_add else 'ON'}・merge・cap{CAP}・単一TP中心回帰）")
+    print(f"[E34 ベース v1] レンジ逆張り 連続モード LONG（add{'OFF' if a.no_add else 'ON'}・MAX_ADDS={a.max_adds}・merge・cap{CAP}・単一TP中心回帰）")
     df = pd.read_csv(e34v1.CSV)
     df["ts"] = pd.to_datetime(df["timestamp"])
     df = df.reset_index(drop=True)
@@ -276,16 +350,34 @@ def main():
     tr = df[df.ts < TRAIN_END]
     z_thr = float(tr.dev_z.quantile(e34v1.Z_Q))
     taker_thr = float(tr.taker_ls.quantile(e34v1.TAKER_Q))
-    print(f"  入口 dev_z≤q{e34v1.Z_Q}={z_thr:+.2f} ∩ taker_ls≤q{e34v1.TAKER_Q}={taker_thr:.3f} ∩ ADX{e34v1.ADX_N}≤{e34v1.ADX_MAX}")
-    s1 = (df.dev_z <= z_thr) & (df.dev_z.shift(1) > z_thr)      # 行き過ぎ cross-in
+    slope_thr = float(tr.bb_mid_slope_pct.quantile(SLOPE_Q))    # ★iteration-1 S4 非急落（学習分位・将来 ML 化）
+    print(f"  入口モード = {a.entry}（crossin=iteration-0再現 / dwell=ゾーン滞在 / dwell_s4=+S4非急落［本命］）")
+    print(f"  分位（学習<2025-01 生値）: dev_z≤q{e34v1.Z_Q}={z_thr:+.2f} / taker_ls≤q{e34v1.TAKER_Q}={taker_thr:.3f}"
+          f" / ADX{e34v1.ADX_N}≤{e34v1.ADX_MAX} / S4 slope_pct≥q{SLOPE_Q}={slope_thr:+.4f}")
+
+    # ── 診断モード（採点しない・学習期間の発火ファネル＋帯別 per-trade）→ ここで終了 ──
+    if a.diagnostic:
+        run_diagnostic(df, z_thr, taker_thr, slope_thr)
+        return
+
+    # ── Signals（S1' ゾーン滞在＝割っている間ずっと / S1 cross-in＝瞬間）──────────────
+    s1_dwell = (df.dev_z <= z_thr)                              # iteration-1: ゾーン滞在
+    s1_crossin = s1_dwell & (df.dev_z.shift(1) > z_thr)         # iteration-0: cross-in
     s2 = df.taker_ls <= taker_thr                               # 投げ売り枯渇
     s3 = df.adx <= e34v1.ADX_MAX                                # 非トレンド
-    df["entry_sig"] = (s1 & s2 & s3).fillna(False)
+    s4 = df.bb_mid_slope_pct >= slope_thr                       # iteration-1: 非急落（横ばいに限定・最も急な下げ帯を除外）
+    if a.entry == "crossin":
+        sig = s1_crossin & s2 & s3                              # iteration-0 再現（S4 なし）
+    elif a.entry == "dwell":
+        sig = s1_dwell & s2 & s3                                # ゾーン滞在のみ（S4 なし・件数増の寄与単離）
+    else:  # dwell_s4（iteration-1 本命）
+        sig = s1_dwell & s2 & s3 & s4                           # ゾーン滞在 ＋ 非急落
+    df["entry_sig"] = sig.fillna(False)
     print(f"  出口 TP=中心SMA{e34v1.SMA_N}(動的) / SL=avg−{SL_ATR_K}×ATR{e34v1.ATR_N}(maker) / 時間切れ{HOLD_5M*5//60}h(taker)")
-    print(f"  入口発火（全系列）: {int(df['entry_sig'].sum())} 本")
+    print(f"  入口発火（全系列・{a.entry}）: {int(df['entry_sig'].sum())} 本")
 
     # ── 連続モード実行 ──────────────────────────────────────────────────────────
-    trades, add_ev, close_ev = run(df, enable_add=(not a.no_add))
+    trades, add_ev, close_ev = run(df, enable_add=(not a.no_add), max_adds=a.max_adds)
     t = pd.DataFrame(trades)
     if len(t) == 0:
         print("  ⛔ 取引 0 件。入口が発火していない可能性 → 分位/データを確認。")
@@ -300,11 +392,11 @@ def main():
 
     print(f"  連続モード約定: {len(t)}件 / 出口 {dict(t['exit_reason'].value_counts())} / add分布 {dict(t['add_count'].value_counts().sort_index())}")
 
-    # ── 出力（全期間=採点用 + 学習<2025-01=precheck 用）────────────────────────────
+    # ── 出力（全期間=採点用 + 学習<2025-01=precheck 用・入口モードをファイル名に含め §7 比較）──
     RATCHET.mkdir(parents=True, exist_ok=True)
-    suffix = "_noadd" if a.no_add else ""
+    suffix = f"_{a.entry}" + (f"_max{a.max_adds}" if a.max_adds != MAX_ADDS else "") + ("_noadd" if a.no_add else "")
     out_full = OUT_FULL.with_name(OUT_FULL.stem + suffix + ".csv")
-    out_train = OUT_TRAIN.with_name(OUT_TRAIN.stem.replace("_train", "") + suffix + "_train.csv")
+    out_train = OUT_FULL.with_name(OUT_FULL.stem + suffix + "_train.csv")
     out_score = OUT_FULL.with_name(OUT_FULL.stem + suffix + "_score.csv")
     SEAL_START = pd.Timestamp("2026-03-01")                 # 封印 2026-03〜05 は出力に含めない（最終1回まで温存）
     t_full = t[t.entry_time < SEAL_START].reset_index(drop=True)

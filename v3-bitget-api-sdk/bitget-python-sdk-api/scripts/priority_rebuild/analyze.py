@@ -202,8 +202,86 @@ def main():
     else:
         print("   mfe_usd 列なし/全0＝計算不能（実験スクリプトが MFE を記録していない＝記録漏れを疑え）")
 
-    print("\n  ⚠️ ここまでは最低ライン（数字の抽出）。ledger に 5つの問い（①どのレバーが動いたか ②あと何が")
-    print("     いくら足りないか ③負けはどこに集中か ④過去のどの実験と同じ/違う構造か ⑤次の事前仮説1つ）を書くこと。")
+    # ===== N10. 分離指標ランキング（★どの指標が勝敗を分けるか・構造を機械抽出・2026-06-14 まこさん「構造の解釈も強制」）=====
+    # 「数字の抽出」で止めず「勝敗を分ける指標」を相関で機械順位づけ→改善は固定値調整でなく ML 特徴量化に向かう。
+    print("\n  N10. 分離指標ランキング（★勝敗を分ける指標を機械抽出＝固定値調整でなく ML 特徴量の候補）")
+    cand = [c for c in ("dev_z_at_entry", "taker_ls_at_entry", "adx_at_entry", "bb_mid_slope_pct_at_entry",
+            "rsi_at_entry", "rsi_slope_at_entry", "stoch_k_at_entry", "bb_width_at_entry", "atr_pct",
+            "ret_5", "add_count", "entry_hour") if c in d.columns and d[c].notna().sum() > 30]
+    tr_d = _load(a.train) if a.train else None       # 両窓再現チェック用（地合いボーナスか本物か）
+    rows = []
+    for c in cand:
+        sub = d[[c, "net_usd"]].dropna()
+        if len(sub) < 30 or sub[c].nunique() < 5:
+            continue
+        rho = sub[c].corr(sub["net_usd"], method="spearman")
+        wmed = wn[c].median() if len(wn) else np.nan
+        lmed = ls[c].median() if len(ls) else np.nan
+        try:                                          # 5分位の net 単調性（向きが一貫しているか）
+            q = pd.qcut(sub[c], 5, duplicates="drop")
+            qnet = sub.groupby(q, observed=True)["net_usd"].mean()
+            if qnet.shape[0] < 3:                     # bin が潰れた（低カーディナリティ）＝単調判定不能
+                mono = "?"
+            else:
+                mono = "単調" if (qnet.is_monotonic_increasing or qnet.is_monotonic_decreasing) else "非単調"
+        except Exception:
+            mono = "?"
+        repro = ""                                    # 学習窓で符号が一致するか（過剰適合/地合い検出）
+        if tr_d is not None and c in tr_d.columns:
+            ts = tr_d[[c, "net_usd"]].dropna()
+            if len(ts) > 30 and ts[c].nunique() >= 5:
+                trho = ts[c].corr(ts["net_usd"], method="spearman")
+                repro = "両窓再現✓" if (pd.notna(trho) and pd.notna(rho) and np.sign(trho) == np.sign(rho) and abs(trho) > 0.05) else "両窓不一致✗"
+        rows.append((c, rho, wmed, lmed, mono, repro))
+    rows.sort(key=lambda r: -abs(r[1]) if pd.notna(r[1]) else 0)
+    for c, rho, wmed, lmed, mono, repro in rows:
+        dir_ = "勝ち玉ほど高い" if (pd.notna(rho) and rho > 0) else "勝ち玉ほど低い"   # 向きは順位統計 rho の符号で（中央値split と食い違わせない）
+        print(f"   {c:26s} 相関{rho:+.3f} / 勝中央{wmed:.3f} vs 負{lmed:.3f}（{dir_}）/ 5分位net {mono} {repro}")
+    if rows and pd.notna(rows[0][1]) and abs(rows[0][1]) >= 0.1:        # ★|相関|<0.1 はノイズ＝断定しない（誤誘導防止・レビュー blocking 2026-06-14）
+        top = rows[0]
+        tdir = "高い" if top[1] > 0 else "低い"
+        print(f"   ★最強分離指標 = {top[0]}（相関{top[1]:+.3f}・勝ち玉ほど{tdir}・5分位{top[4]}・{top[5]}）")
+        print(f"   → この指標を機械学習の特徴量として木に渡す（⛔ 固定値の手調整＝閾値を X→Y にするのは禁止・hook L-267）")
+    elif rows:
+        print(f"   ★分離指標なし（最大|相関| {abs(rows[0][1]):.3f}<0.1＝どの指標も勝敗を明確に分けていない＝入口の指標選びから見直す）")
+
+    # ===== N11. 損切り玉の方向判定（★方向ミスか損切りが狭すぎか・構造を機械抽出）=====
+    print("\n  N11. 損切り玉の方向判定（★方向ミスか損切りが狭すぎか）")
+    slb = d[d["exit_reason"] == "SL_FILLED"] if "exit_reason" in d.columns else d.iloc[0:0]
+    if len(slb) >= 5 and "mfe_usd" in d.columns and "mae_usd" in d.columns:
+        ratio = (slb["mfe_usd"] / slb["mae_usd"].abs().replace(0, np.nan)).dropna()
+        rmed = ratio.median() if len(ratio) else np.nan
+        almost = (slb["mfe_usd"] >= slb["mae_usd"].abs()).mean() * 100      # 含み益>含み損＝惜しい(tight疑い)
+        if pd.notna(rmed):
+            verdict = ("方向ミスが主因（入口の向きが逆＝損切り幅でなく入口を直す）" if rmed < 0.7
+                       else "含み益を経て戻る玉が多い＝損切りが狭すぎる疑い")
+            print(f"   SL {len(slb)}件: 含み益ピーク/含み損 中央値 {rmed:.2f} / 含み益≧含み損 の玉 {almost:.0f}% → ★{verdict}")
+        else:
+            print(f"   SL {len(slb)}件: mfe/mae 比が計算不能（mae 全0?）＝方向判定不能")
+    else:
+        print("   SL<5件 or mfe/mae 列なし＝判定不能")
+
+    # ===== N12. 勝ち場面クロス（★上位2分離指標の組み合わせ・構造を機械抽出）=====
+    print("\n  N12. 勝ち場面クロス（★どの組み合わせが黒字か＝木に学ばせる勝ち場面）")
+    if len(rows) >= 2:
+        c1, c2 = rows[0][0], rows[1][0]
+        sub = d[[c1, c2, "net_usd"]].dropna()
+        b1 = (sub[c1] > sub[c1].median()).map({True: f"{c1}≥中", False: f"{c1}<中"})
+        b2 = (sub[c2] > sub[c2].median()).map({True: f"{c2}≥中", False: f"{c2}<中"})
+        net = sub.pivot_table("net_usd", b1, b2, aggfunc="sum", observed=False).round(0)
+        wr = (sub.assign(w=(sub["net_usd"] > 0)).pivot_table("w", b1, b2, aggfunc="mean", observed=False) * 100).round(0)
+        print(f"   [{c1} × {c2}] 純益$"); print("   " + net.to_string().replace("\n", "\n   "))
+        print(f"   [{c1} × {c2}] 勝率%"); print("   " + wr.to_string().replace("\n", "\n   "))
+        st = net.stack()
+        if len(st):
+            print(f"   ★最も黒字の組み合わせ = {st.idxmax()}（net ${st.max():.0f}）／ 最も赤字 = {st.idxmin()}（net ${st.min():.0f}）")
+    else:
+        print("   分離指標が2つ未満＝クロス不能")
+
+    print("\n  ⚠️ N1〜N12 は数字の抽出。ledger の5つの問いを N10〜N12 の構造解釈を引用して書く（数字でなく構造で結論）:")
+    print("     【問1 レバー】=N10 最強分離指標 / 【問3 負け集中】=N11 SL方向判定・N8 / 【問5 次仮説】=N10上位指標を ML 特徴量化")
+    print("     ⛔【問5】に固定値の手調整（閾値を X→Y にする）を書いたら違反＝分離指標を木に渡す形で書く（②思考の強制・まこさん 2026-06-14）")
+    print("     （①どのレバーが動いたか ②あといくら足りないか ③負けはどこに集中か ④過去のどの実験と同じ/違う構造か ⑤次の事前仮説1つ）")
     print(f"\n[保存] 深掘り分析を書類化 → {out_path}")
 
 

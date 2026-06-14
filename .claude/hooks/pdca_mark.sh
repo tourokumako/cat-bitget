@@ -65,6 +65,7 @@ if tn == "Bash":
             pass   # 診断ラウンド中の採点＝PDCA 連鎖を立てない（不能ループ防止・2026-06-13）
         else:
             touch(need_report); touch(need_ledger); touch(need_analyze); touch(need_5q); touch(need_claim)
+            touch(need_next_step)   # 審判を通したセッションは next_step を1回上書きするまで終了不可（ledger 編集回数に依存させない・2026-06-14 まこさん GO）
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*report\.py", cmd):
         rm(need_report)
         # --vs（前回比較・KB §0）必須。無しは need_vs 旗（初回のみ no_baseline_approved で免除・1回で消費）
@@ -80,9 +81,10 @@ elif tn in ("Edit", "Write", "MultiEdit"):
     fp = ti.get("file_path", "") or ""
     if fp.endswith("ledger.md"):
         rm(need_ledger)
-        # ledger を更新した＝実験を記録した → 次セッションの起点 next_step.md を上書き更新するまで
-        # ターン終了不可（2026-06-12 まこさん指示・引き継ぎ漏れの物理強制）。next_step.md 編集で下りる。
-        touch(need_next_step)
+        # ★2026-06-14 まこさん GO: ledger は「ログ」＝都度何度でも追記してよい。ledger 編集ごとに next_step を
+        #   強制すると同一セッションで何度も付箋の上書きが走る（friction）。→ need_next_step は審判実行時に
+        #   1回だけ立て（上の _is_judge ブロック）、ledger 編集では立てない。next_step はセッション末に1回。
+        #   経緯を忘れない本体は ledger（追記・恒久・開始時 Read 強制）＝こちらは触らない。
         # 5つの問いが全部含まれる編集なら need_5q を下ろす（形だけ防止は まこさん30秒チェックが担保）
         payload = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
         for e in (ti.get("edits", []) or []):
