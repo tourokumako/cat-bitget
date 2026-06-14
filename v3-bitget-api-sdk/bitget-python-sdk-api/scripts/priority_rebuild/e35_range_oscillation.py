@@ -60,7 +60,10 @@ SEAL_START = pd.Timestamp("2026-03-01")     # 封印 2026-03〜05 は出力に�
 # ── a priori 単一固定（最良値スイープしない・hook L-267）─────────────────────────────
 CI_N = 14
 CI_THRESH = 61.8          # Choppiness>61.8 = 横ばい（フィボ 61.8・E.W.Dreiss 代表閾値）
-ADX_MAX = e34v1.ADX_MAX   # 25.0（非トレンド・e34 流用）
+ADX_MAX = e34v1.ADX_MAX   # 25.0（※レンジ判定からは外した・Jump Model 近似に置換・KB §I 固定ADX25 削除）
+ER_N = 20                 # Kaufman Efficiency Ratio 窓（レンジ判定の主役・低効率=レンジ）
+ER_SMOOTH = 5             # 持続性（過去のみ平滑化＝flicker 抑制・Jump penalty 近似・research C4/C5）
+ER_Q = 0.5                # レンジ閾値＝学習期間 ER の分位（ER<この分位=レンジ・a priori 単一・スイープしない）
 ZONE_FRAC = 0.25          # 箱の下/上 25% を反転ゾーンに
 W_Q_LO = 0.25
 W_Q_HI = 0.75
@@ -84,6 +87,18 @@ def add_choppiness(df: pd.DataFrame) -> pd.DataFrame:
     tr_sum = tr.rolling(CI_N).sum()
     rng = (h.rolling(CI_N).max() - l.rolling(CI_N).min()).replace(0, np.nan)
     df["chop"] = 100.0 * np.log10(tr_sum / rng) / np.log10(CI_N)
+    return df
+
+
+def add_jump_model(df: pd.DataFrame) -> pd.DataFrame:
+    """Jump Model 近似＝レンジ判定の主役（research C4/C5・固定閾値でなく適応・leak-safe）。
+    Kaufman Efficiency Ratio = |C_t − C_{t−N}| / Σ|ΔC|（低い=往復=レンジ / 高い=一方向=トレンド）。
+    過去のみの平滑化(ER_SMOOTH)で regime のちらつき(flicker)を抑える＝jump penalty の近似。
+    """
+    c = df["close"]
+    change = (c - c.shift(ER_N)).abs()
+    vol = c.diff().abs().rolling(ER_N).sum().replace(0, np.nan)
+    df["er"] = (change / vol).rolling(ER_SMOOTH).mean()   # 持続性（過去のみ＝leak-safe）
     return df
 
 
@@ -127,14 +142,16 @@ def _build_signals_for_tf(df: pd.DataFrame, tf: str, w_lo: float, w_hi: float) -
     """1 足分（tf）の入口系列（bool Series 辞書）。合成（range_ok/long_entry/short_entry）は設計書の部品リスト通りに組み立てる。"""
     sup = df[e35_box.sup_col(tf)]
     res = df[e35_box.res_col(tf)]
-    chop = df["chop"]; adx = df["adx"]; k = df["stoch_k"]
+    chop = df["chop"]; adx = df["adx"]; k = df["stoch_k"]; er = df["er"]
 
     in_box = sup.notna() & (sup > 0) & res.notna() & (res > 0)
     W = sup + res
     fill = lambda s: s.fillna(False)
+    er_thr = er[df["ts"] < TRAIN_END].quantile(ER_Q)   # レンジ閾値＝学習期間の ER 分位（データ駆動・覗き見なし H8）
 
-    # base 成分を計算（jm_ok=Jump Model は未実装＝設計書が要求するなら _assemble_signals が停止する）
+    # base 成分（jm_ok=Jump Model 近似がレンジ判定の主役・固定 chop_ok/adx_ok はレンジ判定から外した）
     components = {
+        "jm_ok": fill(er < er_thr),
         "chop_ok": fill(chop > CI_THRESH),
         "adx_ok": fill(adx < ADX_MAX),
         "in_box": fill(in_box),
@@ -318,6 +335,7 @@ def _load(smoke: int) -> pd.DataFrame:
     df = e34b.add_analysis_features(df)           # bb_mid_slope_pct/stoch 等
     df = e35_box.add_box_features(df, verify_leak=(smoke > 0 and smoke <= 60000))
     df = add_choppiness(df)
+    df = add_jump_model(df)
     return df
 
 

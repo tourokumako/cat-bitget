@@ -124,7 +124,7 @@
   "design_ref": "e35_design.md §5.2 Signals",
   "self_check_calls": ["_entry_contract(", "_assemble_signals("],
   "must_combine": {
-    "range_ok": ["chop_ok", "adx_ok", "jm_ok", "in_box", "w_ok"],
+    "range_ok": ["jm_ok", "in_box", "w_ok"],
     "long_entry": ["range_ok", "low_zone", "long_rev"],
     "short_entry": ["range_ok", "up_zone", "short_rev"]
   }
