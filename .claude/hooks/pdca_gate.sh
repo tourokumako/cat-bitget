@@ -12,6 +12,7 @@ MISS=""
 [ -f "$STATE/pdca_need_analyze" ] && MISS="${MISS}・analyze.py 深掘り(N1〜N9: 時間構造/交差/系列/ドリフト/bootstrap/個別読み/必要勝率/負け解剖/出口効率)が未実行\n"
 [ -f "$STATE/pdca_need_ledger" ] && MISS="${MISS}・ledger.md への記録(結果+原因3分類+改善)が未実行\n"
 [ -f "$STATE/pdca_need_5q" ] && MISS="${MISS}・ledger に 5つの問いが未記入: 【問1 レバー】(期待値4要素のどれが何pt動いたか)【問2 不足量】(あと何がいくら足りないか・数値)【問3 負け集中】(特徴・期間・出口)【問4 過去接続】(どの E と同じ/違う構造か)【問5 次仮説】(学習期間で検証可能な形で1つ)。5見出し全部を含む編集で旗が下りる\n"
+[ -f "$STATE/pdca_need_claim" ] && MISS="${MISS}・ledger に【主張】1行が未記入（多角チェックリスト #19・analysis_playbook §2.0）。analyze.py N0 の件数妥当性(件数/日)を踏まえ、この実験の結論を【主張】<件数/日 と net を含む根拠つき1行> として ledger E エントリに書け（多角チェックを1発見で止めず量→質→...を通した結論）\n"
 [ -f "$STATE/pdca_need_next_step" ] && MISS="${MISS}・next_step.md（次セッションの起点・SessionStart 表示）が未更新。ledger に実験を記録したら .claude/state/next_step.md を上書き更新せよ（毎回上書き=最新の起点1枚。必須記載=①次セッションの本筋 ②今セッションの確定(ledger E番号を参照) ③やってはいけないこと ④数字の出典）。「本筋」「やってはいけない」「出典」の見出しを含む上書きで旗が下りる\n"
 if [ -n "$MISS" ]; then
   printf "⛔ PDCA未閉じ(analysis_playbook §4)。審判を通したら必ず以下を済ませてから終了せよ:\n%b最低ライン分析(N1〜N9)は数字の抽出にすぎない。5つの問いに答えるまでが分析(まこさん 2026-06-12)。\n" "$MISS" >&2

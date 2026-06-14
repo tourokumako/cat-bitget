@@ -63,6 +63,25 @@ def main():
     print(f"  深掘り分析: {name}   {d['entry_time'].min().date()}〜{d['entry_time'].max().date()} / {len(d)}件 / 審判式net ${d['net_usd'].sum():.0f}")
     print("=" * 70)
 
+    # ===== N0. 件数・頻度の妥当性（質より先に量を見る・設計意図照合・#0/#1/#18・2026-06-14 まこさん）=====
+    days = max(1, (d["entry_time"].max() - d["entry_time"].min()).days)
+    per_day = len(d) / days
+    print("\n  N0. 件数・頻度の妥当性（★質の前に量・設計意図と照合）")
+    print(f"   総件数 {len(d)} / 期間 {days}日 / 件数/日 {per_day:.2f}")
+    if per_day < 3:
+        print(f"   ⚠️ 件数/日 {per_day:.2f} が低い＝戦略が高頻度狙い(レンジ等)なら過しぼりを疑え（入口・発火ファネルを点検・#1/#2）")
+    if len(d) < 100:
+        print(f"   ⚠️ 全体 n={len(d)} <100＝サンプル少・帯別/月別の断定は慎重に（#18）")
+    small = []                                   # 帯別 n<30 ガード（少数で効く/効かないを断定しない・#18）
+    for label, (col, edges) in BANDS.items():
+        if col in d.columns:
+            for b, c in pd.cut(d[col], edges, right=False).value_counts().items():
+                if 0 < c < 30:
+                    small.append(f"{label}{b}={int(c)}件")
+    if small:
+        print(f"   ⚠️ サンプル不足(n<30)の帯＝ここで効く/効かないを断定不可（#18）: " + " / ".join(small))
+    print("   → 設計意図（レンジ=高頻度/スキャル=小利多数/トレンド=少数大利）と上の頻度が一致するか必ず照合（#0）")
+
     # ===== N1. 損失の時間構造 =====
     e = d.sort_values("exit_time")
     eq = e["net_usd"].cumsum()

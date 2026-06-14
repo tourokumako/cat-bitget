@@ -20,6 +20,7 @@ need_analyze = os.path.join(state, "pdca_need_analyze")
 need_score = os.path.join(state, "pdca_need_score")
 need_vs = os.path.join(state, "pdca_need_vs")
 need_5q = os.path.join(state, "pdca_need_5q")
+need_claim = os.path.join(state, "pdca_need_claim")   # 多角チェックの結論=主張1行（件数妥当性込み・2026-06-14 まこさん B）
 need_next_step = os.path.join(state, "pdca_need_next_step")
 no_baseline = os.path.join(state, "no_baseline_approved")
 diagnostic_active = os.path.join(state, "pdca_diagnostic_active")   # 診断ラウンド（採点しない・2026-06-13）
@@ -63,7 +64,7 @@ if tn == "Bash":
         if os.path.exists(diagnostic_active):
             pass   # 診断ラウンド中の採点＝PDCA 連鎖を立てない（不能ループ防止・2026-06-13）
         else:
-            touch(need_report); touch(need_ledger); touch(need_analyze); touch(need_5q)
+            touch(need_report); touch(need_ledger); touch(need_analyze); touch(need_5q); touch(need_claim)
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*report\.py", cmd):
         rm(need_report)
         # --vs（前回比較・KB §0）必須。無しは need_vs 旗（初回のみ no_baseline_approved で免除・1回で消費）
@@ -89,6 +90,8 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         tokens = ["【問1 レバー】", "【問2 不足量】", "【問3 負け集中】", "【問4 過去接続】", "【問5 次仮説】"]
         if all(t in payload for t in tokens):
             rm(need_5q)
+        if "【主張】" in payload:        # 多角チェックの結論=主張1行（件数/日+net 込み・#19・2026-06-14）
+            rm(need_claim)
     if fp.endswith("next_step.md"):
         # 次セッションの起点を上書き更新 → 旗を下ろす。ただし記載必須項目（本筋/やってはいけない/出典）を
         # 含む編集の時だけ（薄い1文字編集で旗を消す＝引き継ぎ空洞化を防ぐ・中身の質はまこさん30秒チェック）。
