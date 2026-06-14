@@ -107,6 +107,31 @@ def add_analysis_features(df):
     return df
 
 
+def apply_meta_filter(df, model_path, theta, meta_set):
+    """iteration-3 メタラベル Entry フィルタ（§11.2・lazy import lightgbm）。
+
+    候補バーの特徴から prob を予測し df["entry_sig"] &= (prob ≥ θ)。初回も add も同じ entry_sig で gating。
+    特徴は train_e34_meta.py と同一順（FEATS_A / FEATS_B）。全て sig_time 確定値＝leak-safe。
+    """
+    import lightgbm as lgb                       # ← lazy import（meta 未指定なら lightgbm 不要・従来動作不変）
+    import train_e34_meta as tm                  # 特徴セットの単一ソース（FEATS_A/B・set 別）
+    feats = tm.FEATS_A if meta_set == "A" else tm.FEATS_B
+    missing = [c for c in feats if c not in df.columns]
+    if missing:
+        raise RuntimeError(f"メタ特徴の欠落: {missing}（add_indicators/add_taker/add_analysis_features/atr_pct/levels を要確認）")
+    booster = lgb.Booster(model_file=str(model_path))
+    X = df[feats].to_numpy(dtype=np.float32)
+    prob = np.full(len(df), np.nan)
+    finite = np.isfinite(X).all(axis=1)          # 特徴に NaN がある行は予測不可＝採用しない（候補生成前の暖機域 等）
+    if finite.any():
+        prob[finite] = booster.predict(X[finite])
+    keep = np.where(np.isfinite(prob), prob >= theta, False)   # NaN(=予測不可) は不採用
+    before = int(df["entry_sig"].sum())
+    df["entry_sig"] = df["entry_sig"].to_numpy(bool) & keep
+    after = int(df["entry_sig"].sum())
+    return before, after, prob
+
+
 def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
     """1 ポジ（merge 済み・全ロット）を 1 行に。コスト＝eval_engine 定数で透明計算（score.py が独立再計算）。"""
     avg = float(pos["avg"]); size = float(pos["size"])
@@ -324,7 +349,15 @@ def main():
     ap.add_argument("--no-add", action="store_true", help="add を無効化（§7 コンポーネント評価：入口のみ vs 入口+add）")
     ap.add_argument("--max-adds", type=int, default=MAX_ADDS, help="add の最大段数（iteration-2＝深い add の暴発を断つ・既定5で既存再現は不変・cap0.12 は別の上限で常に有効）")
     ap.add_argument("--smoke", type=int, default=0, help="先頭 N バーだけで動作確認（0=全期間）")
+    # ── iteration-3 メタラベル Entry フィルタ（§11.2・lazy import lightgbm・未指定なら従来動作完全不変）──
+    ap.add_argument("--meta-model", default=None, help="train_e34_meta.py が出した LightGBM モデル（.txt）。指定で entry_sig &= (prob≥θ)")
+    ap.add_argument("--theta", type=float, default=None, help="メタ採用閾値 θ（train_e34_meta.py の学習OOF単一a priori・採点窓でスイープしない）")
+    ap.add_argument("--meta-set", choices=["A", "B"], default=None, help="メタ特徴セット（A=分離指標のみ / B=A＋レジサポ）。出力CSV名 _metaA/_metaB suffix")
     a = ap.parse_args()
+    if (a.meta_model is not None) != (a.theta is not None):
+        ap.error("--meta-model と --theta は両方指定（メタフィルタON）か両方未指定（従来動作）。")
+    if a.meta_model is not None and a.meta_set is None:
+        ap.error("--meta-model 指定時は --meta-set A|B を指定してください（特徴セットと出力 suffix の決定に必要）。")
 
     print("=" * 92)
     print(f"[E34 ベース v1] レンジ逆張り 連続モード LONG（add{'OFF' if a.no_add else 'ON'}・MAX_ADDS={a.max_adds}・merge・cap{CAP}・単一TP中心回帰）")
@@ -376,6 +409,18 @@ def main():
     print(f"  出口 TP=中心SMA{e34v1.SMA_N}(動的) / SL=avg−{SL_ATR_K}×ATR{e34v1.ATR_N}(maker) / 時間切れ{HOLD_5M*5//60}h(taker)")
     print(f"  入口発火（全系列・{a.entry}）: {int(df['entry_sig'].sum())} 本")
 
+    # ── iteration-3 メタラベル Entry フィルタ（§11.2・指定時のみ・未指定なら従来動作完全不変）──────
+    meta_suffix = ""
+    if a.meta_model is not None:
+        df["atr_pct"] = df["atr"] / df["close"] * 100.0          # 成分A の atr_pct（train_e34_meta と同式）
+        if a.meta_set == "B":
+            import e34_levels as lv                              # 成分B レジサポ（leak/H6 assert 内蔵）
+            df = lv.add_level_features(df)
+        before, after, _prob = apply_meta_filter(df, a.meta_model, a.theta, a.meta_set)
+        rate = (after / before) if before else float("nan")
+        print(f"  [メタフィルタ set={a.meta_set} θ={a.theta:.4f}] 入口採用 {after}/{before}（採用率 {rate:.1%}・degenerate=near-inaction を N0 で要確認）")
+        meta_suffix = f"_meta{a.meta_set}"
+
     # ── 連続モード実行 ──────────────────────────────────────────────────────────
     trades, add_ev, close_ev = run(df, enable_add=(not a.no_add), max_adds=a.max_adds)
     t = pd.DataFrame(trades)
@@ -394,7 +439,7 @@ def main():
 
     # ── 出力（全期間=採点用 + 学習<2025-01=precheck 用・入口モードをファイル名に含め §7 比較）──
     RATCHET.mkdir(parents=True, exist_ok=True)
-    suffix = f"_{a.entry}" + (f"_max{a.max_adds}" if a.max_adds != MAX_ADDS else "") + ("_noadd" if a.no_add else "")
+    suffix = f"_{a.entry}" + (f"_max{a.max_adds}" if a.max_adds != MAX_ADDS else "") + ("_noadd" if a.no_add else "") + meta_suffix
     out_full = OUT_FULL.with_name(OUT_FULL.stem + suffix + ".csv")
     out_train = OUT_FULL.with_name(OUT_FULL.stem + suffix + "_train.csv")
     out_score = OUT_FULL.with_name(OUT_FULL.stem + suffix + "_score.csv")

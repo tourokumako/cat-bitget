@@ -98,3 +98,52 @@ SMA20・std20・dev_z=(close−SMA20)/std20・ATR14・ADX14・taker_ls。
 2. v1 は**部分決済（scale out）を欠いていた** → レンジの往復を刻む小勝ちの核心。複数 TP で段階利確を入れる。
 3. 判定を per-trade ○× でなく**連続モード score.py の月次 net（地面）**にし、アジャイルで改善（1回判定で破棄しない）。
 出典: exchange_spec.md ★決済方法 / cat_requirements §6.1・§6.1.1・§8.4 / Peterson（braverock.com）。
+
+---
+
+## §11 iteration-3 設計 — メタラベル Entry フィルタ ＋ レジサポ特徴量（まこさん GO 2026-06-14・実装前プレゼン GO 済）
+
+### §11.0 6軸ゲート宣言（H15・entry_fix_6axis_gate）
+- **軸4 cascade を閉じる**: §18.5 逐語「cascade 構造不在（= ML 単段 entry 判定）」→「前段に固定ロジック段1を足す（高 recall で絞る→ML 段）」。本設計＝前段 dwell（固定ルール・候補生成＝段1）→後段 ML メタラベル（段2）。
+- **軸6 Meta 同型を閉じる**: §18.5 逐語「Meta-Labeling 失敗（= primary も secondary も同型）」→「primary≠secondary 異種・secondary は盲点情報入力」。primary=dwell 固定ルール／secondary=LightGBM＝異種。secondary に**盲点情報＝レジサポ**（固定ルールが見ない価格の節目）を入力。
+- 軸1 ボラ逃げは不違反（§11.5 H15）。
+
+### §11.1 仮説（a priori・反証可能）
+- 玉単位分析（dwell_max2 の N10-N12）＝設計前提が逆: dev_z 最強分離（相関+0.26・浅いほど勝つ・両窓再現✓）。N12 最良象限（dev_z≥中∩ret_5≥中）でも net −$13＝**値動き系だけでは breakeven 止まり**＝構造（レジサポ）という別次元が要る。N11＝方向ミスが主因。
+- 仮説: dwell 候補のうち「向きが当たる玉（中心TP 先着）」を ML が選別し、特にレジサポ（強いサポート直上）を入れると、momentum だけの breakeven を超えて陽性に動く。深い乖離でも強サポ直上なら反発／遠ければナイフ。
+- 反証: 成分B（+レジサポ）が成分A（既存分離指標のみ）を連続モード net で超えなければ、レジサポは寄与なし（A だけが breakeven 近辺に留まる想定）。
+
+### §11.2 レバー（1ターン1変更＝メタラベル Entry フィルタ・出口/add/cap/候補生成 不変）
+- primary（候補生成・**不変**）＝dwell_max2（S1' dev_z≤q0.05 ゾーン滞在 ∩ S2 taker≤q0.25 ∩ S3 ADX≤25・MAX_ADDS=2・cap0.12・出口 TP=中心/SL=1.5ATR/時間切れ4h）。
+- secondary（**新規＝レバー本体**）＝LightGBM 二値。候補1件ごとに「中心TP 先着か（方向）」の prob を予測。`entry_sig &= (prob ≥ θ)` で初回も add も同じく gating。
+- 源泉検証（§7）: 成分A（既存分離指標のみ）vs 成分B（A＋レジサポ）を同イテレーションで測り、レジサポの寄与を切り分ける（A/B ablation）。
+
+### §11.3 特徴量
+- 成分A（既存・全カラム e34_range_base に記録済）: dev_z, ret_5, rsi, stoch_k, rsi_slope, bb_width, atr_pct(=atr/close×100), adx, bb_mid_slope_pct, taker_ls。
+- 成分B（A＋レジサポ・**流用 structure_features.compute_c1_features(df, N)**＝L-179 leak 修正済・phase_compliance §5.3 確認済）:
+  - support_distance_pct_N（サポートまでの距離%）／ resistance_distance_pct_N（レジまで＝中心TP 伸びしろ%）／ nearest_level_touch_count_N（サポートの強さ＝過去タッチ回数）。
+  - ＋ volume_at_support（サポート帯の出来高 ÷ 窓出来高＝出来高プロファイルの節・無次元・新規追加）。
+  - 窓 N・タッチ許容バンドは a priori 単一（structure_features 既定＝構造パラメータ・SMA期間と同格・スイープしない）。
+- 全て価格非依存（%・回数・出来高比＝H6）。
+
+### §11.4 ラベル・学習・θ
+- ラベル＝Triple Barrier の**方向**（候補から単発前向き sim で 中心TP 先着=1／SL・時間先着=0）＝方向ベース（金額/MFE大きさでない＝H15）。exit ロジックは連続モードと同式（armed 中心・SL=1.5ATR・48本）。
+- 学習 2021-04〜2024-12（候補のみ）／embargo 2025Q1／採点 連続モード 2025-06〜2025-12（taker 実被覆内）。LONG 単独。
+- LightGBM 過学習対策（num_leaves 小・min_child 大・L1/L2・class weight）。lightgbm は python3.13。
+- θ＝学習 OOF で1度だけ決める単一 a priori（採点窓でスイープしない＝forbid_fixed_value_tuning hook）。**採用率を N0 で報告**＝degenerate（near-inaction・E21 全通過/E27 採点7件）でないか確認。E8a-2 の「単一スライス θ は分布シフトで外す」を踏まえ OOF で選ぶ。
+
+### §11.5 H 制約照合
+- H1 cap: 不変（メタラベルは件数を減らすだけ・cap0.12 物理ゲートそのまま）。
+- H2 leak: レジサポ＝pivot 確定遅延（j は j+2 で確定）＋窓 [i-N+1, i]・全特徴 shift(1)/asof・secondary は過去学習→前向き適用・Triple Barrier は LABEL（特徴でない・build_labels と同型）＝コードで assert。
+- H6 価格非依存: 全特徴 %/回数/出来高比。
+- H8 期間分割: 学習≤2024-12／embargo 2025Q1／採点 2025-06〜12（封印 2026-03〜05 最終1回）。
+- H15 ボラ逃げ: ラベル=方向／LONG 単独／ATR は SL・時間のみ／学習後 feature importance でボラ(atr_pct/bb_width)が支配でないことを確認（レジサポ/dev_z 系が主役）。
+- H16 1ターン1変更: レバー=メタラベル+レジサポ。候補生成/add/出口/cap 不変。A/B ablation で源泉分解。
+
+### §11.6 受け入れ（ratchet）
+- 連続モード score.py 月次 net が新ベース dwell_max2 −$506 を超えた分だけ残す。通過点＝黒字化（残り必要勝率 8.5pt を方向当たりで埋める）。超えなければ現状ベース維持・改善継続（破棄でない・L-278）。
+- 成分A→B の差＝レジサポの実力（§7 源泉検証）。
+
+### §11.7 実装（複数CCチェック Workflow・暴走防止＝最大2巡・重い採点は外で1回）
+- 新規 `e34_levels.py`（compute_c1_features 流用＋volume_at_support・leak assert）／`train_e34_meta.py`（LightGBM A/B・Triple Barrier 方向ラベル・θ OOF・py3.13）／`e34_range_base.py` 改修（`--meta-model <path> --theta <θ> --meta-set A|B`・lazy import lightgbm・`entry_sig &= prob≥θ`）。
+- 再現: `python3.13 train_e34_meta.py --set {A,B}` → `python3.13 e34_range_base.py --entry dwell --max-adds 2 --meta-model <A|B> --theta <θ>` → precheck → score.py（2025-06-01〜2025-12-31）→ report.py --vs dwell_max2 → analyze.py（N0-N12）。
