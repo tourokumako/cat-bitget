@@ -1,0 +1,382 @@
+#!/usr/bin/env python3
+"""e35_range_oscillation.py — E35 レンジ上下オシレーション BOT（一式・連続モード両方向・採点まで）
+
+設計書: .claude/ratchet/e35_design.md（Peterson hypothesis-driven・deep-research baseup・まこさん GO）。
+進め方（E34 と同じアジャイル）: Entry/Exit を一式で連続モードで回し、score.py の月次 net を「地面」にして反復改善。
+  ⛔ 件数診断だけ分割しない（Entry/Exit はセットで net が決まる=不可分）。--diagnostic は採点前の発火確認の補助。
+
+★判定は score.py の数字だけ（本スクリプトは eval_engine 定数を import のみ・審判が独立再計算）。
+  CSV の net_usd は self-check 用（score.py が再計算して差を表示）。
+
+流用（実体 Read 済 2026-06-14・新規ロジックを足さない）:
+  - e34_range_zscore_taker: CSV / add_indicators(sma/std/dev_z/atr/adx・taker 不使用)
+  - e34_range_base: add_analysis_features(stoch等) / 連続モードの作法(pending fill・約定barの次出口・cap停止・_verify_cap・_funding_cost)
+  - e35_box: 箱 3列×3足(fractal j+2 / attach_upper_tf / volume_at_support・leak assert 内蔵)
+  - eval_engine: 確定コスト定数（改造禁止・import のみ）
+
+入口（a priori 単一・スイープしない・hook L-267／反転確認は診断 0.06/日 を受け「クロス→oversoldで上向き」に緩めた）:
+  RANGE_OK   = (Choppiness>61.8) ∩ (ADX<25) ∩ in_box ∩ (W∈学習[q25,q75])
+  LONG_ENTRY  = RANGE_OK ∩ 下限ゾーン(sup≤0.25W) ∩ (%K<30 ∩ %K>前%K)   ← クロスでなく oversold で上向き
+  SHORT_ENTRY = RANGE_OK ∩ 上限ゾーン(res≤0.25W) ∩ (%K>70 ∩ %K<前%K)
+出口（両サイド・v1 は単一TP=中心C 全ロット／改善で複数TP分割）:
+  TP = 箱中心 C=(S+R)/2 へ戻り（動く・LONG high≥C / SHORT low≤C・C が建値±コスト床を超える時だけ武装）=指値 maker
+  SL = 箱ブレイク（LONG 終値<S / SHORT 終値>R・構造的）=能動撤退 成行 taker
+  時間切れ = 48本(4h)・成行 taker
+add: 同サイド再発火で merge・平均建値・unit 0.024・★cap=LONG+SHORT 合算≤0.12 で停止。
+
+H 制約（コード内 assert / コメント）:
+  H1 cap   … 任意 t で LONG+SHORT 合算 ≤0.12（fill 時に held+UNIT>cap で add 停止 ＋ _verify_cap 実測 assert ＋ score.py 物理ゲート）。
+  H2 leak  … 箱は e35_box が j+2/attach/破壊テストで担保・指標は shift ベース・出口は約定 bar の次以降（i>last_fill_idx）。
+  H5 約定   … entry/TP=指値 maker（close×(1∓offset)）／箱ブレイク SL・時間切れ=成行 taker+slip。
+  H6 価格非依存 … 入口は距離%/比/無次元。箱の価格(S/R/C)は「現値との距離%」由来で TP/SL の比較に使うのみ（閾値化しない）。
+  H8 期間分割 … W 分位は学習 ts<2025-01。採点 2025-06〜12・封印 2026-03〜05 不参照。
+  H15 ボラ逃げ … 入口=方向（ゾーン+反転）・ボラ(ATR)は使わない（SL は箱ブレイク=構造／時間のみ）・LONG/SHORT 分離。
+  H16 1変更 … 新構造のベース v1 を一式1本（E34 と同じ「正しい器を1本」）。以後 複数TP/多TF重み/固定値ML は1つずつ。
+"""
+from __future__ import annotations
+import argparse
+import pathlib
+import sys
+from datetime import timezone
+
+import numpy as np
+import pandas as pd
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import eval_engine as ee                    # noqa: E402  確定コスト定数 + funding 境界（改造禁止・import のみ）
+import e34_range_zscore_taker as e34v1      # noqa: E402  CSV / add_indicators（taker は呼ばない）
+import e34_range_base as e34b               # noqa: E402  add_analysis_features（stoch 等）
+import e35_box                              # noqa: E402  箱 3列×3足（leak/H6 assert 内蔵）
+
+RATCHET = ROOT / "results" / "priority_rebuild" / "ratchet"
+TRAIN_END = e34v1.TRAIN_END                 # 2025-01-01（W 分位・診断の学習境界・H8）
+SC_START = pd.Timestamp("2025-06-01")       # 採点窓 開始（新窓・taker 実被覆内）
+SCORE_END = pd.Timestamp("2026-01-01")      # 採点窓 終了（2025-12-31 まで）
+SEAL_START = pd.Timestamp("2026-03-01")     # 封印 2026-03〜05 は出力に含めない（最終1回まで温存）
+
+# ── a priori 単一固定（最良値スイープしない・hook L-267）─────────────────────────────
+CI_N = 14
+CI_THRESH = 61.8          # Choppiness>61.8 = 横ばい（フィボ 61.8・E.W.Dreiss 代表閾値）
+ADX_MAX = e34v1.ADX_MAX   # 25.0（非トレンド・e34 流用）
+ZONE_FRAC = 0.25          # 箱の下/上 25% を反転ゾーンに
+W_Q_LO = 0.25
+W_Q_HI = 0.75
+TFS = e35_box.TFS         # ['5m','1h','4h']
+
+CAP = 0.12                # 予算=全建玉（LONG+SHORT）合計の上限（H1・CLAUDE §0-2）
+UNIT = e34v1.SIZE         # 0.024 BTC（add 単位・H10）
+MAX_ADDS = 5              # 1 サイドの最大段数（cap 合算が別途常に有効）
+TTL = ee.DEFAULT_TTL      # 指値 TTL 3 本
+ENTRY_OFFSET = ee.ENTRY_LIMIT_OFFSET   # 0.0001
+COST_FLOOR = e34v1.COST_FLOOR          # 0.0020（TP が建値±床を超える時だけ武装）
+HOLD_5M = e34v1.HOLD_5M                # 48 本（4h・初回 entry 起点）
+PRIORITY = 35
+
+
+def add_choppiness(df: pd.DataFrame) -> pd.DataFrame:
+    """Choppiness Index(14)（横ばい度・CI>61.8=レンジ・全て当該足まで＝leak-safe）。"""
+    c, h, l = df["close"], df["high"], df["low"]
+    pc = c.shift(1)
+    tr = np.maximum(h - l, np.maximum((h - pc).abs(), (l - pc).abs()))   # true range（過去 close のみ）
+    tr_sum = tr.rolling(CI_N).sum()
+    rng = (h.rolling(CI_N).max() - l.rolling(CI_N).min()).replace(0, np.nan)
+    df["chop"] = 100.0 * np.log10(tr_sum / rng) / np.log10(CI_N)
+    return df
+
+
+def _build_signals_for_tf(df: pd.DataFrame, tf: str, w_lo: float, w_hi: float) -> dict:
+    """1 足分（tf）の入口系列（bool Series 辞書）。反転確認は緩めた版（oversold で上向き）。"""
+    sup = df[e35_box.sup_col(tf)]
+    res = df[e35_box.res_col(tf)]
+    chop = df["chop"]; adx = df["adx"]; k = df["stoch_k"]
+
+    in_box = sup.notna() & (sup > 0) & res.notna() & (res > 0)
+    W = sup + res
+    chop_ok = chop > CI_THRESH
+    adx_ok = adx < ADX_MAX
+    w_ok = in_box & (W >= w_lo) & (W <= w_hi)
+    range_ok = chop_ok & adx_ok & in_box & w_ok
+
+    low_zone = in_box & (sup <= ZONE_FRAC * W)
+    up_zone = in_box & (res <= ZONE_FRAC * W)
+    # ★緩めた反転確認（クロスの瞬間一致でなく「oversold/overbought で %K が上/下を向いた」状態）
+    long_rev = (k < 30) & (k > k.shift(1))
+    short_rev = (k > 70) & (k < k.shift(1))
+
+    long_entry = range_ok & low_zone & long_rev
+    short_entry = range_ok & up_zone & short_rev
+
+    fill = lambda s: s.fillna(False)
+    return {
+        "chop_ok": fill(chop_ok), "adx_ok": fill(adx_ok), "in_box": fill(in_box),
+        "w_ok": fill(w_ok), "range_ok": fill(range_ok),
+        "low_zone": fill(low_zone), "up_zone": fill(up_zone),
+        "long_rev": fill(long_rev), "short_rev": fill(short_rev),
+        "long_entry": fill(long_entry), "short_entry": fill(short_entry), "W": W,
+    }
+
+
+def _w_band(df: pd.DataFrame, tf: str, tr_mask: pd.Series) -> tuple:
+    """学習(<2025-01)の in_box バーの W 分布から [q0.25, q0.75]（データ駆動・覗き見なし H8）。"""
+    sup = df[e35_box.sup_col(tf)]; res = df[e35_box.res_col(tf)]
+    in_box = sup.notna() & (sup > 0) & res.notna() & (res > 0)
+    W = (sup + res)[(in_box & tr_mask).fillna(False)]
+    if len(W) == 0:
+        return float("nan"), float("nan"), 0
+    return float(W.quantile(W_Q_LO)), float(W.quantile(W_Q_HI)), int(len(W))
+
+
+def _funding_cost(side: int, entry_ts, exit_ts, size: float, mark: float) -> float:
+    """保有中 8h 境界ごと funding（LONG dir=+1 払い / SHORT dir=-1 受取）。score.py と同式。"""
+    e = pd.Timestamp(entry_ts).to_pydatetime().replace(tzinfo=timezone.utc)
+    x = pd.Timestamp(exit_ts).to_pydatetime().replace(tzinfo=timezone.utc)
+    cost = 0.0
+    for _ in ee._funding_boundaries(e, x):
+        cost += side * size * mark * ee.FUNDING_RATE_8H
+    return cost
+
+
+def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
+    """1 ポジ（merge 済・全ロット）を 1 行に。LONG/SHORT 両対応。TP=maker・箱ブレイク/時間切れ=taker。"""
+    side = pos["side"]; sdir = 1 if side == "LONG" else -1
+    avg = float(pos["avg"]); size = float(pos["size"])
+    entry_ts = pd.Timestamp(ts_arr[pos["first_idx"]]); exit_ts = pd.Timestamp(ts_arr[exit_idx])
+    gross = (exit_price - avg) * size * sdir
+    is_taker = reason != "TP_FILLED"                      # TP のみ maker・SL(箱ブレイク)/時間切れ/EOD は成行 taker
+    entry_fee = avg * size * ee.MAKER_FEE                 # entry は指値 maker
+    exit_fee = exit_price * size * (ee.TAKER_FEE if is_taker else ee.MAKER_FEE)
+    slip = (exit_price * size * ee.SLIPPAGE) if is_taker else 0.0
+    funding = _funding_cost(sdir, entry_ts, exit_ts, size, avg)
+    net = gross - entry_fee - exit_fee - slip - funding
+    trades.append({
+        "entry_time": entry_ts, "exit_time": exit_ts, "side": side,
+        "priority": PRIORITY, "regime": "range", "add_count": int(pos["add_count"]),
+        "size_btc": round(size, 6), "entry_price": round(avg, 2), "exit_price": round(float(exit_price), 2),
+        "exit_reason": reason, "hold_min": int((exit_idx - pos["first_idx"]) * 5),
+        "atr_14": round(float(pos["atr_entry"]), 2),
+        "adx_at_entry": round(float(pos["adx_entry"]), 3) if np.isfinite(pos["adx_entry"]) else None,
+        "stoch_k_at_entry": round(float(pos["k_entry"]), 2) if np.isfinite(pos["k_entry"]) else None,
+        "box_W_pct_at_entry": round(float(pos["W_entry"]), 5) if np.isfinite(pos["W_entry"]) else None,
+        "entry_hour": int(entry_ts.hour), "entry_weekday": int(entry_ts.weekday()),
+        "mfe_usd": round((float(pos["max_fav"]) - avg) * (UNIT if False else size) * 0 + (float(pos["max_fav"]) - avg) * size * sdir, 4),
+        "gross_usd": round(gross, 4), "fee_usd": round(entry_fee + exit_fee + slip, 4), "net_usd": round(net, 4),
+    })
+
+
+def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int):
+    """連続モード両方向。LONG/SHORT を並行管理（merge・cap 合算停止）・TP=箱中心C・SL=箱ブレイク・時間切れ。"""
+    n = len(df)
+    ts = df["ts"].to_numpy()
+    o = df["open"].to_numpy(float); h = df["high"].to_numpy(float)
+    l = df["low"].to_numpy(float); c = df["close"].to_numpy(float)
+    atr = df["atr"].to_numpy(float); adx = df["adx"].to_numpy(float); kk = df["stoch_k"].to_numpy(float)
+    sup = df[e35_box.sup_col(box_tf)].to_numpy(float)     # 現値より下の支えまでの距離%
+    res = df[e35_box.res_col(box_tf)].to_numpy(float)     # 現値より上の抵抗までの距離%
+    long_sig = df["long_entry"].to_numpy(bool); short_sig = df["short_entry"].to_numpy(bool)
+    # 箱の価格（距離%→価格・動く箱）。サポート/レジ無し（NaN）の足は箱中心/ブレイク判定をしない。
+    S = c / (1.0 + sup / 100.0)
+    R = c * (1.0 + res / 100.0)
+    Cc = (S + R) / 2.0
+    Wpct = sup + res
+
+    trades = []
+    pos = {"LONG": None, "SHORT": None}
+    pend = {"LONG": None, "SHORT": None}
+    events = []        # (ts, +/-size) 実 add/決済タイムライン（cap 合算 honest 検証）
+
+    def held_total():
+        return (pos["LONG"]["size"] if pos["LONG"] else 0.0) + (pos["SHORT"]["size"] if pos["SHORT"] else 0.0)
+
+    def open_or_add(side, fp, i):
+        sdir = 1 if side == "LONG" else -1
+        if pos[side] is None:
+            if not (np.isfinite(atr[i]) and np.isfinite(Cc[i])):
+                return
+            pos[side] = {"side": side, "avg": fp, "size": UNIT, "add_count": 1, "first_idx": i, "last_fill_idx": i,
+                         "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i], "W_entry": Wpct[i],
+                         "max_fav": h[i] if side == "LONG" else l[i]}
+            events.append((pd.Timestamp(ts[i]), UNIT))
+        else:
+            if held_total() + UNIT > CAP + 1e-9:          # ★cap=LONG+SHORT 合算で停止（H1）
+                return
+            p = pos[side]; new_sz = p["size"] + UNIT
+            p["avg"] = (p["avg"] * p["size"] + fp * UNIT) / new_sz
+            p["size"] = new_sz; p["add_count"] += 1; p["last_fill_idx"] = i
+            events.append((pd.Timestamp(ts[i]), UNIT))
+
+    for i in range(n):
+        # ── 1. pending fill（LONG: low≤limit / SHORT: high≥limit・約定 bar の次 bar から TTL）──
+        for side in ("LONG", "SHORT"):
+            pd_ = pend[side]
+            if pd_ is None:
+                continue
+            el = i - pd_["placed_idx"]
+            if el > TTL:
+                pend[side] = None
+            elif el >= 1 and ((side == "LONG" and l[i] <= pd_["limit"]) or (side == "SHORT" and h[i] >= pd_["limit"])):
+                open_or_add(side, pd_["limit"], i)
+                pend[side] = None
+
+        # ── 2. MFE 極値更新（記録用）──
+        for side in ("LONG", "SHORT"):
+            p = pos[side]
+            if p is None:
+                continue
+            if side == "LONG":
+                p["max_fav"] = max(p["max_fav"], h[i])
+            else:
+                p["max_fav"] = min(p["max_fav"], l[i])
+
+        # ── 3. 出口（約定 bar の次以降・SL 箱ブレイク → TP 中心C → 時間切れ）──
+        for side in ("LONG", "SHORT"):
+            p = pos[side]
+            if p is None or i <= p["last_fill_idx"]:
+                continue
+            avg = p["avg"]; sdir = 1 if side == "LONG" else -1
+            broke = (side == "LONG" and np.isfinite(S[i]) and c[i] < S[i]) or \
+                    (side == "SHORT" and np.isfinite(R[i]) and c[i] > R[i])
+            if broke:                                       # 箱ブレイク＝構造的 SL（成行 taker）
+                _record(trades, p, c[i], "BOX_BREAK_SL", i, ts)
+                events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+                continue
+            # TP = 箱中心 C へ戻り（C が建値±床を超える時だけ武装）
+            armed = np.isfinite(Cc[i]) and ((side == "LONG" and Cc[i] >= avg * (1.0 + COST_FLOOR)) or
+                                            (side == "SHORT" and Cc[i] <= avg * (1.0 - COST_FLOOR)))
+            hit_tp = armed and ((side == "LONG" and h[i] >= Cc[i]) or (side == "SHORT" and l[i] <= Cc[i]))
+            if hit_tp:
+                _record(trades, p, Cc[i], "TP_FILLED", i, ts)
+                events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+            elif (i - p["first_idx"]) >= HOLD_5M:           # 時間切れ（成行 taker）
+                _record(trades, p, c[i], "TIME_EXIT", i, ts)
+                events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+
+        # ── 4. 入口/add（cap は fill 時に判定）──
+        if long_sig[i] and pend["LONG"] is None and (pos["LONG"] is None or pos["LONG"]["add_count"] < max_adds):
+            pend["LONG"] = {"limit": c[i] * (1.0 - ENTRY_OFFSET), "placed_idx": i}
+        if short_sig[i] and pend["SHORT"] is None and (pos["SHORT"] is None or pos["SHORT"]["add_count"] < max_adds):
+            pend["SHORT"] = {"limit": c[i] * (1.0 + ENTRY_OFFSET), "placed_idx": i}
+
+    # ── 期間末 強制クローズ（成行）──
+    for side in ("LONG", "SHORT"):
+        if pos[side] is not None:
+            _record(trades, pos[side], c[n - 1], "FORCE_CLOSE_EOD", n - 1, ts)
+            events.append((pd.Timestamp(ts[n - 1]), -pos[side]["size"]))
+    return trades, events
+
+
+def _verify_cap(events) -> float:
+    """実 add/決済タイムラインの同時保有 max（LONG+SHORT 合算）を実測（honest・score.py の cap ゲートと二重）。"""
+    ev = sorted(events, key=lambda x: (x[0], x[1]))       # 同時刻は決済(マイナス)を先に
+    cur = mx = 0.0
+    for _t, s in ev:
+        cur = round(cur + s, 9); mx = max(mx, cur)
+    return mx
+
+
+def _load(smoke: int) -> pd.DataFrame:
+    df = pd.read_csv(e34v1.CSV)
+    df["ts"] = pd.to_datetime(df["timestamp"])
+    df = df.reset_index(drop=True)
+    if smoke:
+        df = df.iloc[:smoke].reset_index(drop=True)
+    df = e34v1.add_indicators(df)                 # sma/std/dev_z/atr/adx（taker は呼ばない）
+    df = e34b.add_analysis_features(df)           # bb_mid_slope_pct/stoch 等
+    df = e35_box.add_box_features(df, verify_leak=(smoke > 0 and smoke <= 60000))
+    df = add_choppiness(df)
+    return df
+
+
+def _attach_entry_cols(df: pd.DataFrame, box_tf: str) -> tuple:
+    """指定 box_tf の入口系列（long_entry/short_entry）を df に付与し W 帯を返す。"""
+    tr_mask = df.ts < TRAIN_END
+    lo, hi, nW = _w_band(df, box_tf, tr_mask)
+    sig = _build_signals_for_tf(df, box_tf, lo, hi)
+    df["long_entry"] = sig["long_entry"].to_numpy()
+    df["short_entry"] = sig["short_entry"].to_numpy()
+    return lo, hi, nW, sig
+
+
+def run_diagnostic(df: pd.DataFrame) -> None:
+    """発火ファネル（採点しない・学習 ts<2025-01・補助）。Entry/Exit は一式で回す＝採点が本筋（§8.4）。"""
+    tr_mask = df.ts < TRAIN_END
+    tr_days = max((df.ts[tr_mask].max() - df.ts[tr_mask].min()).total_seconds() / 86400.0, 1.0)
+    def cnt(m):
+        return int((m & tr_mask).sum())
+    print(f"\n  ── 発火ファネル（採点しない・学習 {df.ts[tr_mask].min().date()}〜{df.ts[tr_mask].max().date()}・{tr_days:.0f}日・補助）──")
+    print(f"    {'段':<40}: " + "  ".join(f"{tf:>9}" for tf in TFS))
+    bands = {tf: _w_band(df, tf, tr_mask) for tf in TFS}
+    sig = {tf: _build_signals_for_tf(df, tf, bands[tf][0], bands[tf][1]) for tf in TFS}
+    def row(label, key_expr):
+        print(f"    {label:<40}: " + "  ".join(f"{cnt(key_expr(tf)):>9,}" for tf in TFS))
+    row("RANGE_OK", lambda tf: sig[tf]["range_ok"])
+    row("LONG_ENTRY", lambda tf: sig[tf]["long_entry"])
+    row("SHORT_ENTRY", lambda tf: sig[tf]["short_entry"])
+    print(f"    {'LONG+SHORT /日':<40}: " + "  ".join(
+        f"{(cnt(sig[tf]['long_entry'])+cnt(sig[tf]['short_entry']))/tr_days:>9.2f}" for tf in TFS))
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--box-tf", choices=TFS, default="5m", help="箱に使う足（連続モード・診断で比較→ここで選ぶ）")
+    ap.add_argument("--max-adds", type=int, default=MAX_ADDS)
+    ap.add_argument("--diagnostic", action="store_true", help="発火ファネル（採点しない・補助）。一式は採点が本筋")
+    ap.add_argument("--smoke", type=int, default=0, help="先頭 N バーだけで動作確認")
+    a = ap.parse_args()
+
+    print("=" * 100)
+    print(f"[E35 一式] レンジ上下オシレーション 連続モード両方向（box={a.box_tf}・merge・cap{CAP}合算・TP中心C/SL箱ブレイク/時間切れ）")
+    df = _load(a.smoke)
+    print(f"  価格 {e34v1.CSV.name}（{len(df):,}本・{df.ts.iloc[0].date()}〜{df.ts.iloc[-1].date()}）")
+    print(f"  計器 maker {ee.MAKER_FEE} / taker {ee.TAKER_FEE} / slip {ee.SLIPPAGE} / funding {ee.FUNDING_RATE_8H}/8h / unit {UNIT}")
+
+    if a.diagnostic:
+        run_diagnostic(df)
+        if not a.smoke:
+            print("=" * 100); return
+
+    # ── 入口系列を box_tf で付与 → 連続モード両方向 ──
+    lo, hi, nW, _sig = _attach_entry_cols(df, a.box_tf)
+    print(f"  box={a.box_tf} W正常帯[q{W_Q_LO},q{W_Q_HI}]=[{lo:.3f}%,{hi:.3f}%]（in_box 学習 {nW:,}本）/ "
+          f"入口 CI>{CI_THRESH} & ADX<{ADX_MAX} & ゾーン≤{ZONE_FRAC}W & 反転(緩)%K<30↑/>70↓")
+    print(f"  入口発火（全系列）: LONG {int(df['long_entry'].sum())} / SHORT {int(df['short_entry'].sum())}")
+
+    trades, events = run_continuous(df, a.box_tf, a.max_adds)
+    t = pd.DataFrame(trades)
+    if len(t) == 0:
+        print("  ⛔ 取引 0 件（入口が発火していない or 箱が立たない）。"); print("=" * 100); return
+    t["entry_time"] = pd.to_datetime(t["entry_time"])
+
+    mx = _verify_cap(events)
+    cap_ok = mx <= CAP + 1e-9
+    print(f"  [cap 検証] 同時保有 max(LONG+SHORT) = {mx:.4f} BTC {'✅' if cap_ok else '⛔超過'}（予算 {CAP}）")
+    assert cap_ok, f"同時保有 {mx:.4f} > cap {CAP}（add 停止バグ）"
+    print(f"  約定 {len(t)}件 / side {dict(t['side'].value_counts())} / 出口 {dict(t['exit_reason'].value_counts())} "
+          f"/ add分布 {dict(t['add_count'].value_counts().sort_index())}")
+
+    # ── 出力（全期間=採点用 + 学習<2025-01=precheck 用・封印 2026-03+ 除外）──
+    RATCHET.mkdir(parents=True, exist_ok=True)
+    suffix = f"_{a.box_tf}" + (f"_max{a.max_adds}" if a.max_adds != MAX_ADDS else "")
+    base = RATCHET / f"trades_e35_oscillation{suffix}.csv"
+    out_full = base
+    out_train = base.with_name(base.stem + "_train.csv")
+    out_score = base.with_name(base.stem + "_score.csv")
+    t_full = t[t.entry_time < SEAL_START].reset_index(drop=True)
+    t_score = t[(t.entry_time >= SC_START) & (t.entry_time < SCORE_END)].reset_index(drop=True)
+    t_full.to_csv(out_full, index=False)
+    t_score.to_csv(out_score, index=False)
+    t[t.entry_time < TRAIN_END].reset_index(drop=True).to_csv(out_train, index=False)
+    n_days_score = max((t_score.entry_time.max() - t_score.entry_time.min()).total_seconds() / 86400.0, 1.0) if len(t_score) else 1.0
+    print(f"  [出力] 全期間 {out_full.name}（封印除外後 {len(t_full)}）/ 採点窓 {out_score.name}({len(t_score)}・{len(t_score)/n_days_score:.2f}/日) / precheck {out_train.name}")
+    if len(t_score):
+        sm = t_score.assign(m=t_score.entry_time.dt.strftime("%Y-%m")).groupby("m")["net_usd"].agg(["count", "sum"]).round(1)
+        print(f"\n  採点窓 2025-06〜12 月別（CSV net・参考＝正式は score.py）:\n" + sm.to_string())
+        print(f"  採点窓 合計 CSV net ${t_score.net_usd.sum():.1f} / 件 {len(t_score)} / 勝率 {(t_score.net_usd > 0).mean():.1%}")
+    print("\n  → 判定は score.py（precheck → score.py の数字）:")
+    print(f"     precheck.py {out_train.name} --authorize {out_score.name}")
+    print(f"     score.py {out_score} --start 2025-06-01 --end 2025-12-31")
+    print("=" * 100)
+
+
+if __name__ == "__main__":
+    main()
