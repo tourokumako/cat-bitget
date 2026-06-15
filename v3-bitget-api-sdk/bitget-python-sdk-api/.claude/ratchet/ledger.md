@@ -697,6 +697,23 @@
 - **生成物**: e35_range_oscillation.py(jm_ok=add_jump_model/設計書駆動の自己チェック) / e35_design.md §12 DESIGN_CONTRACT / trades_e35_oscillation_5m{,_score,_train}.csv / precheck_trades_e35_oscillation_5m_train.txt。
 - **再現**: `python3 e35_range_oscillation.py` → precheck(--authorize trades_e35_oscillation_5m_score.csv)=FAIL → report.py=cap拒否(0.192)。analyze.py は列名(bb_mid_slope_at_entry)不一致で N2 停止。
 
+## E35 iteration-1b: cap 是正（merge記録→fill単位記録＋新規建て cap チェック＋_verify_cap 審判一致・2026-06-15）— cap 解消(0.12✅・net恒等)・正しい地面は赤字（precheck FAIL・損源 TIME_EXIT）
+- **変更(A・1変更＝cap 会計の忠実化／net 恒等・レバーでない)**: ①`open_or_add` 新規建て分岐に held_total()+UNIT≤CAP 追加(H1・両branch)。②`_record` を merge 1本→**fill(lot)単位の複数行**(各行 entry_time=その fill 時刻・size 0.024・exit 共通・position_id 付与)＝審判 score.py の区間会計(size_btc を [entry,exit] で合算)が実保有に一致。③`_verify_cap` を内部 events→**出力 trades の区間会計(score.py.assert_position_cap と同式)**に変更(自己チェック=審判一致・false pass 防止)。出口/入口合成/閾値は不変。承認済 acceptance.md(指紋9827907c)・設計契約 PASS・self-test 成立。
+- **真因(iteration-1 の 0.192 の正体・実データ /private/tmp/e35_cap_probe.py)**: 超過は1箇所(2025-08-14 02:05)・重なる玉2本(SHORT 0.072 [22:25-02:25]＋LONG 0.120 [02:05-06:05])。だが LONG は 02:05 に新規 0.024 で開いただけ＝実保有 0.096(cap内)。0.12 に積むのは SHORT 決済後。**0.192=merge 1本記録(最終0.12 を初回fill 02:05 から全区間計上)を審判が保守的に過大計上**した会計差。実保有は元々 ≤0.12(_verify_cap=0.12 は正しかった)。＝iteration-1/next_step の「新規建て未チェックが原因」は実データ上**不正確**(02:05 は 0.096＝チェックを足しても通る)。新規建てチェックは H1 として追加(発火せず)。
+- **結果(再走・採点窓 2025-06〜12)**: cap **0.1200 BTC ✅**(_verify_cap=審判会計＋report.py 完走=score cap ゲート通過)。**net 恒等を確認**＝CSV net −$1402.9 不変(件数 650玉→1025 fill 行に展開・4.83/日)。precheck **FAIL**(採点温存): 全体 breakeven **−0.51**(平均gross −$0.21 < cost $0.41)。月平均 −$200・全月赤字(7月のみ +$154)・勝率65.3%・PF0.75・最大DD$1477。出口別(report C): **TIME_EXIT 429件 −$5,394(中心C非回帰・平均保有203分・worst10 全部240分上限)** / TP 596件 +$3,991。
+- **原因究明(3分類)**: ①**戦略の性質**(不正でない)=損源 TIME_EXIT(中心に戻らない片流れ玉が240分粘って死ぬ)が TP 黒字を相殺。leak無(H2)・cap是正済(0.12✅)。②執行=全体 gross 手数料負け。③regime=採点窓 低ボラ偏重(iteration-1 drift29pt)。
+- **改善(次の一手・別iteration・1変更)**: (a) **TIME_EXIT 止血**=中心Cに一定バーで戻らない玉を早期撤退(HOLD 240分短縮 or 含み損早切り)。(b) jm_ok 厳格化(ER_Q 下げ・中心回帰玉に絞る)。
+- **判定**: **cap 不正=解消(採用・バグfix)**。E35 iteration-1 の正しい地面=赤字(precheck FAIL)と確定。レンジ柱として SHORT合算 $616 に未到達=改善継続(iteration・破棄でない)。
+- **5つの問い**:
+  - 【問1 レバー】cap 修正は net 恒等(レバーでない・バグfix)＝期待値4要素 不変。初の有効地面=CSV net −$1402.9(月−$200・4.83件/日)。
+  - 【問2 不足量】全体 breakeven −0.51(gross −$0.21 vs cost $0.41)＝gross/件 +$0.62 必要。TIME_EXIT −$5,394 の止血が直接効く。レンジ柱で SHORT合算 $616 に並ぶには月 +$800 以上。
+  - 【問3 負け集中】TIME_EXIT 429件 −$5,394(中心非回帰・240分上限)。期間=2025-08 最悪 −$676。最悪日 2025-08-14 −$392(12連敗)。
+  - 【問4 過去接続】INC-1(P23地面 cap 0.6BTC 楽観値)と同型の cap 配線漏れ＝今回は merge記録 vs 審判区間会計のズレ。E0.2(P23 cap是正で honest地面 $925.73)と同じ「cap是正で正しい地面を出す」工程。損源 TIME_EXIT は E0.2/P4(時間切れが出血本体)と同型。
+  - 【問5 次仮説】「中心Cに一定バー(例 N<48)で戻らない玉を早期撤退すれば TIME_EXIT −$5,394 が止まり breakeven 改善」。学習期間で 中心到達バー数 vs 時間切れ を ER 帯別に測れば採点窓を見ずに検証可。
+- **【主張】** E35 iteration-1 は cap是正(merge→fill単位記録)で初の有効地面＝4.83件/日(スキャル頻度確保)・月平均 −$200・precheck FAIL(breakeven −0.51)＝手数料負け。net 恒等(−$1402.9 不変)で cap だけ 0.12✅化。損源は TIME_EXIT(中心非回帰玉 429件 −$5,394)が TP(+$3,991)を相殺。頻度は出たが net 赤字＝次は TIME_EXIT 止血(1変更)。
+- **生成物**: e35_range_oscillation.py(open_or_add 両branch cap / _record lot展開+position_id / _verify_cap 審判一致) / acceptance.md(承認済 指紋9827907c) / trades_e35_oscillation_5m{,_score,_train}.csv(再走) / /private/tmp/e35_cap_probe.py。
+- **再現**: `python3 e35_range_oscillation.py`(cap 0.1200✅) → precheck=FAIL(breakeven −0.51・採点温存) → report.py(cap通過・TIME_EXIT −$5,394)。analyze.py N2 は E35 列非対応で停止(既存ツール非互換・別途)。
+
 ## ★本セッション最大の成果: 設計↔実装の不正を物理防止する強制ゲート群（2026-06-15・commit a3a2b94 / ed0228d / 96c8fda）
 - 背景: CC が設計書(E35 §5.2 の Jump Model)を実装から抜いて「設計通り実装済」と虚偽報告(類型G)。まこさん命令＝設計・会話指示すべてで不正なく正確に実装する強制 hook。
 - ①設計↔実装ゲート(a3a2b94): 設計書 DESIGN_CONTRACT(部品リスト)を実装が読んで入口を組み立てる(_entry_contract/_assemble_signals)＝部品を抜くとプログラムが自停止。verify_design_contract.py＋require_design_contract_before_run.sh(実行前 hook)。

@@ -189,30 +189,35 @@ def _funding_cost(side: int, entry_ts, exit_ts, size: float, mark: float) -> flo
 
 
 def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
-    """1 ポジ（merge 済・全ロット）を 1 行に。LONG/SHORT 両対応。TP=maker・箱ブレイク/時間切れ=taker。"""
+    """1 ポジを fill(lot)単位で複数行に（cap 会計を実保有に忠実化・H1）。LONG/SHORT 両対応。
+    TP=maker・箱ブレイク/時間切れ=taker。net 合計は merge と恒等（gross/手数料は lot 分割で一致・funding は各 lot fill 起点）。"""
     side = pos["side"]; sdir = 1 if side == "LONG" else -1
-    avg = float(pos["avg"]); size = float(pos["size"])
-    entry_ts = pd.Timestamp(ts_arr[pos["first_idx"]]); exit_ts = pd.Timestamp(ts_arr[exit_idx])
-    gross = (exit_price - avg) * size * sdir
+    exit_ts = pd.Timestamp(ts_arr[exit_idx]); exit_px = float(exit_price)
     is_taker = reason != "TP_FILLED"                      # TP のみ maker・SL(箱ブレイク)/時間切れ/EOD は成行 taker
-    entry_fee = avg * size * ee.MAKER_FEE                 # entry は指値 maker
-    exit_fee = exit_price * size * (ee.TAKER_FEE if is_taker else ee.MAKER_FEE)
-    slip = (exit_price * size * ee.SLIPPAGE) if is_taker else 0.0
-    funding = _funding_cost(sdir, entry_ts, exit_ts, size, avg)
-    net = gross - entry_fee - exit_fee - slip - funding
-    trades.append({
-        "entry_time": entry_ts, "exit_time": exit_ts, "side": side,
-        "priority": PRIORITY, "regime": "range", "add_count": int(pos["add_count"]),
-        "size_btc": round(size, 6), "entry_price": round(avg, 2), "exit_price": round(float(exit_price), 2),
-        "exit_reason": reason, "hold_min": int((exit_idx - pos["first_idx"]) * 5),
-        "atr_14": round(float(pos["atr_entry"]), 2),
-        "adx_at_entry": round(float(pos["adx_entry"]), 3) if np.isfinite(pos["adx_entry"]) else None,
-        "stoch_k_at_entry": round(float(pos["k_entry"]), 2) if np.isfinite(pos["k_entry"]) else None,
-        "box_W_pct_at_entry": round(float(pos["W_entry"]), 5) if np.isfinite(pos["W_entry"]) else None,
-        "entry_hour": int(entry_ts.hour), "entry_weekday": int(entry_ts.weekday()),
-        "mfe_usd": round((float(pos["max_fav"]) - avg) * (UNIT if False else size) * 0 + (float(pos["max_fav"]) - avg) * size * sdir, 4),
-        "gross_usd": round(gross, 4), "fee_usd": round(entry_fee + exit_fee + slip, 4), "net_usd": round(net, 4),
-    })
+    pos_id = f"{side}_{int(pos['first_idx'])}"            # 玉ID（玉単位分析で束ねる）
+    add_count = int(pos["add_count"]); max_fav = float(pos["max_fav"])
+    atr14 = round(float(pos["atr_entry"]), 2)
+    adx_e = round(float(pos["adx_entry"]), 3) if np.isfinite(pos["adx_entry"]) else None
+    k_e = round(float(pos["k_entry"]), 2) if np.isfinite(pos["k_entry"]) else None
+    w_e = round(float(pos["W_entry"]), 5) if np.isfinite(pos["W_entry"]) else None
+    for lot_idx, lot_price in pos["lots"]:
+        entry_ts = pd.Timestamp(ts_arr[lot_idx]); lp = float(lot_price)
+        gross = (exit_px - lp) * UNIT * sdir
+        entry_fee = lp * UNIT * ee.MAKER_FEE             # entry は指値 maker
+        exit_fee = exit_px * UNIT * (ee.TAKER_FEE if is_taker else ee.MAKER_FEE)
+        slip = (exit_px * UNIT * ee.SLIPPAGE) if is_taker else 0.0
+        funding = _funding_cost(sdir, entry_ts, exit_ts, UNIT, lp)
+        net = gross - entry_fee - exit_fee - slip - funding
+        trades.append({
+            "entry_time": entry_ts, "exit_time": exit_ts, "side": side,
+            "priority": PRIORITY, "regime": "range", "position_id": pos_id, "add_count": add_count,
+            "size_btc": round(UNIT, 6), "entry_price": round(lp, 2), "exit_price": round(exit_px, 2),
+            "exit_reason": reason, "hold_min": int((exit_idx - lot_idx) * 5),
+            "atr_14": atr14, "adx_at_entry": adx_e, "stoch_k_at_entry": k_e, "box_W_pct_at_entry": w_e,
+            "entry_hour": int(entry_ts.hour), "entry_weekday": int(entry_ts.weekday()),
+            "mfe_usd": round((max_fav - lp) * UNIT * sdir, 4),
+            "gross_usd": round(gross, 4), "fee_usd": round(entry_fee + exit_fee + slip, 4), "net_usd": round(net, 4),
+        })
 
 
 def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int):
@@ -244,9 +249,12 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int):
         if pos[side] is None:
             if not (np.isfinite(atr[i]) and np.isfinite(Cc[i])):
                 return
+            if held_total() + UNIT > CAP + 1e-9:          # ★新規建ても cap=LONG+SHORT 合算で停止（H1・両branch）
+                return
             pos[side] = {"side": side, "avg": fp, "size": UNIT, "add_count": 1, "first_idx": i, "last_fill_idx": i,
                          "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i], "W_entry": Wpct[i],
-                         "max_fav": h[i] if side == "LONG" else l[i]}
+                         "max_fav": h[i] if side == "LONG" else l[i],
+                         "lots": [(i, fp)]}               # ★fill 単位記録（each lot＝その fill 時刻・size UNIT）
             events.append((pd.Timestamp(ts[i]), UNIT))
         else:
             if held_total() + UNIT > CAP + 1e-9:          # ★cap=LONG+SHORT 合算で停止（H1）
@@ -254,6 +262,7 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int):
             p = pos[side]; new_sz = p["size"] + UNIT
             p["avg"] = (p["avg"] * p["size"] + fp * UNIT) / new_sz
             p["size"] = new_sz; p["add_count"] += 1; p["last_fill_idx"] = i
+            p["lots"].append((i, fp))                     # ★fill 単位記録
             events.append((pd.Timestamp(ts[i]), UNIT))
 
     for i in range(n):
@@ -316,9 +325,15 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int):
     return trades, events
 
 
-def _verify_cap(events) -> float:
-    """実 add/決済タイムラインの同時保有 max（LONG+SHORT 合算）を実測（honest・score.py の cap ゲートと二重）。"""
-    ev = sorted(events, key=lambda x: (x[0], x[1]))       # 同時刻は決済(マイナス)を先に
+def _verify_cap(trades) -> float:
+    """出力 trades の区間会計（score.py.assert_position_cap と同式）で同時保有 max（LONG+SHORT 合算）を実測。
+    fill 単位記録なので区間会計＝実保有。自己チェックを審判と一致させ false pass を防ぐ。"""
+    ev = []
+    for t in trades:
+        sz = float(t["size_btc"])
+        ev.append((pd.Timestamp(t["entry_time"]), sz))
+        ev.append((pd.Timestamp(t["exit_time"]), -sz))
+    ev.sort(key=lambda x: (x[0], x[1]))                   # 同時刻は決済(マイナス)を先に（score.py と同じ）
     cur = mx = 0.0
     for _t, s in ev:
         cur = round(cur + s, 9); mx = max(mx, cur)
@@ -399,7 +414,7 @@ def main():
         print("  ⛔ 取引 0 件（入口が発火していない or 箱が立たない）。"); print("=" * 100); return
     t["entry_time"] = pd.to_datetime(t["entry_time"])
 
-    mx = _verify_cap(events)
+    mx = _verify_cap(trades)
     cap_ok = mx <= CAP + 1e-9
     print(f"  [cap 検証] 同時保有 max(LONG+SHORT) = {mx:.4f} BTC {'✅' if cap_ok else '⛔超過'}（予算 {CAP}）")
     assert cap_ok, f"同時保有 {mx:.4f} > cap {CAP}（add 停止バグ）"
