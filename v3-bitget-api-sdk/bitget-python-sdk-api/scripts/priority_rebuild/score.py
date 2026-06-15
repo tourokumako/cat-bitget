@@ -40,7 +40,7 @@ import eval_engine as ee  # noqa: E402  確定コスト定数 + funding 境界�
 #   本番執行 = SL と同じ placePosTpsl（triggerPrice=executePrice の指値）を trail 水準でバーごとに更新する方式。
 #   live エンジン（run_once_v9.py）に trail は未実装（grep 0件・P21 未稼働）で、taker 計上は replay 側の仮定だった。
 #   live の損益 CSV も fee=maker×2 計上（run_once_v9.py L130-131）。すり抜けリスクの扱いは SL maker（E0.1 承認）と同前提。
-MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP"}  # 指値(resting limit)約定=maker。EDGE_TP=逆側端の利確指値(2026-06-15 追加・H13・既知答えテスト再pass)
+MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP", "BE_EXIT"}  # 指値(resting limit)約定=maker。EDGE_TP=逆側端の利確指値 / BE_EXIT=建値撤退の指値(iter4・2026-06-15 追加・H13・既知答えテスト再pass)
 # 成行/トリガ撤退=taker（現在 taker 扱いの全理由を明示＝既存分類を維持）
 TAKER_EXIT_REASONS = {"TIME_EXIT", "MFE_STALE_CUT", "STOCH_REVERSE_EXIT", "PROFIT_LOCK",
                       "RSI_REVERSE_EXIT", "MAE_CUT", "FORCE_CLOSE_EOD", "CENTER_LOCK",

@@ -76,6 +76,7 @@ TTL = ee.DEFAULT_TTL      # 指値 TTL 3 本
 ENTRY_OFFSET = ee.ENTRY_LIMIT_OFFSET   # 0.0001
 COST_FLOOR = e34v1.COST_FLOOR          # 0.0020（TP が建値±床を超える時だけ武装）
 HOLD_5M = e34v1.HOLD_5M                # 48 本（4h・初回 entry 起点）
+BE_ARM_BARS = 12          # iter4 建値撤退 arm（1h・含み損玉が建値へ戻ったら損ゼロ maker 撤退・学習窓上限 N=12 最良・両窓一致・a-priori 固定・スイープしない L-267）
 PRIORITY = 35
 
 
@@ -193,7 +194,7 @@ def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
     TP=maker・箱ブレイク/時間切れ=taker。net 合計は merge と恒等（gross/手数料は lot 分割で一致・funding は各 lot fill 起点）。"""
     side = pos["side"]; sdir = 1 if side == "LONG" else -1
     exit_ts = pd.Timestamp(ts_arr[exit_idx]); exit_px = float(exit_price)
-    is_taker = reason not in ("TP_FILLED", "EDGE_TP")     # TP/逆側端=指値 maker・SL(箱ブレイク)/中心戻り/時間切れ/EOD は成行 taker
+    is_taker = reason not in ("TP_FILLED", "EDGE_TP", "BE_EXIT")  # TP/逆側端/建値撤退=指値 maker・SL(箱ブレイク)/中心戻り/時間切れ/EOD は成行 taker
     pos_id = f"{side}_{int(pos['first_idx'])}"            # 玉ID（玉単位分析で束ねる）
     add_count = int(pos["add_count"]); max_fav = float(pos["max_fav"])
     atr14 = round(float(pos["atr_entry"]), 2)
@@ -295,7 +296,7 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None):
                 return
             pos[side] = {"side": side, "avg": fp, "size": UNIT, "add_count": 1, "first_idx": i, "last_fill_idx": i,
                          "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i], "W_entry": Wpct[i],
-                         "max_fav": h[i] if side == "LONG" else l[i], "extended": False,
+                         "max_fav": h[i] if side == "LONG" else l[i], "extended": False, "be_armed": False,
                          "lots": [(i, fp)]}               # ★fill 単位記録（each lot＝その fill 時刻・size UNIT）
             events.append((pd.Timestamp(ts[i]), UNIT))
         else:
@@ -354,9 +355,20 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None):
                         _hm.predict(np.asarray([_hold_feat_vec(A, sdir, avg, p["first_idx"], p["add_count"], i)]))[0] < _hth:
                     _record(trades, p, c[i], "ML_STANCH", i, ts)   # 保有中判定：中心Cに戻らない玉を早期撤退（成行 taker）
                     events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
-                elif (i - p["first_idx"]) >= HOLD_5M:       # 時間切れ（成行 taker）
-                    _record(trades, p, c[i], "TIME_EXIT", i, ts)
+                    continue
+                # iter4 建値撤退（損側・含み損玉のみ建値 maker 撤退・arm 次 bar から fire＝leak-safe・諦め抑制）
+                mk = ee.MAKER_FEE
+                bp = avg * (1.0 + mk) / (1.0 - mk) if side == "LONG" else avg * (1.0 - mk) / (1.0 + mk)
+                if p["be_armed"] and ((side == "LONG" and h[i] >= bp) or (side == "SHORT" and l[i] <= bp)):
+                    _record(trades, p, bp, "BE_EXIT", i, ts)       # 建値へ戻り＝損ゼロ maker 撤退（指値）
                     events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+                else:
+                    if (i - p["first_idx"]) >= BE_ARM_BARS and not p["be_armed"] and \
+                            ((side == "LONG" and c[i] < bp) or (side == "SHORT" and c[i] > bp)):
+                        p["be_armed"] = True                        # arm 時 含み損のみ武装（次 bar から fire・含み益玉は触らない）
+                    if (i - p["first_idx"]) >= HOLD_5M:             # 時間切れ（成行 taker）
+                        _record(trades, p, c[i], "TIME_EXIT", i, ts)
+                        events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
             else:
                 # 延長中：逆側端到達=利確（maker 指値）→ 中心へ戻り=元TP益確保（taker stop）→ 時間切れ（taker）
                 hit_edge = (side == "LONG" and np.isfinite(R[i]) and h[i] >= R[i]) or \
@@ -535,13 +547,16 @@ def run_hold_ml(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
 
 
 def main():
+    global BE_ARM_BARS
     ap = argparse.ArgumentParser()
     ap.add_argument("--box-tf", choices=TFS, default="5m", help="箱に使う足（連続モード・診断で比較→ここで選ぶ）")
     ap.add_argument("--max-adds", type=int, default=MAX_ADDS)
     ap.add_argument("--diagnostic", action="store_true", help="発火ファネル（採点しない・補助）。一式は採点が本筋")
     ap.add_argument("--smoke", type=int, default=0, help="先頭 N バーだけで動作確認")
     ap.add_argument("--hold-ml", action="store_true", help="保有中判定MLで早期撤退（iteration-2 フェーズ2・python3.13）")
+    ap.add_argument("--be-arm-bars", type=int, default=BE_ARM_BARS, help="iter4 建値撤退 arm 本数（self-check: 大きくすると建値撤退OFF＝iter3 恒等）")
     a = ap.parse_args()
+    BE_ARM_BARS = a.be_arm_bars
 
     print("=" * 100)
     print(f"[E35 一式] レンジ上下オシレーション 連続モード両方向（box={a.box_tf}・merge・cap{CAP}合算・TP中心C/SL箱ブレイク/時間切れ）")

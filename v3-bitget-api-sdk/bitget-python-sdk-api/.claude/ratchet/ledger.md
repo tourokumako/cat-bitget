@@ -761,3 +761,19 @@
 - **採用**: 是正を採用。**iter3 の正しい地面 = −$748.79**(iter1b −$1,403 から +$654)。今後 新出口理由は未登録STOPが採点前に物理検出(EDGE_TP 事案の再発防止)。
 - **注記(本変更と無関係の既知)**: E0 replay 全期間は assert_position_cap が 0.228BTC で STOP(INC-1・V9全部入りの予算超過・要再測は未了)。MAKER/TAKER の eval_engine 集約(戦略と共有=単一ソース#1)は同方向の次の整理(STOP#2 で食い違いは物理検出済み)。
 - **再現**: score.py 編集→`python3 test_eval_engine_known_answers.py`(15/15)→ `import score; score.score(iter3_score)` = −$748.79。
+
+## E35 iteration-4: 建値撤退（損側出口・含み損玉が建値へ戻ったら損ゼロ maker 撤退・2026-06-15）— 採用＝新ベース −$447.22（iter3 −$748.79 から +$301.56・手数料負け大幅改善・依然赤字＝継続）
+- **変更(A・1変更)**: `run_continuous` 非延長branch（中心C到達=延長を先に判定＝中心優先でモメンタム勝ち玉は延長へ逃がす）に建値撤退を追加。arm=`BE_ARM_BARS`=12本(1h・含み損のみ武装・次barからfire＝leak-safe)。建値 bp=avg×maker往復(measure同式)。建値へ戻り(LONG h≥bp/SHORT l≤bp)で `BE_EXIT`(maker指値・損ゼロ)。`score.py` に BE_EXIT=maker 登録(既知答え15/15再pass)。入口/cap/勝ち延長(EDGE_TP/CENTER_LOCK)/TP武装 不変。`--be-arm-bars` で self-check 可。**自己検査: --be-arm-bars 100000(OFF)で iter3 完全恒等(net −$748.8・出口分布 TIME430/EDGE348/CL247 一致)**。
+- **結果(採点窓 2025-06〜12・公式 score.score・gate外)**: net **−$447.22** / 月平均 −$63.89 / 1024件(**4.81/日**=スキャル維持) / 勝率(net>0玉)46.7%・report勝率60.6%。出口: BE_EXIT 458(損ゼロ・gross$0.29≈cost$0.29)・EDGE_TP 227・**TIME_EXIT 179(−$3,705 損本体)**・CENTER_LOCK 160。手数料 285→**178%**・最大DD $1,197→**$821**・PF 0.82→**0.89**。月別 09/10/11 黒字(+31/+293/+90)・最悪 08 −$534。anomaly なし。
+- **原因究明(3分類)= ① 戦略の性質(健全)**: 建値撤退が「一度建値へ戻る逆行玉」を損ゼロ(maker)に変換＝**平均負け $26.06→$10.20・必要勝率 70.2%→49.9%**。残損=戻らない片流れ TIME_EXIT 179件 −$3,705。leak無(arm次barfire)・cap0.12✅・H15(ATR不使用)・既知答え15/15。**② 諦め**: EDGE_TP/CENTER_LOCK 595→387玉(208玉を建値0で手放した=戻った勝ち玉)＝効果上限+$551の約55%(+$301.56)止まりの主因。**③ regime**: 損は依然トレンド区画(N12 ER≥中 −$315/−$195・レンジ低ADXのみ +$227)・採点窓 低ボラ(atr_pct drift 29.8pt)。
+- **判定**: **採用＝新ベース −$447.22**(iter3 から +$301.56・ratchet で超えた分を残す)。建値撤退は益側(iter3 勝ち延長)と相補の損側レバー＝両方で必要勝率の壁を下げた(損側 初成功)。依然赤字→継続(打ち切らない)。
+- **5つの問い**:
+  - 【問1 レバー】建値撤退(損側・含み損→建値0 maker)。期待値4要素: 平均負け $26.06→$10.20(↓損側本体)・平均勝ち $11.07→$10.24(諦めで微減)・勝率 67.1→46.7%(BE_EXIT は勝ちでない+諦め)・正味 net −$748.79→−$447.22(+$301.56)。手数料 285→178%(taker time投げ→maker建値)。
+  - 【問2 不足量】必要勝率 49.9% vs 実 46.7% ＝**不足 3.2pt**(iter3 3.1pt とほぼ同＝勝率低下と必要勝率低下が相殺)。等価＝平均勝ち $10.24→約$11 or 残TIME_EXIT(平均−$20.7/件)をさらに削る。**あと月 +$64 で黒字**。
+  - 【問3 負け集中】残 TIME_EXIT 179件 −$3,705(戻らない片流れ・平均保有212分・iter3 −$5,377 から縮小)。N12 トレンド区画(高ER) −$315/−$195。最悪月 2025-08 −$534・最悪日 08-14 −$161。
+  - 【問4 過去接続】iter3(勝ち延長=益側)と相補の損側レバーで両方とも必要勝率の壁を下げた(初の損側成功)。iter2(ML_STANCH=含み損を成行で損確定 −$80)とは構造差＝**損ゼロ・含み損のみ・戻り待ち maker**＝iter2 の失敗(勝ち玉巻き込み+taker)を回避(ベースアップ Kaminski-Lo: 平均回帰にブランケットstopは損→非回帰=含み損限定/arxiv1707.03498 期限つきMRは目標を平均へ収縮・maker)。
+  - 【問5 次仮説】残損=「戻らない片流れ(TIME_EXIT 179件)」＝N12 トレンド区画。iter5: (a) **iter2 hold-ML(中心戻り判別 OOF AUC0.82・対照0.18)を建値撤退のゲートに足し、戻る勝ち玉(諦め208玉)を建値撤退から除外**→諦めを減らし上積み or (b) 時間依存収縮(期限近で目標を建値/中心へ収縮・arxiv1707.03498)で残TIMEを締める。学習窓で「諦め除外の救い純増」を測れば採点窓を見ず検証可。
+- **【主張】** E35 iteration-4 建値撤退＝公式 **−$447.22**(iter3 −$748.79 から **+$301.56**・**4.81件/日**=スキャル頻度維持・手数料285→178%・最大DD$1,197→$821)＝損側で初の地面更新・**採用(新ベース)**。BE_EXIT 458件は損ゼロ撤退(設計通り gross$0.29≈cost)・degenerate でない(件数維持・anomaly無)。依然赤字(必要勝率不足3.2pt・あと月$64)＝継続。残損=戻らない片流れ(TIME_EXIT −$3,705・トレンド区画)→次は諦め除外(hold-ML ゲート)or 時間依存収縮。
+- **生成物**: e35_range_oscillation.py(BE_ARM_BARS/be_armed/BE_EXIT・--be-arm-bars) / score.py(BE_EXIT=maker 登録) / trades_e35_oscillation_5m_iter4{,_score,_train}.csv / analysis_trades_e35_oscillation_5m_iter4_score.txt / report_trades_e35_oscillation_5m_iter4_score.txt。
+- **ベースアップ(search_log・一次精読)**: Kaminski-Lo(stopは平均回帰に不利→非回帰限定)/ arxiv1707.03498(期限つきMR=目標を平均へ収縮・maker)/ Leung-Li OU(出口=平均が最適・stop-TP連動)/ crypto intraday(手数料支配→maker必須)/ measure_breakeven_ceiling +$551(両窓N=12最良)。
+- **再現**: `python3 e35_range_oscillation.py`(cap✅・self-check=`--be-arm-bars 100000`でiter3恒等) → rename _iter4 → precheck(FAIL・赤字E35) → `import score; score.score(iter4_score)` = **−$447.22**(公式・gate外) → `python3 e35_deep_analysis.py iter4`(N0-N12)。
