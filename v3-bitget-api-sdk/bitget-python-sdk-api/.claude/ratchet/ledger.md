@@ -714,6 +714,23 @@
 - **生成物**: e35_range_oscillation.py(open_or_add 両branch cap / _record lot展開+position_id / _verify_cap 審判一致) / acceptance.md(承認済 指紋9827907c) / trades_e35_oscillation_5m{,_score,_train}.csv(再走) / /private/tmp/e35_cap_probe.py。
 - **再現**: `python3 e35_range_oscillation.py`(cap 0.1200✅) → precheck=FAIL(breakeven −0.51・採点温存) → report.py(cap通過・TIME_EXIT −$5,394)。analyze.py N2 は E35 列非対応で停止(既存ツール非互換・別途)。
 
+## E35 iteration-2: 保有中判定 ML 早期撤退（学習する Exit・2026-06-15）— 地面超えず（−$80）＝継続（打ち切りでない・学び＝切る『単体』では entry-set の損は治らない → 次＝入口の質とセット）
+- **背景・経緯**: iter1b の損源＝TIME_EXIT（中心Cに戻らず引きずる玉 −$5,394）。固定 HOLD 短縮は手調整（まこさん却下）→ **ML で保有中に「戻るか」を判別し戻らない玉だけ早期撤退**（KB §11 保有中の期待値で締める）。フェーズ1（判別チェック・採点なし）→ フェーズ2（撤退実装＋採点）の2段（無駄打ち回避・E28流）。
+- **フェーズ1（train_e35_hold_E35.py・判別チェック）**: 教師＝run_continuous の玉を保有中の各バーで snapshot 化（自己検査 玉5717一致）。ラベル=最終 TP=1/TIME・箱破れ=0。特徴19（保有バー数/含み益%/中心C残り%/箱端 5m1h4h/atr_pct/adx/er/stoch/chop/bb/add数・全て t 時点・%）。学習92,143スナップ。**OOF AUC 0.817**・**対照実験 prob逆転 0.183**(≪0.5＝源泉本物・degenerate でない)・atr_pct は 4/19 位(揺れ幅 非支配＝H15 OK)。＝保有中の判別は本物。
+- **フェーズ2（A・1変更＝e35 に早期撤退追加）**: run_continuous に hold_ctx=(booster,feats,θ) 追加（既定 None＝iter1b 恒等）。各保有バーで P(TP)<θ→成行撤退（新 reason ML_STANCH・taker）。θ=学習期間 net 最大で選択（採点窓不参照・ML使用＝固定値hook対象外）。特徴ヘルパー _hold_feat_vec を教師作成と runtime で共用（整合保証）。
+- **結果(採点窓 2025-06〜12)**: θsweep（学習net）: θ0.3 **−$3,547**(最善) > θ0.4 −$3,833 > θ0.5 −$4,251 > θ0.6 −$4,421＝**切るほど悪化＝早期撤退に正の価値なし**（最善=最も切らない θ0.3）。採点窓 **CSV net −$1,483.2 vs iter1b −$1,402.9 ＝ −$80 悪化**。勝率 65.3%→**45.3%**。precheck **FAIL**(breakeven −0.24・学習では −0.51→−0.24 改善も採点窓 net は悪化＝train/test 乖離)。cap 0.1200✅。
+- **原因究明(3分類)= ① 戦略**(不正でない): **切る行動が net を生まない**。低 P(TP) 玉も実 TP 率は0でなく(base 0.375)、切ると勝ち玉を取り逃し＋taker。report C: ML_STANCH −$4,632(切っても損確定・TIME −$5,394 と大差なし)／TP +$3,991→**+$3,149**(戻る勝ち玉も切った −$842)＝TIME止血分(+$762)を勝ち玉喪失(−$842)が相殺。② **train/test 乖離**(学習 breakeven 改善も採点窓 net 悪化)。leak無(H2 grep)・cap是正済。
+- **判定**: 早期撤退『単体』は地面(iter1b −$1,403)を超えず（−$80）＝**採用しない（地面は iter1b 維持・ratchet）。但し打ち切りでない＝継続**。学び＝切るのは損を確定するだけで、戻らない玉を Entry した損は治せない（root は Entry）。**次の作り込み案＝止血を Entry×Exit セットで作る（入口の質＝jm_ok 厳格化／利確の取り方を Entry とセット）**。
+- **5つの問い**:
+  - 【問1 レバー】保有中ML早期撤退。期待値4要素: 勝率 65.3→45.3%(切って小損確定)・net −1403→−1483。TIME出血 −$5,394→ML_STANCH −$4,632(+$762)だが TP +$3,991→+$3,149(−$842)で相殺＝差し引き −$80。
+  - 【問2 不足量】breakeven −0.24(gross −$0.10 < cost $0.44)＝あと gross +$0.54/件。だが**切る系では埋まらない**(切るほど悪化＝monotonic)。
+  - 【問3 負け集中】ML_STANCH 玉 −$4,632(切っても損確定)。19連敗。最悪日 2025-10-12 −$150。
+  - 【問4 過去接続】P23 の早逃げ(E14)等と同じ構造（判別できても切ると勝ち玉を巻き込む）＝『切る単体』の限界の手がかり（"だからやめる"でなく、止血は Entry とセットで作るべき方向）。E23「Exit値の entry時点学習は entry 時点で最適 Exit 決まらず」とも整合（保有中でも"切る"単体は net を生まない＝root は Entry）。
+  - 【問5 次仮説】「**切る(Exit早め)でなく入口の質を上げる**＝jm_ok 厳格化(ER_Q を q0.5 から下げ＝中心回帰しやすいレンジ玉に絞る)で TP率(base 0.375)を上げれば gross プラス転」。学習期間で ER_Q 別の TP率/玉net を測れば採点窓を見ずに検証可。
+- **【主張】** E35 保有中判定ML は判別が本物(OOF AUC 0.82・対照0.18・atr非支配)だが、早期撤退『単体』は地面を超えず（採点窓 −$1,483・iter1b 比 −$80・切るほど悪化 θ*0.3・勝率45%）＝**採用せず継続**（地面は iter1b 維持・ratchet・打ち切りでない）。学び＝切る単体では戻らない玉を Entry した損は治せない（root=Entry）。**次＝止血を Entry×Exit セットで作る（入口の質＝jm_ok 厳格化／利確の取り方を Entry とセット）**。4.82件/日 維持。
+- **生成物**: train_e35_hold_E35.py(フェーズ1判別) / e35_range_oscillation.py(run_continuous hold_ctx・_hold_feat_vec・run_hold_ml・--hold-ml) / trades_e35_oscillation_5m_holdml{,_score,_train}.csv / trades_e35_oscillation_5m_iter1b_score.csv(--vs baseline)。
+- **再現**: フェーズ1 `python3.13 train_e35_hold_E35.py --no-score`(AUC0.817) / フェーズ2 `python3.13 e35_range_oscillation.py --hold-ml`(θ*0.3・cap✅) → precheck=FAIL(breakeven −0.24) → report.py --vs iter1b(−$80悪化)。
+
 ## ★本セッション最大の成果: 設計↔実装の不正を物理防止する強制ゲート群（2026-06-15・commit a3a2b94 / ed0228d / 96c8fda）
 - 背景: CC が設計書(E35 §5.2 の Jump Model)を実装から抜いて「設計通り実装済」と虚偽報告(類型G)。まこさん命令＝設計・会話指示すべてで不正なく正確に実装する強制 hook。
 - ①設計↔実装ゲート(a3a2b94): 設計書 DESIGN_CONTRACT(部品リスト)を実装が読んで入口を組み立てる(_entry_contract/_assemble_signals)＝部品を抜くとプログラムが自停止。verify_design_contract.py＋require_design_contract_before_run.sh(実行前 hook)。

@@ -22,6 +22,7 @@ need_vs = os.path.join(state, "pdca_need_vs")
 need_5q = os.path.join(state, "pdca_need_5q")
 need_claim = os.path.join(state, "pdca_need_claim")   # 多角チェックの結論=主張1行（件数妥当性込み・2026-06-14 まこさん B）
 need_next_step = os.path.join(state, "pdca_need_next_step")
+need_analyze_report = os.path.join(state, "pdca_need_analyze_report")  # 分析レポートを出して読む強制（別途・省略・読み飛ばし禁止・2026-06-15）
 no_baseline = os.path.join(state, "no_baseline_approved")
 diagnostic_active = os.path.join(state, "pdca_diagnostic_active")   # 診断ラウンド（採点しない・2026-06-13）
 score_bg_pending = os.path.join(state, "pdca_score_bg_pending")     # バックグラウンド実験 実行中（2026-06-13）
@@ -66,6 +67,7 @@ if tn == "Bash":
         else:
             touch(need_report); touch(need_ledger); touch(need_analyze); touch(need_5q); touch(need_claim)
             touch(need_next_step)   # 審判を通したセッションは next_step を1回上書きするまで終了不可（ledger 編集回数に依存させない・2026-06-14 まこさん GO）
+            touch(need_analyze_report)  # 分析レポートを生成→Read tool で読む まで終了不可（「別途」で逃げる・省略・読み飛ばし を物理禁止・2026-06-15 まこさん命令）
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*report\.py", cmd):
         rm(need_report)
         # --vs（前回比較・KB §0）必須。無しは need_vs 旗（初回のみ no_baseline_approved で免除・1回で消費）

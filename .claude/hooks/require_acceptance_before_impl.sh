@@ -58,6 +58,20 @@ if ! grep -q "DESIGN_CONTRACT" "$LIST"; then
   exit 2
 fi
 
+# 5.5) 深い分析＋ベースアップの必須化（まこさん命令 2026-06-15「分析と改善のフローが一番重要・深掘りしてから改善案」）
+#   難しい問題に最易パッチを当てる前に、損の真因・期待値のどれを動かすか・root か symptom か・参照KB を書かせる。
+#   ＝雑な分析のまま改善案を実装するのを物理ブロック。中身の質はまこさん30秒チェックが担保。
+MISS_KW=""
+for kw in "真因" "期待値" "symptom" "ベースアップ"; do
+  grep -q "$kw" "$LIST" || MISS_KW="$MISS_KW $kw"
+done
+if [ -n "$MISS_KW" ]; then
+  echo "🔒 [深い分析ゲート] $LIST に深掘り4点の見出しがありません（不足:$MISS_KW）。改善案の前に必須:" >&2
+  echo "   ①真因(root cause・損/不足の構造的原因) ②期待値分解(勝率/平均利益/敗率/平均損失 のどれを動かすか)" >&2
+  echo "   ③root を直すか symptom か(Y/N+理由・symptom 患い＝最易パッチを防ぐ) ④ベースアップ(参照した KB/検索の証跡・記憶ベース禁止)" >&2
+  exit 2
+fi
+
 # 6) 承認(内容指紋一致)確認
 if [ ! -f "$APPROVED" ]; then
   echo "🔒 [受け入れ条件ゲート] 未承認です。リストを提示し、まこさんに『bash .claude/hooks/approve_impl.sh』を実行してもらってください。" >&2

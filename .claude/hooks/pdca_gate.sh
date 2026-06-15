@@ -18,6 +18,16 @@ if [ -f "$STATE/pdca_need_vs" ]; then
   fi
 fi
 [ -f "$STATE/pdca_need_analyze" ] && MISS="${MISS}・analyze.py 深掘り(N1〜N9: 時間構造/交差/系列/ドリフト/bootstrap/個別読み/必要勝率/負け解剖/出口効率)が未実行\n"
+# 分析レポートを出して読む強制（「別途」で逃げる・省略・読み飛ばし 禁止・まこさん 2026-06-15）。
+#   analyze を完走させ analysis_*.txt を生成 → Read tool で読む（read_log に /analysis_ が載る）まで終了不可。
+#   analyze がスキーマ非対応等でクラッシュ→レポート未生成なら read_log に載らない＝ここで止まる（"別途"の逃げ道を塞ぐ）。
+if [ -f "$STATE/pdca_need_analyze_report" ]; then
+  if grep -q "/analysis_" "$STATE/read_log.txt" 2>/dev/null; then
+    rm -f "$STATE/pdca_need_analyze_report"
+  else
+    MISS="${MISS}・分析レポートを出して読め（「別途」で逃げる・省略・読み飛ばし 禁止・まこさん 2026-06-15）。analyze を完走させ analysis_*.txt を生成→Read tool で読み、5問に N10〜N12 の構造解釈を引用して書け。analyze がクラッシュするならツールを直して完走させる（"別途"は不可）。\n"
+  fi
+fi
 [ -f "$STATE/pdca_need_ledger" ] && MISS="${MISS}・ledger.md への記録(結果+原因3分類+改善)が未実行\n"
 [ -f "$STATE/pdca_need_5q" ] && MISS="${MISS}・ledger に 5つの問いが未記入: 【問1 レバー】(期待値4要素のどれが何pt動いたか)【問2 不足量】(あと何がいくら足りないか・数値)【問3 負け集中】(特徴・期間・出口)【問4 過去接続】(どの E と同じ/違う構造か)【問5 次仮説】(学習期間で検証可能な形で1つ)。5見出し全部を含む編集で旗が下りる\n"
 [ -f "$STATE/pdca_need_claim" ] && MISS="${MISS}・ledger に【主張】1行が未記入（多角チェックリスト #19・analysis_playbook §2.0）。analyze.py N0 の件数妥当性(件数/日)を踏まえ、この実験の結論を【主張】<件数/日 と net を含む根拠つき1行> として ledger E エントリに書け（多角チェックを1発見で止めず量→質→...を通した結論）\n"

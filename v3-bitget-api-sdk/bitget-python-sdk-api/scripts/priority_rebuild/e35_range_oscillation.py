@@ -220,8 +220,48 @@ def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
         })
 
 
-def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int):
-    """連続モード両方向。LONG/SHORT を並行管理（merge・cap 合算停止）・TP=箱中心C・SL=箱ブレイク・時間切れ。"""
+# ── 保有中判定 ML（iteration-2 フェーズ2）の特徴量＝教師作成と runtime 予測で共用（整合保証・全て t 時点＝leak-safe）──
+_HOLD_FEATS = ["bars_held", "unreal_pct", "dist_to_tp_pct", "box_sup_5m", "box_res_5m", "box_w_5m",
+               "box_sup_1h", "box_res_1h", "box_sup_4h", "box_res_4h", "atr_pct", "adx", "er",
+               "stoch_k", "stoch_d", "chop", "bb_slope_pct", "bb_width", "add_count_so_far"]
+
+
+def _hold_arrays(df: pd.DataFrame, box_tf: str) -> dict:
+    """保有中特徴の素配列（教師作成・runtime 予測で同一 source＝整合保証）。全て当該バーまでの値。"""
+    sup = df[e35_box.sup_col(box_tf)].to_numpy(float); res = df[e35_box.res_col(box_tf)].to_numpy(float)
+    c = df["close"].to_numpy(float)
+    S = c / (1.0 + sup / 100.0); R = c * (1.0 + res / 100.0)
+    return {
+        "close": c, "atr": df["atr"].to_numpy(float), "adx": df["adx"].to_numpy(float),
+        "k": df["stoch_k"].to_numpy(float), "d": df["stoch_d"].to_numpy(float),
+        "er": df["er"].to_numpy(float), "chop": df["chop"].to_numpy(float),
+        "bbs": df["bb_mid_slope_pct"].to_numpy(float), "bbw": df["bb_width"].to_numpy(float),
+        "sup5": sup, "res5": res,
+        "sup1": df["box_sup_dist__1h"].to_numpy(float), "res1": df["box_res_dist__1h"].to_numpy(float),
+        "sup4": df["box_sup_dist__4h"].to_numpy(float), "res4": df["box_res_dist__4h"].to_numpy(float),
+        "Cc": (S + R) / 2.0,
+    }
+
+
+def _hold_feat_vec(A: dict, sdir: int, avg_i: float, first_idx: int, nlot: int, i: int) -> list:
+    """保有中 1 バーの特徴ベクトル（_HOLD_FEATS 順・%/比率＝H6・全て t 時点＝leak-safe）。"""
+    cl = A["close"][i]
+    return [
+        float(i - first_idx),
+        (cl - avg_i) / avg_i * sdir * 100.0,                # 含み益%（順方向+）
+        (A["Cc"][i] - cl) / cl * sdir * 100.0,              # 中心Cまでの残り%（+=未到達）
+        A["sup5"][i], A["res5"][i], A["sup5"][i] + A["res5"][i],
+        A["sup1"][i], A["res1"][i], A["sup4"][i], A["res4"][i],
+        A["atr"][i] / cl * 100.0,
+        A["adx"][i], A["er"][i], A["k"][i], A["d"][i], A["chop"][i],
+        A["bbs"][i], A["bbw"][i], float(nlot),
+    ]
+
+
+def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None):
+    """連続モード両方向。LONG/SHORT を並行管理（merge・cap 合算停止）・TP=箱中心C・SL=箱ブレイク・時間切れ。
+    hold_ctx=(booster, feats, theta) を渡すと、保有中の各バーで P(TP)<theta の玉を早期撤退（ML_STANCH・成行 taker）。
+    既定 None＝現行と完全同一（iter1b と net 恒等）。"""
     n = len(df)
     ts = df["ts"].to_numpy()
     o = df["open"].to_numpy(float); h = df["high"].to_numpy(float)
@@ -235,6 +275,8 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int):
     R = c * (1.0 + res / 100.0)
     Cc = (S + R) / 2.0
     Wpct = sup + res
+    A = _hold_arrays(df, box_tf) if hold_ctx is not None else None   # 保有中判定 ML 特徴の素（hold_ctx 時のみ）
+    _hm, _hf, _hth = hold_ctx if hold_ctx is not None else (None, None, None)
 
     trades = []
     pos = {"LONG": None, "SHORT": None}
@@ -306,6 +348,10 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int):
             hit_tp = armed and ((side == "LONG" and h[i] >= Cc[i]) or (side == "SHORT" and l[i] <= Cc[i]))
             if hit_tp:
                 _record(trades, p, Cc[i], "TP_FILLED", i, ts)
+                events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+            elif _hm is not None and np.isfinite(Cc[i]) and \
+                    _hm.predict(np.asarray([_hold_feat_vec(A, sdir, avg, p["first_idx"], p["add_count"], i)]))[0] < _hth:
+                _record(trades, p, c[i], "ML_STANCH", i, ts)   # 保有中判定：中心Cに戻らない玉を早期撤退（成行 taker）
                 events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
             elif (i - p["first_idx"]) >= HOLD_5M:           # 時間切れ（成行 taker）
                 _record(trades, p, c[i], "TIME_EXIT", i, ts)
@@ -383,12 +429,102 @@ def run_diagnostic(df: pd.DataFrame) -> None:
         f"{(cnt(sig[tf]['long_entry'])+cnt(sig[tf]['short_entry']))/tr_days:>9.2f}" for tf in TFS))
 
 
+def _output_and_report(t: pd.DataFrame, suffix: str) -> None:
+    """trades を 全期間/採点窓/precheck に分けて出力＋月別サマリ（main と run_hold_ml で共用）。"""
+    RATCHET.mkdir(parents=True, exist_ok=True)
+    base = RATCHET / f"trades_e35_oscillation{suffix}.csv"
+    out_full = base
+    out_train = base.with_name(base.stem + "_train.csv")
+    out_score = base.with_name(base.stem + "_score.csv")
+    t_full = t[t.entry_time < SEAL_START].reset_index(drop=True)
+    t_score = t[(t.entry_time >= SC_START) & (t.entry_time < SCORE_END)].reset_index(drop=True)
+    t_full.to_csv(out_full, index=False)
+    t_score.to_csv(out_score, index=False)
+    t[t.entry_time < TRAIN_END].reset_index(drop=True).to_csv(out_train, index=False)
+    n_days = max((t_score.entry_time.max() - t_score.entry_time.min()).total_seconds() / 86400.0, 1.0) if len(t_score) else 1.0
+    print(f"  [出力] 全期間 {out_full.name}（封印除外後 {len(t_full)}）/ 採点窓 {out_score.name}({len(t_score)}・{len(t_score)/n_days:.2f}/日) / precheck {out_train.name}")
+    if len(t_score):
+        sm = t_score.assign(m=t_score.entry_time.dt.strftime("%Y-%m")).groupby("m")["net_usd"].agg(["count", "sum"]).round(1)
+        print("\n  採点窓 2025-06〜12 月別（CSV net・参考＝正式は score.py）:\n" + sm.to_string())
+        print(f"  採点窓 合計 CSV net ${t_score.net_usd.sum():.1f} / 件 {len(t_score)} / 勝率 {(t_score.net_usd > 0).mean():.1%}")
+        print(f"  出口別 件数: {dict(t_score['exit_reason'].value_counts())}")
+    print("\n  → 判定は score.py（precheck → score.py の数字）:")
+    print(f"     precheck.py {out_train.name} --authorize {out_score.name}")
+    print(f"     score.py {out_score} --start 2025-06-01 --end 2025-12-31")
+
+
+def run_hold_ml(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
+    """iteration-2 フェーズ2: 保有中判定 ML で中心Cに戻らない玉を早期撤退（学習する Exit・KB §11）。
+    教師=基底 run_continuous の玉 → 保有中スナップ（学習期のみ）→ LightGBM → θ=学習net最大 → 全期間再走。"""
+    import lightgbm as lgb   # python3.13 のみ（基底 e35 実行では import しない）
+    src = pathlib.Path(__file__).read_text(encoding="utf-8")
+    _p1 = "shift(" + "-"; _p2 = "center" + "=True"   # 動的構築＝自分のソースに leak リテラルを残さず誤検出を防ぐ
+    assert _p1 not in src and _p2 not in src, "leak 疑い（未来参照 shift/center）"
+    A = _hold_arrays(df, box_tf)
+    idx_of = {x: i for i, x in enumerate(df["ts"].tolist())}
+
+    # ① 教師＝基底の玉（早期撤退なし）
+    base_trades, _ = run_continuous(df, box_tf, max_adds)
+    bt = pd.DataFrame(base_trades)
+    bt["entry_time"] = pd.to_datetime(bt["entry_time"]); bt["exit_time"] = pd.to_datetime(bt["exit_time"])
+    print(f"  教師＝基底 {bt['position_id'].nunique()} 玉 / 出口 {dict(bt['exit_reason'].value_counts())}")
+
+    # ② 保有中スナップ（玉の lot から avg 再構成・_hold_feat_vec で特徴・ラベル=最終 TP）
+    rows = []
+    for pid, g in bt.groupby("position_id"):
+        g = g.sort_values("entry_time")
+        lot_idx = [idx_of[x] for x in g["entry_time"]]; lot_px = g["entry_price"].astype(float).tolist()
+        exit_idx = idx_of[g["exit_time"].iloc[0]]
+        sdir = 1 if g["side"].iloc[0] == "LONG" else -1
+        label = 1 if g["exit_reason"].iloc[0] == "TP_FILLED" else 0
+        first_idx = lot_idx[0]
+        for i in range(first_idx + 1, exit_idx):
+            filled = [(li, lp) for li, lp in zip(lot_idx, lot_px) if li <= i]
+            if not filled or not (np.isfinite(A["Cc"][i]) and np.isfinite(A["atr"][i])):
+                continue
+            avg_i = sum(lp for _, lp in filled) / len(filled)
+            rows.append([g["entry_time"].iloc[0], label] + _hold_feat_vec(A, sdir, avg_i, first_idx, len(filled), i))
+    snaps = pd.DataFrame(rows, columns=["entry_time", "label"] + _HOLD_FEATS)
+    tr = snaps[snaps.entry_time < TRAIN_END].reset_index(drop=True)        # H8 学習期間のみ
+    print(f"  学習スナップ {len(tr):,} / TP率 {tr.label.mean():.3f}")
+
+    # ③ 学習（学習期間のみ＝H8・特徴量は t 時点＝H2/leak grep 済）
+    params = dict(n_estimators=300, num_leaves=15, min_child_samples=200, reg_alpha=1.0, reg_lambda=1.0,
+                  learning_rate=0.03, random_state=42, verbose=-1)
+    model = lgb.LGBMClassifier(**params); model.fit(tr[_HOLD_FEATS], tr["label"].to_numpy())
+    booster = model.booster_
+
+    # ④ θ＝学習期間 net 最大（採点窓を見ない＝覗き見なし／ML 使用＝固定値 hook 対象外）
+    df_tr = df[df.ts < TRAIN_END].reset_index(drop=True)
+    best_th, best_net = None, None
+    for th in [0.30, 0.40, 0.50, 0.60]:
+        trq, _ = run_continuous(df_tr, box_tf, max_adds, hold_ctx=(booster, _HOLD_FEATS, th))
+        q = pd.DataFrame(trq)
+        net = float(q["net_usd"].sum()) if len(q) else 0.0
+        npos = q["position_id"].nunique() if len(q) else 0
+        stanch = int((q["exit_reason"] == "ML_STANCH").sum()) if len(q) else 0
+        print(f"   θ={th}: 学習 net ${net:.0f} / 玉 {npos} / 早期撤退 {stanch}")
+        if best_net is None or net > best_net:
+            best_net, best_th = net, th
+    print(f"  → θ*={best_th}（学習 net 最大 ${best_net:.0f}）")
+
+    # ⑤ 全期間 再走（撤退適用）→ cap 検証 → 出力
+    trades, _events = run_continuous(df, box_tf, max_adds, hold_ctx=(booster, _HOLD_FEATS, best_th))
+    t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
+    mx = _verify_cap(trades)
+    print(f"  [cap 検証] 同時保有 max = {mx:.4f} BTC {'✅' if mx <= CAP + 1e-9 else '⛔超過'}（予算 {CAP}）")
+    assert mx <= CAP + 1e-9, f"同時保有 {mx:.4f} > cap {CAP}"
+    print(f"  約定 {len(t)} / 出口 {dict(t['exit_reason'].value_counts())} / θ*={best_th}")
+    _output_and_report(t, f"_{box_tf}_holdml")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--box-tf", choices=TFS, default="5m", help="箱に使う足（連続モード・診断で比較→ここで選ぶ）")
     ap.add_argument("--max-adds", type=int, default=MAX_ADDS)
     ap.add_argument("--diagnostic", action="store_true", help="発火ファネル（採点しない・補助）。一式は採点が本筋")
     ap.add_argument("--smoke", type=int, default=0, help="先頭 N バーだけで動作確認")
+    ap.add_argument("--hold-ml", action="store_true", help="保有中判定MLで早期撤退（iteration-2 フェーズ2・python3.13）")
     a = ap.parse_args()
 
     print("=" * 100)
@@ -408,6 +544,9 @@ def main():
           f"入口 CI>{CI_THRESH} & ADX<{ADX_MAX} & ゾーン≤{ZONE_FRAC}W & 反転(緩)%K<30↑/>70↓")
     print(f"  入口発火（全系列）: LONG {int(df['long_entry'].sum())} / SHORT {int(df['short_entry'].sum())}")
 
+    if a.hold_ml:                                    # iteration-2 フェーズ2: 保有中判定 ML で早期撤退
+        run_hold_ml(df, a.box_tf, a.max_adds); print("=" * 100); return
+
     trades, events = run_continuous(df, a.box_tf, a.max_adds)
     t = pd.DataFrame(trades)
     if len(t) == 0:
@@ -422,26 +561,7 @@ def main():
           f"/ add分布 {dict(t['add_count'].value_counts().sort_index())}")
 
     # ── 出力（全期間=採点用 + 学習<2025-01=precheck 用・封印 2026-03+ 除外）──
-    RATCHET.mkdir(parents=True, exist_ok=True)
-    suffix = f"_{a.box_tf}" + (f"_max{a.max_adds}" if a.max_adds != MAX_ADDS else "")
-    base = RATCHET / f"trades_e35_oscillation{suffix}.csv"
-    out_full = base
-    out_train = base.with_name(base.stem + "_train.csv")
-    out_score = base.with_name(base.stem + "_score.csv")
-    t_full = t[t.entry_time < SEAL_START].reset_index(drop=True)
-    t_score = t[(t.entry_time >= SC_START) & (t.entry_time < SCORE_END)].reset_index(drop=True)
-    t_full.to_csv(out_full, index=False)
-    t_score.to_csv(out_score, index=False)
-    t[t.entry_time < TRAIN_END].reset_index(drop=True).to_csv(out_train, index=False)
-    n_days_score = max((t_score.entry_time.max() - t_score.entry_time.min()).total_seconds() / 86400.0, 1.0) if len(t_score) else 1.0
-    print(f"  [出力] 全期間 {out_full.name}（封印除外後 {len(t_full)}）/ 採点窓 {out_score.name}({len(t_score)}・{len(t_score)/n_days_score:.2f}/日) / precheck {out_train.name}")
-    if len(t_score):
-        sm = t_score.assign(m=t_score.entry_time.dt.strftime("%Y-%m")).groupby("m")["net_usd"].agg(["count", "sum"]).round(1)
-        print(f"\n  採点窓 2025-06〜12 月別（CSV net・参考＝正式は score.py）:\n" + sm.to_string())
-        print(f"  採点窓 合計 CSV net ${t_score.net_usd.sum():.1f} / 件 {len(t_score)} / 勝率 {(t_score.net_usd > 0).mean():.1%}")
-    print("\n  → 判定は score.py（precheck → score.py の数字）:")
-    print(f"     precheck.py {out_train.name} --authorize {out_score.name}")
-    print(f"     score.py {out_score} --start 2025-06-01 --end 2025-12-31")
+    _output_and_report(t, f"_{a.box_tf}" + (f"_max{a.max_adds}" if a.max_adds != MAX_ADDS else ""))
     print("=" * 100)
 
 

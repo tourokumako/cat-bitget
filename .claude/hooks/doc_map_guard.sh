@@ -21,7 +21,7 @@ hit = [w for w in ng if w in text]
 if hit:
     is_ledger = fp.endswith("ledger.md")
     where = "ledger.md" if is_ledger else "strat_v9ml_design.md（設計書）"
-    role = "結果/原因3分類/改善/採用or破棄 だけ" if is_ledger else "設計の決定事項 だけ"
+    role = "結果/原因3分類/改善/採用or不採用 だけ" if is_ledger else "設計の決定事項 だけ"
     sys.stderr.write(
         "⛔ 文書マップ §8.2 違反ブロック: %s に「経緯・失敗のログ」を書こうとしています。\n"
         "   検出語: %s\n"
