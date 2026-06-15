@@ -35,8 +35,10 @@ fi
 # ② 厳密ソース（allowed_domains 必須）
 if [ "${HASDOM:-0}" != "1" ]; then
   echo "🔒 [検索精度ゲート②] allowed_domains 未指定。厳密ソースを狙え（retail TAブログ/インジ販売を弾く）。" >&2
-  echo "   推奨: arxiv.org papers.ssrn.com escholarship.org ncbi.nlm.nih.gov quantstart.com quantinsti.com hudsonthames.org github.com" >&2
-  echo "   広い探索が要る時も最低1ドメインを指定（探索後に絞る）。" >&2
+  echo "   推奨(5種別・広く跨ぐ／設計書前ゲートは2種別以上を要求):" >&2
+  echo "     学術=arxiv.org papers.ssrn.com escholarship.org / SSR系クオンツ=hudsonthames.org quantstart.com quantinsti.com github.com" >&2
+  echo "     有名クオンツ(実戦)=quantocracy.com epchan.blogspot.com alphaarchitect.com quantpedia.com / 暗号資産VC・データ=glassnode.com kaiko.com coinmetrics.io messari.io paradigm.xyz" >&2
+  echo "   広い探索が要る時も最低1ドメインを指定（探索後に絞る）。裏取りでなく知らない足がかりを広く探す。" >&2
   exit 2
 fi
 
