@@ -193,7 +193,7 @@ def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
     TP=maker・箱ブレイク/時間切れ=taker。net 合計は merge と恒等（gross/手数料は lot 分割で一致・funding は各 lot fill 起点）。"""
     side = pos["side"]; sdir = 1 if side == "LONG" else -1
     exit_ts = pd.Timestamp(ts_arr[exit_idx]); exit_px = float(exit_price)
-    is_taker = reason != "TP_FILLED"                      # TP のみ maker・SL(箱ブレイク)/時間切れ/EOD は成行 taker
+    is_taker = reason not in ("TP_FILLED", "EDGE_TP")     # TP/逆側端=指値 maker・SL(箱ブレイク)/中心戻り/時間切れ/EOD は成行 taker
     pos_id = f"{side}_{int(pos['first_idx'])}"            # 玉ID（玉単位分析で束ねる）
     add_count = int(pos["add_count"]); max_fav = float(pos["max_fav"])
     atr14 = round(float(pos["atr_entry"]), 2)
@@ -295,7 +295,7 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None):
                 return
             pos[side] = {"side": side, "avg": fp, "size": UNIT, "add_count": 1, "first_idx": i, "last_fill_idx": i,
                          "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i], "W_entry": Wpct[i],
-                         "max_fav": h[i] if side == "LONG" else l[i],
+                         "max_fav": h[i] if side == "LONG" else l[i], "extended": False,
                          "lots": [(i, fp)]}               # ★fill 単位記録（each lot＝その fill 時刻・size UNIT）
             events.append((pd.Timestamp(ts[i]), UNIT))
         else:
@@ -330,7 +330,7 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None):
             else:
                 p["max_fav"] = min(p["max_fav"], l[i])
 
-        # ── 3. 出口（約定 bar の次以降・SL 箱ブレイク → TP 中心C → 時間切れ）──
+        # ── 3. 出口（約定 bar の次以降・SL 箱ブレイク → [未延長]中心C到達=延長アーム/ML/時間切れ → [延長]逆側端/中心戻り/時間切れ）──
         for side in ("LONG", "SHORT"):
             p = pos[side]
             if p is None or i <= p["last_fill_idx"]:
@@ -342,20 +342,36 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None):
                 _record(trades, p, c[i], "BOX_BREAK_SL", i, ts)
                 events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
                 continue
-            # TP = 箱中心 C へ戻り（C が建値±床を超える時だけ武装）
-            armed = np.isfinite(Cc[i]) and ((side == "LONG" and Cc[i] >= avg * (1.0 + COST_FLOOR)) or
-                                            (side == "SHORT" and Cc[i] <= avg * (1.0 - COST_FLOOR)))
-            hit_tp = armed and ((side == "LONG" and h[i] >= Cc[i]) or (side == "SHORT" and l[i] <= Cc[i]))
-            if hit_tp:
-                _record(trades, p, Cc[i], "TP_FILLED", i, ts)
-                events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
-            elif _hm is not None and np.isfinite(Cc[i]) and \
-                    _hm.predict(np.asarray([_hold_feat_vec(A, sdir, avg, p["first_idx"], p["add_count"], i)]))[0] < _hth:
-                _record(trades, p, c[i], "ML_STANCH", i, ts)   # 保有中判定：中心Cに戻らない玉を早期撤退（成行 taker）
-                events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
-            elif (i - p["first_idx"]) >= HOLD_5M:           # 時間切れ（成行 taker）
-                _record(trades, p, c[i], "TIME_EXIT", i, ts)
-                events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+            if not p["extended"]:
+                # 中心 C へ戻り（C が建値±床を超える時だけ武装）＝勝ち延長アーム（即決済しない・この bar は保持・次 bar から延長判定）
+                armed = np.isfinite(Cc[i]) and ((side == "LONG" and Cc[i] >= avg * (1.0 + COST_FLOOR)) or
+                                                (side == "SHORT" and Cc[i] <= avg * (1.0 - COST_FLOOR)))
+                hit_center = armed and ((side == "LONG" and h[i] >= Cc[i]) or (side == "SHORT" and l[i] <= Cc[i]))
+                if hit_center:
+                    p["extended"] = True                    # 延長アーム（中心到達＝最低限の利確圏・逆側端まで運ぶ）
+                    continue
+                if _hm is not None and np.isfinite(Cc[i]) and \
+                        _hm.predict(np.asarray([_hold_feat_vec(A, sdir, avg, p["first_idx"], p["add_count"], i)]))[0] < _hth:
+                    _record(trades, p, c[i], "ML_STANCH", i, ts)   # 保有中判定：中心Cに戻らない玉を早期撤退（成行 taker）
+                    events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+                elif (i - p["first_idx"]) >= HOLD_5M:       # 時間切れ（成行 taker）
+                    _record(trades, p, c[i], "TIME_EXIT", i, ts)
+                    events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+            else:
+                # 延長中：逆側端到達=利確（maker 指値）→ 中心へ戻り=元TP益確保（taker stop）→ 時間切れ（taker）
+                hit_edge = (side == "LONG" and np.isfinite(R[i]) and h[i] >= R[i]) or \
+                           (side == "SHORT" and np.isfinite(S[i]) and l[i] <= S[i])
+                if hit_edge:
+                    _record(trades, p, R[i] if side == "LONG" else S[i], "EDGE_TP", i, ts)
+                    events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+                    continue
+                back_center = np.isfinite(Cc[i]) and ((side == "LONG" and l[i] <= Cc[i]) or (side == "SHORT" and h[i] >= Cc[i]))
+                if back_center:
+                    _record(trades, p, Cc[i], "CENTER_LOCK", i, ts)   # 中心へ戻り＝元TP益を確保（保護 stop・成行 taker）
+                    events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+                elif (i - p["first_idx"]) >= HOLD_5M:       # 時間切れ（成行 taker）
+                    _record(trades, p, c[i], "TIME_EXIT", i, ts)
+                    events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
 
         # ── 4. 入口/add（cap は fill 時に判定）──
         if long_sig[i] and pend["LONG"] is None and (pos["LONG"] is None or pos["LONG"]["add_count"] < max_adds):

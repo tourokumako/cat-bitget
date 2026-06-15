@@ -40,7 +40,13 @@ import eval_engine as ee  # noqa: E402  確定コスト定数 + funding 境界�
 #   本番執行 = SL と同じ placePosTpsl（triggerPrice=executePrice の指値）を trail 水準でバーごとに更新する方式。
 #   live エンジン（run_once_v9.py）に trail は未実装（grep 0件・P21 未稼働）で、taker 計上は replay 側の仮定だった。
 #   live の損益 CSV も fee=maker×2 計上（run_once_v9.py L130-131）。すり抜けリスクの扱いは SL maker（E0.1 承認）と同前提。
-MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT"}
+MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP"}  # 指値(resting limit)約定=maker。EDGE_TP=逆側端の利確指値(2026-06-15 追加・H13・既知答えテスト再pass)
+# 成行/トリガ撤退=taker（現在 taker 扱いの全理由を明示＝既存分類を維持）
+TAKER_EXIT_REASONS = {"TIME_EXIT", "MFE_STALE_CUT", "STOCH_REVERSE_EXIT", "PROFIT_LOCK",
+                      "RSI_REVERSE_EXIT", "MAE_CUT", "FORCE_CLOSE_EOD", "CENTER_LOCK",
+                      "ML_STANCH", "BOX_BREAK_SL"}
+# 採点 CSV に現れる全 exit_reason（実データ列挙済）。未登録は assert_hard_constraints で STOP（黙って taker 計上しない・§2.9）
+KNOWN_EXIT_REASONS = MAKER_EXIT_REASONS | TAKER_EXIT_REASONS
 
 
 def _funding_for_trade(entry_ts: pd.Timestamp, exit_ts: pd.Timestamp,
@@ -105,6 +111,16 @@ def assert_hard_constraints(df: pd.DataFrame) -> None:
     売買記録に現れない H2(leak)/H6(価格非依存)/H8(train末<採点始) は学習スクリプト側で assert（boundary 違い）。"""
     assert_position_cap(df)   # H1: 同時保有合計 ≤ 0.12 BTC
     assert_min_order(df)      # H9: 最小注文 0.0001 BTC / 5 USDT
+    # 未登録 exit_reason STOP（物理対策・§2.9・2026-06-15）: maker/taker 未分類を黙って taker 計上しない＝
+    # 戦略が新出口理由を足したのに審判が知らない食い違い(EDGE_TP 事案)を採点前に物理検出して止める。
+    if "exit_reason" in df.columns:
+        unknown = sorted(set(df["exit_reason"].astype(str)) - KNOWN_EXIT_REASONS)
+        if unknown:
+            sys.exit(
+                f"[STOP・§2.9 未登録 exit_reason] {unknown} は maker/taker 未分類です。"
+                f"黙って taker 計上せず採点を拒否します。\n"
+                f"score.py の MAKER_EXIT_REASONS / TAKER_EXIT_REASONS に正しく登録してください"
+                f"（指値約定=maker / 成行・トリガ=taker）。")
 
 
 def score(df: pd.DataFrame) -> dict:

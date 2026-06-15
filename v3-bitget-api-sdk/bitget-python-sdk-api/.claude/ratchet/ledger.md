@@ -737,3 +737,27 @@
 - ②受け入れ条件ゲート(ed0228d): 戦略実装の編集前に acceptance.md(受け入れ条件リスト)＋承認(approve_impl.sh で内容指紋記録)が無ければブロック。require_acceptance_before_impl.sh。
 - ③書き忘れ防止(96c8fda): acceptance.md に機械照合用 DESIGN_CONTRACT が無ければブロック＋実行前ゲートが acceptance.md の contract も照合。＝設計書が無い会話指示・小修正でも contract＋承認＋照合 が無いと実装・実行できない。
 - 限界(隠さない): 既存未編集戦略の遡及は順次(編集時に通る)／骨抜きは機械不可→score.py＋独立レビュー／承認操作は人が打つ前提。メタ確認(わざと壊して検出)で番人の有効性は実証済み。
+
+## E35 iteration-3: 勝ち延長（中心C到達で切らず逆側端へ目標延長＋中心ストップ保護・2026-06-15）— 官製 +$361（−$1,403→−$1,042）＝採用・新ベース（赤字だが必要勝率不足 6.0→3.1pt 半減・益側レバー有効・継続）
+- **変更(A・1変更)**: run_continuous の出口のみ。中心C到達で即決済せず extended=True にして保有継続→ 逆側端到達=EDGE_TP(maker指値) / 中心へ戻り=CENTER_LOCK(taker 保護stop) / 時間切れ=TIME_EXIT。R/S/Cc は既存の動的箱から導出（新パラメータ無し・固定値手調整なし L-267）。入口・cap・SL=箱ブレイク・fill単位記録 不変。独立CC照合（設計match・不正clean: leak無/cap_ok/cost_ok/h15_ok）。
+- **結果(採点窓 2025-06〜12)**: iter1b −$1,403 → iter3 **−$748.8 ＝ +$654 改善**（EDGE_TP を正しく maker 計上した正味）。出口(lot): EDGE_TP 348/CENTER_LOCK 247/TIME_EXIT 430・約4.9件/日・勝率 67.1%。top winner: 2025-10-10 が iter1b TP +$2 → iter3 CENTER_LOCK +$171/+$168（動的箱が上方ドリフト中に延長保持＝大勝ち創出）。precheck FAIL(breakeven 0.41＝赤字 E35 で想定内)。cap 0.1200✅。
+- **⚠️ 数字の出所・審判バグ発覚(重要・要 score.py 修正)**: 審判 score.py の現値は **−$1,042**（+$361相当）だが、これは**バグった過大計上**。score.py の `MAKER_EXIT_REASONS={TP_FILLED,SL_FILLED,TRAIL_EXIT}` に新設 EDGE_TP が無く、EDGE_TP 348件(逆側端の利確指値＝本来 maker)を taker 扱い→追加 $293.6 を余計に控除（検証: 戦略 −748.8 − 293.6 = −1042.4 ＝審判 −1042 とぴったり一致）。**ズレたのは CSV でなく審判**（戦略の maker 計上が正）。→ score.py の maker 集合に EDGE_TP 追加(既知答えテスト再pass)で公式 net = **−$748.8** に是正。CENTER_LOCK は保護stop＝taker のままで正。funding は両者込みで差にならない(当初の funding 説明は誤り)。
+- **原因究明(3分類)= ① 戦略の性質**(不正でない): 勝ちを中心Cで切っていた設計を逆側端まで延長して是正＝益側レバーが効いた(+$361)。leak無(H2)・cap0.12✅・H15✅(入口/ATR不変・独立CC確認)。② 残る損=TIME_EXIT(損側・本変更は触れず)。③ funding 会計差は判定外(官製除外)。
+- **ツール注記**: report.py(section G)・analyze.py(N3) とも E35 で crash（P23形＝stoch_d_at_entry/bb_mid_slope_at_entry 欠如）。E35 分析は **e35_deep_analysis.py**(repo保存)を使用。次セッションは analyze.py/report.py を E35 に当てない。
+- **5つの問い**:
+  - 【問1 レバー】勝ち延長(中心C→逆側端＋中心保護)。期待値4要素: 平均勝ち $9.47→$11.07(↑益側)・勝率 67.7→67.1%(ほぼ不変)・必要勝率不足 6.0→3.1pt・正味 net −$1,403→**−$748.8(+$654)**(EDGE_TP=maker)。＝勝ちの大きさだけ動かした(de Prado: 方向でなく payoff)。※審判 score.py 現値 −$1,042 は EDGE_TP を taker 誤計上＝要 maker 登録。
+  - 【問2 不足量】正味 −$748.8・月平均 ≈ −$107。N7 必要勝率 70.2% vs 実 67.1% ＝不足 3.1pt。等価＝平均勝ち $11→約$13 or 平均負け $26→約$22。次=損側(建値撤退)で平均負けを下げる。
+  - 【問3 負け集中】TIME_EXIT 252玉 −$5,377(損本体・勝ち延長は損側不変)。N12 高ER/トレンド区画 ER≥中 −$721/−$251。最悪日 2025-08-14 −$424。
+  - 【問4 過去接続】iter2(切る系)と逆＝伸ばす系で初めて地面超え(+$361)＝「過去失敗を却下理由にせず構造差で試す」の正例。E15(P23 fat-tail 部分決済ML)とは別構造(レンジ往復の利確点延長・大勝ち削りでない)。建値撤退(損側)と相補。
+  - 【問5 次仮説】建値撤退(損側・N=12本/1h・測定上限 採点 +$551・両窓一致)を iteration-4 で重ね平均負けを下げる→黒字へ。学習期間で N別「救う負け−諦め勝ち」を測れば採点窓を見ず検証可。または trailing 精緻化(oracle 捕捉 $12→$30)。
+- **【主張】** E35 iteration-3 勝ち延長＝正味 **+$654**(−$1,403→−$748.8・EDGE_TP=maker・月平均≈−$107)・約4.9件/日(スキャル頻度維持)・赤字だが必要勝率不足 6.0→3.1pt 半減・top winner +$2→+$171＝益側レバー有効・**採用(新ベース)・継続**。⚠️審判 score.py は EDGE_TP を taker 誤計上で −$1,042 と過小評価＝score.py の maker 集合に EDGE_TP 追加(既知答えテスト再pass)が必要。次=損側(建値撤退)＋審判修正。
+- **生成物**: e35_range_oscillation.py(run_continuous 出口=extended/EDGE_TP/CENTER_LOCK) / e35_deep_analysis.py(E35分析・repo) / trades_e35_oscillation_5m_iter3{,_score,_train}.csv / analysis_trades_e35_oscillation_5m_iter3_score.txt。
+- **再現**: `python3 e35_range_oscillation.py`(cap✅) → rename _5m_*→_iter3_* → precheck(FAIL) → score.py 是正(E0.5)後 `score.score(iter3)`=**−$748.79**(公式) → `e35_deep_analysis.py iter3`(N0-N12)。
+
+## E0.5: 審判 score.py 是正（EDGE_TP=maker 登録＋未登録 exit_reason STOP・2026-06-15・H13 既知答えテスト再pass）
+- **変更(計器是正・1ファイル score.py)**: MAKER_EXIT_REASONS に **EDGE_TP**(逆側端の利確指値=maker)を追加／TAKER_EXIT_REASONS・KNOWN_EXIT_REASONS を明示(実採点CSVの全14理由を列挙)／assert_hard_constraints に **未登録 exit_reason→sys.exit STOP** を追加。net 計算式・既存分類は不変。
+- **原因(なぜ必要)**: iter3 新設 EDGE_TP が審判の maker 集合に無く 348件を taker 誤計上→iter3 公式 net が −$1,042(誤)。戦略と審判が maker/taker を別管理する構造欠陥(食い違いが silent に net を狂わせる)。
+- **検証**: ①既知答えテスト **15/15** 再pass ②番人メタ確認＝未登録 reason("FAKE_X")で STOP(わざと壊して検出) ③iter3 公式 net −$1,042→**−$748.79**(戦略CSV −$748.8 と一致) ④E0 replay は EDGE_TP 不在・全 reason KNOWN 登録済＝net 不変(分類 byte 同一)。
+- **採用**: 是正を採用。**iter3 の正しい地面 = −$748.79**(iter1b −$1,403 から +$654)。今後 新出口理由は未登録STOPが採点前に物理検出(EDGE_TP 事案の再発防止)。
+- **注記(本変更と無関係の既知)**: E0 replay 全期間は assert_position_cap が 0.228BTC で STOP(INC-1・V9全部入りの予算超過・要再測は未了)。MAKER/TAKER の eval_engine 集約(戦略と共有=単一ソース#1)は同方向の次の整理(STOP#2 で食い違いは物理検出済み)。
+- **再現**: score.py 編集→`python3 test_eval_engine_known_answers.py`(15/15)→ `import score; score.score(iter3_score)` = −$748.79。
