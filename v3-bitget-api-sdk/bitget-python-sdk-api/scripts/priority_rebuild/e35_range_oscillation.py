@@ -259,10 +259,12 @@ def _hold_feat_vec(A: dict, sdir: int, avg_i: float, first_idx: int, nlot: int, 
     ]
 
 
-def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None):
+def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, be_gate=None):
     """連続モード両方向。LONG/SHORT を並行管理（merge・cap 合算停止）・TP=箱中心C・SL=箱ブレイク・時間切れ。
     hold_ctx=(booster, feats, theta) を渡すと、保有中の各バーで P(TP)<theta の玉を早期撤退（ML_STANCH・成行 taker）。
-    既定 None＝現行と完全同一（iter1b と net 恒等）。"""
+    be_gate=(booster, feats, theta) を渡すと、iter4 建値撤退の武装を「戻らないと判別(predict<theta)した含み損玉」だけに絞る
+      ＝戻ると判別した玉は武装せず延長/時間切れへ（iter5a 諦め除外・切らない・損ゼロ建値の限定は不変）。
+    既定 None＝iter4 と完全同一（be_gate 分岐は _bm is None で素通り＝恒等）。"""
     n = len(df)
     ts = df["ts"].to_numpy()
     o = df["open"].to_numpy(float); h = df["high"].to_numpy(float)
@@ -276,8 +278,9 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None):
     R = c * (1.0 + res / 100.0)
     Cc = (S + R) / 2.0
     Wpct = sup + res
-    A = _hold_arrays(df, box_tf) if hold_ctx is not None else None   # 保有中判定 ML 特徴の素（hold_ctx 時のみ）
+    A = _hold_arrays(df, box_tf) if (hold_ctx is not None or be_gate is not None) else None   # 保有中判定 ML 特徴の素
     _hm, _hf, _hth = hold_ctx if hold_ctx is not None else (None, None, None)
+    _bm, _bf, _bth = be_gate if be_gate is not None else (None, None, None)   # iter5a 建値撤退の武装ゲート（諦め除外）
 
     trades = []
     pos = {"LONG": None, "SHORT": None}
@@ -364,8 +367,10 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None):
                     events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
                 else:
                     if (i - p["first_idx"]) >= BE_ARM_BARS and not p["be_armed"] and \
-                            ((side == "LONG" and c[i] < bp) or (side == "SHORT" and c[i] > bp)):
-                        p["be_armed"] = True                        # arm 時 含み損のみ武装（次 bar から fire・含み益玉は触らない）
+                            ((side == "LONG" and c[i] < bp) or (side == "SHORT" and c[i] > bp)) and \
+                            (_bm is None or _bm.predict(np.asarray(
+                                [_hold_feat_vec(A, sdir, avg, p["first_idx"], p["add_count"], i)]))[0] < _bth):
+                        p["be_armed"] = True                        # 戻らない(predict<θ)含み損のみ武装・戻る玉は守る（iter5a be_gate）
                     if (i - p["first_idx"]) >= HOLD_5M:             # 時間切れ（成行 taker）
                         _record(trades, p, c[i], "TIME_EXIT", i, ts)
                         events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
@@ -481,6 +486,86 @@ def _output_and_report(t: pd.DataFrame, suffix: str) -> None:
     print(f"     score.py {out_score} --start 2025-06-01 --end 2025-12-31")
 
 
+def run_be_gate(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
+    """iteration-5(a) 諦め除外: hold-ML(保有中・戻る/戻らない判別)を建値撤退の武装ゲートに（KB §11・acceptance）。
+    教師=建値撤退OFF(iter3基底)の玉・ラベル=中心到達系(TP_FILLED/EDGE_TP/CENTER_LOCK=戻る)=1 / TIME・箱ブレイク=0。
+    戻ると判別(predict≥θ)した含み損玉は武装しない（守る）。ML_STANCH(成行で切る・iter2 で効かず)は使わない。
+    θ=学習窓で『救い純増(be_gate net − iter4 ゲートなし net)』最大（採点窓不参照・ML使用＝固定値hook対象外）。"""
+    import lightgbm as lgb   # python3.13 のみ
+    global BE_ARM_BARS
+    src = pathlib.Path(__file__).read_text(encoding="utf-8")
+    _p1 = "shift(" + "-"; _p2 = "center" + "=True"   # 動的構築＝自分のソースに leak リテラルを残さず誤検出を防ぐ
+    assert _p1 not in src and _p2 not in src, "leak 疑い（未来参照 shift/center）"
+    A = _hold_arrays(df, box_tf)
+    idx_of = {x: i for i, x in enumerate(df["ts"].tolist())}
+
+    # ① 教師＝建値撤退OFF(iter3基底)の玉（建値撤退の挙動を学習に混ぜない＝循環回避）
+    saved = BE_ARM_BARS
+    BE_ARM_BARS = 10 ** 9                          # OFF＝iter3 基底（勝ち延長のみ・建値撤退なし）
+    base_trades, _ = run_continuous(df, box_tf, max_adds)
+    BE_ARM_BARS = saved
+    bt = pd.DataFrame(base_trades)
+    bt["entry_time"] = pd.to_datetime(bt["entry_time"]); bt["exit_time"] = pd.to_datetime(bt["exit_time"])
+    print(f"  教師＝建値撤退OFF基底 {bt['position_id'].nunique()} 玉 / 出口 {dict(bt['exit_reason'].value_counts())}")
+
+    # ② 保有中スナップ（ラベル=中心到達系=戻る=1）
+    WIN = {"TP_FILLED", "EDGE_TP", "CENTER_LOCK"}
+    rows = []
+    for pid, g in bt.groupby("position_id"):
+        g = g.sort_values("entry_time")
+        lot_idx = [idx_of[x] for x in g["entry_time"]]; lot_px = g["entry_price"].astype(float).tolist()
+        exit_idx = idx_of[g["exit_time"].iloc[0]]
+        sdir = 1 if g["side"].iloc[0] == "LONG" else -1
+        label = 1 if g["exit_reason"].iloc[0] in WIN else 0        # 中心到達系=戻る=1 / TIME・箱ブレイク=0
+        first_idx = lot_idx[0]
+        for i in range(first_idx + 1, exit_idx):
+            filled = [(li, lp) for li, lp in zip(lot_idx, lot_px) if li <= i]
+            if not filled or not (np.isfinite(A["Cc"][i]) and np.isfinite(A["atr"][i])):
+                continue
+            avg_i = sum(lp for _, lp in filled) / len(filled)
+            rows.append([g["entry_time"].iloc[0], label] + _hold_feat_vec(A, sdir, avg_i, first_idx, len(filled), i))
+    snaps = pd.DataFrame(rows, columns=["entry_time", "label"] + _HOLD_FEATS)
+    tr = snaps[snaps.entry_time < TRAIN_END].reset_index(drop=True)        # H8 学習期間のみ
+    print(f"  学習スナップ {len(tr):,} / 戻る率 {tr.label.mean():.3f}")
+
+    # ③ 学習（学習期間のみ＝H8・特徴量は t 時点＝H2/leak grep 済）
+    params = dict(n_estimators=300, num_leaves=15, min_child_samples=200, reg_alpha=1.0, reg_lambda=1.0,
+                  learning_rate=0.03, random_state=42, verbose=-1)
+    model = lgb.LGBMClassifier(**params); model.fit(tr[_HOLD_FEATS], tr["label"].to_numpy())
+    booster = model.booster_
+    fi = pd.Series(model.feature_importances_, index=_HOLD_FEATS).sort_values(ascending=False)
+    atr_rank = list(fi.index).index("atr_pct") + 1
+    print(f"  feature importance top8:\n{fi.head(8).to_string()}")
+    print(f"  atr_pct 順位 {atr_rank}/{len(_HOLD_FEATS)}（上位独占でなければ H15 OK）")
+
+    # ④ θ＝学習窓で救い純増（be_gate net − iter4 ゲートなし net）最大
+    df_tr = df[df.ts < TRAIN_END].reset_index(drop=True)
+    base4, _ = run_continuous(df_tr, box_tf, max_adds)                     # iter4（BE_ARM_BARS=12・ゲートなし）
+    base4_net = float(pd.DataFrame(base4)["net_usd"].sum())
+    print(f"  学習窓 iter4(ゲートなし) net ${base4_net:.0f}（救い純増の基準）")
+    best_th, best_net = None, None
+    for th in [0.30, 0.40, 0.50, 0.60, 0.70]:
+        trq, _ = run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, _HOLD_FEATS, th))
+        q = pd.DataFrame(trq); net = float(q["net_usd"].sum()) if len(q) else 0.0
+        be = int((q["exit_reason"] == "BE_EXIT").sum()) if len(q) else 0
+        print(f"   θ={th}: 学習 net ${net:.0f}（救い純増 {net - base4_net:+.0f}）/ BE_EXIT {be}")
+        if best_net is None or net > best_net:
+            best_net, best_th = net, th
+    gain = best_net - base4_net
+    print(f"  → θ*={best_th}（救い純増 {gain:+.0f}）")
+    if gain <= 0:
+        print("  ⚠️ 救い純増がプラスでない＝学習窓で改善せず（採用せず・iter4 維持・(b)時間依存収縮へ）。")
+
+    # ⑤ 全期間 再走（be_gate 適用）→ cap 検証 → 出力
+    trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, _HOLD_FEATS, best_th))
+    t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
+    mx = _verify_cap(trades)
+    print(f"  [cap 検証] 同時保有 max = {mx:.4f} BTC {'✅' if mx <= CAP + 1e-9 else '⛔超過'}（予算 {CAP}）")
+    assert mx <= CAP + 1e-9, f"同時保有 {mx:.4f} > cap {CAP}"
+    print(f"  約定 {len(t)} / 出口 {dict(t['exit_reason'].value_counts())} / θ*={best_th}")
+    _output_and_report(t, f"_{box_tf}_iter5a")
+
+
 def run_hold_ml(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
     """iteration-2 フェーズ2: 保有中判定 ML で中心Cに戻らない玉を早期撤退（学習する Exit・KB §11）。
     教師=基底 run_continuous の玉 → 保有中スナップ（学習期のみ）→ LightGBM → θ=学習net最大 → 全期間再走。"""
@@ -555,6 +640,7 @@ def main():
     ap.add_argument("--smoke", type=int, default=0, help="先頭 N バーだけで動作確認")
     ap.add_argument("--hold-ml", action="store_true", help="保有中判定MLで早期撤退（iteration-2 フェーズ2・python3.13）")
     ap.add_argument("--be-arm-bars", type=int, default=BE_ARM_BARS, help="iter4 建値撤退 arm 本数（self-check: 大きくすると建値撤退OFF＝iter3 恒等）")
+    ap.add_argument("--be-gate", action="store_true", help="iteration-5(a) 諦め除外: hold-ML を建値撤退の武装ゲートに（python3.13）")
     a = ap.parse_args()
     BE_ARM_BARS = a.be_arm_bars
 
@@ -577,6 +663,9 @@ def main():
 
     if a.hold_ml:                                    # iteration-2 フェーズ2: 保有中判定 ML で早期撤退
         run_hold_ml(df, a.box_tf, a.max_adds); print("=" * 100); return
+
+    if a.be_gate:                                    # iteration-5(a) 諦め除外: 建値撤退の武装ゲート
+        run_be_gate(df, a.box_tf, a.max_adds); print("=" * 100); return
 
     trades, events = run_continuous(df, a.box_tf, a.max_adds)
     t = pd.DataFrame(trades)

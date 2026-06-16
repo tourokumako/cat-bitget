@@ -34,6 +34,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import report                                     # _judge_cols / _Tee（審判式・正本1箇所）
+import score                                       # _funding_for_trade（公式 net=funding込み に揃える・H13 import のみ）
 
 BANDS = {
     "ATR%":   ("atr_pct",      [0, 0.15, 0.2, 0.3, 0.4, 9e9]),
@@ -45,16 +46,56 @@ BANDS = {
 def _load(path):
     d = pd.read_csv(path)
     d["entry_time"] = pd.to_datetime(d["entry_time"]); d["exit_time"] = pd.to_datetime(d["exit_time"])
-    d = report._judge_cols(d)
-    d["atr_pct"] = d["atr_14"] / d["entry_price"] * 100
+    d = report._judge_cols(d)                # net_usd=_netj（funding 除く・審判式）
+    fund = np.array([score._funding_for_trade(r["entry_time"], r["exit_time"],          # ★公式 score.score と揃える
+                     1 if r["side"] == "LONG" else -1, r["size_btc"], r["entry_price"]) for _, r in d.iterrows()])
+    d["net_usd"] = d["_netj"] - fund         # funding 込み net（公式 score.py と一致・勝率/必要勝率の食い違い解消）
+    if "atr_14" in d.columns and "entry_price" in d.columns:
+        d["atr_pct"] = d["atr_14"] / d["entry_price"] * 100
+    d = _collapse_positions(d)   # ★玉単位に集約（取引回数で数える・add の fill 複数行を1取引に・KB §0）
     return d.sort_values("entry_time").reset_index(drop=True)
+
+
+# 結果/価格/サイズ/時刻 系（指標でない）＝自動検出から除外
+_NON_IND = {"net_usd", "gross_usd", "fee_usd", "mfe_usd", "mae_usd", "entry_price", "exit_price",
+            "size_btc", "hold_min", "priority", "entry_hour", "entry_weekday", "atr_14"}
+
+
+def _auto_ind_cols(d):
+    """戦略の指標カラムを CSV から自動検出（戦略非依存＝KB §4 指標帯別/分離指標を全戦略で）。
+    数値・有効30件以上・ユニーク5以上の列から、結果/価格/サイズ/時刻 系(_NON_IND)を除いて拾う。
+    ＝E35 なら er/adx/box_W/atr_pct、P23 なら dev_z/stoch 等に自動適応（ハードコードしない）。"""
+    out = []
+    for c in d.columns:
+        if c in _NON_IND or c.startswith("_") or not pd.api.types.is_numeric_dtype(d[c]):
+            continue   # _ 始まり＝judge_cols の結果列(_netj/_gross/_fee/_slip)＝入口指標でない・除外
+        if d[c].notna().sum() >= 30 and d[c].nunique() >= 5:
+            out.append(c)
+    return out
+
+
+def _collapse_positions(d):
+    """position_id があれば玉単位に集約（★取引回数で数える＝add の fill 複数行を1取引にまとめる・KB §0）。
+    金額(net/gross/fee/size)=合計・hold_min=最大・入口特徴/出口理由/entry_time=最初(玉の建て始め)。
+    position_id 無し or 既に1行1玉(P23/E34)はそのまま返す（後方互換＝主要数字不変）。"""
+    if "position_id" not in d.columns or d["position_id"].nunique() == len(d):
+        return d
+    agg = {}
+    for c in d.columns:
+        if c == "position_id":
+            continue
+        agg[c] = "sum" if c in ("net_usd", "gross_usd", "fee_usd", "size_btc") else ("max" if c == "hold_min" else "first")
+    return d.groupby("position_id", as_index=False).agg(agg)
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("csv"); ap.add_argument("--train"); ap.add_argument("--candles")
+    ap.add_argument("--vs", help="前回ベースラインCSV（KB §0 前後比較・件数/net/avg/勝率を並べ激減を警告）")
     a = ap.parse_args()
     d = _load(a.csv)
+    global BANDS
+    BANDS = {k: v for k, v in BANDS.items() if v[0] in d.columns}   # 実在カラムのみ（戦略非依存・E35 crash 回避）
     name = Path(a.csv).name
     out_path = Path(a.csv).with_name(f"analysis_{Path(a.csv).stem}.txt")
     _rf = open(out_path, "w", encoding="utf-8")
@@ -81,6 +122,18 @@ def main():
     if small:
         print(f"   ⚠️ サンプル不足(n<30)の帯＝ここで効く/効かないを断定不可（#18）: " + " / ".join(small))
     print("   → 設計意図（レンジ=高頻度/スキャル=小利多数/トレンド=少数大利）と上の頻度が一致するか必ず照合（#0）")
+    if a.vs and Path(a.vs).exists():                  # ★§0 前後比較（前回ベースライン vs 今回・KB §0 大原則1＝最重要）
+        pv = _load(a.vs)
+        def _row(x):
+            return len(x), x["net_usd"].sum(), x["net_usd"].mean(), (x["net_usd"] > 0).mean() * 100
+        n0, s0, av0, w0 = _row(pv); n1, s1, av1, w1 = _row(d)
+        dcnt = (n1 - n0) / max(1, n0) * 100
+        print(f"\n   ★前後比較 vs {Path(a.vs).name}（KB §0・件数の激減/急増それ自体が最大の発見）")
+        print(f"   {'':6s}{'件数':>8}{'net$':>10}{'avg$':>9}{'勝率%':>8}")
+        print(f"   {'前回':6s}{n0:>8}{s0:>10.0f}{av0:>9.2f}{w0:>8.1f}")
+        print(f"   {'今回':6s}{n1:>8}{s1:>10.0f}{av1:>9.2f}{w1:>8.1f}")
+        print(f"   件数 {dcnt:+.0f}% / net {s1-s0:+.0f} / avg {av1-av0:+.2f} / 勝率 {w1-w0:+.1f}pt"
+              + ("   ⚠️ 件数 ±30%超＝degenerate/過しぼりを疑え（KB §0）" if abs(dcnt) >= 30 else ""))
 
     # ===== N1. 損失の時間構造 =====
     e = d.sort_values("exit_time")
@@ -101,7 +154,7 @@ def main():
 
     # ===== N2. 条件交差表 =====
     print("\n  N2. 条件交差表（純益$ / 件数）")
-    for rl, cl in (("ATR%", "bb傾き"), ("ADX", "ATR%")):
+    for rl, cl in [(r, c) for r, c in (("ATR%", "bb傾き"), ("ADX", "ATR%")) if r in BANDS and c in BANDS]:
         (rc_, re_), (cc_, ce_) = BANDS[rl], BANDS[cl]
         r = pd.cut(d[rc_], re_, right=False); c = pd.cut(d[cc_], ce_, right=False)
         net = d.pivot_table(values="net_usd", index=r, columns=c, aggfunc="sum", observed=False).round(0)
@@ -159,7 +212,9 @@ def main():
             cols = [c for c in ("open", "high", "low", "close", "volume") if c in seg.columns]
             print("   " + seg[cols].round(1).to_string().replace("\n", "\n   "))
     else:
-        cols = ["entry_time", "exit_reason", "hold_min", "net_usd", "adx_at_entry", "bb_mid_slope_at_entry", "atr_pct", "rsi_at_entry"]
+        cols = [c for c in ["entry_time", "exit_reason", "hold_min", "net_usd", "adx_at_entry",
+                "bb_mid_slope_at_entry", "atr_pct", "rsi_at_entry"] + _auto_ind_cols(d)[:3] if c in w.columns]
+        cols = list(dict.fromkeys(cols))   # 重複除去・実在カラムのみ（戦略非依存）
         print("   " + w[cols].round(2).to_string(index=False).replace("\n", "\n   "))
 
     # ===== N7. 必要勝率と不足量（損益分岐・KB §1 期待値）=====
@@ -205,9 +260,7 @@ def main():
     # ===== N10. 分離指標ランキング（★どの指標が勝敗を分けるか・構造を機械抽出・2026-06-14 まこさん「構造の解釈も強制」）=====
     # 「数字の抽出」で止めず「勝敗を分ける指標」を相関で機械順位づけ→改善は固定値調整でなく ML 特徴量化に向かう。
     print("\n  N10. 分離指標ランキング（★勝敗を分ける指標を機械抽出＝固定値調整でなく ML 特徴量の候補）")
-    cand = [c for c in ("dev_z_at_entry", "taker_ls_at_entry", "adx_at_entry", "bb_mid_slope_pct_at_entry",
-            "rsi_at_entry", "rsi_slope_at_entry", "stoch_k_at_entry", "bb_width_at_entry", "atr_pct",
-            "ret_5", "add_count", "entry_hour") if c in d.columns and d[c].notna().sum() > 30]
+    cand = _auto_ind_cols(d)   # CSV の指標カラムを自動検出（戦略非依存・E35=er/adx/box_W、P23=dev_z/stoch 等に適応）
     tr_d = _load(a.train) if a.train else None       # 両窓再現チェック用（地合いボーナスか本物か）
     rows = []
     for c in cand:

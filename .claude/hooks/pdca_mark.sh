@@ -43,7 +43,9 @@ if tn == "Bash":
     #  - --smoke: 採点しない検証ステップ（自己検査・規模確認）（2026-06-12 まこさん・smoke で永久未閉じ事案）
     #  - --no-score: 設計上採点なしの工程（メタラベリング Phase1=OOF 診断のみ・採点は別工程 Phase2 の score.py）。
     #    （2026-06-12 まこさん承認・E28 Phase1 OOF で永久未閉じ事案＝Phase1 は連続モード変換前で score.py 適用外）
-    _is_exp = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_)[A-Za-z0-9_]*\.py", cmd))
+    # 実験＝戦略本体(strat_/train_/measure_/e3N_連番名)を採点ありで実行。probe/deep_analysis は分析＝除外(2026-06-16 命名非依存化)
+    _is_exp = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_|e3[0-9]_)[A-Za-z0-9_]*\.py", cmd)) \
+        and not bool(re.search(r"(_probe|_deep_analysis)\.py|score[A-Za-z0-9_]*\.py", cmd))   # 採点ラッパー score_*(名に e35_ を含む)・probe・分析は実験から除外
     if _is_exp:
         if "--diagnostic" in cmd:
             # 診断（採点しない・cap実態/規模確認等）→ PDCA 連鎖を一切要求しない（2026-06-13・診断CSVは
@@ -57,7 +59,8 @@ if tn == "Bash":
             if ti.get("run_in_background"):
                 touch(score_bg_pending)  # バックグラウンド実行中は審判催促を抑制（2026-06-13・長時間 replay 待ち）
     # python(3) で実際に score.py/precheck.py を実行する形のみ検知（grep/echo/別行言及では誤爆しない）
-    _is_judge = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score\.py", cmd)) or \
+    # 審判＝score.py CLI ＋ 採点ラッパー score_*.py（gate外 score.score を呼ぶ＝命名規約 scripts/priority_rebuild/score_*.py・2026-06-16）
+    _is_judge = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score[A-Za-z0-9_]*\.py", cmd)) or \
                 bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*precheck\.py", cmd))
     if _is_judge:
         # score.py / precheck.py（審判の門）。FAIL=閉じる場合も 分析・記録・5つの問い を飛ばせない（2026-06-12）
@@ -77,8 +80,9 @@ if tn == "Bash":
             rm(no_baseline); rm(need_vs)
         else:
             touch(need_vs)
-    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*analyze\.py", cmd):
-        rm(need_analyze)  # 深掘りバッテリー N1〜N9 実行で旗が下りる
+    # 分析＝analyze.py（汎用 N0-N12）＋ 戦略固有 *_deep_analysis/*_probe（命名規約・2026-06-16）
+    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(analyze|[A-Za-z0-9_]+_deep_analysis|[A-Za-z0-9_]+_probe)\.py", cmd):
+        rm(need_analyze)  # 深掘りバッテリー実行で旗が下りる
 elif tn in ("Edit", "Write", "MultiEdit"):
     fp = ti.get("file_path", "") or ""
     if fp.endswith("ledger.md"):
@@ -91,7 +95,7 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         payload = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
         for e in (ti.get("edits", []) or []):
             payload += e.get("new_string", "") or ""
-        tokens = ["【問1 レバー】", "【問2 不足量】", "【問3 負け集中】", "【問4 過去接続】", "【問5 次仮説】"]
+        tokens = ["【問0 前後比較】", "【問1 レバー】", "【問2 不足量】", "【問3 負け集中】", "【問4 過去接続】", "【問5 次仮説】"]
         if all(t in payload for t in tokens):
             rm(need_5q)
         if "【主張】" in payload:        # 多角チェックの結論=主張1行（件数/日+net 込み・#19・2026-06-14）

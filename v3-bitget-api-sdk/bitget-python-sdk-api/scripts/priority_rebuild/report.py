@@ -48,6 +48,31 @@ def _band(s, edges, labels):
     return pd.cut(s, bins=edges, labels=labels, right=False)
 
 
+def _collapse_positions(d):
+    """position_id があれば玉(取引)単位に集約（fill/add 複数行を1取引に・position-level accounting）。
+    金額(net/gross/fee/size/_netj等)=合計・hold_min=最大・入口特徴/出口理由/entry_time=最初。
+    position_id 無し or 既に1行1玉(P23/E34)はそのまま返す（後方互換・退化させない）。"""
+    if "position_id" not in d.columns or d["position_id"].nunique() == len(d):
+        return d
+    agg = {}
+    for c in d.columns:
+        if c == "position_id":
+            continue
+        agg[c] = "sum" if c in ("net_usd", "gross_usd", "fee_usd", "size_btc", "_gross", "_fee", "_slip", "_netj") \
+            else ("max" if c == "hold_min" else "first")
+    return d.groupby("position_id", as_index=False).agg(agg)
+
+
+def _funding_collapse(d):
+    """公式 score.py と揃える(funding込み net)＋取引(玉)単位に集約＝analyze.py と整合・KB §0。"""
+    import numpy as np
+    if "_netj" in d.columns and "side" in d.columns:
+        fund = np.array([judge._funding_for_trade(r["entry_time"], r["exit_time"],
+                         1 if r["side"] == "LONG" else -1, r["size_btc"], r["entry_price"]) for _, r in d.iterrows()])
+        d = d.copy(); d["net_usd"] = d["_netj"] - fund
+    return _collapse_positions(d)
+
+
 def _judge_cols(t):
     """審判（score.py）と同じ式で gross/手数料/slip/net を行単位に再計算し、内訳用の列を上書きする。
     CSV の net_usd は「生成時の計器」の値＝E0.4（trail maker 化）以降 trail 行が旧値のため表示に使わない。"""
@@ -80,8 +105,9 @@ def main():
     d = _load(a.csv, a.start, a.end)
     if not len(d):
         print("空CSV"); return
-    d_raw = d.copy()                                     # 審判（score.py）には CSV 原本を渡す
+    d_raw = d.copy()                                     # 審判（score.py）には CSV 原本を渡す（fill単位・公式 total用）
     d = _judge_cols(d)                                   # 内訳は全節 審判式（現行計器）で集計
+    d = _funding_collapse(d)                             # ★公式 funding込み net ＋ 取引(玉)単位に集約（analyze.py と整合・KB §0 取引単位）
     has_p = "p" in d.columns
     name = Path(a.csv).name
     out_path = Path(a.csv).with_name(f"report_{Path(a.csv).stem}.txt")   # 結果一覧を書類保存
@@ -108,7 +134,7 @@ def main():
     print(f"  A. 全体  トレード数 {len(d)} / 粗利 ${d['gross_usd'].sum():.0f} / 手数料 ${d['fee_usd'].sum():.0f}"
           f"（{d['fee_usd'].sum()/max(1,abs(d['gross_usd'].sum()))*100:.0f}% ・ ${d['fee_usd'].mean():.2f}/件）")
     print(f"         純益(審判) ${r['total']:.0f} / 月平均 ${r['monthly_avg']:.0f} / 日次純益 ${r['total']/days:.2f}"
-          f" / 内訳net(審判式・funding除く) ${d['net_usd'].sum():.0f}")
+          f" / 内訳net(審判式・funding込み・公式一致) ${d['net_usd'].sum():.0f}")
     print(f"         勝率 {(d['net_usd']>0).mean()*100:.1f}% / 最大DD ${dd:.0f} / 最大連敗 {int(streak)} / 日次最悪 ${daily.min():.0f}")
     print(f"         Sharpe {sharpe:.2f} / Sortino {sortino:.2f} / Profit Factor {pf:.2f} / Recovery {recov:.2f}（日次USD純益・年率365）")
 
@@ -151,12 +177,15 @@ def main():
 
     # ===== F. 月別（+AI vs V9）=====
     print("\n  F. 月別 純益（審判）")
-    mo = r["monthly"].copy().rename(columns={"net_usd": "純益", "n": "件数"}).rename_axis("月"); mo["純益"] = mo["純益"].round(0)
+    mo = (d.assign(_m=d["entry_time"].dt.strftime("%Y-%m")).groupby("_m")["net_usd"]    # ★玉単位（A節・合計と整合）
+          .agg(純益="sum", 件数="size").rename_axis("月")); mo["純益"] = mo["純益"].round(0)
     if a.vs:
-        v = _load(a.vs, a.start, a.end); rv = judge.score(v); v = _judge_cols(v)
-        cmp = pd.DataFrame({"AI純益": r["monthly"]["net_usd"].round(0), "AI件数": r["monthly"]["n"],
-                            "V9純益": rv["monthly"]["net_usd"].round(0), "V9件数": rv["monthly"]["n"]}).fillna(0).rename_axis("月")
-        print(cmp.to_string()); print(f"   合計  AI ${r['total']:.0f}({len(d)}件)  vs  V9 ${rv['total']:.0f}({len(v)}件)  → 差 ${r['total']-rv['total']:+.0f}")
+        v = _funding_collapse(_judge_cols(_load(a.vs, a.start, a.end)))                 # ★V9 も玉単位・funding込み（AI と単位を揃える）
+        dm = d.assign(_m=d["entry_time"].dt.strftime("%Y-%m")).groupby("_m")["net_usd"].agg(["sum", "size"])
+        vm = v.assign(_m=v["entry_time"].dt.strftime("%Y-%m")).groupby("_m")["net_usd"].agg(["sum", "size"])
+        cmp = pd.DataFrame({"AI純益": dm["sum"].round(0), "AI件数": dm["size"],
+                            "V9純益": vm["sum"].round(0), "V9件数": vm["size"]}).fillna(0).rename_axis("月")
+        print(cmp.to_string()); print(f"   合計  AI ${d['net_usd'].sum():.0f}({len(d)}件)  vs  V9 ${v['net_usd'].sum():.0f}({len(v)}件)  → 差 ${d['net_usd'].sum()-v['net_usd'].sum():+.0f}")
     else:
         print(mo.to_string())
 
@@ -179,8 +208,11 @@ def main():
 
     # ===== G. 指標帯別 net/勝率 =====
     print("\n  G. 指標帯別（エッジがどの帯に居るか・V9手書き閾値が最適かを見る）")
-    d = d.copy(); d["atr_pct"] = (d["atr_14"] / d["entry_price"] * 100)
-    d["stoch_gap"] = (d["stoch_d_at_entry"] - d["stoch_k_at_entry"])
+    d = d.copy()
+    if "atr_14" in d.columns and "entry_price" in d.columns:
+        d["atr_pct"] = (d["atr_14"] / d["entry_price"] * 100)
+    if "stoch_d_at_entry" in d.columns and "stoch_k_at_entry" in d.columns:
+        d["stoch_gap"] = (d["stoch_d_at_entry"] - d["stoch_k_at_entry"])
     _e = lambda x: "" if abs(x) >= 9e8 else f"{x:g}"
     bands = {
         "ADX":       ("adx_at_entry",          [0, 20, 25, 30, 35, 40, 50, 9e9]),
