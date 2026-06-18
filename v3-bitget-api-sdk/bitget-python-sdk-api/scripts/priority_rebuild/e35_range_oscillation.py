@@ -29,7 +29,7 @@ H 制約（コード内 assert / コメント）:
   H2 leak  … 箱は e35_box が j+2/attach/破壊テストで担保・指標は shift ベース・出口は約定 bar の次以降（i>last_fill_idx）。
   H5 約定   … entry/TP=指値 maker（close×(1∓offset)）／箱ブレイク SL・時間切れ=成行 taker+slip。
   H6 価格非依存 … 入口は距離%/比/無次元。箱の価格(S/R/C)は「現値との距離%」由来で TP/SL の比較に使うのみ（閾値化しない）。
-  H8 期間分割 … W 分位は学習 ts<2025-01。採点 2025-06〜12・封印 2026-03〜05 不参照。
+  H8 期間分割 … 期間は periods.py が正本（学習 < periods.TRAIN_END・採点 periods.SCORE_START〜SCORE_END・封印 不参照）。手打ち禁止。
   H15 ボラ逃げ … 入口=方向（ゾーン+反転）・ボラ(ATR)は使わない（SL は箱ブレイク=構造／時間のみ）・LONG/SHORT 分離。
   H16 1変更 … 新構造のベース v1 を一式1本（E34 と同じ「正しい器を1本」）。以後 複数TP/多TF重み/固定値ML は1つずつ。
 """
@@ -46,16 +46,17 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import eval_engine as ee                    # noqa: E402  確定コスト定数 + funding 境界（改造禁止・import のみ）
 import e34_range_zscore_taker as e34v1      # noqa: E402  CSV / add_indicators（taker は呼ばない）
+import periods                              # noqa: E402  検証期間の唯一の正本（学習/採点/封印・E31 窓・手打ち禁止 SSOT）
 import e34_range_base as e34b               # noqa: E402  add_analysis_features（stoch 等）
 import e35_box                              # noqa: E402  箱 3列×3足（leak/H6 assert 内蔵）
 import verify_design_contract as _vdc       # noqa: E402  設計↔実装 自己チェック（設計書の部品リストを読む）
 
 RATCHET = ROOT / "results" / "priority_rebuild" / "ratchet"
 DESIGN_MD = ROOT / ".claude" / "ratchet" / "e35_design.md"   # 入口組み立ての唯一の正（設計書 DESIGN_CONTRACT）
-TRAIN_END = e34v1.TRAIN_END                 # 2025-01-01（W 分位・診断の学習境界・H8）
-SC_START = pd.Timestamp("2025-06-01")       # 採点窓 開始（新窓・taker 実被覆内）
-SCORE_END = pd.Timestamp("2026-01-01")      # 採点窓 終了（2025-12-31 まで）
-SEAL_START = pd.Timestamp("2026-03-01")     # 封印 2026-03〜05 は出力に含めない（最終1回まで温存）
+TRAIN_END = periods.TRAIN_END               # 学習境界（< TRAIN_END で fit・W分位/ER/hold-ML）＝periods 正本（E31: 〜2025-02）
+SC_START = periods.SCORE_START              # 採点窓 開始＝periods 正本（2025-06-01）
+SCORE_END = periods.SEAL_START              # 採点スライスの排他終端＝封印開始（採点は封印直前 2026-02末まで・entry < SCORE_END）
+SEAL_START = periods.SEAL_START             # 封印開始＝periods 正本（full 出力は < SEAL_START・封印は不参照）
 
 # ── a priori 単一固定（最良値スイープしない・hook L-267）─────────────────────────────
 CI_N = 14
@@ -170,7 +171,7 @@ def _build_signals_for_tf(df: pd.DataFrame, tf: str, w_lo: float, w_hi: float) -
 
 
 def _w_band(df: pd.DataFrame, tf: str, tr_mask: pd.Series) -> tuple:
-    """学習(<2025-01)の in_box バーの W 分布から [q0.25, q0.75]（データ駆動・覗き見なし H8）。"""
+    """学習(< periods.TRAIN_END)の in_box バーの W 分布から [q0.25, q0.75]（データ駆動・覗き見なし H8）。"""
     sup = df[e35_box.sup_col(tf)]; res = df[e35_box.res_col(tf)]
     in_box = sup.notna() & (sup > 0) & res.notna() & (res > 0)
     W = (sup + res)[(in_box & tr_mask).fillna(False)]
@@ -476,7 +477,7 @@ def _attach_entry_cols(df: pd.DataFrame, box_tf: str) -> tuple:
 
 
 def run_diagnostic(df: pd.DataFrame) -> None:
-    """発火ファネル（採点しない・学習 ts<2025-01・補助）。Entry/Exit は一式で回す＝採点が本筋（§8.4）。"""
+    """発火ファネル（採点しない・学習 ts< periods.TRAIN_END・補助）。Entry/Exit は一式で回す＝採点が本筋（§8.4）。"""
     tr_mask = df.ts < TRAIN_END
     tr_days = max((df.ts[tr_mask].max() - df.ts[tr_mask].min()).total_seconds() / 86400.0, 1.0)
     def cnt(m):
@@ -510,12 +511,12 @@ def _output_and_report(t: pd.DataFrame, suffix: str) -> None:
     print(f"  [出力] 全期間 {out_full.name}（封印除外後 {len(t_full)}）/ 採点窓 {out_score.name}({len(t_score)}・{len(t_score)/n_days:.2f}/日) / precheck {out_train.name}")
     if len(t_score):
         sm = t_score.assign(m=t_score.entry_time.dt.strftime("%Y-%m")).groupby("m")["net_usd"].agg(["count", "sum"]).round(1)
-        print("\n  採点窓 2025-06〜12 月別（CSV net・参考＝正式は score.py）:\n" + sm.to_string())
+        print(f"\n  採点窓 {periods.SCORE_START_STR}〜{periods.SCORE_END_STR} 月別（CSV net・参考＝正式は score.py）:\n" + sm.to_string())
         print(f"  採点窓 合計 CSV net ${t_score.net_usd.sum():.1f} / 件 {len(t_score)} / 勝率 {(t_score.net_usd > 0).mean():.1%}")
         print(f"  出口別 件数: {dict(t_score['exit_reason'].value_counts())}")
     print("\n  → 判定は score.py（precheck → score.py の数字）:")
     print(f"     precheck.py {out_train.name} --authorize {out_score.name}")
-    print(f"     score.py {out_score} --start 2025-06-01 --end 2025-12-31")
+    print(f"     score.py {out_score} --start {periods.SCORE_START_STR} --end {periods.SCORE_END_STR}（既定で正本窓・periods）")
 
 
 def run_be_gate(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
@@ -809,7 +810,7 @@ def main():
     print(f"  約定 {len(t)}件 / side {dict(t['side'].value_counts())} / 出口 {dict(t['exit_reason'].value_counts())} "
           f"/ add分布 {dict(t['add_count'].value_counts().sort_index())}")
 
-    # ── 出力（全期間=採点用 + 学習<2025-01=precheck 用・封印 2026-03+ 除外）──
+    # ── 出力（全期間=採点用 + 学習< periods.TRAIN_END=precheck 用・封印>= periods.SEAL_START 除外）──
     _output_and_report(t, f"_{a.box_tf}" + (f"_max{a.max_adds}" if a.max_adds != MAX_ADDS else ""))
     print("=" * 100)
 

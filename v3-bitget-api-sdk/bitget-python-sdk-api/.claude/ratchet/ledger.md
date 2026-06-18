@@ -842,3 +842,19 @@
 - **【主張】** 検証期間のズレ（採点窓3版並存・E35 が 7ヶ月窓で地面 9ヶ月と不整合）を `periods.py`（単一正本・E31窓・leak-safe assert）＋ `score.py` 正本窓ゲート（公式 net は正本窓以外で出ない・既知答え15/15 で net 式不変）＋ `score_official` で物理化＝Step1 完了・**net 不変**（実験でなく審判ハードニング・3.19取引/日 iter7 参考）。診断＝期間検査 hook が0本だった（absent check・hook 自体は健全）。Step2 で E35 を正本窓に揃え測り直し。
 - **生成物**: scripts/priority_rebuild/periods.py（新規・期間 SSOT）／ score.py（_resolve_window / score_official / --legacy-window / --selftest-period・net 式不変）。検証 `python3 score.py --selftest-period`・`python3 test_eval_engine_known_answers.py`（15/15）。
 - **付随で判明した hook の不具合（次に直す）**: pdca_mark.sh 63行が `python ... score*.py` を審判検知し、**--selftest-period（自己テスト＝採点でない）を除外していない**（--smoke は54行で除外済）。そのため score.py の自己テスト実行で PDCA カスケードが誤点火し、実験でないのに report/analyze/ledger/5q を要求される。修正＝--smoke 同様に --selftest を除外（Step3 で hook 修正＝まこさん承認＋commit）。known-answer テストはファイル名に score を含まず誤検知しない。
+- **Step3 完了（commit 43edd2a）**: require_period_source.sh 新規（priority_rebuild の .py が期間境界を periods 由来でなく自前定義したら実行前に block・学習窓の穴を塞ぐ）＋ pdca_mark --selftest 除外修正。番人メタ確認＝良→通過/悪→block/e35→block/score.py→通過/periods.py→除外・--selftest で旗立たず。
+
+## E35 iteration-7（正本窓 再測定・Step2）: 期間定数を periods 参照化し E31 正本窓（採点2025-06〜2026-02）で測り直し（2026-06-18）— 旧窓 −$240.68 を置換＝公式 −$7.53（月平均 −$0.84・建値）
+- **変更(A)**: e35_range_oscillation.py の期間定数（TRAIN_END/SC_START/SCORE_END/SEAL_START）を全て `periods.*` 参照に（自前リテラル・e34v1.TRAIN_END をやめる）＋表示文字列も periods から組立（手打ち日付ゼロ）。require_period_source hook を通過（periods 参照の物理確認）。net レバーは足さない＝窓を正本に揃える正しさの修正のみ。
+- **自己検査(全PASS)**: 恒等＝add1_frac=None+θ_gate=−1 で iter5a と net 一致 −$436.37。lever-bites＝add1_frac None→0.5 で学習窓 net −$111→+$189（add1 由来 +$299・add1 PARTIAL 269件）。size 保存 0違反。cap 0.1200。leak grep PASS。θ_gate*=0.5 k_tp*=0.001 add1_frac=0.5（学習窓 純増 +$625・iter5a 基準）。
+- **公式採点（score.score_official・正本窓 2025-06〜2026-02・gate外）**: `trades_e35_oscillation_5m_iter7_score.csv` net **−$7.53** / 月平均 **−$0.84** / **845玉・3.12取引/日**（9ヶ月）。月別＝2025-08 −499 が最大出血・2025-10 +358／2026-02 +208 が稼ぐ。
+- **原因究明(3分類)= ① 戦略の性質(健全)**: N7 必要勝率 69.7% vs 実 69.7%＝**不足 0.0pt（建値）**。N5 ブートストラップ net/件 −$0.01 [−1.50,1.47]・月次 −$1 [−161,139]＝**0 跨ぎ＝まだ黒字でなく建値**。期待値 −$0.01/件。leak無・cap0.12✅・H15。② 残り：時間切れが依然 損の本体（2025-08 −499）。③ regime：2026-01/02（穏やかなレンジ・Glassnode）は +40/+208 で稼ぐ＝レンジ戦略に順当。
+- **判定**: 採用（E31 正本窓の正しい数字 −$7.53 を確定＝旧窓 −$240.68 を置換）。地面（P21/P23/E32b・同じ E31 窓）と同じ土俵になった。依然 黒字でない（建値）→ ratchet 継続。
+  - 【問0 前後比較】旧窓(7ヶ月)→正本窓(9ヶ月): 玉 676→845・件数/日 3.19→3.12（維持）・net −$240.68→−$7.53。**改善の大半は窓訂正**（2026-01 +40・2026-02 +208 の好月が入った）＝add1 レバー効果でない。degenerate でない（件数維持・好月は実レジーム）。
+  - 【問1 レバー】窓を periods 正本に揃えた（net レバーでない）。add1 分数部分決済レバーの寄与は lever-bites で分離＝学習窓 +$299（add1 PARTIAL 269件）。
+  - 【問2 不足量】月平均 −$0.84＝黒字化にあと**月 +$0.84**（必要勝率不足 0.0pt＝建値ちょうど）。
+  - 【問3 負け集中】2025-08 −$499（時間切れ）が最大。N9 出口効率は正常域＝直すべきは保有中/入口側（残り時間切れ）。
+  - 【問4 過去接続】旧窓 iter7 −$240.68 は誤窓（E0.5 で判明・採点窓3版並存）。E31 窓に統一＝地面と同じ土俵。窓訂正と add1 レバーを分離して報告（窓が主因）。
+  - 【問5 次仮説】iter8＝残り時間切れの入口/保有中側（add1 残り 0.012 の早期建値 or 分離指標 atr_pct の ML 特徴量化）。封印データ 2026-04/05 延長は最終チェック前。
+- **【主張】** E35 iteration-7 を E31 正本窓（採点2025-06〜2026-02）で測り直し＝公式 score_official **−$7.53**（月平均 −$0.84・**845玉・3.12取引/日**＝スキャル頻度維持・必要勝率不足 **0.0pt＝建値**）。旧窓 −$240.68 は誤窓で置換（採点窓3版並存・E0.5）。**改善の大半は窓訂正**（2026-01/02 の好月）で add1 レバー寄与は +$299（学習窓 lever-bites で分離）。地面と同じ土俵・degenerate でない・**まだ黒字でない（N5 0跨ぎ）**＝ratchet 継続。
+- **生成物**: e35_range_oscillation.py（期間 periods 参照・import periods・手打ち日付ゼロ）／ trades_e35_oscillation_5m_iter7{,_score,_train}.csv（正本窓で再生成）／ report_・analysis_trades_e35_oscillation_5m_iter7_score.txt。公式採点 `python3 /private/tmp/score_e35_iter7.py`（score.score_official・正本窓）。
