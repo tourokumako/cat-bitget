@@ -60,8 +60,9 @@ if tn == "Bash":
                 touch(score_bg_pending)  # バックグラウンド実行中は審判催促を抑制（2026-06-13・長時間 replay 待ち）
     # python(3) で実際に score.py/precheck.py を実行する形のみ検知（grep/echo/別行言及では誤爆しない）
     # 審判＝score.py CLI ＋ 採点ラッパー score_*.py（gate外 score.score を呼ぶ＝命名規約 scripts/priority_rebuild/score_*.py・2026-06-16）
-    _is_judge = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score[A-Za-z0-9_]*\.py", cmd)) or \
-                bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*precheck\.py", cmd))
+    _is_judge = (bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score[A-Za-z0-9_]*\.py", cmd)) or
+                 bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*precheck\.py", cmd))) \
+                and "--selftest" not in cmd   # --selftest* は自己テスト＝採点でない（--smoke と同扱い・2026-06-18・誤点火防止）
     if _is_judge:
         # score.py / precheck.py（審判の門）。FAIL=閉じる場合も 分析・記録・5つの問い を飛ばせない（2026-06-12）
         rm(need_score); rm(score_bg_pending)

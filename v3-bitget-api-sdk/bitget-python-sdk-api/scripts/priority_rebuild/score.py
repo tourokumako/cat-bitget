@@ -32,6 +32,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import eval_engine as ee  # noqa: E402  確定コスト定数 + funding 境界計算（検証済み計器）
+import periods  # noqa: E402  検証期間の唯一の正本（学習/捨て/採点/封印・E31 窓・ズレ再発防止 SSOT）
 
 # TP_FILLED と SL_FILLED は placePosTpsl 指値（maker）= run_once_v9.py L320-348 で executePrice=triggerPrice 確認済
 # （手動は手数料負け回避で entry/exit とも maker 優先）。成行 taker は TIME / MFE_STALE_CUT /
@@ -182,22 +183,77 @@ def score(df: pd.DataFrame) -> dict:
             "funding_total": float(df["funding"].sum())}
 
 
+def _resolve_window(start, end, legacy: bool):
+    """採点窓を【正本 periods】に強制するゲート（ズレ再発防止・公式 net は正本窓以外で出ない）。
+    - legacy=True : 旧窓一致確認など非公式用途。指定された (start,end) をそのまま返す（採否に使わない）。
+    - legacy=False かつ未指定 : 正本窓 (periods.SCORE_START_STR, SCORE_END_STR) を返す（既定＝公式採点）。
+    - legacy=False かつ 正本窓と不一致 : sys.exit で採点拒否（偽窓の公式 net を物理的に出させない）。
+    純関数（テスト可能）＝net 計算は一切触らない・採点の前段フィルタのみ。"""
+    off_s, off_e = periods.SCORE_START_STR, periods.SCORE_END_STR
+    if legacy:
+        return start, end
+    if start is None and end is None:
+        return off_s, off_e
+    if start == off_s and end == off_e:
+        return off_s, off_e
+    sys.exit(
+        f"⛔ [正本窓ゲート] 採点窓 start={start} end={end} が正本 {off_s}〜{off_e}（periods.py・E31）と不一致。\n"
+        f"   公式 net は正本窓でしか出せません。旧窓で測る（一致確認等・非公式）なら --legacy-window を明示してください。"
+    )
+
+
+def _filter_window(df: pd.DataFrame, start, end) -> pd.DataFrame:
+    """entry_time で [start, end]（inclusive）に絞る（main / score_official 共通）。"""
+    et = pd.to_datetime(df["entry_time"])
+    if start:
+        df = df[et >= pd.Timestamp(start)]
+    if end:
+        df = df[pd.to_datetime(df["entry_time"]) < pd.Timestamp(end) + pd.Timedelta(days=1)]
+    return df.reset_index(drop=True)
+
+
+def score_official(df: pd.DataFrame) -> dict:
+    """公式採点入口: full-CSV を【正本窓】に絞って score() する＝窓を呼び手に選ばせない。
+    全 score ラッパー（score_*.py）はこれを使う（自前で start/end を書かない＝ズレ再発防止）。"""
+    return score(_filter_window(df, periods.SCORE_START_STR, periods.SCORE_END_STR))
+
+
+def _selftest_period_gate() -> None:
+    """正本窓ゲートの自己テスト（_resolve_window の3分岐・番人メタ確認）。"""
+    off = (periods.SCORE_START_STR, periods.SCORE_END_STR)
+    assert _resolve_window(None, None, False) == off, "既定が正本窓に解決されない"
+    assert _resolve_window("2099-01-01", "2099-12-31", True) == ("2099-01-01", "2099-12-31"), "legacy が素通ししない"
+    import subprocess
+    # 不一致窓 + legacy なし → sys.exit する（別プロセスで確認＝本プロセスを殺さない）
+    code = ("import sys,os;sys.path.insert(0,os.path.dirname(os.path.abspath('"
+            + os.path.abspath(__file__) + "')));import score;"
+            "score._resolve_window('2025-04-01','2025-12-31',False)")
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+    assert r.returncode != 0 and "正本窓ゲート" in r.stderr + r.stdout, "不一致窓(legacy なし)が採点拒否されない"
+    print("[自己テスト 正本窓ゲート] ①既定→正本窓 ②legacy→素通り ③不一致(legacy なし)→採点拒否 : 全 PASS ✅")
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("trades_csv", help="売買記録 CSV（entry/exit/side/size/price/exit_reason 列）")
+    ap.add_argument("trades_csv", nargs="?", help="売買記録 CSV（entry/exit/side/size/price/exit_reason 列）")
     ap.add_argument("--start", default=None, help="採点開始日 YYYY-MM-DD（entry_time で絞る・含む）")
     ap.add_argument("--end", default=None, help="採点終了日 YYYY-MM-DD（含む）")
+    ap.add_argument("--legacy-window", action="store_true",
+                    help="旧窓など正本外の窓で測る（非公式・採否に使わない・一致確認用）。既定は正本窓を強制")
+    ap.add_argument("--selftest-period", action="store_true", help="正本窓ゲートの自己テストだけ実行して終了")
     a = ap.parse_args()
 
+    if a.selftest_period:
+        _selftest_period_gate(); return
+
+    # ★正本窓ゲート: 既定は periods 正本窓に解決・不一致は採点拒否（--legacy-window 明示時のみ旧窓可）
+    start, end = _resolve_window(a.start, a.end, a.legacy_window)
+    if a.legacy_window:
+        print(f"⚠️ [非公式窓] --legacy-window 指定中（{start or '最初'}〜{end or '最後'}）＝採否・地面比較に使わない")
+
     df = pd.read_csv(a.trades_csv)
-    if a.start or a.end:
-        et = pd.to_datetime(df["entry_time"])
-        if a.start:
-            df = df[et >= pd.Timestamp(a.start)]
-        if a.end:
-            df = df[pd.to_datetime(df["entry_time"]) < pd.Timestamp(a.end) + pd.Timedelta(days=1)]
-        df = df.reset_index(drop=True)
-        print(f"[期間フィルタ] {a.start or '最初'} 〜 {a.end or '最後'} → {len(df)} trades")
+    df = _filter_window(df, start, end)
+    print(f"[期間フィルタ] {start or '最初'} 〜 {end or '最後'}（{'正本窓' if not a.legacy_window else '非公式'}） → {len(df)} trades")
     res = score(df)
 
     print("=" * 64)

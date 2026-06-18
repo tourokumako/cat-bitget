@@ -826,3 +826,19 @@
   - 【問5 次仮説】N10 最強分離 atr_pct（相関+0.168・勝ち玉ほど高い・5分位単調）を ML 特徴量として木に渡す方向（⛔固定値手調整でなく）。残る時間切れ −$3,725 の入口/保有中側＝add1 残り 0.012 の早期建値（iter5 be_gate を add1・前半へ）も候補。学習窓で純増を測り採点窓不参照で検証。
 - **【主張】** E35 iteration-7 add1 分数部分決済＝公式 **−$240.68**（iter6 −$311.26 から **+$70.58**・両窓改善＝学習窓 −$463→−$151(+$312)／採点窓 +$71）・**3.19取引/日**維持（676玉・玉数 iter6 と同一＝非degenerate）・勝率 64.8→69.4・必要勝率不足 1.9→1.4pt＝iter6 が触れなかった最大出血バケット(add1 TIME −$1,862)を玉会計の分数対応で半ロット回収する損側精度レバー・**採用(新ベース)**。源泉裏取り済(add1 PARTIAL lever-bites +$312・時間切れ −$3,818→−$3,725)・過剰適合でない(両窓改善)・degenerate でない(玉676維持・追加/削った玉なし・anomaly無)。judge 改造なし(PARTIAL_TP 再利用)。**依然赤字(月 −$34・ブートストラップ 0跨ぎ＝黒字戦略でない)＝継続**。次=残り時間切れの入口/保有中側 or 分離指標の ML 特徴量化。
 - **生成物**: e35_range_oscillation.py(玉会計 size 付き lot・partial_tp 5要素 add1_frac・add1 分数分岐・自己検査b size保存) / trades_e35_oscillation_5m_iter7{,_score,_train}.csv / report_・analysis_trades_e35_oscillation_5m_iter7_score.txt。公式採点 `python3 /private/tmp/score_e35_iter7.py`(score.score・gate外・両窓 iter5a/iter6/iter7 比較)。再現 `python3.13 e35_range_oscillation.py --partial-tp`。
+
+## E0.5: 検証期間の正本化＋審判 score.py に正本窓ゲート（審判ハードニング・net レバーでない・2026-06-18）— 採用（Step1完了・Step2で E35 測り直し）
+> ※net 実験でなく**審判/期間の物理ハードニング**（E0.1 SL maker・E0.4 trail maker・INC-1 cap 物理ゲートと同類）。pdca_mark が score.py 自己テスト実行を審判と検知し旗が立ったため記録して閉じる（新 net は出していない）。
+- **不整合の事実（まこさん指摘）**: 検証期間の数値が分散ハードコードで食い違い＝採点窓が3版並存（要件定義書 §3.2/§4.6 H8/§8.4＝旧 2025-04〜12／E31 決定 2025-06〜2026-02／E35 コード 2025-06〜2025-12）。E35 は E31 後ろ倒し決定の開始だけ部分反映し終了・学習境界が旧定数＝第3窓。地面（P21/P23/E32b）は E31 窓 9ヶ月・E35 は 7ヶ月＝地面と同じ土俵で測れていない。
+- **変更(A・物理ハードニング)**: ① `periods.py` 新規＝期間の唯一の正本（E31 窓: 学習〜2025-02 / 捨て2025-03〜05 / 採点2025-06〜2026-02 / 封印2026-03〜05・import 時 assert で TRAIN_END<SCORE_START の leak-safe 自己検証）。② `score.py` に正本窓ゲート（`_resolve_window`＝採点窓が正本と不一致なら sys.exit で採点拒否・`--legacy-window` 明示時のみ旧窓可・非公式）＋ `score_official(df)`＝full-CSV を正本窓に絞って score（窓を呼び手に選ばせない）。net 計算式(score()本体)は1行も変えない。
+- **自己検査(全PASS)**: 既知答えテスト **15/15 再pass**（net 式不変＝H13）。正本窓ゲート 3分岐（既定→正本窓 / legacy→素通り / 不一致(legacy なし)→採点拒否）PASS。番人メタ確認＝不一致窓を別プロセスで渡し sys.exit で止まる。periods import assert（leak-safe）PASS。
+- **判定**: 採用（Step1＝土台完了）。これで**公式 net は正本窓以外で出せない**（窓ズレが審判段で物理停止）。
+  - 【問0 前後比較】net 不変（既知答え 15/15・score()本体未変更）＝数字を動かしていない（degenerate でも改善でもない・判断審査の物理ゲート追加のみ・実験でなく審判ハードニング）。iter7 analyze N0 件数/日 3.19 不変。
+  - 【問1 レバー】net レバーでない＝期間の単一正本化(periods.py)＋審判の正本窓ゲート(score.py)＋score_official。正しさ（再現性・leak 防止）の担保。
+  - 【問2 不足量】目標 月$1,900・地面 不変（本件は窓の正しさの担保）。E35 の黒字化ギャップは Step2 の正本窓 remeasure で再確定。
+  - 【問3 負け集中】該当なし（net 実験でない）。構造欠陥＝期間数値の分散ハードコード＋正本未同期＋期間検査 hook が0本（absent check）。
+  - 【問4 過去接続】E0.1(SL maker)/E0.4(trail maker)/INC-1(cap 物理ゲート) と同型＝審判の物理ゲート追加。L-181（設計転換時 旧記述 全 grep sweep 必須）を物理化で担保。
+  - 【問5 次仮説】Step3（本命）＝学習窓 TRAIN_END 含む自前期間ベタ書きを block する hook＋DESIGN_CONTRACT に periods import 必須を組込＋pdca_mark の --selftest 除外修正。Step2＝E35 の窓定数を periods に揃え iter7 を正本窓（2025-06〜2026-02）で測り直す（地面と同じ土俵）。Step4＝要件定義書を periods 参照に更新＋全 grep sweep。
+- **【主張】** 検証期間のズレ（採点窓3版並存・E35 が 7ヶ月窓で地面 9ヶ月と不整合）を `periods.py`（単一正本・E31窓・leak-safe assert）＋ `score.py` 正本窓ゲート（公式 net は正本窓以外で出ない・既知答え15/15 で net 式不変）＋ `score_official` で物理化＝Step1 完了・**net 不変**（実験でなく審判ハードニング・3.19取引/日 iter7 参考）。診断＝期間検査 hook が0本だった（absent check・hook 自体は健全）。Step2 で E35 を正本窓に揃え測り直し。
+- **生成物**: scripts/priority_rebuild/periods.py（新規・期間 SSOT）／ score.py（_resolve_window / score_official / --legacy-window / --selftest-period・net 式不変）。検証 `python3 score.py --selftest-period`・`python3 test_eval_engine_known_answers.py`（15/15）。
+- **付随で判明した hook の不具合（次に直す）**: pdca_mark.sh 63行が `python ... score*.py` を審判検知し、**--selftest-period（自己テスト＝採点でない）を除外していない**（--smoke は54行で除外済）。そのため score.py の自己テスト実行で PDCA カスケードが誤点火し、実験でないのに report/analyze/ledger/5q を要求される。修正＝--smoke 同様に --selftest を除外（Step3 で hook 修正＝まこさん承認＋commit）。known-answer テストはファイル名に score を含まず誤検知しない。
