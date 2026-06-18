@@ -13,7 +13,7 @@
       G指標帯別 / H予測確率帯別(p列があれば) / I MFE/MAE別
 """
 from __future__ import annotations
-import argparse, os, sys
+import argparse, json, os, sys
 from pathlib import Path
 import pandas as pd
 
@@ -98,6 +98,31 @@ def _grp(d, by, net="net_usd"):
     return out
 
 
+def _print_params(csv_path):
+    """節0: 戦略が記録した使用パラメータ サイドカー（<stem>_params.json）を表示（params_sidecar.write_sidecar が出力）。
+    無ければ注記して継続（後方互換）。戦略名で分岐せず JSON の sections を汎用に列挙する（E36/E37 でもそのまま効く）。"""
+    sp = Path(csv_path).with_name(f"{Path(csv_path).stem}_params.json")
+    print("\n  0. 使用パラメータ（戦略が実行時に記録した実使用値・指標/閾値/TP/SL/TimeExit）")
+    if not sp.exists():
+        print(f"     （パラメータ記録なし: {sp.name} が無い。戦略にサイドカー出力を足して再走すると表示されます）")
+        return
+    try:
+        pj = json.loads(sp.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"     （パラメータJSON 読み込み失敗: {e}）")
+        return
+    print(f"     戦略 {pj.get('strategy', '?')} / script {pj.get('script', '?')} / 実験 {pj.get('experiment', '?')}")
+    if pj.get("run_args"):
+        print(f"     実行引数: {pj['run_args']}")
+    for sec, params in (pj.get("sections") or {}).items():
+        print(f"     [{sec}]")
+        if isinstance(params, dict):
+            for k, v in params.items():
+                print(f"        {k}: {v}")
+        else:
+            print(f"        {params}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("csv"); ap.add_argument("--start"); ap.add_argument("--end"); ap.add_argument("--vs")
@@ -112,6 +137,9 @@ def main():
     name = Path(a.csv).name
     out_path = Path(a.csv).with_name(f"report_{Path(a.csv).stem}.txt")   # 結果一覧を書類保存
     _rf = open(out_path, "w", encoding="utf-8"); _orig = sys.stdout; sys.stdout = _Tee(_orig, _rf)
+
+    # ===== 0. 使用パラメータ（戦略が記録したサイドカー・指標/閾値/TP/SL/TimeExit）=====
+    _print_params(a.csv)
 
     # ===== A. 全体サマリー =====
     r = judge.score(d_raw)                               # 公式 net / 月別（原本で採点）

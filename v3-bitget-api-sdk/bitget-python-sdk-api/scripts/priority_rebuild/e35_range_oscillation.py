@@ -50,6 +50,7 @@ import periods                              # noqa: E402  検証期間の唯一�
 import e34_range_base as e34b               # noqa: E402  add_analysis_features（stoch 等）
 import e35_box                              # noqa: E402  箱 3列×3足（leak/H6 assert 内蔵）
 import verify_design_contract as _vdc       # noqa: E402  設計↔実装 自己チェック（設計書の部品リストを読む）
+import params_sidecar as _psc               # noqa: E402  使用パラメータ サイドカー（read専用メタ・審判に不関与）
 
 RATCHET = ROOT / "results" / "priority_rebuild" / "ratchet"
 DESIGN_MD = ROOT / ".claude" / "ratchet" / "e35_design.md"   # 入口組み立ての唯一の正（設計書 DESIGN_CONTRACT）
@@ -495,7 +496,72 @@ def run_diagnostic(df: pd.DataFrame) -> None:
         f"{(cnt(sig[tf]['long_entry'])+cnt(sig[tf]['short_entry']))/tr_days:>9.2f}" for tf in TFS))
 
 
-def _output_and_report(t: pd.DataFrame, suffix: str) -> None:
+def _param_sections(extra_params=None) -> dict:
+    """この走行で実際に使ったパラメータを節ごとに組み立てる（report.py 節0 が表示・read専用メタ）。
+    値は定数参照（手打ちしない）。単位は分/%で明示し、固定値（a-priori）と学習した内容（学習窓で決定）を分けて記す。"""
+    sec = {
+        "検証期間（periods正本・E31）": {
+            "学習(fit)": f"〜{TRAIN_END.date()} 未満（W正常帯・ERレンジ閾値・hold-ML をここで学習）",
+            "採点(公式net)": f"{SC_START.date()} 〜 {SCORE_END.date()} 未満（学習に使わない）",
+            "封印(不参照)": f"{SEAL_START.date()} 以降",
+        },
+        "【固定値】レンジ判定ゲート（a-priori・スイープしない／全条件を満たすbarだけ入口候補）": {
+            "Choppiness": f"窓{CI_N}本・{CI_THRESH}以上=横ばい(レンジ)",
+            "ADX": f"{ADX_MAX}未満=非トレンド(レンジ)",
+            "Efficiency Ratio": f"窓{ER_N}本・平滑{ER_SMOOTH}本・学習期間ERの{int(ER_Q*100)}%ile未満=低効率=レンジ",
+        },
+        "【固定値】箱・反転ゾーン・反転確認（どこで入るか）": {
+            "箱(多TFレジサポ)": f"{list(TFS)} で 下限S/上限R/中心C=(S+R)/2・幅W=(R-S)/C×100（touch-count 使わない）",
+            "反転ゾーン": f"箱の下端/上端から 箱幅W×{ZONE_FRAC}(={int(ZONE_FRAC*100)}%)以内に来たら候補",
+            "W正常帯": f"学習期間Wの{int(W_Q_LO*100)}〜{int(W_Q_HI*100)}%ile（広すぎ/狭すぎる箱は除外）",
+            "反転確認": "stoch %K<30で上反転=買い / %K>70で下反転=売り（受け身指値を置かず確認後にmaker指値=contrarian）",
+        },
+        "【固定値】サイズ・add（どれだけ建てるか）": {
+            "予算上限": f"全建玉(LONG+SHORT)合計 {CAP} BTC（H1・1建玉でなく合計）",
+            "add単位": f"{UNIT} BTC（同方向再発火で merge・平均建値・最大{MAX_ADDS}段）",
+            "指値": f"close×(1∓{ENTRY_OFFSET})（±{ENTRY_OFFSET*100:.2f}%）・TTL {TTL}本(={TTL*5}分)・不約定は積まない（maker限定）",
+        },
+        "【固定値】Exit（どう決済するか・判定つき）": {
+            "TP利確① EDGE_TP(maker指値)": "反対端 R/S に到達＝往復1回分の利",
+            "TP利確② CENTER_LOCK(成行)": "中心Cへ戻った＝それ以上狙わず利益確保（保護stop）",
+            "TP武装条件": f"建値±{COST_FLOOR*100:.2f}%(COST_FLOOR)を超える時だけTPを置く（手数料割れ防止）",
+            "SL損切り BOX_BREAK_SL(成行)": "箱が壊れたら撤退（LONG:終値が下限S下抜け / SHORT:上限R上抜け）＝固定%でなく構造的",
+            "時間切れ TIME_EXIT(成行)": f"初回entryから {HOLD_5M}本 = {HOLD_5M*5}分({HOLD_5M*5//60}h)で未決済なら撤退",
+            "建値撤退 BE_EXIT(maker)": f"含み損玉が建値へ戻ったら arm {BE_ARM_BARS}本(={BE_ARM_BARS*5}分)後に損ゼロで撤退",
+        },
+        "【固定値】コスト（eval_engine・確定値・改造禁止）": {
+            "maker手数料": f"{ee.MAKER_FEE*100:.3f}%",
+            "taker手数料": f"{ee.TAKER_FEE*100:.3f}%",
+            "slippage": f"{ee.SLIPPAGE*100:.3f}%（taker時のみ）",
+            "funding": f"{ee.FUNDING_RATE_8H*100:.4f}% / 8h",
+        },
+        "Entry/Exit ロジックの流れ（要約）": {
+            "入口": "レンジ判定ゲート全通過→箱の反転ゾーン到達→stoch反転確認→maker指値(contrarian)→同方向再発火は merge(平均建値)",
+            "出口": "中心C回帰で利確(EDGE_TP/CENTER_LOCK)／箱ブレイクで損切(BOX_BREAK_SL)／240分で時間切れ(TIME_EXIT)／含み損は建値復帰で損ゼロ撤退(BE_EXIT)／死ぬ判別玉は前半含み益を部分利確(PARTIAL_TP)",
+        },
+    }
+    # 学習した内容（学習窓データで決定・採点窓は使わない）＝固定設計と分けて明示（arxiv 2603.09219）
+    learned = {
+        "hold-ML判別器": "保有中『中心に戻る/死ぬ』を判別する LightGBM（特徴量=保有経路・学習窓でfit）",
+        "W正常帯の境界・ERレンジ閾値": "上記%ile指定を学習期間W/ERに当てて値を決定（採点窓不参照）",
+    }
+    fixed_iter = {}
+    if extra_params:
+        if "θ_gate*" in extra_params:
+            learned["部分利確 θ_gate*（発火閾値）"] = f"{extra_params['θ_gate*']}（学習窓グリッドで純増最大を選定）"
+        if "k_tp*" in extra_params:
+            learned["部分利確 k_tp*（利確の値幅）"] = f"{extra_params['k_tp*']}（同・学習窓グリッド選定）"
+        if "be_th" in extra_params:
+            fixed_iter["be_th（建値撤退ゲート閾値）"] = f"{extra_params['be_th']}（iter5a 確定・a-priori 固定）"
+        if "add1_frac" in extra_params:
+            fixed_iter["add1_frac（add1の部分利確割合）"] = f"{extra_params['add1_frac']}（iter7・a-priori 固定）"
+    sec["【学習した内容】（学習窓データで決定・採点窓は使わない）"] = learned
+    if fixed_iter:
+        sec["【固定値】iteration 追加分（a-priori）"] = fixed_iter
+    return sec
+
+
+def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None) -> None:
     """trades を 全期間/採点窓/precheck に分けて出力＋月別サマリ（main と run_hold_ml で共用）。"""
     RATCHET.mkdir(parents=True, exist_ok=True)
     base = RATCHET / f"trades_e35_oscillation{suffix}.csv"
@@ -507,6 +573,13 @@ def _output_and_report(t: pd.DataFrame, suffix: str) -> None:
     t_full.to_csv(out_full, index=False)
     t_score.to_csv(out_score, index=False)
     t[t.entry_time < TRAIN_END].reset_index(drop=True).to_csv(out_train, index=False)
+    # 使用パラメータをサイドカー出力（report.py 節0 が表示・read専用メタ・net 計算に不関与）
+    _secs = _param_sections(extra_params)
+    _exp = suffix.lstrip("_")
+    for _cp in (out_full, out_score, out_train):
+        _psc.write_sidecar(_cp, strategy="E35 レンジ上下オシレーション（両方向・連続モード）",
+                           script="e35_range_oscillation.py", experiment=_exp, sections=_secs)
+    print(f"  [params] 使用パラメータを各CSVの隣に記録（report.py 節0 で表示）: {out_full.stem}_params.json 他")
     n_days = max((t_score.entry_time.max() - t_score.entry_time.min()).total_seconds() / 86400.0, 1.0) if len(t_score) else 1.0
     print(f"  [出力] 全期間 {out_full.name}（封印除外後 {len(t_full)}）/ 採点窓 {out_score.name}({len(t_score)}・{len(t_score)/n_days:.2f}/日) / precheck {out_train.name}")
     if len(t_score):
@@ -754,7 +827,8 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
     print(f"  [自己検査c cap] 同時保有 max = {mx:.4f} BTC {'✅' if mx <= CAP + 1e-9 else '⛔超過'}（予算 {CAP}）")
     assert mx <= CAP + 1e-9, f"同時保有 {mx:.4f} > cap {CAP}"
     print(f"  約定 {len(t)} / 出口 {dict(t['exit_reason'].value_counts())} / θ_gate*={btg} k_tp*={bk} add1_frac={ADD1_FRAC}")
-    _output_and_report(t, f"_{box_tf}_iter7")
+    _output_and_report(t, f"_{box_tf}_iter7",
+                       extra_params={"be_th": BE_TH, "θ_gate*": btg, "k_tp*": bk, "add1_frac": ADD1_FRAC})
 
 
 def main():

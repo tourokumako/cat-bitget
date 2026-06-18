@@ -43,9 +43,11 @@ if tn == "Bash":
     #  - --smoke: 採点しない検証ステップ（自己検査・規模確認）（2026-06-12 まこさん・smoke で永久未閉じ事案）
     #  - --no-score: 設計上採点なしの工程（メタラベリング Phase1=OOF 診断のみ・採点は別工程 Phase2 の score.py）。
     #    （2026-06-12 まこさん承認・E28 Phase1 OOF で永久未閉じ事案＝Phase1 は連続モード変換前で score.py 適用外）
+    #  - py_compile: コンパイル確認のみ＝戦略を回さない・売買記録を生成しない（2026-06-18 まこさん承認・false trigger 防止）
     # 実験＝戦略本体(strat_/train_/measure_/e3N_連番名)を採点ありで実行。probe/deep_analysis は分析＝除外(2026-06-16 命名非依存化)
     _is_exp = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_|e3[0-9]_)[A-Za-z0-9_]*\.py", cmd)) \
-        and not bool(re.search(r"(_probe|_deep_analysis)\.py|score[A-Za-z0-9_]*\.py", cmd))   # 採点ラッパー score_*(名に e35_ を含む)・probe・分析は実験から除外
+        and not bool(re.search(r"(_probe|_deep_analysis)\.py|score[A-Za-z0-9_]*\.py", cmd)) \
+        and "py_compile" not in cmd   # 採点ラッパー score_*(名に e35_ を含む)・probe・分析・py_compile(コンパイル確認) は実験から除外
     if _is_exp:
         if "--diagnostic" in cmd:
             # 診断（採点しない・cap実態/規模確認等）→ PDCA 連鎖を一切要求しない（2026-06-13・診断CSVは

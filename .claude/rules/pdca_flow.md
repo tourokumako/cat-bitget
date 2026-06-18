@@ -115,6 +115,7 @@ pdca_mark / require_design_contract の検知は全部「**コマンド名・imp
 - **審判**は `score.py` を CLI で通す。gate 外の `score.score(df)` を別名スクリプトで呼ぶなら、その呼び出しを pdca_mark の審判検知に登録する。
 - **分析**は `analyze.py` を通す。専用分析（`*_deep_analysis.py` 等）を使うなら need_analyze / need_analyze_report の解除対象に登録する。
 - **検証期間**（学習/捨て/採点/封印の境界）は `periods.py` から import する（自前で日付リテラルを書かない）。自前定義は require_period_source が実行前にブロック。表示文字列も periods から組み立てる（手打ちしない）。＝期間ズレ根絶の SSOT（ledger E0.5）。
+- **使用パラメータ・ロジックのサイドカー**（2026-06-19）: 戦略は走行のたびに、出力する売買記録CSVの隣に `<stem>_params.json` を `params_sidecar.write_sidecar` で出す。中身＝その戦略で**実際に使った**指標/閾値/TP/SL/TimeExit/期間/サイズ ＋ **Entry/Exit ロジック（ルールの流れ・exit_reason）**。`report.py` 節0 が戦略名非依存で自動表示（E35 が手本・E36/E37 も同パターン）。read 専用メタ＝net 計算・審判に不関与。pdca_mark は `py_compile`（コンパイル確認）を実験/審判検知から除外（false trigger 防止・2026-06-18/19）。
 
 ---
 

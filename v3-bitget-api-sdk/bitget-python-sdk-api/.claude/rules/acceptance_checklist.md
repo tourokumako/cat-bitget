@@ -28,6 +28,7 @@
 - ☐ **entry/exit のコスト種別（maker/taker）が変わるか？** → eval_engine / score の分類と一致するか確認
 - ☐ **judge（score.py / eval_engine）の計算式に触れるか？** → 原則触らない（H13）。触るなら既知答えテスト再pass を必須に
 - ☐ **新スクリプト名・出力CSV名は pdca 命名規約に乗るか**（実験= strat_/train_/measure_/e3N_ ／ 分析= *_probe / *_deep_analysis ／ 審判= score.py CLI or score_*.py）。外れる名前は pdca_mark に登録 or 改名（pdca_flow.md §5）
+- ☐ **使用パラメータ・Entry/Exit ロジックのサイドカー出力を含めるか**（新戦略は必須・2026-06-19）→ 売買記録CSVの隣に `<stem>_params.json` を `params_sidecar.write_sidecar` で出す。sections に **その戦略で実際に使った** 指標/閾値/TP/SL/TimeExit/期間/サイズ ＋ **Entry ロジック・Exit ロジック（ルールの流れ・exit_reason）** を入れる。report.py 節0 が戦略名非依存で自動表示する（E35 が手本・E36/E37 も同パターン）。read 専用メタ＝net 計算に不関与。
 
 ## E. §4.6 ハード制約 照合（該当する H を1つずつ・非該当は「非該当」と明記）
 - ☐ **H1** cap 合計 0.12 BTC（_verify_cap / score.assert_hard_constraints で実測）
