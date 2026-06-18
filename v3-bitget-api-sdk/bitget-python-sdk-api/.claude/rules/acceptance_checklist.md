@@ -1,0 +1,52 @@
+# acceptance_checklist.md — acceptance.md 最低限必要項目（要件定義書 §4.6 準拠・出戻り防止）
+
+作成: 2026-06-18（まこさん指示「acceptance.md の記述を要件定義書に違反しない最低限項目としてリスト化」）
+位置付け: `.claude/state/acceptance.md`（実装前の受け入れ条件リスト）を書く時の必須項目チェック。`cat_requirements.md`（要件定義書）§4.6 ハード制約に違反せず、過去の出戻り（実装後/採点直前で止まる）を物理的に減らす。
+出典が正: hook 実体（require_acceptance_before_impl.sh / require_design_contract_before_run.sh）＋ cat_requirements §4.6 / §8.4。差異が出たら実体に合わせて更新。
+
+> ⚠️ 出戻り事案（2026-06-18・iter6）: 新出口理由 PARTIAL_TP を追加したのに **score.py（審判）への maker 登録** を acceptance に書かず、採点直前に §2.9 未登録 STOP で停止→judge 用 acceptance を別途切り直し（承認2回・トークン浪費）。下の D（審判整合）を必須化して再演防止。
+
+---
+
+## A. ヘッダ（hook が物理強制・無いと Write ブロック）
+- ☐ `TARGET: scripts/priority_rebuild/<1ファイル>.py`（編集する実体1ファイル。複数ファイルに跨るなら分割 or 主ファイル＋やることに明記）
+- ☐ `DESIGN_CONTRACT`（fenced json）= `impl_file` / `self_check_calls`（実装ソースに文字列で在る識別子）/ 必要なら `must_combine`
+
+## B. 深掘り4点（hook が見出し語を物理強制・改善案の前に）
+- ☐ **① 真因**（root cause・損/不足の構造的原因）
+- ☐ **② 期待値分解**（勝率 / 平均利益 / 敗率 / 平均損失 のどれを何 pt 動かすか）
+- ☐ **③ root か symptom か**（最易パッチ＝symptom 患いを避ける・Y/N＋理由）
+- ☐ **④ ベースアップ**（参照した KB / WebSearch の証跡・記憶ベース禁止）
+
+## C. 変更の単位（H16・1ターン1変更）
+- ☐ 変更は **1レバー**か（複数混ぜない）
+- ☐ **既定 OFF で恒等**（新パラメータ None 等で既存ベースと完全一致）を設計で保証し、自己検査で確認するか
+- ☐ 過去に破棄した失敗（lessons / 破棄した E / 6軸）を再演していないか（する場合は差分を1行）
+
+## D. ★審判（score.py / eval_engine）整合 — 出戻り最頻ポイント（2026-06-18 追加）
+- ☐ **新しい exit_reason を出すか？** → YES なら「やること」に **score.py の MAKER_EXIT_REASONS / TAKER_EXIT_REASONS へ登録 ＋ 既知答えテスト再pass」**を含める（H3/H13・§2.9 未登録 exit_reason は採点・分析を STOP）。maker/taker は約定方式で判定（指値 resting=maker / 成行・トリガ=taker）。
+- ☐ **entry/exit のコスト種別（maker/taker）が変わるか？** → eval_engine / score の分類と一致するか確認
+- ☐ **judge（score.py / eval_engine）の計算式に触れるか？** → 原則触らない（H13）。触るなら既知答えテスト再pass を必須に
+- ☐ **新スクリプト名・出力CSV名は pdca 命名規約に乗るか**（実験= strat_/train_/measure_/e3N_ ／ 分析= *_probe / *_deep_analysis ／ 審判= score.py CLI or score_*.py）。外れる名前は pdca_mark に登録 or 改名（pdca_flow.md §5）
+
+## E. §4.6 ハード制約 照合（該当する H を1つずつ・非該当は「非該当」と明記）
+- ☐ **H1** cap 合計 0.12 BTC（_verify_cap / score.assert_hard_constraints で実測）
+- ☐ **H2** leak なし（特徴量 t 時点・`shift(-`/`center=True` grep assert・学習末 < 採点始）
+- ☐ **H5** 約定モデル（entry 指値maker・TTL3 / 出口 TP・SL=maker / TIME・能動=taker+slip）
+- ☐ **H6** 価格非依存（%/比率/BTC 単位・USD 絶対値の閾値/ラベル禁止）
+- ☐ **H8** 期間分割（学習 <2025-01 で fit・採点 2025-06〜12 は評価のみ・封印不参照）
+- ☐ **H13** judge 固定（score.py/eval_engine は実験で改造しない・改造時 既知答えテスト再pass）
+- ☐ **H15** ボラ逃げ禁止（方向スコアで atr/ボラ 非支配・feature importance で確認）
+- ☐ **H16** 1変更・過去失敗の不再演
+
+## F. 受け入れ判定（採点前ゲート・PDCA §8.4）
+- ☐ **自己検査**を列挙（恒等 / 会計保存 / cap / leak grep 等・「わざと壊して落ちるか」のメタ確認 §2.9③）
+- ☐ **学習窓で純増を先に測る**（採点窓 不参照・H8）→ プラスかつ非degenerate なら採点
+- ☐ **公式判定は score.py / score.score**（CC は net 計算に触れない＝import のみ）・**両窓で改善**を確認するまで「効いた」と言わない
+- ☐ degenerate（near-inaction＝ほぼ無取引で損が小さいだけ）でないか（件数/伸びを玉単位で確認）
+
+---
+
+## 使い方
+- acceptance.md を書いたら本リストを上から照合し、該当項目を満たすこと（特に **D 審判整合** は新出口理由・新コスト種別を出す iteration で必須）。
+- 本リストは要件定義書（cat_requirements §4.6）の下位ガイド。矛盾したら cat_requirements / hook 実体が優先。

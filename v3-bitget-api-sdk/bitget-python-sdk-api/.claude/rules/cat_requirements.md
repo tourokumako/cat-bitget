@@ -255,6 +255,7 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 > - **例外（即・破棄してよい＝作り込み対象でない）**: leak（H2違反）/ cap違反（H1）/ 軸1ボラ逃げ（H15）等の設計欠陥・degenerate（near-inaction＝ほぼ無取引で損が小さいだけ）・配管確認の捨て駒（coinflip 等）・既に同一構造で潰した手。
 
 1. **設計(A)報告**: 変更内容を §4.6 ハード制約に1項目ずつ照合して詳細報告 → まこさん確認
+   - ⚠️ **acceptance.md は `acceptance_checklist.md`（最低限必要項目・要件定義書準拠）を上から照合して書く**。特に **D 審判整合**（新 exit_reason を出すなら score.py の maker/taker 登録＋既知答えテスト再pass を「やること」に含める）を漏らさない＝2026-06-18 iter6 出戻り（PARTIAL_TP 登録漏れで採点直前 STOP）の再発防止。
 2. **実装**: §4.6 の `⬜要追加` を含む B（ハード制約）を **assert で埋め込む**（違反→停止＝偽の数字を出さない）
    - ⚠️ **コード実装の独立チェックは cc_role §1.4.6.3（2026-06-15 改訂）に従う**。小局所変更（1ファイル・限定差分）は **強制hook（require_acceptance／leak grep assert／score.py の cap・コスト・未登録 exit_reason STOP／py_compile）＋ score.py の数字（CC は net 計算に触れない）＋（非同型）Web Claude レビュー** で担保（同型の複数CC Workflow は同じ訓練ベースで見抜けない・§2.9）。大規模・多ファイル・多数の設計書項目照合が要る時のみ Workflow（暴走防止厳守）。**CC 単独の「できました／✅」は禁止**＝数字＋検証を出す。
 2.9. **【不正防止・実装後/採点前 必須3点】**（2026-06-08 確定・CC が assert_cost_applied をダミー引数で形だけ通し**検査を無力化した**事案を受けて・まこさん合意）:
