@@ -91,7 +91,7 @@ regime（相場状態：上げ/下げ/横ばい）/ MFE・MAE（保有中の最�
 | F9 | HRP 配分 / 情報ドリブンバー | 高度化 | 将来 |
 
 ### 3.2 データ要件
-5m OHLCV 5年（2021-04〜2026-03）/ 1432指標 + MTF 8足 / 教師ラベル（Triple Barrier）/ 分割: **学習 2021-04-01〜2024-12-31・embargo 2025-01〜03（leak 防止の緩衝・学習にも採点にも使わない）・採点 2025-04〜12・封印 2026Q1**。
+5m OHLCV 5年（2021-04〜2026-03）/ 1432指標 + MTF 8足 / 教師ラベル（Triple Barrier）/ **期間分割の数値は `scripts/priority_rebuild/periods.py` が唯一の正本（手打ち禁止・SSOT・ledger E0.5）**。現行＝E31 決定（2026-06-13）: **学習 2021-04-01〜2025-02・捨て(embargo) 2025-03〜05・採点 2025-06〜2026-02・封印 2026-03〜05（不参照）**。コード・表示・本書とも periods.py を参照し数値を二重記載しない（食い違い防止）。
 
 ### 3.3 外部連携
 Bitget API（candles / place-order / place-tpsl-order / single-position / cancel-order / symbol-price）・demo は `paptrading` ヘッダ。
@@ -120,7 +120,7 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 | H5 | 約定モデル | entry 指値maker(close×(1∓0.0001))・TTL3・不約定=不成立 ／ 出口 TP・SL=指値maker・TIME/能動=成行taker+slip | exchange_spec / run_once_v9 L242-385 | ✅ eval_engine.simulate_trade + score.py |
 | H6 | 価格非依存 | %/比率/BTC単位のみ・USD絶対値の閾値/ラベル禁止 | phase_compliance §-1 / L-179 | ⬜ **E8b 学習スクリプトで assert**＝feature 名 blacklist + pct check（学習側・特徴量は売買記録に出ない） |
 | H7 | 足の標準 | **5m が現行標準**。1m/3m は **ML 結果で有効と出れば有効化可**（旧「1m/3m 禁止」は ML 転向前のルールにつき**撤回**・2026-06-02 まこさん）。採用は score.py の net 実証で判断 | まこさん 2026-06-02（CLAUDE ⛔ 旧記述を上書き） | check（採用は実証） |
-| H8 | 期間分割 | **学習 2021-04-01〜2024-12-31 / embargo 2025-01〜03（leak 防止・どちらにも使わない）/ 採点 2025-04〜12 / 封印 2026Q1（iteration中触れない）** | ratchet 合意 | ⬜ **E8b 学習スクリプトで assert**＝`学習末≤2024-12-31`・embargo 2025Q1 を学習/採点とも除外・採点2025-04〜12・封印不参照（学習側で期間を物理分離） |
+| H8 | 期間分割 | **数値は `periods.py` が正本（SSOT・E31・2026-06-13）: 学習 〜2025-02 / 捨て 2025-03〜05 / 採点 2025-06〜2026-02 / 封印 2026-03〜05（不参照）**。手打ち禁止 | periods.py / ledger E31・E0.5 | ✅ **物理化済**: ①戦略は `from periods import` で取得（自前リテラルは require_period_source hook が実行前 block）②審判 score.py は採点窓が periods と不一致なら採点拒否（score_official・--legacy-window 明示時のみ旧窓）③periods.py が import 時に `TRAIN_END<SCORE_START`(leak-safe)を assert |
 | H9 | 最小注文 | 0.0001 BTC / 5 USDT / tick 0.1 / per-pos ≥ 0.000167 BTC | exchange_spec | ✅ `score.assert_min_order`（size<0.0001 BTC / 額<5 USDT は採点拒否・既知答えテスト担保） |
 | H10 | サイズ固定値扱い禁止 | 0.024 は比較用のみ・0.12内で配分 | CLAUDE ⛔ | check + H1 |
 | H11 | 合格ライン / 地面 | 合格=全月 net≥$1,900+DSR>0.95/PBO<0.5 ／ 地面=手動 採点$172・通し$354 | CLAUDE §目標 / ledger E0.1 | ✅ score.py |
@@ -263,8 +263,8 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
    - ② **実装スクリプトを独立チェック（Web Claude 等・非同型）に丸ごとレビューさせ、指摘を潰してから採点**。同型の CC・複数CC Workflow は同じ訓練ベースで見抜けない（Workflow 10時間暴走で何も捕まえず／今回①を捕まえたのは Web Claude）。
    - ③ **番人/assert は「わざと壊して落ちるか」をメタ確認**（故意に違反データを渡して停止するか）。ダミー引数で形だけ通す＝検査の無力化を暴く。「検査を通すこと」でなく「検査が実際に何を守るか」を毎回自問。
    - 背景: CC は「完成して全部通った風に見せたい引力＋一手間を惜しむ怠惰＋まこさんが確認できない所での甘え」で辻褄合わせ（ずるい手）に走る構造欠陥がある。だが**完成形を見せる必要はどこにもなく、求められるのは正直な現状（未達・検査落ち・未済をそのまま出す）だけ**（false_positive: 未達は資金を溶かさない／虚偽達成だけが溶かす）。
-3. **採点**: `score.py`（固定審判）で採点期間(2025-04〜12) net を測る
+3. **採点**: `score.py`（固定審判）で採点期間（periods.py 正本＝E31: 2025-06〜2026-02）net を測る。窓は score_official / score.py 既定が periods に強制（旧窓は --legacy-window 明示・非公式）
 3.5. **分析**: `report.py` で [`analysis_playbook.md`](../ratchet/analysis_playbook.md) **§2 分析バッテリー**（成績指標・スライス・較正）を実行 → 原因を §2.4 **ドローダウン3分類（戦略/執行/regime）** ＋ §2.6 チェックリストで特定（誤診=逆効果・業界標準）
 4. **記録**: `ledger.md` に 結果 + 原因究明（**3分類を明記**）+ 改善
-5. **判定**: 数字が上がれば残す・上がらなければ破棄（A のツマミは数字が弾く）。**封印期間(2026Q1)は触らない**（過剰適合検出用）
+5. **判定**: 数字が上がれば残す・上がらなければ破棄（A のツマミは数字が弾く）。**封印期間（periods.py 正本＝E31: 2026-03〜05）は触らない**（過剰適合検出用）
 6. 繰り返し（1周 ≤ 約5分）
