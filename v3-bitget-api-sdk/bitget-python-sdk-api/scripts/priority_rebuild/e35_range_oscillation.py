@@ -201,22 +201,24 @@ def _record_lots(trades, pos, lots, exit_price, reason, exit_idx, ts_arr):
     adx_e = round(float(pos["adx_entry"]), 3) if np.isfinite(pos["adx_entry"]) else None
     k_e = round(float(pos["k_entry"]), 2) if np.isfinite(pos["k_entry"]) else None
     w_e = round(float(pos["W_entry"]), 5) if np.isfinite(pos["W_entry"]) else None
-    for lot_idx, lot_price in lots:
+    for lot in lots:
+        lot_idx, lot_price = lot[0], lot[1]
+        lot_size = lot[2] if len(lot) > 2 else UNIT      # iter7 分数部分決済（add1 を 0.012 等に分割）・後方互換（pair なら UNIT）
         entry_ts = pd.Timestamp(ts_arr[lot_idx]); lp = float(lot_price)
-        gross = (exit_px - lp) * UNIT * sdir
-        entry_fee = lp * UNIT * ee.MAKER_FEE             # entry は指値 maker
-        exit_fee = exit_px * UNIT * (ee.TAKER_FEE if is_taker else ee.MAKER_FEE)
-        slip = (exit_px * UNIT * ee.SLIPPAGE) if is_taker else 0.0
-        funding = _funding_cost(sdir, entry_ts, exit_ts, UNIT, lp)
+        gross = (exit_px - lp) * lot_size * sdir
+        entry_fee = lp * lot_size * ee.MAKER_FEE         # entry は指値 maker
+        exit_fee = exit_px * lot_size * (ee.TAKER_FEE if is_taker else ee.MAKER_FEE)
+        slip = (exit_px * lot_size * ee.SLIPPAGE) if is_taker else 0.0
+        funding = _funding_cost(sdir, entry_ts, exit_ts, lot_size, lp)
         net = gross - entry_fee - exit_fee - slip - funding
         trades.append({
             "entry_time": entry_ts, "exit_time": exit_ts, "side": side,
             "priority": PRIORITY, "regime": "range", "position_id": pos_id, "add_count": add_count,
-            "size_btc": round(UNIT, 6), "entry_price": round(lp, 2), "exit_price": round(exit_px, 2),
+            "size_btc": round(lot_size, 6), "entry_price": round(lp, 2), "exit_price": round(exit_px, 2),
             "exit_reason": reason, "hold_min": int((exit_idx - lot_idx) * 5),
             "atr_14": atr14, "adx_at_entry": adx_e, "stoch_k_at_entry": k_e, "box_W_pct_at_entry": w_e,
             "entry_hour": int(entry_ts.hour), "entry_weekday": int(entry_ts.weekday()),
-            "mfe_usd": round((max_fav - lp) * UNIT * sdir, 4),
+            "mfe_usd": round((max_fav - lp) * lot_size * sdir, 4),
             "gross_usd": round(gross, 4), "fee_usd": round(entry_fee + exit_fee + slip, 4), "net_usd": round(net, 4),
         })
 
@@ -286,7 +288,7 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
     A = _hold_arrays(df, box_tf) if (hold_ctx is not None or be_gate is not None or partial_tp is not None) else None   # 保有中判定 ML 特徴の素
     _hm, _hf, _hth = hold_ctx if hold_ctx is not None else (None, None, None)
     _bm, _bf, _bth = be_gate if be_gate is not None else (None, None, None)   # iter5a 建値撤退の武装ゲート（諦め除外）
-    _pm, _pf, _pgate, _ptp = partial_tp if partial_tp is not None else (None, None, None, None)   # iter6 部分利確（死ぬ判別玉の前半含み益を1ロット maker 利確）
+    _pm, _pf, _pgate, _ptp, _pfrac = partial_tp if partial_tp is not None else (None, None, None, None, None)   # iter6 部分利確＋iter7 add1_frac（add1 単一ロットを 0.012 等に分数部分決済・None=iter6 恒等）
 
     trades = []
     pos = {"LONG": None, "SHORT": None}
@@ -307,7 +309,7 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
                          "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i], "W_entry": Wpct[i],
                          "max_fav": h[i] if side == "LONG" else l[i], "extended": False, "be_armed": False,
                          "partial_done": False,           # iter6 部分利確を1玉1回に制限
-                         "lots": [(i, fp)]}               # ★fill 単位記録（each lot＝その fill 時刻・size UNIT）
+                         "lots": [(i, fp, UNIT)]}         # ★fill 単位記録（each lot＝(fill 時刻, 価格, size)・iter7 で size 可変＝分数部分決済）
             events.append((pd.Timestamp(ts[i]), UNIT))
         else:
             if held_total() + UNIT > CAP + 1e-9:          # ★cap=LONG+SHORT 合算で停止（H1）
@@ -315,7 +317,7 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
             p = pos[side]; new_sz = p["size"] + UNIT
             p["avg"] = (p["avg"] * p["size"] + fp * UNIT) / new_sz
             p["size"] = new_sz; p["add_count"] += 1; p["last_fill_idx"] = i
-            p["lots"].append((i, fp))                     # ★fill 単位記録
+            p["lots"].append((i, fp, UNIT))               # ★fill 単位記録（size 付き triple）
             events.append((pd.Timestamp(ts[i]), UNIT))
 
     for i in range(n):
@@ -354,17 +356,28 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
                 events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
                 continue
             if not p["extended"]:
-                # iter6 部分利確（賢いB）: 死ぬ判別玉(_pm.predict<θ_gate)が前半に小利TP(avg±k_tp・maker)に到達したら 1ロットだけ maker 利確。
-                #   残りは avg 不変で現行出口へ（勝ち判別玉は触らない＝運び無傷／玉会計=部分1+残りで総size保存）。1玉1回。≥2ロットのみ。
-                if _pm is not None and not p["partial_done"] and len(p["lots"]) >= 2 and np.isfinite(Cc[i]):
+                # iter6/iter7 部分利確（賢いB）: 死ぬ判別玉(_pm.predict<θ_gate)が前半に小利TP(avg±k_tp・maker)に到達したら maker 利確。
+                #   残りは avg 不変で現行出口へ（勝ち判別玉は触らない＝運び無傷／玉会計=部分+残りで総size保存）。1玉1回。
+                #   iter6=多ロット(≥2)を1ロット(UNIT)pop ／ iter7=add1(単一ロット)を _pfrac 指定時に分数(UNIT*_pfrac)決済。
+                n_lots = len(p["lots"])
+                if _pm is not None and not p["partial_done"] and np.isfinite(Cc[i]) and \
+                        (n_lots >= 2 or (_pfrac is not None and n_lots == 1)):   # iter7: add1(単一ロット)も _pfrac 指定時は対象
                     ptp = avg * (1.0 + _ptp) if side == "LONG" else avg * (1.0 - _ptp)
                     hit_ptp = (side == "LONG" and h[i] >= ptp) or (side == "SHORT" and l[i] <= ptp)
                     if hit_ptp and _pm.predict(np.asarray(
                             [_hold_feat_vec(A, sdir, avg, p["first_idx"], p["add_count"], i)]))[0] < _pgate:
-                        lot = p["lots"].pop()                       # 1ロット部分決済（avg は不変＝残り平均そのまま・triggers 正しい）
-                        _record_lots(trades, p, [lot], ptp, "PARTIAL_TP", i, ts)
-                        p["size"] -= UNIT
-                        events.append((pd.Timestamp(ts[i]), -UNIT))
+                        if n_lots >= 2:
+                            lot = p["lots"].pop()                   # iter6: 1ロット(UNIT)部分決済（avg 不変＝恒等・multi-lot 経路は不変）
+                            _record_lots(trades, p, [lot], ptp, "PARTIAL_TP", i, ts)
+                            p["size"] -= UNIT
+                            events.append((pd.Timestamp(ts[i]), -UNIT))
+                        else:                                       # iter7: add1 単一ロットを分数(close_sz=UNIT*_pfrac)部分決済・残りを継続
+                            li, lp_, lsz = p["lots"][0]
+                            close_sz = UNIT * _pfrac
+                            _record_lots(trades, p, [(li, lp_, close_sz)], ptp, "PARTIAL_TP", i, ts)
+                            p["lots"][0] = (li, lp_, lsz - close_sz)  # 残り size を継続（avg 不変・size 保存=close_sz+(lsz-close_sz)=lsz）
+                            p["size"] -= close_sz
+                            events.append((pd.Timestamp(ts[i]), -close_sz))
                         p["partial_done"] = True
                 # 中心 C へ戻り（C が建値±床を超える時だけ武装）＝勝ち延長アーム（即決済しない・この bar は保持・次 bar から延長判定）
                 armed = np.isfinite(Cc[i]) and ((side == "LONG" and Cc[i] >= avg * (1.0 + COST_FLOOR)) or
@@ -690,48 +703,57 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
     booster = model.booster_
     print(f"  教師(iter3基底) {bt['position_id'].nunique()} 玉 / 学習スナップ {len(tr):,} / 戻る率 {tr.label.mean():.3f}")
 
-    # ② 自己検査(a) 恒等: θ_gate=-1（partial 不発火）で iter5a と net 一致
+    # ② 自己検査(a) 恒等: θ_gate=-1（partial 不発火）+ add1_frac=None で iter5a と net 一致（5要素 plumbing + lot triple を検証）
     df_tr = df[df.ts < TRAIN_END].reset_index(drop=True)
     base5a, _ = run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH))
     base5a_net = float(pd.DataFrame(base5a)["net_usd"].sum())
-    chk, _ = run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, -1.0, 0.0015))
+    chk, _ = run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, -1.0, 0.0015, None))
     chk_net = float(pd.DataFrame(chk)["net_usd"].sum())
     ok_a = abs(chk_net - base5a_net) < 1e-6
-    print(f"  [自己検査a 恒等] θ_gate=-1(不発火) net ${chk_net:.2f} == iter5a ${base5a_net:.2f} : {'✅' if ok_a else '⛔不一致'}")
+    print(f"  [自己検査a 恒等] θ_gate=-1(不発火)+add1_frac=None net ${chk_net:.2f} == iter5a ${base5a_net:.2f} : {'✅' if ok_a else '⛔不一致'}")
     assert ok_a, "partial 不発火が iter5a と不一致＝恒等崩れ"
 
-    # ③ θ_gate × k_tp グリッド（学習窓 純増最大・採点窓不参照）
+    # ③ θ_gate × k_tp グリッド（add1_frac=0.5 固定・学習窓 純増最大・採点窓不参照）
+    ADD1_FRAC = 0.5   # iter7: add1 単一ロットを半分(0.012)だけ部分利確（残り 0.012 を現行出口へ継続）
     base_edge = int((pd.DataFrame(base5a)["exit_reason"] == "EDGE_TP").sum())
     base_cen = int((pd.DataFrame(base5a)["exit_reason"] == "CENTER_LOCK").sum())
-    print(f"  学習窓 iter5a(baseline) net ${base5a_net:.0f} / EDGE {base_edge} CENTER {base_cen}（純増の基準・be_th={BE_TH}）")
+    print(f"  学習窓 iter5a(baseline) net ${base5a_net:.0f} / EDGE {base_edge} CENTER {base_cen}（純増の基準・be_th={BE_TH}・add1_frac={ADD1_FRAC}）")
     best = None
     for tg in [0.30, 0.40, 0.50]:
         for k in [0.0010, 0.0015, 0.0020]:
-            q, _ = run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, tg, k))
+            q, _ = run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, tg, k, ADD1_FRAC))
             qd = pd.DataFrame(q); net = float(qd["net_usd"].sum())
             ptp = int((qd["exit_reason"] == "PARTIAL_TP").sum())
+            ptp_a1 = int(((qd["exit_reason"] == "PARTIAL_TP") & (qd["add_count"] == 1)).sum())  # add1(単一ロット)分の部分利確＝iter7 射程
             edge = int((qd["exit_reason"] == "EDGE_TP").sum()); cen = int((qd["exit_reason"] == "CENTER_LOCK").sum())
             gain = net - base5a_net
-            print(f"   θ_gate={tg} k_tp={k}: net ${net:.0f}（純増 {gain:+.0f}）/ PARTIAL_TP {ptp} / EDGE {edge} CENTER {cen}")
+            print(f"   θ_gate={tg} k_tp={k}: net ${net:.0f}（純増 {gain:+.0f}）/ PARTIAL_TP {ptp}(add1 {ptp_a1}) / EDGE {edge} CENTER {cen}")
             if best is None or gain > best[0]:
                 best = (gain, tg, k)
     gain, btg, bk = best
-    print(f"  → θ_gate*={btg} k_tp*={bk}（学習窓 純増 {gain:+.0f}）")
+    print(f"  → θ_gate*={btg} k_tp*={bk} add1_frac={ADD1_FRAC}（学習窓 純増 {gain:+.0f}・基準=iter5a）")
     if gain <= 0:
-        print("  ⚠️ 学習窓 純増がプラスでない＝採用せず（iter5a 維持）。次案へ（add1 は射程外＝別iter）。")
+        print("  ⚠️ 学習窓 純増がプラスでない＝採用せず（iter6/iter5a 維持）。候補(b) add1 早期建値へ。")
 
-    # ④ 全期間 再走 → 自己検査(b)玉会計保存 → cap → 出力
-    trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk))
+    # ②' 自己検査(a2) lever-bites（§2.9③ メタ確認）: 同 params で add1_frac=None(=iter6 経路) と 0.5 が異なり add1 PARTIAL が発火するか
+    q6 = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, None))[0])
+    q7 = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, ADD1_FRAC))[0])
+    n6 = float(q6["net_usd"].sum()); n7 = float(q7["net_usd"].sum())
+    a1fire = int(((q7["exit_reason"] == "PARTIAL_TP") & (q7["add_count"] == 1)).sum())
+    print(f"  [自己検査a2 lever-bites] add1_frac=None(iter6経路) net ${n6:.0f} → =0.5 net ${n7:.0f}（add1 由来 {n7-n6:+.0f}）/ add1 PARTIAL {a1fire}件 : {'✅効いている' if a1fire > 0 else '⚠️add1 不発火＝射程に玉なし'}")
+
+    # ④ 全期間 再走 → 自己検査(b)size 保存 → cap → 出力
+    trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, ADD1_FRAC))
     t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
-    rc = t.groupby("position_id").agg(nrows=("net_usd", "size"), addc=("add_count", "max"))
-    bad = int((rc["nrows"] != rc["addc"]).sum())
-    print(f"  [自己検査b 玉会計] 行数≠add_count の玉 {bad}（0=総ロット数保存 ✅）")
-    assert bad == 0, "玉会計保存違反（部分+残りの行数が add 総数と不一致）"
+    rc = t.groupby("position_id").agg(sz=("size_btc", "sum"), addc=("add_count", "max"))
+    bad = int((np.abs(rc["sz"] - rc["addc"] * UNIT) > 1e-9).sum())
+    print(f"  [自己検査b size保存] Σsize_btc≠add_count×UNIT の玉 {bad}（0=総量保存 ✅・分数部分決済でも total notional 不変）")
+    assert bad == 0, "size 保存違反（部分+残りの size 合計が add_count×UNIT と不一致）"
     mx = _verify_cap(trades)
     print(f"  [自己検査c cap] 同時保有 max = {mx:.4f} BTC {'✅' if mx <= CAP + 1e-9 else '⛔超過'}（予算 {CAP}）")
     assert mx <= CAP + 1e-9, f"同時保有 {mx:.4f} > cap {CAP}"
-    print(f"  約定 {len(t)} / 出口 {dict(t['exit_reason'].value_counts())} / θ_gate*={btg} k_tp*={bk}")
-    _output_and_report(t, f"_{box_tf}_iter6")
+    print(f"  約定 {len(t)} / 出口 {dict(t['exit_reason'].value_counts())} / θ_gate*={btg} k_tp*={bk} add1_frac={ADD1_FRAC}")
+    _output_and_report(t, f"_{box_tf}_iter7")
 
 
 def main():
