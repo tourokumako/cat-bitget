@@ -18,7 +18,7 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-## 1. hook 一覧（22本・登録は settings.local.json）
+## 1. hook 一覧（23本・登録は settings.local.json）
 
 | hook | タイミング | matcher | 役割 |
 |---|---|---|---|
@@ -39,7 +39,8 @@
 | block_uchikiri | PreToolUse | Write/Edit | アジャイル放棄を表す語をブロック（語一覧は実体参照） |
 | require_precheck_before_score | PreToolUse | Bash | score.py を CLI 実行する前に precheck PASS を要求 |
 | require_design_contract_before_run | PreToolUse | Bash | 戦略実行の前に DESIGN_CONTRACT で実装を機械照合 |
-| pdca_mark | PostToolUse | Bash/Edit/Write | コマンド名で審判/分析/記録の旗を立てる/下ろす |
+| require_period_source | PreToolUse | Bash | priority_rebuild の .py 実行前に、期間境界(TRAIN_END/SC_START/SCORE_START/SCORE_END/SEAL_START/EMBARGO)が periods.py 由来でない自前定義ならブロック（期間ズレ根絶・E0.5・2026-06-18） |
+| pdca_mark | PostToolUse | Bash/Edit/Write | コマンド名で審判/分析/記録の旗を立てる/下ろす（--smoke/--no-score/--selftest は審判検知から除外・2026-06-18） |
 | pdca_gate | Stop | — | 旗の残存でターン終了をブロック |
 | approve_impl | （まこさんが実行） | — | acceptance の承認指紋を立てる |
 | require_workflow_for_impl | （未登録） | — | 撤回済み（cc_role §1.4.6.3・複数CC Workflow 常時必須を廃止） |
@@ -65,6 +66,7 @@
 ### D. python 実行の前（PreToolUse Bash）
 - **require_precheck_before_score**: score.py を CLI 実行する前に precheck の PASS が要る。
 - **require_design_contract_before_run**: 戦略スクリプトを実行する前に、設計書/acceptance.md の DESIGN_CONTRACT で実装を機械照合（verify_design_contract.py）→FAIL=実行ブロック。★設計↔実装照合はここ（詳細 §3）。
+- **require_period_source**: priority_rebuild の .py を実行する前に、検証期間の境界（TRAIN_END/SC_START/SCORE_START/SCORE_END/SEAL_START/EMBARGO）を periods.py から取らず自前定義（pd.Timestamp リテラル・e34v1.TRAIN_END 等）していたらブロック。★期間の手打ち禁止＝期間ズレ根絶（periods.py が唯一の正本＝SSOT・審判 score.py の正本窓ゲート score_official と対・ledger E0.5・2026-06-18）。periods.py 自身は除外。限界＝正規表現ベース（別名はすり抜けうる・審判窓ゲート＋まこさんの目と併せて担保）。
 
 ### E. 審判 → 分析 → 記録（PostToolUse pdca_mark が旗を操作・Stop pdca_gate が未閉じをブロック）
 pdca_mark は**コマンド名の正規表現**で検知する:
@@ -112,6 +114,7 @@ pdca_mark / require_design_contract の検知は全部「**コマンド名・imp
 - **実験**スクリプト名は `strat_` / `train_` / `measure_` で始める。外れる名前（戦略本体に E35 のような連番名を付ける）を作るなら、pdca_mark に明示登録する。
 - **審判**は `score.py` を CLI で通す。gate 外の `score.score(df)` を別名スクリプトで呼ぶなら、その呼び出しを pdca_mark の審判検知に登録する。
 - **分析**は `analyze.py` を通す。専用分析（`*_deep_analysis.py` 等）を使うなら need_analyze / need_analyze_report の解除対象に登録する。
+- **検証期間**（学習/捨て/採点/封印の境界）は `periods.py` から import する（自前で日付リテラルを書かない）。自前定義は require_period_source が実行前にブロック。表示文字列も periods から組み立てる（手打ちしない）。＝期間ズレ根絶の SSOT（ledger E0.5）。
 
 ---
 
