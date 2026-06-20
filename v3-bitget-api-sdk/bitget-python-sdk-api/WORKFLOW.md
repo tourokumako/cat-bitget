@@ -2,7 +2,17 @@
 
 ---
 
-## 🔴 現在地（2026-06-19 改訂91＝report に使用パラメータ＋Entry/Exit ロジックを出す汎用サイドカー整備＋iter7 玉単位深掘りで iter8 方向を修正・依然赤字＝継続）
+## 🔴 現在地（2026-06-20 改訂92＝E35 iter8「部分利確の目標を deadline 接近で建値へ縮める」採用＝採点窓で初の net プラス側 月+$0.77・依然建値＝継続）
+
+> **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（本筋・確定・やってはいけない・出典が集約）。
+> - **前提 probe（e35_timeexit_separation_probe.py・採点なし）**: 順行玉の「取り逃し(TIME_EXIT&mfe>$2) vs 中心到達」を保有中材料で分離＝全バー AUC 0.88・**time_left は分類寄与ゼロ(rank20/20＝bars_held が時間を持つ)**・バー帯別で**半deadline(12-24本) AUC 0.83**＝早期不分離・中盤判別可。→ iter8 を「特徴追加」でなく「時間で出口目標を縮める」へ修正。
+> - **iter8 採用（ledger E35 iteration-8）**: 部分利確 ptp=avg×(1±k_tp×r)・r=残り時間比・建値フロア（arxiv 1707.03498 deadline shrink）。判別は既存 hold-ML 不変・新特徴なし。公式 score.py **+$6.96 / 月平均 +$0.77**（iter7 −$7.53/−$0.84 から **両窓改善**＝学習窓 +$125／採点窓 +$14.49）・**845玉 3.12取引/日 維持（非degenerate）**・勝率 69.7→72.5%。自己検査全✅（a3 shrink lever-bites・既定OFF=iter7 恒等）。
+> - **依然黒字戦略でない**（N5 ブートストラップ 0跨ぎ・不足 0.0pt＝建値・breakeven 1.10 WARN・時間切れ本体 −$4,160 残存）→ ratchet 継続。
+> - **次（iter9）**: iter8 後の TIME_EXIT を玉単位で MFE 再分割（取り逃し残り vs 順行せず片流れ −$1,917）→ 本体側の1レバー選定。⛔ 入口 atr×box_W／entry 時点 atr で切らない（ボラ逃げ H15・両窓×）・time_left を分類特徴に足さない（probe で寄与ゼロ）。
+> - 地面（E31 窓・E35 と同じ土俵）: SHORT 合算 E32b 月$616.55／P21 $401.51／P23 $241.72。判定=score.py。
+> - **⚠️ CC への警告（L-294）**: ①分析の第一仮説は玉単位で検証（probe で「time_left を分類特徴に足す」案を否定＝結論前に潰した）②時間は分類特徴(無価値)と出口目標の縮小変数(有効)を区別 ③probe(採点なし)と本実験(採点起動)を混同しない。
+
+## 🧊 改訂91 ブロック（履歴・参照用）（2026-06-19＝report に使用パラメータ＋Entry/Exit ロジックを出す汎用サイドカー整備＋iter7 玉単位深掘りで iter8 方向を修正・依然赤字＝継続）
 
 > **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（本筋・確定・やってはいけない・出典が集約）。
 > - **report 節0「使用パラメータ」整備（汎用・commit 済）**: 各戦略が実使用の指標/閾値/TP/SL/TimeExit＋Entry/Exit ロジックを `<csv>_params.json` に書き出し（`params_sidecar.write_sidecar`）、report.py が戦略名非依存で表示。表記は単位明示（48本=240分）＋TP/SL判定文＋**固定値/学習を分離**。E35 が手本＝E36/E37 も同パターン（acceptance_checklist D・pdca_flow §5 に規約化）。pdca_mark に py_compile 除外。
