@@ -115,7 +115,7 @@ net(審判) / 月平均 / NET日次 / 勝率 / 最大DD / 最大連敗 / 日次�
 - **ratchet 直下 = 現役のみ**（現役入力 ＋ 最新実験の出力だけ）。過去実験の出力は `results/priority_rebuild/ratchet/archive/` へ退避する。
 - **生CSV（`trades_*`・売買記録）= 上書き / 最新のみ直下**。重い・再現は ledger のコマンドで再生成できる中間生成物。各実験後、前実験の生CSVは archive へ move。
 - **記録（`report_*.txt` / `*_learned_params.json`）= E番号付きで残す**（履歴を消さない）。例: `report_trades_E08_*.txt` / `p23_learned_params_E08.json`。report.py は入力CSV名から自動命名するので、**戦略スクリプトの出力CSV名に E番号(E08等)を入れれば report も自動でE番号付き**になる（ledger の実験番号と1対1で対応＝後から探せる）。
-- **現役入力（消さない・直下常駐）**: `trades_p23_full_test.csv`（地面＝V9手書きP23 $1943・比較の相手）/ `p23_candidates_*.csv`（学習素材）。
+- **現役入力（消さない・直下常駐）**: 現ベースの売買記録一式（現在＝`trades_e35_oscillation_5m_iter9*`＝E35 iter9 base・次イテレーションの --vs 比較相手）。⚠️ 旧 P23 系（`trades_p23_full_test.csv` / `p23_candidates_*.csv`）や旧地面 CSV は archive へ退避済（P23 作業は閉じ・採用地面は P21/P23/E32b の newwin＝archive・2026-06-20）。現役入力は「今のベース戦略の出力」に随時更新する（古い戦略の入力を直下に残さない）。
 - **手順**: 新実験を回す前に、前実験の `trades_*`・記録を `archive/` へ move → 新実験を直下に出力 → 採点 → 分析。
 - **★スクリプト(.py)も同じ思想で整理（2026-06-20 まこさん確定・155本でぐちゃぐちゃ事案）**: `scripts/priority_rebuild/` 直下 = **採用戦略 ＋ 判定器/共通基盤 ＋ それらが import で依存するモジュールのみ**。破棄/旧実験の .py は `scripts/priority_rebuild/archive/` へ `git mv`（履歴保持）。
   - **残す基準＝import closure**: 採用戦略（adopted_strategies.md 参照）と判定器（score/eval_engine/precheck/report/analyze/periods/params_sidecar/verify_design_contract/ratchet_guards/test_*/build_labels_pct/preload_cache）を根に、import を辿って到達する .py だけ直下。到達しない .py は archive へ。
