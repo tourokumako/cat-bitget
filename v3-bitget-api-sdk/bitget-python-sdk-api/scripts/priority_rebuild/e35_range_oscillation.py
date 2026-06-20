@@ -293,6 +293,7 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
     _ptup = partial_tp if partial_tp is not None else (None, None, None, None, None, None)
     _pm, _pf, _pgate, _ptp, _pfrac = _ptup[:5]   # iter6 部分利確＋iter7 add1_frac（add1 単一ロットを 0.012 等に分数部分決済・None=iter6 恒等）
     _pshrink = _ptup[5] if len(_ptup) > 5 else None   # iter8: True で部分利確目標 ptp を残り時間で建値へ線形に縮める（None/False=iter7 固定 ptp 恒等・arxiv 1707.03498・後方互換 5要素タプルは縮めない）
+    _pfull = _ptup[6] if len(_ptup) > 6 else None   # iter9: True で縮む目標到達時に残り全玉を maker 決済（理論=境界で全閉鎖最適・arxiv 1707.03498 Thm3.3・None/False=iter8 恒等・後方互換 6要素タプルは全閉鎖しない）
 
     trades = []
     pos = {"LONG": None, "SHORT": None}
@@ -376,6 +377,11 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
                     hit_ptp = (side == "LONG" and h[i] >= ptp) or (side == "SHORT" and l[i] <= ptp)
                     if hit_ptp and _pm.predict(np.asarray(
                             [_hold_feat_vec(A, sdir, avg, p["first_idx"], p["add_count"], i)]))[0] < _pgate:
+                        if _pfull:                                  # iter9: 縮む目標到達で残り全玉を ptp で maker 決済（理論=境界で全閉鎖最適・arxiv 1707.03498 Thm3.3・判別ゲートは不変＝勝ち判別玉は触らない）
+                            _record_lots(trades, p, list(p["lots"]), ptp, "PARTIAL_TP", i, ts)
+                            events.append((pd.Timestamp(ts[i]), -p["size"]))
+                            pos[side] = None
+                            continue
                         if n_lots >= 2:
                             lot = p["lots"].pop()                   # iter6: 1ロット(UNIT)部分決済（avg 不変＝恒等・multi-lot 経路は不変）
                             _record_lots(trades, p, [lot], ptp, "PARTIAL_TP", i, ts)
@@ -745,7 +751,7 @@ def run_hold_ml(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
     _output_and_report(t, f"_{box_tf}_holdml")
 
 
-def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = False) -> None:
+def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = False, full: bool = False) -> None:
     """iteration-6/7 賢いB: 死ぬ判別玉の前半含み益を maker 部分利確（be_gate booster 流用・iter5a の上に重畳・acceptance）。
     教師=建値撤退OFF(iter3基底)→booster（iter5a と同一手順）。be_th=0.40（iter5a 確定・a-priori 固定）。
     θ_gate × k_tp を学習窓『純増(partial − iter5a)』最大で選定（採点窓不参照・ML/学習窓選定=L-267対象外）。
@@ -758,7 +764,8 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
     A = _hold_arrays(df, box_tf)
     idx_of = {x: i for i, x in enumerate(df["ts"].tolist())}
     feats = _HOLD_FEATS; BE_TH = 0.40
-    SH = bool(shrink); TAG = "iter8" if SH else "iter7"   # iter8=部分利確目標を deadline 接近で縮める / iter7=固定 ptp
+    SH = bool(shrink); FU = bool(full)
+    TAG = "iter9" if FU else ("iter8" if SH else "iter7")   # iter9=縮む目標到達で残り全玉を全閉鎖 / iter8=ptp を deadline 接近で縮める / iter7=固定 ptp
 
     # ① 教師＝iter3基底（建値撤退OFF）→ booster（iter5a と同一手順）
     saved = BE_ARM_BARS; BE_ARM_BARS = 10 ** 9
@@ -805,7 +812,7 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
     best = None
     for tg in [0.30, 0.40, 0.50]:
         for k in [0.0010, 0.0015, 0.0020]:
-            q, _ = run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, tg, k, ADD1_FRAC, SH))
+            q, _ = run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, tg, k, ADD1_FRAC, SH, FU))
             qd = pd.DataFrame(q); net = float(qd["net_usd"].sum())
             ptp = int((qd["exit_reason"] == "PARTIAL_TP").sum())
             ptp_a1 = int(((qd["exit_reason"] == "PARTIAL_TP") & (qd["add_count"] == 1)).sum())  # add1(単一ロット)分の部分利確＝iter7 射程
@@ -832,8 +839,16 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
         p_on = int((q7["exit_reason"] == "PARTIAL_TP").sum())
         print(f"  [自己検査a3 shrink lever-bites] shrink OFF(=iter7) net ${n_off:.0f}/PARTIAL {p_off} → ON(=iter8) net ${n7:.0f}/PARTIAL {p_on}（縮み由来 {n7-n_off:+.0f}・PARTIAL {p_on-p_off:+d}件）: {'✅効いている（OFF≠ON）' if p_on != p_off or abs(n7-n_off) > 1e-6 else '⚠️縮みが射程に玉なし'}")
 
+    if FU:   # 自己検査(a4) iter9 lever-bites: 同 θ/k で full OFF(=iter8) と ON(=iter9) を比べ、全閉鎖が取り逃し玉を時間切れから救う（恒等でない＝効いている）
+        q8 = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, False))[0])
+        q9 = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, True))[0])
+        n8 = float(q8["net_usd"].sum()); n9 = float(q9["net_usd"].sum())
+        te8 = int((q8["exit_reason"] == "TIME_EXIT").sum()); te9 = int((q9["exit_reason"] == "TIME_EXIT").sum())
+        pt8 = int((q8["exit_reason"] == "PARTIAL_TP").sum()); pt9 = int((q9["exit_reason"] == "PARTIAL_TP").sum())
+        print(f"  [自己検査a4 full lever-bites] full OFF(=iter8) net ${n8:.0f}/TIME {te8}/PARTIAL {pt8} → ON(=iter9) net ${n9:.0f}/TIME {te9}/PARTIAL {pt9}（全閉鎖由来 {n9-n8:+.0f}・TIME {te9-te8:+d}・PARTIAL {pt9-pt8:+d}）: {'✅効いている（OFF≠ON・取り逃し玉を時間切れから救う）' if (te9 != te8 or abs(n9-n8) > 1e-6) else '⚠️全閉鎖が射程に玉なし'}")
+
     # ④ 全期間 再走 → 自己検査(b)size 保存 → cap → 出力
-    trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH))
+    trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU))
     t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
     rc = t.groupby("position_id").agg(sz=("size_btc", "sum"), addc=("add_count", "max"))
     bad = int((np.abs(rc["sz"] - rc["addc"] * UNIT) > 1e-9).sum())
@@ -842,10 +857,12 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
     mx = _verify_cap(trades)
     print(f"  [自己検査c cap] 同時保有 max = {mx:.4f} BTC {'✅' if mx <= CAP + 1e-9 else '⛔超過'}（予算 {CAP}）")
     assert mx <= CAP + 1e-9, f"同時保有 {mx:.4f} > cap {CAP}"
-    print(f"  約定 {len(t)} / 出口 {dict(t['exit_reason'].value_counts())} / θ_gate*={btg} k_tp*={bk} add1_frac={ADD1_FRAC} shrink={SH}")
+    print(f"  約定 {len(t)} / 出口 {dict(t['exit_reason'].value_counts())} / θ_gate*={btg} k_tp*={bk} add1_frac={ADD1_FRAC} shrink={SH} full={FU}")
     _xp = {"be_th": BE_TH, "θ_gate*": btg, "k_tp*": bk, "add1_frac": ADD1_FRAC}
     if SH:
         _xp["ptp_shrink（部分利確目標の時間縮小）"] = "iter8: ptp=avg×(1±k_tp×r)・r=(HOLD_5M−経過バー)/HOLD_5M（線形・a-priori）・建値でフロア"
+    if FU:
+        _xp["full_close（縮む目標到達で全閉鎖）"] = "iter9: 死ぬ判別玉が縮む目標 ptp に到達したら 1ロット/半分でなく残り全玉を maker 決済（理論=境界で全閉鎖最適・arxiv 1707.03498 Thm3.3）"
     _output_and_report(t, f"_{box_tf}_{TAG}", extra_params=_xp)
 
 
@@ -861,6 +878,7 @@ def main():
     ap.add_argument("--be-gate", action="store_true", help="iteration-5(a) 諦め除外: hold-ML を建値撤退の武装ゲートに（python3.13）")
     ap.add_argument("--partial-tp", action="store_true", help="iteration-6/7 賢いB: 死ぬ判別玉の前半含み益を maker 部分利確（iter5a 重畳・python3.13）")
     ap.add_argument("--iter8", action="store_true", help="iteration-8: 部分利確目標 ptp を deadline 接近で建値へ縮める（取り逃し玉の時間依存小利確定・python3.13）")
+    ap.add_argument("--iter9", action="store_true", help="iteration-9: 縮む目標到達で死ぬ判別玉の残り全玉を maker 決済（取り逃しの取り分を全閉鎖へ・arxiv 1707.03498 Thm3.3・python3.13）")
     a = ap.parse_args()
     BE_ARM_BARS = a.be_arm_bars
 
@@ -887,8 +905,8 @@ def main():
     if a.be_gate:                                    # iteration-5(a) 諦め除外: 建値撤退の武装ゲート
         run_be_gate(df, a.box_tf, a.max_adds); print("=" * 100); return
 
-    if a.partial_tp or a.iter8:                       # iteration-6/7 部分利確（iter8=部分利確目標を deadline で縮める）
-        run_partial_tp(df, a.box_tf, a.max_adds, shrink=a.iter8); print("=" * 100); return
+    if a.partial_tp or a.iter8 or a.iter9:            # iteration-6/7 部分利確（iter8=目標を縮める / iter9=縮む目標到達で全閉鎖）
+        run_partial_tp(df, a.box_tf, a.max_adds, shrink=(a.iter8 or a.iter9), full=a.iter9); print("=" * 100); return
 
     trades, events = run_continuous(df, a.box_tf, a.max_adds)
     t = pd.DataFrame(trades)
