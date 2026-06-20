@@ -762,7 +762,7 @@ def run_hold_ml(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
     _output_and_report(t, f"_{box_tf}_holdml")
 
 
-def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = False, full: bool = False, gb: bool = False, bydir: bool = False) -> None:
+def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = False, full: bool = False, gb: bool = False, bydir: bool = False, exp: bool = False) -> None:
     """iteration-6/7 賢いB: 死ぬ判別玉の前半含み益を maker 部分利確（be_gate booster 流用・iter5a の上に重畳・acceptance）。
     教師=建値撤退OFF(iter3基底)→booster（iter5a と同一手順）。be_th=0.40（iter5a 確定・a-priori 固定）。
     θ_gate × k_tp を学習窓『純増(partial − iter5a)』最大で選定（採点窓不参照・ML/学習窓選定=L-267対象外）。
@@ -775,8 +775,11 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
     A = _hold_arrays(df, box_tf)
     idx_of = {x: i for i, x in enumerate(df["ts"].tolist())}
     feats = _HOLD_FEATS; BE_TH = 0.40
-    SH = bool(shrink); FU = bool(full); GB = bool(gb); BD = bool(bydir)
-    TAG = "iter11" if BD else ("iter10" if GB else ("iter9" if FU else ("iter8" if SH else "iter7")))   # iter11=θ_gate/k_tp 方向別 / iter10=give-back / iter9=全閉鎖 / iter8=ptp 縮小 / iter7=固定 ptp
+    SH = bool(shrink); FU = bool(full); GB = bool(gb); BD = bool(bydir); EXP = bool(exp)
+    TAG = "iter12" if (BD and EXP) else ("iter11" if BD else ("iter10" if GB else ("iter9" if FU else ("iter8" if SH else "iter7"))))   # iter12=拡張グリッド×方向別 / iter11=θ_gate/k_tp 方向別 / iter10=give-back / iter9=全閉鎖 / iter8=ptp 縮小 / iter7=固定 ptp
+    # iter12: 部分利確 θ_gate/k_tp の探索グリッドを端の外へ拡張（iter11 で両方向ともグリッド端を選択＝最適はグリッド外・acceptance）。EXP=False は iter11/以前のグリッド＝恒等。
+    TG_GRID = [0.30, 0.40, 0.50, 0.60, 0.70] if EXP else [0.30, 0.40, 0.50]   # θ_gate（死ぬ判定ライン・上げるほど多くの玉を部分/全閉鎖）
+    KT_GRID = [0.0005, 0.0010, 0.0015, 0.0020] if EXP else [0.0010, 0.0015, 0.0020]   # k_tp（小利目標の幅・下げるほど近くで利確）
 
     # ① 教師＝iter3基底（建値撤退OFF）→ booster（iter5a と同一手順）
     saved = BE_ARM_BARS; BE_ARM_BARS = 10 ** 9
@@ -820,9 +823,9 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
     base_edge = int((pd.DataFrame(base5a)["exit_reason"] == "EDGE_TP").sum())
     base_cen = int((pd.DataFrame(base5a)["exit_reason"] == "CENTER_LOCK").sum())
     print(f"  学習窓 iter5a(baseline) net ${base5a_net:.0f} / EDGE {base_edge} CENTER {base_cen}（純増の基準・be_th={BE_TH}・add1_frac={ADD1_FRAC}）")
-    best = None
-    for tg in [0.30, 0.40, 0.50]:
-        for k in [0.0010, 0.0015, 0.0020]:
+    best = None; net_i9pt = None   # net_i9pt = iter9 点(θ0.5/k0.001) の net＝a7 グリッド拡張 lever-bites の基準
+    for tg in TG_GRID:
+        for k in KT_GRID:
             q, _ = run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, tg, k, ADD1_FRAC, SH, FU))
             qd = pd.DataFrame(q); net = float(qd["net_usd"].sum())
             ptp = int((qd["exit_reason"] == "PARTIAL_TP").sum())
@@ -830,10 +833,16 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
             edge = int((qd["exit_reason"] == "EDGE_TP").sum()); cen = int((qd["exit_reason"] == "CENTER_LOCK").sum())
             gain = net - base5a_net
             print(f"   θ_gate={tg} k_tp={k}: net ${net:.0f}（純増 {gain:+.0f}）/ PARTIAL_TP {ptp}(add1 {ptp_a1}) / EDGE {edge} CENTER {cen}")
+            if abs(tg - 0.50) < 1e-9 and abs(k - 0.0010) < 1e-9:
+                net_i9pt = net   # iter9 共通最適点（拡張前グリッドの端＝iter9 と同一）
             if best is None or gain > best[0]:
                 best = (gain, tg, k)
     gain, btg, bk = best
     print(f"  → θ_gate*={btg} k_tp*={bk} add1_frac={ADD1_FRAC}（学習窓 純増 {gain:+.0f}・基準=iter5a）")
+    if EXP and net_i9pt is not None:   # 自己検査(a7) grid 拡張 lever-bites: iter9 点(θ0.5/k0.001) vs 拡張グリッド共通最良＝広げて純増したか
+        exp_gain = (base5a_net + gain) - net_i9pt
+        on_edge_old = (abs(btg - 0.50) < 1e-9 and abs(bk - 0.0010) < 1e-9)
+        print(f"  [自己検査a7 grid拡張 lever-bites] iter9点(θ0.5/k0.001) net ${net_i9pt:.0f} → 拡張共通最良(θ{btg}/k{bk}) net ${base5a_net + gain:.0f}（拡張由来 {exp_gain:+.0f}）: {'⚠️拡張に余地なし（共通最良が iter9 点のまま）' if on_edge_old else '✅効いている（共通最良が新セルへ移動＝グリッド外が良い）'}")
     if gain <= 0:
         print("  ⚠️ 学習窓 純増がプラスでない＝採用せず（iter6/iter5a 維持）。候補(b) add1 早期建値へ。")
 
@@ -860,8 +869,8 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
         for sd in ("LONG", "SHORT"):
             print(f"  [iter11] {sd} 用 θ_gate×k_tp スイープ（相手方向は iter9 共通 θ{btg}/k{bk} 固定・{sd} の side-filtered net 最大・学習窓）")
             sbest = None
-            for tg in [0.30, 0.40, 0.50]:
-                for k in [0.0010, 0.0015, 0.0020]:
+            for tg in TG_GRID:
+                for k in KT_GRID:
                     pg = {"LONG": btg, "SHORT": btg}; kt = {"LONG": bk, "SHORT": bk}; pg[sd] = tg; kt[sd] = k
                     q = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, pg, kt, ADD1_FRAC, SH, FU, PGB))[0])
                     snet = float(q[q["side"] == sd]["net_usd"].sum())
@@ -908,11 +917,14 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
         nb9 = float(qb9["net_usd"].sum()); nb11 = float(qb11["net_usd"].sum())
         nL9 = float(qb9[qb9.side == "LONG"]["net_usd"].sum()); nL11 = float(qb11[qb11.side == "LONG"]["net_usd"].sum())
         nS9 = float(qb9[qb9.side == "SHORT"]["net_usd"].sum()); nS11 = float(qb11[qb11.side == "SHORT"]["net_usd"].sum())
-        print(f"  [自己検査a6 bydir lever-bites] 共通(iter9) net ${nb9:.0f}(L ${nL9:.0f}/S ${nS9:.0f}) → 方向別(iter11) net ${nb11:.0f}(L ${nL11:.0f}/S ${nS11:.0f})（方向別由来 {nb11-nb9:+.0f}・L {nL11-nL9:+.0f}・S {nS11-nS9:+.0f}）: {'✅効いている（共通≠方向別）' if abs(nb11-nb9) > 1e-6 else '⚠️方向で同じ最適点＝分ける意味なし'}")
+        print(f"  [自己検査a6 bydir lever-bites] 共通最良(θ{btg}/k{bk}) net ${nb9:.0f}(L ${nL9:.0f}/S ${nS9:.0f}) → 方向別 net ${nb11:.0f}(L ${nL11:.0f}/S ${nS11:.0f})（方向別由来 {nb11-nb9:+.0f}・L {nL11-nL9:+.0f}・S {nS11-nS9:+.0f}）: {'✅効いている（共通≠方向別）' if abs(nb11-nb9) > 1e-6 else '⚠️方向で同じ最適点＝分ける意味なし'}")
 
-    # ④ 全期間 再走 → 自己検査(b)size 保存 → cap → 出力（PGB=None で iter9 以前は恒等／BD で θ_gate/k_tp を方向別 dict に）
-    FIN_PG = PG[0] if (BD and PG is not None) else btg   # iter11: 方向別 θ_gate dict / それ以前: スカラー btg（共通=iter9 恒等）
-    FIN_KT = PG[1] if (BD and PG is not None) else bk
+    # ④ 全期間 再走 → 自己検査(b)size 保存 → cap → 出力（PGB=None で iter9 以前は恒等）
+    # iter12(EXP): 方向別 PG は a6 診断のみ・採用は共通 btg/bk（方向別由来≈0＝パラメータ最小化 DSR・acceptance F「② ≈ ① なら共通を採点」）。
+    # iter11(BD かつ not EXP): 方向別 dict を採用。それ以前: スカラー btg（共通=iter9 恒等）。
+    USE_DIR = (BD and PG is not None) and not EXP
+    FIN_PG = PG[0] if USE_DIR else btg
+    FIN_KT = PG[1] if USE_DIR else bk
     trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, FIN_PG, FIN_KT, ADD1_FRAC, SH, FU, PGB))
     t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
     rc = t.groupby("position_id").agg(sz=("size_btc", "sum"), addc=("add_count", "max"))
@@ -924,8 +936,13 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
     assert mx <= CAP + 1e-9, f"同時保有 {mx:.4f} > cap {CAP}"
     print(f"  約定 {len(t)} / 出口 {dict(t['exit_reason'].value_counts())} / θ_gate*={FIN_PG} k_tp*={FIN_KT} add1_frac={ADD1_FRAC} shrink={SH} full={FU} give-back={PGB} bydir={BD}")
     _xp = {"be_th": BE_TH, "θ_gate*": FIN_PG, "k_tp*": FIN_KT, "add1_frac": ADD1_FRAC}
-    if BD:
-        _xp["θ_gate*/k_tp* LONG/SHORT 別（iter11）"] = f"θ_gate L={PG[0]['LONG']}/S={PG[0]['SHORT']}・k_tp L={PG[1]['LONG']}/S={PG[1]['SHORT']}（方向別に学習窓で独立選定＝相手方向は iter9 共通固定・cat_requirements §6 / 6軸 軸1）"
+    if BD and EXP:   # iter12: 採用=共通（拡張グリッド）。方向別は a6 診断のみ（採用せず）。
+        _xp[f"θ_gate*/k_tp*（{TAG}・拡張グリッド共通採用）"] = (
+            f"採用=共通 θ_gate={btg}/k_tp={bk}（拡張グリッド θ_gate[0.3-0.7]×k_tp[0.0005-0.002] の学習窓 純増最大）。"
+            f"方向別はテスト済だが採用せず＝方向別最良 θ_gate L={PG[0]['LONG']}/S={PG[0]['SHORT']}・k_tp L={PG[1]['LONG']}/S={PG[1]['SHORT']} でも"
+            f"方向別由来 ≈0（パラメータ最小化 DSR・cat_requirements §6 / 6軸 軸1）")
+    elif BD:   # iter11: 方向別 dict 採用
+        _xp[f"θ_gate*/k_tp* LONG/SHORT 別（{TAG}）"] = f"θ_gate L={PG[0]['LONG']}/S={PG[0]['SHORT']}・k_tp L={PG[1]['LONG']}/S={PG[1]['SHORT']}（方向別に学習窓で独立選定＝相手方向は共通最良固定・グリッド θ_gate[0.3-0.5]×k_tp[0.001-0.002]・cat_requirements §6 / 6軸 軸1）"
     if SH:
         _xp["ptp_shrink（部分利確目標の時間縮小）"] = "iter8: ptp=avg×(1±k_tp×r)・r=(HOLD_5M−経過バー)/HOLD_5M（線形・a-priori）・建値でフロア"
     if FU:
@@ -950,6 +967,7 @@ def main():
     ap.add_argument("--iter9", action="store_true", help="iteration-9: 縮む目標到達で死ぬ判別玉の残り全玉を maker 決済（取り逃しの取り分を全閉鎖へ・arxiv 1707.03498 Thm3.3・python3.13）")
     ap.add_argument("--iter10", action="store_true", help="iteration-10: 取り逃し玉の利益吐き出しを期限前に maker 小利で止める（give-back を部分/全決済の発火条件に OR・含み益ピークから戻した玉を死ぬ判定と独立に利確・arxiv 1701.03960・python3.13）")
     ap.add_argument("--iter11", action="store_true", help="iteration-11: 部分利確の θ_gate/k_tp を LONG/SHORT 別に最適化（方向で値動きの癖が違う・iter9 ベース＋方向別・cat_requirements §6 / 6軸 軸1・python3.13）")
+    ap.add_argument("--iter12", action="store_true", help="iteration-12: 部分利確グリッドを端の外へ拡張（θ_gate[0.3-0.7]×k_tp[0.0005-0.002]）× 方向別（iter11 で両方向ともグリッド端を選択＝最適はグリッド外・cat_requirements §6 / 6軸 軸1・python3.13）")
     a = ap.parse_args()
     BE_ARM_BARS = a.be_arm_bars
 
@@ -976,8 +994,8 @@ def main():
     if a.be_gate:                                    # iteration-5(a) 諦め除外: 建値撤退の武装ゲート
         run_be_gate(df, a.box_tf, a.max_adds); print("=" * 100); return
 
-    if a.partial_tp or a.iter8 or a.iter9 or a.iter10 or a.iter11:   # iter6/7 部分利確（iter8=目標縮小 / iter9=全閉鎖 / iter10=give-back / iter11=θ_gate/k_tp 方向別・iter9 ベース）
-        run_partial_tp(df, a.box_tf, a.max_adds, shrink=(a.iter8 or a.iter9 or a.iter10 or a.iter11), full=(a.iter9 or a.iter10 or a.iter11), gb=a.iter10, bydir=a.iter11); print("=" * 100); return
+    if a.partial_tp or a.iter8 or a.iter9 or a.iter10 or a.iter11 or a.iter12:   # iter6/7 部分利確（iter8=目標縮小 / iter9=全閉鎖 / iter10=give-back / iter11=θ_gate/k_tp 方向別 / iter12=拡張グリッド×方向別・iter9 ベース）
+        run_partial_tp(df, a.box_tf, a.max_adds, shrink=(a.iter8 or a.iter9 or a.iter10 or a.iter11 or a.iter12), full=(a.iter9 or a.iter10 or a.iter11 or a.iter12), gb=a.iter10, bydir=(a.iter11 or a.iter12), exp=a.iter12); print("=" * 100); return
 
     trades, events = run_continuous(df, a.box_tf, a.max_adds)
     t = pd.DataFrame(trades)
