@@ -49,6 +49,7 @@ import e34_range_zscore_taker as e34v1      # noqa: E402  CSV / add_indicators�
 import periods                              # noqa: E402  検証期間の唯一の正本（学習/採点/封印・E31 窓・手打ち禁止 SSOT）
 import e34_range_base as e34b               # noqa: E402  add_analysis_features（stoch 等）
 import e35_box                              # noqa: E402  箱 3列×3足（leak/H6 assert 内蔵）
+import build_labels_pct as bl               # noqa: E402  resample_ohlcv / attach_upper_tf（上位足 leak-safe attach・L-128 修正済・SHORT分割 1h MACD ゲート用）
 import verify_design_contract as _vdc       # noqa: E402  設計↔実装 自己チェック（設計書の部品リストを読む）
 import params_sidecar as _psc               # noqa: E402  使用パラメータ サイドカー（read専用メタ・審判に不関与）
 
@@ -268,7 +269,7 @@ def _hold_feat_vec(A: dict, sdir: int, avg_i: float, first_idx: int, nlot: int, 
     ]
 
 
-def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, be_gate=None, partial_tp=None):
+def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, be_gate=None, partial_tp=None, short_htf: bool = False):
     """連続モード両方向。LONG/SHORT を並行管理（merge・cap 合算停止）・TP=箱中心C・SL=箱ブレイク・時間切れ。
     hold_ctx=(booster, feats, theta) を渡すと、保有中の各バーで P(TP)<theta の玉を早期撤退（ML_STANCH・成行 taker）。
     be_gate=(booster, feats, theta) を渡すと、iter4 建値撤退の武装を「戻らないと判別(predict<theta)した含み損玉」だけに絞る
@@ -282,6 +283,7 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
     sup = df[e35_box.sup_col(box_tf)].to_numpy(float)     # 現値より下の支えまでの距離%
     res = df[e35_box.res_col(box_tf)].to_numpy(float)     # 現値より上の抵抗までの距離%
     long_sig = df["long_entry"].to_numpy(bool); short_sig = df["short_entry"].to_numpy(bool)
+    htf_up = df["htf_macd_up"].to_numpy(bool) if (short_htf and "htf_macd_up" in df.columns) else None   # SHORT分割: 1h MACD>0(上向き)で SHORT 入口を抑制（既定OFF=None=未参照=恒等）
     # 箱の価格（距離%→価格・動く箱）。サポート/レジ無し（NaN）の足は箱中心/ブレイク判定をしない。
     S = c / (1.0 + sup / 100.0)
     R = c * (1.0 + res / 100.0)
@@ -452,8 +454,8 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
         # ── 4. 入口/add（cap は fill 時に判定）──
         if long_sig[i] and pend["LONG"] is None and (pos["LONG"] is None or pos["LONG"]["add_count"] < max_adds):
             pend["LONG"] = {"limit": c[i] * (1.0 - ENTRY_OFFSET), "placed_idx": i}
-        if short_sig[i] and pend["SHORT"] is None and (pos["SHORT"] is None or pos["SHORT"]["add_count"] < max_adds):
-            pend["SHORT"] = {"limit": c[i] * (1.0 + ENTRY_OFFSET), "placed_idx": i}
+        if short_sig[i] and (htf_up is None or not htf_up[i]) and pend["SHORT"] is None and (pos["SHORT"] is None or pos["SHORT"]["add_count"] < max_adds):
+            pend["SHORT"] = {"limit": c[i] * (1.0 + ENTRY_OFFSET), "placed_idx": i}   # SHORT分割: 1h MACD>0(上向き)では SHORT 入口を出さない（htf_up=None で恒等）
 
     # ── 期間末 強制クローズ（成行）──
     for side in ("LONG", "SHORT"):
@@ -489,6 +491,21 @@ def _load(smoke: int) -> pd.DataFrame:
     df = e35_box.add_box_features(df, verify_leak=(smoke > 0 and smoke <= 60000))
     df = add_choppiness(df)
     df = add_jump_model(df)
+    df = add_htf_macd(df)                          # SHORT分割: 1h MACD 符号（既定OFFのゲートが参照・read専用列・恒等を壊さない）
+    return df
+
+
+def add_htf_macd(df: pd.DataFrame) -> pd.DataFrame:
+    """SHORT 入口ゲート用: 1時間足 MACD line(EMA12-EMA26) の符号を leak-safe に 5m へ貼る（>0=上向き=SHORT 不利）。
+    resample_ohlcv(1h)→EMA(過去のみ)→符号→attach_upper_tf(+freq・merge_asof backward＝閉じ足のみ・L-128/H2)。
+    MACD の符号のみ使用＝価格非依存(H6)。列 htf_macd_up（bool・warmup=閉じ足前は False=SHORT 許可）。
+    既定ゲート OFF（short_htf=False）では未参照＝iter9 恒等。"""
+    px = df[["ts", "open", "high", "low", "close", "volume"]].rename(columns={"ts": "timestamp"}).set_index("timestamp")
+    c1h = bl.resample_ohlcv(px, bl.RESAMPLE_RULE["1h"])["close"]
+    macd = c1h.ewm(span=12, adjust=False).mean() - c1h.ewm(span=26, adjust=False).mean()   # EMA は過去のみ＝leak-safe
+    up = pd.DataFrame({"htf_macd_up": (macd > 0).astype(float)}, index=c1h.index).dropna()
+    merged = bl.attach_upper_tf(px[["close"]], up, "1h")                                    # +freq・merge_asof backward＝閉じ足のみ
+    df["htf_macd_up"] = df["ts"].map(merged["htf_macd_up"]).fillna(0.0).to_numpy() > 0.5    # ts→値（index 一致・warmup=False）
     return df
 
 
@@ -762,7 +779,7 @@ def run_hold_ml(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
     _output_and_report(t, f"_{box_tf}_holdml")
 
 
-def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = False, full: bool = False, gb: bool = False, bydir: bool = False, exp: bool = False) -> None:
+def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = False, full: bool = False, gb: bool = False, bydir: bool = False, exp: bool = False, short_htf: bool = False) -> None:
     """iteration-6/7 賢いB: 死ぬ判別玉の前半含み益を maker 部分利確（be_gate booster 流用・iter5a の上に重畳・acceptance）。
     教師=建値撤退OFF(iter3基底)→booster（iter5a と同一手順）。be_th=0.40（iter5a 確定・a-priori 固定）。
     θ_gate × k_tp を学習窓『純増(partial − iter5a)』最大で選定（採点窓不参照・ML/学習窓選定=L-267対象外）。
@@ -777,6 +794,10 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
     feats = _HOLD_FEATS; BE_TH = 0.40
     SH = bool(shrink); FU = bool(full); GB = bool(gb); BD = bool(bydir); EXP = bool(exp)
     TAG = "iter12" if (BD and EXP) else ("iter11" if BD else ("iter10" if GB else ("iter9" if FU else ("iter8" if SH else "iter7"))))   # iter12=拡張グリッド×方向別 / iter11=θ_gate/k_tp 方向別 / iter10=give-back / iter9=全閉鎖 / iter8=ptp 縮小 / iter7=固定 ptp
+    if short_htf:
+        TAG = "shortset1"   # E35 SHORT 分割 第1レバー（iter9 ベース＝shrink+full・θ/k は iter9 のまま＋SHORT 入口 1h MACD ゲート）
+        if abs(ZONE_FRAC - 0.25) > 1e-9:
+            TAG = f"shortset1_z{int(round(ZONE_FRAC * 100))}"   # E35 頻度レバー: 反転ゾーン拡張（件数↑・shortset1 の上・例 z40=40%）
     # iter12: 部分利確 θ_gate/k_tp の探索グリッドを端の外へ拡張（iter11 で両方向ともグリッド端を選択＝最適はグリッド外・acceptance）。EXP=False は iter11/以前のグリッド＝恒等。
     TG_GRID = [0.30, 0.40, 0.50, 0.60, 0.70] if EXP else [0.30, 0.40, 0.50]   # θ_gate（死ぬ判定ライン・上げるほど多くの玉を部分/全閉鎖）
     KT_GRID = [0.0005, 0.0010, 0.0015, 0.0020] if EXP else [0.0010, 0.0015, 0.0020]   # k_tp（小利目標の幅・下げるほど近くで利確）
@@ -919,13 +940,22 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
         nS9 = float(qb9[qb9.side == "SHORT"]["net_usd"].sum()); nS11 = float(qb11[qb11.side == "SHORT"]["net_usd"].sum())
         print(f"  [自己検査a6 bydir lever-bites] 共通最良(θ{btg}/k{bk}) net ${nb9:.0f}(L ${nL9:.0f}/S ${nS9:.0f}) → 方向別 net ${nb11:.0f}(L ${nL11:.0f}/S ${nS11:.0f})（方向別由来 {nb11-nb9:+.0f}・L {nL11-nL9:+.0f}・S {nS11-nS9:+.0f}）: {'✅効いている（共通≠方向別）' if abs(nb11-nb9) > 1e-6 else '⚠️方向で同じ最適点＝分ける意味なし'}")
 
+    if short_htf:   # 自己検査(a_htf) SHORT分割第1レバー lever-bites: 同 θ/k で 1h MACD ゲート OFF(=iter9) と ON を学習窓で比べ、SHORT side net が変わる（恒等でない＝効いている）。LONG の差は cap 解放経由のみ（誤配線でない）
+        qhoff = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU, PGB), short_htf=False)[0])
+        qhon = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU, PGB), short_htf=True)[0])
+        sS_off = float(qhoff[qhoff.side == "SHORT"]["net_usd"].sum()); sS_on = float(qhon[qhon.side == "SHORT"]["net_usd"].sum())
+        sL_off = float(qhoff[qhoff.side == "LONG"]["net_usd"].sum()); sL_on = float(qhon[qhon.side == "LONG"]["net_usd"].sum())
+        nS_off = qhoff[qhoff.side == "SHORT"]["position_id"].nunique(); nS_on = qhon[qhon.side == "SHORT"]["position_id"].nunique()
+        print(f"  [自己検査a_htf SHORT分割 lever-bites] 1h MACD ゲート OFF(=iter9) SHORT net ${sS_off:.0f}/{nS_off}玉 → ON SHORT net ${sS_on:.0f}/{nS_on}玉（SHORT由来 {sS_on-sS_off:+.0f}・veto {nS_off-nS_on}玉）/ LONG net ${sL_off:.0f}→${sL_on:.0f}（差は cap 解放のみ）: {'✅効いている（SHORT≠・玉 veto あり）' if (abs(sS_on-sS_off) > 1e-6 and nS_on < nS_off) else '⚠️ゲート未配線（SHORT 不変 or 玉 veto 無し）'}")
+        assert nS_on < nS_off, "1h MACD ゲートが SHORT 玉を1つも veto していない（未配線）"
+
     # ④ 全期間 再走 → 自己検査(b)size 保存 → cap → 出力（PGB=None で iter9 以前は恒等）
     # iter12(EXP): 方向別 PG は a6 診断のみ・採用は共通 btg/bk（方向別由来≈0＝パラメータ最小化 DSR・acceptance F「② ≈ ① なら共通を採点」）。
     # iter11(BD かつ not EXP): 方向別 dict を採用。それ以前: スカラー btg（共通=iter9 恒等）。
     USE_DIR = (BD and PG is not None) and not EXP
     FIN_PG = PG[0] if USE_DIR else btg
     FIN_KT = PG[1] if USE_DIR else bk
-    trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, FIN_PG, FIN_KT, ADD1_FRAC, SH, FU, PGB))
+    trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, FIN_PG, FIN_KT, ADD1_FRAC, SH, FU, PGB), short_htf=short_htf)
     t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
     rc = t.groupby("position_id").agg(sz=("size_btc", "sum"), addc=("add_count", "max"))
     bad = int((np.abs(rc["sz"] - rc["addc"] * UNIT) > 1e-9).sum())
@@ -949,11 +979,13 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
         _xp["full_close（縮む目標到達で全閉鎖）"] = "iter9: 死ぬ判別玉が縮む目標 ptp に到達したら 1ロット/半分でなく残り全玉を maker 決済（理論=境界で全閉鎖最適・arxiv 1707.03498 Thm3.3）"
     if GB:
         _xp["give_back _pgb*（含み益ピークからの吐き出し割合）"] = f"{PGB}（iter10: max_fav から price が _pgb 以上 戻したら死ぬ判定と独立に残り全玉を ptp で maker 決済＝取り逃し玉の利益吐き出しを止血・学習窓グリッド選定・arxiv 1701.03960 トレーリング＋指値併用）"
+    if short_htf:
+        _xp["short_htf_gate（SHORT入口の1h MACDフィルタ・SHORT分割第1レバー）"] = "SHORT は直近で閉じた 1h MACD line(EMA12-EMA26)≤0 のときのみ入口（1h上向き=MACD>0 では SHORT 抑制）・leak-safe attach(+freq backward)・符号のみ=価格非依存(H6)・LONG 不変・θ_gate/k_tp は iter9 のまま"
     _output_and_report(t, f"_{box_tf}_{TAG}", extra_params=_xp)
 
 
 def main():
-    global BE_ARM_BARS
+    global BE_ARM_BARS, ZONE_FRAC
     ap = argparse.ArgumentParser()
     ap.add_argument("--box-tf", choices=TFS, default="5m", help="箱に使う足（連続モード・診断で比較→ここで選ぶ）")
     ap.add_argument("--max-adds", type=int, default=MAX_ADDS)
@@ -968,8 +1000,11 @@ def main():
     ap.add_argument("--iter10", action="store_true", help="iteration-10: 取り逃し玉の利益吐き出しを期限前に maker 小利で止める（give-back を部分/全決済の発火条件に OR・含み益ピークから戻した玉を死ぬ判定と独立に利確・arxiv 1701.03960・python3.13）")
     ap.add_argument("--iter11", action="store_true", help="iteration-11: 部分利確の θ_gate/k_tp を LONG/SHORT 別に最適化（方向で値動きの癖が違う・iter9 ベース＋方向別・cat_requirements §6 / 6軸 軸1・python3.13）")
     ap.add_argument("--iter12", action="store_true", help="iteration-12: 部分利確グリッドを端の外へ拡張（θ_gate[0.3-0.7]×k_tp[0.0005-0.002]）× 方向別（iter11 で両方向ともグリッド端を選択＝最適はグリッド外・cat_requirements §6 / 6軸 軸1・python3.13）")
+    ap.add_argument("--short-htf", action="store_true", help="E35 SHORT 分割 第1レバー: iter9 ベース（shrink+full・θ/k は iter9 のまま）＋SHORT 入口に 1h MACD 符号ゲート（1h上向き=MACD>0 では SHORT 抑制・LONG 不変・python3.13）")
+    ap.add_argument("--zone-frac", type=float, default=ZONE_FRAC, help="E35 頻度レバー: 反転ゾーン幅＝箱幅W×この比率（既定0.25=25%）。広げる（例0.40）と端から遠めでも入る＝入口件数↑（両方向・--short-htf 併用で shortset1 の上・python3.13）")
     a = ap.parse_args()
     BE_ARM_BARS = a.be_arm_bars
+    ZONE_FRAC = a.zone_frac          # E35 頻度レバー: 反転ゾーン幅を CLI で上書き（既定 0.25=恒等）。signal 構築が新値を読む
 
     print("=" * 100)
     print(f"[E35 一式] レンジ上下オシレーション 連続モード両方向（box={a.box_tf}・merge・cap{CAP}合算・TP中心C/SL箱ブレイク/時間切れ）")
@@ -993,6 +1028,9 @@ def main():
 
     if a.be_gate:                                    # iteration-5(a) 諦め除外: 建値撤退の武装ゲート
         run_be_gate(df, a.box_tf, a.max_adds); print("=" * 100); return
+
+    if a.short_htf:                                  # E35 SHORT 分割 第1レバー（iter9 ベース＝shrink+full・θ/k 不変＋SHORT 入口 1h MACD ゲート）
+        run_partial_tp(df, a.box_tf, a.max_adds, shrink=True, full=True, short_htf=True); print("=" * 100); return
 
     if a.partial_tp or a.iter8 or a.iter9 or a.iter10 or a.iter11 or a.iter12:   # iter6/7 部分利確（iter8=目標縮小 / iter9=全閉鎖 / iter10=give-back / iter11=θ_gate/k_tp 方向別 / iter12=拡張グリッド×方向別・iter9 ベース）
         run_partial_tp(df, a.box_tf, a.max_adds, shrink=(a.iter8 or a.iter9 or a.iter10 or a.iter11 or a.iter12), full=(a.iter9 or a.iter10 or a.iter11 or a.iter12), gb=a.iter10, bydir=(a.iter11 or a.iter12), exp=a.iter12); print("=" * 100); return

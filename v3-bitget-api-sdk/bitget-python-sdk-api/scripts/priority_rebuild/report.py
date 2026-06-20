@@ -229,6 +229,21 @@ def main():
     adays = d["entry_time"].dt.date.nunique()
     print(f"\n  F4. 1日あたり（取引のあった {adays} 日で平均）")
     print(f"   トレード数 {len(d)/adays:.2f} 件/日 ・ 純益 ${r['total']/adays:.2f}/取引日")
+    # エントリー数（新規建て玉 ＋ 買い増し）＝まこさんが見る頻度の単位（2026-06-21・暦日基準で 10/日 目標と照合）
+    if "position_id" in d_raw.columns and "add_count" in d_raw.columns:
+        def _ecnt(df):
+            return df["position_id"].nunique(), int(df.groupby("position_id")["add_count"].max().sum())
+        _no, _ef = _ecnt(d_raw)
+        print(f"   エントリー数（暦{days}日平均・新規建て玉 / 新規+買い増し）: 全体 {_no/days:.2f} / {_ef/days:.2f} 件/日")
+        if "side" in d_raw.columns:
+            _parts = []
+            for _sd in ("SHORT", "LONG"):
+                _sub = d_raw[d_raw["side"] == _sd]
+                if len(_sub):
+                    _n2, _e2 = _ecnt(_sub)
+                    _parts.append(f"{_sd} {_n2/days:.2f} / {_e2/days:.2f}")
+            if _parts:
+                print("     方向別（新規建て玉 / 新規+買い増し 件/日）: " + " ・ ".join(_parts))
     er = (d["exit_reason"].map(EXIT_JP).value_counts() / adays).round(2)
     print("   出口理由別 件数/日: " + " / ".join(f"{k} {v}" for k, v in er.items()))
     sz = (d["size_btc"].value_counts().sort_index() / adays).round(2)

@@ -1,6 +1,6 @@
 #!/bin/bash
 # require_spec_read_before_design.sh — PreToolUse on Write|Edit（2026-06-13 まこさん指示で新設）
-# 目的: 設計書（*_design.md / strat_v9ml_design.md）を書く瞬間に、決済方法・ポジションの持ち方の
+# 目的: 設計書（*_design.md / strat_v9ml_design.md / acceptance.md）を書く瞬間に、決済方法・ポジションの持ち方の
 #   正本 exchange_spec.md（★決済方法）と cat_requirements.md（§6.1/§6.1.1 ポジション・§4.6 H制約）を
 #   Read tool で読んでいなければ exit 2 で block する。
 #   背景: CC は決済方法を読まず設計し、同サイド merge・部分決済(scale out)・add(cap0.12) を誤解する事案を
@@ -23,10 +23,14 @@ except Exception:
 
 base=$(basename "$fp")
 
-# 対象: 設計書のみ（*_design.md / strat_v9ml_design.md）
+# 対象: 設計書（*_design.md / strat_v9ml_design.md）＋ acceptance.md（2026-06-21 まこさん承認で追加）
+#   理由: 現在は設計を acceptance.md に書く（acceptance_checklist / DESIGN_CONTRACT）。acceptance.md が対象外だと
+#   設計の瞬間に §6.1.1 を読まされず、同サイド merge・部分決済 scale out・件数の作り方を誤解する事案が再演
+#   （2026-06-20 ゾーン拡張を両方向 global にかけ LONG を壊す＋「玉が閉じるまで次の取引不可」と誤解）。
+#   検索 hook（check_websearch_before_design_write）は既に acceptance.md を対象にしており不整合だった→揃える。
 is_design=0
 case "$base" in
-  *_design.md|strat_v9ml_design.md) is_design=1 ;;
+  *_design.md|strat_v9ml_design.md|acceptance.md) is_design=1 ;;
 esac
 [ "$is_design" -eq 0 ] && exit 0
 

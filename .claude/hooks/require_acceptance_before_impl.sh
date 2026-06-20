@@ -23,6 +23,12 @@ AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(
 
 # 2) 編集対象を取得。戦略実装(scripts/priority_rebuild/*.py)だけ対象（hook/設計書/state は対象外）
 FILE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('file_path',''))" 2>/dev/null)
+# 表示専用ツールは対象外（2026-06-21 まこさん承認）: report.py / plot_trades.py は read-only の集計表示で
+#   net 判定も戦略実装もしない＝戦略設計用 acceptance ゲートは過剰。判定器(score.py/eval_engine・H13改造禁止)・
+#   チェック(precheck.py/analyze.py)・戦略ファイルは下の case で従来どおり gate される。
+case "$FILE" in
+  */report.py|*/plot_trades.py) exit 0 ;;
+esac
 case "$FILE" in
   *scripts/priority_rebuild/*.py) ;;
   *) exit 0 ;;
