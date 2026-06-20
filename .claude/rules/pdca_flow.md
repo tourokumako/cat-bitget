@@ -32,6 +32,7 @@
 | enforce_search_quality | PreToolUse | WebSearch | 検索品質（12語以内・allowed_domains 指定） |
 | track_search_fetch / update_websearch_marker | PostToolUse | WebSearch/WebFetch | search_log・marker 記録 |
 | require_spec_read_before_design | PreToolUse | Write/Edit | 設計書を書く瞬間に cat_requirements/exchange_spec を Read 強制 |
+| show_budget_before_design | PreToolUse | Write/Edit | 設計/改善案（acceptance.md / *_design.md）を書く瞬間に「予算0.12は全採用戦略の共有枠」＋採用台帳を1セッション1回表示（exit2 で1回ブロック→再実行で通す・SessionStart 表示は効果ないため提案の瞬間に出す・2026-06-20・marker は reset_read_log が消す） |
 | require_instrument_read_before_impl | PreToolUse | Write/Edit | 実装を書く前に eval_engine（計器）を Read 強制 |
 | doc_map_guard | PreToolUse | Write/Edit | ledger/設計書に経緯・失敗の語を書くのをブロック（置き場所違反） |
 | forbid_fixed_value_tuning | PreToolUse | Write/Edit | 固定値スイープ（採点窓で最良値選定）をブロック（L-267） |
