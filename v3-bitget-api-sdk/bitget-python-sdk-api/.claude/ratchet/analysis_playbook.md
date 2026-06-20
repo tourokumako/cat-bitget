@@ -117,6 +117,10 @@ net(審判) / 月平均 / NET日次 / 勝率 / 最大DD / 最大連敗 / 日次�
 - **記録（`report_*.txt` / `*_learned_params.json`）= E番号付きで残す**（履歴を消さない）。例: `report_trades_E08_*.txt` / `p23_learned_params_E08.json`。report.py は入力CSV名から自動命名するので、**戦略スクリプトの出力CSV名に E番号(E08等)を入れれば report も自動でE番号付き**になる（ledger の実験番号と1対1で対応＝後から探せる）。
 - **現役入力（消さない・直下常駐）**: `trades_p23_full_test.csv`（地面＝V9手書きP23 $1943・比較の相手）/ `p23_candidates_*.csv`（学習素材）。
 - **手順**: 新実験を回す前に、前実験の `trades_*`・記録を `archive/` へ move → 新実験を直下に出力 → 採点 → 分析。
+- **★スクリプト(.py)も同じ思想で整理（2026-06-20 まこさん確定・155本でぐちゃぐちゃ事案）**: `scripts/priority_rebuild/` 直下 = **採用戦略 ＋ 判定器/共通基盤 ＋ それらが import で依存するモジュールのみ**。破棄/旧実験の .py は `scripts/priority_rebuild/archive/` へ `git mv`（履歴保持）。
+  - **残す基準＝import closure**: 採用戦略（adopted_strategies.md 参照）と判定器（score/eval_engine/precheck/report/analyze/periods/params_sidecar/verify_design_contract/ratchet_guards/test_*/build_labels_pct/preload_cache）を根に、import を辿って到達する .py だけ直下。到達しない .py は archive へ。
+  - **移動後は必ず機械確認**: 残した採用戦略＋判定器が `py_compile` ＋ `import` で壊れないこと（依存欠落＝ModuleNotFoundError が出ないこと）。
+  - 採用が増減したら adopted_strategies.md を更新し、直下の .py も同基準で見直す。
 
 ## §4 毎セッション実行チェックリスト（この順で回す）
 

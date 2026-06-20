@@ -23,11 +23,11 @@ def block(path, start_pat, end_pat=None):
             out.append(ln)
     return "\n".join(out)
 
-# WORKFLOW active ブロック (🔴 現在のフェーズ → 次の 🧊 改訂N ブロック)
-wf = block(f"{SDK}/WORKFLOW.md", r"🔴 現在のフェーズ", r"🧊 改訂\d+ ブロック")
-# ml_pipeline_execlog 現在地+次セッション着手 (末尾まで・2026-05-30 §8 分離で baseline→execlog)
-ml = block(f"{SDK}/.claude/memory/ml_pipeline_execlog.md", r"現在地 \+ 次セッション着手")
-text = wf + "\n" + ml
+# WORKFLOW active ブロック (🔴 現在地/現在のフェーズ → 次の 🧊 改訂N ブロック)
+wf = block(f"{SDK}/WORKFLOW.md", r"🔴 現在(のフェーズ|地)", r"🧊 改訂\d+ ブロック")
+# next_step.md（新セッションの起点・現行正本。旧 ml_pipeline_execlog=廃止8工程フローは参照しない・2026-06-20）
+ns = block("/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/next_step.md", r".")
+text = wf + "\n" + ns
 
 pat = r'(?:results|scripts|data|\.claude)/[A-Za-z0-9_./{}*-]+\.(?:parquet|py|md|json|csv|joblib)'
 paths = sorted(set(re.findall(pat, text)))
