@@ -15,15 +15,20 @@
 
 ---
 
-## 採用済み戦略（柱・add-on・配分レバー）— E31 正本窓（採点 2025-06〜2026-02・score.py）
+## 採用済み戦略（柱・add-on）— E31 正本窓（採点 2025-06〜2026-02・score.py）
 
-| 戦略 | 方向 | 役割 | 採点（月平均） | 実体スクリプト | 状態 | ledger |
-|---|---|---|---|---|---|---|
-| **E32b**（P21+P23 合算） | SHORT | **主力 SHORT 柱（deployable）** | **月$616.55** | `measure_ground_combined_E32b.py` | 採用（現主力） | E32b |
-| └ P21（構成要素） | SHORT | SHORT 最強の生きた柱 | 月$401.51 | cat_v9_decider P21（trail=maker 前提） | E32b の一部 | E16/E0.4 |
-| └ P23（構成要素） | SHORT | SHORT 柱（ライブ cat_v9 の起点） | 月$241.72 | cat_v9_decider P23 SHORT | E32b の一部 | E0/E32 |
-| **E28** | LONG | **下げ相場 LONG の存在証明 add-on** | 月$3.96（+$27.71） | `measure_e28_phase2.py` | 採用（add-on・⚠️小N・bootstrap 0跨ぎ＝運の域・柱でない） | E28 |
-| **E35**（レンジ上下オシレーション） | 両方向 | レンジ柱候補（作業中） | 月+$18.99（iter9） | `e35_range_oscillation.py --iter9` | 進行中（N5 0跨ぎ＝黒字断定前・iter12 過剰適合で不採用＝iter9 が base） | E35 iteration-9 |
+> ★各戦略は「ロジック（中身＝売買ルール）」「計測の道具（成績を出すスクリプト）」「最終データ（売買記録CSV＝採点対象）」の3つで構成。**P21 と P23 は別々の戦略**（E32b はその合算＝別戦略でない・下記注記）。
+
+| 戦略 | 方向 | 役割 | 採点（月平均） | ロジック（中身・★変更禁止） | 計測の道具 | 最終データCSV | ledger |
+|---|---|---|---|---|---|---|---|
+| **P21** | SHORT | **SHORT 最強の生きた柱** | **月$401.51**（915件） | cat_v9_decider.py ＋ cat_params_v9.json（素のV9・MACD系・Entry＝decider／Exit実行＝replay_csv.py rc.run） | `measure_ground_newwindow_E31.py` | archive/trades_p21_E31_newwin_ground.csv | E16/E0.4/E31 |
+| **P23** | SHORT | **SHORT 柱（ライブ cat_v9 の起点）** | **月$241.72**（280件） | cat_v9_decider.py ＋ cat_params_v9.json（素のV9・ストキャス系・Entry＝decider／Exit実行＝gen_p23_candidates.py run_continuous） | `measure_ground_newwindow_E31.py` | archive/trades_p23_E31_newwin_ground.csv | E0/E32/E31 |
+| **E28** | LONG | **下げ相場 LONG の存在証明 add-on** | 月$3.96（+$27.71） | `measure_e28_phase2.py`（ドルバー 行き過ぎ1%ile ∩ taker投げ売り・素ルール） | （同左） | trades_e28_phase2_score.csv | E28 |
+| **E35**（レンジ上下オシレーション） | 両方向 | レンジ柱候補（作業中） | 月+$18.99（iter9） | `e35_range_oscillation.py --iter9`（独自ロジック・hold-ML判別＋部分利確） | （同左） | trades_e35_oscillation_5m_iter9_score.csv | E35 iteration-9 |
+
+> **E32b は別戦略でない＝P21 と P23 を一緒に動かした合算の実測（deployable・月$616.55）**。素朴な和（$401.51+$241.72=$643.23）でなく $616.55 になるのは、共有 cap と decider 順（V9 優先 P23>P21）で互いを少し削るため（21→23 仮説は不成立＝V9 順維持・ledger E32b）。計測の道具＝`measure_ground_combined_E32b.py`。＝本番で P21・P23 を一緒に回した時の正味 SHORT 合算。
+>
+> ⚠️ **P21/P23 は素の V9（cat_v9_decider.py＋cat_params_v9.json）そのまま＝Entry/Exit/閾値を改善して採用された版は無い**（ML改善 E8/E9/E14/E19/E21 はほぼ破棄・採用は E13 サイズだけ＋E0.4 計器修正のみ）。$401.51/$241.72 は素の V9 を新窓で測った地面（2026-06-20 archive CSV で再現確認）。最終データCSV は §3.1 で archive 退避＝再生成は measure スクリプト（V9 を5年 or スライス replay・重い）だが、**数字の確認は archive CSV を score.py に通すだけ（一瞬）**。
 
 ### 配分レバー（単独戦略でなく、柱に乗せるサイジング/配分の手法）
 | レバー | 内容 | 状態 | ledger |
