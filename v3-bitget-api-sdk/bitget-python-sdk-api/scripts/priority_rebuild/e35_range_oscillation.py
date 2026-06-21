@@ -269,7 +269,7 @@ def _hold_feat_vec(A: dict, sdir: int, avg_i: float, first_idx: int, nlot: int, 
     ]
 
 
-def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, be_gate=None, partial_tp=None, short_htf: bool = False):
+def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, be_gate=None, partial_tp=None, short_htf: bool = False, short_only: bool = False):
     """連続モード両方向。LONG/SHORT を並行管理（merge・cap 合算停止）・TP=箱中心C・SL=箱ブレイク・時間切れ。
     hold_ctx=(booster, feats, theta) を渡すと、保有中の各バーで P(TP)<theta の玉を早期撤退（ML_STANCH・成行 taker）。
     be_gate=(booster, feats, theta) を渡すと、iter4 建値撤退の武装を「戻らないと判別(predict<theta)した含み損玉」だけに絞る
@@ -452,8 +452,8 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
                     events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
 
         # ── 4. 入口/add（cap は fill 時に判定）──
-        if long_sig[i] and pend["LONG"] is None and (pos["LONG"] is None or pos["LONG"]["add_count"] < max_adds):
-            pend["LONG"] = {"limit": c[i] * (1.0 - ENTRY_OFFSET), "placed_idx": i}
+        if (not short_only) and long_sig[i] and pend["LONG"] is None and (pos["LONG"] is None or pos["LONG"]["add_count"] < max_adds):
+            pend["LONG"] = {"limit": c[i] * (1.0 - ENTRY_OFFSET), "placed_idx": i}   # E36 SHORT専用: short_only=True で LONG 入口を出さない（予算0.12 が SHORT に解放・既定 False=両方向恒等）
         if short_sig[i] and (htf_up is None or not htf_up[i]) and pend["SHORT"] is None and (pos["SHORT"] is None or pos["SHORT"]["add_count"] < max_adds):
             pend["SHORT"] = {"limit": c[i] * (1.0 + ENTRY_OFFSET), "placed_idx": i}   # SHORT分割: 1h MACD>0(上向き)では SHORT 入口を出さない（htf_up=None で恒等）
 
@@ -603,10 +603,11 @@ def _param_sections(extra_params=None) -> dict:
     return sec
 
 
-def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None) -> None:
-    """trades を 全期間/採点窓/precheck に分けて出力＋月別サマリ（main と run_hold_ml で共用）。"""
+def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None, stem: str = "e35_oscillation") -> None:
+    """trades を 全期間/採点窓/precheck に分けて出力＋月別サマリ（main と run_hold_ml で共用）。
+    stem=出力ファイル名の幹（既定 e35_oscillation・E36 SHORT専用は e36_short_oscillation＝report 自動E番号化）。"""
     RATCHET.mkdir(parents=True, exist_ok=True)
-    base = RATCHET / f"trades_e35_oscillation{suffix}.csv"
+    base = RATCHET / f"trades_{stem}{suffix}.csv"
     out_full = base
     out_train = base.with_name(base.stem + "_train.csv")
     out_score = base.with_name(base.stem + "_score.csv")
@@ -779,7 +780,7 @@ def run_hold_ml(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
     _output_and_report(t, f"_{box_tf}_holdml")
 
 
-def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = False, full: bool = False, gb: bool = False, bydir: bool = False, exp: bool = False, short_htf: bool = False) -> None:
+def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = False, full: bool = False, gb: bool = False, bydir: bool = False, exp: bool = False, short_htf: bool = False, short_only: bool = False) -> None:
     """iteration-6/7 賢いB: 死ぬ判別玉の前半含み益を maker 部分利確（be_gate booster 流用・iter5a の上に重畳・acceptance）。
     教師=建値撤退OFF(iter3基底)→booster（iter5a と同一手順）。be_th=0.40（iter5a 確定・a-priori 固定）。
     θ_gate × k_tp を学習窓『純増(partial − iter5a)』最大で選定（採点窓不参照・ML/学習窓選定=L-267対象外）。
@@ -949,13 +950,22 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
         print(f"  [自己検査a_htf SHORT分割 lever-bites] 1h MACD ゲート OFF(=iter9) SHORT net ${sS_off:.0f}/{nS_off}玉 → ON SHORT net ${sS_on:.0f}/{nS_on}玉（SHORT由来 {sS_on-sS_off:+.0f}・veto {nS_off-nS_on}玉）/ LONG net ${sL_off:.0f}→${sL_on:.0f}（差は cap 解放のみ）: {'✅効いている（SHORT≠・玉 veto あり）' if (abs(sS_on-sS_off) > 1e-6 and nS_on < nS_off) else '⚠️ゲート未配線（SHORT 不変 or 玉 veto 無し）'}")
         assert nS_on < nS_off, "1h MACD ゲートが SHORT 玉を1つも veto していない（未配線）"
 
+    if short_only:   # 自己検査(a_e36) E36 SHORT専用 lever-bites: 同 θ/k/short_htf で LONG切り OFF(=shortset1) と ON(=E36) を学習窓で比べ、ON で LONG net→0・玉0（短絡未配線でない）／SHORT 側は cap 解放で変わる。OFF は shortset1 そのもの＝恒等の参照。
+        qeoff = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU, PGB), short_htf=True, short_only=False)[0])
+        qeon = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU, PGB), short_htf=True, short_only=True)[0])
+        eS_off = float(qeoff[qeoff.side == "SHORT"]["net_usd"].sum()); eS_on = float(qeon[qeon.side == "SHORT"]["net_usd"].sum())
+        eL_on = float(qeon[qeon.side == "LONG"]["net_usd"].sum()); nL_on = qeon[qeon.side == "LONG"]["position_id"].nunique()
+        nS_off2 = qeoff[qeoff.side == "SHORT"]["position_id"].nunique(); nS_on2 = qeon[qeon.side == "SHORT"]["position_id"].nunique()
+        print(f"  [自己検査a_e36 SHORT専用 lever-bites] LONG切り OFF(=shortset1) SHORT net ${eS_off:.0f}/{nS_off2}玉 → ON(=E36) SHORT net ${eS_on:.0f}/{nS_on2}玉・LONG net ${eL_on:.0f}/{nL_on}玉（SHORT cap解放由来 {eS_on-eS_off:+.0f}・SHORT玉 {nS_on2-nS_off2:+d}）: {'✅効いている（LONG=0玉・SHORT cap解放で変化）' if (nL_on == 0 and abs(eL_on) < 1e-9) else '⛔LONG が残存（short_only 未配線）'}")
+        assert nL_on == 0 and abs(eL_on) < 1e-9, "short_only=True なのに LONG 玉/net が残存（未配線）"
+
     # ④ 全期間 再走 → 自己検査(b)size 保存 → cap → 出力（PGB=None で iter9 以前は恒等）
     # iter12(EXP): 方向別 PG は a6 診断のみ・採用は共通 btg/bk（方向別由来≈0＝パラメータ最小化 DSR・acceptance F「② ≈ ① なら共通を採点」）。
     # iter11(BD かつ not EXP): 方向別 dict を採用。それ以前: スカラー btg（共通=iter9 恒等）。
     USE_DIR = (BD and PG is not None) and not EXP
     FIN_PG = PG[0] if USE_DIR else btg
     FIN_KT = PG[1] if USE_DIR else bk
-    trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, FIN_PG, FIN_KT, ADD1_FRAC, SH, FU, PGB), short_htf=short_htf)
+    trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH), partial_tp=(booster, feats, FIN_PG, FIN_KT, ADD1_FRAC, SH, FU, PGB), short_htf=short_htf, short_only=short_only)
     t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
     rc = t.groupby("position_id").agg(sz=("size_btc", "sum"), addc=("add_count", "max"))
     bad = int((np.abs(rc["sz"] - rc["addc"] * UNIT) > 1e-9).sum())
@@ -981,7 +991,9 @@ def run_partial_tp(df: pd.DataFrame, box_tf: str, max_adds: int, shrink: bool = 
         _xp["give_back _pgb*（含み益ピークからの吐き出し割合）"] = f"{PGB}（iter10: max_fav から price が _pgb 以上 戻したら死ぬ判定と独立に残り全玉を ptp で maker 決済＝取り逃し玉の利益吐き出しを止血・学習窓グリッド選定・arxiv 1701.03960 トレーリング＋指値併用）"
     if short_htf:
         _xp["short_htf_gate（SHORT入口の1h MACDフィルタ・SHORT分割第1レバー）"] = "SHORT は直近で閉じた 1h MACD line(EMA12-EMA26)≤0 のときのみ入口（1h上向き=MACD>0 では SHORT 抑制）・leak-safe attach(+freq backward)・符号のみ=価格非依存(H6)・LONG 不変・θ_gate/k_tp は iter9 のまま"
-    _output_and_report(t, f"_{box_tf}_{TAG}", extra_params=_xp)
+    if short_only:
+        _xp["short_only（E36 SHORT専用＝LONG入口を切る）"] = "LONG 入口を出さず SHORT のみ取引＝予算0.12 が SHORT に解放（add5 満玉に届きやすい）。shortset1[1h MACD ゲート]＋iter9 出口を内包・hold-ML/θ_gate/k_tp は shortset1 と同一（変える変数=LONG切りの1つ・cap 解放だけが差）"
+    _output_and_report(t, f"_{box_tf}_{TAG}", extra_params=_xp, stem=("e36_short_oscillation" if short_only else "e35_oscillation"))
 
 
 def main():
@@ -1001,6 +1013,7 @@ def main():
     ap.add_argument("--iter11", action="store_true", help="iteration-11: 部分利確の θ_gate/k_tp を LONG/SHORT 別に最適化（方向で値動きの癖が違う・iter9 ベース＋方向別・cat_requirements §6 / 6軸 軸1・python3.13）")
     ap.add_argument("--iter12", action="store_true", help="iteration-12: 部分利確グリッドを端の外へ拡張（θ_gate[0.3-0.7]×k_tp[0.0005-0.002]）× 方向別（iter11 で両方向ともグリッド端を選択＝最適はグリッド外・cat_requirements §6 / 6軸 軸1・python3.13）")
     ap.add_argument("--short-htf", action="store_true", help="E35 SHORT 分割 第1レバー: iter9 ベース（shrink+full・θ/k は iter9 のまま）＋SHORT 入口に 1h MACD 符号ゲート（1h上向き=MACD>0 では SHORT 抑制・LONG 不変・python3.13）")
+    ap.add_argument("--short-only", action="store_true", help="E36 SHORT専用: E35 を SHORT だけで動かす（shortset1[SHORT 1h MACD ゲート]＋iter9 出口を内包し LONG 入口を切る・予算0.12 が SHORT に解放・出力 trades_e36_short_*・python3.13）")
     ap.add_argument("--zone-frac", type=float, default=ZONE_FRAC, help="E35 頻度レバー: 反転ゾーン幅＝箱幅W×この比率（既定0.25=25%）。広げる（例0.40）と端から遠めでも入る＝入口件数↑（両方向・--short-htf 併用で shortset1 の上・python3.13）")
     a = ap.parse_args()
     BE_ARM_BARS = a.be_arm_bars
@@ -1028,6 +1041,9 @@ def main():
 
     if a.be_gate:                                    # iteration-5(a) 諦め除外: 建値撤退の武装ゲート
         run_be_gate(df, a.box_tf, a.max_adds); print("=" * 100); return
+
+    if a.short_only:                                 # E36 SHORT専用（shortset1 内包＝iter9+SHORT 1h MACD ゲート＋LONG 切り・予算0.12 が SHORT に解放・出力 trades_e36_short_*）
+        run_partial_tp(df, a.box_tf, a.max_adds, shrink=True, full=True, short_htf=True, short_only=True); print("=" * 100); return
 
     if a.short_htf:                                  # E35 SHORT 分割 第1レバー（iter9 ベース＝shrink+full・θ/k 不変＋SHORT 入口 1h MACD ゲート）
         run_partial_tp(df, a.box_tf, a.max_adds, shrink=True, full=True, short_htf=True); print("=" * 100); return

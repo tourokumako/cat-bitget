@@ -326,6 +326,36 @@ def main():
             print(f"   {lbl}: {len(t)}件 / gross ${t['_gross'].sum():,.0f} / net ${t['_netj'].sum():,.0f}"
                   f" / 平均gross ${ag:.2f}/件 / 往復コスト ${ac:.2f}/件 / breakeven倍率 {be:.2f}")
 
+    # ===== M. 週次チャート（売買記録を価格に重ねた PNG・report とセット・read-only）=====
+    # plot_trades.py を呼び、ISO週（月曜始まり）で トレード数 最多/最少 ＋ NET利益 最大/最小 の週を1枚ずつ出力（同一週は統合＝最大4枚）。トレード数は玉単位（A節 件数と整合）。
+    print("\n  M. 週次チャート（plot_trades.py 自動出力・トレード最多/最少＋NET最大/最小の週＝results/priority_rebuild/viz/）")
+    try:
+        import subprocess
+        wkg = d.assign(_wk=d["entry_time"].dt.to_period("W-SUN")).groupby("_wk")
+        cnt = wkg.size(); net = wkg["net_usd"].sum()
+        cand = []                                           # (タグ, 週)・同一週は下で統合
+        if len(cnt):
+            cand += [("トレード最多", cnt.idxmax()), ("トレード最少", cnt.idxmin()),
+                     ("NET最大", net.idxmax()), ("NET最小", net.idxmin())]
+        seen = {}; order = []                               # 週→タグ群（重複週を1枚に）
+        for tag, w in cand:
+            if w not in seen: seen[w] = []; order.append(w)
+            if tag not in seen[w]: seen[w].append(tag)
+        plot_script = Path(__file__).resolve().parent.parent / "dashboard" / "plot_trades.py"
+        for w in order:
+            tags = "/".join(seen[w]); ws = w.start_time.normalize(); we = ws + pd.Timedelta(days=7)
+            rp = subprocess.run([sys.executable, str(plot_script), str(a.csv),
+                                 "--start", ws.strftime("%Y-%m-%d"), "--end", we.strftime("%Y-%m-%d")],
+                                capture_output=True, text=True)
+            lines = [l for l in rp.stdout.splitlines() if l.strip()]
+            png = next((l.split("[出力]", 1)[1].strip() for l in lines if "[出力]" in l), "")
+            summ = next((l.strip() for l in reversed(lines) if "net" in l), "")
+            print(f"   [{tags}] {ws.date()}〜{we.date()}（{int(cnt[w])}トレード・NET ${net[w]:+.0f}）→ {png or (rp.stderr.strip() or '(出力なし)')}")
+            if summ:
+                print(f"      {summ}")
+    except Exception as e:
+        print(f"   ⚠️ 週次チャート生成スキップ（report 本体は有効）: {e}")
+
     sys.stdout = _orig; _rf.close()
     print(f"\n[保存] この結果一覧を書類化 → {out_path}（IDEで開いて確認できます）")
 

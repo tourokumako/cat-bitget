@@ -72,8 +72,8 @@
 ### E. 審判 → 分析 → 記録（PostToolUse pdca_mark が旗を操作・Stop pdca_gate が未閉じをブロック）
 pdca_mark は**コマンド名の正規表現**で検知する:
 - 実験スクリプト実行（`strat_`/`train_`/`measure_`）→ need_score を立てる。
-- **score.py / precheck.py 実行** → need_score を下ろし、need_report / need_analyze / need_analyze_report / need_ledger / need_5q / need_claim / need_next_step を一括で立てる。
-- report.py(--vs) → need_report / need_vs を下ろす。
+- **score.py / precheck.py 実行** → need_score を下ろし、need_report / need_analyze / need_analyze_report / need_ledger / need_5q / need_claim / need_next_step / **need_viz** を一括で立てる。
+- report.py(--vs) → need_report / need_vs を下ろす。**＋採点CSV分の週次チャートPNG（results/priority_rebuild/viz/ に `<stem>_*.png`）が実在すれば need_viz を下ろす**（report.py M節が「トレード最多/最少・NET最大/最小」の4週を自動出力＝結果レポートと同時に画像を出す強制・M節が黙って失敗して PNG が無ければ旗が残り pdca_gate がブロック・まこさん 2026-06-21 強制化・番人メタ確認 pass）。
 - analyze.py → need_analyze を下ろす。
 - ledger.md 編集（5問＋主張を全部含む）→ need_ledger / need_5q / need_claim を下ろす。
 - next_step.md 上書き（本筋/やってはいけない/出典 を含む）→ need_next_step を下ろす。

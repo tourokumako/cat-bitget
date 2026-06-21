@@ -28,6 +28,7 @@ if [ -f "$STATE/pdca_need_analyze_report" ]; then
     MISS="${MISS}・分析レポートを出して読め（「別途」で逃げる・省略・読み飛ばし 禁止・まこさん 2026-06-15）。analyze を完走させ analysis_*.txt を生成→Read tool で読み、5問に N10〜N12 の構造解釈を引用して書け。analyze がクラッシュするならツールを直して完走させる（"別途"は不可）。\n"
   fi
 fi
+[ -f "$STATE/pdca_need_viz" ] && MISS="${MISS}・週次チャートPNG(トレード最多/最少・NET最大/最小 の4週)が未生成。report.py を --vs 付きで実行すれば M節が自動出力する（results/priority_rebuild/viz/）。M節が「スキップ」表示なら matplotlib/plot_trades を直して PNG を出すまで終了不可（まこさん 2026-06-21 強制化）\n"
 [ -f "$STATE/pdca_need_ledger" ] && MISS="${MISS}・ledger.md への記録(結果+原因3分類+改善)が未実行\n"
 [ -f "$STATE/pdca_need_5q" ] && MISS="${MISS}・ledger に 6つの問いが未記入: 【問0 前後比較】(前回ベースライン vs 今回の 件数/net/avg/勝率を並べ、激減や急増がないか=KB §0 大原則・degenerate 見落とし防止)【問1 レバー】(期待値4要素のどれが何pt動いたか)【問2 不足量】(あと何がいくら足りないか・数値)【問3 負け集中】(どのスライス=月/出口/指標帯 に負けが集中か)【問4 過去実験との接続】(過去のどの実験番号 E○○ と構造が同じ/違うか)【問5 次仮説】(学習期間で検証可能な形で1つ)。6見出し全部を含む編集で旗が下りる\n"
 [ -f "$STATE/pdca_need_claim" ] && MISS="${MISS}・ledger に【主張】1行が未記入（多角チェックリスト #19・analysis_playbook §2.0）。analyze.py N0 の件数妥当性(件数/日)を踏まえ、この実験の結論を【主張】<件数/日 と net を含む根拠つき1行> として ledger E エントリに書け（多角チェックを1発見で止めず量→質→...を通した結論）\n"

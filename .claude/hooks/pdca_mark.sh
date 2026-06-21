@@ -12,7 +12,7 @@
 export PDCA_STATE="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 mkdir -p "$PDCA_STATE"
 cat | python3 -c '
-import sys, json, os, re
+import sys, json, os, re, glob
 state = os.environ["PDCA_STATE"]
 need_report = os.path.join(state, "pdca_need_report")
 need_ledger = os.path.join(state, "pdca_need_ledger")
@@ -23,6 +23,8 @@ need_5q = os.path.join(state, "pdca_need_5q")
 need_claim = os.path.join(state, "pdca_need_claim")   # 多角チェックの結論=主張1行（件数妥当性込み・2026-06-14 まこさん B）
 need_next_step = os.path.join(state, "pdca_need_next_step")
 need_analyze_report = os.path.join(state, "pdca_need_analyze_report")  # 分析レポートを出して読む強制（別途・省略・読み飛ばし禁止・2026-06-15）
+need_viz = os.path.join(state, "pdca_need_viz")   # 週次チャートPNG（report と同時に4週分 自動出力）強制（2026-06-21 まこさん「強制化」）
+viz_dir = "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/results/priority_rebuild/viz"
 no_baseline = os.path.join(state, "no_baseline_approved")
 diagnostic_active = os.path.join(state, "pdca_diagnostic_active")   # 診断ラウンド（採点しない・2026-06-13）
 score_bg_pending = os.path.join(state, "pdca_score_bg_pending")     # バックグラウンド実験 実行中（2026-06-13）
@@ -74,8 +76,14 @@ if tn == "Bash":
             touch(need_report); touch(need_ledger); touch(need_analyze); touch(need_5q); touch(need_claim)
             touch(need_next_step)   # 審判を通したセッションは next_step を1回上書きするまで終了不可（ledger 編集回数に依存させない・2026-06-14 まこさん GO）
             touch(need_analyze_report)  # 分析レポートを生成→Read tool で読む まで終了不可（「別途」で逃げる・省略・読み飛ばし を物理禁止・2026-06-15 まこさん命令）
+            touch(need_viz)  # 審判後 report.py が 週次チャートPNG（トレード最多/最少・NET最大/最小 の4週）を出すまで終了不可（2026-06-21 まこさん強制化）
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*report\.py", cmd):
         rm(need_report)
+        # 週次チャートPNG（report.py M節が 最多/最少・NET最大/最小 の4週を自動出力）が 採点CSV分 実在すれば need_viz を下ろす。
+        # M節がスキップ（matplotlib/plot_trades 故障）で PNG が無ければ旗が残る＝gate がブロック（2026-06-21 強制化・番人）。
+        _mc = re.search(r"report\.py[ \t]+\"?([^\"\s]+\.csv)", cmd)
+        if _mc and glob.glob(os.path.join(viz_dir, os.path.basename(_mc.group(1))[:-4] + "_*.png")):
+            rm(need_viz)
         # --vs（前回比較・KB §0）必須。無しは need_vs 旗（初回のみ no_baseline_approved で免除・1回で消費）
         if "--vs" in cmd:
             rm(need_vs)
