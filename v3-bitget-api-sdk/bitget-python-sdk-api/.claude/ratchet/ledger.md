@@ -1011,3 +1011,17 @@
 - 【問5 次仮説】SHORT専用 hold-ML に stoch_k_at_entry(N10 最強分離・相関−0.150)を特徴量追加すれば、TIME_EXIT 片流れ予備軍(stoch_k 高い玉)の保有中判別が上がり学習窓 SHORT net が純増する（学習窓で検証・固定値手調整でなく木に渡す）。
 - **【主張】** E36 SHORT専用 切り出し＝SHORT 0.96/日(新規)・1.49/日(約定)で採点窓 月+$47.52(合計$427.66・405trades)・学習窓 月+$26.37($1239)＝**両窓黒字の独立 SHORT柱を確定**（shortset1 SHORT分解と一致＝cap解放0・自己検査a_e36 で LONG 0玉・SHORT 1取引も不変・report L 限界分解で削った玉=LONG 401件 net≈$0）。勝率70.6%は小利maker構造(leak でない・N9 出口効率0.61正常)。期待値/件 $0.65→$1.64。次は §6.1.1 で SHORT のまま件数↑(stoch_k 特徴量化＋部分利確の刻み)＝両窓 net 維持で。
 - **生成物**: e35_range_oscillation.py(short_only フラグ＝run_continuous LONG 入口抑制／run_partial_tp short_only 配線＋自己検査a_e36／main --short-only／_output_and_report stem)／ trades_e36_short_oscillation_5m_shortset1{,_score,_train}{,_params.json}.csv ／ report_・analysis_trades_e36_short_oscillation_5m_shortset1_score.txt。再現 `python3.13 e35_range_oscillation.py --short-only`。判定=score.py 採点窓 $427.66/月+$47.52（precheck PASS authorize）。
+
+## E36-prep: mae（最大逆行＝最大含み損）記録の追加 ＋ 急騰Exit 事前 probe（計器追加・net 不変／probe で急騰玉の逆行幅を玉単位確認・2026-06-21）— 採用（計器・net 不変）＋ 急騰Exit の根拠を確定（次レバー）
+- **変更(A・計器追加・net 不変)**: e35_range_oscillation.py の _record_lots に max_adv（保有中の最大逆行＝SHORT 最高値／LONG 最安値・running・leak-safe）追跡＋ mae_usd 列を追加（max_fav／mfe_usd と完全対称）。net 計算に不関与（記録専用）。analyze.py N11／report.py I節(MFE/MAE帯)が mae_usd 列で自動稼働（変更不要・grep 確認）。承認 approve_impl・照合 DESIGN_CONTRACT(self_check_calls=max_adv/mae_usd) pass・py_compile OK。
+- **結果(net 不変の確認)**: 公式 score.py 採点窓 月+$47.52・合計 $427.66＝mae 追加前と完全一致（記録列＝net 不変）。mae_usd 全玉 ≤0(含み損)・mfe_usd 全玉 ≥0(含み益) 符号 OK。precheck PASS(breakeven 2.47)。
+- **probe(急騰Exit 事前分析・/tmp/e36_spike_probe.py・read-only・採点なし・両窓)**: 各玉の最大逆行を ATR 倍(mae_atr=|mae_usd|/size/atr_14)で測定。**時間切れ玉 mae_atr 中央 5.5(採点)/6.3(学習)・p25=3.3/4.1 ／ 勝ち玉(EDGE/CENTER/BE) 中央 1.0/1.1・p90=2.7/3.2** ＝死ぬ玉と勝つ玉は逆行の深さで明確分離(両窓一貫)。時間切れ損の本体＝順行ピーク ATR≥0.5 の反転玉(採点 44件 −$706／学習 187件 −$1626)。
+- **原因究明(3分類)**: 戦略=計器追加で net 不変(欠陥なし)。執行=probe は粗い置換試算(funding/taker コスト増・勝ち巻き込みの net 損失を厳密化していない＝実装→score.py で本番確認)。regime=両窓一貫(過剰適合でない)。
+- 【問0 前後比較】mae 追加 前→後・採点窓: net $427.66→$427.66(不変＝記録列)・件数 405→405・出口分布 不変。前後比較＝計器追加で挙動ゼロ変化(恒等)。
+- 【問1 レバー】今回はレバーを動かさず(計器 mae 追加＝net 不変)。probe で次レバー(急騰Exit)の k を測定＝時間切れ玉 ATR×5-6 ／ 勝ち玉 ATR×1 の明確分離を確認。
+- 【問2 不足量】E36 月+$47.52・$1,900 の約1/40(SHORT 追加柱)。時間切れ −$1,238 が止血対象。粗試算 k=4 で採点窓 時間切れ 48件(−$1,071)を浅い損切りへ置換＝+$400 級見込み(要 実装＋score.py)。
+- 【問3 負け集中】時間切れ 71件 −$1,238(mae_atr 中央 5.5＝深い逆行・順行ピーク ATR≥0.5 の反転玉 44件 −$706 が本体)。
+- 【問4 過去接続】保有中止血の系譜(iter5 諦め除外〜iter9 全閉鎖)の延長。新軸＝「逆行の深さ(ATR 倍)で死ぬ玉を判別」＝entry 時点でなく保有中の running 逆行。E14(確率で早逃げ −$194・勝ち巻き込み)と構造差＝勝ち玉は ATR×1 で深逆行帯(ATR×3.5+)に来ない＝巻き込まない。BE_EXIT(建値復帰で救う・mae_atr 中央 2.3)と棲み分け(急騰Exit は ATR×3.5+ の戻らない深逆行)。
+- 【問5 次仮説】急騰Exit を1レバーで実装＝「建値から ATR×k(k=3.5-4)逆行で成行 緊急Exit」。k は学習窓で選定 or a-priori 3.5-4(採点窓スイープ禁止 L-267)→ 学習窓で純増→両窓 score.py で時間切れ損の止血を確認。mae は発火に使わない(未来値・leak)＝各バーの running 逆行(建値比)で判定。速さ(何バーで逆行)は次段(必要なら hold-ML 特徴量 or バー数ゲート)。
+- **【主張】** mae 記録＝計器追加で net 不変(公式 $427.66 一致・符号 OK・judge 不変)＋ probe で**急騰Exit の根拠を確定**＝時間切れで死ぬ玉は ATR×5-6 逆行・勝つ玉は ATR×1(両窓一貫)＝「建値から ATR×3.5-4 逆行で成行 緊急Exit」で勝ち玉ほぼ非巻き込み・死ぬ玉の大半を救える(粗試算 採点窓 +$400 級・要実装→score.py 両窓判定)。次=急騰Exit を設計プレゼン→承認→実装。
+- **生成物**: e35_range_oscillation.py(_record_lots max_adv/mae_usd)／ trades_e36_short_oscillation_5m_shortset1{,_score,_train}.csv(mae_usd 列入り・net 不変)／ report_・analysis_(I節 MFE/MAE帯・N11 が mae で稼働)／ /tmp/e36_spike_probe.py(read-only)。再現 `python3.13 e35_range_oscillation.py --short-only`。

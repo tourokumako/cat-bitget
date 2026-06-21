@@ -199,7 +199,7 @@ def _record_lots(trades, pos, lots, exit_price, reason, exit_idx, ts_arr):
     exit_ts = pd.Timestamp(ts_arr[exit_idx]); exit_px = float(exit_price)
     is_taker = reason not in ("TP_FILLED", "EDGE_TP", "BE_EXIT", "PARTIAL_TP")  # 指値 maker 群（部分利確 PARTIAL_TP も maker）・SL(箱ブレイク)/中心戻り/時間切れ/EOD は成行 taker
     pos_id = f"{side}_{int(pos['first_idx'])}"            # 玉ID（玉単位分析で束ねる）
-    add_count = int(pos["add_count"]); max_fav = float(pos["max_fav"])
+    add_count = int(pos["add_count"]); max_fav = float(pos["max_fav"]); max_adv = float(pos["max_adv"])
     atr14 = round(float(pos["atr_entry"]), 2)
     adx_e = round(float(pos["adx_entry"]), 3) if np.isfinite(pos["adx_entry"]) else None
     k_e = round(float(pos["k_entry"]), 2) if np.isfinite(pos["k_entry"]) else None
@@ -222,6 +222,7 @@ def _record_lots(trades, pos, lots, exit_price, reason, exit_idx, ts_arr):
             "atr_14": atr14, "adx_at_entry": adx_e, "stoch_k_at_entry": k_e, "box_W_pct_at_entry": w_e,
             "entry_hour": int(entry_ts.hour), "entry_weekday": int(entry_ts.weekday()),
             "mfe_usd": round((max_fav - lp) * lot_size * sdir, 4),
+            "mae_usd": round((max_adv - lp) * lot_size * sdir, 4),
             "gross_usd": round(gross, 4), "fee_usd": round(entry_fee + exit_fee + slip, 4), "net_usd": round(net, 4),
         })
 
@@ -315,7 +316,7 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
                 return
             pos[side] = {"side": side, "avg": fp, "size": UNIT, "add_count": 1, "first_idx": i, "last_fill_idx": i,
                          "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i], "W_entry": Wpct[i],
-                         "max_fav": h[i] if side == "LONG" else l[i], "extended": False, "be_armed": False,
+                         "max_fav": h[i] if side == "LONG" else l[i], "max_adv": l[i] if side == "LONG" else h[i], "extended": False, "be_armed": False,
                          "partial_done": False,           # iter6 部分利確を1玉1回に制限
                          "lots": [(i, fp, UNIT)]}         # ★fill 単位記録（each lot＝(fill 時刻, 価格, size)・iter7 で size 可変＝分数部分決済）
             events.append((pd.Timestamp(ts[i]), UNIT))
@@ -348,8 +349,10 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
                 continue
             if side == "LONG":
                 p["max_fav"] = max(p["max_fav"], h[i])
+                p["max_adv"] = min(p["max_adv"], l[i])
             else:
                 p["max_fav"] = min(p["max_fav"], l[i])
+                p["max_adv"] = max(p["max_adv"], h[i])
 
         # ── 3. 出口（約定 bar の次以降・SL 箱ブレイク → [未延長]中心C到達=延長アーム/ML/時間切れ → [延長]逆側端/中心戻り/時間切れ）──
         for side in ("LONG", "SHORT"):

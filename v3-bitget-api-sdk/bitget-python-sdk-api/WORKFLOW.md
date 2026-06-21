@@ -2,7 +2,16 @@
 
 ---
 
-## 🔴 現在地（2026-06-21 改訂96＝E36「E35両方向から SHORT専用を切り出し」採用＝SHORT専用 独立柱を確定・採点 月+$47.52／学習 月+$26.37・shortset1 SHORT分解と一致・cap解放0・LONG をきれいに除去）
+## 🔴 現在地（2026-06-21 改訂97＝mae[最大逆行]記録を追加[計器・net 不変]＋probe で急騰Exit の根拠を確定＝次は急騰Exit の設計プレゼン→承認→実装）
+
+> **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（本筋・確定・やってはいけない・出典が集約）。
+> - **mae 記録 採用（ledger E36-prep・計器・net 不変）**: e35_range_oscillation.py の _record_lots に最大逆行 max_adv 追跡＋mae_usd 列（mfe と完全対称・running・leak-safe）。公式 score.py 月+$47.52・$427.66＝mae 前と完全一致（記録列＝net 不変）。analyze N11／report I節(MFE/MAE帯)が mae_usd で自動稼働（変更不要）。
+> - **probe で急騰Exit の根拠確定（/tmp/e36_spike_probe.py・両窓一貫）**: 時間切れで死ぬ玉は最大逆行 ATR×5-6（採点中央5.5/学習6.3）／勝つ玉は ATR×1（p90=2.7/3.2）＝深さで明確分離。→「建値から ATR×3.5-4 逆行で成行 緊急Exit」で勝ち玉ほぼ非巻き込み・死ぬ玉の大半を救う（粗試算 採点窓+$400級・要実装→score.py）。
+> - **次（本筋）**: 急騰Exit を設計プレゼン→GO→acceptance→実装。mae は発火に使わない（未来値・leak）＝running 逆行（建値比 ATR×k）で判定・新 exit_reason は score.py に taker 登録＋既知答えテスト（H13）。
+> - 地面（E31 窓）: SHORT 合算 E32b 月$616.55。E36 base 月+$47.52（mae 前後で不変・両窓黒字だが N5 0跨ぎ＝黒字戦略でない・ratchet 継続）。判定=score.py。
+> - **⚠️ CC への警告（L-299）**: ①「次の一手」候補も提案前に ledger 照合（next_step 鵜呑み禁止＝既存路線/失敗済みをなぞる癖）②保有中の最大値(mfe/mae)は記録・分析用で発火に使わない（leak）③急騰Exit の k は学習窓 or a-priori（採点窓スイープ禁止 L-267）・両窓で確認 ④勝ち玉巻き込み注意（k≥ATR×3.5・BE_EXIT と棲み分け）。
+
+## 🧊 改訂96 ブロック（履歴・参照用）（2026-06-21＝E36「E35両方向から SHORT専用を切り出し」採用＝SHORT専用 独立柱を確定・採点 月+$47.52／学習 月+$26.37・shortset1 SHORT分解と一致・cap解放0・LONG をきれいに除去）
 
 > **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（本筋・確定・やってはいけない・出典が集約）。
 > - **E36 採用（ledger E36）**: E35 エンジンに short_only フラグ＝LONG 入口を切り SHORT のみ。採用済み shortset1(SHORT 1h MACD≤0 ゲート)＋iter9 出口を内包。公式 score.py 採点窓 **月+$47.52（合計$427.66・405trades・勝率70.6%）**・学習窓 +$26.37（$1239）＝両窓黒字。score.py が直接 SHORT net を出す独立柱（/tmp decompose 不要）。
