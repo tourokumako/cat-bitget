@@ -45,7 +45,7 @@ MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP", "BE_EXI
 # 成行/トリガ撤退=taker（現在 taker 扱いの全理由を明示＝既存分類を維持）
 TAKER_EXIT_REASONS = {"TIME_EXIT", "MFE_STALE_CUT", "STOCH_REVERSE_EXIT", "PROFIT_LOCK",
                       "RSI_REVERSE_EXIT", "MAE_CUT", "FORCE_CLOSE_EOD", "CENTER_LOCK",
-                      "ML_STANCH", "BOX_BREAK_SL"}
+                      "ML_STANCH", "BOX_BREAK_SL", "SPIKE_SL"}  # SPIKE_SL=Lee-Mykland jump の成行 緊急カット(E36・成行=taker+slip・2026-06-21 追加・H13 既知答えテスト再pass)
 # 採点 CSV に現れる全 exit_reason（実データ列挙済）。未登録は assert_hard_constraints で STOP（黙って taker 計上しない・§2.9）
 KNOWN_EXIT_REASONS = MAKER_EXIT_REASONS | TAKER_EXIT_REASONS
 

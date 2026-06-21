@@ -1025,3 +1025,54 @@
 - 【問5 次仮説】急騰Exit を1レバーで実装＝「建値から ATR×k(k=3.5-4)逆行で成行 緊急Exit」。k は学習窓で選定 or a-priori 3.5-4(採点窓スイープ禁止 L-267)→ 学習窓で純増→両窓 score.py で時間切れ損の止血を確認。mae は発火に使わない(未来値・leak)＝各バーの running 逆行(建値比)で判定。速さ(何バーで逆行)は次段(必要なら hold-ML 特徴量 or バー数ゲート)。
 - **【主張】** mae 記録＝計器追加で net 不変(公式 $427.66 一致・符号 OK・judge 不変)＋ probe で**急騰Exit の根拠を確定**＝時間切れで死ぬ玉は ATR×5-6 逆行・勝つ玉は ATR×1(両窓一貫)＝「建値から ATR×3.5-4 逆行で成行 緊急Exit」で勝ち玉ほぼ非巻き込み・死ぬ玉の大半を救える(粗試算 採点窓 +$400 級・要実装→score.py 両窓判定)。次=急騰Exit を設計プレゼン→承認→実装。
 - **生成物**: e35_range_oscillation.py(_record_lots max_adv/mae_usd)／ trades_e36_short_oscillation_5m_shortset1{,_score,_train}.csv(mae_usd 列入り・net 不変)／ report_・analysis_(I節 MFE/MAE帯・N11 が mae で稼働)／ /tmp/e36_spike_probe.py(read-only)。再現 `python3.13 e35_range_oscillation.py --short-only`。
+
+## E36-impl: E36 を独立ファイル e36_short_oscillation.py に切り出し ＋ 急騰Exit（SPIKE_SL・Lee-Mykland jump 検定）を実装（e35 両建ては不変・自己検査 a/b/c PASS・spike-OFF 恒等＝採点不変 $427.66・2026-06-21）— 採用（独立ファイル化＝挙動不変）／ 急騰Exit は spike-ON 未採点（step4=score.py SPIKE_SL 登録 待ち）
+- **設計の確定（★前 E36-prep 問5 から修正）**: E36-prep 問5 は「深さ stop（建値から ATR×k 逆行で成行）」だったが、その後の6方向 probe（深さ/速さ/出来高/CVD/entry指標/1分足）で **深さ stop は OHLCV+taker では net に割に合わない**（戻る勝ち玉を巻き込む）と確定 → 急騰Exit を **Lee-Mykland jump 検定（統計的急騰のみ）に限定**し Risk 管理（テール削り）として入れる方針へピボット（next_step 2026-06-21・acceptance.md が最新確定）。WORKFLOW 改訂97/E36-prep 問5 の「深さ stop」記述はこのピボットで上書き（古い枠組み）。
+- **変更(A)**: e36_short_oscillation.py 新規（e35_range_oscillation.py は一切触らない＝import 流用のみ）。run_continuous「相当」を e36 にコピーし、SPIKE_SL を BOX_BREAK_SL 判定の直後に1ブロック追加（spike_lm=None で e35 と完全恒等）。SHORT 保有・含み損側(c_i>avg)・L_i=r_i/√(局所bipower K本)>L* で成行カット（taker・fill=c_i）。閾値 L*=C_n+β*·a_n は α・K から a-priori（K=270/α=0.01・L*=4.292・データで sweep しない L-267）。教師生成・grid 選定は spike OFF（iter3 基底のまま）／最終 scored run だけ spike_lm。short_htf=True・short_only=True 固定（shortset1＋iter9 出口を内包）。helper（_load/_attach_entry_cols/_hold_*/_record/_output_and_report 等）と定数は e35 から import。
+- **結果（自己検査・CSV 自己計算＝正式は score.py 待ち）**:
+  - 自己検査a（独立ファイル化の恒等・spike OFF）= **全期間/採点/precheck の3 CSV が現行 E36 base とバイト完全一致（diff）＋ 正式 score.py 月+$47.52/$427.66 一致（H12 勝率70.6% 異常表示も同一＝既知の全閉鎖 maker 構造・leak でない）＋ report L「追加/削った玉なし」**＝3レベルで恒等。
+  - 自己検査b（spike 配線）= SPIKE_SL **45件すべて SHORT**（LONG 混入0・assert 通過）/ size 保存 ✅ / L*=4.292（式通り）。
+  - 自己検査c（番人メタ）= SPIKE_SL は score.py の MAKER/TAKER_EXIT_REASONS に**未登録**（score.py:44-50）＝このまま採点すれば §2.9 未登録 exit_reason STOP（score.py:115-123）が出る＝ガード生存を確認（step4 登録が要る根拠）。
+  - **8/22 青玉の救出**: 2025-08-22 13:00 SHORT が spike-ON で **TIME_EXIT −$101.33 → SPIKE_SL −$45.33**（mae −47.9）＝まこさん指示の本丸が発火（acceptance F ①）。
+  - spike-ON の net 影響（CSV 自己計算・正式でない）: 学習窓 $1239→$1106（−$134＝Risk 管理・微減は想定通り）／ 採点窓 $427.7→$483.8（+$56）・TIME_EXIT 71→59・SPIKE_SL 15件(net −$359/avg −$23.94)。
+- 【問0 前後比較】spike OFF（独立ファイル化）前→後・採点窓: net $427.66→$427.66 不変・件数 405→405・出口分布 不変＝独立ファイル化で挙動ゼロ変化（恒等）。spike ON は別軸（step4 後に正式比較）。
+- 【問1 レバー】今回の採用＝独立ファイル化（挙動不変）のみ。急騰Exit（SPIKE_SL）は配線・自己検査まで（spike-ON は score.py 未登録で**未採点**）。正式判定は step4 後。
+- 【問2 不足量】E36 base 月+$47.52・$1,900 の約1/40（SHORT 追加柱）。急騰Exit は net 埋めでなくテール削り（最大DD・平均負け $18.23・テール −$101級を浅い損切り点へ）。採点窓 SPIKE_SL 標的の時間切れ 71件 −$1,238 が止血対象。
+- 【問3 負け集中】N6 ワースト10 = **全て TIME_EXIT 240分・stoch_k_at_entry 高い(64〜93)**＝上限ゾーンで売って急騰で戻らない玉。8/22 −$101 が筆頭。N5 ブートストラップ net/件 [-1.27, 5.36] 0跨ぎ＝依然黒字戦略と断定できない（spike は黒字化でなくテール対策）。
+- 【問4 過去接続】E36-prep probe（時間切れ死に玉 mae_atr 中央 5.5 / 勝ち玉 1.0）の延長。深さ stop（6方向で否定＝勝ち巻き込み）→ Lee-Mykland jump（速さ・統計）に限定＝別物。E14（確率早逃げ −$194・勝ち巻き込み）とも別（統計的 jump・勝ち玉は ATR×1 で深逆行帯に来ず非巻き込み）。
+- 【問5 次仮説】step4 = score.py に SPIKE_SL を TAKER_EXIT_REASONS 登録＋既知答えテスト再pass（別 acceptance・2回目承認）→ spike-ON を両窓 score.py で正式判定: ①8/22 が SPIKE_SL で浅くなるか（玉単位）②全体 net（正直に・微減しうる）③最大DD・平均負けが下がるか ④degenerate でない。α/K は a-priori（採点窓スイープ禁止 L-267）。
+- **【主張】** E36 を独立ファイル e36_short_oscillation.py に切り出し（e35 両建ては一切触らず import 流用）、spike-OFF で現行 E36 base と **CSV diff＋公式 score.py $427.66＋report L の3レベルで完全恒等**＝独立ファイル化で挙動1ビット不変。急騰Exit（Lee-Mykland jump SPIKE_SL）を配線し自己検査 a/b/c PASS（SPIKE_SL 全て SHORT・L*=4.292・番人 §2.9 STOP 生存）＋ 8/22 青玉が TIME_EXIT −$101→SPIKE_SL −$45 に救出されることを確認。**spike-ON は score.py 未登録のため未採点＝正式 net は step4（score.py 登録）後**。
+- **生成物**: scripts/priority_rebuild/e36_short_oscillation.py（新規・e35 import 流用・py_compile OK・設計↔実装ゲート PASS）／ trades_e36_short_oscillation_5m_shortset1{,_score,_train}.csv（spike-OFF＝E36 base 復元・恒等）／ report_・analysis_・viz PNG4枚。再現 `python3.13 e36_short_oscillation.py`（spike OFF・恒等）／ `--spike-lm`（spike ON・自己検査b）。⚠️ acceptance.md の impl_file を repo 相対フルパスに機械修正（設計↔実装ゲートのパス解決・設計不変）＝承認指紋ズレ→再承認要。
+
+## E36-spike: step4=score.py に SPIKE_SL を TAKER 登録 → step5=spike-ON を両窓 score.py で正式採点（急騰Exit・Lee-Mykland jump）— レバーは効く（採点窓 net +$56・平均負け↓・8/22 救出）が**両窓不一致＋最大DD悪化**＝base に折り込まず不採用（既定 spike OFF $427.66 のまま・--spike-lm 残置・まこさん判断で ON 可）・2026-06-21
+- **step4（judge 整合・採用）**: score.py の TAKER_EXIT_REASONS に SPIKE_SL を1語登録（成行=taker+slip・MAKER には入れない）。既知答えテスト **15/15 再pass**（H13・judge 計算式不変）／ 自己検査②恒等＝SPIKE_SL を含まない E36 base は **$427.66 不変**（登録で既存採点が動かない）／ 自己検査③＝spike-ON CSV が登録前 §2.9 STOP・登録後は **STOP せず通る**（SPIKE_SL が taker 計上）＝登録が効いた証拠。
+- **step5（spike-ON 正式採点・公式 score.py 採点窓 2025-06〜2026-02）**: 月平均 **$53.75／合計 $483.77**（spike-OFF $47.52/$427.66 から **採点窓 +$56.11/+$6.23/月**）。SPIKE_SL 採点窓 15件（全 SHORT）・TIME_EXIT 71→59。前後比較(N0)＝261玉同数・net +$56・期待値/玉 $1.64→$1.85・勝率 −0.8pt（玉を増減せず出口を TIME→SPIKE 置換＝非degenerate）。
+- **だが Risk 指標はまだら（不採用の根拠）**: ①**最大DD $140（2025-11→12）→ $155（2026-02）＝+$15 悪化**（spike が 2026-02 で戻る玉を巻き込み 2025-08 −$40→−$99 化）②**学習窓 net $1239→$1106＝−$134**（a_spike）＝両窓不一致 ③N5 ブートストラップ net/件 [-0.87, 5.56] 依然0跨ぎ。α/K は a-priori（採点窓 tuning なし）＝overfitting でなく period 依存だが、ratchet「両窓で改善を確認」（L-289/L-297）を満たさず最大DDも悪化。
+- 【問0 前後比較】spike OFF→ON・採点窓: 261玉同数・net $428→$484(+$56)・avg/玉 $1.64→$1.85・勝率 77.4→76.6%。出口 TIME_EXIT 71→59・SPIKE_SL 0→15。前後比較＝玉は不変で出口だけ置換（救った急騰玉 vs 巻き込んだ戻り玉の差し引き）。
+- 【問1 レバー】急騰Exit（SPIKE_SL・Lee-Mykland jump・K270/α0.01・L*=4.292）。採点窓 net +$56・8/22 −$101→−$45・平均負け(玉)↓。だが最大DD +$15・学習窓 −$134。
+- 【問2 不足量】N7 採点窓 必要勝率 69.9%／実際 76.6%（不足 0.0pt・分岐超え）。$1,900 は埋めない（Risk lever＝テール保険）。依然 N5 0跨ぎ＝黒字戦略でない。
+- 【問3 負け集中】最大DD が 2025-11→12（spike-OFF $140）から **2026-02（spike-ON $155）へ移動・深化**＝spike が 2026-02 の戻る玉を早切り。学習窓 net −$134 も同構造（2021-2025-02 で戻る玉を巻き込む）。8/22 のような一直線急騰は救えるが、戻る玉との区別は完全でない。
+- 【問4 過去接続】iter10 give-back（採用せず・採点窓良いが両窓不一致＝過剰適合サイン L-289）と**同型の判定**＝採点窓だけ良く学習窓悪化。差分＝今回は α/K a-priori（採点窓を tuning していない＝luck でなく period 依存）。深さ stop（6方向で否定・戻る勝ち玉を巻き込む）と別＝統計 jump で 8/22 は確実に切れたが、2026-02 では戻る玉も切った。E14（確率早逃げ −$194）とも別だが「戻る玉を巻き込む」副作用は共通。
+- 【問5 次仮説】**base は spike-OFF（$427.66）維持・急騰Exit は --spike-lm で残置（既定OFF・まこさん判断で ON 可＝8/22 級テール保険を最大DD +$15 で買うか）**。次の作り込みは Risk レバーでなく net 本体＝§6.1.1 件数↑（部分利確の刻み・新規発火）or hold-ML 特徴量化（N10 stoch_k 相関−0.150）で両窓黒字化（N5 0跨ぎ脱出）。
+- **【主張】** 急騰Exit（SPIKE_SL・Lee-Mykland jump）を score.py に TAKER 登録（既知答えテスト 15/15・恒等 $427.66・spike-ON が STOP せず通る）し spike-ON を公式採点＝採点窓 **月$53.75/$483.77（+$56・+$6.23/月）**・8/22 を TIME_EXIT −$101→SPIKE_SL −$45 に救出・平均負け(玉)↓・期待値/玉 +$0.21・非degenerate＝**レバーは設計通り効く**。だが**最大DD $140→$155 悪化＋学習窓 net −$134（両窓不一致）**＝ratchet「両窓で改善」未達 → **base に折り込まず不採用（既定 spike OFF $427.66 のまま）・--spike-lm で残置（まこさん判断で ON 可）**。8/22 級の一直線急騰は救えるが、ゆっくり戻る玉との完全な区別はできず 2026-02 で戻り玉を巻き込んだのが両窓不一致の正体。
+- **生成物**: score.py（TAKER_EXIT_REASONS に SPIKE_SL・1語追加・既知答えテスト 15/15）／ spike-ON 出力 /tmp/e36_spike_on_keep/trades_e36_short_oscillation_5m_shortset1*.csv（保全・repo base は spike-OFF 復元）／ report_・analysis_・viz PNG4枚（spike-ON）。再現 `python3.13 e36_short_oscillation.py --spike-lm` → precheck → score.py。
+
+## E36-spike-iter2: SPIKE_SL に判別器ゲートを追加（急騰 ∩ hold-ML「死ぬ」判別・戻り玉を救う・まこさん発案＝「TPできる玉は切らず急騰で死ぬ玉だけ切る」・de Prado メタラベリング・2026-06-21）— 強い候補（採点窓 +$111・最大DD改善・勝率不変・但し学習窓 −$91＝OOS>IS の period 依存・base 折り込みはまこさん判断）
+- **設計の経緯（probe で角度を潰した）**: ungated spike は「急騰だけ」で切り戻り玉を巻き込む（採点窓 −$66・本体は利益決済まで戻った2玉）。まこさん発案＝保有中に「戻る/死ぬ」を判別し死ぬ方だけ切る。e36 に既存の hold-ML booster（部分利確の「中心に戻る」判別器）があり、それで SPIKE_SL をゲート。※先に出来高/CVD/速度キルスイッチを probe したが全て net 悪化（勝玉も出来高スパイク＝1分足でも分離せず・/tmp/e36_1m_flow_stopsim_probe.py）→ 判別器ゲートが正解。
+- **変更(A)**: run_continuous の SPIKE_SL ブロックに `spike_gate` を追加＝`Lj>L* ∩ c>avg` に加え `_pm.predict(hold_feat)<spike_gate`（判別器が「死ぬ」＝中心に戻らないと予測）を AND。判別器が「戻る」と言った玉は急騰しても切らない。booster は既存 partial 流用（新規学習なし）。spike_gate θ は**学習窓スイープ選定**（GRID[0.3-0.8]・ゲート無しを基準に含め改善時のみ採用・採点窓不参照 L-267）。新 exit_reason なし（SPIKE_SL のまま・score.py 登録済）。
+- **結果（θ*=0.3 学習窓選定・公式 score.py）**:
+  | | 採点窓 | 学習窓 | 最大DD | 勝率(玉) | 平均負け(玉) | 期待値/玉 |
+  |---|---|---|---|---|---|---|
+  | base(spike OFF) | $427.66 | $1239 | $140 | 73.9% | $18.23 | $1.64 |
+  | ungated spike | $483.77 | $1106 | $155 | 73.2% | $16.81 | $1.85 |
+  | **gated θ0.3** | **$539.06** | $1148 | **$111** | **73.9%** | $16.59 | **$2.06** |
+  - ゲートは ungated spike を**両窓改善**（採点 +$55・学習 +$42＝判別器が戻り玉6玉を救う）。base 比＝採点窓 **+$111**・最大DD **−$29 改善**（ungated の悪化を逆転）・**勝率 73.9% 不変**（戻る勝ち玉を切らない）・期待値/玉 +$0.43・**月次 net bootstrap [8,134] 下限プラス（N5 0跨ぎ脱出・月次）**。8/22 は SPIKE_SL −$45 で救出継続。
+  - 唯一の負＝学習窓 $1148（base $1239 比 −$91）。但し θ は学習窓で最良選定済＝spike の IS コスト。**OOS($539)>IS 改善なので overfit でない**（overfit は IS>OOS）＝採点期間に8/22型の鋭い急騰が多い period 依存。
+- 【問0 前後比較】base→gated・採点窓: 261玉同数・net $428→$539(+$111)・期待値/玉 $1.64→$2.06・**勝率 77.4% 不変**・最大DD $140→$111。出口 TIME_EXIT 71→59・SPIKE_SL 0→15（ungated は SPIKE_SL を判別器で 戻り玉ぶん間引いた）。
+- 【問1 レバー】判別器ゲート付き SPIKE_SL（急騰 ∩ predict<θ*=0.3）。学習窓選定 θ*=0.3（6玉除外・学習 +$42）。採点窓 net +$111・最大DD −$29・勝率不変。
+- 【問2 不足量】N7 必要勝率 69.8%/実際 77.4%（分岐超え）。月次 bootstrap 下限 +$8（初）。$1,900 は埋めない（Risk lever＝テール削り＋net 微増）。
+- 【問3 負け集中】最大DD が 2026-02 に残る（$111・spike-OFF $140 から改善）。学習窓 −$91 が唯一の負（2021-2025-02 で spike が一部戻り玉を巻き込む・θ選定後の最良）。
+- 【問4 過去接続】ungated spike（E36-spike・採点+$56/学習−$134/DD悪化）の弱点を判別器メタゲートで解消＝採点+$111/学習−$91/DD改善へ。booster は iter5a(be_gate)/iter6(partial) と同一流用。de Prado AFML Ch3 メタラベリング（一次=Lee-Mykland jump／二次=hold-ML がゲート）。深さ/速度/出来高キルスイッチ（全 net 悪化）と別＝「戻る玉を残す」方向。
+- 【問5 次仮説】**base に折り込むか＝まこさん判断**（採点窓 +$111・最大DD改善・勝率不変・月次下限プラス＝Risk 管理の狙い達成／但し学習窓 −$91＝両窓厳密一致でない・overfit でない period 依存）。採用なら e36 既定を gated spike(θ0.3) に。次の net 本体＝§6.1.1 件数↑ or hold-ML 精度（両窓黒字化）。
+- **【主張】** まこさん発案の「TPできる玉は切らず急騰で死ぬ玉だけ切る」＝SPIKE_SL に hold-ML 判別器ゲート（急騰 ∩ predict<θ*=0.3・θ学習窓選定）を足し、公式 score.py 採点窓 **月$59.90/$539.06（base $427.66 比 +$111・ungated spike 比 +$55）**・**最大DD $140→$111 改善**（ungated の $155 悪化を逆転）・**勝率 73.9% 不変**（判別器が戻り勝ち玉を救い巻き込まない）・期待値/玉 $1.64→$2.06・**月次 net 95%区間 [8,134] 下限プラス**（N5 0跨ぎ脱出・月次）＝Risk 管理（8/22 救出・テール削り）を net も上げつつ達成。唯一の負＝学習窓 −$91（θ選定後の最良・OOS>IS で overfit でない period 依存）。base 折り込みはまこさん判断（強い候補）。
+- **生成物**: e36_short_oscillation.py（spike_gate 追加・学習窓スイープ選定・compile/設計↔実装ゲート PASS）／ gated spike-ON 出力 = repo の trades_e36_short_oscillation_5m_shortset1*（θ0.3）／ report_・analysis_・viz。再現 `python3.13 e36_short_oscillation.py --spike-lm --spike-gate 0.5`（値はゲートON のトリガ・θ は学習窓選定）→ precheck → score.py。判別器ゲート probe 群（read-only）= /tmp/e36_*_probe.py。
