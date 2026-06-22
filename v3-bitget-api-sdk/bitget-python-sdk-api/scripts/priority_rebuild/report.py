@@ -20,6 +20,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import score as judge                                    # 固定審判（import のみ）
 import eval_engine as ee                                 # 確定コスト定数（import のみ・改造禁止）
+import ratchet_io                                        # 出力の上書き防止（書く前に既存を archive へ・全戦略汎用・net 不関与）
 pd.set_option("display.width", 200); pd.set_option("display.max_columns", 30)
 SIDE_JP = {"LONG": "買い", "SHORT": "売り"}
 EXIT_JP = {"TP_FILLED": "利確(TP)", "SL_FILLED": "損切(SL)", "TIME_EXIT": "時間切れ", "MFE_STALE_CUT": "含み益失速",
@@ -136,6 +137,7 @@ def main():
     has_p = "p" in d.columns
     name = Path(a.csv).name
     out_path = Path(a.csv).with_name(f"report_{Path(a.csv).stem}.txt")   # 結果一覧を書類保存
+    ratchet_io.archive_if_exists(out_path)             # 既存 report を archive へ逃がす（上書きしない・過去保全）
     _rf = open(out_path, "w", encoding="utf-8"); _orig = sys.stdout; sys.stdout = _Tee(_orig, _rf)
 
     # ===== 0. 使用パラメータ（戦略が記録したサイドカー・指標/閾値/TP/SL/TimeExit）=====

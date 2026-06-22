@@ -35,6 +35,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import report                                     # _judge_cols / _Tee（審判式・正本1箇所）
 import score                                       # _funding_for_trade（公式 net=funding込み に揃える・H13 import のみ）
+import ratchet_io                                 # 出力の上書き防止（書く前に既存を archive へ・全戦略汎用・net 不関与）
 
 BANDS = {
     "ATR%":   ("atr_pct",      [0, 0.15, 0.2, 0.3, 0.4, 9e9]),
@@ -98,6 +99,7 @@ def main():
     BANDS = {k: v for k, v in BANDS.items() if v[0] in d.columns}   # 実在カラムのみ（戦略非依存・E35 crash 回避）
     name = Path(a.csv).name
     out_path = Path(a.csv).with_name(f"analysis_{Path(a.csv).stem}.txt")
+    ratchet_io.archive_if_exists(out_path)             # 既存 analysis を archive へ逃がす（上書きしない・過去保全）
     _rf = open(out_path, "w", encoding="utf-8")
     sys.stdout = report._Tee(sys.__stdout__, _rf)
     print("=" * 70)

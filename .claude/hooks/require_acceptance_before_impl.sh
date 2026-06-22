@@ -43,19 +43,26 @@ if [ ! -f "$LIST" ]; then
   exit 2
 fi
 
-# 4) TARGET 一致（リストの対象と編集対象が同じか）
-TARGET=$(grep -E '^TARGET:' "$LIST" | head -1 | sed 's/^TARGET:[[:space:]]*//')
-if [ -z "$TARGET" ]; then
+# 4) TARGET 一致（複数 TARGET 行 or カンマ区切りを許可・2026-06-22 まこさん承認＝
+#    1 acceptance で複数ファイルをまとめて承認できる＝承認の往復を減らす。各 TARGET いずれかに一致すれば通す）
+TARGETS=$(grep -E '^TARGET:' "$LIST" | sed 's/^TARGET:[[:space:]]*//' | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$')
+if [ -z "$TARGETS" ]; then
   echo "🔒 [受け入れ条件ゲート] $LIST に『TARGET: <対象.py>』がありません。" >&2
   echo "$GUIDE" >&2
   exit 2
 fi
-case "$FILE" in
-  *"$TARGET") ;;
-  *) echo "🔒 [受け入れ条件ゲート] 編集対象($FILE)がリストの TARGET($TARGET)と一致しません。" >&2
-     echo "$GUIDE" >&2
-     exit 2 ;;
-esac
+MATCH=0
+while IFS= read -r tgt; do
+  [ -z "$tgt" ] && continue
+  case "$FILE" in *"$tgt") MATCH=1; break ;; esac
+done <<EOF
+$TARGETS
+EOF
+if [ "$MATCH" -ne 1 ]; then
+  echo "🔒 [受け入れ条件ゲート] 編集対象($FILE)がリストの TARGET($(echo "$TARGETS" | tr '\n' ' '))のいずれとも一致しません。" >&2
+  echo "$GUIDE" >&2
+  exit 2
+fi
 
 # 5) 機械照合用の部品リスト(DESIGN_CONTRACT)が在るか（書き忘れ防止＝明文化できる範囲を機械で漏れなく）
 if ! grep -q "DESIGN_CONTRACT" "$LIST"; then

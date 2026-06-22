@@ -52,6 +52,7 @@ import e35_box                              # noqa: E402  箱 3列×3足（leak/
 import build_labels_pct as bl               # noqa: E402  resample_ohlcv / attach_upper_tf（上位足 leak-safe attach・L-128 修正済・SHORT分割 1h MACD ゲート用）
 import verify_design_contract as _vdc       # noqa: E402  設計↔実装 自己チェック（設計書の部品リストを読む）
 import params_sidecar as _psc               # noqa: E402  使用パラメータ サイドカー（read専用メタ・審判に不関与）
+import ratchet_io                           # noqa: E402  出力の命名/archive/上書き防止（全戦略が踏襲する共通処理・net 不関与）
 
 RATCHET = ROOT / "results" / "priority_rebuild" / "ratchet"
 DESIGN_MD = ROOT / ".claude" / "ratchet" / "e35_design.md"   # 入口組み立ての唯一の正（設計書 DESIGN_CONTRACT）
@@ -606,16 +607,26 @@ def _param_sections(extra_params=None) -> dict:
     return sec
 
 
-def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None, stem: str = "e35_oscillation") -> None:
+def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None, stem: str = "e35_oscillation",
+                       tag: str | None = None) -> None:
     """trades を 全期間/採点窓/precheck に分けて出力＋月別サマリ（main と run_hold_ml で共用）。
-    stem=出力ファイル名の幹（既定 e35_oscillation・E36 SHORT専用は e36_short_oscillation＝report 自動E番号化）。"""
+    stem=出力ファイル名の幹（既定 e35_oscillation・E36 SHORT専用は e36_short_oscillation＝report 自動E番号化）。
+    ★全戦略が踏襲する共通の書き出し処理（ratchet_io・net 不関与・命名/ファイル移動のみ）:
+      - tag 指定時: suffix を `_<tag>_<NNN>` 連番化（ユニーク）＋同 stem の旧実験出力を archive へ退避（直下=現役のみ）。
+      - 書き出し前に既存があれば archive へ逃がす（上書きしない・過去保全）＝全呼び出し元に効く。
+      新しい戦略（e37/38/39…）もこの関数を呼ぶだけで同じ仕組みを自動で踏襲する。"""
     RATCHET.mkdir(parents=True, exist_ok=True)
+    if tag:                                                     # 実験タグ指定時のみ連番化＋旧実験退避（tag 無=安定名 base は不変）
+        suffix = ratchet_io.tagged_suffix(stem, suffix, tag, RATCHET)
+        ratchet_io.archive_prior_experiments(stem, suffix, RATCHET)
     base = RATCHET / f"trades_{stem}{suffix}.csv"
     out_full = base
     out_train = base.with_name(base.stem + "_train.csv")
     out_score = base.with_name(base.stem + "_score.csv")
     t_full = t[t.entry_time < SEAL_START].reset_index(drop=True)
     t_score = t[(t.entry_time >= SC_START) & (t.entry_time < SCORE_END)].reset_index(drop=True)
+    for _p in (out_full, out_score, out_train):                # 上書きしない＝既存は archive へ逃がしてから書く
+        ratchet_io.archive_if_exists(_p)
     t_full.to_csv(out_full, index=False)
     t_score.to_csv(out_score, index=False)
     t[t.entry_time < TRAIN_END].reset_index(drop=True).to_csv(out_train, index=False)

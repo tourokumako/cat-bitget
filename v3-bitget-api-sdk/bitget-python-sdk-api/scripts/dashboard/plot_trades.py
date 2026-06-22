@@ -53,6 +53,10 @@ DEFAULT_PRICE = ROOT / "data" / "BTCUSDT-5m-2021-04-01_03-31_1826d_V9FULL_safe.c
 RATCHET = ROOT / "results" / "priority_rebuild" / "ratchet"   # 売買記録の置き場
 VIZ_DIR = ROOT / "results" / "priority_rebuild" / "viz"       # チャートPNGの置き場（クリックで開ける）
 
+import sys                                                    # noqa: E402
+sys.path.insert(0, str(ROOT / "scripts" / "priority_rebuild"))
+import ratchet_io                                             # noqa: E402  出力の上書き防止（書く前に既存を archive へ・全戦略汎用）
+
 
 def _resolve_trades(name: str) -> pathlib.Path:
     """売買記録CSVを解決: フルパス → そのまま / 素のファイル名 → ratchet 直下を探す。"""
@@ -156,6 +160,7 @@ def main():
     else:
         VIZ_DIR.mkdir(parents=True, exist_ok=True)
         out = VIZ_DIR / f"{stem}_{s_lbl}_{e_lbl}{'_'+a.side if a.side else ''}.png"
+    ratchet_io.archive_if_exists(out)                # 既存 png を archive へ逃がす（上書きしない・過去保全）
     fig.tight_layout(); fig.savefig(out, dpi=110)
     print(f"[出力] {out}")
     print(f"  期間 {s_lbl}〜{e_lbl}（{days}日）/ 建玉 {npos}（{pos_pd:.1f}/日）/ 決済レグ {len(tr)}（{leg_pd:.1f}/日）")

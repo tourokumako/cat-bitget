@@ -15,6 +15,19 @@ case "$BASE" in
   *) exit 0 ;;
 esac
 
+# 除外（まこさん承認 2026-06-22・環境整備サイクル）: net不変のツール acceptance
+#   （命名規約／出力名／上書きガード等・戦略 net に不関与）は、クオンツ文献ベースアップの対象外。
+#   report.py/plot_trades.py が require_acceptance ゲート対象外なのと同じ思想。
+#   acceptance が自分で「BASEUP_EXEMPT」を宣言した時のみスキップ（戦略/改善設計は従来どおり要ベースアップ）。
+#   Write の content / Edit の new_string、または既存ファイル本文に BASEUP_EXEMPT があれば通す。
+CONTENT=$(printf '%s' "$INPUT" | python3 -c "import sys,json
+try:
+    ti=json.load(sys.stdin).get('tool_input',{}) or {}
+    print(ti.get('content','') or ti.get('new_string',''))
+except Exception: print('')" 2>/dev/null)
+if printf '%s' "$CONTENT" | grep -q "BASEUP_EXEMPT"; then exit 0; fi
+if [ -f "$FILE_PATH" ] && grep -q "BASEUP_EXEMPT" "$FILE_PATH"; then exit 0; fi
+
 STATE="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 LOG="$STATE/search_log.txt"
 WINDOW=3600   # 直近60分のベースアップを集計
