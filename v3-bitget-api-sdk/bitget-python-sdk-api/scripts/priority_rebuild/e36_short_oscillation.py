@@ -104,6 +104,28 @@ def spike_stat(c: np.ndarray, K: int) -> np.ndarray:
         return r / np.sqrt(V)
 
 
+# ── 件数レバー（E36 freq-iter1）: 強レンジ限定で SHORT 反転ゾーンを広げて新規発火を増やす ──
+def _widen_short_zone(df, box_tf, z_wide, er_strong_q):
+    """強レンジ（ER が学習窓 q(er_strong_q) 未満＝強い平均回帰）のバーだけ、SHORT 反転ゾーンを
+    W×e35.ZONE_FRAC(=0.25) → W×z_wide に広げて short_entry を再計算する（zone_short レバー）。
+    e35 の入口成分（range_ok / short_rev / up_zone / in_box / W）を流用＝重複実装しない・e35 base は不変。
+    全て当該足までの値＝leak-safe（H2）／ er 閾値は学習窓 fit＝採点窓不参照（H8）／ LONG は触らない（SHORT 専用）。
+    返り値: (er_strong閾値, strongバー数, 拡大前SHORT発火数, 拡大後SHORT発火数)。"""
+    assert z_wide > e35.ZONE_FRAC, f"z_wide({z_wide}) は現行 ZONE_FRAC({e35.ZONE_FRAC}) より大きく（広げる方向のみ）"
+    res = df[e35_box.res_col(box_tf)]
+    lo, hi, _nW = e35._w_band(df, box_tf, df["ts"] < TRAIN_END)
+    sig = e35._build_signals_for_tf(df, box_tf, lo, hi)            # range_ok / short_rev / up_zone / in_box / W
+    in_box = sig["in_box"]; W = sig["W"]
+    er_strong = float(df["er"][df["ts"] < TRAIN_END].quantile(er_strong_q))   # 学習窓 fit（採点窓不参照・H8）
+    strong = (df["er"] < er_strong).fillna(False)                 # 強い平均回帰のバーだけ広げる（弱レンジは 0.25 のまま）
+    up_zone_wide = (in_box & (res <= z_wide * W)).fillna(False)
+    up_zone_eff = sig["up_zone"].where(~strong, up_zone_wide)      # ~strong=現行up_zone(0.25) / strong=拡大up_zone
+    short_entry_wide = sig["range_ok"] & up_zone_eff & sig["short_rev"]
+    n_before = int(sig["short_entry"].sum()); n_after = int(short_entry_wide.sum())
+    df["short_entry"] = short_entry_wide.to_numpy()
+    return er_strong, int(strong.sum()), n_before, n_after
+
+
 def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp=None,
                    short_htf=False, short_only=False, spike_lm=None, spike_gate=None):
     """★e35.run_continuous の逐語コピー＋ SPIKE_SL を1ブロック追加（spike_lm=None で e35 と完全恒等）。
@@ -316,7 +338,7 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
     return trades, events
 
 
-def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None):
+def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=None):
     """E36 SHORT専用（shortset1[SHORT 1h MACD ゲート]＋iter9 出口を内包）＋急騰Exit。
     e35.run_partial_tp の shortset1+short_only パスの逐語相当（short_htf=True・short_only=True 固定）。
     教師生成・grid 選定は spike OFF（iter3 基底のまま＝教師を急騰Exitで歪めない）／最終 scored run だけ spike_lm を渡す。"""
@@ -456,6 +478,11 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None):
         _xp["spike_gate（急騰Exit の判別器ゲート・iter2）"] = (
             f"θ={spike_gate}（partial の hold-ML booster 流用・predict<θ=死ぬ判別の玉のみ SPIKE_SL）。"
             f"急騰でも判別器が「中心に戻る=TP できる」と言った玉は切らない＝戻り玉の巻き込みを減らす（de Prado メタラベリング）")
+    if zone_short is not None:
+        _xp["zone_short（件数レバー・強レンジで SHORT 反転ゾーン拡大・freq-iter1）"] = (
+            f"z_wide={zone_short[0]}（通常 ZONE_FRAC={e35.ZONE_FRAC}）・er_strong_q={zone_short[1]}（学習窓 ER 分位）。"
+            f"ER<学習窓 q(er_strong_q)=強い平均回帰のバーだけ up_zone を res≤z_wide·W に拡大→新規 SHORT 発火増。"
+            f"弱レンジは 0.25 のまま・LONG は不変（SHORT 専用・arXiv 1607.00454）")
     _output_and_report(t, f"_{box_tf}_shortset1", extra_params=_xp, stem="e36_short_oscillation")
 
 
@@ -471,6 +498,10 @@ def main():
     ap.add_argument("--spike-lm-k", type=int, default=270, help="Lee-Mykland 窓 K 本（既定270≈1日・a-priori）")
     ap.add_argument("--spike-lm-alpha", type=float, default=0.01, help="有意水準 α（既定0.01・a-priori・データで sweep しない L-267）")
     ap.add_argument("--spike-gate", type=float, default=0.5, help="判別器ゲート θ トリガ（既定0.5＝採用・実際の θ は学習窓スイープ選定 L-267）。hold-ML predict<θ=死ぬ判別の玉だけ SPIKE_SL（戻る玉は急騰でも残す）")
+    # ★採用（2026-06-22 まこさん GO）= 件数レバー freq-iter1 が既定（強レンジで SHORT 反転ゾーン拡大・採点窓 $548.74・両窓 net 改善・件数 1.05/日）。
+    ap.add_argument("--no-zone", action="store_true", help="件数レバー（freq-iter1）を OFF（=ゾーン拡大なし恒等参照・E36 gated spike $539.06）")
+    ap.add_argument("--zone-wide", type=float, default=0.35, help="件数レバー（freq-iter1・既定 0.35＝採用）: 強レンジで SHORT 反転ゾーンを W×0.25→W×この値 に拡大")
+    ap.add_argument("--zone-er-q", type=float, default=0.25, help="強レンジ判定の学習窓 ER 分位（ER<この分位=強い平均回帰のバーだけ拡大・a-priori 0.25・採点窓スイープ禁止 L-267）")
     a = ap.parse_args()
 
     if a.no_spike:
@@ -486,7 +517,15 @@ def main():
 
     lo, hi, nW, _sig = _attach_entry_cols(df, a.box_tf)
     print(f"  box={a.box_tf} W正常帯=[{lo:.3f}%,{hi:.3f}%]（in_box 学習 {nW:,}本）/ 入口発火 SHORT {int(df['short_entry'].sum())}")
-    run_e36(df, a.box_tf, a.max_adds, spike_lm=spike_lm, spike_gate=spike_gate)
+    if a.no_zone:
+        zone_short = None
+        print(f"  [zone拡大 OFF＝恒等参照] 反転ゾーン {e35.ZONE_FRAC} のまま（E36 gated spike $539.06 と一致）")
+    else:
+        er_s, n_strong, n_b, n_a = _widen_short_zone(df, a.box_tf, a.zone_wide, a.zone_er_q)
+        zone_short = (a.zone_wide, a.zone_er_q)
+        print(f"  [zone拡大 ON・freq-iter1＝採用] 強レンジ(er<q{a.zone_er_q}={er_s:.3f}) {n_strong:,}本で反転ゾーン {e35.ZONE_FRAC}→{a.zone_wide}"
+              f" / SHORT 入口発火 {n_b}→{n_a}（+{n_a-n_b}）")
+    run_e36(df, a.box_tf, a.max_adds, spike_lm=spike_lm, spike_gate=spike_gate, zone_short=zone_short)
     print("=" * 100)
 
 

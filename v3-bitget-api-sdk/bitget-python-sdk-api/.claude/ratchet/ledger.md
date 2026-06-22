@@ -1076,3 +1076,18 @@
 - 【問5 次仮説】**base に折り込むか＝まこさん判断**（採点窓 +$111・最大DD改善・勝率不変・月次下限プラス＝Risk 管理の狙い達成／但し学習窓 −$91＝両窓厳密一致でない・overfit でない period 依存）。採用なら e36 既定を gated spike(θ0.3) に。次の net 本体＝§6.1.1 件数↑ or hold-ML 精度（両窓黒字化）。
 - **【主張】** まこさん発案の「TPできる玉は切らず急騰で死ぬ玉だけ切る」＝SPIKE_SL に hold-ML 判別器ゲート（急騰 ∩ predict<θ*=0.3・θ学習窓選定）を足し、公式 score.py 採点窓 **月$59.90/$539.06（base $427.66 比 +$111・ungated spike 比 +$55）**・**最大DD $140→$111 改善**（ungated の $155 悪化を逆転）・**勝率 73.9% 不変**（判別器が戻り勝ち玉を救い巻き込まない）・期待値/玉 $1.64→$2.06・**月次 net 95%区間 [8,134] 下限プラス**（N5 0跨ぎ脱出・月次）＝Risk 管理（8/22 救出・テール削り）を net も上げつつ達成。唯一の負＝学習窓 −$91（θ選定後の最良・OOS>IS で overfit でない period 依存）。base 折り込みはまこさん判断（強い候補）。
 - **生成物**: e36_short_oscillation.py（spike_gate 追加・学習窓スイープ選定・compile/設計↔実装ゲート PASS）／ gated spike-ON 出力 = repo の trades_e36_short_oscillation_5m_shortset1*（θ0.3）／ report_・analysis_・viz。再現 `python3.13 e36_short_oscillation.py --spike-lm --spike-gate 0.5`（値はゲートON のトリガ・θ は学習窓選定）→ precheck → score.py。判別器ゲート probe 群（read-only）= /tmp/e36_*_probe.py。
+
+## E36 freq-iter1: 件数レバー＝強レンジ限定で SHORT 反転ゾーンを拡大（W×0.25→W×0.35・新規発火増・2026-06-22）— 採用（ratchet・両窓 net 改善・件数増）/ 既定昇格はまこさん判断待ち
+- **方針（まこさん GO・Entry×Exit セットの Entry 側）**: 件数 0.96/日（デイトレ目標 10/日に桁不足）が壁。WebResearch ベースアップ（arXiv 1607.00454＝強い平均回帰ほど fill 頻度を上げるほど rebalancing premium／arXiv 1411.5062＝Entry 領域は SL の上の有界区間・Entry/TP/SL はセット）。cat_requirements §6.1.1「件数は V9 閾値を場面別に緩めて新規発火で作る」と一致。
+- **変更(A・1レバー・H16)**: e36 に `_widen_short_zone`＋`zone_short=(z_wide, er_strong_q)`・CLI `--zone-wide`（既定 None=OFF＝恒等）。強レンジ（ER<学習窓 q(er_strong_q=0.25)＝強い平均回帰のバー）だけ SHORT 反転ゾーンを res≤0.25·W → res≤z_wide·W に拡大して short_entry 再合成。e35 成分（range_ok/short_rev/up_zone/W）流用・e35 base 不変・LONG 不変（SHORT 専用）。出口/spike/cap 不変・新 exit_reason なし。
+- **結果(公式 score.py)**: 採点窓 net **$539.06→$548.74（+$9.68・月$59.90→$60.97）**／学習窓 net **$1148→$1275（+$127）**＝両窓 net 改善。玉数 261→285（+24・1.05/日）。最大DD $111→$108。月次 net 95%区間 下限 $8→$13（プラス維持）。勝率 77.4→76.1%。precheck PASS（breakeven 2.30）。
+- **自己検査**: a 恒等＝zone OFF が base CSV と1ビット一致（full/train/score 全 diff 0）✅／b 配線＝SHORT 入口発火 405→463・強レンジバーのみ拡大✅／c size 保存 0 違反・cap 0.1200✅。
+- **原因究明(3分類)**: ①**戦略（健全）**＝report L 玉単位＝追加玉 36件 net **+$83・breakeven 2.71**（手数料負けでない・新規玉は黒字）／削った玉 12件 net +$2。leak 無（er/res/W・%K は当該足まで・H2）・cap 0.12✅・H15 非該当（方向ベース）。②**質希釈**＝期待値/玉 $2.07→$1.93（−$0.14・理論どおり中心寄りの新規玉は edge 薄い）＝採点窓の伸びが小さい主因＝z_wide 0.40+ は採点窓を割る恐れ。③regime＝赤月 2025-06/2026-02 は base 同様。
+- 【問0 前後比較】base 261玉 net$539 avg$2.07 勝率77.4 → 今回 285玉 net$549 avg$1.93 勝率76.1（件数+24・net+$10・avg−$0.14・勝率−1.3pt＝激減/急増なし・degenerate でない＝実取引が24玉増えて net も増）。
+- 【問1 レバー】K節 期待値4要素＝動いたのは**件数**（261→285・+24玉）。追加玉 net+$83/breakeven2.71。期待値/玉 $2.06→$1.92・平均負け $16.59→$17.32。
+- 【問2 不足量】採点窓 月$60.97 → 目標 月$1,900 まで **月$1,839 不足**。件数 1.05/日 → デイトレ目標 10/日 まで桁不足。
+- 【問3 負け集中】出口 時間切れ −$1,053（最大出血・不変）。月別 赤 2025-06 −$49・2026-02 −$12。N12 atr_pct<中 ∩ stoch_k≥中 −$162。
+- 【問4 過去接続】E35 iter1（レンジ判定ゲートを緩めて件数 11→650 だが中心非回帰の弱レンジ玉で TIME 大損）と**構造差**＝iter1 はゲート自体を緩め弱レンジを拾った／本変更は**レンジ判定はより厳しく（ER<q0.25）した上でゾーン幅だけ拡大**＝強レンジに限定する逆方向。両窓改善で過剰適合でない（L-289）。
+- 【問5 次仮説】N10 最強分離 **atr_pct（相関+0.134・勝ち玉ほど高ボラ）**を hold-ML / 入口の ML 特徴量へ（固定値手調整禁止 L-267）。学習窓で atr_pct 帯別の純増を測れば採点窓を見ず検証可。
+- **【主張】** E36 freq-iter1（強レンジ限定で反転ゾーン 0.25→0.35）＝**件数 1.05/日（+9%）・採点窓 net $548.74（+$9.68）・学習窓 $1275（+$127）の両窓 net 改善・最大DD $111→$108・月次下限 $8→$13・追加玉36件 net+$83 breakeven2.71（黒字）＝採用（ratchet）**。期待値/玉 $2.07→$1.93 の質希釈でこれ以上の拡大（0.40+）は採点窓を割る恐れ＝0.35 で止める。既定昇格はまこさん判断待ち。
+- **生成物**: e36_short_oscillation.py（_widen_short_zone/zone_short/--zone-wide 追加・py_compile/設計↔実装ゲート PASS）／ zone-ON 出力 = trades_e36_short_oscillation_5m_shortset1*（--zone-wide 0.35）／ base 退避 = trades_e36_basekeep*（gated spike $539.06・--vs 参照）／ report_・analysis_・viz。再現 `python3.13 e36_short_oscillation.py --zone-wide 0.35` → precheck → score.py。
