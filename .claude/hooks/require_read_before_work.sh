@@ -26,8 +26,10 @@ input=$(cat)
 #   - strat_v9ml_design: 設計作業の時だけ読む(Layer 2)。設計書照合は複数 CC チェック(cc_role §1.4.6.3)が物理担当
 # 2026-06-13 まこさん指示: cat_requirements を必読から外す（セッション開始時に読んでもインプットされない実証）。
 #   → just-in-time（設計書を書く瞬間に exchange_spec ★決済方法 + cat_requirements を強制）に移管＝require_spec_read_before_design.sh。
-REQUIRED=("WORKFLOW" "ledger.md")
-LABEL=("WORKFLOW.md(現在地)" "ledger.md(PDCA実験記録の正本)")
+# adopted_strategies.md（採用台帳）追加: 2026-06-22 まこさん指示。器の現在値を「最新の1実験」でなく
+#   「採用ポートフォリオの積み上げ」で見るため、goal_block を書く前に台帳を Read 強制（ゲート3 と対）。
+REQUIRED=("WORKFLOW" "ledger.md" "adopted_strategies")
+LABEL=("WORKFLOW.md(現在地)" "ledger.md(PDCA実験記録の正本)" "adopted_strategies.md(採用ポートフォリオ台帳)")
 
 missing=()
 for idx in "${!REQUIRED[@]}"; do
@@ -87,5 +89,44 @@ if [ ${#missing2[@]} -gt 0 ]; then
   echo "★次セッションの本筋・今セッションの確定・やってはいけないことは next_step.md（SessionStart で全文表示）が正本。" >&2
   echo "   それを起点に goal_block の候補/天井/戦略照合を書く（前セッション固有の handoff をここ/hook に焼き込まない＝古くなって誤誘導する・2026-06-13）。" >&2
   exit 2
+fi
+
+# --- ゲート3: 器の現在値＝採用ポートフォリオの積み上げ照合（近視眼防止・2026-06-22 まこさん指示） ---
+# 採用台帳のマーカー <!-- PORTFOLIO_CHECK: BASE_MAX=... ; PILLARS=...,... --> を読み、
+# goal_block の「## 器の現在値」セクションに「最大 deployable 地面」＋採用柱 計2本以上が
+# 書かれているか照合する。最新の1実験だけを現在値にする近視眼（2026-06-22 E36 単独事案）を物理的に弾く。
+# hook に戦略名を焼かず台帳マーカーから動的に読む＝採用が変われば台帳1行更新で hook が自動追従。
+ADOPTED="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/adopted_strategies.md"
+marker=$(grep -m1 "PORTFOLIO_CHECK:" "$ADOPTED" 2>/dev/null)
+base_max=$(printf '%s' "$marker" | sed -n 's/.*BASE_MAX=\([A-Za-z0-9]*\).*/\1/p')
+pillars=$(printf '%s' "$marker" | sed -n 's/.*PILLARS=\([A-Za-z0-9,]*\).*/\1/p')
+
+if [ -n "$base_max" ] && [ -n "$pillars" ]; then
+  # goal_block の「## 器の現在値」見出し配下（次の「## 」まで）を抽出
+  section=$(awk '/^##[[:space:]]*器の現在値/{f=1;next} /^## /{f=0} f' "$GOAL" 2>/dev/null)
+
+  miss_base=0
+  printf '%s' "$section" | grep -q "$base_max" || miss_base=1
+
+  count=0
+  IFS=',' read -ra arr <<< "$pillars"
+  for p in "${arr[@]}"; do
+    [ -n "$p" ] && printf '%s' "$section" | grep -q "$p" && count=$((count+1))
+  done
+
+  if [ "$miss_base" -eq 1 ] || [ "$count" -lt 2 ]; then
+    echo "🔒 [器の現在値ゲート] goal_block の「器の現在値」が採用ポートフォリオの積み上げになっていません。" >&2
+    echo "近視眼防止（2026-06-22 E36 単独事案）: 最新の1実験だけを現在値にするのを物理的に止めます。" >&2
+    echo "" >&2
+    echo "必須（採用台帳 adopted_strategies.md のマーカーが正・hook はそれに追従）:" >&2
+    echo "  - 最大 deployable 地面「$base_max」を器の現在値に必ず書く" >&2
+    echo "  - 採用柱（$pillars のうち）を計2本以上書く（現在 $count 本）" >&2
+    [ "$miss_base" -eq 1 ] && echo "  → 不足: 最大地面「$base_max」が器の現在値に無い" >&2
+    [ "$count" -lt 2 ] && echo "  → 不足: 採用柱が $count 本（2本以上必要）" >&2
+    echo "" >&2
+    echo "→ adopted_strategies.md（採用台帳）を見て、器の現在値を「積み上げ」で書き直してください。" >&2
+    echo "   器の現在値は最新の1実験でなく、今ポートフォリオに入っている全採用戦略の合算で見る。" >&2
+    exit 2
+  fi
 fi
 exit 0

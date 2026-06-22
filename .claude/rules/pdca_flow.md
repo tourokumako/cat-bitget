@@ -26,7 +26,7 @@
 | force_read_ml_design | SessionStart | — | 必読・6軸ゲート・保管ルール等を表示 |
 | reset_read_log | SessionStart | — | read_log をリセット（前セッションの読了を持ち越さない） |
 | show_latest_state | SessionStart | — | next_step.md 全文表示（起点） |
-| require_read_before_work | PreToolUse | Bash/Edit/Write/MultiEdit | 必読2本＋目標逆算ブロックが済むまで作業ブロック |
+| require_read_before_work | PreToolUse | Bash/Edit/Write/MultiEdit | 必読3本（WORKFLOW/ledger/adopted_strategies）＋目標逆算ブロック＋器の現在値が採用ポートフォリオの積み上げ（最大地面＋採用柱2本以上）になるまで作業ブロック（ゲート3＝近視眼防止・2026-06-22） |
 | record_read | PostToolUse | Read | Read した .md を read_log.txt に記録 |
 | check_websearch_before_design_write | PreToolUse | Write/Edit | 設計書 Write 前に直近60分の検索ベースアップを要求 |
 | enforce_search_quality | PreToolUse | WebSearch | 検索品質（12語以内・allowed_domains 指定） |
@@ -51,9 +51,13 @@
 ### A. セッション開始（SessionStart）
 4本（verify_handoff_paths / force_read_ml_design / reset_read_log / show_latest_state）が表示・準備。強制はまだ無い。次の作業で B が効く。
 
-### B. 最初の Bash/Edit/Write の前（必読＋目標逆算）
-- **require_read_before_work**（PreToolUse）: 必読2本（WORKFLOW.md / ledger.md）を Read tool で開く＋`goal_block.md` に目標逆算の必須見出しを書くまで、全 Bash/Edit/Write をブロック。
-- 解除: read_log に2本が載り、goal_block の必須見出しが揃う。記録は record_read（PostToolUse Read）。
+### B. 最初の Bash/Edit/Write の前（必読＋目標逆算＋器の現在値の積み上げ照合）
+- **require_read_before_work**（PreToolUse）: 3ゲートを順に物理強制。全 Bash/Edit/Write をブロック。
+  - **ゲート1（読了）**: 必読3本（WORKFLOW.md / ledger.md / **adopted_strategies.md＝採用ポートフォリオ台帳**）を Read tool で開く。
+  - **ゲート2（目標逆算）**: goal_block.md に必須見出し（大目標/器の現在値/ギャップ/候補/天井/選定/3行ゲート/届く構成/戦略照合）を書く。
+  - **ゲート3（器の現在値＝近視眼防止・2026-06-22 まこさん指示）**: goal_block の「器の現在値」セクションに、採用台帳マーカー `<!-- PORTFOLIO_CHECK: BASE_MAX=… ; PILLARS=… -->` の「最大 deployable 地面（E32b）」＋「採用柱 計2本以上」が書かれているか照合。無ければブロック。＝最新の1実験だけを現在値にする近視眼（2026-06-22 E36 単独事案）を物理的に弾く。hook に戦略名を焼かず台帳マーカーから動的に読む（採用が変われば台帳1行更新で hook 追従）。
+- 解除: read_log に3本が載り、goal_block の必須見出しが揃い、器の現在値が積み上げ照合を通る。記録は record_read（PostToolUse Read）。
+- ⚠️ 採用/不採用・最大地面が変わったら adopted_strategies.md の `PORTFOLIO_CHECK` 行（BASE_MAX / PILLARS）だけ更新する（hook は本行に自動追従）。
 
 ### C. 設計・実装ファイルを書く前（PreToolUse Write/Edit が順に全部かかる）
 - **check_websearch_before_design_write**: 設計書 Write 前に直近60分で WebSearch3本/ソース種別2/WebFetch2本（足がかり探索）。未達でブロック。
