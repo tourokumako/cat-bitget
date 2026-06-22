@@ -2,14 +2,24 @@
 
 ---
 
-## 🔴 現在地（2026-06-21 改訂97＝mae[最大逆行]記録を追加[計器・net 不変]＋probe で急騰Exit の根拠を確定＝次は急騰Exit の設計プレゼン→承認→実装）
+## 🔴 現在地（2026-06-22 改訂99＝出力整備①完了＝全戦略汎用の「出力命名(タグ連番)・上書き防止・過去 archive」を共有モジュール ratchet_io.py＋共通の書き出し処理 _output_and_report に集約。次＝E35/E36 切り分け[共有エンジンを中立モジュールへ・net 不変リファクタ]→その後 (A) freq-iter3）
 
 > **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（本筋・確定・やってはいけない・出典が集約）。
-> - **mae 記録 採用（ledger E36-prep・計器・net 不変）**: e35_range_oscillation.py の _record_lots に最大逆行 max_adv 追跡＋mae_usd 列（mfe と完全対称・running・leak-safe）。公式 score.py 月+$47.52・$427.66＝mae 前と完全一致（記録列＝net 不変）。analyze N11／report I節(MFE/MAE帯)が mae_usd で自動稼働（変更不要）。
-> - **probe で急騰Exit の根拠確定（/tmp/e36_spike_probe.py・両窓一貫）**: 時間切れで死ぬ玉は最大逆行 ATR×5-6（採点中央5.5/学習6.3）／勝つ玉は ATR×1（p90=2.7/3.2）＝深さで明確分離。→「建値から ATR×3.5-4 逆行で成行 緊急Exit」で勝ち玉ほぼ非巻き込み・死ぬ玉の大半を救う（粗試算 採点窓+$400級・要実装→score.py）。
-> - **次（本筋）**: 急騰Exit を設計プレゼン→GO→acceptance→実装。mae は発火に使わない（未来値・leak）＝running 逆行（建値比 ATR×k）で判定・新 exit_reason は score.py に taker 登録＋既知答えテスト（H13）。
-> - 地面（E31 窓）: SHORT 合算 E32b 月$616.55。E36 base 月+$47.52（mae 前後で不変・両窓黒字だが N5 0跨ぎ＝黒字戦略でない・ratchet 継続）。判定=score.py。
-> - **⚠️ CC への警告（L-299）**: ①「次の一手」候補も提案前に ledger 照合（next_step 鵜呑み禁止＝既存路線/失敗済みをなぞる癖）②保有中の最大値(mfe/mae)は記録・分析用で発火に使わない（leak）③急騰Exit の k は学習窓 or a-priori（採点窓スイープ禁止 L-267）・両窓で確認 ④勝ち玉巻き込み注意（k≥ATR×3.5・BE_EXIT と棲み分け）。
+> - **出力整備①（net 不変・環境整備・ledger 対象外）**: ① `ratchet_io.py`（共有・既知答えテスト付き）= タグ連番命名 / archive_if_exists（書く前に既存を archive＝絶対上書きしない） / archive_prior_experiments。② 共通の書き出し処理 `_output_and_report`（e35 内）に配線＝**呼ぶ全戦略（e35/e36/今後の e37/38/39）が自動踏襲**・e36 は `--tag` を渡すだけ。③ report/analyze/png も archive_if_exists で上書きしない。④ ratchet/ viz/ 直下を整理（現役=E36 base のみ・過去は archive へ退避）。⑤ hook 2本（BASEUP_EXEMPT 免除・複数 TARGET 可）・踏襲ルール明文化（§3.1/acceptance_checklist）。
+> - **次（本筋・まこさん GO）= E35/E36 切り分け**: E36 が e35 を import する依存を断ち、共有エンジンを中立モジュール（osc_engine.py 等）へ。E35/E36 を兄弟化（相手を import しない）。**net 不変リファクタ＝前後バイト一致を score.py で確認**。新セッションで設計プレゼン→承認→実装。
+> - **その後 (A) freq-iter3**: --rev-nofloor ON のまま add を hold-ML 判別器でゲート（両窓で freq-iter1 $548.74 超え）。
+> - 地面（E31 窓）: SHORT 合算 E32b 月$616.55。E36 base（freq-iter1）月$60.97/$548.74。採用は adopted_strategies.md 台帳が正本（E36=採用 SHORT柱候補／E35=共有エンジン・候補）。
+> - **⚠️ CC への警告（L-301）**: ①「全戦略で踏襲」は共通処理に1箇所実装＝個別ファイルに書かない ②「全部やれ」を現存ファイル総当たりと解釈しない（凍結は対象外・将来踏襲が本質）③採用/base を語感で決めつけない＝台帳の役割列を引用 ④切り分けは net 不変＝前後バイト一致を必ず確認。
+
+## 🧊 改訂98 ブロック（履歴・参照用）（2026-06-22＝E36 件数レバー freq-iter2「反転確認の %K>70 下限を外す」＝件数1.05→1.75/日に増やせる検証は成功も net 崩壊で単独採用せず＝次は add を判別器でゲートして net 回収[(A)確定]）
+
+> **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（本筋・確定・やってはいけない・出典が集約）。
+> - **freq-iter2 採用せず（地面 freq-iter1 月$60.97/$548.74 維持・ledger E36 freq-iter2）**: まこさん指摘「レンジは多いのにエントリーできていない」→ 入口ファネル分解で反転確認 short_rev が最大ボトルネック（箱上端到達5,304→892に83%脱落）。反転確認を `(%K>70)∩(%K<前%K)` → `(%K<前%K)`（下限なし下降のみ）に置換（--rev-nofloor・既定OFF）。件数 玉285→476（1.05→1.75/日）に増えたが期待値/玉 $1.93→$0.17 に崩壊し採点窓 月$8.83・N5 0跨ぎ＝この iter は「件数を増やせるか」の検証で net 低下は許容（まこさん方針）。
+> - **deadcross は採用せず**: 当初 deadcross（%K<%D 下抜け）で実装→件数463→318に減（瞬間クロス＝1サイクル1回）。正しい緩め方＝「下限を外す・下降は残す」（/tmp/e36_rev_variants_probe.py で確定）。
+> - **狭レンジ(12-19〜22)が空の原因＝w_ok 箱幅ゲート**（/tmp/e36_dec19_gate_probe.py）。値幅が狭いレンジは箱幅で弾かれる＝反転確認とは別ゲート（(B) で後回し）。
+> - **次（本筋・(A) 確定 GO）**: --rev-nofloor を ON のまま **add（買い増し）を hold-ML 判別器でゲート**（死ぬ判別の玉に積まない・N6/N12 で深add玉が出血）→ 両窓で地面 freq-iter1 超えを狙う。設計プレゼン→承認→実装。
+> - 地面（E31 窓）: SHORT 合算 E32b 月$616.55。E36 base（freq-iter1）月$60.97/$548.74（玉285・1.05/日・両窓黒字だが N5 0跨ぎ）。判定=score.py。
+> - **⚠️ CC への警告（L-300）**: ①ゲートを緩めて件数を増やす時は「どの sub-条件がボトルネックか」を発火数 probe で先に特定（瞬間イベント=deadcross は連続条件より発火少＝"実績ある手"でも頻度が増えるとは限らない）②Entry を広げたら net は下がる＝単独で net 採否を決めず Exit/サイズとセットで回収（まこさん方針）③increased entry に深く add しない（marginal 玉の深add が出血）。
 
 ## 🧊 改訂96 ブロック（履歴・参照用）（2026-06-21＝E36「E35両方向から SHORT専用を切り出し」採用＝SHORT専用 独立柱を確定・採点 月+$47.52／学習 月+$26.37・shortset1 SHORT分解と一致・cap解放0・LONG をきれいに除去）
 

@@ -76,6 +76,8 @@ _record = e35._record
 _record_lots = e35._record_lots
 _verify_cap = e35._verify_cap
 _output_and_report = e35._output_and_report
+# ★出力の命名/archive/上書き防止は共通の書き出し処理（e35._output_and_report・ratchet_io）が担う＝
+#   e36 は --tag を渡すだけ。今後の e37/38/39 も同関数を呼べば自動で踏襲する（個別配線しない）。
 
 
 # ── 急騰検知 Lee-Mykland jump（全 bars≤i の値のみ＝leak-safe・a-priori 閾値・スイープしない）──
@@ -124,6 +126,37 @@ def _widen_short_zone(df, box_tf, z_wide, er_strong_q):
     n_before = int(sig["short_entry"].sum()); n_after = int(short_entry_wide.sum())
     df["short_entry"] = short_entry_wide.to_numpy()
     return er_strong, int(strong.sum()), n_before, n_after
+
+
+# ── 件数レバー（E36 freq-iter2）: SHORT 反転確認の「%K>70 下限」を外し下降のみ（%K<前%K）に ──
+def _short_rev_nofloor(df, box_tf, zone_params):
+    """SHORT 反転確認を %K>70∩下降 → 下限なし・下降のみ（%K<前%K）に置き換えて short_entry を再合成
+    する（rev_nofloor レバー・freq-iter2）。"高い所で売る" の担保は up_zone（箱上端ゾーン）に任せ、%K>70 の
+    買われすぎ下限を外す（%K>70 と up_zone の二重を解消）。入口ファネル分解（採点窓78,624バー）で反転確認が
+    最大ボトルネック（上端到達5,304→892に83%脱落）。反転確認別の発火比較（up_zone内）: 現状892 / deadcross575
+    （瞬間クロス＝減）/ 下限なし下降のみ2,012（2.3倍）→ 下限外しが正しい緩め方（probe 確定）。
+    zone_params=(z_wide, er_strong_q) なら freq-iter1 と同じ強レンジ拡大 up_zone を併用（合成）／None なら base up_zone。
+    e35 入口成分（range_ok / up_zone / in_box / W）流用・e35 base 不変・LONG は触らない（SHORT 専用）。
+    全て当該足と1本前のみ＝leak-safe（H2）。返り値: (置換前SHORT発火数, 置換後SHORT発火数, 下降バー数)。"""
+    lo, hi, _nW = e35._w_band(df, box_tf, df["ts"] < TRAIN_END)
+    sig = e35._build_signals_for_tf(df, box_tf, lo, hi)            # range_ok / up_zone / in_box / W / short_rev
+    # up_zone（zone レバー併用なら強レンジで拡大・freq-iter1 _widen_short_zone と同じ算式）
+    if zone_params is not None:
+        z_wide, er_strong_q = zone_params
+        res = df[e35_box.res_col(box_tf)]; in_box = sig["in_box"]; W = sig["W"]
+        er_strong = float(df["er"][df["ts"] < TRAIN_END].quantile(er_strong_q))   # 学習窓 fit（採点窓不参照・H8）
+        strong = (df["er"] < er_strong).fillna(False)
+        up_zone_wide = (in_box & (res <= z_wide * W)).fillna(False)
+        up_zone_eff = sig["up_zone"].where(~strong, up_zone_wide)
+    else:
+        up_zone_eff = sig["up_zone"]
+    # 反転確認＝下降のみ（%K が前バーから下がった・買われすぎ下限なし・当該足と1本前のみ＝leak-safe H2）
+    k = df["stoch_k"]
+    rev = (k < k.shift(1)).fillna(False)
+    short_entry_nf = sig["range_ok"] & up_zone_eff & rev
+    n_before = int(sig["short_entry"].sum()); n_after = int(short_entry_nf.sum())
+    df["short_entry"] = short_entry_nf.to_numpy()
+    return n_before, n_after, int(rev.sum())
 
 
 def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp=None,
@@ -338,7 +371,7 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
     return trades, events
 
 
-def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=None):
+def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=None, tag=None):
     """E36 SHORT専用（shortset1[SHORT 1h MACD ゲート]＋iter9 出口を内包）＋急騰Exit。
     e35.run_partial_tp の shortset1+short_only パスの逐語相当（short_htf=True・short_only=True 固定）。
     教師生成・grid 選定は spike OFF（iter3 基底のまま＝教師を急騰Exitで歪めない）／最終 scored run だけ spike_lm を渡す。"""
@@ -483,7 +516,8 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
             f"z_wide={zone_short[0]}（通常 ZONE_FRAC={e35.ZONE_FRAC}）・er_strong_q={zone_short[1]}（学習窓 ER 分位）。"
             f"ER<学習窓 q(er_strong_q)=強い平均回帰のバーだけ up_zone を res≤z_wide·W に拡大→新規 SHORT 発火増。"
             f"弱レンジは 0.25 のまま・LONG は不変（SHORT 専用・arXiv 1607.00454）")
-    _output_and_report(t, f"_{box_tf}_shortset1", extra_params=_xp, stem="e36_short_oscillation")
+    # 命名/archive/上書き防止は共通処理に委譲＝安定名 _<box_tf>_shortset1 を渡し、tag があれば共通処理が _<tag>_<NNN> に連番化
+    _output_and_report(t, f"_{box_tf}_shortset1", extra_params=_xp, stem="e36_short_oscillation", tag=tag)
 
 
 def main():
@@ -502,6 +536,9 @@ def main():
     ap.add_argument("--no-zone", action="store_true", help="件数レバー（freq-iter1）を OFF（=ゾーン拡大なし恒等参照・E36 gated spike $539.06）")
     ap.add_argument("--zone-wide", type=float, default=0.35, help="件数レバー（freq-iter1・既定 0.35＝採用）: 強レンジで SHORT 反転ゾーンを W×0.25→W×この値 に拡大")
     ap.add_argument("--zone-er-q", type=float, default=0.25, help="強レンジ判定の学習窓 ER 分位（ER<この分位=強い平均回帰のバーだけ拡大・a-priori 0.25・採点窓スイープ禁止 L-267）")
+    # 件数レバー freq-iter2（検証中・既定OFF=恒等）= 反転確認の買われすぎ下限を外し下降のみ（%K<前%K）に。
+    ap.add_argument("--rev-nofloor", action="store_true", help="反転確認を %K>70∩下降 → 下限なし・下降のみ（%K<前%K）に置換（freq-iter2・件数増の検証・up_zoneが高値圏を担保）。既定OFF=恒等")
+    ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番（ユニーク）にし旧実験を archive へ退避。未指定=安定名 _<box_tf>_shortset1（採用base・--vs 固定）。命名/archive は共通処理(ratchet_io)が担当＝e37/38/39 も同じ")
     a = ap.parse_args()
 
     if a.no_spike:
@@ -525,7 +562,11 @@ def main():
         zone_short = (a.zone_wide, a.zone_er_q)
         print(f"  [zone拡大 ON・freq-iter1＝採用] 強レンジ(er<q{a.zone_er_q}={er_s:.3f}) {n_strong:,}本で反転ゾーン {e35.ZONE_FRAC}→{a.zone_wide}"
               f" / SHORT 入口発火 {n_b}→{n_a}（+{n_a-n_b}）")
-    run_e36(df, a.box_tf, a.max_adds, spike_lm=spike_lm, spike_gate=spike_gate, zone_short=zone_short)
+    if a.rev_nofloor:
+        nb2, na2, n_dn = _short_rev_nofloor(df, a.box_tf, zone_short)
+        print(f"  [反転確認=下限なし下降のみ・freq-iter2＝検証] %K>70 下限を外し %K<前%K（下降）{n_dn:,}本"
+              f" / SHORT 入口発火 {nb2}→{na2}（{'+' if na2>=nb2 else ''}{na2-nb2}・up_zoneが高値圏を担保）")
+    run_e36(df, a.box_tf, a.max_adds, spike_lm=spike_lm, spike_gate=spike_gate, zone_short=zone_short, tag=a.tag)
     print("=" * 100)
 
 
