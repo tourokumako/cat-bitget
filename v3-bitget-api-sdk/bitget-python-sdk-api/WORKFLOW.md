@@ -2,12 +2,19 @@
 
 ---
 
-## 🔴 現在地（2026-06-22 改訂99＝出力整備①完了＝全戦略汎用の「出力命名(タグ連番)・上書き防止・過去 archive」を共有モジュール ratchet_io.py＋共通の書き出し処理 _output_and_report に集約。次＝E35/E36 切り分け[共有エンジンを中立モジュールへ・net 不変リファクタ]→その後 (A) freq-iter3）
+## 🔴 現在地（2026-06-23 改訂100＝E35/E36 切り分け完了＝共有エンジンを中立土台 strat_base.py へ集約し E36 を E35 から独立[兄弟化]・net 不変リファクタ[前後9CSVバイト一致＋score.py $548.74 不変＋監査 net_affecting=0]。次＝(A) freq-iter3[add を hold-ML 判別器でゲート]）
+
+> **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（本筋・確定・やってはいけない・出典が集約）。
+> - **E35/E36 切り分け（net 不変・環境整備・ledger「E35/E36 切り分け」エントリ）**: 新設 **strat_base.py**（中立・全戦略共通土台）= ① load_5m ／ ⑤ _verify_cap・_funding_cost ／ ⑥ _output_and_report（strategy/script/sections 引数化・ratchet_io 委譲）／ ⑦ 取引所・予算定数。E35・E36（今後 E37…）が import するだけで始められる。②③④（箱・売買エンジン・hold-ML 判別）は SHORT 独自最適化部分＝E36 が自前コピーで独立（`import e35` 削除・e35.* 呼び出し0）。
+> - **net 不変を多重確証**: e36 既定(freq-iter1)/e35 --iter9/e35 既定 の売買記録 計9CSV が前後バイト一致＋ e36 score.py 月$60.97/$548.74/463件 不変＋ compile/import OK＋ ratchet_io テスト PASS＋ アドバーサリ監査(11エージェント) net_affecting=0。⚠️ commit 未実施（.py 3本）。
+> - **本筋（次・まこさん GO 済）= (A) freq-iter3**: --rev-nofloor ON のまま add を hold-ML 判別器でゲート（死ぬ判別玉に積まない・N12 深add玉 −$670 を止血）。両窓で freq-iter1（採点 $548.74・学習 $1275）超え。**E36 のファイルだけ触れば E35 に波及しない**。
+> - 地面（E31 窓）: SHORT 合算 E32b 月$616.55。E36 base（freq-iter1）月$60.97/$548.74。採用は adopted_strategies.md 台帳が正本（E36=採用 SHORT柱／E35=共有エンジン・レンジ柱候補）。
+> - **⚠️ CC への警告（L-302）**: ①E36 を直す時 E35（e35_range_oscillation.py）を開かない＝切り分け済・共通土台は strat_base.py のみ ②監査/サブエージェントに安定 stem 戦略の実走(--smoke 含む)を許可しない＝採用 base CSV を上書きする（--tag 必須 or コード読み限定）③net 不変は byte 一致 diff で取る ④採用/base は台帳の役割列を引用。
+
+## 🧊 改訂99 ブロック（履歴・参照用）（2026-06-22＝出力整備①完了＝全戦略汎用の「出力命名(タグ連番)・上書き防止・過去 archive」を共有モジュール ratchet_io.py＋共通の書き出し処理 _output_and_report に集約）
 
 > **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（本筋・確定・やってはいけない・出典が集約）。
 > - **出力整備①（net 不変・環境整備・ledger 対象外）**: ① `ratchet_io.py`（共有・既知答えテスト付き）= タグ連番命名 / archive_if_exists（書く前に既存を archive＝絶対上書きしない） / archive_prior_experiments。② 共通の書き出し処理 `_output_and_report`（e35 内）に配線＝**呼ぶ全戦略（e35/e36/今後の e37/38/39）が自動踏襲**・e36 は `--tag` を渡すだけ。③ report/analyze/png も archive_if_exists で上書きしない。④ ratchet/ viz/ 直下を整理（現役=E36 base のみ・過去は archive へ退避）。⑤ hook 2本（BASEUP_EXEMPT 免除・複数 TARGET 可）・踏襲ルール明文化（§3.1/acceptance_checklist）。
-> - **次（本筋・まこさん GO）= E35/E36 切り分け**: E36 が e35 を import する依存を断ち、共有エンジンを中立モジュール（osc_engine.py 等）へ。E35/E36 を兄弟化（相手を import しない）。**net 不変リファクタ＝前後バイト一致を score.py で確認**。新セッションで設計プレゼン→承認→実装。
-> - **その後 (A) freq-iter3**: --rev-nofloor ON のまま add を hold-ML 判別器でゲート（両窓で freq-iter1 $548.74 超え）。
 > - 地面（E31 窓）: SHORT 合算 E32b 月$616.55。E36 base（freq-iter1）月$60.97/$548.74。採用は adopted_strategies.md 台帳が正本（E36=採用 SHORT柱候補／E35=共有エンジン・候補）。
 > - **⚠️ CC への警告（L-301）**: ①「全戦略で踏襲」は共通処理に1箇所実装＝個別ファイルに書かない ②「全部やれ」を現存ファイル総当たりと解釈しない（凍結は対象外・将来踏襲が本質）③採用/base を語感で決めつけない＝台帳の役割列を引用 ④切り分けは net 不変＝前後バイト一致を必ず確認。
 

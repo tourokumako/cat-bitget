@@ -1120,3 +1120,16 @@
 - 【問5 次仮説】不変＝(A) add を hold-ML 判別器でゲートして nofloor の net を回収（next_step 本筋）。
 - **【主張】** base 再判定で E36 freq-iter1 = 月$60.97/$548.74・玉285・1.05/日 を再現確認（採用値と一致・地面 unchanged）。report/analyze を --vs なしで作り直し前後逆転を是正（実験=主・base=--vs の向きに統一）。重複採用でなく CSV/レポート是正の後処理。
 - **生成物**: repo stem = freq-iter1 base（trades_e36_short_oscillation_5m_shortset1*・analysis/report は --vs なしで作り直し＝前後逆転を是正）／ nofloor = trades_e36_nofloor_freqiter2*（前後比較は --vs base でこちらに正方向生成）。
+
+## E35/E36 切り分け（共有エンジンを中立土台 strat_base.py へ・E36 を E35 から独立・net 不変リファクタ・2026-06-23）— 採用（環境整備・net 1ビット不変・前後9CSVバイト一致）
+- **変更(A・net 不変リファクタ・1レバー＝依存断ち)**: E36 が E35 を `import e35` で借りる依存を断つ。全戦略共通の土台（① load_5m / ⑤ _verify_cap・_funding_cost / ⑥ _output_and_report[strategy/script/sections を引数化] / ⑦ 取引所・予算定数 UNIT/CAP/TTL/ENTRY_OFFSET/COST_FLOOR）を中立モジュール **strat_base.py** に集約。E35・E36（今後 E37…）がそれを import。②③④（箱づくり・売買エンジン run_continuous・hold-ML 判別材料）は SHORT 独自最適化部分として **E36 が verbatim コピーで自前化**（まこさん指示＝重複してよい・相手を気にせず最適化できる方を優先）。e36 は `import e35_range_oscillation` 削除・`e35.<ident>` コード呼び出し0・箱入口契約(must_combine)はインライン保持（e35_design.md を読まない）・サイドカー strategy 表記を E36 に是正（read 専用メタ・net 不関与）。
+- **結果（net 不変＝採用条件・実装前後バイト一致）**: e36 既定（採用 freq-iter1）/ e35 --iter9（採用E35）/ e35 既定（run_continuous）の **売買記録CSV 計9本（各 full/score/train）が前後で diff=0（バイト完全一致）**。e36 公式 score.py = **月$60.97/合計$548.74/463件（玉285・1.05/日）**（採用値と一致）。compile/import 3本 OK・e36 の e35戦略 import 0件・e35.* 呼び出し0件・ratchet_io 既知答えテスト PASS。アドバーサリ監査ワークフロー（4レンズ並列→懐疑者検証・11エージェント）＝**net_affecting=0・確認済5件すべて info**（定数14個一致・_entry_contract must_combine byte一致・_HOLD_FEATS byte一致・strat_base import 整合・e36 の e35 参照0）＝独立に net 不変を確証。
+- **原因究明(3分類)**: 戦略=net 不変（売買ロジック・閾値・約定モデル不変＝コードを別モジュールへ移動/コピーしただけ・byte一致で証明）。執行=コスト式不変（funding は strat_base・_record_lots は各戦略 local・最終 net は score.py が独立再計算）。regime=非該当。
+- 【問0 前後比較】（analyze N0・--vs リファクタ前スナップショット）: 285件 $549 avg$1.93 勝率76.1 → 285件 $549 avg$1.93 勝率76.1（**件数+0%/net+0/avg+0.00/勝率+0.0pt＝完全一致・degenerate でなく恒等リファクタ**）。report L「追加した玉:なし/削った玉:なし」＝0変化（前後バイト一致）。
+- 【問1 レバー】レバーを動かさない（依存断ち＝環境整備）。期待値4要素は今回==ベースラインで全同一（K節・期待値/件 $1.92 不変）。N10 最強分離 atr_pct（相関+0.134）も不変。
+- 【問2 不足量】不変＝月$60.97（$1,900 まで月$1,839 不足）。net レバーは次の (A) freq-iter3 以降。
+- 【問3 負け集中】不変（N6 ワースト10 全 TIME_EXIT 240分＋8/22 SPIKE_SL・N8 負け月 2025-08/2026-02・N12 最赤 atr_pct<中×stoch_k≥中 −$162）。
+- 【問4 過去接続】前セッション「出力整備①」（ratchet_io を全戦略汎用化・「_output_and_report は将来中立モジュールへ」と明記）の延長＝今回その _output_and_report を strat_base へ移し E35/E36 を兄弟化。E36 freq-iter1 と同一数字($548.74)＝同一構成の確認。構造は新規（依存断ち）で過去の同型失敗なし。
+- 【問5 次仮説】切り分け完了＝以降の (A) freq-iter3（--rev-nofloor ON のまま add を hold-ML 判別器でゲート）を **E36 のファイルだけ触って** E35 に波及させず安全に回せる。N10 atr_pct（最強分離）を hold-ML 特徴量へ木に渡す形で（固定値手調整でなく・L-267）両窓で検証。
+- **【主張】** E35/E36 を中立土台 strat_base で兄弟化（E36 は E35 を import しない・②③④は E36 自前）。**net は1ビットも動かさず（採用 base 9CSV バイト一致＋ score.py 月$60.97/$548.74/463件・1.05/日・監査 net_affecting=0）**、E36 を直す時に E35 を触らない・取り違えない構造を物理的に確立。①⑤⑥⑦は全戦略の共通土台＝E37/38/39 も strat_base を import するだけで始められる（環境整備・地面 unchanged）。
+- **生成物**: scripts/priority_rebuild/strat_base.py（新規・全戦略共通土台・docstring に役割明記）／ e35_range_oscillation.py（土台を strat_base import・②③④残置・_output_and_report は thin wrapper）／ e36_short_oscillation.py（import e35 削除・②④自前コピー・_param_sections/_output_and_report 自前・E36 describe 是正）。再現 `python3.13 e36_short_oscillation.py`（$548.74）／`python3.13 e35_range_oscillation.py --iter9`。監査 = workflow wf_3d349ad9（net_affecting=0）。

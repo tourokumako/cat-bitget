@@ -53,6 +53,8 @@ import build_labels_pct as bl               # noqa: E402  resample_ohlcv / attac
 import verify_design_contract as _vdc       # noqa: E402  設計↔実装 自己チェック（設計書の部品リストを読む）
 import params_sidecar as _psc               # noqa: E402  使用パラメータ サイドカー（read専用メタ・審判に不関与）
 import ratchet_io                           # noqa: E402  出力の命名/archive/上書き防止（全戦略が踏襲する共通処理・net 不関与）
+import strat_base                           # noqa: E402  ★全戦略共通の土台（E36 切り分け 2026-06-23）= ① load_5m / ⑤ _verify_cap・_funding_cost / ⑥ _output_and_report / ⑦ 定数
+from strat_base import UNIT, CAP, TTL, ENTRY_OFFSET, COST_FLOOR, load_5m, _verify_cap, _funding_cost  # noqa: E402  共通土台から取得（E35 で別定義しない＝全戦略一致を保証）
 
 RATCHET = ROOT / "results" / "priority_rebuild" / "ratchet"
 DESIGN_MD = ROOT / ".claude" / "ratchet" / "e35_design.md"   # 入口組み立ての唯一の正（設計書 DESIGN_CONTRACT）
@@ -73,14 +75,10 @@ W_Q_LO = 0.25
 W_Q_HI = 0.75
 TFS = e35_box.TFS         # ['5m','1h','4h']
 
-CAP = 0.12                # 予算=全建玉（LONG+SHORT）合計の上限（H1・CLAUDE §0-2）
-UNIT = e34v1.SIZE         # 0.024 BTC（add 単位・H10）
-MAX_ADDS = 5              # 1 サイドの最大段数（cap 合算が別途常に有効）
-TTL = ee.DEFAULT_TTL      # 指値 TTL 3 本
-ENTRY_OFFSET = ee.ENTRY_LIMIT_OFFSET   # 0.0001
-COST_FLOOR = e34v1.COST_FLOOR          # 0.0020（TP が建値±床を超える時だけ武装）
-HOLD_5M = e34v1.HOLD_5M                # 48 本（4h・初回 entry 起点）
-BE_ARM_BARS = 12          # iter4 建値撤退 arm（1h・含み損玉が建値へ戻ったら損ゼロ maker 撤退・学習窓上限 N=12 最良・両窓一致・a-priori 固定・スイープしない L-267）
+# CAP / UNIT / TTL / ENTRY_OFFSET / COST_FLOOR は strat_base（共通土台・⑦）から import 済（上記）＝全戦略で不変
+MAX_ADDS = 5              # 1 サイドの最大段数（cap 合算が別途常に有効）＝E35 戦略パラメータ
+HOLD_5M = e34v1.HOLD_5M                # 48 本（4h・初回 entry 起点）＝E35 戦略パラメータ
+BE_ARM_BARS = 12          # iter4 建値撤退 arm（1h・含み損玉が建値へ戻ったら損ゼロ maker 撤退・学習窓上限 N=12 最良・両窓一致・a-priori 固定・スイープしない L-267）＝E35 戦略パラメータ
 PRIORITY = 35
 
 
@@ -183,14 +181,7 @@ def _w_band(df: pd.DataFrame, tf: str, tr_mask: pd.Series) -> tuple:
     return float(W.quantile(W_Q_LO)), float(W.quantile(W_Q_HI)), int(len(W))
 
 
-def _funding_cost(side: int, entry_ts, exit_ts, size: float, mark: float) -> float:
-    """保有中 8h 境界ごと funding（LONG dir=+1 払い / SHORT dir=-1 受取）。score.py と同式。"""
-    e = pd.Timestamp(entry_ts).to_pydatetime().replace(tzinfo=timezone.utc)
-    x = pd.Timestamp(exit_ts).to_pydatetime().replace(tzinfo=timezone.utc)
-    cost = 0.0
-    for _ in ee._funding_boundaries(e, x):
-        cost += side * size * mark * ee.FUNDING_RATE_8H
-    return cost
+# _funding_cost は strat_base（共通土台・⑤）へ移動・import 済（_record_lots が使用）
 
 
 def _record_lots(trades, pos, lots, exit_price, reason, exit_idx, ts_arr):
@@ -469,27 +460,11 @@ def run_continuous(df: pd.DataFrame, box_tf: str, max_adds: int, hold_ctx=None, 
     return trades, events
 
 
-def _verify_cap(trades) -> float:
-    """出力 trades の区間会計（score.py.assert_position_cap と同式）で同時保有 max（LONG+SHORT 合算）を実測。
-    fill 単位記録なので区間会計＝実保有。自己チェックを審判と一致させ false pass を防ぐ。"""
-    ev = []
-    for t in trades:
-        sz = float(t["size_btc"])
-        ev.append((pd.Timestamp(t["entry_time"]), sz))
-        ev.append((pd.Timestamp(t["exit_time"]), -sz))
-    ev.sort(key=lambda x: (x[0], x[1]))                   # 同時刻は決済(マイナス)を先に（score.py と同じ）
-    cur = mx = 0.0
-    for _t, s in ev:
-        cur = round(cur + s, 9); mx = max(mx, cur)
-    return mx
+# _verify_cap は strat_base（共通土台・⑤）へ移動・import 済（H1 cap 検査・全戦略共通）
 
 
 def _load(smoke: int) -> pd.DataFrame:
-    df = pd.read_csv(e34v1.CSV)
-    df["ts"] = pd.to_datetime(df["timestamp"])
-    df = df.reset_index(drop=True)
-    if smoke:
-        df = df.iloc[:smoke].reset_index(drop=True)
+    df = load_5m(smoke)                           # ① 5分足の読み込み方は共通土台（strat_base.load_5m）。以下の指標付与は E35 が使う指標（戦略ごと）
     df = e34v1.add_indicators(df)                 # sma/std/dev_z/atr/adx（taker は呼ばない）
     df = e34b.add_analysis_features(df)           # bb_mid_slope_pct/stoch 等
     df = e35_box.add_box_features(df, verify_leak=(smoke > 0 and smoke <= 60000))
@@ -609,44 +584,13 @@ def _param_sections(extra_params=None) -> dict:
 
 def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None, stem: str = "e35_oscillation",
                        tag: str | None = None) -> None:
-    """trades を 全期間/採点窓/precheck に分けて出力＋月別サマリ（main と run_hold_ml で共用）。
-    stem=出力ファイル名の幹（既定 e35_oscillation・E36 SHORT専用は e36_short_oscillation＝report 自動E番号化）。
-    ★全戦略が踏襲する共通の書き出し処理（ratchet_io・net 不関与・命名/ファイル移動のみ）:
-      - tag 指定時: suffix を `_<tag>_<NNN>` 連番化（ユニーク）＋同 stem の旧実験出力を archive へ退避（直下=現役のみ）。
-      - 書き出し前に既存があれば archive へ逃がす（上書きしない・過去保全）＝全呼び出し元に効く。
-      新しい戦略（e37/38/39…）もこの関数を呼ぶだけで同じ仕組みを自動で踏襲する。"""
-    RATCHET.mkdir(parents=True, exist_ok=True)
-    if tag:                                                     # 実験タグ指定時のみ連番化＋旧実験退避（tag 無=安定名 base は不変）
-        suffix = ratchet_io.tagged_suffix(stem, suffix, tag, RATCHET)
-        ratchet_io.archive_prior_experiments(stem, suffix, RATCHET)
-    base = RATCHET / f"trades_{stem}{suffix}.csv"
-    out_full = base
-    out_train = base.with_name(base.stem + "_train.csv")
-    out_score = base.with_name(base.stem + "_score.csv")
-    t_full = t[t.entry_time < SEAL_START].reset_index(drop=True)
-    t_score = t[(t.entry_time >= SC_START) & (t.entry_time < SCORE_END)].reset_index(drop=True)
-    for _p in (out_full, out_score, out_train):                # 上書きしない＝既存は archive へ逃がしてから書く
-        ratchet_io.archive_if_exists(_p)
-    t_full.to_csv(out_full, index=False)
-    t_score.to_csv(out_score, index=False)
-    t[t.entry_time < TRAIN_END].reset_index(drop=True).to_csv(out_train, index=False)
-    # 使用パラメータをサイドカー出力（report.py 節0 が表示・read専用メタ・net 計算に不関与）
-    _secs = _param_sections(extra_params)
-    _exp = suffix.lstrip("_")
-    for _cp in (out_full, out_score, out_train):
-        _psc.write_sidecar(_cp, strategy="E35 レンジ上下オシレーション（両方向・連続モード）",
-                           script="e35_range_oscillation.py", experiment=_exp, sections=_secs)
-    print(f"  [params] 使用パラメータを各CSVの隣に記録（report.py 節0 で表示）: {out_full.stem}_params.json 他")
-    n_days = max((t_score.entry_time.max() - t_score.entry_time.min()).total_seconds() / 86400.0, 1.0) if len(t_score) else 1.0
-    print(f"  [出力] 全期間 {out_full.name}（封印除外後 {len(t_full)}）/ 採点窓 {out_score.name}({len(t_score)}・{len(t_score)/n_days:.2f}/日) / precheck {out_train.name}")
-    if len(t_score):
-        sm = t_score.assign(m=t_score.entry_time.dt.strftime("%Y-%m")).groupby("m")["net_usd"].agg(["count", "sum"]).round(1)
-        print(f"\n  採点窓 {periods.SCORE_START_STR}〜{periods.SCORE_END_STR} 月別（CSV net・参考＝正式は score.py）:\n" + sm.to_string())
-        print(f"  採点窓 合計 CSV net ${t_score.net_usd.sum():.1f} / 件 {len(t_score)} / 勝率 {(t_score.net_usd > 0).mean():.1%}")
-        print(f"  出口別 件数: {dict(t_score['exit_reason'].value_counts())}")
-    print("\n  → 判定は score.py（precheck → score.py の数字）:")
-    print(f"     precheck.py {out_train.name} --authorize {out_score.name}")
-    print(f"     score.py {out_score} --start {periods.SCORE_START_STR} --end {periods.SCORE_END_STR}（既定で正本窓・periods）")
+    """E35 の出力（共通土台 strat_base._output_and_report に委譲＝命名/archive/上書き防止/CSV3分割/サイドカーは共通）。
+    E35 の identity（strategy/script）と使用パラメータ（_param_sections）をここで渡す＝呼び出し側4箇所は不変。"""
+    strat_base._output_and_report(
+        t, suffix, stem=stem,
+        strategy="E35 レンジ上下オシレーション（両方向・連続モード）",
+        script="e35_range_oscillation.py",
+        sections=_param_sections(extra_params), tag=tag)
 
 
 def run_be_gate(df: pd.DataFrame, box_tf: str, max_adds: int) -> None:
