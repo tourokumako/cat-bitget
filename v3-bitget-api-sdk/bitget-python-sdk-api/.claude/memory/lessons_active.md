@@ -6,6 +6,33 @@
 
 ---
 
+### L-304: results の命名/archive は共通処理＋正規3ツールに任せ手作業しない／「命名規則の修正」＝report・analyze・png を同じ通し番号で揃える（report.py 単独で止めない）(2026-06-23/24・A/C 後始末で手作業崩壊)
+
+**何が起きたか:** E35/E36 切り分け後の A/C 後始末を、CC が手作業（report/analysis/viz の手リネーム・孤児/誤名の手 rm・戦略の勝手な smoke 再走）で進め results を散らかした。まこさんの「命名規則の修正」「Analyze が出てない・report/analyze/png の通し番号がバラバラ」を掴めず、推測実行→中断を10回以上繰り返し激怒・1セッション崩壊。
+
+**Why:** ①§3.1「命名/archive/上書き防止は共通処理 ratchet_io・CC は手で mv/rm/リネームしない」を破った（手作業が散らかしの元）。②「命名規則の修正」を「記録名を手で直す」と誤解。実際は「**report・analyze・png を同じ通し番号で1セットに揃える＝同じCSVに report.py→analyze.py→plot_trades.py を続けて通す**」運用（前セッションは report.py だけ走らせ analyze 未実行＝世代バラバラ）。③report/analyze/plot のコードは §3.1 通り正しい（入力CSV名から自動命名＋archive_if_exists・report.py L139-140 / analyze.py L101-102 / plot_trades.py L162-163）＝直すのは走らせ方。④確認せず推測で実行を重ねた。⑤2つの results/（リポジトリ直下＝ほぼ空・bitget-python-sdk-api 配下＝本物5.1G）に気づかず混乱→統合して解消。
+
+**How to apply:**
+- results の命名/archive/上書きは共通処理 ratchet_io と正規3ツール（report/analyze/plot）に任せる。**CC は手で mv/rm/リネーム/sed しない**。
+- 「記録が出ていない/通し番号バラバラ」＝同じCSVに report.py→analyze.py→plot_trades.py を続けて通す（3点が同じ通し番号で1セットに揃う・**report.py 単独で止めない**）。
+- 採用 base = E36 freq-iter1（**台帳の役割列が正本**）。最新の実験（freq-iter2 nofloor・月$79・採用せず）≠採用 base。E35=archive（採用 base でない）。
+- **混乱したら勝手に動かず止まってまこさんに確認**（推測実行を重ねない＝今回の最大の失敗）。
+
+参照: next_step（命名規則＋archive 整理 手順）/ §3.1（analysis_playbook）/ memory feedback_no_manual_results_ops_use_common_io
+
+### L-303: 「追記」指示＝元の文章を1文字も変えず新しい行を足すだけ（既存の確定ルール行を書き換え/並べ替えしない）(2026-06-23・strat_base 文書反映)
+
+**何が起きたか:** まこさんに「cat_requirements/analysis_playbook あたりに strat_base を追記してる？」と聞かれ、追記したつもりが **analysis_playbook §3.1 と acceptance_checklist D の既存「命名/archive」ルール行を文言変更＋並べ替え（＝書き換え）** した。まこさん「追記じゃなくて書き換えしたよね？」「命名規則と archive 移動の規則が消えてる・戻して」→ 3文書とも HEAD へ revert。
+
+**Why:** 「追記（add）」と「更新（rewrite）」を混同。既存ルールが古くなっていても（例「_output_and_report はいま e35 内」→実際は strat_base へ移設済）、追記指示なら**古い行はそのまま残し、新しい行で補足する**のが正。既存の確定ルールを書き換えると、まこさんが積み上げた規則が静かに変質/消失するリスク（doc_map の正本が壊れる）。
+
+**How to apply:**
+- 「追記して」と言われたら **既存行は1文字も触らない**。新しい bullet/行を足すだけ。古い記述が事実と食い違っても、書き換えず新しい行で「YYYY-MM-DD 〜へ移設/更新」と補足。
+- 文書を編集したら **git diff で「既存行の削除（-）が無いか」を必ず確認**（追記なら削除0行のはず・cat_requirements は +2/-1 で戦略行を1行 expand していた＝純粋追記でない）。
+- 既存ルールを実際に更新する必要があるなら、それは「追記」でなく「更新」＝別途まこさんに確認してから。
+
+参照: next_step B（doc-map へ strat_base を純粋追記）/ 3文書は HEAD 復帰済
+
 ### L-302: 監査/サブエージェントに「安定 stem へ出力する戦略の実走（--smoke 含む）」を許可しない＝採用 base CSV を上書きする (2026-06-23・E35/E36 切り分けのアドバーサリ監査)
 
 **何が起きたか:** E35/E36 切り分け（net 不変リファクタ）の検証で、未走行パス＋コピー忠実性を独立監査するワークフロー（Explore エージェント4レンズ）を起動し、プロンプトで「`python3.13 e36 --smoke` / `e35 --diagnostic --smoke 5000` 等で軽く起動して例外が出ないか試せ」と許可した。エージェントが実際に戦略を smoke 実行→共通の書き出し処理 `_output_and_report` が**安定 stem**（trades_e36_short_oscillation_5m_shortset1 等）に出力するため、採用 base CSV を archive 退避＋smoke 結果（34玉・score窓0件）で上書きした（e36 score が 463→0行・e35 既定/iter5a/iter7 も smoke 化）。その後の analyze.py が main 空で `idxmax of empty sequence` crash、report.py が「空CSV」。

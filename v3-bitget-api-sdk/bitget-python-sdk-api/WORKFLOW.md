@@ -2,7 +2,15 @@
 
 ---
 
-## 🔴 現在地（2026-06-23 改訂100＝E35/E36 切り分け完了＝共有エンジンを中立土台 strat_base.py へ集約し E36 を E35 から独立[兄弟化]・net 不変リファクタ[前後9CSVバイト一致＋score.py $548.74 不変＋監査 net_affecting=0]。次＝(A) freq-iter3[add を hold-ML 判別器でゲート]）
+## 🔴 現在地（2026-06-24 改訂101＝results/ を1つに統合[exchange_api を本物側へ移設・リポジトリ直下 results 削除]・doc-map 3文書へ strat_base 純粋追記[+3行/削除0・未commit]・「命名規則の修正」の正体確定・next_step を詳細化。次＝①命名規則修正②archive整理→(A) freq-iter3）
+
+> **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（命名規則修正＋archive整理の具体手順・E36ベース=freq-iter1・E35=archive・E36最新=freq-iter2[採用せず]・本筋 freq-iter3 が集約）。
+> - **「命名規則の修正」の正体（2026-06-24 確定）**: report.py/analyze.py/plot_trades.py は §3.1 通り正しく実装済（入力CSV名から自動命名＋ratchet_io.archive_if_exists・report.py L139-140/analyze.py L101-102/plot_trades.py L162-163）＝**コード修正不要**。修正＝「report・analyze・png を同じ通し番号で1セットに揃える」運用＝**同じCSVに report.py→analyze.py→plot_trades.py を続けて通す（report.py 単独で止めない）**。
+> - **archive 整理**: 直下＝①ベース（採用 base＝E36 freq-iter1 `trades_e36_short_oscillation_5m_shortset1*`・月$60.97/$548.74・md5 085d4b2f）＋②現役（最新実験の出力）だけ。**E35（iter9・無印）は archive**（採用 base でない）。最新の実験 freq-iter2 nofloor（archive `trades_e36_nofloor_freqiter2*`・月$79・採用せず）≠採用 base。
+> - **results/ 統合・doc追記（このセッション完了・未commit）**: 本物 results=bitget-python-sdk-api/results/(5.1G)。3文書 strat_base 純粋追記はまこさん OK で commit。
+> - **⚠️ CC への警告（L-304）**: results の命名/archive/上書きは共通処理 ratchet_io＋正規3ツールに任せ手作業しない（手 mv/rm/リネームが前セッション崩壊の元）。混乱したら勝手に動かず止まってまこさんに確認。
+
+## 🧊 改訂100 ブロック（履歴・参照用）（2026-06-23 改訂100＝E35/E36 切り分け完了＝共有エンジンを中立土台 strat_base.py へ集約し E36 を E35 から独立[兄弟化]・net 不変リファクタ[前後9CSVバイト一致＋score.py $548.74 不変＋監査 net_affecting=0]。次＝(A) freq-iter3[add を hold-ML 判別器でゲート]）
 
 > **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（本筋・確定・やってはいけない・出典が集約）。
 > - **E35/E36 切り分け（net 不変・環境整備・ledger「E35/E36 切り分け」エントリ）**: 新設 **strat_base.py**（中立・全戦略共通土台）= ① load_5m ／ ⑤ _verify_cap・_funding_cost ／ ⑥ _output_and_report（strategy/script/sections 引数化・ratchet_io 委譲）／ ⑦ 取引所・予算定数。E35・E36（今後 E37…）が import するだけで始められる。②③④（箱・売買エンジン・hold-ML 判別）は SHORT 独自最適化部分＝E36 が自前コピーで独立（`import e35` 削除・e35.* 呼び出し0）。

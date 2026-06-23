@@ -223,6 +223,7 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 - 戦略: `strat_coinflip.py`(配管確認・捨て駒) /（v1 戦略＝これから作る）
 - 手動（参照のみ・改造禁止・無確認実行禁止）: `cat_v9_decider.py`(entry判定) / `run_once_v9.py`・`replay_csv.py`(発注・保護)
 - データ生成: `build_labels_pct.py`(ラベル)
+- 全戦略共通の土台（中立・2026-06-23 新設）: `strat_base.py`（① load_5m ／ ⑤ _verify_cap・_funding_cost ／ ⑥ _output_and_report[`ratchet_io` へ委譲] ／ ⑦ 取引所・予算定数 UNIT/CAP/TTL/ENTRY_OFFSET/COST_FLOOR）/ `ratchet_io.py` / `params_sidecar.py`。ここを直すと全戦略に効く・戦略固有ロジック（箱・売買エンジン・hold-ML 判別）は各戦略が自前（E35/E36 が手本）
 
 **出力データ**
 - `results/replay/*.csv`(手動replay＝地面) / `results/priority_rebuild/labels_*.parquet`(5m+1432指標+ラベル) / `results/priority_rebuild/ratchet/`(ledger・trades_*.csv・score出力) / `ml_phase2_production/`(旧予測＝ガワ・参照のみ・効いている根拠に使わない)

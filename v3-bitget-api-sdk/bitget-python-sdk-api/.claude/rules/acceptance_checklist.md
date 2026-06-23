@@ -30,6 +30,7 @@
 - ☐ **新スクリプト名・出力CSV名は pdca 命名規約に乗るか**（実験= strat_/train_/measure_/e3N_ ／ 分析= *_probe / *_deep_analysis ／ 審判= score.py CLI or score_*.py）。外れる名前は pdca_mark に登録 or 改名（pdca_flow.md §5）
 - ☐ **使用パラメータ・Entry/Exit ロジックのサイドカー出力を含めるか**（新戦略は必須・2026-06-19）→ 売買記録CSVの隣に `<stem>_params.json` を `params_sidecar.write_sidecar` で出す。sections に **その戦略で実際に使った** 指標/閾値/TP/SL/TimeExit/期間/サイズ ＋ **Entry ロジック・Exit ロジック（ルールの流れ・exit_reason）** を入れる。report.py 節0 が戦略名非依存で自動表示する（E35 が手本・E36/E37 も同パターン）。read 専用メタ＝net 計算に不関与。
 - ☐ **出力は共通の書き出し処理を使うか（命名/archive/上書き防止の踏襲・2026-06-22 まこさん確定・全戦略汎用）**→ 新しい戦略（e37/38/39…）は売買記録を共通の書き出し処理 `_output_and_report`（いま e35 内・将来は中立モジュール・`ratchet_io` を呼ぶ）で出す＝タグ連番命名（`--tag` で `_<tag>_<NNN>`・タグ無=安定名 base）・新実験前の旧実験 archive・書き出し前の上書き防止を**自動で踏襲**する（戦略ごとに命名/archive を手書きしない）。report/analyze/png も `ratchet_io.archive_if_exists` で上書きしない。詳細＝analysis_playbook §3.1。
+- ☐ **共通土台 `strat_base.py` を import するか（2026-06-23 新設・中立）**→ 新戦略は `strat_base` から ①load_5m ／ ⑤_verify_cap・_funding_cost ／ ⑥_output_and_report ／ ⑦取引所・予算定数 を import し、戦略固有ロジック（箱・売買エンジン・hold-ML 判別）だけ自前で書く（個別に命名/archive/コスト定数を書かない＝E35/E36 が手本）。
 
 ## E. §4.6 ハード制約 照合（該当する H を1つずつ・非該当は「非該当」と明記）
 - ☐ **H1** cap 合計 0.12 BTC（_verify_cap / score.assert_hard_constraints で実測）
