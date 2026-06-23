@@ -2,7 +2,16 @@
 
 ---
 
-## 🔴 現在地（2026-06-24 改訂101＝results/ を1つに統合[exchange_api を本物側へ移設・リポジトリ直下 results 削除]・doc-map 3文書へ strat_base 純粋追記[+3行/削除0・未commit]・「命名規則の修正」の正体確定・next_step を詳細化。次＝①命名規則修正②archive整理→(A) freq-iter3）
+## 🔴 現在地（2026-06-24 改訂102＝環境整備セッション完了・net 変更なし。命名規則の運用 確定＋実証・archive 整理・重複68本削除。次＝E36 改善の【分析】からスタート[next_step に手順・参考KB・WebResearch 方法を詳細記載]）
+
+> **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（E36 改善の分析手順・参考KB 6本・WebResearch の検索場所/方法・改善はまこさん決定 が集約）。
+> - **命名規則の運用 確定・実証**: report・analyze・png は同じ売買記録CSVに report.py→analyze.py（png は report の M節）を続けて通すと同じ世代の1セットに揃う。通し番号 _001 は戦略を **--tag X** で回した時に名前に入る（ratchet_io.tagged_suffix）。実物＝freqiter2_001。archive 移動＝archive_prior_experiments（--tag 時に旧実験を自動 archive）＋archive_if_exists（書く前に同名を archive・上書きしない）。
+> - **archive 整理 完了**: ratchet 直下は E36 base（trades_e36_short_oscillation_5m_shortset1* ＋ その report/analyze/png）だけ。E35（iter9・無印）は archive。
+> - **重複削除 完了**: 完全同一(md5)の重複 68本を削除（各内容1つ保持・採用 base 085d4b2f 無傷）。
+> - **次（まこさん指示）= E36 改善の【分析】からスタート**。データ確認 → 参考KB読込 → WebResearch ベースアップ → 改善候補を根拠つきで提案 → まこさん決定（CC が改善の中身を勝手に決めない/実行しない）。
+> - **⚠️ CC への警告（L-305）**: 書いてある単純な指示を自分の心配（再走/PDCA/重複/できない理由）で避けて遠回りしない（通し番号を足すだけに半日溶かした最悪事案）。チャットは短く・やさしく。
+
+## 🧊 改訂101 ブロック（履歴・参照用）（2026-06-24 改訂101＝results/ を1つに統合[exchange_api を本物側へ移設・リポジトリ直下 results 削除]・doc-map 3文書へ strat_base 純粋追記[+3行/削除0・未commit]・「命名規則の修正」の正体確定・next_step を詳細化。次＝①命名規則修正②archive整理→(A) freq-iter3）
 
 > **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（命名規則修正＋archive整理の具体手順・E36ベース=freq-iter1・E35=archive・E36最新=freq-iter2[採用せず]・本筋 freq-iter3 が集約）。
 > - **「命名規則の修正」の正体（2026-06-24 確定）**: report.py/analyze.py/plot_trades.py は §3.1 通り正しく実装済（入力CSV名から自動命名＋ratchet_io.archive_if_exists・report.py L139-140/analyze.py L101-102/plot_trades.py L162-163）＝**コード修正不要**。修正＝「report・analyze・png を同じ通し番号で1セットに揃える」運用＝**同じCSVに report.py→analyze.py→plot_trades.py を続けて通す（report.py 単独で止めない）**。
