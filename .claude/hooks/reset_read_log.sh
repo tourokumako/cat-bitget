@@ -7,6 +7,7 @@ STATE_DIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 mkdir -p "$STATE_DIR"
 : > "$STATE_DIR/read_log.txt"
 rm -f "$STATE_DIR/budget_rule_shown"   # 予算バナーを新セッションで1回出すため（show_budget_before_design.sh・2026-06-20）
+rm -f "$STATE_DIR/analysis_block.md"   # 分析ブロックを新セッションでリセット（前セッションの分析を持ち越さない＝require_analysis_before_proposal.sh・2026-06-24）
 # 目標逆算ゲート（ゲート2）リセット: 前セッションの逆算ブロックは引き継がないが、
 # 引き継ぎ前提（本筋・やってはいけないこと）は残す。必須見出しの語は入れないので
 # ゲートは維持され、新セッションは前提を見てから自分で目標逆算を Write し直す（2026-06-12 まこさん指示）。

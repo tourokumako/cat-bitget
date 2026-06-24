@@ -18,7 +18,7 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-## 1. hook 一覧（23本・登録は settings.local.json）
+## 1. hook 一覧（24本・登録は settings.local.json）
 
 | hook | タイミング | matcher | 役割 |
 |---|---|---|---|
@@ -37,6 +37,7 @@
 | doc_map_guard | PreToolUse | Write/Edit | ledger/設計書に経緯・失敗の語を書くのをブロック（置き場所違反） |
 | forbid_fixed_value_tuning | PreToolUse | Write/Edit | 固定値スイープ（採点窓で最良値選定）をブロック（L-267） |
 | require_acceptance_before_impl | PreToolUse | Write/Edit | scripts/priority_rebuild/*.py を書く前に acceptance＋承認を要求 |
+| require_analysis_before_proposal | PreToolUse | Write/Edit | 改善提案/設計（acceptance.md / *_design.md）を書く前に【分析フェーズ】を強制（採点非依存・2026-06-24）。A 着手＝分析KB(trade_analysis_methods_kb)/analysis_playbook §2/対象 report_・analysis_ を read_log で確認。B 完了＝`.claude/state/analysis_block.md` の必須8見出し（前後比較/両窓/fat-tail/MAE/較正[予測確率]/3分類/問5/経緯照合[E番号引用必須]）。pdca_gate が採点後しか分析を強制しない穴（採点なし既存データ分析=強制ゼロ）を塞ぐ |
 | block_uchikiri | PreToolUse | Write/Edit | アジャイル放棄を表す語をブロック（語一覧は実体参照） |
 | require_precheck_before_score | PreToolUse | Bash | score.py を CLI 実行する前に precheck PASS を要求 |
 | require_design_contract_before_run | PreToolUse | Bash | 戦略実行の前に DESIGN_CONTRACT で実装を機械照合 |
