@@ -18,7 +18,7 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-## 1. hook 一覧（24本・登録は settings.local.json）
+## 1. hook 一覧（25本・登録は settings.local.json）
 
 | hook | タイミング | matcher | 役割 |
 |---|---|---|---|
@@ -42,6 +42,7 @@
 | require_precheck_before_score | PreToolUse | Bash | score.py を CLI 実行する前に precheck PASS を要求 |
 | require_design_contract_before_run | PreToolUse | Bash | 戦略実行の前に DESIGN_CONTRACT で実装を機械照合 |
 | require_period_source | PreToolUse | Bash | priority_rebuild の .py 実行前に、期間境界(TRAIN_END/SC_START/SCORE_START/SCORE_END/SEAL_START/EMBARGO)が periods.py 由来でない自前定義ならブロック（期間ズレ根絶・E0.5・2026-06-18） |
+| require_direct_csv_for_analysis | PreToolUse | Bash | report.py/analyze.py の分析対象（第1引数）が archive/ 配下ならブロック（2026-06-24）。＝最新実験が archive に押し出された＝実験→分析の順序ミスを物理検出（実験は1回 --tag→直下で分析→2本目の前に済ます）。意図的な過去再分析のみ ANALYZE_ARCHIVE_OK=1 で通す |
 | pdca_mark | PostToolUse | Bash/Edit/Write | コマンド名で審判/分析/記録の旗を立てる/下ろす（--smoke/--no-score/--selftest は審判検知から除外・2026-06-18） |
 | pdca_gate | Stop | — | 旗の残存でターン終了をブロック |
 | approve_impl | （まこさんが実行） | — | acceptance の承認指紋を立てる |

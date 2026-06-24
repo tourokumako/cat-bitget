@@ -31,19 +31,24 @@ _SEQ_RE = re.compile(r"_\d{3}(?=[._]|$)")
 def tagged_suffix(stem: str, default_suffix: str, tag: str | None, ratchet_dir: pathlib.Path | None = None) -> str:
     """出力CSVの suffix を決める（命名のみ・net 不変）。
     - tag が falsy → default_suffix（戦略の安定名・--vs 固定の現役 base・完全互換）。
-    - tag 指定     → `_<tag>_<NNN>`（NNN=ratchet_dir 直下の既存 `trades_{stem}_<tag>_NNN.csv` を走査し max+1・
-                     3桁ゼロ埋め・毎走で新番号＝既存を物理的に上書きしない）。
+    - tag 指定     → `_<tag>_<NNN>`。NNN は【全タグ通し・直下＋archive 込み】の既存連番の max+1
+                     ＝**同じ番号を二度出さない**（2026-06-24 まこさん指示・タグごとに 001 が乱立し番号重複した事案の是正）。
+                     タグ名は保持し番号だけ全体ユニーク・3桁ゼロ埋め・毎走で新番号＝既存を物理的に上書きしない。
     report/analyze/png は入力CSV名から自動命名なので、CSV名がユニークになれば自動で追従する。"""
     if not tag:
         return default_suffix
     rd = ratchet_dir or RATCHET
     base = f"_{tag}"
-    pat = re.compile(rf"^trades_{re.escape(stem)}{re.escape(base)}_(\d{{3}})(?:_train|_score)?\.csv$")
+    # 全タグ通しで NNN の最大を探す（タグ問わず・直下＋archive 両方）＝番号を再利用しない（タグ別カウントだと新タグが必ず001になり重複）
+    seq_pat = re.compile(rf"^trades_{re.escape(stem)}_.+_(\d{{3}})(?:_train|_score)?\.csv$")
     mx = 0
-    for p in rd.glob(f"trades_{stem}{base}_*.csv"):
-        m = pat.match(p.name)
-        if m:
-            mx = max(mx, int(m.group(1)))
+    for dd in (rd, rd / "archive"):
+        if not dd.exists():
+            continue
+        for p in dd.glob(f"trades_{stem}_*.csv"):
+            m = seq_pat.match(p.name)
+            if m:
+                mx = max(mx, int(m.group(1)))
     return f"{base}_{mx + 1:03d}"
 
 
@@ -111,6 +116,15 @@ def _known_answer() -> None:
         (d / f"trades_{stem}_freqiter3_001_score.csv").write_text("x")
         s2 = tagged_suffix(stem, "_5m_shortset1", "freqiter3", d)
         assert s2 == "_freqiter3_002", f"既存001があれば次は 002: {s2}"
+        # 全タグ通しでユニーク（別タグでも番号を再利用しない・2026-06-24 まこさん指示）
+        (d / f"trades_{stem}_freqiter3_002.csv").write_text("x")          # 002 も実在させる
+        s3 = tagged_suffix(stem, "_5m_shortset1", "rvX", d)
+        assert s3 == "_rvX_003", f"別タグでも全体max+1（freqiter3_001/002 があるので 003）: {s3}"
+        # archive 内の番号も見る（archive の連番も再利用しない）
+        (d / "archive").mkdir(exist_ok=True)
+        (d / "archive" / f"trades_{stem}_oldtag_009.csv").write_text("x")
+        s4 = tagged_suffix(stem, "_5m_shortset1", "rvX", d)
+        assert s4 == "_rvX_010", f"archive の 009 を見て次は 010: {s4}"
 
         # (2) archive_if_exists: 既存は archive/ へ逃げ、元 path が空く（＝上書きされない）。
         f = d / "report_trades_x.txt"

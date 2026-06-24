@@ -252,14 +252,35 @@ _HOLD_FEATS = ["bars_held", "unreal_pct", "dist_to_tp_pct", "box_sup_5m", "box_r
                "box_sup_1h", "box_res_1h", "box_sup_4h", "box_res_4h", "atr_pct", "adx", "er",
                "stoch_k", "stoch_d", "chop", "bb_slope_pct", "bb_width", "add_count_so_far"]
 
+# ── (B) 保有経路 realized vol を hold-ML 判別器の特徴に足す＝片流れ（中心非回帰）判別の精度向上（2026-06-24・acceptance E36(B)）──
+#   既定 OFF（USE_RV=False）で恒等＝特徴19個のまま base と byte 一致。--rv-feats で ON＝22個。値は木に学習（⛔固定値手調整しない L-267）。
+#   根拠: arxiv 2503.00851（path-dependent ボラ特徴が RV 予測を改善・ボラ特徴が trend より情報量大）／N10 最強分離 atr_pct（保有中ボラ・両窓✓）／KB §13 メタラベリング。
+USE_RV = False
+_RV_SHORT_BARS = 6     # 直近6本=30分（HAR 短期成分・a-priori）
+_RV_MID_BARS = 24      # 直近24本=2時間（HAR 中期成分・a-priori・保有上限48本=240分に対する短中期）
+_RV_EXTRA = ["rv_short", "rv_mid", "rv_ratio"]
+
+
+def hold_feats() -> list:
+    """hold-ML の特徴名リスト（USE_RV 時のみ保有経路 realized vol 3本を足す・OFF=19個で恒等）。"""
+    return _HOLD_FEATS + (_RV_EXTRA if USE_RV else [])
+
 
 def _hold_arrays(df: pd.DataFrame, box_tf: str) -> dict:
     """保有中特徴の素配列（教師作成・runtime 予測で同一 source＝整合保証）。全て当該バーまでの値。"""
     sup = df[e35_box.sup_col(box_tf)].to_numpy(float); res = df[e35_box.res_col(box_tf)].to_numpy(float)
     c = df["close"].to_numpy(float)
     S = c / (1.0 + sup / 100.0); R = c * (1.0 + res / 100.0)
+    # (B) 保有経路 realized vol（log リターンの二乗和の平方根・全て ≤i の過去のみ＝leak-safe・%スケール）
+    lr = np.zeros_like(c); lr[1:] = np.log(c[1:] / c[:-1])
+    csq = np.concatenate([[0.0], np.cumsum(lr * lr)])
+    ix = np.arange(len(c))
+    rv_s = np.sqrt(csq[ix + 1] - csq[np.maximum(0, ix - _RV_SHORT_BARS + 1)]) * 100.0
+    rv_m = np.sqrt(csq[ix + 1] - csq[np.maximum(0, ix - _RV_MID_BARS + 1)]) * 100.0
+    rv_r = rv_s / (rv_m + 1e-9)
     return {
         "close": c, "atr": df["atr"].to_numpy(float), "adx": df["adx"].to_numpy(float),
+        "rv_s": rv_s, "rv_m": rv_m, "rv_r": rv_r,
         "k": df["stoch_k"].to_numpy(float), "d": df["stoch_d"].to_numpy(float),
         "er": df["er"].to_numpy(float), "chop": df["chop"].to_numpy(float),
         "bbs": df["bb_mid_slope_pct"].to_numpy(float), "bbw": df["bb_width"].to_numpy(float),
@@ -273,7 +294,7 @@ def _hold_arrays(df: pd.DataFrame, box_tf: str) -> dict:
 def _hold_feat_vec(A: dict, sdir: int, avg_i: float, first_idx: int, nlot: int, i: int) -> list:
     """保有中 1 バーの特徴ベクトル（_HOLD_FEATS 順・%/比率＝H6・全て t 時点＝leak-safe）。"""
     cl = A["close"][i]
-    return [
+    v = [
         float(i - first_idx),
         (cl - avg_i) / avg_i * sdir * 100.0,                # 含み益%（順方向+）
         (A["Cc"][i] - cl) / cl * sdir * 100.0,              # 中心Cまでの残り%（+=未到達）
@@ -283,6 +304,9 @@ def _hold_feat_vec(A: dict, sdir: int, avg_i: float, first_idx: int, nlot: int, 
         A["adx"][i], A["er"][i], A["k"][i], A["d"][i], A["chop"][i],
         A["bbs"][i], A["bbw"][i], float(nlot),
     ]
+    if USE_RV:                                              # (B) 保有経路 realized vol を末尾追加（_RV_EXTRA 順・USE_RV=False で恒等）
+        v += [A["rv_s"][i], A["rv_m"][i], A["rv_r"][i]]
+    return v
 
 
 # ── 急騰検知 Lee-Mykland jump（全 bars≤i の値のみ＝leak-safe・a-priori 閾値・スイープしない）──
@@ -653,7 +677,7 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
     assert _p1 not in src and _p2 not in src, "leak 疑い（未来参照 shift/center）"
     A = _hold_arrays(df, box_tf)
     idx_of = {x: i for i, x in enumerate(df["ts"].tolist())}
-    feats = _HOLD_FEATS; BE_TH = 0.40
+    feats = hold_feats(); BE_TH = 0.40   # (B) USE_RV 時は rv 3本込み（OFF=19個で恒等）
     SH = True; FU = True                       # shortset1=iter9 ベース（shrink+full・θ/k は iter9 のまま）
     ADD1_FRAC = 0.5
     TG_GRID = [0.30, 0.40, 0.50]               # θ_gate（iter11/以前グリッド＝shortset1 と同一）
@@ -678,11 +702,11 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
                 continue
             avg_i = sum(lp for _, lp in filled) / len(filled)
             rows.append([g["entry_time"].iloc[0], label] + _hold_feat_vec(A, sdir, avg_i, first_idx, len(filled), i))
-    snaps = pd.DataFrame(rows, columns=["entry_time", "label"] + _HOLD_FEATS)
+    snaps = pd.DataFrame(rows, columns=["entry_time", "label"] + feats)
     tr = snaps[snaps.entry_time < TRAIN_END].reset_index(drop=True)
     params = dict(n_estimators=300, num_leaves=15, min_child_samples=200, reg_alpha=1.0, reg_lambda=1.0,
                   learning_rate=0.03, random_state=42, verbose=-1)
-    model = lgb.LGBMClassifier(**params); model.fit(tr[_HOLD_FEATS], tr["label"].to_numpy())
+    model = lgb.LGBMClassifier(**params); model.fit(tr[feats], tr["label"].to_numpy())
     booster = model.booster_
     print(f"  教師(iter3基底・spike OFF) {bt['position_id'].nunique()} 玉 / 学習スナップ {len(tr):,} / 戻る率 {tr.label.mean():.3f}")
 
@@ -809,8 +833,12 @@ def main():
     ap.add_argument("--zone-er-q", type=float, default=0.25, help="強レンジ判定の学習窓 ER 分位（ER<この分位=強い平均回帰のバーだけ拡大・a-priori 0.25・採点窓スイープ禁止 L-267）")
     # 件数レバー freq-iter2（検証中・既定OFF=恒等）= 反転確認の買われすぎ下限を外し下降のみ（%K<前%K）に。
     ap.add_argument("--rev-nofloor", action="store_true", help="反転確認を %K>70∩下降 → 下限なし・下降のみ（%K<前%K）に置換（freq-iter2・件数増の検証・up_zoneが高値圏を担保）。既定OFF=恒等")
+    ap.add_argument("--rv-feats", action="store_true", help="(B) hold-ML 判別器に保有経路 realized vol 3本（rv_short30分/rv_mid2時間/rv_ratio）を追加＝片流れ判別の精度向上。既定OFF=恒等（特徴19個）。木に学習（L-267）")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番（ユニーク）にし旧実験を archive へ退避。未指定=安定名 _<box_tf>_shortset1（採用base・--vs 固定）。命名/archive は共通処理(ratchet_io)が担当＝e37/38/39 も同じ")
     a = ap.parse_args()
+
+    global USE_RV
+    USE_RV = a.rv_feats   # (B) 保有経路 realized vol 特徴の ON/OFF（既定OFF=恒等）
 
     if a.no_spike:
         spike_lm = None; spike_gate = None
