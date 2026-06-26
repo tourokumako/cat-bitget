@@ -34,7 +34,7 @@ case "$BASE" in
 esac
 [ "$is_target" -eq 0 ] && exit 0
 
-GUIDE="→ 分析フェーズの手順: ①対象戦略の ledger 経緯＋関連 report_/analysis_（base＋直近実験）＋分析KB(trade_analysis_methods_kb)＋analysis_playbook §2 を Read tool で開く ②$BLOCK に8見出しを数字つきで埋める ③改善提案($BASE)を書く"
+GUIDE="→ 分析フェーズの手順: ①対象戦略の ledger 経緯＋関連 report_/analysis_（base＋直近実験）＋分析KB(trade_analysis_methods_kb)＋analysis_playbook §2 を Read tool で開く ②$BLOCK に9見出しを数字つきで埋める（⑨巻き込み検証＝切る/Exit 系は勝ち玉/fat-tail への当たり量を数字で）③改善提案($BASE)を書く"
 
 # ── A. 着手ゲート（Read 証跡＝穴2を塞ぐ・record_read.sh が read_log に記録）──
 amiss=()
@@ -55,7 +55,7 @@ fi
 # ── B. 完了ゲート（分析ブロックの必須8見出し＝穴3を塞ぐ・採点非依存＝穴1）──
 if [ ! -f "$BLOCK" ]; then
   echo "🔒 [分析フェーズ 完了ゲート] 分析ブロックがありません: $BLOCK" >&2
-  echo "改善提案の前に、分析ブロックに下記8見出しを数字つきで埋めてください（採点の有無に関わらず必須＝穴1）。" >&2
+  echo "改善提案の前に、分析ブロックに下記9見出しを数字つきで埋めてください（採点の有無に関わらず必須＝穴1）。" >&2
   echo "$GUIDE" >&2
   exit 2
 fi
@@ -72,6 +72,12 @@ grep -q "経緯照合"   "$BLOCK" || miss="$miss\n  - ⑧経緯照合（過去 i
 if grep -q "経緯照合" "$BLOCK"; then
   grep -Eq "E[0-9]|iter[0-9]|iteration-[0-9]" "$BLOCK" || miss="$miss\n  - ⑧経緯照合に過去実験の E番号/iter番号 引用がありません（飛ばし読み防止＝直近の採用 iteration を引用せよ）"
 fi
+# ⑨巻き込み検証（2026-06-26 まこさん指示・本丸）: 切る/早切り/Exit 系レバーは、そのルールが勝ち玉（特に fat-tail）に
+#   当たる量を必ず数字で出す。背景: 2026-06-26 に時間切れ損玉だけを切り出して「取り逃し +$2,624 改善余地」と
+#   結論しかけたが、同じ含み益シグナルが勝ち玉に大量に当たる（MFE≥$5 で勝ち282玉 +$3,401 を巻き込む）ことを
+#   突き合わせていなかった＝損玉だけ見て天井を語る分析手法の欠陥（iter10/DYING_CUT 再演）。Exit/切る レバーでない
+#   提案は「該当なし（Exit/切る レバーでない）」と1行明記すれば可（⑤較正と同型）。
+grep -q "巻き込み" "$BLOCK" || miss="$miss\n  - ⑨巻き込み検証（切る/早切り/Exit 系レバーは、そのルールが勝ち玉・fat-tail に当たる量を数字で。損玉だけ見て天井を語らない＝2026-06-26 取り逃し誤推定事案。Exit/切る でないなら『該当なし』と明記）"
 if [ -n "$miss" ]; then
   echo "🔒 [分析フェーズ 完了ゲート] 分析ブロック（$BLOCK）に必須見出しが未記入（穴3・2026-06-24）:" >&2
   printf "%b\n" "$miss" >&2

@@ -18,7 +18,7 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-## 1. hook 一覧（25本・登録は settings.local.json）
+## 1. hook 一覧（26本・登録は settings.local.json）
 
 | hook | タイミング | matcher | 役割 |
 |---|---|---|---|
@@ -26,7 +26,7 @@
 | force_read_ml_design | SessionStart | — | 必読・6軸ゲート・保管ルール等を表示 |
 | reset_read_log | SessionStart | — | read_log をリセット（前セッションの読了を持ち越さない） |
 | show_latest_state | SessionStart | — | next_step.md 全文表示（起点） |
-| require_read_before_work | PreToolUse | Bash/Edit/Write/MultiEdit | 必読3本（WORKFLOW/ledger/adopted_strategies）＋目標逆算ブロック＋器の現在値が採用ポートフォリオの積み上げ（最大地面＋採用柱2本以上）になるまで作業ブロック（ゲート3＝近視眼防止・2026-06-22） |
+| require_read_before_work | PreToolUse | Bash/Edit/Write/MultiEdit | 必読3本（WORKFLOW/ledger/adopted_strategies）＋目標逆算ブロック＋器の現在値が採用ポートフォリオの積み上げ（最大地面＋採用柱2本以上）になるまで作業ブロック（ゲート3＝近視眼防止・2026-06-22）＋**改善アーク列ゲート＝goal_block「改善の経緯」が 狙い だけでなく 内容（動かしたレバー/機構）・方法（検証/採否理由＝失敗の型）も列に持つ（2026-06-26・狙いだけでは過去 iter の失敗の型が見えず同型を再提案する穴を塞ぐ）** |
 | record_read | PostToolUse | Read | Read した .md を read_log.txt に記録 |
 | check_websearch_before_design_write | PreToolUse | Write/Edit | 設計書 Write 前に直近60分の検索ベースアップを要求 |
 | enforce_search_quality | PreToolUse | WebSearch | 検索品質（12語以内・allowed_domains 指定） |
@@ -37,12 +37,13 @@
 | doc_map_guard | PreToolUse | Write/Edit | ledger/設計書に経緯・失敗の語を書くのをブロック（置き場所違反） |
 | forbid_fixed_value_tuning | PreToolUse | Write/Edit | 固定値スイープ（採点窓で最良値選定）をブロック（L-267） |
 | require_acceptance_before_impl | PreToolUse | Write/Edit | scripts/priority_rebuild/*.py を書く前に acceptance＋承認を要求 |
-| require_analysis_before_proposal | PreToolUse | Write/Edit | 改善提案/設計（acceptance.md / *_design.md）を書く前に【分析フェーズ】を強制（採点非依存・2026-06-24）。A 着手＝分析KB(trade_analysis_methods_kb)/analysis_playbook §2/対象 report_・analysis_ を read_log で確認。B 完了＝`.claude/state/analysis_block.md` の必須8見出し（前後比較/両窓/fat-tail/MAE/較正[予測確率]/3分類/問5/経緯照合[E番号引用必須]）。pdca_gate が採点後しか分析を強制しない穴（採点なし既存データ分析=強制ゼロ）を塞ぐ |
+| require_analysis_before_proposal | PreToolUse | Write/Edit | 改善提案/設計（acceptance.md / *_design.md）を書く前に【分析フェーズ】を強制（採点非依存・2026-06-24）。A 着手＝分析KB(trade_analysis_methods_kb)/analysis_playbook §2/対象 report_・analysis_ を read_log で確認。B 完了＝`.claude/state/analysis_block.md` の必須**9見出し**（前後比較/両窓/fat-tail/MAE/較正[予測確率]/3分類/問5/経緯照合[E番号引用必須]/**⑨巻き込み検証**）。**⑨巻き込み検証（2026-06-26 追加・本丸）＝切る/早切り/Exit 系レバーは、そのルールが勝ち玉（特に fat-tail）に当たる量を数字で出す。損玉だけ見て天井を語る分析手法の欠陥を塞ぐ（2026-06-26 時間切れ損玉だけ切り出し「取り逃し +$2,624」と誤推定・同じ含み益シグナルが勝ち282玉 +$3,401 に当たるのを見落とした事案＝iter10/DYING_CUT 再演手前）。Exit/切る でない提案は「該当なし」と明記**。pdca_gate が採点後しか分析を強制しない穴（採点なし既存データ分析=強制ゼロ）を塞ぐ |
 | block_uchikiri | PreToolUse | Write/Edit | アジャイル放棄を表す語をブロック（語一覧は実体参照） |
 | require_precheck_before_score | PreToolUse | Bash | score.py を CLI 実行する前に precheck PASS を要求 |
 | require_design_contract_before_run | PreToolUse | Bash | 戦略実行の前に DESIGN_CONTRACT で実装を機械照合 |
 | require_period_source | PreToolUse | Bash | priority_rebuild の .py 実行前に、期間境界(TRAIN_END/SC_START/SCORE_START/SCORE_END/SEAL_START/EMBARGO)が periods.py 由来でない自前定義ならブロック（期間ズレ根絶・E0.5・2026-06-18） |
 | require_direct_csv_for_analysis | PreToolUse | Bash | report.py/analyze.py の分析対象（第1引数）が archive/ 配下ならブロック（2026-06-24）。＝最新実験が archive に押し出された＝実験→分析の順序ミスを物理検出（実験は1回 --tag→直下で分析→2本目の前に済ます）。意図的な過去再分析のみ ANALYZE_ARCHIVE_OK=1 で通す |
+| require_probe_naming | PreToolUse | Bash | /tmp・scratchpad から **python で走らせる** .py が `*_probe.py` / `*_deep_analysis.py` 命名でないとブロック（2026-06-26）。＝read-only 分析スクリプトの命名規約（§5）を物理化。背景＝接尾辞なし e3N_*.py 分析を pdca_mark が「実験」と誤検知し need_score 旗を誤発火させた事案。ls/mv/rm/cat は通す（python 実行時のみ＝改名・削除は可能） |
 | pdca_mark | PostToolUse | Bash/Edit/Write | コマンド名で審判/分析/記録の旗を立てる/下ろす（--smoke/--no-score/--selftest は審判検知から除外・2026-06-18） |
 | pdca_gate | Stop | — | 旗の残存でターン終了をブロック |
 | approve_impl | （まこさんが実行） | — | acceptance の承認指紋を立てる |
@@ -82,7 +83,7 @@ pdca_mark は**コマンド名の正規表現**で検知する:
 - report.py(--vs) → need_report / need_vs を下ろす。**＋採点CSV分の週次チャートPNG（results/priority_rebuild/viz/ に `<stem>_*.png`）が実在すれば need_viz を下ろす**（report.py M節が「トレード最多/最少・NET最大/最小」の4週を自動出力＝結果レポートと同時に画像を出す強制・M節が黙って失敗して PNG が無ければ旗が残り pdca_gate がブロック・まこさん 2026-06-21 強制化・番人メタ確認 pass）。
 - analyze.py → need_analyze を下ろす。
 - ledger.md 編集（5問＋**方針/狙い/目的**＋主張を全部含む）→ need_ledger / need_5q / need_claim を下ろす。**方針/狙い/目的**（2026-06-26 まこさん指示）＝改善内容の意図＝前の iter の何を受けて何を狙ってこの変更をしたか。next_step の改善アーク「狙い」列がこの ledger「方針」を引用元にする（CC の記憶要約禁止＝2026-06-26 妄想で狙いを書いた事案）。
-- next_step.md 上書き（本筋/やってはいけない/出典/**改善アーク**/**狙い** を含む）→ need_next_step を下ろす。**改善アーク**（2026-06-26 まこさん指示）＝対象戦略の直近イテレーション系譜＋前提フラグ（nofloor ON/OFF 等）を表 or 箇条書きで残す＝次セッションが流れを理解した上で改善するため（goal_block「改善の経緯」と対）。**狙い**（2026-06-26）＝各 iter に「前の iter の何を受けて何を狙ってこの変更をしたか」を ledger の「方針」記述から引用（CC の記憶要約禁止＝意図が誤解なく引き継がれるため）。
+- next_step.md 上書き（本筋/やってはいけない/出典/**改善アーク**/**狙い**/**内容**/**方法** を含む）→ need_next_step を下ろす。**内容/方法**（2026-06-26 まこさん指示）＝改善アークの各 iter に 狙い(目的) だけでなく 内容（動かしたレバー/機構）と 方法（どう検証・採否理由＝失敗の型）も残す＝次セッションが「何をして/どう検証して/なぜ不採用か」を見て同型の手を再提案しないため（goal_block「改善の経緯」列ゲートと対）。**改善アーク**（2026-06-26 まこさん指示）＝対象戦略の直近イテレーション系譜＋前提フラグ（nofloor ON/OFF 等）を表 or 箇条書きで残す＝次セッションが流れを理解した上で改善するため（goal_block「改善の経緯」と対）。**狙い**（2026-06-26）＝各 iter に「前の iter の何を受けて何を狙ってこの変更をしたか」を ledger の「方針」記述から引用（CC の記憶要約禁止＝意図が誤解なく引き継がれるため）。
 - analysis_*.txt を Read → need_analyze_report を下ろす（read_log 経由）。
 - pdca_gate（Stop）が need_* の残存でターン終了をブロック。
 
@@ -121,6 +122,7 @@ pdca_mark / require_design_contract の検知は全部「**コマンド名・imp
 - **実験**スクリプト名は `strat_` / `train_` / `measure_` で始める。外れる名前（戦略本体に E35 のような連番名を付ける）を作るなら、pdca_mark に明示登録する。
 - **審判**は `score.py` を CLI で通す。gate 外の `score.score(df)` を別名スクリプトで呼ぶなら、その呼び出しを pdca_mark の審判検知に登録する。
 - **分析**は `analyze.py` を通す。専用分析（`*_deep_analysis.py` 等）を使うなら need_analyze / need_analyze_report の解除対象に登録する。
+- **read-only 分析 probe**（/tmp・scratchpad に置く使い捨てスクリプト）は必ず `*_probe.py` または `*_deep_analysis.py` で命名する＝**require_probe_naming が物理強制**（python 実行時のみ・2026-06-26）。接尾辞なし（特に `e3N_*.py`）だと pdca_mark が「実験」と誤検知し need_score 旗を誤発火させる（2026-06-26 事案）。実戦略は scripts/priority_rebuild/ 配下に置き、probe を直下に作らない。
 - **検証期間**（学習/捨て/採点/封印の境界）は `periods.py` から import する（自前で日付リテラルを書かない）。自前定義は require_period_source が実行前にブロック。表示文字列も periods から組み立てる（手打ちしない）。＝期間ズレ根絶の SSOT（ledger E0.5）。
 - **使用パラメータ・ロジックのサイドカー**（2026-06-19）: 戦略は走行のたびに、出力する売買記録CSVの隣に `<stem>_params.json` を `params_sidecar.write_sidecar` で出す。中身＝その戦略で**実際に使った**指標/閾値/TP/SL/TimeExit/期間/サイズ ＋ **Entry/Exit ロジック（ルールの流れ・exit_reason）**。`report.py` 節0 が戦略名非依存で自動表示（E35 が手本・E36/E37 も同パターン）。read 専用メタ＝net 計算・審判に不関与。pdca_mark は `py_compile`（コンパイル確認）を実験/審判検知から除外（false trigger 防止・2026-06-18/19）。
 

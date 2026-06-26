@@ -150,10 +150,13 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         #   （SessionStart 全文表示の next_step に必ず入る・goal_block「改善の経緯」と対＝末と開始の二重強制）。
         # 「狙い」(2026-06-26 まこさん指示): 改善アークの各 iter に「狙い＝前の iter の何を受けて何を狙ってこの変更を
         #   したか」を ledger の「方針」記述から引用して書く（CC の記憶要約禁止＝意図が誤解なく引き継がれるため）。
+        # 「内容・方法」(2026-06-26 まこさん指示): 狙い(目的)だけでなく 内容(動かしたレバー/機構) と 方法(どう検証・採否理由
+        #   ＝失敗の型) も改善アークに残す＝次セッションが「何をして/どう検証して/なぜ不採用か」を見て同型の手を再提案
+        #   しないため（goal_block「改善の経緯」列ゲートと対＝末と開始の二重強制）。
         ns = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
         for e in (ti.get("edits", []) or []):
             ns += e.get("new_string", "") or ""
-        if all(t in ns for t in ("本筋", "やってはいけない", "出典", "改善アーク", "狙い")):
+        if all(t in ns for t in ("本筋", "やってはいけない", "出典", "改善アーク", "狙い", "内容", "方法")):
             rm(need_next_step); rm(score_bg_pending); rm(diagnostic_active)   # セッション境界の安全側クリア
 '
 exit 0
