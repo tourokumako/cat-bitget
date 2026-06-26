@@ -81,8 +81,8 @@ pdca_mark は**コマンド名の正規表現**で検知する:
 - **score.py / precheck.py 実行** → need_score を下ろし、need_report / need_analyze / need_analyze_report / need_ledger / need_5q / need_claim / need_next_step / **need_viz** を一括で立てる。
 - report.py(--vs) → need_report / need_vs を下ろす。**＋採点CSV分の週次チャートPNG（results/priority_rebuild/viz/ に `<stem>_*.png`）が実在すれば need_viz を下ろす**（report.py M節が「トレード最多/最少・NET最大/最小」の4週を自動出力＝結果レポートと同時に画像を出す強制・M節が黙って失敗して PNG が無ければ旗が残り pdca_gate がブロック・まこさん 2026-06-21 強制化・番人メタ確認 pass）。
 - analyze.py → need_analyze を下ろす。
-- ledger.md 編集（5問＋主張を全部含む）→ need_ledger / need_5q / need_claim を下ろす。
-- next_step.md 上書き（本筋/やってはいけない/出典/**改善アーク** を含む）→ need_next_step を下ろす。**改善アーク**（2026-06-26 まこさん指示）＝対象戦略の直近イテレーション系譜＋前提フラグ（nofloor ON/OFF 等）を表 or 箇条書きで残す＝次セッションが流れを理解した上で改善するため（goal_block「改善の経緯」と対）。
+- ledger.md 編集（5問＋**方針/狙い/目的**＋主張を全部含む）→ need_ledger / need_5q / need_claim を下ろす。**方針/狙い/目的**（2026-06-26 まこさん指示）＝改善内容の意図＝前の iter の何を受けて何を狙ってこの変更をしたか。next_step の改善アーク「狙い」列がこの ledger「方針」を引用元にする（CC の記憶要約禁止＝2026-06-26 妄想で狙いを書いた事案）。
+- next_step.md 上書き（本筋/やってはいけない/出典/**改善アーク**/**狙い** を含む）→ need_next_step を下ろす。**改善アーク**（2026-06-26 まこさん指示）＝対象戦略の直近イテレーション系譜＋前提フラグ（nofloor ON/OFF 等）を表 or 箇条書きで残す＝次セッションが流れを理解した上で改善するため（goal_block「改善の経緯」と対）。**狙い**（2026-06-26）＝各 iter に「前の iter の何を受けて何を狙ってこの変更をしたか」を ledger の「方針」記述から引用（CC の記憶要約禁止＝意図が誤解なく引き継がれるため）。
 - analysis_*.txt を Read → need_analyze_report を下ろす（read_log 経由）。
 - pdca_gate（Stop）が need_* の残存でターン終了をブロック。
 

@@ -134,7 +134,11 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         for e in (ti.get("edits", []) or []):
             payload += e.get("new_string", "") or ""
         tokens = ["【問0 前後比較】", "【問1 レバー】", "【問2 不足量】", "【問3 負け集中】", "【問4 過去接続】", "【問5 次仮説】"]
-        if all(t in payload for t in tokens):
+        # 「方針/狙い/目的」(2026-06-26 まこさん指示): 改善内容の意図＝前の iter の何を受けて何を狙って
+        #   この変更をしたか を ledger エントリに明記させる。next_step の改善アークが ledger の「方針」を引用元に
+        #   するため＝CC が記憶要約で狙いを書く穴を塞ぐ（2026-06-26 妄想で狙いを書いた事案）。方針/狙い/目的 のいずれか必須。
+        has_purpose = any(k in payload for k in ("方針", "狙い", "目的"))
+        if all(t in payload for t in tokens) and has_purpose:
             rm(need_5q)
         if "【主張】" in payload:        # 多角チェックの結論=主張1行（件数/日+net 込み・#19・2026-06-14）
             rm(need_claim)
@@ -144,10 +148,12 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         # 「改善アーク」(2026-06-26 まこさん指示): 対象戦略の直近イテレーション系譜＋前提フラグ（nofloor ON/OFF 等）を
         #   表 or 箇条書きで残す。次セッションが最新1実験の局所結論でなく流れを理解した上で改善するため
         #   （SessionStart 全文表示の next_step に必ず入る・goal_block「改善の経緯」と対＝末と開始の二重強制）。
+        # 「狙い」(2026-06-26 まこさん指示): 改善アークの各 iter に「狙い＝前の iter の何を受けて何を狙ってこの変更を
+        #   したか」を ledger の「方針」記述から引用して書く（CC の記憶要約禁止＝意図が誤解なく引き継がれるため）。
         ns = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
         for e in (ti.get("edits", []) or []):
             ns += e.get("new_string", "") or ""
-        if all(t in ns for t in ("本筋", "やってはいけない", "出典", "改善アーク")):
+        if all(t in ns for t in ("本筋", "やってはいけない", "出典", "改善アーク", "狙い")):
             rm(need_next_step); rm(score_bg_pending); rm(diagnostic_active)   # セッション境界の安全側クリア
 '
 exit 0
