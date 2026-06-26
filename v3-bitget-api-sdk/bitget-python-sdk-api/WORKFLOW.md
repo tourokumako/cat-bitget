@@ -2,7 +2,14 @@
 
 ---
 
-## 🔴 現在地（2026-06-24 改訂102＝環境整備セッション完了・net 変更なし。命名規則の運用 確定＋実証・archive 整理・重複68本削除。次＝E36 改善の【分析】からスタート[next_step に手順・参考KB・WebResearch 方法を詳細記載]）
+## 🔴 現在地（2026-06-26 改訂103＝環境整備セッション・net 変更なし。CC が改善の前提[nofloor OFF/ON]を見落とし＋手順を飛ばして妄想で改善案/狙いを記述＝まこさん激怒でセッション切替。物理強制を追加＝改善アーク[goal_block 改善の経緯+next_step 改善アーク]＋各 iter の「狙い」を ledger 方針引用で強制[記憶要約禁止]＋ledger 記録に方針/狙い/目的を必須化。次＝freq-iter2[nofloor ON・476玉]データを漏れなく確認→利益減の原因究明→Exit 側で net 最大化の改善案検討）
+
+> **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（手順・改善アーク[前提フラグ＋ledger 方針引用の狙い]・分析対象データ[freq-iter2 archive report/analyze/CSV]・やってはいけない・出典 が集約）。
+> - **物理強制 追加（commit e18a0a6 + f67ba70・番人PASS）**: ①goal_block 必須見出しに「改善の経緯」②next_step 必須トークンに「改善アーク」＋「狙い」③ledger need_5q に「方針/狙い/目的」必須＝改善の意図（前の iter の何を受けて何を狙ったか）を ledger に書かせ、next_step の改善アークがそれを引用元にする（CC の記憶要約・妄想記述を物理的に塞ぐ）。
+> - **次（まこさん指示・手順厳守）= freq-iter2[nofloor ON]データの原因究明→改善案検討**。①アークを読んで前提（nofloor ON/OFF）を理解 ②分析対象データ（freq-iter2 archive の report/analyze/CSV 476玉）を漏れなく Read ③利益減の原因究明（K節 平均負け拡大・L節 追加239玉 −$644・弱い玉が時間切れで死ぬ）④→ Exit 側で net 最大化の改善案（中身はまこさん決定）。手順を飛ばして改善案に飛びつかない。
+> - **⚠️ CC への警告（L-306）**: 改善の前提（nofloor OFF/ON・どの base の上か）を見落とすな・手順（データ明記→アーク→読解→原因究明→改善案）を飛ばすな・狙いを記憶/妄想で書くな（ledger 方針を引用）・add（fat-tail）を削る方向は絶対NG・「Exit 側を最適化」を Entry/サイズ側にすり替えるな。
+
+## 🧊 改訂102 ブロック（履歴・参照用）（2026-06-24 改訂102＝環境整備セッション完了・net 変更なし。命名規則の運用 確定＋実証・archive 整理・重複68本削除。次＝E36 改善の【分析】からスタート[next_step に手順・参考KB・WebResearch 方法を詳細記載]）
 
 > **⚠️ 新セッションはまず SessionStart hook 冒頭の next_step.md を読む**（E36 改善の分析手順・参考KB 6本・WebResearch の検索場所/方法・改善はまこさん決定 が集約）。
 > - **命名規則の運用 確定・実証**: report・analyze・png は同じ売買記録CSVに report.py→analyze.py（png は report の M節）を続けて通すと同じ世代の1セットに揃う。通し番号 _001 は戦略を **--tag X** で回した時に名前に入る（ratchet_io.tagged_suffix）。実物＝freqiter2_001。archive 移動＝archive_prior_experiments（--tag 時に旧実験を自動 archive）＋archive_if_exists（書く前に同名を archive・上書きしない）。
