@@ -17,7 +17,10 @@ if [ -f "$STATE/pdca_need_vs" ]; then
     MISS="${MISS}・report.py が --vs（前回ベースライン比較・KB §0 前後比較）なしで実行された。--vs <前回CSV> 付きで再実行せよ。真にベースラインが無い初回のみ、まこさん GO を得て state/no_baseline_approved を作成（GO なしの作成は類型G）\n"
   fi
 fi
-[ -f "$STATE/pdca_need_analyze" ] && MISS="${MISS}・analyze.py 深掘り(N1〜N9: 時間構造/交差/系列/ドリフト/bootstrap/個別読み/必要勝率/負け解剖/出口効率)が未実行\n"
+if [ -f "$STATE/pdca_need_analyze" ]; then
+  _why=""; [ -f "$STATE/pdca_analyze_incomplete" ] && _why="（不足: $(cat "$STATE/pdca_analyze_incomplete")）"
+  MISS="${MISS}・analyze.py 深掘り(N0〜N12)が未実行 or 不完全${_why}。汎用 analyze は §0前後比較[前回≠今回]＋N4分布ドリフトが揃うまで旗が残る＝必ず --vs <直前の実験(report持ち)> --train <train.csv> を付けて再実行（2026-06-25 付け忘れ防止）\n"
+fi
 # 分析レポートを出して読む強制（「別途」で逃げる・省略・読み飛ばし 禁止・まこさん 2026-06-15）。
 #   analyze を完走させ analysis_*.txt を生成 → Read tool で読む（read_log に /analysis_ が載る）まで終了不可。
 #   analyze がスキーマ非対応等でクラッシュ→レポート未生成なら read_log に載らない＝ここで止まる（"別途"の逃げ道を塞ぐ）。
@@ -32,7 +35,7 @@ fi
 [ -f "$STATE/pdca_need_ledger" ] && MISS="${MISS}・ledger.md への記録(結果+原因3分類+改善)が未実行\n"
 [ -f "$STATE/pdca_need_5q" ] && MISS="${MISS}・ledger に 6つの問いが未記入: 【問0 前後比較】(前回ベースライン vs 今回の 件数/net/avg/勝率を並べ、激減や急増がないか=KB §0 大原則・degenerate 見落とし防止)【問1 レバー】(期待値4要素のどれが何pt動いたか)【問2 不足量】(あと何がいくら足りないか・数値)【問3 負け集中】(どのスライス=月/出口/指標帯 に負けが集中か)【問4 過去実験との接続】(過去のどの実験番号 E○○ と構造が同じ/違うか)【問5 次仮説】(学習期間で検証可能な形で1つ)。6見出し全部を含む編集で旗が下りる\n"
 [ -f "$STATE/pdca_need_claim" ] && MISS="${MISS}・ledger に【主張】1行が未記入（多角チェックリスト #19・analysis_playbook §2.0）。analyze.py N0 の件数妥当性(件数/日)を踏まえ、この実験の結論を【主張】<件数/日 と net を含む根拠つき1行> として ledger E エントリに書け（多角チェックを1発見で止めず量→質→...を通した結論）\n"
-[ -f "$STATE/pdca_need_next_step" ] && MISS="${MISS}・next_step.md（次セッションの起点・SessionStart 表示）が未更新。ledger に実験を記録したら .claude/state/next_step.md を上書き更新せよ（毎回上書き=最新の起点1枚。必須記載=①次セッションの本筋 ②今セッションの確定(ledger E番号を参照) ③やってはいけないこと ④数字の出典）。「本筋」「やってはいけない」「出典」の見出しを含む上書きで旗が下りる\n"
+[ -f "$STATE/pdca_need_next_step" ] && MISS="${MISS}・next_step.md（次セッションの起点・SessionStart 表示）が未更新。ledger に実験を記録したら .claude/state/next_step.md を上書き更新せよ（毎回上書き=最新の起点1枚。必須記載=①次セッションの本筋 ②今セッションの確定(ledger E番号を参照) ③やってはいけないこと ④数字の出典 ⑤改善アーク=直近イテレーション系譜+前提フラグ[nofloor ON/OFF 等]）。「本筋」「やってはいけない」「出典」「改善アーク」の見出しを含む上書きで旗が下りる（2026-06-26 取り違え防止）\n"
 if [ -n "$MISS" ]; then
   printf "⛔ PDCA未閉じ(analysis_playbook §4)。審判を通したら必ず以下を済ませてから終了せよ:\n%b最低ライン分析(N1〜N9)は数字の抽出にすぎない。5つの問いに答えるまでが分析(まこさん 2026-06-12)。\n" "$MISS" >&2
   exit 2

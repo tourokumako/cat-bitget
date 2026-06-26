@@ -56,7 +56,7 @@
 ### B. 最初の Bash/Edit/Write の前（必読＋目標逆算＋器の現在値の積み上げ照合）
 - **require_read_before_work**（PreToolUse）: 3ゲートを順に物理強制。全 Bash/Edit/Write をブロック。
   - **ゲート1（読了）**: 必読3本（WORKFLOW.md / ledger.md / **adopted_strategies.md＝採用ポートフォリオ台帳**）を Read tool で開く。
-  - **ゲート2（目標逆算）**: goal_block.md に必須見出し（大目標/器の現在値/ギャップ/候補/天井/選定/3行ゲート/届く構成/戦略照合）を書く。
+  - **ゲート2（目標逆算）**: goal_block.md に必須見出し（大目標/器の現在値/ギャップ/候補/天井/選定/3行ゲート/届く構成/戦略照合/**改善の経緯**）を書く。**改善の経緯**（2026-06-26 まこさん指示）＝対象戦略の直近イテレーション系譜を ledger から箇条書きで再構成し、各 iter に前提フラグ（nofloor ON/OFF 等・どの base の上か）を書く。最新1実験の局所結論を起点に改善議論へ走る穴（(A)DYING_CUT を nofloor OFF=base に当てた前提を見落とした 2026-06-26 事案）を塞ぐ。next_step「改善アーク」と対＝開始時(goal_block)と末(next_step)の二重強制。
   - **ゲート3（器の現在値＝近視眼防止・2026-06-22 まこさん指示）**: goal_block の「器の現在値」セクションに、採用台帳マーカー `<!-- PORTFOLIO_CHECK: BASE_MAX=… ; PILLARS=… -->` の「最大 deployable 地面（E32b）」＋「採用柱 計2本以上」が書かれているか照合。無ければブロック。＝最新の1実験だけを現在値にする近視眼（2026-06-22 E36 単独事案）を物理的に弾く。hook に戦略名を焼かず台帳マーカーから動的に読む（採用が変われば台帳1行更新で hook 追従）。
 - 解除: read_log に3本が載り、goal_block の必須見出しが揃い、器の現在値が積み上げ照合を通る。記録は record_read（PostToolUse Read）。
 - ⚠️ 採用/不採用・最大地面が変わったら adopted_strategies.md の `PORTFOLIO_CHECK` 行（BASE_MAX / PILLARS）だけ更新する（hook は本行に自動追従）。
@@ -82,7 +82,7 @@ pdca_mark は**コマンド名の正規表現**で検知する:
 - report.py(--vs) → need_report / need_vs を下ろす。**＋採点CSV分の週次チャートPNG（results/priority_rebuild/viz/ に `<stem>_*.png`）が実在すれば need_viz を下ろす**（report.py M節が「トレード最多/最少・NET最大/最小」の4週を自動出力＝結果レポートと同時に画像を出す強制・M節が黙って失敗して PNG が無ければ旗が残り pdca_gate がブロック・まこさん 2026-06-21 強制化・番人メタ確認 pass）。
 - analyze.py → need_analyze を下ろす。
 - ledger.md 編集（5問＋主張を全部含む）→ need_ledger / need_5q / need_claim を下ろす。
-- next_step.md 上書き（本筋/やってはいけない/出典 を含む）→ need_next_step を下ろす。
+- next_step.md 上書き（本筋/やってはいけない/出典/**改善アーク** を含む）→ need_next_step を下ろす。**改善アーク**（2026-06-26 まこさん指示）＝対象戦略の直近イテレーション系譜＋前提フラグ（nofloor ON/OFF 等）を表 or 箇条書きで残す＝次セッションが流れを理解した上で改善するため（goal_block「改善の経緯」と対）。
 - analysis_*.txt を Read → need_analyze_report を下ろす（read_log 経由）。
 - pdca_gate（Stop）が need_* の残存でターン終了をブロック。
 

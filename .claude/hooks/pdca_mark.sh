@@ -93,7 +93,34 @@ if tn == "Bash":
             touch(need_vs)
     # 分析＝analyze.py（汎用 N0-N12）＋ 戦略固有 *_deep_analysis/*_probe（命名規約・2026-06-16）
     if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(analyze|[A-Za-z0-9_]+_deep_analysis|[A-Za-z0-9_]+_probe)\.py", cmd):
-        rm(need_analyze)  # 深掘りバッテリー実行で旗が下りる
+        # ★付け忘れ防止＝中身検査（2026-06-25 まこさん「強制・自動化」）: 汎用 analyze.py は出力に
+        #   §0前後比較[前回≠今回]＋N4分布ドリフトが揃う時だけ need_analyze を下ろす。
+        #   付け忘れ(--vs/--train なし)・取り違え(前回=今回の同値比較)では旗が残る＝pdca_gate がブロック。
+        #   probe/deep_analysis（前後比較を持たない探索）は従来どおり中身検査せず旗を下ろす。
+        is_generic = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*analyze\.py", cmd))
+        incomplete = os.path.join(state, "pdca_analyze_incomplete")
+        if not is_generic:
+            rm(need_analyze); rm(incomplete)
+        else:
+            rdir = "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/results/priority_rebuild/ratchet"
+            files = sorted(glob.glob(os.path.join(rdir, "analysis_*.txt")), key=os.path.getmtime)
+            ok = False; why = ""
+            if files:
+                txt = open(files[-1], encoding="utf-8", errors="ignore").read()
+                has_vs = "前後比較" in txt and "前回" in txt and "今回" in txt
+                has_n4 = "N4. 分布ドリフト" in txt
+                same = bool(re.search(r"件数 \+0% / net [+-]?0 / avg [+-]0\.00 / 勝率 [+-]0\.0pt", txt))
+                if not has_vs: why = "§0前後比較が無い（--vs <直前の実験(report持ち)> を付ける）"
+                elif not has_n4: why = "N4分布ドリフトが無い（--train <train.csv> を付ける）"
+                elif same: why = "前回=今回の同値比較＝無意味（直前の別実験を --vs に・採用base同値や付け先取り違えを正す）"
+                else: ok = True
+            else:
+                why = "analysis_*.txt が見つからない"
+            if ok:
+                rm(need_analyze); rm(incomplete)
+            else:
+                touch(need_analyze)
+                open(incomplete, "w", encoding="utf-8").write(why)
 elif tn in ("Edit", "Write", "MultiEdit"):
     fp = ti.get("file_path", "") or ""
     if fp.endswith("ledger.md"):
@@ -112,12 +139,15 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         if "【主張】" in payload:        # 多角チェックの結論=主張1行（件数/日+net 込み・#19・2026-06-14）
             rm(need_claim)
     if fp.endswith("next_step.md"):
-        # 次セッションの起点を上書き更新 → 旗を下ろす。ただし記載必須項目（本筋/やってはいけない/出典）を
+        # 次セッションの起点を上書き更新 → 旗を下ろす。ただし記載必須項目（本筋/やってはいけない/出典/改善アーク）を
         # 含む編集の時だけ（薄い1文字編集で旗を消す＝引き継ぎ空洞化を防ぐ・中身の質はまこさん30秒チェック）。
+        # 「改善アーク」(2026-06-26 まこさん指示): 対象戦略の直近イテレーション系譜＋前提フラグ（nofloor ON/OFF 等）を
+        #   表 or 箇条書きで残す。次セッションが最新1実験の局所結論でなく流れを理解した上で改善するため
+        #   （SessionStart 全文表示の next_step に必ず入る・goal_block「改善の経緯」と対＝末と開始の二重強制）。
         ns = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
         for e in (ti.get("edits", []) or []):
             ns += e.get("new_string", "") or ""
-        if all(t in ns for t in ("本筋", "やってはいけない", "出典")):
+        if all(t in ns for t in ("本筋", "やってはいけない", "出典", "改善アーク")):
             rm(need_next_step); rm(score_bg_pending); rm(diagnostic_active)   # セッション境界の安全側クリア
 '
 exit 0
