@@ -36,14 +36,14 @@
 | require_instrument_read_before_impl | PreToolUse | Write/Edit | 実装を書く前に eval_engine（計器）を Read 強制 |
 | doc_map_guard | PreToolUse | Write/Edit | ledger/設計書に経緯・失敗の語を書くのをブロック（置き場所違反） |
 | forbid_fixed_value_tuning | PreToolUse | Write/Edit | 固定値スイープ（採点窓で最良値選定）をブロック（L-267） |
-| require_acceptance_before_impl | PreToolUse | Write/Edit | scripts/priority_rebuild/*.py を書く前に acceptance＋承認を要求 |
+| require_acceptance_before_impl | PreToolUse | Write/Edit | scripts/priority_rebuild/*.py を書く前に acceptance＋承認を要求＋**疑似シミュ由来の固定値ゼロ宣言を必須（2026-06-26 まこさん承認）＝probe(疑似シミュ)で出た数値[θ/段数/AUC]を設計の固定値に焼くのをブロック。acceptance に『★疑似シミュ由来の固定値ゼロ』見出しが無いと exit2。背景＝add ゲート設計で probe の θ≤0.4/段数3 を「クリア」扱いし焼き込んだ事案（STRUCT_SL 近似+$895 が実エンジンで消失した轍と同型）** |
 | require_analysis_before_proposal | PreToolUse | Write/Edit | 改善提案/設計（acceptance.md / *_design.md）を書く前に【分析フェーズ】を強制（採点非依存・2026-06-24）。A 着手＝分析KB(trade_analysis_methods_kb)/analysis_playbook §2/対象 report_・analysis_ を read_log で確認。B 完了＝`.claude/state/analysis_block.md` の必須**9見出し**（前後比較/両窓/fat-tail/MAE/較正[予測確率]/3分類/問5/経緯照合[E番号引用必須]/**⑨巻き込み検証**）。**⑨巻き込み検証（2026-06-26 追加・本丸）＝切る/早切り/Exit 系レバーは、そのルールが勝ち玉（特に fat-tail）に当たる量を数字で出す。損玉だけ見て天井を語る分析手法の欠陥を塞ぐ（2026-06-26 時間切れ損玉だけ切り出し「取り逃し +$2,624」と誤推定・同じ含み益シグナルが勝ち282玉 +$3,401 に当たるのを見落とした事案＝iter10/DYING_CUT 再演手前）。Exit/切る でない提案は「該当なし」と明記**。pdca_gate が採点後しか分析を強制しない穴（採点なし既存データ分析=強制ゼロ）を塞ぐ |
 | block_uchikiri | PreToolUse | Write/Edit | アジャイル放棄を表す語をブロック（語一覧は実体参照） |
 | require_precheck_before_score | PreToolUse | Bash | score.py を CLI 実行する前に precheck PASS を要求 |
 | require_design_contract_before_run | PreToolUse | Bash | 戦略実行の前に DESIGN_CONTRACT で実装を機械照合 |
 | require_period_source | PreToolUse | Bash | priority_rebuild の .py 実行前に、期間境界(TRAIN_END/SC_START/SCORE_START/SCORE_END/SEAL_START/EMBARGO)が periods.py 由来でない自前定義ならブロック（期間ズレ根絶・E0.5・2026-06-18） |
 | require_direct_csv_for_analysis | PreToolUse | Bash | report.py/analyze.py の分析対象（第1引数）が archive/ 配下ならブロック（2026-06-24）。＝最新実験が archive に押し出された＝実験→分析の順序ミスを物理検出（実験は1回 --tag→直下で分析→2本目の前に済ます）。意図的な過去再分析のみ ANALYZE_ARCHIVE_OK=1 で通す |
-| require_probe_naming | PreToolUse | Bash | /tmp・scratchpad から **python で走らせる** .py が `*_probe.py` / `*_deep_analysis.py` 命名でないとブロック（2026-06-26）。＝read-only 分析スクリプトの命名規約（§5）を物理化。背景＝接尾辞なし e3N_*.py 分析を pdca_mark が「実験」と誤検知し need_score 旗を誤発火させた事案。ls/mv/rm/cat は通す（python 実行時のみ＝改名・削除は可能） |
+| require_probe_naming | PreToolUse | Bash | /tmp・scratchpad から **python で走らせる** .py が `*_probe.py` / `*_deep_analysis.py` 命名でないとブロック（2026-06-26）。＝read-only 分析スクリプトの命名規約（§5）を物理化。背景＝接尾辞なし e3N_*.py 分析を pdca_mark が「実験」と誤検知し need_score 旗を誤発火させた事案。ls/mv/rm/cat は通す（python 実行時のみ＝改名・削除は可能）。**＋正しい命名の probe 実行時に「疑似シミュ＝あたり付け専用・出た数値を設計の固定値/採否根拠にしない・採否は実エンジン両窓 score.py」を必ず表示（2026-06-26 まこさん承認・使う瞬間に錨）** |
 | pdca_mark | PostToolUse | Bash/Edit/Write | コマンド名で審判/分析/記録の旗を立てる/下ろす（--smoke/--no-score/--selftest は審判検知から除外・2026-06-18） |
 | pdca_gate | Stop | — | 旗の残存でターン終了をブロック |
 | approve_impl | （まこさんが実行） | — | acceptance の承認指紋を立てる |

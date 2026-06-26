@@ -28,4 +28,15 @@ if [ "$has_python" -gt 0 ] && [ -n "$bad" ]; then
   echo "理由: 接尾辞なしの e3N_*.py 等は pdca_mark が『実験』と誤検知し need_score 旗を誤発火させる（2026-06-26 事案）。_probe 命名で物理除外する。" >&2
   exit 2
 fi
+
+# 正しい命名で probe を走らせる時は、疑似シミュの位置づけを必ず表示（2026-06-26 まこさん承認・疑似シミュ値の設計焼き込み防止）
+#   背景: 2026-06-26 add ゲート設計で probe(疑似シミュ)の AUC0.83/θ≤0.4/段数3 を「クリア」扱いし acceptance に固定値で焼き込み→まこさん指摘。
+#   probe は あたりを付ける参考ツール＝決定的根拠でない。使う瞬間に錨を下ろす（SessionStart でなく実行時＝feedback_enforcement_at_proposal_time）。
+good=$(printf '%s' "$CMD" | grep -oE '(/private/tmp|/tmp)/[^ "'"'"';|&]*(_probe|_deep_analysis)\.py')
+if [ "$has_python" -gt 0 ] && [ -n "$good" ]; then
+  echo "⚠️ [疑似シミュの位置づけ] これは probe＝あたりを付ける専用の参考ツールです（2026-06-26 まこさん）。" >&2
+  echo "   ・出た数値（θ・閾値・段数・AUC 等）を設計の固定値や採否の根拠にしない。" >&2
+  echo "   ・採否は必ず実エンジン再走＋両窓 score.py の数字だけ（STRUCT_SL 近似 +\$895 が実エンジンで消失した轍）。" >&2
+  echo "   ・設計の閾値/段数は実エンジンの学習窓で選定 or 分析の構造由来の a-priori にする（probe 値を焼かない）。" >&2
+fi
 exit 0
