@@ -390,7 +390,7 @@ def _short_rev_nofloor(df, box_tf, zone_params):
 
 def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp=None,
                    short_htf=False, short_only=False, spike_lm=None, spike_gate=None, dying_cut=None,
-                   struct_sl=None):
+                   struct_sl=None, add_gate=None):
     """E36 SHORT専用の売買エンジン（連続モード両方向・LONG/SHORT を並行管理・merge・cap 合算停止）＋ SPIKE_SL（急騰Exit）。
     spike_lm=(K, alpha) を渡すと、SHORT 保有中・含み損側で Lee-Mykland jump 統計が L* を超えたら成行カット（SPIKE_SL）。
     spike_lm=None では SPIKE_SL ブロックに入らず急騰Exit OFF（教師生成・恒等参照用）。pending fill・出口優先順位・部分利確・建値撤退は shortset1/iter9 と同じ。"""
@@ -407,7 +407,7 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
     R = c * (1.0 + res / 100.0)
     Cc = (S + R) / 2.0
     Wpct = sup + res
-    A = _hold_arrays(df, box_tf) if (hold_ctx is not None or be_gate is not None or partial_tp is not None or dying_cut is not None) else None
+    A = _hold_arrays(df, box_tf) if (hold_ctx is not None or be_gate is not None or partial_tp is not None or dying_cut is not None or add_gate is not None) else None
     _hm, _hf, _hth = hold_ctx if hold_ctx is not None else (None, None, None)
     _bm, _bf, _bth = be_gate if be_gate is not None else (None, None, None)
     _ptup = partial_tp if partial_tp is not None else (None, None, None, None, None, None)
@@ -417,6 +417,8 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
     _pgb = _ptup[7] if len(_ptup) > 7 else None
     # ── (A) 死ぬ片流れの早期カット（DYING_CUT）: 含み損側 ∩ 判別器 predict<θ_cut → 成行カット。None で OFF＝恒等 ──
     _dm, _df, _dth = dying_cut if dying_cut is not None else (None, None, None)
+    # ── freq-iter3: add を hold-ML 判別器でゲート（add_gate=(booster, feats, θ)）。add 判定時に predict<θ=死ぬ判別なら積まない。None で OFF＝恒等 ──
+    _agm, _agf, _agth = add_gate if add_gate is not None else (None, None, None)
     # ── 急騰Exit（Lee-Mykland jump）: 統計と閾値は全 bars≤i＝leak-safe・None で未計算＝急騰Exit OFF ──
     if spike_lm is not None:
         _spk_K, _spk_alpha = spike_lm
@@ -449,7 +451,13 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
         else:
             if held_total() + UNIT > CAP + 1e-9:
                 return
-            p = pos[side]; new_sz = p["size"] + UNIT
+            p = pos[side]
+            # ── freq-iter3 add ゲート: 死ぬ判別の玉に積まない（SHORT 専用・predict<θ=死ぬ判別なら add 見送り）。_agm=None で OFF＝恒等 ──
+            #   判別器は add_count+1（この add を入れた後の段数）の状態で「戻る/死ぬ」を予測＝積む価値を判定（メタラベリング）。
+            if _agm is not None and A is not None and side == "SHORT" and np.isfinite(A["Cc"][i]) and np.isfinite(A["atr"][i]):
+                if _agm.predict(np.asarray([_hold_feat_vec(A, sdir, p["avg"], p["first_idx"], p["add_count"] + 1, i)]))[0] < _agth:
+                    return
+            new_sz = p["size"] + UNIT
             p["avg"] = (p["avg"] * p["size"] + fp * UNIT) / new_sz
             p["size"] = new_sz; p["add_count"] += 1; p["last_fill_idx"] = i
             p["lots"].append((i, fp, UNIT))
@@ -686,7 +694,7 @@ def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None, stem: st
 
 
 def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=None, tag=None, dying_cut=False,
-            struct_sl=False):
+            struct_sl=False, add_gate=False):
     """E36 SHORT専用（shortset1[SHORT 1h MACD ゲート]＋iter9 出口を内包）＋急騰Exit。
     本ファイルの run_continuous（SHORT専用エンジン・E36 自前）を短絡フラグ（short_htf=True・short_only=True 固定）で回す。
     教師生成・grid 選定は spike OFF（iter3 基底のまま＝教師を急騰Exitで歪めない）／最終 scored run だけ spike_lm を渡す。"""
@@ -855,11 +863,38 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
         ssl_k = sbest[1]
         print(f"  → struct_sl k*={ssl_k if ssl_k is None else f'{ssl_k*100:.2g}%'}（学習窓 net 最大 ${sbest[0]:.0f}・None=OFFが最良＝不採用）")
 
-    # ⑥ 最終 scored run（spike_lm/spike_gate/dying_cut/struct_sl を最終 run だけに渡す）→ size 保存 → cap → 出力
+    # ⑤'''' freq-iter3: add ゲート θ を学習窓スイープ選定（採点窓不参照＝L-267・H8）。判別器は partial の booster 流用。
+    #     add_gate=True（CLI --add-gate）なら GATE_ADD_GRID から学習窓 net 最大の θ* を選ぶ。OFF を基準に含め改善時のみ採用（既定 base 恒等）。
+    #     ★θ は probe(疑似シミュ)由来でなく実エンジン学習窓選定（acceptance ★固定値ゼロ宣言）。段数の固定区切りは置かず全 add を判別器に委ねる（add_count を特徴に持つ）。
+    GATE_ADD_GRID = [0.30, 0.40, 0.50, 0.60, 0.70, 0.80]
+    add_gate_th = None
+    if add_gate:
+        base_ag = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                              partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
+                                              short_only=True, spike_lm=spike_lm, spike_gate=spike_gate, dying_cut=dcut_arg, struct_sl=ssl_k)[0])
+        ag0 = pd.DataFrame(base_ag)
+        na0 = float(ag0["net_usd"].sum()); depth0 = float(ag0.groupby("position_id")["add_count"].max().mean())
+        print(f"  [自己検査a_add_gate] add_gate OFF 学習窓 net ${na0:.0f} / 平均add段 {depth0:.2f}（基準・採点窓不参照）")
+        abest = (na0, None)
+        for th in GATE_ADD_GRID:
+            qa = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                             partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
+                                             short_only=True, spike_lm=spike_lm, spike_gate=spike_gate, dying_cut=dcut_arg,
+                                             struct_sl=ssl_k, add_gate=(booster, feats, th))[0])
+            na1 = float(qa["net_usd"].sum()); depth1 = float(qa.groupby("position_id")["add_count"].max().mean())
+            print(f"   θ={th}: 学習窓 net ${na1:.0f}（純増 {na1-na0:+.0f}）/ 平均add段 {depth1:.2f}")
+            assert depth1 <= depth0 + 1e-9, "add ゲートで平均add段が増えた（配線異常＝積む方向に作用）"
+            if na1 > abest[0]:
+                abest = (na1, th)
+        add_gate_th = abest[1]
+        print(f"  → add_gate θ*={add_gate_th}（学習窓 net 最大 ${abest[0]:.0f}・None=OFFが最良＝不採用）")
+    add_gate_arg = (booster, feats, add_gate_th) if add_gate_th is not None else None
+
+    # ⑥ 最終 scored run（spike_lm/spike_gate/dying_cut/struct_sl/add_gate を最終 run だけに渡す）→ size 保存 → cap → 出力
     trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
                                partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU, None),
                                short_htf=True, short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
-                               dying_cut=dcut_arg, struct_sl=ssl_k)
+                               dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg)
     t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
     rc = t.groupby("position_id").agg(sz=("size_btc", "sum"), addc=("add_count", "max"))
     bad = int((np.abs(rc["sz"] - rc["addc"] * UNIT) > 1e-9).sum())
@@ -891,6 +926,10 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
         _xp["struct_sl（構造ストップ STRUCT_SL・建値比 k% 逆行で成行カット）"] = (
             f"k={ssl_k*100:.2g}%（学習窓スイープ選定・採点窓不参照 L-267）。SHORT 保有・c_i≥avg×(1+k) で成行カット（taker・能動クローズ）＝予測なしの無条件 risk キャップ。"
             f"BOX_BREAK_SL（rolling box 基準）と別＝entry 建値基準で破断玉の深い損を頭打ち。勝ち玉は浅MAEで非発火（GRID は勝ち MAE 80%ile≈0.45%より深い側・Leung-Li/Chan＝深い『滅多に発火しない』stop のみ MR で許容）")
+    if add_gate_th is not None:
+        _xp["add_gate（add を hold-ML 判別器でゲート・freq-iter3）"] = (
+            f"θ={add_gate_th}（partial の hold-ML booster 流用・学習窓スイープ選定・採点窓不参照 L-267・probe値を焼かない）。"
+            f"add 判定時に predict<θ=死ぬ判別なら積まない（メタラベリング de Prado）。段数の固定区切りなし＝全 add を判別器に委ね（add_count を特徴に持つ）・勝ち玉は判別器が残す＝fat-tail 不削り")
     if zone_short is not None:
         _xp["zone_short（件数レバー・強レンジで SHORT 反転ゾーン拡大・freq-iter1）"] = (
             f"z_wide={zone_short[0]}（通常 ZONE_FRAC={ZONE_FRAC}）・er_strong_q={zone_short[1]}（学習窓 ER 分位）。"
@@ -921,6 +960,7 @@ def main():
     ap.add_argument("--rv-feats", action="store_true", help="(B) hold-ML 判別器に保有経路 realized vol 3本（rv_short30分/rv_mid2時間/rv_ratio）を追加＝片流れ判別の精度向上。既定OFF=恒等（特徴19個）。木に学習（L-267）")
     ap.add_argument("--dying-cut", action="store_true", help="(A) 死ぬ片流れの早期カット（DYING_CUT・含み損側 ∩ hold-ML predict<θ_cut で成行カット）。θ_cut は学習窓選定（0.15/0.20/0.25・採点窓不参照 L-267）。240分の時間切れを待たず中心非回帰の片流れを早期撤退。既定OFF=恒等")
     ap.add_argument("--struct-sl", action="store_true", help="構造ストップ STRUCT_SL（建値比 k% 逆行で成行カット・予測なしの無条件 risk キャップ）。k は学習窓選定（0.5/0.7/1.0/1.5%・採点窓不参照 L-267）。破断玉の深い損を頭打ち（rolling box 基準の BOX_BREAK_SL と別＝entry 建値基準）。既定OFF=恒等")
+    ap.add_argument("--add-gate", action="store_true", help="(freq-iter3) add を hold-ML 判別器でゲート＝add 判定時に predict<θ=死ぬ判別なら積まない（メタラベリング・死ぬ玉に深く積まない／勝ち玉は判別器が残す）。θ は学習窓スイープ選定（0.30〜0.80・採点窓不参照 L-267・probe値を焼かない）。段数の固定区切りなし＝全 add を判別器に委ねる。既定OFF=恒等")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番（ユニーク）にし旧実験を archive へ退避。未指定=安定名 _<box_tf>_shortset1（採用base・--vs 固定）。命名/archive は共通処理(ratchet_io)が担当＝e37/38/39 も同じ")
     a = ap.parse_args()
 
@@ -956,8 +996,10 @@ def main():
         print("  [(A) DYING_CUT ON] 死ぬ片流れの早期カット＝θ_cut 学習窓選定（採点窓不参照）")
     if a.struct_sl:
         print("  [構造ストップ STRUCT_SL ON] 建値比 k% 逆行で成行カット＝k 学習窓選定（採点窓不参照・予測なし無条件）")
+    if a.add_gate:
+        print("  [(freq-iter3) add ゲート ON] add 判定時に判別器 predict<θ=死ぬ判別なら積まない＝θ 学習窓選定（採点窓不参照・全 add を判別器に委ねる）")
     run_e36(df, a.box_tf, a.max_adds, spike_lm=spike_lm, spike_gate=spike_gate, zone_short=zone_short, tag=a.tag,
-            dying_cut=a.dying_cut, struct_sl=a.struct_sl)
+            dying_cut=a.dying_cut, struct_sl=a.struct_sl, add_gate=a.add_gate)
     print("=" * 100)
 
 

@@ -153,10 +153,19 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         # 「内容・方法」(2026-06-26 まこさん指示): 狙い(目的)だけでなく 内容(動かしたレバー/機構) と 方法(どう検証・採否理由
         #   ＝失敗の型) も改善アークに残す＝次セッションが「何をして/どう検証して/なぜ不採用か」を見て同型の手を再提案
         #   しないため（goal_block「改善の経緯」列ゲートと対＝末と開始の二重強制）。
-        ns = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
-        for e in (ti.get("edits", []) or []):
-            ns += e.get("new_string", "") or ""
-        if all(t in ns for t in ("本筋", "やってはいけない", "出典", "改善アーク", "狙い", "内容", "方法")):
+        # 改善アークの改ざん防止（2026-06-27 まこさん指示「全列を改ざんできないように・自動生成」）:
+        #   改善アーク表は gen_improvement_arc.py が ARC マーカー(ledger/acceptance・tamper-evident)＋score.py(数字)から
+        #   自動生成する＝CC は手書きしない。ARC_TABLE_START hash=H の H が表本文の sha256[:12] と一致＝gen 生成の証。
+        #   CC が手書きすると hash 不一致でブロック。gen は Bash(python) で書くため Edit/Write payload に表が無い→
+        #   payload でなく next_step ファイルそのものを読んで検証する（順序: gen --write 後に CC が見出しを編集→旗解除）。
+        import hashlib
+        try:
+            full = open(os.path.join(state, "next_step.md"), encoding="utf-8").read()
+        except Exception:
+            full = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
+        m = re.search(r"ARC_TABLE_START hash=(\w+).*?-->\n(.*?)\n<!-- ARC_TABLE_END", full, re.DOTALL)
+        arc_ok = bool(m) and hashlib.sha256(m.group(2).encode("utf-8")).hexdigest()[:12] == m.group(1)
+        if all(t in full for t in ("本筋", "やってはいけない", "出典", "改善アーク")) and arc_ok:
             rm(need_next_step); rm(score_bg_pending); rm(diagnostic_active)   # セッション境界の安全側クリア
 '
 exit 0

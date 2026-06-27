@@ -23,6 +23,7 @@
 - ☐ **既定 OFF で恒等**（新パラメータ None 等で既存ベースと完全一致）を設計で保証し、自己検査で確認するか
 - ☐ 過去に破棄した失敗（lessons / 破棄した E / 6軸）を再演していないか（する場合は差分を1行）
 - ☐ **★疑似シミュ由来の固定値ゼロ宣言（必須・require_acceptance hook が物理強制・まこさん承認 2026-06-26）**: probe（疑似シミュ・静的後処理）は **あたりを付ける専用＝決定的根拠でない**。設計の閾値/段数/パラメータの出所を1つずつ明示する。`★疑似シミュ由来の固定値ゼロ` の見出しを acceptance に立て、(a) 各値は probe で出した特定数値でなく **実エンジンの学習窓選定** or **分析の構造由来の a-priori** か (b) probe の数値（θ=X・段数=N・AUC=Y 等）を設計の固定値に焼いていないか (c) 採否は probe でなく **実エンジン両窓 score.py の数字**で決めると明記。背景＝2026-06-26 add ゲート設計で probe の θ≤0.4/段数3 を「クリア」扱いし焼き込んだ事案（STRUCT_SL 近似 +$895 が実エンジンで消失した轍と同型）。
+- ☐ **★ARC マーカー（改善アーク自動生成の源・まこさん指示 2026-06-27）**: acceptance に機械可読 ARC マーカーを1ブロック入れる＝承認時に approve_impl が `.claude/ratchet/acceptance_archive/<iter>.md`（git 永続・指紋保護）へ凍結保存し、`gen_improvement_arc.py` が next_step の改善アーク表を**自動生成**する（CC は改善アークを手書きしない＝改ざん不可）。形式: `<!-- ARC order=N iter="..." 前提="nofloor ON/OFF" 採否="採用/採用せず/採用に至らず" base_csv="..." score_csv="..." train_csv="..." 狙い="ledger 方針の逐語" 内容="レバー/機構" 方法="検証方針" -->`。**数字（結果/採点窓）は書かない**（score.py が source＝改ざん不可・採否ラベルの自己検証）。採点後に score_csv/train_csv の実 stem を埋め、ledger にも同マーカーを残す（過去 iter フォールバック）。
 
 ## D. ★審判（score.py / eval_engine）整合 — 出戻り最頻ポイント（2026-06-18 追加）
 - ☐ **新しい exit_reason を出すか？** → YES なら「やること」に **score.py の MAKER_EXIT_REASONS / TAKER_EXIT_REASONS へ登録 ＋ 既知答えテスト再pass」**を含める（H3/H13・§2.9 未登録 exit_reason は採点・分析を STOP）。maker/taker は約定方式で判定（指値 resting=maker / 成行・トリガ=taker）。
