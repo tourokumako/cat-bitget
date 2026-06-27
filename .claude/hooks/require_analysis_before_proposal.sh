@@ -27,12 +27,16 @@ AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(
 FILE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('file_path',''))" 2>/dev/null)
 BASE=$(basename "$FILE")
 
-# 対象＝改善提案・設計の成果物（acceptance.md / *_design.md）。それ以外は通す（最小強制）。
-is_target=0
+# 対象＝分析ブロック（分析の着手）＋改善提案・設計の成果物（提案）。それ以外は通す（最小強制）。
+#   A 着手ゲート（分析KB/playbook/対象 report・analysis 読了）は「分析を始める瞬間＝analysis_block.md を書く時」に効かせる
+#     （2026-06-27 まこさん指摘＝分析KB読了は分析の前提なので、分析の後に出す提案 acceptance を書く瞬間では順序が遅い）。
+#   B 完了ゲート（9見出し）は提案 acceptance/design を書く瞬間に効かせる（A も保険で再掲＝二重に守る）。
+is_block=0; is_target=0
 case "$BASE" in
+  analysis_block.md) is_block=1 ;;
   acceptance.md|*_design.md) is_target=1 ;;
 esac
-[ "$is_target" -eq 0 ] && exit 0
+[ "$is_block" -eq 0 ] && [ "$is_target" -eq 0 ] && exit 0
 
 GUIDE="→ 分析フェーズの手順: ①対象戦略の ledger 経緯＋関連 report_/analysis_（base＋直近実験）＋分析KB(trade_analysis_methods_kb)＋analysis_playbook §2 を Read tool で開く ②$BLOCK に9見出しを数字つきで埋める（⑨巻き込み検証＝切る/Exit 系は勝ち玉/fat-tail への当たり量を数字で）③改善提案($BASE)を書く"
 
@@ -52,7 +56,10 @@ if [ ${#amiss[@]} -gt 0 ]; then
   exit 2
 fi
 
-# ── B. 完了ゲート（分析ブロックの必須8見出し＝穴3を塞ぐ・採点非依存＝穴1）──
+# analysis_block.md を書く瞬間は A 着手ゲートのみで通す（B 完了＝分析ブロック自身なのでスキップ・2026-06-27）
+[ "$is_block" -eq 1 ] && exit 0
+
+# ── B. 完了ゲート（分析ブロックの必須9見出し＝穴3を塞ぐ・採点非依存＝穴1）──
 if [ ! -f "$BLOCK" ]; then
   echo "🔒 [分析フェーズ 完了ゲート] 分析ブロックがありません: $BLOCK" >&2
   echo "改善提案の前に、分析ブロックに下記9見出しを数字つきで埋めてください（採点の有無に関わらず必須＝穴1）。" >&2
