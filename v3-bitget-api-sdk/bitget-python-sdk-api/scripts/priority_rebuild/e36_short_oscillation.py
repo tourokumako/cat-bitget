@@ -338,6 +338,24 @@ def _entry_feat_vec(A: dict, i: int) -> list:
     ]
 
 
+# ══ 場面連動サイジング（vol/expectancy-scaled・E13 横展開・2026-06-27）══
+#   新規 SHORT entry の 1玉 size を、場面（N12 軸＝atr_pct×stoch_k の学習窓バケット期待値）で倍率配分する。
+#   勝ち場面で厚く・負け場面で薄く（cap 0.12 内）。倍率の割当は学習窓 expectancy 順（採点窓不参照 H8）、
+#   倍率値 {0.5,1.0,1.5,2.0} は a-priori（採点窓で sweep しない L-267）。方向でなく size に使う＝H15 罠回避。
+_SCENE_TIERS = [0.5, 1.0, 1.5, 2.0]   # 場面サイズ倍率（worst→best・a-priori）
+
+
+def _scene_unit(scn, A, i):
+    """新規 SHORT entry の 1玉 size＝UNIT×場面倍率（scn=学習窓 fit の {atr_med,k_med,mult}）。
+    場面＝atr_pct(=atr/close×100)×stoch_k の学習窓バケット。倍率割当は学習窓 expectancy 順（採点窓不参照 H8）、
+    倍率値は a-priori。scn=None or A=None で UNIT＝恒等。最小注文(0.0001 BTC)でフロア（H9）。全て ≤i＝leak-safe。"""
+    if scn is None or A is None or not (np.isfinite(A["atr"][i]) and np.isfinite(A["close"][i]) and A["close"][i] > 0):
+        return UNIT
+    ap = A["atr"][i] / A["close"][i] * 100.0
+    key = (bool(ap >= scn["atr_med"]), bool(A["k"][i] >= scn["k_med"]))
+    return max(UNIT * scn["mult"].get(key, 1.0), ee.MIN_ORDER_BTC)
+
+
 # ── 急騰検知 Lee-Mykland jump（全 bars≤i の値のみ＝leak-safe・a-priori 閾値・スイープしない）──
 def spike_threshold(K: int, alpha: float) -> float:
     """Gaussian EVT 閾値 L* = C_n + β*·a_n（K・α から a-priori・データで決めない・L-267）。"""
@@ -419,7 +437,7 @@ def _short_rev_nofloor(df, box_tf, zone_params):
 
 def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp=None,
                    short_htf=False, short_only=False, spike_lm=None, spike_gate=None, dying_cut=None,
-                   struct_sl=None, add_gate=None, entry_gate=None):
+                   struct_sl=None, add_gate=None, entry_gate=None, scene_size=None):
     """E36 SHORT専用の売買エンジン（連続モード両方向・LONG/SHORT を並行管理・merge・cap 合算停止）＋ SPIKE_SL（急騰Exit）。
     spike_lm=(K, alpha) を渡すと、SHORT 保有中・含み損側で Lee-Mykland jump 統計が L* を超えたら成行カット（SPIKE_SL）。
     spike_lm=None では SPIKE_SL ブロックに入らず急騰Exit OFF（教師生成・恒等参照用）。pending fill・出口優先順位・部分利確・建値撤退は shortset1/iter9 と同じ。"""
@@ -436,7 +454,7 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
     R = c * (1.0 + res / 100.0)
     Cc = (S + R) / 2.0
     Wpct = sup + res
-    A = _hold_arrays(df, box_tf) if (hold_ctx is not None or be_gate is not None or partial_tp is not None or dying_cut is not None or add_gate is not None or entry_gate is not None) else None
+    A = _hold_arrays(df, box_tf) if (hold_ctx is not None or be_gate is not None or partial_tp is not None or dying_cut is not None or add_gate is not None or entry_gate is not None or scene_size is not None) else None
     _hm, _hf, _hth = hold_ctx if hold_ctx is not None else (None, None, None)
     _bm, _bf, _bth = be_gate if be_gate is not None else (None, None, None)
     _ptup = partial_tp if partial_tp is not None else (None, None, None, None, None, None)
@@ -450,6 +468,8 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
     _agm, _agf, _agth = add_gate if add_gate is not None else (None, None, None)
     # ── entry-gate: 新規 SHORT entry を入口判別器でゲート（entry_gate=(booster, feats, θ)）。新規建て時に predict<θ=片流れ判別なら建てない。None で OFF＝恒等 ──
     _egm, _egf, _egth = entry_gate if entry_gate is not None else (None, None, None)
+    # ── 場面連動サイジング（scene_size=dict or None）: 新規 SHORT entry の 1玉 size 倍率（_scn=None で UNIT 固定＝恒等）──
+    _scn = scene_size
     # ── 急騰Exit（Lee-Mykland jump）: 統計と閾値は全 bars≤i＝leak-safe・None で未計算＝急騰Exit OFF ──
     if spike_lm is not None:
         _spk_K, _spk_alpha = spike_lm
@@ -476,28 +496,31 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
             if _egm is not None and side == "SHORT" and A is not None:
                 if _egm.predict(np.asarray([_entry_feat_vec(A, i)]))[0] < _egth:
                     return
-            if held_total() + UNIT > CAP + 1e-9:
+            # ── 場面連動サイジング: 新規 entry の 1玉 size を場面倍率で決める（SHORT専用・_scn=None で UNIT＝恒等）──
+            u = _scene_unit(_scn, A, i) if side == "SHORT" else UNIT
+            if held_total() + u > CAP + 1e-9:
                 return
-            pos[side] = {"side": side, "avg": fp, "size": UNIT, "add_count": 1, "first_idx": i, "last_fill_idx": i,
+            pos[side] = {"side": side, "avg": fp, "size": u, "add_count": 1, "first_idx": i, "last_fill_idx": i, "unit": u,
                          "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i], "W_entry": Wpct[i],
                          "max_fav": h[i] if side == "LONG" else l[i], "max_adv": l[i] if side == "LONG" else h[i], "extended": False, "be_armed": False,
                          "partial_done": False,
-                         "lots": [(i, fp, UNIT)]}
-            events.append((pd.Timestamp(ts[i]), UNIT))
+                         "lots": [(i, fp, u)]}
+            events.append((pd.Timestamp(ts[i]), u))
         else:
-            if held_total() + UNIT > CAP + 1e-9:
-                return
             p = pos[side]
+            u = p["unit"]   # add はその position の unit（新規時に確定した場面倍率を踏襲＝玉内で size 一定）
+            if held_total() + u > CAP + 1e-9:
+                return
             # ── freq-iter3 add ゲート: 死ぬ判別の玉に積まない（SHORT 専用・predict<θ=死ぬ判別なら add 見送り）。_agm=None で OFF＝恒等 ──
             #   判別器は add_count+1（この add を入れた後の段数）の状態で「戻る/死ぬ」を予測＝積む価値を判定（メタラベリング）。
             if _agm is not None and A is not None and side == "SHORT" and np.isfinite(A["Cc"][i]) and np.isfinite(A["atr"][i]):
                 if _agm.predict(np.asarray([_hold_feat_vec(A, sdir, p["avg"], p["first_idx"], p["add_count"] + 1, i)]))[0] < _agth:
                     return
-            new_sz = p["size"] + UNIT
-            p["avg"] = (p["avg"] * p["size"] + fp * UNIT) / new_sz
+            new_sz = p["size"] + u
+            p["avg"] = (p["avg"] * p["size"] + fp * u) / new_sz
             p["size"] = new_sz; p["add_count"] += 1; p["last_fill_idx"] = i
-            p["lots"].append((i, fp, UNIT))
-            events.append((pd.Timestamp(ts[i]), UNIT))
+            p["lots"].append((i, fp, u))
+            events.append((pd.Timestamp(ts[i]), u))
 
     for i in range(n):
         # ── 1. pending fill ──
@@ -730,7 +753,7 @@ def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None, stem: st
 
 
 def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=None, tag=None, dying_cut=False,
-            struct_sl=False, add_gate=False, entry_gate=False):
+            struct_sl=False, add_gate=False, entry_gate=False, scene_size=False):
     """E36 SHORT専用（shortset1[SHORT 1h MACD ゲート]＋iter9 出口を内包）＋急騰Exit。
     本ファイルの run_continuous（SHORT専用エンジン・E36 自前）を短絡フラグ（short_htf=True・short_only=True 固定）で回す。
     教師生成・grid 選定は spike OFF（iter3 基底のまま＝教師を急騰Exitで歪めない）／最終 scored run だけ spike_lm を渡す。"""
@@ -992,16 +1015,50 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
         entry_gate_arg = (eg_booster, efeats, entry_gate_th) if entry_gate_th is not None else None
         print(f"  → entry_gate θ*={entry_gate_th}（学習窓 net 最大 ${ebest[0]:.0f}・None=OFFが最良＝不採用）")
 
-    # ⑥ 最終 scored run（spike_lm/spike_gate/dying_cut/struct_sl/add_gate を最終 run だけに渡す）→ size 保存 → cap → 出力
-    trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
-                               partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU, None),
-                               short_htf=True, short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
-                               dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg, entry_gate=entry_gate_arg)
+    # ⑤'''''' 場面連動サイジング（vol/expectancy-scaled・E13 横展開・採点窓不参照 H8）: 場面(atr_pct×stoch_k)の学習窓
+    #     expectancy で 1玉 size 倍率を決める。確定済み設定(scene OFF)の学習窓玉を atr_pct・stoch_k の学習窓中央値で
+    #     4バケットに分け、per-position net 平均が高いバケットほど大きい倍率 _SCENE_TIERS を a-priori 割当（方向でなく size＝H15 罠回避）。
+    scene_arg = None
+    if scene_size:
+        base_sc = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                              partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
+                                              short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
+                                              dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg, entry_gate=entry_gate_arg)[0])
+        sc = base_sc[base_sc.side == "SHORT"].copy()
+        sc["atr_pct"] = sc["atr_14"].astype(float) / sc["entry_price"].astype(float) * 100.0
+        atr_med = float(sc["atr_pct"].median()); k_med = float(sc["stoch_k_at_entry"].astype(float).median())
+        g = sc.groupby("position_id")
+        bdf = pd.DataFrame({"net": g["net_usd"].sum(),
+                            "ha": g["atr_pct"].first() >= atr_med,
+                            "hk": g["stoch_k_at_entry"].first().astype(float) >= k_med})
+        bmean = bdf.groupby(["ha", "hk"])["net"].mean()
+        mult = {}
+        for r, key in enumerate(list(bmean.sort_values().index)):   # worst→best
+            mult[(bool(key[0]), bool(key[1]))] = _SCENE_TIERS[min(r, len(_SCENE_TIERS) - 1)]
+        scene_arg = {"atr_med": atr_med, "k_med": k_med, "mult": mult}
+        on_sc = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                            partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
+                                            short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
+                                            dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg, entry_gate=entry_gate_arg,
+                                            scene_size=scene_arg)[0])
+        nsc0 = float(base_sc["net_usd"].sum()); nsc1 = float(on_sc["net_usd"].sum())
+        mstr = ", ".join(f"atr{'hi' if k[0] else 'lo'}/k{'hi' if k[1] else 'lo'}={v}" for k, v in mult.items())
+        print(f"  [場面サイジング] atr_pct中央={atr_med:.3f} stoch_k中央={k_med:.1f} / バケット倍率 {mstr}")
+        print(f"   学習窓 net OFF ${nsc0:.0f} → ON ${nsc1:.0f}（純増 {nsc1-nsc0:+.0f}・採点窓不参照）")
+
+    # ⑥ 最終 scored run（全レバーを最終 run だけに渡す）→ size 保存 → cap → 出力
+    trades, _ev = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                 partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU, None),
+                                 short_htf=True, short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
+                                 dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg, entry_gate=entry_gate_arg,
+                                 scene_size=scene_arg)
     t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
-    rc = t.groupby("position_id").agg(sz=("size_btc", "sum"), addc=("add_count", "max"))
-    bad = int((np.abs(rc["sz"] - rc["addc"] * UNIT) > 1e-9).sum())
-    print(f"  [自己検査b size保存] Σsize_btc≠add_count×UNIT の玉 {bad}（0=総量保存 ✅）")
-    assert bad == 0, "size 保存違反"
+    entered = sum(s for _, s in _ev if s > 0); recorded = float(t["size_btc"].sum())
+    print(f"  [自己検査b size保存] 建玉合計 {entered:.4f} == 記録合計 {recorded:.4f} BTC : {'✅' if abs(entered-recorded)<1e-6 else '⛔'}")
+    assert abs(entered - recorded) < 1e-6, "size 保存違反（建玉≠記録）"
+    if scene_arg is None:
+        rc = t.groupby("position_id").agg(sz=("size_btc", "sum"), addc=("add_count", "max"))
+        assert int((np.abs(rc["sz"] - rc["addc"] * UNIT) > 1e-9).sum()) == 0, "size 保存違反（恒等時 UNIT 整合崩れ）"
     mx = _verify_cap(trades)
     print(f"  [自己検査c cap] 同時保有 max = {mx:.4f} BTC {'✅' if mx <= CAP + 1e-9 else '⛔超過'}（予算 {CAP}）")
     assert mx <= CAP + 1e-9, f"同時保有 {mx:.4f} > cap {CAP}"
@@ -1037,6 +1094,11 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
             f"θ={entry_gate_arg[2]}（入口専用 booster・学習窓スイープ選定・採点窓不参照 L-267・probe値を焼かない）。"
             f"新規 SHORT を建てる時、入口時点特徴（{', '.join(_ENTRY_FEATS)}）で predict<θ=片流れ判別なら建てない"
             f"（de Prado メタラベリング・入口版）。add/出口/決済は不変・hold-ML とは別の入口専用判別器（保有経路を含まない）")
+    if scene_arg is not None:
+        _xp["scene_size（場面連動サイジング・vol/expectancy-scaled・E13 横展開）"] = (
+            f"atr_pct中央={scene_arg['atr_med']:.3f}・stoch_k中央={scene_arg['k_med']:.1f} で4バケット、"
+            f"学習窓 per-position net 順に倍率 {_SCENE_TIERS}（worst→best・a-priori）を割当（採点窓不参照 L-267）。"
+            f"新規 SHORT の 1玉 size=UNIT×倍率（cap 0.12 内・最小0.0001 BTC でフロア）。方向でなく size に使う＝H15 罠回避")
     if zone_short is not None:
         _xp["zone_short（件数レバー・強レンジで SHORT 反転ゾーン拡大・freq-iter1）"] = (
             f"z_wide={zone_short[0]}（通常 ZONE_FRAC={ZONE_FRAC}）・er_strong_q={zone_short[1]}（学習窓 ER 分位）。"
@@ -1069,6 +1131,7 @@ def main():
     ap.add_argument("--struct-sl", action="store_true", help="構造ストップ STRUCT_SL（建値比 k% 逆行で成行カット・予測なしの無条件 risk キャップ）。k は学習窓選定（0.5/0.7/1.0/1.5%・採点窓不参照 L-267）。破断玉の深い損を頭打ち（rolling box 基準の BOX_BREAK_SL と別＝entry 建値基準）。既定OFF=恒等")
     ap.add_argument("--add-gate", action="store_true", help="(freq-iter3) add を hold-ML 判別器でゲート＝add 判定時に predict<θ=死ぬ判別なら積まない（メタラベリング・死ぬ玉に深く積まない／勝ち玉は判別器が残す）。θ は学習窓スイープ選定（0.30〜0.80・採点窓不参照 L-267・probe値を焼かない）。段数の固定区切りなし＝全 add を判別器に委ねる。既定OFF=恒等")
     ap.add_argument("--entry-gate", action="store_true", help="(entry-gate) 新規 SHORT entry を入口判別器（戻る/片流れ）でゲート＝入口時点特徴だけで predict<θ=片流れ判別なら建てない（de Prado メタラベリング・入口版）。広い入口は --rev-nofloor 併用。θ は学習窓スイープ選定（0.30〜0.80・採点窓不参照 L-267・probe値を焼かない）。add/出口は不変。既定OFF=恒等")
+    ap.add_argument("--scene-size", action="store_true", help="場面連動サイジング（vol/expectancy-scaled・E13 横展開）＝新規 SHORT の 1玉 size を場面(atr_pct×stoch_k の学習窓バケット期待値)で倍率配分（勝ち場面厚く・負け場面薄く・cap 0.12 内）。倍率割当は学習窓 expectancy 順（採点窓不参照 L-267）。方向でなく size に使う（H15 罠回避）。既定OFF=恒等")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番（ユニーク）にし旧実験を archive へ退避。未指定=安定名 _<box_tf>_shortset1（採用base・--vs 固定）。命名/archive は共通処理(ratchet_io)が担当＝e37/38/39 も同じ")
     a = ap.parse_args()
 
@@ -1108,8 +1171,10 @@ def main():
         print("  [(freq-iter3) add ゲート ON] add 判定時に判別器 predict<θ=死ぬ判別なら積まない＝θ 学習窓選定（採点窓不参照・全 add を判別器に委ねる）")
     if a.entry_gate:
         print("  [(entry-gate) 新規入口ゲート ON] 新規 SHORT を入口判別器でゲート＝入口時点特徴で predict<θ=片流れ判別なら建てない＝θ 学習窓スイープ選定（採点窓不参照）")
+    if a.scene_size:
+        print("  [場面連動サイジング ON] 新規 SHORT の 1玉 size を場面(atr_pct×stoch_k 学習窓バケット)で倍率配分＝勝ち場面厚く負け場面薄く（cap 0.12 内・採点窓不参照・E13 横展開）")
     run_e36(df, a.box_tf, a.max_adds, spike_lm=spike_lm, spike_gate=spike_gate, zone_short=zone_short, tag=a.tag,
-            dying_cut=a.dying_cut, struct_sl=a.struct_sl, add_gate=a.add_gate, entry_gate=a.entry_gate)
+            dying_cut=a.dying_cut, struct_sl=a.struct_sl, add_gate=a.add_gate, entry_gate=a.entry_gate, scene_size=a.scene_size)
     print("=" * 100)
 
 

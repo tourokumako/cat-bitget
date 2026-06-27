@@ -38,7 +38,7 @@
 - P1・P2・P3・P4 … 採点期マイナス（P4 は月−$76）／ 不採用（LONG 単独柱は不成立）
 
 **局面3：レンジ＝横ばい（優先度3）**
-- E36 … 月$60.97（玉285・1.05件/日）／ 採用 base（**ショートのみ**・デイトレ型・085d4b2f・この方向で完成形に）
+- E36 … 月$115.85（玉285・1.05件/日・lot 1.67/日）／ 採用 base（**ショートのみ**・デイトレ型・scene_009・**場面連動サイジング採用で $60.97→$115.85**・旧 base freq-iter1 085d4b2f は --vs 比較相手）
 - E35 … 月$18.99（iter9）／ 候補（**ロング＋ショートの両方向**）
 - E37 … 未測定 ／ 計画（**ショートのみ**・スキャル型・本筋・要新設検証）
 
@@ -68,7 +68,7 @@
 | **P23** | SHORT | **SHORT 柱（ライブ cat_v9 の起点）** | **月$241.72**（280件） | cat_v9_decider.py ＋ cat_params_v9.json（素のV9・ストキャス系・Entry＝decider／Exit実行＝gen_p23_candidates.py run_continuous） | `measure_ground_newwindow_E31.py` | archive/trades_p23_E31_newwin_ground.csv | E0/E32/E31 |
 | **E28** | LONG | **下げ相場 LONG の存在証明 add-on** | 月$3.96（+$27.71） | `measure_e28_phase2.py`（ドルバー 行き過ぎ1%ile ∩ taker投げ売り・素ルール） | （同左） | trades_e28_phase2_score.csv | E28 |
 | **E35**（レンジ上下オシレーション） | 両方向 | レンジ柱候補（作業中） | 月+$18.99（iter9） | `e35_range_oscillation.py --iter9`（独自ロジック・hold-ML判別＋部分利確） | （同左） | trades_e35_oscillation_5m_iter9_score.csv | E35 iteration-9 |
-| **E36**（SHORT専用オシレーション＋急騰Exit＋件数レバー） | SHORT | SHORT 柱候補（E35 から SHORT 切り出し＋判別器ゲート急騰Exit＋強レンジ ゾーン拡大・2026-06-22 採用） | **月$60.97**（$548.74・463件・1.05/日） | `e36_short_oscillation.py`（既定=gated spike＋zone拡大0.35・strat_base import＋②③④自前コピー（2026-06-23 切り分け＝E35 を import しない・別戦略）・shortset1[1h MACDゲート]＋iter9 出口＋SPIKE_SL=Lee-Mykland jump ∩ hold-ML 判別器ゲート θ学習窓選定＋強レンジ(ER<q0.25)で SHORT 反転ゾーン0.25→0.35・`--no-zone` で zone OFF=$539.06・`--no-spike` で spike OFF=$427.66） | （同左・score.py） | trades_e36_short_oscillation_5m_shortset1_score.csv | E36/E36-spike-iter2/E36 freq-iter1 |
+| **E36**（SHORT専用オシレーション＋急騰Exit＋件数レバー） | SHORT | SHORT 柱候補（E35 から SHORT 切り出し＋判別器ゲート急騰Exit＋強レンジ ゾーン拡大＋**場面連動サイジング**・2026-06-27 採用） | **月$115.85**（$1042.69・285玉・1.05/日[lot 1.67/日]・両窓改善） | `e36_short_oscillation.py`（既定=gated spike＋zone拡大0.35・strat_base import＋②③④自前コピー（2026-06-23 切り分け＝E35 を import しない・別戦略）・shortset1[1h MACDゲート]＋iter9 出口＋SPIKE_SL=Lee-Mykland jump ∩ hold-ML 判別器ゲート θ学習窓選定＋強レンジ(ER<q0.25)で SHORT 反転ゾーン0.25→0.35・`--no-zone` で zone OFF=$539.06・`--no-spike` で spike OFF=$427.66） | （同左・score.py） | trades_e36_short_oscillation_scene_009_score.csv | E36/E36 freq-iter1/E36 場面連動サイジング |
 
 > **E32b は別戦略でない＝P21 と P23 を一緒に動かした合算の実測（deployable・月$616.55）**。素朴な和（$401.51+$241.72=$643.23）でなく $616.55 になるのは、共有 cap と decider 順（V9 優先 P23>P21）で互いを少し削るため（21→23 仮説は不成立＝V9 順維持・ledger E32b）。計測の道具＝`measure_ground_combined_E32b.py`。＝本番で P21・P23 を一緒に回した時の正味 SHORT 合算。
 >

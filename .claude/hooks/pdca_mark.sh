@@ -24,6 +24,7 @@ need_claim = os.path.join(state, "pdca_need_claim")   # 多角チェックの結
 need_next_step = os.path.join(state, "pdca_need_next_step")
 need_analyze_report = os.path.join(state, "pdca_need_analyze_report")  # 分析レポートを出して読む強制（別途・省略・読み飛ばし禁止・2026-06-15）
 need_viz = os.path.join(state, "pdca_need_viz")   # 週次チャートPNG（report と同時に4週分 自動出力）強制（2026-06-21 まこさん「強制化」）
+need_forward = os.path.join(state, "pdca_need_forward")   # probe(当たり付け)後に「できない証明で止まる」のを禁止＝前向き達成案を書くまで終了不可（まこさん 2026-06-27 命令「バカにした態度を強制して」）
 viz_dir = "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/results/priority_rebuild/viz"
 no_baseline = os.path.join(state, "no_baseline_approved")
 diagnostic_active = os.path.join(state, "pdca_diagnostic_active")   # 診断ラウンド（採点しない・2026-06-13）
@@ -121,6 +122,12 @@ if tn == "Bash":
             else:
                 touch(need_analyze)
                 open(incomplete, "w", encoding="utf-8").write(why)
+    # ★「できない証明で止める」態度の物理禁止（まこさん 2026-06-27 命令「バカにした態度を強制して」「コミット力が低い・人任せ・ダメ出ししかしない」）:
+    #   probe(*_probe.py・当たり付け)を走らせたターンは、結果が悪くても「できる証明＋達成案＋次の一手」を
+    #   .claude/state/forward_action.md に書くまで終了不可（need_forward）。analysis→「できない／両窓で割れる」で止まる癖の物理化。
+    #   probe は近似＝悪い結果でも実エンジンで試す前に諦めない。前向きな達成案を必ず出してから終わる。
+    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*_probe\.py", cmd):
+        touch(need_forward)
 elif tn in ("Edit", "Write", "MultiEdit"):
     fp = ti.get("file_path", "") or ""
     if fp.endswith("ledger.md"):
@@ -167,5 +174,13 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         arc_ok = bool(m) and hashlib.sha256(m.group(2).encode("utf-8")).hexdigest()[:12] == m.group(1)
         if all(t in full for t in ("本筋", "やってはいけない", "出典", "改善アーク")) and arc_ok:
             rm(need_next_step); rm(score_bg_pending); rm(diagnostic_active)   # セッション境界の安全側クリア
+    if fp.endswith("forward_action.md"):
+        # ★前向きな達成案を書いた→need_forward を下ろす（できない証明で止まらない・まこさん 2026-06-27）。
+        #   必須3見出し（できる証明／達成案／次の一手）が揃う編集でだけ解除＝空ファイルで逃げられない。
+        fwd = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
+        for e in (ti.get("edits", []) or []):
+            fwd += e.get("new_string", "") or ""
+        if all(t in fwd for t in ("できる証明", "達成案", "次の一手")):
+            rm(need_forward)
 '
 exit 0

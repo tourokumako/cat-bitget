@@ -36,7 +36,7 @@ for e in (ti.get('edits', []) or []):
     s += e.get('new_string', '') or ''
 print(s)" 2>/dev/null)
 
-HIT=$(printf '%s' "$NEW" | grep -oE "破棄|全敗|打ち止め|再挑戦しない|不成立|別途" | sort -u | tr '\n' ' ')
+HIT=$(printf '%s' "$NEW" | grep -oE "破棄|全敗|打ち止め|再挑戦しない|不成立|別途|行き止まり|改善余地なし|手詰まり|これ以上ない" | sort -u | tr '\n' ' ')
 if [ -n "$HIT" ]; then
   echo "🔒 [打ち切り・逃げ禁止ゲート] 禁止ワード検出: $HIT（まこさん 2026-06-15）。" >&2
   echo "  ・破棄/全敗/打ち止め/再挑戦しない/不成立＝打ち切り思考。1回の悪化で方向を閉じない＝アジャイル。" >&2
