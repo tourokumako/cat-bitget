@@ -437,7 +437,7 @@ def _short_rev_nofloor(df, box_tf, zone_params):
 
 def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp=None,
                    short_htf=False, short_only=False, spike_lm=None, spike_gate=None, dying_cut=None,
-                   struct_sl=None, add_gate=None, entry_gate=None, scene_size=None):
+                   struct_sl=None, add_gate=None, entry_gate=None, scene_size=None, hold_mom_exit=None):
     """E36 SHORT専用の売買エンジン（連続モード両方向・LONG/SHORT を並行管理・merge・cap 合算停止）＋ SPIKE_SL（急騰Exit）。
     spike_lm=(K, alpha) を渡すと、SHORT 保有中・含み損側で Lee-Mykland jump 統計が L* を超えたら成行カット（SPIKE_SL）。
     spike_lm=None では SPIKE_SL ブロックに入らず急騰Exit OFF（教師生成・恒等参照用）。pending fill・出口優先順位・部分利確・建値撤退は shortset1/iter9 と同じ。"""
@@ -470,6 +470,18 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
     _egm, _egf, _egth = entry_gate if entry_gate is not None else (None, None, None)
     # ── 場面連動サイジング（scene_size=dict or None）: 新規 SHORT entry の 1玉 size 倍率（_scn=None で UNIT 固定＝恒等）──
     _scn = scene_size
+    # ── 保有中 momentum反転 早期Exit（HOLD_MOM_EXIT・2026-06-28）: hold_mom_exit=(M, θ_don) or None ──
+    #   donchian_pos[i]=(c−min(low,20))/(max(high,20)−min(low,20))＝直近20本レンジ内の位置（5m・≤i＝leak-safe・0-1比 H6）。
+    #   保有経路 momentum（時間切れ玉 vs 勝ち玉を建値時点でなく保有~60分で両窓 AUC0.9+ 分離）の a-priori 代表指標。None で OFF＝未計算＝恒等。
+    _hme_M, _hme_th = hold_mom_exit if hold_mom_exit is not None else (None, None)
+    if hold_mom_exit is not None:
+        _W_DON = 20
+        _lmin = pd.Series(l).rolling(_W_DON).min().to_numpy()
+        _hmax = pd.Series(h).rolling(_W_DON).max().to_numpy()
+        _rng = _hmax - _lmin
+        donchian_pos = np.where(_rng > 0, (c - _lmin) / _rng, np.nan)
+    else:
+        donchian_pos = None
     # ── 急騰Exit（Lee-Mykland jump）: 統計と閾値は全 bars≤i＝leak-safe・None で未計算＝急騰Exit OFF ──
     if spike_lm is not None:
         _spk_K, _spk_alpha = spike_lm
@@ -629,6 +641,16 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
                 if hit_center:
                     p["extended"] = True
                     continue
+                # ── ★保有中 momentum反転 早期Exit（HOLD_MOM_EXIT・2026-06-28）──
+                #   SHORT 保有・含み損側(c>avg)・M バー経過・donchian_pos≥θ_don（反転せずレンジ上端に居続ける＝SHORT 反転前提が壊れた）
+                #   → 240分の時間切れを待たず成行カット（taker）。保有経路 momentum を a-priori 1指標(donchian)で代表（両窓 AUC0.9+）。
+                #   中心到達(extended)した winner は上で continue 済＝対象外。hold_mom_exit=None で OFF＝恒等。LONG 非対象（SHORT専用）。
+                if hold_mom_exit is not None and side == "SHORT" and c[i] > avg and \
+                        (i - p["first_idx"]) >= _hme_M and donchian_pos is not None and \
+                        np.isfinite(donchian_pos[i]) and donchian_pos[i] >= _hme_th:
+                    _record(trades, p, c[i], "HOLD_MOM_EXIT", i, ts)
+                    events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+                    continue
                 # ── ★(A) 死ぬ片流れの早期カット（DYING_CUT・2026-06-25）──
                 #   SHORT 保有・含み損側(c>avg)・判別器 predict<θ_cut（=中心に戻らない＝死ぬ）→ 240分の時間切れを待たず成行カット（taker）。
                 #   中心到達(extended)した玉は上で continue 済＝対象外（winner 経路）。dying_cut=None で OFF＝恒等。
@@ -753,7 +775,7 @@ def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None, stem: st
 
 
 def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=None, tag=None, dying_cut=False,
-            struct_sl=False, add_gate=False, entry_gate=False, scene_size=False):
+            struct_sl=False, add_gate=False, entry_gate=False, scene_size=False, hold_mom_exit=False):
     """E36 SHORT専用（shortset1[SHORT 1h MACD ゲート]＋iter9 出口を内包）＋急騰Exit。
     本ファイルの run_continuous（SHORT専用エンジン・E36 自前）を短絡フラグ（short_htf=True・short_only=True 固定）で回す。
     教師生成・grid 選定は spike OFF（iter3 基底のまま＝教師を急騰Exitで歪めない）／最終 scored run だけ spike_lm を渡す。"""
@@ -1046,12 +1068,40 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
         print(f"  [場面サイジング] atr_pct中央={atr_med:.3f} stoch_k中央={k_med:.1f} / バケット倍率 {mstr}")
         print(f"   学習窓 net OFF ${nsc0:.0f} → ON ${nsc1:.0f}（純増 {nsc1-nsc0:+.0f}・採点窓不参照）")
 
+    # ⑤d hold_mom_exit（保有中 momentum反転 早期Exit）: 学習窓で θ_don 選定（M=12本=60分 a-priori・採点窓不参照 L-267）
+    #   保有経路 momentum（建値時点は無分離だが保有~60分で両窓 AUC0.9+ 分離）を donchian で代表。OFF を基準に含め改善時のみ採用。
+    hme_arg = None
+    if hold_mom_exit:
+        HME_M = 12  # 60分 a-priori（突破口の分離が育つ帯）
+        HME_TH_GRID = [0.75, 0.80, 0.85, 0.90]
+        base_hme = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                               partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
+                                               short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
+                                               dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg,
+                                               entry_gate=entry_gate_arg, scene_size=scene_arg)[0])
+        n_off = float(base_hme["net_usd"].sum()); best = (None, n_off)
+        print(f"  [HOLD_MOM_EXIT] 学習窓 M={HME_M}本(60分) θ_don グリッド {HME_TH_GRID}（採点窓不参照）/ OFF net ${n_off:.0f}")
+        for th in HME_TH_GRID:
+            qh = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                             partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
+                                             short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
+                                             dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg,
+                                             entry_gate=entry_gate_arg, scene_size=scene_arg,
+                                             hold_mom_exit=(HME_M, th))[0])
+            nq = float(qh["net_usd"].sum())
+            print(f"     θ_don={th}: 学習窓 net ${nq:.0f}（{nq-n_off:+.0f}）")
+            if nq > best[1]:
+                best = ((HME_M, th), nq)
+        hme_arg = best[0]
+        print(f"   → 採用 hold_mom_exit={hme_arg}（学習窓 net 最大・採点窓は score.py で確認）" if hme_arg
+              else "   → OFF最良（学習窓で純増せず・採用せず＝恒等）")
+
     # ⑥ 最終 scored run（全レバーを最終 run だけに渡す）→ size 保存 → cap → 出力
     trades, _ev = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
                                  partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU, None),
                                  short_htf=True, short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
                                  dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg, entry_gate=entry_gate_arg,
-                                 scene_size=scene_arg)
+                                 scene_size=scene_arg, hold_mom_exit=hme_arg)
     t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
     entered = sum(s for _, s in _ev if s > 0); recorded = float(t["size_btc"].sum())
     print(f"  [自己検査b size保存] 建玉合計 {entered:.4f} == 記録合計 {recorded:.4f} BTC : {'✅' if abs(entered-recorded)<1e-6 else '⛔'}")
@@ -1099,6 +1149,11 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
             f"atr_pct中央={scene_arg['atr_med']:.3f}・stoch_k中央={scene_arg['k_med']:.1f} で4バケット、"
             f"学習窓 per-position net 順に倍率 {_SCENE_TIERS}（worst→best・a-priori）を割当（採点窓不参照 L-267）。"
             f"新規 SHORT の 1玉 size=UNIT×倍率（cap 0.12 内・最小0.0001 BTC でフロア）。方向でなく size に使う＝H15 罠回避")
+    if hme_arg is not None:
+        _xp["hold_mom_exit（保有中 momentum反転 早期Exit・HOLD_MOM_EXIT・2026-06-28）"] = (
+            f"M={hme_arg[0]}本(={hme_arg[0]*5}分)・θ_don={hme_arg[1]}（M は a-priori・θ_don は学習窓選定・採点窓不参照 L-267・probe値を焼かない）。"
+            f"SHORT 保有・含み損側(c>avg)・M バー経過・donchian_pos≥θ_don（直近20本レンジ上端に居続ける＝反転せず＝SHORT 前提崩壊）→ 成行カット（taker）。"
+            f"建値時点では時間切れ玉と勝ち玉を分離不能だが保有~60分で momentum が両窓 AUC0.9+ で分離（網羅 sweep）＝entry時点/固定深ストップ/ML予測でない保有経路 momentum。中心到達 winner は対象外")
     if zone_short is not None:
         _xp["zone_short（件数レバー・強レンジで SHORT 反転ゾーン拡大・freq-iter1）"] = (
             f"z_wide={zone_short[0]}（通常 ZONE_FRAC={ZONE_FRAC}）・er_strong_q={zone_short[1]}（学習窓 ER 分位）。"
@@ -1132,6 +1187,7 @@ def main():
     ap.add_argument("--add-gate", action="store_true", help="(freq-iter3) add を hold-ML 判別器でゲート＝add 判定時に predict<θ=死ぬ判別なら積まない（メタラベリング・死ぬ玉に深く積まない／勝ち玉は判別器が残す）。θ は学習窓スイープ選定（0.30〜0.80・採点窓不参照 L-267・probe値を焼かない）。段数の固定区切りなし＝全 add を判別器に委ねる。既定OFF=恒等")
     ap.add_argument("--entry-gate", action="store_true", help="(entry-gate) 新規 SHORT entry を入口判別器（戻る/片流れ）でゲート＝入口時点特徴だけで predict<θ=片流れ判別なら建てない（de Prado メタラベリング・入口版）。広い入口は --rev-nofloor 併用。θ は学習窓スイープ選定（0.30〜0.80・採点窓不参照 L-267・probe値を焼かない）。add/出口は不変。既定OFF=恒等")
     ap.add_argument("--scene-size", action="store_true", help="場面連動サイジング（vol/expectancy-scaled・E13 横展開）＝新規 SHORT の 1玉 size を場面(atr_pct×stoch_k の学習窓バケット期待値)で倍率配分（勝ち場面厚く・負け場面薄く・cap 0.12 内）。倍率割当は学習窓 expectancy 順（採点窓不参照 L-267）。方向でなく size に使う（H15 罠回避）。既定OFF=恒等")
+    ap.add_argument("--hold-mom-exit", action="store_true", help="保有中 momentum反転 早期Exit（HOLD_MOM_EXIT）＝SHORT 保有 M バー(60分)経過＋含み損側＋donchian_pos≥θ_don（反転せずレンジ上端に居続ける＝SHORT 前提崩壊）で成行カット（taker）。θ_don は学習窓選定（採点窓不参照 L-267）。建値時点では時間切れ玉と勝ち玉を分離不能だが保有~60分で momentum が両窓 AUC0.9+ 分離（網羅 sweep）＝entry時点/固定深ストップ/ML予測でない保有経路 momentum。既定OFF=恒等")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番（ユニーク）にし旧実験を archive へ退避。未指定=安定名 _<box_tf>_shortset1（採用base・--vs 固定）。命名/archive は共通処理(ratchet_io)が担当＝e37/38/39 も同じ")
     a = ap.parse_args()
 
@@ -1173,8 +1229,11 @@ def main():
         print("  [(entry-gate) 新規入口ゲート ON] 新規 SHORT を入口判別器でゲート＝入口時点特徴で predict<θ=片流れ判別なら建てない＝θ 学習窓スイープ選定（採点窓不参照）")
     if a.scene_size:
         print("  [場面連動サイジング ON] 新規 SHORT の 1玉 size を場面(atr_pct×stoch_k 学習窓バケット)で倍率配分＝勝ち場面厚く負け場面薄く（cap 0.12 内・採点窓不参照・E13 横展開）")
+    if a.hold_mom_exit:
+        print("  [HOLD_MOM_EXIT ON] 保有中 momentum反転 早期Exit＝M バー(60分)経過＋含み損側＋donchian上端維持で成行カット＝θ_don 学習窓選定（採点窓不参照・保有経路 momentum 両窓 AUC0.9+）")
     run_e36(df, a.box_tf, a.max_adds, spike_lm=spike_lm, spike_gate=spike_gate, zone_short=zone_short, tag=a.tag,
-            dying_cut=a.dying_cut, struct_sl=a.struct_sl, add_gate=a.add_gate, entry_gate=a.entry_gate, scene_size=a.scene_size)
+            dying_cut=a.dying_cut, struct_sl=a.struct_sl, add_gate=a.add_gate, entry_gate=a.entry_gate, scene_size=a.scene_size,
+            hold_mom_exit=a.hold_mom_exit)
     print("=" * 100)
 
 

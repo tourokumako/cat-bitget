@@ -45,7 +45,7 @@ MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP", "BE_EXI
 # 成行/トリガ撤退=taker（現在 taker 扱いの全理由を明示＝既存分類を維持）
 TAKER_EXIT_REASONS = {"TIME_EXIT", "MFE_STALE_CUT", "STOCH_REVERSE_EXIT", "PROFIT_LOCK",
                       "RSI_REVERSE_EXIT", "MAE_CUT", "FORCE_CLOSE_EOD", "CENTER_LOCK",
-                      "ML_STANCH", "BOX_BREAK_SL", "SPIKE_SL", "DYING_CUT", "STRUCT_SL"}  # SPIKE_SL=Lee-Mykland jump の成行 緊急カット(E36・成行=taker+slip・2026-06-21 追加) / DYING_CUT=死ぬ片流れの hold-ML 早期カット(E36 (A)・含み損側 predict<θ_cut・成行=taker+slip・2026-06-25 追加・H13 既知答えテスト再pass) / STRUCT_SL=構造ストップ(E36・建値比 k% 逆行で成行カット・予測なし無条件・成行=taker+slip・2026-06-26 追加・H13 既知答えテスト再pass)
+                      "ML_STANCH", "BOX_BREAK_SL", "SPIKE_SL", "DYING_CUT", "STRUCT_SL", "HOLD_MOM_EXIT"}  # SPIKE_SL=Lee-Mykland jump の成行 緊急カット(E36・成行=taker+slip・2026-06-21 追加) / DYING_CUT=死ぬ片流れの hold-ML 早期カット(E36 (A)・含み損側 predict<θ_cut・成行=taker+slip・2026-06-25 追加・H13 既知答えテスト再pass) / STRUCT_SL=構造ストップ(E36・建値比 k% 逆行で成行カット・予測なし無条件・成行=taker+slip・2026-06-26 追加・H13 既知答えテスト再pass) / HOLD_MOM_EXIT=保有中 momentum反転 早期カット(E36・SHORT 保有M バー+含み損側+donchian_pos≥θ_don で成行カット・保有経路 momentum 両窓AUC0.9+・成行=taker+slip・2026-06-28 追加・H13 既知答えテスト再pass)
 # 採点 CSV に現れる全 exit_reason（実データ列挙済）。未登録は assert_hard_constraints で STOP（黙って taker 計上しない・§2.9）
 KNOWN_EXIT_REASONS = MAKER_EXIT_REASONS | TAKER_EXIT_REASONS
 
