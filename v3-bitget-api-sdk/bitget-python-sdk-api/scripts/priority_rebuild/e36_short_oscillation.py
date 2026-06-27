@@ -287,6 +287,7 @@ def _hold_arrays(df: pd.DataFrame, box_tf: str) -> dict:
         "sup5": sup, "res5": res,
         "sup1": df["box_sup_dist__1h"].to_numpy(float), "res1": df["box_res_dist__1h"].to_numpy(float),
         "sup4": df["box_sup_dist__4h"].to_numpy(float), "res4": df["box_res_dist__4h"].to_numpy(float),
+        "htf": (df["htf_macd_up"].astype(float).to_numpy() if "htf_macd_up" in df.columns else np.zeros_like(c)),
         "Cc": (S + R) / 2.0,
     }
 
@@ -307,6 +308,34 @@ def _hold_feat_vec(A: dict, sdir: int, avg_i: float, first_idx: int, nlot: int, 
     if USE_RV:                                              # (B) 保有経路 realized vol を末尾追加（_RV_EXTRA 順・USE_RV=False で恒等）
         v += [A["rv_s"][i], A["rv_m"][i], A["rv_r"][i]]
     return v
+
+
+# ══ 入口判別ゲート（entry-gate）の入口特徴（新規 entry 時点だけで決まる値・保有経路を含まない＝hold-ML とは別物・leak-safe H6）══
+#   既存 hold-ML は保有経路（bars_held/unreal_pct/dist_to_tp）を使うため入口時点では 0 で無意味。
+#   入口判別器は「この新規 SHORT は中心に戻る（勝つ）か片流れ（死ぬ）か」を入口時点の特徴だけで学習する。
+_ENTRY_FEATS = ["atr_pct", "adx", "er", "stoch_k", "stoch_d", "chop", "bb_slope_pct", "bb_width",
+                "box_sup_5m", "box_res_5m", "box_w_5m", "box_sup_1h", "box_res_1h",
+                "box_sup_4h", "box_res_4h", "htf_macd_up"]
+
+
+def entry_feats() -> list:
+    """入口判別器の特徴名（入口時点だけで決まる＝保有経路を含まない）。"""
+    return list(_ENTRY_FEATS)
+
+
+def _entry_feat_vec(A: dict, i: int) -> list:
+    """新規 entry バー i の入口特徴ベクトル（_ENTRY_FEATS 順・%/比率＝H6・全て ≤i＝leak-safe）。
+    教師生成（run_e36）と runtime ゲート（open_or_add）で同一 source＝整合保証。"""
+    cl = A["close"][i]
+    return [
+        A["atr"][i] / cl * 100.0,                       # atr_pct（ボラは複数特徴の1つ＝H15 単独支配させない）
+        A["adx"][i], A["er"][i],
+        A["k"][i], A["d"][i], A["chop"][i],
+        A["bbs"][i], A["bbw"][i],
+        A["sup5"][i], A["res5"][i], A["sup5"][i] + A["res5"][i],
+        A["sup1"][i], A["res1"][i], A["sup4"][i], A["res4"][i],
+        A["htf"][i],
+    ]
 
 
 # ── 急騰検知 Lee-Mykland jump（全 bars≤i の値のみ＝leak-safe・a-priori 閾値・スイープしない）──
@@ -390,7 +419,7 @@ def _short_rev_nofloor(df, box_tf, zone_params):
 
 def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp=None,
                    short_htf=False, short_only=False, spike_lm=None, spike_gate=None, dying_cut=None,
-                   struct_sl=None, add_gate=None):
+                   struct_sl=None, add_gate=None, entry_gate=None):
     """E36 SHORT専用の売買エンジン（連続モード両方向・LONG/SHORT を並行管理・merge・cap 合算停止）＋ SPIKE_SL（急騰Exit）。
     spike_lm=(K, alpha) を渡すと、SHORT 保有中・含み損側で Lee-Mykland jump 統計が L* を超えたら成行カット（SPIKE_SL）。
     spike_lm=None では SPIKE_SL ブロックに入らず急騰Exit OFF（教師生成・恒等参照用）。pending fill・出口優先順位・部分利確・建値撤退は shortset1/iter9 と同じ。"""
@@ -407,7 +436,7 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
     R = c * (1.0 + res / 100.0)
     Cc = (S + R) / 2.0
     Wpct = sup + res
-    A = _hold_arrays(df, box_tf) if (hold_ctx is not None or be_gate is not None or partial_tp is not None or dying_cut is not None or add_gate is not None) else None
+    A = _hold_arrays(df, box_tf) if (hold_ctx is not None or be_gate is not None or partial_tp is not None or dying_cut is not None or add_gate is not None or entry_gate is not None) else None
     _hm, _hf, _hth = hold_ctx if hold_ctx is not None else (None, None, None)
     _bm, _bf, _bth = be_gate if be_gate is not None else (None, None, None)
     _ptup = partial_tp if partial_tp is not None else (None, None, None, None, None, None)
@@ -419,6 +448,8 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
     _dm, _df, _dth = dying_cut if dying_cut is not None else (None, None, None)
     # ── freq-iter3: add を hold-ML 判別器でゲート（add_gate=(booster, feats, θ)）。add 判定時に predict<θ=死ぬ判別なら積まない。None で OFF＝恒等 ──
     _agm, _agf, _agth = add_gate if add_gate is not None else (None, None, None)
+    # ── entry-gate: 新規 SHORT entry を入口判別器でゲート（entry_gate=(booster, feats, θ)）。新規建て時に predict<θ=片流れ判別なら建てない。None で OFF＝恒等 ──
+    _egm, _egf, _egth = entry_gate if entry_gate is not None else (None, None, None)
     # ── 急騰Exit（Lee-Mykland jump）: 統計と閾値は全 bars≤i＝leak-safe・None で未計算＝急騰Exit OFF ──
     if spike_lm is not None:
         _spk_K, _spk_alpha = spike_lm
@@ -440,6 +471,11 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
         if pos[side] is None:
             if not (np.isfinite(atr[i]) and np.isfinite(Cc[i])):
                 return
+            # ── entry-gate（新規 SHORT のみ）: 入口判別器 predict<θ=片流れ判別なら新規を建てない（de Prado メタラベリング・入口版）──
+            #   入口時点特徴のみ（_entry_feat_vec）＝leak-safe。_egm=None で OFF＝恒等。LONG には掛けない（E36 SHORT専用）。add 分岐は対象外。
+            if _egm is not None and side == "SHORT" and A is not None:
+                if _egm.predict(np.asarray([_entry_feat_vec(A, i)]))[0] < _egth:
+                    return
             if held_total() + UNIT > CAP + 1e-9:
                 return
             pos[side] = {"side": side, "avg": fp, "size": UNIT, "add_count": 1, "first_idx": i, "last_fill_idx": i,
@@ -694,7 +730,7 @@ def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None, stem: st
 
 
 def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=None, tag=None, dying_cut=False,
-            struct_sl=False, add_gate=False):
+            struct_sl=False, add_gate=False, entry_gate=False):
     """E36 SHORT専用（shortset1[SHORT 1h MACD ゲート]＋iter9 出口を内包）＋急騰Exit。
     本ファイルの run_continuous（SHORT専用エンジン・E36 自前）を短絡フラグ（short_htf=True・short_only=True 固定）で回す。
     教師生成・grid 選定は spike OFF（iter3 基底のまま＝教師を急騰Exitで歪めない）／最終 scored run だけ spike_lm を渡す。"""
@@ -890,11 +926,77 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
         print(f"  → add_gate θ*={add_gate_th}（学習窓 net 最大 ${abest[0]:.0f}・None=OFFが最良＝不採用）")
     add_gate_arg = (booster, feats, add_gate_th) if add_gate_th is not None else None
 
+    # ⑤''''' entry-gate: 新規 SHORT entry を入口判別器でゲート（de Prado メタラベリング・入口版・採点窓不参照＝L-267・H8）。
+    #     entry_gate=True（CLI --entry-gate）なら、確定済み設定（partial θ*/k*・spike・spike_gate・dcut・ssl・add_gate）の玉で
+    #     入口専用 booster を学習窓 fit→θ を学習窓スイープ選定。OFF を基準に含め改善時のみ採用（既定 base 恒等）。
+    #     ★入口専用 booster は hold-ML とは別物（入口時点は保有経路=0 で無意味）。特徴は entry_feats()（入口時点だけ・leak-safe H6）。
+    #     ★θ は probe(疑似シミュ)由来でなく実エンジン学習窓選定（acceptance ★固定値ゼロ宣言）。入口特徴の閾値は木に委ね固定値で線引きしない。
+    ENTRY_GATE_GRID = [0.30, 0.40, 0.50, 0.60, 0.70, 0.80]
+    entry_gate_arg = None
+    if entry_gate:
+        import sklearn.metrics as _skm
+        efeats = entry_feats(); A_tr = _hold_arrays(df_tr, box_tf)
+        # 教師＝ゲート対象候補（確定済み設定の玉）の「戻る(WIN)/片流れ」を入口時点特徴でラベル化（df_tr＝学習窓のみ・H8）
+        teach = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                            partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
+                                            short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
+                                            dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg)[0])
+        erows, elab = [], []
+        for pid, g in teach.groupby("position_id"):
+            if not str(pid).startswith("SHORT_"):
+                continue
+            fidx = int(str(pid).split("_")[1])
+            if not (np.isfinite(A_tr["close"][fidx]) and np.isfinite(A_tr["atr"][fidx])):
+                continue
+            erows.append(_entry_feat_vec(A_tr, fidx))
+            elab.append(1 if g["exit_reason"].iloc[0] in WIN else 0)
+        etr = pd.DataFrame(erows, columns=efeats); etr["label"] = elab
+        eg_model = lgb.LGBMClassifier(**params); eg_model.fit(etr[efeats], etr["label"].to_numpy())
+        eg_booster = eg_model.booster_
+        auc_tr = _skm.roc_auc_score(etr["label"], eg_booster.predict(etr[efeats])) if etr["label"].nunique() > 1 else float("nan")
+        imp = dict(zip(efeats, eg_booster.feature_importance(importance_type="gain")))
+        top3 = sorted(imp.items(), key=lambda kv: -kv[1])[:3]
+        print(f"  [entry-gate 教師] 候補 {len(etr):,} 玉 / 戻る率 {etr.label.mean():.3f} / 学習窓 AUC {auc_tr:.3f} / gain top3 {[(k, int(v)) for k, v in top3]}")
+        # θ グリッド選定（学習窓 net 最大・OFF 基準・採点窓不参照）
+        base_eg = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                              partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
+                                              short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
+                                              dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg)[0])
+        ne0 = float(base_eg["net_usd"].sum()); cnt0 = int(base_eg["position_id"].nunique())
+        print(f"  [自己検査a_entry_gate] entry_gate OFF 学習窓 net ${ne0:.0f} / 新規 {cnt0}玉（基準・採点窓不参照）")
+        ebest = (ne0, None)
+        for th in ENTRY_GATE_GRID:
+            qe = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                             partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
+                                             short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
+                                             dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg,
+                                             entry_gate=(eg_booster, efeats, th))[0])
+            cnt1 = int(qe["position_id"].nunique()) if len(qe) else 0
+            ne1 = float(qe["net_usd"].sum()) if len(qe) else 0.0   # 全弾き＝空＝net 0（OFF基準 ne0 より下＝採用されない）
+            eg_long = int((qe["side"] == "LONG").sum()) if len(qe) else 0
+            print(f"   θ={th}: 新規 {cnt1}玉（除外 {cnt0-cnt1}）/ 学習窓 net ${ne1:.0f}（純増 {ne1-ne0:+.0f}）")
+            assert cnt1 <= cnt0, "entry-gate で新規玉が増えた（配線異常＝建てる方向に作用）"
+            assert eg_long == 0, "entry-gate run に LONG 玉（E36 SHORT専用違反）"
+            if ne1 > ebest[0]:
+                ebest = (ne1, th)
+        entry_gate_th = ebest[1]
+        # メタ確認（わざと壊す）: θ=1.0 でほぼ全新規を止める（predict<1.0 がほぼ常に真）→ 新規が激減＝ゲートが効いている
+        q_full = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
+                                             partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
+                                             short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
+                                             dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg,
+                                             entry_gate=(eg_booster, efeats, 1.0))[0])
+        cnt_full = int(q_full["position_id"].nunique()) if len(q_full) else 0
+        print(f"  [メタ確認 θ=1.0] 新規 {cnt_full}玉（OFF {cnt0} から激減なら配線OK）")
+        assert cnt_full < cnt0, "θ=1.0 で新規が減らない＝entry-gate が効いていない（配線異常）"
+        entry_gate_arg = (eg_booster, efeats, entry_gate_th) if entry_gate_th is not None else None
+        print(f"  → entry_gate θ*={entry_gate_th}（学習窓 net 最大 ${ebest[0]:.0f}・None=OFFが最良＝不採用）")
+
     # ⑥ 最終 scored run（spike_lm/spike_gate/dying_cut/struct_sl/add_gate を最終 run だけに渡す）→ size 保存 → cap → 出力
     trades, _ = run_continuous(df, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
                                partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU, None),
                                short_htf=True, short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
-                               dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg)
+                               dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg, entry_gate=entry_gate_arg)
     t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
     rc = t.groupby("position_id").agg(sz=("size_btc", "sum"), addc=("add_count", "max"))
     bad = int((np.abs(rc["sz"] - rc["addc"] * UNIT) > 1e-9).sum())
@@ -930,6 +1032,11 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
         _xp["add_gate（add を hold-ML 判別器でゲート・freq-iter3）"] = (
             f"θ={add_gate_th}（partial の hold-ML booster 流用・学習窓スイープ選定・採点窓不参照 L-267・probe値を焼かない）。"
             f"add 判定時に predict<θ=死ぬ判別なら積まない（メタラベリング de Prado）。段数の固定区切りなし＝全 add を判別器に委ね（add_count を特徴に持つ）・勝ち玉は判別器が残す＝fat-tail 不削り")
+    if entry_gate_arg is not None:
+        _xp["entry_gate（新規entryを入口判別器でゲート・entry-gate）"] = (
+            f"θ={entry_gate_arg[2]}（入口専用 booster・学習窓スイープ選定・採点窓不参照 L-267・probe値を焼かない）。"
+            f"新規 SHORT を建てる時、入口時点特徴（{', '.join(_ENTRY_FEATS)}）で predict<θ=片流れ判別なら建てない"
+            f"（de Prado メタラベリング・入口版）。add/出口/決済は不変・hold-ML とは別の入口専用判別器（保有経路を含まない）")
     if zone_short is not None:
         _xp["zone_short（件数レバー・強レンジで SHORT 反転ゾーン拡大・freq-iter1）"] = (
             f"z_wide={zone_short[0]}（通常 ZONE_FRAC={ZONE_FRAC}）・er_strong_q={zone_short[1]}（学習窓 ER 分位）。"
@@ -961,6 +1068,7 @@ def main():
     ap.add_argument("--dying-cut", action="store_true", help="(A) 死ぬ片流れの早期カット（DYING_CUT・含み損側 ∩ hold-ML predict<θ_cut で成行カット）。θ_cut は学習窓選定（0.15/0.20/0.25・採点窓不参照 L-267）。240分の時間切れを待たず中心非回帰の片流れを早期撤退。既定OFF=恒等")
     ap.add_argument("--struct-sl", action="store_true", help="構造ストップ STRUCT_SL（建値比 k% 逆行で成行カット・予測なしの無条件 risk キャップ）。k は学習窓選定（0.5/0.7/1.0/1.5%・採点窓不参照 L-267）。破断玉の深い損を頭打ち（rolling box 基準の BOX_BREAK_SL と別＝entry 建値基準）。既定OFF=恒等")
     ap.add_argument("--add-gate", action="store_true", help="(freq-iter3) add を hold-ML 判別器でゲート＝add 判定時に predict<θ=死ぬ判別なら積まない（メタラベリング・死ぬ玉に深く積まない／勝ち玉は判別器が残す）。θ は学習窓スイープ選定（0.30〜0.80・採点窓不参照 L-267・probe値を焼かない）。段数の固定区切りなし＝全 add を判別器に委ねる。既定OFF=恒等")
+    ap.add_argument("--entry-gate", action="store_true", help="(entry-gate) 新規 SHORT entry を入口判別器（戻る/片流れ）でゲート＝入口時点特徴だけで predict<θ=片流れ判別なら建てない（de Prado メタラベリング・入口版）。広い入口は --rev-nofloor 併用。θ は学習窓スイープ選定（0.30〜0.80・採点窓不参照 L-267・probe値を焼かない）。add/出口は不変。既定OFF=恒等")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番（ユニーク）にし旧実験を archive へ退避。未指定=安定名 _<box_tf>_shortset1（採用base・--vs 固定）。命名/archive は共通処理(ratchet_io)が担当＝e37/38/39 も同じ")
     a = ap.parse_args()
 
@@ -998,8 +1106,10 @@ def main():
         print("  [構造ストップ STRUCT_SL ON] 建値比 k% 逆行で成行カット＝k 学習窓選定（採点窓不参照・予測なし無条件）")
     if a.add_gate:
         print("  [(freq-iter3) add ゲート ON] add 判定時に判別器 predict<θ=死ぬ判別なら積まない＝θ 学習窓選定（採点窓不参照・全 add を判別器に委ねる）")
+    if a.entry_gate:
+        print("  [(entry-gate) 新規入口ゲート ON] 新規 SHORT を入口判別器でゲート＝入口時点特徴で predict<θ=片流れ判別なら建てない＝θ 学習窓スイープ選定（採点窓不参照）")
     run_e36(df, a.box_tf, a.max_adds, spike_lm=spike_lm, spike_gate=spike_gate, zone_short=zone_short, tag=a.tag,
-            dying_cut=a.dying_cut, struct_sl=a.struct_sl, add_gate=a.add_gate)
+            dying_cut=a.dying_cut, struct_sl=a.struct_sl, add_gate=a.add_gate, entry_gate=a.entry_gate)
     print("=" * 100)
 
 
