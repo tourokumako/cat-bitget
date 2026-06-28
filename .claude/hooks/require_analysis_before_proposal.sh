@@ -89,6 +89,34 @@ grep -q "巻き込み" "$BLOCK" || miss="$miss\n  - ⑨巻き込み検証（切�
 #   背景: E36（デイトレ型レンジ柱）に早期固定TP＝スキャル化を当てようとした戦略ミスマッチ（スキャルは E37 の領域）。
 #   戦術が戦略の役割を壊す提案を分析の段で物理的に止める。cat_requirements §1.2.1 全体戦略と照合。
 grep -q "戦略整合" "$BLOCK" || miss="$miss\n  - ⑩戦略整合（改善レバー＝戦術が対象戦略の役割[局面・デイトレ/スキャル/トレンド型]に妥当か・ミスマッチでないか・cat_requirements §1.2.1）"
+
+# ── 改善案生成ルール STEP3/3.5/4（2026-06-28 まこさん承認・improvement_plan.md・しょぼさ/近視眼/消去法 を封じる）──
+#   STEP1(観察)/STEP2(要因) は probe前ゲートA(require_probe_naming.sh)で先に強制済。ここでは収束側を強制。
+PLAN="$STATE/improvement_plan.md"
+if [ ! -f "$PLAN" ]; then
+  miss="$miss\n  - improvement_plan.md が無い（STEP1〜4＝改善案生成ルールを埋める・probe前ゲートAで STEP1 は強制済）"
+else
+  # STEP3 タグ付け＆重なり（軸B=N10両窓再現の分離指標を必ず使う＝『知ってる犯人だけ追う近視眼』封じ＝2026-06-28 事案の核）
+  grep -q "STEP3"           "$PLAN" || miss="$miss\n  - STEP3 タグ付け＆重なり（軸A出血容疑＋軸B=分離指標 を全負け玉にタグ→クロス集計）"
+  grep -Eq "分離指標|N10"   "$PLAN" || miss="$miss\n  - STEP3 軸B＝分離指標（N10 両窓再現・データが指した軸を必ずタグに含む＝近視眼封じ）"
+  grep -q "重なり"          "$PLAN" || miss="$miss\n  - STEP3 重なり判定の結論（1点突き か / 別問題で金額最大優先 か）"
+  # STEP3.5 発散（切り口5つ以上・各に出典）＝無難な1案への早期収束封じ
+  grep -Eq "STEP3.5|発散"   "$PLAN" || miss="$miss\n  - STEP3.5 発散（改善の切り口5つ以上・各に N番号出典・この段では判定しない）"
+  kiri=$(awk '/STEP3.5|発散/{f=1;next} /STEP4|収束/{f=0} f&&/出典/{c++} END{print c+0}' "$PLAN")
+  [ "${kiri:-0}" -ge 5 ] || miss="$miss\n  - STEP3.5 切り口が ${kiri:-0} 件（各行に『出典: N番号』を付けて5つ以上＝発散）"
+  # STEP4 収束（3案＝守り/攻め/構造・各に 玉数/net学習窓/犠牲）＝守りの消去案だけへの逃げ封じ
+  grep -q "守り"           "$PLAN" || miss="$miss\n  - STEP4 ①守り（負け縮小）"
+  grep -q "攻め"           "$PLAN" || miss="$miss\n  - STEP4 ②攻め（STEP1-1 の最も黒字の条件を増産）"
+  grep -q "構造"           "$PLAN" || miss="$miss\n  - STEP4 ③構造（add ラダー等 玉の構成ロジックを引き直す）"
+  grep -q "玉数"           "$PLAN" || miss="$miss\n  - STEP4 各案に〔玉数増減〕（件数が増えるか減るか）"
+  grep -q "学習窓" "$PLAN" || miss="$miss\n  - STEP4 各案に〔net増減(学習窓)〕（採点窓を見て決めない＝L-267・『学習窓』の語を明記）"
+  grep -q "犠牲"           "$PLAN" || miss="$miss\n  - STEP4 各案に〔何を犠牲にするか〕（トレードオフ1行）"
+  # ⛔ 禁止形式: 「閾値 X→Y」「○帯を除外」＝分離指標を木に渡す形に直す（L-267・生成段階で阻止）
+  if grep -Eq "閾値.*→|→[[:space:]]*[0-9.]+(%|$|[[:space:]])|帯.*除外|を除外" "$PLAN"; then
+    miss="$miss\n  - ⛔禁止形式（『閾値 X→Y』『○帯を除外』）を検出＝線引きはモデルに学習させる＝分離指標を木(LightGBM)に特徴量として渡す形で書き直す（L-267）"
+  fi
+fi
+
 if [ -n "$miss" ]; then
   echo "🔒 [分析フェーズ 完了ゲート] 分析ブロック（$BLOCK）に必須見出しが未記入（穴3・2026-06-24）:" >&2
   printf "%b\n" "$miss" >&2
