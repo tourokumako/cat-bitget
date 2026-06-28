@@ -41,6 +41,10 @@ tn = d.get("tool_name", "")
 ti = d.get("tool_input", {}) or {}
 if tn == "Bash":
     cmd = ti.get("command", "") or ""
+    # ★引用符内（文字列リテラル）を除去した版で実行検知する＝git commit メッセージ・echo・printf テスト等で
+    #   スクリプト名が「言及」されただけ（実行でない）の誤検知で審判/実験/probe 旗を立てる事案を防ぐ
+    #   （2026-06-29 まこさん「毎回フラグ解除で時間がかかる・誤発火を直して」）。CSV 抽出は元 cmd を使う。
+    cmd_x = re.sub(r'"[^"]*"', " ", re.sub(r"'[^']*'", " ", cmd))
     # 実験スクリプト実行 → 審判(score.py/precheck.py)を通すまでターン終了不可（2026-06-12 E24 素通り事案）
     # ただし以下は need_score を立てない:
     #  - --smoke: 採点しない検証ステップ（自己検査・規模確認）（2026-06-12 まこさん・smoke で永久未閉じ事案）
@@ -48,9 +52,9 @@ if tn == "Bash":
     #    （2026-06-12 まこさん承認・E28 Phase1 OOF で永久未閉じ事案＝Phase1 は連続モード変換前で score.py 適用外）
     #  - py_compile: コンパイル確認のみ＝戦略を回さない・売買記録を生成しない（2026-06-18 まこさん承認・false trigger 防止）
     # 実験＝戦略本体(strat_/train_/measure_/e3N_連番名)を採点ありで実行。probe/deep_analysis は分析＝除外(2026-06-16 命名非依存化)
-    _is_exp = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_|e3[0-9]_)[A-Za-z0-9_]*\.py", cmd)) \
-        and not bool(re.search(r"(_probe|_deep_analysis)\.py|score[A-Za-z0-9_]*\.py", cmd)) \
-        and "py_compile" not in cmd   # 採点ラッパー score_*(名に e35_ を含む)・probe・分析・py_compile(コンパイル確認) は実験から除外
+    _is_exp = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_|e3[0-9]_)[A-Za-z0-9_]*\.py", cmd_x)) \
+        and not bool(re.search(r"(_probe|_deep_analysis)\.py|score[A-Za-z0-9_]*\.py", cmd_x)) \
+        and "py_compile" not in cmd_x   # 採点ラッパー score_*(名に e35_ を含む)・probe・分析・py_compile(コンパイル確認) は実験から除外
     if _is_exp:
         if "--diagnostic" in cmd:
             # 診断（採点しない・cap実態/規模確認等）→ PDCA 連鎖を一切要求しない（2026-06-13・診断CSVは
@@ -65,9 +69,9 @@ if tn == "Bash":
                 touch(score_bg_pending)  # バックグラウンド実行中は審判催促を抑制（2026-06-13・長時間 replay 待ち）
     # python(3) で実際に score.py/precheck.py を実行する形のみ検知（grep/echo/別行言及では誤爆しない）
     # 審判＝score.py CLI ＋ 採点ラッパー score_*.py（gate外 score.score を呼ぶ＝命名規約 scripts/priority_rebuild/score_*.py・2026-06-16）
-    _is_judge = (bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score[A-Za-z0-9_]*\.py", cmd)) or
-                 bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*precheck\.py", cmd))) \
-                and "--selftest" not in cmd   # --selftest* は自己テスト＝採点でない（--smoke と同扱い・2026-06-18・誤点火防止）
+    _is_judge = (bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*score[A-Za-z0-9_]*\.py", cmd_x)) or
+                 bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*precheck\.py", cmd_x))) \
+                and "--selftest" not in cmd_x   # --selftest* は自己テスト＝採点でない（--smoke と同扱い・2026-06-18・誤点火防止）
     if _is_judge:
         # score.py / precheck.py（審判の門）。FAIL=閉じる場合も 分析・記録・5つの問い を飛ばせない（2026-06-12）
         rm(need_score); rm(score_bg_pending)
@@ -78,7 +82,7 @@ if tn == "Bash":
             touch(need_next_step)   # 審判を通したセッションは next_step を1回上書きするまで終了不可（ledger 編集回数に依存させない・2026-06-14 まこさん GO）
             touch(need_analyze_report)  # 分析レポートを生成→Read tool で読む まで終了不可（「別途」で逃げる・省略・読み飛ばし を物理禁止・2026-06-15 まこさん命令）
             touch(need_viz)  # 審判後 report.py が 週次チャートPNG（トレード最多/最少・NET最大/最小 の4週）を出すまで終了不可（2026-06-21 まこさん強制化）
-    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*report\.py", cmd):
+    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*report\.py", cmd_x):
         rm(need_report)
         # 週次チャートPNG（report.py M節が 最多/最少・NET最大/最小 の4週を自動出力）が 採点CSV分 実在すれば need_viz を下ろす。
         # M節がスキップ（matplotlib/plot_trades 故障）で PNG が無ければ旗が残る＝gate がブロック（2026-06-21 強制化・番人）。
@@ -86,19 +90,19 @@ if tn == "Bash":
         if _mc and glob.glob(os.path.join(viz_dir, os.path.basename(_mc.group(1))[:-4] + "_*.png")):
             rm(need_viz)
         # --vs（前回比較・KB §0）必須。無しは need_vs 旗（初回のみ no_baseline_approved で免除・1回で消費）
-        if "--vs" in cmd:
+        if "--vs" in cmd_x:
             rm(need_vs)
         elif os.path.exists(no_baseline):
             rm(no_baseline); rm(need_vs)
         else:
             touch(need_vs)
     # 分析＝analyze.py（汎用 N0-N12）＋ 戦略固有 *_deep_analysis/*_probe（命名規約・2026-06-16）
-    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(analyze|[A-Za-z0-9_]+_deep_analysis|[A-Za-z0-9_]+_probe)\.py", cmd):
+    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(analyze|[A-Za-z0-9_]+_deep_analysis|[A-Za-z0-9_]+_probe)\.py", cmd_x):
         # ★付け忘れ防止＝中身検査（2026-06-25 まこさん「強制・自動化」）: 汎用 analyze.py は出力に
         #   §0前後比較[前回≠今回]＋N4分布ドリフトが揃う時だけ need_analyze を下ろす。
         #   付け忘れ(--vs/--train なし)・取り違え(前回=今回の同値比較)では旗が残る＝pdca_gate がブロック。
         #   probe/deep_analysis（前後比較を持たない探索）は従来どおり中身検査せず旗を下ろす。
-        is_generic = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*analyze\.py", cmd))
+        is_generic = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*analyze\.py", cmd_x))
         incomplete = os.path.join(state, "pdca_analyze_incomplete")
         if not is_generic:
             rm(need_analyze); rm(incomplete)
@@ -126,7 +130,7 @@ if tn == "Bash":
     #   probe(*_probe.py・当たり付け)を走らせたターンは、結果が悪くても「できる証明＋達成案＋次の一手」を
     #   .claude/state/forward_action.md に書くまで終了不可（need_forward）。analysis→「できない／両窓で割れる」で止まる癖の物理化。
     #   probe は近似＝悪い結果でも実エンジンで試す前に諦めない。前向きな達成案を必ず出してから終わる。
-    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*_probe\.py", cmd):
+    if re.search(r"python[0-9.]*[ \t]+[^|&;\n]*_probe\.py", cmd_x):
         touch(need_forward)
 elif tn in ("Edit", "Write", "MultiEdit"):
     fp = ti.get("file_path", "") or ""
@@ -136,18 +140,23 @@ elif tn in ("Edit", "Write", "MultiEdit"):
         #   強制すると同一セッションで何度も付箋の上書きが走る（friction）。→ need_next_step は審判実行時に
         #   1回だけ立て（上の _is_judge ブロック）、ledger 編集では立てない。next_step はセッション末に1回。
         #   経緯を忘れない本体は ledger（追記・恒久・開始時 Read 強制）＝こちらは触らない。
-        # 5つの問いが全部含まれる編集なら need_5q を下ろす（形だけ防止は まこさん30秒チェックが担保）
-        payload = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
-        for e in (ti.get("edits", []) or []):
-            payload += e.get("new_string", "") or ""
+        # ★file-state ベース判定（2026-06-29 まこさん「6問を1編集に詰める制約で毎回ハマる・誤発火で何度も立て直る」改善）:
+        #   旧＝編集の new_string(payload)に6見出し全部を要求＝複数回に分けて書くと落ちず CC が毎回ハマる。
+        #   新＝ledger ファイルの【最新エントリ】(最後の "## " セクション)に 6見出し＋方針/狙い/目的＋主張 が
+        #       在れば旗を下ろす＝何回の編集で書いても・どの編集でも通る（中身の厳しさは同じ＝在るか で判定）。
+        #   「最新エントリ」に限定＝過去エントリのトークンで誤って通る(false-pass)を防ぐ。質はまこさん30秒チェック。
         tokens = ["【問0 前後比較】", "【問1 レバー】", "【問2 不足量】", "【問3 負け集中】", "【問4 過去接続】", "【問5 次仮説】"]
-        # 「方針/狙い/目的」(2026-06-26 まこさん指示): 改善内容の意図＝前の iter の何を受けて何を狙って
-        #   この変更をしたか を ledger エントリに明記させる。next_step の改善アークが ledger の「方針」を引用元に
-        #   するため＝CC が記憶要約で狙いを書く穴を塞ぐ（2026-06-26 妄想で狙いを書いた事案）。方針/狙い/目的 のいずれか必須。
-        has_purpose = any(k in payload for k in ("方針", "狙い", "目的"))
-        if all(t in payload for t in tokens) and has_purpose:
+        try:
+            _lg = open(fp, encoding="utf-8", errors="ignore").read()
+        except Exception:
+            _lg = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
+        _entries = re.split(r"\n## ", _lg)
+        latest = _entries[-1] if _entries else _lg     # 最新エントリ＝現在の実験の記録（過去エントリで誤通過しない）
+        # 「方針/狙い/目的」(2026-06-26): 改善の意図＝前の iter の何を受けて何を狙ったか を明記（next_step 改善アークの引用元）。
+        has_purpose = any(k in latest for k in ("方針", "狙い", "目的"))
+        if all(t in latest for t in tokens) and has_purpose:
             rm(need_5q)
-        if "【主張】" in payload:        # 多角チェックの結論=主張1行（件数/日+net 込み・#19・2026-06-14）
+        if "【主張】" in latest:        # 多角チェックの結論=主張1行（件数/日+net 込み・#19・2026-06-14）
             rm(need_claim)
     if fp.endswith("next_step.md"):
         # 次セッションの起点を上書き更新 → 旗を下ろす。ただし記載必須項目（本筋/やってはいけない/出典/改善アーク）を

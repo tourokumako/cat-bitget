@@ -4,6 +4,37 @@
 # exit 2 で終了を拒否し、CC に未済項目を返す（2026-06-12 まこさん合意で --vs / 5q を追加）。
 STATE="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 MISS=""
+# ★Stop 時の file-state self-heal（2026-06-29 まこさん「フラグ解除で毎回ハマる・誤発火で何度も立て直る」改善）:
+#   need_5q/need_claim/need_next_step は「実体ファイルに中身が在るか」で最終判定し、在れば旗をクリアする。
+#   ＝編集の形(6問を1編集に詰める)・gen が Bash で書いた・誤発火で立った 等の機械的事情に依存せず、
+#   内容が在れば通る。中身の厳しさは同じ（最新 ledger エントリに6問+方針/狙い+主張／next_step に4見出し+ARC hash 一致）。
+#   質の確認はまこさんの目（物理ゲートは「在るか」まで）。
+python3 - "$STATE" <<'PYEOF'
+import sys, os, re, hashlib
+state = sys.argv[1]
+ledger = "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/ledger.md"
+def rm(p):
+    try: os.remove(p)
+    except FileNotFoundError: pass
+try:
+    lg = open(ledger, encoding="utf-8", errors="ignore").read()
+except Exception:
+    lg = ""
+latest = re.split(r"\n## ", lg)[-1] if lg else ""   # 最新エントリ＝現在の実験（過去エントリで誤通過しない）
+toks = ["【問0 前後比較】","【問1 レバー】","【問2 不足量】","【問3 負け集中】","【問4 過去接続】","【問5 次仮説】"]
+if all(t in latest for t in toks) and any(k in latest for k in ("方針","狙い","目的")):
+    rm(os.path.join(state, "pdca_need_5q"))
+if "【主張】" in latest:
+    rm(os.path.join(state, "pdca_need_claim"))
+try:
+    ns = open(os.path.join(state, "next_step.md"), encoding="utf-8", errors="ignore").read()
+except Exception:
+    ns = ""
+m = re.search(r"ARC_TABLE_START hash=(\w+).*?-->\n(.*?)\n<!-- ARC_TABLE_END", ns, re.DOTALL)
+arc_ok = bool(m) and hashlib.sha256(m.group(2).encode("utf-8")).hexdigest()[:12] == m.group(1)
+if all(t in ns for t in ("本筋","やってはいけない","出典","改善アーク")) and arc_ok:
+    rm(os.path.join(state, "pdca_need_next_step"))
+PYEOF
 # バックグラウンド実験が実行中（出力前）は審判催促を抑制（2026-06-13・長時間 replay 待ちで連発する事案の防止）。
 # pdca_score_bg_pending は score.py/precheck.py 実行 or next_step 上書きでクリアされる＝完了後は通常通り催促。
 [ -f "$STATE/pdca_need_score" ] && [ ! -f "$STATE/pdca_score_bg_pending" ] && MISS="${MISS}・審判（score.py または precheck.py）が未実行（実験スクリプトを回したのに審判を通っていない）\n"
