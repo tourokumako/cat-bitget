@@ -775,7 +775,8 @@ def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None, stem: st
 
 
 def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=None, tag=None, dying_cut=False,
-            struct_sl=False, add_gate=False, entry_gate=False, scene_size=False, hold_mom_exit=False):
+            struct_sl=False, add_gate=False, entry_gate=False, scene_size=False, hold_mom_exit=False,
+            scene_cap=False):
     """E36 SHORT専用（shortset1[SHORT 1h MACD ゲート]＋iter9 出口を内包）＋急騰Exit。
     本ファイルの run_continuous（SHORT専用エンジン・E36 自前）を短絡フラグ（short_htf=True・short_only=True 固定）で回す。
     教師生成・grid 選定は spike OFF（iter3 基底のまま＝教師を急騰Exitで歪めない）／最終 scored run だけ spike_lm を渡す。"""
@@ -1054,9 +1055,14 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
                             "ha": g["atr_pct"].first() >= atr_med,
                             "hk": g["stoch_k_at_entry"].first().astype(float) >= k_med})
         bmean = bdf.groupby(["ha", "hk"])["net"].mean()
+        tiers = list(_SCENE_TIERS)
+        if scene_cap:
+            # ②勝ち場面を cap まで厚く: 最良バケット倍率を 2.0→CAP/(2×UNIT)=2.5（勝ち場面 add2 が 0.096→0.12=cap 使い切り）。
+            # 幾何由来 a-priori（probe 値・採点窓 sweep でない L-267）。size のみ・方向不変（H15）。cap-skip で add3 は自動ブロック（H1）。
+            tiers[-1] = round(CAP / (2.0 * UNIT), 4)
         mult = {}
         for r, key in enumerate(list(bmean.sort_values().index)):   # worst→best
-            mult[(bool(key[0]), bool(key[1]))] = _SCENE_TIERS[min(r, len(_SCENE_TIERS) - 1)]
+            mult[(bool(key[0]), bool(key[1]))] = tiers[min(r, len(tiers) - 1)]
         scene_arg = {"atr_med": atr_med, "k_med": k_med, "mult": mult}
         on_sc = pd.DataFrame(run_continuous(df_tr, box_tf, max_adds, be_gate=(booster, feats, BE_TH),
                                             partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU), short_htf=True,
@@ -1187,6 +1193,7 @@ def main():
     ap.add_argument("--add-gate", action="store_true", help="(freq-iter3) add を hold-ML 判別器でゲート＝add 判定時に predict<θ=死ぬ判別なら積まない（メタラベリング・死ぬ玉に深く積まない／勝ち玉は判別器が残す）。θ は学習窓スイープ選定（0.30〜0.80・採点窓不参照 L-267・probe値を焼かない）。段数の固定区切りなし＝全 add を判別器に委ねる。既定OFF=恒等")
     ap.add_argument("--entry-gate", action="store_true", help="(entry-gate) 新規 SHORT entry を入口判別器（戻る/片流れ）でゲート＝入口時点特徴だけで predict<θ=片流れ判別なら建てない（de Prado メタラベリング・入口版）。広い入口は --rev-nofloor 併用。θ は学習窓スイープ選定（0.30〜0.80・採点窓不参照 L-267・probe値を焼かない）。add/出口は不変。既定OFF=恒等")
     ap.add_argument("--scene-size", action="store_true", help="場面連動サイジング（vol/expectancy-scaled・E13 横展開）＝新規 SHORT の 1玉 size を場面(atr_pct×stoch_k の学習窓バケット期待値)で倍率配分（勝ち場面厚く・負け場面薄く・cap 0.12 内）。倍率割当は学習窓 expectancy 順（採点窓不参照 L-267）。方向でなく size に使う（H15 罠回避）。既定OFF=恒等")
+    ap.add_argument("--scene-cap", action="store_true", help="②勝ち場面を cap まで厚く＝scene-size の最良バケット倍率を 2.0→CAP/(2×UNIT)=2.5（勝ち場面 add2 が 0.096→0.12=cap 使い切り）。size のみ・方向不変（H15）・cap-skip で add3 ブロック＝H1 厳守・幾何由来 a-priori（採点窓不参照 L-267）。--scene-size と併用（最良バケットだけ厚く）。既定OFF=恒等")
     ap.add_argument("--hold-mom-exit", action="store_true", help="保有中 momentum反転 早期Exit（HOLD_MOM_EXIT）＝SHORT 保有 M バー(60分)経過＋含み損側＋donchian_pos≥θ_don（反転せずレンジ上端に居続ける＝SHORT 前提崩壊）で成行カット（taker）。θ_don は学習窓選定（採点窓不参照 L-267）。建値時点では時間切れ玉と勝ち玉を分離不能だが保有~60分で momentum が両窓 AUC0.9+ 分離（網羅 sweep）＝entry時点/固定深ストップ/ML予測でない保有経路 momentum。既定OFF=恒等")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番（ユニーク）にし旧実験を archive へ退避。未指定=安定名 _<box_tf>_shortset1（採用base・--vs 固定）。命名/archive は共通処理(ratchet_io)が担当＝e37/38/39 も同じ")
     a = ap.parse_args()
@@ -1231,9 +1238,11 @@ def main():
         print("  [場面連動サイジング ON] 新規 SHORT の 1玉 size を場面(atr_pct×stoch_k 学習窓バケット)で倍率配分＝勝ち場面厚く負け場面薄く（cap 0.12 内・採点窓不参照・E13 横展開）")
     if a.hold_mom_exit:
         print("  [HOLD_MOM_EXIT ON] 保有中 momentum反転 早期Exit＝M バー(60分)経過＋含み損側＋donchian上端維持で成行カット＝θ_don 学習窓選定（採点窓不参照・保有経路 momentum 両窓 AUC0.9+）")
+    if a.scene_cap:
+        print("  [②scene-cap ON] 最良バケット倍率 2.0→2.5（=CAP/(2×UNIT)）＝勝ち場面 add2 が 0.096→0.12=cap 使い切り（size のみ・方向不変・cap-skip で H1 厳守・採点窓不参照）")
     run_e36(df, a.box_tf, a.max_adds, spike_lm=spike_lm, spike_gate=spike_gate, zone_short=zone_short, tag=a.tag,
             dying_cut=a.dying_cut, struct_sl=a.struct_sl, add_gate=a.add_gate, entry_gate=a.entry_gate, scene_size=a.scene_size,
-            hold_mom_exit=a.hold_mom_exit)
+            hold_mom_exit=a.hold_mom_exit, scene_cap=a.scene_cap)
     print("=" * 100)
 
 
