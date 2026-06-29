@@ -1,42 +1,39 @@
 #!/usr/bin/env python3
-"""e37_range_scalp_short.py — E37 レンジ・スキャル ショート戦略 ベース v1（MVP・新戦略）
+"""e37_range_scalp_short.py — E37 レンジ・スキャル ショート戦略 v2（入口ゼロ設計・出来高伸び切り×上位足条件×浅スキャル出口）
 
 ★このファイルは E37 専用。E36（e36_short_oscillation.py）/ E35 を import しない（兄弟・独立＝切り分け原則）。
   - 共通土台（① 読み込み方 / ⑤ cap検査・funding / ⑥ 出力処理 / ⑦ 取引所・予算の定数）は strat_base から import。
-  - 戦略ロジック（② 箱・レンジゲート・入口信号 / ③ スキャル売買エンジン run_continuous）は本ファイルが自前。
-  - e35_box は箱特徴の共有ユーティリティ（戦略ファイルではない）。
+  - 戦略ロジック（② レンジゲート・入口信号 / ③ スキャル売買エンジン run_continuous）は本ファイルが自前。
 
-位置づけ（設計書 e37_design.md）: §1.2.1 局面3 レンジの 2本目の柱＝スキャル型（E36=デイトレ型と住み分け）。
-  E36 が「箱の極値で反転→反対端まで往復（EDGE_TP・4h保有）」を取るのに対し、E37 は
-  「レンジ内の短期の買われすぎ(dev_z)→平均へ戻ったら浅く速く利確・60分時間切れ」で小波を取る。
-  freq-iter2（広い入口×E36 長保有出口）が net 崩壊した正体＝長保有出口（240分 time-exit −$2,921・勝ち玉は約50分で決着）
-  を、スキャル出口（浅TP・60分）で回避する（analysis_block.md / improvement_plan.md / acceptance.md）。
+位置づけ（設計書 e37_design.md v2）: §1.2.1 局面3 レンジの 2本目の柱＝スキャル型（E36=デイトレ型と住み分け）。
+  ★v2 で入口をゼロ設計し直し（まこさん 2026-06-29）: v1 は「dev_z 買われすぎ→ショート」の単純逆張り（BTC で弱い・
+  base-up＝RSI/z-score 逆張りは BTC で機能せず／短期反転の本体は板の需給＝5m OHLCV では出来高/VWAP が代理／
+  BTC は中期トレンド優勢＝強い上昇を fade しない）。v2 は **過熱だけで入らず、出来高スパイク（買い climax の伸び切り）を
+  確認できた「戻る過熱」だけ**をショートし、平均へ浅く速く利確・短い時間切れ・ATR スケール SL で回す。
   判定は score.py の数字（本スクリプトは eval_engine 定数を import のみ＝審判が独立再計算）。
 
-入口（DESIGN_CONTRACT・§5.2 と一致・_entry_contract/_assemble_signals が成分欠落で自停止＝類型G 物理防止）:
-  range_ok   = er_ok ∧ in_box                                   （レンジ有効＝ER<学習分位 ∩ 箱内）
-  short_entry= range_ok ∧ macd_ok ∩ ob_dev ∩ short_rev
-    er_ok    = ER < 学習窓分位 q_er（Kaufman Efficiency Ratio・低い=往復=レンジ）
-    in_box   = 多TFレジサポ箱の内側
-    macd_ok  = 1h MACD line ≤ 0（ショート寄り regime・shortset1・符号のみ=価格非依存 H6）
-    ob_dev   = dev_z ≥ 学習窓分位 z_entry（短期の買われすぎ＝箱極値を要求しない＝E36 の up_zone と別）
-    short_rev= 速い %K(9) が下降転換（k9>k_hi ∩ k9<前k9・受け身指値を置かず確認後 maker 指値=contrarian）
+入口（DESIGN_CONTRACT・acceptance §C と一致・_entry_contract/_assemble_signals が成分欠落で自停止＝類型G 物理防止）:
+  short_entry = er_ok ∩ macd_ok ∩ over ∩ vol_exh ∩ rev
+    er_ok    = ER < 学習窓分位 q_er（Kaufman Efficiency Ratio・低い=往復=レンジ regime）
+    macd_ok  = 1h MACD line ≤ 0（ショート寄り＝上位足条件・強い上昇を fade しない・符号のみ=価格非依存 H6）
+    over     = dev_z ≥ 学習窓分位 q0.75（軽い過熱＝頻度を出す・v1 の上位decile より浅い）
+    vol_exh  = vol_z ≥ 1.0（出来高が rolling 平均+1σ＝買い climax の伸び切り＝質の主役・板が無い 5m での需給代理）
+    rev      = 反転バー（close<open ∧ close<前close＝下げに転じた確認）
 
-出口（スキャル＝浅く速く・H5 約定）:
-  TP_FILLED(maker指値): 短期平均へ戻り＝価格が dev_z=z_exit 水準（sma+z_exit·std）へ。手数料床(COST_FLOOR)を超える時だけ武装。
-  TIME_EXIT(成行taker): 初回entryから T_MAX 本(=60分)で未決済なら撤退（スキャル＝短保有・half-life）。
-  BOX_BREAK_SL(成行taker): 終値が箱上限 R を上抜け＝レンジ終了＝構造的 SL（固定%でない）。
-  ＝**新 exit_reason を作らない**（既存登録名に揃え score.py 改造不要・H13・出戻り防止）。
+出口（スキャル＝浅く速く・H5 約定・新 exit_reason を作らない＝既存登録名のみ・H13）:
+  TP_FILLED(maker指値): 平均(SMA)へ戻り＝小さい戻りで即利確。手数料床 SCALP_FLOOR を超える時だけ武装。
+  TIME_EXIT(成行taker): 初回entryから T_MAX 本(=30分)で未決済なら撤退（スキャル＝短保有）。
+  SL_FILLED(maker指値): 建値+K_SL×ATR＝ATR スケール SL（固定%でない・V9 placePosTpsl と同じ maker モデル・base-up §18）。
 
 H 制約（acceptance.md §E）:
   H1 cap … MAX_ADDS=1（size=UNIT 0.024）＝合計≤0.12 自明＋_verify_cap 実測 assert。
-  H2 leak … dev_z/ER/stoch/box は当該足まで・1h は確定足のみ(attach_upper_tf)・出口は約定 bar の次以降・未来参照(負shift/中央窓)を grep assert。
-  H5 約定 … entry=指値maker / TP=指値maker / time-exit・box-break=成行taker＋slip。
-  H6 価格非依存 … dev_z/ER/距離%/W% は無次元・MACD 符号のみ。USD 絶対値の閾値/ラベルなし。
+  H2 leak … dev_z/ER/vol_z/atr/反転バーは当該足まで・1h は確定足のみ(attach_upper_tf)・出口は約定 bar の次以降・未来参照(負shift/中央窓)を grep assert。
+  H5 約定 … entry=指値maker / TP=指値maker / SL=指値maker / time-exit=成行taker＋slip。
+  H6 価格非依存 … dev_z/ER/vol_z(σ)/atr 倍率/床% は無次元・MACD 符号のみ。USD 絶対値の閾値/ラベルなし。
   H8 期間 … 分位は学習窓 fit（periods import・手打ちなし）・採点窓不参照・封印不参照。
   H13 judge … 新 exit_reason を作らない・score.py/eval_engine を触らない（import のみ）。
-  H15 ボラ逃げ … ラベル=方向（短期平均へ戻り到達・二値）・dev_z は方向（買われすぎ）＝ボラ大きさ予測でない・ショート単独。
-  H16 1変更 … 新戦略のベース v1 を1本（複数レバーを混ぜない）。
+  H15 ボラ逃げ … 方向=過熱＋出来高 climax＋反転（方向シグナル）・vol_z/atr は質ゲートと出口幅＝大きさ予測でない・ショート単独。
+  H16 1変更 … 新戦略の v2 を1本（入口ゼロ設計＝1コヒーレント構築）。
 """
 from __future__ import annotations
 import argparse
@@ -49,12 +46,12 @@ import pandas as pd
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import eval_engine as ee                       # noqa: E402  確定コスト定数（改造禁止・import のみ）
 import e34_range_zscore_taker as e34v1         # noqa: E402  CSV / add_indicators（sma/std/dev_z/atr/adx）
-import e34_range_base as e34b                  # noqa: E402  add_analysis_features（stoch 14 等）
-import e35_box                                 # noqa: E402  箱特徴の共有ユーティリティ（sup_col/res_col）
+import e34_range_base as e34b                  # noqa: E402  add_analysis_features（stoch 14 等・記録用）
+import e35_box                                 # noqa: E402  箱特徴の共有ユーティリティ（box_W_pct 記録用）
 import build_labels_pct as bl                  # noqa: E402  resample_ohlcv / attach_upper_tf（1h MACD・leak-safe L-128）
 import periods                                 # noqa: E402  検証期間の唯一の正本（SSOT）
 import strat_base                              # noqa: E402  ★全戦略共通の土台（① load_5m / ⑤ _verify_cap・_funding_cost / ⑥ _output_and_report / ⑦ 定数）
-from strat_base import UNIT, CAP, TTL, ENTRY_OFFSET, COST_FLOOR, load_5m, _verify_cap, _funding_cost  # noqa: E402
+from strat_base import UNIT, CAP, TTL, ENTRY_OFFSET, load_5m, _verify_cap, _funding_cost  # noqa: E402
 
 # ── 検証期間（periods.py が唯一の正本・SSOT・手打ち禁止）──
 TRAIN_END = periods.TRAIN_END              # 学習境界（< TRAIN_END で分位 fit）
@@ -62,28 +59,31 @@ SC_START = periods.SCORE_START             # 採点窓 開始（2025-06-01）
 SCORE_END = periods.SEAL_START             # 採点スライスの排他終端＝封印開始
 SEAL_START = periods.SEAL_START            # 封印開始（不参照）
 
-# ── E37 戦略パラメータ（全て a-priori or 学習窓分位・採点窓でスイープしない L-267）──
+# ── E37 v2 戦略パラメータ（全て a-priori or 学習窓分位・採点窓でスイープしない L-267）──
 PRIORITY = 37
 MAX_ADDS = 1                  # スキャル＝単発（1玉を速く回す・cap 0.12 自明）
 TFS = e35_box.TFS             # ['5m','1h','4h']
-# レンジ有効ゲート（ER＝Kaufman Efficiency Ratio・E36 と同じ）
+# レンジ有効ゲート（ER＝Kaufman Efficiency Ratio）
 ER_N = 20                     # ER 窓
 ER_SMOOTH = 5                 # 持続性（過去のみ平滑化＝flicker 抑制）
-ER_Q = 0.5                    # レンジ閾値＝学習窓 ER 分位（a-priori・主役）
-# 短期の行き過ぎ（dev_z=(close−SMA20)/std20・add_indicators 由来）
-Z_IN_Q = 0.90                 # 入口＝学習窓 dev_z 分位（上位decile=買われすぎ・a-priori≈+1.3σ）
-Z_OUT_Q = 0.65                # TP＝学習窓 dev_z 分位（平均近傍へ戻り・a-priori≈+0.4σ）
-# 速い反転確認（スキャル＝E36 の %K(14) より短い 9）
-K9_N = 9                      # 速い %K の窓
-K_HI = 70.0                   # 買われすぎ下限
-# 出口
-T_MAX = 12                    # 時間切れ＝12本=60分（スキャル・短保有・a-priori）
+ER_Q = 0.5                    # レンジ閾値＝学習窓 ER 分位（a-priori）
+# 軽い過熱（dev_z=(close−SMA20)/std20・add_indicators 由来）
+Z_IN_Q = 0.75                 # 入口＝学習窓 dev_z 分位（上位1/4＝軽い過熱・v1 の 0.90 より浅く頻度を出す）
+# 出来高スパイク（買い climax の伸び切り＝板が無い 5m での需給代理・質の主役）
+VOL_N = 20                    # 出来高 rolling 窓
+VOL_Z_MIN = 1.0               # 出来高 z（平均+1σ）以上＝スパイク（a-priori・出来高σ由来）
+# climax→反転の近接窓（過熱＆出来高 climax は「直近 L_LOOK 本以内に起きた」を取る＝同一バー要求の機構ミス回避）
+L_LOOK = 3                    # 直近3本=15分（a-priori・base-up の exhaustion→reversal は別バー）
+# 出口（スキャル＝浅く速く）
+SCALP_FLOOR = 0.0008          # TP 武装の手数料床 0.08%（実 maker 往復0.028%の約3倍・a-priori・E37 ローカル＝strat_base 共有 COST_FLOOR を使わない）
+T_MAX = 6                     # 時間切れ＝6本=30分（スキャル・短保有・v1 60分より短い・a-priori）
+K_SL = 1.5                    # SL 幅＝建値+K_SL×ATR（ATR スケール・base-up §18・a-priori）
 
 
-# ══ ② レンジ判定指標（ER）＝E36 と同じ算式を E37 が自前で持つ（独立・byte 検証可）══
+# ══ ② レンジ判定指標（ER）・出来高スパイク・1h MACD（全て当該足まで＝leak-safe H2）══
 def add_jump_model(df: pd.DataFrame) -> pd.DataFrame:
     """Kaufman Efficiency Ratio = |C_t − C_{t−N}| / Σ|ΔC|（低い=往復=レンジ / 高い=一方向=トレンド）。
-    過去のみの平滑化(ER_SMOOTH)で regime のちらつきを抑える（jump penalty 近似・leak-safe）。"""
+    過去のみの平滑化(ER_SMOOTH)で regime のちらつきを抑える（leak-safe）。"""
     c = df["close"]
     change = (c - c.shift(ER_N)).abs()
     vol = c.diff().abs().rolling(ER_N).sum().replace(0, np.nan)
@@ -91,12 +91,14 @@ def add_jump_model(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def add_fast_stoch(df: pd.DataFrame) -> pd.DataFrame:
-    """速い %K(9,3)（スキャル＝E36 の 14 より短い反転確認・全て当該足まで＝leak-safe）。
-    Stochastic %K = 100×(c−min_low)/(max_high−min_low)・3本平滑。列 k9。"""
-    h, l, c = df["high"], df["low"], df["close"]
-    ll = l.rolling(K9_N).min(); hh = h.rolling(K9_N).max()
-    df["k9"] = (100.0 * (c - ll) / (hh - ll).replace(0, np.nan)).rolling(3).mean()
+def add_vol_z(df: pd.DataFrame) -> pd.DataFrame:
+    """出来高 z スコア vol_z = (volume − rolling平均) / rolling標準偏差（窓 VOL_N・当該足まで＝leak-safe）。
+    高い vol_z＝出来高スパイク＝買い手の最後の押し込み(climax)＝枯れて戻りやすい（板が無い 5m での需給代理）。
+    出来高比＝価格非依存（H6）。当該足の出来高は確定足の値＝leak なし。"""
+    v = df["volume"]
+    m = v.rolling(VOL_N).mean()
+    s = v.rolling(VOL_N).std().replace(0, np.nan)
+    df["vol_z"] = (v - m) / s
     return df
 
 
@@ -115,14 +117,12 @@ def add_htf_macd(df: pd.DataFrame) -> pd.DataFrame:
 
 # ══ DESIGN_CONTRACT 自己チェック（設計通りに入口を組み立てる・成分欠落で自停止＝類型G 物理防止）══
 def _entry_contract() -> dict:
-    """入口の合成契約（must_combine・e37_design.md §12 / §5.2 と同一）。
-    _assemble_signals がこの通りに range_ok/short_entry を AND 組み立て（成分欠落で自停止）。"""
-    return {"range_ok": ["er_ok", "in_box"],
-            "short_entry": ["range_ok", "macd_ok", "ob_dev", "short_rev"]}
+    """入口の合成契約（acceptance §C と同一）。_assemble_signals がこの通りに short_entry を AND 組み立て（成分欠落で自停止）。"""
+    return {"short_entry": ["er_ok", "macd_ok", "over", "vol_exh", "rev"]}
 
 
 def _assemble_signals(components: dict, must_combine: dict) -> dict:
-    """must_combine の通りに合成シグナル（range_ok/short_entry）を AND 組み立てる。
+    """must_combine の通りに合成シグナル（short_entry）を AND 組み立てる。
     要求成分が components に無ければ即停止＝設計通りに実装しないと動かない（自己チェック・類型G物理防止）。"""
     built, pending = {}, dict(must_combine)
     for _ in range(len(pending) + 1):
@@ -148,57 +148,59 @@ def _assemble_signals(components: dict, must_combine: dict) -> dict:
     return built
 
 
-def _build_signals(df: pd.DataFrame, box_tf: str) -> dict:
-    """入口成分（er_ok/in_box/macd_ok/ob_dev/short_rev）を計算し、契約通りに range_ok/short_entry を合成。
-    z_entry/z_er は学習窓分位（< TRAIN_END）＝採点窓 覗き見なし（H8）。全て当該足まで＝leak-safe（H2）。"""
-    sup = df[e35_box.sup_col(box_tf)]
-    res = df[e35_box.res_col(box_tf)]
-    er = df["er"]; dz = df["dev_z"]; k9 = df["k9"]; macd_up = df["htf_macd_up"]
+def _build_signals(df: pd.DataFrame, drop_vol: bool = False) -> dict:
+    """入口成分（er_ok/macd_ok/over/vol_exh/rev）を計算し、契約通りに short_entry を合成。
+    分位は学習窓（< TRAIN_END）＝採点窓 覗き見なし（H8）。全て当該足まで＝leak-safe（H2）。
+    drop_vol=True で vol_exh を恒真にする＝出来高 ON/OFF 対照（F④・H-d 自己検査用）。"""
+    er = df["er"]; dz = df["dev_z"]; vz = df["vol_z"]; macd_up = df["htf_macd_up"]
+    op = df["open"]; cl = df["close"]
     fill = lambda s: s.fillna(False)
     tr = df["ts"] < TRAIN_END
     er_thr = er[tr].quantile(ER_Q)              # レンジ閾値＝学習窓 ER 分位（データ駆動・覗き見なし H8）
-    z_in = dz[tr].quantile(Z_IN_Q)              # 入口 dev_z 閾値＝学習窓分位（買われすぎ）
+    z_in = dz[tr].quantile(Z_IN_Q)              # 入口 dev_z 閾値＝学習窓分位（軽い過熱）
 
-    in_box = sup.notna() & (sup > 0) & res.notna() & (res > 0)
     macd_up_bool = macd_up if macd_up.dtype == bool else (macd_up > 0.5)
+    # 直近 L_LOOK 本以内の最大（setup＝過熱/climax が「最近 起きた」・rolling max は過去+当該足＝leak-safe）
+    dz_recent = dz.rolling(L_LOOK).max()
+    vz_recent = vz.rolling(L_LOOK).max()
+    vol_exh = pd.Series(True, index=df.index) if drop_vol else fill(vz_recent >= VOL_Z_MIN)
     components = {
-        "er_ok": fill(er < er_thr),
-        "in_box": fill(in_box),
-        "macd_ok": fill(~macd_up_bool),                             # 1h MACD≤0（up=False）
-        "ob_dev": fill(dz >= z_in),                                 # 短期 買われすぎ（箱極値を要求しない）
-        "short_rev": fill((k9 > K_HI) & (k9 < k9.shift(1))),        # 速い %K 下降転換
+        "er_ok": fill(er < er_thr),                                  # レンジ regime
+        "macd_ok": fill(~macd_up_bool),                             # 1h MACD≤0（上位足条件）
+        "over": fill(dz_recent >= z_in),                            # 直近に軽い過熱（買われすぎ setup）
+        "vol_exh": vol_exh,                                          # 直近に出来高スパイク（買い climax の伸び切り setup）
+        "rev": fill((cl < op) & (cl < cl.shift(1))),               # 反転バー（下げに転じた trigger・現在バー）
     }
     built = _assemble_signals(components, _entry_contract())        # ★契約通りに合成（成分欠落で自停止）
     return {**components, **built, "er_thr": float(er_thr), "z_in": float(z_in)}
 
 
-def _attach_entry_cols(df: pd.DataFrame, box_tf: str) -> dict:
-    """入口系列（short_entry）を df に付与＋ TP 用 dev_z 戻り閾値 z_out（学習窓分位）を返す。"""
-    sig = _build_signals(df, box_tf)
+def _attach_entry_cols(df: pd.DataFrame) -> dict:
+    """入口系列（short_entry）を df に付与（TP 目標は平均=SMA＝固定の戻り閾値は使わない）。"""
+    sig = _build_signals(df)
     df["short_entry"] = sig["short_entry"].to_numpy()
-    z_out = float(df["dev_z"][df["ts"] < TRAIN_END].quantile(Z_OUT_Q))   # TP 戻り＝学習窓 dev_z 分位（H8）
-    return {**sig, "z_out": z_out}
+    return sig
 
 
 def _load(smoke: int) -> pd.DataFrame:
-    """① 5分足の読み込みは共通土台（strat_base.load_5m）。指標付与は E37 が使う指標。"""
+    """① 5分足の読み込みは共通土台（strat_base.load_5m）。指標付与は E37 v2 が使う指標。"""
     df = load_5m(smoke)
     df = e34v1.add_indicators(df)                 # sma/std/dev_z/atr/adx（taker は呼ばない）
-    df = e34b.add_analysis_features(df)           # bb_mid_slope_pct/stoch_k(14) 等（記録用）
-    df = e35_box.add_box_features(df, verify_leak=(smoke > 0 and smoke <= 60000))
+    df = e34b.add_analysis_features(df)           # stoch_k(14) 等（記録用）
+    df = e35_box.add_box_features(df, verify_leak=(smoke > 0 and smoke <= 60000))   # box_W_pct 記録用
     df = add_jump_model(df)                       # ER（レンジ判定）
-    df = add_fast_stoch(df)                       # 速い %K(9)（反転確認）
-    df = add_htf_macd(df)                         # 1h MACD 符号（ショート寄り regime）
+    df = add_vol_z(df)                            # 出来高スパイク（買い climax の伸び切り）
+    df = add_htf_macd(df)                         # 1h MACD 符号（上位足条件）
     return df
 
 
 # ══ ⑤(戦略別の記録) 売買記録（funding/cap は共通土台・E37 が自前で記録）══
 def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
-    """1 ポジ（単発 lot）を記録。TP=maker・time-exit/box-break/EOD=taker（reason で判定）。
+    """1 ポジ（単発 lot）を記録。TP_FILLED/SL_FILLED=maker（指値）・time-exit/EOD=taker（reason で判定・score.py と一致）。
     net = gross − entry_fee − exit_fee − slip − funding（lot fill 起点・score.py と恒等）。"""
     side = pos["side"]; sdir = -1                       # E37 は SHORT 専用
     exit_ts = pd.Timestamp(ts_arr[exit_idx]); exit_px = float(exit_price)
-    is_taker = reason not in ("TP_FILLED", "EDGE_TP", "BE_EXIT", "PARTIAL_TP")   # TP_FILLED=maker・他=taker
+    is_taker = reason not in ("TP_FILLED", "SL_FILLED", "EDGE_TP", "BE_EXIT", "PARTIAL_TP")   # TP/SL=指値maker・他=taker（score.py MAKER_EXIT_REASONS と一致）
     pos_id = f"{side}_{int(pos['first_idx'])}"
     atr14 = round(float(pos["atr_entry"]), 2)
     adx_e = round(float(pos["adx_entry"]), 3) if np.isfinite(pos["adx_entry"]) else None
@@ -225,19 +227,18 @@ def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
     })
 
 
-# ══ ③ スキャル売買エンジン（連続モード・SHORT 単発・浅TP/60分時間切れ/箱ブレイクSL）══
-def run_continuous(df, box_tf, z_out):
-    """E37 スキャル ショート売買エンジン（単発・MAX_ADDS=1）。
-    入口=指値maker（不約定は積まない）／出口=① 箱ブレイクSL(taker) ② 浅TP=dev_z→z_out 戻り(maker・手数料床武装) ③ 60分time-exit(taker)。
-    z_out=TP 用 dev_z 戻り閾値（学習窓分位・採点窓不参照 H8）。全て当該足まで＝leak-safe（H2）。"""
+# ══ ③ スキャル売買エンジン（連続モード・SHORT 単発・浅TP=平均/30分time-exit/ATR-SL）══
+def run_continuous(df, box_tf):
+    """E37 v2 スキャル ショート売買エンジン（単発・MAX_ADDS=1）。
+    入口=指値maker（不約定は積まない）／出口=① ATR-SL(maker指値) ② 浅TP=平均(SMA)戻り(maker・手数料床武装) ③ 30分time-exit(taker)。
+    全て当該足まで＝leak-safe（H2）。出口は約定 bar の次以降。"""
     n = len(df)
     ts = df["ts"].to_numpy()
     h = df["high"].to_numpy(float); l = df["low"].to_numpy(float); c = df["close"].to_numpy(float)
     atr = df["atr"].to_numpy(float); adx = df["adx"].to_numpy(float); kk = df["stoch_k"].to_numpy(float)
-    sma = df["sma"].to_numpy(float); std = df["std"].to_numpy(float)
+    sma = df["sma"].to_numpy(float)
     sup = df[e35_box.sup_col(box_tf)].to_numpy(float); res = df[e35_box.res_col(box_tf)].to_numpy(float)
-    R = c * (1.0 + res / 100.0)                      # 箱上限（box-break SL 用）
-    Wpct = sup + res
+    Wpct = sup + res                                  # 記録用（box 幅）
     short_sig = df["short_entry"].to_numpy(bool)
 
     trades = []
@@ -266,17 +267,18 @@ def run_continuous(df, box_tf, z_out):
         # ── 3. 出口（約定 bar の次以降＝leak-safe）──
         if pos is not None and i > pos["last_fill_idx"]:
             avg = pos["avg"]
-            # ① 箱ブレイク＝構造的 SL（終値が箱上限 R を上抜け・成行 taker）
-            if np.isfinite(R[i]) and c[i] > R[i]:
-                _record(trades, pos, c[i], "BOX_BREAK_SL", i, ts); pos = None
+            # ① ATR-SL（建値+K_SL×ATR 上抜け＝指値 maker・V9 placePosTpsl と同モデル・SL_FILLED）
+            atr_sl = avg + K_SL * pos["atr_entry"]
+            if np.isfinite(atr_sl) and h[i] >= atr_sl:
+                _record(trades, pos, atr_sl, "SL_FILLED", i, ts); pos = None
                 continue
-            # ② 浅TP（短期平均へ戻り＝dev_z=z_out 水準 sma+z_out·std・指値 maker・手数料床を超える時だけ武装）
-            tp = sma[i] + z_out * std[i] if (np.isfinite(sma[i]) and np.isfinite(std[i])) else np.nan
-            armed = np.isfinite(tp) and tp <= avg * (1.0 - COST_FLOOR)   # SHORT 利＝床を超える時のみ（手数料割れ防止）
+            # ② 浅TP（平均=SMA へ戻り＝小さい戻りで即利確・指値 maker・手数料床 SCALP_FLOOR を超える時だけ武装）
+            tp = sma[i] if np.isfinite(sma[i]) else np.nan
+            armed = np.isfinite(tp) and tp <= avg * (1.0 - SCALP_FLOOR)   # SHORT 利＝床を超える時のみ（手数料割れ防止）
             if armed and l[i] <= tp:
                 _record(trades, pos, tp, "TP_FILLED", i, ts); pos = None
                 continue
-            # ③ 時間切れ（60分＝スキャル短保有・成行 taker）
+            # ③ 時間切れ（30分＝スキャル短保有・成行 taker）
             if (i - pos["first_idx"]) >= T_MAX:
                 _record(trades, pos, c[i], "TIME_EXIT", i, ts); pos = None
                 continue
@@ -292,23 +294,22 @@ def run_continuous(df, box_tf, z_out):
 
 
 # ══ ⑥ 出力（共通土台 strat_base._output_and_report に委譲）＋使用パラメータ（report.py 節0）══
-def _param_sections(z_in: float, z_out: float, er_thr: float) -> dict:
-    """E37 の使用パラメータ（report.py 節0 が表示・read専用メタ・net 計算に不関与）。定数参照（手打ちしない）。"""
+def _param_sections(z_in: float, er_thr: float) -> dict:
+    """E37 v2 の使用パラメータ（report.py 節0 が表示・read専用メタ・net 計算に不関与）。定数参照（手打ちしない）。"""
     return {
         "検証期間（periods正本・E31）": {
             "学習(fit)": f"〜{TRAIN_END.date()} 未満（ER/dev_z 分位をここで fit）",
             "採点(公式net)": f"{SC_START.date()} 〜 {SCORE_END.date()} 未満（学習に使わない）",
             "封印(不参照)": f"{SEAL_START.date()} 以降",
         },
-        "【固定値】レンジ判定ゲート（a-priori・スイープしない）": {
-            "Efficiency Ratio": f"窓{ER_N}本・平滑{ER_SMOOTH}本・学習期間ERの{int(ER_Q*100)}%ile未満=低効率=レンジ（主役）",
-            "箱(多TFレジサポ)": f"{list(TFS)} で 上限R＝box-break SL の枠・in_box＝レンジ内（touch-count 使わない）",
-            "SHORT 入口ゲート(shortset1)": "1h MACD line≤0 のときのみ入口（符号のみ=価格非依存 H6）",
+        "【入口】レンジ regime ＋ 上位足条件": {
+            "Efficiency Ratio": f"窓{ER_N}本・平滑{ER_SMOOTH}本・学習期間ERの{int(ER_Q*100)}%ile未満=低効率=レンジ（学習窓 fit={er_thr:.3f}）",
+            "上位足条件(macd_ok)": "1h MACD line≤0 のときのみ入口（強い上昇を fade しない・符号のみ=価格非依存 H6）",
         },
-        "【固定値】入口＝短期の行き過ぎ＋速い反転（E36 の箱極値 up_zone とは別・スキャルの広い入口）": {
-            "短期の買われすぎ": f"dev_z=(close−SMA20)/std20 ≥ 学習窓 {int(Z_IN_Q*100)}%ile（={z_in:+.2f}・買われすぎ・箱極値を要求しない）",
-            "速い反転確認": f"%K({K9_N},3) > {K_HI} かつ 下降転換（k9<前k9・受け身指値を置かず確認後 maker 指値=contrarian）",
-            "ER 閾値（学習窓 fit 実値）": f"er < {er_thr:.3f}",
+        "【入口】軽い過熱＋出来高伸び切り＋反転（v2＝過熱だけで入らない・setup→trigger 分離）": {
+            "軽い過熱(over・setup)": f"直近{L_LOOK}本以内に dev_z=(close−SMA20)/std20 ≥ 学習窓 {int(Z_IN_Q*100)}%ile（={z_in:+.2f}・v1 の90%ile より浅く頻度を出す）",
+            "出来高スパイク(vol_exh・setup)": f"直近{L_LOOK}本以内に vol_z=(volume−rolling{VOL_N}平均)/std ≥ {VOL_Z_MIN}σ＝買い climax の伸び切り（質の主役・板が無い5mでの需給代理）",
+            "反転バー(rev・trigger)": "現在バーが close<open かつ close<前close（下げに転じた確認＝同一バー要求の機構ミス回避・確認後 maker 指値=contrarian）",
         },
         "【固定値】サイズ・add（スキャル＝単発）": {
             "予算上限": f"全建玉(LONG+SHORT)合計 {CAP} BTC（H1・全採用戦略の共有枠・1建玉でない）",
@@ -316,64 +317,65 @@ def _param_sections(z_in: float, z_out: float, er_thr: float) -> dict:
             "指値": f"close×(1+{ENTRY_OFFSET})・TTL {TTL}本(={TTL*5}分)・不約定は積まない（maker限定）",
             "方向": "SHORT 専用（LONG 入口は出さない）",
         },
-        "【固定値】Exit（スキャル＝浅く速く・新 exit_reason を作らない）": {
-            "TP利確 TP_FILLED(maker指値)": f"短期平均へ戻り＝価格が dev_z={int(Z_OUT_Q*100)}%ile 水準(sma+{z_out:+.2f}·std)へ（浅TP）",
-            "TP武装条件": f"建値−{COST_FLOOR*100:.2f}%(COST_FLOOR)を超える時だけTPを置く（小TPの手数料割れ防止）",
+        "【出口】スキャル＝浅く速く（新 exit_reason を作らない）": {
+            "TP利確 TP_FILLED(maker指値)": "平均(SMA)へ戻り＝小さい戻りで即利確（浅TP）",
+            "TP武装条件": f"建値−{SCALP_FLOOR*100:.2f}%(SCALP_FLOOR)を超える時だけTPを置く（小TPの手数料割れ防止・実maker往復0.028%の約3倍）",
             "時間切れ TIME_EXIT(成行)": f"初回entryから {T_MAX}本 = {T_MAX*5}分で未決済なら撤退（スキャル＝短保有）",
-            "SL損切り BOX_BREAK_SL(成行)": "箱が壊れたら撤退（終値が上限R上抜け）＝固定%でなく構造的",
+            "SL損切り SL_FILLED(maker指値)": f"建値+{K_SL}×ATR を上抜けで損切り（ATR スケール＝固定%でない・V9 placePosTpsl と同 maker モデル）",
         },
         "【固定値】コスト（eval_engine・確定値・改造禁止）": {
             "maker手数料": f"{ee.MAKER_FEE*100:.3f}%", "taker手数料": f"{ee.TAKER_FEE*100:.3f}%",
             "slippage": f"{ee.SLIPPAGE*100:.3f}%（taker時のみ）", "funding": f"{ee.FUNDING_RATE_8H*100:.4f}% / 8h",
         },
         "【学習した内容】（学習窓データで決定・採点窓は使わない）": {
-            "ER レンジ閾値・dev_z 入口/戻り閾値": f"学習窓 %ile で決定（er<{er_thr:.3f} / z_entry={z_in:+.2f} / z_exit={z_out:+.2f}・採点窓不参照）",
+            "ER レンジ閾値・dev_z 入口閾値": f"学習窓 %ile で決定（er<{er_thr:.3f} / z_entry={z_in:+.2f}・採点窓不参照）",
         },
     }
 
 
-def _output_and_report(t: pd.DataFrame, suffix: str, z_in, z_out, er_thr, tag=None) -> None:
+def _output_and_report(t: pd.DataFrame, suffix: str, z_in, er_thr, tag=None) -> None:
     """E37 の出力（命名/archive/上書き防止/CSV3分割/サイドカーは共通土台に委譲）。"""
     strat_base._output_and_report(
         t, suffix, stem="e37_range_scalp_short",
-        strategy="E37 レンジ・スキャル ショート（短期dev_z入口×浅TP・60分time-exit）",
+        strategy="E37 レンジ・スキャル ショート v2（出来高伸び切り×上位足条件×浅TP/30分time-exit/ATR-SL）",
         script="e37_range_scalp_short.py",
-        sections=_param_sections(z_in, z_out, er_thr), tag=tag)
+        sections=_param_sections(z_in, er_thr), tag=tag)
 
 
 def run_e37(df, box_tf, tag=None):
-    """E37 ベース v1 を回す（連続モード・SHORT 単発・スキャル出口）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。"""
+    """E37 v2 を回す（連続モード・SHORT 単発・スキャル出口）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。"""
     src = pathlib.Path(__file__).read_text(encoding="utf-8")
     _p1 = "shift(" + "-"; _p2 = "center" + "=True"
     assert _p1 not in src and _p2 not in src, "leak 疑い（未来参照 shift/center）"   # H2 自己 grep
-    ctx = _attach_entry_cols(df, box_tf)
-    z_in, z_out, er_thr = ctx["z_in"], ctx["z_out"], ctx["er_thr"]
-    trades = run_continuous(df, box_tf, z_out)
+    ctx = _attach_entry_cols(df)
+    z_in, er_thr = ctx["z_in"], ctx["er_thr"]
+    trades = run_continuous(df, box_tf)
     t = pd.DataFrame(trades)
     if len(t):
         t["entry_time"] = pd.to_datetime(t["entry_time"]); t["exit_time"] = pd.to_datetime(t["exit_time"])
         mx = _verify_cap(trades)                       # 自己検査: cap 実測（H1・score.assert_hard_constraints と同式）
         print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
         assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
-    # ★出力名: 実験は必ず --tag で連番（_<tag>_<NNN>）。タグ無しの既定は dev スクラッチ名（"base" 等の採否を pre-declare する語は使わない＝採用は結果を見てから決める・まこさん 2026-06-29）。
-    _output_and_report(t, f"_{box_tf}_dev", z_in, z_out, er_thr, tag=tag)
+    # ★出力名: 実験は必ず --tag で連番（_<tag>_<NNN>）。タグ無しの既定は dev スクラッチ名（"base" 等の採否を pre-declare する語は使わない）。
+    _output_and_report(t, f"_{box_tf}_dev", z_in, er_thr, tag=tag)
 
 
 def _diagnostic(df, box_tf):
-    """発火ファネル（採点しない・期待件数の宣言）＝各ゲートが何バーに削ったか・E37 の高頻度狙いと照合。"""
-    sig = _build_signals(df, box_tf)
+    """発火ファネル（採点しない・期待件数の宣言）＋出来高 ON/OFF 対照（F④・H-d）。"""
+    sig = _build_signals(df)
+    sig_novol = _build_signals(df, drop_vol=True)        # 出来高条件を外した版（対照）
     n = len(df)
     days = max((df["ts"].iloc[-1] - df["ts"].iloc[0]).total_seconds() / 86400.0, 1.0)
     def cnt(s): return int(np.asarray(s.fillna(False)).sum())
     print("=" * 100)
-    print(f"[E37 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日 / box={box_tf} / ER閾値={sig['er_thr']:.3f} / dev_z入口閾値={sig['z_in']:+.2f}")
-    print(f"  er_ok(ER<分位)         : {cnt(sig['er_ok']):>8,} 本")
-    print(f"  in_box(箱内)           : {cnt(sig['in_box']):>8,} 本")
-    print(f"  range_ok(er_ok∩in_box) : {cnt(sig['range_ok']):>8,} 本")
+    print(f"[E37 v2 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日 / box={box_tf} / ER閾値={sig['er_thr']:.3f} / dev_z入口閾値={sig['z_in']:+.2f}")
+    print(f"  er_ok(ER<分位レンジ)   : {cnt(sig['er_ok']):>8,} 本")
     print(f"  macd_ok(1h MACD≤0)     : {cnt(sig['macd_ok']):>8,} 本")
-    print(f"  ob_dev(dev_z≥分位)     : {cnt(sig['ob_dev']):>8,} 本")
-    print(f"  short_rev(速い%K反転)  : {cnt(sig['short_rev']):>8,} 本")
+    print(f"  over(dev_z≥分位・軽過熱): {cnt(sig['over']):>8,} 本")
+    print(f"  vol_exh(出来高≥{VOL_Z_MIN}σ)   : {cnt(sig['vol_exh']):>8,} 本")
+    print(f"  rev(反転バー)          : {cnt(sig['rev']):>8,} 本")
     print(f"  → SHORT_ENTRY 発火     : {cnt(sig['short_entry']):>8,} 本（{cnt(sig['short_entry'])/days:.2f} 本/日・候補数＝実約定はTTL/単発で減る）")
+    print(f"  〔対照〕出来高条件 OFF  : {cnt(sig_novol['short_entry']):>8,} 本（{cnt(sig_novol['short_entry'])/days:.2f} 本/日）＝vol_exh が削る量（H-d・出来高が質を選別）")
     print(f"  ※ E36 base は 1.05 件/日（デイトレ）。E37=スキャルは数倍を狙う（実際の件数は本走の score 対象 CSV で確認）")
     print("=" * 100)
 
@@ -382,11 +384,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--box-tf", choices=TFS, default="5m")
     ap.add_argument("--smoke", type=int, default=0, help="先頭 N バーだけで動作確認")
-    ap.add_argument("--diagnostic", action="store_true", help="発火ファネル（期待件数）だけ出す＝採点しない")
+    ap.add_argument("--diagnostic", action="store_true", help="発火ファネル（期待件数）＋出来高 ON/OFF 対照だけ出す＝採点しない")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）。未指定=dev スクラッチ名 _<box_tf>_dev（採否を pre-declare する語=base 等は使わない）")
     a = ap.parse_args()
     print("=" * 100)
-    print("[E37] レンジ・スキャル ショート ベース v1（短期dev_z入口×浅TP・60分time-exit／E36 デイトレと住み分け）")
+    print("[E37 v2] レンジ・スキャル ショート（出来高伸び切り×上位足条件×浅TP/30分time-exit/ATR-SL・E36 デイトレと住み分け）")
     df = _load(a.smoke)
     print(f"  価格 {e34v1.CSV.name}（{len(df):,}本・{df.ts.iloc[0].date()}〜{df.ts.iloc[-1].date()}）")
     print(f"  計器 maker {ee.MAKER_FEE} / taker {ee.TAKER_FEE} / slip {ee.SLIPPAGE} / funding {ee.FUNDING_RATE_8H}/8h / unit {UNIT}")
