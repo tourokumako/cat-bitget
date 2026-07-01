@@ -94,6 +94,9 @@ def main():
     ap.add_argument("csv"); ap.add_argument("--train"); ap.add_argument("--candles")
     ap.add_argument("--vs", help="前回ベースラインCSV（KB §0 前後比較・件数/net/avg/勝率を並べ激減を警告）")
     a = ap.parse_args()
+    if a.vs and not Path(a.vs).exists():             # ★--vs 指定時はファイル実在を必須化（前後比較を黙ってスキップしない・まこさん 2026-07-02）
+        sys.exit(f"[STOP] analyze.py: --vs のベースラインCSVが存在しません: {a.vs}\n"
+                 f"  → 前後比較(KB §0 大原則1＝最重要)を黙ってスキップさせない。正しいパス(archive/ 配下含む)を確認して再実行。")
     d = _load(a.csv)
     global BANDS
     BANDS = {k: v for k, v in BANDS.items() if v[0] in d.columns}   # 実在カラムのみ（戦略非依存・E35 crash 回避）
