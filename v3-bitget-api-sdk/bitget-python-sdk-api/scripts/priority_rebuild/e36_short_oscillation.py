@@ -160,14 +160,17 @@ def _build_signals_for_tf(df: pd.DataFrame, tf: str, w_lo: float, w_hi: float) -
     return {**components, **built, "W": W}
 
 
-def _w_band(df: pd.DataFrame, tf: str, tr_mask: pd.Series) -> tuple:
-    """学習(< periods.TRAIN_END)の in_box バーの W 分布から [q0.25, q0.75]（データ駆動・覗き見なし H8）。"""
+def _box_w_band(df: pd.DataFrame, tf: str, tr_mask: pd.Series, wide_box_q=None) -> tuple:
+    """学習(< periods.TRAIN_END)の in_box バーの W 分布から [q_lo, q_hi]（データ駆動・覗き見なし H8）。
+    wide_box_q（None=現行 W_Q_HI=0.75 で恒等）を渡すと上限分位だけ緩め、広い高ATR箱を w_ok に通す
+    （E36 高ATR発火拡張・既定OFF恒等・採点窓不参照 L-267）。"""
     sup = df[e35_box.sup_col(tf)]; res = df[e35_box.res_col(tf)]
     in_box = sup.notna() & (sup > 0) & res.notna() & (res > 0)
     W = (sup + res)[(in_box & tr_mask).fillna(False)]
     if len(W) == 0:
         return float("nan"), float("nan"), 0
-    return float(W.quantile(W_Q_LO)), float(W.quantile(W_Q_HI)), int(len(W))
+    hi_q = W_Q_HI if wide_box_q is None else wide_box_q
+    return float(W.quantile(W_Q_LO)), float(W.quantile(hi_q)), int(len(W))
 
 
 def add_htf_macd(df: pd.DataFrame) -> pd.DataFrame:
@@ -184,10 +187,10 @@ def add_htf_macd(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _attach_entry_cols(df: pd.DataFrame, box_tf: str) -> tuple:
+def _attach_entry_cols(df: pd.DataFrame, box_tf: str, wide_box_q=None) -> tuple:
     """指定 box_tf の入口系列（long_entry/short_entry）を df に付与し W 帯を返す。"""
     tr_mask = df.ts < TRAIN_END
-    lo, hi, nW = _w_band(df, box_tf, tr_mask)
+    lo, hi, nW = _box_w_band(df, box_tf, tr_mask, wide_box_q)
     sig = _build_signals_for_tf(df, box_tf, lo, hi)
     df["long_entry"] = sig["long_entry"].to_numpy()
     df["short_entry"] = sig["short_entry"].to_numpy()
@@ -383,7 +386,7 @@ def spike_stat(c: np.ndarray, K: int) -> np.ndarray:
 
 
 # ── 件数レバー（E36 freq-iter1）: 強レンジ限定で SHORT 反転ゾーンを広げて新規発火を増やす ──
-def _widen_short_zone(df, box_tf, z_wide, er_strong_q):
+def _widen_short_zone(df, box_tf, z_wide, er_strong_q, wide_box_q=None):
     """強レンジ（ER が学習窓 q(er_strong_q) 未満＝強い平均回帰）のバーだけ、SHORT 反転ゾーンを
     W×ZONE_FRAC(=0.25) → W×z_wide に広げて short_entry を再計算する（zone_short レバー）。
     本ファイルの入口成分（_build_signals_for_tf の range_ok / short_rev / up_zone / in_box / W）を流用＝重複実装しない。
@@ -391,7 +394,7 @@ def _widen_short_zone(df, box_tf, z_wide, er_strong_q):
     返り値: (er_strong閾値, strongバー数, 拡大前SHORT発火数, 拡大後SHORT発火数)。"""
     assert z_wide > ZONE_FRAC, f"z_wide({z_wide}) は現行 ZONE_FRAC({ZONE_FRAC}) より大きく（広げる方向のみ）"
     res = df[e35_box.res_col(box_tf)]
-    lo, hi, _nW = _w_band(df, box_tf, df["ts"] < TRAIN_END)
+    lo, hi, _nW = _box_w_band(df, box_tf, df["ts"] < TRAIN_END, wide_box_q)
     sig = _build_signals_for_tf(df, box_tf, lo, hi)            # range_ok / short_rev / up_zone / in_box / W
     in_box = sig["in_box"]; W = sig["W"]
     er_strong = float(df["er"][df["ts"] < TRAIN_END].quantile(er_strong_q))   # 学習窓 fit（採点窓不参照・H8）
@@ -405,7 +408,7 @@ def _widen_short_zone(df, box_tf, z_wide, er_strong_q):
 
 
 # ── 件数レバー（E36 freq-iter2）: SHORT 反転確認の「%K>70 下限」を外し下降のみ（%K<前%K）に ──
-def _short_rev_nofloor(df, box_tf, zone_params):
+def _short_rev_nofloor(df, box_tf, zone_params, wide_box_q=None):
     """SHORT 反転確認を %K>70∩下降 → 下限なし・下降のみ（%K<前%K）に置き換えて short_entry を再合成
     する（rev_nofloor レバー・freq-iter2）。"高い所で売る" の担保は up_zone（箱上端ゾーン）に任せ、%K>70 の
     買われすぎ下限を外す（%K>70 と up_zone の二重を解消）。入口ファネル分解（採点窓78,624バー）で反転確認が
@@ -414,7 +417,7 @@ def _short_rev_nofloor(df, box_tf, zone_params):
     zone_params=(z_wide, er_strong_q) なら freq-iter1 と同じ強レンジ拡大 up_zone を併用（合成）／None なら base up_zone。
     本ファイルの入口成分（range_ok / up_zone / in_box / W）流用・LONG は触らない（SHORT 専用）。
     全て当該足と1本前のみ＝leak-safe（H2）。返り値: (置換前SHORT発火数, 置換後SHORT発火数, 下降バー数)。"""
-    lo, hi, _nW = _w_band(df, box_tf, df["ts"] < TRAIN_END)
+    lo, hi, _nW = _box_w_band(df, box_tf, df["ts"] < TRAIN_END, wide_box_q)
     sig = _build_signals_for_tf(df, box_tf, lo, hi)            # range_ok / up_zone / in_box / W / short_rev
     # up_zone（zone レバー併用なら強レンジで拡大・freq-iter1 _widen_short_zone と同じ算式）
     if zone_params is not None:
@@ -1184,6 +1187,7 @@ def main():
     # ★採用（2026-06-22 まこさん GO）= 件数レバー freq-iter1 が既定（強レンジで SHORT 反転ゾーン拡大・採点窓 $548.74・両窓 net 改善・件数 1.05/日）。
     ap.add_argument("--no-zone", action="store_true", help="件数レバー（freq-iter1）を OFF（=ゾーン拡大なし恒等参照・E36 gated spike $539.06）")
     ap.add_argument("--zone-wide", type=float, default=0.35, help="件数レバー（freq-iter1・既定 0.35＝採用）: 強レンジで SHORT 反転ゾーンを W×0.25→W×この値 に拡大")
+    ap.add_argument("--wide-box-q", type=float, default=None, help="(E36 高ATR発火拡張) W正常帯の上限分位を緩め広い高ATR箱を入口候補(w_ok)に通す。既定 None=現行 W_Q_HI=0.75 で恒等。値は学習窓の箱幅分布から算出（採点窓不参照 L-267）。高ATR(avg$14-16)の取りこぼしを拾う・保有/出口/add/判別器/サイジングは不変")
     ap.add_argument("--zone-er-q", type=float, default=0.25, help="強レンジ判定の学習窓 ER 分位（ER<この分位=強い平均回帰のバーだけ拡大・a-priori 0.25・採点窓スイープ禁止 L-267）")
     # 件数レバー freq-iter2（検証中・既定OFF=恒等）= 反転確認の買われすぎ下限を外し下降のみ（%K<前%K）に。
     ap.add_argument("--rev-nofloor", action="store_true", help="反転確認を %K>70∩下降 → 下限なし・下降のみ（%K<前%K）に置換（freq-iter2・件数増の検証・up_zoneが高値圏を担保）。既定OFF=恒等")
@@ -1212,18 +1216,18 @@ def main():
     print(f"  価格 {e34v1.CSV.name}（{len(df):,}本・{df.ts.iloc[0].date()}〜{df.ts.iloc[-1].date()}）")
     print(f"  計器 maker {ee.MAKER_FEE} / taker {ee.TAKER_FEE} / slip {ee.SLIPPAGE} / funding {ee.FUNDING_RATE_8H}/8h / unit {UNIT}")
 
-    lo, hi, nW, _sig = _attach_entry_cols(df, a.box_tf)
+    lo, hi, nW, _sig = _attach_entry_cols(df, a.box_tf, a.wide_box_q)
     print(f"  box={a.box_tf} W正常帯=[{lo:.3f}%,{hi:.3f}%]（in_box 学習 {nW:,}本）/ 入口発火 SHORT {int(df['short_entry'].sum())}")
     if a.no_zone:
         zone_short = None
         print(f"  [zone拡大 OFF＝恒等参照] 反転ゾーン {ZONE_FRAC} のまま（E36 gated spike $539.06 と一致）")
     else:
-        er_s, n_strong, n_b, n_a = _widen_short_zone(df, a.box_tf, a.zone_wide, a.zone_er_q)
+        er_s, n_strong, n_b, n_a = _widen_short_zone(df, a.box_tf, a.zone_wide, a.zone_er_q, a.wide_box_q)
         zone_short = (a.zone_wide, a.zone_er_q)
         print(f"  [zone拡大 ON・freq-iter1＝採用] 強レンジ(er<q{a.zone_er_q}={er_s:.3f}) {n_strong:,}本で反転ゾーン {ZONE_FRAC}→{a.zone_wide}"
               f" / SHORT 入口発火 {n_b}→{n_a}（+{n_a-n_b}）")
     if a.rev_nofloor:
-        nb2, na2, n_dn = _short_rev_nofloor(df, a.box_tf, zone_short)
+        nb2, na2, n_dn = _short_rev_nofloor(df, a.box_tf, zone_short, a.wide_box_q)
         print(f"  [反転確認=下限なし下降のみ・freq-iter2＝検証] %K>70 下限を外し %K<前%K（下降）{n_dn:,}本"
               f" / SHORT 入口発火 {nb2}→{na2}（{'+' if na2>=nb2 else ''}{na2-nb2}・up_zoneが高値圏を担保）")
     if a.dying_cut:
