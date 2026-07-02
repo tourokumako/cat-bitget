@@ -79,6 +79,7 @@ def main():
     ap.add_argument("--end", default=None, help="表示終了 YYYY-MM-DD（省略時=データ末尾）")
     ap.add_argument("--side", default=None, choices=["LONG", "SHORT"], help="片方向だけ表示（既定=両方）")
     ap.add_argument("--out", default=None, help=f"出力PNG（既定={VIZ_DIR} に自動命名）")
+    ap.add_argument("--label", default=None, help="タイトル先頭に付けるカテゴリ名（例: トレード数最大／net利益最小）。表示のみ＝net/売買データは一切変えない")
     a = ap.parse_args()
 
     trades_path = _resolve_trades(a.trades)
@@ -133,6 +134,8 @@ def main():
            f"建玉{npos}（{pos_pd:.1f}/日）・レグ{len(tr)}（{leg_pd:.1f}/日）・net ${net:.1f}・勝率{wr:.0f}%")
     if a.side:
         ttl += f"（{a.side}のみ）"
+    if a.label:
+        ttl = f"【{a.label}】 " + ttl        # カテゴリ名を先頭に（表示のみ・データ不変）
     ax.set_title(ttl, fontsize=12)
     ax.set_xlabel("時刻"); ax.set_ylabel("Price (USD)")
 

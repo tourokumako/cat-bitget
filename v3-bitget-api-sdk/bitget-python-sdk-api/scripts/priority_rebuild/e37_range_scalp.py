@@ -52,156 +52,67 @@ import e35_box                                 # noqa: E402  箱特徴（フラ�
 import periods                                 # noqa: E402  検証期間の唯一の正本（SSOT）
 import strat_base                              # noqa: E402  ★全戦略共通の土台
 from strat_base import UNIT, CAP, TTL, ENTRY_OFFSET, load_5m, _verify_cap, _funding_cost  # noqa: E402
-from periods import TRAIN_END as _P_TRAIN_END  # noqa: E402,F401  SSOT（境界は periods 由来・手打ち禁止 H8）
-
-from sklearn.linear_model import LogisticRegression  # noqa: E402
-from sklearn.preprocessing import StandardScaler      # noqa: E402
 
 # ── 検証期間（periods.py が唯一の正本・SSOT・手打ち禁止）──
-TRAIN_END = periods.TRAIN_END              # 学習境界（< TRAIN_END で分位 fit・range_score fit）
+TRAIN_END = periods.TRAIN_END              # 学習境界（< TRAIN_END で分位 fit）
 SC_START = periods.SCORE_START             # 採点窓 開始（2025-06-01）
 SCORE_END = periods.SEAL_START             # 採点スライスの排他終端＝封印開始
 SEAL_START = periods.SEAL_START            # 封印開始（不参照）
 
-DATA = e34v1.CSV.parent                     # data/ ディレクトリ（絶対パスを手打ちしない）
-HUMAN_CSV = DATA / "regime_ground_truth_daily_human.csv"   # まこさん手動 regime ラベル（range_score の教師）
-OI_CSV = DATA / "oi_BTCUSDT_5y.csv"                         # taker_ls（ダイバ判定・無い期間は RSI fallback）
-
-# ── E37 MVP 戦略パラメータ（全て a-priori or 学習窓分位・採点窓でスイープしない L-267）──
+# ── E37 v3 戦略パラメータ（向き無し両側 maker MR スキャル・全て a-priori or 学習窓分位・採点窓スイープ禁止 L-267）──
 PRIORITY = 37
 MAX_ADDS = 1                  # スキャル＝単発（単一スロット・cap 0.12 自明）
-W_GEO = 288                   # レンジ幾何の causal 窓＝過去1日（5m×288・a-priori）
-DIV_N = 12                    # ダイバ判定の lookback（12本=60分・a-priori・probe と同じ）
-RSI_N = 14                    # RSI（taker_ls 無い期間の fallback・a-priori）
-Z_LO_Q, Z_HI_Q = 0.25, 0.75  # 入口 dev_z 分位（下端 q25 / 上端 q75・学習窓 fit）
-ATR_HI_Q = 2.0 / 3.0         # 高ATR フィルタ分位（学習窓 fit）
-SCALP_FLOOR = 0.0008          # TP 武装の手数料床 0.08%（実 maker 往復0.028%の約3倍・a-priori）
-T_MAX = 6                     # 時間切れ＝6本=30分（スキャル短保有・a-priori）
-K_SL = 1.5                    # SL 幅＝建値±K_SL×ATR（ATR スケール・a-priori）
-# range_score の材料＝検証済み S/R幾何（e35_box）＋causal な幅・往復（束ねて連続スコア＝硬い1本ルールでない）
-SCORE_FEATS = ["box_strength__5m", "box_strength__1h", "box_strength__4h",
-               "box_sup_dist__1h", "box_res_dist__1h", "box_sup_dist__4h", "box_res_dist__4h",
-               "donch_width_pct", "flips"]
+Z_LO_Q, Z_HI_Q = 0.30, 0.70  # 入口 dev_z 分位（下端 q30 / 上端 q70・学習窓 fit・MVP q25/q75 より緩め＝件数↑）
+ADX_HI_Q = 0.60              # 「強トレンド除外」フィルタ分位（adx<学習窓 q60＝非トレンド地合い＝レンジ8割を通す）
+TREND_DZ = 0.60             # トレンド化 早切り: 保有中 dev_z が entry から更に TREND_DZ 拡大＝反転せず伸びた（a-priori σ比）
+SCALP_FLOOR = 0.0008         # TP 武装の手数料床 0.08%（実 maker 往復0.028%の約3倍・a-priori）
+T_MAX = 6                    # 時間切れ＝6本=30分（スキャル短保有・a-priori）
+K_SL = 2.0                   # SL backstop 幅＝建値±K_SL×ATR（トレンド暴走の最終防波堤・a-priori）
 
 
 # ══ ② 特徴量（全て当該足まで＝leak-safe H2・価格非依存 H6）══
-def _merge_taker_ls(df: pd.DataFrame) -> pd.DataFrame:
-    """taker_ls（買い/売り比）を 5m へ backward-merge（確定値のみ・当該足まで）。oi データ末以降は NaN（→ RSI fallback）。"""
-    oi = pd.read_csv(OI_CSV, parse_dates=["time"])[["time", "taker_ls"]]
-    df = pd.merge_asof(df.sort_values("ts"), oi.sort_values("time"),
-                       left_on="ts", right_on="time", direction="backward", tolerance=pd.Timedelta("5min"))
-    return df.drop(columns=["time"]).reset_index(drop=True)
-
-
-def _add_geo(df: pd.DataFrame) -> pd.DataFrame:
-    """causal なレンジ幾何: donchian幅%（過去W の値幅／close）と往復回数 flips（中心線を跨いだ回数）。全て過去のみ＝leak-safe。"""
-    c = df["close"]
-    box_hi = df["high"].rolling(W_GEO).max()
-    box_lo = df["low"].rolling(W_GEO).min()
-    mid = (box_hi + box_lo) / 2.0
-    df["donch_width_pct"] = (box_hi - box_lo) / c                       # 値幅（狭い=レンジ寄り）
-    df["flips"] = (c > mid).astype(float).diff().abs().rolling(W_GEO).sum()   # 中心線の往復（多い=行き来）
-    return df
-
-
 def _add_rsi(df: pd.DataFrame) -> pd.DataFrame:
-    """RSI14（taker_ls 無い期間のダイバ fallback・当該足まで＝leak-safe・0-100 無次元）。"""
-    d = df["close"].diff()
-    up = d.clip(lower=0).rolling(RSI_N).mean()
-    dn = (-d.clip(upper=0)).rolling(RSI_N).mean().replace(0, np.nan)
-    df["rsi14"] = 100.0 - 100.0 / (1.0 + up / dn)
-    df["atr_pct"] = df["atr"] / df["close"] * 100.0                     # 高ATR フィルタ用（%＝価格非依存 H6）
+    """atr_pct（記録用・% ＝価格非依存 H6）を付ける。"""
+    df["atr_pct"] = df["atr"] / df["close"] * 100.0
     return df
 
 
-def _add_divergence(df: pd.DataFrame) -> pd.DataFrame:
-    """強気/弱気ダイバ: 価格が DIV_N 本の安値/高値を更新したのに、需給指標（taker_ls／無ければ RSI14）が更新しない背離。
-    taker_ls あり=probe と同式（px_lo ∩ ~tls_lo）。taker_ls 無=RSI で代替（px_lo ∩ ~rsi_lo）。全て当該足まで＝leak-safe。"""
-    c = df["close"]
-    px_lo = c <= c.rolling(DIV_N).min()
-    px_hi = c >= c.rolling(DIV_N).max()
-    tls = df["taker_ls"]
-    has_tls = tls.notna()
-    tls_lo = tls <= tls.rolling(DIV_N).min()
-    tls_hi = tls >= tls.rolling(DIV_N).max()
-    rsi = df["rsi14"]
-    rsi_lo = rsi <= rsi.rolling(DIV_N).min()
-    rsi_hi = rsi >= rsi.rolling(DIV_N).max()
-    div_lo = has_tls.where(has_tls, other=False) & tls_lo | (~has_tls) & rsi_lo   # 需給が安値更新
-    div_hi = has_tls & tls_hi | (~has_tls) & rsi_hi                               # 需給が高値更新
-    df["bull_div"] = (px_lo & ~div_lo).fillna(False)      # 価格は安値更新・需給は更新せず＝強気背離
-    df["bear_div"] = (px_hi & ~div_hi).fillna(False)      # 価格は高値更新・需給は更新せず＝弱気背離
-    return df
-
-
-def _add_labels(df: pd.DataFrame) -> pd.DataFrame:
-    """まこさん手動 regime ラベル（range/uptrend/downtrend）を各5mバーの日付へ貼る（range_score の教師）。"""
-    human = pd.read_csv(HUMAN_CSV, parse_dates=["date"])
-    rmap = dict(zip(human["date"].dt.normalize(), human["label"]))
-    lab = df["ts"].dt.normalize().map(rmap)
-    df["reg_label"] = lab
-    df["is_range"] = (lab == "range").astype(float)
-    return df
-
-
-# ══ ② レンジ学習ゲート range_score（S/R幾何を LogisticRegression で束ねる・学習窓のみ fit＝leak-safe H2/H8）══
-def _fit_range_score(df: pd.DataFrame) -> float:
-    """検証済み S/R幾何を1つの「レンジらしさ点数」range_score に束ねる。
-    教師=まこさん range ラベル・fit は学習窓の行だけ（採点窓 覗き見なし）・全行に predict。THR=学習窓 range 比率分位（a-priori）。
-    return THR。"""
-    tr = (df["ts"] < TRAIN_END) & df["reg_label"].notna()
-    feat_ok = df[SCORE_FEATS].notna().all(axis=1)
-    fit_rows = tr & feat_ok
-    Xtr = df.loc[fit_rows, SCORE_FEATS].to_numpy(float)
-    ytr = df.loc[fit_rows, "is_range"].to_numpy(int)
-    scaler = StandardScaler().fit(Xtr)
-    clf = LogisticRegression(max_iter=2000, class_weight="balanced").fit(scaler.transform(Xtr), ytr)
-    # 全行に predict（特徴 NaN の行は score=NaN＝入口不可）
-    sc = np.full(len(df), np.nan)
-    ok = df[SCORE_FEATS].notna().all(axis=1).to_numpy()
-    sc[ok] = clf.predict_proba(scaler.transform(df.loc[ok, SCORE_FEATS].to_numpy(float)))[:, 1]
-    df["range_score"] = sc
-    base_rate = float(ytr.mean())
-    THR = float(np.nanquantile(sc[df["ts"].to_numpy() < np.datetime64(TRAIN_END)], 1.0 - base_rate))
-    return THR
-
-
-# ══ ② 入口信号（両サイド・分位は学習窓 fit＝H8・当該足まで＝H2）══
+# ══ ② 入口信号（向き無し両側 micro 反転・分位は学習窓 fit＝H8・当該足まで＝H2）══
 def _build_signals(df: pd.DataFrame) -> dict:
-    """long_sig / short_sig を組み立てる。range_score を fit→THR、dev_z/atr_pct 分位を学習窓で fit。
-    直接式で AND（range_score/dev_z/atr_pct/*_div を連結）＝設計と一目で照合可能。"""
-    THR = _fit_range_score(df)
+    """long_sig / short_sig を組み立てる（向きを賭けない両側 maker MR スキャル）。
+    ① not_trend（adx<学習窓 q ADX_HI_Q＝強トレンドでない地合い＝レンジ8割を通す・件数を殺さない）
+    ② micro_rev（短期 dev_z が学習窓分位を超える行き過ぎ ∩ 反転バー＝反対側へ maker 指値）。
+    向きスコアを持たず、上げ過ぎは売り・下げ過ぎは買いの両側で戻り幅を取る（H15＝向き当てをしない）。"""
     tr = df["ts"] < TRAIN_END
     Z_LO = float(df.loc[tr, "dev_z"].quantile(Z_LO_Q))
     Z_HI = float(df.loc[tr, "dev_z"].quantile(Z_HI_Q))
-    ATR_HI = float(df.loc[tr, "atr_pct"].quantile(ATR_HI_Q))
+    ADX_HI = float(df.loc[tr, "adx"].quantile(ADX_HI_Q))
 
-    range_score = df["range_score"]
     dev_z = df["dev_z"]
-    atr_pct = df["atr_pct"]
-    bull_div = df["bull_div"].astype(bool)
-    bear_div = df["bear_div"].astype(bool)
-    range_ok = (range_score >= THR).fillna(False)
+    adx = df["adx"]
+    o = df["open"]
+    c = df["close"]
+    not_trend = (adx < ADX_HI).fillna(False)                      # 強トレンドでない地合い（レンジ寄り）
+    micro_rev_short = ((dev_z >= Z_HI) & (c < o)).fillna(False)   # 上に行き過ぎ ∩ 陰転＝売り上がり
+    micro_rev_long = ((dev_z <= Z_LO) & (c > o)).fillna(False)    # 下に行き過ぎ ∩ 陽転＝買い下がり
 
-    long_sig = (range_ok & (dev_z <= Z_LO) & bull_div & (atr_pct >= ATR_HI)).fillna(False)
-    short_sig = (range_ok & (dev_z >= Z_HI) & bear_div & (atr_pct >= ATR_HI)).fillna(False)
+    short_sig = (not_trend & micro_rev_short).fillna(False)
+    long_sig = (not_trend & micro_rev_long).fillna(False)
     df["long_sig"] = long_sig.to_numpy(bool)
     df["short_sig"] = short_sig.to_numpy(bool)
-    return {"THR": THR, "Z_LO": Z_LO, "Z_HI": Z_HI, "ATR_HI": ATR_HI,
-            "range_ok": range_ok, "long_sig": long_sig, "short_sig": short_sig}
+    return {"Z_LO": Z_LO, "Z_HI": Z_HI, "ADX_HI": ADX_HI,
+            "not_trend": not_trend, "long_sig": long_sig, "short_sig": short_sig}
 
 
 def _load(smoke: int) -> pd.DataFrame:
-    """① 5分足の読み込みは共通土台（strat_base.load_5m）。指標付与は E37 MVP が使う指標。"""
+    """① 5分足の読み込みは共通土台（strat_base.load_5m）。指標付与は E37 v3 が使う指標のみ。
+    向き無し両側 MR スキャルは dev_z/adx（入口）・sma/atr（出口）・stoch_k/box_W/atr_pct（記録）だけ使う
+    （旧 range_score/ダイバ/レンジ幾何/regime ラベルは撤去＝件数を殺す選別ゲートを外した）。"""
     df = load_5m(smoke)
-    df = e34v1.add_indicators(df)                 # sma/std/dev_z/atr/adx
-    df = e34b.add_analysis_features(df)           # stoch_k(14) 等（記録用）
-    df = e35_box.add_box_features(df, verify_leak=(smoke > 0 and smoke <= 60000))   # box_strength/sup/res_dist（S/R幾何）
-    df = _merge_taker_ls(df)                       # taker_ls（ダイバ・無い期間は RSI fallback）
-    df = _add_geo(df)                             # donchian幅・往復回数（レンジ幾何）
-    df = _add_rsi(df)                             # RSI14 + atr_pct
-    df = _add_divergence(df)                      # bull_div / bear_div
-    df = _add_labels(df)                          # is_range（range_score の教師）
+    df = e34v1.add_indicators(df)                 # sma/std/dev_z/atr/adx（入口・出口）
+    df = e34b.add_analysis_features(df)           # stoch_k(14)（記録用）
+    df = e35_box.add_box_features(df, verify_leak=(smoke > 0 and smoke <= 60000))   # box_strength/sup/res（box_W 記録用）
+    df = _add_rsi(df)                             # atr_pct（記録用）
     return df
 
 
@@ -241,16 +152,16 @@ def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
     })
 
 
-# ══ ③ 両サイド スキャル売買エンジン（連続モード・単一スロット・浅TP=平均/30分time-exit/ATR-SL）══
+# ══ ③ 両サイド スキャル売買エンジン（連続モード・単一スロット・浅TP=平均/TREND_CONT/30分time-exit/ATR-SL backstop）══
 def run_continuous(df, box_tf):
-    """E37 MVP スキャル 両サイド売買エンジン（単発・単一スロット）。
-    入口=指値maker（不約定は積まない）／出口=① ATR-SL(maker指値) ② 浅TP=平均(SMA)戻り(maker・手数料床武装) ③ 30分time-exit(taker)。
+    """E37 v3 向き無し両側 maker MR スキャル売買エンジン（単発・単一スロット）。
+    入口=指値maker（不約定は積まない）／出口=① 浅TP=平均(SMA)戻り(maker・手数料床武装) ② TREND_CONT=保有中 dev_z が更に伸びトレンド化(成行taker) ③ ATR-SL backstop(maker) ④ 30分time-exit(taker)。
     全て当該足まで＝leak-safe（H2）。出口は約定 bar の次以降。"""
     n = len(df)
     ts = df["ts"].to_numpy()
     h = df["high"].to_numpy(float); l = df["low"].to_numpy(float); c = df["close"].to_numpy(float)
     atr = df["atr"].to_numpy(float); adx = df["adx"].to_numpy(float); kk = df["stoch_k"].to_numpy(float)
-    sma = df["sma"].to_numpy(float)
+    sma = df["sma"].to_numpy(float); dz = df["dev_z"].to_numpy(float)
     sup = df[e35_box.sup_col(box_tf)].to_numpy(float); res = df[e35_box.res_col(box_tf)].to_numpy(float)
     Wpct = sup + res
     long_sig = df["long_sig"].to_numpy(bool); short_sig = df["short_sig"].to_numpy(bool)
@@ -274,7 +185,7 @@ def run_continuous(df, box_tf):
             if filled:
                 if pos is None and np.isfinite(atr[i]) and (UNIT <= CAP + 1e-9):
                     pos = {"side": pend["side"], "avg": pend["limit"], "size": UNIT, "add_count": 1,
-                           "first_idx": i, "last_fill_idx": i,
+                           "first_idx": i, "last_fill_idx": i, "dz_entry": dz[i],
                            "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i], "W_entry": Wpct[i],
                            "max_fav": (h[i] if pend["side"] == "LONG" else l[i]),
                            "max_adv": (l[i] if pend["side"] == "LONG" else h[i])}
@@ -289,22 +200,26 @@ def run_continuous(df, box_tf):
 
         # ── 3. 出口（約定 bar の次以降＝leak-safe）──
         if pos is not None and i > pos["last_fill_idx"]:
-            avg = pos["avg"]; a = pos["atr_entry"]
+            avg = pos["avg"]; a = pos["atr_entry"]; dz_e = pos["dz_entry"]
             if pos["side"] == "LONG":
-                sl = avg - K_SL * a                                   # ① ATR-SL（下抜け・指値maker）
-                if np.isfinite(sl) and l[i] <= sl:
-                    _record(trades, pos, sl, "SL_FILLED", i, ts); pos = None; continue
-                tp = sma[i] if np.isfinite(sma[i]) else np.nan        # ② 浅TP=平均戻り（上・手数料床武装）
+                tp = sma[i] if np.isfinite(sma[i]) else np.nan        # ① 浅TP=平均戻り（上・手数料床武装・maker＝戻り幅の利確）
                 if np.isfinite(tp) and tp >= avg * (1.0 + SCALP_FLOOR) and h[i] >= tp:
                     _record(trades, pos, tp, "TP_FILLED", i, ts); pos = None; continue
-            else:
-                sl = avg + K_SL * a                                   # ① ATR-SL（上抜け・指値maker）
-                if np.isfinite(sl) and h[i] >= sl:
+                if np.isfinite(dz[i]) and np.isfinite(dz_e) and dz[i] <= dz_e - TREND_DZ:  # ② 下げ継続=トレンド化 早切り(taker)
+                    _record(trades, pos, c[i], "TREND_CONT", i, ts); pos = None; continue
+                sl = avg - K_SL * a                                   # ③ ATR-SL backstop（下抜け暴走・指値maker）
+                if np.isfinite(sl) and l[i] <= sl:
                     _record(trades, pos, sl, "SL_FILLED", i, ts); pos = None; continue
-                tp = sma[i] if np.isfinite(sma[i]) else np.nan        # ② 浅TP=平均戻り（下・手数料床武装）
+            else:
+                tp = sma[i] if np.isfinite(sma[i]) else np.nan        # ① 浅TP=平均戻り（下・手数料床武装・maker）
                 if np.isfinite(tp) and tp <= avg * (1.0 - SCALP_FLOOR) and l[i] <= tp:
                     _record(trades, pos, tp, "TP_FILLED", i, ts); pos = None; continue
-            if (i - pos["first_idx"]) >= T_MAX:                       # ③ 時間切れ（30分・成行taker）
+                if np.isfinite(dz[i]) and np.isfinite(dz_e) and dz[i] >= dz_e + TREND_DZ:  # ② 上げ継続=トレンド化 早切り(taker)
+                    _record(trades, pos, c[i], "TREND_CONT", i, ts); pos = None; continue
+                sl = avg + K_SL * a                                   # ③ ATR-SL backstop（上抜け暴走・指値maker）
+                if np.isfinite(sl) and h[i] >= sl:
+                    _record(trades, pos, sl, "SL_FILLED", i, ts); pos = None; continue
+            if (i - pos["first_idx"]) >= T_MAX:                       # ④ 時間切れ（30分・成行taker）
                 _record(trades, pos, c[i], "TIME_EXIT", i, ts); pos = None; continue
 
         # ── 4. 入口（単一スロット・pos も pend も無い時のみ新規指値・LONG 優先で衝突は起きない[dev_z 排他]）──
@@ -321,42 +236,37 @@ def run_continuous(df, box_tf):
 
 # ══ ⑥ 出力（共通土台 strat_base._output_and_report に委譲）＋使用パラメータ（report.py 節0）══
 def _param_sections(ctx: dict) -> dict:
-    """E37 MVP の使用パラメータ（report.py 節0 が表示・read専用メタ・net 計算に不関与）。定数参照（手打ちしない）。"""
+    """E37 v3 の使用パラメータ（report.py 節0 が表示・read専用メタ・net 計算に不関与）。定数参照（手打ちしない）。"""
     return {
         "検証期間（periods正本・E31）": {
-            "学習(fit)": f"〜{TRAIN_END.date()} 未満（range_score/dev_z/atr_pct 分位をここで fit）",
+            "学習(fit)": f"〜{TRAIN_END.date()} 未満（dev_z/adx 分位をここで fit）",
             "採点(公式net)": f"{SC_START.date()} 〜 {SCORE_END.date()} 未満（学習に使わない）",
             "封印(不参照)": f"{SEAL_START.date()} 以降",
         },
-        "【入口】レンジ学習ゲート（S/R幾何を LogisticRegression で束ねた range_score）": {
-            "材料": "box_strength(5m/1h/4h)＋box_sup/res_dist(1h/4h)＋donchian幅%＋往復回数（全て causal・当該足まで）",
-            "教師/fit": f"regime_ground_truth_daily_human.csv の range・学習窓の行だけで fit（採点窓不参照・leak-safe）",
-            "ゲート": f"range_score ≥ THR（THR=学習窓 range 比率分位・a-priori base-rate match・学習窓 fit={ctx['THR']:.3f}）",
-        },
-        "【入口】確認済みエッジ（両サイド・下端/上端＋ダイバ＋高ATR）": {
-            "下端/上端(dev_z)": f"LONG=dev_z≤学習窓q{int(Z_LO_Q*100)}(={ctx['Z_LO']:+.2f}) / SHORT=dev_z≥q{int(Z_HI_Q*100)}(={ctx['Z_HI']:+.2f})",
-            "ダイバ(bull/bear_div)": f"価格が{DIV_N}本安値/高値を更新∩需給(taker_ls／無ければRSI{RSI_N})は更新せず（背離）",
-            "高ATRフィルタ": f"atr_pct≥学習窓q{ATR_HI_Q:.2f}(={ctx['ATR_HI']:.3f})＝高ATR時のみ入口（方向スコアの主役でない・H15）",
+        "【入口】向き無し両側 micro 反転（向きを賭けず戻り幅を取る・H15）": {
+            "地合いフィルタ(not_trend)": f"adx < 学習窓 q{int(ADX_HI_Q*100)}(={ctx['ADX_HI']:.2f})＝強トレンドでない地合いのみ（レンジ8割を通す・件数を殺さない）",
+            "行き過ぎ(dev_z)": f"SHORT=dev_z≥学習窓q{int(Z_HI_Q*100)}(={ctx['Z_HI']:+.2f}) ∩ 陰転(close<open) ／ LONG=dev_z≤q{int(Z_LO_Q*100)}(={ctx['Z_LO']:+.2f}) ∩ 陽転(close>open)",
+            "考え方": "向きスコアを持たない＝上げ過ぎは売り・下げ過ぎは買いの両側で maker 指値（戻り幅＝magnitude を取る・向き当てをしない）",
         },
         "【固定値】サイズ・add（スキャル＝単発・単一スロット）": {
             "予算上限": f"全建玉(LONG+SHORT)合計 {CAP} BTC（H1・全採用戦略の共有枠・1建玉でない）",
-            "size": f"{UNIT} BTC・MAX_ADDS={MAX_ADDS}（単発＝1玉を速く回す）",
+            "size": f"{UNIT} BTC・MAX_ADDS={MAX_ADDS}（単発＝1玉を速く回す・高頻度）",
             "指値": f"LONG=close×(1−{ENTRY_OFFSET})／SHORT=close×(1+{ENTRY_OFFSET})・TTL {TTL}本(={TTL*5}分)・不約定は積まない（maker限定）",
-            "方向": "両サイド（レンジ下端でLONG・上端でSHORT）",
+            "方向": "両サイド（行き過ぎの反対側・向き無し）",
         },
-        "【出口】スキャル＝浅く速く（新 exit_reason を作らない）": {
-            "TP利確 TP_FILLED(maker指値)": "平均(SMA)へ戻り＝小さい戻りで即利確（浅TP）",
+        "【出口】スキャル＝浅く速く・幅を刻む（新 exit_reason=TREND_CONT のみ追加）": {
+            "TP利確 TP_FILLED(maker指値)": "平均(SMA)へ戻り＝小さい戻り幅で即利確（浅TP・戻り幅を取る）",
             "TP武装条件": f"建値比 {SCALP_FLOOR*100:.2f}%(SCALP_FLOOR)を超える時だけTPを置く（小TPの手数料割れ防止）",
+            "トレンド化早切り TREND_CONT(成行taker)": f"保有中 dev_z が entry から更に {TREND_DZ}σ 拡大＝反転せずトレンド化した継続玉を早切り（損の尾を切る・トレンド化限定＝勝ち玉を巻き込まない）",
             "時間切れ TIME_EXIT(成行)": f"初回entryから {T_MAX}本 = {T_MAX*5}分で未決済なら撤退（スキャル＝短保有）",
-            "SL損切り SL_FILLED(maker指値)": f"建値±{K_SL}×ATR＝ATR スケール SL（固定%でない・maker モデル）",
+            "SL backstop SL_FILLED(maker指値)": f"建値±{K_SL}×ATR＝トレンド暴走の最終防波堤（ATR スケール・maker モデル）",
         },
         "【固定値】コスト（eval_engine・確定値・改造禁止）": {
             "maker手数料": f"{ee.MAKER_FEE*100:.3f}%", "taker手数料": f"{ee.TAKER_FEE*100:.3f}%",
             "slippage": f"{ee.SLIPPAGE*100:.3f}%（taker時のみ）", "funding": f"{ee.FUNDING_RATE_8H*100:.4f}% / 8h",
         },
         "【学習した内容】（学習窓データで決定・採点窓は使わない）": {
-            "range_score(LogisticRegression)": f"S/R幾何を束ねた点数・THR={ctx['THR']:.3f}（学習窓 range 比率分位）",
-            "dev_z/atr_pct 分位": f"Z_LO={ctx['Z_LO']:+.2f} / Z_HI={ctx['Z_HI']:+.2f} / ATR_HI={ctx['ATR_HI']:.3f}（学習窓 fit・採点窓不参照）",
+            "dev_z/adx 分位": f"Z_LO={ctx['Z_LO']:+.2f} / Z_HI={ctx['Z_HI']:+.2f} / ADX_HI={ctx['ADX_HI']:.2f}（学習窓 fit・採点窓不参照）",
         },
     }
 
@@ -365,7 +275,7 @@ def _out(t: pd.DataFrame, suffix: str, ctx: dict, tag=None) -> None:
     """E37 の出力（命名/archive/上書き防止/CSV3分割/サイドカー write_sidecar は共通土台に委譲）。"""
     strat_base._output_and_report(
         t, suffix, stem="e37_range_scalp",
-        strategy="E37 レンジ・スキャル MVP（両サイド・確認済みエッジ＋S/R幾何のレンジ学習ゲート）",
+        strategy="E37 v3 レンジ・スキャル（向き無し両側 maker MR・高頻度）",
         script="e37_range_scalp.py",
         sections=_param_sections(ctx), tag=tag)
 
@@ -387,20 +297,20 @@ def run_e37(df, box_tf, tag=None):
 
 
 def _diagnostic(df, box_tf):
-    """発火ファネル（採点しない・期待件数の宣言）＝各成分が何本に削るか。"""
+    """発火ファネル（採点しない・期待件数の宣言）＝各成分が何本に削るか＝スキャル頻度を先に確認。"""
     ctx = _build_signals(df)
     n = len(df)
     days = max((df["ts"].iloc[-1] - df["ts"].iloc[0]).total_seconds() / 86400.0, 1.0)
     def cnt(s): return int(np.asarray(pd.Series(s).fillna(False)).sum())
-    range_ok = ctx["range_ok"]
+    not_trend = ctx["not_trend"]
     print("=" * 100)
-    print(f"[E37 MVP 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日 / box={box_tf}")
-    print(f"  THR={ctx['THR']:.3f} / Z_LO={ctx['Z_LO']:+.2f} / Z_HI={ctx['Z_HI']:+.2f} / ATR_HI={ctx['ATR_HI']:.3f}")
-    print(f"  range_ok(range_score≥THR)   : {cnt(range_ok):>8,} 本（{cnt(range_ok)/n*100:.1f}%）")
-    print(f"  → LONG_ENTRY 発火（下端）    : {cnt(ctx['long_sig']):>8,} 本（{cnt(ctx['long_sig'])/days:.2f} 本/日・候補）")
-    print(f"  → SHORT_ENTRY 発火（上端）   : {cnt(ctx['short_sig']):>8,} 本（{cnt(ctx['short_sig'])/days:.2f} 本/日・候補）")
-    print(f"  → 両サイド計 候補           : {(cnt(ctx['long_sig'])+cnt(ctx['short_sig']))/days:.2f} 本/日（実約定はTTL/単一スロットで減る）")
-    print(f"  ※ E36 base=1.05件/日・E37 v2=2.08件/日。件数は本走の score 対象 CSV で確認（degenerate 点検）")
+    print(f"[E37 v3 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日 / box={box_tf}")
+    print(f"  ADX_HI={ctx['ADX_HI']:.2f} / Z_LO={ctx['Z_LO']:+.2f} / Z_HI={ctx['Z_HI']:+.2f}")
+    print(f"  not_trend(adx<ADX_HI・レンジ地合い) : {cnt(not_trend):>8,} 本（{cnt(not_trend)/n*100:.1f}%）")
+    print(f"  → LONG_ENTRY 発火（下げ過ぎ→買い） : {cnt(ctx['long_sig']):>8,} 本（{cnt(ctx['long_sig'])/days:.2f} 本/日・候補）")
+    print(f"  → SHORT_ENTRY 発火（上げ過ぎ→売り）: {cnt(ctx['short_sig']):>8,} 本（{cnt(ctx['short_sig'])/days:.2f} 本/日・候補）")
+    print(f"  → 両サイド計 候補                  : {(cnt(ctx['long_sig'])+cnt(ctx['short_sig']))/days:.2f} 本/日（実約定はTTL/単一スロットで減る）")
+    print(f"  ※ スキャル目標=数十件/日（MVP 0.32件/日 の役割違反を直す）。件数は本走 score CSV で確認（degenerate 点検）")
     print("=" * 100)
 
 
@@ -412,7 +322,7 @@ def main():
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
     a = ap.parse_args()
     print("=" * 100)
-    print("[E37 MVP] レンジ・スキャル 両サイド（確認済みエッジ＋S/R幾何のレンジ学習ゲート・E36 デイトレと住み分け）")
+    print("[E37 v3] レンジ・スキャル 向き無し両側 maker MR（高頻度・E36 デイトレと住み分け）")
     df = _load(a.smoke)
     print(f"  価格 {e34v1.CSV.name}（{len(df):,}本・{df.ts.iloc[0].date()}〜{df.ts.iloc[-1].date()}）")
     print(f"  計器 maker {ee.MAKER_FEE} / taker {ee.TAKER_FEE} / slip {ee.SLIPPAGE} / funding {ee.FUNDING_RATE_8H}/8h / unit {UNIT}")

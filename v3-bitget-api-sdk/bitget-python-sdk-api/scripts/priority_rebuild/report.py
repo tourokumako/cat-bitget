@@ -337,26 +337,32 @@ def main():
         cnt = wkg.size(); net = wkg["net_usd"].sum()
         cand = []                                           # (タグ, 週)・同一週は下で統合
         if len(cnt):
-            cand += [("トレード最多", cnt.idxmax()), ("トレード最少", cnt.idxmin()),
-                     ("NET最大", net.idxmax()), ("NET最小", net.idxmin())]
-        seen = {}; order = []                               # 週→タグ群（重複週を1枚に）
+            cand += [("トレード数最大", cnt.idxmax()), ("トレード数最小", cnt.idxmin()),
+                     ("net利益最大", net.idxmax()), ("net利益最小", net.idxmin())]
+        seen = {}; order = []                               # 週→タグ群（重複週を1枚に統合＝最大4枚）
         for tag, w in cand:
             if w not in seen: seen[w] = []; order.append(w)
             if tag not in seen[w]: seen[w].append(tag)
         plot_script = Path(__file__).resolve().parent.parent / "dashboard" / "plot_trades.py"
         for w in order:
-            tags = "/".join(seen[w]); ws = w.start_time.normalize(); we = ws + pd.Timedelta(days=7)
+            tags = "・".join(seen[w]); ws = w.start_time.normalize(); we = ws + pd.Timedelta(days=7)
             rp = subprocess.run([sys.executable, str(plot_script), str(a.csv),
-                                 "--start", ws.strftime("%Y-%m-%d"), "--end", we.strftime("%Y-%m-%d")],
+                                 "--start", ws.strftime("%Y-%m-%d"), "--end", we.strftime("%Y-%m-%d"),
+                                 "--label", tags],                       # カテゴリ名を PNG タイトルに（表示のみ・net/売買データ不変）
                                 capture_output=True, text=True)
             lines = [l for l in rp.stdout.splitlines() if l.strip()]
             png = next((l.split("[出力]", 1)[1].strip() for l in lines if "[出力]" in l), "")
             summ = next((l.strip() for l in reversed(lines) if "net" in l), "")
-            print(f"   [{tags}] {ws.date()}〜{we.date()}（{int(cnt[w])}トレード・NET ${net[w]:+.0f}）→ {png or (rp.stderr.strip() or '(出力なし)')}")
+            print(f"   [{tags}] {ws.date()}〜{we.date()}（{int(cnt[w])}トレード・NET ${net[w]:+.0f}）→ {png or '(出力なし)'}")
             if summ:
                 print(f"      {summ}")
+            # ★ PNG 強制出力（黙って表示だけ＝データ改ざん禁止・まこさん 2026-07-02）: 実ファイルが無ければ STOP
+            if not png or not Path(png).exists():
+                sys.stderr.write(f"[STOP] 週次チャート PNG 未生成（{tags} {ws.date()}〜{we.date()}）: stderr={rp.stderr.strip()}\n")
+                sys.exit(2)
     except Exception as e:
-        print(f"   ⚠️ 週次チャート生成スキップ（report 本体は有効）: {e}")
+        sys.stderr.write(f"[STOP] 週次チャート生成 失敗（PNG は強制・黙って skip しない・まこさん 2026-07-02）: {e}\n")
+        sys.exit(2)
 
     sys.stdout = _orig; _rf.close()
     print(f"\n[保存] この結果一覧を書類化 → {out_path}（IDEで開いて確認できます）")
