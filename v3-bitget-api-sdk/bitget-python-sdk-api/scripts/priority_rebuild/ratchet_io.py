@@ -21,11 +21,28 @@ import shutil
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]               # bitget-python-sdk-api/
 RATCHET = ROOT / "results" / "priority_rebuild" / "ratchet"      # 売買記録・記録の置き場（e35.RATCHET と同一）
+ADOPTED_LEDGER = ROOT / ".claude" / "ratchet" / "adopted_strategies.md"   # 採用台帳（ADOPTED_BASE_FILES マーカーの正本）
 
 # 出力ファミリの接頭辞（trades=売買記録 / report_/analysis_=記録 / それらの params サイドカーも含む）
 _OUT_PREFIXES = ("trades_", "report_trades_", "analysis_trades_")
 # タグ連番トークン `_NNN`（後ろが . か _ か末尾）= タグ付き実験ファイルの目印。安定名(base)には現れない。
 _SEQ_RE = re.compile(r"_\d{3}(?=[._]|$)")
+
+
+def _adopted_base_stems(ledger_path: pathlib.Path | None = None) -> tuple:
+    """採用 base のファイル幹（台帳 adopted_strategies.md の機械可読マーカー ADOPTED_BASE_FILES に追従・
+    コードに戦略名を焼かない＝PORTFOLIO_CHECK/ROLE_CHECK と同型・2026-07-03 まこさん承認）。
+    背景: 採用 base はタグ連番名のまま（再走禁止＝タグ無し安定名を再発行できない）なので、同 stem の新実験の
+    たびに archive_prior_experiments が採用 base ごと archive へ押し出していた（直下=現役のみ の逆転事案）。
+    台帳マーカーに載る幹を含むファイルは押し出さない。マーカーが無い/読めない場合は空＝従来挙動（安全側）。"""
+    try:
+        txt = (ledger_path or ADOPTED_LEDGER).read_text(encoding="utf-8")
+    except Exception:
+        return ()
+    m = re.search(r"ADOPTED_BASE_FILES:\s*([^>]+?)\s*-->", txt)
+    if not m:
+        return ()
+    return tuple(s for s in re.split(r"[;,\s]+", m.group(1)) if s)
 
 
 def tagged_suffix(stem: str, default_suffix: str, tag: str | None, ratchet_dir: pathlib.Path | None = None) -> str:
@@ -77,11 +94,15 @@ def archive_if_exists(path) -> pathlib.Path:
     return path
 
 
-def archive_prior_experiments(stem: str, keep_suffix: str, ratchet_dir: pathlib.Path | None = None) -> list[str]:
+def archive_prior_experiments(stem: str, keep_suffix: str, ratchet_dir: pathlib.Path | None = None,
+                              adopted_stems: tuple | None = None) -> list[str]:
     """新実験を書く前に呼ぶ。ratchet_dir 直下の「同 stem のタグ付き実験出力（trades/report/analysis/params）」のうち、
-    今回の keep_suffix を含むもの と 安定名 base（タグ連番 `_NNN` を持たない現役）以外を archive へ move する。
-    ＝直下を「現役 base ＋ 今回」だけに保つ（§3.1）。move したファイル名一覧を返す（ログ用）。他 stem は触らない。"""
+    今回の keep_suffix を含むもの と 安定名 base（タグ連番 `_NNN` を持たない現役）と
+    採用 base（台帳マーカー ADOPTED_BASE_FILES の幹を含む・2026-07-03 押し出し防止）以外を archive へ move する。
+    ＝直下を「現役 base ＋ 今回」だけに保つ（§3.1）。move したファイル名一覧を返す（ログ用）。他 stem は触らない。
+    adopted_stems はテスト注入用（None なら台帳から読む）。"""
     rd = ratchet_dir or RATCHET
+    adopted = _adopted_base_stems() if adopted_stems is None else adopted_stems
     moved: list[str] = []
     if not rd.exists():
         return moved
@@ -94,6 +115,8 @@ def archive_prior_experiments(stem: str, keep_suffix: str, ratchet_dir: pathlib.
         if keep_suffix and keep_suffix in name:       # 今回の出力 → 残す
             continue
         if not _SEQ_RE.search(name):                  # タグ連番 `_NNN` を持たない = 安定名 base（現役）→ 残す
+            continue
+        if any(ab and ab in name for ab in adopted):  # 採用 base（台帳 ADOPTED_BASE_FILES）→ 残す（押し出し防止）
             continue
         archive_if_exists(p)
         moved.append(name)
@@ -143,7 +166,7 @@ def _known_answer() -> None:
                   f"trades_{stem}_freqiter3_002.csv",          # 今回(keep) → 残す
                   f"report_trades_{stem}_freqiter3_001.txt"):  # 旧実験の記録 → 退避
             (d / n).write_text("x")
-        moved = archive_prior_experiments(stem, "_freqiter3_002", d)
+        moved = archive_prior_experiments(stem, "_freqiter3_002", d, adopted_stems=())
         assert (d / f"trades_{stem}_5m_shortset1.csv").exists(), "安定名 base は残す"
         assert (d / f"trades_{stem}_freqiter3_002.csv").exists(), "今回(keep)は残す"
         assert not (d / f"trades_{stem}_freqiter3_001.csv").exists(), "旧実験 trades は退避"
@@ -155,7 +178,27 @@ def _known_answer() -> None:
         # keep(_002) と base は moved に含まれない。
         assert all("_freqiter3_002" not in m and "_5m_shortset1" not in m for m in moved), moved
 
-    print("ratchet_io 既知答えテスト: 全 PASS（連番／archive_if_exists／archive_prior_experiments／番人メタ確認）")
+        # (4) 採用 base 押し出し防止（台帳 ADOPTED_BASE_FILES マーカー追従・2026-07-03 まこさん承認）:
+        #     タグ連番 `_NNN` を持つ採用 base（例 scenecap_012）は新実験の archive 掃除で押し出されない。
+        for n in (f"trades_{stem}_scenecap_012.csv", f"trades_{stem}_scenecap_012_score.csv",
+                  f"report_trades_{stem}_scenecap_012_score.txt"):
+            (d / n).write_text("x")
+        moved4 = archive_prior_experiments(stem, "_newexp_099", d,
+                                           adopted_stems=(f"trades_{stem}_scenecap_012",))
+        assert (d / f"trades_{stem}_scenecap_012.csv").exists(), "採用 base trades は押し出さない"
+        assert (d / f"trades_{stem}_scenecap_012_score.csv").exists(), "採用 base score も押し出さない"
+        assert (d / f"report_trades_{stem}_scenecap_012_score.txt").exists(), "採用 base の記録も押し出さない"
+        assert all("scenecap_012" not in m for m in moved4), moved4
+        # 番人メタ確認: マーカーから幹を外すと従来どおり退避される（弱体化なし）。
+        moved5 = archive_prior_experiments(stem, "_newexp_099", d, adopted_stems=())
+        assert not (d / f"trades_{stem}_scenecap_012.csv").exists(), "番人: マーカー無しなら従来どおり退避"
+        assert any("scenecap_012" in m for m in moved5), moved5
+        # マーカー読取り: 一時台帳ファイルからのパース確認。
+        lg = d / "adopted.md"
+        lg.write_text("x\n<!-- ADOPTED_BASE_FILES: trades_a_001 ; trades_b_002 -->\ny")
+        assert _adopted_base_stems(lg) == ("trades_a_001", "trades_b_002"), _adopted_base_stems(lg)
+
+    print("ratchet_io 既知答えテスト: 全 PASS（連番／archive_if_exists／archive_prior_experiments／採用base押し出し防止／番人メタ確認）")
 
 
 if __name__ == "__main__":

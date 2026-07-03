@@ -6,6 +6,11 @@
 
 <!-- PORTFOLIO_CHECK: BASE_MAX=E32b ; PILLARS=E32b,P21,P23,E28,E35,E36 -->
 <!-- ROLE_CHECK: e37=scalp ; e36=daytrade ; e35=range_both -->
+<!-- ADOPTED_BASE_FILES: trades_e36_short_oscillation_scenecap_012 ; trades_e35_oscillation_5m_iter9 -->
+<!-- ↑ ratchet_io._adopted_base_stems（採用base押し出し防止・2026-07-03 まこさん承認）が読む機械可読マーカー。
+     採用 base はタグ連番名のまま（再走禁止＝安定名を再発行できない）なので、同 stem の新実験の自動 archive
+     （archive_prior_experiments）が採用 base ごと押し出す事故を、この幹を含むファイルの除外で防ぐ。
+     採用/不採用・base が変わったら本行の幹だけ更新＝ratchet_io は本行に自動追従（コードに戦略名を焼かない）。 -->
 <!-- ↑ enforce_role_criteria.sh（役割忘れ防止・2026-06-29 まこさん指示）が読む機械可読マーカー。
      acceptance.md を書く瞬間に TARGET スクリプト token（e3N）の役割を引き、役割に反する案をブロックする。
        scalp（e37）  : 「件数/日を上げる」合格基準が必須＋「件数±0/減・頻度は次 iter」の尻すぼみ容認を禁止。
@@ -80,7 +85,7 @@
 | **P23** | SHORT | **SHORT 柱（ライブ cat_v9 の起点）** | **月$241.72**（280件） | cat_v9_decider.py ＋ cat_params_v9.json（素のV9・ストキャス系・Entry＝decider／Exit実行＝gen_p23_candidates.py run_continuous） | `measure_ground_newwindow_E31.py` | archive/trades_p23_E31_newwin_ground.csv | E0/E32/E31 |
 | **E28** | LONG | **下げ相場 LONG の存在証明 add-on** | 月$3.96（+$27.71） | `measure_e28_phase2.py`（ドルバー 行き過ぎ1%ile ∩ taker投げ売り・素ルール） | （同左） | trades_e28_phase2_score.csv | E28 |
 | **E35**（レンジ上下オシレーション） | 両方向 | レンジ柱候補（作業中） | 月+$18.99（iter9） | `e35_range_oscillation.py --iter9`（独自ロジック・hold-ML判別＋部分利確） | （同左） | trades_e35_oscillation_5m_iter9_score.csv | E35 iteration-9 |
-| **E36**（SHORT専用オシレーション＋急騰Exit＋件数レバー＋場面サイジング＋cap使い切り） | SHORT | SHORT 柱候補（E35 から SHORT 切り出し＋判別器ゲート急騰Exit＋強レンジ ゾーン拡大＋場面連動サイジング＋**scene-cap=勝ち場面 add2 を cap 0.12 まで厚く**・2026-06-28 採用） | **月$137.46**（$1237.13・285玉・1.05/日[lot 1.67/日]・両窓改善・scene_009 $1042.69 を +$194） | `e36_short_oscillation.py`（既定=gated spike＋zone拡大0.35・strat_base import＋②③④自前コピー（2026-06-23 切り分け＝E35 を import しない・別戦略）・shortset1[1h MACDゲート]＋iter9 出口＋SPIKE_SL=Lee-Mykland jump ∩ hold-ML 判別器ゲート θ学習窓選定＋強レンジ(ER<q0.25)で SHORT 反転ゾーン0.25→0.35・`--no-zone` で zone OFF=$539.06・`--no-spike` で spike OFF=$427.66） | （同左・score.py） | trades_e36_short_oscillation_scene_009_score.csv | E36/E36 freq-iter1/E36 場面連動サイジング |
+| **E36**（SHORT専用オシレーション＋急騰Exit＋件数レバー＋場面サイジング＋cap使い切り） | SHORT | SHORT 柱候補（E35 から SHORT 切り出し＋判別器ゲート急騰Exit＋強レンジ ゾーン拡大＋場面連動サイジング＋**scene-cap=勝ち場面 add2 を cap 0.12 まで厚く**・2026-06-28 採用） | **月$137.46**（$1237.13・285玉・1.05/日[lot 1.67/日]・両窓改善・scene_009 $1042.69 を +$194） | `e36_short_oscillation.py`（既定=gated spike＋zone拡大0.35・strat_base import＋②③④自前コピー（2026-06-23 切り分け＝E35 を import しない・別戦略）・shortset1[1h MACDゲート]＋iter9 出口＋SPIKE_SL=Lee-Mykland jump ∩ hold-ML 判別器ゲート θ学習窓選定＋強レンジ(ER<q0.25)で SHORT 反転ゾーン0.25→0.35・`--no-zone` で zone OFF=$539.06・`--no-spike` で spike OFF=$427.66） | （同左・score.py） | trades_e36_short_oscillation_scenecap_012_score.csv | E36/E36 freq-iter1/E36 場面連動サイジング/E36 scene-cap |
 
 > **E32b は別戦略でない＝P21 と P23 を一緒に動かした合算の実測（deployable・月$616.55）**。素朴な和（$401.51+$241.72=$643.23）でなく $616.55 になるのは、共有 cap と decider 順（V9 優先 P23>P21）で互いを少し削るため（21→23 仮説は不成立＝V9 順維持・ledger E32b）。計測の道具＝`measure_ground_combined_E32b.py`。＝本番で P21・P23 を一緒に回した時の正味 SHORT 合算。
 >
