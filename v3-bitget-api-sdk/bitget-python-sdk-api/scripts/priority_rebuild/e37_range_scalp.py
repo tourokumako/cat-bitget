@@ -79,6 +79,12 @@ BREAK_N = 20                 # EV_BREAK_REV: donchian 窓（教科書標準・�
 BREAK_LOOKBACK = 3           # EV_BREAK_REV: ブレイクから3本以内の反転バー
 EVENT_TYPES = ("evt_mr", "evt_mr_sh", "evt_bb", "evt_brk", "evt_pull")   # 5型 one-hot（検出器の特徴に渡す＝木が判定）
 
+# ── E37 v6r（iter2＝ランキングの金額整合＋TP-viability・--v6r で ON・既定 OFF=v5 恒等・acceptance 2026-07-03）──
+# RANK_BE_REGRESSION: 検出器の教師を「net>0 の二値」から「per-event の be＝net/fee（無次元 H6）」の回帰へ。
+#   v6 の確定＝二値教師は金額を見ず薄利勝ち玉が確率上位を占拠し be≥1.0 帯が消失（ledger ARC19）。
+#   回帰（大きさ予測）と分類（向き）の役割分担は業界整合（arxiv 2407.18334）。目的関数=L2（ライブラリ既定・数値探索なし）。
+RANK_BE_REGRESSION = "net_over_fee_l2"   # 教師目標の宣言（DESIGN_CONTRACT トークン・値は識別子であり閾値でない）
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 _PQ_DIR = ROOT / "results" / "priority_rebuild"
 PARQUETS = [_PQ_DIR / "labels_mfe_mae_pct_train_2021_2024.parquet",
@@ -153,6 +159,21 @@ def _gen_events_v6(df: pd.DataFrame) -> pd.DataFrame:
         l_all = l_m if l_all is None else (l_all | l_m)
     df["short_cand"] = s_all.to_numpy(bool)
     df["long_cand"] = l_all.to_numpy(bool)
+    return df
+
+
+# ══ ②v6r TP-viability entry ゲート（毒の機械除去・教師とエンジンの両方＝同一執行・acceptance 2026-07-03）══
+def _tp_viable(df: pd.DataFrame) -> pd.DataFrame:
+    """entry 時点（当該バーの close/sma/std のみ＝t 因果 H2）で、指値価格から見た TP 目標（SMA∓TP_OVERSHOOT×σ）の
+    距離が SCALP_FLOOR（既存定数・新数値なし）未満＝届いても手数料負けが確定している候補は建てない。
+    probe 実測: 該当 6.5イベント/日・be −2.43（毒）。viable_s/viable_l 列を付けるだけ（適用は呼び出し側）。"""
+    c = df["close"]; sma = df["sma"]; sd = df["std"]
+    lim_s = c * (1 + ENTRY_OFFSET)               # SHORT 指値
+    lim_l = c * (1 - ENTRY_OFFSET)               # LONG 指値
+    tgt_s = sma - TP_OVERSHOOT * sd              # SHORT TP 目標
+    tgt_l = sma + TP_OVERSHOOT * sd              # LONG TP 目標
+    df["viable_s"] = (tgt_s <= lim_s * (1.0 - SCALP_FLOOR)).fillna(False)
+    df["viable_l"] = (tgt_l >= lim_l * (1.0 + SCALP_FLOOR)).fillna(False)
     return df
 
 
@@ -263,15 +284,18 @@ def _select_theta_be_first(cand: list) -> dict | None:
 
 
 def _fit_detector(teach: pd.DataFrame, feat: pd.DataFrame, feat_cols: list, days_train: float,
-                  v6: bool = False, evt: pd.DataFrame | None = None) -> dict:
+                  v6: bool = False, evt: pd.DataFrame | None = None, rank_be: bool = False) -> dict:
     """検出器学習＝purged 5fold OOF → oof_theta（θ）を学習窓分位から選定 → 学習窓全体で再 fit。
     θ選定＝v5: ゲート通過イベント/日 ≥ FREQ_FLOOR_EVT_DAY の範囲で be 最大（採点窓不参照）
-           v6: _select_theta_be_first（be≥BE_FLOOR 内で頻度最大・反転）＋旧規則も比較ログ（lever-bites）。
-    v6 は event_type one-hot（EVENT_TYPES）を特徴に追加＝どのイベント型が稼げるかを木が判定。"""
+           v6/v6r: _select_theta_be_first（be≥BE_FLOOR 内で頻度最大・反転）＋旧規則も比較ログ（lever-bites）。
+    v6 は event_type one-hot（EVENT_TYPES）を特徴に追加＝どのイベント型が稼げるかを木が判定。
+    rank_be（v6r・RANK_BE_REGRESSION）＝教師を per-event の be（net/fee・無次元）の回帰にし、
+    ランキングを金額整合へ（二値 P(net>0) は金額を見ず薄利勝ち玉が上位帯を希釈＝ledger ARC19 の是正）。"""
     import lightgbm as lgb
     df = teach.merge(feat.rename(columns={"timestamp": "ts"}), on="ts", how="inner").sort_values("ts").reset_index(drop=True)
     miss = len(teach) - len(df)
-    print(f"  [検出器] 教師 {len(teach)} 件（特徴結合 {len(df)}・特徴欠落 {miss} 件は学習から除外）/ 勝ちラベル率 {df.y.mean()*100:.1f}%")
+    print(f"  [検出器] 教師 {len(teach)} 件（特徴結合 {len(df)}・特徴欠落 {miss} 件は学習から除外）/ 勝ちラベル率 {df.y.mean()*100:.1f}%"
+          + (f" / 教師目標={RANK_BE_REGRESSION}（per-event net/fee 回帰）" if rank_be else ""))
     assert int(pd.DatetimeIndex(df.ts).asi8.max()) < int(pd.Timestamp(TRAIN_END).value), \
         "TRAIN_END assert: 教師に学習窓外の行が混入（H8 違反）"
     evt_cols: list = []
@@ -282,12 +306,18 @@ def _fit_detector(teach: pd.DataFrame, feat: pd.DataFrame, feat_cols: list, days
         df[evt_cols] = df[evt_cols].fillna(0.0)
     X = df[feat_cols + evt_cols].astype(np.float32).assign(side=df["side"].astype(np.float32))
     y = df["y"].to_numpy()
+    y_reg = (df["net"] / df["fee"]).to_numpy() if rank_be else None   # per-event be（無次元 H6・実測比）
     tt = pd.DatetimeIndex(df.ts)
     oof = np.full(len(df), np.nan)
     for tr, te in purged_fold(tt):
-        mdl = lgb.LGBMClassifier(**_LGB_PARAMS)
-        mdl.fit(X[tr], y[tr])
-        oof[te] = mdl.predict_proba(X[te])[:, 1]
+        if rank_be:
+            mdl = lgb.LGBMRegressor(**_LGB_PARAMS)
+            mdl.fit(X[tr], y_reg[tr])
+            oof[te] = mdl.predict(X[te])
+        else:
+            mdl = lgb.LGBMClassifier(**_LGB_PARAMS)
+            mdl.fit(X[tr], y[tr])
+            oof[te] = mdl.predict_proba(X[te])[:, 1]
     ok = np.isfinite(oof)
     # oof_theta 選定（学習窓のみ）
     cand = []
@@ -322,8 +352,12 @@ def _fit_detector(teach: pd.DataFrame, feat: pd.DataFrame, feat_cols: list, days
     rule = f"v6: be≥{BE_FLOOR} 内で頻度最大（反転）" if v6 else f"頻度床 {FREQ_FLOOR_EVT_DAY}/日内で be 最大"
     print(f"  [検出器] oof_theta 選定（学習窓 OOF・{rule}）: {json.dumps(pick, ensure_ascii=False)}")
     # 本番モデル＝学習窓全体で再 fit（Hudson&Thames: 閾値/ハイパラは学習側で確定・OOS は一発評価）
-    final = lgb.LGBMClassifier(**_LGB_PARAMS)
-    final.fit(X, y)
+    if rank_be:
+        final = lgb.LGBMRegressor(**_LGB_PARAMS)
+        final.fit(X, y_reg)
+    else:
+        final = lgb.LGBMClassifier(**_LGB_PARAMS)
+        final.fit(X, y)
     # H15: 重要度で ATR/vol 家族が非支配か（ボラ逃げ検査）
     fi = pd.Series(final.feature_importances_, index=list(X.columns)).sort_values(ascending=False)
     top10 = list(fi.head(10).index)
@@ -333,7 +367,7 @@ def _fit_detector(teach: pd.DataFrame, feat: pd.DataFrame, feat_cols: list, days
     oof_map = pd.Series(oof[ok], index=pd.DatetimeIndex(df.ts)[ok])   # 学習窓ゲート用 OOF（in-sample 記憶を使わない）
     return {"model": final, "oof_theta": oof_theta, "theta_log": cand, "picked": pick,
             "feat_cols": feat_cols, "evt_cols": evt_cols, "top10": top10, "oof_map": oof_map,
-            "pick_old_rule": pick_old}
+            "pick_old_rule": pick_old, "rank_be": rank_be}
 
 
 def detector_gate(det: dict, feat: pd.DataFrame, df: pd.DataFrame) -> np.ndarray:
@@ -367,7 +401,10 @@ def detector_gate(det: dict, feat: pd.DataFrame, df: pd.DataFrame) -> np.ndarray
             ev.index = X.index                      # 同順（両方 df の行順由来）＝index を揃えて結合
             X = pd.concat([X, ev], axis=1)
         X = X.assign(side=np.float32(side_val))
-        p = det["model"].predict_proba(X)[:, 1]
+        if det.get("rank_be"):
+            p = det["model"].predict(X)          # v6r: 回帰スコア（期待 be）
+        else:
+            p = det["model"].predict_proba(X)[:, 1]
         ok[np.where(m)[0]] = p >= det["oof_theta"]
     return ok
 
@@ -491,7 +528,7 @@ def run_continuous(df, gate_ok: np.ndarray, box_tf, evt_lbl=None):
 
 
 # ══ ⑥ 出力（共通土台に委譲）＋使用パラメータ（report.py 節0）══
-def _param_sections(det: dict | None, gate_on: bool, v6: bool = False) -> dict:
+def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False) -> dict:
     if v6:
         evt_desc = {
             "イベント（v6・5型＝母数拡大・どれが稼げるかは検出器が判定）": (
@@ -500,6 +537,13 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False) -> dict:
                 f"EV_PULLBACK: 1h MACD 方向∩dev_z±{SHALLOW_Z}σ∩反転バー（順張り押し目/戻り売り）。全て教科書 a-priori 構造"),
             "θ選定規則（v6・反転）": f"be≥{BE_FLOOR}（損益分岐の定義値）を満たす学習窓 OOF 分位のうちイベント/日最大（頻度床は選定に使わない・be≥{BE_FLOOR} 帯なしなら執行せず停止）",
         }
+        if v6r:
+            evt_desc["検出器の教師（v6r・金額整合）"] = (
+                f"per-event の be＝net/fee（無次元・エンジン同一執行の実測比）の回帰（{RANK_BE_REGRESSION}・L2）"
+                "＝二値 P(net>0) が金額を見ず薄利勝ち玉を上位帯に集めた v6 の是正（分類=向き/回帰=大きさ＝arxiv 2407.18334）")
+            evt_desc["TP-viability entry ゲート（v6r）"] = (
+                f"entry 時点で TP 目標（SMA∓{TP_OVERSHOOT}σ）が指値価格から {SCALP_FLOOR*100:.2f}%（SCALP_FLOOR・既存定数）未満の候補は建てない"
+                "（届いても手数料負け確定の毒を機械除去・教師とエンジンの両方＝同一執行）")
     else:
         evt_desc = {
             "イベント": f"SHORT=dev_z≥+{SIG_Z}σ∩陰転 ／ LONG=dev_z≤−{SIG_Z}σ∩陽転（σ帯の教科書標準・a-priori）",
@@ -547,14 +591,23 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False) -> dict:
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False):
-    """E37 を回す（v6=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。"""
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False):
+    """E37 を回す（v6/v6r=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
+    v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。"""
     src = pathlib.Path(__file__).read_text(encoding="utf-8")
     _p1 = "shift(" + "-"; _p2 = "center" + "=True"
     assert _p1 not in src and _p2 not in src, "leak 疑い（未来参照 shift/center）"   # H2 自己 grep
+    v6 = v6 or v6r
     df = _gen_events_v6(df) if v6 else micro_rev_event(df)
     det = None
     evt_lbl = None
+    if v6r:
+        df = _tp_viable(df)
+        before = int(df["short_cand"].sum() + df["long_cand"].sum())
+        df["short_cand"] = (df["short_cand"] & df["viable_s"].to_numpy(bool))
+        df["long_cand"] = (df["long_cand"] & df["viable_l"].to_numpy(bool))
+        after = int(df["short_cand"].sum() + df["long_cand"].sum())
+        print(f"  [TP-viability] entry 時点で TP 目標<SCALP_FLOOR の候補を除外: {before:,} → {after:,} バー（−{before-after:,}）")
     if v6:
         m = df[list(EVENT_TYPES)].to_numpy(np.float32) > 0.5
         names = np.array(EVENT_TYPES)
@@ -572,7 +625,7 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False):
         teach = _teacher_labels(df, int(pd.Timestamp(TRAIN_END).value))
         days_train = max((teach.ts.max() - teach.ts.min()) / np.timedelta64(1, "D"), 1.0)
         det = _fit_detector(teach, feat, feat_cols, days_train,
-                            v6=v6, evt=(df[["ts"] + list(EVENT_TYPES)] if v6 else None))
+                            v6=v6, evt=(df[["ts"] + list(EVENT_TYPES)] if v6 else None), rank_be=v6r)
         gate_ok = detector_gate(det, feat, df)
         gated = int((gate_ok & (df["short_cand"] | df["long_cand"]).to_numpy(bool)).sum())
         print(f"  [ゲート] oof_theta={det['oof_theta']:.4f} 通過候補 {gated:,} バー")
@@ -584,16 +637,18 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False):
         print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
         assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
         assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9）"
-    _out(t, f"_{box_tf}_{'v6' if v6 else 'v5'}", det, tag=tag, gate_on=not no_gate, v6=v6)
+    ver = "v6r" if v6r else ("v6" if v6 else "v5")
+    _out(t, f"_{box_tf}_{ver}", det, tag=tag, gate_on=not no_gate, v6=v6, v6r=v6r)
 
 
-def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False) -> None:
+def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False) -> None:
     strat_base._output_and_report(
         t, suffix, stem="e37_range_scalp",
-        strategy=("E37 v6 レンジ・スキャル 両側 maker MR＋検出器ゲート（イベント5型＋θ規則反転）" if v6
+        strategy=("E37 v6r レンジ・スキャル 両側 maker MR＋検出器ゲート（金額整合回帰＋TP-viability）" if v6r
+                  else "E37 v6 レンジ・スキャル 両側 maker MR＋検出器ゲート（イベント5型＋θ規則反転）" if v6
                   else "E37 v5 レンジ・スキャル 両側 maker MR＋稼げるレンジ検出器ゲート"),
         script="e37_range_scalp.py",
-        sections=_param_sections(det, gate_on, v6=v6), tag=tag)
+        sections=_param_sections(det, gate_on, v6=v6, v6r=v6r), tag=tag)
 
 
 def _load(smoke: int) -> pd.DataFrame:
@@ -605,14 +660,21 @@ def _load(smoke: int) -> pd.DataFrame:
     return df
 
 
-def _diagnostic(df, v6=False):
+def _diagnostic(df, v6=False, v6r=False):
     """発火ファネル（採点しない）＝イベント頻度のみ（検出器は本走で学習＝重い処理を diagnostic で回さない）。"""
+    v6 = v6 or v6r
     df = _gen_events_v6(df) if v6 else micro_rev_event(df)
+    if v6r:
+        df = _tp_viable(df)
+        before = int(df["short_cand"].sum() + df["long_cand"].sum())
+        df["short_cand"] = (df["short_cand"] & df["viable_s"].to_numpy(bool))
+        df["long_cand"] = (df["long_cand"] & df["viable_l"].to_numpy(bool))
+        print(f"  [TP-viability] 候補 {before:,} → {int(df.short_cand.sum()+df.long_cand.sum()):,} バー")
     n = len(df)
     days = max((df["ts"].iloc[-1] - df["ts"].iloc[0]).total_seconds() / 86400.0, 1.0)
     s = int(df["short_cand"].sum()); L = int(df["long_cand"].sum())
     print("=" * 100)
-    print(f"[E37 {'v6' if v6 else 'v5'} 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日")
+    print(f"[E37 {'v6r' if v6r else 'v6' if v6 else 'v5'} 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日")
     if v6:
         for name in EVENT_TYPES:
             k = int(df[name].sum())
@@ -630,18 +692,20 @@ def main():
     ap.add_argument("--diagnostic", action="store_true", help="発火ファネル（イベント頻度）だけ出す＝採点しない")
     ap.add_argument("--no-gate", action="store_true", help="検出器ゲート OFF（恒等確認・lever-bites 用）")
     ap.add_argument("--v6", action="store_true", help="v6=イベント母数拡大（5型）＋θ選定規則反転（be≥1.0 内で頻度最大）。既定 OFF=v5 恒等")
+    ap.add_argument("--v6r", action="store_true", help="v6r=v6＋検出器の金額整合回帰（net/fee）＋TP-viability entry ゲート（acceptance 2026-07-03）")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
     a = ap.parse_args()
+    ver = "v6r" if a.v6r else ("v6" if a.v6 else "v5")
     print("=" * 100)
-    print(f"[E37 {'v6' if a.v6 else 'v5'}] レンジ・スキャル 両側 maker MR＋検出器ゲート"
-          + ("（v6=イベント5型＋θ規則反転）" if a.v6 else "（E36 デイトレと住み分け）"))
+    print(f"[E37 {ver}] レンジ・スキャル 両側 maker MR＋検出器ゲート"
+          + ("（v6r=金額整合回帰＋TP-viability）" if a.v6r else "（v6=イベント5型＋θ規則反転）" if a.v6 else "（E36 デイトレと住み分け）"))
     df = _load(a.smoke)
     print(f"  価格 {e34v1.CSV.name}（{len(df):,}本・{df.ts.iloc[0].date()}〜{df.ts.iloc[-1].date()}）")
     print(f"  計器 maker {ee.MAKER_FEE} / taker {ee.TAKER_FEE} / slip {ee.SLIPPAGE} / funding {ee.FUNDING_RATE_8H}/8h / unit {UNIT}")
     if a.diagnostic:
-        _diagnostic(df, v6=a.v6)
+        _diagnostic(df, v6=a.v6, v6r=a.v6r)
         return
-    run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6)
+    run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r)
     print("=" * 100)
 
 
