@@ -47,6 +47,19 @@ sys.stdout.write(c or '')
 # E37 対象か（他戦略は誤発火しない）
 printf '%s' "$CONTENT" | grep -qiE 'e37|trades_e37_range_scalp' || exit 0
 
+# ── KB 読了ゲート（2026-07-04 まこさん承認）: E37 の改善案/設計を書く瞬間、レンジ×スキャルの知識正本
+#    range_scalping_kb.md が read_log に無ければブロック＝「KB に書いても次の CC が読まない」穴を物理で塞ぐ。
+#    背景＝スキャル/レンジの業界標準を知らずに設計し10日間堂々巡り（デイトレ箱流用・統計量レンジ判定・深いSL）。
+if [ "$BASE" = "improvement_plan.md" ] || [ "$BASE" = "acceptance.md" ]; then
+  READ_LOG="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/read_log.txt"
+  if ! grep -q "range_scalping_kb" "$READ_LOG" 2>/dev/null; then
+    echo "🔒 [E37スキャル強制ゲート: ${BASE}] レンジ×スキャルの知識正本を読んでいません（2026-07-04 まこさん承認）。" >&2
+    echo "  → bitget-python-sdk-api/.claude/memory/range_scalping_kb.md を Read tool で開いてから書いてください。" >&2
+    echo "    E37 の設計は KB §7 の対応表（§1.2.1 ↔ 業界標準 ↔ 実装のあるべき形）に1行ずつ照合する。" >&2
+    exit 2
+  fi
+fi
+
 export E37_CONTENT="$CONTENT" E37_BASE="$BASE"
 VIOL=$(python3 <<'PY'
 import os, re
