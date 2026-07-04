@@ -53,8 +53,9 @@ if tn == "Bash":
     #  - --smoke: 採点しない検証ステップ（自己検査・規模確認）（2026-06-12 まこさん・smoke で永久未閉じ事案）
     #  - --no-score: 設計上採点なしの工程（2026-06-12 まこさん承認）
     #  - py_compile: コンパイル確認のみ（2026-06-18 まこさん承認・false trigger 防止）
-    # 実験＝戦略本体(strat_/train_/measure_/e3N_連番名)を採点ありで実行。probe/deep_analysis は分析＝除外(2026-06-16 命名非依存化)
-    _is_exp = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_|e3[0-9]_)[A-Za-z0-9_]*\.py", cmd_x)) \
+    # 実験＝戦略本体(strat_/train_/measure_/eNN_連番名)を採点ありで実行。probe/deep_analysis は分析＝除外(2026-06-16 命名非依存化)
+    #   2026-07-04 まこさん承認: e3[0-9]_ → e[0-9][0-9]_ に一般化（E40 番台以降の新戦略が検知から素通りする穴＝pdca_flow §4 の登録忘れ構造を縮小）
+    _is_exp = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*(strat_|train_|measure_|e[0-9][0-9]_)[A-Za-z0-9_]*\.py", cmd_x)) \
         and not bool(re.search(r"(_probe|_deep_analysis)\.py|score[A-Za-z0-9_]*\.py", cmd_x)) \
         and "py_compile" not in cmd_x   # 採点ラッパー score_*・probe・分析・py_compile は実験から除外
     if _is_exp:
@@ -103,7 +104,9 @@ if tn == "Bash":
         is_generic = bool(re.search(r"python[0-9.]*[ \t]+[^|&;\n]*analyze\.py", cmd_x))
         incomplete = os.path.join(state, "pdca_analyze_incomplete")
         if not is_generic:
-            rm(need_analyze); rm(incomplete)
+            # 2026-07-04 まこさん承認: *_deep_analysis/_probe では need_analyze を下ろさない＝§0前後比較＋N4ドリフトの
+            #   中身検査を通る汎用 analyze.py だけが分析完了（deep_analysis 経由で前後比較を飛ばす抜け道を閉鎖）。
+            rm(incomplete)
         else:
             rdir = "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/results/priority_rebuild/ratchet"
             files = sorted(glob.glob(os.path.join(rdir, "analysis_*.txt")), key=os.path.getmtime)

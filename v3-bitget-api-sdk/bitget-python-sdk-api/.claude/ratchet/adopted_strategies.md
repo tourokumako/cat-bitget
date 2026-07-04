@@ -6,6 +6,17 @@
 
 <!-- PORTFOLIO_CHECK: BASE_MAX=E32b ; PILLARS=E32b,P21,P23,E28,E35,E36 -->
 <!-- ROLE_CHECK: e37=scalp ; e36=daytrade ; e35=range_both -->
+<!-- STRATEGY_ANCHOR: e37=range,short_only,scalp ; e36=range,short_only,daytrade ; e35=range,both,none ; e28=spike_crash,long_only,none ; p21=downtrend,short_only,none ; p23=downtrend,short_only,none -->
+<!-- ↑ enforce_strategy_anchor.sh/.py（戦略係留ゲート・2026-07-04 まこさん承認）が読む機械可読マーカー
+     ＝cat_requirements §1.2.1（全体戦略・まこさん確定）の「担当局面,方向,頻度役割」を token ごとに1行へ固定したもの。
+     acceptance.md を書く瞬間に、TARGET 戦略の ①本マーカー逐語の再掲 ②局面ゲート識別子（GATE_IDENT=入口を担当局面の
+     判定で制約する列/関数）③方向機構識別子（SIDE_IDENT・short_only/long_only の時のみ）の宣言＋DESIGN_CONTRACT 登録
+     を物理強制する（識別子は require_design_contract_before_run が実行前に実装ソースと機械照合）。
+     背景＝E37 が両側化・レンジ判定撤去・教師すり替えのドリフトで §1.2.1（ショートのみ・レンジ・スキャル）違反のまま
+     8イテレーション走った事案（ledger ARC11〜23・2026-07-04 まこさん監査で発覚・L-322）。
+     頻度役割（第3フィールド）の強制は既存 enforce_role_criteria.sh（ROLE_CHECK）が担当＝表示用。
+     局面 none・方向 both は該当軸スルー。担当・方向が変わった/戦略が増えたら本行だけ更新＝hook は自動追従
+     （hook に戦略名を焼かない・§1.2.1 と食い違ったら §1.2.1 が正）。 -->
 <!-- ADOPTED_BASE_FILES: trades_e36_short_oscillation_scenecap_012 ; trades_e35_oscillation_5m_iter9 -->
 <!-- ↑ ratchet_io._adopted_base_stems（採用base押し出し防止・2026-07-03 まこさん承認）が読む機械可読マーカー。
      採用 base はタグ連番名のまま（再走禁止＝安定名を再発行できない）なので、同 stem の新実験の自動 archive

@@ -18,7 +18,7 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-## 1. hook 一覧（26本・登録は settings.local.json）
+## 1. hook 一覧（29本・登録は settings.local.json）
 
 | hook | タイミング | matcher | 役割 |
 |---|---|---|---|
@@ -43,6 +43,9 @@
 | enforce_role_criteria | PreToolUse | Write/Edit | **役割忘れ防止（2026-06-29 まこさん承認・番人8/8 pass）**＝acceptance.md を書く瞬間に、TARGET スクリプト token（e3N）の役割を adopted_strategies.md の `ROLE_CHECK` マーカーから引き、役割に反する案をブロック。**scalp（e37）**＝F 受け入れに「件数/日を上げる（高頻度＝役割）」基準が必須＋「件数±0/減・頻度は次 iter」の尻すぼみ容認文言を禁止／**daytrade（e36）**＝「スキャル化/高頻度化」等 役割を壊す文言を禁止／未定義役割はスルー。背景＝CC が E37=スキャル（件数が役割）を忘れ件数±0 の floor 単独案を出し ⑩戦略整合に矛盾を書きながら「頻度は次 iter」と尻すぼみ容認した事案（E34 iter0/3 再演）。hook に戦略名を焼かず ROLE_CHECK マーカー追従（戦略増は1行追加・PORTFOLIO_CHECK と同型）。 |
 | enforce_pdca_chain | PreToolUse | Write/Edit | **【最深刻・思考連結の物理化】PDCA全戦略共通（2026-07-02 まこさん指示「PDCAとすべての思考がつながる仕組み」・番人11/11 pass）**＝Check(analysis_block)→Action(improvement_plan)→Plan(acceptance) の"継ぎ目"で前段の結論を引き継がないとブロック。① analysis_block＝件数(トレード数)を per-trade より先に(§0①)・前後比較・原因3分類 ② improvement_plan＝件数起点＋多角発散(異手法2種)＋末尾に `<!-- LEVER: 動かす値 -->` を1つ確定＋next_step(過去失敗)読了 ③ **acceptance＝improvement_plan の LEVER を"逐語で"引き継がないとブロック（接続②＝分析→設計の連結）**。背景＝CC が分析(件数失格)を強制されてもその結論を無視し別の思いつきで設計した「思考が繋がらない」(2026-07-02・L-316)。限界＝逐語を引いても中身は形骸化可＝連結が本物かは score.py＋まこさんの目。 |
 | enforce_e37_pdca | PreToolUse | Write/Edit | **E37=スキャル 特有のみ（2026-07-02・番人11/11 pass・共通は enforce_pdca_chain）**＝内容に e37 を含む時だけ発火。① analysis_block＝件数がスキャル頻度(役割=一級基準)を満たすか判定(失格/達成・§1.2.1) ② acceptance＝⑦手数料を超えるTP幅(maker往復)・⑨短保有(分単位・数分＝保有4h再演防止)・⑫5分足設定 RSI9/MTF(technical_kb §4/§5・RSI14/MTFなし 再演防止)。**Entry/Exit セットは戦術の一つ＝常時強制しない**（別々調整が良い局面もある）。 |
+| enforce_strategy_anchor | PreToolUse | Write/Edit | **【戦略係留・全戦略汎用】acceptance.md を書く瞬間に「戦略の指定（担当局面・方向・頻度）との照合」を物理強制（2026-07-04 まこさん承認・番人9/9 pass・本体は enforce_strategy_anchor.py＝hook の python 別ファイル規約）**。台帳 adopted_strategies の `STRATEGY_ANCHOR` マーカー（＝cat_requirements §1.2.1 の機械可読形・例 e37=range,short_only,scalp）から TARGET 戦略の指定を引き、①マーカー逐語の再掲 ②局面ゲート識別子 GATE_IDENT=（入口を担当局面の判定で制約する列/関数）③方向機構識別子 SIDE_IDENT=（short_only/long_only の時のみ）の宣言＋**識別子の DESIGN_CONTRACT 登録**（→ require_design_contract_before_run が実行前に実装ソースと機械照合）を要求。「レンジ判定なし」「暗黙に学ぶ」等の逃げ文言はブロック。未定義 token・局面 none・方向 both はスルー。背景＝E37 が両側化・レンジ判定撤去・教師すり替えの5段階ドリフトで §1.2.1（ショートのみ・レンジ）違反のまま8イテレーション走った事案（ledger ARC11〜23・L-322）＝改善アーク/enforce_pdca_chain の「前 iter との連結」だけでは鎖全体の戦略からの漂流を検出できない穴を「戦略への係留」で塞ぐ。頻度役割は既存 enforce_role_criteria が担当（重複させない）。**＋経緯の係留（2026-07-04 追加）＝対象戦略の ledger 直近 ARC エントリの iter 名の逐語引用を必須**（ledger 必読が部分読で通る穴＝今日の事案の温床を塞ぐ・番人 15/15 pass）。限界＝識別子の形骸配線は見抜けない（score.py＋まこさんの目）。 |
+| require_leak_annotation | PreToolUse | Write/Edit | **H2 leak パターンの書き込み時ゲート（2026-07-04 まこさん承認・番人 pass・本体 .py 別ファイル）**＝scripts/priority_rebuild/*.py に未来参照の典型（`.shift(-`・`center=True`）を含む行を書く瞬間、行内に `# H2OK: <理由>` が無ければブロック＝**全未来参照サイトを書く瞬間に因果性宣言させる**（false_positive §0-1 関所B の書き込み時強制・H2 が実装者の自己 assert 頼みだった穴の縮小）。build_labels*／archive／priority_rebuild 外は対象外。既存戦略は該当0件を確認済（既存を壊さない）。限界＝パターン網羅でない（rolling 窓ずれ等は検出外＝関所B・score.py が引き続き担保）。 |
+| hook_health_check | SessionStart | — | **hook 無言死の検出（2026-07-04 まこさん承認・表示専用 exit 0）**＝①登録 .sh の実在・実行権限 ②hooks/*.py 全部の py_compile（構文死＝pdca_mark 2026-06-29〜07-03 無言死事案の型） ③state/*_error.log の非空（fail-open で握りつぶした実行時エラーの可視化）。初回実走で既存 require_tag_for_experiment.sh の実行権限欠落を検出・是正（2026-07-04）。 |
 | require_precheck_before_score | PreToolUse | Bash | score.py を CLI 実行する前に precheck PASS を要求 |
 | require_design_contract_before_run | PreToolUse | Bash | 戦略実行の前に DESIGN_CONTRACT で実装を機械照合 |
 | require_period_source | PreToolUse | Bash | priority_rebuild の .py 実行前に、期間境界(TRAIN_END/SC_START/SCORE_START/SCORE_END/SEAL_START/EMBARGO)が periods.py 由来でない自前定義ならブロック（期間ズレ根絶・E0.5・2026-06-18） |
@@ -126,10 +129,26 @@ pdca_mark / require_design_contract の検知は全部「**コマンド名・imp
 ## 5. 新スクリプトの命名規約（強制に確実に乗せるため）
 - **実験**スクリプト名は `strat_` / `train_` / `measure_` で始める。外れる名前（戦略本体に E35 のような連番名を付ける）を作るなら、pdca_mark に明示登録する。
 - **審判**は `score.py` を CLI で通す。gate 外の `score.score(df)` を別名スクリプトで呼ぶなら、その呼び出しを pdca_mark の審判検知に登録する。
-- **分析**は `analyze.py` を通す。専用分析（`*_deep_analysis.py` 等）を使うなら need_analyze / need_analyze_report の解除対象に登録する。
+- **分析**は `analyze.py` を通す。**⚠️2026-07-04 改訂（まこさん承認）: `*_deep_analysis.py`/`*_probe.py` は need_analyze を下ろさない**＝§0前後比較＋N4ドリフトの中身検査を通る汎用 analyze.py だけが分析完了（deep_analysis 経由で前後比較を飛ばす抜け道を閉鎖）。deep_analysis は補助分析として使う。
+- **実験の検知は `e[0-9][0-9]_` に一般化済（2026-07-04）**＝E40 番台以降の新戦略も自動で審判強制に乗る（旧 e3N 固定＝素通りの穴を縮小）。
 - **read-only 分析 probe**（/tmp・scratchpad に置く使い捨てスクリプト）は必ず `*_probe.py` または `*_deep_analysis.py` で命名する＝**require_probe_naming が物理強制**（python 実行時のみ・2026-06-26）。接尾辞なし（特に `e3N_*.py`）だと pdca_mark が「実験」と誤検知し need_score 旗を誤発火させる（2026-06-26 事案）。実戦略は scripts/priority_rebuild/ 配下に置き、probe を直下に作らない。
 - **検証期間**（学習/捨て/採点/封印の境界）は `periods.py` から import する（自前で日付リテラルを書かない）。自前定義は require_period_source が実行前にブロック。表示文字列も periods から組み立てる（手打ちしない）。＝期間ズレ根絶の SSOT（ledger E0.5）。
 - **使用パラメータ・ロジックのサイドカー**（2026-06-19）: 戦略は走行のたびに、出力する売買記録CSVの隣に `<stem>_params.json` を `params_sidecar.write_sidecar` で出す。中身＝その戦略で**実際に使った**指標/閾値/TP/SL/TimeExit/期間/サイズ ＋ **Entry/Exit ロジック（ルールの流れ・exit_reason）**。`report.py` 節0 が戦略名非依存で自動表示（E35 が手本・E36/E37 も同パターン）。read 専用メタ＝net 計算・審判に不関与。pdca_mark は `py_compile`（コンパイル確認）を実験/審判検知から除外（false trigger 防止・2026-06-18/19）。
+
+---
+
+## 6. 将来の段（定義のみ・強制は該当フェーズ到達時に設計・2026-07-04 まこさん確認）
+
+今の PDCA マップはバックテストの個別戦略最適化で閉じている。**目標（月 net ≥$1,900・本番で出す数字）に届くには下の2段が将来必要**＝ここに段として定義しておく（次の CC が「単独 net の足し算＝届く」と誤読しない足場）。**今の個別最適化の段階では強制しない**（まこさん方針 2026-07-04＝各レジームの複数戦略がある程度最適化されてから）。
+
+### 6.1 統合・最終調整段（V9 型・全戦略を1つに組み込む）
+- 各局面の戦略（E32b/E36/E37/E28/上げ柱…）がある程度最適化されたら、**全戦略を1つの決め手（V9 のような構造）に組み込んで最終調整**する。
+- この段で初めて審判するもの: ①**合算 cap ≤0.12**（単独 CSV の cap は個別戦略の話・本番は全戦略合算＝H1/§6.1） ②**同方向の食い合い**（E36/E35-SHORT が E32b と予算を奪い合う分＝additive か） ③**合算 net が全月 $1,900 以上か**（単独 net の素朴な足し算は未検証の見積り＝台帳の注意書き）。
+- 強制の設計（合算採点スクリプト・hook）はこの段に入る時にまこさんと決める。
+
+### 6.2 本番移行段（バックテスト→ライブ BOT の関所）
+- 統合の合算採点を通った後、本番に出す前の関所: ①**offline=online 一致**（同じ入力でバックテスト実装とライブ BOT が同じ判断をするか・cat_requirements §4.2・V9 期の verify_ml_inference 相当を E系 pipeline に接続） ②**demo（paptrading）→本番の段階移行**（§4.5・H14＝ALLOW_LIVE_ORDERS/paper_trading はユーザーのみ変更） ③レート制限・発注仕様の照合（exchange_spec）。
+- 強制の設計はこの段に入る時にまこさんと決める。バックテストの勝ちが本番に運ばれる保証はこの2段で初めて閉じる。
 
 ---
 
