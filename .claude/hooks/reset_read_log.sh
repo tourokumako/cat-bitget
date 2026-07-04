@@ -25,10 +25,12 @@ cat > "$STATE_DIR/goal_block.md" <<'EOF'
 EOF
 
 echo "=== [読了強制ゲート 有効] ==="
-echo "必読2本を Read tool で実際に開くまで、Bash/Edit/Write は block されます（読んだふり防止・2026-06-13 §8.1 で cat_requirements を just-in-time へ移し 3→2・require_read_before_work と一致）:"
+echo "必読3本を Read tool で実際に開くまで、Bash/Edit/Write は block されます（読んだふり防止・require_read_before_work と一致）:"
 echo "  1. WORKFLOW.md（現在地・次タスク）"
-echo "  2. ledger.md（PDCA 実験記録の正本・直近の数字/原因/採否）"
+echo "  2. next_step.md（改善アーク＝前提/狙い/内容/方法/結果/採否・次セッション起点・2026-07-05 ledger.md 全文読了強制から差替）"
+echo "  3. adopted_strategies.md（採用ポートフォリオ台帳）"
 echo "→ grep や表示だけでは解除されません。Read tool で開いてください。"
+echo "（ledger.md 本体＝特定の過去実験を深掘りする時に読む参照資料。毎回の必読からは外した）"
 echo "★ cat_requirements.md / exchange_spec.md（決済方法）は『設計書を書く瞬間』に強制 read（just-in-time・require_spec_read_before_design.sh）。"
 echo "   理由: セッション開始時に読んでもインプットされない実証（まこさん 2026-06-13・add/決済を毎回誤解）。"
 echo "（補助＝必要時のみ: 設計=strat_v9ml_design / 分析手順=analysis_playbook / 教訓=lessons_active を grep 参照）"

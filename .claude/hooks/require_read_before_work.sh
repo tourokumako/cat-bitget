@@ -28,8 +28,16 @@ input=$(cat)
 #   → just-in-time（設計書を書く瞬間に exchange_spec ★決済方法 + cat_requirements を強制）に移管＝require_spec_read_before_design.sh。
 # adopted_strategies.md（採用台帳）追加: 2026-06-22 まこさん指示。器の現在値を「最新の1実験」でなく
 #   「採用ポートフォリオの積み上げ」で見るため、goal_block を書く前に台帳を Read 強制（ゲート3 と対）。
-REQUIRED=("WORKFLOW" "ledger.md" "adopted_strategies")
-LABEL=("WORKFLOW.md(現在地)" "ledger.md(PDCA実験記録の正本)" "adopted_strategies.md(採用ポートフォリオ台帳)")
+# 2026-07-05 まこさん指示: ledger.md（534KB・1465行）を毎回 Read 強制していたが、判定は
+#   「ledger.md という文字列が read_log に1回出るか」だけ＝実質1行 Read でもゲートは通り、全文読了の
+#   物理担保にはなっていなかった（CC が「全文読まねば」と誤解し手探りの offset 再試行で時間浪費した事案）。
+#   一方 next_step.md の改善アーク表（gen_improvement_arc.py 自動生成・ARC マーカー由来・改ざん不可）は
+#   既に各イテレーションの 前提/狙い/内容/方法/結果/採否 を1行ずつ持ち、goal_block「改善の経緯」が
+#   要求する情報をそのまま満たす＝next_step.md の Read 1回の方が実効性が高い。ledger.md 本体（原因3分類・
+#   問0〜問5の内訳数字等）は「特定の過去実験を深掘りする時に読む参照資料」に位置づけを変更＝毎回の
+#   Read 強制からは外す（cat_requirements §8.2 の役割定義とも整合＝ledger=実験記録の詳細/next_step=起点1枚）。
+REQUIRED=("WORKFLOW" "next_step" "adopted_strategies")
+LABEL=("WORKFLOW.md(現在地)" "next_step.md(改善アーク=次セッション起点)" "adopted_strategies.md(採用ポートフォリオ台帳)")
 
 missing=()
 for idx in "${!REQUIRED[@]}"; do

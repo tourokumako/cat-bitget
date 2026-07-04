@@ -26,7 +26,7 @@
 | force_read_ml_design | SessionStart | — | 必読・6軸ゲート・保管ルール等を表示 |
 | reset_read_log | SessionStart | — | read_log をリセット（前セッションの読了を持ち越さない） |
 | show_latest_state | SessionStart | — | next_step.md 全文表示（起点） |
-| require_read_before_work | PreToolUse | Bash/Edit/Write/MultiEdit | 必読3本（WORKFLOW/ledger/adopted_strategies）＋目標逆算ブロック＋器の現在値が採用ポートフォリオの積み上げ（最大地面＋採用柱2本以上）になるまで作業ブロック（ゲート3＝近視眼防止・2026-06-22）＋**改善アーク列ゲート＝goal_block「改善の経緯」が 狙い だけでなく 内容（動かしたレバー/機構）・方法（検証/採否理由＝失敗の型）も列に持つ（2026-06-26・狙いだけでは過去 iter の失敗の型が見えず同型を再提案する穴を塞ぐ）** |
+| require_read_before_work | PreToolUse | Bash/Edit/Write/MultiEdit | 必読3本（WORKFLOW/**next_step**/adopted_strategies）＋目標逆算ブロック＋器の現在値が採用ポートフォリオの積み上げ（最大地面＋採用柱2本以上）になるまで作業ブロック（ゲート3＝近視眼防止・2026-06-22）＋**改善アーク列ゲート＝goal_block「改善の経緯」が 狙い だけでなく 内容（動かしたレバー/機構）・方法（検証/採否理由＝失敗の型）も列に持つ（2026-06-26・狙いだけでは過去 iter の失敗の型が見えず同型を再提案する穴を塞ぐ）**（**2026-07-05 改訂＝ledger.md 全文読了強制を next_step.md 読了に差替**。判定は「文字列が read_log に1回出るか」だけで全文読了の担保になっておらず、CC が534KB/1465行を全文読もうと手探りし時間浪費。next_step.md の改善アーク表（gen_improvement_arc.py 自動生成）は既に各iterの前提/狙い/内容/方法/結果/採否を持ち「改善の経緯」ゲートの実質を満たす。ledger.md 本体は特定の過去実験の深掘り時に読む参照資料に位置づけ変更） |
 | record_read | PostToolUse | Read | Read した .md を read_log.txt に記録 |
 | check_websearch_before_design_write | PreToolUse | Write/Edit | 設計書 Write 前に直近60分の検索ベースアップを要求 |
 | enforce_search_quality | PreToolUse | WebSearch | 検索品質（12語以内・allowed_domains 指定） |

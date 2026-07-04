@@ -243,9 +243,9 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 
 ## §8 運用ガイド（セッション開始時に読む・新セッション orientation）
 
-### 8.1 セッション開始時に読む順（2026-06-13 まこさん指示で cat_requirements を just-in-time へ移し 3→2・読了強制 hook と同期）
+### 8.1 セッション開始時に読む順（2026-06-13 まこさん指示で cat_requirements を just-in-time へ移し 3→2・読了強制 hook と同期・2026-07-05 ②を ledger.md→next_step.md に差替）
 1. **`WORKFLOW.md` 改訂N active** ＝ 今どこ・次に何をするか（現在地5行・詳細は ledger）
-2. **`.claude/ratchet/ledger.md`** ＝ PDCA 実験ログ（直近の数字・原因3分類・採用/破棄）
+2. **`.claude/state/next_step.md`** ＝ 改善アーク（前提/狙い/内容/方法/結果/採否を全iterationにわたり1行ずつ・`gen_improvement_arc.py` 自動生成・ARC マーカー由来で改ざん不可）＝次セッションの起点。**2026-07-05 まこさん指摘で ledger.md（534KB・1465行）の全文読了強制から差替**＝旧ゲートは「read_log に'ledger.md'の文字列が1回出るか」しか見ておらず全文読了の担保になっていなかった一方、next_step.md の改善アーク表は既に「改善の経緯」ゲートが要る情報を凝縮済み。**ledger.md 本体は特定の過去実験を深掘りする時に読む参照資料**（振り返り用・毎回の必読ではない）
 
 > ★ **cat_requirements.md（全体像・制約 H1-H16・PDCA）と exchange_spec.md（決済方法）は「設計書を書く瞬間」に強制 read**（just-in-time・`require_spec_read_before_design.sh`）。セッション開始時に読んでもインプットされない実証（まこさん 2026-06-13・add/決済を毎回誤解）→ 必要な箇所を使う瞬間に読む方式へ。
 
