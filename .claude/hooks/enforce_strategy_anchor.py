@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-"""enforce_strategy_anchor.py — PreToolUse(Write|Edit) acceptance.md 戦略係留ゲート（2026-07-04 まこさん承認）
+"""enforce_strategy_anchor.py — PreToolUse(Write|Edit) acceptance.md / improvement_plan.md 戦略係留ゲート（2026-07-04 まこさん承認）
 
 目的: acceptance を書く瞬間に、TARGET 戦略の「担当局面・方向・頻度」（台帳 STRATEGY_ANCHOR マーカー＝
 cat_requirements §1.2.1 全体戦略の機械可読形）との照合を物理強制する。
+追加（2026-07-04 同日・まこさん「強制実装する」）: improvement_plan.md（Action 段＝改善案の収束）にも
+軽量係留（★戦略照合 見出し＋アンカー逐語＋局面/方向/頻度の照合行＋逃げ文言ブロック）を前倒し適用。
+背景＝acceptance の網の手前（チャット即興提案・改善案収束）で E36 デイトレ部品（BOX_N=100 の箱）を
+E37=scalp に流用する案が scalp 照合なしで出た事案（同日）。重い検査（識別子/DESIGN_CONTRACT/ARC 引用）は
+acceptance 段のみ＝重複させない。
 背景: E37 が5段階のドリフト（MVP で両側化・v2/v3 でレンジ判定撤去・v5 で教師を「学習窓で儲かったか」に
 すり替え・v6 でトレンドイベントを母数に追加）で §1.2.1（ショートのみ・レンジ・スキャル）違反のまま
 8イテレーション走った事案（ledger ARC11〜23・2026-07-04 まこさん監査で発覚・L-322）。
@@ -37,7 +42,11 @@ def main():
         return 0  # サブエージェントは通す（デッドロック回避・他 hook と同型）
     ti = d.get("tool_input", {}) or {}
     fp = ti.get("file_path", "")
-    if os.path.basename(fp) != "acceptance.md":
+    base = os.path.basename(fp)
+    # improvement_plan.md も対象（2026-07-04 まこさん承認「強制実装する」）: acceptance の網の手前
+    # （改善案を収束させる Action 段）で戦略から漂流した事案（2026-07-04 E37 に E36 デイトレ部品の
+    # 箱流用案をチャット即興で提案＝scalp 照合なし）を、improvement_plan を書く瞬間に塞ぐ。
+    if base not in ("acceptance.md", "improvement_plan.md"):
         return 0
     c = ti.get("content")
     if c is None:  # Edit＝現ファイルに old→new を適用した実効内容で判定
@@ -66,10 +75,11 @@ def main():
     if not anchors:
         return 0
 
-    # TARGET 行の token を優先（無ければ本文から）
+    # TARGET 行の token を優先（無ければ本文から）。大文字表記（E37 等）の検出漏れ＝スルーを防ぐため
+    # 非区別で照合（2026-07-04・improvement_plan には TARGET 行が無く本文は「E37」表記が多い）。
     token = None
     tl = re.search(r"^TARGET:\s*(.+)$", c, re.M)
-    hay = os.path.basename(tl.group(1).strip()) if tl else c
+    hay = (os.path.basename(tl.group(1).strip()) if tl else c).lower()
     for k in anchors:
         if re.search(r"(^|[^a-z0-9])" + re.escape(k) + r"([^0-9]|$)", hay):
             token = k
@@ -87,6 +97,32 @@ def main():
         return 2
 
     anchor_str = "%s=%s,%s,%s" % (token, situ, direc, freq)
+
+    # ── improvement_plan.md（Action 段）: 軽量係留＝「照合の提示」だけを物理化（2026-07-04）──
+    # 重い検査（GATE_IDENT/SIDE_IDENT/DESIGN_CONTRACT/ARC 逐語引用）は acceptance 段のまま＝重複させない。
+    # ここで守るのは「提案の各要素を戦略3フィールド（局面・方向・頻度）に1行ずつ当てて照合を書いたか」＝
+    # 書き写し（goal_block への引用）を照合の代わりにする穴（2026-07-04 事案の構造原因）を塞ぐ。
+    if base == "improvement_plan.md":
+        if "★戦略照合" not in c:
+            return fail("見出し「★戦略照合」がありません（改善案を戦略と照合せず収束させるのは禁止＝2026-07-04 箱流用案の再演防止）。",
+                        "improvement_plan に『## ★戦略照合（STRATEGY_ANCHOR: %s）』の節を立て、局面/方向/頻度の各行で案との適合を1行ずつ書いてください。" % anchor_str)
+        if anchor_str not in c:
+            return fail("台帳 STRATEGY_ANCHOR の逐語（%s）が再掲されていません。" % anchor_str,
+                        "adopted_strategies.md のマーカーから逐語でコピーしてください（不一致＝台帳か理解が古い＝先に照合）。")
+        sec = c.split("★戦略照合", 1)[1]
+        for label, meaning in (("局面", "担当局面（どの場でだけ動くか）に案が適合する形"),
+                               ("方向", "方向（short_only 等）を案がどう保証するか"),
+                               ("頻度", "頻度役割（scalp=件数/日 等）に案が適合する根拠")):
+            if label not in sec:
+                return fail("★戦略照合 節に「%s」の照合行がありません。" % label,
+                            "%s を1行で書いてください（3フィールド全部の照合＝どれか1つの欠落が今回のドリフトの型）。" % meaning)
+        if situ not in ("none", "-"):
+            bad = re.search(r"レンジ判定なし|レンジ判定は不要|暗黙に学ぶ|レンジゲートを外す|レンジゲート撤去|局面判定なし|レンジ判定を外す|局面判定を外す", c)
+            if bad:
+                return fail("局面(%s)の判定を外す/持たない趣旨の文言があります: 「%s」" % (situ, bad.group(0)),
+                            "§1.2.1 の担当局面でだけエントリーする案にしてください。")
+        return 0
+
     if "★戦略照合" not in c:
         return fail("見出し「★戦略照合」がありません（戦略との照合を提示せず設計を書くのは禁止）。",
                     "acceptance に『## ★戦略照合（STRATEGY_ANCHOR: %s）』の節を立て、局面ゲート/方向機構の識別子を明記してください。" % anchor_str)
