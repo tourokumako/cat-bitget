@@ -34,6 +34,17 @@
   ③ 帯の合併＝be≥1.0 に届いた型のいずれかで自型 θ を超えたバーを執行（OR・_detector_gate_v7）。
   ④ TP-viability（v6r 承認済み部品）は同梱を継続。執行エンジン・出口・サイズは v5 不変。
 
+★v8（--v8・acceptance「E37 v8 選定計器の是正」承認 2026-07-04・既定 OFF=v7 恒等・フェーズ0＝計器是正・新レバーなし）:
+  実装総点検（2026-07-04）で特定した「選定計器の歪み」3点の是正＝θ・帯を選ぶ物差しを実行実態に一致させる:
+  ① 型の相互排他化（_gen_events_v8_exclusive）＝5型の入れ子（evt_mr⊂evt_mr_sh 等）を特異度順で1バー1型に割当
+     （型別教師の重複と「帯の合併で最も緩い帯が支配」を根絶・union は不変＝候補集合を変えない）。
+  ② 執行後フロンティア（_frontier_exec_consistent）＝θ選定の件数/日・be を、実行同一規則（サイドごと単一スロット・
+     pending 占有・TTL タッチ約定・不約定は建てない）を適用した執行後の系列で測る（v7 までの独立カウント＝
+     学習1.82イベント/日が実行0.41件/日に消える過大見積りの是正・根拠 arxiv 2407.16527=100%fill 仮定は利益850%過大）。
+  ③ 型×side 別の θ・be≥1.0 判定（_select_theta_per_type_side）＝side プールが片側赤字（採点窓 B節 LONG−$3 vs
+     SHORT−$53）を覆い隠すのを止める。帯なしの型×side は執行しない・全型×side 帯なしなら SystemExit（停止ガード）。
+  検出器 fit（型別・side は特徴列）・特徴・執行・出口・サイズは v7 不変＝新レバーなし・新数値なし。
+
 H 制約（acceptance.md §E）:
   H1 cap … 両側各1玉（LONG 0.024 + SHORT 0.024 = 最大 0.048 ≤ 0.12）＋_verify_cap 実測 assert。
   H2 leak … 特徴量=Phase 0 leak 検証済 parquet のイベントバー行（因果）。検出器 fit は学習窓のみ
@@ -222,21 +233,22 @@ def _teacher_labels(df: pd.DataFrame, upto_ns: int) -> pd.DataFrame:
         ep = lim
         pos = UNIT * ep
         slp = ep + K_SL * atr[fill] if side == -1 else ep - K_SL * atr[fill]
-        xp = None; taker = False
+        xp = None; taker = False; exit_j = None
         for j in range(fill + 1, fill + 1 + T_MAX):
             tgt = (sma[j] - TP_OVERSHOOT * sd[j]) if side == -1 else (sma[j] + TP_OVERSHOOT * sd[j])
             if side == -1:
-                if h[j] >= slp: xp = max(slp, o[j]); break          # SL 優先・gap 反映（保守）
-                if np.isfinite(tgt) and tgt <= ep * (1.0 - SCALP_FLOOR) and l[j] <= tgt: xp = tgt; break
+                if h[j] >= slp: xp = max(slp, o[j]); exit_j = j; break          # SL 優先・gap 反映（保守）
+                if np.isfinite(tgt) and tgt <= ep * (1.0 - SCALP_FLOOR) and l[j] <= tgt: xp = tgt; exit_j = j; break
             else:
-                if l[j] <= slp: xp = min(slp, o[j]); break
-                if np.isfinite(tgt) and tgt >= ep * (1.0 + SCALP_FLOOR) and h[j] >= tgt: xp = tgt; break
+                if l[j] <= slp: xp = min(slp, o[j]); exit_j = j; break
+                if np.isfinite(tgt) and tgt >= ep * (1.0 + SCALP_FLOOR) and h[j] >= tgt: xp = tgt; exit_j = j; break
         if xp is None:
-            xp = c[fill + T_MAX]; taker = True
+            xp = c[fill + T_MAX]; taker = True; exit_j = fill + T_MAX
         fee = pos * ee.MAKER_FEE + UNIT * xp * ((ee.TAKER_FEE + ee.SLIPPAGE) if taker else ee.MAKER_FEE)
         gross = (ep - xp) * UNIT if side == -1 else (xp - ep) * UNIT
-        rows.append((ts[i], side, gross, fee, gross - fee))
-    t = pd.DataFrame(rows, columns=["ts", "side", "gross", "fee", "net"])
+        rows.append((ts[i], side, gross, fee, gross - fee, i, fill, exit_j))
+    t = pd.DataFrame(rows, columns=["ts", "side", "gross", "fee", "net", "entry_i", "fill_i", "exit_i"])
+    # entry_i/fill_i/exit_i は v8 の執行後フロンティア（スロット整合）専用の付加列＝v5〜v7 は不使用（挙動不変）
     t["y"] = (t["net"] > 0).astype(int)
     print(f"  [教師] エンジン同一執行: 約定 {len(t)} / 不約定除外 {unfilled}（教師とエンジンの fill 一致）")
     return t
@@ -423,6 +435,547 @@ def _detector_gate_v7(bundle: dict, feat: pd.DataFrame, df: pd.DataFrame) -> tup
                 ok[j] = True
                 via[j] = f"{via[j]}+{name}" if via[j] else name
     return ok, via
+
+
+# ══ ②v8 選定計器の是正（acceptance 2026-07-04・フェーズ0＝母数一致＋side別be＋型相互排他・新レバーなし）══
+def _gen_events_v8_exclusive(df: pd.DataFrame) -> pd.DataFrame:
+    """v8①: 5型の入れ子を相互排他化＝同一バーは特異度順（条件が多い型を優先・a-priori・新数値なし）で1型に割当。
+    v7 実装総点検（2026-07-04）＝型が入れ子（evt_mr⊂evt_mr_sh 等）だと型別教師が重複し、帯の合併では
+    最も緩い帯が通過を支配する。union（short_cand/long_cand）は不変＝執行候補集合は変えない（割当の一意化のみ）。"""
+    pri = ("evt_pull", "evt_brk", "evt_bb", "evt_mr", "evt_mr_sh")   # 特異度順（MACD条件付き→ブレイク後→バンド→深→浅）
+    assert set(pri) == set(EVENT_TYPES), "v8 優先順と EVENT_TYPES の不一致"
+    taken = np.zeros(len(df), dtype=bool)
+    before = {n_: int(df[n_].sum()) for n_ in EVENT_TYPES}
+    for name in pri:
+        m = df[name].to_numpy(np.float32) > 0.5
+        keep = m & ~taken
+        df[name] = keep.astype(np.float32)
+        taken |= keep
+    tot = np.zeros(len(df), dtype=int)
+    for n_ in EVENT_TYPES:
+        tot += (df[n_].to_numpy(np.float32) > 0.5).astype(int)
+    assert int((tot > 1).sum()) == 0, "v8 相互排他 assert: 型マスクに重複が残存"
+    after = {n_: int(df[n_].sum()) for n_ in EVENT_TYPES}
+    print(f"  [v8 相互排他] 型割当 before={json.dumps(before)} → after={json.dumps(after)}（ペア重複0 assert PASS）")
+    return df
+
+
+def _frontier_exec_consistent(sub: pd.DataFrame, oof: np.ndarray, days_train: float) -> list:
+    """v8②: θ 候補ごとに、実行同一規則（サイドごと単一スロット＝busy 中はスキップ・教師は TTL タッチ約定済み
+    ＝不約定は建てない を反映済み）を学習窓イベント列へ逐次適用した「執行後の件数/日・be」でフロンティアを作る。
+    v7 まで＝全候補を同時執行可能とみなす独立カウント（学習1.82イベント/日→実行0.41件/日の過大見積りの正体）。
+    近似の限界＝スロット競合は同一 型×side 内のみ（型横断の競合は本走の乖離ログで観測＝acceptance F⑤）。"""
+    order = np.argsort(sub["entry_i"].to_numpy())
+    e_i = sub["entry_i"].to_numpy()[order]
+    x_i = sub["exit_i"].to_numpy()[order]
+    gross = sub["gross"].to_numpy(float)[order]
+    fee = sub["fee"].to_numpy(float)[order]
+    net = sub["net"].to_numpy(float)[order]
+    p = oof[order]
+    cand = []
+    for qq in THETA_QQ:
+        thr = float(np.quantile(oof, qq))
+        busy_until = -1
+        g_s = 0.0; f_s = 0.0; w = 0
+        n_exec = 0
+        for k in range(len(e_i)):
+            if p[k] < thr or e_i[k] <= busy_until:
+                continue
+            busy_until = int(x_i[k])
+            g_s += gross[k]; f_s += fee[k]; n_exec += 1
+            if net[k] > 0:
+                w += 1
+        if n_exec == 0:
+            continue
+        cand.append({"quantile": qq, "theta": round(thr, 4),
+                     "events_per_day": round(n_exec / days_train, 2),   # ＝執行後の件数/日（スロット整合）
+                     "avg_gross": round(g_s / n_exec, 4), "avg_fee": round(f_s / n_exec, 4),
+                     "be": round((g_s / n_exec) / (f_s / n_exec), 3) if f_s else float("nan"),
+                     "win_rate": round(w / n_exec, 3), "n_exec": int(n_exec)})
+    return cand
+
+
+def _select_theta_per_type_side(cand: list) -> dict | None:
+    """v8③: 型×side 別の θ 選定＝be≥BE_FLOOR（損益分岐の定義値）を満たす候補のうち執行後件数/日 最大。
+    規則は v7 と同一＝変えたのは母数（型×side の執行後系列）だけ＝新閾値なし。無ければ None＝その型×side は執行しない
+    （side プールが片側赤字を覆い隠すのを止める＝採点窓 B節 LONG−$3 vs SHORT−$53 の非対称を計器に見せる）。"""
+    feas = [c_ for c_ in cand if np.isfinite(c_["be"]) and c_["be"] >= BE_FLOOR]
+    return max(feas, key=lambda c_: c_["events_per_day"]) if feas else None
+
+
+def _fit_detector_per_type_v8(teach: pd.DataFrame, feat: pd.DataFrame, feat_cols: list,
+                              days_train: float, df: pd.DataFrame) -> dict:
+    """v8＝型別 fit（v7 同一・side は特徴列）＋ 選定だけを（執行後フロンティア × 型×side 別）に是正。
+    fit の side 分割はフェーズ1（Entry/Exit セット共同選定）で扱う＝本フェーズは物差しの是正のみ（acceptance やること3）。"""
+    import lightgbm as lgb
+    t_ns = pd.Index(pd.DatetimeIndex(teach.ts).asi8)
+    dets = {}
+    frontier_log = {}
+    for name in EVENT_TYPES:
+        evt_ns = set(pd.DatetimeIndex(df.loc[df[name] > 0.5, "ts"]).asi8)
+        sub = teach[t_ns.isin(evt_ns)]
+        if len(sub) == 0:
+            print(f"  [v8 {name}] 教師 0 件＝型不使用")
+            frontier_log[name] = {"teacher": 0}
+            continue
+        d = (sub.merge(feat.rename(columns={"timestamp": "ts"}), on="ts", how="inner")
+                .sort_values("ts").reset_index(drop=True))
+        print(f"  [v8 {name}] 教師 {len(sub)} 件（特徴結合 {len(d)}）/ 勝ちラベル率 {d.y.mean()*100:.1f}%")
+        assert int(pd.DatetimeIndex(d.ts).asi8.max()) < int(pd.Timestamp(TRAIN_END).value), \
+            "TRAIN_END assert: 教師に学習窓外の行が混入（H8 違反）"
+        X = d[feat_cols].astype(np.float32).assign(side=d["side"].astype(np.float32))
+        y = d["y"].to_numpy()
+        tt = pd.DatetimeIndex(d.ts)
+        oof = np.full(len(d), np.nan)
+        try:
+            for tr, te in purged_fold(tt):
+                if tr.sum() == 0 or te.sum() == 0:
+                    continue
+                mdl = lgb.LGBMClassifier(**_LGB_PARAMS)
+                mdl.fit(X[tr], y[tr])
+                oof[te] = mdl.predict_proba(X[te])[:, 1]
+        except Exception as e:   # 教師が薄く fit 不能な型は不使用（数値閾値でなく実行可能性）
+            print(f"  [v8 {name}] fit 不能（{e}）＝型不使用")
+            frontier_log[name] = {"teacher": int(len(sub))}
+            continue
+        ok = np.isfinite(oof)
+        if not ok.any():
+            print(f"  [v8 {name}] OOF 0 件＝型不使用")
+            frontier_log[name] = {"teacher": int(len(sub))}
+            continue
+        theta_side = {}
+        picked_side = {}
+        log_side = {}
+        for sv, s_lbl in ((-1, "SHORT"), (1, "LONG")):
+            m_s = ok & (d["side"].to_numpy() == sv)
+            if int(m_s.sum()) == 0:
+                theta_side[sv] = None; picked_side[sv] = None
+                log_side[s_lbl] = {"n": 0, "picked": None}
+                continue
+            cand = _frontier_exec_consistent(d[m_s], oof[m_s], days_train)
+            pick = _select_theta_per_type_side(cand)
+            print(f"  [v8 {name} {s_lbl}] 執行後フロンティア（学習窓 OOF・スロット整合）: {json.dumps(cand, ensure_ascii=False)}")
+            log_side[s_lbl] = {"n": int(m_s.sum()), "frontier": cand, "picked": pick}
+            theta_side[sv] = pick["theta"] if pick else None
+            picked_side[sv] = pick
+            if pick is None:
+                print(f"  [v8 {name} {s_lbl}] be≥{BE_FLOOR} 帯なし＝この型×side は執行しない")
+            else:
+                print(f"  [v8 {name} {s_lbl}] 選定 θ={pick['theta']:.4f}（執行後 {pick['events_per_day']}/日・be {pick['be']}）")
+        frontier_log[name] = {"teacher": int(len(sub)), "win_label_rate": round(float(d.y.mean()), 3), **log_side}
+        if theta_side.get(-1) is None and theta_side.get(1) is None:
+            continue
+        final = lgb.LGBMClassifier(**_LGB_PARAMS)
+        final.fit(X, y)
+        fi = pd.Series(final.feature_importances_, index=list(X.columns)).sort_values(ascending=False)
+        top10 = list(fi.head(10).index)
+        atr_top = [x for x in top10 if "atr" in x.lower() or "realized_vol" in x.lower()]
+        print(f"  [v8 {name}] 重要度 top10: {top10}")
+        print(f"  [v8 {name} 自己検査 H15] top10 中 ATR/vol 系 {len(atr_top)} 列（{atr_top}）: "
+              f"{'✅ 非支配' if len(atr_top) <= 2 else '⚠️ ボラ支配疑い＝報告時に要精査'}")
+        dets[name] = {"model": final, "theta_side": theta_side, "picked_side": picked_side,
+                      "feat_cols": feat_cols, "top10": top10,
+                      "oof_map": pd.Series(oof[ok], index=pd.DatetimeIndex(d.ts)[ok])}
+    used = [f"{n_}:" + ("S" if v_["theta_side"].get(-1) is not None else "") + ("L" if v_["theta_side"].get(1) is not None else "")
+            for n_, v_ in dets.items()]
+    print(f"  [v8 帯の合併] be≥{BE_FLOOR} 帯が立った型×side: {used if used else 'なし'}")
+    if not dets:
+        print(f"  [v8] ⛔ 全型×side で be≥{BE_FLOOR} 帯なし＝執行せず停止（赤字帯を選ばない・停止ガード・採点温存）")
+        raise SystemExit(1)
+    return {"dets": dets, "frontier_log": frontier_log}
+
+
+def _detector_gate_v8(bundle: dict, feat: pd.DataFrame, df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+    """v8 帯の合併＝型×side 別 θ（帯なしの型×side は不通過）。学習窓=型別 OOF／TRAIN_END 以降=型別最終モデル
+    （v7 と同一の測定系＝in-sample 自己採点を塞ぐ）。相互排他なので1バーは高々1型。"""
+    n = len(df)
+    ok = np.zeros(n, dtype=bool)
+    via = np.array([""] * n, dtype=object)
+    ts_index = pd.DatetimeIndex(df["ts"])
+    is_train = np.asarray(ts_index < pd.Timestamp(TRAIN_END))
+    f = feat.set_index("timestamp")
+    present = np.asarray(ts_index.isin(f.index))
+    for name, det in bundle["dets"].items():
+        m_evt = df[name].to_numpy(np.float32) > 0.5
+        for sv, col in ((-1, "short_cand"), (1, "long_cand")):
+            th = det["theta_side"].get(sv)
+            if th is None:
+                continue
+            m_side = m_evt & df[col].to_numpy(bool)
+            m_tr = m_side & is_train
+            if m_tr.any():
+                p_tr = det["oof_map"].reindex(ts_index[m_tr]).to_numpy()
+                hit = np.where(np.isfinite(p_tr), p_tr >= th, False)
+                for j in np.where(m_tr)[0][hit]:
+                    ok[j] = True
+                    via[j] = name
+            m_os = m_side & present & ~is_train
+            if m_os.any():
+                X = f.loc[ts_index[m_os], det["feat_cols"]].astype(np.float32).assign(side=np.float32(sv))
+                p = det["model"].predict_proba(X)[:, 1]
+                for j in np.where(m_os)[0][p >= th]:
+                    ok[j] = True
+                    via[j] = name
+    return ok, via
+
+
+# ══ ②v9 型×side Entry/Exit セット共同選定（acceptance 2026-07-04 フェーズ1・まこさん承認・既定 OFF=v8 恒等）══
+def _exit_templates_v9() -> dict:
+    """出口テンプレ4案（a-priori・SL=2×ATR は全案共通＝probe 較正済みのため動かさない・acceptance やること1）。
+    anchor: move=毎バー SMA∓kσ（現行＝選定が現行を選べるよう候補に残す）／fill=約定バーの SMA∓kσ で固定
+    （OU 系平均回帰の最適水準は建値側で確定する固定境界＝arxiv 1602.05858・移動目標はTP逃げの経路＝総点検欠陥5）。
+    tp_k: 0.5σ（現行）/1.0σ（教科書の1σ）。t_max: 12本=60分（現行）/6本=30分（既存定数の半分・短保有側）。"""
+    return {
+        "Xa": {"anchor": "move", "tp_k": TP_OVERSHOOT, "t_max": T_MAX},
+        "Xb": {"anchor": "fill", "tp_k": TP_OVERSHOOT, "t_max": T_MAX},
+        "Xc": {"anchor": "fill", "tp_k": 1.0, "t_max": T_MAX},
+        "Xd": {"anchor": "fill", "tp_k": 1.0, "t_max": T_MAX // 2},
+    }
+
+
+def _entry_variants_v9(df: pd.DataFrame) -> dict:
+    """入口バリアント（入れ子4段・a-priori・acceptance やること2）。
+    E0=現行／E1=実体過半の反転バー（0.5=過半の定義値・単一足陰陽の強化＝総点検欠陥1）／
+    E2=E1∩上位足整合（SHORT=1h MACD≤0・LONG=MACD>0・符号のみ＝E36 shortset1 採用済み機構＝総点検欠陥3の入口版）／
+    E3=E2∩クールダウン（同 side の SL 決済から T_MAX 本は新規建てしない＝総点検欠陥7・マスクでなく逐次パス/エンジンで適用）。"""
+    rng = (df["high"] - df["low"]).to_numpy(float)
+    body = (df["close"] - df["open"]).abs().to_numpy(float)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        body_maj = np.where(rng > 0, body / rng > 0.5, False)
+    htf_up = df["htf_macd_up"].to_numpy(bool)
+    return {
+        "E0": {"s": None, "l": None, "cooldown": False},
+        "E1": {"s": body_maj, "l": body_maj, "cooldown": False},
+        "E2": {"s": body_maj & ~htf_up, "l": body_maj & htf_up, "cooldown": False},
+        "E3": {"s": body_maj & ~htf_up, "l": body_maj & htf_up, "cooldown": True},
+    }
+
+
+def _tp_viable_k(df: pd.DataFrame, tp_k: float) -> tuple[np.ndarray, np.ndarray]:
+    """TP-viability のテンプレ幅版（_tp_viable と同式・tp_k 引数化）。entry 時点の close/sma/std のみ＝t 因果（H2）。"""
+    c = df["close"]; sma = df["sma"]; sd = df["std"]
+    lim_s = c * (1 + ENTRY_OFFSET); lim_l = c * (1 - ENTRY_OFFSET)
+    tgt_s = sma - tp_k * sd; tgt_l = sma + tp_k * sd
+    vs = (tgt_s <= lim_s * (1.0 - SCALP_FLOOR)).fillna(False).to_numpy(bool)
+    vl = (tgt_l >= lim_l * (1.0 + SCALP_FLOOR)).fillna(False).to_numpy(bool)
+    return vs, vl
+
+
+def _teacher_labels_v9(df: pd.DataFrame, upto_ns: int, cand_s: np.ndarray, cand_l: np.ndarray,
+                       anchor: str, tp_k: float, t_max: int) -> pd.DataFrame:
+    """テンプレ別教師（エンジン同一執行・_teacher_labels のテンプレ引数版＝v5〜v8 経路は不変）。
+    is_sl 列＝E3 クールダウンの逐次パス用。TP 武装は SCALP_FLOOR（手数料を超える幅のみ・全テンプレ共通）。"""
+    o = df["open"].to_numpy(float); h = df["high"].to_numpy(float)
+    l = df["low"].to_numpy(float); c = df["close"].to_numpy(float)
+    sma = df["sma"].to_numpy(float); sd = df["std"].to_numpy(float)
+    atr = df["atr"].to_numpy(float)
+    ts = df["ts"].to_numpy()
+    n = len(df)
+    rows = []; unfilled = 0
+    for i in range(25, n - t_max - TTL - 3):
+        if ts[i].astype("datetime64[ns]").astype("int64") >= upto_ns:
+            break
+        side = 0
+        if cand_s[i]: side = -1
+        elif cand_l[i]: side = 1
+        if side == 0 or not (np.isfinite(atr[i]) and np.isfinite(sma[i]) and np.isfinite(sd[i])):
+            continue
+        lim = c[i] * (1 + ENTRY_OFFSET) if side == -1 else c[i] * (1 - ENTRY_OFFSET)
+        fill = None
+        for j in range(i + 1, i + 1 + TTL):
+            if side == -1 and h[j] >= lim: fill = j; break
+            if side == 1 and l[j] <= lim: fill = j; break
+        if fill is None:
+            unfilled += 1
+            continue
+        ep = lim
+        pos = UNIT * ep
+        slp = ep + K_SL * atr[fill] if side == -1 else ep - K_SL * atr[fill]
+        tgt_fix = None
+        if anchor == "fill" and np.isfinite(sma[fill]) and np.isfinite(sd[fill]):
+            tgt_fix = (sma[fill] - tp_k * sd[fill]) if side == -1 else (sma[fill] + tp_k * sd[fill])
+        xp = None; taker = False; exit_j = None; is_sl = False
+        for j in range(fill + 1, fill + 1 + t_max):
+            tgt = tgt_fix if anchor == "fill" else ((sma[j] - tp_k * sd[j]) if side == -1 else (sma[j] + tp_k * sd[j]))
+            if side == -1:
+                if h[j] >= slp: xp = max(slp, o[j]); exit_j = j; is_sl = True; break
+                if tgt is not None and np.isfinite(tgt) and tgt <= ep * (1.0 - SCALP_FLOOR) and l[j] <= tgt: xp = tgt; exit_j = j; break
+            else:
+                if l[j] <= slp: xp = min(slp, o[j]); exit_j = j; is_sl = True; break
+                if tgt is not None and np.isfinite(tgt) and tgt >= ep * (1.0 + SCALP_FLOOR) and h[j] >= tgt: xp = tgt; exit_j = j; break
+        if xp is None:
+            xp = c[fill + t_max]; taker = True; exit_j = fill + t_max
+        fee = pos * ee.MAKER_FEE + UNIT * xp * ((ee.TAKER_FEE + ee.SLIPPAGE) if taker else ee.MAKER_FEE)
+        gross = (ep - xp) * UNIT if side == -1 else (xp - ep) * UNIT
+        rows.append((ts[i], side, gross, fee, gross - fee, i, fill, exit_j, is_sl))
+    t = pd.DataFrame(rows, columns=["ts", "side", "gross", "fee", "net", "entry_i", "fill_i", "exit_i", "is_sl"])
+    t["y"] = (t["net"] > 0).astype(int)
+    print(f"  [教師 v9 {anchor}/tp{tp_k}σ/T{t_max}] 約定 {len(t)} / 不約定 {unfilled}（エンジン同一執行）")
+    return t
+
+
+def _frontier_exec_v9(sub: pd.DataFrame, oof: np.ndarray, days_train: float, cooldown_bars=None) -> list:
+    """v9 組フロンティア＝_frontier_exec_consistent と同一規則（単一スロット・執行後系列）＋
+    E3 のクールダウン（同 side の SL 決済から cooldown_bars は建てない）を逐次パスに追加。"""
+    order = np.argsort(sub["entry_i"].to_numpy())
+    e_i = sub["entry_i"].to_numpy()[order]
+    x_i = sub["exit_i"].to_numpy()[order]
+    is_sl = sub["is_sl"].to_numpy(bool)[order]
+    gross = sub["gross"].to_numpy(float)[order]
+    fee = sub["fee"].to_numpy(float)[order]
+    net = sub["net"].to_numpy(float)[order]
+    p = oof[order]
+    cand = []
+    for qq in THETA_QQ:
+        thr = float(np.quantile(oof, qq))
+        busy_until = -1; cool_until = -1
+        g_s = 0.0; f_s = 0.0; w = 0; n_exec = 0
+        for k in range(len(e_i)):
+            if p[k] < thr or e_i[k] <= busy_until or e_i[k] <= cool_until:
+                continue
+            busy_until = int(x_i[k])
+            if cooldown_bars is not None and is_sl[k]:
+                cool_until = int(x_i[k]) + int(cooldown_bars)
+            g_s += gross[k]; f_s += fee[k]; n_exec += 1
+            if net[k] > 0:
+                w += 1
+        if n_exec == 0:
+            continue
+        cand.append({"quantile": qq, "theta": round(thr, 4),
+                     "events_per_day": round(n_exec / days_train, 2),
+                     "avg_gross": round(g_s / n_exec, 4), "avg_fee": round(f_s / n_exec, 4),
+                     "be": round((g_s / n_exec) / (f_s / n_exec), 3) if f_s else float("nan"),
+                     "win_rate": round(w / n_exec, 3), "n_exec": int(n_exec)})
+    return cand
+
+
+def _select_combo_per_type_side(df: pd.DataFrame, feat: pd.DataFrame, feat_cols: list, days_train: float) -> dict:
+    """v9 本体＝型×出口テンプレごとに教師再生成＋型別 fit（20 fit）→ 型×side ごとに
+    （入口バリアント×出口テンプレ×θ）の執行後フロンティアから be≥BE_FLOOR 内で執行後件数/日最大の組を選定。
+    入口バリアントは母数のサブセット＝fit 再利用でフロンティアだけ引き直す（acceptance やること3・4）。"""
+    import lightgbm as lgb
+    templates = _exit_templates_v9()
+    variants = _entry_variants_v9(df)
+    short_cand = df["short_cand"].to_numpy(bool); long_cand = df["long_cand"].to_numpy(bool)
+    upto = int(pd.Timestamp(TRAIN_END).value)
+    fits = {}          # (type, tpl) -> {d, oof, model}
+    combo = {}         # (type, sv) -> pick dict or None
+    sel_log = {}
+    for tpl_name, tpl in templates.items():
+        vs, vl = _tp_viable_k(df, tpl["tp_k"])
+        cand_s = short_cand & vs
+        cand_l = long_cand & vl
+        teach = _teacher_labels_v9(df, upto, cand_s, cand_l, tpl["anchor"], tpl["tp_k"], tpl["t_max"])
+        t_ns = pd.Index(pd.DatetimeIndex(teach.ts).asi8)
+        for name in EVENT_TYPES:
+            evt_ns = set(pd.DatetimeIndex(df.loc[df[name] > 0.5, "ts"]).asi8)
+            sub = teach[t_ns.isin(evt_ns)]
+            if len(sub) < 50:                      # fit 実行可能性（数値閾値でなく学習の成立性・±で帯判定はしない）
+                continue
+            d = (sub.merge(feat.rename(columns={"timestamp": "ts"}), on="ts", how="inner")
+                    .sort_values("ts").reset_index(drop=True))
+            if len(d) < 50:
+                continue
+            assert int(pd.DatetimeIndex(d.ts).asi8.max()) < upto, "TRAIN_END assert（H8）"
+            X = d[feat_cols].astype(np.float32).assign(side=d["side"].astype(np.float32))
+            y = d["y"].to_numpy()
+            oof = np.full(len(d), np.nan)
+            try:
+                for tr, te in purged_fold(pd.DatetimeIndex(d.ts)):
+                    if tr.sum() == 0 or te.sum() == 0:
+                        continue
+                    mdl = lgb.LGBMClassifier(**_LGB_PARAMS)
+                    mdl.fit(X[tr], y[tr])
+                    oof[te] = mdl.predict_proba(X[te])[:, 1]
+            except Exception as e:
+                print(f"  [v9 {name}×{tpl_name}] fit 不能（{e}）")
+                continue
+            if not np.isfinite(oof).any():
+                continue
+            final = lgb.LGBMClassifier(**_LGB_PARAMS)
+            final.fit(X, y)
+            fits[(name, tpl_name)] = {"d": d, "oof": oof, "model": final}
+            print(f"  [v9 fit] {name}×{tpl_name}: 教師 {len(d)} 件 / 勝ちラベル率 {d.y.mean()*100:.1f}%")
+    for name in EVENT_TYPES:
+        for sv, s_lbl in ((-1, "SHORT"), (1, "LONG")):
+            best = None
+            for tpl_name in templates:
+                fx = fits.get((name, tpl_name))
+                if fx is None:
+                    continue
+                d = fx["d"]; oof = fx["oof"]
+                ok = np.isfinite(oof) & (d["side"].to_numpy() == sv)
+                if not ok.any():
+                    continue
+                e_idx = d["entry_i"].to_numpy()
+                for var_name, var in variants.items():
+                    vmask = var["s"] if sv == -1 else var["l"]
+                    m = ok if vmask is None else (ok & vmask[e_idx])
+                    if int(m.sum()) < 30:
+                        continue
+                    cool = T_MAX if var["cooldown"] else None
+                    for c_ in _frontier_exec_v9(d[m], oof[m], days_train, cooldown_bars=cool):
+                        if not (np.isfinite(c_["be"]) and c_["be"] >= BE_FLOOR):
+                            continue
+                        c_ = {**c_, "tpl": tpl_name, "variant": var_name}
+                        if best is None or c_["events_per_day"] > best["events_per_day"]:
+                            best = c_
+            combo[(name, sv)] = best
+            sel_log[f"{name}_{s_lbl}"] = best
+            if best:
+                print(f"  [v9 選定 {name} {s_lbl}] {best['tpl']}×{best['variant']} θ={best['theta']:.4f}"
+                      f"（執行後 {best['events_per_day']}/日・be {best['be']}・勝率 {best['win_rate']}）")
+            else:
+                print(f"  [v9 選定 {name} {s_lbl}] be≥{BE_FLOOR} の組なし＝執行しない")
+    used = [k for k, v in sel_log.items() if v]
+    print(f"  [v9 帯の合併] 組が立った型×side: {used if used else 'なし'}")
+    if not used:
+        print(f"  [v9] ⛔ 全型×side で be≥{BE_FLOOR} の組なし＝執行せず停止（採点温存・停止ガード）")
+        raise SystemExit(1)
+    return {"fits": fits, "combo": combo, "sel_log": sel_log, "templates": templates, "variants": variants}
+
+
+def _detector_gate_v9(bundle: dict, feat: pd.DataFrame, df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+    """v9 ゲート＝型×side の選定組（テンプレ・バリアント・θ）でバーを通す。学習窓=OOF／以降=最終モデル（v8 同一測定系）。
+    バリアントの静的条件（実体過半・上位足整合）とテンプレ別 TP-viability はここで反映・クールダウンはエンジンで適用。"""
+    n = len(df)
+    ok = np.zeros(n, dtype=bool)
+    via = np.array([""] * n, dtype=object)
+    ts_index = pd.DatetimeIndex(df["ts"])
+    is_train = np.asarray(ts_index < pd.Timestamp(TRAIN_END))
+    f = feat.set_index("timestamp")
+    present = np.asarray(ts_index.isin(f.index))
+    variants = bundle["variants"]; templates = bundle["templates"]
+    for (name, sv), pick in bundle["combo"].items():
+        if pick is None:
+            continue
+        fx = bundle["fits"][(name, pick["tpl"])]
+        tpl = templates[pick["tpl"]]
+        vs, vl = _tp_viable_k(df, tpl["tp_k"])
+        col = "short_cand" if sv == -1 else "long_cand"
+        m_side = (df[name].to_numpy(np.float32) > 0.5) & df[col].to_numpy(bool) & (vs if sv == -1 else vl)
+        var = variants[pick["variant"]]
+        vmask = var["s"] if sv == -1 else var["l"]
+        if vmask is not None:
+            m_side = m_side & vmask
+        oof_map = pd.Series(fx["oof"], index=pd.DatetimeIndex(fx["d"].ts))
+        m_tr = m_side & is_train
+        if m_tr.any():
+            p_tr = oof_map.reindex(ts_index[m_tr]).to_numpy()
+            hit = np.where(np.isfinite(p_tr), p_tr >= pick["theta"], False)
+            for j in np.where(m_tr)[0][hit]:
+                ok[j] = True; via[j] = name
+        m_os = m_side & present & ~is_train
+        if m_os.any():
+            X = f.loc[ts_index[m_os], feat.columns.drop("timestamp")].astype(np.float32).assign(side=np.float32(sv))
+            p = fx["model"].predict_proba(X)[:, 1]
+            for j in np.where(m_os)[0][p >= pick["theta"]]:
+                ok[j] = True; via[j] = name
+    return ok, via
+
+
+def run_continuous_v9(df, gate_ok: np.ndarray, box_tf, bundle: dict, evt_lbl=None):
+    """v9 エンジン＝run_continuous のテンプレ適用版（v5〜v8 経路の run_continuous は不変）。
+    ポジションごとに自分の型×side の選定組（TP anchor/幅・TIME 本数・クールダウン）を適用（acceptance やること5）。"""
+    n = len(df)
+    ts = df["ts"].to_numpy()
+    o = df["open"].to_numpy(float); h = df["high"].to_numpy(float)
+    l = df["low"].to_numpy(float); c = df["close"].to_numpy(float)
+    atr = df["atr"].to_numpy(float); adx = df["adx"].to_numpy(float); kk = df["stoch_k"].to_numpy(float)
+    sma = df["sma"].to_numpy(float); sd = df["std"].to_numpy(float)
+    sup = df[e35_box.sup_col(box_tf)].to_numpy(float); res = df[e35_box.res_col(box_tf)].to_numpy(float)
+    Wpct = sup + res
+    short_cand = df["short_cand"].to_numpy(bool); long_cand = df["long_cand"].to_numpy(bool)
+    combo = bundle["combo"]; templates = bundle["templates"]; variants = bundle["variants"]
+    evt_names = {name: (df[name].to_numpy(np.float32) > 0.5) for name in EVENT_TYPES}
+
+    trades = []
+    slots = {"SHORT": {"pos": None, "pend": None, "cool_until": -1}, "LONG": {"pos": None, "pend": None, "cool_until": -1}}
+
+    def _total_size():
+        return sum(s["pos"]["size"] for s in slots.values() if s["pos"] is not None)
+
+    def _bar_type(i):
+        for name in EVENT_TYPES:
+            if evt_names[name][i]:
+                return name
+        return None
+
+    for i in range(n):
+        for side, st in slots.items():
+            sv = -1 if side == "SHORT" else 1
+            pend = st["pend"]
+            if pend is not None:
+                el = i - pend["placed_idx"]
+                filled = False
+                if el > TTL:
+                    st["pend"] = None
+                elif el >= 1:
+                    if side == "SHORT" and h[i] >= pend["limit"]: filled = True
+                    if side == "LONG" and l[i] <= pend["limit"]: filled = True
+                if filled:
+                    if st["pos"] is None and np.isfinite(atr[i]) and (_total_size() + UNIT <= CAP + 1e-9):
+                        tpl = pend["tpl"]
+                        tp_fix = None
+                        if tpl["anchor"] == "fill" and np.isfinite(sma[i]) and np.isfinite(sd[i]):
+                            tp_fix = (sma[i] - tpl["tp_k"] * sd[i]) if side == "SHORT" else (sma[i] + tpl["tp_k"] * sd[i])
+                        st["pos"] = {"side": side, "avg": pend["limit"], "size": UNIT, "add_count": 1,
+                                     "first_idx": i, "last_fill_idx": i,
+                                     "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i], "W_entry": Wpct[i],
+                                     "max_fav": l[i] if side == "SHORT" else h[i],
+                                     "max_adv": h[i] if side == "SHORT" else l[i],
+                                     "tpl": tpl, "cooldown": pend["cooldown"], "tp_fix": tp_fix,
+                                     "evt": pend.get("evt")}
+                    st["pend"] = None
+            pos = st["pos"]
+            if pos is not None:
+                if side == "SHORT":
+                    pos["max_fav"] = min(pos["max_fav"], l[i]); pos["max_adv"] = max(pos["max_adv"], h[i])
+                else:
+                    pos["max_fav"] = max(pos["max_fav"], h[i]); pos["max_adv"] = min(pos["max_adv"], l[i])
+            if pos is not None and i > pos["last_fill_idx"]:
+                avg = pos["avg"]; a = pos["atr_entry"]; tpl = pos["tpl"]
+                sl = avg + K_SL * a if side == "SHORT" else avg - K_SL * a
+                if tpl["anchor"] == "fill":
+                    tp = pos["tp_fix"]
+                else:
+                    tp = (sma[i] - tpl["tp_k"] * sd[i]) if side == "SHORT" else (sma[i] + tpl["tp_k"] * sd[i])
+                if side == "SHORT" and np.isfinite(sl) and h[i] >= sl:
+                    _record(trades, pos, max(sl, o[i]), "SL_FILLED", i, ts); st["pos"] = None
+                    if pos["cooldown"]:
+                        st["cool_until"] = i + T_MAX
+                    continue
+                if side == "LONG" and np.isfinite(sl) and l[i] <= sl:
+                    _record(trades, pos, min(sl, o[i]), "SL_FILLED", i, ts); st["pos"] = None
+                    if pos["cooldown"]:
+                        st["cool_until"] = i + T_MAX
+                    continue
+                if tp is not None and np.isfinite(tp):
+                    if side == "SHORT" and tp <= avg * (1.0 - SCALP_FLOOR) and l[i] <= tp:
+                        _record(trades, pos, tp, "TP_FILLED", i, ts); st["pos"] = None; continue
+                    if side == "LONG" and tp >= avg * (1.0 + SCALP_FLOOR) and h[i] >= tp:
+                        _record(trades, pos, tp, "TP_FILLED", i, ts); st["pos"] = None; continue
+                if (i - pos["first_idx"]) >= tpl["t_max"]:
+                    _record(trades, pos, c[i], "TIME_EXIT", i, ts); st["pos"] = None; continue
+            if st["pos"] is None and st["pend"] is None:
+                cand = short_cand[i] if side == "SHORT" else long_cand[i]
+                if cand and gate_ok[i]:
+                    name = _bar_type(i)
+                    pick = combo.get((name, sv)) if name else None
+                    if pick is None:
+                        continue
+                    if variants[pick["variant"]]["cooldown"] and i <= st["cool_until"]:
+                        continue
+                    lim = c[i] * (1.0 + ENTRY_OFFSET) if side == "SHORT" else c[i] * (1.0 - ENTRY_OFFSET)
+                    st["pend"] = {"limit": lim, "placed_idx": i, "tpl": templates[pick["tpl"]],
+                                  "cooldown": variants[pick["variant"]]["cooldown"]}
+                    if evt_lbl is not None:
+                        st["pend"]["evt"] = evt_lbl[i]
+
+    for side, st in slots.items():
+        if st["pos"] is not None:
+            _record(trades, st["pos"], c[n - 1], "FORCE_CLOSE_EOD", n - 1, ts)
+    return trades
 
 
 def _fit_detector(teach: pd.DataFrame, feat: pd.DataFrame, feat_cols: list, days_train: float,
@@ -670,8 +1223,31 @@ def run_continuous(df, gate_ok: np.ndarray, box_tf, evt_lbl=None):
 
 
 # ══ ⑥ 出力（共通土台に委譲）＋使用パラメータ（report.py 節0）══
-def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False) -> dict:
-    if v7:
+def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False, v8: bool = False, v9: bool = False) -> dict:
+    if v9:
+        evt_desc = {
+            "イベント（v9・5型 相互排他＝v8 同一）": "特異度順（pull→brk→bb→mr→mr_sh）で1バー1型（入れ子解消・union 不変）",
+            "組の共同選定（v9・型×side・acceptance フェーズ1）": (
+                "入口バリアント（E0=現行／E1=実体過半の反転バー[0.5=過半の定義値]／E2=E1∩上位足整合[SHORT=1h MACD≤0・LONG=MACD>0]／"
+                "E3=E2∩クールダウン[同sideのSL決済からT_MAX本]）×出口テンプレ（Xa=TP移動0.5σ・T12／Xb=fill固定0.5σ・T12／"
+                "Xc=fill固定1.0σ・T12／Xd=fill固定1.0σ・T6）×θ分位 の組を、v8計器（実行同一規則の執行後フロンティア・学習窓OOF）で"
+                f"型×sideごとに be≥{BE_FLOOR} 内 執行後件数/日最大で選定・組なしの型×sideは執行しない・全組なしなら停止"),
+            "TP-viability（テンプレ幅対応）": f"entry 時点で TP 目標が指値から {SCALP_FLOOR*100:.2f}% 未満の候補は建てない（選定テンプレの tp_k で判定）",
+        }
+    elif v8:
+        evt_desc = {
+            "イベント（v8・5型 相互排他）": (
+                f"v6 5型（EV_MR/EV_MR_SHALLOW/EV_BB/EV_BREAK_REV/EV_PULLBACK・教科書 a-priori）を"
+                "特異度順（pull→brk→bb→mr→mr_sh）で1バー1型に割当＝入れ子解消（union 不変・教師母数を互いに素に）"),
+            "検出器（v8・型別 fit）": "v7 同一（型ごとに LightGBM 独立 fit・教師=エンジン同一執行 Triple Barrier 二値・side は特徴列）",
+            "θ選定規則（v8・型×side・執行後フロンティア）": (
+                f"型×side ごとに be≥{BE_FLOOR}（損益分岐の定義値）を満たす候補のうち『実行同一規則（サイドごと単一スロット・"
+                f"pending 占有・TTL タッチ約定）適用後の件数/日』最大・帯なしの型×side は執行しない・全帯なしなら執行せず停止"),
+            "TP-viability entry ゲート（v8 同梱）": (
+                f"entry 時点で TP 目標（SMA∓{TP_OVERSHOOT}σ）が指値価格から {SCALP_FLOOR*100:.2f}%（SCALP_FLOOR・既存定数）未満の候補は建てない"
+                "（届いても手数料負け確定の毒を機械除去・教師とエンジンの両方＝同一執行・v6r 承認済み部品）"),
+        }
+    elif v7:
         evt_desc = {
             "イベント（v7・5型＝v6 同一・母数）": (
                 f"EV_MR: dev_z±{SIG_Z}σ∩反転バー ／ EV_MR_SHALLOW: dev_z±{SHALLOW_Z}σ∩反転バー ／ "
@@ -739,7 +1315,18 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
         },
     }
     if det is not None:
-        if v7:
+        if v9:
+            sec["【学習した内容】型×side 組選定ログ（v9・学習窓 OOF・執行後フロンティア・組なし=null）"] = {
+                k: json.dumps(v, ensure_ascii=False) for k, v in det["sel_log"].items()
+            }
+        elif v8:
+            sec["【学習した内容】型×side 検出器 θ 選定ログ（v8・学習窓 OOF・執行後フロンティア・採点窓不参照・帯なし=picked null）"] = {
+                name: json.dumps(log, ensure_ascii=False) for name, log in det["frontier_log"].items()
+            }
+            sec["【学習した内容】型別 重要度top10（v8・使用型のみ）"] = {
+                name: ", ".join(d_["top10"]) for name, d_ in det["dets"].items()
+            }
+        elif v7:
             sec["【学習した内容】型別検出器 θ 選定ログ（v7・学習窓 OOF・採点窓不参照・帯なし型=picked null）"] = {
                 name: json.dumps(log, ensure_ascii=False) for name, log in det["frontier_log"].items()
             }
@@ -755,18 +1342,23 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False):
-    """E37 を回す（v6/v6r/v7=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False):
+    """E37 を回す（v6/v6r/v7/v8/v9=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
-    v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。"""
+    v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
+    v8＝v7 の上で選定計器を是正（型相互排他＋執行後フロンティア＋型×side 別 θ/be・acceptance 2026-07-04 フェーズ0）。
+    v9＝v8 計器の上で型×side の Entry/Exit セット共同選定（入口バリアント×出口テンプレの組・acceptance 2026-07-04 フェーズ1）。"""
     src = pathlib.Path(__file__).read_text(encoding="utf-8")
     _p1 = "shift(" + "-"; _p2 = "center" + "=True"
     assert _p1 not in src and _p2 not in src, "leak 疑い（未来参照 shift/center）"   # H2 自己 grep
-    v6 = v6 or v6r or v7
+    assert not (v9 and no_gate), "v9 は組選定＝ゲートそのもの（--no-gate 併用不可）"
+    v6 = v6 or v6r or v7 or v8 or v9
     df = _gen_events_v6(df) if v6 else micro_rev_event(df)
+    if v8 or v9:
+        df = _gen_events_v8_exclusive(df)          # v8①: 型の相互排他化（union 不変・教師母数を互いに素に）
     det = None
     evt_lbl = None
-    if v6r or v7:
+    if v6r or v7 or v8:
         df = _tp_viable(df)
         before = int(df["short_cand"].sum() + df["long_cand"].sum())
         df["short_cand"] = (df["short_cand"] & df["viable_s"].to_numpy(bool))
@@ -787,9 +1379,38 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False):
         print(f"  [イベント] 候補 {len(cand_ts):,} バー（特徴回収に進む）")
         feat, feat_cols = _load_features(set(pd.DatetimeIndex(cand_ts).asi8))
         print(f"  [特徴] {len(feat_cols)} 列 × {len(feat):,} 行 回収（label_exclude_assert 通過）")
+        if v9:
+            days_train = max((pd.Timestamp(TRAIN_END) - df["ts"].iloc[0]).total_seconds() / 86400.0, 1.0)
+            det = _select_combo_per_type_side(df, feat, feat_cols, days_train)   # 全型×side 組なしなら SystemExit
+            gate_ok, via = _detector_gate_v9(det, feat, df)
+            evt_lbl = via
+            gated = int((gate_ok & (df["short_cand"] | df["long_cand"]).to_numpy(bool)).sum())
+            print(f"  [ゲート v9] 型×side 選定組の合併 通過候補 {gated:,} バー")
+            trades = run_continuous_v9(df, gate_ok, box_tf, det, evt_lbl=evt_lbl)
+            t = pd.DataFrame(trades)
+            if len(t):
+                t["entry_time"] = pd.to_datetime(t["entry_time"]); t["exit_time"] = pd.to_datetime(t["exit_time"])
+                mx = _verify_cap(trades)
+                print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
+                assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
+                assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9）"
+                tr_n = int((t["entry_time"] < pd.Timestamp(TRAIN_END)).sum())
+                days_tr = max((min(pd.Timestamp(TRAIN_END), df["ts"].iloc[-1]) - df["ts"].iloc[0]).total_seconds() / 86400.0, 1.0)
+                sel = sum(p_["events_per_day"] for p_ in det["sel_log"].values() if p_)
+                act = tr_n / days_tr
+                dev = (act / sel - 1.0) * 100.0 if sel else float("nan")
+                print(f"  [自己検査⑤ 計器整合] 選定時の執行後見積り {sel:.2f}件/日 vs 本走 学習窓 {act:.2f}件/日（乖離 {dev:+.0f}%）")
+            _out(t, f"_{box_tf}_v9", det, tag=tag, gate_on=True, v6=True, v9=True)
+            return
         teach = _teacher_labels(df, int(pd.Timestamp(TRAIN_END).value))
         days_train = max((teach.ts.max() - teach.ts.min()) / np.timedelta64(1, "D"), 1.0)
-        if v7:
+        if v8:
+            det = _fit_detector_per_type_v8(teach, feat, feat_cols, days_train, df)   # 全型×side 帯なしなら SystemExit
+            gate_ok, via = _detector_gate_v8(det, feat, df)
+            evt_lbl = via                              # 記録＝通過させた型（lever-bites）
+            gated = int((gate_ok & (df["short_cand"] | df["long_cand"]).to_numpy(bool)).sum())
+            print(f"  [ゲート v8] 型×side 帯の合併 通過候補 {gated:,} バー")
+        elif v7:
             det = _fit_detector_per_type(teach, feat, feat_cols, days_train, df)   # 全型帯なしなら SystemExit
             gate_ok, via = _detector_gate_v7(det, feat, df)
             evt_lbl = via                              # 記録＝通過させた型（lever-bites）
@@ -809,19 +1430,30 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False):
         print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
         assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
         assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9）"
-    ver = "v7" if v7 else ("v6r" if v6r else ("v6" if v6 else "v5"))
-    _out(t, f"_{box_tf}_{ver}", det, tag=tag, gate_on=not no_gate, v6=v6, v6r=v6r, v7=v7)
+    if v8 and det is not None and len(t):
+        # 自己検査⑤（acceptance F）: 選定時の執行後見積り vs 本走の学習窓 実件数/日（計器の是正確認・観測値として記録）
+        tr_n = int((t["entry_time"] < pd.Timestamp(TRAIN_END)).sum())
+        days_tr = max((min(pd.Timestamp(TRAIN_END), df["ts"].iloc[-1]) - df["ts"].iloc[0]).total_seconds() / 86400.0, 1.0)
+        sel = sum(p_["events_per_day"] for d_ in det["dets"].values() for p_ in d_["picked_side"].values() if p_)
+        act = tr_n / days_tr
+        dev = (act / sel - 1.0) * 100.0 if sel else float("nan")
+        print(f"  [自己検査⑤ 計器整合] 選定時の執行後見積り {sel:.2f}件/日（型×side 合算・型横断競合なし近似） "
+              f"vs 本走 学習窓 {act:.2f}件/日（乖離 {dev:+.0f}%・±30%目安は観測値）")
+    ver = "v8" if v8 else ("v7" if v7 else ("v6r" if v6r else ("v6" if v6 else "v5")))
+    _out(t, f"_{box_tf}_{ver}", det, tag=tag, gate_on=not no_gate, v6=v6, v6r=v6r, v7=v7, v8=v8)
 
 
-def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False) -> None:
+def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False) -> None:
     strat_base._output_and_report(
         t, suffix, stem="e37_range_scalp",
-        strategy=("E37 v7 レンジ・スキャル 両側 maker MR＋型別検出器（帯の合併＋TP-viability）" if v7
+        strategy=("E37 v9 レンジ・スキャル 両側 maker MR＋型×side Entry/Exit セット共同選定（フェーズ1）" if v9
+                  else "E37 v8 レンジ・スキャル 両側 maker MR＋型×side 検出器（選定計器の是正＝母数一致・side別be・型相互排他）" if v8
+                  else "E37 v7 レンジ・スキャル 両側 maker MR＋型別検出器（帯の合併＋TP-viability）" if v7
                   else "E37 v6r レンジ・スキャル 両側 maker MR＋検出器ゲート（金額整合回帰＋TP-viability）" if v6r
                   else "E37 v6 レンジ・スキャル 両側 maker MR＋検出器ゲート（イベント5型＋θ規則反転）" if v6
                   else "E37 v5 レンジ・スキャル 両側 maker MR＋稼げるレンジ検出器ゲート"),
         script="e37_range_scalp.py",
-        sections=_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7), tag=tag)
+        sections=_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9), tag=tag)
 
 
 def _load(smoke: int) -> pd.DataFrame:
@@ -833,11 +1465,13 @@ def _load(smoke: int) -> pd.DataFrame:
     return df
 
 
-def _diagnostic(df, v6=False, v6r=False, v7=False):
+def _diagnostic(df, v6=False, v6r=False, v7=False, v8=False):
     """発火ファネル（採点しない）＝イベント頻度のみ（検出器は本走で学習＝重い処理を diagnostic で回さない）。"""
-    v6 = v6 or v6r or v7
+    v6 = v6 or v6r or v7 or v8
     df = _gen_events_v6(df) if v6 else micro_rev_event(df)
-    if v6r or v7:
+    if v8:
+        df = _gen_events_v8_exclusive(df)
+    if v6r or v7 or v8:
         df = _tp_viable(df)
         before = int(df["short_cand"].sum() + df["long_cand"].sum())
         df["short_cand"] = (df["short_cand"] & df["viable_s"].to_numpy(bool))
@@ -847,7 +1481,7 @@ def _diagnostic(df, v6=False, v6r=False, v7=False):
     days = max((df["ts"].iloc[-1] - df["ts"].iloc[0]).total_seconds() / 86400.0, 1.0)
     s = int(df["short_cand"].sum()); L = int(df["long_cand"].sum())
     print("=" * 100)
-    print(f"[E37 {'v7' if v7 else 'v6r' if v6r else 'v6' if v6 else 'v5'} 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日")
+    print(f"[E37 {'v8' if v8 else 'v7' if v7 else 'v6r' if v6r else 'v6' if v6 else 'v5'} 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日")
     if v6:
         for name in EVENT_TYPES:
             k = int(df[name].sum())
@@ -867,20 +1501,24 @@ def main():
     ap.add_argument("--v6", action="store_true", help="v6=イベント母数拡大（5型）＋θ選定規則反転（be≥1.0 内で頻度最大）。既定 OFF=v5 恒等")
     ap.add_argument("--v6r", action="store_true", help="v6r=v6＋検出器の金額整合回帰（net/fee）＋TP-viability entry ゲート（acceptance 2026-07-03）")
     ap.add_argument("--v7", action="store_true", help="v7=型別検出器（型ごとに独立 fit・型別 θ=be≥1.0 内で頻度最大・帯の合併）＋TP-viability（acceptance 2026-07-04）")
+    ap.add_argument("--v8", action="store_true", help="v8=選定計器の是正（型相互排他＋執行後フロンティア＋型×side 別 θ/be・acceptance 2026-07-04 フェーズ0・既定 OFF=v7 恒等）")
+    ap.add_argument("--v9", action="store_true", help="v9=型×side の Entry/Exit セット共同選定（入口バリアント×出口テンプレの組・acceptance 2026-07-04 フェーズ1・既定 OFF=v8 恒等）")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
     a = ap.parse_args()
-    ver = "v7" if a.v7 else ("v6r" if a.v6r else ("v6" if a.v6 else "v5"))
+    ver = "v9" if a.v9 else ("v8" if a.v8 else ("v7" if a.v7 else ("v6r" if a.v6r else ("v6" if a.v6 else "v5"))))
     print("=" * 100)
     print(f"[E37 {ver}] レンジ・スキャル 両側 maker MR＋検出器ゲート"
-          + ("（v7=型別検出器・帯の合併＋TP-viability）" if a.v7
+          + ("（v9=型×side Entry/Exit セット共同選定・フェーズ1）" if a.v9
+             else "（v8=選定計器の是正＝母数一致・side別be・型相互排他）" if a.v8
+             else "（v7=型別検出器・帯の合併＋TP-viability）" if a.v7
              else "（v6r=金額整合回帰＋TP-viability）" if a.v6r else "（v6=イベント5型＋θ規則反転）" if a.v6 else "（E36 デイトレと住み分け）"))
     df = _load(a.smoke)
     print(f"  価格 {e34v1.CSV.name}（{len(df):,}本・{df.ts.iloc[0].date()}〜{df.ts.iloc[-1].date()}）")
     print(f"  計器 maker {ee.MAKER_FEE} / taker {ee.TAKER_FEE} / slip {ee.SLIPPAGE} / funding {ee.FUNDING_RATE_8H}/8h / unit {UNIT}")
     if a.diagnostic:
-        _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7)
+        _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9))
         return
-    run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7)
+    run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9)
     print("=" * 100)
 
 
