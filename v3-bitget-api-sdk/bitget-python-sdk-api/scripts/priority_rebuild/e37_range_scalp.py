@@ -71,6 +71,7 @@ import eval_engine as ee                       # noqa: E402  確定コスト定�
 import e34_range_zscore_taker as e34v1         # noqa: E402  CSV / add_indicators（sma/std/dev_z/atr/adx）
 import e34_range_base as e34b                  # noqa: E402  add_analysis_features（rsi/stoch_k 等・記録用）
 import e35_box                                 # noqa: E402  箱特徴（box_W 記録用）
+import structure_features as sf                # noqa: E402  fractal ピボット（j+2 確定・leak-safe・v10 ゾーン構築＝e35_box が regime パスを通す）
 import build_labels_pct as bl                  # noqa: E402  resample_ohlcv / attach_upper_tf（v6 EV_PULLBACK の 1h MACD・leak-safe L-128）
 import periods                                 # noqa: E402  検証期間の唯一の正本（SSOT）
 import strat_base                              # noqa: E402  ★全戦略共通の土台
@@ -90,6 +91,13 @@ K_SL = 2.0                   # SL = entry ∓ K_SL×ATR（教科書 1.5-2×ATR�
 TP_OVERSHOOT = 0.5           # TP = SMA ∓ 0.5σ（突き抜け側・教師テンプレ2案{0,0.5σ}を学習窓比較で選定・採点窓不参照）
 T_MAX = 12                   # 時間切れ backstop = 12本 = 60分（スキャル役割のバックストップ・保有中央は20-30分想定）
 SCALP_FLOOR = 0.0008         # TP 武装の手数料床 0.08%（小 TP の手数料割れ防止・a-priori）
+
+# ── v10 ゾーン方式レンジスキャル SHORT（§1.2.1 準拠 MVP・acceptance 2026-07-04・全て a-priori/既存定数＝スイープしない）──
+V10_LOOKBACK = 288           # ゾーン構築の窓 = 288本 = 24h（a-priori の丸い値）
+V10_ZONE_TOL = 0.0010        # ピボット束ね幅 0.10%（a-priori の丸い値）
+V10_TOUCH_MIN = 3            # 機能実績＝タッチ3回以上（range_scalping_kb §2 の検証標準）
+V10_SL_BUF = 0.0005          # SL = ゾーン上端×(1+0.05%)（ゾーンのすぐ外＝KB §4・a-priori）
+V10_MIN_RANGE_W = 2 * SCALP_FLOOR   # レンジ最低幅（幾何由来: TP幅≥SL幅と手数料床の両立に必要な最小幅）
 FREQ_FLOOR_EVT_DAY = 5.0     # θ選定の頻度床（学習窓ゲート通過イベント/日・スロット占有の目減り込みで採点窓 件数/日≥3 を狙う）
 THETA_QQ = (0.50, 0.60, 0.70, 0.80, 0.90, 0.95)   # θ 候補分位（学習窓 OOF から選定・採点窓不参照）
 
@@ -1223,7 +1231,207 @@ def run_continuous(df, gate_ok: np.ndarray, box_tf, evt_lbl=None):
 
 
 # ══ ⑥ 出力（共通土台に委譲）＋使用パラメータ（report.py 節0）══
-def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False, v8: bool = False, v9: bool = False) -> dict:
+# ══ ③v10 ゾーン方式レンジスキャル SHORT（§1.2.1 準拠 MVP・acceptance 2026-07-04・ML 不使用・素ルール）══
+def _rsi9_v10(df: pd.DataFrame) -> pd.DataFrame:
+    """RSI9（5分足スキャル設定・technical_kb §4）。当該足まで＝H2。分析用 rsi(14) とは別列。"""
+    delta = df["close"].diff()
+    up = delta.clip(lower=0).rolling(9).mean()
+    dn = (-delta.clip(upper=0)).rolling(9).mean()
+    df["rsi9"] = 100 - 100 / (1 + up / dn.replace(0, np.nan))
+    return df
+
+
+def _zones_v10(df: pd.DataFrame) -> pd.DataFrame:
+    """タッチ実績のあるゾーン（range_scalping_kb §2）＝過去 V10_LOOKBACK 本の確定ピボット
+    （structure_features の fractal j+2 確定＝当該足までで確定・H2）を価格帯 V10_ZONE_TOL で束ね、
+    タッチ回数（束ねたピボット数＋帯への接触バー数）が V10_TOUCH_MIN 以上の帯だけを
+    「機能しているレジスタンス／サポートゾーン」とする。破れ（最終ピボットより後に
+    出来高>20期間平均 ∩ 終値が帯の外）で無効化＝KB §5「破れたら黙る」。
+    付与列: v10_res_lo/hi・v10_sup_lo/hi・v10_mid・range_ok_v10（GATE_IDENT＝局面の物理 AND）。"""
+    is_res, is_sup, piv_h, piv_l = sf._detect_fractals(df)
+    n = len(df)
+    h = df["high"].to_numpy(float); l = df["low"].to_numpy(float)
+    c = df["close"].to_numpy(float); v = df["volume"].to_numpy(float)
+    vma = pd.Series(v).rolling(20).mean().to_numpy(float)
+    is_res = np.asarray(is_res, bool); is_sup = np.asarray(is_sup, bool)
+    piv_h = np.asarray(piv_h, float); piv_l = np.asarray(piv_l, float)
+    res_idx = np.flatnonzero(is_res); res_px = piv_h[res_idx]
+    sup_idx = np.flatnonzero(is_sup); sup_px = piv_l[sup_idx]
+    z_res_lo = np.full(n, np.nan); z_res_hi = np.full(n, np.nan)
+    z_sup_lo = np.full(n, np.nan); z_sup_hi = np.full(n, np.nan)
+    ok = np.zeros(n, bool)
+
+    def _best_zone(px_arr, idx_arr, i, lo_w, price, above):
+        """窓内の確定ピボットを価格で束ね、price の上（above=True）/下で最も近い有効ゾーンを返す。
+        有効＝タッチ（ピボット数＋帯接触バー数）≥ V10_TOUCH_MIN かつ 破れなし。無ければ None。"""
+        j0 = int(np.searchsorted(idx_arr, lo_w)); j1 = int(np.searchsorted(idx_arr, i + 1))
+        if j1 <= j0:
+            return None
+        px = px_arr[j0:j1]; pidx = idx_arr[j0:j1]
+        sel = (px > price) if above else (px < price)
+        if not sel.any():
+            return None
+        px = px[sel]; pidx = pidx[sel]
+        order = np.argsort(px)
+        px = px[order]; pidx = pidx[order]
+        clusters = []
+        s = 0
+        for k in range(1, len(px) + 1):
+            if k == len(px) or px[k] - px[k - 1] > px[k - 1] * V10_ZONE_TOL:
+                clusters.append((px[s:k], pidx[s:k]))
+                s = k
+        clusters.sort(key=lambda cl: abs(float(np.mean(cl[0])) - price))   # price に近いゾーンから評価
+        hw = h[lo_w:i + 1]; lw = l[lo_w:i + 1]; cw = c[lo_w:i + 1]
+        vw = v[lo_w:i + 1]; vmw = vma[lo_w:i + 1]
+        for cpx, cidx in clusters:
+            zlo = float(cpx.min()) * (1 - V10_ZONE_TOL / 2)
+            zhi = float(cpx.max()) * (1 + V10_ZONE_TOL / 2)
+            touch_bars = int(np.count_nonzero((hw >= zlo) & (lw <= zhi)))
+            if len(cpx) + touch_bars < V10_TOUCH_MIN:
+                continue
+            last_piv = int(cidx.max()) - lo_w
+            cw_a = cw[last_piv + 1:]; vw_a = vw[last_piv + 1:]; vmw_a = vmw[last_piv + 1:]
+            broke = ((cw_a > zhi) if above else (cw_a < zlo)) & (vw_a > vmw_a)
+            if broke.any():
+                continue                                   # 破れ済み＝無効（KB §5＝E32b に道を譲る）
+            return zlo, zhi
+        return None
+
+    start = max(V10_LOOKBACK, 21)
+    for i in range(start, n):
+        lo_w = i - V10_LOOKBACK + 1
+        rz = _best_zone(res_px, res_idx, i, lo_w, c[i], above=True)
+        if rz is None:
+            continue
+        sz = _best_zone(sup_px, sup_idx, i, lo_w, c[i], above=False)
+        if sz is None:
+            continue
+        if (rz[0] - sz[1]) / c[i] < V10_MIN_RANGE_W:
+            continue                                       # 幅が往復可能な最低幅未満＝レンジと呼ばない
+        z_res_lo[i], z_res_hi[i] = rz
+        z_sup_lo[i], z_sup_hi[i] = sz
+        ok[i] = True
+    df["v10_res_lo"] = z_res_lo; df["v10_res_hi"] = z_res_hi
+    df["v10_sup_lo"] = z_sup_lo; df["v10_sup_hi"] = z_sup_hi
+    df["v10_mid"] = (z_res_lo + z_sup_hi) / 2.0
+    df["range_ok_v10"] = ok
+    return df
+
+
+def tp_ge_sl_check_v10(limit: float, tp_px: float, sl_px: float) -> bool:
+    """TP 幅 ≥ SL 幅 かつ TP 幅 ≥ SCALP_FLOOR（KB §1/§4＝勝ち側を大きく・手数料超え・逆 R:R の物理禁止）。"""
+    tp_w = limit - tp_px
+    sl_w = sl_px - limit
+    return bool(np.isfinite(tp_w) and np.isfinite(sl_w) and sl_w > 0
+                and tp_w >= sl_w and tp_w >= limit * SCALP_FLOOR)
+
+
+def v10_entry_candidates(df: pd.DataFrame) -> np.ndarray:
+    """v10 入口候補（KB §3＝到達＋拒否確認）＝range_ok_v10 ∩ 上限ゾーン接触 ∩ 陰転 ∩ RSI9 買われすぎ反転。
+    エンジンと diagnostic が同一条件を使う（条件の二重実装を避ける）。"""
+    h = df["high"].to_numpy(float); c = df["close"].to_numpy(float); o = df["open"].to_numpy(float)
+    rsi9 = df["rsi9"].to_numpy(float); rsi9_prev = np.roll(rsi9, 1); rsi9_prev[0] = np.nan
+    ok = df["range_ok_v10"].to_numpy(bool)
+    rz_lo = df["v10_res_lo"].to_numpy(float)
+    touched = np.isfinite(rz_lo) & (h >= rz_lo)
+    rejected = (c < o) & np.isfinite(rsi9) & np.isfinite(rsi9_prev) & (rsi9_prev > 70.0) & (rsi9 < rsi9_prev)
+    return ok & touched & rejected
+
+
+def run_continuous_v10(df, box_tf):
+    """v10 エンジン＝素ルール SHORT 専用（short_only_v10・LONG スロットを持たない＝§1.2.1 ショートのみ）。
+    入口: v10_entry_candidates → 指値 maker TTL（不約定は建てない）。TP/SL は発注時点のゾーン幾何で固定・
+    tp_ge_sl_check_v10 を通らない候補は建てない。
+    出口: SL=ゾーン上端×(1+V10_SL_BUF)（指値 maker・gap 反映・SL 優先）→ TP=レンジ中央（maker）→ TIME=T_MAX（taker）。
+    全て約定 bar の次以降＝leak-safe（H2）。"""
+    short_only_v10 = True                                  # SIDE_IDENT（LONG 入口の生成経路なし）
+    n = len(df)
+    ts = df["ts"].to_numpy()
+    o = df["open"].to_numpy(float); h = df["high"].to_numpy(float)
+    l = df["low"].to_numpy(float); c = df["close"].to_numpy(float)
+    atr = df["atr"].to_numpy(float); adx = df["adx"].to_numpy(float); kk = df["stoch_k"].to_numpy(float)
+    cand = v10_entry_candidates(df)
+    rz_lo = df["v10_res_lo"].to_numpy(float); rz_hi = df["v10_res_hi"].to_numpy(float)
+    sz_hi = df["v10_sup_hi"].to_numpy(float); mid = df["v10_mid"].to_numpy(float)
+    trades = []
+    pos = None; pend = None
+    for i in range(n):
+        if pend is not None:
+            el = i - pend["placed_idx"]
+            filled = False
+            if el > TTL:
+                pend = None
+            elif el >= 1 and h[i] >= pend["limit"]:
+                filled = True
+            if filled:
+                if pos is None:
+                    pos = {"side": "SHORT", "avg": pend["limit"], "size": UNIT, "add_count": 1,
+                           "first_idx": i, "last_fill_idx": i,
+                           "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i],
+                           "W_entry": pend["W_pct"],
+                           "max_fav": l[i], "max_adv": h[i],
+                           "tp": pend["tp"], "sl": pend["sl"]}
+                pend = None
+        if pos is not None:
+            pos["max_fav"] = min(pos["max_fav"], l[i]); pos["max_adv"] = max(pos["max_adv"], h[i])
+        if pos is not None and i > pos["last_fill_idx"]:
+            if h[i] >= pos["sl"]:
+                _record(trades, pos, max(pos["sl"], o[i]), "SL_FILLED", i, ts); pos = None; continue
+            if l[i] <= pos["tp"]:
+                _record(trades, pos, pos["tp"], "TP_FILLED", i, ts); pos = None; continue
+            if (i - pos["first_idx"]) >= T_MAX:
+                _record(trades, pos, c[i], "TIME_EXIT", i, ts); pos = None; continue
+        if pos is None and pend is None and cand[i]:
+            lim = c[i] * (1.0 + ENTRY_OFFSET)
+            tp_px = mid[i]
+            sl_px = rz_hi[i] * (1.0 + V10_SL_BUF)
+            if not tp_ge_sl_check_v10(lim, tp_px, sl_px):
+                continue                                   # TP幅≥SL幅＋手数料床を満たさない候補は建てない
+            pend = {"limit": lim, "placed_idx": i, "tp": tp_px, "sl": sl_px,
+                    "W_pct": (rz_lo[i] - sz_hi[i]) / c[i] * 100.0}
+    if pos is not None:
+        _record(trades, pos, c[n - 1], "FORCE_CLOSE_EOD", n - 1, ts)
+    assert short_only_v10 and all(r["side"] == "SHORT" for r in trades), "short_only_v10 違反（LONG 玉が混入）"
+    return trades
+
+
+def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False, v8: bool = False, v9: bool = False, v10: bool = False) -> dict:
+    if v10:
+        return {
+            "検証期間（periods正本・E31）": {
+                "学習(fit)": f"〜{TRAIN_END.date()} 未満（v10 は fit なし＝素ルール・分位選定なし）",
+                "採点(公式net)": f"{SC_START.date()} 〜 {SCORE_END.date()} 未満",
+                "封印(不参照)": f"{SEAL_START.date()} 以降",
+            },
+            "【入口】ゾーン方式レンジ判定×拒否確認（SHORT のみ・§1.2.1・range_scalping_kb §2/§3）": {
+                "レンジ判定 range_ok_v10": (
+                    f"過去{V10_LOOKBACK}本(24h)の確定ピボット（fractal j+2）を価格帯 {V10_ZONE_TOL*100:.2f}% で束ね、"
+                    f"タッチ回数（ピボット数＋帯接触バー数）≥{V10_TOUCH_MIN} のゾーンが上下に揃い、"
+                    f"ゾーン間幅 ≥{V10_MIN_RANGE_W*100:.2f}% の時だけ入口を開く（統計量でなく機能実績のあるレベル）"),
+                "ゾーン破れの無効化": "最終ピボットより後に 出来高>20期間平均 ∩ 終値がゾーン外 → 無効（レンジ破れ＝黙る・E32b に道を譲る）",
+                "エントリー": "上限ゾーン接触（high≥ゾーン下端）∩ 陰転バー ∩ RSI9>70 からの下向き反転（到達＋拒否確認・確認なしでは入らない）",
+                "方向 short_only_v10": "SHORT のみ（LONG 入口の生成経路なし・上限ゾーンのみ使用）",
+            },
+            "【固定値】サイズ（スキャル＝単発・単一スロット）": {
+                "予算上限": f"全建玉合計 {CAP} BTC（H1・共有枠）・本戦略の同時最大 {UNIT} BTC（SHORT 単一スロット）",
+                "size": f"{UNIT} BTC・MAX_ADDS=1（単発）",
+                "指値": f"close×(1+{ENTRY_OFFSET})・TTL {TTL}本(={TTL*5}分)・不約定は建てない（maker限定）",
+            },
+            "【出口】レンジ幾何（新 exit_reason なし・既存登録のみ）": {
+                "TP利確 TP_FILLED(maker指値)": f"レンジ中央（(上限ゾーン下端+下限ゾーン上端)/2）・TP幅 ≥{SCALP_FLOOR*100:.2f}%（手数料床）",
+                "SL SL_FILLED(maker指値)": f"上限ゾーン上端×(1+{V10_SL_BUF*100:.2f}%)＝ゾーンのすぐ外（浅い・gap 反映・SL 優先）",
+                "R:R の物理条件 tp_ge_sl_check_v10": "TP幅 ≥ SL幅 でなければ建てない（逆R:R の禁止＝KB §1）",
+                "時間切れ TIME_EXIT(成行taker)": f"初回entryから {T_MAX}本 = {T_MAX*5}分（短保有＝分単位）",
+            },
+            "【固定値】コスト（eval_engine・確定値・改造禁止）": {
+                "maker手数料": f"{ee.MAKER_FEE*100:.3f}%", "taker手数料": f"{ee.TAKER_FEE*100:.3f}%",
+                "slippage": f"{ee.SLIPPAGE*100:.3f}%（taker時のみ）", "funding": f"{ee.FUNDING_RATE_8H*100:.4f}% / 8h",
+            },
+            "【備考】": {
+                "ML/検出器": "不使用（素ルール MVP＝v5〜v9 の検出器経路は不変・--v10 OFF で恒等）",
+                "数値の出所": "タッチ≥3=range_scalping_kb §2 / 窓24h・束ね0.10%・SLバッファ0.05%=a-priori / SCALP_FLOOR・TTL・T_MAX・UNIT=既存定数（スイープなし・L-267）",
+            },
+        }
     if v9:
         evt_desc = {
             "イベント（v9・5型 相互排他＝v8 同一）": "特異度順（pull→brk→bb→mr→mr_sh）で1バー1型（入れ子解消・union 不変）",
@@ -1342,16 +1550,36 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False):
-    """E37 を回す（v6/v6r/v7/v8/v9=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False):
+    """E37 を回す（v6/v6r/v7/v8/v9/v10=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
     v8＝v7 の上で選定計器を是正（型相互排他＋執行後フロンティア＋型×side 別 θ/be・acceptance 2026-07-04 フェーズ0）。
-    v9＝v8 計器の上で型×side の Entry/Exit セット共同選定（入口バリアント×出口テンプレの組・acceptance 2026-07-04 フェーズ1）。"""
+    v9＝v8 計器の上で型×side の Entry/Exit セット共同選定（入口バリアント×出口テンプレの組・acceptance 2026-07-04 フェーズ1）。
+    v10＝素ルール MVP（§1.2.1 準拠・ゾーン方式レンジ判定×拒否確認 SHORT・ML 不使用・acceptance 2026-07-04）。"""
     src = pathlib.Path(__file__).read_text(encoding="utf-8")
     _p1 = "shift(" + "-"; _p2 = "center" + "=True"
     assert _p1 not in src and _p2 not in src, "leak 疑い（未来参照 shift/center）"   # H2 自己 grep
     assert not (v9 and no_gate), "v9 は組選定＝ゲートそのもの（--no-gate 併用不可）"
+    if v10:
+        assert not (v6 or v6r or v7 or v8 or v9 or no_gate), "v10 は素ルール MVP（他バージョンフラグと併用不可）"
+        df = _rsi9_v10(df)
+        df = _zones_v10(df)
+        okn = int(df["range_ok_v10"].sum())
+        cn = int(v10_entry_candidates(df).sum())
+        print(f"  [range_ok_v10] レンジ判定 通過 {okn:,}/{len(df):,} バー（{okn/len(df)*100:.1f}%）"
+              f"＝タッチ≥{V10_TOUCH_MIN} ゾーン上下＋幅≥{V10_MIN_RANGE_W*100:.2f}%")
+        print(f"  [入口候補 v10] 到達＋拒否確認 {cn:,} バー")
+        trades = run_continuous_v10(df, box_tf)
+        t = pd.DataFrame(trades)
+        if len(t):
+            t["entry_time"] = pd.to_datetime(t["entry_time"]); t["exit_time"] = pd.to_datetime(t["exit_time"])
+            mx = _verify_cap(trades)
+            print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
+            assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
+            assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9）"
+        _out(t, f"_{box_tf}_v10", None, tag=tag, gate_on=True, v10=True)
+        return
     v6 = v6 or v6r or v7 or v8 or v9
     df = _gen_events_v6(df) if v6 else micro_rev_event(df)
     if v8 or v9:
@@ -1443,17 +1671,18 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
     _out(t, f"_{box_tf}_{ver}", det, tag=tag, gate_on=not no_gate, v6=v6, v6r=v6r, v7=v7, v8=v8)
 
 
-def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False) -> None:
+def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False) -> None:
     strat_base._output_and_report(
         t, suffix, stem="e37_range_scalp",
-        strategy=("E37 v9 レンジ・スキャル 両側 maker MR＋型×side Entry/Exit セット共同選定（フェーズ1）" if v9
+        strategy=("E37 v10 ゾーン方式レンジスキャル SHORT（§1.2.1 準拠 MVP・タッチ実績ゾーン×拒否確認・ML 不使用）" if v10
+                  else "E37 v9 レンジ・スキャル 両側 maker MR＋型×side Entry/Exit セット共同選定（フェーズ1）" if v9
                   else "E37 v8 レンジ・スキャル 両側 maker MR＋型×side 検出器（選定計器の是正＝母数一致・side別be・型相互排他）" if v8
                   else "E37 v7 レンジ・スキャル 両側 maker MR＋型別検出器（帯の合併＋TP-viability）" if v7
                   else "E37 v6r レンジ・スキャル 両側 maker MR＋検出器ゲート（金額整合回帰＋TP-viability）" if v6r
                   else "E37 v6 レンジ・スキャル 両側 maker MR＋検出器ゲート（イベント5型＋θ規則反転）" if v6
                   else "E37 v5 レンジ・スキャル 両側 maker MR＋稼げるレンジ検出器ゲート"),
         script="e37_range_scalp.py",
-        sections=_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9), tag=tag)
+        sections=_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9, v10=v10), tag=tag)
 
 
 def _load(smoke: int) -> pd.DataFrame:
@@ -1465,8 +1694,27 @@ def _load(smoke: int) -> pd.DataFrame:
     return df
 
 
-def _diagnostic(df, v6=False, v6r=False, v7=False, v8=False):
+def _diagnostic(df, v6=False, v6r=False, v7=False, v8=False, v10=False):
     """発火ファネル（採点しない）＝イベント頻度のみ（検出器は本走で学習＝重い処理を diagnostic で回さない）。"""
+    if v10:
+        df = _rsi9_v10(df)
+        df = _zones_v10(df)
+        n = len(df)
+        days = max((df["ts"].iloc[-1] - df["ts"].iloc[0]).total_seconds() / 86400.0, 1.0)
+        ok = df["range_ok_v10"].to_numpy(bool)
+        cand = v10_entry_candidates(df)
+        adx = df["adx"].to_numpy(float)
+        print("=" * 100)
+        print(f"[E37 v10 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日")
+        print(f"  range_ok_v10 通過率   : {ok.mean()*100:.1f}%（タッチ≥{V10_TOUCH_MIN} ゾーン上下＋幅≥{V10_MIN_RANGE_W*100:.2f}%）")
+        print(f"  入口候補（到達＋拒否確認）: {int(cand.sum()):,} 本（{cand.sum()/days:.2f}/日）")
+        if cand.sum():
+            adx_c = adx[cand]
+            fin = np.isfinite(adx_c)
+            print(f"  入口候補の ADX40+ 混入 : {(adx_c[fin] >= 40).mean()*100:.1f}%（v9 実績 48.5% と比較＝レンジ判定の実効）")
+            print(f"  （参考）候補バーのゾーン幅: median {np.nanmedian((df.loc[cand,'v10_res_lo']-df.loc[cand,'v10_sup_hi'])/df.loc[cand,'close']*100):.3f}%")
+        print("=" * 100)
+        return
     v6 = v6 or v6r or v7 or v8
     df = _gen_events_v6(df) if v6 else micro_rev_event(df)
     if v8:
@@ -1503,22 +1751,24 @@ def main():
     ap.add_argument("--v7", action="store_true", help="v7=型別検出器（型ごとに独立 fit・型別 θ=be≥1.0 内で頻度最大・帯の合併）＋TP-viability（acceptance 2026-07-04）")
     ap.add_argument("--v8", action="store_true", help="v8=選定計器の是正（型相互排他＋執行後フロンティア＋型×side 別 θ/be・acceptance 2026-07-04 フェーズ0・既定 OFF=v7 恒等）")
     ap.add_argument("--v9", action="store_true", help="v9=型×side の Entry/Exit セット共同選定（入口バリアント×出口テンプレの組・acceptance 2026-07-04 フェーズ1・既定 OFF=v8 恒等）")
+    ap.add_argument("--v10", action="store_true", help="v10=ゾーン方式レンジスキャル SHORT（§1.2.1 準拠 MVP・タッチ実績ゾーン×拒否確認・ML 不使用・acceptance 2026-07-04・既定 OFF=既存経路 恒等）")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
     a = ap.parse_args()
-    ver = "v9" if a.v9 else ("v8" if a.v8 else ("v7" if a.v7 else ("v6r" if a.v6r else ("v6" if a.v6 else "v5"))))
+    ver = "v10" if a.v10 else ("v9" if a.v9 else ("v8" if a.v8 else ("v7" if a.v7 else ("v6r" if a.v6r else ("v6" if a.v6 else "v5")))))
     print("=" * 100)
-    print(f"[E37 {ver}] レンジ・スキャル 両側 maker MR＋検出器ゲート"
+    print(f"[E37 {ver}] " + ("ゾーン方式レンジスキャル SHORT（§1.2.1 準拠 MVP・タッチ実績ゾーン×拒否確認・ML 不使用）" if a.v10
+          else "レンジ・スキャル 両側 maker MR＋検出器ゲート"
           + ("（v9=型×side Entry/Exit セット共同選定・フェーズ1）" if a.v9
              else "（v8=選定計器の是正＝母数一致・side別be・型相互排他）" if a.v8
              else "（v7=型別検出器・帯の合併＋TP-viability）" if a.v7
-             else "（v6r=金額整合回帰＋TP-viability）" if a.v6r else "（v6=イベント5型＋θ規則反転）" if a.v6 else "（E36 デイトレと住み分け）"))
+             else "（v6r=金額整合回帰＋TP-viability）" if a.v6r else "（v6=イベント5型＋θ規則反転）" if a.v6 else "（E36 デイトレと住み分け）")))
     df = _load(a.smoke)
     print(f"  価格 {e34v1.CSV.name}（{len(df):,}本・{df.ts.iloc[0].date()}〜{df.ts.iloc[-1].date()}）")
     print(f"  計器 maker {ee.MAKER_FEE} / taker {ee.TAKER_FEE} / slip {ee.SLIPPAGE} / funding {ee.FUNDING_RATE_8H}/8h / unit {UNIT}")
     if a.diagnostic:
-        _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9))
+        _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9), v10=a.v10)
         return
-    run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9)
+    run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9, v10=a.v10)
     print("=" * 100)
 
 
