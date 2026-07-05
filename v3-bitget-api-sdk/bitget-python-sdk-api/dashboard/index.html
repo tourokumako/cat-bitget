@@ -617,7 +617,15 @@
         <option value="15-22">15〜21日</option>
         <option value="22-32">22〜末</option>
       </select></label>
+      <label>結果重ね: <select id="rp-trades"><option value="">なし</option></select></label>
       <span id="rp-loading" style="color:#888;"></span>
+    </div>
+    <div id="rp-trade-legend" style="display:none;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-size:0.85em;color:#444;align-items:center;">
+      <span>● 建て（赤=SHORT）</span>
+      <span style="color:#2e7d32;">▼ 利確 TP/部分</span>
+      <span style="color:#c62828;">✕ 損切 SL</span>
+      <span style="color:#e65100;">■ 時間切れ</span>
+      <span>線＝勝ち(緑)/負け(赤)　<span id="rp-trade-stat" style="color:#333;"></span></span>
     </div>
 
     <div id="rp-summary" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">

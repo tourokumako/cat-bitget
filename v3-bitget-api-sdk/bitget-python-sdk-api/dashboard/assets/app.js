@@ -2653,6 +2653,90 @@ let RP_INDEX = null;
 const RP_DATA = {};
 let RP_CHART = null;
 let RP_CHART_ROWS = [];
+const RP_TRADE_CACHE = {};   // stem -> {trades:[...], ...}
+let RP_TRADES = null;        // 現在重ねているトレード配列（{et,xt,s,ep,xp,r,n}）or null
+
+// ⑪チャート（category x 軸・y=close）にトレードの Entry/Exit を重ねるプラグイン。
+// 各行の ts→index マップで時刻を x に、価格を yScale で y に写す（レンジ帯 rpBackgroundPlugin の上に描く）。
+const rpTradePlugin = {
+  id: "rpTradePlugin",
+  afterDatasetsDraw(chart) {
+    if (!RP_TRADES || !RP_CHART_ROWS.length) return;
+    const {ctx, chartArea, scales} = chart;
+    const xScale = scales.x, yScale = scales.y;
+    if (!chartArea) return;
+    // このビューに映っている時間範囲（rows は時刻昇順）と ts→index の対応
+    const t0 = RP_CHART_ROWS[0][0];
+    const t1 = RP_CHART_ROWS[RP_CHART_ROWS.length - 1][0];
+    const tsIndex = new Map();
+    for (let i = 0; i < RP_CHART_ROWS.length; i++) tsIndex.set(RP_CHART_ROWS[i][0], i);
+    // ts をこのビューの最近傍 index（≤ts の最大）に写す＝5m 以外の粒度でも含むバーに乗る
+    const idxOf = (ts) => {
+      if (tsIndex.has(ts)) return tsIndex.get(ts);
+      if (ts < t0 || ts > t1) return null;
+      let lo = 0, hi = RP_CHART_ROWS.length - 1, best = null;
+      while (lo <= hi) { const m = (lo + hi) >> 1;
+        if (RP_CHART_ROWS[m][0] <= ts) { best = m; lo = m + 1; } else hi = m - 1; }
+      return best;
+    };
+    const yOf = (px) => yScale.getPixelForValue(px);
+    ctx.save();
+    for (const t of RP_TRADES) {
+      if (t.xt < t0 || t.et > t1) continue;          // ビュー外はスキップ
+      const ei = idxOf(t.et), xi = idxOf(t.xt);
+      if (ei == null && xi == null) continue;
+      const ex = ei != null ? xScale.getPixelForValue(ei) : chartArea.left;
+      const xx = xi != null ? xScale.getPixelForValue(xi) : chartArea.right;
+      const ey = yOf(t.ep), xy = yOf(t.xp);
+      // Entry→Exit の連結線（勝ち=緑 / 負け=赤・薄く）
+      ctx.strokeStyle = t.n >= 0 ? "rgba(46,125,50,0.55)" : "rgba(198,40,40,0.5)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(xx, xy); ctx.stroke();
+      // Entry マーカー（●・SHORT=赤 / LONG=青）
+      ctx.fillStyle = t.s < 0 ? "#d32f2f" : "#1565c0";
+      ctx.beginPath(); ctx.arc(ex, ey, 3.2, 0, Math.PI * 2); ctx.fill();
+      // Exit マーカー（理由別・plot_trades.py と同じ意味）
+      rpDrawExit(ctx, xx, xy, t.r);
+    }
+    ctx.restore();
+  },
+};
+
+function rpDrawExit(ctx, x, y, reason) {
+  const s = 4;
+  if (reason === "TP_FILLED" || reason === "PARTIAL_TP" || reason === "EDGE_TP") {
+    ctx.fillStyle = "#2e7d32";                        // ▼ 利確
+    ctx.beginPath(); ctx.moveTo(x, y + s); ctx.lineTo(x - s, y - s); ctx.lineTo(x + s, y - s); ctx.closePath(); ctx.fill();
+  } else if (reason === "SL_FILLED") {
+    ctx.strokeStyle = "#c62828"; ctx.lineWidth = 1.6; // ✕ 損切
+    ctx.beginPath(); ctx.moveTo(x - s, y - s); ctx.lineTo(x + s, y + s);
+    ctx.moveTo(x + s, y - s); ctx.lineTo(x - s, y + s); ctx.stroke();
+  } else if (reason === "TIME_EXIT") {
+    ctx.fillStyle = "#e65100";                        // ■ 時間切れ
+    ctx.fillRect(x - s + 0.5, y - s + 0.5, 2 * s - 1, 2 * s - 1);
+  } else {
+    ctx.fillStyle = "#616161";                        // ◆ その他（EOD 等）
+    ctx.beginPath(); ctx.moveTo(x, y - s); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s); ctx.lineTo(x - s, y); ctx.closePath(); ctx.fill();
+  }
+}
+
+async function rpLoadTrades() {
+  const sel = document.getElementById("rp-trades");
+  const stem = sel ? sel.value : "";
+  const legend = document.getElementById("rp-trade-legend");
+  if (!stem) { RP_TRADES = null; if (legend) legend.style.display = "none"; return; }
+  if (!RP_TRADE_CACHE[stem]) {
+    const meta = (RP_INDEX.trade_overlays || []).find(o => o.stem === stem);
+    RP_TRADE_CACHE[stem] = await fetchJSON(`regime_prototype/${meta.file}`);
+  }
+  const obj = RP_TRADE_CACHE[stem];
+  RP_TRADES = obj.trades;
+  if (legend) {
+    legend.style.display = "flex";
+    const st = document.getElementById("rp-trade-stat");
+    if (st) st.textContent = `／ ${obj.n_trades} トレード・net $${obj.net}・勝率 ${obj.win_rate}%（${obj.start}〜${obj.end}）`;
+  }
+}
 
 const rpBackgroundPlugin = {
   id: "rpBackgroundPlugin",
@@ -2778,6 +2862,7 @@ async function rpRenderChart() {
   loading.textContent = `${rows.length.toLocaleString()} 行`;
 
   RP_CHART_ROWS = rows;
+  await rpLoadTrades();               // 結果重ね（選択されていれば RP_TRADES を用意）
   const labels = rows.map(r => rpFmtTs(r[0], gran));
   const closes = rows.map(r => r[1]);
 
@@ -2809,15 +2894,29 @@ async function rpRenderChart() {
             afterLabel: (item) => {
               const r = RP_CHART_ROWS[item.dataIndex];
               if (!r) return "";
-              return `肉眼: ${r[3] || "—"} / 予測: ${r[2] || "—"}`;
+              let s = `肉眼: ${r[3] || "—"} / 予測: ${r[2] || "—"}`;
+              const t = rpTradeAt(r[0]);
+              if (t) s += `\n${t}`;
+              return s;
             },
           },
         },
       },
       scales: {x: {ticks: {maxTicksLimit: 14}}, y: {beginAtZero: false}},
     },
-    plugins: [rpBackgroundPlugin],
+    plugins: [rpBackgroundPlugin, rpTradePlugin],
   });
+}
+
+// tooltip 用: この 5m 行の時刻に建て/決済があるトレードの1行説明（無ければ null）
+function rpTradeAt(tsMs) {
+  if (!RP_TRADES) return null;
+  const sideJp = (s) => s < 0 ? "SHORT" : "LONG";
+  for (const t of RP_TRADES) {
+    if (t.et === tsMs) return `▶ ${sideJp(t.s)} 建て @${t.ep}（→ ${t.r} / net $${t.n}）`;
+    if (t.xt === tsMs) return `◀ ${t.r} @${t.xp}（net $${t.n}）`;
+  }
+  return null;
 }
 
 function rpRenderSummary() {
@@ -2905,6 +3004,19 @@ async function renderRegimeProto() {
     const opt = document.createElement("option");
     opt.value = ym; opt.textContent = ym;
     ms.appendChild(opt);
+  }
+
+  // 結果重ね（トレードオーバーレイ）選択肢＝index.json の trade_overlays（新しい順）
+  const tsel = document.getElementById("rp-trades");
+  if (tsel) {
+    tsel.innerHTML = '<option value="">なし</option>';
+    for (const o of (RP_INDEX.trade_overlays || []).slice().reverse()) {
+      const opt = document.createElement("option");
+      opt.value = o.stem;
+      opt.textContent = `${o.stem.replace(/^trades_/, "")}（${o.n_trades}件 $${o.net}）`;
+      tsel.appendChild(opt);
+    }
+    tsel.addEventListener("change", rpRenderChart);
   }
 
   document.getElementById("rp-version").addEventListener("change", async () => {
