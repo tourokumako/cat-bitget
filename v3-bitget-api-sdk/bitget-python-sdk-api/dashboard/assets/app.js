@@ -2661,6 +2661,7 @@ const rpBackgroundPlugin = {
     if (!chartArea || !RP_CHART_ROWS.length) return;
     const xScale = scales.x;
     const midY = (chartArea.top + chartArea.bottom) / 2;
+    const hasHuman = RP_CHART_ROWS.some(r => r[3]);   // 肉眼ラベルが1つでもあるか（無ければ pred を全高で塗る＝v17 等）
     ctx.save();
     for (let i = 0; i < RP_CHART_ROWS.length; i++) {
       const r = RP_CHART_ROWS[i];
@@ -2669,17 +2670,24 @@ const rpBackgroundPlugin = {
       const left  = Math.max(x0, chartArea.left);
       const right = Math.min(x1, chartArea.right);
       if (right <= left) continue;
-      ctx.fillStyle = mlLabelLight(r[3]);  // human (top)
-      ctx.fillRect(left, chartArea.top, right - left, midY - chartArea.top);
-      ctx.fillStyle = mlLabelLight(r[2]);  // pred  (bottom)
-      ctx.fillRect(left, midY, right - left, chartArea.bottom - midY);
+      if (hasHuman) {
+        ctx.fillStyle = mlLabelLight(r[3]);  // human (top)
+        ctx.fillRect(left, chartArea.top, right - left, midY - chartArea.top);
+        ctx.fillStyle = mlLabelLight(r[2]);  // pred  (bottom)
+        ctx.fillRect(left, midY, right - left, chartArea.bottom - midY);
+      } else {
+        ctx.fillStyle = mlLabelLight(r[2]);  // pred のみ＝全高で塗る（v17 レンジ判定・グレー帯が価格ラインに乗る）
+        ctx.fillRect(left, chartArea.top, right - left, chartArea.bottom - chartArea.top);
+      }
     }
-    ctx.strokeStyle = "rgba(0,0,0,0.2)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(chartArea.left, midY);
-    ctx.lineTo(chartArea.right, midY);
-    ctx.stroke();
+    if (hasHuman) {
+      ctx.strokeStyle = "rgba(0,0,0,0.2)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, midY);
+      ctx.lineTo(chartArea.right, midY);
+      ctx.stroke();
+    }
     ctx.restore();
   },
 };
@@ -2762,6 +2770,11 @@ async function rpRenderChart() {
     const all = await rpFetchData(version, gran);
     rows = rpFilterByMonth(all, ym);
   }
+  const dr = document.getElementById("rp-dayrange").value;   // 日絞り（月内を約1週間に拡大）
+  if (dr !== "all") {
+    const [d0, d1] = dr.split("-").map(Number);
+    rows = rows.filter(r => { const day = new Date(r[0]).getUTCDate(); return day >= d0 && day < d1; });
+  }
   loading.textContent = `${rows.length.toLocaleString()} 行`;
 
   RP_CHART_ROWS = rows;
@@ -2811,19 +2824,20 @@ function rpRenderSummary() {
   const version = document.getElementById("rp-version").value;
   const proto = RP_INDEX.prototypes.find(p => p.version === version);
   if (!proto) return;
+  const s = proto.spec || {};
+  const items = s.upper
+    ? [`上位: ${s.upper}`, `中位: ${s.middle}`, `下位: ${s.lower}`, `統合: ${s.integration}`,
+       `ヒステリシス: ${s.hysteresis_hours} 時間`, `出力粒度: ${s.output_granularity}`]
+    : Object.entries(s).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`);
   document.getElementById("rp-spec").innerHTML =
     `<strong>仕様（${version}）</strong>` +
     `<ul style="margin:6px 0;line-height:1.7;">` +
-    `<li>上位: ${proto.spec.upper}</li>` +
-    `<li>中位: ${proto.spec.middle}</li>` +
-    `<li>下位: ${proto.spec.lower}</li>` +
-    `<li>統合: ${proto.spec.integration}</li>` +
-    `<li>ヒステリシス: ${proto.spec.hysteresis_hours} 時間</li>` +
-    `<li>出力粒度: ${proto.spec.output_granularity}</li>` +
+    items.map(x => `<li>${x}</li>`).join("") +
     `</ul>` +
     `<small style="color:#666;">生成: ${proto.generated_utc}</small>`;
-  const a1h = proto.accuracy["1h"];
-  const a1d = proto.accuracy["1d"];
+  const acc = proto.accuracy || {};
+  const a1h = acc["1h"];
+  const a1d = acc["1d"];
   document.getElementById("rp-acc-1h").textContent = a1h && a1h.accuracy != null
     ? `${(a1h.accuracy * 100).toFixed(1)}% (${a1h.hit.toLocaleString()}/${a1h.n.toLocaleString()})` : "—";
   document.getElementById("rp-acc-1d").textContent = a1d && a1d.accuracy != null
@@ -2898,6 +2912,7 @@ async function renderRegimeProto() {
   });
   document.getElementById("rp-granularity").addEventListener("change", rpRenderChart);
   document.getElementById("rp-month").addEventListener("change", rpRenderChart);
+  document.getElementById("rp-dayrange").addEventListener("change", rpRenderChart);
   document.getElementById("rp-day-filter").addEventListener("change", rpRenderDayTable);
 
   rpRenderSummary();
