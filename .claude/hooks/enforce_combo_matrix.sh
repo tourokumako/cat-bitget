@@ -36,7 +36,7 @@ esac
 CONTENT=$(printf '%s' "$INPUT" | python3 -c "import sys,json;d=json.load(sys.stdin).get('tool_input',{}) or {};print(d.get('content') or d.get('new_string') or '')" 2>/dev/null)
 [ -z "$CONTENT" ] && exit 0
 
-GUIDE="→ 手順: ①.claude/ratchet/entry_exit_matrix.md を開き、対象戦略の『## グリッド: <戦略>』節に Entry構成×Exit構成の全組み合わせを並べる（試済=実験名・両窓／未試行=空欄）②未試行セルを全て可視化（『未試行: あり』＝残る限り潰し切る）③未試行セル全体を見渡して選定を1行（CC が狭く1マスを決め打ちしない・まこさんと全体から選ぶ）④improvement_plan/acceptance に『網羅マトリクス（entry_exit_matrix）』を参照しどのセルを実装するか明記。CAT 指標マトリックス(23軸)は参考に横目で見る（正本化しない）。"
+GUIDE="→ 手順: ①.claude/ratchet/entry_exit_matrix.md を開き、対象戦略の『## グリッド: <戦略>』節に Entry構成×Exit構成の全組み合わせを並べる（試済=実験名・両窓／未試行=空欄）②未試行セルを全て可視化（『未試行: あり』＝残る限り潰し切る）③未試行セル全体を見渡して選定を1行（CC が狭く1マスを決め打ちしない・まこさんと全体から選ぶ）④improvement_plan/acceptance に『網羅マトリクス（entry_exit_matrix）』を参照しどのセルを実装するか明記。CAT 指標マトリックス(23軸)は参考に横目で見る（正本化しない）。⑤★Exit は『軸を1つ』でなく状態機械として設計＝entry 後のポジション状態（含み益の推移/ピーク反転/失速/逆行/指標反転/時間×損益）ごとに発火する Exit を分岐表で書く（V9 の replay_csv.py _check_exits_replay が雛形・entry_exit_matrix.md Exit カタログ冒頭の基本原則）。Exit を変えないなら『Exit 状態機械は現行維持』と1行。"
 
 # 1) マトリクス存在
 if [ ! -f "$MATRIX" ]; then
@@ -71,6 +71,16 @@ fi
 
 # 6) 提案が本表を指すか（提案がマトリクス由来であることを紐付け）
 printf '%s' "$CONTENT" | grep -qE "網羅マトリクス|entry_exit_matrix" || miss+=("提案が『網羅マトリクス（entry_exit_matrix）』を参照していない＝どのセルを実装するか本表に紐付ける")
+
+# 7) Exit 状態機械の分岐設計（★V9 の基本ロジック・2026-07-06 まこさん承認「hookもいれていいよ」）
+#   改善案は Exit を「軸を1つ選ぶ」でなく「entry 後のポジション状態→発火する Exit」の状態機械として設計する
+#   （利益最大化=伸ばす/消える前に確定・損失最小化=負けは早く/失速で撤退）。背景=E37 が V9 の当たり前
+#   （replay_csv.py _check_exits_replay の状態分岐＝MFE反転/失速/指標反転/TIME down_factor/PROFIT_LOCK）を
+#   毎回外し、固定TP＋固定SL＋固定TIME だけで v2〜v13 の 22 回失敗（まこさん「V9では当たり前にやってきた」）。
+#   Exit を変えない提案は「Exit 状態機械は現行維持」と明記すれば通る（＝状態機械 の語で pass・過剰要求を避ける）。
+#   正直な限界：キーワード検出＝本当に状態機械を組めたかの中身はまこさんの目（他 hook と同じ）。
+printf '%s' "$CONTENT" | grep -qE "状態機械|ポジション状態|含み益.*(ピーク|反転|失速)|MFE_DRAWDOWN|MFE_STALE" \
+  || miss+=("Exit 状態機械の分岐（entry 後のポジション状態→どの Exit を発火させるか）を設計に書く＝V9 の基本[entry_exit_matrix.md の Exit カタログ冒頭『基本原則』・replay_csv.py _check_exits_replay が雛形]。固定TP/SL/TIME だけの Exit は不可。Exit を変えないなら『Exit 状態機械は現行維持』と1行明記")
 
 if [ ${#miss[@]} -gt 0 ]; then
   echo "🔒 [Entry×Exit 網羅ゲート: ${BASE}] Entry×Exit の全組み合わせを網羅し未試行を可視化してから提案してください（狭い1レバー決め打ち禁止・まこさん 2026-07-06）。" >&2
