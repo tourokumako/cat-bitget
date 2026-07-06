@@ -109,6 +109,18 @@ V11_SL_BUF = V10_SL_BUF      # SL = ゾーン上端×(1+0.05%)（v10 と同一�
 FREQ_FLOOR_EVT_DAY = 5.0     # θ選定の頻度床（学習窓ゲート通過イベント/日・スロット占有の目減り込みで採点窓 件数/日≥3 を狙う）
 THETA_QQ = (0.50, 0.60, 0.70, 0.80, 0.90, 0.95)   # θ 候補分位（学習窓 OOF から選定・採点窓不参照）
 
+# ── v14 Exit ポジション状態機械（acceptance 2026-07-07 承認・fixed-value-approved＝学習窓選定の候補メニュー・採点窓スイープでない）──
+# 水準は全て進捗率（prog=(建値−価格)/(建値−レンジ中央)＝無次元・レンジ幾何で自動スケール・H6）またはバー数。
+# None=その枝を使わない（OFF も選定値）。選定は _select_v14_params（学習窓のみ・枝×玉タイプ別の逐次 greedy・L-267）。
+V14_BRANCH_PARAMS = {  # fixed-value-approved
+    "dd":    (None, (0.50, 1/3), (0.50, 0.5), (0.75, 1/3), (0.75, 0.5)),  # 枝3 ピーク反転: (p_arm, r=ピークからの割戻し比)
+    "be":    (None, 0.25, 0.50),                                           # 枝4 建値撤退: be_arm（進捗がこの水準に達したら建値フロアに buy trigger+limit）
+    "stoch": (None, 0.25, 0.50),                                           # 枝5' 指標反転: s_arm（stoch(9,3) GC ∩ 含み益>0 ∩ peak_prog≥s_arm・taker）
+    "stall": (None, (4, 0.25, 8), (6, 0.50, 8)),                           # 枝6 失速: (n本経過, 進捗<g, shrink残りT_eff へ前倒し)
+    "tmax":  (6, 9, 12),                                                   # 枝7 backstop 長（30/45/60分・60分固定は未検証 a-priori だったため候補に降格）
+}
+V14_TYPES = ((1, False), (1, True), (2, False), (2, True))   # 玉の4タイプ＝(add数[1本目/追加], tp1_done[半分利確 前/後])
+
 # ── E37 v6 パラメータ（イベント母数拡大＋θ規則反転・--v6 で ON・既定 OFF=v5 恒等・出所は各行）──
 BE_FLOOR = 1.0               # v6 θ選定の be 床＝損益分岐の定義値（be=平均gross÷往復コスト の分岐点・数値探索でない）
 SHALLOW_Z = 0.5              # 浅い行き過ぎ／順張り押し目・戻り売りの dev_z（教科書の半σ・a-priori）
@@ -1121,7 +1133,7 @@ def detector_gate(det: dict, feat: pd.DataFrame, df: pd.DataFrame) -> np.ndarray
 
 
 # ══ ⑤(戦略別の記録) 売買記録（funding/cap は共通土台・両側）══
-_MAKER_EXIT = ("TP_FILLED", "SL_FILLED", "EDGE_TP", "BE_EXIT", "PARTIAL_TP")   # score.py MAKER_EXIT_REASONS と一致
+_MAKER_EXIT = ("TP_FILLED", "SL_FILLED", "EDGE_TP", "BE_EXIT", "PARTIAL_TP", "MFE_DRAWDOWN_CUT")   # score.py MAKER_EXIT_REASONS と一致（MFE_DRAWDOWN_CUT=v14 トレーリング指値 maker・2026-07-07）
 
 
 def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
@@ -1516,7 +1528,36 @@ def v11_entry_candidates(df: pd.DataFrame, v11_open_entry: bool = False, v12_ope
     return ok & touched & rejected
 
 
-def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False, v11_open_entry: bool = False, v12_open_range: bool = False, v13_time_maker: bool = False):
+def v14_exit_machine(lot, o_i, h_i, c_i, gc_i, params):
+    """v14 Exit 状態機械 枝3/4/5'（TP2 の後・v13 shrink の前に判定・acceptance 2026-07-07）。
+    トリガ判定は前バーまでの含み益ピーク lot["pk_prev"]（同一バー楽観の排除＝H2）。
+    戻り: (exit_reason, exit_px) または None。パラメータは玉のタイプ (add数, tp1_done) 別（V9 の型別条件の E37 版）。
+    枝3 MFE_DRAWDOWN_CUT＝ピーク基準トレーリング buy trigger+limit（maker・下限=建値フロア＝損ゼロ以上・⑦）
+    枝4 BE_EXIT＝建値フロアに buy trigger+limit（maker・利益消失の事実で損ゼロ級撤退）
+    枝5' STOCH_REVERSE_EXIT＝stoch(9,3) GC ∩ 含み益>0 ∩ peak_prog≥s_arm（成行 taker・V9 P23 実績の E37 版）
+    レベル系の gap は SL と同規約（max(level, open)＝悲観側）。"""
+    den = lot["avg"] - lot["tp2"]
+    if den <= 0:
+        return None                                    # 防御（tp_ge_sl_check_v11 が原則排除済み）
+    pk = lot.get("pk_prev", lot["avg"])                # 前バーまでのピーク価格（SHORT＝低いほど利益・fill バー直後は建値=進捗0）
+    peak_prog = (lot["avg"] - pk) / den
+    typ = (min(int(lot["add_count"]), 2), bool(lot["tp1_done"]))
+    be_floor = lot["avg"] * (1.0 - SCALP_FLOOR)        # 建値フロア＝手数料床（v13 と同形・損ゼロ以上）
+    dd = params["dd"][typ]
+    if dd is not None and peak_prog >= dd[0]:          # 枝3: armed（進捗ピーク≥p_arm）∩ ピークから r 割戻しレベルへ回帰
+        lvl = min(pk + (lot["avg"] - pk) * dd[1], be_floor)
+        if h_i >= lvl:
+            return ("MFE_DRAWDOWN_CUT", max(lvl, o_i))
+    be = params["be"][typ]
+    if be is not None and peak_prog >= be and h_i >= be_floor:   # 枝4: armed ∩ 建値へ回帰
+        return ("BE_EXIT", max(be_floor, o_i))
+    st = params["stoch"][typ]
+    if st is not None and peak_prog >= st and gc_i and c_i < lot["avg"]:   # 枝5': armed ∩ GC ∩ 含み益>0（close 時点）
+        return ("STOCH_REVERSE_EXIT", c_i)
+    return None
+
+
+def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False, v11_open_entry: bool = False, v12_open_range: bool = False, v13_time_maker: bool = False, v14_params: dict | None = None):
     """v11 エンジン＝素ルール SHORT 専用（short_only_v11・LONG 入口の生成経路なし＝§1.2.1 ショートのみ）。
     入口: v11_entry_candidates → 指値 maker TTL（不約定は建てない）。TP/SL は発注時点のゾーン幾何で固定・
     tp_ge_sl_check_v11 を通らない候補は建てない。
@@ -1541,6 +1582,16 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
     rz_lo = df["v11_res_lo"].to_numpy(float); rz_hi = df["v11_res_hi"].to_numpy(float)
     sz_hi = df["v11_sup_hi"].to_numpy(float); mid = df["v11_mid"].to_numpy(float)
     max_lots = 1 if no_add else V11_MAX_ADDS
+    tmax_l = T_MAX                                     # backstop 長（v14 では選定値・OFF では既存 T_MAX と同値＝恒等）
+    k9 = d9 = None
+    if v14_params is not None:                         # v14 のみ: stoch(9,3)（枝5' 用・過去 rolling のみ＝leak-safe・OFF 経路では計算しない）
+        tmax_l = int(v14_params.get("tmax", T_MAX))
+        _cs = pd.Series(c); _ls = pd.Series(l); _hs = pd.Series(h)
+        _ll9 = _ls.rolling(9).min(); _hh9 = _hs.rolling(9).max()
+        k9 = (100.0 * (_cs - _ll9) / (_hh9 - _ll9).replace(0, np.nan)).rolling(3).mean().to_numpy(float)
+        d9 = pd.Series(k9).rolling(3).mean().to_numpy(float)
+        v14_params.setdefault("_stats", {})
+        v14_params["_stats"] = {"MFE_DRAWDOWN_CUT": 0, "BE_EXIT": 0, "STOCH_REVERSE_EXIT": 0, "stall_early": 0, "tp2_bothhit": 0}
     trades = []
     lots = []                                          # 保有中 lot（同サイド merge＝単一 SHORT ポジの写像・最大 max_lots）
     pend = None
@@ -1557,6 +1608,8 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                              "tp1": pend["tp1"], "tp2": pend["tp2"], "sl": pend["sl"], "tp1_done": False})
                 pend = None
         for lot in lots:
+            if v14_params is not None:
+                lot["pk_prev"] = lot["max_fav"]        # v14: 前バーまでのピークを退避（当該バー low 反映前＝同一バー楽観の排除・H2）
             lot["max_fav"] = min(lot["max_fav"], l[i]); lot["max_adv"] = max(lot["max_adv"], h[i])
         still = []
         for lot in lots:
@@ -1570,14 +1623,35 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                 lot["size"] = lot["size"] / 2.0
                 lot["tp1_done"] = True
             if l[i] <= lot["tp2"]:                     # ③ TP2＝レンジ中央で残り全部（maker）
+                if v14_params is not None:             # v14 診断: TP2 と枝3/4/5' の同一バー両ヒット計数（挙動不変・楽観側解決の透明化）
+                    _gc = bool(k9 is not None and i > 0 and np.isfinite(k9[i]) and np.isfinite(d9[i])
+                               and np.isfinite(k9[i-1]) and np.isfinite(d9[i-1]) and k9[i-1] <= d9[i-1] and k9[i] > d9[i])
+                    if v14_exit_machine(lot, o[i], h[i], c[i], _gc, v14_params) is not None:
+                        v14_params["_stats"]["tp2_bothhit"] += 1
                 _record(trades, lot, lot["tp2"], "TP_FILLED", i, ts); continue
+            if v14_params is not None:                 # ③.7 v14 Exit 状態機械 枝3/4/5'（acceptance 2026-07-07・トリガは前バーピーク）
+                _gc = bool(i > 0 and np.isfinite(k9[i]) and np.isfinite(d9[i])
+                           and np.isfinite(k9[i-1]) and np.isfinite(d9[i-1]) and k9[i-1] <= d9[i-1] and k9[i] > d9[i])
+                _r14 = v14_exit_machine(lot, o[i], h[i], c[i], _gc, v14_params)
+                if _r14 is not None:
+                    v14_params["_stats"][_r14[0]] += 1
+                    _record(trades, lot, _r14[1], _r14[0], i, ts); continue
             if v13_time_maker:                         # ③.5 deadline shrink（Step2・acceptance 2026-07-06）＝TIME 域の玉を成行taker でなく縮む maker TP で取り切る（E35 iter8-9 型）
-                r = max(0.0, (T_MAX - (i - lot["first_idx"])) / T_MAX)      # 残り時間比（fill時 r=1／deadline で r→0・a-priori 時間機構）
+                _tm = tmax_l                           # v14 枝6: 失速（n本経過しても進捗<g）なら shrink 残り時間を T_eff へ前倒し（式は不変・OFF では tmax_l=T_MAX＝恒等）
+                if v14_params is not None:
+                    _st = v14_params["stall"][(min(int(lot["add_count"]), 2), bool(lot["tp1_done"]))]
+                    if _st is not None and (i - lot["first_idx"]) >= _st[0]:
+                        _den = lot["avg"] - lot["tp2"]
+                        _ppg = (lot["avg"] - lot.get("pk_prev", lot["avg"])) / _den if _den > 0 else 0.0
+                        if _ppg < _st[1]:
+                            _tm = min(_tm, int(_st[2]))
+                            v14_params["_stats"]["stall_early"] += 1
+                r = max(0.0, (_tm - (i - lot["first_idx"])) / _tm)          # 残り時間比（fill時 r=1／deadline で r→0・a-priori 時間機構）
                 be_floor = lot["avg"] * (1.0 - SCALP_FLOOR)                 # 建値フロア＝手数料床（損ゼロ maker・手数料床を割る決済は建てない・⑦）
                 tp_shrunk = lot["tp2"] + (be_floor - lot["tp2"]) * (1.0 - r)   # r=1で tp2（通常）→ r=0で be_floor（建値側へ縮む・tp2≤tp_shrunk≤be_floor）
                 if l[i] <= tp_shrunk:                  # 縮む maker TP に到達＝maker 決済（TP_FILLED＝新 exit_reason なし・score.py 不変）
                     _record(trades, lot, tp_shrunk, "TP_FILLED", i, ts); continue
-            if (i - lot["first_idx"]) >= T_MAX:        # ④ 60分 backstop（taker・lot ごと・縮む maker に当たらなかった玉のみ）
+            if (i - lot["first_idx"]) >= tmax_l:       # ④ backstop（taker・lot ごと・縮む maker に当たらなかった玉のみ・OFF=T_MAX 恒等／v14=選定長）
                 _record(trades, lot, c[i], "TIME_EXIT", i, ts); continue
             still.append(lot)
         lots = still
@@ -1594,6 +1668,75 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         _record(trades, lot, c[n - 1], "FORCE_CLOSE_EOD", n - 1, ts)
     assert short_only_v11 and all(r["side"] == "SHORT" for r in trades), "short_only_v11 違反（LONG 玉が混入）"
     return trades
+
+
+def _select_v14_params(df, box_tf, no_add=False, single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=True):
+    """v14 パラメータの学習窓選定（採点窓不参照・L-267・acceptance 2026-07-07 F-2）。
+    枝の優先順位（dd→be→stoch→stall→tmax）× 玉タイプ順（V14_TYPES）の逐次 greedy＝
+    各セルで候補（V14_BRANCH_PARAMS・fixed-value-approved）＋OFF を学習窓 net で比較し、純増する時だけ採択（同点は OFF/現行優先）。
+    戻り: (sel, rows[選定ログ], base_net[全枝OFF=v13恒等], best_net, nrun)"""
+    dtr = df[df["ts"] < TRAIN_END].reset_index(drop=True)
+
+    def _mk(s):
+        return {"dd": dict(s["dd"]), "be": dict(s["be"]), "stoch": dict(s["stoch"]),
+                "stall": dict(s["stall"]), "tmax": s["tmax"]}
+
+    def _net(p):
+        tr = run_continuous_v11(dtr, box_tf, no_add=no_add, single_tp=single_tp,
+                                v11_open_entry=v11_open_entry, v12_open_range=v12_open_range,
+                                v13_time_maker=v13_time_maker, v14_params=p)
+        return float(sum(r["net_usd"] for r in tr)), len(tr)
+
+    sel = {b: {t: None for t in V14_TYPES} for b in ("dd", "be", "stoch", "stall")}
+    sel["tmax"] = T_MAX
+    base_net, base_n = _net(_mk(sel))          # 全枝 OFF・tmax=T_MAX ＝ v13 恒等の学習窓 net（機械の incumbent）
+    best = base_net
+    rows = [("base(全枝OFF=v13)", "-", "-", base_net, base_n, "")]
+    nrun = 1
+    for br in ("dd", "be", "stoch", "stall"):
+        for typ in V14_TYPES:
+            for cand in V14_BRANCH_PARAMS[br]:
+                if cand is None or cand == sel[br][typ]:
+                    continue
+                trial = _mk(sel); trial[br][typ] = cand
+                v, k = _net(trial); nrun += 1
+                adopt = v > best + 1e-9
+                rows.append((br, str(typ), str(cand), v, k, "採択" if adopt else ""))
+                if adopt:
+                    best = v; sel[br][typ] = cand
+    for tm in V14_BRANCH_PARAMS["tmax"]:
+        if tm == sel["tmax"]:
+            continue
+        trial = _mk(sel); trial["tmax"] = tm
+        v, k = _net(trial); nrun += 1
+        adopt = v > best + 1e-9
+        rows.append(("tmax", "-", str(tm), v, k, "採択" if adopt else ""))
+        if adopt:
+            best = v; sel["tmax"] = tm
+    return sel, rows, base_net, best, nrun
+
+
+def _v14_guard_check(df, box_tf) -> None:
+    """番人メタ確認（acceptance F-1d・§2.9③）＝枝別に極端値を与えて発火が支配的になるか（配線が生きている証明）。
+    診断専用（出力ファイルなし・採点しない・値は選定に使わない）。--smoke と併用する。"""
+    df = _rsi9_v10(df)
+    z1h = _zones_v11_1h(df)
+    df = _apply_v11_to_5m(df, z1h)
+    base = {b: {t: None for t in V14_TYPES} for b in ("dd", "be", "stoch", "stall")}
+    base["tmax"] = T_MAX
+    cases = [
+        ("枝3支配 dd(arm=0,r=0.9)", {**{k: dict(v) if isinstance(v, dict) else v for k, v in base.items()}, "dd": {t: (0.0, 0.9) for t in V14_TYPES}}),
+        ("枝4支配 be(arm=0)",       {**{k: dict(v) if isinstance(v, dict) else v for k, v in base.items()}, "be": {t: 0.0 for t in V14_TYPES}}),
+        ("枝5'支配 stoch(arm=0)",   {**{k: dict(v) if isinstance(v, dict) else v for k, v in base.items()}, "stoch": {t: 0.0 for t in V14_TYPES}}),
+        ("枝6支配 stall(n=0,g=9.9,T_eff=1)", {**{k: dict(v) if isinstance(v, dict) else v for k, v in base.items()}, "stall": {t: (0, 9.9, 1) for t in V14_TYPES}}),
+    ]
+    print("=" * 100)
+    print("[v14 番人メタ確認] 枝別極端値 → exit_reason 分布（枝が支配すれば配線 OK・採点しない）")
+    for name, p in cases:
+        tr = run_continuous_v11(df, box_tf, v13_time_maker=True, v14_params=p)
+        cnt = pd.Series([r["exit_reason"] for r in tr]).value_counts().to_dict()
+        print(f"  {name}: {len(tr)} lot / {cnt} / 発火stats {p.get('_stats')}")
+    print("=" * 100)
 
 
 def _selftest_zones_v11(df: pd.DataFrame) -> None:
@@ -1618,7 +1761,7 @@ def _selftest_zones_v11(df: pd.DataFrame) -> None:
     print("  [selftest zones v11] ✅ 全期間一致＝視認校正済み計器と同一のレンジ判定")
 
 
-def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False, v8: bool = False, v9: bool = False, v10: bool = False, v11: bool = False, v11_no_add: bool = False, v11_single_tp: bool = False, v13_time_maker: bool = False) -> dict:
+def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False, v8: bool = False, v9: bool = False, v10: bool = False, v11: bool = False, v11_no_add: bool = False, v11_single_tp: bool = False, v13_time_maker: bool = False, v14_sel: dict | None = None) -> dict:
     if v11:
         return {
             "検証期間（periods正本・E31）": {
@@ -1652,6 +1795,15 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
                     f"tp_shrunk=tp2+(建値フロア−tp2)×(1−r)・建値フロア=avg×(1−{SCALP_FLOOR*100:.2f}%)（損ゼロ maker・手数料床を割らない）。"
                     "到達玉は maker(TP_FILLED)・未到達玉のみ 60分 成行 TIME_EXIT(taker)。E35 iter8-9 型・acceptance 2026-07-06")}
                   if v13_time_maker else {}),
+                **({"★v14 Exit 状態機械（枝×玉4タイプ別の学習窓選定値・acceptance 2026-07-07）": {
+                    "尺度": "進捗率 prog=(建値−価格)/(建値−レンジ中央)＝無次元（レンジ幾何で自動スケール・H6）・トリガ判定は前バーまでのピーク（H2）",
+                    "枝3 MFE_DRAWDOWN_CUT(maker trigger+limit)": f"(p_arm, r)×タイプ = {v14_sel['dd']}（None=不使用・レベル下限=建値フロア）",
+                    "枝4 BE_EXIT(maker trigger+limit)": f"be_arm×タイプ = {v14_sel['be']}（armed 後 建値フロアで損ゼロ級撤退）",
+                    "枝5' STOCH_REVERSE_EXIT(taker成行)": f"s_arm×タイプ = {v14_sel['stoch']}（stoch(9,3) GC ∩ 含み益>0）",
+                    "枝6 失速shrink前倒し": f"(n,g,T_eff)×タイプ = {v14_sel['stall']}",
+                    "枝7 TIME backstop 長": f"{v14_sel['tmax']}本={v14_sel['tmax']*5}分（候補{{6,9,12}}から学習窓選定）",
+                    "発火数(全期間)": f"{v14_sel.get('_stats')}",
+                }} if v14_sel is not None else {}),
             },
             "【固定値】コスト（eval_engine・確定値・改造禁止）": {
                 "maker手数料": f"{ee.MAKER_FEE*100:.3f}%", "taker手数料": f"{ee.TAKER_FEE*100:.3f}%",
@@ -1816,7 +1968,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -1839,7 +1991,26 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
               f"＝1h S/Rゾーン（スイング≥{V11_ZONE_TOUCH}・幅≥{V11_ZONE_MIN_W*100:.1f}%）∩ 5分ブレイクなし")
         _in_label = "到達のみ（確認なし v12）" if v12_open_range else "到達＋拒否確認"
         print(f"  [入口候補 v11] {_in_label} {cn:,} バー（no_add={v11_no_add}・single_tp={v11_single_tp}・open_entry={v11_open_entry}・open_range={v12_open_range}）")
-        trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker)
+        v14p = None
+        if v14_machine:                                # v14 Exit 状態機械（acceptance 2026-07-07）＝学習窓選定→純増ゲート→本走
+            assert v13_time_maker, "v14 は v13（deadline shrink）の上に載る（--v13-time-maker 必須・acceptance 2026-07-07）"
+            print("  [v14 選定] 学習窓のみで枝×玉タイプ別の逐次 greedy（採点窓不参照・L-267）…")
+            sel, rows, base_net, best_net, nrun = _select_v14_params(
+                df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp,
+                v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker)
+            print(f"  [v14 選定表] {nrun} 回実行（学習窓 net・採択のみ→下に全行）")
+            for br, typ, cand, v, k, adopt in rows:
+                print(f"    {br:<18} typ={typ:<12} cand={cand:<18} net ${v:>10,.0f} / {k:>5} lot {adopt}")
+            print(f"  [v14 選定結果] base(v13恒等) ${base_net:,.0f} → 機械 ${best_net:,.0f}（差 {best_net-base_net:+,.0f}）")
+            print(f"    dd={sel['dd']}\n    be={sel['be']}\n    stoch={sel['stoch']}\n    stall={sel['stall']}\n    tmax={sel['tmax']}本={sel['tmax']*5}分")
+            if best_net <= base_net + 1e-9:
+                print("  ⛔ 機械全体で学習窓純増なし＝停止（採点温存・acceptance F-2・扱いはまこさん判断）")
+                raise SystemExit(1)
+            v14p = {"dd": dict(sel["dd"]), "be": dict(sel["be"]), "stoch": dict(sel["stoch"]),
+                    "stall": dict(sel["stall"]), "tmax": sel["tmax"]}
+        trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker, v14_params=v14p)
+        if v14p is not None:
+            print(f"  [v14 発火（全期間・full CSV 基準）] {v14p.get('_stats')}")
         t = pd.DataFrame(trades)
         if len(t):
             t["entry_time"] = pd.to_datetime(t["entry_time"]); t["exit_time"] = pd.to_datetime(t["exit_time"])
@@ -1847,8 +2018,8 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
             assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
             assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9・PARTIAL_TP 半 lot 含む）"
-        sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "") + ("oe" if v11_open_entry else "") + ("or" if v12_open_range else "") + ("tm" if v13_time_maker else "")
-        _out(t, f"_{box_tf}{sfx}", None, tag=tag, gate_on=True, v11=True, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker)
+        sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "") + ("oe" if v11_open_entry else "") + ("or" if v12_open_range else "") + ("tm" if v13_time_maker else "") + ("xm" if v14_machine else "")
+        _out(t, f"_{box_tf}{sfx}", None, tag=tag, gate_on=True, v11=True, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14p)
         return
     if v10:
         assert not (v6 or v6r or v7 or v8 or v9 or no_gate), "v10 は素ルール MVP（他バージョンフラグと併用不可）"
@@ -1960,10 +2131,11 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
     _out(t, f"_{box_tf}_{ver}", det, tag=tag, gate_on=not no_gate, v6=v6, v6r=v6r, v7=v7, v8=v8)
 
 
-def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v13_time_maker=False) -> None:
+def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v13_time_maker=False, v14_sel=None) -> None:
     strat_base._output_and_report(
         t, suffix, stem="e37_range_scalp",
-        strategy=("E37 v11 視認校正レンジ計器の組み込み（1h S/Rゾーン×5分ブレイク離脱×複数TP+add・SHORT のみ）" if v11
+        strategy=("E37 v14 Exit ポジション状態機械（レンジ幾何ネイティブ・玉4タイプ別 学習窓選定・基本 maker）" if v14_sel is not None
+                  else "E37 v11 視認校正レンジ計器の組み込み（1h S/Rゾーン×5分ブレイク離脱×複数TP+add・SHORT のみ）" if v11
                   else "E37 v10 ゾーン方式レンジスキャル SHORT（§1.2.1 準拠 MVP・タッチ実績ゾーン×拒否確認・ML 不使用）" if v10
                   else "E37 v9 レンジ・スキャル 両側 maker MR＋型×side Entry/Exit セット共同選定（フェーズ1）" if v9
                   else "E37 v8 レンジ・スキャル 両側 maker MR＋型×side 検出器（選定計器の是正＝母数一致・side別be・型相互排他）" if v8
@@ -1972,7 +2144,7 @@ def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6
                   else "E37 v6 レンジ・スキャル 両側 maker MR＋検出器ゲート（イベント5型＋θ規則反転）" if v6
                   else "E37 v5 レンジ・スキャル 両側 maker MR＋稼げるレンジ検出器ゲート"),
         script="e37_range_scalp.py",
-        sections=_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9, v10=v10, v11=v11, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker), tag=tag)
+        sections=_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9, v10=v10, v11=v11, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14_sel), tag=tag)
 
 
 def _load(smoke: int) -> pd.DataFrame:
@@ -2069,6 +2241,8 @@ def main():
     ap.add_argument("--v11-open-entry", action="store_true", help="v11 Step1 Do: 入口の過熱を必須にする確認（rsi9_prev>70）を撤去＝反転確認だけで入る（過熱fadeで負ける方向選別をやめ件数を戻す・acceptance 2026-07-05・既定OFF=v11恒等）")
     ap.add_argument("--v12-open-range", action="store_true", help="v12: 入口の拒否確認（陰転∩RSI9下向き）を外し range_ok_v11∩上限ゾーンのみで SHORT＝レンジ上部で確認なしに件数を出す（方向選別しない・Exit は次段・acceptance 2026-07-06・既定OFF=v11oe恒等）")
     ap.add_argument("--v13-time-maker", action="store_true", help="v13 Step2: TP2 と TIME backstop の間に deadline 型 縮む maker TP を置く＝TIME 域の玉を成行taker でなく残り時間比 r で建値側へ縮む maker指値(TP_FILLED)で取り切る（建値フロア=avg×(1-SCALP_FLOOR)・E35 iter8-9 型・acceptance 2026-07-06・既定OFF=v12恒等）")
+    ap.add_argument("--v14-exit-machine", action="store_true", help="v14: Exit ポジション状態機械（枝3 MFE_DRAWDOWN_CUT トレーリングmaker／枝4 BE_EXIT 建値フロアmaker／枝5' STOCH_REVERSE_EXIT taker／枝6 失速shrink前倒し／枝7 backstop長{30,45,60分}選定・水準=進捗率・玉4タイプ別に学習窓のみで逐次選定・--v13-time-maker 必須・acceptance 2026-07-07・既定OFF=v13恒等）")
+    ap.add_argument("--v14-guard-check", action="store_true", help="v14 番人メタ確認: 枝別極端値で exit_reason 分布が枝支配になるか（配線証明・採点しない・--smoke 併用）")
     ap.add_argument("--v11-selftest-zones", action="store_true", help="v11 自己検査: _zones_v11_1h が labels_v17.csv（視認校正済み計器）と全期間一致するか機械照合して終了")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
     a = ap.parse_args()
@@ -2087,11 +2261,14 @@ def main():
     if a.v11_selftest_zones:
         _selftest_zones_v11(df)
         return
+    if a.v14_guard_check:
+        _v14_guard_check(df, a.box_tf)
+        return
     if a.diagnostic:
         _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9), v10=a.v10, v11=a.v11, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range)
         return
     run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9, v10=a.v10,
-            v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker)
+            v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker, v14_machine=a.v14_exit_machine)
     print("=" * 100)
 
 
