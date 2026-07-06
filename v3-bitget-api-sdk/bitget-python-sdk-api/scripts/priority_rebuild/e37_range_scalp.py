@@ -121,6 +121,20 @@ V14_BRANCH_PARAMS = {  # fixed-value-approved
 }
 V14_TYPES = ((1, False), (1, True), (2, False), (2, True))   # 玉の4タイプ＝(add数[1本目/追加], tp1_done[半分利確 前/後])
 
+# ── v15 Entry×Exit セット最適化 第1弾＝逆行側分岐の作り直し＋枝水準の場面連動 学習窓選定（acceptance 2026-07-07 承認）──
+# 候補は全てレンジ幾何比（W=上下ゾーン間の高さ・進捗率）＝無次元（H6）・fixed-value-approved（学習窓選定の候補格子・採点窓スイープでない L-267）。
+# 選定＝場面セル（学習窓 lot の entry 特徴に LightGBM 1本の木を fit した leaf＝データ駆動の場面分割・手置きビンでない）×玉タイプ別に、
+# 学習窓を purged 3分割（embargo 1日）した OOF 合意（合計純増 ∩ 2/3 セグメント改善）で採択（_select_v15_params）。
+V15_UNIT_DIV = 2                     # add ラダー: UNIT/2=0.012 BTC/lot（合計 4×0.012=0.048 不変＝H1 の取り分を増やさない・H9: ≥0.0001/5USDT）
+V15_MAX_LOTS = 4                     # fixed-value-approved 予算幾何 0.048÷0.012（同予算分割・まこさん 2026-07-07「add 増やす」の (a) 形）
+V15_LADDER = (None, (0.5, 1.0), (0.4, 0.8, 1.2))   # fixed-value-approved 逆走ラダー段（初回建値からの逆走距離＝W 比・None=再発火 add のみ）
+V15_SL_FAR = (0.5, 1.0, 1.5)         # fixed-value-approved 災害SL＝ゾーン上端＋k×W（遠い・浅SL の置換・レンジ幾何比）
+V15_RET_ARM = (None, 0.25, 0.5, 1.0)  # fixed-value-approved 戻り決済 arm＝逆走の深さ（W 比）がこの水準に達した玉は建値フロア回帰で BE_EXIT（maker）
+V15_TMAX = (12, 24, 48)              # fixed-value-approved backstop 長（1h/2h/4h・上限4h=まこさん指定 2026-07-07）
+V15_DOWN = (None, 0.5, 0.25)         # fixed-value-approved 含み損玉の TIME 前倒し係数（V9 TIME_EXIT_DOWN 型・taker）
+V15_BREAK_BARS = 12                  # 構造破れの複数TF確認＝ゾーン外終値の 1h 持続（12×5分・KB §5 a-priori・レンジ破れは E32b に譲る）
+V15_BREAK_VOL_N = 20                 # 破れ判定の出来高窓（20期間平均・KB §5 a-priori）
+
 # ── E37 v6 パラメータ（イベント母数拡大＋θ規則反転・--v6 で ON・既定 OFF=v5 恒等・出所は各行）──
 BE_FLOOR = 1.0               # v6 θ選定の be 床＝損益分岐の定義値（be=平均gross÷往復コスト の分岐点・数値探索でない）
 SHALLOW_Z = 0.5              # 浅い行き過ぎ／順張り押し目・戻り売りの dev_z（教科書の半σ・a-priori）
@@ -1542,22 +1556,48 @@ def v14_exit_machine(lot, o_i, h_i, c_i, gc_i, params):
     pk = lot.get("pk_prev", lot["avg"])                # 前バーまでのピーク価格（SHORT＝低いほど利益・fill バー直後は建値=進捗0）
     peak_prog = (lot["avg"] - pk) / den
     typ = (min(int(lot["add_count"]), 2), bool(lot["tp1_done"]))
+    if "cell" in lot:                                  # v15: 場面セル（LightGBM 木の leaf）×玉タイプでキー（acceptance 2026-07-07）
+        typ = (lot["cell"], typ[0], typ[1])
     be_floor = lot["avg"] * (1.0 - SCALP_FLOOR)        # 建値フロア＝手数料床（v13 と同形・損ゼロ以上）
-    dd = params["dd"][typ]
+    dd = params["dd"].get(typ)
     if dd is not None and peak_prog >= dd[0]:          # 枝3: armed（進捗ピーク≥p_arm）∩ ピークから r 割戻しレベルへ回帰
         lvl = min(pk + (lot["avg"] - pk) * dd[1], be_floor)
         if h_i >= lvl:
             return ("MFE_DRAWDOWN_CUT", max(lvl, o_i))
-    be = params["be"][typ]
+    be = params["be"].get(typ)
     if be is not None and peak_prog >= be and h_i >= be_floor:   # 枝4: armed ∩ 建値へ回帰
         return ("BE_EXIT", max(be_floor, o_i))
-    st = params["stoch"][typ]
+    st = params["stoch"].get(typ)
     if st is not None and peak_prog >= st and gc_i and c_i < lot["avg"]:   # 枝5': armed ∩ GC ∩ 含み益>0（close 時点）
         return ("STOCH_REVERSE_EXIT", c_i)
     return None
 
 
-def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False, v11_open_entry: bool = False, v12_open_range: bool = False, v13_time_maker: bool = False, v14_params: dict | None = None):
+def tp_floor_check_v15(limit: float, tp1_px: float, tp2_px: float) -> bool:
+    """v15 の建て条件＝TP1 幅 ≥ 手数料床（⑦）∩ TP2 幅 > 0。
+    旧 tp_ge_sl_check_v11 の「TP2幅 ≥ SL幅」は浅SL設計の物理条件＝v15 は SL を災害水準（遠い）へ置換し、
+    リスク管理は構造破れ枝＋戻り決済が担う（acceptance 2026-07-07）ため SL 幅条件は課さない。"""
+    tp1_w = limit - tp1_px
+    tp2_w = limit - tp2_px
+    return bool(np.isfinite(tp1_w) and np.isfinite(tp2_w) and tp2_w > 0 and tp1_w >= limit * SCALP_FLOOR)
+
+
+def range_break_check_v15(c_i: float, ok_i: bool, ztop: float, vol_i: float, vol_sma_i: float,
+                          brk_cnt: int, brk_vol: bool, break_bars: int) -> tuple[int, bool, bool]:
+    """v15 構造破れ判定（KB §5＝①出来高>20期間平均 ②境界外終値 ③複数TF確認=1h 持続・acceptance 2026-07-07）。
+    ゾーン外終値（c>ゾーン上端 ∩ range_ok 消失）が break_bars 本連続 ∩ 期間中に出来高スパイクが1回以上 → 発火。
+    戻り: (新カウンタ, 新出来高フラグ, 発火するか)。入力は当該バーの確定値のみ（H2）。"""
+    if np.isfinite(ztop) and c_i > ztop and (not ok_i):
+        brk_cnt += 1
+        if np.isfinite(vol_sma_i) and vol_i > vol_sma_i:
+            brk_vol = True
+    else:
+        brk_cnt = 0
+        brk_vol = False
+    return brk_cnt, brk_vol, bool(brk_cnt >= break_bars and brk_vol)
+
+
+def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False, v11_open_entry: bool = False, v12_open_range: bool = False, v13_time_maker: bool = False, v14_params: dict | None = None, v15_params: dict | None = None):
     """v11 エンジン＝素ルール SHORT 専用（short_only_v11・LONG 入口の生成経路なし＝§1.2.1 ショートのみ）。
     入口: v11_entry_candidates → 指値 maker TTL（不約定は建てない）。TP/SL は発注時点のゾーン幾何で固定・
     tp_ge_sl_check_v11 を通らない候補は建てない。
@@ -1583,6 +1623,23 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
     sz_hi = df["v11_sup_hi"].to_numpy(float); mid = df["v11_mid"].to_numpy(float)
     max_lots = 1 if no_add else V11_MAX_ADDS
     tmax_l = T_MAX                                     # backstop 長（v14 では選定値・OFF では既存 T_MAX と同値＝恒等）
+    v15 = v15_params is not None
+    unit = UNIT
+    vol_arr = vol_sma_prev = ok_arr = cell_fn = None
+    if v15:                                            # v15 Entry×Exit セット（acceptance 2026-07-07・既定 OFF=v14 恒等＝この block ごとスキップ）
+        unit = UNIT / V15_UNIT_DIV                     # 0.012 BTC/lot × 最大4段＝合計 0.048 不変（同予算分割・H1/H9）
+        max_lots = V15_MAX_LOTS
+        tmax_l = int(v15_params.get("tmax", 48))
+        _vs = df["volume"].astype(float)
+        vol_arr = _vs.to_numpy(float)
+        vol_sma_prev = _vs.rolling(V15_BREAK_VOL_N).mean().shift(1).to_numpy(float)   # 過去20本平均（当該バー除外＝H2）
+        ok_arr = df["range_ok_v11"].to_numpy(bool)
+        cell_fn = v15_params.get("cell_fn") or (lambda k_, a_, w_: 0)
+        v15_params["_stats"] = {"ladder_fills": 0, "BE_EXIT_ret": 0, "RANGE_BREAK_EXIT": 0,
+                                "MFE_DRAWDOWN_CUT": 0, "down_time": 0}
+        v15_machine = {"dd": v15_params.get("dd", {}) or {}, "be": {}, "stoch": {}, "stall": {}}
+        brk_bars_req = int(v15_params.get("break_bars", V15_BREAK_BARS))
+        rungs = []; rung_next = 0; brk_cnt = 0; brk_vol = False
     k9 = d9 = None
     if v14_params is not None:                         # v14 のみ: stoch(9,3)（枝5' 用・過去 rolling のみ＝leak-safe・OFF 経路では計算しない）
         tmax_l = int(v14_params.get("tmax", T_MAX))
@@ -1601,22 +1658,67 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
             if el > TTL:
                 pend = None
             elif el >= 1 and h[i] >= pend["limit"]:
-                lots.append({"side": "SHORT", "avg": pend["limit"], "size": UNIT,
-                             "add_count": len(lots) + 1, "first_idx": i, "last_fill_idx": i,
-                             "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i],
-                             "W_entry": pend["W_pct"], "max_fav": l[i], "max_adv": h[i],
-                             "tp1": pend["tp1"], "tp2": pend["tp2"], "sl": pend["sl"], "tp1_done": False})
+                _lot = {"side": "SHORT", "avg": pend["limit"], "size": unit,
+                        "add_count": len(lots) + 1, "first_idx": i, "last_fill_idx": i,
+                        "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i],
+                        "W_entry": pend["W_pct"], "max_fav": l[i], "max_adv": h[i],
+                        "tp1": pend["tp1"], "tp2": pend["tp2"], "sl": pend["sl"], "tp1_done": False}
+                if v15:
+                    _lot["zone_top"] = pend["zone_top"]; _lot["w_px"] = pend["w_px"]
+                    _lot["cell"] = int(cell_fn(kk[i], atr[i] / max(c[i], 1e-9) * 100.0, pend["W_pct"]))
+                    if not lots:                       # position 開始＝逆走ラダーを敷く（初回建値+k×W の resting maker 売り指値）
+                        lad = v15_params.get("ladder")
+                        rungs = [pend["limit"] + kf * pend["w_px"] for kf in lad] if lad else []
+                        rung_next = 0; brk_cnt = 0; brk_vol = False
+                lots.append(_lot)
                 pend = None
+        if v15 and lots and rung_next < len(rungs) and len(lots) < max_lots:
+            rp = rungs[rung_next]                      # 逆走ラダーの約定（resting maker・1バー1段・レンジ判定が立っている時のみ・置いたバーの次以降）
+            if ok_arr[i] and np.isfinite(rz_hi[i]) and np.isfinite(mid[i]) and h[i] >= rp \
+               and i > max(x["last_fill_idx"] for x in lots):
+                w_px2 = rz_lo[i] - sz_hi[i]
+                tp2_px = mid[i]; tp1_px = (rp + tp2_px) / 2.0
+                if tp_floor_check_v15(rp, tp1_px, tp2_px):
+                    lots.append({"side": "SHORT", "avg": rp, "size": unit, "add_count": len(lots) + 1,
+                                 "first_idx": i, "last_fill_idx": i, "atr_entry": atr[i], "adx_entry": adx[i],
+                                 "k_entry": kk[i], "W_entry": w_px2 / max(c[i], 1e-9) * 100.0,
+                                 "max_fav": l[i], "max_adv": h[i], "tp1": tp1_px, "tp2": tp2_px,
+                                 "sl": rz_hi[i] + float(v15_params["sl_far"]) * w_px2, "tp1_done": False,
+                                 "zone_top": rz_hi[i], "w_px": w_px2,
+                                 "cell": int(cell_fn(kk[i], atr[i] / max(c[i], 1e-9) * 100.0,
+                                                     w_px2 / max(c[i], 1e-9) * 100.0))})
+                    v15_params["_stats"]["ladder_fills"] += 1
+                rung_next += 1                         # 幾何条件を満たさない段は撤去（次段へ）
         for lot in lots:
-            if v14_params is not None:
+            if v14_params is not None or v15:
                 lot["pk_prev"] = lot["max_fav"]        # v14: 前バーまでのピークを退避（当該バー low 反映前＝同一バー楽観の排除・H2）
+                lot["adv_prev"] = lot["max_adv"]       # v15: 前バーまでの逆走ピーク（戻り決済の arm 判定用・H2）
             lot["max_fav"] = min(lot["max_fav"], l[i]); lot["max_adv"] = max(lot["max_adv"], h[i])
+        if v15 and lots:                               # v15 構造破れ枝（KB §5・全 lot taker 即畳み→レンジ破れは E32b に譲る）
+            _ztop = max(x["zone_top"] for x in lots)
+            brk_cnt, brk_vol, _fire = range_break_check_v15(
+                c[i], bool(ok_arr[i]), _ztop, vol_arr[i], vol_sma_prev[i], brk_cnt, brk_vol, brk_bars_req)
+            if _fire:
+                for lot in lots:
+                    _record(trades, lot, c[i], "RANGE_BREAK_EXIT", i, ts)
+                    v15_params["_stats"]["RANGE_BREAK_EXIT"] += 1
+                lots = []; pend = None; rungs = []; rung_next = 0; brk_cnt = 0; brk_vol = False
+                continue
         still = []
         for lot in lots:
             if i <= lot["last_fill_idx"]:
                 still.append(lot); continue
-            if h[i] >= lot["sl"]:                      # ① SL 優先（同 bar 両到達は不利側先着＝保守・全量）
+            if h[i] >= lot["sl"]:                      # ① SL 優先（同 bar 両到達は不利側先着＝保守・全量／v15=災害SL 遠水準）
                 _record(trades, lot, max(lot["sl"], o[i]), "SL_FILLED", i, ts); continue
+            if v15:                                    # ①.5 v15 戻り決済枝＝armed（前バーまでの逆走≥ret_arm×W）∩ 建値フロアへ回帰（resting buy limit・maker）
+                _key = (lot["cell"], min(int(lot["add_count"]), 2), bool(lot["tp1_done"]))
+                _rk = v15_params.get("ret", {}).get(_key)
+                if _rk is not None and (lot.get("adv_prev", lot["avg"]) - lot["avg"]) >= _rk * lot["w_px"]:
+                    _bf = lot["avg"] * (1.0 - SCALP_FLOOR)   # 建値フロア＝手数料床（損ゼロ級 maker・⑦・TP1 より建値側＝resting が先に約定）
+                    if l[i] <= _bf:
+                        _record(trades, lot, _bf, "BE_EXIT", i, ts)
+                        v15_params["_stats"]["BE_EXIT_ret"] += 1
+                        continue
             if (not single_tp) and (not lot["tp1_done"]) and l[i] <= lot["tp1"]:
                 half = dict(lot); half["size"] = lot["size"] / 2.0
                 _record(trades, half, lot["tp1"], "PARTIAL_TP", i, ts)   # ② TP1＝半分を部分決済（maker・登録済み）
@@ -1636,6 +1738,11 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                 if _r14 is not None:
                     v14_params["_stats"][_r14[0]] += 1
                     _record(trades, lot, _r14[1], _r14[0], i, ts); continue
+            if v15:                                    # ③.8 v15: dd 枝（ピーク反転確定・場面セル×タイプ別の学習窓選定値・stoch/stall は v15 不使用）
+                _r15 = v14_exit_machine(lot, o[i], h[i], c[i], False, v15_machine)
+                if _r15 is not None:
+                    v15_params["_stats"][_r15[0]] = v15_params["_stats"].get(_r15[0], 0) + 1
+                    _record(trades, lot, _r15[1], _r15[0], i, ts); continue
             if v13_time_maker:                         # ③.5 deadline shrink（Step2・acceptance 2026-07-06）＝TIME 域の玉を成行taker でなく縮む maker TP で取り切る（E35 iter8-9 型）
                 _tm = tmax_l                           # v14 枝6: 失速（n本経過しても進捗<g）なら shrink 残り時間を T_eff へ前倒し（式は不変・OFF では tmax_l=T_MAX＝恒等）
                 if v14_params is not None:
@@ -1651,14 +1758,29 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                 tp_shrunk = lot["tp2"] + (be_floor - lot["tp2"]) * (1.0 - r)   # r=1で tp2（通常）→ r=0で be_floor（建値側へ縮む・tp2≤tp_shrunk≤be_floor）
                 if l[i] <= tp_shrunk:                  # 縮む maker TP に到達＝maker 決済（TP_FILLED＝新 exit_reason なし・score.py 不変）
                     _record(trades, lot, tp_shrunk, "TP_FILLED", i, ts); continue
-            if (i - lot["first_idx"]) >= tmax_l:       # ④ backstop（taker・lot ごと・縮む maker に当たらなかった玉のみ・OFF=T_MAX 恒等／v14=選定長）
+            _t_eff = tmax_l
+            if v15 and v15_params.get("down") is not None and c[i] > lot["avg"]:
+                _t_eff = max(1, int(tmax_l * float(v15_params["down"])))   # v15: 含み損玉の TIME 前倒し（V9 TIME_EXIT_DOWN 型・taker・勝ちは満期まで）
+            if (i - lot["first_idx"]) >= _t_eff:       # ④ backstop（taker・lot ごと・縮む maker に当たらなかった玉のみ・OFF=T_MAX 恒等／v14/v15=選定長）
+                if v15 and _t_eff < tmax_l:
+                    v15_params["_stats"]["down_time"] += 1
                 _record(trades, lot, c[i], "TIME_EXIT", i, ts); continue
             still.append(lot)
         lots = still
+        if v15 and not lots and (rungs or brk_cnt):
+            rungs = []; rung_next = 0; brk_cnt = 0; brk_vol = False   # position 終了＝ラダー/破れカウンタ撤去
         if pend is None and cand[i] and len(lots) < max_lots:
             lim = c[i] * (1.0 + ENTRY_OFFSET)
             tp2_px = mid[i]
             tp1_px = (lim + tp2_px) / 2.0
+            if v15:                                    # v15: SL=災害水準（ゾーン上端+k×W・遠い）・建て条件は TP1 手数料床のみ（リスクは構造破れ枝＋戻り決済が担う）
+                w_px = rz_lo[i] - sz_hi[i]
+                if not (np.isfinite(w_px) and w_px > 0 and tp_floor_check_v15(lim, tp1_px, tp2_px)):
+                    continue
+                pend = {"limit": lim, "placed_idx": i, "tp1": tp1_px, "tp2": tp2_px,
+                        "sl": rz_hi[i] + float(v15_params["sl_far"]) * w_px,
+                        "W_pct": w_px / c[i] * 100.0, "zone_top": rz_hi[i], "w_px": w_px}
+                continue
             sl_px = rz_hi[i] * (1.0 + V11_SL_BUF)
             if not tp_ge_sl_check_v11(lim, tp1_px, tp2_px, sl_px, single_tp=single_tp):
                 continue                               # TP幅≥SL幅＋手数料床を満たさない候補は建てない
@@ -1739,6 +1861,145 @@ def _v14_guard_check(df, box_tf) -> None:
     print("=" * 100)
 
 
+def _fit_v15_branch_policy(base_trades: list) -> tuple:
+    """v15 場面セルの学習（acceptance 2026-07-07 (5)）＝学習窓 base 走行の lot（entry 特徴 stoch_k・ATR%・box_W → net）に
+    LightGBM 1本の木（num_leaves≤4）を fit し、leaf＝場面セル（データ駆動の場面分割・手置きビンでない）。
+    枝の水準はこのセル×玉タイプ別に候補格子から OOF 合意で選定（_select_v15_params）＝
+    自由回帰でなく「木が場面を切る＋セル別選定」＝過剰適合を抑えた場面連動（設計判断・acceptance 過剰適合の守り）。
+    戻り: (cell_fn, ncell, 分割の説明文字列)"""
+    import lightgbm as lgb
+    rows = [r for r in base_trades if r.get("stoch_k_at_entry") is not None]
+    if len(rows) < 400:                                # 標本不足なら単一セル（選定はタイプ別のみ＝誤検出を作らない）
+        return (lambda k_, a_, w_: 0), 1, f"単一セル（学習窓 lot {len(rows)} 件＝標本不足）"
+    X = np.array([[float(r["stoch_k_at_entry"] or 0.0),
+                   float(r["atr_14"]) / max(float(r["entry_price"]), 1e-9) * 100.0,
+                   float(r["box_W_pct_at_entry"] or 0.0)] for r in rows])
+    y = np.array([float(r["net_usd"]) for r in rows])
+    mdl = lgb.LGBMRegressor(n_estimators=1, num_leaves=4, min_child_samples=max(200, len(X) // 20),
+                            random_state=42, verbosity=-1, n_jobs=-1)
+    mdl.fit(X, y)
+    booster = mdl.booster_
+    leaves = np.ravel(booster.predict(X, pred_leaf=True)).astype(int)
+    uniq = sorted(set(leaves.tolist()))
+    cell_map = {lf: j for j, lf in enumerate(uniq)}
+
+    def cell_fn(k_, a_, w_):
+        arr = np.array([[float(k_) if np.isfinite(k_) else 0.0,
+                         float(a_) if np.isfinite(a_) else 0.0,
+                         float(w_) if np.isfinite(w_) else 0.0]])
+        return cell_map.get(int(np.ravel(booster.predict(arr, pred_leaf=True))[0]), 0)
+
+    desc = " / ".join(f"cell{cell_map[lf]}: n={int((leaves == lf).sum())} 平均net${y[leaves == lf].mean():.2f}" for lf in uniq)
+    return cell_fn, len(uniq), desc
+
+
+def _select_v15_params(df, box_tf, no_add=False, single_tp=False, v11_open_entry=False, v12_open_range=False):
+    """v15 枝×場面セル別の学習窓選定（acceptance 2026-07-07 F-3・採点窓不参照 L-267）。
+    ① incumbent（v15 OFF＝v14 恒等）の学習窓 net を測る（最終の純増ゲートの比較相手）
+    ② v15 骨格（ladder なし・sl_far=1.0・tmax=48・down/ret/dd なし）で base 走行 → _fit_v15_branch_policy で場面セル
+    ③ 候補格子（fixed-value-approved）を greedy＝採択条件は purged 3分割 OOF 合意
+      （学習窓を embargo 1日で3区間に分割・合計純増 ∩ 2/3 区間で改善）＝単一 regime への過剰適合を抑える（L-320 対策）
+    戻り: (params, rows_log, inc_net, base_net, best_net, nrun, ncell, cell_desc)"""
+    dtr = df[df["ts"] < TRAIN_END].reset_index(drop=True)
+    t0, t1 = dtr["ts"].iloc[0], dtr["ts"].iloc[-1]
+    span = (t1 - t0) / 3
+    emb = pd.Timedelta(days=1)
+    seg = [(t0, t0 + span - emb), (t0 + span, t0 + 2 * span - emb), (t0 + 2 * span, t1)]
+
+    def _seg_nets(tr):
+        return [float(sum(r["net_usd"] for r in tr if s0 <= pd.Timestamp(r["entry_time"]) <= s1)) for s0, s1 in seg]
+
+    def _clone(p):
+        return {"ladder": p["ladder"], "sl_far": p["sl_far"], "tmax": p["tmax"], "down": p["down"],
+                "ret": dict(p["ret"]), "dd": dict(p["dd"]), "cell_fn": p["cell_fn"]}
+
+    def _run(p):
+        tr = run_continuous_v11(dtr, box_tf, no_add=no_add, single_tp=single_tp, v11_open_entry=v11_open_entry,
+                                v12_open_range=v12_open_range, v13_time_maker=True, v14_params=None,
+                                v15_params=_clone(p))
+        return tr, float(sum(r["net_usd"] for r in tr)), _seg_nets(tr)
+
+    inc_tr = run_continuous_v11(dtr, box_tf, no_add=no_add, single_tp=single_tp, v11_open_entry=v11_open_entry,
+                                v12_open_range=v12_open_range, v13_time_maker=True, v14_params=None, v15_params=None)
+    inc_net = float(sum(r["net_usd"] for r in inc_tr))
+    cur = {"ladder": None, "sl_far": 1.0, "tmax": 48, "down": None, "ret": {}, "dd": {}, "cell_fn": None}
+    base_tr, base_net, base_segs = _run(cur)
+    cell_fn, ncell, cell_desc = _fit_v15_branch_policy(base_tr)
+    cur["cell_fn"] = cell_fn
+    best_net, best_segs = base_net, base_segs
+    rows_log = [("incumbent(v15 OFF)", "-", "-", inc_net, len(inc_tr), []),
+                ("start(v15骨格)", "-", "-", base_net, len(base_tr), base_segs)]
+    nrun = 2
+
+    def _try(br, label, cand, mutate):
+        nonlocal cur, best_net, best_segs, nrun
+        trial = _clone(cur)
+        mutate(trial)
+        _, v, segs = _run(trial)
+        nrun += 1
+        wins = sum(1 for a, b in zip(segs, best_segs) if a > b)
+        adopt = (v > best_net + 1e-9) and (wins >= 2)
+        rows_log.append((br, label, str(cand), v, wins, "採択" if adopt else ""))
+        if adopt:
+            cur = trial
+            best_net, best_segs = v, segs
+        if nrun % 10 == 0:
+            print(f"    …v15 選定進行 {nrun} 回（現 best ${best_net:,.0f}）", flush=True)
+
+    for k in V15_SL_FAR:
+        if k != cur["sl_far"]:
+            _try("sl_far", "-", k, lambda t, k=k: t.__setitem__("sl_far", k))
+    for tm in V15_TMAX:
+        if tm != cur["tmax"]:
+            _try("tmax", "-", tm, lambda t, tm=tm: t.__setitem__("tmax", tm))
+    for dn in V15_DOWN:
+        if dn is not None and dn != cur["down"]:
+            _try("down", "-", dn, lambda t, dn=dn: t.__setitem__("down", dn))
+    for lad in V15_LADDER:
+        if lad is not None and lad != cur["ladder"]:
+            _try("ladder", "-", lad, lambda t, lad=lad: t.__setitem__("ladder", lad))
+    types = ((1, False), (1, True), (2, False), (2, True))
+    for cell in range(ncell):
+        for typ in types:
+            key = (cell, typ[0], typ[1])
+            for rk in V15_RET_ARM:
+                if rk is not None and rk != cur["ret"].get(key):
+                    _try("ret", f"cell{cell}/typ{typ}", rk, lambda t, key=key, rk=rk: t["ret"].__setitem__(key, rk))
+    for cell in range(ncell):
+        for typ in types:
+            key = (cell, typ[0], typ[1])
+            for ddc in V14_BRANCH_PARAMS["dd"]:
+                if ddc is not None and ddc != cur["dd"].get(key):
+                    _try("dd", f"cell{cell}/typ{typ}", ddc, lambda t, key=key, ddc=ddc: t["dd"].__setitem__(key, ddc))
+    return cur, rows_log, inc_net, base_net, best_net, nrun, ncell, cell_desc
+
+
+def _v15_guard_check(df, box_tf) -> None:
+    """v15 番人メタ確認（acceptance F-2・§2.9③）＝枝別に極端値を与えて発火が支配的になるか（配線が生きている証明）。
+    診断専用（出力ファイルなし・採点しない・値は選定に使わない）。--smoke と併用する。"""
+    df = _rsi9_v10(df)
+    z1h = _zones_v11_1h(df)
+    df = _apply_v11_to_5m(df, z1h)
+    base = {"ladder": None, "sl_far": 1.0, "tmax": 48, "down": None, "ret": {}, "dd": {}, "cell_fn": None}
+    allkeys = [(0, a, t) for a in (1, 2) for t in (False, True)]
+    cases = [
+        ("ラダー支配 ladder=(0.05,0.1,0.15)", {**base, "ladder": (0.05, 0.1, 0.15)}),
+        ("戻り決済支配 ret_arm=0", {**base, "ret": {k: 0.0 for k in allkeys}}),
+        ("災害SL支配 sl_far=0.01", {**base, "sl_far": 0.01}),
+        ("破れ支配 break_bars=1", {**base, "break_bars": 1}),
+        ("down支配 down=0.02", {**base, "down": 0.02}),
+        ("dd支配 dd=(0,0.9)", {**base, "dd": {k: (0.0, 0.9) for k in allkeys}}),
+    ]
+    print("=" * 100)
+    print("[v15 番人メタ確認] 枝別極端値 → exit_reason 分布（枝が支配すれば配線 OK・採点しない）")
+    for name, p in cases:
+        pp = dict(p)
+        tr = run_continuous_v11(df, box_tf, v13_time_maker=True, v15_params=pp)
+        cnt = pd.Series([r["exit_reason"] for r in tr]).value_counts().to_dict()
+        print(f"  {name}: {len(tr)} lot / {cnt} / 発火stats {pp.get('_stats')}")
+    print("=" * 100)
+
+
 def _selftest_zones_v11(df: pd.DataFrame) -> None:
     """自己検査（acceptance F-1）: _zones_v11_1h の出力が視認校正済み計器の labels_v17.csv と全期間一致するか機械照合。
     一致＝まこさんがダッシュボードで校正した判定と同一のレンジ判定で戦略が動く証明。"""
@@ -1761,7 +2022,7 @@ def _selftest_zones_v11(df: pd.DataFrame) -> None:
     print("  [selftest zones v11] ✅ 全期間一致＝視認校正済み計器と同一のレンジ判定")
 
 
-def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False, v8: bool = False, v9: bool = False, v10: bool = False, v11: bool = False, v11_no_add: bool = False, v11_single_tp: bool = False, v13_time_maker: bool = False, v14_sel: dict | None = None) -> dict:
+def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False, v8: bool = False, v9: bool = False, v10: bool = False, v11: bool = False, v11_no_add: bool = False, v11_single_tp: bool = False, v13_time_maker: bool = False, v14_sel: dict | None = None, v15_sel: dict | None = None) -> dict:
     if v11:
         return {
             "検証期間（periods正本・E31）": {
@@ -1804,6 +2065,16 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
                     "枝7 TIME backstop 長": f"{v14_sel['tmax']}本={v14_sel['tmax']*5}分（候補{{6,9,12}}から学習窓選定）",
                     "発火数(全期間)": f"{v14_sel.get('_stats')}",
                 }} if v14_sel is not None else {}),
+        **({"★v15 Entry×Exit セット最適化 第1弾（逆行側分岐＋枝×場面セル別 学習窓選定・acceptance 2026-07-07）": {
+                    "add ラダー": f"UNIT {UNIT / V15_UNIT_DIV} BTC × 最大{V15_MAX_LOTS}段（合計 {UNIT / V15_UNIT_DIV * V15_MAX_LOTS} BTC 不変・同予算分割）・逆走段(W比)={v15_sel['ladder']}（入口再発火 add と併用・maker指値）",
+                    "戻り決済枝 BE_EXIT(maker)": f"ret_arm×(セル,add,tp1)={v15_sel['ret']}（前バーまでの逆走≥arm×W で armed → 建値フロア avg×(1−{SCALP_FLOOR}) 回帰で決済・登録済み reason 再利用）",
+                    "構造破れ枝 RANGE_BREAK_EXIT(taker)": f"ゾーン外終値 {V15_BREAK_BARS}本(1h)持続 ∩ 出来高>{V15_BREAK_VOL_N}期間平均（KB §5・新規登録1語・全 lot 即畳み＝E32b に譲る）",
+                    "災害SL SL_FILLED(maker)": f"ゾーン上端 + {v15_sel['sl_far']}×W（浅SL ゾーン外{V10_SL_BUF*100:.2f}% の置換・遠い・学習窓選定）",
+                    "時間の枝": f"backstop {v15_sel['tmax']}本={v15_sel['tmax']*5}分（候補{{12,24,48}}・上限4h=まこさん指定）・含み損玉 down_factor={v15_sel['down']}（taker 前倒し）・deadline shrink は同尺で維持",
+                    "dd 枝 MFE_DRAWDOWN_CUT(maker)": f"(p_arm,r)×(セル,add,tp1)={v15_sel['dd']}",
+                    "場面セル": "LightGBM 1本の木（entry 特徴 stoch_k/ATR%/box_W → net・num_leaves≤4）の leaf＝データ駆動の場面分割・水準はセル×タイプ別に purged 3分割 OOF 合意で選定（学習窓のみ・L-267）",
+                    "発火数(全期間)": f"{v15_sel.get('_stats')}",
+                }} if v15_sel is not None else {}),
             },
             "【固定値】コスト（eval_engine・確定値・改造禁止）": {
                 "maker手数料": f"{ee.MAKER_FEE*100:.3f}%", "taker手数料": f"{ee.TAKER_FEE*100:.3f}%",
@@ -1968,7 +2239,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -2008,9 +2279,30 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
                 raise SystemExit(1)
             v14p = {"dd": dict(sel["dd"]), "be": dict(sel["be"]), "stoch": dict(sel["stoch"]),
                     "stall": dict(sel["stall"]), "tmax": sel["tmax"]}
-        trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker, v14_params=v14p)
+        v15p = None
+        if v15_exit_set:                               # v15 Entry×Exit セット（acceptance 2026-07-07）＝場面セル×タイプ別 学習窓選定→純増ゲート→本走
+            assert v13_time_maker, "v15 は v13（deadline shrink）の上に載る（--v13-time-maker 必須・acceptance 2026-07-07）"
+            assert not v14_machine, "v15 は v14 の枝選定（dd）を内包＝--v14-exit-machine と併用しない（acceptance 2026-07-07）"
+            print("  [v15 選定] 場面セル（LightGBM 1本の木＝データ駆動分割）×玉タイプ別・purged 3分割 OOF 合意（学習窓のみ・L-267）…")
+            sel15, rows15, inc_net, start_net, best_net, nrun15, ncell, cell_desc = _select_v15_params(
+                df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp,
+                v11_open_entry=v11_open_entry, v12_open_range=v12_open_range)
+            print(f"  [v15 場面セル] {ncell} セル: {cell_desc}")
+            print(f"  [v15 選定表] {nrun15} 回実行（学習窓 net・OOF 3区間の改善数・全行）")
+            for br, label, cand, v, wins, adopt in rows15:
+                print(f"    {br:<8} {label:<22} cand={cand:<18} net ${v:>10,.0f} / 区間改善 {wins} {adopt}")
+            print(f"  [v15 選定結果] incumbent(v15 OFF=v14恒等) ${inc_net:,.0f} / v15骨格 ${start_net:,.0f} → 最終 ${best_net:,.0f}（対 incumbent {best_net - inc_net:+,.0f}）")
+            print(f"    ladder={sel15['ladder']} sl_far={sel15['sl_far']} tmax={sel15['tmax']}本={sel15['tmax']*5}分 down={sel15['down']}")
+            print(f"    ret={sel15['ret']}\n    dd={sel15['dd']}")
+            if best_net <= inc_net + 1e-9:
+                print("  ⛔ v15 全体で学習窓純増なし（対 incumbent）＝停止（採点温存・acceptance F-3・扱いはまこさん判断）")
+                raise SystemExit(1)
+            v15p = sel15
+        trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker, v14_params=v14p, v15_params=v15p)
         if v14p is not None:
             print(f"  [v14 発火（全期間・full CSV 基準）] {v14p.get('_stats')}")
+        if v15p is not None:
+            print(f"  [v15 発火（全期間・full CSV 基準）] {v15p.get('_stats')}")
         t = pd.DataFrame(trades)
         if len(t):
             t["entry_time"] = pd.to_datetime(t["entry_time"]); t["exit_time"] = pd.to_datetime(t["exit_time"])
@@ -2018,8 +2310,8 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
             assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
             assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9・PARTIAL_TP 半 lot 含む）"
-        sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "") + ("oe" if v11_open_entry else "") + ("or" if v12_open_range else "") + ("tm" if v13_time_maker else "") + ("xm" if v14_machine else "")
-        _out(t, f"_{box_tf}{sfx}", None, tag=tag, gate_on=True, v11=True, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14p)
+        sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "") + ("oe" if v11_open_entry else "") + ("or" if v12_open_range else "") + ("tm" if v13_time_maker else "") + ("xm" if v14_machine else "") + ("xs" if v15_exit_set else "")
+        _out(t, f"_{box_tf}{sfx}", None, tag=tag, gate_on=True, v11=True, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14p, v15_sel=v15p)
         return
     if v10:
         assert not (v6 or v6r or v7 or v8 or v9 or no_gate), "v10 は素ルール MVP（他バージョンフラグと併用不可）"
@@ -2131,10 +2423,11 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
     _out(t, f"_{box_tf}_{ver}", det, tag=tag, gate_on=not no_gate, v6=v6, v6r=v6r, v7=v7, v8=v8)
 
 
-def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v13_time_maker=False, v14_sel=None) -> None:
+def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v13_time_maker=False, v14_sel=None, v15_sel=None) -> None:
     strat_base._output_and_report(
         t, suffix, stem="e37_range_scalp",
-        strategy=("E37 v14 Exit ポジション状態機械（レンジ幾何ネイティブ・玉4タイプ別 学習窓選定・基本 maker）" if v14_sel is not None
+        strategy=("E37 v15 Entry×Exit セット最適化 第1弾（逆行側分岐＝ラダー/戻り決済/構造破れ/4h backstop＋枝×場面セル別 学習窓選定）" if v15_sel is not None
+                  else "E37 v14 Exit ポジション状態機械（レンジ幾何ネイティブ・玉4タイプ別 学習窓選定・基本 maker）" if v14_sel is not None
                   else "E37 v11 視認校正レンジ計器の組み込み（1h S/Rゾーン×5分ブレイク離脱×複数TP+add・SHORT のみ）" if v11
                   else "E37 v10 ゾーン方式レンジスキャル SHORT（§1.2.1 準拠 MVP・タッチ実績ゾーン×拒否確認・ML 不使用）" if v10
                   else "E37 v9 レンジ・スキャル 両側 maker MR＋型×side Entry/Exit セット共同選定（フェーズ1）" if v9
@@ -2144,7 +2437,7 @@ def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6
                   else "E37 v6 レンジ・スキャル 両側 maker MR＋検出器ゲート（イベント5型＋θ規則反転）" if v6
                   else "E37 v5 レンジ・スキャル 両側 maker MR＋稼げるレンジ検出器ゲート"),
         script="e37_range_scalp.py",
-        sections=_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9, v10=v10, v11=v11, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14_sel), tag=tag)
+        sections=_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9, v10=v10, v11=v11, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14_sel, v15_sel=v15_sel), tag=tag)
 
 
 def _load(smoke: int) -> pd.DataFrame:
@@ -2243,6 +2536,8 @@ def main():
     ap.add_argument("--v13-time-maker", action="store_true", help="v13 Step2: TP2 と TIME backstop の間に deadline 型 縮む maker TP を置く＝TIME 域の玉を成行taker でなく残り時間比 r で建値側へ縮む maker指値(TP_FILLED)で取り切る（建値フロア=avg×(1-SCALP_FLOOR)・E35 iter8-9 型・acceptance 2026-07-06・既定OFF=v12恒等）")
     ap.add_argument("--v14-exit-machine", action="store_true", help="v14: Exit ポジション状態機械（枝3 MFE_DRAWDOWN_CUT トレーリングmaker／枝4 BE_EXIT 建値フロアmaker／枝5' STOCH_REVERSE_EXIT taker／枝6 失速shrink前倒し／枝7 backstop長{30,45,60分}選定・水準=進捗率・玉4タイプ別に学習窓のみで逐次選定・--v13-time-maker 必須・acceptance 2026-07-07・既定OFF=v13恒等）")
     ap.add_argument("--v14-guard-check", action="store_true", help="v14 番人メタ確認: 枝別極端値で exit_reason 分布が枝支配になるか（配線証明・採点しない・--smoke 併用）")
+    ap.add_argument("--v15-exit-set", action="store_true", help="v15: Entry×Exit セット最適化 第1弾＝逆行側分岐の作り直し（add ラダー同予算0.012×4／戻り決済 BE_EXIT／構造破れ RANGE_BREAK_EXIT＋災害SL／4h backstop+down_factor）＋枝水準の場面セル（LightGBM 木）×玉タイプ別 学習窓選定（purged 3分割 OOF 合意・--v13-time-maker 必須・--v14-exit-machine と併用不可・acceptance 2026-07-07・既定OFF=v14恒等）")
+    ap.add_argument("--v15-guard-check", action="store_true", help="v15 番人メタ確認: 枝別極端値（ラダー/戻り決済/災害SL/破れ/down/dd）で exit_reason 分布が枝支配になるか（配線証明・採点しない・--smoke 併用）")
     ap.add_argument("--v11-selftest-zones", action="store_true", help="v11 自己検査: _zones_v11_1h が labels_v17.csv（視認校正済み計器）と全期間一致するか機械照合して終了")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
     a = ap.parse_args()
@@ -2264,11 +2559,14 @@ def main():
     if a.v14_guard_check:
         _v14_guard_check(df, a.box_tf)
         return
+    if a.v15_guard_check:
+        _v15_guard_check(df, a.box_tf)
+        return
     if a.diagnostic:
         _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9), v10=a.v10, v11=a.v11, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range)
         return
     run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9, v10=a.v10,
-            v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker, v14_machine=a.v14_exit_machine)
+            v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker, v14_machine=a.v14_exit_machine, v15_exit_set=a.v15_exit_set)
     print("=" * 100)
 
 
