@@ -1,0 +1,218 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/verify_handoff_paths.sh",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/force_read_ml_design.sh",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/show_latest_state.sh",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/hook_health_check.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/reset_read_log.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "WebSearch|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/update_websearch_marker.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/track_search_fetch.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/pdca_mark.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/record_read.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/check_websearch_before_design_write.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/doc_map_guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/forbid_fixed_value_tuning.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_acceptance_before_impl.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/block_uchikiri.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/block_premature_giveup.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_e37_pdca.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_pdca_chain.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_read_before_work.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_instrument_read_before_impl.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_spec_read_before_design.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_analysis_before_proposal.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_combo_matrix.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/show_budget_before_design.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_role_criteria.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_strategy_anchor.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_leak_annotation.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_precheck_before_score.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_design_contract_before_run.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_period_source.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_direct_csv_for_analysis.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_probe_naming.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_tag_for_experiment.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "WebSearch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_search_quality.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/remind_doc_readability.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/pdca_gate.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
