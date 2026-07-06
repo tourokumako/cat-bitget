@@ -82,6 +82,18 @@ printf '%s' "$CONTENT" | grep -qE "網羅マトリクス|entry_exit_matrix" || m
 printf '%s' "$CONTENT" | grep -qE "状態機械|ポジション状態|含み益.*(ピーク|反転|失速)|MFE_DRAWDOWN|MFE_STALE" \
   || miss+=("Exit 状態機械の分岐（entry 後のポジション状態→どの Exit を発火させるか）を設計に書く＝V9 の基本[entry_exit_matrix.md の Exit カタログ冒頭『基本原則』・replay_csv.py _check_exits_replay が雛形]。固定TP/SL/TIME だけの Exit は不可。Exit を変えないなら『Exit 状態機械は現行維持』と1行明記")
 
+# 8) 指標・閾値のコンフルエンス（★V9 の当たり前・基本原則①・2026-07-06 まこさん承認「毎回絶対忘れない状態に」）
+#   Entry/Exit の判定は単一指標・単一閾値でなく、複数指標の閾値を場面別・条件別・入れ子で組む（confluence）。
+#   V9 cat_params_v9.json が実例（P23 Entry=ADX30-50∩ATR≥150∩入れ子∩BB傾き∩stoch乖離∩陰線）。E37 が「stoch_k 一つ」の単一閾値で22回失敗。
+printf '%s' "$CONTENT" | grep -qE "コンフルエンス|confluence|複数指標|場面別|入れ子|単一閾値" \
+  || miss+=("指標・閾値をコンフルエンス（複数指標×場面別×条件別・単一閾値で組まない）で設計＝V9 の当たり前[entry_exit_matrix 基本原則①・cat_params_v9.json が実例]。単一指標で足る根拠があれば1行明記")
+
+# 9) 閾値・指標の ML 最適化（★プロジェクト中核方針・基本原則②・cat_requirements §6.2・2026-07-06 まこさん承認）
+#   手動 V9 の Entry/Exit を土台に閾値・指標を ML で最適化して net 最大化（E13/E8/E9/E14/E19/E21 の出発点）。
+#   固定値の手調整は L-267 禁止＝木の特徴量 or 学習窓選定。素ルール MVP なら「ML最適化は次段」と明記で通る。
+printf '%s' "$CONTENT" | grep -qE "ML|機械学習|木の特徴量|学習窓|meta.?label|LightGBM|最適化|次段" \
+  || miss+=("閾値・指標を ML で最適化する視点＝プロジェクト中核[entry_exit_matrix 基本原則②・cat_requirements §6.2]。固定値の手調整は L-267 禁止。素ルールMVPなら『ML最適化は次段』と1行明記")
+
 if [ ${#miss[@]} -gt 0 ]; then
   echo "🔒 [Entry×Exit 網羅ゲート: ${BASE}] Entry×Exit の全組み合わせを網羅し未試行を可視化してから提案してください（狭い1レバー決め打ち禁止・まこさん 2026-07-06）。" >&2
   echo "" >&2
