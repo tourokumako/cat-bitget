@@ -1498,19 +1498,25 @@ def tp_ge_sl_check_v11(limit: float, tp1_px: float, tp2_px: float, sl_px: float,
     return bool(floor_w >= limit * SCALP_FLOOR)
 
 
-def v11_entry_candidates(df: pd.DataFrame) -> np.ndarray:
+def v11_entry_candidates(df: pd.DataFrame, v11_open_entry: bool = False, v12_open_range: bool = False) -> np.ndarray:
     """v11 入口候補（KB §3＝到達＋拒否確認・v10 の実証部品を維持）＝
-    range_ok_v11 ∩ 上限ゾーン接触（high≥ゾーン下端）∩ 陰転 ∩ RSI9 買われすぎ反転。"""
+    range_ok_v11 ∩ 上限ゾーン接触（high≥ゾーン下端）∩ 陰転 ∩ RSI9 買われすぎ反転。
+    v11_open_entry=True（--v11-open-entry・Step1 Do・acceptance 2026-07-05）＝過熱を必須にする確認（rsi9_prev>70）を
+    撤去し、反転確認（陰転∩RSI9下向き）だけで入る＝過熱 fade で負ける方向選別をやめ非過熱の反落も取り件数を戻す
+    （probe: 最終入口 stoch_k 高側82%＝過熱に偏る／KB §6.6 過熱fadeは統計的根拠なし・N10 過熱ほど負け）。既定 False=v11 恒等。"""
     h = df["high"].to_numpy(float); c = df["close"].to_numpy(float); o = df["open"].to_numpy(float)
     rsi9 = df["rsi9"].to_numpy(float); rsi9_prev = np.roll(rsi9, 1); rsi9_prev[0] = np.nan
     ok = df["range_ok_v11"].to_numpy(bool)
     rz_lo = df["v11_res_lo"].to_numpy(float)
     touched = np.isfinite(rz_lo) & (h >= rz_lo)
-    rejected = (c < o) & np.isfinite(rsi9) & np.isfinite(rsi9_prev) & (rsi9_prev > 70.0) & (rsi9 < rsi9_prev)
+    rev = (c < o) & np.isfinite(rsi9) & np.isfinite(rsi9_prev) & (rsi9 < rsi9_prev)   # 反転確認（陰転∩RSI9下向き・不変）
+    rejected = rev if v11_open_entry else (rev & (rsi9_prev > 70.0))                  # open_entry=過熱の必須化を撤去／False=v11 恒等
+    if v12_open_range:                                                                # v12=レンジ上部で確認なし（拒否確認 rev を要求しない・acceptance 2026-07-06）
+        return ok & touched                                                          # range_ok_v11 ∩ 上限ゾーンのみで SHORT＝薄利多売（方向選別しない・Exit は次段）
     return ok & touched & rejected
 
 
-def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False):
+def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False, v11_open_entry: bool = False, v12_open_range: bool = False):
     """v11 エンジン＝素ルール SHORT 専用（short_only_v11・LONG 入口の生成経路なし＝§1.2.1 ショートのみ）。
     入口: v11_entry_candidates → 指値 maker TTL（不約定は建てない）。TP/SL は発注時点のゾーン幾何で固定・
     tp_ge_sl_check_v11 を通らない候補は建てない。
@@ -1526,7 +1532,7 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
     o = df["open"].to_numpy(float); h = df["high"].to_numpy(float)
     l = df["low"].to_numpy(float); c = df["close"].to_numpy(float)
     atr = df["atr"].to_numpy(float); adx = df["adx"].to_numpy(float); kk = df["stoch_k"].to_numpy(float)
-    cand = v11_entry_candidates(df)
+    cand = v11_entry_candidates(df, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range)
     rz_lo = df["v11_res_lo"].to_numpy(float); rz_hi = df["v11_res_hi"].to_numpy(float)
     sz_hi = df["v11_sup_hi"].to_numpy(float); mid = df["v11_mid"].to_numpy(float)
     max_lots = 1 if no_add else V11_MAX_ADDS
@@ -1794,7 +1800,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -1812,11 +1818,12 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
         z1h = _zones_v11_1h(df)
         df = _apply_v11_to_5m(df, z1h)
         okn = int(df["range_ok_v11"].sum())
-        cn = int(v11_entry_candidates(df).sum())
+        cn = int(v11_entry_candidates(df, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range).sum())
         print(f"  [range_ok_v11] レンジ判定 通過 {okn:,}/{len(df):,} バー（{okn/len(df)*100:.1f}%）"
               f"＝1h S/Rゾーン（スイング≥{V11_ZONE_TOUCH}・幅≥{V11_ZONE_MIN_W*100:.1f}%）∩ 5分ブレイクなし")
-        print(f"  [入口候補 v11] 到達＋拒否確認 {cn:,} バー（no_add={v11_no_add}・single_tp={v11_single_tp}）")
-        trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp)
+        _in_label = "到達のみ（確認なし v12）" if v12_open_range else "到達＋拒否確認"
+        print(f"  [入口候補 v11] {_in_label} {cn:,} バー（no_add={v11_no_add}・single_tp={v11_single_tp}・open_entry={v11_open_entry}・open_range={v12_open_range}）")
+        trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range)
         t = pd.DataFrame(trades)
         if len(t):
             t["entry_time"] = pd.to_datetime(t["entry_time"]); t["exit_time"] = pd.to_datetime(t["exit_time"])
@@ -1824,7 +1831,7 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
             assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
             assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9・PARTIAL_TP 半 lot 含む）"
-        sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "")
+        sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "") + ("oe" if v11_open_entry else "") + ("or" if v12_open_range else "")
         _out(t, f"_{box_tf}{sfx}", None, tag=tag, gate_on=True, v11=True, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp)
         return
     if v10:
@@ -1961,7 +1968,7 @@ def _load(smoke: int) -> pd.DataFrame:
     return df
 
 
-def _diagnostic(df, v6=False, v6r=False, v7=False, v8=False, v10=False, v11=False):
+def _diagnostic(df, v6=False, v6r=False, v7=False, v8=False, v10=False, v11=False, v11_open_entry=False, v12_open_range=False):
     """発火ファネル（採点しない）＝イベント頻度のみ（検出器は本走で学習＝重い処理を diagnostic で回さない）。"""
     if v11:
         df = _rsi9_v10(df)
@@ -1970,7 +1977,7 @@ def _diagnostic(df, v6=False, v6r=False, v7=False, v8=False, v10=False, v11=Fals
         n = len(df)
         days = max((df["ts"].iloc[-1] - df["ts"].iloc[0]).total_seconds() / 86400.0, 1.0)
         ok = df["range_ok_v11"].to_numpy(bool)
-        cand = v11_entry_candidates(df)
+        cand = v11_entry_candidates(df, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range)
         adx = df["adx"].to_numpy(float)
         print("=" * 100)
         print(f"[E37 v11 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日")
@@ -2043,6 +2050,8 @@ def main():
     ap.add_argument("--v11", action="store_true", help="v11=視認校正レンジ計器の組み込み（1h S/Rゾーン×5分ブレイク離脱×複数TP+add・acceptance 2026-07-05・既定 OFF=v10 恒等）")
     ap.add_argument("--v11-no-add", action="store_true", help="v11 対照: add なし（1 lot）＝寄与分離用（diagnostic/学習窓）")
     ap.add_argument("--v11-single-tp", action="store_true", help="v11 対照: TP2 のみ（v10 出口）＝寄与分離用（diagnostic/学習窓）")
+    ap.add_argument("--v11-open-entry", action="store_true", help="v11 Step1 Do: 入口の過熱を必須にする確認（rsi9_prev>70）を撤去＝反転確認だけで入る（過熱fadeで負ける方向選別をやめ件数を戻す・acceptance 2026-07-05・既定OFF=v11恒等）")
+    ap.add_argument("--v12-open-range", action="store_true", help="v12: 入口の拒否確認（陰転∩RSI9下向き）を外し range_ok_v11∩上限ゾーンのみで SHORT＝レンジ上部で確認なしに件数を出す（方向選別しない・Exit は次段・acceptance 2026-07-06・既定OFF=v11oe恒等）")
     ap.add_argument("--v11-selftest-zones", action="store_true", help="v11 自己検査: _zones_v11_1h が labels_v17.csv（視認校正済み計器）と全期間一致するか機械照合して終了")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
     a = ap.parse_args()
@@ -2062,10 +2071,10 @@ def main():
         _selftest_zones_v11(df)
         return
     if a.diagnostic:
-        _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9), v10=a.v10, v11=a.v11)
+        _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9), v10=a.v10, v11=a.v11, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range)
         return
     run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9, v10=a.v10,
-            v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp)
+            v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range)
     print("=" * 100)
 
 
