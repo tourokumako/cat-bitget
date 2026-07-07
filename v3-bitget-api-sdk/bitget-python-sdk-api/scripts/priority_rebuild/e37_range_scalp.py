@@ -152,6 +152,13 @@ V16_BREAK = (("anchor", 12), ("anchor", 24), (None, 24))   # 破れ計数（mode
 V16_CLUSTER_GAP = 12                 # クラスタ連結 gap（前 position 最終 exit から 12本=60分以内の新規を同一クラスタ・TTL/T_MAX 幾何の a-priori）
 V16_NUM_LEAVES = 6                   # 場面セル木の分割数（候補{4,6}＝min_child_samples ガードでデータが縮退を決める・acceptance (9)）
 
+# ── v17 選定の regime 頑健化（acceptance 2026-07-07 承認 b9a9c702・LEVER＝OOF 合意区間を時間3分割から帯層化へ）──
+# 帯境界は precheck P3 の既存区切りの再利用＝成績で選ばない（acceptance ★疑似シミュ由来の固定値ゼロ (a)）。
+V17_ATR_BAND_EDGES = (0.15, 0.20, 0.30, 0.40)   # fixed-value-approved entry 時 atr_pct の帯境界（a-priori・acceptance やること2）
+V17_LOWVOL_BANDS = 2                 # 低ボラ側の帯数（atr_pct<0.2 の2帯＝層化合意 (ii) の合算対象・a-priori）
+V17_BOXW_EXPAND = (1.5, 2.0)         # fixed-value-approved box_W 膨張ガード m×クラスタ初回幅（W 比幾何の格子・学習窓 OOF 選定・acceptance やること5）
+V17_GUARD_GLOBAL = V16_GUARD + (("boxw", 1.5), ("boxw", 2.0))   # fixed-value-approved 全セル一律ガード候補（guard_global_v17・採否は層化 OOF・acceptance やること4）
+
 # ── E37 v6 パラメータ（イベント母数拡大＋θ規則反転・--v6 で ON・既定 OFF=v5 恒等・出所は各行）──
 BE_FLOOR = 1.0               # v6 θ選定の be 床＝損益分岐の定義値（be=平均gross÷往復コスト の分岐点・数値探索でない）
 SHALLOW_Z = 0.5              # 浅い行き過ぎ／順張り押し目・戻り売りの dev_z（教科書の半σ・a-priori）
@@ -1627,6 +1634,30 @@ def cluster_guard_check_v16(c_i: float, base_px: float, base_w: float, guard, bb
     return bool(bb_sig_i)
 
 
+def boxw_expand_guard_v17(w_now: float, base_w: float, m: float) -> bool:
+    """v17 box_W 膨張ガード（acceptance 2026-07-07 やること5）＝クラスタ初回 entry 時の box_W（px）を基準に、
+    現在のゾーン幅が m 倍以上へ膨張＝ゾーン再基準化（階段急騰で box が広がり直す 12/02 実測 0.53 から 4.39 の型）を
+    トレンド移行と判定。発火の扱いは既存ガードと同じ（全 lot TREND_CONT taker＋クールダウン・score.py 無変更 H13）。
+    入力は当該バーの確定値のみ（H2）。"""
+    return bool(np.isfinite(w_now) and np.isfinite(base_w) and base_w > 0 and w_now >= float(m) * base_w)
+
+
+def guard_fire_v17(c_i: float, base_px: float, base_w: float, guard, bb_sig_i: bool, w_now: float) -> bool:
+    """v17 ガード発火判定＝disp/bb は v16 と同一（cluster_guard_check_v16 へ委譲＝恒等）・boxw のみ新分岐。
+    v16 経路は boxw ガードを持たない＝挙動不変（OFF 恒等）。"""
+    if guard is None:
+        return False
+    if guard[0] == "boxw":
+        return boxw_expand_guard_v17(w_now, base_w, guard[1])
+    return cluster_guard_check_v16(c_i, base_px, base_w, guard, bb_sig_i)
+
+
+def guard_global_v17(p: dict | None):
+    """v17 全セル一律ガード（acceptance 2026-07-07 やること4）＝セル別 guard map より優先して適用する global 候補。
+    v16 以前の params は本キーを持たない＝None（恒等）。採否（global かセル別か）は層化 OOF（_select_v17_params）が決める。"""
+    return (p or {}).get("guard_all")
+
+
 def be_time_arm_v16(lot, i: int, bt) -> bool:
     """v16 時間 arm（acceptance 2026-07-07 (3)）＝TP1 未達のまま bt 本経過で建値フロア指値（BE_EXIT maker）を arm。"""
     return bool(bt is not None and (not lot["tp1_done"]) and (i - lot["first_idx"]) >= int(bt))
@@ -1704,6 +1735,7 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
     if v16:                                            # v16 Entry×Exit セット第2弾（acceptance 2026-07-07・既定 OFF=v15 恒等＝この block ごとスキップ）
         bb_sig = df["v16_bb_sig"].to_numpy(bool) if "v16_bb_sig" in df.columns else np.zeros(n, bool)
         guard_map = v15_params.get("guard", {}) or {}
+        guard_all = guard_global_v17(v15_params)       # v17 全セル一律候補（v16 以前はキー無し=None＝恒等・acceptance v17 やること4）
         cooldown = int(v15_params.get("cooldown", V16_COOLDOWN[0]))
         be_time_map = v15_params.get("be_time", {}) or {}
         tmax_map = v15_params.get("tmax_map", {}) or {}
@@ -1781,8 +1813,8 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                 lot["adv_prev"] = lot["max_adv"]       # v15: 前バーまでの逆走ピーク（戻り決済の arm 判定用・H2）
             lot["max_fav"] = min(lot["max_fav"], l[i]); lot["max_adv"] = max(lot["max_adv"], h[i])
         if v16 and lots and np.isfinite(clu_base):     # v16 トレンド移行ガード（acceptance (2)・全 lot TREND_CONT taker＋クールダウン）
-            _g = guard_map.get(clu_cell)
-            if _g is not None and cluster_guard_check_v16(c[i], clu_base, clu_w, _g, bool(bb_sig[i])):
+            _g = guard_all if guard_all is not None else guard_map.get(clu_cell)   # v17: 全セル一律候補が優先（None=v16 恒等）
+            if _g is not None and guard_fire_v17(c[i], clu_base, clu_w, _g, bool(bb_sig[i]), rz_lo[i] - sz_hi[i]):
                 for lot in lots:
                     _record(trades, lot, c[i], "TREND_CONT", i, ts)
                     v15_params["_stats"]["TREND_CONT"] += 1
@@ -2273,6 +2305,233 @@ def _v16_guard_check(df, box_tf) -> None:
     print("=" * 100)
 
 
+def _v17_band_idx(r) -> int:
+    """v17: 玉の ATR% 帯 index（0..4・V17_ATR_BAND_EDGES 基準・entry 時 atr_pct のみ使用＝H2）。"""
+    ap_ = float(r["atr_14"]) / max(float(r["entry_price"]), 1e-9) * 100.0
+    for b, e in enumerate(V17_ATR_BAND_EDGES):
+        if ap_ < e:
+            return b
+    return len(V17_ATR_BAND_EDGES)
+
+
+def _v17_band_nets(tr) -> list:
+    """v17: fill 単位の帯別 net 合計（層化合意の物差し・学習窓のみで使う）。"""
+    nets = [0.0] * (len(V17_ATR_BAND_EDGES) + 1)
+    for r in tr:
+        nets[_v17_band_idx(r)] += float(r["net_usd"])
+    return nets
+
+
+def partial_tp_protect_v17(tr) -> tuple:
+    """v17 勝ち玉保護（acceptance やること3 (iv)）＝PARTIAL_TP の fill 数と net 合計。
+    「PARTIAL_TP を毀損しない候補だけ採択」の物差し（v16 で勝側 −$1,178 を壊した再演の防止）。"""
+    ps = [float(r["net_usd"]) for r in tr if r["exit_reason"] == "PARTIAL_TP"]
+    return len(ps), float(sum(ps))
+
+
+def v17_band_consensus(v, segs, bands, pn, pnet, best_net, best_segs, best_bands, best_pn, best_pnet) -> tuple:
+    """v17 層化合意（acceptance やること3・LEVER 逐語＝OOF 合意区間を時間3分割から学習窓内 ATR% 帯の層化分割へ）。
+    採択＝(i) OOF 合計純増 ∩ 時間3fold の 2/3 改善（v16 基準を維持＝purged 時間分割は leak 対策として不変）
+       ∩ (ii) 低ボラ2帯（atr_pct<0.2）合算の純増（承認版のまま＝ルール変更はまこさん承認を経てから）
+       ∩ (iii) 各帯 非悪化（運転中は現行構成比の単調・incumbent 比の照合は run_e37 の帯別照合で表示）
+       ∩ (iv) PARTIAL_TP 玉数・net 非悪化（partial_tp_protect_v17）。
+    戻り: (採択するか, 時間fold 改善数, 低ボラ合算の増分)。"""
+    wins = sum(1 for a_, b_ in zip(segs, best_segs) if a_ > b_)
+    low_v = float(sum(bands[:V17_LOWVOL_BANDS]))
+    low_b = float(sum(best_bands[:V17_LOWVOL_BANDS]))
+    ok = (v > best_net + 1e-9) and (wins >= 2) \
+        and (low_v > low_b + 1e-9) \
+        and all(bv >= bb_ - 1e-9 for bv, bb_ in zip(bands, best_bands)) \
+        and (pn >= best_pn) and (pnet >= best_pnet - 1e-9)
+    return ok, wins, low_v - low_b
+
+
+def _select_v17_params(df, box_tf, no_add=False, single_tp=False, v11_open_entry=False, v12_open_range=False):
+    """v17 選定の regime 頑健化（acceptance 2026-07-07 承認 b9a9c702・採点窓不参照 L-267）。
+    v16 の候補格子・OOF 基盤はそのまま＋①採択判定を v17_band_consensus（時間 fold×ATR% 帯の層化合意＋勝ち玉保護）へ
+    ②ガードに全セル一律候補（guard_global_v17・V17_GUARD_GLOBAL）と box_W 膨張（boxw_expand_guard_v17）を追加。
+    incumbent＝v15 選定値（v15_029 train CSV 実測・帯別 net / PARTIAL 統計も同 CSV から）＝最終ゲートの比較相手。
+    戻り: (params, rows_log, inc[dict], base_net, best_net, nrun, ncell, cell_desc, fin[dict])"""
+    inc_csv = ROOT / "results" / "priority_rebuild" / "ratchet" / "trades_e37_range_scalp_v15_029_train.csv"
+    if not inc_csv.exists():                           # §3.1 の自動 archive 退避後は archive/ を見る（実測値の参照＝再走しない）
+        inc_csv = ROOT / "results" / "priority_rebuild" / "ratchet" / "archive" / "trades_e37_range_scalp_v15_029_train.csv"
+    assert inc_csv.exists(), "incumbent（v15_029 train CSV）が見つからない（acceptance F-2 の比較相手）"
+    idf = pd.read_csv(inc_csv)
+    _ap = (idf["atr_14"] / idf["entry_price"].clip(lower=1e-9) * 100.0).to_numpy(float)
+    _bi = np.digitize(_ap, V17_ATR_BAND_EDGES)
+    _pm = (idf["exit_reason"] == "PARTIAL_TP").to_numpy(bool)
+    inc = {"net": float(idf["net_usd"].sum()),
+           "bands": [float(idf.loc[_bi == b, "net_usd"].sum()) for b in range(len(V17_ATR_BAND_EDGES) + 1)],
+           "pn": int(_pm.sum()), "pnet": float(idf.loc[_pm, "net_usd"].sum())}
+    dtr = df[df["ts"] < TRAIN_END].reset_index(drop=True)
+    t0, t1 = dtr["ts"].iloc[0], dtr["ts"].iloc[-1]
+    span = (t1 - t0) / 3
+    emb = pd.Timedelta(days=1)
+    seg = [(t0, t0 + span - emb), (t0 + span, t0 + 2 * span - emb), (t0 + 2 * span, t1)]
+
+    def _seg_nets(tr):
+        return [float(sum(r["net_usd"] for r in tr if s0 <= pd.Timestamp(r["entry_time"]) <= s1)) for s0, s1 in seg]
+
+    def _clone(p):
+        q = {"ladder": p["ladder"], "sl_far": p["sl_far"], "tmax": p["tmax"], "down": p["down"],
+             "ret": dict(p["ret"]), "dd": dict(p["dd"]), "cell_fn": p["cell_fn"], "v16": True, "v17": True,
+             "guard": dict(p["guard"]), "guard_all": p["guard_all"], "cooldown": p["cooldown"],
+             "be_time": dict(p["be_time"]), "tmax_map": dict(p["tmax_map"]), "down_map": dict(p["down_map"]),
+             "tp1_f": dict(p["tp1_f"]), "tp2_f": dict(p["tp2_f"]), "size0": dict(p["size0"]),
+             "break_mode": p["break_mode"], "break_bars": p["break_bars"]}
+        return q
+
+    def _run(p):
+        tr = run_continuous_v11(dtr, box_tf, no_add=no_add, single_tp=single_tp, v11_open_entry=v11_open_entry,
+                                v12_open_range=v12_open_range, v13_time_maker=True, v14_params=None,
+                                v15_params=_clone(p))
+        return tr, float(sum(r["net_usd"] for r in tr)), _seg_nets(tr)
+
+    cur = {"ladder": None, "sl_far": 1.0, "tmax": 48, "down": None, "ret": {}, "dd": {}, "cell_fn": None,
+           "v16": True, "v17": True, "guard": {}, "guard_all": None, "cooldown": V16_COOLDOWN[0], "be_time": {},
+           "tmax_map": {}, "down_map": {}, "tp1_f": {}, "tp2_f": {}, "size0": {},
+           "break_mode": None, "break_bars": V15_BREAK_BARS}
+    base_tr, base_net, base_segs = _run(cur)
+    cell_fn, ncell, cell_desc = _fit_v15_branch_policy(base_tr, num_leaves=V16_NUM_LEAVES)
+    cur["cell_fn"] = cell_fn
+    best_net, best_segs = base_net, base_segs
+    best_bands = _v17_band_nets(base_tr)
+    best_pn, best_pnet = partial_tp_protect_v17(base_tr)
+    rows_log = [("incumbent(v15選定=v15_029)", "-", "-", inc["net"], 0, 0.0, ""),
+                ("start(v17骨格)", "-", "-", base_net, len(base_tr), float(sum(best_bands[:V17_LOWVOL_BANDS])), "")]
+    nrun = 1
+
+    def _try(br, label, cand, mutate):
+        nonlocal cur, best_net, best_segs, best_bands, best_pn, best_pnet, nrun
+        trial = _clone(cur)
+        mutate(trial)
+        tr, v, segs = _run(trial)
+        nrun += 1
+        bands = _v17_band_nets(tr)
+        pn, pnet = partial_tp_protect_v17(tr)
+        ok, wins, lowd = v17_band_consensus(v, segs, bands, pn, pnet, best_net, best_segs, best_bands, best_pn, best_pnet)
+        rows_log.append((br, label, str(cand), v, wins, lowd, "採択" if ok else ""))
+        if ok:
+            cur = trial
+            best_net, best_segs, best_bands, best_pn, best_pnet = v, segs, bands, pn, pnet
+        if nrun % 20 == 0:
+            print(f"    …v17 選定進行 {nrun} 回（現 best ${best_net:,.0f}・低ボラ2帯 ${sum(best_bands[:V17_LOWVOL_BANDS]):,.0f}）", flush=True)
+
+    types = ((1, False), (1, True), (2, False), (2, True))
+    guard_cell_cands = V16_GUARD + tuple(("boxw", m) for m in V17_BOXW_EXPAND)   # セル別候補にも boxw を追加（acceptance やること5）
+    # ── v15 由来の global 格子（層化合意で再選定） ──
+    for k in V15_SL_FAR:
+        if k != cur["sl_far"]:
+            _try("sl_far", "-", k, lambda t, k=k: t.__setitem__("sl_far", k))
+    for tm in sorted(set(V15_TMAX) | {36}):
+        if tm != cur["tmax"]:
+            _try("tmax", "-", tm, lambda t, tm=tm: t.__setitem__("tmax", tm))
+    for dn in V15_DOWN:
+        if dn is not None and dn != cur["down"]:
+            _try("down", "-", dn, lambda t, dn=dn: t.__setitem__("down", dn))
+    for lad in V16_LADDER:
+        if lad is not None and lad != cur["ladder"]:
+            _try("ladder", "-", lad, lambda t, lad=lad: t.__setitem__("ladder", lad))
+    for bm, bb in V16_BREAK:
+        if (bm, bb) != (cur["break_mode"], cur["break_bars"]):
+            _try("break", "-", (bm, bb), lambda t, bm=bm, bb=bb: (t.__setitem__("break_mode", bm),
+                                                                  t.__setitem__("break_bars", bb)))
+    # ── セル×タイプ別（戻り決済 arm／時間 arm／dd／TIME 場面連動） ──
+    for cell in range(ncell):
+        for typ in types:
+            key = (cell, typ[0], typ[1])
+            for rk in V16_RET_ARM:
+                if rk is not None and rk != cur["ret"].get(key):
+                    _try("ret", f"cell{cell}/typ{typ}", rk, lambda t, key=key, rk=rk: t["ret"].__setitem__(key, rk))
+            for bt in V16_BE_TIME:
+                if bt is not None and bt != cur["be_time"].get(key):
+                    _try("be_time", f"cell{cell}/typ{typ}", bt, lambda t, key=key, bt=bt: t["be_time"].__setitem__(key, bt))
+            for ddc in V14_BRANCH_PARAMS["dd"]:
+                if ddc is not None and ddc != cur["dd"].get(key):
+                    _try("dd", f"cell{cell}/typ{typ}", ddc, lambda t, key=key, ddc=ddc: t["dd"].__setitem__(key, ddc))
+            for tmc in V16_TMAX_CELL:
+                if tmc != cur["tmax_map"].get(key, cur["tmax"]):
+                    _try("tmax_map", f"cell{cell}/typ{typ}", tmc, lambda t, key=key, tmc=tmc: t["tmax_map"].__setitem__(key, tmc))
+            for dnc in V16_DOWN_CELL:
+                if dnc != cur["down_map"].get(key):
+                    _try("down_map", f"cell{cell}/typ{typ}", dnc, lambda t, key=key, dnc=dnc: t["down_map"].__setitem__(key, dnc))
+    # ── セル別（TP1/TP2 位置比率・新規 size 配分・ガード[boxw 含む]） ──
+    for cell in range(ncell):
+        for f1 in V16_TP1_F:
+            if f1 != cur["tp1_f"].get(cell, 0.5):
+                _try("tp1_f", f"cell{cell}", f1, lambda t, cell=cell, f1=f1: t["tp1_f"].__setitem__(cell, f1))
+        for f2 in V16_TP2_F:
+            if f2 != cur["tp2_f"].get(cell, 1.0):
+                _try("tp2_f", f"cell{cell}", f2, lambda t, cell=cell, f2=f2: t["tp2_f"].__setitem__(cell, f2))
+        for sm in V16_SIZE0:
+            if sm != cur["size0"].get(cell, 1.0):
+                _try("size0", f"cell{cell}", sm, lambda t, cell=cell, sm=sm: t["size0"].__setitem__(cell, sm))
+        for g in guard_cell_cands:
+            if g != cur["guard"].get(cell):
+                _try("guard", f"cell{cell}", g, lambda t, cell=cell, g=g: t["guard"].__setitem__(cell, g))
+    # ── 全セル一律ガード（guard_global_v17・acceptance やること4＝セル限定の守備範囲の穴を物差しに選ばせる） ──
+    for g in V17_GUARD_GLOBAL:
+        if g != cur["guard_all"]:
+            _try("guard_all", "-", g, lambda t, g=g: t.__setitem__("guard_all", g))
+    if cur["guard_all"] is not None or any(v_ is not None for v_ in cur["guard"].values()):
+        for cd in V16_COOLDOWN:
+            if cd != cur["cooldown"]:
+                _try("cooldown", "-", cd, lambda t, cd=cd: t.__setitem__("cooldown", cd))
+    fin = {"bands": best_bands, "pn": best_pn, "pnet": best_pnet,
+           "low": float(sum(best_bands[:V17_LOWVOL_BANDS]))}
+    return cur, rows_log, inc, base_net, best_net, nrun, ncell, cell_desc, fin
+
+
+def _v17_guard_check(df, box_tf) -> None:
+    """v17 番人メタ確認（acceptance やること7・§2.9③）＝わざと壊して落ちるかの既知答え。
+    ①層化合意 v17_band_consensus: 帯赤字候補の混入→不採択／低ボラ非改善（高ボラのみ）→不採択／PARTIAL_TP 毀損→不採択
+    ②boxw_expand_guard_v17 の発火境界 ③guard_fire_v17 の disp 委譲（v16 恒等） ④guard_all（全セル一律）の配線支配。
+    診断専用（出力ファイルなし・採点しない・値は選定に使わない）。--smoke と併用する。"""
+    segs0 = [10.0, 10.0, 10.0]
+    bands0 = [5.0, 5.0, 10.0, 5.0, 5.0]
+    ok, _, _ = v17_band_consensus(40.0, [12.0, 12.0, 12.0], [7.0, 6.0, 11.0, 6.0, 6.0], 10, 20.0,
+                                  30.0, segs0, bands0, 10, 20.0)
+    assert ok, "T1: 全条件改善の候補が不採択（合意が壊れている）"
+    ok, _, _ = v17_band_consensus(50.0, [20.0, 20.0, 20.0], [3.0, 5.0, 25.0, 5.0, 5.0], 10, 20.0,
+                                  30.0, segs0, bands0, 10, 20.0)
+    assert not ok, "T2: 低ボラ帯を悪化させる候補が採択された（補填の再演＝層化が効いていない）"
+    ok, _, _ = v17_band_consensus(50.0, [20.0, 20.0, 20.0], [5.0, 5.0, 20.0, 10.0, 5.0], 10, 20.0,
+                                  30.0, segs0, bands0, 10, 20.0)
+    assert not ok, "T3: 低ボラ非改善（高ボラのみ改善）の候補が採択された（承認版ルール＝低ボラ純増が必須）"
+    ok, _, _ = v17_band_consensus(40.0, [12.0, 12.0, 12.0], [7.0, 6.0, 11.0, 6.0, 6.0], 8, 20.0,
+                                  30.0, segs0, bands0, 10, 20.0)
+    assert not ok, "T4: PARTIAL_TP 玉数を毀損する候補が採択された（partial_tp_protect_v17 が効いていない）"
+    ok, _, _ = v17_band_consensus(40.0, [12.0, 5.0, 5.0], [7.0, 6.0, 11.0, 6.0, 6.0], 10, 20.0,
+                                  30.0, segs0, bands0, 10, 20.0)
+    assert not ok, "T5: 時間fold 1/3 改善の候補が採択された（purged 時間合意が外れている）"
+    assert boxw_expand_guard_v17(3.1, 2.0, 1.5) and not boxw_expand_guard_v17(2.9, 2.0, 1.5) \
+        and not boxw_expand_guard_v17(float("nan"), 2.0, 1.5), "T6: boxw 膨張ガードの境界が壊れている"
+    assert guard_fire_v17(110.0, 100.0, 10.0, ("disp", 0.5), False, 0.0) == \
+        cluster_guard_check_v16(110.0, 100.0, 10.0, ("disp", 0.5), False), "T7: disp 委譲が v16 と不一致（恒等破れ）"
+    assert guard_fire_v17(0.0, 100.0, 10.0, ("boxw", 1.5), False, 16.0), "T7b: boxw 分岐が発火しない"
+    print("  [v17 番人] 合意・ガード既知答え T1〜T7b ✅（帯赤字混入=不採択／低ボラ非改善=不採択／PARTIAL毀損=不採択）")
+    df = _rsi9_v10(df)
+    z1h = _zones_v11_1h(df)
+    df = _apply_v11_to_5m(df, z1h)
+    df = _attach_v16_bb(df)
+    base = {"ladder": None, "sl_far": 1.0, "tmax": 48, "down": None, "ret": {}, "dd": {}, "cell_fn": None,
+            "v16": True, "v17": True, "guard": {}, "guard_all": None, "cooldown": 6, "be_time": {}, "tmax_map": {},
+            "down_map": {}, "tp1_f": {}, "tp2_f": {}, "size0": {}, "break_mode": None, "break_bars": V15_BREAK_BARS}
+    cases = [
+        ("guard_all 支配 disp k=0.01（全セル一律）", {**base, "guard_all": ("disp", 0.01)}),
+        ("guard_all boxw m=1.01（膨張即発火）", {**base, "guard_all": ("boxw", 1.01)}),
+        ("セル別 guard より guard_all 優先（cell disp 0.01 vs all boxw 9.9=不発）", {**base, "guard": {0: ("disp", 0.01)}, "guard_all": ("boxw", 9.9)}),
+    ]
+    print("=" * 100)
+    print("[v17 番人メタ確認] guard_all 配線（極端値 → exit_reason 分布・採点しない）")
+    for name, p in cases:
+        pp = dict(p)
+        tr = run_continuous_v11(df, box_tf, v12_open_range=True, v13_time_maker=True, v15_params=pp)
+        cnt = pd.Series([r["exit_reason"] for r in tr]).value_counts().to_dict()
+        print(f"  {name}: {len(tr)} fill / {cnt} / 発火stats {pp.get('_stats')}")
+    print("=" * 100)
+
+
 def _selftest_zones_v11(df: pd.DataFrame) -> None:
     """自己検査（acceptance F-1）: _zones_v11_1h の出力が視認校正済み計器の labels_v17.csv と全期間一致するか機械照合。
     一致＝まこさんがダッシュボードで校正した判定と同一のレンジ判定で戦略が動く証明。"""
@@ -2356,6 +2615,11 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
                     "新規size配分": f"size0={v15_sel['size0']}（×unit・減らす側のみ=cap 0.048 不変）",
                     "破れ計数": f"mode={v15_sel['break_mode']}・持続{v15_sel['break_bars']}本（anchor=建玉基準カウント＝新ゾーン成立リセット穴の是正）",
                 }} if (v15_sel or {}).get("v16") else {}),
+        **({"★v17 選定の regime 頑健化（ATR%帯 層化OOF合意＋ガード全セル候補×box_W膨張・acceptance 2026-07-07 承認 b9a9c702）": {
+                    "層化合意 v17_band_consensus": f"帯境界 V17_ATR_BAND_EDGES={V17_ATR_BAND_EDGES}（precheck P3 と同一・a-priori）・採択=(i)OOF合計純増∩時間3fold 2/3改善 (ii)低ボラ2帯(atr_pct<0.2)合算の純増 (iii)各帯非悪化 (iv)PARTIAL_TP 玉数・net 非悪化（partial_tp_protect_v17・incumbent=v15_029 train 実測との最終ゲートつき）",
+                    "ガード全セル一律 guard_all": f"{v15_sel.get('guard_all')}（guard_global_v17＝セル別 map より優先・候補 V17_GUARD_GLOBAL=disp k格子/bb/boxw m{V17_BOXW_EXPAND}・採否は層化 OOF）",
+                    "box_W 膨張ガード": f"boxw_expand_guard_v17＝現在ゾーン幅 ≥ m×クラスタ初回幅（ゾーン再基準化＝階段急騰の検知・TREND_CONT 再利用＝score.py 不変 H13）",
+                }} if (v15_sel or {}).get("v17") else {}),
             },
             "【固定値】コスト（eval_engine・確定値・改造禁止）": {
                 "maker手数料": f"{ee.MAKER_FEE*100:.3f}%", "taker手数料": f"{ee.TAKER_FEE*100:.3f}%",
@@ -2520,7 +2784,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -2600,6 +2864,37 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
                 print("  ⛔ v16 全体で学習窓純増なし（対 incumbent v15 選定値）＝停止（採点温存・acceptance F-2・扱いはまこさん判断）")
                 raise SystemExit(1)
             v15p = sel16
+        if v17_exit_set:                               # v17 選定の regime 頑健化（acceptance 2026-07-07 承認 b9a9c702）＝層化 OOF 選定→最終ゲート→本走
+            assert v13_time_maker, "v17 は v13（deadline shrink）の上に載る（--v13-time-maker 必須・acceptance 2026-07-07）"
+            assert not (v14_machine or v15_exit_set or v16_exit_set), "v17 は v16 基盤（格子・選定）を内包＝--v14/--v15/--v16 と併用しない（acceptance 2026-07-07）"
+            df = _attach_v16_bb(df)                    # BB ガード候補の前計算（v15 以前の経路は列を読まない＝恒等に不干渉）
+            print("  [v17 選定] 候補格子の一括 OOF（時間3fold×ATR%帯の層化合意 v17_band_consensus＋勝ち玉保護・学習窓のみ・L-267）…")
+            sel17, rows17, inc17, start17, best17, nrun17, ncell17, cdesc17, fin17 = _select_v17_params(
+                df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp,
+                v11_open_entry=v11_open_entry, v12_open_range=v12_open_range)
+            print(f"  [v17 場面セル] {ncell17} セル: {cdesc17}")
+            print(f"  [v17 選定表] {nrun17} 回実行（学習窓 net・時間fold 改善数・低ボラ2帯Δ・全行）")
+            for br, label, cand, v, wins, lowd, adopt in rows17:
+                print(f"    {br:<10} {label:<22} cand={cand:<24} net ${v:>10,.0f} / fold改善 {wins} / lowΔ ${lowd:>+8,.0f} {adopt}")
+            _bl = "/".join(f"{b:+,.0f}" for b in fin17["bands"])
+            _il = "/".join(f"{b:+,.0f}" for b in inc17["bands"])
+            print(f"  [v17 選定結果] incumbent(v15選定=v15_029 train 実測) ${inc17['net']:,.0f} / v17骨格 ${start17:,.0f} → 最終 ${best17:,.0f}（対 incumbent {best17 - inc17['net']:+,.0f}）")
+            print(f"    帯別 net 最終 [{_bl}] vs incumbent [{_il}]（帯境界 {V17_ATR_BAND_EDGES}）")
+            print(f"    低ボラ2帯 合算 最終 ${fin17['low']:,.0f} vs incumbent ${sum(inc17['bands'][:V17_LOWVOL_BANDS]):,.0f} / PARTIAL_TP 最終 {fin17['pn']}件 ${fin17['pnet']:,.0f} vs incumbent {inc17['pn']}件 ${inc17['pnet']:,.0f}")
+            print(f"    guard={sel17['guard']} guard_all={sel17['guard_all']} cooldown={sel17['cooldown']}本 ladder={sel17['ladder']} sl_far={sel17['sl_far']}")
+            print(f"    ret={sel17['ret']}\n    be_time={sel17['be_time']}\n    dd={sel17['dd']}")
+            print(f"    tmax={sel17['tmax']}本 tmax_map={sel17['tmax_map']}\n    down={sel17['down']} down_map={sel17['down_map']}\n    tp1_f={sel17['tp1_f']} tp2_f={sel17['tp2_f']} size0={sel17['size0']} break=({sel17['break_mode']},{sel17['break_bars']}本)")
+            _g_total = best17 > inc17["net"] + 1e-9
+            _g_total_nw = best17 >= inc17["net"] - 1e-9
+            _g_low = fin17["low"] > float(sum(inc17["bands"][:V17_LOWVOL_BANDS])) + 1e-9
+            _g_bands = all(fv >= iv - 1e-9 for fv, iv in zip(fin17["bands"], inc17["bands"]))
+            _g_pt = fin17["pn"] >= inc17["pn"] and fin17["pnet"] >= inc17["pnet"] - 1e-9
+            print(f"  [v17 帯別照合（対 incumbent・情報表示）] 合計純増 {'✅' if _g_total else '⛔'} / 合計非悪化 {'✅' if _g_total_nw else '⛔'} / 低ボラ2帯 純増 {'✅' if _g_low else '⛔'} / 各帯 非悪化 {'✅' if _g_bands else '⛔'} / PARTIAL_TP 非毀損 {'✅' if _g_pt else '⛔'}")
+            _verdict = _g_low and _g_total_nw and _g_pt   # 公平な門＝低ボラ2帯で incumbent に勝つ ∩ 合計は退行しない ∩ 勝ち玉非毀損（2026-07-07 まこさん指摘で是正）
+            print("  " + ("✅ v17 層化の門 通過（低ボラ2帯 純増 ∩ 合計非悪化 ∩ PARTIAL 非毀損）" if _verdict
+                          else "⛔ v17 層化の門 不通過（対 incumbent）＝公式採点の可否は precheck が物理判定"))
+            print("  ★ 門の判定に関わらず本走→両窓 CSV 出力→report/analyze まで必ず実施（悪い結果もデータとして積む＝PDCA・まこさん 2026-07-07）")
+            v15p = sel17
         trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker, v14_params=v14p, v15_params=v15p)
         if v14p is not None:
             print(f"  [v14 発火（全期間・full CSV 基準）] {v14p.get('_stats')}")
@@ -2612,7 +2907,7 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
             assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
             assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9・PARTIAL_TP 半 lot 含む）"
-        sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "") + ("oe" if v11_open_entry else "") + ("or" if v12_open_range else "") + ("tm" if v13_time_maker else "") + ("xm" if v14_machine else "") + ("xs" if v15_exit_set else "") + ("x6" if v16_exit_set else "")
+        sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "") + ("oe" if v11_open_entry else "") + ("or" if v12_open_range else "") + ("tm" if v13_time_maker else "") + ("xm" if v14_machine else "") + ("xs" if v15_exit_set else "") + ("x6" if v16_exit_set else "") + ("x7" if v17_exit_set else "")
         _out(t, f"_{box_tf}{sfx}", None, tag=tag, gate_on=True, v11=True, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14p, v15_sel=v15p)
         return
     if v10:
@@ -2728,7 +3023,8 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
 def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v13_time_maker=False, v14_sel=None, v15_sel=None) -> None:
     strat_base._output_and_report(
         t, suffix, stem="e37_range_scalp",
-        strategy=("E37 v16 Entry×Exit セット最適化 第2弾（回帰救済×トレンドガード×候補格子の一括OOF・場面セル×玉タイプ×purged OOF 選定）" if (v15_sel or {}).get("v16")
+        strategy=("E37 v17 選定の regime 頑健化（ATR%帯 層化OOF合意＋勝ち玉保護＋ガード全セル候補×box_W膨張）" if (v15_sel or {}).get("v17")
+                  else "E37 v16 Entry×Exit セット最適化 第2弾（回帰救済×トレンドガード×候補格子の一括OOF・場面セル×玉タイプ×purged OOF 選定）" if (v15_sel or {}).get("v16")
                   else "E37 v15 Entry×Exit セット最適化 第1弾（逆行側分岐＝ラダー/戻り決済/構造破れ/4h backstop＋枝×場面セル別 学習窓選定）" if v15_sel is not None
                   else "E37 v14 Exit ポジション状態機械（レンジ幾何ネイティブ・玉4タイプ別 学習窓選定・基本 maker）" if v14_sel is not None
                   else "E37 v11 視認校正レンジ計器の組み込み（1h S/Rゾーン×5分ブレイク離脱×複数TP+add・SHORT のみ）" if v11
@@ -2843,6 +3139,8 @@ def main():
     ap.add_argument("--v15-guard-check", action="store_true", help="v15 番人メタ確認: 枝別極端値（ラダー/戻り決済/災害SL/破れ/down/dd）で exit_reason 分布が枝支配になるか（配線証明・採点しない・--smoke 併用）")
     ap.add_argument("--v16-exit-set", action="store_true", help="v16: Entry×Exit セット最適化 第2弾＝回帰救済×トレンドガード×候補格子の一括 OOF（トレンド移行ガード[変位k×W/BB拡大→TREND_CONT再利用]／BE arm帯+時間arm／TIME場面連動／ladder rung 0.25-0.5×W／TP1/TP2位置比率／破れ建玉基準カウント／セル別新規size配分・場面セル木 leaves≤6×玉タイプ×purged 3分割 OOF 合意・--v13-time-maker 必須・--v14/--v15 と併用不可・acceptance 2026-07-07・既定OFF=v15恒等）")
     ap.add_argument("--v16-guard-check", action="store_true", help="v16 番人メタ確認: 枝別極端値（ガードdisp/bb・時間arm・tmax_map・rung・tp1_f・size0・破れanchor）で exit_reason 分布が枝支配になるか（配線証明・採点しない・--smoke 併用）")
+    ap.add_argument("--v17-exit-set", action="store_true", help="v17: 選定の regime 頑健化＝OOF 合意区間を時間3分割から学習窓内 ATR%帯の層化分割へ（低ボラ2帯でも純増∩各帯非悪化∩PARTIAL_TP 非毀損の候補だけ採択＝v17_band_consensus）＋ガード全セル一律候補（guard_global_v17）＋box_W 膨張検知（boxw_expand_guard_v17・TREND_CONT 再利用）・--v13-time-maker 必須・--v14/--v15/--v16 と併用不可・acceptance 2026-07-07 承認 b9a9c702・既定OFF=v16恒等")
+    ap.add_argument("--v17-guard-check", action="store_true", help="v17 番人メタ確認: 層化合意の既知答え（帯赤字混入=不採択/低ボラ非改善=不採択/PARTIAL毀損=不採択）＋boxw 膨張境界＋guard_all 配線支配（採点しない・--smoke 併用）")
     ap.add_argument("--v11-selftest-zones", action="store_true", help="v11 自己検査: _zones_v11_1h が labels_v17.csv（視認校正済み計器）と全期間一致するか機械照合して終了")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
     a = ap.parse_args()
@@ -2870,11 +3168,14 @@ def main():
     if a.v16_guard_check:
         _v16_guard_check(df, a.box_tf)
         return
+    if a.v17_guard_check:
+        _v17_guard_check(df, a.box_tf)
+        return
     if a.diagnostic:
         _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9), v10=a.v10, v11=a.v11, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range)
         return
     run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9, v10=a.v10,
-            v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker, v14_machine=a.v14_exit_machine, v15_exit_set=a.v15_exit_set, v16_exit_set=a.v16_exit_set)
+            v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker, v14_machine=a.v14_exit_machine, v15_exit_set=a.v15_exit_set, v16_exit_set=a.v16_exit_set, v17_exit_set=a.v17_exit_set)
     print("=" * 100)
 
 

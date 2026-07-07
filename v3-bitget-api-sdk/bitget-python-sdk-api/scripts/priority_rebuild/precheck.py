@@ -28,6 +28,7 @@
 from __future__ import annotations
 import argparse, os, sys
 from pathlib import Path
+import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -42,6 +43,38 @@ BANDS = {  # ドリフト検査の帯（report.py G 節と同一）
     "ADX":    ("adx_at_entry", [0, 20, 25, 30, 40, 9e9]),
     "bb傾き":  ("bb_mid_slope_at_entry", [-9e9, -30, -10, 0, 9e9]),
 }
+V17_LOWVOL_BANDS = 2   # ATR% 帯の低ボラ側（<0.2 の2帯）＝帯別証跡の合算対象（E37 v17 acceptance 2026-07-07 承認）
+
+
+def _band_evidence(d: pd.DataFrame, tgt: pd.DataFrame) -> tuple[bool, str]:
+    """v17 帯別証跡（acceptance 2026-07-07 やること6・判定器の変更＝既知答えテスト test_precheck_band_known_answers.py＋番人）。
+    ドリフト最大 ≥20pt でも「採点候補側の構成最大帯を低ボラ2帯（ATR%<0.2）が含み、かつ train の低ボラ2帯 合算 be ≥1.0」の
+    機械証跡があれば WARN-PASS（採点 authorize）。証跡が無ければ従来どおり FAIL＝弱体化ではない。
+    採点候補側は帯構成（特徴量）のみ参照＝PnL 不参照（L-267 維持）。戻り: (authorize, 説明1行)。"""
+    col, edges = BANDS["ATR%"]
+    cost = d["_fee"] + d["_slip"]
+    cut_tr = pd.cut(d[col], bins=edges, right=False)
+    print("   [帯別証跡（v17・train 実測 be・fill 単位）]")
+    for iv in cut_tr.cat.categories:
+        sub = d[cut_tr == iv]
+        if len(sub) == 0:
+            print(f"     {iv}: 0件")
+            continue
+        g_, c_ = sub["_gross"].mean(), cost[cut_tr == iv].mean()
+        be_ = g_ / c_ if c_ > 0 else float("inf")
+        print(f"     {iv}: {len(sub)}件 / 平均gross ${g_:.2f} / コスト ${c_:.2f} / be {be_:.2f}")
+    low_mask = cut_tr.cat.codes < V17_LOWVOL_BANDS
+    n_low = int(low_mask.sum())
+    g_low = d.loc[low_mask, "_gross"].mean() if n_low else float("nan")
+    c_low = cost[low_mask].mean() if n_low else float("nan")
+    be_low = (g_low / c_low) if (n_low and np.isfinite(c_low) and c_low > 0) else float("nan")
+    te_share = _band_share(tgt, col, edges)
+    dom = int(np.argmax(te_share.to_numpy())) if len(te_share) else -1
+    print(f"     低ボラ2帯(<0.2) 合算: {n_low}件 / be {be_low:.2f} ・ 採点候補側の構成最大帯 index={dom}（0始まり・低ボラ2帯={{0,1}}）")
+    authorize = bool(dom >= 0 and dom < V17_LOWVOL_BANDS and np.isfinite(be_low) and be_low >= 1.0 and n_low >= 50)
+    if authorize:
+        return True, f"帯別証跡あり＝低ボラ2帯 合算 be {be_low:.2f} ≥1.0（{n_low}件）∩ 採点候補の支配帯 index={dom} を含む → WARN-PASS（authorize）"
+    return False, f"帯別証跡なし（低ボラ2帯 be {be_low:.2f} / {n_low}件 / 支配帯 index={dom}）＝学習窓の帯別頑健が示せない"
 
 
 def _roundtrip_cost(t):
@@ -144,7 +177,12 @@ def main():
             print(f"   [{label}] 最大シフト {diff:.1f}pt")
             print("   " + tab.to_string().replace("\n", "\n   "))
         if worst >= 20:
-            fails.append(f"ドリフト最大 {worst:.1f}pt ≥ 20pt（学習と採点で環境が別物・学習成績は当てにならない）")
+            # v17 帯別証跡（acceptance 2026-07-07）: ドリフト大でも学習窓の帯別頑健の機械証跡があれば authorize（無ければ従来どおり FAIL）
+            auth_band, bmsg = _band_evidence(d, tgt)
+            if auth_band:
+                warns.append(f"ドリフト最大 {worst:.1f}pt ≥ 20pt → {bmsg}（v17 帯別証跡・証跡なしは従来どおり FAIL＝弱体化でない）")
+            else:
+                fails.append(f"ドリフト最大 {worst:.1f}pt ≥ 20pt（学習と採点で環境が別物・学習成績は当てにならない）＋{bmsg}")
         elif worst >= 10:
             warns.append(f"ドリフト最大 {worst:.1f}pt（10pt超・月別の頑健性を学習期間内で確認してから）")
 
