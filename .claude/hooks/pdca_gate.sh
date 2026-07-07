@@ -38,6 +38,19 @@ PYEOF
 # バックグラウンド実験が実行中（出力前）は審判催促を抑制（2026-06-13・長時間 replay 待ちで連発する事案の防止）。
 # pdca_score_bg_pending は score.py/precheck.py 実行 or next_step 上書きでクリアされる＝完了後は通常通り催促。
 [ -f "$STATE/pdca_need_score" ] && [ ! -f "$STATE/pdca_score_bg_pending" ] && MISS="${MISS}・審判（score.py または precheck.py）が未実行（実験スクリプトを回したのに審判を通っていない）\n"
+# ★データ捨て禁止（まこさん命令 2026-07-07「データそのものを捨てる設計にしないよう強制しろ」）:
+#   実験を回したのに新しい売買記録 CSV が1本も出ていない（選定ゲート等で出力前に停止した）状態では終了不可。
+#   選定/門で不合格でも、選定結果の構成で本走して両窓 CSV を出力し report/analyze で分析して資産にする
+#   （公式採点 score.py の可否だけは precheck が判定＝採点温存とデータ出力は別物）。バックグラウンド実行中は判定保留。
+RATCHET_DIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/results/priority_rebuild/ratchet"
+if [ -f "$STATE/pdca_exp_started" ] && [ ! -f "$STATE/pdca_score_bg_pending" ]; then
+  NEWCSV=$(find "$RATCHET_DIR" -maxdepth 1 -name "trades_*.csv" -newer "$STATE/pdca_exp_started" 2>/dev/null | head -1)
+  if [ -n "$NEWCSV" ]; then
+    rm -f "$STATE/pdca_exp_started"
+  else
+    MISS="${MISS}・実験を回したのに売買記録 CSV が出ていない＝データを捨てる設計は禁止（まこさん 2026-07-07）。選定/門で止まった場合も、その構成で本走して両窓 CSV を出力し report/analyze で分析して資産にせよ（採点温存＝score.py を打たないこと・データを出さないことではない）\n"
+  fi
+fi
 [ -f "$STATE/pdca_need_report" ] && MISS="${MISS}・report.py 分析(結果一覧 A〜L)が未実行\n"
 # need_vs: report を --vs なしで回すと立つ。no_baseline_approved（まこさん GO 済）があれば
 # その場で消費して即 OK にする＝「ファイル作成→report 再実行」の二度手間を廃止（2026-06-15 まこさん指示）。

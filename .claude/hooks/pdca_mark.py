@@ -67,6 +67,7 @@ if tn == "Bash":
         else:
             rm(diagnostic_active)        # 通常実験＝診断状態を解除（採点を要求するラウンド）
             touch(need_score)
+            touch(os.path.join(state, "pdca_exp_started"))   # ★データ捨て禁止（まこさん命令 2026-07-07）＝実験開始を記録し、新しい売買記録CSVが出るまで pdca_gate が終了をブロック
             if ti.get("run_in_background"):
                 touch(score_bg_pending)  # バックグラウンド実行中は審判催促を抑制（2026-06-13）
     # python(3) で実際に score.py/precheck.py を実行する形のみ検知（grep/echo/別行言及では誤爆しない）
