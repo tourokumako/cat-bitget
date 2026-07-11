@@ -385,9 +385,9 @@ def _select_theta_be_first(cand: list) -> dict | None:
 def _select_theta_per_type(cand: list) -> dict | None:
     """v7 型別 θ選定（acceptance 2026-07-04）＝be≥BE_FLOOR（損益分岐の定義値）を満たす学習窓 OOF 分位のうち
     イベント/日最大（v6 の反転規則を型別に適用）。満たす帯が無い型は None＝その型は不使用
-    （帯なし型を捨てるのは be ゲートの自然排除＝新しい固定閾値を足さない）。"""
-    feas = [c_ for c_ in cand if np.isfinite(c_["be"]) and c_["be"] >= BE_FLOOR]
-    return max(feas, key=lambda c_: c_["events_per_day"]) if feas else None
+    （帯なし型を捨てるのは be ゲートの自然排除＝新しい固定閾値を足さない）。
+    実装は _select_theta_be_first と同一規則＝委譲（リファクタ 2026-07-12・挙動不変）。"""
+    return _select_theta_be_first(cand)
 
 
 def _fit_detector_per_type(teach: pd.DataFrame, feat: pd.DataFrame, feat_cols: list,
@@ -540,43 +540,18 @@ def _frontier_exec_consistent(sub: pd.DataFrame, oof: np.ndarray, days_train: fl
     """v8②: θ 候補ごとに、実行同一規則（サイドごと単一スロット＝busy 中はスキップ・教師は TTL タッチ約定済み
     ＝不約定は建てない を反映済み）を学習窓イベント列へ逐次適用した「執行後の件数/日・be」でフロンティアを作る。
     v7 まで＝全候補を同時執行可能とみなす独立カウント（学習1.82イベント/日→実行0.41件/日の過大見積りの正体）。
-    近似の限界＝スロット競合は同一 型×side 内のみ（型横断の競合は本走の乖離ログで観測＝acceptance F⑤）。"""
-    order = np.argsort(sub["entry_i"].to_numpy())
-    e_i = sub["entry_i"].to_numpy()[order]
-    x_i = sub["exit_i"].to_numpy()[order]
-    gross = sub["gross"].to_numpy(float)[order]
-    fee = sub["fee"].to_numpy(float)[order]
-    net = sub["net"].to_numpy(float)[order]
-    p = oof[order]
-    cand = []
-    for qq in THETA_QQ:
-        thr = float(np.quantile(oof, qq))
-        busy_until = -1
-        g_s = 0.0; f_s = 0.0; w = 0
-        n_exec = 0
-        for k in range(len(e_i)):
-            if p[k] < thr or e_i[k] <= busy_until:
-                continue
-            busy_until = int(x_i[k])
-            g_s += gross[k]; f_s += fee[k]; n_exec += 1
-            if net[k] > 0:
-                w += 1
-        if n_exec == 0:
-            continue
-        cand.append({"quantile": qq, "theta": round(thr, 4),
-                     "events_per_day": round(n_exec / days_train, 2),   # ＝執行後の件数/日（スロット整合）
-                     "avg_gross": round(g_s / n_exec, 4), "avg_fee": round(f_s / n_exec, 4),
-                     "be": round((g_s / n_exec) / (f_s / n_exec), 3) if f_s else float("nan"),
-                     "win_rate": round(w / n_exec, 3), "n_exec": int(n_exec)})
-    return cand
+    近似の限界＝スロット競合は同一 型×side 内のみ（型横断の競合は本走の乖離ログで観測＝acceptance F⑤）。
+    実装は _frontier_exec_v9 の cooldown_bars=None と同一（クールダウンなし＝cool_until が一度も立たない）＝委譲
+    （リファクタ 2026-07-12・挙動不変。is_sl 列は cooldown_bars=None では不使用＝False 埋めで供給）。"""
+    return _frontier_exec_v9(sub.assign(is_sl=False), oof, days_train, cooldown_bars=None)
 
 
 def _select_theta_per_type_side(cand: list) -> dict | None:
     """v8③: 型×side 別の θ 選定＝be≥BE_FLOOR（損益分岐の定義値）を満たす候補のうち執行後件数/日 最大。
     規則は v7 と同一＝変えたのは母数（型×side の執行後系列）だけ＝新閾値なし。無ければ None＝その型×side は執行しない
-    （side プールが片側赤字を覆い隠すのを止める＝採点窓 B節 LONG−$3 vs SHORT−$53 の非対称を計器に見せる）。"""
-    feas = [c_ for c_ in cand if np.isfinite(c_["be"]) and c_["be"] >= BE_FLOOR]
-    return max(feas, key=lambda c_: c_["events_per_day"]) if feas else None
+    （side プールが片側赤字を覆い隠すのを止める＝採点窓 B節 LONG−$3 vs SHORT−$53 の非対称を計器に見せる）。
+    実装は _select_theta_be_first と同一規則＝委譲（リファクタ 2026-07-12・挙動不変）。"""
+    return _select_theta_be_first(cand)
 
 
 def _fit_detector_per_type_v8(teach: pd.DataFrame, feat: pd.DataFrame, feat_cols: list,
@@ -1181,7 +1156,7 @@ def detector_gate(det: dict, feat: pd.DataFrame, df: pd.DataFrame) -> np.ndarray
 
 
 # ══ ⑤(戦略別の記録) 売買記録（funding/cap は共通土台・両側）══
-_MAKER_EXIT = ("TP_FILLED", "SL_FILLED", "EDGE_TP", "BE_EXIT", "PARTIAL_TP", "MFE_DRAWDOWN_CUT")   # score.py MAKER_EXIT_REASONS と一致（MFE_DRAWDOWN_CUT=v14 トレーリング指値 maker・2026-07-07）
+_MAKER_EXIT = ("TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP", "BE_EXIT", "PARTIAL_TP", "MFE_DRAWDOWN_CUT")   # score.py MAKER_EXIT_REASONS と完全同期（TRAIL_EXIT は e37 未使用だが将来 emit 時の taker 誤計上を防ぐため同期・2026-07-12／MFE_DRAWDOWN_CUT=v14 トレーリング指値 maker・2026-07-07）
 
 
 def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
@@ -1579,7 +1554,9 @@ def v11_entry_candidates(df: pd.DataFrame, v11_open_entry: bool = False, v12_ope
 
 def v14_exit_machine(lot, o_i, h_i, c_i, gc_i, params):
     """v14 Exit 状態機械 枝3/4/5'（TP2 の後・v13 shrink の前に判定・acceptance 2026-07-07）。
-    トリガ判定は前バーまでの含み益ピーク lot["pk_prev"]（同一バー楽観の排除＝H2）。
+    トリガ判定は前バーまでの含み益ピーク lot["pk_prev"]（判定バー自身の値動きを使わない＝同一バー楽観の排除＝H2）。
+    ⚠️ pk_prev の初期値は fill バーの安値（約定前のバー内値動きを含む近似・バー内順序は不可知）＝
+    「fill バー直後は建値＝進捗0」ではない（旧 docstring の記述誤り・2026-07-12 是正・挙動は従来どおり不変）。
     戻り: (exit_reason, exit_px) または None。パラメータは玉のタイプ (add数, tp1_done) 別（V9 の型別条件の E37 版）。
     枝3 MFE_DRAWDOWN_CUT＝ピーク基準トレーリング buy trigger+limit（maker・下限=建値フロア＝損ゼロ以上・⑦）
     枝4 BE_EXIT＝建値フロアに buy trigger+limit（maker・利益消失の事実で損ゼロ級撤退）
@@ -1588,7 +1565,7 @@ def v14_exit_machine(lot, o_i, h_i, c_i, gc_i, params):
     den = lot["avg"] - lot["tp2"]
     if den <= 0:
         return None                                    # 防御（tp_ge_sl_check_v11 が原則排除済み）
-    pk = lot.get("pk_prev", lot["avg"])                # 前バーまでのピーク価格（SHORT＝低いほど利益・fill バー直後は建値=進捗0）
+    pk = lot.get("pk_prev", lot["avg"])                # 前バーまでのピーク価格（SHORT＝低いほど利益・初期値=fill バー安値＝約定前のバー内値動きを含む近似）
     peak_prog = (lot["avg"] - pk) / den
     typ = (min(int(lot["add_count"]), 2), bool(lot["tp1_done"]))
     if "cell" in lot:                                  # v15: 場面セル（LightGBM 木の leaf）×玉タイプでキー（acceptance 2026-07-07）
@@ -2700,22 +2677,26 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     if v11:
         # ── §0 は実行時フラグ・v15p 実値から自動導出（手書き固定文字列を廃す・ズレ根絶・2026-07-12）──
         s15 = v15_sel or {}
+        _prov = s15.get("prov") or {}                  # 値ごとの出所タグ（v18 定数継承構成が設定・無ければ従来表示＝恒等・2026-07-12）
         _edge = "帯の上端 res_hi（本当のレジスタンス）" if v19_upper_touch else "帯の下端 res_lo"
         _conf = ("なし＝到達だけ（--v12-open-range で拒否確認を外す）" if v12_open_range
                  else ("陰転 ∩ RSI9 下向き反転（過熱の必須化なし・--v11-open-entry）" if v11_open_entry
                        else "陰転 ∩ RSI9>70 からの下向き反転（到達＋拒否確認）"))
-        _sl_eff = (f"ゾーン上端 res_hi ＋ {s15['sl_far']}×W＝深い災害SL（遠い・v15 経路が有効な時の実効SL）〔学習窓選定/定数継承〕"
+        _sl_eff = (f"ゾーン上端 res_hi ＋ {s15['sl_far']}×W＝深い災害SL（遠い・v15 経路が有効な時の実効SL）〔{_prov.get('sl_far', '学習窓選定/定数継承')}〕"
                    if "sl_far" in s15 else f"res_hi×(1+{V11_SL_BUF*100:.2f}%)＝ゾーンのすぐ外（浅い）〔固定値〕")
         # 出口の状態機械：実際に有効（値が非空）な枝だけを実値で出す（使っていない枝は表示しない・まこさん 2026-07-12）
         _stats = s15.get("_stats", {})
         _fire = lambda k: (f"・発火{_stats[k]}" if _stats.get(k) else "")
-        _tp2 = (f"サポートゾーン上端×(1+{V11_SL_BUF*100:.2f}%)＝反対側ゾーンのすぐ手前で残り全部〔幾何a-priori・v18〕{_fire('tp2_far_applied')}"
+        _tp2 = (f"サポートゾーン上端×(1+{V11_SL_BUF*100:.2f}%)＝反対側ゾーンのすぐ手前で残り全部〔幾何a-priori・v18〕"
+                + (f"・発火{_stats['tp2_far_applied']}（発注試行ベース＝約定数ではない）" if _stats.get("tp2_far_applied") else "")
                 if s15.get("tp2_far") else "レンジ中央（(上限ゾーン下端+下限ゾーン上端)/2）で残り全部〔幾何a-priori〕")
         _mech = {}   # 有効な枝だけ（値が非空のもの）を実値で
         if s15.get("dd"):
-            _mech["ピーク反転 dd MFE_DRAWDOWN_CUT(maker)"] = f"(p_arm,r)×(セル,add,tp1)={s15['dd']}{_fire('MFE_DRAWDOWN_CUT')}〔学習窓選定/定数継承〕"
+            _mech["ピーク反転 dd MFE_DRAWDOWN_CUT(maker)"] = f"(p_arm,r)×(セル,add,tp1)={s15['dd']}{_fire('MFE_DRAWDOWN_CUT')}〔{_prov.get('dd', '学習窓選定/定数継承')}〕"
         if s15.get("down_map"):
-            _mech["含み損 TIME 前倒し down_map(taker)"] = f"(セル,add,tp1)→短縮率={s15['down_map']}{_fire('down_time')}〔学習窓選定/定数継承〕"
+            _mech["含み損 TIME 前倒し down_map(taker)"] = f"(セル,add,tp1)→短縮率={s15['down_map']}{_fire('down_time')}〔{_prov.get('down_map', '学習窓選定/定数継承')}〕"
+        elif s15.get("down") is not None:              # グローバル down フォールバック（実エンジン 1920-1925 と同経路・表示欠落の是正 2026-07-12）
+            _mech["含み損 TIME 前倒し down(taker・全lot一律)"] = f"短縮率={s15['down']}{_fire('down_time')}〔{_prov.get('down', '学習窓選定')}〕"
         if s15.get("break_bars"):
             _mech["レンジ破れ RANGE_BREAK_EXIT(taker)"] = f"ゾーン外終値{s15['break_bars']}本(1h)持続 ∩ 出来高>{V15_BREAK_VOL_N}期間平均{_fire('RANGE_BREAK_EXIT')}〔KB§5〕"
         if s15.get("ret") or s15.get("be_time"):
@@ -2754,7 +2735,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
                 "TP2 利確 TP_FILLED(maker指値)": _tp2,
                 "SL SL_FILLED(maker指値)": _sl_eff,
                 "R:R の物理条件 tp_ge_sl_check_v11": "TP2幅 ≥ SL幅 ∩ TP1幅 ≥ 手数料床 でなければ建てない（逆R:R の禁止＝KB §1）",
-                "時間切れ TIME_EXIT(成行taker)": f"lot の初回entryから {s15.get('tmax', T_MAX)}本 = {s15.get('tmax', T_MAX)*5}分（短保有＝分単位・lot ごと）〔{'学習窓選定/継承' if 'tmax' in s15 else '固定値'}〕",
+                "時間切れ TIME_EXIT(成行taker)": f"lot の初回entryから {s15.get('tmax', T_MAX)}本 = {s15.get('tmax', T_MAX)*5}分（短保有＝分単位・lot ごと）〔{_prov.get('tmax', '学習窓選定/継承') if 'tmax' in s15 else '固定値'}〕",
                 **({"deadline shrink v13 TP_FILLED(maker指値)": (
                     f"TP2 と TIME backstop の間に縮む maker TP を置く＝残り時間比 r=(T_MAX−経過本)/T_MAX（fill時 r=1＝tp2 通常／deadline で r→0）で "
                     f"tp_shrunk=tp2+(建値フロア−tp2)×(1−r)・建値フロア=avg×(1−{SCALP_FLOOR*100:.2f}%)（損ゼロ maker・手数料床を割らない）。"
@@ -3073,6 +3054,18 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             v15p = {k: (dict(v) if isinstance(v, dict) else v) for k, v in base18.items()}
             v15p.update({"cell_fn": cell_fn18, "dd": dict(V18_FIXED_FROM_V17["dd"]),
                          "down_map": dict(V18_FIXED_FROM_V17["down_map"]), "tp2_far": True})
+            # R1 継承キー照合 v18_cell_inherit_check（acceptance 2026-07-12）＝再fitセル集合に継承セルが無ければ停止。
+            # LightGBM は環境（版/ビルド/システム）跨ぎの同一結果を保証しない（公式 Parameters・issue #6683）＝
+            # 別環境の再走で継承キーが別セル/不在になる静かな誤適用を、実行時の存在照合で物理検出する。
+            v18_cell_inherit_check = sorted({k_[0] for k_ in list(v15p["dd"]) + list(v15p["down_map"])})
+            _miss18 = [c_ for c_ in v18_cell_inherit_check if not (0 <= int(c_) < int(ncell18))]
+            _ok18 = "✅" if not _miss18 else "⛔ 欠落 " + str(_miss18)
+            print(f"  [v18 継承キー照合 v18_cell_inherit_check] 継承セル {v18_cell_inherit_check} ⊆ 再fitセル 0〜{ncell18 - 1}: {_ok18}")
+            if _miss18:
+                print("  ⛔ 場面セル木の再fitに継承セルが無い＝V18_FIXED_FROM_V17 が不発/誤適用（環境差の疑い）＝停止（採点に進めない）")
+                raise SystemExit(1)
+            v15p["prov"] = {"sl_far": "骨格a-priori（v18 選定0回）", "tmax": "骨格a-priori（v18 選定0回）",
+                            "dd": "v17_031 定数継承", "down_map": "v17_031 定数継承"}   # §0 出所タグの実出所（表示のみ・2026-07-12）
             print(f"  [v18 構成] v17_031 採択2本を定数継承（V18_FIXED_FROM_V17・選定0回）dd={v15p['dd']} down_map={v15p['down_map']}")
             print(f"  [v18 レバー] TP2＝サポートゾーン上端×(1+{V11_SL_BUF}) ＝反対側ゾーンのすぐ手前（従来=レンジ中央・TP1/守り枝/入口 不変・幾何防御=非有限/中央超えは中央へフォールバック）")
         trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker, v14_params=v14p, v15_params=v15p, v19_upper_touch=v19_upper_touch)
@@ -3242,7 +3235,11 @@ def _diagnostic(df, v6=False, v6r=False, v7=False, v8=False, v10=False, v11=Fals
         print("=" * 100)
         print(f"[E37 v11 発火ファネル診断・採点しない] {n:,}本 / {days:.0f}日")
         print(f"  range_ok_v11 通過率  : {ok.mean()*100:.1f}%（1h S/Rゾーン スイング≥{V11_ZONE_TOUCH}・幅≥{V11_ZONE_MIN_W*100:.1f}% ∩ 5分ブレイクなし・v10 実績 53.1% と比較）")
-        print(f"  入口候補（到達＋拒否確認）: {int(cand.sum()):,} 本（{cand.sum()/days:.2f}/日）")
+        _lbl = ("到達のみ（確認なし v12）" if v12_open_range
+                else ("到達＋拒否確認（過熱必須なし）" if v11_open_entry else "到達＋拒否確認"))
+        if v19_upper_touch:
+            _lbl += "・上端 res_hi 到達"                # 実フラグから分岐（run_e37 と同一の表示規則・誤ラベル是正 2026-07-12）
+        print(f"  入口候補（{_lbl}）: {int(cand.sum()):,} 本（{cand.sum()/days:.2f}/日）")
         if cand.sum():
             adx_c = adx[cand]
             fin = np.isfinite(adx_c)
