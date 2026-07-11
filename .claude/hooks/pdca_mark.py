@@ -62,8 +62,8 @@ if tn == "Bash":
         if "--diagnostic" in cmd:
             # 診断（採点しない）→ PDCA 連鎖を一切要求しない（2026-06-13）。次の通常実験で解除。
             touch(diagnostic_active)
-        elif "--smoke" in cmd or "--no-score" in cmd:
-            pass   # 採点しない検証ステップ
+        elif "--smoke" in cmd or "--no-score" in cmd or "selftest" in cmd:
+            pass   # 採点しない検証ステップ（--smoke/--no-score／self-test 系＝コマンドに "selftest" を含む: --param-schema-selftest・--v11-selftest-zones 等・2026-07-12 まこさん承認。self-test は売買記録を出さないので実験でない＝誤検知で need_score/exp_started が立つ穴を塞ぐ）
         else:
             rm(diagnostic_active)        # 通常実験＝診断状態を解除（採点を要求するラウンド）
             touch(need_score)
