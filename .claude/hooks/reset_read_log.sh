@@ -7,6 +7,7 @@ STATE_DIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 mkdir -p "$STATE_DIR"
 : > "$STATE_DIR/read_log.txt"
 rm -f "$STATE_DIR/budget_rule_shown"   # 予算バナーを新セッションで1回出すため（show_budget_before_design.sh・2026-06-20）
+rm -f "$STATE_DIR/banned_words_checked" # 禁止語チェックの事前実行を新セッションで1回強制（require_banned_words_check.sh・2026-07-11 まこさん指示）
 rm -f "$STATE_DIR/analysis_block.md"   # 分析ブロックを新セッションでリセット（前セッションの分析を持ち越さない＝require_analysis_before_proposal.sh・2026-06-24）
 rm -f "$STATE_DIR/improvement_plan.md" # 改善案生成(STEP1〜5)を新セッションでリセット（probe前ゲートA＋提案ゲートB＝require_probe_naming/require_analysis_before_proposal・2026-06-28）
 # 目標逆算ゲート（ゲート2）リセット: 前セッションの逆算ブロックは引き継がないが、

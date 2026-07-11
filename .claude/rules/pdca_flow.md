@@ -18,7 +18,7 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-## 1. hook 一覧（29本・登録は settings.local.json）
+## 1. hook 一覧（31本・登録は settings.json）
 
 | hook | タイミング | matcher | 役割 |
 |---|---|---|---|
@@ -33,6 +33,8 @@
 | track_search_fetch / update_websearch_marker | PostToolUse | WebSearch/WebFetch | search_log・marker 記録 |
 | require_spec_read_before_design | PreToolUse | Write/Edit | 設計書を書く瞬間に cat_requirements/exchange_spec を Read 強制 |
 | show_budget_before_design | PreToolUse | Write/Edit | 設計/改善案（acceptance.md / *_design.md）を書く瞬間に「予算0.12は全採用戦略の共有枠」＋採用台帳を1セッション1回表示（exit2 で1回ブロック→再実行で通す・SessionStart 表示は効果ないため提案の瞬間に出す・2026-06-20・marker は reset_read_log が消す） |
+| require_banned_words_check | PreToolUse | Write/Edit | **禁止語チェックの事前実行を物理強制（2026-07-11 まこさん指示「acceptance 等を書く前に list_banned_words.py を通すことを強制化」・番人5/5 pass）**＝5文書（ledger/next_step/acceptance/improvement_plan/analysis_block）を書く前に、そのセッションで list_banned_words.py（各 hook から必須見出し＋禁止語を live 抽出する read-only ツール）を1回実行していなければブロック。背景＝書いてから禁止語/必須見出し hook にブロックされ直す手戻り（2026-07-05 20回・2026-07-11 も複数回）を、書く前の1回で防ぐ。marker（state/banned_words_checked）は track_banned_words_check が touch・reset_read_log が消す（show_budget と同型の1セッション1回方式） |
+| track_banned_words_check | PostToolUse | Bash | list_banned_words.py の実行を検知して marker を touch（require_banned_words_check と対・update_websearch_marker と同型の記録係） |
 | require_instrument_read_before_impl | PreToolUse | Write/Edit | 実装を書く前に eval_engine（計器）を Read 強制 |
 | doc_map_guard | PreToolUse | Write/Edit | ledger/設計書に経緯・失敗の語を書くのをブロック（置き場所違反） |
 | forbid_fixed_value_tuning | PreToolUse | Write/Edit | 固定値スイープ（採点窓で最良値選定）をブロック（L-267） |

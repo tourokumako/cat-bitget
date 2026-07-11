@@ -68,6 +68,15 @@
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/record_read.sh"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/track_banned_words_check.sh"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -198,6 +207,15 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/remind_doc_readability.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_banned_words_check.sh"
           }
         ]
       }
