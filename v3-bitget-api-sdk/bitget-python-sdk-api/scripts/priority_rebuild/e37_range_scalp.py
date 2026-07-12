@@ -52,6 +52,16 @@
   TREND_CONT（登録済み taker）で即クローズ＋新規/add 停止（risk-manager 型・score.py 無変更 H13）。
   Exit/サイズ/add は v18 構成を定数継承（選定0回）。番人メタ確認＝--v20-guard-check。
 
+★v21（--v21-set・acceptance「E37 v21 入口の反転確認（armed DC）＋uptrend畳み分岐（Entry×Exitセット）」承認 2026-07-12・既定 OFF=v20 恒等）:
+  v20 の最大出血＝uptrend 発火時の taker 即クローズ（対照=枝OFF が学習窓 +$2,106 良い＝最悪点確定）と、その供給源＝
+  確認なしの到達即エントリー（TREND_CONT lot の 61% が保有60分以内・N10 stoch_k が唯一の両窓再現✓）を両側から塞ぐ:
+  ① v21_armed_dc_entry＝到達で武装（arm_ttl・range 消滅/uptrend で解除）し stoch(9,3) デッドクロス発生バーで建てる
+     （タイミングシフト・RSI9 帯/武装期限/セル別要否は学習窓の層化合意 v21_band_consensus で選定・件数床=incumbent×V21_FREQ_KEEP）。
+  ② v21_uptrend_fold＝uptrend 発火時の保有畳みを（発火時セル×含み損深さ）別に分岐＝fold（deadline shrink を期限へ前倒し
+     ＝建値側へ縮む maker 逃げ・期限到達で TREND_CONT taker）／キー不在=即 taker（v20 と同じ・切迫側）。
+  新 exit_reason なし（TP_FILLED/TREND_CONT 再利用・score.py 無変更 H13）。対照＝--v21-entry-only／--v21-fold-only。
+  番人メタ確認＝--v21-guard-check（DC 全 False で入口0／fold 全 taker で v20 恒等 hash／labels 改ざん停止）。
+
 H 制約（acceptance.md §E）:
   H1 cap … 両側各1玉（LONG 0.024 + SHORT 0.024 = 最大 0.048 ≤ 0.12）＋_verify_cap 実測 assert。
   H2 leak … 特徴量=Phase 0 leak 検証済 parquet のイベントバー行（因果）。検出器 fit は学習窓のみ
@@ -175,6 +185,19 @@ V18_FIXED_FROM_V17 = {
     "down_map": {(2, 2, True): 0.75},                   # v17_031 採択1: TIME 含み損前倒し（cell2・add2・TP1済み・V16_DOWN_CELL の候補値）
     "dd": {(4, 2, True): V14_BRANCH_PARAMS["dd"][1]},   # v17_031 採択2: ピーク反転 (0.50, 1/3)（cell4・add2・TP1済み・V14 候補メニューの参照）
 }
+
+# ── v21 入口の反転確認（armed DC）＋uptrend 畳み分岐（acceptance 2026-07-12 承認・LEVER＝Entry×Exit セット・既定 OFF=v20 恒等）──
+# 候補は全て fixed-value-approved の離散メニュー＝学習窓の場面セル×purged 3分割 OOF＋ATR%帯層化合意が選ぶ（採点窓スイープでない L-267）。
+# RSI9 帯＝まこさん指定「だいたい50以上」の近傍格子（どれを使うか・使わないかは学習窓選定）。時間格子＝既存 shrink/TIME の尺度（30/60/120分）。
+V21_RSI_LO = (None, 45.0, 50.0, 55.0)   # fixed-value-approved 確認の RSI9 下限（None=RSI 条件なし＝DC のみ）
+V21_ARM_TTL = (6, 12, 24)               # fixed-value-approved 到達→武装の有効本数（30/60/120分・range 消滅・uptrend で即解除）
+V21_FOLD_M = (6, 12, 24)                # fixed-value-approved uptrend 発火後 maker 逃げの期限（本数・期限到達で TREND_CONT taker）
+V21_FOLD_DEEP_W = 0.5                   # 発火時含み損の深い/浅いの境界（W 比の半分＝レンジ幾何 a-priori・畳み分岐キーの次元・スイープしない）
+V21_FREQ_KEEP = 2.0 / 3.0               # 選定の件数床＝incumbent（v21 OFF）の学習窓 新規/日 に対する保持率（「エントリー数は極力減らさない」の運用定義）。
+                                        # ⚠️初走 v21_035 の是正（2026-07-12）: 旧床は絶対値 4.33（v18 の採点窓実績）を学習窓の門に当てる窓取り違え＝
+                                        # incumbent（学習窓 3.88/日）すら通らず全49候補が構造的に不採択。実測＝armed DC のタイミングシフトは
+                                        # 学習窓新規 3.88→2.60/日（33%減）が下限＝保持率 2/3 は「DC のみ（RSI 帯なし＝件数最保全）」だけを通し
+                                        # RSI 帯つき（≤2.17/日＝44%減超）を落とす水準。採点窓の件数・採否は precheck→score.py が別途判定（H8）。
 
 # ── E37 v6 パラメータ（イベント母数拡大＋θ規則反転・--v6 で ON・既定 OFF=v5 恒等・出所は各行）──
 BE_FLOOR = 1.0               # v6 θ選定の be 床＝損益分岐の定義値（be=平均gross÷往復コスト の分岐点・数値探索でない）
@@ -1793,6 +1816,25 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         clu_base = float("nan"); clu_w = float("nan"); clu_cell = 0   # クラスタ基準（初回 entry・階段急騰を貫通して見る）
         last_exit_i = -10 ** 9
         v15_params["_stats"]["TREND_CONT"] = 0
+    v21e = v15_params.get("v21_entry") if v15 else None    # v21 入口の反転確認 armed DC（acceptance 2026-07-12・None=v20 恒等）
+    v21f = v15_params.get("v21_fold") if v15 else None     # v21 uptrend 畳み分岐（None=v20 恒等＝即 taker 1択）
+    dc21 = rsi9_21 = None
+    armed21 = -1                                       # v21_armed_dc_entry: 到達で武装（arm_ttl 本）・DC 発生バーで建てる（-1=非武装）
+    if v21e is not None:
+        assert v20_uptrend is not None, "v21 は v20（RG-v5）構成の上に載る（acceptance 2026-07-12）"
+        _cs21 = pd.Series(c); _ls21 = pd.Series(l); _hs21 = pd.Series(h)
+        _ll21 = _ls21.rolling(9).min(); _hh21 = _hs21.rolling(9).max()
+        _k21 = (100.0 * (_cs21 - _ll21) / (_hh21 - _ll21).replace(0, np.nan)).rolling(3).mean()
+        _d21 = _k21.rolling(3).mean()
+        dc21 = ((_k21.shift(1) >= _d21.shift(1)) & (_k21 < _d21)).fillna(False).to_numpy(bool)   # stoch(9,3) デッドクロス発生（v14 と同式・過去 rolling のみ＝H2）
+        if bool(v21e.get("_dc_force_off")):            # 番人専用の差し替え口（--v21-guard-check＝DC 全 False で v21 入口 0 の配線証明）
+            dc21[:] = False
+        rsi9_21 = df["rsi9"].to_numpy(float)
+        v15_params["_stats"].setdefault("v21_entry_fires", 0)
+    if v21f is not None:
+        v15_params["_stats"].setdefault("v21_fold_armed", 0)
+        v15_params["_stats"].setdefault("v21_fold_expire", 0)
+        v15_params["_stats"].setdefault("v21_fold_taker", 0)
     k9 = d9 = None
     if v14_params is not None:                         # v14 のみ: stoch(9,3)（枝5' 用・過去 rolling のみ＝leak-safe・OFF 経路では計算しない）
         tmax_l = int(v14_params.get("tmax", T_MAX))
@@ -1831,20 +1873,37 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                 pend = None
         if v20_uptrend is not None and v20_uptrend[i]:   # v20 regime exit（acceptance 2026-07-12）: RG-v5 の上げトレンド発火＝レンジ前提の終了
             pend = None                                    # 未約定の指値は取り下げ＝uptrend 中は新規/add を建てない（risk-manager 型）
+            armed21 = -1                                   # v21: uptrend 中は armed DC 入口も封鎖（v21e None 時は無害）
             if lots:
+                _keep20 = []
                 for lot in lots:
-                    _record(trades, lot, c[i], "TREND_CONT", i, ts)   # 登録済み taker 再利用＝新 exit_reason なし・score.py 無変更（H13）
+                    if v21f is not None and "fold_dl" in lot:
+                        _keep20.append(lot); continue      # v21_uptrend_fold: fold 継続中（発火継続バー）＝期限まで maker 逃げ続行
+                    _dec21 = None
+                    if v21f is not None and lot.get("w_px"):   # v21 畳み分岐（acceptance 2026-07-12）: 発火時の場面セル×含み損深さで fold/即taker（学習窓選定）
+                        _ci21f = int(cell_fn(kk[i], atr[i] / max(c[i], 1e-9) * 100.0, lot["W_entry"])) if cell_fn is not None else 0
+                        _deep21 = bool((c[i] - lot["avg"]) >= V21_FOLD_DEEP_W * float(lot["w_px"]))
+                        _dec21 = v21f.get((_ci21f, _deep21))
+                    if _dec21 is not None:                 # fold＝maker 逃げ（deadline shrink の前倒し・期限到達で TREND_CONT taker）
+                        lot["fold_dl"] = i + int(_dec21)
+                        v15_params["_stats"]["v21_fold_armed"] += 1
+                        _keep20.append(lot)
+                        continue
+                    _record(trades, lot, c[i], "TREND_CONT", i, ts)   # 即 taker（v21f None=v20 恒等／分岐=切迫側）・登録済み再利用＝score.py 無変更（H13）
                     if v15_params is not None:             # ⑨巻き込みの実測（uptrend クローズの発火先＝勝ち$/負け$内訳・acceptance F）
                         _st20 = v15_params["_stats"]
                         _st20["TREND_CONT_rg5"] = _st20.get("TREND_CONT_rg5", 0) + 1
                         _k20 = "TREND_CONT_rg5_win$" if trades[-1]["net_usd"] > 0 else "TREND_CONT_rg5_loss$"
                         _st20[_k20] = round(_st20.get(_k20, 0.0) + trades[-1]["net_usd"], 2)
-                lots = []
-                if v15:
+                        if v21f is not None:
+                            _st20["v21_fold_taker"] += 1
+                lots = _keep20
+                if not lots and v15:
                     rungs = []; rung_next = 0; brk_cnt = 0; brk_vol = False
-                if v16:
+                if not lots and v16:
                     last_exit_i = i
-            continue
+            if not lots:
+                continue                                   # 保有なし＝現行どおり（v21 fold 玉が残る時だけ下の Exit 判定へ進む＝SL/TP/shrink の maker 逃げが生きる）
         if v15 and lots and rung_next < len(rungs) and len(lots) < max_lots:
             rp = rungs[rung_next]                      # 逆走ラダーの約定（resting maker・1バー1段・レンジ判定が立っている時のみ・置いたバーの次以降）
             if ok_arr[i] and np.isfinite(rz_hi[i]) and np.isfinite(mid[i]) and h[i] >= rp \
@@ -1955,11 +2014,16 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                         if _ppg < _st[1]:
                             _tm = min(_tm, int(_st[2]))
                             v14_params["_stats"]["stall_early"] += 1
+                if "fold_dl" in lot:                   # v21_uptrend_fold: shrink の deadline を fold 期限へ前倒し（建値側へ速く縮む maker 逃げ・acceptance 2026-07-12）
+                    _tm = min(_tm, max(1, int(lot["fold_dl"]) - int(lot["first_idx"])))
                 r = max(0.0, (_tm - (i - lot["first_idx"])) / _tm)          # 残り時間比（fill時 r=1／deadline で r→0・a-priori 時間機構）
                 be_floor = lot["avg"] * (1.0 - SCALP_FLOOR)                 # 建値フロア＝手数料床（損ゼロ maker・手数料床を割る決済は建てない・⑦）
                 tp_shrunk = lot["tp2"] + (be_floor - lot["tp2"]) * (1.0 - r)   # r=1で tp2（通常）→ r=0で be_floor（建値側へ縮む・tp2≤tp_shrunk≤be_floor）
                 if l[i] <= tp_shrunk:                  # 縮む maker TP に到達＝maker 決済（TP_FILLED＝新 exit_reason なし・score.py 不変）
                     _record(trades, lot, tp_shrunk, "TP_FILLED", i, ts); continue
+            if "fold_dl" in lot and i >= int(lot["fold_dl"]):   # v21_uptrend_fold: 期限＝maker 逃げに当たらなかった玉は TREND_CONT で確定（taker・発火起因の計上維持・score.py 無変更）
+                v15_params["_stats"]["v21_fold_expire"] += 1
+                _record(trades, lot, c[i], "TREND_CONT", i, ts); continue
             _lt = tmax_scene_v16(lot, tmax_map, tmax_l) if v16 else tmax_l   # v16: backstop 長の場面連動（map 無し=global 恒等）
             _t_eff = _lt
             if v15 and c[i] > lot["avg"]:
@@ -1979,7 +2043,22 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
             last_exit_i = i                            # クラスタ連結 gap（V16_CLUSTER_GAP）の起点＝最後に position が空いた bar
         if v15 and not lots and (rungs or brk_cnt):
             rungs = []; rung_next = 0; brk_cnt = 0; brk_vol = False   # position 終了＝ラダー/破れカウンタ撤去
-        if pend is None and cand[i] and len(lots) < max_lots and not (v16 and i < cool_until):
+        _fire21 = cand[i]                              # 既定＝到達即（v21e None＝v20 恒等）
+        if v21e is not None:                           # v21_armed_dc_entry（acceptance 2026-07-12）: 到達で武装し stoch(9,3) DC 発生バーで建てる（タイミングシフト）
+            if not ok_arr[i]:
+                armed21 = -1                           # range 消滅＝武装解除（uptrend は上の v20 ブロックで解除済み）
+            elif cand[i]:
+                armed21 = int(v21e["arm_ttl"])         # 到達（再到達で更新＝同じ波の再武装）
+            elif armed21 >= 0:
+                armed21 -= 1                           # 期限減算（-1 で非武装）
+            _cok21 = True
+            if v21e.get("cells_off") and cell_fn is not None and np.isfinite(rz_lo[i]) and np.isfinite(sz_hi[i]):
+                _wc21 = (rz_lo[i] - sz_hi[i]) / max(c[i], 1e-9) * 100.0
+                _cok21 = int(cell_fn(kk[i], atr[i] / max(c[i], 1e-9) * 100.0, _wc21)) not in v21e["cells_off"]
+            if _cok21:                                 # 確認が有効なセル＝武装中 ∩ DC 発生 ∩ RSI9 帯（コンフルエンス AND・セル別要否は学習窓選定＝件数を残す）
+                _fire21 = bool(armed21 >= 0 and dc21[i]
+                               and (v21e["rsi_lo"] is None or (np.isfinite(rsi9_21[i]) and rsi9_21[i] >= float(v21e["rsi_lo"]))))
+        if pend is None and _fire21 and len(lots) < max_lots and not (v16 and i < cool_until):
             lim = c[i] * (1.0 + ENTRY_OFFSET)
             tp2_px = mid[i]
             tp1_px = (lim + tp2_px) / 2.0
@@ -2007,6 +2086,9 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                 pend = {"limit": lim, "placed_idx": i, "tp1": tp1_px, "tp2": tp2_px,
                         "sl": rz_hi[i] + float(v15_params["sl_far"]) * w_px,
                         "W_pct": w_px / c[i] * 100.0, "zone_top": rz_hi[i], "w_px": w_px, "size_mult": _sm}
+                if v21e is not None:
+                    armed21 = -1                       # 発注できた波は武装消費（1波1回・幾何不成立で置けなかった時は武装維持＝次の DC で再試行）
+                    v15_params["_stats"]["v21_entry_fires"] += 1
                 continue
             sl_px = rz_hi[i] * (1.0 + V11_SL_BUF)
             if not tp_ge_sl_check_v11(lim, tp1_px, tp2_px, sl_px, single_tp=single_tp):
@@ -2402,6 +2484,215 @@ def partial_tp_protect_v17(tr) -> tuple:
     「PARTIAL_TP を毀損しない候補だけ採択」の物差し（v16 で勝側 −$1,178 を壊した再演の防止）。"""
     ps = [float(r["net_usd"]) for r in tr if r["exit_reason"] == "PARTIAL_TP"]
     return len(ps), float(sum(ps))
+
+
+def v21_band_consensus(v, segs, bands, pavg, freq, best_net, best_segs, best_bands, best_pavg, freq_floor, check_pavg: bool = True) -> tuple:
+    """v21 層化合意（acceptance 2026-07-12）＝v17_band_consensus の v21 変種。
+    入口レバー（armed DC）は玉数そのものを動かすため、v17 の「PARTIAL_TP 玉数 非減」は構造的に満たせない＝
+    玉数の床は (v) 新規件数/日 ≥ freq_floor（＝incumbent の学習窓実測 × V21_FREQ_KEEP・scalp 役割）が守る。
+    (iv) PARTIAL 平均 $/件 非悪化は check_pavg=True（fold＝玉集合を動かさない候補）のみ適用＝
+    ⚠️v21_036 の是正（gate_diag 実測 2026-07-12）: 入口候補は建値が反落側へシフトする幾何的帰結で PARTIAL 平均が
+    数セント微減し（$0.663→$0.606）、+$2,428 の改善がこの条件だけで全滅した＝玉集合を動かす entry 候補には論理的に
+    適用不能（v17 の門は玉集合固定が前提）。他は v17 と同一: (i) OOF 合計純増 ∩ 時間3fold の 2/3 改善
+    (ii) 低ボラ2帯（atr_pct<0.2）合算の純増 (iii) 各帯 非悪化。戻り: (採択, fold改善数, 低ボラΔ, 不採択理由)。"""
+    wins = sum(1 for a_, b_ in zip(segs, best_segs) if a_ > b_)
+    low_v = float(sum(bands[:V17_LOWVOL_BANDS]))
+    low_b = float(sum(best_bands[:V17_LOWVOL_BANDS]))
+    why = []
+    if not (v > best_net + 1e-9):
+        why.append("i:合計")
+    if wins < 2:
+        why.append("i:fold")
+    if not (low_v > low_b + 1e-9):
+        why.append("ii:低ボラ")
+    if not all(bv >= bb_ - 1e-9 for bv, bb_ in zip(bands, best_bands)):
+        why.append("iii:帯悪化")
+    if check_pavg and not (pavg >= best_pavg - 1e-9):
+        why.append("iv:PARTIAL平均")
+    if not (freq >= freq_floor):
+        why.append("v:件数床")
+    return (not why), wins, low_v - low_b, ",".join(why)
+
+
+def _select_v21_params(df, box_tf, v15p_base, ncell, up_arr, entry_on=True, fold_on=True,
+                       no_add=False, single_tp=False, v11_open_entry=False, v12_open_range=False):
+    """v21 の学習窓選定（acceptance 2026-07-12・採点窓不参照 L-267）。v18 基盤（v15p_base＝V18_FIXED_FROM_V17 継承・
+    cell_fn fit 済み）の上で、① v21_armed_dc_entry の確認メニュー（RSI9 帯 × 武装期限）を global greedy →
+    セル別 要否（cells_off＝確認が効かないセルは到達即へ戻す＝件数を残す）② v21_uptrend_fold の畳み分岐
+    （(発火時セル, 深い/浅い) → M∈V21_FOLD_M or 即taker）を greedy。採択＝v21_band_consensus。
+    戻り: (v21_entry|None, v21_fold|None, rows_log, inc[dict], fin[dict], nrun)"""
+    dtr = df[df["ts"] < TRAIN_END].reset_index(drop=True)
+    up = np.asarray(up_arr, bool)[: len(dtr)]
+    days = max((dtr["ts"].iloc[-1] - dtr["ts"].iloc[0]).total_seconds() / 86400.0, 1.0)
+    t0, t1 = dtr["ts"].iloc[0], dtr["ts"].iloc[-1]
+    span = (t1 - t0) / 3
+    emb = pd.Timedelta(days=1)
+    seg = [(t0, t0 + span - emb), (t0 + span, t0 + 2 * span - emb), (t0 + 2 * span, t1)]
+
+    def _seg_nets(tr):
+        return [float(sum(r["net_usd"] for r in tr if s0 <= pd.Timestamp(r["entry_time"]) <= s1)) for s0, s1 in seg]
+
+    def _clone_base():
+        p = {k: (dict(v) if isinstance(v, dict) else v) for k, v in v15p_base.items() if k != "cell_fn"}
+        p["cell_fn"] = v15p_base["cell_fn"]
+        return p
+
+    def _run(e21, f21):
+        p = _clone_base()
+        if e21 is not None:
+            p["v21_entry"] = dict(e21)
+        if f21 is not None:
+            p["v21_fold"] = dict(f21)
+        tr = run_continuous_v11(dtr, box_tf, no_add=no_add, single_tp=single_tp, v11_open_entry=v11_open_entry,
+                                v12_open_range=v12_open_range, v13_time_maker=True, v14_params=None,
+                                v15_params=p, v20_uptrend=up)
+        net = float(sum(r["net_usd"] for r in tr))
+        pnl = [float(r["net_usd"]) for r in tr if r["exit_reason"] == "PARTIAL_TP"]
+        pavg = (sum(pnl) / len(pnl)) if pnl else 0.0
+        freq = sum(1 for r in tr if int(r["add_count"]) == 1) / days
+        return tr, net, _seg_nets(tr), _v17_band_nets(tr), pavg, freq
+
+    cur_e, cur_f = None, None
+    _, best_net, best_segs, best_bands, best_pavg, freq0 = _run(None, None)
+    freq_floor = freq0 * V21_FREQ_KEEP                 # 件数床＝incumbent の学習窓実測 × 保持率（窓取り違えの是正・v21_035 初走の教訓）
+    inc = {"net": best_net, "pavg": best_pavg, "freq": freq0, "floor": freq_floor}
+    rows = [("incumbent(v21 OFF=v20)", "-", best_net, 0, 0.0, freq0, "")]
+    nrun = 1
+
+    def _try(br, label, e21, f21):
+        nonlocal cur_e, cur_f, best_net, best_segs, best_bands, best_pavg, nrun
+        _, v, segs, bands, pavg, freq = _run(e21, f21)
+        nrun += 1
+        ok, wins, lowd, why = v21_band_consensus(v, segs, bands, pavg, freq, best_net, best_segs, best_bands, best_pavg,
+                                                 freq_floor, check_pavg=br.startswith("fold"))
+        rows.append((br, label, v, wins, lowd, freq, "採択" if ok else why))
+        if ok:
+            cur_e, cur_f = e21, f21
+            best_net, best_segs, best_bands, best_pavg = v, segs, bands, pavg
+        if nrun % 10 == 0:
+            print(f"    …v21 選定進行 {nrun} 回（現 best ${best_net:,.0f}・新規 {freq:.2f}件/日）", flush=True)
+
+    if entry_on:                                       # ① 入口確認 global（RSI9 帯 × 武装期限＝コンフルエンスのメニュー）
+        for rsi in V21_RSI_LO:
+            for ttl in V21_ARM_TTL:
+                _try("entry", f"rsi{'--' if rsi is None else int(rsi)}/ttl{ttl}",
+                     {"rsi_lo": rsi, "arm_ttl": ttl, "cells_off": ()}, cur_f)
+        if cur_e is not None:                          # ② セル別 要否（確認が効かないセルは到達即＝件数を残す・学習窓選定）
+            for cellk in range(int(ncell)):
+                e21 = dict(cur_e)
+                e21["cells_off"] = tuple(sorted(set(e21.get("cells_off", ())) | {cellk}))
+                _try("entry_cell", f"cell{cellk}=確認off", e21, cur_f)
+    if fold_on:                                        # ③ uptrend 畳み分岐（発火時セル×深さ → fold M or 即taker）
+        for cellk in range(int(ncell)):
+            for deep in (False, True):
+                key = (cellk, deep)
+                for m in V21_FOLD_M:
+                    f21 = dict(cur_f) if cur_f else {}
+                    if f21.get(key) == m:
+                        continue
+                    f21[key] = m
+                    _try("fold", f"cell{cellk}/{'深' if deep else '浅'}/M{m}", cur_e, f21)
+    fin = {"net": best_net, "pavg": best_pavg}
+    # ★学習スペック（学習内容・学習方法・合格判定条件を §0 が自動描画する構造化データ・まこさん 2026-07-12
+    #  「実装した学習内容・学習方法・合格判定の条件を Report §0 に詳細に自動生成」）。selected は本走で確定するので
+    #  run_e37 が cur_e/cur_f で埋める。今後の選定関数（v22+）は同じ形の _learning_spec を返す＝§0 は戦略非依存に描画。
+    _e_sel = cur_e or {}
+    _rsi_sel = "（入口確認は全候補が合格条件 or 件数床を満たさず不採択＝到達即のまま）" if cur_e is None else \
+               ("なし（RSI 条件なし＝DC のみ）" if _e_sel.get("rsi_lo") is None else f"≥{_e_sel['rsi_lo']}")
+    _ttl_sel = "（入口確認 不採択）" if cur_e is None else f"{_e_sel['arm_ttl']}本({_e_sel['arm_ttl']*5}分)"
+    _off_sel = "なし（全セルで確認 ON）" if not _e_sel.get("cells_off") else f"cell{sorted(_e_sel['cells_off'])} は確認off（到達即）"
+    _fold_sel = "（畳み分岐 不採択＝全 即taker＝v20 と同じ）" if not cur_f else str(cur_f)
+    spec = {
+        "targets": [
+            {"name": "入口 RSI9 買われすぎ下限（armed DC の確認）",
+             "menu": ["なし"] + [f"≥{x}" for x in V21_RSI_LO if x is not None], "selected": _rsi_sel,
+             "note": "SHORT の入口確認＝stoch(9,3) デッドクロス発生に AND する RSI9 水準（なし＝DC のみ）"},
+            {"name": "入口 武装期限 arm_ttl（到達→DC 待ちの有効本数）",
+             "menu": [f"{x}本({x*5}分)" for x in V21_ARM_TTL], "selected": _ttl_sel,
+             "note": "上端到達で武装し、この本数以内に DC が出れば建てる（range 消滅/uptrend で解除）"},
+            {"name": "入口 セル別 確認要否 cells_off",
+             "menu": [f"cell0〜{int(ncell)-1} を個別に確認off（到達即へ戻す）"], "selected": _off_sel,
+             "note": "確認が効かない場面セルは到達即に戻して件数を残す（学習窓が判定）"},
+            {"name": "出口 uptrend 畳み分岐 v21_uptrend_fold（発火時セル×含み損深さ→畳み方）",
+             "menu": [f"fold M∈{{{'/'.join(str(x) for x in V21_FOLD_M)}}}本(maker逃げ)", "即taker(キー不在)"], "selected": _fold_sel,
+             "note": f"含み損 ≥{V21_FOLD_DEEP_W}W を深い/浅いで分け、セルごとに maker 逃げ期限 or 即 taker を選ぶ"},
+        ],
+        "method": {
+            "場面セル": f"LightGBM 1本の木（entry 特徴 stoch_k/ATR%/box_W → net・num_leaves≤{V16_NUM_LEAVES}）の leaf で場面分割（データ駆動・手置きビンでない）",
+            "探索": "greedy＝①入口メニュー(RSI9×arm_ttl) global → ②セル別確認要否 → ③fold(セル×深さ)。1候補ずつ現 best と比較し合格条件を全て満たせば採択",
+            "検証(CV)": f"purged 時間3分割 OOF（embargo 1日）＋ATR%帯層化（帯境界 {V17_ATR_BAND_EDGES}）",
+            "データ窓": f"学習窓のみ（〜{TRAIN_END.date()} 未満・採点窓/封印は不参照＝L-267）",
+        },
+        "gate": [   # 合格判定条件（v21_band_consensus・実際に使った採択条件と閾値）
+            {"cond": "(i) 合計純増", "thr": "候補の学習窓 OOF net > 現 best net"},
+            {"cond": "(i) 時間3fold 改善", "thr": "purged 3区間のうち 2 区間以上で現 best を上回る"},
+            {"cond": "(ii) 低ボラ2帯 純増", "thr": f"atr_pct<0.2 の下位2帯合算 net > 現 best（帯境界 {V17_ATR_BAND_EDGES}）"},
+            {"cond": "(iii) 各帯 非悪化", "thr": "全 ATR% 帯で net >= 現 best（1帯も悪化させない）"},
+            {"cond": "(iv) PARTIAL_TP 平均 $/件 非悪化", "thr": "PARTIAL_TP の平均 net/件 >= 現 best（★fold 候補のみ適用＝入口候補は玉集合を動かすため論理的に適用不能・L-337）"},
+            {"cond": "(v) 件数床（scalp 役割）", "thr": f"新規建て玉/日 >= incumbent({freq0:.2f}) × {V21_FREQ_KEEP:.2f} = {freq_floor:.2f}（件数を減らして net を作らない・まこさん 2026-07-12「極力減らさない」）"},
+        ],
+    }
+    return cur_e, cur_f, rows, inc, fin, nrun, spec
+
+
+def _v21_guard_check(df: pd.DataFrame, box_tf: str) -> None:
+    """v21 番人メタ確認（--v21-guard-check・採点しない・--smoke 併用推奨）＝わざと壊して落ちるか（§2.9③）:
+    (a) DC 全 False 強制（_dc_force_off）＝v21 入口で trades 0（armed DC が配線支配）
+    (b) fold 全 taker（v21_fold={}＝分岐辞書は在るが全キー不在＝即 taker）＝v20 と trades 完全一致（恒等退行）
+    (c) labels 改ざん検出＝rg5_selftest_labels が改ざんコピーで停止（v20 番人 (c) と同じ検査の再確認）"""
+    import hashlib
+    import tempfile
+    df = _rsi9_v10(df)
+    df = _apply_rg5_to_5m(df)
+    df = _attach_v16_bb(df)
+    up = df["rg5_uptrend"].to_numpy(bool)
+    base18 = {"ladder": None, "sl_far": 1.0, "tmax": 48, "down": None, "ret": {}, "dd": {}, "cell_fn": None,
+              "v16": True, "v17": True, "guard": {}, "guard_all": None, "cooldown": V16_COOLDOWN[0], "be_time": {},
+              "tmax_map": {}, "down_map": {}, "tp1_f": {}, "tp2_f": {}, "size0": {},
+              "break_mode": None, "break_bars": V15_BREAK_BARS}
+
+    def _mk(extra=None):
+        p = {k: (dict(v) if isinstance(v, dict) else v) for k, v in base18.items()}
+        p.update({"dd": dict(V18_FIXED_FROM_V17["dd"]), "down_map": dict(V18_FIXED_FROM_V17["down_map"]), "tp2_far": True})
+        if extra:
+            p.update(extra)
+        return p
+
+    def _h(tr):
+        return hashlib.md5(pd.DataFrame(tr).to_csv(index=False).encode()).hexdigest()
+
+    print("=" * 100)
+    print("[v21 番人メタ確認] わざと壊して落ちるか（採点しない）")
+    # (a) DC 全 False → v21 入口は一度も発火しない＝trades 0
+    tra = run_continuous_v11(df, box_tf, v12_open_range=True, v13_time_maker=True,
+                             v15_params=_mk({"v21_entry": {"rsi_lo": None, "arm_ttl": 12, "cells_off": (), "_dc_force_off": True}}),
+                             v20_uptrend=up)
+    ok_a = len(tra) == 0
+    print(f"  [番人a DC全False強制] trades={len(tra)}（期待0）: {'✅ armed DC が入口を配線支配' if ok_a else '⛔ 配線不全（DC なしで建っている）'}")
+    # (b) fold 全 taker（空 dict）＝v20 恒等
+    tr0 = run_continuous_v11(df, box_tf, v12_open_range=True, v13_time_maker=True, v15_params=_mk(), v20_uptrend=up)
+    trb = run_continuous_v11(df, box_tf, v12_open_range=True, v13_time_maker=True,
+                             v15_params=_mk({"v21_fold": {}}), v20_uptrend=up)
+    ok_b = _h(tr0) == _h(trb)
+    print(f"  [番人b fold全taker] v20 {len(tr0)} lot vs v21_fold空 {len(trb)} lot / hash 一致: {'✅ 分岐の恒等退行を確認' if ok_b else '⛔ 恒等が崩れている'}")
+    # (c) labels 改ざん → selftest 停止（v20 番人 (c) と同一検査）
+    repo_root = pathlib.Path(__file__).resolve().parents[2]
+    tam = pd.read_csv(repo_root / "dashboard" / "regime_prototype" / "labels_rg-v5.csv")
+    tam["zone_ok"] = 1 - tam["zone_ok"].astype(int)
+    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False) as f:
+        tam.to_csv(f.name, index=False)
+        tam_path = pathlib.Path(f.name)
+    try:
+        rg5_selftest_labels(df, lab_path=tam_path)
+        ok_c = False
+    except AssertionError:
+        ok_c = True
+    finally:
+        tam_path.unlink(missing_ok=True)
+    print(f"  [番人c labels改ざん] selftest 停止: {'✅ 改ざんを検出して停止' if ok_c else '⛔ 素通り＝検査不全'}")
+    assert ok_a and ok_b and ok_c, "v21 番人メタ確認 不合格（配線/恒等/検査の不全）"
+    print("  [v21 番人] ✅ 3/3 pass（DC 配線支配・fold 恒等退行・改ざん検出）")
+    print("=" * 100)
 
 
 def v17_band_consensus(v, segs, bands, pn, pnet, best_net, best_segs, best_bands, best_pn, best_pnet) -> tuple:
@@ -2816,9 +3107,24 @@ def _param_schema_selftest() -> None:
     assert "res_hi" in sec_up[[k for k in sec_up if k.startswith("【入口】")][0]]["エントリー"], "v19 upper_touch を反映せず"
     sec20 = _param_sections(None, True, v11=True, v13_time_maker=True, v12_open_range=True, v15_sel=_s, v20_rg5=True)
     _e20 = sec20[[k for k in sec20 if k.startswith("【入口】")][0]]
-    assert any(str(k).startswith("レンジ判定 range_ok_rg5") for k in _e20) and "RG-v5" in _e20["レンジ判定 range_ok_rg5"], "v20 rg5 のレンジ判定表示を反映せず"
+    _rgk = [k for k in _e20 if str(k).startswith("レンジ判定 range_ok_rg5")]
+    assert _rgk and any("RG-v5" in str(_e20[k]) for k in _rgk), "v20 rg5 のレンジ判定表示を反映せず"
+    # v21 拡張: RG-v5 詳細＝実定数からの自動生成（帯対・5分判定・状態機械の発火/解除・接続）を平坦キーで1行ずつ（まこさん 2026-07-12）
+    for _need_rg in ("帯対", "発火", "解除", "5分 range"):
+        assert any(_need_rg in str(k) for k in _rgk), f"RG-v5 のレンジレジーム判定 詳細（{_need_rg}）が §0 に出ていない（まこさん 2026-07-12）"
     _x20 = sec20[[k for k in sec20 if k.startswith("【出口】")][0]]
     assert any("uptrend 即クローズ" in str(k) for k in _x20), "v20 の uptrend 即クローズ枝が §0 に出ていない"
+    # v21: 学習した実験（_learning_spec あり）は学習対象/方法/合格判定/選定結果が自動で載る（まこさん 2026-07-12）
+    _s21 = dict(_s); _s21["_learning_spec"] = {
+        "targets": [{"name": "test", "menu": ["a", "b"], "selected": "a", "note": "n"}],
+        "method": {"m": "x"}, "gate": [{"cond": "(t)", "thr": "y"}],
+        "result": {"n_tried": 2, "incumbent_net": -1.0, "final_net": -0.5, "incumbent_freq": 1.0, "freq_floor": 0.7,
+                   "selected": {"v21_entry": None, "v21_fold": None},
+                   "rows": [{"候補": "e:t", "net$": -1, "新規/日": 1.0, "採否": "採択"}]}}
+    _l21 = _param_sections(None, True, v11=True, v13_time_maker=True, v12_open_range=True, v15_sel=_s21, v20_rg5=True)
+    _lb = _l21[[k for k in _l21 if k.startswith("【学習方法")][0]]
+    for _need in ("★学習対象", "★学習方法", "★合格判定条件", "★選定結果"):
+        assert any(str(k).startswith(_need) for k in _lb), f"学習の自動ドキュメント（{_need}）が §0 に出ていない（まこさん 2026-07-12）"
     xb = _param_sections(None, True, v11=True)
     xb = xb[[k for k in xb if k.startswith("【出口】")][0]]
     assert "浅い" in xb[[k for k in xb if k.startswith("SL")][0]], "v15 なしで浅SLにならず"
@@ -2842,6 +3148,90 @@ def _param_schema_selftest() -> None:
             print(f"■ {blk}")
             for k, v in body.items():
                 print(f"    {k}: {v}")
+
+
+def _rg5_gate_desc() -> dict:
+    """§0 レンジ判定 range_ok_rg5 の詳細（まこさん 2026-07-12「レンジレジーム判定ロジックも詳細に記述」）＝
+    正本 build_regime_gate_rg.py（RG-v5）のモジュール定数を実行時に import して埋める＝手書きドリフトしない
+    （実際に走る判定と同じ定数・labels 一致 selftest と対）。"""
+    rg = _import_rg5()
+    z = rg.v17                                         # 帯の定数の正本（視認校正済み・RG が import 再利用）
+    return {
+        "正本・照合": ("build_regime_gate_rg.py（RG-v5）を import 再利用（コピー禁止）・labels_rg-v5.csv／predictions_rg-v5_5m と"
+                   "全期間一致を --v20-selftest-rg5 で機械照合・視認校正3巡（まこさん 2026-07-12 OK）・全て確定バーのみ＝未来値ゼロ（H2）〔視認校正〕"),
+        "①1h S/R 帯対（レンジの認識）": (
+            f"1時間足の確定 fractal スイング（j+2 確定＝当該足までで確定）を過去{z.ZONE_LOOKBACK}h（{z.ZONE_LOOKBACK//24}日）窓・"
+            f"価格帯{z.ZONE_TOL*100:.1f}%で束ね、タッチ数≥{z.ZONE_TOUCH}のクラスタ帯を価格に近い順に上下で対にし、"
+            f"帯間の幅≥{z.ZONE_MIN_W*100:.1f}%を満たす最初の対（上=レジスタンス帯 res_lo/res_hi・下=サポート帯 sup_lo/sup_hi）を採用"
+            "＝帯対拡張（最近接対が幅不足でも次の対を試す・RG-v3・12月/1月の不検出解消）"),
+        "②5分 range 判定（執行ゲート）": (
+            "①の帯対あり ∩ 5分 close が帯内（close>res_hi または close<sup_lo でブレイク＝離脱） ∩ ③uptrend 非発火 ＝ range"
+            "（range の時だけ入口候補を生成・帯価格を v11_res_lo/hi・v11_sup_hi・mid へ供給）"),
+        "③uptrend 状態機械・発火（いずれか1つ・上げ専用・過去 close の逐次更新）": (
+            f"A15: 15分足{rg.TREND_ST15_K}本連続の高値切り上げ∩安値切り上げ（上げ構造） ／ "
+            f"D15: 15分足{rg.TREND_MOM15_K}本連続の陽線 ∩ 累積上昇≥{rg.TREND_MOM15_AMP*100:.1f}% ／ "
+            f"C90: 直近90分（前回解除以降に限定＝影再発火の根絶）の最小 close から+{rg.TREND_T90*100:.1f}% ／ "
+            f"T6: 直近6h（同）の最小 close から+{rg.TREND_T6*100:.1f}%（遅い上げの受け皿）"),
+        "③uptrend 状態機械・継続再発火": (
+            f"解除後{rg.TREND_CONT_W}本（{rg.TREND_CONT_W*5//60}時間）以内に close>前回高値×(1+{rg.TREND_CONT_M*100:.1f}%)"
+            "＝上げ継続と確定し再発火（発火時安値は前回の脚から引き継ぐ＝緩やかな上げの断片化防止）"),
+        "③uptrend 状態機械・解除（いずれか1つ）": (
+            f"半値戻し: close≤最高値−{rg.TREND_RETR:.0%}×(最高値−発火時安値) ／ "
+            f"停滞: 高値更新なし{rg.TREND_STALL}本（{rg.TREND_STALL*5//60}時間） ／ "
+            f"15分構造破断: close<直近{rg.TREND_STRUCT_REL}本の確定15分足安値の最小（上げ構造の終了を速く検出）"),
+        "④エンジンへの接続": ("range=入口候補の生成を許可 ／ uptrend 発火中=新規・add 停止（pend 取り下げ）＋保有 lot は"
+                        "『uptrend 畳み分岐』（出口ブロック参照）＝レンジ前提の終了を機構で守る（risk-manager 型）"),
+    }
+
+
+def _render_learning_block(spec: dict) -> dict:
+    """★学習の自動ドキュメント化（まこさん 2026-07-12「実装した学習内容・学習方法・合格判定の条件を Report §0 に
+    詳細に自動生成」）＝選定関数が返す構造化 _learning_spec を §0 の【学習方法・学習内容】サブ項目へ描画する
+    戦略非依存の共通レンダラ。今後の選定（v22+）も同じ形の spec を v15p['_learning_spec'] に入れれば自動で載る。
+    spec = {targets:[{name,menu,selected?,note}], method:{...}, gate:[{cond,thr}], result:{...}}"""
+    out = {}
+    res = spec.get("result", {})
+    sel = res.get("selected", {})
+    # ① 学習対象（何を学習したか＝候補メニュー→選定値）※report 表示は2階層まで＝プレフィックス付き平坦キー
+    for t in spec.get("targets", []):
+        menu = " / ".join(str(x) for x in t.get("menu", []))
+        selected = t.get("selected", "（本走で確定）")
+        line = f"候補メニュー{{{menu}}} → 学習窓選定＝{selected}"
+        if t.get("note"):
+            line += f"（{t['note']}）"
+        out[f"★学習対象: {t['name']}"] = line
+    # ② 学習方法（どう学習したか）
+    for k, v in spec.get("method", {}).items():
+        out[f"★学習方法: {k}"] = v
+    # ③ 合格判定条件（採択ゲートと閾値＝どれを満たせば採用か）
+    for g in spec.get("gate", []):
+        out[f"★合格判定条件 {g['cond']}"] = g["thr"]
+    # ④ 選定結果（試行数・incumbent→最終・採択値・全候補行を §0 に丸ごと＝学習内容の証跡）
+    if res:
+        out["★選定結果: 試行数"] = f"{res.get('n_tried', '?')} 候補（学習窓のみ・採点窓不参照）"
+        out["★選定結果: incumbent→最終 net"] = (f"${res.get('incumbent_net', 0):,.0f}（新規 {res.get('incumbent_freq', 0)}/日・"
+                                            f"件数床 {res.get('freq_floor', 0)}/日）→ ${res.get('final_net', 0):,.0f}")
+        out["★選定結果: 採択値"] = f"入口={sel.get('v21_entry')} / 出口fold={sel.get('v21_fold')}"
+        for i, rw in enumerate(res.get("rows", []), 1):   # 全候補を1行ずつ（net/新規per日/採否 or 不採択理由）＝手書き不能・実測から自動
+            out[f"★選定結果: 候補{i:02d} {rw['候補']}"] = f"学習窓 net ${rw['net$']:,.0f} / 新規 {rw['新規/日']}/日 / {rw['採否']}"
+    return out
+
+
+def _v21_entry_desc(e21, edge: str, conf: str, stats: dict) -> str:
+    """§0 エントリー行（v21_armed_dc_entry の実値表示・acceptance 2026-07-12・None=v20 表示）。
+    ★学習対象パラメータ（RSI9 帯・武装期限）は「候補メニュー→選定値」の形で明示する（まこさん 2026-07-12
+    「RSI の学習内容が Report に書いてない」＝学習させた閾値の選定過程を §0 に残す・選定表全行は
+    <stem>_v21_selection.txt に保存＝gate_diag と対）。"""
+    if not e21:
+        return f"上限ゾーンの{edge} に high 到達 ∩ 拒否確認={conf}"
+    _rsi_menu = "/".join("なし" if x is None else str(x) for x in V21_RSI_LO)
+    rsi_sel = "なし（RSI 条件なし）" if e21.get("rsi_lo") is None else f"≥{e21['rsi_lo']}"
+    _ttl_menu = "/".join(str(x) for x in V21_ARM_TTL)
+    off_txt = f"・確認offセル={sorted(e21['cells_off'])}（このセルは到達即＝確認なし）" if e21.get("cells_off") else ""
+    return (f"上限ゾーンの{edge} に high 到達で武装（武装期限 arm_ttl＝学習メニュー{{{_ttl_menu}}}本から選定＝{e21['arm_ttl']}本・"
+            f"range 消滅/uptrend で解除）→ stoch(9,3) デッドクロス発生バーで建てる（v21_armed_dc_entry）"
+            f"∩ RSI9 買われすぎ下限＝学習メニュー{{{_rsi_menu}}}から学習窓選定＝{rsi_sel}"
+            f"{off_txt}・発火{stats.get('v21_entry_fires', 0)}〔学習窓選定・学習の詳細/全候補は下の【学習方法・学習内容】〕")
 
 
 def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False, v8: bool = False, v9: bool = False, v10: bool = False, v11: bool = False, v11_no_add: bool = False, v11_single_tp: bool = False, v13_time_maker: bool = False, v14_sel: dict | None = None, v15_sel: dict | None = None, v11_open_entry: bool = False, v12_open_range: bool = False, v19_upper_touch: bool = False, v20_rg5: bool = False) -> dict:
@@ -2881,11 +3271,21 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
         if s15.get("size0"):
             _mech["新規 size 配分 size0"] = f"={s15['size0']}〔学習窓選定〕"
         if v20_rg5:                                    # v20 regime exit（acceptance 2026-07-12）＝実フラグから自動生成
-            _mech["uptrend 即クローズ TREND_CONT(taker)"] = (
-                f"RG-v5 上げトレンド状態機械の発火で全 lot 即クローズ＋新規/add 停止（レンジ前提の終了・risk-manager 型）"
-                f"{_fire('TREND_CONT_rg5')}"
-                + (f"・内訳 勝ち玉 ${_stats.get('TREND_CONT_rg5_win$', 0)} / 負け玉 ${_stats.get('TREND_CONT_rg5_loss$', 0)}（⑨巻き込みの実測）"
-                   if _stats.get("TREND_CONT_rg5") else "") + "〔視認校正〕")
+            _f21 = s15.get("v21_fold")
+            if _f21:                                   # v21_uptrend_fold（acceptance 2026-07-12）: 即 taker 1択から場面分岐へ
+                _mech["uptrend 畳み分岐 v21_uptrend_fold(maker逃げ/taker)"] = (
+                    f"RG-v5 上げトレンド発火＝新規/add 停止＋保有 lot を(発火時セル,含み損≥{V21_FOLD_DEEP_W}W)別に分岐："
+                    f"fold=(deadline shrink を期限へ前倒し＝建値側へ縮む maker 逃げ・期限到達で TREND_CONT taker)／キー不在=即 taker。"
+                    f"分岐表={_f21}"
+                    + f"・fold_armed {_stats.get('v21_fold_armed', 0)}／期限taker {_stats.get('v21_fold_expire', 0)}／即taker {_stats.get('v21_fold_taker', 0)}"
+                    + (f"・即taker側 内訳 勝ち玉 ${_stats.get('TREND_CONT_rg5_win$', 0)} / 負け玉 ${_stats.get('TREND_CONT_rg5_loss$', 0)}（⑨巻き込みの実測）"
+                       if _stats.get("TREND_CONT_rg5") else "") + "〔学習窓選定〕")
+            else:
+                _mech["uptrend 即クローズ TREND_CONT(taker)"] = (
+                    f"RG-v5 上げトレンド状態機械の発火で全 lot 即クローズ＋新規/add 停止（レンジ前提の終了・risk-manager 型）"
+                    f"{_fire('TREND_CONT_rg5')}"
+                    + (f"・内訳 勝ち玉 ${_stats.get('TREND_CONT_rg5_win$', 0)} / 負け玉 ${_stats.get('TREND_CONT_rg5_loss$', 0)}（⑨巻き込みの実測）"
+                       if _stats.get("TREND_CONT_rg5") else "") + "〔視認校正〕")
         _sec_v11 = {
             "検証期間（periods正本・E31）": {
                 "学習(fit)": f"〜{TRAIN_END.date()} 未満（v11 は fit なし＝素ルール・分位選定なし）",
@@ -2893,17 +3293,15 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
                 "封印(不参照)": f"{SEAL_START.date()} 以降",
             },
             "【入口】視認校正レンジ計器×到達・確認（SHORT のみ・実フラグから自動生成）": {
-                ("レンジ判定 range_ok_rg5" if v20_rg5 else "レンジ判定 range_ok_v11"): (
-                    (f"RG-v5（レンジ・レジーム判定の正本 build_regime_gate_rg.py を import 再利用・視認校正3巡 2026-07-12）＝"
-                     f"1h タッチ実績 S/R 帯対（近い順で幅≥{V11_ZONE_MIN_W*100:.1f}%を満たす最初の対＝帯対拡張）"
-                     "∩ 上げトレンド状態機械 非発火（15分構造×2＋90分+1.0%＋6h+2.0%・解除=半値戻し/15分構造破断/停滞2h）"
-                     "∩ 5分 close 帯内。uptrend 発火中は新規停止＋保有 TREND_CONT 即クローズ"
-                     "（labels_rg-v5.csv／predictions_rg-v5_5m 一致を --v20-selftest-rg5 で機械照合）〔視認校正〕") if v20_rg5 else
-                    (f"1時間足の確定 fractal スイングを過去{V11_ZONE_LOOKBACK}h(7日)窓・価格帯{V11_ZONE_TOL*100:.1f}%で束ね、"
-                     f"スイング数≥{V11_ZONE_TOUCH}のS/Rゾーンが close の上下に揃い幅≥{V11_ZONE_MIN_W*100:.1f}%＝レンジ局面。"
-                     "5分足で close がゾーン外（ブレイク）なら離脱＝新規候補を生成しない"
-                     "（まこさん視認校正済み v17 計器と同一ロジック・labels_v17.csv 一致を selftest で機械照合・トレンド排除はゾーンが立つか否かが担う）〔視認校正〕")),
-                "エントリー": f"上限ゾーンの{_edge} に high 到達 ∩ 拒否確認={_conf}",
+                # ★RG-v5 の判定ロジック全詳細（帯対・5分判定・uptrend 状態機械の発火/解除・実定数から自動生成）＝まこさん 2026-07-12
+                #   report 表示は2階層まで＝「レンジ判定 range_ok_rg5・<項目>」の平坦キーで1行ずつ展開（学習ブロックと同形）
+                **({f"レンジ判定 range_ok_rg5・{k}": v for k, v in _rg5_gate_desc().items()} if v20_rg5 else
+                   {"レンジ判定 range_ok_v11": (
+                       f"1時間足の確定 fractal スイングを過去{V11_ZONE_LOOKBACK}h(7日)窓・価格帯{V11_ZONE_TOL*100:.1f}%で束ね、"
+                       f"スイング数≥{V11_ZONE_TOUCH}のS/Rゾーンが close の上下に揃い幅≥{V11_ZONE_MIN_W*100:.1f}%＝レンジ局面。"
+                       "5分足で close がゾーン外（ブレイク）なら離脱＝新規候補を生成しない"
+                       "（まこさん視認校正済み v17 計器と同一ロジック・labels_v17.csv 一致を selftest で機械照合・トレンド排除はゾーンが立つか否かが担う）〔視認校正〕")}),
+                "エントリー": _v21_entry_desc(s15.get("v21_entry"), _edge, _conf, _stats),
                 "方向 short_only_v11": "SHORT のみ（LONG 入口の生成経路なし・上限ゾーンのみ使用）",
             },
             "【固定値】サイズ（スキャル＝add で積み・複数TPで刻む）": {
@@ -2937,8 +3335,11 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
             "【学習方法・学習内容】": {
                 "ML/検出器": "不使用（素ルール＝v5〜v10 の検出器経路は不変・v11 は fit なし＝分位選定なし）",
                 "場面セル": (f"LightGBM 1本の木（entry 特徴 stoch_k/ATR%/box_W → net・num_leaves≤{V16_NUM_LEAVES}）の leaf でセル分割〔学習窓のみ・L-267〕" if s15.get("cell_fn") else "なし（場面セル未使用）"),
-                "選定 vs 固定": ("選定0回＝v17_031 採択2本を V18_FIXED_FROM_V17 で定数継承（学習窓で回さない・全 a-priori/継承）〔定数継承〕" if s15.get("tp2_far")
-                                else ("学習窓 OOF 選定（purged 3分割 合意）で枝水準を選定〔学習窓選定〕" if s15.get("cell_fn") else "学習なし（全固定 a-priori）〔固定値〕")),
+                "選定 vs 固定": ("選定0回＝v17_031 採択2本を V18_FIXED_FROM_V17 で定数継承（学習窓で回さない・全 a-priori/継承）〔定数継承〕" if (s15.get("tp2_far") and not s15.get("_learning_spec"))
+                                else ("学習窓 OOF 選定（本走で候補メニューから選定＝下記【学習内容/方法/合格判定】に詳細）〔学習窓選定〕" if s15.get("_learning_spec")
+                                      else ("学習窓 OOF 選定（purged 3分割 合意）で枝水準を選定〔学習窓選定〕" if s15.get("cell_fn") else "学習なし（全固定 a-priori）〔固定値〕"))),
+                # ★実際に学習した時（_learning_spec あり）は学習内容/方法/合格判定条件を自動描画（まこさん 2026-07-12・戦略非依存）
+                **(_render_learning_block(s15["_learning_spec"]) if s15.get("_learning_spec") else {}),
                 "出所タグ凡例": "〔固定値〕既存定数 /〔学習窓選定〕学習窓 OOF /〔幾何a-priori〕レンジ幾何 /〔視認校正〕まこさん校正 /〔定数継承〕過去採択の継承",
             },
             "【固定値】コスト（eval_engine・確定値・改造禁止）": {
@@ -3106,7 +3507,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -3262,6 +3663,39 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
                             "dd": "v17_031 定数継承", "down_map": "v17_031 定数継承"}   # §0 出所タグの実出所（表示のみ・2026-07-12）
             print(f"  [v18 構成] v17_031 採択2本を定数継承（V18_FIXED_FROM_V17・選定0回）dd={v15p['dd']} down_map={v15p['down_map']}")
             print(f"  [v18 レバー] TP2＝サポートゾーン上端×(1+{V11_SL_BUF}) ＝反対側ゾーンのすぐ手前（従来=レンジ中央・TP1/守り枝/入口 不変・幾何防御=非有限/中央超えは中央へフォールバック）")
+        if v21_set or v21_entry_only or v21_fold_only:  # v21 Entry×Exit セット（acceptance 2026-07-12 承認・既定 OFF=v20 恒等）
+            assert v20_rg5 and v18_tp2_far and v15p is not None, "v21 は v20（RG-v5）構成の上に載る（--v20-rg5 --v18-tp2-far 必須・acceptance 2026-07-12）"
+            _e_on = v21_set or v21_entry_only
+            _f_on = v21_set or v21_fold_only
+            print(f"  [v21 選定] armed DC 入口メニュー（RSI9帯×武装期限）×uptrend 畳み分岐（セル×深さ→fold M/taker）を"
+                  f" 層化合意 v21_band_consensus（時間3fold×ATR%帯＋PARTIAL平均非毀損＋件数床=incumbent×{V21_FREQ_KEEP:.2f}）で選定"
+                  f"（entry={_e_on}・fold={_f_on}・学習窓のみ・L-267）…")
+            e21, f21, rows21, inc21, fin21, nrun21, spec21 = _select_v21_params(
+                df, box_tf, v15p, ncell18, df["rg5_uptrend"].to_numpy(bool),
+                entry_on=_e_on, fold_on=_f_on, no_add=v11_no_add, single_tp=v11_single_tp,
+                v11_open_entry=v11_open_entry, v12_open_range=v12_open_range)
+            print(f"  [v21 選定表] {nrun21} 回実行（学習窓 net・時間fold 改善数・低ボラ2帯Δ・新規件数/日・採択/不採択理由・全行）")
+            for br, label, v, wins, lowd, freq, adopt in rows21:
+                print(f"    {br:<12} {label:<20} net ${v:>10,.0f} / fold改善 {wins} / lowΔ ${lowd:>+8,.0f} / 新規 {freq:>5.2f}/日 {adopt}")
+            print(f"  [v21 選定結果] incumbent(v21 OFF=v20) ${inc21['net']:,.0f}（新規 {inc21['freq']:.2f}件/日・PARTIAL 平均 ${inc21['pavg']:.2f}/件）"
+                  f" → 最終 ${fin21['net']:,.0f}（対 incumbent {fin21['net'] - inc21['net']:+,.0f}・PARTIAL 平均 ${fin21['pavg']:.2f}/件）")
+            print(f"    v21_entry={e21}\n    v21_fold={f21}")
+            if e21 is None and f21 is None:
+                print("  ⛔ v21 全候補が層化合意 不採択＝v20 恒等構成で本走（採点の可否は precheck が物理判定・データ捨て禁止 9a4d348）")
+            if e21 is not None:
+                v15p["v21_entry"] = e21
+            if f21 is not None:
+                v15p["v21_fold"] = f21
+            spec21["result"] = {   # 選定結果（§0 が描画・selected は本走の確定値・全候補行も §0 に埋める＝別ファイル不要・監査可）
+                "n_tried": nrun21, "incumbent_net": round(inc21["net"], 1), "final_net": round(fin21["net"], 1),
+                "incumbent_freq": round(inc21["freq"], 2), "freq_floor": round(inc21["floor"], 2),
+                "selected": {"v21_entry": e21, "v21_fold": f21},
+                "rows": [   # 全候補（学習窓 net・新規/日・採否 or 不採択理由）＝§0 に丸ごと残す（学習内容の証跡）
+                    {"候補": f"{br}:{label}", "net$": round(v, 0), "新規/日": round(freq, 2), "採否": (adopt or "採択")}
+                    for br, label, v, wins, lowd, freq, adopt in rows21 if br != "incumbent(v21 OFF=v20)"
+                ],
+            }
+            v15p["_learning_spec"] = spec21
         trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker, v14_params=v14p, v15_params=v15p, v19_upper_touch=v19_upper_touch,
                                     v20_uptrend=(df["rg5_uptrend"].to_numpy(bool) if v20_rg5 else None))
         if v14p is not None:
@@ -3275,7 +3709,7 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
             assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
             assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9・PARTIAL_TP 半 lot 含む）"
-        sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "") + ("oe" if v11_open_entry else "") + ("or" if v12_open_range else "") + ("tm" if v13_time_maker else "") + ("xm" if v14_machine else "") + ("xs" if v15_exit_set else "") + ("x6" if v16_exit_set else "") + ("x7" if v17_exit_set else "") + ("x8" if v18_tp2_far else "") + ("x9" if v19_upper_touch else "") + ("r5" if v20_rg5 else "")
+        sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "") + ("oe" if v11_open_entry else "") + ("or" if v12_open_range else "") + ("tm" if v13_time_maker else "") + ("xm" if v14_machine else "") + ("xs" if v15_exit_set else "") + ("x6" if v16_exit_set else "") + ("x7" if v17_exit_set else "") + ("x8" if v18_tp2_far else "") + ("x9" if v19_upper_touch else "") + ("r5" if v20_rg5 else "") + ("s21" if v21_set else "") + ("s21e" if v21_entry_only else "") + ("s21f" if v21_fold_only else "")
         _out(t, f"_{box_tf}{sfx}", None, tag=tag, gate_on=True, v11=True, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14p, v15_sel=v15p, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v19_upper_touch=v19_upper_touch, v20_rg5=v20_rg5)
         return
     if v10:
@@ -3391,7 +3825,8 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
 def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v13_time_maker=False, v14_sel=None, v15_sel=None, v11_open_entry=False, v12_open_range=False, v19_upper_touch=False, v20_rg5=False) -> None:
     strat_base._output_and_report(
         t, suffix, stem="e37_range_scalp",
-        strategy=("E37 v20 RG-v5 レンジ判定移植＋レンジ期間を漏れなく取る上端入口（uptrend 即クローズ・v18 Exit 継承）" if v20_rg5
+        strategy=("E37 v21 入口の反転確認（armed DC）＋uptrend 畳み分岐（Entry×Exit セット・v20 RG-v5 の上・v18 Exit 継承）" if ((v15_sel or {}).get("v21_entry") is not None or (v15_sel or {}).get("v21_fold") is not None)
+                  else "E37 v20 RG-v5 レンジ判定移植＋レンジ期間を漏れなく取る上端入口（uptrend 即クローズ・v18 Exit 継承）" if v20_rg5
                   else "E37 v17 選定の regime 頑健化（ATR%帯 層化OOF合意＋勝ち玉保護＋ガード全セル候補×box_W膨張）" if (v15_sel or {}).get("v17")
                   else "E37 v16 Entry×Exit セット最適化 第2弾（回帰救済×トレンドガード×候補格子の一括OOF・場面セル×玉タイプ×purged OOF 選定）" if (v15_sel or {}).get("v16")
                   else "E37 v15 Entry×Exit セット最適化 第1弾（逆行側分岐＝ラダー/戻り決済/構造破れ/4h backstop＋枝×場面セル別 学習窓選定）" if v15_sel is not None
@@ -3527,6 +3962,10 @@ def main():
     ap.add_argument("--v20-rg5", action="store_true", help="v20: 入口ゲートを RG-v5（視認校正3巡・帯対拡張＋上げトレンド状態機械・build_regime_gate_rg.py を import 再利用）に差し替え＝レンジ中の上端ゾーン到達で漏れなく建て、uptrend 発火で新規停止＋保有 TREND_CONT 即クローズ。v18 構成の上（--v12-open-range --v13-time-maker --v18-tp2-far 必須・--v19-upper-touch 併用不可・acceptance 2026-07-12 承認・既定OFF=v19恒等）")
     ap.add_argument("--v20-selftest-rg5", action="store_true", help="v20 自己検査: 戦略内 RG-v5 判定（1h帯・zone_ok・uptrend・5分ラベル）が labels_rg-v5.csv／predictions_rg-v5_5m と全期間一致するか機械照合して終了")
     ap.add_argument("--v20-guard-check", action="store_true", help="v20 番人メタ確認: uptrend 強制で入口 veto/即クローズが配線支配になるか＋labels 改ざんで selftest が停止するか（採点しない・--smoke 併用推奨）")
+    ap.add_argument("--v21-set", action="store_true", help="v21: 入口の反転確認（到達で武装し stoch(9,3) デッドクロス発生バーで建てる・RSI9帯/武装期限/セル別要否は学習窓の層化合意で選定・件数床 4.33/日）＋uptrend 発火時の畳み分岐（即taker 1択から fold=deadline shrink 前倒しの maker 逃げ[期限で TREND_CONT taker]／切迫のみ即taker をセル×深さ別に学習窓選定）の Entry×Exit セット。v20 構成の上（--v20-rg5 --v18-tp2-far 必須・acceptance 2026-07-12 承認・既定OFF=v20恒等）")
+    ap.add_argument("--v21-entry-only", action="store_true", help="v21 対照: 入口確認（armed DC）だけ選定・畳み分岐は v20 のまま＝寄与分離用")
+    ap.add_argument("--v21-fold-only", action="store_true", help="v21 対照: 畳み分岐（fold/taker）だけ選定・入口は v20 のまま（到達即）＝寄与分離用")
+    ap.add_argument("--v21-guard-check", action="store_true", help="v21 番人メタ確認: DC 全 False 強制で入口 0（配線支配）／fold 全 taker で v20 恒等 hash／labels 改ざんで selftest 停止（採点しない・--smoke 併用推奨）")
     ap.add_argument("--v11-selftest-zones", action="store_true", help="v11 自己検査: _zones_v11_1h が labels_v17.csv（視認校正済み計器）と全期間一致するか機械照合して終了")
     ap.add_argument("--param-schema-selftest", action="store_true", help="§0 使用パラメータ 自動生成の既知答えテスト＋番人（導出の正しさ＋項目削除の物理禁止）を実行して終了・採点しない・データ不要")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
@@ -3555,6 +3994,9 @@ def main():
     if a.v20_guard_check:
         _v20_guard_check(df)
         return
+    if a.v21_guard_check:
+        _v21_guard_check(df, a.box_tf)
+        return
     if a.v14_guard_check:
         _v14_guard_check(df, a.box_tf)
         return
@@ -3574,7 +4016,8 @@ def main():
         _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9), v10=a.v10, v11=a.v11, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v19_upper_touch=a.v19_upper_touch, v20_rg5=a.v20_rg5)
         return
     run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9, v10=a.v10,
-            v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker, v14_machine=a.v14_exit_machine, v15_exit_set=a.v15_exit_set, v16_exit_set=a.v16_exit_set, v17_exit_set=a.v17_exit_set, v18_tp2_far=a.v18_tp2_far, v19_upper_touch=a.v19_upper_touch, v20_rg5=a.v20_rg5)
+            v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker, v14_machine=a.v14_exit_machine, v15_exit_set=a.v15_exit_set, v16_exit_set=a.v16_exit_set, v17_exit_set=a.v17_exit_set, v18_tp2_far=a.v18_tp2_far, v19_upper_touch=a.v19_upper_touch, v20_rg5=a.v20_rg5,
+            v21_set=a.v21_set, v21_entry_only=a.v21_entry_only, v21_fold_only=a.v21_fold_only)
     print("=" * 100)
 
 
