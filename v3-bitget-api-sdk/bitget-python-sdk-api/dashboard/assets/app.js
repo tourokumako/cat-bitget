@@ -1495,6 +1495,7 @@ function mlLabelLight(label) {
   if (label === "uptrend") return "rgba(76, 175, 80, 0.30)";
   if (label === "downtrend") return "rgba(229, 57, 53, 0.30)";
   if (label === "range") return "rgba(158, 158, 158, 0.25)";
+  if (label === "range_wait") return "rgba(66, 165, 245, 0.14)";   // RG-v3: 帯は立つが往復実証待ち（薄青・表示専用）
   return "rgba(255, 255, 255, 0)";
 }
 
@@ -1502,6 +1503,7 @@ function mlLabelColor(label) {
   if (label === "uptrend") return "#4caf50";
   if (label === "downtrend") return "#e53935";
   if (label === "range") return "#9e9e9e";
+  if (label === "range_wait") return "#42a5f5";   // RG-v3: 往復実証待ち
   return "#ccc";
 }
 
