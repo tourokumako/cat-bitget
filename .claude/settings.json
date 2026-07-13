@@ -117,7 +117,7 @@
           },
           {
             "type": "command",
-            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_optimization_honesty.sh"
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_ml_honesty.sh"
           }
         ]
       },
@@ -177,6 +177,10 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_design_contract_before_run.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_ml_wiring.sh"
           },
           {
             "type": "command",
