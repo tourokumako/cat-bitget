@@ -1868,6 +1868,14 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
     v22a = v15_params.get("v22_anchor") if v15 else None   # v22_low_anchor_tp（cell→M・None/キー無し=現行アンカー恒等）
     v22p = v15_params.get("v22_pf") if v15 else None       # v22_peak_fold（k,r,warn_only・None=恒等）
     v22w = v15_params.get("v22_warn") if v15 else None     # v22_uptrend_warning の shrink 前倒し（M 本・None=恒等）
+    v23te = bool(v15_params.get("v23_trend_exit")) if v15 else False   # v23（acceptance 2026-07-15）: uptrend 発火の成行投げを廃止し V9 型状態機械へ
+    if v23te:                                              # v23: ピーク畳み(trailing=MFE_DRAWDOWN_CUT)は不使用（両窓符号反転で勝ち玉を切る・L-341）
+        v22p = None
+        v15_params["_stats"].setdefault("v23_trend_caught", 0)
+        v15_params["_stats"].setdefault("STOCH_REVERSE_EXIT", 0)
+        v15_params["_stats"].setdefault("MFE_STALE_CUT", 0)
+    V23_RT_FEE = 2.0 * ee.MAKER_FEE                         # 往復 maker fee（含み益ピークが費用を超えたかの目安・a-priori）
+    V23_STALE_MIN = 30                                     # V9 §9.2 MFE_STALE の保有分（a-priori・分）
     warn22 = (df["v22_warning"].to_numpy(bool)
               if (v15 and "v22_warning" in df.columns and (v22p is not None or v22w is not None)) else None)
     low22 = {}
@@ -1883,12 +1891,13 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         assert dc21 is not None and rsi9_21 is not None, "v22 入口は v21 構成（DC/RSI9 配列）の上に載る（acceptance 2026-07-13）"
         v15_params["_stats"].setdefault("v22_entry_fires", 0)
     k9 = d9 = None
-    if v14_params is not None:                         # v14 のみ: stoch(9,3)（枝5' 用・過去 rolling のみ＝leak-safe・OFF 経路では計算しない）
-        tmax_l = int(v14_params.get("tmax", T_MAX))
+    if v14_params is not None or v23te:                # v14/v23: stoch(9,3)（v14 枝5'／v23 STOCH_REVERSE_EXIT 用・過去 rolling のみ＝leak-safe H2・OFF 経路では計算しない）
         _cs = pd.Series(c); _ls = pd.Series(l); _hs = pd.Series(h)
         _ll9 = _ls.rolling(9).min(); _hh9 = _hs.rolling(9).max()
         k9 = (100.0 * (_cs - _ll9) / (_hh9 - _ll9).replace(0, np.nan)).rolling(3).mean().to_numpy(float)
         d9 = pd.Series(k9).rolling(3).mean().to_numpy(float)
+    if v14_params is not None:                         # v14 のみ: tmax／stats 初期化
+        tmax_l = int(v14_params.get("tmax", T_MAX))
         v14_params.setdefault("_stats", {})
         v14_params["_stats"] = {"MFE_DRAWDOWN_CUT": 0, "BE_EXIT": 0, "STOCH_REVERSE_EXIT": 0, "stall_early": 0, "tp2_bothhit": 0}
     trades = []
@@ -1921,7 +1930,13 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         if v20_uptrend is not None and v20_uptrend[i]:   # v20 regime exit（acceptance 2026-07-12）: RG-v5 の上げトレンド発火＝レンジ前提の終了
             pend = None                                    # 未約定の指値は取り下げ＝uptrend 中は新規/add を建てない（risk-manager 型）
             armed21 = -1                                   # v21: uptrend 中は armed DC 入口も封鎖（v21e None 時は無害）
-            if lots:
+            if v23te and lots:                             # v23（acceptance 2026-07-15）: 成行投げ(TREND_CONT 即taker)せず全 lot を trend_caught として保持＝下の Exit 状態機械（STOCH_REVERSE/MFE_STALE/災害SL/TIME）へ委ねる
+                for lot in lots:
+                    if not lot.get("trend_caught"):
+                        lot["trend_caught"] = True
+                        v15_params["_stats"]["v23_trend_caught"] += 1
+                # lots は keep・新規は pend=None で停止＝この後 Exit ループへフォールスルー（ladder は uptrend 中 ok_arr=False で不発）
+            elif lots:
                 _keep20 = []
                 for lot in lots:
                     if v21f is not None and "fold_dl" in lot:
@@ -2014,6 +2029,19 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                 still.append(lot); continue
             if h[i] >= lot["sl"]:                      # ① SL 優先（同 bar 両到達は不利側先着＝保守・全量／v15=災害SL 遠水準）
                 _record(trades, lot, max(lot["sl"], o[i]), "SL_FILLED", i, ts); continue
+            if v23te and lot.get("trend_caught"):      # ①.3 v23（acceptance 2026-07-15）: trend_caught 玉の V9 型 Exit 状態機械（SL の次・TP より優先＝反転/失速で先に畳む・固定値 a-priori）
+                _pk23 = lot.get("pk_prev", lot["max_fav"])       # 前バーまでの含み益ピーク＝最良（最安）価格（H2・同一バー楽観の排除）
+                _in_profit23 = (lot["avg"] - _pk23) >= lot["avg"] * V23_RT_FEE   # 含み益ピークが往復 maker fee を超えた＝逃げ場が実在
+                _gc23 = bool(k9 is not None and i > 0 and np.isfinite(k9[i]) and np.isfinite(d9[i])
+                             and np.isfinite(k9[i - 1]) and np.isfinite(d9[i - 1]) and k9[i - 1] <= d9[i - 1] and k9[i] > d9[i])
+                if _in_profit23 and _gc23:             # STOCH_REVERSE_EXIT（taker・登録済み再利用）＝含み益ありで stoch(9,3) GC＝下げの勢いが尽きた→利確（genuine 反転・トレーリングでない）
+                    _record(trades, lot, c[i], "STOCH_REVERSE_EXIT", i, ts)
+                    v15_params["_stats"]["STOCH_REVERSE_EXIT"] += 1
+                    continue
+                if (not _in_profit23) and (i - int(lot["first_idx"])) * 5 >= V23_STALE_MIN:   # MFE_STALE_CUT（taker・登録済み再利用）＝保有 30分でも益が出ない B型→小さく切る
+                    _record(trades, lot, c[i], "MFE_STALE_CUT", i, ts)
+                    v15_params["_stats"]["MFE_STALE_CUT"] += 1
+                    continue
             if v15:                                    # ①.5 v15 戻り決済枝＝armed（前バーまでの逆走≥ret_arm×W）∩ 建値フロアへ回帰（resting buy limit・maker）
                 _key = (lot["cell"], min(int(lot["add_count"]), 2), bool(lot["tp1_done"]))
                 _rk = v15_params.get("ret", {}).get(_key)
@@ -3785,7 +3813,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -4013,6 +4041,10 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
                 ],
             }
             v15p["_learning_spec"] = spec22
+        if v23_trend_exit:                             # v23（acceptance 2026-07-15）: TREND_CONT を V9 型 Exit 状態機械へ（uptrend 発火の成行投げを廃止・入口/TP は v22 据え置き・固定値・学習窓選定なし）
+            assert v22_set and v15p is not None, "v23 は v22 構成の上に載る（--v22-set 必須・acceptance 2026-07-15）"
+            v15p["v23_trend_exit"] = True
+            print("  [v23] TREND_CONT を V9 型状態機械へ＝uptrend 発火で保有 SHORT を成行投げせず、STOCH_REVERSE_EXIT(taker・stoch GC∩含み益)/MFE_STALE_CUT(taker・保有30分∩益なし)/災害SL・TIME(現行) に委ねる（MFE_DRAWDOWN_CUT・v21_fold・v22_peak_fold は不使用・既定 OFF=v22_042 恒等）")
         trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker, v14_params=v14p, v15_params=v15p, v19_upper_touch=v19_upper_touch,
                                     v20_uptrend=(df["rg5_uptrend"].to_numpy(bool) if v20_rg5 else None))
         if v14p is not None:
@@ -4285,6 +4317,8 @@ def main():
     ap.add_argument("--v21-guard-check", action="store_true", help="v21 番人メタ確認: DC 全 False 強制で入口 0（配線支配）／fold 全 taker で v20 恒等 hash／labels 改ざんで selftest 停止（採点しない・--smoke 併用推奨）")
     ap.add_argument("--v22-set", action="store_true", help="v22: レンジ中の戻り売り DC 入口（range_ok_rg5 ∩ stoch(9,3) デッドクロス発生バー・到達武装との対決を学習窓選定）×TP アンカー=レンジ下限（直近 M 本押し安値・セル別 M 選定）＋ピーク反転畳み常設（k×fee 武装・r 割戻し・半分 maker）＋uptrend 前兆 warning で shrink 前倒し、の Entry×Exit セット。v21 採択値は定数継承（--v20-rg5 --v18-tp2-far 必須・--v21-set と併用不可・acceptance 2026-07-13 承認・既定 OFF=v21_040 構成恒等）")
     ap.add_argument("--v22-guard-check", action="store_true", help="v22 番人メタ確認: DC 全 False で v22 入口 0／anchor M=1 で床が全拒否／pf r 極端値で MFE_DRAWDOWN_CUT 支配／OFF 恒等（採点しない・--smoke 併用推奨）")
+    ap.add_argument("--v23-trend-exit", action="store_true", help="v23: TREND_CONT の V9 型 Exit 状態機械化＝uptrend 発火で保有 SHORT を成行投げ（TREND_CONT 即taker）せず trend_caught として保持し、STOCH_REVERSE_EXIT(taker・stoch(9,3) GC∩含み益ピーク≥往復fee)／MFE_STALE_CUT(taker・保有30分∩含み益ピーク<往復fee)／災害SL・TIME(現行)の優先順位つき状態機械へ委ねる。MFE_DRAWDOWN_CUT(trailing)・v21_fold・v22_peak_fold は v23 中は不使用。固定値は V9 実証 a-priori・学習窓選定なし・入口 armed DC/TP 据え置き（--v22-set 必須・acceptance 2026-07-15 承認・既定 OFF=v22_042 構成恒等）")
+    ap.add_argument("--v23-guard-check", action="store_true", help="v23 番人メタ確認: OFF 恒等 md5(v22_042 一致)／uptrend 全True で TREND_CONT 即taker 0＝新設枝へ／stoch GC 全False で STOCH_REVERSE 0／MFE_STALE gate 極大で全 trend_caught 即 stall cut（採点しない・--smoke 併用推奨）")
     ap.add_argument("--v11-selftest-zones", action="store_true", help="v11 自己検査: _zones_v11_1h が labels_v17.csv（視認校正済み計器）と全期間一致するか機械照合して終了")
     ap.add_argument("--param-schema-selftest", action="store_true", help="§0 使用パラメータ 自動生成の既知答えテスト＋番人（導出の正しさ＋項目削除の物理禁止）を実行して終了・採点しない・データ不要")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
@@ -4339,7 +4373,8 @@ def main():
         return
     run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9, v10=a.v10,
             v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker, v14_machine=a.v14_exit_machine, v15_exit_set=a.v15_exit_set, v16_exit_set=a.v16_exit_set, v17_exit_set=a.v17_exit_set, v18_tp2_far=a.v18_tp2_far, v19_upper_touch=a.v19_upper_touch, v20_rg5=a.v20_rg5,
-            v21_set=a.v21_set, v21_entry_only=a.v21_entry_only, v21_fold_only=a.v21_fold_only, v22_set=a.v22_set)
+            v21_set=a.v21_set, v21_entry_only=a.v21_entry_only, v21_fold_only=a.v21_fold_only, v22_set=a.v22_set,
+            v23_trend_exit=a.v23_trend_exit)
     print("=" * 100)
 
 
