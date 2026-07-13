@@ -41,7 +41,7 @@ import periods  # noqa: E402  検証期間の唯一の正本（学習/捨て/採
 #   本番執行 = SL と同じ placePosTpsl（triggerPrice=executePrice の指値）を trail 水準でバーごとに更新する方式。
 #   live エンジン（run_once_v9.py）に trail は未実装（grep 0件・P21 未稼働）で、taker 計上は replay 側の仮定だった。
 #   live の損益 CSV も fee=maker×2 計上（run_once_v9.py L130-131）。すり抜けリスクの扱いは SL maker（E0.1 承認）と同前提。
-MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP", "BE_EXIT", "PARTIAL_TP", "MFE_DRAWDOWN_CUT"}  # 指値(resting limit)約定=maker。EDGE_TP=逆側端の利確指値 / BE_EXIT=建値撤退の指値(iter4・2026-06-15 追加) / PARTIAL_TP=部分利確の指値TP(iter6・2026-06-18 追加・executePrice=triggerPrice の resting maker・H13 既知答えテスト再pass) / MFE_DRAWDOWN_CUT=含み益ピーク基準トレーリング指値(E37 v14・placePosTpsl triggerPrice=executePrice をピーク進捗でバー毎更新＝TRAIL_EXIT と同前提・2026-07-07 追加・H13 既知答えテスト再pass)
+MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP", "BE_EXIT", "PARTIAL_TP", "MFE_DRAWDOWN_CUT", "TREND_CAUGHT_TP"}  # 指値(resting limit)約定=maker。EDGE_TP=逆側端の利確指値 / BE_EXIT=建値撤退の指値(iter4・2026-06-15 追加) / PARTIAL_TP=部分利確の指値TP(iter6・2026-06-18 追加・executePrice=triggerPrice の resting maker・H13 既知答えテスト再pass) / MFE_DRAWDOWN_CUT=含み益ピーク基準トレーリング指値(E37 v14・placePosTpsl triggerPrice=executePrice をピーク進捗でバー毎更新＝TRAIL_EXIT と同前提・2026-07-07 追加・H13 既知答えテスト再pass) / TREND_CAUGHT_TP=trend_caught 玉のピーク帯 resting maker 利確(E37 v24・uptrend 発火で畳む玉に建値+0.08% の resting 指値TP＝反転待ち STOCH_REVERSE を置換・executePrice=triggerPrice の resting maker・2026-07-16 追加・H13 既知答えテスト再pass)
 # 成行/トリガ撤退=taker（現在 taker 扱いの全理由を明示＝既存分類を維持）
 TAKER_EXIT_REASONS = {"TIME_EXIT", "MFE_STALE_CUT", "STOCH_REVERSE_EXIT", "PROFIT_LOCK",
                       "RSI_REVERSE_EXIT", "MAE_CUT", "FORCE_CLOSE_EOD", "CENTER_LOCK",

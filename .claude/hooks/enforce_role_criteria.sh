@@ -60,6 +60,25 @@ ROLE=$(printf '%s' "$marker" | sed -n "s/.*[^a-z]${TOKEN}=\([a-z_]*\).*/\1/p")
 
 case "$ROLE" in
   scalp)
+    # ★Exit レバー例外（2026-07-16 まこさん承認）: 入口を触らない Exit レバー（trend_caught の畳み方等）は
+    #   件数を入口が決める＝Exit 単独で件数増を要求できない。acceptance に <!-- ROLE_EXIT_LEVER --> 宣言があれば
+    #   ②(件数増基準)を免除し、代わりに「件数を減らして勝つ尻すぼみ」を禁止＋「件数/日を減らさない(維持)」の明示を要求する。
+    #   ＝役割の本旨（件数を減らして net を作る尻すぼみの禁止）は保ちつつ、正当な Exit レバー(件数维持)を通す。
+    if printf '%s' "$CONTENT" | grep -qE 'ROLE_EXIT_LEVER'; then
+      bad=$(printf '%s' "$CONTENT" | grep -oE '件数を減らし|件数を減らす|件数を絞|低頻度でも|頻度は次|頻度は iter|頻度は後' | head -1)
+      if [ -n "$bad" ]; then
+        echo "🔒 [役割ゲート: ${TOKEN}=scalp/Exitレバー] Exit レバーでも『件数を減らして勝つ』尻すぼみは禁止（件数維持のみ可）。" >&2
+        echo "  検出: 「$bad」" >&2
+        echo "  → Exit レバーは件数を減らさず net を底上げする案に限る（feedback_scalp_daytrade_frequency_floor）。" >&2
+        exit 2
+      fi
+      if ! printf '%s' "$CONTENT" | grep -qE '件数.{0,12}(維持|据え置き|減らさ)'; then
+        echo "🔒 [役割ゲート: ${TOKEN}=scalp/Exitレバー] Exit レバーは『件数/日を減らさない(維持)』の明示が必須。" >&2
+        echo "  → F 受け入れ判定に『件数/日を維持（scalp 頻度を減らさない）・減れば不採用』を入れてください。件数増は入口レバーで別途。" >&2
+        exit 2
+      fi
+      exit 0
+    fi
     # ① 尻すぼみ容認文言の禁止（件数を上げない/後回しを成功扱い）
     bad=$(printf '%s' "$CONTENT" | grep -oE '件数±0|件数は不変|件数は増やさ|件数を増やさ|頻度は次|頻度は iter|頻度は後|低頻度でも' | head -1)
     if [ -n "$bad" ]; then
