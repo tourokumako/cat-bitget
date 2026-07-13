@@ -145,3 +145,36 @@
 - FXOpen 5 Crypto Scalping Strategies（レンジ戦略ルール・反転ローソク確認・SL=レンジ外・高コスト/リスク管理の失敗）: https://fxopen.com/blog/en/5-crypto-scalping-strategies/
 - QuantifiedStrategies Scalping（小さい利益×多数・手数料の壁）: https://www.quantifiedstrategies.com/scalping-trading-strategies/
 - Babypips S/R（ゾーンとして扱う）: https://www.babypips.com/learn/forex/support-and-resistance
+
+## §9 V9（実証済みの唯一の資産）の出口＝状態機械・固定値の作り方（2026-07-14 追記・E37 Exit の雛形）
+
+> 経緯: まこさん指示「学習窓の成果が採点窓に反映されないなら ML で Exit を決めないほうがいい／V9 は疑似シミュ＋Optuna で固定値を最適化した／V9 を全部読んで手法を理解して書け」。V9（`cat_v9_decider.py`／`cat_params_v9.json`／`runner/replay_csv.py` の `_check_exits_replay`）を読解。**V9 は実際に月 net 黒字を出す唯一の資産（P23 SHORT 月$241・[[manual_v9_p23_only_reason]]）＝推測でなく実証済みの正解形**。E37 の Exit はこれを雛形にする。
+
+### §9.1 V9 P23 の入口（参考・ただし局面が違う）
+- stoch デッドクロス（2本上→当バー下抜け）∩ 陰線 ∩ stoch_d−stoch_k>0.3（クロス確認）∩ BB中央線 下向き ∩ ADX 30–50 ∩ ATR≥150。
+- ★注意＝**P23 は ADX30–50・BB下向き＝レンジでなく「下げトレンドの勢い反転ショート」**（§1.2.1 局面1）。E37 は局面3（レンジ）＝**入口はそのまま転用できない**。転用するのは下の出口の哲学。
+
+### §9.2 V9 P23 の出口＝優先順位つき状態機械（`_check_exits_replay`・これが核心）
+最初に当たった枝で決済（優先順・SHORT）:
+1. **MFE_STALE_CUT**：保有≥30分でも含み益がゲート（$4）未満＝**益が出ない玉（B型）を切る**（失速止血）。
+2. **MFE_DRAWDOWN_CUT**（任意・現行 params 未設定＝OFF）：含み益がピーク到達後、割戻し比を下回ったら切る。
+3. **STOCH_REVERSE_EXIT**：含み益がある（mfe≥$15・保有≥30分）状態で stoch ゴールデンクロス（下げの勢いが尽きた）→**利確**。＝genuine な指標反転で確定（割戻しトレーリングでない）。
+4. **RSI_REVERSE_EXIT**：低ADX（<12）で RSI<50 かつ上向き→出る。
+5. **TP=1.2%（広い）／SL=5%（極端に広い＝災害SLのみ）／TIME=8h（負けてる時だけ×0.5＝4h）**。
+6. **PROFIT_LOCK は OFF**（P23_SHORT_PROFIT_LOCK_ENABLE=0）。アグレッシブな利確ロック・割戻しトレーリングは使っていない。
+
+### §9.3 V9 の出口哲学（＝実証済みの正解・本KB §4/§7 の"浅SL/狭TP"を上書き）
+- **勝ち玉は広い TP まで持ち切る**（TP 1.2%）＋**災害SLだけ**（5%）＋**長め TIME**（8h・負け時のみ4h）。
+- **能動的な出口は genuine な指標反転**（stoch/RSI 反転）と**失速（益が出ない B型）の stall cut**。
+- **アグレッシブなロック/トレーリングはしない**（V9 は OFF）。
+- ⚠️ **本KB §4/§7 の初版「SL＝ゾーンのすぐ外（浅い）・狭い TP」は web リサーチ由来だが、V9（実証済み）と E37 の実測（[[lessons L-341]]＝早利確/トレーリング/即 force-close が採点窓で勝ち玉を切る）に反する＝ここで上書きする。レンジでも「勝ち玉は持ち切り・災害SL・genuine な反転で確定」が実証側の正解。浅SL は E37 v10〜v13 で繰り返し失敗（L-341）。**
+
+### §9.4 固定値の作り方（疑似シミュ＋Optuna・まこさん）
+- V9 の固定値は「**疑似シミュ（＝CAT_v9_regime.py のバックテストで net を算出）で候補を絞り、Optuna で閾値を net 最大化に最適化**」して決めた（まこさん）。＝**固定値でも最適化はする**（構造から手置き1点でも、学習窓 net 最大 fit でもない）。
+- ★汎化した理由（構造からの推測）＝値が**広い・粗い**（TP1.2%/SL5%/TIME8h）＋**指標反転ベース**＝狭い閾値を細かく合わせないので**レジームが変わっても壊れにくい**。E37 の手置きメニュー greedy（浅い・[[feedback_optimization_is_not_menu_greedy]]）や学習窓 net 最大 fit（過剰適合＝L-320）と対照的。
+- ⚠️ **未確認**＝V9 の Optuna が「どの期間で・どの目的関数で・期間外検証したか」の tuning wrapper 本体は現存ファイルに見当たらず（CAT_v9_regime.py 本体は backtest エンジン＝Optuna 呼び出しは別スクリプト・現存せず／cat-swing-sniper に `optimize_v8_params.py` 等あり＝必要なら追読）。＝汎化の担保が「robust な構造」ゆえか「適切な CV」ゆえかは構造からの推測どまり。
+
+### §9.5 E37 への含意（Exit の設計方針）
+- E37 の Exit を **V9 P23 の状態機械を雛形に作り直す**：広い TP（レンジ下限）＋災害SL＋長め TIME＋stoch/RSI 反転で利確＋B型 stall 切り＋**ロック/トレーリング/即 force-close なし**。
+- 値は **V9 の実証済みレンジを起点（a-priori・広い/粗い）**、スイープでなく構造から1セット決めて実エンジン両窓で測る（L-341 の運用縛り）。
+- ML は Exit に使わない（学習窓が採点窓を予測しない・まこさん）＝固定値。ただし固定値も V9 のように robust に作る（狭く合わせない）。
