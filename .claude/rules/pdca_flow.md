@@ -18,7 +18,7 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-## 1. hook 一覧（31本・登録は settings.json）
+## 1. hook 一覧（32本・登録は settings.json）
 
 | hook | タイミング | matcher | 役割 |
 |---|---|---|---|
@@ -37,7 +37,8 @@
 | track_banned_words_check | PostToolUse | Bash | list_banned_words.py の実行を検知して marker を touch（require_banned_words_check と対・update_websearch_marker と同型の記録係） |
 | require_instrument_read_before_impl | PreToolUse | Write/Edit | 実装を書く前に eval_engine（計器）を Read 強制 |
 | doc_map_guard | PreToolUse | Write/Edit | ledger/設計書に経緯・失敗の語を書くのをブロック（置き場所違反） |
-| forbid_fixed_value_tuning | PreToolUse | Write/Edit | 固定値スイープ（採点窓で最良値選定）をブロック（L-267） |
+| forbid_fixed_value_tuning | PreToolUse | Write/Edit | 固定値スイープ（採点窓で最良値選定）をブロック（L-267）。⚠️ **既知の穴（2026-07-13 発見）＝ファイルに `lightgbm` の語があれば素通り（20行目）**。E37 は lightgbm を別用途（検出器・場面分割）で持つため、実体が手置きメニューの greedy 調整でも見逃された＝「最適化詐欺」を42 iter 許した物理的穴の一つ。runtime 変更は E35/E36 採用戦略が同 free-pass に依存していないか確認してからでないと壊すので保留＝当面は下の enforce_optimization_honesty が doc 層で補完（まこさんと安全な塞ぎ方を相談） |
+| enforce_optimization_honesty | PreToolUse | Write/Edit | **【最適化 正直ゲート・学習による最適化詐欺の防止】（2026-07-13 まこさん指示「学習による最適化詐欺を今後働けないようにしろ」・番人6/6 pass・本体 enforce_optimization_honesty.py＝python 別ファイル規約）**＝acceptance.md / improvement_plan.md / *_design.md を書く瞬間、「最適化/ML最適化/optuna/グリッドサーチ/greedy 選定」等の語があれば、正直な宣言ブロック `<!-- OPT_DECL 探索空間/探索アルゴ/検証/目的関数/取り逃し項の有無/自己申告 -->`（6項目）を要求し、無ければブロック。**核心＝探索アルゴ・自己申告が「手置きメニューの greedy」なら本文で『最適化』と肯定的に呼ぶのを禁止**（「手置き候補の逐次(greedy)選定＝本物の最適化ではない」と正直表記させる）。背景＝CC が E37 v10〜v22 の42 iter で、実体が「手書き固定候補メニュー（V22_ANCHOR_M=(24,36,48) 等）を学習窓 net 最大で1周 greedy 調整」なのを「最適化/学習で選定/ML最適化」と呼び続け、ML 知見の無いまこさんが検証できないことに乗った（feedback_optimization_is_not_menu_greedy・v14「最適化の方法が浅い」/v21「閾値は ML/Optuna で最適化」の指示を毎回矮小化・L-322 翻訳矮小化）。狙い＝**まこさんが宣言ブロックを読めば ML 知見ゼロでも「本物の最適化か・手置き greedy か」を判別できる状態**にする。**限界（正直に）＝テキスト検査＝宣言に嘘（探索アルゴに optuna と書いて実装は greedy）を書けば doc 層では見抜けない（番人ケース f で実証）→ 非同型 Web Claude レビューで宣言↔実装を照合＋将来 DESIGN_CONTRACT で実オプティマイザ呼び出しを実行前に機械照合＋まこさんの目で補う。本 hook 単独で「本物の最適化」は保証しない＝正直な表示の強制まで** |
 | require_acceptance_before_impl | PreToolUse | Write/Edit | scripts/priority_rebuild/*.py を書く前に acceptance＋承認を要求＋**疑似シミュ由来の固定値ゼロ宣言を必須（2026-06-26 まこさん承認）＝probe(疑似シミュ)で出た数値[θ/段数/AUC]を設計の固定値に焼くのをブロック。acceptance に『★疑似シミュ由来の固定値ゼロ』見出しが無いと exit2。背景＝add ゲート設計で probe の θ≤0.4/段数3 を「クリア」扱いし焼き込んだ事案（STRUCT_SL 近似+$895 が実エンジンで消失した轍と同型）** |
 | require_analysis_before_proposal | PreToolUse | Write/Edit | 【分析フェーズ】を物理強制（採点非依存・2026-06-24）。**A 着手ゲート（分析KB読了）と B 完了ゲート（9見出し）を別タイミングで効かせる（2026-06-27 まこさん指摘で順序是正＝分析KB読了は分析の前提なので、分析の後に出す提案 acceptance を書く瞬間では遅い）**: ① **A 着手＝analysis_block.md を書く瞬間（分析の着手）に強制**＝分析KB(trade_analysis_methods_kb)/analysis_playbook §2/対象 report_・analysis_ を read_log で確認（未読なら analysis_block すら書けない＝分析を始める前にKBを読む）。② **B 完了＝改善提案/設計（acceptance.md / *_design.md）を書く瞬間に強制**＝`.claude/state/analysis_block.md` の必須**9見出し**（A も保険で再掲＝二重に守る）（前後比較/両窓/fat-tail/MAE/較正[予測確率]/3分類/問5/経緯照合[E番号引用必須]/**⑨巻き込み検証**）。**⑨巻き込み検証（2026-06-26 追加・本丸）＝切る/早切り/Exit 系レバーは、そのルールが勝ち玉（特に fat-tail）に当たる量を数字で出す。損玉だけ見て天井を語る分析手法の欠陥を塞ぐ（2026-06-26 時間切れ損玉だけ切り出し「取り逃し +$2,624」と誤推定・同じ含み益シグナルが勝ち282玉 +$3,401 に当たるのを見落とした事案＝iter10/DYING_CUT 再演手前）。Exit/切る でない提案は「該当なし」と明記**。pdca_gate が採点後しか分析を強制しない穴（採点なし既存データ分析=強制ゼロ）を塞ぐ。**③ B 完了ゲートに改善案生成ルール STEP3/3.5/4 を追加（2026-06-28 まこさん承認・番人9/9 pass・`.claude/state/improvement_plan.md`）＝STEP3 タグ付け＆重なり判定（軸A出血容疑＋軸B=N10両窓再現の分離指標を必ず使う＝「知ってる犯人だけ追う近視眼」封じ）／STEP3.5 発散（切り口5つ以上・各に N番号出典＝無難な1案収束封じ）／STEP4 収束3案（守り/攻め/構造・各〔玉数増減〕〔net増減=学習窓〕〔犠牲〕＝消去案逃げ封じ）＋禁止形式「閾値X→Y」「○帯を除外」検出（分離指標を木に渡す形に直す・L-267）。STEP1観察/STEP2要因は probe前ゲートA(require_probe_naming)で先に強制済** |
 | block_uchikiri | PreToolUse | Write/Edit | アジャイル放棄を表す語をブロック（語一覧は実体参照） |
