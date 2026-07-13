@@ -30,6 +30,23 @@ FILE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.s
 case "$FILE" in
   */report.py|*/plot_trades.py|*/analyze.py) exit 0 ;;
 esac
+# 診断レーン免除（2026-07-14 まこさん承認）: *_diag.py ＝ read-only の検証/診断（戦略の実関数を import で再利用・
+#   print/集計のみ）。改善フロー（新レバー提案）でない検証実装に acceptance ゲートは過剰＝report/analyze と同じ思想。
+#   ★歯止め（骨抜き防止）: 新内容 or 既存ファイルに 売買記録CSV出力(to_csv/write_sidecar)・score 呼び出し(import score/
+#   score.score)・採用書き出し(_output_and_report/ratchet_io) のいずれかが在れば免除しない＝通常ゲートへ落とす
+#   （＝read-only でなければ実験扱い）。採用戦略ファイル(e37_range_scalp.py 等)は別名で今まで通り全ゲート対象＝
+#   診断からは採用パイプラインを1文字も変えられない。
+case "$FILE" in
+  *_diag.py)
+    NEWC=$(printf '%s' "$INPUT" | python3 -c "import sys,json;d=(json.load(sys.stdin).get('tool_input',{}) or {});print((d.get('content') or d.get('new_string') or ''))" 2>/dev/null)
+    EXIST=""; [ -f "$FILE" ] && EXIST=$(cat "$FILE" 2>/dev/null)
+    if printf '%s\n%s' "$NEWC" "$EXIST" | grep -qE 'to_csv|write_sidecar|import score|from score|score\.score|_output_and_report|ratchet_io'; then
+      : # CSV/score/採用書き出しを触る＝read-only でない＝下の通常ゲートへ（実験扱い）
+    else
+      exit 0
+    fi
+    ;;
+esac
 case "$FILE" in
   *scripts/priority_rebuild/*.py) ;;
   *) exit 0 ;;
