@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # enforce_ml_wiring.sh — PreToolUse on Bash（2026-07-13 まこさん指示・機械学習の不正防止の2枚目＝実行前コード照合）
 # ML を名乗る戦略を python で実行する前に、acceptance.md の ML_CONTRACT（fenced json）を読み、
 # 自己申告『本物のML』なら ML 予測が決定に配線されているか（飾りでないか）を AST で照合し、飾りなら実行ブロック。

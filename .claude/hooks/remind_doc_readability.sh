@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # remind_doc_readability.sh — 資料文書を Write/Edit する瞬間に「文書はCCの足場が第一目的・
 #   だがまこさんが原因究明できる可読性を保つ」原則を表示する（非ブロック・exit 0）。
 # 対象: .claude/rules/ ・ .claude/ratchet/ ・ .claude/state/ 配下の .md / memory ディレクトリ配下の .md

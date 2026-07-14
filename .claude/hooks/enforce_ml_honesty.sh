@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # enforce_ml_honesty.sh — PreToolUse on Write|Edit（2026-07-13 まこさん指示・機械学習の不正防止の1枚目=doc 層）
 # 機械学習 正直ゲート: acceptance.md / improvement_plan.md / *_design.md を書く瞬間、機械学習(ML/教師/分類器/
 # LightGBM 等)を名乗るなら正直な宣言ブロック ML_DECL（目的/教師/学習内容/学習方法/自己申告）を要求し、

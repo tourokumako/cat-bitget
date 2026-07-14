@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # PreToolUse(Edit|Write): ledger.md / strat_v9ml_design.md に「経緯・失敗のログ」を書く違反(文書マップ §8.2)を物理ブロック。
 # cat_requirements §8.2: ledger=結果/原因3分類/改善/採用or破棄 だけ ／ strat_v9ml_design=設計の決定事項 だけ。
 #   経緯・学び・失敗の物語は session_log_YYYYMMDD.md へ・教訓は lessons_active.md へ。

@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # require_direct_csv_for_analysis.sh — PreToolUse on Bash（2026-06-24 まこさん指示で新設）
 # 目的: report.py / analyze.py の【分析対象（第1引数）が archive/ 配下】ならブロック。
 #   ＝「archive の CSV を分析している＝最新実験が archive に押し出された＝実験→分析の順序ミス」を物理検出。

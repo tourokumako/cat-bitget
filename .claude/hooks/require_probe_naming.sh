@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # require_probe_naming.sh — PreToolUse on Bash（2026-06-26 まこさん承認で新設）
 # 目的: read-only 分析スクリプトを /tmp・scratchpad から走らせる時、命名を *_probe.py / *_deep_analysis.py に物理強制。
 #   背景: 2026-06-26 に分析 probe を _probe 接尾辞なし（e36_winner_vs_te_overlap.py）で命名し、pdca_mark が

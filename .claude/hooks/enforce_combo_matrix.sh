@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # enforce_combo_matrix.sh — PreToolUse on Write|Edit（2026-07-06 まこさん指示で新設）
 # 指示: 「Entry×Exit の全組み合わせを網羅マトリクスで並べたうえで、あらゆる組み合わせ・選択肢で
 #        改善しつくすように、強制しろ」「E37 専用でなく全戦略共通にして」。

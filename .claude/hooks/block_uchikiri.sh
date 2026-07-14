@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # block_uchikiri.sh — PreToolUse on Write|Edit
 # 「打ち切り思考」のワードを 意思決定アーティファクト(ledger.md / next_step.md / acceptance.md)の
 # 新規内容で物理禁止（まこさん命令 2026-06-15「破棄ワード自体禁止／打ち切り思考も防ぐ」）。

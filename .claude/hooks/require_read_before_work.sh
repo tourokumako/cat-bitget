@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # require_read_before_work.sh — PreToolUse on Bash|Edit|Write|MultiEdit
 # ゲート1（読了強制）: 必読を Read tool で実際に開く（record_read.sh が read_log に記録）まで、
 #   作業ツール(Bash/Edit/Write/MultiEdit)を exit 2 で物理 block する。

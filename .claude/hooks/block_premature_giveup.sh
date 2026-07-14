@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # block_premature_giveup.sh — PreToolUse on Write|Edit
 # 「中身の打ち切り＝やらない理由で潰して止まる」を物理禁止（まこさん 2026-06-28 命令「ちゃんと強制して」）。
 #

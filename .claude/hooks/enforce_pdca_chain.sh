@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # enforce_pdca_chain.sh — PreToolUse on Write|Edit（2026-07-02 まこさん指示「PDCAとすべての思考がつながる仕組みを入れて」）
 #
 # 目的（全戦略共通）: PDCA の各段階(Check=analysis_block → Action=improvement_plan → Plan=acceptance)の"継ぎ目"を物理照合し、

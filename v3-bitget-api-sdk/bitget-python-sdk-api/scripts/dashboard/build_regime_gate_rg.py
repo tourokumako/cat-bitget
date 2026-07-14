@@ -92,14 +92,17 @@ def _assert_spec_schema(spec: dict) -> None:
             raise SystemExit(f"[RG 仕様スキーマ強制] 必須項目欠落: {key}（仕様は実値から自動生成・削れない・まこさん 2026-07-12）")
 
 
-def _zones_1h_rg(df: pd.DataFrame) -> pd.DataFrame:
+def _zones_1h_rg(df: pd.DataFrame, tol_arr=None) -> pd.DataFrame:
     """RG の 1h ゾーン＝v17 と同じ fractal スイング＋束ね（sf._detect_fractals・ZONE_* 定数）で、
     帯対の選択だけ拡張（RG-v3）: v17 は「価格に最も近い ≥ZONE_TOUCH クラスタ」1対のみで幅チェック →
     大きな往復の中の小さな中間レベル対を掴むと幅不足で不成立（12-09〜12-14 事案）。近い順にクラスタ対を
-    試し幅 ≥ ZONE_MIN_W を満たす最初の対を採る（最近接対が幅を満たす時は v17 と完全同一＝selftest で照合）。"""
+    試し幅 ≥ ZONE_MIN_W を満たす最初の対を採る（最近接対が幅を満たす時は v17 と完全同一＝selftest で照合）。
+    tol_arr=None（既定）＝固定 ZONE_TOL（RG-v5・v17 恒等）／per-bar 配列を渡すと束ね幅・padding を
+    ボラ連動にする（RG-v6・K×ATR%_1h・main の --adaptive-k）＝平坦は鋭く・高ボラはゾーンが立つ。"""
     is_res, is_sup, piv_h, piv_l = sf._detect_fractals(df)
     n = len(df)
     c = df["close"].to_numpy(float)
+    tol_arr = np.full(n, v17.ZONE_TOL) if tol_arr is None else np.asarray(tol_arr, float)
     is_res = np.asarray(is_res, bool); is_sup = np.asarray(is_sup, bool)
     piv_h = np.asarray(piv_h, float); piv_l = np.asarray(piv_l, float)
     res_idx = np.flatnonzero(is_res); res_px = piv_h[res_idx]
@@ -108,8 +111,9 @@ def _zones_1h_rg(df: pd.DataFrame) -> pd.DataFrame:
     s_lo = np.full(n, np.nan); s_hi = np.full(n, np.nan)
     ok = np.zeros(n, bool)
 
-    def zones(px_arr, idx_arr, i, lo_w, price, above):
-        """タッチ≥ZONE_TOUCH のクラスタ帯を全部返す（価格に近い順）＝v17 best_zone の全候補版。"""
+    def zones(px_arr, idx_arr, i, lo_w, price, above, tol):
+        """タッチ≥ZONE_TOUCH のクラスタ帯を全部返す（価格に近い順）＝v17 best_zone の全候補版。
+        tol＝束ね幅・padding（RG-v5 は固定 ZONE_TOL／RG-v6 は per-bar ボラ連動）。"""
         j0 = int(np.searchsorted(idx_arr, lo_w)); j1 = int(np.searchsorted(idx_arr, i + 1))
         if j1 <= j0:
             return []
@@ -120,21 +124,21 @@ def _zones_1h_rg(df: pd.DataFrame) -> pd.DataFrame:
         px = np.sort(px[sel])
         out = []; s = 0
         for k in range(1, len(px) + 1):
-            if k == len(px) or px[k] - px[k - 1] > px[k - 1] * v17.ZONE_TOL:
+            if k == len(px) or px[k] - px[k - 1] > px[k - 1] * tol:
                 cl = px[s:k]
                 if len(cl) >= v17.ZONE_TOUCH:
-                    out.append((float(cl.min()) * (1 - v17.ZONE_TOL / 2), float(cl.max()) * (1 + v17.ZONE_TOL / 2)))
+                    out.append((float(cl.min()) * (1 - tol / 2), float(cl.max()) * (1 + tol / 2)))
                 s = k
         out.sort(key=lambda z: abs((z[0] + z[1]) / 2 - price))
         return out
 
     start = max(v17.ZONE_LOOKBACK, 25)
     for i in range(start, n):
-        lo_w = i - v17.ZONE_LOOKBACK + 1
-        rcs = zones(res_px, res_idx, i, lo_w, c[i], True)
+        tol_i = float(tol_arr[i]); lo_w = i - v17.ZONE_LOOKBACK + 1
+        rcs = zones(res_px, res_idx, i, lo_w, c[i], True, tol_i)
         if not rcs:
             continue
-        scs = zones(sup_px, sup_idx, i, lo_w, c[i], False)
+        scs = zones(sup_px, sup_idx, i, lo_w, c[i], False, tol_i)
         if not scs:
             continue
         pairs = sorted(((rz, sz) for rz in rcs for sz in scs),
@@ -255,14 +259,37 @@ def _rows_5m(df: pd.DataFrame) -> list:
     return [[int(t), int(c), lab, ""] for t, c, lab in zip(ts_ms, close_int, df["label"].tolist())]
 
 
+def _adaptive_tol_1h(df1h: pd.DataFrame, k: float, lo: float = 0.0015, hi: float = 0.006) -> np.ndarray:
+    """RG-v6: 1時間足の ATR%（ATR14/close）から束ね幅 tol=clamp(k×ATR%, lo, hi) を per-bar で作る
+    ＝平坦は tol 小さく帯が鋭く／高ボラは tol 大きくスイングが束なってゾーンが立つ（頻度維持）。"""
+    h = df1h["high"].to_numpy(float); l = df1h["low"].to_numpy(float); c = df1h["close"].to_numpy(float)
+    pc = np.roll(c, 1); pc[0] = c[0]
+    tr = np.maximum(h - l, np.maximum(np.abs(h - pc), np.abs(l - pc)))
+    atr = pd.Series(tr).rolling(14).mean().to_numpy()
+    atr_pct = np.where(c > 0, atr / c, np.nan)
+    return np.clip(k * np.nan_to_num(atr_pct, nan=v17.ZONE_TOL), lo, hi)
+
+
 def main() -> int:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--adaptive-k", type=float, default=None,
+                    help="RG-v6: 束ね幅を k×ATR%%_1h に連動（例 0.5）。未指定=RG-v5（固定 ZONE_TOL・v17 恒等）")
+    args = ap.parse_args()
+    adaptive_k = args.adaptive_k
+    global VERSION, SM_DIR
+    if adaptive_k is not None:
+        VERSION = "rg-v6"
+        SM_DIR = PROTO_DIR / f"predictions_{VERSION}_5m"
+
     csv_path = v17.CSV
     if not csv_path.exists():
         sys.exit(f"ABORT: missing input CSV: {csv_path}")
     if not INDEX_JSON.exists():
         sys.exit(f"ABORT: missing index.json: {INDEX_JSON}")
 
-    print(f"[1/6] loading 5m CSV: {csv_path.name}")
+    print(f"[1/6] loading 5m CSV: {csv_path.name}  （VERSION={VERSION}"
+          f"{f' / adaptive-k={adaptive_k}' if adaptive_k is not None else ''}）")
     md5_head = hashlib.md5(csv_path.read_bytes()).hexdigest()[:12]
     df5 = pd.read_csv(csv_path)
     df5["ts"] = pd.to_datetime(df5["timestamp"])
@@ -270,10 +297,17 @@ def main() -> int:
     print(f"    5m rows: {len(df5):,} / {df5.index[0].date()}〜{df5.index[-1].date()} / md5 {md5_head}")
 
     print(f"[2/6] ① 1時間 S/Rゾーン局面（帯対拡張・fractal/束ね/定数は v17 再利用）＋ selftest ...")
-    df1h = _zones_1h_rg(v17._resample(df5, "1h"))
+    d1h_src = v17._resample(df5, "1h")
+    tol_arr = _adaptive_tol_1h(d1h_src, adaptive_k) if adaptive_k is not None else None
+    df1h = _zones_1h_rg(d1h_src, tol_arr=tol_arr)
     n1 = len(df1h); okz = int(df1h["zone_ok"].sum())
     print(f"    1h: {n1:,}本 / 帯あり {okz:,}（{okz/n1*100:.1f}%）")
-    selftest_msg = _selftest_vs_v17(df1h)
+    if adaptive_k is not None:
+        selftest_msg = (f"RG-v6 適応版（束ね幅=clamp({adaptive_k}×ATR%_1h, 0.15%, 0.6%)）＝v17 とは帯定義が異なるため "
+                        f"labels_v17 一致 selftest は非適用（意図的に別校正）。視認校正で確認後 labels_rg-v6.csv を E37 移植の照合正本にする。")
+        print(f"    selftest: 非適用（v6＝v17 と別校正・視認確認）")
+    else:
+        selftest_msg = _selftest_vs_v17(df1h)
 
     print(f"[3/6] ② 上げトレンド状態機械（複数足: 15分構造×2＋90分{TREND_T90*100:.1f}%＋6h{TREND_T6*100:.1f}%）＋ ③ 5分足 帯内判定...")
     df5g = _apply_5m_rg(df5, df1h)
@@ -322,12 +356,17 @@ def main() -> int:
     print(f"    saved labels_{VERSION}.csv（E37 移植時の一致照合の正本・5分の最終判定は predictions_{VERSION}_5m/）")
 
     print(f"[5/6] 仕様の自動生成（実値由来・スキーマ強制）...")
+    tol_logic = (f"価格帯{v17.ZONE_TOL*100:.1f}%" if adaptive_k is None
+                 else f"価格帯 clamp({adaptive_k}×ATR%_1h, 0.15%, 0.6%)〔RG-v6 ボラ連動〕")
+    tol_param = (f"ZONE_TOL={v17.ZONE_TOL}〔視認校正（2026-07-05 概ね良い）＝v17 と同一値〕"
+                 if adaptive_k is None
+                 else f"ZONE_TOL=clamp({adaptive_k}×ATR%_1h,0.15%,0.6%)〔RG-v6 ボラ連動＝平坦は鋭く/高ボラでゾーン成立・視認校正中〕")
     spec = {
         "入力データ": (f"{csv_path.name}（5分足 {len(df5):,}本 {df5.index[0].date()}〜{df5.index[-1].date()}・"
                    f"md5 {md5_head}・Binance spot 正本 §8.2.1.1）"),
         "教師": ("なし＝幾何ルールのみ（手動レジームラベル regime_samples_4h*.csv / daily_human は一切不読・2026-07-03 方針）。"
                "まこさん指摘の除外7窓・残す3域（2026-07-12）は閾値選定の視認校正照合点として使用（学習器に与えない・採点窓 net 不参照）"),
-        "判定ロジック": (f"①1時間足: 確定 fractal スイング（j+2 確定）を過去{v17.ZONE_LOOKBACK}h窓・価格帯{v17.ZONE_TOL*100:.1f}%で束ね、"
+        "判定ロジック": (f"①1時間足: 確定 fractal スイング（j+2 確定）を過去{v17.ZONE_LOOKBACK}h窓・{tol_logic}で束ね、"
                     f"スイング数≥{v17.ZONE_TOUCH}のS/Rゾーン対（近い順・幅≥{v17.ZONE_MIN_W*100:.1f}%を満たす最初の対＝v3拡張）が"
                     f"close の上下に揃う＝帯あり "
                     f"②上げトレンド状態機械（v4新設・v5で複数足化・上げ専用）: 発火＝(a)15分足{TREND_ST15_K}本連続の"
@@ -338,8 +377,8 @@ def main() -> int:
                     f"（close<直近{TREND_STRUCT_REL}本の確定15分安値）＝発火中は uptrend（range にしない） "
                     f"③5分足: 帯あり ∩ close が帯内（外れ＝即離脱） ∩ 非 uptrend ＝ range。"
                     f"※v3 の range_wait（往復実証待ち）は range に統合（2026-07-12 まこさん）"),
-        "パラメータ（出所つき）": (f"ZONE_LOOKBACK={v17.ZONE_LOOKBACK}h / ZONE_TOL={v17.ZONE_TOL} / ZONE_TOUCH={v17.ZONE_TOUCH} / "
-                         f"ZONE_MIN_W={v17.ZONE_MIN_W}〔視認校正（2026-07-05 概ね良い）＝v17 と同一値〕 / "
+        "パラメータ（出所つき）": (f"ZONE_LOOKBACK={v17.ZONE_LOOKBACK}h / {tol_param} / ZONE_TOUCH={v17.ZONE_TOUCH} / "
+                         f"ZONE_MIN_W={v17.ZONE_MIN_W} / "
                          f"TREND_T90={TREND_T90} TREND_T6={TREND_T6} ST15_K={TREND_ST15_K} MOM15_K={TREND_MOM15_K} "
                          f"MOM15_AMP={TREND_MOM15_AMP} RETR={TREND_RETR} STALL={TREND_STALL}bar STRUCT_REL={TREND_STRUCT_REL}本 "
                          f"CONT={TREND_CONT_M}/{TREND_CONT_W}bar〔2026-07-12 まこさん指摘の除外7窓と残す3域で校正・"

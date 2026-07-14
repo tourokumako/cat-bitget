@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # enforce_strategy_anchor.sh — PreToolUse on Write|Edit（2026-07-04 まこさん承認で新設）
 # 戦略係留ゲート: acceptance.md を書く瞬間に、TARGET 戦略の担当局面・方向（台帳 STRATEGY_ANCHOR マーカー
 # ＝cat_requirements §1.2.1 の機械可読形）との照合を物理強制する。ロジック本体は enforce_strategy_anchor.py

@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # enforce_role_criteria.sh — PreToolUse on Write|Edit（2026-06-29 まこさん承認で新設）
 # 目的: 改善提案（acceptance.md）を書く瞬間に「対象戦略の役割（スキャル/デイトレ…）に反する案」を物理的に止める。
 #   背景＝CC が E37=スキャル（件数を上げて小さく多数取る）の役割を忘れ、件数±0 の floor 単独案を出し、

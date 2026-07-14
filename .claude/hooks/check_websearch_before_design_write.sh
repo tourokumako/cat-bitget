@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # PreToolUse on Write|Edit — 設計書前 しっかりベースアップ ゲート（2026-06-15 まこさん承認）。
 # 旧版は file_path に "ml_pipeline_baseline"（廃止8工程フロー）を含む時だけ発火＝死にフック化していた。
 # → 現行設計書（*_design.md / strat_v9ml_design.md / acceptance.md）を書く瞬間に、直近 WINDOW 分の

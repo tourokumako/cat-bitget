@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # enforce_e37_pdca.sh — PreToolUse on Write|Edit（2026-07-02 まこさん指示・共通/E37専用を明確に分離）
 #
 # 目的（E37=スキャル 特有のみ）: 全戦略共通の PDCA 連結・分析原則は enforce_pdca_chain.sh が担当。

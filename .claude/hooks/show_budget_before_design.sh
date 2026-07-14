@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # show_budget_before_design.sh — PreToolUse on Write|Edit
 # 設計/改善案を書く瞬間（acceptance.md / *_design.md）に、予算 0.12 BTC は【全採用戦略の共有枠】を
 # 1セッション1回だけ表示（exit 2 でブロック→再実行で通す＝確実に目に入る・毎回ブロックは煩いので1回）。

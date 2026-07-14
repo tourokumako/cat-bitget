@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # require_analysis_before_proposal.sh — PreToolUse on Write|Edit（2026-06-24 まこさん承認で新設）
 # 目的: 改善提案・設計（acceptance.md / *_design.md）を書く瞬間に「分析フェーズ」を物理強制する。
 #   既存の pdca_gate は score.py で採点した後にしか分析を強制しない＝採点しない既存データ分析には

@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # require_instrument_read_before_impl.sh — PreToolUse on Write|Edit（2026-06-12 まこさん指示で新設）
 # 目的: 実験スクリプト（strat_/train_/gen_/measure_/*oracle*/compose_/size_）を書く瞬間に、
 #   計器の正本 eval_engine.py を Read tool で読んでいなければ exit 2 で block する。

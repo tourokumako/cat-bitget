@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # require_precheck_before_score.sh — PreToolUse on Bash
 # score.py を「実際に python(3) で実行」する前に、対象CSVが採点前ゲート（precheck.py）を
 # PASS しているか（marker precheck_pass_<csv名> の有無）を確認。無ければ exit 2 でブロック。

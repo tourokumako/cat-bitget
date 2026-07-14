@@ -206,6 +206,8 @@ V22_FIXED_V21_FOLD = {(5, False): 12}                                   # v21_03
 # ── v24（acceptance 2026-07-16）: trend_caught 玉のピーク帯 resting maker 利確 ＋ v22 学習の定数化（入口〜出口すべて固定値・学習ゼロ）──
 V24_TREND_TP_PCT = 0.08          # trend_caught 玉の resting maker 利確%（a-priori＝手数料床 SCALP_FLOOR ∩ MFE 較正基準[MFE中央値×60-70%] ∩ 学術 Leung&Li[深SL→浅TP]・スイープでない・L-267）
 V24_FIXED_V22 = {"v22_anchor": {0: 24}}   # v22_042 採択値の定数継承（cell0/M24・v22 学習窓選定 _select_v22_params をスキップ＝入口〜出口すべて固定値・V22_FIXED_V21_* と同型・他 entry/pf/warn は None＝v22_042 採択どおり）
+# ── v25（acceptance 2026-07-16）: レンジ判定 range_ok_rg5 の束ね幅をボラ連動にする（RG-v6・入口/件数/出口は v24 据え置き・1レバー）──
+V25_K = 0.5                       # 束ね幅 tol=clamp(K×ATR%_1h,0.15%,0.6%) の倍率（幾何指標 diag＋まこさん視認校正で選定＝採点窓 net 不参照・L-267 非該当・build_regime_gate_rg._adaptive_tol_1h に渡す）
 V22_ANCHOR_M = (24, 36, 48)     # fixed-value-approved TP アンカー＝レンジ下限（直近 M 本 low・2〜4h＝スキャル保有整合の幾何 a-priori）
 V22_PF_K = (2.0, 3.0)           # fixed-value-approved ピーク畳みの武装＝含み益ピーク ≥ k×往復fee（手数料倍率 a-priori）
 V22_PF_R = (0.3, 0.5)           # fixed-value-approved ピークからの戻し率 r（比率 a-priori）
@@ -1572,13 +1574,17 @@ def _import_rg5():
     return rgmod
 
 
-def _rg5_frames(df: pd.DataFrame):
+def _rg5_frames(df: pd.DataFrame, adaptive_k=None):
     """v20: RG-v5 の 1h 帯と 5分判定（range/uptrend）を計算して返す（_apply_rg5_to_5m と selftest の共通実体）。
     未来値ゼロ（H2）＝1h/15分は確定バーのみ ffill・状態機械 rg5_uptrend_state は過去 close の逐次更新
-    （RG 仕様欄「因果性」と同一・ロジックは build_regime_gate_rg.py を import 再利用＝コピー禁止）。"""
+    （RG 仕様欄「因果性」と同一・ロジックは build_regime_gate_rg.py を import 再利用＝コピー禁止）。
+    adaptive_k=None（既定）＝RG-v5 固定束ね幅（v24 まで恒等）／指定時＝RG-v6 束ね幅ボラ連動（v25・
+    tol=clamp(adaptive_k×ATR%_1h,0.15%,0.6%)＝_adaptive_tol_1h）＝平坦は帯が鋭く/高ボラでゾーンが立つ。"""
     rgmod = _import_rg5()
     d5 = df.set_index(pd.DatetimeIndex(df["ts"]))[["open", "high", "low", "close", "volume"]]
-    z1h = rgmod._zones_1h_rg(rgmod.v17._resample(d5, "1h"))
+    _d1h = rgmod.v17._resample(d5, "1h")
+    _tol = rgmod._adaptive_tol_1h(_d1h, adaptive_k) if adaptive_k is not None else None   # v25: RG-v6 適応束ね幅
+    z1h = rgmod._zones_1h_rg(_d1h, tol_arr=_tol)
     idx5 = pd.DatetimeIndex(df["ts"])
     okz = z1h["zone_ok"].reindex(idx5, method="ffill").fillna(False).astype(bool).to_numpy()
     res_lo = z1h["res_lo"].reindex(idx5, method="ffill").to_numpy(float)
@@ -1593,10 +1599,11 @@ def _rg5_frames(df: pd.DataFrame):
     return z1h, up, rng, res_lo, res_hi, sup_lo, sup_hi
 
 
-def _apply_rg5_to_5m(df: pd.DataFrame) -> pd.DataFrame:
+def _apply_rg5_to_5m(df: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:
     """v20: RG-v5（帯対拡張＋上げトレンド状態機械・視認校正3巡）で range_ok_rg5（GATE_IDENT）と
-    rg5_uptrend を計算し、v11 エンジンの帯列へ供給する（acceptance 2026-07-12・実体は _rg5_frames）。"""
-    _, up, rng, res_lo, res_hi, sup_lo, sup_hi = _rg5_frames(df)
+    rg5_uptrend を計算し、v11 エンジンの帯列へ供給する（acceptance 2026-07-12・実体は _rg5_frames）。
+    adaptive_k 指定時＝RG-v6 束ね幅ボラ連動（v25・acceptance 2026-07-16）＝既定 None は RG-v5 恒等。"""
+    _, up, rng, res_lo, res_hi, sup_lo, sup_hi = _rg5_frames(df, adaptive_k)
     df["rg5_uptrend"] = up
     df["range_ok_rg5"] = rng
     df["v11_res_lo"] = res_lo; df["v11_res_hi"] = res_hi
@@ -3830,7 +3837,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -3848,12 +3855,16 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
         if v20_rg5:                                    # v20: 入口ゲートを RG-v5 に差し替え（acceptance 2026-07-12 承認・LEVER）
             assert v12_open_range and v13_time_maker and v18_tp2_far and not v19_upper_touch, \
                 "v20 は v18 構成（--v12-open-range --v13-time-maker --v18-tp2-far）の入口ゲート差し替え＝--v19-upper-touch と併用しない（acceptance 2026-07-12）"
-            df = _apply_rg5_to_5m(df)
+            if v25_adaptive_band:                       # v25: レンジ判定の束ね幅をボラ連動に（RG-v6・acceptance 2026-07-16・LEVER）
+                assert v24_trend_maker_tp, "v25 は v24 構成の上に載る（--v24-trend-maker-tp 必須・acceptance 2026-07-16）"
+            _ak = V25_K if v25_adaptive_band else None   # v25 時のみ RG-v6 適応束ね幅・None=RG-v5 恒等
+            df = _apply_rg5_to_5m(df, adaptive_k=_ak)
             _upn = int(df["rg5_uptrend"].sum())
             okn = int(df["range_ok_v11"].sum())
             cn = int(v11_entry_candidates(df, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, upper_touch=v19_upper_touch).sum())
-            print(f"  [range_ok_rg5] RG-v5 レンジ判定 通過 {okn:,}/{len(df):,} バー（{okn/len(df)*100:.1f}%）"
-                  f"／uptrend {_upn:,}（{_upn/len(df)*100:.1f}%）＝帯対拡張 ∩ 5分帯内 ∩ 非uptrend（labels_rg-v5 一致は --v20-selftest-rg5）")
+            print(f"  [range_ok_rg5] {'RG-v6 適応束ね幅' if v25_adaptive_band else 'RG-v5 レンジ判定'} 通過 {okn:,}/{len(df):,} バー（{okn/len(df)*100:.1f}%）"
+                  f"／uptrend {_upn:,}（{_upn/len(df)*100:.1f}%）＝帯対拡張 ∩ 5分帯内 ∩ 非uptrend"
+                  f"{f'・束ね幅 tol=clamp({V25_K}×ATR%_1h,0.15%,0.6%)' if v25_adaptive_band else '（labels_rg-v5 一致は --v20-selftest-rg5）'}")
         else:
             z1h = _zones_v11_1h(df)
             df = _apply_v11_to_5m(df, z1h)
@@ -4227,12 +4238,12 @@ def _load(smoke: int) -> pd.DataFrame:
     return df
 
 
-def _diagnostic(df, v6=False, v6r=False, v7=False, v8=False, v10=False, v11=False, v11_open_entry=False, v12_open_range=False, v19_upper_touch=False, v20_rg5=False):
+def _diagnostic(df, v6=False, v6r=False, v7=False, v8=False, v10=False, v11=False, v11_open_entry=False, v12_open_range=False, v19_upper_touch=False, v20_rg5=False, v25_adaptive_band=False):
     """発火ファネル（採点しない）＝イベント頻度のみ（検出器は本走で学習＝重い処理を diagnostic で回さない）。"""
     if v11:
         df = _rsi9_v10(df)
         if v20_rg5:                                    # v20: RG-v5 ゲート（acceptance 2026-07-12）
-            df = _apply_rg5_to_5m(df)
+            df = _apply_rg5_to_5m(df, adaptive_k=(V25_K if v25_adaptive_band else None))   # v25: RG-v6 適応束ね幅
         else:
             z1h = _zones_v11_1h(df)
             df = _apply_v11_to_5m(df, z1h)
@@ -4346,6 +4357,7 @@ def main():
     ap.add_argument("--v23-trend-exit", action="store_true", help="v23: TREND_CONT の V9 型 Exit 状態機械化＝uptrend 発火で保有 SHORT を成行投げ（TREND_CONT 即taker）せず trend_caught として保持し、STOCH_REVERSE_EXIT(taker・stoch(9,3) GC∩含み益ピーク≥往復fee)／MFE_STALE_CUT(taker・保有30分∩含み益ピーク<往復fee)／災害SL・TIME(現行)の優先順位つき状態機械へ委ねる。MFE_DRAWDOWN_CUT(trailing)・v21_fold・v22_peak_fold は v23 中は不使用。固定値は V9 実証 a-priori・学習窓選定なし・入口 armed DC/TP 据え置き（--v22-set 必須・acceptance 2026-07-15 承認・既定 OFF=v22_042 構成恒等）")
     ap.add_argument("--v23-guard-check", action="store_true", help="v23 番人メタ確認: OFF 恒等 md5(v22_042 一致)／uptrend 全True で TREND_CONT 即taker 0＝新設枝へ／stoch GC 全False で STOCH_REVERSE 0／MFE_STALE gate 極大で全 trend_caught 即 stall cut（採点しない・--smoke 併用推奨）")
     ap.add_argument("--v24-trend-maker-tp", action="store_true", help="v24: trend_caught 玉（uptrend 発火で畳む玉）に建値+0.08%（V24_TREND_TP_PCT）の resting maker 利確（TREND_CAUGHT_TP・maker）を優先枝で置き、反転待ち STOCH_REVERSE_EXIT を置換（速い5分レンジで遅行し取り逃すため）。MFE_STALE_CUT(B型止血)・災害SL・TIME は維持・稼ぐ玉は不変。v22 学習窓選定も V24_FIXED_V22 で定数化＝入口〜出口すべて固定値（学習ゼロ）。L=0.08% は a-priori（手数料床∩MFE較正∩両窓crude∩学術Leung&Li）・学習窓選定なし（--v22-set 必須・acceptance 2026-07-16 承認・既定 OFF=v23_043 恒等）")
+    ap.add_argument("--v25-adaptive-band", action="store_true", help="v25: レンジ判定 range_ok_rg5 の束ね幅をボラ連動にする（RG-v6・tol=clamp(0.5×ATR%_1h[V25_K],0.15%,0.6%)・build_regime_gate_rg._adaptive_tol_1h）＝平坦は帯が鋭く res_lo が真の抵抗に近づく[下弦是正]／高ボラはスイングが束なってゾーンが立つ[高ボラレンジを拾う・頻度維持]。入口の到達/armed DC・件数・出口は v24 据え置き（1レバー・K は幾何指標 diag＋まこさん視認校正で選定＝採点窓 net 不参照・L-267 非該当）。--v24-trend-maker-tp 必須・acceptance 2026-07-16 承認・既定 OFF=v24_044 恒等")
     ap.add_argument("--v11-selftest-zones", action="store_true", help="v11 自己検査: _zones_v11_1h が labels_v17.csv（視認校正済み計器）と全期間一致するか機械照合して終了")
     ap.add_argument("--param-schema-selftest", action="store_true", help="§0 使用パラメータ 自動生成の既知答えテスト＋番人（導出の正しさ＋項目削除の物理禁止）を実行して終了・採点しない・データ不要")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
@@ -4396,12 +4408,12 @@ def main():
         _v18_guard_check(df, a.box_tf)
         return
     if a.diagnostic:
-        _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9), v10=a.v10, v11=a.v11, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v19_upper_touch=a.v19_upper_touch, v20_rg5=a.v20_rg5)
+        _diagnostic(df, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=(a.v8 or a.v9), v10=a.v10, v11=a.v11, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v19_upper_touch=a.v19_upper_touch, v20_rg5=a.v20_rg5, v25_adaptive_band=a.v25_adaptive_band)
         return
     run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9, v10=a.v10,
             v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker, v14_machine=a.v14_exit_machine, v15_exit_set=a.v15_exit_set, v16_exit_set=a.v16_exit_set, v17_exit_set=a.v17_exit_set, v18_tp2_far=a.v18_tp2_far, v19_upper_touch=a.v19_upper_touch, v20_rg5=a.v20_rg5,
             v21_set=a.v21_set, v21_entry_only=a.v21_entry_only, v21_fold_only=a.v21_fold_only, v22_set=a.v22_set,
-            v23_trend_exit=a.v23_trend_exit, v24_trend_maker_tp=a.v24_trend_maker_tp)
+            v23_trend_exit=a.v23_trend_exit, v24_trend_maker_tp=a.v24_trend_maker_tp, v25_adaptive_band=a.v25_adaptive_band)
     print("=" * 100)
 
 

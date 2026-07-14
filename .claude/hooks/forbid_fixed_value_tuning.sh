@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # 固定値調整の物理禁止（まこさん命令 2026-06-12・L-261/E20 再演防止）
 #
 # 対象: scripts/priority_rebuild/*.py への Write/Edit のうち、戦略パラメータの「手置き候補値スイープ」

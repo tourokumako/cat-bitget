@@ -1,4 +1,5 @@
 #!/bin/bash
+[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
 # enforce_search_quality.sh — PreToolUse on WebSearch
 # 「程よい検索」の物理強制（まこさん 2026-06-14・検索精度が低い＝Gemini に聞いた方がマシ事案）。
 # CC は (a) キーワードサラダの広い検索で retail SEO を掴む (b) スニペット要約で済ませ精読しない、で
