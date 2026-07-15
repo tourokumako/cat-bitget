@@ -181,6 +181,16 @@ def main():
     cm["平均保有"] = d.groupby("exit_reason")["hold_min"].mean().round(0)
     print(cm.rename(index=EXIT_JP).rename_axis("出口理由").to_string())
 
+    # ===== C2. 入口型別（戦略が入口を枝分かれさせている時は必ず型で分けて見る・見落とし防止 2026-07-15）=====
+    if "ceil_type" in d.columns and d["ceil_type"].notna().any():
+        print("\n  C2. 入口型別（down=下落系[天井=直近高値] / flat_up=平坦上昇系[天井=res_hi]・型で成績が違うので分けて見る）")
+        ct = d.copy(); ct["ceil_type"] = ct["ceil_type"].fillna("(不明)")
+        print(_grp(ct, "ceil_type").rename_axis("入口型").to_string())
+        piv2 = ct.pivot_table(index="exit_reason", columns="ceil_type", values="net_usd", aggfunc="sum", observed=True).round(0).fillna(0)
+        piv2.columns = [f"純益_{c}" for c in piv2.columns]
+        print("\n     ├ 出口理由 × 入口型（純益）")
+        print(piv2.rename(index=EXIT_JP).rename_axis("出口理由").to_string())
+
     # ===== D. サイズ / add 別（増強）=====
     print("\n  D. サイズ・add別（mean が右肩上がりなら買い増しが効いている）")
     dd2 = _grp(d, "size_btc"); dd2["平均買増"] = d.groupby("size_btc")["add_count"].mean().round(2)
