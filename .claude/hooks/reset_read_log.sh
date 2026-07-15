@@ -10,7 +10,7 @@ rm -f "$STATE_DIR/budget_rule_shown"   # 予算バナーを新セッションで
 rm -f "$STATE_DIR/banned_words_checked" # 禁止語チェックの事前実行を新セッションで1回強制（require_banned_words_check.sh・2026-07-11 まこさん指示）
 rm -f "$STATE_DIR/analysis_block.md"   # 分析ブロックを新セッションでリセット（前セッションの分析を持ち越さない＝require_analysis_before_proposal.sh・2026-06-24）
 rm -f "$STATE_DIR/improvement_plan.md" # 改善案生成(STEP1〜5)を新セッションでリセット（probe前ゲートA＋提案ゲートB＝require_probe_naming/require_analysis_before_proposal・2026-06-28）
-rm -f "$STATE_DIR/fastmode_trades_seen" "$STATE_DIR/fastmode_e37_seen" "$STATE_DIR/worklog_ok"  # fast-mode ガード(改善前データ必読/引き継ぎ記録)のマーカーを新セッションでリセット（2026-07-16）
+rm -f "$STATE_DIR/fastmode_trades_seen" "$STATE_DIR/fastmode_e37_seen" "$STATE_DIR/worklog_ok" "$STATE_DIR/fastmode_record_pending"  # fast-mode ガード(改善前データ必読/引き継ぎ記録/分析後記録)のマーカーを新セッションでリセット（2026-07-16）
 # 目標逆算ゲート（ゲート2）リセット: 前セッションの逆算ブロックは引き継がないが、
 # 引き継ぎ前提（本筋・やってはいけないこと）は残す。必須見出しの語は入れないので
 # ゲートは維持され、新セッションは前提を見てから自分で目標逆算を Write し直す（2026-06-12 まこさん指示）。

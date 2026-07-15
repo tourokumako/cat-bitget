@@ -16,26 +16,33 @@ STATE="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 RATCHET="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/results/priority_rebuild/ratchet"
 WLDIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state"
 
-python3 - "$RATCHET" "$WLDIR" <<'PYEOF'
+python3 - "$RATCHET" "$WLDIR" "$STATE" <<'PYEOF'
 import sys, os, glob
-ratchet, wldir = sys.argv[1], sys.argv[2]
-trades = glob.glob(os.path.join(ratchet, "trades_*.csv"))   # 直下のみ（archive は対象外）
-if not trades:
-    sys.exit(0)                                              # 実験なし → 通す
-newest_trade = max(os.path.getmtime(p) for p in trades)
+ratchet, wldir, state = sys.argv[1], sys.argv[2], sys.argv[3]
+# 実験＝新 trades_*.csv（直下のみ・archive 対象外）／ 分析＝fastmode_record_pending マーカー（report/analyze/score/probe を走らせた・track_fastmode_data_read が touch）
+trades = glob.glob(os.path.join(ratchet, "trades_*.csv"))
+newest_trade = max((os.path.getmtime(p) for p in trades), default=0)
+marker = os.path.join(state, "fastmode_record_pending")
+newest_pending = os.path.getmtime(marker) if os.path.exists(marker) else 0
+newest_action = max(newest_trade, newest_pending)          # 実験 or 分析 の最新
+if newest_action == 0:
+    sys.exit(0)                                            # 実験も分析もしていない → 通す
 wls = glob.glob(os.path.join(wldir, "session_worklog_*.md"))
 newest_wl = max((os.path.getmtime(p) for p in wls), default=0)
-if newest_wl >= newest_trade:
-    sys.exit(0)                                             # worklog が実験より新しい＝記録済み → 通す
-sys.exit(7)                                                 # 未記録 → ブロック（7 を下で判定）
+if newest_wl >= newest_action:
+    sys.exit(0)                                            # worklog が実験/分析より新しい＝記録済み → 通す
+# 何が未記録かを stderr に（実験 or 分析）
+sys.stderr.write("EXPERIMENT " if newest_trade > newest_wl else "")
+sys.stderr.write("ANALYSIS " if newest_pending > newest_wl else "")
+sys.exit(7)                                                # 未記録 → ブロック
 PYEOF
 rc=$?
 [ "$rc" -eq 0 ] && exit 0
 
-echo "🔒 [引き継ぎ記録ゲート・fast-mode] 実験(新 trades_*.csv)を回したのに session_worklog が未更新です。" >&2
+echo "🔒 [引き継ぎ記録ゲート・fast-mode] 実験(新 trades_*.csv) または 分析(report/analyze/score/probe) を回したのに session_worklog が未更新です。" >&2
 echo "" >&2
-echo "fast-mode は改善アーク自動生成が使えない＝都度ログで引き継ぎの「改善内容・経緯」に誤解/ヌケモレを残さない（next_step 運転方式2・cat_requirements §8.5）。" >&2
-echo "対処: session_worklog_<日付>.md に今回の実験を追記してからターンを終える。記載＝①何を変えた ②採点窓 score.py の net（学習窓を持ち込まない）③merit/demerit ④次の一手。" >&2
-echo "  誤解防止チェック: 采否は採点窓 score.py の数字で書いたか／学習窓・precheck・L-320 を持ち込んでいないか／crude(疑似シミュ)の数字を采否に使っていないか。" >&2
+echo "fast-mode は改善アーク自動生成が使えない＝都度ログで引き継ぎの「改善内容・経緯（＝なぜそうしたか）」に誤解/ヌケモレを残さない（next_step 運転方式2・cat_requirements §8.5）。実験だけでなく分析の結論・方針判断も記録する（今回たまたま書けただけ＝再現性がないので強制・まこさん 2026-07-16）。" >&2
+echo "対処: session_worklog_<日付>.md に追記してからターンを終える。記載＝①何を変えた/何を分析した ②結論（採点窓 score.py の net・学習窓を持ち込まない）③merit/demerit ④次の一手（なぜ）。" >&2
+echo "  誤解防止チェック: 采否は採点窓 score.py の数字か／学習窓・precheck・L-320 を持ち込んでいないか／crude の数字を采否に使っていないか／E37 は件数/日≥5(スキャル)か。" >&2
 echo "（正当に記録不要な時のみ touch .claude/state/worklog_ok）" >&2
 exit 2
