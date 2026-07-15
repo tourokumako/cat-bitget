@@ -1226,6 +1226,9 @@ def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
         "adx_at_entry": round(float(pos["adx_entry"]), 3) if np.isfinite(pos["adx_entry"]) else None,
         "stoch_k_at_entry": round(float(pos["k_entry"]), 2) if np.isfinite(pos["k_entry"]) else None,
         "box_W_pct_at_entry": round(float(pos["W_entry"]), 5) if np.isfinite(pos["W_entry"]) else None,
+        "entry_pos_frac": (round(float(pos["pos_frac"]), 3) if (pos.get("pos_frac") is not None and np.isfinite(pos.get("pos_frac", np.nan))) else None),   # v26 診断: 発火位置（0=下端サポート/1=上端レジスタンス）
+        "mid_frac": (round(float(pos["mid_frac"]), 3) if (pos.get("mid_frac") is not None and np.isfinite(pos.get("mid_frac", np.nan))) else None),         # v26 診断: TP2=レンジ中央の帯内位置（entry_pos_frac と比較＝上/下半分の判定）
+        "res_zone_pos": (round(float(pos["res_zone_pos"]), 3) if (pos.get("res_zone_pos") is not None and np.isfinite(pos.get("res_zone_pos", np.nan))) else None),   # v26 診断: レジスタンス帯内の発火位置（0=res_lo 下端/1=res_hi 頂点/<0=帯の下/>1=帯の上）
         "entry_hour": int(entry_ts.hour), "entry_weekday": int(entry_ts.weekday()),
         "mfe_usd": round((pos["max_fav"] - lp) * lot_size * sdir, 4),
         "mae_usd": round((pos["max_adv"] - lp) * lot_size * sdir, 4),
@@ -1880,6 +1883,28 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
     v22w = v15_params.get("v22_warn") if v15 else None     # v22_uptrend_warning の shrink 前倒し（M 本・None=恒等）
     v23te = bool(v15_params.get("v23_trend_exit")) if v15 else False   # v23（acceptance 2026-07-15）: uptrend 発火の成行投げを廃止し V9 型状態機械へ
     v24tm = bool(v15_params.get("v24_trend_maker_tp")) if v15 else False   # v24（acceptance 2026-07-16）: trend_caught 玉のピーク帯 resting maker 利確（反転待ち STOCH_REVERSE を置換・全固定値）
+    v26g = float(v15_params.get("v26_atr_gate")) if (v15 and v15_params.get("v26_atr_gate") is not None) else None   # v26（fast-mode 2026-07-15）: 入口 atr_pct 固定下限＝低ボラ薄利を建てず TP幅ある高ボラ場面に寄せる（None=恒等・建て時点 atr[i]/c[i]＝H2）
+    v26tf = float(v15_params.get("v26_touch_frac")) if (v15 and v15_params.get("v26_touch_frac") is not None) else None   # v26（fast-mode 2026-07-15・まこさん）: 天井で売る＝直近レンジの上端寄り pos>=F でだけ建てる（急落後も直近レンジは価格に追従＝張り付いた古いレジを使わない）
+    _hh26 = _ll26 = _rng26f = None
+    if v26tf is not None:
+        _mbar26 = max(2, int(round(float(v15_params.get("v26_touch_hours", 12.0)) * 12)))   # 直近レンジの窓（時間→5分バー）
+        _hh26 = pd.Series(h).rolling(_mbar26, min_periods=2).max().to_numpy(float)           # 直近高値（h[i] は当該バー確定＝H2）
+        _ll26 = pd.Series(l).rolling(_mbar26, min_periods=2).min().to_numpy(float)           # 直近安値
+        _rng26f = _hh26 - _ll26
+        o26 = df["open"].to_numpy(float)                                                     # 陰転（反転）判定用
+    v26sp = bool(v15_params.get("v26_split")) if v15 else False                              # v26（fast-mode・まこさん）: 下落系/平坦系でレンジ入口を切り分け＝天井に売り指値を置いて待つ
+    v26ue = bool(v15_params.get("v26_uptrend_exit")) if v15 else False                       # v26 B（まこさん 2026-07-15）: uptrend レジーム発火で保有玉を緊急離脱（成行）＝上昇に巻き込まれ時間切れ大損する前に損害頭打ち
+    _rhdn26 = None; _gap26 = 0.0; _v26ceil = np.nan
+    if v26sp:
+        _gap26 = float(v15_params.get("v26_gap", 0.5)) / 100.0                                # 下落系判定＝価格がレジ帯下端より _gap% 以上下（レジが急落前に張り付き）
+        _mdn26 = max(2, int(round(float(v15_params.get("v26_down_hours", 6.0)) * 12)))        # 下落系の天井＝直近高値の窓（急落除外の短窓・時間→5分バー）
+        _rhdn26 = pd.Series(h).rolling(_mdn26, min_periods=2).max().shift(1).to_numpy(float)  # 直近高値（前バーまで＝H2・当該バーが新高値で約定）
+        _maxage26 = float(v15_params.get("v26_max_age_hours", 0.0))                           # A: レンジ判定直後に入る＝range_ok が立ってからの経過がこの時間内のみ建てる（0=制限なし）
+        if _maxage26 > 0:
+            _idxn = np.arange(n); _fi = np.where(~ok_arr, _idxn, -1)                          # range_ok 連続バー数（立ってからの経過・まこさん 2026-07-15）
+            _age26 = (_idxn - np.maximum.accumulate(_fi)).astype(float)
+        else:
+            _age26 = None
     if v23te:                                              # v23: ピーク畳み(trailing=MFE_DRAWDOWN_CUT)は不使用（両窓符号反転で勝ち玉を切る・L-341）
         v22p = None
         v15_params["_stats"].setdefault("v23_trend_caught", 0)
@@ -1922,10 +1947,14 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
             if el > TTL:
                 pend = None
             elif el >= 1 and h[i] >= pend["limit"]:
+                _rng26 = (rz_hi[i] - sz_hi[i]) if (np.isfinite(rz_hi[i]) and np.isfinite(sz_hi[i])) else np.nan   # v26 診断: レンジ帯内の発火位置（0=下端サポート・1=上端レジスタンス）＝下端発火の一次確認
                 _lot = {"side": "SHORT", "avg": pend["limit"], "size": unit,
                         "add_count": len(lots) + 1, "first_idx": i, "last_fill_idx": i,
                         "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i],
                         "W_entry": pend["W_pct"], "max_fav": l[i], "max_adv": h[i],
+                        "pos_frac": ((pend["limit"] - sz_hi[i]) / _rng26) if (np.isfinite(_rng26) and _rng26 > 0) else np.nan,
+                        "mid_frac": ((mid[i] - sz_hi[i]) / _rng26) if (np.isfinite(_rng26) and _rng26 > 0) else np.nan,
+                        "res_zone_pos": (((pend["limit"] - rz_lo[i]) / (rz_hi[i] - rz_lo[i])) if (np.isfinite(rz_lo[i]) and np.isfinite(rz_hi[i]) and rz_hi[i] > rz_lo[i]) else np.nan),
                         "tp1": pend["tp1"], "tp2": pend["tp2"], "sl": pend["sl"], "tp1_done": False}
                 if v15:
                     _lot["zone_top"] = pend["zone_top"]; _lot["w_px"] = pend["w_px"]
@@ -1943,7 +1972,16 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         if v20_uptrend is not None and v20_uptrend[i]:   # v20 regime exit（acceptance 2026-07-12）: RG-v5 の上げトレンド発火＝レンジ前提の終了
             pend = None                                    # 未約定の指値は取り下げ＝uptrend 中は新規/add を建てない（risk-manager 型）
             armed21 = -1                                   # v21: uptrend 中は armed DC 入口も封鎖（v21e None 時は無害）
-            if v23te and lots:                             # v23（acceptance 2026-07-15）: 成行投げ(TREND_CONT 即taker)せず全 lot を trend_caught として保持＝下の Exit 状態機械（STOCH_REVERSE/MFE_STALE/災害SL/TIME）へ委ねる
+            if v26ue and lots:                             # v26 B（まこさん 2026-07-15）: uptrend 発火で保有玉を緊急離脱（成行 TREND_CONT）＝trend_caught 保持で時間切れ大損する前に頭打ち（v23/v24 の保持より優先）
+                for lot in lots:
+                    _record(trades, lot, c[i], "TREND_CONT", i, ts)
+                    if v15_params is not None:
+                        _st = v15_params["_stats"]
+                        _st["TREND_CONT_rg5"] = _st.get("TREND_CONT_rg5", 0) + 1
+                        _kk = "TREND_CONT_rg5_win$" if trades[-1]["net_usd"] > 0 else "TREND_CONT_rg5_loss$"
+                        _st[_kk] = round(_st.get(_kk, 0.0) + trades[-1]["net_usd"], 2)
+                lots = []
+            elif v23te and lots:                           # v23（acceptance 2026-07-15）: 成行投げ(TREND_CONT 即taker)せず全 lot を trend_caught として保持＝下の Exit 状態機械（STOCH_REVERSE/MFE_STALE/災害SL/TIME）へ委ねる
                 for lot in lots:
                     if not lot.get("trend_caught"):
                         lot["trend_caught"] = True
@@ -2174,8 +2212,20 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         if v22e is not None:                           # v22_range_dc_entry（acceptance 2026-07-13）: レンジ判定中は DC 発生バーで建てる（到達武装なし＝戻り売り・v21 入口を置換）
             _fire21 = bool(ok_arr[i] and dc21[i]
                            and (v22e.get("rsi_lo") is None or (np.isfinite(rsi9_21[i]) and rsi9_21[i] >= float(v22e["rsi_lo"]))))
+        if v26g is not None and _fire21:               # v26（fast-mode 2026-07-15）: 入口 atr_pct 固定下限＝低ボラ薄利を建てず TP幅ある高ボラ場面に寄せる（建て時点 atr[i]/c[i]＝H2・両経路一括ゲート）
+            _atrp26 = atr[i] / max(c[i], 1e-9) * 100.0
+            if not (np.isfinite(_atrp26) and _atrp26 >= v26g):
+                _fire21 = False
+        if v26tf is not None:                          # v26（fast-mode 2026-07-15・まこさん）: 天井で売る＝直近レンジ上端(pos>=F)∩陰転(反転)で建てる。DC は下落中に出て天井を過ぎるため使わず、上端で赤い足が出た瞬間に売る（range_ok は維持・急落後も直近レンジに追従・H2）
+            _pos26 = (c[i] - _ll26[i]) / _rng26f[i] if (np.isfinite(_rng26f[i]) and _rng26f[i] > 0) else np.nan
+            _fire21 = bool(ok_arr[i] and np.isfinite(_pos26) and _pos26 >= v26tf and c[i] < o26[i])
+        if v26sp:                                      # v26（fast-mode 2026-07-15・まこさん）: レンジを2タイプに切り分けて天井に売り指値を置いて待つ（急落後も直近高値に追従／平坦は res_hi）
+            _isdn26 = bool(np.isfinite(rz_lo[i]) and rz_lo[i] > c[i] * (1.0 + _gap26))   # 下落系＝価格がレジ帯下端より _gap 以上下（レジが上に張り付き＝急落後）
+            _v26ceil = float(_rhdn26[i] if _isdn26 else rz_hi[i])                        # 下落系=直近高値（急落除外の短窓）／平坦上昇系=システムのレジスタンス res_hi
+            _fire21 = bool(ok_arr[i] and np.isfinite(_v26ceil) and _v26ceil > c[i]       # 天井が現在価格の上＝これから上がって来たら約定（resting maker sell）
+                           and (_age26 is None or _age26[i] <= _maxage26 * 12))          # A: レンジ判定直後に入る＝立ってからの経過が _maxage 時間内のみ（序盤ほど上昇転換まで余裕・まこさん 2026-07-15）
         if pend is None and _fire21 and len(lots) < max_lots and not (v16 and i < cool_until):
-            lim = c[i] * (1.0 + ENTRY_OFFSET)
+            lim = (_v26ceil if v26sp else c[i] * (1.0 + ENTRY_OFFSET))   # v26 切り分け: 天井（下落系=直近高値／平坦=res_hi）に売り指値＝価格が上がって来たら約定（resting maker sell）
             tp2_px = mid[i]
             tp1_px = (lim + tp2_px) / 2.0
             if v15:                                    # v15: SL=災害水準（ゾーン上端+k×W・遠い）・建て条件は TP1 手数料床のみ（リスクは構造破れ枝＋戻り決済が担う）
@@ -3837,7 +3887,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_uptrend_exit=False):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -4082,6 +4132,20 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
                 print(f"  [v24] trend_caught 玉に建値+{V24_TREND_TP_PCT}% の resting maker 利確（TREND_CAUGHT_TP・maker）＝反転待ち STOCH_REVERSE を置換・MFE_STALE(B型止血)/災害SL/TIME 維持・稼ぐ玉不変・全固定値（既定 OFF=v23_043 恒等）")
             else:
                 print("  [v23] TREND_CONT を V9 型状態機械へ＝uptrend 発火で保有 SHORT を成行投げせず、STOCH_REVERSE_EXIT(taker・stoch GC∩含み益)/MFE_STALE_CUT(taker・保有30分∩益なし)/災害SL・TIME(現行) に委ねる（MFE_DRAWDOWN_CUT・v21_fold・v22_peak_fold は不使用・既定 OFF=v22_042 恒等）")
+        if v26_atr_gate is not None and v15p is not None:   # v26（fast-mode 2026-07-15）: 入口 atr_pct 固定下限を v15p に注入（run_continuous_v11 が発火時にゲート・両窓 score.py で采否）
+            v15p["v26_atr_gate"] = float(v26_atr_gate)
+            print(f"  [v26] 入口 atr_pct 固定下限ゲート＝atr_pct >= {float(v26_atr_gate):.3f}% でのみ建てる（低ボラ薄利を止め TP幅ある高ボラ場面に寄せる・固定値・H2・両窓 score.py で采否）")
+        if v26_touch_frac is not None and v15p is not None:   # v26（fast-mode 2026-07-15・まこさん）: 天井で売る＝直近レンジ上端寄りフィルタを v15p に注入
+            v15p["v26_touch_frac"] = float(v26_touch_frac); v15p["v26_touch_hours"] = float(v26_touch_hours)
+            print(f"  [v26] 天井で売る＝直近{float(v26_touch_hours):.0f}hレンジの上端寄り pos>={float(v26_touch_frac):.2f} でだけ建てる（急落後も直近レンジに追従＝張り付いた古いレジを使わない・下端エントリー禁止・H2・両窓 score.py で采否）")
+        if v26_split_ceiling and v15p is not None:            # v26（fast-mode 2026-07-15・まこさん）: レンジ2タイプ切り分け＋天井に売り指値を v15p に注入
+            v15p["v26_split"] = True; v15p["v26_gap"] = float(v26_gap); v15p["v26_down_hours"] = float(v26_down_hours)
+            v15p["v26_max_age_hours"] = float(v26_max_age_hours)
+            print(f"  [v26] レンジ切り分け＝下落系(価格がレジ帯下端より{float(v26_gap):.1f}%以上下→天井=直近{float(v26_down_hours):.0f}h高値)／平坦上昇系(→天井=res_hi) に売り指値を置いて待つ（下がる足で仕掛けない・H2・両窓 score.py で采否）"
+                  + (f" ＋A: レンジ判定直後{float(v26_max_age_hours):.1f}h以内のみ建てる（上昇転換巻き込み回避）" if v26_max_age_hours > 0 else ""))
+        if v26_uptrend_exit and v15p is not None:             # v26 B（まこさん 2026-07-15）: uptrend 発火で緊急離脱
+            v15p["v26_uptrend_exit"] = True
+            print(f"  [v26] B: uptrend レジーム発火で保有玉を緊急離脱（成行 TREND_CONT）＝時間切れ大損の前に頭打ち（v23/v24 の trend_caught 保持より優先・両窓 score.py で采否）")
         trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker, v14_params=v14p, v15_params=v15p, v19_upper_touch=v19_upper_touch,
                                     v20_uptrend=(df["rg5_uptrend"].to_numpy(bool) if v20_rg5 else None))
         if v14p is not None:
@@ -4358,6 +4422,14 @@ def main():
     ap.add_argument("--v23-guard-check", action="store_true", help="v23 番人メタ確認: OFF 恒等 md5(v22_042 一致)／uptrend 全True で TREND_CONT 即taker 0＝新設枝へ／stoch GC 全False で STOCH_REVERSE 0／MFE_STALE gate 極大で全 trend_caught 即 stall cut（採点しない・--smoke 併用推奨）")
     ap.add_argument("--v24-trend-maker-tp", action="store_true", help="v24: trend_caught 玉（uptrend 発火で畳む玉）に建値+0.08%（V24_TREND_TP_PCT）の resting maker 利確（TREND_CAUGHT_TP・maker）を優先枝で置き、反転待ち STOCH_REVERSE_EXIT を置換（速い5分レンジで遅行し取り逃すため）。MFE_STALE_CUT(B型止血)・災害SL・TIME は維持・稼ぐ玉は不変。v22 学習窓選定も V24_FIXED_V22 で定数化＝入口〜出口すべて固定値（学習ゼロ）。L=0.08% は a-priori（手数料床∩MFE較正∩両窓crude∩学術Leung&Li）・学習窓選定なし（--v22-set 必須・acceptance 2026-07-16 承認・既定 OFF=v23_043 恒等）")
     ap.add_argument("--v25-adaptive-band", action="store_true", help="v25: レンジ判定 range_ok_rg5 の束ね幅をボラ連動にする（RG-v6・tol=clamp(0.5×ATR%_1h[V25_K],0.15%,0.6%)・build_regime_gate_rg._adaptive_tol_1h）＝平坦は帯が鋭く res_lo が真の抵抗に近づく[下弦是正]／高ボラはスイングが束なってゾーンが立つ[高ボラレンジを拾う・頻度維持]。入口の到達/armed DC・件数・出口は v24 据え置き（1レバー・K は幾何指標 diag＋まこさん視認校正で選定＝採点窓 net 不参照・L-267 非該当）。--v24-trend-maker-tp 必須・acceptance 2026-07-16 承認・既定 OFF=v24_044 恒等")
+    ap.add_argument("--v26-atr-gate", type=float, default=None, help="v26（fast-mode 2026-07-15）: 入口に atr_pct 固定下限ゲートを課す＝atr_pct(=atr14/close×100) >= 指定値 の場面でだけ建てる。低ボラ薄利（v25 採点窓 atr<0.15 で入口70%・全帯 net マイナス）を止め、TP幅が実在する高ボラ場面（atr≥0.3 が唯一 net プラス）に寄せる。建て時点 atr[i]/c[i]＝H2。固定値・学習窓選定なし・両窓 score.py で采否（採点窓を覗いて閾値を選ばない＝L-320）。--v24-trend-maker-tp 必須・既定 None=v25 恒等")
+    ap.add_argument("--v26-touch-frac", type=float, default=None, help="v26（fast-mode 2026-07-15・まこさん）: 天井で売る＝直近レンジ（--v26-touch-hours 窓の高安）の上端寄り pos=(close-直近安値)/(直近高値-直近安値) >= F でだけ建てる。急落後も直近レンジは価格に追従＝張り付いた古いレジスタンスを使わず、下端エントリー（ショートなのに安い所で売る）を止める。H2（直近高安は当該バー確定値）。既定 None=v22 恒等")
+    ap.add_argument("--v26-touch-hours", type=float, default=12.0, help="v26: 直近レンジ窓の長さ（時間・既定12h＝144本）。--v26-touch-frac と併用")
+    ap.add_argument("--v26-split-ceiling", action="store_true", help="v26（fast-mode 2026-07-15・まこさん）: レンジを2タイプに切り分けて天井に売り指値を置いて待つ。下落系レンジ（価格がレジ帯下端より --v26-gap%% 以上下＝急落後でレジが上に張り付き）は天井＝直近高値（--v26-down-hours の短窓＝急落除外）／平坦・上昇系レンジは天井＝システムのレジスタンス res_hi。価格が天井まで上がってきたら約定（resting maker sell）＝下がる足で仕掛けて約定しない問題を回避。既定 OFF=v22 恒等")
+    ap.add_argument("--v26-gap", type=float, default=0.5, help="v26 切り分け: 下落系判定のしきい値%%（価格がレジ帯下端より何%%下なら下落系＝レジ張り付き・既定0.5）")
+    ap.add_argument("--v26-down-hours", type=float, default=6.0, help="v26 切り分け: 下落系の天井=直近高値の窓（時間・急落を除くため短め・既定6h）")
+    ap.add_argument("--v26-max-age-hours", type=float, default=0.0, help="v26（A・まこさん 2026-07-15）: レンジ判定直後に入る＝range_ok が立ってからの経過がこの時間内のバーだけ建てる（序盤ほど上昇転換まで余裕＝勝てる／時間が経ってからの入口は上昇レジームに巻き込まれ損）。0=制限なし（恒等）")
+    ap.add_argument("--v26-uptrend-exit", action="store_true", help="v26（B・まこさん 2026-07-15）: uptrend レジーム発火で保有玉を緊急離脱（成行 TREND_CONT）＝trend_caught 保持で時間切れ大損する前に損害頭打ち（v23/v24 の保持より優先・既定 OFF=保持のまま恒等）")
     ap.add_argument("--v11-selftest-zones", action="store_true", help="v11 自己検査: _zones_v11_1h が labels_v17.csv（視認校正済み計器）と全期間一致するか機械照合して終了")
     ap.add_argument("--param-schema-selftest", action="store_true", help="§0 使用パラメータ 自動生成の既知答えテスト＋番人（導出の正しさ＋項目削除の物理禁止）を実行して終了・採点しない・データ不要")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
@@ -4413,7 +4485,10 @@ def main():
     run_e37(df, a.box_tf, tag=a.tag, no_gate=a.no_gate, v6=a.v6, v6r=a.v6r, v7=a.v7, v8=a.v8, v9=a.v9, v10=a.v10,
             v11=a.v11, v11_no_add=a.v11_no_add, v11_single_tp=a.v11_single_tp, v11_open_entry=a.v11_open_entry, v12_open_range=a.v12_open_range, v13_time_maker=a.v13_time_maker, v14_machine=a.v14_exit_machine, v15_exit_set=a.v15_exit_set, v16_exit_set=a.v16_exit_set, v17_exit_set=a.v17_exit_set, v18_tp2_far=a.v18_tp2_far, v19_upper_touch=a.v19_upper_touch, v20_rg5=a.v20_rg5,
             v21_set=a.v21_set, v21_entry_only=a.v21_entry_only, v21_fold_only=a.v21_fold_only, v22_set=a.v22_set,
-            v23_trend_exit=a.v23_trend_exit, v24_trend_maker_tp=a.v24_trend_maker_tp, v25_adaptive_band=a.v25_adaptive_band)
+            v23_trend_exit=a.v23_trend_exit, v24_trend_maker_tp=a.v24_trend_maker_tp, v25_adaptive_band=a.v25_adaptive_band,
+            v26_atr_gate=a.v26_atr_gate, v26_touch_frac=a.v26_touch_frac, v26_touch_hours=a.v26_touch_hours,
+            v26_split_ceiling=a.v26_split_ceiling, v26_gap=a.v26_gap, v26_down_hours=a.v26_down_hours,
+            v26_max_age_hours=a.v26_max_age_hours, v26_uptrend_exit=a.v26_uptrend_exit)
     print("=" * 100)
 
 
