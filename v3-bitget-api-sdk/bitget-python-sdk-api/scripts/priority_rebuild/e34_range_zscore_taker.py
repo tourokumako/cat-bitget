@@ -33,7 +33,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import eval_engine as ee   # noqa: E402  （審判・改造禁止・import のみ）
 
-CSV = ROOT / "data" / "BTCUSDT-5m-2021-04-01_03-31_1826d_V9FULL_safe.csv"  # Binance spot 5m（§8.2.1.1 正本）
+CSV = ROOT / "data" / "BTCUSDT-5m-2021-04-01_2026-05-31_V9FULL_safe.csv"  # Binance spot 5m（§8.2.1.1 正本・採点窓延長で2026-05-31版へ・2026-07-15 まこさん承認）
 OI_CSV = ROOT / "data" / "oi_BTCUSDT_5y.csv"                                # taker_ls（Binance futures metrics・5min）
 RATCHET = ROOT / "results" / "priority_rebuild" / "ratchet"
 TRAIN_END = pd.Timestamp("2025-01-01")   # 学習 2021-04〜2024-12 のみ（H8・Phase0 は E28/E33 と同窓）

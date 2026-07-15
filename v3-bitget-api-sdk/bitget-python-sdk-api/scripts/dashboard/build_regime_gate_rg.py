@@ -409,8 +409,13 @@ def main() -> int:
         "spec": spec,
         "distribution": distribution,
     })
+    # available_months（⑪ 月プルダウンの源＝app.js rp-month が読む）＝データの実期間から自動生成。
+    # 誰も保守しない静的リストを廃し、期間を延ばすと末尾が自動追従（手当て漏れ防止・2026-07-15 まこさん指示）。
+    index_obj["available_months"] = (
+        pd.period_range(df5.index.min(), df5.index.max(), freq="M").strftime("%Y-%m").tolist())
     INDEX_JSON.write_text(json.dumps(index_obj, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"    index.json: {VERSION} 登録（5m range {distribution['range']['pct']}% / uptrend {distribution['uptrend']['pct']}%）")
+    print(f"    index.json: {VERSION} 登録（5m range {distribution['range']['pct']}% / uptrend {distribution['uptrend']['pct']}%）"
+          f" / available_months {index_obj['available_months'][0]}〜{index_obj['available_months'][-1]}")
 
     print(f"\n[DONE] ダッシュボード → python3 scripts/dashboard/dashboard_server.py → ⑪ → {VERSION} → 粒度5分 → 月 → 日絞り")
     return 0

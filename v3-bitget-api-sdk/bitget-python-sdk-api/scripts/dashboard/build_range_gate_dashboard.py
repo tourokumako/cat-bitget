@@ -39,7 +39,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts" / "priority_rebuild"))
 sys.path.insert(0, str(REPO_ROOT / "scripts" / "regime"))
 import structure_features as sf   # noqa: E402  fractal スイング検出（j+2 確定・leak-safe・v10 が使用）
 
-CSV = REPO_ROOT / "data" / "BTCUSDT-5m-2021-04-01_03-31_1826d_V9FULL_safe.csv"
+CSV = REPO_ROOT / "data" / "BTCUSDT-5m-2021-04-01_2026-05-31_V9FULL_safe.csv"  # 採点窓延長で2026-05-31版へ（2026-07-15・2021〜2026-03は旧1826dと同一・04/05が追加されるだけ）
 PROTO_DIR = REPO_ROOT / "dashboard" / "regime_prototype"
 CHART_DIR = PROTO_DIR / "range_charts"
 SM_DIR = PROTO_DIR / "predictions_v17_5m"
@@ -59,7 +59,7 @@ TREND5M_BARS = 12      # 短期トレンド本数（1時間）
 TREND5M_MAX = 0.008    # 1時間の一方向の累積変化率（緩やかな上昇/下降トレンドの初動で離脱）
 
 PLOT_START = "2024-06-01"
-PLOT_END = "2026-04-01"
+PLOT_END = "2026-06-01"   # 5分ビュー表示窓の上限（採点窓延長で2026-05まで表示・2026-07-15）
 
 
 def _resample(df5: pd.DataFrame, rule: str) -> pd.DataFrame:
@@ -272,8 +272,13 @@ def main() -> int:
         },
         "distribution": distribution,
     })
+    # available_months（⑪ 月プルダウンの源＝app.js rp-month が読む）＝データの実期間から自動生成。
+    # 誰も保守しない静的リストを廃し、期間を延ばすと末尾が自動追従（手当て漏れ防止・2026-07-15 まこさん指示）。
+    index_obj["available_months"] = (
+        pd.period_range(df5.index.min(), df5.index.max(), freq="M").strftime("%Y-%m").tolist())
     INDEX_JSON.write_text(json.dumps(index_obj, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"    index.json: {VERSION} appended（5m range {distribution['range']['pct']}%）")
+    print(f"    index.json: {VERSION} appended（5m range {distribution['range']['pct']}%）"
+          f" / available_months {index_obj['available_months'][0]}〜{index_obj['available_months'][-1]}")
 
     print(f"\n[DONE] ダッシュボード → python3 scripts/dashboard/dashboard_server.py → ⑪ → {VERSION} → 粒度5分 → 月 → 日絞り")
     print(f"       確認用PNG {len(charts)}枚（5分足）→ dashboard/regime_prototype/range_charts/")

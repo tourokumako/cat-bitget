@@ -1900,6 +1900,7 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         _mdn26 = max(2, int(round(float(v15_params.get("v26_down_hours", 6.0)) * 12)))        # 下落系の天井＝直近高値の窓（急落除外の短窓・時間→5分バー）
         _rhdn26 = pd.Series(h).rolling(_mdn26, min_periods=2).max().shift(1).to_numpy(float)  # 直近高値（前バーまで＝H2・当該バーが新高値で約定）
         _maxage26 = float(v15_params.get("v26_max_age_hours", 0.0))                           # A: レンジ判定直後に入る＝range_ok が立ってからの経過がこの時間内のみ建てる（0=制限なし）
+        _cbuf26 = float(v15_params.get("v26_ceil_buffer", 0.0)) / 100.0                        # v26 天井バッファ: 売り指値を天井×(1-buffer)へ下げる（上端手前で止まるレンジを拾う・0=恒等・まこさん 2026-07-15）
         if _maxage26 > 0:
             _idxn = np.arange(n); _fi = np.where(~ok_arr, _idxn, -1)                          # range_ok 連続バー数（立ってからの経過・まこさん 2026-07-15）
             _age26 = (_idxn - np.maximum.accumulate(_fi)).astype(float)
@@ -2222,6 +2223,8 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         if v26sp:                                      # v26（fast-mode 2026-07-15・まこさん）: レンジを2タイプに切り分けて天井に売り指値を置いて待つ（急落後も直近高値に追従／平坦は res_hi）
             _isdn26 = bool(np.isfinite(rz_lo[i]) and rz_lo[i] > c[i] * (1.0 + _gap26))   # 下落系＝価格がレジ帯下端より _gap 以上下（レジが上に張り付き＝急落後）
             _v26ceil = float(_rhdn26[i] if _isdn26 else rz_hi[i])                        # 下落系=直近高値（急落除外の短窓）／平坦上昇系=システムのレジスタンス res_hi
+            if _cbuf26 > 0.0 and np.isfinite(_v26ceil):                                  # v26 天井バッファ: 天井×(1-buffer)へ下げる（現値+offset 未満にはしない＝maker 成立・上端手前で止まるレンジを拾う）
+                _v26ceil = max(_v26ceil * (1.0 - _cbuf26), c[i] * (1.0 + ENTRY_OFFSET))
             _fire21 = bool(ok_arr[i] and np.isfinite(_v26ceil) and _v26ceil > c[i]       # 天井が現在価格の上＝これから上がって来たら約定（resting maker sell）
                            and (_age26 is None or _age26[i] <= _maxage26 * 12))          # A: レンジ判定直後に入る＝立ってからの経過が _maxage 時間内のみ（序盤ほど上昇転換まで余裕・まこさん 2026-07-15）
         if pend is None and _fire21 and len(lots) < max_lots and not (v16 and i < cool_until):
@@ -3441,6 +3444,26 @@ def _assert_param_schema_v11(sec: dict) -> None:
                 raise SystemExit(f"[§0 スキーマ強制] {blk} の必須キー欠落: {sk}（項目は削れない・まこさん 2026-07-12）")
 
 
+def _used_flags_section(parser, args) -> dict:
+    """report §0 用: 実際に渡された全フラグ＋argparse help（＝ロジック説明）＋実値を自動列挙する。
+    ★狙い（まこさん 2026-07-15「強制せずとも今後も修正した内容を正確に Report へ自動生成」）＝
+      argparse を単一の出所にすることで、今後どのフラグ（入口/出口ロジック）を足しても report に
+      自動で漏れなく載る。手書き _param_sections が v25/v26 を取りこぼしドリフトした根本対策で、
+      フラグは argparse に定義しないと使えない＝report を argparse から作れば構造的に正確なまま（強制hook不要）。"""
+    import sys
+    passed = {t.split("=", 1)[0] for t in sys.argv[1:] if t.startswith("--")}   # 実際に渡された option 名
+    used = {}
+    for act in parser._actions:
+        if not act.option_strings:                                             # 位置引数/helpはスキップ
+            continue
+        if set(act.option_strings) & passed:                                   # このフラグは今回の実行で使われた
+            val = getattr(args, act.dest, None)
+            used[f"{act.option_strings[-1]} = {val}"] = " ".join((act.help or "").split())
+    title = ("【使用フラグ全量（argparse 由来・自動生成＝今後どのフラグ[入口/出口ロジック]を足しても"
+             "漏れず載る・強制hook不要で正確・手書きドリフト対策・まこさん 2026-07-15）】")
+    return {title: (used or {"（既定フラグのみ）": "明示フラグなし"})}
+
+
 def _param_schema_selftest() -> None:
     """§0 自動生成の既知答えテスト＋番人（--param-schema-selftest）。導出の正しさ＋項目削除の物理禁止を検証。"""
     _s = {"sl_far": 1.0, "tmax": 48, "down": None, "ret": {}, "dd": {(4, 2, True): (0.5, 1 / 3)}, "cell_fn": (lambda k, a, w: 0),
@@ -3887,7 +3910,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_uptrend_exit=False):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_ceil_buffer=0.0, v26_uptrend_exit=False, used_flags_section=None):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -4140,9 +4163,10 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             print(f"  [v26] 天井で売る＝直近{float(v26_touch_hours):.0f}hレンジの上端寄り pos>={float(v26_touch_frac):.2f} でだけ建てる（急落後も直近レンジに追従＝張り付いた古いレジを使わない・下端エントリー禁止・H2・両窓 score.py で采否）")
         if v26_split_ceiling and v15p is not None:            # v26（fast-mode 2026-07-15・まこさん）: レンジ2タイプ切り分け＋天井に売り指値を v15p に注入
             v15p["v26_split"] = True; v15p["v26_gap"] = float(v26_gap); v15p["v26_down_hours"] = float(v26_down_hours)
-            v15p["v26_max_age_hours"] = float(v26_max_age_hours)
+            v15p["v26_max_age_hours"] = float(v26_max_age_hours); v15p["v26_ceil_buffer"] = float(v26_ceil_buffer)
             print(f"  [v26] レンジ切り分け＝下落系(価格がレジ帯下端より{float(v26_gap):.1f}%以上下→天井=直近{float(v26_down_hours):.0f}h高値)／平坦上昇系(→天井=res_hi) に売り指値を置いて待つ（下がる足で仕掛けない・H2・両窓 score.py で采否）"
-                  + (f" ＋A: レンジ判定直後{float(v26_max_age_hours):.1f}h以内のみ建てる（上昇転換巻き込み回避）" if v26_max_age_hours > 0 else ""))
+                  + (f" ＋A: レンジ判定直後{float(v26_max_age_hours):.1f}h以内のみ建てる（上昇転換巻き込み回避）" if v26_max_age_hours > 0 else "")
+                  + (f" ＋天井バッファ {float(v26_ceil_buffer):.2f}%＝売り指値を天井×(1-{float(v26_ceil_buffer):.2f}%)へ下げ上端手前で止まるレンジを拾う（現値未満にはしない）" if v26_ceil_buffer > 0 else ""))
         if v26_uptrend_exit and v15p is not None:             # v26 B（まこさん 2026-07-15）: uptrend 発火で緊急離脱
             v15p["v26_uptrend_exit"] = True
             print(f"  [v26] B: uptrend レジーム発火で保有玉を緊急離脱（成行 TREND_CONT）＝時間切れ大損の前に頭打ち（v23/v24 の trend_caught 保持より優先・両窓 score.py で采否）")
@@ -4160,7 +4184,7 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
             assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9・PARTIAL_TP 半 lot 含む）"
         sfx = "_v11" + ("na" if v11_no_add else "") + ("st" if v11_single_tp else "") + ("oe" if v11_open_entry else "") + ("or" if v12_open_range else "") + ("tm" if v13_time_maker else "") + ("xm" if v14_machine else "") + ("xs" if v15_exit_set else "") + ("x6" if v16_exit_set else "") + ("x7" if v17_exit_set else "") + ("x8" if v18_tp2_far else "") + ("x9" if v19_upper_touch else "") + ("r5" if v20_rg5 else "") + ("s21" if v21_set else "") + ("s21e" if v21_entry_only else "") + ("s21f" if v21_fold_only else "") + ("s22" if v22_set else "")
-        _out(t, f"_{box_tf}{sfx}", None, tag=tag, gate_on=True, v11=True, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14p, v15_sel=v15p, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v19_upper_touch=v19_upper_touch, v20_rg5=v20_rg5)
+        _out(t, f"_{box_tf}{sfx}", None, tag=tag, gate_on=True, v11=True, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14p, v15_sel=v15p, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v19_upper_touch=v19_upper_touch, v20_rg5=v20_rg5, used_flags_section=used_flags_section)
         return
     if v10:
         assert not (v6 or v6r or v7 or v8 or v9 or no_gate), "v10 は素ルール MVP（他バージョンフラグと併用不可）"
@@ -4179,7 +4203,7 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             print(f"  [自己検査 cap] 同時保有 max {mx:.4f} BTC ≤ {CAP}: {'✅' if mx <= CAP + 1e-9 else '⛔cap 超過'}")
             assert mx <= CAP + 1e-9, "cap 0.12 超過（H1 違反）"
             assert (t["size_btc"] >= ee.MIN_ORDER_BTC).all(), "最小注文サイズ違反（H9）"
-        _out(t, f"_{box_tf}_v10", None, tag=tag, gate_on=True, v10=True)
+        _out(t, f"_{box_tf}_v10", None, tag=tag, gate_on=True, v10=True, used_flags_section=used_flags_section)
         return
     v6 = v6 or v6r or v7 or v8 or v9
     df = _gen_events_v6(df) if v6 else micro_rev_event(df)
@@ -4229,7 +4253,7 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
                 act = tr_n / days_tr
                 dev = (act / sel - 1.0) * 100.0 if sel else float("nan")
                 print(f"  [自己検査⑤ 計器整合] 選定時の執行後見積り {sel:.2f}件/日 vs 本走 学習窓 {act:.2f}件/日（乖離 {dev:+.0f}%）")
-            _out(t, f"_{box_tf}_v9", det, tag=tag, gate_on=True, v6=True, v9=True)
+            _out(t, f"_{box_tf}_v9", det, tag=tag, gate_on=True, v6=True, v9=True, used_flags_section=used_flags_section)
             return
         teach = _teacher_labels(df, int(pd.Timestamp(TRAIN_END).value))
         days_train = max((teach.ts.max() - teach.ts.min()) / np.timedelta64(1, "D"), 1.0)
@@ -4269,10 +4293,10 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
         print(f"  [自己検査⑤ 計器整合] 選定時の執行後見積り {sel:.2f}件/日（型×side 合算・型横断競合なし近似） "
               f"vs 本走 学習窓 {act:.2f}件/日（乖離 {dev:+.0f}%・±30%目安は観測値）")
     ver = "v8" if v8 else ("v7" if v7 else ("v6r" if v6r else ("v6" if v6 else "v5")))
-    _out(t, f"_{box_tf}_{ver}", det, tag=tag, gate_on=not no_gate, v6=v6, v6r=v6r, v7=v7, v8=v8)
+    _out(t, f"_{box_tf}_{ver}", det, tag=tag, gate_on=not no_gate, v6=v6, v6r=v6r, v7=v7, v8=v8, used_flags_section=used_flags_section)
 
 
-def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v13_time_maker=False, v14_sel=None, v15_sel=None, v11_open_entry=False, v12_open_range=False, v19_upper_touch=False, v20_rg5=False) -> None:
+def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v13_time_maker=False, v14_sel=None, v15_sel=None, v11_open_entry=False, v12_open_range=False, v19_upper_touch=False, v20_rg5=False, used_flags_section=None) -> None:
     strat_base._output_and_report(
         t, suffix, stem="e37_range_scalp",
         strategy=("E37 v21 入口の反転確認（armed DC）＋uptrend 畳み分岐（Entry×Exit セット・v20 RG-v5 の上・v18 Exit 継承）" if ((v15_sel or {}).get("v21_entry") is not None or (v15_sel or {}).get("v21_fold") is not None)
@@ -4290,7 +4314,9 @@ def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6
                   else "E37 v6 レンジ・スキャル 両側 maker MR＋検出器ゲート（イベント5型＋θ規則反転）" if v6
                   else "E37 v5 レンジ・スキャル 両側 maker MR＋稼げるレンジ検出器ゲート"),
         script="e37_range_scalp.py",
-        sections=_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9, v10=v10, v11=v11, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14_sel, v15_sel=v15_sel, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v19_upper_touch=v19_upper_touch, v20_rg5=v20_rg5), tag=tag)
+        sections={**_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9, v10=v10, v11=v11, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14_sel, v15_sel=v15_sel, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v19_upper_touch=v19_upper_touch, v20_rg5=v20_rg5),
+                  **(used_flags_section or {})},   # ＋argparse 由来の使用フラグ全量（自動生成＝入口/出口ロジックの実フラグを漏れなく載せる・強制hook不要で正確・まこさん 2026-07-15）
+        tag=tag)
 
 
 def _load(smoke: int) -> pd.DataFrame:
@@ -4429,6 +4455,7 @@ def main():
     ap.add_argument("--v26-gap", type=float, default=0.5, help="v26 切り分け: 下落系判定のしきい値%%（価格がレジ帯下端より何%%下なら下落系＝レジ張り付き・既定0.5）")
     ap.add_argument("--v26-down-hours", type=float, default=6.0, help="v26 切り分け: 下落系の天井=直近高値の窓（時間・急落を除くため短め・既定6h）")
     ap.add_argument("--v26-max-age-hours", type=float, default=0.0, help="v26（A・まこさん 2026-07-15）: レンジ判定直後に入る＝range_ok が立ってからの経過がこの時間内のバーだけ建てる（序盤ほど上昇転換まで余裕＝勝てる／時間が経ってからの入口は上昇レジームに巻き込まれ損）。0=制限なし（恒等）")
+    ap.add_argument("--v26-ceil-buffer", type=float, default=0.0, help="v26（まこさん 2026-07-15「指定レンジも入れるように調整しろ」）: 天井の売り指値を 天井×(1-buffer%%) へ下げる。価格が上端手前で止まって約定しないレンジ（W1=遠いres_hi/W2=直近高値に僅か届かず）を拾う。現値+offset 未満には下げない（maker 成立）。既定 0=v26 恒等・采否は両窓 score.py")
     ap.add_argument("--v26-uptrend-exit", action="store_true", help="v26（B・まこさん 2026-07-15）: uptrend レジーム発火で保有玉を緊急離脱（成行 TREND_CONT）＝trend_caught 保持で時間切れ大損する前に損害頭打ち（v23/v24 の保持より優先・既定 OFF=保持のまま恒等）")
     ap.add_argument("--v11-selftest-zones", action="store_true", help="v11 自己検査: _zones_v11_1h が labels_v17.csv（視認校正済み計器）と全期間一致するか機械照合して終了")
     ap.add_argument("--param-schema-selftest", action="store_true", help="§0 使用パラメータ 自動生成の既知答えテスト＋番人（導出の正しさ＋項目削除の物理禁止）を実行して終了・採点しない・データ不要")
@@ -4488,7 +4515,8 @@ def main():
             v23_trend_exit=a.v23_trend_exit, v24_trend_maker_tp=a.v24_trend_maker_tp, v25_adaptive_band=a.v25_adaptive_band,
             v26_atr_gate=a.v26_atr_gate, v26_touch_frac=a.v26_touch_frac, v26_touch_hours=a.v26_touch_hours,
             v26_split_ceiling=a.v26_split_ceiling, v26_gap=a.v26_gap, v26_down_hours=a.v26_down_hours,
-            v26_max_age_hours=a.v26_max_age_hours, v26_uptrend_exit=a.v26_uptrend_exit)
+            v26_max_age_hours=a.v26_max_age_hours, v26_ceil_buffer=a.v26_ceil_buffer, v26_uptrend_exit=a.v26_uptrend_exit,
+            used_flags_section=_used_flags_section(ap, a))   # report §0 に実際に使った全フラグ＋help を自動列挙（強制hook不要で正確・まこさん 2026-07-15）
     print("=" * 100)
 
 
