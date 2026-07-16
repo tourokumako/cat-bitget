@@ -527,6 +527,62 @@ def _apply_rg5_to_5m(df: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:
     return df
 
 
+def _v34_fresh_top(df: pd.DataFrame) -> np.ndarray:
+    """v34（fast-mode 2026-07-17・まこさんGO）: 実際のレンジ上端＝天井 T を返す（worklog 20260717 §1-2）。
+    定義（業界手法の型＝LuxAlgo S/R Zones Strength Classifier・WebResearch 2026-07-17）:
+      1. 5分足の確定スイング高値（fractal j±2＝確定は j+2 バー・L-179 と同じ確定遅延構造＝未来参照なし H2）。
+      2. 直近144本（12h）のスイング高値を、RG-v6 と同じボラ連動 tol=clamp(0.5×ATR%_1h,0.15%,0.6%) で束ねる
+         （ATR は確定1h足のみ shift(1)・新数値なし）。
+      3. タッチ2回以上の束のみ「実績のある上端」。
+      4. 終値が束の代表水準（メンバー高値の中央値）を tol 超えで上抜けたら、その束は捨てる（古い上端を使わない
+         ＝v32 の轍[7日窓の古い水準を保持]への対策）。
+      5. 現値より上の有効な束のうち**最上位（一番高い束）**の代表水準を T とする（無ければ NaN＝呼び出し側で res_hi フォールバック）。
+         v34b（2026-07-17 まこさんGO）: 初版 v34=最近接の束は、レンジ中間の戻り高値でも売ってしまい出血
+         （fix6m_095 の位置分析＝中間帯 0.4-0.8 が −$186・上端寄り 0.8+ は ±0・worklog 20260717 §4）
+         → 「上端で売る」に忠実な最上位へ変更（パラメータ追加なし）。"""
+    ts = pd.to_datetime(df["timestamp"]).reset_index(drop=True)
+    h = df["high"].to_numpy(float); l = df["low"].to_numpy(float); c = df["close"].to_numpy(float)
+    n = len(df)
+    d1 = pd.DataFrame({"h": h, "l": l, "c": c}, index=ts)
+    h1 = d1.resample("1h").agg({"h": "max", "l": "min", "c": "last"}).dropna()
+    tr1 = np.maximum(h1["h"] - h1["l"], np.maximum((h1["h"] - h1["c"].shift()).abs(), (h1["l"] - h1["c"].shift()).abs()))
+    atrp1 = (tr1.rolling(14).mean().shift(1) / h1["c"].shift(1) * 100)     # 確定1h足のみ（H2）
+    tol = np.clip(0.5 * atrp1.reindex(ts, method="ffill").to_numpy(float), 0.15, 0.6) / 100.0
+    sw = (h[2:-2] > h[1:-3]) & (h[2:-2] > h[:-4]) & (h[2:-2] > h[3:-1]) & (h[2:-2] > h[4:])
+    js = np.where(sw)[0] + 2
+    sw_px = h[js]; sw_at = js + 2                                          # 確定バー＝j+2（H2）
+    T = np.full(n, np.nan)
+    k0 = 0
+    for i in range(n):
+        while k0 < len(sw_at) and sw_at[k0] < i - 144:
+            k0 += 1
+        if not np.isfinite(tol[i]):
+            continue
+        pts = [(sw_px[k], sw_at[k]) for k in range(k0, len(sw_at)) if sw_at[k] <= i]
+        if len(pts) < 2:
+            continue
+        pts.sort()
+        clusters, cur = [], [pts[0]]
+        for p in pts[1:]:
+            if (p[0] - cur[-1][0]) / cur[-1][0] <= tol[i]:
+                cur.append(p)
+            else:
+                clusters.append(cur); cur = [p]
+        clusters.append(cur)
+        best = np.nan
+        for cl in clusters:
+            if len(cl) < 2:
+                continue
+            rep = float(np.median([x[0] for x in cl]))
+            t_last = max(x[1] for x in cl)
+            if t_last < i and np.max(c[t_last:i + 1]) > rep * (1.0 + tol[i]):
+                continue                                                    # 終値ブレイク＝束を捨てる
+            if rep > c[i] * (1.0 + ENTRY_OFFSET) and (not np.isfinite(best) or rep > best):
+                best = rep                             # v34b: 最上位の束（レンジ中間の束で売らない・worklog 20260717 §4）
+        T[i] = best
+    return T
+
+
 def v22_uptrend_warning(df: pd.DataFrame) -> pd.DataFrame:
     """v22_uptrend_warning（acceptance 2026-07-13）＝RG-v5 uptrend 状態機械の発火条件の半値水準の前兆フラグ。
     確定した 15分足のみ使用（当該 5分バーを含む形成中の 15分足は使わない）＋過去 close の rolling（shift(1)）＝H2。
@@ -807,6 +863,11 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
     v26ue = bool(v15_params.get("v26_uptrend_exit")) if v15 else False                       # v26 B（まこさん 2026-07-15）: uptrend レジーム発火で保有玉を緊急離脱（成行）＝上昇に巻き込まれ時間切れ大損する前に損害頭打ち
     v27fl = bool(v15_params.get("v27_flatup_lock")) if v15 else False                        # v27（fast-mode 2026-07-15・まこさん）: flat_up 型のピーク反転 建値保護（§12・MFE_DRAWDOWN_CUT maker 再利用）
     v31tb = bool(v15_params.get("v31_time_be")) if v15 else False                            # v31（fast-mode 2026-07-16・まこさんGO）: TIME満了の成行→建値フロア resting maker 化（worklog §15・BE_EXIT 登録済み再利用）
+    v32ft = bool(v15_params.get("v32_flatup_touch")) if v15 else False                       # v32（fast-mode 2026-07-16・まこさんGO）: flat_up 型の天井＝v11タッチ実績ゾーン下端（worklog §19 C2・probe 轢かれ38→34%）
+    t32 = df["v32_touch_lo"].to_numpy(float) if (v32ft and "v32_touch_lo" in df.columns) else None
+    v33fp = bool(v15_params.get("v33_flatup_tp1")) if v15 else False                         # v33（fast-mode 2026-07-16・まこさんGO）: flat_up 玉の TP1 を建値−0.08% の先置き resting maker へ前倒し（worklog §21・軌跡＝98%が直後に乗るのに TP1 到達22%）
+    v34ff = bool(v15_params.get("v34_flatup_fresh")) if v15 else False                       # v34（fast-mode 2026-07-17・まこさんGO）: flat_up の天井＝実際のレンジ上端 T（5分スイングのタッチ束・ブレイク削除・worklog 20260717 §1-2）
+    t34 = df["v34_fresh_top"].to_numpy(float) if (v34ff and "v34_fresh_top" in df.columns) else None
     _rhdn26 = None; _gap26 = 0.0; _v26ceil = np.nan; _ceil_type26 = None   # _ceil_type26=入口型マーカー（診断・net不関与・型別分析の見落とし防止 2026-07-15）
     if v26sp:
         _gap26 = float(v15_params.get("v26_gap", 0.5)) / 100.0                                # 下落系判定＝価格がレジ帯下端より _gap% 以上下（レジが急落前に張り付き）
@@ -1164,6 +1225,18 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
             _isdn26 = bool(np.isfinite(rz_lo[i]) and rz_lo[i] > c[i] * (1.0 + _gap26))   # 下落系＝価格がレジ帯下端より _gap 以上下（レジが上に張り付き＝急落後）
             _v26ceil = float(_rhdn26[i] if _isdn26 else rz_hi[i])                        # 下落系=直近高値（急落除外の短窓）／平坦上昇系=システムのレジスタンス res_hi
             _ceil_type26 = "down" if _isdn26 else "flat_up"                              # 入口型マーカー（診断列・net不関与・型別分析を見落とさないため 2026-07-15）
+            if v32ft and (not _isdn26) and t32 is not None:                              # v32: flat_up の天井＝v11タッチ実績ゾーン下端 touch_lo（価格が実際に戻って反落した実績のある近い上端＝res_hi は古い高値側に厚く残り+0.65〜2.18%上で刺さらない・worklog §18-19）
+                if np.isfinite(t32[i]) and t32[i] > c[i] * (1.0 + ENTRY_OFFSET):         # NaN/現値以下は現行 res_hi のまま＝フォールバック（恒等側・maker 成立）
+                    _v26ceil = float(t32[i])
+                    v15_params["_stats"]["v32_applied"] = v15_params["_stats"].get("v32_applied", 0) + 1
+                else:
+                    v15_params["_stats"]["v32_fallback"] = v15_params["_stats"].get("v32_fallback", 0) + 1
+            if v34ff and (not _isdn26) and t34 is not None:                              # v34: flat_up の天井＝実際のレンジ上端 T（5分確定スイングのタッチ束≥2・12h窓・ボラ連動束ね・終値ブレイクで束を削除＝_v34_fresh_top・worklog 20260717）
+                if np.isfinite(t34[i]) and t34[i] > c[i] * (1.0 + ENTRY_OFFSET):         # T なし/現値以下は現行 res_hi のまま＝フォールバック（恒等側・maker 成立）
+                    _v26ceil = float(t34[i])
+                    v15_params["_stats"]["v34_applied"] = v15_params["_stats"].get("v34_applied", 0) + 1
+                else:
+                    v15_params["_stats"]["v34_fallback"] = v15_params["_stats"].get("v34_fallback", 0) + 1
             if _cbuf26 > 0.0 and np.isfinite(_v26ceil):                                  # v26 天井バッファ: 天井×(1-buffer)へ下げる（現値+offset 未満にはしない＝maker 成立・上端手前で止まるレンジを拾う）
                 _v26ceil = max(_v26ceil * (1.0 - _cbuf26), c[i] * (1.0 + ENTRY_OFFSET))
             _fire21 = bool(ok_arr[i] and np.isfinite(_v26ceil) and _v26ceil > c[i]       # 天井が現在価格の上＝これから上がって来たら約定（resting maker sell）
@@ -1204,6 +1277,9 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                             v15_params["_stats"]["v22_anchor_fallback"] += 1   # 幾何の防御＝現行アンカーのまま（恒等側・下がり切った直後は床が弾く）
                 if not (np.isfinite(w_px) and w_px > 0 and tp_floor_check_v15(lim, tp1_px, tp2_px)):
                     continue
+                if v33fp and _ceil_type26 == "flat_up":   # v33: flat_up の TP1 を建値−V24_TREND_TP_PCT% へ前倒し（最初の反落で半分確定・床チェックの後に置換＝入口の可否は現行と同一＝玉集合不変。0.08% は maker 往復 0.028% の2.9倍＝床を自明に超える・既存定数再利用で新数値なし）
+                    tp1_px = lim * (1.0 - V24_TREND_TP_PCT / 100.0)
+                    v15_params["_stats"]["v33_tp1_fast"] = v15_params["_stats"].get("v33_tp1_fast", 0) + 1
                 pend = {"limit": lim, "placed_idx": i, "tp1": tp1_px, "tp2": tp2_px,
                         "sl": rz_hi[i] + float(v15_params["sl_far"]) * w_px,
                         "W_pct": w_px / c[i] * 100.0, "zone_top": rz_hi[i], "w_px": w_px, "size_mult": _sm,
@@ -1882,7 +1958,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_ceil_buffer=0.0, v26_uptrend_exit=False, v27_flatup_lock=False, v31_time_be=False, used_flags_section=None):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_ceil_buffer=0.0, v26_uptrend_exit=False, v27_flatup_lock=False, v31_time_be=False, v32_flatup_touch=False, v33_flatup_tp1=False, v34_flatup_fresh=False, used_flags_section=None):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -1903,6 +1979,11 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             if v25_adaptive_band:                       # v25: レンジ判定の束ね幅をボラ連動に（RG-v6・acceptance 2026-07-16・LEVER）
                 assert v24_trend_maker_tp, "v25 は v24 構成の上に載る（--v24-trend-maker-tp 必須・acceptance 2026-07-16）"
             _ak = V25_K if v25_adaptive_band else None   # v25 時のみ RG-v6 適応束ね幅・None=RG-v5 恒等
+            if v32_flatup_touch:                        # v32（fast-mode 2026-07-16・まこさんGO）: flat_up 天井用の v11 タッチ実績ゾーン下端を独立計算（rg5 が v11_* 列を上書きする前に別名列 v32_touch_lo へ・probe e37_ceiling_probe と同経路）
+                _z32 = _zones_v11_1h(df.copy())
+                df["v32_touch_lo"] = _apply_v11_to_5m(df.copy(), _z32)["v11_res_lo"].to_numpy(float)
+            if v34_flatup_fresh:                        # v34（fast-mode 2026-07-17・まこさんGO）: 実際のレンジ上端 T を計算（probe e37_freshtop_probe と同ロジック・worklog 20260717 §1-2）
+                df["v34_fresh_top"] = _v34_fresh_top(df)
             df = _apply_rg5_to_5m(df, adaptive_k=_ak)
             _upn = int(df["rg5_uptrend"].sum())
             okn = int(df["range_ok_v11"].sum())
@@ -1961,6 +2042,18 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
         if v31_time_be and v15p is not None:                # v31（fast-mode 2026-07-16・まこさんGO）: TIME満了の maker 化を v15p に注入（worklog §15・采否は採点窓 score.py）
             v15p["v31_time_be"] = True
             print(f"  [v31] TIME満了の成行→建値フロア resting maker 化＝満了玉を成行 taker で投げず L=建値×(1−{SCALP_FLOOR})（手数料床込み損ゼロ級・既存定数再利用）へ resting buy（maker・BE_EXIT 登録済み再利用＝score.py 無変更 H13）を置き TTL {V31_TTL_BARS}本({V31_TTL_BARS*5}分)待つ・未到達は現行どおり成行 TIME_EXIT・待機中も災害SL 有効（根拠=TIME玉129中128負け＝勝ち巻き込みほぼゼロ・exit後120分で半数が建値近傍回帰・worklog §14[D2]・既定 OFF=fix6m_082 恒等・采否は採点窓 score.py の net）")
+        if v34_flatup_fresh and v15p is not None:           # v34（fast-mode 2026-07-17・まこさんGO）: flat_up 天井の実上端化を v15p に注入（worklog 20260717・采否は採点窓 score.py）
+            assert v26_split_ceiling, "v34 は v26 切り分け構成の上に載る（--v26-split-ceiling 必須）"
+            v15p["v34_flatup_fresh"] = True
+            print("  [v34] flat_up 型の天井＝res_hi → 実際のレンジ上端 T。T＝5分足の確定スイング高値（fractal j±2・H2）を直近12hで RG-v6 と同じボラ連動幅で束ね、タッチ2回以上の束のみ有効、終値がtol超で上抜けた束は削除（古い上端を使わない）、現値の上で最近接の束の中央値。T なし/現値以下は res_hi フォールバック（恒等側）。down型不変・既定 OFF=fix6m+v31 恒等・probe＝5窓中4窓で立って刺さる位置（worklog 20260717 §2）・采否は採点窓 score.py の net＋件数/日≥5")
+        if v33_flatup_tp1 and v15p is not None:             # v33（fast-mode 2026-07-16・まこさんGO）: flat_up の TP1 前倒しを v15p に注入（worklog §21・采否は採点窓 score.py）
+            assert v26_split_ceiling, "v33 は v26 切り分け構成の上に載る（--v26-split-ceiling 必須）"
+            v15p["v33_flatup_tp1"] = True
+            print(f"  [v33] flat_up 玉の TP1（半分決済 PARTIAL_TP）を建値−{V24_TREND_TP_PCT}% の先置き resting maker へ前倒し。根拠＝flat_up の98%が建てた直後に0.08%以上の含み益に触れるのに現行 TP1 到達は22%（軌跡分析 worklog §21）。残り半分は現行のまま伸ばす・down型不変・入口不変＝玉集合不変（床チェック後の置換）・既定 OFF=fix6m+v31 恒等・采否は採点窓 score.py の net＋件数/日≥5")
+        if v32_flatup_touch and v15p is not None:           # v32（fast-mode 2026-07-16・まこさんGO）: flat_up 天井のタッチ実績化を v15p に注入（worklog §19 C2・采否は採点窓 score.py）
+            assert v26_split_ceiling, "v32 は v26 切り分け構成の上に載る（--v26-split-ceiling 必須）"
+            v15p["v32_flatup_touch"] = True
+            print("  [v32] flat_up 型の天井＝res_hi（RG帯上端・下落後は古い高値側に厚く+0.65〜2.18%上＝刺さらない）→ v11タッチ実績ゾーン下端 touch_lo（価格が実際に戻って反落した実績のある近い上端・視認校正済み計器 _zones_v11_1h 再利用）。NaN/現値以下は res_hi フォールバック（恒等側）・down型の天井（直近1h高値）は不変・既定 OFF=fix6m+v31 恒等・采否は採点窓 score.py の net＋件数/日≥5")
         if v27_flatup_lock and v15p is not None:            # v27（fast-mode 2026-07-15・まこさん）: flat_up ピーク反転 建値保護を v15p に注入（§12・両窓 score.py で采否）
             v15p["v27_flatup_lock"] = True
             print(f"  [v27] flat_up 型のピーク反転 建値保護＝含み益ピークが+{V27_ARM_PCT}%到達で武装→ピーク利益の{V27_GIVEBACK*100:.0f}%戻しで MFE_DRAWDOWN_CUT(maker・下限=建値フロア)＝flat_up SL負け(含み益+0.4%→反転→−1.16%突き抜け)を建値近傍で止める（下落系は不変・1レバー・H2・H13無変更・両窓 score.py で采否）")
@@ -2144,6 +2237,9 @@ def main():
     ap.add_argument("--v26-ceil-buffer", type=float, default=0.0, help="v26（まこさん 2026-07-15「指定レンジも入れるように調整しろ」）: 天井の売り指値を 天井×(1-buffer%%) へ下げる。価格が上端手前で止まって約定しないレンジ（W1=遠いres_hi/W2=直近高値に僅か届かず）を拾う。現値+offset 未満には下げない（maker 成立）。既定 0=v26 恒等・采否は両窓 score.py")
     ap.add_argument("--v26-uptrend-exit", action="store_true", help="v26（B・まこさん 2026-07-15）: uptrend レジーム発火で保有玉を緊急離脱（成行 TREND_CONT）＝trend_caught 保持で時間切れ大損する前に損害頭打ち（v23/v24 の保持より優先・既定 OFF=保持のまま恒等）")
     ap.add_argument("--v31-time-be", action="store_true", help="v31（fast-mode 2026-07-16・まこさんGO）: TIME満了の成行→建値フロア resting maker 化＝満了玉を成行 taker で投げず、L=建値×(1−SCALP_FLOOR)（手数料床込み損ゼロ級・既存定数再利用＝新数値なし）へ resting buy（maker・BE_EXIT 登録済み再利用＝score.py 無変更 H13）を置いて TTL 24本(120分) 待つ。未到達は現行どおり成行 TIME_EXIT・待機中も災害SL 有効。根拠＝採点窓の軌跡分析（TIME玉129中128負け＝勝ち巻き込みほぼゼロ・exit後120分で半数が建値近傍へ回帰・worklog 20260716 §14[D2]）。既定 OFF=fix6m_082 恒等・采否は採点窓 score.py の net＋件数/日≥5")
+    ap.add_argument("--v32-flatup-touch", action="store_true", help="v32（fast-mode 2026-07-16・まこさんGO）: flat_up 型の売り指値の天井を res_hi（RG帯上端＝下落後は古い高値側に厚く残り現値+0.65〜2.18%上＝ボラ高レンジで一度も刺さらない・worklog §18）から v11 タッチ実績ゾーン下端 touch_lo（価格が実際に戻って反落した実績のある近い上端・視認校正済み計器 _zones_v11_1h を import 再利用・タッチ実績が下端売り[v26tf の轍]を防ぐ）へ。touch_lo が NaN／現値以下のバーは res_hi のまま＝フォールバック（恒等側）。down型の天井（直近1h高値）は不変（1レバー）。probe（worklog §19 C2）＝同条件比較で約定+15%・TP1到達71→75%・轢かれ38→34%。既定 OFF=fix6m+v31 恒等・采否は採点窓 score.py の net＋件数/日≥5")
+    ap.add_argument("--v34-flatup-fresh-top", action="store_true", help="v34（fast-mode 2026-07-17・まこさんGO）: flat_up 型の売り指値の天井を res_hi（RG帯上端）から「実際のレンジ上端 T」へ。T＝5分足の確定スイング高値（fractal j±2＝確定は2本遅れ・未来参照なし H2）を直近12h窓で RG-v6 と同じボラ連動幅 tol=clamp(0.5×ATR%_1h,0.15%,0.6%) で束ね、タッチ2回以上の束のみ有効、終値が代表水準を tol 超えで上抜けた束は削除（古い上端を使い続けない＝v32 の轍への対策・LuxAlgo S/R zones の型・WebResearch 2026-07-17）、現値の上で最近接の束の代表水準（中央値）。T なし/現値以下のバーは res_hi のまま＝フォールバック（恒等側）。down型の天井（直近1h高値）は不変（1レバー）。probe（worklog 20260717 §2）＝指定5窓中4窓で立って刺さる位置（5-12/3-23 は全手法初）・距離中央値 +0.36%（現行 res_hi +1.24%）。既定 OFF=fix6m+v31 恒等・采否は採点窓 score.py の net＋件数/日≥5")
+    ap.add_argument("--v33-flatup-fast-tp1", action="store_true", help="v33（fast-mode 2026-07-16・まこさんGO）: flat_up 玉の TP1（半分決済 PARTIAL_TP・resting maker）の水準を、アンカー基準から建値−0.08%（V24_TREND_TP_PCT 再利用＝新数値なし）へ前倒しする。根拠＝軌跡分析（worklog §21）＝flat_up の98%が建てた直後に0.08%以上の含み益に一度触れる（負け玉ですら93%）のに、現行 TP1 は遠く到達22%＝乗った益を取る枝がこの型の速度に無い。最初の反落で半分を確定し、残り半分は現行（TP2/v27/状態機械）のまま伸ばす。down型不変・入口不変（床チェック後の置換＝建てる/建てないの判定は現行と同一＝玉集合不変）。既定 OFF=fix6m+v31 恒等・采否は採点窓 score.py の net＋件数/日≥5")
     ap.add_argument("--v11-selftest-zones", action="store_true", help="v11 自己検査: _zones_v11_1h が labels_v17.csv（視認校正済み計器）と全期間一致するか機械照合して終了")
     ap.add_argument("--param-schema-selftest", action="store_true", help="§0 使用パラメータ 自動生成の既知答えテスト＋番人（導出の正しさ＋項目削除の物理禁止）を実行して終了・採点しない・データ不要")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番にし旧実験を archive へ退避（実験は必ず付ける）")
@@ -2185,7 +2281,8 @@ def main():
             v26_atr_gate=a.v26_atr_gate, v26_touch_frac=a.v26_touch_frac, v26_touch_hours=a.v26_touch_hours,
             v26_split_ceiling=a.v26_split_ceiling, v26_gap=a.v26_gap, v26_down_hours=a.v26_down_hours,
             v26_max_age_hours=a.v26_max_age_hours, v26_ceil_buffer=a.v26_ceil_buffer, v26_uptrend_exit=a.v26_uptrend_exit,
-            v27_flatup_lock=a.v27_flatup_lock, v31_time_be=a.v31_time_be,
+            v27_flatup_lock=a.v27_flatup_lock, v31_time_be=a.v31_time_be, v32_flatup_touch=a.v32_flatup_touch,
+            v33_flatup_tp1=a.v33_flatup_fast_tp1, v34_flatup_fresh=a.v34_flatup_fresh_top,
             used_flags_section=_used_flags_section(ap, a))   # report §0 に実際に使った全フラグ＋help を自動列挙（強制hook不要で正確・まこさん 2026-07-15）
     print("=" * 100)
 
