@@ -30,14 +30,20 @@ grep -qE 'trades_[A-Za-z0-9_]*\.csv' "$LOG" 2>/dev/null && trades_ok=1
 e37_ok=0
 [ -f "$STATE/fastmode_e37_seen" ] && e37_ok=1
 grep -qE 'e37_range_scalp\.py' "$LOG" 2>/dev/null && e37_ok=1
+# ledger 該当 ARC（過去にやったこと）を読んだ証跡: マーカー or read_log（2026-07-16 まこさん承認・退行の物理防止）
+#   ＝タッチ3回(ARC24→v11でタッチ2回に差替済)を確認せず退行させた事案（next_step 失敗(c)）の再発防止。
+ledger_ok=0
+[ -f "$STATE/fastmode_ledger_seen" ] && ledger_ok=1
+grep -qE 'ledger\.md' "$LOG" 2>/dev/null && ledger_ok=1
 
-[ "$trades_ok" -eq 1 ] && [ "$e37_ok" -eq 1 ] && exit 0   # 両方読んでいれば通す
+[ "$trades_ok" -eq 1 ] && [ "$e37_ok" -eq 1 ] && [ "$ledger_ok" -eq 1 ] && exit 0   # 3つとも読んでいれば通す
 
-echo "🔒 [改善前データ必読ゲート・fast-mode] 戦略実装(e37_range_scalp.py)を編集する前に、CSVデータと実装を読んでください。" >&2
+echo "🔒 [改善前データ必読ゲート・fast-mode] 戦略実装(e37_range_scalp.py)を編集する前に、CSVデータ・実装・ledger の ARC 履歴を読んでください。" >&2
 echo "" >&2
 [ "$trades_ok" -eq 0 ] && echo "  ❌ trades_*.csv（実データ）を今セッションで読んだ証跡なし（python/pandas で開く or Read tool）" >&2
 [ "$e37_ok" -eq 0 ] && echo "  ❌ e37_range_scalp.py（実装）を今セッションで読んだ証跡なし（sed/grep/cat or Read tool）" >&2
+[ "$ledger_ok" -eq 0 ] && echo "  ❌ ledger.md（e37 の ARC 履歴＝過去にやったこと）を今セッションで読んだ証跡なし（grep/sed で該当 ARC 群 or Read tool）" >&2
 echo "" >&2
-echo "理由: 実装・データを読まず推測で改善案を出して二度外し激怒された（memory feedback_fastmode_read_history_code_data）。" >&2
-echo "対処: 該当の trades CSV と e37 の該当箇所を実際に開いてから編集を再実行。ML 復帰時など正当な時は DATAREAD_OK=1。" >&2
+echo "理由: ①実装・データを読まず推測して二度外し激怒（memory feedback_fastmode_read_history_code_data）②過去にやったこと(ARC)を確認せず退行（next_step 失敗(c)＝タッチ3回は ARC24 でやって v11 でタッチ2回に差替済なのに戻そうとした）。" >&2
+echo "対処: 該当 trades CSV・e37・ledger の該当 ARC 群 を実際に開いてから編集を再実行。ML 復帰時など正当な時は DATAREAD_OK=1。" >&2
 exit 2

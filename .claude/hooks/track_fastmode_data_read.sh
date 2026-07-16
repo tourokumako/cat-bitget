@@ -11,6 +11,9 @@ CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.st
 printf '%s' "$CMD" | grep -qE 'trades_[A-Za-z0-9_]*\.csv' && touch "$STATE/fastmode_trades_seen"
 # e37_range_scalp.py に触れた（sed/grep/cat/python いずれでも）＝実装を読んだ
 printf '%s' "$CMD" | grep -qE 'e37_range_scalp\.py' && touch "$STATE/fastmode_e37_seen"
+# ledger.md に触れた（grep/sed/cat/less いずれでも）＝ARC 履歴（過去にやったこと）を読んだ
+#   → require_data_read_before_improve の3つ目のゲート（改善前 ledger 読了）が参照（退行の物理防止・2026-07-16 まこさん承認）
+printf '%s' "$CMD" | grep -qE 'ledger\.md' && touch "$STATE/fastmode_ledger_seen"
 # 分析/採点（report/analyze/score/probe/deep_analysis）を走らせた＝結論を worklog に記録すべき（enforce_worklog_on_experiment が Stop で照合）
 printf '%s' "$CMD" | grep -qE 'report\.py|analyze\.py|score\.py|_probe\.py|_deep_analysis\.py' && touch "$STATE/fastmode_record_pending"
 exit 0
