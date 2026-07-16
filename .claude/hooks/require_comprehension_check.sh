@@ -42,6 +42,8 @@ else
   { grep -qE '6ヶ月|採点窓' "$CC" && grep -qE '5年' "$CC"; } || miss="$miss Q4"
   # Q5: 実データ/コードを読んでから・思い込みで結論しない
   grep -qE '読' "$CC" && grep -qE '思い込み|考え' "$CC" || miss="$miss Q5"
+  # Q6: 次タスク＝入口2パターン(down型/flat_up)の entry後の建玉の動きを詳細分析・entry_exit_matrix 必読
+  { grep -qE 'down型|下落系' "$CC" && grep -qE 'flat_up|res_hi' "$CC" && grep -qE 'entry後|建玉|軌跡|動' "$CC" && grep -qE 'entry_exit_matrix' "$CC"; } || miss="$miss Q6"
 fi
 
 [ -z "$miss" ] && exit 0
@@ -52,6 +54,6 @@ echo "未達: $miss" >&2
 echo "" >&2
 echo "背景: next_step に詳細に書いても CC は読まず同じミス（早切りで悪化・思い込み断言・無断変更・全5年走行）を繰り返す。" >&2
 echo "対処: .claude/state/comprehension_check.md に Q1〜Q5 を【自分の言葉で】回答し、チャットにも出す（まこさんが理解を判断）。next_step の【理解確認テスト】に各問の正答の要点あり。" >&2
-echo "  Q1=早切り/損切りは TP(勝ち玉)も同時に切る＝負けだけ切るのは原理的に不可能／Q2=前CCの Exit 結論は思い込み・嘘＝信用しない／Q3=CCは損切り提案せずまこさんに相談・まこさんが導く／Q4=fast-modeは6ヶ月(採点窓)だけ・全5年で走らせない／Q5=実データ/コード/ledgerを読み思い込みで結論しない。" >&2
+echo "  Q1=早切り/損切りは TP(勝ち玉)も同時に切る＝負けだけ切るのは原理的に不可能／Q2=前CCの Exit 結論は思い込み・嘘＝信用しない／Q3=CCは損切り提案せずまこさんに相談・まこさんが導く／Q4=fast-modeは6ヶ月(採点窓)だけ・全5年で走らせない／Q5=実データ/コード/ledgerを読み思い込みで結論しない／Q6=次タスク＝入口2パターン(down型:天井直近高値/flat_up:天井res_hi)の entry後の建玉の動きをパターン別に詳細分析・entry_exit_matrix.md 必読。" >&2
 echo "（正当に不要な時のみ COMPREHENSION_OK=1）" >&2
 exit 2
