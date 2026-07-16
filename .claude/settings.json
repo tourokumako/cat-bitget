@@ -147,6 +147,10 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_read_before_work.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_comprehension_check.sh"
           }
         ]
       },
