@@ -910,6 +910,12 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
     warn37 = df["v22_warning"].to_numpy(bool) if (v37cg and "v22_warning" in df.columns) else None
     v38cl = bool(v15_params.get("v38_clamp_prev")) if v15 else False
     v39td = bool(v15_params.get("v39_trend_deadline")) if v15 else False                     # v39（fast-mode 2026-07-17・まこさん「どんどん試す」）: trend_caught 玉の待ち期限＝120分で建値+L% 未達なら成行降り（worklog 20260717 §19）                         # v38（fast-mode 2026-07-17・まこさん「どんどん試す」）: flat_up 天井を同一レンジ内の前玉価格でクランプ＝前玉より高くは売らない（同じレンジの上端は1つ・worklog 20260717 §18）
+    v40na = bool(v15_params.get("v40_down_no_age")) if v15 else False                        # v40（fast-mode 2026-07-17・まこさんGO 案1）: down 型は年齢6hゲート免除（5-15 窓の犯人＝年齢単独・終盤負けの実測証拠は flat_up 行由来＝flat_up は6h維持・worklog 20260717 §21）
+    v41dl = bool(v15_params.get("v41_down_lock")) if v15 else False                          # 枝1 v41（Exit最適化フロー 2026-07-17・まこさん「全部やって良い物を残す」）: v27 ピーク反転建値保護を down 型へ拡張（B down −$224・flat_up は同枝で B −$16 まで消えた対称証拠＝worklog §26）
+    v42db = bool(v15_params.get("v42_down_break")) if v15 else False                         # 枝2dn v42: down 前提崩れ＝未搭乗 ∩ RSI9≥70 ∩ RSI21≥60 で成行降り（D2 98%/D1 86% カバー・A巻込5%・初発15分 −0.29%＝STEP3 probe・標準値）
+    v43fb = bool(v15_params.get("v43_flatup_break")) if v15 else False                       # 枝2fl v43: flat_up 前提崩れ＝未搭乗 ∩ BB+2σ ∩ RSI9≥70 で成行降り（D2 76%・A巻込3%・30分 −0.42%＝STEP3 probe・標準値）
+    v44sc = bool(v15_params.get("v44_stale_confluence")) if v15 else False                   # 枝3 v44: 失速確定＝保有≥60分 ∩ 型別指標 AND（down=ADX≥30∩+DI∩RSI9≥70／flat_up=BB+2σ∩RSI9≥70・C 71-86% カバー・A巻込1%＝STEP3 probe）
+    v46sc = bool(v15_params.get("v46_spike_cut")) if v15 else False                          # 枝6 v46（Exit最適化フロー 2026-07-18・SL STEP3・まこさん「切る方向を試す」）: 急騰カット＝未搭乗 ∩ 保有中60分上昇率≥閾値（down 1.0%／flat_up 0.5%＝観察 a-priori）で成行降り。v42/43（指標点灯）と違い動きの大きさで切る（§10・1%急騰は建値回帰4%＝救済されにくい玉を狙う）
     last_fup_px = None                                     # v37/v38: 同一レンジ内の直近 flat_up 約定価格（レンジ切れでリセット）
     _rhdn26 = None; _gap26 = 0.0; _v26ceil = np.nan; _ceil_type26 = None   # _ceil_type26=入口型マーカー（診断・net不関与・型別分析の見落とし防止 2026-07-15）
     if v26sp:
@@ -946,6 +952,28 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
     if v22e is not None:
         assert dc21 is not None and rsi9_21 is not None, "v22 入口は v21 構成（DC/RSI9 配列）の上に載る（acceptance 2026-07-13）"
         v15_params["_stats"].setdefault("v22_entry_fires", 0)
+    _r9e = _r14e = _r21e = None; _bb2e = None; _adx30pe = None; _spk60 = None
+    if v15 and (v42db or v43fb or v44sc or v46sc):     # 枝2/枝3/枝6 用の 5m 指標（過去 rolling/ewm のみ＝H2・しきい値は教科書標準/観察a-priori＝採点窓で選ばない・OFF 経路では計算しない）
+        _cse = pd.Series(c); _hse = pd.Series(h); _lse = pd.Series(l)
+        def _rsi_e(_nn):
+            _dd = _cse.diff()
+            _up = _dd.clip(lower=0).ewm(alpha=1.0 / _nn, adjust=False).mean()
+            _dn = (-_dd.clip(upper=0)).ewm(alpha=1.0 / _nn, adjust=False).mean()
+            return (100 - 100 / (1 + _up / _dn.replace(0, np.nan))).to_numpy(float)
+        _r9e = _rsi_e(9); _r21e = _rsi_e(21)
+        _sm20e = _cse.rolling(20).mean(); _sd20e = _cse.rolling(20).std()
+        _bb2e = (_cse > _sm20e + 2 * _sd20e).to_numpy(bool)
+        _upm = _hse.diff(); _dnm = -_lse.diff()
+        _pdm = np.where((_upm > _dnm) & (_upm > 0), _upm, 0.0)
+        _mdm = np.where((_dnm > _upm) & (_dnm > 0), _dnm, 0.0)
+        _tre = pd.concat([_hse - _lse, (_hse - _cse.shift()).abs(), (_lse - _cse.shift()).abs()], axis=1).max(axis=1)
+        _atre = _tre.ewm(alpha=1.0 / 14, adjust=False).mean()
+        _pdie = (100 * pd.Series(_pdm).ewm(alpha=1.0 / 14, adjust=False).mean() / _atre).to_numpy(float)
+        _mdie = (100 * pd.Series(_mdm).ewm(alpha=1.0 / 14, adjust=False).mean() / _atre).to_numpy(float)
+        _dxe = 100 * np.abs(_pdie - _mdie) / np.where(_pdie + _mdie > 0, _pdie + _mdie, np.nan)
+        _adxe = pd.Series(_dxe).ewm(alpha=1.0 / 14, adjust=False).mean().to_numpy(float)
+        _adx30pe = (_adxe >= 30) & (_pdie > _mdie)
+        _spk60 = (_cse.pct_change(12) * 100).to_numpy(float)   # 枝6 v46: 保有中60分(12本)の上昇率%（過去のみ＝H2 leak-safe・c[i]/c[i-12]）
     k9 = d9 = None
     if v14_params is not None or v23te:                # v14/v23: stoch(9,3)（v14 枝5'／v23 STOCH_REVERSE_EXIT 用・過去 rolling のみ＝leak-safe H2・OFF 経路では計算しない）
         _cs = pd.Series(c); _ls = pd.Series(l); _hs = pd.Series(h)
@@ -1102,13 +1130,15 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         for lot in lots:
             if i <= lot["last_fill_idx"]:
                 still.append(lot); continue
-            if v27fl and lot.get("ceil_type") == "flat_up":   # ①.0 v27: flat_up ピーク反転 建値保護（§12＝含み益+0.4%到達後の反転→SL を建値近傍で止める・SL より内側なので先着）
+            if (v27fl and lot.get("ceil_type") == "flat_up") or (v41dl and lot.get("ceil_type") == "down"):   # ①.0 v27: flat_up ピーク反転 建値保護（§12）／枝1 v41: down へ対称拡張（B down −$224・値は V27 既存定数の再利用＝新数値なし・worklog §26 対称証拠）
                 _pk27 = lot.get("pk_prev", lot["max_fav"])     # 前バーまでの含み益ピーク＝最安値（H2・同一バー楽観の排除）
                 if (lot["avg"] - _pk27) >= lot["avg"] * (V27_ARM_PCT / 100.0):   # 武装＝ピーク含み益 ≥ +ARM%（費用超えの逃げ場が実在）
                     _lvl27 = min(_pk27 + V27_GIVEBACK * (lot["avg"] - _pk27), lot["avg"] * (1.0 - SCALP_FLOOR))   # ピーク利益の GIVEBACK 分戻し（下限=建値フロア＝損ゼロ級）
                     if h[i] >= _lvl27:                         # 価格が戻ってロック水準に到達＝resting buy maker 約定（登録済み MFE_DRAWDOWN_CUT・H13無変更）
                         _record(trades, lot, max(_lvl27, o[i]), "MFE_DRAWDOWN_CUT", i, ts)
                         v15_params["_stats"]["MFE_DRAWDOWN_CUT_pf"] = v15_params["_stats"].get("MFE_DRAWDOWN_CUT_pf", 0) + 1
+                        if lot.get("ceil_type") == "down":
+                            v15_params["_stats"]["v41_dn_lock"] = v15_params["_stats"].get("v41_dn_lock", 0) + 1
                         continue
             if h[i] >= lot["sl"]:                      # ① SL 優先（同 bar 両到達は不利側先着＝保守・全量／v15=災害SL 遠水準）
                 _record(trades, lot, max(lot["sl"], o[i]), "SL_FILLED", i, ts); continue
@@ -1124,6 +1154,32 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                         v15_params["_stats"]["v31_expire"] = v15_params["_stats"].get("v31_expire", 0) + 1
                     continue
                 still.append(lot); continue            # 待ち継続（TP/shrink 枝はスキップ＝buy 水準は建値フロアが最近傍で先に約定＝等価・診断を BE_EXIT に一本化）
+            if (v42db or v43fb or v44sc or v46sc) and _r9e is not None:   # ①.2 枝2/枝3/枝6（Exit最適化フロー）: 未搭乗ゲート×指標/急騰の前提崩れ/失速確定（成行 taker・TREND_CONT 登録済み再利用＝score.py 無変更 H13・しきい値は教科書標準/観察a-priori）
+                _pkx = lot.get("pk_prev", lot["max_fav"])                    # 前バーまでの含み益ピーク（H2）
+                _ride = (lot["avg"] - _pkx) >= lot["avg"] * (V24_TREND_TP_PCT / 100.0)   # 一度でも fee床超え(0.08%)に搭乗したか（既存定数再利用）
+                if v42db and lot.get("ceil_type") == "down" and (not _ride) \
+                        and np.isfinite(_r9e[i]) and _r9e[i] >= 70.0 and np.isfinite(_r21e[i]) and _r21e[i] >= 60.0:
+                    _record(trades, lot, c[i], "TREND_CONT", i, ts)          # 枝2dn: 未搭乗 ∩ RSI9≥70 ∩ RSI21≥60（D2 98%/A5%・初発15分 −0.29%＝probe）
+                    v15_params["_stats"]["v42_break"] = v15_params["_stats"].get("v42_break", 0) + 1
+                    continue
+                if v43fb and lot.get("ceil_type") == "flat_up" and (not _ride) \
+                        and _bb2e[i] and np.isfinite(_r9e[i]) and _r9e[i] >= 70.0:
+                    _record(trades, lot, c[i], "TREND_CONT", i, ts)          # 枝2fl: 未搭乗 ∩ BB+2σ ∩ RSI9≥70（D2 76%/A3%・初発30分 −0.42%＝probe）
+                    v15_params["_stats"]["v43_break"] = v15_params["_stats"].get("v43_break", 0) + 1
+                    continue
+                if v44sc and (i - int(lot["first_idx"])) * 5 >= 60:
+                    _fire44 = ((lot.get("ceil_type") == "down" and _adx30pe[i] and np.isfinite(_r9e[i]) and _r9e[i] >= 70.0)
+                               or (lot.get("ceil_type") == "flat_up" and _bb2e[i] and np.isfinite(_r9e[i]) and _r9e[i] >= 70.0))
+                    if _fire44:
+                        _record(trades, lot, c[i], "TREND_CONT", i, ts)      # 枝3: 保有≥60分 ∩ 型別指標 AND＝失速確定（C 71-86%/A1%＝probe）
+                        v15_params["_stats"]["v44_stale"] = v15_params["_stats"].get("v44_stale", 0) + 1
+                        continue
+                if v46sc and _spk60 is not None and (not _ride):     # 枝6 v46（SL STEP3 2026-07-18・まこさん「切る方向を試す」）: 急騰カット＝未搭乗 ∩ 保有中60分上昇率≥閾値（動きの大きさで切る・§10）
+                    _thr46 = 1.0 if lot.get("ceil_type") == "down" else 0.5   # down 1.0%／flat_up 0.5%（観察 a-priori・勝ち巻き込み0付近の大きさ・採点窓 net で選んでいない）
+                    if np.isfinite(_spk60[i]) and _spk60[i] >= _thr46:
+                        _record(trades, lot, c[i], "TREND_CONT", i, ts)      # 成行 taker（TREND_CONT 登録済み再利用＝score.py 無変更 H13）
+                        v15_params["_stats"]["v46_spike"] = v15_params["_stats"].get("v46_spike", 0) + 1
+                        continue
             if v23te and lot.get("trend_caught"):      # ①.3 v23/v24: trend_caught 玉の V9 型 Exit 状態機械（SL の次・TP より優先＝反転/失速で先に畳む・固定値 a-priori）
                 _pk23 = lot.get("pk_prev", lot["max_fav"])       # 前バーまでの含み益ピーク＝最良（最安）価格（H2・同一バー楽観の排除）
                 _in_profit23 = (lot["avg"] - _pk23) >= lot["avg"] * V23_RT_FEE   # 含み益ピークが往復 maker fee を超えた＝逃げ場が実在
@@ -1304,8 +1360,12 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                 v15_params["_stats"]["v38_clamped"] = v15_params["_stats"].get("v38_clamped", 0) + 1
             if _cbuf26 > 0.0 and np.isfinite(_v26ceil):                                  # v26 天井バッファ: 天井×(1-buffer)へ下げる（現値+offset 未満にはしない＝maker 成立・上端手前で止まるレンジを拾う）
                 _v26ceil = max(_v26ceil * (1.0 - _cbuf26), c[i] * (1.0 + ENTRY_OFFSET))
+            _age_ok26 = bool(_age26 is None or _age26[i] <= _maxage26 * 12)               # A: レンジ判定直後に入る＝立ってからの経過が _maxage 時間内のみ（序盤ほど上昇転換まで余裕・まこさん 2026-07-15）
+            if v40na and _isdn26 and not _age_ok26:                                       # v40: down 型だけ年齢免除（5-15 窓診断＝年齢ゲートが唯一の決め手・レンジ終盤負けの実測証拠は flat_up 行＝flat_up の6hは維持・worklog 20260717 §21）
+                _age_ok26 = True
+                v15_params["_stats"]["v40_age_exempt"] = v15_params["_stats"].get("v40_age_exempt", 0) + 1
             _fire21 = bool(ok_arr[i] and np.isfinite(_v26ceil) and _v26ceil > c[i]       # 天井が現在価格の上＝これから上がって来たら約定（resting maker sell）
-                           and (_age26 is None or _age26[i] <= _maxage26 * 12))          # A: レンジ判定直後に入る＝立ってからの経過が _maxage 時間内のみ（序盤ほど上昇転換まで余裕・まこさん 2026-07-15）
+                           and _age_ok26)
             if (v37cg and _fire21 and (not _isdn26) and warn37 is not None and warn37[i]
                     and last_fup_px is not None and np.isfinite(_v26ceil) and _v26ceil > last_fup_px):
                 _fire21 = False                                                          # v37: uptrend 前兆 ∩ 前 entry より高い指値＝階段売り上がり×上げ巻き込まれの A∩B だけ新規停止（fix6m_100 実測＝この563行が −$449・窓内の巻き込み −$7 のみ・worklog 20260717 §16・down型は対象外）
@@ -2035,7 +2095,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_ceil_buffer=0.0, v26_uptrend_exit=False, v27_flatup_lock=False, v31_time_be=False, v32_flatup_touch=False, v33_flatup_tp1=False, v34_flatup_fresh=False, v35_flatup_range=False, v36_flatup_near=False, v37_flatup_climb=False, v38_flatup_clamp=False, v39_trend_deadline=False, used_flags_section=None):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_ceil_buffer=0.0, v26_uptrend_exit=False, v27_flatup_lock=False, v31_time_be=False, v32_flatup_touch=False, v33_flatup_tp1=False, v34_flatup_fresh=False, v35_flatup_range=False, v36_flatup_near=False, v37_flatup_climb=False, v38_flatup_clamp=False, v39_trend_deadline=False, v40_down_no_age=False, v41_down_lock=False, v42_down_break=False, v43_flatup_break=False, v44_stale_confluence=False, v45_time_down_factor=False, v46_spike_cut=False, used_flags_section=None):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -2130,6 +2190,33 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             assert not v34_flatup_fresh, "v35 は v34（束方式）の置き換え＝併用しない（worklog 20260717 §9）"
             v15p["v35_flatup_range"] = True
             print("  [v35] flat_up 型の天井＝res_hi → 今のレンジ（range_ok_rg5 連続区間）開始以降の実測高値×(1−tol)。tol＝RG-v6 と同じ clamp(0.5×ATR%_1h,0.15%,0.6%)＝上端の tol 手前に resting maker sell（上端ちょうどは戻りが届かない＝probe 実測）。区間リセットで古い高値を持ち越さない（v32/v34 の轍への対策）。T なし/現値以下は res_hi フォールバック（恒等側）。down型不変・レンジ序盤の低い上端はそのまま実測し型別分析で見る（まこさん 2026-07-17）。probe＝指定5窓すべてで窓の実上端 0.95〜1.07 に立ち機会の塊1〜6回（worklog 20260717 §9）・既定 OFF=fix6m+v31 恒等・采否は採点窓 score.py の net＋件数/日≥5")
+        if v41_down_lock and v15p is not None:              # 枝1 v41（Exit最適化フロー 2026-07-17・まこさん「全部やって良い物を残す」）: v27 の down 拡張を注入
+            assert v27_flatup_lock and v26_split_ceiling, "v41 は v27（建値保護）＋v26 切り分け構成の上に載る（--v27-flatup-lock --v26-split-ceiling 必須）"
+            v15p["v41_down_lock"] = True
+            print("  [v41] 枝1＝v27 ピーク反転建値保護を down 型へ対称拡張（武装 V27_ARM_PCT・戻し V27_GIVEBACK・下限=建値フロア＝既存定数再利用・新数値なし）。根拠＝B ピーク反転状態が flat_up は v27 で −$16 まで消え down は枝なしで −$224 残る対称証拠（fix6m_108・worklog 20260717 §26）。既定 OFF=v40 恒等・采否は採点窓 score.py の net＋件数/日≥5＋型別")
+        if v42_down_break and v15p is not None:             # 枝2dn v42: down 前提崩れ撤退を注入
+            assert v26_split_ceiling, "v42 は v26 切り分け構成の上に載る（--v26-split-ceiling 必須）"
+            v15p["v42_down_break"] = True
+            print("  [v42] 枝2dn＝down 玉の前提崩れ撤退: 未搭乗（含み益ピーク<0.08%＝V24_TREND_TP_PCT 再利用）∩ RSI9≥70 ∩ RSI21≥60（教科書標準値）で成行降り（TREND_CONT 再利用 H13）。根拠＝STEP3 probe: D2 98%/D1 86% カバー・A巻込5%・初発15分・その時点 −0.29%（V9 BREAKOUT_CUT の形の現代適合・worklog 20260717 §32）。既定 OFF・采否は採点窓 score.py")
+        if v43_flatup_break and v15p is not None:           # 枝2fl v43: flat_up 前提崩れ撤退を注入
+            assert v26_split_ceiling, "v43 は v26 切り分け構成の上に載る（--v26-split-ceiling 必須）"
+            v15p["v43_flatup_break"] = True
+            print("  [v43] 枝2fl＝flat_up 玉の前提崩れ撤退: 未搭乗 ∩ BB+2σ 上抜け ∩ RSI9≥70（教科書標準値）で成行降り（TREND_CONT 再利用 H13）。根拠＝STEP3 probe: D2 76% カバー・A巻込3%・初発30分 −0.42%（worklog 20260717 §32）。既定 OFF・采否は採点窓 score.py")
+        if v44_stale_confluence and v15p is not None:       # 枝3 v44: 失速確定を注入
+            assert v26_split_ceiling, "v44 は v26 切り分け構成の上に載る（--v26-split-ceiling 必須）"
+            v15p["v44_stale_confluence"] = True
+            print("  [v44] 枝3＝失速確定: 保有≥60分 ∩ 型別指標 AND（down=ADX≥30∩+DI優勢∩RSI9≥70／flat_up=BB+2σ∩RSI9≥70）で成行降り（TREND_CONT 再利用 H13）。根拠＝STEP3 probe: C 71-86% カバー・A巻込1%（worklog 20260717 §32）。既定 OFF・采否は採点窓 score.py")
+        if v45_time_down_factor and v15p is not None:       # 枝5 v45: 含み損玉の TIME 前倒し（既存 v15 down 機構の有効化＝engine 無変更）
+            v15p["down"] = 0.5
+            print("  [v45] 枝5＝含み損玉の TIME 前倒し down_factor=0.5（V9 SHORT_TIME_EXIT_DOWN_FACTOR 実証値の再利用・勝ちは満期まで＝非対称満期）。実装＝v15 既存の down 機構（眠っていた）を 0.5 で有効化＝engine 変更なし。既定 OFF・采否は採点窓 score.py")
+        if v46_spike_cut and v15p is not None:              # 枝6 v46（SL STEP3 2026-07-18・まこさん「切る方向を試す」）: 急騰カットを注入
+            assert v26_split_ceiling, "v46 は v26 切り分け構成の上に載る（--v26-split-ceiling 必須＝ceil_type 判定に依存）"
+            v15p["v46_spike_cut"] = True
+            print("  [v46] 枝6＝急騰カット: 未搭乗 ∩ 保有中60分上昇率≥閾値（down 1.0%／flat_up 0.5%＝SL観察の a-priori・勝ち巻き込み0付近）で成行降り（TREND_CONT 再利用 H13）。v42/v43（RSI/BB 点灯）との違い＝小さな戻る動きでなく大きな急騰（§7 で1%急騰の建値回帰4%＝救済されにくい玉）を狙う。既定 OFF・采否は採点窓 score.py の net＋件数/日≥5")
+        if v40_down_no_age and v15p is not None:            # v40（fast-mode 2026-07-17・まこさんGO 案1）: down 型の年齢免除を v15p に注入（worklog 20260717 §21・采否は採点窓 score.py）
+            assert v26_split_ceiling and v26_max_age_hours > 0, "v40 は v26 切り分け＋年齢ゲート（--v26-split-ceiling --v26-max-age-hours >0）の上に載る"
+            v15p["v40_down_no_age"] = True
+            print("  [v40] down 型（下落系・天井=直近高値）は年齢6hゲートを免除＝レンジが6hを超えて続いても down 型なら建てる。flat_up は6h維持（レンジ終盤負けの実測証拠[経過率で単調・fix6m_100 §15]は flat_up 行で測ったもの）。根拠＝5-15 窓（指定6窓で唯一の0玉）の診断: 144本全部 range・年齢ゲートだけ外すと現行天井のまま fill 3回・全部 down 型＝年齢が唯一の決め手（worklog 20260717 §21）。新数値なし・既定 OFF=v38 恒等・采否は採点窓 score.py の net＋件数/日≥5")
         if v39_trend_deadline and v15p is not None:         # v39（fast-mode 2026-07-17・まこさん「どんどん試す」）: trend_caught 待ち期限を v15p に注入（worklog 20260717 §19・采否は採点窓 score.py）
             assert v24_trend_maker_tp, "v39 は v24（trend_caught 建値+L% resting maker）の上に載る（--v24-trend-maker-tp 必須）"
             v15p["v39_trend_deadline"] = True
@@ -2338,6 +2425,13 @@ def main():
     ap.add_argument("--v26-uptrend-exit", action="store_true", help="v26（B・まこさん 2026-07-15）: uptrend レジーム発火で保有玉を緊急離脱（成行 TREND_CONT）＝trend_caught 保持で時間切れ大損する前に損害頭打ち（v23/v24 の保持より優先・既定 OFF=保持のまま恒等）")
     ap.add_argument("--v31-time-be", action="store_true", help="v31（fast-mode 2026-07-16・まこさんGO）: TIME満了の成行→建値フロア resting maker 化＝満了玉を成行 taker で投げず、L=建値×(1−SCALP_FLOOR)（手数料床込み損ゼロ級・既存定数再利用＝新数値なし）へ resting buy（maker・BE_EXIT 登録済み再利用＝score.py 無変更 H13）を置いて TTL 24本(120分) 待つ。未到達は現行どおり成行 TIME_EXIT・待機中も災害SL 有効。根拠＝採点窓の軌跡分析（TIME玉129中128負け＝勝ち巻き込みほぼゼロ・exit後120分で半数が建値近傍へ回帰・worklog 20260716 §14[D2]）。既定 OFF=fix6m_082 恒等・采否は採点窓 score.py の net＋件数/日≥5")
     ap.add_argument("--v32-flatup-touch", action="store_true", help="v32（fast-mode 2026-07-16・まこさんGO）: flat_up 型の売り指値の天井を res_hi（RG帯上端＝下落後は古い高値側に厚く残り現値+0.65〜2.18%上＝ボラ高レンジで一度も刺さらない・worklog §18）から v11 タッチ実績ゾーン下端 touch_lo（価格が実際に戻って反落した実績のある近い上端・視認校正済み計器 _zones_v11_1h を import 再利用・タッチ実績が下端売り[v26tf の轍]を防ぐ）へ。touch_lo が NaN／現値以下のバーは res_hi のまま＝フォールバック（恒等側）。down型の天井（直近1h高値）は不変（1レバー）。probe（worklog §19 C2）＝同条件比較で約定+15%・TP1到達71→75%・轢かれ38→34%。既定 OFF=fix6m+v31 恒等・采否は採点窓 score.py の net＋件数/日≥5")
+    ap.add_argument("--v41-down-lock", action="store_true", help="枝1 v41（Exit最適化フロー 2026-07-17）: v27 ピーク反転建値保護を down 型へ対称拡張（武装0.15%%・戻し50%%・下限=建値フロア＝V27 既存定数再利用・新数値なし）。根拠＝B 状態の対称証拠（flat_up は v27 で −$16・down は枝なしで −$224＝fix6m_108 worklog §26）。--v27-flatup-lock --v26-split-ceiling 必須・既定 OFF・采否は採点窓 score.py")
+    ap.add_argument("--v42-down-break", action="store_true", help="枝2dn v42: down 玉の前提崩れ撤退＝未搭乗（含み益ピーク<0.08%%）∩ RSI9≥70 ∩ RSI21≥60（教科書標準値）で成行降り（TREND_CONT 再利用）。根拠＝STEP3 probe D2 98%%/A5%%・初発15分 −0.29%%（V9 BREAKOUT_CUT の形・worklog §32）。--v26-split-ceiling 必須・既定 OFF")
+    ap.add_argument("--v43-flatup-break", action="store_true", help="枝2fl v43: flat_up 玉の前提崩れ撤退＝未搭乗 ∩ BB+2σ ∩ RSI9≥70 で成行降り（TREND_CONT 再利用）。根拠＝STEP3 probe D2 76%%/A3%%・初発30分 −0.42%%（worklog §32）。--v26-split-ceiling 必須・既定 OFF")
+    ap.add_argument("--v44-stale-confluence", action="store_true", help="枝3 v44: 失速確定＝保有≥60分 ∩ 型別指標 AND（down=ADX≥30∩+DI∩RSI9≥70／flat_up=BB+2σ∩RSI9≥70）で成行降り（TREND_CONT 再利用）。根拠＝STEP3 probe C 71-86%%/A1%%（worklog §32）。--v26-split-ceiling 必須・既定 OFF")
+    ap.add_argument("--v45-time-down-factor", action="store_true", help="枝5 v45: 含み損玉の TIME 前倒し down_factor=0.5（V9 実証値再利用・勝ちは満期まで＝非対称満期）。実装＝v15 既存 down 機構の有効化（engine 無変更）。既定 OFF")
+    ap.add_argument("--v46-spike-cut", action="store_true", help="枝6 v46（SL STEP3 2026-07-18・まこさん「切る方向を試す」）: 急騰カット＝未搭乗 ∩ 保有中60分上昇率≥閾値（down 1.0%%／flat_up 0.5%%＝SL観察 a-priori・勝ち巻き込み0付近）で成行降り（TREND_CONT 再利用）。v42/43（RSI/BB 点灯）と違い動きの大きさで切る（1%%急騰の建値回帰4%%＝救済されにくい玉）。--v26-split-ceiling 必須・既定 OFF")
+    ap.add_argument("--v40-down-no-age", action="store_true", help="v40（fast-mode 2026-07-17・まこさんGO 案1）: down 型（下落系・天井=直近高値）は --v26-max-age-hours の年齢ゲートを免除＝レンジが6hを超えて続いても down 型なら建てる。flat_up は年齢維持（レンジ終盤負けの実測証拠[経過率で単調・fix6m_100 §15]は flat_up 行で測ったもの）。根拠＝5-15 窓（まこさん指定6窓で唯一の0玉）の詰まり診断で年齢ゲートが唯一の決め手（144本全部 range 判定・年齢だけ外すと現行天井のまま fill 3回・全部 down 型・worklog 20260717 §21）。新数値なし・--v26-split-ceiling --v26-max-age-hours 必須・既定 OFF=v38 恒等・采否は採点窓 score.py の net＋件数/日≥5")
     ap.add_argument("--v39-trend-deadline", action="store_true", help="v39（fast-mode 2026-07-17・まこさん「どんどん試して結果で判断」）: trend_caught 玉（uptrend 発火で新規停止し建値+0.08%% の resting maker 待ちに入った玉）に待ち期限＝発火から V31_TTL_BARS(24本=120分・既存定数再利用) で利確未達なら成行 taker で降りる（TREND_CONT 登録済み再利用=score.py 無変更 H13）。根拠＝fix6m_104 実測: 建値降り玉473（+$83）の保有90%ileは160分＝期限120分の巻き込み上限92玉 +$15.7 と小さい一方、降りられない玉は SL −$344・TIME −$342 の深追い（5-1 型＝待ちすぎ）。--v24-trend-maker-tp 必須・既定 OFF=v38 恒等・采否は採点窓 score.py の net＋件数/日≥5")
     ap.add_argument("--v38-flatup-clamp-prev", action="store_true", help="v38（fast-mode 2026-07-17・まこさん「どんどん試して結果で判断」）: flat_up の売り指値の天井を「同一レンジ内の前玉価格」でクランプ＝前玉より高くは売らない（天井=min(現行天井, 前玉価格)・レンジ切れで基準リセット・a-priori=同じレンジの上端は1つ・上がっているならレンジでない・新数値なし）。根拠＝軌跡観察（fix6m_102）: 前玉より高く入った負け玉は「最初から乗らない即逆行型」（初動30分の含み益タッチ 勝ち74% vs 負け22%・higher 617行 −$328＝残存 flat_up の負けの7割・worklog 20260717 §18）。down型の天井は不変（1レバー）。--v26-split-ceiling 必須・既定 OFF=v37 恒等・采否は採点窓 score.py の net＋件数/日≥5")
     ap.add_argument("--v37-flatup-climb-guard", action="store_true", help="v37（fast-mode 2026-07-17・まこさんGO）: flat_up の新規停止ガード＝uptrend 前兆 v22_warning（既存実装・確定15分足＋過去close のみ H2） ∩ 同一レンジ内で前 entry より高い指値（階段売り上がり・レンジ切れで基準リセット）の A∩B に該当する時だけ建てない。根拠＝まこさんのダッシュボード観察2つをデータ検証（レンジ経過率で完全単調 序盤93%勝ち→終盤65%・深い負けの57%が前より高い玉・fix6m_100 実測で A∩B 563行 −$449＝最も濃い負け集合・指定窓内の巻き込み −$7 のみ・worklog 20260717 §15-16）。down型不変（1レバー）。--v26-split-ceiling --v22-set 必須・既定 OFF=v36 恒等・采否は採点窓 score.py の net＋件数/日≥5")
@@ -2387,7 +2481,7 @@ def main():
             v26_split_ceiling=a.v26_split_ceiling, v26_gap=a.v26_gap, v26_down_hours=a.v26_down_hours,
             v26_max_age_hours=a.v26_max_age_hours, v26_ceil_buffer=a.v26_ceil_buffer, v26_uptrend_exit=a.v26_uptrend_exit,
             v27_flatup_lock=a.v27_flatup_lock, v31_time_be=a.v31_time_be, v32_flatup_touch=a.v32_flatup_touch,
-            v33_flatup_tp1=a.v33_flatup_fast_tp1, v34_flatup_fresh=a.v34_flatup_fresh_top, v35_flatup_range=a.v35_flatup_range_top, v36_flatup_near=a.v36_flatup_near_fallback, v37_flatup_climb=a.v37_flatup_climb_guard, v38_flatup_clamp=a.v38_flatup_clamp_prev, v39_trend_deadline=a.v39_trend_deadline,
+            v33_flatup_tp1=a.v33_flatup_fast_tp1, v34_flatup_fresh=a.v34_flatup_fresh_top, v35_flatup_range=a.v35_flatup_range_top, v36_flatup_near=a.v36_flatup_near_fallback, v37_flatup_climb=a.v37_flatup_climb_guard, v38_flatup_clamp=a.v38_flatup_clamp_prev, v39_trend_deadline=a.v39_trend_deadline, v40_down_no_age=a.v40_down_no_age, v41_down_lock=a.v41_down_lock, v42_down_break=a.v42_down_break, v43_flatup_break=a.v43_flatup_break, v44_stale_confluence=a.v44_stale_confluence, v45_time_down_factor=a.v45_time_down_factor, v46_spike_cut=a.v46_spike_cut,
             used_flags_section=_used_flags_section(ap, a))   # report §0 に実際に使った全フラグ＋help を自動列挙（強制hook不要で正確・まこさん 2026-07-15）
     print("=" * 100)
 
