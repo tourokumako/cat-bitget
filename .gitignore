@@ -34,3 +34,5 @@ v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
 
 # L-236 physical enforcement hooks state (machine-generated timestamp)
 .claude/state/
+# bitget 側 state はリポジトリ直下 .claude/state へのシンボリックリンク（2026-07-19 統合・パスミス無害化）＝リンク自体も無視（末尾スラッシュ無し）
+v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state
