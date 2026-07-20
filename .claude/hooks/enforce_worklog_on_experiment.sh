@@ -18,8 +18,19 @@ RATCHET="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bi
 WLDIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state"
 HOOKS="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks"
 
-python3 "$HOOKS/enforce_worklog_on_experiment.py" "$RATCHET" "$WLDIR" "$STATE" 2>>"$STATE/enforce_worklog_error.log"
+# stderr の書き分け（2026-07-20 まこさん承認）: py は「なぜ止めたか」を毎回 stderr に書く＝正常動作。
+# それを *_error.log に貯めると hook_health_check（state/*_error.log の非空＝無言死の可視化）が毎セッション
+# 誤警告し、本物のエラーに気づけなくなる（オオカミ少年）。想定内 rc は reason へ、想定外 rc だけ error へ。
+ERRLOG="$STATE/enforce_worklog_error.log"      # hook が壊れた時だけ（health_check が拾う）
+REASONLOG="$STATE/enforce_worklog_reason.log"  # 正常に止めた理由（health_check は見ない）
+TMPERR=$(mktemp)
+python3 "$HOOKS/enforce_worklog_on_experiment.py" "$RATCHET" "$WLDIR" "$STATE" 2>"$TMPERR"
 rc=$?
+case "$rc" in
+  0|7|8|9) cat "$TMPERR" >> "$REASONLOG" ;;    # 想定内＝正常動作
+  *)       cat "$TMPERR" >> "$ERRLOG" ;;       # 想定外＝python が壊れた（無言死の可視化）
+esac
+rm -f "$TMPERR"
 [ "$rc" -eq 0 ] && exit 0
 
 if [ "$rc" -eq 8 ]; then
