@@ -9,8 +9,12 @@
   - 内訳（A リスク指標・B〜L）は**全節 審判式**（score.py と同じコスト式・現行計器・funding 除く）で行単位に再計算して集計
     ⚠️ 旧仕様（CSV の net_usd 列をそのまま集計）は E0.4 trail maker 化以降 P21 の trail 行が旧計器の値になり
     誤表示だった（2026-06-12 まこさん指摘「間違った数字を出すレポートはゴミ以下」→ 全節を審判式に統一）
-出力: A全体 / B優先度別 / C出口理由別 / D サイズ・add別 / E ベスト・ワースト / F月別(+AI vs V9) /
-      G指標帯別 / H予測確率帯別(p列があれば) / I MFE/MAE別
+出力: 0使用パラメータ / 0bこの表の数字の作り方 / A全体 / B優先度別 / C出口理由別 / C2 side×入口型(4分割) /
+      Dサイズ・add別 / Eベスト・ワースト / F月別(--vs で基準と比較) / F2〜F4時系列 / G指標帯別 /
+      H予測確率帯別(p列があれば) / I MFE/MAE別 / Jコスト分解 / K期待値4要素 / L限界分解 / M週次チャート
+⚠️ 表示は実データ由来を原則にする（手書きの固有名詞を置かない）。F節の列名は旧「AI vs V9」＝ML戦略×手動戦略V9
+   時代の手書き固定値で、--vs に何を渡しても "V9" と出て本番の手動V9と混同しうるため 2026-07-20 に
+   比較相手のファイル名からの自動生成へ是正。EXIT_JP(翻訳辞書)の追従漏れは _check_exit_jp が毎回自動検出する。
 """
 from __future__ import annotations
 import argparse, json, os, sys
@@ -25,7 +29,23 @@ pd.set_option("display.width", 200); pd.set_option("display.max_columns", 30)
 SIDE_JP = {"LONG": "買い", "SHORT": "売り"}
 EXIT_JP = {"TP_FILLED": "利確(TP)", "SL_FILLED": "損切(SL)", "TIME_EXIT": "時間切れ", "MFE_STALE_CUT": "含み益失速",
            "STOCH_REVERSE_EXIT": "ストキャス反転", "RSI_REVERSE_EXIT": "RSI反転", "TRAIL_EXIT": "トレール",
-           "PROFIT_LOCK": "利益確保", "MAE_CUT": "含み損切", "MIDTERM_CUT": "中期切", "FORCE_CLOSE_EOD": "期末強制"}
+           "PROFIT_LOCK": "利益確保", "MAE_CUT": "含み損切", "MIDTERM_CUT": "中期切", "FORCE_CLOSE_EOD": "期末強制",
+           # 2026-07-20 追記＝_check_exit_jp が「英語のまま出ている6件」を自動検出したため（訳語は §0 の実装説明から）
+           "PARTIAL_TP": "部分利確(TP1)", "BE_EXIT": "建値撤退", "MFE_DRAWDOWN_CUT": "ピーク反転",
+           "RANGE_BREAK_EXIT": "レンジ破れ", "TREND_CAUGHT_TP": "トレンド玉利確", "TREND_CONT": "トレンド撤退"}
+
+
+def _check_exit_jp(d):
+    """出口理由の日本語訳の追従漏れを機械が検出して警告（2026-07-20 まこさん指摘「手書きは入れてないはず」）。
+
+    EXIT_JP は翻訳辞書なので手書きが避けられない。だが戦略に出口枝を足すたび辞書が古くなり、
+    レポートに英語の exit_reason が黙って増える（2026-07-20 実測＝6件が英語のまま出ていた）。
+    黙って古くなるのを防ぐため、CSV に実在する出口理由と辞書の差分を毎回機械が出す（表示のみ・net 不関与）。
+    """
+    unknown = sorted(set(d["exit_reason"].dropna().astype(str).unique()) - set(EXIT_JP))
+    if unknown:
+        print(f"  ⚠️ 日本語訳が未登録の出口理由 {len(unknown)}件（以降の表に英語のまま出ます）: {', '.join(unknown)}")
+        print("     → 戦略に出口枝を足したら report.py の EXIT_JP にも追記が要る（この検出は自動・手書きの追従漏れ対策）")
 
 
 class _Tee:
@@ -172,6 +192,8 @@ def main():
     _print_params(a.csv)
 
     r = judge.score(d_raw)          # 公式 net / 月別（原本で採点）★0b と A で共用＝重い iterrows を2回呼ばない
+    # 比較相手（--vs）は C2（型別）と F（月別）で共用＝1回だけ読む（2026-07-20 C2 に前後比較を足した際に前倒し）
+    v = _funding_collapse(_judge_cols(_load(a.vs, a.start, a.end))) if a.vs else None
 
     # ===== 0b. この表の数字の作り方（CSV列と審判値が違う理由・毎回出す・2026-07-20 まこさん指示）=====
     _print_accounting_note(d_raw, d, r)
@@ -193,6 +215,7 @@ def main():
     recov = r["total"] / dd if dd > 0 else float("inf")
     print("=" * 70); print(f"  結果レポート: {name}   期間 {d['entry_time'].min().date()}〜{d['entry_time'].max().date()} ({days}日)")
     print("=" * 70)
+    _check_exit_jp(d)                                     # 出口理由の日本語訳の追従漏れを機械が検出（表示のみ・net 不関与）
     print(f"  A. 全体  トレード数 {len(d)} / 粗利 ${d['gross_usd'].sum():.0f} / 手数料 ${d['fee_usd'].sum():.0f}"
           f"（{d['fee_usd'].sum()/max(1,abs(d['gross_usd'].sum()))*100:.0f}% ・ ${d['fee_usd'].mean():.2f}/件）")
     print(f"         純益(審判) ${r['total']:.0f} / 月平均 ${r['monthly_avg']:.0f} / 日次純益 ${r['total']/days:.2f}"
@@ -232,6 +255,34 @@ def main():
             print("\n     ├ 出口理由 × 入口型（純益）")
         print(piv2.rename(index=EXIT_JP).rename_axis("出口理由").to_string())
 
+        # ── 型別の前後比較（--vs）＝2026-07-20 新設。
+        # 背景: 型別だけ基準との比較が無く、CC が2ファイルを手で引き算して報告し虚偽になった事案
+        # （災害SLが無効化されて損失計上が消えただけの変化を「改善」と報告）。機械が差まで出せば手計算の余地が消える。
+        # 軸（方向・入口型）の値はデータから取る＝手書きしない。
+        if v is not None and "ceil_type" in v.columns and v["ceil_type"].notna().any():
+            vt = v.copy(); vt["ceil_type"] = vt["ceil_type"].fillna("(不明)")
+            _keys = ["side", "ceil_type"] if _two else ["ceil_type"]
+            _n = ct.groupby(_keys, observed=True)["net_usd"].agg(["size", "sum"])
+            _b = vt.groupby(_keys, observed=True)["net_usd"].agg(["size", "sum"])
+            cmp2 = pd.DataFrame({"今回_件数": _n["size"], "今回_純益": _n["sum"].round(0),
+                                 "基準_件数": _b["size"], "基準_純益": _b["sum"].round(0)}).fillna(0)
+            cmp2["差_件数"] = (cmp2["今回_件数"] - cmp2["基準_件数"]).astype(int)
+            cmp2["差_純益"] = (cmp2["今回_純益"] - cmp2["基準_純益"]).round(0)
+            _idx = ["方向", "入口型"] if _two else ["入口型"]
+            print(f"\n     ├ 型別の前後比較（基準 --vs = {Path(a.vs).name}）")
+            print(cmp2.rename(index=SIDE_JP).rename_axis(_idx).to_string())
+            # 出口理由 × 型 の差（どの出口が増減して差が出たか＝「net が良くなった理由」を機械が示す）
+            _nx = ct.groupby(_keys + ["exit_reason"], observed=True)["net_usd"].sum()
+            _bx = vt.groupby(_keys + ["exit_reason"], observed=True)["net_usd"].sum()
+            dx = (_nx.subtract(_bx, fill_value=0.0)).round(0)
+            dx = dx[dx != 0].sort_values()
+            if len(dx):
+                print("\n     ├ 出口理由 × 型 の差（今回−基準・0以外／マイナス＝この出口で悪化・プラス＝改善）")
+                _df = dx.reset_index(); _df.columns = _idx + ["出口理由", "差_純益"]
+                _df["出口理由"] = _df["出口理由"].map(EXIT_JP).fillna(_df["出口理由"])
+                if _two: _df["方向"] = _df["方向"].map(SIDE_JP).fillna(_df["方向"])
+                print("     " + _df.to_string(index=False).replace("\n", "\n     "))
+
     # ===== D. サイズ / add 別（増強）=====
     print("\n  D. サイズ・add別（mean が右肩上がりなら買い増しが効いている）")
     dd2 = _grp(d, "size_btc"); dd2["平均買増"] = d.groupby("size_btc")["add_count"].mean().round(2)
@@ -251,7 +302,7 @@ def main():
         t = t.rename(columns=_cjp)
         if "出口理由" in t.columns: t["出口理由"] = t["出口理由"].map(EXIT_JP).fillna(t["出口理由"])
         return t
-    print("\n  E. ベスト10（指標値＝入った時の閾値の組み合わせ・V9閾値: ADX30-50/bb傾き<-10/ATR≥150 と対比）")
+    print("\n  E. ベスト10（入った時の指標値＝どの閾値の組み合わせで勝ち負けしたか）")
     print(_disp(d.nlargest(10, "net_usd")[cols]).to_string(index=False))
     print("     ワースト10")
     print(_disp(d.nsmallest(10, "net_usd")[cols]).to_string(index=False))
@@ -261,12 +312,15 @@ def main():
     mo = (d.assign(_m=d["entry_time"].dt.strftime("%Y-%m")).groupby("_m")["net_usd"]    # ★玉単位（A節・合計と整合）
           .agg(純益="sum", 件数="size").rename_axis("月")); mo["純益"] = mo["純益"].round(0)
     if a.vs:
-        v = _funding_collapse(_judge_cols(_load(a.vs, a.start, a.end)))                 # ★V9 も玉単位・funding込み（AI と単位を揃える）
+        # 比較相手 v は 196行で読み込み済み（C2 と共用＝2回読まない）・玉単位/funding込みで今回と単位を揃えてある
         dm = d.assign(_m=d["entry_time"].dt.strftime("%Y-%m")).groupby("_m")["net_usd"].agg(["sum", "size"])
         vm = v.assign(_m=v["entry_time"].dt.strftime("%Y-%m")).groupby("_m")["net_usd"].agg(["sum", "size"])
-        cmp = pd.DataFrame({"AI純益": dm["sum"].round(0), "AI件数": dm["size"],
-                            "V9純益": vm["sum"].round(0), "V9件数": vm["size"]}).fillna(0).rename_axis("月")
-        print(cmp.to_string()); print(f"   合計  AI ${d['net_usd'].sum():.0f}({len(d)}件)  vs  V9 ${v['net_usd'].sum():.0f}({len(v)}件)  → 差 ${d['net_usd'].sum()-v['net_usd'].sum():+.0f}")
+        # 列名は比較相手のファイル名から自動生成（旧「AI vs V9」は ML戦略×手動戦略V9 時代の手書き固定値＝
+        # --vs に何を渡しても "V9" と表示され本番の手動V9と混同しうる・2026-07-20 まこさん指摘で是正）
+        print(f"   今回 = {Path(a.csv).name}   /   基準(--vs) = {Path(a.vs).name}")
+        cmp = pd.DataFrame({"今回_純益": dm["sum"].round(0), "今回_件数": dm["size"],
+                            "基準_純益": vm["sum"].round(0), "基準_件数": vm["size"]}).fillna(0).rename_axis("月")
+        print(cmp.to_string()); print(f"   合計  今回 ${d['net_usd'].sum():.0f}({len(d)}件)  vs  基準 ${v['net_usd'].sum():.0f}({len(v)}件)  → 差 ${d['net_usd'].sum()-v['net_usd'].sum():+.0f}")
     else:
         print(mo.to_string())
 
@@ -303,7 +357,7 @@ def main():
     print("   サイズ別 件数/日: " + " / ".join(f"{k} {v}" for k, v in sz.items()))
 
     # ===== G. 指標帯別 net/勝率 =====
-    print("\n  G. 指標帯別（エッジがどの帯に居るか・V9手書き閾値が最適かを見る）")
+    print("\n  G. 指標帯別（エッジがどの帯に居るか・帯の区切りは実験間で固定＝版をまたいで同じ物差しで比べる）")
     d = d.copy()
     if "atr_14" in d.columns and "entry_price" in d.columns:
         d["atr_pct"] = (d["atr_14"] / d["entry_price"] * 100)
@@ -325,7 +379,7 @@ def main():
 
     # ===== H. 予測確率帯別（ML のとき）=====
     if has_p:
-        print("\n  H. 予測確率帯別（AIの自信度が儲けと対応しているか=較正）")
+        print("\n  H. 予測確率帯別（予測の自信度が儲けと対応しているか＝較正・p列がある時だけ出る）")
         d["_pb"] = _band(d["p"], [0, 0.4, 0.5, 0.56, 0.6, 0.7, 1.01], ["〜0.4", "0.4〜0.5", "0.5〜0.56", "0.56〜0.6", "0.6〜0.7", "0.7〜"])
         print("   " + _grp(d, "_pb").drop(columns=["平均保有"], errors="ignore").rename_axis("確率帯").to_string().replace("\n", "\n   "))
 
