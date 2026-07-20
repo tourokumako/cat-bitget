@@ -17,7 +17,7 @@
      頻度役割（第3フィールド）の強制は既存 enforce_role_criteria.sh（ROLE_CHECK）が担当＝表示用。
      局面 none・方向 both は該当軸スルー。担当・方向が変わった/戦略が増えたら本行だけ更新＝hook は自動追従
      （hook に戦略名を焼かない・§1.2.1 と食い違ったら §1.2.1 が正）。 -->
-<!-- ADOPTED_BASE_FILES: trades_e36_short_oscillation_scenecap_012 ; trades_e35_oscillation_5m_iter9 -->
+<!-- ADOPTED_BASE_FILES: trades_e36_short_oscillation_scenecap_012 ; trades_e35_oscillation_5m_iter9 ; trades_e37_range_scalp_fix6m_134 -->
 <!-- ↑ ratchet_io._adopted_base_stems（採用base押し出し防止・2026-07-03 まこさん承認）が読む機械可読マーカー。
      採用 base はタグ連番名のまま（再走禁止＝安定名を再発行できない）なので、同 stem の新実験の自動 archive
      （archive_prior_experiments）が採用 base ごと押し出す事故を、この幹を含むファイルの除外で防ぐ。

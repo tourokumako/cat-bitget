@@ -801,7 +801,7 @@ def _attach_v16_bb(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False, v11_open_entry: bool = False, v12_open_range: bool = False, v13_time_maker: bool = False, v14_params: dict | None = None, v15_params: dict | None = None, v19_upper_touch: bool = False, v20_uptrend: np.ndarray | None = None):
+def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False, v11_open_entry: bool = False, v12_open_range: bool = False, v13_time_maker: bool = False, v14_params: dict | None = None, v15_params: dict | None = None, v19_upper_touch: bool = False, v20_uptrend: np.ndarray | None = None, short_lots: int | None = None):
     """v11 エンジン＝素ルール SHORT 専用（short_only_v11・LONG 入口の生成経路なし＝§1.2.1 ショートのみ）。
     入口: v11_entry_candidates → 指値 maker TTL（不約定は建てない）。TP/SL は発注時点のゾーン幾何で固定・
     tp_ge_sl_check_v11 を通らない候補は建てない。
@@ -1012,6 +1012,8 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         v14_params.setdefault("_stats", {})
         v14_params["_stats"] = {"MFE_DRAWDOWN_CUT": 0, "BE_EXIT": 0, "STOCH_REVERSE_EXIT": 0, "stall_early": 0, "tp2_bothhit": 0}
     trades = []
+    if short_lots is not None:                         # v57: ショート枠を絞る（ロング枝と cap 0.12 を共有＝ショート2/ロング2・既定 None=恒等）
+        max_lots = int(short_lots)
     lots = []                                          # 保有中 lot（同サイド merge＝単一 SHORT ポジの写像・最大 max_lots）
     pend = None
     for i in range(n):
@@ -1494,6 +1496,88 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
     for lot in lots:
         _record(trades, lot, c[n - 1], "FORCE_CLOSE_EOD", n - 1, ts)
     assert short_only_v11 and all(r["side"] == "SHORT" for r in trades), "short_only_v11 違反（LONG 玉が混入）"
+    return trades
+
+
+def run_long_support(df: pd.DataFrame, max_lots: int = 2, tmax: int = 48, sl_pct: float | None = None, vol_gate: float | None = None, gap_pct: float = 0.5, flat_up_only: bool = False) -> list:
+    """v57（まこさん GO 2026-07-20「E37 が難航しているので試しにレンジ下端の反発ロングを入れる」）＝レンジ下端の反発ロング枝。
+    ★採用中のショートエンジン run_continuous_v11 には一切触れず、中核だけを対称移植した別枝。
+      ショートの v22〜v56 型別レバーは MVP では載せない（まず生の下端反発 edge を採点窓で実測）。
+    入口: range_ok_rg5 ∩ 下端 fresh touch（帯に入った最初のバー・low≤sup_hi ∩ close>sup_lo）→ maker 指値 close×(1−OFF)・TTL3。
+    add: 保有中に下端 fresh 再到達で同量追加（最大 max_lots・約定バーの次以降＝leak-safe H2）。
+    出口（ショートと対称・maker/taker はショートと同規約）:
+      ① 災害SL = 支持帯下端 sup_lo − K×帯幅（maker・悲観側 min(sl,open)）
+         ★sl_pct 指定時（まこさん予測1 2026-07-20「SL は entry との価格差%で切る」）＝SL = entry×(1−sl_pct/100)（幾何でなく固定%）
+      ② PARTIAL_TP = 半分を (建値+mid)/2 で（maker）
+      ③ TP_FILLED = 残り全部を mid で（maker）
+      ④ TIME_EXIT = tmax 本で成行（taker）
+    ★vol_gate 指定時（まこさん予測2 2026-07-20「急騰急落の損が多いなら高ボラは避ける」）＝入口時 atr_pct>vol_gate なら建てない。
+    uptrend 発火＝新規/add 停止（保有は維持＝ロングに uptrend は逆風でない）。cap は S+L 合算で score.py が実測（H1）。"""
+    o = df["open"].to_numpy(float); h = df["high"].to_numpy(float)
+    l = df["low"].to_numpy(float); c = df["close"].to_numpy(float)
+    ts = df["ts"].to_numpy()
+    atr = df["atr"].to_numpy(float); adx = df["adx"].to_numpy(float)
+    atr_pct = df["atr_pct"].to_numpy(float) if "atr_pct" in df.columns else (atr / np.maximum(c, 1e-9) * 100.0)
+    ok = df["range_ok_rg5"].to_numpy(bool); up = df["rg5_uptrend"].to_numpy(bool)
+    sup_lo = df["v11_sup_lo"].to_numpy(float); sup_hi = df["v11_sup_hi"].to_numpy(float)
+    res_lo = df["v11_res_lo"].to_numpy(float); res_hi = df["v11_res_hi"].to_numpy(float); mid = df["v11_mid"].to_numpy(float)
+    n = len(df); unit = UNIT / V15_UNIT_DIV                 # 0.012 BTC/lot（ショートと同じ lot 幾何）
+    _gap = gap_pct / 100.0                                  # 型判定 gap（ショート v26_gap と同じ・下落系＝レジ帯下端が価格の上に gap 超で張り付き＝急落後）
+    SL_K = 1.0                                              # 災害SL＝支持帯下端 − K×帯幅（ショート V15_SL_FAR 中央値 1.0 の対称・a-priori・net で選んでいない L-267）
+    in_sup = ok & np.isfinite(sup_hi) & np.isfinite(sup_lo) & (l <= sup_hi) & (c > sup_lo)   # 下端帯内
+    fresh = in_sup & ~np.r_[False, in_sup[:-1]]            # 帯に入った最初のバー＝1バー1発注（居座り連射を防ぐ）
+    trades = []; lots = []; pend = None
+    for i in range(n):
+        if pend is not None:                               # pend 約定（約定バーの次以降・low≤limit で maker fill）
+            el = i - pend["placed_idx"]
+            if el > TTL:
+                pend = None
+            elif el >= 1 and l[i] <= pend["limit"]:
+                lots.append({"side": "LONG", "avg": pend["limit"], "size": unit,
+                             "add_count": len(lots) + 1, "first_idx": i, "last_fill_idx": i,
+                             "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": np.nan,
+                             "W_entry": pend["W_pct"], "max_fav": h[i], "max_adv": l[i],
+                             "pos_frac": pend["pos_frac"], "mid_frac": pend["mid_frac"],
+                             "res_zone_pos": np.nan, "ceil_type": pend["ceil_type"],
+                             "tp1": pend["tp1"], "tp2": pend["tp2"], "sl": pend["sl"], "tp1_done": False})
+                pend = None
+        if up[i]:                                          # uptrend 中は新規/add 停止（保有は維持）
+            pend = None
+        still = []                                         # 出口ループ（約定バーの次以降・SL→PARTIAL_TP→TP2→TIME、ショートと対称）
+        for lot in lots:
+            if i <= lot["last_fill_idx"]:
+                still.append(lot); continue
+            lot["max_fav"] = max(lot["max_fav"], h[i]); lot["max_adv"] = min(lot["max_adv"], l[i])   # mfe/mae 追跡（診断・net不関与）
+            if (i - lot["first_idx"]) >= tmax:             # ④ 時間切れ backstop（taker）
+                _record(trades, lot, c[i], "TIME_EXIT", i, ts); continue
+            if l[i] <= lot["sl"]:                          # ① 災害SL（maker・悲観側 min）
+                _record(trades, lot, min(lot["sl"], o[i]), "SL_FILLED", i, ts); continue
+            if (not lot["tp1_done"]) and h[i] >= lot["tp1"]:   # ② PARTIAL_TP＝半分（maker）
+                half = dict(lot); half["size"] = lot["size"] / 2.0
+                _record(trades, half, lot["tp1"], "PARTIAL_TP", i, ts)
+                lot["size"] = lot["size"] / 2.0; lot["tp1_done"] = True
+            if h[i] >= lot["tp2"]:                         # ③ TP2＝レンジ中央で残り全部（maker）
+                _record(trades, lot, lot["tp2"], "TP_FILLED", i, ts); continue
+            still.append(lot)
+        lots = still
+        _vol_ok = (vol_gate is None) or (np.isfinite(atr_pct[i]) and atr_pct[i] <= vol_gate)   # 予測2: 高ボラ回避
+        if (not up[i]) and pend is None and len(lots) < max_lots and fresh[i] and np.isfinite(mid[i]) and _vol_ok:   # 新規/add 発注
+            lim = c[i] * (1 - ENTRY_OFFSET)
+            tp2_px = mid[i]; tp1_px = (lim + mid[i]) / 2.0
+            w = max(sup_hi[i] - sup_lo[i], 1e-9)
+            sl_px = (lim * (1.0 - sl_pct / 100.0)) if sl_pct is not None else (sup_lo[i] - SL_K * w)   # 予測1: SL を entry 価格差%（既定=幾何 sup_lo−K×帯幅）
+            _isdn = bool(np.isfinite(res_lo[i]) and res_lo[i] > c[i] * (1.0 + _gap))   # ショート _ceil_type26 と同一式（レンジの性質＝side 非依存）
+            _ctype = "down" if _isdn else "flat_up"        # 下落系（天井=直近高値）／平坦上昇系（天井=res_hi）＝side×型で4分割（まこさん 2026-07-20）
+            _type_ok = (not flat_up_only) or (not _isdn)    # flat_up 限定＝down 型（落ちるナイフ）は建てない（4分割で down が赤字の全部・+$5 の flat_up だけ残す・まこさん 2026-07-20）
+            if _type_ok and tp1_px >= lim * (1.0 + SCALP_FLOOR):        # TP1 幅 ≥ 手数料床（tp_floor_check_v15 の対称・tp1<tp2 なので tp2 も自明にクリア）
+                _band = res_hi[i] - sup_lo[i]
+                pend = {"limit": lim, "placed_idx": i, "tp1": tp1_px, "tp2": tp2_px, "sl": sl_px,
+                        "W_pct": w / c[i] * 100.0, "ceil_type": _ctype,
+                        "pos_frac": ((lim - sup_lo[i]) / _band) if (np.isfinite(_band) and _band > 0) else np.nan,
+                        "mid_frac": ((mid[i] - sup_lo[i]) / _band) if (np.isfinite(_band) and _band > 0) else np.nan}
+    for lot in lots:
+        _record(trades, lot, c[n - 1], "FORCE_CLOSE_EOD", n - 1, ts)
+    assert all(r["side"] == "LONG" for r in trades), "run_long_support 違反（SHORT 玉が混入）"
     return trades
 
 
@@ -2162,7 +2246,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_ceil_buffer=0.0, v26_uptrend_exit=False, v27_flatup_lock=False, v31_time_be=False, v32_flatup_touch=False, v33_flatup_tp1=False, v34_flatup_fresh=False, v35_flatup_range=False, v36_flatup_near=False, v37_flatup_climb=False, v38_flatup_clamp=False, v39_trend_deadline=False, v40_down_no_age=False, v41_down_lock=False, v42_down_break=False, v43_flatup_break=False, v44_stale_confluence=False, v45_time_down_factor=False, v46_spike_cut=False, v47_mtf_cut=False, v48_stale_wait=False, v49_time_wait6h=False, v50_trend_wait=False, v51_bb_gate=False, v53_flatup_fast_cut=False, v54_flatup_level_cap=False, v56_rearm_delay=False, used_flags_section=None):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_ceil_buffer=0.0, v26_uptrend_exit=False, v27_flatup_lock=False, v31_time_be=False, v32_flatup_touch=False, v33_flatup_tp1=False, v34_flatup_fresh=False, v35_flatup_range=False, v36_flatup_near=False, v37_flatup_climb=False, v38_flatup_clamp=False, v39_trend_deadline=False, v40_down_no_age=False, v41_down_lock=False, v42_down_break=False, v43_flatup_break=False, v44_stale_confluence=False, v45_time_down_factor=False, v46_spike_cut=False, v47_mtf_cut=False, v48_stale_wait=False, v49_time_wait6h=False, v50_trend_wait=False, v51_bb_gate=False, v53_flatup_fast_cut=False, v54_flatup_level_cap=False, v56_rearm_delay=False, v57_long_support=False, v57_long_sl_pct=None, v57_long_vol_gate=None, v57_long_flat_up_only=False, used_flags_section=None):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -2359,7 +2443,16 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             v15p["v26_uptrend_exit"] = True
             print(f"  [v26] B: uptrend レジーム発火で保有玉を緊急離脱（成行 TREND_CONT）＝時間切れ大損の前に頭打ち（v23/v24 の trend_caught 保持より優先・両窓 score.py で采否）")
         trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker, v14_params=v14p, v15_params=v15p, v19_upper_touch=v19_upper_touch,
-                                    v20_uptrend=(df["rg5_uptrend"].to_numpy(bool) if v20_rg5 else None))
+                                    v20_uptrend=(df["rg5_uptrend"].to_numpy(bool) if v20_rg5 else None),
+                                    short_lots=(2 if v57_long_support else None))
+        if v57_long_support:                               # v57（まこさん GO 2026-07-20）: レンジ下端ロング枝を合流（cap 内訳 ショート2/ロング2＝合計最大0.048≤0.12）
+            assert v20_rg5, "v57 は v20 RG-v5 の range_ok_rg5/sup ゾーンを使う（--v20-rg5 必須）"
+            _long = run_long_support(df, max_lots=2, tmax=int((v15p or {}).get("tmax", 48)), sl_pct=v57_long_sl_pct, vol_gate=v57_long_vol_gate, gap_pct=v26_gap, flat_up_only=v57_long_flat_up_only)
+            _slmsg = (f"SL={v57_long_sl_pct}%固定" if v57_long_sl_pct is not None else "SL=幾何")
+            _vmsg = (f"高ボラ回避 atr%≤{v57_long_vol_gate}" if v57_long_vol_gate is not None else "ボラ無制限")
+            _tmsg = ("flat_up限定" if v57_long_flat_up_only else "down+flat_up両型")
+            print(f"  [v57] レンジ下端ロング {len(_long)}玉 ＋ ショート(枠2) {len(trades)}玉 合流（cap 内訳 S2/L2・{_slmsg}・{_vmsg}・{_tmsg}）")
+            trades = trades + _long
         if v14p is not None:
             print(f"  [v14 発火（全期間・full CSV 基準）] {v14p.get('_stats')}")
         if v15p is not None:
@@ -2541,6 +2634,10 @@ def main():
     ap.add_argument("--v53-flatup-fast-cut", action="store_true", help="枝12 v53（2026-07-19・まこさんGO (i)）: flat_up 限定 幾何早切り＝未搭乗（一度も maker 往復fee 超えの益に触れず）∩ 建てて20分以内に建値+0.5% 逆行 で成行降り（TREND_CONT 再利用・down は分離不成立で対象外）。根拠＝分離probe §17（採点窓126）: flat_up の未搭乗∩到達≤20分で損玉12/勝ち6・gross +$47（勝ち巻き込み33%承知・L-330 で目減りしうる実測）。--v26-split-ceiling 必須・既定 OFF")
     ap.add_argument("--v54-flatup-level-cap", action="store_true", help="枝13 v54（2026-07-19・まこさんGO）: flat_up 限定 同レベル再装填禁止＝未決済 lot の建値と 0.10% 以内の価格レベルには新規指値を置かない（決済後は同レベル可・down 型は対象外・入口スキップのみ）。根拠＝4月分解 probe §19（採点窓130）: 同一価格への5分毎再装填が急騰イベントに賭け金を2〜4倍化し同時死（04-13 同値4玉 −$82）・stacked flat_up 6ヶ月 −$85.4（4月 −$72.1・他月の犠牲 最大+$4.0）。--v26-split-ceiling 必須・既定 OFF")
     ap.add_argument("--v56-rearm-delay", action="store_true", help="枝14 v56（2026-07-19・まこさん観察「上昇判定中に一瞬レンジ→その瞬間に約定→再上昇でSL」）: flat_up 限定＝uptrend 解除から6本(30分)未満の若いレンジ窓では新規指値を置かない（down 型は対象外・入口スキップのみ）。根拠＝worklog §25: 約定バー＝再発火の玉133 net −$196（全バケツ最悪・04-07 21:05 実例）・静的 K=6 +$44.8。--v20-rg5/--v26-split-ceiling 必須・既定 OFF")
+    ap.add_argument("--v57-long-support", action="store_true", help="v57（まこさん GO 2026-07-20「試しにレンジ下端の反発ロングを入れる」）: 採用中のショートエンジンに触れず、レンジ下端(sup_hi 到達)の反発ロングを別枝(run_long_support)で足す。cap 内訳 ショート2/ロング2=合計最大0.048≤0.12。出口はショートの中核だけ対称移植(部分TP/TP2=mid/災害SL=sup_lo−1×帯幅/時間切れ)＝v22〜v56 型別レバーは MVP 未搭載。--v20-rg5 前提・既定 OFF=134 恒等")
+    ap.add_argument("--v57-long-sl-pct", type=float, default=None, help="v57 予測1（まこさん 2026-07-20「SL は entry との価格差%で切る」）: ロングの災害SL を幾何(sup_lo−1×帯幅)から entry×(1−X%) の固定%へ。深い SL 損(163玉 −$1,307)を浅く畳む検証（Q1=浅くすると勝ち玉も切る両面を採点窓 score.py で実測）。既定 None=幾何")
+    ap.add_argument("--v57-long-vol-gate", type=float, default=None, help="v57 予測2（まこさん 2026-07-20「急騰急落の損が多いなら高ボラは避ける」）: ロング入口時 atr_pct>X%%なら建てない。SL の深い損が高ボラに集中する仮説の検証。既定 None=ボラ無制限")
+    ap.add_argument("--v57-long-flat-up-only", action="store_true", help="v57 4分割由来（まこさん 2026-07-20）: ロングを flat_up 型（天井=res_hi）に限定＝down 型（急落でレジ上張り付き＝落ちるナイフの底買い）を建てない。根拠＝4分割 longv57b_142: 買いロング down 706玉 −$422（損の全部・SL−$1093/TIME−$391）／flat_up 73玉 +$5。down 型を外すとロングのドラッグがほぼ消える見込み。既定 OFF")
     ap.add_argument("--probe-start", default=None, help="検証専用（2026-07-19 まこさん指示）: 走行データの開始日を上書き（例 2023-11-01）＝probe の玉サンプルを価格帯が似ている期間へ拡張する。出力 CSV は採否に使わない（采否は採点窓 score.py のみ）。既定 None=恒等（採点窓＋助走60日）")
     ap.add_argument("--v40-down-no-age", action="store_true", help="v40（fast-mode 2026-07-17・まこさんGO 案1）: down 型（下落系・天井=直近高値）は --v26-max-age-hours の年齢ゲートを免除＝レンジが6hを超えて続いても down 型なら建てる。flat_up は年齢維持（レンジ終盤負けの実測証拠[経過率で単調・fix6m_100 §15]は flat_up 行で測ったもの）。根拠＝5-15 窓（まこさん指定6窓で唯一の0玉）の詰まり診断で年齢ゲートが唯一の決め手（144本全部 range 判定・年齢だけ外すと現行天井のまま fill 3回・全部 down 型・worklog 20260717 §21）。新数値なし・--v26-split-ceiling --v26-max-age-hours 必須・既定 OFF=v38 恒等・采否は採点窓 score.py の net＋件数/日≥5")
     ap.add_argument("--v39-trend-deadline", action="store_true", help="v39（fast-mode 2026-07-17・まこさん「どんどん試して結果で判断」）: trend_caught 玉（uptrend 発火で新規停止し建値+0.08%% の resting maker 待ちに入った玉）に待ち期限＝発火から V31_TTL_BARS(24本=120分・既存定数再利用) で利確未達なら成行 taker で降りる（TREND_CONT 登録済み再利用=score.py 無変更 H13）。根拠＝fix6m_104 実測: 建値降り玉473（+$83）の保有90%ileは160分＝期限120分の巻き込み上限92玉 +$15.7 と小さい一方、降りられない玉は SL −$344・TIME −$342 の深追い（5-1 型＝待ちすぎ）。--v24-trend-maker-tp 必須・既定 OFF=v38 恒等・采否は採点窓 score.py の net＋件数/日≥5")
@@ -2594,7 +2691,7 @@ def main():
             v26_split_ceiling=a.v26_split_ceiling, v26_gap=a.v26_gap, v26_down_hours=a.v26_down_hours,
             v26_max_age_hours=a.v26_max_age_hours, v26_ceil_buffer=a.v26_ceil_buffer, v26_uptrend_exit=a.v26_uptrend_exit,
             v27_flatup_lock=a.v27_flatup_lock, v31_time_be=a.v31_time_be, v32_flatup_touch=a.v32_flatup_touch,
-            v33_flatup_tp1=a.v33_flatup_fast_tp1, v34_flatup_fresh=a.v34_flatup_fresh_top, v35_flatup_range=a.v35_flatup_range_top, v36_flatup_near=a.v36_flatup_near_fallback, v37_flatup_climb=a.v37_flatup_climb_guard, v38_flatup_clamp=a.v38_flatup_clamp_prev, v39_trend_deadline=a.v39_trend_deadline, v40_down_no_age=a.v40_down_no_age, v41_down_lock=a.v41_down_lock, v42_down_break=a.v42_down_break, v43_flatup_break=a.v43_flatup_break, v44_stale_confluence=a.v44_stale_confluence, v45_time_down_factor=a.v45_time_down_factor, v46_spike_cut=a.v46_spike_cut, v47_mtf_cut=a.v47_mtf_cut, v48_stale_wait=a.v48_stale_wait, v49_time_wait6h=a.v49_time_wait6h, v50_trend_wait=a.v50_trend_wait, v51_bb_gate=a.v51_bb_gate, v53_flatup_fast_cut=a.v53_flatup_fast_cut, v54_flatup_level_cap=a.v54_flatup_level_cap, v56_rearm_delay=a.v56_rearm_delay,
+            v33_flatup_tp1=a.v33_flatup_fast_tp1, v34_flatup_fresh=a.v34_flatup_fresh_top, v35_flatup_range=a.v35_flatup_range_top, v36_flatup_near=a.v36_flatup_near_fallback, v37_flatup_climb=a.v37_flatup_climb_guard, v38_flatup_clamp=a.v38_flatup_clamp_prev, v39_trend_deadline=a.v39_trend_deadline, v40_down_no_age=a.v40_down_no_age, v41_down_lock=a.v41_down_lock, v42_down_break=a.v42_down_break, v43_flatup_break=a.v43_flatup_break, v44_stale_confluence=a.v44_stale_confluence, v45_time_down_factor=a.v45_time_down_factor, v46_spike_cut=a.v46_spike_cut, v47_mtf_cut=a.v47_mtf_cut, v48_stale_wait=a.v48_stale_wait, v49_time_wait6h=a.v49_time_wait6h, v50_trend_wait=a.v50_trend_wait, v51_bb_gate=a.v51_bb_gate, v53_flatup_fast_cut=a.v53_flatup_fast_cut, v54_flatup_level_cap=a.v54_flatup_level_cap, v56_rearm_delay=a.v56_rearm_delay, v57_long_support=a.v57_long_support, v57_long_sl_pct=a.v57_long_sl_pct, v57_long_vol_gate=a.v57_long_vol_gate, v57_long_flat_up_only=a.v57_long_flat_up_only,
             used_flags_section=_used_flags_section(ap, a))   # report §0 に実際に使った全フラグ＋help を自動列挙（強制hook不要で正確・まこさん 2026-07-15）
     print("=" * 100)
 

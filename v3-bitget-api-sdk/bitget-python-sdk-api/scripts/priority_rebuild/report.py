@@ -181,14 +181,23 @@ def main():
     cm["平均保有"] = d.groupby("exit_reason")["hold_min"].mean().round(0)
     print(cm.rename(index=EXIT_JP).rename_axis("出口理由").to_string())
 
-    # ===== C2. 入口型別（戦略が入口を枝分かれさせている時は必ず型で分けて見る・見落とし防止 2026-07-15）=====
+    # ===== C2. 入口 side × 型別（枝分かれは必ず型で分けて見る・両側戦略は side×型の4分割・見落とし防止 2026-07-15/2026-07-20）=====
     if "ceil_type" in d.columns and d["ceil_type"].notna().any():
-        print("\n  C2. 入口型別（down=下落系[天井=直近高値] / flat_up=平坦上昇系[天井=res_hi]・型で成績が違うので分けて見る）")
         ct = d.copy(); ct["ceil_type"] = ct["ceil_type"].fillna("(不明)")
-        print(_grp(ct, "ceil_type").rename_axis("入口型").to_string())
-        piv2 = ct.pivot_table(index="exit_reason", columns="ceil_type", values="net_usd", aggfunc="sum", observed=True).round(0).fillna(0)
-        piv2.columns = [f"純益_{c}" for c in piv2.columns]
-        print("\n     ├ 出口理由 × 入口型（純益）")
+        _two = ("side" in ct.columns) and (ct["side"].nunique() > 1)   # 両側（ロング＋ショート）が居る＝side×型の4分割で見る（まこさん 2026-07-20）
+        if _two:
+            print("\n  C2. 入口 side × 型別（down=下落系[天井=直近高値] / flat_up=平坦上昇系[天井=res_hi]・売り/買い × 型 の4分割で分けて見る）")
+            print(_grp(ct, ["side", "ceil_type"]).rename(index=SIDE_JP).rename_axis(["方向", "入口型"]).to_string())
+            ct["_st"] = ct["side"].map(SIDE_JP).fillna(ct["side"]).astype(str) + "_" + ct["ceil_type"].astype(str)
+            piv2 = ct.pivot_table(index="exit_reason", columns="_st", values="net_usd", aggfunc="sum", observed=True).round(0).fillna(0)
+            piv2.columns = [f"純益_{c}" for c in piv2.columns]
+            print("\n     ├ 出口理由 × 方向_型（純益・4分割）")
+        else:
+            print("\n  C2. 入口型別（down=下落系[天井=直近高値] / flat_up=平坦上昇系[天井=res_hi]・型で成績が違うので分けて見る）")
+            print(_grp(ct, "ceil_type").rename_axis("入口型").to_string())
+            piv2 = ct.pivot_table(index="exit_reason", columns="ceil_type", values="net_usd", aggfunc="sum", observed=True).round(0).fillna(0)
+            piv2.columns = [f"純益_{c}" for c in piv2.columns]
+            print("\n     ├ 出口理由 × 入口型（純益）")
         print(piv2.rename(index=EXIT_JP).rename_axis("出口理由").to_string())
 
     # ===== D. サイズ / add 別（増強）=====

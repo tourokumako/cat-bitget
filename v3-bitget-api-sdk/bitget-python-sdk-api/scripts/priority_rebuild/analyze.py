@@ -140,6 +140,17 @@ def main():
         print(f"   件数 {dcnt:+.0f}% / net {s1-s0:+.0f} / avg {av1-av0:+.2f} / 勝率 {w1-w0:+.1f}pt"
               + ("   ⚠️ 件数 ±30%超＝degenerate/過しぼりを疑え（KB §0）" if abs(dcnt) >= 30 else ""))
 
+    # ===== N0b. side × 入口型 4分割（両側戦略＝ロング＋ショートの詳細分析・まこさん 2026-07-20）=====
+    if "ceil_type" in d.columns and d["ceil_type"].notna().any() and "side" in d.columns and d["side"].nunique() > 1:
+        print("\n  N0b. side × 入口型 4分割（down=下落系[天井=直近高値] / flat_up=平坦上昇系[天井=res_hi]・売り/買い × 型で分けて見る）")
+        cc = d.copy(); cc["ceil_type"] = cc["ceil_type"].fillna("(不明)")
+        g0b = cc.groupby(["side", "ceil_type"], observed=True)
+        tb0b = pd.DataFrame({"件数": g0b.size(), "件数/日": (g0b.size() / days).round(2),
+                             "net$": g0b["net_usd"].sum().round(0), "avg$": g0b["net_usd"].mean().round(3),
+                             "勝率%": (g0b["net_usd"].apply(lambda x: (x > 0).mean()) * 100).round(1),
+                             "平均保有分": g0b["hold_min"].mean().round(0)})
+        print(tb0b.rename_axis(["方向", "入口型"]).to_string())
+
     # ===== N1. 損失の時間構造 =====
     e = d.sort_values("exit_time")
     eq = e["net_usd"].cumsum()

@@ -7,6 +7,12 @@
 STATE="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 INPUT=$(cat)
 CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('command',''))" 2>/dev/null)
+# ★worklog への記録コマンドは「実データ/実装/分析の実行」でなく「記録行為」＝除外（2026-07-20 まこさん指示）。
+#   背景: cat >> session_worklog <<EOF …本文に score.py/trades_*.csv/e37_range_scalp.py の語… EOF の
+#   heredoc 本文の"言及"を実行と誤検知し、fastmode_record_pending が worklog 書込みの直後に立ち直して
+#   enforce_worklog_on_experiment（Stop）が永久に exit 7 になった（worklog を書くほどブロックが続く自己矛盾）。
+#   記録コマンド（session_worklog を含む Bash）は下の materialマーカーを立てない＝本文の語で誤発火しない。
+printf '%s' "$CMD" | grep -qE 'session_worklog' && exit 0
 # trades_*.csv に触れた（pandas read_csv / probe / report / analyze 等）＝データを読んだ
 printf '%s' "$CMD" | grep -qE 'trades_[A-Za-z0-9_]*\.csv' && touch "$STATE/fastmode_trades_seen"
 # e37_range_scalp.py に触れた（sed/grep/cat/python いずれでも）＝実装を読んだ
