@@ -1,5 +1,6 @@
 #!/bin/bash
-[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
+# ⚠️ fast-mode の早期 exit は「編集対象を判定した後」に移した（2026-07-20）。
+#    標準入力は1回しか読めないため、file_path を取る前に exit すると対象別の例外を作れない。
 # require_acceptance_before_impl.sh — PreToolUse on Write|Edit
 # 戦略実装(scripts/priority_rebuild/*.py)を編集する前に、受け入れ条件リスト(acceptance.md)が在り・
 # 対象が一致し・まこさんが承認済(内容指紋一致)であることを確認。無ければ exit 2 でブロック。
@@ -24,13 +25,22 @@ AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(
 
 # 2) 編集対象を取得。戦略実装(scripts/priority_rebuild/*.py)だけ対象（hook/設計書/state は対象外）
 FILE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('file_path',''))" 2>/dev/null)
-# 表示専用ツールは対象外（2026-06-21 まこさん承認・analyze.py 追加 2026-07-02 まこさん指示）: report.py /
-#   plot_trades.py / analyze.py は read-only の集計・分析表示で net 判定も戦略実装もしない＝戦略設計用 acceptance
-#   ゲートは過剰（免除基準＝read-only 集計表示・net/戦略に不関与を満たす）。判定器(score.py/eval_engine・H13改造禁止)・
-#   採点前ゲート(precheck.py)・戦略ファイルは下の case で従来どおり gate される。
+
+# ★計器・レポートツールは fast-mode でも承認必須（2026-07-20 まこさん指示「report.pyは勝手に変更できないようにしてよ」）
+#   旧仕様＝report.py / plot_trades.py / analyze.py は「表示専用で net 判定も戦略実装もしない」として
+#   完全免除だった（2026-06-21 まこさん承認・2026-07-02 に analyze.py 追加）。**2026-07-20 に撤回。**
+#   撤回の理由＝CC が「自作 hook を通すため」に report.py の月平均の表示桁を GO なしで書き換えた。
+#   表示専用でも勝手に変えれば まこさんが判断に使う数字の見え方が変わる＝判断材料が CC の都合で動く。
 case "$FILE" in
-  */report.py|*/plot_trades.py|*/analyze.py) exit 0 ;;
+  */report.py|*/plot_trades.py|*/analyze.py|*/score.py|*/eval_engine.py|*/precheck.py) TOOLGATE=1 ;;
+  *) TOOLGATE=0 ;;
 esac
+
+# [fast-mode] process hook の一時無効化（touch/rm pdca_fast_mode で切替・2026-07-16）。
+#   ただし TOOLGATE=1（計器・レポート・判定器）は fast-mode でも通さない＝上の撤回の実体。
+if [ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && [ "$TOOLGATE" -eq 0 ]; then
+  exit 0
+fi
 # 診断レーン免除（2026-07-14 まこさん承認）: *_diag.py ＝ read-only の検証/診断（戦略の実関数を import で再利用・
 #   print/集計のみ）。改善フロー（新レバー提案）でない検証実装に acceptance ゲートは過剰＝report/analyze と同じ思想。
 #   ★歯止め（骨抜き防止）: 新内容 or 既存ファイルに 売買記録CSV出力(to_csv/write_sidecar)・score 呼び出し(import score/
