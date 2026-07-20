@@ -88,6 +88,21 @@ if (not _DISABLED_READ_CHECK) and read_log and os.path.exists(read_log):
         sys.stderr.write("CLAIMED_BUT_NOT_READ:" + ",".join(sorted(set(unread))[:6]) + " ")
         sys.exit(7)
 
+# ---- D) 金額を書くなら証拠（機械出力の逐語引用）を同じ編集内に貼る ----------------
+# まこさん指示 2026-07-20「Bはやってみて」＝WebResearch で見つけた SmartSnap 型（proactive evidence seeking）。
+#   検証側が数字を照合するのではなく、**書く側に証拠を出させる**。中身の当否はまこさんが見て判断する
+#   （＝"success only upon unequivocal proof"・検証者は証拠に無いことを推測で埋めない）。
+# 判定A（機械出力との文字列照合）が壊れた理由＝丸め・偶然一致・照合範囲依存で、結局 CC が範囲を調整した
+#   （evaluator tampering）。D は照合しないので範囲調整の余地が無い。
+# 事案＝機械のどこにも無い「+$19」を CC が2ファイルの手計算で作った。D があれば貼る証拠が無く書けない。
+# ★正直な限界: 偽の引用ブロックを貼れば通る（self-populated field の限界・研究でも指摘）。
+#   だが「貼れない数字は書けない」＝手計算をその場で自覚する契機になり、貼った証拠はまこさんが検算できる。
+EVIDENCE_MARK = ("```", "出典:", "出典＝", "根拠:", "根拠＝")
+_amts = re.findall(r"[$＄]\s*-?[\d,]+(?:\.\d+)?", txt)
+if _amts and not any(k in txt for k in EVIDENCE_MARK):
+    sys.stderr.write("NO_EVIDENCE_FOR_AMOUNT:" + ",".join(sorted(set(a.replace(" ", "") for a in _amts))[:6]) + " ")
+    sys.exit(8)
+
 # ---- A) 機械の出力に無い金額 ---------------------------------------------------
 # ⛔ 2026-07-20 取り下げ（まこさん指摘「さっきの強制のやりかたがバカなんじゃないの？」）。
 #    この照合は検査として成立していなかった。実測での失敗:
