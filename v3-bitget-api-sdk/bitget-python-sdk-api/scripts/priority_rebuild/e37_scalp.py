@@ -801,7 +801,7 @@ def _attach_v16_bb(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False, v11_open_entry: bool = False, v12_open_range: bool = False, v13_time_maker: bool = False, v14_params: dict | None = None, v15_params: dict | None = None, v19_upper_touch: bool = False, v20_uptrend: np.ndarray | None = None, short_lots: int | None = None):
+def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False, v11_open_entry: bool = False, v12_open_range: bool = False, v13_time_maker: bool = False, v14_params: dict | None = None, v15_params: dict | None = None, v19_upper_touch: bool = False, v20_uptrend: np.ndarray | None = None, short_lots: int | None = None, v58_short_sl_pct: float | None = None):
     """v11 エンジン＝素ルール SHORT 専用（short_only_v11・LONG 入口の生成経路なし＝§1.2.1 ショートのみ）。
     入口: v11_entry_candidates → 指値 maker TTL（不約定は建てない）。TP/SL は発注時点のゾーン幾何で固定・
     tp_ge_sl_check_v11 を通らない候補は建てない。
@@ -1128,7 +1128,8 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                                  "first_idx": i, "last_fill_idx": i, "atr_entry": atr[i], "adx_entry": adx[i],
                                  "k_entry": kk[i], "W_entry": w_px2 / max(c[i], 1e-9) * 100.0,
                                  "max_fav": l[i], "max_adv": h[i], "tp1": tp1_px, "tp2": tp2_px,
-                                 "sl": rz_hi[i] + float(v15_params["sl_far"]) * w_px2, "tp1_done": False,
+                                 "sl": ((rp * (1.0 + v58_short_sl_pct / 100.0)) if v58_short_sl_pct is not None
+                                        else (rz_hi[i] + float(v15_params["sl_far"]) * w_px2)), "tp1_done": False,   # v58: 災害SL を建値の固定%へ（add 経路・既定 None=幾何）
                                  "zone_top": rz_hi[i], "w_px": w_px2, "cell": _cl2})
                     v15_params["_stats"]["ladder_fills"] += 1
                 rung_next += 1                         # 幾何条件を満たさない段は撤去（次段へ）
@@ -1479,7 +1480,8 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                     tp1_px = lim * (1.0 - V24_TREND_TP_PCT / 100.0)
                     v15_params["_stats"]["v33_tp1_fast"] = v15_params["_stats"].get("v33_tp1_fast", 0) + 1
                 pend = {"limit": lim, "placed_idx": i, "tp1": tp1_px, "tp2": tp2_px,
-                        "sl": rz_hi[i] + float(v15_params["sl_far"]) * w_px,
+                        "sl": ((lim * (1.0 + v58_short_sl_pct / 100.0)) if v58_short_sl_pct is not None
+                               else (rz_hi[i] + float(v15_params["sl_far"]) * w_px)),   # v58: 災害SL を建値の固定%へ（新規発注・既定 None=幾何）
                         "W_pct": w_px / c[i] * 100.0, "zone_top": rz_hi[i], "w_px": w_px, "size_mult": _sm,
                         "ceil_type": _ceil_type26}
                 if v22e is not None:
@@ -1806,6 +1808,26 @@ def _param_schema_selftest() -> None:
     assert ("災害SL" in sl) and ("1.0" in sl), f"SL が sl_far を反映せず（手書き浅SL疑い）: {sl}"
     assert not any("ラダー" in str(k) for k in x), "使っていない add ラダーが表示されている（不使用の枝は出さない）"
     assert any("ピーク反転" in str(k) for k in x), "使っている dd 枝が表示されていない"
+    # ── 番人（2026-07-21 まこさん GO）: §0 の「方向」と「建て条件」が実行時の値に追従するか。
+    #    背景＝この2行は実行時の値を1つも参照しない固定文で、実態と食い違ったまま印字されていた
+    #    （方向＝--v57-long-support でロング87件を建てた走行でも「LONG 入口の生成経路なし」と表示／
+    #     建て条件＝v15 経路が課していない R:R ガードを「課している」と表示）。検査は SL の行だけだった。
+    _rr = [k for k in x if str(k).startswith(("建て条件", "R:R"))]
+    assert _rr, "建て条件（R:R）の行が §0 に出ていない"
+    assert ("R:R ガードなし" in str(_rr[0])) and ("課していない" in str(x[_rr[0]])), \
+        f"v15 経路（sl_far あり＝tp_floor_check_v15）なのに R:R を課していると表示している: {_rr[0]} / {x[_rr[0]]}"
+    _s_shallow = {k: v for k, v in _s.items() if k != "sl_far"}   # 浅SL経路＝tp_ge_sl_check_v11 が実際に走る側
+    _x_sh = _param_sections(None, True, v11=True, v13_time_maker=True, v12_open_range=True, v15_sel=_s_shallow)[
+        [k for k in sec if k.startswith("【出口】")][0]]
+    assert any(str(k).startswith("R:R") for k in _x_sh), "浅SL経路では R:R ガードありと表示されるべき（両側で追従を確認）"
+    _dir = lambda s: s[[k for k in s if k.startswith("【入口】")][0]]
+    _d_short = _dir(sec)
+    assert any("SHORT のみ" in str(v) for v in _d_short.values()), "ショート単独なのに方向表示が SHORT のみになっていない"
+    _d_long = _dir(_param_sections(None, True, v11=True, v13_time_maker=True, v12_open_range=True, v15_sel=_s, v57_long=True))
+    assert any("両サイド" in str(v) for v in _d_long.values()), \
+        "--v57-long-support 有効なのに方向表示が SHORT のみのまま（longfu_145 で実在した虚偽表示の再演）"
+    assert not any("LONG 入口の生成経路なし" in str(v) for v in _d_long.values()), \
+        "ロング枝ありなのに「LONG 入口の生成経路なし」と表示している"
     sec_up = _param_sections(None, True, v11=True, v13_time_maker=True, v12_open_range=True, v19_upper_touch=True, v15_sel=_s)
     assert "res_hi" in sec_up[[k for k in sec_up if k.startswith("【入口】")][0]]["エントリー"], "v19 upper_touch を反映せず"
     _s_eff = dict(_s); _s_eff["_eff_unit"] = 0.012; _s_eff["_eff_max_lots"] = 4   # 番人: サイズ節が実行時実効値から自動生成されるか（表記と実装の齟齬根絶・まこさん 2026-07-17）
@@ -1950,7 +1972,7 @@ def _v21_entry_desc(e21, edge: str, conf: str, stats: dict) -> str:
             f"{off_txt}・発火{stats.get('v21_entry_fires', 0)}〔定数継承（v21_037/040 採択値・v24 で固定・非ML・学習窓選定なし）〕")
 
 
-def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False, v8: bool = False, v9: bool = False, v10: bool = False, v11: bool = False, v11_no_add: bool = False, v11_single_tp: bool = False, v13_time_maker: bool = False, v14_sel: dict | None = None, v15_sel: dict | None = None, v11_open_entry: bool = False, v12_open_range: bool = False, v19_upper_touch: bool = False, v20_rg5: bool = False) -> dict:
+def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool = False, v7: bool = False, v8: bool = False, v9: bool = False, v10: bool = False, v11: bool = False, v11_no_add: bool = False, v11_single_tp: bool = False, v13_time_maker: bool = False, v14_sel: dict | None = None, v15_sel: dict | None = None, v11_open_entry: bool = False, v12_open_range: bool = False, v19_upper_touch: bool = False, v20_rg5: bool = False, v57_long: bool = False) -> dict:
     if v11:
         # ── §0 は実行時フラグ・v15p 実値から自動導出（手書き固定文字列を廃す・ズレ根絶・2026-07-12）──
         s15 = v15_sel or {}
@@ -2036,7 +2058,12 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
                        "（まこさん視認校正済み v17 計器と同一ロジック・labels_v17.csv 一致を selftest で機械照合・トレンド排除はゾーンが立つか否かが担う）〔視認校正〕")}),
                 "エントリー": (_v22_entry_desc(s15["v22_entry"], _stats) if s15.get("v22_entry")
                             else _v21_entry_desc(s15.get("v21_entry"), _edge, _conf, _stats)),
-                "方向 short_only_v11": "SHORT のみ（LONG 入口の生成経路なし・上限ゾーンのみ使用）",
+                # ★実行時フラグから自動生成（2026-07-21 まこさん GO）。旧版は "SHORT のみ（LONG 入口の生成経路なし）" の
+                #   固定文で、--v57-long-support を付けた走行でも同じ文を出していた＝同一レポートの C2 に買い玉が並ぶのに
+                #   §0 は「LONG なし」と表示する矛盾（longfu_145 で実在）。表示は必ず実行時の値から導く。
+                ("方向 both_v11＋v57_long_support" if v57_long else "方向 short_only_v11"):
+                    ("ショート＝run_continuous_v11（上限ゾーン）／ロング＝run_long_support（下端 sup_hi 反発・別枝）の両サイド"
+                     if v57_long else "SHORT のみ（LONG 入口の生成経路なし・上限ゾーンのみ使用）"),
             },
             "【固定値】サイズ（スキャル＝add で積み・複数TPで刻む）": {
                 # ★自動生成（まこさん 2026-07-17）: エンジン run_continuous_v11 が実際に使った実効値（_eff_unit/_eff_max_lots）を
@@ -2051,7 +2078,14 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
                 "TP1 部分利確 PARTIAL_TP(maker指値)": f"(建値+レンジ中央)/2 で lot の半分（{round(s15.get('_eff_unit', UNIT)/2, 6)} BTC）・TP1幅 ≥{SCALP_FLOOR*100:.2f}%（手数料床＝maker往復0.028%の約2.9倍）〔幾何a-priori・lot は実行時実効値〕",
                 "TP2 利確 TP_FILLED(maker指値)": _tp2,
                 "SL SL_FILLED(maker指値)": _sl_eff,
-                "R:R の物理条件 tp_ge_sl_check_v11": "TP2幅 ≥ SL幅 ∩ TP1幅 ≥ 手数料床 でなければ建てない（逆R:R の禁止＝KB §1）",
+                # ★実際に呼ばれている建て条件から自動生成（2026-07-21 まこさん GO）。旧版は「TP2幅 ≥ SL幅 でなければ建てない」の
+                #   固定文を無条件で印字していた。だが v15 経路（災害SL＝sl_far）は tp_floor_check_v15 を呼び、その関数は
+                #   docstring のとおり R:R 条件を課さない（v15 で SL を災害水準へ置換した際に外した・acceptance 2026-07-07）。
+                #   ＝効いていない安全ルールを「効いている」と表示し、まこさんに誤った前提を渡していた（2026-07-21 発覚）。
+                ("建て条件 tp_floor_check_v15（⚠️R:R ガードなし）" if "sl_far" in s15 else "R:R の物理条件 tp_ge_sl_check_v11"):
+                    ("TP1幅 ≥ 手数料床 ∩ TP2幅 > 0 のみを課す。⚠️R:R 条件（TP2幅 ≥ SL幅）は課していない＝"
+                     "SL が TP より遠い玉も建つ。実測では SL は建値から 0.66〜3.84% にばらけた（longfu_145）"
+                     if "sl_far" in s15 else "TP2幅 ≥ SL幅 ∩ TP1幅 ≥ 手数料床 でなければ建てない（逆R:R の禁止＝KB §1）"),
                 "時間切れ TIME_EXIT(成行taker)": f"lot の初回entryから {s15.get('tmax', T_MAX)}本 = {s15.get('tmax', T_MAX)*5}分（短保有＝分単位・lot ごと）〔{_prov.get('tmax', '学習窓選定/継承') if 'tmax' in s15 else '固定値'}〕",
                 **({"deadline shrink v13 TP_FILLED(maker指値)": (
                     f"TP2 と TIME backstop の間に縮む maker TP を置く＝残り時間比 r=(T_MAX−経過本)/T_MAX（fill時 r=1＝tp2 通常／deadline で r→0）で "
@@ -2246,7 +2280,7 @@ def _param_sections(det: dict | None, gate_on: bool, v6: bool = False, v6r: bool
     return sec
 
 
-def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_ceil_buffer=0.0, v26_uptrend_exit=False, v27_flatup_lock=False, v31_time_be=False, v32_flatup_touch=False, v33_flatup_tp1=False, v34_flatup_fresh=False, v35_flatup_range=False, v36_flatup_near=False, v37_flatup_climb=False, v38_flatup_clamp=False, v39_trend_deadline=False, v40_down_no_age=False, v41_down_lock=False, v42_down_break=False, v43_flatup_break=False, v44_stale_confluence=False, v45_time_down_factor=False, v46_spike_cut=False, v47_mtf_cut=False, v48_stale_wait=False, v49_time_wait6h=False, v50_trend_wait=False, v51_bb_gate=False, v53_flatup_fast_cut=False, v54_flatup_level_cap=False, v56_rearm_delay=False, v57_long_support=False, v57_long_sl_pct=None, v57_long_vol_gate=None, v57_long_flat_up_only=False, used_flags_section=None):
+def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, v8=False, v9=False, v10=False, v11=False, v11_no_add=False, v11_single_tp=False, v11_open_entry=False, v12_open_range=False, v13_time_maker=False, v14_machine=False, v15_exit_set=False, v16_exit_set=False, v17_exit_set=False, v18_tp2_far=False, v19_upper_touch=False, v20_rg5=False, v21_set=False, v21_entry_only=False, v21_fold_only=False, v22_set=False, v23_trend_exit=False, v24_trend_maker_tp=False, v25_adaptive_band=False, v26_atr_gate=None, v26_touch_frac=None, v26_touch_hours=12.0, v26_split_ceiling=False, v26_gap=0.5, v26_down_hours=6.0, v26_max_age_hours=0.0, v26_ceil_buffer=0.0, v26_uptrend_exit=False, v27_flatup_lock=False, v31_time_be=False, v32_flatup_touch=False, v33_flatup_tp1=False, v34_flatup_fresh=False, v35_flatup_range=False, v36_flatup_near=False, v37_flatup_climb=False, v38_flatup_clamp=False, v39_trend_deadline=False, v40_down_no_age=False, v41_down_lock=False, v42_down_break=False, v43_flatup_break=False, v44_stale_confluence=False, v45_time_down_factor=False, v46_spike_cut=False, v47_mtf_cut=False, v48_stale_wait=False, v49_time_wait6h=False, v50_trend_wait=False, v51_bb_gate=False, v53_flatup_fast_cut=False, v54_flatup_level_cap=False, v56_rearm_delay=False, v57_long_support=False, v57_long_sl_pct=None, v57_long_vol_gate=None, v57_long_flat_up_only=False, v58_short_sl_pct=None, used_flags_section=None):
     """E37 を回す（v6/v6r/v7/v8/v9/v10/v11=False で v5 恒等）。判定は score.py の数字（本関数は net を計算しない＝記録のみ）。
     v6r＝v6 のイベント5型に ①TP-viability entry ゲート ②検出器の金額整合回帰（RANK_BE_REGRESSION）を重ねる（acceptance 2026-07-03）。
     v7＝イベント5型＋TP-viability の上で、検出器の fit と θ 選定を型別に分け be≥1.0 帯の合併で執行（acceptance 2026-07-04）。
@@ -2444,7 +2478,8 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
             print(f"  [v26] B: uptrend レジーム発火で保有玉を緊急離脱（成行 TREND_CONT）＝時間切れ大損の前に頭打ち（v23/v24 の trend_caught 保持より優先・両窓 score.py で采否）")
         trades = run_continuous_v11(df, box_tf, no_add=v11_no_add, single_tp=v11_single_tp, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v13_time_maker=v13_time_maker, v14_params=v14p, v15_params=v15p, v19_upper_touch=v19_upper_touch,
                                     v20_uptrend=(df["rg5_uptrend"].to_numpy(bool) if v20_rg5 else None),
-                                    short_lots=(2 if v57_long_support else None))
+                                    short_lots=(2 if v57_long_support else None),
+                                    v58_short_sl_pct=v58_short_sl_pct)
         if v57_long_support:                               # v57（まこさん GO 2026-07-20）: レンジ下端ロング枝を合流（cap 内訳 ショート2/ロング2＝合計最大0.048≤0.12）
             assert v20_rg5, "v57 は v20 RG-v5 の range_ok_rg5/sup ゾーンを使う（--v20-rg5 必須）"
             _long = run_long_support(df, max_lots=2, tmax=int((v15p or {}).get("tmax", 48)), sl_pct=v57_long_sl_pct, vol_gate=v57_long_vol_gate, gap_pct=v26_gap, flat_up_only=v57_long_flat_up_only)
@@ -2487,7 +2522,7 @@ def _out(t: pd.DataFrame, suffix: str, det, tag=None, gate_on=True, v6=False, v6
                   else "E37 v6 レンジ・スキャル 両側 maker MR＋検出器ゲート（イベント5型＋θ規則反転）" if v6
                   else "E37 v5 レンジ・スキャル 両側 maker MR＋稼げるレンジ検出器ゲート"),
         script="e37_scalp.py",
-        sections={**_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9, v10=v10, v11=v11, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14_sel, v15_sel=v15_sel, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v19_upper_touch=v19_upper_touch, v20_rg5=v20_rg5),
+        sections={**_param_sections(det, gate_on, v6=v6, v6r=v6r, v7=v7, v8=v8, v9=v9, v10=v10, v11=v11, v11_no_add=v11_no_add, v11_single_tp=v11_single_tp, v13_time_maker=v13_time_maker, v14_sel=v14_sel, v15_sel=v15_sel, v11_open_entry=v11_open_entry, v12_open_range=v12_open_range, v19_upper_touch=v19_upper_touch, v20_rg5=v20_rg5, v57_long=v57_long_support),
                   **(used_flags_section or {})},   # ＋argparse 由来の使用フラグ全量（自動生成＝入口/出口ロジックの実フラグを漏れなく載せる・強制hook不要で正確・まこさん 2026-07-15）
         tag=tag)
 
@@ -2637,6 +2672,7 @@ def main():
     ap.add_argument("--v57-long-support", action="store_true", help="v57（まこさん GO 2026-07-20「試しにレンジ下端の反発ロングを入れる」）: 採用中のショートエンジンに触れず、レンジ下端(sup_hi 到達)の反発ロングを別枝(run_long_support)で足す。cap 内訳 ショート2/ロング2=合計最大0.048≤0.12。出口はショートの中核だけ対称移植(部分TP/TP2=mid/災害SL=sup_lo−1×帯幅/時間切れ)＝v22〜v56 型別レバーは MVP 未搭載。--v20-rg5 前提・既定 OFF=134 恒等")
     ap.add_argument("--v57-long-sl-pct", type=float, default=None, help="v57 予測1（まこさん 2026-07-20「SL は entry との価格差%で切る」）: ロングの災害SL を幾何(sup_lo−1×帯幅)から entry×(1−X%) の固定%へ。深い SL 損(163玉 −$1,307)を浅く畳む検証（Q1=浅くすると勝ち玉も切る両面を採点窓 score.py で実測）。既定 None=幾何")
     ap.add_argument("--v57-long-vol-gate", type=float, default=None, help="v57 予測2（まこさん 2026-07-20「急騰急落の損が多いなら高ボラは避ける」）: ロング入口時 atr_pct>X%%なら建てない。SL の深い損が高ボラに集中する仮説の検証。既定 None=ボラ無制限")
+    ap.add_argument("--v58-short-sl-pct", type=float, default=None, help="v58（まこさん指示 2026-07-20「災害SLこそ％にしたほうがいい」）: ショートの災害SL を幾何（res_hi＋sl_far×帯幅・採点窓の実績で建値から中央1.49%%）から建値×(1+X%%) の固定%%へ。ロング側の --v57-long-sl-pct と対称＝両サイドを建値基準の%%に揃える。X の目安＝BTC が $500 動く幅（採点窓の建値中央 $77,089 で 0.649%%／価格帯 0.515〜0.783%%）＝まこさん指定の構造由来で net 最大化スイープではない（L-267）。⚠️浅くすると負け玉だけでなく TP に届くはずだった勝ち玉も同時に切る（原理的に不可避・理解確認 Q1）＝採否は切った玉の勝ち/負け内訳を型別に見てまこさんが判断。既定 None=幾何（fix6m_134 恒等）")
     ap.add_argument("--v57-long-flat-up-only", action="store_true", help="v57 4分割由来（まこさん 2026-07-20）: ロングを flat_up 型（天井=res_hi）に限定＝down 型（急落でレジ上張り付き＝落ちるナイフの底買い）を建てない。根拠＝4分割 longv57b_142: 買いロング down 706玉 −$422（損の全部・SL−$1093/TIME−$391）／flat_up 73玉 +$5。down 型を外すとロングのドラッグがほぼ消える見込み。既定 OFF")
     ap.add_argument("--probe-start", default=None, help="検証専用（2026-07-19 まこさん指示）: 走行データの開始日を上書き（例 2023-11-01）＝probe の玉サンプルを価格帯が似ている期間へ拡張する。出力 CSV は採否に使わない（采否は採点窓 score.py のみ）。既定 None=恒等（採点窓＋助走60日）")
     ap.add_argument("--v40-down-no-age", action="store_true", help="v40（fast-mode 2026-07-17・まこさんGO 案1）: down 型（下落系・天井=直近高値）は --v26-max-age-hours の年齢ゲートを免除＝レンジが6hを超えて続いても down 型なら建てる。flat_up は年齢維持（レンジ終盤負けの実測証拠[経過率で単調・fix6m_100 §15]は flat_up 行で測ったもの）。根拠＝5-15 窓（まこさん指定6窓で唯一の0玉）の詰まり診断で年齢ゲートが唯一の決め手（144本全部 range 判定・年齢だけ外すと現行天井のまま fill 3回・全部 down 型・worklog 20260717 §21）。新数値なし・--v26-split-ceiling --v26-max-age-hours 必須・既定 OFF=v38 恒等・采否は採点窓 score.py の net＋件数/日≥5")
@@ -2691,7 +2727,7 @@ def main():
             v26_split_ceiling=a.v26_split_ceiling, v26_gap=a.v26_gap, v26_down_hours=a.v26_down_hours,
             v26_max_age_hours=a.v26_max_age_hours, v26_ceil_buffer=a.v26_ceil_buffer, v26_uptrend_exit=a.v26_uptrend_exit,
             v27_flatup_lock=a.v27_flatup_lock, v31_time_be=a.v31_time_be, v32_flatup_touch=a.v32_flatup_touch,
-            v33_flatup_tp1=a.v33_flatup_fast_tp1, v34_flatup_fresh=a.v34_flatup_fresh_top, v35_flatup_range=a.v35_flatup_range_top, v36_flatup_near=a.v36_flatup_near_fallback, v37_flatup_climb=a.v37_flatup_climb_guard, v38_flatup_clamp=a.v38_flatup_clamp_prev, v39_trend_deadline=a.v39_trend_deadline, v40_down_no_age=a.v40_down_no_age, v41_down_lock=a.v41_down_lock, v42_down_break=a.v42_down_break, v43_flatup_break=a.v43_flatup_break, v44_stale_confluence=a.v44_stale_confluence, v45_time_down_factor=a.v45_time_down_factor, v46_spike_cut=a.v46_spike_cut, v47_mtf_cut=a.v47_mtf_cut, v48_stale_wait=a.v48_stale_wait, v49_time_wait6h=a.v49_time_wait6h, v50_trend_wait=a.v50_trend_wait, v51_bb_gate=a.v51_bb_gate, v53_flatup_fast_cut=a.v53_flatup_fast_cut, v54_flatup_level_cap=a.v54_flatup_level_cap, v56_rearm_delay=a.v56_rearm_delay, v57_long_support=a.v57_long_support, v57_long_sl_pct=a.v57_long_sl_pct, v57_long_vol_gate=a.v57_long_vol_gate, v57_long_flat_up_only=a.v57_long_flat_up_only,
+            v33_flatup_tp1=a.v33_flatup_fast_tp1, v34_flatup_fresh=a.v34_flatup_fresh_top, v35_flatup_range=a.v35_flatup_range_top, v36_flatup_near=a.v36_flatup_near_fallback, v37_flatup_climb=a.v37_flatup_climb_guard, v38_flatup_clamp=a.v38_flatup_clamp_prev, v39_trend_deadline=a.v39_trend_deadline, v40_down_no_age=a.v40_down_no_age, v41_down_lock=a.v41_down_lock, v42_down_break=a.v42_down_break, v43_flatup_break=a.v43_flatup_break, v44_stale_confluence=a.v44_stale_confluence, v45_time_down_factor=a.v45_time_down_factor, v46_spike_cut=a.v46_spike_cut, v47_mtf_cut=a.v47_mtf_cut, v48_stale_wait=a.v48_stale_wait, v49_time_wait6h=a.v49_time_wait6h, v50_trend_wait=a.v50_trend_wait, v51_bb_gate=a.v51_bb_gate, v53_flatup_fast_cut=a.v53_flatup_fast_cut, v54_flatup_level_cap=a.v54_flatup_level_cap, v56_rearm_delay=a.v56_rearm_delay, v57_long_support=a.v57_long_support, v57_long_sl_pct=a.v57_long_sl_pct, v57_long_vol_gate=a.v57_long_vol_gate, v57_long_flat_up_only=a.v57_long_flat_up_only, v58_short_sl_pct=a.v58_short_sl_pct,
             used_flags_section=_used_flags_section(ap, a))   # report §0 に実際に使った全フラグ＋help を自動列挙（強制hook不要で正確・まこさん 2026-07-15）
     print("=" * 100)
 

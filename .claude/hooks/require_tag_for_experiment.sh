@@ -28,7 +28,12 @@ strat=$(printf '%s' "$CMD" | grep -oE '(e3[0-9][a-z0-9_]*|strat_[a-z0-9_]*|measu
 [ -z "$strat" ] && exit 0
 
 # テスト/非出力モード（出力を書かない or 動作確認）は通す
-printf '%s' "$CMD" | grep -qE '(--smoke|--diagnostic|--selftest|--no-score|py_compile|--help)' && exit 0
+# ⚠️2026-07-21 修正（まこさん GO）: 旧版は '--selftest'（ダッシュ2つ完全一致）だけを除外しており、
+#   '--param-schema-selftest' / '--v11-selftest-zones' のように接頭辞が付く self-test フラグを
+#   捕まえられず、売買記録を1行も出さない検査を「実験」と誤検知してブロックしていた。
+#   pdca_mark.py が 2026-07-12 に塞いだのと同型の穴（あちらは "selftest" 部分一致で是正済み）。
+#   → '--<任意の接頭辞>selftest' を除外に含める。
+printf '%s' "$CMD" | grep -qE '(--smoke|--diagnostic|--[a-z0-9-]*selftest|--no-score|py_compile|--help)' && exit 0
 
 # --tag があれば OK（出力が _<tag>_<NNN> 連番になる）
 printf '%s' "$CMD" | grep -qE '(^|[[:space:]])--tag([[:space:]]|=)' && exit 0
