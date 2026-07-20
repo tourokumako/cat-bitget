@@ -151,6 +151,10 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_comprehension_check.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_observation_design.sh"
           }
         ]
       },
