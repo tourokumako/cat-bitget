@@ -56,7 +56,16 @@ if hits:
 #   まこさんに判断を求めた。read_log（Read tool で開いたファイルを record_read.sh が記録・
 #   セッション開始で reset）と突き合わせれば、読まずに「確認した」と書いたことは機械で分かる。
 CLAIM = ("確認した", "確認しました", "読んだ", "読みました", "見た", "調べた", "開いた", "照合した")
-if read_log and os.path.exists(read_log):
+# ⛔ 2026-07-20 取り下げ＝判定A と同じ失敗の構造。実測での破綻:
+#   「実際に読んだファイル（report.py）=通す」という**番人テストの記録**の中の「読んだ」に反応し、
+#   周辺120字にある無関係なファイル名（read_log.txt / record_read.sh / reset_read_log.sh /
+#   テストで"読んでいない例"として挙げた pdca_gate.sh）まで「確認したと主張した」と誤検出した。
+#   ＝CC が「読んでいない」と明示した記述までブロックされる。範囲を狭めれば見逃し・広げれば誤検知で、
+#   結局 CC が範囲を調整する＝判定A（照合範囲を 6件/167件/20件 と動かした）と同型。
+#   本セッション3回目の「作る→自分が引っかかる→調整する」。テキスト検査で CC の誠実さを担保する試みは、
+#   検査の設計者と被検査者が同一である限り機能しない（=まこさんの「果てしなく強制し続けることになる」の実証）。
+_DISABLED_READ_CHECK = True
+if (not _DISABLED_READ_CHECK) and read_log and os.path.exists(read_log):
     try:
         seen = open(read_log, encoding="utf-8", errors="ignore").read()
     except OSError:
