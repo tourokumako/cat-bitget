@@ -74,6 +74,34 @@ def _funding_collapse(d):
     return _collapse_positions(d)
 
 
+def _print_accounting_note(d_raw, d, r):
+    """【0b】売買記録CSVの列を単純合計した値と、本レポートの審判値が違う理由を毎回出す（表示のみ・net 計算に不関与）。
+    背景（2026-07-20 まこさん指示「report に CSV をどのように処理してるのか毎回書いておけば？」）＝
+    CC が採点窓CSVを自前集計して審判値と食い違い、それを「発見」と誤認して原因調査にトークンを浪費した。
+    本ファイルの docstring には書いてあったが**出力に無かった**＝読む人の目に入らなかったのが原因。
+    全部 実値から自動生成する（手書きドリフト禁止・§0 param schema と同じ思想）。
+    maker 決済の一覧は score.py の MAKER_EXIT_REASONS から読む＝出口理由が増えたら自動追従（手書きしない）。"""
+    n_row, n_pos = len(d_raw), len(d)
+    print("\n  0b. 【この表の数字の作り方】売買記録CSVの列を単純合計した値とは一致しません（実値から自動生成・表示のみ）")
+    if n_row != n_pos:
+        print(f"     件数の単位: 玉(取引)単位。CSV {n_row} 約定行 → position_id で集約 → {n_pos} 玉。"
+              f"部分利確・add で1玉が複数行に分かれるため、行数と玉数は一致しません。")
+    else:
+        print(f"     件数の単位: 玉(取引)単位。CSV {n_row} 行 ＝ {n_pos} 玉（1行1玉のCSV＝集約なし）。")
+    print("     金額の出所: CSV の net_usd / fee_usd 列は使いません。score.py と同じ式で"
+          " entry_price / exit_price / size_btc から再計算します。")
+    if "net_usd" in d_raw.columns:
+        print(f"                 CSV net_usd 列の単純合計 ${float(d_raw['net_usd'].sum()):.0f}"
+              f"  ≠  本レポートの審判 net ${r['total']:.0f}  ← 違って正常です。審判値（右）が正本（H13）。")
+    print(f"     手数料判定: exit_reason が maker 決済なら maker {ee.MAKER_FEE*100:.3f}%、"
+          f"それ以外は taker {ee.TAKER_FEE*100:.3f}% ＋ slippage {ee.SLIPPAGE*100:.3f}%。")
+    print(f"                 maker 決済 ＝ {', '.join(sorted(judge.MAKER_EXIT_REASONS))}"
+          " （score.py の MAKER_EXIT_REASONS から取得＝手書きしない）")
+    print(f"     funding:    込み。{ee.FUNDING_RATE_8H*100:.4f}%/8h を保有期間分（LONG 払い / SHORT 受取）。")
+    print("     ⚠️ CSV から分析に使ってよいのは 件数・保有時間・MFE/MAE・入口特徴 などの"
+          "**金額でない**分布のみ。金額は必ず本レポート（審判値）を使う。")
+
+
 def _judge_cols(t):
     """審判（score.py）と同じ式で gross/手数料/slip/net を行単位に再計算し、内訳用の列を上書きする。
     CSV の net_usd は「生成時の計器」の値＝E0.4（trail maker 化）以降 trail 行が旧値のため表示に使わない。"""
@@ -143,8 +171,12 @@ def main():
     # ===== 0. 使用パラメータ（戦略が記録したサイドカー・指標/閾値/TP/SL/TimeExit）=====
     _print_params(a.csv)
 
+    r = judge.score(d_raw)          # 公式 net / 月別（原本で採点）★0b と A で共用＝重い iterrows を2回呼ばない
+
+    # ===== 0b. この表の数字の作り方（CSV列と審判値が違う理由・毎回出す・2026-07-20 まこさん指示）=====
+    _print_accounting_note(d_raw, d, r)
+
     # ===== A. 全体サマリー =====
-    r = judge.score(d_raw)                               # 公式 net / 月別（原本で採点）
     days = max(1, (d["exit_time"].max() - d["entry_time"].min()).days)
     eq = d.sort_values("exit_time")["net_usd"].cumsum()
     dd = (eq.cummax() - eq).max()
