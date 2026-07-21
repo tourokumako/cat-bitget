@@ -1,0 +1,71 @@
+{
+  "_説明": "observe_diag.py が使う探索範囲。probe を走らせる前にここを編集して、値を足す・減らす。使った値は出力の先頭に全部印字される。",
+
+  "period": {"start": null, "end": null},
+  "_period": "検証期間。null なら periods.py の採点窓全部。指定する時は 2026-01-01 の形。採点窓の外（学習窓・封印期間）は指定しても止まる。",
+
+  "search_modes": ["exit_cut"],
+  "_search_modes": "この走行で検証する系統。一気に回さず順番に1系統ずつ（まこさん 2026-07-21）。exit_cut=切る（エントリー価格からの%・逆行側シグナル）/ entry_filter=入口で建てない / set=入口と切るの同時。どのモードも side×型の分岐ごとに別々に回る。建値% TP の探索（旧 exit_take）は削除済み＝TP は現行ロジックのまま。",
+
+  "timeframes": ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "1d"],
+  "_timeframes": "指標を計算する足。1m は使わない（CLAUDE.md）。足を増やすと計算時間が伸びる。",
+
+  "quantiles": [0.50, 0.60, 0.70, 0.80, 0.90, 0.95, 0.99],
+  "_quantiles": "閾値を作る分位。指標ごとの分布の何%の位置で切るか。逆行方向へ向きを揃えた上での上側。順行側は 1-q の下側を自動で対にする。",
+
+  "sl_grid": [0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0],
+  "_sl_grid": "建値から何%で切るかの候補。",
+
+  "favorable_marks": [0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75, 1.0, 1.5],
+  "_favorable_marks": "保有中に何%順行したかを刻む位置（観察の記述用・探索の値ではない）。旧 tp_grid＝建値% TP の探索は削除済み。",
+
+  "wait_grid": [0, 5, 10, 15, 20, 30, 45, 60],
+  "_wait_grid": "建ててから判定を始めるまでの待ち（分）。",
+
+  "early_windows": [10, 15, 20, 30, 45, 60, 90, 120, 180, 240, 360],
+  "_early_windows": "建ててから何分以内の発火を判定材料にするか。",
+
+  "adverse_marks": [0.2, 0.3, 0.5, 0.75, 1.0, 1.5, 2.0],
+  "_adverse_marks": "保有中に何%逆行したかを刻む位置（結果の記述用）。",
+
+  "rsi_periods": [7, 9, 14, 21],
+  "stoch_periods": [5, 9, 14],
+  "atr_periods": [7, 14, 21],
+  "bb_periods": [20, 50],
+  "bb_sigma": [2.0, 3.0],
+  "donchian_periods": [20, 48],
+  "ema_periods": [9, 20, 50, 200],
+  "sma_periods": [20, 50, 200],
+  "roc_periods": [6, 12, 24],
+  "macd_params": [[12, 26, 9]],
+  "mfi_periods": [14],
+  "cmf_periods": [20],
+  "obv_slope_periods": [10, 20],
+  "rci_periods": [9, 26],
+  "zscore_periods": [20, 50],
+  "realized_vol_periods": [20, 50],
+  "volume_ratio_periods": [20, 50],
+  "swing_windows": [24, 48, 96],
+  "vwap_windows": [288],
+  "keltner": [[20, 2.0]],
+  "supertrend": [[10, 3.0]],
+  "vp_windows": [288],
+  "sr_windows": [288],
+  "sr_tol": [0.003],
+  "fib_windows": [96],
+  "pivot_windows": [288],
+  "ichimoku": [[9, 26]],
+  "_指標パラメータ": "上は各指標の期間。足すとその期間ぶんの列が増える。全部 timeframes と掛け算になる。",
+
+  "warmup_days": 250,
+  "_warmup_days": "指標の暖機。period の開始より何日前から5分足を読むか。最長の指標（SMA200×日足=200日）より長くする。観察対象の玉は period で決まる＝暖機は観察を狭めない。",
+
+  "episode_gap_h": 6.0,
+  "_episode_gap_h": "レンジの区切り。この時間あいたら別のレンジと見なす。",
+
+  "min_n": 20,
+  "_min_n": "この件数未満の枠は数字を出さず『計算できず』と書く。",
+
+  "optuna_trials": 500,
+  "_optuna_trials": "探索の試行回数。"
+}

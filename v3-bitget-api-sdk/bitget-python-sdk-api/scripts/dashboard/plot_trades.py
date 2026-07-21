@@ -49,7 +49,7 @@ def exit_marker(reason: str) -> str:
 
 # リポジトリ既定パス（どの検証でも 1コマンドで出せるよう既定化・2026-06-20 正式フォーマット）
 ROOT = pathlib.Path(__file__).resolve().parents[2]   # bitget-python-sdk-api/
-DEFAULT_PRICE = ROOT / "data" / "BTCUSDT-5m-2021-04-01_03-31_1826d_V9FULL_safe.csv"  # 全期間 Binance Spot 正本
+DEFAULT_PRICE = ROOT / "data" / "BTCUSDT-5m-2021-04-01_2026-05-31_V9FULL_safe.csv"  # 全期間 Binance Spot 正本（2026-05-31 まで＝採点窓を覆う。旧 _03-31_1826d 版は 2026-03-31 で切れ、採点窓後半の週次PNGが作れず report M節が exit 2 になっていた＝まこさん指示で差し替え 2026-07-21）
 RATCHET = ROOT / "results" / "priority_rebuild" / "ratchet"   # 売買記録の置き場
 VIZ_DIR = ROOT / "results" / "priority_rebuild" / "viz"       # チャートPNGの置き場（クリックで開ける）
 
