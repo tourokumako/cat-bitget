@@ -77,13 +77,15 @@ warnings.filterwarnings("ignore")
 # ══ 呼び出し側から変更できない定数 ═══════════════════════════════════════
 SECTIONS = [
     "0 母集団（型 × 出口理由 × 勝敗）",
-    "1 出口ごと × 型ごと ─ エントリーの瞬間",
-    "2 出口ごと × 型ごと ─ 入ってから決済まで",
-    "3 出口ごと × 型ごと ─ 決済の瞬間",
-    "4 出口ごと × 型ごと ─ 入った前後の玉の差異",
-    "5 巻き込み（負けを切る量と勝ちを切る量）",
-    "6 ロジック構築（side×型の分岐ごとに search_modes で選んだ系統だけを probe→Optuna・前半探索/後半確認）",
-    "7 結果サマリ（自動生成＝両半期プラスの候補だけを機械抽出・手書きなし）",
+    "1 機構別分解（TREND_CONT を どの撤退機構が切ったかで再導出・概算＝価格水準と保有時間から・実装の分岐ログではない）",
+    "2 出口ごと × 型ごと ─ エントリーの瞬間",
+    "3 出口ごと × 型ごと ─ 入ってから決済まで",
+    "4 出口ごと × 型ごと ─ 決済の瞬間",
+    "5 出口ごと × 型ごと ─ 決済の後（切った/決済した後に価格がどうなったか＝episode_gap_h 時間の追跡）",
+    "6 出口ごと × 型ごと ─ 入った前後の玉の差異",
+    "7 巻き込み（負けを切る量と勝ちを切る量）",
+    "8 ロジック構築（side×型の分岐ごとに search_modes で選んだ系統だけを probe→Optuna・前半探索/後半確認）",
+    "9 結果サマリ（自動生成＝両半期プラスの候補だけを機械抽出・手書きなし）",
 ]
 # 探索モードの定義＝「どのロジックに対して・どの値の候補から最適を検証するか」（計画と本走の両方に印字）
 MODE_INFO = {
@@ -95,8 +97,11 @@ MODE_INFO = {
                  "判定シグナル候補（逆行側プール＝指標96種×時間足×分位 quantiles・ショートは上向き/ロングは下向き）"
                  " × 待ち分 wait_grid × 判定窓 early_windows × 切る% sl_grid（エントリー価格からの%）"),
     "entry_filter": ("入らない（入口フィルタ）",
-                     "entry 直前の特徴が閾値の側にある玉は建てないロジックに対し、どの特徴・どの閾値が最適かを検証する",
-                     "entry 直前の特徴（指標×時間足）× 分位 quantiles（前半の分布で閾値化）× 上下側"),
+                     "entry 直前の特徴が閾値の側にある玉は建てないロジックに対し、どの特徴・どの閾値が最適かを検証する。"
+                     "プールには指標×時間足に加え、玉間の特徴（レンジ内で何番目・前玉との価格差%・前玉との時間間隔分"
+                     "[エピソード内/通し]・前玉entryから相場変化%＝entry 時点で確定している因果 OK 列のみ・"
+                     "前玉の勝敗依存は入れない）を含む（2026-07-23 まこさん選択3＝観察で最強だった玉間隔を同じ土俵で対決させる）",
+                     "entry 直前の特徴（指標×時間足＋玉間5列）× 分位 quantiles（前半の分布で閾値化）× 上下側"),
     "set": ("セット（入口フィルタ＋切るの同時）",
             "入らない と 切る を同時に効かせた組み合わせを検証する",
             "入口フィルタの条件 × 切るの条件（同時）"),
@@ -493,6 +498,45 @@ def trajectory(tr, bars, sig_mat, sig_names, cfg):
     return traj, fired, fmin
 
 
+def post_exit(tr, bars, cfg):
+    """決済の後の追跡（節5）＝決済から episode_gap_h 時間、価格がどうなったかの記述。
+    建値回帰＝決済しなければ損ゼロ級に戻れた玉（SHORT は安値が建値以下・LONG は高値が建値以上）。
+    さらに逆行＝決済価格からさらに逆行した玉（この決済が損の拡大を止めた）。
+    ⚠️ 決済より後のバーを読む＝記述専用（何が起きたかの観察）。売買判定・シグナルには使わない。"""
+    idx = bars.index
+    pos = {t: i for i, t in enumerate(idx)}
+    hi, lo = bars.high.to_numpy(), bars.low.to_numpy()
+    steps = int(cfg["episode_gap_h"] * 12)          # 5分足で episode_gap_h 時間ぶん
+    recs = []
+    for _, t in tr.iterrows():
+        i1 = pos.get(t.exit_time)
+        r = {"後_ok": False}
+        if i1 is not None and i1 + 1 < len(idx):
+            seg = np.arange(i1 + 1, min(i1 + 1 + steps, len(idx)))
+            ep, xp = t.entry_price, t.exit_price
+            if t.side == "LONG":
+                fav_e = (hi[seg] / ep - 1) * 100          # 建値比の順行（戻り）
+                adv_x = (1 - lo[seg] / xp) * 100          # 出口比のさらなる逆行
+                back = hi[seg] >= ep
+            else:
+                fav_e = (1 - lo[seg] / ep) * 100
+                adv_x = (hi[seg] / xp - 1) * 100
+                back = lo[seg] <= ep
+            k = int(np.argmax(back)) if back.any() else -1
+            r.update({"後_ok": True,
+                      "後_建値回帰": bool(back.any()),
+                      "後_建値回帰まで分": int((k + 1) * 5) if k >= 0 else np.nan,
+                      "後_建値比最大順行%": float(fav_e.max()),
+                      "後_出口比さらに逆行%": float(adv_x.max())})
+        recs.append(r)
+    return pd.DataFrame(recs, index=tr.index)
+
+
+# 入口フィルタ探索に足す玉間の特徴（entry 時点で因果的に確定している列だけ・2026-07-23 まこさん選択3）。
+# ⛔「前玉は勝ち」「前玉より高い」等の勝敗依存は入れない＝前玉が保有中なら entry 時点で未確定（未来参照）。
+NEI_FILTER_COLS = ["レンジ内で何番目", "前玉との価格差%", "前玉との時間間隔分", "前玉との時間間隔分_通し", "前玉entryから相場変化%"]
+
+
 def neighbors(tr, cfg, bars):
     d = tr.sort_values("entry_time").copy()
     gap = d.entry_time.diff().dt.total_seconds() / 3600
@@ -503,6 +547,9 @@ def neighbors(tr, cfg, bars):
     o["前玉との価格差%"] = (d.entry_price / pe - 1) * 100
     o["前玉より高い"] = o["前玉との価格差%"] > 0
     o["前玉との時間間隔分"] = d.groupby("_ep").entry_time.diff().dt.total_seconds() / 60
+    # エピソード（6時間区切り）を跨いだ通しの間隔＝「静けさの後の初回タッチ」はエピソード先頭に来て
+    # 上の within-episode 間隔では NaN になる。フィルタ探索用に区切りなしの間隔も持つ（entry 時点で確定・因果 OK）。
+    o["前玉との時間間隔分_通し"] = d.entry_time.diff().dt.total_seconds() / 60
     o["前玉は勝ち"] = d.groupby("_ep").is_win.shift(1)
     # 相場そのものの動き（自玉の entry 価格でなく 5分足 close・約定前に確定した1本前の値）
     d["_c0"] = bars.close.reindex(d.entry_time - pd.Timedelta("5min")).to_numpy()
@@ -606,6 +653,7 @@ def _one_side(tr, bars, feat, dir_map, side, cfg):
 
     traj, fired, fmin = trajectory(tr, bars, sig_mat, names, cfg)
     tr = pd.concat([tr.reset_index(drop=True), traj.reset_index(drop=True)], axis=1)
+    tr = pd.concat([tr, post_exit(tr, bars, cfg)], axis=1)
     tr = pd.concat([tr, neighbors(tr, cfg, bars)], axis=1)
     # entry / 決済 時点の特徴（約定バーの1本前＝その時点で確定している値・H2）
     ecols = [c for c in feat.columns if feat[c].notna().sum() >= 1000]
@@ -622,7 +670,11 @@ def _one_side(tr, bars, feat, dir_map, side, cfg):
     print(pd.crosstab([tr.ceil_type, tr.exit_reason], tr.is_win)
           .rename(columns={False: "負け", True: "勝ち"}).to_string())
 
-    # ── 1〜4: 出口ごと × 型ごと ──
+    # ── 1 機構別分解（TREND_CONT）──
+    _h(SECTIONS[1])
+    _mech_decompose(tr, side, cfg)
+
+    # ── 2〜6: 出口ごと × 型ごと ──
     for ex in exits.index:
         for ty in types:
             m = (tr.exit_reason == ex) & (tr.ceil_type == ty)
@@ -632,14 +684,14 @@ def _one_side(tr, bars, feat, dir_map, side, cfg):
                 _skip(f"{int(m.sum())} 行しかない（{cfg['min_n']} 未満は数字を出さない）"); continue
             mm = m[tr.ceil_type == ty]
 
-            _sub(SECTIONS[1] + "：この出口になる玉 vs 同じ型のそれ以外")
+            _sub(SECTIONS[2] + "：この出口になる玉 vs 同じ型のそれ以外")
             r = rank_separation(g, mm, ecols, _tautology(cfg))
             print(r.to_string(index=False) if len(r) else "     分離する特徴なし")
 
-            _sub(SECTIONS[2] + "：結果の記述（見分けには使えない）")
+            _sub(SECTIONS[3] + "：結果の記述（見分けには使えない）")
             base = ["最大逆行%", "最大順行%", "最大逆行まで分"] + [f"{x}%逆行まで分" for x in cfg["adverse_marks"]]
             print(tr.loc[m, base].median().round(2).to_frame("中央値").T.to_string())
-            _sub(SECTIONS[2] + "：判断に使える材料＝建ててから何分以内に発火したか")
+            _sub(SECTIONS[3] + "：判断に使える材料＝建ててから何分以内に発火したか")
             for w in cfg["early_windows"]:
                 e = pd.DataFrame(fmin[np.asarray(m)] <= w, columns=names)
                 o = pd.DataFrame(fmin[np.asarray((tr.ceil_type == ty) & ~m)] <= w, columns=names)
@@ -650,13 +702,31 @@ def _one_side(tr, bars, feat, dir_map, side, cfg):
                 print(f"\n     ── {w} 分以内 ── 上位8本")
                 print(t.to_string())
 
-            _sub(SECTIONS[3] + "：決済位置と保有時間")
+            _sub(SECTIONS[4] + "：決済位置と保有時間")
             print(tr.loc[m, ["決済位置%", "hold_min"]].describe(percentiles=[.5, .9]).round(2).to_string())
-            _sub(SECTIONS[3] + "：決済直前の指標（決済バーの1本前の確定値）で分離する特徴")
+            _sub(SECTIONS[4] + "：決済直前の指標（決済バーの1本前の確定値）で分離する特徴")
             r3 = rank_separation(xf[tr.ceil_type == ty], mm, ecols, _tautology(cfg))
             print(r3.to_string(index=False) if len(r3) else "     分離する特徴なし")
 
-            _sub(SECTIONS[4])
+            _sub(SECTIONS[5] + f"：追跡 {cfg['episode_gap_h']} 時間（記述専用＝決済より後のバー・シグナルには使わない）")
+            pm = tr.loc[m & tr["後_ok"]]
+            if len(pm) < cfg["min_n"]:
+                _skip(f"追跡できる玉が {len(pm)} 行（{cfg['min_n']} 未満は数字を出さない）")
+            else:
+                print("     建値回帰＝決済しなければ損ゼロ級に戻れた玉／出口比さらに逆行＝この決済が損の拡大を止めた玉")
+                head = {"追跡玉数": len(pm),
+                        "建値回帰率%": round(pm["後_建値回帰"].mean() * 100, 1),
+                        "建値回帰まで分_中央値": float(pm["後_建値回帰まで分"].median()),
+                        "建値比最大順行%_中央値": round(pm["後_建値比最大順行%"].median(), 2),
+                        "出口比さらに逆行%_中央値": round(pm["後_出口比さらに逆行%"].median(), 2)}
+                print("     " + pd.Series(head).to_string().replace("\n", "\n     "))
+                rows5 = [{"刻み": f"出口からさらに {x}% 逆行", "該当率%": round((pm["後_出口比さらに逆行%"] >= x).mean() * 100, 1)}
+                         for x in cfg["adverse_marks"]]
+                rows5 += [{"刻み": f"建値から {x}% 順行へ回復", "該当率%": round((pm["後_建値比最大順行%"] >= x).mean() * 100, 1)}
+                          for x in cfg["favorable_marks"]]
+                print(pd.DataFrame(rows5).to_string(index=False))
+
+            _sub(SECTIONS[6])
             ncols = ["レンジ内で何番目", "前玉との価格差%", "前玉との時間間隔分", "前玉entryから相場変化%"]
             print(pd.concat([tr.loc[m, ncols].median().rename("この出口"),
                              tr.loc[(tr.ceil_type == ty) & ~m, ncols].median().rename("それ以外")],
@@ -673,8 +743,8 @@ def _one_side(tr, bars, feat, dir_map, side, cfg):
                 print((s2.groupby(flag).apply(lambda x: (x.exit_reason == ex).mean() * 100)
                        ).round(1).to_string())
 
-    # ── 5 巻き込み ──
-    _h(SECTIONS[5])
+    # ── 7 巻き込み ──
+    _h(SECTIONS[7])
     print("  損切りを手前へ動かすと、その線に触れた玉は勝ち負けに関わらず全部切れる。")
     print("  負けだけを切ることは原理的にできないので、両方を同じ表に出す。")
     ok = tr[tr._ok]
@@ -695,9 +765,55 @@ def _one_side(tr, bars, feat, dir_map, side, cfg):
                          if (cut & g.is_win).any() else np.nan})
         print(pd.DataFrame(rows).to_string(index=False))
 
-    # ── 6 探索 ──
-    _h(SECTIONS[6])
-    return _search(tr, fmin, names, sig_dirs, ecols, side, cfg, types)
+    # ── 8 探索 ──
+    _h(SECTIONS[8])
+    # 入口フィルタ／セット探索のプール＝指標特徴＋玉間の因果 OK 列（NEI_FILTER_COLS・勝敗依存は入れない）
+    fcols = ecols + [c for c in NEI_FILTER_COLS if c in tr.columns]
+    return _search(tr, fmin, names, sig_dirs, fcols, side, cfg, types)
+
+
+def _mech_decompose(tr, side, cfg):
+    """節1＝TREND_CONT を「どの撤退機構が切ったか」で分ける（概算）。
+    分類は 価格水準（建値からの決済位置%）と保有時間からの再導出＝実装の分岐ログではない。
+    境界の玉は誤分類しうる（その注記ごと読む）。閾値の定数は e37_scalp から import（手打ちしない）。"""
+    tc = tr[tr.exit_reason == "TREND_CONT"]
+    if not len(tc):
+        _skip("TREND_CONT の玉が 0 行（この side には撤退機構の玉が無い）"); return
+    if side != "SHORT":
+        _skip(f"side={side} は TREND_CONT {len(tc)} 行あるが撤退機構はショート用＝分解しない"); return
+    try:
+        from e37_scalp import (V53_FAST_MIN, V53_ADV_PCT, V59_WAIT_MIN,
+                               V59_FLAT_WIN_MIN, V59_DOWN_ADV_PCT, V59_FLAT_ADV_PCT)
+    except Exception as e:
+        _skip(f"e37_scalp の定数を import できない: {e}"); return
+    TOL = 0.02   # 水準一致の許容%（stop はギャップで水準より不利側に約定しうる＝下側のみ緩める・診断専用）
+    print(f"  分類規則（概算・上から順に判定）: "
+          f"v53={{flat_up ∩ 未搭乗 ∩ 保有≤{V53_FAST_MIN}分 ∩ 決済位置≥+{V53_ADV_PCT}−{TOL}%}} → "
+          f"v59_down={{down ∩ 保有≥{V59_WAIT_MIN}分 ∩ 決済位置≥+{round(V59_DOWN_ADV_PCT,3)}−{TOL}%}} → "
+      f"v59_flat={{flat_up ∩ 保有{V59_WAIT_MIN}〜{V59_FLAT_WIN_MIN}分 ∩ 決済位置≥+{round(V59_FLAT_ADV_PCT,3)}−{TOL}%}} → "
+          f"残り=その他（uptrend 畳み・v50 待機後 等）")
+    tc = tc.copy()
+    def _cls(t):
+        p = t["決済位置%"]
+        if t.ceil_type == "flat_up" and t.hold_min <= V53_FAST_MIN \
+                and bool(t.get("一度も利にならず", False)) and p >= V53_ADV_PCT - TOL:
+            return "v53 幾何早切り"
+        if t.ceil_type == "down" and t.hold_min >= V59_WAIT_MIN and p >= V59_DOWN_ADV_PCT - TOL:
+            return "v59 急騰早切り(down)"
+        if t.ceil_type == "flat_up" and V59_WAIT_MIN <= t.hold_min <= V59_FLAT_WIN_MIN \
+                and p >= V59_FLAT_ADV_PCT - TOL:
+            return "v59 急騰早切り(flat)"
+        return "その他(uptrend畳み/v50等)"
+    tc["機構"] = tc.apply(_cls, axis=1)
+    for ty in sorted(tc.ceil_type.dropna().unique()):
+        _sub(f"型 {ty}（TREND_CONT {int((tc.ceil_type == ty).sum())} 行）")
+        g = tc[tc.ceil_type == ty]
+        agg = g.groupby("機構").agg(件数=("機構", "size"), 勝ち=("is_win", "sum"),
+                                    決済位置pct中央値=("決済位置%", "median"),
+                                    保有分中央値=("hold_min", "median"))
+        agg["割合%"] = (agg.件数 / len(g) * 100).round(1)
+        print(agg.round(2).to_string())
+    print("  ⚠️ 概算＝価格水準と保有時間からの再導出。実装の分岐ログではない＝境界の玉は誤分類しうる。金額は出さない。")
 
 
 def _search(tr, fmin, names, sig_dirs, ecols, side, cfg, types):
@@ -849,7 +965,7 @@ def _search(tr, fmin, names, sig_dirs, ecols, side, cfg, types):
 def _summary(all_res: dict) -> None:
     """結果サマリの自動生成（手書きなし）。各分岐×モードの上位10（重複除去後）から
     前半・後半の両方で正味プラスの行だけを機械抽出して1枚に出す。CC の要約を挟まない。"""
-    _h(SECTIONS[7])
+    _h(SECTIONS[9])
     print("  機械集計＝各分岐×モードの上位10のうち、前半と後半の両方で正味プラスの行。解釈と採否はまこさん＋score.py。")
     for side, res in all_res.items():
         if not res:
@@ -1033,6 +1149,26 @@ def selftest() -> None:
             mods = [a.name for a in node.names] + ([node.module] if isinstance(node, ast.ImportFrom) else [])
             if any(m and m.split(".")[0] == "score" for m in mods):
                 ng.append("read-only 診断なのに score を import している")
+    # ★節5 決済の後（2026-07-23 追加）＝追跡が配線され、かつ記述専用（探索に混ぜない＝決済後の情報で候補を選ばない）
+    if "def post_exit" not in src:
+        ng.append("決済の後の追跡 post_exit が無い")
+    if "post_exit(tr, bars, cfg)" not in inspect.getsource(_one_side):
+        ng.append("決済の後の追跡が observe に配線されていない")
+    if "後_" in inspect.getsource(_search):
+        ng.append("決済の後の列（後_*）が探索に混ざっている（決済後の情報で候補を選んではいけない）")
+    # ★入口フィルタのプール拡張（2026-07-23 まこさん選択3）＝玉間の因果 OK 列が配線され、勝敗依存の列が混ざっていない
+    if "NEI_FILTER_COLS" not in inspect.getsource(_one_side):
+        ng.append("玉間の特徴が入口フィルタ探索のプールに配線されていない")
+    for bad_col in ("前玉は勝ち", "前玉より高い", "前玉entryから相場が上昇"):
+        if bad_col in NEI_FILTER_COLS:
+            ng.append(f"入口フィルタのプールに勝敗/bool 依存の列 {bad_col}（前玉が保有中なら entry 時点で未確定＝未来参照の疑い）")
+    if "前玉との時間間隔分_通し" not in inspect.getsource(neighbors):
+        ng.append("エピソード跨ぎの通し間隔が neighbors に無い（静けさの後の初回タッチが NaN で探索から漏れる）")
+    # ★節1 機構別分解（2026-07-23 追加）＝配線され、閾値は e37_scalp から import（手打ち禁止）
+    if "_mech_decompose" not in inspect.getsource(_one_side):
+        ng.append("機構別分解が observe に配線されていない")
+    if "from e37_scalp import" not in inspect.getsource(_mech_decompose):
+        ng.append("機構別分解の閾値が e37_scalp から import されていない（手打ちの疑い）")
     for need in SECTIONS:
         if need not in src:
             ng.append(f"節が実装されていない: {need}")

@@ -39,7 +39,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts" / "priority_rebuild"))
 sys.path.insert(0, str(REPO_ROOT / "scripts" / "regime"))
 import structure_features as sf   # noqa: E402  fractal スイング検出（j+2 確定・leak-safe・v10 が使用）
 
-CSV = REPO_ROOT / "data" / "BTCUSDT-5m-2021-04-01_2026-05-31_V9FULL_safe.csv"  # 採点窓延長で2026-05-31版へ（2026-07-15・2021〜2026-03は旧1826dと同一・04/05が追加されるだけ）
+CSV = REPO_ROOT / "data" / "BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv"  # 窓の組み替えで2026-06-30版へ（2026-07-23・既存期間は2026-05-31版と同一・06が追加されるだけ）
 PROTO_DIR = REPO_ROOT / "dashboard" / "regime_prototype"
 CHART_DIR = PROTO_DIR / "range_charts"
 SM_DIR = PROTO_DIR / "predictions_v17_5m"

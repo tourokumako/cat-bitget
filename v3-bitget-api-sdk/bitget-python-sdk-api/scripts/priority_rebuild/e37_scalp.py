@@ -217,19 +217,23 @@ V48_TTL_BARS = 72                 # 枝8 v48: 失速切りの建値待ち TTL（
 # ── v53（fast-mode 2026-07-19・まこさんGO (i)）: flat_up 限定 幾何早切り＝未搭乗 ∩ 建てて短時間で建値+X% 逆行 で成行降り（分離probe §17）──
 V53_FAST_MIN = 20                 # 枝12 v53: 早切りの「速く到達」窓（分）＝flat_up SL 損玉が建値+0.5% に中央25分で速く到達する構造由来（net最大化スイープでない・L-267）。この窓内に+X%到達なら「戻らない急騰」と判断
 V53_ADV_PCT  = 0.5                # 枝12 v53: 早切りの逆行しきい%（建値+0.5%＝損玉の速い到達点∩勝ち玉の巻き込み最小の分離点・分離probe §17 の観察 a-priori・採点窓 net で選んでいない）
-# ── 枝15 v59 の値（現行＝エンジン内探索 #157・まこさん GO 2026-07-21）──
-# 出所＝engine_search_e37（層3探索＝実エンジン×審判式・探索窓 2022-07〜2022-12＝まこさん決定・採点窓と非重複）の
-# 最良試行 #157 の値そのまま（scratchpad/engsearch_2022.log 逐語・上位10が同じ点に収束＝面の勝ち・CC の新規決定なし）。
-# 旧値（v59_157 の実走＝observe_diag run2 由来・採点窓で月−$48 に悪化し不採用）: WAIT=10 / DOWN=adx7 53.05 +0.2% /
-# FLAT=di7 34.25 +0.15% / CUT_MODE=close。
-V59_WAIT_MIN     = 5              # 判定開始の待ち（分）
+# ── 枝15 v59 の値（検証中＝新探索窓の層3探索 #189・2026-07-23・採否まこさん待ち）──
+# 出所＝engine_search_e37（層3探索＝実エンジン×審判式・新探索窓 2025-12〜2026-02＝まこさん確定 2026-07-23 の
+# walk-forward 形）の最良試行 #189 の値そのまま（scratchpad/engine_search_round3.log 逐語・上位10が
+# di14×kijun26・wait20・flat_win240 に収束＝面の勝ち・CC の新規決定なし）。採否＝新採点窓 2026-03〜06 の score.py
+# を v59bw_163 基準の --vs で見てまこさん判断。不採用なら下の v59b 値へ戻す。
+# 採用中 v59b（#157・旧窓採用 2026-07-21・新採点窓の測り直し＝v59bw_163 月−$25.56）: WAIT=5 / FLAT_WIN=240 /
+# DOWN=di7 36.13933739897127 +0.1325178647139078% 窓なし / FLAT=di7 32.89394994364991 +0.17818204443509536% / CUT=stop。
+# 旧値（v59_157 の実走・旧採点窓で月−$48 不採用）: WAIT=10 / DOWN=adx7 53.05 +0.2% / FLAT=di7 34.25 +0.15% / CUT=close。
+V59_WAIT_MIN     = 20             # 判定開始の待ち（分）
 V59_FLAT_WIN_MIN = 240            # flat_up の判定窓（分）
-V59_DOWN_ADV_PCT = 0.1325178647139078   # down 早切りの逆行しきい%（建値+X%）
-V59_FLAT_ADV_PCT = 0.17818204443509536  # flat_up 早切りの逆行しきい%
-V59_DOWN_ADX7_TH = 36.13933739897127    # down のシグナル閾値（V59_DOWN_SIG の水準）
-V59_FLAT_DID7_TH = 32.89394994364991    # flat_up のシグナル閾値
-V59_DOWN_SIG = "di7"              # down のシグナル種（adx7/di7・探索ドライバが setattr で差し替え可）
-V59_FLAT_SIG = "di7"              # flat_up のシグナル種
+V59_DOWN_ADV_PCT = 0.15588160549621896  # down 早切りの逆行しきい%（建値+X%）
+V59_FLAT_ADV_PCT = 0.15024814839103248  # flat_up 早切りの逆行しきい%
+V59_DOWN_ADX7_TH = 28.102910192963172   # down のシグナル閾値（V59_DOWN_SIG の水準）
+V59_FLAT_DID7_TH = 0.283351853801863    # flat_up のシグナル閾値（kijun26＝乖離%スケール）
+V59_DOWN_SIG = "di14"             # down のシグナル種（adx7/di7/di14/kijun26・探索ドライバが setattr で差し替え可）
+V59_FLAT_SIG = "kijun26"          # flat_up のシグナル種（同上。di14/kijun26 は層2の2周目候補由来＝2026-07-23 まこさんGO）
+V59_DOWN_WIN_MIN = 0              # down の判定窓（分）。0=窓なし。層2の2周目候補が窓180分を使ったため追加（2026-07-23 まこさんGO）
 V59_CUT_MODE = "stop"             # 切り方＝stop（水準 buy-stop＝v53 型・gap は不利側=始値）。close はバー close 成行＝旧 v59_157 の形
 # ── v54（fast-mode 2026-07-19・まこさんGO）: flat_up 限定 同レベル再装填禁止＝未決済 lot と同じ価格レベルへの新規指値を置かない（4月分解 probe §19）──
 V54_TOL_PCT = 0.10                # 枝13 v54: 「同レベル」の許容幅%＝probe §19 のクラスタ定義（同一天井への5分毎再装填は文字通り同値・0.10% は帯の微動を吸収する幾何 a-priori・採点窓 net で選んでいない）
@@ -1016,7 +1020,7 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         _adxe = pd.Series(_dxe).ewm(alpha=1.0 / 14, adjust=False).mean().to_numpy(float)
         _adx30pe = (_adxe >= 30) & (_pdie > _mdie)
         _spk60 = (_cse.pct_change(12) * 100).to_numpy(float)   # 枝6 v46: 保有中60分(12本)の上昇率%（過去のみ＝H2 leak-safe・c[i]/c[i-12]）
-    _adx7e = _did7e = None
+    _adx7e = _did7e = _did14e = _kij26e = None
     if v15 and v59ac:                                  # 枝15 v59 用の 5m ADX7 / DI差7（Wilder 平滑＝observe_diag._adx_di と同式 n=7・過去 ewm のみ H2・OFF 経路では計算しない）
         _cs59 = pd.Series(c); _hs59 = pd.Series(h); _ls59 = pd.Series(l)
         _up59 = _hs59.diff(); _dn59 = -_ls59.diff()
@@ -1029,6 +1033,14 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
         _dx59 = 100 * (_pdi59 - _mdi59).abs() / (_pdi59 + _mdi59).replace(0, np.nan)
         _adx7e = _dx59.ewm(alpha=1.0 / 7, adjust=False).mean().to_numpy(float)
         _did7e = (_pdi59 - _mdi59).to_numpy(float)
+        # 2周目の層2候補シグナル（2026-07-23 まこさんGO・既定 di7 のまま＝base 恒等）: DI差14＝同じ Wilder 式で期間14
+        _atr14x = _tr59.ewm(alpha=1.0 / 14, adjust=False).mean()
+        _pdi14x = 100 * _p59.ewm(alpha=1.0 / 14, adjust=False).mean() / _atr14x
+        _mdi14x = 100 * _m59.ewm(alpha=1.0 / 14, adjust=False).mean() / _atr14x
+        _did14e = (_pdi14x - _mdi14x).to_numpy(float)
+        # 基準線乖離26＝一目均衡表の基準線（過去26本の高値安値の中点・rolling は過去のみ＝H2）に対する close の乖離%
+        _kij26x = (_hs59.rolling(26).max() + _ls59.rolling(26).min()) / 2.0
+        _kij26e = ((_cs59 / _kij26x) - 1.0).to_numpy(float) * 100.0
     k9 = d9 = None
     if v14_params is not None or v23te:                # v14/v23: stoch(9,3)（v14 枝5'／v23 STOCH_REVERSE_EXIT 用・過去 rolling のみ＝leak-safe H2・OFF 経路では計算しない）
         _cs = pd.Series(c); _ls = pd.Series(l); _hs = pd.Series(h)
@@ -1264,12 +1276,13 @@ def run_continuous_v11(df, box_tf, no_add: bool = False, single_tp: bool = False
                 _age59 = (i - int(lot["first_idx"])) * 5
                 if _age59 >= V59_WAIT_MIN:
                     _ct59 = lot.get("ceil_type"); _lvl59 = None
-                    if _ct59 == "down":
-                        _arr59 = _adx7e if V59_DOWN_SIG == "adx7" else _did7e        # シグナル種は定数（既定 adx7＝v59_157 と同一・探索ドライバが差し替え可）
+                    _sig59 = {"adx7": _adx7e, "di7": _did7e, "di14": _did14e, "kijun26": _kij26e}
+                    if _ct59 == "down" and (V59_DOWN_WIN_MIN <= 0 or _age59 <= V59_DOWN_WIN_MIN):
+                        _arr59 = _sig59[V59_DOWN_SIG]        # シグナル種は定数（既定 adx7＝v59_157 と同一・探索ドライバが差し替え可）
                         if np.isfinite(_arr59[i]) and _arr59[i] >= V59_DOWN_ADX7_TH:
                             _lvl59 = lot["avg"] * (1.0 + V59_DOWN_ADV_PCT / 100.0)   # down: シグナル≥TH ∩ 高値が建値+X% 到達
                     elif _ct59 == "flat_up" and _age59 <= V59_FLAT_WIN_MIN:
-                        _arr59 = _did7e if V59_FLAT_SIG == "di7" else _adx7e         # 既定 di7＝v59_157 と同一
+                        _arr59 = _sig59[V59_FLAT_SIG]         # 既定 di7＝v59_157 と同一
                         if np.isfinite(_arr59[i]) and _arr59[i] >= V59_FLAT_DID7_TH:
                             _lvl59 = lot["avg"] * (1.0 + V59_FLAT_ADV_PCT / 100.0)   # flat_up: 窓内・シグナル≥TH ∩ 高値が建値+X% 到達
                     if _lvl59 is not None and h[i] >= _lvl59:
@@ -2488,7 +2501,7 @@ def run_e37(df, box_tf, tag=None, no_gate=False, v6=False, v6r=False, v7=False, 
         if v59_adx_cut and v15p is not None:                # 枝15 v59（2026-07-21・まこさんGO）: 急騰判定（5分 ADX系）×建値% 早切りを注入
             assert v26_split_ceiling, "v59 は v26 切り分け構成の上に載る（--v26-split-ceiling 必須＝ceil_type[down/flat_up] 判定に依存）"
             v15p["v59_adx_cut"] = True
-            print(f"  [v59] 枝15＝急騰判定（5分 ADX系）×建値% 早切り: 建てて{V59_WAIT_MIN}分以降、down= ADX7≥{V59_DOWN_ADX7_TH}（分布q90換算）∩ 高値が建値+{V59_DOWN_ADV_PCT}% ／ flat_up= {V59_FLAT_WIN_MIN}分まで・DI差7≥{V59_FLAT_DID7_TH}（q95換算）∩ 建値+{V59_FLAT_ADV_PCT}% で成行降り（TREND_CONT 再利用 H13・LONG は別枝＝対象外・急騰非該当玉の SL 不変＝まこさん指示 2026-07-20 の形）。値の出所＝observe_diag 機械探索 run2 後半最良（両半期プラス行そのまま・CC の新規決定なし）。⚠️疑似シミュの楽観＋勝ち巻き込み（探索実測 down 36/34・flat_up 45/38）承知の実測。既定 OFF・采否は採点窓 score.py の net＋件数/日≥5＋型別")
+            print(f"  [v59] 枝15＝急騰判定（5分 ADX系）×建値% 早切り: 建てて{V59_WAIT_MIN}分以降、down= {V59_DOWN_SIG}≥{V59_DOWN_ADX7_TH}（窓{V59_DOWN_WIN_MIN or 'なし'}分）∩ 高値が建値+{V59_DOWN_ADV_PCT}% ／ flat_up= {V59_FLAT_WIN_MIN}分まで・{V59_FLAT_SIG}≥{V59_FLAT_DID7_TH} ∩ 建値+{V59_FLAT_ADV_PCT}% で成行降り（シグナル種 adx7/di7/di14/kijun26＝2026-07-23 まこさんGO で拡張・切り方={V59_CUT_MODE}）（TREND_CONT 再利用 H13・LONG は別枝＝対象外・急騰非該当玉の SL 不変＝まこさん指示 2026-07-20 の形）。値の出所＝observe_diag 機械探索 run2 後半最良（両半期プラス行そのまま・CC の新規決定なし）。⚠️疑似シミュの楽観＋勝ち巻き込み（探索実測 down 36/34・flat_up 45/38）承知の実測。既定 OFF・采否は採点窓 score.py の net＋件数/日≥5＋型別")
         if v54_flatup_level_cap and v15p is not None:       # 枝13 v54（2026-07-19・まこさんGO）: flat_up 限定 同レベル再装填禁止を注入
             assert v26_split_ceiling, "v54 は v26 切り分け構成の上に載る（--v26-split-ceiling 必須＝ceil_type[down/flat_up] 判定に依存）"
             v15p["v54_flatup_level_cap"] = True
@@ -2744,7 +2757,7 @@ def main():
     ap.add_argument("--v57-long-vol-gate", type=float, default=None, help="v57 予測2（まこさん 2026-07-20「急騰急落の損が多いなら高ボラは避ける」）: ロング入口時 atr_pct>X%%なら建てない。SL の深い損が高ボラに集中する仮説の検証。既定 None=ボラ無制限")
     ap.add_argument("--v58-short-sl-pct", type=float, default=None, help="v58（まこさん指示 2026-07-20「災害SLこそ％にしたほうがいい」）: ショートの災害SL を幾何（res_hi＋sl_far×帯幅・採点窓の実績で建値から中央1.49%%）から建値×(1+X%%) の固定%%へ。ロング側の --v57-long-sl-pct と対称＝両サイドを建値基準の%%に揃える。X の目安＝BTC が $500 動く幅（採点窓の建値中央 $77,089 で 0.649%%／価格帯 0.515〜0.783%%）＝まこさん指定の構造由来で net 最大化スイープではない（L-267）。⚠️浅くすると負け玉だけでなく TP に届くはずだった勝ち玉も同時に切る（原理的に不可避・理解確認 Q1）＝採否は切った玉の勝ち/負け内訳を型別に見てまこさんが判断。既定 None=幾何（fix6m_134 恒等）")
     ap.add_argument("--v57-long-flat-up-only", action="store_true", help="v57 4分割由来（まこさん 2026-07-20）: ロングを flat_up 型（天井=res_hi）に限定＝down 型（急落でレジ上張り付き＝落ちるナイフの底買い）を建てない。根拠＝4分割 longv57b_142: 買いロング down 706玉 −$422（損の全部・SL−$1093/TIME−$391）／flat_up 73玉 +$5。down 型を外すとロングのドラッグがほぼ消える見込み。既定 OFF")
-    ap.add_argument("--v59-adx-cut", action="store_true", help="枝15 v59（2026-07-21 まこさんGO）: 急騰と判定された玉だけをエントリー価格からの%%で早く切る（まこさん指示 2026-07-20 の実装形・急騰非該当玉の SL は不変・LONG は対象外）。急騰判定＝5分 ADX系: down=ADX7≥53.05（分布q90換算）／flat_up=DI差7≥34.25（q95換算）。建てて10分以降（flat_up は240分まで）にシグナル成立∩高値が建値+0.2%%（down）/+0.15%%（flat_up）到達でバー close 成行降り（TREND_CONT 再利用＝score.py 無変更）。値の出所＝observe_diag 機械探索 run2 後半最良（両半期プラス・CC の新規決定なし）。既定 OFF=longfu_145 恒等")
+    ap.add_argument("--v59-adx-cut", action="store_true", help="枝15 v59（2026-07-21 まこさんGO）: 急騰と判定された玉だけをエントリー価格からの%%で早く切る（まこさん指示 2026-07-20 の実装形・急騰非該当玉の SL は不変・LONG は対象外）。急騰判定＝5分 ADX系（シグナル種・閾値・待ち・窓・切る%%・切り方の実値は V59_* モジュール定数が正本＝実行時に [v59] 行へ印字。旧 help の固定値 53.05/34.25/10分/close は v59_157 時点の値＝2026-07-23 是正）。TREND_CONT 再利用＝score.py 無変更。値の出所＝層3エンジン内探索（CC の新規決定なし）。既定 OFF=longfu_145 恒等")
     ap.add_argument("--probe-start", default=None, help="検証専用（2026-07-19 まこさん指示）: 走行データの開始日を上書き（例 2023-11-01）＝probe の玉サンプルを価格帯が似ている期間へ拡張する。出力 CSV は採否に使わない（采否は採点窓 score.py のみ）。既定 None=恒等（採点窓＋助走60日）")
     ap.add_argument("--v40-down-no-age", action="store_true", help="v40（fast-mode 2026-07-17・まこさんGO 案1）: down 型（下落系・天井=直近高値）は --v26-max-age-hours の年齢ゲートを免除＝レンジが6hを超えて続いても down 型なら建てる。flat_up は年齢維持（レンジ終盤負けの実測証拠[経過率で単調・fix6m_100 §15]は flat_up 行で測ったもの）。根拠＝5-15 窓（まこさん指定6窓で唯一の0玉）の詰まり診断で年齢ゲートが唯一の決め手（144本全部 range 判定・年齢だけ外すと現行天井のまま fill 3回・全部 down 型・worklog 20260717 §21）。新数値なし・--v26-split-ceiling --v26-max-age-hours 必須・既定 OFF=v38 恒等・采否は採点窓 score.py の net＋件数/日≥5")
     ap.add_argument("--v39-trend-deadline", action="store_true", help="v39（fast-mode 2026-07-17・まこさん「どんどん試して結果で判断」）: trend_caught 玉（uptrend 発火で新規停止し建値+0.08%% の resting maker 待ちに入った玉）に待ち期限＝発火から V31_TTL_BARS(24本=120分・既存定数再利用) で利確未達なら成行 taker で降りる（TREND_CONT 登録済み再利用=score.py 無変更 H13）。根拠＝fix6m_104 実測: 建値降り玉473（+$83）の保有90%ileは160分＝期限120分の巻き込み上限92玉 +$15.7 と小さい一方、降りられない玉は SL −$344・TIME −$342 の深追い（5-1 型＝待ちすぎ）。--v24-trend-maker-tp 必須・既定 OFF=v38 恒等・采否は採点窓 score.py の net＋件数/日≥5")

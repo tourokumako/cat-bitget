@@ -4,8 +4,10 @@
 疑似シミュを介さず、試行ごとに実エンジン（e37_scalp.run_e37）を回し、審判式 net（score.score・import のみ・H13）で
 候補を評価する Optuna 探索。再回転・手数料・約定が全部本物の計算で入る＝L-330 の穴が無い。
 
-- 探索窓＝2024-02-01〜2025-04-30（まこさん決定 2026-07-21・current_request.md に逐語記録）。
-  採点窓 2025-12-01〜2026-05-31 と重ならない＝采否の窓の汚染ゼロ。
+- 探索窓＝2025-12-01〜2026-02-28（まこさん確定 2026-07-23「検索窓を2025-12から2026-02」＝下の
+  SEARCH_START/SEARCH_END が実体・walk-forward 形＝直近の過去3ヶ月で調整→未使用の採点窓 2026-03〜06 で採否。
+  旧探索窓 2022-07〜12 は v59c_162 の実測で「成績の近さ≠ツマミの移りやすさ」が確定し廃止）。
+  採点窓 2026-03-01〜2026-06-30（periods.py）と重ならない＝采否の窓の汚染ゼロ。
 - 探索対象＝v59 の枝のツマミ（型別のシグナル種・閾値・切る%・待ち・窓・切り方 close/stop）。
   値の差し替えは e37_scalp のモジュール定数 setattr（エンジン本体は無変更・既定値は v59_157 と同一）。
 - 試行は CSV を書かない（run_e37 return_trades=True）。全試行のログを残す。
@@ -26,11 +28,12 @@ import pandas as pd
 import e37_scalp as e37
 import score as judge          # 審判＝import のみ・無変更（H13）
 
-# 探索窓（まこさん最終決定 2026-07-21「2022-07 から 2022-12 にする」＝全期間スキャン window_scan_probe の
-# 上位1位＝土台の月平均が採点窓に最も近い窓・current_request.md 逐語）。periods.py の採点窓とは別物＝
-# 採点窓 SCORE_START/SCORE_END には触れない（採否は最終本走の score.py が periods 正本で行う・非重複＝汚染ゼロ）。
-SEARCH_START = pd.Timestamp("2022-07-01")
-SEARCH_END   = pd.Timestamp("2023-01-01")            # 2022-12-31 まで（終端は排他）
+# 探索窓（まこさん確定 2026-07-23「検索窓を2025-12から2026-02」＝walk-forward 形へ組み替え。
+# 旧窓 2022-07〜12［全期間スキャン最近傍・2026-07-21 決定］は v59c_162 実測＝探索窓 net +$94 が採点窓 月−$8.42 に
+# 反転＝「土台の成績の近さ≠ツマミの移りやすさ」で廃止）。periods.py の採点窓 2026-03〜06 とは非重複＝
+# 採点窓 SCORE_START/SCORE_END には触れない（採否は最終本走の score.py が periods 正本で行う・汚染ゼロ）。
+SEARCH_START = pd.Timestamp("2025-12-01")
+SEARCH_END   = pd.Timestamp("2026-03-01")            # 2026-02-28 まで（終端は排他）
 WARM_START   = SEARCH_START - pd.Timedelta(days=60)  # 助走60日（e37._load と同じ考え方）
 
 # 土台 longfu_145 の構成（report_trades_e37_range_scalp_longfu_145_score.txt §0 実行引数と同一）＋ v59 ON
@@ -46,18 +49,36 @@ BASE_KW = dict(
 
 # 探索するツマミ（v59 のモジュール定数名 → Optuna の提案）。範囲は分布の裾を広めに覆う固定幅＝
 # 特定の net で選んだ範囲ではない（Optuna が範囲内を絞る・L-267 の禁止は採点窓 net を目的関数にした選定）。
+# 2026-07-23 まこさんGO（切る系2周目）: シグナル種に di14/kijun26 を追加・待ち 45/60・down 判定窓を追加。
+# kijun26 は%スケール（adx/di の 10〜70 と桁が違う）＝閾値レンジは探索窓の分布分位から実行時に決める（CC の手打ち値なし）。
+_KIJ_TH_RANGE = None   # (lo, hi) = 探索窓 kijun26 乖離%の (q50, q99.5)。main() が実行時に設定・印字。
+
+_V59_SIGS = ["adx7", "di7", "di14", "kijun26"]
+
+
+def _kij_range(df):
+    kij = (df["high"].rolling(26).max() + df["low"].rolling(26).min()) / 2.0
+    dev = ((df["close"] / kij) - 1.0) * 100.0
+    return float(dev.quantile(0.50)), float(dev.quantile(0.995))
+
+
 def _suggest(t):
-    return {
-        "V59_DOWN_SIG":     t.suggest_categorical("down_sig", ["adx7", "di7"]),
-        "V59_DOWN_ADX7_TH": t.suggest_float("down_th", 10.0, 70.0),
-        "V59_DOWN_ADV_PCT": t.suggest_float("down_adv", 0.1, 1.0),
-        "V59_FLAT_SIG":     t.suggest_categorical("flat_sig", ["adx7", "di7"]),
-        "V59_FLAT_DID7_TH": t.suggest_float("flat_th", 10.0, 70.0),
-        "V59_FLAT_ADV_PCT": t.suggest_float("flat_adv", 0.1, 1.0),
-        "V59_WAIT_MIN":     t.suggest_categorical("wait", [0, 5, 10, 15, 20, 30]),
-        "V59_FLAT_WIN_MIN": t.suggest_categorical("flat_win", [60, 120, 240, 360]),
-        "V59_CUT_MODE":     t.suggest_categorical("cut_mode", ["close", "stop"]),
-    }
+    ov = {}
+    ds = t.suggest_categorical("down_sig", _V59_SIGS)
+    ov["V59_DOWN_SIG"] = ds
+    ov["V59_DOWN_ADX7_TH"] = (t.suggest_float("down_th_kij", *_KIJ_TH_RANGE) if ds == "kijun26"
+                              else t.suggest_float("down_th", 10.0, 70.0))
+    ov["V59_DOWN_ADV_PCT"] = t.suggest_float("down_adv", 0.1, 1.0)
+    ov["V59_DOWN_WIN_MIN"] = t.suggest_categorical("down_win", [0, 120, 180, 240, 360])
+    fs = t.suggest_categorical("flat_sig", _V59_SIGS)
+    ov["V59_FLAT_SIG"] = fs
+    ov["V59_FLAT_DID7_TH"] = (t.suggest_float("flat_th_kij", *_KIJ_TH_RANGE) if fs == "kijun26"
+                              else t.suggest_float("flat_th", 10.0, 70.0))
+    ov["V59_FLAT_ADV_PCT"] = t.suggest_float("flat_adv", 0.1, 1.0)
+    ov["V59_WAIT_MIN"] = t.suggest_categorical("wait", [0, 5, 10, 15, 20, 30, 45, 60])
+    ov["V59_FLAT_WIN_MIN"] = t.suggest_categorical("flat_win", [60, 120, 240, 360])
+    ov["V59_CUT_MODE"] = t.suggest_categorical("cut_mode", ["close", "stop"])
+    return ov
 
 
 def _run_engine(df, overrides: dict, v59_on: bool):
@@ -81,7 +102,7 @@ def _run_engine(df, overrides: dict, v59_on: bool):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="層3エンジン内探索（v59 のツマミ・探索窓=まこさん決定 2024-02〜2025-04）")
+    ap = argparse.ArgumentParser(description=f"層3エンジン内探索（v59 のツマミ・探索窓={SEARCH_START.date()}〜{SEARCH_END.date()} 排他=まこさん決定・SEARCH_START/END 定数が正本）")
     ap.add_argument("--trials", type=int, default=200)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--log", default=None, help="試行ログの出力先（既定=scratchpad 相当のカレント）")
@@ -94,6 +115,9 @@ def main():
     df = e37._load(0, start_override=str(WARM_START.date()))
     df = df[df["ts"] < SEARCH_END].reset_index(drop=True)
     print(f"[共通部分] データ+指標 {len(df):,} バー（{time.time()-t0:.0f}秒・以後の試行はエンジンループのみ）")
+    global _KIJ_TH_RANGE
+    _KIJ_TH_RANGE = _kij_range(df)
+    print(f"[kijun26 閾値レンジ] 探索窓の乖離%分布 (q50, q99.5) = ({_KIJ_TH_RANGE[0]:.4f}, {_KIJ_TH_RANGE[1]:.4f})＝実行時実値（手打ちなし）")
 
     logf = open(a.log or "engine_search_e37_trials.log", "w", encoding="utf-8")
 
