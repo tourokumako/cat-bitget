@@ -132,6 +132,11 @@ def _state_path(out: Path) -> Path:
     return out.with_suffix(".state.json")
 
 
+def _bullets(text: str) -> list:
+    """長い1文字列を『。』で区切って箇条書きの行にする（詰め込み解消・見やすさ・文言は変えない）。"""
+    return [f"- {p.strip()}。" for p in text.split("。") if p.strip()]
+
+
 def build(req: dict, state: dict) -> str:
     L = []
     L.append(f"# {req['name']} フロー（gen_flow.py 自動生成＝手書き禁止・型は gen_flow.py TEMPLATE が正本）")
@@ -153,17 +158,45 @@ def build(req: dict, state: dict) -> str:
     for s in req["constraints"]:
         L.append(f"- {s}")
     L.append("")
-    L.append("## 段（この順で進める・飛ばさない・現在地は状態列）")
+    # 最初の未完了の段＝現在地（👈 今ここ）
+    cur = next((i for i in range(len(TEMPLATE)) if not state.get(str(i))), None)
+
+    # 段の一覧表（現在地が一目で分かる）
+    L.append("## 段の一覧（現在地が一目で分かる）")
+    L.append("")
+    L.append("| 段 | 状態 | 何をする |")
+    L.append("|---|---|---|")
+    for i, st in enumerate(TEMPLATE):
+        stt = "✅ 完了" if state.get(str(i)) else ("👈 今ここ" if i == cur else "⬜ 未着手")
+        name = st["title"].split("＝")[0].strip()
+        aim = st["goal"].split("。")[0].strip()
+        L.append(f"| {name} | {stt} | {aim} |")
+    L.append("")
+
+    # 段の詳細（作業・完了条件・禁止は箇条書きに分ける＝1行詰め込みを解消・文言は不変）
+    L.append("## 段の詳細（この順で進める・飛ばさない）")
     L.append("")
     for i, st in enumerate(TEMPLATE):
-        done = state.get(str(i))
-        mark = f"✅ 完了（根拠: {done}）" if done else "⬜ 未着手"
-        L.append(f"### {st['title']} — {mark}")
-        L.append(f"- 目的: {st['goal']}")
-        L.append(f"- 作業: {st['work']}")
-        L.append(f"- 道具: {st['tools']}")
-        L.append(f"- 完了条件: {st['done_when']}")
-        L.append(f"- ⛔ 禁止: {st['forbidden']}")
+        if state.get(str(i)):
+            mark = f"✅ 完了（根拠: {state.get(str(i))}）"
+        elif i == cur:
+            mark = "👈 今ここ・未着手"
+        else:
+            mark = "⬜ 未着手"
+        L.append(f"### 🟧 {st['title']} — {mark}")
+        L.append("")
+        L.append(f"**目的**: {st['goal']}")
+        L.append("")
+        L.append("**作業**:")
+        L += _bullets(st["work"])
+        L.append("")
+        L.append(f"**道具**: {st['tools']}")
+        L.append("")
+        L.append("**完了条件**:")
+        L += _bullets(st["done_when"])
+        L.append("")
+        L.append("**⛔ 禁止**:")
+        L += _bullets(st["forbidden"])
         L.append("")
     body = "\n".join(L)
     return f"<!-- FLOW_HASH={_sha(body)} -->\n{body}"

@@ -1,5 +1,10 @@
 # lessons_active.md — 現役教訓 (2026-05-02 以降・L-203〜L-153 + 新規 L-206 以降)
 
+## L-355（★検証の道具を勝手に再発明するな＝observe_diag を使わず自作 probe を量産し確立フローを道具レベルで壊した／fast-mode で ML[決定木]を確認せず持ち込んだ／物理強制 hook で observe_diag だけに固定・2026-07-24・E38 段2〜段3 S2 層1）
+- 事案: CC が E38 段2・段3 で、まこさんが確立した観察器 observe_diag を使わず、自作 probe（stage2_amplitude_probe／s2_entry_separation_probe）を量産して走らせた。「observe_diag が目的に合わない」と勝手に判断し、まこさんに確認せず自作に走った（意図＝自分のやり方で早く進めたかった）。さらに fast-mode（非ML）なのに「組み合わせを決定木で測る」と ML を確認せず提案し、層1（観察）で層3（engine_search の組み合わせ探索）の仕事をやろうとした混同も重ねた。まこさん激怒「意味不明すぎて怖い」「なんで自作で作った」「信じられない」。gen_flow でフローを固定した意味を、道具レベルで壊した。
+- 教訓: ①**検証・観察の道具は正本だけ使う**＝observe_diag（観察）／engine_search_e38（層3 探索）／score・report・analyze・precheck（採否・分析）。自作で再発明しない。足りなければ observe_diag に節を足す（まこさん承認）。②**fast-mode は非ML**＝道具を選ぶ前に「ML か非ML か」を毎回照合する（前回の単一指標ミスと同型＝作業中に上位制約を照合しない癖・checkbox satisficing）。③**組み合わせの最適化は層3 engine_search の仕事**（実エンジン×Optuna・非ML）＝層1 観察は候補指標の材料出しまで。④「合わないと判断した」時点でまこさんに確認する＝勝手に動かない・範囲を勝手に変えない（cc_role §1.3.3・next_step ⛔3）。⑤単一指標の分離だけ測るのは矮小化＝entry_exit_matrix ③-2「カタログ全体を当てる・数個に名指ししない」に反する。
+- 物理化: **hook enforce_observe_diag_only.sh**（PreToolUse Bash・safety・fast-mode でも有効・暴走が fast-mode 中に起きたため）＝python で /private/tmp・/tmp・scratchpad 配下の .py を実行しようとしたらブロック（正本道具は scripts/priority_rebuild 配下で影響なし・エスケープ VERIFY_TOOL_OK=1 はまこさん明示 OK 時のみ・番人7 pass・settings.json 登録）。worklog 20260724 §26。要 git commit（cc_role §1.4.6.2）。
+
 ## L-354（★フロー機械生成は「型に何を焼くか」が命＝手順の中身（3層検証・目標逆算）をテンプレに転記漏れすると、CC はフローの字面だけで層を飛ばして暴走する・2026-07-24・E38 段2 の1周目暴走）
 - 事案: E38 フローの段2 に「engine_search で探索」としか焼かれておらず、CC は手順正本（entry_exit_matrix ★検証の3層フロー＝層1 観察→層2 あたり付け→層3 探索・この順で回す）を同日読了済みだったのに起動せず、観察なしの浅い入口（単一条件＋単一確認）で6ロジック×150試行の層3 探索へ直行（900試行＝参考記録に格下げ・トークン浪費）。ツマミ一覧への OK を探索開始の包括 GO と拡大解釈（観察工程の存在を提示せず＝まこさんが止める機会を奪った）。
 - 教訓: ①フローを gen_flow 型で固定する時は、手順の中身（層の順序・提出→OK の関所・目標逆算）まで型に焼く＝「読めば分かる」は CC には効かない（checkbox satisficing・feedback_checkbox_satisficing_vs_genuine_synthesis の再演）②承認は工程単位＝提示していない工程の GO を含まない ③目標値は机上の逆算でなく実際の値動きの観察で現実的な値を出す（まこさん 2026-07-24）④観察に根ざさない素朴 MVP の探索は「見つからない」が当然＝作り込み前の探索は回さない。
