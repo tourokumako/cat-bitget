@@ -96,6 +96,23 @@ GLOSSARY: list[tuple[str, str]] = [
 ]
 
 
+# observe_diag と engine_search_e38 の違い（2026-07-26 まこさん質問「違いってなに？」）。
+#   どちらも条件を探索するので混同しやすい。事実の裏づけ＝engine_search_e38 は 32行目で
+#   `import score as judge`・91行目で `judge.score(t)` を呼ぶ（実エンジンを回して審判の式で評価）。
+#   observe_diag は score を1度も呼ばない（read-only 診断・売買記録CSVも書かない）。
+DIFF_ROWS: list[tuple[str, str, str]] = [
+    ("何をする道具か", "観察して材料と候補を出す", "候補の値を決める"),
+    ("売買エンジンを回すか", "回さない", "回す"),
+    ("審判の式を使うか", "使わない", "使う"),
+    ("手数料・約定・funding", "入らない", "入る"),
+    ("同じ枠の取り合い", "入らない", "入る"),
+    ("玉の集合", "条件を変えても変わらない", "条件を変えると変わる"),
+    ("使う期間", "採点窓だけ", "探索窓と確認窓"),
+    ("出す数字の意味", "材料。順位づけまで", "候補の順位づけ"),
+    ("採否を決めるか", "決めない", "決めない"),
+]
+
+
 # 場面の型が「どんな値動きか」の説明（2026-07-26 まこさん指摘＝型の名前だけでは分からない）。
 #   型そのものの一覧は observe_diag._SCENE_TYPES から取る。ここは名前と日本語の対応だけを持つ。
 #   型を足したら1行足す（足し忘れは自己検査が落とす）。
@@ -413,6 +430,46 @@ def build() -> str:
         L.append(f"- {g}")
     L.append("")
 
+    L.append("## engine_search_e38 との違い")
+    L.append("")
+    L.append("どちらも条件を探索します。名前も役割も似ているので混同しやすいですが、"
+             "評価のしかたが根本的に違います。")
+    L.append("")
+    L.append("| | observe_diag | engine_search_e38 |")
+    L.append("|---|---|---|")
+    for a, b, c in DIFF_ROWS:
+        L.append(f"| {a} | {b} | {c} |")
+    L.append("")
+    L.append("### 一番大きい違い")
+    L.append("")
+    L.append("observe_diag は、既にある玉や場面のバーに条件を当てはめて、勝ち負けを静かに数えます。"
+             "条件を変えても玉は増えません。")
+    L.append("")
+    L.append("engine_search_e38 は、条件を変えるたびに売買エンジンを最初から回し直します。"
+             "だから玉の集合そのものが変わります。同じ枠を別の玉が取り合う動きも入ります。")
+    L.append("")
+    L.append("これが「疑似シミュで上位だった条件が、実際に回すと順位が逆転する」の理由です（L-330）。"
+             "observe_diag が良いと言った条件が engine_search_e38 で悪くなることは普通に起きます。")
+    L.append("")
+    L.append("### 検証の3層での位置")
+    L.append("")
+    L.append("```")
+    L.append("層1 観察      → observe_diag（材料と候補を出す）")
+    L.append("層2 あたり付け → 疑似シミュ（採否にも候補選定にも使わない）")
+    L.append("層3 候補選定  → engine_search_e38（実エンジン × 審判の式で値を決める）")
+    L.append("本走・採否    → e38_priority_stack + score.py（採点窓・まこさんが決める）")
+    L.append("```")
+    L.append("")
+    L.append("observe_diag は入口です。engine_search_e38 は出口の1つ手前です。")
+    L.append("")
+    L.append("### 紛らわしい点")
+    L.append("")
+    L.append("observe_diag のフェーズ8 も条件を探索します。engine_search_e38 と名前も動きも似ています。")
+    L.append("")
+    L.append("ただしフェーズ8 は「既にある玉のうち、どれを除外すると合計がどうなるか」を静かに計算するだけです。"
+             "engine_search_e38 のように回し直しません。だから同じ「探索」でも数字の重みが違います。")
+    L.append("")
+
     L.append("## この道具では分からないこと")
     L.append("")
     L.append("- 採否は決められません。採否は score.py を採点窓に通して、まこさんが決めます。")
@@ -467,9 +524,13 @@ def selftest() -> int:
     if miss:
         ng.append(f"場面の型の説明が未登録: {miss}（型を足したら SCENE_TYPE_JP にも足す）")
     txt = build()
+    if len(DIFF_ROWS) < 5:
+        ng.append("engine_search_e38 との違いの表が足りない（混同したまま使われる）")
     for must in ("この道具は何か", "この道具の目的", "言葉の説明", "2つのモード", "実行のしかた",
                  "検証する項目", "指標（", "探索の系統", "場面の型",
-                 "登録されている場面", "設定で変えられるもの", "検証できる期間", "この道具では分からないこと"):
+                 "登録されている場面", "設定で変えられるもの", "検証できる期間",
+                 "engine_search_e38 との違い", "検証の3層での位置", "紛らわしい点",
+                 "この道具では分からないこと"):
         if must not in txt:
             ng.append(f"説明書に見出しが無い: {must}")
     # 2026-07-26 にまこさんが引っかかった言葉が、全部 説明書に載っていること
