@@ -61,7 +61,8 @@ def _stage0_evidence() -> str:
 def _stage1_verbatim() -> str:
     """フロー正本 e38_flow.md の段1 節を逐語引用する（完了条件・禁止を再発明しない）。"""
     txt = FLOW_MD.read_text(encoding="utf-8")
-    m = re.search(r"(### 段1 器＝.*?)(?=### 段2 )", txt, re.S)
+    # 見出しは gen_flow の可読性改善（2026-07-24 §27）で「### 🟧 段1 …」形になった＝絵文字の有無どちらも受ける
+    m = re.search(r"(### (?:🟧 )?段1 器＝.*?)(?=### (?:🟧 )?段2 )", txt, re.S)
     if not m:
         raise SystemExit(f"段1 節が見つからない: {FLOW_MD}")
     return m.group(1).rstrip()

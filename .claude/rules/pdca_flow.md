@@ -18,10 +18,12 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-## 1. hook 一覧（33本・登録は settings.json）
+## 1. hook 一覧（35本・登録は settings.json）
 
 | hook | タイミング | matcher | 役割 |
 |---|---|---|---|
+| enforce_observe_diag_only | PreToolUse | Bash | **【検証は observe_diag だけ・safety＝fast-mode でも有効】（2026-07-24 まこさん指示・番人7 pass）**＝python で /private/tmp・/tmp・scratchpad 配下の .py を実行しようとしたらブロック＝自作 probe の量産（2026-07-24 事案＝CC が observe_diag を使わず stage2_amplitude_probe / s2_entry_separation_probe を自作して走らせた）を物理封鎖。正本道具（scripts/priority_rebuild 配下）は影響なし。足りない観察は observe_diag に節を足す（まこさん承認）。エスケープ VERIFY_TOOL_OK=1 はまこさん明示 OK 時のみ |
+| enforce_flow_declaration | PreToolUse | Bash | **【フロー宣言ゲート・safety＝fast-mode でも有効】（2026-07-25 まこさん指示「毎回なにか実行するまえに、フローのなにをやってるのか宣言するように強制」・番人9 pass）**＝実行系スクリプト（e38_priority_stack/engine_search_e3N/observe_diag/slot_opportunity_diag/e37_scalp/e35_・e36_/score/precheck/report/analyze/plot_trades）を python 実行する前に、`.claude/state/flow_declaration.md` に4行の型（【フロー宣言】／段:／工程:／実行:／目的:）＋実行スクリプト名＋24時間以内の更新が無いとブロック。同内容をチャットにも出す（運用）。selftest/py_compile/--help/--verify・読み取り系・サブエージェントは通す。エスケープ FLOW_DECL_OK=1 はまこさん明示 OK 時のみ。限界＝宣言と実工程の一致の意味判定は不可（まこさんの目と併用） |
 | verify_handoff_paths | SessionStart | — | 引き継ぎパスの存在チェック（ずれ検出） |
 | force_read_ml_design | SessionStart | — | 必読・6軸ゲート・保管ルール等を表示 |
 | reset_read_log | SessionStart | — | read_log をリセット（前セッションの読了を持ち越さない） |

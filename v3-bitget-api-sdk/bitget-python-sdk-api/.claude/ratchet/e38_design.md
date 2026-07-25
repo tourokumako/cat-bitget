@@ -1,7 +1,7 @@
-<!-- DESIGN_HASH=2efb0a0eba7edd99 -->
+<!-- DESIGN_HASH=aab86c95981f4583 -->
 # e38_design.md — E38 優先度スタック 設計書（gen_design.py 機械生成＝手書き禁止）
 
-生成元: e38_logics.json（ロジック定義の正本・sha256=077311789b92473b）＋ e38_requirements.json ＋ 段0 実測（worklog 逐語）。
+生成元: e38_logics.json（ロジック定義の正本・sha256=fc5f54d95b60f1b4）＋ e38_requirements.json ＋ 段0 実測（worklog 逐語）。
 再生成: python3 scripts/priority_rebuild/gen_design.py --write ／ 改変検出: --verify
 ⚠️ 本ファイルの手書き編集は禁止。変更は e38_logics.json（値）または gen_design.py（型・まこさん承認）を直して再生成。
 ⚠️ 設定 json が設計書の中核であり実装データそのもの（e38_requirements.json decisions）＝本書の flags/const は json の逐語ダンプ。
@@ -22,7 +22,8 @@
 
 - E38 新設（E37 の一枚岩 2900 行へは挿し込まない・部品は import 再利用・v59d_164 は採用土台として残す＝E38 が採点窓で超えたら乗り換え）
 - 設定駆動＝ロジック定義（入口条件・出口値・優先度・スロット）は設定ファイルが正本・エンジンは設定を解釈する固定部品（設計書と実装の差異を構造的に消す・V9 cat_params_v9.json と同じ思想）
-- 安定の物差し＝探索窓で成績良好 ∩ 採点窓4ヶ月全月プラス。ただしロジック個別の確認は探索側期間の分割で行い、採点窓は統合最終形1つの採否だけに使う（採点窓の覗き見禁止）
+- 改善フローの構造（まこさん提示 2026-07-24・逐語要旨）＝①目標額からの逆算でロングとショート合わせて1日のトレード数を出す ②①のトレード数を達成できる Entry ロジックをロングとショートそれぞれで複数策定 ③採用候補の Entry ロジックに対して Exit 側を最適化 ④Entry/Exit をセットで最適化 ⑤優先度付け・ポジションサイズ・数・add 数を最適化。②③④の策定方法＝1️⃣層1 観察（observe_diag --plan 提出→OK→本走） 2️⃣層2 あたり付け（採否・選定に不使用） 3️⃣層3 候補選定（engine_search・実エンジン×審判式・探索窓） 4️⃣正式本走→採否
+- 採否の運用（2026-07-24 まこさんのフロー提示で更新＝旧『採点窓は統合最終形1つの採否だけ』を上書き）＝各策定段階の 4️⃣ で最終候補1つだけを正式本走し、採点窓 score.py＋型別4分割＋N5 区間でまこさんが採否（E37 と同じ運用）。探索・選定・あたり付けに採点窓は使わない（L-267 維持）。確認候補を複数にして採否の窓を何度も覗かない
 - 件数/日は成績表の一級列（稼げても件数が出ないロジックは上位にしない）
 - 優先度はスロット配分＋発火競合時に若い番号優先で効かせる
 - DESIGN_CONTRACT（verify_design_contract.py・実行前機械照合）を E38 設計書に適用する
@@ -110,6 +111,7 @@ SEARCH_END   = pd.Timestamp("2024-08-01")            # 2024-07-31 まで（終�
 | L3 | long | 未確定 | False | 下抜け失敗 fade（sup_lo 下抜け→帯内へ戻り） | fade_long | generic_scalp_exit |
 | L4 | long | 未確定 | False | 統計的回帰ロング（dev_z 下側行き過ぎ） | zscore_long | generic_scalp_exit |
 | L5 | long | 未確定 | False | グリッド買い（sup_hi〜mid 等間隔 resting） | grid_long | grid_exit |
+| L1i | long | 未確定 | False | レンジ下端反発ロング 改良候補（L1 入口＋S2 の2軸確認） | support_touch_long | generic_scalp_exit |
 
 ### S1（priority 1・short・有効）: レンジ上端逆張りショート（現行 v59d_164 相当）
 
@@ -207,7 +209,7 @@ params（実装データ＝関数引数への注入値・逐語）:
 
 - 出典: 段0 実測＝届かない戻り 81.2 バー/日（worklog 20260723 §8・在庫最大）・E-a4・グリッド E38 #S2（まこさん OK 2026-07-24）
 - 実装: e38_logic_parts / generic_logic_loop
-- 入口（type=pullback_short）: params が正本（null=段2 探索で決める）: {"pos_min": null, "confirm": null}
+- 入口（type=pullback_short）: params が正本（null=段2 探索で決める）: {"pos_min": null, "confirm": null, "confirm_htf": null, "confirm_vol": null, "ceil_filter": "flat_up"}
 - 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null}
 
 engine_flags（実装データ＝run_e37 への注入値・逐語）:
@@ -217,7 +219,8 @@ engine_flags（実装データ＝run_e37 への注入値・逐語）:
 params（実装データ＝関数引数への注入値・逐語）:
 ```json
 {
-  "max_lots": 2
+  "max_lots": 2,
+  "search_min_per_day": 2.0
 }
 ```
 
@@ -349,11 +352,30 @@ params（実装データ＝関数引数への注入値・逐語）:
 }
 ```
 
+### L1i（priority 未確定（段3 まこさん）・long・無効）: レンジ下端反発ロング 改良候補（L1 入口＋S2 の2軸確認）
+
+- 出典: L1a 観察（worklog 20260725 §19/§20＝下端タッチ全体・浅い戻り床×2 で素の勝率62%・在庫36バー/日・まこさん OK 2026-07-25）＝現行 L1 の入口幾何＋S2 で確立した2軸確認（ボラ床＋上位足非過熱）。現行 L1（run_e37 経路・採用 priority1）は不変＝これは別ロジックの改良候補
+- 実装: e38_logic_parts / generic_logic_loop
+- 入口（type=support_touch_long）: params が正本（null=段2 探索で決める）: {"fresh_only": null, "confirm_htf": null, "confirm_vol": null}
+- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null, "tp_mode": null, "tp_pct_k": null}
+
+engine_flags（実装データ＝run_e37 への注入値・逐語）:
+```json
+{}
+```
+params（実装データ＝関数引数への注入値・逐語）:
+```json
+{
+  "max_lots": 2,
+  "search_min_per_day": 2.0
+}
+```
+
 ## 7b. 探索範囲の宣言（段2・engine_search_e38 が読む・実装データ＝json 逐語）
 
 ```json
 {
-  "note": "engine_search_e38 が読む探索範囲の宣言（type=float/cat/quantile）。quantile は探索窓の分布分位から実行時に上下限を決める＝CC の手打ち値なし（kijun26 前例）。float の比率系は幾何 a-priori の広め固定幅（engine_search_e37 の 0.1〜1.0 と同型＝L-267 の禁止は採点窓 net 目的関数の選定）。値決め＝探索窓のみ・確認窓は表示のみ・採点窓不使用（まこさん決定 2026-07-24・正本 window_similarity_ranking.md）",
+  "note": "engine_search_e38 が読む探索範囲の宣言（type=float/cat/quantile）。quantile は探索窓の分布分位から実行時に上下限を決める＝CC の手打ち値なし（kijun26 前例）。float の比率系は幾何 a-priori の広め固定幅（engine_search_e37 の 0.1〜1.0 と同型＝L-267 の禁止は採点窓 net 目的関数の選定）。値決め＝探索窓のみ・確認窓は表示のみ・採点窓不使用（まこさん決定 2026-07-24・正本 window_similarity_ranking.md）。★logics 側の宣言は common_exit と同名キーを上書きできる（engine_search の解決順）。時間系の候補は役割（§8.6 スキャル）から逆算した枠内のみ＝_common_exit_note 参照（まこさん確定 2026-07-25・段3 はセット粗探索でこの枠を全ロジック共通に使う）。S2 の confirm_htf/confirm_vol と th_* は層1 観察の2軸（worklog 20260725 §7・9組の部品そのまま・q_lo/q_hi 0.2〜0.8 は中立の広め幅・stochd14 のみ q_hi 0.95=張り付き解消）",
   "common_exit": {
     "tp1_frac": {
       "type": "float",
@@ -375,19 +397,34 @@ params（実装データ＝関数引数への注入値・逐語）:
     "tmax_bars": {
       "type": "cat",
       "choices": [
-        24,
-        48,
-        96
+        1,
+        2,
+        3,
+        6,
+        9,
+        12
       ]
     },
     "be_wait": {
       "type": "cat",
       "choices": [
-        0,
-        1
+        0
       ]
+    },
+    "tp_mode": {
+      "type": "cat",
+      "choices": [
+        "zone",
+        "pct"
+      ]
+    },
+    "tp_pct_k": {
+      "type": "float",
+      "lo": 1.0,
+      "hi": 3.0
     }
   },
+  "_common_exit_note": "tmax_bars＝5分足の本数＝5/10/15/30/45/60分（まこさん提示の刻み 2026-07-25＝役割 §8.6 スキャル・保有分単位からの逆算・旧 [24,48,96]=2h/4h/8h はデイトレ部品値の流用だった＝枠外につき撤去）。be_wait [0]＝建値フロア待機は待機 TTL 24本=2時間が役割枠外のため段3 では候補から外す（部品は残置・段5 Exit 調整で分単位の待機を設計してから再検討）。tp_mode＝zone（レンジ幾何の2段TP・従来）と pct（建値から床×tp_pct_k の固定% 1段TP・全量 maker＝スキャル幾何・まこさん承認 2026-07-25『段3 のセット粗探索をやり直し』）の型対決。tp_pct_k 1.0〜3.0＝手数料床の1〜3倍（k≥1＝床割れの物理禁止・幾何 a-priori）。pct 選択時 tp1_frac/tp2_target は不使用。",
   "logics": {
     "S2": {
       "pos_min": {
@@ -403,6 +440,81 @@ params（実装データ＝関数引数への注入値・逐語）:
           "bear_bar",
           "none"
         ]
+      },
+      "confirm_htf": {
+        "type": "cat",
+        "choices": [
+          "none",
+          "roc24_2h",
+          "macd_2h",
+          "di7_4h",
+          "adx14_2h",
+          "stochd14_2h"
+        ]
+      },
+      "th_roc24_2h": {
+        "type": "quantile",
+        "series": "e38_htf_roc24_2h",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_macd_2h": {
+        "type": "quantile",
+        "series": "e38_htf_macd_2h",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_di7_4h": {
+        "type": "quantile",
+        "series": "e38_htf_di7_4h",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_adx14_2h": {
+        "type": "quantile",
+        "series": "e38_htf_adx14_2h",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_stochd14_2h": {
+        "type": "quantile",
+        "series": "e38_htf_stochd14_2h",
+        "q_lo": 0.2,
+        "q_hi": 0.95
+      },
+      "confirm_vol": {
+        "type": "cat",
+        "choices": [
+          "none",
+          "volr20_15m",
+          "volr50_15m",
+          "bbw50_1d",
+          "donch20_1d"
+        ]
+      },
+      "th_volr20_15m": {
+        "type": "quantile",
+        "series": "e38_vol_volr20_15m",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_volr50_15m": {
+        "type": "quantile",
+        "series": "e38_vol_volr50_15m",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_bbw50_1d": {
+        "type": "quantile",
+        "series": "e38_vol_bbw50_1d",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_donch20_1d": {
+        "type": "quantile",
+        "series": "e38_vol_donch20_1d",
+        "q_lo": 0.2,
+        "q_hi": 0.8
       }
     },
     "S3": {
@@ -483,6 +595,90 @@ params（実装データ＝関数引数への注入値・逐語）:
           "rev"
         ]
       }
+    },
+    "L1i": {
+      "confirm_htf": {
+        "type": "cat",
+        "choices": [
+          "none",
+          "roc24_2h",
+          "macd_2h",
+          "di7_4h",
+          "adx14_2h",
+          "stochd14_2h"
+        ]
+      },
+      "th_roc24_2h": {
+        "type": "quantile",
+        "series": "e38_htf_roc24_2h",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_macd_2h": {
+        "type": "quantile",
+        "series": "e38_htf_macd_2h",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_di7_4h": {
+        "type": "quantile",
+        "series": "e38_htf_di7_4h",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_adx14_2h": {
+        "type": "quantile",
+        "series": "e38_htf_adx14_2h",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_stochd14_2h": {
+        "type": "quantile",
+        "series": "e38_htf_stochd14_2h",
+        "q_lo": 0.2,
+        "q_hi": 0.95
+      },
+      "confirm_vol": {
+        "type": "cat",
+        "choices": [
+          "none",
+          "volr20_15m",
+          "volr50_15m",
+          "bbw50_1d",
+          "donch20_1d"
+        ]
+      },
+      "th_volr20_15m": {
+        "type": "quantile",
+        "series": "e38_vol_volr20_15m",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_volr50_15m": {
+        "type": "quantile",
+        "series": "e38_vol_volr50_15m",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_bbw50_1d": {
+        "type": "quantile",
+        "series": "e38_vol_bbw50_1d",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "th_donch20_1d": {
+        "type": "quantile",
+        "series": "e38_vol_donch20_1d",
+        "q_lo": 0.2,
+        "q_hi": 0.8
+      },
+      "fresh_only": {
+        "type": "cat",
+        "choices": [
+          true,
+          false
+        ]
+      }
     }
   }
 }
@@ -490,12 +686,26 @@ params（実装データ＝関数引数への注入値・逐語）:
 
 ## 8. 段1 の作業・完了条件・禁止（フロー正本 e38_flow.md 逐語＝再発明しない）
 
-### 段1 器＝E38 設定駆動エンジンと候補ロジック定義 — ✅ 完了（根拠: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/session_worklog_20260724.md）
-- 目的: 設定ファイルが正本のエンジンを新設し、設計書と実装の差異を構造的に消す。
-- 作業: e38 エンジン新設（strat_base・レンジ計器等を import 再利用・E37 一枚岩に挿し込まない）。ロジック定義（入口条件・出口値・優先度・スロット）は設定ファイル（json）に置き、エンジンは設定を解釈する固定部品にする。最初の登録＝S1（現行 v59d 相当ショート）とL1（現行 v57 相当ロング）。売買記録に logic 列（診断・net 不関与）。設計書は手書きしない＝骨格を設定 json＋段0 実測から機械生成（gen_design スクリプト・CC の自由記述を最小化）し、DESIGN_CONTRACT を含めて、まこさんの承認を得る。
-- 道具: e38_*.py（新規）・logic config json・acceptance/設計書・verify_design_contract.py。
-- 完了条件: 設計書がまこさん承認済み。E38 が S1/L1 構成で走り、py_compile・番人（わざと壊して落ちる）・妥当性確認（件数/型別が v59d と桁が合う）を通過。
-- ⛔ 禁止: 採点窓を覗く。設定ファイルの外にロジック固有値をハードコードする。
+### 🟧 段1 器＝E38 設定駆動エンジンと候補ロジック定義 — ✅ 完了（根拠: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/session_worklog_20260724.md）
+
+**目的**: 設定ファイルが正本のエンジンを新設し、設計書と実装の差異を構造的に消す。
+
+**作業**:
+- e38 エンジン新設（strat_base・レンジ計器等を import 再利用・E37 一枚岩に挿し込まない）。
+- ロジック定義（入口条件・出口値・優先度・スロット）は設定ファイル（json）に置き、エンジンは設定を解釈する固定部品にする。
+- 最初の登録＝S1（現行 v59d 相当ショート）とL1（現行 v57 相当ロング）。
+- 売買記録に logic 列（診断・net 不関与）。
+- 設計書は手書きしない＝骨格を設定 json＋段0 実測から機械生成（gen_design スクリプト・CC の自由記述を最小化）し、DESIGN_CONTRACT を含めて、まこさんの承認を得る。
+
+**道具**: e38_*.py（新規）・logic config json・acceptance/設計書・verify_design_contract.py。
+
+**完了条件**:
+- 設計書がまこさん承認済み。
+- E38 が S1/L1 構成で走り、py_compile・番人（わざと壊して落ちる）・妥当性確認（件数/型別が v59d と桁が合う）を通過。
+
+**⛔ 禁止**:
+- 採点窓を覗く。
+- 設定ファイルの外にロジック固有値をハードコードする。
 
 ## 9. 段1 妥当性確認の番人（設計）
 

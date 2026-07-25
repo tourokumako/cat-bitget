@@ -47,10 +47,14 @@ assert SEARCH_END <= periods.SCORE_START and CONFIRM_END <= periods.SCORE_START,
 def _series_bank(win: pd.DataFrame) -> dict:
     """quantile 型の探索範囲が参照する分布（探索窓内のみ＝確認窓・採点窓は見ない）。"""
     r12 = win["close"].pct_change(12)
-    return {
+    out = {
         "dev_z_abs": win["dev_z"].abs().dropna(),
         "ret12_abs_down": (-r12[r12 < 0]).dropna(),
     }
+    for c in win.columns:                       # S2 確認2軸の部品列（prepare_df が付ける・2026-07-25 まこさん GO）
+        if c.startswith("e38_htf_") or c.startswith("e38_vol_"):
+            out[c] = win[c].dropna()
+    return out
 
 
 def _resolve_space(space_decl: dict, bank: dict) -> dict:
@@ -128,18 +132,37 @@ def main() -> None:
     df_c = parts.prepare_df(df_all[(df_all["ts"] >= CONFIRM_START - WARM) & (df_all["ts"] < CONFIRM_END)].reset_index(drop=True).copy(), adaptive_k=adaptive_k)
     print(f"[共通部分] 探索スライス {len(df_s):,} バー／確認スライス {len(df_c):,} バー（{time.time()-t0:.0f}秒）")
     bank = _series_bank(df_s[df_s["ts"] >= SEARCH_START])
-    space = {**_resolve_space(sp_entry, bank), **_resolve_space(sp_exit, bank)}
+    # ロジック側の宣言が common_exit の同名キーを上書きする（後勝ち）＝S2 tmax_bars [24,48]＝8時間持ちの除外
+    # （まこさん決定 2026-07-25「8時間は外す」・スキャル役割 §8.6）。同名キーは1回だけ suggest され、
+    # exit_keys 分類は common_exit のキー名で行うので xp へ正しく流れる。
+    space = {**_resolve_space(sp_exit, bank), **_resolve_space(sp_entry, bank)}
     for n, r in space.items():
         print(f"[範囲] {n}: {r[0]} {r[1] if r[0]=='float' else r[1]}" + (f" 〜 {r[2]:.6g}" if r[0] == "float" else ""))
 
     exit_keys = set(sp_exit)
+    # ★json の確定値（null でない entry/exit params＝例 S2 ceil_filter="flat_up"）を毎試行にマージする。
+    #   2026-07-25 発見の配線漏れ＝試行の値だけを部品に渡し、json の固定値が探索中に無視されていた
+    #   （2回目探索で flat_up 限定が効かず down 玉95が混入＝型別表示で検出）。探索対象キーは試行値が勝つ。
+    fixed_ep = {k: v for k, v in lg["entry"].get("params", {}).items() if v is not None and k not in space}
+    fixed_xp = {k: v for k, v in lg["exit"].get("params", {}).items() if v is not None and k not in space}
+    if fixed_ep or fixed_xp:
+        print(f"[固定値（json 確定値＝全試行に適用）] entry={fixed_ep} / exit={fixed_xp}")
+    # ★件数/日の下限ゲート（2026-07-25 まこさん指摘「段2 の目標を段3 の検証条件に入れるべき」）:
+    #   json の logics[].params.search_min_per_day（値の確定はまこさん・null=ゲートなし）。
+    #   下限未満の試行は棄却＝net だけを見て件数極小へ逃げ込む形（pos_min 0.82 事案）を探索空間から締め出す。
+    min_per_day = lg.get("params", {}).get("search_min_per_day")
+    if min_per_day is not None:
+        min_per_day = float(min_per_day)
+        print(f"[件数ゲート] 値決め窓の件数/日 < {min_per_day} の試行は棄却（出典＝json params.search_min_per_day・段2 最低ラインからの割り付け＝まこさん確定値）")
+    else:
+        print("[件数ゲート] なし（json params.search_min_per_day が未設定＝値はまこさんが決める）")
     logf = open(a.log or f"engine_search_e38_{a.logic}.log", "w", encoding="utf-8")
     results = []
 
     def obj(trial):
         pr = _suggest(trial, space)
-        ep = {k: v for k, v in pr.items() if k not in exit_keys}
-        xp = {k: v for k, v in pr.items() if k in exit_keys}
+        ep = {**fixed_ep, **{k: v for k, v in pr.items() if k not in exit_keys}}
+        xp = {**fixed_xp, **{k: v for k, v in pr.items() if k in exit_keys}}
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             res = _run_window(df_s, lg, ep, xp, SEARCH_START, SEARCH_END)
@@ -148,6 +171,8 @@ def main() -> None:
         logf.flush()
         if trial.number % 20 == 0:
             print(f"  trial {trial.number}: net ${res['total']:+,.0f} / {res['n']}玉 / {res['per_day']:.2f}件/日 / 経過 {(time.time()-t0)/60:.1f}分", flush=True)
+        if min_per_day is not None and res["per_day"] < min_per_day:
+            return -1e9                    # 件数下限ゲート＝段2 最低ラインの割り付け（値はまこさん確定）
         return res["total"]
 
     st = optuna.create_study(direction="maximize", sampler=optuna.samplers.TPESampler(seed=a.seed))
@@ -158,8 +183,8 @@ def main() -> None:
         print(f"  #{num}: net ${res['total']:+,.0f} / {res['n']}玉 / {res['per_day']:.2f}件/日\n      {params}")
 
     bp = dict(st.best_trial.params)
-    ep = {k: v for k, v in bp.items() if k not in exit_keys}
-    xp = {k: v for k, v in bp.items() if k in exit_keys}
+    ep = {**fixed_ep, **{k: v for k, v in bp.items() if k not in exit_keys}}
+    xp = {**fixed_xp, **{k: v for k, v in bp.items() if k in exit_keys}}
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         rs = _run_window(df_s, lg, ep, xp, SEARCH_START, SEARCH_END)

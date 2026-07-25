@@ -59,6 +59,15 @@ observe_config.json で決める。走らせる前に編集して足す/減ら�
           出力の先頭に計画と同じ設定が印字される＝計画と実行を機械的に突き合わせられる。
 ③ 結果  : 末尾の「結果サマリ」節が機械集計で自動生成される＝CC の手書き要約を挟まない。
 
+Entry 候補観察（まだ玉のない新候補の層1・2026-07-25 まこさん承認）
+--------------------------------------------------------------------------
+① 計画  : python3 observe_diag.py --scene S2 --plan
+② 本走  : まこさんの OK が出てから python3 observe_diag.py --scene S2
+場面バー（例＝レンジ内で mid 以上への戻り）を母集団に、機械ラベル（Triple Barrier 型）で勝ち負けを付け、
+カタログ全体で 1次元の分離力 → 異種カテゴリ AND（2〜3条件・時間足2種以上）のコンフルエンス探索まで出す。
+場面の定義・バリア・探索条件は observe_config.json の scenes / conf_*（レンジ専用でなく場面を足せば他戦略でも使える）。
+出た組は材料まで＝値決めは層3 engine_search_e38・採否は採点窓 score.py（まこさん）。
+
 自己検査: python3 observe_diag.py --selftest
 """
 from __future__ import annotations
@@ -986,6 +995,382 @@ def _summary(all_res: dict) -> None:
     print("\n  ⚠️ 疑似シミュの機械集計＝候補の提示まで。採否は実装して score.py の採点窓で決める。")
 
 
+# ══ Entry 候補観察（--scene・2026-07-25 まこさん承認「それでOK」）═══════════
+# まだ玉のない新 Entry 候補（S2〜/L2〜）の層1 観察＝場面バーを母集団にし、機械ラベルで勝ち負けを付け、
+# カタログ全体で 1次元の分離力 → 異種カテゴリ AND のコンフルエンス探索まで出す。
+# 1軸のみ検索の失敗（確認候補の決め打ち・単一条件探索＝worklog 20260724 §25/§26）を構造で防ぐ:
+#  - 部品＝「指標×パラメータ×時間足×閾値の位置」の4軸が決まって1個（閾値は分位＝値を手で決めない）。
+#  - 組＝別カテゴリ（ボラ/トレンド/位置構造/出来高需給/ローソク）から 2〜3個＝同族の二度掛け禁止。
+#  - 時間足は1つの組に2種類以上を強制（5分×上位足の MTF コンフルエンス・§25 実測の2軸と同型）。
+#  - 閾値は前半の分布で実値化し、後半は同じ実値のまま確認（L-267）。評価は勝率の持ち上げ×件数下限（金額なし）。
+# 出た組は材料まで＝値決めは層3 engine_search_e38（探索窓）・採否は採点窓 score.py（まこさん）。
+
+SECTIONS_SCENE = [
+    "0 場面の母集団（バー数/日・素の勝率＝機械ラベル）",
+    "1 1次元の分離力（材料出しのみ＝ここでは決めない）",
+    "2 コンフルエンス探索（異種カテゴリ AND 2〜3・時間足2種以上・前半探索/後半確認）",
+    "3 結果サマリ（両半期で素の勝率超えの組だけ機械抽出・手書きなし）",
+]
+
+_SCENE_TYPES = ("pullback_short", "fade_short", "zscore_short",
+                "crash_rebound_long", "fade_long", "zscore_long",
+                "support_touch_long")   # L1 入口改良の場面（2026-07-25 まこさん承認「L1改良に進めて」）
+
+
+def _category(col: str) -> str:
+    """列名から部品カテゴリを機械分類（1つの組は別カテゴリから選ぶ＝同族の二度掛け禁止）。"""
+    base = col.split("__")[0]
+    if any(k in base for k in ("ATR%", "BB幅", "realized_vol", "Donchian幅")):
+        return "ボラ"
+    if any(k in base for k in ("volume_ratio", "OBV", "CMF", "MFI", "taker_ls", "L-S比", "CVD")):
+        return "出来高需給"
+    if any(k in base for k in ("包み足", "pinbar", "連続本数", "body比", "ヒゲ比")):
+        return "ローソク"
+    if any(k in base for k in ("close vs", "swing", "経過バー", "fib位置", "S-Rタッチ",
+                               "pivotPP", "形スコア", "zscore", "BB%b")):
+        return "位置構造"
+    return "トレンド"
+
+
+def _scene_floor(cfg) -> float:
+    """S2 の戻り幅の下限%。config が null なら e37 の手数料床 SCALP_FLOOR を実行時に解決（手打ちしない）。"""
+    if cfg.get("scene_floor_pct") is not None:
+        return float(cfg["scene_floor_pct"])
+    import e37_scalp as e37
+    return float(e37.SCALP_FLOOR) * 100.0
+
+
+def _scene_data(cfg):
+    """5分足とレンジ幾何＝e37 の計器（_load/_rg5_frames）を import 再利用（自前で再実装しない）。
+    暖機は warmup_days 日（最長指標 SMA200×日足のため・観察対象は採点窓のバーのみ）。"""
+    import e37_scalp as e37
+    p0, p1 = _resolve_period(cfg)
+    warm = (p0 - pd.Timedelta(days=int(cfg["warmup_days"]))).strftime("%Y-%m-%d")
+    df = e37._load(0, start_override=warm)
+    _z, _up, rng, res_lo, res_hi, sup_lo, sup_hi = e37._rg5_frames(df, adaptive_k=e37.V25_K)
+    ts = pd.DatetimeIndex(df["ts"])
+    bars = df.set_index(ts)[["open", "high", "low", "close", "volume"]]
+    g = {"rng": rng, "res_lo": res_lo, "res_hi": res_hi, "sup_lo": sup_lo, "sup_hi": sup_hi,
+         "dev_z": df["dev_z"].to_numpy(float) if "dev_z" in df.columns else None}
+    w = np.asarray((ts >= p0) & (ts < p1 + pd.Timedelta(days=1)))
+    return bars, g, w, p0, p1
+
+
+def _scene_mask(scene: dict, bars, g, floor_pct: float):
+    """場面バーの抽出（型は _SCENE_TYPES・パラメータは observe_config.json の scenes）。"""
+    h, l, c = bars.high.to_numpy(), bars.low.to_numpy(), bars.close.to_numpy()
+    v = bars.volume.to_numpy()
+    base = (g["rng"] & np.isfinite(g["res_hi"]) & np.isfinite(g["sup_hi"])
+            & np.isfinite(g["res_lo"]) & np.isfinite(g["sup_lo"]))
+    mid = (g["res_lo"] + g["sup_hi"]) / 2.0
+    t = scene["type"]
+    if t == "pullback_short":
+        return base & (c >= mid) & ((c - mid) / c * 100.0 >= floor_pct), mid
+    if t == "fade_short":
+        return base & (h > g["res_hi"]) & (c < g["res_hi"]), mid
+    if t == "zscore_short":
+        if g["dev_z"] is None:
+            raise SystemExit("[場面] dev_z 列が無い（e37._load の指標に依存）")
+        return base & (g["dev_z"] >= float(scene["z_th"])), mid
+    if t == "crash_rebound_long":
+        ret = (bars.close / bars.close.shift(int(scene["k_bars"])) - 1) * 100.0
+        vol_avg = bars.volume.rolling(20).mean()
+        return (base & (ret.to_numpy() <= -float(scene["drop_pct"]))
+                & (v >= float(scene["vol_mult"]) * vol_avg.to_numpy())), mid
+    if t == "fade_long":
+        return base & (l < g["sup_lo"]) & (c > g["sup_lo"]), mid
+    if t == "zscore_long":
+        if g["dev_z"] is None:
+            raise SystemExit("[場面] dev_z 列が無い（e37._load の指標に依存）")
+        return base & (g["dev_z"] <= -float(scene["z_th"])), mid
+    if t == "support_touch_long":
+        # L1 の入口幾何そのまま（e38_logic_parts support_fresh_touch＝low≤sup_hi ∩ close>sup_lo）
+        touch = base & (l <= g["sup_hi"]) & (c > g["sup_lo"])
+        m = touch
+        if scene.get("fresh_only"):                        # 帯に入った最初のバー＝1バー1発注（実装と同じ）
+            prev = np.concatenate([[False], touch[:-1]])
+            m = touch & ~prev
+        if scene.get("flat_up_only"):                      # 現行 L1 と同じ flat_up 型限定（down=落ちるナイフ回避）
+            isdn = np.isfinite(g["res_lo"]) & (g["res_lo"] > c * 1.005)
+            m = m & ~isdn
+        return m, mid
+    raise SystemExit(f"[設定] 知らない場面型: {t}（使えるのは {_SCENE_TYPES}）")
+
+
+def _scene_labels(sel_idx, bars, g, side: str, lose_w: float, tmax: int, mid,
+                  win_target: str = "mid", win_pct: float | None = None):
+    """機械ラベル（Triple Barrier 型）。entry＝次バー open（場面はバー確定で判定→建てるのは次のバー）。
+    勝ち＝win_target="mid" なら場面バー時点の mid に先着／"pct" なら建値から win_pct%（床×k・
+    手数料負けしない幅＝k≥1 を呼び出し側の番人で保証・2026-07-25 まこさん OK）の順行に先着。
+    負け＝災害線（SHORT: res_hi+w×レジ帯厚・LONG: sup_lo−w×サポ帯厚）に先着 or 時間切れ。
+    同バーで両方に到達した時は 負け優先（保守）。"""
+    hi, lo = bars.high.to_numpy(), bars.low.to_numpy()
+    op = bars.open.to_numpy()
+    n = len(bars)
+    res_hi, res_lo = g["res_hi"], g["res_lo"]
+    sup_lo, sup_hi = g["sup_lo"], g["sup_hi"]
+    wins, oks = [], []
+    for i in sel_idx:
+        entry_i = i + 1                       # 次バー open で建てる（同バー約定＝未来参照を避ける）
+        if entry_i >= n:
+            wins.append(False); oks.append(False); continue
+        if win_target == "pct":               # 浅い戻り＝スキャル幾何（実装の浅TP型と同じ）
+            ep = op[entry_i]
+            wt = ep * (1 - win_pct / 100.0) if side == "SHORT" else ep * (1 + win_pct / 100.0)
+        else:
+            wt = mid[i]
+        lb = (res_hi[i] + lose_w * (res_hi[i] - res_lo[i]) if side == "SHORT"
+              else sup_lo[i] - lose_w * (sup_hi[i] - sup_lo[i]))
+        end = min(i + int(tmax), n - 1)
+        win = False
+        for j in range(entry_i, end + 1):
+            lose_hit = (hi[j] >= lb) if side == "SHORT" else (lo[j] <= lb)
+            win_hit = (lo[j] <= wt) if side == "SHORT" else (hi[j] >= wt)
+            if lose_hit:                      # 同バー両到達は 負け優先（保守）
+                win = False; break
+            if win_hit:
+                win = True; break
+        wins.append(win); oks.append(True)    # 時間切れ＝負け（取れなかった＝機会として失敗）
+    return np.asarray(wins, bool), np.asarray(oks, bool)
+
+
+def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2):
+    """異種カテゴリ AND のコンフルエンス探索。閾値は前半の分布で実値化（_th_first）→後半は同じ実値で確認。
+    評価＝勝率の持ち上げ（pt）を最大化・成立バー/日 conf_min_bars_per_day 未満はゲートで棄却（金額なし）。"""
+    try:
+        import optuna
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+    except Exception as e:
+        _skip(f"optuna が使えない: {e}"); return []
+    from itertools import combinations
+    cats: dict[str, list] = {}
+    for c in feat_cols:
+        cats.setdefault(_category(c), []).append(c)
+    combos = ["+".join(x) for r in range(int(cfg["conf_and_min"]), int(cfg["conf_and_max"]) + 1)
+              for x in combinations(sorted(cats), r)]
+    if not combos:
+        _skip("カテゴリが足りない"); return []
+    win = sdf["win"].to_numpy(bool)
+    ev = {c: pd.to_numeric(sdf[c], errors="coerce").to_numpy(float) for c in feat_cols}
+    min_day = float(cfg["conf_min_bars_per_day"])
+
+    def _th_first(col, q, hi_side):
+        v = ev[col][first]
+        v = v[np.isfinite(v)]
+        return float(np.quantile(v, q if hi_side else round(1.0 - q, 4))) if len(v) else np.nan
+
+    def _mask(conds):
+        m = np.ones(len(sdf), bool)
+        for col, _q, hi_side, th in conds:
+            v = ev[col]
+            m &= np.isfinite(v) & ((v >= th) if hi_side else (v <= th))
+        return m
+
+    def _eval(conds, half, days):
+        m = _mask(conds) & half
+        n = int(m.sum())
+        wr = float(win[m].mean() * 100) if n else np.nan
+        return wr, n, n / max(days, 1)
+
+    def _conds_of(params):
+        conds, tfs = [], set()
+        for cat in params["cats"].split("+"):
+            col = cats[cat][params[f"col_{cat}"]]
+            th = _th_first(col, params[f"q_{cat}"], params[f"hi_{cat}"])
+            conds.append((col, params[f"q_{cat}"], params[f"hi_{cat}"], th))
+            tfs.add(col.split("__")[1] if "__" in col else "外部")
+        return conds, tfs
+
+    def objective(t):
+        combo = t.suggest_categorical("cats", combos)
+        for cat in combo.split("+"):
+            t.suggest_int(f"col_{cat}", 0, len(cats[cat]) - 1)
+            t.suggest_categorical(f"q_{cat}", cfg["quantiles"])
+            t.suggest_categorical(f"hi_{cat}", [True, False])
+        conds, tfs = _conds_of(t.params)
+        if any(not np.isfinite(th) for *_x, th in conds):
+            return -1e9
+        if len(tfs) < 2:
+            return -1e9                       # 時間足2種以上を強制（MTF コンフルエンス）
+        wr, _n, per_day = _eval(conds, first, d1)
+        if per_day < min_day or not np.isfinite(wr):
+            return -1e9                       # 件数下限＝conf_min_bars_per_day（勝率だけ最大化の逃げ禁止）
+        return wr - base1
+    st = optuna.create_study(direction="maximize", sampler=optuna.samplers.TPESampler(seed=42))
+    st.optimize(objective, n_trials=int(cfg["conf_trials"]), show_progress_bar=False)
+    rows, seen = [], set()
+    for tr_ in sorted(st.trials, key=lambda z: -(z.value if z.value is not None else -1e9)):
+        if tr_.value is None or tr_.value <= -1e8:
+            continue
+        try:
+            conds, _tfs = _conds_of(tr_.params)
+        except Exception:
+            continue
+        key = tuple((c, q, h) for c, q, h, _ in conds)
+        if key in seen:
+            continue
+        seen.add(key)
+        w1, _n1, pd1_ = _eval(conds, first, d1)
+        w2, _n2, pd2_ = _eval(conds, second, d2)
+        rows.append({"条件の組": " AND ".join(
+            f"{c} {'≥' if h else '≤'}q{int(q * 100) if h else int(round((1 - q) * 100))}[{th:.4g}]"
+            for c, q, h, th in conds),
+            "前半_勝率%": round(w1, 1), "前半_バー/日": round(pd1_, 1),
+            "後半_勝率%": round(w2, 1), "後半_バー/日": round(pd2_, 1)})
+        if len(rows) >= 10:
+            break
+    return rows
+
+
+def _scene_header(scene_id, scene, cfg, floor, p0, p1, planning: bool):
+    print("#" * 100)
+    print(f"# Entry 候補観察 {'検証計画（自動生成・本走しない）' if planning else '本走'}  場面 {scene_id}")
+    print(f"# 期間: {p0.date()} 〜 {p1.date()}（採点窓の範囲内のみ・periods.py）／ 指標の暖機 {cfg['warmup_days']} 日")
+    print(f"# 場面定義: type={scene['type']} / side={scene['side']} / パラメータ={ {k: v for k, v in scene.items() if k not in ('type', 'side')} }")
+    print(f"# 戻り幅の床: {floor:.3f}%（{'config 指定' if cfg.get('scene_floor_pct') is not None else 'e37_scalp.SCALP_FLOOR から解決'}）")
+    if scene.get("win_target", "mid") == "pct":
+        k = float(scene.get("win_pct_k", 0))
+        print(f"# 機械ラベル: entry=場面バーの次バー open ／ 勝ち=建値から {k:.1f}×床＝{k * floor:.3f}% の順行に先着"
+              f"（浅い戻り＝スキャル幾何・maker往復 0.028% の約{k * floor / 0.028:.0f}倍＝手数料負けしない幅）／")
+    else:
+        print("# 機械ラベル: entry=場面バーの次バー open ／ 勝ち=場面バー時点の mid に先着 ／")
+    print("#            負け=災害線（SHORT: res_hi+w×レジ帯厚・LONG: sup_lo−w×サポ帯厚）に先着 or 時間切れ（負け扱い）")
+    print("#            同バー両到達は負け優先（保守）。レンジ幾何は e37 の計器（RG-v5＋V25_K）を import 再利用。")
+    print(f"# コンフルエンス探索: AND {cfg['conf_and_min']}〜{cfg['conf_and_max']} 条件・異種カテゴリのみ・時間足2種以上・"
+          f"件数下限 {cfg['conf_min_bars_per_day']} バー/日・試行 {cfg['conf_trials']}")
+    print(f"# 閾値の候補（分位）: {cfg['quantiles']}（上下側・実値化は前半の分布のみ＝後半で選び直さない）")
+    print(f"# 設定ファイル: {cfg['_source']}（場面・バリア・探索条件はここを編集して再生成）")
+    print("# ⚠️ 疑似シミュ＝スロット・手数料・約定を含まない。出た組は材料まで＝値決めは層3・採否は採点窓 score.py。")
+    print("#" * 100)
+
+
+def plan_scene(scene_id: str, config_path: str | None = None) -> None:
+    """Entry 候補観察の検証計画（自動生成）＝場面の定義・母集団の件数・探索条件を実値から印字して
+    まこさんに提出する1枚。ラベル付け・分離力・探索は本走でだけ回す（計画に観察結果を混ぜない）。"""
+    cfg = load_config(config_path)
+    scene = (cfg.get("scenes") or {}).get(scene_id)
+    if not scene:
+        raise SystemExit(f"[設定] scenes に {scene_id} が無い（observe_config.json・定義済み {list((cfg.get('scenes') or {}))}）")
+    floor = _scene_floor(cfg)
+    bars, g, w, p0, p1 = _scene_data(cfg)
+    mask_all, _mid = _scene_mask(scene, bars, g, floor)
+    sel = np.where(mask_all & w)[0]
+    days = max((p1 - p0).days + 1, 1)
+    _scene_header(scene_id, scene, cfg, floor, p0, p1, planning=True)
+    times = bars.index[sel]
+    half_t = times[len(times) // 2] if len(times) else None
+    print(f"\n  場面バー: {len(sel)} バー（{len(sel) / days:.1f} バー/日）")
+    if half_t is not None:
+        n1 = int((times <= half_t).sum())
+        print(f"  探索の分割: 前半 {p0.date()}〜{half_t.date()} {n1} バー＝探索 ／ 後半 〜{p1.date()} {len(sel) - n1} バー＝同じ実値で確認（L-267）")
+    cat = build_catalog(cfg)
+    names_all = [n for n, _f, _d in cat]
+    print(f"\n  ── 観察に当てる指標カタログ（全 {len(cat)} 種 × 足 {cfg['timeframes']} = {len(cat) * len(cfg['timeframes'])} 列 ＋ 需給 {list(_DEMAND_FILES)}・減らせない）──")
+    for i in range(0, len(names_all), 5):
+        print("     " + " | ".join(names_all[i:i + 5]))
+    bycat: dict[str, int] = {}
+    for tf in cfg["timeframes"]:
+        for nme in names_all:
+            bycat[_category(f"{nme}__{tf}")] = bycat.get(_category(f"{nme}__{tf}"), 0) + 1
+    print(f"\n  ── 部品のカテゴリ内訳（1つの組は別カテゴリから選ぶ＝同族の二度掛け禁止）──")
+    for k, v in sorted(bycat.items()):
+        print(f"     {k}: {v} 列")
+    print("\n  ── 出す節（固定・減らせない）──")
+    for sct in SECTIONS_SCENE:
+        print(f"     {sct}")
+    print("\n  ⚠️ この計画の外は検証しない。場面・バリア・探索条件を変えるのは observe_config.json を編集して計画を再生成してから。")
+    print("  ⚠️ まこさんの OK が出たら本走する。本走の先頭に同じ設定が印字される＝計画との差分は突き合わせで見える。")
+
+
+def observe_scene(scene_id: str, config_path: str | None = None) -> None:
+    cfg = load_config(config_path)
+    scene = (cfg.get("scenes") or {}).get(scene_id)
+    if not scene:
+        raise SystemExit(f"[設定] scenes に {scene_id} が無い（observe_config.json）")
+    floor = _scene_floor(cfg)
+    bars, g, w, p0, p1 = _scene_data(cfg)
+    mask_all, mid = _scene_mask(scene, bars, g, floor)
+    sel = np.where(mask_all & w)[0]
+    days = max((p1 - p0).days + 1, 1)
+    _scene_header(scene_id, scene, cfg, floor, p0, p1, planning=False)
+    if len(sel) < cfg["min_n"]:
+        raise SystemExit(f"[場面] 場面バーが {len(sel)} 行（min_n {cfg['min_n']} 未満＝観察しない）")
+
+    print("\n[指標を計算中...]", flush=True)
+    feat, meta = build_features(bars, cfg)
+    dem, cov = load_demand(bars.index)
+    feat = pd.concat([feat, dem], axis=1)
+    ng = [k for k, v in meta.items() if v[0] != "ok"]
+    print(f"  指標 {feat.shape[1]} 列を用意（計算できず {len(ng)} 列）")
+    print("  需給データの被覆:")
+    for k, v in cov.items():
+        print(f"     {k}: {v}")
+
+    win_target = scene.get("win_target", "mid")
+    win_pct = None
+    if win_target == "pct":
+        k = float(scene.get("win_pct_k", 0))
+        if k < 1.0:                            # 床割れの勝ち定義＝手数料負けの動きを「勝ち」と数える設計を物理禁止
+            raise SystemExit(f"[設定] win_pct_k が 1.0 未満: {k}（勝ちの幅は床×1以上＝手数料負けしない幅）")
+        win_pct = k * floor
+    wins, oks = _scene_labels(sel, bars, g, scene["side"], float(scene["lose_barrier_w"]),
+                              int(scene["tmax_bars"]), mid, win_target, win_pct)
+    sel, wins = sel[oks], wins[oks]
+    times = bars.index[sel]
+    sdf = feat.reindex(times).copy()   # 場面バーの確定値（entry は次バー open＝当バー確定値は因果 OK・H2）
+    sdf["win"] = wins
+    sdf.reset_index(drop=True, inplace=True)
+    half_t = times[len(times) // 2]
+    first = np.asarray(times <= half_t)
+    second = ~first
+    d1 = max((half_t - times.min()).days + 1, 1)
+    d2 = max((times.max() - half_t).days + 1, 1)
+    base_all = float(wins.mean() * 100)
+    base1 = float(wins[first].mean() * 100) if first.any() else np.nan
+    base2 = float(wins[second].mean() * 100) if second.any() else np.nan
+
+    _h(SECTIONS_SCENE[0])
+    print(f"  場面バー {len(sel)}（{len(sel) / days:.1f} バー/日）／ 素の勝率 {base_all:.1f}%")
+    print(f"  前半 {times.min().date()}〜{half_t.date()}: {int(first.sum())} バー・素の勝率 {base1:.1f}%")
+    print(f"  後半 〜{times.max().date()}: {int(second.sum())} バー・素の勝率 {base2:.1f}%")
+    # 型内訳（down=下落系レンジ / flat_up=平坦上昇系・実装と同じ gap 0.5% 判定・型を混ぜた場面でも内訳が見える）
+    isdn_all = np.isfinite(g["res_lo"]) & (g["res_lo"] > bars.close.to_numpy() * 1.005)
+    isdn_sel = isdn_all[sel]
+    for ty, msk in [("down", isdn_sel), ("flat_up", ~isdn_sel)]:
+        n_ty = int(msk.sum())
+        wr_ty = float(wins[msk].mean() * 100) if n_ty else float("nan")
+        print(f"  型内訳 {ty}: {n_ty} バー（{n_ty / days:.1f} バー/日）・素の勝率 {wr_ty:.1f}%")
+    print("  ＝素で五分なら確認条件が必須という判定材料。時間切れは負け扱い（取れなかった機会）。")
+
+    _h(SECTIONS_SCENE[1])
+    fcols = [c for c in feat.columns if sdf[c].notna().sum() >= max(int(len(sdf) * 0.5), cfg["min_n"])]
+    r = rank_separation(sdf, sdf["win"].astype(bool), fcols, TAUTOLOGY_COLS, top=20)
+    print(r.to_string(index=False) if len(r) else "     分離する特徴なし")
+    print("  ＝1個ずつの材料。ここでは決めない（前回の1軸検索の失敗を繰り返さない）。")
+
+    _h(SECTIONS_SCENE[2])
+    rows = _conf_search(sdf, fcols, cfg, first, second, base1, base2, d1, d2)
+    df_rows = pd.DataFrame(rows)
+    if len(df_rows):
+        print("  前半で探索した上位10（重複除去後・後半は同じ実値をそのまま当てた確認）")
+        print(f"  素の勝率: 前半 {base1:.1f}% / 後半 {base2:.1f}%")
+        print(df_rows.to_string(index=False))
+    else:
+        _skip("候補が1件も残らなかった")
+
+    _h(SECTIONS_SCENE[3])
+    if len(df_rows):
+        both = df_rows[(df_rows["前半_勝率%"] > base1) & (df_rows["後半_勝率%"] > base2)]
+        if len(both):
+            print(f"  両半期で素の勝率超え: {len(both)} 組")
+            print(both.to_string(index=False))
+        else:
+            print("  両半期で素の勝率超え 0 組 ＝ 前半に合わせただけの疑い（候補にしない）")
+    else:
+        print("  候補 0 組")
+    print("\n  ⚠️ 疑似シミュの機械集計＝候補の材料まで。値決めは層3 engine_search_e38・採否は採点窓 score.py（まこさん）。")
+
+
 def plan(trades_csv: str, bars_csv: str, title: str = "", config_path: str | None = None) -> None:
     """検証計画の自動生成＝検証する内容・項目・条件を実値から出す1枚。検証する前にまこさんへ提出する。
     CC は計画を手書きしない。足す/減らすは observe_config.json を編集して再生成する。
@@ -1172,6 +1557,41 @@ def selftest() -> None:
     for need in SECTIONS:
         if need not in src:
             ng.append(f"節が実装されていない: {need}")
+    # ★Entry 候補観察（--scene・2026-07-25 まこさん承認）＝場面定義とコンフルエンス探索の番人
+    sc_cfg = cfg.get("scenes") or {}
+    if not sc_cfg:
+        ng.append("scenes が config に無い（Entry 候補観察の場面定義）")
+    for sid, s in sc_cfg.items():
+        if s.get("type") not in _SCENE_TYPES:
+            ng.append(f"scenes {sid} の型 {s.get('type')} が未実装（使えるのは {_SCENE_TYPES}）")
+        if s.get("side") not in ("SHORT", "LONG"):
+            ng.append(f"scenes {sid} の side が不正: {s.get('side')}")
+    for key in ("conf_and_min", "conf_and_max", "conf_min_bars_per_day", "conf_trials"):
+        if key not in cfg:
+            ng.append(f"{key} が config に無い（コンフルエンス探索の条件）")
+    src_conf = inspect.getsource(_conf_search)
+    if 'suggest_categorical("cats"' not in src_conf:
+        ng.append("コンフルエンス探索が異種カテゴリの組から選んでいない（同族の二度掛けを弾けない）")
+    if "len(tfs) < 2" not in src_conf:
+        ng.append("時間足2種以上の強制が無い（MTF コンフルエンスにならない）")
+    if "_th_first" not in src_conf:
+        ng.append("閾値が前半の分布から実値化されていない（後半で選び直しの疑い・L-267）")
+    if "min_day" not in src_conf:
+        ng.append("件数下限のゲートが無い（勝率だけ最大化して件数を消す逃げを弾けない）")
+    src_lab = inspect.getsource(_scene_labels)
+    if "i + 1" not in src_lab:
+        ng.append("機械ラベルの entry が次バーになっていない（同バー約定＝未来参照の疑い・H2）")
+    if "負け優先" not in src_lab:
+        ng.append("同バー両到達の負け優先（保守）が無い")
+    if "win_target" not in src_lab:
+        ng.append("勝ち条件 win_target（mid/pct）の分岐が _scene_labels に無い")
+    if "win_pct_k が 1.0 未満" not in inspect.getsource(observe_scene):
+        ng.append("pct ラベルの床割れ番人（win_pct_k≥1）が observe_scene に無い（手数料負けの動きを勝ちと数えてしまう）")
+    if "_scene_data" not in inspect.getsource(observe_scene) or "_resolve_period" not in inspect.getsource(_scene_data):
+        ng.append("場面観察の期間が採点窓クランプ（_resolve_period）を通っていない")
+    for need in SECTIONS_SCENE:
+        if need not in src:
+            ng.append(f"場面観察の節が実装されていない: {need}")
     print("=" * 80)
     print("observe_diag 自己検査")
     print("=" * 80)
@@ -1194,14 +1614,26 @@ if __name__ == "__main__":
     else:
         import argparse
         ap = argparse.ArgumentParser(description="建玉の観察と探索（read-only 診断・売買記録CSVを書かない）")
-        ap.add_argument("trades_csv", help="実エンジンが出した売買記録CSV")
-        ap.add_argument("bars_csv", help="5分足CSV（Binance Spot 正本）")
+        ap.add_argument("trades_csv", nargs="?", default=None,
+                        help="実エンジンが出した売買記録CSV（--scene の時は不要）")
+        ap.add_argument("bars_csv", nargs="?", default=None,
+                        help="5分足CSV（Binance Spot 正本・--scene の時は不要＝e37 の計器で読む）")
+        ap.add_argument("--scene", default=None,
+                        help="Entry 候補観察＝場面ID（observe_config.json の scenes・例 S2＝まだ玉のない新候補の層1）")
         ap.add_argument("--plan", action="store_true",
                         help="検証計画だけを自動生成して印字（本走しない・まこさんへ提出する1枚）")
         ap.add_argument("--config", default=None, help="observe_config.json のパス（既定は同ディレクトリ）")
         ap.add_argument("--title", default="")
         a = ap.parse_args()
-        if a.plan:
-            plan(a.trades_csv, a.bars_csv, a.title, a.config)
+        if a.scene:
+            if a.plan:
+                plan_scene(a.scene, a.config)
+            else:
+                observe_scene(a.scene, a.config)
         else:
-            observe(a.trades_csv, a.bars_csv, a.title, a.config)
+            if not (a.trades_csv and a.bars_csv):
+                ap.error("trades_csv と bars_csv が必要（--scene の時だけ省略可）")
+            if a.plan:
+                plan(a.trades_csv, a.bars_csv, a.title, a.config)
+            else:
+                observe(a.trades_csv, a.bars_csv, a.title, a.config)

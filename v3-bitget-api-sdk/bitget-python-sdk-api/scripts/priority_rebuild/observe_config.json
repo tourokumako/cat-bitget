@@ -214,6 +214,93 @@
   ]
  ],
  "_指標パラメータ": "上は各指標の期間。足すとその期間ぶんの列が増える。全部 timeframes と掛け算になる。",
+ "scenes": {
+  "L1": {
+   "type": "support_touch_long",
+   "side": "LONG",
+   "fresh_only": true,
+   "flat_up_only": true,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "S2": {
+   "type": "pullback_short",
+   "side": "SHORT",
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 48
+  },
+  "S3": {
+   "type": "fade_short",
+   "side": "SHORT",
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 48
+  },
+  "S4": {
+   "type": "zscore_short",
+   "side": "SHORT",
+   "z_th": 2.0,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 48
+  },
+  "L2": {
+   "type": "crash_rebound_long",
+   "side": "LONG",
+   "k_bars": 12,
+   "drop_pct": 1.0,
+   "vol_mult": 1.5,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "L3": {
+   "type": "fade_long",
+   "side": "LONG",
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 48
+  },
+  "L4": {
+   "type": "zscore_long",
+   "side": "LONG",
+   "z_th": 2.0,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 48
+  },
+  "L1w": {
+   "type": "support_touch_long",
+   "side": "LONG",
+   "fresh_only": false,
+   "flat_up_only": true,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "L1a": {
+   "type": "support_touch_long",
+   "side": "LONG",
+   "fresh_only": false,
+   "flat_up_only": false,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "L1ap": {
+   "type": "support_touch_long",
+   "side": "LONG",
+   "fresh_only": false,
+   "flat_up_only": false,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12,
+   "win_target": "pct",
+   "win_pct_k": 2.0
+  }
+ },
+ "_scenes": "Entry 候補観察（--scene）の場面定義。type は道具側の実装済み場面型・パラメータはここで差し替える（レンジ専用でなく場面を足せば他戦略でも使える）。勝ち=場面バー時点の mid 到達／負け=災害線（SHORT: res_hi+w×レジ帯厚・LONG: sup_lo−w×サポ帯厚）到達 or tmax_bars 時間切れ（時間切れは負け扱い）。z_th 2.0=BB2σ相当の標準値・L2 の k_bars/drop_pct/vol_mult は段0 L2 定義由来の仮置き＝--plan でまこさん確認。L2 の tmax_bars は 48→12（=1時間・2026-07-25 スキャル概念整合＝判定窓も役割の保有帯に合わせる・S2 の 48 は当時の値のまま残置=歴史）。",
+ "scene_floor_pct": null,
+ "_scene_floor_pct": "戻り幅の下限%（S2 の場面条件）。null なら e37_scalp.SCALP_FLOOR（手数料床）を実行時に解決して印字。",
+ "conf_and_min": 2,
+ "conf_and_max": 3,
+ "_conf_and": "コンフルエンス探索の AND 条件数の範囲（2〜3・異種カテゴリから選ぶ＝同族の二度掛け禁止）。",
+ "conf_min_bars_per_day": 12.0,
+ "_conf_min_bars_per_day": "組の成立バー/日の下限＝これ未満の組は勝率が良くても棄却（条件を厳しくして件数を消す逃げの禁止・段2 最低ライン9.8件/日と観察の上限性を踏まえた仮置き＝--plan で確認）。",
+ "conf_trials": 500,
+ "_conf_trials": "コンフルエンス探索の Optuna 試行回数。",
  "warmup_days": 250,
  "_warmup_days": "指標の暖機。period の開始より何日前から5分足を読むか。最長の指標（SMA200×日足=200日）より長くする。観察対象の玉は period で決まる＝暖機は観察を狭めない。",
  "episode_gap_h": 6.0,
