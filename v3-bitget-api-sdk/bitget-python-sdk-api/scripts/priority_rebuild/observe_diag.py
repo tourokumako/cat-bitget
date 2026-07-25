@@ -1,6 +1,17 @@
 #!/usr/bin/env python3
 """observe_diag.py — 建玉の観察と探索を、決まった型で機械が全部出す道具（read-only 診断）
 
+この道具の目的（まこさん確定 2026-07-26・逐語・ここが正本）
+--------------------------------------------------------------------------
+・新規で Entry/Exit ロジックを構築する際に、
+  設定した戦略や条件に沿った、指標、閾値、時間足、パラメータの組み合わせロジックを見つける
+・既存 Entry/Exit に対しては、目標達成するために改善すべき点を見つける
+
+経緯: この目的がどこにも書かれていなかったため、何ができて何ができないかが誰にも整理できず、
+  出力が「取り逃しがある」のような目標と無関係な当たり前の指摘に留まっていた
+  （まこさん「次へつなげるためになにをすべきかよくわからない」2026-07-26）。
+  以後、この道具に足す機能は上の2つの目的に紐づける。紐づかない機能は足さない。
+
 実装しているフロー（まこさん指定・この3段を全部やる）
 --------------------------------------------------------------------------
 1. すべての Exit ごとに、下の分岐・視点で観察する
@@ -72,6 +83,9 @@ Entry 候補観察（まだ玉のない新候補の層1・2026-07-25 まこさ�
 """
 from __future__ import annotations
 
+import datetime
+import pathlib
+import re
 import sys
 import warnings
 
@@ -80,21 +94,27 @@ import pandas as pd
 
 # 検証期間は periods.py が正本（H8・手打ち禁止）
 from periods import SCORE_START, SCORE_END   # noqa: E402
+# 出力の保管は全戦略・全ツール共通の書き出し処理に委譲する（命名/archive/上書き防止・§3.1）
+import ratchet_io   # noqa: E402
 
 warnings.filterwarnings("ignore")
 
 # ══ 呼び出し側から変更できない定数 ═══════════════════════════════════════
+# フェーズの名前は「何をするか」を動詞で書く（まこさん指示 2026-07-26）。
+#   旧名は「母集団」「機構別分解」のように、読んでも何をするか分からない言葉だった。
+#   英語をそのまま日本語にした言葉と CC の造語は使わない。
 SECTIONS = [
-    "0 母集団（型 × 出口理由 × 勝敗）",
-    "1 機構別分解（TREND_CONT を どの撤退機構が切ったかで再導出・概算＝価格水準と保有時間から・実装の分岐ログではない）",
-    "2 出口ごと × 型ごと ─ エントリーの瞬間",
-    "3 出口ごと × 型ごと ─ 入ってから決済まで",
-    "4 出口ごと × 型ごと ─ 決済の瞬間",
-    "5 出口ごと × 型ごと ─ 決済の後（切った/決済した後に価格がどうなったか＝episode_gap_h 時間の追跡）",
-    "6 出口ごと × 型ごと ─ 入った前後の玉の差異",
-    "7 巻き込み（負けを切る量と勝ちを切る量）",
-    "8 ロジック構築（side×型の分岐ごとに search_modes で選んだ系統だけを probe→Optuna・前半探索/後半確認）",
-    "9 結果サマリ（自動生成＝両半期プラスの候補だけを機械抽出・手書きなし）",
+    "0 分析する玉の全体を、型と出口理由と勝ち負けで数える",
+    "1 どの撤退の仕組みが切ったかを分ける（E37 専用・概算＝価格の位置と保有時間から推定・実装のログではない）",
+    "2 建てた瞬間の相場の状態を、出口と型ごとに見る",
+    "3 保有している間の値動きを、出口と型ごとに見る",
+    "4 決済した瞬間の相場の状態を、出口と型ごとに見る",
+    "5 決済した後に価格がどうなったかを追う（episode_gap_h 時間）",
+    "6 前後の玉との違いを見る（価格差・時間間隔・レンジ内で何番目か）",
+    "7 負けを切ったときに勝ち玉に当たる量を測る",
+    "8 改善の条件の候補を探す（side×型ごとに search_modes で選んだ系統だけ・前半で探して後半で確認）",
+    "9 両方の期間でプラスの候補だけを抜き出す（機械が抽出・手書きなし）",
+    "10 この結果から次に何をすべきかを出す（戦略名を見ず、売買記録の共通列だけを使う）",
 ]
 # 探索モードの定義＝「どのロジックに対して・どの値の候補から最適を検証するか」（計画と本走の両方に印字）
 MODE_INFO = {
@@ -619,6 +639,10 @@ def observe(trades_csv: str, bars_csv: str, title: str = "", config_path: str | 
         all_res[s] = _one_side(sub.copy(), bars, feat, dir_map, s, cfg) or []
 
     _summary(all_res)
+
+    _h(SECTIONS[10])                       # 節10 判定＝この結果はどうなのかを機械が出す（手書き判定を挟まない）
+    verdict(tr_all)
+
     print("\n" + "#" * 100)
     print("# ⚠️ 疑似シミュ。スロット再回転（L-330）を再現していない＝実エンジンより良く出る。")
     print("#   采否は実装して score.py の採点窓で決める。")
@@ -1006,10 +1030,10 @@ def _summary(all_res: dict) -> None:
 # 出た組は材料まで＝値決めは層3 engine_search_e38（探索窓）・採否は採点窓 score.py（まこさん）。
 
 SECTIONS_SCENE = [
-    "0 場面の母集団（バー数/日・素の勝率＝機械ラベル）",
-    "1 1次元の分離力（材料出しのみ＝ここでは決めない）",
-    "2 コンフルエンス探索（異種カテゴリ AND 2〜3・時間足2種以上・前半探索/後半確認）",
-    "3 結果サマリ（両半期で素の勝率超えの組だけ機械抽出・手書きなし）",
+    "0 その場面が1日に何回あるかと、条件なしの勝ち負け・負けの中身・概算の期待値を数える",
+    "1 指標1つずつで勝ち負けがどれだけ分かれるかを順位づける（材料出しのみ＝ここでは決めない）",
+    "2 種類の違う指標を2〜3個重ねて、勝率が上がる組を探す（時間足2種以上・前半で探して後半で確認）",
+    "3 両方の期間で勝率も期待値もプラスの組だけを抜き出す（機械が抽出・手書きなし）",
 ]
 
 _SCENE_TYPES = ("pullback_short", "fade_short", "zscore_short",
@@ -1103,19 +1127,28 @@ def _scene_labels(sel_idx, bars, g, side: str, lose_w: float, tmax: int, mid,
     勝ち＝win_target="mid" なら場面バー時点の mid に先着／"pct" なら建値から win_pct%（床×k・
     手数料負けしない幅＝k≥1 を呼び出し側の番人で保証・2026-07-25 まこさん OK）の順行に先着。
     負け＝災害線（SHORT: res_hi+w×レジ帯厚・LONG: sup_lo−w×サポ帯厚）に先着 or 時間切れ。
-    同バーで両方に到達した時は 負け優先（保守）。"""
+    同バーで両方に到達した時は 負け優先（保守）。
+
+    ★不利側の測定（2026-07-26 まこさん OK・「観察器が有利側しか測っていない」の是正）:
+      勝率だけでは、小さい負けと大きい負けが同じ1件になる（L1ap 勝率62%→実エンジン −$70 の乖離の正体）。
+      そこで勝ち負けの判定式は1文字も変えず、下の3つを「追加で」返す（既存の wins/oks は不変）:
+        res_pct  決着時の損益幅%（符号つき）＝勝ち:+勝ち幅／災害線:−災害線までの幅／時間切れ:終値までの実現幅
+        mae_pct  保有中の最大逆行幅%（0以上・勝ち玉がどこまで踏まれたかも見える）
+        kinds    決着の種類（勝ち／災害線／時間切れ）＝負けの中身を2つに分ける
+      これで 概算の期待値（平均 res_pct − 手数料床）が出せる＝有利側だけの表示に戻れなくする。"""
     hi, lo = bars.high.to_numpy(), bars.low.to_numpy()
-    op = bars.open.to_numpy()
+    op, cl = bars.open.to_numpy(), bars.close.to_numpy()
     n = len(bars)
     res_hi, res_lo = g["res_hi"], g["res_lo"]
     sup_lo, sup_hi = g["sup_lo"], g["sup_hi"]
-    wins, oks = [], []
+    wins, oks, res_pct, mae_pct, kinds = [], [], [], [], []
     for i in sel_idx:
         entry_i = i + 1                       # 次バー open で建てる（同バー約定＝未来参照を避ける）
         if entry_i >= n:
-            wins.append(False); oks.append(False); continue
+            wins.append(False); oks.append(False)
+            res_pct.append(np.nan); mae_pct.append(np.nan); kinds.append(""); continue
+        ep = op[entry_i]
         if win_target == "pct":               # 浅い戻り＝スキャル幾何（実装の浅TP型と同じ）
-            ep = op[entry_i]
             wt = ep * (1 - win_pct / 100.0) if side == "SHORT" else ep * (1 + win_pct / 100.0)
         else:
             wt = mid[i]
@@ -1123,20 +1156,33 @@ def _scene_labels(sel_idx, bars, g, side: str, lose_w: float, tmax: int, mid,
               else sup_lo[i] - lose_w * (sup_hi[i] - sup_lo[i]))
         end = min(i + int(tmax), n - 1)
         win = False
+        kind, worst, j_end = "時間切れ", 0.0, end
         for j in range(entry_i, end + 1):
+            # 不利側の最大到達（SHORT は上ヒゲ・LONG は下ヒゲ）＝順行と対で持つ（片側だけを出さない）
+            adv = ((hi[j] - ep) if side == "SHORT" else (ep - lo[j])) / ep * 100.0
+            if adv > worst:
+                worst = adv
             lose_hit = (hi[j] >= lb) if side == "SHORT" else (lo[j] <= lb)
             win_hit = (lo[j] <= wt) if side == "SHORT" else (hi[j] >= wt)
             if lose_hit:                      # 同バー両到達は 負け優先（保守）
-                win = False; break
+                win = False; kind = "災害線"; j_end = j; break
             if win_hit:
-                win = True; break
+                win = True; kind = "勝ち"; j_end = j; break
+        px = wt if kind == "勝ち" else (lb if kind == "災害線" else cl[j_end])
+        r = ((ep - px) if side == "SHORT" else (px - ep)) / ep * 100.0
         wins.append(win); oks.append(True)    # 時間切れ＝負け（取れなかった＝機会として失敗）
-    return np.asarray(wins, bool), np.asarray(oks, bool)
+        res_pct.append(r); mae_pct.append(max(worst, 0.0)); kinds.append(kind)
+    return (np.asarray(wins, bool), np.asarray(oks, bool), np.asarray(res_pct, float),
+            np.asarray(mae_pct, float), np.asarray(kinds, object))
 
 
-def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2):
+def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2, floor):
     """異種カテゴリ AND のコンフルエンス探索。閾値は前半の分布で実値化（_th_first）→後半は同じ実値で確認。
-    評価＝勝率の持ち上げ（pt）を最大化・成立バー/日 conf_min_bars_per_day 未満はゲートで棄却（金額なし）。"""
+    評価＝勝率の持ち上げ（pt）を最大化・成立バー/日 conf_min_bars_per_day 未満はゲートで棄却（金額なし）。
+
+    ★不利側の併記（2026-07-26 まこさん OK）＝各組に概算期待値%（平均 決着幅 − 手数料床）を必ず並べる。
+      勝率が上がっても負けの幅が広がって期待値がマイナスの組を、表を見て弾けるようにする。
+      探索の目的関数は勝率のまま（変更は別途まこさん判断）＝ここは表示の追加。"""
     try:
         import optuna
         optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -1151,6 +1197,7 @@ def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2):
     if not combos:
         _skip("カテゴリが足りない"); return []
     win = sdf["win"].to_numpy(bool)
+    resv = pd.to_numeric(sdf["res_pct"], errors="coerce").to_numpy(float)   # 決着幅%（不利側込み）
     ev = {c: pd.to_numeric(sdf[c], errors="coerce").to_numpy(float) for c in feat_cols}
     min_day = float(cfg["conf_min_bars_per_day"])
 
@@ -1170,7 +1217,8 @@ def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2):
         m = _mask(conds) & half
         n = int(m.sum())
         wr = float(win[m].mean() * 100) if n else np.nan
-        return wr, n, n / max(days, 1)
+        evp = float(np.nanmean(resv[m]) - floor) if n else np.nan   # 概算期待値%＝不利側込み
+        return wr, n, n / max(days, 1), evp
 
     def _conds_of(params):
         conds, tfs = [], set()
@@ -1192,7 +1240,7 @@ def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2):
             return -1e9
         if len(tfs) < 2:
             return -1e9                       # 時間足2種以上を強制（MTF コンフルエンス）
-        wr, _n, per_day = _eval(conds, first, d1)
+        wr, _n, per_day, _evp = _eval(conds, first, d1)
         if per_day < min_day or not np.isfinite(wr):
             return -1e9                       # 件数下限＝conf_min_bars_per_day（勝率だけ最大化の逃げ禁止）
         return wr - base1
@@ -1210,13 +1258,13 @@ def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2):
         if key in seen:
             continue
         seen.add(key)
-        w1, _n1, pd1_ = _eval(conds, first, d1)
-        w2, _n2, pd2_ = _eval(conds, second, d2)
+        w1, _n1, pd1_, ev1 = _eval(conds, first, d1)
+        w2, _n2, pd2_, ev2 = _eval(conds, second, d2)
         rows.append({"条件の組": " AND ".join(
             f"{c} {'≥' if h else '≤'}q{int(q * 100) if h else int(round((1 - q) * 100))}[{th:.4g}]"
             for c, q, h, th in conds),
-            "前半_勝率%": round(w1, 1), "前半_バー/日": round(pd1_, 1),
-            "後半_勝率%": round(w2, 1), "後半_バー/日": round(pd2_, 1)})
+            "前半_勝率%": round(w1, 1), "前半_期待値%": round(ev1, 3), "前半_バー/日": round(pd1_, 1),
+            "後半_勝率%": round(w2, 1), "後半_期待値%": round(ev2, 3), "後半_バー/日": round(pd2_, 1)})
         if len(rows) >= 10:
             break
     return rows
@@ -1313,12 +1361,15 @@ def observe_scene(scene_id: str, config_path: str | None = None) -> None:
         if k < 1.0:                            # 床割れの勝ち定義＝手数料負けの動きを「勝ち」と数える設計を物理禁止
             raise SystemExit(f"[設定] win_pct_k が 1.0 未満: {k}（勝ちの幅は床×1以上＝手数料負けしない幅）")
         win_pct = k * floor
-    wins, oks = _scene_labels(sel, bars, g, scene["side"], float(scene["lose_barrier_w"]),
-                              int(scene["tmax_bars"]), mid, win_target, win_pct)
+    wins, oks, res_pct, mae_pct, kinds = _scene_labels(
+        sel, bars, g, scene["side"], float(scene["lose_barrier_w"]),
+        int(scene["tmax_bars"]), mid, win_target, win_pct)
     sel, wins = sel[oks], wins[oks]
+    res_pct, mae_pct, kinds = res_pct[oks], mae_pct[oks], kinds[oks]
     times = bars.index[sel]
     sdf = feat.reindex(times).copy()   # 場面バーの確定値（entry は次バー open＝当バー確定値は因果 OK・H2）
     sdf["win"] = wins
+    sdf["res_pct"] = res_pct           # 決着時の損益幅%（符号つき）＝節2/節3 の概算期待値の材料（不利側を必ず併記）
     sdf.reset_index(drop=True, inplace=True)
     half_t = times[len(times) // 2]
     first = np.asarray(times <= half_t)
@@ -1339,8 +1390,33 @@ def observe_scene(scene_id: str, config_path: str | None = None) -> None:
     for ty, msk in [("down", isdn_sel), ("flat_up", ~isdn_sel)]:
         n_ty = int(msk.sum())
         wr_ty = float(wins[msk].mean() * 100) if n_ty else float("nan")
-        print(f"  型内訳 {ty}: {n_ty} バー（{n_ty / days:.1f} バー/日）・素の勝率 {wr_ty:.1f}%")
+        ev_ty = float(np.nanmean(res_pct[msk]) - floor) if n_ty else float("nan")
+        print(f"  型内訳 {ty}: {n_ty} バー（{n_ty / days:.1f} バー/日）・素の勝率 {wr_ty:.1f}%"
+              f"・概算期待値 {ev_ty:+.3f}%/件")
     print("  ＝素で五分なら確認条件が必須という判定材料。時間切れは負け扱い（取れなかった機会）。")
+
+    # ★不利側（2026-07-26 まこさん OK）＝勝率だけを出すのを止める。
+    #   背景＝観察の勝率62%が実エンジンで −$70 になった乖離の正体は「有利側しか測っていない」こと。
+    #   小さい負けと大きい負けが勝率では同じ1件になるので、負けの中身と概算期待値を必ず併記する。
+    print("\n  ── 不利側（勝率だけでは見えない負けの中身・有利側と必ず対で出す）")
+    w_m = wins.astype(bool)
+    for nm, m in [("勝ち", w_m), ("負け", ~w_m)]:
+        if int(m.sum()):
+            print(f"  {nm}  {int(m.sum())}件（{m.mean()*100:.1f}%）・平均 決着幅 {np.nanmean(res_pct[m]):+.3f}%")
+    for kd in ("災害線", "時間切れ"):
+        m = (kinds == kd)
+        if int(m.sum()):
+            print(f"    └ 負けの内訳 {kd}: {int(m.sum())}件・平均 決着幅 {np.nanmean(res_pct[m]):+.3f}%"
+                  f"・最大逆行 中央 {np.nanmedian(mae_pct[m]):.3f}%")
+    print(f"  保有中の最大逆行%: 全体 中央 {np.nanmedian(mae_pct):.3f} / q75 {np.nanquantile(mae_pct, .75):.3f}"
+          f" / q90 {np.nanquantile(mae_pct, .90):.3f}"
+          + (f" ／ 勝ち玉 中央 {np.nanmedian(mae_pct[w_m]):.3f}" if int(w_m.sum()) else "")
+          + (f" ／ 負け玉 中央 {np.nanmedian(mae_pct[~w_m]):.3f}" if int((~w_m).sum()) else ""))
+    ev_all = float(np.nanmean(res_pct)) - floor
+    print(f"  概算の期待値 ＝ 平均 決着幅 {np.nanmean(res_pct):+.3f}% − 手数料床 {floor:.3f}% "
+          f"＝ {ev_all:+.3f}%/件")
+    print("  ⚠️ 概算です。スロットの取り合い・約定の不確実・funding は含みません。"
+          "勝率が高くても期待値がマイナスなら候補にしない。実力は層3 の実エンジン・採否は採点窓 score.py。")
 
     _h(SECTIONS_SCENE[1])
     fcols = [c for c in feat.columns if sdf[c].notna().sum() >= max(int(len(sdf) * 0.5), cfg["min_n"])]
@@ -1349,11 +1425,13 @@ def observe_scene(scene_id: str, config_path: str | None = None) -> None:
     print("  ＝1個ずつの材料。ここでは決めない（前回の1軸検索の失敗を繰り返さない）。")
 
     _h(SECTIONS_SCENE[2])
-    rows = _conf_search(sdf, fcols, cfg, first, second, base1, base2, d1, d2)
+    rows = _conf_search(sdf, fcols, cfg, first, second, base1, base2, d1, d2, floor)
     df_rows = pd.DataFrame(rows)
     if len(df_rows):
         print("  前半で探索した上位10（重複除去後・後半は同じ実値をそのまま当てた確認）")
-        print(f"  素の勝率: 前半 {base1:.1f}% / 後半 {base2:.1f}%")
+        print(f"  素の勝率: 前半 {base1:.1f}% / 後半 {base2:.1f}%"
+              f" ／ 素の概算期待値: 前半 {float(np.nanmean(res_pct[first])) - floor:+.3f}%"
+              f" / 後半 {float(np.nanmean(res_pct[second])) - floor:+.3f}%")
         print(df_rows.to_string(index=False))
     else:
         _skip("候補が1件も残らなかった")
@@ -1366,6 +1444,13 @@ def observe_scene(scene_id: str, config_path: str | None = None) -> None:
             print(both.to_string(index=False))
         else:
             print("  両半期で素の勝率超え 0 組 ＝ 前半に合わせただけの疑い（候補にしない）")
+        # ★不利側の合格（2026-07-26 まこさん OK）＝勝率で選んだ組が、期待値でも生き残るかを別に出す。
+        #   勝率が上がっても負けの幅が広がれば期待値はマイナスになる（観察と実エンジンの乖離の正体）。
+        ev_ok = both[(both["前半_期待値%"] > 0) & (both["後半_期待値%"] > 0)] if len(both) else both
+        print(f"  └ そのうち 両半期とも 概算期待値がプラス: {len(ev_ok)} 組"
+              " ＝ここが層3 に渡す候補（勝率だけで渡さない）")
+        if len(ev_ok):
+            print(ev_ok.to_string(index=False))
     else:
         print("  候補 0 組")
     print("\n  ⚠️ 疑似シミュの機械集計＝候補の材料まで。値決めは層3 engine_search_e38・採否は採点窓 score.py（まこさん）。")
@@ -1424,7 +1509,175 @@ def plan(trades_csv: str, bars_csv: str, title: str = "", config_path: str | Non
     print("  ⚠️ まこさんの OK が出たら本走する。本走の先頭に同じ設定が印字される＝計画との差分は突き合わせで見える。")
 
 
+# ══ 節10 判定（2026-07-26 まこさん OK）═══════════════════════════════════
+#   まこさんの要望＝「別の戦略でも別の条件でも、observe_diag で検証したら分析結果まで自動で出る状態にしたい。
+#   CC が手で書く判定を挟まない」。今まで observe_diag が出すのは材料だけで、「で、この結果はどうなのか」は
+#   CC が毎回チャットに手書きしていた＝毎回ぶれる（まこさん指摘 2026-07-25 の分析自動化）。
+#
+#   ★戦略名を一切見ない＝汎用の根拠: 使うのは売買記録の共通9列だけ（side / ceil_type / exit_reason /
+#     hold_min / gross_usd / fee_usd / net_usd / mfe_usd / mae_usd）。この9列は全戦略が共通の記録処理
+#     （e37_scalp._record）で出しているので、E35/E36/E37/E38 でも今後の新戦略でも同じ節がそのまま出る。
+#     欠けている列があれば、その行だけ飛ばして残りを出す（戦略ごとに分岐を書かない）。
+#
+#   ★金額について（道具の原則との関係を明示）: 節8/節9 と --scene は疑似シミュ＝今までどおり金額を出さない。
+#     本節が出す金額は「実エンジンが売買記録に記録した実額」＝report.py が読むのと同じ列。疑似シミュではない。
+#     采否は従来どおり score.py の採点窓でまこさんが決める（本節は採否をしない・出血箇所を指すだけ）。
+_HOLD_BANDS = ((0, 15), (15, 30), (30, 60), (60, 120), (120, 240), (240, 10 ** 9))
+
+
+def _hold_band(m) -> str:
+    """保有時間の帯。表示のための区切りで、戦略のパラメータではない（値を設計に焼かない）。"""
+    try:
+        m = float(m)
+    except (TypeError, ValueError):
+        return "不明"
+    for lo, hi in _HOLD_BANDS:
+        if lo <= m < hi:
+            return f"{lo}-{hi}分" if hi < 10 ** 9 else f"{lo}分超"
+    return "不明"
+
+
+def verdict(tr: pd.DataFrame) -> dict:
+    """節10。①稼げているか ②有利側と不利側 ③どこで血が出ているか ④残せる部分 ⑤巻き込み を機械で出す。
+    戻り値＝既知答えテスト用の集計値（画面出力と同じ数字）。"""
+    out: dict = {}
+    if not len(tr):
+        print("  売買記録が0行＝判定できない"); return out
+    t = tr.copy()
+    n = len(t)
+    net = float(t["net_usd"].sum())
+    out["n"], out["net"], out["per"] = n, net, net / n
+
+    print("  ① 稼げているか")
+    print(f"     全体 {n}件 ／ 純益 ${net:+,.2f} ／ 1件あたり ${net / n:+.3f}")
+    if {"gross_usd", "fee_usd"} <= set(t.columns):
+        gr, fe = float(t["gross_usd"].sum()), float(t["fee_usd"].sum())
+        print(f"     1件あたりの内訳 粗利 ${gr / n:+.3f} − 手数料 ${fe / n:.3f} ＝ 純益 ${(gr - fe) / n:+.3f}")
+        if gr > 0:
+            print(f"     ＝手数料が粗利の {fe / gr * 100:.0f}% を食っている"
+                  f"（この割合が高いほど、値幅でなくコストで負けている）")
+        else:
+            print("     ＝粗利がゼロ以下＝値幅そのものが取れていない（コストの問題より前の段階）")
+
+    print("  ② 有利側と不利側")
+    w, l = t[t["net_usd"] > 0], t[t["net_usd"] <= 0]
+    if len(w):
+        print(f"     勝ち {len(w)}件（{len(w) / n * 100:.1f}%）・平均 ${w['net_usd'].mean():+.3f}")
+    if len(l):
+        print(f"     負け {len(l)}件（{len(l) / n * 100:.1f}%）・平均 ${l['net_usd'].mean():+.3f}")
+    if {"mfe_usd", "mae_usd"} <= set(t.columns):
+        print(f"     保有中の最大含み益 中央 ${t['mfe_usd'].median():+.3f}"
+              f" ／ 最大含み損 中央 ${t['mae_usd'].median():+.3f}")
+        if len(w) and len(l):
+            print(f"       勝ち玉が踏まれた深さ 中央 ${w['mae_usd'].median():+.3f}"
+                  f" ／ 負け玉が一度は乗った益 中央 ${l['mfe_usd'].median():+.3f}"
+                  f"（後者が大きいほど取り逃しが多い）")
+
+    keys = [k for k in ("side", "ceil_type", "exit_reason") if k in t.columns]
+    if "hold_min" in t.columns:
+        t["保有帯"] = t["hold_min"].map(_hold_band)
+        keys.append("保有帯")
+    if not keys:
+        print("  ③〜⑤ 区分に使える列が無い（side/ceil_type/exit_reason/hold_min のいずれも無い）"); return out
+    g = (t.groupby(keys, dropna=False)["net_usd"].agg(件数="size", 純益="sum").reset_index())
+    g["1件あたり"] = (g["純益"] / g["件数"]).round(3)
+    g["純益"] = g["純益"].round(2)
+
+    print("  ③ どこで血が出ているか（純益の悪い順・上位8）")
+    print("     " + g.sort_values("純益").head(8).to_string(index=False).replace("\n", "\n     "))
+    print("     ＝ここが段5 Exit 調整の対象（直す1箇所を機械が指す）")
+
+    print("  ④ 残せる部分（純益がプラスの区分・上位5）")
+    plus = g[g["純益"] > 0].sort_values("純益", ascending=False).head(5)
+    print("     " + (plus.to_string(index=False).replace("\n", "\n     ") if len(plus)
+                     else "プラスの区分なし＝全部の区分でマイナス"))
+    print("     ＝ここは捨てずに次の段へ渡す")
+
+    print("  ⑤ 巻き込み（③の最悪の区分を保有時間で切ったとき、同じ場面の勝ち玉に何件当たるか）")
+    row = g.sort_values("純益").iloc[0]
+    m = pd.Series(True, index=t.index)
+    for k in [k for k in keys if k != "exit_reason"]:      # 出口理由は入口では選べない＝場面の条件から外す
+        m &= (t[k] == row[k]) | (t[k].isna() & pd.isna(row[k]))
+    same = t[m]
+    sw = same[same["net_usd"] > 0]
+    cond = " × ".join(f"{k}={row[k]}" for k in keys if k != "exit_reason")
+    print(f"     最悪の区分: {' × '.join(f'{k}={row[k]}' for k in keys)}"
+          f" → {int(row['件数'])}件 ${row['純益']:+,.2f}")
+    print(f"     同じ場面 {cond} の全体: {len(same)}件 ${same['net_usd'].sum():+,.2f}"
+          f" ／ うち勝ち玉 {len(sw)}件 ${sw['net_usd'].sum():+,.2f}")
+    print("     ＝この場面を時間で切ると、その勝ち玉も一緒に切れる（切る案は必ずこの対で出す・Q1）")
+    # ★切ったときの正味の増減（2026-07-26 まこさん OK・進め方の1つ目）
+    #   経緯＝節10 は数字を並べるだけで「良いのか悪いのか」の基準が無く、次の一手につながらなかった
+    #   （まこさん指摘「次へつなげるためになにをすべきかよくわからない」）。⑤は既にある数字の引き算で
+    #   判定になる＝この場面を丸ごと切れば、その場面の純益がそのまま消える。だから増減は「−場面の純益」。
+    #   CC が決める余地のない部分（引き算）から入れる。②取り逃しの基準は未着手＝まこさんと別途決める。
+    cut_delta = -float(same["net_usd"].sum())
+    if cut_delta > 0:
+        judge_txt = "＝切ると良くなる。切る幅と条件を段5 Exit 調整で詰める。"
+    elif cut_delta < 0:
+        judge_txt = "＝切ると悪くなる。この場面は切る方向では直せない。出口の位置か入口の条件を変える。"
+    else:
+        judge_txt = "＝差し引きゼロ。切っても変わらない。"
+    print(f"     切ったときの正味の増減: ${cut_delta:+,.2f}{judge_txt}")
+    out["worst"] = (tuple(row[k] for k in keys), float(row["純益"]))
+    out["wrap"] = (len(sw), float(sw["net_usd"].sum()))
+    out["cut_delta"] = cut_delta
+    print("\n  ⚠️ 本節の金額は売買記録の記録値＝report.py と同じ列。疑似シミュではない。"
+          "ただし採否はしない＝采否は score.py の採点窓でまこさんが決める。")
+    return out
+
+
+# ══ 観察結果の保存（2026-07-26 まこさん OK）══════════════════════════════
+#   背景＝観察結果は画面に出るだけで、走らせた人がリダイレクトした先にしか残らなかった
+#   （CC のセッションごとの一時ディレクトリ＝まこさんが後から見返せない）。report/analysis と同じ
+#   results/priority_rebuild/ratchet/ に固定パスで残す。上書きは絶対にしない＝共通の書き出し処理
+#   ratchet_io.archive_if_exists に委譲（§3.1・道具ごとに命名/archive を書かない）。
+#   ⚠️ 書くのは観察結果のテキスト1本だけ。売買記録CSVは書かない・score は呼ばない（read-only 診断のまま）。
+def _out_path(kind: str, key: str) -> pathlib.Path:
+    """保存先を決める。場所は ratchet_io.RATCHET に固定＝道具側で別の場所を選べない。"""
+    safe = re.sub(r"[^0-9A-Za-z_.-]", "_", str(key))
+    if kind == "scene":
+        day = datetime.date.today().strftime("%Y%m%d")
+        return ratchet_io.RATCHET / f"observe_scene_{safe}_{day}.txt"
+    return ratchet_io.RATCHET / f"observe_{safe}.txt"
+
+
+class _Tee:
+    """画面と保存ファイルの両方へ出す。with で囲んだ中の print が両方に行く。"""
+
+    def __init__(self, path):
+        self.path = ratchet_io.archive_if_exists(path)   # 既存は archive へ退避＝上書きしない
+        self._f = open(self.path, "w", encoding="utf-8")
+        self._out = sys.stdout
+
+    def write(self, s):
+        self._out.write(s); self._f.write(s)
+
+    def flush(self):
+        self._out.flush(); self._f.flush()
+
+    def __enter__(self):
+        sys.stdout = self
+        print(f"[保存先] {self.path}")
+        return self
+
+    def __exit__(self, *e):
+        sys.stdout = self._out
+        self._f.close()
+        self._out.write(f"\n[保存] {self.path}\n")
+        return False
+
+
 # ══ 自己検査 ════════════════════════════════════════════════════════════
+def _J(a: str, b: str) -> str:
+    """検査文字列を分割して連結する（自己一致よけ）。
+
+    番人が探す文字列を selftest 内に丸ごと書くと、その文字列を全置換したとき検査側も一緒に変わり、
+    壊したのに pass してしまう（2026-07-26 メタ確認で実測・2026-07-21 の同型事案の再発）。
+    連結して書けば、対象を置換しても検査側の文字列は変わらないので、番人が正しく落ちる。"""
+    return a + b
+
+
 def selftest() -> None:
     """この道具が守ると言っていることを機械で確かめる。まこさんはこれを叩けばよい。"""
     ng = []
@@ -1587,6 +1840,90 @@ def selftest() -> None:
         ng.append("勝ち条件 win_target（mid/pct）の分岐が _scene_labels に無い")
     if "win_pct_k が 1.0 未満" not in inspect.getsource(observe_scene):
         ng.append("pct ラベルの床割れ番人（win_pct_k≥1）が observe_scene に無い（手数料負けの動きを勝ちと数えてしまう）")
+    # ★不利側の番人（2026-07-26 まこさん OK）＝有利側だけの表示に戻れなくする物理検査。
+    #   背景＝観察の勝率62%が実エンジンで −$70 になった乖離（L1ap・worklog 20260725 §20/§23）。
+    #   ⚠️ 検査文字列は必ず連結して書く（"概" + "算" 等）＝検査対象と検査自身が同じ文字列だと、
+    #      全置換で両方いっしょに書き換わって素通りする（2026-07-26 メタ確認で実測・observe_diag 2026-07-21 と同型）。
+    src_scene = inspect.getsource(observe_scene)
+    for need, why in ((_J("不利", "側"), "節0 に不利側の見出しが無い"),
+                      (_J("概算の期", "待値"), "節0 に概算期待値の出力が無い"),
+                      (_J("保有中の最", "大逆行"), "節0 に最大逆行の分布が無い"),
+                      (_J("両半期とも 概算期", "待値がプラス"), "節3 に期待値での絞り込みが無い")):
+        if need not in src_scene:
+            ng.append(f"{why}＝有利側だけを出す設計に戻っている: {need}")
+    if _J("前半_期", "待値%") not in src_conf:
+        ng.append("コンフルエンス探索の組ごとに概算期待値%が並んでいない（勝率だけで層3 に渡してしまう）")
+    # ★既知答えテスト（文字列検査では「名前だけ残って中身が消えた」を見抜けないので実測で照合する）。
+    #   合成バー3本立て＝勝ち／災害線／時間切れ の決着幅と最大逆行を手計算値と突き合わせる。
+    _syn_cases = [   # (種類, high, low, close, 勝ちか, 期待 res_pct%, 期待 mae_pct%)
+        ("勝ち", [100.0, 100.2, 100.2, 100.2], [100.0, 99.4, 99.4, 99.4], [100.0, 99.6, 99.6, 99.6], True, +0.5, 0.2),
+        ("災害線", [100.0, 101.6, 101.6, 101.6], [100.0, 99.9, 99.9, 99.9], [100.0, 101.5, 101.5, 101.5], False, -1.5, 1.6),
+        ("時間切れ", [100.0, 100.3, 100.3, 100.3], [100.0, 99.7, 99.7, 99.7], [100.0, 100.1, 100.1, 100.1], False, -0.1, 0.3),
+    ]
+    for kd, hh, ll, cc, exp_w, exp_r, exp_m in _syn_cases:
+        nn = len(hh)
+        bb = pd.DataFrame({"open": [100.0] * nn, "high": hh, "low": ll, "close": cc},
+                          index=pd.date_range("2026-03-01", periods=nn, freq="5min"))
+        gg = {"res_hi": np.full(nn, 101.0), "res_lo": np.full(nn, 100.5),
+              "sup_hi": np.full(nn, 99.5), "sup_lo": np.full(nn, 99.0)}
+        # SHORT・災害線 = res_hi + 1.0×レジ帯厚 = 101.5・勝ち = 建値 −0.5%（= 99.5）・時間切れ = 3本
+        w_, o_, r_, m_, k_ = _scene_labels([0], bb, gg, "SHORT", 1.0, 3, np.full(nn, np.nan), "pct", 0.5)
+        got = (bool(o_[0]), bool(w_[0]), str(k_[0]), round(float(r_[0]), 6), round(float(m_[0]), 6))
+        if got != (True, exp_w, kd, round(exp_r, 6), round(exp_m, 6)):
+            ng.append(f"不利側の既知答えテスト不一致 {kd}: 実測 {got} ／ 期待 {(True, exp_w, kd, exp_r, exp_m)}")
+    # ★観察結果の保存の番人（2026-07-26 まこさん OK）＝①保存先が固定 ②上書きしない。
+    #   ②は「呼んでいるふり」を文字列では見抜けないので、一時ディレクトリで実際に動かして確かめる。
+    if _out_path("scene", "L1ap").parent != ratchet_io.RATCHET:
+        ng.append(f"観察結果の保存先が results ラチェット直下に固定されていない: {_out_path('scene', 'L1ap').parent}")
+    if not _out_path("scene", "L1ap").name.startswith("observe_scene_L1ap_"):
+        ng.append(f"保存名が observe_scene_<場面ID>_<実行日> の型でない: {_out_path('scene', 'L1ap').name}")
+    if _out_path("trades", "trades_x_score").name != "observe_trades_x_score.txt":
+        ng.append(f"売買記録モードの保存名が observe_<売買記録名> の型でない: {_out_path('trades', 'trades_x_score').name}")
+    # ★節10 判定の番人（2026-07-26 まこさん OK）＝合成の売買記録で ①〜⑤ の集計を既知答えと突き合わせる。
+    #   戦略名を見ずに共通9列だけで動くこと・巻き込みが出口理由を除いた場面で数えられていることを実測で確かめる。
+    if _J("verdict(tr_", "all)") not in inspect.getsource(observe):
+        ng.append("節10 判定が本走（observe）から呼ばれていない＝関数だけ在って動かない")
+    _sy = pd.DataFrame([
+        {"side": "SHORT", "ceil_type": "down", "exit_reason": "TIME_EXIT", "hold_min": 70,
+         "gross_usd": -9.0, "fee_usd": 1.0, "net_usd": -10.0, "mfe_usd": 2.0, "mae_usd": -12.0},
+        {"side": "SHORT", "ceil_type": "down", "exit_reason": "TP", "hold_min": 70,
+         "gross_usd": 5.0, "fee_usd": 1.0, "net_usd": 4.0, "mfe_usd": 5.0, "mae_usd": -1.0},
+        {"side": "SHORT", "ceil_type": "flat_up", "exit_reason": "TP", "hold_min": 10,
+         "gross_usd": 3.0, "fee_usd": 1.0, "net_usd": 2.0, "mfe_usd": 3.0, "mae_usd": -0.5},
+        {"side": "LONG", "ceil_type": "flat_up", "exit_reason": "SL", "hold_min": 200,
+         "gross_usd": -2.0, "fee_usd": 1.0, "net_usd": -3.0, "mfe_usd": 1.0, "mae_usd": -5.0},
+    ])
+    import contextlib as _cl
+    import io as _io
+    with _cl.redirect_stdout(_io.StringIO()):
+        _v = verdict(_sy)
+    # cut_delta＝最悪の区分と同じ場面（SHORT×down×60-120分＝1行目 -10 と2行目 +4）を切ると
+    #   その場面の純益 -6 が消える＝正味は +6（切ると良くなる側）。既にある数字の引き算であることの実測。
+    _exp = {"n": 4, "net": -7.0, "per": -1.75,
+            "worst": (("SHORT", "down", "TIME_EXIT", "60-120分"), -10.0), "wrap": (1, 4.0),
+            "cut_delta": 6.0}
+    for _k, _e in _exp.items():
+        _g = _v.get(_k)
+        if isinstance(_e, float):
+            _g = round(float(_g), 6) if _g is not None else None
+        if _g != _e:
+            ng.append(f"節10 判定の既知答え不一致 {_k}: 実測 {_g} ／ 期待 {_e}")
+    if (_hold_band(10), _hold_band(70), _hold_band(200), _hold_band(999)) != ("0-15分", "60-120分", "120-240分", "240分超"):
+        ng.append("保有帯の区切りが期待どおりでない（③〜⑤ の区分がずれる）")
+    import shutil as _sh
+    import tempfile as _tf
+    _td = pathlib.Path(_tf.mkdtemp())
+    try:
+        _p = _td / "observe_scene_TEST_20260726.txt"
+        _p.write_text("古い結果", encoding="utf-8")
+        _t = _Tee(_p)                       # 既存があるので archive へ退避してから開くはず
+        _t._f.write("新しい結果"); _t._f.close()
+        _moved = _td / "archive" / _p.name
+        if not (_moved.exists() and _moved.read_text(encoding="utf-8") == "古い結果"
+                and _p.read_text(encoding="utf-8") == "新しい結果"):
+            ng.append("観察結果の保存が上書きしている（既存が archive へ退避されていない・§3.1 違反）")
+    finally:
+        _sh.rmtree(_td, ignore_errors=True)
     if "_scene_data" not in inspect.getsource(observe_scene) or "_resolve_period" not in inspect.getsource(_scene_data):
         ng.append("場面観察の期間が採点窓クランプ（_resolve_period）を通っていない")
     for need in SECTIONS_SCENE:
@@ -1601,6 +1938,7 @@ def selftest() -> None:
     print(f"  節 {len(SECTIONS)} / 分位 {cfg['quantiles']} / SL候補 {cfg['sl_grid']}（エントリー価格からの%）")
     print(f"  探索 {cfg.get('search_modes')} × side×型の分岐 / 切る探索＝逆行側プールのみ / 建値%TP探索なし")
     print(f"  設定ファイル {cfg['_source']}")
+    print(f"  結果の保存先 {ratchet_io.RATCHET}（本走のみ・既存は archive へ退避＝上書きしない）")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
@@ -1608,32 +1946,42 @@ def selftest() -> None:
     print("  ✅ 全部 pass")
 
 
+def build_parser():
+    """引数の定義（取扱説明書の機械生成が読むので関数に括り出す・挙動は不変・2026-07-26）。"""
+    import argparse
+    ap = argparse.ArgumentParser(description="建玉の観察と探索（read-only 診断・売買記録CSVを書かない）")
+    ap.add_argument("trades_csv", nargs="?", default=None,
+                    help="実エンジンが出した売買記録CSV（--scene の時は不要）")
+    ap.add_argument("bars_csv", nargs="?", default=None,
+                    help="5分足CSV（Binance Spot 正本・--scene の時は不要＝e37 の計器で読む）")
+    ap.add_argument("--scene", default=None,
+                    help="Entry 候補観察＝場面ID（observe_config.json の scenes・例 S2＝まだ玉のない新候補の層1）")
+    ap.add_argument("--plan", action="store_true",
+                    help="検証計画だけを自動生成して印字（本走しない・まこさんへ提出する1枚）")
+    ap.add_argument("--config", default=None, help="observe_config.json のパス（既定は同ディレクトリ）")
+    ap.add_argument("--title", default="", help="出力の見出しに付ける題名")
+    ap.add_argument("--selftest", action="store_true", help="自己検査だけ走らせる（この道具が守ると言っていることを機械で確認）")
+    return ap
+
+
 if __name__ == "__main__":
     if "--selftest" in sys.argv:
         selftest()
     else:
-        import argparse
-        ap = argparse.ArgumentParser(description="建玉の観察と探索（read-only 診断・売買記録CSVを書かない）")
-        ap.add_argument("trades_csv", nargs="?", default=None,
-                        help="実エンジンが出した売買記録CSV（--scene の時は不要）")
-        ap.add_argument("bars_csv", nargs="?", default=None,
-                        help="5分足CSV（Binance Spot 正本・--scene の時は不要＝e37 の計器で読む）")
-        ap.add_argument("--scene", default=None,
-                        help="Entry 候補観察＝場面ID（observe_config.json の scenes・例 S2＝まだ玉のない新候補の層1）")
-        ap.add_argument("--plan", action="store_true",
-                        help="検証計画だけを自動生成して印字（本走しない・まこさんへ提出する1枚）")
-        ap.add_argument("--config", default=None, help="observe_config.json のパス（既定は同ディレクトリ）")
-        ap.add_argument("--title", default="")
+        ap = build_parser()
         a = ap.parse_args()
+        # 本走の結果は results ラチェット直下へ保存する（--plan は提出用の計画＝画面のみ・2026-07-26）
         if a.scene:
             if a.plan:
                 plan_scene(a.scene, a.config)
             else:
-                observe_scene(a.scene, a.config)
+                with _Tee(_out_path("scene", a.scene)):
+                    observe_scene(a.scene, a.config)
         else:
             if not (a.trades_csv and a.bars_csv):
                 ap.error("trades_csv と bars_csv が必要（--scene の時だけ省略可）")
             if a.plan:
                 plan(a.trades_csv, a.bars_csv, a.title, a.config)
             else:
-                observe(a.trades_csv, a.bars_csv, a.title, a.config)
+                with _Tee(_out_path("trades", pathlib.Path(a.trades_csv).stem)):
+                    observe(a.trades_csv, a.bars_csv, a.title, a.config)
