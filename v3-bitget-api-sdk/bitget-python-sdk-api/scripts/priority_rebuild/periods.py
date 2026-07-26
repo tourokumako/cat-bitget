@@ -30,6 +30,13 @@
     データ: e34v1.CSV を 2026-06-30 版（...2021-04-01_2026-06-30_V9FULL_safe.csv）へ差し替え（2026-06 を延長取得）。
     注意: 旧採点窓（2025-12〜2026-05）で測った v59b_161 等の net とは直接比較不可＝土台 v59b は新窓で測り直して
          新基準にする（前後比較 --vs の基準も新窓の base に切り替え）。
+  値決め窓・確認窓の集約（2026-07-27・まこさん OK「各書類へ自動生成するように」）:
+    値決め窓 SEARCH_START/END と確認窓 CONFIRM_START/END を本ファイルへ移した（元は engine_tuner.py と
+    engine_search_e37.py が各々 定数で持っていた＝数値が3箇所に分かれ、本ファイルのコメントだけが
+    古い窓［2025-12〜2026-02］のまま残って毎回の混乱の元になっていた）。値は移設前と同一＝挙動は不変。
+    窓の中身の決定は 2026-07-24 まこさん（値決め 2024-04〜07／確認 2025-12〜2026-02／採点 2026-03〜06）。
+    ★選び方は「値動きの構造の近さ」＝時間の近さではない（正本 window_similarity_ranking.md）。
+    読み物＝.claude/ratchet/windows.md（gen_windows.py が本ファイルから機械生成・手書き禁止）。
   leak 原則（false_positive §0-1 / H2 / H8）: 学習末 < 採点始（embargo を挟む）を下の assert で物理保証。
 
 旧窓（2025-04〜12 等）はここに定義しない（混在の芽を断つ）。旧窓との一致確認が要る時は
@@ -41,7 +48,7 @@ import pandas as pd
 TRAIN_END = pd.Timestamp("2025-03-01")        # 学習は TRAIN_END 未満（= 〜2025-02 末）
 
 # ── 捨て(embargo): leak 防止の緩衝＋採点に使わない期間（2025-03〜2026-02）。うち 2025-12〜2026-02 は
-#    層3エンジン内探索の探索窓（正本＝engine_search_e37.SEARCH_START/END・まこさん確定 2026-07-23）──
+#    engine_tuner の確認窓（下の CONFIRM_START/END が正本・まこさん決定 2026-07-24）──
 EMBARGO_START = pd.Timestamp("2025-03-01")
 EMBARGO_END = pd.Timestamp("2026-03-01")       # = SCORE_START（捨ては採点開始の直前まで）
 
@@ -51,6 +58,21 @@ SCORE_END = pd.Timestamp("2026-06-30")         # inclusive（窓の組み替え 
 
 # ── 封印: 過剰適合の独立チェック用・iteration 中は不参照（現状空＝データ末2026-06-30・本番判断前に再設定）──
 SEAL_START = pd.Timestamp("2026-07-01")
+
+# ── 値決め窓（＝探索窓）: 探索器が値を選ぶためだけに使う期間。採点窓とは重ならない ──
+#    まこさん決定 2026-07-24。選び方＝値動きの構造特徴15次元で採点窓に近い窓（2位・距離1.78）。
+#    ★時間の近さでは選んでいない（距離1位の 2025-09〜12 は5分リターン尖度が基準の約8倍＝2025-10 の
+#      急落イベント込みのため、まこさんが却下）。全順位と抽出方法の正本＝
+#      .claude/ratchet/window_similarity_ranking.md。読み物＝.claude/ratchet/windows.md（機械生成）。
+#    ⚠️ 学習期間（< TRAIN_END）の中に入るが、これは意図した通り＝ML の学習窓ではなく、
+#      構造が採点窓に近いから選ばれた期間（§8.5 の「学習窓を采否に使うな」とは別の話）。
+SEARCH_START = pd.Timestamp("2024-04-01")
+SEARCH_END = pd.Timestamp("2024-08-01")        # 排他（2024-07-31 まで）
+
+# ── 確認窓: 値決め窓で選んだ値のまま1回だけ走らせて表示する期間。ここで選び直さない ──
+#    まこさん決定 2026-07-24（採点窓の直前3ヶ月・構造距離 8位相当 2.26・v59d が採点窓へ移った実績窓）。
+CONFIRM_START = pd.Timestamp("2025-12-01")
+CONFIRM_END = pd.Timestamp("2026-03-01")       # 排他（= SCORE_START と接し、採点窓と重ならない）
 
 # ── CLI / 文字列比較用（score.py の --start/--end 照合に使う・YYYY-MM-DD）──
 SCORE_START_STR = "2026-03-01"
@@ -63,3 +85,6 @@ assert SCORE_END < SEAL_START, "採点終了が封印開始より前でない（
 assert TRAIN_END < SCORE_START, "学習末 < 採点始 でない（leak・H2/H8 違反）"
 assert SCORE_START_STR == SCORE_START.strftime("%Y-%m-%d") and SCORE_END_STR == SCORE_END.strftime("%Y-%m-%d"), \
     "CLI 文字列が Timestamp と不一致"
+assert SEARCH_START < SEARCH_END and CONFIRM_START < CONFIRM_END, "値決め窓／確認窓の前後関係が壊れている"
+assert SEARCH_END <= SCORE_START and CONFIRM_END <= SCORE_START, \
+    "値決め窓／確認窓が採点窓と重なる＝采否の窓の汚染（L-267）"

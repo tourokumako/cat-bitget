@@ -39,7 +39,21 @@
 - ☐ **H2** leak なし（特徴量 t 時点・`shift(-`/`center=True` grep assert・学習末 < 採点始）
 - ☐ **H5** 約定モデル（entry 指値maker・TTL3 / 出口 TP・SL=maker / TIME・能動=taker+slip）
 - ☐ **H6** 価格非依存（%/比率/BTC 単位・USD 絶対値の閾値/ラベル禁止）
-- ☐ **H8** 期間分割（学習 <2025-01 で fit・採点 2025-06〜12 は評価のみ・封印不参照）
+- ☐ **H8** 期間分割（学習窓で fit・採点窓は評価のみ・封印は不参照・値決め窓で選んだ値は確認窓で選び直さない）。**実値は下の機械生成の表**＝`gen_windows.py` が periods.py から差し込む（手で数字を書かない・2026-07-27）。意味と経緯＝[windows.md](../ratchet/windows.md)。
+
+<!-- WINDOWS_START hash=d0c5c88783bc87c9 ここは gen_windows.py が自動生成＝手で書き換えない -->
+| 期間の名前 | いつ | 何に使うか |
+|---|---|---|
+| 学習 | 〜2025-02-28 | ML が教師で訓練する期間。固定ルールの改善では使わない |
+| 捨て | 2025-03-01 〜 2026-02-28 | leak を防ぐ緩衝。採点には使わない。この中に確認窓が入る |
+| 値決め | 2024-04-01 〜 2024-07-31 | engine_tuner ／ engine_search_e37。値を選ぶのはここだけ |
+| 確認 | 2025-12-01 〜 2026-02-28 | engine_tuner。選んだ値のまま1回走らせて表示するだけ。選び直さない |
+| 採点 | 2026-03-01 〜 2026-06-30 | score.py ／ observe_diag。採否を決める。探索には一切使わない |
+| 封印 | 2026-07-01 〜 | 過剰適合の独立チェック用。いまは空。本番判断の前に決め直す |
+
+> 数値の正本＝`scripts/priority_rebuild/periods.py`。意味と経緯＝`.claude/ratchet/windows.md`。
+> どちらも手で書き換えない（`gen_windows.py --write` が作る・`--verify` が改変を検出する）。
+<!-- WINDOWS_END -->
 - ☐ **H13** judge 固定（score.py/eval_engine は実験で改造しない・改造時 既知答えテスト再pass）
 - ☐ **H15** ボラ逃げ禁止（方向スコアで atr/ボラ 非支配・feature importance で確認）
 - ☐ **H16** 1変更・過去失敗の不再演

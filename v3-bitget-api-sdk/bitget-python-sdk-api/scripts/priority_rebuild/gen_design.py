@@ -69,10 +69,15 @@ def _stage1_verbatim() -> str:
 
 
 def _search_window_verbatim() -> str:
-    """探索窓は engine_search_e37.py の定数行を逐語引用（正本はソース・ここに日付を書かない）。"""
-    lines = [l for l in SEARCH_PY.read_text(encoding="utf-8").splitlines()
-             if l.startswith("SEARCH_START") or l.startswith("SEARCH_END")]
-    return "\n".join(lines)
+    """値決め窓・確認窓は periods.py の実値から出す（2026-07-27 集約＝正本は periods.py 1箇所）。
+
+    以前は engine_search_e37.py の定数行を逐語で拾っていたが、その定数が periods 参照へ変わり
+    日付が出なくなったため実値へ切り替え。ここに日付を手で書かないのは前と同じ。
+    """
+    return (f"SEARCH_START = {periods.SEARCH_START.date()}   # 値決め窓（periods.py が正本）\n"
+            f"SEARCH_END   = {periods.SEARCH_END.date()}   # 排他\n"
+            f"CONFIRM_START= {periods.CONFIRM_START.date()}   # 確認窓（表示のみ・選び直さない）\n"
+            f"CONFIRM_END  = {periods.CONFIRM_END.date()}   # 排他")
 
 
 def _logic_section(lg: dict) -> str:
@@ -134,7 +139,8 @@ def build() -> str:
     p.append("## 4. 検証期間（数値は正本から・本書に手打ちしない）")
     p.append("")
     p.append(f"- 採点窓（采否・段5 のみ）: {periods.SCORE_START_STR} 〜 {periods.SCORE_END_STR}（periods.py 正本・fast-mode §8.5）")
-    p.append("- 探索窓（段2 目的関数・まこさん決定 2026-07-24・正本 window_similarity_ranking.md）＝engine_search_e37.py 定数（逐語）:")
+    p.append("- 値決め窓・確認窓（段2 目的関数・まこさん決定 2026-07-24・選び方の正本 window_similarity_ranking.md）"
+             "＝periods.py の実値（意味と経緯＝.claude/ratchet/windows.md）:")
     p.append("```python\n" + _search_window_verbatim() + "\n```")
     p.append("")
     p.append("## 5. 段0 実測（設計の入力・出典 session_worklog_20260723.md §8 逐語＝増やす手段の優先順位: 第1 ロジック追加・第2 スロット構成・第3 ゲート緩和）")

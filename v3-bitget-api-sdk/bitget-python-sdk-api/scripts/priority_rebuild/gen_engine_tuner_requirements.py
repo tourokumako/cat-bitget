@@ -136,6 +136,20 @@ def build() -> str:
         L.append(f"- **状態**: {r['state']}")
         if r.get("progress"):
             L.append(f"- **いまどこまで**: {r['progress']}")
+        # ★どう作るか（設計）＝まこさんが中身を判断するための節。承認の前にここを埋める
+        #   （2026-07-27 まこさん指摘「知見が浅いまま浅い提案をするな」＝根拠と出典つきで出す）。
+        if r.get("design"):
+            L.append("")
+            L.append(f"#### {r['id']} をどう作るか（設計・まこさんの承認待ち）")
+            L.append("")
+            for para in r["design"]:
+                L.append(para)
+                L.append("")
+        if r.get("design_sources"):
+            L.append("**この設計の出どころ**")
+            L.append("")
+            for s in r["design_sources"]:
+                L.append(f"- {s}")
         L.append("")
 
     L.append("## この道具でやらないこと")

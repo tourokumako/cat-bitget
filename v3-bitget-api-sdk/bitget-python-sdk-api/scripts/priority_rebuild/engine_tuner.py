@@ -58,11 +58,13 @@ from tuner_adapters import available, load_adapter   # 戦略ごとの接続フ�
 
 HERE = pathlib.Path(__file__).resolve()
 
-SEARCH_START = pd.Timestamp("2024-04-01")   # まこさん決定 2026-07-24（構造類似2位・正本 window_similarity_ranking.md）
-SEARCH_END = pd.Timestamp("2024-08-01")     # 排他（2024-07-31 まで）
-CONFIRM_START = pd.Timestamp("2025-12-01")  # まこさん決定 2026-07-24（確認窓＝8位相当・採点窓直前・表示のみ）
-CONFIRM_END = pd.Timestamp("2026-03-01")    # 排他（採点窓 SCORE_START と接し重ならない）
-WARM = pd.Timedelta(days=60)                # 助走（RG 168h＋rolling を満たす a-priori）
+# ★期間の数値は periods.py だけが持つ（H8・手打ち禁止・2026-07-27 集約＝値は移設前と同一で挙動不変）。
+#   窓の意味・選び方・経緯の読み物＝.claude/ratchet/windows.md（gen_windows.py が機械生成）。
+SEARCH_START = periods.SEARCH_START          # 値決め窓（まこさん決定 2026-07-24・構造類似2位）
+SEARCH_END = periods.SEARCH_END              # 排他（2024-07-31 まで）
+CONFIRM_START = periods.CONFIRM_START        # 確認窓（表示のみ・選び直し禁止）
+CONFIRM_END = periods.CONFIRM_END            # 排他（採点窓 SCORE_START と接し重ならない）
+WARM = pd.Timedelta(days=60)                 # 助走（RG 168h＋rolling を満たす a-priori）
 
 assert SEARCH_END <= periods.SCORE_START and CONFIRM_END <= periods.SCORE_START, \
     "探索/確認窓が採点窓（periods 正本）と重複＝采否の窓の汚染"

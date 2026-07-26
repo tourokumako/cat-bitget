@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 
 import e37_scalp as e37
+import periods                 # 期間の唯一の正本（H8・値決め窓もここから取る）
 import score as judge          # 審判＝import のみ・無変更（H13）
 
 # 探索窓（まこさん決定 2026-07-24「2024-04〜07 にする」＝値動きの構造特徴15次元による類似窓抽出の2位・
@@ -36,8 +37,9 @@ import score as judge          # 審判＝import のみ・無変更（H13）
 # 「成績は近いが構造が遠い」）→ 2025-12〜2026-02［walk-forward 形・2026-07-23］→ 構造類似の実測で
 # 2024-04〜07 へ（2026-07-24）。periods.py の採点窓 2026-03〜06 とは非重複＝
 # 採点窓 SCORE_START/SCORE_END には触れない（採否は最終本走の score.py が periods 正本で行う・汚染ゼロ）。
-SEARCH_START = pd.Timestamp("2024-04-01")
-SEARCH_END   = pd.Timestamp("2024-08-01")            # 2024-07-31 まで（終端は排他）
+# ★数値は periods.py だけが持つ（H8・手打ち禁止・2026-07-27 集約＝値は移設前と同一で挙動不変）。
+SEARCH_START = periods.SEARCH_START
+SEARCH_END   = periods.SEARCH_END                    # 2024-07-31 まで（終端は排他）
 WARM_START   = SEARCH_START - pd.Timedelta(days=60)  # 助走60日（e37._load と同じ考え方）
 
 # 土台 longfu_145 の構成（report_trades_e37_range_scalp_longfu_145_score.txt §0 実行引数と同一）＋ v59 ON

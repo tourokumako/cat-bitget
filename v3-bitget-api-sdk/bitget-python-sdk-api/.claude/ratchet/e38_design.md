@@ -1,4 +1,4 @@
-<!-- DESIGN_HASH=47d3522fb5efdc68 -->
+<!-- DESIGN_HASH=5ac72015dcd0986f -->
 # e38_design.md — E38 優先度スタック 設計書（gen_design.py 機械生成＝手書き禁止）
 
 生成元: e38_logics.json（ロジック定義の正本・sha256=b6606e907f019619）＋ e38_requirements.json ＋ 段0 実測（worklog 逐語）。
@@ -46,10 +46,12 @@
 ## 4. 検証期間（数値は正本から・本書に手打ちしない）
 
 - 採点窓（采否・段5 のみ）: 2026-03-01 〜 2026-06-30（periods.py 正本・fast-mode §8.5）
-- 探索窓（段2 目的関数・まこさん決定 2026-07-24・正本 window_similarity_ranking.md）＝engine_search_e37.py 定数（逐語）:
+- 値決め窓・確認窓（段2 目的関数・まこさん決定 2026-07-24・選び方の正本 window_similarity_ranking.md）＝periods.py の実値（意味と経緯＝.claude/ratchet/windows.md）:
 ```python
-SEARCH_START = pd.Timestamp("2024-04-01")
-SEARCH_END   = pd.Timestamp("2024-08-01")            # 2024-07-31 まで（終端は排他）
+SEARCH_START = 2024-04-01   # 値決め窓（periods.py が正本）
+SEARCH_END   = 2024-08-01   # 排他
+CONFIRM_START= 2025-12-01   # 確認窓（表示のみ・選び直さない）
+CONFIRM_END  = 2026-03-01   # 排他
 ```
 
 ## 5. 段0 実測（設計の入力・出典 session_worklog_20260723.md §8 逐語＝増やす手段の優先順位: 第1 ロジック追加・第2 スロット構成・第3 ゲート緩和）

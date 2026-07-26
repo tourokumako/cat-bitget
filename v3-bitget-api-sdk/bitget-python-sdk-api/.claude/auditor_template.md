@@ -33,36 +33,106 @@
 
 ## プロジェクト基本情報
 
-- **目標**: **月次 NET ≥ $1,900 全月クリア達成** (一次ソース: MEMORY/project_goal.md・$60/day はデイリー参考値で判定基準ではない・凍結ベースライン月次 $370/月 = 5.1 倍ギャップ)
-- **手数料**: Maker 0.014% (適用) / 0.02% (剥落 stress) / Taker 0.042% (適用) / 0.06% (剥落)・exchange_spec.md L7-8 audit#19 確定値 (BGB 割引適用後・剥落で標準復帰)
-- **Funding Rate**: median (p50) +0.0002%/8h baseline (月次 NET 合格判定基準) / p95 0.01%/8h stress (参考値・合格条件には含めない)・exchange_spec.md L27-28 audit#19 確定値
-- **戦略**: 5m bar × 1,432 指標 × 未来 MFE/MAE → LightGBM × **14 ラベル独立学習** (LONG_MFE/MAE × K=7・対称性活用で SHORT は Phase 5 で予測値流用) で Entry 確率を学習
-  → k-means クラスタリングで Entry 性質を分類 → cluster × K × side で最適 Exit を設計
-  → 365d Replay で月次 NET 評価
+- **目標**: **月次 NET ≥ $1,900 全月クリア達成** (一次ソース: MEMORY/project_goal.md・$60/day はデイリー参考値で判定基準ではない)
+- **手数料**: Maker 0.014% (適用) / 0.02% (剥落 stress) / Taker 0.042% (適用) / 0.06% (剥落)・exchange_spec.md audit#19 確定値
+- **Funding Rate**: median (p50) +0.0002%/8h baseline / p95 0.01%/8h stress (参考値・合格条件に含めない)・exchange_spec.md audit#19 確定値
 
-### ML pipeline Phase 構成（一次ソース: WORKFLOW.md / cc_ml_design_spec.md）
+> ⚠️ **2026-07-27 改訂（まこさん指摘「この設定が古いけど大丈夫なのか？」）**: 本テンプレは 2026-05-21 で更新が止まっており、
+> 廃止された8工程フロー（Phase 0〜7・LightGBM 14 ラベル独立学習・k-means）と、現行と違う期間が書かれていた。
+> **腐る部分（現在地・戦略・期間・道具・制約・決定）を下の機械生成ブロックへ移した**（`gen_auditor_brief.py` が実体から生成・改変検出つき）。
+> 7つの監査観点は普遍なのでそのまま残している。以降の本文に旧フローの語が出てきたら、下のブロックが正。
 
-| Phase | 内容 | 合格条件 |
-|-------|------|----------|
-| Phase 0 | ラベル再生成 (5y × 5m × 1,432 指標 × MFE/MAE pct ベース・USD 絶対値禁止) | timestamp 分離・leak フリー確認・価格非依存性 verify |
-| Phase 1 | LightGBM × **14 ラベル独立学習** (LONG_MFE/MAE × K=7・対称性活用で SHORT は Phase 5 流用) × デフォルトハイパラ | feature_importance top20 に leak 列なし・rmse_ratio 14/14 |
-| Phase 2 | 精度判定 (cc_ml_design_spec §1.6 改訂後 4 指標) | ① q99 net_quality 平均 > +10pp かつ 8 組合せ中 6+ で > 0 / ② net_quality 最小値 > -50pp / ③ valid_rmse/label_std 14 中 12+ で < 1.5 / ④ mean_real_MFE/mean_real_MAE 8 中 6+ で > 1.0 (4 指標 ALL PASS) |
-| Phase 3-a/3-b | ハイパラ調整（K 窓別 num_leaves）+ B-11 cluster B 案 (LONG/SHORT 差分追加) | Phase 2 より精度改善 |
-| Phase 4-a | k-means **k=3** (silhouette 0.510・size_ratio 0.159・WORKFLOW.md L390) | fit は train のみ・artifact 名に "test" 禁止・起動時 assertion |
-| Phase 4-b | Exit 設計 | cluster_best_exit は train PnL のみで選定・採用方式見直し (Layer 1 ① trailing 究明 + train PnL idxmax → 複合採用) |
-| Phase 5/5-b/5-c | 365d Replay（cap 無 → FIFO → 質駆動） | 全 12 ヶ月 NET ≥ $1,900 (cc_ml_design_spec §1.6.1 メタルール・実行後緩和禁止) |
-| Phase 5-d/5-e | POS_SIZE 正解・Funding 控除 (median +0.0002%/8h baseline) | **合計 0.12 BTC 厳守** (false_positive §0-2 第二絶対規定・1 ポジあたりではなく合計上限)・8h 境界 |
-| Phase 6-a/6-b | 本テスト 2026 Q1 (1 回限り) | 全 3 ヶ月 NET ≥ $1,900 (実行後緩和禁止) |
-| Phase 7-a〜e | Bot 統合 → デモ → 本番 | offline = online 推論再現性・**ALLOW_LIVE_ORDERS=False 維持** (まこさん明示 GO 必須) |
+<!-- AUDITOR_CONTEXT_START hash=e5921fe76b6d8417 ここは gen_auditor_brief.py が自動生成＝手で書き換えない -->
+### いまのプロジェクトの現在地（gen_auditor_brief.py が実体から機械生成＝手で書き換えない）
 
-### データ分割（時系列・chronological）
+⚠️ **監査する人へ**: 本テンプレの他の節には 2026-05 時点の記述が残っています。特に文中の「Phase 0〜7」「LightGBM 14 ラベル独立学習」「k-means クラスタリング」は**廃止された旧フロー**です。いまのプロジェクトの姿はこの節が唯一の正しい情報です。矛盾したらこの節が正です。
 
-| 区分 | 期間 | 用途 |
-|------|------|------|
-| train | 2021-04〜2024-12 | LightGBM fit / k-means fit / best Exit 選定 |
-| valid | train 末尾 10% | early stopping |
-| 仮テスト | 2025 全年 | Phase 2/5 合格判定 |
-| 本テスト | 2026 Q1 | Phase 6-b 最終判定（1 回のみ使用） |
+**いま何をしているか**
+
+## 🔴 現在地（2026-07-27 改訂153＝散らばって腐っていた「期間」「ファイルの地図」「V9 の Exit」「監査テンプレ」を、実体から機械生成する形へ作り替えた。戦略の実験・採点はゼロ／E37 の採用土台 v59d_164 不変）。①期間の数字を periods.py の1箇所へ集約＝値決め窓と確認窓を移設（値は同一＝探索の結果は変わらないことを機械で確認）。発端はまこさん指摘「その受け取り方は間違っている・経緯がある」で、実測すると期間の数字が6箇所にあって全部が古かった（cat_requirements 4箇所／acceptance_checklist／台帳／網羅マトリクス［2世代前］／window_similarity_ranking／periods.py のコメント）。新設 windows.md（gen_windows.py 機械生成）になぜ「構造の近さ」で選ぶのか・時間の近さでは選ばない・2025-09〜12 を尖度で却下し…
+
+**検証に使う期間（periods.py が唯一の正本）**
+
+| 期間の名前 | いつ | 何に使うか |
+|---|---|---|
+| 学習 | 〜2025-02-28 | ML が教師で訓練する期間。固定ルールの改善では使わない |
+| 捨て | 2025-03-01 〜 2026-02-28 | leak を防ぐ緩衝。採点には使わない。この中に確認窓が入る |
+| 値決め | 2024-04-01 〜 2024-07-31 | engine_tuner ／ engine_search_e37。値を選ぶのはここだけ |
+| 確認 | 2025-12-01 〜 2026-02-28 | engine_tuner。選んだ値のまま1回走らせて表示するだけ。選び直さない |
+| 採点 | 2026-03-01 〜 2026-06-30 | score.py ／ observe_diag。採否を決める。探索には一切使わない |
+| 封印 | 2026-07-01 〜 | 過剰適合の独立チェック用。いまは空。本番判断の前に決め直す |
+
+> 値決め窓は「値動きの構造が採点窓に近い期間」で選んでいます。時間の近さでは選んでいません。経緯は .claude/ratchet/windows.md にあります。
+
+**戦略と役割（adopted_strategies.md の機械可読マーカー）**
+
+| 戦略 | 担当する局面 | 方向 | 役割 |
+|---|---|---|---|
+| E37 | range | both | scalp |
+| E36 | range | short_only | daytrade |
+| E35 | range | both | range_both |
+| E28 | spike_crash | long_only | none |
+| P21 | downtrend | short_only | none |
+| P23 | downtrend | short_only | none |
+| （採用の柱） | BASE_MAX=E32b ; PILLARS=E32b,P21,P23,E28,E35,E36 | — | — |
+
+**使う道具（迷ったら .claude/ratchet/filemap.md）**
+
+| やりたいこと | 使うもの |
+|---|---|
+| いまの戦略の弱点を知りたい | `observe_diag.py` |
+| Entry/Exit の値を調整したい | `engine_tuner.py` |
+| E37 の値だけ調整したい | `engine_search_e37.py` |
+| 採否を決めたい | `score.py` |
+| 結果の中身を見たい | `report.py` |
+| 前回との差を見たい | `analyze.py` |
+| 検証期間を知りたい | `periods.py` |
+| 採点窓を変えたので探索窓を選び直したい | `window_similarity.py` |
+| 窓の選定の経緯を知りたい | `windows.md` |
+| いま何を採用しているか知りたい | `adopted_strategies.md` |
+| まこさんが何を決めたか知りたい | `decisions.md` |
+| 次に何をするか知りたい | `next_step.md` |
+
+**守る制約（cat_requirements.md §4.6・違反は最重大インシデント）**
+
+- H1＝ポジション合計上限
+- H2＝leak なし / 本番再現性
+- H3＝net 判定（gross 禁止）
+- H4＝コスト確定値
+- H5＝約定モデル
+- H6＝価格非依存
+- H7＝足の標準
+- H8＝期間分割
+- H9＝最小注文
+- H10＝サイズ固定値扱い禁止
+- H11＝合格ライン / 地面
+- H12＝異常値STOP
+- H13＝judge 固定
+- H14＝発注フラグ
+- H15＝**Entry ボラ逃げ禁止（軸1・設計前チェック）**
+- H16＝**過去失敗の不再演 ＋ 1ターン1変更（設計前チェック）**
+
+**まこさんが最近決めたこと（decisions.md・提案の前に必ず読む）**
+
+- 2026-07-27（指示）まこさん指示 2026-07-27（逐語）＝「ではengine_searchの改修から進める。現状のengine_searchの機能をmanual文書を新規で作成して、observe_diag_manual.mdを参考に…
+- 2026-07-27（確定）§15 要件 R8 の実装＝損失最小化（まこさん確定 2026-07-27・完了）
+- 2026-07-27（確定）まこさん確定 2026-07-27（逐語）:
+- 2026-07-27（指示）まこさん指示 2026-07-27＝「R8からでOK」「では、区切りの良いところまでこのセッションのまま続ける」。
+- 2026-07-27（確定）まこさん確定 2026-07-27（逐語）＝「E36は対象外でOK」。
+- 2026-07-27（確定）§13 E36 は engine_tuner の対象外に決まった（まこさん確定 2026-07-27・要件 R4 完了）
+- 2026-07-27（決定）まこさん決定 2026-07-27＝汎用化の範囲: engine_search は e38 以外のあらゆる戦略で汎用的に機能してほしい。ファイル名は変更する。名前は CC が提案してよい。
+- 2026-07-27（承認）§12 E37 の接続ファイルを足した（まこさん承認 2026-07-27・要件 R4 の2枚目／R1 の半分）
+
+**機械生成の正本（手書きの要約を信用しない）**
+
+- `.claude/ratchet/windows.md`＝期間の意味と経緯
+- `.claude/ratchet/filemap.md`＝何がどこにあるか
+- `.claude/ratchet/v9_exits.md`＝V9 の Exit 実装（実コードから抽出）
+- `.claude/ratchet/decisions.md`＝まこさんの決定の一覧
+- `.claude/state/next_step.md`＝次にやること
+
+> これらは実体から機械生成され、改変検出がついています。**手書きの要約は実装とずれている前例があります**（2026-07-27＝V9 Exit の手書き要約5点のうち2点が実装と食い違っていた）。
+<!-- AUDITOR_CONTEXT_END -->
 
 ---
 
@@ -93,12 +163,14 @@
 
 | 指摘の型 | 確認すべき前提 |
 |---------|-------------|
-| IS/OOS 乖離 | IS = train 2021-2024・OOS = test 2025 で比較しているか（仮テスト/本テストの区別を混同していないか） |
-| サンプルサイズ不足 | 全体件数ではなく cluster × K × side の最小セルで評価しているか |
-| データ snooping | fit が train のみか。test データが cluster fit / best Exit 選定 / ハイパラ探索に使われていないか |
-| feature leak | grep 静的検査（.shift(-) / center=True / j+1, j+2 等）と動的 verify の両方が揃っているか |
-| 前 Phase 依存 | 前 Phase 出力（parquet/joblib）が leak フリーか・同一ソース CSV から生成されたか確認しているか |
-| PM の早期断念 | Phase 不合格時、合格条件 (Phase 2 = cc_ml_design_spec §1.6 改訂後 4 指標 ALL PASS / Phase 5/6 = 月次 NET ≥ $1,900 全月クリア) を満たせない原因が特定されているか |
+| 窓をまたぐ乖離 | 値決め窓・確認窓・採点窓のどれで測った数字か（上のブロックの期間の表で確認）。窓が違う数字を並べて比較していないか |
+| サンプルサイズ不足 | 全体件数ではなく、型別（down / flat_up）・side 別・出口理由別の最小セルで評価しているか |
+| データ snooping | **採点窓が探索・選定に使われていないか**（L-267）。値を選んでよいのは値決め窓だけ。確認窓は表示のみで選び直し禁止 |
+| 多重検定 | 何回試して最良を選んだか。試行数に応じた補正（DSR / PBO / Reality Check）が入っているか。最良を1つだけ選んでいないか |
+| feature leak | grep 静的検査（.shift(-) / center=True / j+1, j+2 等）と、決済後の情報をシグナルに使っていないかの両方が揃っているか（H2） |
+| 疑似シミュの数字 | 「もしこう切っていたら」の概算を採否や候補選定に使っていないか（L-330＝実走で順位が入れ替わる実証あり） |
+| 早期断念 | 「期待値が低い」「筋が悪い」で止めていないか。止めるなら、試した分析角度と未試行の角度を挙げているか（block_premature_giveup） |
+| 頻度の逸脱 | 件数を減らして net を作る形になっていないか（E37 はスキャル＝件数/日 5 が絶対下限・§8.6） |
 
 **確認の手順**:
 1. 指摘を発する前に「この指摘の前提は〇〇である」と言語化する
@@ -226,9 +298,9 @@
 **チェックポイント**:
 
 **A. 早期断念バイアス**（このプロジェクトで最頻出）
-- Phase 不合格・方向転換推奨が出た場合: 合格条件 (Phase 2 = cc_ml_design_spec §1.6 改訂後 4 指標 ALL PASS / Phase 5/6 = 月次 NET ≥ $1,900 全月クリア) を満たせない原因が明確か
+- 不合格・方向転換推奨が出た場合: 合格条件（**採点窓 score.py の月次 net ≥ $1,900 全月クリア・DSR>0.95・PBO<0.5**＝H11。中間の目安は E36+E37 合算 月 net $600）を満たせない原因が明確か。⚠️ 旧「Phase 2 の4指標」は廃止された8工程フローの基準＝使わない
 - 「試していない K 窓・cluster・Exit type が 1 つでもある」場合の方向転換推奨は調査不足
-- learning_design_v4 Layer 1〜3 タスクのうち未試行のものが残っていれば方向転換は時期尚早
+- **entry_exit_matrix.md の対象戦略のグリッドに未試行のセルが残っていれば方向転換は時期尚早**（旧 learning_design_v4 の Layer 1〜3 は廃止＝いまの未試行の正本は網羅マトリクス）
 
 **B. 確証バイアス**
 - leak 修正前の「構造洞察」を根拠に設計判断していないか
@@ -414,7 +486,7 @@ PM が「方向転換推奨」または「Priority 廃止」を出した場合�
 ### ガバナンス正本 (上位ヒエラルキー)
 - `WORKFLOW.md`: 現在の Phase・次のタスク・改訂16 ブロック（唯一の正本・887→373 行スリム化済・履歴は archive/workflow/WORKFLOW_archive_20260521.md）
 - `CLAUDE.md` (v3-bitget-api-sdk/CLAUDE.md): 設計思想・目標・必読リスト・絶対禁止
-- `cc_ml_design_spec.md`: ML pipeline 仕様書（Phase 0〜7 詳細・2026-05-21 改訂 CC ML 設計担当移譲反映済）
+- ⚠️ `cc_ml_design_spec.md`（Phase 0〜7 の ML pipeline 仕様）は**廃止された旧フロー**＝参照しない。いまの要件は `.claude/rules/cat_requirements.md`、いまの改善フローは `.claude/ratchet/e38_flow.md` を見る
 - `.claude/rules/false_positive_incident_policy.md`: **【最重大・必読】** 虚偽達成・虚偽報告インシデント方針 (類型 A〜H・防止関所 7 つ・§0-1 Prime Directive・§0-2 ポジション上限合計 0.12 BTC 厳守)
 - `.claude/rules/cc_role.md`: **【CC 役割定義・必読】** 2026-05-21 ML 設計担当 CC 移譲後の役割・思考プロセス・対話プロトコル
 - `.claude/rules/web_claude_role.md` v3.1: Web Claude 機械照合担当 (旧 ML 設計担当・2026-05-21 降格)
@@ -422,29 +494,26 @@ PM が「方向転換推奨」または「Priority 廃止」を出した場合�
 - `.claude/rules/phase_compliance_checklist.md`: Phase 別現実整合性チェックリスト (14 ラベル独立学習 + audit#19 反映済)
 - `.claude/rules/exchange_spec.md`: Bitget USDT-FUTURES スペック正本 (audit#19 確定値)
 
-### ML pipeline 設計ドラフト
-- `.claude/memory/learning_design_v4.md`: **【最新・必読】** ML 学習デザイン v4 (2026-05-21 CC 移譲後・23 軸 §X.10 整合再構築・Web Claude ドラフト 5 タスク分解 T1〜T5 採用)
-- `.claude/memory/archive/learning_design_v3_20260521.md`: v3 archive (Web Claude 作成・参照のみ)
-- `.claude/memory/phase_flow_v3_with_recovery.md`: Phase 1-b 以降全 Phase フロー + 失敗時改善フロー
-- `.claude/memory/CAT−指標マトリックス - 一覧.csv`: **【23 軸構成要素カタログ・1962 行・必読】** 各軸 §X.1〜§X.10 構造 (定義 / 現状 ML 学習範囲 / 業界カタログ / 絞り込み戦略 / Layer 担当)
+### いまの設計・道具・データ（2026-07-27 差し替え＝旧「ML pipeline 設計ドラフト」「最新 handoff」「実装スクリプト」の節は廃止）
 
-### 最新 handoff
-- `.claude/instructions/handoff_to_cc_v19_session_20260521.md`: **【最新・必読・宛先 CC】** 2026-05-21 ML 設計担当 CC 移譲 / Phase 1-c smoke NO-GO / Entry/Exit 両側学習方法改善議論 / CC 同型バイアス 5 件記録
+> ⚠️ ここに載っていた learning_design_v4／phase_flow_v3／handoff_to_cc_v19／Phase 0〜1-c のスクリプトは、
+> いずれも 2026-05 時点の旧フローのもので、**handoff は 2026-05-26 に廃止済み**。個別に列挙すると必ず腐るので、
+> **機械生成の一覧を見る形に変えた**（下記）。
 
-### 実装スクリプト (Phase 0 v3 + Phase 1-a 完了済)
-- `scripts/priority_rebuild/build_labels_pct.py`: Phase 0 v3 ラベル生成 (14 ラベル MFE/MAE pct・USD 絶対値廃止・leak フリー)
-- `scripts/priority_rebuild/run_lgbm_phase1a_rmse.py`: Phase 1-a 14 ラベル RMSE 学習
-- `scripts/priority_rebuild/build_triple_barrier_labels.py`: Phase 1-c Triple Barrier ラベル生成 (Stage 1)
-- `scripts/priority_rebuild/run_lgbm_phase1c_multiclass.py`: Phase 1-c multiclass 学習 (Stage 2・smoke NO-GO・未 commit)
-- `scripts/priority_rebuild/run_phase4b_phase5_rolling_option5_v3.py`: Phase 4-b/5 v3 (rolling 365 日 + 動的ポジサイジング `size = remaining / n_sim`)
+- `.claude/ratchet/filemap.md`: **【まずここ】** 何がどこにあるか（193 件を実体から機械生成・「やりたいこと→どれを使うか」の索引つき・使われていないファイルも出る）
+- `.claude/ratchet/windows.md`: 検証に使う期間の意味と経緯（periods.py から機械生成）
+- `.claude/ratchet/v9_exits.md`: V9 の Exit 実装（replay_csv.py から機械生成＝手書きの要約を信用しない）
+- `.claude/ratchet/decisions.md`: まこさんが決めたこと（**提案の前に必ず読む**）
+- `.claude/ratchet/adopted_strategies.md`: 全戦略の地図と採用台帳
+- `.claude/ratchet/entry_exit_matrix.md`: Entry×Exit の網羅マトリクス（軸カタログ・戦略ごとの試済／未試行）
+- `.claude/ratchet/engine_tuner_requirements.md`: 値の調整器の要件定義（機械生成）
+- `.claude/ratchet/observe_diag_manual.md` / `engine_tuner_manual.md`: 2つの道具の取扱説明書（機械生成）
+- `.claude/state/next_step.md`: 次にやること（セッション開始で全文表示される）
+- `.claude/state/session_worklog_<日付>.md`: その日の経緯・結論・次の一手
 
 ### 過去事案記録
 - `results/priority_rebuild/leak_incident_20260513.md`: leak 全 14 件ミス記録 (L-179 fractal j±2)
-- `.claude/memory/lessons_active.md`: 過去の失敗記録（L-179/L-182/L-183/L-189/L-196/L-198/L-199 重点）
-
-### Web Claude 役割降格関連
-- `.claude/instructions/handoff_to_web_claude_v18_session_20260521.md`: Web Claude 役割降格申告 (歴史記録)
-- `.claude/instructions/handoff_to_web_claude_v17_session_20260521.md`: audit#18 起票記録 (歴史記録)
+- `.claude/memory/lessons_active.md`: 過去の失敗記録（直近の L 番号が現役・古いものは lessons_archive.md）
 
 ---
 
