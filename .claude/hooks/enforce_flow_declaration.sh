@@ -14,10 +14,10 @@
 #   【フロー宣言】
 #   段: E38 段3 Entry 策定
 #   工程: 3️⃣層3 候補選定
-#   実行: engine_search_e38.py --logic S2
+#   実行: engine_tuner.py --logic S2
 #   目的: 時間系候補の是正後の再探索
 #
-# 対象（実行系のみ）: e38_priority_stack / engine_search_e38 / engine_search_e37 / observe_diag /
+# 対象（実行系のみ）: e38_priority_stack / engine_tuner / engine_search_e37 / observe_diag /
 #   slot_opportunity_diag / e37_scalp / e35_* / e36_* / score.py / precheck.py / report.py / analyze.py / plot_trades
 # 対象外（通す）: --selftest・py_compile・--help・読み取り系（grep/ls/cat 等）・引用符/ヒアドキュメント内の言及・
 #   サブエージェント（デッドロック回避・他 hook と同型）。
@@ -49,7 +49,7 @@ printf '%s' "$CMD_X" | grep -qE 'python[0-9.]*[[:space:]]' || exit 0
 printf '%s' "$CMD_X" | grep -qE -- '--selftest|py_compile|--help|--verify' && exit 0
 
 # 実行系スクリプトの抽出（読み取り系・文書生成は対象外）
-TARGETS=$(printf '%s' "$CMD_X" | grep -oE '(e38_priority_stack|engine_search_e3[78]|observe_diag|slot_opportunity_diag|e37_scalp|e3[56]_[a-z_]+|score|precheck|report|analyze|plot_trades)\.py' | sort -u)
+TARGETS=$(printf '%s' "$CMD_X" | grep -oE '(e38_priority_stack|engine_tuner|engine_search_e37|observe_diag|slot_opportunity_diag|e37_scalp|e3[56]_[a-z_]+|score|precheck|report|analyze|plot_trades)\.py' | sort -u)
 [ -z "$TARGETS" ] && exit 0
 
 DECL="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/flow_declaration.md"

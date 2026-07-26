@@ -1,7 +1,7 @@
-<!-- DESIGN_HASH=aab86c95981f4583 -->
+<!-- DESIGN_HASH=47d3522fb5efdc68 -->
 # e38_design.md — E38 優先度スタック 設計書（gen_design.py 機械生成＝手書き禁止）
 
-生成元: e38_logics.json（ロジック定義の正本・sha256=fc5f54d95b60f1b4）＋ e38_requirements.json ＋ 段0 実測（worklog 逐語）。
+生成元: e38_logics.json（ロジック定義の正本・sha256=b6606e907f019619）＋ e38_requirements.json ＋ 段0 実測（worklog 逐語）。
 再生成: python3 scripts/priority_rebuild/gen_design.py --write ／ 改変検出: --verify
 ⚠️ 本ファイルの手書き編集は禁止。変更は e38_logics.json（値）または gen_design.py（型・まこさん承認）を直して再生成。
 ⚠️ 設定 json が設計書の中核であり実装データそのもの（e38_requirements.json decisions）＝本書の flags/const は json の逐語ダンプ。
@@ -371,11 +371,11 @@ params（実装データ＝関数引数への注入値・逐語）:
 }
 ```
 
-## 7b. 探索範囲の宣言（段2・engine_search_e38 が読む・実装データ＝json 逐語）
+## 7b. 探索範囲の宣言（段2・engine_tuner が読む・実装データ＝json 逐語）
 
 ```json
 {
-  "note": "engine_search_e38 が読む探索範囲の宣言（type=float/cat/quantile）。quantile は探索窓の分布分位から実行時に上下限を決める＝CC の手打ち値なし（kijun26 前例）。float の比率系は幾何 a-priori の広め固定幅（engine_search_e37 の 0.1〜1.0 と同型＝L-267 の禁止は採点窓 net 目的関数の選定）。値決め＝探索窓のみ・確認窓は表示のみ・採点窓不使用（まこさん決定 2026-07-24・正本 window_similarity_ranking.md）。★logics 側の宣言は common_exit と同名キーを上書きできる（engine_search の解決順）。時間系の候補は役割（§8.6 スキャル）から逆算した枠内のみ＝_common_exit_note 参照（まこさん確定 2026-07-25・段3 はセット粗探索でこの枠を全ロジック共通に使う）。S2 の confirm_htf/confirm_vol と th_* は層1 観察の2軸（worklog 20260725 §7・9組の部品そのまま・q_lo/q_hi 0.2〜0.8 は中立の広め幅・stochd14 のみ q_hi 0.95=張り付き解消）",
+  "note": "engine_tuner_e38 が読む探索範囲の宣言（type=float/cat/quantile）。quantile は探索窓の分布分位から実行時に上下限を決める＝CC の手打ち値なし（kijun26 前例）。float の比率系は幾何 a-priori の広め固定幅（engine_search_e37 の 0.1〜1.0 と同型＝L-267 の禁止は採点窓 net 目的関数の選定）。値決め＝探索窓のみ・確認窓は表示のみ・採点窓不使用（まこさん決定 2026-07-24・正本 window_similarity_ranking.md）。★logics 側の宣言は common_exit と同名キーを上書きできる（engine_tuner の解決順）。時間系の候補は役割（§8.6 スキャル）から逆算した枠内のみ＝_common_exit_note 参照（まこさん確定 2026-07-25・段3 はセット粗探索でこの枠を全ロジック共通に使う）。S2 の confirm_htf/confirm_vol と th_* は層1 観察の2軸（worklog 20260725 §7・9組の部品そのまま・q_lo/q_hi 0.2〜0.8 は中立の広め幅・stochd14 のみ q_hi 0.95=張り付き解消）",
   "common_exit": {
     "tp1_frac": {
       "type": "float",

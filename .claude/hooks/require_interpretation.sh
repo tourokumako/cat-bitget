@@ -64,7 +64,7 @@ print(s)" 2>/dev/null)
     # 検査だけの実行は通す
     printf '%s' "$CMD_X" | grep -qE -- '--selftest|py_compile|--help|--verify' && exit 0
     # 実行系スクリプトでなければ通す
-    printf '%s' "$CMD_X" | grep -qE '(e38_priority_stack|engine_search_e3[78]|observe_diag|slot_opportunity_diag|e37_scalp|e3[56]_[a-z_]+|score|precheck|report|analyze|plot_trades|gen_[a-z_]+)\.py' || exit 0
+    printf '%s' "$CMD_X" | grep -qE '(e38_priority_stack|engine_tuner|engine_search_e37|observe_diag|slot_opportunity_diag|e37_scalp|e3[56]_[a-z_]+|score|precheck|report|analyze|plot_trades|gen_[a-z_]+)\.py' || exit 0
     ;;
   *)
     exit 0 ;;

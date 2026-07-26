@@ -160,7 +160,7 @@ def build() -> str:
         p.append(_logic_section(lg))
         p.append("")
     if cfg.get("search_space"):
-        p.append("## 7b. 探索範囲の宣言（段2・engine_search_e38 が読む・実装データ＝json 逐語）")
+        p.append("## 7b. 探索範囲の宣言（段2・engine_tuner が読む・実装データ＝json 逐語）")
         p.append("")
         p.append("```json\n" + json.dumps(cfg["search_space"], ensure_ascii=False, indent=2) + "\n```")
         p.append("")

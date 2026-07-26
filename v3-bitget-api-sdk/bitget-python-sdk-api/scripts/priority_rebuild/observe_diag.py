@@ -81,7 +81,7 @@ Entry 候補観察（まだ玉のない新候補の層1・2026-07-25 まこさ�
 場面バー（例＝レンジ内で mid 以上への戻り）を母集団に、機械ラベル（Triple Barrier 型）で勝ち負けを付け、
 カタログ全体で 1次元の分離力 → 異種カテゴリ AND（2〜3条件・時間足2種以上）のコンフルエンス探索まで出す。
 場面の定義・バリア・探索条件は observe_config.json の scenes / conf_*（レンジ専用でなく場面を足せば他戦略でも使える）。
-出た組は材料まで＝値決めは層3 engine_search_e38・採否は採点窓 score.py（まこさん）。
+出た組は材料まで＝値決めは層3 engine_tuner・採否は採点窓 score.py（まこさん）。
 
 自己検査: python3 observe_diag.py --selftest
 """
@@ -1198,7 +1198,7 @@ def _summary(all_res: dict) -> None:
 #  - 組＝別カテゴリ（ボラ/トレンド/位置構造/出来高需給/ローソク）から 2〜3個＝同族の二度掛け禁止。
 #  - 時間足は1つの組に2種類以上を強制（5分×上位足の MTF コンフルエンス・§25 実測の2軸と同型）。
 #  - 閾値は前半の分布で実値化し、後半は同じ実値のまま確認（L-267）。評価は勝率の持ち上げ×件数下限（金額なし）。
-# 出た組は材料まで＝値決めは層3 engine_search_e38（探索窓）・採否は採点窓 score.py（まこさん）。
+# 出た組は材料まで＝値決めは層3 engine_tuner（探索窓）・採否は採点窓 score.py（まこさん）。
 
 SECTIONS_SCENE = [
     "0 その場面が1日に何回あるかと、条件なしの勝ち負け・負けの中身・概算の期待値を数える",
@@ -1912,7 +1912,7 @@ def observe_scene(scene_id: str, config_path: str | None = None) -> None:
             t2 = _scene_exit_rows(sc, keep, first, second, d1, d2, floor, tps, sls, tmaxs, cfg)
             print(f"\n  条件: {cond['条件の組']}（該当 {int(keep.sum())} 件）")
             print(t2.head(3).to_string(index=False) if len(t2) else "     min_n 未満で出せない")
-    print("\n  ⚠️ 疑似シミュの機械集計＝候補の材料まで。値決めは層3 engine_search_e38・採否は採点窓 score.py（まこさん）。")
+    print("\n  ⚠️ 疑似シミュの機械集計＝候補の材料まで。値決めは層3 engine_tuner・採否は採点窓 score.py（まこさん）。")
 
 
 def plan(trades_csv: str, bars_csv: str, title: str = "", config_path: str | None = None) -> None:

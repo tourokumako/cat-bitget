@@ -79,12 +79,12 @@ TEMPLATE = [
                 "1️⃣層1 観察＝observe_diag の --plan で観察計画を自動生成してまこさんに提出し、OK で本走。"
                 "指標カタログ全体（entry_exit_matrix E-c 145ファミリー等）を複数時間足で当てて分離指標を順位づけする（数個の決め打ち禁止）。"
                 "2️⃣層2 あたり付け＝疑似シミュ。採否にも候補選定にも使わない（L-330）。"
-                "3️⃣層3 セット粗探索＝engine_search_e38 で Entry×Exit を同時に探索"
+                "3️⃣層3 セット粗探索＝engine_tuner で Entry×Exit を同時に探索"
                 "（値決め＝探索窓の全期間のみ・確認窓は選んだ値のまま1回表示のみ・"
-                "窓はまこさん決定 2026-07-24・実日付は engine_search_e38 定数が実体）。"
+                "窓はまこさん決定 2026-07-24・実日付は engine_tuner 定数が実体）。"
                 "4️⃣正式本走→採否＝最終候補1つだけを --tag 連番で本走し、採点窓 score.py＋型別4分割＋N5 区間で"
                 "まこさんが採否（E37 と同じ運用）。",
-        "tools": "observe_diag（層1）・engine_search_e38（層3）・e38_priority_stack（本走）・score.py/report.py/analyze.py。",
+        "tools": "observe_diag（層1）・engine_tuner（層3）・e38_priority_stack（本走）・score.py/report.py/analyze.py。",
         "judge": "★段3 は粗探索＝一回の探索で net 最大化された完璧な値は出ない（段4 Entry 調整・段5 Exit 調整・段6 全体で作り込む土台）。"
                  "net がマイナスでも候補ごと却下しない＝「マイナス→切り捨て」で終える判定を禁止（全部切り捨てたら何も残らない・まこさん指摘 2026-07-25）。"
                  "① 全体 net の1数字で判定しない＝型別（side × down/flat_up）で切り分け、プラスの型・±0の型・出血の型を分ける。"
@@ -108,7 +108,7 @@ TEMPLATE = [
         "work": "Exit＝段3 採択値に固定（動かさない）。Entry 側のパラメータだけを探索空間にして策定4段で回す"
                 "（1️⃣層1 観察→2️⃣層2 あたり付け→3️⃣層3 探索→4️⃣正式本走→採否）。"
                 "評価は件数/日・型別の質を一級にする（net だけで選ばない）。",
-        "tools": "observe_diag・engine_search_e38・score.py/report.py/analyze.py。",
+        "tools": "observe_diag・engine_tuner・score.py/report.py/analyze.py。",
         "done_when": "各候補の Entry 調整済み値が採否記録つきで揃っている。",
         "forbidden": "Exit 側の値を同時に動かす。層を飛ばす。探索に採点窓を使う。",
     },
@@ -120,9 +120,9 @@ TEMPLATE = [
                 "枝の出発点＝V9 型状態機械カタログ（entry_exit_matrix ③-2）。"
                 "1️⃣層1 観察＝entry 後の建玉の動き（含み益の推移・ピーク反転・失速・逆行・時間×損益）を observe_diag で観察。"
                 "2️⃣層2 あたり付け（採否・選定に不使用）。"
-                "3️⃣層3＝出口の枝×値を engine_search_e38 で探索。"
+                "3️⃣層3＝出口の枝×値を engine_tuner で探索。"
                 "4️⃣正式本走→採点窓でまこさんが採否。",
-        "tools": "observe_diag・engine_search_e38・score.py/report.py/analyze.py。",
+        "tools": "observe_diag・engine_tuner・score.py/report.py/analyze.py。",
         "done_when": "各候補に、調整済み Exit のセットが採否記録つきで揃っている。",
         "forbidden": "Entry 側の値を同時に動かす。層を飛ばす。探索に採点窓を使う。"
                      "勝ち玉の巻き込みを実測せずに切る系の枝を足す（Q1・L-352/L-353）。",

@@ -10,7 +10,7 @@
 #   フローの意味を道具レベルで壊した。cc_role §1.4.6.2＝CC 自主運用では止まらない→物理強制で塞ぐ。
 #
 # 強制: python で /private/tmp・/tmp・scratchpad 配下の .py を実行しようとしたらブロック（exit 2）。
-#   正本道具（observe_diag / engine_search_e38 / score / report / analyze / precheck 等）は
+#   正本道具（observe_diag / engine_tuner / score / report / analyze / precheck 等）は
 #   scripts/priority_rebuild/ 配下にあるので一切影響しない（置き場所で判別）。
 #   観察に足りない機能があれば自作せず observe_diag に節を足す（まこさん承認）。
 #
@@ -53,7 +53,7 @@ echo "" >&2
 echo "背景: 2026-07-24 CC が observe_diag を使わず自作 probe を量産し、確立した検証道具・フローを勝手に置き換えた。" >&2
 echo "検証・観察の正本道具（scripts/priority_rebuild/ 配下）だけを使う:" >&2
 echo "  ・観察/分析 = observe_diag.py（--plan 提出→まこさん OK→本走）" >&2
-echo "  ・層3 探索  = engine_search_e38.py" >&2
+echo "  ・層3 探索  = engine_tuner.py" >&2
 echo "  ・採否/分析 = score.py / report.py / analyze.py / precheck.py" >&2
 echo "" >&2
 echo "observe_diag に足りない観察があれば、自作せず observe_diag に節を足す（まこさん承認）＝道具を再発明しない。" >&2

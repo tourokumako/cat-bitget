@@ -1,4 +1,4 @@
-<!-- MANUAL_HASH=fdd863cb0f08ea05 -->
+<!-- MANUAL_HASH=4f5729cad19f7588 -->
 # observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は observe_diag.py と observe_config.json から
@@ -292,6 +292,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 上は説明文です。実際に機械で検査している項目は下です。`--selftest` で全部走ります。
 どれか1つでも崩れると自己検査が止まります。
 
+- 1往復の実コストが eval_engine の確定値と違う:
 - entry の特徴が約定バーの終値を含む（1本前の確定値を使っていない）
 - neighbors が bars を受けない＝相場変化を自玉の価格で代用している
 - observe が結果サマリを呼んでいない（結果の要約が CC の手書きに戻る）
@@ -306,6 +307,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - search_modes が空＝何も検証しない計画になっている
 - search_modes に定義の無いモード （MODE_INFO に無い＝計画に説明が出ない）
 - が config に無い（コンフルエンス探索の条件）
+- が期待値から実コストを引いていない（設計上の下限を引く形に戻っている）
 - の候補が足りない（probe は広く試す）
 - を periods.py から import していない（手打ちの疑い）
 - エピソード跨ぎの通し間隔が neighbors に無い（静けさの後の初回タッチが NaN で探索から漏れる）
@@ -335,6 +337,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 場面の型  が呼び出せない（登録表の中身が関数でない）
 - 場面の型の一覧を登録表から作っていない（手で並べた一覧はずれる）
 - 場面の型の既知答え不一致 : 実測  ／ 期待
+- 場面観察が期待値に SCALP_FLOOR（設計上の下限）を使っている＝手数料と取り違えている
 - 場面観察の期間が採点窓クランプ（_resolve_period）を通っていない
 - 場面観察の節が実装されていない:
 - 増やす方向が件数（バー/日）を出していない（頻度を見ずに入口を足す）
@@ -342,6 +345,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 増やす方向の母集団に建てた玉のバーが混ざっている: 実測  ／ 期待 [0, 1, 4, 5, 7, 8, 9]（建てたバー2・保有中3・建てたバー6 を除く）
 - 売買記録モードの保存名が observe_<売買記録名> の型でない:
 - 建値% TP の探索 sc_take が残っている（TP を変えろという指示は無い）
+- 手数料を eval_engine から取っていない（手打ちの疑い）
 - 指標カタログが  種しかない
 - 採点窓の外の期間（学習窓）が通ってしまう
 - 探索  が実装されていない
@@ -371,11 +375,11 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 閾値が前半の分布から実値化されていない（後半で選び直しの疑い・L-267）
 - ＝有利側だけを出す設計に戻っている:
 
-## engine_search_e38 との違い
+## engine_tuner との違い
 
 どちらも条件を探索します。名前も役割も似ているので混同しやすいですが、評価のしかたが根本的に違います。
 
-| | observe_diag | engine_search_e38 |
+| | observe_diag | engine_tuner |
 |---|---|---|
 | 何をする道具か | 観察して材料と候補を出す | 候補の値を決める |
 | 売買エンジンを回すか | 回さない | 回す |
@@ -391,26 +395,26 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 
 observe_diag は、既にある玉や場面のバーに条件を当てはめて、勝ち負けを静かに数えます。条件を変えても玉は増えません。
 
-engine_search_e38 は、条件を変えるたびに売買エンジンを最初から回し直します。だから玉の集合そのものが変わります。同じ枠を別の玉が取り合う動きも入ります。
+engine_tuner は、条件を変えるたびに売買エンジンを最初から回し直します。だから玉の集合そのものが変わります。同じ枠を別の玉が取り合う動きも入ります。
 
-これが「疑似シミュで上位だった条件が、実際に回すと順位が逆転する」の理由です（L-330）。observe_diag が良いと言った条件が engine_search_e38 で悪くなることは普通に起きます。
+これが「疑似シミュで上位だった条件が、実際に回すと順位が逆転する」の理由です（L-330）。observe_diag が良いと言った条件が engine_tuner で悪くなることは普通に起きます。
 
 ### 検証の3層での位置
 
 ```
 層1 観察      → observe_diag（材料と候補を出す）
 層2 あたり付け → 疑似シミュ（採否にも候補選定にも使わない）
-層3 候補選定  → engine_search_e38（実エンジン × 審判の式で値を決める）
+層3 候補選定  → engine_tuner（実エンジン × 審判の式で値を決める）
 本走・採否    → e38_priority_stack + score.py（採点窓・まこさんが決める）
 ```
 
-observe_diag は入口です。engine_search_e38 は出口の1つ手前です。
+observe_diag は入口です。engine_tuner は出口の1つ手前です。
 
 ### 紛らわしい点
 
-observe_diag のフェーズ8 も条件を探索します。engine_search_e38 と名前も動きも似ています。
+observe_diag のフェーズ8 も条件を探索します。engine_tuner と名前も動きも似ています。
 
-ただしフェーズ8 は「既にある玉のうち、どれを除外すると合計がどうなるか」を静かに計算するだけです。engine_search_e38 のように回し直しません。だから同じ「探索」でも数字の重みが違います。
+ただしフェーズ8 は「既にある玉のうち、どれを除外すると合計がどうなるか」を静かに計算するだけです。engine_tuner のように回し直しません。だから同じ「探索」でも数字の重みが違います。
 
 ## この道具では分からないこと
 
