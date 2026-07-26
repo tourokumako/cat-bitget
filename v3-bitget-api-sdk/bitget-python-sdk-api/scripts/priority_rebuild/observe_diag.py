@@ -50,9 +50,13 @@ observe_config.json で決める。走らせる前に編集して足す/減ら�
 ・探索は前半で行い後半で確認する（同じ窓で最良値を選んで良く見せない・L-267）。
 ・探索のモードは search_modes で選ぶ＝**一気に回さず、順番に1系統ずつ**（まこさん指示 2026-07-21。
   独立探索の寄せ集めは全体の最適解にならず、試行が増えるほど運を拾う数も増えるため）。
-・**取る（建値からの % TP）は削除した**＝TP を変えろという指示は無い（まこさん 2026-07-21）。
-  TP は現行ロジック（レンジ幾何の2段利確）のまま＝この道具では触らない。
-  利益最大化側の探索が要る時は、形をまこさんと決めてから作る。selftest が sc_take の不在を検査する。
+・**既存ロジックの検証では 取る（建値からの % TP）を削除したままにする**＝現行ロジックの TP を変えろという
+  指示は無い（まこさん 2026-07-21）。TP は現行ロジック（レンジ幾何の2段利確）のまま＝ここでは触らない。
+  selftest が sc_take の不在を検査する（この検査は残す）。
+・**新規ロジックの検証では 出口の組み合わせを探す**（まこさん OK 2026-07-26＝「新しい入口候補に対して出口の
+  組み合わせを探す機能がない」の是正）。上の削除は「既に動いている E37 の TP を触るな」であって、まだ玉の無い
+  新しい入口候補の出口まで固定しろという意味ではない＝適用範囲を分ける。振るのは 利確 × 損切り × 保有の上限 の
+  3軸で、刻みは config（場面ごとに上書き可）。順位づけは勝率でなく概算期待値。値決めは層3・採否は採点窓のまま。
 ・★最適化の単位は side（ショート/ロング）× 入口の型（down/flat_up）の4分岐。ロングとショートは
   玉の動きと特徴が違う＝混ぜて最適化しない（cat_requirements §6＝閾値は LONG/SHORT 別・H15 分離・
   V9 原則3＝値は型別に別調整）。シグナルは逆行側/順行側を別プールで生成し、
@@ -105,7 +109,7 @@ warnings.filterwarnings("ignore")
 #   英語をそのまま日本語にした言葉と CC の造語は使わない。
 SECTIONS = [
     "0 分析する玉の全体を、型と出口理由と勝ち負けで数える",
-    "1 どの撤退の仕組みが切ったかを分ける（E37 専用・概算＝価格の位置と保有時間から推定・実装のログではない）",
+    "1 どの撤退の仕組みが切ったかを分ける（概算・ものさしはその走行で実際に使った値から解決する）",
     "2 建てた瞬間の相場の状態を、出口と型ごとに見る",
     "3 保有している間の値動きを、出口と型ごとに見る",
     "4 決済した瞬間の相場の状態を、出口と型ごとに見る",
@@ -115,6 +119,7 @@ SECTIONS = [
     "8 改善の条件の候補を探す（side×型ごとに search_modes で選んだ系統だけ・前半で探して後半で確認）",
     "9 両方の期間でプラスの候補だけを抜き出す（機械が抽出・手書きなし）",
     "10 この結果から次に何をすべきかを出す（戦略名を見ず、売買記録の共通列だけを使う）",
+    "11 増やす方向＝建てなかった場面のうち、建てていれば取れた条件を探す（建値からの%で判定・枠は見ない）",
 ]
 # 探索モードの定義＝「どのロジックに対して・どの値の候補から最適を検証するか」（計画と本走の両方に印字）
 MODE_INFO = {
@@ -627,6 +632,7 @@ def observe(trades_csv: str, bars_csv: str, title: str = "", config_path: str | 
     for k, v in cov.items():
         print(f"     {k}: {v}")
 
+    mech = mech_thresholds(trades_csv)   # フェーズ1 のものさし＝その走行で実際に使った値から解決
     dir_map = {c: meta[c][1] for c in meta if meta[c][0] == "ok"}
     all_res = {}
     for s in ["SHORT", "LONG"]:
@@ -636,12 +642,15 @@ def observe(trades_csv: str, bars_csv: str, title: str = "", config_path: str | 
         print("\n\n" + "★" * 50)
         print(f"★ side = {s}   {len(sub)} 行")
         print("★" * 50)
-        all_res[s] = _one_side(sub.copy(), bars, feat, dir_map, s, cfg) or []
+        all_res[s] = _one_side(sub.copy(), bars, feat, dir_map, s, cfg, mech) or []
 
     _summary(all_res)
 
     _h(SECTIONS[10])                       # 節10 判定＝この結果はどうなのかを機械が出す（手書き判定を挟まない）
     verdict(tr_all)
+
+    _h(SECTIONS[11])                       # フェーズ11 増やす方向（2026-07-26 まこさん OK）
+    grow_search(tr_all, bars, feat, cfg, p0, p1)
 
     print("\n" + "#" * 100)
     print("# ⚠️ 疑似シミュ。スロット再回転（L-330）を再現していない＝実エンジンより良く出る。")
@@ -649,7 +658,98 @@ def observe(trades_csv: str, bars_csv: str, title: str = "", config_path: str | 
     print("#" * 100)
 
 
-def _one_side(tr, bars, feat, dir_map, side, cfg):
+def _free_bars(tr_all, bars, p0, p1):
+    """建てられたのに建てなかったバー＝期間内のバーから、建てたバーと保有中のバーを除く。
+
+    枠（予算 0.12 BTC）は全部の玉で共有なので、side を分けずに全玉の保有時間で埋める
+    （まこさん確認 2026-07-26）。保有中は現実には建てられない＝ここを候補に数えると
+    取り逃しを多く見積もりすぎる。"""
+    idx = bars.index
+    free = np.asarray((idx >= p0) & (idx <= p1))
+    for e, x in zip(pd.to_datetime(tr_all.entry_time), pd.to_datetime(tr_all.exit_time)):
+        free &= ~np.asarray((idx >= e) & (idx <= x))
+    return free
+
+
+def _pct_exit_scan(sel_idx, bars, side, tp_pcts, sl_pcts, tmax_max):
+    """レンジ幾何を使わない走査＝建値からの%だけで到達本数を測る（どの戦略の売買記録でも動く）。
+    帯（レンジ中央・災害線）は NaN を渡す＝比較が成立せず「着かなかった」扱いになる。"""
+    nan = np.full(len(bars), np.nan)
+    g0 = {"res_hi": nan, "res_lo": nan, "sup_hi": nan, "sup_lo": nan}
+    return _scene_exit_scan(sel_idx, bars, g0, side, 0.0, nan, list(tp_pcts), list(sl_pcts), tmax_max)
+
+
+def grow_search(tr_all, bars, feat, cfg, p0, p1):
+    """フェーズ11＝増やす方向。建てなかったバーで「建てていれば取れた」条件を探す。
+
+    ここまでのフェーズは建てた玉しか見ていない＝探せるのは減らす方向だけだった（まこさん指摘 2026-07-26）。
+    売買記録には建てた玉しか載らないので、建てなかった場面は機械ラベルで勝ち負けを付けて見る。
+    判定は建値からの%だけ＝レンジの帯を使わない（戦略に依らず動く・フェーズ10 と同じ思想）。
+
+    ⚠️ 疑似シミュ＝枠の取り合いを見ていない。保有中のバーを母集団から外して近づけるだけ。
+       出るのは候補まで＝実際に件数と net が増えるかは層3 の実エンジンでしか分からない。"""
+    floor, cost_note = round_trip_cost()      # 概算期待値から引くのは実コスト（設計上の下限ではない）
+    print(f"  1往復の実コスト: {cost_note}")
+    tps = [float(x) for x in cfg["scene_exit_tp_pcts"]]
+    sls = [float(x) for x in cfg["scene_exit_sl_pcts"]]
+    tmaxs = [int(x) for x in cfg["scene_exit_tmax_bars"]]
+    free = _free_bars(tr_all, bars, p0, p1)
+    days = max((p1 - p0).days + 1, 1)
+    print(f"  母集団: 期間内のバーのうち、建てたバーと保有中のバーを除いた {int(free.sum())} バー"
+          f"（{int(free.sum()) / days:.1f} バー/日）／ 除いた {int(((bars.index >= p0) & (bars.index <= p1)).sum()) - int(free.sum())} バー")
+    print(f"  出口: 利確 {tps}% × 損切り {sls}% × 保有の上限 {[t * 5 for t in tmaxs]} 分"
+          f"（レンジ中央・災害線は使わない＝帯に依らない）")
+    if int(free.sum()) < cfg["min_n"]:
+        _skip("建てなかったバーが min_n 未満"); return
+    sel = np.where(free)[0]
+    times = bars.index[sel]
+    half_t = times[len(times) // 2]
+    first = np.asarray(times <= half_t)
+    second = ~first
+    d1 = max((half_t - times.min()).days + 1, 1)
+    d2 = max((times.max() - half_t).days + 1, 1)
+    for side in sorted(tr_all.side.dropna().unique()):
+        print("\n" + "─" * 90)
+        print(f"  ■ side = {side}（この向きで建てていたら、の観察）")
+        sc = _pct_exit_scan(sel, bars, side, tps, sls, max(tmaxs))
+        keep = np.ones(len(sel), bool)
+        tbl = _scene_exit_rows(sc, keep, first, second, d1, d2, floor, tps, sls, tmaxs, cfg)
+        if not len(tbl):
+            _skip("出口の組み合わせが min_n を満たさない"); continue
+        print("  ── 条件なし（建てなかったバー全部）＝出口別の期待値 上位5 ──")
+        print(tbl.head(5).to_string(index=False))
+        # 条件探索に使う出口は「前半の期待値が最良」の1つ＝後半で選び直さない（L-267）
+        best = tbl.sort_values("前半_期待値%", ascending=False).iloc[0]
+        b_tp = "mid" if best["利確"] == "レンジ中央" else float(str(best["利確"]).rstrip("%"))
+        b_sl = "zone" if best["損切り"] == "災害線" else float(str(best["損切り"]).rstrip("%"))
+        b_tmax = int(best["保有上限分"]) // 5
+        print(f"  条件探索に使う出口（前半の期待値が最良・後半で選び直さない）: "
+              f"利確 {best['利確']} / 損切り {best['損切り']} / 保有の上限 {best['保有上限分']}分")
+        win, res = _scene_exit_eval(sc, b_tp, b_sl, b_tmax)
+        ok = sc["ok"]
+        sdf = feat.reindex(times).copy()
+        sdf["win"], sdf["res_pct"] = win, res
+        sdf = sdf[ok].reset_index(drop=True)
+        f1, f2 = first[ok], second[ok]
+        base1 = float(win[ok][f1].mean() * 100) if f1.any() else np.nan
+        base2 = float(win[ok][f2].mean() * 100) if f2.any() else np.nan
+        fcols = [c for c in feat.columns if sdf[c].notna().sum() >= max(int(len(sdf) * 0.5), cfg["min_n"])]
+        rows, _raw = _conf_search(sdf, fcols, cfg, f1, f2, base1, base2, d1, d2, floor)
+        df = pd.DataFrame(rows)
+        if not len(df):
+            _skip("足す候補が1件も残らなかった"); continue
+        print(f"\n  ── 足す候補（前半で探索・後半は同じ実値で確認）素の勝率 前半 {base1:.1f}% / 後半 {base2:.1f}% ──")
+        print(df.to_string(index=False))
+        good = df[(df["前半_期待値%"] > 0) & (df["後半_期待値%"] > 0)]
+        print(f"\n  └ 両半期とも 概算期待値がプラス: {len(good)} 組 ＝ここが入口を足す候補（勝率だけで渡さない）")
+        if len(good):
+            print(good.to_string(index=False))
+            print("     ※ バー/日 がそのまま増える件数ではない（枠が空いている時しか建たない）。"
+                  "件数の実力は層3 の実エンジンで見る。")
+    print("\n  ⚠️ 枠の取り合いを見ていない疑似シミュ＝候補の材料まで。値決めは層3・採否は採点窓 score.py。")
+
+
+def _one_side(tr, bars, feat, dir_map, side, cfg, mech):
     tr["is_win"] = tr.net_usd > 0
     sign = -1.0 if side == "LONG" else 1.0
     tr["決済位置%"] = (tr.exit_price / tr.entry_price - 1) * 100 * sign
@@ -705,7 +805,7 @@ def _one_side(tr, bars, feat, dir_map, side, cfg):
 
     # ── 1 機構別分解（TREND_CONT）──
     _h(SECTIONS[1])
-    _mech_decompose(tr, side, cfg)
+    _mech_decompose(tr, side, cfg, mech)
 
     # ── 2〜6: 出口ごと × 型ごと ──
     for ex in exits.index:
@@ -805,36 +905,107 @@ def _one_side(tr, bars, feat, dir_map, side, cfg):
     return _search(tr, fmin, names, sig_dirs, fcols, side, cfg, types)
 
 
-def _mech_decompose(tr, side, cfg):
+_MECH_KEYS = ("V53_FAST_MIN", "V53_ADV_PCT", "V59_WAIT_MIN",
+              "V59_FLAT_WIN_MIN", "V59_DOWN_ADV_PCT", "V59_FLAT_ADV_PCT")
+
+
+def mech_thresholds(trades_csv: str):
+    """フェーズ1 のものさし（撤退機構の閾値）を、その走行で実際に使った値から解決する。
+
+    ★取り違え防止（2026-07-26 まこさん OK）＝以前は e37_scalp のモジュール定数を無条件で import して
+      いた。E38 が段4/段5 で値を変えると、変えたあとの売買記録を古い E37 の値で分類してしまい、
+      出血がどの仕組みから出ているかを読み違える。しかも表は普通に出るので間違いに気づけない。
+
+    解決の順番:
+      ① 売買記録の隣の <stem>_params.json（その走行で実際に使った値の記録）から6つ全部を読めたら、それを使う。
+      ② 読めない時は、そのサイドカーの script が e37_scalp.py の時に限り、e37_scalp のモジュール定数を使う
+         （その売買記録を出した実装そのものなので取り違えにならない）。
+      ③ どちらでもない時は None を返す＝表を出さない（黙って別の戦略の値で分類しない）。
+    返す: (値の dict, 出所の説明) ／ 解決できなければ (None, 理由)。"""
+    import json
+    import pathlib
+    import re
+    p = pathlib.Path(trades_csv)
+    side_car = p.with_name(p.stem + "_params.json")
+    if not side_car.exists():
+        return None, f"使用パラメータの記録が無い: {side_car.name}"
+    raw = side_car.read_text(encoding="utf-8")
+    got = {}
+    for k in _MECH_KEYS:                       # キー名の中に「名前 = 値」で入る形（E38）にも当たる
+        m = re.search(rf"{k}\s*=\s*(-?[0-9]+(?:\.[0-9]+)?)", raw)
+        if m:
+            got[k] = float(m.group(1))
+    src = f"{side_car.name}（その走行で実際に使った値）"
+    if len(got) < len(_MECH_KEYS):
+        try:
+            script = str(json.loads(raw).get("script", ""))
+        except Exception as e:
+            return (got, f"{src}／使用パラメータの記録を読めない: {e}") if got else \
+                (None, f"使用パラメータの記録を読めない: {e}")
+        if script == "e37_scalp.py":     # その売買記録を出した実装そのもの＝取り違えにならない
+            try:
+                import e37_scalp as _e37
+                for k in _MECH_KEYS:
+                    got.setdefault(k, float(getattr(_e37, k)))
+                src = "e37_scalp のモジュール定数（この売買記録を出した実装そのもの）"
+            except Exception as e:
+                src = f"{src}／e37_scalp の定数を読めない: {e}"
+    if not got:
+        return None, ("ものさしが1つも決まらない＝使用パラメータの記録に閾値が載っておらず、"
+                      "この売買記録を出した実装の定数も使えない（別の戦略の値で分類しない）")
+    miss = [k for k in _MECH_KEYS if k not in got]
+    if miss:
+        src += f"／値が無くて分類できない仕組みあり（{', '.join(miss)}）"
+    return got, src
+
+
+def _mech_decompose(tr, side, cfg, mech):
     """節1＝TREND_CONT を「どの撤退機構が切ったか」で分ける（概算）。
     分類は 価格水準（建値からの決済位置%）と保有時間からの再導出＝実装の分岐ログではない。
-    境界の玉は誤分類しうる（その注記ごと読む）。閾値の定数は e37_scalp から import（手打ちしない）。"""
+    境界の玉は誤分類しうる（その注記ごと読む）。閾値は mech_thresholds が解決した値（手打ちしない）。"""
     tc = tr[tr.exit_reason == "TREND_CONT"]
     if not len(tc):
         _skip("TREND_CONT の玉が 0 行（この side には撤退機構の玉が無い）"); return
     if side != "SHORT":
         _skip(f"side={side} は TREND_CONT {len(tc)} 行あるが撤退機構はショート用＝分解しない"); return
-    try:
-        from e37_scalp import (V53_FAST_MIN, V53_ADV_PCT, V59_WAIT_MIN,
-                               V59_FLAT_WIN_MIN, V59_DOWN_ADV_PCT, V59_FLAT_ADV_PCT)
-    except Exception as e:
-        _skip(f"e37_scalp の定数を import できない: {e}"); return
+    th, src = mech
+    if th is None:
+        _skip(f"ものさしが解決できないので分解しない（黙って別の値で分類しない）: {src}"); return
     TOL = 0.02   # 水準一致の許容%（stop はギャップで水準より不利側に約定しうる＝下側のみ緩める・診断専用）
-    print(f"  分類規則（概算・上から順に判定）: "
-          f"v53={{flat_up ∩ 未搭乗 ∩ 保有≤{V53_FAST_MIN}分 ∩ 決済位置≥+{V53_ADV_PCT}−{TOL}%}} → "
-          f"v59_down={{down ∩ 保有≥{V59_WAIT_MIN}分 ∩ 決済位置≥+{round(V59_DOWN_ADV_PCT,3)}−{TOL}%}} → "
-      f"v59_flat={{flat_up ∩ 保有{V59_WAIT_MIN}〜{V59_FLAT_WIN_MIN}分 ∩ 決済位置≥+{round(V59_FLAT_ADV_PCT,3)}−{TOL}%}} → "
-          f"残り=その他（uptrend 畳み・v50 待機後 等）")
+    # 仕組みごとに要る値が揃っている分だけ分類する（揃わない仕組みは分類しない＝その他へ落ちる・黙らない）
+    can53 = all(k in th for k in ("V53_FAST_MIN", "V53_ADV_PCT"))
+    can59d = all(k in th for k in ("V59_WAIT_MIN", "V59_DOWN_ADV_PCT"))
+    can59f = all(k in th for k in ("V59_WAIT_MIN", "V59_FLAT_WIN_MIN", "V59_FLAT_ADV_PCT"))
+    print(f"  ものさしの出所: {src}")
+    print("  ものさしの値: " + " / ".join(f"{k}={th[k]:g}" for k in _MECH_KEYS if k in th))
+    if not (can53 or can59d or can59f):
+        _skip("値が揃う仕組みが1つも無いので分解しない（黙って別の値で分類しない）"); return
+    rules = []
+    if can53:
+        rules.append(f"v53={{flat_up ∩ 未搭乗 ∩ 保有≤{th['V53_FAST_MIN']:g}分 "
+                     f"∩ 決済位置≥+{th['V53_ADV_PCT']:g}−{TOL}%}}")
+    if can59d:
+        rules.append(f"v59_down={{down ∩ 保有≥{th['V59_WAIT_MIN']:g}分 "
+                     f"∩ 決済位置≥+{round(th['V59_DOWN_ADV_PCT'], 3)}−{TOL}%}}")
+    if can59f:
+        rules.append(f"v59_flat={{flat_up ∩ 保有{th['V59_WAIT_MIN']:g}〜{th['V59_FLAT_WIN_MIN']:g}分 "
+                     f"∩ 決済位置≥+{round(th['V59_FLAT_ADV_PCT'], 3)}−{TOL}%}}")
+    print("  分類規則（概算・上から順に判定）: " + " → ".join(rules) + " → 残り=その他")
+    for _nm, _ok in (("v53 幾何早切り", can53), ("v59 急騰早切り(down)", can59d),
+                     ("v59 急騰早切り(flat)", can59f)):
+        if not _ok:
+            print(f"  ⚠️ {_nm} は値が無いので分類しない＝この仕組みの玉は「その他」に入る（見かけ上ゼロになる）")
     tc = tc.copy()
     def _cls(t):
         p = t["決済位置%"]
-        if t.ceil_type == "flat_up" and t.hold_min <= V53_FAST_MIN \
-                and bool(t.get("一度も利にならず", False)) and p >= V53_ADV_PCT - TOL:
+        if can53 and t.ceil_type == "flat_up" and t.hold_min <= th["V53_FAST_MIN"] \
+                and bool(t.get("一度も利にならず", False)) and p >= th["V53_ADV_PCT"] - TOL:
             return "v53 幾何早切り"
-        if t.ceil_type == "down" and t.hold_min >= V59_WAIT_MIN and p >= V59_DOWN_ADV_PCT - TOL:
+        if can59d and t.ceil_type == "down" and t.hold_min >= th["V59_WAIT_MIN"] \
+                and p >= th["V59_DOWN_ADV_PCT"] - TOL:
             return "v59 急騰早切り(down)"
-        if t.ceil_type == "flat_up" and V59_WAIT_MIN <= t.hold_min <= V59_FLAT_WIN_MIN \
-                and p >= V59_FLAT_ADV_PCT - TOL:
+        if can59f and t.ceil_type == "flat_up" and th["V59_WAIT_MIN"] <= t.hold_min <= th["V59_FLAT_WIN_MIN"] \
+                and p >= th["V59_FLAT_ADV_PCT"] - TOL:
             return "v59 急騰早切り(flat)"
         return "その他(uptrend畳み/v50等)"
     tc["機構"] = tc.apply(_cls, axis=1)
@@ -1034,11 +1205,11 @@ SECTIONS_SCENE = [
     "1 指標1つずつで勝ち負けがどれだけ分かれるかを順位づける（材料出しのみ＝ここでは決めない）",
     "2 種類の違う指標を2〜3個重ねて、勝率が上がる組を探す（時間足2種以上・前半で探して後半で確認）",
     "3 両方の期間で勝率も期待値もプラスの組だけを抜き出す（機械が抽出・手書きなし）",
+    "4 出口の組み合わせを比べる（利確 × 損切り × 保有の上限・期待値で順位づけ・入口の条件とセットでも見る）",
 ]
 
-_SCENE_TYPES = ("pullback_short", "fade_short", "zscore_short",
-                "crash_rebound_long", "fade_long", "zscore_long",
-                "support_touch_long")   # L1 入口改良の場面（2026-07-25 まこさん承認「L1改良に進めて」）
+# 場面の型は _SCENE_KINDS（登録表）が正本＝この一覧は登録表から機械で作る（手で並べない・ずれない）。
+# 型を足す手順＝関数を1つ書いて登録表に1行足す。★型を足すのはまこさんの承認が要る（2026-07-26 確認）。
 
 
 def _category(col: str) -> str:
@@ -1054,6 +1225,22 @@ def _category(col: str) -> str:
                                "pivotPP", "形スコア", "zscore", "BB%b")):
         return "位置構造"
     return "トレンド"
+
+
+def round_trip_cost() -> tuple[float, str]:
+    """1往復の実コスト%（概算期待値から引く額）。値は eval_engine の確定値から取る＝手打ちしない。
+
+    ★2026-07-26 まこさん指示で是正。それまでは e37 の SCALP_FLOOR（0.080%）を「手数料床」として
+      引いていたが、あれは**利確をこれより狭く置くなという設計上の下限**であって手数料ではない。
+      実コストの約2.9倍を引いていた＝全部の期待値が実際より悪く見えていた。
+
+    まこさんの指示（2026-07-26 逐語）＝「基本出口はtakerでもいいけど、入口はmaker以外では立てない」。
+      入口＝指値 maker（post_only・約定しなければ建たない）
+      出口＝成行 taker ＋ 滑り（保守側に寄せる。指値で利確できた玉はこれより安く済む）"""
+    from eval_engine import MAKER_FEE, TAKER_FEE, SLIPPAGE
+    c = (MAKER_FEE + TAKER_FEE + SLIPPAGE) * 100.0
+    return c, (f"入口 maker {MAKER_FEE * 100:.3f}% ＋ 出口 taker {TAKER_FEE * 100:.3f}%"
+               f" ＋ 滑り {SLIPPAGE * 100:.3f}% ＝ {c:.3f}%（eval_engine の確定値・まこさん指示 2026-07-26）")
 
 
 def _scene_floor(cfg) -> float:
@@ -1080,45 +1267,136 @@ def _scene_data(cfg):
     return bars, g, w, p0, p1
 
 
+# ══ 場面の型（1つの型＝1つの関数・登録表 _SCENE_KINDS に並べる）════════════
+#   型を足す手順＝下に関数を1つ書いて _SCENE_KINDS に1行足すだけ（一覧・エラー文言・説明書は自動で追従）。
+#   ★型を足すのはまこさんの承認が要る（2026-07-26 確認）＝CC が思いついた型を勝手に増やさない。
+#   関数の約束＝(scene, x) を受け取り、場面バーの bool 配列を返す。x は _scene_ctx が作る共通の材料。
+
+def _scene_ctx(bars, g, floor_pct: float) -> dict:
+    """型の関数が共通で使う材料。レンジの帯・価格・出来高・戻り幅の床。"""
+    c = bars.close.to_numpy()
+    return {
+        "h": bars.high.to_numpy(), "l": bars.low.to_numpy(), "c": c,
+        "v": bars.volume.to_numpy(), "bars": bars, "g": g, "floor": floor_pct,
+        "base": (g["rng"] & np.isfinite(g["res_hi"]) & np.isfinite(g["sup_hi"])
+                 & np.isfinite(g["res_lo"]) & np.isfinite(g["sup_lo"])),
+        "mid": (g["res_lo"] + g["sup_hi"]) / 2.0,
+    }
+
+
+def _touch_filter(scene: dict, x: dict, touch):
+    """帯タッチ系の共通の絞り込み。帯に入った最初のバーだけにする／入口の型で限定する。"""
+    m = touch
+    if scene.get("fresh_only"):                        # 帯に入った最初のバー＝1バー1発注（実装と同じ）
+        prev = np.concatenate([[False], touch[:-1]])
+        m = touch & ~prev
+    isdn = np.isfinite(x["g"]["res_lo"]) & (x["g"]["res_lo"] > x["c"] * 1.005)   # down 型（天井が遠い下落系）
+    if scene.get("flat_up_only"):                      # 現行 L1 と同じ flat_up 型限定（down=落ちるナイフ回避）
+        m = m & ~isdn
+    if scene.get("down_only"):
+        m = m & isdn
+    return m
+
+
+def _sk_pullback_short(scene, x):
+    """レンジの中で mid 以上へ戻ったところを売る（戻り幅が床以上）。"""
+    return x["base"] & (x["c"] >= x["mid"]) & ((x["c"] - x["mid"]) / x["c"] * 100.0 >= x["floor"])
+
+
+def _sk_fade_short(scene, x):
+    """レンジの上に抜けかけて失敗したところを売る。"""
+    return x["base"] & (x["h"] > x["g"]["res_hi"]) & (x["c"] < x["g"]["res_hi"])
+
+
+def _sk_zscore_short(scene, x):
+    """平均から統計的に離れすぎた上側を売る。"""
+    if x["g"]["dev_z"] is None:
+        raise SystemExit("[場面] dev_z 列が無い（e37._load の指標に依存）")
+    return x["base"] & (x["g"]["dev_z"] >= float(scene["z_th"]))
+
+
+def _sk_crash_rebound_long(scene, x):
+    """急落したあとの反発を買う（k_bars 本で drop_pct% 以上下げ ∩ 出来高が平均の vol_mult 倍以上）。"""
+    ret = (x["bars"].close / x["bars"].close.shift(int(scene["k_bars"])) - 1) * 100.0
+    vol_avg = x["bars"].volume.rolling(20).mean()
+    return (x["base"] & (ret.to_numpy() <= -float(scene["drop_pct"]))
+            & (x["v"] >= float(scene["vol_mult"]) * vol_avg.to_numpy()))
+
+
+def _sk_fade_long(scene, x):
+    """レンジの下に抜けかけて失敗したところを買う。"""
+    return x["base"] & (x["l"] < x["g"]["sup_lo"]) & (x["c"] > x["g"]["sup_lo"])
+
+
+def _sk_zscore_long(scene, x):
+    """平均から統計的に離れすぎた下側を買う。"""
+    if x["g"]["dev_z"] is None:
+        raise SystemExit("[場面] dev_z 列が無い（e37._load の指標に依存）")
+    return x["base"] & (x["g"]["dev_z"] <= -float(scene["z_th"]))
+
+
+def _sk_support_touch_long(scene, x):
+    """レンジの下端の帯に触れたところを買う。
+    L1 の入口幾何そのまま（e38_logic_parts support_fresh_touch＝low≤sup_hi ∩ close>sup_lo）。"""
+    touch = x["base"] & (x["l"] <= x["g"]["sup_hi"]) & (x["c"] > x["g"]["sup_lo"])
+    return _touch_filter(scene, x, touch)
+
+
+def _sk_resistance_touch_short(scene, x):
+    """レンジの上端の帯に触れたところを売る（2026-07-26 まこさん OK で新設）。
+    下端タッチの鏡像＝高値が帯の下端以上に届き（触れた）、終値はまだ帯の上端より下（抜け切っていない）。"""
+    touch = x["base"] & (x["h"] >= x["g"]["res_lo"]) & (x["c"] < x["g"]["res_hi"])
+    return _touch_filter(scene, x, touch)
+
+
+def _sk_grid_short(scene, x):
+    """グリッド売り（2026-07-26 まこさん OK で新設・段3 候補 S5 に対応する型）。
+    レンジの内側（下端の帯の上〜上端の帯の下）を grid_n 等分し、その線に下から上へ触れたバー。
+    線をまたいだ判定は「前のバーの終値が線より下 ∩ このバーの高値が線以上」＝過去のみ（H2）。"""
+    return _grid_touch(scene, x, up=True)
+
+
+def _sk_grid_long(scene, x):
+    """グリッド買い（同上・段3 候補 L5 に対応する型）。線に上から下へ触れたバー。"""
+    return _grid_touch(scene, x, up=False)
+
+
+def _grid_touch(scene, x, up: bool):
+    lo_edge, hi_edge = x["g"]["sup_hi"], x["g"]["res_lo"]        # レンジの内側の下端と上端
+    n = int(scene["grid_n"])
+    if n < 2:
+        raise SystemExit(f"[設定] grid_n は2以上（線が引けない）: {n}")
+    prev_c = np.concatenate([[np.nan], x["c"][:-1]])             # 前のバーの終値＝過去のみ
+    m = np.zeros(len(x["c"]), bool)
+    for k in range(1, n):                                        # 内側を n 等分する n-1 本の線
+        lv = lo_edge + (hi_edge - lo_edge) * (k / n)
+        m |= ((prev_c < lv) & (x["h"] >= lv)) if up else ((prev_c > lv) & (x["l"] <= lv))
+    return x["base"] & np.isfinite(prev_c) & m
+
+
+_SCENE_KINDS = {                      # ★型の正本（順番＝説明書と一覧に出る順）
+    "pullback_short": _sk_pullback_short,
+    "fade_short": _sk_fade_short,
+    "zscore_short": _sk_zscore_short,
+    "crash_rebound_long": _sk_crash_rebound_long,
+    "fade_long": _sk_fade_long,
+    "zscore_long": _sk_zscore_long,
+    "support_touch_long": _sk_support_touch_long,
+    "resistance_touch_short": _sk_resistance_touch_short,
+    "grid_short": _sk_grid_short,
+    "grid_long": _sk_grid_long,
+}
+_SCENE_TYPES = tuple(_SCENE_KINDS)    # 一覧は登録表から作る（手で並べない＝ずれない）
+
+
 def _scene_mask(scene: dict, bars, g, floor_pct: float):
-    """場面バーの抽出（型は _SCENE_TYPES・パラメータは observe_config.json の scenes）。"""
-    h, l, c = bars.high.to_numpy(), bars.low.to_numpy(), bars.close.to_numpy()
-    v = bars.volume.to_numpy()
-    base = (g["rng"] & np.isfinite(g["res_hi"]) & np.isfinite(g["sup_hi"])
-            & np.isfinite(g["res_lo"]) & np.isfinite(g["sup_lo"]))
-    mid = (g["res_lo"] + g["sup_hi"]) / 2.0
+    """場面バーの抽出（型は登録表 _SCENE_KINDS・パラメータは observe_config.json の scenes）。"""
     t = scene["type"]
-    if t == "pullback_short":
-        return base & (c >= mid) & ((c - mid) / c * 100.0 >= floor_pct), mid
-    if t == "fade_short":
-        return base & (h > g["res_hi"]) & (c < g["res_hi"]), mid
-    if t == "zscore_short":
-        if g["dev_z"] is None:
-            raise SystemExit("[場面] dev_z 列が無い（e37._load の指標に依存）")
-        return base & (g["dev_z"] >= float(scene["z_th"])), mid
-    if t == "crash_rebound_long":
-        ret = (bars.close / bars.close.shift(int(scene["k_bars"])) - 1) * 100.0
-        vol_avg = bars.volume.rolling(20).mean()
-        return (base & (ret.to_numpy() <= -float(scene["drop_pct"]))
-                & (v >= float(scene["vol_mult"]) * vol_avg.to_numpy())), mid
-    if t == "fade_long":
-        return base & (l < g["sup_lo"]) & (c > g["sup_lo"]), mid
-    if t == "zscore_long":
-        if g["dev_z"] is None:
-            raise SystemExit("[場面] dev_z 列が無い（e37._load の指標に依存）")
-        return base & (g["dev_z"] <= -float(scene["z_th"])), mid
-    if t == "support_touch_long":
-        # L1 の入口幾何そのまま（e38_logic_parts support_fresh_touch＝low≤sup_hi ∩ close>sup_lo）
-        touch = base & (l <= g["sup_hi"]) & (c > g["sup_lo"])
-        m = touch
-        if scene.get("fresh_only"):                        # 帯に入った最初のバー＝1バー1発注（実装と同じ）
-            prev = np.concatenate([[False], touch[:-1]])
-            m = touch & ~prev
-        if scene.get("flat_up_only"):                      # 現行 L1 と同じ flat_up 型限定（down=落ちるナイフ回避）
-            isdn = np.isfinite(g["res_lo"]) & (g["res_lo"] > c * 1.005)
-            m = m & ~isdn
-        return m, mid
-    raise SystemExit(f"[設定] 知らない場面型: {t}（使えるのは {_SCENE_TYPES}）")
+    fn = _SCENE_KINDS.get(t)
+    if fn is None:
+        raise SystemExit(f"[設定] 知らない場面型: {t}（使えるのは {_SCENE_TYPES}）")
+    x = _scene_ctx(bars, g, floor_pct)
+    return fn(scene, x), x["mid"]
 
 
 def _scene_labels(sel_idx, bars, g, side: str, lose_w: float, tmax: int, mid,
@@ -1176,6 +1454,150 @@ def _scene_labels(sel_idx, bars, g, side: str, lose_w: float, tmax: int, mid,
             np.asarray(mae_pct, float), np.asarray(kinds, object))
 
 
+def _scene_exit_grid(scene: dict, cfg: dict):
+    """出口の組み合わせの刻み（まこさん確定 2026-07-26・粗い版）。
+    場面の定義に同名キーがあればそれを使い、無ければ config の共通値を使う（まこさん OK＝場面ごとに上書き可）。
+    段4/段5 で細かく刻みたい時は、その場面の定義に細かい配列を書くだけでよい（コードは触らない）。
+
+    返す3つ: 利確の候補／損切りの候補／保有の上限（5分足の本数）。
+      利確  = "mid"（レンジ中央に先着＝従来の形）＋ 建値からの順行%（複数）
+      損切り = "zone"（災害線に先着＝従来の形）＋ 建値からの逆行%（複数）"""
+    def _pick(key):
+        v = scene.get(key, cfg.get(key))
+        if v is None:
+            raise SystemExit(f"[設定] {key} が config にも場面定義にも無い（出口の組み合わせを作れない）")
+        return list(v)
+    tps = ["mid"] + [float(x) for x in _pick("scene_exit_tp_pcts")]
+    sls = ["zone"] + [float(x) for x in _pick("scene_exit_sl_pcts")]
+    tmaxs = [int(x) for x in _pick("scene_exit_tmax_bars")]
+    if len(tps) * len(sls) * len(tmaxs) < 2:
+        raise SystemExit("[設定] 出口の組み合わせが1通りしかない（比べる意味がない＝探索を消した状態）")
+    return tps, sls, tmaxs
+
+
+def _scene_exit_scan(sel_idx, bars, g, side: str, lose_w: float, mid, tps, sls, tmax_max: int):
+    """出口の組み合わせを1回のバー走査で全部測る（組み合わせの数だけ辿り直さない）。
+
+    やっていること＝場面バーの次バー open で建て、tmax_max 本先まで1回だけ辿りながら
+      ・レンジ中央／災害線／各 利確%／各 損切り% に「何本目で最初に着いたか」
+      ・各本数で決済したときの実現幅%と、そこまでの最大逆行%
+    を記録する。組み合わせ (利確, 損切り, 保有の上限) の勝ち負けは、この記録から後で引ける
+    ＝走査は1回で足りる（利確10×損切り14×上限6 でも走査は増えない）。
+
+    返す dict の中身（全部 玉数 n の配列・届かなければ tmax_max+1 を入れる＝「期間内に着かなかった」）:
+      ok        建てられたか（最終バーで次バーが無い玉は False）
+      t_mid     レンジ中央に先着した本数 ／ gain_mid  その時の実現幅%
+      t_zone    災害線に先着した本数     ／ loss_zone その時の実現幅%（負の値）
+      t_tp      (n, 利確の数) 先着本数   ／ t_sl (n, 損切りの数) 先着本数
+      res_at    (n, tmax_max) その本数で決済したときの実現幅%
+      mae_at    (n, tmax_max) そこまでの最大逆行%"""
+    hi, lo = bars.high.to_numpy(), bars.low.to_numpy()
+    op, cl = bars.open.to_numpy(), bars.close.to_numpy()
+    n_all = len(bars)
+    res_hi, res_lo = g["res_hi"], g["res_lo"]
+    sup_lo, sup_hi = g["sup_lo"], g["sup_hi"]
+    tp_pcts = [x for x in tps if x != "mid"]
+    sl_pcts = [x for x in sls if x != "zone"]
+    n = len(sel_idx)
+    NEVER = tmax_max + 1                      # 「期間内に着かなかった」を表す本数
+    out = {
+        "ok": np.zeros(n, bool),
+        "t_mid": np.full(n, NEVER, int), "gain_mid": np.full(n, np.nan),
+        "t_zone": np.full(n, NEVER, int), "loss_zone": np.full(n, np.nan),
+        "t_tp": np.full((n, len(tp_pcts)), NEVER, int),
+        "t_sl": np.full((n, len(sl_pcts)), NEVER, int),
+        "res_at": np.full((n, tmax_max), np.nan),
+        "mae_at": np.full((n, tmax_max), np.nan),
+        "tp_pcts": tp_pcts, "sl_pcts": sl_pcts, "NEVER": NEVER,
+    }
+    for r, i in enumerate(sel_idx):
+        entry_i = i + 1                       # 次バー open で建てる（同バー約定＝未来参照を避ける・H2）
+        if entry_i >= n_all:
+            continue
+        ep = op[entry_i]
+        wt = mid[i]
+        lb = (res_hi[i] + lose_w * (res_hi[i] - res_lo[i]) if side == "SHORT"
+              else sup_lo[i] - lose_w * (sup_hi[i] - sup_lo[i]))
+        out["ok"][r] = True
+        out["gain_mid"][r] = ((ep - wt) if side == "SHORT" else (wt - ep)) / ep * 100.0
+        out["loss_zone"][r] = ((ep - lb) if side == "SHORT" else (lb - ep)) / ep * 100.0
+        worst = 0.0
+        for t in range(tmax_max):             # t=0 が建てたバー（次バー）＝保有1本
+            j = entry_i + t
+            if j >= n_all:
+                break
+            fav = ((ep - lo[j]) if side == "SHORT" else (hi[j] - ep)) / ep * 100.0   # 順行の最大到達
+            adv = ((hi[j] - ep) if side == "SHORT" else (ep - lo[j])) / ep * 100.0   # 逆行の最大到達
+            worst = max(worst, adv)
+            out["res_at"][r, t] = ((ep - cl[j]) if side == "SHORT" else (cl[j] - ep)) / ep * 100.0
+            out["mae_at"][r, t] = max(worst, 0.0)
+            if out["t_mid"][r] == NEVER and ((lo[j] <= wt) if side == "SHORT" else (hi[j] >= wt)):
+                out["t_mid"][r] = t
+            if out["t_zone"][r] == NEVER and ((hi[j] >= lb) if side == "SHORT" else (lo[j] <= lb)):
+                out["t_zone"][r] = t
+            for k, p in enumerate(tp_pcts):
+                if out["t_tp"][r, k] == NEVER and fav >= p:
+                    out["t_tp"][r, k] = t
+            for k, p in enumerate(sl_pcts):
+                if out["t_sl"][r, k] == NEVER and adv >= p:
+                    out["t_sl"][r, k] = t
+    return out
+
+
+def _scene_exit_eval(sc, tp, sl, tmax: int):
+    """走査の記録から、1つの組み合わせ (利確, 損切り, 保有の上限) の勝ち負けと決着幅%を引く。
+    同じ本数で両方に着いたときは 負け優先（保守・_scene_labels と同じ扱い）。
+    保有の上限に着く前にどちらにも着かなければ 時間切れ＝負け扱い（取れなかった機会）。"""
+    NEVER = sc["NEVER"]
+    t_win = sc["t_mid"] if tp == "mid" else sc["t_tp"][:, sc["tp_pcts"].index(tp)]
+    t_los = sc["t_zone"] if sl == "zone" else sc["t_sl"][:, sc["sl_pcts"].index(sl)]
+    gain = sc["gain_mid"] if tp == "mid" else np.full(len(t_win), float(tp))
+    loss = sc["loss_zone"] if sl == "zone" else np.full(len(t_los), -float(sl))
+    last = min(int(tmax), sc["res_at"].shape[1]) - 1
+    res_to = sc["res_at"][:, last]
+    win = (t_win <= last) & (t_win < t_los)                      # 利確が先＝勝ち（同着は負け優先）
+    los = (t_los <= last) & (t_los <= t_win)                     # 損切りが先 or 同着＝負け
+    res = np.where(win, gain, np.where(los, loss, res_to))       # どちらも無ければ時間切れの実現幅
+    return win, res
+
+
+def _cond_mask(sdf, conds):
+    """フェーズ3 で残った入口の条件を、そのままの実値でマスクに戻す（表示用の丸めた文字列から復元しない）。"""
+    m = np.ones(len(sdf), bool)
+    for col, _q, hi_side, th in conds:
+        v = pd.to_numeric(sdf[col], errors="coerce").to_numpy(float)
+        m &= np.isfinite(v) & ((v >= th) if hi_side else (v <= th))
+    return m
+
+
+def _scene_exit_rows(sc, keep, first, second, days1, days2, floor, tps, sls, tmaxs, cfg):
+    """出口の組み合わせを全部評価して1行ずつの表にする。順位づけは概算期待値（勝率では並べない）。
+    keep＝入口の条件で残した玉のマスク（条件なしのときは全部 True）。"""
+    rows = []
+    for tp in tps:
+        for sl in sls:
+            for tmax in tmaxs:
+                win, res = _scene_exit_eval(sc, tp, sl, tmax)
+                m = keep & sc["ok"]
+                m1, m2 = m & first, m & second
+                if int(m.sum()) < int(cfg["min_n"]):
+                    continue
+                rows.append({
+                    "利確": ("レンジ中央" if tp == "mid" else f"{tp}%"),
+                    "損切り": ("災害線" if sl == "zone" else f"{sl}%"),
+                    "保有上限分": int(tmax) * 5,
+                    "件数": int(m.sum()),
+                    "件数/日": round(float(m.sum()) / max(days1 + days2, 1), 2),
+                    "勝率%": round(float(win[m].mean() * 100), 1),
+                    "平均決着幅%": round(float(np.nanmean(res[m])), 3),
+                    "期待値%": round(float(np.nanmean(res[m]) - floor), 3),
+                    "前半_期待値%": round(float(np.nanmean(res[m1]) - floor), 3) if int(m1.sum()) else np.nan,
+                    "後半_期待値%": round(float(np.nanmean(res[m2]) - floor), 3) if int(m2.sum()) else np.nan,
+                })
+    df = pd.DataFrame(rows)
+    return df.sort_values("期待値%", ascending=False).reset_index(drop=True) if len(df) else df
+
+
 def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2, floor):
     """異種カテゴリ AND のコンフルエンス探索。閾値は前半の分布で実値化（_th_first）→後半は同じ実値で確認。
     評価＝勝率の持ち上げ（pt）を最大化・成立バー/日 conf_min_bars_per_day 未満はゲートで棄却（金額なし）。
@@ -1187,7 +1609,7 @@ def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2, floor
         import optuna
         optuna.logging.set_verbosity(optuna.logging.WARNING)
     except Exception as e:
-        _skip(f"optuna が使えない: {e}"); return []
+        _skip(f"optuna が使えない: {e}"); return [], []
     from itertools import combinations
     cats: dict[str, list] = {}
     for c in feat_cols:
@@ -1195,7 +1617,7 @@ def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2, floor
     combos = ["+".join(x) for r in range(int(cfg["conf_and_min"]), int(cfg["conf_and_max"]) + 1)
               for x in combinations(sorted(cats), r)]
     if not combos:
-        _skip("カテゴリが足りない"); return []
+        _skip("カテゴリが足りない"); return [], []
     win = sdf["win"].to_numpy(bool)
     resv = pd.to_numeric(sdf["res_pct"], errors="coerce").to_numpy(float)   # 決着幅%（不利側込み）
     ev = {c: pd.to_numeric(sdf[c], errors="coerce").to_numpy(float) for c in feat_cols}
@@ -1246,7 +1668,7 @@ def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2, floor
         return wr - base1
     st = optuna.create_study(direction="maximize", sampler=optuna.samplers.TPESampler(seed=42))
     st.optimize(objective, n_trials=int(cfg["conf_trials"]), show_progress_bar=False)
-    rows, seen = [], set()
+    rows, raw, seen = [], [], set()
     for tr_ in sorted(st.trials, key=lambda z: -(z.value if z.value is not None else -1e9)):
         if tr_.value is None or tr_.value <= -1e8:
             continue
@@ -1265,9 +1687,10 @@ def _conf_search(sdf, feat_cols, cfg, first, second, base1, base2, d1, d2, floor
             for c, q, h, th in conds),
             "前半_勝率%": round(w1, 1), "前半_期待値%": round(ev1, 3), "前半_バー/日": round(pd1_, 1),
             "後半_勝率%": round(w2, 1), "後半_期待値%": round(ev2, 3), "後半_バー/日": round(pd2_, 1)})
+        raw.append(list(conds))    # フェーズ4 が同じ条件でマスクを作り直すための生の条件（表示は上の文字列）
         if len(rows) >= 10:
             break
-    return rows
+    return rows, raw
 
 
 def _scene_header(scene_id, scene, cfg, floor, p0, p1, planning: bool):
@@ -1305,6 +1728,7 @@ def plan_scene(scene_id: str, config_path: str | None = None) -> None:
     sel = np.where(mask_all & w)[0]
     days = max((p1 - p0).days + 1, 1)
     _scene_header(scene_id, scene, cfg, floor, p0, p1, planning=True)
+    print(f"# 1往復の実コスト: {round_trip_cost()[1]}")
     times = bars.index[sel]
     half_t = times[len(times) // 2] if len(times) else None
     print(f"\n  場面バー: {len(sel)} バー（{len(sel) / days:.1f} バー/日）")
@@ -1335,12 +1759,14 @@ def observe_scene(scene_id: str, config_path: str | None = None) -> None:
     scene = (cfg.get("scenes") or {}).get(scene_id)
     if not scene:
         raise SystemExit(f"[設定] scenes に {scene_id} が無い（observe_config.json）")
-    floor = _scene_floor(cfg)
+    floor_cond = _scene_floor(cfg)            # 場面の条件に使う戻り幅の下限（手数料ではない）
+    floor, cost_note = round_trip_cost()       # 概算期待値から引く1往復の実コスト
     bars, g, w, p0, p1 = _scene_data(cfg)
-    mask_all, mid = _scene_mask(scene, bars, g, floor)
+    mask_all, mid = _scene_mask(scene, bars, g, floor_cond)
     sel = np.where(mask_all & w)[0]
     days = max((p1 - p0).days + 1, 1)
-    _scene_header(scene_id, scene, cfg, floor, p0, p1, planning=False)
+    _scene_header(scene_id, scene, cfg, floor_cond, p0, p1, planning=False)
+    print(f"# 1往復の実コスト: {cost_note}")
     if len(sel) < cfg["min_n"]:
         raise SystemExit(f"[場面] 場面バーが {len(sel)} 行（min_n {cfg['min_n']} 未満＝観察しない）")
 
@@ -1360,7 +1786,7 @@ def observe_scene(scene_id: str, config_path: str | None = None) -> None:
         k = float(scene.get("win_pct_k", 0))
         if k < 1.0:                            # 床割れの勝ち定義＝手数料負けの動きを「勝ち」と数える設計を物理禁止
             raise SystemExit(f"[設定] win_pct_k が 1.0 未満: {k}（勝ちの幅は床×1以上＝手数料負けしない幅）")
-        win_pct = k * floor
+        win_pct = k * floor_cond
     wins, oks, res_pct, mae_pct, kinds = _scene_labels(
         sel, bars, g, scene["side"], float(scene["lose_barrier_w"]),
         int(scene["tmax_bars"]), mid, win_target, win_pct)
@@ -1425,7 +1851,7 @@ def observe_scene(scene_id: str, config_path: str | None = None) -> None:
     print("  ＝1個ずつの材料。ここでは決めない（前回の1軸検索の失敗を繰り返さない）。")
 
     _h(SECTIONS_SCENE[2])
-    rows = _conf_search(sdf, fcols, cfg, first, second, base1, base2, d1, d2, floor)
+    rows, conds_raw = _conf_search(sdf, fcols, cfg, first, second, base1, base2, d1, d2, floor)
     df_rows = pd.DataFrame(rows)
     if len(df_rows):
         print("  前半で探索した上位10（重複除去後・後半は同じ実値をそのまま当てた確認）")
@@ -1453,6 +1879,39 @@ def observe_scene(scene_id: str, config_path: str | None = None) -> None:
             print(ev_ok.to_string(index=False))
     else:
         print("  候補 0 組")
+
+    # ★フェーズ4＝出口の組み合わせ（まこさん OK 2026-07-26）。
+    #   背景＝ここまでのフェーズは出口を1組に固定したまま入口だけを見ていた＝入口の順位が出口の仮定に
+    #   引きずられる（Entry と Exit はセットで net が決まる・L-285）。刻みはまこさん確定の粗い版。
+    _h(SECTIONS_SCENE[4])
+    tps, sls, tmaxs = _scene_exit_grid(scene, cfg)
+    print(f"  振る軸: 利確 {['レンジ中央' if t == 'mid' else f'{t}%' for t in tps]}"
+          f" × 損切り {['災害線' if s == 'zone' else f'{s}%' for s in sls]}"
+          f" × 保有の上限 {[t * 5 for t in tmaxs]} 分"
+          f" ＝ {len(tps) * len(sls) * len(tmaxs)} 通り")
+    print("  ＝走査は1回だけ（組み合わせの数だけ辿り直さない）。順位づけは概算期待値（勝率では並べない）。")
+    sc = _scene_exit_scan(sel, bars, g, scene["side"], float(scene["lose_barrier_w"]),
+                          mid, tps, sls, max(tmaxs))
+    all_keep = np.ones(len(sel), bool)
+    tbl = _scene_exit_rows(sc, all_keep, first, second, d1, d2, floor, tps, sls, tmaxs, cfg)
+    if len(tbl):
+        print("\n  ── 入口の条件なし（場面バー全部）＝出口だけの効き・期待値の上位10 ──")
+        print(tbl.head(10).to_string(index=False))
+        both_ex = tbl[(tbl["前半_期待値%"] > 0) & (tbl["後半_期待値%"] > 0)]
+        print(f"\n  └ 両半期とも 概算期待値がプラス: {len(both_ex)} 通り ＝ここが層3 に渡す出口の候補")
+        if len(both_ex):
+            print(both_ex.to_string(index=False))
+    else:
+        _skip("出口の組み合わせが1通りも min_n を満たさなかった")
+
+    # 入口の条件とセットで見る（フェーズ3 で両半期プラスが残った時だけ・上位3条件まで）
+    if len(df_rows) and len(ev_ok):
+        print("\n  ── 入口の条件 × 出口（フェーズ3 で残った条件の上位3・各条件の出口 上位3）──")
+        for idx, cond in ev_ok.head(3).iterrows():
+            keep = _cond_mask(sdf, conds_raw[idx])
+            t2 = _scene_exit_rows(sc, keep, first, second, d1, d2, floor, tps, sls, tmaxs, cfg)
+            print(f"\n  条件: {cond['条件の組']}（該当 {int(keep.sum())} 件）")
+            print(t2.head(3).to_string(index=False) if len(t2) else "     min_n 未満で出せない")
     print("\n  ⚠️ 疑似シミュの機械集計＝候補の材料まで。値決めは層3 engine_search_e38・採否は採点窓 score.py（まこさん）。")
 
 
@@ -1802,11 +2261,42 @@ def selftest() -> None:
             ng.append(f"入口フィルタのプールに勝敗/bool 依存の列 {bad_col}（前玉が保有中なら entry 時点で未確定＝未来参照の疑い）")
     if "前玉との時間間隔分_通し" not in inspect.getsource(neighbors):
         ng.append("エピソード跨ぎの通し間隔が neighbors に無い（静けさの後の初回タッチが NaN で探索から漏れる）")
-    # ★節1 機構別分解（2026-07-23 追加）＝配線され、閾値は e37_scalp から import（手打ち禁止）
+    # ★フェーズ1 機構別分解＝配線され、ものさしは「その走行で実際に使った値」から解決する（2026-07-26 改訂）
+    #   旧検査は「e37_scalp から import しているか」だった＝E38 の値を変えても古い E37 の値で分類する
+    #   取り違えを許してしまうので、出所の解決を検査する形に作り替えた（まこさん OK）。
     if "_mech_decompose" not in inspect.getsource(_one_side):
         ng.append("機構別分解が observe に配線されていない")
-    if "from e37_scalp import" not in inspect.getsource(_mech_decompose):
-        ng.append("機構別分解の閾値が e37_scalp から import されていない（手打ちの疑い）")
+    _src_mech = inspect.getsource(_mech_decompose)
+    if _J("mech_thre", "sholds") not in inspect.getsource(observe):
+        ng.append("フェーズ1 のものさしを本走で解決していない（古い値で分類する取り違えが起きる）")
+    if _J("th, src = ", "mech") not in _src_mech:
+        ng.append("フェーズ1 が解決済みのものさしを使っていない（自前で import に戻っている疑い）")
+    if _J("ものさしの", "出所") not in _src_mech:
+        ng.append("フェーズ1 がものさしの出所を印字していない（どの値で分類したか追えない）")
+    import re as _re
+    for _num in _re.findall(r"V5[39]_[A-Z_]+\s*=\s*[0-9]", inspect.getsource(mech_thresholds)):
+        ng.append(f"フェーズ1 のものさしを手打ちしている: {_num}")
+    # 既知答え＝①記録に値があればそれを使う ②無くて別の戦略なら None（表を出さない）
+    import json as _json
+    import shutil as _sh2
+    import tempfile as _tf2
+    _td2 = _tf2.mkdtemp()
+    try:
+        _csv = pathlib.Path(_td2) / "trades_x_score.csv"
+        _csv.write_text("a\n1\n", encoding="utf-8")
+        _sj = pathlib.Path(_td2) / "trades_x_score_params.json"
+        _sj.write_text(_json.dumps({"script": "e38_priority_stack.py", "sections": {
+            " / ".join(f"{k} = {i + 1}.5" for i, k in enumerate(_MECH_KEYS)): "テスト"}},
+            ensure_ascii=False), encoding="utf-8")
+        _th, _src = mech_thresholds(str(_csv))
+        if _th is None or _th["V53_FAST_MIN"] != 1.5 or _th["V59_FLAT_ADV_PCT"] != 6.5:
+            ng.append(f"フェーズ1 が記録の値を読めていない: {_th}")
+        _sj.write_text(_json.dumps({"script": "e38_priority_stack.py"}, ensure_ascii=False), encoding="utf-8")
+        _th2, _src2 = mech_thresholds(str(_csv))
+        if _th2 is not None:
+            ng.append("記録に閾値が無い別の戦略でも、ものさしを決めてしまう（取り違えの元）")
+    finally:
+        _sh2.rmtree(_td2, ignore_errors=True)
     for need in SECTIONS:
         if need not in src:
             ng.append(f"節が実装されていない: {need}")
@@ -1859,6 +2349,9 @@ def selftest() -> None:
         ("勝ち", [100.0, 100.2, 100.2, 100.2], [100.0, 99.4, 99.4, 99.4], [100.0, 99.6, 99.6, 99.6], True, +0.5, 0.2),
         ("災害線", [100.0, 101.6, 101.6, 101.6], [100.0, 99.9, 99.9, 99.9], [100.0, 101.5, 101.5, 101.5], False, -1.5, 1.6),
         ("時間切れ", [100.0, 100.3, 100.3, 100.3], [100.0, 99.7, 99.7, 99.7], [100.0, 100.1, 100.1, 100.1], False, -0.1, 0.3),
+        # 同じバーで利確にも災害線にも着いた場合＝負け優先（保守）。これを入れないと「同着を勝ちに数える」
+        # 改悪を番人が見逃す（2026-07-26 メタ確認で実測＝壊しても pass したので追加）。
+        ("災害線", [100.0, 101.6, 101.6, 101.6], [100.0, 99.4, 99.4, 99.4], [100.0, 101.5, 101.5, 101.5], False, -1.5, 1.6),
     ]
     for kd, hh, ll, cc, exp_w, exp_r, exp_m in _syn_cases:
         nn = len(hh)
@@ -1871,6 +2364,94 @@ def selftest() -> None:
         got = (bool(o_[0]), bool(w_[0]), str(k_[0]), round(float(r_[0]), 6), round(float(m_[0]), 6))
         if got != (True, exp_w, kd, round(exp_r, 6), round(exp_m, 6)):
             ng.append(f"不利側の既知答えテスト不一致 {kd}: 実測 {got} ／ 期待 {(True, exp_w, kd, exp_r, exp_m)}")
+        # ★出口の組み合わせの既知答え（2026-07-26 まこさん OK）＝同じ合成バーで、従来の固定の仮定と
+        #   同じ組み合わせ（利確 0.5%・損切り 災害線・保有 3本）を指定したら、上の _scene_labels と
+        #   同じ勝ち負け・同じ決着幅になること。ここがずれたら「直したことにしない」（恒等の確認）。
+        _sc = _scene_exit_scan([0], bb, gg, "SHORT", 1.0, np.full(nn, np.nan), ["mid", 0.5], ["zone"], 3)
+        _w2, _r2 = _scene_exit_eval(_sc, 0.5, "zone", 3)
+        if (bool(_w2[0]), round(float(_r2[0]), 6)) != (exp_w, round(exp_r, 6)):
+            ng.append(f"出口の組み合わせが従来の固定の仮定と一致しない {kd}: "
+                      f"実測 {(bool(_w2[0]), round(float(_r2[0]), 6))} ／ 期待 {(exp_w, exp_r)}")
+    # ★出口の組み合わせの番人（2026-07-26 まこさん OK）
+    _grid_cfg = {"scene_exit_tp_pcts": [0.2], "scene_exit_sl_pcts": [0.3], "scene_exit_tmax_bars": [6]}
+    # 刻みを空にして1通りに戻したら止まること（＝出口の探索を消した状態を弾く）。
+    # ⚠️ 空でない刻みで試すと「レンジ中央」「災害線」が常に足されて必ず2通り以上になり、検査が素通りする
+    #    （2026-07-26 メタ確認で実測＝弾く処理を消しても pass したので、空の刻みで試す形に直した）。
+    try:
+        _scene_exit_grid({}, {"scene_exit_tp_pcts": [], "scene_exit_sl_pcts": [],
+                              "scene_exit_tmax_bars": [6]})
+        ng.append("出口の組み合わせが1通りでも通ってしまう（比べる意味が無い状態を弾けない）")
+    except SystemExit:
+        pass
+    if _scene_exit_grid({"scene_exit_tmax_bars": [1, 2]}, _grid_cfg)[2] != [1, 2]:
+        ng.append("出口の刻みを場面ごとに上書きできない（config の共通値しか使えない）")
+    _src_exit = inspect.getsource(_scene_exit_rows)
+    if _J("\"期待", "値%\", ascending=False") not in _src_exit:
+        ng.append("出口の組み合わせを期待値で順位づけしていない（勝率で並べる設計に戻っている）")
+    if _J("_scene_exit_", "scan(") not in src_scene:
+        ng.append("フェーズ4 出口の組み合わせが本走（observe_scene）から呼ばれていない＝関数だけ在って動かない")
+    # ★場面の型の登録表の番人（2026-07-26 まこさん OK＝型を足せるようにした）
+    if _J("tuple(_SCENE_", "KINDS)") not in src:
+        ng.append("場面の型の一覧を登録表から作っていない（手で並べた一覧はずれる）")
+    for _t, _fn in _SCENE_KINDS.items():
+        if not callable(_fn):
+            ng.append(f"場面の型 {_t} が呼び出せない（登録表の中身が関数でない）")
+    try:                                   # 登録していない型を場面に書いたら止まること
+        _scene_mask({"type": "この型は登録していない"}, pd.DataFrame(
+            {"open": [1.0], "high": [1.0], "low": [1.0], "close": [1.0], "volume": [1.0]}),
+            {"rng": np.array([True]), "res_hi": np.array([1.0]), "res_lo": np.array([1.0]),
+             "sup_hi": np.array([1.0]), "sup_lo": np.array([1.0]), "dev_z": None}, 0.08)
+        ng.append("登録していない場面の型でも通ってしまう（型の取り違えを弾けない）")
+    except SystemExit:
+        pass
+    # ★新しい型の既知答え（手計算・合成バー5本／帯 res 100.5-101.0・sup 99.0-99.5・線は 100.0 の1本）
+    _nb = pd.DataFrame({"open": [99.6, 99.8, 100.2, 100.6, 100.4],
+                        "high": [99.7, 100.1, 100.6, 100.7, 100.5],
+                        "low": [99.5, 99.7, 100.0, 100.3, 99.9],
+                        "close": [99.6, 99.8, 100.2, 100.6, 100.4],
+                        "volume": [1.0] * 5},
+                       index=pd.date_range("2026-03-01", periods=5, freq="5min"))
+    _ng5 = {"rng": np.ones(5, bool), "res_hi": np.full(5, 101.0), "res_lo": np.full(5, 100.5),
+            "sup_hi": np.full(5, 99.5), "sup_lo": np.full(5, 99.0), "dev_z": None}
+    for _sc, _exp, _why in (
+            ({"type": "resistance_touch_short"}, [2, 3, 4], "上端タッチの売り"),
+            ({"type": "resistance_touch_short", "fresh_only": True}, [2], "上端タッチの売り（最初のバーだけ）"),
+            ({"type": "grid_short", "grid_n": 2}, [1, 2], "グリッド売り（下から線に触れた）"),
+            ({"type": "grid_long", "grid_n": 2}, [4], "グリッド買い（上から線に触れた）")):
+        _m, _ = _scene_mask(_sc, _nb, _ng5, 0.08)
+        if list(np.where(_m)[0]) != _exp:
+            ng.append(f"場面の型の既知答え不一致 {_why}: 実測 {list(np.where(_m)[0])} ／ 期待 {_exp}")
+    # ★手数料の番人（2026-07-26 まこさん指示で是正＝設計上の下限を手数料として引いていた）
+    _c, _note = round_trip_cost()
+    from eval_engine import MAKER_FEE as _mk, TAKER_FEE as _tk, SLIPPAGE as _sl
+    if abs(_c - (_mk + _tk + _sl) * 100.0) > 1e-12:
+        ng.append(f"1往復の実コストが eval_engine の確定値と違う: {_c}")
+    if _J("from eval_engine import MAKER_FEE, TAKER_FEE, ", "SLIPPAGE") not in inspect.getsource(round_trip_cost):
+        ng.append("手数料を eval_engine から取っていない（手打ちの疑い）")
+    # 期待値を出す2か所（場面観察・増やす方向）が実コストを引いているか。売買記録の観察 observe は
+    # 自分では期待値を出さず grow_search に委ねるので、ここでは見ない（見ると必ず落ちる誤検査になる）。
+    for _fn, _why in ((observe_scene, "場面観察"), (grow_search, "増やす方向")):
+        if _J("round_trip_", "cost()") not in inspect.getsource(_fn):
+            ng.append(f"{_why} が期待値から実コストを引いていない（設計上の下限を引く形に戻っている）")
+    if _J("floor = _scene_", "floor(cfg)") in inspect.getsource(observe_scene):
+        ng.append("場面観察が期待値に SCALP_FLOOR（設計上の下限）を使っている＝手数料と取り違えている")
+    # ★フェーズ11 増やす方向の番人（2026-07-26 まこさん OK）
+    _gb = pd.DataFrame({"open": [1.0] * 10, "high": [1.0] * 10, "low": [1.0] * 10,
+                        "close": [1.0] * 10, "volume": [1.0] * 10},
+                       index=pd.date_range("2026-03-01", periods=10, freq="5min"))
+    _gt = pd.DataFrame({"entry_time": [_gb.index[2], _gb.index[6]],
+                        "exit_time": [_gb.index[3], _gb.index[6]], "side": ["SHORT", "SHORT"]})
+    _fr = _free_bars(_gt, _gb, _gb.index[0], _gb.index[-1])
+    if list(np.where(_fr)[0]) != [0, 1, 4, 5, 7, 8, 9]:
+        ng.append(f"増やす方向の母集団に建てた玉のバーが混ざっている: 実測 {list(np.where(_fr)[0])} "
+                  f"／ 期待 [0, 1, 4, 5, 7, 8, 9]（建てたバー2・保有中3・建てたバー6 を除く）")
+    _src_grow = inspect.getsource(grow_search)
+    if _J("前半_期待値%\"] > 0) & (df[\"後半_期", "待値%\"] > 0") not in _src_grow:
+        ng.append("増やす方向の候補を期待値で絞っていない（勝率だけで足す候補にしてしまう）")
+    if _J("バー", "/日") not in _src_grow:
+        ng.append("増やす方向が件数（バー/日）を出していない（頻度を見ずに入口を足す）")
+    if _J("grow_", "search(") not in inspect.getsource(observe):
+        ng.append("フェーズ11 増やす方向が本走（observe）から呼ばれていない＝関数だけ在って動かない")
     # ★観察結果の保存の番人（2026-07-26 まこさん OK）＝①保存先が固定 ②上書きしない。
     #   ②は「呼んでいるふり」を文字列では見抜けないので、一時ディレクトリで実際に動かして確かめる。
     if _out_path("scene", "L1ap").parent != ratchet_io.RATCHET:

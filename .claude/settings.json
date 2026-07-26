@@ -21,6 +21,11 @@
           },
           {
             "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/show_decisions.sh",
+            "timeout": 20
+          },
+          {
+            "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/hook_health_check.sh",
             "timeout": 30
           }
@@ -160,10 +165,6 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_read_before_work.sh"
-          },
-          {
-            "type": "command",
-            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_comprehension_check.sh"
           },
           {
             "type": "command",

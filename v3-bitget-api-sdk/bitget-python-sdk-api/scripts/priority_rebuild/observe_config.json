@@ -227,20 +227,20 @@
    "type": "pullback_short",
    "side": "SHORT",
    "lose_barrier_w": 1.0,
-   "tmax_bars": 48
+   "tmax_bars": 12
   },
   "S3": {
    "type": "fade_short",
    "side": "SHORT",
    "lose_barrier_w": 1.0,
-   "tmax_bars": 48
+   "tmax_bars": 12
   },
   "S4": {
    "type": "zscore_short",
    "side": "SHORT",
    "z_th": 2.0,
    "lose_barrier_w": 1.0,
-   "tmax_bars": 48
+   "tmax_bars": 12
   },
   "L2": {
    "type": "crash_rebound_long",
@@ -255,14 +255,14 @@
    "type": "fade_long",
    "side": "LONG",
    "lose_barrier_w": 1.0,
-   "tmax_bars": 48
+   "tmax_bars": 12
   },
   "L4": {
    "type": "zscore_long",
    "side": "LONG",
    "z_th": 2.0,
    "lose_barrier_w": 1.0,
-   "tmax_bars": 48
+   "tmax_bars": 12
   },
   "L1w": {
    "type": "support_touch_long",
@@ -291,9 +291,27 @@
    "win_pct_k": 2.0
   }
  },
- "_scenes": "Entry 候補観察（--scene）の場面定義。type は道具側の実装済み場面型・パラメータはここで差し替える（レンジ専用でなく場面を足せば他戦略でも使える）。勝ち=場面バー時点の mid 到達／負け=災害線（SHORT: res_hi+w×レジ帯厚・LONG: sup_lo−w×サポ帯厚）到達 or tmax_bars 時間切れ（時間切れは負け扱い）。z_th 2.0=BB2σ相当の標準値・L2 の k_bars/drop_pct/vol_mult は段0 L2 定義由来の仮置き＝--plan でまこさん確認。L2 の tmax_bars は 48→12（=1時間・2026-07-25 スキャル概念整合＝判定窓も役割の保有帯に合わせる・S2 の 48 は当時の値のまま残置=歴史）。",
+ "_scenes": "Entry 候補観察（--scene）の場面定義。type は道具側の実装済み場面型・パラメータはここで差し替える（レンジ専用でなく場面を足せば他戦略でも使える）。勝ち=場面バー時点の mid 到達／負け=災害線（SHORT: res_hi+w×レジ帯厚・LONG: sup_lo−w×サポ帯厚）到達 or tmax_bars 時間切れ（時間切れは負け扱い）。z_th 2.0=BB2σ相当の標準値・L2 の k_bars/drop_pct/vol_mult は段0 L2 定義由来の仮置き＝--plan でまこさん確認。★保持時間の上限 tmax_bars は全場面 12本＝60分に統一（まこさん指示 2026-07-26「全部６０分に揃える」）＝勝ち負けを決めるまでの保持時間の上限。旧 48本＝240分（4時間）は E38 の役割（§8.6 スキャル・保有は分単位）の枠外で、探索側からは 2026-07-25 に撤去済みだったが場面定義に残っていた。",
  "scene_floor_pct": null,
  "_scene_floor_pct": "戻り幅の下限%（S2 の場面条件）。null なら e37_scalp.SCALP_FLOOR（手数料床）を実行時に解決して印字。",
+ "scene_exit_tp_pcts": [
+  0.1,
+  0.2,
+  0.3,
+  0.5
+ ],
+ "scene_exit_sl_pcts": [
+  0.2,
+  0.3,
+  0.5,
+  1.0
+ ],
+ "scene_exit_tmax_bars": [
+  2,
+  6,
+  12
+ ],
+ "_scene_exit": "新規ロジックの検証 フェーズ4＝出口の組み合わせの刻み（まこさん確定 2026-07-26・粗い版）。tp=建値からの順行%（これに『レンジ中央』が常に加わる）／sl=建値からの逆行%（これに『災害線』が常に加わる）／tmax_bars=5分足の本数＝10/30/60分。値の根拠（a-priori・net で選んでいない）＝tp 0.1 は手数料床 0.080% の1.25倍で届く最小・0.2 は段2 観察の取れ幅の中央値・0.3/0.5 は上振れ側／sl 0.2 は tp 0.2 と1対1・0.3 は時間切れ負けの最大逆行の中央 0.346% の手前・1.0 は災害線負けの最大逆行の中央 0.832% の外／保有はまこさん提示の刻み 5/10/15/30/45/60分から倍々で3つ。合計 5×5×3=75通り。★場面ごとに上書き可＝scenes の各場面に同名キーを書けばその場面だけ別の刻みになる（段4 Entry 調整・段5 Exit 調整で細かく刻む時はコードでなく場面定義に書く）。",
  "conf_and_min": 2,
  "conf_and_max": 3,
  "_conf_and": "コンフルエンス探索の AND 条件数の範囲（2〜3・異種カテゴリから選ぶ＝同族の二度掛け禁止）。",
