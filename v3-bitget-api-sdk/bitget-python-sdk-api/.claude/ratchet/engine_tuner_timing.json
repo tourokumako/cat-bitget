@@ -8,10 +8,10 @@
     "trials": 10
   },
   "e38/S2": {
-    "load_sec": 103.3,
+    "load_sec": 0.3,
     "measured_at": "2026-07-27",
-    "opt_sec": 11.4,
-    "per_trial_sec": 0.38,
+    "opt_sec": 10.8,
+    "per_trial_sec": 0.36,
     "search_bars": 52416,
     "trials": 30
   }

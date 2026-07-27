@@ -9,6 +9,11 @@
 ・新規で Entry/Exit ロジックを構築する際に、設定した戦略や条件に沿った、指標、閾値、時間足、
   パラメータの組み合わせロジックを見つけ、利益最大化、損失最小化するまで調整する
 ・既存 Entry/Exit に対しては、目標達成するために改善すべき点を見つけ、利益最大化、損失最小化するまで調整する
+※ 調整しきるの主語は【ロジック1本】。目標額（月 net $1,900）は【全戦略の合算】にかかるもので、
+  ロジック1本にはかからない。全ロジックと E36 と E38 は同じ 0.12 BTC を取り合うので、単独 net の
+  足し上げは合算にならない（実測＝P21 月$401.51 ＋ P23 月$241.72 を一緒に回した E32b は月$616.55）。
+  だからこの道具が出せるのは「このロジックはこれ以上出ない」まで。目標に届いたかは統合の段で
+  合算して判定する（正本＝pdca_flow §6.1・まだ一度も行っていない）。まこさん確認 2026-07-27。
 
 使う順番（まこさん確定 2026-07-27）
 --------------------------------------------------------------------------
@@ -46,6 +51,8 @@
 from __future__ import annotations
 import argparse
 import contextlib
+import hashlib
+import inspect
 import io
 import json
 import pathlib
@@ -65,6 +72,14 @@ HERE = pathlib.Path(__file__).resolve()
 #   （lessons_active L-29 が出どころ・監査で発覚）。手書きの数値は必ず腐るので、実測を機械で残す形にする。
 TIMING = HERE.parents[2] / ".claude" / "ratchet" / "engine_tuner_timing.json"
 
+# ★指標つきデータの使い回し（2026-07-27 まこさん OK）＝実測で読み込みに毎回およそ100秒かかっていた。
+#   試行の回数によらない固定費で、30分の枠のうち6%がここで消える。作った結果を保存して次回は読むだけにする。
+#   ⚠️ 古い結果を使うと数字が狂う。だから指紋（下記の材料）が1つでも変わったら作り直す。--no-cache で無効化。
+CACHE_DIR = HERE.parents[2] / "results" / "priority_rebuild" / "tuner_cache"
+#   指紋の材料＝データの作り方に関わる実体のファイル。ここが変われば作り直す。
+FINGERPRINT_FILES = ("e37_scalp.py", "e38_logic_parts.py", "build_regime_gate_rg.py",
+                     "strat_base.py", "periods.py", "e34_range_zscore_taker.py")
+
 # ★期間の数値は periods.py だけが持つ（H8・手打ち禁止・2026-07-27 集約＝値は移設前と同一で挙動不変）。
 #   窓の意味・選び方・経緯の読み物＝.claude/ratchet/windows.md（gen_windows.py が機械生成）。
 SEARCH_START = periods.SEARCH_START          # 値決め窓（まこさん決定 2026-07-24・構造類似2位）
@@ -75,6 +90,58 @@ WARM = pd.Timedelta(days=60)                 # 助走（RG 168h＋rolling を満
 
 assert SEARCH_END <= periods.SCORE_START and CONFIRM_END <= periods.SCORE_START, \
     "探索/確認窓が採点窓（periods 正本）と重複＝采否の窓の汚染"
+
+
+def data_fingerprint(ad, windows, warm) -> str:
+    """指標つきデータの指紋。1つでも変われば別物として作り直す（古い結果で数字を狂わせないため）。
+
+    材料＝接続ファイルと、データの作り方に関わる実体のファイルと、設定ファイルと、5分足CSVと、窓と助走。
+    """
+    h = hashlib.sha256()
+    files = [pathlib.Path(inspect.getfile(ad))]
+    files += [HERE.parent / n for n in FINGERPRINT_FILES]
+    cfg = getattr(ad, "CONFIG", None)
+    if cfg is not None:
+        files.append(pathlib.Path(cfg))
+    for f in sorted(set(files), key=str):
+        h.update(f.name.encode())
+        if f.exists():
+            h.update(f.read_bytes())
+    try:                                    # 5分足CSVは巨大なので中身でなく大きさと更新時刻で見る
+        import e34_range_zscore_taker as e34
+        csv = pathlib.Path(e34.CSV)
+        st = csv.stat()
+        h.update(f"{csv.name}|{st.st_size}|{int(st.st_mtime)}".encode())
+    except Exception:                       # noqa: BLE001  取れないときは毎回作り直す側に倒す
+        h.update(str(time.time()).encode())
+    h.update(str([(str(s), str(e)) for s, e in windows]).encode())
+    h.update(str(warm).encode())
+    return h.hexdigest()[:16]
+
+
+def load_windows_cached(ad, windows, warm, use_cache: bool = True) -> list[pd.DataFrame]:
+    """指標つきデータを作る。同じ指紋の結果が残っていれば、作らずにそれを読む。"""
+    if not use_cache:
+        print("[キャッシュ] 使わない（--no-cache）＝毎回作り直す")
+        return ad.load_windows(windows, warm)
+    fp = data_fingerprint(ad, windows, warm)
+    paths = [CACHE_DIR / f"{ad.NAME}_{fp}_{i}.parquet" for i in range(len(windows))]
+    if all(p.exists() for p in paths):
+        try:
+            out = [pd.read_parquet(p) for p in paths]
+            print(f"[キャッシュ] 前に作ったものを再利用した（指紋 {fp}）＝作り直しを飛ばした")
+            return out
+        except Exception as e:              # noqa: BLE001  読めなければ作り直す（黙って古い物を使わない）
+            print(f"[キャッシュ] 読めなかったので作り直す: {e}")
+    out = ad.load_windows(windows, warm)
+    try:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        for df, p in zip(out, paths):
+            df.to_parquet(p, index=False)
+        print(f"[キャッシュ] 次回のために保存した（指紋 {fp}・{CACHE_DIR.name}）")
+    except Exception as e:                  # noqa: BLE001  保存に失敗しても結果は変わらない
+        print(f"[キャッシュ] 保存に失敗した（結果には影響しない）: {e}")
+    return out
 
 
 def catalog_size() -> tuple[int, int] | None:
@@ -214,6 +281,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--minimize", default=None,
                     help="減らしたい損失の出口理由（例 TIME_EXIT）。指定するとその損失を最小化する。"
                          "省略すると合計 net を最大化する（従来どおり）")
+    ap.add_argument("--no-cache", action="store_true",
+                    help="指標つきデータの使い回しをやめて毎回作り直す。"
+                         "数字が合わないときの切り分けに使う（作り方を変えたときは指紋が変わるので自動で作り直す）")
     ap.add_argument("--net-floor", type=float, default=None,
                     help="合計 net の下限。値決め窓の合計 net がこれを下回った試行は捨てる。"
                          "--minimize と併用する歯止め＝損失を減らすつもりで勝ち玉まで削る形を弾く。"
@@ -237,7 +307,8 @@ def main() -> None:
     print(f"[戦略] {ad.NAME}: {ad.LABEL} ／ ロジック {a.logic}: {known[a.logic]['label']}")
     print(f"[窓] 値決め {SEARCH_START.date()}〜{SEARCH_END.date()}（排他）／確認 {CONFIRM_START.date()}〜{CONFIRM_END.date()}（排他・表示のみ）＝まこさん決定 2026-07-24・採点窓不使用")
     t0 = time.time()
-    df_s, df_c = ad.load_windows([(SEARCH_START, SEARCH_END), (CONFIRM_START, CONFIRM_END)], WARM)
+    df_s, df_c = load_windows_cached(
+        ad, [(SEARCH_START, SEARCH_END), (CONFIRM_START, CONFIRM_END)], WARM, use_cache=not a.no_cache)
     t_load = time.time() - t0
     print(f"[共通部分] 探索スライス {len(df_s):,} バー／確認スライス {len(df_c):,} バー（{t_load:.0f}秒）")
     _print_coverage(ad, a.logic)

@@ -142,9 +142,12 @@ def build() -> str:
             L.append("")
             L.append(f"#### {r['id']} をどう作るか（設計・まこさんの承認待ち）")
             L.append("")
+            # ★表の行と空行のあとには空行を足さない（2026-07-27）。
+            #   一律に空行を挟むと、表の行が1行ずつ分断されて表として描画されなくなる。
             for para in r["design"]:
                 L.append(para)
-                L.append("")
+                if para.strip() and not para.lstrip().startswith("|"):
+                    L.append("")
         if r.get("design_sources"):
             L.append("**この設計の出どころ**")
             L.append("")
