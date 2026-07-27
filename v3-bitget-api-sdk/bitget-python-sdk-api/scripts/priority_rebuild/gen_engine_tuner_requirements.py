@@ -89,6 +89,27 @@ def build() -> str:
     L.append(f"出典: {d.get('purpose_source', '')}")
     L.append("")
 
+    # ★目的の正確な意味（まこさん指示 2026-07-27・逐語「新セッションで記憶のないCCが、誤解や矮小化のない
+    #   正確な理解が伝わるような文章にして、engine_tunerの要件定義の目的とかに目立つように書いておいて」）。
+    #   ここが消えると、次の CC が目的を「値の微調整」や「768列から選ぶ」や「V9 のコピー」に読み替える。
+    #   2026-07-27 に実際に5回外した型を、名指しで残してある。selftest が消失を検出する。
+    if d.get("purpose_reading"):
+        L.append("---")
+        L.append("")
+        L.append("## ★★ この目的の正確な意味（読み替え防止・着手の前に必ず読む）")
+        L.append("")
+        prev_item = False
+        for para in d["purpose_reading"]:
+            is_item = para.lstrip().startswith("- ")
+            if prev_item and not is_item:
+                L.append("")                       # 箇条書きが終わったら段落との間を空ける
+            L.append(para)
+            if para.strip() and not is_item:
+                L.append("")
+            prev_item = is_item
+        L.append("---")
+        L.append("")
+
     u = d.get("usage", {})
     if u:
         L.append("## 使う順番")
@@ -213,6 +234,13 @@ def selftest() -> int:
     for need in ("組み合わせロジックを見つけ", "改善すべき点を見つけ", "利益最大化、損失最小化するまで調整する"):
         if not any(need in p for p in d.get("purpose", [])):
             ng.append(f"目的の逐語が欠けている: {need}")
+    # ★目的の正確な意味が消えていないこと（まこさん指示 2026-07-27）＝ここが消えると次の CC が読み替える
+    if not d.get("purpose_reading"):
+        ng.append("目的の正確な意味（purpose_reading）が消えている＝次の CC が目的を読み替える")
+    for need in ("ロジックそのものを組み立てられる器", "V9 は到達目標ではありません",
+                 "やってはいけない読み替え", "設定した戦略や条件に沿った"):
+        if not any(need in p for p in d.get("purpose_reading", [])):
+            ng.append(f"目的の正確な意味の逐語が欠けている: {need}")
     if not d.get("out_of_scope"):
         ng.append("やらないことが書かれていない（範囲が閉じない）")
     if not d.get("constraints"):
@@ -221,7 +249,8 @@ def selftest() -> int:
     if not any("作ってみて実際に動かして" in p for p in d.get("policy", [])):
         ng.append("進め方の方針の逐語が欠けている: 作ってみて実際に動かして")
     txt = build()
-    for must in ("この文書は何か", "進め方の方針", "この道具の目的", "使う順番", "進み具合",
+    for must in ("この文書は何か", "進め方の方針", "この道具の目的",
+                 "この目的の正確な意味", "使う順番", "進み具合",
                  "要件の一覧", "要件の中身", "この道具でやらないこと", "守る制約",
                  "できたことをどう確かめるか"):
         if must not in txt:
