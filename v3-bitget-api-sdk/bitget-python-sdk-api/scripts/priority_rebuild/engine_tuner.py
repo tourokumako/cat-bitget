@@ -62,6 +62,7 @@ import pandas as pd
 
 import periods                      # 採点窓の正本（重複 assert 用・数値は書かない）
 import score as judge               # 審判＝import のみ・無変更（H13）
+import tuner_stats                  # 「その数字が本物か」＝DSR と PBO（要件 R7 の B5・B6）
 from tuner_adapters import available, load_adapter   # 戦略ごとの接続ファイル（要件 R4）
 
 HERE = pathlib.Path(__file__).resolve()
@@ -198,6 +199,51 @@ def _record_timing(strategy: str, logic: str, load_sec: float, trials: int,
               f"（{trials}試行で {rec['opt_sec']}秒）→ {TIMING.name} に記録した")
     except Exception as e:                                   # noqa: BLE001  記録に失敗しても探索の結果は出す
         print(f"[計測] 記録に失敗した（結果には影響しない）: {e}")
+
+
+def _print_stats(strategy: str, logic: str, kept: list, best_num: int) -> None:
+    """B5・B6＝その数字が本物か（DSR と PBO）。合格ラインは H11 が正本（まこさんが決める値ではない）。
+
+    ★日ごとの net は審判 score.py を日ごとに呼んで得る＝CC は net を計算しない（H13）。
+      足し合わせが全期間と一致することを毎回確かめる（一致しなければ止まる）。
+    """
+    print("\n[B5・B6 その数字が本物か（試した回数で割り引いた成績 DSR ／ 過剰なあてはめの確率 PBO）]")
+    if len(kept) < 2:
+        print(f"  ゲートを通った試行が {len(kept)} 本＝統計で判定できない（2本以上要る）")
+        return
+    t0 = time.time()
+    daily = {}
+    for num, _params, res, _ok, _why in kept:
+        s = tuner_stats.daily_net(res["t"], judge, SEARCH_START, SEARCH_END)
+        tuner_stats.check_daily_sum(s, res["total"])          # 分け方が壊れていないことの確認
+        daily[num] = s
+    if best_num not in daily:                                  # best がゲートで落ちている時は通った中の最良
+        best_num = max(daily, key=lambda k: float(daily[k].sum()))
+        print(f"  ※ best はゲートを通っていないので、通った中で最良の #{best_num} で判定する")
+
+    key = f"{strategy}/{logic}@{SEARCH_START.date()}_{SEARCH_END.date()}"
+    past = tuner_stats.load_cumulative(key)
+    r = tuner_stats.evaluate(daily, best_num, past)
+    d, p = r["dsr"], r["pbo"]
+    ok_d = d["dsr"] > tuner_stats.DSR_PASS
+    ok_p = (p is not None) and (p["pbo"] < tuner_stats.PBO_PASS)
+
+    print(f"  期間 T = {r['T']} 日（月ごとに集計すると 4 にしかならず統計にならないので日ごとにしている）")
+    print(f"  試行 = 生 {r['n_raw']} 本 → 似た動きをまとめて {r['n_eff']} 本"
+          f" ＋ この窓での過去の累積 {r['past_trials']} 本 = DSR に渡した N {r['n_for_dsr']}")
+    print(f"  DSR = {d['dsr']:.3f}（合格 > {tuner_stats.DSR_PASS}）"
+          f"{'  ✅' if ok_d else '  ❌'}   成績 {d['sr']:.4f} ／ 運だけで出る水準 {d['sr0']:.4f}")
+    if p is None:
+        print("  PBO = 測れない（候補が足りない、または期間が短い）  ❌")
+    else:
+        print(f"  PBO = {p['pbo']:.3f}（合格 < {tuner_stats.PBO_PASS}）{'  ✅' if ok_p else '  ❌'}"
+              f"   候補 {r['n_pbo_cols']} 本・組み合わせ {p['n_combos']} 通り")
+    print(f"  判定: B5 と B6 は {'両方とも合格' if (ok_d and ok_p) else '合格していない'}"
+          f"（{time.time() - t0:.0f}秒で計算）")
+    print("  ⚠️ 分散は探索が集めた試行から推定している＝良い所に試行が集まるほど分散が縮み、"
+          "DSR は甘い側に出る。独立に撒く段（ランダムサーチ）は未実装。")
+    tot = tuner_stats.add_cumulative(key, r["n_raw"], time.strftime("%Y-%m-%d"))
+    print(f"  この窓での累積の試行数を {tot} 本に更新した（次回の DSR はこの数を罰に使う）")
 
 
 def _resolve_space(space_decl: dict, bank: dict) -> dict:
@@ -411,7 +457,10 @@ def main() -> None:
         extra = f" / {a.minimize} ${r['focus']:+,.0f}（{r['focus_n']}玉）" if a.minimize else ""
         print(f"  {nm}: net ${r['total']:+,.0f}{extra} / {r['n']}玉 / {r['per_day']:.2f}件/日"
               f" / 保有中央 {r['hold_med']:.0f}分 / 型別 {_type_split(ad, r['t'])}")
-    print("⚠️ ここは探索側の数字＝採否の数字ではない。統合最終形1つだけを採点窓 score.py にかけ、採否はまこさんが判断する。")
+    _print_stats(a.strategy, a.logic, kept, st.best_trial.number)
+    print("\n⚠️ ここは探索側の数字＝採否の数字ではない。統合最終形1つだけを採点窓 score.py にかけ、採否はまこさんが判断する。")
+    print("⚠️ 目標額（月 net $1,900）に届いたかは、この道具では判定しない＝全戦略を同じ 0.12 BTC で"
+          "一緒に回した合算でしか出ない（統合の段・pdca_flow §6.1）。")
     logf.close()
 
 
