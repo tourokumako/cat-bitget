@@ -201,6 +201,62 @@ def _record_timing(strategy: str, logic: str, load_sec: float, trials: int,
         print(f"[計測] 記録に失敗した（結果には影響しない）: {e}")
 
 
+ADOPTED = HERE.parents[2] / ".claude" / "ratchet" / "adopted_strategies.md"
+
+
+def role_floor(strategy: str) -> tuple[str | None, float | None]:
+    """役割と、役割から来る件数/日 の絶対下限を採用台帳のマーカーから引く。
+
+    ★ここを下回るのは「調整」でなく「役割を変える決定」（cat_requirements §8.6）。
+      道具に戦略名や数字を焼かない＝台帳の1行を直せば追従する（他の hook と同じ方式）。
+    """
+    try:
+        txt = ADOPTED.read_text(encoding="utf-8")
+    except Exception:                                        # noqa: BLE001
+        return None, None
+    role = None
+    for ln in txt.splitlines():
+        if "ROLE_CHECK:" in ln:
+            for kv in ln.split("ROLE_CHECK:")[1].split("-->")[0].split(";"):
+                if "=" in kv and kv.split("=")[0].strip() == strategy:
+                    role = kv.split("=")[1].strip()
+        if "ROLE_FLOOR:" in ln and role:
+            for kv in ln.split("ROLE_FLOOR:")[1].split("-->")[0].split(";"):
+                if "=" in kv and kv.split("=")[0].strip() == role:
+                    try:
+                        return role, float(kv.split("=")[1].strip())
+                    except ValueError:
+                        return role, None
+    return role, None
+
+
+def _atr_bands(base_t: pd.DataFrame, cand_t: pd.DataFrame, edges) -> list[tuple[str, float, float, bool]]:
+    """ATR% の帯ごとに、土台と候補の net を審判で出して比べる（B4）。
+
+    帯に分ける理由＝静かな相場だけで稼ぎ荒い相場で損を出す形でも、合計では改善に見えるため
+    （E37 v16 の学習窓プラスが帯の補填による見かけだった実証・ARC31／ARC32）。
+    ATR% は売買記録の atr_14 と entry_price から出す＝net の計算には触れない（H13）。
+    """
+    def band_of(t: pd.DataFrame) -> pd.Series:
+        return (t["atr_14"].astype(float) / t["entry_price"].astype(float) * 100.0)
+
+    lo = [-float("inf")] + list(edges)
+    hi = list(edges) + [float("inf")]
+    out = []
+    for a, b in zip(lo, hi):
+        lab = (f"〜{b:g}" if a == -float("inf") else (f"{a:g}〜" if b == float("inf") else f"{a:g}〜{b:g}"))
+        vals = []
+        for t in (base_t, cand_t):
+            if t is None or not len(t):
+                vals.append(0.0)
+                continue
+            m = (band_of(t) >= a) & (band_of(t) < b)
+            sub = t[m].reset_index(drop=True)
+            vals.append(float(judge.score(sub)["total"]) if len(sub) else 0.0)
+        out.append((lab, vals[0], vals[1], vals[1] >= vals[0]))
+    return out
+
+
 def _run_baseline(ad, df_s, df_c, logic: str, exit_keys: set, minimize: str | None):
     """土台＝いまの採用値で1回だけ走らせる（B1・B2 の比較相手・2026-07-27 まこさん OK）。
 
@@ -221,16 +277,32 @@ def _run_baseline(ad, df_s, df_c, logic: str, exit_keys: set, minimize: str | No
     return {"search": rs, "confirm": rc}
 
 
-def _print_judgement(base, rs, rc, min_per_day, stats: dict | None, n_kept: int) -> None:
+def _print_judgement(base, rs, rc, min_per_day, stats: dict | None, n_kept: int,
+                     rules: dict | None = None, rfloor: float | None = None,
+                     trials: int = 0, gain: float | None = None,
+                     bands: list | None = None) -> None:
     """判定の1枚表（A＝出し切ったか／B＝本物か／C＝目標に届いたか）。
 
     ★ML の知識がなくても読めるように、印は ✅ と ❌ と「値がまこさん待ち」の3つだけにする。
       値を CC が決めない項目は、勝手に埋めずに「まこさん待ち」と出す（監査 2026-07-27 Q8）。
     """
     WAIT = "— 値がまこさん待ち"
+    sr = rules or {}
     rows = []
-    rows.append(("A1", "直近2段で改善が δ 未満（出し切ったか）", WAIT))
-    rows.append(("A2", "試行の上限 N_max に到達（着手前に宣言）", WAIT))
+    delta = sr.get("delta_net")
+    if delta is None or gain is None:
+        rows.append(("A1", "改善が δ 未満（出し切ったか）", WAIT))
+    else:
+        rows.append(("A1", "改善が δ 未満（出し切ったか）",
+                     f"δ ${delta:,.0f} → 後半の伸び ${gain:+,.0f}"
+                     + ("  ✅" if gain < delta else "  ❌ まだ伸びている")))
+    nmax = sr.get("n_max")
+    if nmax is None:
+        rows.append(("A2", "試行の上限 N_max に到達（着手前に宣言）", WAIT))
+    else:
+        rows.append(("A2", "試行の上限 N_max に到達（着手前に宣言）",
+                     f"N_max {nmax:,} → 今回 {trials:,}"
+                     + ("  ✅" if trials >= nmax else "  ❌ まだ上限に達していない")))
     if base is None:
         rows.append(("B1", "値決め窓で土台より改善しているか", "— このロジックはまだ採用値を持たない"))
         rows.append(("B2", "確認窓で土台より悪化していないか", "— 同上"))
@@ -242,13 +314,27 @@ def _print_judgement(base, rs, rc, min_per_day, stats: dict | None, n_kept: int)
         rows.append(("B2", "確認窓で土台より悪化していないか",
                      f"土台 ${bc:+,.0f} → 候補 ${rc['total']:+,.0f}"
                      + ("  ✅" if rc["total"] >= bc else "  ❌")))
-    if min_per_day is None:
+    # B3＝役割の下限（台帳・下回るのは役割を変える決定）と、運用の下限（PDCA で見直してよい）の2段
+    ops = sr.get("ops_min_per_day")
+    floor = ops if ops is not None else (min_per_day if min_per_day is not None else rfloor)
+    if floor is None:
         rows.append(("B3", "件数/日 が下限以上", WAIT))
     else:
-        rows.append(("B3", "件数/日 が下限以上",
-                     f"下限 {min_per_day} → 候補 {rs['per_day']:.2f}"
-                     + ("  ✅" if rs["per_day"] >= min_per_day else "  ❌")))
-    rows.append(("B4", "ATR% の全帯で土台を悪化させない", WAIT + "（帯の切り方・未実装）"))
+        src = "運用の下限" if ops is not None else ("探索のゲート" if min_per_day is not None else "役割の下限")
+        note = ""
+        if rfloor is not None and floor < rfloor:
+            note = f"  ⚠️ 役割の下限 {rfloor:g} を下回る線を使っている＝役割を変える決定に当たる"
+        rows.append(("B3", f"件数/日 が下限以上（{src}）",
+                     f"下限 {floor:g} → 候補 {rs['per_day']:.2f}"
+                     + ("  ✅" if rs["per_day"] >= floor else "  ❌") + note))
+    if bands is None:
+        rows.append(("B4", "ATR% の全帯で土台を悪化させない",
+                     WAIT if not sr.get("atr_band_edges") else "— 土台が無いので比べられない"))
+    else:
+        ng_b = [b[0] for b in bands if not b[3]]
+        rows.append(("B4", "ATR% の全帯で土台を悪化させない",
+                     f"{len(bands)}帯" + ("  ✅ 全帯で非悪化" if not ng_b
+                                          else f"  ❌ 悪化した帯 {', '.join(ng_b)}")))
     if stats is None:
         rows.append(("B5", "DSR > 0.95（試した回数で割り引いた成績）", f"— 判定できない（通った試行 {n_kept} 本）"))
         rows.append(("B6", "PBO < 0.5（過剰なあてはめの確率）", "— 同上"))
@@ -459,6 +545,18 @@ def main() -> None:
               "（損失を減らすつもりで勝ち玉まで削る形を弾く・値はまこさん確定）")
     elif a.minimize:
         print("[net の歯止め] なし（--net-floor 未指定）。⚠️ 損失だけを見ると建てない形が上位に来る")
+    # ★終わりの条件の値＝戦略ごとの設定から引く（道具に数字を焼かない・2026-07-27 まこさん確定）
+    rules = getattr(ad, "stop_rules", lambda _l: {})(a.logic)
+    role, rfloor = role_floor(a.strategy)
+    print(f"[終わりの条件の値] δ ${rules.get('delta_net')} ／ N_max {rules.get('n_max')} ／ "
+          f"ATR%帯 {rules.get('atr_band_edges')} ／ 運用の下限 {rules.get('ops_min_per_day')}"
+          f"（理由 {rules.get('ops_reason')}・{rules.get('ops_date')}）")
+    print(f"[役割] {a.strategy} = {role} ／ 役割から来る件数/日 の絶対下限 {rfloor}"
+          "（台帳のマーカーが正本・下回るのは調整でなく役割を変える決定）")
+    if rules.get("n_max") and a.trials > rules["n_max"]:
+        print(f"⚠️ 今回の試行 {a.trials:,} が宣言した上限 {rules['n_max']:,} を超えている"
+              "＝多重検定の罰を後出しで薄める形。上限を変えるなら設定ファイルを直してから回すこと。")
+
     # ★土台＝いまの採用値を1回だけ走らせる（B1・B2 の比較相手・2026-07-27 まこさん OK）
     base = _run_baseline(ad, df_s, df_c, a.logic, exit_keys, a.minimize)
     if base is None:
@@ -544,7 +642,24 @@ def main() -> None:
         print(f"  {nm}: net ${r['total']:+,.0f}{extra} / {r['n']}玉 / {r['per_day']:.2f}件/日"
               f" / 保有中央 {r['hold_med']:.0f}分 / 型別 {_type_split(ad, r['t'])}")
     stats = _print_stats(a.strategy, a.logic, kept, st.best_trial.number)
-    _print_judgement(base, rs, rc, min_per_day, stats, len(kept))
+
+    # A1 の代用＝試行の前半と後半で、目的関数の最良がどれだけ伸びたか（段がまだ無いため）
+    gain = None
+    if kept:
+        val = (lambda z: z[2]["focus"]) if a.minimize else (lambda z: z[2]["total"])
+        half = a.trials / 2.0
+        first = [val(z) for z in kept if z[0] < half]
+        gain = (max(val(z) for z in kept) - max(first)) if first else None
+    bands = None
+    if base is not None and rules.get("atr_band_edges"):
+        bands = _atr_bands(base["search"]["t"], rs["t"], rules["atr_band_edges"])
+        print("\n[B4 ATR% の帯ごとの比較（静かな相場だけで稼いで荒い相場で損を出す形を弾く）]")
+        for lab, b, c, ok in bands:
+            print(f"  ATR% {lab:>10} : 土台 ${b:+,.0f} → 候補 ${c:+,.0f}" + ("  ✅" if ok else "  ❌"))
+    _print_judgement(base, rs, rc, min_per_day, stats, len(kept),
+                     rules=rules, rfloor=rfloor, trials=a.trials, gain=gain, bands=bands)
+    if gain is not None:
+        print("  ※ A1 は段がまだ無いので、試行の前半と後半の伸びで代用している（段の構成は未実装）。")
     print("\n⚠️ ここは探索側の数字＝採否の数字ではない。統合最終形1つだけを採点窓 score.py にかけ、採否はまこさんが判断する。")
     print("⚠️ 目標額（月 net $1,900）に届いたかは、この道具では判定しない＝全戦略を同じ 0.12 BTC で"
           "一緒に回した合算でしか出ない（統合の段・pdca_flow §6.1）。")

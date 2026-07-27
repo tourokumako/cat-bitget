@@ -70,6 +70,19 @@ def space(logic_id: str) -> dict:
     return {**cfg["search_space"]["common_exit"], **sp}
 
 
+def stop_rules(logic_id: str) -> dict:
+    """終わりの条件の値（まこさん確定・置き場所は設定ファイルの tuner ブロック1箇所）。
+
+    ★engine_tuner は数字を持たない＝実行のたびに手で入れない。戦略が増えたら接続ファイルが返す。
+    """
+    t = config().get("tuner", {})
+    ops = (t.get("ops_min_per_day") or {})
+    return {"delta_net": t.get("delta_net"), "n_max": t.get("n_max"),
+            "atr_band_edges": t.get("atr_band_edges"),
+            "ops_min_per_day": ops.get("value"), "ops_reason": ops.get("reason"),
+            "ops_date": ops.get("date")}
+
+
 def baseline(logic_id: str) -> dict | None:
     """土台＝いま設定ファイルに入っている値（B1・B2 の比較相手・2026-07-27 まこさん OK）。
 

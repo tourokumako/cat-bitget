@@ -1,9 +1,9 @@
 {
   "e37/v59": {
-    "load_sec": 100.1,
+    "load_sec": 101.8,
     "measured_at": "2026-07-27",
-    "opt_sec": 26.0,
-    "per_trial_sec": 2.6,
+    "opt_sec": 26.2,
+    "per_trial_sec": 2.62,
     "search_bars": 52416,
     "trials": 10
   },

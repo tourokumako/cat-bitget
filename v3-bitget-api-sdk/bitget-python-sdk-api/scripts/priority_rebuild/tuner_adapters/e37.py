@@ -72,6 +72,24 @@ def space(logic_id: str) -> dict:
     return sp
 
 
+# ── 終わりの条件の値（まこさん確定 2026-07-27・ここが E37 の置き場所＝実行のたびに手で入れない）──
+#   ★運用の下限は PDCA で見直してよい。変えたら reason と date を必ず書く（黙って下げない）。
+#     役割の下限（台帳 ROLE_FLOOR scalp=5）を下回るのは「調整」でなく「役割を変える決定」。
+STOP_RULES = {
+    "delta_net": 20.0,          # 値決め窓4ヶ月の net で $20＝月$5 相当。これ以下の伸びは誤差に埋もれる
+    "n_max": 500,               # 30分で約690試行が回る実測（1試行2.6秒）。余裕を持たせた数
+    "atr_band_edges": list(e37.V17_ATR_BAND_EDGES),   # 実体から取る＝数字を書き写さない（ARC31/ARC32 の層化）
+    "ops_min_per_day": None,    # 運用の下限（未設定＝役割の下限 5 で判定する）
+    "ops_reason": "未設定",
+    "ops_date": None,
+}
+
+
+def stop_rules(logic_id: str) -> dict:
+    """終わりの条件の値。E37 は設定ファイルを持たないので本ファイルが置き場所。"""
+    return dict(STOP_RULES)
+
+
 def baseline(logic_id: str) -> dict | None:
     """土台＝採用土台 v59d_164 の値（B1・B2 の比較相手・2026-07-27 まこさん OK）。
 

@@ -5,8 +5,16 @@
 出典が正: ledger.md の各 E エントリ＋ score.py の数字。差異が出たら ledger に合わせて更新。
 
 <!-- PORTFOLIO_CHECK: BASE_MAX=E32b ; PILLARS=E32b,P21,P23,E28,E35,E36 -->
-<!-- ROLE_CHECK: e37=scalp ; e36=daytrade ; e35=range_both -->
-<!-- STRATEGY_ANCHOR: e37=range,both,scalp ; e36=range,short_only,daytrade ; e35=range,both,none ; e28=spike_crash,long_only,none ; p21=downtrend,short_only,none ; p23=downtrend,short_only,none -->
+<!-- ROLE_CHECK: e37=scalp ; e36=daytrade ; e35=range_both ; e38=scalp -->
+<!-- STRATEGY_ANCHOR: e37=range,both,scalp ; e36=range,short_only,daytrade ; e35=range,both,none ; e28=spike_crash,long_only,none ; p21=downtrend,short_only,none ; p23=downtrend,short_only,none ; e38=range,both,scalp -->
+<!-- ROLE_FLOOR: scalp=5 -->
+<!-- ↑ 役割から来る件数/日 の絶対下限（cat_requirements §8.6・2026-07-27 まこさん OK で機械可読化）。
+     engine_tuner が B3 の判定に使う＝ここを下回るのは「調整」でなく「役割を変える決定」。
+     運用の下限（その回の探索で使う線）は戦略ごとの設定に置き、PDCA で見直してよい＝別物。
+     daytrade の下限は未定（まこさんが決める）。 -->
+<!-- ↑ e38 は 2026-07-27 に追加（まこさん確認）。役割は e38_flow.md:17「E38＝レンジ・両方向・スキャル」と
+     同 :34「§8.6 E38 はスキャル＝件数/日 5 が絶対下限」が正本。文書には書いてあったが機械可読マーカーに
+     無く、道具も hook も E38 の役割を引けなかったため足した。 -->
 <!-- ↑ e37 は 2026-07-23 まこさん決定で short_only → both へ更新（ロング・ショート両サイドのロジックを優先度スタックで並立させ、スロット配分で予算を取り合う構成へ。v57 ロングの本格化を含む） -->
 <!-- ↑ enforce_strategy_anchor.sh/.py（戦略係留ゲート・2026-07-04 まこさん承認）が読む機械可読マーカー
      ＝cat_requirements §1.2.1（全体戦略・まこさん確定）の「担当局面,方向,頻度役割」を token ごとに1行へ固定したもの。
