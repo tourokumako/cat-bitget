@@ -1,16 +1,16 @@
 {
   "e37/v59": {
-    "load_sec": 98.2,
+    "load_sec": 100.1,
     "measured_at": "2026-07-27",
-    "opt_sec": 26.2,
-    "per_trial_sec": 2.62,
+    "opt_sec": 26.0,
+    "per_trial_sec": 2.6,
     "search_bars": 52416,
     "trials": 10
   },
   "e38/S2": {
-    "load_sec": 0.1,
+    "load_sec": 100.1,
     "measured_at": "2026-07-27",
-    "opt_sec": 10.8,
+    "opt_sec": 10.9,
     "per_trial_sec": 0.36,
     "search_bars": 52416,
     "trials": 30

@@ -70,6 +70,21 @@ def space(logic_id: str) -> dict:
     return {**cfg["search_space"]["common_exit"], **sp}
 
 
+def baseline(logic_id: str) -> dict | None:
+    """土台＝いま設定ファイルに入っている値（B1・B2 の比較相手・2026-07-27 まこさん OK）。
+
+    探索で選んだ値が「土台より良いか」を見るための相手。設定ファイルの確定値をそのまま返す。
+    """
+    lg = _logic(logic_id)
+    out = {}
+    out.update({k: v for k, v in lg["entry"].get("params", {}).items() if v is not None})
+    out.update({k: v for k, v in lg["exit"].get("params", {}).items() if v is not None})
+    # ★出口の値が設定ファイルに揃っていないロジックは「土台が無い」＝まだ採用値を持たない候補。
+    #   無理に既定値を当てて土台のふりをしない（比較相手が偽物になると B1・B2 が意味を失う）。
+    need = set(config()["search_space"]["common_exit"])
+    return out if need.issubset(out) else None
+
+
 def coverage(logic_id: str) -> list[str]:
     """この探索が触れる指標の列（＝網羅度の分子・2026-07-27 まこさん OK・監査 提案1）。
 

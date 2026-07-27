@@ -201,6 +201,81 @@ def _record_timing(strategy: str, logic: str, load_sec: float, trials: int,
         print(f"[計測] 記録に失敗した（結果には影響しない）: {e}")
 
 
+def _run_baseline(ad, df_s, df_c, logic: str, exit_keys: set, minimize: str | None):
+    """土台＝いまの採用値で1回だけ走らせる（B1・B2 の比較相手・2026-07-27 まこさん OK）。
+
+    E38 は設定ファイルの現行値、E37 は採用土台 v59d_164 の定数そのまま。数字は接続ファイルが持つ。
+    """
+    fn = getattr(ad, "baseline", None)
+    if fn is None:
+        return None
+    bp = fn(logic)
+    if bp is None:
+        return None
+    ep = {k: v for k, v in bp.items() if k not in exit_keys}
+    xp = {k: v for k, v in bp.items() if k in exit_keys}
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rs = _run_window(ad, df_s, logic, ep, xp, SEARCH_START, SEARCH_END, minimize)
+        rc = _run_window(ad, df_c, logic, ep, xp, CONFIRM_START, CONFIRM_END, minimize)
+    return {"search": rs, "confirm": rc}
+
+
+def _print_judgement(base, rs, rc, min_per_day, stats: dict | None, n_kept: int) -> None:
+    """判定の1枚表（A＝出し切ったか／B＝本物か／C＝目標に届いたか）。
+
+    ★ML の知識がなくても読めるように、印は ✅ と ❌ と「値がまこさん待ち」の3つだけにする。
+      値を CC が決めない項目は、勝手に埋めずに「まこさん待ち」と出す（監査 2026-07-27 Q8）。
+    """
+    WAIT = "— 値がまこさん待ち"
+    rows = []
+    rows.append(("A1", "直近2段で改善が δ 未満（出し切ったか）", WAIT))
+    rows.append(("A2", "試行の上限 N_max に到達（着手前に宣言）", WAIT))
+    if base is None:
+        rows.append(("B1", "値決め窓で土台より改善しているか", "— このロジックはまだ採用値を持たない"))
+        rows.append(("B2", "確認窓で土台より悪化していないか", "— 同上"))
+    else:
+        bs, bc = base["search"]["total"], base["confirm"]["total"]
+        rows.append(("B1", "値決め窓で土台より改善しているか",
+                     f"土台 ${bs:+,.0f} → 候補 ${rs['total']:+,.0f}"
+                     + ("  ✅" if rs["total"] > bs else "  ❌")))
+        rows.append(("B2", "確認窓で土台より悪化していないか",
+                     f"土台 ${bc:+,.0f} → 候補 ${rc['total']:+,.0f}"
+                     + ("  ✅" if rc["total"] >= bc else "  ❌")))
+    if min_per_day is None:
+        rows.append(("B3", "件数/日 が下限以上", WAIT))
+    else:
+        rows.append(("B3", "件数/日 が下限以上",
+                     f"下限 {min_per_day} → 候補 {rs['per_day']:.2f}"
+                     + ("  ✅" if rs["per_day"] >= min_per_day else "  ❌")))
+    rows.append(("B4", "ATR% の全帯で土台を悪化させない", WAIT + "（帯の切り方・未実装）"))
+    if stats is None:
+        rows.append(("B5", "DSR > 0.95（試した回数で割り引いた成績）", f"— 判定できない（通った試行 {n_kept} 本）"))
+        rows.append(("B6", "PBO < 0.5（過剰なあてはめの確率）", "— 同上"))
+    else:
+        d, p = stats["dsr"], stats["pbo"]
+        rows.append(("B5", "DSR > 0.95（試した回数で割り引いた成績）",
+                     f"{d['dsr']:.3f}" + ("  ✅" if d["dsr"] > tuner_stats.DSR_PASS else "  ❌")))
+        rows.append(("B6", "PBO < 0.5（過剰なあてはめの確率）",
+                     (f"{p['pbo']:.3f}" + ("  ✅" if p["pbo"] < tuner_stats.PBO_PASS else "  ❌"))
+                     if p else "— 測れない  ❌"))
+    rows.append(("C", "目標額（月 net $1,900）に届いたか", "— この道具では判定しない（統合の段で合算）"))
+
+    print("\n[判定の1枚表（A＝そのロジックで出し切ったか／B＝その数字が本物か／C＝目標に届いたか）]")
+    print("| # | 見るもの | 結果 |")
+    print("|---|---|---|")
+    for a, b, c in rows:
+        print(f"| {a} | {b} | {c} |")
+    ng = [a for a, _b, c in rows if "❌" in c]
+    wait = [a for a, _b, c in rows if "まこさん待ち" in c]
+    if ng:
+        print(f"→ **調整しきれていない**（{', '.join(ng)} が不合格）")
+    elif wait:
+        print(f"→ 判定できない（{', '.join(wait)} の値が決まっていない）")
+    else:
+        print("→ このロジックはこれ以上出ない（★目標額に届いたかは別＝統合の段で合算して判定する）")
+
+
 def _print_stats(strategy: str, logic: str, kept: list, best_num: int) -> None:
     """B5・B6＝その数字が本物か（DSR と PBO）。合格ラインは H11 が正本（まこさんが決める値ではない）。
 
@@ -210,7 +285,7 @@ def _print_stats(strategy: str, logic: str, kept: list, best_num: int) -> None:
     print("\n[B5・B6 その数字が本物か（試した回数で割り引いた成績 DSR ／ 過剰なあてはめの確率 PBO）]")
     if len(kept) < 2:
         print(f"  ゲートを通った試行が {len(kept)} 本＝統計で判定できない（2本以上要る）")
-        return
+        return None
     t0 = time.time()
     daily = {}
     for num, _params, res, _ok, _why in kept:
@@ -244,6 +319,7 @@ def _print_stats(strategy: str, logic: str, kept: list, best_num: int) -> None:
           "DSR は甘い側に出る。独立に撒く段（ランダムサーチ）は未実装。")
     tot = tuner_stats.add_cumulative(key, r["n_raw"], time.strftime("%Y-%m-%d"))
     print(f"  この窓での累積の試行数を {tot} 本に更新した（次回の DSR はこの数を罰に使う）")
+    return r
 
 
 def _resolve_space(space_decl: dict, bank: dict) -> dict:
@@ -383,6 +459,16 @@ def main() -> None:
               "（損失を減らすつもりで勝ち玉まで削る形を弾く・値はまこさん確定）")
     elif a.minimize:
         print("[net の歯止め] なし（--net-floor 未指定）。⚠️ 損失だけを見ると建てない形が上位に来る")
+    # ★土台＝いまの採用値を1回だけ走らせる（B1・B2 の比較相手・2026-07-27 まこさん OK）
+    base = _run_baseline(ad, df_s, df_c, a.logic, exit_keys, a.minimize)
+    if base is None:
+        print("[土台] このロジックはまだ採用値を持たない＝比べる相手が無い（B1 と B2 は判定できない）。"
+              "既定値を当てて土台のふりをしない＝偽の相手と比べると B1・B2 が意味を失うため。")
+    else:
+        print(f"[土台（いまの採用値）] 値決め窓 net ${base['search']['total']:+,.0f} / "
+              f"{base['search']['n']}玉 / {base['search']['per_day']:.2f}件/日"
+              f" ／ 確認窓 net ${base['confirm']['total']:+,.0f} / {base['confirm']['n']}玉")
+        print("           ＝探索で選ぶ値は、これより良くなって初めて意味がある（B1・B2 の比較相手）")
     logf = open(a.log or f"engine_tuner_{a.strategy}_{a.logic}.log", "w", encoding="utf-8")
     results = []
     seen_reasons: set = set()
@@ -457,7 +543,8 @@ def main() -> None:
         extra = f" / {a.minimize} ${r['focus']:+,.0f}（{r['focus_n']}玉）" if a.minimize else ""
         print(f"  {nm}: net ${r['total']:+,.0f}{extra} / {r['n']}玉 / {r['per_day']:.2f}件/日"
               f" / 保有中央 {r['hold_med']:.0f}分 / 型別 {_type_split(ad, r['t'])}")
-    _print_stats(a.strategy, a.logic, kept, st.best_trial.number)
+    stats = _print_stats(a.strategy, a.logic, kept, st.best_trial.number)
+    _print_judgement(base, rs, rc, min_per_day, stats, len(kept))
     print("\n⚠️ ここは探索側の数字＝採否の数字ではない。統合最終形1つだけを採点窓 score.py にかけ、採否はまこさんが判断する。")
     print("⚠️ 目標額（月 net $1,900）に届いたかは、この道具では判定しない＝全戦略を同じ 0.12 BTC で"
           "一緒に回した合算でしか出ない（統合の段・pdca_flow §6.1）。")

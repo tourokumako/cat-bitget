@@ -72,6 +72,15 @@ def space(logic_id: str) -> dict:
     return sp
 
 
+def baseline(logic_id: str) -> dict | None:
+    """土台＝採用土台 v59d_164 の値（B1・B2 の比較相手・2026-07-27 まこさん OK）。
+
+    ★空の辞書を返す＝run() が値を1つも上書きしない＝e37_scalp のモジュール定数そのまま。
+      それが採用土台の値。ここに数字を書き写さない（書き写すと実体とずれる）。
+    """
+    return {} if logic_id == "v59" else None
+
+
 def coverage(logic_id: str) -> list[str]:
     """この探索が触れる指標の列（＝網羅度の分子・2026-07-27 まこさん OK・監査 提案1）。
 
@@ -123,6 +132,8 @@ def run(df: pd.DataFrame, logic_id: str, entry_params: dict, exit_params: dict) 
     """
     p = {**entry_params, **exit_params}
     ov = {k: v for k, v in p.items() if k.startswith("V59_")}
+    if not ov:                                     # ★値を1つも渡さない＝土台（採用 v59d_164 の定数のまま）
+        return e37.run_e37(df.copy(), "5m", tag=None, v59_adx_cut=True, return_trades=True, **BASE_KW)
     ds, fs = p["V59_DOWN_SIG"], p["V59_FLAT_SIG"]
     for s, key, dst in ((ds, f"th_down_{ds}", "V59_DOWN_ADX7_TH"), (fs, f"th_flat_{fs}", "V59_FLAT_DID7_TH")):
         if key not in p:
