@@ -70,6 +70,21 @@ def space(logic_id: str) -> dict:
     return {**cfg["search_space"]["common_exit"], **sp}
 
 
+def coverage(logic_id: str) -> list[str]:
+    """この探索が触れる指標の列（＝網羅度の分子・2026-07-27 まこさん OK・監査 提案1）。
+
+    分母は observe_diag の指標カタログ（96種 × 8足 = 768列）。ここは手で書いた部品の一覧を返す
+    ＝入口の確認に使えるのは HTF_PARTS と VOL_PARTS だけで、時間足も部品名に焼き付いている。
+    要件 R3 が終わればここがカタログ側に置き換わる。
+    """
+    sp = space(logic_id)
+    used = []
+    for k in ("confirm_htf", "confirm_vol"):
+        if k in sp:
+            used += [c for c in sp[k]["choices"] if c != "none"]
+    return used
+
+
 def exit_keys() -> set:
     """出口側のキー（探索器が試行の値を入口と出口へ振り分けるのに使う）。"""
     return set(config()["search_space"]["common_exit"])

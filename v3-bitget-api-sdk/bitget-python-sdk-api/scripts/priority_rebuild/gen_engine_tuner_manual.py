@@ -56,9 +56,12 @@ CFG = HERE / "e38_logics.json"
 # ══ 言葉の説明（gen_observe_manual.GLOSSARY と同じ方式・英語をそのまま日本語にした言葉は使わない）══
 #   足すときはここに1行足す。説明書へ機械で流す。
 GLOSSARY: list[tuple[str, str]] = [
+    # ⚠️ ここに秒数を書かないこと（2026-07-27 まこさん OK・監査 提案1）。
+    #    以前は「実測でおよそ7秒かかる」と手で書いてあったが、それは別の道具 engine_search_e37.py の値だった。
+    #    所要は engine_tuner が走るたびに実測して engine_tuner_timing.json に残す＝下の「1試行にかかる時間」で読む。
     ("試行",
      "値を1組決めて、その値で売買エンジンを最初から1回まるごと回して、審判で採点するまでの1回。"
-     "実測でおよそ7秒かかる。試行の回数は --trials で決める。"),
+     "試行の回数は --trials で決める。"),
     ("値決め窓",
      "どの値が良いかを決めるために使う期間。この期間の成績だけを見て値を選ぶ。"),
     ("確認窓",
@@ -207,6 +210,34 @@ def _space_rows(space: dict) -> list[tuple[str, str, str]]:
             how = json.dumps(d, ensure_ascii=False)
         rows.append((name, _param_jp(name), how))
     return rows
+
+
+def _timing() -> dict:
+    """1試行の所要（engine_tuner が走るたびに実測して残したもの）。手書きの秒数は使わない。"""
+    p = es.TIMING
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:                                        # noqa: BLE001
+        return {}
+
+
+def _coverage_rows() -> list[tuple[str, str, int, str]]:
+    """(戦略, ロジック, 触れる列の本数, 割合) ＝どれだけ試していないかを機械で出す。"""
+    size = es.catalog_size()
+    total = size[0] * size[1] if size else 0
+    out = []
+    for ad in _adapters():
+        cov = getattr(ad, "coverage", None)
+        if cov is None:
+            continue
+        for z in ad.logics():
+            if not z["searchable"]:
+                continue
+            n = len(list(cov(z["id"])))
+            out.append((ad.NAME, z["id"], n, f"{n / total * 100:.2f}%" if total else "分母が取れない"))
+    return out
 
 
 def _doc_first_line() -> str:
@@ -422,6 +453,49 @@ def build() -> str:
     L.append("探索器は純益の計算に手を触れません。")
     L.append("")
 
+    L.append("## 1試行にかかる時間")
+    L.append("")
+    L.append("**engine_tuner が走るたびに実測して記録した値です。この説明書に秒数を手で書きません。**")
+    L.append(f"記録の置き場所は `{es.TIMING.name}` です。")
+    L.append("")
+    tm = _timing()
+    if tm:
+        L.append("| 戦略とロジック | データの読み込み | 1試行 | 何試行で測ったか | 測った日 |")
+        L.append("|---|---|---|---|---|")
+        for k in sorted(tm):
+            r = tm[k]
+            L.append(f"| {_c(k)} | {_c(r.get('load_sec'))}秒 | **{_c(r.get('per_trial_sec'))}秒** | "
+                     f"{_c(r.get('trials'))}回 | {_c(r.get('measured_at'))} |")
+        L.append("")
+        L.append("読み込みの時間は試行の回数によらず毎回かかります。短い探索ではここが大半を占めます。")
+    else:
+        L.append("**未計測です。** engine_tuner を1回走らせると記録されます。")
+    L.append("")
+    L.append("> 2026-07-27 まで、ここには「実測でおよそ7秒」と手で書かれていました。")
+    L.append("> それは別の道具 engine_search_e37.py の値で、engine_tuner の値ではありませんでした。")
+    L.append("> 監査で発覚し、実測を機械で残す形に変えました。")
+    L.append("")
+
+    L.append("## 触れている指標の範囲")
+    L.append("")
+    size = es.catalog_size()
+    if size:
+        L.append(f"指標の作り方の正本は observe_diag です。カタログは **{size[0]}種 × 足 {size[1]}種 = "
+                 f"{size[0] * size[1]}列** あります。そのうち、この道具が入口の条件に使える列は次の本数だけです。")
+    else:
+        L.append("指標カタログを読めませんでした。分母を出せません。")
+    L.append("")
+    rows_cov = _coverage_rows()
+    if rows_cov:
+        L.append("| 戦略 | ロジック | 触れる列 | カタログ全体に対する割合 |")
+        L.append("|---|---|---|---|")
+        for s, lid, n, pct in rows_cov:
+            L.append(f"| {_c(s)} | {_c(lid)} | {n}本 | **{_c(pct)}** |")
+        L.append("")
+    L.append("**残りは落としたのではありません。候補にそもそも入っていません。**")
+    L.append("これを広げるのが要件 R3 です。R3 はまだ終わっていません。")
+    L.append("")
+
     L.append("## 件数の下限ゲート")
     L.append("")
     L.append("| ロジック | 1日あたりの下限 |")
@@ -476,6 +550,10 @@ def build() -> str:
              "「この道具でやらないこと」を見てください（E36 は対象外と決まっています）。")
     L.append(f"- 入口に足せる確認の部品は {len(parts.HTF_PARTS) + len(parts.VOL_PARTS)} 個だけです。"
              "指標も時間足も、この一覧の外は試せません。")
+    if size and rows_cov:
+        worst = max(rows_cov, key=lambda z: z[2])
+        L.append(f"- 指標カタログ {size[0] * size[1]}列 のうち、いちばん広いロジックでも触れているのは "
+                 f"{worst[2]}本（{worst[3]}）です。**残りは試していません。**")
     L.append("- 局面の判定はレンジに固定です。共通の売買ループが range_ok_rg5 を前提にしています。")
     L.append("- 保有の上限の候補は分単位に固定です。デイトレの時間単位を試せません。")
     L.append("- 調整の単位はロジック1本です。**戦略まるごと**（複数のロジック＋優先度＋枠の配分）を"
@@ -552,10 +630,23 @@ def selftest() -> int:
                 ng.append(f"接続ファイル {ad} に {k} が無い")
     if not _all_logics():
         ng.append("ロジックの一覧が接続ファイルから取れていない")
+    # ★所要時間と網羅度は実体から取ること（2026-07-27 まこさん OK・監査 提案1）
+    #   ＝手書きの秒数が生成器へ戻ってくるのを止める番人。
+    src_gen = inspect.getsource(sys.modules[__name__])
+    for w, d in GLOSSARY:
+        if "秒かかる" in d or "秒です" in d:
+            ng.append(f"言葉の説明に所要時間が手書きされている: {w}（実測は engine_tuner_timing.json から読む）")
+    if "engine_tuner_timing" not in src_gen and "es.TIMING" not in src_gen:
+        ng.append("所要時間の記録ファイルを読んでいない（説明書の秒数が手書きになる）")
+    if es.catalog_size() is None:
+        ng.append("指標カタログの大きさを observe_diag から取れない（網羅度の分母が出せない）")
+    if not _coverage_rows():
+        ng.append("触れる列の一覧を接続ファイルから取れない（網羅度の分子が出せない）")
     txt = build()
     for must in ("この説明書の位置づけ", "この道具は何か", "この道具の目的", "言葉の説明", "実行のしかた", "使う期間",
                  "扱える戦略", "調整できるロジック", "入口の型", "確認の部品", "出口の仕組み", "探索する値",
-                 "1回の試行で起きること", "件数の下限ゲート", "この道具が守ると言っていること",
+                 "1回の試行で起きること", "1試行にかかる時間", "触れている指標の範囲",
+                 "件数の下限ゲート", "この道具が守ると言っていること",
                  "observe_diag との違い", "使う順番", "いまできないこと", "この道具では分からないこと"):
         if must not in txt:
             ng.append(f"説明書に見出しが無い: {must}")

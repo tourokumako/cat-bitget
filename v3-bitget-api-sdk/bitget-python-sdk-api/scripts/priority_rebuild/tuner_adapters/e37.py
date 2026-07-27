@@ -72,6 +72,17 @@ def space(logic_id: str) -> dict:
     return sp
 
 
+def coverage(logic_id: str) -> list[str]:
+    """この探索が触れる指標の列（＝網羅度の分子・2026-07-27 まこさん OK・監査 提案1）。
+
+    v59 の急騰の判定に使えるシグナルは _SIGS の4種だけ。どれも5分足で、時間足は選べない。
+    分母は observe_diag の指標カタログ（96種 × 8足 = 768列）。
+    """
+    if logic_id != "v59":
+        return []
+    return [f"{s}_5m" for s in _SIGS]
+
+
 def exit_keys() -> set:
     """E37 は入口と出口が一枚岩で分かれていない＝全部まとめて run へ渡す。"""
     return set()

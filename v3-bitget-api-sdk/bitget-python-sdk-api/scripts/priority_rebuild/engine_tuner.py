@@ -47,6 +47,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import io
+import json
 import pathlib
 import time
 
@@ -58,6 +59,12 @@ from tuner_adapters import available, load_adapter   # 戦略ごとの接続フ�
 
 HERE = pathlib.Path(__file__).resolve()
 
+# ★計測の記録（2026-07-27 まこさん OK・監査 2026-07-27 提案1）＝1試行の所要を走らせるたびに実測して残す。
+#   説明書 gen_engine_tuner_manual.py はこのファイルから読む＝文書に秒数を手で書かない。
+#   背景＝説明書に「実測でおよそ7秒」と手で焼いてあったが、それは別の道具 engine_search_e37.py の値だった
+#   （lessons_active L-29 が出どころ・監査で発覚）。手書きの数値は必ず腐るので、実測を機械で残す形にする。
+TIMING = HERE.parents[2] / ".claude" / "ratchet" / "engine_tuner_timing.json"
+
 # ★期間の数値は periods.py だけが持つ（H8・手打ち禁止・2026-07-27 集約＝値は移設前と同一で挙動不変）。
 #   窓の意味・選び方・経緯の読み物＝.claude/ratchet/windows.md（gen_windows.py が機械生成）。
 SEARCH_START = periods.SEARCH_START          # 値決め窓（まこさん決定 2026-07-24・構造類似2位）
@@ -68,6 +75,62 @@ WARM = pd.Timedelta(days=60)                 # 助走（RG 168h＋rolling を満
 
 assert SEARCH_END <= periods.SCORE_START and CONFIRM_END <= periods.SCORE_START, \
     "探索/確認窓が採点窓（periods 正本）と重複＝采否の窓の汚染"
+
+
+def catalog_size() -> tuple[int, int] | None:
+    """指標カタログの大きさを observe_diag（指標の作り方の正本）から取る。取れなければ None。
+
+    ここで数えるのは「この道具が試せる範囲の分母」。分子＝接続ファイルの coverage()。
+    ＝どれだけ試していないかを機械で出すため（監査 2026-07-27 提案1・まこさん OK）。
+    """
+    try:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            import observe_diag as od
+            cfg = od.load_config()
+            n_ind, n_tf = len(od.build_catalog(cfg)), len(cfg["timeframes"])
+        return n_ind, n_tf
+    except Exception as e:                                   # noqa: BLE001  読めなくても探索は続ける
+        print(f"[網羅度] 指標カタログを読めなかった＝分母を出せない: {e}")
+        return None
+
+
+def _print_coverage(ad, logic_id: str) -> None:
+    """いま触れている列と、カタログ全体との比を出す（黙って落としているのでなく、そもそも候補に無い）。"""
+    cov = getattr(ad, "coverage", None)
+    if cov is None:
+        print("[網羅度] この接続ファイルは触れる列の一覧を返さない＝分子を出せない")
+        return
+    touched = list(cov(logic_id))
+    size = catalog_size()
+    if size is None:
+        print(f"[網羅度] この探索が触れる列 {len(touched)}本: {', '.join(touched)}")
+        return
+    n_ind, n_tf = size
+    total = n_ind * n_tf
+    print(f"[網羅度] 指標カタログ {n_ind}種 × 足 {n_tf}種 = {total}列 ／ "
+          f"この探索が触れる列 {len(touched)}本 = {len(touched) / total * 100:.2f}%")
+    print(f"         触れる列: {', '.join(touched)}")
+    print("         ＝残りは試していない。落としたのでなく、候補にそもそも入っていない（要件 R3 が未着手）。")
+
+
+def _record_timing(strategy: str, logic: str, load_sec: float, trials: int,
+                   opt_sec: float, bars: int) -> None:
+    """1試行の所要を実測して残す（説明書はここから読む＝文書に秒数を手で書かない）。"""
+    key = f"{strategy}/{logic}"
+    rec = {"load_sec": round(load_sec, 1), "trials": trials,
+           "opt_sec": round(opt_sec, 1), "per_trial_sec": round(opt_sec / max(trials, 1), 2),
+           "search_bars": int(bars), "measured_at": time.strftime("%Y-%m-%d")}
+    try:
+        cur = json.loads(TIMING.read_text(encoding="utf-8")) if TIMING.exists() else {}
+        cur[key] = rec
+        TIMING.parent.mkdir(parents=True, exist_ok=True)
+        TIMING.write_text(json.dumps(cur, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                          encoding="utf-8")
+        print(f"[計測] 読み込み {rec['load_sec']}秒 ／ 1試行 {rec['per_trial_sec']}秒"
+              f"（{trials}試行で {rec['opt_sec']}秒）→ {TIMING.name} に記録した")
+    except Exception as e:                                   # noqa: BLE001  記録に失敗しても探索の結果は出す
+        print(f"[計測] 記録に失敗した（結果には影響しない）: {e}")
 
 
 def _resolve_space(space_decl: dict, bank: dict) -> dict:
@@ -175,7 +238,9 @@ def main() -> None:
     print(f"[窓] 値決め {SEARCH_START.date()}〜{SEARCH_END.date()}（排他）／確認 {CONFIRM_START.date()}〜{CONFIRM_END.date()}（排他・表示のみ）＝まこさん決定 2026-07-24・採点窓不使用")
     t0 = time.time()
     df_s, df_c = ad.load_windows([(SEARCH_START, SEARCH_END), (CONFIRM_START, CONFIRM_END)], WARM)
-    print(f"[共通部分] 探索スライス {len(df_s):,} バー／確認スライス {len(df_c):,} バー（{time.time()-t0:.0f}秒）")
+    t_load = time.time() - t0
+    print(f"[共通部分] 探索スライス {len(df_s):,} バー／確認スライス {len(df_c):,} バー（{t_load:.0f}秒）")
+    _print_coverage(ad, a.logic)
 
     bank = ad.series_bank(df_s[df_s["ts"] >= SEARCH_START])
     space = _resolve_space(ad.space(a.logic), bank)
@@ -213,22 +278,31 @@ def main() -> None:
         with contextlib.redirect_stdout(buf):
             res = _run_window(ad, df_s, a.logic, ep, xp, SEARCH_START, SEARCH_END, a.minimize)
         seen_reasons.update(_exit_reasons(res["t"]))
-        results.append((trial.number, dict(trial.params), res))
+        # ★ゲートの判定を先に出して試行に貼る（2026-07-27 まこさん OK）。
+        #   従来は棄却した試行も上位10に並んでいた＝ほとんど建てない形が1位に見え、§8.6 が禁じる
+        #   尻すぼみを最良として見せる表示になっていた（2026-07-27 の実走で発見）。選定は従来どおり。
+        ok, why = True, ""
+        if min_per_day is not None and res["per_day"] < min_per_day:
+            ok, why = False, f"件数の下限 {min_per_day} に対して {res['per_day']:.2f}件/日"
+        elif a.net_floor is not None and res["total"] < a.net_floor:
+            ok, why = False, f"net の下限 ${a.net_floor:,.0f} に対して ${res['total']:+,.0f}"
+        results.append((trial.number, dict(trial.params), res, ok, why))
         logf.write(f"T{trial.number}\t{res['total']:+.1f}\t{res['n']}\t{res['per_day']:.2f}"
                    + (f"\t{a.minimize}={res['focus']:+.1f}({res['focus_n']}玉)" if a.minimize else "")
+                   + ("" if ok else f"\t棄却={why}")
                    + f"\t{trial.params}\n")
         logf.flush()
         if trial.number % 20 == 0:
             extra = f" / {a.minimize} ${res['focus']:+,.0f}（{res['focus_n']}玉）" if a.minimize else ""
             print(f"  trial {trial.number}: net ${res['total']:+,.0f}{extra} / {res['n']}玉 / {res['per_day']:.2f}件/日 / 経過 {(time.time()-t0)/60:.1f}分", flush=True)
-        if min_per_day is not None and res["per_day"] < min_per_day:
-            return -1e9                    # 件数下限ゲート＝役割からの割り付け（値はまこさん確定）
-        if a.net_floor is not None and res["total"] < a.net_floor:
-            return -1e9                    # net の歯止め＝勝ち玉まで削る形を弾く（値はまこさん確定）
+        if not ok:
+            return -1e9                    # 件数下限ゲート／net の歯止め（値はまこさん確定）
         return res["focus"] if a.minimize else res["total"]
 
     st = optuna.create_study(direction="maximize", sampler=optuna.samplers.TPESampler(seed=a.seed))
+    t_opt0 = time.time()
     st.optimize(obj, n_trials=a.trials, show_progress_bar=False)
+    _record_timing(a.strategy, a.logic, t_load, a.trials, time.time() - t_opt0, len(df_s))
 
     if a.minimize and a.minimize not in seen_reasons:
         print(f"\n⚠️ [警告] 指定した出口理由 {a.minimize} は、どの試行の売買記録にも出ていない。"
@@ -236,10 +310,23 @@ def main() -> None:
               "＝最小化する対象がゼロのまま探索した。指定が正しいか確かめること。")
     key = (lambda z: -z[2]["focus"]) if a.minimize else (lambda z: -z[2]["total"])
     head = f"{a.minimize} の損失が小さい順" if a.minimize else "合計 net が大きい順"
-    print(f"\n[上位10（{a.logic}・値決め窓の審判値・{head}・件数/日は §8.6 の一級列＝net だけで上位に置かない）]")
-    for num, params, res in sorted(results, key=key)[:10]:
+    kept = [z for z in results if z[3]]
+    dropped = [z for z in results if not z[3]]
+    print(f"\n[上位10（{a.logic}・値決め窓の審判値・{head}・★ゲートを通った試行だけ）]")
+    if not kept:
+        print(f"  ⚠️ ゲートを通った試行が {len(results)} 本中 0 本。下の best は選定の対象になっていない"
+              "＝下限を満たす形が見つからなかったということ。下限か探索範囲を見直すこと。")
+    for num, params, res, _ok, _why in sorted(kept, key=key)[:10]:
         extra = f" / {a.minimize} ${res['focus']:+,.0f}（{res['focus_n']}玉）" if a.minimize else ""
         print(f"  #{num}: net ${res['total']:+,.0f}{extra} / {res['n']}玉 / {res['per_day']:.2f}件/日\n      {params}")
+    # ★捨てたものは黙って消さない（L-330／L-356）＝本数と理由と、捨てた中で net が良かった3本を出す。
+    if dropped:
+        n_cnt = sum(1 for z in dropped if z[4].startswith("件数"))
+        print(f"\n[ゲートで捨てた試行] {len(dropped)}/{len(results)} 本"
+              f"（件数の下限 {n_cnt} 本 ／ net の下限 {len(dropped) - n_cnt} 本）"
+              "＝上の一覧には入れない。ほとんど建てない形が最良に見えるのを防ぐため（§8.6）。")
+        for num, params, res, _ok, why in sorted(dropped, key=key)[:3]:
+            print(f"  #{num}: net ${res['total']:+,.0f} / {res['n']}玉 / {res['per_day']:.2f}件/日 ← {why}")
 
     bp = dict(st.best_trial.params)
     ep = {**fixed_ep, **{k: v for k, v in bp.items() if k not in exit_keys}}
