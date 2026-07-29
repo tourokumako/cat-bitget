@@ -13,11 +13,16 @@
 #   マーカーは reset_interpretation.sh（UserPromptSubmit）が まこさんの発言のたびに消す
 #   ＝新しい指示のあと、最初に手を動かす前に必ずやり直しになる。
 #
-# 宣言の型（3行・チャットと interpretation.md の両方・長い型は形骸化するので増やさない）:
+# 宣言の型（4行・チャットと interpretation.md の両方・長い型は形骸化するので増やさない）:
 #   【解釈】
 #   指示: <まこさんの言葉をそのまま>
 #   埋めた空白: <指示に無くて私が決めたこと。無ければ「なし」>
 #   確認したいこと: <無ければ「なし」>
+#   開いて読むファイル: <指示に出てくるファイル・文書。無ければ「なし」>
+# ↑4行目は 2026-07-30 まこさん承認「1は強制化してほしい」＝指定された文書を読まずに返答した事案
+#   （2026-07-29 監査FB対応で指定5本が未読のまま返答）の再発防止。列挙したファイルが read_log に
+#   無ければブロック＝宣言だけでなく Read の実績で照合する。
+#   限界: basename の部分一致＝同名の別ファイルはすり抜ける／「なし」と嘘を書けば機械では見抜けない。
 #
 # 対象: Write / Edit / MultiEdit ／ Bash は実行系スクリプトの python 実行のみ。
 # 対象外（通す）: 読む・調べる系の Bash（grep/ls/cat/find/git 等）／--selftest・py_compile・--help・--verify／
@@ -87,6 +92,7 @@ fail() {
   echo "  指示: <まこさんの言葉をそのまま>" >&2
   echo "  埋めた空白: <指示に無くて自分で決めたこと。無ければ「なし」>" >&2
   echo "  確認したいこと: <無ければ「なし」>" >&2
+  echo "  開いて読むファイル: <指示に出てくるファイル・文書。無ければ「なし」>" >&2
   echo "" >&2
   echo "  shasum -a 256 \"$DECL\" | awk '{print \$1}' > \"$MARK\"" >&2
   echo "（まこさんが次に発言するとマーカーは消える＝指示のたびに解釈をやり直す・INTERP_OK=1 はまこさん明示 OK 時のみ）" >&2
@@ -98,6 +104,18 @@ grep -q "【解釈】" "$DECL" || fail "「【解釈】」の行が無い"
 grep -q "^指示:" "$DECL" || fail "「指示:」の行が無い（まこさんの言葉をそのまま書く）"
 grep -q "^埋めた空白:" "$DECL" || fail "「埋めた空白:」の行が無い（無ければ「なし」と書く）"
 grep -q "^確認したいこと:" "$DECL" || fail "「確認したいこと:」の行が無い（無ければ「なし」と書く）"
+grep -q "^開いて読むファイル:" "$DECL" || fail "「開いて読むファイル:」の行が無い（指示に出てくるファイル・文書を列挙。無ければ「なし」と書く・2026-07-30 まこさん承認）"
+
+# 列挙したファイルを Read tool で実際に開いたかを read_log で照合（2026-07-30 まこさん承認「1は強制化してほしい」
+# ＝指定文書を読まずに返答した 2026-07-29 事案の再発防止）
+RLOG="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/read_log.txt"
+FLINE=$(grep -m1 "^開いて読むファイル:" "$DECL")
+if ! printf '%s' "$FLINE" | grep -qE '^開いて読むファイル:[[:space:]]*なし'; then
+  for f in $(printf '%s' "$FLINE" | grep -oE '[A-Za-z0-9_./-]+\.(md|py|json|csv|txt|sh)'); do
+    b=$(basename "$f")
+    grep -qF "$b" "$RLOG" 2>/dev/null || fail "宣言に挙げたファイルをまだ Read tool で開いていない: $f（読んでから作業する・2026-07-30 まこさん承認）"
+  done
+fi
 
 DHASH=$(shasum -a 256 "$DECL" 2>/dev/null | awk '{print $1}')
 POSTED=$(cat "$MARK" 2>/dev/null)
