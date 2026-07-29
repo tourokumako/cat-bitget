@@ -311,9 +311,16 @@ def _print_judgement(base, rs, rc, min_per_day, stats: dict | None, n_kept: int,
         rows.append(("B1", "値決め窓で土台より改善しているか",
                      f"土台 ${bs:+,.0f} → 候補 ${rs['total']:+,.0f}"
                      + ("  ✅" if rs["total"] > bs else "  ❌")))
-        rows.append(("B2", "確認窓で土台より悪化していないか",
-                     f"土台 ${bc:+,.0f} → 候補 ${rc['total']:+,.0f}"
-                     + ("  ✅" if rc["total"] >= bc else "  ❌")))
+        if SEARCH_START == CONFIRM_START and SEARCH_END == CONFIRM_END:
+            # ★同一窓の間は B2 に合格の印を出さない（暫定窓＝まこさん確定 2026-07-30）。
+            #   確認窓の役割は「値決め窓だけのまぐれ当たりを弾く」＝同じ窓では B1 と同じ数字を
+            #   2回見るだけで、弾く力がゼロ。✅を出すと独立の確認に見えてしまう。
+            rows.append(("B2", "確認窓で土台より悪化していないか",
+                         "— 確認窓＝値決め窓のため判定不能（engine_tuner 完成までの暫定・窓の決め直しは歩5）"))
+        else:
+            rows.append(("B2", "確認窓で土台より悪化していないか",
+                         f"土台 ${bc:+,.0f} → 候補 ${rc['total']:+,.0f}"
+                         + ("  ✅" if rc["total"] >= bc else "  ❌")))
     # B3＝役割の下限（台帳・下回るのは役割を変える決定）と、運用の下限（PDCA で見直してよい）の2段
     ops = sr.get("ops_min_per_day")
     floor = ops if ops is not None else (min_per_day if min_per_day is not None else rfloor)

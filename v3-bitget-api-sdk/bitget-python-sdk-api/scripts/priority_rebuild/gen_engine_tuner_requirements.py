@@ -47,7 +47,16 @@ def _c(s) -> str:
 
 
 def _load() -> dict:
-    return json.loads(REQ.read_text(encoding="utf-8"))
+    raw = REQ.read_text(encoding="utf-8")
+    # ★手書き秒数の検出（CP2 監査 4-23 への対応・2026-07-30 まこさん確認済み fix_map）
+    #   実測の秒数は engine_tuner_timing.json が正本＝json に「N秒」「N.N秒」を手で書いたら生成を止める。
+    #   背景＝「1試行およそ7秒」（別の道具の値）と「0.41秒／2.79秒」の手書きが2回続けて混入した。
+    import re as _re
+    hand = _re.findall(r"\d+(?:\.\d+)?秒", raw)
+    if hand:
+        raise SystemExit(f"[手書き数値エラー] json に秒数のリテラルがある: {sorted(set(hand))}"
+                         "＝実測は engine_tuner_timing.json が正本。文言を「timing.json が正本」に直すこと")
+    return json.loads(raw)
 
 
 def build() -> str:

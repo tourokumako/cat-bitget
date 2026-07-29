@@ -1,18 +1,26 @@
 {
   "e37/v59": {
-    "load_sec": 101.8,
-    "measured_at": "2026-07-27",
-    "opt_sec": 26.2,
-    "per_trial_sec": 2.62,
+    "load_sec": 101.9,
+    "measured_at": "2026-07-30",
+    "opt_sec": 10.4,
+    "per_trial_sec": 10.43,
+    "search_bars": 218592,
+    "trials": 1
+  },
+  "e38/L1i": {
+    "load_sec": 101.3,
+    "measured_at": "2026-07-29",
+    "opt_sec": 35.0,
+    "per_trial_sec": 0.35,
     "search_bars": 52416,
-    "trials": 10
+    "trials": 100
   },
   "e38/S2": {
-    "load_sec": 100.1,
-    "measured_at": "2026-07-27",
-    "opt_sec": 10.9,
-    "per_trial_sec": 0.36,
+    "load_sec": 0.2,
+    "measured_at": "2026-07-29",
+    "opt_sec": 38.6,
+    "per_trial_sec": 0.39,
     "search_bars": 52416,
-    "trials": 30
+    "trials": 100
   }
 }

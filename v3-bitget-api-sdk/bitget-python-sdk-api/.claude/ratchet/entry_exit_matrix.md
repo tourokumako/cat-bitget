@@ -16,12 +16,14 @@
 
 - **E-a シグナル家族（何を取るか・WebResearch 8分類＋α）**: (1) 逆張り＝平均回帰 MR（レンジ端/行き過ぎを fade） / (2) 順張り＝モメンタム/トレンドフォロー / (3) ブレイクアウト（レンジ/ATH 超え＋出来高） / (4) 戻り売り・押し目（プルバック） / (5) グリッド（往復を仕組みで刻む） / (6) マーケットメイク（両側 maker・在庫制御＝Avellaneda-Stoikov/Cartea・スプレッド収益） / (7) order-flow/需給（Institutional Accumulation・Flow Momentum） / (8) レンジ内 value（stable range で仕込む）
 - **E-b 局面判定 regime（CAT D-ε・9手法×state）**: (1) なし＝全地合い / (2) MA（close vs MA70） / (3) ADX（trend/range） / (4) ATR（高低ボラ） / (5) Hurst 指数 / (6) HMM / (7) GMM-HMM / (8) UMAP+HDBSCAN / (9) Markov regime switching / (10) change point detection / (11) タッチ実績 S/R ゾーン（E37 v10/v11） / (12) ボリュームプロファイル POC / (13) BB スクイーズ / (14) 現物先物ベーシス。state＝3状態(DT/RANGE/UT)／+ボラ／連続score
-- **E-c Entry 指標（CAT A-1・145ファミリー・6TF）**: トレンド/モメンタム＝ADX/DI/MACD(line/sig/hist)/RSI(7/14/21)/ROC/Stoch(k/d)/MFI/CMF/OBV/Ichimoku/RCI/MTF傾き整合 ／ ボラ＝ATR%/BB%b/BB幅/realized_vol/donchian幅/zscore_return ／ 出来高＝volume_ratio/OBV傾き/CMF/MFI ／ ローソク＝engulfing/pinbar/streak/body_ratio/wick_ratio ／ 形(W窓)＝V/W/M/swing_dist/bars_since_high-low ／ 位置＝close vs EMA/SMA/VWAP/kijun/keltner/supertrend/high-low ／ 構造＝pivot(PP/R/S)/fib(382-786)/VP(VAH/VAL/POC)/S-R touch_count ／ 需給＝taker_ls/L-S比/CVD
+- **E-c Entry 指標（CAT A-1・145ファミリー・6TF）**: トレンド/モメンタム＝ADX/DI/MACD(line/sig/hist)/RSI(7/14/21)/ROC/Stoch(k/d)/MFI/CMF/OBV/Ichimoku/RCI/MTF傾き整合 ／ ボラ＝ATR%/BB%b/BB幅/realized_vol/donchian幅/zscore_return ／ 出来高＝volume_ratio/OBV傾き/CMF/MFI ／ ローソク＝engulfing/pinbar/harami孕み足/streak/body_ratio/wick_ratio ／ 形(W窓)＝V/W/M/swing_dist/bars_since_high-low ／ 位置＝close vs EMA/SMA/VWAP/kijun/keltner/supertrend/high-low ／ 構造＝pivot(PP/R/S)/fib(382-786)/VP(VAH/VAL/POC)/S-R touch_count ／ 需給＝taker_ls/L-S比/CVD
 - **E-d 到達・トリガ（CAT A-3）**: (1) ゾーン/バンド接触（S/R・Keltner） / (2) BB±2σ/±3σ 超え / (3) 相対分位 dev_z≥q（q90/95/99） / (4) 指標クロス（MACD/stoch/EMA） / (5) VP/POC 距離
 - **E-e 確認（入る前の裏取り・CAT B-9 AND段数3-7）**: (1) なし＝到達で即 / (2) 反転ローソク（陰陽転・pinbar・engulfing・KB §3） / (3) モメンタム反転（RSI9・stoch・divergence） / (4) 出来高（exhaustion＝減少 or spike） / (5) MTF 整合（上位足の向き） / (6) AND 深さを増やす（confluence 3〜7 条件）
 - **E-f 方向材料（向きの根拠）**: (1) なし＝方向を当てない・雑に多く（両側 maker） / (2) 静的テクニカル stoch_k/RSI（E37 SHORT で AUC0.61＝弱） / (3) 需給 taker_ls（E28 LONG 有効・E37 SHORT で AUC0.52＝不能） / (4) L-S比 ls_global（E29 LONG 有効） / (5) CVD 累積出来高デルタ（未・§6.7） / (6) MTF 上位足の向き
 - **E-g 足・時間軸（CAT A-5/A-4）**: 足＝5m/15m/30m/1h/4h/1d（1m 禁止・3m 保留）／ MTF 展開＝ffill/5m rolling/線形補間 ／ 予測ホライズン K＝6/12/24/48/96/144/288（上限24h）
 - **E-h 方向（CAT D-ζ）**: SHORT のみ / LONG のみ / 両側 / hedge(net0) / ペアトレード（§1.2.1 で戦略ごとに固定＝逸脱不可）
+- **E-i 資金管理・リスクリワードの事前担保（2026-07-30 まこさん提示の入口8軸⑦との照合で欠けを発見・追加）**: 損切り幅に対する利確幅の比率（例 1:2 以上）が建てる前に担保されているかを確認する。engine_tuner ではレシピ生成の物理制約に接続する（損切り幅と利確幅は条件から機械で計算できる・比率の下限はまこさんが決める・手数料床 TP_FEE_FLOOR とは併用）
+- **E-j 時間帯・セッション（同⑧との照合で欠けを発見・追加）**: 時刻 / 曜日 / 流動性の高い時間帯（米国時間のボラ集中は BTC でも実在） / 重要指標発表の近傍の回避。時刻と曜日は既存データから列を作れる（材料の列としても追加する）
 
 ## 共通 Exit ロジック軸（全戦略の選択肢カタログ・CAT A-2 16サブ＋WebResearch・CAT軸ID併記）
 
@@ -119,13 +121,13 @@
 >
 **層1〜層3 と採否が使う期間**（`gen_windows.py` が periods.py から機械生成＝手で数字を書かない・2026-07-27。意味と経緯＝[windows.md](windows.md)）:
 
-<!-- WINDOWS_START hash=d0c5c88783bc87c9 ここは gen_windows.py が自動生成＝手で書き換えない -->
+<!-- WINDOWS_START hash=28a4141026516b85 ここは gen_windows.py が自動生成＝手で書き換えない -->
 | 期間の名前 | いつ | 何に使うか |
 |---|---|---|
 | 学習 | 〜2025-02-28 | ML が教師で訓練する期間。固定ルールの改善では使わない |
 | 捨て | 2025-03-01 〜 2026-02-28 | leak を防ぐ緩衝。採点には使わない。この中に確認窓が入る |
-| 値決め | 2024-04-01 〜 2024-07-31 | engine_tuner ／ engine_search_e37。値を選ぶのはここだけ |
-| 確認 | 2025-12-01 〜 2026-02-28 | engine_tuner。選んだ値のまま1回走らせて表示するだけ。選び直さない |
+| 値決め | 2024-04-01 〜 2026-02-28 | engine_tuner ／ engine_search_e37。値を選ぶのはここだけ |
+| 確認 | 2024-04-01 〜 2026-02-28 | engine_tuner。選んだ値のまま1回走らせて表示するだけ。選び直さない |
 | 採点 | 2026-03-01 〜 2026-06-30 | score.py ／ observe_diag。採否を決める。探索には一切使わない |
 | 封印 | 2026-07-01 〜 | 過剰適合の独立チェック用。いまは空。本番判断の前に決め直す |
 
@@ -138,10 +140,10 @@
 - **X-a TP 固定目標（CAT A-2）**: (1) 固定 %/pip/dollar / (2) R:R 固定（1:2/1:3） / (3) レンジ中央 SMA/中央線 / (4) 反対ゾーン（サポート側）まで伸ばす / (5) 固定σ幅 / (6) VWAP 回帰 / (7) bracket order
 - **X-b TP 段階決済 scale-out（WebResearch＝fade/scale/exit）**: (1) 部分決済（例 中央35%/1.5σ35%/反転30%） / (2) profit target ladder（段階利確） / (3) pyramiding exit / (4) 複数TP（最大20個・Bitget）
 - **X-c トレーリング（CAT A-2）**: (1) %トレーリング / (2) ATR トレーリング（Chandelier） / (3) Parabolic SAR / (4) high-water mark / (5) ボラ連動トレーリング（利益で 0.25-0.40% へ締める）
-- **X-d SL（CAT A-2）**: (1) 固定 % / (2) ゾーンすぐ外・浅い構造線 / (3) **遠い Chan 型＝深SL・時間切れ主体**（L-323＝平均回帰に浅SLは逆効果） / (4) SLなし＝レンジ破れ/前提崩れ検知でのみ撤退（KB §5） / (5) ATR×k 倍 / (6) swing 高安の外 / (7) MAE stop / (8) acceleration SL（早期カット） / (9) ±3σ / (10) 建値撤退（含み損戻りで損ゼロ maker・E35 iter4）
+- **X-d SL（CAT A-2）**: (1) 固定 % / (2) ゾーンすぐ外・浅い構造線 / (3) **遠い Chan 型＝深SL・時間切れ主体**（L-323＝平均回帰に浅SLは逆効果） / (4) SLなし＝レンジ破れ/前提崩れ検知でのみ撤退（KB §5） / (5) ATR×k 倍 / (6) swing 高安の外 / (7) MAE stop / (8) acceleration SL（早期カット） / (9) ±3σ / (10) 建値撤退（含み損戻りで損ゼロ maker・E35 iter4） / (11) **1トレード最大許容損失＝フィナンシャルストップ**（資金比%で機械的に切る・予算0.12の合計capとは別の1トレード軸・2026-07-30 まこさん提示の出口11軸⑤との照合で欠けを発見・追加）
 - **X-e 含み益管理（CAT A-2）**: (1) break-even（建値へ SL 移動） / (2) profit lock（利益固定） / (3) MFE-based（含み益ピーク基準） / (4) MFE stale（含み益が伸びない検知）
-- **X-f 時間切れ・前提崩れ（CAT A-4）**: (1) 固定時間/バー数 成行 taker / (2) **deadline shrink＝残り時間比で建値側 maker 化**（E35 iter8-9・E37 v13） / (3) レンジ破れ（出来高∩境界外終値）で早期撤退 / (4) market close/曜日 exit / (5) なし
-- **X-g 指標反転・構造・ボラ・出来高・統計 Exit（CAT A-2）**: RSI/Stoch/MACD reversal / BBタッチ / EMA cross / ADX decay / pivot反転 / trendline-channel break / vol expansion-contraction / volume spike-divergence / order-flow reversal / z-score reversion（統計的平均回帰閾値）
+- **X-f 時間切れ・前提崩れ（CAT A-4）**: (1) 固定時間/バー数 成行 taker / (2) **deadline shrink＝残り時間比で建値側 maker 化**（E35 iter8-9・E37 v13） / (3) レンジ破れ（出来高∩境界外終値）で早期撤退 / (4) market close/曜日 exit / (5) なし / (6) **外部イベント回避**（FOMC/CPI/雇用統計の発表前に手仕舞い・発表時刻の過去データの入手はまこさんと相談・2026-07-30 まこさん提示の出口11軸⑪との照合で欠けを発見・追加）
+- **X-g 指標反転・構造・ボラ・出来高・統計 Exit（CAT A-2）**: RSI/Stoch/MACD reversal / BBタッチ / EMA cross / ADX decay / pivot反転 / trendline-channel break / vol expansion-contraction / volume spike-divergence / order-flow reversal / z-score reversion（統計的平均回帰閾値） / **ローソク形状反転**（pinbar・包み足・ダブルトップ等の確定足の形で決済＝入口側 E-c のローソクの出口版・2026-07-30 まこさん提示の出口11軸③との照合で欠けを発見・追加）
 - **X-h ML Exit（CAT A-2/B-10）**: Triple Barrier（Lopez de Prado） / meta-labeling / 強化学習 terminal policy / exit value prediction
 - **X-i add / ピラミッディング（CAT A-6）**: (1) なし単発 / (2) 順張りピラミッド（Turtle 逓減・N=20 ATR） / (3) Martingale / (4) Anti-Martingale / (5) 予測強度依存 / (6) Kelly fractional / (7) vol-targeted / (8) グリッド add / (9) add トリガ（逆行幅/時間経過/指標再発火/含み益確認）
 - **X-j サイジング（CAT A-7・8方式）**: 一律 / remaining÷n / 予測強度比例 / Kelly（fractional 0.25-0.5） / risk parity / vol-targeting（ATR反比例） / cluster別固定 / 過去パフォーマンス重み（合計0.12 BTC 厳守）
