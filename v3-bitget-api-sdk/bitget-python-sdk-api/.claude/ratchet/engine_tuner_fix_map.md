@@ -1,4 +1,4 @@
-<!-- FIXMAP_HASH=a26d29e2d93fcfea -->
+<!-- FIXMAP_HASH=f632ef3f8c33f93f -->
 # engine_tuner 修正対応表（gen_fix_map.py が機械生成＝手書き禁止）
 
 このファイルは手で書き換えません。直すときは engine_tuner_fix_map.json を直して再生成します。
@@ -10,6 +10,11 @@
 python3 scripts/priority_rebuild/gen_fix_map.py --write   # 作り直す
 python3 scripts/priority_rebuild/gen_fix_map.py --verify  # 改変の検出
 ```
+
+## 前提（毎セッション有効・消さない・まこさん指示 2026-07-30）
+
+- engine_tuner と observe_diag のどんな修正も、cat_requirements.md §4.6 ハード制約チェックリスト（H1〜H16・不変・違反＝重大インシデント・全設計が照合する関所）を前提とする。新しいセッションは、着手の前に §4.6 を Read tool で開き、変更が触れる H を1項目ずつ照合してから作業する。照合の結果はチャットに出す（まこさん指示 2026-07-30「前提とすべき項目なので、新セッションで絶対に読むように」）。
+- 本ファイルの「前提」の節は、セッションが替わっても消さない。next_step.md は毎セッション上書きされるため、消えない正本はここに置く。
 
 ## まず全体を見る表（詳細は下の節にあります）
 

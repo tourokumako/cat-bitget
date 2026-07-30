@@ -143,6 +143,12 @@ def build_md(findings: list[dict], data: dict) -> str:
     L.append("python3 scripts/priority_rebuild/gen_fix_map.py --verify  # 改変の検出")
     L.append("```")
     L.append("")
+    if data.get("premise"):
+        L.append("## 前提（毎セッション有効・消さない・まこさん指示 2026-07-30）")
+        L.append("")
+        for p in data["premise"]:
+            L.append(f"- {p}")
+        L.append("")
     L.append("## まず全体を見る表（詳細は下の節にあります）")
     L.append("")
     L.append("| ID | 指摘（見出しだけ） | 行き先 | 状態 |")
