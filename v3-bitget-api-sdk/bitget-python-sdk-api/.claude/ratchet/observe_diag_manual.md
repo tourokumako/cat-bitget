@@ -1,4 +1,4 @@
-<!-- MANUAL_HASH=2f392ab1c6bc37b9 -->
+<!-- MANUAL_HASH=cab048add372cb8f -->
 # observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は observe_diag.py と observe_config.json から
@@ -295,6 +295,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 
 - 1往復の実コストが eval_engine の確定値と違う:
 - entry の特徴が約定バーの終値を含む（1本前の確定値を使っていない）
+- entry_exit_matrix.md の E-c 行が  本（1本のはず）
 - neighbors が bars を受けない＝相場変化を自玉の価格で代用している
 - observe が結果サマリを呼んでいない（結果の要約が CC の手書きに戻る）
 - observe() が  を受け取れてしまう（呼び出し側が絞れる）
@@ -363,6 +364,13 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 検査3 がわざと壊した式（RSI を定数化）を見逃す
 - 検査3 が正しいカタログで不一致を出す（許容差の線を疑う）:
 - 検査4 がわざと入れた未来参照列（1本先の close）を見逃す
+- 検査6 が『終端より後を値で埋めている』を見逃す（未来の捏造を検出できない）
+- 検査6 が壊れた需給データ（）を見逃す:
+- 検査6 が正しい取り込み（終端後 NaN）を誤検出
+- 検査6 が正常な需給データで誤検出:
+- 検査7 が E-c に足された未知の項目を見逃す（ドリフト検出が死んでいる）
+- 検査7 が『対応表は実装ありなのに列が無い』を見逃す（実装の欠落を検出できない）
+- 検査7 が現状の E-c と対応表で不一致を出す（表の直し忘れ）:
 - 検証済みにならない列  件:
 - 検証計画の自動生成 plan が無い
 - 機械ラベルの entry が次バーになっていない（同バー約定＝未来参照の疑い・H2）

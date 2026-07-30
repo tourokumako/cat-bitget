@@ -836,3 +836,131 @@ _r(r"S-Rタッチ数\((\d+),([\d.]+)\)", "S-Rタッチ数",
                          h=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],
                          l=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0]),
                      [(-1, 3.0, 1e-9)])])
+
+
+# ══ 軸カタログ E-c との突き合わせ（検査7・まこさん OK 2026-07-30）══════════
+# entry_exit_matrix.md の E-c（Entry 指標の軸カタログ）の項目1つずつに、実装列との対応を持つ。
+# 検査7 が E-c の実文とこの表を機械照合する＝E-c を変えたのに表を直さない・表にあるのに実装が
+# 消えた、のどちらも機械検出。未実装は ⚠️ で可視化する（実装するかは歩2 とまこさんの判断）。
+# impl は実装列名の正規表現（先頭一致）。空リスト＝未実装。
+AXIS_EC: list[dict] = [
+    # トレンド/モメンタム
+    dict(cat="トレンド/モメンタム", token="ADX", impl=[r"ADX\d+"], status="あり", note=""),
+    dict(cat="トレンド/モメンタム", token="DI", impl=[r"DI差\d+"], status="あり", note=""),
+    dict(cat="トレンド/モメンタム", token="MACD(line/sig/hist)", impl=[r"MACD線%", r"MACDヒスト%"],
+         status="部分", note="シグナル線の単体列は無し（ヒスト＝線−シグナルに内包）"),
+    dict(cat="トレンド/モメンタム", token="RSI(7/14/21)", impl=[r"RSI\d+"], status="あり",
+         note="実装は 7/9/14/21＝一覧より広い"),
+    dict(cat="トレンド/モメンタム", token="ROC", impl=[r"ROC\d+"], status="あり", note=""),
+    dict(cat="トレンド/モメンタム", token="Stoch(k/d)", impl=[r"Stoch%K\d+", r"Stoch%D\d+"], status="あり", note=""),
+    dict(cat="トレンド/モメンタム", token="MFI", impl=[r"MFI\d+"], status="あり", note=""),
+    dict(cat="トレンド/モメンタム", token="CMF", impl=[r"CMF\d+"], status="あり", note=""),
+    dict(cat="トレンド/モメンタム", token="OBV", impl=[r"OBV傾き\d+"], status="あり",
+         note="傾きとして実装（生の累積は列でない）"),
+    dict(cat="トレンド/モメンタム", token="Ichimoku", impl=[r"close vs 転換線%", r"close vs 基準線%"],
+         status="あり", note=""),
+    dict(cat="トレンド/モメンタム", token="RCI", impl=[r"RCI\d+"], status="あり", note=""),
+    dict(cat="トレンド/モメンタム", token="MTF傾き整合", impl=[], status="未実装",
+         note="足ごとの EMA傾きは有り＝複数足の整合は条件の組み立て側（歩2）"),
+    # ボラ
+    dict(cat="ボラ", token="ATR%", impl=[r"ATR%\d+"], status="あり", note=""),
+    dict(cat="ボラ", token="BB%b", impl=[r"BB%b\("], status="あり", note=""),
+    dict(cat="ボラ", token="BB幅", impl=[r"BB幅\("], status="あり", note=""),
+    dict(cat="ボラ", token="realized_vol", impl=[r"realized_vol\d+"], status="あり", note=""),
+    dict(cat="ボラ", token="donchian幅", impl=[r"Donchian幅%\d+"], status="あり", note=""),
+    dict(cat="ボラ", token="zscore_return", impl=[], status="未実装",
+         note="実装は価格基準の zscore（定義が違う）＝リターン基準は未実装"),
+    # 出来高
+    dict(cat="出来高", token="volume_ratio", impl=[r"volume_ratio\d+"], status="あり", note=""),
+    dict(cat="出来高", token="OBV傾き", impl=[r"OBV傾き\d+"], status="あり", note=""),
+    dict(cat="出来高", token="CMF", impl=[r"CMF\d+"], status="あり", note=""),
+    dict(cat="出来高", token="MFI", impl=[r"MFI\d+"], status="あり", note=""),
+    # ローソク
+    dict(cat="ローソク", token="engulfing", impl=[r"包み足"], status="あり", note=""),
+    dict(cat="ローソク", token="pinbar", impl=[r"pinbar"], status="あり", note=""),
+    dict(cat="ローソク", token="harami孕み足", impl=[], status="未実装",
+         note="2026-07-30 に軸カタログへ追加・カタログ実装は未着手"),
+    dict(cat="ローソク", token="streak", impl=[r"連続本数"], status="あり", note=""),
+    dict(cat="ローソク", token="body_ratio", impl=[r"body比"], status="あり", note=""),
+    dict(cat="ローソク", token="wick_ratio", impl=[r"上ヒゲ比", r"下ヒゲ比"], status="あり", note=""),
+    # 形(W窓)
+    dict(cat="形(W窓)", token="V", impl=[r"形スコア\d+"], status="あり", note="形スコア V=+2"),
+    dict(cat="形(W窓)", token="W", impl=[], status="未実装",
+         note="形スコアは2区間＝W（4区間）は表現できない"),
+    dict(cat="形(W窓)", token="M", impl=[r"形スコア\d+"], status="あり", note="形スコア M=−2"),
+    dict(cat="形(W窓)", token="swing_dist", impl=[r"swing高値距離%\d+", r"swing安値距離%\d+"], status="あり", note=""),
+    dict(cat="形(W窓)", token="bars_since_high-low",
+         impl=[r"高値からの経過バー\d+", r"安値からの経過バー\d+"], status="あり", note=""),
+    # 位置
+    dict(cat="位置", token="close vs EMA", impl=[r"close vs EMA\d+%"], status="あり", note=""),
+    dict(cat="位置", token="SMA", impl=[r"close vs SMA\d+%"], status="あり", note=""),
+    dict(cat="位置", token="VWAP", impl=[r"close vs VWAP%\d+"], status="あり", note=""),
+    dict(cat="位置", token="kijun", impl=[r"close vs 基準線%"], status="あり", note=""),
+    dict(cat="位置", token="keltner", impl=[r"close vs Keltner上%", r"close vs Keltner下%"], status="あり", note=""),
+    dict(cat="位置", token="supertrend", impl=[r"close vs Supertrend%"], status="あり", note=""),
+    dict(cat="位置", token="high-low", impl=[r"close vs \d+本高値%", r"close vs \d+本安値%"], status="あり", note=""),
+    # 構造
+    dict(cat="構造", token="pivot(PP/R/S)", impl=[r"close vs pivotPP%\d+"], status="部分",
+         note="PP のみ・R1/S1 等の水準は未実装"),
+    dict(cat="構造", token="fib(382-786)", impl=[r"fib位置\d+"], status="あり",
+         note="連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現"),
+    dict(cat="構造", token="VP(VAH/VAL/POC)",
+         impl=[r"close vs POC%\d+", r"close vs VAH%\d+", r"close vs VAL%\d+"], status="あり", note=""),
+    dict(cat="構造", token="S-R touch_count", impl=[r"S-Rタッチ数\("], status="あり", note=""),
+    # 需給
+    dict(cat="需給", token="taker_ls", impl=[r"taker_ls"], status="あり",
+         note="外部データ（load_demand）＝被覆は検査6"),
+    dict(cat="需給", token="L-S比", impl=[r"L-S比"], status="あり",
+         note="外部データ（load_demand）＝被覆は検査6"),
+    dict(cat="需給", token="CVD", impl=[r"CVD"], status="あり",
+         note="外部データ（load_demand）＝被覆は検査6"),
+]
+
+
+def tokenize_ec(line: str) -> list[tuple[str, str]]:
+    """E-c の1行を（カテゴリ, 項目）の一覧にする。項目の区切りは半角スラッシュ・括弧の中は割らない。"""
+    body = line.split("**:", 1)[1] if "**:" in line else line
+    out = []
+    for chunk in body.split("／"):
+        chunk = chunk.strip()
+        if "＝" not in chunk:
+            continue
+        cat, items = chunk.split("＝", 1)
+        buf, depth = "", 0
+        toks = []
+        for ch in items:
+            if ch in "（(":
+                depth += 1
+            elif ch in "）)":
+                depth -= 1
+            if ch == "/" and depth == 0:
+                toks.append(buf)
+                buf = ""
+            else:
+                buf += ch
+        toks.append(buf)
+        out += [(cat.strip(), t.strip()) for t in toks if t.strip()]
+    return out
+
+
+def axis_ec_check(ec_line: str, impl_names: list[str]) -> tuple[list[str], list[dict]]:
+    """検査7 の本体＝E-c の実文と AXIS_EC 対応表と実装列名の3者を機械照合する。
+    戻り値＝(❌一覧, 表示行)。未実装・部分は ❌ でなく表示行の status で出す（判断はまこさん）。"""
+    ng, rows = [], []
+    toks = tokenize_ec(ec_line)
+    table = {(e["cat"], e["token"]): e for e in AXIS_EC}
+    for key in [k for k in toks if k not in table]:
+        ng.append(f"E-c に在るが対応表に無い: {key[0]}＝{key[1]}（E-c を変えたら AXIS_EC も直す）")
+    for key in [k for k in table if k not in toks]:
+        ng.append(f"対応表に在るが E-c に無い: {key[0]}＝{key[1]}（E-c から消えた＝表の直し忘れ）")
+    for e in AXIS_EC:
+        hit, miss = [], []
+        for pat in e["impl"]:
+            names = [n for n in impl_names if re.match("^" + pat, n)]
+            (hit if names else miss).append(pat)
+        if e["impl"] and miss:
+            ng.append(f"対応表は実装ありと言うが列が無い: {e['token']} → {miss}")
+        rows.append(dict(cat=e["cat"], token=e["token"], status=e["status"],
+                         n=sum(len([n for n in impl_names if re.match('^' + p, n)]) for p in e["impl"]),
+                         note=e["note"]))
+    return ng, rows

@@ -473,12 +473,13 @@ def build_features(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -
     return pd.DataFrame(out, index=bars.index), meta
 
 
-def load_demand(bars_index) -> tuple[pd.DataFrame, dict]:
-    """需給。元データが期間を覆っていない分は NaN のまま残し、被覆率を報告する。"""
+def load_demand(bars_index, files: dict | None = None) -> tuple[pd.DataFrame, dict]:
+    """需給。元データが期間を覆っていない分は NaN のまま残し、被覆率を報告する。
+    files はデータ検査（歩0）の番人がわざと壊したファイルを注入するためだけの引数＝通常は渡さない。"""
     import pathlib
     base = pathlib.Path(__file__).resolve().parent
     out, cov = {}, {}
-    for name, (rel, tcol, vcol) in _DEMAND_FILES.items():
+    for name, (rel, tcol, vcol) in (files or _DEMAND_FILES).items():
         p = (base / rel).resolve()
         if not p.exists():
             cov[name] = "ファイルなし"; continue
@@ -2186,11 +2187,11 @@ INSPECT_SECTIONS = [
     "検査3 指標の計算式を検査する（代表指標を教科書の式で独立計算して突き合わせ＋人工データの性質テスト＋全列を3区分）",
     "検査4 未来参照を検査する（切り詰め再計算テスト＋静的検査）",
     "検査5 欠損と有効標本数を数える（列ごとの欠損率・助走・有効標本数＝歩2 の適合制約の基礎データ）",
+    "検査6 需給データを検査する（taker_ls・L-S比・CVD＝重複・整合・欠け・窓ごとの被覆・終端より後を埋めていないか）",
+    "検査7 軸カタログ（entry_exit_matrix E-c）と実装を突き合わせる（一覧にあるが実装の無い指標を機械で出す）",
 ]
-# 検査の線（全部この場で印字する＝黙って変えられない）
-_INSP_ATOL_EXACT = 1e-8    # 式が完全一致するはずの系（Stoch・BB）の許容差
-_INSP_ATOL_CONV = 1e-6     # 逐次平滑系（RSI・ATR・MACD＝初期値の流儀の差が時間で消える）の許容差
-_INSP_ATOL_ADX = 1e-4      # ADX/DI系（平滑が3段重なる＝収束が一番遅い）の許容差
+# 検査の線（全部この場で印字する＝黙って変えられない）。指標照合の許容差は
+# indicator_reference_diag（参照表の tol）が正本。
 _INSP_STEP_NG_PCT = 5.0    # 前バー終値→次バー始値の段差。これ超は別系列（別取引所の足）の混入を疑い ❌
 _INSP_STEP_WARN_PCT = 0.5  # 段差の報告だけの線（❌ にしない）
 
@@ -2564,6 +2565,77 @@ def _insp_samples(bars: pd.DataFrame, cfg: dict) -> None:
             print(f"     {col} … 欠損 {miss:.1f}% ／ 助走 {lead} ／ 有効 {n_w}（値決め）・{n_s}（採点）")
 
 
+def _demand_tail_ok(series: pd.Series, src_end: pd.Timestamp) -> bool:
+    """検査6 の部品＝取り込んだ需給の列が、元データの終端より後を値で埋めていないか（埋めたら未来の捏造）。"""
+    after = series[series.index > src_end]
+    return bool(after.isna().all()) if len(after) else True
+
+
+def _insp_demand(bars: pd.DataFrame, files: dict | None = None) -> list[str]:
+    """検査6 需給データ。元ファイルの重複・整合・欠けと、値決め窓・採点窓それぞれの被覆を機械出力し、
+    取り込み（load_demand）が終端より後を埋めていないことを確かめる。"""
+    ng = []
+    files = files or _DEMAND_FILES
+    base = pathlib.Path(__file__).resolve().parent
+    ingested, cov = load_demand(bars.index, files)
+    for name, (rel, tcol, vcol) in files.items():
+        p = (base / rel).resolve()
+        if not p.exists():
+            print(f"  {name}: ⚠️ 元ファイルなし（{rel}）＝観察では全期間 NaN")
+            continue
+        use = [tcol] + ([vcol] if vcol else ["taker_buy_base", "volume"])
+        try:
+            d = pd.read_csv(p, usecols=use, parse_dates=[tcol]).set_index(tcol).sort_index()
+        except Exception as e:
+            ng.append(f"{name}: 元ファイルが読めない: {str(e)[:50]}")
+            continue
+        dup = int(d.index.duplicated().sum())
+        if dup:
+            ng.append(f"{name}: 元データに重複タイムスタンプ {dup} 本")
+        step = d.index.to_series().diff().median()
+        gaps = int((d.index.to_series().diff() > step).sum()) if pd.notna(step) else 0
+        if vcol:
+            bad = int((pd.to_numeric(d[vcol], errors="coerce") < 0).sum())
+            if bad:
+                ng.append(f"{name}: 値が負 {bad} 本（比率が負はデータ壊れ）")
+        else:
+            tb = pd.to_numeric(d["taker_buy_base"], errors="coerce")
+            vv = pd.to_numeric(d["volume"], errors="coerce")
+            bad = int(((tb < 0) | (vv < 0) | (tb > vv)).sum())
+            if bad:
+                ng.append(f"{name}: taker_buy_base と volume の整合 NG {bad} 本（負・または taker>全量）")
+        print(f"  {name}: {rel}（{len(d)} 行 / {d.index.min()} 〜 {d.index.max()} / 刻み {step} / 重複 {dup} / 欠け {gaps} 箇所）")
+        if name in ingested.columns:
+            s = ingested[name]
+            if not _demand_tail_ok(s, d.index.max()):
+                ng.append(f"{name}: 元データの終端 {d.index.max()} より後を値で埋めている（未来の捏造＝ffill の漏れ）")
+            for wname, w0, w1 in _insp_windows():
+                seg = s[(s.index >= w0) & (s.index < w1)]
+                pct = 100.0 * seg.notna().mean() if len(seg) else float("nan")
+                note = "" if pct >= 99.5 else (" ⚠️ 被覆が欠ける" if pct > 0 else " ⚠️ 0%＝この窓では何も寄与しない")
+                print(f"     被覆 {wname}: {pct:.1f}%{note}")
+    return ng
+
+
+def _insp_axis(cfg: dict) -> list[str]:
+    """検査7 軸カタログ E-c と実装の突き合わせ。E-c の実文・対応表 AXIS_EC・実装列名の3者を機械照合する。"""
+    p = pathlib.Path(__file__).resolve().parent.parent.parent / ".claude" / "ratchet" / "entry_exit_matrix.md"
+    lines = [ln for ln in p.read_text(encoding="utf-8").splitlines() if ln.lstrip().startswith("- **E-c")]
+    if len(lines) != 1:
+        return [f"entry_exit_matrix.md の E-c 行が {len(lines)} 本（1本のはず）＝突き合わせ不能"]
+    impl_names = [nm for nm, _f, _d in build_catalog(cfg)] + list(_DEMAND_FILES)
+    ng, rows = iref.axis_ec_check(lines[0], impl_names)
+    from collections import Counter
+    cnt = Counter(r["status"] for r in rows)
+    print(f"  E-c の項目 {len(rows)} 件: 実装あり {cnt.get('あり', 0)} / 部分実装 {cnt.get('部分', 0)} / 未実装 {cnt.get('未実装', 0)}")
+    for r in rows:
+        mark = {"あり": "  ", "部分": "⚠️", "未実装": "⚠️"}[r["status"]]
+        note = f" … {r['note']}" if r["note"] else ""
+        print(f"     {mark} [{r['status']}] {r['cat']}＝{r['token']}（実装列 {r['n']} 本）{note}")
+    print("  ⚠️＝実装するかは歩2 の材料設計と一緒にまこさんが決める（検査は可視化まで）")
+    return ng
+
+
 def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
     """データと指標の検査（歩0）＝5段を順に走らせ、まとめを機械出力する。❌ が1つでもあれば終了コード1。"""
     cfg = load_config(config_path)
@@ -2581,13 +2653,16 @@ def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
               ("検査2", INSPECT_SECTIONS[1], lambda: _insp_resample(bars, cfg)),
               ("検査3", INSPECT_SECTIONS[2], lambda: _insp_indicator_stage(bars, cfg)),
               ("検査4", INSPECT_SECTIONS[3], lambda: _insp_lookahead(bars, cfg))]
+    stages += [("検査6", INSPECT_SECTIONS[5], lambda: _insp_demand(bars)),
+               ("検査7", INSPECT_SECTIONS[6], lambda: _insp_axis(cfg))]
     for key, title, run in stages:
+        if key == "検査6":                     # 検査5（判定なしの報告）を順番どおり挟む
+            _h(INSPECT_SECTIONS[4])
+            _insp_samples(bars, cfg)
         _h(title)
         fails[key] = run()
         if fails[key]:
             print(f"  ⚠️ {key} で問題が出た＝これより下流の段の結果は全部疑う")
-    _h(INSPECT_SECTIONS[4])
-    _insp_samples(bars, cfg)
     print("\n" + "=" * 100)
     print("検査のまとめ（❌＝直すまで下流を信じない ／ ⚠️＝データの事実の報告）")
     bad = 0
@@ -3048,6 +3123,57 @@ def selftest() -> None:
             ng.append(f"データと指標の検査の節が実装されていない: {need}")
     if _J("inspect_", "data(") not in src or "--inspect" not in inspect.getsource(build_parser):
         ng.append("データと指標の検査が CLI（--inspect）に配線されていない")
+    # ★検査6 需給（2026-07-30 まこさん OK）の番人＝壊した元データで ❌・終端より後の埋めを検出
+    import tempfile as _tf6
+    import shutil as _sh6
+    _td6 = pathlib.Path(_tf6.mkdtemp())
+    try:
+        _bars6 = pd.DataFrame({"open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "volume": 1.0},
+                              index=pd.date_range("2026-03-01", periods=200, freq="5min"))
+        # 正常な元データ（1時間刻み・bars の途中で終わる）→ ❌ ゼロ・終端後は NaN のはず
+        _ok6 = _td6 / "ok.csv"
+        _ok6.write_text("time,taker_ls\n" + "\n".join(
+            f"2026-03-01 {h:02d}:00:00,1.{h}" for h in range(8)) + "\n", encoding="utf-8")
+        _files_ok = {"taker_ls": (str(_ok6), "time", "taker_ls")}
+        with _cl2.redirect_stdout(_q):
+            _f6 = _insp_demand(_bars6, files=_files_ok)
+        if _f6:
+            ng.append(f"検査6 が正常な需給データで誤検出: {_f6}")
+        # 壊した元データ（重複タイムスタンプ＋負の値）→ 両方 ❌ のはず
+        _bad6 = _td6 / "bad.csv"
+        _bad6.write_text("time,taker_ls\n2026-03-01 00:00:00,1.0\n2026-03-01 00:00:00,1.1\n"
+                         "2026-03-01 02:00:00,-5.0\n", encoding="utf-8")
+        _files_bad = {"taker_ls": (str(_bad6), "time", "taker_ls")}
+        with _cl2.redirect_stdout(_q):
+            _f6b = _insp_demand(_bars6, files=_files_bad)
+        for _need6, _why6 in (("重複", "重複タイムスタンプ"), ("負", "負の値")):
+            if not any(_need6 in x for x in _f6b):
+                ng.append(f"検査6 が壊れた需給データ（{_why6}）を見逃す: {_f6b}")
+        # 終端より後を値で埋めた列（ffill の漏れ相当）を _demand_tail_ok が見抜くこと
+        _end6 = _bars6.index[96]                                  # ＝元データ ok.csv の終端 08:00 と同時刻
+        _leak6 = pd.Series(1.0, index=_bars6.index)               # 全部埋まっている＝終端後も値あり
+        if _demand_tail_ok(_leak6, _end6):
+            ng.append("検査6 が『終端より後を値で埋めている』を見逃す（未来の捏造を検出できない）")
+        if not _demand_tail_ok(_leak6.where(_leak6.index <= _end6), _end6):
+            ng.append("検査6 が正しい取り込み（終端後 NaN）を誤検出")
+    finally:
+        _sh6.rmtree(_td6, ignore_errors=True)
+    # ★検査7 軸カタログ照合（2026-07-30 まこさん OK）の番人＝3者照合のドリフトを検出
+    _p7 = pathlib.Path(__file__).resolve().parent.parent.parent / ".claude" / "ratchet" / "entry_exit_matrix.md"
+    _ec = [ln for ln in _p7.read_text(encoding="utf-8").splitlines() if ln.lstrip().startswith("- **E-c")]
+    if len(_ec) != 1:
+        ng.append(f"entry_exit_matrix.md の E-c 行が {len(_ec)} 本（1本のはず）")
+    else:
+        _names7 = [nm for nm, _f, _d in build_catalog(cfg)] + list(_DEMAND_FILES)
+        _ng7, _rows7 = iref.axis_ec_check(_ec[0], _names7)
+        if _ng7:
+            ng.append(f"検査7 が現状の E-c と対応表で不一致を出す（表の直し忘れ）: {_ng7[:3]}")
+        _ng7b, _r7b = iref.axis_ec_check(_ec[0] + "/この指標は存在しない", _names7)
+        if not _ng7b:
+            ng.append("検査7 が E-c に足された未知の項目を見逃す（ドリフト検出が死んでいる）")
+        _ng7c, _r7c = iref.axis_ec_check(_ec[0], [n for n in _names7 if n != "包み足"])
+        if not any("包み足" in x or "engulfing" in x for x in _ng7c):
+            ng.append("検査7 が『対応表は実装ありなのに列が無い』を見逃す（実装の欠落を検出できない）")
     print("=" * 80)
     print("observe_diag 自己検査")
     print("=" * 80)
