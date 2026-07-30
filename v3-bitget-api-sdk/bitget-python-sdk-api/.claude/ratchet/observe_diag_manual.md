@@ -1,4 +1,4 @@
-<!-- MANUAL_HASH=4f5729cad19f7588 -->
+<!-- MANUAL_HASH=2f392ab1c6bc37b9 -->
 # observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は observe_diag.py と observe_config.json から
@@ -94,6 +94,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 | trades_csv | 実エンジンが出した売買記録CSV（--scene の時は不要） |
 | bars_csv | 5分足CSV（Binance Spot 正本・--scene の時は不要＝e37 の計器で読む） |
 | --scene | Entry 候補観察＝場面ID（observe_config.json の scenes・例 S2＝まだ玉のない新候補の層1） |
+| --inspect | データと指標の検査（歩0・5段・read-only）＝5分足CSVのパスを1つ渡す（売買記録は使わない） |
 | --plan | 検証計画だけを自動生成して印字（本走しない・まこさんへ提出する1枚） |
 | --config | observe_config.json のパス（既定は同ディレクトリ） |
 | --title | 出力の見出しに付ける題名 |
@@ -314,6 +315,8 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - コンフルエンス探索が異種カテゴリの組から選んでいない（同族の二度掛けを弾けない）
 - コンフルエンス探索の組ごとに概算期待値%が並んでいない（勝率だけで層3 に渡してしまう）
 - シグナルの順行側プールを生成していない（切る側だけになっている）
+- データと指標の検査が CLI（--inspect）に配線されていない
+- データと指標の検査の節が実装されていない:
 - フェーズ1 がものさしの出所を印字していない（どの値で分類したか追えない）
 - フェーズ1 が解決済みのものさしを使っていない（自前で import に戻っている疑い）
 - フェーズ1 が記録の値を読めていない:
@@ -333,6 +336,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 出口の組み合わせを期待値で順位づけしていない（勝率で並べる設計に戻っている）
 - 切る探索がシグナルの逆行側プールから選んでいない（向きの分離が無い）
 - 勝ち条件 win_target（mid/pct）の分岐が _scene_labels に無い
+- 参照表に無いカタログ列  件:
 - 同バー両到達の負け優先（保守）が無い
 - 場面の型  が呼び出せない（登録表の中身が関数でない）
 - 場面の型の一覧を登録表から作っていない（手で並べた一覧はずれる）
@@ -352,6 +356,14 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 探索が型（down/flat_up）で分岐していない＝side×型の4分岐になっていない
 - 時間足2種以上の強制が無い（MTF コンフルエンスにならない）
 - 期間を手打ちしている: pd.Timestamp('')
+- 検査1 が壊れたデータ（）を見逃す:
+- 検査1 が正常なデータで誤検出:
+- 検査2 が正しい組み立てで誤検出
+- 検査2 が閉じる前のバーへの漏れを検出しない（ずらしを外しても素通り）
+- 検査3 がわざと壊した式（RSI を定数化）を見逃す
+- 検査3 が正しいカタログで不一致を出す（許容差の線を疑う）:
+- 検査4 がわざと入れた未来参照列（1本先の close）を見逃す
+- 検証済みにならない列  件:
 - 検証計画の自動生成 plan が無い
 - 機械ラベルの entry が次バーになっていない（同バー約定＝未来参照の疑い・H2）
 - 機構別分解が observe に配線されていない

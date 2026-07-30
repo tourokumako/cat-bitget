@@ -83,6 +83,13 @@ Entry 候補観察（まだ玉のない新候補の層1・2026-07-25 まこさ�
 場面の定義・バリア・探索条件は observe_config.json の scenes / conf_*（レンジ専用でなく場面を足せば他戦略でも使える）。
 出た組は材料まで＝値決めは層3 engine_tuner・採否は採点窓 score.py（まこさん）。
 
+データと指標の検査（歩0・2026-07-30 まこさん OK）
+--------------------------------------------------------------------------
+python3 observe_diag.py --inspect <5分足CSV>
+5段＝①元データ（欠け・重複・価格の整合・段差） ②足の組み立て（集計・区切り・閉じる前の漏れ・内訳）
+③指標の計算式（代表指標の独立計算との突き合わせ＋性質テスト＋全列の3区分） ④未来参照（切り詰め再計算＋静的検査）
+⑤欠損と有効標本数（歩2 の適合制約の基礎データ）。read-only・結果は機械出力・上流で間違いが出たら下流は全部疑う。
+
 自己検査: python3 observe_diag.py --selftest
 """
 from __future__ import annotations
@@ -96,10 +103,14 @@ import warnings
 import numpy as np
 import pandas as pd
 
-# 検証期間は periods.py が正本（H8・手打ち禁止）
-from periods import SCORE_START, SCORE_END   # noqa: E402
+# 検証期間は periods.py が正本（H8・手打ち禁止）。SEARCH/CONFIRM はデータ検査（歩0）の
+# 「欠けと窓の重なり判定」「有効標本数の集計」だけに使う＝観察・探索は採点窓のまま。
+from periods import (SCORE_START, SCORE_END, SEARCH_START, SEARCH_END,   # noqa: E402
+                     CONFIRM_START, CONFIRM_END)
 # 出力の保管は全戦略・全ツール共通の書き出し処理に委譲する（命名/archive/上書き防止・§3.1）
 import ratchet_io   # noqa: E402
+# 指標カタログの正しさの証明に使う参照表（定義表・外部ライブラリ照合・独立実装・既知答え・歩0）
+import indicator_reference_diag as iref   # noqa: E402
 
 warnings.filterwarnings("ignore")
 
@@ -213,7 +224,9 @@ def _rsi(c, n):
     d = c.diff()
     up = d.clip(lower=0).ewm(alpha=1 / n, adjust=False).mean()
     dn = (-d.clip(upper=0)).ewm(alpha=1 / n, adjust=False).mean()
-    return 100 - 100 / (1 + up / dn.replace(0, np.nan))
+    # 全部上昇の窓は RS=∞ → RSI=100（世界標準の慣例・TradingView / ta と同じ）。
+    # 旧式は 0 を NaN に置換して欠損にしていた＝標準とずれるので是正（2026-07-30・検査3 で発見）。
+    return 100 - 100 / (1 + up / dn)
 
 
 def _atr(h, l, c, n=14):
@@ -240,8 +253,33 @@ def _rci(c, n=9):
 
 
 def _supertrend(h, l, c, n=10, k=3.0):
-    a = _atr(h, l, c, n)
-    return (h + l) / 2 - k * a          # 上側バンド基準の簡易版（close との差を見る）
+    """本物の Supertrend（教科書の式）＝バンドの切り上げ切り下げ＋終値の抜けで反転。
+    旧実装は反転の仕組みの無い下側バンド固定で、コメントは上側バンドと書かれていた
+    ＝名前と中身の食い違い（2026-07-30 検査3 で発見・まこさん承認で是正）。
+    上昇トレンド中は下側バンド（価格の下＝乖離%はプラス）・下降中は上側バンド（マイナス）。"""
+    a = _atr(h, l, c, n).to_numpy()
+    hl2 = ((h + l) / 2).to_numpy()
+    cl = c.to_numpy(dtype=float)
+    ub, lb = hl2 + k * a, hl2 - k * a
+    line = np.full(len(cl), np.nan)
+    fu = fl = np.nan
+    up = True
+    for i in range(len(cl)):
+        if np.isnan(a[i]):
+            continue
+        if np.isnan(fu):                      # 最初の有効バー＝バンドの初期化だけ
+            fu, fl = ub[i], lb[i]
+            line[i] = fl if up else fu
+            continue
+        pu, pl = fu, fl                       # 1本前の確定バンド（過去のみ参照＝H2）
+        fu = ub[i] if (ub[i] < pu or cl[i - 1] > pu) else pu
+        fl = lb[i] if (lb[i] > pl or cl[i - 1] < pl) else pl
+        if cl[i] > fu:
+            up = True
+        elif cl[i] < fl:
+            up = False
+        line[i] = fl if up else fu
+    return pd.Series(line, index=c.index)
 
 
 def _vp_levels(c, v, win=288):
@@ -303,9 +341,10 @@ def build_catalog(cfg: dict) -> list[tuple]:
         add(f"Stoch%D{n}", lambda d, n=n: (100 * (d.close - d.low.rolling(n).min())
             / (d.high.rolling(n).max() - d.low.rolling(n).min()).replace(0, np.nan)).rolling(3).mean(), True)
     for n in cfg["mfi_periods"]:
+        # 全部上昇の窓は 100（世界標準の慣例）。旧式は分母0を NaN に置換して欠損にしていた＝是正（2026-07-30）
         add(f"MFI{n}", lambda d, n=n: (lambda tp: 100 - 100 / (1 + (
             (tp * d.volume).where(tp > tp.shift(), 0).rolling(n).sum()
-            / (tp * d.volume).where(tp < tp.shift(), 0).rolling(n).sum().replace(0, np.nan)
+            / (tp * d.volume).where(tp < tp.shift(), 0).rolling(n).sum()
         )))((d.high + d.low + d.close) / 3), True)
     for n in cfg["cmf_periods"]:
         add(f"CMF{n}", lambda d, n=n: (((d.close - d.low) - (d.high - d.close))
@@ -328,10 +367,11 @@ def build_catalog(cfg: dict) -> list[tuple]:
         add(f"ATR%{n}", lambda d, n=n: _atr(d.high, d.low, d.close, n) / d.close * 100, False)
     for n in cfg["bb_periods"]:
         for s in cfg["bb_sigma"]:
+            # 標準偏差は母集団（ddof=0）＝TradingView・ta と同じ世界標準（2026-07-30 に標本 ddof=1 から統一）
             add(f"BB%b({n},{s})", lambda d, n=n, s=s: (d.close - (d.close.rolling(n).mean()
-                - s * d.close.rolling(n).std())) / (2 * s * d.close.rolling(n).std()).replace(0, np.nan), True)
+                - s * d.close.rolling(n).std(ddof=0))) / (2 * s * d.close.rolling(n).std(ddof=0)).replace(0, np.nan), True)
             add(f"BB幅({n},{s})", lambda d, n=n, s=s:
-                2 * s * d.close.rolling(n).std() / d.close.rolling(n).mean(), False)
+                2 * s * d.close.rolling(n).std(ddof=0) / d.close.rolling(n).mean(), False)
     for n in cfg["realized_vol_periods"]:
         add(f"realized_vol{n}", lambda d, n=n: np.log(d.close / d.close.shift()).rolling(n).std() * 100, False)
     for n in cfg["donchian_periods"]:
@@ -344,8 +384,11 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for n in cfg["volume_ratio_periods"]:
         add(f"volume_ratio{n}", lambda d, n=n: d.volume / d.volume.rolling(n).mean().replace(0, np.nan), False)
     # ── ローソク ──
-    add("包み足", lambda d: ((d.close > d.open.shift()) & (d.open < d.close.shift())).astype(float)
-        - ((d.close < d.open.shift()) & (d.open > d.close.shift())).astype(float), True)
+    # 教科書の包み足＝前バーと逆の色で実体を包む（2026-07-30 に前バーの色を問わない簡略形から是正）
+    add("包み足", lambda d: (((d.close.shift() < d.open.shift()) & (d.open < d.close.shift())
+                              & (d.close > d.open.shift())).astype(float)
+                            - ((d.close.shift() > d.open.shift()) & (d.open > d.close.shift())
+                               & (d.close < d.open.shift())).astype(float)), True)
     add("pinbar", lambda d: ((d[["open", "close"]].min(axis=1) - d.low)
                              - (d.high - d[["open", "close"]].max(axis=1))) / (d.high - d.low).replace(0, np.nan), True)
     add("連続本数", lambda d: (np.sign(d.close - d.open)
@@ -362,8 +405,10 @@ def build_catalog(cfg: dict) -> list[tuple]:
             d.high.rolling(n).apply(lambda x: len(x) - 1 - int(np.argmax(x)), raw=True), False)
         add(f"安値からの経過バー{n}", lambda d, n=n:
             d.low.rolling(n).apply(lambda x: len(x) - 1 - int(np.argmin(x)), raw=True), False)
+        # 名前どおり V=+2（下げて上げ）・M=−2（上げて下げ）・一方向=0。旧式は和になっていて
+        # V も M も 0 になる符号の間違いだった（2026-07-30 検査3 の定義照合で発見・是正）
         add(f"形スコア{n}(V=+/M=−)", lambda d, n=n:
-            np.sign(d.close - d.close.shift(n // 2)) + np.sign(d.close.shift(n // 2) - d.close.shift(n)), True)
+            np.sign(d.close - d.close.shift(n // 2)) - np.sign(d.close.shift(n // 2) - d.close.shift(n)), True)
     # ── 位置 ──
     for n in cfg["ema_periods"]:
         add(f"close vs EMA{n}%", lambda d, n=n: (d.close / d.close.ewm(span=n, adjust=False).mean() - 1) * 100, True)
@@ -406,10 +451,11 @@ def _resample(df, rule):
         {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}).dropna()
 
 
-def build_features(bars: pd.DataFrame, cfg: dict) -> tuple[pd.DataFrame, dict]:
-    """指標 × 時間軸 を全部つくる。上位足は『足が閉じた時刻』から使う（未来を見ない）。"""
+def build_features(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> tuple[pd.DataFrame, dict]:
+    """指標 × 時間軸 を全部つくる。上位足は『足が閉じた時刻』から使う（未来を見ない）。
+    catalog はデータ検査（歩0）の番人がわざと壊した式を注入するためだけの引数＝通常は渡さない。"""
     out, meta = {}, {}
-    catalog = build_catalog(cfg)
+    catalog = catalog or build_catalog(cfg)
     for tf in cfg["timeframes"]:
         src = bars if tf == "5m" else _resample(bars, TF_RULE[tf])
         for name, fn, directional in catalog:
@@ -2098,6 +2144,9 @@ def _out_path(kind: str, key: str) -> pathlib.Path:
     if kind == "scene":
         day = datetime.date.today().strftime("%Y%m%d")
         return ratchet_io.RATCHET / f"observe_scene_{safe}_{day}.txt"
+    if kind == "inspect":
+        day = datetime.date.today().strftime("%Y%m%d")
+        return ratchet_io.RATCHET / f"observe_inspect_{safe}_{day}.txt"
     return ratchet_io.RATCHET / f"observe_{safe}.txt"
 
 
@@ -2125,6 +2174,434 @@ class _Tee:
         self._f.close()
         self._out.write(f"\n[保存] {self.path}\n")
         return False
+
+
+# ══ データと指標の検査（歩0の残作業・まこさん OK 2026-07-30・read-only）═══
+# 5段の検査。上流（元データ）で間違いが出たら、下流（足・指標・未来参照・欠損）の結果は全部疑う。
+# 結果は機械出力（保存された txt がそのまま正）。売買記録は読まない・書かない。値決めをしない。
+# 使い方: python3 observe_diag.py --inspect <5分足CSV>
+INSPECT_SECTIONS = [
+    "検査1 元データを検査する（欠け・重複・区切り・価格の整合・前後バーの段差）",
+    "検査2 足の組み立てを検査する（5分→上位足の集計・区切り時刻・閉じる前のバーへの漏れ・足の内訳）",
+    "検査3 指標の計算式を検査する（代表指標を教科書の式で独立計算して突き合わせ＋人工データの性質テスト＋全列を3区分）",
+    "検査4 未来参照を検査する（切り詰め再計算テスト＋静的検査）",
+    "検査5 欠損と有効標本数を数える（列ごとの欠損率・助走・有効標本数＝歩2 の適合制約の基礎データ）",
+]
+# 検査の線（全部この場で印字する＝黙って変えられない）
+_INSP_ATOL_EXACT = 1e-8    # 式が完全一致するはずの系（Stoch・BB）の許容差
+_INSP_ATOL_CONV = 1e-6     # 逐次平滑系（RSI・ATR・MACD＝初期値の流儀の差が時間で消える）の許容差
+_INSP_ATOL_ADX = 1e-4      # ADX/DI系（平滑が3段重なる＝収束が一番遅い）の許容差
+_INSP_STEP_NG_PCT = 5.0    # 前バー終値→次バー始値の段差。これ超は別系列（別取引所の足）の混入を疑い ❌
+_INSP_STEP_WARN_PCT = 0.5  # 段差の報告だけの線（❌ にしない）
+
+
+def _insp_windows() -> list[tuple[str, pd.Timestamp, pd.Timestamp]]:
+    """欠けとの重なり判定・標本数の集計に使う窓（periods.py が正本・終端は排他）。"""
+    return [("値決め", SEARCH_START, SEARCH_END),
+            ("確認", CONFIRM_START, CONFIRM_END),
+            ("採点", SCORE_START, SCORE_END + pd.Timedelta("1D"))]
+
+
+def _gap_runs(missing) -> list[tuple]:
+    """欠けた5分バーの一覧を連続区間（開始・終了・本数）へまとめる。"""
+    runs = []
+    if len(missing) == 0:
+        return runs
+    s = prev = missing[0]
+    n = 1
+    for t in missing[1:]:
+        if t - prev == pd.Timedelta("5min"):
+            n += 1
+        else:
+            runs.append((s, prev, n))
+            s, n = t, 1
+        prev = t
+    runs.append((s, prev, n))
+    return runs
+
+
+def _insp_source(bars: pd.DataFrame) -> list[str]:
+    """検査1 元データ。戻り値＝❌ の一覧。欠けは ⚠️ で印字する（データの事実の報告＝直せない）。"""
+    ng = []
+    print(f"  行数 {len(bars)} / 期間 {bars.index.min()} 〜 {bars.index.max()}")
+    dup = int(bars.index.duplicated().sum())
+    print(f"  重複バー: {dup} 本")
+    if dup:
+        ng.append(f"重複バー {dup} 本（例 {list(bars.index[bars.index.duplicated()][:3])}）")
+    off = bars.index[(bars.index.minute % 5 != 0) | (bars.index.second != 0)]
+    if len(off):
+        ng.append(f"5分の区切りに乗らない時刻 {len(off)} 本（例 {list(off[:3])}）")
+    grid = pd.date_range(bars.index.min(), bars.index.max(), freq="5min")
+    missing = grid.difference(bars.index.drop_duplicates())
+    runs = _gap_runs(missing)
+    print(f"  欠け: {len(missing)} 本（連続区間 {len(runs)} 箇所）… 窓との重なりは各行に表示")
+    for s, e, k in runs:
+        hits = [nm for nm, w0, w1 in _insp_windows() if (s < w1) and (e >= w0)]
+        print(f"     ⚠️ {s} 〜 {e}（{k} 本）… 重なり: {'・'.join(hits) if hits else 'なし'}")
+    o, h, l, c = bars.open, bars.high, bars.low, bars.close
+    checks = [("high < low", h < l),
+              ("high < max(open, close)", h < pd.concat([o, c], axis=1).max(axis=1)),
+              ("low > min(open, close)", l > pd.concat([o, c], axis=1).min(axis=1)),
+              ("価格が 0 以下", (o <= 0) | (h <= 0) | (l <= 0) | (c <= 0)),
+              ("出来高が負", bars.volume < 0)]
+    for why, mask in checks:
+        k = int(mask.sum())
+        print(f"  価格の整合 {why}: {k} 本")
+        if k:
+            ng.append(f"価格の整合 NG＝{why} が {k} 本（例 {list(bars.index[mask][:3])}）")
+    consec = bars.index.to_series().diff() == pd.Timedelta("5min")
+    step = ((o / c.shift() - 1) * 100)[consec.to_numpy()]
+    if len(step):
+        n_warn = int((step.abs() > _INSP_STEP_WARN_PCT).sum())
+        n_bad = int((step.abs() > _INSP_STEP_NG_PCT).sum())
+        print(f"  段差（前バー終値→次バー始値・連続バーのみ）: 最大 {step.abs().max():.4f}% "
+              f"/ {_INSP_STEP_WARN_PCT}% 超 {n_warn} 本 / {_INSP_STEP_NG_PCT}% 超 {n_bad} 本")
+        top = step.iloc[np.argsort(-step.abs().to_numpy())[:10]]
+        for t, v in top.items():
+            print(f"     段差上位: {t}  {float(v):+.4f}%")
+        if n_bad:
+            ng.append(f"段差 {_INSP_STEP_NG_PCT}% 超が {n_bad} 本＝別の取引所の足の混入を疑う")
+    return ng
+
+
+def _insp_close_leak(shift: bool = True) -> list[str]:
+    """検査2 の一部＝閉じる前の上位足バーへの漏れ（未来参照）を人工データで確かめる。
+    shift=False は番人用＝『足が閉じた時刻へずらす』処理を外した壊れた状態を再現する。"""
+    ng = []
+    idx = pd.date_range("2026-03-01", periods=288, freq="5min")
+    syn = pd.DataFrame({"open": 1.0, "high": 1.0, "low": 1.0,
+                        "close": np.arange(288, dtype=float) + 1.0, "volume": 1.0}, index=idx)
+    for tf in ("15m", "2h"):
+        src = _resample(syn, TF_RULE[tf])
+        s = src["close"].copy()
+        if shift:
+            s.index = src.index + pd.Timedelta(TF_RULE[tf])
+        s = s.reindex(syn.index, method="ffill")
+        t = idx[30]                                  # 02:30＝どの足でも形成中の時刻
+        exp = float(syn["close"].loc[t.floor(TF_RULE[tf]) - pd.Timedelta("5min")])
+        got = s.loc[t]
+        if pd.isna(got) or float(got) != exp:
+            ng.append(f"{tf}: 形成中の足の値が漏れている（t={t} の値 {got} ≠ 閉じた足の close {exp}）")
+    return ng
+
+
+def _insp_resample(bars: pd.DataFrame, cfg: dict) -> list[str]:
+    """検査2 足の組み立て。resample の集計を groupby の独立集計と突き合わせ、区切り時刻と
+    閉じる前の漏れを確かめ、足の内訳（8種類）を報告する。"""
+    ng = []
+    sample = bars.iloc[-min(len(bars), 288 * 40):]
+    for tf in ("15m", "2h", "1d"):
+        rule = TF_RULE[tf]
+        r = _resample(sample, rule)
+        g = sample.groupby(sample.index.floor(rule))
+        indep = pd.DataFrame({"open": g["open"].first(), "high": g["high"].max(),
+                              "low": g["low"].min(), "close": g["close"].last(),
+                              "volume": g["volume"].sum()})
+        common = r.index.intersection(indep.index)
+        worst = 0.0
+        for col in ("open", "high", "low", "close", "volume"):
+            d = float((r.loc[common, col] - indep.loc[common, col]).abs().max())
+            worst = max(worst, d)
+            if d > 1e-9:
+                ng.append(f"{tf} の {col} が独立集計と不一致（最大差 {d:.3e}）")
+        misaligned = int((r.index.asi8 % pd.Timedelta(rule).value != 0).sum())
+        print(f"  {tf}: バー {len(r)} 本 / 独立集計との最大差 {worst:.2e} / 区切り時刻ずれ {misaligned} 本")
+        if misaligned:
+            ng.append(f"{tf} の区切り時刻がずれたバー {misaligned} 本")
+    leak = _insp_close_leak(shift=True)
+    print(f"  閉じる前のバーへの漏れ（人工データ・15m と 2h）: {'なし' if not leak else '検出'}")
+    ng += leak
+    print(f"  足の内訳（observe_config.json の timeframes・全 {len(cfg['timeframes'])} 種＝指標はこの全部で組む）:")
+    for tf in cfg["timeframes"]:
+        if tf == "5m":
+            print("     5m: 元データそのまま（resample しない）")
+        else:
+            rr = _resample(sample, TF_RULE[tf])
+            print(f"     {tf}: resample 規則 {TF_RULE[tf]}・label=left/closed=left・直近40日で {len(rr)} 本")
+    return ng
+
+
+# ── 検査3 の照合本体（参照表 indicator_reference_diag が正本・2026-07-30 全96種へ拡張）──
+def _insp_indicator_match(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> tuple[list[str], set, list]:
+    """カタログ全列を参照表と機械照合する。①外部ライブラリ ta（非同型の照合相手）
+    ②教科書の式の独立実装 ③手計算の既知答え。どれか1つ以上で一致し、どの検査にも
+    落ちなかった列だけを検証済みとする。戻り値＝(❌一覧, 検証済み集合, 表示行)。"""
+    ng, verified, rows = [], set(), []
+    sample = bars.iloc[-min(len(bars), 6000):]
+    tail = 500
+
+    def _cmp(mine, ref_s):
+        a = mine.iloc[-tail:]
+        b = pd.to_numeric(ref_s, errors="coerce").iloc[-tail:]
+        m = a.notna() & b.notna()
+        if int(m.sum()) < 100:
+            return None
+        return float((a[m] - b[m]).abs().max())
+
+    for name, fn, _dir in (catalog or build_catalog(cfg)):
+        ref, prm = iref.find(name)
+        if ref is None:
+            ng.append(f"{name}: 参照表に無い（定義・照合方法が未登録）")
+            rows.append((name, "参照なし"))
+            continue
+        marks = []
+        bad = False
+        try:
+            mine = pd.to_numeric(fn(sample), errors="coerce")
+        except Exception as e:
+            ng.append(f"{name}: カタログ側が計算できない: {str(e)[:50]}")
+            rows.append((name, "計算不可"))
+            continue
+        # ① 外部ライブラリ ta
+        if ref["ext"] is not None and iref.TA_OK:
+            try:
+                ext_s = ref["ext"](sample, prm)
+            except Exception as e:
+                ext_s = None
+                ng.append(f"{name}: 外部照合が計算できない: {str(e)[:50]}")
+                bad = True
+            if ext_s is None and not bad:
+                marks.append("外部=対象外")
+            elif ext_s is not None:
+                dmax = _cmp(mine, ext_s)
+                if dmax is None:
+                    marks.append("外部=点不足")
+                elif dmax <= ref["tol"]:
+                    marks.append(f"外部✓({dmax:.0e})")
+                    verified.add(name)
+                else:
+                    marks.append(f"外部✗({dmax:.1e})")
+                    ng.append(f"{name}: 外部ライブラリ ta と不一致（最大差 {dmax:.3e} > 許容 {ref['tol']:.0e}）")
+                    bad = True
+        else:
+            marks.append("外部=対象外" if ref["ext"] is None else "外部=ta無し")
+        # ② 教科書の式の独立実装
+        if ref["tb"] is not None:
+            try:
+                dmax = _cmp(mine, ref["tb"](sample, prm))
+            except Exception as e:
+                dmax = None
+                ng.append(f"{name}: 独立実装が計算できない: {str(e)[:50]}")
+                bad = True
+            if dmax is None:
+                if not bad:
+                    marks.append("独立=点不足")
+            elif dmax <= ref["tol"]:
+                marks.append(f"独立✓({dmax:.0e})")
+                verified.add(name)
+            else:
+                marks.append(f"独立✗({dmax:.1e})")
+                ng.append(f"{name}: 教科書の独立実装と不一致（最大差 {dmax:.3e} > 許容 {ref['tol']:.0e}）")
+                bad = True
+        # ③ 手計算の既知答え
+        if ref["known"] is not None:
+            k_ok = k_all = 0
+            for cb, checks in (ref["known"](prm) or []):
+                try:
+                    out = pd.to_numeric(fn(cb), errors="coerce")
+                except Exception as e:
+                    ng.append(f"{name}: 既知答えの合成バーで計算できない: {str(e)[:50]}")
+                    bad = True
+                    continue
+                for pos, exp, atol in checks:
+                    k_all += 1
+                    got = out.iloc[pos]
+                    if isinstance(exp, str):
+                        ok = pd.notna(got) and ((got > 0) if exp == "+" else (got < 0))
+                        want = f"符号{exp}"
+                    else:
+                        ok = pd.notna(got) and abs(float(got) - exp) <= atol
+                        want = f"{exp:.6g}"
+                    if ok:
+                        k_ok += 1
+                    else:
+                        ng.append(f"{name}: 手計算の既知答えと不一致（期待 {want} / 実測 {got}）")
+                        bad = True
+            if k_all:
+                marks.append(f"既知{k_ok}/{k_all}")
+                if k_ok == k_all:
+                    verified.add(name)
+        if bad:
+            verified.discard(name)
+        rows.append((name, " ".join(marks)))
+    return ng, verified, rows
+
+
+def _insp_property(cfg: dict, catalog: list | None = None) -> tuple[set, dict]:
+    """人工データの性質テスト（参照表の性質の型に従う）。順張り値＝上げ相場の値 > 下げ相場の値。
+    ボラ量＝荒い相場の値 ≥ 静かな相場の値。反転サイン・状態量は型が無い＝既知答えの側で検証する。"""
+    n = 900
+    idx = pd.date_range("2026-03-01", periods=n, freq="5min")
+    t = np.arange(n, dtype=float)
+    wig = np.sin(t / 3.0)
+
+    def mk(close):
+        c = pd.Series(close, index=idx)
+        return pd.DataFrame({"open": c.shift().fillna(c.iloc[0]),
+                             "high": c * 1.001 + 0.2 * np.abs(wig),
+                             "low": c * 0.999 - 0.2 * np.abs(wig),
+                             "close": c, "volume": 10.0 + np.cos(t / 5.0)}, index=idx)
+
+    up = mk(100.0 + 0.05 * t + 0.3 * wig)
+    dn = mk(100.0 + 0.05 * (n - t) + 0.3 * wig)
+    calm = mk(100.0 + 0.05 * np.sin(t / 40.0))
+    wild = mk(100.0 + 3.0 * np.sin(t / 7.0))
+    ok, why = set(), {}
+    for name, fn, directional in (catalog or build_catalog(cfg)):
+        ref, _prm = iref.find(name)
+        kind = ref["prop"] if ref else ("trend" if directional else "vol")
+        try:
+            if kind == "trend":
+                a = float(pd.to_numeric(fn(up), errors="coerce").iloc[-100:].median())
+                b = float(pd.to_numeric(fn(dn), errors="coerce").iloc[-100:].median())
+                good = np.isfinite(a) and np.isfinite(b) and a > b
+                why[name] = f"上げ {a:.4g} / 下げ {b:.4g}" + ("" if good else "＝大小が期待どおりでない")
+            elif kind == "vol":
+                a = float(pd.to_numeric(fn(wild), errors="coerce").iloc[-100:].median())
+                b = float(pd.to_numeric(fn(calm), errors="coerce").iloc[-100:].median())
+                good = np.isfinite(a) and np.isfinite(b) and a >= b
+                why[name] = f"荒い {a:.4g} / 静か {b:.4g}" + ("" if good else "＝大小が期待どおりでない")
+            else:
+                why[name] = "性質テストの型なし（反転サイン・状態量＝既知答えの側で検証）"
+                good = False
+            if good:
+                ok.add(name)
+        except Exception as e:
+            why[name] = f"計算できず: {str(e)[:40]}"
+    return ok, why
+
+
+def _insp_indicator_stage(bars: pd.DataFrame, cfg: dict) -> list[str]:
+    """検査3 全体＝定義表の機械印字＋3本柱の照合＋性質テスト＋全列の3区分。"""
+    print(f"  外部ライブラリ照合: {'ta（非同型の照合相手＝別の実装者のコード）' if iref.TA_OK else '⚠️ ta が無い環境＝独立実装と既知答えで担保'}")
+    print("  ── 定義表（指標ごとの定義・流儀・方向の意味。この表が検査の物差し）──")
+    for e in iref.REFS:
+        print(f"     ◆ {e['family']} … {e['teigi']}")
+        print(f"        流儀: {e['ryugi']}")
+        print(f"        方向: {e['houkou']}")
+    print("  ── 照合（外部ライブラリ ／ 教科書の独立実装 ／ 手計算の既知答え）──")
+    ng, verified, rows = _insp_indicator_match(bars, cfg)
+    for name, marks in rows:
+        print(f"     {name}: {marks}")
+    print("  ── 人工データの性質テスト（参照表の性質の型に従う）──")
+    prop_ok, why = _insp_property(cfg)
+    names = [nm for nm, _f, _d in build_catalog(cfg)]
+    cls = {nm: ("一致検証済み" if nm in verified else "性質検証のみ" if nm in prop_ok else "未検証")
+           for nm in names}
+    from collections import Counter
+    cnt = Counter(cls.values())
+    print(f"  3区分（指標 {len(names)} 種）: 一致検証済み {cnt.get('一致検証済み', 0)} "
+          f"/ 性質検証のみ {cnt.get('性質検証のみ', 0)} / 未検証 {cnt.get('未検証', 0)}")
+    for nm in names:
+        note = "" if cls[nm] != "未検証" else f" … {why.get(nm, '')}"
+        print(f"     [{cls[nm]}] {nm}{note}")
+    return ng
+
+
+def _insp_lookahead(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> list[str]:
+    """検査4 未来参照。①静的検査＝このファイルに負の shift／中央寄せ rolling が無いか。
+    ②切り詰め再計算＝サンプル時点 t でデータを切り詰めて全列を計算し直し、全量計算の t の値と比べる。
+    切り詰めて値が変わる／消える列＝t より後の情報を使っている疑い。"""
+    ng = []
+    src = pathlib.Path(__file__).read_text(encoding="utf-8")
+    for pat, why in ((_J(".shift", "(-"), "負の shift＝未来参照"),
+                     (_J("center", "=True"), "中央寄せ rolling＝未来参照")):
+        hits = [i + 1 for i, line in enumerate(src.splitlines())
+                if pat in line and "H2OK" not in line]
+        print(f"  静的検査 {why}: {len(hits)} 行 {hits if hits else ''}")
+        for ln in hits:
+            ng.append(f"静的検査: {why} が {ln} 行目にある")
+    span = bars.loc[bars.index.max() - pd.Timedelta(days=int(cfg["warmup_days"]) + 3):]
+    feat_full, _meta = build_features(span, cfg, catalog)
+    picks = [span.index[-1], span.index[-100], span.index[-400]]
+    suspects = {}
+    for t in picks:
+        feat_tr, _m2 = build_features(span.loc[:t], cfg, catalog)
+        a, b = feat_full.loc[t], feat_tr.loc[t]
+        for col in feat_full.columns:
+            x, y = a.get(col), b.get(col)
+            if pd.isna(x) and pd.isna(y):
+                continue
+            if pd.isna(x) != pd.isna(y) or abs(float(x) - float(y)) > 1e-9 * max(1.0, abs(float(x))):
+                suspects.setdefault(col, []).append(str(t))
+    print(f"  切り詰め再計算: サンプル時点 {[str(t) for t in picks]} × 全 {feat_full.shape[1]} 列 "
+          f"→ 不一致 {len(suspects)} 列")
+    for col, ts in suspects.items():
+        ng.append(f"切り詰めで値が変わる列（未来参照の疑い）: {col}（時点 {ts}）")
+    return ng
+
+
+def _insp_samples(bars: pd.DataFrame, cfg: dict) -> None:
+    """検査5 列ごとの欠損率・助走・有効標本数（値決め窓・採点窓）。判定はしない＝
+    適合制約の下限はまこさんが決める（歩2）。独立の有効標本数は『その足のバー』で数える
+    （5分へ ffill した見かけの本数で数えると上位足が実際より多く見えるため）。"""
+    w0, w1 = SEARCH_START, SEARCH_END
+    s0, s1 = SCORE_START, SCORE_END + pd.Timedelta("1D")
+    span = bars.loc[w0 - pd.Timedelta(days=int(cfg["warmup_days"])):]
+    catalog = build_catalog(cfg)
+    print(f"  値決め窓 {w0.date()}〜{(w1 - pd.Timedelta('1D')).date()} ／ 採点窓 {s0.date()}〜{SCORE_END.date()} "
+          f"／ 助走データ {cfg['warmup_days']} 日")
+    print("  列 … 欠損率%（値決め窓・その足のバー基準）／助走（最初に値が出るまでのバー数）"
+          "／独立の有効標本数（値決め窓・採点窓）")
+    for tf in cfg["timeframes"]:
+        src = span if tf == "5m" else _resample(span, TF_RULE[tf])
+        closed = src.index if tf == "5m" else src.index + pd.Timedelta(TF_RULE[tf])
+        in_w = (closed >= w0) & (closed < w1)
+        in_s = (closed >= s0) & (closed < s1)
+        tot = int(in_w.sum())
+        for name, fn, _d in catalog:
+            col = f"{name}__{tf}"
+            try:
+                v = pd.to_numeric(fn(src), errors="coerce").notna().to_numpy()
+            except Exception as e:
+                print(f"     {col} … 計算できず: {str(e)[:50]}")
+                continue
+            n_w = int(v[in_w].sum())
+            n_s = int(v[in_s].sum())
+            first = int(np.argmax(v)) if v.any() else -1
+            lead = f"{first} 本" if first >= 0 else "値なし"
+            miss = 100.0 * (1 - n_w / tot) if tot else float("nan")
+            print(f"     {col} … 欠損 {miss:.1f}% ／ 助走 {lead} ／ 有効 {n_w}（値決め）・{n_s}（採点）")
+
+
+def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
+    """データと指標の検査（歩0）＝5段を順に走らせ、まとめを機械出力する。❌ が1つでもあれば終了コード1。"""
+    cfg = load_config(config_path)
+    bars = pd.read_csv(bars_csv, parse_dates=["timestamp"]).set_index("timestamp").sort_index()
+    print("#" * 100)
+    print("# データと指標の検査（歩0・read-only・結果は機械出力＝この出力が正・まこさん OK 2026-07-30）")
+    print(f"# 対象: {bars_csv}（{len(bars)} 行 / {bars.index.min()} 〜 {bars.index.max()}）")
+    print(f"# 設定: {cfg['_source']} ／ 足 {cfg['timeframes']} ／ 指標 {len(build_catalog(cfg))} 種")
+    print("# 窓（periods.py 正本）: " + " ／ ".join(
+        f"{nm} {a.date()}〜{(b - pd.Timedelta('1D')).date()}" for nm, a, b in _insp_windows()))
+    print("# 5段の検査。上流で間違いが出たら下流の結果は全部疑う。売買しない・値決めしない・審判に触れない。")
+    print("#" * 100)
+    fails = {}
+    stages = [("検査1", INSPECT_SECTIONS[0], lambda: _insp_source(bars)),
+              ("検査2", INSPECT_SECTIONS[1], lambda: _insp_resample(bars, cfg)),
+              ("検査3", INSPECT_SECTIONS[2], lambda: _insp_indicator_stage(bars, cfg)),
+              ("検査4", INSPECT_SECTIONS[3], lambda: _insp_lookahead(bars, cfg))]
+    for key, title, run in stages:
+        _h(title)
+        fails[key] = run()
+        if fails[key]:
+            print(f"  ⚠️ {key} で問題が出た＝これより下流の段の結果は全部疑う")
+    _h(INSPECT_SECTIONS[4])
+    _insp_samples(bars, cfg)
+    print("\n" + "=" * 100)
+    print("検査のまとめ（❌＝直すまで下流を信じない ／ ⚠️＝データの事実の報告）")
+    bad = 0
+    for key, _t, _r in stages:
+        if fails[key]:
+            for x in fails[key]:
+                print(f"  ❌ {key}: {x}")
+            bad += len(fails[key])
+        else:
+            print(f"  ✅ {key}: 異常なし")
+    print("  検査5: 判定なし（欠損・助走・有効標本数の報告＝歩2 の適合制約の基礎データ・下限はまこさんが決める）")
+    print("=" * 100)
+    if bad:
+        raise SystemExit(1)
 
 
 # ══ 自己検査 ════════════════════════════════════════════════════════════
@@ -2510,6 +2987,67 @@ def selftest() -> None:
     for need in SECTIONS_SCENE:
         if need not in src:
             ng.append(f"場面観察の節が実装されていない: {need}")
+    # ★データと指標の検査（歩0・2026-07-30 まこさん OK）の番人＝わざと壊したデータ・式で ❌ が出ること
+    import contextlib as _cl2
+    import io as _io2
+    _q = _io2.StringIO()
+    # 検査1: high<low・重複・負の出来高 を混ぜたデータで全部検出すること
+    _badb = pd.DataFrame({"open": [100.0, 100.0, 100.0], "high": [99.0, 101.0, 101.0],
+                          "low": [100.5, 99.5, 99.5], "close": [100.2, 100.1, 100.1],
+                          "volume": [1.0, 1.0, -1.0]},
+                         index=pd.DatetimeIndex(["2026-03-01 00:00", "2026-03-01 00:05", "2026-03-01 00:05"]))
+    with _cl2.redirect_stdout(_q):
+        _f1 = _insp_source(_badb)
+    for _need, _lbl in (("high < low", "high<low"), ("重複", "重複バー"), ("出来高", "負の出来高")):
+        if not any(_need in x for x in _f1):
+            ng.append(f"検査1 が壊れたデータ（{_lbl}）を見逃す: {_f1}")
+    _okb = pd.DataFrame({"open": [100.0] * 5, "high": [100.5] * 5, "low": [99.5] * 5,
+                         "close": [100.2] * 5, "volume": [1.0] * 5},
+                        index=pd.date_range("2026-03-01", periods=5, freq="5min"))
+    with _cl2.redirect_stdout(_q):
+        _f0 = _insp_source(_okb)
+    if _f0:
+        ng.append(f"検査1 が正常なデータで誤検出: {_f0}")
+    # 検査2: 「足が閉じた時刻へずらす」処理を外した壊れた組み立てで ❌ が出ること
+    if not _insp_close_leak(shift=False):
+        ng.append("検査2 が閉じる前のバーへの漏れを検出しない（ずらしを外しても素通り）")
+    if _insp_close_leak(shift=True):
+        ng.append("検査2 が正しい組み立てで誤検出")
+    # 検査3: RSI をわざと定数の式に差し替えたカタログで不一致が出ること・正しいカタログで一致すること
+    _t3 = np.arange(6000, dtype=float)
+    _c3 = pd.Series(100 + np.sin(_t3 / 9.0) * 2 + _t3 * 0.001,
+                    index=pd.date_range("2026-03-01", periods=6000, freq="5min"))
+    _sb3 = pd.DataFrame({"open": _c3.shift().fillna(_c3.iloc[0]), "high": _c3 + 0.1,
+                         "low": _c3 - 0.1, "close": _c3, "volume": 1.0}, index=_c3.index)
+    _fake = [(f"RSI{cfg['rsi_periods'][0]}", lambda d: d.close * 0 + 50.0, True)]
+    with _cl2.redirect_stdout(_q):
+        _ng3, _v3, _r3 = _insp_indicator_match(_sb3, cfg, catalog=_fake)
+    if not any("不一致" in x for x in _ng3):
+        ng.append("検査3 がわざと壊した式（RSI を定数化）を見逃す")
+    with _cl2.redirect_stdout(_q):
+        _ng3b, _v3b, _r3b = _insp_indicator_match(_sb3, cfg)
+    if _ng3b:
+        ng.append(f"検査3 が正しいカタログで不一致を出す（許容差の線を疑う）: {_ng3b[:3]}")
+    # 参照表の網羅＝カタログ全列に定義・照合方法が登録されていること（登録漏れの列を作れない）
+    _miss = iref.coverage([nm for nm, _f, _d in build_catalog(cfg)])
+    if _miss:
+        ng.append(f"参照表に無いカタログ列 {len(_miss)} 件: {_miss[:5]}")
+    # 正しいカタログなら全列が検証済みになること（＝未検証ゼロの物理担保）
+    _unver = [nm for nm, _f, _d in build_catalog(cfg) if nm not in _v3b]
+    if _unver:
+        ng.append(f"検証済みにならない列 {len(_unver)} 件: {_unver[:5]}")
+    # 検査4: わざと未来を見る列（1本先の close）を注入して、切り詰め再計算が検出すること
+    _n1 = -1
+    _leaky = [("未来を見る列", lambda d: d.close.shift(_n1), True)]
+    with _cl2.redirect_stdout(_q):
+        _ng4 = _insp_lookahead(_sb3, {**cfg, "timeframes": ["5m"], "warmup_days": 3}, catalog=_leaky)
+    if not any("未来を見る列" in x for x in _ng4):
+        ng.append("検査4 がわざと入れた未来参照列（1本先の close）を見逃す")
+    for need in INSPECT_SECTIONS:
+        if need not in src:
+            ng.append(f"データと指標の検査の節が実装されていない: {need}")
+    if _J("inspect_", "data(") not in src or "--inspect" not in inspect.getsource(build_parser):
+        ng.append("データと指標の検査が CLI（--inspect）に配線されていない")
     print("=" * 80)
     print("observe_diag 自己検査")
     print("=" * 80)
@@ -2537,6 +3075,8 @@ def build_parser():
                     help="5分足CSV（Binance Spot 正本・--scene の時は不要＝e37 の計器で読む）")
     ap.add_argument("--scene", default=None,
                     help="Entry 候補観察＝場面ID（observe_config.json の scenes・例 S2＝まだ玉のない新候補の層1）")
+    ap.add_argument("--inspect", action="store_true",
+                    help="データと指標の検査（歩0・5段・read-only）＝5分足CSVのパスを1つ渡す（売買記録は使わない）")
     ap.add_argument("--plan", action="store_true",
                     help="検証計画だけを自動生成して印字（本走しない・まこさんへ提出する1枚）")
     ap.add_argument("--config", default=None, help="observe_config.json のパス（既定は同ディレクトリ）")
@@ -2552,7 +3092,13 @@ if __name__ == "__main__":
         ap = build_parser()
         a = ap.parse_args()
         # 本走の結果は results ラチェット直下へ保存する（--plan は提出用の計画＝画面のみ・2026-07-26）
-        if a.scene:
+        if a.inspect:
+            path = a.trades_csv or a.bars_csv          # 位置引数の1つ目に5分足CSVを渡してよい
+            if not path:
+                ap.error("--inspect には 5分足CSV のパスが必要（売買記録は使わない）")
+            with _Tee(_out_path("inspect", pathlib.Path(path).stem)):
+                inspect_data(path, a.config)
+        elif a.scene:
             if a.plan:
                 plan_scene(a.scene, a.config)
             else:

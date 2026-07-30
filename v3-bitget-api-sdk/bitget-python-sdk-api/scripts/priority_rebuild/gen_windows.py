@@ -64,6 +64,17 @@ def _prev_day(ts: pd.Timestamp) -> str:
     return _d(ts - pd.Timedelta(days=1))
 
 
+def _confirm_desc() -> str:
+    """確認窓の説明文。値決め窓と同一の間は暫定の注記を機械で付ける（同一で
+    なくなれば注記も自動で消える＝歩5 の窓の決め直しで手直し不要）。"""
+    base = "engine_tuner。選んだ値のまま1回走らせて表示するだけ。選び直さない"
+    if (periods.CONFIRM_START == periods.SEARCH_START
+            and periods.CONFIRM_END == periods.SEARCH_END):
+        return (base + "。暫定＝値決め窓と同一（まこさん確定 2026-07-30）のため "
+                "B2 は判定不能表示。窓の決め直しは作り直し計画の歩5")
+    return base
+
+
 def rows() -> list[tuple[str, str, str]]:
     """期間の表（名前・いつ・使う道具）。数値は periods.py だけから取る。"""
     return [
@@ -74,7 +85,7 @@ def rows() -> list[tuple[str, str, str]]:
         ("値決め", f"{_d(periods.SEARCH_START)} 〜 {_prev_day(periods.SEARCH_END)}",
          "engine_tuner ／ engine_search_e37。値を選ぶのはここだけ"),
         ("確認", f"{_d(periods.CONFIRM_START)} 〜 {_prev_day(periods.CONFIRM_END)}",
-         "engine_tuner。選んだ値のまま1回走らせて表示するだけ。選び直さない"),
+         _confirm_desc()),
         ("採点", f"{_d(periods.SCORE_START)} 〜 {_d(periods.SCORE_END)}",
          "score.py ／ observe_diag。採否を決める。探索には一切使わない"),
         ("封印", f"{_d(periods.SEAL_START)} 〜",
