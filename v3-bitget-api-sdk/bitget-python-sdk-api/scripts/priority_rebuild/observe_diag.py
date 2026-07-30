@@ -215,7 +215,8 @@ def _tautology(cfg) -> set:
 _DEMAND_FILES = {
     "taker_ls": ("../../data/oi_BTCUSDT_5y.csv", "time", "taker_ls"),
     "L-S比": ("../../data/oi_BTCUSDT_5y.csv", "time", "ls_global"),
-    "CVD": ("../../data/BTCUSDT-1m-binance-taker-2025-06-01_2026-02-28.csv", "timestamp", None),
+    # 2026-07-30 取り直し（2024-04〜2026-06・値決め窓と採点窓を被覆）。旧 2025-06〜2026-02 版は data/ に温存
+    "CVD": ("../../data/BTCUSDT-1m-binance-taker-2024-04-01_2026-06-30.csv", "timestamp", None),
 }
 
 
@@ -312,6 +313,19 @@ def _sr_touch(c, h, l, win=288, tol=0.003):
     return pd.Series(out, index=c.index)
 
 
+def _w_flag(c, h, l, n, tol):
+    """W字（ダブルボトム）の完成フラグ（2026-07-30 案A＝教科書定義で実装・まこさん判断不能のため
+    feedback_design_judgment_owner に基づき CC が確定）。窓 n の前半の最安値と後半の最安値が
+    同水準（許容幅=tol×終値）で、終値が中央 n/2 区間の最高値（ネックラインの近似・流儀）を
+    上抜けたら 1・それ以外 0。全部 過去方向の rolling/shift＝未来参照なし。"""
+    half, q = n // 2, (n // 2) // 2
+    lo1 = l.shift(half).rolling(n - half).min()
+    lo2 = l.rolling(half).min()
+    neck = h.shift(q).rolling(half).max()
+    ok = ((lo1 - lo2).abs() <= tol * c) & (c > neck)
+    return ok.astype(float).where(lo1.notna() & lo2.notna() & neck.notna())
+
+
 # ══ 指標カタログ（この道具が正本・呼び出し側は足せない/減らせない）══════
 # (表示名, 計算関数, 方向あり?)  方向あり＝値が大きいほど「価格が上」を意味する
 def build_catalog(cfg: dict) -> list[tuple]:
@@ -328,6 +342,9 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for (f_, s_, g_) in cfg["macd_params"]:
         add(f"MACD線%({f_},{s_})", lambda d, f_=f_, s_=s_:
             (d.close.ewm(span=f_).mean() - d.close.ewm(span=s_).mean()) / d.close * 100, True)
+        add(f"MACDシグナル線%({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
+            (d.close.ewm(span=f_).mean() - d.close.ewm(span=s_).mean())
+            .ewm(span=g_).mean() / d.close * 100, True)
         add(f"MACDヒスト%({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
             (lambda m: (m - m.ewm(span=g_).mean()) / d.close * 100)(
                 d.close.ewm(span=f_).mean() - d.close.ewm(span=s_).mean()), True)
@@ -380,6 +397,10 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for n in cfg["zscore_periods"]:
         add(f"zscore{n}", lambda d, n=n:
             (d.close - d.close.rolling(n).mean()) / d.close.rolling(n).std().replace(0, np.nan), True)
+        # 対数リターン基準の zスコア（軸カタログ E-c の zscore_return・2026-07-30 検査7 を受けて追加）
+        add(f"zscore_return{n}", lambda d, n=n:
+            (lambda r: (r - r.rolling(n).mean()) / r.rolling(n).std().replace(0, np.nan))
+            (np.log(d.close / d.close.shift())), True)
     # ── 出来高 ──
     for n in cfg["volume_ratio_periods"]:
         add(f"volume_ratio{n}", lambda d, n=n: d.volume / d.volume.rolling(n).mean().replace(0, np.nan), False)
@@ -389,6 +410,11 @@ def build_catalog(cfg: dict) -> list[tuple]:
                               & (d.close > d.open.shift())).astype(float)
                             - ((d.close.shift() > d.open.shift()) & (d.open > d.close.shift())
                                & (d.close < d.open.shift())).astype(float)), True)
+    # 教科書の孕み足＝前バーと逆の色で実体が前バーの実体の中に収まる（2026-07-30 検査7 の軸カタログ照合で追加）
+    add("孕み足", lambda d: (((d.close.shift() < d.open.shift()) & (d.close > d.open)
+                              & (d.open > d.close.shift()) & (d.close < d.open.shift())).astype(float)
+                            - ((d.close.shift() > d.open.shift()) & (d.close < d.open)
+                               & (d.open < d.close.shift()) & (d.close > d.open.shift())).astype(float)), True)
     add("pinbar", lambda d: ((d[["open", "close"]].min(axis=1) - d.low)
                              - (d.high - d[["open", "close"]].max(axis=1))) / (d.high - d.low).replace(0, np.nan), True)
     add("連続本数", lambda d: (np.sign(d.close - d.open)
@@ -409,6 +435,9 @@ def build_catalog(cfg: dict) -> list[tuple]:
         # V も M も 0 になる符号の間違いだった（2026-07-30 検査3 の定義照合で発見・是正）
         add(f"形スコア{n}(V=+/M=−)", lambda d, n=n:
             np.sign(d.close - d.close.shift(n // 2)) - np.sign(d.close.shift(n // 2) - d.close.shift(n)), True)
+        # W字＝ダブルボトムの完成フラグ（2026-07-30 追加・定義と流儀は参照表）
+        for t in cfg["w_tol"]:
+            add(f"W字({n},{t})", lambda d, n=n, t=t: _w_flag(d.close, d.high, d.low, n, t), True)
     # ── 位置 ──
     for n in cfg["ema_periods"]:
         add(f"close vs EMA{n}%", lambda d, n=n: (d.close / d.close.ewm(span=n, adjust=False).mean() - 1) * 100, True)
@@ -432,6 +461,11 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for n in cfg["pivot_windows"]:
         add(f"close vs pivotPP%{n}", lambda d, n=n: (d.close / ((d.high.rolling(n).max()
             + d.low.rolling(n).min() + d.close.shift(1)) / 3) - 1) * 100, True)
+        # R1/S1 は PP と同じ移動窓の変形（教科書は前期間の高安・終値＝流儀は参照表に明記・2026-07-30 追加）
+        add(f"close vs pivotR1%{n}", lambda d, n=n: (d.close / (2 * ((d.high.rolling(n).max()
+            + d.low.rolling(n).min() + d.close.shift(1)) / 3) - d.low.rolling(n).min()) - 1) * 100, True)
+        add(f"close vs pivotS1%{n}", lambda d, n=n: (d.close / (2 * ((d.high.rolling(n).max()
+            + d.low.rolling(n).min() + d.close.shift(1)) / 3) - d.high.rolling(n).max()) - 1) * 100, True)
     for n in cfg["fib_windows"]:
         add(f"fib位置{n}", lambda d, n=n: (d.close - d.low.rolling(n).min())
             / (d.high.rolling(n).max() - d.low.rolling(n).min()).replace(0, np.nan), True)
@@ -2532,10 +2566,24 @@ def _insp_lookahead(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) 
     return ng
 
 
+def _nominal_wlen(name: str, lead: int) -> int:
+    """列の名目窓長＝max(材料の数値パラメータの最大値, 助走+1)。補正後独立標本数の分母
+    （CP3 提案1 の強化・2026-07-30 まこさん GO）。再帰型（RSI/ADX 等＝助走1本）でも名目期間で
+    補正が効く。パラメータの正本＝indicator_reference_diag の正規表現（find）。
+    流儀＝EMA 系の実効記憶は名目より長いことがあるが、CP2 4-4 の病型（長窓 rolling の
+    重なり水増し）を正しく潰す下限近似として名目窓長を使う。"""
+    _ref, prm = iref.find(name)
+    nums = [int(p) for p in (prm or ()) if isinstance(p, (int, float)) and float(p) == int(p) and p >= 2]
+    return max(nums + [lead + 1, 1])
+
+
 def _insp_samples(bars: pd.DataFrame, cfg: dict) -> None:
     """検査5 列ごとの欠損率・助走・有効標本数（値決め窓・採点窓）。判定はしない＝
     適合制約の下限はまこさんが決める（歩2）。独立の有効標本数は『その足のバー』で数える
-    （5分へ ffill した見かけの本数で数えると上位足が実際より多く見えるため）。"""
+    （5分へ ffill した見かけの本数で数えると上位足が実際より多く見えるため）。
+    ★補正後独立標本数（2026-07-30 CP3 提案1・まこさん GO）＝非欠損バー数 ÷ 名目窓長。
+    窓長の重なりの水増し（例＝日足288本窓の列が『660標本』に見えるが重ならない区間は2つ）を
+    補正する。G2 適合制約の下限 N_MIN はこの補正後の値に当てる。"""
     w0, w1 = SEARCH_START, SEARCH_END
     s0, s1 = SCORE_START, SCORE_END + pd.Timedelta("1D")
     span = bars.loc[w0 - pd.Timedelta(days=int(cfg["warmup_days"])):]
@@ -2543,7 +2591,7 @@ def _insp_samples(bars: pd.DataFrame, cfg: dict) -> None:
     print(f"  値決め窓 {w0.date()}〜{(w1 - pd.Timedelta('1D')).date()} ／ 採点窓 {s0.date()}〜{SCORE_END.date()} "
           f"／ 助走データ {cfg['warmup_days']} 日")
     print("  列 … 欠損率%（値決め窓・その足のバー基準）／助走（最初に値が出るまでのバー数）"
-          "／独立の有効標本数（値決め窓・採点窓）")
+          "／独立の有効標本数（値決め窓・採点窓）／補正後独立標本数＝有効÷名目窓長（G2 の基礎データ）")
     for tf in cfg["timeframes"]:
         src = span if tf == "5m" else _resample(span, TF_RULE[tf])
         closed = src.index if tf == "5m" else src.index + pd.Timedelta(TF_RULE[tf])
@@ -2562,7 +2610,9 @@ def _insp_samples(bars: pd.DataFrame, cfg: dict) -> None:
             first = int(np.argmax(v)) if v.any() else -1
             lead = f"{first} 本" if first >= 0 else "値なし"
             miss = 100.0 * (1 - n_w / tot) if tot else float("nan")
-            print(f"     {col} … 欠損 {miss:.1f}% ／ 助走 {lead} ／ 有効 {n_w}（値決め）・{n_s}（採点）")
+            wl = _nominal_wlen(name, max(first, 0))
+            print(f"     {col} … 欠損 {miss:.1f}% ／ 助走 {lead} ／ 有効 {n_w}（値決め）・{n_s}（採点）"
+                  f" ／ 補正後 {n_w // wl}（値決め・窓長{wl}）・{n_s // wl}（採点）")
 
 
 def _demand_tail_ok(series: pd.Series, src_end: pd.Timestamp) -> bool:
@@ -2572,12 +2622,22 @@ def _demand_tail_ok(series: pd.Series, src_end: pd.Timestamp) -> bool:
 
 
 def _insp_demand(bars: pd.DataFrame, files: dict | None = None) -> list[str]:
-    """検査6 需給データ。元ファイルの重複・整合・欠けと、値決め窓・採点窓それぞれの被覆を機械出力し、
-    取り込み（load_demand）が終端より後を埋めていないことを確かめる。"""
+    """検査6 需給データ。①定義表（定義・流儀・方向・出典＝indicator_reference_diag.DEMAND_REF が正本）
+    ②元ファイルの重複・整合・値の妥当範囲 ③欠けの位置と窓の重なり ④取り込みが終端より後を
+    埋めていないこと ⑤値決め窓・採点窓それぞれの被覆、を機械出力する（2026-07-30 見直し5点を反映）。"""
     ng = []
     files = files or _DEMAND_FILES
     base = pathlib.Path(__file__).resolve().parent
     ingested, cov = load_demand(bars.index, files)
+    print("  定義と流儀（正本＝indicator_reference_diag.DEMAND_REF・2026-07-30 WebResearch＋実測で確定）:")
+    for nm in files:
+        r = iref.DEMAND_REF.get(nm)
+        if r is None:
+            ng.append(f"{nm}: 需給の定義表 DEMAND_REF に未登録（定義・流儀・出典の記録が無い）")
+            continue
+        print(f"     ◆ {nm} … {r['teigi']}")
+        print(f"        流儀: {r['ryugi']}")
+        print(f"        方向: {r['houkou']} ／ 出典: {r['source']}")
     for name, (rel, tcol, vcol) in files.items():
         p = (base / rel).resolve()
         if not p.exists():
@@ -2595,7 +2655,8 @@ def _insp_demand(bars: pd.DataFrame, files: dict | None = None) -> list[str]:
         step = d.index.to_series().diff().median()
         gaps = int((d.index.to_series().diff() > step).sum()) if pd.notna(step) else 0
         if vcol:
-            bad = int((pd.to_numeric(d[vcol], errors="coerce") < 0).sum())
+            v = pd.to_numeric(d[vcol], errors="coerce")
+            bad = int((v < 0).sum())
             if bad:
                 ng.append(f"{name}: 値が負 {bad} 本（比率が負はデータ壊れ）")
         else:
@@ -2605,6 +2666,28 @@ def _insp_demand(bars: pd.DataFrame, files: dict | None = None) -> list[str]:
             if bad:
                 ng.append(f"{name}: taker_buy_base と volume の整合 NG {bad} 本（負・または taker>全量）")
         print(f"  {name}: {rel}（{len(d)} 行 / {d.index.min()} 〜 {d.index.max()} / 刻み {step} / 重複 {dup} / 欠け {gaps} 箇所）")
+        # 値の妥当範囲（負だけでは甘い＝ゼロ・分布の裾を機械出力・2026-07-30 見直し5）
+        if vcol:
+            z = int((v == 0).sum())
+            znote = " ⚠️ ゼロは要確認（比率・OI のゼロは通常起きない値）" if z else ""
+            print(f"     値の範囲: min {v.min():.6g} / p1 {v.quantile(0.01):.6g} / 中央 {v.median():.6g}"
+                  f" / p99 {v.quantile(0.99):.6g} / max {v.max():.6g} / ゼロ {z} 本{znote}")
+            if z:
+                zt = d.index[(v == 0).to_numpy()]
+                print(f"       ゼロの時刻（最初と最後）: {zt.min()} 〜 {zt.max()}")
+        # 欠けの位置と窓の重なり（数だけでなく位置＝検査1 と同型・2026-07-30 見直し4）
+        if gaps and pd.notna(step):
+            dif = d.index.to_series().diff()
+            pos = np.where((dif > step).to_numpy())[0]
+            regions = [(d.index[i - 1], d.index[i], int(round(dif.iloc[i] / step)) - 1) for i in pos]
+            total_missing = sum(r[2] for r in regions)
+            regions.sort(key=lambda r: -r[2])
+            print(f"     欠けの位置（大きい順に5つ・全 {len(regions)} 箇所・計 {total_missing} 本分）:")
+            for a, b, k in regions[:5]:
+                print(f"       {a} 〜 {b}（{k} 本分）")
+            for wname, w0, w1 in _insp_windows():
+                hit = [r for r in regions if r[0] < w1 and r[1] > w0]
+                print(f"     欠けと{wname}の重なり: {len(hit)} 箇所（約 {sum(r[2] for r in hit)} 本分）")
         if name in ingested.columns:
             s = ingested[name]
             if not _demand_tail_ok(s, d.index.max()):
@@ -3156,6 +3239,23 @@ def selftest() -> None:
             ng.append("検査6 が『終端より後を値で埋めている』を見逃す（未来の捏造を検出できない）")
         if not _demand_tail_ok(_leak6.where(_leak6.index <= _end6), _end6):
             ng.append("検査6 が正しい取り込み（終端後 NaN）を誤検出")
+        # CVD の組み立て式（2×テイカー買い−出来高 の累積）を手計算の既知答えで確認（2026-07-30 見直し2）
+        _cvd6 = _td6 / "cvd.csv"
+        _cvd6.write_text("timestamp,taker_buy_base,volume\n"
+                         "2026-03-01 00:00:00,7,10\n"
+                         "2026-03-01 00:05:00,3,10\n"
+                         "2026-03-01 00:10:00,4,8\n", encoding="utf-8")
+        _g6, _c6 = load_demand(_bars6.index, {"CVD": (str(_cvd6), "timestamp", None)})
+        _exp6 = [4.0, 0.0, 0.0]                                   # 2*7-10 / +2*3-10 / +2*4-8 の累積
+        _got6 = [float(_g6["CVD"].iloc[i]) for i in range(3)]
+        if any(abs(a - b) > 1e-9 for a, b in zip(_got6, _exp6)):
+            ng.append(f"検査6 の CVD 組み立てが手計算の既知答えと合わない: {_got6} ≠ {_exp6}")
+        # 定義表 DEMAND_REF の網羅＝登録の無い需給列は検査6 が ❌ を出すこと（ドリフト検出）
+        _ref_ng = []
+        with _cl2.redirect_stdout(_q):
+            _ref_ng = _insp_demand(_bars6, files={"未登録の需給列": (str(_ok6), "time", "taker_ls")})
+        if not any("未登録" in x for x in _ref_ng):
+            ng.append("検査6 が定義表 DEMAND_REF に無い需給列を見逃す（定義なしの列を足せてしまう）")
     finally:
         _sh6.rmtree(_td6, ignore_errors=True)
     # ★検査7 軸カタログ照合（2026-07-30 まこさん OK）の番人＝3者照合のドリフトを検出

@@ -201,6 +201,12 @@ def _tb_macd_hist(d, p):
     return _S((line - _ema_rec(line, p[2])) / c * 100, d)
 
 
+def _tb_macd_signal(d, p):
+    c = d.close.to_numpy(float)
+    line = _ema_rec(c, p[0]) - _ema_rec(c, p[1])
+    return _S(_ema_rec(line, p[2]) / c * 100, d)
+
+
 def _tb_roc(d, p):
     n = p[0]
     c = d.close.to_numpy(float)
@@ -311,6 +317,14 @@ def _tb_zscore(d, p):
     return _S(_div(c - _roll(c, n, "mean"), _roll(c, n, "std", ddof=1)), d)
 
 
+def _tb_zscore_ret(d, p):
+    n = p[0]
+    c = d.close.to_numpy(float)
+    r = np.log(c / np.roll(c, 1))
+    r[0] = np.nan
+    return _S(_div(r - _roll(r, n, "mean"), _roll(r, n, "std", ddof=1)), d)
+
+
 def _tb_vr(d, p):
     o, h, l, c, v = _arr(d)
     return _S(_div(v, _roll(v, p[0], "mean")), d)
@@ -322,6 +336,15 @@ def _tb_engulf(d, p):
     po[0] = pc[0] = np.nan
     bull = (pc < po) & (o < pc) & (c > po)
     bear = (pc > po) & (o > pc) & (c < po)
+    return _S(bull.astype(float) - bear.astype(float), d)
+
+
+def _tb_harami(d, p):
+    o, h, l, c, v = _arr(d)
+    po, pc = np.roll(o, 1), np.roll(c, 1)
+    po[0] = pc[0] = np.nan
+    bull = (pc < po) & (c > o) & (o > pc) & (c < po)
+    bear = (pc > po) & (c < o) & (o < pc) & (c > po)
     return _S(bull.astype(float) - bear.astype(float), d)
 
 
@@ -397,6 +420,37 @@ def _tb_shape(d, p):
     return _S(out, d)
 
 
+def _w_case(n, second_low):
+    """W字の既知答え用の合成バー。前半に底1=100・中央に山（ネックライン）=108・後半に底2=second_low・
+    最終バーの終値 109 でネックライン上抜け。second_low=100.2 なら同水準（tol 0.003×109=0.327 以内）＝W字完成。"""
+    half, q = n // 2, (n // 2) // 2
+    m = n + 6
+    c = np.full(m, 106.0)
+    h = np.full(m, 106.0)
+    l = np.full(m, 105.0)
+    base = m - n
+    l[base + 2] = 100.0                # 底1（前半・中央区間の外）
+    h[base + half] = 108.0             # 間の山＝ネックライン（中央区間の中）
+    l[base + half + q + 1] = second_low  # 底2（後半）
+    c[-1] = 109.0
+    return _mk(c=c, o=c.copy(), h=np.maximum(h, c), l=np.minimum(l, c))
+
+
+def _tb_wpat(d, p):
+    n, tol = int(p[0]), float(p[1])
+    o, h, l, c, v = _arr(d)
+    half, q = n // 2, (n // 2) // 2
+    out = np.full(len(c), np.nan)
+    for i in range(n - 1, len(c)):
+        wl = l[i - n + 1:i + 1]
+        wh = h[i - n + 1:i + 1]
+        lo1 = np.min(wl[:n - half])
+        lo2 = np.min(wl[n - half:])
+        neck = np.max(wh[n - half - q:n - q])
+        out[i] = 1.0 if (abs(lo1 - lo2) <= tol * c[i] and c[i] > neck) else 0.0
+    return _S(out, d)
+
+
 def _tb_vs_ema(d, p):
     return _S((d.close.to_numpy(float) / _ema_rec(d.close.to_numpy(float), p[0]) - 1) * 100, d)
 
@@ -455,6 +509,17 @@ def _tb_vs_pivot(d, p):
     pc[0] = np.nan
     pp = (_roll(h, n, "max") + _roll(l, n, "min") + pc) / 3
     return _S((c / pp - 1) * 100, d)
+
+
+def _tb_vs_pivot_rs(d, p, which):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    pc = np.roll(c, 1)
+    pc[0] = np.nan
+    hh, ll = _roll(h, n, "max"), _roll(l, n, "min")
+    pp = (hh + ll + pc) / 3
+    lvl = (2 * pp - ll) if which > 0 else (2 * pp - hh)
+    return _S((c / lvl - 1) * 100, d)
 
 
 def _tb_fib(d, p):
@@ -528,6 +593,10 @@ def _ext_macd_line(d, p):
 
 def _ext_macd_hist(d, p):
     return _ta.trend.MACD(d.close, p[1], p[0], p[2]).macd_diff() / d.close * 100
+
+
+def _ext_macd_signal(d, p):
+    return _ta.trend.MACD(d.close, p[1], p[0], p[2]).macd_signal() / d.close * 100
 
 
 def _ext_roc(d, p):
@@ -643,6 +712,10 @@ _r(r"MACDヒスト%\((\d+),(\d+),(\d+)\)", "MACDヒスト%",
    "MACD線 − シグナル線（MACD線の EMA）を終値で割って%化", "Appel。%化は本プロジェクトの流儀",
    "順張り値＝プラスで勢いが加速", "trend", tb=_tb_macd_hist, ext=_ext_macd_hist,
    known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])
+_r(r"MACDシグナル線%\((\d+),(\d+),(\d+)\)", "MACDシグナル線%",
+   "シグナル線（MACD線の g 本 EMA）を終値で割って%化", "Appel。%化は本プロジェクトの流儀。単体列は 2026-07-30 検査7（軸カタログ照合）を受けて追加",
+   "順張り値＝プラスで上昇の勢いが持続", "trend", tb=_tb_macd_signal, ext=_ext_macd_signal,
+   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])
 _r(r"RSI(\d+)", "RSI",
    "相対力指数。n 本の平均上昇幅と平均下落幅の比から 0〜100", "Wilder 1978。全部上昇の窓は 100（世界標準の慣例・TradingView と同じ）",
    "順張り値＝大きいほど上昇の勢い", "trend", tb=_tb_rsi, ext=_ext_rsi,
@@ -715,6 +788,12 @@ _r(r"zscore(\d+)", "zscore",
    "終値が n 本平均から標準偏差いくつ分離れているか", "標準（標本標準偏差 ddof=1）",
    "順張り値", "trend", tb=_tb_zscore,
    known=lambda p: [(_alt_pm1(p[0] * 2), [(-1, 1.0 / float(np.sqrt(p[0] / (p[0] - 1))), 1e-9)])])
+_r(r"zscore_return(\d+)", "zscore_return",
+   "対数リターンが n 本平均から標準偏差いくつ分離れているか",
+   "標準（標本標準偏差 ddof=1）。価格基準の zscore とは別の指標（軸カタログ E-c の zscore_return）＝2026-07-30 検査7 を受けて追加",
+   "順張り値＝プラスで直近の上げが平常より強い", "trend", tb=_tb_zscore_ret,
+   known=lambda p: [(_mk(100.0 * np.exp(np.cumsum(np.resize([0.01, -0.01], p[0] * 2)))),
+                     [(-1, -float(np.sqrt((p[0] - 1) / p[0])), 1e-9)])])
 # ── 出来高 ──
 _r(r"volume_ratio(\d+)", "volume_ratio",
    "出来高が n 本平均の何倍か", "標準", "状態量＝大きいほど商いが厚い", "none", tb=_tb_vr,
@@ -728,6 +807,14 @@ _r(r"包み足", "包み足",
                          h=[101.0, 101.0, 101.2], l=[99.9, 99.9, 99.8]), [(-1, 1.0, 1e-9)]),
                     (_mk(c=[101.0, 101.0, 99.9], o=[100.0, 100.0, 101.2],
                          h=[101.0, 101.0, 101.3], l=[99.9, 99.9, 99.8]), [(-1, -1.0, 1e-9)])])
+_r(r"孕み足", "孕み足",
+   "前バーと逆の色で実体が前バーの実体の中に収まる反転パターン。陽の孕み=+1・陰の孕み=−1・それ以外0",
+   "教科書定義（前バーの色と当バーの色の両方を条件に含む・実体の内包は強い不等号）＝2026-07-30 検査7（軸カタログ照合）を受けて追加",
+   "反転サイン＝+1 は買い転換の示唆", "reversal", tb=_tb_harami,
+   known=lambda p: [(_mk(c=[100.0, 99.8, 100.5], o=[100.0, 101.2, 100.0],
+                         h=[100.0, 101.2, 100.6], l=[100.0, 99.7, 99.9]), [(-1, 1.0, 1e-9)]),
+                    (_mk(c=[100.0, 101.2, 99.9], o=[100.0, 99.8, 100.4],
+                         h=[100.0, 101.3, 100.5], l=[99.9, 99.7, 99.8]), [(-1, -1.0, 1e-9)])])
 _r(r"pinbar", "pinbar",
    "（下ヒゲ−上ヒゲ）÷全幅。+0.5 超で強い下ヒゲ（買い転換の示唆）",
    "標準のピンバー比", "反転サイン", "reversal", tb=_tb_pinbar,
@@ -774,6 +861,15 @@ _r(r"形スコア(\d+)\(V=\+/M=−\)", "形スコア",
                                np.full(2, 110.0)][:p[0] + 3]), [(p[0], 2.0, 1e-9)]),
                     (_mk(np.r_[np.linspace(100, 110, p[0] // 2 + 1), np.linspace(110, 100, p[0] // 2 + 1)[1:],
                                np.full(2, 100.0)][:p[0] + 3]), [(p[0], -2.0, 1e-9)])])
+_r(r"W字\((\d+),([\d.]+)\)", "W字",
+   "ダブルボトム（W字）の完成フラグ。窓 n の前半の最安値と後半の最安値が同水準（許容幅=tol×終値）で、"
+   "終値がネックラインを上抜けたら 1・それ以外 0",
+   "教科書のダブルボトム＝2つの底が同水準＋間の山（ネックライン）の上抜けで完成。ネックラインは"
+   "中央 n/2 区間の最高値で近似（ベクトル計算のための本プロジェクトの流儀）。定義は 2026-07-30 に"
+   "まこさん判断不能のため feedback_design_judgment_owner に基づき CC が案A（教科書定義）で確定",
+   "反転サイン＝1 は買い転換（ダブルボトム完成）の示唆", "reversal", tb=_tb_wpat,
+   known=lambda p: [(_w_case(int(p[0]), 100.2), [(-1, 1.0, 1e-9)]),
+                    (_w_case(int(p[0]), 92.0), [(-1, 0.0, 1e-9)])])
 # ── 位置 ──
 _r(r"close vs EMA(\d+)%", "close vs EMA",
    "EMA からの乖離%", "EMA は標準の漸化式", "順張り値", "trend", tb=_tb_vs_ema, ext=_ext_vs_ema,
@@ -812,6 +908,18 @@ _r(r"close vs pivotPP%(\d+)", "pivotPP",
    "★流儀に注意＝教科書の PP は前の期間の高値・安値・終値。本カタログは移動窓の高安＋前バー終値の変形",
    "順張り値", "trend", tb=_tb_vs_pivot,
    known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.0, 1e-6)])])
+_r(r"close vs pivotR1%(\d+)", "pivotR1",
+   "ピボットの抵抗1 R1（2×PP − n 本安値）からの乖離%",
+   "★流儀に注意＝教科書の R1 は前の期間の高安・終値から。本カタログは PP と同じ移動窓の変形（2026-07-30 検査7 を受けて追加）。外部照合は定義が違うため対象外",
+   "順張り値", "trend", tb=lambda d, p: _tb_vs_pivot_rs(d, p, +1),
+   known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),
+                    (_range_case(n=max(300, p[0] + 60)), [(-1, (105.0 / 110.0 - 1) * 100, 1e-6)])])
+_r(r"close vs pivotS1%(\d+)", "pivotS1",
+   "ピボットの支持1 S1（2×PP − n 本高値）からの乖離%",
+   "★流儀に注意＝教科書の S1 は前の期間の高安・終値から。本カタログは PP と同じ移動窓の変形（2026-07-30 検査7 を受けて追加）。外部照合は定義が違うため対象外",
+   "順張り値", "trend", tb=lambda d, p: _tb_vs_pivot_rs(d, p, -1),
+   known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),
+                    (_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-6)])])
 _r(r"fib位置(\d+)", "fib位置",
    "n 本の高安レンジの中の位置 0〜1", "フィボナッチ・リトレースメントの位置測定", "順張り値", "trend", tb=_tb_fib,
    known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.5, 1e-9)])])
@@ -838,6 +946,40 @@ _r(r"S-Rタッチ数\((\d+),([\d.]+)\)", "S-Rタッチ数",
                      [(-1, 3.0, 1e-9)])])
 
 
+# ══ 需給データの定義表（検査6 が印字する正本・2026-07-30 WebResearch＋実測で確定）══
+# 実測の方法＝①直近の metrics 日次 zip と REST の同系列を1時間分突き合わせ（OI・比率3種は
+# zip の時刻+5分 = REST の終了時刻ラベルで平均差ゼロ・taker は同時刻で一致）②OI の現在値
+# スナップショットを15秒ごとに12分記録し、REST の終了時刻ラベル T の行の値が T−5分 の
+# スナップショットと一致（例＝10:15 ラベル 105958.643 vs 10:10:09 実測 105958.655）
+# ＝metrics の create_time は測定時刻そのもの → ffill 取り込みは未来参照にならない。
+DEMAND_REF: dict[str, dict] = {
+    "taker_ls": dict(
+        teigi="sum_taker_long_short_vol_ratio＝5分間のテイカー買い量÷テイカー売り量",
+        ryugi="Binance Vision 先物メトリクス（futures/um/daily/metrics）。刻印は集計期間の終わり"
+              "（2026-07-30 実測＝REST takerlongshortRatio の終了時刻ラベルと同時刻で一致・平均差1e-4）"
+              "＝行の時刻までに値が確定。OI・L-S比 より1本遅れて5分バーに載る癖に注意",
+        houkou="需給＝1超でテイカー買い優勢",
+        source="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Taker-BuySell-Volume",
+    ),
+    "L-S比": dict(
+        teigi="count_long_short_ratio＝全トレーダーのロング口座数÷ショート口座数（口座数ベース・建玉量ベースではない）",
+        ryugi="同メトリクス。create_time は測定時刻（2026-07-30 実測＝zip の時刻+5分が REST の終了時刻"
+              "ラベルと一致し、境界またぎの実測で値はラベルの5分前のスナップショットと一致）"
+              "＝ffill 取り込みは因果的に安全",
+        houkou="需給＝1超でロング口座が多い",
+        source="https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Long-Short-Ratio",
+    ),
+    "CVD": dict(
+        teigi="累積出来高デルタ＝Σ(テイカー買い量×2 − 総出来高)＝Σ(テイカー買い − テイカー売り)",
+        ryugi="Binance Spot 1分足 kline の taker_buy_base_asset_volume（その足でテイカーが買った基準資産量・"
+              "kline 9列目）から組み立て。刻印は足の開始時刻・集計は足の終わりに確定"
+              "＝5分バーへの ffill は kline の慣例（行＝その足の確定値）と整合",
+        houkou="需給＝増加でテイカー買い圧の積み上がり",
+        source="https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints",
+    ),
+}
+
+
 # ══ 軸カタログ E-c との突き合わせ（検査7・まこさん OK 2026-07-30）══════════
 # entry_exit_matrix.md の E-c（Entry 指標の軸カタログ）の項目1つずつに、実装列との対応を持つ。
 # 検査7 が E-c の実文とこの表を機械照合する＝E-c を変えたのに表を直さない・表にあるのに実装が
@@ -847,8 +989,9 @@ AXIS_EC: list[dict] = [
     # トレンド/モメンタム
     dict(cat="トレンド/モメンタム", token="ADX", impl=[r"ADX\d+"], status="あり", note=""),
     dict(cat="トレンド/モメンタム", token="DI", impl=[r"DI差\d+"], status="あり", note=""),
-    dict(cat="トレンド/モメンタム", token="MACD(line/sig/hist)", impl=[r"MACD線%", r"MACDヒスト%"],
-         status="部分", note="シグナル線の単体列は無し（ヒスト＝線−シグナルに内包）"),
+    dict(cat="トレンド/モメンタム", token="MACD(line/sig/hist)",
+         impl=[r"MACD線%", r"MACDシグナル線%", r"MACDヒスト%"],
+         status="あり", note="シグナル線の単体列は 2026-07-30 に追加（検査7 の指摘を解消）"),
     dict(cat="トレンド/モメンタム", token="RSI(7/14/21)", impl=[r"RSI\d+"], status="あり",
          note="実装は 7/9/14/21＝一覧より広い"),
     dict(cat="トレンド/モメンタム", token="ROC", impl=[r"ROC\d+"], status="あり", note=""),
@@ -868,8 +1011,8 @@ AXIS_EC: list[dict] = [
     dict(cat="ボラ", token="BB幅", impl=[r"BB幅\("], status="あり", note=""),
     dict(cat="ボラ", token="realized_vol", impl=[r"realized_vol\d+"], status="あり", note=""),
     dict(cat="ボラ", token="donchian幅", impl=[r"Donchian幅%\d+"], status="あり", note=""),
-    dict(cat="ボラ", token="zscore_return", impl=[], status="未実装",
-         note="実装は価格基準の zscore（定義が違う）＝リターン基準は未実装"),
+    dict(cat="ボラ", token="zscore_return", impl=[r"zscore_return\d+"], status="あり",
+         note="対数リターン基準を 2026-07-30 に追加・価格基準の zscore は別列で残す"),
     # 出来高
     dict(cat="出来高", token="volume_ratio", impl=[r"volume_ratio\d+"], status="あり", note=""),
     dict(cat="出来高", token="OBV傾き", impl=[r"OBV傾き\d+"], status="あり", note=""),
@@ -878,15 +1021,15 @@ AXIS_EC: list[dict] = [
     # ローソク
     dict(cat="ローソク", token="engulfing", impl=[r"包み足"], status="あり", note=""),
     dict(cat="ローソク", token="pinbar", impl=[r"pinbar"], status="あり", note=""),
-    dict(cat="ローソク", token="harami孕み足", impl=[], status="未実装",
-         note="2026-07-30 に軸カタログへ追加・カタログ実装は未着手"),
+    dict(cat="ローソク", token="harami孕み足", impl=[r"孕み足"], status="あり",
+         note="教科書定義で 2026-07-30 に実装（検査7 の指摘を解消）"),
     dict(cat="ローソク", token="streak", impl=[r"連続本数"], status="あり", note=""),
     dict(cat="ローソク", token="body_ratio", impl=[r"body比"], status="あり", note=""),
     dict(cat="ローソク", token="wick_ratio", impl=[r"上ヒゲ比", r"下ヒゲ比"], status="あり", note=""),
     # 形(W窓)
     dict(cat="形(W窓)", token="V", impl=[r"形スコア\d+"], status="あり", note="形スコア V=+2"),
-    dict(cat="形(W窓)", token="W", impl=[], status="未実装",
-         note="形スコアは2区間＝W（4区間）は表現できない"),
+    dict(cat="形(W窓)", token="W", impl=[r"W字\("], status="あり",
+         note="教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）"),
     dict(cat="形(W窓)", token="M", impl=[r"形スコア\d+"], status="あり", note="形スコア M=−2"),
     dict(cat="形(W窓)", token="swing_dist", impl=[r"swing高値距離%\d+", r"swing安値距離%\d+"], status="あり", note=""),
     dict(cat="形(W窓)", token="bars_since_high-low",
@@ -900,8 +1043,9 @@ AXIS_EC: list[dict] = [
     dict(cat="位置", token="supertrend", impl=[r"close vs Supertrend%"], status="あり", note=""),
     dict(cat="位置", token="high-low", impl=[r"close vs \d+本高値%", r"close vs \d+本安値%"], status="あり", note=""),
     # 構造
-    dict(cat="構造", token="pivot(PP/R/S)", impl=[r"close vs pivotPP%\d+"], status="部分",
-         note="PP のみ・R1/S1 等の水準は未実装"),
+    dict(cat="構造", token="pivot(PP/R/S)",
+         impl=[r"close vs pivotPP%\d+", r"close vs pivotR1%\d+", r"close vs pivotS1%\d+"], status="あり",
+         note="R1/S1 を 2026-07-30 に追加＝PP と同じ移動窓の変形（流儀は定義表に明記）"),
     dict(cat="構造", token="fib(382-786)", impl=[r"fib位置\d+"], status="あり",
          note="連続位置 0〜1 として実装＝382/618 等の水準は閾値側で表現"),
     dict(cat="構造", token="VP(VAH/VAL/POC)",
