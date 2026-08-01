@@ -43,6 +43,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import eval_engine as ee            # 手数料の確定値（数字を書き写さない）
 import periods                      # 期間の正本（H8・日付リテラルを書かない）
 import score as judge               # 審判＝import のみ・無変更（H13）
+from tuner_judgement import slot_usage   # 枠の占有の数え方は判定表と同じものを使う（二重に持たない）
 
 TARGET_MONTHLY_DEFAULT = 600.00 - 137.46   # まこさん確定のマイルストーン − E36 の実測（台帳）
 
@@ -71,45 +72,6 @@ def check_split(nets: np.ndarray, total: float, tol: float = 0.5) -> None:
     if abs(got - total) > tol:
         raise SystemExit(f"[逆算エラー] 1玉ずつの合計 ${got:,.2f} が全体の net ${total:,.2f} と一致しない"
                          f"＝分け方が壊れている（この材料は使えない）")
-
-
-def slot_usage(t: pd.DataFrame, start, end) -> dict:
-    """予算 0.12 BTC の枠をどれだけ使っているか（H1）と、枠の回転から出る件数の天井。
-
-    同時保有の合計を時系列で追う（score.assert_position_cap と同じ数え方・あちらは改造しない）。
-    ★件数を増やせるかは「機会があるか」だけでなく「枠が空いているか」で決まる。
-    """
-    et = pd.to_datetime(t["entry_time"]).tolist()
-    xt = pd.to_datetime(t["exit_time"]).tolist()
-    sz = t["size_btc"].astype(float).tolist()
-    ev = [(et[i], sz[i]) for i in range(len(t))] + [(xt[i], -sz[i]) for i in range(len(t))]
-    ev.sort(key=lambda z: (z[0], z[1]))
-    cur = mx = 0.0
-    prev = pd.Timestamp(start)
-    area = 0.0                                   # 合計 BTC×秒（時間で重みづけした平均を出すため）
-    busy_sec = 0.0                               # 1玉でも持っていた秒数
-    for ts, s in ev:
-        dt = max((pd.Timestamp(ts) - prev).total_seconds(), 0.0)
-        area += cur * dt
-        if cur > 1e-12:
-            busy_sec += dt
-        prev = pd.Timestamp(ts)
-        cur = round(cur + s, 9)
-        mx = max(mx, cur)
-    total_sec = max((pd.Timestamp(end) - pd.Timestamp(start)).total_seconds(), 1.0)
-    hold = t["hold_min"].astype(float) if "hold_min" in t.columns else None
-    lot = float(np.median(t["size_btc"].astype(float)))
-    cap = float(ee.POSITION_CAP_BTC)
-    slots = int(cap / lot) if lot > 0 else 0
-    ceil_per_day = None
-    if hold is not None and len(hold) and float(hold.median()) > 0:
-        ceil_per_day = slots * (24 * 60 / float(hold.median()))
-    return {"max_btc": mx, "avg_btc": area / total_sec, "cap": cap,
-            "busy_ratio": busy_sec / total_sec, "lot": lot, "slots": slots,
-            "hold_med": float(hold.median()) if hold is not None and len(hold) else None,
-            "hold_mean": float(hold.mean()) if hold is not None and len(hold) else None,
-            "hold_p75": float(hold.quantile(0.75)) if hold is not None and len(hold) else None,
-            "ceil_per_day": ceil_per_day}
 
 
 def describe(x: np.ndarray) -> dict:
@@ -229,7 +191,8 @@ def analyse(t: pd.DataFrame, start, end, target_monthly: float) -> dict:
           f" ／ 時間で重みづけした平均 {su['avg_btc']:.4f} BTC（枠の {su['avg_btc'] / su['cap'] * 100:.1f}%）")
     print(f"  1玉でも持っていた時間の割合 {su['busy_ratio'] * 100:.1f}%")
     if su["hold_med"] is not None:
-        print(f"  保有時間: 中央値 {su['hold_med']:.0f}分 ／ 平均 {su['hold_mean']:.0f}分 ／ 上位25% {su['hold_p75']:.0f}分")
+        hold = t["hold_min"].astype(float)
+        print(f"  保有時間: 中央値 {su['hold_med']:.0f}分 ／ 平均 {hold.mean():.0f}分 ／ 上位25% {hold.quantile(0.75):.0f}分")
         print(f"  枠を全部使って回した場合の1日の件数の上限 = {su['ceil_per_day']:,.0f} 件/日"
               f"（{su['slots']} 個 × 24時間 ÷ 保有中央値 {su['hold_med']:.0f}分）")
         print(f"  いまは {len(t) / days:.2f} 件/日 ＝ 上限の {len(t) / days / su['ceil_per_day'] * 100:.1f}%")

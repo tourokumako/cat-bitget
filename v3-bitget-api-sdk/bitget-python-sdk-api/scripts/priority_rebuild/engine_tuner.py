@@ -171,23 +171,68 @@ def catalog_size() -> tuple[int, int] | None:
         return None
 
 
-def _print_coverage(ad, logic_id: str) -> None:
-    """いま触れている列と、カタログ全体との比を出す（黙って落としているのでなく、そもそも候補に無い）。"""
-    cov = getattr(ad, "coverage", None)
-    if cov is None:
-        print("[網羅度] この接続ファイルは触れる列の一覧を返さない＝分子を出せない")
-        return
-    touched = list(cov(logic_id))
+def catalog_columns() -> set | None:
+    """指標カタログの列名の集合（指標名__時間足）。網羅度の分母の中身＝名前で照合するため。"""
+    try:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            import observe_diag as od
+            cfg = od.load_config()
+            names = [n for n, _fn, _d in od.build_catalog(cfg)]
+            tfs = list(cfg["timeframes"])
+        return {f"{n}__{tf}" for n in names for tf in tfs}
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[網羅度] 指標カタログの列名を読めなかった: {e}")
+        return None
+
+
+def _print_coverage(ad, logic_id: str, df: pd.DataFrame | None = None) -> None:
+    """網羅度＝カタログのどれだけに触れているか。★3つを書き分ける（監査 根拠4・歩5 の2回目）。
+
+    直す前は「この探索が触れる列 N本」の1つしか出しておらず、ロジックが固定で読んでいる列
+    （stoch_k・dev_z・ATR・レンジ幾何など）が入っていなかった。数えていたのは「探索が選べる
+    確認部品」だけで、名前がそれを表していなかった＝数字が実態より小さく見えていた。
+    """
     size = catalog_size()
     if size is None:
-        print(f"[網羅度] この探索が触れる列 {len(touched)}本: {', '.join(touched)}")
+        print("[網羅度] 指標カタログを読めない＝分母を出せない")
         return
     n_ind, n_tf = size
     total = n_ind * n_tf
-    print(f"[網羅度] 指標カタログ {n_ind}種 × 足 {n_tf}種 = {total}列 ／ "
-          f"この探索が触れる列 {len(touched)}本 = {len(touched) / total * 100:.2f}%")
-    print(f"         触れる列: {', '.join(touched)}")
-    print("         ＝残りは試していない。落としたのでなく、候補にそもそも入っていない（要件 R3 が未着手）。")
+    print(f"[網羅度] 分母＝指標カタログ {n_ind}種 × 足 {n_tf}種 = {total}列")
+
+    # ① 探索が動かせる列（＝試行ごとに選び替えられるもの）
+    cov = getattr(ad, "coverage", None)
+    if cov is None:
+        print("  ① 探索が動かせる列: この接続ファイルは一覧を返さない＝数えられない")
+    else:
+        touched = list(cov(logic_id))
+        print(f"  ① 探索が動かせる列 {len(touched)}本 = {len(touched) / total * 100:.2f}%"
+              f"（{', '.join(touched) if touched else 'なし'}）")
+
+    # ② ロジックが実際に読む列（接続ファイルが宣言していれば）
+    reads = getattr(ad, "columns_read", None)
+    if reads is None:
+        print("  ② ロジックが実際に読む列: 宣言が無い＝数えられない。"
+              "一枚岩の実装は材料を宣言しないため（歩6 でレシピ形式へ移すと機械で数えられる）。")
+    else:
+        rd = list(reads(logic_id))
+        print(f"  ② ロジックが実際に読む列 {len(rd)}本 = {len(rd) / total * 100:.2f}%")
+
+    # ③ 用意されているデータのうち、カタログの名前と一致する列（機械で数える）
+    if df is not None:
+        cat = catalog_columns()
+        if cat is not None:
+            hit = sorted(set(df.columns) & cat)
+            print(f"  ③ 用意されたデータのうちカタログ名と一致する列 {len(hit)}本"
+                  f" = {len(hit) / total * 100:.2f}%")
+            if not hit:
+                print("     ＝0本。部品が手で名前を付けられていて、カタログの名前を持たない"
+                      "（例 e38_htf_roc24_2h と ROC24__2h は同じ式でも名前が違う）。"
+                      "だから名前では数えられない。")
+    print("  ★正しく数えられるのはレシピ形式に移してから（材料を ファミリー×期間×時間足 で宣言するため）。"
+          "新しい生成器 engine_tuner_gen.py は既に機械で数えている（--dry-run の網羅度）。")
+    print("  ★残りは試していない。落としたのでなく、候補にそもそも入っていない（要件 R3）。")
 
 
 def _record_timing(strategy: str, logic: str, load_sec: float, trials: int,
@@ -396,7 +441,7 @@ def main() -> None:
         ad, [(SEARCH_START, SEARCH_END), (CONFIRM_START, CONFIRM_END)], WARM, use_cache=not a.no_cache)
     t_load = time.time() - t0
     print(f"[共通部分] 探索スライス {len(df_s):,} バー／確認スライス {len(df_c):,} バー（{t_load:.0f}秒）")
-    _print_coverage(ad, a.logic)
+    _print_coverage(ad, a.logic, df_s)
 
     bank = ad.series_bank(df_s[df_s["ts"] >= SEARCH_START])
     space = _resolve_space(ad.space(a.logic), bank)

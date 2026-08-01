@@ -59,6 +59,7 @@ import pandas as pd
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
+import eval_engine as ee            # 予算の上限 POSITION_CAP_BTC（数字を書き写さない・H1）
 import periods                      # 期間の正本（H8・ここに日付リテラルを書かない）
 import score as judge               # 審判＝import のみ・無変更（H13）
 import tuner_stats                  # 合格ライン DSR_PASS / PBO_PASS（H11 が正本）
@@ -300,6 +301,69 @@ def _row_b4(base, bands, sr: dict) -> tuple[str, str, str]:
     return UNKNOWN, label, "— 判定不能（帯ごとの比較が出ていない）"
 
 
+def slot_usage(t: pd.DataFrame, start, end) -> dict:
+    """予算 0.12 BTC の枠をどれだけ使っているか（監査 4-13・要件 R14・H1）。
+
+    ★なぜ判定表に要るか＝目的関数が単独 net だけだと、探索は積み増しの上限を上げ切る方向に押す。
+      予算 0.12 BTC は全戦略の共有枠なので、1本のロジックが枠を食えば他が建てられなくなる。
+      その量が見えないと、単独 net が良いだけの設定を採ってしまう。
+    数え方は score.assert_position_cap と同じ（同時保有の合計を時系列で追う）。あちらは改造しない。
+    """
+    if t is None or not len(t):
+        return {}
+    et = pd.to_datetime(t["entry_time"]).tolist()
+    xt = pd.to_datetime(t["exit_time"]).tolist()
+    sz = t["size_btc"].astype(float).tolist()
+    ev = [(et[i], sz[i]) for i in range(len(t))] + [(xt[i], -sz[i]) for i in range(len(t))]
+    ev.sort(key=lambda z: (z[0], z[1]))          # 同時刻は決済（マイナス）を先に処理
+    cur = mx = 0.0
+    prev = pd.Timestamp(start)
+    area = 0.0                                   # BTC×秒の合計（時間で重みづけした平均を出すため）
+    busy_sec = 0.0                               # 1玉でも持っていた秒数
+    for ts, s in ev:
+        dt = max((pd.Timestamp(ts) - prev).total_seconds(), 0.0)
+        area += cur * dt
+        if cur > 1e-12:
+            busy_sec += dt
+        prev = pd.Timestamp(ts)
+        cur = round(cur + s, 9)
+        mx = max(mx, cur)
+    total_sec = max((pd.Timestamp(end) - pd.Timestamp(start)).total_seconds(), 1.0)
+    hold = t["hold_min"].astype(float) if "hold_min" in t.columns else None
+    lot = float(t["size_btc"].astype(float).median())
+    cap = float(ee.POSITION_CAP_BTC)
+    slots = int(cap / lot) if lot > 0 else 0
+    ceil_per_day = None
+    if hold is not None and len(hold) and float(hold.median()) > 0:
+        ceil_per_day = slots * (24 * 60 / float(hold.median()))
+    return {"max_btc": mx, "avg_btc": area / total_sec, "cap": cap,
+            "busy_ratio": busy_sec / total_sec, "lot": lot, "slots": slots,
+            "hold_med": float(hold.median()) if hold is not None and len(hold) else None,
+            "ceil_per_day": ceil_per_day}
+
+
+def _row_slots(base, rs, sr: dict) -> tuple[str, str, str]:
+    """枠の占有（監査 4-13）。合否には使わない＝予算 0.12 は全戦略の共有枠で、1本では良し悪しを
+    判定できないため（C の原則）。上限を決めたくなったら設定 stop_rules の slot_max_btc で足せる。"""
+    label = "枠の占有（予算 0.12 BTC は全戦略の共有枠・合否には使わない）"
+    t = rs.get("t")
+    su = slot_usage(t, SEARCH_START, SEARCH_END) if t is not None else {}
+    if not su:
+        return NA, label, "— 売買記録が渡されていないので測れない"
+    txt = (f"最大 {su['max_btc']:.4f} BTC（枠の {su['max_btc'] / su['cap'] * 100:.1f}%）"
+           f" ／ 時間で重みづけした平均 {su['avg_btc']:.4f} BTC（枠の {su['avg_btc'] / su['cap'] * 100:.1f}%）"
+           f" ／ 1玉でも持っていた時間 {su['busy_ratio'] * 100:.1f}%")
+    if su.get("hold_med") is not None:
+        txt += (f" ／ 保有中央値 {su['hold_med']:.0f}分 ＝ 枠を全部回した場合の上限"
+                f" {su['ceil_per_day']:,.0f} 件/日（{su['slots']} 枠）")
+    cap_max = sr.get("slot_max_btc")
+    if cap_max is not None:
+        ok = su["max_btc"] <= cap_max
+        return ((PASS if ok else FAIL), label.replace("合否には使わない", f"上限 {cap_max} BTC"),
+                txt + ("  ✅" if ok else f"  ❌ 上限 {cap_max} BTC を超えている"))
+    return NA, label, txt
+
+
 def _row_goal(rs, sr: dict) -> tuple[str, str, str]:
     """★参考の行（まこさん承認 2026-08-01・案1）＝月いくら稼いでいるか・担う額にいくら足りないか。
 
@@ -357,6 +421,8 @@ def build_rows(base, rs, rc, min_per_day, stats: dict | None, n_kept: int,
     st, lab, txt = _row_b4(base, bands, sr)
     rows.append(("B4", lab, txt, st))
     rows += _rows_b5b6(stats, n_kept)
+    st, lab, txt = _row_slots(base, rs, sr)
+    rows.append(("B7", lab, txt, st))
     st, lab, txt = _row_goal(rs, sr)
     rows.append(("参考", lab, txt, st))
     rows.append(("C", "目標額（月 net $1,900）に届いたか",
@@ -495,7 +561,29 @@ def _cases() -> list[tuple[str, dict]]:
          dict(base=base_a, rs=rs_a, rc=rc_a, min_per_day=5.0, stats=stats_ok, n_kept=90,
               rules={"delta_net": 20.0, "n_max": 100, "atr_band_edges": edges},
               rfloor=5.0, trials=150, stage_bests=[100.0, 112.0, 118.0], bands=bands_ok)),
+        ("⑨ 売買記録つき＝B7 枠の占有が出る（合否には使わない）",
+         dict(base=base_a, rs={**rs_a, "t": _slot_case()}, rc=rc_a, min_per_day=5.0,
+              stats=stats_ok, n_kept=90,
+              rules={"delta_net": 20.0, "n_max": 100, "atr_band_edges": edges},
+              rfloor=5.0, trials=150, stage_bests=[100.0, 112.0, 118.0], bands=bands_ok)),
+        ("⑩ 同じ売買記録で、枠の上限 0.006 BTC を設定＝B7 が不合格になる",
+         dict(base=base_a, rs={**rs_a, "t": _slot_case()}, rc=rc_a, min_per_day=5.0,
+              stats=stats_ok, n_kept=90,
+              rules={"delta_net": 20.0, "n_max": 100, "atr_band_edges": edges,
+                     "slot_max_btc": 0.006},
+              rfloor=5.0, trials=150, stage_bests=[100.0, 112.0, 118.0], bands=bands_ok)),
     ]
+
+
+def _slot_case() -> pd.DataFrame:
+    """枠の占有の検収に使う売買記録（合成）。2玉が15分だけ重なる＝最大 0.012 BTC。"""
+    t0 = SEARCH_START
+    return pd.DataFrame({
+        "entry_time": [t0, t0 + pd.Timedelta(minutes=15)],
+        "exit_time": [t0 + pd.Timedelta(minutes=30), t0 + pd.Timedelta(minutes=45)],
+        "size_btc": [0.006, 0.006],
+        "hold_min": [30.0, 30.0],
+    })
 
 
 class _StubJudge:
@@ -552,11 +640,11 @@ STEP1_BANDS_MD5 = "ab1f16299bf309d0b580f7749df6cc84"
 #      判定が直ったことの証拠は、下の番人（⑤土台なしで合格を出さない ⑥段が無いと A1 は判定不能
 #      ⑦判定不能を結論に数える）と、--selftest が印字する表そのもの。md5 は「以後うっかり変えた」を
 #      検出する道具として使う。
-STEP2_TABLE_MD5: str | None = "a0cafab70b87e00c4ef18491208e216d"
+STEP2_TABLE_MD5: str | None = "58e835f46690cc399823b417c7aeead4"
 STEP2_BANDS_MD5: str | None = "ab1f16299bf309d0b580f7749df6cc84"
-#   ↑ 2026-08-01 の第2段の実測。内訳＝A1 の代用の廃止・B3 の役割下限の強制・土台なしの合否の新設
-#     ＋まこさん承認の案1（土台なしの下限 $0 を既定にする・月いくら稼いでいるかの「参考」の行を足す）。
-#     ATR% 帯は第2段で1行も触っていないので、md5 が第1段のままであること自体が証拠になる。
+#   ↑ 2026-08-01 の実測。内訳＝1回目（A1 の代用の廃止・B3 の役割下限の強制・土台なしの合否の新設
+#     ＋案1 の $0 と「参考」の行）＋2回目（B7 枠の占有の行の新設）。
+#     ATR% 帯は1回目からずっと1行も触っていないので、md5 が第1段のままであること自体が証拠になる。
 
 
 def run_identity() -> int:
@@ -670,6 +758,27 @@ def _sentinels() -> list[str]:
     if st10 != NA:
         ng.append(f"⑨ 参考の行が合否に入っている（{st10}）＝表示だけのはず")
 
+    # ⑩ 枠の占有の既知答え（電卓で出せる合成データ・監査 4-13）
+    #    2玉 0.006 BTC が 15分だけ重なる → 最大 0.012 ／ 1時間の窓で時間平均 0.006 ／ 埋まり 75%
+    tt = _slot_case()
+    su = slot_usage(tt, SEARCH_START, SEARCH_START + pd.Timedelta(hours=1))
+    if abs(su["max_btc"] - 0.012) > 1e-9:
+        ng.append(f"⑩ 枠の最大の既知答え不一致（0.012 のはずが {su['max_btc']}）")
+    if abs(su["avg_btc"] - 0.006) > 1e-9:
+        ng.append(f"⑩ 枠の時間平均の既知答え不一致（0.006 のはずが {su['avg_btc']}）")
+    if abs(su["busy_ratio"] - 0.75) > 1e-9:
+        ng.append(f"⑩ 埋まっていた時間の割合の既知答え不一致（0.75 のはずが {su['busy_ratio']}）")
+    if su["slots"] != 20 or abs(su["ceil_per_day"] - 960.0) > 1e-9:
+        ng.append(f"⑩ 枠の数と件数の上限の既知答え不一致（20 枠・960 件/日 のはずが "
+                  f"{su['slots']} 枠・{su['ceil_per_day']}）")
+    # ⑪ 枠の占有は既定では合否に入らない。上限を設定した時だけ合否になる
+    if _row_slots(None, {"t": tt}, {})[0] != NA:
+        ng.append("⑪ 枠の占有が既定で合否に入っている＝表示だけのはず")
+    if _row_slots(None, {"t": tt}, {"slot_max_btc": 0.006})[0] != FAIL:
+        ng.append("⑪ 上限 0.006 BTC を超えているのに落ちない")
+    if _row_slots(None, {"t": tt}, {"slot_max_btc": 0.02})[0] != PASS:
+        ng.append("⑪ 上限 0.02 BTC の内側なのに通らない")
+
     # ⑥ 段が無いのに A1 が合格になる代用が残っていないか
     kw2 = dict(kw, base={"search": {"total": 0.0}, "confirm": {"total": 0.0}}, stage_bests=None)
     with contextlib.redirect_stdout(io.StringIO()):
@@ -711,7 +820,8 @@ def selftest() -> int:
     ng = _sentinels()
     lines.append("\n[番人] ①役割下限を割る線で止まる ②決定の明示があれば通る ③下限ちょうどは通る "
                  "④台帳の実値でも同じ ⑤土台なしで合格を出さない ⑥段が無いと A1 は判定不能 "
-                 "⑦判定不能を数える ⑧土台なしの下限 $0 ⑨参考の行は合否に入らない")
+                 "⑦判定不能を数える ⑧土台なしの下限 $0 ⑨参考の行は合否に入らない "
+                 "⑩枠の占有の既知答え ⑪枠の占有は既定では合否に入らない")
     for x in ng:
         lines.append(f"  ❌ {x}")
     if not ng:
