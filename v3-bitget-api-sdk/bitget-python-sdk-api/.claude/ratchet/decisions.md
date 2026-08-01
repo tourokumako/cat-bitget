@@ -1,4 +1,4 @@
-<!-- DECISIONS_HASH=8fd53e0e8d08a3df -->
+<!-- DECISIONS_HASH=76bf602de843d939 -->
 # まこさんが決めたこと（gen_decisions.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は正本ファイルから機械で集めています。
@@ -31,16 +31,22 @@ python3 scripts/priority_rebuild/gen_decisions.py --verify
 - next_step.md
 - e38_logics.json
 - observe_config.json
+- session_worklog_20260801.md
 - session_worklog_20260730.md
 - session_worklog_20260727.md
 - session_worklog_20260726.md
 - session_worklog_20260725.md
-- session_worklog_20260724.md
 
-## 決定の一覧（152 件・新しい順）
+## 決定の一覧（133 件・新しい順）
 
 | 日付 | 印 | 決めたこと | 出どころ |
 |---|---|---|---|
+| 2026-08-01 | OK | …せん。実装中に見つかった設計書の事実誤差は1件で、§6 に書きました（→§8 でまこさん OK・訂正適用済み）。 | session_worklog_20260801.md:7 |
+| 2026-08-01 | OK | §8 確認3点の承認と適用（まこさん OK 2026-08-01・逐語「1,2,3すべてOK」） | session_worklog_20260801.md:68 |
+| 2026-08-01 | OK | …係を記録しました。設計の形式（cross＝2本足）は変えていません。→ §8 でまこさん OK・設計書の行6 を訂正済み。 | session_worklog_20260801.md:60 |
+| 2026-08-01 | 指示 | §1 指示と解釈（まこさん指示 2026-08-01「監査フィードバック対応と、前回セッションからの続きを進めて」） | session_worklog_20260801.md:5 |
+| 2026-08-01 | OK | （済み）fix_map 歩3 状態更新と設計書 §8 行6 の訂正＝まこさん OK 2026-08-01 で適用済み（worklog 20260801 §8）。 | next_step.md:54 |
+| 2026-08-01 | OK | 歩4＝生成器から（確認3点は 2026-08-01 にまこさん OK「1,2,3すべてOK」＝fix_map 歩3 完了・設計書 §8 行6 訂正・commit まで適用済み）。 | next_step.md:21 |
 | 2026-07-30 | 指示 | §17 未実装の扱い（まこさん指示 2026-07-30「未実装の項目は次セッションで実装すべきなのでは」） | session_worklog_20260730.md:91 |
 | 2026-07-30 | 確定 | §2 解釈ゲートの強制化（まこさん確定 2026-07-30） | session_worklog_20260730.md:9 |
 | 2026-07-30 | OK | §14 fix_map の状態更新（まこさん OK 2026-07-30「1はOK」） | session_worklog_20260730.md:74 |
@@ -53,11 +59,10 @@ python3 scripts/priority_rebuild/gen_decisions.py --verify
 | 2026-07-30 | 指示 | §5 出口の順番（まこさん指示 2026-07-30・逐語） | session_worklog_20260730.md:21 |
 | 2026-07-30 | 確定 | §4 窓の統一（まこさん確定 2026-07-30・逐語） | session_worklog_20260730.md:17 |
 | 2026-07-30 | OK | …その場しのぎでhookを増やしたくない」→ gen_fix_map.py 新設（まこさん OK）。指摘の側（CP2 監査34件の番号・見出し・核心逐語）を監査レポートから機械抽出＝CC の手を経由しない。対応の json と網羅照合（欠け・余りで停止）＋出典逐語の実在照合（捏造で停止）＋ハッシュ改変検出。番人 pass。実際に CC の誤引用等を4件捕まえ… | session_worklog_20260730.md:15 |
+| 2026-07-30 | 承認 | cc_role §1.4.6.1.A に項16 を追加（まこさん承認）＝「検収用実例は対象実装との1対1突き合わせ表（列・値・執行）を必須にする。突き合わせ無しの宣言は類型 G（確認したフリ）」＝今回の CC の欠陥（観点⑦）の物理化（L-372）。 | session_worklog_20260730.md:138 |
 | 2026-07-30 | 確定 | §3 fix_map＝修正対応表の機械生成方式（まこさん確定 2026-07-30） | session_worklog_20260730.md:13 |
 | 2026-07-30 | 指示 | 追記2（まこさん指示「確認は新セッションでいい。ちゃんとWEBResearchするなりして、需給の仕組みについて調べてから進めて」）＝新セッションの需給タスクの最初に WebResearch ベースアップを必須化（next_step ⓪ に固定）。調べる項目＝メトリクス各列の公式定義・create_time の意味・比率の計算方法・OI の意味・CVD/タカ… | session_worklog_20260730.md:101 |
-| 2026-07-30 | 指示 | …*engine_tuner と observe_diag のどんな修正でも前提（まこさん指示 2026-07-30・絶対に読む）。 着手前に Read で開き、変更が触れる H を1項目ずつ照合して結果をチャットに出す。恒久の正本は fix_map の「前提」の節 ／ | next_step.md:9 |
-| 2026-07-30 | 指示 | …効く玉の範囲）。枝の順番はデータ（探索と PDCA の両方で調整できる・まこさん指示 2026-07-30）。 | next_step.md:52 |
-| 2026-07-30 | 指示 | 最初＝軸カタログの未実装をカタログへ実装する（まこさん指示 2026-07-30「未実装の項目は次セッションで実装すべき」） | next_step.md:21 |
+| 2026-07-30 | 指示 | …*engine_tuner と observe_diag のどんな修正でも前提（まこさん指示 2026-07-30・絶対に読む）。 着手前に Read で開き、変更が触れる H を1項目ずつ照合して結果をチャットに出す ／ | next_step.md:9 |
 | 2026-07-27 | 確定 | §26 終わりの条件の値を確定し、判定表を全項目埋めた（まこさん確定 2026-07-27・コミット 5079625） | session_worklog_20260727.md:988 |
 | 2026-07-27 | OK | §25 判定の1枚表＝土台との比較 B1・B2 を実装（まこさん OK 2026-07-27・コミット bb7badb） | session_worklog_20260727.md:934 |
 | 2026-07-27 | OK | §24 監査 提案2〜4 の設計と実装＝終わりの条件の書き分け・読み込みの短縮・DSR と PBO の実装（まこさん OK 2026-07-27） | session_worklog_20260727.md:845 |
@@ -143,28 +148,6 @@ python3 scripts/priority_rebuild/gen_decisions.py --verify
 | 2026-07-25 | 承認 | …値から床×tp_pct_k の固定% 1段TP・全量 maker＝スキャル幾何・まこさん承認 2026-07-25『段3 のセット粗探索をやり直し』）の型対決。tp_pct_k 1.0〜3.0＝手数料床の1〜3倍（k≥1＝床割れの物理禁止・幾何 a-priori）。pct 選択時 tp1_frac/tp2_target は不使用。 | e38_logics.json:477 |
 | 2026-07-25 | OK | …9/§20＝下端タッチ全体・浅い戻り床×2 で素の勝率62%・在庫36バー/日・まこさん OK 2026-07-25）＝現行 L1 の入口幾何＋S2 で確立した2軸確認（ボラ床＋上位足非過熱）。現行 L1（run_e37 経路・採用 priority1）は不変＝これは別ロジックの改良候補 | e38_logics.json:394 |
 | 2026-07-25 | 承認 | …戻す。ceil_filter=flat_up＝S2 は flat_up 型専用（まこさん承認 2026-07-25・根拠＝1回目探索の値決め窓 型別 down −$28／flat_up +$284・確認窓の数字は選定に不使用）。th_stochd14_2h の q_hi 0.8→0.95＝1回目探索で閾値が q80 上限に張り付いた解消（まこさん承認 同日… | e38_logics.json:170 |
-| 2026-07-24 | OK | 1. 設計書承認: e38_design.md（hash 0297ced5c72c0eea）にまこさん OK。 | session_worklog_20260724.md:52 |
-| 2026-07-24 | 承認 | §8 段1 実装その2＝E38 エンジン実装・番人4種・恒等証明・正式本走（設計書まこさん承認後・2026-07-24） | session_worklog_20260724.md:50 |
-| 2026-07-24 | 承認 | 4. エンジン e38_priority_stack.py は未実装＝設計書のまこさん承認待ち（設計書末尾「承認前にエンジン実装へ進まない」・フロー段1 完了条件の先頭）。 | session_worklog_20260724.md:47 |
-| 2026-07-24 | OK | …が style を無視）。まこさんがプレビューで確認中。git commit はまこさん OK 待ち。 | session_worklog_20260724.md:379 |
-| 2026-07-24 | 指示 | §27 e38_flow.md の可読性改善（まこさん指示 2026-07-24・gen_flow.py の型を修正） | session_worklog_20260724.md:369 |
-| 2026-07-24 | 確定 | 7. 次の一手（まこさん確定待ち）: S2 はまだ玉がないので observe_diag をそのまま向けられない。S2 の層1 観察をどう組むかまこさんが決める＝(a) 現行 v59d の玉を観察 (b) S2 のクルード版を一度回して玉を作り観察 (c) observe_diag に S2 用の節を足す（まこさん承認）。CC は自作しない・勝手に決めない。… | session_worklog_20260724.md:366 |
-| 2026-07-24 | 指示 | …2_entry_separation_probe.py は今後使わない（まこさん指示＝検証は observe_diag だけ）。段2 の目標最低ライン（§23）は確定済みで有効。段3 S2 の分離指標結果（§25）は自作 probe 由来＝参考に留め、正規の層1 は observe_diag で組み直す。 | session_worklog_20260724.md:364 |
-| 2026-07-24 | 承認 | 4. 是正＝物理強制 hook 新設（まこさん承認 "hookはそれでOKなので作って"）: .claude/hooks/enforce_observe_diag_only.sh（PreToolUse Bash・safety hook＝fast-mode でも有効＝暴走が fast-mode 中に起きたため）。python で /private/tmp・/t… | session_worklog_20260724.md:363 |
-| 2026-07-24 | 決定 | 3. まこさん決定: 検証は observe_diag.py 以外使わない（自作 probe 禁止）。物理強制する。 | session_worklog_20260724.md:362 |
-| 2026-07-24 | OK | 1. スロット初期値と json 置き場所＝まこさん OK（確認1・2）。実装着手はもう1点の確認後。 | session_worklog_20260724.md:35 |
-| 2026-07-24 | OK | §25 段3 S2 層1観察 本走の結果（まこさん OK 後・機械出力の逐語・出典: scratchpad/s2_entry_separation_out.txt） | session_worklog_20260724.md:331 |
-| 2026-07-24 | 決定 | 1. まこさん決定（このセッション）: (a) レジーム判定は E37 の RG-v5＋RG-v6（V25_K）を流用で OK（実体確認＝e38_logics.json global.regime v20_rg5+v25_adaptive_band／e38_priority_stack 159-160行が V25_K を prepare_df へ／e37._… | session_worklog_20260724.md:323 |
-| 2026-07-24 | OK | §24 段3 着手＝S2 戻り売り 層1観察の計画提出（2026-07-24・まこさん OK 後・計画提出まで＝本走 GO 待ち） | session_worklog_20260724.md:321 |
-| 2026-07-24 | OK | …実的な最低ラインを決めればいい」→ CC が最低ラインの候補2つを提示 → まこさん OK で確定。 | session_worklog_20260724.md:299 |
-| 2026-07-24 | 確定 | 7. 次の一手（まこさん確定待ち）: まこさんが「1日トレード数の目標 × 前提の1件単価」の組を確定 → worklog・next_step に記録 → 段2 完了（gen_flow --done 2）→ 段3 Entry 策定へ。層を飛ばさない（L-354）。 | session_worklog_20260724.md:294 |
-| 2026-07-24 | 決定 | …込んでいない。窓は採点窓 2026-03〜06 と探索窓 2024-04〜07（まこさん決定）の言及のみ。 | session_worklog_20260724.md:29 |
-| 2026-07-24 | OK | §22 段2 観察の本走＝結果（まこさん OK 後・機械出力の逐語・出典: scratchpad/stage2_amplitude_out.txt） | session_worklog_20260724.md:259 |
-| 2026-07-24 | 指示 | §20 段2 に「観察で現実値」を焼き込み＋セッション終了（まこさん指示 2026-07-24） | session_worklog_20260724.md:212 |
-| 2026-07-24 | 指示 | 3. 是正（まこさん指示「フローの自動生成 py から修正して」）: gen_flow.py TEMPLATE 段2 を「層1 観察（--plan 提出→OK→本走・カタログ全体の多次元観察）→層2（採否・候補選定に不使用）→層3（観察に根ざしたコンフルエンス入口で探索）」の順に書き換え、done_when に層1 記録を追加、forbidden に「層1・… | session_worklog_20260724.md:201 |
-| 2026-07-24 | 承認 | … 追記／gen_flow.py TEMPLATE 段2・段3 文言を3窓構成へ（まこさん承認の型変更・フロー再生成 hash 2c25ffeb9c87a5c1・段0/1 完了保持・verify OK）／window_similarity_ranking.md「まこさんの決定」節に追記。 | session_worklog_20260724.md:118 |
-| 2026-07-24 | OK | …探索窓=2位・距離1.78／確認窓=8位相当・距離2.26＝両方上位圏）→ まこさん OK で確定。値決めが4ヶ月フルに戻り、確認窓は採点窓直前＝時間近接も兼ねる（v59d が移った実績窓）。 | session_worklog_20260724.md:116 |
-| 2026-07-24 | 決定 | §13 段2 の窓構成＝3窓で確定（まこさん決定 2026-07-24）＋正本3つへ反映 | session_worklog_20260724.md:114 |
 | 2026-07-24 | 決定 | … net 目的関数の選定）。値決め＝探索窓のみ・確認窓は表示のみ・採点窓不使用（まこさん決定 2026-07-24・正本 window_similarity_ranking.md）。★logics 側の宣言は common_exit と同名キーを上書きできる（engine_tuner の解決順）。時間系の候補は役割（§8.6 スキャル）から逆算した枠内のみ… | e38_logics.json:428 |
 | 2026-07-24 | OK | E-a1/E-d2・S4 の対称・グリッド E38 #L4（まこさん OK 2026-07-24） | e38_logics.json:336 |
 | 2026-07-24 | OK | E-a3 の fade・下側対称・グリッド E38 #L3（まこさん OK 2026-07-24） | e38_logics.json:303 |
@@ -184,11 +167,9 @@ python3 scripts/priority_rebuild/gen_decisions.py --verify
 | 2026-06-22 | 指示 | <!-- ↑ require_read_before_work.sh ゲート3（近視眼防止・2026-06-22 まこさん指示）が読む機械可読マーカー。 | adopted_strategies.md:40 |
 | 2026-06-20 | 指示 | 作成: 2026-06-20（まこさん指示「過去に採用となった最終ロジック・スクリプトをどこかに記録してほしい」）／ 2026-06-27 全戦略ポートフォリオ地図に格上げ（まこさん指示「P1〜P4・P21〜P24・E35/E36 含む全戦略が1枚で見える場所が無いのが問題」）。 | adopted_strategies.md:3 |
 | 2024-04-01 | 確定 | …r。選んだ値のまま1回走らせて表示するだけ。選び直さない。暫定＝値決め窓と同一（まこさん確定 2026-07-30）のため B2 は判定不能表示。窓の決め直しは作り直し計画の歩5 ／ | adopted_strategies.md:108 |
-| 日付なし | 承認 | 3. 歩2 の設計を実装に進める前に CP3 監査へ出す（まこさん承認済みの手順）。 | next_step.md:72 |
-| 日付なし | OK | 6. fix_map 更新（まこさん OK「1はOK」）＝「決定-データ検査」と歩0 → 完了。gen_fix_map verify OK。 | next_step.md:64 |
-| 日付なし | 確定 | 3. 指標カタログ全96種が「一致検証済み」＝未検証0。 証明は3本柱＋定義表（まこさん確定の方式）＝①外部ライブラリ ta 照合51種一致 ②教科書の独立実装照合96種一致（新設 indicator_reference_diag.py） ③手計算の既知答え82箇所 ④定義表（定義・流儀・方向の意味）を検査出力へ機械印字。番人＝96種の網羅登録が selft… | next_step.md:61 |
-| 日付なし | 承認 | 本命＝歩2 条件データ形式の設計（まこさん承認済みの計画・fix_map 歩2） | next_step.md:44 |
-| 日付なし | 指示 | ⓪ 最初に WebResearch で需給の仕組みをベースアップする（まこさん指示・推測で進めない）。 調べる項目＝Binance Vision 先物メトリクス（BTCUSDT-metrics-*.zip）の各列の公式定義／create_time が期間の開始か終了か／sum_taker_long_short_vol_ratio・count_long_sho… | next_step.md:30 |
+| 日付なし | OK | git commit は未実施＝まこさん OK 待ち（変更＝indicator_reference_diag.py・observe_diag.py・engine_tuner_exec.py 新設・recipes/identity_s2_legacy.json 新設・worklog/lessons/next_step/WORKFLOW）。 | next_step.md:62 |
+| 日付なし | OK | …い（json → gen 再生成・手書きはハッシュ検出）。歩3 の状態更新もまこさん OK が出てから。 | next_step.md:41 |
+| 日付なし | OK | …ne_tuner_fix_map.md ／ 作り直しの正本。歩3 の状態更新はまこさん OK 待ち（下の確認1） ／ | next_step.md:14 |
 | 日付なし | 承認 | 設計書がまこさん承認済み。 | e38_flow.md:86 |
 | 日付なし | 決定 | 確定事項（まこさん決定） | e38_flow.md:19 |
 | 日付なし | 確定 | 観察の機械出力（振幅分布・現実的な件数×単価の範囲）が揃い、1日トレード数の目標と前提の1件単価がまこさん確定として worklog に記録されている。 | e38_flow.md:105 |

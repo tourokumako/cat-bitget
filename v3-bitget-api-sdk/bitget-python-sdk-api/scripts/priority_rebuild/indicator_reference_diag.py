@@ -1061,6 +1061,174 @@ AXIS_EC: list[dict] = [
 ]
 
 
+# ══ レンジ幾何列の登録（歩3 冒頭①・CP3 提案2-(a)・設計書 §2.3・まこさん GO 2026-07-30）═══
+# 正本ロジック＝scripts/dashboard/build_regime_gate_rg.py（RG ゾーンビルダー・視認校正3巡）。
+# ここは定義・流儀・因果性・既知答えの登録（実装列は observe_diag build_range_geometry が作る）。
+# ★条件の材料に使えるのは比率列（kind="ratio"）だけ（H6 価格非依存）。価格水準5列（kind="price"）は
+#   出口 placement の幾何参照（例 mid + f×(res_hi−mid)）専用＝閾値の材料には使えない（検証器 G6 が拒否）。
+RANGE_GEO_TF = "5m（1h ゾーンを足が閉じた時刻から ffill・状態機械は過去 close の逐次更新）"
+RANGE_GEO_REF: dict[str, dict] = {
+    "res_hi": dict(kind="price", teigi="レジスタンス帯の上端（1h 確定 fractal スイング高値を tol で束ねた帯・padding 込み）",
+                   ryugi="RG ゾーンビルダー（build_regime_gate_rg._zones_1h_rg・fractal j+2 確定＝L-179 型の確定遅延）",
+                   houkou="価格水準＝placement の幾何参照専用（条件の材料には使えない・H6）"),
+    "res_lo": dict(kind="price", teigi="レジスタンス帯の下端", ryugi="同上", houkou="同上"),
+    "sup_hi": dict(kind="price", teigi="サポート帯の上端", ryugi="同上", houkou="同上"),
+    "sup_lo": dict(kind="price", teigi="サポート帯の下端", ryugi="同上", houkou="同上"),
+    "mid": dict(kind="price", teigi="レンジ中央＝(res_lo + sup_hi) / 2（エンジン v11_mid と同式）",
+                ryugi="e37_scalp._apply_rg5_to_5m と同じ定義（帯の内側の中点）", houkou="同上"),
+    "W%": dict(kind="ratio", teigi="帯幅％＝(res_hi − sup_lo) / close × 100",
+               ryugi="エンジンの W（USD 幅）を close で割って%化（H6）", houkou="状態量＝大きいほど広いレンジ"),
+    "帯内位置%": dict(kind="ratio", teigi="上半分の帯内位置＝(close − mid) / (res_hi − mid)。mid=0・res_hi=1",
+                  ryugi="S2 入口の pos と同式（e38_logic_parts._pullback_short L95-99）。分母≤0 は欠損",
+                  houkou="順張り値＝1 に近いほど上端（戻り売りの場所）"),
+}
+
+
+def _range_geo_case(zone_touch: int, zone_lookback: int) -> pd.DataFrame:
+    """既知答え用の合成5分足。毎時間フラット close=100 で、スパイク時間だけ high=110（レジ束）／
+    low=90（サポ束）を置く＝1h fractal が電卓で追える形。close は常に 100＝上げトレンド状態機械は発火しない。"""
+    hours = max(zone_lookback, 25) + 40
+    n = hours * 12
+    c = np.full(n, 100.0)
+    h = np.full(n, 100.0)
+    l = np.full(n, 100.0)
+    k = max(int(zone_touch), 2) + 1
+    hi_hours = [hours - 12 - 6 * j for j in range(k)]          # 末尾から 12,18,24,… 時間前
+    lo_hours = [hours - 9 - 6 * j for j in range(k)]           # 末尾から 9,15,21,… 時間前
+    for hh_ in hi_hours:
+        h[hh_ * 12] = 110.0
+    for lh_ in lo_hours:
+        l[lh_ * 12] = 90.0
+    idx = pd.date_range("2024-01-01", periods=n, freq="5min")
+    return pd.DataFrame({"open": c, "high": h, "low": l, "close": c, "volume": np.full(n, 1.0)}, index=idx)
+
+
+def range_geo_known_check(geo_fn, zone_tol: float, zone_touch: int, zone_lookback: int) -> list[str]:
+    """既知答え＝合成バーの最終行で、帯の4隅・mid・W%・帯内位置% が電卓式と一致するか。
+    電卓式: res 帯＝110×(1∓tol/2)・sup 帯＝90×(1∓tol/2)・mid=(res_lo+sup_hi)/2・
+    W%=(res_hi−sup_lo)/100×100・帯内位置%=(100−mid)/(res_hi−mid)。geo_fn は観察側の実装
+    （observe_diag.build_range_geometry・adaptive_k=None＝固定 tol）を注入する＝実装と定義の照合。"""
+    ng = []
+    bars = _range_geo_case(zone_touch, zone_lookback)
+    geo = geo_fn(bars)
+    t = zone_tol
+    exp = {"res_lo": 110 * (1 - t / 2), "res_hi": 110 * (1 + t / 2),
+           "sup_lo": 90 * (1 - t / 2), "sup_hi": 90 * (1 + t / 2)}
+    exp["mid"] = (exp["res_lo"] + exp["sup_hi"]) / 2
+    exp["W%"] = (exp["res_hi"] - exp["sup_lo"]) / 100.0 * 100.0
+    exp["帯内位置%"] = (100.0 - exp["mid"]) / (exp["res_hi"] - exp["mid"])
+    last = geo.iloc[-1]
+    for col, want in exp.items():
+        got = float(last.get(col, np.nan))
+        if not np.isfinite(got) or abs(got - want) > 1e-9 * max(1.0, abs(want)):
+            ng.append(f"レンジ幾何 既知答え不一致: {col} 期待 {want:.10g} 実測 {got:.10g}")
+    missing = [c for c in RANGE_GEO_REF if c not in geo.columns]
+    if missing:
+        ng.append(f"レンジ幾何: 実装列が定義表より少ない {missing}")
+    extra = [c for c in geo.columns if c not in RANGE_GEO_REF]
+    if extra:
+        ng.append(f"レンジ幾何: 定義表に無い実装列 {extra}（登録なしの列は足せない）")
+    return ng
+
+
+# ══ 系統マップ（G3 同系統制限の正本・CP3 Q4・全 family を単一割当＝載っていない family は生成不可）══
+# 8系統＝トレンド／オシレーター／ボラ／出来高／ローソク／構造・位置／需給／時間帯（設計書 G3）。
+# 両属性の family は主用途で単一割当し、理由を note に書く（例＝MFI はオシレーター・CP3 の例示どおり）。
+FAMILY_LINEAGE: dict[str, dict] = {
+    # トレンド
+    "ADX": dict(k="トレンド", note="向きを持たないがトレンドの強さの計測が主用途（Wilder）"),
+    "DI差": dict(k="トレンド"), "MACD線%": dict(k="トレンド"), "MACDヒスト%": dict(k="トレンド"),
+    "MACDシグナル線%": dict(k="トレンド"), "EMA傾き": dict(k="トレンド"),
+    "Supertrend": dict(k="トレンド", note="位置系でもあるが符号がトレンドの向きそのもの＝主用途トレンド"),
+    "転換線": dict(k="トレンド", note="位置系でもあるが一目の転換判断が主用途"),
+    "基準線": dict(k="トレンド", note="同上"),
+    # オシレーター
+    "RSI": dict(k="オシレーター"), "ROC": dict(k="オシレーター"), "Stoch%K": dict(k="オシレーター"),
+    "Stoch%D": dict(k="オシレーター"), "RCI": dict(k="オシレーター"),
+    "zscore": dict(k="オシレーター"), "zscore_return": dict(k="オシレーター"),
+    "MFI": dict(k="オシレーター", note="出来高系でもあるが行き過ぎの計測が主用途（CP3 Q4 の例示どおり）"),
+    "BB%b": dict(k="オシレーター", note="ボラ由来だが 0〜1 の有界位置＝行き過ぎの計測が主用途"),
+    # ボラ
+    "ATR%": dict(k="ボラ"), "BB幅": dict(k="ボラ"), "realized_vol": dict(k="ボラ"), "Donchian幅": dict(k="ボラ"),
+    # 出来高
+    "volume_ratio": dict(k="出来高"),
+    "CMF": dict(k="出来高", note="オシレーター形でもあるが出来高加重の資金フローが主用途"),
+    "OBV傾き": dict(k="出来高", note="トレンド確認にも使うが出来高の積み上げが主用途"),
+    # ローソク
+    "包み足": dict(k="ローソク"), "孕み足": dict(k="ローソク"), "pinbar": dict(k="ローソク"),
+    "連続本数": dict(k="ローソク"), "body比": dict(k="ローソク"), "上ヒゲ比": dict(k="ローソク"),
+    "下ヒゲ比": dict(k="ローソク"),
+    # 構造・位置
+    "swing高値距離": dict(k="構造・位置"), "swing安値距離": dict(k="構造・位置"),
+    "高値からの経過バー": dict(k="構造・位置"), "安値からの経過バー": dict(k="構造・位置"),
+    "形スコア": dict(k="構造・位置", note="反転サインでもあるが W 窓の形＝構造の計測が主用途"),
+    "W字": dict(k="構造・位置", note="同上（ダブルボトム＝構造パターン）"),
+    "close vs EMA": dict(k="構造・位置"), "close vs SMA": dict(k="構造・位置"),
+    "close vs VWAP": dict(k="構造・位置"), "Keltner上": dict(k="構造・位置"), "Keltner下": dict(k="構造・位置"),
+    "n本高値": dict(k="構造・位置"), "n本安値": dict(k="構造・位置"),
+    "pivotPP": dict(k="構造・位置"), "pivotR1": dict(k="構造・位置"), "pivotS1": dict(k="構造・位置"),
+    "fib位置": dict(k="構造・位置"), "POC": dict(k="構造・位置"), "VAH": dict(k="構造・位置"),
+    "VAL": dict(k="構造・位置"), "S-Rタッチ数": dict(k="構造・位置"),
+    "レンジ幾何": dict(k="構造・位置", note="RG ゾーンビルダーの帯＝構造そのもの"),
+    # 需給・時間帯
+    "taker_ls": dict(k="需給"), "L-S比": dict(k="需給"), "CVD": dict(k="需給"),
+    "時刻": dict(k="時間帯"), "曜日": dict(k="時間帯"),
+}
+LINEAGE_KINDS = ("トレンド", "オシレーター", "ボラ", "出来高", "ローソク", "構造・位置", "需給", "時間帯")
+
+
+def lineage_coverage(families: list[str]) -> list[str]:
+    """系統マップに載っていない family の一覧（空であるべき＝載っていない family は生成不可・G3）。"""
+    return [f for f in dict.fromkeys(families) if f not in FAMILY_LINEAGE]
+
+
+# ══ 名前つき定数レジストリ（G6・設計書 §2.4-②・出典必須・レジストリに無い名前は使えない）══════
+# 教科書の固定水準＋本プロジェクトの物理定数。値の一覧は §11-11 でまこさんの承認を受ける。
+# 実装定数（SCALP_FLOOR 等）はレジストリの値が実体とずれないよう const_registry_live_check で機械照合する。
+CONST_REGISTRY: dict[str, dict] = {
+    "RSI_OB": dict(value=70.0, imi="RSI の買われ過ぎ水準", source="Wilder 1978（technical KB §4）"),
+    "RSI_OS": dict(value=30.0, imi="RSI の売られ過ぎ水準", source="Wilder 1978（technical KB §4）"),
+    "STOCH_OB": dict(value=80.0, imi="Stochastic の買われ過ぎ水準", source="Lane（technical KB §4）"),
+    "STOCH_OS": dict(value=20.0, imi="Stochastic の売られ過ぎ水準", source="Lane（technical KB §4）"),
+    "ADX_TREND": dict(value=25.0, imi="ADX のトレンド成立の目安", source="Wilder 1978（technical KB §4）"),
+    "NEUTRAL_0": dict(value=0.0, imi="差・乖離系の中立点", source="指標の定義（中立点）"),
+    "MID_50": dict(value=50.0, imi="0〜100 型オシレーターの中立点", source="指標の定義（中立点）"),
+    "FULL_100": dict(value=100.0, imi="0〜100 型オシレーターの上端", source="指標の定義"),
+    "SCALP_FLOOR": dict(value=0.0008, imi="TP 武装の手数料床 0.08%（maker 往復の約2.9倍）",
+                        source="e37_scalp.py SCALP_FLOOR（a-priori・exchange_spec H4 から逆算）"),
+    "V11_SL_BUF": dict(value=0.0005, imi="反対側ゾーン手前バッファ 0.05%（ゾーンのすぐ外）",
+                       source="e37_scalp.py V10_SL_BUF（KB §4・a-priori）"),
+    "BE_TTL_BARS": dict(value=24.0, imi="建値フロア待機の TTL（5分×24本＝120分・v31 型）",
+                        source="e38_logic_parts.py BE_TTL_BARS（v31 と同一）"),
+    "TOL_SR": dict(value=0.003, imi="サポレジ・タッチ判定の許容幅 0.3%",
+                   source="observe_config sr_tol（S-Rタッチ数と同じ幅）"),
+}
+
+
+def const_registry_live_check(live: dict[str, float]) -> list[str]:
+    """実装定数とレジストリの値のずれを機械照合する（ずれ＝どちらかが黙って動いた＝止める）。
+    live＝{定数名: 実体の値}（呼び出し側が実モジュールから渡す＝ここで import しない）。"""
+    ng = []
+    for name, v in live.items():
+        r = CONST_REGISTRY.get(name)
+        if r is None:
+            ng.append(f"定数レジストリに未登録: {name}（レジストリに無い名前は使えない・G6）")
+        elif abs(float(r["value"]) - float(v)) > 1e-12:
+            ng.append(f"定数レジストリと実体がずれている: {name} レジストリ {r['value']} 実体 {v}")
+    return ng
+
+
+# ══ 時間帯の材料列（E-j・カレンダー由来＝因果性自明）と ポジション状態列（設計書 §6 fire の材料）══
+TIME_REF: dict[str, dict] = {
+    "時刻": dict(teigi="バー開始時刻の時（0〜23・UTC）", ryugi="カレンダー由来＝計算なし・因果性自明",
+               houkou="状態量（セッションの癖の材料）"),
+    "曜日": dict(teigi="バー開始時刻の曜日（0=月〜6=日）", ryugi="同上", houkou="状態量"),
+}
+# ポジション状態列（出口 fire の材料・入口の条件には使えない＝建玉が無いと定義できない）。
+# 値の体系は 設計書 §2.4＝分位不可（自己参照）＝名前つき定数の倍数か整数グリッドだけ。
+STATE_COLS = ("unreal_pct", "mfe_pct", "mae_pct", "peak_age_bars", "hold_min", "add_count", "dist_be_pct")
+
+
 def tokenize_ec(line: str) -> list[tuple[str, str]]:
     """E-c の1行を（カテゴリ, 項目）の一覧にする。項目の区切りは半角スラッシュ・括弧の中は割らない。"""
     body = line.split("**:", 1)[1] if "**:" in line else line

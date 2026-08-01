@@ -208,7 +208,7 @@
 | 3 | pos=(c−mid)/(res_hi−mid) ≥ pos_min（L95-99） | location 条件: form=level・材料=帯内位置%列（レンジ幾何・歩3 冒頭で登録）・value=legacy(pos_min) | 列＋legacy 値 |
 | 4 | confirm_htf: htf 列 ≤ th（L120-125） | env 条件: form=level・材料=roc24__2h 等・side=below・value=legacy(th) | 列＋legacy 値 |
 | 5 | confirm_vol: vol 列 ≥ th（L126-131） | sufficiency 条件: form=level・材料=volume_ratio20__15m 等・side=above・value=legacy(th) | 列＋legacy 値 |
-| 6 | stoch_dc: k[i−1]≥d[i−1] ∩ k[i]<d[i]（L104-106） | trigger 条件: form=cross・材料=[Stoch%K14__5m, Stoch%D14__5m]・向き=下抜け（縁評価と定義一致） | 列 |
+| 6 | stoch_dc: k[i−1]≥d[i−1] ∩ k[i]<d[i]（L104-106） | trigger 条件: form=cross・向き=下抜け（縁評価と定義一致）。材料の実体＝stoch_k は e34_range_base の slow %K(14,3)＝カタログの Stoch%D14__5m と同式・相手の e38_stoch_d はその3本平均＝カタログ外＝**legacy 材料列**（恒等レーン専用）で書く。初版の「Stoch%K14__5m, Stoch%D14__5m」は実装の実体と違った＝歩3 の実装時に実測で訂正（まこさん OK 2026-08-01・worklog 20260801 §6） | 列＋legacy 材料 |
 | 7 | エントリー指値 c×(1+ENTRY_OFFSET)・TTL・maker fill（L273-278・L332） | 実行器のグローバル定数（§1・レシピに持たない） | 執行 |
 | 8 | TP1＝幾何・半分（L321-324） | 枝1: fire=なし（常時武装）・exec={maker, resting, level=幾何参照(tp1_frac)}・size_ratio=0.5・value=legacy(tp1_frac) | 執行＋legacy |
 | 9 | TP2＝幾何・残り全部（L325-326） | 枝2: 同上（tp2_target） | 執行＋legacy |

@@ -532,6 +532,75 @@ def load_demand(bars_index, files: dict | None = None) -> tuple[pd.DataFrame, di
     return pd.DataFrame(out, index=bars_index), cov
 
 
+# ══ レンジ幾何列（歩3 冒頭①・CP3 提案2-(a)・設計書 §2.3・2026-08-01）══════════════════════
+def _rg_zone_consts() -> tuple[float, int, int]:
+    """RG ゾーンビルダーの束ね定数（tol・touch・lookback）を正本 v17 から取る（手打ちしない）。"""
+    import e37_scalp as e37                     # lazy＝観察経路と同じ（重い import を必要時だけ）
+    rgmod = e37._import_rg5()
+    return float(rgmod.v17.ZONE_TOL), int(rgmod.v17.ZONE_TOUCH), int(rgmod.v17.ZONE_LOOKBACK)
+
+
+def build_range_geometry(bars: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:
+    """レンジ幾何列を作る（正本ロジック＝build_regime_gate_rg を e37._rg5_frames 経由で import 再利用・
+    コピー禁止）。列＝indicator_reference_diag.RANGE_GEO_REF が正本（登録なしの列は足せない＝selftest）。
+    adaptive_k=None（既定）＝RG-v5 固定束ね幅。エンジン E38 は RG-v6（e37.V25_K）を渡す＝流儀の違いは
+    定義表に記載。全て当該バーまでの確定値（H2）＝検査8 の切り詰め再計算が機械確認する。"""
+    import e37_scalp as e37                     # lazy
+    d = bars[["open", "high", "low", "close", "volume"]].copy()
+    d.insert(0, "ts", bars.index)
+    d = d.reset_index(drop=True)
+    _z, _up, _rng, res_lo, res_hi, sup_lo, sup_hi = e37._rg5_frames(d, adaptive_k)
+    c = bars["close"].to_numpy(float)
+    mid = (res_lo + sup_hi) / 2.0               # エンジン v11_mid と同式
+    span = res_hi - mid
+    with np.errstate(invalid="ignore", divide="ignore"):
+        pos = np.where(np.isfinite(span) & (span > 0), (c - mid) / span, np.nan)
+        wpct = np.where(np.isfinite(res_hi) & np.isfinite(sup_lo), (res_hi - sup_lo) / c * 100.0, np.nan)
+    return pd.DataFrame({"res_hi": res_hi, "res_lo": res_lo, "sup_hi": sup_hi, "sup_lo": sup_lo,
+                         "mid": mid, "W%": wpct, "帯内位置%": pos}, index=bars.index)
+
+
+def _insp_range_geo(bars: pd.DataFrame, cfg: dict) -> list[str]:
+    """検査8 レンジ幾何列。①定義表（RANGE_GEO_REF が正本） ②既知答え（合成バー＝電卓式と一致）
+    ③切り詰め再計算（検査4 と同じ機構＝未来参照の機械確認） ④値決め窓・採点窓の被覆、を機械出力。"""
+    ng = []
+    print(f"  定義と流儀（正本＝indicator_reference_diag.RANGE_GEO_REF・時間軸: {iref.RANGE_GEO_TF}）:")
+    for nm, r in iref.RANGE_GEO_REF.items():
+        print(f"     ◆ {nm} [{'比率＝条件の材料可' if r['kind'] == 'ratio' else '価格水準＝placement 幾何参照専用（H6）'}] … {r['teigi']}")
+        print(f"        流儀: {r['ryugi']} ／ 方向: {r['houkou']}")
+    tol, touch, lookback = _rg_zone_consts()
+    print(f"  束ね定数（正本 v17）: tol {tol} ／ touch {touch} ／ lookback {lookback}")
+    ng += iref.range_geo_known_check(build_range_geometry, tol, touch, lookback)
+    print(f"  既知答え（合成バー＝電卓式）: {'一致' if not ng else '不一致あり'}")
+    # 切り詰め再計算（検査4 と同じ機構・レンジ幾何7列）
+    span = bars.loc[bars.index.max() - pd.Timedelta(days=int(cfg["warmup_days"]) + 3):]
+    geo_full = build_range_geometry(span)
+    picks = [span.index[-1], span.index[-100], span.index[-400]]
+    suspects: dict = {}
+    for t in picks:
+        geo_tr = build_range_geometry(span.loc[:t])
+        a, b = geo_full.loc[t], geo_tr.loc[t]
+        for col in geo_full.columns:
+            x, y = a.get(col), b.get(col)
+            if pd.isna(x) and pd.isna(y):
+                continue
+            if pd.isna(x) != pd.isna(y) or abs(float(x) - float(y)) > 1e-9 * max(1.0, abs(float(x))):
+                suspects.setdefault(col, []).append(str(t))
+    print(f"  切り詰め再計算: サンプル時点 {len(picks)}点 × {geo_full.shape[1]} 列 → 不一致 {len(suspects)} 列")
+    for col, ts in suspects.items():
+        ng.append(f"切り詰めで値が変わるレンジ幾何列（未来参照の疑い）: {col}（時点 {ts}）")
+    # 被覆（値決め窓・採点窓＝G2 の基礎データ・判定はしない）
+    span2 = bars.loc[SEARCH_START - pd.Timedelta(days=int(cfg["warmup_days"])):]
+    geo = build_range_geometry(span2)
+    for wname, w0, w1 in _insp_windows():
+        seg = geo[(geo.index >= w0) & (geo.index < w1)]
+        if not len(seg):
+            continue
+        pct = 100.0 * seg["帯内位置%"].notna().mean()
+        print(f"     被覆 {wname}（帯内位置%＝帯あり∩分母>0）: {pct:.1f}%（有効 {int(seg['帯内位置%'].notna().sum())} バー）")
+    return ng
+
+
 # ══ 分離力 ═════════════════════════════════════════════════════════════
 def _auc(a: pd.Series, b: pd.Series) -> float:
     """b の値が a より大きくなる確率。0.5=分離なし。"""
@@ -2223,6 +2292,7 @@ INSPECT_SECTIONS = [
     "検査5 欠損と有効標本数を数える（列ごとの欠損率・助走・有効標本数＝歩2 の適合制約の基礎データ）",
     "検査6 需給データを検査する（taker_ls・L-S比・CVD＝重複・整合・欠け・窓ごとの被覆・終端より後を埋めていないか）",
     "検査7 軸カタログ（entry_exit_matrix E-c）と実装を突き合わせる（一覧にあるが実装の無い指標を機械で出す）",
+    "検査8 レンジ幾何列を検査する（res_hi/res_lo/sup_hi/sup_lo/mid/W%/帯内位置%＝定義表・既知答え・切り詰め再計算・被覆）",
 ]
 # 検査の線（全部この場で印字する＝黙って変えられない）。指標照合の許容差は
 # indicator_reference_diag（参照表の tol）が正本。
@@ -2737,7 +2807,8 @@ def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
               ("検査3", INSPECT_SECTIONS[2], lambda: _insp_indicator_stage(bars, cfg)),
               ("検査4", INSPECT_SECTIONS[3], lambda: _insp_lookahead(bars, cfg))]
     stages += [("検査6", INSPECT_SECTIONS[5], lambda: _insp_demand(bars)),
-               ("検査7", INSPECT_SECTIONS[6], lambda: _insp_axis(cfg))]
+               ("検査7", INSPECT_SECTIONS[6], lambda: _insp_axis(cfg)),
+               ("検査8", INSPECT_SECTIONS[7], lambda: _insp_range_geo(bars, cfg))]
     for key, title, run in stages:
         if key == "検査6":                     # 検査5（判定なしの報告）を順番どおり挟む
             _h(INSPECT_SECTIONS[4])
@@ -3204,6 +3275,33 @@ def selftest() -> None:
     for need in INSPECT_SECTIONS:
         if need not in src:
             ng.append(f"データと指標の検査の節が実装されていない: {need}")
+    # ★検査8 レンジ幾何（歩3 冒頭①・2026-08-01）の番人＝系統マップの網羅・既知答え・壊した実装で❌
+    _fam8 = []
+    for _nm8, _f8, _d8 in cat:
+        _e8, _p8 = iref.find(_nm8)
+        if _e8 is not None:
+            _fam8.append(_e8["family"])
+    _fam8 += list(_DEMAND_FILES) + ["レンジ幾何", "時刻", "曜日"]
+    _miss8 = iref.lineage_coverage(_fam8)
+    if _miss8:
+        ng.append(f"系統マップ FAMILY_LINEAGE に無い family: {_miss8}（G3 の割当表は全 family 必須・載っていない family は生成不可）")
+    _badk8 = [f for f, v in iref.FAMILY_LINEAGE.items() if v.get("k") not in iref.LINEAGE_KINDS]
+    if _badk8:
+        ng.append(f"系統マップに8系統の外の割当がある: {_badk8}")
+    _tol8, _tch8, _lb8 = _rg_zone_consts()
+    _ng8 = iref.range_geo_known_check(build_range_geometry, _tol8, _tch8, _lb8)
+    if _ng8:
+        ng.append(f"検査8 の既知答えが正しい実装で落ちる: {_ng8[:2]}")
+
+    def _broken8(b, _k=None):                   # わざと mid を 1% ずらした実装＝既知答えが落ちるはず
+        g = build_range_geometry(b, _k)
+        g["mid"] = g["mid"] * 1.01
+        return g
+    if not iref.range_geo_known_check(_broken8, _tol8, _tch8, _lb8):
+        ng.append("検査8 がわざと壊したレンジ幾何（mid×1.01）を見逃す")
+    for _cn8, _cv8 in iref.CONST_REGISTRY.items():
+        if not str(_cv8.get("source", "")).strip():
+            ng.append(f"定数レジストリ {_cn8} に出典が無い（出典必須＝設計書 §2.4-②）")
     if _J("inspect_", "data(") not in src or "--inspect" not in inspect.getsource(build_parser):
         ng.append("データと指標の検査が CLI（--inspect）に配線されていない")
     # ★検査6 需給（2026-07-30 まこさん OK）の番人＝壊した元データで ❌・終端より後の埋めを検出
