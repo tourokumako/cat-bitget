@@ -15,7 +15,7 @@ H13＝score.py・eval_engine に触れない（記録は e37._record を import 
 legacy 値・legacy 材料列は lane="legacy"（恒等検収・過去資産の書き写し）専用＝探索レシピでは検証器が拒否。
 
 採点はしない・売買記録CSVは書かない・score.py は呼ばない（恒等はメモリ上の md5 比較）。
-自己検査: python3 engine_tuner_exec.py --selftest（壊したレシピ12種で全部止まる・正しい2種は通る）
+自己検査: python3 engine_tuner_exec.py --selftest（壊したレシピ18種で全部止まる・正しい2種は通る・歩4 拡張の既知答え込み）
 恒等検収: python3 engine_tuner_exec.py --identity（値決め窓・約20分）／--identity-quick（短窓デバッグ）
 """
 from __future__ import annotations
@@ -173,10 +173,12 @@ def _material_family(m: dict) -> str:
 
 
 def _check_value(v: dict, lane: str, cond_desc: str, legacy_used: list):
-    """値の4区分（設計書 §2.4）＝分位・名前つき定数・整数グリッド・legacy。生の数字は拒否（G6）。"""
+    """値の4区分（設計書 §2.4）＝分位・名前つき定数・整数グリッド・legacy。生の数字は拒否（G6）。
+    lo/hi（band 系の下限・上限＝§2.2）と th（slope 系の閾値）は入れ子の値＝再帰で同じ検査を通す（歩4 拡張）。"""
     if not isinstance(v, dict):
         _fail("G6", f"{cond_desc}: 値が dict でない（生の数字の閾値は禁止・§2.4）: {v!r}")
-    known = {"threshold_q", "const", "mult", "side_sign", "n", "legacy", "direction", "dir", "na", "offset"}
+    known = {"threshold_q", "const", "mult", "side_sign", "n", "legacy", "direction", "dir", "na", "offset",
+             "lo", "hi", "th", "m"}
     bad = set(v) - known
     if bad:
         _fail("G6", f"{cond_desc}: 値に未知のフィールド {sorted(bad)}（生の数字の閾値の混入経路＝拒否）")
@@ -188,6 +190,11 @@ def _check_value(v: dict, lane: str, cond_desc: str, legacy_used: list):
         _fail("G6", f"{cond_desc}: 名前つき定数レジストリに無い定数: {v['const']}")
     if "n" in v and (not isinstance(v["n"], int) or v["n"] < 1):
         _fail("G5", f"{cond_desc}: 整数グリッドの n が不正: {v['n']}")
+    if "m" in v and (not isinstance(v["m"], int) or v["m"] < 1):
+        _fail("G5", f"{cond_desc}: 整数グリッドの m が不正: {v['m']}")
+    for sub in ("lo", "hi", "th"):
+        if sub in v:
+            _check_value(v[sub], lane, f"{cond_desc}/{sub}", legacy_used)
 
 
 def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False):
@@ -213,6 +220,16 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         _fail("G5", f"{where}: 形 {form} に side（above/below）が無い")
     if form == "cross" and (c.get("value") or {}).get("direction") not in ("up", "down"):
         _fail("G5", f"{where}: cross に向き（up/down）が無い")
+    if form in ("band", "band_exclude"):
+        vv = c.get("value") or {}
+        if "lo" not in vv or "hi" not in vv:
+            _fail("G5", f"{where}: 形 {form} は value.lo と value.hi（下限・上限）が要る（§2.2）")
+    if form == "slope" and not isinstance((c.get("value") or {}).get("n"), int):
+        _fail("G5", f"{where}: 形 slope は value.n（遡る本数＝整数グリッド）が要る（§2.2）")
+    if form == "slope_avg":
+        vv = c.get("value") or {}
+        if not isinstance(vv.get("n"), int) or not isinstance(vv.get("m"), int):
+            _fail("G5", f"{where}: 形 slope_avg は value.n（遡る本数）と value.m（平均の本数）が要る（§2.2）")
     mats = c.get("material") or []
     need2 = form in ("cross", "diff", "touch")
     if need2 and len(mats) != 2:
@@ -433,7 +450,7 @@ def _check_level(lv, lane: str, where: str, legacy_used: list):
 
 # ══ ② 実行器（共通の売買ループ・設計書 §1〜§7 の意味論）══════════════════════════════
 def _vnum(v: dict) -> float:
-    """値の解決（数値）。分位はここでは解けない（探索の解決表は歩4）＝legacy/定数/整数のみ。"""
+    """値の解決（数値）＝legacy/定数/整数のみ。分位は _vnum_q（解決表つき・歩4）で解く。"""
     if "legacy" in v:
         return float(v["legacy"])
     if "const" in v:
@@ -441,7 +458,19 @@ def _vnum(v: dict) -> float:
         return val * float(v.get("mult", 1.0))
     if "n" in v:
         return float(v["n"])
-    raise RecipeError(f"[実行器] 値を解決できない（分位の解決表は歩4）: {v}")
+    raise RecipeError(f"[実行器] 値を解決できない（分位は解決表＝qtable が要る）: {v}")
+
+
+def _vnum_q(v: dict, qkey: str, qtable: dict | None) -> float:
+    """値の解決（分位対応・歩4）。threshold_q は解決表（値決め窓の分布から探索開始時に1回固定・§2.4-①・
+    §5-4）でしか実値にならない＝表に無ければ止まる（fail-closed・rolling 解決の混入経路を持たない）。"""
+    if "threshold_q" in v:
+        q = v["threshold_q"]
+        if qtable is None or qkey not in qtable or q not in qtable[qkey]:
+            raise RecipeError(f"[実行器] 分位 {q} の解決表に {qkey} が無い"
+                              f"（解決表＝探索開始時に1回固定・§5-4・生成器が作って渡す）")
+        return float(qtable[qkey][q]) * float(v.get("mult", 1.0))
+    return _vnum(v)
 
 
 def _col_array(df: pd.DataFrame, m: dict, geo: dict, lane: str) -> np.ndarray:
@@ -456,21 +485,30 @@ def _col_array(df: pd.DataFrame, m: dict, geo: dict, lane: str) -> np.ndarray:
         ts = pd.DatetimeIndex(df["ts"])
         return (ts.hour if name == "時刻" else ts.weekday).to_numpy(float)
     if kind == "col":
+        # 歩4 拡張＝カタログ名の列が実行データに直接あればそれを使う（生成器が observe_diag
+        # build_features で必要列だけ組み立てて df に付けて渡す）。無ければ従来の別名（恒等系）。
+        if name in df.columns:
+            return df[name].to_numpy(float)
         run_col = RUNTIME_ALIAS.get(name)
         if run_col is None or run_col not in df.columns:
-            raise RecipeError(f"[実行器] 材料列 {name} が実行データに無い（RUNTIME_ALIAS 未登録＝歩4 で"
-                              f"observe_diag build_features 接続に拡張）")
+            raise RecipeError(f"[実行器] 材料列 {name} が実行データに無い"
+                              f"（生成器の材料組み立て（build_features 接続）でも別名でも見つからない）")
         return df[run_col].to_numpy(float)
     raise RecipeError(f"[実行器] 入口の材料に使えない種別: {kind}（{name}）")
 
 
-def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str) -> np.ndarray:
+def _mat_key(m: dict, lane: str) -> str:
+    """分位の解決表の鍵＝材料の解決名（列名）。"""
+    return _material_name(m, lane)[1]
+
+
+def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | None = None) -> np.ndarray:
     """条件1つ → 各バーの真偽（状態評価）。na=fail が既定（欠損は不成立）。"""
     form = c["form"]
     v = c.get("value", {})
     na_pass = (v.get("na") == "pass")
     if form in NEST_FORMS:
-        inner = _eval_cond(c["inner"], df, geo, lane)
+        inner = _eval_cond(c["inner"], df, geo, lane, qtable)
         n = int(v["n"])
         off = int(v.get("offset", 0))
         s = pd.Series(inner.astype(float))
@@ -488,18 +526,33 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str) -> np.ndarray:
         return (cl > o) if v.get("dir") == "bull" else (cl < o)
     mats = c.get("material") or []
     a = _col_array(df, mats[0], geo, lane)
+    akey = _mat_key(mats[0], lane)
     if form == "level":
-        th = _vnum(v)
+        th = _vnum_q(v, akey, qtable)
         ok = (a >= th) if c.get("side") == "above" else (a <= th)
         res = np.where(np.isfinite(a), ok, na_pass)
         return res.astype(bool)
-    if form in ("band", "band_exclude", "slope_avg"):
-        raise RecipeError(f"[実行器] 形 {form} の実行は歩4 で拡張（検証は通る・恒等検収では未使用）")
+    if form in ("band", "band_exclude"):
+        lo = _vnum_q(v["lo"], akey, qtable)
+        hi = _vnum_q(v["hi"], akey, qtable)
+        if lo > hi:
+            lo, hi = hi, lo                       # 分位の取り違えで帯が裏返っても空帯にしない（正規化）
+        inside = (a >= lo) & (a <= hi)
+        ok = inside if form == "band" else ~inside
+        return np.where(np.isfinite(a), ok, na_pass).astype(bool)
     if form == "slope":
         n = int(v["n"])
         d = a - np.roll(a, n)
         d[:n] = np.nan
-        th = _vnum(v.get("th", {"legacy": 0.0})) if "th" in v else 0.0
+        th = _vnum_q(v["th"], f"Δ{n}:{akey}", qtable) if "th" in v else 0.0
+        ok = (d >= th) if c.get("side") == "above" else (d <= th)
+        return np.where(np.isfinite(d), ok, na_pass).astype(bool)
+    if form == "slope_avg":
+        n, m_ = int(v["n"]), int(v["m"])
+        ma = pd.Series(a).rolling(m_).mean().to_numpy()
+        d = ma - np.roll(ma, n)
+        d[:n + m_] = np.nan
+        th = _vnum_q(v["th"], f"Δ{n}:MA{m_}:{akey}", qtable) if "th" in v else 0.0
         ok = (d >= th) if c.get("side") == "above" else (d <= th)
         return np.where(np.isfinite(d), ok, na_pass).astype(bool)
     b = _col_array(df, mats[1], geo, lane) if len(mats) > 1 else None
@@ -514,29 +567,29 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str) -> np.ndarray:
         return out.astype(bool)
     if form == "diff":
         d = a - b
-        th = _vnum(v)
+        th = _vnum_q(v, f"{akey}−{_mat_key(mats[1], lane)}", qtable)
         ok = (d >= th) if c.get("side") == "above" else (d <= th)
         return np.where(np.isfinite(d), ok, na_pass).astype(bool)
     if form == "touch":
-        tol = _vnum(v)
+        tol = _vnum(v)                            # 許容幅＝名前つき定数（§2.2・分位は使わない）
         d = np.abs(a - b)
         return np.where(np.isfinite(d), d <= tol * np.abs(b), na_pass).astype(bool)
-    raise RecipeError(f"[実行器] 形 {form} の実行が未実装（検証は通る＝実行は歩4 で拡張）")
+    raise RecipeError(f"[実行器] 形 {form} の実行が未実装")
 
 
-def _entry_fire(recipe: dict, df: pd.DataFrame, geo: dict) -> np.ndarray:
+def _entry_fire(recipe: dict, df: pd.DataFrame, geo: dict, qtable: dict | None = None) -> np.ndarray:
     """エントリー発火＝経路の木が当バーで真 ∧ その経路の引き金が当バーで縁（設計書 §2.1・確定意味論）。"""
     lane = recipe["meta"].get("lane", "")
     tree = recipe["entry"]["connective"]
     paths = tree["any"] if (isinstance(tree, dict) and set(tree) == {"any"}) else [tree]
     pre = np.ones(len(df), bool)
     for c in recipe.get("pre_filter", []):
-        pre &= _eval_cond(c, df, geo, lane)
+        pre &= _eval_cond(c, df, geo, lane, qtable)
     fire = np.zeros(len(df), bool)
 
     def _eval_tree(node) -> np.ndarray:
         if _is_cond(node):
-            return _eval_cond(node, df, geo, lane)
+            return _eval_cond(node, df, geo, lane, qtable)
         if "all" in node:
             out = np.ones(len(df), bool)
             for ch in node["all"]:
@@ -554,7 +607,7 @@ def _entry_fire(recipe: dict, df: pd.DataFrame, geo: dict) -> np.ndarray:
     for path in paths:
         conds, _d = _walk(path)
         trig = next(c for c in conds if c.get("role") == "trigger")
-        t_true = _eval_cond(trig, df, geo, lane)
+        t_true = _eval_cond(trig, df, geo, lane, qtable)
         edge = t_true & ~np.roll(t_true, 1)       # 縁＝前バー不成立→今バー成立（cross は形が縁を内包）
         edge[0] = False
         fire |= _eval_tree(path) & edge & pre
@@ -667,9 +720,10 @@ def _exit_fire_ok(b: dict, lot: dict, i: int, df: pd.DataFrame, geo: dict, lane:
 
 
 def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
-               samples: dict | None = None) -> tuple[list, dict]:
+               samples: dict | None = None, qtable: dict | None = None) -> tuple[list, dict]:
     """レシピを共通の売買ループで走らせ、売買記録（e37._record の行）と検証報告を返す。
-    ループの意味論＝設計書 §1〜§7（H5 執行・恒等の対象＝generic_logic_loop と同じ規則）。"""
+    ループの意味論＝設計書 §1〜§7（H5 執行・恒等の対象＝generic_logic_loop と同じ規則）。
+    qtable＝分位の解決表（生成器が値決め窓から探索開始時に1回固定して渡す・§5-4・歩4）。"""
     rep = validate_recipe(recipe, limits, samples)
     meta = recipe["meta"]
     side = meta["side"]
@@ -699,7 +753,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
         wpct_arr = np.where(np.isfinite(res_hi) & np.isfinite(sup_lo), (res_hi - sup_lo) / c * 100.0, np.nan)
     geo = {"res_hi": res_hi, "res_lo": res_lo, "sup_hi": sup_hi, "sup_lo": sup_lo,
            "mid": mid, "W%": wpct_arr, "帯内位置%": pos_arr}
-    fire = _entry_fire(recipe, df, geo)
+    fire = _entry_fire(recipe, df, geo, qtable)
     n = len(df)
     trades: list = []
     lots: list = []
@@ -988,7 +1042,7 @@ def run_identity(quick: bool = False) -> int:
     return ng
 
 
-# ══ 自己検査（番人＝わざと壊したレシピ12種で全部止まる・正しい2種は通る・設計書 §10）══════
+# ══ 自己検査（番人＝わざと壊したレシピ18種で全部止まる・正しい2種は通る・設計書 §10＋歩4 拡張）══
 def _base_ok_recipe() -> dict:
     """検証だけ通す最小の正しいレシピ（V9 風多条件・探索レーン＝legacy なし）。"""
     return {
@@ -1088,6 +1142,36 @@ def selftest() -> None:
     broke("⑭ score 未登録の出口理由", lambda r: r["exits"][1].__setitem__("reason", "MY_EXIT"), "G6")
     broke("⑮ 価格水準列を条件の材料に", lambda r: r["entry"]["connective"]["all"][3]["material"].__setitem__(
         0, {"geo": "res_hi"}), "G6")
+    # 歩4 拡張の番人（band 系・入れ子の値）
+    broke("⑯ band に lo/hi が無い", lambda r: r["entry"]["connective"]["all"].append(
+        {"role": "sufficiency", "form": "band", "material": [{"family": "ATR%", "param": 14, "tf": "1h"}],
+         "value": {"lo": {"const": "NEUTRAL_0"}}}), "G5")
+    broke("⑰ slope_avg に m が無い", lambda r: r["entry"]["connective"]["all"].append(
+        {"role": "sufficiency", "form": "slope_avg", "side": "above",
+         "material": [{"family": "ATR%", "param": 14, "tf": "1h"}], "value": {"n": 3}}), "G5")
+    broke("⑱ band の lo に未知フィールド（生の数字の混入経路）", lambda r: r["entry"]["connective"]["all"].append(
+        {"role": "sufficiency", "form": "band", "material": [{"family": "ATR%", "param": 14, "tf": "1h"}],
+         "value": {"lo": {"raw": 1.0}, "hi": {"const": "NEUTRAL_0"}}}), "G6")
+    # 歩4 拡張の既知答え（band／band_exclude／slope_avg／分位の解決＝合成列を電卓式と照合）
+    a5 = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    df4 = pd.DataFrame({"ts": pd.date_range("2024-05-01", periods=5, freq="5min"),
+                        "open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "RSI14__1h": a5})
+    bandc = {"role": "env", "form": "band", "material": [{"family": "RSI", "param": 14, "tf": "1h"}],
+             "value": {"lo": {"threshold_q": "q20"}, "hi": {"threshold_q": "q80"}}}
+    qt = {"RSI14__1h": {"q20": 2.0, "q80": 4.0}}
+    if list(_eval_cond(bandc, df4, {}, "", qt)) != [False, True, True, True, False]:
+        ng.append("band の既知答え不一致（lo=2, hi=4 で [F,T,T,T,F] のはず）")
+    if list(_eval_cond({**bandc, "form": "band_exclude"}, df4, {}, "", qt)) != [True, False, False, False, True]:
+        ng.append("band_exclude の既知答え不一致（band の否定のはず）")
+    try:
+        _eval_cond(bandc, df4, {}, "", None)
+        ng.append("分位が解決表なしで素通り（fail-closed が死んでいる）")
+    except RecipeError:
+        pass
+    slc = {"role": "env", "form": "slope_avg", "side": "above",
+           "material": [{"family": "RSI", "param": 14, "tf": "1h"}], "value": {"n": 1, "m": 2}}
+    if list(_eval_cond(slc, df4, {}, "", None)) != [False, False, False, True, True]:
+        ng.append("slope_avg の既知答え不一致（MA2 の1本傾き>0 で [F,F,F,T,T] のはず）")
     # 定数レジストリと実体のずれ検査（レジストリの値が実装から黙って離れない）
     ng += iref.const_registry_live_check({"SCALP_FLOOR": e37.SCALP_FLOOR, "V11_SL_BUF": e37.V11_SL_BUF,
                                           "BE_TTL_BARS": parts.BE_TTL_BARS})
@@ -1096,7 +1180,7 @@ def selftest() -> None:
     if miss:
         ng.append(f"FAMILY_TEMPLATES の family が系統マップに無い: {miss}")
     print("=" * 80)
-    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ15種で全部止まる・正しい2種は通る）")
+    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ18種で全部止まる・正しい2種は通る・歩4 拡張の既知答え込み）")
     print("=" * 80)
     if ng:
         for x in ng:
@@ -1107,7 +1191,7 @@ def selftest() -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="歩3 実行器＝レシピ（条件データ）を共通の売買ループで走らせる")
-    ap.add_argument("--selftest", action="store_true", help="壊したレシピ15種で全部止まることの機械確認")
+    ap.add_argument("--selftest", action="store_true", help="壊したレシピ18種で全部止まることの機械確認（歩4 拡張の既知答え込み）")
     ap.add_argument("--identity", action="store_true", help="恒等検収（値決め窓・S2 md5 完全一致＋R14）")
     ap.add_argument("--identity-quick", action="store_true", help="恒等検収の短窓デバッグ（値決め窓の頭90日）")
     ap.add_argument("--validate", type=str, default=None, help="レシピ json を検証だけする")

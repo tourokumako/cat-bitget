@@ -1,0 +1,20 @@
+{
+  "_note": "歩4 生成器の limits（設計書 §11＝値はまこさんが決める）。null＝値待ち。null の間、生成器の本走は物理的に始められない（fail-closed）。検収専用の値は engine_tuner_gen.py の selftest の中にだけ存在し、このファイルには書かない（採否・本走に使わない）。",
+  "_taiou": "§11-1=n_min ／ §11-2=r_min ／ §11-3=role_max ／ §11-4=count_range ／ §11-5=k_max ／ §11-6=quantile_grid ／ §11-7=depth_max ／ §11-8=p_max ／ §11-9=state_mult_grid（FEE_FLOOR×k・atr×k の k 格子） ／ §11-10=int_grid・hold_grid・hour_grid ／ 追加（§11-10 に準ずる格子・まこさんが決める）=frac_grid（段階決済 mix の比率）・exit_mult_grid（SL 幾何 k の倍率）・max_adds_grid ／ fdr_q=BH 法の偽発見率の水準（歩4 新設・まこさんが決める）",
+  "n_min": null,
+  "r_min": null,
+  "role_max": null,
+  "count_range": null,
+  "k_max": null,
+  "quantile_grid": null,
+  "depth_max": null,
+  "p_max": null,
+  "state_mult_grid": null,
+  "int_grid": null,
+  "hold_grid": null,
+  "hour_grid": null,
+  "frac_grid": null,
+  "exit_mult_grid": null,
+  "max_adds_grid": null,
+  "fdr_q": null
+}
