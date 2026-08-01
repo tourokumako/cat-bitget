@@ -118,6 +118,54 @@ def exit_keys() -> set:
     return set(config()["search_space"]["common_exit"])
 
 
+def writeback_map(logic_id: str, values: dict) -> tuple[dict, list[tuple[str, str]]]:
+    """試行の値を、設定ファイルの欄の名前へ言い換えます（要件 R9・まこさん OK 2026-08-02・案A）。
+
+    なぜ要るか
+      engine_tuner は、確認シグナルの候補それぞれについて、しきい値を1つずつ探します。
+      しきい値の名前は th_roc24_2h のように、シグナルの名前が付いています。
+      設定ファイルには、選ばれたシグナルのしきい値を入れる欄が1つだけあります。
+      欄の名前は confirm_htf_th です。ですから言い換えが要ります。
+      この言い換えを知っているのは、この接続ファイルだけです。書き戻しの道具は知りません。
+
+    やること
+      1 confirm 系の欄を探します。候補のどれかに th_ の宣言があるものだけが対象です。
+      2 その欄で選ばれたシグナルの th_ を、欄の名前に _th を付けた名前へ言い換えます。
+      3 選ばれなかった th_ は「使わない」として返します。黙って捨てません。
+      4 それ以外の値は、名前を変えずにそのまま返します。
+
+    返すもの
+      1つ目は、設定ファイルへ入れる値です。鍵は設定ファイルの欄の名前です。
+      2つ目は、使わない値の一覧です。名前と理由の組で返します。
+    """
+    dec = config()["search_space"]["logics"].get(logic_id) or {}
+    conf_cols = [k for k, v in dec.items()
+                 if k.startswith("confirm") and isinstance(v, dict) and v.get("type") == "cat"
+                 and any(f"th_{ch}" in dec for ch in v.get("choices", []))]
+
+    chosen: dict[str, str] = {}                 # しきい値の名前 → 入れ先の欄の名前
+    for c in conf_cols:
+        pick = values.get(c)
+        if pick and pick != "none" and f"th_{pick}" in dec:
+            chosen[f"th_{pick}"] = f"{c}_th"
+
+    out: dict = {}
+    unused: list[tuple[str, str]] = []
+    for name, v in values.items():
+        if not name.startswith("th_"):
+            out[name] = v
+            continue
+        if name in chosen:
+            out[chosen[name]] = v
+            continue
+        sig = name[3:]
+        owner = next((c for c in conf_cols if sig in dec[c].get("choices", [])), None)
+        why = (f"{owner} で選ばれたのは {values.get(owner)} です。このしきい値は使いません"
+               if owner else "対応する確認シグナルが選ばれていません。このしきい値は使いません")
+        unused.append((name, why))
+    return out, unused
+
+
 def series_bank(win: pd.DataFrame) -> dict:
     """quantile 型の宣言が参照する分布（値決め窓の中だけ＝確認窓・採点窓は見ない）。"""
     r12 = win["close"].pct_change(12)

@@ -149,7 +149,9 @@
           "confirm": null,
           "confirm_htf": null,
           "confirm_vol": null,
-          "ceil_filter": "flat_up"
+          "ceil_filter": "flat_up",
+          "confirm_htf_th": null,
+          "confirm_vol_th": null
         }
       },
       "exit": {
@@ -159,7 +161,9 @@
           "tp2_target": null,
           "sl_zone_k": null,
           "tmax_bars": null,
-          "be_wait": null
+          "be_wait": null,
+          "tp_mode": null,
+          "tp_pct_k": null
         }
       },
       "engine_flags": {},
@@ -194,7 +198,9 @@
           "tp2_target": null,
           "sl_zone_k": null,
           "tmax_bars": null,
-          "be_wait": null
+          "be_wait": null,
+          "tp_mode": null,
+          "tp_pct_k": null
         }
       },
       "engine_flags": {},
@@ -227,7 +233,9 @@
           "tp2_target": null,
           "sl_zone_k": null,
           "tmax_bars": null,
-          "be_wait": null
+          "be_wait": null,
+          "tp_mode": null,
+          "tp_pct_k": null
         }
       },
       "engine_flags": {},
@@ -286,7 +294,9 @@
           "tp2_target": null,
           "sl_zone_k": null,
           "tmax_bars": null,
-          "be_wait": null
+          "be_wait": null,
+          "tp_mode": null,
+          "tp_pct_k": null
         }
       },
       "engine_flags": {},
@@ -319,7 +329,9 @@
           "tp2_target": null,
           "sl_zone_k": null,
           "tmax_bars": null,
-          "be_wait": null
+          "be_wait": null,
+          "tp_mode": null,
+          "tp_pct_k": null
         }
       },
       "engine_flags": {},
@@ -352,7 +364,9 @@
           "tp2_target": null,
           "sl_zone_k": null,
           "tmax_bars": null,
-          "be_wait": null
+          "be_wait": null,
+          "tp_mode": null,
+          "tp_pct_k": null
         }
       },
       "engine_flags": {},
@@ -401,7 +415,9 @@
         "params": {
           "fresh_only": null,
           "confirm_htf": null,
-          "confirm_vol": null
+          "confirm_vol": null,
+          "confirm_htf_th": null,
+          "confirm_vol_th": null
         }
       },
       "exit": {
@@ -730,7 +746,8 @@
           ]
         }
       }
-    }
+    },
+    "_writeback_note": "2026-08-02 まこさん OK（案A）＝engine_tuner が出す値の入れ先を設定ファイルに足した。tp_mode と tp_pct_k は common_exit の宣言に対する入れ先。confirm_htf_th と confirm_vol_th は 選ばれた確認シグナルのしきい値の入れ先。どの th_ をどの欄へ入れるかの規則は tuner_adapters の e38 接続ファイルの writeback_map が持つ。背景＝R9 の書き戻しを作ったところ、engine_tuner が出す11個の値に入れ先が無いと機械が検出した。人が手で写していた間は、入れ先の無い値が黙って捨てられていた。"
   },
   "tuner": {
     "_note": "engine_tuner の終わりの条件の値（まこさん確定 2026-07-27）。ここが唯一の置き場所＝実行のたびに手で入れない。engine_tuner は数字を持たない。運用の下限は PDCA で見直してよい＝変えたら reason と date を必ず書く（黙って下げない）。",
