@@ -64,6 +64,13 @@ import periods                      # 採点窓の正本（重複 assert 用・�
 import score as judge               # 審判＝import のみ・無変更（H13）
 import tuner_stats                  # 「その数字が本物か」＝DSR と PBO（要件 R7 の B5・B6）
 from tuner_adapters import available, load_adapter   # 戦略ごとの接続ファイル（要件 R4）
+# ★判定の1枚表は tuner_judgement.py へ集約した（案B・まこさん承認 2026-08-01・歩5 の1回目 第1段）。
+#   理由＝作り直し中の新しい器（engine_tuner_gen.py）にも同じ判定を使わせるため。判定が1箇所に無いと、
+#   同じ設定に対して古い器と新しい器で別の合否が出る。引っ越しの恒等＝tuner_judgement.py --identity
+#   （判定表 md5 ccbfe65aedbdf639a120becaa45304a6 ／ ATR%帯 md5 ab1f16299bf309d0b580f7749df6cc84）。
+from tuner_judgement import atr_bands as _atr_bands              # B4＝ATR% の帯ごとの土台比較
+from tuner_judgement import print_judgement as _print_judgement  # 判定の1枚表（A/B/C）
+from tuner_judgement import role_floor                           # B3＝採用台帳から役割と件数の下限
 
 HERE = pathlib.Path(__file__).resolve()
 
@@ -201,60 +208,9 @@ def _record_timing(strategy: str, logic: str, load_sec: float, trials: int,
         print(f"[計測] 記録に失敗した（結果には影響しない）: {e}")
 
 
-ADOPTED = HERE.parents[2] / ".claude" / "ratchet" / "adopted_strategies.md"
-
-
-def role_floor(strategy: str) -> tuple[str | None, float | None]:
-    """役割と、役割から来る件数/日 の絶対下限を採用台帳のマーカーから引く。
-
-    ★ここを下回るのは「調整」でなく「役割を変える決定」（cat_requirements §8.6）。
-      道具に戦略名や数字を焼かない＝台帳の1行を直せば追従する（他の hook と同じ方式）。
-    """
-    try:
-        txt = ADOPTED.read_text(encoding="utf-8")
-    except Exception:                                        # noqa: BLE001
-        return None, None
-    role = None
-    for ln in txt.splitlines():
-        if "ROLE_CHECK:" in ln:
-            for kv in ln.split("ROLE_CHECK:")[1].split("-->")[0].split(";"):
-                if "=" in kv and kv.split("=")[0].strip() == strategy:
-                    role = kv.split("=")[1].strip()
-        if "ROLE_FLOOR:" in ln and role:
-            for kv in ln.split("ROLE_FLOOR:")[1].split("-->")[0].split(";"):
-                if "=" in kv and kv.split("=")[0].strip() == role:
-                    try:
-                        return role, float(kv.split("=")[1].strip())
-                    except ValueError:
-                        return role, None
-    return role, None
-
-
-def _atr_bands(base_t: pd.DataFrame, cand_t: pd.DataFrame, edges) -> list[tuple[str, float, float, bool]]:
-    """ATR% の帯ごとに、土台と候補の net を審判で出して比べる（B4）。
-
-    帯に分ける理由＝静かな相場だけで稼ぎ荒い相場で損を出す形でも、合計では改善に見えるため
-    （E37 v16 の学習窓プラスが帯の補填による見かけだった実証・ARC31／ARC32）。
-    ATR% は売買記録の atr_14 と entry_price から出す＝net の計算には触れない（H13）。
-    """
-    def band_of(t: pd.DataFrame) -> pd.Series:
-        return (t["atr_14"].astype(float) / t["entry_price"].astype(float) * 100.0)
-
-    lo = [-float("inf")] + list(edges)
-    hi = list(edges) + [float("inf")]
-    out = []
-    for a, b in zip(lo, hi):
-        lab = (f"〜{b:g}" if a == -float("inf") else (f"{a:g}〜" if b == float("inf") else f"{a:g}〜{b:g}"))
-        vals = []
-        for t in (base_t, cand_t):
-            if t is None or not len(t):
-                vals.append(0.0)
-                continue
-            m = (band_of(t) >= a) & (band_of(t) < b)
-            sub = t[m].reset_index(drop=True)
-            vals.append(float(judge.score(sub)["total"]) if len(sub) else 0.0)
-        out.append((lab, vals[0], vals[1], vals[1] >= vals[0]))
-    return out
+# ★ role_floor（B3 の出どころ＝採用台帳のマーカー）と _atr_bands（B4＝ATR% の帯ごとの土台比較）は
+#   tuner_judgement.py へ移した（案B・まこさん承認 2026-08-01）。冒頭の import が同じ関数を指している
+#   ＝挙動は不変。恒等の証拠＝tuner_judgement.py --identity の md5 突き合わせ（切り出し前後で完全一致）。
 
 
 def _run_baseline(ad, df_s, df_c, logic: str, exit_keys: set, minimize: str | None):
@@ -277,96 +233,9 @@ def _run_baseline(ad, df_s, df_c, logic: str, exit_keys: set, minimize: str | No
     return {"search": rs, "confirm": rc}
 
 
-def _print_judgement(base, rs, rc, min_per_day, stats: dict | None, n_kept: int,
-                     rules: dict | None = None, rfloor: float | None = None,
-                     trials: int = 0, gain: float | None = None,
-                     bands: list | None = None) -> None:
-    """判定の1枚表（A＝出し切ったか／B＝本物か／C＝目標に届いたか）。
-
-    ★ML の知識がなくても読めるように、印は ✅ と ❌ と「値がまこさん待ち」の3つだけにする。
-      値を CC が決めない項目は、勝手に埋めずに「まこさん待ち」と出す（監査 2026-07-27 Q8）。
-    """
-    WAIT = "— 値がまこさん待ち"
-    sr = rules or {}
-    rows = []
-    delta = sr.get("delta_net")
-    if delta is None or gain is None:
-        rows.append(("A1", "改善が δ 未満（出し切ったか）", WAIT))
-    else:
-        rows.append(("A1", "改善が δ 未満（出し切ったか）",
-                     f"δ ${delta:,.0f} → 後半の伸び ${gain:+,.0f}"
-                     + ("  ✅" if gain < delta else "  ❌ まだ伸びている")))
-    nmax = sr.get("n_max")
-    if nmax is None:
-        rows.append(("A2", "試行の上限 N_max に到達（着手前に宣言）", WAIT))
-    else:
-        rows.append(("A2", "試行の上限 N_max に到達（着手前に宣言）",
-                     f"N_max {nmax:,} → 今回 {trials:,}"
-                     + ("  ✅" if trials >= nmax else "  ❌ まだ上限に達していない")))
-    if base is None:
-        rows.append(("B1", "値決め窓で土台より改善しているか", "— このロジックはまだ採用値を持たない"))
-        rows.append(("B2", "確認窓で土台より悪化していないか", "— 同上"))
-    else:
-        bs, bc = base["search"]["total"], base["confirm"]["total"]
-        rows.append(("B1", "値決め窓で土台より改善しているか",
-                     f"土台 ${bs:+,.0f} → 候補 ${rs['total']:+,.0f}"
-                     + ("  ✅" if rs["total"] > bs else "  ❌")))
-        if SEARCH_START == CONFIRM_START and SEARCH_END == CONFIRM_END:
-            # ★同一窓の間は B2 に合格の印を出さない（暫定窓＝まこさん確定 2026-07-30）。
-            #   確認窓の役割は「値決め窓だけのまぐれ当たりを弾く」＝同じ窓では B1 と同じ数字を
-            #   2回見るだけで、弾く力がゼロ。✅を出すと独立の確認に見えてしまう。
-            rows.append(("B2", "確認窓で土台より悪化していないか",
-                         "— 確認窓＝値決め窓のため判定不能（engine_tuner 完成までの暫定・窓の決め直しは歩5）"))
-        else:
-            rows.append(("B2", "確認窓で土台より悪化していないか",
-                         f"土台 ${bc:+,.0f} → 候補 ${rc['total']:+,.0f}"
-                         + ("  ✅" if rc["total"] >= bc else "  ❌")))
-    # B3＝役割の下限（台帳・下回るのは役割を変える決定）と、運用の下限（PDCA で見直してよい）の2段
-    ops = sr.get("ops_min_per_day")
-    floor = ops if ops is not None else (min_per_day if min_per_day is not None else rfloor)
-    if floor is None:
-        rows.append(("B3", "件数/日 が下限以上", WAIT))
-    else:
-        src = "運用の下限" if ops is not None else ("探索のゲート" if min_per_day is not None else "役割の下限")
-        note = ""
-        if rfloor is not None and floor < rfloor:
-            note = f"  ⚠️ 役割の下限 {rfloor:g} を下回る線を使っている＝役割を変える決定に当たる"
-        rows.append(("B3", f"件数/日 が下限以上（{src}）",
-                     f"下限 {floor:g} → 候補 {rs['per_day']:.2f}"
-                     + ("  ✅" if rs["per_day"] >= floor else "  ❌") + note))
-    if bands is None:
-        rows.append(("B4", "ATR% の全帯で土台を悪化させない",
-                     WAIT if not sr.get("atr_band_edges") else "— 土台が無いので比べられない"))
-    else:
-        ng_b = [b[0] for b in bands if not b[3]]
-        rows.append(("B4", "ATR% の全帯で土台を悪化させない",
-                     f"{len(bands)}帯" + ("  ✅ 全帯で非悪化" if not ng_b
-                                          else f"  ❌ 悪化した帯 {', '.join(ng_b)}")))
-    if stats is None:
-        rows.append(("B5", "DSR > 0.95（試した回数で割り引いた成績）", f"— 判定できない（通った試行 {n_kept} 本）"))
-        rows.append(("B6", "PBO < 0.5（過剰なあてはめの確率）", "— 同上"))
-    else:
-        d, p = stats["dsr"], stats["pbo"]
-        rows.append(("B5", "DSR > 0.95（試した回数で割り引いた成績）",
-                     f"{d['dsr']:.3f}" + ("  ✅" if d["dsr"] > tuner_stats.DSR_PASS else "  ❌")))
-        rows.append(("B6", "PBO < 0.5（過剰なあてはめの確率）",
-                     (f"{p['pbo']:.3f}" + ("  ✅" if p["pbo"] < tuner_stats.PBO_PASS else "  ❌"))
-                     if p else "— 測れない  ❌"))
-    rows.append(("C", "目標額（月 net $1,900）に届いたか", "— この道具では判定しない（統合の段で合算）"))
-
-    print("\n[判定の1枚表（A＝そのロジックで出し切ったか／B＝その数字が本物か／C＝目標に届いたか）]")
-    print("| # | 見るもの | 結果 |")
-    print("|---|---|---|")
-    for a, b, c in rows:
-        print(f"| {a} | {b} | {c} |")
-    ng = [a for a, _b, c in rows if "❌" in c]
-    wait = [a for a, _b, c in rows if "まこさん待ち" in c]
-    if ng:
-        print(f"→ **調整しきれていない**（{', '.join(ng)} が不合格）")
-    elif wait:
-        print(f"→ 判定できない（{', '.join(wait)} の値が決まっていない）")
-    else:
-        print("→ このロジックはこれ以上出ない（★目標額に届いたかは別＝統合の段で合算して判定する）")
+# ★ _print_judgement（判定の1枚表 A/B/C）は tuner_judgement.py へ移した（案B・まこさん承認 2026-08-01）。
+#   冒頭の import が同じ関数を指している＝挙動は不変。恒等の証拠＝tuner_judgement.py --identity。
+#   歩5 の第2段で A1・B3・土台なし合否を直すときは、あちら側だけを直せば新旧の器に同時に効く。
 
 
 def _print_stats(strategy: str, logic: str, kept: list, best_num: int) -> None:
