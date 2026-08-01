@@ -68,6 +68,7 @@ from tuner_adapters import available, load_adapter   # 戦略ごとの接続フ�
 #   理由＝作り直し中の新しい器（engine_tuner_gen.py）にも同じ判定を使わせるため。判定が1箇所に無いと、
 #   同じ設定に対して古い器と新しい器で別の合否が出る。引っ越しの恒等＝tuner_judgement.py --identity
 #   （判定表 md5 ccbfe65aedbdf639a120becaa45304a6 ／ ATR%帯 md5 ab1f16299bf309d0b580f7749df6cc84）。
+from tuner_judgement import assert_role_floor                    # B3 の関門＝役割の下限で止める
 from tuner_judgement import atr_bands as _atr_bands              # B4＝ATR% の帯ごとの土台比較
 from tuner_judgement import print_judgement as _print_judgement  # 判定の1枚表（A/B/C）
 from tuner_judgement import role_floor                           # B3＝採用台帳から役割と件数の下限
@@ -429,6 +430,9 @@ def main() -> None:
           f"（理由 {rules.get('ops_reason')}・{rules.get('ops_date')}）")
     print(f"[役割] {a.strategy} = {role} ／ 役割から来る件数/日 の絶対下限 {rfloor}"
           "（台帳のマーカーが正本・下回るのは調整でなく役割を変える決定）")
+    # ★役割の下限より緩い線で回そうとしたら、明示の決定が無い限りここで止まる（fail-closed・監査 4-14）。
+    #   直す前は「⚠️ 下回る線を使っている」と警告するだけで走ってしまい、§8.6 の逸脱が素通りしていた。
+    assert_role_floor(a.strategy, min_per_day, rules, rfloor)
     if rules.get("n_max") and a.trials > rules["n_max"]:
         print(f"⚠️ 今回の試行 {a.trials:,} が宣言した上限 {rules['n_max']:,} を超えている"
               "＝多重検定の罰を後出しで薄める形。上限を変えるなら設定ファイルを直してから回すこと。")
@@ -519,23 +523,30 @@ def main() -> None:
               f" / 保有中央 {r['hold_med']:.0f}分 / 型別 {_type_split(ad, r['t'])}")
     stats = _print_stats(a.strategy, a.logic, kept, st.best_trial.number)
 
-    # A1 の代用＝試行の前半と後半で、目的関数の最良がどれだけ伸びたか（段がまだ無いため）
-    gain = None
-    if kept:
-        val = (lambda z: z[2]["focus"]) if a.minimize else (lambda z: z[2]["total"])
-        half = a.trials / 2.0
-        first = [val(z) for z in kept if z[0] < half]
-        gain = (max(val(z) for z in kept) - max(first)) if first else None
+    # ★A1 の代用は廃止した（監査 4-15・歩5 の1回目 第2段・2026-08-01）。
+    #   代用＝「試行の前半と後半で最良がどれだけ伸びたか」は、1試行しか無くても合格が出た
+    #   （2026-07-30 の測定1 で再実証）。本来の A1 は「直近2段の改善が δ 未満」で、段の最良が
+    #   3個そろって初めて測れる。この道具（engine_tuner.py）は単段なので段の最良を渡せない
+    #   ＝A1 は「判定不能」と出る。段のある新しい器（engine_tuner_gen.py）が stage_bests を
+    #   渡せるようになった時点で、あちらから本来の判定が出る。
+    stage_bests = None
     bands = None
     if base is not None and rules.get("atr_band_edges"):
         bands = _atr_bands(base["search"]["t"], rs["t"], rules["atr_band_edges"])
         print("\n[B4 ATR% の帯ごとの比較（静かな相場だけで稼いで荒い相場で損を出す形を弾く）]")
         for lab, b, c, ok in bands:
             print(f"  ATR% {lab:>10} : 土台 ${b:+,.0f} → 候補 ${c:+,.0f}" + ("  ✅" if ok else "  ❌"))
+    # ★判定表はファイルにも残す（まこさん指示 2026-08-01）＝画面だけだと走らせるたびに流れて消え、
+    #   後から検収の証拠を見返せないため。置き場所は results/priority_rebuild/ratchet/judgement/。
     _print_judgement(base, rs, rc, min_per_day, stats, len(kept),
-                     rules=rules, rfloor=rfloor, trials=a.trials, gain=gain, bands=bands)
-    if gain is not None:
-        print("  ※ A1 は段がまだ無いので、試行の前半と後半の伸びで代用している（段の構成は未実装）。")
+                     rules=rules, rfloor=rfloor, trials=a.trials,
+                     stage_bests=stage_bests, bands=bands,
+                     save_tag=f"{a.strategy}_{a.logic}",
+                     save_note=f"試行 {a.trials} ／ seed {a.seed}"
+                               + (f" ／ 最小化 {a.minimize}" if a.minimize else "")
+                               + (f" ／ net の下限 ${a.net_floor:,.0f}" if a.net_floor is not None else ""))
+    print("  ※ この道具は単段なので A1 は判定不能と出る（代用の合格は廃止した・監査 4-15）。"
+          "段のある新しい器が段ごとの最良を渡せるようになれば、本来の A1 が出る。")
     print("\n⚠️ ここは探索側の数字＝採否の数字ではない。統合最終形1つだけを採点窓 score.py にかけ、採否はまこさんが判断する。")
     print("⚠️ 目標額（月 net $1,900）に届いたかは、この道具では判定しない＝全戦略を同じ 0.12 BTC で"
           "一緒に回した合算でしか出ない（統合の段・pdca_flow §6.1）。")
