@@ -1,12 +1,50 @@
 #!/bin/bash
 # L-239 ずれ防止: 新セッション開始時に「次セッション着手」ブロックの参照パスを自動 ls チェック。
-# WORKFLOW.md 🔴 active ブロック + ml_pipeline_execlog.md「現在地+次セッション着手」から
+# WORKFLOW.md 🔴 active ブロック + next_step.md から
 # results/ scripts/ data/ .claude/ 配下の .parquet/.py/.md/.json/.csv/.joblib パスを抽出 → 存在確認。
 # ❌欠落があれば、引き継ぎ記述が古い/思い込みの疑い → 着手前に疑う (= 学習済み誤断定・データ再作成の無駄を防ぐ)。
-SDK="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api"
-python3 - "$SDK" << 'PYEOF'
+#
+# ★2026-08-02 まこさん指示「この誤検知が度々発生しているので、今後一切このようなことを起こさない状態に」
+#   原因＝パスを深い方（bitget-python-sdk-api）だけで探しており、リポジトリ直下にあるファイル
+#   （.claude/rules/chat_writing_rules.md 等）を毎回「❌ 欠落」と誤報していた。
+#   直し3点:
+#     ① 探す場所を2つにした（リポジトリ直下 と bitget-python-sdk-api）。どちらかに在れば ✅。どこで
+#        見つかったかも出す＝「似た名前のフォルダが2つある」ことが開始時に毎回見える。
+#     ② この仕組み自体を毎回 自己検査する（下の SENTINEL）。既知答え3件＝直下にだけ在る／深い方にだけ
+#        在る／本当に無い。1件でも外れたら大きく警告する＝検査が黙って壊れることを防ぐ。
+#     ③ 見つからない時は、両方の場所で探した事実を出す（片方しか見ていない誤報と区別できる）。
+REPO="/Users/tachiharamasako/Documents/GitHub/cat-bitget"
+SDK="$REPO/v3-bitget-api-sdk/bitget-python-sdk-api"
+python3 - "$SDK" "$REPO" << 'PYEOF'
 import sys, re, os, glob
-SDK = sys.argv[1]
+SDK, REPO = sys.argv[1], sys.argv[2]
+# 探す場所（名前, 実体）＝この2つが .claude を持つ全部（2026-08-02 実測・find で確認済み）
+BASES = [("直下", REPO), ("sdk", SDK)]
+
+
+def find_in_bases(rel: str):
+    """相対パスを全部の場所で探し、見つかった場所の名前を返す（複数可・空なら本当に無い）。"""
+    gp = re.sub(r'\{[^}]*\}', '*', rel)          # {label} 等テンプレ → glob
+    hits = []
+    for name, base in BASES:
+        if glob.glob(os.path.join(base, gp)):
+            hits.append(name)
+    return hits
+
+
+# ── ② 番人（既知答え）＝この仕組み自体が毎回自分を検査する ──────────────────────
+SENTINEL = [
+    (".claude/rules/chat_writing_rules.md", True, "直下にだけ在るファイル"),
+    ("scripts/priority_rebuild/periods.py", True, "sdk にだけ在るファイル"),
+    (".claude/rules/__this_file_never_exists__.md", False, "本当に無いファイル"),
+]
+sent_ng = []
+for rel, want, imi in SENTINEL:
+    got = bool(find_in_bases(rel))
+    if got != want:
+        sent_ng.append(f"{imi}（{rel}）＝期待 {'見つかる' if want else '見つからない'} / "
+                       f"実際 {'見つかった' if got else '見つからない'}")
+
 
 def block(path, start_pat, end_pat=None):
     try:
@@ -23,28 +61,35 @@ def block(path, start_pat, end_pat=None):
             out.append(ln)
     return "\n".join(out)
 
+
 # WORKFLOW active ブロック (🔴 現在地/現在のフェーズ → 次の 🧊 改訂N ブロック)
 wf = block(f"{SDK}/WORKFLOW.md", r"🔴 現在(のフェーズ|地)", r"🧊 改訂\d+ ブロック")
-# next_step.md（新セッションの起点・現行正本。旧 ml_pipeline_execlog=廃止8工程フローは参照しない・2026-06-20）
-ns = block("/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/next_step.md", r".")
+# next_step.md（新セッションの起点・現行正本）
+ns = block(f"{REPO}/.claude/state/next_step.md", r".")
 text = wf + "\n" + ns
 
 pat = r'(?:results|scripts|data|\.claude)/[A-Za-z0-9_./{}*-]+\.(?:parquet|py|md|json|csv|joblib)'
 paths = sorted(set(re.findall(pat, text)))
 
 print("=== 次セッション着手: 参照パス存在チェック (自動・L-239 ずれ防止) ===")
+if sent_ng:
+    print("🚨 この検査自体が壊れている（番人が落ちた）＝下の ✅/❌ を信用しないでください:")
+    for x in sent_ng:
+        print(f"   ・{x}")
+else:
+    print("（番人 ✅ 3件 pass＝『直下にだけ在る』『sdk にだけ在る』『本当に無い』を正しく見分けられている）")
 if not paths:
     print("⚠️ 引き継ぎブロックにファイルパスなし (= 実行可能テンプレ未記載の疑い・5列表で書き直せ)")
 miss = 0
 for p in paths:
-    gp = re.sub(r'\{[^}]*\}', '*', p)  # {label} 等テンプレ → glob
-    full = os.path.join(SDK, gp)
-    hit = glob.glob(full)
-    if hit:
-        print(f"✅ {p}")
+    hits = find_in_bases(p)
+    if hits:
+        print(f"✅ {p}  ［{'／'.join(hits)}］")
     else:
-        print(f"❌ 欠落: {p}")
+        print(f"❌ 欠落: {p}  ［直下・sdk の両方で探して見つからない］")
         miss += 1
 print(f"--- 欠落 {miss} / 計 {len(paths)} 件。❌ があれば引き継ぎ記述が古い/思い込みの疑い → 着手前に検証 ---")
+print("--- ［直下］＝cat-bitget/ 直下の .claude ／［sdk］＝bitget-python-sdk-api/ の .claude。"
+      "2つある理由は .claude/rules/README_folder_map.md ---")
 PYEOF
 exit 0
