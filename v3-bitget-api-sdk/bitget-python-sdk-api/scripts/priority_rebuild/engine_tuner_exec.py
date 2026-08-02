@@ -854,12 +854,34 @@ def _peak_giveback_level(lv: dict, lot: dict, side: str) -> float | None:
     return float(max(pk - gb * gain, avg * (1.0 + fl)))
 
 
-def _exit_fire_ok(b: dict, lot: dict, i: int, df: pd.DataFrame, geo: dict, lane: str) -> bool:
+def _collect_fire_cols(recipe: dict, df: pd.DataFrame, geo: dict, lane: str) -> dict:
+    """出口 fire が使う材料列を、ループの前に1回だけ解決して配列にする（歩6-1 里程標7）。
+    ★毎バー解決すると列の作り直しが走って遅い＝ここで1回だけ作る。値そのものは変えない。"""
+    out: dict[str, np.ndarray] = {}
+    for b in recipe.get("exits") or []:
+        fire = b.get("fire")
+        if fire is None:
+            continue
+        conds, _d = _walk(fire)
+        for c in conds:
+            for m in (c.get("material") or []):
+                if "state" in m:
+                    continue                      # ポジション状態列は毎バー計算（配列にできない）
+                key = _material_name(m, lane)[1]
+                if key not in out:
+                    out[key] = _col_array(df, m, geo, lane)
+    return out
+
+
+def _exit_fire_ok(b: dict, lot: dict, i: int, df: pd.DataFrame, geo: dict, lane: str,
+                  fire_cols: dict | None = None) -> bool:
     """出口 fire（材料＝ポジション状態列・on_close 評価）。scope（adds・hold_min・ceil_type）もここで見る。"""
     sc = b.get("scope")
     hold_min = (i - lot["first_idx"]) * 5
     if sc:
         lo, hi = sc.get("adds", [1, 10**9])
+        if hi is None:
+            hi = 10**9
         if not (lo <= lot["add_count"] <= hi):
             return False
         ct = sc.get("ceil_type")               # 型別の枝（歩6-1＝v27/v47/v53 等は flat_up 限定・down 限定がある）
@@ -887,9 +909,15 @@ def _exit_fire_ok(b: dict, lot: dict, i: int, df: pd.DataFrame, geo: dict, lane:
         if _is_cond(node):
             m = (node.get("material") or [{}])[0]
             nm = m.get("state")
-            if nm is None:
-                raise RecipeError("[実行器] 出口 fire の材料はポジション状態列（歩4 でカタログ列に拡張）")
-            val = state[nm]
+            if nm is not None:
+                val = state[nm]
+            else:                                  # 指標の列（歩6-1 里程標7 で拡張・先に配列にしてある）
+                key = _material_name(m, lane)[1]
+                if fire_cols is None or key not in fire_cols:
+                    raise RecipeError(f"[実行器] 出口 fire の材料列が解決されていない: {key}")
+                val = float(fire_cols[key][i])
+                if not np.isfinite(val):           # 欠損は不成立（入口の条件と同じ既定・na=pass で反転）
+                    return bool((node.get("value") or {}).get("na") == "pass")
             th = _vnum(node.get("value", {}))
             return bool(_side_cmp(val, th, node.get("side")))
         if "all" in node:
@@ -951,6 +979,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
         fire = _entry_fire(recipe, df, geo, qtable)
         ceil_arr = isdn_arr = None
     last_fup_px = None                            # 同一レンジ内の直近 flat_up 約定価格（e37 956行・v37/v38 の基準）
+    fire_cols = _collect_fire_cols(recipe, df, geo, lane)   # 出口 fire の指標列（ループ前に1回だけ解決）
     pex = recipe.get("position_exits") or {}
     uc = pex.get("uptrend_cut")
     rb = pex.get("range_break")
@@ -1067,7 +1096,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                     if _lvl is None:
                         continue
                     _hit = (h[i] >= _lvl) if side == "SHORT" else (l[i] <= _lvl)
-                    if _hit and _exit_fire_ok(b, lot, i, df, geo, lane):
+                    if _hit and _exit_fire_ok(b, lot, i, df, geo, lane, fire_cols):
                         _px = (max(_lvl, o[i]) if side == "SHORT" else min(_lvl, o[i])) \
                             if _pl.get("pessimistic") else _lvl
                         e37._record(trades, lot, _px, b["reason"], i, ts)
@@ -1103,7 +1132,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                     if _lvl is None:
                         continue                   # 武装していない＝この枝は不発
                     _hit = (h[i] >= _lvl) if side == "SHORT" else (l[i] <= _lvl)
-                    if _hit and _exit_fire_ok(b, lot, i, df, geo, lane):
+                    if _hit and _exit_fire_ok(b, lot, i, df, geo, lane, fire_cols):
                         _px = (max(_lvl, o[i]) if side == "SHORT" else min(_lvl, o[i])) \
                             if pl.get("pessimistic") else _lvl
                         e37._record(trades, lot, _px, b["reason"], i, ts)
@@ -1122,7 +1151,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                     _r = max(0.0, (_tmb - (i - lot["first_idx"])) / _tmb)
                     _lvl = src + (_bef - src) * (1.0 - _r)
                     _hit = (l[i] <= _lvl) if side == "SHORT" else (h[i] >= _lvl)
-                    if _hit and _exit_fire_ok(b, lot, i, df, geo, lane):
+                    if _hit and _exit_fire_ok(b, lot, i, df, geo, lane, fire_cols):
                         e37._record(trades, lot, _lvl, b["reason"], i, ts)
                         closed = True
                         break
@@ -1137,7 +1166,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                     else:
                         hit = (l[i] <= lvl) if side == "SHORT" else (h[i] >= lvl)
                         px = lvl
-                    if not (hit and _exit_fire_ok(b, lot, i, df, geo, lane)):
+                    if not (hit and _exit_fire_ok(b, lot, i, df, geo, lane, fire_cols)):
                         continue
                     ratio = float(b.get("size_ratio", 1.0))
                     if ratio < 1.0:
@@ -1152,7 +1181,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                     closed = True
                     break
                 # on_close 枝（バー確定時に fire を評価）
-                if not _exit_fire_ok(b, lot, i, df, geo, lane):
+                if not _exit_fire_ok(b, lot, i, df, geo, lane, fire_cols):
                     continue
                 bw = (b.get("exec") or {}).get("be_wait")
                 if bw is not None:                 # TIME→建値フロア待機へ移行（on_close→resting・§6）
@@ -1488,9 +1517,57 @@ def s1_engine_params(recipe: dict) -> dict:
             "peaklock": (((bx["PEAKLOCK"].get("exec") or {}).get("placement") or {}).get("level")
                          if "PEAKLOCK" in bx else None),
             "fastcut": (bx["FASTCUT"] if "FASTCUT" in bx else None),
+            "v59": ({"down": bx["V59DOWN"], "flat": bx["V59FLAT"]}
+                    if ("V59DOWN" in bx and "V59FLAT" in bx) else None),
+            "mtfcut": (bx["MTFCUT"] if "MTFCUT" in bx else None),
             "sl_far": _vnum(bx["SL"]["exec"]["placement"]["level"]["k"]),
             "tmax": tmax_sh, "break_bars": int(_vnum(rbx["bars"])), "vol_n": int(_vnum(rbx["vol_n"])),
             "max_lots": int(recipe["position"]["max_adds"])}
+
+
+def _attach_v59_cols(dfp: pd.DataFrame) -> pd.DataFrame:
+    """v59 の材料列（歩6-1 里程標7）＝e37_scalp 1026-1044行の式をそのまま写す。
+    ★写しが正しいことは恒等そのものが守る＝両側を毎回走らせて md5 を比べるので、式がずれれば不一致で止まる。
+    （e37 側はこの式が run_continuous_v11 の中に埋まっていて、関数として呼び出せないため写している）。"""
+    c = dfp["close"].to_numpy(float)
+    h = dfp["high"].to_numpy(float)
+    l = dfp["low"].to_numpy(float)
+    cs, hs, ls = pd.Series(c), pd.Series(h), pd.Series(l)
+    up, dn = hs.diff(), -ls.diff()
+    p = pd.Series(np.where((up > dn) & (up > 0), up, 0.0))
+    m = pd.Series(np.where((dn > up) & (dn > 0), dn, 0.0))
+    tr = pd.concat([hs - ls, (hs - cs.shift()).abs(), (ls - cs.shift()).abs()], axis=1).max(axis=1)
+    atr14 = tr.ewm(alpha=1.0 / 14, adjust=False).mean()
+    pdi14 = 100 * p.ewm(alpha=1.0 / 14, adjust=False).mean() / atr14
+    mdi14 = 100 * m.ewm(alpha=1.0 / 14, adjust=False).mean() / atr14
+    kij26 = (hs.rolling(26).max() + ls.rolling(26).min()) / 2.0
+    out = dfp.copy()
+    out["e37_v59_di14"] = (pdi14 - mdi14).to_numpy(float)
+    out["e37_v59_kijun26"] = ((cs / kij26) - 1.0).to_numpy(float) * 100.0
+    return out
+
+
+def _attach_v47_cols(dfp: pd.DataFrame) -> pd.DataFrame:
+    """v47 の材料列（歩6-1 里程標8）＝e37_scalp 993-1002行（15分足 RSI9）と 1011-1012行（BB+2σ）の写し。
+    ★15分足 RSI9 は「閉じた15分バーの次の5分バーから有効」＝当該バー内の値は使わない（H2）。
+    ★写しの正しさは恒等そのものが守る（両側を毎回走らせて md5 を比べる）。"""
+    ts = dfp["ts"].to_numpy()
+    c = dfp["close"].to_numpy(float)
+    n = len(dfp)
+    min15 = (pd.to_datetime(pd.Series(ts)).dt.minute % 15) == 10   # 15分足を閉じる5分バー
+    c15 = pd.Series(c)[min15.to_numpy()]
+    d15 = c15.diff()
+    u15 = d15.clip(lower=0).ewm(alpha=1.0 / 9, adjust=False).mean()
+    n15 = (-d15.clip(upper=0)).ewm(alpha=1.0 / 9, adjust=False).mean()
+    r15 = 100 - 100 / (1 + u15 / n15.replace(0, np.nan))
+    tmp = np.full(n, np.nan)
+    tmp[c15.index.to_numpy()] = r15.to_numpy(float)
+    cs = pd.Series(c)
+    sm20, sd20 = cs.rolling(20).mean(), cs.rolling(20).std()
+    out = dfp.copy()
+    out["e37_v47_rsi9_15m"] = pd.Series(tmp).shift(1).ffill().to_numpy(float)
+    out["e37_v47_bb2"] = (cs > sm20 + 2 * sd20).to_numpy(float)     # 1=BB+2σ 上抜け／0=それ以外
+    return out
 
 
 def run_identity_s1(quick: bool = False) -> int:
@@ -1548,6 +1625,43 @@ def run_identity_s1(quick: bool = False) -> int:
         checks.append(("未搭乗の線＝maker 往復fee",
                        round(2.0 * e37.ee.MAKER_FEE * 100.0, 6),
                        round(float(_vnum(_fc["fire"]["all"][0]["value"])), 6)))
+    if prm["v59"] is not None:                     # 里程標7＝v59（型別シグナル早切り・待ち20分・型別の窓）
+        _dn, _fl = prm["v59"]["down"], prm["v59"]["flat"]
+        checks += [
+            ("v59_adx_cut", True, bool(ef.get("v59_adx_cut"))),
+            ("V59_WAIT_MIN(down)", int(e37.V59_WAIT_MIN), int(_dn["scope"]["hold_min"][0])),
+            ("V59_WAIT_MIN(flat)", int(e37.V59_WAIT_MIN), int(_fl["scope"]["hold_min"][0])),
+            ("V59_DOWN_WIN_MIN(0=窓なし)", int(e37.V59_DOWN_WIN_MIN), 0 if _dn["scope"]["hold_min"][1] is None else -1),
+            ("V59_FLAT_WIN_MIN", int(e37.V59_FLAT_WIN_MIN), int(_fl["scope"]["hold_min"][1])),
+            ("V59_DOWN_SIG", str(e37.V59_DOWN_SIG), "di14"),
+            ("V59_FLAT_SIG", str(e37.V59_FLAT_SIG), "kijun26"),
+            ("V59_DOWN_ADX7_TH", float(e37.V59_DOWN_ADX7_TH), float(_vnum(_dn["fire"]["all"][0]["value"]))),
+            ("V59_FLAT_DID7_TH", float(e37.V59_FLAT_DID7_TH), float(_vnum(_fl["fire"]["all"][0]["value"]))),
+            ("V59_DOWN_ADV_PCT", float(e37.V59_DOWN_ADV_PCT),
+             float(_vnum(_dn["exec"]["placement"]["level"]["k"])) * 100.0),
+            ("V59_FLAT_ADV_PCT", float(e37.V59_FLAT_ADV_PCT),
+             float(_vnum(_fl["exec"]["placement"]["level"]["k"])) * 100.0),
+            ("V59_CUT_MODE(stop=悲観側)", str(e37.V59_CUT_MODE),
+             "stop" if _dn["exec"]["placement"].get("pessimistic") else "close"),
+        ]
+    if prm["mtfcut"] is not None:                  # 里程標8＝v47（15分過熱×BB のカット）＋v50（切らずに待機へ回す）
+        _mc = prm["mtfcut"]
+        _f3 = {}                                   # 材料の名前で条件を引ける形（state か legacy_col の名前が鍵）
+        for _x in _mc["fire"]["all"]:
+            _m3 = (_x.get("material") or [{}])[0]
+            _f3[_m3.get("state") or _m3.get("legacy_col") or "?"] = _x
+        checks += [
+            ("v47_mtf_cut", True, bool(ef.get("v47_mtf_cut"))),
+            ("v50_trend_wait", True, bool(ef.get("v50_trend_wait"))),
+            ("v47 RSI9(15分)の線", 75.0, float(_vnum(_f3["e37_v47_rsi9_15m"]["value"]))),
+            # ★v47 の未搭乗の線は v53 と別の定数（V24_TREND_TP_PCT 0.08%）＝e37_scalp 1234行。
+            #   v53 は maker 往復fee 0.028%。同じ「未搭乗」でも枝によって線が違う（2026-08-02 に写し間違えて恒等が
+            #   不一致になり、この照合行を足して固定した）。
+            ("v47 未搭乗の線(V24_TREND_TP_PCT)", float(e37.V24_TREND_TP_PCT),
+             float(_vnum(_f3["mfe_prev_pct"]["value"]))),
+            ("V48_TTL_BARS(v50 の待ち)", int(e37.V48_TTL_BARS),
+             int(_vnum(_mc["exec"]["be_wait"]["ttl"]))),
+        ]
     for nm, want, got in checks:
         okc = (want == got)
         print(f"[恒等検収 S1] 値の照合 {nm}: 正本={want} / レシピ側={got} → {'✅' if okc else '❌'}")
@@ -1591,6 +1705,15 @@ def run_identity_s1(quick: bool = False) -> int:
     if prm["fastcut"] is not None:                 # 里程標6＝v53（幾何早切り）
         v15p["v53_flatup_fast_cut"] = True
         _lv.append("v53 幾何早切り")
+    if prm["v59"] is not None:                     # 里程標7＝v59（型別シグナル早切り）
+        v15p["v59_adx_cut"] = True
+        dfp = _attach_v59_cols(dfp)                # 材料列（両側に同じ df を渡す）
+        _lv.append("v59 型別シグナル早切り")
+    if prm["mtfcut"] is not None:                  # 里程標8＝v47（15分過熱×BB のカット）＋v50（待機へ回す）
+        v15p["v47_mtf_cut"] = True
+        v15p["v50_trend_wait"] = True
+        dfp = _attach_v47_cols(dfp)
+        _lv.append("v47 15分過熱カット→v50 待機")
     print(f"[恒等検収 S1] 載せたレバー: {' / '.join(_lv)}（レシピが正本＝現行側の引数はレシピから機械導出）")
     box_tf = ad.config()["global"]["box_tf"]
     up_arr = dfp["rg5_uptrend"].to_numpy(bool)
@@ -1599,6 +1722,11 @@ def run_identity_s1(quick: bool = False) -> int:
     for r in t_ref:
         r["logic"] = recipe["meta"]["logic_id"]
     h_ref, n_ref = _md5_trades(t_ref, s, e)
+    # ★配線が生きている証拠＝現行側が数えたレバーの発火回数。0 のレバーは「両側が一致した」だけで、
+    #   この窓では一度も動いていない＝書き写しの正しさをその窓では確かめられていない（正直に出す）。
+    _st = {k: v for k, v in (v15p.get("_stats") or {}).items()
+           if isinstance(v, int) and v > 0 and not k.endswith("$")}
+    print(f"[恒等検収 S1] 現行側のレバー発火回数（0 のレバーはこの窓で動いていない）: {_st}")
     t_new, rep = run_recipe(dfp, recipe)
     h_new, n_new = _md5_trades(t_new, s, e)
     same = (h_ref == h_new)
