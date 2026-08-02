@@ -49,6 +49,9 @@ FORMS = ("level", "band", "band_exclude", "slope", "slope_avg", "cross",
          "streak", "within_n", "diff", "touch", "candle_dir")
 NEST_FORMS = ("streak", "within_n")          # 入れ子形（内側は単純形のみ・1段まで）
 ROLES = ("env", "trigger", "sufficiency", "location")
+# 側の比較（歩6-1 里程標6 で strict を追加）。above/below は境界を含む（≥ / ≤）。
+# above_strict/below_strict は境界を含まない（> / <）＝過去実装が「〜未満」で書いている枝の写しに要る。
+SIDES = ("above", "below", "above_strict", "below_strict")
 EXEC_METHODS = ("maker", "taker", "post_only", "stop")          # 歩3 で実行できる方式
 EXEC_REGISTERED_ONLY = ("iceberg", "twap", "vwap")              # 登録済みだが実行不能＝拒否側（CP3 Q1）
 # 出口理由は score.py の maker/taker 登録と一致していること（H13・acceptance_checklist D）
@@ -217,8 +220,8 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         _check_value(c.get("value", {}), lane, f"{where}/{form}", legacy_used)
         _check_cond(inner, lane, f"{where}/{form}の内側", legacy_used, in_nest=True)
         return
-    if form in ("level", "diff", "slope", "slope_avg") and c.get("side") not in ("above", "below"):
-        _fail("G5", f"{where}: 形 {form} に side（above/below）が無い")
+    if form in ("level", "diff", "slope", "slope_avg") and c.get("side") not in SIDES:
+        _fail("G5", f"{where}: 形 {form} に side（{'/'.join(SIDES)}）が無い")
     if form == "cross" and (c.get("value") or {}).get("direction") not in ("up", "down"):
         _fail("G5", f"{where}: cross に向き（up/down）が無い")
     if form in ("band", "band_exclude"):
@@ -507,6 +510,12 @@ def _check_level(lv, lane: str, where: str, legacy_used: list):
         if lv.get("base") not in ("entry", "avg"):
             _fail("G6", f"{where}: pct.base が entry/avg でない")
         _check_value(lv.get("k", {}), lane, f"{where}/k", legacy_used)
+    elif kind == "peak_giveback":
+        # v27 型のピーク反転ロック（歩6-1 里程標5）＝武装 arm%・戻し giveback・下限 floor（建値フロア）。
+        for key in ("arm", "giveback", "floor"):
+            if key not in lv:
+                _fail("G5", f"{where}: peak_giveback.{key} が無い（arm＝武装%／giveback＝戻す割合／floor＝建値フロア）")
+            _check_value(lv[key], lane, f"{where}/{key}", legacy_used)
     elif kind == "shrink":
         # v13 deadline shrink（歩6-1・S1 の書き写し）＝from 枝の水準から建値フロアへ残り時間比で縮む maker TP。
         if lv.get("from") is None:
@@ -520,6 +529,17 @@ def _check_level(lv, lane: str, where: str, legacy_used: list):
 
 
 # ══ ② 実行器（共通の売買ループ・設計書 §1〜§7 の意味論）══════════════════════════════
+def _side_cmp(val, th, side: str):
+    """側の比較（above=≥／below=≤／above_strict=>／below_strict=<）。配列でも単値でも同じ式で使う。"""
+    if side == "above":
+        return val >= th
+    if side == "below":
+        return val <= th
+    if side == "above_strict":
+        return val > th
+    return val < th
+
+
 def _vnum(v: dict) -> float:
     """値の解決（数値）＝legacy/定数/整数のみ。分位は _vnum_q（解決表つき・歩4）で解く。"""
     if "legacy" in v:
@@ -600,7 +620,7 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
     akey = _mat_key(mats[0], lane)
     if form == "level":
         th = _vnum_q(v, akey, qtable)
-        ok = (a >= th) if c.get("side") == "above" else (a <= th)
+        ok = _side_cmp(a, th, c.get("side"))
         res = np.where(np.isfinite(a), ok, na_pass)
         return res.astype(bool)
     if form in ("band", "band_exclude"):
@@ -695,8 +715,8 @@ def _resolve_levels(exits: list, i: int, lim: float, side: str, geo: dict, lane:
         if pl.get("kind") != "resting":
             continue
         lv = pl["level"]
-        if lv["kind"] == "shrink":
-            continue                              # 縮む TP＝毎バーの水準（歩6-1）＝ここでは解決しない（ループ側で計算）
+        if lv["kind"] in ("shrink", "peak_giveback"):
+            continue                              # 毎バーの水準（歩6-1）＝ここでは解決しない（ループ側で計算）
         if lv["kind"] == "zone":
             if lv["target"] == "mid":
                 px = geo["mid"][i]
@@ -817,13 +837,33 @@ def _guards_ok(guards: dict, lv: dict, lim: float, side: str) -> bool:
     return True
 
 
+def _peak_giveback_level(lv: dict, lot: dict, side: str) -> float | None:
+    """v27 型のピーク反転ロックの水準（e37_scalp 1208-1217行と同式・歩6-1 里程標5）。
+    武装＝前バーまでの含み益ピークが建値から arm% 以上。水準＝ピーク利益の giveback 分を戻した所
+    （下限＝建値フロア＝損ゼロ級）。武装していなければ None（＝この枝は不発）。"""
+    pk = lot.get("pk_prev", lot["max_fav"])
+    arm = abs(_vnum(lv["arm"])) / 100.0
+    gb = _vnum(lv["giveback"])
+    fl = abs(_vnum(lv["floor"]))
+    avg = lot["avg"]
+    gain = (avg - pk) if side == "SHORT" else (pk - avg)
+    if not (np.isfinite(gain) and gain >= avg * arm):
+        return None
+    if side == "SHORT":
+        return float(min(pk + gb * gain, avg * (1.0 - fl)))
+    return float(max(pk - gb * gain, avg * (1.0 + fl)))
+
+
 def _exit_fire_ok(b: dict, lot: dict, i: int, df: pd.DataFrame, geo: dict, lane: str) -> bool:
-    """出口 fire（材料＝ポジション状態列・on_close 評価）。scope（adds・hold_min）もここで見る。"""
+    """出口 fire（材料＝ポジション状態列・on_close 評価）。scope（adds・hold_min・ceil_type）もここで見る。"""
     sc = b.get("scope")
     hold_min = (i - lot["first_idx"]) * 5
     if sc:
         lo, hi = sc.get("adds", [1, 10**9])
         if not (lo <= lot["add_count"] <= hi):
+            return False
+        ct = sc.get("ceil_type")               # 型別の枝（歩6-1＝v27/v47/v53 等は flat_up 限定・down 限定がある）
+        if ct is not None and lot.get("ceil_type") != ct:
             return False
         if "hold_min" in sc:
             lo2, hi2 = sc["hold_min"]
@@ -837,6 +877,7 @@ def _exit_fire_ok(b: dict, lot: dict, i: int, df: pd.DataFrame, geo: dict, lane:
     sgn = -1.0 if lot["side"] == "SHORT" else 1.0
     avg = lot["avg"]
     state["mfe_pct"] = (lot["max_fav"] - avg) / avg * 100.0 * sgn
+    state["mfe_prev_pct"] = (lot.get("pk_prev", lot["max_fav"]) - avg) / avg * 100.0 * sgn
     state["mae_pct"] = (lot["max_adv"] - avg) / avg * 100.0 * sgn
     c = float(df["close"].iloc[i])
     state["unreal_pct"] = (c - avg) / avg * 100.0 * sgn
@@ -850,7 +891,7 @@ def _exit_fire_ok(b: dict, lot: dict, i: int, df: pd.DataFrame, geo: dict, lane:
                 raise RecipeError("[実行器] 出口 fire の材料はポジション状態列（歩4 でカタログ列に拡張）")
             val = state[nm]
             th = _vnum(node.get("value", {}))
-            return val >= th if node.get("side") == "above" else val <= th
+            return bool(_side_cmp(val, th, node.get("side")))
         if "all" in node:
             return all(_ev(ch) for ch in node["all"])
         if "any" in node:
@@ -979,6 +1020,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                 continue                           # e37 1144-1145行＝uptrend バーは以降の処理へ進まない
         if pre_mfe:                                # e37_scalp 1177-1181行＝mfe/mae は枝の前に全 lot 一括更新
             for lot in lots:
+                lot["pk_prev"] = lot["max_fav"]    # 前バーまでの含み益ピーク（e37 1179行・同一バー楽観の排除）
                 if side == "LONG":
                     lot["max_fav"] = max(lot["max_fav"], h[i])
                     lot["max_adv"] = min(lot["max_adv"], l[i])
@@ -1002,6 +1044,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                 still.append(lot)
                 continue
             if not pre_mfe:                        # 位置の出口がある時は上で一括更新済み（e37 と同じ順序）
+                lot["pk_prev"] = lot["max_fav"]
                 if side == "LONG":
                     lot["max_fav"] = max(lot["max_fav"], h[i])
                     lot["max_adv"] = min(lot["max_adv"], l[i])
@@ -1010,6 +1053,28 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                     lot["max_adv"] = max(lot["max_adv"], h[i])
             closed = False
             if lot["be_dl"] >= 0:                  # 建値フロア待機（v31 型＝SL→BE→期限の順・§8 行11）
+                # ★待機中でも評価する枝（歩6-1 里程標5）＝e37 では v27 が待機ブロックの前にあり、
+                #   待機中の玉にも当たる（1208行 v27 → 1218行 SL → 1220行 待機）。印が無い枝は従来どおり飛ばす。
+                _wclosed = False
+                for bi, b in enumerate(exits):
+                    if (not b.get("while_waiting")) or bi in lot["done"]:
+                        continue
+                    _pl = (b.get("exec") or {}).get("placement") or {}
+                    _lvw = _pl.get("level") or {}
+                    if _lvw.get("kind") != "peak_giveback":
+                        raise RecipeError("[実行器] while_waiting は peak_giveback 枝だけが持てる（歩6-1）")
+                    _lvl = _peak_giveback_level(_lvw, lot, side)
+                    if _lvl is None:
+                        continue
+                    _hit = (h[i] >= _lvl) if side == "SHORT" else (l[i] <= _lvl)
+                    if _hit and _exit_fire_ok(b, lot, i, df, geo, lane):
+                        _px = (max(_lvl, o[i]) if side == "SHORT" else min(_lvl, o[i])) \
+                            if _pl.get("pessimistic") else _lvl
+                        e37._record(trades, lot, _px, b["reason"], i, ts)
+                        _wclosed = True
+                        break
+                if _wclosed:
+                    continue
                 slb = next((b for b in exits if b.get("reason") == "SL_FILLED"), None)
                 if slb is not None:
                     slv = lot["lv"].get(slb["name"], np.nan)
@@ -1032,6 +1097,19 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                     continue
                 pl = (b.get("exec") or {}).get("placement") or {}
                 _lvs = pl.get("level") or {}
+                if pl.get("kind") == "resting" and _lvs.get("kind") == "peak_giveback":
+                    # v27 型のピーク反転ロック（歩6-1 里程標5・e37_scalp 1208-1217行と同式）
+                    _lvl = _peak_giveback_level(_lvs, lot, side)
+                    if _lvl is None:
+                        continue                   # 武装していない＝この枝は不発
+                    _hit = (h[i] >= _lvl) if side == "SHORT" else (l[i] <= _lvl)
+                    if _hit and _exit_fire_ok(b, lot, i, df, geo, lane):
+                        _px = (max(_lvl, o[i]) if side == "SHORT" else min(_lvl, o[i])) \
+                            if pl.get("pessimistic") else _lvl
+                        e37._record(trades, lot, _px, b["reason"], i, ts)
+                        closed = True
+                        break
+                    continue
                 if pl.get("kind") == "resting" and _lvs.get("kind") == "shrink":
                     # v13 deadline shrink（歩6-1）＝from 枝の水準から建値フロアへ残り時間比で縮む maker TP
                     # （e37_scalp 1386-1405行と同式・r=1 で from の水準・r=0 で建値フロア）
@@ -1407,6 +1485,9 @@ def s1_engine_params(recipe: dict) -> dict:
             "rearm_bars": (int(_vnum(sp["rearm_delay_bars"])) if "rearm_delay_bars" in sp else None),
             "ceiling": (recipe["entry"].get("ceiling") or {}),
             "be_wait": ((bx["TIME"].get("exec") or {}).get("be_wait")),
+            "peaklock": (((bx["PEAKLOCK"].get("exec") or {}).get("placement") or {}).get("level")
+                         if "PEAKLOCK" in bx else None),
+            "fastcut": (bx["FASTCUT"] if "FASTCUT" in bx else None),
             "sl_far": _vnum(bx["SL"]["exec"]["placement"]["level"]["k"]),
             "tmax": tmax_sh, "break_bars": int(_vnum(rbx["bars"])), "vol_n": int(_vnum(rbx["vol_n"])),
             "max_lots": int(recipe["position"]["max_adds"])}
@@ -1454,6 +1535,19 @@ def run_identity_s1(quick: bool = False) -> int:
     if prm["be_wait"] is not None:                 # 里程標4＝v31（TIME 満了を成行でなく建値フロアの resting maker へ）
         checks.append(("v31_time_be", True, bool(ef.get("v31_time_be"))))
         checks.append(("V31_TTL_BARS", int(e37.V31_TTL_BARS), int(_vnum(prm["be_wait"]["ttl"]))))
+    if prm["peaklock"] is not None:                # 里程標5＝v27（flat_up 限定のピーク反転 建値ロック）
+        checks.append(("v27_flatup_lock", True, bool(ef.get("v27_flatup_lock"))))
+        checks.append(("V27_ARM_PCT", float(e37.V27_ARM_PCT), float(_vnum(prm["peaklock"]["arm"]))))
+        checks.append(("V27_GIVEBACK", float(e37.V27_GIVEBACK), float(_vnum(prm["peaklock"]["giveback"]))))
+    if prm["fastcut"] is not None:                 # 里程標6＝v53（flat_up 限定の幾何早切り・未搭乗ゲート）
+        _fc = prm["fastcut"]
+        checks.append(("v53_flatup_fast_cut", True, bool(ef.get("v53_flatup_fast_cut"))))
+        checks.append(("V53_FAST_MIN", int(e37.V53_FAST_MIN), int(_fc["scope"]["hold_min"][1])))
+        checks.append(("V53_ADV_PCT", float(e37.V53_ADV_PCT),
+                       float(_vnum(_fc["exec"]["placement"]["level"]["k"])) * 100.0))
+        checks.append(("未搭乗の線＝maker 往復fee",
+                       round(2.0 * e37.ee.MAKER_FEE * 100.0, 6),
+                       round(float(_vnum(_fc["fire"]["all"][0]["value"])), 6)))
     for nm, want, got in checks:
         okc = (want == got)
         print(f"[恒等検収 S1] 値の照合 {nm}: 正本={want} / レシピ側={got} → {'✅' if okc else '❌'}")
@@ -1491,6 +1585,12 @@ def run_identity_s1(quick: bool = False) -> int:
     if prm["be_wait"] is not None:                 # 里程標4＝v31（TIME 満了後の建値フロア待機・既存の待機機構で書ける）
         v15p["v31_time_be"] = True
         _lv.append("v31 建値フロア待機")
+    if prm["peaklock"] is not None:                # 里程標5＝v27（ピーク反転の建値ロック・待機中も評価される）
+        v15p["v27_flatup_lock"] = True
+        _lv.append("v27 ピーク反転ロック")
+    if prm["fastcut"] is not None:                 # 里程標6＝v53（幾何早切り）
+        v15p["v53_flatup_fast_cut"] = True
+        _lv.append("v53 幾何早切り")
     print(f"[恒等検収 S1] 載せたレバー: {' / '.join(_lv)}（レシピが正本＝現行側の引数はレシピから機械導出）")
     box_tf = ad.config()["global"]["box_tf"]
     up_arr = dfp["rg5_uptrend"].to_numpy(bool)
@@ -1657,6 +1757,30 @@ def selftest() -> None:
         r["exits"][1]["exec"]["placement"]["level"] = {"kind": "shrink", "from": "TP2",
                                                        "floor": {"const": "SCALP_FLOOR"}}
     broke("㉕ shrink の tmax 欠落", _shrink_no_tmax, "G5")
+
+    def _peak_no_arm(r):
+        r["meta"]["lane"] = "legacy"
+        r["exits"][1]["exec"]["placement"]["level"] = {"kind": "peak_giveback",
+                                                       "giveback": {"legacy": 0.5},
+                                                       "floor": {"const": "SCALP_FLOOR"}}
+    broke("㉖ peak_giveback の arm 欠落", _peak_no_arm, "G5")
+    # 既知答え（歩6-1 里程標5）＝ピーク反転ロックの水準（e37_scalp 1211行の電卓式と突き合わせ）
+    _lotS = {"avg": 100.0, "pk_prev": 99.0, "max_fav": 99.0}      # SHORT・ピーク含み益 1.0（=1.0%≥arm 0.15%）
+    _lvS = {"arm": {"legacy": 0.15}, "giveback": {"legacy": 0.5}, "floor": {"legacy": 0.0008}}
+    _gotS = _peak_giveback_level(_lvS, _lotS, "SHORT")             # min(99+0.5×1, 100×(1−0.0008))=min(99.5,99.92)
+    if _gotS is None or abs(_gotS - 99.5) > 1e-9:
+        ng.append(f"peak_giveback(SHORT) の既知答え不一致: {_gotS}（99.5 のはず）")
+    _lotF = {"avg": 100.0, "pk_prev": 99.9, "max_fav": 99.9}       # 含み益 0.1 < arm 0.15% ＝武装しない
+    if _peak_giveback_level(_lvS, _lotF, "SHORT") is not None:
+        ng.append("peak_giveback が武装前に水準を返した（arm 未達で None のはず）")
+    _lotC = {"avg": 100.0, "pk_prev": 90.0, "max_fav": 90.0}       # 大きな含み益＝下限（建値フロア）で頭打ち
+    _gotC = _peak_giveback_level(_lvS, _lotC, "SHORT")             # min(90+5, 99.92)=95.0 → 下限は効かない
+    if _gotC is None or abs(_gotC - 95.0) > 1e-9:
+        ng.append(f"peak_giveback の戻し計算が違う: {_gotC}（95.0 のはず）")
+    _lotD = {"avg": 100.0, "pk_prev": 99.8, "max_fav": 99.8}       # 含み益 0.2＝武装する・戻し 0.1 → 99.9
+    _gotD = _peak_giveback_level(_lvS, _lotD, "SHORT")             # min(99.9, 99.92)=99.9
+    if _gotD is None or abs(_gotD - 99.9) > 1e-9:
+        ng.append(f"peak_giveback の下限（建値フロア）が違う: {_gotD}（99.9 のはず）")
     # 歩4 拡張の既知答え（band／band_exclude／slope_avg／分位の解決＝合成列を電卓式と照合）
     a5 = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     df4 = pd.DataFrame({"ts": pd.date_range("2024-05-01", periods=5, freq="5min"),
@@ -1685,7 +1809,7 @@ def selftest() -> None:
     if miss:
         ng.append(f"FAMILY_TEMPLATES の family が系統マップに無い: {miss}")
     print("=" * 80)
-    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ25種で全部止まる・正しい4種は通る・歩4/歩6-1 拡張の既知答え込み）")
+    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ26種で全部止まる・正しい4種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)
     if ng:
         for x in ng:

@@ -1229,7 +1229,11 @@ TIME_REF: dict[str, dict] = {
 }
 # ポジション状態列（出口 fire の材料・入口の条件には使えない＝建玉が無いと定義できない）。
 # 値の体系は 設計書 §2.4＝分位不可（自己参照）＝名前つき定数の倍数か整数グリッドだけ。
-STATE_COLS = ("unreal_pct", "mfe_pct", "mae_pct", "peak_age_bars", "hold_min", "add_count", "dist_be_pct")
+# ★mfe_prev_pct（2026-08-02 歩6-1 里程標6 で追加）＝mfe_pct と同じ含み益の率だが、当該バーを含めず
+#   「前のバーまで」で測る。理由＝S1 の切る枝（v53 等）は同一バーの高値を含めると楽観になるため、
+#   実装（e37_scalp 1179行 pk_prev）が前バーまでのピークで判定している。その写しに要る（H2 の型）。
+STATE_COLS = ("unreal_pct", "mfe_pct", "mfe_prev_pct", "mae_pct", "peak_age_bars", "hold_min",
+              "add_count", "dist_be_pct")
 
 
 def tokenize_ec(line: str) -> list[tuple[str, str]]:
