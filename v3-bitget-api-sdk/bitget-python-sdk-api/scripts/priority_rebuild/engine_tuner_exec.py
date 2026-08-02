@@ -2215,6 +2215,16 @@ def selftest() -> None:
     # 定数レジストリと実体のずれ検査（レジストリの値が実装から黙って離れない）
     ng += iref.const_registry_live_check({"SCALP_FLOOR": e37.SCALP_FLOOR, "V11_SL_BUF": e37.V11_SL_BUF,
                                           "BE_TTL_BARS": parts.BE_TTL_BARS})
+    # ★戦略と審判の maker/taker の一覧が一致しているか（2026-08-02 里程標9 で新設・まこさん指示「修正する」）。
+    #   e37_scalp の _MAKER_EXIT は「score.py MAKER_EXIT_REASONS と完全同期」と自分で宣言している。
+    #   ところが TREND_CAUGHT_TP が score.py にだけ在り、e37 に無い状態が 2026-07-16 から続いていた
+    #   （売買記録CSVの net_usd/fee_usd だけが成行として計算され実際より悲観的に出ていた）。
+    #   宣言は機械で守られていなかった＝ここで一致を検査する。ずれたら止まる。
+    _only_e37 = sorted(set(e37._MAKER_EXIT) - set(_score.MAKER_EXIT_REASONS))
+    _only_judge = sorted(set(_score.MAKER_EXIT_REASONS) - set(e37._MAKER_EXIT))
+    if _only_e37 or _only_judge:
+        ng.append(f"戦略と審判の maker 一覧がずれている: e37 だけに在る {_only_e37} / "
+                  f"score.py だけに在る {_only_judge}（e37_scalp の宣言は『score.py と完全同期』）")
     # 系統マップ: FAMILY_TEMPLATES の全 family が割当済み（G3 の前提）
     miss = iref.lineage_coverage(list(FAMILY_TEMPLATES))
     if miss:

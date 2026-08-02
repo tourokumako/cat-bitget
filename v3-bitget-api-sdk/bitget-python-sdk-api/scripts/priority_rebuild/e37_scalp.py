@@ -373,7 +373,7 @@ def _gen_events_v8_exclusive(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-_MAKER_EXIT = ("TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP", "BE_EXIT", "PARTIAL_TP", "MFE_DRAWDOWN_CUT")   # score.py MAKER_EXIT_REASONS と完全同期（TRAIL_EXIT は e37 未使用だが将来 emit 時の taker 誤計上を防ぐため同期・2026-07-12／MFE_DRAWDOWN_CUT=v14 トレーリング指値 maker・2026-07-07）
+_MAKER_EXIT = ("TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP", "BE_EXIT", "PARTIAL_TP", "MFE_DRAWDOWN_CUT", "TREND_CAUGHT_TP")   # score.py MAKER_EXIT_REASONS と完全同期（TRAIL_EXIT は e37 未使用だが将来 emit 時の taker 誤計上を防ぐため同期・2026-07-12／MFE_DRAWDOWN_CUT=v14 トレーリング指値 maker・2026-07-07／★TREND_CAUGHT_TP＝v24 の trend_caught 玉の resting maker 利確・2026-08-02 追加（まこさん指示「修正する」）＝score.py には 2026-07-16 に登録されていたのに、こちらへ写し忘れていた。そのため売買記録CSVの net_usd と fee_usd の列だけが成行として計算され、実際より悲観的に出ていた。公式の net は score.py が自分で計算し直すので採否には影響していない（score.py 139-145行）。食い違いは score.py 160-161行の自己検算 fee_diff_max に出る形になっていた。二度と黙って写し忘れが起きないよう engine_tuner_exec.py の番人が両者の一致を検査する）
 
 
 def _record(trades, pos, exit_price, reason, exit_idx, ts_arr):
