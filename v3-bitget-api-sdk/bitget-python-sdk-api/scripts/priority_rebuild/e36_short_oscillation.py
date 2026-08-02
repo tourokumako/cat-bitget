@@ -215,7 +215,16 @@ def _record_lots(trades, pos, lots, exit_price, reason, exit_idx, ts_arr):
     TP/逆側端/建値撤退/部分利確=maker・箱ブレイク/中心戻り/時間切れ=taker。net 合計は merge と恒等（gross/手数料は lot 分割で一致・funding は各 lot fill 起点）。"""
     side = pos["side"]; sdir = 1 if side == "LONG" else -1
     exit_ts = pd.Timestamp(ts_arr[exit_idx]); exit_px = float(exit_price)
-    is_taker = reason not in ("TP_FILLED", "EDGE_TP", "BE_EXIT", "PARTIAL_TP")  # 指値 maker 群（部分利確 PARTIAL_TP も maker）・SL(箱ブレイク)/中心戻り/時間切れ/EOD は成行 taker
+    # 指値 maker 群（部分利確 PARTIAL_TP も maker）・SL(箱ブレイク)/時間切れ/EOD は成行 taker。
+    # ★CENTER_LOCK を maker 群へ移した（2026-08-02・まこさん承認「どちらもOK」・H13 で score.py も同時に登録変更）。
+    #   理由＝実装は中心の水準ちょうどで約定させている（694行が Cc[i] で記録・バー終値ではない）＝置いた注文に
+    #   価格が戻って約定する形で、E37 の SL_FILLED / MFE_DRAWDOWN_CUT とまったく同じ形。
+    #   根拠＝exchange_spec 107行「TP/SL の execute_price = trigger_price（Maker 確保）」／
+    #   score.py 40-43行「TRAIL_EXIT は 2026-06-12 まこさん決定で maker に変更…すり抜けリスクの扱いは
+    #   SL maker（E0.1 承認）と同前提」／cat_requirements 211行「手数料負け回避＝maker 優先」。
+    #   ⚠️ maker 化だけでは良く見せる計算になるので、水準を飛び越えたバーの悲観処理（--center-lock-gap）を
+    #   同時に用意した（E37 の SL と同じ max(水準, 始値)）。両方の数字を分けて出す。
+    is_taker = reason not in ("TP_FILLED", "EDGE_TP", "BE_EXIT", "PARTIAL_TP", "CENTER_LOCK")
     pos_id = f"{side}_{int(pos['first_idx'])}"            # 玉ID（玉単位分析で束ねる）
     add_count = int(pos["add_count"]); max_fav = float(pos["max_fav"]); max_adv = float(pos["max_adv"])
     atr14 = round(float(pos["atr_entry"]), 2)
@@ -440,7 +449,8 @@ def _short_rev_nofloor(df, box_tf, zone_params, wide_box_q=None):
 
 def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp=None,
                    short_htf=False, short_only=False, spike_lm=None, spike_gate=None, dying_cut=None,
-                   struct_sl=None, add_gate=None, entry_gate=None, scene_size=None, hold_mom_exit=None):
+                   struct_sl=None, add_gate=None, entry_gate=None, scene_size=None, hold_mom_exit=None,
+                   center_lock_gap=False, time_be_wait=None):
     """E36 SHORT専用の売買エンジン（連続モード両方向・LONG/SHORT を並行管理・merge・cap 合算停止）＋ SPIKE_SL（急騰Exit）。
     spike_lm=(K, alpha) を渡すと、SHORT 保有中・含み損側で Lee-Mykland jump 統計が L* を超えたら成行カット（SPIKE_SL）。
     spike_lm=None では SPIKE_SL ブロックに入らず急騰Exit OFF（教師生成・恒等参照用）。pending fill・出口優先順位・部分利確・建値撤退は shortset1/iter9 と同じ。"""
@@ -596,6 +606,23 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
                 _record(trades, p, c[i], "STRUCT_SL", i, ts)
                 events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
                 continue
+            # ── ★建値フロア待機（時間切れを成行で投げない・2026-08-02 まこさん承認「どちらもOK」・E37 v31 の移植）──
+            #   時間切れの玉を成行 taker で投げる代わりに、建値（手数料込み＝下の bp と同式）へ指値を置いて待つ。
+            #   待つ本数は time_be_wait（既定は E36 の HOLD_5M を再利用＝新しい数値を作らない・L-267）。
+            #   ★待っている間も守り（箱ブレイク・急騰・構造ストップ）は上で先に評価される＝E37 と同じ順序。
+            #   届かずに期限が切れたら、いまどおり成行 TIME_EXIT で降りる。time_be_wait=None で OFF＝恒等。
+            #   ⚠️ 副作用＝指値が届かないと、待つ間にさらに逆行して いまより深い損で確定しうる（E37 v60 と同じ trade-off）。
+            if p.get("be_dl") is not None:
+                _hit_be = (l[i] <= p["be_lvl"]) if side == "SHORT" else (h[i] >= p["be_lvl"])
+                if _hit_be:
+                    _record(trades, p, p["be_lvl"], "BE_EXIT", i, ts)   # 登録済み maker（score.py 無変更＝H13）
+                    events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+                    continue
+                if i >= int(p["be_dl"]):
+                    _record(trades, p, c[i], "TIME_EXIT", i, ts)        # 期限切れ＝いまどおり成行
+                    events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
+                    continue
+                continue                                                # 待機継続（TP/中心戻りは見ない＝E37 と同じ）
             if not p["extended"]:
                 n_lots = len(p["lots"])
                 if _pm is not None and not p["partial_done"] and np.isfinite(Cc[i]) and \
@@ -680,6 +707,9 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
                                 [_hold_feat_vec(A, sdir, avg, p["first_idx"], p["add_count"], i)]))[0] < _bth):
                         p["be_armed"] = True
                     if (i - p["first_idx"]) >= HOLD_5M:
+                        if time_be_wait is not None:   # ★成行で投げず建値へ指値を置いて待つ（同バーは判定しない＝H2）
+                            p["be_lvl"] = bp; p["be_dl"] = i + int(time_be_wait)
+                            continue
                         _record(trades, p, c[i], "TIME_EXIT", i, ts)
                         events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
             else:
@@ -691,16 +721,33 @@ def run_continuous(df, box_tf, max_adds, hold_ctx=None, be_gate=None, partial_tp
                     continue
                 back_center = np.isfinite(Cc[i]) and ((side == "LONG" and l[i] <= Cc[i]) or (side == "SHORT" and h[i] >= Cc[i]))
                 if back_center:
-                    _record(trades, p, Cc[i], "CENTER_LOCK", i, ts)
+                    # ★水準を飛び越えて開いたバーの悲観処理（2026-08-02・まこさん承認・既定 OFF＝恒等）。
+                    #   E37 の SL が使っている max(水準, 始値) と同式（e37_scalp 1219行）。
+                    #   OFF のままだと、バーが中心を飛び越えて開いた場合に中心ちょうどで約定する＝実際より有利。
+                    _px_cl = Cc[i]
+                    if center_lock_gap:
+                        _px_cl = max(Cc[i], o[i]) if side == "SHORT" else min(Cc[i], o[i])
+                    _record(trades, p, _px_cl, "CENTER_LOCK", i, ts)
                     events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
                 elif (i - p["first_idx"]) >= HOLD_5M:
+                    if time_be_wait is not None:       # ★中心到達済みの玉も同じ待機へ（式は上の bp と同一）
+                        _mk2 = ee.MAKER_FEE
+                        p["be_lvl"] = avg * (1.0 + _mk2) / (1.0 - _mk2) if side == "LONG" \
+                            else avg * (1.0 - _mk2) / (1.0 + _mk2)
+                        p["be_dl"] = i + int(time_be_wait)
+                        continue
                     _record(trades, p, c[i], "TIME_EXIT", i, ts)
                     events.append((pd.Timestamp(ts[i]), -p["size"])); pos[side] = None
 
         # ── 4. 入口/add ──
-        if (not short_only) and long_sig[i] and pend["LONG"] is None and (pos["LONG"] is None or pos["LONG"]["add_count"] < max_adds):
+        # ★建値フロア待機中の玉には積み増さない（2026-08-02）＝待機の買い戻し水準は待機開始時の建値で固定して
+        #   置いてあるので、途中で平均建値が動くと置いた指値と食い違う。待機は「降りる途中」なので積まない。
+        #   time_be_wait=None（既定）では be_dl が付かないので、この条件は常に真＝恒等。
+        if (not short_only) and long_sig[i] and pend["LONG"] is None and (pos["LONG"] is None or pos["LONG"]["add_count"] < max_adds) \
+                and (pos["LONG"] is None or pos["LONG"].get("be_dl") is None):
             pend["LONG"] = {"limit": c[i] * (1.0 - ENTRY_OFFSET), "placed_idx": i}
-        if short_sig[i] and (htf_up is None or not htf_up[i]) and pend["SHORT"] is None and (pos["SHORT"] is None or pos["SHORT"]["add_count"] < max_adds):
+        if short_sig[i] and (htf_up is None or not htf_up[i]) and pend["SHORT"] is None and (pos["SHORT"] is None or pos["SHORT"]["add_count"] < max_adds) \
+                and (pos["SHORT"] is None or pos["SHORT"].get("be_dl") is None):
             pend["SHORT"] = {"limit": c[i] * (1.0 + ENTRY_OFFSET), "placed_idx": i}
 
     # ── 期間末 強制クローズ ──
@@ -779,7 +826,7 @@ def _output_and_report(t: pd.DataFrame, suffix: str, extra_params=None, stem: st
 
 def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=None, tag=None, dying_cut=False,
             struct_sl=False, add_gate=False, entry_gate=False, scene_size=False, hold_mom_exit=False,
-            scene_cap=False):
+            scene_cap=False, center_lock_gap=False, time_be_wait=None):
     """E36 SHORT専用（shortset1[SHORT 1h MACD ゲート]＋iter9 出口を内包）＋急騰Exit。
     本ファイルの run_continuous（SHORT専用エンジン・E36 自前）を短絡フラグ（short_htf=True・short_only=True 固定）で回す。
     教師生成・grid 選定は spike OFF（iter3 基底のまま＝教師を急騰Exitで歪めない）／最終 scored run だけ spike_lm を渡す。"""
@@ -1110,7 +1157,8 @@ def run_e36(df, box_tf, max_adds, spike_lm=None, spike_gate=None, zone_short=Non
                                  partial_tp=(booster, feats, btg, bk, ADD1_FRAC, SH, FU, None),
                                  short_htf=True, short_only=True, spike_lm=spike_lm, spike_gate=spike_gate,
                                  dying_cut=dcut_arg, struct_sl=ssl_k, add_gate=add_gate_arg, entry_gate=entry_gate_arg,
-                                 scene_size=scene_arg, hold_mom_exit=hme_arg)
+                                 scene_size=scene_arg, hold_mom_exit=hme_arg,
+                                 center_lock_gap=center_lock_gap, time_be_wait=time_be_wait)   # 2026-08-02 の2レバー（最終 run だけに渡す＝教師は不変）
     t = pd.DataFrame(trades); t["entry_time"] = pd.to_datetime(t["entry_time"])
     entered = sum(s for _, s in _ev if s > 0); recorded = float(t["size_btc"].sum())
     print(f"  [自己検査b size保存] 建玉合計 {entered:.4f} == 記録合計 {recorded:.4f} BTC : {'✅' if abs(entered-recorded)<1e-6 else '⛔'}")
@@ -1199,6 +1247,8 @@ def main():
     ap.add_argument("--scene-size", action="store_true", help="場面連動サイジング（vol/expectancy-scaled・E13 横展開）＝新規 SHORT の 1玉 size を場面(atr_pct×stoch_k の学習窓バケット期待値)で倍率配分（勝ち場面厚く・負け場面薄く・cap 0.12 内）。倍率割当は学習窓 expectancy 順（採点窓不参照 L-267）。方向でなく size に使う（H15 罠回避）。既定OFF=恒等")
     ap.add_argument("--scene-cap", action="store_true", help="②勝ち場面を cap まで厚く＝scene-size の最良バケット倍率を 2.0→CAP/(2×UNIT)=2.5（勝ち場面 add2 が 0.096→0.12=cap 使い切り）。size のみ・方向不変（H15）・cap-skip で add3 ブロック＝H1 厳守・幾何由来 a-priori（採点窓不参照 L-267）。--scene-size と併用（最良バケットだけ厚く）。既定OFF=恒等")
     ap.add_argument("--hold-mom-exit", action="store_true", help="保有中 momentum反転 早期Exit（HOLD_MOM_EXIT）＝SHORT 保有 M バー(60分)経過＋含み損側＋donchian_pos≥θ_don（反転せずレンジ上端に居続ける＝SHORT 前提崩壊）で成行カット（taker）。θ_don は学習窓選定（採点窓不参照 L-267）。建値時点では時間切れ玉と勝ち玉を分離不能だが保有~60分で momentum が両窓 AUC0.9+ 分離（網羅 sweep）＝entry時点/固定深ストップ/ML予測でない保有経路 momentum。既定OFF=恒等")
+    ap.add_argument("--center-lock-gap", action="store_true", help="（2026-08-02 まこさん承認）CENTER_LOCK の約定価格に、水準を飛び越えて開いたバーの悲観処理を足す＝SHORT なら max(中心, 始値)。E37 の SL と同式（e37_scalp 1219行）。いまは中心ちょうどで約定するので、飛び越えた場合に実際より有利。★CENTER_LOCK の maker 化（score.py 登録変更・H13 まこさん承認済）とセットで出す＝maker 化だけだと良く見せる計算になる。既定 OFF＝恒等")
+    ap.add_argument("--time-be-wait", action="store_true", help="（2026-08-02 まこさん承認・E37 v31 の移植）時間切れ TIME_EXIT を成行 taker で投げず、建値（手数料込み＝BE_EXIT と同式）へ指値を置いて HOLD_5M 本（=240分）待つ。届けば BE_EXIT（maker・登録済み＝score.py 無変更 H13）、届かず期限切れなら いまどおり成行 TIME_EXIT。待機中も箱ブレイク/急騰/構造ストップは先に評価＝守りは維持。待機中は積み増さない。★副作用＝指値が届かないと待つ間にさらに逆行して いまより深い損で確定しうる（E37 v60 と同じ trade-off）。既定 OFF＝恒等。根拠＝cat_requirements 211行「手数料負け回避＝maker 優先」・まこさん指示 2026-08-02「決済は、やむを得ない理由がなければtakerにしてはいけない」")
     ap.add_argument("--tag", default=None, help="実験タグ。指定で出力名を _<tag>_<NNN> 連番（ユニーク）にし旧実験を archive へ退避。未指定=安定名 _<box_tf>_shortset1（採用base・--vs 固定）。命名/archive は共通処理(ratchet_io)が担当＝e37/38/39 も同じ")
     a = ap.parse_args()
 
@@ -1246,7 +1296,9 @@ def main():
         print("  [②scene-cap ON] 最良バケット倍率 2.0→2.5（=CAP/(2×UNIT)）＝勝ち場面 add2 が 0.096→0.12=cap 使い切り（size のみ・方向不変・cap-skip で H1 厳守・採点窓不参照）")
     run_e36(df, a.box_tf, a.max_adds, spike_lm=spike_lm, spike_gate=spike_gate, zone_short=zone_short, tag=a.tag,
             dying_cut=a.dying_cut, struct_sl=a.struct_sl, add_gate=a.add_gate, entry_gate=a.entry_gate, scene_size=a.scene_size,
-            hold_mom_exit=a.hold_mom_exit, scene_cap=a.scene_cap)
+            hold_mom_exit=a.hold_mom_exit, scene_cap=a.scene_cap,
+            center_lock_gap=a.center_lock_gap,
+            time_be_wait=(HOLD_5M if a.time_be_wait else None))
     print("=" * 100)
 
 
