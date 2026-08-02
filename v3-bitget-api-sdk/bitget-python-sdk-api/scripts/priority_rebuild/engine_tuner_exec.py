@@ -35,6 +35,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import e37_scalp as e37                      # noqa: E402  _record（記録＝会計の既存系）・SCALP_FLOOR 等
 import e38_logic_parts as parts              # noqa: E402  恒等検収の対象実装・prepare_df（材料の実体）
 import indicator_reference_diag as iref      # noqa: E402  材料・系統・定数レジストリの正本
+import score as _score                       # noqa: E402  出口理由の maker/taker 登録の正本（H13・読むだけ）
 from strat_base import ENTRY_OFFSET, TTL     # noqa: E402  H5 執行仕様（レシピは上書きできない）
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -54,9 +55,18 @@ ROLES = ("env", "trigger", "sufficiency", "location")
 SIDES = ("above", "below", "above_strict", "below_strict")
 EXEC_METHODS = ("maker", "taker", "post_only", "stop")          # 歩3 で実行できる方式
 EXEC_REGISTERED_ONLY = ("iceberg", "twap", "vwap")              # 登録済みだが実行不能＝拒否側（CP3 Q1）
-# 出口理由は score.py の maker/taker 登録と一致していること（H13・acceptance_checklist D）
-REASONS_MAKER = set(e37._MAKER_EXIT)
-REASONS_TAKER = {"TIME_EXIT", "FORCE_CLOSE_EOD", "RANGE_BREAK_EXIT", "TREND_CONT"}
+# 出口理由は score.py の maker/taker 登録と一致していること（H13・acceptance_checklist D）。
+# ★2026-08-02（歩6-1 里程標9）に出どころを score.py 本体へ変えた。理由を書く。
+#   前は REASONS_MAKER を e37_scalp の _MAKER_EXIT から、REASONS_TAKER を手書きの4個から作っていた。
+#   ところが e37_scalp の _MAKER_EXIT には TREND_CAUGHT_TP が入っておらず、score.py の
+#   MAKER_EXIT_REASONS には入っている＝2つが食い違っていた（e37 側のコメントは「score.py と完全同期」
+#   と書いてあるが実際は同期していない）。この検査が見るべき正本は審判 score.py なので、そこから直接
+#   読む形にした。手書きの写しを置くと、また黙ってずれる。
+#   ⚠️ 別途まこさんへ報告する事実＝e37_scalp が売買記録CSVに書く net_usd の列は、TREND_CAUGHT_TP を
+#   成行（taker）として計算している。score.py は指値（maker）として計算し直す。公式の net は score.py が
+#   出すので採否は正しいが、e37 の画面表示と CSV の net 列だけが実際より悲観的に出る。
+REASONS_MAKER = set(_score.MAKER_EXIT_REASONS)
+REASONS_TAKER = set(_score.TAKER_EXIT_REASONS)
 
 # ── 材料の名前組み立て（family×param×tf → カタログ名・G6 fail-closed）──
 # 単純数値パラメータの family だけ登録（複合パラメータ＝MACD 等は歩4 で拡張＝未登録は生成不可）。
@@ -310,8 +320,17 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
         if lane != "legacy":
             _fail("G6", "position_exits は恒等検収レーン専用（探索は生成できない・歩6-1）")
         uc = pex.get("uptrend_cut")
-        if uc is not None and uc.get("reason") not in REASONS_TAKER:
-            _fail("G6", f"uptrend_cut.reason が taker 登録に無い: {uc.get('reason')}（H13）")
+        if uc is not None:
+            # mode＝close（成行で全部確定・既定）／mark（確定させず印を付けて保持・里程標9＝e37_scalp 1109-1115行）。
+            mode = uc.get("mode", "close")
+            if mode not in ("close", "mark"):
+                _fail("G6", f"uptrend_cut.mode が close/mark でない: {mode}（歩6-1 里程標9）")
+            if mode == "close":
+                if uc.get("reason") not in REASONS_TAKER:
+                    _fail("G6", f"uptrend_cut.reason が taker 登録に無い: {uc.get('reason')}（H13）")
+            elif uc.get("state") != "trend_caught":
+                _fail("G6", "uptrend_cut.mode=mark の state は trend_caught のみ"
+                            "（付けた印に当たる枝は scope.trend_caught で受ける・歩6-1 里程標9）")
         rb = pex.get("range_break")
         if rb is not None:
             if rb.get("reason") not in REASONS_TAKER:
@@ -465,6 +484,15 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
         if sc is not None:
             if "adds" in sc and not (isinstance(sc["adds"], list) and len(sc["adds"]) == 2):
                 _fail("G5", f"枝 {nm}: scope.adds は [下限, 上限]")
+            if "trend_caught" in sc:           # 里程標9＝印が付いた玉だけに当たる枝（v24/MFE_STALE）
+                if not isinstance(sc["trend_caught"], bool):
+                    _fail("G5", f"枝 {nm}: scope.trend_caught が bool でない")
+                if lane != "legacy":
+                    _fail("G6", f"枝 {nm}: scope.trend_caught は恒等検収レーン専用"
+                                f"（印を付けるのは position_exits の mark＝恒等レーン専用・探索は生成できない）")
+                if (recipe.get("position_exits") or {}).get("uptrend_cut", {}).get("mode") != "mark":
+                    _fail("G5", f"枝 {nm}: scope.trend_caught があるのに印を付ける側"
+                                f"（position_exits.uptrend_cut.mode=mark）が無い＝この枝は一度も発火しない")
     has_sl = any(b.get("reason") == "SL_FILLED" for b in exits)
     has_losscap = any(b.get("risk") == "loss_cap" for b in exits)
     if not has_sl and not has_losscap:
@@ -524,8 +552,27 @@ def _check_level(lv, lane: str, where: str, legacy_used: list):
             if key not in lv:
                 _fail("G5", f"{where}: shrink.{key} が無い（tmax＝縮み切るまでの本数／floor＝建値フロアの床）")
             _check_value(lv[key], lane, f"{where}/{key}", legacy_used)
+    elif kind == "swing":
+        # v22 アンカー（歩6-1 里程標9・e37_scalp 1531-1541行）＝利確の基準を直近 m 本の安値（SHORT）に置く。
+        # target＝low（SHORT の利確側）／high（LONG の利確側）。当該バーは含めない（H2＝rolling().shift(1)）。
+        # buf＝返す水準に掛ける余白（SHORT は ×(1+buf)＝安値のすぐ手前）。
+        # gate_buf＝「その水準が建値より利益側にあるか」を判定する時に使う余白（省略時は buf と同じ）。
+        # fallback＝判定に落ちた時／安値が欠損の時に使う水準（入れ子＝TP2 なら反対側ゾーン・TP1 なら中央）。
+        # ★TP1 と TP2 は同じ判定を各自で評価する＝同じバー・同じ値なので必ず同時に切り替わる（実装と同じ連動）。
+        if lv.get("target") not in ("low", "high"):
+            _fail("G6", f"{where}: swing.target が low/high でない: {lv.get('target')}")
+        if "m" not in lv:
+            _fail("G5", f"{where}: swing.m（さかのぼる本数）が無い")
+        _check_value(lv["m"], lane, f"{where}/m", legacy_used)
+        for key in ("buf", "gate_buf"):
+            if key in lv:
+                _check_value(lv[key], lane, f"{where}/{key}", legacy_used)
+        if not isinstance(lv.get("fallback"), dict):
+            _fail("G5", f"{where}: swing.fallback（判定に落ちた時に使う水準）が無い"
+                        f"（幾何が成立しない時に黙って建てないのでなく、元の置き方へ戻す＝実装と同じ）")
+        _check_level(lv["fallback"], lane, f"{where}/fallback", legacy_used)
     else:
-        _fail("G6", f"{where}: level.kind が zone/zone_sl/mix/pct/shrink でない: {kind}")
+        _fail("G6", f"{where}: level.kind が zone/zone_sl/mix/pct/shrink/swing でない: {kind}")
 
 
 # ══ ② 実行器（共通の売買ループ・設計書 §1〜§7 の意味論）══════════════════════════════
@@ -705,9 +752,88 @@ def _entry_fire(recipe: dict, df: pd.DataFrame, geo: dict, qtable: dict | None =
     return fire
 
 
+def _swing_key(lv: dict) -> str:
+    """swing 水準（直近 m 本の安値／高値）の配列の鍵。run_recipe がループの前に作って geo へ入れる。"""
+    return f"swing:{lv['target']}:{int(_vnum(lv['m']))}"
+
+
+def _swing_specs(recipe: dict) -> list[tuple[str, int]]:
+    """レシピの中の swing 水準を全部集める（入れ子の fallback と mix の to_level も辿る・里程標9）。"""
+    out: list[tuple[str, int]] = []
+
+    def _walk_lv(lv):
+        if not isinstance(lv, dict):
+            return
+        if lv.get("kind") == "swing":
+            out.append((lv["target"], int(_vnum(lv["m"]))))
+            _walk_lv(lv.get("fallback"))
+        elif lv.get("kind") == "mix":
+            _walk_lv(lv.get("to_level"))
+
+    for b in recipe.get("exits") or []:
+        ex = b.get("exec") or {}
+        _walk_lv((ex.get("placement") or {}).get("level"))
+        _walk_lv((ex.get("be_wait") or {}).get("level"))
+    return out
+
+
+def _static_level_px(lv: dict, i: int, lim: float, side: str, geo: dict) -> float:
+    """エントリー時に1回だけ解ける水準を1つ解決する（zone／zone_sl／pct／swing）。
+    swing の fallback で入れ子になるので再帰にしてある（歩6-1 里程標9 で分離）。"""
+    sgn = -1.0 if side == "SHORT" else 1.0        # profit 側の符号（SHORT は下が利益）
+    kind = lv["kind"]
+    if kind == "zone":
+        if lv["target"] == "mid":
+            px = geo["mid"][i]
+        else:                                     # opp＝反対側ゾーン手前×バッファ（v18 と同じ幾何）
+            buf = _vnum(lv.get("buf", {"const": "V11_SL_BUF"}))
+            px = geo["sup_hi"][i] * (1 + buf) if side == "SHORT" else geo["res_lo"][i] * (1 - buf)
+            if lv.get("fallback") == "mid":       # v18 幾何防御＝非有限/中央超えは中央へ（e37_scalp 1524-1530行と同式）
+                _mid = geo["mid"][i]
+                if not (np.isfinite(px) and (px < _mid if side == "SHORT" else px > _mid)):
+                    px = _mid
+    elif kind == "zone_sl":
+        k = _vnum(lv["k"])
+        if lv.get("w", "range") == "zone":        # 同じ側の帯幅（L1＝sup_hi−sup_lo・run_long_support 1634行と同式）
+            w = max((geo["res_hi"][i] - geo["res_lo"][i]) if side == "SHORT"
+                    else (geo["sup_hi"][i] - geo["sup_lo"][i]), 1e-9)
+        elif lv.get("w") == "inner":              # 帯の内側の隙間（S1＝res_lo−sup_hi・e37_scalp 1513/1549行と同式・下駄なし）
+            w = geo["res_lo"][i] - geo["sup_hi"][i]
+        else:                                     # range＝レンジ全幅（S2 恒等と同じ既定）
+            w = max(geo["res_hi"][i] - geo["sup_lo"][i], 1e-9)   # 実装と同じ下駄（幅0の防御・S2 恒等）
+        px = geo["res_hi"][i] + k * w if side == "SHORT" else geo["sup_lo"][i] - k * w
+    elif kind == "pct":
+        base = lim                                # entry 基準（avg 基準は arm 時に解決＝be_wait）
+        kv = _vnum(lv["k"])
+        if lv["k"].get("side_sign") == "profit":
+            kv = abs(kv) * sgn
+        px = base * (1 + kv)
+    elif kind == "swing":
+        # v22 アンカー（里程標9・e37_scalp 1531-1541行）＝直近 m 本の安値（SHORT）を利確の基準にする。
+        key = _swing_key(lv)
+        arr = geo.get(key)
+        if arr is None:
+            raise RecipeError(f"[実行器] swing の配列 {key} が用意されていない（run_recipe が事前に作る）")
+        raw = float(arr[i])
+        buf = _vnum(lv["buf"]) if "buf" in lv else 0.0
+        gbuf = _vnum(lv["gate_buf"]) if "gate_buf" in lv else buf
+        if side == "SHORT":
+            gate_px = raw * (1.0 + gbuf)
+            use = bool(np.isfinite(raw) and gate_px < lim)   # 安値のすぐ手前が建値より下＝利益側にある
+            px = raw * (1.0 + buf)
+        else:
+            gate_px = raw * (1.0 - gbuf)
+            use = bool(np.isfinite(raw) and gate_px > lim)
+            px = raw * (1.0 - buf)
+        if not use:                               # 幾何の防御＝元の置き方へ戻す（e37_scalp 1540-1541行と同じ）
+            px = _static_level_px(lv["fallback"], i, lim, side, geo)
+    else:
+        raise RecipeError(f"[実行器] level.kind 未実装: {kind}")
+    return float(px)
+
+
 def _resolve_levels(exits: list, i: int, lim: float, side: str, geo: dict, lane: str) -> dict:
     """resting 枝の価格水準をシグナルバー i で解決（設計書 §6・エントリー時に指値を置く）。"""
-    sgn = -1.0 if side == "SHORT" else 1.0        # profit 側の符号（SHORT は下が利益）
     lv_out: dict[str, float] = {}
     mixes = []
     for b in exits:
@@ -717,45 +843,13 @@ def _resolve_levels(exits: list, i: int, lim: float, side: str, geo: dict, lane:
         lv = pl["level"]
         if lv["kind"] in ("shrink", "peak_giveback"):
             continue                              # 毎バーの水準（歩6-1）＝ここでは解決しない（ループ側で計算）
-        if lv["kind"] == "zone":
-            if lv["target"] == "mid":
-                px = geo["mid"][i]
-            else:                                 # opp＝反対側ゾーン手前×バッファ（v18 と同じ幾何）
-                buf = _vnum(lv.get("buf", {"const": "V11_SL_BUF"}))
-                px = geo["sup_hi"][i] * (1 + buf) if side == "SHORT" else geo["res_lo"][i] * (1 - buf)
-                if lv.get("fallback") == "mid":   # v18 幾何防御＝非有限/中央超えは中央へ（e37_scalp 1524-1530行と同式）
-                    _mid = geo["mid"][i]
-                    if not (np.isfinite(px) and (px < _mid if side == "SHORT" else px > _mid)):
-                        px = _mid
-        elif lv["kind"] == "zone_sl":
-            k = _vnum(lv["k"])
-            if lv.get("w", "range") == "zone":    # 同じ側の帯幅（L1＝sup_hi−sup_lo・run_long_support 1634行と同式）
-                w = max((geo["res_hi"][i] - geo["res_lo"][i]) if side == "SHORT"
-                        else (geo["sup_hi"][i] - geo["sup_lo"][i]), 1e-9)
-            elif lv.get("w") == "inner":          # 帯の内側の隙間（S1＝res_lo−sup_hi・e37_scalp 1513/1549行と同式・下駄なし）
-                w = geo["res_lo"][i] - geo["sup_hi"][i]
-            else:                                 # range＝レンジ全幅（S2 恒等と同じ既定）
-                w = max(geo["res_hi"][i] - geo["sup_lo"][i], 1e-9)   # 実装と同じ下駄（幅0の防御・S2 恒等）
-            px = geo["res_hi"][i] + k * w if side == "SHORT" else geo["sup_lo"][i] - k * w
-        elif lv["kind"] == "pct":
-            base = lim                            # entry 基準（avg 基準は arm 時に解決＝be_wait）
-            kv = _vnum(lv["k"])
-            if lv["k"].get("side_sign") == "profit":
-                kv = abs(kv) * sgn
-            px = base * (1 + kv)
-        elif lv["kind"] == "mix":
+        if lv["kind"] == "mix":
             mixes.append((b["name"], lv))
             continue
-        else:
-            raise RecipeError(f"[実行器] level.kind 未実装: {lv['kind']}")
-        lv_out[b["name"]] = float(px)
+        lv_out[b["name"]] = _static_level_px(lv, i, lim, side, geo)
     for name, lv in mixes:                        # mix は他の枝の水準に依存＝後で解決
         if isinstance(lv.get("to_level"), dict):  # to_level＝枝でなく水準そのもの（S1 の TP1＝mid 基準・歩6-1）
-            tl = lv["to_level"]
-            if tl.get("kind") == "zone" and tl.get("target") == "mid":
-                to = float(geo["mid"][i])
-            else:
-                raise RecipeError(f"[実行器] mix.to_level は zone/mid のみ: {tl}")
+            to = _static_level_px(lv["to_level"], i, lim, side, geo)
         else:
             to = lv_out.get(lv["to"])
             if to is None:
@@ -887,6 +981,9 @@ def _exit_fire_ok(b: dict, lot: dict, i: int, df: pd.DataFrame, geo: dict, lane:
         ct = sc.get("ceil_type")               # 型別の枝（歩6-1＝v27/v47/v53 等は flat_up 限定・down 限定がある）
         if ct is not None and lot.get("ceil_type") != ct:
             return False
+        tc = sc.get("trend_caught")            # 里程標9＝上げトレンドに捕まった玉だけに当たる枝（v24/MFE_STALE）
+        if tc is not None and bool(lot.get("trend_caught")) != bool(tc):
+            return False
         if "hold_min" in sc:
             lo2, hi2 = sc["hold_min"]
             if not (lo2 <= hold_min <= (10**9 if hi2 is None else hi2)):
@@ -895,7 +992,8 @@ def _exit_fire_ok(b: dict, lot: dict, i: int, df: pd.DataFrame, geo: dict, lane:
     if fire is None:
         return True
     state = {"hold_min": hold_min, "add_count": lot["add_count"],
-             "peak_age_bars": i - lot.get("peak_idx", lot["first_idx"])}
+             "peak_age_bars": i - lot.get("peak_idx", lot["first_idx"]),
+             "trend_caught": 1.0 if lot.get("trend_caught") else 0.0}   # 里程標9（1/0・印は uptrend_cut が付ける）
     sgn = -1.0 if lot["side"] == "SHORT" else 1.0
     avg = lot["avg"]
     state["mfe_pct"] = (lot["max_fav"] - avg) / avg * 100.0 * sgn
@@ -963,6 +1061,13 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
         wpct_arr = np.where(np.isfinite(res_hi) & np.isfinite(sup_lo), (res_hi - sup_lo) / c * 100.0, np.nan)
     geo = {"res_hi": res_hi, "res_lo": res_lo, "sup_hi": sup_hi, "sup_lo": sup_lo,
            "mid": mid, "W%": wpct_arr, "帯内位置%": pos_arr}
+    for _tgt, _m in _swing_specs(recipe):         # v22 アンカー（里程標9）＝直近 m 本の安値／高値
+        _k = f"swing:{_tgt}:{_m}"                 # 当該バーは含めない（shift(1)＝H2・e37_scalp 984行と同式）
+        if _k in geo:
+            continue
+        _src = pd.Series(l if _tgt == "low" else h)
+        geo[_k] = ((_src.rolling(_m).min() if _tgt == "low" else _src.rolling(_m).max())
+                   .shift(1).to_numpy(float))
     is_ceiling = (recipe.get("entry") or {}).get("type") == "ceiling_resting"
     clamp_prev = climb_guard = False
     warn_arr = None
@@ -982,6 +1087,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
     fire_cols = _collect_fire_cols(recipe, df, geo, lane)   # 出口 fire の指標列（ループ前に1回だけ解決）
     pex = recipe.get("position_exits") or {}
     uc = pex.get("uptrend_cut")
+    uc_mark = (uc is not None and uc.get("mode") == "mark")   # 里程標9＝確定させず印を付けるだけ
     rb = pex.get("range_break")
     vol_arr = vol_sma_prev = None
     rb_bars = 0
@@ -1041,12 +1147,21 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
             last_fup_px = None                     # レンジ切れ＝基準リセット（e37 1094-1095行・次のレンジへ持ち越さない）
         if up[i]:                                  # uptrend 発火＝新規停止（保有は SL/TIME が守る）
             pend = None
-            if uc is not None:                     # 歩6-1: uptrend 畳み＝保有全 lot を成行で確定（e37_scalp 1096-1145行の v20 経路）
-                for lot in lots:                   # mfe/mae は更新前＝e37 と同じ（1096行は 1177行の更新より前）
-                    e37._record(trades, lot, c[i], uc["reason"], i, ts)
-                lots = []
-                brk_cnt, brk_vol = 0, False
-                continue                           # e37 1144-1145行＝uptrend バーは以降の処理へ進まない
+            if uc is not None:                     # 歩6-1: uptrend 畳み（e37_scalp 1096-1145行の v20 経路）
+                if uc_mark:                        # 里程標9＝成行で投げず「捕まった玉」の印を付けて保持（e37 1109-1115行）
+                    if not lots:
+                        continue                   # 保有なし＝e37 1144-1145行と同じ（以降の処理へ進まない）
+                    for lot in lots:
+                        if not lot.get("trend_caught"):
+                            lot["trend_caught"] = True
+                            lot["tc_idx"] = i      # 印が付いた時刻（e37 1113行・v39 の起点＝v39 OFF では読まれない）
+                    # ★ここで continue しない＝e37 は lots を keep して以降の Exit ループへ進む（1115行のコメント）
+                else:                              # 既定＝保有全 lot を成行で確定（里程標1〜8 の形）
+                    for lot in lots:               # mfe/mae は更新前＝e37 と同じ（1096行は 1177行の更新より前）
+                        e37._record(trades, lot, c[i], uc["reason"], i, ts)
+                    lots = []
+                    brk_cnt, brk_vol = 0, False
+                    continue                       # e37 1144-1145行＝uptrend バーは以降の処理へ進まない
         if pre_mfe:                                # e37_scalp 1177-1181行＝mfe/mae は枝の前に全 lot 一括更新
             for lot in lots:
                 lot["pk_prev"] = lot["max_fav"]    # 前バーまでの含み益ピーク（e37 1179行・同一バー楽観の排除）
@@ -1520,6 +1635,12 @@ def s1_engine_params(recipe: dict) -> dict:
             "v59": ({"down": bx["V59DOWN"], "flat": bx["V59FLAT"]}
                     if ("V59DOWN" in bx and "V59FLAT" in bx) else None),
             "mtfcut": (bx["MTFCUT"] if "MTFCUT" in bx else None),
+            # 里程標9＝v22 アンカー／v24 の捕まった玉の利確／v48 の失速切りの建値待ち。
+            "anchor": (bx["TP2"]["exec"]["placement"]["level"]
+                       if bx["TP2"]["exec"]["placement"]["level"].get("kind") == "swing" else None),
+            "tcaught": (bx["TCTP"] if "TCTP" in bx else None),
+            "stale": (bx["MFESTALE"] if "MFESTALE" in bx else None),
+            "uptrend_mark": (recipe["position_exits"]["uptrend_cut"].get("mode") == "mark"),
             "sl_far": _vnum(bx["SL"]["exec"]["placement"]["level"]["k"]),
             "tmax": tmax_sh, "break_bars": int(_vnum(rbx["bars"])), "vol_n": int(_vnum(rbx["vol_n"])),
             "max_lots": int(recipe["position"]["max_adds"])}
@@ -1662,6 +1783,78 @@ def run_identity_s1(quick: bool = False) -> int:
             ("V48_TTL_BARS(v50 の待ち)", int(e37.V48_TTL_BARS),
              int(_vnum(_mc["exec"]["be_wait"]["ttl"]))),
         ]
+    if prm["anchor"] is not None:                  # 里程標9＝v22 アンカー（利確の基準を直近 M 本の安値へ）
+        _an = prm["anchor"]
+        checks += [
+            ("v22_set", True, bool(ef.get("v22_set"))),
+            ("v22 の M（V24_FIXED_V22 の cell0）", int(e37.V24_FIXED_V22["v22_anchor"][0]), int(_vnum(_an["m"]))),
+            ("v22 の余白 V11_SL_BUF（TP2 側）", float(e37.V11_SL_BUF), float(_vnum(_an["buf"]))),
+            ("v22 の判定に使う余白（TP2 側）", float(e37.V11_SL_BUF),
+             float(_vnum(_an.get("gate_buf", _an["buf"])))),
+            ("v22 の落ちた時の戻り先（TP2）", "zone/opp", f"{_an['fallback']['kind']}/{_an['fallback']['target']}"),
+        ]
+        _bx9 = {b["name"]: b for b in recipe["exits"]}
+        _tp1lv = _bx9["TP1"]["exec"]["placement"]["level"]["to_level"]   # TP1 側も同じ M・同じ判定余白であること
+        checks += [
+            ("v22 の M（TP1 側・TP2 と同じであること）", int(_vnum(_an["m"])), int(_vnum(_tp1lv["m"]))),
+            ("v22 の判定に使う余白（TP1 側）", float(e37.V11_SL_BUF), float(_vnum(_tp1lv["gate_buf"]))),
+            # ★TP1 は安値そのものを基準にする（安値×(1+余白) ではない・e37_scalp 1538行）＝buf を持たない。
+            ("v22 の TP1 は安値そのもの（余白なし）", False, "buf" in _tp1lv),
+            ("v22 の落ちた時の戻り先（TP1）", "zone/mid",
+             f"{_tp1lv['fallback']['kind']}/{_tp1lv['fallback']['target']}"),
+        ]
+    if prm["tcaught"] is not None:                 # 里程標9＝v24（捕まった玉の建値−L% resting maker 利確）
+        _tc = prm["tcaught"]
+        checks += [
+            ("v24_trend_maker_tp", True, bool(ef.get("v24_trend_maker_tp"))),
+            ("uptrend で成行に投げず印を付ける（v23）", True, bool(prm["uptrend_mark"])),
+            ("V24_TREND_TP_PCT", float(e37.V24_TREND_TP_PCT),
+             round(float(_vnum(_tc["exec"]["placement"]["level"]["k"])) * 100.0, 6)),
+        ]
+    if prm["stale"] is not None:                   # 里程標9＝MFE_STALE（失速切り）＋v48（切らずに待機へ回す）
+        _st9 = prm["stale"]
+        checks += [
+            ("v48_stale_wait", True, bool(ef.get("v48_stale_wait"))),
+            # ★V23_STALE_MIN は run_continuous_v11 の局所変数（e37_scalp 977行）＝モジュール定数として引けない。
+            #   だからここは数字で書く。正しさは恒等の md5 が守る（ずれれば全窓で不一致になる）。
+            ("V23_STALE_MIN（保有分・e37_scalp 977行の局所値）", 30, int(_st9["scope"]["hold_min"][0])),
+            ("MFE_STALE の未搭乗の線＝往復 maker fee（V23_RT_FEE）",
+             round(2.0 * e37.ee.MAKER_FEE * 100.0, 6),
+             round(float(_vnum(_st9["fire"]["all"][0]["value"])), 6)),
+            ("V48_TTL_BARS（v48 の待ち）", int(e37.V48_TTL_BARS),
+             int(_vnum(_st9["exec"]["be_wait"]["ttl"]))),
+        ]
+    # ★網羅の番人（里程標9 で新設）＝e38_logics.json の S1 のフラグを1個も取りこぼしていないこと。
+    #   恒等の md5 が一致しても、それは「この恒等ハーネスが載せた構成どうし」の一致でしかない。
+    #   採用土台 v59d_164 が持つフラグのうち1個でもハーネスが知らないものが在れば、書き写しは未完である。
+    #   だからフラグの一覧を機械で突き合わせ、知らないフラグが在れば止める（fail-closed）。
+    #   値は下の checks が1つずつ照合している。ここが見るのは「扱ったかどうか」だけ。
+    _cover = {
+        "v11": "骨格＝v15 経路（v15_params を渡すこと自体）",
+        "v12_open_range": "run_continuous_v11 の引数 v12_open_range=True",
+        "v13_time_maker": "run_continuous_v11 の引数 v13_time_maker=True",
+        "v18_tp2_far": "v15p['tp2_far']=True（TP2＝反対側ゾーン手前）",
+        "v22_set": "レシピの TP1/TP2 の swing アンカー", "v24_trend_maker_tp": "レシピの TCTP 枝",
+        "v26_split_ceiling": "レシピの entry.type=ceiling_resting", "v26_gap": "entry.split.gap_pct",
+        "v26_down_hours": "entry.split.down_window_hours", "v26_max_age_hours": "entry.split.max_age_hours",
+        "v27_flatup_lock": "レシピの PEAKLOCK 枝", "v31_time_be": "TIME 枝の be_wait",
+        "v35_flatup_range": "entry.ceiling.flat_up_top", "v36_flatup_near": "entry.ceiling.near_fallback",
+        "v37_flatup_climb": "entry.ceiling.climb_guard", "v38_flatup_clamp": "entry.ceiling.clamp_prev_fill",
+        "v40_down_no_age": "entry.split.down_no_age", "v47_mtf_cut": "レシピの MTFCUT 枝",
+        "v48_stale_wait": "MFESTALE 枝の be_wait", "v50_trend_wait": "MTFCUT 枝の be_wait",
+        "v53_flatup_fast_cut": "レシピの FASTCUT 枝", "v56_rearm_delay": "entry.split.rearm_delay_bars",
+        "v59_adx_cut": "レシピの V59DOWN / V59FLAT 枝",
+    }
+    _unknown = sorted(set(ef) - set(_cover))
+    _stale_cover = sorted(set(_cover) - set(ef))
+    print(f"[恒等検収 S1] 網羅の番人＝S1 のフラグ {len(ef)} 個／このハーネスが扱う {len(_cover)} 個 → "
+          f"{'✅ 取りこぼしなし' if not (_unknown or _stale_cover) else '❌'}")
+    if _unknown:
+        print(f"  ❌ ハーネスが知らないフラグ: {_unknown}（書き写しが未完＝この分は恒等で確かめられていない）")
+        ng += len(_unknown)
+    if _stale_cover:
+        print(f"  ❌ 設定に無いフラグをハーネスが扱っている: {_stale_cover}（設定側が変わった＝表を直す）")
+        ng += len(_stale_cover)
     for nm, want, got in checks:
         okc = (want == got)
         print(f"[恒等検収 S1] 値の照合 {nm}: 正本={want} / レシピ側={got} → {'✅' if okc else '❌'}")
@@ -1714,6 +1907,22 @@ def run_identity_s1(quick: bool = False) -> int:
         v15p["v50_trend_wait"] = True
         dfp = _attach_v47_cols(dfp)
         _lv.append("v47 15分過熱カット→v50 待機")
+    if prm["anchor"] is not None:                  # 里程標9＝v22 アンカー（run_e37 2431-2440行の v22_set 相当）
+        v15p["v22_anchor"] = {0: int(_vnum(prm["anchor"]["m"]))}   # V24_FIXED_V22 と同じ形（cell0→M）
+        # ★run_e37 の v22_set は、TP アンカー以外に v21 の2つの値も一緒に入れる（2434-2435行）。
+        #   採用土台と同じ引数にするため、ここでも同じものを入れる。この2つは v26 の型別天井（1459行）が
+        #   _fire21 を丸ごと上書きするので入口には効かず、畳みの分岐も v23 の枝が先に取るので効かない。
+        #   「効かないはず」を口で言わず、入れた上で恒等が取れることで示す。
+        v15p["v21_entry"] = dict(e37.V22_FIXED_V21_ENTRY)
+        v15p["v21_fold"] = dict(e37.V22_FIXED_V21_FOLD)
+        _lv.append("v22 TP アンカー（直近24本の安値）")
+    if prm["tcaught"] is not None:                 # 里程標9＝v23/v24（捕まった玉の状態機械・run_e37 2441-2446行）
+        v15p["v23_trend_exit"] = True
+        v15p["v24_trend_maker_tp"] = True
+        _lv.append("v23/v24 捕まった玉の建値−0.08% 利確")
+    if prm["stale"] is not None:                   # 里程標9＝v48（失速切りを成行にせず建値フロア待機へ）
+        v15p["v48_stale_wait"] = True
+        _lv.append("v48 失速切りの建値待ち")
     print(f"[恒等検収 S1] 載せたレバー: {' / '.join(_lv)}（レシピが正本＝現行側の引数はレシピから機械導出）")
     box_tf = ad.config()["global"]["box_tf"]
     up_arr = dfp["rg5_uptrend"].to_numpy(bool)
@@ -1892,6 +2101,80 @@ def selftest() -> None:
                                                        "giveback": {"legacy": 0.5},
                                                        "floor": {"const": "SCALP_FLOOR"}}
     broke("㉖ peak_giveback の arm 欠落", _peak_no_arm, "G5")
+    # 歩6-1 里程標9 の番人（v22 アンカー＝swing 水準／捕まった玉の印＝uptrend_cut mark と scope.trend_caught）
+    def _swing_no_fb(r):
+        r["meta"]["lane"] = "legacy"
+        r["exits"][1]["exec"]["placement"]["level"] = {"kind": "swing", "target": "low",
+                                                       "m": {"legacy": 24}, "buf": {"const": "V11_SL_BUF"}}
+    broke("㉗ swing の fallback 欠落（落ちた時の戻り先が無い）", _swing_no_fb, "G5")
+
+    def _swing_bad_target(r):
+        r["meta"]["lane"] = "legacy"
+        r["exits"][1]["exec"]["placement"]["level"] = {"kind": "swing", "target": "close",
+                                                       "m": {"legacy": 24},
+                                                       "fallback": {"kind": "zone", "target": "mid"}}
+    broke("㉘ swing.target が low/high でない", _swing_bad_target, "G6")
+
+    def _uc_bad_mode(r):
+        r["meta"]["lane"] = "legacy"
+        r["position_exits"] = {"uptrend_cut": {"mode": "投げる", "reason": "TREND_CONT"}}
+    broke("㉙ uptrend_cut.mode が close/mark でない", _uc_bad_mode, "G6")
+
+    def _uc_mark_bad_state(r):
+        r["meta"]["lane"] = "legacy"
+        r["position_exits"] = {"uptrend_cut": {"mode": "mark", "state": "変な印"}}
+    broke("㉚ mark の state が trend_caught でない", _uc_mark_bad_state, "G6")
+    broke("㉛ scope.trend_caught は恒等レーン専用", lambda r: r["exits"][1].__setitem__(
+        "scope", {"trend_caught": True}), "G6")
+
+    def _tc_without_mark(r):
+        r["meta"]["lane"] = "legacy"
+        r["exits"][1]["scope"] = {"trend_caught": True}   # 印を付ける側（mode=mark）が無い＝一度も発火しない枝
+    broke("㉜ 印を受ける枝はあるが印を付ける側が無い", _tc_without_mark, "G5")
+    # 既知答え（里程標9）＝v22 アンカーの TP1/TP2 が「同じ判定で必ず同時に切り替わる」ことを電卓式で確認。
+    # e37_scalp 1531-1541行＝安値×(1+V11_SL_BUF) が建値より下なら TP2＝その値・TP1＝(建値+安値)/2。
+    # 下でなければ TP2 も TP1 も元の置き方（TP2＝反対側ゾーン手前／TP1＝(建値+中央)/2）へ同時に戻る。
+    _ex9 = [
+        {"name": "TP1", "reason": "PARTIAL_TP",
+         "exec": {"method": "maker", "placement": {"kind": "resting", "fill": "profit",
+                  "level": {"kind": "mix", "from": "entry",
+                            "to_level": {"kind": "swing", "target": "low", "m": {"legacy": 24},
+                                         "gate_buf": {"const": "V11_SL_BUF"},
+                                         "fallback": {"kind": "zone", "target": "mid"}},
+                            "frac": {"legacy": 0.5}}}}, "size_ratio": 0.5},
+        {"name": "TP2", "reason": "TP_FILLED",
+         "exec": {"method": "maker", "placement": {"kind": "resting", "fill": "profit",
+                  "level": {"kind": "swing", "target": "low", "m": {"legacy": 24},
+                            "buf": {"const": "V11_SL_BUF"},
+                            "fallback": {"kind": "zone", "target": "opp",
+                                         "buf": {"const": "V11_SL_BUF"}, "fallback": "mid"}}}},
+         "size_ratio": 1.0},
+    ]
+    _geo9 = {"mid": np.array([97.0, 97.0]), "sup_hi": np.array([96.0, 96.0]),
+             "sup_lo": np.array([95.0, 95.0]), "res_lo": np.array([99.0, 99.0]),
+             "res_hi": np.array([101.0, 101.0]),
+             "swing:low:24": np.array([98.0, 101.0])}     # i=0＝安値が建値より下（立つ）／i=1＝上（落ちる）
+    _lv0 = _resolve_levels(_ex9, 0, 100.0, "SHORT", _geo9, "legacy")
+    if abs(_lv0["TP2"] - 98.0 * (1 + e37.V11_SL_BUF)) > 1e-9 or abs(_lv0["TP1"] - 99.0) > 1e-9:
+        ng.append(f"v22 アンカーの既知答え不一致（立つ側）: TP1={_lv0['TP1']} TP2={_lv0['TP2']}"
+                  f"（TP1=99.0／TP2={98.0 * (1 + e37.V11_SL_BUF)} のはず）")
+    _lv1 = _resolve_levels(_ex9, 1, 100.0, "SHORT", _geo9, "legacy")
+    if abs(_lv1["TP2"] - 96.0 * (1 + e37.V11_SL_BUF)) > 1e-9 or abs(_lv1["TP1"] - 98.5) > 1e-9:
+        ng.append(f"v22 アンカーの既知答え不一致（落ちる側＝元の置き方へ戻る）: TP1={_lv1['TP1']} "
+                  f"TP2={_lv1['TP2']}（TP1=98.5／TP2={96.0 * (1 + e37.V11_SL_BUF)} のはず）")
+    # 既知答え（里程標9）＝印が付いていない玉には、印つきの枝が当たらないこと（scope.trend_caught）。
+    _b9 = {"name": "TCTP", "reason": "TREND_CAUGHT_TP", "scope": {"trend_caught": True},
+           "exec": {"method": "maker", "placement": {"kind": "resting", "fill": "profit",
+                    "level": {"kind": "pct", "base": "avg", "k": {"legacy": 0.0008, "side_sign": "profit"}}}},
+           "size_ratio": 1.0}
+    _df9 = pd.DataFrame({"ts": pd.date_range("2024-05-01", periods=2, freq="5min"),
+                         "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0})
+    _lotN = {"side": "SHORT", "avg": 100.0, "first_idx": 0, "add_count": 1,
+             "max_fav": 100.0, "max_adv": 100.0}
+    if _exit_fire_ok(_b9, _lotN, 1, _df9, {}, "legacy", {}):
+        ng.append("印の無い玉に印つきの枝が当たった（scope.trend_caught が効いていない）")
+    if not _exit_fire_ok(_b9, {**_lotN, "trend_caught": True}, 1, _df9, {}, "legacy", {}):
+        ng.append("印の付いた玉に印つきの枝が当たらない（scope.trend_caught が過剰に弾いている）")
     # 既知答え（歩6-1 里程標5）＝ピーク反転ロックの水準（e37_scalp 1211行の電卓式と突き合わせ）
     _lotS = {"avg": 100.0, "pk_prev": 99.0, "max_fav": 99.0}      # SHORT・ピーク含み益 1.0（=1.0%≥arm 0.15%）
     _lvS = {"arm": {"legacy": 0.15}, "giveback": {"legacy": 0.5}, "floor": {"legacy": 0.0008}}
@@ -1937,7 +2220,7 @@ def selftest() -> None:
     if miss:
         ng.append(f"FAMILY_TEMPLATES の family が系統マップに無い: {miss}")
     print("=" * 80)
-    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ26種で全部止まる・正しい4種は通る・歩4/歩6-1 拡張の既知答え込み）")
+    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ32種で全部止まる・正しい4種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)
     if ng:
         for x in ng:

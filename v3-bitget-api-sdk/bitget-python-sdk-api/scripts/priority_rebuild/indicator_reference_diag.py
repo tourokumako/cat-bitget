@@ -1232,8 +1232,13 @@ TIME_REF: dict[str, dict] = {
 # ★mfe_prev_pct（2026-08-02 歩6-1 里程標6 で追加）＝mfe_pct と同じ含み益の率だが、当該バーを含めず
 #   「前のバーまで」で測る。理由＝S1 の切る枝（v53 等）は同一バーの高値を含めると楽観になるため、
 #   実装（e37_scalp 1179行 pk_prev）が前バーまでのピークで判定している。その写しに要る（H2 の型）。
+# ★trend_caught（2026-08-02 歩6-1 里程標9 で追加）＝この玉が「上げトレンドに捕まった玉」かどうか（1/0）。
+#   上げトレンドの判定が立ったバーで、玉を成行で投げずに印だけ付けて保持する形（e37_scalp 1109-1115行）。
+#   印を付けるのは位置の出口 uptrend_cut（mode=mark）で、印が付いた玉だけに当たる出口の枝が2本ある
+#   （建値から 0.08% 下の指値で利確する TREND_CAUGHT_TP と、含み益が出ないまま30分たった玉を切る
+#    MFE_STALE_CUT）。値は 1 か 0 だけ＝しきい値の探索対象にはしない（枝の scope で使う）。
 STATE_COLS = ("unreal_pct", "mfe_pct", "mfe_prev_pct", "mae_pct", "peak_age_bars", "hold_min",
-              "add_count", "dist_be_pct")
+              "add_count", "dist_be_pct", "trend_caught")
 
 
 def tokenize_ec(line: str) -> list[tuple[str, str]]:
