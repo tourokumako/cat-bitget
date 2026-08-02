@@ -1,4 +1,20 @@
 {
+  "e37/L1": {
+    "load_sec": 0.3,
+    "measured_at": "2026-08-02",
+    "opt_sec": 1.5,
+    "per_trial_sec": 0.76,
+    "search_bars": 175392,
+    "trials": 2
+  },
+  "e37/S1": {
+    "load_sec": 98.9,
+    "measured_at": "2026-08-02",
+    "opt_sec": 21.4,
+    "per_trial_sec": 10.7,
+    "search_bars": 175392,
+    "trials": 2
+  },
   "e37/v59": {
     "load_sec": 101.9,
     "measured_at": "2026-07-30",

@@ -1,4 +1,4 @@
-<!-- DECISIONS_HASH=6571584a17ec224f -->
+<!-- DECISIONS_HASH=4bff0a1f0c9b7644 -->
 # まこさんが決めたこと（gen_decisions.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は正本ファイルから機械で集めています。
@@ -37,7 +37,7 @@ python3 scripts/priority_rebuild/gen_decisions.py --verify
 - session_worklog_20260727.md
 - session_worklog_20260726.md
 
-## 決定の一覧（137 件・新しい順）
+## 決定の一覧（140 件・新しい順）
 
 | 日付 | 印 | 決めたこと | 出どころ |
 |---|---|---|---|
@@ -51,6 +51,9 @@ python3 scripts/priority_rebuild/gen_decisions.py --verify
 | 2026-08-02 | OK | 9.8 git commit（まこさん OK 待ち） | session_worklog_20260802.md:305 |
 | 2026-08-02 | 指示 | まこさん指示 2026-08-02「セッションスタート」。 私は next_step.md の「次にやること＝里程標9」に従うと解釈し、宣言してから着手しました。 | session_worklog_20260802.md:246 |
 | 2026-08-02 | OK | 8.4 git commit（まこさん OK 待ち） | session_worklog_20260802.md:238 |
+| 2026-08-02 | 指示 | ★ToDo が1つでも進んだら、その場で TodoWrite を呼び直す（まこさん指示 2026-08-02） | next_step.md:83 |
+| 2026-08-02 | 指示 | ★ToDo が1つでも進んだら、その返信の一番上に現在地を4行で出す（まこさん指示 2026-08-02） | next_step.md:51 |
+| 2026-08-02 | 指示 | 🔴 この節は毎回消さないでください（まこさん指示 2026-08-02）。 next_step.md は毎セッション上書きされるので、印が無いと次の CC がまた消します。実際、2026-08-02 の CC が消しました。 | next_step.md:38 |
 | 2026-08-02 | OK | 2026-08-02 まこさん OK（案A）＝engine_tuner が出す値の入れ先を設定ファイルに足した。tp_mode と tp_pct_k は common_exit の宣言に対する入れ先。confirm_htf_th と confirm_vol_th は 選ばれた確認シグナルのしきい値の入れ先。どの th_ をどの欄へ入れるかの規則は tuner… | e38_logics.json:750 |
 | 2026-08-01 | 指示 | §10 指示と解釈（まこさん指示 2026-08-01「新セッションスタート。前回の続きを進めて」） | session_worklog_20260801.md:84 |
 | 2026-08-01 | OK | …せん。実装中に見つかった設計書の事実誤差は1件で、§6 に書きました（→§8 でまこさん OK・訂正適用済み）。 | session_worklog_20260801.md:7 |
@@ -173,7 +176,7 @@ python3 scripts/priority_rebuild/gen_decisions.py --verify
 | 2026-06-22 | 指示 | <!-- ↑ require_read_before_work.sh ゲート3（近視眼防止・2026-06-22 まこさん指示）が読む機械可読マーカー。 | adopted_strategies.md:40 |
 | 2026-06-20 | 指示 | 作成: 2026-06-20（まこさん指示「過去に採用となった最終ロジック・スクリプトをどこかに記録してほしい」）／ 2026-06-27 全戦略ポートフォリオ地図に格上げ（まこさん指示「P1〜P4・P21〜P24・E35/E36 含む全戦略が1枚で見える場所が無いのが問題」）。 | adopted_strategies.md:3 |
 | 2026-06-12 | 決定 | …」「TRAIL_EXIT（P1/P21 トレーリング）は 2026-06-12 まこさん決定で maker に変更…すり抜けリスクの扱いは SL maker（E0.1 承認）と同前提」 | session_worklog_20260802.md:573 |
-| 日付なし | 承認 | 5-2. 審判 score.py の2件（H13・まこさん承認済） | next_step.md:155 |
+| 日付なし | 承認 | 5-2. 審判 score.py の2件（H13・まこさん承認済） | next_step.md:230 |
 | 日付なし | 承認 | 設計書がまこさん承認済み。 | e38_flow.md:86 |
 | 日付なし | 決定 | 確定事項（まこさん決定） | e38_flow.md:19 |
 | 日付なし | 確定 | 観察の機械出力（振幅分布・現実的な件数×単価の範囲）が揃い、1日トレード数の目標と前提の1件単価がまこさん確定として worklog に記録されている。 | e38_flow.md:105 |
