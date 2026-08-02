@@ -15,8 +15,9 @@ H13＝score.py・eval_engine に触れない（記録は e37._record を import 
 legacy 値・legacy 材料列は lane="legacy"（恒等検収・過去資産の書き写し）専用＝探索レシピでは検証器が拒否。
 
 採点はしない・売買記録CSVは書かない・score.py は呼ばない（恒等はメモリ上の md5 比較）。
-自己検査: python3 engine_tuner_exec.py --selftest（壊したレシピ18種で全部止まる・正しい2種は通る・歩4 拡張の既知答え込み）
-恒等検収: python3 engine_tuner_exec.py --identity（値決め窓・約20分）／--identity-quick（短窓デバッグ）
+自己検査: python3 engine_tuner_exec.py --selftest（壊したレシピ21種で全部止まる・正しい3種は通る・歩4/歩6-1 拡張の既知答え込み）
+恒等検収: python3 engine_tuner_exec.py --identity（S2・値決め窓）／--identity-quick（短窓デバッグ）
+恒等検収 L1: python3 engine_tuner_exec.py --identity-l1（歩6-1＝採用中 L1 の書き写し）／--identity-l1-quick
 """
 from __future__ import annotations
 
@@ -262,6 +263,17 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
             _fail("G5", f"meta.{key} が無い")
     if meta["side"] not in ("SHORT", "LONG"):
         _fail("G5", f"meta.side が不正: {meta['side']}")
+    # record（記録スタイル）＝過去資産の書き写しで診断列（W_entry/k_entry）の出し方を実装に合わせる指定。
+    # 歩6-1（L1）で追加。net に不関与の診断列だが、md5 恒等の対象なので実装と同じ出し方が要る。
+    # 恒等検収レーン専用＝探索レシピには存在しない（生成器は作らない・番人で隔離）。
+    rec_style = recipe.get("record")
+    if rec_style is not None:
+        if lane != "legacy":
+            _fail("G6", "record（記録スタイル＝W_entry/k_entry の再現指定）は恒等検収レーン専用（探索は生成できない）")
+        if rec_style.get("w_entry", "range") not in ("range", "zone"):
+            _fail("G5", f"record.w_entry が range/zone でない: {rec_style.get('w_entry')}")
+        if rec_style.get("k_entry", "stoch") not in ("stoch", "none"):
+            _fail("G5", f"record.k_entry が stoch/none でない: {rec_style.get('k_entry')}")
     ent = recipe.get("entry") or {}
     # entry 構造の拡張点（設計書 §12・CP3 提案7）＝既定 edge_trigger。グリッド/MM の別型（複数指値の
     # 同時管理）は歩6 でここに足す＝実行器ごと作り直さないための予約。未知の型は fail-closed。
@@ -435,6 +447,9 @@ def _check_level(lv, lane: str, where: str, legacy_used: list):
         if lv.get("target") == "opp":
             _check_value(lv.get("buf", {}), lane, f"{where}/buf", legacy_used)
     elif kind == "zone_sl":
+        if lv.get("w", "range") not in ("range", "zone"):
+            _fail("G6", f"{where}: zone_sl.w が range/zone でない: {lv.get('w')}"
+                        f"（range＝レンジ全幅 res_hi−sup_lo／zone＝同じ側の帯幅・L1 恒等 歩6-1 で追加）")
         _check_value(lv.get("k", {}), lane, f"{where}/k", legacy_used)
     elif kind == "mix":
         if lv.get("from") != "entry" or not lv.get("to"):
@@ -632,7 +647,11 @@ def _resolve_levels(exits: list, i: int, lim: float, side: str, geo: dict, lane:
                 px = geo["sup_hi"][i] * (1 + buf) if side == "SHORT" else geo["res_lo"][i] * (1 - buf)
         elif lv["kind"] == "zone_sl":
             k = _vnum(lv["k"])
-            w = max(geo["res_hi"][i] - geo["sup_lo"][i], 1e-9)   # 実装と同じ下駄（幅0の防御・S2 恒等）
+            if lv.get("w", "range") == "zone":    # 同じ側の帯幅（L1＝sup_hi−sup_lo・run_long_support 1634行と同式）
+                w = max((geo["res_hi"][i] - geo["res_lo"][i]) if side == "SHORT"
+                        else (geo["sup_hi"][i] - geo["sup_lo"][i]), 1e-9)
+            else:                                 # range＝レンジ全幅（S2 恒等と同じ既定）
+                w = max(geo["res_hi"][i] - geo["sup_lo"][i], 1e-9)   # 実装と同じ下駄（幅0の防御・S2 恒等）
             px = geo["res_hi"][i] + k * w if side == "SHORT" else geo["sup_lo"][i] - k * w
         elif lv["kind"] == "pct":
             base = lim                            # entry 基準（avg 基準は arm 時に解決＝be_wait）
@@ -732,6 +751,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
     posz = recipe["position"]
     mode, max_adds = posz["mode"], int(posz["max_adds"])
     guards = recipe.get("entry_guards", {})
+    rec_style = recipe.get("record") or {}        # 記録スタイル（恒等レーン専用・validate_recipe が検査済み）
     o = df["open"].to_numpy(float)
     h = df["high"].to_numpy(float)
     l = df["low"].to_numpy(float)
@@ -777,7 +797,8 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                     lots.append({"side": side, "avg": pend["limit"], "size": UNIT_LOT,
                                  "add_count": len(lots) + 1 if mode == "separate" else 1,
                                  "first_idx": i, "last_fill_idx": i,
-                                 "atr_entry": atr[i], "adx_entry": adx[i], "k_entry": kk[i],
+                                 "atr_entry": atr[i], "adx_entry": adx[i],
+                                 "k_entry": (np.nan if rec_style.get("k_entry") == "none" else kk[i]),
                                  "W_entry": pend["W_pct"],
                                  "max_fav": h[i] if side == "LONG" else l[i],
                                  "max_adv": l[i] if side == "LONG" else h[i],
@@ -864,7 +885,11 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                 continue
             still.append(lot)
         lots = still
-        band_ok = ok[i] and np.isfinite(res_hi[i]) and np.isfinite(sup_lo[i]) and np.isfinite(mid[i])
+        # 帯の物理ゲート＝range_ok と mid の有限だけを課す（歩6-1 で res_hi/sup_lo の有限要件を外した＝
+        # L1 は res 帯が無いバーでも建てる実装のため。res/sup の有限は、実際に使う側＝条件（帯内位置% は
+        # res_hi 依存で na=fail）と placement の解決＋require_finite ガード（SL は sup_lo/res_hi 依存）が課す。
+        # S2 恒等の非退行は --identity の md5 で機械確認（緩和はこの依存関係により S2 の挙動を変えない）。
+        band_ok = ok[i] and np.isfinite(mid[i])
         can_add = (len(lots) < max_adds) if mode == "separate" else \
             (not lots or (lots[0]["add_count"] < max_adds and (posz.get("add_trigger") or {}).get("kind") == "resignal"))
         if (not up[i]) and pend is None and can_add and band_ok and fire[i]:
@@ -872,9 +897,13 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
             lv = _resolve_levels(exits, i, lim, side, geo, lane)
             if _guards_ok(guards, lv, lim, side):
                 W = max(res_hi[i] - sup_lo[i], 1e-9)
+                if rec_style.get("w_entry") == "zone":   # L1 の W_entry＝同じ側の帯幅（run_long_support 1634行と同式）
+                    Wr = max((res_hi[i] - res_lo[i]) if side == "SHORT" else (sup_hi[i] - sup_lo[i]), 1e-9)
+                else:
+                    Wr = W
                 isdn = bool(np.isfinite(res_lo[i]) and res_lo[i] > c[i] * (1.0 + GAP_DIAG))
                 pend = {"limit": lim, "placed_idx": i, "lv": lv,
-                        "W_pct": W / c[i] * 100.0, "ceil_type": "down" if isdn else "flat_up",
+                        "W_pct": Wr / c[i] * 100.0, "ceil_type": "down" if isdn else "flat_up",
                         "pos_frac": ((lim - sup_lo[i]) / W) if W > 0 else np.nan,
                         "mid_frac": ((mid[i] - sup_lo[i]) / W) if W > 0 else np.nan}
     for lot in lots:
@@ -1042,6 +1071,91 @@ def run_identity(quick: bool = False) -> int:
     return ng
 
 
+# ══ ③-2 恒等検収 L1（歩6-1・まこさん GO 2026-08-02＝採用中 L1 をレシピで書き写す・fix_map 歩6）═════
+def identity_l1_recipe() -> dict:
+    p = RECIPE_DIR / "identity_l1_legacy.json"
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def l1_engine_params(recipe: dict) -> tuple[int, float, int]:
+    """恒等レシピ → 現行 L1（e37.run_long_support）の引数を機械で導出（両側が同じ値を共有）。"""
+    bx = {b["name"]: b for b in recipe["exits"]}
+    tmax = int(bx["TIME"]["fire"]["all"][0]["value"]["n"]) // 5
+    sl_k = float(bx["SL"]["exec"]["placement"]["level"]["k"]["legacy"])
+    return tmax, sl_k, int(recipe["position"]["max_adds"])
+
+
+def _l1_attach_legacy_cols(dfp: pd.DataFrame, gap_pct: float) -> pd.DataFrame:
+    """L1 恒等用の legacy 材料列（run_long_support 1594-1595 / 1636 行と同式・当該バーのみ＝H2）。"""
+    ok = dfp["range_ok_rg5"].to_numpy(bool)
+    sup_hi = dfp["v11_sup_hi"].to_numpy(float)
+    sup_lo = dfp["v11_sup_lo"].to_numpy(float)
+    res_lo = dfp["v11_res_lo"].to_numpy(float)
+    lo = dfp["low"].to_numpy(float)
+    cl = dfp["close"].to_numpy(float)
+    in_sup = ok & np.isfinite(sup_hi) & np.isfinite(sup_lo) & (lo <= sup_hi) & (cl > sup_lo)
+    isdn = np.isfinite(res_lo) & (res_lo > cl * (1.0 + gap_pct / 100.0))
+    out = dfp.copy()
+    out["e37_l1_in_sup"] = in_sup.astype(float)
+    out["e37_l1_isdn"] = isdn.astype(float)
+    return out
+
+
+def run_identity_l1(quick: bool = False) -> int:
+    """L1 恒等＝レシピ実行器と現行 L1（e37.run_long_support・v59d_164 の L1 側と同じ引数）の md5 比較。
+    採点はしない・売買記録CSVは書かない・score.py は呼ばない（メモリ上の比較・値決め窓の中だけ）。"""
+    import periods
+    from tuner_adapters import e38 as ad
+    import engine_tuner as tuner
+    s, e = periods.SEARCH_START, periods.SEARCH_END
+    if quick:
+        s, e = periods.SEARCH_START, periods.SEARCH_START + pd.Timedelta(days=90)
+    assert s >= periods.SEARCH_START and e <= periods.SEARCH_END, "恒等は値決め窓の中だけ（採点窓不使用）"
+    print(f"[恒等検収 L1] 窓 {s.date()}〜{(e - pd.Timedelta('1D')).date()}（値決め窓の中・採点はしない・CSV は書かない）")
+    ng = 0
+    # 値の出所＝e38_logics.json の L1（v59d_164 恒等移植の正本）。レシピと食い違えば止める（写し間違いの物理封鎖）
+    lg = next(x for x in ad.config()["logics"] if x["id"] == "L1")
+    pr = lg.get("params", {})
+    gp = float(pr["gap_pct"])
+    recipe = identity_l1_recipe()
+    tmax, sl_k, max_lots = l1_engine_params(recipe)
+    checks = [
+        ("tmax_bars", int(pr["tmax_bars"]), tmax),
+        ("sl_zone_k", float(pr["sl_zone_k"]), sl_k),
+        ("max_lots", int(pr["max_lots"]), max_lots),
+        ("flat_up_only", True, bool(lg["engine_flags"].get("v57_long_flat_up_only"))),
+        ("sl_pct(null)", None, lg["engine_flags"].get("v57_long_sl_pct")),
+        ("vol_gate(null)", None, lg["engine_flags"].get("v57_long_vol_gate")),
+    ]
+    for nm, want, got in checks:
+        okc = (want == got)
+        print(f"[恒等検収 L1] 値の照合 {nm}: e38_logics={want} / レシピ側={got} → {'✅' if okc else '❌'}")
+        ng += 0 if okc else 1
+    (dfp,) = tuner.load_windows_cached(ad, [(s, e)], tuner.WARM, use_cache=not quick)
+    # 現行 L1（v59d_164 の L1 側と同じ引数＝run_long_support を直接呼ぶ・E37 本体は無変更）
+    t_ref = e37.run_long_support(dfp, max_lots=int(pr["max_lots"]), tmax=int(pr["tmax_bars"]),
+                                 sl_pct=None, vol_gate=None, gap_pct=gp, flat_up_only=True)
+    for r in t_ref:
+        r["logic"] = recipe["meta"]["logic_id"]
+    h_ref, n_ref = _md5_trades(t_ref, s, e)
+    dfl = _l1_attach_legacy_cols(dfp, gp)
+    t_new, rep = run_recipe(dfl, recipe)
+    h_new, n_new = _md5_trades(t_new, s, e)
+    same = (h_ref == h_new)
+    print(f"[恒等 L1] 現行 L1（run_long_support）: {n_ref} 行 md5 {h_ref}")
+    print(f"[恒等 L1] レシピ実行器: {n_new} 行 md5 {h_new} → {'✅ 完全一致' if same else '❌ 不一致'}")
+    tr = pd.DataFrame(t_ref)
+    if len(tr):
+        et_r = pd.to_datetime(tr["entry_time"])
+        cnt = tr[(et_r >= s) & (et_r < e)]["exit_reason"].value_counts().to_dict()
+        print(f"[恒等 L1] 出口理由の内訳（入口と出口の両方が恒等の対象）: {cnt}")
+    print(f"[検証器の報告] 経路 {rep['経路数']} / 条件 {rep['条件数']} / 触れた列 {rep['触れた列']}")
+    print(f"[検証器の報告] legacy 使用 {len(rep['legacy使用'])} 件（恒等レーン）/ 値待ち {rep['値待ち']}")
+    ng += 0 if same else 1
+    print(f"\n[恒等検収 L1 まとめ] {'✅ 全部一致' if ng == 0 else f'❌ 不一致 {ng} 件'}")
+    return ng
+
+
 # ══ 自己検査（番人＝わざと壊したレシピ18種で全部止まる・正しい2種は通る・設計書 §10＋歩4 拡張）══
 def _base_ok_recipe() -> dict:
     """検証だけ通す最小の正しいレシピ（V9 風多条件・探索レーン＝legacy なし）。"""
@@ -1091,6 +1205,10 @@ def selftest() -> None:
         validate_recipe(identity_recipe())
     except RecipeError as e:
         ng.append(f"正しいレシピ（S2 恒等）が拒否された: {e}")
+    try:
+        validate_recipe(identity_l1_recipe())
+    except RecipeError as e:
+        ng.append(f"正しいレシピ（L1 恒等）が拒否された: {e}")
 
     import copy
 
@@ -1152,6 +1270,14 @@ def selftest() -> None:
     broke("⑱ band の lo に未知フィールド（生の数字の混入経路）", lambda r: r["entry"]["connective"]["all"].append(
         {"role": "sufficiency", "form": "band", "material": [{"family": "ATR%", "param": 14, "tf": "1h"}],
          "value": {"lo": {"raw": 1.0}, "hi": {"const": "NEUTRAL_0"}}}), "G6")
+    # 歩6-1 拡張の番人（record＝記録スタイル・zone_sl.w＝帯幅の選択・L1 恒等で追加）
+    broke("⑲ record は恒等レーン専用", lambda r: r.__setitem__("record", {"w_entry": "zone"}), "G6")
+
+    def _rec_bad(r):
+        r["meta"]["lane"] = "legacy"
+        r["record"] = {"w_entry": "変な値"}
+    broke("⑳ record.w_entry 不正", _rec_bad, "G5")
+    broke("㉑ zone_sl.w 不正", lambda r: r["exits"][0]["exec"]["placement"]["level"].__setitem__("w", "変な値"), "G6")
     # 歩4 拡張の既知答え（band／band_exclude／slope_avg／分位の解決＝合成列を電卓式と照合）
     a5 = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     df4 = pd.DataFrame({"ts": pd.date_range("2024-05-01", periods=5, freq="5min"),
@@ -1180,7 +1306,7 @@ def selftest() -> None:
     if miss:
         ng.append(f"FAMILY_TEMPLATES の family が系統マップに無い: {miss}")
     print("=" * 80)
-    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ18種で全部止まる・正しい2種は通る・歩4 拡張の既知答え込み）")
+    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ21種で全部止まる・正しい3種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)
     if ng:
         for x in ng:
@@ -1191,9 +1317,11 @@ def selftest() -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="歩3 実行器＝レシピ（条件データ）を共通の売買ループで走らせる")
-    ap.add_argument("--selftest", action="store_true", help="壊したレシピ18種で全部止まることの機械確認（歩4 拡張の既知答え込み）")
+    ap.add_argument("--selftest", action="store_true", help="壊したレシピ21種で全部止まることの機械確認（歩4/歩6-1 拡張の既知答え込み）")
     ap.add_argument("--identity", action="store_true", help="恒等検収（値決め窓・S2 md5 完全一致＋R14）")
     ap.add_argument("--identity-quick", action="store_true", help="恒等検収の短窓デバッグ（値決め窓の頭90日）")
+    ap.add_argument("--identity-l1", action="store_true", help="恒等検収 L1（歩6-1＝採用中 L1 の書き写し・run_long_support と md5 完全一致）")
+    ap.add_argument("--identity-l1-quick", action="store_true", help="L1 恒等の短窓デバッグ（値決め窓の頭90日）")
     ap.add_argument("--validate", type=str, default=None, help="レシピ json を検証だけする")
     a = ap.parse_args()
     if a.selftest:
@@ -1205,6 +1333,8 @@ def main() -> int:
         return 0
     if a.identity or a.identity_quick:
         return run_identity(quick=a.identity_quick)
+    if a.identity_l1 or a.identity_l1_quick:
+        return run_identity_l1(quick=a.identity_l1_quick)
     ap.print_help()
     return 0
 
