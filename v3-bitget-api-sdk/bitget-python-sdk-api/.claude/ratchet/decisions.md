@@ -1,4 +1,4 @@
-<!-- DECISIONS_HASH=c06e65b444236792 -->
+<!-- DECISIONS_HASH=c2736477a2913340 -->
 # まこさんが決めたこと（gen_decisions.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は正本ファイルから機械で集めています。
@@ -31,16 +31,24 @@ python3 scripts/priority_rebuild/gen_decisions.py --verify
 - next_step.md
 - e38_logics.json
 - observe_config.json
+- session_worklog_20260802.md
 - session_worklog_20260801.md
 - session_worklog_20260730.md
 - session_worklog_20260727.md
 - session_worklog_20260726.md
-- session_worklog_20260725.md
 
-## 決定の一覧（146 件・新しい順）
+## 決定の一覧（132 件・新しい順）
 
 | 日付 | 印 | 決めたこと | 出どころ |
 |---|---|---|---|
+| 2026-08-02 | 指示 | §8 S1 の書き写し・里程標1 が完全一致（まこさん指示「S1 の書き写しを続けて」・commit 601bac2 の後） | session_worklog_20260802.md:85 |
+| 2026-08-02 | 指示 | §1 指示と解釈（まこさん指示 2026-08-02「前セッションからの続き」→「了解。OKです。進めていいよ」） | session_worklog_20260802.md:6 |
+| 2026-08-02 | OK | 2. git commit（まこさん OK 待ち）＝engine_tuner_exec.py・recipes/identity_l1_legacy.json・本 worklog。 | session_worklog_20260802.md:51 |
+| 2026-08-02 | 指示 | まこさん指示 2026-08-02「１コミットしてよい ２修正する」。 ①里程標9 を commit しました（38cec2b）。②私が §9.7 で報告した食い違いを直しました。 | session_worklog_20260802.md:319 |
+| 2026-08-02 | 指示 | §10 戦略と審判の maker/taker の食い違いを直した（まこさん指示「２修正する」） | session_worklog_20260802.md:317 |
+| 2026-08-02 | OK | 9.8 git commit（まこさん OK 待ち） | session_worklog_20260802.md:305 |
+| 2026-08-02 | 指示 | まこさん指示 2026-08-02「セッションスタート」。 私は next_step.md の「次にやること＝里程標9」に従うと解釈し、宣言してから着手しました。 | session_worklog_20260802.md:246 |
+| 2026-08-02 | OK | 8.4 git commit（まこさん OK 待ち） | session_worklog_20260802.md:238 |
 | 2026-08-02 | OK | 2026-08-02 まこさん OK（案A）＝engine_tuner が出す値の入れ先を設定ファイルに足した。tp_mode と tp_pct_k は common_exit の宣言に対する入れ先。confirm_htf_th と confirm_vol_th は 選ばれた確認シグナルのしきい値の入れ先。どの th_ をどの欄へ入れるかの規則は tuner… | e38_logics.json:750 |
 | 2026-08-01 | 指示 | §10 指示と解釈（まこさん指示 2026-08-01「新セッションスタート。前回の続きを進めて」） | session_worklog_20260801.md:84 |
 | 2026-08-01 | OK | …せん。実装中に見つかった設計書の事実誤差は1件で、§6 に書きました（→§8 でまこさん OK・訂正適用済み）。 | session_worklog_20260801.md:7 |
@@ -140,28 +148,6 @@ python3 scripts/priority_rebuild/gen_decisions.py --verify
 | 2026-07-26 | 指示 | §10 observe_diag の取扱説明書を新設（まこさん指示・機械生成） | session_worklog_20260726.md:109 |
 | 2026-07-26 | 確定 | 新規ロジックの検証 フェーズ4＝出口の組み合わせの刻み（まこさん確定 2026-07-26・粗い版）。tp=建値からの順行%（これに『レンジ中央』が常に加わる）／sl=建値からの逆行%（これに『災害線』が常に加わる）／tmax_bars=5分足の本数＝10/30/60分。値の根拠（a-priori・net で選んでいない）＝tp 0.1 は手数料床 0.08… | observe_config.json:317 |
 | 2026-07-26 | 指示 | …さん確認。★保持時間の上限 tmax_bars は全場面 12本＝60分に統一（まこさん指示 2026-07-26「全部６０分に揃える」）＝勝ち負けを決めるまでの保持時間の上限。旧 48本＝240分（4時間）は E38 の役割（§8.6 スキャル・保有は分単位）の枠外で、探索側からは 2026-07-25 に撤去済みだったが場面定義に残っていた。 | observe_config.json:297 |
-| 2026-07-25 | 決定 | 1. まこさん決定: (a) S2 の反映案（2軸確認を探索範囲に追加）で実装 GO (b) 時間切れ96本＝8時間持ちは S2 の探索範囲から外す（24本・48本のみ）。 | session_worklog_20260725.md:81 |
-| 2026-07-25 | 指示 | 2. まこさん指示（next_step §2 逐語）の observe_diag 調査を read-only で実施＝observe_diag.py 全1207行・observe_config.json・entry_exit_matrix.md 全212行・e38_flow.md・slot_opportunity_probe.py（前セッション scratc… | session_worklog_20260725.md:6 |
-| 2026-07-25 | OK | §7 S2 層1観察の本走結果（まこさん OK 後・機械出力の逐語・出典: scratchpad/observe_scene_S2_out.txt） | session_worklog_20260725.md:55 |
-| 2026-07-25 | 承認 | §5 まこさん承認と閾値・パラメータの質疑（2026-07-25） | session_worklog_20260725.md:42 |
-| 2026-07-25 | 承認 | §4 段3 層1「Entry 候補観察」節の詳細提案（チャット提示・まこさん承認待ち・実装未着手) | session_worklog_20260725.md:36 |
-| 2026-07-25 | OK | …ns L-356・本 worklog が経緯の正本。git commit はまこさん OK 待ち＝コード（e38_logic_parts/e38_priority_stack/engine_search_e38/gen_flow/gen_design/observe_diag/slot_opportunity_diag）＋設定（e38_logics.jso… | session_worklog_20260725.md:287 |
-| 2026-07-25 | 指示 | 4. 次セッション（まこさん指示 2026-07-25 逐語）: ショート S2 とロングの段3 結果を活かす視点で見直し→分析し直し→分析方法も毎回ぶれるので自動化できるか相談。 | session_worklog_20260725.md:286 |
-| 2026-07-25 | OK | §21 L1 入口改良の実装＝L1i 新規ロジック（まこさん OK 2026-07-25「OK」） | session_worklog_20260725.md:251 |
-| 2026-07-25 | OK | §20 L1ap（勝ち=床×2 の浅い戻り版）層1 観察の本走結果（まこさん OK・機械出力の逐語・出典: scratchpad/observe_scene_L1ap_out.txt） | session_worklog_20260725.md:234 |
-| 2026-07-25 | 承認 | 2. 場面型の追加（まこさん承認済みの範囲）: observe_diag に support_touch_long（下端タッチ・fresh_only/flat_up_only フラグつき・L1 実装と同じ幾何 low≤sup_hi ∩ close>sup_lo・型判定 gap 0.5% も実装と同値）を追加・selftest ✅ 全部 pass。observ… | session_worklog_20260725.md:210 |
-| 2026-07-25 | 決定 | 1. まこさん決定: L1 改良に進む（L2 は在庫不足と記録・本走せず）。 | session_worklog_20260725.md:209 |
-| 2026-07-25 | 承認 | …観察の場面型に「下端タッチ」を追加（observe_diag の場面型1個追加＝まこさん承認事項） (b) 代替＝L2 の急落条件を緩めて場面を増やす（急落の定義が薄まる）。 | session_worklog_20260725.md:204 |
-| 2026-07-25 | 決定 | 1. まこさん決定: S2 は「スキャルの枠内では今の部品で成立しない」と記録して打ち止め・次候補（ロング側 L2）へ OK。 | session_worklog_20260725.md:200 |
-| 2026-07-25 | OK | §17 S2 打ち止め（まこさん OK）→ L2 層1 観察の計画生成＝在庫不足が判明（2026-07-25） | session_worklog_20260725.md:198 |
-| 2026-07-25 | 確定 | …rams に search_min_per_day: null を追加＝値はまこさん確定待ち（CC 提案＝2件/日・チャット提示）。 | session_worklog_20260725.md:178 |
-| 2026-07-25 | 指示 | §15 スキャル幾何の浅TP追加＋段2 条件のゲート実装（まこさん指示 2026-07-25「やり直して／概念ズレはもうないよね」「段2 の値を段3 の条件に入れるべきでは」） | session_worklog_20260725.md:174 |
-| 2026-07-25 | 承認 | §3 段0 検証器の昇格＝slot_opportunity_diag.py 新設（まこさん承認済み・実装完了） | session_worklog_20260725.md:15 |
-| 2026-07-25 | OK | 3. フロー宣言 hook 新設（まこさん OK）: .claude/hooks/enforce_flow_declaration.sh（PreToolUse Bash・safety＝fast-mode でも有効）＝実行系スクリプトの python 実行前に .claude/state/flow_declaration.md（4行の型＝【フロー宣言】／段／工… | session_worklog_20260725.md:144 |
-| 2026-07-25 | 指示 | §12 スキャル概念のずれの指摘＋フロー宣言 hook 新設（まこさん指示 2026-07-25） | session_worklog_20260725.md:140 |
-| 2026-07-25 | 決定 | 1. まこさん決定: 2点変更 OK（(1) S2 を flat_up 型専用に (2) th_stochd14_2h の分位上限を拡大）。他候補の扱いの質問に回答済み（S3〜L5 は json 定義のまま生存・1周目は参考格下げ・S2 の型を1本ずつ展開・S5/L5 は実装未着手・順番はまこさん）。 | session_worklog_20260725.md:110 |
-| 2026-07-25 | OK | §10 S2 の2点変更（まこさん OK）＋2回目探索＋★配線漏れの発見と修正（2026-07-25） | session_worklog_20260725.md:108 |
-| 2026-07-25 | 決定 | §2 まこさん決定（2026-07-25 セッション内） | session_worklog_20260725.md:10 |
 | 2026-07-25 | 承認 | …値から床×tp_pct_k の固定% 1段TP・全量 maker＝スキャル幾何・まこさん承認 2026-07-25『段3 のセット粗探索をやり直し』）の型対決。tp_pct_k 1.0〜3.0＝手数料床の1〜3倍（k≥1＝床割れの物理禁止・幾何 a-priori）。pct 選択時 tp1_frac/tp2_target は不使用。 | e38_logics.json:493 |
 | 2026-07-25 | OK | …9/§20＝下端タッチ全体・浅い戻り床×2 で素の勝率62%・在庫36バー/日・まこさん OK 2026-07-25）＝現行 L1 の入口幾何＋S2 で確立した2軸確認（ボラ床＋上位足非過熱）。現行 L1（run_e37 経路・採用 priority1）は不変＝これは別ロジックの改良候補 | e38_logics.json:408 |
 | 2026-07-25 | 承認 | …戻す。ceil_filter=flat_up＝S2 は flat_up 型専用（まこさん承認 2026-07-25・根拠＝1回目探索の値決め窓 型別 down −$28／flat_up +$284・確認窓の数字は選定に不使用）。th_stochd14_2h の q_hi 0.8→0.95＝1回目探索で閾値が q80 上限に張り付いた解消（まこさん承認 同日… | e38_logics.json:174 |
