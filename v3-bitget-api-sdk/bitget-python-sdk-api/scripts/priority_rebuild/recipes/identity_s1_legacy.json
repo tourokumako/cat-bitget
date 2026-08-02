@@ -1,0 +1,62 @@
+{
+  "_note": "S1（採用中 v59d_164 のショート側）の書き写し・歩6-1 後半（まこさん指示 2026-08-02「S1 の書き写しを続けて」）。★これは里程標1＝v26 型別天井の入口＋v18 基本出口の骨格（SL・TP1・TP2 反対側・縮む TP・TIME・uptrend 畳み・構造破れ）。v59d の残りレバー（v22 入口・v24/v23・v27・v31・v47/v48/v50・v53・v54・v56・v59・v35〜v38 クランプ）は未搭載＝1系統ずつ足して md5 里程標を積み上げる。lane=legacy（恒等検収専用・探索は生成できない）。恒等の相手＝e37_scalp.run_continuous_v11 を同じ構成（引数はこのレシピから機械導出）で走らせた売買記録。",
+  "_taiou": "run_continuous_v11 との対応: entry=ceiling_resting（v26 切り分け 1459〜1502行＝down型は直近高値 rolling(down_window_hours×12).max().shift(1)／flat_up型は res_hi・年齢ゲート 1490行・v40 免除 1491行・split の値は e38_logics.json S1 の v26_gap/v26_down_hours/v26_max_age_hours/v40_down_no_age と機械照合）／SL 枝=1549行（rz_hi＋sl_far×(rz_lo−sz_hi)＝zone_sl w=inner）／TP1 枝=1511行（(建値+mid)/2＝mix to_level=mid・frac 0.5）／TP2 枝=1524-1530行（v18＝sup_hi×(1+V11_SL_BUF) 中央超え/非有限は mid へ＝zone opp fallback=mid）／SHRINK 枝=1386-1405行（v13 deadline shrink・tmax 48本・床=SCALP_FLOOR・reason TP_FILLED）／TIME 枝=1417-1426行（48本=240分・taker）／uptrend_cut=1096-1145行（v20 経路・TREND_CONT taker・mfe 更新前）／range_break=1191-1203行（v15 構造破れ・bars=V15_BREAK_BARS 12・vol_n=V15_BREAK_VOL_N 20）／record style=s1（1066-1075行＝約定バーの幾何・W_entry=内側の隙間 1550行）／position=separate・max_adds 2（short_lots=2＝v57 ロング併走時のショート枠）。",
+  "meta": { "strategy": "e38", "logic_id": "S1ID", "side": "SHORT", "regime": "range_rg5", "lane": "legacy" },
+  "record": { "style": "s1" },
+  "pre_filter": [],
+  "entry": {
+    "type": "ceiling_resting",
+    "split": {
+      "gap_pct": { "legacy": 0.5 },
+      "down_window_hours": { "legacy": 1.0 },
+      "max_age_hours": { "legacy": 6.0 },
+      "down_no_age": true,
+      "rearm_delay_bars": { "legacy": 6 }
+    },
+    "ceiling": {
+      "flat_up_top": "range_high",
+      "near_fallback": true,
+      "clamp_prev_fill": true,
+      "climb_guard": true
+    }
+  },
+  "entry_guards": {
+    "tp_inside": "TP2",
+    "fee_floor_vs": "TP1",
+    "fee_floor": { "const": "SCALP_FLOOR" }
+  },
+  "exits": [
+    { "name": "SL", "reason": "SL_FILLED",
+      "exec": { "method": "maker", "placement": { "kind": "resting", "fill": "adverse", "pessimistic": true,
+                                                   "level": { "kind": "zone_sl", "k": { "legacy": 1.0 }, "w": "inner" } } },
+      "size_ratio": 1.0 },
+    { "name": "TP1", "reason": "PARTIAL_TP", "once": true,
+      "exec": { "method": "maker", "placement": { "kind": "resting", "fill": "profit",
+                "level": { "kind": "mix", "from": "entry",
+                           "to_level": { "kind": "zone", "target": "mid" },
+                           "frac": { "legacy": 0.5 } } } },
+      "size_ratio": 0.5 },
+    { "name": "TP2", "reason": "TP_FILLED",
+      "exec": { "method": "maker", "placement": { "kind": "resting", "fill": "profit",
+                "level": { "kind": "zone", "target": "opp", "buf": { "const": "V11_SL_BUF" }, "fallback": "mid" } } },
+      "size_ratio": 1.0 },
+    { "name": "SHRINK", "reason": "TP_FILLED",
+      "exec": { "method": "maker", "placement": { "kind": "resting", "fill": "profit",
+                "level": { "kind": "shrink", "from": "TP2", "tmax": { "legacy": 48 },
+                           "floor": { "const": "SCALP_FLOOR" } } } },
+      "size_ratio": 1.0 },
+    { "name": "TIME", "reason": "TIME_EXIT",
+      "fire": { "all": [ { "role": "env", "form": "level", "side": "above", "value": { "n": 240 },
+                          "material": [ { "state": "hold_min" } ] } ] },
+      "exec": { "method": "taker", "placement": { "kind": "on_close" },
+                "be_wait": { "level": { "kind": "pct", "base": "avg",
+                                         "k": { "const": "SCALP_FLOOR", "side_sign": "profit" } },
+                             "ttl": { "const": "BE_TTL_BARS" } } },
+      "size_ratio": 1.0 }
+  ],
+  "position_exits": {
+    "uptrend_cut": { "reason": "TREND_CONT" },
+    "range_break": { "reason": "RANGE_BREAK_EXIT", "bars": { "legacy": 12 }, "vol_n": { "legacy": 20 } }
+  },
+  "position": { "mode": "separate", "max_adds": 2 }
+}

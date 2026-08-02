@@ -275,12 +275,51 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
         if rec_style.get("k_entry", "stoch") not in ("stoch", "none"):
             _fail("G5", f"record.k_entry が stoch/none でない: {rec_style.get('k_entry')}")
     ent = recipe.get("entry") or {}
-    # entry 構造の拡張点（設計書 §12・CP3 提案7）＝既定 edge_trigger。グリッド/MM の別型（複数指値の
-    # 同時管理）は歩6 でここに足す＝実行器ごと作り直さないための予約。未知の型は fail-closed。
+    # entry 構造の拡張点（設計書 §12・CP3 提案7）＝既定 edge_trigger。歩6-1 で ceiling_resting を追加
+    # （S1 の書き写し＝型別の天井に売り指値を置いて待つ・恒等レーン専用＝探索は生成できない）。
+    # グリッド/MM の別型（複数指値の同時管理）は後続の拡張点。未知の型は fail-closed。
     et = ent.get("type", "edge_trigger")
-    if et != "edge_trigger":
-        _fail("G6", f"entry.type={et} は未実装（歩3 は edge_trigger のみ・grid 等は歩6 の拡張点）")
+    if et == "ceiling_resting":
+        if lane != "legacy":
+            _fail("G6", "entry.type=ceiling_resting は恒等検収レーン専用（探索は生成できない・歩6-1）")
+        sp = ent.get("split") or {}
+        for key in ("gap_pct", "down_window_hours", "max_age_hours"):
+            if key not in sp:
+                _fail("G5", f"ceiling_resting の split.{key} が無い（e37 v26 切り分けの値）")
+            _check_value(sp[key], lane, f"entry.split.{key}", rep["legacy使用"])
+        if not isinstance(sp.get("down_no_age", False), bool):
+            _fail("G5", "ceiling_resting の split.down_no_age が bool でない（v40 の免除）")
+        if "rearm_delay_bars" in sp:                  # v56（里程標2）＝uptrend 解除直後の若いレンジでは建てない（flat_up 限定）
+            _check_value(sp["rearm_delay_bars"], lane, "entry.split.rearm_delay_bars", rep["legacy使用"])
+        cl = ent.get("ceiling") or {}                 # 里程標3＝flat_up 天井のクランプ群（v35/v36/v37/v38）
+        if cl.get("flat_up_top") not in (None, "range_high"):
+            _fail("G6", f"ceiling.flat_up_top は range_high のみ（v35）: {cl.get('flat_up_top')}")
+        for key in ("near_fallback", "clamp_prev_fill", "climb_guard"):
+            if key in cl and not isinstance(cl[key], bool):
+                _fail("G5", f"ceiling.{key} が bool でない（v36/v38/v37 の有無）")
+        if cl.get("near_fallback") and cl.get("flat_up_top") != "range_high":
+            _fail("G5", "ceiling.near_fallback（v36）は flat_up_top=range_high（v35）の上にだけ載る")
+    elif et != "edge_trigger":
+        _fail("G6", f"entry.type={et} は未実装（edge_trigger／ceiling_resting[legacy] のみ・grid 等は拡張点）")
+    # position_exits（位置＝保有全体に掛かる出口・歩6-1）＝uptrend 畳みと構造破れ。恒等レーン専用。
+    pex = recipe.get("position_exits")
+    if pex is not None:
+        if lane != "legacy":
+            _fail("G6", "position_exits は恒等検収レーン専用（探索は生成できない・歩6-1）")
+        uc = pex.get("uptrend_cut")
+        if uc is not None and uc.get("reason") not in REASONS_TAKER:
+            _fail("G6", f"uptrend_cut.reason が taker 登録に無い: {uc.get('reason')}（H13）")
+        rb = pex.get("range_break")
+        if rb is not None:
+            if rb.get("reason") not in REASONS_TAKER:
+                _fail("G6", f"range_break.reason が taker 登録に無い: {rb.get('reason')}（H13）")
+            for key in ("bars", "vol_n"):
+                if key not in rb:
+                    _fail("G5", f"range_break.{key} が無い（v15 構造破れの値）")
+                _check_value(rb[key], lane, f"position_exits.range_break.{key}", rep["legacy使用"])
     tree = ent.get("connective")
+    if tree is None and et == "ceiling_resting":
+        tree = {"all": []}                            # 天井型＝発火は engine 側の幾何（条件の木は空でよい）
     if tree is None:
         _fail("G5", "entry.connective（つなぎ木）が無い")
     # 発火経路＝最上位 any の各枝（設計書 §2.1・P22 型 OR・まこさん GO）
@@ -295,6 +334,10 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
     for pi, path in enumerate(paths):
         conds, depths = _walk(path)
         all_conds += conds
+        if et == "ceiling_resting":
+            if conds:
+                _fail("G5", "ceiling_resting の entry は条件の木を持たない（発火は天井の幾何＝engine 側・歩6-1）")
+            continue
         trigs = [c for c in conds if c.get("role") == "trigger"]
         if len(trigs) == 0:
             _fail("G1", f"経路{pi + 1}: 引き金がゼロ（原理的に発火しない構成は作れない）")
@@ -446,21 +489,34 @@ def _check_level(lv, lane: str, where: str, legacy_used: list):
             _fail("G6", f"{where}: zone.target が mid/opp でない")
         if lv.get("target") == "opp":
             _check_value(lv.get("buf", {}), lane, f"{where}/buf", legacy_used)
+            if lv.get("fallback") not in (None, "mid"):
+                _fail("G6", f"{where}: zone.fallback は mid のみ（v18 の幾何防御＝中央超え/非有限は中央へ・歩6-1）")
     elif kind == "zone_sl":
-        if lv.get("w", "range") not in ("range", "zone"):
-            _fail("G6", f"{where}: zone_sl.w が range/zone でない: {lv.get('w')}"
-                        f"（range＝レンジ全幅 res_hi−sup_lo／zone＝同じ側の帯幅・L1 恒等 歩6-1 で追加）")
+        if lv.get("w", "range") not in ("range", "zone", "inner"):
+            _fail("G6", f"{where}: zone_sl.w が range/zone/inner でない: {lv.get('w')}"
+                        f"（range＝レンジ全幅 res_hi−sup_lo／zone＝同じ側の帯幅／inner＝帯の内側の隙間 res_lo−sup_hi・歩6-1）")
         _check_value(lv.get("k", {}), lane, f"{where}/k", legacy_used)
     elif kind == "mix":
-        if lv.get("from") != "entry" or not lv.get("to"):
-            _fail("G6", f"{where}: mix は from=entry と to=<枝名> が要る")
+        has_to = bool(lv.get("to")) or isinstance(lv.get("to_level"), dict)
+        if lv.get("from") != "entry" or not has_to:
+            _fail("G6", f"{where}: mix は from=entry と to=<枝名>（または to_level=<水準>・歩6-1）が要る")
+        if isinstance(lv.get("to_level"), dict):
+            _check_level(lv["to_level"], lane, f"{where}/to_level", legacy_used)
         _check_value(lv.get("frac", {}), lane, f"{where}/frac", legacy_used)
     elif kind == "pct":
         if lv.get("base") not in ("entry", "avg"):
             _fail("G6", f"{where}: pct.base が entry/avg でない")
         _check_value(lv.get("k", {}), lane, f"{where}/k", legacy_used)
+    elif kind == "shrink":
+        # v13 deadline shrink（歩6-1・S1 の書き写し）＝from 枝の水準から建値フロアへ残り時間比で縮む maker TP。
+        if lv.get("from") is None:
+            _fail("G6", f"{where}: shrink.from（縮み始めの枝名・例 TP2）が無い")
+        for key in ("tmax", "floor"):
+            if key not in lv:
+                _fail("G5", f"{where}: shrink.{key} が無い（tmax＝縮み切るまでの本数／floor＝建値フロアの床）")
+            _check_value(lv[key], lane, f"{where}/{key}", legacy_used)
     else:
-        _fail("G6", f"{where}: level.kind が zone/zone_sl/mix/pct でない: {kind}")
+        _fail("G6", f"{where}: level.kind が zone/zone_sl/mix/pct/shrink でない: {kind}")
 
 
 # ══ ② 実行器（共通の売買ループ・設計書 §1〜§7 の意味論）══════════════════════════════
@@ -639,17 +695,25 @@ def _resolve_levels(exits: list, i: int, lim: float, side: str, geo: dict, lane:
         if pl.get("kind") != "resting":
             continue
         lv = pl["level"]
+        if lv["kind"] == "shrink":
+            continue                              # 縮む TP＝毎バーの水準（歩6-1）＝ここでは解決しない（ループ側で計算）
         if lv["kind"] == "zone":
             if lv["target"] == "mid":
                 px = geo["mid"][i]
             else:                                 # opp＝反対側ゾーン手前×バッファ（v18 と同じ幾何）
                 buf = _vnum(lv.get("buf", {"const": "V11_SL_BUF"}))
                 px = geo["sup_hi"][i] * (1 + buf) if side == "SHORT" else geo["res_lo"][i] * (1 - buf)
+                if lv.get("fallback") == "mid":   # v18 幾何防御＝非有限/中央超えは中央へ（e37_scalp 1524-1530行と同式）
+                    _mid = geo["mid"][i]
+                    if not (np.isfinite(px) and (px < _mid if side == "SHORT" else px > _mid)):
+                        px = _mid
         elif lv["kind"] == "zone_sl":
             k = _vnum(lv["k"])
             if lv.get("w", "range") == "zone":    # 同じ側の帯幅（L1＝sup_hi−sup_lo・run_long_support 1634行と同式）
                 w = max((geo["res_hi"][i] - geo["res_lo"][i]) if side == "SHORT"
                         else (geo["sup_hi"][i] - geo["sup_lo"][i]), 1e-9)
+            elif lv.get("w") == "inner":          # 帯の内側の隙間（S1＝res_lo−sup_hi・e37_scalp 1513/1549行と同式・下駄なし）
+                w = geo["res_lo"][i] - geo["sup_hi"][i]
             else:                                 # range＝レンジ全幅（S2 恒等と同じ既定）
                 w = max(geo["res_hi"][i] - geo["sup_lo"][i], 1e-9)   # 実装と同じ下駄（幅0の防御・S2 恒等）
             px = geo["res_hi"][i] + k * w if side == "SHORT" else geo["sup_lo"][i] - k * w
@@ -666,12 +730,69 @@ def _resolve_levels(exits: list, i: int, lim: float, side: str, geo: dict, lane:
             raise RecipeError(f"[実行器] level.kind 未実装: {lv['kind']}")
         lv_out[b["name"]] = float(px)
     for name, lv in mixes:                        # mix は他の枝の水準に依存＝後で解決
-        to = lv_out.get(lv["to"])
-        if to is None:
-            raise RecipeError(f"[実行器] mix の参照先 {lv['to']} が resting 枝に無い")
+        if isinstance(lv.get("to_level"), dict):  # to_level＝枝でなく水準そのもの（S1 の TP1＝mid 基準・歩6-1）
+            tl = lv["to_level"]
+            if tl.get("kind") == "zone" and tl.get("target") == "mid":
+                to = float(geo["mid"][i])
+            else:
+                raise RecipeError(f"[実行器] mix.to_level は zone/mid のみ: {tl}")
+        else:
+            to = lv_out.get(lv["to"])
+            if to is None:
+                raise RecipeError(f"[実行器] mix の参照先 {lv['to']} が resting 枝に無い")
         frac = _vnum(lv["frac"])
         lv_out[name] = float(lim + frac * (to - lim))
     return lv_out
+
+
+def _ceiling_fire(recipe: dict, df: pd.DataFrame, geo: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """ceiling_resting の発火の前提と指値水準（歩6-1＝e37 v26 切り分けの書き写し・1459〜1495行と同式）。
+    戻り: (fire_pre, ceil_arr＝型別の天井, isdn_arr＝down 型か)。
+    ★fire_pre に「天井 > 現値」は含めない＝その判定はループ側（v38 クランプ後の水準で見る必要があるため）。
+    すべて当該バーの確定値のみ（H2）。"""
+    sp = recipe["entry"]["split"]
+    gap = _vnum(sp["gap_pct"]) / 100.0
+    dn_h = _vnum(sp["down_window_hours"])
+    age_h = _vnum(sp["max_age_hours"])
+    no_age_dn = bool(sp.get("down_no_age", False))
+    c = df["close"].to_numpy(float)
+    h = df["high"].to_numpy(float)
+    ok = df["range_ok_rg5"].to_numpy(bool)
+    res_lo = geo["res_lo"]
+    res_hi = geo["res_hi"]
+    n = len(df)
+    with np.errstate(invalid="ignore"):
+        isdn = np.isfinite(res_lo) & (res_lo > c * (1.0 + gap))          # 下落系＝レジ帯下端が価格の上に gap 超（e37 1460行）
+    mbar = max(2, int(round(dn_h * 12)))
+    rhdn = pd.Series(h).rolling(mbar, min_periods=2).max().shift(1).to_numpy(float)   # 直近高値（前バーまで＝H2・e37 961行）
+    ceil_arr = np.where(isdn, rhdn, res_hi)                              # down=直近高値／flat_up=res_hi（e37 1461行）
+    cl = recipe["entry"].get("ceiling") or {}
+    if cl.get("flat_up_top") == "range_high":                            # v35（e37 1475〜1483行）: flat_up の天井＝
+        if "v35_range_top" not in df.columns:                            # 今のレンジ開始以降の実測高値×(1−tol)
+            raise RecipeError("[実行器] v35 の材料列 v35_range_top が実行データに無い（恒等ハーネスが付ける）")
+        t35 = df["v35_range_top"].to_numpy(float)
+        near = c * (1.0 + ENTRY_OFFSET)                                  # 現値のすぐ上（maker 成立の下限）
+        with np.errstate(invalid="ignore"):
+            use35 = (~isdn) & np.isfinite(t35) & (t35 > near)
+        ceil_arr = np.where(use35, t35, ceil_arr)
+        if cl.get("near_fallback"):                                      # v36（e37 1479〜1481行）: t35 が現値以下＝
+            use36 = (~isdn) & np.isfinite(t35) & (~use35)                # 上端圏に居る瞬間は現値すぐ上に置く
+            ceil_arr = np.where(use36, near, ceil_arr)
+    idxn = np.arange(n)
+    fi = np.where(~ok, idxn, -1)                                         # range_ok 連続バー数（e37 965-966行）
+    age = (idxn - np.maximum.accumulate(fi)).astype(float)
+    age_ok = age <= age_h * 12
+    if no_age_dn:
+        age_ok = age_ok | isdn                                           # v40＝down 型は年齢免除（e37 1491-1492行）
+    # 発火の前提（e37 1494行のうち「天井 > 現値」を除いた分＝その判定は v38 クランプ後にループ側で行う）
+    fire = ok & np.isfinite(ceil_arr) & age_ok
+    if "rearm_delay_bars" in sp:                                         # v56（里程標2・e37 1507行）: uptrend 解除から
+        rd = int(_vnum(sp["rearm_delay_bars"]))                          # rd 本未満の若いレンジ窓では flat_up 型を建てない
+        up = df["rg5_uptrend"].to_numpy(bool)                            # （down 型は対象外・e37 last_up26＝直近 uptrend バー）
+        lastup = np.maximum.accumulate(np.where(up, idxn, -10 ** 9))
+        young = (idxn - lastup) < rd
+        fire = fire & ~(young & ~isdn)
+    return fire, ceil_arr, isdn
 
 
 def _guards_ok(guards: dict, lv: dict, lim: float, side: str) -> bool:
@@ -773,7 +894,33 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
         wpct_arr = np.where(np.isfinite(res_hi) & np.isfinite(sup_lo), (res_hi - sup_lo) / c * 100.0, np.nan)
     geo = {"res_hi": res_hi, "res_lo": res_lo, "sup_hi": sup_hi, "sup_lo": sup_lo,
            "mid": mid, "W%": wpct_arr, "帯内位置%": pos_arr}
-    fire = _entry_fire(recipe, df, geo, qtable)
+    is_ceiling = (recipe.get("entry") or {}).get("type") == "ceiling_resting"
+    clamp_prev = climb_guard = False
+    warn_arr = None
+    if is_ceiling:                                # 歩6-1: S1 型＝天井への resting（fire と指値水準を幾何で作る）
+        fire, ceil_arr, isdn_arr = _ceiling_fire(recipe, df, geo)
+        _cl = (recipe["entry"].get("ceiling") or {})
+        clamp_prev = bool(_cl.get("clamp_prev_fill"))     # v38＝前玉より高くは売らない
+        climb_guard = bool(_cl.get("climb_guard"))        # v37＝前兆 ∩ 前玉より高い指値なら建てない
+        if climb_guard:
+            if "v22_warning" not in df.columns:
+                raise RecipeError("[実行器] v37 の材料列 v22_warning が実行データに無い（恒等ハーネスが付ける）")
+            warn_arr = df["v22_warning"].to_numpy(bool)
+    else:
+        fire = _entry_fire(recipe, df, geo, qtable)
+        ceil_arr = isdn_arr = None
+    last_fup_px = None                            # 同一レンジ内の直近 flat_up 約定価格（e37 956行・v37/v38 の基準）
+    pex = recipe.get("position_exits") or {}
+    uc = pex.get("uptrend_cut")
+    rb = pex.get("range_break")
+    vol_arr = vol_sma_prev = None
+    rb_bars = 0
+    if rb is not None:                            # v15 構造破れの材料（e37_scalp 858-860行と同式＝当該バー除外の出来高平均）
+        vol_arr = df["volume"].to_numpy(float)
+        vol_sma_prev = df["volume"].rolling(int(_vnum(rb["vol_n"]))).mean().shift(1).to_numpy(float)
+        rb_bars = int(_vnum(rb["bars"]))
+    brk_cnt, brk_vol = 0, False
+    pre_mfe = bool(pex)                           # 位置の出口がある時＝mfe/mae は e37 と同じ位置（枝の前・全 lot 一括）で更新
     n = len(df)
     trades: list = []
     lots: list = []
@@ -794,31 +941,73 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                     p0["last_fill_idx"] = i
                     p0["lv"] = pend["lv"]          # 積み増しバーの幾何で置き直し（機械出力で見える）
                 else:
-                    lots.append({"side": side, "avg": pend["limit"], "size": UNIT_LOT,
-                                 "add_count": len(lots) + 1 if mode == "separate" else 1,
-                                 "first_idx": i, "last_fill_idx": i,
-                                 "atr_entry": atr[i], "adx_entry": adx[i],
-                                 "k_entry": (np.nan if rec_style.get("k_entry") == "none" else kk[i]),
-                                 "W_entry": pend["W_pct"],
-                                 "max_fav": h[i] if side == "LONG" else l[i],
-                                 "max_adv": l[i] if side == "LONG" else h[i],
-                                 "pos_frac": pend["pos_frac"], "mid_frac": pend["mid_frac"],
-                                 "res_zone_pos": np.nan, "ceil_type": pend["ceil_type"],
-                                 "lv": pend["lv"], "done": set(), "be_lvl": np.nan, "be_dl": -1})
+                    _newlot = {"side": side, "avg": pend["limit"], "size": UNIT_LOT,
+                               "add_count": len(lots) + 1 if mode == "separate" else 1,
+                               "first_idx": i, "last_fill_idx": i,
+                               "atr_entry": atr[i], "adx_entry": adx[i],
+                               "k_entry": (np.nan if rec_style.get("k_entry") == "none" else kk[i]),
+                               "W_entry": pend["W_pct"],
+                               "max_fav": h[i] if side == "LONG" else l[i],
+                               "max_adv": l[i] if side == "LONG" else h[i],
+                               "pos_frac": pend["pos_frac"], "mid_frac": pend["mid_frac"],
+                               "res_zone_pos": np.nan, "ceil_type": pend["ceil_type"],
+                               "zone_top": pend.get("zone_top", np.nan),
+                               "lv": pend["lv"], "done": set(), "be_lvl": np.nan, "be_dl": -1}
+                    if rec_style.get("style") == "s1":
+                        # S1 の診断列＝約定バーの幾何で出す（e37_scalp 1066-1075行と同式・net 不関与だが md5 恒等の対象）
+                        _lim1 = pend["limit"]
+                        _rng1 = (res_hi[i] - sup_hi[i]) if (np.isfinite(res_hi[i]) and np.isfinite(sup_hi[i])) else np.nan
+                        _newlot["pos_frac"] = ((_lim1 - sup_hi[i]) / _rng1) if (np.isfinite(_rng1) and _rng1 > 0) else np.nan
+                        _newlot["mid_frac"] = ((mid[i] - sup_hi[i]) / _rng1) if (np.isfinite(_rng1) and _rng1 > 0) else np.nan
+                        _newlot["res_zone_pos"] = (((_lim1 - res_lo[i]) / (res_hi[i] - res_lo[i]))
+                                                   if (np.isfinite(res_lo[i]) and np.isfinite(res_hi[i]) and res_hi[i] > res_lo[i]) else np.nan)
+                    if not lots:
+                        brk_cnt, brk_vol = 0, False    # position 開始＝破れカウンタ撤去（e37_scalp 1081-1084行）
+                    lots.append(_newlot)
+                if (clamp_prev or climb_guard) and pend["ceil_type"] == "flat_up":
+                    last_fup_px = float(pend["limit"])  # v37/v38 の基準＝直近 flat_up 約定価格（e37 1087-1088行）
                 pend = None
+        if (clamp_prev or climb_guard) and not ok[i]:
+            last_fup_px = None                     # レンジ切れ＝基準リセット（e37 1094-1095行・次のレンジへ持ち越さない）
         if up[i]:                                  # uptrend 発火＝新規停止（保有は SL/TIME が守る）
             pend = None
+            if uc is not None:                     # 歩6-1: uptrend 畳み＝保有全 lot を成行で確定（e37_scalp 1096-1145行の v20 経路）
+                for lot in lots:                   # mfe/mae は更新前＝e37 と同じ（1096行は 1177行の更新より前）
+                    e37._record(trades, lot, c[i], uc["reason"], i, ts)
+                lots = []
+                brk_cnt, brk_vol = 0, False
+                continue                           # e37 1144-1145行＝uptrend バーは以降の処理へ進まない
+        if pre_mfe:                                # e37_scalp 1177-1181行＝mfe/mae は枝の前に全 lot 一括更新
+            for lot in lots:
+                if side == "LONG":
+                    lot["max_fav"] = max(lot["max_fav"], h[i])
+                    lot["max_adv"] = min(lot["max_adv"], l[i])
+                else:
+                    lot["max_fav"] = min(lot["max_fav"], l[i])
+                    lot["max_adv"] = max(lot["max_adv"], h[i])
+        if rb is not None and lots:                # 歩6-1: v15 構造破れ（e37_scalp 1191-1203行・判定関数は e37 のものを再利用）
+            _ztop = max(x.get("zone_top", np.nan) for x in lots)
+            brk_cnt, brk_vol, _fire_rb = e37.range_break_check_v15(
+                c[i], bool(ok[i]), _ztop, vol_arr[i], vol_sma_prev[i], brk_cnt, brk_vol, rb_bars)
+            if _fire_rb:
+                for lot in lots:
+                    e37._record(trades, lot, c[i], rb["reason"], i, ts)
+                lots = []
+                pend = None
+                brk_cnt, brk_vol = 0, False
+                continue
         still = []
         for lot in lots:
             if i <= lot["last_fill_idx"]:
                 still.append(lot)
                 continue
-            if side == "LONG":
-                lot["max_fav"] = max(lot["max_fav"], h[i])
-                lot["max_adv"] = min(lot["max_adv"], l[i])
-            else:
-                lot["max_fav"] = min(lot["max_fav"], l[i])
-                lot["max_adv"] = max(lot["max_adv"], h[i])
+            if not pre_mfe:                        # 位置の出口がある時は上で一括更新済み（e37 と同じ順序）
+                if side == "LONG":
+                    lot["max_fav"] = max(lot["max_fav"], h[i])
+                    lot["max_adv"] = min(lot["max_adv"], l[i])
+                else:
+                    lot["max_fav"] = min(lot["max_fav"], l[i])
+                    lot["max_adv"] = max(lot["max_adv"], h[i])
             closed = False
             if lot["be_dl"] >= 0:                  # 建値フロア待機（v31 型＝SL→BE→期限の順・§8 行11）
                 slb = next((b for b in exits if b.get("reason") == "SL_FILLED"), None)
@@ -842,6 +1031,24 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
                 if bi in lot["done"]:
                     continue
                 pl = (b.get("exec") or {}).get("placement") or {}
+                _lvs = pl.get("level") or {}
+                if pl.get("kind") == "resting" and _lvs.get("kind") == "shrink":
+                    # v13 deadline shrink（歩6-1）＝from 枝の水準から建値フロアへ残り時間比で縮む maker TP
+                    # （e37_scalp 1386-1405行と同式・r=1 で from の水準・r=0 で建値フロア）
+                    src = lot["lv"].get(_lvs["from"], np.nan)
+                    if not np.isfinite(src):
+                        continue
+                    _tmb = int(_vnum(_lvs["tmax"]))
+                    _fl = abs(_vnum(_lvs["floor"]))
+                    _bef = lot["avg"] * (1.0 - _fl) if side == "SHORT" else lot["avg"] * (1.0 + _fl)
+                    _r = max(0.0, (_tmb - (i - lot["first_idx"])) / _tmb)
+                    _lvl = src + (_bef - src) * (1.0 - _r)
+                    _hit = (l[i] <= _lvl) if side == "SHORT" else (h[i] >= _lvl)
+                    if _hit and _exit_fire_ok(b, lot, i, df, geo, lane):
+                        e37._record(trades, lot, _lvl, b["reason"], i, ts)
+                        closed = True
+                        break
+                    continue
                 if pl.get("kind") == "resting":
                     lvl = lot["lv"].get(b["name"], np.nan)
                     if not np.isfinite(lvl):
@@ -892,18 +1099,42 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
         band_ok = ok[i] and np.isfinite(mid[i])
         can_add = (len(lots) < max_adds) if mode == "separate" else \
             (not lots or (lots[0]["add_count"] < max_adds and (posz.get("add_trigger") or {}).get("kind") == "resignal"))
-        if (not up[i]) and pend is None and can_add and band_ok and fire[i]:
-            lim = c[i] * (1 + ENTRY_OFFSET) if side == "SHORT" else c[i] * (1 - ENTRY_OFFSET)
+        if pex and not lots and brk_cnt:
+            brk_cnt, brk_vol = 0, False            # position 終了＝破れカウンタ撤去（e37_scalp 1432-1433行）
+        _fire_i = bool(fire[i])
+        _lim_c = np.nan
+        if is_ceiling and _fire_i:
+            _lim_c = float(ceil_arr[i])
+            if clamp_prev and (not isdn_arr[i]) and last_fup_px is not None \
+                    and np.isfinite(_lim_c) and _lim_c > last_fup_px:
+                _lim_c = float(last_fup_px)        # v38（e37 1484-1487行）＝前玉より高くは売らない
+            if not (np.isfinite(_lim_c) and _lim_c > c[i]):
+                _fire_i = False                    # e37 1494行の「天井が現在価格の上」
+            elif (climb_guard and (not isdn_arr[i]) and warn_arr[i]
+                  and last_fup_px is not None and _lim_c > last_fup_px):
+                _fire_i = False                    # v37（e37 1496-1499行）＝前兆 ∩ 前玉より高い指値は建てない
+        if (not up[i]) and pend is None and can_add and band_ok and _fire_i:
+            if is_ceiling:                         # S1 型＝指値は型別の天井（e37_scalp 1502行・close±offset ではない）
+                lim = _lim_c
+                w_in = res_lo[i] - sup_hi[i]       # 帯の内側の隙間（e37_scalp 1513行 w_px）
+                if not (np.isfinite(w_in) and w_in > 0):
+                    continue                       # e37_scalp 1542行＝幾何不成立は建てない
+            else:
+                lim = c[i] * (1 + ENTRY_OFFSET) if side == "SHORT" else c[i] * (1 - ENTRY_OFFSET)
             lv = _resolve_levels(exits, i, lim, side, geo, lane)
             if _guards_ok(guards, lv, lim, side):
                 W = max(res_hi[i] - sup_lo[i], 1e-9)
                 if rec_style.get("w_entry") == "zone":   # L1 の W_entry＝同じ側の帯幅（run_long_support 1634行と同式）
                     Wr = max((res_hi[i] - res_lo[i]) if side == "SHORT" else (sup_hi[i] - sup_lo[i]), 1e-9)
+                elif is_ceiling:
+                    Wr = res_lo[i] - sup_hi[i]     # S1 の W_entry＝帯の内側の隙間（e37_scalp 1550行）
                 else:
                     Wr = W
-                isdn = bool(np.isfinite(res_lo[i]) and res_lo[i] > c[i] * (1.0 + GAP_DIAG))
+                isdn = bool(isdn_arr[i]) if is_ceiling else \
+                    bool(np.isfinite(res_lo[i]) and res_lo[i] > c[i] * (1.0 + GAP_DIAG))
                 pend = {"limit": lim, "placed_idx": i, "lv": lv,
                         "W_pct": Wr / c[i] * 100.0, "ceil_type": "down" if isdn else "flat_up",
+                        "zone_top": res_hi[i],
                         "pos_frac": ((lim - sup_lo[i]) / W) if W > 0 else np.nan,
                         "mid_frac": ((mid[i] - sup_lo[i]) / W) if W > 0 else np.nan}
     for lot in lots:
@@ -1156,6 +1387,135 @@ def run_identity_l1(quick: bool = False) -> int:
     return ng
 
 
+# ══ ③-3 恒等検収 S1 里程標1（歩6-1 後半・まこさん指示 2026-08-02「S1 の書き写しを続けて」）═════════
+def identity_s1_recipe() -> dict:
+    p = RECIPE_DIR / "identity_s1_legacy.json"
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def s1_engine_params(recipe: dict) -> dict:
+    """恒等レシピ → 現行 S1（e37.run_continuous_v11）の里程標1 構成を機械で導出（両側が同じ値を共有）。"""
+    sp = recipe["entry"]["split"]
+    bx = {b["name"]: b for b in recipe["exits"]}
+    rbx = recipe["position_exits"]["range_break"]
+    tmax_sh = int(_vnum(bx["SHRINK"]["exec"]["placement"]["level"]["tmax"]))
+    tmax_ti = int(bx["TIME"]["fire"]["all"][0]["value"]["n"]) // 5
+    if tmax_sh != tmax_ti:
+        raise SystemExit(f"[S1 恒等] SHRINK.tmax={tmax_sh} と TIME={tmax_ti}本 が食い違う（e37 は同じ tmax 48）")
+    return {"gap": _vnum(sp["gap_pct"]), "down_hours": _vnum(sp["down_window_hours"]),
+            "max_age_hours": _vnum(sp["max_age_hours"]), "down_no_age": bool(sp.get("down_no_age", False)),
+            "rearm_bars": (int(_vnum(sp["rearm_delay_bars"])) if "rearm_delay_bars" in sp else None),
+            "ceiling": (recipe["entry"].get("ceiling") or {}),
+            "be_wait": ((bx["TIME"].get("exec") or {}).get("be_wait")),
+            "sl_far": _vnum(bx["SL"]["exec"]["placement"]["level"]["k"]),
+            "tmax": tmax_sh, "break_bars": int(_vnum(rbx["bars"])), "vol_n": int(_vnum(rbx["vol_n"])),
+            "max_lots": int(recipe["position"]["max_adds"])}
+
+
+def run_identity_s1(quick: bool = False) -> int:
+    """S1 里程標1 の恒等＝レシピ実行器と現行 run_continuous_v11（同じ構成・引数はレシピから機械導出）の md5 比較。
+    構成＝v12+v13+v18+v20(RG-v5)+v26 切り分け(+v40)＝v59d の入口骨格と v18 基本出口。残りレバーは次の里程標。
+    採点はしない・売買記録CSVは書かない・score.py は呼ばない（メモリ上の比較・値決め窓の中だけ）。"""
+    import periods
+    from tuner_adapters import e38 as ad
+    import engine_tuner as tuner
+    s, e = periods.SEARCH_START, periods.SEARCH_END
+    if quick:
+        s, e = periods.SEARCH_START, periods.SEARCH_START + pd.Timedelta(days=90)
+    assert s >= periods.SEARCH_START and e <= periods.SEARCH_END, "恒等は値決め窓の中だけ（採点窓不使用）"
+    print(f"[恒等検収 S1]窓 {s.date()}〜{(e - pd.Timedelta('1D')).date()}（値決め窓の中・採点はしない・CSV は書かない）")
+    ng = 0
+    recipe = identity_s1_recipe()
+    prm = s1_engine_params(recipe)
+    # 値の照合＝e38_logics.json の S1（v59d_164 恒等移植の正本）と、実行器の定数（構造破れの窓）
+    lg = next(x for x in ad.config()["logics"] if x["id"] == "S1")
+    ef = lg["engine_flags"]
+    checks = [
+        ("v26_gap", float(ef["v26_gap"]), prm["gap"]),
+        ("v26_down_hours", float(ef["v26_down_hours"]), prm["down_hours"]),
+        ("v26_max_age_hours", float(ef["v26_max_age_hours"]), prm["max_age_hours"]),
+        ("v40_down_no_age", bool(ef["v40_down_no_age"]), prm["down_no_age"]),
+        ("v26_split_ceiling", True, bool(ef["v26_split_ceiling"])),
+        ("break_bars(V15)", int(e37.V15_BREAK_BARS), prm["break_bars"]),
+        ("vol_n(V15)", int(e37.V15_BREAK_VOL_N), prm["vol_n"]),
+    ]
+    if prm["rearm_bars"] is not None:              # 里程標2＝v56（e38_logics S1 の v56_rearm_delay が正本）
+        checks.append(("v56_rearm_delay", True, bool(ef.get("v56_rearm_delay"))))
+        checks.append(("V56_REARM_BARS", int(e37.V56_REARM_BARS), prm["rearm_bars"]))
+    _cl = prm["ceiling"]                           # 里程標3＝クランプ群（レシピに書いた分だけ現行側も ON にする）
+    if _cl.get("flat_up_top") == "range_high":
+        checks.append(("v35_flatup_range", True, bool(ef.get("v35_flatup_range"))))
+    if _cl.get("near_fallback"):
+        checks.append(("v36_flatup_near", True, bool(ef.get("v36_flatup_near"))))
+    if _cl.get("clamp_prev_fill"):
+        checks.append(("v38_flatup_clamp", True, bool(ef.get("v38_flatup_clamp"))))
+    if _cl.get("climb_guard"):
+        checks.append(("v37_flatup_climb", True, bool(ef.get("v37_flatup_climb"))))
+    if prm["be_wait"] is not None:                 # 里程標4＝v31（TIME 満了を成行でなく建値フロアの resting maker へ）
+        checks.append(("v31_time_be", True, bool(ef.get("v31_time_be"))))
+        checks.append(("V31_TTL_BARS", int(e37.V31_TTL_BARS), int(_vnum(prm["be_wait"]["ttl"]))))
+    for nm, want, got in checks:
+        okc = (want == got)
+        print(f"[恒等検収 S1] 値の照合 {nm}: 正本={want} / レシピ側={got} → {'✅' if okc else '❌'}")
+        ng += 0 if okc else 1
+    (dfp,) = tuner.load_windows_cached(ad, [(s, e)], tuner.WARM, use_cache=not quick)
+    # 里程標3 の材料列＝run_e37 2393-2394行／2436行と同じ関数を呼ぶ（式のドリフト防止＝出典を e37 に固定）。
+    # 両側（現行 run_continuous_v11 とレシピ実行器）に同じ df を渡す＝材料の食い違いを物理的に作らない。
+    if _cl.get("flat_up_top") == "range_high" or _cl.get("climb_guard"):
+        dfp = dfp.copy()
+        if _cl.get("flat_up_top") == "range_high":
+            dfp["v35_range_top"] = e37._v35_range_top(dfp)      # v35＝今のレンジ開始以降の実測高値×(1−tol)
+        if _cl.get("climb_guard"):
+            dfp = e37.v22_uptrend_warning(dfp)                  # v37＝uptrend 前兆フラグ（確定15分足のみ＝H2）
+    # 現行側＝run_continuous_v11 を同じ構成で（v18 base18 と同じ形の v15_params・run_e37 2419-2429 行と同式）
+    v15p = {"ladder": None, "sl_far": prm["sl_far"], "tmax": prm["tmax"], "down": None, "ret": {}, "dd": {},
+            "cell_fn": (lambda k_, a_, w_: 0), "cell_fixed": True, "v16": True, "v17": True,
+            "guard": {}, "guard_all": None, "cooldown": e37.V16_COOLDOWN[0], "be_time": {},
+            "tmax_map": {}, "down_map": {}, "tp1_f": {}, "tp2_f": {}, "size0": {},
+            "break_mode": None, "break_bars": prm["break_bars"], "tp2_far": True,
+            "v26_split": True, "v26_gap": prm["gap"], "v26_down_hours": prm["down_hours"],
+            "v26_max_age_hours": prm["max_age_hours"], "v40_down_no_age": prm["down_no_age"]}
+    if prm["rearm_bars"] is not None:              # 里程標2＝v56（レシピに書いてあるレバーだけ現行側でも ON にする）
+        v15p["v56_rearm_delay"] = True
+    _lv = ["v26 型別天井", "v40 down 免除", "v18 TP2 反対側", "v13 縮む TP", "uptrend 畳み", "構造破れ"]
+    if prm["rearm_bars"] is not None:
+        _lv.append("v56 再武装遅延")
+    for _key, _flag, _name in (("flat_up_top", "v35_flatup_range", "v35 レンジ実測高値"),
+                               ("near_fallback", "v36_flatup_near", "v36 近傍フォールバック"),
+                               ("clamp_prev_fill", "v38_clamp_prev", "v38 前玉クランプ"),
+                               ("climb_guard", "v37_climb_guard", "v37 階段売り上がり停止")):
+        _on = (_cl.get(_key) == "range_high") if _key == "flat_up_top" else bool(_cl.get(_key))
+        if _on:
+            v15p[_flag] = True
+            _lv.append(_name)
+    if prm["be_wait"] is not None:                 # 里程標4＝v31（TIME 満了後の建値フロア待機・既存の待機機構で書ける）
+        v15p["v31_time_be"] = True
+        _lv.append("v31 建値フロア待機")
+    print(f"[恒等検収 S1] 載せたレバー: {' / '.join(_lv)}（レシピが正本＝現行側の引数はレシピから機械導出）")
+    box_tf = ad.config()["global"]["box_tf"]
+    up_arr = dfp["rg5_uptrend"].to_numpy(bool)
+    t_ref = e37.run_continuous_v11(dfp, box_tf, v12_open_range=True, v13_time_maker=True,
+                                   v20_uptrend=up_arr, short_lots=prm["max_lots"], v15_params=v15p)
+    for r in t_ref:
+        r["logic"] = recipe["meta"]["logic_id"]
+    h_ref, n_ref = _md5_trades(t_ref, s, e)
+    t_new, rep = run_recipe(dfp, recipe)
+    h_new, n_new = _md5_trades(t_new, s, e)
+    same = (h_ref == h_new)
+    print(f"[恒等 S1]現行（run_continuous_v11・里程標1 構成）: {n_ref} 行 md5 {h_ref}")
+    print(f"[恒等 S1]レシピ実行器: {n_new} 行 md5 {h_new} → {'✅ 完全一致' if same else '❌ 不一致'}")
+    tr = pd.DataFrame(t_ref)
+    if len(tr):
+        et_r = pd.to_datetime(tr["entry_time"])
+        cnt = tr[(et_r >= s) & (et_r < e)]["exit_reason"].value_counts().to_dict()
+        print(f"[恒等 S1]出口理由の内訳（入口と出口の両方が恒等の対象）: {cnt}")
+    print(f"[検証器の報告] 経路 {rep['経路数']} / 条件 {rep['条件数']} / 触れた列 {rep['触れた列']}")
+    print(f"[検証器の報告] legacy 使用 {len(rep['legacy使用'])} 件（恒等レーン）/ 値待ち {rep['値待ち']}")
+    ng += 0 if same else 1
+    print(f"\n[恒等検収 S1 まとめ] {'✅ 全部一致' if ng == 0 else f'❌ 不一致 {ng} 件'}")
+    return ng
+
+
 # ══ 自己検査（番人＝わざと壊したレシピ18種で全部止まる・正しい2種は通る・設計書 §10＋歩4 拡張）══
 def _base_ok_recipe() -> dict:
     """検証だけ通す最小の正しいレシピ（V9 風多条件・探索レーン＝legacy なし）。"""
@@ -1209,6 +1569,10 @@ def selftest() -> None:
         validate_recipe(identity_l1_recipe())
     except RecipeError as e:
         ng.append(f"正しいレシピ（L1 恒等）が拒否された: {e}")
+    try:
+        validate_recipe(identity_s1_recipe())
+    except RecipeError as e:
+        ng.append(f"正しいレシピ（S1 恒等・里程標1）が拒否された: {e}")
 
     import copy
 
@@ -1278,6 +1642,21 @@ def selftest() -> None:
         r["record"] = {"w_entry": "変な値"}
     broke("⑳ record.w_entry 不正", _rec_bad, "G5")
     broke("㉑ zone_sl.w 不正", lambda r: r["exits"][0]["exec"]["placement"]["level"].__setitem__("w", "変な値"), "G6")
+    # 歩6-1 後半の番人（S1 里程標1＝天井入口・位置の出口・縮む TP）
+    broke("㉒ ceiling_resting は恒等レーン専用", lambda r: r["entry"].__setitem__("type", "ceiling_resting"), "G6")
+
+    def _ceil_no_split(r):
+        r["meta"]["lane"] = "legacy"
+        r["entry"] = {"type": "ceiling_resting", "split": {"gap_pct": {"legacy": 0.5}}}
+    broke("㉓ ceiling の split 欠落", _ceil_no_split, "G5")
+    broke("㉔ position_exits は恒等レーン専用", lambda r: r.__setitem__(
+        "position_exits", {"uptrend_cut": {"reason": "TREND_CONT"}}), "G6")
+
+    def _shrink_no_tmax(r):
+        r["meta"]["lane"] = "legacy"
+        r["exits"][1]["exec"]["placement"]["level"] = {"kind": "shrink", "from": "TP2",
+                                                       "floor": {"const": "SCALP_FLOOR"}}
+    broke("㉕ shrink の tmax 欠落", _shrink_no_tmax, "G5")
     # 歩4 拡張の既知答え（band／band_exclude／slope_avg／分位の解決＝合成列を電卓式と照合）
     a5 = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     df4 = pd.DataFrame({"ts": pd.date_range("2024-05-01", periods=5, freq="5min"),
@@ -1306,7 +1685,7 @@ def selftest() -> None:
     if miss:
         ng.append(f"FAMILY_TEMPLATES の family が系統マップに無い: {miss}")
     print("=" * 80)
-    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ21種で全部止まる・正しい3種は通る・歩4/歩6-1 拡張の既知答え込み）")
+    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ25種で全部止まる・正しい4種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)
     if ng:
         for x in ng:
@@ -1317,11 +1696,13 @@ def selftest() -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="歩3 実行器＝レシピ（条件データ）を共通の売買ループで走らせる")
-    ap.add_argument("--selftest", action="store_true", help="壊したレシピ21種で全部止まることの機械確認（歩4/歩6-1 拡張の既知答え込み）")
+    ap.add_argument("--selftest", action="store_true", help="壊したレシピ25種で全部止まることの機械確認（歩4/歩6-1 拡張の既知答え込み）")
     ap.add_argument("--identity", action="store_true", help="恒等検収（値決め窓・S2 md5 完全一致＋R14）")
     ap.add_argument("--identity-quick", action="store_true", help="恒等検収の短窓デバッグ（値決め窓の頭90日）")
     ap.add_argument("--identity-l1", action="store_true", help="恒等検収 L1（歩6-1＝採用中 L1 の書き写し・run_long_support と md5 完全一致）")
     ap.add_argument("--identity-l1-quick", action="store_true", help="L1 恒等の短窓デバッグ（値決め窓の頭90日）")
+    ap.add_argument("--identity-s1", action="store_true", help="恒等検収 S1 里程標1（歩6-1 後半＝天井入口＋v18 基本出口の骨格・run_continuous_v11 と md5 完全一致）")
+    ap.add_argument("--identity-s1-quick", action="store_true", help="S1 恒等の短窓デバッグ（値決め窓の頭90日）")
     ap.add_argument("--validate", type=str, default=None, help="レシピ json を検証だけする")
     a = ap.parse_args()
     if a.selftest:
@@ -1335,6 +1716,8 @@ def main() -> int:
         return run_identity(quick=a.identity_quick)
     if a.identity_l1 or a.identity_l1_quick:
         return run_identity_l1(quick=a.identity_l1_quick)
+    if a.identity_s1 or a.identity_s1_quick:
+        return run_identity_s1(quick=a.identity_s1_quick)
     ap.print_help()
     return 0
 
