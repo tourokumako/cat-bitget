@@ -1524,6 +1524,76 @@ def run_identity(quick: bool = False) -> int:
     return ng
 
 
+# ══ 材料列の付け足し（歩6・監査 4-17 の接続・まこさん GO 2026-08-02）════════════════════════
+#   ★これまで、この処理は恒等ハーネスの中に埋まっていた（run_identity_s1 と run_identity_l1）。
+#     engine_tuner の接続ファイルからも同じ列が要るので、1本の関数へ切り出した。
+#     切り出しの検収＝恒等の md5 が切り出しの前後で1文字も変わらないこと（値は1つも変えていない）。
+#   ★知らない材料列が在れば止める（fail-closed）＝列が無いまま黙って走らせない。
+_LEGACY_COL_SOURCE = {                      # 材料列の名前 → それを作る処理の名前
+    "e37_v59_di14": "v59", "e37_v59_kijun26": "v59",
+    "e37_v47_rsi9_15m": "v47", "e37_v47_bb2": "v47",
+    "e37_l1_in_sup": "l1", "e37_l1_isdn": "l1",
+}
+
+
+def legacy_cols_in(recipe: dict) -> set:
+    """レシピの中で使っている legacy 材料列の名前を全部拾う（入れ子の中まで）。"""
+    found: set = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            v = node.get("legacy_col")
+            if isinstance(v, str):
+                found.add(v)
+            for x in node.values():
+                walk(x)
+        elif isinstance(node, list):
+            for x in node:
+                walk(x)
+
+    walk(recipe)
+    return found
+
+
+def source_logic(recipe: dict) -> dict:
+    """レシピの元になった設定（e38_logics.json のロジック）＝値の正本。レシピに数字を二重化しない。"""
+    from tuner_adapters import e38 as ad
+    lid = str(recipe["meta"]["logic_id"])
+    src = lid[:-2] if lid.endswith("ID") else lid
+    lg = next((x for x in ad.config()["logics"] if x["id"] == src), None)
+    if lg is None:
+        raise RecipeError(f"[実行器] レシピ {lid} の元になる設定 {src} が e38_logics.json に無い")
+    return lg
+
+
+def attach_recipe_columns(dfp: pd.DataFrame, recipe: dict) -> pd.DataFrame:
+    """レシピが要る材料列だけを付けて返す（要らなければそのまま返す）。
+
+    付ける順番は恒等ハーネスと同じ＝天井の材料（v35・v37）→ v59 → v47 → L1。
+    列を足すだけなので順番は値に影響しないが、切り出し前と同じにして差分をゼロにする。
+    """
+    out = dfp
+    cl = ((recipe.get("entry") or {}).get("ceiling") or {})
+    if cl.get("flat_up_top") == "range_high" and "v35_range_top" not in out.columns:
+        out = out.copy()
+        out["v35_range_top"] = e37._v35_range_top(out)    # v35＝今のレンジ開始以降の実測高値×(1−tol)
+    if cl.get("climb_guard") and "v22_warning" not in out.columns:
+        out = e37.v22_uptrend_warning(out)                # v37＝uptrend 前兆フラグ（確定15分足のみ＝H2）
+    need = legacy_cols_in(recipe)
+    unknown = sorted(n for n in need if n not in _LEGACY_COL_SOURCE and n not in out.columns)
+    if unknown:
+        raise RecipeError(f"[実行器] レシピが使う材料列の作り方が登録されていない: {unknown}"
+                          "（_LEGACY_COL_SOURCE に付け方を登録すること）")
+    src = {_LEGACY_COL_SOURCE[n] for n in need if n in _LEGACY_COL_SOURCE}
+    if "v59" in src and "e37_v59_di14" not in out.columns:
+        out = _attach_v59_cols(out)
+    if "v47" in src and "e37_v47_rsi9_15m" not in out.columns:
+        out = _attach_v47_cols(out)
+    if "l1" in src and "e37_l1_in_sup" not in out.columns:
+        out = _l1_attach_legacy_cols(out, float(source_logic(recipe)["params"]["gap_pct"]))
+    return out
+
+
 # ══ ③-2 恒等検収 L1（歩6-1・まこさん GO 2026-08-02＝採用中 L1 をレシピで書き写す・fix_map 歩6）═════
 def identity_l1_recipe() -> dict:
     p = RECIPE_DIR / "identity_l1_legacy.json"
@@ -1591,7 +1661,7 @@ def run_identity_l1(quick: bool = False) -> int:
     for r in t_ref:
         r["logic"] = recipe["meta"]["logic_id"]
     h_ref, n_ref = _md5_trades(t_ref, s, e)
-    dfl = _l1_attach_legacy_cols(dfp, gp)
+    dfl = attach_recipe_columns(dfp, recipe)      # 歩6 で切り出した共通処理（中身は _l1_attach_legacy_cols）
     t_new, rep = run_recipe(dfl, recipe)
     h_new, n_new = _md5_trades(t_new, s, e)
     same = (h_ref == h_new)
@@ -1860,14 +1930,10 @@ def run_identity_s1(quick: bool = False) -> int:
         print(f"[恒等検収 S1] 値の照合 {nm}: 正本={want} / レシピ側={got} → {'✅' if okc else '❌'}")
         ng += 0 if okc else 1
     (dfp,) = tuner.load_windows_cached(ad, [(s, e)], tuner.WARM, use_cache=not quick)
-    # 里程標3 の材料列＝run_e37 2393-2394行／2436行と同じ関数を呼ぶ（式のドリフト防止＝出典を e37 に固定）。
+    # 材料列＝レシピを読んで要るものだけを付ける（歩6 で attach_recipe_columns へ切り出した共通処理）。
+    # 中身は v35／v37／v59／v47 の付け足しで、式は e37 の関数と写しをそのまま使う（出典を e37 に固定）。
     # 両側（現行 run_continuous_v11 とレシピ実行器）に同じ df を渡す＝材料の食い違いを物理的に作らない。
-    if _cl.get("flat_up_top") == "range_high" or _cl.get("climb_guard"):
-        dfp = dfp.copy()
-        if _cl.get("flat_up_top") == "range_high":
-            dfp["v35_range_top"] = e37._v35_range_top(dfp)      # v35＝今のレンジ開始以降の実測高値×(1−tol)
-        if _cl.get("climb_guard"):
-            dfp = e37.v22_uptrend_warning(dfp)                  # v37＝uptrend 前兆フラグ（確定15分足のみ＝H2）
+    dfp = attach_recipe_columns(dfp, recipe)
     # 現行側＝run_continuous_v11 を同じ構成で（v18 base18 と同じ形の v15_params・run_e37 2419-2429 行と同式）
     v15p = {"ladder": None, "sl_far": prm["sl_far"], "tmax": prm["tmax"], "down": None, "ret": {}, "dd": {},
             "cell_fn": (lambda k_, a_, w_: 0), "cell_fixed": True, "v16": True, "v17": True,
@@ -1899,13 +1965,11 @@ def run_identity_s1(quick: bool = False) -> int:
         v15p["v53_flatup_fast_cut"] = True
         _lv.append("v53 幾何早切り")
     if prm["v59"] is not None:                     # 里程標7＝v59（型別シグナル早切り）
-        v15p["v59_adx_cut"] = True
-        dfp = _attach_v59_cols(dfp)                # 材料列（両側に同じ df を渡す）
+        v15p["v59_adx_cut"] = True                 # 材料列は attach_recipe_columns が付け済み
         _lv.append("v59 型別シグナル早切り")
     if prm["mtfcut"] is not None:                  # 里程標8＝v47（15分過熱×BB のカット）＋v50（待機へ回す）
-        v15p["v47_mtf_cut"] = True
+        v15p["v47_mtf_cut"] = True                 # 材料列は attach_recipe_columns が付け済み
         v15p["v50_trend_wait"] = True
-        dfp = _attach_v47_cols(dfp)
         _lv.append("v47 15分過熱カット→v50 待機")
     if prm["anchor"] is not None:                  # 里程標9＝v22 アンカー（run_e37 2431-2440行の v22_set 相当）
         v15p["v22_anchor"] = {0: int(_vnum(prm["anchor"]["m"]))}   # V24_FIXED_V22 と同じ形（cell0→M）

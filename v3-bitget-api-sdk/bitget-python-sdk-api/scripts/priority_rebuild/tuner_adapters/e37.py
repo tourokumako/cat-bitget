@@ -12,9 +12,20 @@
 """
 from __future__ import annotations
 
+import json
+import pathlib
+
 import pandas as pd
 
 import e37_scalp as e37
+
+# ★歩6・監査 4-17（まこさん GO 2026-08-02）＝採用中の S1 と L1 は「レシピ経由」で回す。
+#   一枚岩の run_e37 では S1 と L1 が同時に動いてしまい、ロジック単位で調整できない（監査 335-337行）。
+#   2026-08-02 に S1 と L1 をレシピ（条件データ）へ書き写し、売買記録が md5 で完全一致することを確かめた。
+#   ここはその成果を engine_tuner へつなぐだけ＝売買のルール（e37_scalp.py）は1バイトも変えない。
+RECIPE_DIR = pathlib.Path(__file__).resolve().parents[1] / "recipes"
+RECIPES = {"S1": "identity_s1_legacy.json", "L1": "identity_l1_legacy.json"}
+_PREPARED: dict = {}                                       # 指標つきデータの使い回し（同じ窓は1回だけ作る）
 
 NAME = "e37"
 LABEL = "E37 レンジスキャル（採用土台 v59d_164・S1 ショートと L1 ロングが同時に動く一枚岩）"
@@ -39,11 +50,21 @@ _SIGS = ["adx7", "di7", "di14", "kijun26"]                 # 急騰の判定に�
 LOGICS = [
     {"id": "v59", "side": "both", "label": "急騰早切りの値（型別シグナル × 建値からの逆行% × 待ち時間）",
      "searchable": True, "why": ""},
+    # ★歩6・監査 4-17＝ロジック単位で回せるようにしたもの（レシピ経由・2026-08-02）
+    {"id": "S1", "side": "SHORT", "label": "レンジ上端の逆張りショート（採用土台 v59d_164 の S1・レシピ経由）",
+     "searchable": True, "why": ""},
+    {"id": "L1", "side": "LONG", "label": "レンジ下端の反発ロング（採用土台 v59d_164 の L1・レシピ経由）",
+     "searchable": True, "why": ""},
 ]
 
 
 def logics() -> list[dict]:
     return [dict(z) for z in LOGICS]
+
+
+def _recipe(logic_id: str) -> dict:
+    """そのロジックのレシピ（条件データ）を読む。中身は 2026-08-02 に恒等が取れた書き写し。"""
+    return json.loads((RECIPE_DIR / RECIPES[logic_id]).read_text(encoding="utf-8"))
 
 
 def space(logic_id: str) -> dict:
@@ -54,7 +75,7 @@ def space(logic_id: str) -> dict:
       kijun26 だけ quantile 型＝値決め窓の分布から実行時に決める（CC の手打ち値なし）。
       走らせるときは、選ばれたシグナルに対応する閾値だけを使う（E38 の confirm_htf / th_* と同じ方式）。
     """
-    if logic_id != "v59":
+    if logic_id not in {"v59"} | set(RECIPES):
         raise SystemExit(f"[エラー] ツマミ群の id が e37 に無い: {logic_id}"
                          f"（在るのは {', '.join(z['id'] for z in LOGICS)}）")
     sp: dict = {}
@@ -69,7 +90,24 @@ def space(logic_id: str) -> dict:
     sp["V59_FLAT_WIN_MIN"] = {"type": "cat", "choices": [60, 120, 240, 360]}
     sp["V59_WAIT_MIN"] = {"type": "cat", "choices": [0, 5, 10, 15, 20, 30, 45, 60]}
     sp["V59_CUT_MODE"] = {"type": "cat", "choices": ["close", "stop"]}
-    return sp
+    if logic_id == "v59":
+        return sp
+    if logic_id == "S1":
+        # ★段1（まこさん OK 2026-08-02「最初は v59 の値だけ」）＝レシピで表せる7個だけを開く。
+        #   範囲の宣言は上の v59 のものをそのまま使う＝私が新しい数字を作らない（L-267）。
+        #   ⛔ 開けない2つと、その理由（矮小化しないために明記する）:
+        #     V59_DOWN_SIG／V59_FLAT_SIG（シグナルの種類を4つから選ぶ）
+        #       ＝レシピの経路には DI差14 と 基準線乖離26 の2列しか材料が無い。adx7 と di7 の列を
+        #         作る処理がまだ無いので、選ばせると材料が無い側で必ず止まる。作れば開く。
+        #     V59_CUT_MODE（成行で降りるか、指値を置いて待つか）
+        #       ＝枝の執行の形そのものを差し替える変更で、値の差し替えでは書けない。段2 で開く。
+        return {k: sp[k] for k in ("th_down_di14", "th_flat_kijun26",
+                                   "V59_DOWN_ADV_PCT", "V59_FLAT_ADV_PCT",
+                                   "V59_DOWN_WIN_MIN", "V59_FLAT_WIN_MIN", "V59_WAIT_MIN")}
+    # L1 は v59 の枝を持たない（急騰早切りはショート側の機構）。段1 で開くのは損切りの幅1つだけ。
+    #   宣言は E38 の共通の出口の宣言をそのまま借りる＝ここでも私が新しい数字を作らない。
+    from tuner_adapters import e38 as _e38
+    return {"sl_zone_k": dict(_e38.config()["search_space"]["common_exit"]["sl_zone_k"])}
 
 
 # ── 終わりの条件の値（まこさん確定 2026-07-27・ここが E37 の置き場所＝実行のたびに手で入れない）──
@@ -96,7 +134,7 @@ def baseline(logic_id: str) -> dict | None:
     ★空の辞書を返す＝run() が値を1つも上書きしない＝e37_scalp のモジュール定数そのまま。
       それが採用土台の値。ここに数字を書き写さない（書き写すと実体とずれる）。
     """
-    return {} if logic_id == "v59" else None
+    return {} if logic_id in ({"v59"} | set(RECIPES)) else None
 
 
 def coverage(logic_id: str) -> list[str]:
@@ -142,13 +180,74 @@ def load_windows(windows, warm: pd.Timedelta) -> list[pd.DataFrame]:
             for (s, e) in windows]
 
 
+def _prepared(df: pd.DataFrame) -> pd.DataFrame:
+    """レシピの共通売買ループが要る指標つきデータ（作り方は E38 の接続ファイルと同じ）。
+
+    同じ窓のデータは1回だけ作って使い回す（毎試行作り直すと1試行の時間が跳ね上がるため）。
+    """
+    key = (id(df), len(df))
+    hit = _PREPARED.get(key)
+    if hit is not None:
+        return hit
+    import e38_logic_parts as parts
+    from tuner_adapters import e38 as _e38
+    cfg = _e38.config()
+    ak = e37.V25_K if cfg["global"].get("regime", {}).get("v25_adaptive_band") else None
+    out = parts.prepare_df(df.copy(), adaptive_k=ak)
+    if len(_PREPARED) >= 2:                                # 値決め窓と確認窓の2つだけ持てば足りる
+        _PREPARED.clear()
+    _PREPARED[key] = out
+    return out
+
+
+def _apply_s1(recipe: dict, p: dict) -> None:
+    """S1 の値をレシピへ入れる（段1＝v59 の枝の値だけ・space() が開いた7個と1対1）。"""
+    bx = {b["name"]: b for b in recipe["exits"]}
+    dn, fl = bx["V59DOWN"], bx["V59FLAT"]
+    if "th_down_di14" in p:                                # down 型のしきい値（DI差14）
+        dn["fire"]["all"][0]["value"] = {"legacy": float(p["th_down_di14"])}
+    if "th_flat_kijun26" in p:                             # flat_up 型のしきい値（基準線乖離26%）
+        fl["fire"]["all"][0]["value"] = {"legacy": float(p["th_flat_kijun26"])}
+    if "V59_DOWN_ADV_PCT" in p:                            # 建値からの逆行%（%→比率）
+        dn["exec"]["placement"]["level"]["k"] = {"legacy": float(p["V59_DOWN_ADV_PCT"]) / 100.0}
+    if "V59_FLAT_ADV_PCT" in p:
+        fl["exec"]["placement"]["level"]["k"] = {"legacy": float(p["V59_FLAT_ADV_PCT"]) / 100.0}
+    wait = p.get("V59_WAIT_MIN")
+    for b, win_key in ((dn, "V59_DOWN_WIN_MIN"), (fl, "V59_FLAT_WIN_MIN")):
+        sc = b["scope"]["hold_min"]                        # [待ち時間の下限, 効く窓の上限]（分）
+        if wait is not None:
+            sc[0] = int(wait)
+        if win_key in p:
+            sc[1] = None if int(p[win_key]) == 0 else int(p[win_key])   # 0＝窓なし（e37 と同じ意味）
+
+
+def _apply_l1(recipe: dict, p: dict) -> None:
+    """L1 の値をレシピへ入れる（段1＝損切りの帯幅の倍率だけ）。"""
+    bx = {b["name"]: b for b in recipe["exits"]}
+    if "sl_zone_k" in p:
+        bx["SL"]["exec"]["placement"]["level"]["k"] = {"legacy": float(p["sl_zone_k"])}
+
+
+def _run_recipe_logic(df: pd.DataFrame, logic_id: str, p: dict) -> pd.DataFrame:
+    """レシピ経由で1試行を走らせる（歩6・監査 4-17）。値を1つも渡さなければ採用土台そのもの。"""
+    import engine_tuner_exec as ex
+    recipe = _recipe(logic_id)
+    (_apply_s1 if logic_id == "S1" else _apply_l1)(recipe, p)
+    dfx = ex.attach_recipe_columns(_prepared(df), recipe)
+    trades, _rep = ex.run_recipe(dfx, recipe)
+    return pd.DataFrame(trades)
+
+
 def run(df: pd.DataFrame, logic_id: str, entry_params: dict, exit_params: dict) -> pd.DataFrame:
     """値を1組受け取って売買記録を返す（1試行の中身）。
 
-    モジュール定数を書き換えて run_e37 を呼び、**必ず元へ戻す**（戻さないと次の試行が汚れる）。
-    選ばれたシグナルに対応する閾値だけを、エンジンが見る定数へ入れる。
+    S1 と L1 はレシピ経由（歩6・監査 4-17）。v59 は従来どおり一枚岩の run_e37 を呼ぶ。
+    一枚岩の側は、モジュール定数を書き換えて run_e37 を呼び、**必ず元へ戻す**
+    （戻さないと次の試行が汚れる）。選ばれたシグナルに対応する閾値だけを、エンジンが見る定数へ入れる。
     """
     p = {**entry_params, **exit_params}
+    if logic_id in RECIPES:
+        return _run_recipe_logic(df, logic_id, p)
     ov = {k: v for k, v in p.items() if k.startswith("V59_")}
     if not ov:                                     # ★値を1つも渡さない＝土台（採用 v59d_164 の定数のまま）
         return e37.run_e37(df.copy(), "5m", tag=None, v59_adx_cut=True, return_trades=True, **BASE_KW)
