@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import inspect
 import json
 import pathlib
 import sys
@@ -2017,6 +2018,34 @@ def run_identity_s1(quick: bool = False) -> int:
     return ng
 
 
+# ══ 手数料の分類の食い違い検査（2026-08-02 まこさん OK で「丸ごと比較」から直した）════════════
+def maker_taker_sync_check(name: str, src: str, maker: tuple, judge) -> list[str]:
+    """戦略と審判で、決済の方式（指値か成行か）の分類が食い違っていないかを見る。
+
+    **何を守るか**＝手数料の計算のずれ。指値は 0.014%、成行は 0.042% で3倍違う。
+    戦略は自分でも手数料を引いた金額を売買記録に書き（画面用）、審判は同じ記録を読んで
+    計算し直す（公式）。片方が指値、もう片方が成行と思っていると、画面の数字だけが狂う。
+
+    ★比べるのは「その戦略のソースに文字列として出てくる決済理由」だけ。
+      直す前は 戦略の指値一覧 と 審判の指値一覧 を丸ごと比べていた。**審判は全戦略ぶんの一覧を
+      持つので、他の戦略の理由（例＝E36 の CENTER_LOCK）で必ず差が出て、関係の無い理由で
+      番人が落ち続けていた**（2026-08-02 の cbf1fde 以降ずっと ❌ で、自己検査が最後まで走らなかった）。
+    ★戦略を引数で受け取る形にした＝E36 と E38 にも同じ検査を1行で足せる（いまは E37 だけ）。
+    ★この検査が本物であることは、下の selftest の「番人の番人」が毎回確かめる
+      （2026-08-02 に実際に起きた事故＝TREND_CAUGHT_TP の抜け を再現して、落ちることを見る）。
+    """
+    known = set(judge.MAKER_EXIT_REASONS) | set(judge.TAKER_EXIT_REASONS)
+    used = sorted(r for r in known if f'"{r}"' in src)
+    if not used:
+        return [f"{name}: 決済理由がソースから1つも見つからない（抽出のしかたが壊れている）"]
+    mk = set(maker)
+    def _w(flag):                                   # 表示用（人が読んで分かる言葉にする）
+        return "指値" if flag else "成行"
+    bad = [f"{r}（戦略は{_w(r in mk)}／審判は{_w(r in judge.MAKER_EXIT_REASONS)}）"
+           for r in used if (r in mk) != (r in judge.MAKER_EXIT_REASONS)]
+    return [f"{name} と審判で決済の方式の分類が食い違う: {', '.join(bad)}"] if bad else []
+
+
 # ══ 自己検査（番人＝わざと壊したレシピ18種で全部止まる・正しい2種は通る・設計書 §10＋歩4 拡張）══
 def _base_ok_recipe() -> dict:
     """検証だけ通す最小の正しいレシピ（V9 風多条件・探索レーン＝legacy なし）。"""
@@ -2279,16 +2308,19 @@ def selftest() -> None:
     # 定数レジストリと実体のずれ検査（レジストリの値が実装から黙って離れない）
     ng += iref.const_registry_live_check({"SCALP_FLOOR": e37.SCALP_FLOOR, "V11_SL_BUF": e37.V11_SL_BUF,
                                           "BE_TTL_BARS": parts.BE_TTL_BARS})
-    # ★戦略と審判の maker/taker の一覧が一致しているか（2026-08-02 里程標9 で新設・まこさん指示「修正する」）。
-    #   e37_scalp の _MAKER_EXIT は「score.py MAKER_EXIT_REASONS と完全同期」と自分で宣言している。
-    #   ところが TREND_CAUGHT_TP が score.py にだけ在り、e37 に無い状態が 2026-07-16 から続いていた
-    #   （売買記録CSVの net_usd/fee_usd だけが成行として計算され実際より悲観的に出ていた）。
-    #   宣言は機械で守られていなかった＝ここで一致を検査する。ずれたら止まる。
-    _only_e37 = sorted(set(e37._MAKER_EXIT) - set(_score.MAKER_EXIT_REASONS))
-    _only_judge = sorted(set(_score.MAKER_EXIT_REASONS) - set(e37._MAKER_EXIT))
-    if _only_e37 or _only_judge:
-        ng.append(f"戦略と審判の maker 一覧がずれている: e37 だけに在る {_only_e37} / "
-                  f"score.py だけに在る {_only_judge}（e37_scalp の宣言は『score.py と完全同期』）")
+    # ★手数料の分類の食い違い検査（2026-08-02 里程標9 で新設 → 同日 まこさん OK で比べ方を直した）。
+    #   直した理由＝審判は全戦略ぶんの一覧を持つので、丸ごと比べると他の戦略の理由で必ず差が出る。
+    #   いまは「その戦略が使う決済理由だけ」を比べる（詳しくは maker_taker_sync_check の説明）。
+    _src37 = inspect.getsource(e37)
+    ng += maker_taker_sync_check("e37_scalp", _src37, tuple(e37._MAKER_EXIT), _score)
+    # ★番人の番人＝2026-08-02 に実際に起きた事故をわざと再現して、検査が落ちることを毎回確かめる。
+    #   事故の中身＝TREND_CAUGHT_TP が e37 の指値の一覧から抜けていて、戦略だけが成行として
+    #   手数料を計算していた（値決め窓18ヶ月で 932玉・$294.42 ぶん実際より悲観的に出ていた）。
+    #   これが落ちなければ、比べ方を直したときに検査を無力化したということ＝直ちに止める。
+    _broken = tuple(x for x in e37._MAKER_EXIT if x != "TREND_CAUGHT_TP")
+    if not maker_taker_sync_check("e37_scalp(わざと壊した)", _src37, _broken, _score):
+        ng.append("番人の番人: TREND_CAUGHT_TP を抜いても手数料の分類の食い違い検査が落ちない"
+                  "（＝検査が無力化されている・2026-08-02 の事故を捕まえられない）")
     # 系統マップ: FAMILY_TEMPLATES の全 family が割当済み（G3 の前提）
     miss = iref.lineage_coverage(list(FAMILY_TEMPLATES))
     if miss:
