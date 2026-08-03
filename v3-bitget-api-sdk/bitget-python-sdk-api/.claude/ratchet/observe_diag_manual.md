@@ -1,4 +1,4 @@
-<!-- MANUAL_HASH=cab048add372cb8f -->
+<!-- MANUAL_HASH=5399adc9cf17466b -->
 # observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は observe_diag.py と observe_config.json から
@@ -50,7 +50,7 @@ python3 scripts/priority_rebuild/gen_observe_manual.py --verify
 
 どちらも `--plan` を付けると、検証計画だけを出して本走しません。まこさんへ提出する1枚です。
 
-## 既存ロジックの検証が出すもの（12フェーズ）
+## 既存ロジックの検証が出すもの（13フェーズ）
 
 | # | 何を出すか |
 |---|---|
@@ -66,6 +66,7 @@ python3 scripts/priority_rebuild/gen_observe_manual.py --verify
 | 9 | 両方の期間でプラスの候補だけを抜き出す（機械が抽出・手書きなし） |
 | 10 | この結果から次に何をすべきかを出す（戦略名を見ず、売買記録の共通列だけを使う） |
 | 11 | 増やす方向＝建てなかった場面のうち、建てていれば取れた条件を探す（建値からの%で判定・枠は見ない） |
+| 12 | まとめ＝上の節で機械が出した数字のうち、次の調整に使う3つだけを1画面に並べる（新しい計算はしない） |
 
 ## 新規ロジックの検証が出すもの（5フェーズ）
 
@@ -100,33 +101,35 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 | --title | 出力の見出しに付ける題名 |
 | --selftest | 自己検査だけ走らせる（この道具が守ると言っていることを機械で確認） |
 
-結果は `results/priority_rebuild/ratchet` に保存されます。既にある同名は archive へ逃がすので上書きしません。
+結果は `results/priority_rebuild/ratchet/observe` に保存されます。既にある同名は同じ階層の archive へ逃がすので上書きしません。
 計画（--plan）は画面に出すだけで保存しません。
 
 ## 検証する項目
 
 何を検証の対象にしているかの一覧です。すべてコードと設定ファイルから取っています。
 
-### 1. 指標（96種）
+### 1. 指標（105種）
 
-この96種に、時間足8種を掛けて 768列になります。閾値は分位7段で刻みます。
+この105種に、時間足8種を掛けて 840列になります。閾値は分位7段で刻みます。
 
 - ADX14 ／ ADX21 ／ ADX7 ／ ATR%14 ／ ATR%21 ／ ATR%7
 - BB%b(20,2.0) ／ BB%b(20,3.0) ／ BB%b(50,2.0) ／ BB%b(50,3.0) ／ BB幅(20,2.0) ／ BB幅(20,3.0)
 - BB幅(50,2.0) ／ BB幅(50,3.0) ／ CMF20 ／ DI差14 ／ DI差21 ／ DI差7
 - Donchian幅%20 ／ Donchian幅%48 ／ EMA200傾き% ／ EMA20傾き% ／ EMA50傾き% ／ EMA9傾き%
-- MACDヒスト%(12,26,9) ／ MACD線%(12,26) ／ MFI14 ／ OBV傾き10 ／ OBV傾き20 ／ RCI26
-- RCI9 ／ ROC12 ／ ROC24 ／ ROC6 ／ RSI14 ／ RSI21
-- RSI7 ／ RSI9 ／ S-Rタッチ数(288,0.003) ／ Stoch%D14 ／ Stoch%D5 ／ Stoch%D9
-- Stoch%K14 ／ Stoch%K5 ／ Stoch%K9 ／ body比 ／ close vs 24本安値% ／ close vs 24本高値%
-- close vs 48本安値% ／ close vs 48本高値% ／ close vs 96本安値% ／ close vs 96本高値% ／ close vs EMA20% ／ close vs EMA200%
-- close vs EMA50% ／ close vs EMA9% ／ close vs Keltner上%(20,2.0) ／ close vs Keltner下%(20,2.0) ／ close vs POC%288 ／ close vs SMA20%
-- close vs SMA200% ／ close vs SMA50% ／ close vs Supertrend%(10,3.0) ／ close vs VAH%288 ／ close vs VAL%288 ／ close vs VWAP%288
-- close vs pivotPP%288 ／ close vs 基準線%(26) ／ close vs 転換線%(9) ／ fib位置96 ／ pinbar ／ realized_vol20
+- MACDシグナル線%(12,26,9) ／ MACDヒスト%(12,26,9) ／ MACD線%(12,26) ／ MFI14 ／ OBV傾き10 ／ OBV傾き20
+- RCI26 ／ RCI9 ／ ROC12 ／ ROC24 ／ ROC6 ／ RSI14
+- RSI21 ／ RSI7 ／ RSI9 ／ S-Rタッチ数(288,0.003) ／ Stoch%D14 ／ Stoch%D5
+- Stoch%D9 ／ Stoch%K14 ／ Stoch%K5 ／ Stoch%K9 ／ W字(24,0.003) ／ W字(48,0.003)
+- W字(96,0.003) ／ body比 ／ close vs 24本安値% ／ close vs 24本高値% ／ close vs 48本安値% ／ close vs 48本高値%
+- close vs 96本安値% ／ close vs 96本高値% ／ close vs EMA20% ／ close vs EMA200% ／ close vs EMA50% ／ close vs EMA9%
+- close vs Keltner上%(20,2.0) ／ close vs Keltner下%(20,2.0) ／ close vs POC%288 ／ close vs SMA20% ／ close vs SMA200% ／ close vs SMA50%
+- close vs Supertrend%(10,3.0) ／ close vs VAH%288 ／ close vs VAL%288 ／ close vs VWAP%288 ／ close vs pivotPP%288 ／ close vs pivotR1%288
+- close vs pivotS1%288 ／ close vs 基準線%(26) ／ close vs 転換線%(9) ／ fib位置96 ／ pinbar ／ realized_vol20
 - realized_vol50 ／ swing安値距離%24 ／ swing安値距離%48 ／ swing安値距離%96 ／ swing高値距離%24 ／ swing高値距離%48
-- swing高値距離%96 ／ volume_ratio20 ／ volume_ratio50 ／ zscore20 ／ zscore50 ／ 上ヒゲ比
-- 下ヒゲ比 ／ 包み足 ／ 安値からの経過バー24 ／ 安値からの経過バー48 ／ 安値からの経過バー96 ／ 形スコア24(V=+/M=−)
-- 形スコア48(V=+/M=−) ／ 形スコア96(V=+/M=−) ／ 連続本数 ／ 高値からの経過バー24 ／ 高値からの経過バー48 ／ 高値からの経過バー96
+- swing高値距離%96 ／ volume_ratio20 ／ volume_ratio50 ／ zscore20 ／ zscore50 ／ zscore_return20
+- zscore_return50 ／ 上ヒゲ比 ／ 下ヒゲ比 ／ 包み足 ／ 孕み足 ／ 安値からの経過バー24
+- 安値からの経過バー48 ／ 安値からの経過バー96 ／ 形スコア24(V=+/M=−) ／ 形スコア48(V=+/M=−) ／ 形スコア96(V=+/M=−) ／ 連続本数
+- 高値からの経過バー24 ／ 高値からの経過バー48 ／ 高値からの経過バー96
 
 ### 2. 探索の系統
 
@@ -176,11 +179,11 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 | grid_short | レンジを等分した線に下から触れたところを売る（グリッド売り） |
 | grid_long | レンジを等分した線に上から触れたところを買う（グリッド買い） |
 
-### 6. 出口理由（9種）
+### 6. 出口理由（6種）
 
 売買記録に出てくる決済のしかたです。多くのフェーズがこれで分けて見ます。
 
-- BE_EXIT ／ MFE_DRAWDOWN_CUT ／ PARTIAL_TP ／ RANGE_BREAK_EXIT ／ SL_FILLED ／ TIME_EXIT ／ TP_FILLED ／ TREND_CAUGHT_TP ／ TREND_CONT
+- BE_EXIT ／ CENTER_LOCK ／ EDGE_TP ／ PARTIAL_TP ／ SPIKE_SL ／ TIME_EXIT
 
 ## 登録されている場面
 
@@ -240,6 +243,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 | vp_windows | [288] |
 | sr_windows | [288] |
 | sr_tol | [0.003] |
+| w_tol | [0.003] |
 | fib_windows | [96] |
 | pivot_windows | [288] |
 | ichimoku | [[9, 26]] |
@@ -294,6 +298,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 どれか1つでも崩れると自己検査が止まります。
 
 - 1往復の実コストが eval_engine の確定値と違う:
+- _out_path が ratchet 直下を直に指している（OBSERVE_DIR を使っていない）
 - entry の特徴が約定バーの終値を含む（1本前の確定値を使っていない）
 - entry_exit_matrix.md の E-c 行が  本（1本のはず）
 - neighbors が bars を受けない＝相場変化を自玉の価格で代用している
@@ -331,6 +336,8 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 保存名が observe_scene_<場面ID>_<実行日> の型でない:
 - 保有帯の区切りが期待どおりでない（③〜⑤ の区分がずれる）
 - 入口フィルタのプールに勝敗/bool 依存の列 （前玉が保有中なら entry 時点で未確定＝未来参照の疑い）
+- 出力先が observe フォルダの外:  →
+- 出力先が ratchet 直下のまま:  →
 - 出口の刻みを場面ごとに上書きできない（config の共通値しか使えない）
 - 出口の組み合わせが1通りでも通ってしまう（比べる意味が無い状態を弾けない）
 - 出口の組み合わせが従来の固定の仮定と一致しない : 実測  ／ 期待
@@ -349,6 +356,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 増やす方向の候補を期待値で絞っていない（勝率だけで足す候補にしてしまう）
 - 増やす方向の母集団に建てた玉のバーが混ざっている: 実測  ／ 期待 [0, 1, 4, 5, 7, 8, 9]（建てたバー2・保有中3・建てたバー6 を除く）
 - 売買記録モードの保存名が observe_<売買記録名> の型でない:
+- 定数レジストリ  に出典が無い（出典必須＝設計書 §2.4-②）
 - 建値% TP の探索 sc_take が残っている（TP を変えろという指示は無い）
 - 手数料を eval_engine から取っていない（手打ちの疑い）
 - 指標カタログが  種しかない
@@ -366,11 +374,15 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 検査4 がわざと入れた未来参照列（1本先の close）を見逃す
 - 検査6 が『終端より後を値で埋めている』を見逃す（未来の捏造を検出できない）
 - 検査6 が壊れた需給データ（）を見逃す:
+- 検査6 が定義表 DEMAND_REF に無い需給列を見逃す（定義なしの列を足せてしまう）
 - 検査6 が正しい取り込み（終端後 NaN）を誤検出
 - 検査6 が正常な需給データで誤検出:
+- 検査6 の CVD 組み立てが手計算の既知答えと合わない:  ≠
 - 検査7 が E-c に足された未知の項目を見逃す（ドリフト検出が死んでいる）
 - 検査7 が『対応表は実装ありなのに列が無い』を見逃す（実装の欠落を検出できない）
 - 検査7 が現状の E-c と対応表で不一致を出す（表の直し忘れ）:
+- 検査8 がわざと壊したレンジ幾何（mid×1.01）を見逃す
+- 検査8 の既知答えが正しい実装で落ちる:
 - 検証済みにならない列  件:
 - 検証計画の自動生成 plan が無い
 - 機械ラベルの entry が次バーになっていない（同バー約定＝未来参照の疑い・H2）
@@ -383,13 +395,21 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 登録していない場面の型でも通ってしまう（型の取り違えを弾けない）
 - 節10 判定が本走（observe）から呼ばれていない＝関数だけ在って動かない
 - 節10 判定の既知答え不一致 : 実測  ／ 期待
+- 節12 が上の節の戻り値  を使っていない（自前で作り直している疑い）
+- 節12 が本走から呼ばれていない（実装したが動かない）
+- 節12 が空の入力で落ちる:
+- 節12 が自分で集計している（）＝上の節の値をそのまま並べる約束に反する
+- 節12 の出力に  が出ていない（窓の取り違えを防げない）
+- 節12 の材料が繋がっていない:
 - 節が実装されていない:
+- 系統マップ FAMILY_LINEAGE に無い family: （G3 の割当表は全 family 必須・載っていない family は生成不可）
+- 系統マップに8系統の外の割当がある:
 - 結果の言い換えが分離力の順位表に入っている
 - 結果の言い換えの隔離が空
 - 結果サマリが両半期プラスの機械抽出をしていない
 - 結果サマリの自動生成 _summary が無い
 - 観察結果の保存が上書きしている（既存が archive へ退避されていない・§3.1 違反）
-- 観察結果の保存先が results ラチェット直下に固定されていない:
+- 観察結果の保存先が observe フォルダに固定されていない:
 - 記録に閾値が無い別の戦略でも、ものさしを決めてしまう（取り違えの元）
 - 設定の出所が記録されていない
 - 閾値が前半の分布から実値化されていない（後半で選び直しの疑い・L-267）

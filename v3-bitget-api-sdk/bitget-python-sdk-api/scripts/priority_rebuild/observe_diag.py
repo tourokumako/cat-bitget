@@ -131,6 +131,7 @@ SECTIONS = [
     "9 両方の期間でプラスの候補だけを抜き出す（機械が抽出・手書きなし）",
     "10 この結果から次に何をすべきかを出す（戦略名を見ず、売買記録の共通列だけを使う）",
     "11 増やす方向＝建てなかった場面のうち、建てていれば取れた条件を探す（建値からの%で判定・枠は見ない）",
+    "12 まとめ＝上の節で機械が出した数字のうち、次の調整に使う3つだけを1画面に並べる（新しい計算はしない）",
 ]
 # 探索モードの定義＝「どのロジックに対して・どの値の候補から最適を検証するか」（計画と本走の両方に印字）
 MODE_INFO = {
@@ -794,18 +795,66 @@ def observe(trades_csv: str, bars_csv: str, title: str = "", config_path: str | 
         print("★" * 50)
         all_res[s] = _one_side(sub.copy(), bars, feat, dir_map, s, cfg, mech) or []
 
-    _summary(all_res)
+    picked = _summary(all_res)
 
     _h(SECTIONS[10])                       # 節10 判定＝この結果はどうなのかを機械が出す（手書き判定を挟まない）
-    verdict(tr_all)
+    vd = verdict(tr_all)
 
     _h(SECTIONS[11])                       # フェーズ11 増やす方向（2026-07-26 まこさん OK）
-    grow_search(tr_all, bars, feat, cfg, p0, p1)
+    grown = grow_search(tr_all, bars, feat, cfg, p0, p1)
+
+    _h(SECTIONS[12])                       # 節12 まとめ（2026-08-03 まこさん「案１でやってみて」・監査 4-18）
+    next_actions(vd, picked, grown, p0, p1)
 
     print("\n" + "#" * 100)
     print("# ⚠️ 疑似シミュ。スロット再回転（L-330）を再現していない＝実エンジンより良く出る。")
     print("#   采否は実装して score.py の採点窓で決める。")
     print("#" * 100)
+
+
+def next_actions(vd: dict, picked: list, grown: dict, p0, p1) -> None:
+    """節12 まとめ＝上の節が機械で出した数字のうち、次の調整に使う3つだけを1画面に並べる。
+
+    経緯（2026-08-03・監査 4-18＝要件 R10）: この道具の出力は節0 から節11 まで長く、
+      「次に何をすべきか」が埋もれていた。まこさん指摘「observe_diag ここでの診断結果を
+      Report のような文書にまとめて出せば良くないか？」→「案１でやってみて」。
+
+    ★守ること（この関数の設計の芯）:
+      ① 新しい計算を1つもしない。上の節が出した値をそのまま並べる（CC の要約・判断を挟まない）。
+      ② 順位も付け直さない。①は節10 ③の並び、②は節9 の抽出、③は節11 の抽出をそのまま使う。
+      ③ 採否を書かない。ここは材料の提示まで（采否は score.py の採点窓でまこさんが決める）。
+      ④ この数字を作った期間を必ず印字する（採点窓）。値を選ぶ窓（値決め窓）とは別だと分かる形にする。
+    """
+    print(f"  この数字を作った期間: {p0.date()} 〜 {p1.date()}（採点窓）")
+    print(f"  値を選ぶ期間はここではない: 値決め窓 {SEARCH_START.date()} 〜 "
+          f"{(SEARCH_END - pd.Timedelta(days=1)).date()}（engine_tuner が使う）")
+    print("  ⚠️ ここに出るのは材料です。採否は score.py の採点窓でまこさんが決めます。")
+
+    print("\n  ① 減らす方向＝損している区分（節10 ③ の並びのまま・上位5）")
+    wr = vd.get("worst_rows")
+    if wr is None or not len(wr):
+        print("     出せない（売買記録が0行、または区分に使える列が無い）")
+    else:
+        print("     " + wr.to_string(index=False).replace("\n", "\n     "))
+        print("     ＝engine_tuner で調整するなら、この区分に効く値を動かす")
+
+    print("\n  ② 入口の質＝前半と後半の両方でプラスだった候補（節9 の抽出のまま）")
+    if not picked:
+        print("     0 件（両半期プラスの候補が無い＝前半に合わせただけの疑い・候補にしない）")
+    else:
+        for label, n, desc in picked:
+            print(f"     ・{label}: {n} 行。後半最良 → {desc}")
+
+    print("\n  ③ 増やす方向＝建てなかったが建てていれば取れた場面（節11 の抽出のまま）")
+    if not grown:
+        print("     0 件（両半期とも概算期待値がプラスの組が無い、または母集団が min_n 未満）")
+    else:
+        for side, g in grown.items():
+            print(f"     ・side {side}: {g['n']} 組（使った出口＝{g['exit']}）")
+            print("       " + g["top"].to_string(index=False).replace("\n", "\n       "))
+
+    print("\n  ★この3つを見て、engine_tuner で何を調整するかはまこさんが決めます。"
+          "この道具は決めません（要件 R10・診断と探索の受け渡しは人が読んで設定する）。")
 
 
 def _free_bars(tr_all, bars, p0, p1):
@@ -850,7 +899,8 @@ def grow_search(tr_all, bars, feat, cfg, p0, p1):
     print(f"  出口: 利確 {tps}% × 損切り {sls}% × 保有の上限 {[t * 5 for t in tmaxs]} 分"
           f"（レンジ中央・災害線は使わない＝帯に依らない）")
     if int(free.sum()) < cfg["min_n"]:
-        _skip("建てなかったバーが min_n 未満"); return
+        _skip("建てなかったバーが min_n 未満"); return {}
+    grown: dict = {}          # ★まとめ（節12）へ渡す＝画面に出したものと同じ値（2026-08-03・監査 4-18 案1）
     sel = np.where(free)[0]
     times = bars.index[sel]
     half_t = times[len(times) // 2]
@@ -896,7 +946,11 @@ def grow_search(tr_all, bars, feat, cfg, p0, p1):
             print(good.to_string(index=False))
             print("     ※ バー/日 がそのまま増える件数ではない（枠が空いている時しか建たない）。"
                   "件数の実力は層3 の実エンジンで見る。")
+            grown[side] = {"n": len(good), "exit": f"利確 {best['利確']} / 損切り {best['損切り']}"
+                                                   f" / 保有の上限 {best['保有上限分']}分",
+                           "top": good.head(3)}
     print("\n  ⚠️ 枠の取り合いを見ていない疑似シミュ＝候補の材料まで。値決めは層3・採否は採点窓 score.py。")
+    return grown
 
 
 def _one_side(tr, bars, feat, dir_map, side, cfg, mech):
@@ -1316,11 +1370,15 @@ def _search(tr, fmin, names, sig_dirs, ecols, side, cfg, types):
     return out
 
 
-def _summary(all_res: dict) -> None:
+def _summary(all_res: dict) -> list:
     """結果サマリの自動生成（手書きなし）。各分岐×モードの上位10（重複除去後）から
-    前半・後半の両方で正味プラスの行だけを機械抽出して1枚に出す。CC の要約を挟まない。"""
+    前半・後半の両方で正味プラスの行だけを機械抽出して1枚に出す。CC の要約を挟まない。
+
+    戻り値＝まとめ（節12）へ渡す (ラベル, 行数, 後半最良の説明) の一覧。
+    ★画面に出したものと同じ値をそのまま返すだけ＝新しい計算をしない（2026-08-03・監査 4-18 案1）。"""
     _h(SECTIONS[9])
     print("  機械集計＝各分岐×モードの上位10のうち、前半と後半の両方で正味プラスの行。解釈と採否はまこさん＋score.py。")
+    picked: list = []
     for side, res in all_res.items():
         if not res:
             print(f"\n  side {side}: 探索なし"); continue
@@ -1337,7 +1395,9 @@ def _summary(all_res: dict) -> None:
                 best = both.sort_values(c2, ascending=False).iloc[0]
                 desc = " / ".join(f"{k}={best[k]}" for k in both.columns)
                 print(f"  {label}: 両半期プラス {len(both)} 行。後半最良 → {desc}")
+                picked.append((label, len(both), desc))
     print("\n  ⚠️ 疑似シミュの機械集計＝候補の提示まで。採否は実装して score.py の採点窓で決める。")
+    return picked
 
 
 # ══ Entry 候補観察（--scene・2026-07-25 まこさん承認「それでOK」）═══════════
@@ -2231,6 +2291,9 @@ def verdict(tr: pd.DataFrame) -> dict:
     out["worst"] = (tuple(row[k] for k in keys), float(row["純益"]))
     out["wrap"] = (len(sw), float(sw["net_usd"].sum()))
     out["cut_delta"] = cut_delta
+    # ★まとめ（節12）へ渡す＝③で既に画面に出した表そのもの。新しい計算をしない（2026-08-03・監査 4-18 案1）
+    out["worst_rows"] = g.sort_values("純益").head(5)
+    out["keys"] = list(keys)
     print("\n  ⚠️ 本節の金額は売買記録の記録値＝report.py と同じ列。疑似シミュではない。"
           "ただし採否はしない＝采否は score.py の採点窓でまこさんが決める。")
     return out
@@ -2238,20 +2301,29 @@ def verdict(tr: pd.DataFrame) -> dict:
 
 # ══ 観察結果の保存（2026-07-26 まこさん OK）══════════════════════════════
 #   背景＝観察結果は画面に出るだけで、走らせた人がリダイレクトした先にしか残らなかった
-#   （CC のセッションごとの一時ディレクトリ＝まこさんが後から見返せない）。report/analysis と同じ
-#   results/priority_rebuild/ratchet/ に固定パスで残す。上書きは絶対にしない＝共通の書き出し処理
-#   ratchet_io.archive_if_exists に委譲（§3.1・道具ごとに命名/archive を書かない）。
+#   （CC のセッションごとの一時ディレクトリ＝まこさんが後から見返せない）。上書きは絶対にしない＝
+#   共通の書き出し処理 ratchet_io.archive_if_exists に委譲（§3.1・道具ごとに命名/archive を書かない）。
 #   ⚠️ 書くのは観察結果のテキスト1本だけ。売買記録CSVは書かない・score は呼ばない（read-only 診断のまま）。
+#
+#   ★2026-08-03 まこさん指示で置き場所を変えた（逐語「ratchet直下に出すのはやめて。フォルダが
+#     ぐちゃぐちゃになる。せめて新規フォルダ作成してその中に出力するようにしてほしい」）。
+#     旧＝results/priority_rebuild/ratchet/ の直下（売買記録CSV・report・analysis と混ざっていた）。
+#     新＝その下の observe/ フォルダ。退避先も observe/archive/ になる（archive_if_exists は
+#     「同じ階層の archive/」へ逃がす作りなので、書き先を変えるだけで退避先も一緒に移る）。
+OBSERVE_DIR = ratchet_io.RATCHET / "observe"      # ★この道具の出力はここだけ（ratchet 直下に書かない）
+
+
 def _out_path(kind: str, key: str) -> pathlib.Path:
-    """保存先を決める。場所は ratchet_io.RATCHET に固定＝道具側で別の場所を選べない。"""
+    """保存先を決める。場所は OBSERVE_DIR に固定＝道具側で別の場所を選べない。"""
     safe = re.sub(r"[^0-9A-Za-z_.-]", "_", str(key))
+    OBSERVE_DIR.mkdir(parents=True, exist_ok=True)
     if kind == "scene":
         day = datetime.date.today().strftime("%Y%m%d")
-        return ratchet_io.RATCHET / f"observe_scene_{safe}_{day}.txt"
+        return OBSERVE_DIR / f"observe_scene_{safe}_{day}.txt"
     if kind == "inspect":
         day = datetime.date.today().strftime("%Y%m%d")
-        return ratchet_io.RATCHET / f"observe_inspect_{safe}_{day}.txt"
-    return ratchet_io.RATCHET / f"observe_{safe}.txt"
+        return OBSERVE_DIR / f"observe_inspect_{safe}_{day}.txt"
+    return OBSERVE_DIR / f"observe_{safe}.txt"
 
 
 class _Tee:
@@ -3160,8 +3232,11 @@ def selftest() -> None:
         ng.append("フェーズ11 増やす方向が本走（observe）から呼ばれていない＝関数だけ在って動かない")
     # ★観察結果の保存の番人（2026-07-26 まこさん OK）＝①保存先が固定 ②上書きしない。
     #   ②は「呼んでいるふり」を文字列では見抜けないので、一時ディレクトリで実際に動かして確かめる。
-    if _out_path("scene", "L1ap").parent != ratchet_io.RATCHET:
-        ng.append(f"観察結果の保存先が results ラチェット直下に固定されていない: {_out_path('scene', 'L1ap').parent}")
+    #   ⚠️ 2026-08-03 まこさん指示で置き場所を ratchet 直下 → その下の observe/ へ変えた。
+    #      この番人は元「ratchet 直下に固定されているか」を見ていて、その変更を実際に捕まえた（正しく働いた）。
+    #      固定先だけを新しいフォルダへ差し替える＝「固定されているか」を見る役目は変えない。
+    if _out_path("scene", "L1ap").parent != OBSERVE_DIR:
+        ng.append(f"観察結果の保存先が observe フォルダに固定されていない: {_out_path('scene', 'L1ap').parent}")
     if not _out_path("scene", "L1ap").name.startswith("observe_scene_L1ap_"):
         ng.append(f"保存名が observe_scene_<場面ID>_<実行日> の型でない: {_out_path('scene', 'L1ap').name}")
     if _out_path("trades", "trades_x_score").name != "observe_trades_x_score.txt":
@@ -3372,6 +3447,52 @@ def selftest() -> None:
         _ng7c, _r7c = iref.axis_ec_check(_ec[0], [n for n in _names7 if n != "包み足"])
         if not any("包み足" in x or "engulfing" in x for x in _ng7c):
             ng.append("検査7 が『対応表は実装ありなのに列が無い』を見逃す（実装の欠落を検出できない）")
+    # ★節12 まとめ の番人（2026-08-03・監査 4-18＝要件 R10・まこさん「案１でやってみて」）
+    #   この節の約束は「新しい計算を1つもしない＝上の節が出した値をそのまま並べる」。
+    #   約束が破られたら（集計や並べ替えを足したら）ここで落とす。
+    #   ⚠️ 検査文字列は連結して書く（全置換で検査自身も一緒に書き換わって素通りするのを防ぐ・既存と同型）。
+    src_na = inspect.getsource(next_actions)
+    for _bad in ("groupby", "sort_values", ".mean(", ".sum(", ".median(", "nlargest", "quantile"):
+        if _bad in src_na:
+            ng.append(f"節12 が自分で集計している（{_bad}）＝上の節の値をそのまま並べる約束に反する")
+    for _need in (_J("worst_", "rows"), "picked", "grown"):
+        if _need not in src_na:
+            ng.append(f"節12 が上の節の戻り値 {_need} を使っていない（自前で作り直している疑い）")
+    src_main12 = inspect.getsource(observe)
+    if "next_actions(" not in src_main12:
+        ng.append("節12 が本走から呼ばれていない（実装したが動かない）")
+    for _need, _why in (("vd = verdict(", "節10 の戻り値を受けていない"),
+                        ("picked = _summary(", "節9 の戻り値を受けていない"),
+                        ("grown = grow_search(", "節11 の戻り値を受けていない")):
+        if _need not in src_main12:
+            ng.append(f"節12 の材料が繋がっていない: {_why}")
+    try:                                   # 3つとも空でも落ちない（診断が何も出さない走行でも本走を止めない）
+        import io as _io12
+        import contextlib as _ct12
+        _buf12 = _io12.StringIO()
+        with _ct12.redirect_stdout(_buf12):
+            next_actions({}, [], {}, SCORE_START, SCORE_END)
+        _out12 = _buf12.getvalue()
+        # ★窓の印字は「実際の出力」で確かめる（ソースの文字列一致では素通りする＝2026-08-03 の
+        #   メタ確認で実測。印字の行を消しても、説明文に同じ語が残っていて番人が落ちなかった）。
+        for _need, _why in ((str(SCORE_START.date()), "この数字を作った期間（採点窓）の開始日"),
+                            (str(SEARCH_START.date()), "値を選ぶ期間（値決め窓）の開始日")):
+            if _need not in _out12:
+                ng.append(f"節12 の出力に {_why} が出ていない（窓の取り違えを防げない）")
+    except Exception as _e12:              # noqa: BLE001
+        ng.append(f"節12 が空の入力で落ちる: {type(_e12).__name__} {_e12}")
+
+    # ★出力先の番人（2026-08-03 まこさん指示「ratchet直下に出すのはやめて」）
+    #   この道具の出力は observe/ フォルダの中だけ。ratchet 直下に1本も書かない。
+    for _kind in ("trades", "scene", "inspect", "plan"):
+        _p = _out_path(_kind, "検査用")
+        if _p.parent != ratchet_io.RATCHET / "observe":
+            ng.append(f"出力先が observe フォルダの外: {_kind} → {_p.parent}")
+        if _p.parent == ratchet_io.RATCHET:
+            ng.append(f"出力先が ratchet 直下のまま: {_kind} → {_p}")
+    if "ratchet_io.RATCHET /" in inspect.getsource(_out_path):
+        ng.append("_out_path が ratchet 直下を直に指している（OBSERVE_DIR を使っていない）")
+
     print("=" * 80)
     print("observe_diag 自己検査")
     print("=" * 80)
@@ -3381,7 +3502,7 @@ def selftest() -> None:
     print(f"  節 {len(SECTIONS)} / 分位 {cfg['quantiles']} / SL候補 {cfg['sl_grid']}（エントリー価格からの%）")
     print(f"  探索 {cfg.get('search_modes')} × side×型の分岐 / 切る探索＝逆行側プールのみ / 建値%TP探索なし")
     print(f"  設定ファイル {cfg['_source']}")
-    print(f"  結果の保存先 {ratchet_io.RATCHET}（本走のみ・既存は archive へ退避＝上書きしない）")
+    print(f"  結果の保存先 {OBSERVE_DIR}（本走のみ・既存は observe/archive へ退避＝上書きしない）")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")

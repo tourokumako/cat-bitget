@@ -309,7 +309,10 @@ def build() -> str:
     for name, hlp in _args_rows():
         L.append(f"| {name} | {hlp} |")
     L.append("")
-    L.append(f"結果は `{od.ratchet_io.RATCHET.relative_to(ROOT)}` に保存されます。既にある同名は archive へ逃がすので上書きしません。")
+    # ★保存先は実体（observe_diag.OBSERVE_DIR）から読む＝手で書かない。2026-08-03 まこさん指示で
+    #   ratchet 直下 → その下の observe/ へ移した。実体を読む形なので、また変わっても説明書は自動で追う。
+    L.append(f"結果は `{od.OBSERVE_DIR.relative_to(ROOT)}` に保存されます。"
+             f"既にある同名は同じ階層の archive へ逃がすので上書きしません。")
     L.append("計画（--plan）は画面に出すだけで保存しません。")
     L.append("")
 
