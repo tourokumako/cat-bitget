@@ -67,7 +67,30 @@ def space(logic_id: str) -> dict:
     sp = cfg["search_space"]["logics"].get(logic_id)
     if sp is None:
         raise SystemExit(f"[エラー] search_space.logics に {logic_id} が無い（正本 {CONFIG.name}）")
-    return {**cfg["search_space"]["common_exit"], **sp}
+    out = {**cfg["search_space"]["common_exit"], **sp}
+    # ★保有時間の上限を、役割から決めた整数の範囲へ差し替える（監査 4-19／要件 R6・まこさん OK 2026-08-03）。
+    #   それまでは設定ファイルのメニュー（1・2・3・6・9・12 本）からしか選べなかった。
+    #   メニューに無い本数（例＝5本＝25分）は、何回試しても出なかった。
+    #   ロジックが自分で tmax_bars を宣言している場合は、そちらを尊重する（ロジック側が勝つ・従来の決まり）。
+    if "tmax_bars" in out and "tmax_bars" not in sp:
+        out["tmax_bars"] = hold_space()
+    return out
+
+
+def hold_space() -> dict:
+    """保有時間の上限の探索の宣言を、この戦略の役割から作る（単位＝5分足の本数）。
+
+    手順を書きます。
+      1 設定ファイル recipes/search_limits.json を読みます。
+      2 採用台帳 adopted_strategies.md の ROLE_CHECK の行から、e38 の役割（scalp）を読み取ります。
+      3 その役割の範囲（lo_bars と hi_bars）を設定ファイルから読み取ります。
+      4 Optuna に渡す宣言の形（type=int）にして返します。
+    役割が台帳に無いとき、その役割の範囲が設定ファイルに無いときは、走らせません（fail-closed）。
+    """
+    import engine_tuner_gen as gen
+    lm, _waiting = gen.load_limits()
+    lo, hi = gen.hold_bars(gen.resolve_hold_range(lm, NAME))
+    return {"type": "int", "lo": lo, "hi": hi, "step": 1}
 
 
 def stop_rules(logic_id: str) -> dict:
@@ -197,6 +220,25 @@ def min_per_day(logic_id: str):
     return None if v is None else float(v)
 
 
+def regime(logic_id: str) -> dict:
+    """このロジックが担当する相場を宣言する（監査 4-19／要件 R5・2026-08-03 新設）。
+
+    どこから読むか
+      設定ファイル e38_logics.json の global.regime に書いてある3つを、そのまま返します。
+      name は相場の名前です。entry_col は「このバーだけ玉を建ててよい」を表す列の名前です。
+      block_col は「このバーでは新規の発注を止める」を表す列の名前です。
+
+    なぜここに置くか
+      それまで実行器 engine_tuner_exec.py のコードに、列の名前が直接書いてありました。
+      だから engine_tuner はレンジ以外の相場を指定できませんでした。
+      戦略の側が宣言する形にすると、戦略ごとに違う相場を指定できます（要件 R5 の完了の線）。
+
+    ⚠️ 値はいまと同じです。ですから売買の結果は1行も変わりません。
+    """
+    rg = config()["global"].get("regime") or {}
+    return {"name": rg.get("name"), "entry_col": rg.get("entry_col"), "block_col": rg.get("block_col")}
+
+
 def load_windows(windows, warm: pd.Timedelta) -> list[pd.DataFrame]:
     """窓ごとの指標つきデータを作る。生データの読み込みは1回だけ（重いため）。"""
     lo = min(w[0] for w in windows) - warm
@@ -215,5 +257,6 @@ def run(df: pd.DataFrame, logic_id: str, entry_params: dict, exit_params: dict) 
     lg = _logic(logic_id)
     tr = parts.generic_logic_loop(df, lg["entry"]["type"], entry_params, exit_params,
                                   max_lots=int(lg.get("params", {}).get("max_lots", 2)),
-                                  logic_id=logic_id)
+                                  logic_id=logic_id,
+                                  regime=regime(logic_id))   # 監査 4-19＝相場は宣言から渡す
     return pd.DataFrame(tr)

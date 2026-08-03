@@ -208,9 +208,36 @@ ENTRY_FNS = {
 }
 
 
+_REGIME_CACHE: dict = {}
+
+
+def config_regime() -> dict:
+    """E38 が担当する相場の宣言を、自分の設定ファイル e38_logics.json から読む。
+
+    ★なぜこれを足したか（監査 4-19／要件 R5・2026-08-03）
+      それまで、この売買ループの中には レンジ判定の列の名前 range_ok_rg5 が直接書いてありました。
+      だから、レンジ以外の相場を扱えませんでした。監査の逐語はこうです。
+        「局面の判定はレンジに固定です。共通の売買ループが range_ok_rg5 を前提にしています」
+      いまは設定ファイルに書いてある名前を読みます。値はいままでと同じです。
+    """
+    if not _REGIME_CACHE:
+        import json as _json
+        import pathlib as _pl
+        cfg = _json.loads((_pl.Path(__file__).resolve().parent / "e38_logics.json").read_text(encoding="utf-8"))
+        rg = (cfg.get("global") or {}).get("regime") or {}
+        for k in ("name", "entry_col", "block_col"):
+            _REGIME_CACHE[k] = rg.get(k)
+        if not _REGIME_CACHE.get("entry_col"):
+            raise SystemExit("[相場の宣言エラー] e38_logics.json の global.regime に entry_col がありません")
+    return dict(_REGIME_CACHE)
+
+
 def generic_logic_loop(df: pd.DataFrame, entry_type: str, entry_params: dict, exit_params: dict,
-                       max_lots: int = 2, logic_id: str = "") -> list:
+                       max_lots: int = 2, logic_id: str = "", regime: dict | None = None) -> list:
     """汎用売買ループ（run_long_support の側対称一般化）。
+
+    regime … この売買が担当する相場の宣言（監査 4-19／要件 R5・2026-08-03 追加）。
+             省略したときは、自分の設定ファイル e38_logics.json の global.regime を読む。
 
     出口 exit_params:
       tp1_frac   … TP1 の位置＝建値と TP2 の間の比率（0〜1・建値寄りほど小さい）
@@ -252,7 +279,16 @@ def generic_logic_loop(df: pd.DataFrame, entry_type: str, entry_params: dict, ex
     ceil_filter = entry_params.get("ceil_filter")          # ★型の限定（S2=flat_up 専用・まこさん承認 2026-07-25
     if ceil_filter not in (None, "down", "flat_up"):       #   ＝値決め窓で down −$28/flat_up +$284 の型別差が根拠）
         raise SystemExit(f"[設定エラー] ceil_filter が不正: {ceil_filter}（None / down / flat_up）")
-    ok = df["range_ok_rg5"].to_numpy(bool); up = df["rg5_uptrend"].to_numpy(bool)
+    # ★相場の列は宣言から読む（監査 4-19／要件 R5＝直書きをやめた）。列が無ければ走らせない。
+    _rg = dict(regime) if regime else config_regime()
+    _ent, _blk = _rg.get("entry_col"), _rg.get("block_col")
+    if _ent not in df.columns:
+        raise SystemExit(f"[相場の列が無い] 玉を建ててよいバーの列 {_ent} がデータにありません"
+                         f"（宣言された相場＝{_rg.get('name')}）")
+    if _blk is not None and _blk not in df.columns:
+        raise SystemExit(f"[相場の列が無い] 新規の発注を止める列 {_blk} がデータにありません")
+    ok = df[_ent].to_numpy(bool)
+    up = df[_blk].to_numpy(bool) if _blk is not None else np.zeros(len(df), dtype=bool)
     atr_e, adx_e, k_e = ctx["atr"], ctx["adx"], ctx["k"]
     res_lo, res_hi, sup_lo, sup_hi, mid = ctx["res_lo"], ctx["res_hi"], ctx["sup_lo"], ctx["sup_hi"], ctx["mid"]
     tp1_frac = float(exit_params["tp1_frac"]); tp2_target = exit_params["tp2_target"]

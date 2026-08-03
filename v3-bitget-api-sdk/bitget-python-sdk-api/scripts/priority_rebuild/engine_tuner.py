@@ -186,6 +186,35 @@ def catalog_columns() -> set | None:
         return None
 
 
+def _print_regime(ad, logic_id: str, df: pd.DataFrame | None = None) -> None:
+    """このロジックが担当する相場と、いま指定できる相場の一覧を画面に出す（監査 4-19／要件 R5）。
+
+    なぜ出すか
+      それまで engine_tuner は、レンジ以外の相場を扱えませんでした。実行器のコードに
+      レンジ判定の列の名前が直接書いてあったためです。いまは接続ファイルが相場を宣言します。
+      ただし「名前を書けばその相場を扱える」わけではありません。判定の列が実データに要ります。
+      だから「名前の一覧」と「その列がデータに在るか」を、両方そのまま画面に出します。
+    """
+    from tuner_adapters import REGIME_NAMES, check_regime
+    d = check_regime(ad.NAME, logic_id, ad.regime(logic_id))
+    print(f"[相場] このロジックが担当するのは {d['name']}"
+          f"（玉を建ててよいバーの列 {d['entry_col']} ／ 新規を止める列 {d['block_col']}）")
+    if df is None:
+        return
+    rows = []
+    for nm in REGIME_NAMES:
+        if nm == d["name"]:
+            have = d["entry_col"] in df.columns
+            rows.append(f"{nm}: {'指定できる' if have else '列がデータに無い'}（列 {d['entry_col']}）")
+        elif d["block_col"] and nm == "uptrend" and d["block_col"] in df.columns:
+            rows.append(f"{nm}: 判定の列は在る（列 {d['block_col']}）＝接続ファイルが宣言すれば指定できる")
+        else:
+            rows.append(f"{nm}: 判定の列が無い＝いまは指定できない")
+    print("[相場の一覧] " + " ／ ".join(rows))
+    print("           ★名前を書いただけでは扱えません。その相場を判定する列が要ります"
+          "（下げトレンドの判定を作るのは engine_tuner の外側の作業＝要件定義書 R5 の前提）。")
+
+
 def _print_coverage(ad, logic_id: str, df: pd.DataFrame | None = None) -> None:
     """網羅度＝カタログのどれだけに触れているか。★3つを書き分ける（監査 根拠4・歩5 の2回目）。
 
@@ -338,6 +367,9 @@ def _resolve_space(space_decl: dict, bank: dict) -> dict:
             out[name] = ("float", float(d["lo"]), float(d["hi"]))
         elif d["type"] == "cat":
             out[name] = ("cat", list(d["choices"]))
+        elif d["type"] == "int":
+            # 監査 4-19／要件 R6 で新設＝下限から上限までの整数を全部試せる形（メニュー方式との違いは下の _suggest）
+            out[name] = ("int", int(d["lo"]), int(d["hi"]), int(d.get("step", 1)))
         elif d["type"] == "quantile":
             s = bank[d["series"]]
             out[name] = ("float", float(s.quantile(d["q_lo"])), float(s.quantile(d["q_hi"])))
@@ -347,8 +379,25 @@ def _resolve_space(space_decl: dict, bank: dict) -> dict:
 
 
 def _suggest(trial, space: dict) -> dict:
-    return {n: (trial.suggest_float(n, r[1], r[2]) if r[0] == "float" else trial.suggest_categorical(n, r[1]))
-            for n, r in space.items()}
+    """1試行ぶんの値を作る。値の作り方は3つある。
+
+      float … 下限と上限の間の小数（例＝損切りの幅 0.5〜2.0）
+      int   … 下限から上限までの整数（例＝保有時間の上限 1本〜12本）★監査 4-19／要件 R6 で新設
+      cat   … あらかじめ並べた候補から1つ（メニュー方式）
+
+    ★int を足した理由。それまで保有時間の上限はメニュー方式だった。
+      メニューに無い数字は、何回試しても出ない。たとえば一番稼げる上限が 75分でも、
+      メニューが 5/10/15/30/45/60分 なら 75分には永久に到達しない。
+    """
+    out = {}
+    for n, r in space.items():
+        if r[0] == "float":
+            out[n] = trial.suggest_float(n, r[1], r[2])
+        elif r[0] == "int":
+            out[n] = trial.suggest_int(n, r[1], r[2], step=r[3])
+        else:
+            out[n] = trial.suggest_categorical(n, r[1])
+    return out
 
 
 def _run_window(ad, dfp: pd.DataFrame, logic_id: str, ep: dict, xp: dict,
@@ -442,11 +491,17 @@ def main() -> None:
     t_load = time.time() - t0
     print(f"[共通部分] 探索スライス {len(df_s):,} バー／確認スライス {len(df_c):,} バー（{t_load:.0f}秒）")
     _print_coverage(ad, a.logic, df_s)
+    _print_regime(ad, a.logic, df_s)
 
     bank = ad.series_bank(df_s[df_s["ts"] >= SEARCH_START])
     space = _resolve_space(ad.space(a.logic), bank)
     for n, r in space.items():
-        print(f"[範囲] {n}: {r[0]} {r[1] if r[0]=='float' else r[1]}" + (f" 〜 {r[2]:.6g}" if r[0] == "float" else ""))
+        if r[0] == "float":
+            print(f"[範囲] {n}: float {r[1]:.6g} 〜 {r[2]:.6g}")
+        elif r[0] == "int":                        # 監査 4-19／要件 R6＝整数の範囲（メニューでない）
+            print(f"[範囲] {n}: int {r[1]} 〜 {r[2]}（刻み {r[3]}・試せる値 {len(range(r[1], r[2] + 1, r[3]))} 通り）")
+        else:
+            print(f"[範囲] {n}: cat {r[1]}")
 
     exit_keys = ad.exit_keys()
     fixed_ep, fixed_xp = ad.fixed(a.logic, set(space))

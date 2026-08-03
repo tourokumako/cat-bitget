@@ -10,7 +10,11 @@
     "regime": {
       "v20_rg5": true,
       "v25_adaptive_band": true,
-      "note": "レンジ判定 RG-v5＋RG-v6 適応束ね幅＝S1/L1 共通の局面ゲート（build_regime_gate_rg.py を import 再利用・視認校正3巡・H2 確定バーのみ）"
+      "name": "range",
+      "entry_col": "range_ok_rg5",
+      "block_col": "rg5_uptrend",
+      "note": "レンジ判定 RG-v5＋RG-v6 適応束ね幅＝S1/L1 共通の局面ゲート（build_regime_gate_rg.py を import 再利用・視認校正3巡・H2 確定バーのみ）",
+      "note_2026_08_03": "name / entry_col / block_col を追加（監査 4-19・要件 R5・まこさん OK 2026-08-03）。それまでは実行器 engine_tuner_exec.py と共通の売買ループ e38_logic_parts.py のコードに列の名前が直接書いてあり、レンジ以外の相場を指定できなかった。ここに書いた名前を接続ファイル e38.py の regime() が返し、実行器がそれを読んで動く。値はいまと同じ＝挙動は変わらない（恒等）。name の一覧の正本＝cat_requirements.md §1.2.1（range / uptrend / downtrend / spike）。⚠️ 名前を downtrend に変えても下げ相場は扱えない＝判定の列が存在しない（build_regime_gate_rg.py のラベルは uptrend と range の2種のみ・down は0件・2026-08-03 実測）"
     },
     "slots": {
       "short_lots_max": 2,

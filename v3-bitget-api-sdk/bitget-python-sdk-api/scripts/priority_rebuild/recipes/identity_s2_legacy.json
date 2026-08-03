@@ -1,7 +1,9 @@
 {
   "_note": "恒等検収レシピ＝現行 S2（e38_logic_parts.generic_logic_loop・confirm=stoch_dc 構成）の書き写し。正本＝engine_tuner_step2_condition_format.md §8（S2 との1対1突き合わせ表）。lane=legacy＝生値 legacy と legacy 材料列を使える唯一のレーン（探索は生成できない・番人で隔離）。値は恒等の照合用に選んだ legacy（採否・成績とは無関係＝両側が同じ値を共有して md5 を比べるためだけの値）。",
   "_taiou": "設計書 §8 の行番号: 行1-2=meta.regime と band_ok（実行器が課す）／行3=location 条件／行4=env 条件／行5=sufficiency 条件／行6=trigger（cross）／行7=実行器のグローバル定数（H5）／行8=TP1 枝／行9=TP2 枝／行10=SL 枝／行11=TIME 枝（be_wait）／行12=exits の並び順／行13=position。行6 の材料の実体＝stoch_k は Stoch%D14__5m と同式（e34_range_base の slow %K(14,3)）・その3本平均はカタログ外＝legacy 材料列（設計書 §8 は Stoch%K14/D14 と書いたが実装の実体はこの2列＝worklog 2026-08-01 に記録）。",
-  "meta": { "strategy": "e38", "logic_id": "S2ID", "side": "SHORT", "regime": "range_rg5", "lane": "legacy" },
+  "meta": { "strategy": "e38", "logic_id": "S2ID", "side": "SHORT",
+            "regime": { "name": "range", "entry_col": "range_ok_rg5", "block_col": "rg5_uptrend" },
+            "lane": "legacy" },
   "pre_filter": [],
   "entry": {
     "connective": { "all": [

@@ -171,6 +171,40 @@ def min_per_day(logic_id: str):
     return None
 
 
+# ── この戦略が担当する相場（監査 4-19／要件 R5・2026-08-03 新設）────────────────────
+#   E37 は設定ファイルを持たない（値は e37_scalp.py の定数）ので、STOP_RULES と同じくここが置き場所。
+#   name＝相場の名前（一覧の正本＝cat_requirements.md §1.2.1）。
+#   entry_col＝このバーだけ玉を建ててよい、を表す列の名前。
+#   block_col＝このバーでは新規の発注を止める、を表す列の名前。
+#   ★列を作っているのは E38 と同じ prepare_df（build_regime_gate_rg.py を再利用）なので、
+#     E38 の設定ファイル e38_logics.json の global.regime と中身が一致していなければならない。
+#     一致しなくなったら engine_tuner が止まる（下の assert_regime_agrees が番人）。
+REGIME = {"name": "range", "entry_col": "range_ok_rg5", "block_col": "rg5_uptrend"}
+
+
+def regime(logic_id: str) -> dict:
+    """このロジックが担当する相場を宣言する（S1・L1・v59 のどれも レンジ）。"""
+    return dict(REGIME)
+
+
+def assert_regime_agrees() -> None:
+    """番人＝E37 の宣言と E38 の設定ファイルの宣言が食い違ったら止める。
+
+    なぜ要るか
+      どちらの戦略も、同じ prepare_df がつけた同じ列を見ています。
+      片方だけ列の名前を変えると、もう片方は黙って古い列を見続けます。
+      黙って動き続けるのがいちばん危ないので、食い違った時点で止めます。
+    """
+    from tuner_adapters import e38 as _e38
+    other = _e38.regime("S2")
+    if {k: REGIME[k] for k in ("entry_col", "block_col")} != {k: other[k] for k in ("entry_col", "block_col")}:
+        raise SystemExit(
+            f"[相場の宣言エラー] E37 と E38 で相場の列の名前が食い違っています。\n"
+            f"  E37（tuner_adapters/e37.py の REGIME）: {REGIME}\n"
+            f"  E38（e38_logics.json の global.regime）: {other}\n"
+            f"  どちらも同じ prepare_df がつけた列を見ています。片方だけ直すと、もう片方が古い列を見続けます。")
+
+
 def load_windows(windows, warm: pd.Timedelta) -> list[pd.DataFrame]:
     """窓ごとのデータを作る。生データの読み込みは1回だけ。
     ★E37 は指標を run_e37 が内部で作るので、ここでは助走込みのスライスを返すだけ。"""

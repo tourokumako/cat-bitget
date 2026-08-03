@@ -21,8 +21,23 @@ E36 は関数のキーワード引数で、細かい値は実行時のフラグ�
   min_per_day(id) … 件数の下限（無ければ None）
   load_windows()  … 窓ごとの指標つきデータを作る（生データの読み込みは1回だけ）
   run()           … 値を1組受け取って売買記録を返す
+  regime(id)      … その ロジックが担当する相場（監査 4-19／要件 R5・2026-08-03 追加）
 任意:
   TYPE_COL / TYPE_VALUES … 型別に分けて見る列と値（無ければ型別の内訳を出さない）
+
+★regime(id) を足した理由（監査 4-19／要件 R5・2026-08-03）
+  それまで engine_tuner は、レンジ以外の相場を扱えなかった。原因は3つあった。
+  ① 接続ファイルの決まり（この REQUIRED）に、相場を書く欄が無かった。
+  ② 実行器 engine_tuner_exec.py のコードに、レンジ判定の列の名前が直接書いてあった。
+  ③ 共通の売買ループ e38_logic_parts.py にも、同じ名前が直接書いてあった。
+  そこで、接続ファイルが相場を宣言する欄をここに足した。実行器は、この宣言を読んで動く。
+
+  regime(id) が返すもの（辞書）:
+    name       … 相場の名前。下の REGIME_NAMES のどれか（正本＝cat_requirements §1.2.1）
+    entry_col  … このバーだけ玉を建ててよい、を表す列の名前（真偽値の列）
+    block_col  … このバーでは新規の発注を止める、を表す列の名前（要らなければ None）
+  ⚠️ 名前が REGIME_NAMES に無ければ実行前に止める。列が実データに無ければ実行時に止める。
+     ＝「downtrend と書けば下げ相場を扱える」ことにはならない。判定の列が別に要る。
 """
 from __future__ import annotations
 
@@ -31,7 +46,40 @@ import pathlib
 
 # 接続ファイルに必ず在るもの（1つでも欠けたら実行前に止める＝形骸の接続ファイルを走らせない）
 REQUIRED = ("NAME", "LABEL", "logics", "space", "exit_keys", "series_bank",
-            "fixed", "min_per_day", "load_windows", "run")
+            "fixed", "min_per_day", "load_windows", "run", "regime")
+
+# 相場の名前の一覧（正本＝cat_requirements.md §1.2.1「全体戦略」の4局面・ここはその機械可読の写し）
+#   局面1 下げトレンド／局面2 上げトレンド／局面3 レンジ（横ばい）／局面4 スパイク。
+#   ★ここに名前が在ることと、その相場を判定する列が在ることは別。列の有無は実行時に検査する。
+REGIME_NAMES = ("range", "uptrend", "downtrend", "spike")
+
+
+class RegimeDeclError(SystemExit):
+    """接続ファイルの相場の宣言が壊れている＝走らせない（fail-closed）。"""
+
+
+def check_regime(adapter_name: str, logic_id: str, decl) -> dict:
+    """接続ファイルが返した相場の宣言を検査する。壊れていたら実行前に止める。"""
+    if not isinstance(decl, dict):
+        raise RegimeDeclError(
+            f"[相場の宣言エラー] 接続ファイル {adapter_name} の regime({logic_id}) が辞書を返していない"
+            f"（返した型＝{type(decl).__name__}／返すもの＝name・entry_col・block_col）")
+    name = decl.get("name")
+    if name not in REGIME_NAMES:
+        raise RegimeDeclError(
+            f"[相場の宣言エラー] 接続ファイル {adapter_name} の regime({logic_id}) の name が一覧に無い: {name!r}"
+            f"（使えるのは {', '.join(REGIME_NAMES)}／正本＝cat_requirements.md §1.2.1）")
+    ent = decl.get("entry_col")
+    if not ent or not isinstance(ent, str):
+        raise RegimeDeclError(
+            f"[相場の宣言エラー] 接続ファイル {adapter_name} の regime({logic_id}) に entry_col が無い"
+            f"（玉を建ててよいバーを表す列の名前が要る）")
+    blk = decl.get("block_col")
+    if blk is not None and not isinstance(blk, str):
+        raise RegimeDeclError(
+            f"[相場の宣言エラー] 接続ファイル {adapter_name} の regime({logic_id}) の block_col が文字列でない: {blk!r}"
+            f"（要らないときは None）")
+    return {"name": name, "entry_col": ent, "block_col": blk}
 
 
 def available() -> list[str]:

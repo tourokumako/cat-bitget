@@ -561,8 +561,7 @@ def build() -> str:
         worst = max(rows_cov, key=lambda z: z[2])
         L.append(f"- 指標カタログ {size[0] * size[1]}列 のうち、いちばん広いロジックでも触れているのは "
                  f"{worst[2]}本（{worst[3]}）です。**残りは試していません。**")
-    L.append("- 局面の判定はレンジに固定です。共通の売買ループが range_ok_rg5 を前提にしています。")
-    L.append("- 保有の上限の候補は分単位に固定です。デイトレの時間単位を試せません。")
+    L.extend(_regime_and_hold_lines())
     L.append("- 調整の単位はロジック1本です。**戦略まるごと**（複数のロジック＋優先度＋枠の配分）を"
              "一度に調整することはできません。ロジック単体で最善にしても、"
              "他のロジックと同じ予算を取り合うと全体では変わります。")
@@ -577,6 +576,50 @@ def build() -> str:
 
     body = "\n".join(L).rstrip() + "\n"
     return f"<!-- MANUAL_HASH={_sha(body)} -->\n{body}"
+
+
+def _regime_and_hold_lines() -> list[str]:
+    """「いまできないこと」の相場と保有時間の2行を、実体から作る（監査 4-19／要件 R5・R6）。
+
+    ★なぜ実体から作るか
+      それまでこの2行は、この生成器の中に固定の文で書いてありました。
+      逐語は「局面の判定はレンジに固定です」と「保有の上限の候補は分単位に固定です」でした。
+      実体を直しても、この2行は同じことを言い続けます。監査 4-23 で指摘された欠陥と同じ型です。
+      いまは接続ファイルの宣言と設定ファイルの値を読んで、そのつど書き出します。
+    """
+    from tuner_adapters import REGIME_NAMES, available, load_adapter, check_regime
+    import engine_tuner_gen as gen
+
+    out: list[str] = []
+    seen: dict[str, set] = {}
+    for nm in available():
+        ad = load_adapter(nm)
+        for z in ad.logics():
+            d = check_regime(nm, z["id"], ad.regime(z["id"]))
+            seen.setdefault(d["name"], set()).add(nm)
+    names = "／".join(f"{k}（{'・'.join(sorted(v))}）" for k, v in sorted(seen.items()))
+    未使用 = [n for n in REGIME_NAMES if n not in seen]
+    out.append(f"- 接続ファイルが宣言している相場は {names} です。"
+               f"宣言できる名前は {len(REGIME_NAMES)} 種（{', '.join(REGIME_NAMES)}）ですが、"
+               f"いま誰も宣言していないのは {', '.join(未使用) if 未使用 else 'ありません'} です。"
+               "★名前を宣言しても、その相場を判定する列がデータに無ければ走りません。"
+               "下げトレンドの判定を作るのは、この道具の外側の作業です（要件 R5 の前提）。")
+
+    lm, _w = gen.load_limits()
+    table = lm.get("hold_range_by_role") or {}
+    parts = []
+    for role in sorted(table):
+        v = table[role] or {}
+        lo, hi = v.get("lo_bars"), v.get("hi_bars")
+        if lo is None or hi is None:
+            parts.append(f"{role}＝未定（決まるまでこの役割の戦略は回せません）")
+        else:
+            parts.append(f"{role}＝{lo}本から{hi}本（{int(lo) * 5}分から{int(hi) * 5}分・"
+                         f"試せる値は {int(hi) - int(lo) + 1} 通り）")
+    out.append("- 保有時間の上限は、戦略の役割ごとに決めた整数の範囲から選びます。単位は5分足の本数です。"
+               + "／".join(parts) + "。役割は採用台帳の ROLE_CHECK の行から読み取ります。"
+               "役割が台帳に無いとき、その役割の範囲が決まっていないときは走りません。")
+    return out
 
 
 def verify() -> int:

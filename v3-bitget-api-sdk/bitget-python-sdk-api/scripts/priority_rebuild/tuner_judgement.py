@@ -112,6 +112,20 @@ class RoleFloorError(SystemExit):
 
 
 # ══ B3 の出どころ＝採用台帳から役割と件数の下限を引く ═══════════════════════════════════
+def role_of(strategy: str) -> str | None:
+    """戦略の役割（scalp か daytrade か）を採用台帳から読み取る（監査 4-19／要件 R6・2026-08-03）。
+
+    手順を書きます。
+      1 採用台帳のファイル adopted_strategies.md を開きます。
+      2 そのファイルの中の ROLE_CHECK という行を探します。中身はこう書いてあります。
+          ROLE_CHECK: e37=scalp ; e36=daytrade ; e35=range_both ; e38=scalp
+      3 その行の中から、渡された戦略の名前（例＝e37）を探します。
+      4 その右側に書いてある文字（例＝scalp）を読み取って返します。
+    見つからなければ None を返します（呼んだ側が fail-closed で止めます）。
+    """
+    return role_floor(strategy)[0]
+
+
 def role_floor(strategy: str) -> tuple[str | None, float | None]:
     """役割と、役割から来る件数/日 の絶対下限を採用台帳のマーカーから引く。
 

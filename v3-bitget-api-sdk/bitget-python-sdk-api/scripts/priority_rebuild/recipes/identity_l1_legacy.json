@@ -1,7 +1,9 @@
 {
   "_note": "恒等検収レシピ＝採用中 L1（e37_scalp.run_long_support・v57 レンジ下端反発ロング・flat_up 限定・まこさん採用系譜 longfu_145→v59d_164）の書き写し（歩6-1・まこさん GO 2026-08-02）。lane=legacy＝生値 legacy と legacy 材料列を使える唯一のレーン（探索は生成できない・番人で隔離）。値は e38_logics.json の L1（params: max_lots=2, tmax_bars=48, gap_pct=0.5, sl_zone_k=1.0／engine_flags: v57_long_flat_up_only=true, sl_pct=null, vol_gate=null）と同じ＝両側が同じ値を共有して md5 を比べる。",
   "_taiou": "run_long_support（e37_scalp.py 1569行〜）との対応: trigger=fresh（in_sup の縁＝帯に入った最初のバー・1594-1595行）／env=flat_up 限定（_type_ok・1636-1638行）／entry_guards.fee_floor=TP1 幅≥手数料床（1639行）／TIME 枝=1618行（48本=240分・taker・先頭で評価）／SL 枝=1620行（sup_lo−1.0×(sup_hi−sup_lo)・悲観側 min・maker）＝zone_sl の w=zone（同じ側の帯幅）／TP1 枝=1622行（(建値+mid)/2 で半分・maker）＝mix frac 0.5／TP2 枝=1626行（mid で残り全部・maker）＝zone mid／record: W_entry=sup 帯幅（1634行）・k_entry=nan（1605行）／position=separate・max_adds=2（1631行 len(lots)<max_lots）。",
-  "meta": { "strategy": "e38", "logic_id": "L1ID", "side": "LONG", "regime": "range_rg5", "lane": "legacy" },
+  "meta": { "strategy": "e38", "logic_id": "L1ID", "side": "LONG",
+            "regime": { "name": "range", "entry_col": "range_ok_rg5", "block_col": "rg5_uptrend" },
+            "lane": "legacy" },
   "record": { "w_entry": "zone", "k_entry": "none" },
   "pre_filter": [],
   "entry": {

@@ -263,6 +263,60 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
     _check_value(c.get("value", {}), lane, where, legacy_used)
 
 
+# ══ 相場の宣言（監査 4-19／要件 R5・2026-08-03 新設）══════════════════════════════════
+#   それまで、この実行器のコードには レンジ判定の列の名前 range_ok_rg5 が3か所に直接書いてあった
+#   （875行・1052行・1614行）。だから engine_tuner はレンジ以外の相場を扱えなかった。
+#   いまは レシピの meta.regime が列の名前を持つ。実行器は そこに書いてある名前の列を見る。
+#   meta.regime の形（辞書）:
+#     name       … 相場の名前（一覧の正本＝cat_requirements.md §1.2.1・写し＝tuner_adapters.REGIME_NAMES）
+#     entry_col  … このバーだけ玉を建ててよい、を表す列の名前
+#     block_col  … このバーでは新規の発注を止める、を表す列の名前（要らなければ null）
+#   ⚠️ 名前を downtrend にしても下げ相場は扱えない。判定の列そのものが要る（実行時に列の有無を検査する）。
+def _check_regime_meta(meta: dict) -> None:
+    """meta.regime の形を検査する（G5）。壊れていたらレシピを読み込まない。"""
+    from tuner_adapters import REGIME_NAMES
+    rg = meta.get("regime")
+    if not isinstance(rg, dict):
+        _fail("G5", f"meta.regime が辞書でない: {rg!r}"
+                    "（形＝name・entry_col・block_col／監査 4-19 で文字列から辞書へ変えた）")
+    if rg.get("name") not in REGIME_NAMES:
+        _fail("G5", f"meta.regime.name が一覧に無い: {rg.get('name')!r}"
+                    f"（使えるのは {', '.join(REGIME_NAMES)}／正本＝cat_requirements.md §1.2.1）")
+    if not rg.get("entry_col") or not isinstance(rg.get("entry_col"), str):
+        _fail("G5", "meta.regime.entry_col が無い（玉を建ててよいバーを表す列の名前が要る）")
+    if rg.get("block_col") is not None and not isinstance(rg.get("block_col"), str):
+        _fail("G5", f"meta.regime.block_col が文字列でない: {rg.get('block_col')!r}（要らないときは null）")
+
+
+def regime_cols(recipe: dict) -> tuple[str, str | None]:
+    """レシピの meta.regime から、使う列の名前2つを読み取る（検査は validate_recipe が済ませている）。"""
+    rg = (recipe.get("meta") or {}).get("regime") or {}
+    return rg["entry_col"], rg.get("block_col")
+
+
+def _regime_series(df: pd.DataFrame, recipe: dict) -> tuple[np.ndarray, np.ndarray]:
+    """宣言された列を実データから読み出す。列が無ければ止める（fail-closed）。
+
+    ★ここが「相場の名前を書いただけでは扱えない」を物理で示す場所。
+      判定の列が実データに無ければ、名前が何であっても走らない。
+    """
+    ent, blk = regime_cols(recipe)
+    if ent not in df.columns:
+        name = (recipe.get("meta") or {}).get("regime", {}).get("name")
+        raise RecipeError(
+            f"[相場の列が無い] 宣言された相場は {name} で、玉を建ててよいバーの列は {ent} です。"
+            f"しかしデータにその列がありません。判定を作る処理が要ります（engine_tuner の外側の作業）。")
+    ok = df[ent].to_numpy(bool)
+    if blk is None:
+        up = np.zeros(len(df), dtype=bool)
+    else:
+        if blk not in df.columns:
+            raise RecipeError(
+                f"[相場の列が無い] 新規の発注を止める列 {blk} がデータにありません。")
+        up = df[blk].to_numpy(bool)
+    return ok, up
+
+
 def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | None = None) -> dict:
     """スキーマ検証器＝G1〜G6。壊れたレシピは RecipeError（読み込み拒否）。
     limits＝まこさん判断の値（n_min/k_max/depth_max/p_max/r_min/role_max/count_range）。
@@ -277,6 +331,7 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
             _fail("G5", f"meta.{key} が無い")
     if meta["side"] not in ("SHORT", "LONG"):
         _fail("G5", f"meta.side が不正: {meta['side']}")
+    _check_regime_meta(meta)
     # record（記録スタイル）＝過去資産の書き写しで診断列（W_entry/k_entry）の出し方を実装に合わせる指定。
     # 歩6-1（L1）で追加。net に不関与の診断列だが、md5 恒等の対象なので実装と同じ出し方が要る。
     # 恒等検収レーン専用＝探索レシピには存在しない（生成器は作らない・番人で隔離）。
@@ -872,7 +927,7 @@ def _ceiling_fire(recipe: dict, df: pd.DataFrame, geo: dict) -> tuple[np.ndarray
     no_age_dn = bool(sp.get("down_no_age", False))
     c = df["close"].to_numpy(float)
     h = df["high"].to_numpy(float)
-    ok = df["range_ok_rg5"].to_numpy(bool)
+    ok, _up = _regime_series(df, recipe)          # 監査 4-19＝列の名前はレシピの宣言から読む（直書きをやめた）
     res_lo = geo["res_lo"]
     res_hi = geo["res_hi"]
     n = len(df)
@@ -1049,8 +1104,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
     atr = df["atr"].to_numpy(float)
     adx = df["adx"].to_numpy(float)
     kk = df["stoch_k"].to_numpy(float)
-    ok = df["range_ok_rg5"].to_numpy(bool)
-    up = df["rg5_uptrend"].to_numpy(bool)
+    ok, up = _regime_series(df, recipe)           # 監査 4-19＝列の名前はレシピの宣言から読む（直書きをやめた）
     res_lo = df["v11_res_lo"].to_numpy(float)
     res_hi = df["v11_res_hi"].to_numpy(float)
     sup_lo = df["v11_sup_lo"].to_numpy(float)
@@ -1390,11 +1444,12 @@ def engine_params_from_recipe(recipe: dict) -> tuple[dict, dict, int]:
     return ep, xp, int(recipe["position"]["max_adds"])
 
 
-def _ordering_sentinel() -> bool:
-    """番人＝枝順（exits の並び）が結果を変えることを、競合バーを必ず含む合成データで機械確認する。
-    実データの窓では TIME と SL が同じバーで競合するとは限らない（短窓で実測＝競合ゼロだと差が出ない）
-    ため、番人は運任せにしない＝バー17で『保有30分の TIME 発火』と『SL 触り』を同時に起こす。
-    [TIME,SL] の順＝建値フロア待機へ → 後で BE_EXIT ／ [SL,TIME] の順＝その場で SL_FILLED ＝ md5 が変わる。"""
+def _sentinel_df() -> pd.DataFrame:
+    """番人用の合成5分足（実データを使わない＝累積の試行を汚さない）。
+
+    バー17 で『保有30分の TIME 発火』と『SL 触り』を同時に起こす形にしてある
+    （枝順の番人が運任せにならないため）。監査 4-19 の番人⑤ もこのデータを使う。
+    """
     n = 60
     t0, tfill, tconf = 10, 11, 17
     idx = pd.date_range("2024-05-01", periods=n, freq="5min")
@@ -1407,13 +1462,21 @@ def _ordering_sentinel() -> bool:
     k = np.full(n, 50.0)
     k[t0:] = 40.0                                  # t0 でデッドクロス（1回だけ）
     d = np.full(n, 45.0)
-    df = pd.DataFrame({"ts": idx, "open": o, "high": h, "low": l, "close": c, "volume": 1.0,
-                       "atr": 1.0, "adx": 20.0, "stoch_k": k, "e38_stoch_d": d,
-                       "rsi9": 50.0, "dev_z": 0.0,
-                       "range_ok_rg5": True, "rg5_uptrend": False,
-                       "v11_res_hi": 110.0, "v11_res_lo": 109.0, "v11_sup_hi": 91.0,
-                       "v11_sup_lo": 90.0, "v11_mid": 100.0,
-                       "e38_htf_roc24_2h": 0.0, "e38_vol_volr20_15m": 2.0})
+    return pd.DataFrame({"ts": idx, "open": o, "high": h, "low": l, "close": c, "volume": 1.0,
+                         "atr": 1.0, "adx": 20.0, "stoch_k": k, "e38_stoch_d": d,
+                         "rsi9": 50.0, "dev_z": 0.0,
+                         "range_ok_rg5": True, "rg5_uptrend": False,
+                         "v11_res_hi": 110.0, "v11_res_lo": 109.0, "v11_sup_hi": 91.0,
+                         "v11_sup_lo": 90.0, "v11_mid": 100.0,
+                         "e38_htf_roc24_2h": 0.0, "e38_vol_volr20_15m": 2.0})
+
+
+def _ordering_sentinel() -> bool:
+    """番人＝枝順（exits の並び）が結果を変えることを、競合バーを必ず含む合成データで機械確認する。
+    実データの窓では TIME と SL が同じバーで競合するとは限らない（短窓で実測＝競合ゼロだと差が出ない）
+    ため、番人は運任せにしない＝バー17で『保有30分の TIME 発火』と『SL 触り』を同時に起こす。
+    [TIME,SL] の順＝建値フロア待機へ → 後で BE_EXIT ／ [SL,TIME] の順＝その場で SL_FILLED ＝ md5 が変わる。"""
+    df = _sentinel_df()
     recipe = identity_recipe()
     t_a, _r = run_recipe(df, recipe)
     swapped = json.loads(json.dumps(recipe))
@@ -1591,7 +1654,8 @@ def attach_recipe_columns(dfp: pd.DataFrame, recipe: dict) -> pd.DataFrame:
     if "v47" in src and "e37_v47_rsi9_15m" not in out.columns:
         out = _attach_v47_cols(out)
     if "l1" in src and "e37_l1_in_sup" not in out.columns:
-        out = _l1_attach_legacy_cols(out, float(source_logic(recipe)["params"]["gap_pct"]))
+        out = _l1_attach_legacy_cols(out, float(source_logic(recipe)["params"]["gap_pct"]),
+                                     regime_cols(recipe)[0])
     return out
 
 
@@ -1609,9 +1673,14 @@ def l1_engine_params(recipe: dict) -> tuple[int, float, int]:
     return tmax, sl_k, int(recipe["position"]["max_adds"])
 
 
-def _l1_attach_legacy_cols(dfp: pd.DataFrame, gap_pct: float) -> pd.DataFrame:
-    """L1 恒等用の legacy 材料列（run_long_support 1594-1595 / 1636 行と同式・当該バーのみ＝H2）。"""
-    ok = dfp["range_ok_rg5"].to_numpy(bool)
+def _l1_attach_legacy_cols(dfp: pd.DataFrame, gap_pct: float, entry_col: str) -> pd.DataFrame:
+    """L1 恒等用の legacy 材料列（run_long_support 1594-1595 / 1636 行と同式・当該バーのみ＝H2）。
+
+    entry_col＝玉を建ててよいバーを表す列の名前（監査 4-19＝レシピの宣言から受け取る・直書きをやめた）。
+    """
+    if entry_col not in dfp.columns:
+        raise RecipeError(f"[相場の列が無い] L1 の材料列を作れない: {entry_col} がデータにありません。")
+    ok = dfp[entry_col].to_numpy(bool)
     sup_hi = dfp["v11_sup_hi"].to_numpy(float)
     sup_lo = dfp["v11_sup_lo"].to_numpy(float)
     res_lo = dfp["v11_res_lo"].to_numpy(float)
@@ -2050,7 +2119,8 @@ def maker_taker_sync_check(name: str, src: str, maker: tuple, judge) -> list[str
 def _base_ok_recipe() -> dict:
     """検証だけ通す最小の正しいレシピ（V9 風多条件・探索レーン＝legacy なし）。"""
     return {
-        "meta": {"strategy": "e38", "logic_id": "T1", "side": "SHORT", "regime": "range_rg5"},
+        "meta": {"strategy": "e38", "logic_id": "T1", "side": "SHORT",
+                 "regime": {"name": "range", "entry_col": "range_ok_rg5", "block_col": "rg5_uptrend"}},
         "pre_filter": [],
         "entry": {"connective": {"all": [
             {"role": "trigger", "form": "cross", "value": {"direction": "down"},
@@ -2079,6 +2149,152 @@ def _base_ok_recipe() -> dict:
         ],
         "position": {"mode": "separate", "max_adds": 2},
     }
+
+
+def _selftest_4_19() -> list[str]:
+    """監査 4-19 の番人6件（要件 R5＝相場／要件 R6＝保有時間の上限）。落ちなかったものを返す。
+
+    番人の考え方＝「直した」と言うために、わざと壊して落ちることを毎回その場で確かめる。
+    """
+    import copy as _copy
+    import tempfile as _tmp
+    from tuner_adapters import REQUIRED, load_adapter, RegimeDeclError
+    import engine_tuner_gen as _gen
+    import tuner_judgement as _tj
+    bad: list[str] = []
+
+    # ① 接続ファイルから相場の宣言を消すと、engine_tuner が実行前に止まる
+    if "regime" not in REQUIRED:
+        bad.append("番人①: 接続ファイルの必須項目に regime が入っていない")
+    else:
+        _ad = load_adapter("e38")
+        _saved = _ad.regime
+        try:
+            del _ad.regime
+            try:
+                load_adapter("e38")
+                bad.append("番人①: 接続ファイルから regime を消しても止まらない")
+            except SystemExit:
+                pass
+        finally:
+            _ad.regime = _saved
+
+    # ② 相場の宣言が辞書でない（＝直す前の文字列の形）と、レシピを読み込まない
+    _r = identity_recipe()
+    _r2 = _copy.deepcopy(_r)
+    _r2["meta"]["regime"] = "range_rg5"
+    try:
+        validate_recipe(_r2)
+        bad.append("番人②: meta.regime が文字列でもレシピが読み込まれる（G5 で止まるはず）")
+    except RecipeError:
+        pass
+
+    # ③ 決めていない相場の名前を宣言すると、レシピを読み込まない
+    _r3 = _copy.deepcopy(_r)
+    _r3["meta"]["regime"] = {"name": "bull", "entry_col": "range_ok_rg5", "block_col": None}
+    try:
+        validate_recipe(_r3)
+        bad.append("番人③: 一覧に無い相場の名前でもレシピが読み込まれる（G5 で止まるはず）")
+    except RecipeError:
+        pass
+    try:
+        from tuner_adapters import check_regime as _ck
+        _ck("e38", "S2", {"name": "bull", "entry_col": "x"})
+        bad.append("番人③: 接続ファイル側の検査も一覧に無い名前を通す")
+    except RegimeDeclError:
+        pass
+
+    # ④ 宣言した列がデータに無いと、走らせない
+    _df = _sentinel_df()
+    _r4 = _copy.deepcopy(_r)
+    _r4["meta"]["regime"]["entry_col"] = "regime_not_exist"
+    try:
+        run_recipe(_df, _r4)
+        bad.append("番人④: データに無い列を宣言しても走ってしまう")
+    except RecipeError:
+        pass
+
+    # ⑤ 宣言を差し替えると、売買記録が実際に変わる（＝宣言が本当に効いている）
+    #    直書きに戻した実装だと、宣言を変えても結果が変わらない＝ここが落ちる。
+    _t_base, _ = run_recipe(_df, _r)
+    _df2 = _df.copy()
+    _df2["regime_never"] = False                       # どのバーでも建てられない相場
+    _r5 = _copy.deepcopy(_r)
+    _r5["meta"]["regime"] = {"name": "range", "entry_col": "regime_never", "block_col": None}
+    _t_never, _ = run_recipe(_df2, _r5)
+    if len(_t_base) == 0:
+        bad.append("番人⑤: 土台の合成データで玉が1つも建たない（番人が成立していない）")
+    elif len(_t_never) != 0:
+        bad.append(f"番人⑤: 建てられない相場を宣言しても {len(_t_never)} 玉が建つ（宣言が効いていない）")
+
+    # ⑥ 役割の範囲が決まっていない／台帳に役割が無いと、走らせない
+    _lm, _ = _gen.load_limits()
+    _lm_empty = dict(_lm)
+    _lm_empty["hold_range_by_role"] = {"scalp": {"lo_bars": None, "hi_bars": None}}
+    try:
+        _gen.resolve_hold_range(_lm_empty, "e38")
+        bad.append("番人⑥: 役割の範囲が空でも走ってしまう")
+    except _gen.HoldRangeError:
+        pass
+    _saved_adopted = _tj.ADOPTED
+    try:
+        with _tmp.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as fh:
+            fh.write("# 台帳から ROLE_CHECK の行を消した状態（番人⑥）\n")
+            _p = pathlib.Path(fh.name)
+        _tj.ADOPTED = _p
+        try:
+            _gen.resolve_hold_range(_lm, "e38")
+            bad.append("番人⑥: 台帳に役割が無くても走ってしまう")
+        except _gen.HoldRangeError:
+            pass
+    finally:
+        _tj.ADOPTED = _saved_adopted
+        try:
+            _p.unlink()
+        except Exception:                              # noqa: BLE001
+            pass
+
+    # ⑦ 古い方の売買ループ（e38_logic_parts.generic_logic_loop）でも宣言が効いている
+    #    ＝監査の逐語「共通の売買ループが range_ok_rg5 を前提にしています」を実際に外せたかの確認。
+    _ep, _xp, _ml = engine_params_from_recipe(_r)
+
+    def _with_parts_cols(d):
+        """古い売買ループが要る列を、番人用の合成データへ足す（値は入口の判定に効かない中立値）。"""
+        out = d.copy()
+        out["e38_vol_ma20"] = 1.0
+        for _pt in parts.HTF_PARTS:
+            if f"e38_htf_{_pt}" not in out.columns:
+                out[f"e38_htf_{_pt}"] = 0.0
+        for _pt in parts.VOL_PARTS:
+            if f"e38_vol_{_pt}" not in out.columns:
+                out[f"e38_vol_{_pt}"] = 2.0
+        return out
+
+    _t_old = parts.generic_logic_loop(_with_parts_cols(_df), "pullback_short", _ep, _xp,
+                                      max_lots=_ml, logic_id="番人⑦")
+    _t_old_never = parts.generic_logic_loop(_with_parts_cols(_df2), "pullback_short", _ep, _xp,
+                                            max_lots=_ml, logic_id="番人⑦",
+                                            regime={"name": "range", "entry_col": "regime_never",
+                                                    "block_col": None})
+    if len(_t_old) == 0:
+        bad.append("番人⑦: 古い売買ループの土台で玉が1つも建たない（番人が成立していない）")
+    elif len(_t_old_never) != 0:
+        bad.append(f"番人⑦: 古い売買ループが宣言を無視して {len(_t_old_never)} 玉を建てる（直書きのままということ）")
+
+    # 追加＝E37 と E38 の宣言が食い違ったら止まる（列の名前は同じ prepare_df が作るため）
+    import tuner_adapters.e37 as _e37a
+    _sv = dict(_e37a.REGIME)
+    try:
+        _e37a.REGIME["entry_col"] = "range_ok_OTHER"
+        try:
+            _e37a.assert_regime_agrees()
+            bad.append("番人⑥+: E37 と E38 の宣言が食い違っても止まらない")
+        except SystemExit:
+            pass
+    finally:
+        _e37a.REGIME.clear()
+        _e37a.REGIME.update(_sv)
+    return bad
 
 
 def selftest() -> None:
@@ -2321,6 +2537,16 @@ def selftest() -> None:
     if not maker_taker_sync_check("e37_scalp(わざと壊した)", _src37, _broken, _score):
         ng.append("番人の番人: TREND_CAUGHT_TP を抜いても手数料の分類の食い違い検査が落ちない"
                   "（＝検査が無力化されている・2026-08-02 の事故を捕まえられない）")
+    # ══ 監査 4-19（要件 R5 相場／R6 保有時間）の番人6件・2026-08-03 新設 ═══════════════════
+    #   どれも「わざと壊すと落ちるか」を毎回その場で確かめる。落ちなければ直したことにしない。
+    _bad419 = _selftest_4_19()
+    ng += _bad419
+    print("[番人 監査4-19] ①接続ファイルから相場の宣言を消す ②宣言が文字列（直す前の形） "
+          "③一覧に無い相場の名前 ④データに無い列を宣言 ⑤新しい実行器で宣言を差し替えると売買記録が変わるか "
+          "⑥役割の範囲が空／台帳に役割が無い ⑦古い売買ループでも宣言が効いているか "
+          "＋E37とE38の宣言の食い違い → "
+          + ("✅ 全部 落ちた（検査が生きている）" if not _bad419 else "❌ " + " ／ ".join(_bad419)))
+
     # 系統マップ: FAMILY_TEMPLATES の全 family が割当済み（G3 の前提）
     miss = iref.lineage_coverage(list(FAMILY_TEMPLATES))
     if miss:

@@ -30,6 +30,7 @@ import json
 import math
 import pathlib
 import sys
+import tempfile
 from collections import Counter
 
 import numpy as np
@@ -62,7 +63,7 @@ LIMIT_LABELS = {
     "p_max": "P_MAX（発火経路数の上限・§11-8）",
     "state_mult_grid": "状態列の定数倍数 k の格子（§11-9）",
     "int_grid": "整数グリッド＝lookback・N（§11-10）",
-    "hold_grid": "整数グリッド＝hold_min（§11-10）",
+    "hold_range_by_role": "保有時間の上限の範囲（役割ごと・5分足の本数・監査 4-19／要件 R6）",
     "hour_grid": "整数グリッド＝時刻の閾値（§11-10）",
     "frac_grid": "段階決済 mix の比率の格子（§11-10 に準ずる）",
     "exit_mult_grid": "SL 幾何 k の倍率の格子（§11-10 に準ずる）",
@@ -78,6 +79,65 @@ def load_limits(path: pathlib.Path | None = None) -> tuple[dict, list[str]]:
     lm = {k: v for k, v in raw.items() if not k.startswith("_")}
     waiting = [LIMIT_LABELS.get(k, k) for k, v in lm.items() if v is None]
     return lm, waiting
+
+
+class HoldRangeError(SystemExit):
+    """保有時間の上限の範囲が決まっていない＝走らせない（fail-closed）。"""
+
+
+def resolve_hold_range(limits: dict, strategy: str) -> dict:
+    """戦略の役割から、保有時間の上限の範囲を決めて limits に入れて返す（監査 4-19／要件 R6）。
+
+    なぜ役割から決めるか
+      保有時間の上限は、その戦略の役割で変わります。
+      scalp は短く小刻みに売買します。daytrade は1つの玉を長く伸ばします。
+      それまでは、どの戦略でも同じ候補（30分・60分・120分・240分の4つ）を使っていました。
+
+    どうやって役割を知るか
+      tuner_judgement.role_of が、台帳ファイル adopted_strategies.md を開きます。
+      そのファイルの ROLE_CHECK という行の中から、戦略の名前を探します。
+      その右側に書いてある文字（scalp か daytrade）を読み取ります。
+
+    範囲の単位
+      5分足の本数です。1本＝5分です。12本＝60分です。120本＝600分です。
+      設定ファイル recipes/search_limits.json の hold_range_by_role に書いてあります。
+
+    止める場合（fail-closed）
+      ①役割が台帳に書かれていないとき ②その役割の範囲が設定ファイルに無いか空のとき。
+      黙って別の役割の範囲を使うことはしません。
+    """
+    import tuner_judgement as tj
+    role = tj.role_of(strategy)
+    if not role:
+        raise HoldRangeError(
+            f"[保有時間の範囲エラー] 戦略 {strategy} の役割が採用台帳に書かれていません。"
+            f"\n  台帳＝{tj.ADOPTED}\n  その中の ROLE_CHECK の行に「{strategy}=scalp」のように足してください。")
+    table = limits.get("hold_range_by_role") or {}
+    rng_decl = table.get(role)
+    if not rng_decl or rng_decl.get("lo_bars") is None or rng_decl.get("hi_bars") is None:
+        raise HoldRangeError(
+            f"[保有時間の範囲エラー] 役割 {role} の保有時間の上限の範囲が決まっていません。"
+            f"\n  設定ファイル＝{LIMITS_PATH}\n  その中の hold_range_by_role.{role} に lo_bars と hi_bars を書いてください"
+            f"（単位＝5分足の本数・値はまこさんが決める）。")
+    lo, hi = int(rng_decl["lo_bars"]), int(rng_decl["hi_bars"])
+    if lo < 1 or hi < lo:
+        raise HoldRangeError(
+            f"[保有時間の範囲エラー] 役割 {role} の範囲が不正です: lo_bars={lo} / hi_bars={hi}"
+            f"（1本以上で、上限が下限以上であること）")
+    out = dict(limits)
+    out["hold_bars"] = (lo, hi)
+    out["hold_role"] = role
+    return out
+
+
+def hold_bars(limits: dict) -> tuple[int, int]:
+    """解決済みの保有時間の上限の範囲（5分足の本数）を読み出す。未解決なら止める。"""
+    hb = limits.get("hold_bars")
+    if not hb:
+        raise HoldRangeError(
+            "[保有時間の範囲エラー] 保有時間の上限の範囲が解決されていません。"
+            "\n  先に resolve_hold_range(limits, 戦略の名前) を呼んでください（役割から範囲を決める処理）。")
+    return int(hb[0]), int(hb[1])
 
 
 # ══ 材料の候補プール ═══════════════════════════════════════════════════════════════════
@@ -237,7 +297,10 @@ def _make_exits(rng, limits) -> list[dict]:
         {"name": "TIME", "reason": "TIME_EXIT",
          "fire": {"all": [{"role": "env", "form": "level", "side": "above",
                            "material": [{"state": "hold_min"}],
-                           "value": {"n": int(rng.choice(limits["hold_grid"]))}}]},
+                           # 監査 4-19／要件 R6＝メニューから選ぶのをやめ、役割から決めた整数の範囲から引く。
+                           # 単位は分。5分足なので必ず5の倍数になる（本数 × 5）。
+                           "value": {"n": int(rng.integers(hold_bars(limits)[0],
+                                                           hold_bars(limits)[1] + 1)) * 5}}]},
          "exec": {"method": "taker", "placement": {"kind": "on_close"}},
          "size_ratio": 1.0},
     ]
@@ -257,7 +320,17 @@ def _make_exits(rng, limits) -> list[dict]:
     return [exits[i] for i in order]
 
 
-def sample_structure(rng, limits, pool, tfs, side="SHORT", regime="range_rg5", logic_id="GEN") -> dict:
+def default_regime() -> dict:
+    """既定の相場の宣言＝接続ファイル e38 が設定ファイルから読んだもの（監査 4-19／要件 R5）。
+
+    ★道具の中に列の名前を書かないため、接続ファイルに聞きます。
+      列の名前を道具に書いてしまうと、レンジ以外の相場を指定できなくなります（それが 4-19 の指摘でした）。
+    """
+    from tuner_adapters import e38 as _e38
+    return _e38.regime("S2")
+
+
+def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id="GEN") -> dict:
     """構造1本＝役割構成・本数・つなぎ方・形・材料・出口の枝・玉の持ち方 をランダムに組む。"""
     lo, hi = limits["count_range"]
     n_total = int(rng.integers(lo, hi + 1))
@@ -304,7 +377,8 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime="range_rg5", l
         kids.append({"if": a, "then": b})
     tree = {"all": kids}
     return {
-        "meta": {"strategy": "e38", "logic_id": logic_id, "side": side, "regime": regime},
+        "meta": {"strategy": "e38", "logic_id": logic_id, "side": side,
+                 "regime": dict(regime if regime is not None else default_regime())},
         "pre_filter": [],
         "entry": {"connective": tree},
         "exits": _make_exits(rng, limits),
@@ -555,26 +629,52 @@ def run_trial(df: pd.DataFrame, recipe: dict, qtable: dict, judge, start, end) -
 
 
 # ══ 第2段（TPE）用＝値スロットの列挙と適用 ═══════════════════════════════════════════════
-def value_slots(recipe: dict, limits: dict) -> list[tuple[str, list]]:
-    """レシピの中の『動かせる値』を (パス, 候補リスト) で列挙する。構造は動かさない（第2段の定義）。"""
-    slots: list[tuple[str, list]] = []
+def _cat(choices) -> dict:
+    """候補の一覧から選ぶ値（メニュー方式）。"""
+    return {"kind": "cat", "choices": list(choices)}
+
+
+def _int_range(lo: int, hi: int, step: int = 1) -> dict:
+    """下限から上限までの整数から選ぶ値（範囲方式・監査 4-19／要件 R6 で新設）。"""
+    return {"kind": "int", "lo": int(lo), "hi": int(hi), "step": int(step)}
+
+
+def suggest_slot(trial, name: str, spec: dict):
+    """1つの値を Optuna に作らせる。メニュー方式と範囲方式の2つに対応する。
+
+    ★範囲方式を足した理由（監査 4-19／要件 R6・2026-08-03）
+      それまで、保有時間の上限はメニュー方式でした。あらかじめ並べた数字からしか選べません。
+      たとえば一番稼げる上限が 75分でも、メニューに 75分が無ければ、何回試しても出ません。
+      範囲方式では、下限と上限の間の整数を全部試せます。
+    """
+    if spec.get("kind") == "int":
+        return trial.suggest_int(name, spec["lo"], spec["hi"], step=spec.get("step", 1))
+    return trial.suggest_categorical(name, spec["choices"])
+
+
+def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
+    """レシピの中の『動かせる値』を (パス, 値の作り方) で列挙する。構造は動かさない（第2段の定義）。
+
+    値の作り方は2つ。メニュー方式（候補の一覧から選ぶ）と 範囲方式（整数の範囲から選ぶ）。
+    """
+    slots: list[tuple[str, dict]] = []
     qg = limits["quantile_grid"]
 
     def _cond_slots(prefix, c):
         v = c.get("value", {})
         if c["form"] in ("streak", "within_n"):
-            slots.append((f"{prefix}.value.n", [n for n in limits["int_grid"] if n >= 2]))
+            slots.append((f"{prefix}.value.n", _cat([n for n in limits["int_grid"] if n >= 2])))
             _cond_slots(f"{prefix}.inner", c["inner"])
             return
         if "threshold_q" in v:
-            slots.append((f"{prefix}.value.threshold_q", list(qg)))
+            slots.append((f"{prefix}.value.threshold_q", _cat(qg)))
         for sub in ("lo", "hi"):
             if "threshold_q" in v.get(sub, {}):
-                slots.append((f"{prefix}.value.{sub}.threshold_q", list(qg)))
+                slots.append((f"{prefix}.value.{sub}.threshold_q", _cat(qg)))
         if c["form"] in ("slope", "slope_avg"):
-            slots.append((f"{prefix}.value.n", list(limits["int_grid"])))
+            slots.append((f"{prefix}.value.n", _cat(limits["int_grid"])))
         if c["form"] == "slope_avg":
-            slots.append((f"{prefix}.value.m", list(limits["int_grid"])))
+            slots.append((f"{prefix}.value.m", _cat(limits["int_grid"])))
 
     tree = recipe["entry"]["connective"]
 
@@ -597,7 +697,9 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, list]]:
             for ci, c in enumerate(conds):
                 mats = c.get("material") or []
                 if mats and "state" in mats[0] and mats[0]["state"] == "hold_min":
-                    slots.append((f"exits[{bi}].fire[{ci}].value.n", list(limits["hold_grid"])))
+                    # 監査 4-19／要件 R6＝保有時間の上限は範囲方式（単位は分・5分足なので刻みは5）
+                    _lo, _hi = hold_bars(limits)
+                    slots.append((f"exits[{bi}].fire[{ci}].value.n", _int_range(_lo * 5, _hi * 5, 5)))
     return slots
 
 
@@ -640,7 +742,7 @@ def apply_slots(recipe: dict, choices: dict[str, object]) -> dict:
 def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                    trials1: int, trials2: int, top_k: int, seed: int,
                    run_dir: pathlib.Path, pool, tfs, catalog_total: int,
-                   side="SHORT", regime="range_rg5",
+                   side="SHORT", regime=None,
                    base_trades=None, atr_edges=None, min_per_day=None, net_floor=None,
                    record_cumulative: bool = False, tag: str = "") -> dict:
     """第1段＝構造をランダムに撒く（統計の土台）→ BH 法 → 第2段＝有望構造の値を TPE で詰める。"""
@@ -810,7 +912,7 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                 stage2_best.append({"idx": r1["idx"], "total": r1["total"], "params": {}})
                 continue
             def obj(trial, recipe=recipe, slots=slots, sidx=r1["idx"]):
-                choices = {p: trial.suggest_categorical(p.replace(".", "_"), ch) for p, ch in slots}
+                choices = {p: suggest_slot(trial, p.replace(".", "_"), sp) for p, sp in slots}
                 key = f"s2/{sidx}/{trial.number}/" + hashlib.sha256(
                     json.dumps(choices, sort_keys=True, default=str).encode()).hexdigest()[:12]
                 got = jn.get(key)
@@ -849,7 +951,9 @@ KENSHU_LIMITS = {
     "role_max": {"env": 2, "sufficiency": 2, "location": 1},
     "count_range": [3, 6], "k_max": 3,
     "quantile_grid": ["q20", "q50", "q80"], "depth_max": 3, "p_max": 2,
-    "state_mult_grid": [1.0], "int_grid": [3, 6, 12], "hold_grid": [30, 60, 120],
+    "state_mult_grid": [1.0], "int_grid": [3, 6, 12],
+    # 保有時間の上限＝検収専用の範囲（本走は役割から決める＝resolve_hold_range・監査 4-19／要件 R6）
+    "hold_bars": (1, 24), "hold_role": "検収専用",
     "hour_grid": [6, 12, 18], "frac_grid": [50.0], "exit_mult_grid": [50.0, 100.0],
     "max_adds_grid": [1, 2], "fdr_q": 0.10,
 }
@@ -989,10 +1093,25 @@ def selftest() -> int:
         except SystemExit:
             pass
 
-    # T7 値待ち＝limits が null なら本走が始められない
-    lm_null, waiting = load_limits()
-    if not waiting:
-        ng.append("T7: search_limits.json が値待ちでない（まこさんの値が入るまで null のはず）")
+    # T7 値待ち＝limits に null が在れば「まこさん待ち」として検出できる（fail-closed の仕組みの検査）
+    #
+    # ★2026-08-03 に直しました。直す前の T7 は「search_limits.json に null が在ること」を検査していました。
+    #   しかし 2026-08-02 の commit a9368fe で R_MIN が 0.25 に決まり、null がゼロになりました。
+    #   その時点から T7 は ❌ を出し続けていました。誰も生成器の自己検査を走らせ直さなかったので、
+    #   気づかれませんでした（監査 4-19 の作業中 2026-08-03 に発見）。
+    #   検査したいのは「ファイルにいま null が在ること」ではなく「null を検出できること」です。
+    #   だから、わざと null を1つ入れた設定ファイルを作って、検出されるかを見る形へ直しました。
+    _lm_real, waiting = load_limits()
+    with tempfile.TemporaryDirectory() as _td:
+        _p = pathlib.Path(_td) / "search_limits_null.json"
+        _inj = json.loads(LIMITS_PATH.read_text(encoding="utf-8"))
+        _inj["r_min"] = None                      # わざと1つ空にする
+        _p.write_text(json.dumps(_inj, ensure_ascii=False), encoding="utf-8")
+        _lm2, _w2 = load_limits(_p)
+        if not _w2:
+            ng.append("T7: 値が空（null）でも『まこさん待ち』として検出されない（fail-closed が死んでいる）")
+    if waiting:
+        ng.append(f"T7: いまの search_limits.json に値待ちが残っている＝本走は始められない: {waiting}")
 
     # T8 サンプル不能が黙って通らない（役割の予算ゼロで count_range を満たせない）
     bad = dict(lm)
