@@ -26,6 +26,7 @@ import hashlib
 import inspect
 import json
 import pathlib
+import re
 import sys
 
 import numpy as np
@@ -2115,6 +2116,63 @@ def maker_taker_sync_check(name: str, src: str, maker: tuple, judge) -> list[str
     return [f"{name} と審判で決済の方式の分類が食い違う: {', '.join(bad)}"] if bad else []
 
 
+def e36_maker_taker_behavior_check(judge) -> list[str]:
+    """E36 と審判で、決済の方式（指値か成行か）の分類が食い違っていないかを見る。
+
+    ★上の maker_taker_sync_check と違って「ソースに書いてある一覧」を読まない。
+      **実際に E36 の記録処理を呼んで、出てきた手数料の額から どちらで計算されたかを判定する。**
+
+    なぜこの形にしたか（まこさん OK 2026-08-04・案A）:
+      ①E36 は指値の一覧を モジュールの定数でなく 関数の中の式に直接持つ
+        （e36_short_oscillation.py 227行 `is_taker = reason not in (...)`）ので、名前で外から読めない。
+      ②2026-08-02 の事故（TREND_CAUGHT_TP の写し忘れ）は「書いてあることと 実際の動きがずれた」型。
+        だから 実際の動きを見るほうが、同じ型の事故を捕まえられる。
+      ③E36 は採用中の柱なので、コードを1バイトも触らずに検査を足せる形を選んだ。
+
+    ★作り物のデータだけで走る＝売買記録CSVを書かない・採点窓を1バーも使わない（L-267）。
+    ★審判 score.py は import して一覧を読むだけ＝計算式に触れない（H13）。
+    ★手数料の率は eval_engine（E36 が使っているものと同じ実体）から読む＝数字を手で書かない（H4）。
+    """
+    import e36_short_oscillation as e36          # 局所 import＝通常の実行に読み込みの費用をかけない
+    ee36 = e36.ee                                # E36 自身が使っているコスト定数の実体（H4）
+    src = inspect.getsource(e36)
+    known = set(judge.MAKER_EXIT_REASONS) | set(judge.TAKER_EXIT_REASONS)
+    used = sorted(r for r in known if f'"{r}"' in src)
+    if not used:
+        return ["e36_short_oscillation: 決済理由がソースから1つも見つからない（抽出のしかたが壊れている）"]
+    # 作り物の1玉。価格と枚数は実際の桁に合わせる＝小数4桁の丸めで指値と成行の差が消えないように。
+    px_in, px_out, sz = 60000.0, 60000.0, 0.024
+    ts = pd.date_range("2024-05-01", periods=2, freq="5min").to_numpy()
+    pos = {"side": "SHORT", "first_idx": 0, "add_count": 1, "max_fav": px_in, "max_adv": px_in,
+           "atr_entry": 1.0, "adx_entry": 20.0, "k_entry": 50.0, "W_entry": 0.01}
+    lots = [(0, px_in, sz)]
+    fee_maker = round(px_in * sz * ee36.MAKER_FEE + px_out * sz * ee36.MAKER_FEE, 4)
+    fee_taker = round(px_in * sz * ee36.MAKER_FEE + px_out * sz * ee36.TAKER_FEE
+                      + px_out * sz * ee36.SLIPPAGE, 4)
+    if abs(fee_maker - fee_taker) < 1e-9:        # 見分けが付かない作り物＝検査が空振りになるので止める
+        return [f"e36 の検査: 作り物のデータで指値 {fee_maker} と成行 {fee_taker} が同額になり判定できない"]
+    def _w(flag):                                # 表示用（人が読んで分かる言葉にする）
+        return "指値" if flag else "成行"
+    bad = []
+    for r in used:
+        rows: list = []
+        e36._record_lots(rows, pos, lots, px_out, r, 1, ts)
+        if len(rows) != 1:
+            bad.append(f"{r}: 記録が1行にならなかった（{len(rows)} 行）"); continue
+        fee = rows[0]["fee_usd"]
+        if abs(fee - fee_maker) < 1e-9:
+            strat_is_maker = True
+        elif abs(fee - fee_taker) < 1e-9:
+            strat_is_maker = False
+        else:
+            bad.append(f"{r}: 出た手数料 {fee} が 指値 {fee_maker} とも 成行 {fee_taker} とも一致しない")
+            continue
+        judge_is_maker = r in judge.MAKER_EXIT_REASONS
+        if strat_is_maker != judge_is_maker:
+            bad.append(f"{r}（戦略は{_w(strat_is_maker)}／審判は{_w(judge_is_maker)}）")
+    return [f"e36_short_oscillation と審判で決済の方式の分類が食い違う: {', '.join(bad)}"] if bad else []
+
+
 # ══ 自己検査（番人＝わざと壊したレシピ18種で全部止まる・正しい2種は通る・設計書 §10＋歩4 拡張）══
 def _base_ok_recipe() -> dict:
     """検証だけ通す最小の正しいレシピ（V9 風多条件・探索レーン＝legacy なし）。"""
@@ -2527,16 +2585,55 @@ def selftest() -> None:
     # ★手数料の分類の食い違い検査（2026-08-02 里程標9 で新設 → 同日 まこさん OK で比べ方を直した）。
     #   直した理由＝審判は全戦略ぶんの一覧を持つので、丸ごと比べると他の戦略の理由で必ず差が出る。
     #   いまは「その戦略が使う決済理由だけ」を比べる（詳しくは maker_taker_sync_check の説明）。
+    _fee_ng: list[str] = []
     _src37 = inspect.getsource(e37)
-    ng += maker_taker_sync_check("e37_scalp", _src37, tuple(e37._MAKER_EXIT), _score)
+    _fee_ng += maker_taker_sync_check("e37_scalp", _src37, tuple(e37._MAKER_EXIT), _score)
     # ★番人の番人＝2026-08-02 に実際に起きた事故をわざと再現して、検査が落ちることを毎回確かめる。
     #   事故の中身＝TREND_CAUGHT_TP が e37 の指値の一覧から抜けていて、戦略だけが成行として
     #   手数料を計算していた（値決め窓18ヶ月で 932玉・$294.42 ぶん実際より悲観的に出ていた）。
     #   これが落ちなければ、比べ方を直したときに検査を無力化したということ＝直ちに止める。
     _broken = tuple(x for x in e37._MAKER_EXIT if x != "TREND_CAUGHT_TP")
     if not maker_taker_sync_check("e37_scalp(わざと壊した)", _src37, _broken, _score):
-        ng.append("番人の番人: TREND_CAUGHT_TP を抜いても手数料の分類の食い違い検査が落ちない"
-                  "（＝検査が無力化されている・2026-08-02 の事故を捕まえられない）")
+        _fee_ng.append("番人の番人: TREND_CAUGHT_TP を抜いても手数料の分類の食い違い検査が落ちない"
+                       "（＝検査が無力化されている・2026-08-02 の事故を捕まえられない）")
+    # ══ E38 の検査（2026-08-04 新設・まこさん決定 2026-08-03「足す」→ 実装 OK 2026-08-04）════
+    #   E38 は自分の記録処理を持たず e37._record を借りている（e38_logic_parts 342/345/347/354/
+    #   356/359/362/400行の8か所）。だから E38 が使う指値の一覧は E37 のものが正本＝それを渡す。
+    _src38 = inspect.getsource(parts)
+    _fee_ng += maker_taker_sync_check("e38_logic_parts", _src38, tuple(e37._MAKER_EXIT), _score)
+    # 番人＝E38 が e37._record を使い続けているか。E38 が自分の記録処理を持ち始めたら、上で渡した
+    #   一覧が嘘になる（別戦略の一覧と比べたまま素通りする）ので、その瞬間に止める。
+    #   ★条件を2つにした（2026-08-04）。理由＝「e37._record」だけを文字として探すと、
+    #     e37._recordXXX のような別名がそれを含んでしまい、番人が反応しない（メタ確認で実際に素通りした）。
+    #     ①呼び出しの丸括弧まで含めて探す ②E38 が自分の記録処理を定義していないこと、の両方を見る。
+    if "e37._record(" not in _src38:
+        _fee_ng.append("e38_logic_parts が e37._record( を呼んでいない＝手数料の分類の検査に渡す指値の"
+                       "一覧が E37 のものではなくなった（E38 自身の一覧を渡す形へ直してから走らせる）")
+    if re.search(r"^def _record", _src38, re.M):
+        _fee_ng.append("e38_logic_parts が自分の記録処理 _record を定義している＝指値の一覧が E37 の"
+                       "ものとは限らない（E38 自身の一覧を検査に渡す形へ直してから走らせる）")
+    # 番人の番人＝E38 でも、指値の一覧から1つ抜くと検査が落ちることを毎回確かめる。
+    _broken38 = tuple(x for x in e37._MAKER_EXIT if x != "SL_FILLED")
+    if not maker_taker_sync_check("e38_logic_parts(わざと壊した)", _src38, _broken38, _score):
+        _fee_ng.append("番人の番人: SL_FILLED を抜いても E38 の手数料の分類の検査が落ちない"
+                       "（＝検査が無力化されている）")
+    # ══ E36 の検査（2026-08-04 新設・案A＝実際に出た手数料の額で判定・E36 のコードは触らない）════
+    _fee_ng += e36_maker_taker_behavior_check(_score)
+    # 番人の番人＝指値と成行を丸ごと入れ替えた偽の審判を渡すと落ちること。
+    #   ★特定の決済理由の名前に頼らない形にした（2026-08-04）。理由＝名前で書くと、その理由の分類が
+    #     将来まこさんの承認で正しく変わったときに、番人の番人だけが誤って鳴る。入れ替えなら、
+    #     E36 が使う決済理由が1つでも在れば必ず食い違う＝どの名前でも成り立つ。
+    #   これで 2026-08-02 の事故の形（片方の一覧に登録が無い＝分類が食い違う）も同時に覆う。
+    class _JudgeSwapped:                         # 偽の審判＝この場だけの作り物（score.py は無改造・H13）
+        MAKER_EXIT_REASONS = set(_score.TAKER_EXIT_REASONS)
+        TAKER_EXIT_REASONS = set(_score.MAKER_EXIT_REASONS)
+    if not e36_maker_taker_behavior_check(_JudgeSwapped):
+        _fee_ng.append("番人の番人: 審判の指値と成行を丸ごと入れ替えても E36 の手数料の分類の検査が"
+                       "落ちない（＝検査が無力化されている・2026-08-02 の事故を捕まえられない）")
+    ng += _fee_ng
+    print("[番人 手数料の分類] E37（ソースの一覧を比べる）／E38（e37._record を借りている確認つき）／"
+          "E36（実際に出た手数料の額で判定・コード無改変） → "
+          + ("✅ 食い違いなし・番人の番人3件とも落ちた" if not _fee_ng else "❌ " + " ／ ".join(_fee_ng)))
     # ══ 監査 4-19（要件 R5 相場／R6 保有時間）の番人6件・2026-08-03 新設 ═══════════════════
     #   どれも「わざと壊すと落ちるか」を毎回その場で確かめる。落ちなければ直したことにしない。
     _bad419 = _selftest_4_19()
