@@ -67,7 +67,10 @@ def load_logic_config(path: pathlib.Path) -> dict:
             if _is_generic(lg):
                 if "unimplemented" in str(lg.get("impl", {}).get("status", "")):
                     raise SystemExit(f"[設定エラー] 未実装ロジックを enabled にした: {lg['id']}（{lg['impl']['status']}）")
-                if lg["entry"]["type"] not in e38_logic_parts.ENTRY_FNS:
+                if _entry_point(lg) == "grid_loop":        # グリッド（S5/L5・要件 R2・2026-08-04）
+                    if lg["entry"]["type"] not in e38_logic_parts.GRID_ENTRY_TYPES:
+                        raise SystemExit(f"[設定エラー] grid_loop に無い entry type: {lg['entry']['type']}（{lg['id']}）")
+                elif lg["entry"]["type"] not in e38_logic_parts.ENTRY_FNS:
                     raise SystemExit(f"[設定エラー] 未実装の entry type: {lg['entry']['type']}（{lg['id']}）")
                 nulls = [k for k, v in {**lg["entry"].get("params", {}), **lg["exit"].get("params", {})}.items() if v is None]
                 if nulls:
@@ -81,6 +84,11 @@ def load_logic_config(path: pathlib.Path) -> dict:
 def _is_generic(lg: dict) -> bool:
     """汎用部品ロジック（e38_logic_parts 経路）か。False＝e37 run_e37 経路（S1/L1）。"""
     return lg.get("impl", {}).get("module") == "e38_logic_parts"
+
+
+def _entry_point(lg: dict) -> str:
+    """e38_logic_parts のどの売買ループで動くか（generic_logic_loop ／ grid_loop＝要件 R2・2026-08-04）。"""
+    return str(lg.get("impl", {}).get("entry_point", "generic_logic_loop"))
 
 
 def build_run_kwargs(cfg: dict) -> tuple[dict, dict, dict]:
@@ -159,10 +167,15 @@ def main() -> None:
         adaptive_k = e37.V25_K if cfg["global"].get("regime", {}).get("v25_adaptive_band") else None
         dfp = e38_logic_parts.prepare_df(df.copy(), adaptive_k=adaptive_k)
         for lg in sorted(gen_logics, key=lambda z: (int(z["priority"]), str(z["id"]))):
-            tr = e38_logic_parts.generic_logic_loop(
-                dfp, lg["entry"]["type"], lg["entry"]["params"], lg["exit"]["params"],
-                max_lots=int(lg.get("params", {}).get("max_lots", 2)), logic_id=lg["id"])
-            print(f"[e38] {lg['id']}（generic・{lg['side']}）: {len(tr)} 行")
+            if _entry_point(lg) == "grid_loop":            # グリッド（S5/L5・要件 R2・2026-08-04）
+                tr = e38_logic_parts.grid_loop(
+                    dfp, lg["entry"]["type"], lg["entry"]["params"], lg["exit"]["params"],
+                    max_lots=int(lg.get("params", {}).get("max_lots", 2)), logic_id=lg["id"])
+            else:
+                tr = e38_logic_parts.generic_logic_loop(
+                    dfp, lg["entry"]["type"], lg["entry"]["params"], lg["exit"]["params"],
+                    max_lots=int(lg.get("params", {}).get("max_lots", 2)), logic_id=lg["id"])
+            print(f"[e38] {lg['id']}（{_entry_point(lg)}・{lg['side']}）: {len(tr)} 行")
             gen_trades += tr
 
     saved = {k: getattr(e37, k) for k in const}

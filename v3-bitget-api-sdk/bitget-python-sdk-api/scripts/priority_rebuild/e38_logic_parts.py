@@ -9,7 +9,8 @@ run_long_support（e37_scalp.py 1569行〜）の型を側対称に一般化し�
 
 S4 の注記（まこさん報告済み 2026-07-24）: dev_z=(close−SMA20)/std20 は BB20 の kσ と同じ窓の標準化＝数学的に同値なので
 指標カテゴリは dev_z に一本化した（別窓の BB を足す時は entry.params に窓を持たせて拡張する）。
-S5/L5 グリッドは売買構造が別物（複数 resting・在庫管理）＝本部品に押し込まず後続の実装単位（json に定義のみ・enabled 不可）。
+S5/L5 グリッドは売買構造が別物（複数 resting・在庫管理）＝generic_logic_loop に押し込まず、別の関数 grid_loop が持つ
+（要件 R2・まこさん OK 2026-08-04。2026-08-03 までは json に名前だけで実装が無く、enabled にすると設定エラーで停止していた）。
 """
 from __future__ import annotations
 
@@ -401,3 +402,260 @@ def generic_logic_loop(df: pd.DataFrame, entry_type: str, entry_params: dict, ex
     for r in trades:
         r["logic"] = logic_id                              # 診断列（net 不関与）
     return trades
+
+
+# ---------------------------------------------------------------- グリッド売買（S5・L5＝要件 R2）
+
+GRID_ENTRY_TYPES = {"grid_short": "SHORT", "grid_long": "LONG"}
+
+
+def _grid_rec(trades: list, lot: dict, px: float, reason: str, i: int, ts_arr) -> None:
+    """記録は E37 の記録処理を借りる（手数料の分類の見張りの前提＝e37._record( を呼ぶ形を維持）。
+    そのうえで、どの線で建った玉かの診断列 grid_level を1行に足す（net 不関与）。"""
+    e37._record(trades, lot, px, reason, i, ts_arr)
+    trades[-1]["grid_level"] = int(lot["grid_level"])
+
+
+def grid_loop(df: pd.DataFrame, entry_type: str, entry_params: dict, exit_params: dict,
+              max_lots: int = 2, logic_id: str = "", regime: dict | None = None) -> list:
+    """グリッド売買ループ（S5 売り・L5 買い・要件 R2・まこさん OK 2026-08-04）。
+
+    generic_logic_loop と何が違うか
+      あちらは発注中の指値を1つしか持てない（pend が1個）。グリッドは、レンジの半分を等間隔に
+      区切った線それぞれに resting の指値を置き続ける型なので、複数の指値を同時に管理する。
+      置き直しは毎バー（実運用のキャンセル→再発注に対応）。約定の判定は置いた次のバーから（H2）。
+
+    どの範囲に線を引くか（ロジック固定＝e38_logics.json のラベルどおり）
+      grid_short（S5）… レンジ中央 mid から上端 res_hi の間（上半分に売り）
+      grid_long （L5）… 下端帯上端 sup_hi から中央 mid の間（下半分に買い）
+
+    値
+      entry_params: grid_n   … 線の本数（1以上の整数。範囲の宣言は e38_logics.json search_space が正本）
+      exit_params : sl_zone_k … 災害SL＝ゾーン外側 + k×帯幅（generic_logic_loop と同じ幾何）
+                    tmax_bars … 時間切れ（5分足の本数・成行 taker）
+      利確＝1段下（買いは1段上）の線への resting maker（TP_FILLED）。
+      線の間隔が手数料床 SCALP_FLOOR（0.08%）を割る密度では発注しない（床割れ TP の物理禁止）。
+      いまの値段をまたぐ線には置かない（置いた瞬間に成行になる指値の禁止＝maker 保証）。
+
+    決済理由は登録済みの4種（TP_FILLED / SL_FILLED / TIME_EXIT / FORCE_CLOSE_EOD）だけ
+    ＝審判 score.py は無変更（H13）。記録は e37._record を借りる（_grid_rec 経由）。
+    """
+    if entry_type not in GRID_ENTRY_TYPES:
+        raise SystemExit(f"[設定エラー] grid_loop に未知の entry type: {entry_type}"
+                         f"（使えるのは {tuple(GRID_ENTRY_TYPES)}）")
+    side = GRID_ENTRY_TYPES[entry_type]
+    gn = entry_params.get("grid_n")
+    if not isinstance(gn, (int, np.integer)) or isinstance(gn, bool) or gn < 1:
+        raise SystemExit(f"[設定エラー] grid_n が未確定か不正: {gn}（1以上の整数・範囲の確定はまこさん）")
+    gn = int(gn)
+    for _k in ("sl_zone_k", "tmax_bars"):
+        if exit_params.get(_k) is None:
+            raise SystemExit(f"[設定エラー] grid_loop の出口の値が無い: {_k}")
+    sl_k = float(exit_params["sl_zone_k"]); tmax = int(exit_params["tmax_bars"])
+
+    o = df["open"].to_numpy(float); h = df["high"].to_numpy(float)
+    l = df["low"].to_numpy(float); c = df["close"].to_numpy(float)
+    ts = df["ts"].to_numpy()
+    atr_e = df["atr"].to_numpy(float); adx_e = df["adx"].to_numpy(float); k_e = df["stoch_k"].to_numpy(float)
+    res_lo = df["v11_res_lo"].to_numpy(float); res_hi = df["v11_res_hi"].to_numpy(float)
+    sup_lo = df["v11_sup_lo"].to_numpy(float); sup_hi = df["v11_sup_hi"].to_numpy(float)
+    mid = df["v11_mid"].to_numpy(float)
+
+    # 相場の列は宣言から読む（要件 R5 と同じ決まり・直書きしない）。列が無ければ走らせない。
+    _rg = dict(regime) if regime else config_regime()
+    _ent, _blk = _rg.get("entry_col"), _rg.get("block_col")
+    if _ent not in df.columns:
+        raise SystemExit(f"[相場の列が無い] 玉を建ててよいバーの列 {_ent} がデータにありません"
+                         f"（宣言された相場＝{_rg.get('name')}）")
+    if _blk is not None and _blk not in df.columns:
+        raise SystemExit(f"[相場の列が無い] 新規の発注を止める列 {_blk} がデータにありません")
+    ok = df[_ent].to_numpy(bool)
+    up = df[_blk].to_numpy(bool) if _blk is not None else np.zeros(len(df), dtype=bool)
+
+    gap = 0.5 / 100.0                                      # 型判定 gap（generic_logic_loop と同じ・診断列用）
+    n = len(df); trades: list = []; lots: list = []
+    pend: dict = {}                                        # 線の番号 → resting 指値（前のバーに置いた分だけが約定対象）
+    for i in range(1, n):
+        # ── ① 約定（前のバーで置いた指値だけ＝H2。触れた線は全部このバーで約定＝複数の指値の同時管理）──
+        for lv, od in sorted(pend.items(), key=lambda kv: kv[1]["limit"], reverse=(side == "LONG")):
+            if i - od["placed_idx"] < 1:                   # 置いたバーでは約定しない（構造上も置き直しは後段）
+                continue
+            filled = (h[i] >= od["limit"]) if side == "SHORT" else (l[i] <= od["limit"])
+            if not filled or len(lots) >= max_lots:        # 在庫の上限（置く数も後段で制限＝二重の守り）
+                continue
+            lots.append({"side": side, "avg": od["limit"], "size": UNIT_LOT,
+                         "add_count": len(lots) + 1, "first_idx": i, "last_fill_idx": i,
+                         "atr_entry": atr_e[i], "adx_entry": adx_e[i], "k_entry": k_e[i],
+                         "W_entry": od["W_pct"], "max_fav": h[i] if side == "LONG" else l[i],
+                         "max_adv": l[i] if side == "LONG" else h[i],
+                         "pos_frac": od["pos_frac"], "mid_frac": od["mid_frac"],
+                         "res_zone_pos": np.nan, "ceil_type": od["ceil_type"],
+                         "tp": od["tp"], "sl": od["sl"], "grid_level": lv})
+        # ── ② 出口（約定バーの次以降・TIME → SL → TP の順＝generic_logic_loop と同じ悲観側）──
+        still = []
+        for lot in lots:
+            if i <= lot["last_fill_idx"]:
+                still.append(lot); continue
+            if side == "LONG":
+                lot["max_fav"] = max(lot["max_fav"], h[i]); lot["max_adv"] = min(lot["max_adv"], l[i])
+                sl_hit = l[i] <= lot["sl"]; sl_px = min(lot["sl"], o[i]); tp_hit = h[i] >= lot["tp"]
+            else:
+                lot["max_fav"] = min(lot["max_fav"], l[i]); lot["max_adv"] = max(lot["max_adv"], h[i])
+                sl_hit = h[i] >= lot["sl"]; sl_px = max(lot["sl"], o[i]); tp_hit = l[i] <= lot["tp"]
+            if (i - lot["first_idx"]) >= tmax:             # 時間切れ（成行 taker）
+                _grid_rec(trades, lot, c[i], "TIME_EXIT", i, ts); continue
+            if sl_hit:                                     # 災害SL（maker・悲観側の約定価格）
+                _grid_rec(trades, lot, sl_px, "SL_FILLED", i, ts); continue
+            if tp_hit:                                     # 1段戻りの利確（resting maker）＝在庫が減る
+                _grid_rec(trades, lot, lot["tp"], "TP_FILLED", i, ts); continue
+            still.append(lot)
+        lots = still
+        # ── ③ 置き直し（毎バーのキャンセル→再発注。約定の判定は次のバー＝H2）──
+        pend = {}
+        if up[i] or not ok[i]:                             # 新規停止（保有は SL/TIME が守る）
+            continue
+        lo_b = mid[i] if side == "SHORT" else sup_hi[i]
+        hi_b = res_hi[i] if side == "SHORT" else mid[i]
+        if not (np.isfinite(lo_b) and np.isfinite(hi_b) and hi_b > lo_b
+                and np.isfinite(res_hi[i]) and np.isfinite(sup_lo[i])):
+            continue
+        step = (hi_b - lo_b) / (gn + 1)
+        if step < c[i] * SCALP_FLOOR:                      # 手数料床＝TP1段（=step）が床を割る密度では置かない
+            continue
+        W = max(res_hi[i] - sup_lo[i], 1e-9)
+        isdn = bool(np.isfinite(res_lo[i]) and res_lo[i] > c[i] * (1.0 + gap))
+        ctype = "down" if isdn else "flat_up"
+        sl_px = res_hi[i] + sl_k * W if side == "SHORT" else sup_lo[i] - sl_k * W
+        if not np.isfinite(sl_px):
+            continue
+        occupied = {lot["grid_level"] for lot in lots}     # 玉が居る線には置き直さない（在庫の管理）
+        budget = max_lots - len(lots)                      # 置く数 ≤ 空き在庫＝全部約定しても上限を超えない
+        for lv in range(1, gn + 1):                        # 1=価格に近い側（売りは下から・買いは上から）
+            if budget <= 0:
+                break
+            if lv in occupied:
+                continue
+            lim = lo_b + lv * step if side == "SHORT" else hi_b - lv * step
+            if not (lim > c[i] if side == "SHORT" else lim < c[i]):
+                continue                                   # いまの値段をまたぐ線には置かない（maker 保証）
+            pend[lv] = {"limit": lim, "tp": (lim - step) if side == "SHORT" else (lim + step),
+                        "sl": sl_px, "placed_idx": i, "W_pct": W / c[i] * 100.0,
+                        "pos_frac": ((lim - sup_lo[i]) / W) if W > 0 else np.nan,
+                        "mid_frac": ((mid[i] - sup_lo[i]) / W) if W > 0 else np.nan,
+                        "ceil_type": ctype}
+            budget -= 1
+    for lot in lots:
+        _grid_rec(trades, lot, c[n - 1], "FORCE_CLOSE_EOD", n - 1, ts)
+    for r in trades:
+        r["logic"] = logic_id                              # 診断列（net 不関与）
+    return trades
+
+
+# ---------------------------------------------------------------- grid_loop の番人（合成データの既知答え）
+
+def _selftest_grid() -> None:
+    """grid_loop の番人5件（全部 合成データ・実データゼロ・CSV を書かない）。落ちたら SystemExit。"""
+    def mk(bars, res_hi=110.0):
+        d = pd.DataFrame({
+            "ts": pd.date_range("2024-06-03", periods=len(bars), freq="5min"),
+            "open": [b[0] for b in bars], "high": [b[1] for b in bars],
+            "low": [b[2] for b in bars], "close": [b[3] for b in bars],
+            "volume": 1.0, "atr": 1.0, "adx": 20.0, "stoch_k": 50.0,
+            "v11_res_lo": 109.0, "v11_res_hi": res_hi,
+            "v11_sup_lo": 100.0, "v11_sup_hi": 101.0, "v11_mid": 105.0,
+            "g_ok": True,
+        })
+        return d
+
+    rg = {"name": "range", "entry_col": "g_ok", "block_col": None}
+    xp = {"sl_zone_k": 1.0, "tmax_bars": 12}
+    flat = (105.0, 105.0, 105.0, 105.0)
+
+    # 番人1: 1本のバーで2つの線に同時に約定（在庫 0→2→0）→ 空いた線に置き直して再約定（在庫 0→1→0）
+    #   線（grid_n=2・mid105〜res_hi110・間隔 5/3≒1.667）＝106.67 と 108.33。TP は各1段下＝105.00 と 106.67。
+    bars = [flat, flat, (105, 109, 105, 108), (108, 108, 104.9, 105), flat,
+            (105, 107, 105, 106), (106, 106, 104.9, 105), flat]
+    t = grid_loop(mk(bars), "grid_short", {"grid_n": 2}, xp, max_lots=4, logic_id="S5", regime=rg)
+    assert len(t) == 3 and all(r["exit_reason"] == "TP_FILLED" for r in t), f"番人1: 3玉 TP のはず: {t}"
+    assert sorted(r["add_count"] for r in t) == [1, 1, 2], f"番人1: 同時在庫が 2 に達していない: {[r['add_count'] for r in t]}"
+    assert len({r["entry_time"] for r in t}) == 2, "番人1: 同時約定（同じ entry_time の2玉）が出ていない"
+    assert sorted(r["grid_level"] for r in t) == [1, 1, 2], "番人1: 線の割り当て（lv1×2・lv2×1）が違う"
+    print("  ✅ 番人1: 複数の指値の同時約定（在庫 0→2→0）と置き直し（0→1→0）が売買記録に出た")
+
+    # 番人2: 在庫の上限＝max_lots=1 なら同じ相場でも約定は1玉だけ（置く数の制限が効く）
+    t = grid_loop(mk(bars), "grid_short", {"grid_n": 2}, xp, max_lots=1, logic_id="S5", regime=rg)
+    assert all(r["add_count"] == 1 for r in t), f"番人2: 上限1なのに同時在庫が2以上: {[r['add_count'] for r in t]}"
+    print("  ✅ 番人2: 在庫の上限（max_lots）を超えない")
+
+    # 番人3: 手数料の床＝帯が狭くて線の間隔が床 0.08% を割るなら発注ゼロ（触れても約定しない）
+    t = grid_loop(mk([flat, flat, (105, 105.09, 105, 105.05), flat], res_hi=105.1),
+                  "grid_short", {"grid_n": 2}, xp, max_lots=4, logic_id="S5", regime=rg)
+    assert t == [], f"番人3: 床割れの密度で発注された: {t}"
+    print("  ✅ 番人3: 線の間隔が手数料床を割る置き方はしない")
+
+    # 番人4: H2＝置いたバーでは約定しない（最初の置き直しと同じバーの急騰では建たない）
+    t = grid_loop(mk([flat, (105, 120, 105, 105), flat]), "grid_short", {"grid_n": 2}, xp,
+                  max_lots=4, logic_id="S5", regime=rg)
+    assert t == [], f"番人4: 置いたバーで約定した（H2 違反）: {t}"
+    print("  ✅ 番人4: 置いたバーでは約定しない（約定は次のバーから＝H2）")
+
+    # 番人5: L5（買い）の対称＝下半分（sup_hi101〜mid105・間隔 4/3≒1.333）の線 103.67 と 102.33
+    bars_l = [flat, flat, (105, 105, 101, 102), (102, 105.2, 102, 105), flat]
+    t = grid_loop(mk(bars_l), "grid_long", {"grid_n": 2}, xp, max_lots=4, logic_id="L5", regime=rg)
+    assert len(t) == 2 and all(r["exit_reason"] == "TP_FILLED" for r in t), f"番人5: {t}"
+    assert sorted(r["add_count"] for r in t) == [1, 2], "番人5: 買い側で同時在庫2が出ていない"
+    print("  ✅ 番人5: 買い側（L5）も上下対称に動く")
+    print("[grid_loop 番人] 5件とも既知答えと一致（全部 合成データ・実データゼロ・CSV なし）")
+
+
+def _grid_demo() -> None:
+    """S5 と L5 を確認用の値で値決め窓を1回走らせる（R2 完了の線の実証・採否に使わない・CSV は書かない）。
+
+    確認用の値は構造から決めた（net で選んでいない・L-267）:
+      grid_n=2      … 「複数の指値の同時管理」を示せる最小の本数
+      sl_zone_k=1.0 … 採用中の L1 と同じ値（e38_logics.json L1.params.sl_zone_k）
+      tmax_bars=12  … scalp の役割の保有上限（60分・recipes/search_limits.json の hold_bars_by_role）
+    """
+    import periods
+    import score as judge
+    from tuner_adapters import e38 as ad
+    print(f"[grid demo] 窓＝値決め窓 {periods.SEARCH_START.date()}〜{periods.SEARCH_END.date()}"
+          f"（採点窓 {periods.SCORE_START.date()} 以降は不使用・L-267）")
+    dfp = ad.load_windows([(periods.SEARCH_START, periods.SEARCH_END)], pd.Timedelta(days=60))[0]
+    days = max((periods.SEARCH_END - periods.SEARCH_START).days, 1)
+    for logic_id, etype in (("S5", "grid_short"), ("L5", "grid_long")):
+        tr = grid_loop(dfp, etype, {"grid_n": 2}, {"sl_zone_k": 1.0, "tmax_bars": 12},
+                       max_lots=2, logic_id=logic_id, regime=ad.regime(logic_id))
+        t = pd.DataFrame(tr)
+        if len(t):
+            et = pd.to_datetime(t["entry_time"])
+            t = t[(et >= periods.SEARCH_START) & (et < periods.SEARCH_END)].reset_index(drop=True)
+        if not len(t):
+            print(f"[grid demo] {logic_id}: 窓内の売買 0 行")
+            continue
+        multi = int((t.groupby("entry_time").size() >= 2).sum())
+        rearm = {int(k): int(v) for k, v in t["grid_level"].value_counts().sort_index().items()}
+        reasons = {k: int(v) for k, v in t["exit_reason"].value_counts().items()}
+        res = judge.score(t)                               # 審判が通る実証（未登録の決済理由なら STOP する）
+        print(f"[grid demo] {logic_id}: {len(t)} 玉 ／ {len(t) / days:.2f} 件/日 ／ 保有中央値 "
+              f"{float(t['hold_min'].median()):.0f} 分")
+        print(f"  同時在庫の最大 {int(t['add_count'].max())} 玉 ／ 同じバーで2玉以上 同時に建った回数 {multi} 回"
+              f" ／ 線ごとの約定回数 {rearm}（同じ線の2回目以降＝置き直し後の再約定＝在庫の増減）")
+        print(f"  決済理由の内訳 {reasons}（全部 審判 score.py に登録済み）")
+        print(f"  審判の net 合計 {res['total']:+.2f}（★確認用の値の1走＝採否に使わない・比較しない）")
+    print("[grid demo] CSV は書いていない・採点していない・試行の累積は増えていない")
+
+
+if __name__ == "__main__":
+    import argparse
+    _ap = argparse.ArgumentParser(description="E38 汎用売買部品（grid_loop の番人と動作実測だけを持つ・本走の口は無い）")
+    _ap.add_argument("--selftest", action="store_true", help="grid_loop の番人5件（合成データのみ・既知答え）")
+    _ap.add_argument("--selftest-grid-demo", action="store_true",
+                     help="S5/L5 を確認用の値で値決め窓を1回走らせる（R2 完了の線の実証・CSV は書かない・採否に使わない）")
+    _a = _ap.parse_args()
+    if _a.selftest:
+        _selftest_grid()
+    if _a.selftest_grid_demo:
+        _grid_demo()
+    if not (_a.selftest or _a.selftest_grid_demo):
+        _ap.print_help()

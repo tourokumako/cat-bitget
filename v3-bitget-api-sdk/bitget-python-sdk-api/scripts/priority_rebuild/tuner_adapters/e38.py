@@ -39,6 +39,11 @@ def _logic(logic_id: str) -> dict:
     return lg
 
 
+def _is_grid(lg: dict) -> bool:
+    """グリッド売買（S5/L5＝parts.grid_loop で動く・要件 R2・2026-08-04）か。"""
+    return lg.get("impl", {}).get("entry_point") == "grid_loop"
+
+
 def logics() -> list[dict]:
     """扱えるロジックの一覧。回せるかの判定も返す（説明書 engine_tuner_manual と同じ条件）。"""
     cfg = config()
@@ -47,6 +52,11 @@ def logics() -> list[dict]:
         ok, why = True, ""
         if lg.get("impl", {}).get("module") != "e38_logic_parts":
             ok, why = False, f"実装が {lg.get('impl', {}).get('module', '未指定')}＝共通の売買ループで動かない"
+        elif _is_grid(lg):                                 # グリッド（S5/L5・要件 R2・2026-08-04）
+            if lg["entry"]["type"] not in parts.GRID_ENTRY_TYPES:
+                ok, why = False, f"入口の型 {lg['entry']['type']} が grid_loop に無い"
+            elif cfg["search_space"]["logics"].get(lg["id"]) is None:
+                ok, why = False, "探索する値が宣言されていない"
         elif lg["entry"]["type"] not in parts.ENTRY_FNS:
             ok, why = False, f"入口の型 {lg['entry']['type']} が実装されていない"
         elif cfg["search_space"]["logics"].get(lg["id"]) is None:
@@ -61,12 +71,23 @@ def space(logic_id: str) -> dict:
     ★同名のキーはロジック側が勝つ（例 S2 の tmax_bars＝枠外の長い保有の除外・まこさん決定 2026-07-25）。"""
     cfg = config()
     lg = _logic(logic_id)
-    if lg.get("impl", {}).get("module") != "e38_logic_parts" or lg["entry"]["type"] not in parts.ENTRY_FNS:
-        raise SystemExit(f"[エラー] 回せるのは共通の売買ループのロジックだけ"
+    if lg.get("impl", {}).get("module") != "e38_logic_parts" or (
+            not _is_grid(lg) and lg["entry"]["type"] not in parts.ENTRY_FNS) or (
+            _is_grid(lg) and lg["entry"]["type"] not in parts.GRID_ENTRY_TYPES):
+        raise SystemExit(f"[エラー] 回せるのは共通の売買ループか grid_loop のロジックだけ"
                          f"（{logic_id}: {lg.get('impl', {})} / {lg['entry']['type']}）")
     sp = cfg["search_space"]["logics"].get(logic_id)
     if sp is None:
         raise SystemExit(f"[エラー] search_space.logics に {logic_id} が無い（正本 {CONFIG.name}）")
+    sp = {k: v for k, v in sp.items() if not k.startswith("_")}   # _note 等の説明の鍵は宣言ではない
+    if _is_grid(lg):
+        # グリッドの出口は形が違う（要件 R2・2026-08-04）＝共通の出口の宣言から意味のある2つだけを借りる。
+        #   sl_zone_k＝災害SL の帯幅係数（既存の宣言 0.5〜2.0 を借用＝新しい数字を作らない）
+        #   tmax_bars＝保有の上限（役割から決めた整数の範囲＝hold_space）
+        # 残り（tp1_frac / tp2_target / tp_mode / tp_pct_k / be_wait）は入れない＝意味の無い軸を探索しない。
+        # grid_n の範囲は search_space.logics が正本＝null の間は engine_tuner が値待ちで止まる（fail-closed）。
+        return {"sl_zone_k": cfg["search_space"]["common_exit"]["sl_zone_k"],
+                "tmax_bars": hold_space(), **sp}
     out = {**cfg["search_space"]["common_exit"], **sp}
     # ★保有時間の上限を、役割から決めた整数の範囲へ差し替える（監査 4-19／要件 R6・まこさん OK 2026-08-03）。
     #   それまでは設定ファイルのメニュー（1・2・3・6・9・12 本）からしか選べなかった。
@@ -255,6 +276,11 @@ def load_windows(windows, warm: pd.Timedelta) -> list[pd.DataFrame]:
 def run(df: pd.DataFrame, logic_id: str, entry_params: dict, exit_params: dict) -> pd.DataFrame:
     """値を1組受け取って売買記録を返す（1試行の中身・CSV は書かない）。"""
     lg = _logic(logic_id)
+    if _is_grid(lg):                                       # グリッド（S5/L5・要件 R2・2026-08-04）
+        tr = parts.grid_loop(df, lg["entry"]["type"], entry_params, exit_params,
+                             max_lots=int(lg.get("params", {}).get("max_lots", 2)),
+                             logic_id=logic_id, regime=regime(logic_id))
+        return pd.DataFrame(tr)
     tr = parts.generic_logic_loop(df, lg["entry"]["type"], entry_params, exit_params,
                                   max_lots=int(lg.get("params", {}).get("max_lots", 2)),
                                   logic_id=logic_id,

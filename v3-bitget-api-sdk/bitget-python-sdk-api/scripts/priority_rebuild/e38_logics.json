@@ -257,20 +257,26 @@
       "impl": {
         "module": "e38_logic_parts",
         "entry_point": "grid_loop",
-        "status": "unimplemented＝グリッド構造（複数 resting・在庫管理）は別部品＝後続の実装単位（まこさん報告済み 2026-07-24）・enabled にすると設定エラーで停止"
+        "note_2026_08_04": "要件 R2 で実装（grid_loop 新設・まこさん OK 2026-08-04）。2026-08-03 までは名前だけの未実装で、enabled にすると設定エラーで停止していた。複数の resting 指値と在庫管理は grid_loop が持つ（generic_logic_loop は無変更）。利確＝1段下の線への resting maker（TP_FILLED）／災害SL＝res_hi+k×帯幅（SL_FILLED）／時間切れ＝TIME_EXIT。決済理由は登録済みのみ＝審判 score.py 無変更（H13）"
       },
       "entry": {
         "type": "grid_short",
-        "params": {}
+        "params": {
+          "grid_n": null
+        }
       },
       "exit": {
         "type": "grid_exit",
-        "params": {}
+        "params": {
+          "sl_zone_k": null,
+          "tmax_bars": null
+        }
       },
       "engine_flags": {},
       "params": {
         "max_lots": 2
-      }
+      },
+      "note": "null=未確定（grid_n の範囲はまこさんが決める＝search_space が正本・null の間は engine_tuner が値待ちで停止する fail-closed）。enabled は探索の単独確認時のみ true"
     },
     {
       "id": "L2",
@@ -388,20 +394,26 @@
       "impl": {
         "module": "e38_logic_parts",
         "entry_point": "grid_loop",
-        "status": "unimplemented＝S5 と同じ後続の実装単位・enabled にすると設定エラーで停止"
+        "note_2026_08_04": "要件 R2 で実装（S5 と同じ grid_loop・上下対称・まこさん OK 2026-08-04）。利確＝1段上の線への resting maker（TP_FILLED）／災害SL＝sup_lo−k×帯幅（SL_FILLED）"
       },
       "entry": {
         "type": "grid_long",
-        "params": {}
+        "params": {
+          "grid_n": null
+        }
       },
       "exit": {
         "type": "grid_exit",
-        "params": {}
+        "params": {
+          "sl_zone_k": null,
+          "tmax_bars": null
+        }
       },
       "engine_flags": {},
       "params": {
         "max_lots": 2
-      }
+      },
+      "note": "null=未確定（S5 と同じ・grid_n の範囲はまこさんが決める）。enabled は探索の単独確認時のみ true"
     },
     {
       "id": "L1i",
@@ -445,7 +457,7 @@
     }
   ],
   "search_space": {
-    "note": "engine_tuner_e38 が読む探索範囲の宣言（type=float/cat/quantile）。quantile は探索窓の分布分位から実行時に上下限を決める＝CC の手打ち値なし（kijun26 前例）。float の比率系は幾何 a-priori の広め固定幅（engine_search_e37 の 0.1〜1.0 と同型＝L-267 の禁止は採点窓 net 目的関数の選定）。値決め＝探索窓のみ・確認窓は表示のみ・採点窓不使用（まこさん決定 2026-07-24・正本 window_similarity_ranking.md）。★logics 側の宣言は common_exit と同名キーを上書きできる（engine_tuner の解決順）。時間系の候補は役割（§8.6 スキャル）から逆算した枠内のみ＝_common_exit_note 参照（まこさん確定 2026-07-25・段3 はセット粗探索でこの枠を全ロジック共通に使う）。S2 の confirm_htf/confirm_vol と th_* は層1 観察の2軸（worklog 20260725 §7・9組の部品そのまま・q_lo/q_hi 0.2〜0.8 は中立の広め幅・stochd14 のみ q_hi 0.95=張り付き解消）",
+    "note": "engine_tuner_e38 が読む探索範囲の宣言（type=float/cat/quantile）。quantile は探索窓の分布分位から実行時に上下限を決める＝CC の手打ち値なし（kijun26 前例）。float の比率系は幾何 a-priori の広め固定幅（engine_search_e37 の 0.1〜1.0 と同型＝L-267 の禁止は採点窓 net 目的関数の選定）。値決め＝探索窓のみ・確認窓は表示のみ・採点窓不使用（まこさん決定 2026-07-24・正本 window_similarity_ranking.md）。★logics 側の宣言は common_exit と同名キーを上書きできる（engine_tuner の解決順）。時間系の候補は役割（§8.6 スキャル）から逆算した枠内のみ＝_common_exit_note 参照（まこさん確定 2026-07-25・段3 はセット粗探索でこの枠を全ロジック共通に使う）。S2 の confirm_htf/confirm_vol と th_* は層1 観察の2軸（worklog 20260725 §7・9組の部品そのまま・q_lo/q_hi 0.2〜0.8 は中立の広め幅・stochd14 のみ q_hi 0.95=張り付き解消）。★S5/L5（グリッド・要件 R2・2026-08-04）＝grid_n の範囲は null＝まこさん待ち（null の間は engine_tuner の値待ち fail-closed が探索を止める）。出口は sl_zone_k（common_exit の既存宣言を借用）と tmax_bars（役割の整数範囲＝hold_space）だけを接続ファイルが組む＝新しい数字ゼロ",
     "common_exit": {
       "tp1_frac": {
         "type": "float",
@@ -599,6 +611,22 @@
             0,
             1
           ]
+        }
+      },
+      "S5": {
+        "grid_n": {
+          "type": "int",
+          "lo": null,
+          "hi": null,
+          "step": 1
+        }
+      },
+      "L5": {
+        "grid_n": {
+          "type": "int",
+          "lo": null,
+          "hi": null,
+          "step": 1
         }
       },
       "S4": {

@@ -363,6 +363,11 @@ def _resolve_space(space_decl: dict, bank: dict) -> dict:
     """探索範囲の宣言 → Optuna 用の実レンジ（quantile は実行時実値・印字して透明化）。"""
     out = {}
     for name, d in space_decl.items():
+        # ★値待ちの fail-closed（要件 R2・2026-08-04 新設）＝範囲が null の宣言は「まこさんが決めるまで
+        #   探索を走らせない」の印。黙って既定値を当てない（例＝S5/L5 の grid_n）。
+        if d["type"] in ("float", "int") and (d.get("lo") is None or d.get("hi") is None):
+            raise SystemExit(f"[値待ち] {name} の範囲が null＝まこさんが決めるまで探索は走らない"
+                             f"（fail-closed・置き場所は e38_logics.json の search_space）")
         if d["type"] == "float":
             out[name] = ("float", float(d["lo"]), float(d["hi"]))
         elif d["type"] == "cat":
