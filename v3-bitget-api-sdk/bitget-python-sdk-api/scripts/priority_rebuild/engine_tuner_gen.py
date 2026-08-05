@@ -1160,12 +1160,47 @@ def selftest() -> int:
     except ex.RecipeError:
         pass
 
+    # T9 本走の関門（2026-08-05 新設）＝3つの止まり方。1つでも素通りしたら本走を作った意味がない
+    import inspect
+
+    import tuner_stats as _ts9
+    from periods import SCORE_END, SCORE_START, SEARCH_END, SEARCH_START
+    t9 = []
+    for bad_p in (None, "", "SEARCH", "確認"):           # ① 目的の宣言（既定に倒れない）
+        try:
+            pre_run_gate("e38", bad_p, SEARCH_START, SEARCH_END, None, {}, None)
+            t9.append(f"目的 {bad_p!r} で止まらない")
+        except SystemExit:
+            pass
+    try:                                                  # ② 採点窓に掛かる窓（H8・L-267）
+        pre_run_gate("e38", _ts9.PURPOSE_CHECK, SCORE_START, SCORE_END, None, {}, None)
+        t9.append("採点窓に掛かる窓で止まらない")
+    except SystemExit:
+        pass
+    try:                                                  # ③ 役割の下限割れ（監査 4-14）
+        pre_run_gate("e38", _ts9.PURPOSE_CHECK, SEARCH_START, SEARCH_END,
+                     1.0, {"ops_min_per_day": 1.0}, 5.0)
+        t9.append("役割の下限 5 を下回る線 1 で止まらない")
+    except (SystemExit, Exception) as e:                  # noqa: BLE001  RoleFloorError も含めて止まればよい
+        if "役割の下限" not in str(e):
+            t9.append(f"③ の止まり方が役割の下限でない: {str(e)[:60]}")
+    try:                                                  # 正しい組み合わせは通る（過剰に止めない）
+        pre_run_gate("e38", _ts9.PURPOSE_CHECK, SEARCH_START, SEARCH_END, None, {}, None)
+    except Exception as e:                                # noqa: BLE001
+        t9.append(f"正しい組み合わせなのに止まる: {str(e)[:60]}")
+    # T9b 本走の入口が、その関門を実際に呼んでいるか（丸括弧まで見る＝L-394 の型）
+    if "pre_run_gate(" not in inspect.getsource(run_main):
+        t9.append("T9b: run_main が pre_run_gate( を呼んでいない（関門が配線されていない）")
+    ng += [f"T9: {x}" for x in t9]
+
     print("=" * 80)
     print("engine_tuner_gen 自己検査（合成データのみ・実データの試行ゼロ・累積試行の記録なし）")
     print("=" * 80)
     print(f"  T1 構造の撒き: {len(structs)}/100 本が検証を通過 ／ 内訳 {json.dumps(bd, ensure_ascii=False)[:200]}…")
     print(f"  T2 BH 既知答え ✅ ／ T3 p値 (+){p_pos:.4f} (0){p_zero:.3f} ／ T4 解決表 {len(q1)} 鍵・決定論")
     print(f"  T5 層化の門 ／ T6 R12 再開 ／ T7 値待ち {len(waiting)} 件 ／ T8 生成不能の拒否")
+    print("  T9 本走の関門: 目的の未宣言4通り・採点窓・役割の下限割れ で停止／正しい組み合わせは通過"
+          "／T9b 入口が関門を呼んでいる")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
@@ -1174,12 +1209,155 @@ def selftest() -> int:
     return 0
 
 
+# ══ 本走（2026-08-05 新設・next_step §6.5 の13番）══════════════════════════════════
+#   直す前は、この器に本走の入口が無かった。コマンドは --selftest と --dry-run の2つだけで、
+#   本体の関数 run_generation は在るのに外から呼べなかった（1213行が「本走の実装は測定2 と同時」と
+#   出して終わっていた＝測定2 は 2026-08-04 に「やらない」で確定したので、その一文は嘘になっていた）。
+#   ここで作るのは入口だけ。判定の1枚表（A1・A2・B1〜B7）の接続は次の一手に分ける（1ターン1変更）。
+
+GEN_RUNS = HERE.parents[2] / "results" / "priority_rebuild" / "ratchet" / "gen_runs"
+
+
+def pre_run_gate(strategy: str, purpose: str | None, start, end,
+                 min_per_day, rules: dict | None, rfloor) -> None:
+    """本走の前の関門3つ。1つでも欠けたら走らせない（fail-closed）。
+
+    ① 走行の目的が宣言されているか（既定に黙って倒れない・2026-08-05 の決まり）
+    ② 使う窓が採点窓に掛かっていないか（H8・L-267＝采否の窓を探索に使わない）
+    ③ 役割から来る件数/日 の絶対下限を下回っていないか（監査 4-14・cat_requirements §8.6）
+    """
+    import tuner_judgement as tj
+    import tuner_stats as ts
+    from periods import SCORE_START
+    if purpose not in ts.PURPOSES:
+        raise SystemExit(f"[走行の目的エラー] --purpose は {ts.PURPOSES} のどれか。渡された値: {purpose!r}\n"
+                         "  search＝値を選ぶ（試した回数に数える）／check＝道具の動作確認（数えない）。\n"
+                         "  既定は持ちません＝書き忘れをここで止めます。")
+    if pd.Timestamp(end) > SCORE_START:
+        raise SystemExit(f"[窓エラー] 使おうとした窓の終わり {pd.Timestamp(end).date()} が "
+                         f"採点窓の始まり {SCORE_START.date()} を越えています。\n"
+                         "  採点窓は采否を決める窓です。探索に1バーも使いません（H8・L-267）。")
+    tj.assert_role_floor(strategy, min_per_day, rules, rfloor)
+
+
+def run_main(a) -> int:
+    """本走の入口。窓は periods.py、宣言は接続ファイルと採用台帳から機械で読む（道具に数字を焼かない）。"""
+    import time
+
+    import engine_tuner as et                  # データの読み込みと接続ファイルの解決を使い回す（二重に書かない）
+    import score as judge                      # 審判＝import のみ・無変更（H13）
+    import tuner_judgement as tj
+    import tuner_stats as ts
+    from periods import SEARCH_END, SEARCH_START
+
+    ad = et.load_adapter(a.strategy)           # ★戦略の中身を知るのは接続ファイルだけ（要件 R4）
+    known = {z["id"]: z for z in ad.logics()}
+    if a.logic not in known:
+        raise SystemExit(f"[エラー] ロジック id が {ad.NAME} に無い: {a.logic}（在るのは {', '.join(known)}）")
+    side = (known[a.logic].get("side") or "SHORT").upper()
+    regime = ad.regime(a.logic)
+    rules = getattr(ad, "stop_rules", lambda _l: {})(a.logic)
+    mpd = ad.min_per_day(a.logic)
+    role, rfloor = tj.role_floor(a.strategy)
+
+    pre_run_gate(a.strategy, a.purpose, SEARCH_START, SEARCH_END, mpd, rules, rfloor)
+
+    lm, waiting = load_limits()
+    if waiting:
+        print("[歩4 本走] 走らせられない＝search_limits.json の値がまこさん待ち:")
+        for w in waiting:
+            print(f"  ・{w}")
+        return 2
+    # ★保有時間の上限の範囲は、戦略の役割から決める（監査 4-19／要件 R6・2026-08-03）。
+    #   これを呼ばずに撒くと「範囲が解決されていません」で止まる（fail-closed＝黙って既定に倒れない）。
+    lm = resolve_hold_range(lm, a.strategy)
+    _lo, _hi = hold_bars(lm)
+    print(f"[保有時間の上限の範囲] {_lo}〜{_hi} 本（1本＝5分＝{_lo * 5}〜{_hi * 5} 分）"
+          f"＝役割 {lm['hold_role']} から決めた（設定 recipes/search_limits.json の hold_range_by_role が正本）")
+
+    print(f"[戦略] {ad.NAME}: {ad.LABEL} ／ 宣言を借りるロジック {a.logic}: {known[a.logic].get('label', '')}")
+    if a.purpose == ts.PURPOSE_SEARCH:
+        print("[この走行の目的] search＝値を選ぶ。試した回数に数える"
+              "（この窓で今後行う探索すべての合格の線が、その分だけ厳しくなる）")
+    else:
+        print("[この走行の目的] check＝道具が動くかを見る。試した回数に数えない（帳簿には残す）")
+    print(f"[窓] 値決め {SEARCH_START.date()}〜{SEARCH_END.date()}（排他）＝periods.py が正本・採点窓は1バーも使わない")
+    print(f"[側] {side} ／ [局面] {regime.get('name')}（入口の列 {regime.get('entry_col')}／止める列 {regime.get('block_col')}）")
+    print(f"[役割] {a.strategy} = {role} ／ 役割から来る件数/日 の絶対下限 {rfloor}"
+          f" ／ この回の探索で使う件数の下限 {mpd}")
+    print(f"[終わりの条件の値] δ ${rules.get('delta_net')} ／ N_max {rules.get('n_max')} ／ "
+          f"ATR%帯 {rules.get('atr_band_edges')}")
+    if rules.get("n_max") and (a.trials1 + a.trials2) > rules["n_max"]:
+        print(f"⚠️ 今回の試行 {a.trials1 + a.trials2:,} が宣言した上限 {rules['n_max']:,} を超えている"
+              "＝合格の線を後出しで薄める形。上限を変えるなら設定ファイルを直してから回すこと。")
+
+    t0 = time.time()
+    df = et.load_windows_cached(ad, [(SEARCH_START, SEARCH_END)], et.WARM, use_cache=not a.no_cache)[0]
+    print(f"[データ] 値決め窓 {len(df):,} バー（助走込み・{time.time() - t0:.0f}秒）")
+
+    # ★土台＝いまの採用値の売買記録（層化の門 B4 の比較相手）。無ければ判定不能と出るだけ（偽装の✅を出さない）。
+    base_trades = None
+    bp = getattr(ad, "baseline", lambda _l: None)(a.logic)
+    if bp is not None:
+        xk = ad.exit_keys()
+        ep = {k: v for k, v in bp.items() if k not in xk}
+        xp = {k: v for k, v in bp.items() if k in xk}
+        base_trades = et._run_window(ad, df, a.logic, ep, xp, SEARCH_START, SEARCH_END)["t"]
+        print(f"[土台] {a.logic} の現行値で {len(base_trades):,} 玉（層化の門の比較相手）")
+    else:
+        print("[土台] このロジックは採用値を持たない＝層化の門は判定不能と出る（合格の印は出さない）")
+
+    if a.resume:                                # R12＝途中で止まった走行の続きから
+        run_dir = pathlib.Path(a.resume)
+        if not run_dir.exists():
+            raise SystemExit(f"[再開エラー] 記録の置き場が無い: {run_dir}")
+        print(f"[再開] {run_dir} の記録を使う（同じ構造は走らせ直さない）")
+    else:
+        run_dir = GEN_RUNS / f"{a.tag or 'run'}_{time.strftime('%Y%m%d_%H%M%S')}"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        print(f"[記録の置き場] {run_dir}（途中で止まってもここから続きを始められる＝R12）")
+
+    pool, tfs, cat_total = material_pool()
+    out = run_generation(df, limits=lm, judge=judge, start=SEARCH_START, end=SEARCH_END,
+                         trials1=a.trials1, trials2=a.trials2, top_k=a.top_k, seed=a.seed,
+                         run_dir=run_dir, pool=pool, tfs=tfs, catalog_total=cat_total,
+                         side=side, regime=regime, base_trades=base_trades,
+                         atr_edges=rules.get("atr_band_edges"), min_per_day=mpd,
+                         net_floor=a.net_floor, purpose=a.purpose, tag=a.tag)
+    print(f"\n[本走まとめ] 通った {out['kept']} 本 ／ 捨てた {out['dropped']} 本 ／ 再利用 {out['reused']} 本"
+          f" ／ 記録 {run_dir}")
+    print("⚠️ 判定の1枚表（A1・A2・B1〜B7）はまだ出していません＝次の一手で接続します"
+          "（確認窓で1回だけ走らせる処理が要るため・1ターン1変更）。")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="歩4 生成器＝構造をランダムに撒き（第1段）、有望構造の値を TPE で詰める（第2段）")
     ap.add_argument("--selftest", action="store_true", help="番人（合成データのみ・実データの試行ゼロ）")
     ap.add_argument("--dry-run", type=int, default=None, metavar="N",
                     help="構造を N 本撒いて内訳だけ機械出力（売買しない・データ不要・検収専用 limits）")
+    # ── 本走（2026-08-05 新設・next_step §6.5 の13番・まこさん OK「OK」）────────────
+    ap.add_argument("--run", action="store_true",
+                    help="本走＝実データで構造を撒いて売買を回す（--purpose 必須・値決め窓のみ）")
+    ap.add_argument("--strategy", default="e38", help="宣言の出どころの戦略（接続ファイル tuner_adapters/<名前>.py）")
+    ap.add_argument("--logic", default="S2",
+                    help="宣言を借りるロジック id。側・局面・件数の下限・ATR%%帯・δ・N_max・土台をここから機械で読む")
+    ap.add_argument("--trials1", type=int, default=30, help="第1段＝ランダムに撒く本数（統計の土台）")
+    ap.add_argument("--trials2", type=int, default=0, help="第2段＝TPE で値を詰める本数（統計判定に不使用）")
+    ap.add_argument("--top-k", type=int, default=3, help="第2段へ送る有望構造の本数")
+    ap.add_argument("--seed", type=int, default=1, help="撒き方の種（同じ種なら同じ構造が出る＝再現できる）")
+    ap.add_argument("--purpose", default=None,
+                    help="この走行の目的。search＝値を選ぶ（試した回数に数える）／check＝道具の動作確認"
+                         "（数えない・帳簿に残る）。書き忘れは止める＝既定に黙って倒れない")
+    ap.add_argument("--tag", default="", help="この走行の名前（記録の置き場と、確認の走行の帳簿の理由の欄に入る）")
+    ap.add_argument("--net-floor", type=float, default=None,
+                    help="合計 net の下限。値決め窓の合計 net がこれを下回った試行は捨てる（値はまこさん）")
+    ap.add_argument("--resume", default=None, metavar="DIR",
+                    help="途中で止まった走行の続きから始める（R12）。前の走行の記録の置き場を渡す")
+    ap.add_argument("--no-cache", action="store_true", help="指標つきデータの使い回しをやめて毎回作り直す")
     a = ap.parse_args()
+    if a.run:
+        return run_main(a)
     if a.selftest:
         return selftest()
     if a.dry_run:
@@ -1210,7 +1388,12 @@ def main() -> int:
             print(f"  ・{w}")
         print("→ 値が入り次第、windows（periods.py）と接続ファイルで本走する（採点窓は使わない）。")
         return 2
-    print("[歩4] limits はそろっているが、本走の窓・接続・累積記録の実装は測定2 と同時（まこさんの実施判断待ち）")
+    # ★2026-08-05 に書き換えた。直す前はここに「本走の窓・接続・累積記録の実装は測定2 と同時
+    #   （まこさんの実施判断待ち）」と出していたが、測定2 は 2026-08-04 に「やらない」で確定した
+    #   ＝この一文はもう嘘だった。本走は --run で走る。
+    print("[歩4] limits はそろっている。本走は --run で走らせる。例:")
+    print("  python3 engine_tuner_gen.py --run --purpose check --trials1 3 --tag 動作確認")
+    print("  （--purpose は必須。search＝値を選ぶ＝試した回数に数える／check＝動作確認＝数えない）")
     return 0
 
 
