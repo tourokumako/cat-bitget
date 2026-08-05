@@ -744,7 +744,7 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                    run_dir: pathlib.Path, pool, tfs, catalog_total: int,
                    side="SHORT", regime=None,
                    base_trades=None, atr_edges=None, min_per_day=None, net_floor=None,
-                   record_cumulative: bool = False, tag: str = "") -> dict:
+                   purpose: str, tag: str = "") -> dict:
     """第1段＝構造をランダムに撒く（統計の土台）→ BH 法 → 第2段＝有望構造の値を TPE で詰める。"""
     meta = {"seed": seed, "trials1": trials1, "trials2": trials2, "top_k": top_k,
             "window": [str(start), str(end)], "side": side,
@@ -832,7 +832,11 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
         if ok and gate_ok is False:
             ok, why = False, f"層化の門: {gate_why}"
         daily = None
-        if ok and len(res["t"]):
+        # ★2026-08-05 改訂（まこさん OK・fix_map 決定-確認走行を数えない）＝ok の条件を外した。
+        #   直す前は「ゲートを通った試行」だけ日ごとの net を作っていたので、捨てた試行が
+        #   DSR の統計に入れられなかった。ゲートは 売買を回して審判の net を出した "後で" 捨てる門
+        #   ＝捨てた試行も「比べた」。DSR は選ばれなかった試行の情報を使う設計（Bailey & LdP 2014）。
+        if len(res["t"]):
             import tuner_stats
             s = tuner_stats.daily_net(res["t"], judge, start, end)
             tuner_stats.check_daily_sum(s, res["total"])
@@ -856,7 +860,10 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
         print(f"  #{r['idx']}: net ${r['total']:+,.0f} / {r['n']}玉 / {r['per_day']:.2f}件/日 ← {r['why']}")
 
     # ── BH 法（第1段のサンプルだけ・CP1 提案4(e)）──
+    #   BH は「どの候補を採択するか」の門なので、対象は通過した試行のまま（2026-08-05 も不変）。
     stat_kept = [r for r in kept if r.get("daily")]
+    # ★DSR/PBO は「何通り比べたか」を数えるので、捨てた試行も入れる（2026-08-05 新設）。
+    stat_all = [r for r in results1 if r.get("daily")]
     pvals = [pvalue_daily(np.array(r["daily"])) for r in stat_kept]
     fdr_q = limits.get("fdr_q")
     survivors_idx = [r["idx"] for r in stat_kept]
@@ -873,29 +880,38 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
 
     # ── DSR/PBO＝第1段のサンプルだけから（CP1 解A・4-16／4-21 の実装）──
     stats = None
-    if len(stat_kept) >= 2:
+    if len(stat_all) >= 2 and stat_kept:
         import tuner_stats
+        is_search = (purpose == tuner_stats.PURPOSE_SEARCH)
         daily = {r["idx"]: pd.Series(np.array(r["daily"]),
                                      index=pd.date_range(start.normalize(), periods=len(r["daily"]), freq="D"))
-                 for r in stat_kept}
-        best_id = max(daily, key=lambda k: float(daily[k].sum()))
+                 for r in stat_all}                       # ★試した全部（捨てた分も含む）
+        kept_ids = {r["idx"] for r in stat_kept}          # 選定の対象は通過した試行だけ
+        best_id = max(kept_ids, key=lambda k: float(daily[k].sum()))
         key = f"gen/{tag or 'run'}@{pd.Timestamp(start).date()}_{pd.Timestamp(end).date()}"
-        past = tuner_stats.load_cumulative(key) if record_cumulative else 0
+        past = tuner_stats.load_cumulative(key) if is_search else 0
         stats = tuner_stats.evaluate(daily, best_id, past)
         d = stats["dsr"]
-        print(f"[統計＝第1段ランダムのみ] 分散・p値・PBO の入力はランダム段 {stats['n_raw']} 本だけ"
-              f"（TPE の試行は入れない＝CP1 解A・『独立に撒く段は未実装』の警告をここで解消）")
-        if stats["pbo"]:
+        print(f"[統計＝第1段ランダムのみ] 分散・p値・PBO の入力はランダム段 {stats['n_raw']} 本"
+              f"（うち通過 {len(stat_kept)} 本・捨てた {stats['n_raw'] - len(stat_kept)} 本も"
+              "『比べた』ので数に入れる＝2026-08-05）"
+              "（TPE の試行は入れない＝CP1 解A・『独立に撒く段は未実装』の警告をここで解消）")
+        if not is_search:
+            print("  ⚠️ 確認の走行（purpose=check）＝合格の印は出さない・値の選択には使わない")
+        elif stats["pbo"]:
             print(f"  DSR {d['dsr']:.3f} ／ PBO {stats['pbo']['pbo']:.3f}")
         else:
             print(f"  DSR {d['dsr']:.3f} ／ PBO 測れない（候補不足）")
-        if record_cumulative:
-            tot = tuner_stats.add_cumulative(key, stats["n_raw"], pd.Timestamp.now().strftime("%Y-%m-%d"))
-            print(f"  この窓での累積の試行数を {tot} 本に更新した")
+        # ★走行の目的で行き先が変わる（2026-08-05）。足すのは「まとめた後の数」＝判定に使う数と同じ。
+        where, tot = tuner_stats.record_run(key, stats["n_eff"],
+                                            pd.Timestamp.now().strftime("%Y-%m-%d"), purpose, note=tag)
+        if is_search:
+            print(f"  この窓での累積の試行数を {tot} 本に更新した"
+                  f"（足したのは まとめた後の {stats['n_eff']} 本＝判定に使った数と同じ）")
         else:
-            print("  ⚠️ 累積試行の記録なし（検収専用の走行＝本走では必ず記録する）")
+            print(f"  累積（合格の線に効く数）は1本も増やしていない＝確認の帳簿に {tot} 件目として残した")
     else:
-        print("[統計＝第1段ランダムのみ] 通過が2本未満＝判定できない")
+        print("[統計＝第1段ランダムのみ] 売買のあった試行が2本未満、または通過ゼロ＝判定できない")
 
     # ── 第2段＝有望構造の値を TPE で詰める（統計判定に不使用）──
     top_pool = [r for r in kept if r["idx"] in survivors_idx] or kept
@@ -1067,19 +1083,32 @@ def selftest() -> int:
         ng.append("T5: 土台なしで判定不能にならない（偽装の✅経路）")
 
     # T6 ミニ本走（合成データ・第1段10本＋第2段6本）→ R12 再開＝journal から再利用して同一結果
+    #   ★2026-08-05 追加: 走行の目的（purpose）を渡す。ここは検収なので check＝累積に数えない。
+    #     本物の記録ファイル2本には触らせない（一時の場所へ差し替える＝この検査そのものが
+    #     試した回数を1本も増やさない・帳簿も汚さない）。
+    import tuner_stats as _ts
     with tempfile.TemporaryDirectory() as td:
         run_dir = pathlib.Path(td) / "run1"
         run_dir.mkdir(parents=True)
+        _real_cum, _real_chk = _ts.CUMULATIVE, _ts.CHECK_RUNS
+        _ts.CUMULATIVE = pathlib.Path(td) / "cum.json"
+        _ts.CHECK_RUNS = pathlib.Path(td) / "chk.json"
         kw = dict(limits=lm, judge=judge, start=s4, end=e4, trials1=10, trials2=6, top_k=2,
                   seed=11, run_dir=run_dir, pool=pool, tfs=tfs_small, catalog_total=cat_total,
-                  record_cumulative=False, tag="selftest")
+                  purpose=_ts.PURPOSE_CHECK, tag="selftest")
         import contextlib
         import io
         buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
-            out1 = run_generation(df, **kw)
-        with contextlib.redirect_stdout(buf):
-            out2 = run_generation(df, **kw)
+        try:
+            with contextlib.redirect_stdout(buf):
+                out1 = run_generation(df, **kw)
+            with contextlib.redirect_stdout(buf):
+                out2 = run_generation(df, **kw)
+            # T6b（2026-08-05 新設）＝確認の走行では累積が1本も増えない
+            if _ts.CUMULATIVE.exists():
+                ng.append("T6b: 確認の走行なのに累積ファイルが作られた（数えない約束が守られていない）")
+        finally:
+            _ts.CUMULATIVE, _ts.CHECK_RUNS = _real_cum, _real_chk
         if out2["reused"] != 10:
             ng.append(f"T6: 再開で第1段 10 本が再利用されない（{out2['reused']} 本）")
         a = [(r["idx"], r["total"], r["ok"]) for r in out1["results1"]]

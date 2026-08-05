@@ -313,24 +313,36 @@ def _run_baseline(ad, df_s, df_c, logic: str, exit_keys: set, minimize: str | No
 #   歩5 の第2段で A1・B3・土台なし合否を直すときは、あちら側だけを直せば新旧の器に同時に効く。
 
 
-def _print_stats(strategy: str, logic: str, kept: list, best_num: int) -> None:
+def _print_stats(strategy: str, logic: str, results: list, best_num: int) -> None:
     """B5・B6＝その数字が本物か（DSR と PBO）。合格ラインは H11 が正本（まこさんが決める値ではない）。
 
     ★日ごとの net は審判 score.py を日ごとに呼んで得る＝CC は net を計算しない（H13）。
       足し合わせが全期間と一致することを毎回確かめる（一致しなければ止まる）。
+
+    ★2026-08-05 改訂（まこさん OK・fix_map 決定-確認走行を数えない）＝渡すのを kept（ゲートを
+      通った試行）から results（試した全部）へ広げた。ゲートは 18ヶ月を回して審判の net を出した
+      "後で" 捨てている＝捨てた試行も「比べた」。DSR は選ばれなかった試行の情報を使う設計であり
+      （Bailey & LdP 2014）、実装 dsr_pbo.deflated_sharpe_ratio の docstring 自身が
+      「n_trials を過少申告すると DSR が過大化」と警告している。直す前は 150 本試して 49 本と
+      申告する形＝過少申告で、合格の線が本来より甘く出ていた。
+      選定の対象はいまも kept のみ（ゲートは選ぶ側の門であって、数える側の門ではない）。
     """
     print("\n[B5・B6 その数字が本物か（試した回数で割り引いた成績 DSR ／ 過剰なあてはめの確率 PBO）]")
-    if len(kept) < 2:
-        print(f"  ゲートを通った試行が {len(kept)} 本＝統計で判定できない（2本以上要る）")
+    if len(results) < 2:
+        print(f"  試行が {len(results)} 本＝統計で判定できない（2本以上要る）")
         return None
     t0 = time.time()
     daily = {}
-    for num, _params, res, _ok, _why in kept:
+    for num, _params, res, _ok, _why in results:               # ★試した全部（ゲートで捨てた分も含む）
         s = tuner_stats.daily_net(res["t"], judge, SEARCH_START, SEARCH_END)
         tuner_stats.check_daily_sum(s, res["total"])          # 分け方が壊れていないことの確認
         daily[num] = s
-    if best_num not in daily:                                  # best がゲートで落ちている時は通った中の最良
-        best_num = max(daily, key=lambda k: float(daily[k].sum()))
+    kept_nums = {z[0] for z in results if z[3]}                # 選定の対象はゲートを通った試行だけ
+    if best_num not in kept_nums:                              # best がゲートで落ちている時は通った中の最良
+        if not kept_nums:
+            print(f"  ゲートを通った試行が 0/{len(results)} 本＝選ぶ相手がいない（統計は出さない）")
+            return None
+        best_num = max(kept_nums, key=lambda k: float(daily[k].sum()))
         print(f"  ※ best はゲートを通っていないので、通った中で最良の #{best_num} で判定する")
 
     key = f"{strategy}/{logic}@{SEARCH_START.date()}_{SEARCH_END.date()}"
@@ -341,7 +353,9 @@ def _print_stats(strategy: str, logic: str, kept: list, best_num: int) -> None:
     ok_p = (p is not None) and (p["pbo"] < tuner_stats.PBO_PASS)
 
     print(f"  期間 T = {r['T']} 日（月ごとに集計すると 4 にしかならず統計にならないので日ごとにしている）")
-    print(f"  試行 = 生 {r['n_raw']} 本 → 似た動きをまとめて {r['n_eff']} 本"
+    print(f"  試行 = 試した全部 {r['n_raw']} 本（うちゲートを通ったのは {len(kept_nums)} 本"
+          "＝ゲートは選ぶ側の門であって、数える側の門ではない）"
+          f" → 似た動きをまとめて {r['n_eff']} 本"
           f" ＋ この窓での過去の累積 {r['past_trials']} 本 = DSR に渡した N {r['n_for_dsr']}")
     print(f"  DSR = {d['dsr']:.3f}（合格 > {tuner_stats.DSR_PASS}）"
           f"{'  ✅' if ok_d else '  ❌'}   成績 {d['sr']:.4f} ／ 運だけで出る水準 {d['sr0']:.4f}")
@@ -354,8 +368,13 @@ def _print_stats(strategy: str, logic: str, kept: list, best_num: int) -> None:
           f"（{time.time() - t0:.0f}秒で計算）")
     print("  ⚠️ 分散は探索が集めた試行から推定している＝良い所に試行が集まるほど分散が縮み、"
           "DSR は甘い側に出る。独立に撒く段（ランダムサーチ）は未実装。")
-    tot = tuner_stats.add_cumulative(key, r["n_raw"], time.strftime("%Y-%m-%d"))
-    print(f"  この窓での累積の試行数を {tot} 本に更新した（次回の DSR はこの数を罰に使う）")
+    # ★足すのは「まとめた後の数」（2026-08-05 改訂）＝この回の判定に使った数と同じにする。
+    #   直す前は「まとめる前の生の本数」を足していて、同じ試行が走行をまたぐと数が変わっていた
+    #   （その回は まとめた後の 20 で判定し、次回からは 生の 49 が効く、という食い違い）。
+    where, tot = tuner_stats.record_run(key, r["n_eff"], time.strftime("%Y-%m-%d"),
+                                        tuner_stats.PURPOSE_SEARCH)
+    print(f"  この窓での累積の試行数を {tot} 本に更新した（足したのは まとめた後の {r['n_eff']} 本"
+          "＝この回の判定に使った数と同じ。次回の DSR はこの数を罰に使う）")
     return r
 
 
@@ -472,6 +491,16 @@ def build_parser() -> argparse.ArgumentParser:
                     help="合計 net の下限。値決め窓の合計 net がこれを下回った試行は捨てる。"
                          "--minimize と併用する歯止め＝損失を減らすつもりで勝ち玉まで削る形を弾く。"
                          "値はまこさんが決める（省略＝歯止めなし）")
+    # ★走行の目的（2026-08-05 まこさん OK・fix_map 決定-確認走行を数えない）＝必須。既定を持たせない。
+    #   search … 値を選ぶために走らせる → 試した回数に数える（この窓の今後の合格の線が厳しくなる）
+    #   check  … 道具が動くかを見るために走らせる → 数えない。代わりに engine_tuner は
+    #            一番稼いだ値・上位10・判定表・DSR/PBO を出さない＝この走行から値を選べない形にする。
+    #            「見ていない情報は選択に影響しない」から数えなくてよい、と言い切れる形にするため。
+    ap.add_argument("--purpose", required=True, choices=list(tuner_stats.PURPOSES),
+                    help="この走行の目的。search＝値を選ぶ（数える）／check＝道具の動作確認（数えない・"
+                         "一番稼いだ値を出さない）。書き忘れは止める＝既定に黙って倒れない")
+    ap.add_argument("--purpose-note", default="",
+                    help="--purpose check のときに、なぜ確認だったのかを一文で書く（帳簿に残る）")
     return ap
 
 
@@ -489,6 +518,12 @@ def main() -> None:
         raise SystemExit(f"[エラー] {a.logic} はいま回せない: {known[a.logic]['why']}")
 
     print(f"[戦略] {ad.NAME}: {ad.LABEL} ／ ロジック {a.logic}: {known[a.logic]['label']}")
+    if a.purpose == tuner_stats.PURPOSE_SEARCH:
+        print("[この走行の目的] search＝値を選ぶ。試した回数に数える"
+              "（この窓で今後行う探索すべての合格の線が、その分だけ厳しくなる）")
+    else:
+        print("[この走行の目的] check＝道具が動くかを見る。試した回数に数えない。"
+              "そのかわり 一番稼いだ値・上位10・判定表・DSR/PBO を出さない＝この走行から値は選べない")
     print(f"[窓] 値決め {SEARCH_START.date()}〜{SEARCH_END.date()}（排他）／確認 {CONFIRM_START.date()}〜{CONFIRM_END.date()}（排他・表示のみ）＝まこさん決定 2026-07-24・採点窓不使用")
     t0 = time.time()
     df_s, df_c = load_windows_cached(
@@ -598,6 +633,34 @@ def main() -> None:
     head = f"{a.minimize} の損失が小さい順" if a.minimize else "合計 net が大きい順"
     kept = [z for z in results if z[3]]
     dropped = [z for z in results if not z[3]]
+
+    # ★確認の走行はここで終わる（2026-08-05 まこさん OK・fix_map 決定-確認走行を数えない）。
+    #   一番稼いだ値・上位10・判定表・DSR/PBO を出さない＝この走行から値を選べない形にする。
+    #   「見ていない情報は値の選択に影響しない」から、試した回数に数えなくてよい、と言い切れる。
+    #   ＝「確認です」と書けば数えずに済む形（申告だけが根拠）にしないための設計。
+    #   engine_tuner 自身は設定ファイルへ書き戻さない（書き戻しは tuner_writeback.py が別に行い、
+    #   その入力はここに出る値である）＝値を出さないことが、そのまま書き戻しの禁止になる。
+    if a.purpose == tuner_stats.PURPOSE_CHECK:
+        ns = [z[2]["n"] for z in results]
+        pds = [z[2]["per_day"] for z in results]
+        skey = f"{a.strategy}/{a.logic}@{SEARCH_START.date()}_{SEARCH_END.date()}"
+        before = tuner_stats.load_cumulative(skey)
+        print("\n[確認の走行＝道具が動くかを見る目的]"
+              " 一番稼いだ値・上位10・判定表・DSR/PBO は出さない"
+              "（この走行から値を選べない形にして、試した回数に数えないため）")
+        print(f"  動作 OK ／ 試行 {len(results)} 本"
+              f"（ゲートを通った {len(kept)} 本 ／ 捨てた {len(dropped)} 本）")
+        print(f"  玉数 {min(ns)}〜{max(ns)} ／ 件数/日 {min(pds):.2f}〜{max(pds):.2f}"
+              f" ／ 出た決済理由 {', '.join(sorted(seen_reasons)) or 'なし'}")
+        where, cnt = tuner_stats.record_run(skey, len(results), time.strftime("%Y-%m-%d"),
+                                            tuner_stats.PURPOSE_CHECK, note=a.purpose_note)
+        after = tuner_stats.load_cumulative(skey)
+        print(f"  → 累積（合格の線に効く数）は {before} 本のまま（いま {after} 本）＝1本も増やしていない。"
+              f"確認の帳簿（{where}）に {cnt} 件目として残した"
+              f"／理由: {a.purpose_note or '（記載なし）'}")
+        logf.close()
+        return
+
     print(f"\n[上位10（{a.logic}・値決め窓の審判値・{head}・★ゲートを通った試行だけ）]")
     if not kept:
         print(f"  ⚠️ ゲートを通った試行が {len(results)} 本中 0 本。下の best は選定の対象になっていない"
@@ -626,7 +689,7 @@ def main() -> None:
         extra = f" / {a.minimize} ${r['focus']:+,.0f}（{r['focus_n']}玉）" if a.minimize else ""
         print(f"  {nm}: net ${r['total']:+,.0f}{extra} / {r['n']}玉 / {r['per_day']:.2f}件/日"
               f" / 保有中央 {r['hold_med']:.0f}分 / 型別 {_type_split(ad, r['t'])}")
-    stats = _print_stats(a.strategy, a.logic, kept, st.best_trial.number)
+    stats = _print_stats(a.strategy, a.logic, results, st.best_trial.number)
 
     # ★A1 の代用は廃止した（監査 4-15・歩5 の1回目 第2段・2026-08-01）。
     #   代用＝「試行の前半と後半で最良がどれだけ伸びたか」は、1試行しか無くても合格が出た
