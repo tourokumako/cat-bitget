@@ -744,7 +744,9 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                    run_dir: pathlib.Path, pool, tfs, catalog_total: int,
                    side="SHORT", regime=None,
                    base_trades=None, atr_edges=None, min_per_day=None, net_floor=None,
-                   purpose: str, tag: str = "") -> dict:
+                   purpose: str, tag: str = "",
+                   df_confirm: pd.DataFrame | None = None, confirm_start=None, confirm_end=None,
+                   base=None, rules: dict | None = None, rfloor: float | None = None) -> dict:
     """第1段＝構造をランダムに撒く（統計の土台）→ BH 法 → 第2段＝有望構造の値を TPE で詰める。"""
     meta = {"seed": seed, "trials1": trials1, "trials2": trials2, "top_k": top_k,
             "window": [str(start), str(end)], "side": side,
@@ -960,10 +962,40 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
         for b in stage2_best:
             print(f"  構造 #{b['idx']}: 第1段 ${next(z['total'] for z in top if z['idx']==b['idx']):+,.0f}"
                   f" → 第2段 best ${b['total']:+,.0f}")
+    # ══ tuner_judgement（判定表）＝A と B の合否を1枚で出す（2026-08-05 新設・まこさん OK「OK」）══
+    #   直す前は、この器が判定表を1行も出していなかった。出すには確認窓の成績が要る（B2 が要求する）が、
+    #   この器は値決め窓しか走らせていなかった。ここで確認窓の1走を足してつなぐ。
+    #   ★確認窓では分位（閾値の基準の値）を作り直さない＝値決め窓で1回固定した qtable をそのまま使う。
+    #     作り直すと「確認窓を見て閾値を選び直した」ことになり、窓の決まり（periods.py）に反する。
+    #   ★tuner_judgement の中身は変えない＝古い器と新しい器が同じ表を使う（変えると古い器の合否まで動く）。
+    verdict = None
+    if df_confirm is not None and kept:
+        import tuner_judgement as tj
+        best_rec = max(kept, key=lambda z: z["total"])
+        best_struct = structures[best_rec["idx"]]
+        # 値決め窓でもう1回だけ走らせる＝journal は売買記録を残していないため（1試行ぶんの費用）
+        rs_j = run_trial(df2, best_struct, qtable, judge, start, end)
+        df2c = attach_materials(df_confirm, [best_struct])
+        rc_j = run_trial(df2c, best_struct, qtable, judge, confirm_start, confirm_end)   # ★同じ qtable
+        print(f"\n[確認窓の1走] 構造 #{best_rec['idx']}（値決め窓で最良）を確認窓で1回だけ走らせた"
+              f"＝net ${rc_j['total']:+,.0f} ／ {rc_j['n']}玉 ／ {rc_j['per_day']:.2f}件/日"
+              "（★ここで選び直しはしない・分位は値決め窓のものを流用）")
+        bands = None
+        if base_trades is not None and atr_edges:
+            bands = tj.atr_bands(base_trades, rs_j["t"], atr_edges)
+        verdict = tj.print_judgement(base, rs_j, rc_j, min_per_day, stats, len(kept),
+                                     rules=rules, rfloor=rfloor, trials=trials1 + trials2,
+                                     stage_bests=None, bands=bands,
+                                     save_tag=f"gen_{tag or 'run'}",
+                                     save_note=f"新しい器（engine_tuner_gen）／構造 #{best_rec['idx']}"
+                                               f"／第1段 {trials1} 本・第2段 {trials2} 本／目的 {purpose}")
+    elif df_confirm is not None:
+        print("\n[判定表] 通った構造が0本＝比べる相手がいないので出さない（偽装の✅を出さない）")
+
     print("\n⚠️ ここは探索側の数字＝採否の数字ではない。統合最終形1つだけを採点窓 score.py にかけ、採否はまこさんが判断する。")
     return {"breakdown": bd, "rejects": dict(rejects), "kept": len(kept), "dropped": len(dropped),
             "pvals": pvals, "stats": stats, "stage2": stage2_best, "qtable_keys": len(qtable),
-            "reused": reused, "results1": results1}
+            "reused": reused, "results1": results1, "verdict": verdict}
 
 
 # ══ 検収専用（selftest／--dry-run）＝採否・本走に使わない ═══════════════════════════════════
@@ -1160,6 +1192,52 @@ def selftest() -> int:
     except ex.RecipeError:
         pass
 
+    # T10 tuner_judgement（判定表）の接続（2026-08-05 新設）＝3つ
+    #   ① 確認窓で分位（閾値の基準の値）を作り直さない＝値決め窓で1回固定したものを流用する
+    #   ② 土台が無いときに「これ以上出ない」と言わない（偽装の✅を出さない）
+    #   ③ 確認窓が採点窓に掛かるときは走らせない（③は T9 の窓の検査と同じ関門）
+    import contextlib as _ctx10
+    import io as _io10
+
+    import tuner_judgement as _tj10
+    import tuner_stats as _ts10
+    t10 = []
+    _real_qt = globals()["build_qtable"]
+    _calls = {"n": 0}
+
+    def _counting_qtable(*args, **kw):
+        _calls["n"] += 1
+        return _real_qt(*args, **kw)
+    with tempfile.TemporaryDirectory() as td10:
+        rd10 = pathlib.Path(td10) / "run"
+        rd10.mkdir(parents=True)
+        _rc, _rk = _ts10.CUMULATIVE, _ts10.CHECK_RUNS
+        _jd = _tj10.JUDGE_DIR
+        _ts10.CUMULATIVE = pathlib.Path(td10) / "cum.json"
+        _ts10.CHECK_RUNS = pathlib.Path(td10) / "chk.json"
+        _tj10.JUDGE_DIR = pathlib.Path(td10) / "judgement"
+        globals()["build_qtable"] = _counting_qtable
+        try:
+            with _ctx10.redirect_stdout(_io10.StringIO()):
+                # ★T6 と同じ種と本数を使う（この合成データで材料が組み立てられることが確認済みの経路）
+                out10 = run_generation(df, limits=lm, judge=judge, start=s4, end=e4,
+                                       trials1=10, trials2=0, top_k=2, seed=11, run_dir=rd10,
+                                       pool=pool, tfs=tfs_small, catalog_total=cat_total,
+                                       purpose=_ts10.PURPOSE_CHECK, tag="t10",
+                                       df_confirm=df, confirm_start=s4, confirm_end=e4,
+                                       base=None)
+        finally:
+            globals()["build_qtable"] = _real_qt
+            _ts10.CUMULATIVE, _ts10.CHECK_RUNS = _rc, _rk
+            _tj10.JUDGE_DIR = _jd
+        if _calls["n"] != 1:
+            t10.append(f"① 分位の解決表を {_calls['n']} 回 作った（確認窓では作り直さない＝1回のはず）")
+        if out10.get("kept") and out10.get("verdict") is None:
+            t10.append("② 通った構造が在るのに判定表を出していない")
+        if out10.get("verdict") == _tj10.PASS:
+            t10.append("② 土台が無いのに『これ以上出ない』と出た（偽装の✅）")
+    ng += [f"T10: {x}" for x in t10]
+
     # T9 本走の関門（2026-08-05 新設）＝3つの止まり方。1つでも素通りしたら本走を作った意味がない
     import inspect
 
@@ -1175,6 +1253,12 @@ def selftest() -> int:
     try:                                                  # ② 採点窓に掛かる窓（H8・L-267）
         pre_run_gate("e38", _ts9.PURPOSE_CHECK, SCORE_START, SCORE_END, None, {}, None)
         t9.append("採点窓に掛かる窓で止まらない")
+    except SystemExit:
+        pass
+    try:                                                  # ②b 確認窓が採点窓に掛かる（2026-08-05 追加）
+        pre_run_gate("e38", _ts9.PURPOSE_CHECK, SEARCH_START, SEARCH_END, None, {}, None,
+                     confirm_end=SCORE_END)
+        t9.append("確認窓が採点窓に掛かっても止まらない")
     except SystemExit:
         pass
     try:                                                  # ③ 役割の下限割れ（監査 4-14）
@@ -1199,8 +1283,10 @@ def selftest() -> int:
     print(f"  T1 構造の撒き: {len(structs)}/100 本が検証を通過 ／ 内訳 {json.dumps(bd, ensure_ascii=False)[:200]}…")
     print(f"  T2 BH 既知答え ✅ ／ T3 p値 (+){p_pos:.4f} (0){p_zero:.3f} ／ T4 解決表 {len(q1)} 鍵・決定論")
     print(f"  T5 層化の門 ／ T6 R12 再開 ／ T7 値待ち {len(waiting)} 件 ／ T8 生成不能の拒否")
-    print("  T9 本走の関門: 目的の未宣言4通り・採点窓・役割の下限割れ で停止／正しい組み合わせは通過"
-          "／T9b 入口が関門を呼んでいる")
+    print("  T9 本走の関門: 目的の未宣言4通り・採点窓・確認窓の越境・役割の下限割れ で停止／"
+          "正しい組み合わせは通過／T9b 入口が関門を呼んでいる")
+    print(f"  T10 判定表の接続: 分位の解決表は {_calls['n']} 回だけ作った（確認窓では作り直さない）／"
+          f"土台なしの結論 {out10.get('verdict')}（『これ以上出ない』ではない）")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
@@ -1219,11 +1305,12 @@ GEN_RUNS = HERE.parents[2] / "results" / "priority_rebuild" / "ratchet" / "gen_r
 
 
 def pre_run_gate(strategy: str, purpose: str | None, start, end,
-                 min_per_day, rules: dict | None, rfloor) -> None:
+                 min_per_day, rules: dict | None, rfloor, confirm_end=None) -> None:
     """本走の前の関門3つ。1つでも欠けたら走らせない（fail-closed）。
 
     ① 走行の目的が宣言されているか（既定に黙って倒れない・2026-08-05 の決まり）
     ② 使う窓が採点窓に掛かっていないか（H8・L-267＝采否の窓を探索に使わない）
+       ★確認窓も同じ検査に掛ける（2026-08-05 の判定表の接続で追加）
     ③ 役割から来る件数/日 の絶対下限を下回っていないか（監査 4-14・cat_requirements §8.6）
     """
     import tuner_judgement as tj
@@ -1233,10 +1320,11 @@ def pre_run_gate(strategy: str, purpose: str | None, start, end,
         raise SystemExit(f"[走行の目的エラー] --purpose は {ts.PURPOSES} のどれか。渡された値: {purpose!r}\n"
                          "  search＝値を選ぶ（試した回数に数える）／check＝道具の動作確認（数えない）。\n"
                          "  既定は持ちません＝書き忘れをここで止めます。")
-    if pd.Timestamp(end) > SCORE_START:
-        raise SystemExit(f"[窓エラー] 使おうとした窓の終わり {pd.Timestamp(end).date()} が "
-                         f"採点窓の始まり {SCORE_START.date()} を越えています。\n"
-                         "  採点窓は采否を決める窓です。探索に1バーも使いません（H8・L-267）。")
+    for nm, w in (("値決め窓", end), ("確認窓", confirm_end)):
+        if w is not None and pd.Timestamp(w) > SCORE_START:
+            raise SystemExit(f"[窓エラー] {nm} の終わり {pd.Timestamp(w).date()} が "
+                             f"採点窓の始まり {SCORE_START.date()} を越えています。\n"
+                             "  採点窓は采否を決める窓です。探索にも確認にも1バーも使いません（H8・L-267）。")
     tj.assert_role_floor(strategy, min_per_day, rules, rfloor)
 
 
@@ -1248,7 +1336,7 @@ def run_main(a) -> int:
     import score as judge                      # 審判＝import のみ・無変更（H13）
     import tuner_judgement as tj
     import tuner_stats as ts
-    from periods import SEARCH_END, SEARCH_START
+    from periods import CONFIRM_END, CONFIRM_START, SEARCH_END, SEARCH_START
 
     ad = et.load_adapter(a.strategy)           # ★戦略の中身を知るのは接続ファイルだけ（要件 R4）
     known = {z["id"]: z for z in ad.logics()}
@@ -1260,7 +1348,8 @@ def run_main(a) -> int:
     mpd = ad.min_per_day(a.logic)
     role, rfloor = tj.role_floor(a.strategy)
 
-    pre_run_gate(a.strategy, a.purpose, SEARCH_START, SEARCH_END, mpd, rules, rfloor)
+    pre_run_gate(a.strategy, a.purpose, SEARCH_START, SEARCH_END, mpd, rules, rfloor,
+                 confirm_end=CONFIRM_END)
 
     lm, waiting = load_limits()
     if waiting:
@@ -1281,7 +1370,9 @@ def run_main(a) -> int:
               "（この窓で今後行う探索すべての合格の線が、その分だけ厳しくなる）")
     else:
         print("[この走行の目的] check＝道具が動くかを見る。試した回数に数えない（帳簿には残す）")
-    print(f"[窓] 値決め {SEARCH_START.date()}〜{SEARCH_END.date()}（排他）＝periods.py が正本・採点窓は1バーも使わない")
+    print(f"[窓] 値決め {SEARCH_START.date()}〜{SEARCH_END.date()}（排他）／"
+          f"確認 {CONFIRM_START.date()}〜{CONFIRM_END.date()}（排他・1回走らせて表示するだけ・選び直さない）"
+          "＝periods.py が正本・採点窓は1バーも使わない")
     print(f"[側] {side} ／ [局面] {regime.get('name')}（入口の列 {regime.get('entry_col')}／止める列 {regime.get('block_col')}）")
     print(f"[役割] {a.strategy} = {role} ／ 役割から来る件数/日 の絶対下限 {rfloor}"
           f" ／ この回の探索で使う件数の下限 {mpd}")
@@ -1292,20 +1383,19 @@ def run_main(a) -> int:
               "＝合格の線を後出しで薄める形。上限を変えるなら設定ファイルを直してから回すこと。")
 
     t0 = time.time()
-    df = et.load_windows_cached(ad, [(SEARCH_START, SEARCH_END)], et.WARM, use_cache=not a.no_cache)[0]
-    print(f"[データ] 値決め窓 {len(df):,} バー（助走込み・{time.time() - t0:.0f}秒）")
+    df, df_c = et.load_windows_cached(ad, [(SEARCH_START, SEARCH_END), (CONFIRM_START, CONFIRM_END)],
+                                      et.WARM, use_cache=not a.no_cache)
+    print(f"[データ] 値決め窓 {len(df):,} バー ／ 確認窓 {len(df_c):,} バー（助走込み・{time.time() - t0:.0f}秒）")
 
-    # ★土台＝いまの採用値の売買記録（層化の門 B4 の比較相手）。無ければ判定不能と出るだけ（偽装の✅を出さない）。
-    base_trades = None
-    bp = getattr(ad, "baseline", lambda _l: None)(a.logic)
-    if bp is not None:
-        xk = ad.exit_keys()
-        ep = {k: v for k, v in bp.items() if k not in xk}
-        xp = {k: v for k, v in bp.items() if k in xk}
-        base_trades = et._run_window(ad, df, a.logic, ep, xp, SEARCH_START, SEARCH_END)["t"]
-        print(f"[土台] {a.logic} の現行値で {len(base_trades):,} 玉（層化の門の比較相手）")
+    # ★土台＝いまの採用値を両窓で1回ずつ走らせた結果（B1・B2・B4 の比較相手）。
+    #   無ければ判定表は「判定不能」と出るだけ（偽装の✅を出さない）。
+    base = et._run_baseline(ad, df, df_c, a.logic, ad.exit_keys(), None)
+    base_trades = base["search"]["t"] if base else None
+    if base:
+        print(f"[土台] {a.logic} の現行値＝値決め窓 net ${base['search']['total']:+,.0f}／{base['search']['n']:,}玉"
+              f" ／ 確認窓 net ${base['confirm']['total']:+,.0f}／{base['confirm']['n']:,}玉")
     else:
-        print("[土台] このロジックは採用値を持たない＝層化の門は判定不能と出る（合格の印は出さない）")
+        print("[土台] このロジックは採用値を持たない＝B1・B2・B4 は判定不能と出る（合格の印は出さない）")
 
     if a.resume:                                # R12＝途中で止まった走行の続きから
         run_dir = pathlib.Path(a.resume)
@@ -1323,11 +1413,11 @@ def run_main(a) -> int:
                          run_dir=run_dir, pool=pool, tfs=tfs, catalog_total=cat_total,
                          side=side, regime=regime, base_trades=base_trades,
                          atr_edges=rules.get("atr_band_edges"), min_per_day=mpd,
-                         net_floor=a.net_floor, purpose=a.purpose, tag=a.tag)
+                         net_floor=a.net_floor, purpose=a.purpose, tag=a.tag,
+                         df_confirm=df_c, confirm_start=CONFIRM_START, confirm_end=CONFIRM_END,
+                         base=base, rules=rules, rfloor=rfloor)
     print(f"\n[本走まとめ] 通った {out['kept']} 本 ／ 捨てた {out['dropped']} 本 ／ 再利用 {out['reused']} 本"
-          f" ／ 記録 {run_dir}")
-    print("⚠️ 判定の1枚表（A1・A2・B1〜B7）はまだ出していません＝次の一手で接続します"
-          "（確認窓で1回だけ走らせる処理が要るため・1ターン1変更）。")
+          f" ／ 結論 {out.get('verdict') or '（判定表を出していない）'} ／ 記録 {run_dir}")
     return 0
 
 
