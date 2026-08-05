@@ -25,6 +25,30 @@
      推定して その旨を必ず表示する（黙って甘い数字を出さない）。
  (d) PBO には全試行を渡さない。重複を除いた候補（クラスタの代表）を渡す。
 
+★分散 V を測る単位（2026-08-06・まこさん OK「実装していいよ」・next_step §6.5 の12番）
+--------------------------------------------------------------------------
+直す前は、N は「まとめたグループの数」なのに、分散は「まとめる前の1本ごとの成績」から測っていた。
+単位が食い違っていた。式（dsr_pbo.expected_max_sharpe）は自身の説明文のとおり
+「N 回の独立試行で期待される最大 Sharpe」で、独立な N 個を前提にしている。まとめるのは
+試行が独立でないからなので、N をグループの数にした以上、分散も同じグループの単位で測るのが筋。
+
+標準（Lopez de Prado & Lewis 2019 の ONC）の手順は4段:
+  ① 似た動きの試行をグループにまとめる                    ← 既存 effective_trials
+  ② グループごとに、中の試行の成績を1本の系列にまとめる    ← 新設 cluster_sharpes
+     （重み＝1/分散 を正規化＝ばらつきの小さい試行を重く）
+  ③ その系列から、グループごとの成績（Sharpe）を1つ出す    ← 同上
+  ④ そのグループごとの成績の分散を V にする                ← evaluate が渡す
+
+⚠️ 出典の確かめ方の限界（正直に）＝SSRN の論文ページは 403 で取得できず、Bailey の PDF は
+   この環境に文字を取り出す道具（pdftotext 等）が無く逐語を引けなかった。根拠は「検索の要約2件が
+   同じ4段を述べたこと」と「dsr_pbo.expected_max_sharpe の説明文が独立試行を前提と明記していること」。
+   論文本文で確認した、とは言わない。
+
+⚠️ グループが2つ未満のときは、まとめる前の1本ごとの分散に戻す（fail-closed）。グループが1つだと
+   グループの成績も1つになり分散が 0 になる＝合格の線が 0 に落ちて罰が丸ごと消えるため。
+   罰が重い側へ倒す（effective_trials の except 節と同じ考え方）。どちらを使ったかは戻り値の
+   v_unit に入れ、engine_tuner が画面に出す（黙って切り替えない）。
+
 審判に触れない（H13）
 --------------------------------------------------------------------------
 日ごとの net は score.py を日ごとに呼んで得る。CC が net を計算し直すことはしない。
@@ -111,6 +135,36 @@ def effective_trials(matrix: np.ndarray, rho: float = 0.8) -> tuple[int, np.ndar
         return n, np.arange(n)
 
 
+def cluster_sharpes(matrix: np.ndarray, labels: np.ndarray) -> np.ndarray:
+    """グループごとに1本の系列へまとめ、そのグループの成績（Sharpe）を出す（標準 ONC の ②③）。
+
+    重みは 1/分散 を正規化したもの＝日ごとの net のばらつきが小さい試行を重くする
+    （inverse variance optimization）。分散が 0 の試行（玉が1本も無い＝毎日 0 の列）は
+    重み 0 にして外す。グループの全員が分散 0 のときだけ、等しい重みにする。
+
+    Args:
+        matrix: (日数 T × 試行数 N) の日ごとの net
+        labels: 各列のグループ番号（effective_trials が返すもの）
+    Returns:
+        グループごとの Sharpe（長さ＝グループの数）
+    """
+    M = np.asarray(matrix, dtype=np.float64)
+    lab = np.asarray(labels)
+    out = []
+    for c in sorted({int(x) for x in lab.tolist()}):
+        idx = np.where(lab == c)[0]
+        sub = M[:, idx]
+        var = sub.var(axis=0, ddof=1) if sub.shape[0] > 1 else np.zeros(sub.shape[1])
+        good = np.isfinite(var) & (var > 0)
+        if not good.any():                       # 全員が動かない列＝重みを付けようがない
+            w = np.full(len(idx), 1.0 / len(idx))
+        else:
+            inv = np.where(good, 1.0 / np.where(good, var, 1.0), 0.0)
+            w = inv / inv.sum()
+        out.append(dsr_pbo.per_period_sharpe(sub @ w))
+    return np.array(out, dtype=np.float64)
+
+
 def load_cumulative(key: str) -> int:
     try:
         return int(json.loads(CUMULATIVE.read_text(encoding="utf-8")).get(key, {}).get("trials", 0))
@@ -193,7 +247,16 @@ def evaluate(daily: dict[int, pd.Series], best_id: int, past_trials: int,
     best_col = ids.index(best_id)
 
     n_for_dsr = n_eff + int(past_trials)
-    d = dsr_pbo.deflated_sharpe_ratio(M[:, best_col], sr, n_trials=n_for_dsr, T=T)
+
+    # ★分散 V はグループごとの成績から測る（2026-08-06・標準 ONC の ②③④・冒頭の説明を参照）。
+    #   N をグループの数にした以上、分散も同じ単位で測らないと辻褄が合わない。
+    #   グループが2つ未満のときだけ、まとめる前の1本ごとに戻す（罰が消えるのを防ぐ fail-closed）。
+    sr_cluster = cluster_sharpes(M, lab)
+    if len(sr_cluster) >= 2:
+        sr_for_var, v_unit = sr_cluster, "cluster"
+    else:
+        sr_for_var, v_unit = sr, "trial"
+    d = dsr_pbo.deflated_sharpe_ratio(M[:, best_col], sr_for_var, n_trials=n_for_dsr, T=T)
 
     # PBO には重複を除いた候補だけ渡す（クラスタごとに Sharpe が最良の1本）
     reps = []
@@ -205,7 +268,8 @@ def evaluate(daily: dict[int, pd.Series], best_id: int, past_trials: int,
     if len(reps) >= 2 and T >= n_blocks:
         pbo = dsr_pbo.pbo_cscv(M[:, reps], n_blocks=n_blocks)
     return {"T": T, "n_raw": len(ids), "n_eff": n_eff, "past_trials": int(past_trials),
-            "n_for_dsr": n_for_dsr, "dsr": d, "pbo": pbo, "n_pbo_cols": len(reps)}
+            "n_for_dsr": n_for_dsr, "dsr": d, "pbo": pbo, "n_pbo_cols": len(reps),
+            "v_unit": v_unit, "n_var": len(sr_for_var)}
 
 
 def selftest() -> int:
@@ -250,6 +314,56 @@ def selftest() -> int:
         ng.append(f"⑧ 捨てた試行を入れても N が増えない（{r_kept['n_for_dsr']} → {r_all['n_for_dsr']}）")
     if not (r_all["dsr"]["sr0"] >= r_kept["dsr"]["sr0"]):
         ng.append("⑧ N が増えたのに『運だけで出る水準』が上がらない（合格の線が厳しくならない）")
+
+    # ⑨⑩ 分散 V を測る単位（2026-08-06 の直しの効き目の既知答え）
+    #    ⑨ 2グループに分かれる合成データ＝グループごとの分散で測り、線が動く
+    #    ⑩ 1グループしかできない合成データ＝1本ごとに戻り、罰が消えない（fail-closed）
+    rng9 = np.random.default_rng(11)
+    a9, b9 = rng9.normal(loc=0.04, size=200), rng9.normal(loc=-0.02, size=200)
+    cols9 = ([a9 + rng9.normal(scale=0.05, size=200) for _ in range(10)]
+             + [b9 + rng9.normal(scale=0.05, size=200) for _ in range(10)])
+    M9 = np.column_stack(cols9)
+    d9 = {i: pd.Series(cols9[i]) for i in range(20)}
+    r9 = evaluate(d9, 0, past_trials=0)
+    sr9_trial = np.array([dsr_pbo.per_period_sharpe(M9[:, j]) for j in range(M9.shape[1])])
+    sr0_trial9 = dsr_pbo.expected_max_sharpe(float(np.var(sr9_trial, ddof=1)), r9["n_for_dsr"])
+    sr0_clus9 = r9["dsr"]["sr0"]
+    if r9["n_eff"] != 2:
+        ng.append(f"⑨ 2グループに分かれない（{r9['n_eff']}）＝既知答えの前提が崩れている")
+    if r9["v_unit"] != "cluster" or r9["n_var"] != 2:
+        ng.append(f"⑨ グループごとの分散で測っていない（{r9['v_unit']} / {r9['n_var']}本）")
+    if abs(sr0_clus9 - sr0_trial9) < 1e-9:
+        ng.append(f"⑨ 合格の線が動かない（1本ごと {sr0_trial9:.4f} ／ グループごと {sr0_clus9:.4f}）")
+
+    rng10 = np.random.default_rng(12)
+    base10 = rng10.normal(size=200)
+    cols10 = [base10 + 0.03 * j for j in range(10)]        # 定数のずれ＝相関1・成績だけ違う
+    d10 = {i: pd.Series(cols10[i]) for i in range(10)}
+    r10 = evaluate(d10, 0, past_trials=100)
+    if r10["n_eff"] != 1:
+        ng.append(f"⑩ 1グループにまとまらない（{r10['n_eff']}）＝既知答えの前提が崩れている")
+    if r10["v_unit"] != "trial":
+        ng.append(f"⑩ グループが1つなのに1本ごとへ戻っていない（{r10['v_unit']}）")
+    if not (r10["dsr"]["sr0"] > 0):
+        ng.append(f"⑩ 罰が消えている（運だけで出る水準 {r10['dsr']['sr0']:.4f} ＝ 0）")
+    if len(cluster_sharpes(np.column_stack(cols10), effective_trials(np.column_stack(cols10))[1])) != 1:
+        ng.append("⑩ グループの数が1でない＝戻す条件の前提が崩れている")
+
+    # ⑪ グループの中の重みが「ばらつきの小さい試行を重く」になっているか（標準 ONC の ②）
+    #    同じ平均で、ばらつきだけが 20 倍違う2本を1グループに入れる。
+    #    正しい重みなら まとめた成績は ばらつきの小さい方 とほぼ同じ。等しい重みだと大きく下がる。
+    rng11 = np.random.default_rng(13)
+    quiet = rng11.normal(loc=0.05, scale=0.1, size=400)
+    noisy = rng11.normal(loc=0.05, scale=2.0, size=400)
+    M11 = np.column_stack([quiet, noisy])
+    sr11 = float(cluster_sharpes(M11, np.zeros(2, dtype=int))[0])
+    sr11_quiet = dsr_pbo.per_period_sharpe(quiet)
+    sr11_equal = dsr_pbo.per_period_sharpe(M11 @ np.array([0.5, 0.5]))
+    if abs(sr11 - sr11_quiet) > 0.05:
+        ng.append(f"⑪ まとめた成績が ばらつきの小さい方 と違う（{sr11:.4f} vs {sr11_quiet:.4f}）"
+                  "＝重みが 1/分散 になっていない")
+    if not (sr11 > 3.0 * sr11_equal):
+        ng.append(f"⑪ 等しい重みと見分けがつかない（{sr11:.4f} vs 等重み {sr11_equal:.4f}）")
 
     # ⑤〜⑦ 走行の目的（2026-08-05 新設・fix_map 決定-確認走行を数えない）
     #   ★本物のファイルには一切触らない＝書き込み先を一時の場所へ差し替えて確かめる。
@@ -299,6 +413,14 @@ def selftest() -> int:
     print(f"  捨てた試行を入れる直しの効き目: 通過10本だけ → N {r_kept['n_for_dsr']}"
           f"（運だけで出る水準 {r_kept['dsr']['sr0']:.4f}） ／ 試した30本全部 → N {r_all['n_for_dsr']}"
           f"（同 {r_all['dsr']['sr0']:.4f}）＝数が増えるほど合格の線が厳しくなる")
+    print(f"  分散を測る単位の直しの効き目: 20本が2グループ →"
+          f" 1本ごとで測ると 運だけで出る水準 {sr0_trial9:.4f} ／"
+          f" グループごとで測ると {sr0_clus9:.4f}"
+          f"（{'厳しく' if sr0_clus9 > sr0_trial9 else '甘く'}なる）")
+    print(f"  グループが1つのとき: 単位 {r10['v_unit']}（1本ごとへ戻す）・"
+          f"運だけで出る水準 {r10['dsr']['sr0']:.4f}（0 でなければ罰が消えていない）")
+    print(f"  グループの中の重み: ばらつき20倍違う2本をまとめた成績 {sr11:.4f} ／"
+          f" ばらつきの小さい方の成績 {sr11_quiet:.4f} ／ 等しい重みなら {sr11_equal:.4f}")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")

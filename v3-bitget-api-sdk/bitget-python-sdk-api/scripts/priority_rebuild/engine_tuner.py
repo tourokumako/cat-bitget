@@ -357,6 +357,12 @@ def _print_stats(strategy: str, logic: str, results: list, best_num: int) -> Non
           "＝ゲートは選ぶ側の門であって、数える側の門ではない）"
           f" → 似た動きをまとめて {r['n_eff']} 本"
           f" ＋ この窓での過去の累積 {r['past_trials']} 本 = DSR に渡した N {r['n_for_dsr']}")
+    # ★ばらつき（分散）を測った単位（2026-08-06）＝黙って切り替えないための表示。
+    if r["v_unit"] == "cluster":
+        print(f"  ばらつきは まとめた {r['n_var']} グループの成績から測った（標準 ONC の形）")
+    else:
+        print(f"  ⚠️ ばらつきは まとめる前の {r['n_var']} 本の成績から測った"
+              "＝グループが2つ未満で、グループごとだと分散が 0 になり罰が消えるため戻した")
     print(f"  DSR = {d['dsr']:.3f}（合格 > {tuner_stats.DSR_PASS}）"
           f"{'  ✅' if ok_d else '  ❌'}   成績 {d['sr']:.4f} ／ 運だけで出る水準 {d['sr0']:.4f}")
     if p is None:

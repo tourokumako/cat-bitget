@@ -896,6 +896,12 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
               f"（うち通過 {len(stat_kept)} 本・捨てた {stats['n_raw'] - len(stat_kept)} 本も"
               "『比べた』ので数に入れる＝2026-08-05）"
               "（TPE の試行は入れない＝CP1 解A・『独立に撒く段は未実装』の警告をここで解消）")
+        # ★ばらつき（分散）を測った単位（2026-08-06）＝黙って切り替えないための表示。
+        if stats["v_unit"] == "cluster":
+            print(f"  ばらつきは まとめた {stats['n_var']} グループの成績から測った（標準 ONC の形）")
+        else:
+            print(f"  ⚠️ ばらつきは まとめる前の {stats['n_var']} 本の成績から測った"
+                  "＝グループが2つ未満で、グループごとだと分散が 0 になり罰が消えるため戻した")
         if not is_search:
             print("  ⚠️ 確認の走行（purpose=check）＝合格の印は出さない・値の選択には使わない")
         elif stats["pbo"]:
