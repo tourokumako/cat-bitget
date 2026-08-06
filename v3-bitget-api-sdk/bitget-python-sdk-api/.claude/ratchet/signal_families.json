@@ -1,0 +1,887 @@
+{
+ "approval": {
+  "fingerprint": null,
+  "note": "まこさんの承認の指紋が入るまで、この表は無効（G1 が生成器のコードの書き込みを止める）"
+ },
+ "bans": {
+  "direction_note": {
+   "basis": "2026-08-06 材料検査1 の実測（普通の相場で向きの差が四分位幅の半分以下）＋まこさん OK",
+   "parts": [
+    "安値からの経過バー24",
+    "安値からの経過バー48",
+    "安値からの経過バー96",
+    "高値からの経過バー24",
+    "高値からの経過バー48",
+    "高値からの経過バー96"
+   ],
+   "rule": "カタログ注記「型の表で向きの材料に使わない」を持つ部品は、向きの条件に使えない"
+  },
+  "direction_stateful": {
+   "basis": "indicator_reference_diag の「方向」の欄（2026-08-06 材料検査1＝合成系列＋実データの2本柱で全種検証済み・❌0件）",
+   "parts": [
+    "ADX14",
+    "ADX21",
+    "ADX7",
+    "ATR%14",
+    "ATR%21",
+    "ATR%7",
+    "BB幅(20,2.0)",
+    "BB幅(20,3.0)",
+    "BB幅(50,2.0)",
+    "BB幅(50,3.0)",
+    "Donchian幅%20",
+    "Donchian幅%48",
+    "S-Rタッチ数(288,0.003)",
+    "body比",
+    "realized_vol20",
+    "realized_vol50",
+    "volume_ratio20",
+    "volume_ratio50",
+    "zscore_return20",
+    "zscore_return50"
+   ],
+   "rule": "区分が 状態量・ボラ量 の部品は、向き（上昇/下落の優劣）の条件に使えない。強さ・量の条件には使える"
+  },
+  "insufficient_samples": {
+   "basis": "CP2 監査 4-4 の算術＋search_limits.json の n_min（まこさん OK 2026-08-01）。恒久の接続（検査5 の実測表）は D9 の直しで行う",
+   "pairs": [
+    {
+     "n_eff": 26.1,
+     "part": "ADX21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "DI差21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "MACD線%(12,26)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "MACDシグナル線%(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "MACDヒスト%(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "RSI21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "ROC24",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "CMF20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "OBV傾き20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "close vs 基準線%(26)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "RCI26",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "EMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "EMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "EMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "EMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "EMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "ATR%21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "BB%b(20,2.0)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "BB幅(20,2.0)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "BB%b(20,3.0)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "BB幅(20,3.0)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "BB%b(50,2.0)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "BB幅(50,2.0)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "BB%b(50,3.0)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "BB幅(50,3.0)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "realized_vol20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "realized_vol50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "Donchian幅%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "Donchian幅%48",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "zscore20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "zscore_return20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "zscore50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "zscore_return50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "volume_ratio20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "volume_ratio50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "swing高値距離%24",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "swing安値距離%24",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "高値からの経過バー24",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "安値からの経過バー24",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "形スコア24(V=+/M=−)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "W字(24,0.003)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "swing高値距離%48",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "swing安値距離%48",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "高値からの経過バー48",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "安値からの経過バー48",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "形スコア48(V=+/M=−)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "W字(48,0.003)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "swing高値距離%96",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 5.7,
+     "part": "swing高値距離%96",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "swing安値距離%96",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 5.7,
+     "part": "swing安値距離%96",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "高値からの経過バー96",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 5.7,
+     "part": "高値からの経過バー96",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "安値からの経過バー96",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 5.7,
+     "part": "安値からの経過バー96",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "形スコア96(V=+/M=−)",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 5.7,
+     "part": "形スコア96(V=+/M=−)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "W字(96,0.003)",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 5.7,
+     "part": "W字(96,0.003)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs EMA20%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs EMA50%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs EMA200%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs EMA200%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs EMA200%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs SMA20%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs SMA50%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs SMA200%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs SMA200%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs SMA200%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs VWAP%288",
+     "tf": "2h"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "close vs VWAP%288",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 7.6,
+     "part": "close vs VWAP%288",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 1.9,
+     "part": "close vs VWAP%288",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs Keltner上%(20,2.0)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs Keltner下%(20,2.0)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs 24本高値%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs 24本安値%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "close vs 48本高値%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "close vs 48本安値%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs 96本高値%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 5.7,
+     "part": "close vs 96本高値%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs 96本安値%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 5.7,
+     "part": "close vs 96本安値%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs pivotPP%288",
+     "tf": "2h"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "close vs pivotPP%288",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 7.6,
+     "part": "close vs pivotPP%288",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 1.9,
+     "part": "close vs pivotPP%288",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs pivotR1%288",
+     "tf": "2h"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "close vs pivotR1%288",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 7.6,
+     "part": "close vs pivotR1%288",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 1.9,
+     "part": "close vs pivotR1%288",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs pivotS1%288",
+     "tf": "2h"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "close vs pivotS1%288",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 7.6,
+     "part": "close vs pivotS1%288",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 1.9,
+     "part": "close vs pivotS1%288",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "fib位置96",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 5.7,
+     "part": "fib位置96",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs POC%288",
+     "tf": "2h"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "close vs POC%288",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 7.6,
+     "part": "close vs POC%288",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 1.9,
+     "part": "close vs POC%288",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs VAH%288",
+     "tf": "2h"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "close vs VAH%288",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 7.6,
+     "part": "close vs VAH%288",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 1.9,
+     "part": "close vs VAH%288",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "close vs VAL%288",
+     "tf": "2h"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "close vs VAL%288",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 7.6,
+     "part": "close vs VAL%288",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 1.9,
+     "part": "close vs VAL%288",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.9,
+     "part": "S-Rタッチ数(288,0.003)",
+     "tf": "2h"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "S-Rタッチ数(288,0.003)",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 7.6,
+     "part": "S-Rタッチ数(288,0.003)",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 1.9,
+     "part": "S-Rタッチ数(288,0.003)",
+     "tf": "1d"
+    }
+   ],
+   "rule": "値決め窓 549 日で有効標本数 n_eff < 30 の（部品×時間足）は条件の候補にしない"
+  }
+ },
+ "built_by": "gen_signal_families.py（全自動生成・CC の手書きの行ゼロ）",
+ "families": [
+  {
+   "id": "E-a1",
+   "name": "逆張り＝平均回帰 MR（レンジ端/行き過ぎを fade）"
+  },
+  {
+   "id": "E-a2",
+   "name": "順張り＝モメンタム/トレンドフォロー"
+  },
+  {
+   "id": "E-a3",
+   "name": "ブレイクアウト（レンジ/ATH 超え＋出来高）"
+  },
+  {
+   "id": "E-a4",
+   "name": "戻り売り・押し目（プルバック）"
+  },
+  {
+   "id": "E-a5",
+   "name": "グリッド（往復を仕組みで刻む）"
+  },
+  {
+   "id": "E-a6",
+   "name": "マーケットメイク（両側 maker・在庫制御＝Avellaneda-Stoikov/Cartea・スプレッド収益）"
+  },
+  {
+   "id": "E-a7",
+   "name": "order-flow/需給（Institutional Accumulation・Flow Momentum）"
+  },
+  {
+   "id": "E-a8",
+   "name": "レンジ内 value（stable range で仕込む）"
+  }
+ ],
+ "kubun": {
+  "ADX14": "状態量",
+  "ADX21": "状態量",
+  "ADX7": "状態量",
+  "ATR%14": "ボラ量",
+  "ATR%21": "ボラ量",
+  "ATR%7": "ボラ量",
+  "BB%b(20,2.0)": "順張り値",
+  "BB%b(20,3.0)": "順張り値",
+  "BB%b(50,2.0)": "順張り値",
+  "BB%b(50,3.0)": "順張り値",
+  "BB幅(20,2.0)": "ボラ量",
+  "BB幅(20,3.0)": "ボラ量",
+  "BB幅(50,2.0)": "ボラ量",
+  "BB幅(50,3.0)": "ボラ量",
+  "CMF20": "順張り値",
+  "DI差14": "順張り値",
+  "DI差21": "順張り値",
+  "DI差7": "順張り値",
+  "Donchian幅%20": "ボラ量",
+  "Donchian幅%48": "ボラ量",
+  "EMA200傾き%": "順張り値",
+  "EMA20傾き%": "順張り値",
+  "EMA50傾き%": "順張り値",
+  "EMA9傾き%": "順張り値",
+  "MACDシグナル線%(12,26,9)": "順張り値",
+  "MACDヒスト%(12,26,9)": "順張り値",
+  "MACD線%(12,26)": "順張り値",
+  "MFI14": "順張り値",
+  "OBV傾き10": "順張り値",
+  "OBV傾き20": "順張り値",
+  "RCI26": "順張り値",
+  "RCI9": "順張り値",
+  "ROC12": "順張り値",
+  "ROC24": "順張り値",
+  "ROC6": "順張り値",
+  "RSI14": "順張り値",
+  "RSI21": "順張り値",
+  "RSI7": "順張り値",
+  "RSI9": "順張り値",
+  "S-Rタッチ数(288,0.003)": "状態量",
+  "Stoch%D14": "順張り値",
+  "Stoch%D5": "順張り値",
+  "Stoch%D9": "順張り値",
+  "Stoch%K14": "順張り値",
+  "Stoch%K5": "順張り値",
+  "Stoch%K9": "順張り値",
+  "W字(24,0.003)": "反転サイン",
+  "W字(48,0.003)": "反転サイン",
+  "W字(96,0.003)": "反転サイン",
+  "body比": "状態量",
+  "close vs 24本安値%": "順張り値",
+  "close vs 24本高値%": "順張り値",
+  "close vs 48本安値%": "順張り値",
+  "close vs 48本高値%": "順張り値",
+  "close vs 96本安値%": "順張り値",
+  "close vs 96本高値%": "順張り値",
+  "close vs EMA20%": "順張り値",
+  "close vs EMA200%": "順張り値",
+  "close vs EMA50%": "順張り値",
+  "close vs EMA9%": "順張り値",
+  "close vs Keltner上%(20,2.0)": "順張り値",
+  "close vs Keltner下%(20,2.0)": "順張り値",
+  "close vs POC%288": "順張り値",
+  "close vs SMA20%": "順張り値",
+  "close vs SMA200%": "順張り値",
+  "close vs SMA50%": "順張り値",
+  "close vs Supertrend%(10,3.0)": "順張り値",
+  "close vs VAH%288": "順張り値",
+  "close vs VAL%288": "順張り値",
+  "close vs VWAP%288": "順張り値",
+  "close vs pivotPP%288": "順張り値",
+  "close vs pivotR1%288": "順張り値",
+  "close vs pivotS1%288": "順張り値",
+  "close vs 基準線%(26)": "順張り値",
+  "close vs 転換線%(9)": "順張り値",
+  "fib位置96": "順張り値",
+  "pinbar": "反転サイン",
+  "realized_vol20": "ボラ量",
+  "realized_vol50": "ボラ量",
+  "swing安値距離%24": "順張り値",
+  "swing安値距離%48": "順張り値",
+  "swing安値距離%96": "順張り値",
+  "swing高値距離%24": "順張り値",
+  "swing高値距離%48": "順張り値",
+  "swing高値距離%96": "順張り値",
+  "volume_ratio20": "状態量",
+  "volume_ratio50": "状態量",
+  "zscore20": "順張り値",
+  "zscore50": "順張り値",
+  "zscore_return20": "状態量",
+  "zscore_return50": "状態量",
+  "上ヒゲ比": "反転サイン",
+  "下ヒゲ比": "反転サイン",
+  "包み足": "反転サイン",
+  "孕み足": "反転サイン",
+  "安値からの経過バー24": "状態量",
+  "安値からの経過バー48": "状態量",
+  "安値からの経過バー96": "状態量",
+  "形スコア24(V=+/M=−)": "反転サイン",
+  "形スコア48(V=+/M=−)": "反転サイン",
+  "形スコア96(V=+/M=−)": "反転サイン",
+  "連続本数": "順張り値",
+  "高値からの経過バー24": "状態量",
+  "高値からの経過バー48": "状態量",
+  "高値からの経過バー96": "状態量"
+ },
+ "parts": [
+  "ADX7",
+  "DI差7",
+  "ADX14",
+  "DI差14",
+  "ADX21",
+  "DI差21",
+  "MACD線%(12,26)",
+  "MACDシグナル線%(12,26,9)",
+  "MACDヒスト%(12,26,9)",
+  "RSI7",
+  "RSI9",
+  "RSI14",
+  "RSI21",
+  "ROC6",
+  "ROC12",
+  "ROC24",
+  "Stoch%K5",
+  "Stoch%D5",
+  "Stoch%K9",
+  "Stoch%D9",
+  "Stoch%K14",
+  "Stoch%D14",
+  "MFI14",
+  "CMF20",
+  "OBV傾き10",
+  "OBV傾き20",
+  "close vs 転換線%(9)",
+  "close vs 基準線%(26)",
+  "RCI9",
+  "RCI26",
+  "EMA9傾き%",
+  "EMA20傾き%",
+  "EMA50傾き%",
+  "EMA200傾き%",
+  "ATR%7",
+  "ATR%14",
+  "ATR%21",
+  "BB%b(20,2.0)",
+  "BB幅(20,2.0)",
+  "BB%b(20,3.0)",
+  "BB幅(20,3.0)",
+  "BB%b(50,2.0)",
+  "BB幅(50,2.0)",
+  "BB%b(50,3.0)",
+  "BB幅(50,3.0)",
+  "realized_vol20",
+  "realized_vol50",
+  "Donchian幅%20",
+  "Donchian幅%48",
+  "zscore20",
+  "zscore_return20",
+  "zscore50",
+  "zscore_return50",
+  "volume_ratio20",
+  "volume_ratio50",
+  "包み足",
+  "孕み足",
+  "pinbar",
+  "連続本数",
+  "body比",
+  "上ヒゲ比",
+  "下ヒゲ比",
+  "swing高値距離%24",
+  "swing安値距離%24",
+  "高値からの経過バー24",
+  "安値からの経過バー24",
+  "形スコア24(V=+/M=−)",
+  "W字(24,0.003)",
+  "swing高値距離%48",
+  "swing安値距離%48",
+  "高値からの経過バー48",
+  "安値からの経過バー48",
+  "形スコア48(V=+/M=−)",
+  "W字(48,0.003)",
+  "swing高値距離%96",
+  "swing安値距離%96",
+  "高値からの経過バー96",
+  "安値からの経過バー96",
+  "形スコア96(V=+/M=−)",
+  "W字(96,0.003)",
+  "close vs EMA9%",
+  "close vs EMA20%",
+  "close vs EMA50%",
+  "close vs EMA200%",
+  "close vs SMA20%",
+  "close vs SMA50%",
+  "close vs SMA200%",
+  "close vs VWAP%288",
+  "close vs Keltner上%(20,2.0)",
+  "close vs Keltner下%(20,2.0)",
+  "close vs Supertrend%(10,3.0)",
+  "close vs 24本高値%",
+  "close vs 24本安値%",
+  "close vs 48本高値%",
+  "close vs 48本安値%",
+  "close vs 96本高値%",
+  "close vs 96本安値%",
+  "close vs pivotPP%288",
+  "close vs pivotR1%288",
+  "close vs pivotS1%288",
+  "fib位置96",
+  "close vs POC%288",
+  "close vs VAH%288",
+  "close vs VAL%288",
+  "S-Rタッチ数(288,0.003)"
+ ],
+ "pending": {
+  "direction_conflict": {
+   "basis": "無し（2026-08-06 の不正の再発防止＝根拠の無い規則を書かない）",
+   "rule": "（空欄）型の狙う向きと条件の向きの矛盾の定義＝機械で導く根拠がまだ無い。CC は書かない。まこさんの判断待ち"
+  },
+  "role_lineage": {
+   "basis": "無し（同上。2026-08-06 に CC が監査の例文から捏造して不正になった部分）",
+   "rule": "（空欄）役割（引き金・環境認識・十分性・位置）ごとに系統を絞る決まり＝機械で導く根拠がまだ無い。CC は書かない。まこさんの判断待ち"
+  }
+ },
+ "purpose": "net利益を最大化させる条件（指標、閾値、時間、パラメータ）の組み合わせを、見つけることができる機械を作ることが目的（まこさん確定 2026-08-06 逐語）",
+ "timeframes": [
+  "5m",
+  "15m",
+  "30m",
+  "1h",
+  "2h",
+  "4h",
+  "6h",
+  "1d"
+ ]
+}
