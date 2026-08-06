@@ -2905,6 +2905,372 @@ def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
         raise SystemExit(1)
 
 
+# ══ 材料検査（CP4 監査フィードバック②・2026-08-06・read-only）═══════════════
+# 型の表（役割×系統×時間足×向き）を作る前に、表の材料3つが間違っていないかを機械検査する。
+# ①方向の欄（indicator_reference_diag の houkou）②系統分類（FAMILY_LINEAGE）③v9_logic.md の鮮度。
+# 条件の生成・値の選定・売買・採点は一切しない。実データを使うのは②だけで、値決め窓のみ（採点窓は1バーも使わない）。
+_HOUKOU2PROP = {"順張り値": "trend", "状態量": "none", "ボラ量": "vol", "反転サイン": "reversal"}
+_V9_SOURCES = ("strategies/cat_v9_decider.py", "runner/replay_csv.py", "config/cat_params_v9.json")
+_V9_RECORD_SINCE = "2026-07-28 00:00"   # v9_logic.md の記録時点 2026-07-27 の翌日0時＝これ以降の変更を探す
+_OSC_BOUNDS = {"RSI": (0.0, 100.0), "Stoch%K": (0.0, 100.0), "Stoch%D": (0.0, 100.0),
+               "MFI": (0.0, 100.0), "RCI": (-100.0, 100.0)}
+# BB%b は作りの上で上限・下限が無い（価格がバンドの外に出れば 0〜1 を超える＝StockCharts %B Indicator・
+# 2026-08-06 WebResearch で確認）。端の値でなく分位と中央値で「オシレーターの形か」を見る。
+_OSC_PCTL = {"BB%b": (0.0, 1.0)}
+
+
+def _mat_series(n: int = 2600):
+    """合成の系列6本（上げ・下げ・横ばい・荒い・加速上げ・加速下げ）。検査専用＝学習にも値決めにも使わない。
+    加速の2本は 2026-08-06 まこさん OK の直し＝「加速」を主張する指標（MACDヒスト等）は、一定の速さの
+    上げでは 0 に収束するのが正しい動き（StockCharts MACD-Histogram）なので、だんだん速くなる系列で照合する。"""
+    idx = pd.date_range("2026-03-01", periods=n, freq="5min")
+    t = np.arange(n, dtype=float)
+    wig = np.sin(t / 3.0)
+
+    def mk(close):
+        c = pd.Series(close, index=idx)
+        return pd.DataFrame({"open": c.shift().fillna(c.iloc[0]),
+                             "high": c * 1.001 + 0.2 * np.abs(wig),
+                             "low": c * 0.999 - 0.2 * np.abs(wig),
+                             "close": c, "volume": 10.0 + np.cos(t / 5.0)}, index=idx)
+
+    up = mk(100.0 + 0.05 * t + 0.3 * wig)
+    dn = mk(100.0 + 0.05 * (n - t) + 0.3 * wig)
+    flat = mk(100.0 + 0.05 * np.sin(t / 40.0))
+    wild = mk(100.0 + 3.0 * np.sin(t / 7.0))
+    acc_up = mk(100.0 + 4e-5 * t * t + 0.3 * wig)
+    acc_dn = mk(100.0 + 4e-5 * n * n - 4e-5 * t * t + 0.3 * wig)
+    return up, dn, flat, wild, acc_up, acc_dn
+
+
+def _insp_direction_known(cfg: dict, bars: pd.DataFrame | None = None, fake: dict | None = None,
+                          catalog: list | None = None) -> list[str]:
+    """材料検査1 方向の欄の既知答え検査（CP4 ②）＝カタログ全種の「方向」の欄の主張を、2本の柱で照合する。
+    柱1＝合成系列（上げ・下げ・横ばい・荒い・加速）。柱2＝実データ（値決め窓の「上げた日」と「下げた日」の
+    分布・2026-08-06 まこさん OK で追加＝合成系列は CC が作ったものなので、独立の柱で確かめる）。
+    ★最終判定は実データの柱を優先する＝実データが ✗ なら ❌ ／ 実データが ✓ で合成だけ合わないなら ⚠️（報告）
+    ／実データが使えない列だけ合成の柱で判定する。
+    fake はメタ確認専用＝偽の欄で検査が実際に ❌ を出すことを確かめる（合成の柱で落とす＝bars 省略可）。"""
+    up, dn, flat, wild, acc_up, acc_dn = _mat_series()
+    tail = 300
+    ng: list[str] = []
+    from collections import Counter
+    marks = Counter()
+    bycat = Counter()
+
+    def med(fn, d):
+        try:
+            return float(pd.to_numeric(fn(d), errors="coerce").iloc[-tail:].median())
+        except Exception:
+            return float("nan")
+
+    def fire(fn, d):
+        try:
+            s = pd.to_numeric(fn(d), errors="coerce").iloc[-tail:]
+            return float((s.fillna(0.0) != 0.0).mean())
+        except Exception:
+            return float("nan")
+
+    # 実データの柱の準備＝値決め窓だけ（採点窓は1バーも使わない）。日足の陽線＝上げた日／陰線＝下げた日。
+    win = None
+    m_up = m_dn = None
+    if bars is not None:
+        _nm0, a0, b0 = _insp_windows()[0]
+        win = bars.loc[(bars.index >= a0) & (bars.index < b0)]
+        d_open = win.open.resample("1D").first()
+        d_close = win.close.resample("1D").last()
+        day = win.index.normalize()
+        ups = d_open.index[(d_close > d_open).fillna(False)]
+        dns = d_open.index[(d_close < d_open).fillna(False)]
+        m_up = day.isin(ups)
+        m_dn = day.isin(dns)
+        print(f"  実データの柱: 値決め窓 {a0.date()}〜{(b0 - pd.Timedelta('1D')).date()}＝"
+              f"上げた日 {len(ups)} 日 ／ 下げた日 {len(dns)} 日（採点窓は1バーも使わない）")
+
+    def real_split(fn):
+        """実データの柱＝(上げた日の中央値, 下げた日の中央値, 全体の四分位幅)。使えなければ None。"""
+        if win is None:
+            return None
+        try:
+            s = pd.to_numeric(fn(win), errors="coerce")
+        except Exception:
+            return None
+        iqr = float(s.quantile(0.75)) - float(s.quantile(0.25))
+        return (float(s[m_up].median()), float(s[m_dn].median()), iqr)
+
+    for name, fn, _d in (catalog or build_catalog(cfg)):
+        ref, _prm = iref.find(name)
+        if ref is None:
+            ng.append(f"{name}: 参照表に無い（方向の欄が引けない）")
+            marks["❌"] += 1
+            continue
+        houkou, prop = ref["houkou"], ref["prop"]
+        faked = bool(fake and fake.get("name") == name)
+        if faked:
+            houkou, prop = fake["houkou"], fake.get("prop", prop)
+        cat = houkou.split("＝")[0]
+        bycat[cat] += 1
+        if cat not in _HOUKOU2PROP:
+            ng.append(f"{name}: 方向の欄の区分が読めない（{houkou[:40]}）")
+            marks["❌"] += 1
+            continue
+        if _HOUKOU2PROP[cat] != prop:
+            ng.append(f"{name}: 方向の欄（{cat}）と性質テストの型（prop={prop}）が食い違う")
+            marks["❌"] += 1
+            continue
+        syn, real = "na", "na"                  # 各柱の結果＝ok / ng / na（判定不能）
+        sn, rn = "", ""
+        if cat == "順張り値":
+            d_hi, d_lo = (acc_up, acc_dn) if "加速" in houkou else (up, dn)
+            a, b = med(fn, d_hi), med(fn, d_lo)
+            if not (np.isfinite(a) and np.isfinite(b)) or max(abs(a), abs(b)) < 1e-6 or a == b:
+                sn = f"合成=判定不能（上げ {a:.4g} ／ 下げ {b:.4g}＝計算不能か実質ゼロ）"
+            else:
+                ok = a > b
+                if ok and "プラス" in houkou:
+                    ok = (a > 0.0) and (b < 0.0)
+                syn = "ok" if ok else "ng"
+                sn = f"合成{'✓' if ok else '✗'}（上げ {a:.4g} ／ 下げ {b:.4g}{'・加速系列' if '加速' in houkou else ''}）"
+            r = real_split(fn)
+            if r is not None:
+                mu, mdn, iqr = r
+                if not (np.isfinite(mu) and np.isfinite(mdn)) or iqr <= 0:
+                    rn = "実データ=判定不能"
+                elif abs(mu - mdn) < 0.05 * iqr:
+                    real = "flat"
+                    rn = f"実データ=向きの差が出ない（上げた日 {mu:.4g} ／ 下げた日 {mdn:.4g} ／ 四分位幅 {iqr:.4g}）"
+                elif mu > mdn:
+                    real = "ok"
+                    rn = f"実データ✓（上げた日 {mu:.4g} ＞ 下げた日 {mdn:.4g}）"
+                else:
+                    real = "ng"
+                    rn = f"実データ✗（上げた日 {mu:.4g} ＜ 下げた日 {mdn:.4g}＝主張と逆向き）"
+        elif cat == "状態量":
+            a, b = med(fn, up), med(fn, dn)
+            if not (np.isfinite(a) and np.isfinite(b)):
+                sn = f"合成=判定不能（上げ {a:.4g} ／ 下げ {b:.4g}）"
+            elif max(abs(a), abs(b)) < 1e-9:
+                syn, sn = "ok", f"合成✓（上げ {a:.4g} ／ 下げ {b:.4g}＝どちらも 0）"
+            else:
+                asym = abs(a - b) / max(abs(a), abs(b))
+                syn = "ok" if asym <= 0.5 else "ng"
+                sn = f"合成{'✓' if syn == 'ok' else '✗'}（上げ {a:.4g} ／ 下げ {b:.4g}＝非対称率 {asym:.2f}・0.5 以下で向きなし）"
+            r = real_split(fn)
+            if r is not None:
+                mu, mdn, iqr = r
+                if not (np.isfinite(mu) and np.isfinite(mdn)) or iqr <= 0:
+                    rn = "実データ=判定不能"
+                else:
+                    real = "ok" if abs(mu - mdn) <= 0.5 * iqr else "ng"
+                    rn = (f"実データ{'✓' if real == 'ok' else '✗'}（上げた日 {mu:.4g} ／ 下げた日 {mdn:.4g} ／ "
+                          f"四分位幅 {iqr:.4g}＝差が幅の半分以下で向きなし）")
+        elif cat == "ボラ量":
+            w, c0 = med(fn, wild), med(fn, flat)
+            if not (np.isfinite(w) and np.isfinite(c0)):
+                sn = f"合成=判定不能（荒い {w:.4g} ／ 静か {c0:.4g}）"
+            else:
+                syn = "ok" if w >= c0 else "ng"
+                sn = f"合成{'✓' if syn == 'ok' else '✗'}（荒い {w:.4g} ／ 静か {c0:.4g}＝荒い ≥ 静か の主張）"
+            rn = "実データ=対象外（ボラは下げ相場で大きく出る非対称が実在＝向きの検査に使わない）"
+        else:                                   # 反転サイン＝方向の系列では検証できない＝既知答えの有無を検査
+            if ref["known"] is None and not faked:
+                syn, sn = "ng", "反転の主張なのに手計算の既知答えが無い（検証の柱が無い）"
+            else:
+                syn = "ok"
+                sn = (f"既知答えあり（向きの照合は検査3 ③が担保）／発火率 上げ {fire(fn, up):.0%}"
+                      f" ／ 下げ {fire(fn, dn):.0%} ／ 横ばい {fire(fn, flat):.0%}")
+            rn = "実データ=対象外（事象の印＝分布の照合になじまない）"
+        # ★最終判定＝実データ優先（実データ ✗ → ❌ ／ 実データ ✓ で合成 ✗ → ⚠️ ／ 実データ不可 → 合成で判定）
+        if real == "ng":
+            mark = "❌"
+        elif real in ("ok", "flat"):
+            if syn == "ng":
+                mark = "❌" if real == "flat" else "⚠️"
+            elif real == "flat" and syn != "ok":
+                mark = "⚠️"
+            else:
+                mark = "✅" if real == "ok" else ("✅" if syn == "ok" else "⚠️")
+        else:                                   # real == "na"
+            mark = {"ok": "✅", "ng": "❌", "na": "⚠️"}[syn]
+        marks[mark] += 1
+        note = sn + ("／" + rn if rn else "")
+        if mark == "❌":
+            ng.append(f"{name}: 方向の欄の主張と実測が食い違う（{note}）")
+        print(f"     {mark} {name} [{cat}] {note}")
+    print(f"  区分の内訳: {dict(bycat)}")
+    print(f"  結果: ✅ {marks.get('✅', 0)} ／ ❌ {marks.get('❌', 0)} ／ ⚠️ {marks.get('⚠️', 0)}"
+          f"（⚠️＝片方の柱だけ合わない・判定不能＝反証ではないが一覧で報告する）")
+    return ng
+
+
+def _insp_lineage_range(bars: pd.DataFrame, cfg: dict, fake_family: str | None = None,
+                        catalog: list | None = None) -> list[str]:
+    """材料検査2 系統分類（FAMILY_LINEAGE）の範囲検査（CP4 ②）＝オシレーター系に分類された
+    指標の値域が「有界」または「0 を挟んで振動」かを、値決め窓の実データで照合する。
+    あわせて全種の分類一覧を、非同型レビュー（Web Claude）へ渡す形で印字する。
+    fake_family はメタ確認専用＝その系統をわざとオシレーター扱いにして ❌ が出ることを確かめる。"""
+    ng: list[str] = []
+    nm0, a0, b0 = _insp_windows()[0]            # 値決め窓（periods.py 正本）＝採点窓は使わない
+    win = bars.loc[(bars.index >= a0) & (bars.index < b0)]
+    print(f"  実データ: {nm0}窓 {a0.date()}〜{(b0 - pd.Timedelta('1D')).date()}（{len(win)} 行）＝採点窓は1バーも使わない")
+    rows = []
+    for name, fn, _d in (catalog or build_catalog(cfg)):
+        ref, _prm = iref.find(name)
+        fam = ref["family"] if ref else "？"
+        k = iref.FAMILY_LINEAGE.get(fam, {}).get("k", "未登録")
+        if fake_family and fam == fake_family:
+            k = "オシレーター"
+        rows.append((name, fam, k))
+        if k != "オシレーター":
+            continue
+        try:
+            s = pd.to_numeric(fn(win), errors="coerce").dropna()
+        except Exception as e:
+            ng.append(f"{name}: 値決め窓で計算できない: {str(e)[:50]}")
+            continue
+        if len(s) < 1000:
+            print(f"     ⚠️ {name}: 点が足りない（{len(s)} 本）＝判定不能")
+            continue
+        lo_hi = _OSC_BOUNDS.get(fam)
+        pct = _OSC_PCTL.get(fam)
+        if pct:
+            lo, hi = pct
+            p01, p99, md0 = float(s.quantile(0.01)), float(s.quantile(0.99)), float(s.median())
+            ok = (p01 >= lo - 0.5) and (p99 <= hi + 0.5) and (lo <= md0 <= hi)
+            note = (f"分位で照合＝p01 {p01:.4g} ／ p99 {p99:.4g} ／ 中央値 {md0:.4g}"
+                    f"（%b はバンドの外で 0〜1 を超えるのが正しい＝端の値でなく分位 ±0.5 と中央値で見る）")
+        elif lo_hi:
+            lo, hi = lo_hi
+            ok = (float(s.min()) >= lo - 1e-6) and (float(s.max()) <= hi + 1e-6)
+            note = f"値域 [{float(s.min()):.4g}, {float(s.max()):.4g}] ⊂ 想定 [{lo:.4g}, {hi:.4g}]"
+        else:
+            neg, pos = float((s < 0).mean()), float((s > 0).mean())
+            ok = (neg >= 0.05) and (pos >= 0.05)
+            note = f"0 を挟んで振動するか＝マイナス側 {neg:.0%} ／ プラス側 {pos:.0%}（両側 5% 以上で合格）"
+        print(f"     {'✅' if ok else '❌'} {name} [{fam}] {note}")
+        if not ok:
+            ng.append(f"{name}: オシレーター系の分類なのに値域がオシレーターの形でない（{note}）")
+    print("  ── 非同型レビュー依頼（この節を丸ごと Web Claude に渡す・実施はまこさんにお願いする）──")
+    print("  依頼文: 下の「指標名 → 系統」の分類が妥当かを、実装を見ない立場で1行ずつ 妥当/疑問 で判定し、")
+    print("  疑問の行には理由を1行で書いてください。系統は トレンド／オシレーター／ボラ／出来高／ローソク／構造・位置 の6つです。")
+    for name, fam, k in rows:
+        print(f"     {name} [{fam}] → {k}")
+    return ng
+
+
+def _insp_v9_freshness(expected: dict | None = None) -> list[str]:
+    """材料検査3 v9_logic.md の鮮度検査（CP4 ②）＝出どころ3本（Entry判定・Exit実行・値）が
+    記録時点（2026-07-27）から変わっていないことを git log と md5 で機械照合する。
+    v9_logic.md に md5 の記録は無い（確認済 2026-08-06）＝今回の出力を以後の比較の基準として残す。
+    expected はメタ確認専用＝偽の md5 を渡して ❌ が出ることを確かめる。"""
+    import hashlib
+    import os
+    import subprocess
+    ng: list[str] = []
+    sdk = pathlib.Path(__file__).resolve().parents[2]
+    try:
+        root = subprocess.run(["git", "-C", str(sdk), "rev-parse", "--show-toplevel"],
+                              capture_output=True, text=True, check=True).stdout.strip()
+    except Exception as e:
+        return [f"git が使えない: {str(e)[:60]}"]
+    for rel in _V9_SOURCES:
+        p = sdk / rel
+        if not p.exists():
+            ng.append(f"{rel}: ファイルが無い")
+            continue
+        md5v = hashlib.md5(p.read_bytes()).hexdigest()
+        rp = os.path.relpath(p, root)
+        after = subprocess.run(["git", "-C", root, "log", "--since", _V9_RECORD_SINCE,
+                                "--format=%h %ad %s", "--date=short", "--", rp],
+                               capture_output=True, text=True).stdout.strip().splitlines()
+        after = [x for x in after if x.strip()]
+        last = subprocess.run(["git", "-C", root, "log", "-1", "--format=%h %ad", "--date=short", "--", rp],
+                              capture_output=True, text=True).stdout.strip()
+        mark = "✅"
+        note = ""
+        if after:
+            mark = "❌"
+            ng.append(f"{rel}: 記録時点（2026-07-27）より後に変更コミットがある: {after[0][:60]}")
+            note = f"／ 記録後の変更 {len(after)} 件"
+        exp = (expected or {}).get(p.name)
+        if exp is not None and exp != md5v:
+            mark = "❌"
+            ng.append(f"{rel}: md5 が照合値と不一致（照合値 {exp[:8]}… ／ 実測 {md5v[:8]}…）")
+            note += "／ md5 不一致"
+        print(f"     {mark} {rel} md5 {md5v} ／ 最終コミット {last or '（履歴なし）'}{note}")
+    return ng
+
+
+def check_materials(bars_csv: str, config_path: str | None = None) -> None:
+    """材料検査（CP4 ②）＝3本を順に走らせ、まとめを機械出力する。❌ が1つでもあれば終了コード1。
+    ❌ が出ても直さない＝報告してまこさんの判断を仰ぐ（acceptance 2026-08-06 の決まり）。"""
+    cfg = load_config(config_path)
+    bars = pd.read_csv(bars_csv, parse_dates=["timestamp"]).set_index("timestamp").sort_index()
+    print("#" * 100)
+    print("# 材料検査（CP4 監査フィードバック②・read-only・型の表の材料の間違い確認）")
+    print(f"# 対象: {bars_csv}（{len(bars)} 行）／ 指標 {len(build_catalog(cfg))} 種")
+    print("# 売買しない・値決めしない・審判に触れない。実データは値決め窓のみ＝採点窓は1バーも使わない。")
+    print("#" * 100)
+    fails = {}
+    _h("材料検査1 方向の欄の既知答え検査（柱1＝合成系列 ／ 柱2＝実データの上げた日・下げた日＝実データ優先）")
+    fails["材料検査1"] = _insp_direction_known(cfg, bars=bars)
+    _h("材料検査2 系統分類（FAMILY_LINEAGE）の範囲検査（値決め窓の実データ・オシレーター系の値域）")
+    fails["材料検査2"] = _insp_lineage_range(bars, cfg)
+    _h("材料検査3 v9_logic.md の鮮度検査（git log と md5）")
+    fails["材料検査3"] = _insp_v9_freshness()
+    print("\n" + "=" * 100)
+    print("材料検査のまとめ（❌＝直さずに報告する・材料の直しはまこさんの判断を仰いでから）")
+    bad = 0
+    for key in fails:
+        if fails[key]:
+            for x in fails[key]:
+                print(f"  ❌ {key}: {x}")
+            bad += len(fails[key])
+        else:
+            print(f"  ✅ {key}: 異常なし")
+    print("=" * 100)
+    if bad:
+        raise SystemExit(1)
+
+
+def check_materials_meta(bars_csv: str, config_path: str | None = None) -> None:
+    """材料検査のメタ確認（§2.9③）＝わざと偽物を3つ注入し、検査が実際に ❌ を出すことを確かめる。
+    3件とも落ちれば終了コード0（検査は機能している）。1件でも素通りすれば終了コード1。
+    実物のカタログ・参照表・ファイルは1バイトも変えない（差し替えは実行中の引数だけ）。"""
+    cfg = load_config(config_path)
+    bars = pd.read_csv(bars_csv, parse_dates=["timestamp"]).set_index("timestamp").sort_index()
+    cat = build_catalog(cfg)
+    print("#" * 100)
+    print("# 材料検査のメタ確認（わざと壊して落ちるか・実物は不変・注入は実行中の引数のみ）")
+    print("#" * 100)
+    tgt = next((nm for nm, _f, _d in cat if iref.find(nm)[0] and iref.find(nm)[0]["family"] == "DI差"), None)
+    results = []
+    _h(f"偽1: {tgt} の方向の欄を「状態量（向きなし）」に差し替える＝本物は順張り値なので ❌ が出るはず")
+    sub1 = [row for row in cat if row[0] == tgt]
+    r1 = _insp_direction_known(cfg, fake=dict(name=tgt, houkou="状態量＝メタ確認用の偽の欄（本物は順張り値）",
+                                              prop="none"), catalog=sub1)
+    results.append(("偽の方向の欄", r1))
+    _h("偽2: ボラ系 ATR% をオシレーター系に差し替える＝値域が片側だけなので ❌ が出るはず")
+    sub2 = [row for row in cat if iref.find(row[0])[0] and iref.find(row[0])[0]["family"] == "ATR%"]
+    r2 = _insp_lineage_range(bars, cfg, fake_family="ATR%", catalog=sub2)
+    results.append(("偽の系統分類", r2))
+    _h("偽3: cat_v9_decider.py に偽の md5 を照合値として渡す＝不一致で ❌ が出るはず")
+    r3 = _insp_v9_freshness(expected={"cat_v9_decider.py": "0" * 32})
+    results.append(("偽の指紋", r3))
+    print("\n" + "=" * 100)
+    ok = True
+    for label, r in results:
+        if r:
+            print(f"  ✅ {label}: 検査が正しく ❌ を出した（{len(r)} 件）")
+        else:
+            print(f"  🚨 {label}: 偽物が素通りした＝検査が機能していない")
+            ok = False
+    print("=" * 100)
+    if not ok:
+        raise SystemExit(1)
+    print("  メタ確認3件 全部落ちた＝材料検査は機能している")
+
+
 # ══ 自己検査 ════════════════════════════════════════════════════════════
 def _J(a: str, b: str) -> str:
     """検査文字列を分割して連結する（自己一致よけ）。
@@ -3527,6 +3893,10 @@ def build_parser():
     ap.add_argument("--config", default=None, help="observe_config.json のパス（既定は同ディレクトリ）")
     ap.add_argument("--title", default="", help="出力の見出しに付ける題名")
     ap.add_argument("--selftest", action="store_true", help="自己検査だけ走らせる（この道具が守ると言っていることを機械で確認）")
+    ap.add_argument("--check-materials", action="store_true",
+                    help="材料検査（CP4 ②・read-only）＝方向の欄・系統分類・v9_logic.md の鮮度を機械検査＝5分足CSVのパスを1つ渡す")
+    ap.add_argument("--check-materials-meta", action="store_true",
+                    help="材料検査のメタ確認＝わざと偽の欄・偽の分類・偽の指紋を注入し、検査が実際に ❌ を出すことを確かめる")
     return ap
 
 
@@ -3537,7 +3907,16 @@ if __name__ == "__main__":
         ap = build_parser()
         a = ap.parse_args()
         # 本走の結果は results ラチェット直下へ保存する（--plan は提出用の計画＝画面のみ・2026-07-26）
-        if a.inspect:
+        if a.check_materials or a.check_materials_meta:
+            path = a.trades_csv or a.bars_csv          # 位置引数の1つ目に5分足CSVを渡してよい
+            if not path:
+                ap.error("--check-materials には 5分足CSV のパスが必要（売買記録は使わない）")
+            if a.check_materials_meta:
+                check_materials_meta(path, a.config)
+            else:
+                with _Tee(_out_path("materials", pathlib.Path(path).stem)):
+                    check_materials(path, a.config)
+        elif a.inspect:
             path = a.trades_csv or a.bars_csv          # 位置引数の1つ目に5分足CSVを渡してよい
             if not path:
                 ap.error("--inspect には 5分足CSV のパスが必要（売買記録は使わない）")
