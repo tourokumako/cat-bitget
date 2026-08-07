@@ -13,13 +13,21 @@ CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.st
 #   enforce_worklog_on_experiment（Stop）が永久に exit 7 になった（worklog を書くほどブロックが続く自己矛盾）。
 #   記録コマンド（session_worklog を含む Bash）は下の materialマーカーを立てない＝本文の語で誤発火しない。
 printf '%s' "$CMD" | grep -qE 'session_worklog' && exit 0
+# ★検知に使う形へ整える（2026-08-07 まこさん指示「21は今やれば？」・next_step §6.5 の21番）。
+#   ヒアドキュメント（<<EOF … EOF）の中身と引用符の中身を空白に置き換える＝走らせていないのに
+#   名前が出てくる場面（git commit のメッセージ本文・echo の中）で誤発火しない。
+#   背景＝2026-08-07 に commit メッセージ本文の score.py を「分析を回した」と誤検知してターンが止まった（この日 2回）。
+#   上の15行（session_worklog を除外）は同じ型のその場しのぎ（2026-07-20）。原因は同じなのでここで1本にした。
+#   実装は .claude/hooks/hook_cmd.py（番人＝既知答え7件・--selftest）。失敗したら元の CMD のまま使う（fail-open）。
+CMD_X=$(printf '%s' "$CMD" | python3 "$(dirname "$0")/hook_cmd.py" 2>/dev/null) || CMD_X="$CMD"
 # trades_*.csv に触れた（pandas read_csv / probe / report / analyze 等）＝データを読んだ
-printf '%s' "$CMD" | grep -qE 'trades_[A-Za-z0-9_]*\.csv' && touch "$STATE/fastmode_trades_seen"
+printf '%s' "$CMD_X" | grep -qE 'trades_[A-Za-z0-9_]*\.csv' && touch "$STATE/fastmode_trades_seen"
 # e37_range_scalp.py に触れた（sed/grep/cat/python いずれでも）＝実装を読んだ
-printf '%s' "$CMD" | grep -qE 'e37_range_scalp\.py' && touch "$STATE/fastmode_e37_seen"
+printf '%s' "$CMD_X" | grep -qE 'e37_range_scalp\.py' && touch "$STATE/fastmode_e37_seen"
 # ledger.md に触れた（grep/sed/cat/less いずれでも）＝ARC 履歴（過去にやったこと）を読んだ
 #   → require_data_read_before_improve の3つ目のゲート（改善前 ledger 読了）が参照（退行の物理防止・2026-07-16 まこさん承認）
-printf '%s' "$CMD" | grep -qE 'ledger\.md' && touch "$STATE/fastmode_ledger_seen"
-# 分析/採点（report/analyze/score/probe/deep_analysis）を走らせた＝結論を worklog に記録すべき（enforce_worklog_on_experiment が Stop で照合）
-printf '%s' "$CMD" | grep -qE 'report\.py|analyze\.py|score\.py|_probe\.py|_deep_analysis\.py' && touch "$STATE/fastmode_record_pending"
+printf '%s' "$CMD_X" | grep -qE 'ledger\.md' && touch "$STATE/fastmode_ledger_seen"
+# 分析/採点（report/analyze/score/probe/deep_analysis）を「python で走らせた」＝結論を worklog に記録すべき
+#   （enforce_worklog_on_experiment が Stop で照合）。★名前がコマンドの中に在るだけでは立てない（2026-08-07・§6.5 の21番）。
+printf '%s' "$CMD_X" | grep -qE 'python[0-9.]*[ \t]+[^|&;]*(report\.py|analyze\.py|score[A-Za-z0-9_]*\.py|_probe\.py|_deep_analysis\.py)' && touch "$STATE/fastmode_record_pending"
 exit 0

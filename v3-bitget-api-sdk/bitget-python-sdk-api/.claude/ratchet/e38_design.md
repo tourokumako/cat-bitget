@@ -1,7 +1,7 @@
-<!-- DESIGN_HASH=5ac72015dcd0986f -->
+<!-- DESIGN_HASH=6e9bd515a6d622f9 -->
 # e38_design.md — E38 優先度スタック 設計書（gen_design.py 機械生成＝手書き禁止）
 
-生成元: e38_logics.json（ロジック定義の正本・sha256=b6606e907f019619）＋ e38_requirements.json ＋ 段0 実測（worklog 逐語）。
+生成元: e38_logics.json（ロジック定義の正本・sha256=3acc8484fa84acc2）＋ e38_requirements.json ＋ 段0 実測（worklog 逐語）。
 再生成: python3 scripts/priority_rebuild/gen_design.py --write ／ 改変検出: --verify
 ⚠️ 本ファイルの手書き編集は禁止。変更は e38_logics.json（値）または gen_design.py（型・まこさん承認）を直して再生成。
 ⚠️ 設定 json が設計書の中核であり実装データそのもの（e38_requirements.json decisions）＝本書の flags/const は json の逐語ダンプ。
@@ -48,9 +48,9 @@
 - 採点窓（采否・段5 のみ）: 2026-03-01 〜 2026-06-30（periods.py 正本・fast-mode §8.5）
 - 値決め窓・確認窓（段2 目的関数・まこさん決定 2026-07-24・選び方の正本 window_similarity_ranking.md）＝periods.py の実値（意味と経緯＝.claude/ratchet/windows.md）:
 ```python
-SEARCH_START = 2024-04-01   # 値決め窓（periods.py が正本）
-SEARCH_END   = 2024-08-01   # 排他
-CONFIRM_START= 2025-12-01   # 確認窓（表示のみ・選び直さない）
+SEARCH_START = 2024-03-01   # 値決め窓（periods.py が正本）
+SEARCH_END   = 2025-09-01   # 排他
+CONFIRM_START= 2025-09-01   # 確認窓（表示のみ・選び直さない）
 CONFIRM_END  = 2026-03-01   # 排他
 ```
 
@@ -83,7 +83,11 @@ CONFIRM_END  = 2026-03-01   # 排他
   "regime": {
     "v20_rg5": true,
     "v25_adaptive_band": true,
-    "note": "レンジ判定 RG-v5＋RG-v6 適応束ね幅＝S1/L1 共通の局面ゲート（build_regime_gate_rg.py を import 再利用・視認校正3巡・H2 確定バーのみ）"
+    "name": "range",
+    "entry_col": "range_ok_rg5",
+    "block_col": "rg5_uptrend",
+    "note": "レンジ判定 RG-v5＋RG-v6 適応束ね幅＝S1/L1 共通の局面ゲート（build_regime_gate_rg.py を import 再利用・視認校正3巡・H2 確定バーのみ）",
+    "note_2026_08_03": "name / entry_col / block_col を追加（監査 4-19・要件 R5・まこさん OK 2026-08-03）。それまでは実行器 engine_tuner_exec.py と共通の売買ループ e38_logic_parts.py のコードに列の名前が直接書いてあり、レンジ以外の相場を指定できなかった。ここに書いた名前を接続ファイル e38.py の regime() が返し、実行器がそれを読んで動く。値はいまと同じ＝挙動は変わらない（恒等）。name の一覧の正本＝cat_requirements.md §1.2.1（range / uptrend / downtrend / spike）。⚠️ 名前を downtrend に変えても下げ相場は扱えない＝判定の列が存在しない（build_regime_gate_rg.py のラベルは uptrend と range の2種のみ・down は0件・2026-08-03 実測）"
   },
   "slots": {
     "short_lots_max": 2,
@@ -175,6 +179,12 @@ const_overrides（実装データ＝モジュール定数への注入値・逐�
   "V59_CUT_MODE": "stop"
 }
 ```
+params（実装データ＝関数引数への注入値・逐語）:
+```json
+{
+  "search_min_per_day": 5.0
+}
+```
 
 ### L1（priority 1・long・有効）: レンジ下端反発ロング（現行 v57 flat_up 限定相当）
 
@@ -203,7 +213,8 @@ params（実装データ＝関数引数への注入値・逐語）:
   "max_lots": 2,
   "tmax_bars": 48,
   "gap_pct": 0.5,
-  "sl_zone_k": 1.0
+  "sl_zone_k": 1.0,
+  "search_min_per_day": 5.0
 }
 ```
 
@@ -211,154 +222,7 @@ params（実装データ＝関数引数への注入値・逐語）:
 
 - 出典: 段0 実測＝届かない戻り 81.2 バー/日（worklog 20260723 §8・在庫最大）・E-a4・グリッド E38 #S2（まこさん OK 2026-07-24）
 - 実装: e38_logic_parts / generic_logic_loop
-- 入口（type=pullback_short）: params が正本（null=段2 探索で決める）: {"pos_min": null, "confirm": null, "confirm_htf": null, "confirm_vol": null, "ceil_filter": "flat_up"}
-- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null}
-
-engine_flags（実装データ＝run_e37 への注入値・逐語）:
-```json
-{}
-```
-params（実装データ＝関数引数への注入値・逐語）:
-```json
-{
-  "max_lots": 2,
-  "search_min_per_day": 2.0
-}
-```
-
-### S3（priority 未確定（段3 まこさん）・short・無効）: 上抜け失敗 fade（res_hi 上抜け→帯内へ戻り）
-
-- 出典: E-a3 の fade（false breakout）・グリッド E38 #S3（まこさん OK 2026-07-24）
-- 実装: e38_logic_parts / generic_logic_loop
-- 入口（type=fade_short）: params が正本（null=段2 探索で決める）: {"over_min": null, "confirm_bars": null}
-- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null}
-
-engine_flags（実装データ＝run_e37 への注入値・逐語）:
-```json
-{}
-```
-params（実装データ＝関数引数への注入値・逐語）:
-```json
-{
-  "max_lots": 2
-}
-```
-
-### S4（priority 未確定（段3 まこさん）・short・無効）: 統計的回帰ショート（dev_z 上側行き過ぎ）
-
-- 出典: E-a1/E-d2・グリッド E38 #S4。注記＝dev_z=(close−SMA20)/std20 は BB20 と同窓の標準化＝数学的に同値のため指標カテゴリは dev_z に一本化（2026-07-24 まこさん報告済み）
-- 実装: e38_logic_parts / generic_logic_loop
-- 入口（type=zscore_short）: params が正本（null=段2 探索で決める）: {"z_th": null, "trigger": null}
-- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null}
-
-engine_flags（実装データ＝run_e37 への注入値・逐語）:
-```json
-{}
-```
-params（実装データ＝関数引数への注入値・逐語）:
-```json
-{
-  "max_lots": 2
-}
-```
-
-### S5（priority 未確定（段3 まこさん）・short・無効）: グリッド売り（mid〜res_hi 等間隔 resting）
-
-- 出典: E-a5・グリッド E38 #S5
-- 実装: e38_logic_parts / grid_loop
-- 状態: unimplemented＝グリッド構造（複数 resting・在庫管理）は別部品＝後続の実装単位（まこさん報告済み 2026-07-24）・enabled にすると設定エラーで停止
-- 入口（type=grid_short）: params が正本（null=段2 探索で決める）: {}
-- 出口（type=grid_exit）: params が正本（null=段2 探索で決める）: {}
-
-engine_flags（実装データ＝run_e37 への注入値・逐語）:
-```json
-{}
-```
-params（実装データ＝関数引数への注入値・逐語）:
-```json
-{
-  "max_lots": 2
-}
-```
-
-### L2（priority 未確定（段3 まこさん）・long・無効）: 急落後反発ロング（急落幅×出来高スパイク）
-
-- 出典: E28 型の5分足近似（taker 系列が5分足に無いため 急落幅×出来高スパイク へ置き換え＝まこさん OK 2026-07-24）・E-a1・グリッド E38 #L2
-- 実装: e38_logic_parts / generic_logic_loop
-- 入口（type=crash_rebound_long）: params が正本（null=段2 探索で決める）: {"k_bars": null, "drop_th": null, "vol_mult": null}
-- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null}
-
-engine_flags（実装データ＝run_e37 への注入値・逐語）:
-```json
-{}
-```
-params（実装データ＝関数引数への注入値・逐語）:
-```json
-{
-  "max_lots": 2
-}
-```
-
-### L3（priority 未確定（段3 まこさん）・long・無効）: 下抜け失敗 fade（sup_lo 下抜け→帯内へ戻り）
-
-- 出典: E-a3 の fade・下側対称・グリッド E38 #L3（まこさん OK 2026-07-24）
-- 実装: e38_logic_parts / generic_logic_loop
-- 入口（type=fade_long）: params が正本（null=段2 探索で決める）: {"over_min": null, "confirm_bars": null}
-- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null}
-
-engine_flags（実装データ＝run_e37 への注入値・逐語）:
-```json
-{}
-```
-params（実装データ＝関数引数への注入値・逐語）:
-```json
-{
-  "max_lots": 2
-}
-```
-
-### L4（priority 未確定（段3 まこさん）・long・無効）: 統計的回帰ロング（dev_z 下側行き過ぎ）
-
-- 出典: E-a1/E-d2・S4 の対称・グリッド E38 #L4（まこさん OK 2026-07-24）
-- 実装: e38_logic_parts / generic_logic_loop
-- 入口（type=zscore_long）: params が正本（null=段2 探索で決める）: {"z_th": null, "trigger": null}
-- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null}
-
-engine_flags（実装データ＝run_e37 への注入値・逐語）:
-```json
-{}
-```
-params（実装データ＝関数引数への注入値・逐語）:
-```json
-{
-  "max_lots": 2
-}
-```
-
-### L5（priority 未確定（段3 まこさん）・long・無効）: グリッド買い（sup_hi〜mid 等間隔 resting）
-
-- 出典: E-a5・段0 (b) 下端到達 38.7 バー/日・グリッド E38 #L5
-- 実装: e38_logic_parts / grid_loop
-- 状態: unimplemented＝S5 と同じ後続の実装単位・enabled にすると設定エラーで停止
-- 入口（type=grid_long）: params が正本（null=段2 探索で決める）: {}
-- 出口（type=grid_exit）: params が正本（null=段2 探索で決める）: {}
-
-engine_flags（実装データ＝run_e37 への注入値・逐語）:
-```json
-{}
-```
-params（実装データ＝関数引数への注入値・逐語）:
-```json
-{
-  "max_lots": 2
-}
-```
-
-### L1i（priority 未確定（段3 まこさん）・long・無効）: レンジ下端反発ロング 改良候補（L1 入口＋S2 の2軸確認）
-
-- 出典: L1a 観察（worklog 20260725 §19/§20＝下端タッチ全体・浅い戻り床×2 で素の勝率62%・在庫36バー/日・まこさん OK 2026-07-25）＝現行 L1 の入口幾何＋S2 で確立した2軸確認（ボラ床＋上位足非過熱）。現行 L1（run_e37 経路・採用 priority1）は不変＝これは別ロジックの改良候補
-- 実装: e38_logic_parts / generic_logic_loop
-- 入口（type=support_touch_long）: params が正本（null=段2 探索で決める）: {"fresh_only": null, "confirm_htf": null, "confirm_vol": null}
+- 入口（type=pullback_short）: params が正本（null=段2 探索で決める）: {"pos_min": null, "confirm": null, "confirm_htf": null, "confirm_vol": null, "ceil_filter": "flat_up", "confirm_htf_th": null, "confirm_vol_th": null}
 - 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null, "tp_mode": null, "tp_pct_k": null}
 
 engine_flags（実装データ＝run_e37 への注入値・逐語）:
@@ -369,7 +233,159 @@ params（実装データ＝関数引数への注入値・逐語）:
 ```json
 {
   "max_lots": 2,
-  "search_min_per_day": 2.0
+  "search_min_per_day": 5.0
+}
+```
+
+### S3（priority 未確定（段3 まこさん）・short・無効）: 上抜け失敗 fade（res_hi 上抜け→帯内へ戻り）
+
+- 出典: E-a3 の fade（false breakout）・グリッド E38 #S3（まこさん OK 2026-07-24）
+- 実装: e38_logic_parts / generic_logic_loop
+- 入口（type=fade_short）: params が正本（null=段2 探索で決める）: {"over_min": null, "confirm_bars": null}
+- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null, "tp_mode": null, "tp_pct_k": null}
+
+engine_flags（実装データ＝run_e37 への注入値・逐語）:
+```json
+{}
+```
+params（実装データ＝関数引数への注入値・逐語）:
+```json
+{
+  "max_lots": 2,
+  "search_min_per_day": 5.0
+}
+```
+
+### S4（priority 未確定（段3 まこさん）・short・無効）: 統計的回帰ショート（dev_z 上側行き過ぎ）
+
+- 出典: E-a1/E-d2・グリッド E38 #S4。注記＝dev_z=(close−SMA20)/std20 は BB20 と同窓の標準化＝数学的に同値のため指標カテゴリは dev_z に一本化（2026-07-24 まこさん報告済み）
+- 実装: e38_logic_parts / generic_logic_loop
+- 入口（type=zscore_short）: params が正本（null=段2 探索で決める）: {"z_th": null, "trigger": null}
+- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null, "tp_mode": null, "tp_pct_k": null}
+
+engine_flags（実装データ＝run_e37 への注入値・逐語）:
+```json
+{}
+```
+params（実装データ＝関数引数への注入値・逐語）:
+```json
+{
+  "max_lots": 2,
+  "search_min_per_day": 5.0
+}
+```
+
+### S5（priority 未確定（段3 まこさん）・short・無効）: グリッド売り（mid〜res_hi 等間隔 resting）
+
+- 出典: E-a5・グリッド E38 #S5
+- 実装: e38_logic_parts / grid_loop
+- 入口（type=grid_short）: params が正本（null=段2 探索で決める）: {"grid_n": null}
+- 出口（type=grid_exit）: params が正本（null=段2 探索で決める）: {"sl_zone_k": null, "tmax_bars": null}
+
+engine_flags（実装データ＝run_e37 への注入値・逐語）:
+```json
+{}
+```
+params（実装データ＝関数引数への注入値・逐語）:
+```json
+{
+  "max_lots": 2,
+  "search_min_per_day": 5.0
+}
+```
+
+### L2（priority 未確定（段3 まこさん）・long・無効）: 急落後反発ロング（急落幅×出来高スパイク）
+
+- 出典: E28 型の5分足近似（taker 系列が5分足に無いため 急落幅×出来高スパイク へ置き換え＝まこさん OK 2026-07-24）・E-a1・グリッド E38 #L2
+- 実装: e38_logic_parts / generic_logic_loop
+- 入口（type=crash_rebound_long）: params が正本（null=段2 探索で決める）: {"k_bars": null, "drop_th": null, "vol_mult": null}
+- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null, "tp_mode": null, "tp_pct_k": null}
+
+engine_flags（実装データ＝run_e37 への注入値・逐語）:
+```json
+{}
+```
+params（実装データ＝関数引数への注入値・逐語）:
+```json
+{
+  "max_lots": 2,
+  "search_min_per_day": 5.0
+}
+```
+
+### L3（priority 未確定（段3 まこさん）・long・無効）: 下抜け失敗 fade（sup_lo 下抜け→帯内へ戻り）
+
+- 出典: E-a3 の fade・下側対称・グリッド E38 #L3（まこさん OK 2026-07-24）
+- 実装: e38_logic_parts / generic_logic_loop
+- 入口（type=fade_long）: params が正本（null=段2 探索で決める）: {"over_min": null, "confirm_bars": null}
+- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null, "tp_mode": null, "tp_pct_k": null}
+
+engine_flags（実装データ＝run_e37 への注入値・逐語）:
+```json
+{}
+```
+params（実装データ＝関数引数への注入値・逐語）:
+```json
+{
+  "max_lots": 2,
+  "search_min_per_day": 5.0
+}
+```
+
+### L4（priority 未確定（段3 まこさん）・long・無効）: 統計的回帰ロング（dev_z 下側行き過ぎ）
+
+- 出典: E-a1/E-d2・S4 の対称・グリッド E38 #L4（まこさん OK 2026-07-24）
+- 実装: e38_logic_parts / generic_logic_loop
+- 入口（type=zscore_long）: params が正本（null=段2 探索で決める）: {"z_th": null, "trigger": null}
+- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null, "tp_mode": null, "tp_pct_k": null}
+
+engine_flags（実装データ＝run_e37 への注入値・逐語）:
+```json
+{}
+```
+params（実装データ＝関数引数への注入値・逐語）:
+```json
+{
+  "max_lots": 2,
+  "search_min_per_day": 5.0
+}
+```
+
+### L5（priority 未確定（段3 まこさん）・long・無効）: グリッド買い（sup_hi〜mid 等間隔 resting）
+
+- 出典: E-a5・段0 (b) 下端到達 38.7 バー/日・グリッド E38 #L5
+- 実装: e38_logic_parts / grid_loop
+- 入口（type=grid_long）: params が正本（null=段2 探索で決める）: {"grid_n": null}
+- 出口（type=grid_exit）: params が正本（null=段2 探索で決める）: {"sl_zone_k": null, "tmax_bars": null}
+
+engine_flags（実装データ＝run_e37 への注入値・逐語）:
+```json
+{}
+```
+params（実装データ＝関数引数への注入値・逐語）:
+```json
+{
+  "max_lots": 2,
+  "search_min_per_day": 5.0
+}
+```
+
+### L1i（priority 未確定（段3 まこさん）・long・無効）: レンジ下端反発ロング 改良候補（L1 入口＋S2 の2軸確認）
+
+- 出典: L1a 観察（worklog 20260725 §19/§20＝下端タッチ全体・浅い戻り床×2 で素の勝率62%・在庫36バー/日・まこさん OK 2026-07-25）＝現行 L1 の入口幾何＋S2 で確立した2軸確認（ボラ床＋上位足非過熱）。現行 L1（run_e37 経路・採用 priority1）は不変＝これは別ロジックの改良候補
+- 実装: e38_logic_parts / generic_logic_loop
+- 入口（type=support_touch_long）: params が正本（null=段2 探索で決める）: {"fresh_only": null, "confirm_htf": null, "confirm_vol": null, "confirm_htf_th": null, "confirm_vol_th": null}
+- 出口（type=generic_scalp_exit）: params が正本（null=段2 探索で決める）: {"tp1_frac": null, "tp2_target": null, "sl_zone_k": null, "tmax_bars": null, "be_wait": null, "tp_mode": null, "tp_pct_k": null}
+
+engine_flags（実装データ＝run_e37 への注入値・逐語）:
+```json
+{}
+```
+params（実装データ＝関数引数への注入値・逐語）:
+```json
+{
+  "max_lots": 2,
+  "search_min_per_day": 5.0
 }
 ```
 
@@ -377,7 +393,7 @@ params（実装データ＝関数引数への注入値・逐語）:
 
 ```json
 {
-  "note": "engine_tuner_e38 が読む探索範囲の宣言（type=float/cat/quantile）。quantile は探索窓の分布分位から実行時に上下限を決める＝CC の手打ち値なし（kijun26 前例）。float の比率系は幾何 a-priori の広め固定幅（engine_search_e37 の 0.1〜1.0 と同型＝L-267 の禁止は採点窓 net 目的関数の選定）。値決め＝探索窓のみ・確認窓は表示のみ・採点窓不使用（まこさん決定 2026-07-24・正本 window_similarity_ranking.md）。★logics 側の宣言は common_exit と同名キーを上書きできる（engine_tuner の解決順）。時間系の候補は役割（§8.6 スキャル）から逆算した枠内のみ＝_common_exit_note 参照（まこさん確定 2026-07-25・段3 はセット粗探索でこの枠を全ロジック共通に使う）。S2 の confirm_htf/confirm_vol と th_* は層1 観察の2軸（worklog 20260725 §7・9組の部品そのまま・q_lo/q_hi 0.2〜0.8 は中立の広め幅・stochd14 のみ q_hi 0.95=張り付き解消）",
+  "note": "engine_tuner_e38 が読む探索範囲の宣言（type=float/cat/quantile）。quantile は探索窓の分布分位から実行時に上下限を決める＝CC の手打ち値なし（kijun26 前例）。float の比率系は幾何 a-priori の広め固定幅（engine_search_e37 の 0.1〜1.0 と同型＝L-267 の禁止は採点窓 net 目的関数の選定）。値決め＝探索窓のみ・確認窓は表示のみ・採点窓不使用（まこさん決定 2026-07-24・正本 window_similarity_ranking.md）。★logics 側の宣言は common_exit と同名キーを上書きできる（engine_tuner の解決順）。時間系の候補は役割（§8.6 スキャル）から逆算した枠内のみ＝_common_exit_note 参照（まこさん確定 2026-07-25・段3 はセット粗探索でこの枠を全ロジック共通に使う）。S2 の confirm_htf/confirm_vol と th_* は層1 観察の2軸（worklog 20260725 §7・9組の部品そのまま・q_lo/q_hi 0.2〜0.8 は中立の広め幅・stochd14 のみ q_hi 0.95=張り付き解消）。★S5/L5（グリッド・要件 R2・2026-08-04）＝grid_n の範囲は null＝まこさん待ち（null の間は engine_tuner の値待ち fail-closed が探索を止める）。出口は sl_zone_k（common_exit の既存宣言を借用）と tmax_bars（役割の整数範囲＝hold_space）だけを接続ファイルが組む＝新しい数字ゼロ",
   "common_exit": {
     "tp1_frac": {
       "type": "float",
@@ -533,6 +549,22 @@ params（実装データ＝関数引数への注入値・逐語）:
         ]
       }
     },
+    "S5": {
+      "grid_n": {
+        "type": "int",
+        "lo": null,
+        "hi": null,
+        "step": 1
+      }
+    },
+    "L5": {
+      "grid_n": {
+        "type": "int",
+        "lo": null,
+        "hi": null,
+        "step": 1
+      }
+    },
     "S4": {
       "z_th": {
         "type": "quantile",
@@ -682,7 +714,8 @@ params（実装データ＝関数引数への注入値・逐語）:
         ]
       }
     }
-  }
+  },
+  "_writeback_note": "2026-08-02 まこさん OK（案A）＝engine_tuner が出す値の入れ先を設定ファイルに足した。tp_mode と tp_pct_k は common_exit の宣言に対する入れ先。confirm_htf_th と confirm_vol_th は 選ばれた確認シグナルのしきい値の入れ先。どの th_ をどの欄へ入れるかの規則は tuner_adapters の e38 接続ファイルの writeback_map が持つ。背景＝R9 の書き戻しを作ったところ、engine_tuner が出す11個の値に入れ先が無いと機械が検出した。人が手で写していた間は、入れ先の無い値が黙って捨てられていた。"
 }
 ```
 

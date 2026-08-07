@@ -47,7 +47,15 @@ if tn == "Bash":
     # ★引用符内（文字列リテラル）を除去した版で実行検知する＝git commit メッセージ・echo・printf テスト等で
     #   スクリプト名が「言及」されただけ（実行でない）の誤検知で審判/実験/probe 旗を立てる事案を防ぐ
     #   （2026-06-29 まこさん「毎回フラグ解除で時間がかかる・誤発火を直して」）。CSV 抽出は元 cmd を使う。
-    cmd_x = re.sub(r'"[^"]*"', " ", re.sub(r"'[^']*'", " ", cmd))
+    # ★2026-08-07（まこさん指示「21は今やれば？」・next_step §6.5 の21番）＝下ごしらえを共通の1本にまとめた。
+    #   引用符の中身に加えて、ヒアドキュメント（<<EOF … EOF）の中身も空白にする。
+    #   実装＝.claude/hooks/hook_cmd.py（番人＝既知答え7件・--selftest）。読み込めなければ従来どおり引用符だけ消す。
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from hook_cmd import normalize_cmd
+        cmd_x = normalize_cmd(cmd)
+    except Exception:                                   # noqa: BLE001（fail-open＝旗管理を止めない）
+        cmd_x = re.sub(r'"[^"]*"', " ", re.sub(r"'[^']*'", " ", cmd))
     # 実験スクリプト実行 → 審判(score.py/precheck.py)を通すまでターン終了不可（2026-06-12 E24 素通り事案）
     # ただし以下は need_score を立てない:
     #  - --smoke: 採点しない検証ステップ（自己検査・規模確認）（2026-06-12 まこさん・smoke で永久未閉じ事案）

@@ -95,6 +95,9 @@
         "V59_FLAT_SIG": "kijun26",
         "V59_DOWN_WIN_MIN": 0,
         "V59_CUT_MODE": "stop"
+      },
+      "params": {
+        "search_min_per_day": 5.0
       }
     },
     {
@@ -132,7 +135,8 @@
         "max_lots": 2,
         "tmax_bars": 48,
         "gap_pct": 0.5,
-        "sl_zone_k": 1.0
+        "sl_zone_k": 1.0,
+        "search_min_per_day": 5.0
       }
     },
     {
@@ -173,7 +177,7 @@
       "engine_flags": {},
       "params": {
         "max_lots": 2,
-        "search_min_per_day": 2.0
+        "search_min_per_day": 5.0
       },
       "note": "null=未確定（値は段2 探索・優先度は段3 まこさん）。enabled は探索の単独確認時のみ true。confirm_htf/confirm_vol＝S2 層1 観察の2軸確認（上位足モメンタム非過熱 ≤ ／ボラ出来高床 ≥・worklog 20260725 §7・まこさん GO 2026-07-25）＝採択時は選んだ部品の th_<部品名> を params に書き戻す。ceil_filter=flat_up＝S2 は flat_up 型専用（まこさん承認 2026-07-25・根拠＝1回目探索の値決め窓 型別 down −$28／flat_up +$284・確認窓の数字は選定に不使用）。th_stochd14_2h の q_hi 0.8→0.95＝1回目探索で閾値が q80 上限に張り付いた解消（まこさん承認 同日）"
     },
@@ -209,7 +213,8 @@
       },
       "engine_flags": {},
       "params": {
-        "max_lots": 2
+        "max_lots": 2,
+        "search_min_per_day": 5.0
       }
     },
     {
@@ -244,7 +249,8 @@
       },
       "engine_flags": {},
       "params": {
-        "max_lots": 2
+        "max_lots": 2,
+        "search_min_per_day": 5.0
       }
     },
     {
@@ -274,7 +280,8 @@
       },
       "engine_flags": {},
       "params": {
-        "max_lots": 2
+        "max_lots": 2,
+        "search_min_per_day": 5.0
       },
       "note": "null=未確定（grid_n の範囲はまこさんが決める＝search_space が正本・null の間は engine_tuner が値待ちで停止する fail-closed）。enabled は探索の単独確認時のみ true"
     },
@@ -311,7 +318,8 @@
       },
       "engine_flags": {},
       "params": {
-        "max_lots": 2
+        "max_lots": 2,
+        "search_min_per_day": 5.0
       }
     },
     {
@@ -346,7 +354,8 @@
       },
       "engine_flags": {},
       "params": {
-        "max_lots": 2
+        "max_lots": 2,
+        "search_min_per_day": 5.0
       }
     },
     {
@@ -381,7 +390,8 @@
       },
       "engine_flags": {},
       "params": {
-        "max_lots": 2
+        "max_lots": 2,
+        "search_min_per_day": 5.0
       }
     },
     {
@@ -411,7 +421,8 @@
       },
       "engine_flags": {},
       "params": {
-        "max_lots": 2
+        "max_lots": 2,
+        "search_min_per_day": 5.0
       },
       "note": "null=未確定（S5 と同じ・grid_n の範囲はまこさんが決める）。enabled は探索の単独確認時のみ true"
     },
@@ -451,7 +462,7 @@
       "engine_flags": {},
       "params": {
         "max_lots": 2,
-        "search_min_per_day": 2.0
+        "search_min_per_day": 5.0
       },
       "note": "null=未確定（値は段3 セット粗探索）。ceil_filter なし＝down 型も含む（L1a 観察で down が在庫の本体・素の勝率62.8%）。fresh_only は探索対象（cat）＝現行 L1 の1バー1発注 true と件数を出す false を対決。現行 L1 は run_e37 経路で不変＝L1i は採点窓で超えたら入れ替え候補"
     }
@@ -799,6 +810,7 @@
       "value": null,
       "reason": "未設定（ロジックごとの search_min_per_day を使う）",
       "date": null
-    }
+    },
+    "_search_min_per_day_why": "件数/日 の下限は11本とも 5.0（まこさん OK 2026-08-07「OK」）。出どころ＝cat_requirements §8.6 の逐語『絶対下限＝件数/日 5』＋採用台帳 adopted_strategies.md の ROLE_FLOOR: scalp=5 と ROLE_CHECK: e38=scalp。5.0 未満で回すのは『調整』でなく『役割を変える決定』＝stop_rules に role_change_decision が要る（tuner_judgement.assert_role_floor が物理で止める）。★差し替えた2件＝S2 と L1i に入っていた 2.0 は、まこさんの確定値ではなく CC が置いた数だった（worklog 20260725 §178 の逐語『値はまこさん確定待ち（CC 提案＝2件/日）』）。その 2.0 は絶対下限 5.0 を下回るため、engine_tuner は S2 と L1i を走らせられない状態だった。"
   }
 }

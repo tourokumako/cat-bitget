@@ -1089,6 +1089,26 @@ def zero_trade_gate(res: dict) -> tuple[bool, str]:
     return True, ""
 
 
+def per_day_gate(res: dict, min_per_day) -> tuple[bool, str]:
+    """件数/日 の関門（D3 の残り・D6・まこさん OK 2026-08-07「OK」）。
+
+    門は2つあります。第1段と第2段で同じ1本の処理として持ちます
+    （書き分けると、片方だけ直して片方が古いまま残ります）。
+      ① 売買ゼロ（0玉）の門＝下限が空欄でも捨てる（zero_trade_gate・0c・2026-08-07）
+      ② 件数/日 の下限＝下限が入っているとき、それを下回る案を捨てる
+
+    下限の値の正本＝e38_logics.json の logics[].params.search_min_per_day（11本とも 5.0）。
+    5.0 の出どころ＝cat_requirements §8.6 の逐語「絶対下限＝件数/日 5」＋
+    採用台帳 adopted_strategies.md の ROLE_FLOOR: scalp=5 と ROLE_CHECK: e38=scalp。
+    ★下限が空欄（None）のときは ① だけが働きます。2026-08-07 まで、11本のうち9本がこの形でした
+    （残り2本は CC が置いた 2.0 で、絶対下限 5.0 を下回るため走らせられませんでした）。
+    """
+    ok, why = zero_trade_gate(res)
+    if ok and min_per_day is not None and res["per_day"] < min_per_day:
+        return False, f"件数の下限 {min_per_day} に対して {res['per_day']:.2f}件/日"
+    return ok, why
+
+
 # ══ 第2段（TPE）用＝値スロットの列挙と適用 ═══════════════════════════════════════════════
 def _cat(choices) -> dict:
     """候補の一覧から選ぶ値（メニュー方式）。"""
@@ -1287,10 +1307,8 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
             continue
         res = run_trial(df2, r, qtable, judge, start, end)
         legacy_total += len(res["rep"]["legacy使用"])
-        ok, why = zero_trade_gate(res)   # 0c＝0玉は min_per_day が空欄でも捨てる（D3）
-        if ok and min_per_day is not None and res["per_day"] < min_per_day:
-            ok, why = False, f"件数の下限 {min_per_day} に対して {res['per_day']:.2f}件/日"
-        elif ok and net_floor is not None and res["total"] < net_floor:
+        ok, why = per_day_gate(res, min_per_day)   # 0玉の門（0c）＋件数/日 の下限（D6）を1本で
+        if ok and net_floor is not None and res["total"] < net_floor:
             ok, why = False, f"net の下限 ${net_floor:,.0f} に対して ${res['total']:+,.0f}"
         gate_ok, gate_why = strat_gate(base_trades, res["t"], atr_edges, judge)
         if ok and gate_ok is False:
@@ -1407,9 +1425,7 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                     return got["total"] if got["ok"] else -1e9
                 r2 = apply_slots(recipe, choices)
                 res = run_trial(df2, r2, qtable, judge, start, end)
-                ok, why = zero_trade_gate(res)   # 0c＝0玉は候補に残さない（D3・第1段と同じ門）
-                if ok and min_per_day is not None and res["per_day"] < min_per_day:
-                    ok, why = False, "件数の下限"
+                ok, why = per_day_gate(res, min_per_day)   # 第1段と同じ1本の門（0玉＋件数/日 の下限）
                 gate_ok, _gw = strat_gate(base_trades, res["t"], atr_edges, judge)
                 if ok and gate_ok is False:
                     ok, why = False, "層化の門"
@@ -1795,6 +1811,37 @@ def selftest() -> int:
         t12.append(f"実走（T6 のミニ本走）の第1段で 0玉の案が {len(z_bad)} 本 通過している")
     ng += [f"T12: {x}" for x in t12]
 
+    # T15 件数/日 の下限が実際に案を捨てる（D3 の残り・D6・まこさん OK 2026-08-07「OK」）
+    #   直す前は 11本のうち9本が空欄で門が無く、残り2本（S2・L1i）は CC が置いた 2.0 で
+    #   役割の絶対下限 5.0 を下回るため走らせられなかった（2026-08-07 実測）。
+    #   ここで見るのは4つ＝①下回る案を捨てる ②届く案は負けでも通す
+    #   ③★メタ確認＝下限を空欄に戻すと同じ案が通る（＝止めているのが確かに下限であること）
+    #   ④実物の設定ファイルの11本が、全部 役割の絶対下限以上であること。
+    t15 = []
+    ng15, why15 = per_day_gate({"n": 600, "per_day": 4.99, "total": 999.0}, 5.0)
+    if ng15 is not False or "件数の下限" not in why15:
+        t15.append("下限 5.0 に対して 4.99件/日 の案が通った（捨てるはず）")
+    ok15, _w15 = per_day_gate({"n": 700, "per_day": 5.00, "total": -50.0}, 5.0)
+    if ok15 is not True:
+        t15.append("下限 5.0 に対して 5.00件/日 の案が捨てられた（負けでも通すはず）")
+    okn15, _wn15 = per_day_gate({"n": 600, "per_day": 4.99, "total": 999.0}, None)   # ③ メタ確認
+    if okn15 is not True:
+        t15.append("下限を空欄にしても 4.99件/日 の案が捨てられた＝止めているのは下限ではない")
+    okz15, whyz15 = per_day_gate({"n": 0, "per_day": 0.0, "total": 0.0}, None)
+    if okz15 is not False or "売買ゼロ" not in whyz15:
+        t15.append("0玉の門が per_day_gate を通っていない（0c が第2段で外れる）")
+    import engine_tuner as et15
+    import tuner_judgement as tj15
+    ad15 = et15.load_adapter("e38")
+    _role15, rf15 = tj15.role_floor("e38")
+    for lg15 in ad15.config()["logics"]:
+        v15 = ad15.min_per_day(lg15["id"])
+        if v15 is None:
+            t15.append(f"{lg15['id']} の件数/日 の下限が空欄（11本とも値が要る＝D6）")
+        elif rf15 is not None and v15 < rf15:
+            t15.append(f"{lg15['id']} の下限 {v15:g} が役割の絶対下限 {rf15:g} を下回る")
+    ng += [f"T15: {x}" for x in t15]
+
     # T13 D1＝生成が型の表の中に閉じている（対応表の役割×系統×時間足・禁止3・DC1〜DC4・G2 適合率100%）
     #   本物の格子（search_limits.json）・本物の部品・本物の承認済みの表で、SHORT と LONG の両方を撒いて照合する。
     t13 = []
@@ -1993,6 +2040,9 @@ def selftest() -> int:
           " 分位の解決表が作れる（D4）")
     print("  T12 0玉の門: 売買ゼロの案は min_per_day が空欄でも候補に残らない（D3 の一部・0c）／"
           "売買が在る案（負けでも）は0玉の門では捨てない")
+    print(f"  T15 件数/日 の下限（D3 の残り・D6）: 下限 {ad15.min_per_day('S3'):g} で 4.99件/日 は捨て・"
+          f"5.00件/日 は負けでも通す ／ 下限を空欄に戻すと同じ案が通る（メタ確認）／"
+          f" 設定ファイルの11本とも 役割の絶対下限 {rf15:g} 以上")
     print(f"  T13 型の表の閉じ込め（D1）: 本物の格子で {len(sts13)} 本（SHORT/LONG）＝対応表・禁止3・DC1〜DC4 の"
           f"違反 {len(viol13)} 本 ／ G2 適合率 {n_ok13}/{len(sts13)} ／ 型のラベル {sorted(fam13)}")
     print(f"  T14 出口の状態機械（D2）: {len(sts14)} 本＝決済の名前 {len(reasons14)} 種類"
