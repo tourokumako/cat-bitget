@@ -220,6 +220,8 @@ def load_signal_table() -> dict:
         "families": list(rl["applies_to"]),
         "quantile_grid_hi": ("q70", "q80", "q90"),   # DC2 の高分位（表の DC2 の逐語＝q70・q80・q90）
         "quantile_grid_lo": ("q10", "q20", "q30"),   # DC2 の低分位（同＝q10・q20・q30）
+        "quantile_hi": ("q70", "q80", "q90"),        # 出口の確認条件で使う別名（同じ値）
+        "quantile_lo": ("q10", "q20", "q30"),
     }
     return _SIGNAL_TABLE
 
@@ -382,44 +384,305 @@ def _const100(x: float) -> dict:
     return {"const": "FULL_100", "mult": float(x) / base}
 
 
-def _make_exits(rng, limits) -> list[dict]:
-    """出口の枝＝SL 必須（G4）＋TP（zone mid）＋確率で TP1（mix）＋TIME。並び順もランダム＝順番はデータ。
+# ══ 出口の表（exit_families）＝D2 の枝の組み立ての正本（2026-08-07 まこさん承認・指紋つき）════
+_EXIT_TABLE: dict | None = None
 
-    exit_mult_grid・frac_grid は％表記（50.0＝0.5）＝格子の値はまこさん（§11-10 に準ずる）。
+
+def load_exit_table() -> dict:
+    """承認済みの出口の表を読む。未承認・指紋不一致なら止まる（fail-closed・D2）。
+
+    表は gen_exit_families.py が軸カタログ entry_exit_matrix.md の X-a〜X-k から全自動生成する。
+    ここで読むのは「どの枝の型を作ってよいか」の一覧＝表に無い枝は組み立てない。
     """
-    exits = [
-        {"name": "SL", "reason": "SL_FILLED",
-         "exec": {"method": "maker", "placement": {"kind": "resting", "fill": "adverse", "pessimistic": True,
-                                                   "level": {"kind": "zone_sl",
-                                                             "k": _const100(float(rng.choice(limits["exit_mult_grid"])) / 100.0)}}},
-         "size_ratio": 1.0},
-        {"name": "TP2", "reason": "TP_FILLED",
-         "exec": {"method": "maker", "placement": {"kind": "resting", "fill": "profit",
-                                                   "level": {"kind": "zone", "target": "mid"}}},
-         "size_ratio": 1.0},
-        {"name": "TIME", "reason": "TIME_EXIT",
-         "fire": {"all": [{"role": "env", "form": "level", "side": "above",
-                           "material": [{"state": "hold_min"}],
-                           # 監査 4-19／要件 R6＝メニューから選ぶのをやめ、役割から決めた整数の範囲から引く。
-                           # 単位は分。5分足なので必ず5の倍数になる（本数 × 5）。
-                           "value": {"n": int(rng.integers(hold_bars(limits)[0],
-                                                           hold_bars(limits)[1] + 1)) * 5}}]},
-         "exec": {"method": "taker", "placement": {"kind": "on_close"}},
-         "size_ratio": 1.0},
-    ]
-    if rng.random() < 0.5:
-        frac = float(rng.choice(limits["frac_grid"])) / 100.0
-        exits.append({"name": "TP1", "reason": "PARTIAL_TP", "once": True,
-                      "exec": {"method": "maker",
-                               "placement": {"kind": "resting", "fill": "profit",
-                                             "level": {"kind": "mix", "from": "entry", "to": "TP2",
-                                                       "frac": _const100(frac)}}},
-                      "size_ratio": frac})
+    global _EXIT_TABLE
+    if _EXIT_TABLE is not None:
+        return _EXIT_TABLE
+    import gen_exit_families as gef
+    ok, msg = gef.table_status()
+    if not ok:
+        raise SystemExit(f"[出口の表] {msg}＝出口の枝を生成できない（fail-closed・D2）")
+    _EXIT_TABLE = json.loads(gef.OUT_JSON.read_text(encoding="utf-8"))
+    return _EXIT_TABLE
+
+
+def _floor_pct(k: float) -> dict:
+    """手数料床（SCALP_FLOOR＝比率 0.0008）の k 倍を、％の値として表す。
+
+    玉の状態の列（mfe_prev_pct・unreal_pct）は％の単位で持たれている（実行器 1051行）。
+    SCALP_FLOOR は比率なので、100 を掛けて％にそろえる。生の数字のフィールドは作らない（§2.4）。
+    """
+    return {"const": "SCALP_FLOOR", "mult": 100.0 * float(k)}
+
+
+# 出口の水準の条件に使える名前つき定数（部品 → 上側・下側）。定数レジストリ iref.CONST_REGISTRY が正本＝
+# ここは対応づけだけ。実行器が出口の発火条件で分位を解けないため、水準は定数でしか表せない（上の注記）。
+_EXIT_LEVEL_CONST = {
+    "RSI": ("RSI_OB", "RSI_OS"),
+    "Stoch%K": ("STOCH_OB", "STOCH_OS"),
+    "Stoch%D": ("STOCH_OB", "STOCH_OS"),
+    "ADX": ("ADX_TREND", "ADX_TREND"),
+}
+
+
+def _state_cond(state: str, side: str, value: dict) -> dict:
+    """出口の発火条件1本＝玉の状態の列を見る形。役割は env で固定（実行器は出口の fire で役割を見ない）。"""
+    return {"role": "env", "form": "level", "side": side, "material": [{"state": state}], "value": value}
+
+
+def _pick_exit_material(rng, pool, tfs, table, lineages: set) -> dict:
+    """出口の確認条件の材料＝入口の型の表の部品から、決められた系統の中で1本 引く。
+
+    禁止3（標本不足の部品×時間足）は入口と同じように避ける。表の外は引かない（D1 と同じ閉じ込め）。
+    """
+    cand = [b for b in pool if iref.FAMILY_LINEAGE[b["family"]]["k"] in lineages]
+    if not cand:
+        raise SampleError(f"出口の材料に使える部品が無い（系統 {sorted(lineages)}）")
+    tf_pool = [t for t in tfs if t in table["tfs"]]
+    for _ in range(40):
+        b = cand[int(rng.integers(len(cand)))]
+        m = {"family": b["family"], "param": b["param"], "tf": str(rng.choice(tf_pool))}
+        if not _banned_pair(m, table):
+            return m
+    raise SampleError("出口の材料を40回 引いても禁止3 を避けられない")
+
+
+def _exit_indicator_cond(rng, limits, pool, tfs, table, side, spec) -> dict:
+    """出口の確認条件＝指標を見る形1本。向きの決め方は表の規則から機械で決まる。
+
+    表の規則に reverse_of_side が在る枝＝入口と逆の向きを見る（例＝SHORT の玉は、下げ止まり側で降りる）。
+    無い枝＝広がる側・強い側を見る（例＝レンジが壊れたことを見る BREAKOUT）。
+    """
+    lineages = set(spec.get("lineage_any") or ([spec["lineage"]] if spec.get("lineage") else
+                                               ["オシレーター", "トレンド", "ボラ", "ローソク", "出来高", "構造・位置"]))
+    forms = [f for f in (spec.get("forms") or ["level"]) if f in ("level", "cross", "slope", "diff", "candle_dir")]
+    rev = bool(spec.get("reverse_of_side"))
+    form = str(rng.choice(forms))
+    # ★ローソクの部品は「値のある列」ではない（実行器の FAMILY_TEMPLATES に無い＝材料として引けない）。
+    #   だから系統がローソクだけの枝は、材料の要らない形（陽線か陰線か）で作る。
+    if "ローソク" in lineages and not any(iref.FAMILY_LINEAGE[b["family"]]["k"] in lineages for b in pool):
+        form = "candle_dir"
+    if form == "candle_dir":
+        # 出口のローソク＝入口の逆（SHORT の玉は陽線の形で降りる・DC4 の逆）
+        return {"role": "env", "form": "candle_dir",
+                "value": {"dir": ("bull" if side == "SHORT" else "bear") if rev else
+                                 ("bear" if side == "SHORT" else "bull")}}
+    if form == "cross" and "ローソク" not in lineages:
+        # 2本の線の交差＝入口の逆向き（DC3 の逆）
+        fams = {}
+        for b in pool:
+            if iref.FAMILY_LINEAGE[b["family"]]["k"] in lineages:
+                fams.setdefault(b["family"], []).append(b["param"])
+        ks = sorted(set(fams.get("Stoch%K", [])) & set(fams.get("Stoch%D", [])))
+        tf_pool = [t for t in tfs if t in table["tfs"]]
+        if ks:
+            p = int(rng.choice(ks))
+            tf = str(rng.choice(tf_pool))
+            pair = [{"family": "Stoch%K", "param": p, "tf": tf}, {"family": "Stoch%D", "param": p, "tf": tf}]
+            if not any(_banned_pair(m, table) for m in pair):
+                return {"role": "env", "form": "cross", "material": pair,
+                        "value": {"direction": ("up" if side == "SHORT" else "down") if rev
+                                  else ("down" if side == "SHORT" else "up")}}
+        form = "level"
+    m = _pick_exit_material(rng, pool, tfs, table, lineages)
+    if form == "slope":
+        return {"role": "env", "form": "slope", "material": [m],
+                "side": ("above" if side == "SHORT" else "below") if rev else str(rng.choice(["above", "below"])),
+                "value": {"n": int(rng.choice(limits["int_grid"]))}}
+    # ── 水準を見る形（level）──
+    # ★実行器は出口の発火条件で分位（threshold_q）を解けない（_exit_fire_ok が解決表を受け取らない・
+    #   1073行の _vnum）。だから出口の水準は、名前つき定数レジストリに登録済みの値だけで表す。
+    #   使えるのは、その定数が意味を持つ部品（RSI・ストキャス・ADX）に限る。
+    #   ほかの部品は水準では見ない＝交差・傾き・ローソクの形で見る（値の要らない形）。
+    hi_lo = _EXIT_LEVEL_CONST.get(m["family"])
+    if hi_lo is None:
+        return {"role": "env", "form": "slope", "material": [m],
+                "side": ("above" if side == "SHORT" else "below") if rev else str(rng.choice(["above", "below"])),
+                "value": {"n": int(rng.choice(limits["int_grid"]))}}
+    hi, lo = hi_lo
+    if rev:                       # 反転を見る＝SHORT の玉は下がり切った側（買われ過ぎの逆）で降りる
+        sd, cst = ("below", lo) if side == "SHORT" else ("above", hi)
+    else:                         # 壊れたことを見る＝SHORT の玉は上に振れた側
+        sd, cst = ("above", hi) if side == "SHORT" else ("below", lo)
+    return {"role": "env", "form": "level", "material": [m], "side": sd, "value": {"const": cst}}
+
+
+def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_adds=1) -> list[dict]:
+    """出口の枝＝承認済みの出口の表（exit_families）の枝の型から組み立てる（D2・2026-08-07）。
+
+    ★2026-08-07 まで＝作れる枝は4つ（損切り・利確・時間切れ・確率で部分利確）だけで、中身も固定だった。
+      玉がどう動いたかで枝が切り替わる形（状態機械）を1つも作れなかった＝欠陥 D2。
+    ★これから＝表に載っている枝の型20種から組み立てる。どの枝を入れるか・並び順は乱数（要件 R13＝
+      枝の有無と順番が探索の対象）。枝の中身（決済の名前・置き場所・発火の条件の形）は表が決める＝
+      乱数で条件をつなぐ形にはならない。
+
+    必ず入る枝＝利確1本（名前 TP2）・時間切れ（TIME）・損切り（SL）または資金防衛（FINSTOP）。
+    実行器の G4＝損切り系の枝か、1トレード最大許容損失の枝（risk=loss_cap）のどちらかが要る。
+    """
+    et = load_exit_table()
+    bt = et["branch_types"]
+    sig = table or load_signal_table()
+    pool = pool if pool is not None else []
+    tfs = tfs if tfs is not None else sig["tfs"]
+
+    def need(bid: str) -> dict:
+        if bid not in bt:
+            raise SampleError(f"出口の表に枝の型 {bid} が無い＝組み立てられない（表が正本）")
+        return bt[bid]
+
+    def mk(bid: str, name: str, **kw) -> dict:
+        """表の枝の型から、実行器が読む形の枝を1本 作る。決済の名前と執行は表のとおり。"""
+        b = need(bid)
+        method = "maker" if b["exec_method"].startswith("maker") else "taker"
+        out = {"name": name, "reason": b["reason"], "size_ratio": kw.pop("size_ratio", 1.0),
+               "exec": {"method": method, "placement": kw.pop("placement")}}
+        for k, v in kw.items():
+            if v is not None:
+                out[k] = v
+        return out
+
+    tmax_min = int(rng.integers(hold_bars(limits)[0], hold_bars(limits)[1] + 1)) * 5
+    hf = limits["hold_frac_grid"]
+
+    def hold_gate() -> dict:
+        """満期に対する割合で保有の門を作る（分・5の倍数に丸める・最低5分）。"""
+        n = int(round(tmax_min * float(rng.choice(hf)) / 5.0)) * 5
+        return {"n": max(5, n)}
+
+    exits: list[dict] = []
+
+    # ── ① 利確（名前は TP2 で固定＝部分利確と縮む枝がこの名前を参照する）──
+    tp_id = str(rng.choice(["TP_ZONE_MID", "TP_ZONE_OPP", "TP_PCT", "TP_SWING"]))
+    if tp_id == "TP_ZONE_MID":
+        lv = {"kind": "zone", "target": "mid"}
+    elif tp_id == "TP_ZONE_OPP":
+        lv = {"kind": "zone", "target": "opp", "fallback": "mid",
+              "buf": _floor_pct(float(rng.choice(limits["state_mult_grid"])) / 100.0)}
+    elif tp_id == "TP_PCT":
+        lv = {"kind": "pct", "base": "entry",
+              "k": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["state_mult_grid"]))}}
+    else:
+        lv = {"kind": "swing", "target": "low" if side == "SHORT" else "high",
+              "m": {"n": int(rng.choice(limits["int_grid"]))},
+              "buf": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["state_mult_grid"]))},
+              "fallback": {"kind": "zone", "target": "mid"}}
+    exits.append(mk(tp_id, "TP2", placement={"kind": "resting", "fill": "profit", "level": lv}))
+
+    # ── ② 損切り（3種から1つ）／確率で「損切り無し＋資金防衛」（軸 X-d4）──
+    no_sl = rng.random() < 0.15
+    if not no_sl:
+        sl_id = str(rng.choice(["SL_ZONE", "SL_PCT", "SL_SWING"]))
+        if sl_id == "SL_ZONE":
+            lv = {"kind": "zone_sl", "w": str(rng.choice(["range", "zone", "inner"])),
+                  "k": _const100(float(rng.choice(limits["exit_mult_grid"])) / 100.0)}
+        elif sl_id == "SL_PCT":
+            lv = {"kind": "pct", "base": "entry",
+                  "k": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["exit_mult_grid"])) / 10.0}}
+        else:
+            lv = {"kind": "swing", "target": "high" if side == "SHORT" else "low",
+                  "m": {"n": int(rng.choice(limits["int_grid"]))},
+                  "buf": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["state_mult_grid"]))},
+                  "fallback": {"kind": "zone_sl", "w": "range", "k": _const100(1.0)}}
+        exits.append(mk(sl_id, "SL", placement={"kind": "resting", "fill": "adverse",
+                                                "pessimistic": True, "level": lv}))
+
+    # ── ③ 資金防衛（1トレードの最大許容損失・損切り無しの案では必ず入れる）──
+    if no_sl or rng.random() < 0.30:
+        cap = float(rng.choice(limits["loss_cap_grid"]))
+        exits.append(mk("FINSTOP", "FINSTOP", placement={"kind": "on_close"}, risk="loss_cap",
+                        fire={"all": [_state_cond("unreal_pct", "below",
+                                                  {"const": "SCALP_FLOOR", "mult": -100.0 * cap / 0.08})]}))
+
+    # ── ④ 時間切れ（必ず入る）──
+    time_br = mk("TIME", "TIME", placement={"kind": "on_close"},
+                 fire={"all": [_state_cond("hold_min", "above", {"n": tmax_min})]})
     if rng.random() < 0.3:
-        exits[2]["exec"]["be_wait"] = {"level": {"kind": "pct", "base": "avg",
-                                                 "k": {"const": "SCALP_FLOOR", "side_sign": "profit"}},
-                                       "ttl": {"const": "BE_TTL_BARS"}}
-    order = rng.permutation(len(exits))
+        time_br["exec"]["be_wait"] = {"level": {"kind": "pct", "base": "avg",
+                                                "k": {"const": "SCALP_FLOOR", "side_sign": "profit"}},
+                                      "ttl": {"const": "BE_TTL_BARS"}}
+    exits.append(time_br)
+
+    # ── ⑤ 玉の動きで切り替わる枝（ここが D2 の本体）──
+    if rng.random() < 0.40:       # 含み損の玉だけ満期を前倒しする（V9 の down_factor）
+        exits.append(mk("TIME_DOWN", "TIMEDOWN", placement={"kind": "on_close"},
+                        fire={"all": [_state_cond("hold_min", "above", hold_gate()),
+                                      _state_cond("unreal_pct", "below", {"const": "NEUTRAL_0"})]}))
+    if rng.random() < 0.40:       # 含み益のピークから戻したら、利益を残す位置に指値
+        exits.append(mk("PEAKLOCK", "PEAKLOCK",
+                        placement={"kind": "resting", "fill": "adverse", "pessimistic": True,
+                                   "level": {"kind": "peak_giveback",
+                                             "arm": _floor_pct(float(rng.choice(limits["state_mult_grid"]))),
+                                             "giveback": {"n": max(1, int(round(float(rng.choice(limits["giveback_grid"])) * 100)))},
+                                             "floor": {"const": "SCALP_FLOOR"}}}))
+    if rng.random() < 0.30:       # 一度 利が乗った後、建値+手数料床で降りる
+        exits.append(mk("BEEXIT", "BEEXIT",
+                        placement={"kind": "resting", "fill": "profit",
+                                   "level": {"kind": "pct", "base": "avg",
+                                             "k": {"const": "SCALP_FLOOR", "side_sign": "profit"}}},
+                        fire={"all": [_state_cond("mfe_prev_pct", "above",
+                                                  _floor_pct(float(rng.choice(limits["state_mult_grid"]))))]}))
+    if rng.random() < 0.30:       # 時間が経っても利が乗らない玉を、建値フロアで降りる（停滞・失速）
+        exits.append(mk("BESTALE", "BESTALE",
+                        placement={"kind": "resting", "fill": "profit",
+                                   "level": {"kind": "pct", "base": "avg",
+                                             "k": {"const": "SCALP_FLOOR", "side_sign": "profit"}}},
+                        fire={"all": [_state_cond("hold_min", "above", hold_gate()),
+                                      _state_cond("mfe_prev_pct", "below",
+                                                  _floor_pct(float(rng.choice(limits["state_mult_grid"]))))]}))
+    if rng.random() < 0.30:       # 利確に届かないまま満期が近い玉を、手前の位置で確定する
+        frac = float(rng.choice(limits["frac_grid"])) / 100.0
+        exits.append(mk("MFEEXIT", "MFEEXIT",
+                        placement={"kind": "resting", "fill": "profit",
+                                   "level": {"kind": "mix", "from": "entry", "to": "TP2",
+                                             "frac": _const100(frac)}},
+                        fire={"all": [_state_cond("hold_min", "above", hold_gate()),
+                                      _state_cond("mfe_prev_pct", "above",
+                                                  _floor_pct(float(rng.choice(limits["state_mult_grid"]))))]}))
+    if pool and rng.random() < 0.30:    # 指標が反転したら、利益側に指値を置いて確定する
+        try:
+            c = _exit_indicator_cond(rng, limits, pool, tfs, sig, side, need("REVERSE_IND")["fire"][0])
+            exits.append(mk("REVERSE_IND", "REVIND",
+                            placement={"kind": "resting", "fill": "profit",
+                                       "level": {"kind": "pct", "base": "avg",
+                                                 "k": {"const": "SCALP_FLOOR", "side_sign": "profit"}}},
+                            fire={"all": [c, _state_cond("unreal_pct", "above", {"const": "NEUTRAL_0"})]}))
+        except SampleError:
+            pass
+    # ★ローソクの形の反転（軸 X-g11）は組まない＝実行器が出口の発火条件で「材料の無い形」を
+    #   評価できないことを実物で確認したため（2026-08-07・exit_families.md の X-g11 に理由を記録）。
+    if pool and rng.random() < 0.30:    # レンジが壊れたら成行で降りる（前提崩れ）
+        try:
+            c = _exit_indicator_cond(rng, limits, pool, tfs, sig, side, need("BREAKOUT")["fire"][0])
+            exits.append(mk("BREAKOUT", "BREAKOUT", placement={"kind": "on_close"}, fire={"all": [c]}))
+        except SampleError:
+            pass
+    if max_adds >= 2 and rng.random() < 0.30:   # 積み増した玉だけに当たる損切り（枝が回数で切り替わる）
+        lo = int(rng.choice([a for a in limits["max_adds_grid"] if 2 <= a <= max_adds] or [2]))
+        exits.append(mk("MAECUT_ADDS", "MAECUTADDS", placement={"kind": "on_close"},
+                        scope={"adds": [lo, None]},
+                        fire={"all": [_state_cond("hold_min", "above", hold_gate()),
+                                      _state_cond("unreal_pct", "below", {"const": "NEUTRAL_0"})]}))
+    if rng.random() < 0.30:       # 残り時間の比で建値側へ縮む指値（時間切れの前に置き直す）
+        exits.append(mk("SHRINK", "SHRINK",
+                        placement={"kind": "resting", "fill": "profit",
+                                   "level": {"kind": "shrink", "from": "TP2",
+                                             "tmax": {"n": max(1, tmax_min // 5)},
+                                             "floor": {"const": "SCALP_FLOOR"}}}))
+
+    # ── ⑥ 部分利確（段数は格子から・各段の量の合計が玉を超えない）──
+    if rng.random() < 0.5:
+        steps = int(rng.choice(limits["ladder_steps_grid"]))
+        rest = 1.0
+        for s in range(steps):
+            frac = float(rng.choice(limits["frac_grid"])) / 100.0
+            if frac >= rest:
+                break
+            exits.append(mk("TP1_LADDER", f"TP1{'' if s == 0 else s + 1}", size_ratio=frac, once=True,
+                            placement={"kind": "resting", "fill": "profit",
+                                       "level": {"kind": "mix", "from": "entry", "to": "TP2",
+                                                 "frac": _const100(frac * (s + 1) / steps)}}))
+            rest -= frac
+
+    order = rng.permutation(len(exits))          # 並び順もデータ（上から先勝ち・要件 R13）
     return [exits[i] for i in order]
 
 
@@ -492,15 +755,17 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
         b = kids.pop(len(kids) - 1)
         kids.append({"if": a, "then": b})
     tree = {"all": kids}
+    pos_adds = int(rng.choice(limits["max_adds_grid"]))    # 先に決める＝出口の枝が回数で切り替わるため
     return {
         "meta": {"strategy": "e38", "logic_id": logic_id, "side": side,
                  "signal_family": fam_label,
                  "regime": dict(regime if regime is not None else default_regime())},
         "pre_filter": [],
         "entry": {"connective": tree},
-        "exits": _make_exits(rng, limits),
+        "exits": _make_exits(rng, limits, pool=pool, tfs=tfs, table=table, side=side,
+                             max_adds=int(pos_adds)),
         "position": {"mode": str(rng.choice(["separate", "avg"])),
-                     "max_adds": int(rng.choice(limits["max_adds_grid"])),
+                     "max_adds": pos_adds,
                      **({"add_trigger": {"kind": "resignal"}}
                         if True else {})},
     }
@@ -604,9 +869,29 @@ def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
     for r in recipes:
         lane = r["meta"].get("lane", "")
         conds, _d = ex._walk(r["entry"]["connective"])
+        # ★出口の枝の発火条件も歩く（D2・2026-08-07）。直す前は入口と事前の足切りしか見ておらず、
+        #   出口に指標を見る条件（例＝レンジが壊れたことを見る枝）を入れると、分位の解決表に鍵が無くて止まった。
+        for b in (r.get("exits") or []):
+            if b.get("fire"):
+                ec, _ed = ex._walk(b["fire"])
+                conds += ec
         for c in conds + list(r.get("pre_filter", [])):
             _cond_keys(c, lane)
     return keys
+
+
+def _geo_of(df: pd.DataFrame) -> dict:
+    """レンジ幾何＝帯の4隅・中央と、そこから作る2列（帯内位置%・W%）。本走と番人で同じ作り方を使う。"""
+    geo = {"res_hi": df["v11_res_hi"].to_numpy(float), "res_lo": df["v11_res_lo"].to_numpy(float),
+           "sup_hi": df["v11_sup_hi"].to_numpy(float), "sup_lo": df["v11_sup_lo"].to_numpy(float),
+           "mid": df["v11_mid"].to_numpy(float)}
+    c = df["close"].to_numpy(float)
+    span = geo["res_hi"] - geo["mid"]
+    with np.errstate(invalid="ignore", divide="ignore"):
+        geo["帯内位置%"] = np.where(np.isfinite(span) & (span > 0), (c - geo["mid"]) / span, np.nan)
+        geo["W%"] = np.where(np.isfinite(geo["res_hi"]) & np.isfinite(geo["sup_lo"]),
+                             (geo["res_hi"] - geo["sup_lo"]) / c * 100.0, np.nan)
+    return geo
 
 
 def build_qtable(df: pd.DataFrame, geo: dict, recipes: list[dict], grid: list[str],
@@ -645,6 +930,11 @@ def attach_materials(df: pd.DataFrame, recipes: list[dict]) -> pd.DataFrame:
     for r in recipes:
         lane = r["meta"].get("lane", "")
         conds, _d = ex._walk(r["entry"]["connective"])
+        # ★出口の枝の発火条件の材料も組み立てる（D2・2026-08-07）。needed_qkeys と同じ理由。
+        for b in (r.get("exits") or []):
+            if b.get("fire"):
+                ec, _ed = ex._walk(b["fire"])
+                conds += ec
         for c in conds + list(r.get("pre_filter", [])):
             stack = [c] + ([c["inner"]] if c.get("inner") else [])
             for cc in stack:
@@ -977,15 +1267,7 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
 
     # ── 材料の組み立てと解決表（探索開始時に1回固定・§5-4）──
     df2 = attach_materials(df, structures)
-    geo = {"res_hi": df2["v11_res_hi"].to_numpy(float), "res_lo": df2["v11_res_lo"].to_numpy(float),
-           "sup_hi": df2["v11_sup_hi"].to_numpy(float), "sup_lo": df2["v11_sup_lo"].to_numpy(float),
-           "mid": df2["v11_mid"].to_numpy(float)}
-    c = df2["close"].to_numpy(float)
-    span = geo["res_hi"] - geo["mid"]
-    with np.errstate(invalid="ignore", divide="ignore"):
-        geo["帯内位置%"] = np.where(np.isfinite(span) & (span > 0), (c - geo["mid"]) / span, np.nan)
-        geo["W%"] = np.where(np.isfinite(geo["res_hi"]) & np.isfinite(geo["sup_lo"]),
-                             (geo["res_hi"] - geo["sup_lo"]) / c * 100.0, np.nan)
+    geo = _geo_of(df2)
     qtable = build_qtable(df2, geo, structures, limits["quantile_grid"], start, end)
     (run_dir / "qtable.json").write_text(json.dumps(qtable, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
                                          encoding="utf-8")
@@ -1191,6 +1473,8 @@ KENSHU_LIMITS = {
     "hold_bars": (1, 24), "hold_role": "検収専用",
     "hour_grid": [6, 12, 18], "frac_grid": [50.0], "exit_mult_grid": [50.0, 100.0],
     "max_adds_grid": [1, 2], "fdr_q": 0.10,
+    # 出口の枝（D2・2026-08-07）＝検収専用の値。本走は search_limits.json の格子を使う。
+    "hold_frac_grid": [0.5], "giveback_grid": [0.5], "loss_cap_grid": [0.6], "ladder_steps_grid": [1, 2],
 }
 
 
@@ -1600,6 +1884,101 @@ def selftest() -> int:
         t13.append(f"型のラベルが表の対象の外（{sorted(fam13)}）")
     ng += [f"T13: {x}" for x in t13]
 
+    # ══ T14 出口の状態機械（D2・2026-08-07）＝完了の線①②④の番人 ═══════════════════════
+    #   ①枝の種類が4種類より増える ②積み増しの回数で枝が切り替わる構造が組める
+    #   ④枝が実際に発火した売買記録が出る・わざと条件を外すと発火しない（メタ確認つき）
+    t14: list[str] = []
+    import gen_exit_families as gef14
+    ok14, msg14 = gef14.table_status()
+    if not ok14:
+        t14.append(f"出口の表が無効（{msg14}）")
+    et14 = load_exit_table()
+    lm14 = dict(KENSHU_LIMITS)
+    lm14.update({k: v for k, v in json.loads(LIMITS_PATH.read_text(encoding="utf-8")).items()
+                 if k in ("hold_frac_grid", "giveback_grid", "loss_cap_grid", "ladder_steps_grid")})
+    sts14, reasons14, names14 = [], set(), set()
+    for i in range(80):
+        rng = np.random.default_rng([14, 8, i])
+        try:
+            st = sample_structure(rng, lm14, pool, tfs_small, side="SHORT", logic_id="S3")
+        except SampleError:
+            continue
+        sts14.append(st)
+        for b in st["exits"]:
+            reasons14.add(b["reason"])
+            names14.add(b["name"])
+    # ①枝の種類（決済の名前の種類）が4種類より増えたか
+    if len(reasons14) <= 4:
+        t14.append(f"出口の決済の名前が {len(reasons14)} 種類しか出ない（4種類より増えること＝完了の線①）")
+    # ②積み増しの回数で切り替わる枝が組めたか（scope.adds を持つ枝が在るか）
+    if not any(b.get("scope", {}).get("adds") for st in sts14 for b in st["exits"]):
+        t14.append("積み増しの回数で切り替わる枝が1本も出ない（完了の線②）")
+    # ★表に無い決済の名前・置き場所を作っていないか（表が正本）
+    allow14 = {b["reason"] for b in et14["branch_types"].values()}
+    if not reasons14 <= allow14:
+        t14.append(f"表に無い決済の名前を作った: {sorted(reasons14 - allow14)}")
+    # ★成行（taker）の枝が、能動クローズの決済の名前だけか（H5・完了の線⑥）
+    import score as _sc14
+    for st in sts14:
+        for b in st["exits"]:
+            is_taker = b["exec"]["method"] == "taker"
+            if is_taker != (b["reason"] in _sc14.TAKER_EXIT_REASONS):
+                t14.append(f"執行と決済の名前が食い違う枝: {b['name']}（{b['reason']}・{b['exec']['method']}）")
+                break
+        if t14 and t14[-1].startswith("執行と"):
+            break
+    # ④実際に発火するか＝合成データで走らせて、状態機械の枝の決済が売買記録に出るか
+    df14 = synth_df(1500, seed=14)
+    # ★材料の列を組み立ててから走らせる（本走と同じ経路＝attach_materials）。
+    #   これを抜くと「列が実行データに無い」で走行が落ちる＝番人が枝の発火を見られない。
+    df14 = attach_materials(df14, sts14)
+    geo14 = _geo_of(df14)          # 本走と同じ作り方（帯の4隅・中央・帯内位置%・W%）
+    fired14: set = set()
+    # 玉の動きで切り替わる枝＝発火の条件（fire）を持つものだけを見る（常に置く枝は対象外）
+    state_names = {"TIMEDOWN", "BEEXIT", "BESTALE", "MFEEXIT", "REVIND", "BREAKOUT",
+                   "MAECUTADDS", "FINSTOP"}
+    picked14 = None
+    for st in sts14:
+        if not (state_names & {b["name"] for b in st["exits"]}):
+            continue
+        try:
+            r14 = ex.run_recipe(df14, st, qtable=build_qtable(df14, geo14, [st], lm14["quantile_grid"]))
+        except BaseException:
+            continue
+        tr = r14[0] if isinstance(r14, tuple) else r14
+        if tr is None or not len(tr):
+            continue
+        got = {t.get("exit_reason") for t in (tr.to_dict("records") if hasattr(tr, "to_dict") else tr)}
+        # ★どの枝で決済したかを決済の名前で見分けるので、他の枝も出す名前は除く。
+        #   例＝利確の名前（TP_FILLED）は、いつも置く利確の枝も出す＝状態機械の枝の発火とは言えない。
+        st_reasons = {b["reason"] for b in st["exits"] if b["name"] in state_names and b.get("fire")}
+        st_reasons -= {b["reason"] for b in st["exits"]
+                       if not (b["name"] in state_names and b.get("fire"))}
+        if got & st_reasons:
+            fired14 |= got & st_reasons
+            picked14 = st
+            break
+    if not fired14:
+        t14.append("状態機械の枝が1本も発火しなかった（完了の線④＝発火した売買記録が出ること）")
+    elif picked14 is not None:
+        # メタ確認＝わざと条件を外すと発火しなくなるか（枝の発火の門を届かない値にする）
+        broke = copy.deepcopy(picked14)
+        for b in broke["exits"]:
+            if b["name"] in state_names and b.get("fire"):
+                # 発火の条件を「絶対に満たさないもの」に丸ごと置き換える（保有 10^6 分＝約2年）。
+                # 条件の中身を1本ずつ弄る形だと、値を持たない形（傾き・交差）が壊れず残る。
+                b["fire"] = {"all": [_state_cond("hold_min", "above", {"n": 10 ** 6})]}
+        try:
+            r14b = ex.run_recipe(df14, broke,
+                                 qtable=build_qtable(df14, geo14, [broke], lm14["quantile_grid"]))
+            trb = r14b[0] if isinstance(r14b, tuple) else r14b
+            gotb = {t.get("exit_reason") for t in (trb.to_dict("records") if hasattr(trb, "to_dict") else (trb or []))}
+            if fired14 & gotb:
+                t14.append(f"条件を届かない値にしても枝が発火した（門が飾り）: {sorted(fired14 & gotb)}")
+        except BaseException as e:
+            t14.append(f"メタ確認の走行が落ちた: {str(e)[:60]}")
+    ng += [f"T14: {x}" for x in t14]
+
     print("=" * 80)
     print("engine_tuner_gen 自己検査（合成データのみ・実データの試行ゼロ・累積試行の記録なし）")
     print("=" * 80)
@@ -1616,6 +1995,10 @@ def selftest() -> int:
           "売買が在る案（負けでも）は0玉の門では捨てない")
     print(f"  T13 型の表の閉じ込め（D1）: 本物の格子で {len(sts13)} 本（SHORT/LONG）＝対応表・禁止3・DC1〜DC4 の"
           f"違反 {len(viol13)} 本 ／ G2 適合率 {n_ok13}/{len(sts13)} ／ 型のラベル {sorted(fam13)}")
+    print(f"  T14 出口の状態機械（D2）: {len(sts14)} 本＝決済の名前 {len(reasons14)} 種類"
+          f"（表の中だけ・4種類より増える）／枝の名前 {len(names14)} 種類 ／"
+          f" 積み増しの回数で切り替わる枝あり ／ 実際に発火した枝 {sorted(fired14) or 'なし'}"
+          f" ／ 条件を届かない値にすると発火しない（メタ確認）")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")

@@ -41,11 +41,27 @@ import periods  # noqa: E402  検証期間の唯一の正本（学習/捨て/採
 #   本番執行 = SL と同じ placePosTpsl（triggerPrice=executePrice の指値）を trail 水準でバーごとに更新する方式。
 #   live エンジン（run_once_v9.py）に trail は未実装（grep 0件・P21 未稼働）で、taker 計上は replay 側の仮定だった。
 #   live の損益 CSV も fee=maker×2 計上（run_once_v9.py L130-131）。すり抜けリスクの扱いは SL maker（E0.1 承認）と同前提。
-MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP", "BE_EXIT", "PARTIAL_TP", "MFE_DRAWDOWN_CUT", "TREND_CAUGHT_TP", "CENTER_LOCK"}  # 指値(resting limit)約定=maker。EDGE_TP=逆側端の利確指値 / BE_EXIT=建値撤退の指値(iter4・2026-06-15 追加) / PARTIAL_TP=部分利確の指値TP(iter6・2026-06-18 追加・executePrice=triggerPrice の resting maker・H13 既知答えテスト再pass) / MFE_DRAWDOWN_CUT=含み益ピーク基準トレーリング指値(E37 v14・placePosTpsl triggerPrice=executePrice をピーク進捗でバー毎更新＝TRAIL_EXIT と同前提・2026-07-07 追加・H13 既知答えテスト再pass) / TREND_CAUGHT_TP=trend_caught 玉のピーク帯 resting maker 利確(E37 v24・uptrend 発火で畳む玉に建値+0.08% の resting 指値TP＝反転待ち STOCH_REVERSE を置換・executePrice=triggerPrice の resting maker・2026-07-16 追加・H13 既知答えテスト再pass)
+MAKER_EXIT_REASONS = {"TP_FILLED", "SL_FILLED", "TRAIL_EXIT", "EDGE_TP", "BE_EXIT", "PARTIAL_TP", "MFE_DRAWDOWN_CUT", "TREND_CAUGHT_TP", "CENTER_LOCK",
+                      # ↓ 2026-08-07 追加（D2＝出口を状態機械にする・まこさん承認「承認した」・正本＝.claude/ratchet/exit_families.md）。
+                      #   3件とも placePosTpsl の指値（triggerPrice=executePrice の resting maker）で置く枝＝maker。
+                      #   MFE_EXIT            = 利確に届かないまま満期が近い玉を、利確の手前の位置に置いた指値で確定する（V9 の同名の枝の maker 版）。
+                      #   INDICATOR_REVERSE_TP = 指標が反転したら、利益側の位置に指値を置いて確定する（V9 STOCH_REVERSE_EXIT／RSI_REVERSE_EXIT の maker 版）。
+                      #   ★V9 は同じ場面を成行（taker）で投げていた。maker に変えた理由＝手数料負け回避が本プロジェクトの根幹
+                      #     （cat_requirements §6・H5＝成行 taker は能動クローズのみ）で、実測でも有利価格の maker 決済だけが
+                      #     再エントリーの食い合いを上回った（L-331・v15 で SL −$1,905→−$545）。TREND_CAUGHT_TP（v24）と同型の置き方。
+                      #   ⚠️ CANDLE_REVERSE_TP（ローソクの形の反転で利確）は登録しない＝実行器が出口の発火条件で
+                      #     「材料の無い形」を評価できないことを実物で確認したため（2026-08-07・exit_families.md の X-g11）。
+                      #     使わない名前を審判に残すと、次に読む人が「この出口は在る」と誤読する。
+                      "MFE_EXIT", "INDICATOR_REVERSE_TP"}  # 指値(resting limit)約定=maker。EDGE_TP=逆側端の利確指値 / BE_EXIT=建値撤退の指値(iter4・2026-06-15 追加) / PARTIAL_TP=部分利確の指値TP(iter6・2026-06-18 追加・executePrice=triggerPrice の resting maker・H13 既知答えテスト再pass) / MFE_DRAWDOWN_CUT=含み益ピーク基準トレーリング指値(E37 v14・placePosTpsl triggerPrice=executePrice をピーク進捗でバー毎更新＝TRAIL_EXIT と同前提・2026-07-07 追加・H13 既知答えテスト再pass) / TREND_CAUGHT_TP=trend_caught 玉のピーク帯 resting maker 利確(E37 v24・uptrend 発火で畳む玉に建値+0.08% の resting 指値TP＝反転待ち STOCH_REVERSE を置換・executePrice=triggerPrice の resting maker・2026-07-16 追加・H13 既知答えテスト再pass)
 # 成行/トリガ撤退=taker（現在 taker 扱いの全理由を明示＝既存分類を維持）
 TAKER_EXIT_REASONS = {"TIME_EXIT", "MFE_STALE_CUT", "STOCH_REVERSE_EXIT", "PROFIT_LOCK",
                       "RSI_REVERSE_EXIT", "MAE_CUT", "FORCE_CLOSE_EOD",
-                      "ML_STANCH", "BOX_BREAK_SL", "SPIKE_SL", "DYING_CUT", "STRUCT_SL", "HOLD_MOM_EXIT", "TREND_CONT", "RANGE_BREAK_EXIT"}  # SPIKE_SL=Lee-Mykland jump の成行 緊急カット(E36・成行=taker+slip・2026-06-21 追加) / DYING_CUT=死ぬ片流れの hold-ML 早期カット(E36 (A)・含み損側 predict<θ_cut・成行=taker+slip・2026-06-25 追加・H13 既知答えテスト再pass) / STRUCT_SL=構造ストップ(E36・建値比 k% 逆行で成行カット・予測なし無条件・成行=taker+slip・2026-06-26 追加・H13 既知答えテスト再pass) / HOLD_MOM_EXIT=保有中 momentum反転 早期カット(E36・SHORT 保有M バー+含み損側+donchian_pos≥θ_don で成行カット・保有経路 momentum 両窓AUC0.9+・成行=taker+slip・2026-06-28 追加・H13 既知答えテスト再pass) / TREND_CONT=向き無し両側 MR スキャルのトレンド化 早切り(E37 v3・保有中 dev_z が entry から更に伸び反転せずトレンド化した継続玉を成行カット・成行=taker+slip・2026-07-02 追加・H13 既知答えテスト再pass) / RANGE_BREAK_EXIT=レンジ構造破れの即畳み(E37 v15・出来高>20期間平均∩ゾーン外終値∩1h持続の AND で全 lot 成行カット＝レンジ破れは E32b に譲る・成行=taker+slip・2026-07-07 追加・H13 既知答えテスト再pass)
+                      "ML_STANCH", "BOX_BREAK_SL", "SPIKE_SL", "DYING_CUT", "STRUCT_SL", "HOLD_MOM_EXIT", "TREND_CONT", "RANGE_BREAK_EXIT",
+                      # ↓ 2026-08-07 追加（D2・同上）。BREAKOUT_CUT＝レンジが壊れた（前提崩れ）ときの能動クローズ＝成行 taker+slip。
+                      #   V9 の同名の枝（BB幅≥X ∩ RSI≥Y で成行・v9_exits.md 枝1）と同じ扱い。既存の RANGE_BREAK_EXIT（v15＝出来高∩
+                      #   ゾーン外終値∩1h持続のハードコード判定）とは発火条件が別なので、名前を分けて登録する（同じ名前にすると
+                      #   どちらの条件で切れたのか売買記録から見分けられなくなる）。
+                      "BREAKOUT_CUT"}  # SPIKE_SL=Lee-Mykland jump の成行 緊急カット(E36・成行=taker+slip・2026-06-21 追加) / DYING_CUT=死ぬ片流れの hold-ML 早期カット(E36 (A)・含み損側 predict<θ_cut・成行=taker+slip・2026-06-25 追加・H13 既知答えテスト再pass) / STRUCT_SL=構造ストップ(E36・建値比 k% 逆行で成行カット・予測なし無条件・成行=taker+slip・2026-06-26 追加・H13 既知答えテスト再pass) / HOLD_MOM_EXIT=保有中 momentum反転 早期カット(E36・SHORT 保有M バー+含み損側+donchian_pos≥θ_don で成行カット・保有経路 momentum 両窓AUC0.9+・成行=taker+slip・2026-06-28 追加・H13 既知答えテスト再pass) / TREND_CONT=向き無し両側 MR スキャルのトレンド化 早切り(E37 v3・保有中 dev_z が entry から更に伸び反転せずトレンド化した継続玉を成行カット・成行=taker+slip・2026-07-02 追加・H13 既知答えテスト再pass) / RANGE_BREAK_EXIT=レンジ構造破れの即畳み(E37 v15・出来高>20期間平均∩ゾーン外終値∩1h持続の AND で全 lot 成行カット＝レンジ破れは E32b に譲る・成行=taker+slip・2026-07-07 追加・H13 既知答えテスト再pass)
 # 採点 CSV に現れる全 exit_reason（実データ列挙済）。未登録は assert_hard_constraints で STOP（黙って taker 計上しない・§2.9）
 KNOWN_EXIT_REASONS = MAKER_EXIT_REASONS | TAKER_EXIT_REASONS
 # ★2つの一覧が重ならないことを import 時に物理検査する（2026-08-02 新設・まこさん承認済の登録変更の副産物）。

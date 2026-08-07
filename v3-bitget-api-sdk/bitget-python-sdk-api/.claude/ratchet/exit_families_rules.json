@@ -1,0 +1,899 @@
+{
+  "_この文書は何か": "出口の枝の表（exit_families）を機械生成するための規則ファイル。gen_exit_families.py だけが読む。CC は md を手で書かない（まこさん指示 2026-08-07『X-a〜X-kから自動生成して』『お前は手書きはするな』）。",
+  "_決まり": [
+    "axis_options のキーは、軸カタログ entry_exit_matrix.md の X-a〜X-k の選択肢と1対1で完全一致すること。漏れ・余りが1つでもあれば生成器が止まる（網羅の物理保証）。",
+    "全行に basis（出典）が要る。空の行は生成器が拒否する。",
+    "枝の型（branch_types）が使える受け皿・決済理由・格子は、生成器が実物（engine_tuner_exec.py の AST／score.py／search_limits.json／indicator_reference_diag）と機械照合する。実物に無いものを書いても表に載らず、生成器が止まる。",
+    "執行（maker/taker）は決済理由から機械で決まる（score.py の MAKER_EXIT_REASONS／TAKER_EXIT_REASONS が正本＝H13）。この規則ファイルに執行を書かない。",
+    "値は格子の名前で書く。実値を書かない（§2.4 生の数字のフィールドを作らない）。格子が search_limits.json に無ければ『値待ち＝まこさんが決める』として表に出て、その枝は生成できない（fail-closed）。"
+  ],
+  "branch_types": {
+    "TP_ZONE_MID": {
+      "jp": "利確＝レンジ中央に指値",
+      "reason": "TP_FILLED",
+      "placement": {
+        "kind": "resting",
+        "fill": "profit",
+        "level": {
+          "kind": "zone",
+          "target": "mid"
+        }
+      },
+      "basis": "実行器 _check_level の zone（target=mid）＝S2/S1 恒等レシピが使っている置き方"
+    },
+    "TP_ZONE_OPP": {
+      "jp": "利確＝反対側ゾーンまで伸ばす（届かない時は中央へ戻す）",
+      "reason": "TP_FILLED",
+      "placement": {
+        "kind": "resting",
+        "fill": "profit",
+        "level": {
+          "kind": "zone",
+          "target": "opp",
+          "buf_grid": "state_mult_grid",
+          "fallback": "mid"
+        }
+      },
+      "basis": "実行器 _check_level の zone（target=opp・buf・fallback=mid の幾何防御）／E37 v18 実測＝平均勝ち +20%（ARC33）"
+    },
+    "TP_PCT": {
+      "jp": "利確＝建値から固定%（手数料床の倍数）に指値",
+      "reason": "TP_FILLED",
+      "placement": {
+        "kind": "resting",
+        "fill": "profit",
+        "level": {
+          "kind": "pct",
+          "base": "entry",
+          "k_const": "SCALP_FLOOR",
+          "k_grid": "state_mult_grid"
+        }
+      },
+      "basis": "実行器 _check_level の pct／定数レジストリ SCALP_FLOOR（手数料床 0.08%＝maker 往復の約2.9倍）"
+    },
+    "TP_SWING": {
+      "jp": "利確＝直近M本の押し安値・戻り高値の手前に指値（届かない時は元の置き方へ戻す）",
+      "reason": "TP_FILLED",
+      "placement": {
+        "kind": "resting",
+        "fill": "profit",
+        "level": {
+          "kind": "swing",
+          "m_grid": "int_grid",
+          "buf_grid": "state_mult_grid",
+          "fallback": "TP_ZONE_MID"
+        }
+      },
+      "basis": "実行器 _check_level の swing（v22 アンカー・当該バーを含めない＝H2）"
+    },
+    "TP1_LADDER": {
+      "jp": "部分利確＝建値と利確の間を刻んで指値（1〜2段）",
+      "reason": "PARTIAL_TP",
+      "placement": {
+        "kind": "resting",
+        "fill": "profit",
+        "level": {
+          "kind": "mix",
+          "from": "entry",
+          "to": "TP2",
+          "frac_grid": "frac_grid"
+        }
+      },
+      "size_ratio_grid": "frac_grid",
+      "steps_grid": "ladder_steps_grid",
+      "basis": "実行器 _check_level の mix／E37 実測＝PARTIAL_TP は両窓で +$1,413〜1,566（壊すな・2026-07-06 分析）"
+    },
+    "SHRINK": {
+      "jp": "利確＝残り時間の比で建値側へ縮む指値（時間切れの前に置き直す）",
+      "reason": "TP_FILLED",
+      "placement": {
+        "kind": "resting",
+        "fill": "profit",
+        "level": {
+          "kind": "shrink",
+          "from": "TP2",
+          "tmax_grid": "int_grid",
+          "floor_const": "SCALP_FLOOR"
+        }
+      },
+      "basis": "実行器 _check_level の shrink（v13 deadline shrink・S1 の書き写し）／軸 X-f2 の逐語"
+    },
+    "PEAKLOCK": {
+      "jp": "含み益のピークから戻したら、利益を残す位置に指値（追従＋利益の下限）",
+      "reason": "MFE_DRAWDOWN_CUT",
+      "placement": {
+        "kind": "resting",
+        "fill": "adverse",
+        "pessimistic": true,
+        "level": {
+          "kind": "peak_giveback",
+          "arm_grid": "state_mult_grid",
+          "giveback_grid": "giveback_grid",
+          "floor_const": "SCALP_FLOOR"
+        }
+      },
+      "basis": "実行器 _peak_giveback_level（前バーまでのピーク＝H2）／S1 恒等レシピ PEAKLOCK の実証値（arm 0.15%・giveback 0.5・floor SCALP_FLOOR）"
+    },
+    "BEEXIT": {
+      "jp": "同値撤退＝一度 利が乗った後、建値+手数料床に指値",
+      "reason": "BE_EXIT",
+      "placement": {
+        "kind": "resting",
+        "fill": "profit",
+        "level": {
+          "kind": "pct",
+          "base": "avg",
+          "k_const": "SCALP_FLOOR",
+          "k_grid": "state_mult_grid"
+        }
+      },
+      "fire": [
+        {
+          "state": "mfe_prev_pct",
+          "side": "above",
+          "const": "SCALP_FLOOR",
+          "grid": "state_mult_grid"
+        }
+      ],
+      "basis": "実行器の状態列 mfe_prev_pct（前バーまでのピーク＝H2）／E37 経路再現 2026-07-06 実測＝建値撤退 単独が両窓プラス転換／E35 iter4 実績"
+    },
+    "BESTALE": {
+      "jp": "停滞・失速の撤退＝時間が経っても利が乗らない玉を、建値フロアの指値で降りる",
+      "reason": "BE_EXIT",
+      "placement": {
+        "kind": "resting",
+        "fill": "profit",
+        "level": {
+          "kind": "pct",
+          "base": "avg",
+          "k_const": "SCALP_FLOOR",
+          "k_grid": "state_mult_grid"
+        }
+      },
+      "fire": [
+        {
+          "state": "hold_min",
+          "side": "above",
+          "grid": "hold_frac_grid"
+        },
+        {
+          "state": "mfe_prev_pct",
+          "side": "below",
+          "const": "SCALP_FLOOR",
+          "grid": "state_mult_grid"
+        }
+      ],
+      "basis": "V9 MFE_STALE_CUT（保有≥N分 ∩ MFE<gate）と STAGNATION_CUT（保有≥M ∩ MFE≤小）の受け皿＝v9_exits.md の枝3〜5・16〜17／E37 v48 の実装形（失速→建値フロア resting maker）"
+    },
+    "MFEEXIT": {
+      "jp": "長く持った玉の利確＝利確に届かないまま満期が近い玉を、手前の位置で確定する",
+      "reason": "MFE_EXIT",
+      "placement": {
+        "kind": "resting",
+        "fill": "profit",
+        "level": {
+          "kind": "mix",
+          "from": "entry",
+          "to": "TP2",
+          "frac_grid": "frac_grid"
+        }
+      },
+      "fire": [
+        {
+          "state": "hold_min",
+          "side": "above",
+          "grid": "hold_frac_grid"
+        },
+        {
+          "state": "mfe_prev_pct",
+          "side": "above",
+          "const": "SCALP_FLOOR",
+          "grid": "state_mult_grid"
+        }
+      ],
+      "basis": "v9_exits.md の枝2 MFE_EXIT（保有≥満期×0.6 ∩ MFE≥$20）＝機械生成の正本にある枝（CC の手書き要約から落ちていた・2026-08-07 まこさん指摘で発覚）",
+      "reason_pending_side": "maker"
+    },
+    "REVERSE_IND": {
+      "jp": "指標の反転で利確＝反転を検知したら利益側に指値（材料は型の表の部品から選ぶ）",
+      "reason": "INDICATOR_REVERSE_TP",
+      "placement": {
+        "kind": "resting",
+        "fill": "profit",
+        "level": {
+          "kind": "pct",
+          "base": "avg",
+          "k_const": "SCALP_FLOOR",
+          "k_grid": "state_mult_grid"
+        }
+      },
+      "fire": [
+        {
+          "indicator": true,
+          "forms": [
+            "cross",
+            "level",
+            "slope",
+            "diff"
+          ],
+          "reverse_of_side": true
+        },
+        {
+          "state": "unreal_pct",
+          "side": "above",
+          "const": "NEUTRAL_0"
+        }
+      ],
+      "confirm_max": 2,
+      "basis": "V9 STOCH_REVERSE_EXIT／RSI_REVERSE_EXIT（v9_exits.md の枝7・10＝利益ゲート unreal≥0 つき）／maker 化＝v24 TREND_CAUGHT_TP と同じ置き方（反転を待たず利益側 resting）／cat_requirements §6（maker 優先）",
+      "reason_pending_side": "maker"
+    },
+    "SL_ZONE": {
+      "jp": "損切り＝レンジの帯の外に指値（帯の取り方3種・倍率つき）",
+      "reason": "SL_FILLED",
+      "placement": {
+        "kind": "resting",
+        "fill": "adverse",
+        "pessimistic": true,
+        "level": {
+          "kind": "zone_sl",
+          "w_choices": [
+            "range",
+            "zone",
+            "inner"
+          ],
+          "k_grid": "exit_mult_grid"
+        }
+      },
+      "basis": "実行器 _check_level の zone_sl（w＝range/zone/inner）／L-323＝平均回帰に浅SLは逆効果＝深い側も格子に入れる"
+    },
+    "SL_PCT": {
+      "jp": "損切り＝建値から固定%に指値",
+      "reason": "SL_FILLED",
+      "placement": {
+        "kind": "resting",
+        "fill": "adverse",
+        "pessimistic": true,
+        "level": {
+          "kind": "pct",
+          "base": "entry",
+          "k_const": "SCALP_FLOOR",
+          "k_grid": "exit_mult_grid"
+        }
+      },
+      "basis": "実行器 _check_level の pct／軸 X-d1 の逐語"
+    },
+    "SL_SWING": {
+      "jp": "損切り＝直近M本の高安の外に指値",
+      "reason": "SL_FILLED",
+      "placement": {
+        "kind": "resting",
+        "fill": "adverse",
+        "pessimistic": true,
+        "level": {
+          "kind": "swing",
+          "m_grid": "int_grid",
+          "buf_grid": "state_mult_grid",
+          "fallback": "SL_ZONE"
+        }
+      },
+      "basis": "実行器 _check_level の swing／軸 X-d6 の逐語"
+    },
+    "TIME": {
+      "jp": "時間切れ＝保有の上限で成行",
+      "reason": "TIME_EXIT",
+      "placement": {
+        "kind": "on_close"
+      },
+      "fire": [
+        {
+          "state": "hold_min",
+          "side": "above",
+          "grid": "hold_bars_from_role"
+        }
+      ],
+      "basis": "実行器の状態列 hold_min／保有の上限の範囲は役割から機械で決まる（要件 R6・監査 4-19）"
+    },
+    "TIME_DOWN": {
+      "jp": "時間切れの前倒し＝含み損の玉だけ満期を短くして成行（勝ちは満期まで）",
+      "reason": "TIME_EXIT",
+      "placement": {
+        "kind": "on_close"
+      },
+      "fire": [
+        {
+          "state": "hold_min",
+          "side": "above",
+          "grid": "hold_frac_grid"
+        },
+        {
+          "state": "unreal_pct",
+          "side": "below",
+          "const": "NEUTRAL_0"
+        }
+      ],
+      "basis": "v9_exits.md の枝18 TIME_EXIT（含み損だけ満期×f に前倒し・f=0.5）＝V9 down_factor"
+    },
+    "BREAKOUT": {
+      "jp": "前提崩れ＝レンジが壊れたら成行で降りる",
+      "reason": "BREAKOUT_CUT",
+      "placement": {
+        "kind": "on_close"
+      },
+      "fire": [
+        {
+          "indicator": true,
+          "forms": [
+            "level",
+            "slope",
+            "diff"
+          ],
+          "lineage_any": [
+            "ボラ",
+            "オシレーター",
+            "構造・位置"
+          ]
+        }
+      ],
+      "confirm_max": 2,
+      "basis": "v9_exits.md の枝1 BREAKOUT_CUT（BB幅≥X ∩ RSI≥Y）／軸 X-f3・X-g6・X-g7／閾値は分位（H6・絶対値を持ち込まない）",
+      "reason_pending_side": "taker"
+    },
+    "FINSTOP": {
+      "jp": "資金防衛＝1トレードの含み損が線に達したら無条件で成行",
+      "reason": "MAE_CUT",
+      "risk": "loss_cap",
+      "placement": {
+        "kind": "on_close"
+      },
+      "fire": [
+        {
+          "state": "unreal_pct",
+          "side": "below",
+          "grid": "loss_cap_grid",
+          "negative": true
+        }
+      ],
+      "basis": "軸 X-d11 の逐語（1トレード最大許容損失＝資金比%・予算0.12の合計capとは別軸）／実行器 G4 は risk=loss_cap の枝を SL の代わりに認める（554行）"
+    },
+    "MAECUT_ADDS": {
+      "jp": "積み増した玉の損切り＝積み増し回数が一定以上で、時間が経っても含み損なら成行",
+      "reason": "MAE_CUT",
+      "placement": {
+        "kind": "on_close"
+      },
+      "scope": {
+        "adds_min_grid": "max_adds_grid"
+      },
+      "fire": [
+        {
+          "state": "hold_min",
+          "side": "above",
+          "grid": "hold_frac_grid"
+        },
+        {
+          "state": "unreal_pct",
+          "side": "below",
+          "const": "NEUTRAL_0"
+        }
+      ],
+      "basis": "v9_exits.md の枝11 MAE_CUT（add≥4 ∩ 保有≥300分 ∩ 含み損）／実行器 scope.adds（1033行）＝枝が積み増しの回数で切り替わる（要件 R13・D2 の完了の線②）"
+    }
+  },
+  "axis_options": {
+    "X-a1": {
+      "status": "buildable",
+      "branches": [
+        "TP_PCT",
+        "SL_PCT"
+      ],
+      "basis": "実行器 _check_level の pct（base=entry/avg・k は定数×格子）"
+    },
+    "X-a2": {
+      "status": "partial",
+      "note": "比率そのものを置き場所にする受け皿は無い。下限の担保は入口の門（entry_guards の r_min＝リスクリワード比の下限 0.25・まこさん承認 2026-08-01）で行う",
+      "basis": "実行器 _guards_ok（969行）／search_limits.json の r_min"
+    },
+    "X-a3": {
+      "status": "buildable",
+      "branches": [
+        "TP_ZONE_MID"
+      ],
+      "basis": "実行器 _check_level の zone target=mid"
+    },
+    "X-a4": {
+      "status": "buildable",
+      "branches": [
+        "TP_ZONE_OPP",
+        "TP_SWING"
+      ],
+      "basis": "実行器 _check_level の zone target=opp と swing（直近の高安＝構造線）"
+    },
+    "X-a5": {
+      "status": "blocked",
+      "reason_code": "no_placement",
+      "basis": "実行器 _check_level に σ 幅の水準が無い（zone/zone_sl/mix/pct/shrink/swing の6種のみ）"
+    },
+    "X-a6": {
+      "status": "partial",
+      "note": "VWAP を置き場所にする受け皿は無い。VWAP からの乖離（close vs VWAP%）は確認条件の材料としては使える",
+      "basis": "実行器 _check_level に VWAP の水準が無い／型の表に close vs VWAP%288 が在る"
+    },
+    "X-a7": {
+      "status": "covered_elsewhere",
+      "note": "bracket＝TP と SL を同時に置く発注の形。枝を複数持てば同じことになる（X-k7 と同じ）",
+      "basis": "実行器は exits を配列で持ち、上から先勝ちで評価する（1295行）"
+    },
+    "X-b1": {
+      "status": "buildable",
+      "branches": [
+        "TP1_LADDER"
+      ],
+      "basis": "実行器 _check_level の mix ＋ size_ratio（0,1]"
+    },
+    "X-b2": {
+      "status": "buildable",
+      "branches": [
+        "TP1_LADDER"
+      ],
+      "note": "段数は ladder_steps_grid（1〜2）で振る。合計の size_ratio が 1 を超えない",
+      "basis": "同上／E37 v16 実測＝ladder の rung 幾何は 0 発火で不採択＝段数と位置を格子で振り直す残件"
+    },
+    "X-b3": {
+      "status": "out_of_scope_stage",
+      "note": "積み増した玉の段階決済＝玉の持ち方（要件 R14）の残件。D2（出口の枝）では扱わない",
+      "basis": "要件 R14（設計をまこさんに提出中）"
+    },
+    "X-b4": {
+      "status": "covered_elsewhere",
+      "note": "複数TP＝X-b1／X-b2 と同じ（枝を複数持てる）",
+      "basis": "実行器の exits 配列"
+    },
+    "X-c1": {
+      "status": "buildable",
+      "branches": [
+        "PEAKLOCK"
+      ],
+      "basis": "実行器 _peak_giveback_level（ピークからの戻し％）"
+    },
+    "X-c2": {
+      "status": "blocked",
+      "reason_code": "no_placement",
+      "basis": "実行器の peak_giveback は建値比%で動く＝ATR 連動（Chandelier）の水準を作る受け皿が無い"
+    },
+    "X-c3": {
+      "status": "blocked",
+      "reason_code": "no_material",
+      "basis": "型の表の部品に Parabolic SAR が無い（observe_diag のカタログに無い）"
+    },
+    "X-c4": {
+      "status": "buildable",
+      "branches": [
+        "PEAKLOCK"
+      ],
+      "note": "high-water mark＝含み益のピーク基準＝peak_giveback そのもの",
+      "basis": "実行器 _peak_giveback_level（pk_prev＝前バーまでのピーク）"
+    },
+    "X-c5": {
+      "status": "blocked",
+      "reason_code": "no_placement",
+      "basis": "X-c2 と同じ＝ボラに連動して締める受け皿が無い"
+    },
+    "X-d1": {
+      "status": "buildable",
+      "branches": [
+        "SL_PCT"
+      ],
+      "basis": "実行器 _check_level の pct"
+    },
+    "X-d2": {
+      "status": "buildable",
+      "branches": [
+        "SL_ZONE"
+      ],
+      "note": "帯の取り方 w=zone/inner が浅い側",
+      "basis": "実行器 _check_level の zone_sl（w＝range/zone/inner）"
+    },
+    "X-d3": {
+      "status": "buildable",
+      "branches": [
+        "SL_ZONE"
+      ],
+      "note": "帯の取り方 w=range ＋ 倍率を大きく＝深い側",
+      "basis": "同上／L-323＝平均回帰に浅SLは逆効果"
+    },
+    "X-d4": {
+      "status": "buildable",
+      "branches": [
+        "FINSTOP",
+        "BREAKOUT"
+      ],
+      "note": "SL の枝を持たない案＝資金防衛の枝（risk=loss_cap）が必須。前提崩れの枝で降りる",
+      "basis": "実行器 validate_recipe の G4（SL 系か loss_cap のどちらかが必須・554行）"
+    },
+    "X-d5": {
+      "status": "blocked",
+      "reason_code": "no_placement",
+      "basis": "ATR×k の水準を作る受け皿が無い（ATR% は確認条件の材料としては使える）"
+    },
+    "X-d6": {
+      "status": "buildable",
+      "branches": [
+        "SL_SWING"
+      ],
+      "basis": "実行器 _check_level の swing"
+    },
+    "X-d7": {
+      "status": "buildable",
+      "branches": [
+        "FINSTOP",
+        "MAECUT_ADDS"
+      ],
+      "basis": "実行器の状態列 mae_pct／unreal_pct（1051行）"
+    },
+    "X-d8": {
+      "status": "blocked",
+      "reason_code": "no_placement",
+      "basis": "加速度（値動きの速さ）の水準を作る受け皿が無い"
+    },
+    "X-d9": {
+      "status": "blocked",
+      "reason_code": "no_placement",
+      "basis": "X-a5 と同じ＝σ 幅の水準が無い"
+    },
+    "X-d10": {
+      "status": "buildable",
+      "branches": [
+        "BEEXIT"
+      ],
+      "basis": "実行器の pct（base=avg）＋状態列 mfe_prev_pct／E35 iter4 実績"
+    },
+    "X-d11": {
+      "status": "buildable",
+      "branches": [
+        "FINSTOP"
+      ],
+      "note": "線の値（含み損の%）はまこさんが決める＝loss_cap_grid",
+      "basis": "軸 X-d11 の逐語／実行器 G4 の risk=loss_cap"
+    },
+    "X-e1": {
+      "status": "buildable",
+      "branches": [
+        "BEEXIT"
+      ],
+      "basis": "同 X-d10（建値へ戻して降りる＝同じ枝）"
+    },
+    "X-e2": {
+      "status": "buildable",
+      "branches": [
+        "PEAKLOCK"
+      ],
+      "note": "利益の固定＝peak_giveback の floor（下限）が受け持つ",
+      "basis": "実行器 _peak_giveback_level の floor／V9 PROFIT_LOCK（v9_exits.md 枝12〜15）"
+    },
+    "X-e3": {
+      "status": "buildable",
+      "branches": [
+        "PEAKLOCK",
+        "MFEEXIT"
+      ],
+      "basis": "実行器の状態列 mfe_prev_pct／v9_exits.md 枝2・6"
+    },
+    "X-e4": {
+      "status": "buildable",
+      "branches": [
+        "BESTALE"
+      ],
+      "basis": "v9_exits.md 枝3〜5（MFE_STALE_CUT）・枝16〜17（STAGNATION_CUT）"
+    },
+    "X-f1": {
+      "status": "buildable",
+      "branches": [
+        "TIME",
+        "TIME_DOWN"
+      ],
+      "basis": "実行器の状態列 hold_min／保有の上限は役割から（要件 R6）"
+    },
+    "X-f2": {
+      "status": "buildable",
+      "branches": [
+        "SHRINK"
+      ],
+      "basis": "実行器 _check_level の shrink（v13 deadline shrink・S1 の書き写し）"
+    },
+    "X-f3": {
+      "status": "buildable",
+      "branches": [
+        "BREAKOUT"
+      ],
+      "note": "V9 の BREAKOUT_CUT と同族（BB幅 ∩ RSI）。v15 の形（出来高∩ゾーン外終値∩1h持続）は実行器のハードコードで恒等レーン専用＝探索では組めない",
+      "basis": "実行器 validate_recipe の position_exits の門（lane != legacy で拒否・377行）"
+    },
+    "X-f4": {
+      "status": "not_applicable_market",
+      "note": "BTC 無期限先物は24時間365日で市場の引け・週末またぎが無い。E37/E38 の FORCE_CLOSE_EOD はデータの最終バーの記録処理（e37_scalp.py 1564行・1646行）で戦略の枝ではない",
+      "basis": "exchange_spec.md（定期メンテなし・24/7 取引）／e37_scalp.py の実測"
+    },
+    "X-f5": {
+      "status": "covered_elsewhere",
+      "note": "枝を持たない＝枝の有無そのものが探索の対象（要件 R13）",
+      "basis": "要件 R13 の逐語（枝の有無と順番が探索の対象になること）"
+    },
+    "X-f6": {
+      "status": "blocked",
+      "reason_code": "no_data",
+      "note": "発表時刻の列がデータに無い。入手はまこさんと相談（軸 X-f6 の逐語）",
+      "basis": "軸 X-f6 の逐語／型の表の部品に指標発表の列が無い"
+    },
+    "X-g1": {
+      "status": "buildable",
+      "branches": [
+        "REVERSE_IND"
+      ],
+      "note": "RSI・Stoch は型の表に在る。MACD は材料の組み立てが未対応（複合パラメータ＝FAMILY_TEMPLATES に無い）",
+      "basis": "実行器 FAMILY_TEMPLATES（MACD 系が無い＝G6 生成不可）／型の表のオシレーター24種"
+    },
+    "X-g2": {
+      "status": "buildable",
+      "branches": [
+        "REVERSE_IND"
+      ],
+      "note": "BB%b・BB幅の水準として組む",
+      "basis": "型の表のオシレーター（BB%b 4種）・ボラ（BB幅 4種）"
+    },
+    "X-g3": {
+      "status": "buildable",
+      "branches": [
+        "REVERSE_IND"
+      ],
+      "note": "close vs EMA% の水準・EMA傾き%・cross の形で組む",
+      "basis": "型の表のトレンド16種（close vs EMA/傾き）／実行器の形 cross"
+    },
+    "X-g4": {
+      "status": "buildable",
+      "branches": [
+        "REVERSE_IND",
+        "BREAKOUT"
+      ],
+      "note": "ADX の水準・傾きで組む",
+      "basis": "型の表のトレンド（ADX7/14/21）"
+    },
+    "X-g5": {
+      "status": "buildable",
+      "branches": [
+        "REVERSE_IND"
+      ],
+      "note": "close vs pivotPP/R1/S1% の水準で組む",
+      "basis": "型の表の構造・位置（close vs pivotPP%288 ほか）"
+    },
+    "X-g6": {
+      "status": "partial",
+      "note": "トレンドラインの列は無い。チャネル破れに近いものは Donchian幅%・close vs 24/48/96本高値% で組む（同じものではないと明示）",
+      "basis": "型の表の構造・位置とボラ（Donchian幅%20/48）"
+    },
+    "X-g7": {
+      "status": "buildable",
+      "branches": [
+        "BREAKOUT",
+        "REVERSE_IND"
+      ],
+      "note": "ボラの拡大・縮小＝BB幅・ATR%・realized_vol の水準と傾き",
+      "basis": "型の表のボラ11種"
+    },
+    "X-g8": {
+      "status": "partial",
+      "note": "出来高スパイクは volume_ratio で組める。ダイバージェンス（価格と出来高の逆行）は形の一覧に無い",
+      "basis": "型の表の出来高5種／実行器の形11種にダイバージェンスが無い"
+    },
+    "X-g9": {
+      "status": "blocked",
+      "reason_code": "no_material",
+      "note": "★発見＝型の表の対応表は十分性の系統に『需給』を挙げているが、部品の系統に需給の列が1つも無い（構造・位置42／オシレーター24／トレンド16／ボラ11／ローソク7／出来高5＝合計105）。対応表と部品の食い違い",
+      "basis": "型の表 signal_families.json の lineage_of の集計（2026-08-07 実測）"
+    },
+    "X-g10": {
+      "status": "buildable",
+      "branches": [
+        "REVERSE_IND"
+      ],
+      "note": "zscore20/50・zscore_return20/50 の水準で組む",
+      "basis": "型の表のオシレーター（zscore 系4種）"
+    },
+    "X-g11": {
+      "status": "blocked",
+      "reason_code": "no_fire_form",
+      "basis": "実行器 _exit_fire_ok を実物に呼んで確認（2026-08-07）＝出口の発火条件で扱えるのは材料のある形だけ。ローソクの向き（材料の無い形）を渡すと『材料の3軸が欠けている』で止まる。ローソクの7部品は実行器 FAMILY_TEMPLATES に無く材料としても引けない＝入口では candle_dir 形で使えるが出口では使えない。使えるようにするには実行器の出口の評価を直す必要がある（D2 の範囲外＝別の回）"
+    },
+    "X-h1": {
+      "status": "out_of_scope_stage",
+      "note": "ML の Exit。engine_tuner は固定ルールを組み立てる道具＝ML の解禁はまこさんが決める",
+      "basis": "engine_tuner_requirements『この道具でやらないこと』／cat_requirements §8.5"
+    },
+    "X-h2": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-h1"
+    },
+    "X-h3": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-h1"
+    },
+    "X-h4": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-h1"
+    },
+    "X-i1": {
+      "status": "covered_elsewhere",
+      "note": "積み増し無し＝position.max_adds=1（既に格子で振っている）",
+      "basis": "生成器 sample_structure の position（max_adds_grid）"
+    },
+    "X-i2": {
+      "status": "out_of_scope_stage",
+      "note": "積み増しの入れ方＝要件 R14 の残件（add_trigger は resignal のみ実装）",
+      "basis": "要件 R14／実行器 validate_recipe の add_trigger 4種（565行）"
+    },
+    "X-i3": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-i2"
+    },
+    "X-i4": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-i2"
+    },
+    "X-i5": {
+      "status": "out_of_scope_stage",
+      "note": "予測強度＝ML の出力が要る（工程の対象外）",
+      "basis": "同 X-h1"
+    },
+    "X-i6": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-i2"
+    },
+    "X-i7": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-i2"
+    },
+    "X-i8": {
+      "status": "out_of_scope_stage",
+      "note": "グリッド売買の add＝S5/L5 のロジック側（grid_n の範囲がまこさん判断待ち）",
+      "basis": "next_step §6 の6番（grid_n の探索範囲）"
+    },
+    "X-i9": {
+      "status": "partial",
+      "note": "実装済みは再発火（resignal）のみ。逆行幅・時間経過・含み益確認の3種は受け皿は在るが生成器が出していない＝R14 の残件",
+      "basis": "実行器 validate_recipe（565行＝resignal/adverse_pct/time/profit_confirm の4種を受ける）"
+    },
+    "X-j1": {
+      "status": "covered_elsewhere",
+      "note": "枝ごとの決済の量＝size_ratio（0,1] で持つ",
+      "basis": "実行器 validate_recipe の size_ratio（537行）"
+    },
+    "X-j2": {
+      "status": "out_of_scope_stage",
+      "note": "建てる量の配分＝統合の段（全戦略で 0.12 BTC を取り合う）",
+      "basis": "cat_requirements §6.1／pdca_flow §6.1"
+    },
+    "X-j3": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-j2（かつ予測強度＝ML）"
+    },
+    "X-j4": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-j2"
+    },
+    "X-j5": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-j2"
+    },
+    "X-j6": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-j2"
+    },
+    "X-j7": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-j2"
+    },
+    "X-j8": {
+      "status": "out_of_scope_stage",
+      "basis": "同 X-j2"
+    },
+    "X-k1": {
+      "status": "buildable",
+      "note": "成行＝能動クローズの枝だけ（時間切れ・前提崩れ・資金防衛）。執行は決済理由から機械で決まる",
+      "basis": "score.py の TAKER_EXIT_REASONS／H5（成行 taker は能動クローズのみ）"
+    },
+    "X-k2": {
+      "status": "buildable",
+      "note": "指値＝出口の既定。maker の決済理由の枝は全部これ",
+      "basis": "score.py の MAKER_EXIT_REASONS／cat_requirements §6（手数料負け回避＝maker 優先）"
+    },
+    "X-k3": {
+      "status": "partial",
+      "note": "実行器は post_only を受けるが、出口の枝の執行は maker/taker の2択で扱う（入口の執行は実行器の固定＝H5）",
+      "basis": "実行器 EXEC_METHODS（maker/taker/post_only/stop）"
+    },
+    "X-k4": {
+      "status": "partial",
+      "note": "実行器は stop を受けるが、score.py の理由の分類（maker/taker）と1対1にならない＝いまは使わない",
+      "basis": "実行器 EXEC_METHODS／score.py の分類"
+    },
+    "X-k5": {
+      "status": "blocked",
+      "reason_code": "no_exec_method",
+      "basis": "実行器 EXEC_METHODS に stop-limit が無い"
+    },
+    "X-k6": {
+      "status": "covered_elsewhere",
+      "note": "追従＝PEAKLOCK（指値で追従する形）",
+      "basis": "実行器 _peak_giveback_level"
+    },
+    "X-k7": {
+      "status": "covered_elsewhere",
+      "note": "TP と SL を同時に置く＝枝を複数持てば同じ（上から先勝ち）",
+      "basis": "実行器の exits 配列（1295行）"
+    },
+    "X-k8": {
+      "status": "blocked",
+      "reason_code": "no_exec_method",
+      "basis": "実行器 EXEC_REGISTERED_ONLY（登録済みだが実行不能＝拒否側・CP3 Q1）"
+    },
+    "X-k9": {
+      "status": "blocked",
+      "reason_code": "no_exec_method",
+      "basis": "同 X-k8"
+    },
+    "X-k10": {
+      "status": "blocked",
+      "reason_code": "no_exec_method",
+      "basis": "同 X-k8"
+    }
+  },
+  "reason_codes": {
+    "no_placement": "実行器に、その置き場所（価格の決め方）の受け皿が無い",
+    "no_material": "型の表の部品に、その材料の列が無い",
+    "no_exec_method": "実行器が、その発注の方式を実行できない（登録済みでも拒否側）",
+    "legacy_only": "実行器が恒等検収レーン専用にしている（探索の案では使えない）",
+    "out_of_scope_stage": "この工程（engine_tuner の生成器）の担当ではない",
+    "no_data": "そのデータが無い",
+    "not_applicable_market": "この市場（BTC 無期限先物）には当てはまらない",
+    "no_fire_form": "実行器が、出口の発火条件でその形を扱えない（材料の無い形は評価できない）"
+  },
+  "v9_coverage": {
+    "_note": "V9 の決済の枝（機械生成の v9_exits.md が正本）を、どの枝の型で受けるか。生成器が v9_exits.md から枝の名前を機械で抜き、この表と突き合わせる。1つでも受け手が無ければ落ちる（2026-08-07 の MFE_EXIT の漏れの再発検出）",
+    "BREAKOUT_CUT": [
+      "BREAKOUT"
+    ],
+    "MFE_EXIT": [
+      "MFEEXIT"
+    ],
+    "MFE_STALE_CUT": [
+      "BESTALE"
+    ],
+    "MFE_DRAWDOWN_CUT": [
+      "PEAKLOCK"
+    ],
+    "STOCH_REVERSE_EXIT": [
+      "REVERSE_IND"
+    ],
+    "RSI_REVERSE_EXIT": [
+      "REVERSE_IND"
+    ],
+    "MAE_CUT": [
+      "FINSTOP",
+      "MAECUT_ADDS"
+    ],
+    "PROFIT_LOCK": [
+      "PEAKLOCK"
+    ],
+    "STAGNATION_CUT": [
+      "BESTALE"
+    ],
+    "TIME_EXIT": [
+      "TIME",
+      "TIME_DOWN"
+    ]
+  },
+  "approval": {
+    "fingerprint": null,
+    "note": "まこさんの承認の指紋が入るまで、この表は無効（D2 の実装に進めない）"
+  }
+}
