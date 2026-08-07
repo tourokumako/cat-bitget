@@ -37,8 +37,13 @@ input=$(cat)
 #   要求する情報をそのまま満たす＝next_step.md の Read 1回の方が実効性が高い。ledger.md 本体（原因3分類・
 #   問0〜問5の内訳数字等）は「特定の過去実験を深掘りする時に読む参照資料」に位置づけを変更＝毎回の
 #   Read 強制からは外す（cat_requirements §8.2 の役割定義とも整合＝ledger=実験記録の詳細/next_step=起点1枚）。
-REQUIRED=("WORKFLOW" "next_step" "adopted_strategies")
-LABEL=("WORKFLOW.md(現在地)" "next_step.md(改善アーク=次セッション起点)" "adopted_strategies.md(採用ポートフォリオ台帳)")
+# permanent_rules.md 追加: 2026-08-08 まこさん指示（逐語「恒久のものを別出ししてもいいけど、毎回読ませるようにして」）。
+#   背景＝engine_tuner の目的の逐語・まこさんの禁止命令・ToDo 宣言の決まり・E36 の順番・やってはいけないこと45件は
+#   next_step.md に置いてあったが、next_step.md は毎セッション上書きされるので恒久の置き場所として弱く、
+#   実際に2回 消えた（2026-08-02 の CC ／ 2026-08-08 の CC＝教訓 L-410）。リポジトリ直下の rules/ へ移し、
+#   auto-load（毎回 自動で読み込まれる）＋本ゲート（Read tool で開くまでブロック）の二重で毎回 読ませる。
+REQUIRED=("WORKFLOW" "next_step" "adopted_strategies" "permanent_rules")
+LABEL=("WORKFLOW.md(現在地)" "next_step.md(改善アーク=次セッション起点)" "adopted_strategies.md(採用ポートフォリオ台帳)" "permanent_rules.md(恒久の決まり・リポジトリ直下 .claude/rules/)")
 
 missing=()
 for idx in "${!REQUIRED[@]}"; do
