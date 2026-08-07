@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import pathlib
@@ -277,27 +278,86 @@ def approve() -> None:
     print("[注意] この操作はまこさんが行う。CC が自分で実行するのは false_positive 類型 G の不正")
 
 
-def _collect_parts(obj, parts: set, tfs: set, found: list) -> None:
-    """構造（レシピ）の中から『部品__時間足』の形の文字列を全部拾う（形式に依存しない走査）。"""
-    if isinstance(obj, dict):
-        for v in obj.values():
-            _collect_parts(v, parts, tfs, found)
-    elif isinstance(obj, list):
-        for v in obj:
-            _collect_parts(v, parts, tfs, found)
-    elif isinstance(obj, str) and "__" in obj:
-        base, _, tf = obj.rpartition("__")
-        if tf in tfs or base in parts:
-            found.append((base, tf))
+def _walk_conds(node, out: list) -> None:
+    """つなぎ木を歩いて、条件を1つずつ集める（全部満たす／どれか満たす／入れ子 に対応）。
+
+    ★engine_tuner_gen.sample_structure が実際に返す形をそのまま歩きます（2026-08-07・D10 の直し）。
+    """
+    if isinstance(node, list):
+        for k in node:
+            _walk_conds(k, out)
+        return
+    if not isinstance(node, dict):
+        return
+    if "all" in node or "any" in node:
+        for k in (node.get("all") or node.get("any") or []):
+            _walk_conds(k, out)
+        return
+    if "if" in node and "then" in node:
+        _walk_conds(node["if"], out)
+        _walk_conds(node["then"], out)
+        return
+    if "form" in node:
+        out.append(node)
+        if isinstance(node.get("inner"), dict):
+            _walk_conds(node["inner"], out)
+
+
+def collect_materials(st: dict) -> tuple[list, list, list]:
+    """構造1本から材料を全部 集める。戻り＝(表と照合できる列, 表の対象外, 読めなかったもの)。
+
+    ★名前の組み立ては実行器 engine_tuner_exec._material_name をそのまま呼びます。
+      ここで名前を組み立て直すと、実行器と検査で名前がずれます（2026-08-06 の欠陥の原因）。
+    """
+    import engine_tuner_exec as ex                          # 重い import は使う時だけ
+    lane = str(st.get("meta", {}).get("lane", "")) if isinstance(st.get("meta"), dict) else ""
+    conds: list = []
+    _walk_conds(st.get("entry", {}).get("connective", {}), conds)
+    _walk_conds(st.get("pre_filter", []), conds)
+    for br in (st.get("exits") or []):
+        if isinstance(br, dict) and br.get("fire"):
+            _walk_conds(br["fire"], conds)
+    cols: list = []       # (カタログ名, 時間足)＝型の表と照合できる
+    outside: list = []    # (種別, 名前)＝型の表の部品の一覧に載っていない材料
+    unread: list = []     # 材料の形が壊れていて読めなかったもの
+    for c in conds:
+        for m in (c.get("material") or []):
+            try:
+                kind, name = ex._material_name(m, lane)
+            except BaseException as e:                      # RecipeError は SystemExit を継承
+                unread.append(f"{m!r} → {e}")
+                continue
+            if kind == "col":
+                base, _, tf = name.rpartition("__")
+                cols.append((base, tf))
+            else:
+                outside.append((kind, name))
+    return cols, outside, unread
+
+
+def _judge_structure(st: dict, parts: set, tfs: set, banned: set) -> tuple[list, list, list]:
+    """構造1本を型の表と照合する。戻り＝(違反の一覧, 照合できた列, 表の対象外)。"""
+    cols, outside, unread = collect_materials(st)
+    ng = [f"材料が読めない（{u}）" for u in unread]
+    for base, tf in cols:
+        if base not in parts:
+            ng.append(f"部品 {base} がカタログに無い")
+        elif tf not in tfs:
+            ng.append(f"時間足 {tf} が表に無い（{base}）")
+        elif (base, tf) in banned:
+            ng.append(f"{base}__{tf} は標本不足の禁止（禁止3）")
+    if not cols and not outside:
+        ng.append("材料が1つも見つからない（構造の形式が想定外）")
+    return ng, cols, outside
 
 
 def check_structures(path: str) -> None:
-    """G2 判定器＝生成された全構造を表と照合する。適合率 100% でなければ終了コード1。
+    """G2 判定器＝生成された全構造を表と照合する。1本でも違反が在れば終了コード1。
     表が無効（承認の指紋なし）のときも終了コード1（本走に進めない）。"""
     table = json.loads(OUT_JSON.read_text(encoding="utf-8"))
     parts = set(table["parts"])
     tfs = set(table["timeframes"])
-    banned_pairs = {(p["part"], p["tf"]) for p in table["bans"]["insufficient_samples"]["pairs"]}
+    banned = {(p["part"], p["tf"]) for p in table["bans"]["insufficient_samples"]["pairs"]}
     ok_tbl, msg = _table_status()
     print(f"[表の状態] {msg}")
     data = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
@@ -305,33 +365,57 @@ def check_structures(path: str) -> None:
     if not isinstance(structures, list) or not structures:
         raise SystemExit("[G2エラー] 構造の一覧が読めない（json のリストか {structures:[...]} を渡す）")
     n_ok = 0
+    n_cols = 0
+    outside_count: dict = {}
     for i, st in enumerate(structures):
-        found: list = []
-        _collect_parts(st, parts, tfs, found)
-        ng = []
-        for base, tf in found:
-            if base not in parts:
-                ng.append(f"部品 {base} がカタログに無い")
-            elif tf not in tfs:
-                ng.append(f"時間足 {tf} が表に無い（{base}）")
-            elif (base, tf) in banned_pairs:
-                ng.append(f"{base}__{tf} は標本不足の禁止（禁止3）")
-        if not found:
-            ng.append("部品が1つも見つからない（構造の形式が想定外）")
+        ng, cols, outside = _judge_structure(st, parts, tfs, banned)
+        n_cols += len(cols)
+        for kind, name in outside:
+            outside_count[f"{kind}:{name}"] = outside_count.get(f"{kind}:{name}", 0) + 1
         if ng:
             print(f"  ❌ 構造#{i}: " + " ／ ".join(ng))
         else:
             n_ok += 1
-            print(f"  ✅ 構造#{i}: 部品 {len(found)} 個 全部 表の中")
+            print(f"  ✅ 構造#{i}: 表と照合できた材料 {len(cols)} 個 全部 表の中"
+                  + (f" ／ 表の対象外 {len(outside)} 個" if outside else ""))
     rate = n_ok / len(structures)
-    print(f"[G2] 適合率 {rate:.0%}（{n_ok}/{len(structures)}）"
-          f" ／ 未検査＝空欄2件（向きの矛盾・役割の系統）は定義がまだ無いので照合できない（隠さず明示）")
+    print(f"[G2] 表に沿っていた構造 {n_ok}/{len(structures)}（{rate:.0%}）"
+          f" ／ 照合できた材料 合計 {n_cols} 個")
+    if outside_count:
+        naka = "／".join(f"{k} {v}個" for k, v in sorted(outside_count.items()))
+        print(f"[G2] ★表の対象外の材料 合計 {sum(outside_count.values())} 個（{naka}）")
+        print("     これらは型の表の部品の一覧に載っていません。表は許可も禁止もしていません。")
+        print("     足すかどうかは まこさんの判断待ちです（根拠なく CC が決めません）。")
+    print("[G2] ★未検査＝空欄2件（向きの矛盾・役割ごとの系統）は定義がまだ無いので照合できない（隠さず明示）")
     if not ok_tbl or rate < 1.0:
         raise SystemExit(1)
 
 
+def _real_structures(n: int, seed: int) -> list:
+    """番人が使う構造＝engine_tuner_gen が実際に出すものをそのまま作る（手書きの形を使わない）。"""
+    import numpy as np
+    import engine_tuner_gen as g
+    limits, _ = g.load_limits()
+    limits = dict(limits)
+    limits.update(g.resolve_hold_range(limits, "e38"))
+    pool, tfs, _total = g.material_pool()
+    rng = np.random.default_rng(seed)
+    out: list = []
+    while len(out) < n:
+        try:
+            out.append(g.sample_structure(rng, limits, pool, tfs, side="SHORT", logic_id="S3"))
+        except Exception:
+            continue
+    return out
+
+
 def g2_selftest() -> None:
-    """G2 の番人＝既知答え。表の中の構造は ✅・表の外（偽の部品・禁止3 の組）は ❌ が出ること。"""
+    """G2 の番人＝既知答え。★本物の生成器が出す構造で試す（2026-08-07・D10 の直し）。
+
+    2026-08-06 版の番人は、CC が手で書いた『RSI9__15m』という文字列の形で試していた。
+    生成器はその文字列を作らない（材料を family／param／tf の3つに分けて持つ）ので、
+    本物の構造を渡すと 5本とも「読めない」で落ちる欠陥を、番人が見逃していた。
+    """
     table = json.loads(OUT_JSON.read_text(encoding="utf-8"))
     parts = set(table["parts"])
     tfs = set(table["timeframes"])
@@ -339,24 +423,71 @@ def g2_selftest() -> None:
     if not banned:
         raise SystemExit("[番人エラー] 禁止3 が空＝既知答えが作れない")
     bp, btf = next(iter(sorted(banned)))
+
+    sts = _real_structures(30, seed=20260807)
+    clean = [st for st in sts if not _judge_structure(st, parts, tfs, banned)[0]]
+    if not clean:
+        raise SystemExit("[番人エラー] 表に沿った本物の構造が1本も作れない＝既知答えが作れない")
+    base_st = copy.deepcopy(clean[0])
+
+    def _first_col_cond(st):
+        conds: list = []
+        _walk_conds(st.get("entry", {}).get("connective", {}), conds)
+        for c in conds:
+            for m in (c.get("material") or []):
+                if "family" in m:
+                    return m
+        return None
+
+    ban_st = copy.deepcopy(base_st)
+    m = _first_col_cond(ban_st)
+    if m is None:
+        raise SystemExit("[番人エラー] 差し替えられる材料が構造に無い")
+    fam_of_ban = None
+    for fam, tpl in _templates().items():
+        mm = re.match("^" + re.escape(tpl).replace(re.escape("{p}"), r"(\d+)") + "$", bp)
+        if mm:
+            fam_of_ban, prm_of_ban = fam, int(mm.group(1))
+            break
+    if fam_of_ban is None:
+        raise SystemExit(f"[番人エラー] 禁止3 の部品 {bp} の family を組み立てられない")
+    m.clear(); m.update({"family": fam_of_ban, "param": prm_of_ban, "tf": btf})
+
+    fake_st = copy.deepcopy(base_st)
+    m2 = _first_col_cond(fake_st)
+    m2.clear(); m2.update({"family": "ニセ指標", "param": 9, "tf": "5m"})
+
     cases = [
-        (dict(entry={"all": [{"m": "RSI9__15m"}]}), True, "表の中の部品"),
-        (dict(entry={"all": [{"m": f"{bp}__{btf}"}]}), False, f"禁止3 の組（{bp}__{btf}）"),
-        (dict(entry={"all": [{"m": "ニセ指標__5m"}]}), False, "カタログに無い偽の部品"),
+        (base_st, True, "本物の構造（表の中の材料だけ）"),
+        (ban_st, False, f"本物の構造の材料を1つ 禁止3 の組へ差し替え（{bp}__{btf}）"),
+        (fake_st, False, "本物の構造の材料を1つ カタログに無い偽の指標へ差し替え"),
     ]
-    ng = []
+    ng_all = []
     for st, want_ok, label in cases:
-        found: list = []
-        _collect_parts(st, parts, tfs, found)
-        bad = [1 for b, t in found if b not in parts or t not in tfs or (b, t) in banned]
-        got_ok = bool(found) and not bad
+        ng, cols, _out = _judge_structure(st, parts, tfs, banned)
+        got_ok = not ng
         mark = "✅" if got_ok == want_ok else "🚨"
-        print(f"  {mark} {label}: 期待={'通る' if want_ok else '❌'} ／ 実際={'通る' if got_ok else '❌'}")
+        print(f"  {mark} {label}: 期待={'通る' if want_ok else '❌'} ／ 実際={'通る' if got_ok else '❌'}"
+              + (f"（{ng[0]}）" if ng else f"（照合できた材料 {len(cols)} 個）"))
         if got_ok != want_ok:
-            ng.append(label)
-    if ng:
-        raise SystemExit(f"[番人] 🚨 G2 が既知答えに正しく反応しない: {ng}")
-    print("[番人] ✅ G2 の既知答え 3件 全部 期待どおり")
+            ng_all.append(label)
+
+    # ★2026-08-06 の欠陥そのものの再発検出＝本物の構造で材料が1つも読めない状態に戻っていないか
+    cols0, out0, unread0 = collect_materials(base_st)
+    ok4 = bool(cols0) and not unread0
+    print(f"  {'✅' if ok4 else '🚨'} 本物の構造から材料を読めること"
+          f"（照合できる列 {len(cols0)} 個 ／ 表の対象外 {len(out0)} 個 ／ 読めない {len(unread0)} 個）")
+    if not ok4:
+        ng_all.append("本物の構造から材料が読めない（2026-08-06 の欠陥の再発）")
+
+    if ng_all:
+        raise SystemExit(f"[番人] 🚨 G2 が既知答えに正しく反応しない: {ng_all}")
+    print("[番人] ✅ G2 の既知答え 4件 全部 期待どおり（★全部 本物の生成器が出した構造で試した）")
+
+
+def _templates() -> dict:
+    import engine_tuner_exec as ex
+    return ex.FAMILY_TEMPLATES
 
 
 V9_LOGIC_MD = SDK / ".claude/ratchet/v9_logic.md"

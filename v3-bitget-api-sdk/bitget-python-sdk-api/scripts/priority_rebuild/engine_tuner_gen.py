@@ -468,6 +468,11 @@ def build_qtable(df: pd.DataFrame, geo: dict, recipes: list[dict], grid: list[st
                 return np.asarray(geo[name], float)
             if name in df.columns:
                 return df[name].to_numpy(float)
+            # 別名（D4 の直し・2026-08-07）＝実行器 _col_array（686行）と同じ扱いにそろえる。
+            # 直す前はここが別名を見ず、別名で持たれている7列のどれかに分位が当たると走行が丸ごと止まった。
+            run_col = ex.RUNTIME_ALIAS.get(name)
+            if run_col is not None and run_col in df.columns:
+                return df[run_col].to_numpy(float)
             raise SystemExit(f"[解決表エラー] 列 {name} が実行データに無い（材料の組み立て漏れ）")
         s = _arr(cols[0]) if len(cols) == 1 else _arr(cols[0]) - _arr(cols[1])
         s = s[mask]
@@ -1277,6 +1282,44 @@ def selftest() -> int:
         t9.append("T9b: run_main が pre_run_gate( を呼んでいない（関門が配線されていない）")
     ng += [f"T9: {x}" for x in t9]
 
+    # T11 別名の列でも分位の解決表が作れるか（D4 の直し・2026-08-07 新設）
+    #   直す前は build_qtable が別名を見なかった。カタログ名の列が無く別名だけ在ると、
+    #   その列に分位が当たった瞬間に本走が丸ごと止まった（2026-08-06 実測＝Stoch%D14__2h で停止）。
+    #   ここでは カタログ名の列を わざと作らず、別名の列だけを置いて、解決表が作れることを見る。
+    t11 = []
+    alias_name = "ADX14__2h"                      # RUNTIME_ALIAS の7列のうちの1つ
+    alias_col = ex.RUNTIME_ALIAS.get(alias_name)
+    if alias_col is None:
+        t11.append(f"前提が崩れている: {alias_name} が RUNTIME_ALIAS に無い")
+    else:
+        n11 = 600
+        df11 = pd.DataFrame({
+            "ts": pd.date_range("2024-03-01", periods=n11, freq="5min"),
+            "open": 60000.0, "high": 60010.0, "low": 59990.0, "close": 60000.0, "volume": 1.0,
+        })
+        df11[alias_col] = np.linspace(10.0, 40.0, n11)      # ★別名の列だけを置く
+        if alias_name in df11.columns:
+            t11.append("前提が崩れている: カタログ名の列を作ってしまっている")
+        rec11 = {
+            "meta": {"strategy": "e38", "logic_id": "T11", "side": "SHORT", "lane": ""},
+            "pre_filter": [],
+            "entry": {"connective": {"all": [
+                {"role": "trigger", "form": "level",
+                 "material": [{"family": "ADX", "param": 14, "tf": "2h"}],
+                 "side": "above", "value": {"threshold_q": "q50"}}]}},
+            "exits": [], "position": {"mode": "separate", "max_adds": 1},
+        }
+        try:
+            qt11 = build_qtable(df11, {}, [rec11], ["q10", "q50", "q90"],
+                                start=pd.Timestamp("2024-03-01"), end=pd.Timestamp("2024-03-03"))
+            if alias_name not in qt11:
+                t11.append(f"解決表に {alias_name} の鍵が無い")
+            elif not np.isfinite(qt11[alias_name]["q50"]):
+                t11.append(f"{alias_name} の q50 が数値でない")
+        except SystemExit as e:
+            t11.append(f"別名の列で止まった（D4 が直っていない）: {str(e)[:80]}")
+    ng += [f"T11: {x}" for x in t11]
+
     print("=" * 80)
     print("engine_tuner_gen 自己検査（合成データのみ・実データの試行ゼロ・累積試行の記録なし）")
     print("=" * 80)
@@ -1287,6 +1330,8 @@ def selftest() -> int:
           "正しい組み合わせは通過／T9b 入口が関門を呼んでいる")
     print(f"  T10 判定表の接続: 分位の解決表は {_calls['n']} 回だけ作った（確認窓では作り直さない）／"
           f"土台なしの結論 {out10.get('verdict')}（『これ以上出ない』ではない）")
+    print(f"  T11 別名の列: カタログ名の列が無く別名（{ex.RUNTIME_ALIAS.get('ADX14__2h')}）だけでも"
+          " 分位の解決表が作れる（D4）")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
