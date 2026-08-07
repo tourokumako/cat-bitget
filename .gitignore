@@ -33,6 +33,17 @@ v3-bitget-api-sdk/bitget-python-sdk-api/dashboard/regime_prototype/
 v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
 
 # L-236 physical enforcement hooks state (machine-generated timestamp)
-.claude/state/
+# ★2026-08-07 まこさん OK で書き換え（保存場所は動かさず、除外の巻き添えだけを外す）。
+#   経緯: 32行目 **/state/ は 2026-04-27（d0396e3）に「一時ファイル」として入った＝当時の state は
+#   BOT が動くときに書く実行中の状態（open_position.json 等）。下の .claude/state/ は hook が付ける
+#   時刻の印を除外するため。どちらも「人が読む記録」のために作られた決まりではない。
+#   ところが session_worklog と next_step.md が後から同じフォルダに置かれ、巻き添えで除外され、
+#   session_worklog は一度も git に入ったことがなかった（2026-08-07 実測）。
+#   ★ディレクトリごと除外すると中の1本を ! で戻せない（git の仕様）ので、
+#   「フォルダは除外しない → 中身を全部 除外 → 記録の2種類だけ戻す」の3段で書く。
+!.claude/state/
+.claude/state/*
+!.claude/state/session_worklog_*.md
+!.claude/state/next_step.md
 # bitget 側 state はリポジトリ直下 .claude/state へのシンボリックリンク（2026-07-19 統合・パスミス無害化）＝リンク自体も無視（末尾スラッシュ無し）
 v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state
