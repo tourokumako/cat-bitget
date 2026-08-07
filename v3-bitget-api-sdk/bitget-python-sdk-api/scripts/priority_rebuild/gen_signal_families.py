@@ -75,7 +75,7 @@ def _n_min() -> int:
     return int(v)
 
 
-_TF_MIN = {"5m": 5, "15m": 15, "30m": 30, "1h": 60, "2h": 120, "4h": 240, "6h": 360, "12h": 720, "1d": 1440}
+_TF_MIN = {"5m": 5, "10m": 10, "15m": 15, "30m": 30, "1h": 60, "2h": 120, "4h": 240, "6h": 360, "12h": 720, "1d": 1440}
 
 
 def _window_days(name: str, tf: str) -> float | None:
@@ -121,9 +121,31 @@ def build_table() -> dict:
             if n_eff < n_min:
                 ban_samples.append(dict(part=nm, tf=tf, n_eff=round(n_eff, 1)))
 
+    # ── そもそもの一覧（目的の4要素＝指標・閾値・時間・パラメータ を1枚で確認できる写し・2026-08-07 まこさん指示）──
+    #   正本＝指標と時間足: observe_diag のカタログ ／ 閾値と探索の格子: recipes/search_limits.json（まこさん承認 2026-08-01）。
+    #   ここは機械の写し＝手で書かない。正本が変われば --write で写しも変わり、指紋が変わって再承認になる。
+    limits_all = json.loads(LIMITS_JSON.read_text(encoding="utf-8"))
+    grids = {k: v for k, v in limits_all.items() if not k.startswith("_")}
+    lineage_of = {}
+    for nm in names:
+        ref, _ = iref.find(nm)
+        fam = ref["family"] if ref else "？"
+        lineage_of[nm] = iref.FAMILY_LINEAGE.get(fam, {}).get("k", "？")
+
     table = dict(
         purpose="net利益を最大化させる条件（指標、閾値、時間、パラメータ）の組み合わせを、見つけることができる機械を作ることが目的（まこさん確定 2026-08-06 逐語）",
         built_by="gen_signal_families.py（全自動生成・CC の手書きの行ゼロ）",
+        inventory=dict(
+            note="指標と時間足の正本＝observe_diag のカタログ。閾値と探索の格子の正本＝recipes/search_limits.json"
+                 "（まこさん承認 2026-08-01『たたき台でOK』・r_min は 2026-08-01 OK で 0.25）。ここは機械の写し",
+            lineage_of=lineage_of,
+            thresholds=dict(
+                quantile_grid=grids["quantile_grid"],
+                note="閾値は USD の生の値でなく、値決め窓の分位（データを小さい順に並べた何%点か）で引く（H6 価格非依存）。"
+                     "9段より細かくしないのは、試す数が増えるほど合格の線が厳しくなる（多重検定の罰）ため",
+            ),
+            grids=grids,
+        ),
         # 表の本体（広さ）＝機械抽出。ここから下の禁止に当たらない組み合わせは全部 許可。
         families=fams,
         parts=names,
@@ -147,16 +169,88 @@ def build_table() -> dict:
                 basis="CP2 監査 4-4 の算術＋search_limits.json の n_min（まこさん OK 2026-08-01）。恒久の接続（検査5 の実測表）は D9 の直しで行う",
             ),
         ),
-        # 機械で導けなかったもの＝作らない・空欄で明示（根拠の無い行を書かないため）
-        pending=dict(
-            direction_conflict=dict(
-                rule="（空欄）型の狙う向きと条件の向きの矛盾の定義＝機械で導く根拠がまだ無い。CC は書かない。まこさんの判断待ち",
-                basis="無し（2026-08-06 の不正の再発防止＝根拠の無い規則を書かない）",
+        # ── 追加の部品（D12・2026-08-07 まこさん OK「OK」）＝カタログ105種の外に在る入口の材料を機械抽出 ──
+        #   2026-08-07 の実測＝100本の案の入口の材料のうち65個（帯内位置%47・時刻18）が表に載っておらず、
+        #   G2 が許可も禁止も言えなかった。保有時間（state:hold_min）は出口の材料＝この表の対象外のまま。
+        extra_parts=dict(
+            geo=dict(
+                rule="レンジ幾何の列は kind=ratio（W%・帯内位置%）だけ入口の条件の材料に使える。"
+                     "kind=price（帯の4隅 res_hi/res_lo/sup_hi/sup_lo・mid）は placement の幾何参照専用（H6 価格非依存）＝条件の材料に使えない",
+                parts=sorted(nm for nm, r in iref.RANGE_GEO_REF.items() if r.get("kind") == "ratio"),
+                basis="indicator_reference_diag.RANGE_GEO_REF の kind の欄（実行器 engine_tuner_exec.py 152行 G6 が登録済み列だけ通し、"
+                      "259行が ratio 以外を条件の材料に使うのを既に止めている＝その決まりを表にも写した）",
             ),
-            role_lineage=dict(
-                rule="（空欄）役割（引き金・環境認識・十分性・位置）ごとに系統を絞る決まり＝機械で導く根拠がまだ無い。CC は書かない。まこさんの判断待ち",
-                basis="無し（同上。2026-08-06 に CC が監査の例文から捏造して不正になった部分）",
+            time=dict(
+                rule="カレンダー由来の列（時刻・曜日）は入口の条件の材料に使える（計算なし・因果性自明）",
+                parts=sorted(iref.TIME_REF),
+                basis="indicator_reference_diag.TIME_REF ＋ entry_exit_matrix.md 軸カタログ E-j"
+                      "（逐語＝「時刻と曜日は既存データから列を作れる（材料の列としても追加する）」）",
             ),
+        ),
+        # ── 役割×系統×時間足（D1 の対応表・2026-08-07 CC の案＝1行ずつ出典つき。承認の指紋がまこさんの判断の記録）──
+        #   2026-08-06 の空欄（役割ごとの系統の絞り）を、材料（実測＝V9 の実物・KB 逐語・WebResearch 2026-08-07）を
+        #   揃えて埋めた案。行が無い型は生成不可（fail-closed）＝根拠なしに広げない。
+        role_lineage=dict(
+            rule="レンジ系の型（E-a1 逆張り／E-a4 戻り売り・押し目／E-a5 グリッド／E-a8 レンジ内 value）の構造は、"
+                 "役割ごとに下の系統×時間足だけから材料を引く。行が無い型（E-a2・E-a3・E-a6・E-a7）は生成不可",
+            applies_to=["E-a1", "E-a4", "E-a5", "E-a8"],
+            not_covered=dict(
+                families=["E-a2", "E-a3", "E-a6", "E-a7"],
+                note="根拠（実測・WebResearch）が未収集＝生成不可（fail-closed）。順張り（E-a2）の引き金＝トレンド系は"
+                     " V9 P21 の実物が在るが、局面が下げトレンド＝レンジの表には書かない。材料を揃えたら行を足して再承認",
+            ),
+            roles=dict(
+                trigger=dict(
+                    lineages=["オシレーター", "ローソク"], tfs=["5m", "10m", "15m"],
+                    basis="technical KB §2.4（V9 P3 実物＝『Stoch ゴールデンクロス ← オシレーター系・トリガー』）／"
+                          "range_scalping_kb §3（拒否の確認材料＝反転ローソク足パターン＋モメンタム・『5分足は RSI9』）／"
+                          "technical KB §2.1（『短期足でタイミング』）＝スキャルの保有は分単位（range_scalping_kb §1・§4）"
+                          "＝上位足の引き金では入る瞬間を決められない",
+                ),
+                env=dict(
+                    lineages=["トレンド", "ボラ", "時間帯"], tfs="all",
+                    basis="technical KB §2.1（『長期足で方向性確認』＝環境認識）／§2.4（V9 P3 実物＝『BB middle slope ← "
+                          "トレンド系・トレンド確認』『ADX ∈ [30,50) ← トレンド系・強さ確認』＝5分足）／"
+                          "WebResearch 2026-08-07（上位足のトレンドフィルタ・ADX でレンジ/トレンドを分類・レンジは ADX 低）"
+                          "※時間足は 5m を含む全部＝V9 の実物が 5m の環境認識で稼いでいるため締め出さない（v9-selftest の原則）",
+                ),
+                sufficiency=dict(
+                    lineages=["ボラ", "出来高", "需給", "オシレーター"], tfs="all",
+                    basis="technical KB §2.4（V9 P3 実物＝『ATR ≥ 250 ← ボラ系・ボラ十分性』）／"
+                          "range_scalping_kb §3（拒否の確認材料に出来高）／§6.7（需給フィルタ＝このプロジェクトで既に効いている確定エッジ）／"
+                          "WebResearch 2026-08-07（ATR のボラゲート＝動かない場面のスキャル失敗を避ける）"
+                          "※オシレーターは行き過ぎの量（zscore_return 等の状態量）を数える用途",
+                ),
+                location=dict(
+                    lineages=["構造・位置"], tfs="all", geo=True,
+                    basis="range_scalping_kb §3（手順＝『①ゾーンに到達 → ②拒否の確認 → ③エントリー』）／"
+                          "§7（上位足で機械検出したゾーンの間にいる時だけ入口を開く）／レンジ幾何2列と時刻は extra_parts",
+                ),
+            ),
+        ),
+        # ── 向きの矛盾の定義（D1 の対応表の向きの部分・2026-08-07 CC の案＝1行ずつ出典つき）──
+        direction_conflict=dict(
+            rule="型の狙う向きと逆の条件を作らない。機械で判定できる4つの決まり",
+            items=[
+                dict(id="DC1",
+                     rule="順張り値の部品（プラス＝上昇優勢）を side 付きの形（level・diff・slope・slope_avg）で"
+                          " 環境認識・十分性に使うとき、SHORT は below だけ・LONG は above だけ（逆＝狙いと逆の地合いの要求）",
+                     basis="V9 P23 実物（SHORT＝『BB中央線 下向き』∩ 陰線・range_scalping_kb §9.1）／"
+                           "V9 P3 実物（LONG＝『BB middle slope > 10』・technical KB §2.4）"),
+                dict(id="DC2",
+                     rule="レンジ系の型の引き金のオシレーター（level 形）は、行き過ぎを逆に取る＝"
+                          "SHORT は above かつ 高分位（q70・q80・q90）・LONG は below かつ 低分位（q10・q20・q30）",
+                     basis="E-a1 の逐語（『レンジ端/行き過ぎを fade』）／range_scalping_kb §3（『レンジ相場の RSI は 70/30 が有効』）／"
+                           "WebResearch 2026-08-07（MR＝RSI>70 で売り・<30 で買いが入口）"
+                           "※70/30 の絶対値を分位（q70/q30）へ写すのは実装の形式＝絶対値そのものではないことを明示"),
+                dict(id="DC3",
+                     rule="cross の direction は side と揃える＝up は LONG だけ・down は SHORT だけ",
+                     basis="V9 P3 実物（Stoch ゴールデンクロス＝LONG の引き金）／V9 P23 実物（stoch デッドクロス＝SHORT の引き金・range_scalping_kb §9.1）"),
+                dict(id="DC4",
+                     rule="ローソクの反転サイン・candle_dir は SHORT＝bear だけ・LONG＝bull だけ",
+                     basis="range_scalping_kb §3（『ショート＝レジスタンスゾーンで確認された拒否』＝反転ローソク）／"
+                           "V9 P23 実物（陰線 ∩ SHORT・range_scalping_kb §9.1）"),
+            ],
         ),
         approval=dict(fingerprint=None, note="まこさんの承認の指紋が入るまで、この表は無効（G1 が生成器のコードの書き込みを止める）"),
     )
@@ -182,9 +276,69 @@ def _md(table: dict, h: str) -> str:
     ]
     for f in table["families"]:
         lines.append(f"| {f['id']} | {f['name']} |")
+    ep = table["extra_parts"]
+    inv = table["inventory"]
+    lin_of = inv["lineage_of"]
+    kub = table["kubun"]
+    by_lin: dict = {}
+    for nm in table["parts"]:
+        by_lin.setdefault(lin_of.get(nm, "？"), []).append(nm)
     lines += [
         "",
         "部品と時間足＝observe_diag のカタログ（2026-08-06 材料検査済み）の全部。**下の禁止に当たらない組み合わせは全部 許可。**",
+        "",
+        "## そもそもの一覧（目的の4要素＝指標・閾値・時間足・パラメータ・機械の写し）",
+        "",
+        f"（{inv['note']}）",
+        "",
+        f"### 指標 … {len(table['parts'])} 種（系統ごと・括弧の中は方向の区分）",
+        "",
+    ]
+    for lin in sorted(by_lin, key=lambda k: -len(by_lin[k])):
+        parts_s = "、".join(f"{nm}({kub.get(nm, '？')})" for nm in by_lin[lin])
+        lines.append(f"- **{lin}**（{len(by_lin[lin])} 種）: {parts_s}")
+    g = inv["grids"]
+    lines += [
+        "",
+        f"### 時間足 … {len(table['timeframes'])} 本",
+        "",
+        "、".join(table["timeframes"]),
+        "",
+        f"### 閾値 … 分位 {len(inv['thresholds']['quantile_grid'])} 段（{'、'.join(inv['thresholds']['quantile_grid'])}）",
+        "",
+        f"（{inv['thresholds']['note']}）",
+        "",
+        "### 探索のパラメータの格子（正本＝recipes/search_limits.json・まこさん承認 2026-08-01）",
+        "",
+        "| 名前 | 値 | 何の格子か |",
+        "|---|---|---|",
+        f"| count_range | {g['count_range']} | 条件の本数の範囲 |",
+        f"| role_max | {json.dumps(g['role_max'], ensure_ascii=False)} | 役割ごとの本数の上限（引き金は常に1本） |",
+        f"| k_max | {g['k_max']} | 同じ系統を重ねられる上限 |",
+        f"| depth_max | {g['depth_max']} | 入れ子の深さの上限 |",
+        f"| p_max | {g['p_max']} | 発火経路の数の上限（探索の既定は1経路） |",
+        f"| int_grid | {g['int_grid']} | 本数の格子（傾き・連続などの N） |",
+        f"| hour_grid | {g['hour_grid']} | 時刻の境界の格子 |",
+        f"| hold_range_by_role | {json.dumps(g['hold_range_by_role'], ensure_ascii=False)} | 保有時間の上限の範囲（役割ごと・5分足の本数） |",
+        f"| state_mult_grid | {g['state_mult_grid']} | 出口の名前つき定数の倍数の格子 |",
+        f"| frac_grid | {g['frac_grid']} | 部分利確の割合の格子（%） |",
+        f"| exit_mult_grid | {g['exit_mult_grid']} | SL の帯幅の倍数の格子（%） |",
+        f"| max_adds_grid | {g['max_adds_grid']} | 積み増しの回数の格子 |",
+        f"| n_min | {g['n_min']} | 列の有効標本数の下限（禁止3 の材料） |",
+        f"| r_min | {g['r_min']} | リスクリワード比の下限 |",
+        f"| fdr_q | {g['fdr_q']} | BH 法の偽発見率の線 |",
+        "",
+        "## 追加の部品（D12・2026-08-07）＝カタログの外に在る入口の材料（機械抽出）",
+        "",
+        f"### レンジ幾何 … {len(ep['geo']['parts'])} 列（{('、'.join(ep['geo']['parts']))}）",
+        f"規則: {ep['geo']['rule']}",
+        f"根拠: {ep['geo']['basis']}",
+        "",
+        f"### 時間帯 … {len(ep['time']['parts'])} 列（{('、'.join(ep['time']['parts']))}）",
+        f"規則: {ep['time']['rule']}",
+        f"根拠: {ep['time']['basis']}",
+        "",
+        "（保有時間などのポジション状態列は出口の材料＝この表（入口の表）の対象外。G2 は件数だけ出す）",
         "",
         "## 削る（全部 機械生成・根拠つき）",
         "",
@@ -205,12 +359,36 @@ def _md(table: dict, h: str) -> str:
     ]
     for p in b["insufficient_samples"]["pairs"]:
         lines.append(f"| {p['part']} | {p['tf']} | {p['n_eff']} |")
+    rl = table["role_lineage"]
+    dc = table["direction_conflict"]
     lines += [
         "",
-        "## ★機械で導けなかったもの（CC は書かない・まこさんの判断待ち）",
+        "## 役割×系統×時間足（D1 の対応表・2026-08-07 CC の案＝出典つき・承認の指紋がまこさんの判断の記録）",
         "",
-        f"- 向きの矛盾の定義: {table['pending']['direction_conflict']['rule']}",
-        f"- 役割ごとの系統の絞り: {table['pending']['role_lineage']['rule']}",
+        f"規則: {rl['rule']}",
+        f"対象の型: {'、'.join(rl['applies_to'])} ／ 行が無い型（生成不可）: {'、'.join(rl['not_covered']['families'])}",
+        f"（{rl['not_covered']['note']}）",
+        "",
+        "| 役割 | 使える系統 | 時間足 | 出典 |",
+        "|---|---|---|---|",
+    ]
+    for rname, jp in [("trigger", "引き金"), ("env", "環境認識"), ("sufficiency", "十分性"), ("location", "位置")]:
+        r = rl["roles"][rname]
+        tfs_s = "全部" if r["tfs"] == "all" else "、".join(r["tfs"])
+        geo_s = "＋レンジ幾何（extra_parts）" if r.get("geo") else ""
+        lines.append(f"| {jp} | {'、'.join(r['lineages'])}{geo_s} | {tfs_s} | {r['basis']} |")
+    lines += [
+        "",
+        "## 向きの矛盾の定義（D1 の対応表の向きの部分・2026-08-07 CC の案＝出典つき）",
+        "",
+        f"規則: {dc['rule']}",
+        "",
+        "| # | 決まり | 出典 |",
+        "|---|---|---|",
+    ]
+    for it in dc["items"]:
+        lines.append(f"| {it['id']} | {it['rule']} | {it['basis']} |")
+    lines += [
         "",
         "## 承認",
         "",
@@ -232,7 +410,11 @@ def write() -> None:
     print(f"[削る] 禁止1（状態量・ボラ量を向きに使わない）= {len(b['direction_stateful']['parts'])} 種"
           f" ／ 禁止2（注記）= {len(b['direction_note']['parts'])} 種"
           f" ／ 禁止3（標本不足の部品×時間足）= {len(b['insufficient_samples']['pairs'])} 組")
-    print(f"[空欄] 機械で導けず作らなかった決まり = {len(table['pending'])} 件（向きの矛盾の定義・役割ごとの系統）＝まこさんの判断待ち")
+    rl = table["role_lineage"]
+    print(f"[対応表] 役割×系統×時間足＝{len(rl['roles'])} 役割（対象の型 {'、'.join(rl['applies_to'])}"
+          f" ／ 生成不可の型 {'、'.join(rl['not_covered']['families'])}）"
+          f" ／ 向きの矛盾の定義＝{len(table['direction_conflict']['items'])} 本"
+          "（2026-08-06 の空欄2件を 2026-08-07 に出典つきの案で埋めた＝承認の指紋がまこさんの判断の記録）")
     print(f"[指紋] md5 {h} ／ 承認の指紋 = {table['approval']['fingerprint']}（無し＝表は無効のまま）")
 
 
@@ -335,10 +517,17 @@ def collect_materials(st: dict) -> tuple[list, list, list]:
     return cols, outside, unread
 
 
-def _judge_structure(st: dict, parts: set, tfs: set, banned: set) -> tuple[list, list, list]:
-    """構造1本を型の表と照合する。戻り＝(違反の一覧, 照合できた列, 表の対象外)。"""
+def _judge_structure(st: dict, parts: set, tfs: set, banned: set,
+                     geo_ok: set = frozenset(), time_ok: set = frozenset()) -> tuple[list, list, list]:
+    """構造1本を型の表と照合する。戻り＝(違反の一覧, 照合できた材料, 表の対象外)。
+
+    ★2026-08-07 0d（D12・まこさん OK）＝レンジ幾何（geo）と時間帯（time）の材料も表と照合する。
+      表の extra_parts に載っていれば「照合できた」・載っていない名前は違反。
+      ポジション状態（state）は出口の材料＝この表（入口の表）の対象外のまま件数だけ出す。
+    """
     cols, outside, unread = collect_materials(st)
     ng = [f"材料が読めない（{u}）" for u in unread]
+    matched = list(cols)
     for base, tf in cols:
         if base not in parts:
             ng.append(f"部品 {base} がカタログに無い")
@@ -346,9 +535,23 @@ def _judge_structure(st: dict, parts: set, tfs: set, banned: set) -> tuple[list,
             ng.append(f"時間足 {tf} が表に無い（{base}）")
         elif (base, tf) in banned:
             ng.append(f"{base}__{tf} は標本不足の禁止（禁止3）")
+    rest: list = []
+    for kind, name in outside:
+        if kind == "geo":
+            if name in geo_ok:
+                matched.append((f"geo:{name}", "-"))
+            else:
+                ng.append(f"レンジ幾何 {name} は条件の材料に使えない（表の許可は ratio の {sorted(geo_ok)} だけ・H6）")
+        elif kind == "time":
+            if name in time_ok:
+                matched.append((f"time:{name}", "-"))
+            else:
+                ng.append(f"時間帯の列 {name} は表に無い（許可は {sorted(time_ok)}）")
+        else:
+            rest.append((kind, name))
     if not cols and not outside:
         ng.append("材料が1つも見つからない（構造の形式が想定外）")
-    return ng, cols, outside
+    return ng, matched, rest
 
 
 def check_structures(path: str) -> None:
@@ -358,6 +561,9 @@ def check_structures(path: str) -> None:
     parts = set(table["parts"])
     tfs = set(table["timeframes"])
     banned = {(p["part"], p["tf"]) for p in table["bans"]["insufficient_samples"]["pairs"]}
+    ep = table.get("extra_parts") or {}
+    geo_ok = set((ep.get("geo") or {}).get("parts") or [])
+    time_ok = set((ep.get("time") or {}).get("parts") or [])
     ok_tbl, msg = _table_status()
     print(f"[表の状態] {msg}")
     data = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
@@ -368,7 +574,7 @@ def check_structures(path: str) -> None:
     n_cols = 0
     outside_count: dict = {}
     for i, st in enumerate(structures):
-        ng, cols, outside = _judge_structure(st, parts, tfs, banned)
+        ng, cols, outside = _judge_structure(st, parts, tfs, banned, geo_ok, time_ok)
         n_cols += len(cols)
         for kind, name in outside:
             outside_count[f"{kind}:{name}"] = outside_count.get(f"{kind}:{name}", 0) + 1
@@ -384,9 +590,9 @@ def check_structures(path: str) -> None:
     if outside_count:
         naka = "／".join(f"{k} {v}個" for k, v in sorted(outside_count.items()))
         print(f"[G2] ★表の対象外の材料 合計 {sum(outside_count.values())} 個（{naka}）")
-        print("     これらは型の表の部品の一覧に載っていません。表は許可も禁止もしていません。")
-        print("     足すかどうかは まこさんの判断待ちです（根拠なく CC が決めません）。")
-    print("[G2] ★未検査＝空欄2件（向きの矛盾・役割ごとの系統）は定義がまだ無いので照合できない（隠さず明示）")
+        print("     これらは出口の材料（ポジション状態など）＝入口の表の対象外です（D12・入口の geo/time は 0d で表に入れて照合済み）。")
+    print("[G2] ★未検査＝対応表（役割×系統×時間足）と向きの矛盾（DC1〜DC4）は、定義は表に入ったが"
+          "照合の配線が D1 の実装待ち＝この判定にはまだ入っていない（隠さず明示）")
     if not ok_tbl or rate < 1.0:
         raise SystemExit(1)
 
@@ -420,12 +626,17 @@ def g2_selftest() -> None:
     parts = set(table["parts"])
     tfs = set(table["timeframes"])
     banned = {(p["part"], p["tf"]) for p in table["bans"]["insufficient_samples"]["pairs"]}
+    ep = table.get("extra_parts") or {}
+    geo_ok = set((ep.get("geo") or {}).get("parts") or [])
+    time_ok = set((ep.get("time") or {}).get("parts") or [])
     if not banned:
         raise SystemExit("[番人エラー] 禁止3 が空＝既知答えが作れない")
+    if not geo_ok or not time_ok:
+        raise SystemExit("[番人エラー] 追加の部品（geo/time）が表に無い＝0d の表で再生成してから番人を走らせる")
     bp, btf = next(iter(sorted(banned)))
 
     sts = _real_structures(30, seed=20260807)
-    clean = [st for st in sts if not _judge_structure(st, parts, tfs, banned)[0]]
+    clean = [st for st in sts if not _judge_structure(st, parts, tfs, banned, geo_ok, time_ok)[0]]
     if not clean:
         raise SystemExit("[番人エラー] 表に沿った本物の構造が1本も作れない＝既知答えが作れない")
     base_st = copy.deepcopy(clean[0])
@@ -457,14 +668,28 @@ def g2_selftest() -> None:
     m2 = _first_col_cond(fake_st)
     m2.clear(); m2.update({"family": "ニセ指標", "param": 9, "tf": "5m"})
 
+    # 0d（D12）＝geo/time の既知答え。帯内位置%（ratio）は通る／res_hi（price＝H6）は ❌／時刻は通る
+    geo_st = copy.deepcopy(base_st)
+    m3 = _first_col_cond(geo_st)
+    m3.clear(); m3.update({"geo": "帯内位置%"})
+    geo_bad_st = copy.deepcopy(base_st)
+    m4 = _first_col_cond(geo_bad_st)
+    m4.clear(); m4.update({"geo": "res_hi"})
+    time_st = copy.deepcopy(base_st)
+    m5 = _first_col_cond(time_st)
+    m5.clear(); m5.update({"time": "時刻"})
+
     cases = [
         (base_st, True, "本物の構造（表の中の材料だけ）"),
         (ban_st, False, f"本物の構造の材料を1つ 禁止3 の組へ差し替え（{bp}__{btf}）"),
         (fake_st, False, "本物の構造の材料を1つ カタログに無い偽の指標へ差し替え"),
+        (geo_st, True, "材料を1つ レンジ幾何の 帯内位置%（ratio）へ差し替え＝表の許可の中"),
+        (geo_bad_st, False, "材料を1つ レンジ幾何の res_hi（price・H6）へ差し替え＝条件の材料に使えない"),
+        (time_st, True, "材料を1つ 時間帯の 時刻 へ差し替え＝表の許可の中"),
     ]
     ng_all = []
     for st, want_ok, label in cases:
-        ng, cols, _out = _judge_structure(st, parts, tfs, banned)
+        ng, cols, _out = _judge_structure(st, parts, tfs, banned, geo_ok, time_ok)
         got_ok = not ng
         mark = "✅" if got_ok == want_ok else "🚨"
         print(f"  {mark} {label}: 期待={'通る' if want_ok else '❌'} ／ 実際={'通る' if got_ok else '❌'}"
@@ -482,7 +707,7 @@ def g2_selftest() -> None:
 
     if ng_all:
         raise SystemExit(f"[番人] 🚨 G2 が既知答えに正しく反応しない: {ng_all}")
-    print("[番人] ✅ G2 の既知答え 4件 全部 期待どおり（★全部 本物の生成器が出した構造で試した）")
+    print("[番人] ✅ G2 の既知答え 7件 全部 期待どおり（★土台は本物の生成器が出した構造・geo/time は 0d の既知答え）")
 
 
 def _templates() -> dict:

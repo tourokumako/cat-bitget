@@ -172,8 +172,9 @@ def _print_mode_info(cfg: dict) -> None:
 #   probe は広く試すためのものなので、値をコードに焼かない。
 #   使った値は出力の先頭に全部印字する＝狭めたら見える。
 CONFIG_PATH = __file__.rsplit("/", 1)[0] + "/observe_config.json"
-TF_RULE = {"5m": "5min", "15m": "15min", "30m": "30min", "1h": "1h",
+TF_RULE = {"5m": "5min", "10m": "10min", "15m": "15min", "30m": "30min", "1h": "1h",
            "2h": "2h", "4h": "4h", "6h": "6h", "12h": "12h", "1d": "1D"}
+# ↑ 10m は 2026-08-07 まこさん指示「時間足に10mも追加したい」で追加（5m データからの resample＝他の足と同じ作り）
 
 
 def load_config(path: str | None = None) -> dict:

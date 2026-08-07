@@ -179,84 +179,187 @@ def _lineage_of(m: dict) -> str:
     return iref.FAMILY_LINEAGE[m["family"]]["k"]
 
 
-def _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count) -> dict:
-    """材料1本＝G3（同系統×同役割は1本・K_MAX）をサンプリング時から守る。"""
-    for _ in range(30):
+def _kubun_of(m: dict) -> str:
+    """材料の方向の区分（順張り値／状態量／ボラ量／反転サイン）＝カタログの「方向」の欄から機械で引く。"""
+    if "geo" in m:
+        return iref.RANGE_GEO_REF[m["geo"]]["houkou"].split("＝")[0]
+    if "time" in m:
+        return iref.TIME_REF[m["time"]]["houkou"].split("＝")[0]
+    name = ex.FAMILY_TEMPLATES[m["family"]].format(p=m.get("param"))
+    ref, _ = iref.find(name)
+    return ref["houkou"].split("＝")[0] if ref else "？"
+
+
+# ══ 型の表（signal_families）＝D1 の閉じ込めの正本（2026-08-07 まこさん承認・指紋つき）════════
+_SIGNAL_TABLE: dict | None = None
+
+
+def load_signal_table() -> dict:
+    """承認済みの型の表を読み、閉じ込めに使う形へ直す。未承認・指紋不一致なら止まる（fail-closed）。"""
+    global _SIGNAL_TABLE
+    if _SIGNAL_TABLE is not None:
+        return _SIGNAL_TABLE
+    import gen_signal_families as gsf
+    ok, msg = gsf._table_status()
+    if not ok:
+        raise SystemExit(f"[型の表] {msg}＝構造を生成できない（fail-closed・D1）")
+    t = json.loads(gsf.OUT_JSON.read_text(encoding="utf-8"))
+    rl = t["role_lineage"]
+    roles = {}
+    for rname, r in rl["roles"].items():
+        roles[rname] = {"lineages": set(r["lineages"]),
+                        "tfs": None if r["tfs"] == "all" else set(r["tfs"]),   # None＝表の全足
+                        "geo": bool(r.get("geo"))}
+    _SIGNAL_TABLE = {
+        "parts": set(t["parts"]),
+        "tfs": list(t["timeframes"]),
+        "banned": {(p["part"], p["tf"]) for p in t["bans"]["insufficient_samples"]["pairs"]},
+        "geo_ok": list((t.get("extra_parts") or {}).get("geo", {}).get("parts") or []),
+        "time_ok": list((t.get("extra_parts") or {}).get("time", {}).get("parts") or []),
+        "roles": roles,
+        "families": list(rl["applies_to"]),
+        "quantile_grid_hi": ("q70", "q80", "q90"),   # DC2 の高分位（表の DC2 の逐語＝q70・q80・q90）
+        "quantile_grid_lo": ("q10", "q20", "q30"),   # DC2 の低分位（同＝q10・q20・q30）
+    }
+    return _SIGNAL_TABLE
+
+
+def _role_tfs(tfs, table, role) -> list[str]:
+    """役割に使える時間足＝呼び出し側の足 ∩ 表の足 ∩ 対応表の役割の足（D1・表が正本）。"""
+    rr = table["roles"][role]
+    out = [t for t in tfs if t in table["tfs"] and (rr["tfs"] is None or t in rr["tfs"])]
+    if not out:
+        raise SampleError(f"役割 {role} に使える時間足が無い")
+    return out
+
+
+def _banned_pair(m: dict, table) -> bool:
+    """（部品×時間足）が禁止3（標本不足）に当たるか。"""
+    if "family" not in m:
+        return False
+    name = ex.FAMILY_TEMPLATES[m["family"]].format(p=m["param"])
+    return (name, m["tf"]) in table["banned"]
+
+
+def _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count, table) -> dict:
+    """材料1本＝G3（同系統×同役割は1本・K_MAX）＋型の表（対応表の系統×時間足・禁止3・許可 geo/time）を
+    サンプリング時から守る（D1・2026-08-07 まこさん承認の表が正本）。"""
+    rr = table["roles"][role]
+    tf_pool = _role_tfs(tfs, table, role)
+    for _ in range(60):
         r = rng.random()
-        if role == "location" and r < 0.5:
-            m = {"geo": str(rng.choice(["帯内位置%", "W%"]))}
-        elif role == "env" and r < 0.10 and limits.get("hour_grid"):
-            m = {"time": "時刻"}                  # 曜日の閾値格子は未定義＝時刻だけ（格子はまこさん §11-10）
+        if role == "location" and rr["geo"] and table["geo_ok"] and r < 0.5:
+            m = {"geo": str(rng.choice(table["geo_ok"]))}
+        elif role == "env" and "時間帯" in rr["lineages"] and r < 0.10 and limits.get("hour_grid"):
+            m = {"time": "時刻"}                  # 曜日の閾値格子は未定義＝時刻だけ（格子はまこさん §11-10）。表は両方許可
         else:
             base = pool[int(rng.integers(len(pool)))]
-            m = {"family": base["family"], "param": base["param"], "tf": str(rng.choice(tfs))}
+            m = {"family": base["family"], "param": base["param"], "tf": str(rng.choice(tf_pool))}
+            if _banned_pair(m, table):
+                continue                                        # 禁止3（標本不足）＝引き直す
         kind = _lineage_of(m)
+        if kind not in rr["lineages"]:
+            continue                                            # 対応表＝役割に使えない系統
         if role != "trigger" and (role, kind) in seen_rolekind:
             continue
         if limits.get("k_max") is not None and kind_count.get(kind, 0) >= limits["k_max"]:
             continue
         return m
-    raise SampleError("材料を30回引いても G3 を満たせない")
+    raise SampleError(f"役割 {role} の材料を60回引いても表と G3 を満たせない")
 
 
-def _pair_materials(rng, pool, tfs) -> list[dict]:
-    """列2本の形（cross/diff/touch）＝同 family の期間違い、または Stoch%K と %D の対。"""
+def _pair_materials(rng, pool, tfs, role, table) -> list[dict]:
+    """列2本の形（cross/diff/touch）＝同 family の期間違い、または Stoch%K と %D の対。
+    D1＝対応表の系統×時間足・禁止3 を守る。"""
+    rr = table["roles"][role]
+    tf_pool = _role_tfs(tfs, table, role)
     fams = {}
     for b in pool:
-        fams.setdefault(b["family"], []).append(b["param"])
-    tf = str(rng.choice(tfs))
-    if rng.random() < 0.4:
-        ks = sorted(set(fams.get("Stoch%K", [])) & set(fams.get("Stoch%D", [])))
-        if ks:
-            p = int(rng.choice(ks))
-            return [{"family": "Stoch%K", "param": p, "tf": tf},
-                    {"family": "Stoch%D", "param": p, "tf": tf}]
-    cands = [f for f, ps in fams.items() if len(set(ps)) >= 2]
-    if not cands:
-        raise SampleError("列2本の形を組める family が無い")
-    f = str(rng.choice(cands))
-    p1, p2 = rng.choice(sorted(set(fams[f])), size=2, replace=False)
-    return [{"family": f, "param": int(p1), "tf": tf}, {"family": f, "param": int(p2), "tf": tf}]
+        if iref.FAMILY_LINEAGE[b["family"]]["k"] in rr["lineages"]:
+            fams.setdefault(b["family"], []).append(b["param"])
+    for _ in range(30):
+        tf = str(rng.choice(tf_pool))
+        if rng.random() < 0.4:
+            ks = sorted(set(fams.get("Stoch%K", [])) & set(fams.get("Stoch%D", [])))
+            if ks:
+                p = int(rng.choice(ks))
+                pair = [{"family": "Stoch%K", "param": p, "tf": tf},
+                        {"family": "Stoch%D", "param": p, "tf": tf}]
+                if not any(_banned_pair(m, table) for m in pair):
+                    return pair
+        cands = [f for f, ps in fams.items() if len(set(ps)) >= 2]
+        if not cands:
+            raise SampleError(f"役割 {role} で列2本の形を組める family が無い（表の系統の中）")
+        f = str(rng.choice(cands))
+        p1, p2 = rng.choice(sorted(set(fams[f])), size=2, replace=False)
+        pair = [{"family": f, "param": int(p1), "tf": tf}, {"family": f, "param": int(p2), "tf": tf}]
+        if not any(_banned_pair(m, table) for m in pair):
+            return pair
+    raise SampleError(f"役割 {role} の列2本を30回引いても禁止3 を避けられない")
 
 
 def _q(rng, limits) -> dict:
     return {"threshold_q": str(rng.choice(limits["quantile_grid"]))}
 
 
-def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, allow_nest=True) -> dict:
+def _dc1_side(rng, role, mats, side) -> str:
+    """DC1（表の向きの決まり・2026-08-07 まこさん承認）＝順張り値の部品を side 付きの形で
+    環境認識・十分性に使うとき、SHORT は below だけ・LONG は above だけ。それ以外は乱数。"""
+    if role in ("env", "sufficiency") and any(_kubun_of(m) == "順張り値" for m in mats):
+        return "below" if side == "SHORT" else "above"
+    return str(rng.choice(["above", "below"]))
+
+
+def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, side, allow_nest=True) -> dict:
     forms = TRIGGER_FORMS if role == "trigger" else STATE_FORMS
+    rr = table["roles"][role]
+    forms = tuple(f for f in forms if f != "candle_dir" or "ローソク" in rr["lineages"])
     form = str(rng.choice(forms))
     if form in ("streak", "within_n"):
         if not allow_nest:
             form = "level"
         else:
-            inner = _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, allow_nest=False)
+            inner = _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, side,
+                               allow_nest=False)
             inner.pop("role", None)
             inner["role"] = role
             n = int(rng.choice([n for n in limits["int_grid"] if n >= 2]))
             return {"role": role, "form": form, "inner": inner,
                     "value": {"n": n, "offset": int(rng.choice([0, 1]))}}
     if form in NEEDS_PAIR:
-        mats = _pair_materials(rng, pool, tfs)
+        mats = _pair_materials(rng, pool, tfs, role, table)
         for m in mats:
             kind_count[_lineage_of(m)] = kind_count.get(_lineage_of(m), 0) + 0  # 数えは下で一括
         if form == "cross":
+            # DC3（表の向きの決まり）＝cross の direction は side と揃える（up＝LONG・down＝SHORT）
             return {"role": role, "form": "cross", "material": mats,
-                    "value": {"direction": str(rng.choice(["up", "down"]))}}
+                    "value": {"direction": "down" if side == "SHORT" else "up"}}
         if form == "diff":
             return {"role": role, "form": "diff", "material": mats,
-                    "side": str(rng.choice(["above", "below"])), "value": _q(rng, limits)}
+                    "side": _dc1_side(rng, role, mats, side), "value": _q(rng, limits)}
         return {"role": role, "form": "touch", "material": mats, "value": {"const": "TOL_SR"}}
     if form == "candle_dir":
-        return {"role": role, "form": "candle_dir", "value": {"dir": str(rng.choice(["bull", "bear"]))}}
-    m = _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count)
+        # DC4（表の向きの決まり）＝反転サイン・ローソクは SHORT＝bear だけ・LONG＝bull だけ
+        return {"role": role, "form": "candle_dir",
+                "value": {"dir": "bear" if side == "SHORT" else "bull"}}
+    m = _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count, table)
     if "time" in m:
         return {"role": role, "form": "level", "material": [m],
                 "side": str(rng.choice(["above", "below"])),
                 "value": {"n": int(rng.choice(limits["hour_grid"]))}}
     if form == "level":
+        if role == "trigger" and _lineage_of(m) == "オシレーター":
+            # DC2（表の向きの決まり）＝レンジ系の引き金のオシレーターは行き過ぎを逆に取る
+            #   SHORT＝above かつ 高分位（q70/q80/q90）・LONG＝below かつ 低分位（q10/q20/q30）
+            grid = table["quantile_grid_hi"] if side == "SHORT" else table["quantile_grid_lo"]
+            qs = [q for q in limits["quantile_grid"] if q in grid]
+            if not qs:
+                raise SampleError("DC2 の分位が格子に無い")
+            return {"role": role, "form": "level", "material": [m],
+                    "side": "above" if side == "SHORT" else "below",
+                    "value": {"threshold_q": str(rng.choice(qs))}}
         return {"role": role, "form": "level", "material": [m],
-                "side": str(rng.choice(["above", "below"])), "value": _q(rng, limits)}
+                "side": _dc1_side(rng, role, [m], side), "value": _q(rng, limits)}
     if form in ("band", "band_exclude"):
         qs = rng.choice(limits["quantile_grid"], size=2, replace=False)
         lo, hi = sorted(qs, key=lambda s: int(str(s).lstrip("q")))
@@ -264,11 +367,11 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, allow_ne
                 "value": {"lo": {"threshold_q": str(lo)}, "hi": {"threshold_q": str(hi)}}}
     if form == "slope":
         return {"role": role, "form": "slope", "material": [m],
-                "side": str(rng.choice(["above", "below"])),
+                "side": _dc1_side(rng, role, [m], side),
                 "value": {"n": int(rng.choice(limits["int_grid"]))}}
     if form == "slope_avg":
         return {"role": role, "form": "slope_avg", "material": [m],
-                "side": str(rng.choice(["above", "below"])),
+                "side": _dc1_side(rng, role, [m], side),
                 "value": {"n": int(rng.choice(limits["int_grid"])), "m": int(rng.choice(limits["int_grid"]))}}
     raise SampleError(f"形 {form} の値の組み立てが未定義")
 
@@ -331,7 +434,20 @@ def default_regime() -> dict:
 
 
 def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id="GEN") -> dict:
-    """構造1本＝役割構成・本数・つなぎ方・形・材料・出口の枝・玉の持ち方 をランダムに組む。"""
+    """構造1本＝役割構成・本数・つなぎ方・形・材料・出口の枝・玉の持ち方 をランダムに組む。
+
+    ★D1（2026-08-07 まこさん承認の型の表が正本）＝乱数は表の中だけで振る。
+      ①型（シグナル家族）を表の対象（E-a1/4/5/8＝レンジ系）から1つ引く（行が無い型は生成不可）
+      ②材料は対応表（役割×系統×時間足）・禁止3・許可 geo/time の中だけ
+      ③向きは DC1〜DC4 の決まりで side と噛み合わせる
+    """
+    table = load_signal_table()
+    pool = [b for b in pool
+            if ex.FAMILY_TEMPLATES[b["family"]].format(p=b["param"]) in table["parts"]
+            and b["family"] in iref.FAMILY_LINEAGE]
+    if not pool:
+        raise SampleError("表に載っている部品が pool に1つも無い")
+    fam_label = str(rng.choice(table["families"]))       # ①型を1つ引く（4型は共通の対応表＝ラベルは記録用）
     lo, hi = limits["count_range"]
     n_total = int(rng.integers(lo, hi + 1))
     seen_rolekind: set = set()
@@ -349,7 +465,7 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
             if limits.get("k_max") is not None and kind_count[kind] > limits["k_max"]:
                 raise SampleError("K_MAX 超過")
 
-    trig = _make_cond(rng, "trigger", limits, pool, tfs, seen_rolekind, kind_count)
+    trig = _make_cond(rng, "trigger", limits, pool, tfs, seen_rolekind, kind_count, table, side)
     _register(trig)
     conds.append(trig)
     budget = dict(limits["role_max"])
@@ -360,7 +476,7 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
         role = str(rng.choice(sorted(avail)))
         for _try in range(20):
             try:
-                c = _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count)
+                c = _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, side)
                 _register(c)
                 break
             except SampleError:
@@ -378,6 +494,7 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
     tree = {"all": kids}
     return {
         "meta": {"strategy": "e38", "logic_id": logic_id, "side": side,
+                 "signal_family": fam_label,
                  "regime": dict(regime if regime is not None else default_regime())},
         "pre_filter": [],
         "entry": {"connective": tree},
@@ -391,6 +508,44 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
 
 def recipe_hash(recipe: dict) -> str:
     return hashlib.sha256(json.dumps(recipe, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
+
+
+def write_kakikudashi(run_dir, structures: list[dict], results1: list[dict], kept: list[dict], seed) -> None:
+    """人が読む書き下し＝最良1本＋機械が無作為に選んだ3本（D1 完了の線①・監査 G4 の材料・L-400 の4番）。
+    画面と run_dir/kakikudashi.txt の両方に出す。条件の日本語化は fire_diag.cond_label（既存）を使う。"""
+    import engine_tuner_fire_diag as fd
+    lines: list[str] = []
+
+    def _one(idx: int, title: str) -> None:
+        st = structures[idx]
+        lane = str(st.get("meta", {}).get("lane", ""))
+        conds, _d = ex._walk(st["entry"]["connective"])
+        rec = next((r for r in results1 if r["idx"] == idx), None)
+        lines.append(f"■ {title} 構造#{idx}（型 {st['meta'].get('signal_family', '?')} ／ side {st['meta'].get('side')}）")
+        if rec is not None:
+            gate = "" if rec["ok"] else f" ／ 門で不合格（{rec['why']}）"
+            lines.append(f"  値決め窓: net ${rec['total']:+,.0f} ／ {rec['n']}玉 ／ {rec['per_day']:.2f}件/日{gate}")
+        for c in conds:
+            lines.append(f"  ・{fd.cond_label(c, lane)}")
+        exs = "、".join(f"{b['name']}({b['reason']})" for b in st.get("exits", []))
+        pos = st.get("position", {})
+        lines.append(f"  出口の枝: {exs} ／ 玉の持ち方: {pos.get('mode')}・積み増し上限 {pos.get('max_adds')}")
+        lines.append("")
+
+    if kept:
+        best = max(kept, key=lambda z: z["total"])
+        _one(int(best["idx"]), "最良（値決め窓）")
+    else:
+        lines.append("■ 最良: 通った構造が0本＝書けない（偽装の書き下しを出さない）")
+        lines.append("")
+    rng = np.random.default_rng([int(seed), 9999])
+    picks = sorted(int(i) for i in rng.choice(len(structures), size=min(3, len(structures)), replace=False))
+    for i in picks:
+        _one(i, "無作為")
+    text = "\n".join(lines)
+    (pathlib.Path(run_dir) / "kakikudashi.txt").write_text(text, encoding="utf-8")
+    print("\n[書き下し（最良1本＋機械が無作為に選んだ3本・kakikudashi.txt にも保存）]")
+    print(text)
 
 
 # ══ 構造の内訳（機械出力・R3 完了の線⑤）══════════════════════════════════════════════════
@@ -633,6 +788,17 @@ def run_trial(df: pd.DataFrame, recipe: dict, qtable: dict, judge, start, end) -
     return {"total": float(res["total"]), "n": len(t), "per_day": len(t) / days, "t": t, "rep": rep}
 
 
+def zero_trade_gate(res: dict) -> tuple[bool, str]:
+    """売買ゼロ（0玉）の案は、件数/日 の下限（min_per_day）が空欄でも候補に残さない（D3 の一部・0c）。
+
+    2026-08-07 まこさん OK＝「件数が 0件/日 の案を候補に残さない」は CC の判断でよい。
+    下限の値そのもの（例＝5件/日）はまこさんが決める＝ここでは判定しない（0玉だけを捨てる）。
+    背景＝売買ゼロの net は $0 で、負けた案（net マイナス）に勝つため「最良」に居座る（defects.md D3）。"""
+    if res["n"] == 0:
+        return False, "売買ゼロ（0玉）＝候補に残さない（D3・net $0 が負けた案に勝つのを防ぐ）"
+    return True, ""
+
+
 # ══ 第2段（TPE）用＝値スロットの列挙と適用 ═══════════════════════════════════════════════
 def _cat(choices) -> dict:
     """候補の一覧から選ぶ値（メニュー方式）。"""
@@ -800,6 +966,15 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     print(f"[構造の内訳（機械出力・R3 完了の線⑤）] {json.dumps(bd, ensure_ascii=False)}")
     print(f"[生成拒否の理由別件数] {json.dumps(dict(rejects), ensure_ascii=False)} ／ 重複（正規形で同一） {dup} 本")
 
+    # ── D11＝案そのものを記録に残す ＋ G2＝生成のたびの照合（D1・2026-08-07）──
+    #   適合率が100%未満、または表が未承認なら、check_structures が SystemExit(1)＝試行を1本も走らせない。
+    spath = run_dir / "structures.json"
+    spath.write_text(json.dumps({"structures": structures}, ensure_ascii=False, sort_keys=True) + "\n",
+                     encoding="utf-8")
+    print(f"[D11] 案そのもの {len(structures)} 本を {spath} に記録（journal の idx と1対1）")
+    import gen_signal_families as gsf
+    gsf.check_structures(str(spath))
+
     # ── 材料の組み立てと解決表（探索開始時に1回固定・§5-4）──
     df2 = attach_materials(df, structures)
     geo = {"res_hi": df2["v11_res_hi"].to_numpy(float), "res_lo": df2["v11_res_lo"].to_numpy(float),
@@ -830,10 +1005,10 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
             continue
         res = run_trial(df2, r, qtable, judge, start, end)
         legacy_total += len(res["rep"]["legacy使用"])
-        ok, why = True, ""
-        if min_per_day is not None and res["per_day"] < min_per_day:
+        ok, why = zero_trade_gate(res)   # 0c＝0玉は min_per_day が空欄でも捨てる（D3）
+        if ok and min_per_day is not None and res["per_day"] < min_per_day:
             ok, why = False, f"件数の下限 {min_per_day} に対して {res['per_day']:.2f}件/日"
-        elif net_floor is not None and res["total"] < net_floor:
+        elif ok and net_floor is not None and res["total"] < net_floor:
             ok, why = False, f"net の下限 ${net_floor:,.0f} に対して ${res['total']:+,.0f}"
         gate_ok, gate_why = strat_gate(base_trades, res["t"], atr_edges, judge)
         if ok and gate_ok is False:
@@ -865,6 +1040,7 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     print(f"[第1段] 通過 {len(kept)} 本 ／ ゲートで捨てた試行 {len(dropped)}/{len(results1)} 本（黙って消さない）")
     for r in sorted(dropped, key=lambda z: -z["total"])[:3]:
         print(f"  #{r['idx']}: net ${r['total']:+,.0f} / {r['n']}玉 / {r['per_day']:.2f}件/日 ← {r['why']}")
+    write_kakikudashi(run_dir, structures, results1, kept, seed)   # D1 完了の線①＋監査 G4 の材料
 
     # ── BH 法（第1段のサンプルだけ・CP1 提案4(e)）──
     #   BH は「どの候補を採択するか」の門なので、対象は通過した試行のまま（2026-08-05 も不変）。
@@ -949,8 +1125,8 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                     return got["total"] if got["ok"] else -1e9
                 r2 = apply_slots(recipe, choices)
                 res = run_trial(df2, r2, qtable, judge, start, end)
-                ok, why = True, ""
-                if min_per_day is not None and res["per_day"] < min_per_day:
+                ok, why = zero_trade_gate(res)   # 0c＝0玉は候補に残さない（D3・第1段と同じ門）
+                if ok and min_per_day is not None and res["per_day"] < min_per_day:
                     ok, why = False, "件数の下限"
                 gate_ok, _gw = strat_gate(base_trades, res["t"], atr_edges, judge)
                 if ok and gate_ok is False:
@@ -1320,6 +1496,110 @@ def selftest() -> int:
             t11.append(f"別名の列で止まった（D4 が直っていない）: {str(e)[:80]}")
     ng += [f"T11: {x}" for x in t11]
 
+    # T12 売買ゼロ（0玉）の案が候補に残らない（D3 の一部・0c・2026-08-07 まこさん OK）
+    #   直す前は min_per_day が空欄だと門が無く、0玉（net $0）の案が「通過」し、
+    #   負けた案（net マイナス）より net が大きいので「最良」に選ばれた（2026-08-05 実測＝#0 が選ばれた）。
+    t12 = []
+    ok0, why0 = zero_trade_gate({"n": 0, "per_day": 0.0, "total": 0.0})
+    if ok0 is not False or "売買ゼロ" not in why0:
+        t12.append("0玉の案が門を素通り（min_per_day が空欄でも捨てるはず）")
+    ok1, _w1 = zero_trade_gate({"n": 3, "per_day": 0.01, "total": -5.0})
+    if ok1 is not True:
+        t12.append("売買が在る案（負けでも）が0玉の門で捨てられた（下限の値の判定はまこさん待ち＝ここではしない）")
+    z_bad = [r for r in out1["results1"] if r["n"] == 0 and r["ok"]]
+    if z_bad:
+        t12.append(f"実走（T6 のミニ本走）の第1段で 0玉の案が {len(z_bad)} 本 通過している")
+    ng += [f"T12: {x}" for x in t12]
+
+    # T13 D1＝生成が型の表の中に閉じている（対応表の役割×系統×時間足・禁止3・DC1〜DC4・G2 適合率100%）
+    #   本物の格子（search_limits.json）・本物の部品・本物の承認済みの表で、SHORT と LONG の両方を撒いて照合する。
+    t13 = []
+    import gen_signal_families as gsf13
+    tbl13 = load_signal_table()
+    lm13, _w13 = load_limits()
+    lm13 = dict(lm13)
+    lm13.update(resolve_hold_range(lm13, "e38"))
+    parts13 = set(tbl13["parts"])
+    tfs13_all = set(tbl13["tfs"])
+    banned13 = tbl13["banned"]
+    sts13: list[dict] = []
+    for side13 in ("SHORT", "LONG"):
+        i13 = 0
+        got = 0
+        while got < 30 and i13 < 300:
+            rng13 = np.random.default_rng([13, 1 if side13 == "SHORT" else 2, i13])
+            i13 += 1
+            try:
+                sts13.append(sample_structure(rng13, lm13, pool, tfs, side=side13, logic_id="T13"))
+                got += 1
+            except SampleError:
+                continue
+    if len(sts13) < 60:
+        t13.append(f"本物の格子で 60本 撒けない（{len(sts13)} 本）")
+
+    def _t13_viol(st: dict) -> list[str]:
+        v: list[str] = []
+        side_v = st["meta"]["side"]
+        conds: list = []
+        gsf13._walk_conds(st["entry"]["connective"], conds)
+        for c in conds:
+            role = c.get("role")
+            rr = tbl13["roles"].get(role)
+            if rr is None:
+                v.append(f"知らない役割 {role}")
+                continue
+            for m in (c.get("material") or []):
+                kind = _lineage_of(m)
+                if kind not in rr["lineages"]:
+                    v.append(f"{role} に系統 {kind}（対応表の外）")
+                if "family" in m:
+                    name = ex.FAMILY_TEMPLATES[m["family"]].format(p=m["param"])
+                    if name not in parts13 or m["tf"] not in tfs13_all:
+                        v.append(f"表に無い部品/時間足 {name}__{m.get('tf')}")
+                    if rr["tfs"] is not None and m["tf"] not in rr["tfs"]:
+                        v.append(f"{role} に時間足 {m['tf']}（対応表の外）")
+                    if (name, m["tf"]) in banned13:
+                        v.append(f"禁止3 の組 {name}__{m['tf']}")
+            mats = c.get("material") or []
+            if (c.get("side") and c["form"] in ("level", "diff", "slope", "slope_avg")
+                    and role in ("env", "sufficiency")
+                    and any(_kubun_of(m) == "順張り値" for m in mats)):
+                want = "below" if side_v == "SHORT" else "above"
+                if c["side"] != want:
+                    v.append(f"DC1 違反（{role}・順張り値・side {c['side']}）")
+            if (role == "trigger" and c["form"] == "level" and mats and "family" in mats[0]
+                    and iref.FAMILY_LINEAGE[mats[0]["family"]]["k"] == "オシレーター"):
+                q13 = str(c.get("value", {}).get("threshold_q", ""))
+                if side_v == "SHORT" and not (c.get("side") == "above" and q13 in tbl13["quantile_grid_hi"]):
+                    v.append(f"DC2 違反（SHORT・side {c.get('side')}・{q13}）")
+                if side_v == "LONG" and not (c.get("side") == "below" and q13 in tbl13["quantile_grid_lo"]):
+                    v.append(f"DC2 違反（LONG・side {c.get('side')}・{q13}）")
+            if c["form"] == "cross":
+                want = "down" if side_v == "SHORT" else "up"
+                if c.get("value", {}).get("direction") != want:
+                    v.append(f"DC3 違反（{side_v}・{c.get('value', {}).get('direction')}）")
+            if c["form"] == "candle_dir":
+                want = "bear" if side_v == "SHORT" else "bull"
+                if c.get("value", {}).get("dir") != want:
+                    v.append(f"DC4 違反（{side_v}・{c.get('value', {}).get('dir')}）")
+        return v
+
+    viol13 = [f"#{i}: {'; '.join(vv)}" for i, st in enumerate(sts13) if (vv := _t13_viol(st))]
+    if viol13:
+        t13.append(f"対応表・向きの決まりの違反 {len(viol13)} 本（例＝{viol13[0]}）")
+    n_ok13 = 0
+    for st in sts13:
+        ng13, _c13, _o13 = gsf13._judge_structure(st, parts13, tfs13_all, banned13,
+                                                  set(tbl13["geo_ok"]), set(tbl13["time_ok"]))
+        if not ng13:
+            n_ok13 += 1
+    if sts13 and n_ok13 != len(sts13):
+        t13.append(f"G2 適合率が100%でない（{n_ok13}/{len(sts13)}）")
+    fam13 = {st["meta"].get("signal_family") for st in sts13}
+    if sts13 and not fam13 <= set(tbl13["families"]):
+        t13.append(f"型のラベルが表の対象の外（{sorted(fam13)}）")
+    ng += [f"T13: {x}" for x in t13]
+
     print("=" * 80)
     print("engine_tuner_gen 自己検査（合成データのみ・実データの試行ゼロ・累積試行の記録なし）")
     print("=" * 80)
@@ -1332,6 +1612,10 @@ def selftest() -> int:
           f"土台なしの結論 {out10.get('verdict')}（『これ以上出ない』ではない）")
     print(f"  T11 別名の列: カタログ名の列が無く別名（{ex.RUNTIME_ALIAS.get('ADX14__2h')}）だけでも"
           " 分位の解決表が作れる（D4）")
+    print("  T12 0玉の門: 売買ゼロの案は min_per_day が空欄でも候補に残らない（D3 の一部・0c）／"
+          "売買が在る案（負けでも）は0玉の門では捨てない")
+    print(f"  T13 型の表の閉じ込め（D1）: 本物の格子で {len(sts13)} 本（SHORT/LONG）＝対応表・禁止3・DC1〜DC4 の"
+          f"違反 {len(viol13)} 本 ／ G2 適合率 {n_ok13}/{len(sts13)} ／ 型のラベル {sorted(fam13)}")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
