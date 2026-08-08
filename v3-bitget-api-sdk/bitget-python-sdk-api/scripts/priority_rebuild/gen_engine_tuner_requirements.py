@@ -36,6 +36,14 @@ MANUAL = ROOT / ".claude" / "ratchet" / "engine_tuner_manual.md"
 
 NEED_KEYS = ("id", "title", "source", "decided", "why", "accept", "state")
 
+# ★生成器が実際に文書へ出す欄の名前の全部（2026-08-08 新設）。
+#   ここに無い名前の欄を json に書くと、その中身は文書に1文字も出ない＝まこさんの目に届かない。
+#   背景（実害が出ていた）＝「いまどこまで進んだか」の欄に progress と now の2つの名前が混ざり、
+#   生成器は progress しか読まないため、R2・R5・R6 の進み具合が要件の一覧表で「—」になっていた。
+#   R5 は「作業中」なのに、何が残っているか（下げトレンドの判定の列が無い）が文書に出ていなかった。
+#   欄を足すときは、この一覧と build() の両方に足す。片方だけだと selftest が落ちる。
+KNOWN_KEYS = frozenset(NEED_KEYS) | {"progress", "precondition", "design", "design_sources"}
+
 
 def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
@@ -238,6 +246,12 @@ def selftest() -> int:
     ids = [r.get("id") for r in reqs]
     if len(ids) != len(set(ids)):
         ng.append("要件の id が重複している")
+    # ★番人＝json に在るのに生成器が1文字も読まない欄が無いこと（2026-08-08 新設・KNOWN_KEYS の説明を参照）
+    for r in reqs:
+        unknown = sorted(set(r.keys()) - KNOWN_KEYS)
+        if unknown:
+            ng.append(f"{r.get('id', '?')} に、生成器が読まない欄がある: {unknown}"
+                      "＝その中身は文書に1文字も出ない。欄の名前を揃えるか、build() と KNOWN_KEYS の両方に足すこと")
     if len(d.get("purpose") or []) < 2:
         ng.append("目的が2項目そろっていない（まこさん確定 2026-07-27 は2項目）")
     for need in ("組み合わせロジックを見つけ", "改善すべき点を見つけ", "利益最大化、損失最小化するまで調整する"):

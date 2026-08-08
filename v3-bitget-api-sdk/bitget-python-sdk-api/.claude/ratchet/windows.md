@@ -1,4 +1,4 @@
-<!-- WINDOWS_DOC_HASH=d56db470ac158e65 -->
+<!-- WINDOWS_DOC_HASH=b305d78804e69763 -->
 # windows.md — 検証に使う期間の正本（gen_windows.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。数値は `scripts/priority_rebuild/periods.py` から
@@ -101,7 +101,6 @@ periods.py の1つだけにして、読む文書はそこから機械で作る�
 
 ## この表が差し込まれている文書
 
-- [cat_requirements.md](../rules/cat_requirements.md) … 要件定義書＝大本。期間の原則を書く場所
 - [acceptance_checklist.md](../rules/acceptance_checklist.md) … acceptance を書くときの照合リスト（H8）
 - [adopted_strategies.md](../ratchet/adopted_strategies.md) … 採用ポートフォリオ台帳（どの窓で測った net か）
 - [entry_exit_matrix.md](../ratchet/entry_exit_matrix.md) … Entry×Exit 網羅マトリクス（層3 探索の窓）

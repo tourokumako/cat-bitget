@@ -47,7 +47,11 @@ END = "<!-- WINDOWS_END -->"
 
 # 差し込み先（この一覧が対象の正本・足すときはここへ1行）
 TARGETS = [
-    (RULES / "cat_requirements.md", "要件定義書＝大本。期間の原則を書く場所"),
+    # ★cat_requirements.md は 2026-08-08 に差し込み先から外した。
+    #   理由＝同ファイルは gen_cat_requirements.py が json から全文を作る形になったため、
+    #   2つの生成器が同じファイルを書き合って片方が片方を消す状態だった。
+    #   期間の表の中身は gen_cat_requirements.py が gen_windows.block() を呼んで差し込む
+    #   ＝periods.py が正本であることは変わらない（H8・SSOT）。
     (RULES / "acceptance_checklist.md", "acceptance を書くときの照合リスト（H8）"),
     (RATCHET / "adopted_strategies.md", "採用ポートフォリオ台帳（どの窓で測った net か）"),
     (RATCHET / "entry_exit_matrix.md", "Entry×Exit 網羅マトリクス（層3 探索の窓）"),
