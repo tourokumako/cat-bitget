@@ -154,7 +154,15 @@ def expand_rules(s: dict) -> dict:
 
 # ── 3. ヌケモレを機械で止める ─────────────────────────────────────────────
 def check_coverage(rules: dict) -> list:
-    """3つの検査。漏れが在れば止める（fail-closed）。戻り値＝報告の行。"""
+    """検査。戻り値＝報告の行。
+
+    ★2026-08-08 まこさん指示（逐語「なに勝手に決めてる？すぐに修正して」）で直した。
+      直す前は、CC が記事の一般論から作った限定（役目ごとの系統・時間足の層・合図の弱点・型ごとの
+      合図）を fail-closed で強制していた。その限定が ゴールデンクロス・MACD のクロス・RCI のクロス・
+      15分足の ADX・条件5〜10本 を潰していた。
+      いまは「まこさんが決めた制約」と「実データで測るもの」だけを止める理由にし、
+      CC の判断（元ファイルの 機械が強制するか=false）は ⚠️ の報告に落とす（止めない）。
+    """
     report = []
     lineage = rules["lineage_of"]
     kinds = sorted(set(lineage.values()))
@@ -166,7 +174,8 @@ def check_coverage(rules: dict) -> list:
             assigned.add(k)
     missing = [k for k in kinds if k not in assigned]
     if missing:
-        raise RuleError(f"[ヌケモレ検査1] どの役目にも割り当てられていない系統: {missing}")
+        report.append(f"⚠️ 検査1 どの役目にも割り当てられていない系統: {missing}"
+                      f"（★役目ごとの系統の割り当ては CC の判断＝機械は強制しない）")
     report.append(f"検査1 系統 {len(kinds)} 種すべてが役目に割り当て済み（{'／'.join(kinds)}）")
     # 部品がまだ無い系統は、止めずに報告する（次の段で足す）
     未実装 = [k for k in sorted(assigned) if k not in kinds]
@@ -179,7 +188,8 @@ def check_coverage(rules: dict) -> list:
     all_tfs = sorted({c["tf"] for r in rules["roles"] for c in (r.get("候補") or [])})
     miss_tf = [t for t in all_tfs if t not in covered]
     if miss_tf:
-        raise RuleError(f"[ヌケモレ検査2] 層に割り当てられていない時間足: {miss_tf}")
+        report.append(f"⚠️ 検査2 層に割り当てられていない時間足: {miss_tf}"
+                      f"（★時間足の層の割り当ては CC の判断＝機械は強制しない）")
     report.append(f"検査2 時間足 {len(covered)} 本すべてが層に割り当て済み"
                   f"（下位 {len(layers['下位'])}／上位 {len(layers['上位'])}）")
 
@@ -194,7 +204,8 @@ def check_coverage(rules: dict) -> list:
     # 検査4: 合図の型ごとに、ふるいが確かめることが在るか（fail-closed）
     for w in rules["trigger_weakness"]:
         if not w.get("ふるいが確かめること") or not w.get("ふるいの系統"):
-            raise RuleError(f"[ヌケモレ検査4] 合図の型 {w['id']} に、ふるいの指定が無い")
+            report.append(f"⚠️ 検査4 合図の型 {w['id']} に、ふるいの指定が無い"
+                          f"（★ふるいを必須にするのは CC の判断＝機械は強制しない）")
     report.append(f"検査4 合図の型 {len(rules['trigger_weakness'])} 種すべてに、ふるいの指定が在る")
 
     # 検査5: 型ごとに使える合図の型が在るか。無い型は生成不可として記録する（fail-closed）
@@ -204,15 +215,17 @@ def check_coverage(rules: dict) -> list:
         trigs = f.get("使える合図の型") or []
         unknown = [t for t in trigs if t not in known]
         if unknown:
-            raise RuleError(f"[ヌケモレ検査5] 型 {f['型']} が、弱点の表に無い合図の型を指している: {unknown}")
+            report.append(f"⚠️ 検査5 型 {f['型']} が、弱点の表に無い合図の型を指している: {unknown}"
+                          f"（★型ごとの合図の限定は CC の判断＝機械は強制しない）")
         if trigs:
             ok_fams.append(f["型"])
         else:
             if not f.get("生成不可の理由"):
-                raise RuleError(f"[ヌケモレ検査5] 型 {f['型']} に合図の型も、生成不可の理由も無い")
+                report.append(f"⚠️ 検査5 型 {f['型']} に合図の型も、生成不可の理由も無い")
             ng_fams.append(f["型"])
     if not ok_fams:
-        raise RuleError("[ヌケモレ検査5] 組み立てられる型が1つも無い（全部の型で合図の型が空）")
+        report.append("⚠️ 検査5 組み立てられる型が1つも無い"
+                      "（★型ごとの合図の限定は CC の判断＝機械は強制しない。実データと net で決める）")
     report.append(f"検査5 型 {len(rules['family_trigger'])} 種のうち、組み立てられるのは {len(ok_fams)} 種"
                   f"（{'／'.join(ok_fams)}）。組み立てられない {len(ng_fams)} 種は理由つきで記録"
                   f"（{'／'.join(ng_fams)}）")
@@ -248,7 +261,27 @@ def write_outputs(rules: dict, report: list) -> tuple[str, str]:
              f"手で書いた行は recipes/composition_rules_src.json の "
              f"{json.loads(src_path.read_text())['_手で書いた行数']} 件だけ。"
              "部品・時間足・使えない部品・向きの決まり・格子は正本から機械で引いた。", "",
-             "## ヌケモレ検査", ""]
+             "## ★この決まりのうち、機械が強制するのはどれか（2026-08-08 まこさん指示で仕分けた）", ""]
+    src_all = json.loads(src_path.read_text())
+    graded = []
+    for k, v in src_all.items():
+        for x in (v if isinstance(v, list) else [v]):
+            if isinstance(x, dict) and "仕分け" in x:
+                graded.append(x)
+    enf = [x for x in graded if x.get("機械が強制するか")]
+    ref = [x for x in graded if not x.get("機械が強制するか")]
+    lines += [f"**全 {len(graded)} 件のうち、機械が強制するのは {len(enf)} 件。"
+              f"残り {len(ref)} 件は CC が記事の一般論から作った判断なので、機械は強制しない（参考の知識）。**", "",
+              src_all.get("_仕分け", ""), "",
+              "| 決まり | 仕分け | 機械が強制するか | 仕分けの理由 |", "|---|---|---|---|"]
+    for x in graded:
+        nm = str(x.get("決まり") or x.get("name") or x.get("id"))[:44]
+        lines.append(f"| {x['id']} {nm} | {x['仕分け'][:1]} | "
+                     f"{'**する**' if x.get('機械が強制するか') else '**しない**'} | {x.get('仕分けの理由','')} |")
+    lines += ["", "> ⚠️ 下に並ぶ候補の数（93／340／654）は、**機械が強制しない限定を掛けた後の数**です。"
+              "engine_tuner は この限定で候補を狭めません。狭めるのは実データの重なり（RD-2）と、"
+              "実際に走らせた net です。", "",
+              "## ヌケモレ検査", ""]
     lines += [f"- {r}" for r in report]
     lines += ["", "## 役目（条件は必ずどれかの役目を持つ）", "",
               "| 役目 | 何をするか | 使える系統 | 時間足の層 | 本数 | 候補の数 |", "|---|---|---|---|---|---|"]
@@ -351,14 +384,14 @@ def selftest() -> int:
                 r["使える系統"] = [k for k in r["使える系統"] if k != "出来高"]
         return d
     if not _mutated(_drop_kind):
-        ng.append("T2: 系統『出来高』をどの役目にも割り当てなくても止まらない")
+        pass  # T2 は 2026-08-08 に役目を失った（役目ごとの系統の割り当ては CC の判断＝強制しない）
 
     # T3 時間足を層に割り当てないと止まる
     def _drop_tf(d):
         d["timeframe_layers"]["上位"] = [t for t in d["timeframe_layers"]["上位"] if t != "1d"]
         return d
     if not _mutated(_drop_tf):
-        ng.append("T3: 時間足『1d』を層に割り当てなくても止まらない")
+        pass  # T3 同上（時間足の層は CC の判断）
 
     # T4 答える問いを消すと止まる
     def _drop_q(d):
@@ -372,7 +405,7 @@ def selftest() -> int:
         d["trigger_weakness"][0]["ふるいの系統"] = []
         return d
     if not _mutated(_drop_w):
-        ng.append("T5: 合図の型の『ふるいの系統』を空にしても止まらない")
+        pass  # T5 同上（ふるいを必須にするのは CC の判断）
 
     # T6 正本の指紋のずれを検出する（記録を偽の値にして verify が鳴るか）
     if out_json.exists():
@@ -398,7 +431,7 @@ def selftest() -> int:
         d["family_trigger"][0]["使える合図の型"] = ["存在しない合図"]
         return d
     if not _mutated(_bad_trig):
-        ng.append("T8: 弱点の表に無い合図の型を指しても止まらない")
+        pass  # T8 同上（型ごとの合図の限定は CC の判断）
 
     # T9 全部の型で合図の型が空だと止まる（組み立てられる型がゼロ）
     def _no_trig(d):
@@ -407,10 +440,31 @@ def selftest() -> int:
             f.setdefault("生成不可の理由", "番人")
         return d
     if not _mutated(_no_trig):
-        ng.append("T9: 組み立てられる型が1つも無くても止まらない")
+        pass  # T9 同上（型ごとの合図の限定は CC の判断）
 
     for x in ng:
         print(f"  ❌ {x}")
+
+    # T10（2026-08-08 新設）＝仕分けが勝手に戻されていないか。
+    #   まこさん指示で「CC が記事から作った判断」を機械の強制から外した。次の CC が
+    #   機械が強制するか を true に戻したら、また ゴールデンクロス等を潰す。だから止める。
+    import json as _json
+    _src = _json.loads(src_path.read_text())
+    _graded = []
+    for _k, _v in _src.items():
+        for _x in (_v if isinstance(_v, list) else [_v]):
+            if isinstance(_x, dict) and "仕分け" in _x:
+                _graded.append(_x)
+    _enf = [x for x in _graded if x.get("機械が強制するか")]
+    if len(_graded) != 23:
+        ng.append(f"T10: 仕分け済みの決まりが 23 件でない（{len(_graded)} 件）")
+    if len(_enf) != 2:
+        ng.append(f"T10: 機械が強制する決まりが 2 件でない（{len(_enf)} 件）"
+                  "＝CC の判断が強制に戻された疑い。まこさんの確認なしに戻さない")
+    _ids = {x["id"] for x in _enf}
+    if _ids != {"Q-1", "RD-2"}:
+        ng.append(f"T10: 機械が強制する決まりの中身が変わった（{sorted(_ids)}）")
+
     print(f"[番人] {'✅ 全部 pass（T1〜T9）' if not ng else f'❌ {len(ng)} 件'}")
     return 1 if ng else 0
 
