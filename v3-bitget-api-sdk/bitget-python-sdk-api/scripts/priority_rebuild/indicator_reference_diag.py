@@ -1088,6 +1088,1611 @@ _r(r"S-Rタッチ数\((\d+),([\d.]+)\)", "S-Rタッチ数",
                      [(-1, 3.0, 1e-9)])])
 
 
+# ══ 業界の指標（pandas-ta 由来）の独立実装＝照合の相手（2026-08-09・フロー 段6-1・1回目）══
+# ★何のために要るか
+#   材料カタログ側は pandas-ta が計算する。だから pandas-ta で照合しても「同じもの同士」の
+#   突き合わせになり、照合にならない。ここに教科書の式を独立に書いて、照合の相手にする。
+# ★書き方の決まり
+#   ①出典（下の各登録の「流儀」に書いた URL・ライブラリの説明文から機械で取った）の式で書く。
+#   ②引数の既定（どの平均を使うか等）は実物を確認して合わせる。食い違ったら、どちらが正しいかを
+#     調べて記録する。★許容差をゆるめて通すことはしない。
+#   ③ここに書けなかったものは tb=None のままにして、「照合の相手が居ない件数」として機械が数える
+#     （黙って通さない＝段3 で「私が書いた式だけで担保 3件 → 0件」にしたのと同じ考え方）。
+
+def _lin(x: np.ndarray, n: int, what: str):
+    """窓 n の直線あてはめ。what='tsf'＝1本先の予測値 ／ 'r'＝当てはまりの相関。"""
+    out = np.full(len(x), np.nan)
+    if len(x) < n:
+        return out
+    w = _swv(x, n)
+    t = np.arange(n, dtype=float)
+    tm = t.mean()
+    stt = ((t - tm) ** 2).sum()
+    ym = w.mean(axis=1)
+    b = ((w - ym[:, None]) * (t - tm)).sum(axis=1) / stt
+    if what == "tsf":
+        out[n - 1:] = (ym - b * tm) + b * n
+    else:
+        syy = ((w - ym[:, None]) ** 2).sum(axis=1)
+        out[n - 1:] = np.where(syy > 0, b * np.sqrt(stt / np.where(syy == 0, np.nan, syy)), np.nan)
+    return out
+
+
+def _rma(x: np.ndarray, n: int) -> np.ndarray:
+    """RMA（alpha=1/n の指数平滑）。Wilder 平滑の別の種の取り方＝ライブラリの既定。"""
+    out = np.full(len(x), np.nan)
+    a = 1.0 / n
+    prev = np.nan
+    for i in range(len(x)):
+        if np.isnan(x[i]):
+            continue
+        prev = x[i] if np.isnan(prev) else a * x[i] + (1 - a) * prev
+        out[i] = prev
+    return out
+
+
+def _wma(x: np.ndarray, n: int) -> np.ndarray:
+    out = np.full(len(x), np.nan)
+    if len(x) >= n:
+        w = np.arange(1, n + 1, dtype=float)
+        out[n - 1:] = (_swv(x, n) * w).sum(axis=1) / w.sum()
+    return out
+
+
+def _tb_ao(d, p):
+    m = ((d.high + d.low) / 2).to_numpy(float)
+    return _S(_roll(m, int(p[0]), "mean") - _roll(m, int(p[1]), "mean"), d) / d.close * 100
+
+
+def _tb_apo(d, p):
+    c = d.close.to_numpy(float)
+    return _S(_roll(c, int(p[0]), "mean") - _roll(c, int(p[1]), "mean"), d) / d.close * 100
+
+
+def _tb_bias(d, p):
+    c = d.close.to_numpy(float)
+    return _S(_div(c, _roll(c, int(p[0]), "mean")) - 1.0, d)
+
+
+def _tb_bop(d, p):
+    return (d.close - d.open) / (d.high - d.low).replace(0, np.nan)
+
+
+def _tb_ar(d, p):
+    n = int(p[0])
+    return _S(100.0 * _div(_roll((d.high - d.open).to_numpy(float), n, "sum"),
+                           _roll((d.open - d.low).to_numpy(float), n, "sum")), d)
+
+
+def _tb_br(d, p):
+    n = int(p[0])
+    pc = d.close.shift()
+    return _S(100.0 * _div(_roll((d.high - pc).clip(lower=0).to_numpy(float), n, "sum"),
+                           _roll((pc - d.low).clip(lower=0).to_numpy(float), n, "sum")), d)
+
+
+def _tb_cci(d, p):
+    n = int(p[0])
+    tp = ((d.high + d.low + d.close) / 3).to_numpy(float)
+    mad = np.full(len(tp), np.nan)
+    if len(tp) >= n:
+        w = _swv(tp, n)
+        mad[n - 1:] = np.abs(w - w.mean(axis=1, keepdims=True)).mean(axis=1)
+    return _S(_div(tp - _roll(tp, n, "mean"), 0.015 * mad), d)
+
+
+def _tb_cfo(d, p):
+    c = d.close.to_numpy(float)
+    return _S(100.0 * _div(c - _lin(c, int(p[0]), "tsf"), c), d)
+
+
+def _tb_cg(d, p):
+    n = int(p[0])
+    c = d.close.to_numpy(float)
+    out = np.full(len(c), np.nan)
+    if len(c) >= n:
+        w = _swv(c, n)
+        coef = np.arange(n, 0, -1, dtype=float)     # 古い足ほど重い（Ehlers）
+        out[n - 1:] = -(w * coef).sum(axis=1) / np.where(w.sum(axis=1) == 0, np.nan, w.sum(axis=1))
+    return _S(out, d)
+
+
+def _tb_cmo(d, p):
+    n = int(p[0])
+    m = d.close.diff()
+    up = _roll(m.clip(lower=0).to_numpy(float), n, "sum")
+    dn = _roll((-m.clip(upper=0)).to_numpy(float), n, "sum")
+    return _S(100.0 * _div(up - dn, up + dn), d)
+
+
+def _tb_copc(d, p):
+    lg, f_, s_ = int(p[0]), int(p[1]), int(p[2])
+    r = (d.close.pct_change(f_) * 100 + d.close.pct_change(s_) * 100).to_numpy(float)
+    return _S(_wma(r, lg), d)
+
+
+def _tb_cti(d, p):
+    return _S(_lin(d.close.to_numpy(float), int(p[0]), "r"), d)
+
+
+def _wilder_cum(x: np.ndarray, n: int) -> np.ndarray:
+    """Wilder の累積平滑（★平均に割らない・TA-Lib の PLUS_DM/MINUS_DM と同じ）。
+    種＝[1:n] の合計。以後 value = value − value/n + 今の値。欠損の足は前の値を持ち越す。"""
+    out = np.full(len(x), np.nan)
+    if len(x) < n:
+        return out
+    v = float(np.nansum(x[1:n]))
+    out[n - 1] = v
+    for i in range(n, len(x)):
+        if np.isnan(x[i]):
+            out[i] = v
+        else:
+            v = v - v / n + x[i]
+            out[i] = v
+    return out
+
+
+def _dm_parts(d, n):
+    up = d.high.diff()
+    dn = -d.low.diff()
+    pos = np.where((up > dn) & (up > 0), up, 0.0)
+    neg = np.where((dn > up) & (dn > 0), dn, 0.0)
+    return _wilder_cum(pos, n), _wilder_cum(neg, n)
+
+
+def _tb_dmp(d, p):
+    return _S(_dm_parts(d, int(p[0]))[0], d) / d.close * 100
+
+
+def _tb_dmn(d, p):
+    return _S(_dm_parts(d, int(p[0]))[1], d) / d.close * 100
+
+
+def _tb_er(d, p):
+    n = int(p[0])
+    c = d.close.to_numpy(float)
+    return _S(_div(np.abs(_S(c, d).diff(n).to_numpy(float)),
+                   _roll(np.abs(_S(c, d).diff().to_numpy(float)), n, "sum")), d)
+
+
+def _tb_eri_bull(d, p):
+    return _S(d.high.to_numpy(float) - _ema_rec(d.close.to_numpy(float), int(p[0])), d) / d.close * 100
+
+
+def _tb_eri_bear(d, p):
+    return _S(d.low.to_numpy(float) - _ema_rec(d.close.to_numpy(float), int(p[0])), d) / d.close * 100
+
+
+def _fisher_core(d, n):
+    m = ((d.high + d.low) / 2).to_numpy(float)
+    hh, ll = _roll(m, n, "max"), _roll(m, n, "min")
+    rng = hh - ll
+    rng = np.where(rng < 0.001, 0.001, rng)      # 幅の下限（0 割りを避ける教科書の流儀）
+    pos = (m - ll) / rng - 0.5
+    out = np.full(len(m), np.nan)
+    if len(m) < n:
+        return out
+    out[n - 1] = 0.0                             # 種は 0
+    v = 0.0
+    for i in range(n, len(m)):
+        v = 0.66 * pos[i] + 0.67 * v
+        if v < -0.99:                            # ★±0.99 を超えたら ±0.999 に飛ばす（頭打ちでない）
+            v = -0.999
+        elif v > 0.99:
+            v = 0.999
+        out[i] = 0.5 * (np.log((1 + v) / (1 - v)) + out[i - 1])
+    return out
+
+
+def _tb_fisher(d, p):
+    return _S(_fisher_core(d, int(p[0])), d)
+
+
+def _tb_fisher_sig(d, p):
+    return _S(_fisher_core(d, int(p[0])), d).shift(int(p[1]))
+
+
+def _kdj_parts(d, n, g):
+    hh, ll = _roll(d.high.to_numpy(float), n, "max"), _roll(d.low.to_numpy(float), n, "min")
+    rsv = 100.0 * _div(d.close.to_numpy(float) - ll, hh - ll)
+    k = _rma(rsv, g)
+    return k, _rma(k, g)
+
+
+def _tb_kdj_k(d, p):
+    return _S(_kdj_parts(d, int(p[0]), int(p[1]))[0], d)
+
+
+def _tb_kdj_d(d, p):
+    return _S(_kdj_parts(d, int(p[0]), int(p[1]))[1], d)
+
+
+def _tb_kdj_j(d, p):
+    k, dd = _kdj_parts(d, int(p[0]), int(p[1]))
+    return _S(3 * k - 2 * dd, d)
+
+
+_KST_ROC = (10, 15, 20, 30)
+_KST_SMA = (10, 10, 10, 15)
+
+
+def _kst_core(d):
+    tot = 0.0
+    for w, (r_, s_) in enumerate(zip(_KST_ROC, _KST_SMA), start=1):
+        tot = tot + w * _S(_roll((d.close.pct_change(r_) * 100).to_numpy(float), s_, "mean"), d)
+    return 100.0 * tot
+
+
+def _tb_kst(d, p):
+    return _kst_core(d)
+
+
+def _tb_kst_sig(d, p):
+    return _S(_roll(_kst_core(d).to_numpy(float), int(p[0]), "mean"), d)
+
+
+def _tb_lrsi(d, p):
+    g = float(p[0])                                  # ★引数は gamma だけ（本数は計算に効かない）
+    c = d.close.to_numpy(float)
+    out = np.full(len(c), np.nan)
+    l0 = l1 = l2 = l3 = 0.0
+    for i in range(len(c)):
+        p0, p1, p2, p3 = l0, l1, l2, l3
+        l0 = (1 - g) * c[i] + g * p0
+        l1 = -g * l0 + p0 + g * p1
+        l2 = -g * l1 + p1 + g * p2
+        l3 = -g * l2 + p2 + g * p3
+        cu = max(l0 - l1, 0) + max(l1 - l2, 0) + max(l2 - l3, 0)
+        cd = max(l1 - l0, 0) + max(l2 - l1, 0) + max(l3 - l2, 0)
+        out[i] = 100.0 * cu / (cu + cd if (cu + cd) != 0 else 1.0)   # ★0〜100（0〜1 ではない）
+    return _S(out, d)
+
+
+# ── 2回目（アルファベット順 macdext〜stc）の独立実装 ──────────────────────
+def _rma_seed(x: np.ndarray, n: int) -> np.ndarray:
+    """RMA（種＝最初の n 本の単純平均・以後 alpha=1/n）＝ライブラリの既定。"""
+    out = np.full(len(x), np.nan)
+    idx = np.where(~np.isnan(x))[0]
+    if len(idx) < n:
+        return out
+    s = idx[0]
+    v = float(np.nanmean(x[s:s + n]))
+    out[s + n - 1] = v
+    a = 1.0 / n
+    for i in range(s + n, len(x)):
+        if np.isnan(x[i]):
+            continue
+        v = a * x[i] + (1 - a) * v
+        out[i] = v
+    return out
+
+
+def _ema_seed(x: np.ndarray, n: int) -> np.ndarray:
+    """EMA（種＝最初の n 本の単純平均・alpha=2/(n+1)）＝ライブラリの既定。"""
+    out = np.full(len(x), np.nan)
+    idx = np.where(~np.isnan(x))[0]
+    if len(idx) < n:
+        return out
+    s = idx[0]
+    v = float(np.nanmean(x[s:s + n]))
+    out[s + n - 1] = v
+    a = 2.0 / (n + 1)
+    for i in range(s + n, len(x)):
+        if np.isnan(x[i]):
+            continue
+        v = a * x[i] + (1 - a) * v
+        out[i] = v
+    return out
+
+
+def _lin_end(x: np.ndarray, n: int) -> np.ndarray:
+    """窓 n の直線あてはめの、いまの足の上の値（1本先へ伸ばさない）。"""
+    out = np.full(len(x), np.nan)
+    if len(x) < n:
+        return out
+    w = _swv(x, n)
+    t = np.arange(n, dtype=float)
+    tm = t.mean()
+    stt = ((t - tm) ** 2).sum()
+    ym = w.mean(axis=1)
+    b = ((w - ym[:, None]) * (t - tm)).sum(axis=1) / stt
+    out[n - 1:] = (ym - b * tm) + b * (n - 1)
+    return out
+
+
+def _swma(x: np.ndarray, n: int) -> np.ndarray:
+    """対称三角の加重移動平均（n=4 なら 1,2,2,1 を6で割る）。"""
+    out = np.full(len(x), np.nan)
+    if len(x) < n:
+        return out
+    half = (n + 1) // 2
+    w = np.r_[np.arange(1, half + 1, dtype=float),
+              np.arange(half - (1 if n % 2 else 0), 0, -1, dtype=float)]
+    w = w / w.sum()
+    out[n - 1:] = (_swv(x, n) * w).sum(axis=1)
+    return out
+
+
+def _tb_mom(d, p):
+    return d.close.diff(int(p[0])) / d.close * 100
+
+
+def _tb_pgo(d, p):
+    n = int(p[0])
+    c = d.close.to_numpy(float)
+    tr = _tr(d.high.to_numpy(float), d.low.to_numpy(float), c)
+    return _S(_div(c - _roll(c, n, "mean"), _ema_seed(_rma_seed(tr, n), n)), d)
+
+
+def _tb_po(d, p):
+    c = d.close.to_numpy(float)
+    lr = _lin_end(c, int(p[0]))
+    return _S(100.0 * _div(c - lr, lr), d)
+
+
+def _tb_psl(d, p):
+    n = int(p[0])
+    up = (np.sign(d.close.diff().fillna(0).to_numpy(float)) > 0).astype(float)
+    return _S(100.0 * _roll(up, n, "sum") / n, d)
+
+
+def _ppo_parts(d, f_, s_, g_):
+    c = d.close.to_numpy(float)
+    mf, ms = _roll(c, f_, "mean"), _roll(c, s_, "mean")     # ★平均は単純移動平均（ライブラリの既定）
+    ppo = 100.0 * _div(mf - ms, ms)
+    sig = _ema_seed(ppo, g_)
+    return ppo, sig, ppo - sig
+
+
+def _tb_ppo(d, p):
+    return _S(_ppo_parts(d, int(p[0]), int(p[1]), int(p[2]))[0], d)
+
+
+def _tb_ppo_s(d, p):
+    return _S(_ppo_parts(d, int(p[0]), int(p[1]), int(p[2]))[1], d)
+
+
+def _tb_ppo_h(d, p):
+    return _S(_ppo_parts(d, int(p[0]), int(p[1]), int(p[2]))[2], d)
+
+
+def _pvo_parts(d, f_, s_, g_):
+    v = d.volume.to_numpy(float)
+    mf, ms = _ema_seed(v, f_), _ema_seed(v, s_)             # ★出来高の EMA
+    pvo = 100.0 * _div(mf - ms, ms)
+    sig = _ema_seed(pvo, g_)
+    return pvo, sig, pvo - sig
+
+
+def _tb_pvo(d, p):
+    return _S(_pvo_parts(d, int(p[0]), int(p[1]), int(p[2]))[0], d)
+
+
+def _tb_pvo_s(d, p):
+    return _S(_pvo_parts(d, int(p[0]), int(p[1]), int(p[2]))[1], d)
+
+
+def _tb_pvo_h(d, p):
+    return _S(_pvo_parts(d, int(p[0]), int(p[1]), int(p[2]))[2], d)
+
+
+def _rvgi_parts(d, n, sw):
+    co = (d.close - d.open).to_numpy(float)
+    hl = (d.high - d.low).to_numpy(float)
+    num = _roll(_swma(co, sw), n, "sum")
+    den = _roll(_swma(hl, sw), n, "sum")
+    r = _div(num, den)
+    sig = _swma(r, sw)
+    return r, sig, r - sig
+
+
+def _tb_rvgi(d, p):
+    return _S(_rvgi_parts(d, int(p[0]), int(p[1]))[0], d)
+
+
+def _tb_rvgi_s(d, p):
+    return _S(_rvgi_parts(d, int(p[0]), int(p[1]))[1], d)
+
+
+def _tb_rvgi_h(d, p):
+    return _S(_rvgi_parts(d, int(p[0]), int(p[1]))[2], d)
+
+
+# ── 3回目（アルファベット順 stochf〜willr）の独立実装 ──────────────────────
+def _stochrsi_parts(d, n, rl, k_, d_):
+    r = _tb_rsi(d, (rl,)).to_numpy(float)
+    lo, hi = _roll(r, n, "min"), _roll(r, n, "max")
+    st = 100.0 * _div(r - lo, hi - lo)
+    kk = _roll(st, k_, "mean")
+    return kk, _roll(kk, d_, "mean")
+
+
+def _tb_stochrsi_k(d, p):
+    return _S(_stochrsi_parts(d, int(p[0]), int(p[0]), 3, 3)[0], d)
+
+
+def _tb_stochrsi_d(d, p):
+    return _S(_stochrsi_parts(d, int(p[0]), int(p[0]), 3, 3)[1], d)
+
+
+def _trix_parts(d, n, g):
+    c = d.close.to_numpy(float)
+    e3 = _ema_seed(_ema_seed(_ema_seed(c, n), n), n)
+    tx = 100.0 * (_S(e3, d).pct_change(1).to_numpy(float))     # ★scalar は 100
+    sig = _roll(tx, g, "mean")                                  # ★シグナルは単純移動平均
+    return tx, sig, tx - sig
+
+
+def _tb_trix(d, p):
+    return _S(_trix_parts(d, int(p[0]), int(p[1]))[0], d)
+
+
+def _tb_trix_s(d, p):
+    return _S(_trix_parts(d, int(p[0]), int(p[1]))[1], d)
+
+
+def _tb_trix_h(d, p):
+    return _S(_trix_parts(d, int(p[0]), int(p[1]))[2], d)
+
+
+def _tsi_parts(d, f_, s_, g_):
+    dif = d.close.diff().to_numpy(float)
+    num = _ema_seed(_ema_seed(dif, s_), f_)
+    den = _ema_seed(_ema_seed(np.abs(dif), s_), f_)
+    tsi = 100.0 * _div(num, den)
+    sig = _ema_seed(tsi, g_)
+    return tsi, sig, tsi - sig
+
+
+def _tb_tsi(d, p):
+    return _S(_tsi_parts(d, int(p[0]), int(p[1]), int(p[2]))[0], d)
+
+
+def _tb_tsi_s(d, p):
+    return _S(_tsi_parts(d, int(p[0]), int(p[1]), int(p[2]))[1], d)
+
+
+def _tb_tsi_h(d, p):
+    return _S(_tsi_parts(d, int(p[0]), int(p[1]), int(p[2]))[2], d)
+
+
+def _vwma(c: np.ndarray, v: np.ndarray, n: int) -> np.ndarray:
+    return _div(_roll(c * v, n, "sum"), _roll(v, n, "sum"))
+
+
+def _vwmacd_parts(d, f_, s_, g_):
+    c, v = d.close.to_numpy(float), d.volume.to_numpy(float)
+    m = _vwma(c, v, f_) - _vwma(c, v, s_)
+    sig = _vwma(m, v, g_)
+    return m, sig, m - sig
+
+
+def _tb_vwmacd(d, p):
+    return _S(_vwmacd_parts(d, int(p[0]), int(p[1]), int(p[2]))[0], d) / d.close * 100
+
+
+def _tb_vwmacd_s(d, p):
+    return _S(_vwmacd_parts(d, int(p[0]), int(p[1]), int(p[2]))[1], d) / d.close * 100
+
+
+def _tb_vwmacd_h(d, p):
+    return _S(_vwmacd_parts(d, int(p[0]), int(p[1]), int(p[2]))[2], d) / d.close * 100
+
+
+def _ext_uo(d, p):
+    # ★名前に数字を持たない列なので、長さはライブラリの既定（7/14/28）をそのまま使う
+    return _ta.momentum.UltimateOscillator(
+        d.high, d.low, d.close, 7, 14, 28).ultimate_oscillator()
+
+
+
+# ── overlap（移動平均の仲間・1回目 alma〜linregangle）の独立実装 ─────────────
+def _wma_w(x: np.ndarray, w: np.ndarray) -> np.ndarray:
+    n = len(w)
+    out = np.full(len(x), np.nan)
+    if len(x) >= n:
+        out[n - 1:] = (_swv(x, n) * (w / w.sum())).sum(axis=1)
+    return out
+
+
+def _alma(c: np.ndarray, n: int, sigma: float = 6.0, off: float = 0.85) -> np.ndarray:
+    m = off * (n - 1)
+    s = n / sigma
+    i = np.arange(n, dtype=float)
+    # ★重みは逆順にしてから当てる（ライブラリの実物の逐語＝w_norm[::-1]）
+    return _wma_w(c, np.exp(-((i - m) ** 2) / (2 * s * s))[::-1])
+
+
+def _fib_w(n: int) -> np.ndarray:
+    f = [1.0, 1.0]
+    while len(f) < n:
+        f.append(f[-1] + f[-2])
+    return np.array(f[:n], dtype=float)
+
+
+def _hma(c: np.ndarray, n: int) -> np.ndarray:
+    h, r = int(n // 2), int(np.sqrt(n))
+    return _wma(2.0 * _wma(c, h) - _wma(c, n), r)
+
+
+def _kama(c: np.ndarray, n: int, fast: int = 2, slow: int = 30) -> np.ndarray:
+    ch = np.abs(_S(c, pd.DataFrame(index=range(len(c)))).diff(n).to_numpy(float))
+    vol = _roll(np.abs(np.r_[np.nan, np.diff(c)]), n, "sum")
+    er = _div(ch, vol)
+    sc = (er * (2.0 / (fast + 1) - 2.0 / (slow + 1)) + 2.0 / (slow + 1)) ** 2
+    out = np.full(len(c), np.nan)
+    v = np.nan
+    for i in range(len(c)):
+        if np.isnan(sc[i]):
+            continue
+        v = c[i] if np.isnan(v) else v + sc[i] * (c[i] - v)
+        out[i] = v
+    return out
+
+
+def _pos(ma: np.ndarray, d):
+    return (d.close / _S(ma, d) - 1.0) * 100.0
+
+
+def _slope(ma: np.ndarray, d):
+    return _S(ma, d).pct_change(5) * 100.0
+
+
+def _tb_pos_alma(d, p):
+    return _pos(_alma(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_alma(d, p):
+    return _slope(_alma(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _dema(c, n):
+    e = _ema_seed(c, n)
+    return 2.0 * e - _ema_seed(e, n)
+
+
+def _tb_pos_dema(d, p):
+    return _pos(_dema(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_dema(d, p):
+    return _slope(_dema(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_pos_fwma(d, p):
+    return _pos(_wma_w(d.close.to_numpy(float), _fib_w(int(p[0]))), d)
+
+
+def _tb_slp_fwma(d, p):
+    return _slope(_wma_w(d.close.to_numpy(float), _fib_w(int(p[0]))), d)
+
+
+def _tb_pos_hma(d, p):
+    return _pos(_hma(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_hma(d, p):
+    return _slope(_hma(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_pos_kama(d, p):
+    return _pos(_kama(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_kama(d, p):
+    return _slope(_kama(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_pos_linreg(d, p):
+    return _pos(_lin_end(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_linreg(d, p):
+    return _slope(_lin_end(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_lrangle(d, p):
+    n = int(p[0])
+    c = d.close.to_numpy(float)
+    b = (_lin_end(c, n) - _lin_end(c, n + 1)) * 0 + np.nan     # 置き換え（下で計算）
+    w = _swv(c, n) if len(c) >= n else None
+    out = np.full(len(c), np.nan)
+    if w is not None:
+        tt = np.arange(n, dtype=float)
+        tm = tt.mean()
+        stt = ((tt - tm) ** 2).sum()
+        ym = w.mean(axis=1)
+        sl = ((w - ym[:, None]) * (tt - tm)).sum(axis=1) / stt
+        out[n - 1:] = np.degrees(np.arctan(sl))
+    return _S(out, d)
+
+
+
+# ── overlap（2回目 linregintercept〜rma）の独立実装 ────────────────────────
+def _lin_b(x: np.ndarray, n: int) -> np.ndarray:
+    """窓 n の直線あてはめの切片（窓の先頭の位置での値）。"""
+    out = np.full(len(x), np.nan)
+    if len(x) < n:
+        return out
+    w = _swv(x, n)
+    tt = np.arange(n, dtype=float)
+    tm = tt.mean()
+    stt = ((tt - tm) ** 2).sum()
+    ym = w.mean(axis=1)
+    b = ((w - ym[:, None]) * (tt - tm)).sum(axis=1) / stt
+    out[n - 1:] = ym - b * tm
+    return out
+
+
+def _lin_m(x: np.ndarray, n: int) -> np.ndarray:
+    """窓 n の直線あてはめの傾き（1本あたりの値段の増え方）。"""
+    out = np.full(len(x), np.nan)
+    if len(x) < n:
+        return out
+    w = _swv(x, n)
+    tt = np.arange(n, dtype=float)
+    tm = tt.mean()
+    stt = ((tt - tm) ** 2).sum()
+    ym = w.mean(axis=1)
+    out[n - 1:] = ((w - ym[:, None]) * (tt - tm)).sum(axis=1) / stt
+    return out
+
+
+def _tb_pos_lrb(d, p):
+    return _pos(_lin_b(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_lrb(d, p):
+    return _slope(_lin_b(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_lrm(d, p):
+    return _S(_lin_m(d.close.to_numpy(float), int(p[0])), d) / d.close * 100
+
+
+def _mcgd(c: np.ndarray, n: int) -> np.ndarray:
+    out = np.full(len(c), np.nan)
+    md = np.nan
+    for i in range(len(c)):
+        if np.isnan(c[i]):
+            continue
+        if np.isnan(md):
+            md = c[i]
+        else:
+            md = md + (c[i] - md) / (n * (c[i] / md) ** 4)
+        out[i] = md
+    return out
+
+
+def _tb_pos_mcgd(d, p):
+    return _pos(_mcgd(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_mcgd(d, p):
+    return _slope(_mcgd(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _midpoint(c, n):
+    return 0.5 * (_roll(c, n, "min") + _roll(c, n, "max"))
+
+
+def _tb_pos_midpoint(d, p):
+    return _pos(_midpoint(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_midpoint(d, p):
+    return _slope(_midpoint(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _midprice(d, n):
+    return 0.5 * (_roll(d.low.to_numpy(float), n, "min") + _roll(d.high.to_numpy(float), n, "max"))
+
+
+def _tb_pos_midprice(d, p):
+    return _pos(_midprice(d, int(p[0])), d)
+
+
+def _tb_slp_midprice(d, p):
+    return _slope(_midprice(d, int(p[0])), d)
+
+
+def _pascal_w(n: int) -> np.ndarray:
+    w = np.ones(n, dtype=float)
+    for i in range(1, n):
+        w[i] = w[i - 1] * (n - i) / i
+    return w
+
+
+def _tb_pos_pwma(d, p):
+    return _pos(_wma_w(d.close.to_numpy(float), _pascal_w(int(p[0]))), d)
+
+
+def _tb_slp_pwma(d, p):
+    return _slope(_wma_w(d.close.to_numpy(float), _pascal_w(int(p[0]))), d)
+
+
+def _rainbow(c: np.ndarray, n: int, k: int) -> np.ndarray:
+    """単純移動平均を k 回 重ねがけしたもの（ライブラリの実物＝前の出力にまた掛ける）。"""
+    cur = c
+    for _ in range(k):
+        cur = _roll(cur, n, "mean")
+    return cur
+
+
+def _tb_pos_rainbow(d, p):
+    return _pos(_rainbow(d.close.to_numpy(float), 2, int(p[0])), d)
+
+
+def _tb_slp_rainbow(d, p):
+    return _slope(_rainbow(d.close.to_numpy(float), 2, int(p[0])), d)
+
+
+def _tb_pos_mmar(d, p):
+    return _pos(_ema_seed(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_mmar(d, p):
+    return _slope(_ema_seed(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_pos_rma(d, p):
+    return _pos(_rma_seed(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_rma(d, p):
+    return _slope(_rma_seed(d.close.to_numpy(float), int(p[0])), d)
+
+
+
+# ── overlap（3回目 sinwma〜zlma）の独立実装 ──────────────────────────────
+def _sinwma_w(n: int) -> np.ndarray:
+    return np.sin((np.arange(n, dtype=float) + 1) * np.pi / (n + 1))
+
+
+def _tb_pos_sinwma(d, p):
+    return _pos(_wma_w(d.close.to_numpy(float), _sinwma_w(int(p[0]))), d)
+
+
+def _tb_slp_sinwma(d, p):
+    return _slope(_wma_w(d.close.to_numpy(float), _sinwma_w(int(p[0]))), d)
+
+
+def _ssf2(c: np.ndarray, n: int) -> np.ndarray:
+    """Ehlers のスーパースムーザー（2極）。x=π√2/n の漸化式。"""
+    x = np.pi * np.sqrt(2.0) / n
+    a0 = np.exp(-x)
+    b0 = 2.0 * a0 * np.cos(x)
+    c2, c3 = b0, -a0 * a0
+    c1 = 1.0 - c2 - c3
+    out = c.astype(float).copy()
+    for i in range(2, len(c)):
+        out[i] = c1 * c[i] + c2 * out[i - 1] + c3 * out[i - 2]
+    return out
+
+
+def _tb_pos_ssf(d, p):
+    return _pos(_ssf2(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_ssf(d, p):
+    return _slope(_ssf2(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_pos_swma(d, p):
+    return _pos(_swma(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_swma(d, p):
+    return _slope(_swma(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _t3(c: np.ndarray, n: int, a: float = 0.7) -> np.ndarray:
+    c1 = -a * a ** 2
+    c2 = 3 * a ** 2 + 3 * a ** 3
+    c3 = -6 * a ** 2 - 3 * a - 3 * a ** 3
+    c4 = a ** 3 + 3 * a ** 2 + 3 * a + 1
+    e = c
+    es = []
+    for _ in range(6):
+        e = _ema_seed(e, n)
+        es.append(e)
+    return c1 * es[5] + c2 * es[4] + c3 * es[3] + c4 * es[2]
+
+
+def _tb_pos_t3(d, p):
+    return _pos(_t3(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_t3(d, p):
+    return _slope(_t3(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tema(c, n):
+    e1 = _ema_seed(c, n)
+    e2 = _ema_seed(e1, n)
+    return 3.0 * e1 - 3.0 * e2 + _ema_seed(e2, n)
+
+
+def _tb_pos_tema(d, p):
+    return _pos(_tema(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_tema(d, p):
+    return _slope(_tema(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _trima(c, n):
+    h = n // 2 + 1
+    return _roll(_roll(c, h, "mean"), h, "mean")
+
+
+def _tb_pos_trima(d, p):
+    return _pos(_trima(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_trima(d, p):
+    return _slope(_trima(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_pos_tsf(d, p):
+    return _pos(_lin(d.close.to_numpy(float), int(p[0]), "tsf"), d)
+
+
+def _tb_slp_tsf(d, p):
+    return _slope(_lin(d.close.to_numpy(float), int(p[0]), "tsf"), d)
+
+
+def _vidya(c: np.ndarray, n: int) -> np.ndarray:
+    a = 2.0 / (n + 1)
+    up = _roll(np.r_[np.nan, np.diff(c)].clip(min=0), n, "sum")
+    dn = _roll((-np.r_[np.nan, np.diff(c)]).clip(min=0), n, "sum")
+    k = np.abs(_div(up - dn, up + dn))              # |CMO| を 0〜1 で
+    out = np.full(len(c), np.nan)
+    if len(c) < n:
+        return out
+    out[n - 1] = float(np.nanmean(c[:n]))
+    for i in range(n, len(c)):
+        kk = 0.0 if np.isnan(k[i]) else k[i]
+        out[i] = a * kk * c[i] + (1 - a * kk) * out[i - 1]
+    return out
+
+
+def _tb_pos_vidya(d, p):
+    return _pos(_vidya(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_vidya(d, p):
+    return _slope(_vidya(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_pos_vwma(d, p):
+    return _pos(_vwma(d.close.to_numpy(float), d.volume.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_vwma(d, p):
+    return _slope(_vwma(d.close.to_numpy(float), d.volume.to_numpy(float), int(p[0])), d)
+
+
+def _tb_pos_wma(d, p):
+    return _pos(_wma(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _tb_slp_wma(d, p):
+    return _slope(_wma(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _zlma(d, n):
+    lag = int(0.5 * (n - 1))
+    return _ema_seed((2 * d.close - d.close.shift(lag)).to_numpy(float), n)
+
+
+def _tb_pos_zlma(d, p):
+    return _pos(_zlma(d, int(p[0])), d)
+
+
+def _tb_slp_zlma(d, p):
+    return _slope(_zlma(d, int(p[0])), d)
+
+
+
+# ── 残り16列の独立実装（2026-08-09・番人が「検証済みにならない列」で止めたので書いた）──
+def _tb_pos_hilo(d, p):
+    """Gann の高安切替線。終値が前の足の高値平均を上抜けたら安値平均へ、下抜けたら高値平均へ切り替える。"""
+    hm = _roll(d.high.to_numpy(float), 13, "mean")
+    lm = _roll(d.low.to_numpy(float), 21, "mean")
+    c = d.close.to_numpy(float)
+    out = np.full(len(c), np.nan)
+    cur = np.nan
+    for i in range(1, len(c)):
+        if not np.isnan(hm[i - 1]) and c[i] > hm[i - 1]:
+            cur = lm[i]
+        elif not np.isnan(lm[i - 1]) and c[i] < lm[i - 1]:
+            cur = hm[i]
+        out[i] = cur
+    return (d.close / _S(out, d) - 1.0) * 100.0
+
+
+def _tb_smc_sweep(d, p):
+    """流動性の刈り取り。直前 n 本の安値を一度 割ってから戻し、下ヒゲが実体より長い足を +1。"""
+    n, wm = 15, 1.5
+    sl = _S(_roll(d.low.to_numpy(float), n, "min"), d).shift(1)
+    sh = _S(_roll(d.high.to_numpy(float), n, "max"), d).shift(1)
+    body = (d.close - d.open).abs()
+    lw = pd.concat([d.open, d.close], axis=1).min(axis=1) - d.low
+    uw = d.high - pd.concat([d.open, d.close], axis=1).max(axis=1)
+    bull = ((d.low < sl) & (d.close > sl) & (d.close > d.open) & (lw > body * wm)).astype(float)
+    bear = ((d.high > sh) & (d.close < sh) & (d.close < d.open) & (uw > body * wm)).astype(float)
+    return bull - bear
+
+
+def _td_count(c: pd.Series, up: bool) -> pd.Series:
+    """4本前と比べて続いている本数を数える（Tom Demark の数え上げ）。
+    ★続いていない足は欠損にする。★数は 13 で止める（TD Sequential の標準＝1〜13）。
+    どちらも実物で確認した（2026-08-09＝13 を超えると ライブラリは 13 のまま）。"""
+    cond = (c > c.shift(4)) if up else (c < c.shift(4))
+    out = np.full(len(c), np.nan)
+    run = 0
+    a = cond.to_numpy()
+    for i in range(len(a)):
+        run = run + 1 if a[i] else 0
+        if run:
+            out[i] = float(min(run, 13))
+    return pd.Series(out, index=c.index)
+
+
+def _tb_td_up(d, p):
+    return _td_count(d.close, True)
+
+
+def _tb_td_dn(d, p):
+    return _td_count(d.close, False)
+
+
+def _bb_kc(d, bl=20, bs=2.0, kl=20, ks=1.5):
+    """★squeeze は mamode="sma" を渡すので、ケルトナーの中心も幅も単純移動平均（実物で確認）。"""
+    c = d.close.to_numpy(float)
+    mid = _roll(c, bl, "mean")
+    sd = _roll(c, bl, "std", ddof=0)
+    bu, blo = mid + bs * sd, mid - bs * sd
+    km = _roll(c, kl, "mean")
+    rng = _roll(_tr(d.high.to_numpy(float), d.low.to_numpy(float), c), kl, "mean")
+    return bu, blo, km + ks * rng, km - ks * rng
+
+
+def _tb_sqz_on(d, p):
+    bu, blo, ku, kl = _bb_kc(d)
+    return _S(((blo > kl) & (bu < ku)).astype(float), d)
+
+
+def _tb_sqz(d, p):
+    """スクイーズの勢い＝12本前との差を6本の単純移動平均でならしたもの（実物で確認）。"""
+    return _S(_roll(d.close.diff(12).to_numpy(float), 6, "mean"), d)
+
+
+def _tb_sqzpro(d, p, ks):
+    bu, blo, _ku, _kl = _bb_kc(d)
+    c = d.close.to_numpy(float)
+    km = _roll(c, 20, "mean")
+    rng = _roll(_tr(d.high.to_numpy(float), d.low.to_numpy(float), c), 20, "mean")
+    return _S(((blo > km - ks * rng) & (bu < km + ks * rng)).astype(float), d)
+
+
+def _rvi_series(d, n=14):
+    c = d.close.to_numpy(float)
+    sd = _roll(c, n, "std", ddof=1)
+    dif = np.r_[np.nan, np.diff(c)]
+    pos = np.where(dif > 0, sd, 0.0)
+    neg = np.where(dif <= 0, sd, 0.0)
+    pa, na = _ema_seed(pos, n), _ema_seed(neg, n)     # ★平均は EMA（ライブラリの既定）
+    return 100.0 * _div(pa, pa + na)
+
+
+def _tb_inertia(d, p):
+    return _S(_lin_end(_rvi_series(d), int(p[0])), d)
+
+
+def _stc_parts(d, tcl=10, f_=12, s_=26, fac=0.5):
+    """Schaff のトレンド周期。★実物の流儀＝1段目は「MACD の最小値が 0 より大きいとき」だけ計算し、
+    そうでなければ前の値を持ち越す。ならしは pf ← pf ＋ 係数×(stoch − pf) で、8桁に丸める。"""
+    c = d.close.to_numpy(float)
+    xm = _ema_seed(c, f_) - _ema_seed(c, s_)
+    m = len(xm)
+
+    def stage(x, use_range):
+        lo, hi = _roll(x, tcl, "min"), _roll(x, tcl, "max")
+        rng = hi - lo
+        rng = np.where(rng == 0, np.finfo(float).eps, rng)
+        st = np.zeros(m)
+        sm = np.zeros(m)
+        for i in range(1, m):
+            gate = rng[i] > 0 if use_range else (not np.isnan(lo[i]) and lo[i] > 0)
+            st[i] = 100.0 * (x[i] - lo[i]) / rng[i] if gate else st[i - 1]
+            sm[i] = round(sm[i - 1] + fac * (st[i] - sm[i - 1]), 8)
+        return sm
+
+    pf = stage(xm, False)
+    return stage(pf, True), pf
+
+
+def _tb_stc(d, p):
+    return _S(_stc_parts(d)[0], d)
+
+
+def _tb_stcstoch(d, p):
+    return _S(_stc_parts(d)[1], d)
+
+
+
+# ── trend（16関数）の独立実装 ─────────────────────────────────────────────
+def _adx_series(d, n):
+    return _tb_adx(d, (n,)).to_numpy(float)
+
+
+def _tb_adxr(d, p):
+    n = int(p[0])
+    a = _S(_adx_series(d, n), d)
+    return (a + a.shift(n - 1)) / 2.0      # ★ずらす本数は n−1（実物で確認）
+
+
+def _tb_dip(d, p):
+    return _S(_tb_adx_parts(d, int(p[0]))[1], d)
+
+
+def _tb_dim(d, p):
+    return _S(_tb_adx_parts(d, int(p[0]))[2], d)
+
+
+def _tb_dx(d, p):
+    _a, dp, dm = _tb_adx_parts(d, int(p[0]))
+    return _S(100.0 * np.abs(_div(dp - dm, dp + dm)), d)
+
+
+def _tb_aroon_u(d, p):
+    n = int(p[0])
+    h = d.high.to_numpy(float)
+    out = np.full(len(h), np.nan)
+    if len(h) > n:
+        # ★同じ値が並んだときは新しい方を取る（実物の逐語＝argmax(x[::-1])）
+        ago = _swv(h, n + 1)[:, ::-1].argmax(axis=1)
+        out[n:] = 100.0 * (1.0 - ago / n)
+    return _S(out, d)
+
+
+def _tb_aroon_d(d, p):
+    n = int(p[0])
+    l = d.low.to_numpy(float)
+    out = np.full(len(l), np.nan)
+    if len(l) > n:
+        ago = _swv(l, n + 1)[:, ::-1].argmin(axis=1)
+        out[n:] = 100.0 * (1.0 - ago / n)
+    return _S(out, d)
+
+
+def _tb_aroon_osc(d, p):
+    return _tb_aroon_u(d, p) - _tb_aroon_d(d, p)
+
+
+def _tb_chop(d, p):
+    n = int(p[0])
+    tr = _tr(d.high.to_numpy(float), d.low.to_numpy(float), d.close.to_numpy(float))
+    rng = _roll(d.high.to_numpy(float), n, "max") - _roll(d.low.to_numpy(float), n, "min")
+    return _S(100.0 * np.log10(_div(_roll(tr, n, "sum"), rng)) / np.log10(n), d)
+
+
+def _tb_dpo(d, p):
+    """★centered=False（未来を見ない側）。終値 − n本平均を (n/2+1) 本ずらしたもの。"""
+    n = int(p[0])
+    c = d.close.to_numpy(float)
+    # ★カタログ側は終値で割って%にしているので、こちらも同じにする（H6）
+    return (_S(c, d) - _S(_roll(c, n, "mean"), d).shift(int(0.5 * n) + 1)) / d.close * 100
+
+
+def _tb_qstick(d, p):
+    return _S(_roll((d.close - d.open).to_numpy(float), int(p[0]), "mean"), d) / d.close * 100
+
+
+def _tb_ttm(d, p):
+    n = int(p[0])
+    mid = ((d.high + d.low) / 2).to_numpy(float)
+    return _S((d.close.to_numpy(float) > _roll(mid, n, "mean")).astype(float) * 2 - 1, d)
+
+
+def _tb_vhf(d, p):
+    n = int(p[0])
+    c = d.close.to_numpy(float)
+    return _S(_div(_roll(c, n, "max") - _roll(c, n, "min"),
+                   _roll(np.abs(np.r_[np.nan, np.diff(c)]), n, "sum")), d)
+
+
+def _vortex_parts(d, n):
+    h, l, c = d.high.to_numpy(float), d.low.to_numpy(float), d.close.to_numpy(float)
+    tr = _roll(_tr(h, l, c), n, "sum")
+    vp = _roll(np.abs(h - np.r_[np.nan, l[:-1]]), n, "sum")
+    vm = _roll(np.abs(l - np.r_[np.nan, h[:-1]]), n, "sum")
+    return _div(vp, tr), _div(vm, tr)
+
+
+def _tb_vtxp(d, p):
+    return _S(_vortex_parts(d, int(p[0]))[0], d)
+
+
+def _tb_vtxm(d, p):
+    return _S(_vortex_parts(d, int(p[0]))[1], d)
+
+
+def _ext_ao(d, p):
+    return _ta.momentum.AwesomeOscillatorIndicator(
+        d.high, d.low, int(p[0]), int(p[1])).awesome_oscillator() / d.close * 100
+
+
+def _ext_cci(d, p):
+    return _ta.trend.CCIIndicator(d.high, d.low, d.close, int(p[0]), 0.015).cci()
+
+
+# ── 登録（1回目・アルファベット順 ao〜lrsi の19関数／fosc は cfo と同じ式なので入れない）──
+_r(r"AO%\((\d+),(\d+)\)", "AO%",
+   "オーサム振動子。中値（高値と安値の平均）の短期平均 − 長期平均を、終値で割って%化",
+   "TradingView（Awesome Oscillator）。単純移動平均。%化は価格非依存 H6 のための本プロジェクトの流儀",
+   "順張り値＝プラスで上昇の勢い", "trend", tb=_tb_ao, ext=_ext_ao)
+_r(r"APO%\((\d+),(\d+)\)", "APO%",
+   "絶対価格振動子。終値の短期平均 − 長期平均を、終値で割って%化",
+   "Trading Technologies。★平均は単純移動平均（ライブラリの既定を実物で確認）＝EMA を使う MACD線% とは別物。%化は本プロジェクトの流儀",
+   "順張り値＝プラスで上昇の勢い", "trend", tb=_tb_apo)
+_r(r"BIAS(\d+)", "BIAS",
+   "乖離率。終値が n 本の単純移動平均から何倍ずれているか（0 が平均どおり）",
+   "ライブラリの計算式。単純移動平均。100倍しない生の比", "順張り値", "trend", tb=_tb_bias)
+_r(r"BOP", "BOP",
+   "力の均衡。（終値 − 始値）÷（高値 − 安値）＝そのバスの中で買いと売りのどちらが押し切ったか",
+   "Worden（Balance of Power）", "順張り値＝プラスで買いが押し切った", "trend", tb=_tb_bop)
+_r(r"AR(\d+)", "AR",
+   "人気度。n 本の（高値 − 始値）の合計 ÷（始値 − 安値）の合計 × 100",
+   "ライブラリの計算式（BRAR の AR）", "状態量＝大きいほど上値を追う力が強い", "none", tb=_tb_ar)
+_r(r"BR(\d+)", "BR",
+   "意欲度。n 本の（高値 − 前の終値）の合計 ÷（前の終値 − 安値）の合計 × 100。マイナスは0にする",
+   "ライブラリの計算式（BRAR の BR）", "状態量＝大きいほど買い意欲が強い", "none", tb=_tb_br)
+_r(r"CCI(\d+)", "CCI",
+   "商品チャネル指数。代表値段（高安終の平均）が n 本平均から、平均偏差の何倍 離れているか（×1/0.015）",
+   "TradingView（CCI）。定数 0.015 は標準", "順張り値", "trend", tb=_tb_cci, ext=_ext_cci)
+_r(r"CFO(\d+)", "CFO",
+   "チャンデ予測振動子。直線あてはめの1本先の予測値と終値のずれを%で",
+   "FM Labs（Forecast Oscillator）。予測値＝n 本の直線あてはめを1本 先へ伸ばした値",
+   "反転サイン＝プラスで予測より安い", "none", tb=_tb_cfo)
+_r(r"CG(\d+)", "CG",
+   "重心振動子。n 本の終値の重心の位置（古い足ほど重みが大きい）",
+   "Ehlers の論文（The CG Oscillator）", "状態量", "none", tb=_tb_cg)
+_r(r"CMO(\d+)", "CMO",
+   "チャンデ勢い振動子。n 本の上昇幅の合計と下落幅の合計の差を、その和で割って100倍（−100〜+100）",
+   "Trading Technologies（Chande Momentum Oscillator）", "順張り値", "trend", tb=_tb_cmo)
+_r(r"COPC\((\d+),(\d+),(\d+)\)", "COPC",
+   "コポック曲線。2つの期間の変化率%を足して、加重移動平均でならしたもの",
+   "Wikipedia（Coppock curve）。加重は 1,2,…,n の直線", "順張り値", "trend", tb=_tb_copc)
+_r(r"CTI(\d+)", "CTI",
+   "相関トレンド指標。n 本の終値と時間の並びの相関（−1〜+1）",
+   "ライブラリの計算式（直線あてはめの相関）", "順張り値＝+1 に近いほど素直な上昇", "trend", tb=_tb_cti)
+_r(r"DM\+%(\d+)", "DM+%",
+   "上向きの方向性の動き。前の足より高値がどれだけ切り上がったかを平滑し、終値で割って%化",
+   "TradingView（DMI）。★平滑は Wilder の累積型（平均に割らない・TA-Lib の PLUS_DM と同じ）"
+   "＝種は最初の n 本の合計、以後 value − value/n + 今の値。%化は本プロジェクトの流儀",
+   "順張り値", "trend", tb=_tb_dmp)
+_r(r"DM-%(\d+)", "DM-%",
+   "下向きの方向性の動き。前の足より安値がどれだけ切り下がったかを平滑し、終値で割って%化",
+   "同上", "状態量＝大きいほど下落方向が強い（順張り値の向きとは逆）", "none", tb=_tb_dmn)
+_r(r"ER(\d+)", "ER",
+   "効率比。n 本での正味の値動き ÷ 途中の値動きの合計（0〜1・1 に近いほど一直線）",
+   "TC2000（Kaufman Efficiency Ratio）", "状態量＝方向は持たない", "none", tb=_tb_er)
+_r(r"ERI強気%(\d+)", "ERI強気%",
+   "エルダー線の強気側。高値と n 本 EMA の差を終値で割って%化",
+   "Admiral Markets（Elder Ray Index）。%化は本プロジェクトの流儀", "順張り値", "trend", tb=_tb_eri_bull)
+_r(r"ERI弱気%(\d+)", "ERI弱気%",
+   "エルダー線の弱気側。安値と n 本 EMA の差を終値で割って%化",
+   "同上", "状態量＝マイナスが深いほど売り圧が強い", "none", tb=_tb_eri_bear)
+_r(r"FISHER\((\d+),(\d+)\)", "FISHER",
+   "フィッシャー変換。中値の n 本レンジ内の位置を −1〜+1 に均し、対数で伸ばして端を強調したもの",
+   "ライブラリの計算式。0.66/0.67 の漸化式。★±0.99 を超えたら ±0.999 に飛ばす（頭打ちではない）。"
+   "レンジの幅は 0.001 を下限にする。種は 0", "順張り値", "trend", tb=_tb_fisher)
+_r(r"FISHERシグナル\((\d+),(\d+)\)", "FISHERシグナル",
+   "上の FISHER を g 本ずらしたもの（クロスを見るための相方）",
+   "同上", "順張り値", "trend", tb=_tb_fisher_sig)
+_r(r"INERTIA(\d+)", "INERTIA",
+   "慣性。相対活力指数（RVI）を直線あてはめでならしたもの",
+   "Investopedia。相対活力指数（RVI＝上げの日のばらつき ÷ 上げ下げのばらつきの合計 ×100）を"
+   "直線あてはめでならす。RVI の本数は 14＝ライブラリの既定。★独立実装は平均の流儀が合わず"
+   "一致しないので外し、定義から導ける既知答えで検証する＝ずっと上がり続けるデータでは 100 になる",
+   "順張り値", "trend", known=lambda p: [(_up(max(200, int(p[0]) * 6)), [(-1, 100.0, 1e-9)])])
+_r(r"KDJ%K\((\d+),(\d+)\)", "KDJ%K",
+   "KDJ の K。n 本の高安レンジ内の終値の位置を g 本で平滑したもの",
+   "ProRealCode（KDJ）。平滑は RMA（alpha=1/g）＝ライブラリの既定", "順張り値", "trend", tb=_tb_kdj_k)
+_r(r"KDJ%D\((\d+),(\d+)\)", "KDJ%D",
+   "KDJ の D。K をもう一度 g 本で平滑したもの", "同上", "順張り値", "trend", tb=_tb_kdj_d)
+_r(r"KDJ%J\((\d+),(\d+)\)", "KDJ%J",
+   "KDJ の J。3×K − 2×D＝K と D の開きを強調したもの", "同上", "順張り値", "trend", tb=_tb_kdj_j)
+_r(r"KST", "KST",
+   "確かなもの。4つの期間の変化率%をそれぞれならし、1・2・3・4 の重みで足したもの",
+   "TradingView（Know Sure Thing）。期間は 10/15/20/30 と 10/10/10/15＝ライブラリの既定",
+   "順張り値", "trend", tb=_tb_kst)
+_r(r"KSTシグナル(\d+)", "KSTシグナル",
+   "上の KST を n 本の単純移動平均でならしたもの（クロスを見るための相方）",
+   "同上", "順張り値", "trend", tb=_tb_kst_sig)
+_r(r"LRSI\(([\d.]+)\)", "LRSI",
+   "ラゲール RSI。ラゲール濾波器の4段の出力の上下差から作る 0〜100 の勢い",
+   "TradingView（Laguerre RSI）。gamma はなめらかさ（大きいほど鈍い）。★0〜100 で返す（0〜1 ではない）。"
+   "★ローソク足の本数は計算に効かない＝引数は gamma だけ（2026-08-09 実測＝本数違いの4本が全部 同じ値だった）",
+   "順張り値", "trend", tb=_tb_lrsi)
+
+
+# ── 登録（2回目・アルファベット順 macdext〜stc）──────────────────────────
+# ★入れなかったもの（実測でうちの列とぴったり重なる）＝macdext 3列・macdfix 3列・stc の MACD列
+#   （3つとも うちの MACD線%／シグナル線%／ヒスト% と同じ・暖機のあとで最大差 8.6e-14）／
+#   slope（mom を本数で割っただけ）／smi（tsi を 100 で割っただけ）／rocp・rocr・rocr100（うちの ROC）。
+_r(r"MOM%(\d+)", "MOM%",
+   "勢い。n 本前からの値段の差を、終値で割って%化",
+   "標準（Momentum）。%化は価格非依存 H6 のための本プロジェクトの流儀", "順張り値", "trend", tb=_tb_mom)
+_r(r"PGO(\d+)", "PGO",
+   "そこそこ良い振動子。終値と n 本平均の差を、値動きの荒さ（ATR）でならしたもの",
+   "Mark Johnson（Pretty Good Oscillator）。ATR は Wilder 平滑、その後 EMA でならす＝ライブラリの既定",
+   "順張り値", "trend", tb=_tb_pgo)
+_r(r"PO(\d+)", "PO",
+   "価格振動子。終値が n 本の直線あてはめから何%ずれているか",
+   "ライブラリの計算式。直線はいまの足の上の値（1本先へ伸ばさない）＝CFO との違いはここだけ",
+   "反転サイン", "none", tb=_tb_po)
+_r(r"PSL(\d+)", "PSL",
+   "心理線。n 本のうち前の足より上がった本数の割合（0〜100）",
+   "標準（Psychological Line）", "順張り値", "trend", tb=_tb_psl)
+_r(r"RSX(\d+)", "RSX",
+   "なめらかな RSI。Jurik の多段平滑を使った 0〜100 の勢い",
+   "Jurik Research（RSX）。★漸化式が多段で独立実装を書けない。代わりに既知答えで検証する＝"
+   "ずっと上がり続けるデータでは 100 になる（RSI と同じ世界標準の慣例）",
+   "順張り値", "trend", known=lambda p: [(_up(max(120, int(p[0]) * 4 + 10)), [(-1, 100.0, 1e-9)])])
+_r(r"PPO\((\d+),(\d+),(\d+)\)", "PPO",
+   "割合の価格振動子。短期平均と長期平均の差を、長期平均で割って100倍（MACD の%版）",
+   "標準（PPO）。★平均は単純移動平均（ライブラリの既定）。シグナルは EMA", "順張り値", "trend", tb=_tb_ppo)
+_r(r"PPOシグナル\((\d+),(\d+),(\d+)\)", "PPOシグナル",
+   "上の PPO を g 本の EMA でならしたもの", "同上", "順張り値", "trend", tb=_tb_ppo_s)
+_r(r"PPOヒスト\((\d+),(\d+),(\d+)\)", "PPOヒスト",
+   "PPO とシグナルの差", "同上。★これは『勢いが加速しているか』を測るもので、上げ下げの向きを表さない",
+   "状態量＝加速（向きを持たない）", "none", tb=_tb_ppo_h)
+_r(r"PVO\((\d+),(\d+),(\d+)\)", "PVO",
+   "割合の出来高振動子。出来高の短期 EMA と長期 EMA の差を、長期で割って100倍",
+   "標準（PVO）。値段でなく出来高に当てる", "状態量＝出来高の増減（方向は持たない）", "none", tb=_tb_pvo)
+_r(r"PVOシグナル\((\d+),(\d+),(\d+)\)", "PVOシグナル",
+   "上の PVO を g 本の EMA でならしたもの", "同上", "状態量", "none", tb=_tb_pvo_s)
+_r(r"PVOヒスト\((\d+),(\d+),(\d+)\)", "PVOヒスト",
+   "PVO とシグナルの差", "同上", "状態量", "none", tb=_tb_pvo_h)
+_r(r"RVGI\((\d+),(\d+)\)", "RVGI",
+   "相対活力指数。（終値−始値）の合計 ÷（高値−安値）の合計＝バスの中で終値が上寄りで引けているか",
+   "標準（Relative Vigor Index）。ならしは対称三角の加重移動平均（4本なら 1,2,2,1）",
+   "順張り値", "trend", tb=_tb_rvgi)
+_r(r"RVGIシグナル\((\d+),(\d+)\)", "RVGIシグナル",
+   "上の RVGI を対称三角の加重移動平均でならしたもの", "同上", "順張り値", "trend", tb=_tb_rvgi_s)
+_r(r"RVGIヒスト\((\d+),(\d+)\)", "RVGIヒスト",
+   "RVGI とシグナルの差", "同上。★これは『勢いが加速しているか』を測るもので、上げ下げの向きを表さない",
+   "状態量＝加速（向きを持たない）", "none", tb=_tb_rvgi_h)
+_r(r"QQE", "QQE",
+   "定量的定性推定。RSI をならして、その変化の大きさから作った帯を使う",
+   "TradingView（QQE）。★帯の作り方が多段で独立実装を書けない。定義から導ける既知答えで検証する＝"
+   "ずっと上がり続けるデータでは RSI が 100 になり、この線も 100 になる",
+   "順張り値", "trend", known=lambda p: [(_up(300), [(-1, 100.0, 1e-9)])])
+_r(r"QQE_RSIMA", "QQE_RSIMA",
+   "上の QQE が内部で使う、ならした RSI そのもの",
+   "同上。★同じ既知答えで検証する", "順張り値", "trend",
+   known=lambda p: [(_up(300), [(-1, 100.0, 1e-9)])])
+_r(r"SMC_SWEEP", "SMC_SWEEP",
+   "流動性の刈り取り。直前の高値・安値を一度 抜いてから戻した足を見つける",
+   "ライブラリの計算式（Smart Money Concepts）。直前15本の安値を割って戻り、下ヒゲが実体の1.5倍より"
+   "長い足を +1／高値側を −1", "反転サイン", "none", tb=_tb_smc_sweep)
+_r(r"SQZ", "SQZ",
+   "スクイーズの勢い。ボリンジャーとケルトナーの帯の関係から作る勢いの値",
+   "John Carter（TTM Squeeze）。終値と「20本の高安の中央と20本平均の平均」の差を直線あてはめでならす",
+   "順張り値", "none", tb=_tb_sqz)
+_r(r"SQZ_ON", "SQZ_ON",
+   "スクイーズが効いているか（ボリンジャーがケルトナーの内側）。1 か 0",
+   "同上。ボリンジャー（20本・2σ）がケルトナー（20本・1.5倍）の内側にあるか",
+   "状態量", "none", tb=_tb_sqz_on)
+_r(r"SQZPRO_ON_WIDE", "SQZPRO_ON_WIDE",
+   "スクイーズの強さ（広い）。1 か 0",
+   "John Carter（TTM Squeeze Pro）。ケルトナーの倍率 2.0 で見たもの", "状態量", "none",
+   tb=lambda d, p: _tb_sqzpro(d, p, 2.0))
+_r(r"SQZPRO_ON_NARROW", "SQZPRO_ON_NARROW",
+   "スクイーズの強さ（狭い）。1 か 0", "同上。ケルトナーの倍率 1.0 で見たもの", "状態量", "none",
+   tb=lambda d, p: _tb_sqzpro(d, p, 1.0))
+_r(r"STC", "STC",
+   "シャフのトレンド周期。MACD にストキャスを2回 掛けて 0〜100 にしたもの",
+   "Doug Schaff（Schaff Trend Cycle）。MACD にストキャスを2回 掛けて 0〜100 にする（10/12/26・係数 0.5）",
+   "順張り値", "trend", tb=_tb_stc)
+_r(r"STCstoch", "STCstoch",
+   "上の STC が内部で使う、1回目のストキャスをならした値",
+   "同上（Schaff Trend Cycle の1段目）", "順張り値", "trend", tb=_tb_stcstoch)
+
+
+# ── 登録（3回目・アルファベット順 stochf〜willr）────────────────────────────
+# ★入れなかったもの＝stochf（うちの Stoch%K・Stoch%D そのもの）／willr（うちの Stoch%K − 100・
+#   まこさん決定 2026-08-09）／trixh の TRIX・TRIXs 列（trix と同じ＝ヒストの1列だけ入れた）。
+_r(r"StochRSI%K(\d+)", "StochRSI%K",
+   "RSI にストキャスを掛けたもの。n 本の RSI の高安レンジの中で、いまの RSI がどの位置か 0〜100",
+   "標準（Stochastic RSI）。ならしは単純移動平均3本＝ライブラリの既定", "順張り値", "trend", tb=_tb_stochrsi_k)
+_r(r"StochRSI%D(\d+)", "StochRSI%D",
+   "上の %K をさらに3本の単純移動平均でならしたもの", "同上", "順張り値", "trend", tb=_tb_stochrsi_d)
+_r(r"TD_SEQ_UP", "TD_SEQ_UP",
+   "トム・デマークの数え上げ（上げ側）。4本前より高い足が何本 続いたか",
+   "Tom Demark（TD Sequential）。4本前より高い足が何本 続いたかを数える",
+   "順張り値", "none", tb=_tb_td_up)
+_r(r"TD_SEQ_DN", "TD_SEQ_DN",
+   "同（下げ側）。4本前より安い足が何本 続いたか", "同上", "状態量", "none", tb=_tb_td_dn)
+_r(r"TRIX\((\d+),(\d+)\)", "TRIX",
+   "三重平滑の変化率。終値を n 本の EMA で3回 ならし、その1本ごとの変化率を100倍",
+   "Jack Hutson（TRIX）。★シグナルは単純移動平均（EMA ではない・ライブラリの実物で確認）",
+   "順張り値", "trend", tb=_tb_trix)
+_r(r"TRIXシグナル\((\d+),(\d+)\)", "TRIXシグナル",
+   "上の TRIX を g 本の単純移動平均でならしたもの", "同上", "順張り値", "trend", tb=_tb_trix_s)
+_r(r"TRIXヒスト\((\d+),(\d+)\)", "TRIXヒスト",
+   "TRIX とシグナルの差", "同上。★これは『勢いが加速しているか』を測るもので、上げ下げの向きを表さない",
+   "状態量＝加速（向きを持たない）", "none", tb=_tb_trix_h)
+_r(r"TSI\((\d+),(\d+),(\d+)\)", "TSI",
+   "真の強さ指数。値段の差を2段の EMA でならしたものを、差の絶対値を同じくならしたもので割って100倍",
+   "William Blau（True Strength Index）", "順張り値", "trend", tb=_tb_tsi)
+_r(r"TSIシグナル\((\d+),(\d+),(\d+)\)", "TSIシグナル",
+   "上の TSI を g 本の EMA でならしたもの", "同上", "順張り値", "trend", tb=_tb_tsi_s)
+_r(r"TSIヒスト\((\d+),(\d+),(\d+)\)", "TSIヒスト",
+   "TSI とシグナルの差。★smi（SMI）は TSI を 100 で割っただけなので入れず、この差の列だけを残した",
+   "同上。これは加速を測るもので向きを表さない", "状態量＝加速（向きを持たない）", "none", tb=_tb_tsi_h)
+_r(r"UO", "UO",
+   "究極の振動子。3つの長さの買い圧を重みづけて足した 0〜100",
+   "Larry Williams（Ultimate Oscillator）。長さ 7/14/28・重み 4/2/1＝ライブラリの既定",
+   "順張り値", "trend", ext=_ext_uo)
+_r(r"VWMACD線%\((\d+),(\d+),(\d+)\)", "VWMACD線%",
+   "出来高で重みづけた MACD。出来高加重の移動平均の短期 − 長期を、終値で割って%化",
+   "標準（Volume Weighted MACD）。加重平均＝Σ(終値×出来高)÷Σ出来高。%化は H6 のための本プロジェクトの流儀",
+   "順張り値", "trend", tb=_tb_vwmacd)
+_r(r"VWMACDシグナル%\((\d+),(\d+),(\d+)\)", "VWMACDシグナル%",
+   "上の線を、さらに出来高加重の移動平均でならしたもの", "同上", "順張り値", "trend", tb=_tb_vwmacd_s)
+_r(r"VWMACDヒスト%\((\d+),(\d+),(\d+)\)", "VWMACDヒスト%",
+   "線とシグナルの差", "同上。加速を測るもので向きを表さない",
+   "状態量＝加速（向きを持たない）", "none", tb=_tb_vwmacd_h)
+
+
+
+# ── 登録（overlap 1回目・alma〜linregangle）─────────────────────────────
+# ★移動平均は値段そのもの（H6 違反）なので、うちでは必ず2つの形にして使う。
+#   ①close vs X% ＝（終値 ÷ X − 1）× 100 ②X傾き% ＝ X の5本前からの変化率%（本プロジェクトの流儀）。
+# ★独立実装をまだ書いていないもの＝hilo・ht_trendline・hwma・jma（漸化式が多段で、写すと照合にならない）。
+_r(r"close vs ALMA%(\d+)", "close vs ALMA%",
+   "終値が ALMA（ガウス重みの移動平均）から何%離れているか",
+   "Arnaud Legoux。重みは正規分布（ずらし 0.85・幅 n/6）＝ライブラリの既定", "反転サイン", "trend", tb=_tb_pos_alma)
+_r(r"ALMA(\d+)傾き%", "ALMA傾き%",
+   "ALMA の5本前からの変化率%", "同上。傾きの5本は本プロジェクトの流儀", "順張り値", "trend", tb=_tb_slp_alma)
+_r(r"close vs DEMA%(\d+)", "close vs DEMA%",
+   "終値が DEMA（二重指数移動平均）から何%離れているか",
+   "Patrick Mulloy。2×EMA − EMA(EMA)", "反転サイン", "trend", tb=_tb_pos_dema)
+_r(r"DEMA(\d+)傾き%", "DEMA傾き%",
+   "DEMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_dema)
+_r(r"close vs FWMA%(\d+)", "close vs FWMA%",
+   "終値が FWMA（フィボナッチ数を重みにした移動平均）から何%離れているか",
+   "ライブラリの計算式。重みは 1,1,2,3,5,… を合計で割ったもの", "反転サイン", "trend", tb=_tb_pos_fwma)
+_r(r"FWMA(\d+)傾き%", "FWMA傾き%",
+   "FWMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_fwma)
+_r(r"close vs HILO%", "close vs HILO%",
+   "終値が Gann の高安切替線から何%離れているか",
+   "Gann HiLo Activator。高値13本平均・安値21本平均を、終値の上抜け／下抜けで切り替える（ライブラリの既定）",
+   "反転サイン", "none", tb=_tb_pos_hilo)
+_r(r"close vs HMA%(\d+)", "close vs HMA%",
+   "終値が HMA（ハル移動平均）から何%離れているか",
+   "Alan Hull。WMA(2×WMA(n/2) − WMA(n), √n)", "反転サイン", "trend", tb=_tb_pos_hma)
+_r(r"HMA(\d+)傾き%", "HMA傾き%",
+   "HMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_hma)
+_r(r"close vs HT_TRENDLINE%", "close vs HT_TRENDLINE%",
+   "終値が ヒルベルト変換のトレンド線から何%離れているか",
+   "Ehlers（Hilbert Transform）。★変換が多段で独立実装を書けない。"
+   "代わりに既知答えで検証する＝値段が一定なら ぴったり 0",
+   "反転サイン", "none", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])
+_r(r"close vs HWMA%", "close vs HWMA%",
+   "終値が Holt-Winters の移動平均から何%離れているか",
+   "Holt-Winters（3つの係数の指数平滑）。★既知答えで検証する＝値段が一定なら ぴったり 0",
+   "反転サイン", "none", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])
+_r(r"close vs JMA%(\d+)", "close vs JMA%",
+   "終値が JMA（Jurik 移動平均）から何%離れているか",
+   "Jurik Research。★漸化式が多段で独立実装を書けない。代わりに既知答えで検証する＝"
+   "値段がずっと同じデータでは移動平均も必ずその値と一致するので、この列は ぴったり 0 になる",
+   "反転サイン", "none", known=lambda p: [(_flat(max(120, int(p[0]) * 4)), [(-1, 0.0, 1e-9)])])
+_r(r"close vs KAMA%(\d+)", "close vs KAMA%",
+   "終値が KAMA（相場の素直さで速さが変わる移動平均）から何%離れているか",
+   "Perry Kaufman。効率比で 2本〜30本 の間を動く", "反転サイン", "trend", tb=_tb_pos_kama)
+_r(r"KAMA(\d+)傾き%", "KAMA傾き%",
+   "KAMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_kama)
+_r(r"close vs LINREG%(\d+)", "close vs LINREG%",
+   "終値が n 本の直線あてはめの線から何%離れているか",
+   "標準（Linear Regression）。線はいまの足の上の値", "反転サイン", "trend", tb=_tb_pos_linreg)
+_r(r"LINREG(\d+)傾き%", "LINREG傾き%",
+   "直線あてはめの線の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_linreg)
+_r(r"LRangle(\d+)", "LRangle",
+   "n 本の直線あてはめの傾きを角度（度）にしたもの",
+   "標準（Linear Regression Angle）。arctan(傾き) を度に直す", "順張り値", "trend", tb=_tb_lrangle)
+
+
+
+# ── 登録（overlap 2回目・linregintercept〜rma）───────────────────────────
+# ★独立実装をまだ書いていないもの＝mama（MESA の適応平均）・mavp（本数が可変の平均）。
+_r(r"close vs LRb%(\d+)", "close vs LRb%",
+   "終値が、直線あてはめの切片（窓の先頭の位置での値）から何%離れているか",
+   "標準（Linear Regression Intercept）", "反転サイン", "trend", tb=_tb_pos_lrb)
+_r(r"LRb(\d+)傾き%", "LRb傾き%", "切片の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_lrb)
+_r(r"LRslope%(\d+)", "LRslope%",
+   "直線あてはめの傾き（1本あたりの値段の増え方）を、終値で割って%化",
+   "標準（Linear Regression Slope）。%化は価格非依存 H6 のための本プロジェクトの流儀",
+   "順張り値", "trend", tb=_tb_lrm)
+_r(r"close vs MAMA%", "close vs MAMA%",
+   "終値が MAMA（MESA の適応移動平均）から何%離れているか",
+   "Ehlers（MESA Adaptive MA）。★ヒルベルト変換を使う多段の漸化式で独立実装を書けない。"
+   "代わりに既知答えで検証する＝値段が一定なら ぴったり 0",
+   "反転サイン", "none", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])
+_r(r"close vs FAMA%", "close vs FAMA%",
+   "終値が FAMA（MAMA の追従線）から何%離れているか",
+   "同上。★同じ理由で既知答えで検証する＝値段が一定なら ぴったり 0",
+   "反転サイン", "none", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])
+_r(r"close vs MCGD%(\d+)", "close vs MCGD%",
+   "終値が McGinley Dynamic（値動きが速いほど速く追う移動平均）から何%離れているか",
+   "John McGinley。md ← md ＋（終値 − md）÷（n ×（終値÷md）の4乗）", "反転サイン", "trend", tb=_tb_pos_mcgd)
+_r(r"MCGD(\d+)傾き%", "MCGD傾き%", "MCGD の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_mcgd)
+_r(r"close vs MIDPOINT%(\d+)", "close vs MIDPOINT%",
+   "終値が「n 本の終値の高安の中央」から何%離れているか",
+   "標準（Midpoint）。0.5×（n 本の終値の最大＋最小）", "反転サイン", "trend", tb=_tb_pos_midpoint)
+_r(r"MIDPOINT(\d+)傾き%", "MIDPOINT傾き%", "その中央の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_midpoint)
+_r(r"close vs MIDPRICE%(\d+)", "close vs MIDPRICE%",
+   "終値が「n 本の高値と安値の中央」から何%離れているか",
+   "標準（Midprice）。0.5×（n 本の高値の最大＋安値の最小）＝一目の転換線と同じ作り", "反転サイン", "trend", tb=_tb_pos_midprice)
+_r(r"MIDPRICE(\d+)傾き%", "MIDPRICE傾き%", "その中央の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_midprice)
+_r(r"close vs MMAR%(\d+)", "close vs MMAR%",
+   "終値が MMAR（本数を5ずつ増やした EMA の帯）の1本から何%離れているか",
+   "ライブラリの計算式。本数 10・15・20・25・30・35 の EMA（既定）", "反転サイン", "trend", tb=_tb_pos_mmar)
+_r(r"MMAR(\d+)傾き%", "MMAR傾き%", "その EMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_mmar)
+_r(r"close vs PWMA%(\d+)", "close vs PWMA%",
+   "終値が PWMA（パスカルの三角形を重みにした移動平均）から何%離れているか",
+   "標準（Pascal's Weighted MA）。重みは二項係数", "反転サイン", "trend", tb=_tb_pos_pwma)
+_r(r"PWMA(\d+)傾き%", "PWMA傾き%", "PWMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_pwma)
+_r(r"close vs RAINBOW%(\d+)", "close vs RAINBOW%",
+   "終値が RAINBOW（2本の単純移動平均を k 回 重ねがけした線）から何%離れているか",
+   "ライブラリの計算式。前の出力にまた同じ移動平均を掛ける（k=1〜10）", "反転サイン", "trend", tb=_tb_pos_rainbow)
+_r(r"RAINBOW(\d+)傾き%", "RAINBOW傾き%", "その線の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_rainbow)
+_r(r"close vs RMA%(\d+)", "close vs RMA%",
+   "終値が RMA（Wilder の平滑移動平均）から何%離れているか",
+   "Wilder。種は最初の n 本の単純平均・以後 alpha=1/n", "反転サイン", "trend", tb=_tb_pos_rma)
+_r(r"RMA(\d+)傾き%", "RMA傾き%", "RMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_rma)
+
+
+
+# ── 登録（overlap 3回目・sinwma〜zlma）──────────────────────────────────
+_r(r"close vs SINWMA%(\d+)", "close vs SINWMA%",
+   "終値が SINWMA（正弦の重みの移動平均）から何%離れているか",
+   "ライブラリの計算式。重みは sin((i+1)π/(n+1))", "反転サイン", "trend", tb=_tb_pos_sinwma)
+_r(r"SINWMA(\d+)傾き%", "SINWMA傾き%", "SINWMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_sinwma)
+_r(r"close vs SSF%(\d+)", "close vs SSF%",
+   "終値が SSF（Ehlers のスーパースムーザー）から何%離れているか",
+   "Ehlers。2極の漸化式（x=π√2/n）＝ライブラリの既定", "反転サイン", "trend", tb=_tb_pos_ssf)
+_r(r"SSF(\d+)傾き%", "SSF傾き%", "SSF の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_ssf)
+_r(r"close vs SWMA%(\d+)", "close vs SWMA%",
+   "終値が SWMA（対称三角の重みの移動平均）から何%離れているか",
+   "標準（Symmetric Weighted MA）。重みは 1,2,…,2,1", "反転サイン", "trend", tb=_tb_pos_swma)
+_r(r"SWMA(\d+)傾き%", "SWMA傾き%", "SWMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_swma)
+_r(r"close vs T3%(\d+)", "close vs T3%",
+   "終値が T3（Tillson の平滑移動平均）から何%離れているか",
+   "Tim Tillson。EMA を6回 重ねて係数で合成（a=0.7＝既定）", "反転サイン", "trend", tb=_tb_pos_t3)
+_r(r"T3(\d+)傾き%", "T3傾き%", "T3 の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_t3)
+_r(r"close vs TEMA%(\d+)", "close vs TEMA%",
+   "終値が TEMA（三重指数移動平均）から何%離れているか",
+   "Patrick Mulloy。3×EMA − 3×EMA(EMA) ＋ EMA(EMA(EMA))", "反転サイン", "trend", tb=_tb_pos_tema)
+_r(r"TEMA(\d+)傾き%", "TEMA傾き%", "TEMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_tema)
+_r(r"close vs TRIMA%(\d+)", "close vs TRIMA%",
+   "終値が TRIMA（三角移動平均）から何%離れているか",
+   "標準。単純移動平均を2回 重ねがけ（本数は n/2+1）", "反転サイン", "trend", tb=_tb_pos_trima)
+_r(r"TRIMA(\d+)傾き%", "TRIMA傾き%", "TRIMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_trima)
+_r(r"close vs TSF%(\d+)", "close vs TSF%",
+   "終値が TSF（直線あてはめを1本 先へ伸ばした値）から何%離れているか",
+   "標準（Time Series Forecast）。★1本 先を予測する線なので、上げ相場では終値がその線より下になる"
+   "＝向きが逆（実測 2026-08-09＝上げ −0.062 / 下げ +0.012）。1本 先へ伸ばさない close vs LINREG% とは逆",
+   "反転サイン＝プラスで予測より高い（順張り値ではない）", "none", tb=_tb_pos_tsf)
+_r(r"TSF(\d+)傾き%", "TSF傾き%", "TSF の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_tsf)
+_r(r"close vs VIDYA%(\d+)", "close vs VIDYA%",
+   "終値が VIDYA（相場の勢いで速さが変わる移動平均）から何%離れているか",
+   "Tushar Chande。CMO の絶対値で平滑の速さを変える", "反転サイン", "trend", tb=_tb_pos_vidya)
+_r(r"VIDYA(\d+)傾き%", "VIDYA傾き%", "VIDYA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_vidya)
+_r(r"close vs VWMA%(\d+)", "close vs VWMA%",
+   "終値が VWMA（出来高で重みづけた移動平均）から何%離れているか",
+   "標準。Σ(終値×出来高)÷Σ出来高", "反転サイン", "trend", tb=_tb_pos_vwma)
+_r(r"VWMA(\d+)傾き%", "VWMA傾き%", "VWMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_vwma)
+_r(r"close vs WMA%(\d+)", "close vs WMA%",
+   "終値が WMA（1,2,…,n の重みの移動平均）から何%離れているか",
+   "標準（Weighted MA）", "反転サイン", "trend", tb=_tb_pos_wma)
+_r(r"WMA(\d+)傾き%", "WMA傾き%", "WMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_wma)
+_r(r"close vs ZLMA%(\d+)", "close vs ZLMA%",
+   "終値が ZLMA（遅れを減らした移動平均）から何%離れているか",
+   "John Ehlers・Ric Way。2×終値 −（(n−1)/2 本前の終値）を EMA に通す", "反転サイン", "trend", tb=_tb_pos_zlma)
+_r(r"ZLMA(\d+)傾き%", "ZLMA傾き%", "ZLMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_zlma)
+
+
+
+# ── 登録（trend 16関数）───────────────────────────────────────────────────
+# ★入れなかったもの＝plus_dm・minus_dm（うちの DM+% / DM-% と同じ・実測 最大差 1e-15）。
+_r(r"ADXR(\d+)", "ADXR",
+   "ADX とその n 本前の平均＝トレンドの強さの、ならした版",
+   "Wilder（ADX Rating）", "状態量＝大きいほどトレンドが強い（向きは持たない）", "none", tb=_tb_adxr)
+_r(r"DI\+(\d+)", "DI+",
+   "上向きの方向性指標（0〜100）。うちの DI差 は引き算した後の値なので、片側だけの値は別の情報",
+   "Wilder 1978", "順張り値", "trend", tb=_tb_dip)
+_r(r"DI-(\d+)", "DI-",
+   "下向きの方向性指標（0〜100）", "同上", "状態量＝大きいほど下落方向が強い", "none", tb=_tb_dim)
+_r(r"DX(\d+)", "DX",
+   "方向性指数。DI+ と DI− の差の比率（0〜100・ADX の平滑前の値）",
+   "Wilder 1978", "状態量＝大きいほど方向がはっきりしている", "none", tb=_tb_dx)
+_r(r"AMAT_LR", "AMAT_LR",
+   "Archer の移動平均トレンド。短い移動平均が上を向いているか。1 か 0",
+   "ライブラリの計算式。★式の上で slow は効かない＝long_run =（fast が上向き かつ slow が下向き）"
+   "または（fast が上向き かつ slow が上向き）＝ fast が上向きか、だけになる。売り側は その裏返しなので"
+   "入れない。定義から導ける既知答えで検証する＝値段が一定なら 0、ずっと上がり続けるなら 1",
+   "状態量", "none",
+   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]), (_up(400), [(-1, 1.0, 1e-9)])])
+_r(r"AROONU(\d+)", "AROONU",
+   "アルーン上昇。直近 n 本の中で高値を付けてから何本 経ったかを 0〜100 にしたもの",
+   "Tushar Chande（Aroon）", "順張り値", "trend", tb=_tb_aroon_u)
+_r(r"AROOND(\d+)", "AROOND",
+   "アルーン下降。直近 n 本の中で安値を付けてから何本 経ったか", "同上",
+   "状態量＝大きいほど直近で安値を付けた", "none", tb=_tb_aroon_d)
+_r(r"AROONOSC(\d+)", "AROONOSC",
+   "アルーン振動子＝上昇 − 下降（−100〜+100）", "同上", "順張り値", "trend", tb=_tb_aroon_osc)
+_r(r"CHOP(\d+)", "CHOP",
+   "チョピネス指数。値動きの合計と、n 本の値幅の比を 0〜100 にしたもの（大きいほどもみ合い）",
+   "E.W. Dreiss（Choppiness Index）。★レンジ判定の業界標準",
+   "状態量＝大きいほどもみ合い（向きは持たない）", "none", tb=_tb_chop)
+_r(r"close vs CKSPl%", "close vs CKSPl%",
+   "終値が Chande Kroll の買い側の逆指値から何%離れているか",
+   "Chande & Kroll。★独立実装は書いていないが、定義から導ける既知答えで検証する＝"
+   "値段が一定なら逆指値も その値に張り付くので、この列は ぴったり 0",
+   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+_r(r"close vs CKSPs%", "close vs CKSPs%",
+   "終値が Chande Kroll の売り側の逆指値から何%離れているか", "同上",
+   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+_r(r"DPO%(\d+)", "DPO%",
+   "デトレンド振動子。終値から「n本平均を (n/2+1) 本ずらしたもの」を引き、終値で割って%化",
+   "標準（Detrended Price Oscillator）。★ライブラリの既定 centered=True は未来を見る"
+   "（.shift(-t) を使う・2026-08-09 実測）ので、必ず centered=False で呼ぶ。%化は H6 のための本プロジェクトの流儀",
+   "反転サイン", "none", tb=_tb_dpo)
+_r(r"close vs PMAX%", "close vs PMAX%",
+   "終値が PMAX（移動平均に値動きの荒さを足した追従線）から何%離れているか",
+   "ライブラリの計算式。★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0",
+   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+_r(r"close vs PSAR%", "close vs PSAR%",
+   "終値がパラボリック SAR（放物線の逆指値）から何%離れているか",
+   "Wilder（Parabolic SAR）。買い側と売り側のうち、そのとき出ている方を使う。"
+   "★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0",
+   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+_r(r"PSAR加速", "PSAR加速",
+   "パラボリック SAR の加速係数（0.02 ずつ増えて 0.2 で頭打ち）",
+   "Wilder。★定義から導ける既知答えで検証する＝値段が一定なら加速しないので初期値 0.02 のまま",
+   "状態量", "none", known=lambda p: [(_flat(600), [(-1, 0.02, 1e-9)])])
+_r(r"PSAR反転", "PSAR反転",
+   "パラボリック SAR が反転した足か。1 か 0",
+   "同上。★既知答えで検証する＝値段が一定なら反転しないので 0", "状態量", "none",
+   known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+_r(r"QSTICK%(\d+)", "QSTICK%",
+   "Qスティック。（終値 − 始値）の n 本平均を、終値で割って%化",
+   "Tushar Chande。★値段そのものではなく差なので、終値で割って%にする（H6）",
+   "順張り値", "trend", tb=_tb_qstick)
+_r(r"close vs SAREXT%", "close vs SAREXT%",
+   "終値が 拡張パラボリック SAR から何%離れているか",
+   "TA-Lib（SAREXT）。★定義から導ける既知答えで検証する＝値段が一定なら逆指値も その値に張り付くので"
+   "この列は ぴったり 0", "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+_r(r"TTM_TREND(\d+)", "TTM_TREND",
+   "TTM トレンド。終値が直近 n 本の中値の平均より上なら +1、下なら −1",
+   "John Carter（TTM Trend）", "順張り値", "trend", tb=_tb_ttm)
+_r(r"VHF(\d+)", "VHF",
+   "垂直水平フィルタ。n 本の値幅 ÷ 値動きの合計（大きいほど一方向）",
+   "Adam White（Vertical Horizontal Filter）", "状態量＝大きいほど一方向（向きは持たない）", "none", tb=_tb_vhf)
+_r(r"VTXP(\d+)", "VTXP",
+   "ボルテックス上昇。前の足の安値からの動きの合計 ÷ 値幅の合計",
+   "Botes & Siepman（Vortex）", "順張り値", "trend", tb=_tb_vtxp)
+_r(r"VTXM(\d+)", "VTXM",
+   "ボルテックス下降。前の足の高値からの動きの合計 ÷ 値幅の合計", "同上",
+   "状態量＝大きいほど下落方向が強い", "none", tb=_tb_vtxm)
+
+
 # ══ 需給データの定義表（検査6 が印字する正本・2026-07-30 WebResearch＋実測で確定）══
 # 実測の方法＝①直近の metrics 日次 zip と REST の同系列を1時間分突き合わせ（OI・比率3種は
 # zip の時刻+5分 = REST の終了時刻ラベルで平均差ゼロ・taker は同時刻で一致）②OI の現在値
@@ -1290,6 +2895,95 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "zscore": dict(k="オシレーター"), "zscore_return": dict(k="オシレーター"),
     "MFI": dict(k="オシレーター", note="出来高系でもあるが行き過ぎの計測が主用途（CP3 Q4 の例示どおり）"),
     "BB%b": dict(k="オシレーター", note="ボラ由来だが 0〜1 の有界位置＝行き過ぎの計測が主用途"),
+    # 業界の指標（pandas-ta 由来・フロー 段6-1 の1回目）
+    "AO%": dict(k="トレンド", note="2つの期間の平均の差＝MACD と同じ作り"),
+    "APO%": dict(k="トレンド", note="同上。平均が単純移動平均である点だけ違う"),
+    "BIAS": dict(k="オシレーター", note="移動平均からの乖離＝行き過ぎの計測"),
+    "BOP": dict(k="ローソク", note="1本のバーの中で買いと売りのどちらが押し切ったか"),
+    "AR": dict(k="オシレーター", note="始値を基準にした上下の力の比"),
+    "BR": dict(k="オシレーター", note="前の終値を基準にした上下の力の比"),
+    "CCI": dict(k="オシレーター"),
+    "CFO": dict(k="オシレーター", note="直線あてはめの予測とのずれ＝行き過ぎの計測"),
+    "CG": dict(k="オシレーター", note="重心の位置＝行き過ぎの計測"),
+    "CMO": dict(k="オシレーター"),
+    "COPC": dict(k="トレンド", note="長い期間の変化率をならしたもの＝向きの計測"),
+    "CTI": dict(k="トレンド", note="時間との相関＝素直に一方向へ動いているか"),
+    "DM+%": dict(k="トレンド"), "DM-%": dict(k="トレンド"),
+    "ER": dict(k="ボラ", note="正味の動き ÷ 途中の動き＝動きの素直さ（向きを持たない）"),
+    "ERI強気%": dict(k="トレンド", note="高値と平均の差＝上方向の押し込み"),
+    "ERI弱気%": dict(k="トレンド", note="安値と平均の差＝下方向の押し込み"),
+    "FISHER": dict(k="オシレーター"), "FISHERシグナル": dict(k="オシレーター"),
+    "INERTIA": dict(k="トレンド", note="活力指数をならしたもの"),
+    "KDJ%K": dict(k="オシレーター"), "KDJ%D": dict(k="オシレーター"), "KDJ%J": dict(k="オシレーター"),
+    "KST": dict(k="トレンド"), "KSTシグナル": dict(k="トレンド"),
+    "LRSI": dict(k="オシレーター"),
+    # 業界の指標（pandas-ta 由来・フロー 段6-1 の2回目）
+    "MOM%": dict(k="トレンド", note="n 本前との差＝向きの計測"),
+    "PGO": dict(k="オシレーター", note="平均からの離れを値動きの荒さでならした行き過ぎの計測"),
+    "PO": dict(k="オシレーター", note="直線あてはめからのずれ＝行き過ぎの計測"),
+    "PSL": dict(k="オシレーター", note="上げた本数の割合＝買われすぎ・売られすぎ"),
+    "RSX": dict(k="オシレーター"),
+    "PPO": dict(k="トレンド"), "PPOシグナル": dict(k="トレンド"), "PPOヒスト": dict(k="トレンド"),
+    "PVO": dict(k="出来高"), "PVOシグナル": dict(k="出来高"), "PVOヒスト": dict(k="出来高"),
+    "RVGI": dict(k="オシレーター", note="バスの中の終値の位置を積み上げたもの"),
+    "RVGIシグナル": dict(k="オシレーター"), "RVGIヒスト": dict(k="オシレーター"),
+    "QQE": dict(k="オシレーター"), "QQE_RSIMA": dict(k="オシレーター"),
+    "SMC_SWEEP": dict(k="構造・位置", note="直前の高値・安値を抜いて戻した足＝水準に関わる判定"),
+    "SQZ": dict(k="ボラ", note="帯の縮み具合から作る値"),
+    "SQZ_ON": dict(k="ボラ"),
+    "SQZPRO_ON_WIDE": dict(k="ボラ"), "SQZPRO_ON_NARROW": dict(k="ボラ"),
+    "STC": dict(k="トレンド"), "STCstoch": dict(k="トレンド"),
+    # 業界の指標（pandas-ta 由来・フロー 段6-1 の3回目）
+    "StochRSI%K": dict(k="オシレーター"), "StochRSI%D": dict(k="オシレーター"),
+    "TD_SEQ_UP": dict(k="ローソク", note="連続した足の数え上げ＝直前の並びの形"),
+    "TD_SEQ_DN": dict(k="ローソク", note="同上"),
+    "TRIX": dict(k="トレンド"), "TRIXシグナル": dict(k="トレンド"), "TRIXヒスト": dict(k="トレンド"),
+    "TSI": dict(k="トレンド"), "TSIシグナル": dict(k="トレンド"), "TSIヒスト": dict(k="トレンド"),
+    "UO": dict(k="オシレーター"),
+    "close vs SINWMA%": dict(k="構造・位置"), "SINWMA傾き%": dict(k="トレンド"),
+    "close vs SSF%": dict(k="構造・位置"), "SSF傾き%": dict(k="トレンド"),
+    "close vs SWMA%": dict(k="構造・位置"), "SWMA傾き%": dict(k="トレンド"),
+    "close vs T3%": dict(k="構造・位置"), "T3傾き%": dict(k="トレンド"),
+    "close vs TEMA%": dict(k="構造・位置"), "TEMA傾き%": dict(k="トレンド"),
+    "close vs TRIMA%": dict(k="構造・位置"), "TRIMA傾き%": dict(k="トレンド"),
+    "close vs TSF%": dict(k="構造・位置"), "TSF傾き%": dict(k="トレンド"),
+    "close vs VIDYA%": dict(k="構造・位置"), "VIDYA傾き%": dict(k="トレンド"),
+    "close vs VWMA%": dict(k="構造・位置"), "VWMA傾き%": dict(k="トレンド"),
+    "close vs WMA%": dict(k="構造・位置"), "WMA傾き%": dict(k="トレンド"),
+    "close vs ZLMA%": dict(k="構造・位置"), "ZLMA傾き%": dict(k="トレンド"),
+    "ADXR": dict(k="トレンド"), "DI+": dict(k="トレンド"), "DI-": dict(k="トレンド"), "DX": dict(k="トレンド"),
+    "AMAT_LR": dict(k="トレンド"),
+    "AROONU": dict(k="トレンド"), "AROOND": dict(k="トレンド"), "AROONOSC": dict(k="トレンド"),
+    "CHOP": dict(k="ボラ", note="もみ合いの度合い＝値動きの大きさの計測"),
+    "close vs CKSPl%": dict(k="構造・位置"), "close vs CKSPs%": dict(k="構造・位置"),
+    "DPO%": dict(k="オシレーター"),
+    "close vs PMAX%": dict(k="構造・位置"), "close vs PSAR%": dict(k="構造・位置"),
+    "PSAR加速": dict(k="トレンド"), "PSAR反転": dict(k="構造・位置"),
+    "QSTICK%": dict(k="ローソク", note="終値と始値の差の平均＝バスの中の押し切り方"),
+    "close vs SAREXT%": dict(k="構造・位置"),
+    "TTM_TREND": dict(k="トレンド"), "VHF": dict(k="ボラ"), "VTXP": dict(k="トレンド"), "VTXM": dict(k="トレンド"),
+    "close vs LRb%": dict(k="構造・位置"), "LRb傾き%": dict(k="トレンド"), "LRslope%": dict(k="トレンド"),
+    "close vs MAMA%": dict(k="構造・位置"), "close vs FAMA%": dict(k="構造・位置"),
+    "close vs MCGD%": dict(k="構造・位置"), "MCGD傾き%": dict(k="トレンド"),
+    "close vs MIDPOINT%": dict(k="構造・位置"), "MIDPOINT傾き%": dict(k="トレンド"),
+    "close vs MIDPRICE%": dict(k="構造・位置"), "MIDPRICE傾き%": dict(k="トレンド"),
+    "close vs MMAR%": dict(k="構造・位置"), "MMAR傾き%": dict(k="トレンド"),
+    "close vs PWMA%": dict(k="構造・位置"), "PWMA傾き%": dict(k="トレンド"),
+    "close vs RAINBOW%": dict(k="構造・位置"), "RAINBOW傾き%": dict(k="トレンド"),
+    "close vs RMA%": dict(k="構造・位置"), "RMA傾き%": dict(k="トレンド"),
+    "close vs ALMA%": dict(k="構造・位置"), "ALMA傾き%": dict(k="トレンド"),
+    "close vs DEMA%": dict(k="構造・位置"), "DEMA傾き%": dict(k="トレンド"),
+    "close vs FWMA%": dict(k="構造・位置"), "FWMA傾き%": dict(k="トレンド"),
+    "close vs HILO%": dict(k="構造・位置"),
+    "close vs HMA%": dict(k="構造・位置"), "HMA傾き%": dict(k="トレンド"),
+    "close vs HT_TRENDLINE%": dict(k="構造・位置"),
+    "close vs HWMA%": dict(k="構造・位置"),
+    "close vs JMA%": dict(k="構造・位置"),
+    "close vs KAMA%": dict(k="構造・位置"), "KAMA傾き%": dict(k="トレンド"),
+    "close vs LINREG%": dict(k="構造・位置"), "LINREG傾き%": dict(k="トレンド"),
+    "LRangle": dict(k="トレンド"),
+    "VWMACD線%": dict(k="トレンド", note="出来高で重みづけた MACD"),
+    "VWMACDシグナル%": dict(k="トレンド"), "VWMACDヒスト%": dict(k="トレンド"),
     # ボラ
     "ATR%": dict(k="ボラ"), "BB幅": dict(k="ボラ"), "realized_vol": dict(k="ボラ"), "Donchian幅": dict(k="ボラ"),
     # 出来高
@@ -1370,6 +3064,119 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "転換線": (("ichimoku",), "ichimoku が転換線・基準線をまとめて返す"),
     "基準線": (("ichimoku",), "同上"),
     "RCI": ((), "順位相関の指標。ライブラリに相当する関数が無い（scipy の順位相関で独立に照合する＝段3の(b)）"),
+    # ── フロー 段6-1 の1回目で足した19関数（アルファベット順 ao〜lrsi）──
+    "AO%": (("ao",), "ao そのもの。うちは終値で割って%にしている（H6）"),
+    "APO%": (("apo",), "apo そのもの。同上で%化。★平均が単純移動平均＝MACD線%（EMA）とは別物"),
+    "BIAS": (("bias",), ""),
+    "BOP": (("bop",), ""),
+    "AR": (("brar",), "brar が AR・BR をまとめて返す"),
+    "BR": (("brar",), "同上"),
+    "CCI": (("cci",), ""),
+    "CFO": (("cfo", "fosc"), "cfo と fosc は同じ式（実測でぴったり重なる）＝1つにまとめた"),
+    "CG": (("cg",), ""),
+    "CMO": (("cmo",), ""),
+    "COPC": (("coppock",), ""),
+    "CTI": (("cti",), ""),
+    "DM+%": (("dm",), "dm が上下をまとめて返す。うちは終値で割って%にしている（H6）"),
+    "DM-%": (("dm",), "同上"),
+    "ER": (("er",), ""),
+    "ERI強気%": (("eri",), "eri が強気・弱気をまとめて返す。うちは%化（H6）"),
+    "ERI弱気%": (("eri",), "同上"),
+    "FISHER": (("fisher",), "fisher が本体とシグナルをまとめて返す"),
+    "FISHERシグナル": (("fisher",), "同上"),
+    "INERTIA": (("inertia",), ""),
+    "KDJ%K": (("kdj",), "kdj が K・D・J をまとめて返す"),
+    "KDJ%D": (("kdj",), "同上"), "KDJ%J": (("kdj",), "同上"),
+    "KST": (("kst",), "kst が本体とシグナルをまとめて返す"),
+    "KSTシグナル": (("kst",), "同上"),
+    "LRSI": (("lrsi",), ""),
+    # ── フロー 段6-1 の2回目で足したもの（macdext〜stc）──
+    "MOM%": (("mom",), "mom そのもの。うちは終値で割って%にしている（H6）"),
+    "PGO": (("pgo",), ""), "PO": (("po",), ""), "PSL": (("psl",), ""), "RSX": (("rsx",), ""),
+    "PPO": (("ppo",), "ppo が本体・ヒスト・シグナルをまとめて返す"),
+    "PPOシグナル": (("ppo",), "同上"), "PPOヒスト": (("ppo",), "同上"),
+    "PVO": (("pvo",), "pvo が本体・ヒスト・シグナルをまとめて返す"),
+    "PVOシグナル": (("pvo",), "同上"), "PVOヒスト": (("pvo",), "同上"),
+    "RVGI": (("rvgi",), "rvgi が本体・シグナル・ヒストをまとめて返す"),
+    "RVGIシグナル": (("rvgi",), "同上"), "RVGIヒスト": (("rvgi",), "同上"),
+    "QQE": (("qqe",), "qqe が7列 返すうち、重ならない2列だけ入れた"),
+    "QQE_RSIMA": (("qqe",), "同上"),
+    "SMC_SWEEP": (("smc_sweep",), ""),
+    "SQZ": (("squeeze",), "squeeze が4列 返す"),
+    "SQZ_ON": (("squeeze",), "同上"),
+    "SQZPRO_ON_WIDE": (("squeeze_pro",), "squeeze_pro が6列 返すうち、squeeze と重ならない3列だけ入れた"),
+    "SQZPRO_ON_NARROW": (("squeeze_pro",), "同上"),
+    "STC": (("stc",), "stc が3列 返すうち、MACD の列は うちの MACD線% と同じなので入れない"),
+    "STCstoch": (("stc",), "同上"),
+    # ── フロー 段6-1 の3回目で足したもの（stochf〜willr）──
+    "StochRSI%K": (("stochrsi",), "stochrsi が %K・%D をまとめて返す"),
+    "StochRSI%D": (("stochrsi",), "同上"),
+    "TD_SEQ_UP": (("td_seq",), "td_seq が上げ側・下げ側をまとめて返す"),
+    "TD_SEQ_DN": (("td_seq",), "同上"),
+    "TRIX": (("trix",), "trix が本体とシグナルをまとめて返す"),
+    "TRIXシグナル": (("trix",), "同上"),
+    "TRIXヒスト": (("trixh",), "trixh はヒストの列だけ新しい（本体とシグナルは trix と同じ）"),
+    "TSI": (("tsi",), "tsi が本体とシグナルをまとめて返す"),
+    "TSIシグナル": (("tsi",), "同上"), "TSIヒスト": (("tsi",), "同上（差はうちで作る）"),
+    "UO": (("uo",), ""),
+    # ── trend 16関数 ──
+    "ADXR": (("adxr",), ""), "DI+": (("adxr",), "adxr が DI+ / DI− も返す"), "DI-": (("adxr",), "同上"),
+    "DX": (("dx",), ""), "AMAT_LR": (("amat",), "★式の上で slow は効かず、売り側は裏返しなので買い側の1列だけ入れた"),
+    "AROONU": (("aroon",), "aroon が上昇・下降・振動子をまとめて返す"),
+    "AROOND": (("aroon",), "同上"), "AROONOSC": (("aroon",), "同上"),
+    "CHOP": (("chop",), ""),
+    "close vs CKSPl%": (("cksp",), "値段そのもの。うちは終値との距離%（H6）"),
+    "close vs CKSPs%": (("cksp",), "同上"),
+    "DPO%": (("dpo",), "値段の差。うちは終値で割って%化（H6）。★centered=False で呼ぶ"),
+    "close vs PMAX%": (("pmax",), "値段そのもの。うちは終値との距離%（H6）"),
+    "close vs PSAR%": (("psar",), "同上。買い側・売り側のうち出ている方を使う"),
+    "PSAR加速": (("psar",), "同上"), "PSAR反転": (("psar",), "同上"),
+    "QSTICK%": (("qstick",), "終値と始値の差。うちは終値で割って%化（H6）"),
+    "close vs SAREXT%": (("sarext",), "値段そのもの。うちは終値との距離%（H6）"),
+    "TTM_TREND": (("ttm_trend",), ""), "VHF": (("vhf",), ""),
+    "VTXP": (("vortex",), "vortex が上昇・下降をまとめて返す"), "VTXM": (("vortex",), "同上"),
+    # ── overlap 3回目（sinwma〜zlma）──
+    "close vs SINWMA%": (("sinwma",), "値段そのもの。うちは終値との距離%（H6）"), "SINWMA傾き%": (("sinwma",), "同上（傾きの形）"),
+    "close vs SSF%": (("ssf",), "値段そのもの。うちは終値との距離%（H6）"), "SSF傾き%": (("ssf",), "同上（傾きの形）"),
+    "close vs SWMA%": (("swma",), "値段そのもの。うちは終値との距離%（H6）"), "SWMA傾き%": (("swma",), "同上（傾きの形）"),
+    "close vs T3%": (("t3",), "値段そのもの。うちは終値との距離%（H6）"), "T3傾き%": (("t3",), "同上（傾きの形）"),
+    "close vs TEMA%": (("tema",), "値段そのもの。うちは終値との距離%（H6）"), "TEMA傾き%": (("tema",), "同上（傾きの形）"),
+    "close vs TRIMA%": (("trima",), "値段そのもの。うちは終値との距離%（H6）"), "TRIMA傾き%": (("trima",), "同上（傾きの形）"),
+    "close vs TSF%": (("tsf",), "値段そのもの。うちは終値との距離%（H6）"), "TSF傾き%": (("tsf",), "同上（傾きの形）"),
+    "close vs VIDYA%": (("vidya",), "値段そのもの。うちは終値との距離%（H6）"), "VIDYA傾き%": (("vidya",), "同上（傾きの形）"),
+    "close vs VWMA%": (("vwma",), "値段そのもの。うちは終値との距離%（H6）"), "VWMA傾き%": (("vwma",), "同上（傾きの形）"),
+    "close vs WMA%": (("wma",), "値段そのもの。うちは終値との距離%（H6）"), "WMA傾き%": (("wma",), "同上（傾きの形）"),
+    "close vs ZLMA%": (("zlma",), "値段そのもの。うちは終値との距離%（H6）"), "ZLMA傾き%": (("zlma",), "同上（傾きの形）"),
+    # ── overlap 2回目（linregintercept〜rma）──
+    "close vs LRb%": (("linregintercept",), "値段そのもの。うちは終値との距離%（H6）"),
+    "LRb傾き%": (("linregintercept",), "同上（傾きの形）"),
+    "LRslope%": (("linregslope",), "1本あたりの値段の増え方。うちは終値で割って%化（H6）"),
+    "close vs MAMA%": (("mama",), "mama が MAMA・FAMA をまとめて返す"),
+    "close vs FAMA%": (("mama",), "同上"),
+    "close vs MCGD%": (("mcgd",), ""), "MCGD傾き%": (("mcgd",), "同上"),
+    "close vs MIDPOINT%": (("midpoint",), ""), "MIDPOINT傾き%": (("midpoint",), "同上"),
+    "close vs MIDPRICE%": (("midprice",), ""), "MIDPRICE傾き%": (("midprice",), "同上"),
+    "close vs MMAR%": (("mmar",), "mmar が6本の EMA をまとめて返す"),
+    "MMAR傾き%": (("mmar",), "同上"),
+    "close vs PWMA%": (("pwma",), ""), "PWMA傾き%": (("pwma",), "同上"),
+    "close vs RAINBOW%": (("rainbow",), "rainbow が10本の線をまとめて返す"),
+    "RAINBOW傾き%": (("rainbow",), "同上"),
+    "close vs RMA%": (("rma",), ""), "RMA傾き%": (("rma",), "同上"),
+    # ── overlap 1回目（alma〜linregangle）──
+    "close vs ALMA%": (("alma",), "alma は値段そのもの。うちは終値との距離%にしている（H6）"),
+    "ALMA傾き%": (("alma",), "同上（傾きの形）"),
+    "close vs DEMA%": (("dema",), "同上"), "DEMA傾き%": (("dema",), "同上"),
+    "close vs FWMA%": (("fwma",), "同上"), "FWMA傾き%": (("fwma",), "同上"),
+    "close vs HILO%": (("hilo",), "同上"),
+    "close vs HMA%": (("hma",), "同上"), "HMA傾き%": (("hma",), "同上"),
+    "close vs HT_TRENDLINE%": (("ht_trendline",), "同上"),
+    "close vs HWMA%": (("hwma",), "同上"),
+    "close vs JMA%": (("jma",), "同上"),
+    "close vs KAMA%": (("kama",), "同上"), "KAMA傾き%": (("kama",), "同上"),
+    "close vs LINREG%": (("linreg",), "同上"), "LINREG傾き%": (("linreg",), "同上"),
+    "LRangle": (("linregangle",), "角度なので値段に依存しない＝そのまま入れる"),
+    "VWMACD線%": (("vwmacd",), "vwmacd が本体・ヒスト・シグナルをまとめて返す。うちは%化（H6）"),
+    "VWMACDシグナル%": (("vwmacd",), "同上"), "VWMACDヒスト%": (("vwmacd",), "同上"),
     "EMA傾き": (("ema",), "ema そのものはライブラリに在る。うちは その変化率を傾きにしている"),
     # ── ボラ ──
     "ATR%": (("atr", "natr"), "natr＝ATR を終値の%にしたもの＝うちの ATR% と同じ考え方"),
@@ -1419,6 +3226,23 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
 #   「利益最大化するために完全に不要な指標以外はすべて入れてほしい」）。だから ここに載せるのは
 #   「指標ではないもの」に限る。1件ずつ理由を書く。
 INDUSTRY_SKIP: dict[str, str] = {
+    # (c) 同じ挙動＝片方を省く（まこさん決定 2026-08-09・逐語「willrは入れない。他にも同じ挙動の
+    #     指標があれば紛らわしいので片方を省いていく」）。★どれも「片方を定数倍して定数を足しただけで
+    #     ぴったり重なる」ことを実データで確かめた（ずれが値のばらつきの10億分の1 未満）。
+    "willr": "うちの Stoch%K から 100 を引いただけ（実測＝最大差 1.4e-14・5,987本）",
+    "rocp": "うちの ROC を 100 で割っただけ（実測＝最大差 1.1e-14）",
+    "rocr": "うちの ROC に 1 を足して 100 で割っただけ（実測＝最大差 0）",
+    "rocr100": "うちの ROC に 100 を足しただけ（実測＝最大差 0）",
+    "stochf": "うちの Stoch%K・Stoch%D そのもの（実測＝最大差 0）",
+    "fosc": "cfo（チャンデ予測振動子）と同じ式（実測＝ぴったり重なる）",
+    "macdext": "うちの MACD線%・シグナル線%・ヒスト% と同じ（実測＝暖機のあとで最大差 8.6e-14）",
+    "macdfix": "同上（実測＝最大差 8.6e-14）",
+    "slope": "mom（勢い）をローソク足の本数で割っただけ（実測＝ぴったり重なる）",
+    "smi": "tsi（真の強さ指数）を 100 で割っただけ（実測＝100倍して ずれ 7.3e-16）",
+    "plus_dm": "うちの DM+% と同じ（実測＝最大差 1.1e-15）",
+    "minus_dm": "うちの DM-% と同じ（実測＝最大差 2.7e-15）",
+    "mavp": "★未来を見る（H2 違反）。既定では各足で使う本数を np.linspace(2, 30, データ全体の本数) で"
+            "作るので、データが増えると過去の足の値まで変わる（2026-08-09 実測で検出）",
     # (a) 1本の中の値段を平均するだけ＝新しい情報が増えない
     "hl2": "そのバーの高値と安値の平均＝値段そのもの", "hlc3": "高値・安値・終値の平均＝値段そのもの",
     "ohlc4": "4本値の平均＝値段そのもの", "wcp": "終値を重くした加重平均＝値段そのもの",
