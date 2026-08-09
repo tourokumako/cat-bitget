@@ -56,6 +56,119 @@ _SIGFAM = _RATCHET / "signal_families.json"
 
 _GROUP_TBD = "（段8 で埋める）"
 _TBD = "（未定・材料に足すときに決める＝段6）"
+_EEM = _RATCHET / "entry_exit_matrix.md"
+
+# ── 段5（足すものの一覧）で使う「選べるか」の言い方（1か所に置く＝表記ゆれ防止）──
+_SEL_OK = "選べる"
+_SEL_NO_TPL = "選べない（名前の組み立てが未登録＝G6 で拒否）"
+_SEL_NO_COL = "選べない（材料カタログに列が無い）"
+_SEL_NO_H6 = "使えない（価格そのもの＝placement の幾何参照専用・H6）"
+_SEL_NA = "—（まだ材料に入っていない）"
+
+
+def _quiet(fn, *a, **kw):
+    """observe_diag は import と実行で画面に出すので、ここでは黙らせて戻り値だけ使う。"""
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()):
+        return fn(*a, **kw)
+
+
+def _engine_view() -> dict:
+    """engine_tuner がいま「条件の材料として選べる」ものを、実物から機械で数える（段5・2026-08-09 新設）。
+
+    ★なぜ要るか。materials.md の『在る』は『参照表に登録済み』という意味しか無かった。
+      ところが engine_tuner の生成器が条件に選べるのは、そのうちの一部だけ。
+      まこさんが『在る 65』を読んで『65 使える』と受け取ると、実物と食い違う。
+    ★どこから引くか（書き写さない）。
+      engine_tuner_exec.FAMILY_TEMPLATES … 生成器が名前を組み立てられる指標の種類（G6 の線）
+      engine_tuner_gen.material_pool     … (指標, 期間) の候補と時間足＝いま探せる範囲そのもの
+      observe_diag.build_catalog          … 材料カタログの部品（生成器の入口①）
+      signal_families.json extra_parts    … レンジ幾何・時間帯（生成器の入口②③）
+    """
+    import json as _j
+
+    def _load():
+        import engine_tuner_exec as ex
+        import engine_tuner_gen as g
+        import observe_diag as od
+        cfg = od.load_config()
+        pool, tfs, cat_total = g.material_pool(cfg)
+        names = [nm for nm, _f, _d in od.build_catalog(cfg)]
+        return dict(tpl=dict(ex.FAMILY_TEMPLATES), pool=pool, tfs=list(tfs),
+                    cat_total=int(cat_total), names=names,
+                    demand=list(od._DEMAND_FILES), tf_list=list(cfg["timeframes"]))
+    v = _quiet(_load)
+    extra = (_j.loads(_SIGFAM.read_text(encoding="utf-8")).get("extra_parts") or {})
+    v["geo_ok"] = list((extra.get("geo") or {}).get("parts") or [])
+    v["time_ok"] = list((extra.get("time") or {}).get("parts") or [])
+    fams = list(dict.fromkeys(e["family"] for e in iref.REFS))
+    v["selectable_fams"] = sorted({p["family"] for p in v["pool"]})
+    v["unselectable_fams"] = [f for f in fams if f not in set(v["selectable_fams"])]
+    v["cols_selectable"] = len(v["pool"]) * len(v["tfs"])
+    # 期間がいま「点」で固定されている実測（マイルストーン③の対象・段5 は事実を出すだけ）
+    per: dict[str, list[int]] = {}
+    for p in v["pool"]:
+        per.setdefault(p["family"], []).append(int(p["param"]))
+    v["params"] = {k: sorted(set(x)) for k, x in sorted(per.items())}
+    return v
+
+
+def _row_engine(row: dict, ev: dict) -> str:
+    """1行が engine_tuner から選べるかを返す（上の _engine_view の実測だけで決める）。"""
+    if row["状態"] != "在る":
+        return _SEL_NA
+    nm = row["名前"]
+    if nm.startswith("レンジ幾何 "):
+        part = nm.split(" ", 1)[1]
+        if part in ev["geo_ok"]:
+            return _SEL_OK + "（レンジ幾何）"
+        return _SEL_NO_H6
+    if nm in ev["time_ok"]:
+        # 型の表は許すが、生成器が実際に作るかは別（曜日は閾値の格子が未定義＝engine_tuner_gen.py:256）
+        return (_SEL_OK + "（時間帯）") if nm == "時刻" else \
+            "選べない（型の表は許すが、閾値の格子が未定義＝engine_tuner_gen.py:256）"
+    if nm in ev["demand"]:
+        return _SEL_NO_COL
+    return _SEL_OK if nm in set(ev["selectable_fams"]) else _SEL_NO_TPL
+
+
+def _gaps(ev: dict, body_counts: dict, add_n: int, skip: list) -> list[dict]:
+    """段5＝足すものの一覧。4か所に散っている不足を1つにまとめる（数は全部 実物から）。"""
+    # 検査9（向きの穴）
+    def _dg():
+        import observe_diag as od
+        return od._direction_gap(ev["names"])
+    _dist, _slope, gap = _quiet(_dg)
+    # 検査7（軸カタログ E-c の未実装）
+    ec = [ln for ln in _EEM.read_text(encoding="utf-8").splitlines()
+          if ln.lstrip().startswith("- **E-c")]
+    ax_un: list[str] = []
+    if len(ec) == 1:
+        _ng, rows = iref.axis_ec_check(ec[0], ev["names"] + ev["demand"])
+        ax_un = [f"{r['cat']}＝{r['token']}" for r in rows if r["status"] != "あり"]
+    return [
+        dict(印="A", 何を足すか="業界のライブラリに在って、うちの材料に無い指標",
+             数=add_n, 単位="種類", 出どころ="検査10（observe_diag）",
+             中身="下の『材料の一覧』で状態が「足す」の行"),
+        dict(印="B", 何を足すか="★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標",
+             数=len(ev["unselectable_fams"]), 単位="種類", 出どころ="段5 で新しく数えた（検査には無い）",
+             中身="・".join(ev["unselectable_fams"])),
+        dict(印="C", 何を足すか="★参照表に在るのに、材料カタログに列が無い（需給）",
+             数=len(ev["demand"]), 単位="件", 出どころ="段5 で新しく数えた（検査7 は『あり』と出る＝別の道で見ている）",
+             中身="・".join(ev["demand"])),
+        dict(印="D", 何を足すか="「終値と◯◯の距離%」に対する「◯◯ そのものの向き」",
+             数=len(gap), 単位="件", 出どころ="検査9（observe_diag）", 中身="・".join(gap)),
+        dict(印="E", 何を足すか="軸カタログ（入口 E-c）の未実装",
+             数=len(ax_un), 単位="件", 出どころ="検査7（observe_diag）", 中身="・".join(ax_un) or "（無し）"),
+        dict(印="F", 何を足すか="時間足（1分足・3分足）",
+             数=2, 単位="本", 出どころ="要件 R15（フロー 段7 で足す）",
+             中身=f"いま {len(ev['tf_list'])} 本＝" + "・".join(ev["tf_list"])),
+        dict(印="G", 何を足すか="★型の表は許すが、閾値の格子が無くて選べない部品",
+             数=sum(1 for t in ev["time_ok"] if t != "時刻"), 単位="件",
+             出どころ="段5 で新しく数えた（engine_tuner_gen.py:256 の逐語）",
+             中身="・".join(t for t in ev["time_ok"] if t != "時刻") or "（無し）"),
+    ]
 
 
 def _roles_by_lineage() -> dict[str, list[str]]:
@@ -142,9 +255,27 @@ def build_body() -> dict:
     counts = {"在る": sum(1 for r in rows if r["状態"] == "在る"),
               "足す": sum(1 for r in rows if r["状態"] == "足す"),
               "入れない": sum(1 for r in rows if r["状態"].startswith("入れない"))}
+    # ── 段5（2026-08-09 追加）＝engine_tuner が選べるか ＋ 足すものの一覧 ＋ 入れない一覧 ──
+    ev = _engine_view() if lib else None
+    if ev is not None:
+        for r in rows:
+            r["engine_tuner"] = _row_engine(r, ev)
+        skip_rows = [dict(名前=fn, 理由=iref.INDUSTRY_SKIP[fn])
+                     for fn in iref.INDUSTRY_SKIP if fn in lib]
+        gaps = _gaps(ev, counts, counts["足す"], skip_rows)
+        engine = dict(選べる指標の種類=len(ev["selectable_fams"]),
+                      選べない指標の種類=len(ev["unselectable_fams"]),
+                      選べる組=len(ev["pool"]), 時間足=len(ev["tfs"]),
+                      選べる列=ev["cols_selectable"], カタログ総列数=ev["cat_total"],
+                      レンジ幾何=ev["geo_ok"], 時間帯=ev["time_ok"], 期間=ev["params"])
+    else:
+        for r in rows:
+            r["engine_tuner"] = _SEL_NA
+        skip_rows, gaps, engine = [], [], {}
     return dict(rows=rows, counts=counts,
                 lineage_question={k: dict(問い=v[0], 出典=v[1]) for k, v in iref.LINEAGE_QUESTION.items()},
-                library_ready=bool(lib), library_funcs=len(lib))
+                library_ready=bool(lib), library_funcs=len(lib),
+                gaps=gaps, skip_rows=skip_rows, engine=engine)
 
 
 def _body_hash(body: dict) -> str:
@@ -161,21 +292,78 @@ def render_md(body: dict) -> str:
          "期間は範囲の軸として engine_tuner が探します。", "",
          f"**いまの数＝在る {c['在る']} 件 ／ 足す {c['足す']} 件 ／ 入れない {c['入れない']} 件"
          f"（合計 {len(body['rows'])} 行）。**", "",
-         "> ⚠️ 「入れない」は**まこさんの承認がまだ**です（next_step §5 の10番）。",
+         "> ✅ 「入れない」は**まこさんが承認済み**です（2026-08-09・逐語「1,2,3,4全部いれないくていい」）。",
          "> 既定は「入れる」です（まこさん決定＝「利益最大化するために完全に不要な指標以外はすべて入れてほしい」）。",
          "> ですからここに載っているのは「指標ではないもの」だけです。", "",
          "> ⚠️ 「グループ」の欄は、この段では全部 空です（フロー 段8 で埋めます）。", ""]
+    e = body.get("engine") or {}
+    if e:
+        L += ["## ★1｜足すものの一覧（フロー 段5・まこさんが見るのはここです）", "",
+              "**4か所に散っていた不足を、機械が1つにまとめました。**下の A〜G が、これから足す候補の全部です。",
+              "**この段では1件も足しません。**足すのは段6 です。", "",
+              "| 印 | 何を足すか | 数 | 出どころ |", "|---|---|---|---|"]
+
+        for g in body["gaps"]:
+            L.append(f"| {g['印']} | {g['何を足すか']} | **{g['数']} {g['単位']}** | {g['出どころ']} |")
+        L += ["", "**中身（名前の一覧）**", ""]
+        for g in body["gaps"]:
+            L.append(f"- **{g['印']}（{g['数']} {g['単位']}）** … {g['中身']}")
+        L += ["",
+              "> ★印 B・C・G は、検査9・検査10・検査7 が出したものではありません。**段5 で新しく数えたものです。**",
+              "> 段6 で A（業界の指標）だけを材料カタログに足しても、engine_tuner はそれを条件に選べません。",
+              "> 選べるようにするには B の入口（下の ★2）も一緒に直す必要があります。", "",
+              "## ★2｜engine_tuner がいま条件の材料として選べるもの（段5 で機械が数えた）", "",
+              "**材料カタログに在ることと、engine_tuner が条件に選べることは別です。**",
+              "下は、生成器（engine_tuner_gen）が実際に選べるものを実物から数えた結果です。", "",
+              "| 何 | 数 |", "|---|---|",
+              f"| 材料カタログの列（部品 × 時間足） | {e['カタログ総列数']} 列 |",
+              f"| **engine_tuner が選べる列** | **{e['選べる列']} 列"
+              f"（{100.0 * e['選べる列'] / max(e['カタログ総列数'], 1):.1f}%）** |",
+              f"| engine_tuner が選べる指標の種類 | **{e['選べる指標の種類']} 種類** |",
+              f"| **engine_tuner が選べない指標の種類** | **{e['選べない指標の種類']} 種類**（上の一覧 B） |",
+              f"| そのほかに選べるもの（レンジ幾何） | {'・'.join(e['レンジ幾何']) or '（無し）'} |",
+              f"| そのほかに選べるもの（時間帯） | 時刻だけ（型の表は {'・'.join(e['時間帯'])} を許す） |",
+              "",
+              "**なぜ選べないか**＝実行器の `FAMILY_TEMPLATES`（列名の組み立て表・手書き19件）に載っていない指標は、",
+              "レシピの読み込みの段階で `G6` が拒否します（`engine_tuner_exec.py:170` の逐語＝",
+              "「family の名前組み立てが未登録: …（複合パラメータ family は歩4 で拡張＝生成不可）」）。", "",
+              "## ★3｜パラメータ（指標を作るときのローソク足の本数）が、決まった数字だけに固定されている", "",
+              "**（マイルストーン③の対象。段5 は事実を出すだけで、直しません。）**", "",
+              "**ここで言う数字は、ローソク足の本数です。**指標を計算するとき、直近の何本分のローソク足を使うかを",
+              "先に決めます。RSI7 の「7」は 直近7本、RSI14 の「14」は 直近14本、という意味です。",
+              "5分足なら 7本＝35分ぶん、14本＝70分ぶんになります。本数が少ないほど直近の値動きに素早く反応し、",
+              "多いほどゆっくり動きます。", "",
+              "**これは「パラメータ」です。「閾値」ではありません。**",
+              "パラメータ＝指標を作るときの設定（RSI14 の 14＝本数）。",
+              "閾値＝できあがった値の区切り（「RSI が 70 を超えたら」の 70）。**この表に閾値は出てきません。**", "",
+              "**engine_tuner が試せる本数は、下の数字だけです。**この一覧に無い本数は、何回 試しても永久に出ません。",
+              "例＝RSI で試せるのは 7本・9本・14本・21本 の4つだけで、RSI12（12本）も RSI30（30本）も出てきません。",
+              "本来の形は「範囲で探す」＝7本 から 200本 までの、どの整数でもよい、という探し方です。",
+              "いまは、要件の「作ってはいけないもの」2番（原文＝探す値を、CC が先に「点の一覧」で限定するもの）に",
+              "当たる状態です。数字の出どころ＝`scripts/priority_rebuild/observe_config.json` の `*_periods` の行。", "",
+              "| 指標の種類 | いま試せるローソク足の本数 |", "|---|---|"]
+        for k, v in e["期間"].items():
+            L.append(f"| {k} | {' 本・'.join(str(x) for x in v)} 本（{len(v)} 通り） |")
+        L += ["", "## ★4｜入れないと判断したもの（理由つき・✅ まこさん承認済み 2026-08-09）", "",
+              f"**{len(body['skip_rows'])} 件です。**既定は「入れる」なので、ここに載るのは",
+              "**指標ではないもの**と、**うちに既に同じものが在るもの**だけです。",
+              "（まこさん決定＝「利益最大化するために完全に不要な指標以外はすべて入れてほしい」）",
+              "**承認＝2026-08-09・まこさんの逐語「1,2,3,4全部いれないくていい」。**", "",
+              "| ライブラリの関数 | 入れない理由 |", "|---|---|"]
+        for s in body["skip_rows"]:
+            L.append(f"| {s['名前']} | {s['理由']} |")
+        L += [""]
     L += ["## 答える問いの出どころ（系統ごと・1行ずつ）", "",
           "| 系統 | 答える問い | 出典 |", "|---|---|---|"]
     for k, v in body["lineage_question"].items():
         L.append(f"| {k} | {v['問い']} | {v['出典']} |")
+    cols = ("名前", "系統", "答える問い", "使える役割", "計算の出どころ",
+            "グループ", "状態", "engine_tuner")
     L += ["", "## 材料の一覧", "",
-          "| 名前 | 系統 | 答える問い | 使える役割 | 計算の出どころ | グループ | 状態 |",
-          "|---|---|---|---|---|---|---|"]
+          "| " + " | ".join(cols) + " |",
+          "|" + "---|" * len(cols)]
     for r in body["rows"]:
-        L.append("| " + " | ".join(r[k] for k in
-                                   ("名前", "系統", "答える問い", "使える役割",
-                                    "計算の出どころ", "グループ", "状態")) + " |")
+        L.append("| " + " | ".join(r[k] for k in cols) + " |")
     L += ["", "## この表の作り方（正本＝ここから機械で引いています）", "",
           "| 欄 | どこから引いたか |", "|---|---|",
           "| 名前 | `indicator_reference_diag.REFS` の family（指標の種類 53 件） |",
@@ -185,6 +373,8 @@ def render_md(body: dict) -> str:
           "| 計算の出どころ | `INDUSTRY_MAP`（ライブラリに同じものが在るか）＋ `REFS[ext]`・`EXT2`（照合の相手） |",
           "| グループ | 空（フロー 段8 で埋める） |",
           "| 状態 | 在る＝参照表に登録済み ／ 足す・入れない＝`pandas_ta_classic.Category` と `INDUSTRY_SKIP` |",
+          "| engine_tuner | `engine_tuner_exec.FAMILY_TEMPLATES`（生成器が名前を組み立てられる指標）"
+          "＋ `engine_tuner_gen.material_pool`（実際の候補）＋ `signal_families.json` の `extra_parts` |",
           "", f"（業界のライブラリの関数 {body['library_funcs']} 種類を読み込みました"
           f"{'' if body['library_ready'] else '＝★入っていないので 足す・入れない の行が出ていません'}）", ""]
     return "\n".join(L) + "\n"
@@ -272,6 +462,37 @@ def selftest() -> int:
     # T5 答える問いの出どころが、系統の数だけ揃っている
     if set(body["lineage_question"]) != set(iref.LINEAGE_KINDS):
         ng.append("T5: 答える問いの表が、系統の一覧と食い違う")
+    # ── 段5（2026-08-09 追加）の番人 ──
+    # T7 engine_tuner の欄が全行に在り、「在る」の行に判定不能が混ざっていない
+    for r in rows:
+        if not r.get("engine_tuner"):
+            ng.append(f"T7: 『{r['名前']}』に engine_tuner の欄が無い")
+        elif r["状態"] == "在る" and r["engine_tuner"] == _SEL_NA:
+            ng.append(f"T7: 『{r['名前']}』は材料に在るのに engine_tuner の欄が『まだ入っていない』")
+    # T8 足すものの一覧の数が、いま材料の一覧に出ている「足す」の件数と一致する（表と一覧の食い違い防止）
+    ga = {g["印"]: g for g in body.get("gaps", [])}
+    if ga and ga["A"]["数"] != body["counts"]["足す"]:
+        ng.append(f"T8: 足すものの一覧 A の {ga['A']['数']} が、材料の一覧の『足す』{body['counts']['足す']} 件と合わない")
+    # T8-2 「選べない指標の種類」の数が、一覧 B の数と一致する
+    if ga and ga["B"]["数"] != body["engine"]["選べない指標の種類"]:
+        ng.append("T8-2: 一覧 B の数が engine_tuner の集計と合わない")
+    # T9 わざと FAMILY_TEMPLATES から1件 消すと「選べない」が1件 増える（この検査が生きていることの確認）
+    try:
+        import engine_tuner_exec as _ex
+        _keep = dict(_ex.FAMILY_TEMPLATES)
+        _base = len(_engine_view()["unselectable_fams"])
+        _ex.FAMILY_TEMPLATES.pop("RSI", None)
+        _cut = len(_engine_view()["unselectable_fams"])
+        if _cut != _base + 1:
+            ng.append(f"T9: FAMILY_TEMPLATES から1件 消しても『選べない』が増えない（{_base} → {_cut}）")
+    except Exception as _e:                                      # noqa: BLE001
+        ng.append(f"T9: 実行器を読み込めないので『選べるか』の検査を確かめられない（{str(_e)[:60]}）")
+    finally:
+        try:
+            _ex.FAMILY_TEMPLATES.clear()
+            _ex.FAMILY_TEMPLATES.update(_keep)
+        except Exception:                                        # noqa: BLE001
+            pass
     # T6 わざと書き換えると --verify が鳴る（メタ確認）
     if _MD.exists():
         keep = _MD.read_text(encoding="utf-8")
