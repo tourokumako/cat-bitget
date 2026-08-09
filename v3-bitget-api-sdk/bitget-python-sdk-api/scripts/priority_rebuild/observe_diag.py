@@ -2366,6 +2366,8 @@ INSPECT_SECTIONS = [
     "検査6 需給データを検査する（taker_ls・L-S比・CVD＝重複・整合・欠け・窓ごとの被覆・終端より後を埋めていないか）",
     "検査7 軸カタログ（entry_exit_matrix E-c）と実装を突き合わせる（一覧にあるが実装の無い指標を機械で出す）",
     "検査8 レンジ幾何列を検査する（res_hi/res_lo/sup_hi/sup_lo/mid/W%/帯内位置%＝定義表・既知答え・切り詰め再計算・被覆）",
+    "検査9 「終値と◯◯の距離%」に対して「◯◯ そのものの向き」が在るかを突き合わせる（材料の穴を機械で出す）",
+    "検査10 業界のライブラリ（pandas-ta-classic）の指標一覧と、うちの材料を突き合わせる（不足を機械で出す）",
 ]
 # 検査の線（全部この場で印字する＝黙って変えられない）。指標照合の許容差は
 # indicator_reference_diag（参照表の tol）が正本。
@@ -2553,6 +2555,31 @@ def _insp_indicator_match(bars: pd.DataFrame, cfg: dict, catalog: list | None = 
                     bad = True
         else:
             marks.append("外部=対象外" if ref["ext"] is None else "外部=ta無し")
+        # ①-2 2つ目の外部の照合相手（pandas-ta ／ scipy・2026-08-09 新設・フロー 段3 の 3-2/3-3）
+        #     ta で照合できない指標のうち、別のライブラリ・別の道具で照合できるものをここで見る。
+        x2 = iref.EXT2.get(ref["family"])
+        if x2 is not None and iref.ext2_ready():
+            fn2, tool = x2
+            try:
+                s2 = fn2(sample, prm)
+            except Exception as e:
+                s2 = None
+                ng.append(f"{name}: 2つ目の照合（{tool}）が計算できない: {str(e)[:50]}")
+                bad = True
+            if s2 is not None:
+                dmax = _cmp(mine, s2)
+                if dmax is None:
+                    marks.append(f"外部2[{tool}]=点不足")
+                elif dmax <= ref["tol"]:
+                    marks.append(f"外部2[{tool}]✓({dmax:.0e})")
+                    verified.add(name)
+                else:
+                    marks.append(f"外部2[{tool}]✗({dmax:.1e})")
+                    ng.append(f"{name}: 2つ目の照合（{tool}）と不一致"
+                              f"（最大差 {dmax:.3e} > 許容 {ref['tol']:.0e}）")
+                    bad = True
+        elif x2 is not None:
+            marks.append("外部2=道具無し")
         # ② 教科書の式の独立実装
         if ref["tb"] is not None:
             try:
@@ -2649,9 +2676,59 @@ def _insp_property(cfg: dict, catalog: list | None = None) -> tuple[set, dict]:
     return ok, why
 
 
+def _ref_coverage_counts(refs: list, ext2_keys) -> tuple[list[str], list[str]]:
+    """照合の相手の数を数える（純粋な計算＝番人が偽の表を渡して既知答えで確かめられる）。
+    戻り値＝(外部の照合相手がいない family, そのうち手計算の既知答えも無い family)。"""
+    no_ext, only_mine = [], []
+    for e in refs:
+        if e["ext"] is None and e["family"] not in ext2_keys:
+            no_ext.append(e["family"])
+            if e["known"] is None:
+                only_mine.append(e["family"])
+    return no_ext, only_mine
+
+
+def _insp_ref_coverage() -> list[str]:
+    """検査3 の頭に出す「私が書いた式だけで担保されている件数」（2026-08-09・フロー 段3 の 3-5）。
+    ★何を伝えるか＝外部の照合相手も、別の道具も、手計算の既知答えも無い指標は、
+      私（CC）が2回 同じ向きに読み違えると、そのまま通ってしまう。その件数を毎回 出す。"""
+    no_ext, only_mine = _ref_coverage_counts(iref.REFS, set(iref.EXT2))
+    n = len(iref.REFS)
+    print(f"  ── 照合の相手の数（指標の種類 {n} 件）──")
+    print(f"     外部ライブラリ ta で照合 {sum(1 for e in iref.REFS if e['ext'] is not None)} 件"
+          f" ／ 2つ目の道具で照合 {len(iref.EXT2)} 件"
+          f" ／ ★外部の照合相手がいない {len(no_ext)} 件")
+    print(f"     ★そのうち手計算の既知答えも無い（＝私が書いた式だけで担保）: {len(only_mine)} 件"
+          + (f" … {'・'.join(only_mine)}" if only_mine else "（無し）"))
+    print("     ↑ この件数が、私の書き間違いだけで通ってしまう範囲です（フロー 段3 の 3-5）")
+    # 仕分け表（フロー 段3 の 3-1）＝ta で照合できない指標を (a)(b)(c) に分けて出す。
+    # ★どれが (a) かは「名前が同じだから」でなく「実データで許容差の中に入ったから」で決めている
+    #   （入らなかったものは EXT2 に足していない＝ここで (c) に出る）。
+    rest = [e for e in iref.REFS if e["ext"] is None]
+    grp: dict[str, list[str]] = {"(a) 別のライブラリで照合できる": [], "(b) 別の道具で照合できる": [],
+                                 "(c) 外部の照合相手がいない": []}
+    for e in rest:
+        x2 = iref.EXT2.get(e["family"])
+        if x2 is None:
+            grp["(c) 外部の照合相手がいない"].append(
+                e["family"] + ("（手計算の既知答えあり）" if e["known"] is not None else "（★既知答えも無い）"))
+        elif x2[1] == "pandas-ta":
+            grp["(a) 別のライブラリで照合できる"].append(f"{e['family']}［{x2[1]}］")
+        else:
+            grp["(b) 別の道具で照合できる"].append(f"{e['family']}［{x2[1]}］")
+    print(f"  ── 仕分け（ta で照合できない {len(rest)} 件・フロー 段3 の 3-1）──")
+    for k, v in grp.items():
+        print(f"     {k}: {len(v)} 件")
+        for x in v:
+            print(f"        ・{x}")
+    return []
+
+
 def _insp_indicator_stage(bars: pd.DataFrame, cfg: dict) -> list[str]:
     """検査3 全体＝定義表の機械印字＋3本柱の照合＋性質テスト＋全列の3区分。"""
     print(f"  外部ライブラリ照合: {'ta（非同型の照合相手＝別の実装者のコード）' if iref.TA_OK else '⚠️ ta が無い環境＝独立実装と既知答えで担保'}")
+    print(f"  2つ目の照合の相手: {'pandas-ta-classic と scipy（2026-08-09 追加）' if iref.ext2_ready() else '⚠️ 入っていない環境＝1つ目だけで担保'}")
+    _insp_ref_coverage()
     print("  ── 定義表（指標ごとの定義・流儀・方向の意味。この表が検査の物差し）──")
     for e in iref.REFS:
         print(f"     ◆ {e['family']} … {e['teigi']}")
@@ -2862,6 +2939,81 @@ def _insp_axis(cfg: dict) -> list[str]:
     return ng
 
 
+# ══ 検査9・検査10（材料の不足を機械で出す・2026-08-09 新設・マイルストーン①のフロー 段2）═══════
+# ★置き場所をここにした理由＝新しい道具を別に作ると、材料の正本が2つになるため（フロー 段2 の本文）。
+# ★どちらも「足りないものを数えて出す」だけ。材料を足さない・式を直さない（足すのは段6）。
+_DIST_PAT = re.compile(r"^close vs (.+?)%")   # 「終値と◯◯の距離%」の部品
+_SLOPE_PAT = re.compile(r"^(.+?)傾き")         # 「◯◯ そのものの向き」の部品
+
+
+def _direction_gap(names: list[str]) -> tuple[list[str], list[str], list[str]]:
+    """カタログ名の一覧から ①距離%の対象 ②向きの対象 ③距離は在るが向きが無い対象 を出す。
+    対象＝「close vs 」と「%」の間の文字。期間を含む＝SMA20 と SMA50 は別の対象として数える
+    （SMA20 の向きが在っても SMA50 の向きの代わりにはならないため）。"""
+    dist: list[str] = []
+    slope: list[str] = []
+    for n in names:
+        m = _DIST_PAT.match(n)
+        if m and m.group(1) not in dist:
+            dist.append(m.group(1))
+        m2 = _SLOPE_PAT.match(n)
+        if m2 and m2.group(1) not in slope:
+            slope.append(m2.group(1))
+    return dist, slope, [d for d in dist if d not in slope]
+
+
+def _insp_direction_gap(cfg: dict, catalog: list | None = None) -> list[str]:
+    """検査9 「終値と◯◯の距離%」に対して「◯◯ そのものの向き」が在るかの突き合わせ。
+    ❌＝この検査自身が死んでいるとき（命名が変わって距離の部品を1つも拾えない）。
+    穴そのものは ⚠️ の報告＝材料を足すのはフロー 段6（検査で直さない）。"""
+    names = [nm for nm, _f, _d in (catalog if catalog is not None else build_catalog(cfg))]
+    dist, slope, gap = _direction_gap(names)
+    print(f"  「終値と◯◯の距離%」の対象 {len(dist)} 個 ／ 「◯◯ そのものの向き」の対象 {len(slope)} 個"
+          f" ／ ★距離は在るが向きが無い {len(gap)} 件")
+    print(f"     向きが在る対象: {'・'.join(slope) if slope else '（無し）'}")
+    for g in gap:
+        print(f"     ⚠️ {g}: 「終値と{g}の距離%」は在るが、「{g} そのものの向き」の部品が無い")
+    print("  ⚠️＝材料の穴の報告（直すのはフロー 段6）。V9 の9本のうち6本が BB 中央線（＝SMA20）の傾きを使っている")
+    return [] if dist else ["「close vs ◯◯%」の形の部品が1つも無い＝命名が変わって この検査が死んでいる"]
+
+
+def _insp_industry(cfg: dict, lib_funcs: dict | None = None) -> list[str]:
+    """検査10 業界のライブラリ（pandas-ta-classic）の指標一覧と、うちの材料の突き合わせ。
+    ❌＝ライブラリが入っていない／対応表 INDUSTRY_MAP が実物とずれている（表の直し忘れ）。
+    足りない指標そのものは ⚠️ の報告＝足すのはフロー 段6。
+    lib_funcs は番人専用＝偽の関数一覧を注入して、検査が実際に落ちることを確かめる。"""
+    ver = "（注入・番人用）"
+    if lib_funcs is None:
+        try:
+            import pandas_ta_classic as _pt
+            lib_funcs = {k: list(v) for k, v in _pt.Category.items()}
+            ver = str(_pt.version)
+        except Exception as e:                                  # noqa: BLE001
+            return ["業界のライブラリ pandas-ta-classic が読めない＝突き合わせ不能"
+                    f"（{str(e)[:60]}）。requirements.txt の版で入れる"]
+    fams = [e["family"] for e in iref.REFS]
+    r = iref.industry_gap(lib_funcs, fams)
+    print(f"  ライブラリ pandas-ta-classic {ver}: 関数 {len(r['all_fn'])} 種類"
+          f"（{' / '.join(f'{k} {len(v)}' for k, v in lib_funcs.items())}）")
+    print(f"  うちの参照表 family {len(dict.fromkeys(fams))} 種類 → 押さえている関数 {len(r['covered'])} 種類")
+    print(f"  ★押さえていない関数 {len(r['missing'])} 種類 ＝ 入れない候補 {len(r['skip'])} ＋ ★入れる候補 {len(r['add'])}")
+    print("  ── 対応表（うちの指標 → 同じものを計算するライブラリの関数）──")
+    for f in dict.fromkeys(fams):
+        fns, note = iref.INDUSTRY_MAP.get(f, ((), "（対応表に無い）"))
+        print(f"     {f:18s} → {('・'.join(fns) if fns else '（無し）'):22s} {note}")
+    print("  ── 入れない候補（★まこさんの承認はまだ・next_step §5 の10番。指標でないものに限る）──")
+    for fn in r["skip"]:
+        print(f"     {fn:16s} {iref.INDUSTRY_SKIP[fn]}")
+    print("  ── ★入れる候補（既定は「入れる」＝まこさん決定「完全に不要な指標以外はすべて入れてほしい」）──")
+    for cat in lib_funcs:
+        got = [fn for fn in r["add"] if r["all_fn"][fn] == cat]
+        if got:
+            print(f"     [{cat} {len(got)}] " + ", ".join(sorted(got)))
+    print("  ⚠️ 2026-08-08 に手で数えた数（押さえている34／不足159／入れる候補139）は再現できない＝"
+          "そのときの対応表が記録に残っていないため。上の数は この対応表から機械が数えたもの")
+    return r["ng"]
+
+
 def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
     """データと指標の検査（歩0）＝5段を順に走らせ、まとめを機械出力する。❌ が1つでもあれば終了コード1。"""
     cfg = load_config(config_path)
@@ -2872,7 +3024,8 @@ def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
     print(f"# 設定: {cfg['_source']} ／ 足 {cfg['timeframes']} ／ 指標 {len(build_catalog(cfg))} 種")
     print("# 窓（periods.py 正本）: " + " ／ ".join(
         f"{nm} {a.date()}〜{(b - pd.Timedelta('1D')).date()}" for nm, a, b in _insp_windows()))
-    print("# 5段の検査。上流で間違いが出たら下流の結果は全部疑う。売買しない・値決めしない・審判に触れない。")
+    print(f"# 検査の段は {len(INSPECT_SECTIONS)} 段（下のまとめに全部 出る）。"
+          "上流で間違いが出たら下流の結果は全部疑う。売買しない・値決めしない・審判に触れない。")
     print("#" * 100)
     fails = {}
     stages = [("検査1", INSPECT_SECTIONS[0], lambda: _insp_source(bars)),
@@ -2881,7 +3034,9 @@ def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
               ("検査4", INSPECT_SECTIONS[3], lambda: _insp_lookahead(bars, cfg))]
     stages += [("検査6", INSPECT_SECTIONS[5], lambda: _insp_demand(bars)),
                ("検査7", INSPECT_SECTIONS[6], lambda: _insp_axis(cfg)),
-               ("検査8", INSPECT_SECTIONS[7], lambda: _insp_range_geo(bars, cfg))]
+               ("検査8", INSPECT_SECTIONS[7], lambda: _insp_range_geo(bars, cfg)),
+               ("検査9", INSPECT_SECTIONS[8], lambda: _insp_direction_gap(cfg)),
+               ("検査10", INSPECT_SECTIONS[9], lambda: _insp_industry(cfg))]
     for key, title, run in stages:
         if key == "検査6":                     # 検査5（判定なしの報告）を順番どおり挟む
             _h(INSPECT_SECTIONS[4])
@@ -3699,6 +3854,41 @@ def selftest() -> None:
         _ng3b, _v3b, _r3b = _insp_indicator_match(_sb3, cfg)
     if _ng3b:
         ng.append(f"検査3 が正しいカタログで不一致を出す（許容差の線を疑う）: {_ng3b[:3]}")
+    # ★段3（照合の相手を増やす・2026-08-09）の番人
+    #  ① 2つ目の照合（pandas-ta ／ scipy）が実際に効く＝わざと少しずらした式で「2つ目の照合」の不一致が出る
+    _z3 = f"zscore{cfg['zscore_periods'][0]}"
+    _zfn = dict((nm, fn) for nm, fn, _d in build_catalog(cfg))[_z3]
+    _fakex2 = [(_z3, lambda d: _zfn(d) * 1.01, True)]
+    with _cl2.redirect_stdout(_q):
+        _ngx2, _vx2, _rx2 = _insp_indicator_match(_sb3, cfg, catalog=_fakex2)
+    if not any("2つ目の照合" in x and "不一致" in x for x in _ngx2):
+        ng.append("検査3 の2つ目の照合（pandas-ta / scipy）が、わざとずらした式を見逃す")
+    #  ② POC・VAH・VAL の手計算の既知答えが実際に効く＝わざとずらした式で「既知答えと不一致」が出る
+    _vpn = cfg["vp_windows"][0]
+    for _key in ("POC", "VAH", "VAL"):
+        _nm = f"close vs {_key}%{_vpn}"
+        _vfn = dict((nm, fn) for nm, fn, _d in build_catalog(cfg))[_nm]
+        with _cl2.redirect_stdout(_q):
+            _ngk, _vk, _rk = _insp_indicator_match(_sb3, cfg,
+                                                   catalog=[(_nm, lambda d, f=_vfn: f(d) + 1.0, True)])
+        if not any("既知答えと不一致" in x for x in _ngk):
+            ng.append(f"{_key} の手計算の既知答えが、わざとずらした式を見逃す（3-4 の担保が死んでいる）")
+    #  ③ 3-5 の数え方の既知答え（偽の表を渡して、数え方そのものを確かめる＝本物の表を壊さない）
+    _fk = [dict(family="外部もなく既知答えも無い", ext=None, known=None),
+           dict(family="外部は無いが既知答えは在る", ext=None, known=(lambda p: [])),
+           dict(family="外部で照合できる", ext=(lambda d, p: None), known=None),
+           dict(family="2つ目の照合がある", ext=None, known=None)]
+    _no35, _om35 = _ref_coverage_counts(_fk, set())
+    if (_no35, _om35) != (["外部もなく既知答えも無い", "外部は無いが既知答えは在る", "2つ目の照合がある"],
+                          ["外部もなく既知答えも無い", "2つ目の照合がある"]):
+        ng.append(f"3-5 の数え方が既知答えと合わない（外部なし{_no35} ／ 私の式だけ{_om35}）")
+    _no35b, _om35b = _ref_coverage_counts(_fk, {"2つ目の照合がある"})
+    if len(_no35b) != 2 or len(_om35b) != 1:
+        ng.append(f"3-5 が『2つ目の照合が在る』を数から外せていない（{_no35b} / {_om35b}）")
+    #  ④ POC・VAH・VAL に手計算の既知答えが在ること（3-4 が消えたら落とす）
+    for _k in ("POC", "VAH", "VAL"):
+        if next(e for e in iref.REFS if e["family"] == _k)["known"] is None:
+            ng.append(f"{_k} に手計算の既知答えが無い（3-4 の担保が消えている）")
     # 参照表の網羅＝カタログ全列に定義・照合方法が登録されていること（登録漏れの列を作れない）
     _miss = iref.coverage([nm for nm, _f, _d in build_catalog(cfg)])
     if _miss:
@@ -3814,6 +4004,40 @@ def selftest() -> None:
         _ng7c, _r7c = iref.axis_ec_check(_ec[0], [n for n in _names7 if n != "包み足"])
         if not any("包み足" in x or "engulfing" in x for x in _ng7c):
             ng.append("検査7 が『対応表は実装ありなのに列が無い』を見逃す（実装の欠落を検出できない）")
+    # ★検査9 向きの穴（2026-08-09・マイルストーン①のフロー 段2）の番人＝わざと壊して落ちることを確かめる
+    import contextlib as _cl9
+    import io as _io9
+    _q9 = _io9.StringIO()
+    _d9, _s9, _g9 = _direction_gap(["close vs SMA20%", "close vs EMA9%", "EMA9傾き%", "RSI14"])
+    if (_d9, _s9, _g9) != (["SMA20", "EMA9"], ["EMA9"], ["SMA20"]):
+        ng.append(f"検査9 の拾い方が既知答えと合わない（距離{_d9} 向き{_s9} 穴{_g9}）")
+    _names9 = [nm for nm, _f, _d in build_catalog(cfg)]
+    _base9 = len(_direction_gap(_names9)[2])
+    _cut9 = len(_direction_gap([n for n in _names9 if not n.startswith("EMA9傾き")])[2])
+    if _cut9 != _base9 + 1:
+        ng.append(f"検査9 が『向きの部品を消した』のを見逃す（穴 {_base9} → {_cut9}・+1 のはず）")
+    with _cl9.redirect_stdout(_q9):
+        _ng9 = _insp_direction_gap(cfg, catalog=[("RSI14", None, True)])
+    if not _ng9:
+        ng.append("検査9 が『距離の部品が1つも無い＝命名が変わって検査が死んだ』を見逃す")
+    # ★検査10 業界のライブラリとの突き合わせ（2026-08-09・同）の番人
+    try:
+        import pandas_ta_classic as _pt10
+        _lib10 = {k: list(v) for k, v in _pt10.Category.items()}
+    except Exception:                                           # noqa: BLE001
+        _lib10 = None
+        ng.append("検査10 が使う pandas-ta-classic が入っていない（requirements.txt の版で入れる）")
+    if _lib10 is not None:
+        _fams10 = [e["family"] for e in iref.REFS]
+        if iref.industry_gap(_lib10, _fams10)["ng"]:
+            ng.append(f"検査10 が現状の対応表で不一致を出す（表の直し忘れ）: "
+                      f"{iref.industry_gap(_lib10, _fams10)['ng'][:3]}")
+        _broke10 = {k: [f for f in v if f != "adx"] for k, v in _lib10.items()}
+        if not any("adx" in x for x in iref.industry_gap(_broke10, _fams10)["ng"]):
+            ng.append("検査10 が『対応表が指す関数がライブラリに無い』を見逃す（表の古さを検出できない）")
+        if not any("この指標は存在しない" in x
+                   for x in iref.industry_gap(_lib10, _fams10 + ["この指標は存在しない"])["ng"]):
+            ng.append("検査10 が『対応表に無い指標が足された』を見逃す（材料を足しても表を直さずに済んでしまう）")
     # ★節12 まとめ の番人（2026-08-03・監査 4-18＝要件 R10・まこさん「案１でやってみて」）
     #   この節の約束は「新しい計算を1つもしない＝上の節が出した値をそのまま並べる」。
     #   約束が破られたら（集計や並べ替えを足したら）ここで落とす。

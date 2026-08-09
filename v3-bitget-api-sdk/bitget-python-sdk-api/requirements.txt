@@ -1,0 +1,48 @@
+# requirements.txt — このプロジェクトが動くのに必要な外部ライブラリ（版を固定）
+#
+# 作成: 2026-08-09（マイルストーン①のフロー 段1・やること 1-4）。それまで、依存を宣言するファイルは1つもありませんでした
+# （実測＝リポジトリ直下から4階層まで requirements*.txt / pyproject.toml / setup.py / Pipfile を探して0件）。
+#
+# ★なぜ版を固定するか
+#   pandas と numpy の版が変わると、指標の計算結果が変わり、過去の売買記録・net の数字が全部 変わります。
+#   ですからライブラリを足すときは、必ず恒等3本（S1・L1・S2 の売買記録の md5）が不変であることを確かめます。
+#     python3 scripts/priority_rebuild/engine_tuner_exec.py --identity      # S2  165行 7b01f51b5a9b29b3c05a7b340c203ba1
+#     python3 scripts/priority_rebuild/engine_tuner_exec.py --identity-l1   # L1  367行 96a9102ec8a34f94cf01e9e463f6aade
+#     python3 scripts/priority_rebuild/engine_tuner_exec.py --identity-s1   # S1 6569行 18b3d31a5fe71c4a4b5f83cf1771a46c
+#   md5 が1本でも変わったら、そこで止めてまこさんに出します（勝手に進めません）。
+#
+# ★入れ方（2026-08-09 実測の環境）
+#   python 3.13.3（Homebrew）。この python は PEP 668 の「外部管理」扱いなので、pip はそのままでは入れられません。
+#   既存のライブラリは全部 /usr/local/lib/python3.13/site-packages に入っています。同じ場所へ入れるには次の形です。
+#     python3 -m pip install --break-system-packages -r requirements.txt
+#   入れる前に、何が動くかを必ず先に見ます（--dry-run を付けると、実際には入れずに結果だけ出ます）。
+#
+# ★版はすべて 2026-08-09 に実際に入っている版を機械で読み取ったものです（手で書いた数字ではありません）。
+
+# --- 計算の土台（★この2本の版が動くと、過去の結果が全部 変わります）---
+pandas==2.2.3
+numpy==2.2.5
+
+# --- 指標の計算 ---
+ta==0.11.0                  # 計算式の照合の相手（外部ライブラリ）。参照表53件のうち22件をこれで照合している
+pandas-ta-classic==0.6.52   # 2026-08-09 追加。まこさん指示「pandas-taからも指標をインポートして正本をつくる」
+scipy==1.17.1               # RCI（順位の相関）を独立に計算して照合するのに使う（フロー 段3 の(b)）
+
+# --- 機械学習（いまは固定ルールで進めているが、消さない）---
+lightgbm==4.6.0
+scikit-learn==1.8.0
+joblib==1.5.3
+
+# --- 値の探索 ---
+optuna==4.3.0               # engine_tuner（古い方）が値を振るのに使う
+
+# --- データの読み書き・図 ---
+pyarrow==24.0.0             # parquet（5m足＋指標）の読み書き
+matplotlib==3.10.3          # 週次チャートPNG（report.py M節）
+plotly==6.7.0
+tqdm==4.67.1
+PyYAML==6.0.2
+
+# --- 入れていないもの（意図的）---
+# hmmlearn … scripts/hmm/ の12本が import しているが、入っていない。
+#            この12本は regime（相場状態）判定の研究で、2026-05-13 に凍結済み。動かす必要が出たら入れる。

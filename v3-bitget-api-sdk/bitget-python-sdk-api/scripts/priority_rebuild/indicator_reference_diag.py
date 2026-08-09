@@ -31,6 +31,22 @@ except Exception:
     _ta = None
     TA_OK = False
 
+# 2つ目の外部の照合相手（2026-08-09・マイルストーン①のフロー 段3）。
+# ta で照合できない31件のうち、pandas-ta-classic なら照合できるものを拾うために足した。
+try:
+    import pandas_ta_classic as _pta
+    PTA_OK = True
+except Exception:
+    _pta = None
+    PTA_OK = False
+# 3つ目の道具（ライブラリではない・独立に計算できるもの）。RCI の順位相関に使う。
+try:
+    from scipy import stats as _sps
+    SCIPY_OK = True
+except Exception:
+    _sps = None
+    SCIPY_OK = False
+
 _IDX0 = "2026-03-01"
 
 
@@ -151,6 +167,27 @@ def _range_case(n=300, hh=110.0, ll=100.0, cend=105.0):
     l[n - 5] = ll
     c[-1] = cend
     return _mk(c, o=c, h=np.maximum(h, c), l=np.minimum(l, c))
+
+
+def _vp_case(n: int, va: float, vb: float):
+    """出来高プロファイル（POC・VAH・VAL）の手計算用（2026-08-09・フロー 段3 の 3-4 で新設）。
+    ★手で計算できるように、窓の中の終値を 100 と 200 の2つだけにする。
+      窓＝最初の n 本（最後の1本は評価する場所で、窓には入らない）。
+      前半 n//2 本＝終値100・出来高 va ／ 後半＝終値200・出来高 vb ／ 最後の1本＝終値100。
+    ★実装は窓の最安値〜最高値を24等分する。100 は一番下の区画・200 は一番上の区画に入る。
+      一番下の区画の中央 ＝ 100 ＋ (100/24)/2 ＝ 102.083333…
+      一番上の区画の中央 ＝ 200 − (100/24)/2 ＝ 197.916666…
+    ★va と vb の比で、出来高上位70%の帯が「1区画で足りる」か「2区画 要る」かが決まる。"""
+    m = n // 2
+    c = np.concatenate([np.full(m, 100.0), np.full(n - m, 200.0), np.array([100.0])])
+    v = np.concatenate([np.full(m, float(va)), np.full(n - m, float(vb)), np.array([1.0])])
+    return _mk(c, o=c, h=c, l=c, v=v)
+
+
+_VP_LO = 100.0 + (100.0 / 24.0) / 2.0    # 一番下の区画の中央 ＝ 102.0833333…
+_VP_HI = 200.0 - (100.0 / 24.0) / 2.0    # 一番上の区画の中央 ＝ 197.9166666…
+_VP_D_LO = (100.0 / _VP_LO - 1.0) * 100.0   # 終値100 から見た乖離% ＝ −2.0408163265…
+_VP_D_HI = (100.0 / _VP_HI - 1.0) * 100.0   # 同上 ＝ −49.4736842105…
 
 
 # ══ 教科書の独立実装（③）════════════════════════════════════════════════
@@ -668,6 +705,89 @@ def _ext_keltner(d, p, side):
     return (d.close / band - 1) * 100
 
 
+# ══ 2つ目の照合の相手（2026-08-09・フロー 段3）══════════════════════════
+# ★何のためか＝外部ライブラリ ta で照合できるのは53件のうち22件だけ。残り31件は
+#   「私（CC）が書いた式」しか照合の相手がいない＝私が2回 同じ向きに読み違えると通ってしまう。
+#   そこで、別のライブラリ（pandas-ta-classic）と別の道具（scipy）で照合できるものを足した。
+# ★どれを足すかは「名前が同じだから」では決めていない。実データ（5分足の直近6,000本）で
+#   実際に突き合わせて、許容差の中に入ったものだけを足した。入らなかったものは足していない。
+def _x2_zscore(d, p):
+    return _pta.zscore(d.close, length=int(p[0]))
+
+
+def _x2_zscore_ret(d, p):
+    return _pta.zscore(np.log(d.close / d.close.shift()), length=int(p[0]))
+
+
+def _x2_rvol(d, p):
+    # hvol は「年率化しない（annualization=1）」で、うちの realized_vol と同じ＝対数リターンの標準偏差の%
+    return _pta.hvol(d.close, length=int(p[0]), annualization=1)
+
+
+def _x2_obv_slope(d, p):
+    n = int(p[0])
+    return _pta.obv(d.close, d.volume).diff(n) / d.volume.rolling(n).sum().replace(0, np.nan)
+
+
+def _x2_vr(d, p):
+    return d.volume / _pta.sma(d.volume, length=int(p[0]))
+
+
+def _x2_donch(d, p, side):
+    n = int(p[0])
+    dc = _pta.donchian(d.high, d.low, lower_length=n, upper_length=n)
+    band = dc.iloc[:, 2] if side > 0 else dc.iloc[:, 0]   # 2列目＝上限 / 0列目＝下限
+    return (d.close / band - 1) * 100
+
+
+def _x2_fib(d, p):
+    # うちの fib位置＝n本の高安の中の位置 0〜1。ライブラリの stochf の生の %K（0〜100）と同じ形
+    return _pta.stochf(d.high, d.low, d.close, fastk=int(p[0]), fastd=1).iloc[:, 0] / 100.0
+
+
+def _x2_rci(d, p):
+    """RCI を scipy の順位相関で独立に計算する（ライブラリではなく別の道具）。
+    うちの RCI ＝ 時間の並びと値段の並びの順位相関 ×100。scipy の spearmanr がそれそのもの。
+
+    ★窓の中に同じ値段が2本以上あるときは、照合の対象から外す（NaN を返す）。
+      理由＝うちの式は 1 − 6Σd²/(n(n²−1)) という簡便式で、これが順位相関と一致するのは
+      「同じ順位が無いとき」だけ。同じ値段があると、簡便式と scipy の式（順位のピアソン相関）は
+      理論上ずれる。どちらかが間違いなのではなく、流儀が違う。
+      ★実測（5分足の直近500本・2026-08-09）＝同値なしの窓では最大差 2.8e-14 で一致。
+        同値のある窓は RCI9 で 37/500 本・RCI26 で 145/500 本あり、そこでは最大 0.83 ずれる。
+      ★許容差をゆるめて通すことはしない。比べられる所だけを正直に比べる。"""
+    n = int(p[0])
+    t = np.arange(n, dtype=float)
+
+    def one(x):
+        if len(np.unique(x)) != n:      # 同じ値段がある窓＝簡便式と定義がずれるので照合しない
+            return np.nan
+        return _sps.spearmanr(t, x).statistic * 100.0
+
+    return d.close.rolling(n).apply(one, raw=True)
+
+
+# family → (照合の関数, 使った道具の名前)。ここに無い family は2つ目の照合が無い。
+EXT2: dict[str, tuple] = {
+    "zscore": (_x2_zscore, "pandas-ta"),
+    "zscore_return": (_x2_zscore_ret, "pandas-ta"),
+    "realized_vol": (_x2_rvol, "pandas-ta"),
+    "OBV傾き": (_x2_obv_slope, "pandas-ta"),
+    "volume_ratio": (_x2_vr, "pandas-ta"),
+    "swing高値距離": (lambda d, p: _x2_donch(d, p, +1), "pandas-ta"),
+    "swing安値距離": (lambda d, p: _x2_donch(d, p, -1), "pandas-ta"),
+    "n本高値": (lambda d, p: _x2_donch(d, p, +1), "pandas-ta"),
+    "n本安値": (lambda d, p: _x2_donch(d, p, -1), "pandas-ta"),
+    "fib位置": (_x2_fib, "pandas-ta"),
+    "RCI": (_x2_rci, "scipy"),
+}
+
+
+def ext2_ready() -> bool:
+    """2つ目の照合が使える状態か（ライブラリと道具が両方 入っているか）。"""
+    return bool(PTA_OK and SCIPY_OK)
+
+
 # ══ 参照表（①〜④を1種ずつ）＝ observe_diag の検査3 が読む正本 ═══════════
 REFS: list[dict] = []
 
@@ -756,7 +876,13 @@ _r(r"close vs 基準線%\((\d+)\)", "基準線",
    "順張り値", "trend", tb=_tb_ichi, ext=_ext_kijun,
    known=lambda p: [(_range_case(), [(-1, 0.0, 1e-6)])])
 _r(r"RCI(\d+)", "RCI",
-   "時間の順位と価格の順位の相関（Spearman）×100。−100〜+100", "日本のテクニカルで標準。同値の順位は平均順位",
+   "時間の順位と価格の順位の相関（Spearman）×100。−100〜+100",
+   "日本のテクニカルで標準。同値の順位は平均順位。★式は RCI＝{1−6D/(N(N²−1))}×100 の簡便式を使い、"
+   "同じ値段が並んだときは平均順位を割り当てる（出典の逐語＝「同値で順番が同じ場合は、例えば1位が2つある時には"
+   "(1＋2)／2＝1.5、3位が2つある時には(3＋4)／2＝3.5 を両方の番号に付します」futuresite.jp/guide/technical/rci.htm ／"
+   "TradingView jp「2つ以上の価格が等しくなった場合は、それらの各々にその順位位置の平均値を最終順位として割り当てます」）。"
+   "★scipy の spearmanr は同値のとき『順位のピアソン相関』で計算するので、この簡便式とは理論上ずれる＝流儀の違いで、"
+   "うちが間違いなのではない（2026-08-09 に出典2本を開いて確認）。だから2つ目の照合は同値の無い窓だけで行う",
    "順張り値＝+100 で一貫した上昇", "trend", tb=_tb_rci,
    known=lambda p: [(_up(p[0] + 5), [(-1, 100.0, 1e-9)]), (_dn(p[0] + 5), [(-1, -100.0, 1e-9)])])
 _r(r"EMA(\d+)傾き%", "EMA傾き",
@@ -931,13 +1057,24 @@ _r(r"fib位置(\d+)", "fib位置",
 _r(r"close vs POC%(\d+)", "POC",
    "出来高プロファイルの最厚価格帯 POC からの乖離%",
    "Market Profile。窓 n 本・25分割の近似。同量の帯が並んだら価格の高い側を採る（実装の決め）",
-   "順張り値", "trend", tb=lambda d, p: _tb_vs_vp(d, p, 0))
+   "順張り値", "trend", tb=lambda d, p: _tb_vs_vp(d, p, 0),
+   # 手計算の既知答え（2026-08-09 新設・フロー 段3 の 3-4）。POC＝出来高が一番 厚い区画の中央。
+   # 場合1（出来高が下に偏る 10:1）も 場合2（6:4）も、一番 厚いのは下の区画＝答えは同じ。
+   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),
+                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])])
 _r(r"close vs VAH%(\d+)", "VAH",
    "バリューエリア上端（出来高上位70%帯の上端）からの乖離%", "Market Profile。25分割の近似",
-   "順張り値", "trend", tb=lambda d, p: _tb_vs_vp(d, p, 1))
+   "順張り値", "trend", tb=lambda d, p: _tb_vs_vp(d, p, 1),
+   # 場合1＝下の区画だけで出来高の91%を占める→上位70%帯は1区画で足りる→上端も下の区画。
+   # 場合2＝下の区画は60%しか無い→上位70%帯に上の区画も要る→上端は上の区画。
+   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),
+                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_HI, 1e-9)])])
 _r(r"close vs VAL%(\d+)", "VAL",
    "バリューエリア下端からの乖離%", "Market Profile。25分割の近似",
-   "順張り値", "trend", tb=lambda d, p: _tb_vs_vp(d, p, 2))
+   "順張り値", "trend", tb=lambda d, p: _tb_vs_vp(d, p, 2),
+   # 下端は どちらの場合も下の区画。
+   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),
+                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])])
 _r(r"S-Rタッチ数\((\d+),([\d.]+)\)", "S-Rタッチ数",
    "いまの価格の許容幅つき帯に、過去 n 本の高安が何回触れたか", "サポート・レジスタンスの強度の近似",
    "状態量＝多いほど節が固い", "none", tb=_tb_sr_touch,
@@ -1181,10 +1318,147 @@ FAMILY_LINEAGE: dict[str, dict] = {
 }
 LINEAGE_KINDS = ("トレンド", "オシレーター", "ボラ", "出来高", "ローソク", "構造・位置", "需給", "時間帯")
 
+# 系統 → その系統の指標が「答える問い」（2026-08-09 新設・マイルストーン①のフロー 段4 が使う）。
+# ★新しい事実は作っていない。既に在る文書の記述を、系統ごとに1行へ言い換えただけ＝出典を1件ずつ付ける。
+LINEAGE_QUESTION: dict[str, tuple[str, str]] = {
+    "トレンド": ("いま どちらへ動いているか",
+              "technical KB §3.1 の表「Trend (トレンド系)｜方向確認」"),
+    "オシレーター": ("行き過ぎているか（買われすぎ・売られすぎ）",
+                "technical KB §3.1 の表「Momentum / Oscillator (オシレーター系)｜買われすぎ/売られすぎ」"),
+    "ボラ": ("どれくらい大きく動いているか",
+           "technical KB §3.1 の表「Volatility (ボラ系)｜価格変動測定・SL 設定」"),
+    "出来高": ("買いと売りの どちらの圧力が強いか",
+            "technical KB §3.1 の表「Volume (ボリューム系)｜買い/売り圧力」"),
+    "構造・位置": ("いま どの価格水準にいるか",
+               "technical KB §3.1 の表「Support / Resistance｜価格水準識別」"),
+    "ローソク": ("直前の1〜2本の形が 反転を示しているか",
+             "technical KB §B.1 ローソク足 (Japanese Candlestick) パターン"),
+    "需給": ("実際の注文の偏りが どちらに出ているか",
+           "technical KB §C.5 Order Flow / Footprint Chart / CVD"),
+    "時間帯": ("いまが どの時間帯・曜日か",
+            "軸カタログ entry_exit_matrix.md の E-j（時間帯・セッション）"),
+}
+
 
 def lineage_coverage(families: list[str]) -> list[str]:
     """系統マップに載っていない family の一覧（空であるべき＝載っていない family は生成不可・G3）。"""
     return [f for f in dict.fromkeys(families) if f not in FAMILY_LINEAGE]
+
+
+# ══ 業界のライブラリ（pandas-ta-classic）との対応表（2026-08-09 新設・observe_diag の検査10 が使う）══
+# ★何のためか: 「業界に在って、うちに無い指標」を機械で出すため。
+# ★なぜ対応表を人が書くか: 名前の文字が違うだけの同じ指標（うちの「ATR%」＝ライブラリの natr など）を、
+#   機械は自動で結び付けられない。だから 参照表の family 53件 のそれぞれについて、
+#   「同じものを計算するライブラリの関数はどれか」を1行ずつ人が書き、まこさんが読んで直せる形にする。
+# ★2026-08-08 に手で数えた「押さえているのは34種類」は再現できない（そのときの対応表が記録に残っていない）。
+#   だから今回 書き直した。数は下の表から機械が数える＝この表を直せば数が変わる。
+# ★空のタプル () ＝ ライブラリに相当する関数が無い。理由を必ず添える。
+INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
+    # ── トレンド・モメンタム ──
+    "ADX": (("adx",), "adx は ADX・DI+・DI− を1本の関数で返す"),
+    "DI差": (("adx",), "同じ adx が返す DI+ と DI− の差＝関数としては同じもの"),
+    "MACD線%": (("macd",), "macd の MACD 線。うちは終値で割って%にしている（H6・価格に依存させない）"),
+    "MACDヒスト%": (("macd",), "macd のヒストグラム。同上で%化"),
+    "MACDシグナル線%": (("macd",), "macd のシグナル線。同上で%化"),
+    "RSI": (("rsi",), ""),
+    "ROC": (("roc",), ""),
+    "Stoch%K": (("stoch",), ""),
+    "Stoch%D": (("stoch",), ""),
+    "MFI": (("mfi",), ""),
+    "CMF": (("cmf",), ""),
+    "OBV傾き": (("obv",), "obv そのものはライブラリに在る。うちは その差分を出来高で割った傾きにしている"),
+    "転換線": (("ichimoku",), "ichimoku が転換線・基準線をまとめて返す"),
+    "基準線": (("ichimoku",), "同上"),
+    "RCI": ((), "順位相関の指標。ライブラリに相当する関数が無い（scipy の順位相関で独立に照合する＝段3の(b)）"),
+    "EMA傾き": (("ema",), "ema そのものはライブラリに在る。うちは その変化率を傾きにしている"),
+    # ── ボラ ──
+    "ATR%": (("atr", "natr"), "natr＝ATR を終値の%にしたもの＝うちの ATR% と同じ考え方"),
+    "BB%b": (("bbands",), "bbands が %b を返す"),
+    "BB幅": (("bbands",), "bbands が帯の幅を返す"),
+    "realized_vol": (("hvol",), "hvol＝対数リターンの標準偏差＝うちの realized_vol と同じ考え方"),
+    "Donchian幅": (("donchian",), "donchian の上限と下限の差"),
+    "zscore": (("zscore",), ""),
+    "zscore_return": (("zscore",), "同じ zscore を、終値でなく対数リターンに当てたもの"),
+    # ── 出来高 ──
+    "volume_ratio": ((), "出来高を その移動平均で割った比。ライブラリに相当する関数が無い"),
+    # ── ローソク ──
+    "包み足": (("cdl_pattern",), "cdl_pattern が包み足を持つ。⚠️ この関数は TA-Lib が別途 要り、いま入っていない"),
+    "孕み足": (("cdl_pattern",), "同上。cdl_inside（内包足）は前バーの色を問わない別の定義なので当てない"),
+    "pinbar": ((), "ヒゲの長さの差を連続値にしたもの。ライブラリのローソク足は 0/1 の型判定で、形が違う"),
+    "連続本数": ((), "同じ向きが何本 続いたか。ライブラリに相当する関数が無い"),
+    "body比": ((), "実体の幅 ÷ 全体の幅。ライブラリに相当する関数が無い"),
+    "上ヒゲ比": ((), "同上（上ヒゲ ÷ 全体の幅）"),
+    "下ヒゲ比": ((), "同上（下ヒゲ ÷ 全体の幅）"),
+    # ── 構造・位置 ──
+    "swing高値距離": (("donchian",), "終値と N本高値の距離%。N本高値は donchian の上限と同じ値"),
+    "swing安値距離": (("donchian",), "同上（donchian の下限）"),
+    "高値からの経過バー": ((), "高値を付けてから何本 経ったか。ライブラリに相当する関数が無い"),
+    "安値からの経過バー": ((), "同上"),
+    "形スコア": ((), "V字・M字の判定。ライブラリに相当する関数が無い"),
+    "W字": ((), "ダブルボトムの完成。ライブラリに相当する関数が無い"),
+    "close vs EMA": (("ema",), "終値と EMA の距離%"),
+    "close vs SMA": (("sma",), "終値と SMA の距離%"),
+    "close vs VWAP": (("vwap",), "終値と VWAP の距離%"),
+    "Keltner上": (("kc",), "kc がケルトナーの上下の帯を返す"),
+    "Keltner下": (("kc",), "同上"),
+    "Supertrend": (("supertrend",), ""),
+    "n本高値": (("donchian",), "donchian の上限と同じ値"),
+    "n本安値": (("donchian",), "donchian の下限と同じ値"),
+    "pivotPP": (("cpr",), "cpr が中心のピボットと帯を返す"),
+    "pivotR1": (("cpr",), "⚠️ 部分的。cpr は R1 を返さない（うちは PP から計算している）"),
+    "pivotS1": (("cpr",), "⚠️ 部分的。cpr は S1 を返さない（同上）"),
+    "fib位置": ((), "N本の高安の中で終値がどこか（0〜1）。式の形は Stoch%K と同じだが、"
+                   "フィボナッチの関数はライブラリに無い"),
+    "POC": (("vp",), "vp＝出来高プロファイル。POC・VAH・VAL をまとめて出す"),
+    "VAH": (("vp",), "同上"),
+    "VAL": (("vp",), "同上"),
+    "S-Rタッチ数": ((), "同じ値段に何回 触れたか。ライブラリに相当する関数が無い"),
+}
+
+# ★入れない候補（★まこさんの承認はまだ・next_step §5 の10番）。既定は「入れる」（まこさん決定＝
+#   「利益最大化するために完全に不要な指標以外はすべて入れてほしい」）。だから ここに載せるのは
+#   「指標ではないもの」に限る。1件ずつ理由を書く。
+INDUSTRY_SKIP: dict[str, str] = {
+    # (a) 1本の中の値段を平均するだけ＝新しい情報が増えない
+    "hl2": "そのバーの高値と安値の平均＝値段そのもの", "hlc3": "高値・安値・終値の平均＝値段そのもの",
+    "ohlc4": "4本値の平均＝値段そのもの", "wcp": "終値を重くした加重平均＝値段そのもの",
+    "medprice": "高値と安値の中央＝値段そのもの", "typprice": "代表値段＝値段そのもの",
+    "avgprice": "4本値の平均＝値段そのもの",
+    # (b) 売買の成績を出すもの＝条件の材料ではない
+    "drawdown": "成績（最大の落ち込み）の計算", "log_return": "成績（対数リターン）の計算",
+    "percent_return": "成績（%リターン）の計算",
+    # (c) 条件を組み立てる補助＝指標ではなく道具
+    "increasing": "値が増えているかの判定＝条件を組む道具", "decreasing": "値が減っているかの判定＝同上",
+    "long_run": "上げが続いているかの判定＝同上", "short_run": "下げが続いているかの判定＝同上",
+    "tsignals": "トレンドから売買の合図を作る道具", "xsignals": "交差から売買の合図を作る道具",
+    "decay": "値を時間で減衰させる道具", "edecay": "同上（指数で減衰）",
+    "ma": "移動平均の種類を名前で選ぶ振り分け＝指標そのものではない",
+}
+
+
+def industry_gap(lib_funcs: dict[str, list[str]], families: list[str]) -> dict:
+    """業界のライブラリの関数一覧と、うちの材料の突き合わせ。
+    lib_funcs＝{カテゴリ名: [関数名, ...]}（pandas-ta-classic の Category をそのまま渡す）。
+    families＝参照表の family の一覧。戻り値は数と一覧だけ＝判定はしない。"""
+    all_fn = {fn: cat for cat, fns in lib_funcs.items() for fn in fns}
+    ng: list[str] = []
+    for f in dict.fromkeys(families):
+        if f not in INDUSTRY_MAP:
+            ng.append(f"対応表 INDUSTRY_MAP に family『{f}』が無い（足すか、無いなら空のタプルと理由を書く）")
+    covered: dict[str, list[str]] = {}
+    for f, (fns, _note) in INDUSTRY_MAP.items():
+        for fn in fns:
+            if fn not in all_fn:
+                ng.append(f"対応表が指す関数『{fn}』（family {f}）がライブラリに無い＝表が古い")
+            else:
+                covered.setdefault(fn, []).append(f)
+    for fn in INDUSTRY_SKIP:
+        if fn not in all_fn:
+            ng.append(f"入れない候補の『{fn}』がライブラリに無い＝表が古い")
+    missing = [fn for fn in all_fn if fn not in covered]
+    skip = [fn for fn in missing if fn in INDUSTRY_SKIP]
+    add = [fn for fn in missing if fn not in INDUSTRY_SKIP]
+    return dict(ng=ng, all_fn=all_fn, covered=covered, missing=missing, skip=skip, add=add)
 
 
 # ══ 名前つき定数レジストリ（G6・設計書 §2.4-②・出典必須・レジストリに無い名前は使えない）══════
