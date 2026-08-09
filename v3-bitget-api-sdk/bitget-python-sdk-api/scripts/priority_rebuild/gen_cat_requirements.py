@@ -102,6 +102,22 @@ def _split_outside(text: str) -> list[str]:
     return parts
 
 
+def _expand_windows(lines: list[str]) -> list[str]:
+    """WINDOWS_START〜END マーカーを periods.py 由来の最新の表へ差し替える（2026-08-08 新設）。
+
+    背景＝この差し替えは元々「まだ作り直していない節（raw）」だけに効いていた。§3.2 等を
+    items（作り直した節）へ変換すると、そのままでは期間の表が差し替えられず、原文の日付が
+    そのまま固まって残る＝H8（期間の数字は periods.py だけが正本）に反する。
+    raw・items のどちらの本文にも同じ差し替えを効かせるため、共通の関数にした。
+    """
+    txt = "\n".join(lines)
+    if "WINDOWS_START" not in txt:
+        return lines
+    import gen_windows as _gw
+    txt = re.sub(r"<!-- WINDOWS_START.*?<!-- WINDOWS_END -->", _gw.block(), txt, flags=re.S)
+    return txt.split("\n")
+
+
 def _readable(lines):
     """決まりの本文を読める形に組み直す（★中身は1文字も消さない・改行と番号を足すだけ）。"""
     out = []
@@ -280,20 +296,14 @@ def build() -> tuple[str, list[str]]:
             #   まこさんが実物を読めない＝まこさん指摘「cat_requirements.mdはなにも修正されてない」。
             if sec.get("raw"):
                 # ★期間の表は periods.py が正本（H8・SSOT）。原文をそのまま貼ると古いまま固まるので、
-                #   毎回 gen_windows から取り直して差し替える（2026-08-08 新設）。
+                #   毎回 gen_windows から取り直して差し替える（2026-08-08 新設・_expand_windows へ集約）。
                 #   背景＝gen_windows.py も同じファイルに表を差し込む作りだったため、
                 #   このファイルを2つの生成器が書き合って、片方がもう片方を消す状態になっていた。
                 #   ＝1つのファイルは1つの生成器が持つ形に直し、表の中身だけ gen_windows から借りる。
                 raw_txt = "\n".join(sec["raw"])
                 # 見出しの番号表示だけ「§」付きに揃える（番号は変えない＝参照は壊れない）
                 raw_txt = re.sub(r"^(#{3,4} )(?!§)(\d)", r"\1§\2", raw_txt, flags=re.M)
-                # 原文の見出しはそのままの深さで置く（節が ## なので項目は ### のまま）
-                sec = dict(sec, raw=raw_txt.split("\n"))          # ★どの節にも効かせる
-                if "WINDOWS_START" in raw_txt:
-                    import gen_windows as _gw
-                    raw_txt = re.sub(r"<!-- WINDOWS_START.*?<!-- WINDOWS_END -->", _gw.block(),
-                                     raw_txt, flags=re.S)
-                    sec = dict(sec, raw=raw_txt.split("\n"))
+                sec = dict(sec, raw=_expand_windows(raw_txt.split("\n")))
                 L.append("> ⚠️ **この節はまだ作り直していません。**旧版の原文をそのまま載せています。")
                 L.append("")
                 L.extend(sec["raw"])
@@ -313,7 +323,7 @@ def build() -> tuple[str, list[str]]:
                     L.append("")
                 L.append(f"> **守るもの**＝{it['protects']}")
                 L.append("")
-                L.extend(_readable(it.get("body", [])))
+                L.extend(_readable(_expand_windows(it.get("body", []))))
                 L.append("")
                 if it.get("state"):
                     L.append(f"**いまの姿（書いてある予定と違うところ）**")
@@ -335,8 +345,13 @@ def build() -> tuple[str, list[str]]:
                     if not ok:
                         bad.append(f"{it['id']} の強制 {e.get('name', '(名前なし)')}: {msg}")
                     if e.get("kind") == "fact":
-                        n = msg.split("が **")[-1].replace(" 件**", "") if "が **" in msg else "—"
-                        facts.append(f"`{e['file']}` に `{e['name']}` が **{n}** 件")
+                        if "が **" in msg:
+                            n = msg.split("が **")[-1].replace(" 件**", "")
+                            facts.append(f"`{e['file']}` に `{e['name']}` が **{n}** 件")
+                        else:
+                            # ★ファイルが無い等、件数に丸められない結果はメッセージをそのまま出す
+                            #   （2026-08-08 新設・旧コードは「—件」に丸めて『ファイルが無い』を握りつぶしていた）
+                            facts.append(msg.replace("📊 実測＝", ""))
                     elif e.get("kind") == "none":
                         stops.append(f"**無し**。{e['how']}")
                     else:
@@ -518,7 +533,10 @@ def selftest() -> int:
     bare_txt = _bare(txt)
     for sec in d["sections"]:
         for it in sec.get("items", []):
-            for b in it.get("body", []):
+            # ★WINDOWS_START〜END は build() 側と同じく展開してから比べる（2026-08-08 新設）。
+            #   展開前のマーカー行そのものは最終文書に残らない（periods.py 由来の表に差し替わる）ので、
+            #   展開せずに比べると毎回「消えている」と誤検知する。
+            for b in _expand_windows(it.get("body", [])):
                 if _bare(b) and _bare(b) not in bare_txt:
                     ng.append(f"{it['id']} の原文の文字が文書から消えている: {b[:40]}…")
 

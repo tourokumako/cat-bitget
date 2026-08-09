@@ -1,4 +1,4 @@
-<!-- CATREQ_HASH=7001ac7dfde3591e -->
+<!-- CATREQ_HASH=e16e2ed69ff26843 -->
 <h1 style="font-size:2.4em;border-bottom:3px solid #888;padding-bottom:.2em">要件定義書 — cat-bitget ML トレード BOT</h1>
 
 作成: 2026-06-02 / 版: v3（v2 の手書きを json 正本＋機械生成へ移した。v1 は制約チェックリストのみ＝要件定義書として不備 → v2 で標準4部構成に書き直し）
@@ -404,9 +404,10 @@ regime（相場状態：上げ/下げ/横ばい）/ MFE・MAE（保有中の最�
 
 ## §3 機能要件（優先度付き）
 
-> ⚠️ **この節はまだ作り直していません。**旧版の原文をそのまま載せています。
-
 ### §3.1 機能一覧
+
+> **守るもの**＝何を作るかを1枚の一覧に固定します。優先度（必須／あれば／将来）を分けて書くことで、必須の機能をあとまわしにするのを防ぎます。
+
 | ID | 機能 | 概要 | 優先度 |
 |---|---|---|---|
 | F1 | regime 判定 | 相場状態（方向・確信度）を後段へ渡す | 必須 |
@@ -419,7 +420,19 @@ regime（相場状態：上げ/下げ/横ばい）/ MFE・MAE（保有中の最�
 | F8 | cluster 並立 / 異種 stacking / drift 監視 | 後段レバー・運用層 | あれば |
 | F9 | HRP 配分 / 情報ドリブンバー | 高度化 | 将来 |
 
+**いまの姿（書いてある予定と違うところ）**
+
+★この一覧は 2026-06-02 に書かれた To-Be（作ったあとの姿）です。F1〜F5 の「ML」は、§2.2 の実測のとおり、いまは ML でなく固定ルール（cat_v9_decider.py）と engine_tuner が受け持っています。F6・F7 は実物のファイルが在ります（下の実物を数えた結果）。
+
+**実物を数えた結果**
+
+- `scripts/priority_rebuild/score.py` に `def score(` が **1** 件
+- `runner/run_once_v9.py` に `ALLOW_LIVE_ORDERS` が **16** 件
+
 ### §3.2 データ要件
+
+> **守るもの**＝検証に使うデータと期間の区切りを1つに固定します。ここが緩むと、学習に使ってよい期間と、採否を決める期間が混ざり、leak（未来のデータを使ってしまう不正）につながります。
+
 5m OHLCV 5年（2021-04〜2026-06）/ 1432指標 + MTF 8足 / 教師ラベル（Triple Barrier）/ **期間分割の数値は `scripts/priority_rebuild/periods.py` が唯一の正本（手打ち禁止・SSOT・ledger E0.5）**。コード・表示・本書とも periods.py を参照し数値を二重記載しない（食い違い防止）。⚠️ **下の表は `gen_windows.py --write` が periods.py から機械生成して差し込む＝本書に数字を手で書かない**（2026-07-27 まこさん OK「各書類へ自動生成するように」＝本節・H8・acceptance_checklist・台帳・網羅マトリクスの4文書が全部 旧窓のまま腐っていた事案の構造対策）。意味と経緯＝[windows.md](../ratchet/windows.md)。
 
 <!-- WINDOWS_START hash=7f0a1c828847d7bd ここは gen_windows.py が自動生成＝手で書き換えない -->
@@ -437,12 +450,29 @@ regime（相場状態：上げ/下げ/横ばい）/ MFE・MAE（保有中の最�
 <!-- WINDOWS_END -->
 
 ### §3.3 外部連携
+
+> **守るもの**＝どの取引所 API を、どの目的で呼ぶかを1つに固定します。ここが曖昧だと、発注まわりの実装が API ごとに矛盾した想定で書かれます。
+
 Bitget API（candles / place-order / place-tpsl-order / single-position / cancel-order / symbol-price）・demo は `paptrading` ヘッダ。
 
-### §3.4 出力（画面/帳票相当）
+### §3.4 出力
+
+> 画面/帳票相当
+
+> **守るもの**＝結果をどこに記録するかを1つに固定します。ここが緩むと、同じ実験結果が複数の場所にバラバラに書かれ、どれが正本か分からなくなります。
+
 PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON action）/ 視認ダッシュボード。
 
----
+### §3 のまとめ
+
+**この節の決まりを破ったとき、機械が止めてくれるか。そう言える根拠はどこを見たか。★この表は機械が実物のファイルを開いて毎回 書き直します。**
+
+| 決まり | 破ったときに止まる仕組み | 根拠（見たファイルと行） |
+|---|---|---|
+| **3.1** 機能一覧 | **無し**。F1〜F5・F8・F9 は機能の一覧であって、一覧そのものを守る機械の強制はありません。個別の中身（H1〜H16 等）は §4.6 が別に強制します。 | <sub>`.claude/rules/cat_requirements.md` 318行目</sub> ＝F1〜F5 のいまの姿（固定ルール／engine_tuner）の記録元 |
+| **3.2** データ要件 | H8＝期間分割は periods.py が唯一の正本という決まりの実体。手打ちの自前定義は require_period_source hook が実行前にブロックする（詳細は §4.6 H8）。（実物（scripts/priority_rebuild/periods.py の 71 行目ほか 5 件に「TRAIN_END」）） | <sub>`scripts/priority_rebuild/periods.py` 71行目</sub> ＝期間分割の数値の正本（SSOT） |
+| **3.3** 外部連携 | **無し**。機械の強制はありません。exchange_spec.md の仕様と実装（bitget_adapter.py）が食い違っていないかは、コードレビューで確かめます。 | <sub>`.claude/rules/exchange_spec.md` 144行目</sub> ＝各 API の仕様の正本 |
+| **3.4** 出力 | **無し**。機械の強制はありません。ledger.md への記録は、pdca_mark／pdca_gate（実験後にターン終了をブロックする hook）が別に強制します（詳細は pdca_flow.md）。 | <sub>`.claude/ratchet/ledger.md` </sub> ＝PDCA 台帳の実物 |
 
 ---
 
@@ -452,36 +482,266 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 
 ## §4 非機能要件（品質・性能・運用）
 
-> ⚠️ **この節はまだ作り直していません。**旧版の原文をそのまま載せています。
+### §4.1 性能・拡張性
 
-- **4.1 性能・拡張性**: PDCA 1周 ≤ 約5分 / 推論はバー確定後の増分計算（本番再現）/ 学習は数分。
-- **4.2 可用性・信頼性**: 24/7 稼働 / leak 防止（本番再現性）/ offline=online 一致 / 異常値 STOP。
-- **4.3 セキュリティ**: API キー機密（ログ出力禁止）/ `ALLOW_LIVE_ORDERS=False`（ユーザーのみ変更）/ `paper_trading`。
-- **4.4 運用・保守**: 全実験を `ledger.md` 記録 / judge 固定＋既知答えテスト / 監査経路 `/audit` / 1ターン1変更。
-- **4.5 移行**: demo（paptrading）→ 本番の段階移行（Phase7）。
+> **守るもの**＝動きの速さの目安を1つに固定します。ここが無いと、遅い実装を作ってしまってから気づき、作り直しになります。
 
-### §4.6 ハード制約チェックリスト（不変・違反＝重大インシデント・全設計が照合する関所）
+- **PDCA 1周**: ≤ 約5分。
+- **推論**: バー確定後の増分計算（本番再現）。
+- **学習**: 数分。
 
-| # | 要件 | 値 / 内容 | 出典 | 強制方法 |
-|---|---|---|---|---|
-| H1 | ポジション合計上限 | 任意 t で `sum(active_btc) ≤ 0.12 BTC`（合計） | CLAUDE §0-2 / 類型H | ✅ `score.assert_hard_constraints`（売買記録の**時系列**cap・違反は採点拒否・既知答えテスト担保）＋ `eval_engine.assert_position_cap`（点版） |
-| H2 | leak なし / 本番再現性 | t で取得可能な値のみ・特徴量に未来参照なし・出口判定は次bar以降 | CLAUDE §0-1 / 類型A / L-179 | ⬜ **E8b 学習スクリプト(`train_p23_entry_E8b.py`)で assert**＝特徴量 grep(`.shift(-`/`center=True`) + `assert train末<採点始` + embargo（売買記録に出ない＝boundary 違い・審判では不可） |
-| H3 | net 判定（gross 禁止） | 全コスト控除後で判定 | false_positive §0.1 / 類型E | ✅ score.py / eval_engine |
-| H4 | コスト確定値 | maker 0.00014 / taker 0.00042 / slippage 0.00005 / funding +0.000002(8h) | exchange_spec audit#19 | ✅ eval_engine 定数 |
-| H5 | 約定モデル | entry 指値maker(close×(1∓0.0001))・TTL3・不約定=不成立 ／ 出口 TP・SL=指値maker・TIME/能動=成行taker+slip | exchange_spec / run_once_v9 L242-385 | ✅ eval_engine.simulate_trade + score.py |
-| H6 | 価格非依存 | %/比率/BTC単位のみ・USD絶対値の閾値/ラベル禁止 | phase_compliance §-1 / L-179 | ⬜ **E8b 学習スクリプトで assert**＝feature 名 blacklist + pct check（学習側・特徴量は売買記録に出ない） |
-| H7 | 足の標準 | **5m が現行標準**。1m/3m は **ML 結果で有効と出れば有効化可**（旧「1m/3m 禁止」は ML 転向前のルールにつき**撤回**・2026-06-02 まこさん）。採用は score.py の net 実証で判断 | まこさん 2026-06-02（CLAUDE ⛔ 旧記述を上書き） | check（採用は実証） |
-| H8 | 期間分割 | **数値は `periods.py` が正本（SSOT）＝学習／捨て／値決め／確認／採点／封印。実値は §3.2 の機械生成の表と [windows.md](../ratchet/windows.md) を見る（本表に数字を書かない＝旧窓のまま腐る事案の対策・2026-07-27）**。手打ち禁止 | periods.py / ledger E31・E0.5 | ✅ **物理化済**: ①戦略は `from periods import` で取得（自前リテラルは require_period_source hook が実行前 block）②審判 score.py は採点窓が periods と不一致なら採点拒否（score_official・--legacy-window 明示時のみ旧窓）③periods.py が import 時に `TRAIN_END<SCORE_START`(leak-safe)を assert |
-| H9 | 最小注文 | 0.0001 BTC / 5 USDT / tick 0.1 / per-pos ≥ 0.000167 BTC | exchange_spec | ✅ `score.assert_min_order`（size<0.0001 BTC / 額<5 USDT は採点拒否・既知答えテスト担保） |
-| H10 | サイズ固定値扱い禁止 | 0.024 は比較用のみ・0.12内で配分 | CLAUDE ⛔ | check + H1 |
-| H11 | 合格ライン / 地面 | 合格=全月 net≥$1,900+DSR>0.95/PBO<0.5 ／ 地面=手動 採点$172・通し$354 | CLAUDE §目標 / ledger E0.1 | ✅ score.py |
-| H12 | 異常値STOP | 勝率>70% / 月NET>$3,800 / IS-OOS Sharpe>3倍 / DD<月NET10% → 調査 | false_positive 関所A | ✅ `score.score の anomaly`（勝率>70% / 月>$3,800 / DD<合計5% を採点後に「異常値・要調査」強制表示・既知答えテスト担保。IS-OOS は学習側） |
-| H13 | judge 固定 | score.py/eval_engine は実験で改造しない・改造時は既知答えテスト再pass | ratchet 合意 | ✅ test 9/9 |
-| H14 | 発注フラグ | ALLOW_LIVE_ORDERS=False / paper_trading / run_once・replay 無確認実行禁止 | CLAUDE ⛔ / core_rules | check |
-| H15 | **Entry ボラ逃げ禁止（軸1・設計前チェック）** | Entry の方向スコアで揺れ幅(ATR/ボラ)が支配的でない／ラベルがボラ依存(net金額・MFEの大きさ)でなく**方向ベース**／ボラ系はサイジング・フィルタへ役割を移す | entry_fix_6axis_gate §軸1 / ledger E8b・L-252 | ⬜ **設計報告の前に entry_fix_6axis_gate §軸1 ①②③を照合し結果を提示**（① 揺れ幅が方向スコアで非支配 ② LONG/SHORT 分離 ③ ボラ系がサイジング/TP-SL/フィルタに接続）＋ 学習後 feature importance で揺れ幅が上位非支配を確認。**Entry 設計は H15 を通すまで報告しない** |
-| H16 | **過去失敗の不再演 ＋ 1ターン1変更（設計前チェック）** | ① この設計変更は **1つ**か（複数混ぜない＝PDCA 1ターン1変更）② **過去に破棄した失敗**（lessons 直近・6軸・破棄した E）を繰り返していないか | analysis_playbook §1 PDCA / lessons / L-252 | ⬜ **設計報告の前に①②を照合し結果を提示**・違反なら実装に入らない。実装の独立チェックは cc_role §1.4.6.3（2026-06-15 改訂＝小局所変更は強制hook＋score.py の数字＋非同型 Web Claude レビュー／大規模のみ Workflow・暴走防止厳守）。 |
+### §4.2 可用性・信頼性
 
----
+> **守るもの**＝24時間動き続けること・leak（未来のデータを使ってしまう不正）が無いこと・本番と同じ計算になることを1つに固定します。ここが緩むと、バックテストだけ良い数字が出て本番で再現しない実装を見逃します。
+
+- **稼働**: 24/7。
+- **leak 防止**: 本番再現性。
+- **一致**: offline=online。
+- **異常値**: STOP。
+
+### §4.3 セキュリティ
+
+> **守るもの**＝取引所の API キーと、実際に発注するかどうかのフラグを、まこさん以外が動かせないようにします。ここが緩むと、CC の判断ミス1つで実弾が発注されます。
+
+- API キー機密（ログ出力禁止）。
+- `ALLOW_LIVE_ORDERS=False`（ユーザーのみ変更）。
+- `paper_trading`。
+
+**実物を数えた結果**
+
+- `runner/run_once_v9.py` に `ALLOW_LIVE_ORDERS` が **16** 件
+
+### §4.4 運用・保守
+
+> **守るもの**＝実験の記録先と、判定の道具を変えない約束と、変更の大きさを1つに固定します。ここが緩むと、何を試して何が採用されたのかを誰も追えなくなります。
+
+- 全実験を `ledger.md` 記録。
+- judge 固定＋既知答えテスト。
+- 監査経路 `/audit`。
+- 1ターン1変更。
+
+### §4.5 移行
+
+> **守るもの**＝本番にいきなり出さず、demo（実弾を使わない模擬取引）を経由することを固定します。ここが無いと、検証が終わっていない実装がそのまま実弾に触れます。
+
+demo（paptrading）→ 本番の段階移行（Phase7）。
+
+### §4.6 ハード制約チェックリスト
+
+> 不変・違反＝重大インシデント・全設計が照合する関所
+
+> **守るもの**＝この16件（H1〜H16）を、いつでも同じ形で1項目ずつ照合できるようにします。個別に何を守るかは、H1〜H16 のそれぞれで説明します。
+
+下の H1〜H16 が、この関所の中身です。全設計・実装は着手前に、ここへ1項目ずつ照合します。
+
+### §4.6.H1 ポジション合計上限
+
+> **守るもの**＝実際のお金がどれだけ市場に晒されているかの上限を1つに固定します。ここが緩むと、複数の戦略を同時に動かした時に、気づかないうちに規定の何倍もの持ち高を持ってしまいます（false_positive §3 の事案9＝規定の19倍のエクスポージャーで走っていた実例）。
+
+- **値 / 内容**: 任意 t で `sum(active_btc) ≤ 0.12 BTC`（合計）
+- **出典**: CLAUDE §0-2 / 類型H
+- **強制方法（原文の主張）**: ✅ `score.assert_hard_constraints`（売買記録の**時系列**cap・違反は採点拒否・既知答えテスト担保）＋ `eval_engine.assert_position_cap`（点版）
+
+### §4.6.H2 leak なし / 本番再現性
+
+> **守るもの**＝本番では手に入らない未来の値を使って良い成績を出す不正（leak）を防ぎます。ここが崩れると、バックテストの数字がまるごと嘘になります。
+
+- **値 / 内容**: t で取得可能な値のみ・特徴量に未来参照なし・出口判定は次bar以降
+
+**出典**
+
+1. CLAUDE §0-1
+2. 類型A
+3. L-179
+
+- **強制方法（原文の主張）**: ⬜ **E8b 学習スクリプト(`train_p23_entry_E8b.py`)で assert**＝特徴量 grep(`.shift(-`/`center=True`) + `assert train末<採点始` + embargo（売買記録に出ない＝boundary 違い・審判では不可）
+
+### §4.6.H3 net 判定
+
+> gross 禁止
+
+> **守るもの**＝手数料等を引く前の金額（gross）を「儲け」として見せる不正を防ぎます。ここが緩むと、コストを引いたら赤字の戦略が黒字に見えます。
+
+- **値 / 内容**: 全コスト控除後で判定
+- **出典**: false_positive §0.1 / 類型E
+- **強制方法（原文の主張）**: ✅ score.py / eval_engine
+
+### §4.6.H4 コスト確定値
+
+> **守るもの**＝手数料・スリッページ・funding の数字を1つに固定します。ここが緩むと、実験ごとに違うコストで測ってしまい、結果を並べて比べられません。
+
+**値 / 内容**
+
+1. maker 0.00014
+2. taker 0.00042
+3. slippage 0.00005
+4. funding +0.000002(8h)
+
+- **出典**: exchange_spec audit#19
+- **強制方法（原文の主張）**: ✅ eval_engine 定数
+
+### §4.6.H5 約定モデル
+
+> **守るもの**＝注文がどう約定するか（指値か成行か・待ち時間はどれだけか）の想定を1つに固定します。ここが緩むと、実際には約定しない有利な値段で約定した前提の数字が出ます。
+
+- **値 / 内容**: entry 指値maker(close×(1∓0.0001))・TTL3・不約定=不成立 ／ 出口 TP・SL=指値maker・TIME/能動=成行taker+slip
+- **出典**: exchange_spec / run_once_v9 L242-385
+- **強制方法（原文の主張）**: ✅ eval_engine.simulate_trade + score.py
+
+### §4.6.H6 価格非依存
+
+> **守るもの**＝BTC の値段そのもの（USD 絶対値）に閾値やラベルを依存させないことを固定します。ここが緩むと、学習した時と本番で BTC の値段帯が違うだけで、判断がまるごと外れます。
+
+- **値 / 内容**: %/比率/BTC単位のみ・USD絶対値の閾値/ラベル禁止
+- **出典**: phase_compliance §-1 / L-179
+- **強制方法（原文の主張）**: ⬜ **E8b 学習スクリプトで assert**＝feature 名 blacklist + pct check（学習側・特徴量は売買記録に出ない）
+
+### §4.6.H7 足の標準
+
+> **守るもの**＝何分足を標準に検証するかを1つに固定します。ここが緩むと、5分足で見つけた形が別の足でも成立するはずだと思い込んで検証を飛ばします。
+
+- **値 / 内容**: **5m が現行標準**。1m/3m は **ML 結果で有効と出れば有効化可**（旧「1m/3m 禁止」は ML 転向前のルールにつき**撤回**・2026-06-02 まこさん）。採用は score.py の net 実証で判断
+- **出典**: まこさん 2026-06-02（CLAUDE ⛔ 旧記述を上書き）
+- **強制方法（原文の主張）**: check（採用は実証）
+
+### §4.6.H8 期間分割
+
+> **守るもの**＝学習に使ってよい期間・leak を防ぐ緩衝期間・採否を決める採点期間の境目を1つに固定します。ここが緩むと、採点に使うはずのデータを学習にも混ぜてしまう leak が起きます。
+
+数値は `periods.py` が正本（SSOT）＝学習／捨て／値決め／確認／採点／封印。実値は §3.2 の機械生成の表と [windows.md](../ratchet/windows.md) を見る（本表に数字を書かない＝旧窓のまま腐る事案の対策・2026-07-27）。手打ち禁止。
+
+- **出典**: periods.py / ledger E31・E0.5
+- **強制方法（原文の主張）**: ✅ 物理化済: ①戦略は `from periods import` で取得（自前リテラルは require_period_source hook が実行前 block）②審判 score.py は採点窓が periods と不一致なら採点拒否（score_official・--legacy-window 明示時のみ旧窓）③periods.py が import 時に `TRAIN_END<SCORE_START`(leak-safe)を assert
+
+### §4.6.H9 最小注文
+
+> **守るもの**＝取引所が受け付ける最小の注文量を1つに固定します。ここが緩むと、取引所に拒否される注文量で検証してしまい、実測と食い違います。
+
+**値 / 内容**
+
+1. 0.0001 BTC
+2. 5 USDT
+3. tick 0.1
+4. per-pos ≥ 0.000167 BTC
+
+- **出典**: exchange_spec
+- **強制方法（原文の主張）**: ✅ `score.assert_min_order`（size<0.0001 BTC / 額<5 USDT は採点拒否・既知答えテスト担保）
+
+### §4.6.H10 サイズ固定値扱い禁止
+
+> **守るもの**＝0.024 BTC という比較用の数字を「これしか使えない値」だと決めつけないようにします。ここが緩むと、0.12 BTC の予算をもっと活かせる配分があっても、比較用の値のまま思考が止まります。
+
+- **値 / 内容**: 0.024 は比較用のみ・0.12内で配分
+- **出典**: CLAUDE ⛔
+- **強制方法（原文の主張）**: check + H1
+
+### §4.6.H11 合格ライン / 地面
+
+> **守るもの**＝「合格」と言ってよい条件を1つに固定します。ここが緩むと、都合の良い月だけ見せて「合格」と言えてしまいます（false_positive §3 の最重大エラー＝虚偽達成）。
+
+- **値 / 内容**: 合格=全月 net≥$1,900+DSR>0.95/PBO<0.5 ／ 地面=手動 採点$172・通し$354
+- **出典**: CLAUDE §目標 / ledger E0.1
+- **強制方法（原文の主張）**: ✅ score.py
+
+### §4.6.H12 異常値STOP
+
+> **守るもの**＝成績が良すぎる時に、疑わずに喜ばないようにします。ここが無いと、leak やバグで良すぎる数字が出ても、そのまま「合格」と誤認します。
+
+**値 / 内容**
+
+1. 勝率>70%
+2. 月NET>$3,800
+3. IS-OOS Sharpe>3倍
+4. DD<月NET10% → 調査
+
+- **出典**: false_positive 関所A
+- **強制方法（原文の主張）**: ✅ `score.score の anomaly`（勝率>70% / 月>$3,800 / DD<合計5% を採点後に「異常値・要調査」強制表示・既知答えテスト担保。IS-OOS は学習側）
+
+### §4.6.H13 judge 固定
+
+> **守るもの**＝採点の道具（score.py・eval_engine）を実験のたびに書き換えないことを固定します。ここが緩むと、審判自身が実験ごとに変わり、成績を比べる意味が無くなります。
+
+- **値 / 内容**: score.py/eval_engine は実験で改造しない・改造時は既知答えテスト再pass
+- **出典**: ratchet 合意
+- **強制方法（原文の主張）**: ✅ test 9/9
+
+**実物を数えた結果**
+
+- `scripts/priority_rebuild/test_eval_engine_known_answers.py` に `def test_` が **7** 件
+- `scripts/priority_rebuild/test_dsr_pbo_known_answers.py` に `def test_` が **6** 件
+
+### §4.6.H14 発注フラグ
+
+> **守るもの**＝実弾を発注してよいかどうかのスイッチを、まこさん以外が動かせないようにします。ここが緩むと、CC の判断ミス1つで実弾が発注されます。
+
+**値 / 内容**
+
+1. ALLOW_LIVE_ORDERS=False
+2. paper_trading
+3. run_once・replay 無確認実行禁止
+
+- **出典**: CLAUDE ⛔ / core_rules
+- **強制方法（原文の主張）**: check
+
+### §4.6.H15 Entry ボラ逃げ禁止
+
+> 軸1・設計前チェック
+
+> **守るもの**＝Entry（買う/売るタイミング）の判断が、実は値動きの荒さ（ボラティリティ）だけを当てているという逃げを防ぎます。ここが崩れると、方向を当てているつもりで、実は荒れそうな時を当てているだけの ML になります。
+
+**値 / 内容**
+
+1. Entry の方向スコアで揺れ幅(ATR/ボラ)が支配的でない
+2. ラベルがボラ依存(net金額・MFEの大きさ)でなく**方向ベース**
+3. ボラ系はサイジング・フィルタへ役割を移す
+
+- **出典**: entry_fix_6axis_gate §軸1 / ledger E8b・L-252
+- **強制方法（原文の主張）**: ⬜ **設計報告の前に entry_fix_6axis_gate §軸1 ①②③を照合し結果を提示**（① 揺れ幅が方向スコアで非支配 ② LONG/SHORT 分離 ③ ボラ系がサイジング/TP-SL/フィルタに接続）＋ 学習後 feature importance で揺れ幅が上位非支配を確認。**Entry 設計は H15 を通すまで報告しない**
+
+### §4.6.H16 過去失敗の不再演 ＋ 1ターン1変更
+
+> 設計前チェック
+
+> **守るもの**＝同じ失敗を形を変えて繰り返さないこと・1回の変更を1つに絞ることを固定します。ここが緩むと、何が効いて何が効かなかったのかが分からなくなり、過去に捨てた失敗を思い出せないまま再演します。
+
+- **値 / 内容**: ① この設計変更は **1つ**か（複数混ぜない＝PDCA 1ターン1変更）② **過去に破棄した失敗**（lessons 直近・6軸・破棄した E）を繰り返していないか
+
+**出典**
+
+1. analysis_playbook §1 PDCA
+2. lessons
+3. L-252
+
+- **強制方法（原文の主張）**: ⬜ **設計報告の前に①②を照合し結果を提示**・違反なら実装に入らない。実装の独立チェックは cc_role §1.4.6.3（2026-06-15 改訂＝小局所変更は強制hook＋score.py の数字＋非同型 Web Claude レビュー／大規模のみ Workflow・暴走防止厳守）。
+
+### §4 のまとめ
+
+**この節の決まりを破ったとき、機械が止めてくれるか。そう言える根拠はどこを見たか。★この表は機械が実物のファイルを開いて毎回 書き直します。**
+
+| 決まり | 破ったときに止まる仕組み | 根拠（見たファイルと行） |
+|---|---|---|
+| **4.1** 性能・拡張性 | **無し**。機械の強制はありません。時間の目安であって、時間を測って止める仕組みはありません。 | <sub>`../../.claude/rules/pdca_flow.md` 1行目</sub> ＝PDCA 1周の実際の段階（審判→分析→記録）の正本 |
+| **4.2** 可用性・信頼性 | **無し**。leak 防止・offline=online 一致は、この節では機械の強制がありません。強制の実体は §4.6 の H2 にあります（★H2 は書いてある強制と実物が食い違っています＝下記参照）。<br>異常値 STOP の実体。詳しくは §4.6 H12。（実物（scripts/priority_rebuild/score.py の 192 行目ほか 7 件に「anomaly」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 15行目</sub> ＝leak 防止・本番再現性の正本（Prime Directive） |
+| **4.3** セキュリティ | **無し**。API キー機密・paper_trading は、この節では機械の強制がありません。 | <sub>`../CLAUDE.md` 32行目</sub> ＝API キー機密の正本<br><sub>`../CLAUDE.md` 30行目</sub> ＝発注フラグの正本 |
+| **4.4** 運用・保守 | **無し**。ledger.md 記録は、この節では機械の強制がありません。強制の実体は pdca_mark／pdca_gate（実験後にターン終了をブロックする hook・詳細は pdca_flow.md）です。<br>**無し**。judge 固定＋既知答えテストは、この節では機械の強制がありません。詳しくは §4.6 H13（★書いてある本数と実物の本数が食い違っています）。<br>**無し**。監査経路 `/audit`・1ターン1変更は、この節では機械の強制がありません。1ターン1変更は §4.6 H16 が『設計報告の前に照合する』人の手順として持っています。 | <sub>`../../.claude/rules/pdca_flow.md` 18行目</sub> ＝ledger.md 記録を物理強制する hook の正本 |
+| **4.5** 移行 | **無し**。機械の強制はありません。demo から本番への切り替えは `paper_trading` フラグ（§4.3・H14）が実体です。 | <sub>`.claude/rules/exchange_spec.md` 280行目</sub> ＝demo（paptrading ヘッダ）の仕様の正本 |
+| **4.6** ハード制約チェックリスト | **無し**。この項目自体は見出し（目次）です。個々の強制は H1〜H16 のそれぞれにあります。 | <sub>`.claude/rules/archive/cat_requirements_20260808.md` 4行目</sub> ＝この関所の位置づけの出どころ（旧版の同じ文言） |
+| **4.6.H1** ポジション合計上限 | 原文の主張どおり実在。売買記録の時系列で合計を確かめ、0.12 BTC を超えたら採点を拒否する。（実物（scripts/priority_rebuild/score.py の 65 行目ほか 3 件に「assert_hard_constraints」））<br>原文の主張どおり実在（点版）。（実物（scripts/priority_rebuild/eval_engine.py の 33 行目ほか 2 件に「assert_position_cap」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 44行目</sub> ＝ポジション合計 0.12 BTC 上限の正本 |
+| **4.6.H2** leak なし / 本番再現性 | **見当たりません**。★原文が担保先に挙げているファイルは現役の場所に無い。実物は `archive/train_p23_entry_E8b.py` にある（2026-08-08 実測）。（❌ ファイルが無い（scripts/priority_rebuild/train_p23_entry_E8b.py））<br>★原文とは別の仕組みが実際に動いている（2026-08-09 追記）。`require_leak_annotation` フック＝scripts/priority_rebuild/*.py に未来参照の典型（.shift(-・center=True）を新しく書く瞬間、その行に「# H2OK: 理由」が無ければ書き込みをブロックする。設定ファイルへの登録済み・構文エラーなし・無言死の記録なし（2026-08-09 実測）。★穴＝①理由が本当に正しいかは機械が見ない（嘘の理由でも通る）②既に書いてある古いコードは対象外（新しく書く瞬間だけ）。次セッションでこの穴を塞ぐ（次項参照）。（実物（../../.claude/hooks/require_leak_annotation.py の 6 行目ほか 4 件に「H2OK」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 15行目</sub> ＝leak 禁止の正本（Prime Directive） |
+| **4.6.H3** net 判定 | 原文の主張どおり実在。（実物（scripts/priority_rebuild/score.py の 149 行目ほか 1 件に「def score(」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 104行目</sub> ＝gross と net の取り違えの類型の正本 |
+| **4.6.H4** コスト確定値 | 原文の主張どおり実在。（実物（scripts/priority_rebuild/eval_engine.py の 48 行目ほか 2 件に「MAKER_FEE」）） | <sub>`.claude/rules/exchange_spec.md` 16行目</sub> ＝手数料・注文単位の確定値の正本（audit#19） |
+| **4.6.H5** 約定モデル | 原文の主張どおり実在。（実物（scripts/priority_rebuild/eval_engine.py の 100 行目ほか 1 件に「def simulate_trade」）） | <sub>`.claude/rules/exchange_spec.md` 96行目</sub> ＝約定モデルの仕様の正本 |
+| **4.6.H6** 価格非依存 | **見当たりません**。★H2 と同じ担保先。現役の場所に無い。実物は archive にある（2026-08-08 実測）。（❌ ファイルが無い（scripts/priority_rebuild/train_p23_entry_E8b.py））<br>★原文とは別の仕組みが実際に動いている（2026-08-09 追記）。`warn_usd_absolute_in_e37` フック＝USD 絶対値っぽい数値閾値を書くと警告する。設定ファイルへの登録済み（2026-08-09 実測）。★穴＝①警告だけでブロックしない ②対象は e37_range_scalp.py だけ（E36・E38 など他のファイルは対象外）。（実物（../../.claude/hooks/warn_usd_absolute_in_e37.sh の 2 行目ほか 4 件に「H6」）） | <sub>`.claude/rules/phase_compliance_checklist.md` 18行目</sub> ＝価格非依存 blacklist の正本 |
+| **4.6.H7** 足の標準 | **無し**。★強制が無く人任せの4件のうちの1つ。機械の強制はありません。5m 以外を採用してよいかは、score.py の net の実測だけで判断します（機械が自動で止めるものではない）。 | <sub>`../CLAUDE.md` 11行目</sub> ＝1m/3m 撤回の記録 |
+| **4.6.H8** 期間分割 | 原文の主張どおり実在。（実物（scripts/priority_rebuild/periods.py の 71 行目ほか 5 件に「TRAIN_END」）） | <sub>`scripts/priority_rebuild/periods.py` 71行目</sub> ＝期間分割の数値の正本（SSOT） |
+| **4.6.H9** 最小注文 | 原文の主張どおり実在。（実物（scripts/priority_rebuild/score.py の 117 行目ほか 1 件に「def assert_min_order」）） | <sub>`.claude/rules/exchange_spec.md` 16行目</sub> ＝最小注文の仕様の正本 |
+| **4.6.H10** サイズ固定値扱い禁止 | **無し**。★強制が無く人任せの4件のうちの1つ。この決まり単独の機械の強制はありません。合計 0.12 BTC を超えないことだけは H1 が強制します（0.024 を使うこと自体は強制されていません）。 | <sub>`../CLAUDE.md` 13行目</sub> ＝サイズ固定値扱い禁止の記録 |
+| **4.6.H11** 合格ライン / 地面 | **見当たりません**。★原文は「✅ score.py」と主張しているが、score.py に「dsr」の文字は無い（下の実測）。score.py は月ごとの net の金額を出すだけで、『全月 $1,900 以上か』『DSR>0.95 か』を判定する処理はいまありません。まこさん指示（2026-08-08）＝『あとで修正する』。（❌ 見当たらない（scripts/priority_rebuild/score.py に「dsr」が0件）） | <sub>`../CLAUDE.md` 13行目</sub> ＝合格ラインの数字の正本 |
+| **4.6.H12** 異常値STOP | 原文の主張どおり実在。（実物（scripts/priority_rebuild/score.py の 192 行目ほか 7 件に「anomaly」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 192行目</sub> ＝異常値の自動 STOP の正本 |
+| **4.6.H13** judge 固定 | **無し**。test_precheck_band_known_answers.py は `def test_` の形式ではなく main() 関数の形式＝上の2ファイルと数え方が違う。3つ目の数字が食い違う原因はここ（2026-08-08 実測）。 | <sub>`scripts/priority_rebuild/test_eval_engine_known_answers.py` 53行目</sub> ＝既知答えテストの実物 |
+| **4.6.H14** 発注フラグ | ★原文の値は False という前提だが、実物の代入行は True（2026-08-08 実測）。CC は触っていません。変更できるのはまこさんだけです。（実物（runner/run_once_v9.py の 4 行目ほか 1 件に「ALLOW_LIVE_ORDERS = True」）） | <sub>`../CLAUDE.md` 30行目</sub> ＝発注フラグの正本 |
+| **4.6.H15** Entry ボラ逃げ禁止 | **無し**。★強制が無く人任せの4件のうちの1つ。機械の強制はありません。entry_fix_6axis_gate.md の表に沿って、Entry の設計を報告する瞬間に CC が自分で照合します。 | <sub>`.claude/rules/entry_fix_6axis_gate.md` 30行目</sub> ＝軸1（ボラ逃げ）の正本 |
+| **4.6.H16** 過去失敗の不再演 ＋ 1ターン1変更 | **無し**。★強制が無く人任せの4件のうちの1つ。機械の強制はありません。設計を報告する瞬間に CC が自分で①②を照合します。 | <sub>`.claude/ratchet/analysis_playbook.md` 14行目</sub> ＝PDCA 工程（1ターン1変更を含む）の正本 |
 
 ---
 
@@ -491,14 +751,39 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 
 ## §5 設計パラメータ（A・実験ごとに決めて報告・数字が判定する"ツマミ"）
 
-> ⚠️ **この節はまだ作り直していません。**旧版の原文をそのまま載せています。
+### §5 設計パラメータ
+
+> A・実験ごとに決めて報告・数字が判定する"ツマミ"
+
+> **守るもの**＝実験のたびに動かしてよい値（つまみ）の対象を1つに固定します。ここが緩むと、まこさんへの報告なしに値を変えてしまいます。
 
 実装前にまこさんへ詳細報告 → 確認 → 数字で判定（間違えても score.py が弾く＝インシデントでない）。
-特徴量の顔ぶれ / ラベル定義（TP/SL/時間 barrier）/ モデル種類・ハイパラ / 入る閾値 / bar 種別 / cascade・メタ・stacking・cluster / サイズ配分（H1/H10 内）。
+
+**対象**
+
+1. 特徴量の顔ぶれ
+2. ラベル定義（TP/SL/時間 barrier）
+3. モデル種類・ハイパラ
+4. 入る閾値
+5. bar 種別
+6. cascade・メタ・stacking・cluster
+7. サイズ配分（H1/H10 内）。
+
+### §5 のまとめ
+
+**この節の決まりを破ったとき、機械が止めてくれるか。そう言える根拠はどこを見たか。★この表は機械が実物のファイルを開いて毎回 書き直します。**
+
+| 決まり | 破ったときに止まる仕組み | 根拠（見たファイルと行） |
+|---|---|---|
+| **5** 設計パラメータ | **無し**。機械の強制はありません。実装前の報告は CC が自分で行います。値が正しいかどうかは、実装後に score.py の数字が判定します（間違っていても score.py が弾く＝インシデントではない）。 | <sub>`../CLAUDE.md` 66行目</sub> ＝実装前にまこさんへ報告して GO を待つ決まりの正本 |
 
 ## §6 トレード設計の本質（忘却防止・設計時に必ず想起）
 
-> ⚠️ **この節はまだ作り直していません。**旧版の原文をそのまま載せています。
+### §6 トレード設計の本質
+
+> 忘却防止・設計時に必ず想起
+
+> **守るもの**＝個別の指標をどう組み合わせるかの考え方を1つに固定します。ここを忘れると、単一指標や固定閾値のような、V9 の実測が既に否定した設計に戻ってしまいます。
 
 - エッジは単一指標でなく**コンフルエンス（複数条件の同時成立）**から出る（technical §2.3）。決定木に生値を渡し AND の枝で学ばせる。
 - 閾値は **LONG/SHORT 別・場面別・条件付き**（cat_v9 params 実証）。V9 の具体数値は焼き込まず木に側別の切れ目を探させる。
@@ -507,7 +792,11 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 - 後段レバー（Exit/並立/サイジング）は **Entry が >1.0×（コスト勝ち）**の土台の上に乗る（industry §2.6）。
 - **手数料負け回避＝maker 優先**（手動の根幹・entry/出口とも指値・成行は能動クローズのみ）。
 
-### §6.0 ポートフォリオ設計思想（不変の枠組み・全戦略の現在地は adopted_strategies.md が正本・2026-06-27 まこさん指示）
+### §6.0 ポートフォリオ設計思想
+
+> 不変の枠組み・全戦略の現在地は adopted_strategies.md が正本・2026-06-27 まこさん指示
+
+> **守るもの**＝月$1,900 を1つの戦略だけで狙わないという大枠を固定します。ここが緩むと、下げ相場だけに頼る構成に戻り、手動 V9 と同じ『regime 依存で持続しない』を繰り返します。
 
 > ⚠️ **ここに書くのは"不変の枠組み"だけ**（どんな役割の柱で月$1,900を組むか）。**各戦略の採用状態・単独net・担当局面など"動く現在地"は adopted_strategies.md（全戦略ポートフォリオ地図）が唯一の正本**＝本書に焼かない（動く数字を要件定義書に二重化すると更新漏れで腐る・§3.1 が腐った 2026-06-26 事案と同型）。背景＝「P1〜P4・P21〜P24・E35/E36 含む全戦略を1枚で見る場所が無く CC が最新1実験に閉じる近視眼」を塞ぐため、地図を台帳に、枠組みを本節に、と二層化した。
 
@@ -516,15 +805,26 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 - **予算0.12は全戦略の共有枠（§6.1）＝同方向は食い合う**。新戦略の採否は「単独 net」でなく**既存採用柱との合算で additive か食い合いか**で見る（特に同方向 SHORT＝E36/E35-SHORT と E32b の食い合い）。単独 CSV の net をそのまま足さない。
 - **改善の起点＝全戦略地図（adopted_strategies.md）で器の現在値（採用ポートフォリオの積み上げ）と最大の空白を見てから**、どの局面の柱を厚くするか目標逆算で選ぶ（最新1実験を現在値にしない・goal_block ゲート3・memory feedback_genzaichi_portfolio_not_latest）。
 
-### §6.1 予算 0.12 BTC の正しい理解（★CC が繰り返し誤解・毎セッション読んで"理解"する・2026-06-07）
+### §6.1 予算 0.12 BTC の正しい理解
+
+> ★CC が繰り返し誤解・毎セッション読んで"理解"する・2026-06-07
+
+> **守るもの**＝0.12 BTC が「1建玉の上限」でなく「全建玉の合計の上限」であることを固定します。ここを誤解すると、実際には予算を使い切っているのに『まだ余裕がある』と誤認して発注してしまいます。
 
 **0.12 BTC は「予算（財布）」**。任意の時点 t で、保有中の **全建玉の size を合計** して 0.12 を超えない（CLAUDE §0-2）。
 - **1建玉あたりでなく「合計」**。配分は柔軟（強い所に厚く・弱い所に薄く・例: P23 に 0.06 ＋ 別 Priority に 0.04）。
 - **add はサイドごとに積み立てる**: 同じサイド（SHORT/LONG）でシグナル再発火 → 新建玉でなく **既存建玉に積み増し**（size 増・建値は平均）。決済は積み立てた **合計 size を一括**で。
-- ❌ **CC が繰り返す誤解（禁止）**: 「1ポジ 0.12」／「P23 単独 add5＝0.12 だから cap を守る」（＝予算を1つで全部使う状態を"守る"と誤認）／「同時保有は1つ」を曖昧に使う。
+1. ❌ **CC が繰り返す誤解（禁止）**: 「1ポジ 0.12」
+2. 「P23 単独 add5＝0.12 だから cap を守る」（＝予算を1つで全部使う状態を"守る"と誤認）
+3. 「同時保有は1つ」を曖昧に使う。
+
 - ✅ **正**: 全 Priority の全建玉を足して 0.12。P23 単独 add5＝0.12 は「P23 に予算を全振り」した状態で、他 Priority を同時に動かせば予算オーバー。実装は `score.assert_hard_constraints` が各時点の合計を実測し 0.12 超で採点拒否（物理強制・H1）。
 
-### §6.1.1 ポジションの持ち方（Bitget の決済方法・取引所仕様＝`exchange_spec.md` ★決済方法 が正本・2026-06-09 まこさん指示で明記）
+### §6.1.1 ポジションの持ち方
+
+> Bitget の決済方法・取引所仕様＝`exchange_spec.md` ★決済方法 が正本・2026-06-09 まこさん指示で明記
+
+> **守るもの**＝Bitget の決済の仕組み（同サイドは1ポジに統合される・部分決済ができる）を固定します。ここを誤解すると、『複数建玉を同時に持てる』という取引所の仕様上ありえない前提で設計してしまいます（L-255 事案）。
 
 > 正本: `exchange_spec.md` 「★ポジションの持ち方・決済方法」（Bitget 公式 WebFetch 確認）。本項は設計含意のみ。**CC が「placePosTpsl=ポジ全体」の1行だけ見て「決済はポジ全体のみ・複数同時建玉が要る」と誤解した事案（L-255）の再発防止。**
 
@@ -534,7 +834,11 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 - **「1日10件以上・大勝ちも小勝ちも両取り」の成立**: 1ポジを add で積み上げ（大勝ち＝強い下げで伸ばす）つつ、**複数 TP で部分利確を刻む（小勝ち）**。件数は「複数同時建玉」でなく「**部分決済（段階利確）＋ V9 閾値を場面別に緩めて新規発火を増やす**」で作る。
 - ⛔ **CC が犯した誤り（L-255・撤回済）**: 「予算0.12内で同サイド複数建玉を同時に持って日10件」は**取引所仕様上ありえない**（同サイド merge）。地面 $925.73/265件（連続モード＝1ポジ一括決済・部分決済を使わない）が件数を日1件に抑えていた。
 
-### §6.2 戦略：全 Priority の Entry/Exit を ML で値調整して net 最大化（着手は P23・現主軸は P21・対象は実績で選び直す・2026-06-07 / 起点更新 2026-06-12）
+### §6.2 戦略：全 Priority の Entry/Exit を ML で値調整して net 最大化
+
+> 着手は P23・現主軸は P21・対象は実績で選び直す・2026-06-07 / 起点更新 2026-06-12
+
+> **守るもの**＝改善の対象が V9 の全 Priority であり、P23 だけに限定されないことを固定します。ここが緩むと、『P23 が起点』という古い理解のまま作業を続けてしまいます。
 
 **戦略（目的）**: V9 の全 Priority（P1〜P25）の Entry/Exit ロジックを使い、ML で学習できる値（Entry の閾値・指標の期間・Exit の値・部分決済の刻み・サイズ配分）を場面別に調整して、net 利益を最大化する。
 
@@ -545,6 +849,27 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 - ML 調整の対象は **V9 の全 Priority（P1〜P25）の Entry/Exit ロジックのセット**。1 つずつ調整していく。**P23 が全てではない**。
 - 予算 0.12 は全 Priority の建玉合計への制約 → 複数 Priority 同時稼働時はサイズを配分（§6.1）。
 
+**いまの姿（書いてある予定と違うところ）**
+
+★この節は「これから何をできるようにするか」を書いたもので、いまの姿ではありません（§2.2 と同じ注記）。**いまは、`observe_diag`（売買記録を観察して改善点を見つける道具）と `engine_tuner`（実エンジンと審判で Entry/Exit の値を調整しきる道具）で、固定値を最適化する手法を開発中です。** ML を使った値調整はまだ行っていません。まこさんの逐語（2026-08-08）＝「利益最大化に必要なら使いたい。現状は私の意図通りに実装してもらえない状況なので固定値に切り替えているだけ」。対象は P21・P23 に限らず、engine_tuner が受け持つロジック（いまは E38）全般です。
+
+**実物を数えた結果**
+
+- `scripts/priority_rebuild/observe_diag.py` に `lightgbm` が **0** 件
+- `scripts/priority_rebuild/engine_tuner.py` に `lightgbm` が **0** 件
+
+### §6 のまとめ
+
+**この節の決まりを破ったとき、機械が止めてくれるか。そう言える根拠はどこを見たか。★この表は機械が実物のファイルを開いて毎回 書き直します。**
+
+| 決まり | 破ったときに止まる仕組み | 根拠（見たファイルと行） |
+|---|---|---|
+| **6** トレード設計の本質 | **無し**。機械の強制はありません。設計の考え方であって、コードで強制するものではありません。 | <sub>`.claude/memory/technical_analysis_knowledge_base.md` 90行目</sub> ＝コンフルエンス（複数条件の同時成立）の正本<br><sub>`.claude/memory/industry_benchmark_knowledge_base.md` 198行目</sub> ＝Entry が土台という考え方の業界実証の正本（§2.6） |
+| **6.0** ポートフォリオ設計思想 | **無し**。機械の強制はありません。次に何をやるかを選ぶ時、CC が adopted_strategies.md を見てから決めます（require_read_before_work のゲート3が、採用ポートフォリオの積み上げを読んだかだけは別途 物理で確認します）。 | <sub>`.claude/ratchet/adopted_strategies.md` 1行目</sub> ＝各戦略の採用状態・単独net・担当局面の正本（動く現在地） |
+| **6.1** 予算 0.12 BTC の正しい理解 | H1 と同じ実体。合計 0.12 BTC を超えたら採点を拒否する。（実物（scripts/priority_rebuild/score.py の 65 行目ほか 3 件に「assert_hard_constraints」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 44行目</sub> ＝0.12 BTC 合計上限の正本 |
+| **6.1.1** ポジションの持ち方 | **無し**。機械の強制はありません。取引所の仕様そのものです。 | <sub>`.claude/rules/exchange_spec.md` 116行目</sub> ＝決済方法の仕様の正本（Bitget 公式） |
+| **6.2** 戦略：全 Priority の Entry/Exit を ML で値調整して net 最大化 | **無し**。機械の強制はありません。どの Priority・どのレバーを次にやるかは、CC が goal_block（目標逆算）で毎回 選び直します。 | <sub>`.claude/ratchet/adopted_strategies.md` 3行目</sub> ＝現主軸 P21 の実測（採点 $401.51・下げトレンド最強の柱） |
+
 ---
 
 # 第5部 どう進めるか
@@ -553,30 +878,42 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 
 ## §7 使い方・改訂ルール
 
-> ⚠️ **この節はまだ作り直していません。**旧版の原文をそのまま載せています。
+### §7 使い方・改訂ルール
+
+> **守るもの**＝この文書をどう使い、どう直すかの決まりを1つに固定します。ここが緩むと、実装のたびに §4.6 への照合が抜けたり、この文書が出典と食い違ったまま放置されます。
 
 - **全設計/実装は着手前に §4.6 を1項目ずつ照合**し照合結果を出す。`⬜要追加` の assert は実装時にコード化し済んだら ✅ に。
 - §5（設計パラメータ）は実装前に報告・数字で判定。
 - 本書はインデックス。出典に変更があった時のみ更新（出典が正）。
 
----
+### §7 のまとめ
+
+**この節の決まりを破ったとき、機械が止めてくれるか。そう言える根拠はどこを見たか。★この表は機械が実物のファイルを開いて毎回 書き直します。**
+
+| 決まり | 破ったときに止まる仕組み | 根拠（見たファイルと行） |
+|---|---|---|
+| **7** 使い方・改訂ルール | **無し**。機械の強制はありません。§4.6 への照合は CC が設計・実装のたびに自分で行います。 | <sub>`.claude/ratchet/cat_requirements.json` 5行目</sub> ＝この文書がインデックスであること・出典が正であることの正本（json の note 欄） |
 
 ## §8 運用ガイド（セッション開始時に読む・新セッション orientation）
 
-> ⚠️ **この節はまだ作り直していません。**旧版の原文をそのまま載せています。
+### §8.1 セッション開始時に読む順
 
-### §8.1 セッション開始時に読む順（2026-06-13 まこさん指示で cat_requirements を just-in-time へ移し 3→2・読了強制 hook と同期・2026-07-05 ②を ledger.md→next_step.md に差替）
+> 2026-06-13 まこさん指示で cat_requirements を just-in-time へ移し 3→2・読了強制 hook と同期・2026-07-05 ②を ledger.md→next_step.md に差替
+
+> **守るもの**＝セッション開始時に何を読むかを1つに固定します。ここが緩むと、前セッションの結論を読まずに、また同じ調査をやり直してしまいます。
+
 1. **`WORKFLOW.md` 改訂N active** ＝ 今どこ・次に何をするか（現在地5行・詳細は ledger）
 2. **`.claude/state/next_step.md`** ＝ 改善アーク（前提/狙い/内容/方法/結果/採否を全iterationにわたり1行ずつ・`gen_improvement_arc.py` 自動生成・ARC マーカー由来で改ざん不可）＝次セッションの起点。**2026-07-05 まこさん指摘で ledger.md（534KB・1465行）の全文読了強制から差替**＝旧ゲートは「read_log に'ledger.md'の文字列が1回出るか」しか見ておらず全文読了の担保になっていなかった一方、next_step.md の改善アーク表は既に「改善の経緯」ゲートが要る情報を凝縮済み。**ledger.md 本体は特定の過去実験を深掘りする時に読む参照資料**（振り返り用・毎回の必読ではない）
 
 > ★ **cat_requirements.md（全体像・制約 H1-H16・PDCA）と exchange_spec.md（決済方法）は「設計書を書く瞬間」に強制 read**（just-in-time・`require_spec_read_before_design.sh`）。セッション開始時に読んでもインプットされない実証（まこさん 2026-06-13・add/決済を毎回誤解）→ 必要な箇所を使う瞬間に読む方式へ。
 
-> 外した4本（読了強制で効果なしの実証・トークン浪費）: session_log（WORKFLOW+ledger と重複）／
-> analysis_playbook（手順は report.py A〜L / analyze.py N1〜N6 / precheck.py P0〜P3 ＋ pdca_gate hook に物理化済・手順を**足す**時だけ開く）／
-> strat_v9ml_design（設計作業時のみ・Layer 2）／ lessons_active（4,118行・教訓は hook/ツールに物理化する方針 L-236・必要時 grep）。
-> ※`ml_pipeline_execlog.md` は旧8工程フローの記録・参照のみ。CLAUDE.md / cc_role 等は auto-load。
+> 外した4本（読了強制で効果なしの実証・トークン浪費）: session_log（WORKFLOW+ledger と重複）／ analysis_playbook（手順は report.py A〜L / analyze.py N1〜N6 / precheck.py P0〜P3 ＋ pdca_gate hook に物理化済・手順を**足す**時だけ開く）／ strat_v9ml_design（設計作業時のみ・Layer 2）／ lessons_active（4,118行・教訓は hook/ツールに物理化する方針 L-236・必要時 grep）。※`ml_pipeline_execlog.md` は旧8工程フローの記録・参照のみ。CLAUDE.md / cc_role 等は auto-load。
 
-### §8.2 文書マップ＆更新ルール（★どの文書に何を書くか＝唯一の正本・2026-06-07 確定）
+### §8.2 文書マップ＆更新ルール
+
+> ★どの文書に何を書くか＝唯一の正本・2026-06-07 確定
+
+> **守るもの**＝どの文書に何を書くかを1つに固定します。ここが緩むと、同じ内容を複数の文書に書いてしまい、片方だけ更新されて残りが腐ります（実際に §3.1 が腐った 2026-06-26 事案）。
 
 > **混乱防止（2026-06-07）**: 「設計の決定事項」と「経緯・失敗・教訓（ログ）」を別の文書に書き分ける。混在させると CC が毎回誤読して的外れな修正を繰り返す（L-247/L-249）。役割記述が 3 箇所（本 §8.2 / strat_v9ml_design §12 / analysis_playbook §3）に散在していたのを**本表に一本化**。他の 2 箇所は本表を参照する。
 
@@ -596,28 +933,46 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 
 **徹底の仕掛け**: 本書は SessionStart 強制ロード（強制 cat ①）→ 本表が毎回読まれる。各文書の冒頭に「この文書に書くもの／書かないもの（cat_requirements §8.2 参照）」を 1 行明記。判断に迷ったら本表が優先。
 
-### §8.2.1 ファイル・データの地図（ありか）
+### §8.2.1 ファイル・データの地図
+
+> ありか
+
+> **守るもの**＝「やりたいこと→どのファイルを使うか」を探す入口を1つに固定します。ここが無いと、使われなくなった古いファイルを正本と勘違いして参照してしまいます。
 
 > ★**全部の一覧は [filemap.md](../ratchet/filemap.md)（`gen_filemap.py` が実体から機械生成・説明は各ファイルの1行目）**。まず「やりたいこと → どれを使うか」の索引を見る。使われていないファイル・参照ゼロの文書もそこに出る。
 > ⚠️ **下の手書きの地図は代表だけ**（2026-07-27 実測＝直下の .py は 58 本あるのに、ここに載っているのは10本・載っていた strat_coinflip.py は既に存在しない）。ここに新しいファイルを足していく運用はしない＝腐るため。迷ったら filemap.md を見る。
 
 **.md（資料・正本）**
-- ルール: `CLAUDE.md`(最上位) / `cc_role.md`(CC役割) / `false_positive_incident_policy.md`(インシデント) / `exchange_spec.md`(**Bitget 仕様**: 手数料・最小注文・funding・発注API) / `core_rules.md` / **本書 `cat_requirements.md`(要件)**
-- 現在地/設計: `ml_pipeline_execlog.md`(現在地・次着手) / `ml_pipeline_baseline_v1.md`(旧8工程設計・参照) / `WORKFLOW.md`(フェーズ)
-- 知識: `technical_analysis_knowledge_base` / `industry_benchmark_knowledge_base` / `cc_entry_logic_self_study`(KB) / `priority_v9_trade_logic_analysis`(手動分析)
-- ログ: `.claude/ratchet/ledger.md`(PDCA記録・commit対象) ／ 実験のデータ出力(trades_*.csv・score出力)は `results/priority_rebuild/ratchet/`(commit対象外)
+
+ルール: `CLAUDE.md`(最上位) / `cc_role.md`(CC役割) / `false_positive_incident_policy.md`(虚偽達成・虚偽報告インシデント方針・最重大) / `exchange_spec.md`(**Bitget 仕様**: 手数料・最小注文・funding・発注API) / `core_rules.md` / **本書 `cat_requirements.md`(要件)** / `chat_writing_rules.md`(CCのチャット返信の文章規則・★リポジトリ直下のみ)
+
+現在地/設計: `ml_pipeline_execlog.md`(現在地・次着手) / `ml_pipeline_baseline_v1.md`(旧8工程設計・参照) / `WORKFLOW.md`(フェーズ)
+
+知識: `technical_analysis_knowledge_base`(テクニカル分析ナレッジベース・辞典レベル) / `industry_benchmark_knowledge_base`(業界相場・経験則) / `cc_entry_logic_self_study`(エントリーロジック自己学習資料 v6) / `priority_v9_trade_logic_analysis`(手動分析) / `v9_logic.md`(最新V9構造まとめ) / `entry_exit_relationship_kb`(トレードにおける Entry と Exit の関係性 ナレッジ) / `trade_methods_study`(トレード手法) / `trade_analysis_methods_kb`(トレード結果データ分析方法 ナレッジベース) / `range_scalping_kb`(レンジ×スキャルで稼ぐ方法・知識の正本) / `improvement_ideation_kb`(改善案・アイデアの発想法カタログ) / `indicator_combination_kb`(指標の組み合わせ方の法則・知識の正本)
+
+ログ: `.claude/ratchet/ledger.md`(PDCA記録・commit対象) ／ 実験のデータ出力(trades_*.csv・score出力)は `results/priority_rebuild/ratchet/`(commit対象外)
 
 **.py（実装）**
-- 審判（固定・改造禁止）: `eval_engine.py`(約定/コスト計器・既知答えテスト済) / `score.py`(売買記録→月次net) / `test_eval_engine_known_answers.py`
-- 戦略: `strat_coinflip.py`(配管確認・捨て駒) /（v1 戦略＝これから作る）
-- 手動（参照のみ・改造禁止・無確認実行禁止）: `cat_v9_decider.py`(entry判定) / `run_once_v9.py`・`replay_csv.py`(発注・保護)
-- データ生成: `build_labels_pct.py`(ラベル)
-- 全戦略共通の土台（中立・2026-06-23 新設）: `strat_base.py`（① load_5m ／ ⑤ _verify_cap・_funding_cost ／ ⑥ _output_and_report[`ratchet_io` へ委譲] ／ ⑦ 取引所・予算定数 UNIT/CAP/TTL/ENTRY_OFFSET/COST_FLOOR）/ `ratchet_io.py` / `params_sidecar.py`。ここを直すと全戦略に効く・戦略固有ロジック（箱・売買エンジン・hold-ML 判別）は各戦略が自前（E35/E36 が手本）
+
+審判（固定・改造禁止）: `eval_engine.py`(約定/コスト計器・既知答えテスト済) / `score.py`(売買記録→月次net) / `test_eval_engine_known_answers.py`
+
+戦略: `strat_coinflip.py`(配管確認・捨て駒) /（v1 戦略＝これから作る）
+
+手動（参照のみ・改造禁止・無確認実行禁止）: `cat_v9_decider.py`(entry判定) / `run_once_v9.py`・`replay_csv.py`(発注・保護)
+
+データ生成: `build_labels_pct.py`(ラベル)
+
+全戦略共通の土台（中立・2026-06-23 新設）: `strat_base.py`（① load_5m ／ ⑤ _verify_cap・_funding_cost ／ ⑥ _output_and_report[`ratchet_io` へ委譲] ／ ⑦ 取引所・予算定数 UNIT/CAP/TTL/ENTRY_OFFSET/COST_FLOOR）/ `ratchet_io.py` / `params_sidecar.py`。ここを直すと全戦略に効く・戦略固有ロジック（箱・売買エンジン・hold-ML 判別）は各戦略が自前（E35/E36 が手本）
 
 **出力データ**
-- `results/replay/*.csv`(手動replay＝地面) / `results/priority_rebuild/labels_*.parquet`(5m+1432指標+ラベル) / `results/priority_rebuild/ratchet/`(ledger・trades_*.csv・score出力) / `ml_phase2_production/`(旧予測＝ガワ・参照のみ・効いている根拠に使わない)
 
-#### §8.2.1.1 5m足データの取得・期間延長手順（★今後の期間後ろ倒し/延長で迷わない・2026-06-13 確定）
+`results/replay/*.csv`(手動replay＝地面) / `results/priority_rebuild/labels_*.parquet`(5m+1432指標+ラベル) / `results/priority_rebuild/ratchet/`(ledger・trades_*.csv・score出力) / `ml_phase2_production/`(旧予測＝ガワ・参照のみ・効いている根拠に使わない)
+
+### §8.2.1.1 5m足データの取得・期間延長手順
+
+> ★今後の期間後ろ倒し/延長で迷わない・2026-06-13 確定
+
+> **守るもの**＝検証期間を延長する時の手順を1つに固定します。ここが緩むと、取引所の違うデータ系列（Binance と Bitget）を混ぜてしまい、価格の段差が生まれます。
 
 > 経緯: 検証期間を2ヶ月後ろ倒しする際、採点の5m足がどの取引所由来か・どう延長するかで迷った。次回以降のために確定手順を残す。
 
@@ -629,14 +984,19 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
    - 既存の5分gap 5ヶ所（2021-04/08/09・2023-03）は元データ由来で採点窓の外＝無害（毎回出る・新規欠損と混同しない）。
 
 ### §8.3 ログ更新タイミング
+
+> **守るもの**＝実験の記録・文書の更新・セッション末の引き継ぎを、いつ・どこに書くかを1つに固定します。ここが緩むと、次セッションが何を確定事項として引き継げばよいか分からなくなります。
+
 - **各実験後**: `ledger.md` に1行（変更(A) / 結果(月平均・最悪月・$1900達成月数) / 原因究明 / 改善 / 採用 or 破棄）
 - **制約変更・設計が覆った時**: 本書 + 出典を更新（出典が正）
 - **セッション末（恒久・物理強制）**: ① **`.claude/state/next_step.md` を上書き更新**（毎回上書き=最新の起点1枚・SessionStart で全文表示。記載必須＝①次セッションの本筋 ②今セッションの確定=ledger E番号を参照 ③やってはいけないこと ④数字の出典）② `WORKFLOW.md` 改訂（現在地5行）③ `lessons_active.md`（教訓 L-XX）。
   - ⚠️ **物理強制（pdca_mark/pdca_gate・2026-06-12 まこさん指示）**: ledger.md を編集した（=実験を記録した）セッションは、**next_step.md を上記必須項目込みで上書きするまでターン終了不可**（pdca_need_next_step 旗）。
-  - 役割分離: next_step=最新の起点（上書き）／ ledger=実験の確定（追記）／ lessons=教訓（追記）／ WORKFLOW=現在地+改訂履歴。**確定知見は next_step 上書き前に ledger へ記録済みであること**（上書きで失われない）。
+  役割分離: next_step=最新の起点（上書き）／ ledger=実験の確定（追記）／ lessons=教訓（追記）／ WORKFLOW=現在地+改訂履歴。**確定知見は next_step 上書き前に ledger へ記録済みであること**（上書きで失われない）。
   - （`ml_pipeline_execlog.md` は旧8工程フローの記録＝廃止・参照のみ・セッション末更新の対象外。）
 
 ### §8.4 改善（PDCA）フロー
+
+> **守るもの**＝改善の進め方（設計→実装→採点→分析→記録→判定）の順番と、新規戦略の作り方（一発の合否でなく反復で作り込む）を1つに固定します。ここが緩むと、1回の判定で戦略ごと切り捨てる、成果の出ない進め方に戻ります。
 
 > ★**アジャイル開発で進める（新規戦略の進め方・最重要・2026-06-13 まこさん指示・L-278）**: 新規戦略は「動く最小限のベース(MVP)」をまず作り、**反復で作り込む**。
 > - **手順**: ① ベース v1（入口・出口・サイズの一式）を作る（完璧でなくてよい）→ ② 連続モード `score.py` で月次 net の**地面**を出す（一発の○×でなく数字）→ ③ 改善レバーを短い反復で**1つずつ**入れ、地面を超えた分だけ残す（ratchet＝継続的改善）。動くベースは捨てない。
@@ -660,7 +1020,11 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 5. **判定**: 数字が上がれば残す・上がらなければ破棄（A のツマミは数字が弾く）。**封印期間（periods.py 正本・実値は §3.2 の表）は触らない**（過剰適合検出用）
 6. 繰り返し（1周 ≤ 約5分）
 
-### §8.5 fast-mode（非ML・固定ルール改善）は「採点窓だけ」で回す（★CC が間違える・2026-07-16 まこさん指示で明記・時間/トークン浪費の再発防止）
+### §8.5 fast-mode（非ML・固定ルール改善）は「採点窓だけ」で回す
+
+> **守るもの**＝ML を使わない改善（固定ルールの調整）で、学習窓（今と乖離した古い相場）を判定に使わないことを固定します。ここが緩むと、いまの相場と関係ない期間に合わせて値を選んでしまい、本番で再現しません。
+
+★CC が間違える・2026-07-16 まこさん指示で明記・時間/トークン浪費の再発防止。
 
 **fast-mode（PDCA 強制オフ・`pdca_fast.sh on`）で ML を使わず固定ルール／ルールで改善する時、probe・分析・検証・テスト・疑似シミュ・采否判定は すべて 採点窓（periods.py の SCORE_START〜SCORE_END＝直近6ヶ月・本番に最も近い期間）だけで行う。**
 
@@ -670,7 +1034,11 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 - **ML を使う改善に戻る時（まこさんが明示解禁）だけ**、学習窓/採点窓の分割・precheck・両窓比較を使う。
 - **背景（2026-07-16 事案・二度とやらない）**＝CC が flat_up 建値保護（固定ルール）を e37 標準パイプライン（ML 用に train+score を自動生成し precheck が学習窓で判定）に惰性で乗せ、学習窓の precheck FAIL と符号逆転で結果を殺した。まこさんが採点窓を直近6ヶ月へ前寄せ＝テスト期間を短くしたのは fast-mode の高速化と「今の値動きに近い期間で判定」のため。古い学習窓で測る意味はゼロ。採点窓だけで見れば v27 は月 −$24.75→−$12.99 の改善だった（最悪月 2026-04 −$135.8→−$45.5）。
 
-### §8.6 E37 スキャル頻度の下限・目標（★戦略から逸脱させない・2026-07-16 まこさん確定・fast-mode でも強制）
+### §8.6 E37 スキャル頻度の下限・目標
+
+> ★戦略から逸脱させない・2026-07-16 まこさん確定・fast-mode でも強制
+
+> **守るもの**＝E37（レンジのスキャル戦略）が、件数を減らして net を作る改善に流れないようにします。ここが緩むと、スキャルという役割そのものが壊れます（2026-07-16 に実際に 7.6件/日→2.3件/日 まで低下した degrade 事案）。
 
 **E37＝スキャル（§1.2.1・ROLE_CHECK e37=scalp＝小刻みに大量・高頻度が役割）。改善は頻度を絶対に下げない（スキャルから逸脱する改善は禁止＝『改善』でなく違反）。**
 
@@ -679,6 +1047,21 @@ PDCA 台帳 `ledger.md` / score 出力（月次 net）/ 運用ログ（JSON acti
 - **尻すぼみ禁止**（台帳ルール）＝前の版より件数/日を減らさない。低頻度で net を作る改善は却下。net はスキャル頻度を保ったまま出口/場面の質で解く。
 - **物理強制（fast-mode でも効く）**＝`enforce_e37_scalp_frequency.sh`（PostToolUse Bash）＝E37 の *_score.csv を score.py/report.py した時、件数/日 <5 なら §1.2.1 逸脱を警告。process の役割 hook（enforce_role_criteria/e37_pdca/strategy_anchor）は fast-mode 無効なので、fast-mode 用に別途新設。
 - **背景（degrade 事案 2026-07-16）**＝net を追う反復（v21 armed DC・v26 到達+max-age）が入口を絞り、E37 の頻度が 7.6→2.3件/日 まで低下して §1.2.1 違反状態に漂流。強制が無いと degrade する実例。現状 2.3件/日 は目標(5/hour)の約50分の1＝E37 は構造的にスキャルになっていない＝入口を作り直して頻度を桁で上げるのが最優先。
+
+### §8 のまとめ
+
+**この節の決まりを破ったとき、機械が止めてくれるか。そう言える根拠はどこを見たか。★この表は機械が実物のファイルを開いて毎回 書き直します。**
+
+| 決まり | 破ったときに止まる仕組み | 根拠（見たファイルと行） |
+|---|---|---|
+| **8.1** セッション開始時に読む順 | 必読3本（WORKFLOW.md/next_step.md/adopted_strategies.md）を Read tool で開くまで Bash/Edit/Write をブロックする。（実物（../../.claude/hooks/require_read_before_work.sh の 3 行目ほか 1 件に「require_read_before_work」）） | <sub>`.claude/state/next_step.md` 1行目</sub> ＝次セッションの起点1枚の実物 |
+| **8.2** 文書マップ＆更新ルール | **無し**。機械の強制はありません。どの文書に何を書くかは、CC が本表を見て自分で守ります。 | <sub>`.claude/memory/improvement_ideation_kb.md` 1行目</sub> ＝improvement_ideation_kb.md の実在確認 |
+| **8.2.1** ファイル・データの地図 | **無し**。機械の強制はありません。手書きの地図が古くなることの対策として filemap.md（機械生成）を正本にしています。 | <sub>`.claude/ratchet/filemap.md` 2行目</sub> ＝全ファイル一覧の正本の実在確認 |
+| **8.2.1.1** 5m足データの取得・期間延長手順 | **無し**。機械の強制はありません。取得・延長は人が手順どおりに実行します。 | <sub>`.claude/rules/exchange_spec.md` 16行目</sub> ＝コスト側（手数料・funding・slippage）の確定値の正本（H4 と同じ出典） |
+| **8.3** ログ更新タイミング | ledger.md を編集したセッションが next_step.md を上書きするまでターン終了をブロックする（pdca_need_next_step 旗）。（実物（../../.claude/hooks/pdca_gate.sh の 37 行目ほか 2 件に「pdca_need_next_step」）） | <sub>`.claude/ratchet/ledger.md` </sub> ＝実験ごとの記録の実物 |
+| **8.4** 改善 | acceptance.md（受け入れ条件＋承認）が無いと scripts/priority_rebuild/*.py を書けない。（実物（../../.claude/hooks/require_acceptance_before_impl.sh の 4 行目ほか 1 件に「require_acceptance_before_impl」）） | <sub>`.claude/rules/acceptance_checklist.md` 1行目</sub> ＝acceptance.md の照合項目の正本 |
+| **8.5** fast-mode | **無し**。★強制が無く人任せ。機械の強制はありません。fast-mode 中は process 系 hook（enforce_role_criteria 等）が無効になるため、採点窓だけを見る判断は CC が自分で行います。 | <sub>`scripts/priority_rebuild/periods.py` 77行目</sub> ＝採点窓（SCORE_START〜SCORE_END）の実物 |
+| **8.6** E37 スキャル頻度の下限・目標 | E37 の採点結果で件数/日 <5 なら §1.2.1 逸脱を警告する（fast-mode でも有効）。（実物（../../.claude/hooks/enforce_e37_scalp_frequency.sh の 2 行目ほか 1 件に「enforce_e37_scalp_frequency」）） | <sub>`.claude/ratchet/adopted_strategies.md` 8行目</sub> ＝E37=scalp という役割の機械可読の実物 |
 
 ---
 
@@ -713,12 +1096,12 @@ python3 scripts/priority_rebuild/gen_cat_requirements.py --verify  # 手で書�
 
 **★機械が git から毎回 数えます。**2026-08-08 に まこさんが3回 続けて「いまやっていることが書かれていない」と指摘したため足しました（E38 ／ いまは固定ルールで動いている事実 ／ engine_tuner）。3回とも見つけたのは まこさんです。
 
-- 直近 14 日に `scripts/priority_rebuild` で手を入れた .py は **38 本**。そのうち この文書に名前が出ているのは **13 本**、出ていないのは **25 本**。
+- 直近 14 日に `scripts/priority_rebuild` で手を入れた .py は **40 本**。そのうち この文書に名前が出ているのは **16 本**、出ていないのは **24 本**。
 
 この文書に名前が出ていないもの（★載せるかどうかは まこさんが決めます）
 
 - `__init__.py`
-- `dsr_pbo.py`
+- `doc_coverage_diag.py`
 - `e38_logic_parts.py`
 - `engine_search_e38.py`
 - `engine_tuner_exec.py`
@@ -736,7 +1119,6 @@ python3 scripts/priority_rebuild/gen_cat_requirements.py --verify  # 手で書�
 - `gen_signal_families.py`
 - `gen_v9_exits.py`
 - `indicator_reference_diag.py`
-- `test_dsr_pbo_known_answers.py`
 - `tuner_backcalc.py`
 - `tuner_judgement.py`
 - `tuner_stats.py`
