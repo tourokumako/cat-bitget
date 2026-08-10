@@ -78,7 +78,7 @@ observe_diag 自己検査 → ✅ 全部 pass（2回）
 
 **実験ゼロ・採点ゼロ・売買記録CSVゼロ。**審判 `score.py`（`1d4751ed…`）・実行器（`fcef9d73…`）・生成器（`27f4fac…`）・戦略3本は md5 不変。
 **私が変えたのは `indicator_reference_diag.py` と `observe_diag.py` の2本だけ**（ほかは機械生成と、進み具合の表 `engine_tuner_milestones.md`）。
-**git commit は していません（まこさんの OK 待ち）。**
+**git commit は 済みです**（まこさん OK 2026-08-11・逐語「コミットOK」）＝`b1a54b8`（10ファイル・1,247 行 追加）。
 
 ## A-9 ★計算が前より遅くなりました（正直に）
 

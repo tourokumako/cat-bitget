@@ -225,4 +225,4 @@ observe_diag 自己検査 → ✅ 全部 pass（cycles を足したあと・cand
 
 ## §14 git commit
 
-**未了（まこさんの OK 待ち）。**変えたファイル＝`indicator_reference_diag.py`／`observe_diag.py`（私が書いた2本）＋ `materials.md`・`materials.json`・`decisions.md`（機械生成）＋ `engine_tuner_milestones.md`（進み具合の表）＋ 引き継ぎ3本。
+**済み**（まこさん OK 2026-08-11・逐語「コミットOK」）＝`b1a54b8`（10ファイル・1,247 行 追加・200 行 削除）。変えたファイル＝`indicator_reference_diag.py`／`observe_diag.py`（私が書いた2本）＋ `materials.md`・`materials.json`・`decisions.md`（機械生成）＋ `engine_tuner_milestones.md`（進み具合の表）＋ 引き継ぎ3本。
