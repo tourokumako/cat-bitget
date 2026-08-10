@@ -702,7 +702,9 @@ def build_catalog(cfg: dict) -> list[tuple]:
 
     # ── 業界の指標（trend 16関数）──
     # ★入れなかったもの＝plus_dm・minus_dm（うちの DM+% / DM-% と同じ・実測 最大差 1e-15）。
-    # ★dpo は既定の centered=True が未来を見る（.shift(-t) を使う）ので、必ず centered=False で呼ぶ。
+    # ★dpo は既定の centered=True が未来を見る（値を未来の足の方へずらす書き方を使う）ので、
+    #   必ず centered=False で呼ぶ。★説明文に その書き方をそのまま書かない＝検査4 の静的検査が
+    #   コメントを拾って「未来参照 1 行」と出てしまう（2026-08-10 実測で誤検出を確認して直した）。
     for n in cfg["atr_periods"]:
         add(f"ADXR{n}", lambda d, n=n: _pta6.adxr(high=d.high, low=d.low, close=d.close,
                                                   length=n).iloc[:, 0], False)
@@ -741,6 +743,75 @@ def build_catalog(cfg: dict) -> list[tuple]:
     add("PSAR加速", lambda d: _ps(d).iloc[:, 2], False)
     add("PSAR反転", lambda d: _ps(d).iloc[:, 3], False)
     add("close vs SAREXT%", lambda d: (d.close / _pta6.sarext(high=d.high, low=d.low, close=d.close) - 1) * 100, True)
+
+    # ── 業界の指標（volume 16関数）──
+    # ★出来高系は、ライブラリの値をそのままでは材料にできない（積み上げは増え続ける・
+    #   出来高と値段の大きさに引きずられる＝H6 違反）。既に在る OBV傾き と同じ形にそろえる。
+    #   無次元にする理由と やり方の一覧＝indicator_reference_diag の volume の節。
+    # ★入れなかったもの3件（理由は参照表の INDUSTRY_SKIP に1件ずつ）＝
+    #   ad（★うちの CMF そのもの＝重複。総当たりの検出で見つかった）／emv（eom の1万分の1・実測で重複）／
+    #   pvr（1〜4 の区分で大小に意味が無い。★中身の半分は下の「出来高変化率%」として入れた）。
+    # ★vfi は「入れない」から「入れる」に変えた（まこさん承認 2026-08-10・逐語「１，２は修正して残す」）。
+    #   ライブラリの実装は使わず、教科書の式（足切り＝対数リターンの標準偏差×0.2×終値）で下に書いた。
+    for n in cfg["obv_slope_periods"]:
+        add(f"EFI比{n}", lambda d, n=n: _pta6.efi(close=d.close, volume=d.volume, length=n)
+            / (d.close * d.volume.rolling(n).mean()) * 100, True)
+        # ★係数は 1e4＝%が2つ（中値の動き% × 値幅%）の積だから 100×100（100 だと片方ぶんしか戻らない）
+        add(f"EOM比{n}", lambda d, n=n: _pta6.eom(high=d.high, low=d.low, close=d.close,
+                                                  volume=d.volume, length=n)
+            * d.volume.rolling(n).mean() * 1e4 / (d.close * d.close * 1e8), True)
+        add(f"MARKETFI比{n}", lambda d, n=n: _pta6.marketfi(high=d.high, low=d.low, volume=d.volume)
+            * d.volume.rolling(n).mean() * 100 / d.close, False)
+        add(f"NVI傾き{n}", lambda d, n=n: _pta6.nvi(close=d.close, volume=d.volume).diff(n), True)
+        add(f"PVI傾き{n}", lambda d, n=n: _pta6.pvi(close=d.close, volume=d.volume).diff(n), True)
+        add(f"PVOL比{n}", lambda d, n=n: (lambda pv: pv / pv.rolling(n).mean())(
+            _pta6.pvol(close=d.close, volume=d.volume)), False)
+        add(f"PVT傾き{n}", lambda d, n=n: _pta6.pvt(close=d.close, volume=d.volume).diff(n)
+            / d.volume.rolling(n).sum().replace(0, np.nan), True)
+        add(f"WAD傾き{n}", lambda d, n=n: _pta6.wad(high=d.high, low=d.low, close=d.close).diff(n)
+            / d.close * 100, True)
+    # 本数を2つ以上 自分で持つ指標＝ライブラリの既定をそのまま使う（本数を私が新しく作らない）
+    add("ADOSC比", lambda d: _pta6.adosc(high=d.high, low=d.low, close=d.close, volume=d.volume)
+        / d.volume.rolling(10).mean(), True)
+    add("AOBV_LR", lambda d: _pta6.aobv(close=d.close, volume=d.volume)["AOBV_LR_2"].astype(float), True)
+    # ★KVO は「向きを持つ列」ではない＝出来高が一定なら、ずっと上げでも ずっと下げでも 0 になる
+    #   （2026-08-10 実測。式の上でも 2つの EMA が同じ定数に収束して差が消える）。理由は参照表の流儀の欄。
+    _kv = lambda d: _pta6.kvo(high=d.high, low=d.low, close=d.close, volume=d.volume)
+    add("KVO比", lambda d: _kv(d).iloc[:, 0] / d.volume.rolling(55).mean(), False)
+    add("KVOシグナル比", lambda d: _kv(d).iloc[:, 1] / d.volume.rolling(55).mean(), False)
+    add("VOSC", lambda d: _pta6.vosc(volume=d.volume), False)
+
+    # ── まこさん承認で足した2件（2026-08-10・逐語「１，２は修正して残す」）──
+    # ★VFI＝教科書の式（Markos Katsanos）。ライブラリの実装は使わない（足切りが終値の20%で、
+    #   5分足では一度も超えず全部ゼロになる＝2026-08-10 実測 157,851本すべて 0）。
+    def _vfi(d, n):
+        typ = (d.high + d.low + d.close) / 3.0
+        inter = np.log(typ) - np.log(typ.shift(1))
+        cutoff = 0.2 * inter.rolling(30).std() * d.close        # 教科書＝標準偏差30本・係数 0.2
+        vave = d.volume.rolling(n).mean().shift(1)              # 前の足まで（未来を見ない）
+        vc = d.volume.clip(upper=vave * 2.5)                    # 教科書＝出来高の上を 2.5 倍で切る
+        mf = typ - typ.shift(1)
+        vcp = vc * np.sign(mf.where(mf.abs() > cutoff, 0.0))
+        return (vcp.rolling(n).sum() / vave.replace(0, np.nan)).ewm(span=3, adjust=False).mean()
+    for n in cfg["obv_slope_periods"]:
+        add(f"VFI{n}", lambda d, n=n: _vfi(d, n), True)
+    # ★出来高変化率%＝pvr（1〜4 の区分）の中身の半分。既にある volume_ratio は「n 本平均の何倍か」で
+    #   別のもの（2026-08-10 実測＝「前の足より増えた」との一致率 0.6737）。本数は pvr の定義どおり 1 本。
+    add("出来高変化率%1", lambda d: (d.volume / d.volume.shift(1) - 1) * 100, False)
+
+    # ── 業界の指標（statistics 13関数）──
+    # ★入れなかったもの8件（理由は参照表の INDUSTRY_SKIP に1件ずつ）＝
+    #   tos_stdevall（★未来を見る＝既定で「データ全部」に回帰直線を引く）／beta・correl（別の銘柄が要る）／
+    #   entropy（★実データでほとんど動かない）／md（mad と同じ）／quantile（median と同じ）／
+    #   stderr（stdev の定数倍）／variance（stdev の2乗＝条件として同じ並び）。
+    for n in cfg["realized_vol_periods"]:
+        add(f"skew{n}", lambda d, n=n: _pta6.skew(close=d.close, length=n), False)
+        add(f"kurtosis{n}", lambda d, n=n: _pta6.kurtosis(close=d.close, length=n), False)
+        add(f"MAD比{n}", lambda d, n=n: _pta6.mad(close=d.close, length=n) / d.close * 100, False)
+        add(f"stdev%{n}", lambda d, n=n: _pta6.stdev(close=d.close, length=n) / d.close * 100, False)
+    for n in cfg["sma_periods"]:
+        add(f"close vs MEDIAN%{n}", lambda d, n=n: (d.close / _pta6.median(close=d.close, length=n) - 1) * 100, True)
+        add(f"MEDIAN傾き%{n}", lambda d, n=n: _pta6.median(close=d.close, length=n).pct_change(5) * 100, True)
     return C
 
 
@@ -759,15 +830,22 @@ def build_features(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -
         src = bars if tf == "5m" else _resample(bars, TF_RULE[tf])
         for name, fn, directional in catalog:
             col = f"{name}__{tf}"
+            # ★囲いは「上位足へのずらし」まで含める（2026-08-10 まこさん OK で広げた）。
+            #   前は fn(src) の1行だけを囲っていたので、関数が None を そのまま返すと
+            #   囲いの外の s.copy() で全体が止まった（実測＝69日ぶんのデータで停止）。
+            #   ライブラリには、データが短いと例外でなく None を返す関数がある（t3 ほか）。
             try:
                 s = fn(src)
+                if s is None:                            # ★例外を出さずに None を返す関数がある
+                    meta[col] = ("計算できず", "None を返した（データが短いと起きる）")
+                    continue
+                if tf != "5m":
+                    s = s.copy()
+                    s.index = src.index + pd.Timedelta(TF_RULE[tf])
+                    s = s.reindex(bars.index, method="ffill")
+                out[col] = pd.to_numeric(s, errors="coerce")
             except Exception as e:                       # 黙って消さない
                 meta[col] = ("計算できず", str(e)[:60]); continue
-            if tf != "5m":
-                s = s.copy()
-                s.index = src.index + pd.Timedelta(TF_RULE[tf])
-                s = s.reindex(bars.index, method="ffill")
-            out[col] = pd.to_numeric(s, errors="coerce")
             meta[col] = ("ok", directional)
     return pd.DataFrame(out, index=bars.index), meta
 
@@ -3036,7 +3114,20 @@ def _insp_lookahead(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) 
         for ln in hits:
             ng.append(f"静的検査: {why} が {ln} 行目にある")
     span = bars.loc[bars.index.max() - pd.Timedelta(days=int(cfg["warmup_days"]) + 3):]
-    feat_full, _meta = build_features(span, cfg, catalog)
+    feat_full, meta_full = build_features(span, cfg, catalog)
+    # ★この検査は本走より短い期間（助走+3日）で計算し直す＝長い本数が要る指標は、その期間では
+    #   計算できないことがある。列の数だけを出すと「本走 4,689 なのに ここは 4,683」で読む人が
+    #   悩む（2026-08-10 実際に悩んだ）ので、名前と理由を出す。★本走の材料の欠けではない。
+    _nocalc = sorted((k, v[1]) for k, v in meta_full.items() if v[0] != "ok")
+    n_cat = len(catalog or build_catalog(cfg)) * len(cfg["timeframes"])
+    print(f"  この期間（{len(span)} 本・{span.index[0].date()}〜{span.index[-1].date()}）で計算できない列: "
+          f"{len(_nocalc)} 件 ／ カタログの掛け算 {n_cat} 列 − {len(_nocalc)} ＝ 下の照合の対象 "
+          f"{feat_full.shape[1]} 列")
+    for k, why in _nocalc:
+        print(f"     {k} ← {why}")
+    if _nocalc:
+        print("     ↑ ★この期間が短いために出るもので、本走（助走 "
+              f"{cfg['warmup_days']} 日＋全期間）の材料の欠けではない（検査5 の列の数で確かめられる）")
     picks = [span.index[-1], span.index[-100], span.index[-400]]
     suspects = {}
     for t in picks:
@@ -4123,6 +4214,29 @@ def selftest() -> None:
         _ng3b, _v3b, _r3b = _insp_indicator_match(_sb3, cfg)
     if _ng3b:
         ng.append(f"検査3 が正しいカタログで不一致を出す（許容差の線を疑う）: {_ng3b[:3]}")
+    # ★列の作り方の番人（2026-08-10 まこさん OK）＝計算が None を返しても全体が止まらず、
+    #   「計算できず」として記録されること。前は囲いが fn(src) の1行だけで、囲いの外の
+    #   s.copy() で止まった（実測＝69日ぶんのデータで AttributeError）。ライブラリには
+    #   データが短いと例外でなく None を返す関数がある（t3 ほか）。
+    _cfg_bf = dict(cfg)
+    _cfg_bf["timeframes"] = ["5m", "1h"]                 # 上位足へのずらしも通す
+    _bfb = pd.DataFrame({"open": [100.0] * 40, "high": [100.5] * 40, "low": [99.5] * 40,
+                         "close": [100.2] * 40, "volume": [1.0] * 40},
+                        index=pd.date_range("2026-03-01", periods=40, freq="5min"))
+    _cat_none = [("わざとNoneを返す列", lambda d: None, True),
+                 ("ふつうの列", lambda d: d.close, True)]
+    try:
+        _Xn, _mn = build_features(_bfb, _cfg_bf, catalog=_cat_none)
+    except Exception as _e_bf:
+        ng.append(f"列の作り方: 計算が None を返すと全体が止まる（本来は記録して飛ばす）: {str(_e_bf)[:60]}")
+    else:
+        if any(k.startswith("わざとNoneを返す列") and v[0] == "ok" for k, v in _mn.items()):
+            ng.append("列の作り方: None を返した列を『ok』として通してしまう")
+        if any(c.startswith("わざとNoneを返す列") for c in _Xn.columns):
+            ng.append("列の作り方: None を返した列が、材料の列として出てきてしまう")
+        if not all(_mn.get(f"ふつうの列__{t}", ("", ""))[0] == "ok" for t in _cfg_bf["timeframes"]):
+            ng.append(f"列の作り方: ふつうの列まで落としてしまう（誤検出）: "
+                      f"{[(k, v) for k, v in _mn.items() if k.startswith('ふつうの列')]}")
     # ★段3（照合の相手を増やす・2026-08-09）の番人
     #  ① 2つ目の照合（pandas-ta ／ scipy）が実際に効く＝わざと少しずらした式で「2つ目の照合」の不一致が出る
     _z3 = f"zscore{cfg['zscore_periods'][0]}"

@@ -2652,7 +2652,8 @@ _r(r"close vs CKSPs%", "close vs CKSPs%",
 _r(r"DPO%(\d+)", "DPO%",
    "デトレンド振動子。終値から「n本平均を (n/2+1) 本ずらしたもの」を引き、終値で割って%化",
    "標準（Detrended Price Oscillator）。★ライブラリの既定 centered=True は未来を見る"
-   "（.shift(-t) を使う・2026-08-09 実測）ので、必ず centered=False で呼ぶ。%化は H6 のための本プロジェクトの流儀",
+   "（値を未来の足の方へずらす書き方を使う・2026-08-09 実測）ので、必ず centered=False で呼ぶ。"
+   "%化は H6 のための本プロジェクトの流儀",
    "反転サイン", "none", tb=_tb_dpo)
 _r(r"close vs PMAX%", "close vs PMAX%",
    "終値が PMAX（移動平均に値動きの荒さを足した追従線）から何%離れているか",
@@ -2691,6 +2692,466 @@ _r(r"VTXP(\d+)", "VTXP",
 _r(r"VTXM(\d+)", "VTXM",
    "ボルテックス下降。前の足の高値からの動きの合計 ÷ 値幅の合計", "同上",
    "状態量＝大きいほど下落方向が強い", "none", tb=_tb_vtxm)
+
+
+# ══ 業界の指標（volume 16関数）＝独立実装・外部照合・登録（2026-08-10・フロー 段6-1 の4回目）══
+#
+# ★出来高系の指標は、ライブラリが返す値をそのまま材料にできません。3つの理由があります。
+#   ① 積み上げ型（AD・PVT・NVI・PVI・WAD・OBV）は日が経つほど値が大きくなり続けます。
+#      値そのものには意味が無く、意味があるのは「直近 n 本でどれだけ増えたか」です。
+#   ② 出来高の大きさに引きずられます（取引所が成長すると同じ値動きでも値が大きくなる）。
+#   ③ 「値段 × 出来高」の型は値段にも引きずられます＝H6（価格非依存）違反です。
+#
+# ★直し方は、既に在る OBV傾き と同じ形にそろえることです（新しい流儀を作りません）。
+#   (1) 積み上げ型      … n 本の増分 ÷ 同じ n 本の出来高の合計（−1〜+1 の加重平均になる）
+#   (2) 出来高スケール型 … 同じ本数の出来高の平均で割る（ADOSC・KVO）
+#   (3) 値段×出来高型   … 終値と平均出来高で割る（EFI・PVOL）
+#   (4) 値段²÷出来高型  … 平均出来高を掛けて、終値の2乗で割る（EOM・MARKETFI）
+#   WAD だけは積み上げが値段の単位なので、増分を終値で割って%にします（QSTICK% と同じ流儀）。
+def _clv_ad(h, l, c, v):
+    """AD（集積・拡散）の積み上げ。CLV＝(2c−h−l)/(h−l) を出来高で重みづけて足す。"""
+    rng = h - l
+    clv = np.where(rng > 0, (2.0 * c - h - l) / np.where(rng > 0, rng, 1.0), 0.0)
+    return np.cumsum(clv * v)
+
+
+def _cum_slope(cum, v, n, d):
+    """積み上げの n 本の増分 ÷ 同じ n 本の出来高の合計。"""
+    out = np.full(len(cum), np.nan)
+    out[n:] = _div(cum[n:] - cum[:-n], _roll(v, n, "sum")[n:])
+    return _S(out, d)
+
+
+def _roc1(c):
+    r = np.full(len(c), np.nan)
+    r[1:] = (c[1:] / c[:-1] - 1.0) * 100.0
+    return r
+
+
+def _tb_adosc(d, p):
+    """チャイキン振動子＝AD の 3本 EMA − 10本 EMA。ライブラリは種を AD の1本目に置く
+    （実物の逐語＝fast_ema = ad_arr[0]）ので、教科書の漸化式 _ema_rec と同じ形になる。"""
+    o, h, l, c, v = _arr(d)
+    ad = _clv_ad(h, l, c, v)
+    return _S(_div(_ema_rec(ad, 3) - _ema_rec(ad, 10), _roll(v, 10, "mean")), d)
+
+
+def _tb_aobv_lr(d, p):
+    """AOBV の買い側。OBV の 4本 EMA と 12本 EMA から作る 0/1。
+    ★式を読むと slow は打ち消されて効かない＝(inc(fast)&dec(slow))|(inc(fast)&inc(slow))。
+      売り側 SR はその裏返しなので入れない（AMAT と同じ作り・実測でも食い違いは暖機だけ）。"""
+    o, h, l, c, v = _arr(d)
+    obv = np.zeros(len(c))
+    for i in range(1, len(c)):
+        s = np.sign(c[i] - c[i - 1])
+        obv[i] = obv[i - 1] + (0.0 if np.isnan(s) else s) * v[i]
+    f, s2 = _ema_seed(obv, 4), _ema_seed(obv, 12)
+    df, ds = np.full(len(c), np.nan), np.full(len(c), np.nan)
+    df[2:], ds[2:] = f[2:] - f[:-2], s2[2:] - s2[:-2]
+    return _S((((df > 0) & (ds < 0)) | ((df > 0) & (ds > 0))).astype(float), d)
+
+
+def _tb_efi(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    pv = np.full(len(c), np.nan)
+    pv[1:] = (c[1:] - c[:-1]) * v[1:]
+    return _S(_div(_ema_seed(pv, n) * 100.0, c * _roll(v, n, "mean")), d)
+
+
+def _eom_raw(h, l, v):
+    """イーズ・オブ・ムーブメントの素の値＝中値の動き ÷（出来高 ÷ 1e8 ÷ 値幅）。"""
+    hl2 = 0.5 * (h + l)
+    dist = np.full(len(hl2), np.nan)
+    dist[1:] = hl2[1:] - hl2[:-1]
+    return _div(dist * (h - l) * 1e8, v)
+
+
+def _tb_eom(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    eom = _roll(_eom_raw(h, l, v), n, "mean")
+    return _S(_div(eom * _roll(v, n, "mean") * 1e4, c * c * 1e8), d)
+
+
+def _tb_marketfi(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    return _S(_div((h - l) * _roll(v, n, "mean") * 100.0, v * c), d)
+
+
+def _pvni_slope(d, p, side):
+    """出来高が増えた足（side=+1）／減った足（side=−1）の変化率だけを積み上げ、n 本の増分を出す。"""
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    roc = _roc1(c)
+    dv = np.full(len(c), np.nan)
+    dv[1:] = v[1:] - v[:-1]
+    take = (dv > 0) if side > 0 else (dv < 0)
+    cum = np.cumsum(np.where(take & ~np.isnan(roc), np.nan_to_num(roc), 0.0))
+    out = np.full(len(c), np.nan)
+    out[n:] = cum[n:] - cum[:-n]
+    return _S(out, d)
+
+
+def _tb_nvi_slope(d, p):
+    return _pvni_slope(d, p, -1)
+
+
+def _tb_pvi_slope(d, p):
+    return _pvni_slope(d, p, +1)
+
+
+def _tb_pvol_ratio(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    pv = c * v
+    return _S(_div(pv, _roll(pv, n, "mean")), d)
+
+
+def _tb_pvt_slope(d, p):
+    o, h, l, c, v = _arr(d)
+    roc = _roc1(c)
+    return _cum_slope(np.cumsum(np.where(np.isnan(roc), 0.0, roc) * v), v, p[0], d)
+
+
+def _tb_wad_slope(d, p):
+    """ウィリアムズの集積・拡散。上げた足は 終値−真の安値、下げた足は 終値−真の高値 を積む。"""
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    pc = np.roll(c, 1)
+    pc[0] = np.nan
+    trh, trl = np.maximum(h, pc), np.minimum(l, pc)
+    day = np.where(c > pc, c - trl, np.where(c < pc, c - trh, 0.0))
+    cum = np.cumsum(np.where(np.isnan(day), 0.0, day))
+    out = np.full(len(c), np.nan)
+    out[n:] = (cum[n:] - cum[:-n]) / c[n:] * 100.0
+    return _S(out, d)
+
+
+def _kvo_parts(d):
+    o, h, l, c, v = _arr(d)
+    hlc3 = (h + l + c) / 3.0
+    dh = np.full(len(c), np.nan)
+    dh[1:] = hlc3[1:] - hlc3[:-1]
+    sg = np.where(dh > 0, 1.0, np.where(dh < 0, -1.0, 0.0))
+    sg[0] = 1.0                                   # ライブラリの初期値（signed_series の initial=1）
+    sv = sg * v
+    kvo = _ema_seed(sv, 34) - _ema_seed(sv, 55)
+    return kvo, _ema_seed(kvo, 13), _roll(v, 55, "mean")
+
+
+def _tb_kvo(d, p):
+    kvo, _sig, vm = _kvo_parts(d)
+    return _S(_div(kvo, vm), d)
+
+
+def _tb_kvos(d, p):
+    _kvo, sig, vm = _kvo_parts(d)
+    return _S(_div(sig, vm), d)
+
+
+def _tb_vosc(d, p):
+    o, h, l, c, v = _arr(d)
+    fast, slow = _roll(v, 14, "mean"), _roll(v, 28, "mean")
+    return _S(100.0 * _div(fast - slow, slow), d)
+
+
+# ── 外部ライブラリ ta による照合（非同型の相手。volume は3種を ta が持っている）──
+def _ext_efi(d, p):
+    n = p[0]
+    fi = _ta.volume.ForceIndexIndicator(d.close, d.volume, n).force_index()
+    return fi / (d.close * d.volume.rolling(n).mean()) * 100.0
+
+
+def _ext_eom(d, p):
+    n = p[0]
+    e = _ta.volume.EaseOfMovementIndicator(d.high, d.low, d.volume, n).sma_ease_of_movement()
+    return e * d.volume.rolling(n).mean() * 1e4 / (d.close * d.close * 1e8)
+
+
+def _ext_pvt_slope(d, p):
+    n = p[0]
+    # ★ta は変化率を小数で積み、pandas-ta は%で積む＝100 倍の違い（実測＝比 100.0000000）。
+    pvt = _ta.volume.VolumePriceTrendIndicator(d.close, d.volume).volume_price_trend() * 100.0
+    return pvt.diff(n) / d.volume.rolling(n).sum().replace(0, np.nan)
+
+
+# ── 既知答え用の合成バー（volume 用・定義から期待値が決まるものだけ）──
+def _bar_clv(n, top=True):
+    """終値が高値に張り付く（CLV＝+1）／安値に張り付く（CLV＝−1）バー。出来高は 1 で一定。"""
+    hi, lo = np.full(n, 100.0), np.full(n, 99.0)
+    c = hi.copy() if top else lo.copy()
+    return _mk(c, o=c, h=hi, l=lo)
+
+
+def _bar_hl(n, hi=101.0, lo=99.0, vol=2.0):
+    """終値・高値・安値・出来高がすべて一定のバー（中値が動かない＝EOM は 0）。"""
+    c = np.full(n, 100.0)
+    return _mk(c, o=c, h=np.full(n, hi), l=np.full(n, lo), v=np.full(n, vol))
+
+
+def _bar_vslope(n, up_vol=True):
+    """終値は上げ続け、出来高は1本ずつ増える（または減る）バー。"""
+    c = 100.0 + 0.01 * np.arange(n)
+    v = 1.0 + np.arange(n, dtype=float)
+    return _mk(c, o=c, h=c, l=c, v=(v if up_vol else v[::-1].copy()))
+
+
+# ★AD（集積・拡散）は列にしない。増分を出来高の合計で割ると、式の上で CMF そのものになるため
+#   （CMF の定義＝Σ(CLV×出来高) ÷ Σ出来高 ＝ AD の n 本の増分 ÷ 同じ n 本の出来高の合計）。
+#   2026-08-10 の総当たりの重複検出が「AD傾き20 ＝ 1×CMF20（ずれ 1.0e-10）」で捕まえた。
+#   ライブラリの ad は、うちの CMF が既に押さえている（対応表の CMF の行に書いた）。
+_r(r"ADOSC比", "ADOSC比",
+   "チャイキン振動子（AD の 3本 EMA − 10本 EMA）を、10本の平均出来高で割った値",
+   "Chaikin。ライブラリは EMA の種を AD の1本目に置く（実物の逐語＝fast_ema = ad_arr[0]）。"
+   "出来高の大きさに引きずられないよう平均出来高で割る（H6）",
+   "順張り値＝プラスで買い集めが加速", "trend", tb=_tb_adosc,
+   known=lambda p: [(_bar_clv(600, True), [(-1, 3.5, 1e-6)])])
+_r(r"AOBV_LR", "AOBV_LR",
+   "OBV の 4本 EMA と 12本 EMA から作る買い側の 0/1",
+   "Archer OBV。★式の上で slow は打ち消されて効かず、売り側 SR は買い側の裏返し＝買い側の1列だけ入れる"
+   "（AMAT と同じ作り。実測＝LR+SR≠1 の足は 158,112 本中 13 本で、位置は 0〜12 の暖機だけ）",
+   "順張り値＝1 で OBV が上向き", "trend", tb=_tb_aobv_lr,
+   known=lambda p: [(_up(600), [(-1, 1.0, 1e-9)]), (_dn(600), [(-1, 0.0, 1e-9)])])
+_r(r"EFI比(\d+)", "EFI比",
+   "エルダーの勢力指数（終値の差×出来高 の n 本 EMA）を、終値と平均出来高で割って%化",
+   "Alexander Elder。値段×出来高の単位なので、終値と平均出来高の両方で割って無次元にする（H6）",
+   "順張り値＝プラスで買いの勢力が優勢", "trend", tb=_tb_efi, ext=_ext_efi,
+   known=lambda p: [(_flat(p[0] + 40), [(-1, 0.0, 1e-9)])])
+_r(r"EOM比(\d+)", "EOM比",
+   "イーズ・オブ・ムーブメント（中値の動き ÷ 出来高の厚み）の n 本平均を、平均出来高と終値²で無次元化。"
+   "＝『中値の動き%』×『値幅%』÷『出来高が平均の何倍か』の n 本平均",
+   "Richard Arms。素の値は 値段²÷出来高 の単位（ライブラリの divisor＝1e8）。"
+   "平均出来高を掛けて終値の2乗で割り、1e8 を戻す。最後の 1e4 は%が2つ（中値の動き%×値幅%）ぶん（H6）",
+   "順張り値＝プラスで少ない出来高でも上に動きやすい", "trend", tb=_tb_eom, ext=_ext_eom,
+   known=lambda p: [(_bar_hl(p[0] + 40), [(-1, 0.0, 1e-9)])])
+_r(r"MARKETFI比(\d+)", "MARKETFI比",
+   "値幅 ÷ 出来高（ビル・ウィリアムズの市場ファシリテーション指数）を、平均出来高と終値で無次元化",
+   "Bill Williams。値段÷出来高の単位なので、平均出来高を掛けて終値で割る（H6）。"
+   "出来高が平均どおりのときは 値幅の終値に対する% と同じ値になる",
+   "状態量＝大きいほど少ない出来高で値幅が出た（向きは持たない）", "none", tb=_tb_marketfi,
+   known=lambda p: [(_bar_hl(p[0] + 40), [(-1, 2.0, 1e-9)])])
+_r(r"NVI傾き(\d+)", "NVI傾き",
+   "出来高が減った足の変化率だけを積み上げた指数（NVI）の n 本の増分",
+   "Paul Dysart / Norman Fosback。積み上げの値そのものは意味を持たない（起点が 1000 の定数）ので"
+   "増分を見る。変化率%の足し算なので、そのままで無次元",
+   "順張り値＝プラスで、商いの薄い足で上げている", "trend", tb=_tb_nvi_slope,
+   known=lambda p: [(_bar_vslope(p[0] + 40, True), [(-1, 0.0, 1e-9)]),
+                    (_bar_vslope(p[0] + 40, False), [(-1, "+", 0.0)])])
+_r(r"PVI傾き(\d+)", "PVI傾き",
+   "出来高が増えた足の変化率だけを積み上げた指数（PVI）の n 本の増分", "同上（NVI の裏側）",
+   "順張り値＝プラスで、商いの厚い足で上げている", "trend", tb=_tb_pvi_slope,
+   known=lambda p: [(_bar_vslope(p[0] + 40, False), [(-1, 0.0, 1e-9)]),
+                    (_bar_vslope(p[0] + 40, True), [(-1, "+", 0.0)])])
+_r(r"PVOL比(\d+)", "PVOL比",
+   "売買代金（終値×出来高）が、n 本平均の何倍か",
+   "標準。値段×出来高の単位なので、同じ売買代金の平均で割って倍率にする（H6・volume_ratio と同じ形）",
+   "状態量＝大きいほど売買代金が多い", "none", tb=_tb_pvol_ratio,
+   known=lambda p: [(_flat(p[0] + 40), [(-1, 1.0, 1e-9)])])
+_r(r"PVT傾き(\d+)", "PVT傾き",
+   "価格・出来高トレンド（変化率%×出来高 の積み上げ）の n 本の増分を、同じ n 本の出来高の合計で割った値",
+   "標準。出来高で重みづけた n 本の平均変化率%になる（H6・OBV傾き と同じ流儀）",
+   "順張り値＝プラスで出来高を伴って上げている", "trend", tb=_tb_pvt_slope, ext=_ext_pvt_slope,
+   known=lambda p: [(_flat(p[0] + 40), [(-1, 0.0, 1e-9)])])
+_r(r"WAD傾き(\d+)", "WAD傾き",
+   "ウィリアムズの集積・拡散（上げた足は 終値−真の安値、下げた足は 終値−真の高値 を積む）の n 本の増分を終値で割って%化",
+   "Larry Williams。積み上げが値段の単位なので、増分を終値で割る（H6・QSTICK% と同じ流儀）",
+   "順張り値＝プラスで買い集めが優勢", "trend", tb=_tb_wad_slope,
+   known=lambda p: [(_up(p[0] + 40), [(-1, "+", 0.0)]), (_dn(p[0] + 40), [(-1, "-", 0.0)])])
+_r(r"KVO比", "KVO比",
+   "クリンガー出来高振動子（向きつき出来高の 34本 EMA − 55本 EMA）を、55本の平均出来高で割った値",
+   "Stephen Klinger。向きは hlc3 の前足との差で決める。出来高の大きさに引きずられないよう平均出来高で割る（H6）。"
+   "★2つの EMA の差は、向きつき出来高が『増えているか』にだけ反応する＝値動きの向きそのものには反応しない。"
+   "出来高が一定なら、ずっと上げでも ずっと下げでも 0 になる（2026-08-10 実測＝どちらも +0.000000）。"
+   "だから順張り値ではない",
+   "状態量＝プラスで買い方向の出来高の流れが強まっている（上げ相場で大きくなるとは限らない）", "none", tb=_tb_kvo,
+   known=lambda p: [(_bar_vslope(800, True), [(-1, 10.5 / 773.0, 1e-6)]),
+                    (_flat(600), [(-1, 0.0, 1e-9)])])
+_r(r"KVOシグナル比", "KVOシグナル比",
+   "KVO の 13本 EMA を、55本の平均出来高で割った値", "同上（KVO を平らにしたもの＝性質は同じ）",
+   "状態量＝プラスで買い方向の出来高の流れが強まっている（上げ相場で大きくなるとは限らない）", "none", tb=_tb_kvos,
+   known=lambda p: [(_bar_vslope(800, True), [(-1, 10.5 / 773.0, 1e-6)]),
+                    (_flat(600), [(-1, 0.0, 1e-9)])])
+# ══ まこさん承認で足した2件（2026-08-10・逐語「１，２は修正して残す」）════════════════
+# ★経緯＝「入れない」に置いていた2件を、まこさんの決定「完全に不要な指標以外はすべて入れてほしい」
+#   に照らして入れ直した。CC の判断が狭かった（worklog 20260810 §21）。
+#   ① VFI ＝ライブラリの実装が壊れていて全部ゼロだった。教科書の式（Markos Katsanos）で書き直す。
+#      違い＝値動きの足切りを『対数リターンの標準偏差 × 0.2 × 終値』で作る
+#      （ライブラリは『0.2 × 終値』＝終値の20%で、5分足では一度も超えない）。
+#   ② 出来高変化率% ＝pvr（1〜4 の区分）の中身の半分。うちの材料に無いことを実測で確かめた
+#      （volume_ratio20 ≥ 1 との一致率 0.6737＝別のもの）。pvr の区分そのものは入れない。
+def _vfi_parts(h, l, c, v, n):
+    """VFI の素材。typ＝代表値段／cutoff＝値動きの足切り／vave＝前の足までの平均出来高。"""
+    typ = (h + l + c) / 3.0
+    inter = np.full(len(c), np.nan)
+    inter[1:] = np.log(typ[1:]) - np.log(typ[:-1])
+    cutoff = 0.2 * _roll(inter, 30, "std", ddof=1) * c        # 教科書＝coef 0.2・標準偏差は30本
+    vave = np.full(len(c), np.nan)
+    vave[1:] = _roll(v, n, "mean")[:-1]                       # 前の足まで（未来を見ない）
+    mf = np.full(len(c), np.nan)
+    mf[1:] = typ[1:] - typ[:-1]
+    return typ, cutoff, vave, mf
+
+
+def _tb_vfi(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    _typ, cutoff, vave, mf = _vfi_parts(h, l, c, v, n)
+    vc = np.minimum(v, vave * 2.5)                            # 教科書＝vcoef 2.5 で出来高の上を切る
+    sg = np.where(np.abs(mf) > cutoff, np.sign(mf), 0.0)
+    return _S(_ema_rec(_div(_roll(vc * sg, n, "sum"), vave), 3), d)
+
+
+def _tb_vol_roc(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    out = np.full(len(v), np.nan)
+    out[n:] = (_div(v[n:], v[:-n]) - 1.0) * 100.0
+    return _S(out, d)
+
+
+def _bar_geo(n, r=1.001, up=True, vol=3.0):
+    """一定の比で上げ続ける（または下げ続ける）バー。対数リターンが完全に一定になるので、
+    VFI の足切り（対数リターンの標準偏差）がちょうど 0 になり、期待値が定義から決まる。"""
+    c = 100.0 * (r ** np.arange(n)) if up else 100.0 * (r ** -np.arange(n))
+    o = np.roll(c, 1)
+    o[0] = c[0]
+    return _mk(c, o=o, h=np.maximum(o, c), l=np.minimum(o, c), v=np.full(n, vol))
+
+
+_r(r"VFI(\d+)", "VFI",
+   "出来高の勢い指数。値動きが足切りを超えた足だけ、出来高に向きの符号を付けて n 本 足し、"
+   "同じ n 本の平均出来高で割った値（の3本 EMA）",
+   "Markos Katsanos（VFI）。★ライブラリ pandas-ta-classic の実装は使わない＝足切りを『0.2×終値』"
+   "（終値の20%）としているため、5分足では一度も超えず値が常に 0 になる（2026-08-10 実測＝"
+   "157,851本すべて 0）。教科書どおり足切りを『対数リターンの30本標準偏差 × 0.2 × 終値』にした。"
+   "出来高で割るので無次元（H6）",
+   "順張り値＝プラスで買い方向の出来高が優勢", "trend", tb=_tb_vfi,
+   known=lambda p: [(_bar_geo(p[0] + 60, up=True), [(-1, float(p[0]), 1e-9)]),
+                    (_bar_geo(p[0] + 60, up=False), [(-1, -float(p[0]), 1e-9)]),
+                    (_flat(p[0] + 60), [(-1, 0.0, 1e-9)])])
+_r(r"出来高変化率%(\d+)", "出来高変化率%",
+   "出来高が n 本前から何%増えたか（減ったか）",
+   "標準。もともと比率なので無次元（H6）。★pvr（1〜4 の区分）の中身の半分＝『出来高が前の足より"
+   "増えたか』を材料にしたもの。既にある volume_ratio は『n 本平均の何倍か』で別のもの"
+   "（2026-08-10 実測＝『前の足より増えた』との一致率 0.6737）",
+   "状態量＝プラスで出来高が増えた（値動きの向きは持たない）", "none", tb=_tb_vol_roc,
+   known=lambda p: [(_flat(p[0] + 40), [(-1, 0.0, 1e-9)])])
+
+
+# ══ 業界の指標（statistics 13関数）＝独立実装・登録（2026-08-10・フロー 段6-1 の5回目）══
+# ★13関数のうち 8件は入れない（理由は INDUSTRY_SKIP に1件ずつ）。
+#   なかでも tos_stdevall は★未来を見る（既定で「データ全部」に回帰直線を引く）。
+# ★歪度・尖度の流儀＝不偏（G1・G2）。素の積率ではない（2026-08-10 実測＝不偏なら差 1e-15・素なら 0.32/4.5）。
+def _mom_win(x, n):
+    """窓ごとの平均まわりの積率（m2・m3・m4）と、窓の中身。"""
+    w = _swv(x, n)
+    dv = w - w.mean(axis=1, keepdims=True)
+    return dv, (dv ** 2).mean(axis=1), (dv ** 3).mean(axis=1), (dv ** 4).mean(axis=1)
+
+
+def _tb_skew(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    out = np.full(len(c), np.nan)
+    if len(c) >= n:
+        _dv, m2, m3, _m4 = _mom_win(c, n)
+        out[n - 1:] = m3 / m2 ** 1.5 * np.sqrt(n * (n - 1)) / (n - 2)
+    return _S(out, d)
+
+
+def _tb_kurtosis(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    out = np.full(len(c), np.nan)
+    if len(c) >= n:
+        dv, m2, _m3, _m4 = _mom_win(c, n)
+        s4 = (m2 * n / (n - 1)) ** 2
+        out[n - 1:] = (n * (n + 1) / ((n - 1) * (n - 2) * (n - 3))) * ((dv ** 4).sum(axis=1) / s4) \
+            - 3 * (n - 1) ** 2 / ((n - 2) * (n - 3))
+    return _S(out, d)
+
+
+def _tb_mad(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    out = np.full(len(c), np.nan)
+    if len(c) >= n:
+        w = _swv(c, n)
+        out[n - 1:] = np.abs(w - w.mean(axis=1, keepdims=True)).mean(axis=1)
+    return _S(out / c * 100.0, d)
+
+
+def _tb_stdev_pct(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    return _S(_roll(c, n, "std", ddof=0) / c * 100.0, d)
+
+
+def _tb_median(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    out = np.full(len(c), np.nan)
+    if len(c) >= n:
+        out[n - 1:] = np.median(_swv(c, n), axis=1)
+    return _S((c / out - 1.0) * 100.0, d)
+
+
+def _tb_median_slope(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    out = np.full(len(c), np.nan)
+    if len(c) >= n:
+        out[n - 1:] = np.median(_swv(c, n), axis=1)
+    sl = np.full(len(c), np.nan)
+    sl[5:] = (out[5:] / out[:-5] - 1.0) * 100.0
+    return _S(sl, d)
+
+
+def _bar_alt(n, level=100.0, amp=1.0):
+    """100 を挟んで ±1 を交互に並べたバー（平均 100・母標準偏差 1・歪度 0）。"""
+    c = level + np.where(np.arange(n) % 2 == 0, -amp, amp)
+    return _mk(c, o=c, h=c, l=c)
+
+
+_r(r"skew(\d+)", "skew",
+   "直近 n 本の終値の歪度（分布の左右の偏り・不偏の G1）",
+   "標準（不偏＝m3/m2^1.5 × √(n(n−1))/(n−2)）。2026-08-10 実測でライブラリと 1.8e-15 で一致。"
+   "★まっすぐ上げ続けるだけの形では 0 になる＝向きの指標ではない",
+   "状態量＝プラスで、窓の中の低い値段に長くとどまり最後に上へ伸びた形（向きは持たない）", "none",
+   tb=_tb_skew, known=lambda p: [(_bar_alt(p[0] + 40), [(-1, 0.0, 1e-9)])])
+_r(r"kurtosis(\d+)", "kurtosis",
+   "直近 n 本の終値の尖度（分布の裾の厚み・不偏の G2・正規分布で 0）",
+   "標準（不偏の G2）。2026-08-10 実測でライブラリと 8.9e-15 で一致",
+   "状態量＝大きいほど裾が厚い（向きは持たない）", "none", tb=_tb_kurtosis,
+   known=lambda p: [(_bar_alt(p[0] + 40), [(-1, -2.0 * (p[0] - 1) / (p[0] - 3), 1e-9)])])
+_r(r"MAD比(\d+)", "MAD比",
+   "直近 n 本の終値の平均絶対偏差を、終値で割って%化",
+   "標準。値段の単位なので終値で割る（H6）。★窓の中の各足について「窓の平均からの離れ」を測って平均する"
+   "（いまの足と平均の差ではない）",
+   "ボラ量", "vol", tb=_tb_mad,
+   known=lambda p: [(_bar_alt(p[0] + 40), [(-1, 100.0 / 101.0, 1e-9)])])
+_r(r"stdev%(\d+)", "stdev%",
+   "直近 n 本の終値の標準偏差を、終値で割って%化",
+   "標準（母標準偏差＝ddof 0。2026-08-10 実測でライブラリの stdev は ddof=0）。値段の単位なので終値で割る（H6）",
+   "ボラ量", "vol", tb=_tb_stdev_pct,
+   known=lambda p: [(_bar_alt(p[0] + 40), [(-1, 100.0 / 101.0, 1e-9)])])
+_r(r"close vs MEDIAN%(\d+)", "close vs MEDIAN%",
+   "終値が、直近 n 本の終値の中央値から何%離れているか",
+   "標準。値段そのものなので終値との距離%にする（H6・close vs SMA% と同じ流儀）",
+   "順張り値", "trend", tb=_tb_median,
+   known=lambda p: [(_flat(p[0] + 40), [(-1, 0.0, 1e-9)])])
+_r(r"MEDIAN傾き%(\d+)", "MEDIAN傾き%",
+   "直近 n 本の終値の中央値の、5本前からの変化率%", "同上（傾きの形）",
+   "順張り値", "trend", tb=_tb_median_slope,
+   known=lambda p: [(_flat(p[0] + 40), [(-1, 0.0, 1e-9)])])
+_r(r"VOSC", "VOSC",
+   "出来高振動子＝出来高の 14本平均と 28本平均の差を、28本平均で割った%",
+   "標準（tulip の既定 14/28）。もともと比率なので、そのままで無次元",
+   "状態量＝大きいほど直近の商いが厚い（向きは持たない）", "none", tb=_tb_vosc,
+   known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),
+                    (_bar_vslope(800, True), [(-1, 700.0 / 786.5, 1e-6)])])
 
 
 # ══ 需給データの定義表（検査6 が印字する正本・2026-07-30 WebResearch＋実測で確定）══
@@ -2962,6 +3423,19 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "QSTICK%": dict(k="ローソク", note="終値と始値の差の平均＝バスの中の押し切り方"),
     "close vs SAREXT%": dict(k="構造・位置"),
     "TTM_TREND": dict(k="トレンド"), "VHF": dict(k="ボラ"), "VTXP": dict(k="トレンド"), "VTXM": dict(k="トレンド"),
+    # 業界の指標（pandas-ta 由来・フロー 段6-1 の4回目＝volume）＝全部 出来高の系統
+    "ADOSC比": dict(k="出来高"), "AOBV_LR": dict(k="出来高"),
+    "EFI比": dict(k="出来高"), "EOM比": dict(k="出来高"),
+    "MARKETFI比": dict(k="出来高", note="値幅÷出来高。ボラ系でもあるが出来高で割るのが主用途"),
+    "NVI傾き": dict(k="出来高"), "PVI傾き": dict(k="出来高"), "PVOL比": dict(k="出来高"),
+    "PVT傾き": dict(k="出来高"), "WAD傾き": dict(k="出来高"),
+    "KVO比": dict(k="出来高"), "KVOシグナル比": dict(k="出来高"), "VOSC": dict(k="出来高"),
+    "VFI": dict(k="出来高"), "出来高変化率%": dict(k="出来高"),
+    # 業界の指標（pandas-ta 由来・フロー 段6-1 の5回目＝statistics）
+    "skew": dict(k="ボラ", note="窓の中の値段の分布の形＝値動きの大きさの計測に属する"),
+    "kurtosis": dict(k="ボラ", note="同上（裾の厚み）"),
+    "MAD比": dict(k="ボラ"), "stdev%": dict(k="ボラ"),
+    "close vs MEDIAN%": dict(k="構造・位置"), "MEDIAN傾き%": dict(k="トレンド"),
     "close vs LRb%": dict(k="構造・位置"), "LRb傾き%": dict(k="トレンド"), "LRslope%": dict(k="トレンド"),
     "close vs MAMA%": dict(k="構造・位置"), "close vs FAMA%": dict(k="構造・位置"),
     "close vs MCGD%": dict(k="構造・位置"), "MCGD傾き%": dict(k="トレンド"),
@@ -3072,7 +3546,7 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "AR": (("brar",), "brar が AR・BR をまとめて返す"),
     "BR": (("brar",), "同上"),
     "CCI": (("cci",), ""),
-    "CFO": (("cfo", "fosc"), "cfo と fosc は同じ式（実測でぴったり重なる）＝1つにまとめた"),
+    "CFO": (("cfo",), "fosc は同じ式（実測でぴったり重なる）＝『入れない』の一覧に載せている"),
     "CG": (("cg",), ""),
     "CMO": (("cmo",), ""),
     "COPC": (("coppock",), ""),
@@ -3135,6 +3609,30 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "close vs SAREXT%": (("sarext",), "値段そのもの。うちは終値との距離%（H6）"),
     "TTM_TREND": (("ttm_trend",), ""), "VHF": (("vhf",), ""),
     "VTXP": (("vortex",), "vortex が上昇・下降をまとめて返す"), "VTXM": (("vortex",), "同上"),
+    # ── volume 16関数（4回目）──
+    "ADOSC比": (("adosc",), "出来高スケール。うちは平均出来高で割る（H6）"),
+    "AOBV_LR": (("aobv",), "aobv が7列 返すうち、買い側の1列だけ入れた（式の上で slow は効かず SR は裏返し）"),
+    "EFI比": (("efi",), "値段×出来高。うちは終値と平均出来高で割って%化（H6）"),
+    "EOM比": (("eom",), "値段²÷出来高。うちは平均出来高と終値²で無次元化（H6）"),
+    "MARKETFI比": (("marketfi",), "値段÷出来高。うちは平均出来高と終値で無次元化（H6）"),
+    "NVI傾き": (("nvi",), "積み上げそのもの。うちは n 本の増分（変化率%の足し算＝すでに無次元）"),
+    "PVI傾き": (("pvi",), "同上"),
+    "PVOL比": (("pvol",), "売買代金そのもの。うちは n 本平均に対する倍率（H6）"),
+    "PVT傾き": (("pvt",), "積み上げそのもの。うちは増分を出来高の合計で割る（H6）"),
+    "WAD傾き": (("wad",), "値段の単位の積み上げ。うちは増分を終値で割って%化（H6）"),
+    "KVO比": (("kvo",), "kvo が本体とシグナルをまとめて返す。うちは平均出来高で割る（H6）"),
+    "KVOシグナル比": (("kvo",), "同上"),
+    "VOSC": (("vosc",), "もともと%＝そのまま"),
+    "VFI": (("vfi",), "★ライブラリの実装は使わない（全部ゼロになる）。教科書の式で書き直した"
+                      "＝まこさん承認 2026-08-10・逐語「１，２は修正して残す」"),
+    "出来高変化率%": ((), "ライブラリに相当する関数が無い。pvr（1〜4 の区分）の中身の半分を"
+                          "材料にしたもの＝まこさん承認 2026-08-10"),
+    # ── statistics 13関数（5回目）──
+    "skew": (("skew",), ""), "kurtosis": (("kurtosis",), ""),
+    "MAD比": (("mad",), "値段の単位。うちは終値で割って%化（H6）"),
+    "stdev%": (("stdev",), "値段の単位。うちは終値で割って%化（H6・母標準偏差＝ddof 0）"),
+    "close vs MEDIAN%": (("median",), "値段そのもの。うちは終値との距離%（H6）"),
+    "MEDIAN傾き%": (("median",), "同上（傾きの形）"),
     # ── overlap 3回目（sinwma〜zlma）──
     "close vs SINWMA%": (("sinwma",), "値段そのもの。うちは終値との距離%（H6）"), "SINWMA傾き%": (("sinwma",), "同上（傾きの形）"),
     "close vs SSF%": (("ssf",), "値段そのもの。うちは終値との距離%（H6）"), "SSF傾き%": (("ssf",), "同上（傾きの形）"),
@@ -3225,6 +3723,49 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
 # ★入れない候補（★まこさんの承認はまだ・next_step §5 の10番）。既定は「入れる」（まこさん決定＝
 #   「利益最大化するために完全に不要な指標以外はすべて入れてほしい」）。だから ここに載せるのは
 #   「指標ではないもの」に限る。1件ずつ理由を書く。
+# ★まこさんが実際に承認した「入れない」の一覧（2026-08-09・逐語「1,2,3,4全部いれないくていい」）。
+#   出どころ＝そのときの materials.md（git の 03aad50 の ★4）から機械で取り出した19件。
+#   ★これ以降に足したものは まこさんの承認を受けていない。materials.md が1件ずつ ✅／★未承認 で出す。
+#   2026-08-10 に、文書が44件すべてを「承認済み」と書いていたのを是正した（承認の偽装になっていた）。
+SKIP_APPROVED_20260809: frozenset = frozenset({
+    "hl2", "hlc3", "ohlc4", "wcp", "medprice", "typprice", "avgprice",
+    "drawdown", "log_return", "percent_return",
+    "increasing", "decreasing", "long_run", "short_run", "tsignals", "xsignals",
+    "decay", "edecay", "ma",
+    # ★willr は同じ日にまこさんが名指しで「入れない」と言われている（逐語＝「willrは入れない。
+    #   他にも同じ挙動の指標があれば紛らわしいので片方を省いていく」）。2026-08-10 に足した
+    #   （それまで CC が ★未承認 に入れていた＝印の付け忘れ）。
+    "willr",
+})
+
+# ★「方針は承認済み」＝まこさんが 2026-08-09 に承認した方針に当たるもの（逐語＝
+#   「他にも同じ挙動の指標があれば紛らわしいので片方を省いていく」）。
+#   ★「同じ挙動かどうか」の判定は CC が実測でやった＝まこさんは1件ずつは見ていない。
+#   だから ✅（名指しの承認）とは分ける（まこさん OK 2026-08-10・印を3種類にする）。
+#   ★ここに入れ忘れたものは ★未承認 として出る＝承認が勝手に広がらない側に倒してある。
+SKIP_POLICY_DUP_20260809: frozenset = frozenset({
+    "rocp", "rocr", "rocr100", "stochf", "fosc", "macdext", "macdfix",
+    "slope", "smi", "plus_dm", "minus_dm", "ad", "emv", "md", "quantile",
+})
+
+# ★2026-08-10 にまこさんが承認した「入れない」（逐語＝「４…→OK ／ １，２は修正して残す。
+#   ３は入れないということだよね」）。CC が9件を型ごとに説明し、まこさんが「３」＝この7件を
+#   入れないと確認した。★pvr は入れていない＝「1〜4 の区分そのものを入れない」ことについて
+#   明示の逐語が無いため（中身の半分は「出来高変化率%」として材料に入れた）。承認は広げない。
+SKIP_APPROVED_20260810: frozenset = frozenset({
+    "mavp", "tos_stdevall", "entropy", "stderr", "variance", "beta", "correl",
+})
+
+# 承認の一覧（印つき）＝gen_materials が1件ずつ印を付けるために読む。印は3種類（まこさん OK 2026-08-10）。
+#   ✅ …まこさんが名指しで「入れない」と言われたもの
+#   ◯ …まこさんが方針を承認したもの（同じ挙動なら片方を省く）。同じかどうかの判定は CC の実測
+#   ★未承認 …上のどちらにも当たらないもの（この辞書に無いもの）
+SKIP_APPROVED: dict[str, str] = {
+    **{fn: "✅ 2026-08-09" for fn in SKIP_APPROVED_20260809},
+    **{fn: "✅ 2026-08-10" for fn in SKIP_APPROVED_20260810},
+    **{fn: "◯ 方針は承認済み（判定は CC の実測）" for fn in SKIP_POLICY_DUP_20260809},
+}
+
 INDUSTRY_SKIP: dict[str, str] = {
     # (c) 同じ挙動＝片方を省く（まこさん決定 2026-08-09・逐語「willrは入れない。他にも同じ挙動の
     #     指標があれば紛らわしいので片方を省いていく」）。★どれも「片方を定数倍して定数を足しただけで
@@ -3243,6 +3784,42 @@ INDUSTRY_SKIP: dict[str, str] = {
     "minus_dm": "うちの DM-% と同じ（実測＝最大差 2.7e-15）",
     "mavp": "★未来を見る（H2 違反）。既定では各足で使う本数を np.linspace(2, 30, データ全体の本数) で"
             "作るので、データが増えると過去の足の値まで変わる（2026-08-09 実測で検出）",
+    "ad": "★うちの CMF そのもの。CMF の定義＝Σ(CLV×出来高)÷Σ出来高 は、AD（CLV×出来高 の積み上げ）の"
+          "n 本の増分を同じ n 本の出来高の合計で割ったものと式の上で同じ"
+          "（2026-08-10 実測＝AD傾き20 ＝ 1×CMF20 ＋ −5.2e-14・ずれ 1.0e-10。総当たりの重複検出が捕まえた）",
+    "emv": "eom（イーズ・オブ・ムーブメント）を 1本平均で出したものの1万分の1（実測 2026-08-10＝"
+           "eom(length=1) ÷ emv の比が 158,112 本すべてで 10000.000000 ・ばらつき 1.3e-12）。"
+           "うちは EOM比 として入れている＝重複",
+    # (d) 数の大小に意味が無い＝『値 ≥ 閾値』の形の条件に使えない（2026-08-10・volume）
+    "pvr": "1〜4 の区分（1＝上げ×出来高増／2＝上げ×出来高減／3＝下げ×出来高増／4＝下げ×出来高減）。"
+           "数が大きいほど◯◯という並びになっておらず、2 と 3 の境目で意味が反転する。"
+           "engine_tuner の条件は『値 ≥ 閾値』の形なので、この並びのままでは条件にできない。"
+           "★2026-08-10 訂正＝前は『中身の2つは ROC と volume_ratio で表せる』と書いていたが、"
+           "実測で間違いだった。『終値が上げたか』は ROC1 ≥ 0 と一致率 1.0000 で表せるが、"
+           "『出来高が前の足より増えたか』は volume_ratio20 ≥ 1 と一致率 0.6737 しかない"
+           "（volume_ratio は 20本平均に対する倍率で、前の足との比較ではないため）。"
+           "★足りていなかった半分は『出来高変化率%』として材料に入れた"
+           "（まこさん承認 2026-08-10・逐語「１，２は修正して残す」）＝"
+           "入れないのは 1〜4 の区分そのものだけ",
+    "tos_stdevall": "★未来を見る（H2 違反）。既定の length=None で『データ全部』に回帰直線を引き、"
+                    "全期間の標準偏差を足し引きするので、各足の値がその足より後のデータで変わる。"
+                    "2026-08-10 実測＝同じ足の値が、データを 2,000本で切ると 3,000本のときと最大 213.06 ずれる",
+    "beta": "別の銘柄の系列（benchmark）が要る。うちは BTCUSDT の1本だけなので、自分自身との比＝常に 1 になる",
+    "correl": "同上（別の銘柄との相関）",
+    "md": "mad（平均絶対偏差）と同じ関数を呼ぶだけ（実物のコードの逐語＝result = mad(close, length=length)・"
+          "実測でも最大差 0）",
+    "quantile": "既定が中央値＝median と同じ（実測＝最大差 0）",
+    "stderr": "stdev の定数倍（stdev の 1/√(n−1) 倍。実測＝比が 0.18569533〜0.18569539 で一定・1/√29＝0.185695338）。"
+              "定数倍は『値 ≥ 閾値』の条件として同じ並びになる＝新しい条件を作れない",
+    "variance": "stdev の2乗（実測＝最大差 9.3e-10）。2乗は大小の並びを変えないので、"
+                "『値 ≥ 閾値』の条件として stdev と同じ",
+    # (e) ライブラリの実装が壊れていて、実データで値が出ない（2026-08-10 実測で検出）
+    "entropy": "★実データでほとんど動かない（値決め窓の実測＝最小 3.3212716880・最大 3.3219280938・"
+               "ばらつき 9.1e-06＝上限 log2(10)＝3.3219280949 に張り付く）。原因＝ライブラリが"
+               "終値そのものに当てているため、窓の中の値段がどれも近い値になり、分布がほぼ均等になる。"
+               "条件の材料にならない（どの閾値でも切れない）。★2026-08-10 実測＝入力を変化率に変えても"
+               "直らない（ばらつき 4.0e-06・幅 1.7e-04）。ライブラリの作り（窓の合計で割って分布にする）"
+               "が原因なので、入力の直しでは動かない",
     # (a) 1本の中の値段を平均するだけ＝新しい情報が増えない
     "hl2": "そのバーの高値と安値の平均＝値段そのもの", "hlc3": "高値・安値・終値の平均＝値段そのもの",
     "ohlc4": "4本値の平均＝値段そのもの", "wcp": "終値を重くした加重平均＝値段そのもの",
