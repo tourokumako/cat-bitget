@@ -2172,6 +2172,166 @@
     "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
    },
    {
+    "名前": "close vs ABER_ZG%",
+    "系統": "構造・位置",
+    "答える問い": "いま どの価格水準にいるか",
+    "使える役割": "location",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（aberration）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "ABER位置",
+    "系統": "構造・位置",
+    "答える問い": "いま どの価格水準にいるか",
+    "使える役割": "location",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（aberration）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "close vs ACCBL%",
+    "系統": "構造・位置",
+    "答える問い": "いま どの価格水準にいるか",
+    "使える役割": "location",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（accbands）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "close vs ACCBU%",
+    "系統": "構造・位置",
+    "答える問い": "いま どの価格水準にいるか",
+    "使える役割": "location",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（accbands）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "close vs CE_L%",
+    "系統": "構造・位置",
+    "答える問い": "いま どの価格水準にいるか",
+    "使える役割": "location",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（ce）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "close vs CE_S%",
+    "系統": "構造・位置",
+    "答える問い": "いま どの価格水準にいるか",
+    "使える役割": "location",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（ce）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "CVI",
+    "系統": "ボラ",
+    "答える問い": "どれくらい大きく動いているか",
+    "使える役割": "env・sufficiency",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（cvi）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "HWC位置",
+    "系統": "構造・位置",
+    "答える問い": "いま どの価格水準にいるか",
+    "使える役割": "location",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（hwc）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "HWC幅%",
+    "系統": "ボラ",
+    "答える問い": "どれくらい大きく動いているか",
+    "使える役割": "env・sufficiency",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（hwc）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "MASSI",
+    "系統": "ボラ",
+    "答える問い": "どれくらい大きく動いているか",
+    "使える役割": "env・sufficiency",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（massi）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "PDIST%",
+    "系統": "ボラ",
+    "答える問い": "どれくらい大きく動いているか",
+    "使える役割": "env・sufficiency",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（pdist）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "RVI",
+    "系統": "ボラ",
+    "答える問い": "どれくらい大きく動いているか",
+    "使える役割": "env・sufficiency",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（rvi）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "THERMO%",
+    "系統": "ボラ",
+    "答える問い": "どれくらい大きく動いているか",
+    "使える役割": "env・sufficiency",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（thermo）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "THERMO比",
+    "系統": "ボラ",
+    "答える問い": "どれくらい大きく動いているか",
+    "使える役割": "env・sufficiency",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（thermo）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "TR%",
+    "系統": "ボラ",
+    "答える問い": "どれくらい大きく動いているか",
+    "使える役割": "env・sufficiency",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（true_range）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
+    "名前": "UI",
+    "系統": "ボラ",
+    "答える問い": "どれくらい大きく動いているか",
+    "使える役割": "env・sufficiency",
+    "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（ui）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+   },
+   {
     "名前": "taker_ls",
     "系統": "需給",
     "答える問い": "実際の注文の偏りが どちらに出ているか",
@@ -2652,123 +2812,13 @@
     "engine_tuner": "—（まだ材料に入っていない）"
    },
    {
-    "名前": "aberration",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
-    "名前": "accbands",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
     "名前": "avolume",
     "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
+    "答える問い": "（指標ではない）",
+    "使える役割": "（指標ではない）",
     "計算の出どころ": "ライブラリ pandas-ta-classic",
     "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
-    "名前": "ce",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
-    "名前": "cvi",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
-    "名前": "hwc",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
-    "名前": "massi",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
-    "名前": "pdist",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
-    "名前": "rvi",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
-    "名前": "thermo",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
-    "名前": "true_range",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
-    "engine_tuner": "—（まだ材料に入っていない）"
-   },
-   {
-    "名前": "ui",
-    "系統": "（未定・ライブラリの分類は volatility）",
-    "答える問い": "（未定・材料に足すときに決める＝段6）",
-    "使える役割": "（未定・材料に足すときに決める＝段6）",
-    "計算の出どころ": "ライブラリ pandas-ta-classic",
-    "グループ": "（段8 で埋める）",
-    "状態": "足す",
+    "状態": "入れない（うちの realized_vol の定数倍（どちらも対数リターンの標準偏差。avolume は母標準偏差×√252・うちは 標本標準偏差×100）。2026-08-10 実測＝比が値決め窓の全区間で1つの値（20本 0.154725563499／50本 0.157149610245・式から出る定数 √252×√((n−1)/n)/100 と12桁 一致）。定数倍は『値 ≥ 閾値』の条件として同じ並びになる＝新しい条件を作れない（stderr と同じ理屈））",
     "engine_tuner": "—（まだ材料に入っていない）"
    },
    {
@@ -2963,9 +3013,9 @@
    }
   ],
   "counts": {
-   "在る": 229,
-   "足す": 24,
-   "入れない": 43
+   "在る": 245,
+   "足す": 12,
+   "入れない": 44
   },
   "lineage_question": {
    "トレンド": {
@@ -3007,7 +3057,7 @@
    {
     "印": "A",
     "何を足すか": "業界のライブラリに在って、うちの材料に無い指標",
-    "数": 24,
+    "数": 12,
     "単位": "種類",
     "出どころ": "検査10（observe_diag）",
     "中身": "下の『材料の一覧』で状態が「足す」の行"
@@ -3015,10 +3065,10 @@
    {
     "印": "B",
     "何を足すか": "★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標",
-    "数": 198,
+    "数": 214,
     "単位": "種類",
     "出どころ": "段5 で新しく数えた（検査には無い）",
-    "中身": "MACD線%・MACDヒスト%・MACDシグナル線%・OBV傾き・転換線・基準線・BB%b・BB幅・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・高値からの経過バー・安値からの経過バー・形スコア・W字・close vs VWAP・Keltner上・Keltner下・Supertrend・n本高値・n本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・S-Rタッチ数・AO%・APO%・BIAS・BOP・AR・BR・CCI・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ER・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・KST・KSTシグナル・LRSI・MOM%・PGO・PO・PSL・RSX・PPO・PPOシグナル・PPOヒスト・PVO・PVOシグナル・PVOヒスト・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SMC_SWEEP・SQZ・SQZ_ON・SQZPRO_ON_WIDE・SQZPRO_ON_NARROW・STC・STCstoch・StochRSI%K・StochRSI%D・TD_SEQ_UP・TD_SEQ_DN・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UO・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・close vs ALMA%・ALMA傾き%・close vs DEMA%・DEMA傾き%・close vs FWMA%・FWMA傾き%・close vs HILO%・close vs HMA%・HMA傾き%・close vs HT_TRENDLINE%・close vs HWMA%・close vs JMA%・close vs KAMA%・KAMA傾き%・close vs LINREG%・LINREG傾き%・LRangle・close vs LRb%・LRb傾き%・LRslope%・close vs MAMA%・close vs FAMA%・close vs MCGD%・MCGD傾き%・close vs MIDPOINT%・MIDPOINT傾き%・close vs MIDPRICE%・MIDPRICE傾き%・close vs MMAR%・MMAR傾き%・close vs PWMA%・PWMA傾き%・close vs RAINBOW%・RAINBOW傾き%・close vs RMA%・RMA傾き%・close vs SINWMA%・SINWMA傾き%・close vs SSF%・SSF傾き%・close vs SWMA%・SWMA傾き%・close vs T3%・T3傾き%・close vs TEMA%・TEMA傾き%・close vs TRIMA%・TRIMA傾き%・close vs TSF%・TSF傾き%・close vs VIDYA%・VIDYA傾き%・close vs VWMA%・VWMA傾き%・close vs WMA%・WMA傾き%・close vs ZLMA%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・AROONU・AROOND・AROONOSC・CHOP・close vs CKSPl%・close vs CKSPs%・DPO%・close vs PMAX%・close vs PSAR%・PSAR加速・PSAR反転・QSTICK%・close vs SAREXT%・TTM_TREND・VHF・VTXP・VTXM・ADOSC比・AOBV_LR・EFI比・EOM比・MARKETFI比・NVI傾き・PVI傾き・PVOL比・PVT傾き・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MAD比・stdev%・close vs MEDIAN%・MEDIAN傾き%・VOSC"
+    "中身": "MACD線%・MACDヒスト%・MACDシグナル線%・OBV傾き・転換線・基準線・BB%b・BB幅・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・高値からの経過バー・安値からの経過バー・形スコア・W字・close vs VWAP・Keltner上・Keltner下・Supertrend・n本高値・n本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・S-Rタッチ数・AO%・APO%・BIAS・BOP・AR・BR・CCI・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ER・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・KST・KSTシグナル・LRSI・MOM%・PGO・PO・PSL・RSX・PPO・PPOシグナル・PPOヒスト・PVO・PVOシグナル・PVOヒスト・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SMC_SWEEP・SQZ・SQZ_ON・SQZPRO_ON_WIDE・SQZPRO_ON_NARROW・STC・STCstoch・StochRSI%K・StochRSI%D・TD_SEQ_UP・TD_SEQ_DN・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UO・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・close vs ALMA%・ALMA傾き%・close vs DEMA%・DEMA傾き%・close vs FWMA%・FWMA傾き%・close vs HILO%・close vs HMA%・HMA傾き%・close vs HT_TRENDLINE%・close vs HWMA%・close vs JMA%・close vs KAMA%・KAMA傾き%・close vs LINREG%・LINREG傾き%・LRangle・close vs LRb%・LRb傾き%・LRslope%・close vs MAMA%・close vs FAMA%・close vs MCGD%・MCGD傾き%・close vs MIDPOINT%・MIDPOINT傾き%・close vs MIDPRICE%・MIDPRICE傾き%・close vs MMAR%・MMAR傾き%・close vs PWMA%・PWMA傾き%・close vs RAINBOW%・RAINBOW傾き%・close vs RMA%・RMA傾き%・close vs SINWMA%・SINWMA傾き%・close vs SSF%・SSF傾き%・close vs SWMA%・SWMA傾き%・close vs T3%・T3傾き%・close vs TEMA%・TEMA傾き%・close vs TRIMA%・TRIMA傾き%・close vs TSF%・TSF傾き%・close vs VIDYA%・VIDYA傾き%・close vs VWMA%・VWMA傾き%・close vs WMA%・WMA傾き%・close vs ZLMA%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・AROONU・AROOND・AROONOSC・CHOP・close vs CKSPl%・close vs CKSPs%・DPO%・close vs PMAX%・close vs PSAR%・PSAR加速・PSAR反転・QSTICK%・close vs SAREXT%・TTM_TREND・VHF・VTXP・VTXM・ADOSC比・AOBV_LR・EFI比・EOM比・MARKETFI比・NVI傾き・PVI傾き・PVOL比・PVT傾き・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MAD比・stdev%・close vs MEDIAN%・MEDIAN傾き%・VOSC・close vs ABER_ZG%・ABER位置・close vs ACCBL%・close vs ACCBU%・close vs CE_L%・close vs CE_S%・CVI・HWC位置・HWC幅%・MASSI・PDIST%・RVI・THERMO%・THERMO比・TR%・UI"
    },
    {
     "印": "C",
@@ -3031,10 +3081,10 @@
    {
     "印": "D",
     "何を足すか": "「終値と◯◯の距離%」に対する「◯◯ そのものの向き」",
-    "数": 57,
+    "数": 62,
     "単位": "件",
     "出どころ": "検査9（observe_diag）",
-    "中身": "転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT"
+    "中身": "転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S"
    },
    {
     "印": "E",
@@ -3178,6 +3228,11 @@
     "承認": "✅ 2026-08-10"
    },
    {
+    "名前": "avolume",
+    "理由": "うちの realized_vol の定数倍（どちらも対数リターンの標準偏差。avolume は母標準偏差×√252・うちは 標本標準偏差×100）。2026-08-10 実測＝比が値決め窓の全区間で1つの値（20本 0.154725563499／50本 0.157149610245・式から出る定数 √252×√((n−1)/n)/100 と12桁 一致）。定数倍は『値 ≥ 閾値』の条件として同じ並びになる＝新しい条件を作れない（stderr と同じ理屈）",
+    "承認": "★未承認"
+   },
+   {
     "名前": "entropy",
     "理由": "★実データでほとんど動かない（値決め窓の実測＝最小 3.3212716880・最大 3.3219280938・ばらつき 9.1e-06＝上限 log2(10)＝3.3219280949 に張り付く）。原因＝ライブラリが終値そのものに当てているため、窓の中の値段がどれも近い値になり、分布がほぼ均等になる。条件の材料にならない（どの閾値でも切れない）。★2026-08-10 実測＝入力を変化率に変えても直らない（ばらつき 4.0e-06・幅 1.7e-04）。ライブラリの作り（窓の合計で割って分布にする）が原因なので、入力の直しでは動かない",
     "承認": "✅ 2026-08-10"
@@ -3280,11 +3335,11 @@
   ],
   "engine": {
    "選べる指標の種類": 19,
-   "選べない指標の種類": 198,
+   "選べない指標の種類": 214,
    "選べる組": 48,
    "時間足": 9,
    "選べる列": 432,
-   "カタログ総列数": 4689,
+   "カタログ総列数": 4887,
    "レンジ幾何": [
     "W%",
     "帯内位置%"
@@ -3383,5 +3438,5 @@
    }
   }
  },
- "_本文の指紋": "950ebcc898a8be86"
+ "_本文の指紋": "bad83c402602f3ff"
 }

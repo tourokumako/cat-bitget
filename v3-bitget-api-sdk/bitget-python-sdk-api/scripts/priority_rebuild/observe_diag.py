@@ -812,6 +812,43 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for n in cfg["sma_periods"]:
         add(f"close vs MEDIAN%{n}", lambda d, n=n: (d.close / _pta6.median(close=d.close, length=n) - 1) * 100, True)
         add(f"MEDIAN傾き%{n}", lambda d, n=n: _pta6.median(close=d.close, length=n).pct_change(5) * 100, True)
+
+    # ── 業界の指標（volatility 12関数）──
+    # ★帯（中心線・上下の帯）は値段そのものなので、終値との距離%にする（H6・close vs SMA% と同じ流儀）。
+    #   値幅（真の値幅・PDIST・温度計）も値段の単位なので、終値で割って%にする。
+    # ★入れなかったもの1件（関数まるごと・理由は参照表の INDUSTRY_SKIP）＝
+    #   avolume（うちの realized_vol の定数倍＝実測で比が全区間 1つの値）。
+    # ★関数の返す列の一部だけ入れなかったもの4件（理由は対応表 INDUSTRY_MAP に1件ずつ）＝
+    #   aberration の ATR 列（うちの ATR% と同じ指標）／accbands の中心線（うちの close vs SMA% と実測 差 0）／
+    #   hwc の上下の帯（HWC位置 と HWC幅% で表す＝BB%b・BB幅 と同じ流儀）／
+    #   thermo の 0/1 の2列（THERMO比 に固定の閾値 2・0.5 を当てただけ＝閾値は engine_tuner が探す）。
+    _ab = lambda d: _pta6.aberration(high=d.high, low=d.low, close=d.close)
+    add("close vs ABER_ZG%", lambda d: (d.close / _ab(d).iloc[:, 0] - 1) * 100, True)
+    add("ABER位置", lambda d: (lambda a: (d.close - a.iloc[:, 2]) / (a.iloc[:, 1] - a.iloc[:, 2]))(_ab(d)), True)
+    _acb = lambda d: _pta6.accbands(high=d.high, low=d.low, close=d.close)
+    add("close vs ACCBL%", lambda d: (d.close / _acb(d).iloc[:, 0] - 1) * 100, True)
+    add("close vs ACCBU%", lambda d: (d.close / _acb(d).iloc[:, 2] - 1) * 100, True)
+    _cel = lambda d: _pta6.ce(high=d.high, low=d.low, close=d.close)
+    add("close vs CE_L%", lambda d: (d.close / _cel(d).iloc[:, 0] - 1) * 100, True)
+    add("close vs CE_S%", lambda d: (d.close / _cel(d).iloc[:, 1] - 1) * 100, True)
+    # ★hwc の中心線（HWM）は入れない＝うちに既に在る close vs HWMA% の HWMA と同じ値だった
+    #   （2026-08-10 実測＝40,000本すべて 最大差 0.0）。hwc から足すのは、HWMA には無い「帯」の2列だけ。
+    #   ★総当たりの重複検出（定数倍＋定数）では捕まらなかった＝終値で割る形が入ると関係が曲がるため。
+    #   捕まえたのは「相関 0.999 超の近い組」の報告（相関 −0.999973）。教訓 L-438。
+    _hw = lambda d: _pta6.hwc(close=d.close, channel_eval=True)
+    add("HWC位置", lambda d: _hw(d)["HWPCT"], False)
+    add("HWC幅%", lambda d: _hw(d)["HWW"] / d.close * 100, False)
+    add("MASSI", lambda d: _pta6.massi(high=d.high, low=d.low), False)
+    add("PDIST%", lambda d: _pta6.pdist(open_=d.open, high=d.high, low=d.low,
+                                        close=d.close) / d.close * 100, False)
+    add("TR%", lambda d: _pta6.true_range(high=d.high, low=d.low, close=d.close) / d.close * 100, False)
+    _th = lambda d: _pta6.thermo(high=d.high, low=d.low)
+    add("THERMO%", lambda d: _th(d).iloc[:, 0] / d.close * 100, False)
+    add("THERMO比", lambda d: (lambda t: t.iloc[:, 0] / t.iloc[:, 1])(_th(d)), False)
+    for n in cfg["atr_periods"]:
+        add(f"CVI{n}", lambda d, n=n: _pta6.cvi(high=d.high, low=d.low, length=n), False)
+        add(f"RVI{n}", lambda d, n=n: _pta6.rvi(close=d.close, length=n), True)
+        add(f"UI{n}", lambda d, n=n: _pta6.ui(close=d.close, length=n), False)
     return C
 
 

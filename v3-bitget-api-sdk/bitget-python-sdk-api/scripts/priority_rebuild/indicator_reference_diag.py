@@ -3154,6 +3154,288 @@ _r(r"VOSC", "VOSC",
                     (_bar_vslope(800, True), [(-1, 700.0 / 786.5, 1e-6)])])
 
 
+# ══ 業界の指標（volatility 12関数）＝独立実装・登録（2026-08-10・フロー 段6-1 の6回目）══
+# ★12関数のうち 1件は関数まるごと入れない（avolume＝うちの realized_vol の定数倍・実測）。
+#   ほかに「関数の返す列の一部だけ入れない」ものが4件（理由は下の対応表 INDUSTRY_MAP に1件ずつ）。
+# ★本数を2つ以上 自分で持つ指標（aberration・accbands・ce・hwc・massi・thermo）は、
+#   ライブラリの既定をそのまま使う（本数を私が新しく作らない）＝volume の ADOSC・AOBV と同じ流儀。
+# ★平滑の種の取り方は実測で突き止めた（2026-08-10）＝ATR は `_rma_seed`（種＝最初の n 本の単純平均）で
+#   ライブラリと最大差 0〜2.8e-14 ／ EMA は `_ema_seed` で最大差 0。`_ema_rec`（先頭1本を種）では合わない。
+_ABER_L, _ABER_A = 5, 15                 # aberration の既定（中心線の本数, ATR の本数）
+_ACCB_L, _ACCB_C = 20, 4.0               # accbands の既定（本数, 帯の係数）
+_CE_L, _CE_M = 22, 3.0                   # ce（シャンデリア・エグジット）の既定（本数, ATR の倍率）
+_HW_NA, _HW_NB, _HW_NC, _HW_ND, _HW_S = 0.2, 0.1, 0.1, 0.1, 1.0   # hwc の既定
+_MASSI_F, _MASSI_S = 9, 25               # massi の既定（EMA の本数, 合計する本数）
+_THERMO_L = 20                           # thermo の既定（EMA の本数）
+
+
+def _tr_lib(h: np.ndarray, l: np.ndarray, c: np.ndarray) -> np.ndarray:
+    """真の値幅（ライブラリの流儀＝1本目は前の終値が無いので NaN）。上の `_tr` は1本目に高安差を入れる別流儀。"""
+    out = np.full(len(c), np.nan)
+    if len(c) > 1:
+        pc = np.r_[np.nan, c[:-1]]
+        out[1:] = np.nanmax(np.column_stack([(h - l)[1:], np.abs(h - pc)[1:], np.abs(pc - l)[1:]]), axis=1)
+    return out
+
+
+def _bar_fixed_range(n=80, level=100.0, half=1.0):
+    """値段が一定で、1本ごとの値幅だけが一定（高値＝終値+half・安値＝終値−half）。
+    値幅の変化を見る指標（CVI・MASSI・PDIST・TR）の既知答え用。"""
+    c = np.full(n, level)
+    return _mk(c, o=c, h=c + half, l=c - half)
+
+
+def _aber_parts(d):
+    """アバレーション＝HLC3 の n 本単純平均を中心線に、その上下へ ATR を足し引きした帯。"""
+    o, h, l, c, v = _arr(d)
+    zg = _roll((h + l + c) / 3.0, _ABER_L, "mean")
+    atr = _rma_seed(_tr_lib(h, l, c), _ABER_A)
+    return c, zg, zg + atr, zg - atr
+
+
+def _tb_aber_zg(d, p):
+    c, zg, _sg, _xg = _aber_parts(d)
+    return _S((_div(c, zg) - 1.0) * 100.0, d)
+
+
+def _tb_aber_pos(d, p):
+    c, _zg, sg, xg = _aber_parts(d)
+    return _S(_div(c - xg, sg - xg), d)
+
+
+def _accb_parts(d):
+    """アクセラレーション・バンド＝値幅の割合で高値・安値を広げてから n 本平均した帯。"""
+    o, h, l, c, v = _arr(d)
+    r = _ACCB_C * _div(h - l, h + l)
+    return c, _roll(l * (1.0 - r), _ACCB_L, "mean"), _roll(h * (1.0 + r), _ACCB_L, "mean")
+
+
+def _tb_accbl(d, p):
+    c, lo, _up = _accb_parts(d)
+    return _S((_div(c, lo) - 1.0) * 100.0, d)
+
+
+def _tb_accbu(d, p):
+    c, _lo, up = _accb_parts(d)
+    return _S((_div(c, up) - 1.0) * 100.0, d)
+
+
+def _ce_parts(d):
+    """シャンデリア・エグジット＝n 本高値から ATR の m 倍を引いた線と、n 本安値に足した線。"""
+    o, h, l, c, v = _arr(d)
+    atr = _rma_seed(_tr_lib(h, l, c), _CE_L)
+    return c, _roll(h, _CE_L, "max") - _CE_M * atr, _roll(l, _CE_L, "min") + _CE_M * atr
+
+
+def _tb_ce_l(d, p):
+    c, cl, _cs = _ce_parts(d)
+    return _S((_div(c, cl) - 1.0) * 100.0, d)
+
+
+def _tb_ce_s(d, p):
+    c, _cl, cs = _ce_parts(d)
+    return _S((_div(c, cs) - 1.0) * 100.0, d)
+
+
+def _tb_cvi(d, p):
+    """チャイキンのボラティリティ＝高安差の EMA が n 本前から何%増えたか。"""
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    e = _ema_seed(h - l, n)
+    prev = np.r_[np.full(n, np.nan), e[:-n]]
+    return _S(100.0 * _div(e - prev, prev), d)
+
+
+def _hw_parts(d):
+    """ホルト・ウィンターズの水路＝水準・速さ・加速の3段の指数平滑で1本先を予測し、
+    予測の外れ具合（分散の指数平滑）の平方根を上下に足し引きした帯。"""
+    o, h, l, c, v = _arr(d)
+    m = len(c)
+    res = np.full(m, np.nan)
+    up = np.full(m, np.nan)
+    lo = np.full(m, np.nan)
+    f = c[0] if m else np.nan
+    vel = acc = var = 0.0
+    prev_price = prev_res = c[0] if m else np.nan
+    for i in range(m):
+        f_new = (1.0 - _HW_NA) * (f + vel + 0.5 * acc) + _HW_NA * c[i]
+        v_new = (1.0 - _HW_NB) * (vel + acc) + _HW_NB * (f_new - f)
+        a_new = (1.0 - _HW_NC) * acc + _HW_NC * (v_new - vel)
+        res[i] = f_new + v_new + 0.5 * a_new
+        sd = var ** 0.5                      # ★1本前までの分散を使う（いまの足の分は入れない）
+        up[i] = res[i] + _HW_S * sd
+        lo[i] = res[i] - _HW_S * sd
+        var = (1.0 - _HW_ND) * var + _HW_ND * (prev_price - prev_res) ** 2
+        prev_price, prev_res = c[i], res[i]
+        f, vel, acc = f_new, v_new, a_new
+    return c, res, up, lo
+
+
+def _tb_hw_pos(d, p):
+    c, _res, up, lo = _hw_parts(d)
+    return _S(_div(c - lo, up - lo), d)
+
+
+def _tb_hw_width(d, p):
+    c, _res, up, lo = _hw_parts(d)
+    return _S(_div(up - lo, c) * 100.0, d)
+
+
+def _tb_massi(d, p):
+    """マス・インデックス＝高安差の EMA と、その EMA をもう1回 EMA した値の比を n 本 合計する。"""
+    o, h, l, c, v = _arr(d)
+    e1 = _ema_seed(h - l, _MASSI_F)
+    e2 = _ema_seed(e1, _MASSI_F)
+    return _S(_roll(_div(e1, e2), _MASSI_S, "sum"), d)
+
+
+def _tb_pdist(d, p):
+    """値段が動いた距離＝高安差の2倍 ＋ |始値 − 前の終値| − |終値 − 始値|。終値で割って%化。"""
+    o, h, l, c, v = _arr(d)
+    pc = np.r_[np.nan, c[:-1]]
+    return _S(_div(2.0 * (h - l) + np.abs(o - pc) - np.abs(c - o), c) * 100.0, d)
+
+
+def _tb_rvi(d, p):
+    """相対ボラティリティ指数＝上げた足と下げた足それぞれに標準偏差を掛け、その EMA の比を 0〜100 にする。"""
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    sd = _roll(c, n, "std", ddof=0)
+    diff = np.r_[0.0, np.diff(c)]
+    pa = _ema_seed(np.where(diff > 0, 1.0, 0.0) * sd, n)
+    na = _ema_seed(np.where(diff < 0, 1.0, 0.0) * sd, n)
+    return _S(100.0 * _div(pa, pa + na), d)
+
+
+def _thermo_parts(d):
+    """エルダーの温度計＝安値の下げ幅と高値の上げ幅の大きい方と、その EMA。"""
+    o, h, l, c, v = _arr(d)
+    pl = np.r_[np.nan, l[:-1]]
+    ph = np.r_[np.nan, h[:-1]]
+    tl = np.abs(pl - l)
+    th = np.abs(h - ph)
+    t = np.where(th < tl, tl, th)            # ★ライブラリは where で大きい方を残す＝実物の逐語で確認
+    return c, t, _ema_seed(t, _THERMO_L)
+
+
+def _tb_thermo_pct(d, p):
+    c, t, _ma = _thermo_parts(d)
+    return _S(_div(t, c) * 100.0, d)
+
+
+def _tb_thermo_ratio(d, p):
+    c, t, ma_ = _thermo_parts(d)
+    return _S(_div(t, ma_), d)
+
+
+def _tb_tr_pct(d, p):
+    o, h, l, c, v = _arr(d)
+    return _S(_div(_tr_lib(h, l, c), c) * 100.0, d)
+
+
+def _tb_ui(d, p):
+    """アルサー指数＝n 本最高値からの下落率の2乗を n 本 平均して平方根を取る（下げだけを測る）。"""
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    hc = _roll(c, n, "max")
+    ds = 100.0 * _div(c - hc, hc)
+    return _S(np.sqrt(_roll(ds * ds, n, "sum") / n), d)
+
+
+_r(r"close vs ABER_ZG%", "close vs ABER_ZG%",
+   "終値が、アバレーションの中心線（高値・安値・終値の平均の5本単純移動平均）から何%離れているか",
+   "標準（ライブラリの既定 length=5・atr_length=15）。値段そのものなので終値との距離%にする"
+   "（H6・close vs SMA% と同じ流儀）",
+   "順張り値＝プラスで中心線より上", "trend", tb=_tb_aber_zg,
+   known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])
+_r(r"ABER位置", "ABER位置",
+   "終値がアバレーションの帯（中心線 ± ATR15）の中のどこにあるか。0 で下の帯・1 で上の帯",
+   "標準。帯の幅そのものは 2×ATR15 ＝ うちの ATR% の定数倍なので入れない（重複）。"
+   "位置だけを入れる＝BB%b と同じ流儀",
+   "順張り値＝大きいほど帯の上側", "trend", tb=_tb_aber_pos)
+_r(r"close vs ACCBL%", "close vs ACCBL%",
+   "終値が、アクセラレーション・バンドの下の帯から何%離れているか",
+   "Price Headley（ライブラリの既定 length=20・c=4）。安値を値幅の割合ぶん広げてから 20本平均する。"
+   "値段そのものなので終値との距離%にする（H6）",
+   "順張り値＝大きいほど下の帯から離れて上にいる", "trend", tb=_tb_accbl,
+   known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])
+_r(r"close vs ACCBU%", "close vs ACCBU%",
+   "終値が、アクセラレーション・バンドの上の帯から何%離れているか", "同上（高値の側）",
+   # ★方向の欄に「プラス」と書かない＝検査が「上げ相場でプラス・下げ相場でマイナス」まで要求してしまう。
+   #   この列は上の帯との距離なので、上げ相場でもふつうはマイナス（帯の内側）＝2026-08-10 に機械が捕まえた。
+   "順張り値＝大きいほど上の帯に近い（0 を超えると帯の外）", "trend", tb=_tb_accbu,
+   known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])
+_r(r"close vs CE_L%", "close vs CE_L%",
+   "終値が、シャンデリア・エグジットの買い側の線（22本高値 − 3×ATR22）から何%離れているか",
+   "Chuck LeBeau（ライブラリの既定 length=22・multiplier=3）。値段そのものなので終値との距離%にする（H6）",
+   "順張り値＝大きいほど直近高値から見た余裕がある", "trend", tb=_tb_ce_l,
+   known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])
+_r(r"close vs CE_S%", "close vs CE_S%",
+   "終値が、シャンデリア・エグジットの売り側の線（22本安値 ＋ 3×ATR22）から何%離れているか", "同上",
+   "順張り値＝大きいほど売り側の線より上", "trend", tb=_tb_ce_s,
+   known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])
+_r(r"CVI(\d+)", "CVI",
+   "チャイキンのボラティリティ＝高安差の n 本 EMA が、n 本前から何%増えたか",
+   "Marc Chaikin。もともと%なので、そのままで無次元。★値幅の『大きさ』ではなく『変化』を見る指標なので、"
+   "荒い相場でも静かな相場でも、値幅が一定なら 0 になる（下の既知答え）",
+   "状態量＝プラスで値幅が広がっている（向きは持たない）", "none", tb=_tb_cvi,
+   known=lambda p: [(_bar_fixed_range(p[0] * 6 + 60), [(-1, 0.0, 1e-9)])])
+_r(r"HWC位置", "HWC位置",
+   "終値がホルト・ウィンターズの水路の中のどこにあるか。0 で下の帯・1 で上の帯",
+   "標準。帯は中心線 ± 予測の外れ具合。★上下の帯そのものは入れない＝この位置と下の幅%で表す"
+   "（BB%b・BB幅 と同じ流儀）。★中心線が1本先を予測するので、上げ相場ではむしろ小さく出る"
+   "（2026-08-10 実測＝合成の上げ 0.366 ／ 下げ 0.607・実データは 0.488 と 0.500 でほぼ差なし）",
+   "状態量＝大きいほど水路の上側（向きは持たない）", "none", tb=_tb_hw_pos)
+_r(r"HWC幅%", "HWC幅%",
+   "ホルト・ウィンターズの水路の幅（上の帯 − 下の帯）を、終値で割って%化",
+   "標準。値段の単位なので終値で割る（H6・BB幅 と同じ流儀）", "ボラ量", "vol", tb=_tb_hw_width,
+   known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+_r(r"MASSI", "MASSI",
+   "マス・インデックス＝高安差の9本 EMA を、それをもう1回9本 EMA した値で割った比を、25本 合計する",
+   "Donald Dorsey（ライブラリの既定 fast=9・slow=25）。もともと比の合計なので、そのままで無次元。"
+   "★値幅が一定なら 2つの EMA が同じになり、比が 1 ＝合計は 25（下の既知答え）",
+   "状態量＝大きいほど値幅が広がった（向きは持たない）", "none", tb=_tb_massi,
+   known=lambda p: [(_bar_fixed_range(200), [(-1, 25.0, 1e-9)])])
+_r(r"PDIST%", "PDIST%",
+   "1本のバーで値段が動いた距離＝高安差の2倍 ＋ |始値 − 前の終値| − |終値 − 始値|。終値で割って%化",
+   "ProRealCode（ライブラリの既定 drift=1）。値段の単位なので終値で割る（H6）。"
+   "★終値と始値が離れているほど引き算が効くので、値動きの大きさとは一致しない"
+   "（2026-08-10 実測＝合成の荒い 0.679 ／ 静か 0.967＝荒い方が小さい）。だからボラ量ではなく状態量にした",
+   "状態量＝大きいほど1本の中で往復した距離が長い（向きは持たない）", "none", tb=_tb_pdist,
+   known=lambda p: [(_bar_fixed_range(80, half=1.0), [(-1, 4.0, 1e-9)])])
+_r(r"RVI(\d+)", "RVI",
+   "相対ボラティリティ指数＝上げた足の標準偏差の EMA ÷（上げた足＋下げた足の標準偏差の EMA）を 0〜100 にする",
+   "Donald Dorsey。RSI の材料を『値幅の大きさ』に置き換えた形（ライブラリの既定 scalar=100・EMA 平滑）。"
+   "★名前が似ている RVGI（相対活力指数）とは別物",
+   "順張り値＝大きいほど上げ側の値動きが優勢", "trend", tb=_tb_rvi,
+   known=lambda p: [(_up(p[0] * 6 + 40), [(-1, 100.0, 1e-9)])])
+_r(r"THERMO%", "THERMO%",
+   "エルダーの温度計＝安値の下げ幅と高値の上げ幅の大きい方を、終値で割って%化",
+   "Alexander Elder（ライブラリの既定 length=20）。値段の単位なので終値で割る（H6）", "ボラ量", "vol",
+   tb=_tb_thermo_pct, known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])
+_r(r"THERMO比", "THERMO比",
+   "エルダーの温度計が、その20本 EMA の何倍か",
+   "同上。★ライブラリはこの比に固定の閾値（2 と 0.5）を当てた 0/1 の列も返すが、その2列は入れない"
+   "＝閾値は engine_tuner が探すもの（点の一覧で先に限定しない・教訓 L-408）。"
+   "★値幅が一定の割合で動き続けると 1 に収束する（下の既知答え）",
+   "状態量＝大きいほど、いまの値動きが直近20本の平均より大きい（向きは持たない）", "none",
+   tb=_tb_thermo_ratio,
+   # ★400本 使う理由＝合成バー `_up` は1本目の始値に最後の終値を入れる作りなので、2本目の温度計だけが
+   #   198 になり、その汚れが EMA の種に入る。200本では 1.6e-7 しか減衰せず、許容差 1e-9 に届かない。
+   #   400本 で 1.3e-15（2026-08-10 実測）。★許容差はゆるめず、減衰するまで系列を長くした。
+   known=lambda p: [(_up(400), [(-1, 1.0, 1e-9)])])
+_r(r"TR%", "TR%",
+   "真の値幅（高安差・高値と前の終値の差・前の終値と安値の差の最大）を、終値で割って%化",
+   "Wilder 1978。★うちの ATR% は これを Wilder 平滑したもの＝こちらは平滑前の1本ぶん", "ボラ量", "vol",
+   tb=_tb_tr_pct, known=lambda p: [(_bar_fixed_range(80, half=1.0), [(-1, 2.0, 1e-9)])])
+_r(r"UI(\d+)", "UI",
+   "アルサー指数＝n 本最高値からの下落率%の2乗を n 本 平均して平方根を取る",
+   "Peter Martin（ライブラリの既定 scalar=100）。もともと%なので、そのままで無次元。"
+   "★下げだけを測る（上げ続けると 0・下の既知答え）",
+   "ボラ量", "vol", tb=_tb_ui,
+   known=lambda p: [(_up(p[0] * 4 + 40), [(-1, 0.0, 1e-9)])])
+
+
 # ══ 需給データの定義表（検査6 が印字する正本・2026-07-30 WebResearch＋実測で確定）══
 # 実測の方法＝①直近の metrics 日次 zip と REST の同系列を1時間分突き合わせ（OI・比率3種は
 # zip の時刻+5分 = REST の終了時刻ラベルで平均差ゼロ・taker は同時刻で一致）②OI の現在値
@@ -3435,6 +3717,25 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "skew": dict(k="ボラ", note="窓の中の値段の分布の形＝値動きの大きさの計測に属する"),
     "kurtosis": dict(k="ボラ", note="同上（裾の厚み）"),
     "MAD比": dict(k="ボラ"), "stdev%": dict(k="ボラ"),
+    # 業界の指標（pandas-ta 由来・フロー 段6-1 の6回目＝volatility）
+    "close vs ABER_ZG%": dict(k="構造・位置", note="中心線との距離＝位置の計測（close vs SMA% と同じ作り）"),
+    "ABER位置": dict(k="構造・位置", note="帯の中の位置＝BB%b と同じ作り。★ただし BB%b は行き過ぎの計測が"
+                                          "主用途でオシレーターに置いてある。こちらは中心線が値段の平均でなく"
+                                          "HLC3 の平均で、帯の幅が ATR＝位置の計測が主用途"),
+    "close vs ACCBL%": dict(k="構造・位置", note="帯との距離＝位置の計測（Keltner 上下と同じ作り）"),
+    "close vs ACCBU%": dict(k="構造・位置", note="同上"),
+    "close vs CE_L%": dict(k="構造・位置", note="直近高値から ATR ぶん下げた線との距離＝位置の計測"),
+    "close vs CE_S%": dict(k="構造・位置", note="同上（直近安値の側）"),
+    "HWC位置": dict(k="構造・位置", note="水路の中の位置＝位置の計測"),
+    "HWC幅%": dict(k="ボラ", note="水路の幅＝値動きの大きさの計測（BB幅 と同じ作り）"),
+    "CVI": dict(k="ボラ", note="高安差の平均が何%増えたか＝値動きの大きさの変化"),
+    "MASSI": dict(k="ボラ", note="高安差の広がりの計測"),
+    "PDIST%": dict(k="ボラ", note="1本の中で値段が動いた距離"),
+    "RVI": dict(k="ボラ", note="上げ側と下げ側それぞれの値動きの大きさの比。★0〜100 の有界だが、"
+                               "材料が値幅（標準偏差）なのでオシレーターでなくボラに置く"),
+    "THERMO%": dict(k="ボラ"), "THERMO比": dict(k="ボラ"),
+    "TR%": dict(k="ボラ", note="1本ぶんの真の値幅＝ATR% の平滑前"),
+    "UI": dict(k="ボラ", note="高値からの下落の深さ＝下げ側だけの値動きの大きさ"),
     "close vs MEDIAN%": dict(k="構造・位置"), "MEDIAN傾き%": dict(k="トレンド"),
     "close vs LRb%": dict(k="構造・位置"), "LRb傾き%": dict(k="トレンド"), "LRslope%": dict(k="トレンド"),
     "close vs MAMA%": dict(k="構造・位置"), "close vs FAMA%": dict(k="構造・位置"),
@@ -3633,6 +3934,30 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "stdev%": (("stdev",), "値段の単位。うちは終値で割って%化（H6・母標準偏差＝ddof 0）"),
     "close vs MEDIAN%": (("median",), "値段そのもの。うちは終値との距離%（H6）"),
     "MEDIAN傾き%": (("median",), "同上（傾きの形）"),
+    # ── volatility 12関数（6回目）──
+    "close vs ABER_ZG%": (("aberration",), "aberration が中心線・上の帯・下の帯・ATR の4列を返す。"
+                                           "うちは終値との距離%（H6）。★ATR の列は入れない＝"
+                                           "うちの ATR%（期間 7/14/21）と同じ指標"),
+    "ABER位置": (("aberration",), "同上。帯の中の位置。★帯の幅は 2×ATR15 ＝ うちの ATR% の定数倍なので入れない"),
+    "close vs ACCBL%": (("accbands",), "accbands が下の帯・中心線・上の帯の3列を返す。うちは終値との距離%（H6）。"
+                                       "★中心線は入れない＝うちの close vs SMA%20/50/200 と実測 差 0"),
+    "close vs ACCBU%": (("accbands",), "同上（上の帯）"),
+    "close vs CE_L%": (("ce",), "ce が買い側・売り側の2列を返す。値段そのものなので終値との距離%（H6）"),
+    "close vs CE_S%": (("ce",), "同上（売り側）"),
+    "CVI": (("cvi",), "もともと%＝そのまま"),
+    "HWC位置": (("hwc",), "hwc が中心線・上の帯・下の帯・幅・位置の5列を返す（channel_eval=True）。"
+                          "うちが足すのは帯の2列だけ。★中心線は入れない＝うちに既に在る close vs HWMA% の"
+                          "HWMA と同じ値だった（2026-08-10 実測＝40,000本すべて 最大差 0.0）。"
+                          "★上下の帯そのものも入れない＝この位置と下の幅%で表す（BB%b・BB幅 と同じ流儀）"),
+    "HWC幅%": (("hwc",), "同上。幅は値段の単位なので終値で割って%化（H6）"),
+    "MASSI": (("massi",), "もともと比の合計＝そのまま"),
+    "PDIST%": (("pdist",), "値段の単位。うちは終値で割って%化（H6）"),
+    "RVI": (("rvi",), "もともと 0〜100＝そのまま。★名前の似た RVGI（相対活力指数）とは別の関数"),
+    "THERMO%": (("thermo",), "thermo が値・その EMA・0/1 の2列 の4列を返す。値は値段の単位なので%化（H6）。"
+                             "★0/1 の2列は入れない＝THERMO比 に固定の閾値 2・0.5 を当てただけ"),
+    "THERMO比": (("thermo",), "同上。値をその EMA で割った比＝もともと無次元"),
+    "TR%": (("true_range",), "値段の単位。うちは終値で割って%化（H6）。★うちの ATR% は これを Wilder 平滑したもの"),
+    "UI": (("ui",), "もともと%＝そのまま"),
     # ── overlap 3回目（sinwma〜zlma）──
     "close vs SINWMA%": (("sinwma",), "値段そのもの。うちは終値との距離%（H6）"), "SINWMA傾き%": (("sinwma",), "同上（傾きの形）"),
     "close vs SSF%": (("ssf",), "値段そのもの。うちは終値との距離%（H6）"), "SSF傾き%": (("ssf",), "同上（傾きの形）"),
@@ -3813,6 +4138,10 @@ INDUSTRY_SKIP: dict[str, str] = {
               "定数倍は『値 ≥ 閾値』の条件として同じ並びになる＝新しい条件を作れない",
     "variance": "stdev の2乗（実測＝最大差 9.3e-10）。2乗は大小の並びを変えないので、"
                 "『値 ≥ 閾値』の条件として stdev と同じ",
+    "avolume": "うちの realized_vol の定数倍（どちらも対数リターンの標準偏差。avolume は母標準偏差×√252・"
+               "うちは 標本標準偏差×100）。2026-08-10 実測＝比が値決め窓の全区間で1つの値"
+               "（20本 0.154725563499／50本 0.157149610245・式から出る定数 √252×√((n−1)/n)/100 と12桁 一致）。"
+               "定数倍は『値 ≥ 閾値』の条件として同じ並びになる＝新しい条件を作れない（stderr と同じ理屈）",
     # (e) ライブラリの実装が壊れていて、実データで値が出ない（2026-08-10 実測で検出）
     "entropy": "★実データでほとんど動かない（値決め窓の実測＝最小 3.3212716880・最大 3.3219280938・"
                "ばらつき 9.1e-06＝上限 log2(10)＝3.3219280949 に張り付く）。原因＝ライブラリが"

@@ -1,11 +1,11 @@
-<!-- MATERIALS hash=950ebcc898a8be86 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=bad83c402602f3ff gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
 理由＝要件の「作ってはいけないもの」2番（探す値を先に点の一覧で限定するもの）に当たるためです。
 期間は範囲の軸として engine_tuner が探します。
 
-**いまの数＝在る 229 件 ／ 足す 24 件 ／ 入れない 43 件（合計 296 行）。**
+**いまの数＝在る 245 件 ／ 足す 12 件 ／ 入れない 44 件（合計 301 行）。**
 
 > ★「入れない」の承認は**1件ずつ ★4 の表に出しています**（全部が承認済みではありません）。
 > 既定は「入れる」です（まこさん決定＝「利益最大化するために完全に不要な指標以外はすべて入れてほしい」）。
@@ -20,20 +20,20 @@
 
 | 印 | 何を足すか | 数 | 出どころ |
 |---|---|---|---|
-| A | 業界のライブラリに在って、うちの材料に無い指標 | **24 種類** | 検査10（observe_diag） |
-| B | ★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標 | **198 種類** | 段5 で新しく数えた（検査には無い） |
+| A | 業界のライブラリに在って、うちの材料に無い指標 | **12 種類** | 検査10（observe_diag） |
+| B | ★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標 | **214 種類** | 段5 で新しく数えた（検査には無い） |
 | C | ★参照表に在るのに、材料カタログに列が無い（需給） | **3 件** | 段5 で新しく数えた（検査7 は『あり』と出る＝別の道で見ている） |
-| D | 「終値と◯◯の距離%」に対する「◯◯ そのものの向き」 | **57 件** | 検査9（observe_diag） |
+| D | 「終値と◯◯の距離%」に対する「◯◯ そのものの向き」 | **62 件** | 検査9（observe_diag） |
 | E | 軸カタログ（入口 E-c）の未実装 | **1 件** | 検査7（observe_diag） |
 | F | 時間足（1分足・3分足） | **2 本** | 要件 R15（フロー 段7 で足す） |
 | G | ★型の表は許すが、閾値の格子が無くて選べない部品 | **1 件** | 段5 で新しく数えた（engine_tuner_gen.py:256 の逐語） |
 
 **中身（名前の一覧）**
 
-- **A（24 種類）** … 下の『材料の一覧』で状態が「足す」の行
-- **B（198 種類）** … MACD線%・MACDヒスト%・MACDシグナル線%・OBV傾き・転換線・基準線・BB%b・BB幅・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・高値からの経過バー・安値からの経過バー・形スコア・W字・close vs VWAP・Keltner上・Keltner下・Supertrend・n本高値・n本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・S-Rタッチ数・AO%・APO%・BIAS・BOP・AR・BR・CCI・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ER・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・KST・KSTシグナル・LRSI・MOM%・PGO・PO・PSL・RSX・PPO・PPOシグナル・PPOヒスト・PVO・PVOシグナル・PVOヒスト・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SMC_SWEEP・SQZ・SQZ_ON・SQZPRO_ON_WIDE・SQZPRO_ON_NARROW・STC・STCstoch・StochRSI%K・StochRSI%D・TD_SEQ_UP・TD_SEQ_DN・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UO・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・close vs ALMA%・ALMA傾き%・close vs DEMA%・DEMA傾き%・close vs FWMA%・FWMA傾き%・close vs HILO%・close vs HMA%・HMA傾き%・close vs HT_TRENDLINE%・close vs HWMA%・close vs JMA%・close vs KAMA%・KAMA傾き%・close vs LINREG%・LINREG傾き%・LRangle・close vs LRb%・LRb傾き%・LRslope%・close vs MAMA%・close vs FAMA%・close vs MCGD%・MCGD傾き%・close vs MIDPOINT%・MIDPOINT傾き%・close vs MIDPRICE%・MIDPRICE傾き%・close vs MMAR%・MMAR傾き%・close vs PWMA%・PWMA傾き%・close vs RAINBOW%・RAINBOW傾き%・close vs RMA%・RMA傾き%・close vs SINWMA%・SINWMA傾き%・close vs SSF%・SSF傾き%・close vs SWMA%・SWMA傾き%・close vs T3%・T3傾き%・close vs TEMA%・TEMA傾き%・close vs TRIMA%・TRIMA傾き%・close vs TSF%・TSF傾き%・close vs VIDYA%・VIDYA傾き%・close vs VWMA%・VWMA傾き%・close vs WMA%・WMA傾き%・close vs ZLMA%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・AROONU・AROOND・AROONOSC・CHOP・close vs CKSPl%・close vs CKSPs%・DPO%・close vs PMAX%・close vs PSAR%・PSAR加速・PSAR反転・QSTICK%・close vs SAREXT%・TTM_TREND・VHF・VTXP・VTXM・ADOSC比・AOBV_LR・EFI比・EOM比・MARKETFI比・NVI傾き・PVI傾き・PVOL比・PVT傾き・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MAD比・stdev%・close vs MEDIAN%・MEDIAN傾き%・VOSC
+- **A（12 種類）** … 下の『材料の一覧』で状態が「足す」の行
+- **B（214 種類）** … MACD線%・MACDヒスト%・MACDシグナル線%・OBV傾き・転換線・基準線・BB%b・BB幅・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・高値からの経過バー・安値からの経過バー・形スコア・W字・close vs VWAP・Keltner上・Keltner下・Supertrend・n本高値・n本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・S-Rタッチ数・AO%・APO%・BIAS・BOP・AR・BR・CCI・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ER・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・KST・KSTシグナル・LRSI・MOM%・PGO・PO・PSL・RSX・PPO・PPOシグナル・PPOヒスト・PVO・PVOシグナル・PVOヒスト・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SMC_SWEEP・SQZ・SQZ_ON・SQZPRO_ON_WIDE・SQZPRO_ON_NARROW・STC・STCstoch・StochRSI%K・StochRSI%D・TD_SEQ_UP・TD_SEQ_DN・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UO・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・close vs ALMA%・ALMA傾き%・close vs DEMA%・DEMA傾き%・close vs FWMA%・FWMA傾き%・close vs HILO%・close vs HMA%・HMA傾き%・close vs HT_TRENDLINE%・close vs HWMA%・close vs JMA%・close vs KAMA%・KAMA傾き%・close vs LINREG%・LINREG傾き%・LRangle・close vs LRb%・LRb傾き%・LRslope%・close vs MAMA%・close vs FAMA%・close vs MCGD%・MCGD傾き%・close vs MIDPOINT%・MIDPOINT傾き%・close vs MIDPRICE%・MIDPRICE傾き%・close vs MMAR%・MMAR傾き%・close vs PWMA%・PWMA傾き%・close vs RAINBOW%・RAINBOW傾き%・close vs RMA%・RMA傾き%・close vs SINWMA%・SINWMA傾き%・close vs SSF%・SSF傾き%・close vs SWMA%・SWMA傾き%・close vs T3%・T3傾き%・close vs TEMA%・TEMA傾き%・close vs TRIMA%・TRIMA傾き%・close vs TSF%・TSF傾き%・close vs VIDYA%・VIDYA傾き%・close vs VWMA%・VWMA傾き%・close vs WMA%・WMA傾き%・close vs ZLMA%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・AROONU・AROOND・AROONOSC・CHOP・close vs CKSPl%・close vs CKSPs%・DPO%・close vs PMAX%・close vs PSAR%・PSAR加速・PSAR反転・QSTICK%・close vs SAREXT%・TTM_TREND・VHF・VTXP・VTXM・ADOSC比・AOBV_LR・EFI比・EOM比・MARKETFI比・NVI傾き・PVI傾き・PVOL比・PVT傾き・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MAD比・stdev%・close vs MEDIAN%・MEDIAN傾き%・VOSC・close vs ABER_ZG%・ABER位置・close vs ACCBL%・close vs ACCBU%・close vs CE_L%・close vs CE_S%・CVI・HWC位置・HWC幅%・MASSI・PDIST%・RVI・THERMO%・THERMO比・TR%・UI
 - **C（3 件）** … taker_ls・L-S比・CVD
-- **D（57 件）** … 転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT
+- **D（62 件）** … 転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S
 - **E（1 件）** … トレンド/モメンタム＝MTF傾き整合
 - **F（2 本）** … いま 9 本＝5m・10m・15m・30m・1h・2h・4h・6h・1d
 - **G（1 件）** … 曜日
@@ -49,10 +49,10 @@
 
 | 何 | 数 |
 |---|---|
-| 材料カタログの列（部品 × 時間足） | 4689 列 |
-| **engine_tuner が選べる列** | **432 列（9.2%）** |
+| 材料カタログの列（部品 × 時間足） | 4887 列 |
+| **engine_tuner が選べる列** | **432 列（8.8%）** |
 | engine_tuner が選べる指標の種類 | **19 種類** |
-| **engine_tuner が選べない指標の種類** | **198 種類**（上の一覧 B） |
+| **engine_tuner が選べない指標の種類** | **214 種類**（上の一覧 B） |
 | そのほかに選べるもの（レンジ幾何） | W%・帯内位置% |
 | そのほかに選べるもの（時間帯） | 時刻だけ（型の表は 時刻・曜日 を許す） |
 
@@ -103,7 +103,7 @@
 
 ## ★4｜入れないと判断したもの（理由つき・★承認の欄を1件ずつ出します）
 
-**43 件です。**既定は「入れる」なので、ここに載るのは
+**44 件です。**既定は「入れる」なので、ここに載るのは
 **指標ではないもの**と、**うちに既に同じものが在るもの**だけです。
 （まこさん決定＝「利益最大化するために完全に不要な指標以外はすべて入れてほしい」）
 
@@ -113,7 +113,7 @@
 |---|---|---|
 | ✅ | **まこさんが名指しで「入れない」と言われたもの**（2026-08-09「1,2,3,4全部いれないくていい」「willrは入れない」／2026-08-10「３は入れない」） | **27 件** |
 | ◯ | **まこさんが方針を承認したもの**（2026-08-09 の逐語「他にも同じ挙動の指標があれば紛らわしいので片方を省いていく」）。★**同じ挙動かどうかの判定は CC が実測でやりました**＝まこさんは1件ずつ見ていません | **15 件** |
-| ★未承認 | **上のどちらにも当たらないもの** | **1 件** |
+| ★未承認 | **上のどちらにも当たらないもの** | **2 件** |
 
 ⚠️ 2026-08-10 まで、この文書は全件を「承認済み」と書いていました（承認の偽装）。是正しました。
 
@@ -142,6 +142,7 @@
 | quantile | ◯ 方針は承認済み（判定は CC の実測） | 既定が中央値＝median と同じ（実測＝最大差 0） |
 | stderr | ✅ 2026-08-10 | stdev の定数倍（stdev の 1/√(n−1) 倍。実測＝比が 0.18569533〜0.18569539 で一定・1/√29＝0.185695338）。定数倍は『値 ≥ 閾値』の条件として同じ並びになる＝新しい条件を作れない |
 | variance | ✅ 2026-08-10 | stdev の2乗（実測＝最大差 9.3e-10）。2乗は大小の並びを変えないので、『値 ≥ 閾値』の条件として stdev と同じ |
+| avolume | ★未承認 | うちの realized_vol の定数倍（どちらも対数リターンの標準偏差。avolume は母標準偏差×√252・うちは 標本標準偏差×100）。2026-08-10 実測＝比が値決め窓の全区間で1つの値（20本 0.154725563499／50本 0.157149610245・式から出る定数 √252×√((n−1)/n)/100 と12桁 一致）。定数倍は『値 ≥ 閾値』の条件として同じ並びになる＝新しい条件を作れない（stderr と同じ理屈） |
 | entropy | ✅ 2026-08-10 | ★実データでほとんど動かない（値決め窓の実測＝最小 3.3212716880・最大 3.3219280938・ばらつき 9.1e-06＝上限 log2(10)＝3.3219280949 に張り付く）。原因＝ライブラリが終値そのものに当てているため、窓の中の値段がどれも近い値になり、分布がほぼ均等になる。条件の材料にならない（どの閾値でも切れない）。★2026-08-10 実測＝入力を変化率に変えても直らない（ばらつき 4.0e-06・幅 1.7e-04）。ライブラリの作り（窓の合計で割って分布にする）が原因なので、入力の直しでは動かない |
 | hl2 | ✅ 2026-08-09 | そのバーの高値と安値の平均＝値段そのもの |
 | hlc3 | ✅ 2026-08-09 | 高値・安値・終値の平均＝値段そのもの |
@@ -397,6 +398,22 @@
 | close vs MEDIAN% | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（median）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
 | MEDIAN傾き% | トレンド | いま どちらへ動いているか | env | うちの自前の式／ライブラリに同じものが在る（median）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
 | VOSC | 出来高 | 買いと売りの どちらの圧力が強いか | sufficiency | うちの自前の式／ライブラリに同じものが在る（vosc）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| close vs ABER_ZG% | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（aberration）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| ABER位置 | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（aberration）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| close vs ACCBL% | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（accbands）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| close vs ACCBU% | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（accbands）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| close vs CE_L% | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（ce）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| close vs CE_S% | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（ce）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| CVI | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（cvi）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| HWC位置 | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（hwc）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| HWC幅% | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（hwc）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| MASSI | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（massi）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| PDIST% | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（pdist）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| RVI | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（rvi）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| THERMO% | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（thermo）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| THERMO比 | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（thermo）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| TR% | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（true_range）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| UI | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（ui）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
 | taker_ls | 需給 | 実際の注文の偏りが どちらに出ているか | sufficiency | うちの自前の式／定義表 indicator_reference_diag.DEMAND_REF／照合の相手: 検査6（元データの重複・整合・欠け・被覆） | （段8 で埋める） | 在る | 選べない（材料カタログに列が無い） |
 | L-S比 | 需給 | 実際の注文の偏りが どちらに出ているか | sufficiency | うちの自前の式／定義表 indicator_reference_diag.DEMAND_REF／照合の相手: 検査6（元データの重複・整合・欠け・被覆） | （段8 で埋める） | 在る | 選べない（材料カタログに列が無い） |
 | CVD | 需給 | 実際の注文の偏りが どちらに出ているか | sufficiency | うちの自前の式／定義表 indicator_reference_diag.DEMAND_REF／照合の相手: 検査6（元データの重複・整合・欠け・被覆） | （段8 で埋める） | 在る | 選べない（材料カタログに列が無い） |
@@ -445,18 +462,7 @@
 | short_run | （未定・ライブラリの分類は trend） | （指標ではない） | （指標ではない） | ライブラリ pandas-ta-classic | （段8 で埋める） | 入れない（下げが続いているかの判定＝同上） | —（まだ材料に入っていない） |
 | tsignals | （未定・ライブラリの分類は trend） | （指標ではない） | （指標ではない） | ライブラリ pandas-ta-classic | （段8 で埋める） | 入れない（トレンドから売買の合図を作る道具） | —（まだ材料に入っていない） |
 | xsignals | （未定・ライブラリの分類は trend） | （指標ではない） | （指標ではない） | ライブラリ pandas-ta-classic | （段8 で埋める） | 入れない（交差から売買の合図を作る道具） | —（まだ材料に入っていない） |
-| aberration | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| accbands | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| avolume | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| ce | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| cvi | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| hwc | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| massi | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| pdist | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| rvi | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| thermo | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| true_range | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
-| ui | （未定・ライブラリの分類は volatility） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
+| avolume | （未定・ライブラリの分類は volatility） | （指標ではない） | （指標ではない） | ライブラリ pandas-ta-classic | （段8 で埋める） | 入れない（うちの realized_vol の定数倍（どちらも対数リターンの標準偏差。avolume は母標準偏差×√252・うちは 標本標準偏差×100）。2026-08-10 実測＝比が値決め窓の全区間で1つの値（20本 0.154725563499／50本 0.157149610245・式から出る定数 √252×√((n−1)/n)/100 と12桁 一致）。定数倍は『値 ≥ 閾値』の条件として同じ並びになる＝新しい条件を作れない（stderr と同じ理屈）） | —（まだ材料に入っていない） |
 | cdl_doji | （未定・ライブラリの分類は candles） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
 | cdl_inside | （未定・ライブラリの分類は candles） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
 | cdl_z | （未定・ライブラリの分類は candles） | （未定・材料に足すときに決める＝段6） | （未定・材料に足すときに決める＝段6） | ライブラリ pandas-ta-classic | （段8 で埋める） | 足す | —（まだ材料に入っていない） |
