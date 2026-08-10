@@ -117,7 +117,7 @@ observe_diag 自己検査 → ✅ 全部 pass
 
 **実験ゼロ・採点ゼロ・売買記録CSVゼロ。**審判 `score.py`（`1d4751ed…`）・実行器（`fcef9d73…`）・生成器（`27f4fac…`）・戦略3本は md5 不変（前セッションと同じ値）。
 **私が変えたのは `indicator_reference_diag.py` と `observe_diag.py` の2本だけ**（ほかは機械生成）。
-**git commit は していません（まこさんの OK 待ち）。**
+**git commit は 済みです**（まこさん OK 2026-08-10・逐語「コミットOK」）＝`84af6b6`（10ファイル）。
 
 ---
 
@@ -185,7 +185,7 @@ observe_diag 自己検査 → ✅ 全部 pass
 
 **実験ゼロ・採点ゼロ・売買記録CSVゼロ。**審判 `score.py`（`1d4751ed…`）・実行器（`fcef9d73…`）・戦略3本は md5 不変。
 **私が変えたのは `indicator_reference_diag.py` と `observe_diag.py` の2本だけ**（ほかは機械生成）。
-**git commit は していません（まこさんの OK 待ち）。**
+**git commit は 済みです**（まこさん OK 2026-08-10・逐語「コミットOK」）＝`84af6b6`（10ファイル）。
 
 ---
 

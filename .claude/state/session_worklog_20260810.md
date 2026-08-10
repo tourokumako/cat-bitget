@@ -447,4 +447,6 @@ observe_diag 自己検査 → ✅ 全部 pass
 
 ## §20 git commit
 
-**未了（まこさんの OK 待ち）。**変えたファイル＝`indicator_reference_diag.py`／`observe_diag.py`／`materials.md`／`materials.json`／`decisions.md`。
+**✅ 済み（まこさん OK 2026-08-10・逐語「コミットOK」）＝`84af6b6`。**10ファイル（1,734 行 追加・381 行 削除）。
+内訳＝私が書いたコード3本（`indicator_reference_diag.py`／`observe_diag.py`／`gen_materials.py`）／機械生成3本（`materials.md`・`materials.json`・`decisions.md`）／引き継ぎ4本（`next_step.md`・`session_worklog_20260810.md`・`WORKFLOW.md`・`lessons_active.md`）。
+`results/` 配下と CSV は対象外（CLAUDE.md のコミット禁止）。`bitget_keys.json` は変更なしを確認済み。
