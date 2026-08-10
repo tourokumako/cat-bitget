@@ -95,6 +95,7 @@ python3 observe_diag.py --inspect <5分足CSV>
 from __future__ import annotations
 
 import datetime
+import hashlib
 import pathlib
 import re
 import sys
@@ -326,6 +327,24 @@ def _w_flag(c, h, l, n, tol):
     neck = h.shift(q).rolling(half).max()
     ok = ((lo1 - lo2).abs() <= tol * c) & (c > neck)
     return ok.astype(float).where(lo1.notna() & lo2.notna() & neck.notna())
+
+
+# ══ cycles（サイクル系）の重い計算を使い回す入れもの ══════════════════════
+# ★なぜ要るか＝ヒルベルト変換の関数は1本 250,000 本で 12.8 秒かかる（2026-08-11 実測）。
+#   ht_phasor と ht_sine は1回の計算で2つの列を返すので、列ごとに呼ぶと同じ計算を2回する。
+# ★未来を見る心配は無い＝入れものの鍵は「渡された終値そのものの指紋」なので、
+#   データを1本でも切ると鍵が変わって計算し直す（検査4 の切り詰め再計算がこれを確かめる）。
+# ★持つのは直近の1組だけ＝入力が変われば捨てる（記憶が膨らまない）。
+_CYC_MEMO: dict = {"sig": None, "v": {}}
+
+
+def _cyc(d: pd.DataFrame, name: str, fn):
+    sig = (len(d), hashlib.md5(d.close.to_numpy(dtype=float).tobytes()).hexdigest())
+    if _CYC_MEMO["sig"] != sig:
+        _CYC_MEMO["sig"], _CYC_MEMO["v"] = sig, {}
+    if name not in _CYC_MEMO["v"]:
+        _CYC_MEMO["v"][name] = fn(d)
+    return _CYC_MEMO["v"][name]
 
 
 # ══ 指標カタログ（この道具が正本・呼び出し側は足せない/減らせない）══════
@@ -849,6 +868,80 @@ def build_catalog(cfg: dict) -> list[tuple]:
         add(f"CVI{n}", lambda d, n=n: _pta6.cvi(high=d.high, low=d.low, length=n), False)
         add(f"RVI{n}", lambda d, n=n: _pta6.rvi(close=d.close, length=n), True)
         add(f"UI{n}", lambda d, n=n: _pta6.ui(close=d.close, length=n), False)
+
+    # ── 業界の指標（cycles 8関数）──
+    # ★入れなかったもの1件（関数まるごと・理由は参照表の INDUSTRY_SKIP）＝
+    #   dsp（うちの close vs EMA% の単調変換＝実測でスピアマン相関 1.0000000000）。
+    # ★ebsw だけ ライブラリの関数を使わない＝角度の単位が違う（教科書 J.F.Ehlers の式は「度」だが、
+    #   ライブラリは 360/length などの度の数字を そのままラジアンとして sin/cos に入れている。
+    #   2026-08-11 実測＝係数 alpha1 が 教科書 +0.854081 ／ ライブラリ −0.645222 で、
+    #   出てくる系列の相関は +0.5878＝別物）。VFI と同じ扱いで、教科書の式で書き直す。
+    # ★ヒルベルト変換の5関数は1回の計算で複数の列を返すものがある（ht_phasor・ht_sine）ので、
+    #   同じ入力なら計算を使い回す（_cyc）。1本 250,000 本で 12.8 秒かかる重い計算のため。
+    def _ebsw(d, length=40, bars=10):
+        """Even Better SineWave（J.F.Ehlers, Cycle Analytics for Traders 2014）。
+        ①ハイパスで length 本より長い波を落とす ②スーパースムーザー（2極）で bars 本より短い波を落とす
+        ③3本の平均を3本の実効値で割って −1〜1 にする。角度は度（教科書どおり）。"""
+        c = d.close.to_numpy(dtype=float)
+        m = len(c)
+        out = np.full(m, np.nan)
+        if m <= length:
+            return pd.Series(out, index=d.index)
+        out[length - 1] = 0.0
+        a_hp = (1.0 - np.sin(np.radians(360.0 / length))) / np.cos(np.radians(360.0 / length))
+        a1 = np.exp(-np.sqrt(2.0) * np.pi / bars)
+        c2 = 2.0 * a1 * np.cos(np.radians(np.sqrt(2.0) * 180.0 / bars))
+        c3 = -a1 * a1
+        c1 = 1.0 - c2 - c3
+        last_c = last_hp = 0.0
+        hist = [0.0, 0.0]
+        for i in range(length, m):
+            hp = 0.5 * (1.0 + a_hp) * (c[i] - last_c) + a_hp * last_hp
+            filt = c1 * (hp + last_hp) / 2.0 + c2 * hist[1] + c3 * hist[0]
+            wave = (filt + hist[1] + hist[0]) / 3.0
+            pwr = (filt * filt + hist[1] * hist[1] + hist[0] * hist[0]) / 3.0
+            out[i] = wave / np.sqrt(pwr) if pwr > 0 else 0.0
+            hist.append(filt)
+            hist.pop(0)
+            last_hp, last_c = hp, c[i]
+        return pd.Series(out, index=d.index)
+
+    add("EBSW", lambda d: _ebsw(d), True)
+    add("HT_DCPERIOD", lambda d: _cyc(d, "dcperiod", lambda x: _pta6.ht_dcperiod(close=x.close)), False)
+    add("HT_DCPHASE", lambda d: _cyc(d, "dcphase", lambda x: _pta6.ht_dcphase(close=x.close)), False)
+    add("HT_INPHASE%", lambda d: _cyc(d, "phasor", lambda x: _pta6.ht_phasor(close=x.close)).iloc[:, 0]
+        / d.close * 100, True)
+    add("HT_QUAD%", lambda d: _cyc(d, "phasor", lambda x: _pta6.ht_phasor(close=x.close)).iloc[:, 1]
+        / d.close * 100, False)
+    add("HT_SINE", lambda d: _cyc(d, "htsine", lambda x: _pta6.ht_sine(close=x.close)).iloc[:, 0], False)
+    add("HT_LEADSINE", lambda d: _cyc(d, "htsine", lambda x: _pta6.ht_sine(close=x.close)).iloc[:, 1], False)
+    add("HT_TRENDMODE", lambda d: _cyc(d, "trendmode", lambda x: _pta6.ht_trendmode(close=x.close)), False)
+    add("MSW_SINE", lambda d: _cyc(d, "msw", lambda x: _pta6.msw(close=x.close)).iloc[:, 0], True)
+    add("MSW_LEAD", lambda d: _cyc(d, "msw", lambda x: _pta6.msw(close=x.close)).iloc[:, 1], False)
+
+    # ── 業界の指標（candles 4関数）──
+    # ★入れなかったもの（理由は参照表の INDUSTRY_MAP／INDUSTRY_SKIP に1件ずつ）＝
+    #   ①cdl_doji の 0/1 そのもの＝「実体 ≤ 直前10本の平均値幅の10%」という固定の閾値を当てただけ。
+    #     閾値は engine_tuner が探すもの（教訓 L-408）。だから中身の連続値 実体幅比10 を入れる。
+    #   ②cdl_z の終値の z 値＝うちの zscore の本数違い（2026-08-11 実測＝本数30 のうちの式と
+    #     スピアマン相関 1.0000000・最大差 5.3e-07）。始値・高値・安値の z 値は うちに無いので入れる。
+    #   ③ha の4本値そのもの＝値段（H6）。実体%と上下のヒゲ比で表す。
+    #   ④cdl_pattern＝うちの 包み足・孕み足 で既に入っている。
+    _DOJI_N = 10                                  # cdl_doji の既定（直前 n 本の平均値幅）
+    add(f"実体幅比{_DOJI_N}", lambda d: (d.close - d.open).abs()
+        / (d.high - d.low).rolling(_DOJI_N).mean().shift(1).replace(0, np.nan), False)
+    add("内側バー", lambda d: (((d.high.diff() < 0) & (d.low.diff() > 0)).astype(float)
+                             * np.where(d.close >= d.open, 1.0, -1.0)), True)
+    _CDLZ_N = 30                                  # cdl_z の既定（本数・標本標準偏差 ddof=1）
+    for _k, _c in (("open", 0), ("high", 1), ("low", 2)):
+        add(f"{_k}_Z{_CDLZ_N}", lambda d, c=_c: _pta6.cdl_z(open_=d.open, high=d.high, low=d.low,
+                                                            close=d.close).iloc[:, c], True)
+    _ha = lambda d: _cyc(d, "ha", lambda x: _pta6.ha(open_=x.open, high=x.high, low=x.low, close=x.close))
+    add("HA実体%", lambda d: (lambda a: (a.iloc[:, 3] - a.iloc[:, 0]) / d.close * 100)(_ha(d)), True)
+    add("HA上ヒゲ比", lambda d: (lambda a: (a.iloc[:, 1] - a.iloc[:, [0, 3]].max(axis=1))
+                              / (a.iloc[:, 1] - a.iloc[:, 2]).replace(0, np.nan))(_ha(d)), False)
+    add("HA下ヒゲ比", lambda d: (lambda a: (a.iloc[:, [0, 3]].min(axis=1) - a.iloc[:, 2])
+                              / (a.iloc[:, 1] - a.iloc[:, 2]).replace(0, np.nan))(_ha(d)), False)
     return C
 
 
@@ -3466,7 +3559,10 @@ _HOUKOU2PROP = {"順張り値": "trend", "状態量": "none", "ボラ量": "vol"
 _V9_SOURCES = ("strategies/cat_v9_decider.py", "runner/replay_csv.py", "config/cat_params_v9.json")
 _V9_RECORD_SINCE = "2026-07-28 00:00"   # v9_logic.md の記録時点 2026-07-27 の翌日0時＝これ以降の変更を探す
 _OSC_BOUNDS = {"RSI": (0.0, 100.0), "Stoch%K": (0.0, 100.0), "Stoch%D": (0.0, 100.0),
-               "MFI": (0.0, 100.0), "RCI": (-100.0, 100.0)}
+               "MFI": (0.0, 100.0), "RCI": (-100.0, 100.0),
+               # サイクル系（2026-08-11・段6-g）＝作りの上で −1〜1 に収まる（サインの値・正規化した波）
+               "EBSW": (-1.0, 1.0), "HT_SINE": (-1.0, 1.0), "HT_LEADSINE": (-1.0, 1.0),
+               "MSW_SINE": (-1.0, 1.0), "MSW_LEAD": (-1.0, 1.0)}
 # BB%b は作りの上で上限・下限が無い（価格がバンドの外に出れば 0〜1 を超える＝StockCharts %B Indicator・
 # 2026-08-06 WebResearch で確認）。端の値でなく分位と中央値で「オシレーターの形か」を見る。
 _OSC_PCTL = {"BB%b": (0.0, 1.0)}

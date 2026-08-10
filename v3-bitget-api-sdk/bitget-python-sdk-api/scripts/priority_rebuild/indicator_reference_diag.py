@@ -3436,6 +3436,431 @@ _r(r"UI(\d+)", "UI",
    known=lambda p: [(_up(p[0] * 4 + 40), [(-1, 0.0, 1e-9)])])
 
 
+# ══ 業界の指標（cycles 8関数）＝独立実装・登録（2026-08-11・フロー 段6-1 の7回目）══
+# ★8関数のうち 1件は関数まるごと入れない（dsp＝うちの close vs EMA% の単調変換・実測）。
+# ★ebsw だけ ライブラリの関数を使わない＝ライブラリが角度の単位を取り違えている
+#   （教科書 J.F.Ehlers の式は「度」。EasyLanguage の Sine()/Cosine() は度を取る。
+#    ライブラリは 360/length などの度の数字を そのままラジアンとして numpy の sin/cos に入れている）。
+#   2026-08-11 実測＝係数 alpha1 が 教科書 +0.854081 ／ ライブラリ −0.645222、
+#   出てくる系列の相関は +0.5878＝別物になる。VFI と同じ扱いで、教科書の式で書き直した。
+# ★ヒルベルト変換の5関数（ht_dcperiod・ht_dcphase・ht_phasor・ht_sine・ht_trendmode）は
+#   Ehlers『Rocket Science for Traders』(2001) の擬似コードから独立に書き起こして照合した。
+#   ★この照合が捕まえるのは「式の書き写しの間違い」と「既定の引数の違い」であって、
+#     式そのものの正しさではない（ライブラリも同じ式を実装しているため）。
+#     式そのものは、下の「定義から決まる既知答え」（純粋なサイン波の周期・まっすぐな上げ）で確かめる。
+_CYC_SYN_NOTE = ("★合成データの柱（上げ・下げの人工の系列）だけ合わない＝この検査は ⚠️ を出す。理由は実測で突き止めた（2026-08-11）＝合成系列は上げも下げも同じゆらぎ sin(t/3)（周期18.85本）1本しか持たず、傾きの符号がデトレンドの残りを通して位相を半周期ずらす（実測＝位相 上げ 195.25度／下げ 16.83度・差 178.42度＝ほぼ180度）。実データは周期がばらばらなのでこの貼りつきが起きない（実測＝上げた日と下げた日の差が四分位幅の半分以下）。判定は実データの柱が主（この道具の決まり）。")
+_HT_START_A = 12                         # ht_dcperiod・ht_phasor の開始位置（TA-Lib の lookback 32）
+_HT_START_B = 37                         # ht_dcphase・ht_sine・ht_trendmode の開始位置（同 63）
+_EBSW_L, _EBSW_B = 40, 10                # ebsw の既定（拾う波の上限の本数, 低域通過の本数）
+_MSW_P = 5                               # msw の既定（DFT に使う本数）
+
+
+def _bar_cycle(n=2000, period=20, amp=5.0, level=100.0):
+    """純粋なサイン波（周期 period 本）の合成バー。サイクル系の既知答え用＝
+    『支配的なサイクルの本数』が定義から period に決まる。"""
+    c = level + amp * np.sin(2.0 * np.pi * np.arange(n, dtype=float) / period)
+    return _mk(c, o=c, h=c, l=c)
+
+
+def _ht_indep(d, ht_start: int) -> dict:
+    """ヒルベルト変換（J.F.Ehlers『Rocket Science for Traders』2001 の擬似コード）を
+    独立に書き起こしたもの。返すのは 支配的なサイクルの本数・位相・同相成分・直交成分・
+    サイン波・45度先行のサイン波・トレンドかサイクルかの判定。"""
+    o, h, l, c, v = _arr(d)
+    m = len(c)
+    sm = np.zeros(m); dt = np.zeros(m); i1 = np.zeros(m); q1 = np.zeros(m)
+    jI = np.zeros(m); jQ = np.zeros(m); i2 = np.zeros(m); q2 = np.zeros(m)
+    re = np.zeros(m); im = np.zeros(m); per = np.zeros(m); itr = np.zeros(m)
+    sper = np.full(m, np.nan); phase = np.full(m, np.nan)
+    ip = np.full(m, np.nan); qu = np.full(m, np.nan)
+    sine = np.full(m, np.nan); lead = np.full(m, np.nan)
+    tmode = np.full(m, np.nan); tline = np.full(m, np.nan)
+    days = 0
+    prev_s = prev_l = prev_ph = 0.0
+    for i in range(m):
+        if i >= ht_start and i >= 3:                       # 4本の加重平均で均す
+            sm[i] = (4.0 * c[i] + 3.0 * c[i - 1] + 2.0 * c[i - 2] + c[i - 3]) / 10.0
+        if i < ht_start:
+            per[i] = 0.0
+            sper[i] = 0.0
+            continue
+        adj = 0.075 * per[i - 1] + 0.54                    # 1本前の周期で係数を調整する
+        dt[i] = (0.0962 * sm[i] + 0.5769 * sm[i - 2] - 0.5769 * sm[i - 4] - 0.0962 * sm[i - 6]) * adj
+        q1[i] = (0.0962 * dt[i] + 0.5769 * dt[i - 2] - 0.5769 * dt[i - 4] - 0.0962 * dt[i - 6]) * adj
+        i1[i] = dt[i - 3]
+        jI[i] = (0.0962 * i1[i] + 0.5769 * i1[i - 2] - 0.5769 * i1[i - 4] - 0.0962 * i1[i - 6]) * adj
+        jQ[i] = (0.0962 * q1[i] + 0.5769 * q1[i - 2] - 0.5769 * q1[i - 4] - 0.0962 * q1[i - 6]) * adj
+        i2[i] = i1[i] - jQ[i]
+        q2[i] = q1[i] + jI[i]
+        i2[i] = 0.2 * i2[i] + 0.8 * i2[i - 1]
+        q2[i] = 0.2 * q2[i] + 0.8 * q2[i - 1]
+        re[i] = i2[i] * i2[i - 1] + q2[i] * q2[i - 1]      # ホモダイン検波
+        im[i] = i2[i] * q2[i - 1] - q2[i] * i2[i - 1]
+        re[i] = 0.2 * re[i] + 0.8 * re[i - 1]
+        im[i] = 0.2 * im[i] + 0.8 * im[i - 1]
+        per[i] = 360.0 / np.degrees(np.arctan(im[i] / re[i])) if (im[i] and re[i]) else per[i - 1]
+        if per[i] > 1.5 * per[i - 1]:
+            per[i] = 1.5 * per[i - 1]
+        if per[i] < 0.67 * per[i - 1]:
+            per[i] = 0.67 * per[i - 1]
+        per[i] = max(6.0, min(50.0, per[i]))
+        per[i] = 0.2 * per[i] + 0.8 * per[i - 1]
+        sper[i] = 0.33 * per[i] + 0.67 * sper[i - 1]
+        sp = sper[i]
+        dcp = max(int(sp + 0.5), 1)                        # 教科書＝小数を四捨五入して本数にする
+        rp = ipart = 0.0
+        for j in range(dcp):
+            if i - j >= 0:
+                ang = 2.0 * np.pi * j / dcp
+                rp += np.sin(ang) * sm[i - j]
+                ipart += np.cos(ang) * sm[i - j]
+        if abs(ipart) > 0.0:
+            ph = np.degrees(np.arctan(rp / ipart))
+        else:
+            ph = prev_ph + (-90.0 if rp < 0 else (90.0 if rp > 0 else 0.0))
+        ph += 90.0
+        if sp > 0:
+            ph += 360.0 / sp
+        if ipart < 0:
+            ph += 180.0
+        if ph > 315.0:
+            ph -= 360.0
+        phase[i] = ph
+        ip[i] = i1[i]
+        qu[i] = q1[i]
+        sine[i] = np.sin(np.radians(ph))
+        lead[i] = np.sin(np.radians(ph + 45.0))
+        itr[i] = c[max(i - dcp + 1, 0):i + 1].mean()       # 支配的なサイクルの本数で均した線
+        tline[i] = (4.0 * itr[i] + 3.0 * itr[i - 1]
+                    + 2.0 * (itr[i - 2] if i >= 2 else itr[0])
+                    + (itr[i - 3] if i >= 3 else itr[0])) / 10.0
+        tr = 1                                             # まずトレンドと仮定する（教科書の4段）
+        if (sine[i] > lead[i] and prev_s <= prev_l) or (sine[i] < lead[i] and prev_s >= prev_l):
+            days, tr = 0, 0                                # 段1 サイン波が交差したら数え直す
+        days += 1
+        if days < 0.5 * sp:
+            tr = 0                                         # 段2 交差から半周期たっていない
+        dph = ph - prev_ph
+        if sp != 0 and 0.67 * 360.0 / sp < dph < 1.5 * 360.0 / sp:
+            tr = 0                                         # 段3 位相の進みがサイクルらしい
+        if tline[i] != 0 and abs((sm[i] - tline[i]) / tline[i]) >= 0.015:
+            tr = 1                                         # 段4 値段が線から1.5%以上 離れた
+        tmode[i] = float(tr)
+        prev_s, prev_l, prev_ph = sine[i], lead[i], ph
+    return dict(sper=sper, phase=phase, ip=ip, qu=qu, sine=sine, lead=lead, tmode=tmode)
+
+
+def _tb_ht_dcperiod(d, p):
+    return _S(_ht_indep(d, _HT_START_A)["sper"], d)
+
+
+def _tb_ht_dcphase(d, p):
+    return _S(_ht_indep(d, _HT_START_B)["phase"], d)
+
+
+def _tb_ht_inphase(d, p):
+    o, h, l, c, v = _arr(d)
+    return _S(_div(_ht_indep(d, _HT_START_A)["ip"], c) * 100.0, d)
+
+
+def _tb_ht_quad(d, p):
+    o, h, l, c, v = _arr(d)
+    return _S(_div(_ht_indep(d, _HT_START_A)["qu"], c) * 100.0, d)
+
+
+def _tb_ht_sine(d, p):
+    return _S(_ht_indep(d, _HT_START_B)["sine"], d)
+
+
+def _tb_ht_leadsine(d, p):
+    return _S(_ht_indep(d, _HT_START_B)["lead"], d)
+
+
+def _tb_ht_trendmode(d, p):
+    tm = _ht_indep(d, _HT_START_B)["tmode"].copy()
+    tm[:63] = np.nan                       # ★TA-Lib の助走 63 本に合わせる（それ以前は 0 で出す）
+    return _S(np.where(np.isnan(tm), 0.0, tm), d)
+
+
+def _tb_ebsw(d, p):
+    """Even Better SineWave（J.F.Ehlers, Cycle Analytics for Traders 2014）。
+    ①length 本より長い波をハイパスで落とす ②bars 本より短い波を2極のスーパースムーザーで落とす
+    ③3本の平均を3本の実効値で割って −1〜1 にする。★角度は度（教科書どおり）。"""
+    o, h, l, c, v = _arr(d)
+    m = len(c)
+    out = np.full(m, np.nan)
+    if m <= _EBSW_L:
+        return _S(out, d)
+    out[_EBSW_L - 1] = 0.0
+    a_hp = (1.0 - np.sin(np.radians(360.0 / _EBSW_L))) / np.cos(np.radians(360.0 / _EBSW_L))
+    a1 = np.exp(-np.sqrt(2.0) * np.pi / _EBSW_B)
+    k2 = 2.0 * a1 * np.cos(np.radians(np.sqrt(2.0) * 180.0 / _EBSW_B))
+    k3 = -a1 * a1
+    k1 = 1.0 - k2 - k3
+    last_c = last_hp = 0.0
+    f2 = f1 = 0.0                          # 2本前・1本前のフィルタ出力
+    for i in range(_EBSW_L, m):
+        hp = 0.5 * (1.0 + a_hp) * (c[i] - last_c) + a_hp * last_hp
+        filt = k1 * (hp + last_hp) / 2.0 + k2 * f1 + k3 * f2
+        wave = (filt + f1 + f2) / 3.0
+        pwr = (filt * filt + f1 * f1 + f2 * f2) / 3.0
+        out[i] = wave / np.sqrt(pwr) if pwr > 0 else 0.0
+        f2, f1 = f1, filt
+        last_hp, last_c = hp, c[i]
+    return _S(out, d)
+
+
+def _msw_indep(d):
+    """メサ・サイン波（J.F.Ehlers『Rocket Science for Traders』2001）。
+    直近 period 本に離散フーリエ変換を1本だけ当てて位相を出し、そのサインと45度先行のサインを返す。"""
+    o, h, l, c, v = _arr(d)
+    m, n = len(c), _MSW_P
+    sine = np.full(m, np.nan)
+    lead = np.full(m, np.nan)
+    ang = 2.0 * np.pi * np.arange(n, dtype=float) / n
+    cs, sn = np.cos(ang), np.sin(ang)
+    for i in range(n, m):
+        w = c[i - n + 1:i + 1][::-1]       # 新しい足が j=0
+        rp = float(np.dot(w, cs))
+        ipt = float(np.dot(w, sn))
+        ph = np.arctan(ipt / rp) if abs(rp) > 0.001 else np.pi * (-1.0 if ipt < 0 else 1.0)
+        if rp < 0.0:
+            ph += np.pi
+        ph += np.pi / 2.0
+        if ph < 0.0:
+            ph += 2.0 * np.pi
+        if ph > 2.0 * np.pi:
+            ph -= 2.0 * np.pi
+        sine[i] = np.sin(ph)
+        lead[i] = np.sin(ph + np.pi / 4.0)
+    return sine, lead
+
+
+def _tb_msw_sine(d, p):
+    return _S(_msw_indep(d)[0], d)
+
+
+def _tb_msw_lead(d, p):
+    return _S(_msw_indep(d)[1], d)
+
+
+_r(r"EBSW", "EBSW",
+   "かなり良いサイン波＝40本より長い波と10本より短い波を落として、3本の平均を3本の実効値で割った −1〜1 の値",
+   "J.F.Ehlers（Cycle Analytics for Traders 2014・既定 length=40・bars=10）。"
+   "★ライブラリの関数は使っていない＝ライブラリが角度の単位を取り違えている（教科書は度・"
+   "ライブラリは度の数字をそのままラジアンとして sin/cos に入れている）。2026-08-11 実測＝"
+   "係数 alpha1 が 教科書 +0.854081 ／ ライブラリ −0.645222 で、系列の相関は +0.5878＝別物。"
+   "★まっすぐな上げ／下げでは、ハイパス通過後が一定になるので ちょうど +1／−1 になる（下の既知答え）",
+   "順張り値＝プラスで上げ", "trend", tb=_tb_ebsw,
+   known=lambda p: [(_up(1200, step=0.5), [(-1, 1.0, 1e-9)]),
+                    (_dn(1200, start=700.0, step=0.5), [(-1, -1.0, 1e-9)])])
+_r(r"HT_DCPERIOD", "HT_DCPERIOD",
+   "ヒルベルト変換で測った、いま支配的なサイクルの本数（6〜50 に収める）",
+   "J.F.Ehlers（Rocket Science for Traders 2001）。ホモダイン検波で1本ごとに周期を測り、"
+   "1.5倍・0.67倍の変化幅と 6〜50 の範囲で抑えてから平滑する。もともと「本数」なので無次元。"
+   "★純粋なサイン波を入れると、その周期の本数がそのまま出る（下の既知答え）",
+   "状態量＝大きいほど長い波が支配している（向きは持たない）", "none", tb=_tb_ht_dcperiod,
+   known=lambda p: [(_bar_cycle(2000, 20), [(-1, 20.0, 0.05)]),
+                    (_bar_cycle(2000, 30), [(-1, 30.0, 0.05)])])
+_r(r"HT_DCPHASE", "HT_DCPHASE",
+   "ヒルベルト変換で測った、支配的なサイクルの中のいまの位相（度・−45〜315）",
+   "同上（開始位置 37＝TA-Lib の助走 63 に合わせる）。もともと「度」なので無次元。"
+   "★円環の量＝315 を超えると −360 して戻るので、大小に一直線の意味は無い。"
+   "★下の HT_SINE・HT_LEADSINE は この位相のサインそのもの（sin(位相) と sin(位相+45度)）。"
+   "サインは −45〜315 度の範囲で一直線でないので、『値 ≥ 閾値』の条件としては別のものになる。" + _CYC_SYN_NOTE,
+   "状態量＝サイクルの中の居場所（向きは持たない）", "none", tb=_tb_ht_dcphase)
+_r(r"HT_INPHASE%", "HT_INPHASE%",
+   "ヒルベルト変換の同相成分（デトレンドした値段の3本前）を、終値で割って%化",
+   "同上（開始位置 12）。値段の単位なので終値で割る（H6）", "順張り値＝プラスで上げ", "trend",
+   tb=_tb_ht_inphase)
+_r(r"HT_QUAD%", "HT_QUAD%",
+   "ヒルベルト変換の直交成分（同相成分から90度ずらした側）を、終値で割って%化",
+   "同上（開始位置 12）。値段の単位なので終値で割る（H6）。"
+   "★作りからして同相成分より4分の1周期 先を行くので、上げ下げと一定の向きを持たない。" + _CYC_SYN_NOTE,
+   "状態量＝サイクルの90度ずれた側（向きは持たない）", "none", tb=_tb_ht_quad)
+_r(r"HT_SINE", "HT_SINE",
+   "支配的なサイクルの位相のサイン（sin(位相)・−1〜1）",
+   "同上（開始位置 37）。★使い方は下の HT_LEADSINE との交差＝この2本が交差した所がサイクルの折り返し。"
+   "値そのものの大小は上げ下げの向きを表さない。" + _CYC_SYN_NOTE,
+   "状態量＝サイクルの中の居場所（向きは持たない）", "none", tb=_tb_ht_sine)
+_r(r"HT_LEADSINE", "HT_LEADSINE",
+   "支配的なサイクルの位相を45度 先に進めたサイン（sin(位相+45度)・−1〜1）",
+   "同上。★HT_SINE との交差を見るための相方。" + _CYC_SYN_NOTE, "状態量＝同上（向きは持たない）", "none",
+   tb=_tb_ht_leadsine)
+_r(r"HT_TRENDMODE", "HT_TRENDMODE",
+   "いまがトレンドか（1）サイクルか（0）の判定",
+   "同上（開始位置 37・助走 63 本は 0）。教科書の4段＝①サイン波の交差で数え直す ②交差から半周期"
+   "たっていなければサイクル ③位相の進みがサイクルらしければサイクル ④値段が均した線から"
+   "1.5%以上 離れていればトレンド。★まっすぐな上げでは 1 になる（下の既知答え）",
+   "状態量＝1 でトレンド・0 でサイクル（向きは持たない）", "none", tb=_tb_ht_trendmode,
+   known=lambda p: [(_up(800, step=0.5), [(-1, 1.0, 1e-9)])])
+_r(r"MSW_SINE", "MSW_SINE",
+   "メサ・サイン波＝直近5本に離散フーリエ変換を当てて出した位相のサイン（−1〜1）",
+   "J.F.Ehlers（Rocket Science for Traders 2001・ライブラリの既定 period=5）。"
+   "★ヒルベルト変換の HT_SINE とは位相の求め方が違う（こちらは決まった本数のフーリエ変換・"
+   "あちらは1本ごとに周期を測る）。2026-08-11 実測＝2つの相関は 0.99 に届かない＝別のもの。"
+   "★純粋なサイン波（周期5）で、最後の位置を5で割った余りが1のとき、"
+   "定義から 位相 = 72度 に決まる（下の既知答え）",
+   "順張り値＝プラスで上げ", "trend", tb=_tb_msw_sine,
+   known=lambda p: [(_bar_cycle(1002, 5), [(-1, 0.9510565162951535, 1e-9)])])
+_r(r"MSW_LEAD", "MSW_LEAD",
+   "メサ・サイン波の45度先行（sin(位相+45度)・−1〜1）",
+   "同上。★MSW_SINE との交差を見るための相方。45度ずれているので、上げ下げと一定の向きを持たない。"
+   "★上と同じ合成バーで 位相+45度 = 117度 に決まる（下の既知答え）。" + _CYC_SYN_NOTE,
+   "状態量＝サイクルの中の居場所（向きは持たない）", "none", tb=_tb_msw_lead,
+   known=lambda p: [(_bar_cycle(1002, 5), [(-1, 0.8910065241883679, 1e-9)])])
+
+
+# ══ 業界の指標（candles 4関数）＝独立実装・登録（2026-08-11・フロー 段6-h）══
+# ★4関数のうち「関数の返す列の一部だけ入れない」ものが3件（理由は下の対応表 INDUSTRY_MAP に1件ずつ）＝
+#   cdl_doji の 0/1（固定の閾値を当てただけ＝中身の連続値だけ入れる）／
+#   cdl_z の終値の z 値（うちの zscore の本数違い・実測 スピアマン相関 1.0000000）／
+#   ha の4本値そのもの（値段＝H6）。
+_CDLZ_N = 30                             # cdl_z の既定（本数・標本標準偏差 ddof=1）
+_DOJI_N = 10                             # cdl_doji の既定（直前 n 本の平均値幅）
+
+
+def _bar_nowick(n=200, start=100.0, step=0.5, up=True):
+    """ヒゲの無いまっすぐな上げ／下げ。平均足（HA）の既知答え用＝
+    実体%・上ヒゲ比・下ヒゲ比 が定義から決まる（下の登録に導出を書いた）。"""
+    c = start + (step if up else -step) * np.arange(n, dtype=float)
+    o = c - step if up else c + step
+    return _mk(c, o=o, h=np.maximum(o, c), l=np.minimum(o, c))
+
+
+def _bar_inside(n=40, level=100.0):
+    """最後のバーだけが、その1本前のバーの高安の内側に完全に入る陽線（内側バーの既知答え用）。"""
+    c = np.full(n, level)
+    o = np.full(n, level)
+    h = np.full(n, level + 2.0)
+    l = np.full(n, level - 2.0)
+    o[-1], c[-1] = level - 0.5, level + 0.5      # 陽線（終値 > 始値）
+    h[-1], l[-1] = level + 1.0, level - 1.0      # 1本前の高安（±2.0）の内側
+    return _mk(c, o=o, h=h, l=l)
+
+
+def _bar_fixed_body(n=40, level=100.0, body=1.0):
+    """実体と値幅が同じ（＝実体幅比 = 1）バー。実体幅比の既知答え用。"""
+    o = np.full(n, level)
+    c = np.full(n, level + body)
+    return _mk(c, o=o, h=np.maximum(o, c), l=np.minimum(o, c))
+
+
+def _tb_body_range(d, p):
+    """実体 ÷ 直前 n 本の平均値幅（cdl_doji の中身の連続値）。"""
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    avg = np.r_[np.nan, _roll(h - l, n, "mean")[:-1]]     # 1本前まで（未来を見ない）
+    return _S(_div(np.abs(c - o), avg), d)
+
+
+def _tb_inside(d, p):
+    """内側バー＝高値が前より低く、安値が前より高い。陽線なら +1・陰線なら −1。"""
+    o, h, l, c, v = _arr(d)
+    ph = np.r_[np.nan, h[:-1]]
+    pl = np.r_[np.nan, l[:-1]]
+    hit = ((h - ph) < 0) & ((l - pl) > 0)
+    return _S(np.where(hit, np.where(c >= o, 1.0, -1.0), 0.0), d)
+
+
+def _tb_cdlz(d, p, which: str):
+    """4本値それぞれの z スコア（n 本の平均を引いて標本標準偏差で割る・ddof=1）。"""
+    n = p[0]
+    x = {"open": d.open, "high": d.high, "low": d.low}[which].to_numpy(float)
+    return _S(_div(x - _roll(x, n, "mean"), _roll(x, n, "std", ddof=1)), d)
+
+
+def _ha_indep(d):
+    """平均足（Heikin-Ashi）。終値＝4本値の平均／始値＝1本前の平均足の始値と終値の平均。
+    高値・安値は 平均足の始値・終値と 実際の高値・安値 を合わせた最大・最小。"""
+    o, h, l, c, v = _arr(d)
+    m = len(c)
+    hc = (o + h + l + c) / 4.0
+    ho = np.full(m, np.nan)
+    if m:
+        ho[0] = 0.5 * (o[0] + c[0])
+        for i in range(1, m):
+            ho[i] = 0.5 * (ho[i - 1] + hc[i - 1])
+    hh = np.maximum.reduce([ho, h, hc])
+    hl = np.minimum.reduce([ho, l, hc])
+    return ho, hh, hl, hc
+
+
+def _tb_ha_body(d, p):
+    o, h, l, c, v = _arr(d)
+    ho, hh, hl, hc = _ha_indep(d)
+    return _S(_div(hc - ho, c) * 100.0, d)
+
+
+def _tb_ha_uwick(d, p):
+    ho, hh, hl, hc = _ha_indep(d)
+    return _S(_div(hh - np.maximum(ho, hc), hh - hl), d)
+
+
+def _tb_ha_lwick(d, p):
+    ho, hh, hl, hc = _ha_indep(d)
+    return _S(_div(np.minimum(ho, hc) - hl, hh - hl), d)
+
+
+_r(r"実体幅比(\d+)", "実体幅比",
+   "そのバーの実体（|終値 − 始値|）が、直前 n 本の平均値幅の何倍か",
+   "cdl_doji（十字線）の中身の連続値。★ライブラリはこれに固定の閾値（平均値幅の10%）を当てた 0/1 を返すが、"
+   "その 0/1 は入れない＝閾値は engine_tuner が探すもの（教訓 L-408・THERMO の 0/1 と同じ扱い）。"
+   "★うちの body比（実体 ÷ そのバーの値幅）とは別もの＝あちらは同じバーの中の比、これは直近の平均との比。"
+   "★平均は1本前まで（当該バーを入れない＝ライブラリと同じ流儀・未来を見ない）",
+   "状態量＝大きいほど迷いのないバー（向きは持たない）", "none", tb=_tb_body_range,
+   known=lambda p: [(_bar_fixed_body(p[0] * 4 + 20), [(-1, 1.0, 1e-9)])])
+_r(r"内側バー", "内側バー",
+   "高値が1本前より低く、安値が1本前より高いバー（内側バー）。陽線なら +1・陰線なら −1・当てはまらなければ 0",
+   "cdl_inside（ライブラリの既定＝当てはまった所にローソクの色 ±1 を掛ける）。"
+   "★うちの 孕み足 とは別もの＝孕み足は『実体』が前のバーの実体の内側、内側バーは『高安』が前のバーの内側",
+   "反転サイン＝+1 は陽線の内側バー（もみ合いからの上放れの前触れ）", "reversal", tb=_tb_inside,
+   known=lambda p: [(_bar_inside(), [(-1, 1.0, 1e-9)])])
+_r(r"open_Z(\d+)", "open_Z",
+   "始値が、直前 n 本の始値の平均から標準偏差いくつぶん離れているか",
+   "cdl_z（ライブラリの既定 length=30・標本標準偏差 ddof=1）。もともと無次元。"
+   "★終値の z 値は入れない＝うちの zscore の本数違い（2026-08-11 実測＝本数30 のうちの式と"
+   "スピアマン相関 1.0000000）。本数30 が うちの一覧に無いことは materials.md ★3 の"
+   "『zscore … 20 本・50 本』で見える＝本数の側で埋める穴。"
+   "始値・高値・安値の z 値は うちに1つも無いので入れる。"
+   "★まっすぐな上げでは (n−1)/2 ÷ √(n(n+1)/12) に決まる（下の既知答え）",
+   "順張り値＝プラスで直近の平均より上", "trend", tb=lambda d, p: _tb_cdlz(d, p, "open"),
+   known=lambda p: [(_up(200, step=1.0),
+                     [(-1, ((p[0] - 1) / 2) / np.sqrt(p[0] * (p[0] + 1) / 12.0), 1e-9)])])
+_r(r"high_Z(\d+)", "high_Z",
+   "高値が、直前 n 本の高値の平均から標準偏差いくつぶん離れているか", "同上（高値の側）",
+   "順張り値＝プラスで直近の平均より上", "trend", tb=lambda d, p: _tb_cdlz(d, p, "high"),
+   known=lambda p: [(_up(200, step=1.0),
+                     [(-1, ((p[0] - 1) / 2) / np.sqrt(p[0] * (p[0] + 1) / 12.0), 1e-9)])])
+_r(r"low_Z(\d+)", "low_Z",
+   "安値が、直前 n 本の安値の平均から標準偏差いくつぶん離れているか", "同上（安値の側）",
+   "順張り値＝プラスで直近の平均より上", "trend", tb=lambda d, p: _tb_cdlz(d, p, "low"),
+   known=lambda p: [(_up(200, step=1.0),
+                     [(-1, ((p[0] - 1) / 2) / np.sqrt(p[0] * (p[0] + 1) / 12.0), 1e-9)])])
+_r(r"HA実体%", "HA実体%",
+   "平均足の実体（平均足の終値 − 平均足の始値）を、終値で割って%化",
+   "ha（平均足）。平均足の終値＝4本値の平均／始値＝1本前の平均足の始値と終値の平均。"
+   "値段の単位なので終値で割る（H6）。★4本値そのものは入れない＝値段（H6）。"
+   "★ヒゲの無いまっすぐな上げ（1本 step ぶん）では、平均足の実体が ちょうど 2×step に収まる"
+   "（実測＝step 0.5・終値 199.5 で 0.5012531…％＝1.0 ÷ 199.5 × 100）",
+   "順張り値＝プラスで平均足が陽線", "trend", tb=_tb_ha_body,
+   known=lambda p: [(_bar_nowick(200, step=0.5), [(-1, 100.0 / 199.5, 1e-9)]),
+                    (_bar_nowick(200, start=200.0, step=0.5, up=False), [(-1, -100.0 / 100.5, 1e-9)])])
+_r(r"HA上ヒゲ比", "HA上ヒゲ比",
+   "平均足の上ヒゲが、平均足の全幅の何割か",
+   "同上。★ヒゲの無いまっすぐな下げでは、平均足の始値が上限になるので ちょうど 0 になる（下の既知答え）",
+   "反転サイン＝大きいほど上値の売り圧の示唆", "reversal", tb=_tb_ha_uwick,
+   known=lambda p: [(_bar_nowick(200, start=200.0, step=0.5, up=False), [(-1, 0.0, 1e-9)]),
+                    (_bar_nowick(200, step=0.5), [(-1, 0.2, 1e-9)])])
+_r(r"HA下ヒゲ比", "HA下ヒゲ比",
+   "平均足の下ヒゲが、平均足の全幅の何割か",
+   "同上。★ヒゲの無いまっすぐな上げでは、平均足の始値が下限になるので ちょうど 0 になる"
+   "＝『上げが強いと平均足に下ヒゲが出ない』という平均足の使い方そのもの（下の既知答え）",
+   "反転サイン＝大きいほど下値の買い支えの示唆", "reversal", tb=_tb_ha_lwick,
+   known=lambda p: [(_bar_nowick(200, step=0.5), [(-1, 0.0, 1e-9)]),
+                    (_bar_nowick(200, start=200.0, step=0.5, up=False), [(-1, 0.2, 1e-9)])])
+
+
 # ══ 需給データの定義表（検査6 が印字する正本・2026-07-30 WebResearch＋実測で確定）══
 # 実測の方法＝①直近の metrics 日次 zip と REST の同系列を1時間分突き合わせ（OI・比率3種は
 # zip の時刻+5分 = REST の終了時刻ラベルで平均差ゼロ・taker は同時刻で一致）②OI の現在値
@@ -3736,6 +4161,28 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "THERMO%": dict(k="ボラ"), "THERMO比": dict(k="ボラ"),
     "TR%": dict(k="ボラ", note="1本ぶんの真の値幅＝ATR% の平滑前"),
     "UI": dict(k="ボラ", note="高値からの下落の深さ＝下げ側だけの値動きの大きさ"),
+    # 業界の指標（cycles・フロー 段6-g・2026-08-11）
+    "EBSW": dict(k="オシレーター", note="長い波と短い波を落として −1〜1 に正規化した波＝行き過ぎの計測"),
+    "HT_DCPERIOD": dict(k="ボラ", note="支配的なサイクルの本数＝値動きの速さの計測（向きを持たない）。"
+                                       "★ボラに置いた理由＝8つの系統に『サイクル』が無く、"
+                                       "向きを持たない値動きの性質の置き場がボラだから（ER と同じ扱い）"),
+    "HT_DCPHASE": dict(k="構造・位置", note="サイクルの中のいまの位相（度）＝位置の計測"),
+    "HT_INPHASE%": dict(k="オシレーター", note="デトレンドした値段の同相成分＝0 を挟んで振動する"),
+    "HT_QUAD%": dict(k="オシレーター", note="同じく直交成分＝0 を挟んで振動する"),
+    "HT_SINE": dict(k="オシレーター", note="位相のサイン＝−1〜1 の有界の振動"),
+    "HT_LEADSINE": dict(k="オシレーター", note="同上（45度先行）"),
+    "HT_TRENDMODE": dict(k="トレンド", note="トレンドかサイクルかの判定そのもの"),
+    "MSW_SINE": dict(k="オシレーター", note="フーリエ変換で出した位相のサイン＝−1〜1 の有界の振動"),
+    "MSW_LEAD": dict(k="オシレーター", note="同上（45度先行）"),
+    # 業界の指標（candles・フロー 段6-h・2026-08-11）
+    "実体幅比": dict(k="ローソク", note="実体 ÷ 直前 n 本の平均値幅＝1本のバーの迷いの無さ"),
+    "内側バー": dict(k="ローソク", note="高安が前のバーの内側に収まった形"),
+    "open_Z": dict(k="オシレーター", note="始値の z スコア＝行き過ぎの計測（うちの zscore と同じ作り）"),
+    "high_Z": dict(k="オシレーター", note="高値の z スコア＝同上"),
+    "low_Z": dict(k="オシレーター", note="安値の z スコア＝同上"),
+    "HA実体%": dict(k="ローソク", note="平均足の実体＝ならしたローソクの向きと厚み"),
+    "HA上ヒゲ比": dict(k="ローソク", note="平均足の上ヒゲの割合"),
+    "HA下ヒゲ比": dict(k="ローソク", note="平均足の下ヒゲの割合"),
     "close vs MEDIAN%": dict(k="構造・位置"), "MEDIAN傾き%": dict(k="トレンド"),
     "close vs LRb%": dict(k="構造・位置"), "LRb傾き%": dict(k="トレンド"), "LRslope%": dict(k="トレンド"),
     "close vs MAMA%": dict(k="構造・位置"), "close vs FAMA%": dict(k="構造・位置"),
@@ -3958,6 +4405,35 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "THERMO比": (("thermo",), "同上。値をその EMA で割った比＝もともと無次元"),
     "TR%": (("true_range",), "値段の単位。うちは終値で割って%化（H6）。★うちの ATR% は これを Wilder 平滑したもの"),
     "UI": (("ui",), "もともと%＝そのまま"),
+    # ── cycles 8関数（フロー 段6-g・2026-08-11）──
+    "EBSW": (("ebsw",), "★ライブラリの関数は使っていない＝ライブラリが角度の単位を取り違えている"
+                        "（教科書は度・ライブラリは度の数字をそのままラジアンとして sin/cos に入れる）。"
+                        "2026-08-11 実測＝係数 alpha1 が 教科書 +0.854081 ／ ライブラリ −0.645222、"
+                        "系列の相関 +0.5878＝別物。VFI と同じく教科書（J.F.Ehlers）の式で書き直した"),
+    "HT_DCPERIOD": (("ht_dcperiod",), "もともと『本数』＝そのまま"),
+    "HT_DCPHASE": (("ht_dcphase",), "もともと『度』＝そのまま。★円環の量（−45〜315）"),
+    "HT_INPHASE%": (("ht_phasor",), "ht_phasor が同相成分と直交成分の2列を返す。値段の単位なので終値で割って%化（H6）"),
+    "HT_QUAD%": (("ht_phasor",), "同上（直交成分）"),
+    "HT_SINE": (("ht_sine",), "ht_sine がサイン波と45度先行の2列を返す。もともと −1〜1＝そのまま"),
+    "HT_LEADSINE": (("ht_sine",), "同上（45度先行）"),
+    "HT_TRENDMODE": (("ht_trendmode",), "もともと 0/1＝そのまま"),
+    "MSW_SINE": (("msw",), "msw がサイン波と45度先行の2列を返す。もともと −1〜1＝そのまま"),
+    "MSW_LEAD": (("msw",), "同上（45度先行）"),
+    # ── candles 4関数（フロー 段6-h・2026-08-11）──
+    "実体幅比": (("cdl_doji",), "cdl_doji（十字線）の中身の連続値。★ライブラリが返す 0/1 は入れない＝"
+                              "『実体 ≤ 直前10本の平均値幅の10%』という固定の閾値を当てただけで、"
+                              "閾値は engine_tuner が探すもの（教訓 L-408・THERMO の 0/1 と同じ扱い）"),
+    "内側バー": (("cdl_inside",), "そのまま（±1・0）。★うちの 孕み足 とは別もの＝"
+                                "孕み足は実体、内側バーは高安が内側に収まる形"),
+    "open_Z": (("cdl_z",), "cdl_z が 始値・高値・安値・終値 の4つの z スコアを返す。もともと無次元＝そのまま。"
+                           "★終値の z 値は入れない＝うちの zscore の本数違い（2026-08-11 実測＝"
+                           "本数30 のうちの式とスピアマン相関 1.0000000・最大差 5.3e-07）"),
+    "high_Z": (("cdl_z",), "同上（高値）"),
+    "low_Z": (("cdl_z",), "同上（安値）"),
+    "HA実体%": (("ha",), "ha が平均足の4本値を返す。★4本値そのものは入れない＝値段（H6）。"
+                        "実体は値段の単位なので終値で割って%化"),
+    "HA上ヒゲ比": (("ha",), "同上。上ヒゲ ÷ 全幅＝もともと比"),
+    "HA下ヒゲ比": (("ha",), "同上。下ヒゲ ÷ 全幅＝もともと比"),
     # ── overlap 3回目（sinwma〜zlma）──
     "close vs SINWMA%": (("sinwma",), "値段そのもの。うちは終値との距離%（H6）"), "SINWMA傾き%": (("sinwma",), "同上（傾きの形）"),
     "close vs SSF%": (("ssf",), "値段そのもの。うちは終値との距離%（H6）"), "SSF傾き%": (("ssf",), "同上（傾きの形）"),
@@ -4138,6 +4614,14 @@ INDUSTRY_SKIP: dict[str, str] = {
               "定数倍は『値 ≥ 閾値』の条件として同じ並びになる＝新しい条件を作れない",
     "variance": "stdev の2乗（実測＝最大差 9.3e-10）。2乗は大小の並びを変えないので、"
                 "『値 ≥ 閾値』の条件として stdev と同じ",
+    "dsp": "うちの close vs EMA%（終値が EMA から何%離れているか）の単調変換。"
+           "dsp = 終値 − EMA。値段の単位なので終値で割って%化すると (終値−EMA)÷終値 になる。"
+           "うちの式は (終値÷EMA − 1)。r = 終値÷EMA と置くと、うちは (r−1)・dsp% は (r−1)÷r で、"
+           "r > 0 では大小の並びが完全に一致する。2026-08-11 実測＝**スピアマン相関 1.0000000000**"
+           "（値決め窓 157,112 本・暖機1,000本を除く）＝『値 ≥ 閾値』の条件として同じ並びになる。"
+           "★ただし dsp の既定の本数 14 は うちの本数の一覧に無い（materials.md ★3 の"
+           "『close vs EMA … 9 本・20 本・50 本・200 本』で見える）。この穴は本数の側で埋める＝"
+           "同じ形の指標を、名前を変えて2つ持たない。本数を範囲で探せるようにするのがマイルストーン③",
     "avolume": "うちの realized_vol の定数倍（どちらも対数リターンの標準偏差。avolume は母標準偏差×√252・"
                "うちは 標本標準偏差×100）。2026-08-10 実測＝比が値決め窓の全区間で1つの値"
                "（20本 0.154725563499／50本 0.157149610245・式から出る定数 √252×√((n−1)/n)/100 と12桁 一致）。"
