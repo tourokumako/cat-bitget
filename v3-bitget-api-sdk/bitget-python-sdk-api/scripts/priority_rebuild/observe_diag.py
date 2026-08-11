@@ -407,6 +407,15 @@ def build_catalog(cfg: dict) -> list[tuple]:
                 d.close.ewm(span=f_).mean() - d.close.ewm(span=s_).mean()), True)
     for n in cfg["rsi_periods"]:
         add(f"RSI{n}", lambda d, n=n: _rsi(d.close, n), True)
+        # ★2026-08-11 に「RSI の差」の列を8本 足したが、同じ日に省いた（まこさん OK・逐語「１はOK」）。
+        #   理由＝engine_tuner には元から「いまの値 − n本前の値」を作る形が在った
+        #   （engine_tuner_exec.py の form="slope"＝`d = a - np.roll(a, n)`・n は条件ごとの欄）。
+        #   ＝列で持つと、同じものを「列」と「形」の2通りで持つことになる（まこさん決定
+        #   2026-08-09 の逐語「同じ挙動の指標があれば紛らわしいので片方を省いていく」に当たる）。
+        #   ★私が「engine_tuner はこの形を作れない」と報告したのは間違いだった（実物を見ずに、
+        #   材料カタログに列が無いことだけを見て言った）。教訓＝材料（列）に無い＝作れない、ではない。
+        #   本当の穴は「使い方の側」＝slope の本数が 3・6・12・24 の4つに限定されていること
+        #   （recipes/search_limits.json の int_grid）＝マイルストーン③で範囲にする。
     for n in cfg["roc_periods"]:
         add(f"ROC{n}", lambda d, n=n: d.close.pct_change(n) * 100, True)
     for n in cfg["stoch_periods"]:
@@ -2901,6 +2910,7 @@ INSPECT_SECTIONS = [
     "検査11 V9 が実際に使っている指標の本数が、設定ファイルの本数に入っているかを1件ずつ照らす（段6 の 6-8）",
     "検査12 材料どうしの重複を総当たりで出す（値そのものの相関と、順位の相関の2つで見る・段6 の 6-9③）",
     "検査13 4本値を定数倍しても材料の値が変わらないかを実測する（H6 価格非依存・段6 の 6-9①）",
+    "検査14 V9 の実物の列と、うちの材料の列の対応を実測で決める（名前で決めない・2026-08-11 新設）",
 ]
 # 検査の線（全部この場で印字する＝黙って変えられない）。指標照合の許容差は
 # indicator_reference_diag（参照表の tol）が正本。
@@ -3263,8 +3273,9 @@ def _insp_ref_coverage() -> list[str]:
     return []
 
 
-def _insp_indicator_stage(bars: pd.DataFrame, cfg: dict) -> list[str]:
-    """検査3 全体＝定義表の機械印字＋3本柱の照合＋性質テスト＋全列の3区分。"""
+def _insp_indicator_stage(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> list[str]:
+    """検査3 全体＝定義表の機械印字＋3本柱の照合＋性質テスト＋全列の3区分。
+    catalog を渡すとその列だけを測る（--cols＝材料を足した時に、足した列だけを確かめるため）。"""
     print(f"  外部ライブラリ照合: {'ta（非同型の照合相手＝別の実装者のコード）' if iref.TA_OK else '⚠️ ta が無い環境＝独立実装と既知答えで担保'}")
     print(f"  2つ目の照合の相手: {'pandas-ta-classic と scipy（2026-08-09 追加）' if iref.ext2_ready() else '⚠️ 入っていない環境＝1つ目だけで担保'}")
     _insp_ref_coverage()
@@ -3274,12 +3285,12 @@ def _insp_indicator_stage(bars: pd.DataFrame, cfg: dict) -> list[str]:
         print(f"        流儀: {e['ryugi']}")
         print(f"        方向: {e['houkou']}")
     print("  ── 照合（外部ライブラリ ／ 教科書の独立実装 ／ 手計算の既知答え）──")
-    ng, verified, rows = _insp_indicator_match(bars, cfg)
+    ng, verified, rows = _insp_indicator_match(bars, cfg, catalog)
     for name, marks in rows:
         print(f"     {name}: {marks}")
     print("  ── 人工データの性質テスト（参照表の性質の型に従う）──")
-    prop_ok, why = _insp_property(cfg)
-    names = [nm for nm, _f, _d in build_catalog(cfg)]
+    prop_ok, why = _insp_property(cfg, catalog)
+    names = [nm for nm, _f, _d in (catalog or build_catalog(cfg))]
     cls = {nm: ("一致検証済み" if nm in verified else "性質検証のみ" if nm in prop_ok else "未検証")
            for nm in names}
     from collections import Counter
@@ -3595,8 +3606,13 @@ _V9_PERIOD_PATTERNS = (
      r"window=(\d+), smooth_window=\d+", "1つ", "V9 のストキャスティクス"),
     ("fib位置", "fib_windows", "strategies/cat_v9_decider.py",
      r"n_look = (\d+)", "1つ", "V9 の『直近レンジ内での位置』（うちの fib位置 と同じ形）"),
-    ("realized_vol", "realized_vol_periods", "strategies/cat_v9_decider.py",
-     r"vola = df\[\"close\"\]\.rolling\(window=(\d+)", "1つ", "V9 の entry_risk_score のばらつき"),
+    # ★2026-08-11 に指標名とキーを直した。前は「realized_vol / realized_vol_periods」で照らしていたが、
+    #   V9 の entry_risk_score は「終値のばらつき ÷ 終値」で、うちの realized_vol（対数リターンの
+    #   ばらつき）とは別物だった。実測（検査14）＝BB幅(20,2.0) と 値の相関 +0.9999464／順位 +0.9999952。
+    #   realized_vol は上位3件にも入らない。よって照らす先を bb_periods にした（本数 20 は両方に在る）。
+    ("entry_risk_score", "bb_periods", "strategies/cat_v9_decider.py",
+     r"vola = df\[\"close\"\]\.rolling\(window=(\d+)", "1つ",
+     "V9 の entry_risk_score（終値のばらつき÷終値）＝うちの BB幅 と実測で一致（検査14）"),
 )
 _V9_PERIOD_PARAMS = (
     # (指標, 設定のキー, cat_params_v9.json のキー, 説明)
@@ -3861,7 +3877,11 @@ _V9_LABEL_TO_FAMILIES: dict[str, tuple[str, ...]] = {
     "RCI": ("RCI",), "ADX": ("ADX", "DI差"), "ATR%": ("ATR%",), "RSI": ("RSI",),
     "BB": ("BB%b", "BB幅"), "EMA": ("close vs EMA", "EMA傾き"),
     "Stoch": ("Stoch%K", "Stoch%D"), "MACD": ("MACD線%", "MACDヒスト%", "MACDシグナル線%"),
-    "fib位置": ("fib位置",), "realized_vol": ("realized_vol",),
+    # ★entry_risk_score は 2026-08-11 まで "realized_vol" の名前で realized_vol に対応づけていた。
+    #   実測（検査14）で うちの BB幅(20,2.0) と一致（値 +0.9999464／順位 +0.9999952）＝realized_vol は別物。
+    #   ここは「V9 が実際に計算している family」の一覧＝重複の組で残す側を決める材料になるので、
+    #   間違ったまま置くと『V9 が使っている』を理由に別の列を残してしまう。
+    "fib位置": ("fib位置",), "entry_risk_score": ("BB幅",),
 }
 
 
@@ -4058,8 +4078,18 @@ def _dup_keep_of_group(grp: list[str], warm: dict | None = None) -> tuple[str, s
     return c3[0], "決まり4＝上の3つが同点＝名前の並び順で前の方", tbl
 
 
-def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
-    """データと指標の検査（歩0）＝5段を順に走らせ、まとめを機械出力する。❌ が1つでもあれば終了コード1。"""
+def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None = None,
+                 cols: str | None = None) -> None:
+    """データと指標の検査（歩0）＝5段を順に走らせ、まとめを機械出力する。❌ が1つでもあれば終了コード1。
+
+    only＝走らせる検査の番号（例 "14" や "11,14"）。指定した検査だけを走らせる。
+    cols＝測る材料の列を名前で絞る（例 "RSI21傾き3" や "RSI.*傾き" ＝正規表現）。
+    ★何のために足したか（2026-08-11）。全部 通すと 2時間10分 かかる（実測）ので、
+      1つの検査を直した時の確かめが1日1回しかできなかった。
+      ★列を8本 足しただけなのに 4,887列 すべてを測り直していた（2026-08-11 の反省）。
+      材料を足した時に確かめたいのは、足した列が①値段に依存しないか ②未来を見ていないか
+      ③計算式が合っているか の3つで、既に在る列は変えていないので測り直す必要がない。
+    ★走らせた範囲（検査の番号・列の絞り）は必ず出力の冒頭に印字する＝一部だけ走らせたことを黙らない。"""
     cfg = load_config(config_path)
     bars = pd.read_csv(bars_csv, parse_dates=["timestamp"]).set_index("timestamp").sort_index()
     print("#" * 100)
@@ -4072,18 +4102,38 @@ def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
           "上流で間違いが出たら下流の結果は全部疑う。売買しない・値決めしない・審判に触れない。")
     print("#" * 100)
     fails = {}
+    # ★列の絞り（--cols）。材料を足した時、足した列だけを測るために使う。
+    #   絞れる検査だけに効く（材料の一覧を受け取れる検査＝3・4・9・12・13・14）。
+    #   絞った時は、その事実と対象の列名を必ず印字する（黙って一部だけ測らない）。
+    cat_all = build_catalog(cfg)
+    cat = cat_all
+    if cols:
+        rx = re.compile(cols)
+        cat = [c for c in cat_all if rx.search(c[0])]
+        if not cat:
+            raise SystemExit(f"[--cols] その名前の列は材料に無い: {cols}")
+        print(f"# ⚠️ --cols 指定＝材料 {len(cat_all)} 種のうち {len(cat)} 種だけを測る"
+              f"（ほかの列は測っていない）: {[c[0] for c in cat]}")
     stages = [("検査1", INSPECT_SECTIONS[0], lambda: _insp_source(bars)),
               ("検査2", INSPECT_SECTIONS[1], lambda: _insp_resample(bars, cfg)),
-              ("検査3", INSPECT_SECTIONS[2], lambda: _insp_indicator_stage(bars, cfg)),
-              ("検査4", INSPECT_SECTIONS[3], lambda: _insp_lookahead(bars, cfg))]
+              ("検査3", INSPECT_SECTIONS[2], lambda: _insp_indicator_stage(bars, cfg, cat)),
+              ("検査4", INSPECT_SECTIONS[3], lambda: _insp_lookahead(bars, cfg, cat))]
     stages += [("検査6", INSPECT_SECTIONS[5], lambda: _insp_demand(bars)),
                ("検査7", INSPECT_SECTIONS[6], lambda: _insp_axis(cfg)),
                ("検査8", INSPECT_SECTIONS[7], lambda: _insp_range_geo(bars, cfg)),
-               ("検査9", INSPECT_SECTIONS[8], lambda: _insp_direction_gap(cfg)),
+               ("検査9", INSPECT_SECTIONS[8], lambda: _insp_direction_gap(cfg, cat)),
                ("検査10", INSPECT_SECTIONS[9], lambda: _insp_industry(cfg)),
                ("検査11", INSPECT_SECTIONS[10], lambda: _insp_v9_periods(cfg)),
-               ("検査12", INSPECT_SECTIONS[11], lambda: _insp_duplicates(bars, cfg)),
-               ("検査13", INSPECT_SECTIONS[12], lambda: _insp_price_scale(bars, cfg))]
+               ("検査12", INSPECT_SECTIONS[11], lambda: _insp_duplicates(bars, cfg, cat)),
+               ("検査13", INSPECT_SECTIONS[12], lambda: _insp_price_scale(bars, cfg, cat)),
+               ("検査14", INSPECT_SECTIONS[13], lambda: _insp_v9_columns(bars, cfg, cat))]
+    if only:
+        want = {"検査" + x.strip() for x in str(only).split(",") if x.strip()}
+        unknown = want - {k for k, _t, _r in stages}
+        if unknown:
+            raise SystemExit(f"[--only] そんな検査は無い: {sorted(unknown)}")
+        stages = [s for s in stages if s[0] in want]
+        print(f"# ⚠️ --only 指定＝{sorted(want)} だけを走らせる（ほかの検査は走っていない）")
     for key, title, run in stages:
         if key == "検査6":                     # 検査5（判定なしの報告）を順番どおり挟む
             _h(INSPECT_SECTIONS[4])
@@ -4106,6 +4156,187 @@ def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
     print("=" * 100)
     if bad:
         raise SystemExit(1)
+
+
+# ══ 検査14（V9 の実物の列と、うちのカタログの列の対応を実測で決める・2026-08-11 新設）═════════
+# ★何のための検査か。V9 の検算（gen_signal_families.py --v9-test）は「V9 の指標名 → うちの family 名」の
+#   対応を手書きの表（V9_FAMILY_MAP）で持っている。手書きなので、外し方が2つ ある。両方 実際に起きていた。
+#   ①名前が違うだけで中身は同じ列が「機械対応なし＝検算の対象外」に落ちる
+#     ＝V9 の location_prev（直近20本の高安の中での終値の位置・cat_v9_decider.py:118-125）。
+#       うちの fib位置20 が同じ形なのに、名前が違うので検算から外れていた。
+#   ②名前が似ている別物を「同じ」と書いてしまう
+#     ＝V9 の entry_risk_score は「終値のばらつき ÷ 終値」（同 :128-129）。
+#       うちの realized_vol は「対数リターンのばらつき」＝別物。同じ形は「σ ÷ 終値」の側。
+# ★だから対応を名前で決めない。V9 の実物（cat_v9_decider.preprocess）をそのまま呼んで列を作り、
+#   うちのカタログの全列と総当たりで相関を取って、一番 近い列を実測で出す。
+#   ＝教訓 L-434・L-438（実物の式を突き合わせずに、名前と説明から「同じ／別物」を決めた）を機械で塞ぐ。
+# ★この検査は ❌ を出さない＝一覧と数字を出すだけ。合否は gen_signal_families.py --v9-test が出す。
+#   材料を足す・省くも一切しない（read-only）。V9 のファイルは1バイトも変えない（改造禁止・CLAUDE.md）。
+_V9_MATCH_SAME = 0.99999   # これを超えたら「うちのカタログに同じ意味の列が在る」
+_V9_MATCH_NEAR = 0.99      # これを超えたら「近い列は在るが、同じではない」
+_V9_INPUT_COLS = ("open", "high", "low", "close", "volume", "timestamp")
+
+
+def _v9_preprocess_frame(bars: pd.DataFrame, calc_rows: int = 30000) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """V9 の実物（strategies/cat_v9_decider.preprocess）をそのまま呼んで、指標の列を作る。
+    ★書き写さない＝実物を import して呼ぶ（写し間違いを構造的に無くす）。
+    ★read-only＝発注しない・V9 のファイルは1バイトも変えない。戻り＝(値決め窓の5分足, V9 の指標の列)。"""
+    import importlib.util
+    import json as _json
+    p = _V9_ROOT / "strategies/cat_v9_decider.py"
+    if not p.exists():
+        raise FileNotFoundError(f"V9 の実物が無い: {p}")
+    spec = importlib.util.spec_from_file_location("_cat_v9_decider_readonly", p)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)                                  # type: ignore[union-attr]
+    pj = _V9_ROOT / "config/cat_params_v9.json"
+    prm = _json.loads(pj.read_text(encoding="utf-8")) if pj.exists() else {}
+    _nm, a0, b0 = _insp_windows()[0]                              # 値決め窓（採点窓は1バーも使わない）
+    win = bars.loc[(bars.index >= a0) & (bars.index < b0)].iloc[-calc_rows:]
+    out = mod.preprocess(win.reset_index(), prm)                  # preprocess は timestamp を列で欲しがる
+    out.index = win.index                                         # 行の順も本数も変わらない（中で reset するだけ）
+    keep = [c for c in out.columns
+            if c not in _V9_INPUT_COLS and not c.startswith("filter_")
+            and pd.api.types.is_numeric_dtype(out[c]) and not pd.api.types.is_bool_dtype(out[c])]
+    return win, out[keep]
+
+
+def _v9_price_kinds(bars: pd.DataFrame, calc_rows: int = 3000, k: float = 2.0) -> dict:
+    """V9 の各列が『値段の単位』か（4本値を k 倍すると値も変わるか）を実測で分ける。
+    ★検査13 と同じやり方。値段の単位の列は、うちは H6（価格非依存）で % の形に直して持っているので、
+      『対応なし』と出ても材料の穴とは限らない＝その区別をこの欄で出す（隠さない）。"""
+    _w1, a = _v9_preprocess_frame(bars, calc_rows)
+    scaled = bars.copy()
+    for c in ("open", "high", "low", "close"):
+        if c in scaled.columns:
+            scaled[c] = pd.to_numeric(scaled[c], errors="coerce") * k
+    _w2, b = _v9_preprocess_frame(scaled, calc_rows)
+    out = {}
+    for c in a.columns:
+        if c not in b.columns:
+            continue
+        u = pd.to_numeric(a[c], errors="coerce").to_numpy(dtype=float)
+        v = pd.to_numeric(b[c], errors="coerce").to_numpy(dtype=float)
+        m = np.isfinite(u) & np.isfinite(v)
+        if not m.any():
+            out[c] = "測れない"; continue
+        rel = np.abs(u[m] - v[m]) / (np.abs(u[m]) + 1e-12)
+        out[c] = "値段の単位" if float(np.nanmax(rel)) > 1e-9 else "値段に依らない"
+    return out
+
+
+def _v9_col_matches(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
+                    calc_rows: int = 30000, rows: int = 20000, fake=None) -> dict:
+    """V9 の各列に、うちのカタログのどの列が一番 近いかを実測で出す。戻り＝機械が読む形。
+
+    ★1本ずらしても測る。V9 は「1本前の値」で判定する列を持つ（location_prev は .shift(1)＝
+      cat_v9_decider.py:125）。ずらさずに測ると、同じ式の列でも別物に見える（実測＝0.906 まで落ちた）。
+    fake は番人専用＝わざと作った列を V9 側に混ぜて、この検査が期待どおりに判定するかを確かめる。"""
+    win, v9 = _v9_preprocess_frame(bars, calc_rows)
+    if fake is not None:
+        v9 = v9.copy()
+        for k, s in fake(win).items():
+            v9[k] = s
+    cat = catalog or build_catalog(cfg)
+    take = rows + 1                                               # 1本ずらして測るぶんを1本ぶん多く取る
+    vals, names, skipped_ours = [], [], []
+    for name, fn, _d in cat:
+        try:
+            s = pd.to_numeric(fn(win), errors="coerce")
+        except Exception as e:                                    # noqa: BLE001
+            skipped_ours.append((name, f"計算できず: {str(e)[:40]}")); continue
+        if s is None:
+            skipped_ours.append((name, "None を返した")); continue
+        v = s.to_numpy(dtype=float)[-take:]
+        if len(v) < take or not np.isfinite(v).all():
+            skipped_ours.append((name, "この本数では欠けが残る（暖機が終わらない）")); continue
+        if np.nanstd(v) == 0:
+            skipped_ours.append((name, "値が動かない（この窓では一定）")); continue
+        vals.append(v); names.append(name)
+    if len(names) < 2:
+        return dict(rows=0, ours=names, skipped_ours=skipped_ours, matches=[], skipped_v9=[])
+    xa = np.column_stack(vals)
+
+    def _rank(a: np.ndarray) -> np.ndarray:
+        try:
+            from scipy.stats import rankdata as _rankdata
+            return _rankdata(a, axis=0) if a.ndim == 2 else _rankdata(a)
+        except Exception:                                         # noqa: BLE001
+            return (np.argsort(np.argsort(a, axis=0), axis=0).astype(float) if a.ndim == 2
+                    else np.argsort(np.argsort(a)).astype(float))
+
+    def _z(a: np.ndarray) -> np.ndarray:
+        z = a - a.mean(axis=0, keepdims=True)
+        s = z.std(axis=0, ddof=0, keepdims=True)
+        s[s == 0] = np.nan
+        return z / s
+
+    # ラグ0＝同じ足どうし ／ ラグ1＝うちの列の「1本前」と V9 の列（V9 の .shift(1) の列に効く）
+    lag_x = {0: xa[1:], 1: xa[:-1]}
+    lag_z = {k: (_z(v), _z(_rank(v))) for k, v in lag_x.items()}
+    matches, skipped_v9 = [], []
+    for col in v9.columns:
+        y = pd.to_numeric(v9[col], errors="coerce").to_numpy(dtype=float)[-take:][1:]
+        if len(y) < rows or not np.isfinite(y).all():
+            skipped_v9.append((col, "この本数では欠けが残る")); continue
+        if np.nanstd(y) == 0:
+            skipped_v9.append((col, "値が動かない（この窓では一定）")); continue
+        zy, zry = _z(y[:, None]), _z(_rank(y)[:, None])
+        cand = []
+        for lag, (zx, zrx) in lag_z.items():
+            cp = (zy.T @ zx / len(y))[0]
+            cs = (zry.T @ zrx / len(y))[0]
+            b = np.nan_to_num(np.maximum(np.abs(cp), np.abs(cs)), nan=0.0)
+            for i in np.argsort(-b)[:3]:
+                cand.append(dict(name=names[i], lag=lag, pearson=float(cp[i]),
+                                 spearman=float(cs[i]), score=float(b[i]),
+                                 family=(iref.find(names[i])[0] or {}).get("family", "？")))
+        cand.sort(key=lambda d: -d["score"])
+        top = cand[:3]
+        score = top[0]["score"] if top else 0.0
+        judge = ("同じ" if score >= _V9_MATCH_SAME else
+                 "近い" if score >= _V9_MATCH_NEAR else "対応なし")
+        matches.append(dict(v9=col, 判定=judge, score=score, top=top))
+    return dict(rows=int(xa.shape[0] - 1), ours=names, skipped_ours=skipped_ours,
+                matches=matches, skipped_v9=skipped_v9)
+
+
+def _insp_v9_columns(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> list[str]:
+    """検査14 V9 の実物の列 ↔ うちのカタログの列 の対応を実測で出す（値決め窓・5分足）。
+    ❌ は出さない＝対応表を直すかどうかは まこさんが決める（CC が勝手に消さない・足さない）。"""
+    r = _v9_col_matches(bars, cfg, catalog)
+    kinds = _v9_price_kinds(bars)
+    print(f"  V9 の実物（cat_v9_decider.preprocess）を そのまま呼んで作った列 "
+          f"{len(r['matches']) + len(r['skipped_v9'])} 本 × うちの材料 {len(r['ours'])} 列"
+          f"（値決め窓の {r['rows']} 本・5分足・ラグ0 と ラグ1 の両方で測る）")
+    if r["skipped_v9"]:
+        print(f"  この窓では測れなかった V9 の列 {len(r['skipped_v9'])} 件")
+        for nm, why in r["skipped_v9"]:
+            print(f"     ・{nm}: {why}")
+    same = [m for m in r["matches"] if m["判定"] == "同じ"]
+    near = [m for m in r["matches"] if m["判定"] == "近い"]
+    none = [m for m in r["matches"] if m["判定"] == "対応なし"]
+    print(f"  ★同じ（|相関| ≥ {_V9_MATCH_SAME}）= {len(same)} 本 ／ "
+          f"近い（≥ {_V9_MATCH_NEAR}）= {len(near)} 本 ／ 対応なし = {len(none)} 本")
+    print("  ★『値段の単位』の列は、うちは H6（価格非依存）で % の形に直して持っている＝"
+          "『対応なし』でも材料の穴とは限らない（この欄で区別する）")
+    for m in r["matches"]:
+        mark = {"同じ": "✅", "近い": "⚠️", "対応なし": "❌"}[m["判定"]]
+        t0 = m["top"][0]
+        kind = kinds.get(m["v9"], "？")
+        print(f"     {mark} V9 {m['v9']:20s} [{kind}] → うちの {t0['name']}"
+              f"（family {t0['family']}／{'同じ足' if t0['lag'] == 0 else 'うちの1本前'}"
+              f"／値の相関 {t0['pearson']:+.7f}／順位の相関 {t0['spearman']:+.7f}）")
+        for t in m["top"][1:]:
+            print(f"          2番手以下: {t['name']}"
+                  f"（{'同じ足' if t['lag'] == 0 else 'うちの1本前'}"
+                  f"／値 {t['pearson']:+.7f}／順位 {t['spearman']:+.7f}）")
+    holes = [m for m in none if kinds.get(m["v9"]) == "値段に依らない"]
+    print(f"  ★材料の穴の候補＝『対応なし』かつ『値段に依らない』= {len(holes)} 本"
+          + ("（" + "・".join(m["v9"] for m in holes) + "）" if holes else ""))
+    print("  ⚠️ この検査は ❌ を出さない（合否は gen_signal_families.py --v9-test）。"
+          "穴を埋めるかどうかは まこさんが決める（CC が勝手に材料を足さない）")
+    return []
 
 
 # ══ 材料検査（CP4 監査フィードバック②・2026-08-06・read-only）═══════════════
@@ -5181,6 +5412,43 @@ def selftest() -> None:
     if not _fake_ng:
         ng.append("検査11: 設定に無い本数を入れても ❌ が出ない（この検査が死んでいる）")
 
+    # ── 検査14（V9 の実物の列 ↔ うちの列 の対応を実測で決める）が生きているか（2026-08-11 新設）──
+    #   ★既知答え4件。①〜③は「対応表に書いた3件が、実測でもそう出るか」＝表と実物のずれを毎回 検出する。
+    #     ④は「無関係な列を混ぜたら『対応なし』と出るか」＝この検査が何でも『同じ』と言わないことの確認。
+    #   わざと作ったデータ（乱数の値動き）で回すので、実データのCSVが無くても回る。
+    import contextlib as _cl14
+    import io as _io14
+    _n14 = 1500
+    _rng14 = np.random.default_rng(7)
+    _px14 = 30000.0 * np.exp(np.cumsum(_rng14.normal(0, 0.0008, _n14)))
+    _idx14 = pd.date_range(SEARCH_START, periods=_n14, freq="5min")     # 値決め窓の中に置く
+    _bars14 = pd.DataFrame({"open": _px14, "high": _px14 * 1.0006, "low": _px14 * 0.9994,
+                            "close": _px14, "volume": 1.0 + np.abs(_rng14.normal(0, 1, _n14))},
+                           index=_idx14)
+    _bars14.index.name = "timestamp"
+    _want14 = {"rsi_short": "RSI21", "location_prev": "fib位置20", "entry_risk_score": "BB幅(20,2.0)"}
+    _cat14 = [c for c in cat if c[0] in set(_want14.values())]
+    if len(_cat14) != len(_want14):
+        ng.append(f"検査14: 既知答えに使う列がカタログに無い（在るのは {[c[0] for c in _cat14]}）")
+    else:
+        def _fake14(win14):
+            return {"番人_無関係": pd.Series(_rng14.normal(0, 1, len(win14)), index=win14.index)}
+        with _cl14.redirect_stdout(_io14.StringIO()):
+            _r14 = _v9_col_matches(_bars14, cfg, catalog=_cat14, calc_rows=_n14, rows=800, fake=_fake14)
+        _got14 = {m["v9"]: m for m in _r14["matches"]}
+        for _c14, _exp14 in _want14.items():
+            _m14 = _got14.get(_c14)
+            if _m14 is None:
+                ng.append(f"検査14: V9 の {_c14} を測れていない（既知答えが回らない）")
+            elif _m14["top"][0]["name"] != _exp14 or _m14["判定"] == "対応なし":
+                ng.append(f"検査14: V9 の {_c14} の相手が {_m14['top'][0]['name']}"
+                          f"（判定 {_m14['判定']}）＝対応表の {_exp14} と食い違う")
+        if _c14 := _got14.get("番人_無関係"):
+            if _c14["判定"] != "対応なし":
+                ng.append(f"検査14: 無関係な列を『{_c14['判定']}』と言う（何でも同じだと言う＝検査が死んでいる）")
+        else:
+            ng.append("検査14: 番人が混ぜた列が測られていない")
+
     # ── RCI の速い実装が、元の実装と1つも違わないか（2026-08-11・段6 の 6-8 で速くした）──
     #   同じ値段があるとき（平均順位）と、欠けがあるときの2つを、わざと作ったデータで確かめる。
     _rng = np.random.default_rng(0)
@@ -5225,6 +5493,12 @@ def build_parser():
                     help="Entry 候補観察＝場面ID（observe_config.json の scenes・例 S2＝まだ玉のない新候補の層1）")
     ap.add_argument("--inspect", action="store_true",
                     help="データと指標の検査（歩0・5段・read-only）＝5分足CSVのパスを1つ渡す（売買記録は使わない）")
+    ap.add_argument("--cols", default=None,
+                    help="--inspect と一緒に使う＝測る材料の列を名前で絞る（正規表現・例 'RSI.*傾き'）。"
+                         "材料を足した時に、足した列だけを確かめるため。絞ったことは出力の冒頭に印字する")
+    ap.add_argument("--only", default=None,
+                    help="--inspect と一緒に使う＝走らせる検査の番号（例 14 や 11,14）。"
+                         "指定した検査だけを走らせる（全部だと2時間10分かかる・一部だけ走らせたことは出力に印字する）")
     ap.add_argument("--plan", action="store_true",
                     help="検証計画だけを自動生成して印字（本走しない・まこさんへ提出する1枚）")
     ap.add_argument("--config", default=None, help="observe_config.json のパス（既定は同ディレクトリ）")
@@ -5258,7 +5532,7 @@ if __name__ == "__main__":
             if not path:
                 ap.error("--inspect には 5分足CSV のパスが必要（売買記録は使わない）")
             with _Tee(_out_path("inspect", pathlib.Path(path).stem)):
-                inspect_data(path, a.config)
+                inspect_data(path, a.config, a.only, a.cols)
         elif a.scene:
             if a.plan:
                 plan_scene(a.scene, a.config)

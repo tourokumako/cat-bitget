@@ -4084,6 +4084,8 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "ADX": dict(k="トレンド", note="向きを持たないがトレンドの強さの計測が主用途（Wilder）"),
     "DI差": dict(k="トレンド"), "MACD線%": dict(k="トレンド"), "MACDヒスト%": dict(k="トレンド"),
     "MACDシグナル線%": dict(k="トレンド"), "EMA傾き": dict(k="トレンド"),
+    # ★RSI傾き は 2026-08-11 に足して同じ日に省いた（列で持たず form=slope で作る）。経緯は
+    #   observe_diag の build_catalog の RSI の所と、worklog 20260811 §44。
     "Supertrend": dict(k="トレンド", note="位置系でもあるが符号がトレンドの向きそのもの＝主用途トレンド"),
     "転換線": dict(k="トレンド", note="位置系でもあるが一目の転換判断が主用途"),
     "基準線": dict(k="トレンド", note="同上"),

@@ -256,6 +256,47 @@ def _source_note(fam: str, ext_ok: bool) -> str:
     return f"うちの自前の式／{lib}／{chk}"
 
 
+def forms_table() -> list[dict]:
+    """★使い方（条件の形）の一覧を、実物から機械で引く（まこさん指示 2026-08-11「すべて自動生成にして」）。
+
+    引く先は2つ。どちらも実物で、この道具は1行も手で書かない。
+      ①形の名前と数 … engine_tuner_exec.FORMS（実行器が本当に実行できる形＝これが正）
+      ②何をするか・必要な値 … engine_tuner_step2_condition_format.md §2.2 の表（人が読む説明）
+    ★①に在って②に無い形が1つでもあれば ❌ にする（実物と説明のずれを黙らせない）。
+    ★なぜ材料の正本に入れるか＝「材料（指標）に列が無い＝作れない」と CC が誤判定した事案
+      （2026-08-11・RSI の差）の対策。指標の一覧と使い方の一覧が別の場所に在ると突き合わせられない。
+    """
+    import engine_tuner_exec as ex
+    doc = _RATCHET / "engine_tuner_step2_condition_format.md"
+    rows, ng = [], []
+    text = doc.read_text(encoding="utf-8") if doc.exists() else ""
+    desc = {}
+    for line in text.splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) != 4:
+            continue
+        key = cells[0].split()[0]                      # 「level 水準」→「level」
+        if key in ex.FORMS:
+            desc[key] = dict(和名=cells[0], 材料=cells[1], 必要な値=cells[2], 実例=cells[3])
+    # ★入れ子の欄の意味＝streak・within_n は「外側になる形」（内側に条件を1つ包む）。
+    #   それ以外は「内側に置ける」（設計書 §2.2 の逐語「単純形＝入れ子形以外の全部」）。
+    for f in ex.FORMS:
+        nest = "外側になる形（中に条件を1つ包む）" if f in ex.NEST_FORMS else "内側に置ける"
+        d = desc.get(f)
+        if d is None:
+            ng.append(f)
+            rows.append(dict(形=f, 和名="？", 材料="？", 必要な値="？", 実例="？", 入れ子=nest))
+            continue
+        # 「level 水準」→「水準」（形の名前は左の欄に在るので、説明だけにする）
+        wa = d["和名"].split(" ", 1)[1] if " " in d["和名"] else d["和名"]
+        rows.append(dict(形=f, 和名=wa, 材料=d["材料"], 必要な値=d["必要な値"],
+                         実例=d["実例"], 入れ子=nest))
+    return dict(rows=rows, ng=ng, n_forms=len(ex.FORMS),
+                doc=".claude/ratchet/" + doc.name)
+
+
 def build_body() -> dict:
     """表の中身を作る（正本から機械で引く）。"""
     rbl = _roles_by_lineage()
@@ -436,6 +477,31 @@ def render_md(body: dict) -> str:
                 L.append(f"| {k} | {s}（{len(v)} 通り・数字が2つ以上の指標は組で1通り） |")
             else:
                 L.append(f"| {k} | {' 本・'.join(str(x) for x in v)} 本（{len(v)} 通り） |")
+        # ★★使い方（条件の形）の一覧＝2026-08-11 まこさん指示で材料の正本に入れた。
+        #   逐語＝「一覧の正本は materials.md だと思うけど。そこには使い方一覧は入れないの？」
+        #        「すべて自動生成にして」。だから この節は1行も手で書かず、実物から機械で引く。
+        _fm = forms_table()
+        L += ["", "## ★5｜使い方の一覧（条件の形）＝指標をどう条件にするか", "",
+              "**★この節は機械が実物から引いて書きます（手書きゼロ）。**",
+              f"形の名前と数＝`engine_tuner_exec.py` の `FORMS`（実行器が本当に実行できる形）。",
+              f"何をするか・必要な値＝`{_fm['doc']}` の §2.2 の表。", "",
+              "**なぜ材料の正本に入れるか。**指標の一覧だけを見て「この列が無い＝engine_tuner は作れない」と",
+              "判定すると間違えます。**2026-08-11 に実際に間違えました**（RSI の差の列が無いことを理由に",
+              "「作れない」と報告したが、下の `slope` で作れた）。**指標と使い方は、同じ1枚で突き合わせます。**", "",
+              f"**いま実行器が実行できる形＝{_fm['n_forms']} 種類。**", "",
+              "| 形 | 何をするか | 使う材料 | 必要な値 | 実例 | 入れ子 |",
+              "|---|---|---|---|---|---|"]
+        for r in _fm["rows"]:
+            L.append(f"| `{r['形']}` | {r['和名']} | {r['材料']} | {r['必要な値']} | {r['実例']} | {r['入れ子']} |")
+        if _fm["ng"]:
+            L += ["", f"**❌ 実行器に在るのに説明が見つからない形が {len(_fm['ng'])} 件**"
+                      f"（{'・'.join(_fm['ng'])}）＝実物と説明がずれています。"]
+        else:
+            L += ["", "**✅ 実行器の形すべてに説明が付いています（実物と説明のずれ 0 件）。**"]
+        L += ["", "**★使い方の側にも「決まった数字だけ」の縛りがあります。**",
+              "例＝`slope`（いまの値 − n本前の値）の n として engine_tuner が選べるのは、",
+              "`recipes/search_limits.json` の `int_grid` に並んだ数字だけです。**ここも ★3 と同じで、",
+              "マイルストーン③（範囲で探せるようにする）の対象です。**"]
         _ok = sum(1 for s in body["skip_rows"] if s.get("承認", "").startswith("✅"))
         _po = sum(1 for s in body["skip_rows"] if s.get("承認", "").startswith("◯"))
         _no = len(body["skip_rows"]) - _ok - _po
