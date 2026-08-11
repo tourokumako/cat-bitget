@@ -431,10 +431,10 @@ def parts_matrix() -> dict:
             e_ok = f"❌ 拒否（{str(e)[:40]}）"
         except Exception as e:
             e_ok = f"❌ {type(e).__name__}"
-        # ② 生成器＝_pair_materials の決まりをそのまま当てる
-        special = {a, b} == {"Stoch%K", "Stoch%D"}
-        same_multi = (a == b) and len({str(x) for x in pa}) >= 2
-        g_ok = "✅ 作る" if (special or same_multi) else "❌ 作らない（別の指標どうし）"
+        # ② 生成器＝決まりの実物（engine_tuner_gen.pair_allowed）を呼ぶ。
+        #    ★決まりをここに書き写さない（2026-08-11・段C の C-5）。書き写すと、生成器だけ直って
+        #      この判定が古いまま残る＝「直したのに ❌ のまま」「直していないのに ✅」が起きる。
+        g_ok = "✅ 作る" if gen.pair_allowed(a, b, pa, pb) else "❌ 作らない（別の指標どうし）"
         rows.append(dict(name=cc["name"], a=a, b=b, exec_ok=e_ok, gen_ok=g_ok, note=cc.get("note", "")))
 
     ng = []

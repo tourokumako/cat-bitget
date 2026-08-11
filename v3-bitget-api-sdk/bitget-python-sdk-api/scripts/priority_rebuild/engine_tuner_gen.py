@@ -270,41 +270,98 @@ def _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count, tabl
             continue                                            # 対応表＝役割に使えない系統
         if role != "trigger" and (role, kind) in seen_rolekind:
             continue
-        if limits.get("k_max") is not None and kind_count.get(kind, 0) >= limits["k_max"]:
+        _km, _ = ex.cap_of(limits, "k_max")
+        if _km is not None and kind_count.get(kind, 0) >= _km:
             continue
         return m
     raise SampleError(f"役割 {role} の材料を60回引いても表と G3 を満たせない")
 
 
+def _pkey(p):
+    """数字の大小を比べるための鍵。数字は「1つ」「並び」「無し」の3通りある（material_pool の説明）。
+    無し＜数字1つ・並び。並びは先頭から順に比べる（MACD線%(12,26) と (12,26,9) なら前者が小さい）。"""
+    if p is None:
+        return (0,)
+    if isinstance(p, (tuple, list)):
+        return (1,) + tuple(float(x) for x in p)
+    return (1, float(p))
+
+
+def same_fn_family_pairs(families) -> list[tuple[str, str]]:
+    """同じライブラリ関数から出た family の組を、対応表から機械で作る（D15・2026-08-11・段C の C-5）。
+
+    ★出どころ＝indicator_reference_diag.INDUSTRY_MAP（materials.md の「計算の出どころ」の欄と同じ）。
+      **手で一覧を書かない。**手で1件ずつ登録する形は 2026-08-08 のインシデント #15 と同じ形。
+    ★入れる法則＝「同じライブラリ関数から出た2本は組んでよい」。実測（2026-08-11）＝生成器が作らない
+      定番のクロス7件（MACD／VWMACD／ストキャスRSI／DI+ × DI−／一目 転換線×基準線／KST／FISHER）と、
+      コードに直書きだった例外1件（Stoch%K × %D）の8件すべてが この形。
+    """
+    byfn: dict[str, set] = {}
+    for f in families:
+        for fn in (iref.INDUSTRY_MAP.get(f, ((), ""))[0] or ()):
+            byfn.setdefault(fn, set()).add(f)
+    out = set()
+    for fs in byfn.values():
+        fl = sorted(fs)
+        for i in range(len(fl)):
+            for j in range(i + 1, len(fl)):
+                out.add((fl[i], fl[j]))
+    return sorted(out)
+
+
+def pair_allowed(a: str, b: str, pa, pb) -> bool:
+    """生成器が、この2つの family を『列2本の形』として組めるか。
+    ★決まりの実物はここ1か所だけ。gen_materials の定番のクロスの判定も、この関数を呼ぶ
+      （決まりを2か所に書き写すと、片方だけ直って腐る）。"""
+    if a == b:
+        return len({str(x) for x in (pa or ())}) >= 2
+    return (min(a, b), max(a, b)) in set(same_fn_family_pairs([a, b]))
+
+
 def _pair_materials(rng, pool, tfs, role, table) -> list[dict]:
-    """列2本の形（cross/diff/touch）＝同 family の期間違い、または Stoch%K と %D の対。
-    D1＝対応表の系統×時間足・禁止3 を守る。"""
+    """列2本の形（cross/diff/touch）＝①同 family の期間違い ②同じライブラリ関数から出た別の family。
+    D1＝対応表の系統×時間足・禁止3 を守る。②は D15 の直し（2026-08-11・段C の C-5）。"""
     rr = table["roles"][role]
     tf_pool = _role_tfs(tfs, table, role)
     fams = {}
     for b in pool:
         if iref.FAMILY_LINEAGE[b["family"]]["k"] in rr["lineages"]:
             fams.setdefault(b["family"], []).append(b["param"])
+    # ①同じ指標のパラメータ違い2本 ／ ②同じライブラリ関数から出た別の指標2本
+    cands: list[tuple[str, object]] = [("same", f) for f, ps in fams.items()
+                                       if len({str(p) for p in ps}) >= 2]
+    cands += [("fn", pr) for pr in same_fn_family_pairs(fams)]
+    if not cands:
+        raise SampleError(f"役割 {role} で列2本の形を組める family が無い（表の系統の中）")
     for _ in range(30):
         tf = str(rng.choice(tf_pool))
-        if rng.random() < 0.4:
-            ks = sorted(set(fams.get("Stoch%K", [])) & set(fams.get("Stoch%D", [])))
-            if ks:
-                p = ks[int(rng.integers(len(ks)))]
-                pair = [{"family": "Stoch%K", "param": p, "tf": tf},
-                        {"family": "Stoch%D", "param": p, "tf": tf}]
-                if not any(_banned_pair(m, table) for m in pair):
-                    return pair
-        cands = [f for f, ps in fams.items() if len(set(ps)) >= 2]
-        if not cands:
-            raise SampleError(f"役割 {role} で列2本の形を組める family が無い（表の系統の中）")
-        f = str(rng.choice(cands))
-        # ★数字は「並び」のこともある（MACD線%(12,26) のような形）ので、値そのものでなく
-        #   並びの場所を引く（2026-08-11・段6 の 6-7）。int() に丸めると小数の数字が壊れる。
-        opts = sorted(set(fams[f]))
-        i1, i2 = rng.choice(len(opts), size=2, replace=False)
-        pair = [{"family": f, "param": opts[int(i1)], "tf": tf},
-                {"family": f, "param": opts[int(i2)], "tf": tf}]
+        kind, c = cands[int(rng.integers(len(cands)))]
+        if kind == "same":
+            # ★数字は「並び」のこともある（MACD線%(12,26) のような形）ので、値そのものでなく
+            #   並びの場所を引く（2026-08-11・段6 の 6-7）。int() に丸めると小数の数字が壊れる。
+            opts = sorted({str(p): p for p in fams[c]}.values(), key=_pkey)
+            i1, i2 = rng.choice(len(opts), size=2, replace=False)
+            lo, hi = sorted((int(i1), int(i2)))       # ★短い方を先に置く（まこさん OK 2026-08-11）
+            pair = [{"family": c, "param": opts[lo], "tf": tf},
+                    {"family": c, "param": opts[hi], "tf": tf}]
+        else:
+            fa, fb = c                                # type: ignore[misc]
+            oa = sorted({str(p): p for p in fams[fa]}.values(), key=_pkey)
+            ob = sorted({str(p): p for p in fams[fb]}.values(), key=_pkey)
+            # ★数字は「同じ回の呼び出しから出た2本」を組む＝並びの場所で揃える
+            #   （Stoch%K14 と Stoch%D14／MACD線%(12,26) と MACDシグナル線%(12,26,9)）。
+            #   本数が違うときだけ、それぞれ別に引く（揃えようがないため）。
+            if len(oa) == len(ob):
+                i = int(rng.integers(len(oa)))
+                pa_, pb_ = oa[i], ob[i]
+            else:
+                pa_, pb_ = oa[int(rng.integers(len(oa)))], ob[int(rng.integers(len(ob)))]
+            # ★別の指標どうしは、どちらを先に置くかの決まりが無い＝両方の向きを作る（乱数）。
+            #   「短い方を先に置く」は同じ指標のパラメータ違いにだけ効く決まり。
+            if rng.random() < 0.5:
+                fa, fb, pa_, pb_ = fb, fa, pb_, pa_
+            pair = [{"family": fa, "param": pa_, "tf": tf},
+                    {"family": fb, "param": pb_, "tf": tf}]
         if not any(_banned_pair(m, table) for m in pair):
             return pair
     raise SampleError(f"役割 {role} の列2本を30回引いても禁止3 を避けられない")
@@ -724,8 +781,12 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
     if not pool:
         raise SampleError("表に載っている部品が pool に1つも無い")
     fam_label = str(rng.choice(table["families"]))       # ①型を1つ引く（4型は共通の対応表＝ラベルは記録用）
-    lo, hi = limits["count_range"]
-    n_total = int(rng.integers(lo, hi + 1))
+    # ★条件の合計本数（まこさん決定 2026-08-12・逐語「Aはすべて上限ナシでいいのでは」）
+    #   上限の数字を持たない。作れなくなるところまで足して、その中から何本 残すかを一様に引く。
+    #   「作れなくなるところ」は、承認済みの型の表（役割 × 使える系統）と G3 から機械が決める＝
+    #   CC が数字を書かない。範囲が入っているとき（検収・過去の設定）は、これまでどおりその範囲から引く。
+    _cr, _ = ex.cap_of(limits, "count_range")
+    n_total = int(rng.integers(_cr[0], _cr[1] + 1)) if _cr is not None else None
     seen_rolekind: set = set()
     kind_count: dict = {}
     conds = []
@@ -738,32 +799,48 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
                 raise SampleError("G3 重複")
             seen_rolekind.add(key)
             kind_count[kind] = kind_count.get(kind, 0) + 1
-            if limits.get("k_max") is not None and kind_count[kind] > limits["k_max"]:
+            _km, _ = ex.cap_of(limits, "k_max")
+            if _km is not None and kind_count[kind] > _km:
                 raise SampleError("K_MAX 超過")
 
     trig = _make_cond(rng, "trigger", limits, pool, tfs, seen_rolekind, kind_count, table, side)
     _register(trig)
     conds.append(trig)
-    budget = dict(limits["role_max"])
-    for _ in range(n_total - 1):
-        avail = [r for r, b in budget.items() if b > 0]
+    _rm, _ = ex.cap_of(limits, "role_max")
+    budget = dict(_rm) if _rm is not None else None
+    state_roles = sorted(r for r in table["roles"] if r != "trigger")
+    while n_total is None or len(conds) < n_total:
+        avail = [r for r in state_roles if budget is None or budget.get(r, 0) > 0]
         if not avail:
             break
-        role = str(rng.choice(sorted(avail)))
-        for _try in range(20):
-            try:
-                c = _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, side)
-                _register(c)
+        # ★1つの役割で作れなくても、案を捨てない。ほかの役割を順に試して、
+        #   どの役割でも作れなくなったところで止める（2026-08-12）。
+        #   直す前は「その役割で20回 作れなかったら案を丸ごと捨てる」で、100本中19本が捨てられていた。
+        made = None
+        for role in rng.permutation(avail):
+            role = str(role)
+            for _try in range(20):
+                try:
+                    c = _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, side)
+                    _register(c)
+                    made = (role, c)
+                    break
+                except SampleError:
+                    continue
+            if made:
                 break
-            except SampleError:
-                continue
-        else:
-            raise SampleError(f"役割 {role} の条件を組めない")
-        budget[role] -= 1
-        conds.append(c)
+        if made is None:
+            break                                         # どの役割でも作れない＝ここが作れる最大
+        if budget is not None:
+            budget[made[0]] -= 1
+        conds.append(made[1])
+    if n_total is None and len(conds) > 1:
+        # ★上限を持たないとき＝作れた最大までの中から、何本 残すかを一様に引く（引き金は必ず残す）
+        conds = conds[:int(rng.integers(1, len(conds) + 1))]
     # つなぎ方＝flat all／if-then 入り（深さは limits.depth_max の内側）
+    _dm, _ = ex.cap_of(limits, "depth_max")
     kids: list = list(conds)
-    if len(conds) >= 3 and limits["depth_max"] >= 2 and rng.random() < 0.3:
+    if len(conds) >= 3 and (_dm is None or _dm >= 2) and rng.random() < 0.3:
         a = kids.pop(len(kids) - 1)
         b = kids.pop(len(kids) - 1)
         kids.append({"if": a, "then": b})
@@ -1494,9 +1571,11 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
 KENSHU_LIMITS = {
     # ★検収専用（§11 の値はまこさんが決める＝この値は生成器の機械の検収にだけ使い、本走・採否に使わない）
     "n_min": None, "r_min": None,
-    "role_max": {"env": 2, "sufficiency": 2, "location": 1},
-    "count_range": [3, 6], "k_max": 3,
-    "quantile_grid": ["q20", "q50", "q80"], "depth_max": 3, "p_max": 2,
+    # ★上限5件は 2026-08-12 まこさん決定で「無制限」（逐語「Aはすべて上限ナシでいいのでは」）。
+    #   本走の設定ファイルと同じにして、番人が本走と同じ道を通るようにする。
+    "role_max": ex.NO_CAP,
+    "count_range": ex.NO_CAP, "k_max": ex.NO_CAP,
+    "quantile_grid": ["q20", "q50", "q80"], "depth_max": ex.NO_CAP, "p_max": ex.NO_CAP,
     "state_mult_grid": [1.0], "int_grid": [3, 6, 12],
     # 保有時間の上限＝検収専用の範囲（本走は役割から決める＝resolve_hold_range・監査 4-19／要件 R6）
     "hold_bars": (1, 24), "hold_role": "検収専用",
@@ -1562,6 +1641,47 @@ def selftest() -> int:
     lane_bad = [r for r in structs if r["meta"].get("lane")]
     if lane_bad:
         ng.append("T1: 探索構造に lane が付いている（legacy 混入経路）")
+
+    # ── T1-C5 列2本の形の作り方（D15 の直し・2026-08-11・段C の C-5）───────────────────
+    #   ①同じ指標のパラメータ違いの2本は、短い方が必ず先に置かれる（＝ゴールデンクロスの向き）
+    #   ②別の指標どうしの2本は「同じライブラリ関数から出た」ものだけ（コードに直書きの例外を持たない）
+    #   ③定番のクロス8件（MACD・VWMACD・ストキャスRSI・DI+/DI−・一目・KST・FISHER・ストキャス）が
+    #     組める＝pair_allowed が実物の対応表 INDUSTRY_MAP から引いている
+    import inspect
+    _tbl5 = load_signal_table()
+    _p5 = []
+    for i in range(100):
+        _r5 = np.random.default_rng([55, 1, i])
+        for _role5 in _tbl5["roles"]:
+            try:
+                _p5.append(_pair_materials(_r5, pool, tfs_small, _role5, _tbl5))
+            except (SampleError, KeyError):
+                continue
+    if len(_p5) < 50:
+        ng.append(f"T1-C5: 列2本の組を100回×4役割 引いて {len(_p5)} 組しか出ない（引けていない）")
+    _rev = [pr for pr in _p5 if pr[0]["family"] == pr[1]["family"]
+            and _pkey(pr[0]["param"]) > _pkey(pr[1]["param"])]
+    if _rev:
+        ng.append(f"T1-C5 番人①: 同じ指標の2本で、長い方が先に置かれた組が {len(_rev)} 件"
+                  f"（例 {_rev[0][0]['family']} {_rev[0][0]['param']} → {_rev[0][1]['param']}）"
+                  "＝ゴールデンクロスの逆を作っている")
+    _bad5 = [pr for pr in _p5 if pr[0]["family"] != pr[1]["family"]
+             and not pair_allowed(pr[0]["family"], pr[1]["family"], [0], [0])]
+    if _bad5:
+        ng.append(f"T1-C5 番人②: 同じライブラリ関数から出ていない2本を組んだ組が {len(_bad5)} 件"
+                  f"（例 {_bad5[0][0]['family']} × {_bad5[0][1]['family']}）")
+    _src5 = "\n".join(ln.split("#", 1)[0] for ln in inspect.getsource(_pair_materials).splitlines())
+    if "Stoch%K" in _src5:                                    # 説明の文（#より右）は外して見る
+        ng.append("T1-C5 番人②: _pair_materials に指標の名前が直書きで残っている"
+                  "（法則でなく手書きの一覧に戻っている＝インシデント #15 と同じ形）")
+    _want5 = [("MACD線%", "MACDシグナル線%"), ("VWMACD線%", "VWMACDシグナル%"),
+              ("StochRSI%K", "StochRSI%D"), ("DI+", "DI-"), ("転換線", "基準線"),
+              ("KST", "KSTシグナル"), ("FISHER", "FISHERシグナル"), ("Stoch%K", "Stoch%D")]
+    _ng5 = [f"{a} × {b}" for a, b in _want5 if not pair_allowed(a, b, [0], [0])]
+    if _ng5:
+        ng.append(f"T1-C5 番人③: 定番のクロスを組めない（{'／'.join(_ng5)}）")
+    if pair_allowed("RSI", "ADX", [7, 21], [7, 21]):
+        ng.append("T1-C5 番人③: 関係の無い2本（RSI × ADX）まで組めると言う＝法則が効いていない")
 
     # T2 BH 法の既知答え（q=0.05・p=[0.001,0.01,0.02,0.04,0.2,0.9] → 3 本採択）
     sel = bh_select([0.001, 0.01, 0.02, 0.04, 0.2, 0.9], 0.05)
@@ -1994,49 +2114,53 @@ def selftest() -> int:
     df14 = attach_materials(df14, sts14)
     geo14 = _geo_of(df14)          # 本走と同じ作り方（帯の4隅・中央・帯内位置%・W%）
     fired14: set = set()
-    # 玉の動きで切り替わる枝＝発火の条件（fire）を持つものだけを見る（常に置く枝は対象外）
-    state_names = {"TIMEDOWN", "BEEXIT", "BESTALE", "MFEEXIT", "REVIND", "BREAKOUT",
-                   "MAECUTADDS", "FINSTOP"}
+    # ★玉の動きで切り替わる枝の名前は、承認済みの表から機械で引く（手で一覧を書かない・2026-08-12）。
+    #   直す前は手書きの8件で、そのうち3件（TIMEDOWN／REVIND／MAECUTADDS）が表に存在しない名前だった。
+    #   ＝MAECUT_ADDS（表の正しい名前）を、この番人は一度も見ていなかった。
+    state_names = {k for k, v in et14["branch_types"].items() if v.get("fire")}
+    if not state_names:
+        t14.append("表から『玉の動きで切り替わる枝』を1つも引けない（表の読み方が実物とずれている）")
+    _miss14 = state_names - {b["name"] for st in sts14 for b in st["exits"]}
     picked14 = None
     for st in sts14:
         if not (state_names & {b["name"] for b in st["exits"]}):
             continue
-        try:
-            r14 = ex.run_recipe(df14, st, qtable=build_qtable(df14, geo14, [st], lm14["quantile_grid"]))
-        except BaseException:
-            continue
-        tr = r14[0] if isinstance(r14, tuple) else r14
-        if tr is None or not len(tr):
-            continue
-        got = {t.get("exit_reason") for t in (tr.to_dict("records") if hasattr(tr, "to_dict") else tr)}
+        st_reasons = {b["reason"] for b in st["exits"] if b["name"] in state_names and b.get("fire")}
         # ★どの枝で決済したかを決済の名前で見分けるので、他の枝も出す名前は除く。
         #   例＝利確の名前（TP_FILLED）は、いつも置く利確の枝も出す＝状態機械の枝の発火とは言えない。
-        st_reasons = {b["reason"] for b in st["exits"] if b["name"] in state_names and b.get("fire")}
         st_reasons -= {b["reason"] for b in st["exits"]
                        if not (b["name"] in state_names and b.get("fire"))}
-        if got & st_reasons:
-            fired14 |= got & st_reasons
-            picked14 = st
-            break
-    if not fired14:
-        t14.append("状態機械の枝が1本も発火しなかった（完了の線④＝発火した売買記録が出ること）")
-    elif picked14 is not None:
-        # メタ確認＝わざと条件を外すと発火しなくなるか（枝の発火の門を届かない値にする）
-        broke = copy.deepcopy(picked14)
+        if not st_reasons:
+            continue
+        # ★発火の証拠は「枝が在ると出て、枝を壊すと消える」名前だけ（2026-08-12・厳しくした）。
+        #   直す前は「出た」だけで合格にしていた。実行器は建値待機の中で自分でも BE_EXIT を出す
+        #   （engine_tuner_exec.py:1344）ので、「出た」だけでは枝が発火した証拠にならない。
+        broke = copy.deepcopy(st)
         for b in broke["exits"]:
             if b["name"] in state_names and b.get("fire"):
                 # 発火の条件を「絶対に満たさないもの」に丸ごと置き換える（保有 10^6 分＝約2年）。
                 # 条件の中身を1本ずつ弄る形だと、値を持たない形（傾き・交差）が壊れず残る。
                 b["fire"] = {"all": [_state_cond("hold_min", "above", {"n": 10 ** 6})]}
         try:
+            r14 = ex.run_recipe(df14, st, qtable=build_qtable(df14, geo14, [st], lm14["quantile_grid"]))
             r14b = ex.run_recipe(df14, broke,
                                  qtable=build_qtable(df14, geo14, [broke], lm14["quantile_grid"]))
-            trb = r14b[0] if isinstance(r14b, tuple) else r14b
-            gotb = {t.get("exit_reason") for t in (trb.to_dict("records") if hasattr(trb, "to_dict") else (trb or []))}
-            if fired14 & gotb:
-                t14.append(f"条件を届かない値にしても枝が発火した（門が飾り）: {sorted(fired14 & gotb)}")
-        except BaseException as e:
-            t14.append(f"メタ確認の走行が落ちた: {str(e)[:60]}")
+        except BaseException:
+            continue
+        tr = r14[0] if isinstance(r14, tuple) else r14
+        trb = r14b[0] if isinstance(r14b, tuple) else r14b
+        if tr is None or not len(tr):
+            continue
+        got = {t.get("exit_reason") for t in (tr.to_dict("records") if hasattr(tr, "to_dict") else tr)}
+        gotb = {t.get("exit_reason") for t in (trb.to_dict("records") if hasattr(trb, "to_dict") else (trb or []))}
+        only = (got & st_reasons) - gotb                  # 枝を壊すと消える＝枝が出した証拠
+        if only:
+            fired14 |= only
+            picked14 = st
+            break
+    if not fired14:
+        t14.append("状態機械の枝が『在ると出て、壊すと消える』決済を1つも出さなかった"
+                   "（完了の線④＝発火した売買記録が出ること）")
     ng += [f"T14: {x}" for x in t14]
 
     print("=" * 80)

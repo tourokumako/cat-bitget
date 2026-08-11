@@ -357,10 +357,27 @@ def _regime_series(df: pd.DataFrame, recipe: dict) -> tuple[np.ndarray, np.ndarr
     return ok, up
 
 
+NO_CAP = "無制限"
+# ★上限を置かない、という まこさんの決定を表す印（2026-08-12・逐語「Aはすべて上限ナシでいいのでは」）。
+#   null（未確定＝まこさん待ち）と区別する。null は本走を止める（fail-closed）が、この印は止めない。
+#   背景＝上限5件（k_max・role_max・count_range・depth_max・p_max）は 2026-08-01 に CC が一度に埋めた
+#   たたき台で、実物と照らすと k_max と count_range の根拠が実物と食い違っていた（2026-08-12 に機械で確認）。
+
+
+def cap_of(lm: dict, key: str):
+    """上限を引く。戻り＝(上限の値, まこさん待ちか)。
+    ★『無制限』＝上限を置かない（まこさん決定）＝待ちでない。None＝未確定＝待ち。"""
+    v = lm.get(key)
+    if v == NO_CAP:
+        return None, False
+    return v, v is None
+
+
 def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | None = None) -> dict:
     """スキーマ検証器＝G1〜G6。壊れたレシピは RecipeError（読み込み拒否）。
     limits＝まこさん判断の値（n_min/k_max/depth_max/p_max/r_min/role_max/count_range）。
     未確定（None）は『値待ち』として報告し、構造の検査だけ行う（§11＝値はまこさんが決める）。
+    『無制限』（NO_CAP）は上限を置かない＝その検査を飛ばす（まこさん決定 2026-08-12）。
     samples＝列ごとの補正後独立標本数（検査5 の機械出力・G2 の基礎データ）。戻り値＝機械出力の報告。"""
     lm = limits or {}
     rep = {"値待ち": [], "legacy使用": [], "経路数": 0, "条件数": 0, "系統": {}, "触れた列": []}
@@ -443,10 +460,10 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
     # 発火経路＝最上位 any の各枝（設計書 §2.1・P22 型 OR・まこさん GO）
     paths = tree["any"] if (isinstance(tree, dict) and set(tree) == {"any"}) else [tree]
     rep["経路数"] = len(paths)
-    p_max = lm.get("p_max")
-    if p_max is None:
+    p_max, _wait = cap_of(lm, "p_max")
+    if _wait:
         rep["値待ち"].append("P_MAX（経路数の上限・§11-8）")
-    elif len(paths) > p_max:
+    elif p_max is not None and len(paths) > p_max:
         _fail("G1", f"発火経路が {len(paths)} 本 > P_MAX={p_max}")
     all_conds = []
     for pi, path in enumerate(paths):
@@ -474,25 +491,25 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
             _fail("G5", f"条件{i + 1}: 役割が無い/不正: {c.get('role')}（G1 の前提＝役割の欄）")
         _check_cond(c, lane, f"entry条件{i + 1}", rep["legacy使用"])
     rep["条件数"] = len(all_conds)
-    cr = lm.get("count_range")
-    if cr is None:
+    cr, _wait = cap_of(lm, "count_range")
+    if _wait:
         rep["値待ち"].append("条件の合計本数の範囲（§11-4）")
-    elif not (cr[0] <= len(all_conds) <= cr[1]):
+    elif cr is not None and not (cr[0] <= len(all_conds) <= cr[1]):
         _fail("G5", f"条件の合計本数 {len(all_conds)} が範囲 {cr} の外")
-    role_max = lm.get("role_max")
-    if role_max is None:
+    role_max, _wait = cap_of(lm, "role_max")
+    if _wait:
         rep["値待ち"].append("E_MAX/S_MAX/L_MAX（役割ごとの本数上限・§11-3）")
-    else:
+    elif role_max is not None:
         from collections import Counter
         rc = Counter(c["role"] for c in all_conds)
         for r, mx in role_max.items():
             if rc.get(r, 0) > mx:
                 _fail("G5", f"役割 {r} が {rc[r]} 本 > 上限 {mx}")
-    dmax = lm.get("depth_max")
+    dmax, _wait = cap_of(lm, "depth_max")
     depth = _tree_depth(tree)
-    if dmax is None:
+    if _wait:
         rep["値待ち"].append("木の深さ上限（§11-7）")
-    elif depth > dmax:
+    elif dmax is not None and depth > dmax:
         _fail("G5", f"つなぎ木の深さ {depth} > 上限 {dmax}")
     # G3 同系統の重ね掛け制限（同一系統は同一役割に1本まで＝構造規則・K_MAX＝まこさん）
     seen_role_kind = set()
@@ -514,10 +531,10 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
                 _fail("G3", f"同一系統 {kind} を同一役割 {c.get('role')} に2本（1本まで）")
             seen_role_kind.add(key)
             kind_count[kind] += 1
-    k_max = lm.get("k_max")
-    if k_max is None:
+    k_max, _wait = cap_of(lm, "k_max")
+    if _wait:
         rep["値待ち"].append("K_MAX（同系統のレシピ全体での上限・§11-5）")
-    else:
+    elif k_max is not None:
         for kind, n in kind_count.items():
             if n > k_max:
                 _fail("G3", f"系統 {kind} が {n} 本 > K_MAX={k_max}")

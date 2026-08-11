@@ -4225,13 +4225,133 @@ def _v9_price_kinds(bars: pd.DataFrame, calc_rows: int = 3000, k: float = 2.0) -
     return out
 
 
+def _v9_rank(a: np.ndarray) -> np.ndarray:
+    """順位に直す（同じ値は平均順位）。順位の相関を出すために使う。"""
+    try:
+        from scipy.stats import rankdata as _rankdata
+        return _rankdata(a, axis=0) if a.ndim == 2 else _rankdata(a)
+    except Exception:                                             # noqa: BLE001
+        return (np.argsort(np.argsort(a, axis=0), axis=0).astype(float) if a.ndim == 2
+                else np.argsort(np.argsort(a)).astype(float))
+
+
+def _v9_z(a: np.ndarray) -> np.ndarray:
+    """列ごとに平均0・ばらつき1へ直す（相関を行列の掛け算1回で出すため）。"""
+    z = a - a.mean(axis=0, keepdims=True)
+    s = z.std(axis=0, ddof=0, keepdims=True)
+    s[s == 0] = np.nan
+    return z / s
+
+
+# ── C-4｜うちの材料に「条件の部品」を当てた列とも比べる（2026-08-11・段C の C-4）──────────────
+# ★なぜ要るか。V9 の rsi_slope_short は「RSI21 の3本差分」（cat_v9_decider.py:96 の
+#   df["rsi_short"].diff(short_rsi_slope_n)／本数は同 :93-94 と config/cat_params_v9.json:41-42 で
+#   SHORT_RSI_PERIOD=21・SHORT_RSI_SLOPE_N=3）。うちには RSI21 が在り、engine_tuner には
+#   slope（いまの値 − n本前の値）という部品が在るので、組み合わせれば作れる。
+#   ところが検査14 は「うちの列を、そのままの形でしか」比べていなかったので、これを材料の穴と誤報していた。
+# ★当てる部品は materials.md ★6 の13個から作る4種だけ（CC が思いつきで足さない）。
+#   そのまま＝value ／ n本前との差＝value・lag・sub（slope の中身）／ m本の平均＝value・ma ／
+#   m本の平均の n本前との差＝value・ma・lag・sub（slope_avg の中身）。
+# ★n と m の数字は recipes/search_limits.json の int_grid から機械で引く（CC が数字を決めない）。
+# ★式は実行器 engine_tuner_exec.py:777-791 と同じ（slope＝a − n本前 ／ slope_avg＝MA(m) − その n本前）。
+# ★限界（先に書く）＝当てるのは部品を1〜2段 重ねたところまで。3段以上は見ない。
+#   ＝「本当は作れるのに、穴だと言う」ことは残る。逆（作れないのに、穴でないと言う）は起きない。
+#   ＝言い過ぎる側に倒している。
+_V9_PART_GRID_PATH = pathlib.Path(__file__).resolve().parent / "recipes" / "search_limits.json"
+
+
+def _v9_part_grid() -> list[int]:
+    """部品の n・m に使う数字を recipes/search_limits.json の int_grid から引く（手で書かない）。"""
+    import json as _json
+    g = _json.loads(_V9_PART_GRID_PATH.read_text(encoding="utf-8")).get("int_grid")
+    if not g:
+        raise ValueError(f"int_grid が読めない: {_V9_PART_GRID_PATH}")
+    return [int(x) for x in g]
+
+
+def _v9_part_variants(grid: list[int]) -> list[dict]:
+    """当てる部品の組み合わせ（4種）。warm＝暖機（先頭の何行が使えないか）。"""
+    def _ma(a: np.ndarray, m: int) -> np.ndarray:              # 実行器と同じ pd の rolling 平均
+        return pd.DataFrame(a).rolling(m).mean().to_numpy()
+
+    def _dn(a: np.ndarray, n: int) -> np.ndarray:              # いまの値 − n本前の値
+        d = np.full_like(a, np.nan)
+        d[n:] = a[n:] - a[:-n]
+        return d
+
+    out = [dict(kind="そのまま", label="そのまま", warm=0,
+                parts=["value"], fn=lambda a: a)]
+    for n in grid:
+        out.append(dict(kind="n本前との差", label=f"{n}本前との差", warm=n,
+                        parts=["value", "lag", "sub"],
+                        fn=(lambda n_: (lambda a: _dn(a, n_)))(n)))
+    for m in grid:
+        out.append(dict(kind="m本の平均", label=f"{m}本の平均", warm=m,
+                        parts=["value", "ma"],
+                        fn=(lambda m_: (lambda a: _ma(a, m_)))(m)))
+    for m in grid:
+        for n in grid:
+            out.append(dict(kind="m本の平均の n本前との差",
+                            label=f"{m}本の平均の {n}本前との差", warm=n + m,
+                            parts=["value", "ma", "lag", "sub"],
+                            fn=(lambda m_, n_: (lambda a: _dn(_ma(a, m_), n_)))(m, n)))
+    return out
+
+
+def _v9_part_matches(v9: pd.DataFrame, xa: np.ndarray, names: list[str], cols: list[str],
+                     take: int, rows: int, grid: list[int]) -> dict:
+    """『対応なし』と出た V9 の列だけ、うちの材料に部品を当てた列とも比べる。
+    戻り＝{V9 の列名: 一番 近かった部品つきの列}。作れる＝|相関| が _V9_MATCH_SAME 以上。"""
+    ys = {}
+    for col in cols:
+        y = pd.to_numeric(v9[col], errors="coerce").to_numpy(dtype=float)[-take:]
+        if len(y) == take and np.isfinite(y).all() and float(np.nanstd(y)) != 0:
+            ys[col] = y
+    if not ys or xa.shape[1] < 1:
+        return {}
+    best: dict = {c: None for c in ys}
+    for var in _v9_part_variants(grid):
+        xt = var["fn"](xa)                                        # (take, 材料の本数)
+        cut = var["warm"] + 1                                     # 暖機が終わるまでの行は使わない
+        for lag in (0, 1):
+            x = (xt[1:] if lag == 0 else xt[:-1])[cut:]
+            if x.shape[0] < max(50, rows // 2):
+                continue
+            keep = np.isfinite(x).all(axis=0) & (x.std(axis=0) > 0)
+            if not keep.any():
+                continue
+            idx = np.flatnonzero(keep)
+            zx, zrx = _v9_z(x[:, idx]), _v9_z(_v9_rank(x[:, idx]))
+            for col, yfull in ys.items():
+                y = yfull[1:][cut:]
+                zy, zry = _v9_z(y[:, None]), _v9_z(_v9_rank(y)[:, None])
+                cp = (zy.T @ zx / len(y))[0]
+                cs = (zry.T @ zrx / len(y))[0]
+                b = np.nan_to_num(np.maximum(np.abs(cp), np.abs(cs)), nan=0.0)
+                i = int(np.argmax(b))
+                cur = best[col]
+                if cur is None or float(b[i]) > cur["score"]:
+                    best[col] = dict(name=names[idx[i]], kind=var["kind"], label=var["label"],
+                                     parts=list(var["parts"]), lag=lag, score=float(b[i]),
+                                     pearson=float(cp[i]), spearman=float(cs[i]))
+    out = {}
+    for col, d in best.items():
+        if d is None:
+            continue
+        d["作れる"] = bool(d["score"] >= _V9_MATCH_SAME)
+        out[col] = d
+    return out
+
+
 def _v9_col_matches(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
-                    calc_rows: int = 30000, rows: int = 20000, fake=None) -> dict:
+                    calc_rows: int = 30000, rows: int = 20000, fake=None,
+                    parts: bool = True, part_grid: list[int] | None = None) -> dict:
     """V9 の各列に、うちのカタログのどの列が一番 近いかを実測で出す。戻り＝機械が読む形。
 
     ★1本ずらしても測る。V9 は「1本前の値」で判定する列を持つ（location_prev は .shift(1)＝
       cat_v9_decider.py:125）。ずらさずに測ると、同じ式の列でも別物に見える（実測＝0.906 まで落ちた）。
-    fake は番人専用＝わざと作った列を V9 側に混ぜて、この検査が期待どおりに判定するかを確かめる。"""
+    fake は番人専用＝わざと作った列を V9 側に混ぜて、この検査が期待どおりに判定するかを確かめる。
+    parts／part_grid は番人専用＝部品を当てる処理を止める・n と m の数字を差し替えるためのつまみ。"""
     win, v9 = _v9_preprocess_frame(bars, calc_rows)
     if fake is not None:
         v9 = v9.copy()
@@ -4257,20 +4377,7 @@ def _v9_col_matches(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
         return dict(rows=0, ours=names, skipped_ours=skipped_ours, matches=[], skipped_v9=[])
     xa = np.column_stack(vals)
 
-    def _rank(a: np.ndarray) -> np.ndarray:
-        try:
-            from scipy.stats import rankdata as _rankdata
-            return _rankdata(a, axis=0) if a.ndim == 2 else _rankdata(a)
-        except Exception:                                         # noqa: BLE001
-            return (np.argsort(np.argsort(a, axis=0), axis=0).astype(float) if a.ndim == 2
-                    else np.argsort(np.argsort(a)).astype(float))
-
-    def _z(a: np.ndarray) -> np.ndarray:
-        z = a - a.mean(axis=0, keepdims=True)
-        s = z.std(axis=0, ddof=0, keepdims=True)
-        s[s == 0] = np.nan
-        return z / s
-
+    _rank, _z = _v9_rank, _v9_z                                   # 部品を当てる処理と同じものを使う
     # ラグ0＝同じ足どうし ／ ラグ1＝うちの列の「1本前」と V9 の列（V9 の .shift(1) の列に効く）
     lag_x = {0: xa[1:], 1: xa[:-1]}
     lag_z = {k: (_z(v), _z(_rank(v))) for k, v in lag_x.items()}
@@ -4297,8 +4404,21 @@ def _v9_col_matches(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
         judge = ("同じ" if score >= _V9_MATCH_SAME else
                  "近い" if score >= _V9_MATCH_NEAR else "対応なし")
         matches.append(dict(v9=col, 判定=judge, score=score, top=top))
+
+    # ── C-4｜『対応なし』の列だけ、うちの材料に部品を当てた列とも比べる ──────────────
+    #   ★全部の列には当てない（材料 533列 × 変換25通り × 2 では計算が足りない）。
+    #     当てるのは『対応なし』の列だけ＝この検査が材料の穴だと言おうとしている列だけ。
+    none_cols = [m["v9"] for m in matches if m["判定"] == "対応なし"]
+    part_hits = {}
+    if parts and none_cols:
+        part_hits = _v9_part_matches(v9, xa, names, none_cols, take, rows,
+                                     part_grid or _v9_part_grid())
+        for m in matches:
+            if m["v9"] in part_hits:
+                m["部品"] = part_hits[m["v9"]]
     return dict(rows=int(xa.shape[0] - 1), ours=names, skipped_ours=skipped_ours,
-                matches=matches, skipped_v9=skipped_v9)
+                matches=matches, skipped_v9=skipped_v9, parts_on=bool(parts and none_cols),
+                part_grid=list(part_grid or (_v9_part_grid() if parts else [])))
 
 
 def _insp_v9_columns(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> list[str]:
@@ -4320,6 +4440,12 @@ def _insp_v9_columns(bars: pd.DataFrame, cfg: dict, catalog: list | None = None)
           f"近い（≥ {_V9_MATCH_NEAR}）= {len(near)} 本 ／ 対応なし = {len(none)} 本")
     print("  ★『値段の単位』の列は、うちは H6（価格非依存）で % の形に直して持っている＝"
           "『対応なし』でも材料の穴とは限らない（この欄で区別する）")
+    if r.get("parts_on"):
+        print(f"  ★『対応なし』の列だけ、うちの材料に条件の部品を当てた列とも比べる"
+              f"（部品4種＝そのまま／n本前との差／m本の平均／m本の平均の n本前との差・"
+              f"n と m は search_limits.json の int_grid {r.get('part_grid')} から引く）")
+        print("  ★当てるのは部品を1〜2段 重ねたところまで＝3段以上は見ない。"
+              "「本当は作れるのに、穴だと言う」ことは残る（逆は起きない＝言い過ぎる側に倒している）")
     for m in r["matches"]:
         mark = {"同じ": "✅", "近い": "⚠️", "対応なし": "❌"}[m["判定"]]
         t0 = m["top"][0]
@@ -4331,9 +4457,21 @@ def _insp_v9_columns(bars: pd.DataFrame, cfg: dict, catalog: list | None = None)
             print(f"          2番手以下: {t['name']}"
                   f"（{'同じ足' if t['lag'] == 0 else 'うちの1本前'}"
                   f"／値 {t['pearson']:+.7f}／順位 {t['spearman']:+.7f}）")
-    holes = [m for m in none if kinds.get(m["v9"]) == "値段に依らない"]
-    print(f"  ★材料の穴の候補＝『対応なし』かつ『値段に依らない』= {len(holes)} 本"
-          + ("（" + "・".join(m["v9"] for m in holes) + "）" if holes else ""))
+        if p := m.get("部品"):
+            head = "部品で作れる" if p["作れる"] else "部品でも作れない（一番 近いもの）"
+            print(f"          {head}: うちの {p['name']} に「{p['label']}」を当てたもの"
+                  f"（部品 {'・'.join(p['parts'])}"
+                  f"／{'同じ足' if p['lag'] == 0 else 'うちの1本前'}"
+                  f"／値 {p['pearson']:+.7f}／順位 {p['spearman']:+.7f}）")
+    holes = [m for m in none if kinds.get(m["v9"]) == "値段に依らない"
+             and not (m.get("部品") or {}).get("作れる")]
+    made = [m for m in none if kinds.get(m["v9"]) == "値段に依らない"
+            and (m.get("部品") or {}).get("作れる")]
+    print(f"  ★材料の穴の候補＝『対応なし』かつ『値段に依らない』かつ『部品でも作れない』"
+          f"= {len(holes)} 本" + ("（" + "・".join(m["v9"] for m in holes) + "）" if holes else ""))
+    if made:
+        print(f"  ★『対応なし』だが部品で作れるので穴でない = {len(made)} 本（"
+              + "・".join(f"{m['v9']}＝{m['部品']['name']} の {m['部品']['label']}" for m in made) + "）")
     print("  ⚠️ この検査は ❌ を出さない（合否は gen_signal_families.py --v9-test）。"
           "穴を埋めるかどうかは まこさんが決める（CC が勝手に材料を足さない）")
     return []
@@ -5448,6 +5586,43 @@ def selftest() -> None:
                 ng.append(f"検査14: 無関係な列を『{_c14['判定']}』と言う（何でも同じだと言う＝検査が死んでいる）")
         else:
             ng.append("検査14: 番人が混ぜた列が測られていない")
+
+        # ── C-4 の番人4件（部品を当てる処理・2026-08-11）─────────────────────────
+        #   ①穴から外れる ②偽の列は穴のまま ③処理を壊すと穴に戻る ④数字を差し替えると穴に戻る。
+        #   既知答え＝V9 の rsi_slope_short は「RSI21 の3本差分」（cat_v9_decider.py:96・
+        #   本数は同 :93-94 と config/cat_params_v9.json:41-42 の SHORT_RSI_PERIOD=21／SHORT_RSI_SLOPE_N=3）。
+        _p14 = (_got14.get("rsi_slope_short") or {}).get("部品")
+        if "rsi_slope_short" not in _got14:
+            ng.append("検査14 C-4: V9 の rsi_slope_short を測れていない（既知答えが回らない）")
+        elif _got14["rsi_slope_short"]["判定"] != "対応なし":
+            ng.append("検査14 C-4: rsi_slope_short が『対応なし』でない＝部品を当てる処理が回らない"
+                      f"（判定 {_got14['rsi_slope_short']['判定']}）")
+        elif _p14 is None:
+            ng.append("検査14 C-4: rsi_slope_short に部品の欄が付いていない（処理が呼ばれていない）")
+        elif not _p14["作れる"]:
+            ng.append(f"検査14 C-4 番人1: rsi_slope_short が部品でも作れない扱いのまま"
+                      f"（一番 近いのが {_p14['name']} の {_p14['label']}・相関 {_p14['score']:.7f}）")
+        elif _p14["name"] != "RSI21" or _p14["kind"] != "n本前との差" or "3本前" not in _p14["label"]:
+            ng.append(f"検査14 C-4 番人1: rsi_slope_short を作った部品が実物と違う"
+                      f"（出たのは {_p14['name']} の {_p14['label']}／実物は RSI21 の 3本前との差）")
+        _f14 = (_got14.get("番人_無関係") or {}).get("部品")
+        if _f14 is None:
+            ng.append("検査14 C-4 番人2: 番人が混ぜた列に部品の欄が付いていない")
+        elif _f14["作れる"]:
+            ng.append(f"検査14 C-4 番人2: 無関係な列を『部品で作れる』と言う"
+                      f"（{_f14['name']} の {_f14['label']}・相関 {_f14['score']:.7f}）＝穴を見逃す")
+        with _cl14.redirect_stdout(_io14.StringIO()):               # 番人3＝処理を止めたら穴に戻る
+            _off14 = _v9_col_matches(_bars14, cfg, catalog=_cat14, calc_rows=_n14, rows=800,
+                                     fake=_fake14, parts=False)
+            # 番人4＝n の数字を差し替える（3 を外す）と、同じ列が作れなくなる
+            _bad14 = _v9_col_matches(_bars14, cfg, catalog=_cat14, calc_rows=_n14, rows=800,
+                                     fake=_fake14, part_grid=[6, 12, 24])
+        if any(m["v9"] == "rsi_slope_short" and "部品" in m for m in _off14["matches"]):
+            ng.append("検査14 C-4 番人3: 部品を当てる処理を止めても部品の欄が付く（止まっていない）")
+        _b14 = next((m.get("部品") for m in _bad14["matches"] if m["v9"] == "rsi_slope_short"), None)
+        if _b14 is not None and _b14["作れる"]:
+            ng.append(f"検査14 C-4 番人4: n の数字から 3 を外しても rsi_slope_short を作れると言う"
+                      f"（{_b14['name']} の {_b14['label']}）＝数字を実物から引いていない")
 
     # ── RCI の速い実装が、元の実装と1つも違わないか（2026-08-11・段6 の 6-8 で速くした）──
     #   同じ値段があるとき（平均順位）と、欠けがあるときの2つを、わざと作ったデータで確かめる。
