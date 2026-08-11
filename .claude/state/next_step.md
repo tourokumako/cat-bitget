@@ -109,7 +109,7 @@ materials.md ＝ 在る 262 ／ 足す 0 ／ 入れない 46 ／ 指紋 e4fe464b
 
 **実験ゼロ・採点ゼロ・売買記録CSVゼロ。**審判 `score.py`（`1d4751ed…`）・戦略3本は md5 不変。
 **私が変えたのは `engine_tuner_exec.py`・`engine_tuner_gen.py`・`observe_diag.py`・`indicator_reference_diag.py`・`gen_materials.py`・`observe_config.json` の6本**（ほかは機械生成と、進み具合の表）。
-**git commit はしていません（まこさんの OK 待ち）。**
+**git commit は 済みです**（まこさん OK 2026-08-11・逐語「コミットはOK」）＝`d903976`（20ファイル・6,869 行 追加）。
 
 ---
 
@@ -505,7 +505,7 @@ observe_diag 自己検査 → ✅ 全部 pass
 
 ## A-5 このセッションの net
 
-**ゼロ。実験ゼロ・採点ゼロ・売買記録CSVゼロ。**戦略・審判・engine_tuner 本体は1バイトも触っていません。累積の試した回数も不変。**git commit はしていません（まこさんの OK 待ち）。**
+**ゼロ。実験ゼロ・採点ゼロ・売買記録CSVゼロ。**戦略・審判・engine_tuner 本体は1バイトも触っていません。累積の試した回数も不変。**git commit は 済みです**（まこさん OK 2026-08-11・逐語「コミットはOK」）＝`d903976`（20ファイル・6,869 行 追加）。
 
 ## A-6 教訓
 
