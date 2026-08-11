@@ -1,4 +1,4 @@
-<!-- MANUAL_HASH=5399adc9cf17466b -->
+<!-- MANUAL_HASH=45542fe92ec60a57 -->
 # observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は observe_diag.py と observe_config.json から
@@ -100,6 +100,8 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 | --config | observe_config.json のパス（既定は同ディレクトリ） |
 | --title | 出力の見出しに付ける題名 |
 | --selftest | 自己検査だけ走らせる（この道具が守ると言っていることを機械で確認） |
+| --check-materials | 材料検査（CP4 ②・read-only）＝方向の欄・系統分類・v9_logic.md の鮮度を機械検査＝5分足CSVのパスを1つ渡す |
+| --check-materials-meta | 材料検査のメタ確認＝わざと偽の欄・偽の分類・偽の指紋を注入し、検査が実際に ❌ を出すことを確かめる |
 
 結果は `results/priority_rebuild/ratchet/observe` に保存されます。既にある同名は同じ階層の archive へ逃がすので上書きしません。
 計画（--plan）は画面に出すだけで保存しません。
@@ -108,28 +110,100 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 
 何を検証の対象にしているかの一覧です。すべてコードと設定ファイルから取っています。
 
-### 1. 指標（105種）
+### 1. 指標（535種）
 
-この105種に、時間足8種を掛けて 840列になります。閾値は分位7段で刻みます。
+この535種に、時間足9種を掛けて 4815列になります。閾値は分位7段で刻みます。
 
-- ADX14 ／ ADX21 ／ ADX7 ／ ATR%14 ／ ATR%21 ／ ATR%7
-- BB%b(20,2.0) ／ BB%b(20,3.0) ／ BB%b(50,2.0) ／ BB%b(50,3.0) ／ BB幅(20,2.0) ／ BB幅(20,3.0)
-- BB幅(50,2.0) ／ BB幅(50,3.0) ／ CMF20 ／ DI差14 ／ DI差21 ／ DI差7
-- Donchian幅%20 ／ Donchian幅%48 ／ EMA200傾き% ／ EMA20傾き% ／ EMA50傾き% ／ EMA9傾き%
-- MACDシグナル線%(12,26,9) ／ MACDヒスト%(12,26,9) ／ MACD線%(12,26) ／ MFI14 ／ OBV傾き10 ／ OBV傾き20
-- RCI26 ／ RCI9 ／ ROC12 ／ ROC24 ／ ROC6 ／ RSI14
-- RSI21 ／ RSI7 ／ RSI9 ／ S-Rタッチ数(288,0.003) ／ Stoch%D14 ／ Stoch%D5
-- Stoch%D9 ／ Stoch%K14 ／ Stoch%K5 ／ Stoch%K9 ／ W字(24,0.003) ／ W字(48,0.003)
-- W字(96,0.003) ／ body比 ／ close vs 24本安値% ／ close vs 24本高値% ／ close vs 48本安値% ／ close vs 48本高値%
-- close vs 96本安値% ／ close vs 96本高値% ／ close vs EMA20% ／ close vs EMA200% ／ close vs EMA50% ／ close vs EMA9%
-- close vs Keltner上%(20,2.0) ／ close vs Keltner下%(20,2.0) ／ close vs POC%288 ／ close vs SMA20% ／ close vs SMA200% ／ close vs SMA50%
-- close vs Supertrend%(10,3.0) ／ close vs VAH%288 ／ close vs VAL%288 ／ close vs VWAP%288 ／ close vs pivotPP%288 ／ close vs pivotR1%288
-- close vs pivotS1%288 ／ close vs 基準線%(26) ／ close vs 転換線%(9) ／ fib位置96 ／ pinbar ／ realized_vol20
-- realized_vol50 ／ swing安値距離%24 ／ swing安値距離%48 ／ swing安値距離%96 ／ swing高値距離%24 ／ swing高値距離%48
-- swing高値距離%96 ／ volume_ratio20 ／ volume_ratio50 ／ zscore20 ／ zscore50 ／ zscore_return20
-- zscore_return50 ／ 上ヒゲ比 ／ 下ヒゲ比 ／ 包み足 ／ 孕み足 ／ 安値からの経過バー24
-- 安値からの経過バー48 ／ 安値からの経過バー96 ／ 形スコア24(V=+/M=−) ／ 形スコア48(V=+/M=−) ／ 形スコア96(V=+/M=−) ／ 連続本数
-- 高値からの経過バー24 ／ 高値からの経過バー48 ／ 高値からの経過バー96
+- ABER位置 ／ ADOSC比 ／ ADX14 ／ ADX21 ／ ADX7 ／ ADXR14
+- ADXR21 ／ ADXR7 ／ ALMA200傾き% ／ ALMA20傾き% ／ ALMA50傾き% ／ AMAT_LR
+- AO%(12,26) ／ AOBV_LR ／ AR14 ／ AR21 ／ AR7 ／ AR9
+- AROOND14 ／ AROOND21 ／ AROOND7 ／ AROONOSC14 ／ AROONOSC21 ／ AROONOSC7
+- AROONU14 ／ AROONU21 ／ AROONU7 ／ ATR%14 ／ ATR%21 ／ ATR%7
+- BB%b(20,2.0) ／ BB%b(50,2.0) ／ BB幅(20,2.0) ／ BB幅(50,2.0) ／ BIAS14 ／ BIAS21
+- BIAS7 ／ BIAS9 ／ BOP ／ CCI14 ／ CCI21 ／ CCI7
+- CCI9 ／ CFO14 ／ CFO21 ／ CFO7 ／ CFO9 ／ CG14
+- CG21 ／ CG7 ／ CG9 ／ CHOP14 ／ CHOP21 ／ CHOP7
+- CMF20 ／ CMO14 ／ CMO21 ／ CMO7 ／ CMO9 ／ COPC(9,12,26)
+- CTI14 ／ CTI21 ／ CTI7 ／ CTI9 ／ CVI14 ／ CVI21
+- CVI7 ／ DEMA200傾き% ／ DEMA20傾き% ／ DEMA50傾き% ／ DI+14 ／ DI+21
+- DI+7 ／ DI-14 ／ DI-21 ／ DI-7 ／ DI差14 ／ DI差21
+- DI差7 ／ DM+%14 ／ DM+%21 ／ DM+%7 ／ DM+%9 ／ DM-%14
+- DM-%21 ／ DM-%7 ／ DM-%9 ／ DPO%20 ／ DPO%48 ／ DX14
+- DX21 ／ DX7 ／ Donchian幅%20 ／ Donchian幅%48 ／ EBSW ／ EFI比10
+- EFI比20 ／ EMA200傾き% ／ EMA20傾き% ／ EMA50傾き% ／ EMA9傾き% ／ EOM比10
+- EOM比20 ／ ER14 ／ ER21 ／ ER7 ／ ER9 ／ ERI弱気%14
+- ERI弱気%21 ／ ERI弱気%7 ／ ERI弱気%9 ／ ERI強気%14 ／ ERI強気%21 ／ ERI強気%7
+- ERI強気%9 ／ FISHER(12,9) ／ FISHERシグナル(12,9) ／ FWMA20傾き% ／ HA上ヒゲ比 ／ HA下ヒゲ比
+- HA実体% ／ HMA200傾き% ／ HMA20傾き% ／ HMA50傾き% ／ HT_DCPERIOD ／ HT_DCPHASE
+- HT_INPHASE% ／ HT_LEADSINE ／ HT_QUAD% ／ HT_SINE ／ HT_TRENDMODE ／ HWC位置
+- HWC幅% ／ INERTIA14 ／ INERTIA21 ／ INERTIA7 ／ INERTIA9 ／ KAMA200傾き%
+- KAMA20傾き% ／ KAMA50傾き% ／ KDJ%D(14,9) ／ KDJ%D(5,9) ／ KDJ%D(9,9) ／ KDJ%J(14,9)
+- KDJ%J(5,9) ／ KDJ%J(9,9) ／ KDJ%K(14,9) ／ KDJ%K(5,9) ／ KDJ%K(9,9) ／ KST
+- KSTシグナル9 ／ KVOシグナル比 ／ KVO比 ／ LINREG200傾き% ／ LINREG20傾き% ／ LINREG50傾き%
+- LRSI(0.5) ／ LRb200傾き% ／ LRb20傾き% ／ LRb50傾き% ／ LRslope%20 ／ LRslope%200
+- LRslope%50 ／ MACDシグナル線%(12,26,9) ／ MACDヒスト%(12,26,9) ／ MACD線%(12,26) ／ MAD比20 ／ MAD比50
+- MARKETFI比10 ／ MARKETFI比20 ／ MASSI ／ MCGD200傾き% ／ MCGD20傾き% ／ MCGD50傾き%
+- MEDIAN傾き%20 ／ MEDIAN傾き%200 ／ MEDIAN傾き%50 ／ MFI14 ／ MIDPOINT200傾き% ／ MIDPOINT20傾き%
+- MIDPOINT50傾き% ／ MIDPRICE200傾き% ／ MIDPRICE20傾き% ／ MIDPRICE50傾き% ／ MMAR10傾き% ／ MMAR15傾き%
+- MMAR25傾き% ／ MMAR30傾き% ／ MMAR35傾き% ／ MOM%14 ／ MOM%21 ／ MOM%7
+- MOM%9 ／ MSW_LEAD ／ MSW_SINE ／ NVI傾き10 ／ NVI傾き20 ／ OBV傾き10
+- OBV傾き20 ／ PDIST% ／ PGO14 ／ PGO21 ／ PGO7 ／ PGO9
+- PO14 ／ PO21 ／ PO7 ／ PO9 ／ PPO(12,26,9) ／ PPOシグナル(12,26,9)
+- PPOヒスト(12,26,9) ／ PSAR加速 ／ PSAR反転 ／ PSL14 ／ PSL21 ／ PSL7
+- PSL9 ／ PVI傾き10 ／ PVI傾き20 ／ PVO(12,26,9) ／ PVOL比10 ／ PVOシグナル(12,26,9)
+- PVOヒスト(12,26,9) ／ PVT傾き10 ／ PVT傾き20 ／ PWMA200傾き% ／ PWMA20傾き% ／ PWMA50傾き%
+- QQE ／ QQE_RSIMA ／ RAINBOW10傾き% ／ RAINBOW1傾き% ／ RAINBOW2傾き% ／ RAINBOW3傾き%
+- RAINBOW4傾き% ／ RAINBOW5傾き% ／ RAINBOW6傾き% ／ RAINBOW7傾き% ／ RAINBOW8傾き% ／ RAINBOW9傾き%
+- RCI26 ／ RCI52 ／ RCI7 ／ RCI9 ／ RMA200傾き% ／ RMA20傾き%
+- RMA50傾き% ／ ROC12 ／ ROC24 ／ ROC6 ／ RSI14 ／ RSI21
+- RSI7 ／ RSI9 ／ RSX14 ／ RSX21 ／ RSX7 ／ RSX9
+- RVGI(14,4) ／ RVGI(21,4) ／ RVGI(7,4) ／ RVGI(9,4) ／ RVGIシグナル(14,4) ／ RVGIシグナル(21,4)
+- RVGIシグナル(7,4) ／ RVGIシグナル(9,4) ／ RVGIヒスト(14,4) ／ RVGIヒスト(21,4) ／ RVGIヒスト(7,4) ／ RVGIヒスト(9,4)
+- RVI14 ／ RVI21 ／ RVI7 ／ S-Rタッチ数(288,0.003) ／ SINWMA200傾き% ／ SINWMA20傾き%
+- SINWMA50傾き% ／ SMC_SWEEP ／ SQZ% ／ SQZPRO_ON_NARROW ／ SQZPRO_ON_WIDE ／ SQZ_ON
+- SSF200傾き% ／ SSF20傾き% ／ SSF50傾き% ／ STC ／ STCstoch ／ SWMA200傾き%
+- SWMA20傾き% ／ SWMA50傾き% ／ Stoch%D14 ／ Stoch%D5 ／ Stoch%D9 ／ Stoch%K14
+- Stoch%K5 ／ Stoch%K9 ／ StochRSI%D14 ／ StochRSI%D21 ／ StochRSI%D7 ／ StochRSI%D9
+- StochRSI%K14 ／ StochRSI%K21 ／ StochRSI%K7 ／ StochRSI%K9 ／ T3200傾き% ／ T320傾き%
+- T350傾き% ／ TD_SEQ_DN ／ TD_SEQ_UP ／ TEMA200傾き% ／ TEMA20傾き% ／ TEMA50傾き%
+- THERMO% ／ THERMO比 ／ TR% ／ TRIMA200傾き% ／ TRIMA20傾き% ／ TRIMA50傾き%
+- TRIX(14,9) ／ TRIX(21,9) ／ TRIX(7,9) ／ TRIX(9,9) ／ TRIXシグナル(14,9) ／ TRIXシグナル(21,9)
+- TRIXシグナル(7,9) ／ TRIXシグナル(9,9) ／ TRIXヒスト(14,9) ／ TRIXヒスト(21,9) ／ TRIXヒスト(7,9) ／ TRIXヒスト(9,9)
+- TSF20傾き% ／ TSF50傾き% ／ TSI(12,26,9) ／ TSIシグナル(12,26,9) ／ TSIヒスト(12,26,9) ／ TTM_TREND20
+- TTM_TREND48 ／ UI14 ／ UI21 ／ UI7 ／ UO ／ VFI10
+- VFI20 ／ VHF14 ／ VHF21 ／ VHF7 ／ VIDYA200傾き% ／ VIDYA20傾き%
+- VIDYA50傾き% ／ VOSC ／ VTXM14 ／ VTXM21 ／ VTXM7 ／ VTXP14
+- VTXP21 ／ VTXP7 ／ VWMA200傾き% ／ VWMA20傾き% ／ VWMA50傾き% ／ VWMACDシグナル%(12,26,9)
+- VWMACDヒスト%(12,26,9) ／ VWMACD線%(12,26,9) ／ WAD傾き10 ／ WAD傾き20 ／ WMA200傾き% ／ WMA20傾き%
+- WMA50傾き% ／ W字(24,0.003) ／ W字(48,0.003) ／ W字(96,0.003) ／ ZLMA200傾き% ／ ZLMA20傾き%
+- ZLMA50傾き% ／ body比 ／ close vs 24本安値% ／ close vs 24本高値% ／ close vs 48本安値% ／ close vs 48本高値%
+- close vs 96本安値% ／ close vs 96本高値% ／ close vs ABER_ZG% ／ close vs ACCBL% ／ close vs ACCBU% ／ close vs ALMA%20
+- close vs ALMA%200 ／ close vs ALMA%50 ／ close vs CE_L% ／ close vs CE_S% ／ close vs CKSPl% ／ close vs CKSPs%
+- close vs DEMA%20 ／ close vs DEMA%200 ／ close vs DEMA%50 ／ close vs EMA20% ／ close vs EMA200% ／ close vs EMA50%
+- close vs EMA9% ／ close vs FAMA% ／ close vs FWMA%20 ／ close vs HILO% ／ close vs HMA%20 ／ close vs HMA%200
+- close vs HMA%50 ／ close vs HT_TRENDLINE% ／ close vs HWMA% ／ close vs JMA%20 ／ close vs JMA%200 ／ close vs JMA%50
+- close vs KAMA%20 ／ close vs KAMA%200 ／ close vs KAMA%50 ／ close vs Keltner上%(20,2.0) ／ close vs Keltner下%(20,2.0) ／ close vs LINREG%20
+- close vs LINREG%200 ／ close vs LINREG%50 ／ close vs LRb%20 ／ close vs LRb%200 ／ close vs LRb%50 ／ close vs MAMA%
+- close vs MCGD%20 ／ close vs MCGD%200 ／ close vs MCGD%50 ／ close vs MEDIAN%20 ／ close vs MEDIAN%200 ／ close vs MEDIAN%50
+- close vs MIDPOINT%20 ／ close vs MIDPOINT%200 ／ close vs MIDPOINT%50 ／ close vs MIDPRICE%20 ／ close vs MIDPRICE%200 ／ close vs MIDPRICE%50
+- close vs MMAR%10 ／ close vs MMAR%15 ／ close vs MMAR%25 ／ close vs MMAR%30 ／ close vs MMAR%35 ／ close vs PMAX%
+- close vs POC%288 ／ close vs PSAR% ／ close vs PWMA%20 ／ close vs PWMA%200 ／ close vs PWMA%50 ／ close vs RAINBOW%1
+- close vs RAINBOW%10 ／ close vs RAINBOW%2 ／ close vs RAINBOW%3 ／ close vs RAINBOW%4 ／ close vs RAINBOW%5 ／ close vs RAINBOW%6
+- close vs RAINBOW%7 ／ close vs RAINBOW%8 ／ close vs RAINBOW%9 ／ close vs RMA%20 ／ close vs RMA%200 ／ close vs RMA%50
+- close vs SAREXT% ／ close vs SINWMA%20 ／ close vs SINWMA%200 ／ close vs SINWMA%50 ／ close vs SMA20% ／ close vs SMA200%
+- close vs SMA50% ／ close vs SSF%20 ／ close vs SSF%200 ／ close vs SSF%50 ／ close vs SWMA%20 ／ close vs SWMA%200
+- close vs SWMA%50 ／ close vs Supertrend%(10,3.0) ／ close vs T3%20 ／ close vs T3%200 ／ close vs T3%50 ／ close vs TEMA%20
+- close vs TEMA%200 ／ close vs TEMA%50 ／ close vs TRIMA%20 ／ close vs TRIMA%50 ／ close vs TSF%20 ／ close vs TSF%200
+- close vs TSF%50 ／ close vs VAH%288 ／ close vs VAL%288 ／ close vs VIDYA%20 ／ close vs VIDYA%200 ／ close vs VIDYA%50
+- close vs VWAP%288 ／ close vs VWMA%20 ／ close vs VWMA%200 ／ close vs VWMA%50 ／ close vs WMA%20 ／ close vs WMA%200
+- close vs WMA%50 ／ close vs ZLMA%20 ／ close vs ZLMA%200 ／ close vs ZLMA%50 ／ close vs pivotPP%288 ／ close vs pivotR1%288
+- close vs pivotS1%288 ／ close vs 基準線%(26) ／ close vs 転換線%(9) ／ fib位置20 ／ fib位置96 ／ high_Z30
+- kurtosis20 ／ kurtosis50 ／ low_Z30 ／ open_Z30 ／ pinbar ／ realized_vol20
+- realized_vol50 ／ skew20 ／ skew50 ／ stdev%50 ／ volume_ratio20 ／ volume_ratio50
+- zscore_return20 ／ zscore_return50 ／ 上ヒゲ比 ／ 下ヒゲ比 ／ 内側バー ／ 出来高変化率%1
+- 包み足 ／ 孕み足 ／ 安値からの経過バー24 ／ 安値からの経過バー48 ／ 安値からの経過バー96 ／ 実体幅比10
+- 形スコア24(V=+/M=−) ／ 形スコア48(V=+/M=−) ／ 形スコア96(V=+/M=−) ／ 連続本数 ／ 高値からの経過バー24 ／ 高値からの経過バー48
+- 高値からの経過バー96
 
 ### 2. 探索の系統
 
@@ -212,7 +286,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 |---|---|
 | period | {"start": null, "end": null} |
 | search_modes | ["entry_filter"] |
-| timeframes | ["5m", "15m", "30m", "1h", "2h", "4h", "6h", "1d"] |
+| timeframes | ["5m", "10m", "15m", "30m", "1h", "2h", "4h", "6h", "1d"] |
 | quantiles | [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99] |
 | sl_grid | [0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0] |
 | favorable_marks | [0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.75, 1.0, 1.5] |
@@ -232,7 +306,8 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 | mfi_periods | [14] |
 | cmf_periods | [20] |
 | obv_slope_periods | [10, 20] |
-| rci_periods | [9, 26] |
+| drop_columns | [["BB%b(20,3.0)", "BB%b(20,2.0)"], ["BB%b(50,3.0)", "BB%b(50,2.0)"], ["BB幅(20,3.0)", "BB幅(20,2.0)"], ["BB幅(50,3.0)", … |
+| rci_periods | [7, 9, 26, 52] |
 | zscore_periods | [20, 50] |
 | realized_vol_periods | [20, 50] |
 | volume_ratio_periods | [20, 50] |
@@ -244,7 +319,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 | sr_windows | [288] |
 | sr_tol | [0.003] |
 | w_tol | [0.003] |
-| fib_windows | [96] |
+| fib_windows | [20, 96] |
 | pivot_windows | [288] |
 | ichimoku | [[9, 26]] |
 | scene_floor_pct | null |
@@ -298,6 +373,10 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 どれか1つでも崩れると自己検査が止まります。
 
 - 1往復の実コストが eval_engine の確定値と違う:
+- 3-5 が『2つ目の照合が在る』を数から外せていない（ / ）
+- 3-5 の数え方が既知答えと合わない（外部なし ／ 私の式だけ）
+- RCI（）: 速い実装と元の実装で欠けの位置が違う
+- RCI（）: 速い実装と元の実装の最大差 （0 でない）
 - _out_path が ratchet 直下を直に指している（OBSERVE_DIR を使っていない）
 - entry の特徴が約定バーの終値を含む（1本前の確定値を使っていない）
 - entry_exit_matrix.md の E-c 行が  本（1本のはず）
@@ -315,7 +394,9 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - search_modes に定義の無いモード （MODE_INFO に無い＝計画に説明が出ない）
 - が config に無い（コンフルエンス探索の条件）
 - が期待値から実コストを引いていない（設計上の下限を引く形に戻っている）
+- に手計算の既知答えが無い（3-4 の担保が消えている）
 - の候補が足りない（probe は広く試す）
+- の手計算の既知答えが、わざとずらした式を見逃す（3-4 の担保が死んでいる）
 - を periods.py から import していない（手打ちの疑い）
 - エピソード跨ぎの通し間隔が neighbors に無い（静けさの後の初回タッチが NaN で探索から漏れる）
 - コンフルエンス探索が異種カテゴリの組から選んでいない（同族の二度掛けを弾けない）
@@ -343,6 +424,10 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 出口の組み合わせが従来の固定の仮定と一致しない : 実測  ／ 期待
 - 出口の組み合わせを期待値で順位づけしていない（勝率で並べる設計に戻っている）
 - 切る探索がシグナルの逆行側プールから選んでいない（向きの分離が無い）
+- 列の作り方: None を返した列が、材料の列として出てきてしまう
+- 列の作り方: None を返した列を『ok』として通してしまう
+- 列の作り方: ふつうの列まで落としてしまう（誤検出）:
+- 列の作り方: 計算が None を返すと全体が止まる（本来は記録して飛ばす）:
 - 勝ち条件 win_target（mid/pct）の分岐が _scene_labels に無い
 - 参照表に無いカタログ列  件:
 - 同バー両到達の負け優先（保守）が無い
@@ -367,10 +452,19 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 期間を手打ちしている: pd.Timestamp('')
 - 検査1 が壊れたデータ（）を見逃す:
 - 検査1 が正常なデータで誤検出:
+- 検査10 が『対応表が指す関数がライブラリに無い』を見逃す（表の古さを検出できない）
+- 検査10 が『対応表に無い指標が足された』を見逃す（材料を足しても表を直さずに済んでしまう）
+- 検査10 が使う pandas-ta-classic が入っていない（requirements.txt の版で入れる）
+- 検査10 が現状の対応表で不一致を出す（表の直し忘れ）:
+- 検査11: V9 の本数を実物から1件も拾えない（拾い方が実物とずれている）
+- 検査11: いまの設定で V9 の本数が足りない（）
+- 検査11: 設定に無い本数を入れても ❌ が出ない（この検査が死んでいる）
 - 検査2 が正しい組み立てで誤検出
 - 検査2 が閉じる前のバーへの漏れを検出しない（ずらしを外しても素通り）
 - 検査3 がわざと壊した式（RSI を定数化）を見逃す
 - 検査3 が正しいカタログで不一致を出す（許容差の線を疑う）:
+- 検査3 の2つ目の照合を持つ列がカタログに1本も無い（この番人が回せない）
+- 検査3 の2つ目の照合（pandas-ta / scipy）が、わざとずらした式を見逃す
 - 検査4 がわざと入れた未来参照列（1本先の close）を見逃す
 - 検査6 が『終端より後を値で埋めている』を見逃す（未来の捏造を検出できない）
 - 検査6 が壊れた需給データ（）を見逃す:
@@ -383,6 +477,9 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 検査7 が現状の E-c と対応表で不一致を出す（表の直し忘れ）:
 - 検査8 がわざと壊したレンジ幾何（mid×1.01）を見逃す
 - 検査8 の既知答えが正しい実装で落ちる:
+- 検査9 が『向きの部品を消した』のを見逃す（穴  → ・+1 のはず）
+- 検査9 が『距離の部品が1つも無い＝命名が変わって検査が死んだ』を見逃す
+- 検査9 の拾い方が既知答えと合わない（距離 向き 穴）
 - 検証済みにならない列  件:
 - 検証計画の自動生成 plan が無い
 - 機械ラベルの entry が次バーになっていない（同バー約定＝未来参照の疑い・H2）

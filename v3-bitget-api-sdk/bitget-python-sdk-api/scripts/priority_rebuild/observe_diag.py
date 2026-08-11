@@ -249,11 +249,47 @@ def _adx_di(h, l, c, n=14):
     return dx.ewm(alpha=1 / n, adjust=False).mean(), pdi, mdi
 
 
-def _rci(c, n=9):
+def _rci_slow(c, n=9):
+    """RCI の元の実装（1本ずつ Python で回す形）。★速い方の答え合わせ専用に残す（消さない）。"""
     r = c.rolling(n).apply(
         lambda x: 1 - 6 * ((pd.Series(x).rank() - pd.Series(range(1, n + 1))) ** 2).sum() / (n * (n * n - 1)),
         raw=True)
     return r * 100
+
+
+def _rci(c, n=9):
+    """RCI＝時間の並びと値段の並びの順位相関 ×100。
+
+    ★2026-08-11（段6 の 6-8）に、計算のしかたを変えた。**値は1つも変えない。**
+      前は1本ずつ Python の関数で回していて、実測で **250,000本・1つの本数につき 114 秒** かかった。
+      本数を1つ足すたびに同じだけ増える（V9 が使う RCI7・RCI52 を足すと +228 秒）。
+      いまは窓をまとめて作り、順位を一度に出す。★同じ値段があるときの順位の付け方（平均順位）も
+      元のまま（pandas の rank と同じ流儀・scipy の rankdata の既定）。
+      番人＝`--selftest` で元の実装と突き合わせて最大差 0 であることを毎回 確かめる。
+      scipy が無い環境では元の実装をそのまま使う（答えは同じ・遅いだけ）。
+    """
+    try:
+        from scipy.stats import rankdata as _rankdata
+    except Exception:                                            # noqa: BLE001
+        return _rci_slow(c, n)
+    x = pd.to_numeric(c, errors="coerce").to_numpy(dtype=float)
+    out = np.full(len(x), np.nan)
+    if len(x) < n:
+        return pd.Series(out, index=c.index)
+    win = np.lib.stride_tricks.sliding_window_view(x, n)         # 窓を作る（値のコピーはしない）
+    t = np.arange(1, n + 1, dtype=float)
+    const = float(n * (n * n - 1))
+    res = np.empty(len(win))
+    step = max(1, int(4_000_000 // n))                           # メモリを抑えて分けて計算する
+    for s in range(0, len(win), step):
+        blk = win[s:s + step]
+        r = _rankdata(blk, axis=1)                               # 平均順位（同値の扱いが元と同じ）
+        d2 = ((r - t) ** 2).sum(axis=1)
+        v = 1.0 - 6.0 * d2 / const
+        v[np.isnan(blk).any(axis=1)] = np.nan                    # 窓に欠けがあれば欠け（元と同じ）
+        res[s:s + step] = v
+    out[n - 1:] = res * 100.0
+    return pd.Series(out, index=c.index)
 
 
 def _supertrend(h, l, c, n=10, k=3.0):
@@ -582,7 +618,10 @@ def build_catalog(cfg: dict) -> list[tuple]:
     add("QQE", lambda d: _pta6.qqe(close=d.close).iloc[:, 0], True)
     add("QQE_RSIMA", lambda d: _pta6.qqe(close=d.close).iloc[:, 1], True)
     add("SMC_SWEEP", lambda d: _pta6.smc_sweep(open_=d.open, high=d.high, low=d.low, close=d.close), False)
-    add("SQZ", lambda d: _pta6.squeeze(high=d.high, low=d.low, close=d.close).iloc[:, 0], False)
+    # ★SQZ は値段の単位で出る（実測＝4本値を2倍にすると値も2倍・検査13）。H6 に直して % で入れる
+    #   （2026-08-11・段6 の 6-9①）。前は `SQZ` の名前で値段のまま材料に入っていた。
+    add("SQZ%", lambda d: _pta6.squeeze(high=d.high, low=d.low, close=d.close).iloc[:, 0]
+        / d.close * 100, False)
     add("SQZ_ON", lambda d: _pta6.squeeze(high=d.high, low=d.low, close=d.close).iloc[:, 1], False)
     # ★SQZ_OFF（=1−SQZ_ON）・SQZ_NO（実測で2,000本すべて0）・SQZPRO_OFF（=1−SQZPRO_ON_WIDE）は
     #   情報が増えないので入れない（2026-08-09 実測）。
@@ -651,7 +690,17 @@ def build_catalog(cfg: dict) -> list[tuple]:
             add(f"close vs {_nm}%{n}", lambda d, n=n, f=_fn: (d.close / f(d, n) - 1) * 100, True)
             if _nm not in ("JMA",):            # JMA は独立実装を書いていない＝傾きも作らない
                 add(f"{_nm}{n}傾き%", lambda d, n=n, f=_fn: f(d, n).pct_change(5) * 100, True)
-        add(f"LRangle{n}", lambda d, n=n: _pta6.linregangle(close=d.close, length=n), True)
+        # ★LRangle（直線あてはめの角度）＝2026-08-11 に一度 材料から外したが、同じ日に戻した。
+        #   経緯を残す。①検査13（4本値を定数倍して計算し直す）が「値段の単位に依存する」と出した
+        #   （業界の実装は arctan(1本あたり何ドル動くか) なので、値段の帯が変わると角度が変わる。
+        #   ★対応表には「角度なので値段に依存しない＝そのまま入れる」と書いてあったが実測で誤り）。
+        #   ②私はそこで「外す」と決めたが、これは私の勝手な判断だった（まこさん指摘 2026-08-11）。
+        #   ★正しい形＝要件のハード制約（H6）に反する指標は、外すのではなく直して使う。
+        #   だから「1本あたり何%動くか」の傾きの角度に直して入れる（SQZ% と同じ直し方）。
+        #   ③この形は既に在る LRslope% の単調変換（実測＝順位の相関 1.0000000000）＝重複の候補。
+        #   ★どちらを省くかは まこさんが決める（検査12 の一覧に出る）。CC は決めない。
+        add(f"LRangle{n}", lambda d, n=n: np.degrees(np.arctan(
+            _pta6.linregslope(close=d.close, length=n) / d.close * 100)), True)
         # ★FWMA はフィボナッチの重みが急に大きくなるので、本数を増やすと古い足の重みが
         #   数値の下限を割ってゼロになり、値が変わらなくなる（実測 2026-08-09＝n=200 では
         #   200本中144本の重みがゼロ・FWMA50 と最大差 8.6e-08＝実質 同じ）。
@@ -942,6 +991,16 @@ def build_catalog(cfg: dict) -> list[tuple]:
                               / (a.iloc[:, 1] - a.iloc[:, 2]).replace(0, np.nan))(_ha(d)), False)
     add("HA下ヒゲ比", lambda d: (lambda a: (a.iloc[:, [0, 3]].min(axis=1) - a.iloc[:, 2])
                               / (a.iloc[:, 1] - a.iloc[:, 2]).replace(0, np.nan))(_ha(d)), False)
+    # ★同じ挙動の列を省く（まこさん OK 2026-08-11・逐語「同じ挙動ならどちらかは使わないように
+    #   していいよ」）。どれを省くかは observe_config.json の drop_columns（左＝省く・右＝残す）。
+    #   ★ここで消す前に、残す側が本当にカタログに在るかを確かめる（書き間違いで両方 消えないため）。
+    drop = {d: k for d, k in (cfg.get("drop_columns") or [])}
+    if drop:
+        have = {n for n, _f, _d in C}
+        bad = [f"{d}→{k}" for d, k in drop.items() if k not in have]
+        if bad:
+            raise SystemExit(f"[材料カタログ] 省く設定の『残す側』がカタログに無い: {bad}")
+        C = [(n, f, d) for n, f, d in C if n not in drop]
     return C
 
 
@@ -2839,6 +2898,9 @@ INSPECT_SECTIONS = [
     "検査8 レンジ幾何列を検査する（res_hi/res_lo/sup_hi/sup_lo/mid/W%/帯内位置%＝定義表・既知答え・切り詰め再計算・被覆）",
     "検査9 「終値と◯◯の距離%」に対して「◯◯ そのものの向き」が在るかを突き合わせる（材料の穴を機械で出す）",
     "検査10 業界のライブラリ（pandas-ta-classic）の指標一覧と、うちの材料を突き合わせる（不足を機械で出す）",
+    "検査11 V9 が実際に使っている指標の本数が、設定ファイルの本数に入っているかを1件ずつ照らす（段6 の 6-8）",
+    "検査12 材料どうしの重複を総当たりで出す（値そのものの相関と、順位の相関の2つで見る・段6 の 6-9③）",
+    "検査13 4本値を定数倍しても材料の値が変わらないかを実測する（H6 価格非依存・段6 の 6-9①）",
 ]
 # 検査の線（全部この場で印字する＝黙って変えられない）。指標照合の許容差は
 # indicator_reference_diag（参照表の tol）が正本。
@@ -3504,6 +3566,498 @@ def _insp_industry(cfg: dict, lib_funcs: dict | None = None) -> list[str]:
     return r["ng"]
 
 
+# ══ 検査11（V9 が実際に使っている本数との突き合わせ・2026-08-11 新設・段6 の 6-8）════════════
+# ★何のための検査か。指標の本数（RSI の 14、RCI の 7 のような数字）は設定ファイル
+#   observe_config.json に書いてある。**そこに無い本数は、engine_tuner が何回 試しても永久に出ない。**
+#   V9（唯一の実利資産）が実際に使っている本数が1つも入っていないと、V9 が組んでいる形すら
+#   engine_tuner は作れない（実例＝V9 P22 の RCI7 と RCI9 のクロス）。
+#   ★この検査は「本数を点の一覧で限定する」こととは別。V9 が使う本数の穴を埋めるだけ。
+#   本数を範囲で探せるようにするのはマイルストーン③。
+# ★数字は実物のファイルから拾う（記憶や書き写しでない）。1件ずつ「どのファイルの何行目の、どの文か」を出す。
+_V9_ROOT = pathlib.Path(__file__).resolve().parents[2]           # bitget-python-sdk-api/
+_V9_PERIOD_PATTERNS = (
+    # (指標, 設定のキー, ファイル, 正規表現, 拾う数字の位置, 説明)
+    ("RCI", "rci_periods", "strategies/cat_v9_decider.py",
+     r'calculate_rci\(df\["close"\], (\d+)\)', "1つ", "V9 が直に計算している RCI"),
+    ("RCI", "rci_periods", "strategies/cat_v9_decider.py",
+     r'for period in \[([\d, ]+)\]', "並び", "同上（まとめて回している方）"),
+    ("RCI", "rci_periods", "cat/indicators.py",
+     r'"RCI_WINDOWS", \[([\d, ]+)\]', "並び", "共通の指標づくりの既定"),
+    ("ADX", "atr_periods", "strategies/cat_v9_decider.py",
+     r"ADXIndicator\([^)]*window=(\d+)", "1つ", "V9 の ADX"),
+    ("ATR%", "atr_periods", "strategies/cat_v9_decider.py",
+     r'_tr\.rolling\(window=(\d+)', "1つ", "V9 の ATR（単純平均）"),
+    ("BB", "bb_periods", "strategies/cat_v9_decider.py",
+     r'BollingerBands\(close=df\["close"\], window=(\d+)\)', "1つ", "V9 のボリンジャーバンド"),
+    ("EMA", "ema_periods", "cat/indicators.py",
+     r'EMAIndicator\(close=df\["close"\], window=(\d+)\)', "1つ", "V9 の EMA"),
+    ("Stoch", "stoch_periods", "strategies/cat_v9_decider.py",
+     r"window=(\d+), smooth_window=\d+", "1つ", "V9 のストキャスティクス"),
+    ("fib位置", "fib_windows", "strategies/cat_v9_decider.py",
+     r"n_look = (\d+)", "1つ", "V9 の『直近レンジ内での位置』（うちの fib位置 と同じ形）"),
+    ("realized_vol", "realized_vol_periods", "strategies/cat_v9_decider.py",
+     r"vola = df\[\"close\"\]\.rolling\(window=(\d+)", "1つ", "V9 の entry_risk_score のばらつき"),
+)
+_V9_PERIOD_PARAMS = (
+    # (指標, 設定のキー, cat_params_v9.json のキー, 説明)
+    ("RSI", "rsi_periods", ("SHORT_RSI_PERIOD",), "V9 の SHORT 側の RSI"),
+    ("MACD", "macd_params", ("P1_MACD_FAST", "P1_MACD_SLOW", "P1_MACD_SIGNAL"), "V9 P1 の MACD（3つで1組）"),
+)
+
+
+def _v9_periods() -> list[dict]:
+    """V9 が実際に使っている本数を、実物のファイルから機械で拾う。逐語と行番号を必ず持たせる。"""
+    rows: list[dict] = []
+    for fam, key, rel, pat, how, note in _V9_PERIOD_PATTERNS:
+        p = _V9_ROOT / rel
+        if not p.exists():
+            rows.append(dict(指標=fam, キー=key, 本数=None, 出どころ=f"{rel}（ファイルが無い）", 逐語="", 説明=note))
+            continue
+        for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+            m = re.search(pat, line)
+            if not m:
+                continue
+            nums = ([int(x) for x in m.group(1).split(",") if x.strip()] if how == "並び"
+                    else [int(m.group(1))])
+            for n in nums:
+                rows.append(dict(指標=fam, キー=key, 本数=n, 出どころ=f"{rel}:{i}",
+                                 逐語=line.strip()[:90], 説明=note))
+    import json as _json
+    pj = _V9_ROOT / "config/cat_params_v9.json"
+    prm = _json.loads(pj.read_text(encoding="utf-8")) if pj.exists() else {}
+    for fam, key, keys, note in _V9_PERIOD_PARAMS:
+        vals = [prm.get(k) for k in keys]
+        if any(v is None for v in vals):
+            continue
+        val = int(vals[0]) if len(vals) == 1 else tuple(int(v) for v in vals)
+        rows.append(dict(指標=fam, キー=key, 本数=val, 出どころ="config/cat_params_v9.json",
+                         逐語=" / ".join(f"{k}={v}" for k, v in zip(keys, vals)), 説明=note))
+    return rows
+
+
+def _insp_v9_periods(cfg: dict, rows: list[dict] | None = None) -> list[str]:
+    """検査11 V9 が使っている本数が、設定ファイルの本数に入っているかを1件ずつ照らす。
+    rows は番人専用＝偽の一覧を入れて、この検査が実際に ❌ を出すことを確かめる。"""
+    rows = _v9_periods() if rows is None else rows
+    if not rows:
+        return ["V9 の本数を1件も拾えなかった（拾い方の正規表現が実物とずれている疑い）"]
+    print(f"  V9 の実物から拾った本数 {len(rows)} 件（1件ずつ どのファイルの何行目か を出す）")
+    ng, miss = [], []
+    for r in sorted(rows, key=lambda x: (x["指標"], str(x["本数"]))):
+        have = cfg.get(r["キー"], [])
+        want = r["本数"]
+        if want is None:
+            ng.append(f"{r['指標']}: 実物を読めない（{r['出どころ']}）")
+            continue
+        # 設定の値は 数字 か 数字の並び（macd_params のような組）
+        ok = any((tuple(v) == want if isinstance(v, list) else v == want) for v in have)
+        mark = "✅" if ok else "❌"
+        print(f"     {mark} {r['指標']:12s} {str(want):12s} 設定 {r['キー']}={have}"
+              f" … {r['説明']}（{r['出どころ']}）")
+        print(f"         逐語: {r['逐語']}")
+        if not ok:
+            miss.append(f"{r['指標']} の {want}（設定 {r['キー']} に無い・{r['出どころ']}）")
+    if miss:
+        ng += [f"V9 が使っている本数が設定ファイルに無い: {x}" for x in miss]
+    print(f"  → 足りない本数 {len(miss)} 件"
+          + ("（V9 が組んでいる形を engine_tuner が作れない）" if miss else "＝V9 の本数は全部 入っている"))
+    return ng
+
+
+# ══ 検査13（価格を定数倍しても値が変わらないか＝H6・2026-08-11 新設・段6 の 6-9①）════════
+# ★何のための検査か。H6（価格非依存）＝ドルの金額そのもので出る指標は、engine_tuner の材料に
+#   できない。BTC の値段の帯が学習の時と本番で違うと、同じ閾値が別の意味になるためです。
+#   だから帯や線は「終値からの距離%」、値幅は「終値で割って%」に直してから材料にしています
+#   （段6 の12段の⑤＝旧 6-3）。**この検査は、それが全部の列でできているかを実測で確かめます。**
+# ★やり方＝4本値（始値・高値・安値・終値）を定数倍して、全部の列を計算し直す。
+#   %や比に直してあれば値は変わりません。ドルの金額のまま残っていれば値が変わります。
+#   ★文字（列名に % が付いているか）で数えません。実際に計算し直して比べます。
+_H6_FACTORS = (2.0, 0.5)      # 値段を2倍にした場合と半分にした場合の両方で見る
+_H6_RTOL = 1e-8               # これ以下のずれは小数の丸め（同じとみなす）
+
+
+def _price_scale_check(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
+                       rows: int = 3000) -> dict:
+    """4本値を定数倍して全列を計算し直し、値が変わる列（＝ドルの金額のまま）を出す。"""
+    cat = catalog or build_catalog(cfg)
+    _nm, a0, b0 = _insp_windows()[0]                    # 値決め窓（採点窓は1バーも使わない）
+    win = bars.loc[(bars.index >= a0) & (bars.index < b0)].iloc[-rows:]
+    bad, ok, skip = [], [], []
+    base = {}
+    for name, fn, _d in cat:
+        try:
+            s = pd.to_numeric(fn(win), errors="coerce")
+            base[name] = None if s is None else s.to_numpy(dtype=float)
+        except Exception as e:                          # noqa: BLE001
+            base[name] = None
+            skip.append((name, f"計算できず: {str(e)[:40]}"))
+    for k in _H6_FACTORS:
+        w2 = win.copy()
+        for c in ("open", "high", "low", "close"):
+            w2[c] = w2[c] * k                           # 出来高は触らない（値段の単位だけを見る）
+        for name, fn, _d in cat:
+            if base.get(name) is None:
+                continue
+            try:
+                v2 = pd.to_numeric(fn(w2), errors="coerce").to_numpy(dtype=float)
+            except Exception as e:                      # noqa: BLE001
+                skip.append((name, f"定数倍のあとで計算できず: {str(e)[:40]}")); continue
+            v1 = base[name]
+            m = np.isfinite(v1) & np.isfinite(v2)
+            if m.sum() == 0:
+                skip.append((name, "比べられる値が無い（全部 欠け）")); continue
+            # ★ずれの大きさは「その列のふつうの大きさ」と比べる（2026-08-11 に直した）。
+            #   前は1本ずつの値そのもので割っていたので、値がほぼ 0 の足（BOP の実例＝高値と安値の
+            #   差が 0.01・終値と始値の差が 0 で、値が 2e-14）で 小数の丸めの差が大きな比に見えて
+            #   誤って ❌ を出した（実測＝3,000本のうち5本）。
+            scale = float(np.median(np.abs(v1[m])))
+            denom = np.maximum(np.abs(v1[m]), max(scale, 1e-12))
+            rel = float(np.max(np.abs(v2[m] - v1[m]) / denom))
+            if rel > _H6_RTOL:
+                bad.append(dict(名前=name, 倍率=k, 最大のずれ=rel,
+                                比=float(np.median(v2[m] / np.where(v1[m] == 0, np.nan, v1[m])))))
+            elif k == _H6_FACTORS[0]:
+                ok.append(name)
+    return dict(ok=ok, bad=bad, skip=skip, rows=len(win), n=len(cat))
+
+
+def _insp_price_scale(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> list[str]:
+    """検査13 価格を定数倍しても値が変わらないか（H6）。変わる列が1つでもあれば ❌。"""
+    r = _price_scale_check(bars, cfg, catalog)
+    print(f"  値決め窓の {r['rows']} 本で、4本値を {_H6_FACTORS[0]} 倍と {_H6_FACTORS[1]} 倍にして"
+          f" 全 {r['n']} 種を計算し直した（出来高は触らない）")
+    print(f"  ★値が変わらなかった列（＝%や比に直せている）= {len(r['ok'])} 種"
+          f" ／ ★値が変わった列（＝ドルの金額のまま）= {len({b['名前'] for b in r['bad']})} 種")
+    if r["skip"]:
+        print(f"  比べられなかった列 {len(r['skip'])} 件")
+        for nm, why in r["skip"][:10]:
+            print(f"     ・{nm}: {why}")
+    for b in r["bad"]:
+        print(f"     ❌ {b['名前']}: 値段を {b['倍率']} 倍にすると値が変わる"
+              f"（相対のずれ 最大 {b['最大のずれ']:.3g}・値の比の中央値 {b['比']:.4g}）")
+    return [f"H6 違反の疑い: {b['名前']}（値段を {b['倍率']} 倍にすると値が変わる）"
+            for b in r["bad"]]
+
+
+# ══ 検査12（材料どうしの重複の総当たり・2026-08-11 新設・段6 の 6-9③）═══════════════════
+# ★何のための検査か。まこさん決定（2026-08-09・逐語「他にも同じ挙動の指標があれば紛らわしいので
+#   片方を省いていく」）を機械で回せる形にする。前は毎回その場で書いていて、何が重複だったかの
+#   記録が残らなかった（2026-08-10 の「既存12列ぶん」が何かを、次のセッションが再現できなかった）。
+# ★2つの見方で測る。どちらも「engine_tuner にとって同じ条件になるか」を見ている。
+#   ①値そのものの相関（ピアソン）＝片方を定数倍して定数を足すと重なる組。
+#   ②順位の相関（スピアマン）＝『値 ≥ 閾値』の形にしたとき、同じ足で同じ判定になる組。
+#     ★終値で割る形（比）が入ると①では捕まらない（教訓 L-438）ので②が要る。
+# ★総当たりは行列の掛け算で出す（1組ずつ回さない）＝列 564 でも数秒。
+_DUP_NEAR = 0.999      # これを超える組を「近い組」として一覧に出す（L-438 の hwc は 0.999973 だった）
+_DUP_SAME = 0.99999    # これを超える組は「実質 同じもの」＝省く候補
+
+
+def _corr_matrix(x: np.ndarray) -> np.ndarray:
+    """列どうしの相関の総当たり（掛け算1回で出す）。列は標準化してから内積を取る。"""
+    z = x - x.mean(axis=0, keepdims=True)
+    s = z.std(axis=0, ddof=0, keepdims=True)
+    s[s == 0] = np.nan                                  # 動かない列は相関を出さない
+    z = z / s
+    return (z.T @ z) / len(z)
+
+
+def _dup_pairs(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
+               tf: str = "5m", rows: int = 20000, calc_rows: int = 60000) -> dict:
+    """材料の列を値決め窓で作り、重複の組を総当たりで出す。戻り＝機械が読む形。
+
+    ★calc_rows＝計算に使う本数（値決め窓の後ろから）。値決め窓 158,000本 の全部で 561列 を作ると
+      時間もメモリも足りない（2026-08-11 実測＝走行が途中で落ちた）。60,000本＝約208日ぶんで、
+      いちばん長い暖機（200本）の 300倍 あるので、重複の判定には十分。
+    ★rows＝そのうち相関を取る本数（暖機を除くため後ろから取る）。
+    """
+    cat = catalog or build_catalog(cfg)
+    _nm, a0, b0 = _insp_windows()[0]                    # 値決め窓（採点窓は1バーも使わない）
+    win = bars.loc[(bars.index >= a0) & (bars.index < b0)].iloc[-calc_rows:]
+    vals, names, skipped, warm = [], [], [], {}
+    for name, fn, _d in cat:
+        try:
+            s = pd.to_numeric(fn(win), errors="coerce")
+        except Exception as e:                          # noqa: BLE001
+            skipped.append((name, f"計算できず: {str(e)[:40]}")); continue
+        if s is None:
+            skipped.append((name, "None を返した")); continue
+        _fin = np.isfinite(s.to_numpy(dtype=float))
+        warm[name] = int(np.argmax(_fin)) + 1 if _fin.any() else 10**9   # 値が出はじめる本数（実測）
+        v = s.to_numpy(dtype=float)[-rows:]
+        if len(v) < rows or not np.isfinite(v).all():
+            skipped.append((name, "この本数では欠けが残る（暖機が終わらない）")); continue
+        if np.nanstd(v) == 0:
+            skipped.append((name, "値が動かない（この窓では一定）")); continue
+        vals.append(v); names.append(name)
+    if len(names) < 2:
+        return dict(names=names, skipped=skipped, pairs=[], rows=0, tf=tf, warm=warm)
+    x = np.column_stack(vals)
+    try:
+        from scipy.stats import rankdata as _rankdata
+        r = _rankdata(x, axis=0)
+    except Exception:                                   # noqa: BLE001
+        r = np.argsort(np.argsort(x, axis=0), axis=0).astype(float)
+    cp, cs = _corr_matrix(x), _corr_matrix(r)
+    pairs = []
+    iu = np.triu_indices(len(names), k=1)
+    for i, j in zip(*iu):
+        p, sp = abs(cp[i, j]), abs(cs[i, j])
+        if not (np.isfinite(p) or np.isfinite(sp)):
+            continue
+        top = max(p if np.isfinite(p) else 0.0, sp if np.isfinite(sp) else 0.0)
+        if top >= _DUP_NEAR:
+            pairs.append(dict(a=names[i], b=names[j], pearson=float(cp[i, j]),
+                              spearman=float(cs[i, j]),
+                              判定="実質 同じもの" if top >= _DUP_SAME else "近い組"))
+    pairs.sort(key=lambda d: -max(abs(d["pearson"]), abs(d["spearman"])))
+    return dict(names=names, skipped=skipped, pairs=pairs, rows=int(x.shape[0]), tf=tf, warm=warm)
+
+
+def _insp_duplicates(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> list[str]:
+    """検査12 材料どうしの重複の総当たり（値決め窓・5分足）。
+    ❌ は出さない＝どちらを省くかは まこさんが決める（CC が勝手に消さない）。一覧を毎回 出す。"""
+    r = _dup_pairs(bars, cfg, catalog)
+    print(f"  値決め窓の {r['rows']} 本 × {len(r['names'])} 列（{r['tf']}）を総当たり"
+          f"＝{len(r['names']) * (len(r['names']) - 1) // 2:,} 通り")
+    if r["skipped"]:
+        print(f"  この窓では測れなかった列 {len(r['skipped'])} 件（暖機が終わらない・値が動かない ほか）")
+        for nm, why in r["skipped"][:20]:
+            print(f"     ・{nm}: {why}")
+    same = [p for p in r["pairs"] if p["判定"] == "実質 同じもの"]
+    near = [p for p in r["pairs"] if p["判定"] == "近い組"]
+    print(f"  ★実質 同じもの（|相関| ≥ {_DUP_SAME}）= {len(same)} 組"
+          f" ／ 近い組（≥ {_DUP_NEAR}）= {len(near)} 組")
+    for p in same + near:
+        print(f"     [{p['判定']}] {p['a']} ↔ {p['b']}"
+              f"（値の相関 {p['pearson']:+.7f} ／ 順位の相関 {p['spearman']:+.7f}）")
+    if same:
+        print("  ── まとまりごとの「残す／省く」（まこさん OK 2026-08-11・逐語「同じ挙動ならどちらかは"
+              "使わないようにしていいよ」）──")
+        print("     決まり1: V9 と採用中の戦略が実際に書いている行が多い方を残す")
+        print("       （根拠＝まこさん逐語 2026-08-08「最低限v9で使ってるロジックを組めることは必要」）")
+        print("     決まり2: 同点なら、業界のライブラリに同じ関数が在る方を残す")
+        print("     決まり3: それも同点なら、暖機（値が出はじめる本数）が短い方を残す（実測）")
+        print("     決まり4: それも同点なら、名前の並び順で前の方")
+        for grp in _dup_groups(same):
+            keep, why, tbl = _dup_keep_of_group(grp, r.get("warm"))
+            drops = [g for g in grp if g != keep]
+            print(f"     ・残す {keep} ／ 省く {'・'.join(drops)}")
+            print(f"         決め手: {why}")
+            print(f"         内訳: {tbl}")
+    print("  ⚠️ 省く作業そのものは、この検査では しない（材料カタログを直すのは別の手順）")
+    return []
+
+
+# ══ 重複の組で「残す側」を決める材料（2026-08-11・3回 間違えたので探し方そのものを変えた）════
+# ★経緯を残す。CC は「その指標を使っているか」を、ソースの文字探しで数えようとして3回 外した。
+#   ①材料カタログの列名とレシピの family 名だけを探し、V9 のファイルを1つも見なかった（BB が 0 行）
+#   ②文字の並びが入っていれば数える形にしたら、短い名前が別の単語に当たった（AR が 1,246 行）
+#   ③語の区切りで探す形にしたら、今度は `bb_middle` のような書き方が外れた（BB が 137 → 23 行）
+# ★やめて、実物の一覧との「一致」で判定する形にした（あいまいな探し方をしない）。
+#   (a) V9 が実際に計算している指標か＝検査11 が V9 の実物から機械で拾った一覧
+#   (b) engine_tuner のレシピ・E38 のロジックが family として使っているか＝json を読んで一致で判定
+_V9_LABEL_TO_FAMILIES: dict[str, tuple[str, ...]] = {
+    # 検査11 が出す「指標」の呼び名 → 材料カタログの family（この対応だけは手で書く・1か所に集約）
+    "RCI": ("RCI",), "ADX": ("ADX", "DI差"), "ATR%": ("ATR%",), "RSI": ("RSI",),
+    "BB": ("BB%b", "BB幅"), "EMA": ("close vs EMA", "EMA傾き"),
+    "Stoch": ("Stoch%K", "Stoch%D"), "MACD": ("MACD線%", "MACDヒスト%", "MACDシグナル線%"),
+    "fib位置": ("fib位置",), "realized_vol": ("realized_vol",),
+}
+
+
+def _v9_families() -> set:
+    """V9 が実際に計算している指標の family（検査11 が実物から拾った一覧から引く）。"""
+    out = set()
+    for r in _v9_periods():
+        out.update(_V9_LABEL_TO_FAMILIES.get(r["指標"], ()))
+    return out
+
+
+def _recipe_families() -> set:
+    """engine_tuner のレシピ・E38 のロジックが材料として使っている family（json の一致で判定）。"""
+    import json as _json
+    root = pathlib.Path(__file__).resolve().parent
+    files = list((root / "recipes").glob("*.json")) if (root / "recipes").exists() else []
+    if (root / "e38_logics.json").exists():
+        files.append(root / "e38_logics.json")
+    out = set()
+
+    def walk(o):
+        if isinstance(o, dict):
+            if isinstance(o.get("family"), str):
+                out.add(o["family"])
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+    for f in files:
+        try:
+            walk(_json.loads(f.read_text(encoding="utf-8")))
+        except Exception:                                        # noqa: BLE001
+            pass
+    return out
+
+
+# ★（古い数え方・使っていない）その指標を実際に書いている行を数える（2026-08-11 に作り直した）。
+#   前は「材料カタログの列名」と「レシピの family 名」だけを探していたので、
+#   ①V9 のファイルを1つも見ていない ②戦略が自前の列名（bb_middle・bb_sig ほか）で持っている分を
+#   見落とす、の2つで BB を「使っていない」と数えた（実測＝BB は V9 だけで 69 行）。
+_USE_PATTERNS: dict[str, tuple[str, ...]] = {
+    "BB%b": ("bollinger", "bb_"), "BB幅": ("bb_width", "bollinger"),
+    "zscore": ("zscore", "z_score"), "stdev%": ("stdev", "std("),
+    "close vs SMA": ("sma", "rolling"), "close vs EMA": ("ema_", "ewm"),
+    "RSI": ("rsi",), "RCI": ("rci",), "ADX": ("adx",), "ATR%": ("atr",),
+    "Stoch%K": ("stoch",), "Stoch%D": ("stoch",), "MACD線%": ("macd",),
+    "volume_ratio": ("volume_ratio", "vol_ratio"), "ROC": ("roc", "pct_change"),
+}
+
+
+def _dup_used_in_strategies(name: str) -> dict:
+    """その指標を V9 と採用中の戦略が実際に書いている行の数（ファイルごとの内訳つき）。"""
+    import subprocess
+    root = pathlib.Path(__file__).resolve().parents[2]
+    files = {
+        "V9": root / "strategies" / "cat_v9_decider.py",
+        "V9共通": root / "cat" / "indicators.py",
+        "E37": root / "scripts" / "priority_rebuild" / "e37_range_scalp.py",
+        "E36": root / "scripts" / "priority_rebuild" / "e36_short_oscillation.py",
+        "E38": root / "scripts" / "priority_rebuild" / "e38_logic_parts.py",
+        "レンジ土台": root / "scripts" / "priority_rebuild" / "e34_range_base.py",
+        "レシピ": root / "scripts" / "priority_rebuild" / "recipes",
+    }
+    ent = iref.find(name)[0]
+    fam = ent["family"] if ent else name
+    pats = list(_USE_PATTERNS.get(fam, ())) + [name, fam]
+    # ★語の区切りで探す（2026-08-11 に直した）。前は文字の並びが入っていれば数えていたので、
+    #   短い名前が別の単語の中に当たった（実測＝`AR` が 1,246 行＝params・array などに当たっていた）。
+    def _rx(p: str) -> str:
+        return "(^|[^A-Za-z0-9_%])" + re.escape(p.rstrip("_")) + "([^A-Za-z0-9_]|$)"
+    out, total = {}, 0
+    for label, path in files.items():
+        if not path.exists():
+            continue
+        n = 0
+        for pat in dict.fromkeys(pats):
+            if len(pat) < 2:
+                continue
+            try:
+                cmd = ["grep", "-rcE", "--", _rx(pat), str(path)]
+                if len(pat) > 3:                                  # 短い名前は大文字小文字を区別する
+                    cmd.insert(2, "-i")
+                r = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+                for ln in r.stdout.splitlines():
+                    tail = ln.rsplit(":", 1)[-1].strip()
+                    if tail.isdigit():
+                        n += int(tail)
+            except Exception:                                    # noqa: BLE001
+                pass
+        out[label] = n
+        total += n
+    return dict(計=total, 内訳=out)
+
+
+def _dup_groups(pairs: list[dict]) -> list[list[str]]:
+    """「同じもの」の組をつなげて、ひとまとまりにする（A=B・B=C なら A・B・C で1組）。
+
+    ★2026-08-11 に足した。理由＝組ごとに別々に「残す方」を選ぶと、同じ列を
+      片方の組では「残す」・別の組では「省く」と言ってしまう（実測で2件 起きた）。
+    """
+    parent: dict[str, str] = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for p in pairs:
+        a, b = find(p["a"]), find(p["b"])
+        if a != b:
+            parent[a] = b
+    grp: dict[str, list[str]] = {}
+    for x in list(parent):
+        grp.setdefault(find(x), []).append(x)
+    return [sorted(v) for v in grp.values() if len(v) > 1]
+
+
+def _dup_used_in_repo(name: str) -> int:
+    """その列を、採用中の戦略・レシピ・設定が使っているか（使っている物を消さないため）。
+
+    ★2つの書き方を両方 探す（2026-08-11 に直した）。
+      ①列の名前そのまま（例＝`volume_ratio20`）
+      ②レシピの書き方＝family と 数字を分けて持つ形（例＝`"family": "volume_ratio"` ＋ `"param": 20`）。
+      ★前は①だけを探していたので、レシピが実際に使っている列を「使っていない」と誤って数えた
+        （実測＝volume_ratio20 を『省く』側に出してしまった。実物では e38 のレシピが使っている）。
+    """
+    import subprocess
+    root = pathlib.Path(__file__).resolve().parents[0]
+    targets = [str(root / x) for x in ("recipes", "e38_logics.json", "e38_logic_parts.py",
+                                       "e37_range_scalp.py", "engine_tuner_exec.py")]
+    targets = [t for t in targets if pathlib.Path(t).exists()]
+    ent, prm = iref.find(name)
+    pats = [name]
+    if ent is not None:
+        pats.append(f'"{ent["family"]}"')                        # レシピの family の書き方
+    n = 0
+    for pat in pats:
+        try:
+            r = subprocess.run(["grep", "-rIl", "-F", "--", pat, *targets],
+                               capture_output=True, text=True, timeout=60)
+            n += len([x for x in r.stdout.splitlines() if x.strip()])
+        except Exception:                                        # noqa: BLE001
+            pass
+    return n
+
+
+def _dup_keep_of_group(grp: list[str], warm: dict | None = None) -> tuple[str, str, str]:
+    """まとまりの中から、残す1本を選ぶ。★2026-08-11 に作り直した（前の版は2つ間違っていた）。
+
+    まこさんの決定＝「同じ挙動の指標があれば片方を省いてよい」（2026-08-09・2026-08-11）。
+    ★どちらを残すかの順番は、まこさんの決定から引く。
+      決まり1＝**V9 と採用中の戦略が実際に書いている行が多い方を残す**
+        （根拠＝まこさん逐語 2026-08-08「最低限v9で使ってるロジックを組めることは必要」。
+          使っている物を消すと、その形が組めなくなる）
+      決まり2＝同点なら、業界のライブラリに同じ関数が在る方を残す（業界の名前を残す）
+      決まり3＝それも同点なら、暖機（値が出はじめる本数）が短い方を残す（実測）
+      決まり4＝それも同点なら、名前の並び順で前の方
+
+    ★前の版の間違い（2026-08-11・まこさん指摘）
+      ①使っている所を「材料カタログの列名」と「レシピの family 名」だけで探し、V9 のファイルを
+        1つも見ていなかった＝BB を「使っていない」と数えた（実物では V9 だけで 72 行）。
+      ②暖機を「名前の中の数字を全部 足す」で近似し、標準偏差の 2.0 のような本数でない数字まで
+        足していた（実測＝BB%b(20,2.0) も zscore20 も暖機は同じ 20 本目）。
+    """
+    v9f, rcf = _v9_families(), _recipe_families()
+    used, ind, wm, why1 = {}, {}, {}, {}
+    for g in grp:
+        ent = iref.find(g)[0]
+        fam = ent["family"] if ent else g
+        tags = []
+        if fam in v9f:
+            tags.append("V9 が計算している")
+        if fam in rcf:
+            tags.append("レシピが材料に使っている")
+        used[g] = len(tags)
+        why1[g] = "・".join(tags) or "どちらでもない"
+        ind[g] = bool(iref.INDUSTRY_MAP.get(fam, ((), ""))[0]) if ent else False
+        wm[g] = (warm or {}).get(g, 10**9)
+    tbl = " ／ ".join(f"{g}（{why1[g]}・業界の関数 {'有' if ind[g] else '無'}"
+                     + (f"・暖機 {wm[g]} 本目" if wm[g] < 10**9 else "") + "）" for g in grp)
+    best = max(used.values())
+    cand = [g for g in grp if used[g] == best]
+    if best > 0 and len(cand) == 1:
+        return cand[0], f"決まり1＝{why1[cand[0]]}（ほかは使われていない）", tbl
+    c2 = [g for g in cand if ind[g]] or cand
+    if len(c2) == 1:
+        return c2[0], "決まり2＝業界のライブラリに同じ関数が在る", tbl
+    c3 = sorted(c2, key=lambda g: (wm[g], g))
+    if len({wm[g] for g in c2}) > 1:
+        return c3[0], f"決まり3＝暖機がいちばん短い（{wm[c3[0]]} 本目）", tbl
+    return c3[0], "決まり4＝上の3つが同点＝名前の並び順で前の方", tbl
+
+
 def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
     """データと指標の検査（歩0）＝5段を順に走らせ、まとめを機械出力する。❌ が1つでもあれば終了コード1。"""
     cfg = load_config(config_path)
@@ -3526,7 +4080,10 @@ def inspect_data(bars_csv: str, config_path: str | None = None) -> None:
                ("検査7", INSPECT_SECTIONS[6], lambda: _insp_axis(cfg)),
                ("検査8", INSPECT_SECTIONS[7], lambda: _insp_range_geo(bars, cfg)),
                ("検査9", INSPECT_SECTIONS[8], lambda: _insp_direction_gap(cfg)),
-               ("検査10", INSPECT_SECTIONS[9], lambda: _insp_industry(cfg))]
+               ("検査10", INSPECT_SECTIONS[9], lambda: _insp_industry(cfg)),
+               ("検査11", INSPECT_SECTIONS[10], lambda: _insp_v9_periods(cfg)),
+               ("検査12", INSPECT_SECTIONS[11], lambda: _insp_duplicates(bars, cfg)),
+               ("検査13", INSPECT_SECTIONS[12], lambda: _insp_price_scale(bars, cfg))]
     for key, title, run in stages:
         if key == "検査6":                     # 検査5（判定なしの報告）を順番どおり挟む
             _h(INSPECT_SECTIONS[4])
@@ -4372,8 +4929,15 @@ def selftest() -> None:
                       f"{[(k, v) for k, v in _mn.items() if k.startswith('ふつうの列')]}")
     # ★段3（照合の相手を増やす・2026-08-09）の番人
     #  ① 2つ目の照合（pandas-ta ／ scipy）が実際に効く＝わざと少しずらした式で「2つ目の照合」の不一致が出る
-    _z3 = f"zscore{cfg['zscore_periods'][0]}"
-    _zfn = dict((nm, fn) for nm, fn, _d in build_catalog(cfg))[_z3]
+    # ★2つ目の照合（pandas-ta / scipy）を持つ列を、カタログの実物から選ぶ（2026-08-11 に直した）。
+    #   前は zscore20 を名前で決め打ちしていたが、同じ挙動の列を省いたときに消えて番人が落ちた。
+    _cat_now = dict((nm, fn) for nm, fn, _d in build_catalog(cfg))
+    _z3 = next((nm for nm in _cat_now
+                if (iref.find(nm)[0] or {}).get("family") in iref.EXT2), None)
+    if _z3 is None:
+        ng.append("検査3 の2つ目の照合を持つ列がカタログに1本も無い（この番人が回せない）")
+        _z3 = next(iter(_cat_now))
+    _zfn = _cat_now[_z3]
     _fakex2 = [(_z3, lambda d: _zfn(d) * 1.01, True)]
     with _cl2.redirect_stdout(_q):
         _ngx2, _vx2, _rx2 = _insp_indicator_match(_sb3, cfg, catalog=_fakex2)
@@ -4599,6 +5163,38 @@ def selftest() -> None:
             ng.append(f"出力先が ratchet 直下のまま: {_kind} → {_p}")
     if "ratchet_io.RATCHET /" in inspect.getsource(_out_path):
         ng.append("_out_path が ratchet 直下を直に指している（OBSERVE_DIR を使っていない）")
+
+    # ── 検査11（V9 の本数との突き合わせ）が生きているか（2026-08-11・段6 の 6-8）──
+    #   ①いまの設定では ❌ が出ないこと ②わざと「設定に無い本数」を1件 入れると ❌ が出ること
+    import contextlib as _cl11
+    import io as _io11
+    _v9rows = _v9_periods()
+    if not _v9rows:
+        ng.append("検査11: V9 の本数を実物から1件も拾えない（拾い方が実物とずれている）")
+    with _cl11.redirect_stdout(_io11.StringIO()):
+        _now_ng = _insp_v9_periods(cfg)
+        _fake_ng = _insp_v9_periods(cfg, rows=[dict(指標="RCI", キー="rci_periods", 本数=9999,
+                                                    出どころ="番人（偽）", 逐語="番人が入れた偽の本数",
+                                                    説明="この検査が生きていることの確認")])
+    if _now_ng:
+        ng.append(f"検査11: いまの設定で V9 の本数が足りない（{_now_ng[0]}）")
+    if not _fake_ng:
+        ng.append("検査11: 設定に無い本数を入れても ❌ が出ない（この検査が死んでいる）")
+
+    # ── RCI の速い実装が、元の実装と1つも違わないか（2026-08-11・段6 の 6-8 で速くした）──
+    #   同じ値段があるとき（平均順位）と、欠けがあるときの2つを、わざと作ったデータで確かめる。
+    _rng = np.random.default_rng(0)
+    _cc = pd.Series(np.round(np.cumsum(_rng.normal(0, 1.0, 3000)) + 100.0, 1))   # 丸めて同値を作る
+    _cn = _cc.copy()
+    _cn.iloc[500:505] = np.nan
+    for _w in (7, 9, 26, 52):
+        for _lbl, _s in (("同じ値段あり", _cc), ("欠けあり", _cn)):
+            _a, _b = _rci_slow(_s, _w), _rci(_s, _w)
+            if not (_a.isna() == _b.isna()).all():
+                ng.append(f"RCI{_w}（{_lbl}）: 速い実装と元の実装で欠けの位置が違う")
+            _d = float((_a - _b).abs().max())
+            if not (_d == 0.0 or np.isnan(_d)):
+                ng.append(f"RCI{_w}（{_lbl}）: 速い実装と元の実装の最大差 {_d:.3g}（0 でない）")
 
     print("=" * 80)
     print("observe_diag 自己検査")

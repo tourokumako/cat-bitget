@@ -829,7 +829,16 @@ _r(r"MACD線%\((\d+),(\d+)\)", "MACD線%",
    "順張り値＝プラスで上昇の勢い", "trend", tb=_tb_macd_line, ext=_ext_macd_line,
    known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])
 _r(r"MACDヒスト%\((\d+),(\d+),(\d+)\)", "MACDヒスト%",
-   "MACD線 − シグナル線（MACD線の EMA）を終値で割って%化", "Appel。%化は本プロジェクトの流儀",
+   "MACD線 − シグナル線（MACD線の EMA）を終値で割って%化",
+   "Appel。%化は本プロジェクトの流儀。"
+   "★2026-08-11 に「この登録は 状態量＝加速 に直すべきではないか」を実測で確かめた（段6 の 6-9④）。"
+   "結果＝直さない。加速の柱で 加速した上げ +0.0008543 ／ 加速した下げ −0.001215＝符号が分かれる"
+   "（＝プラスが上げの加速という主張は支持される）。実データの柱では 上げた日 −0.000612 ／ "
+   "下げた日 −0.0001865・四分位幅 0.04503＝差は幅の 1% 未満で向きが出ない（加速を測る指標なので、"
+   "上げた日と下げた日で差が出ないのが正しい）。★同じ形の PPOヒスト・RVGIヒスト・VWMACDヒスト は "
+   "状態量＝加速（向きを持たない）で登録されていて、この列だけ区分が違う。そろえるかどうかは "
+   "実測で決める（PPOヒスト 加速上げ +0.0001571／加速下げ −0.007139・RVGIヒスト +0.002105／−0.003796 は"
+   "符号が分かれる＝順張り値の側／VWMACDヒスト +0.001163／+0.001312 は分かれない＝状態量の側）",
    "順張り値＝プラスで勢いが加速", "trend", tb=_tb_macd_hist, ext=_ext_macd_hist,
    known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])])
 _r(r"MACDシグナル線%\((\d+),(\d+),(\d+)\)", "MACDシグナル線%",
@@ -1692,9 +1701,14 @@ def _tb_slp_linreg(d, p):
 
 
 def _tb_lrangle(d, p):
+    """直線あてはめの角度。★2026-08-11 に「1本あたり何%動くか」の傾きの角度へ直した。
+
+    業界の実装は arctan（1本あたり何ドル動くか）だが、それだと値段の帯が変わると同じ動きでも
+    角度が変わる＝H6（価格非依存）に反する（実測＝4本値を2倍にすると値が変わる・検査13）。
+    うちは傾きを終値で割って%にしてから角度にする（SQZ% と同じ流儀）。
+    """
     n = int(p[0])
     c = d.close.to_numpy(float)
-    b = (_lin_end(c, n) - _lin_end(c, n + 1)) * 0 + np.nan     # 置き換え（下で計算）
     w = _swv(c, n) if len(c) >= n else None
     out = np.full(len(c), np.nan)
     if w is not None:
@@ -1703,7 +1717,7 @@ def _tb_lrangle(d, p):
         stt = ((tt - tm) ** 2).sum()
         ym = w.mean(axis=1)
         sl = ((w - ym[:, None]) * (tt - tm)).sum(axis=1) / stt
-        out[n - 1:] = np.degrees(np.arctan(sl))
+        out[n - 1:] = np.degrees(np.arctan(sl / c[n - 1:] * 100.0))
     return _S(out, d)
 
 
@@ -2065,8 +2079,9 @@ def _tb_sqz_on(d, p):
 
 
 def _tb_sqz(d, p):
-    """スクイーズの勢い＝12本前との差を6本の単純移動平均でならしたもの（実物で確認）。"""
-    return _S(_roll(d.close.diff(12).to_numpy(float), 6, "mean"), d)
+    """スクイーズの勢い＝12本前との差を6本の単純移動平均でならしたもの（実物で確認）を、終値で割って%化。
+    ★%化は 2026-08-11（段6 の 6-9①）に足した＝値段の単位のままだと H6 違反（検査13 が見つけた）。"""
+    return _S(_roll(d.close.diff(12).to_numpy(float), 6, "mean"), d) / d.close * 100
 
 
 def _tb_sqzpro(d, p, ks):
@@ -2380,9 +2395,12 @@ _r(r"SMC_SWEEP", "SMC_SWEEP",
    "流動性の刈り取り。直前の高値・安値を一度 抜いてから戻した足を見つける",
    "ライブラリの計算式（Smart Money Concepts）。直前15本の安値を割って戻り、下ヒゲが実体の1.5倍より"
    "長い足を +1／高値側を −1", "反転サイン", "none", tb=_tb_smc_sweep)
-_r(r"SQZ", "SQZ",
-   "スクイーズの勢い。ボリンジャーとケルトナーの帯の関係から作る勢いの値",
-   "John Carter（TTM Squeeze）。終値と「20本の高安の中央と20本平均の平均」の差を直線あてはめでならす",
+_r(r"SQZ%", "SQZ%",
+   "スクイーズの勢い。ボリンジャーとケルトナーの帯の関係から作る勢いの値を、終値で割って%化",
+   "John Carter（TTM Squeeze）。終値と「20本の高安の中央と20本平均の平均」の差を直線あてはめでならす。"
+   "★%化は価格非依存 H6 のための本プロジェクトの流儀（2026-08-11・段6 の 6-9①）。"
+   "前は値段の単位のまま材料に入っていた＝検査13（4本値を定数倍して計算し直す）が見つけた"
+   "（実測＝4本値を2倍にすると値も2倍・比の中央値 2.000）",
    "順張り値", "none", tb=_tb_sqz)
 _r(r"SQZ_ON", "SQZ_ON",
    "スクイーズが効いているか（ボリンジャーがケルトナーの内側）。1 か 0",
@@ -2504,8 +2522,15 @@ _r(r"close vs LINREG%(\d+)", "close vs LINREG%",
 _r(r"LINREG(\d+)傾き%", "LINREG傾き%",
    "直線あてはめの線の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_linreg)
 _r(r"LRangle(\d+)", "LRangle",
-   "n 本の直線あてはめの傾きを角度（度）にしたもの",
-   "標準（Linear Regression Angle）。arctan(傾き) を度に直す", "順張り値", "trend", tb=_tb_lrangle)
+   "n 本の直線あてはめの傾きを角度（度）にしたもの。傾きは「1本あたり何%動くか」で測る",
+   "標準（Linear Regression Angle）は arctan(1本あたり何ドル動くか) だが、それだと値段の帯が変わると "
+   "同じ動きでも角度が変わる＝H6 違反（実測＝4本値を2倍にすると値が変わる・検査13）。"
+   "★うちは傾きを終値で割って%にしてから角度にする（本プロジェクトの流儀・2026-08-11）。"
+   "★経緯＝2026-08-11 に私が一度「外す」と決めたが、それは私の勝手な判断だった（まこさん指摘）。"
+   "要件のハード制約に反する指標は、外すのではなく直して使う。"
+   "★この形は既に在る LRslope% の単調変換（実測＝順位の相関 1.0000000000）＝重複の候補。"
+   "どちらを省くかは まこさんが決める（検査12 の一覧に出る）",
+   "順張り値", "trend", tb=_tb_lrangle)
 
 
 
@@ -3946,7 +3971,12 @@ AXIS_EC: list[dict] = [
     dict(cat="形(W窓)", token="W", impl=[r"W字\("], status="あり",
          note="教科書のダブルボトム検出を 2026-07-30 に実装（同水準の2底＋ネックライン上抜け・流儀は定義表）"),
     dict(cat="形(W窓)", token="M", impl=[r"形スコア\d+"], status="あり", note="形スコア M=−2"),
-    dict(cat="形(W窓)", token="swing_dist", impl=[r"swing高値距離%\d+", r"swing安値距離%\d+"], status="あり", note=""),
+    dict(cat="形(W窓)", token="swing_dist", impl=[r"close vs \d+本高値%", r"close vs \d+本安値%"],
+         status="あり",
+         note="★2026-08-11 に指す列を変えた。前は swing高値距離%・swing安値距離% を指していたが、"
+              "検査12（重複の総当たり）で close vs n本高値%・close vs n本安値% と『実質 同じもの』"
+              "（値の相関も順位の相関も 1.0000000）と出たので、まこさん OK 2026-08-11（逐語"
+              "「同じ挙動ならどちらかは使わないようにしていいよ」）で swing 側を省いた。中身は同じ"),
     dict(cat="形(W窓)", token="bars_since_high-low",
          impl=[r"高値からの経過バー\d+", r"安値からの経過バー\d+"], status="あり", note=""),
     # 位置
@@ -4097,7 +4127,7 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "RVGIシグナル": dict(k="オシレーター"), "RVGIヒスト": dict(k="オシレーター"),
     "QQE": dict(k="オシレーター"), "QQE_RSIMA": dict(k="オシレーター"),
     "SMC_SWEEP": dict(k="構造・位置", note="直前の高値・安値を抜いて戻した足＝水準に関わる判定"),
-    "SQZ": dict(k="ボラ", note="帯の縮み具合から作る値"),
+    "SQZ%": dict(k="ボラ", note="帯の縮み具合から作る値を終値で割って%化（H6・2026-08-11）"),
     "SQZ_ON": dict(k="ボラ"),
     "SQZPRO_ON_WIDE": dict(k="ボラ"), "SQZPRO_ON_NARROW": dict(k="ボラ"),
     "STC": dict(k="トレンド"), "STCstoch": dict(k="トレンド"),
@@ -4184,6 +4214,7 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "HA上ヒゲ比": dict(k="ローソク", note="平均足の上ヒゲの割合"),
     "HA下ヒゲ比": dict(k="ローソク", note="平均足の下ヒゲの割合"),
     "close vs MEDIAN%": dict(k="構造・位置"), "MEDIAN傾き%": dict(k="トレンド"),
+    "LRangle": dict(k="トレンド"),
     "close vs LRb%": dict(k="構造・位置"), "LRb傾き%": dict(k="トレンド"), "LRslope%": dict(k="トレンド"),
     "close vs MAMA%": dict(k="構造・位置"), "close vs FAMA%": dict(k="構造・位置"),
     "close vs MCGD%": dict(k="構造・位置"), "MCGD傾き%": dict(k="トレンド"),
@@ -4203,7 +4234,6 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "close vs JMA%": dict(k="構造・位置"),
     "close vs KAMA%": dict(k="構造・位置"), "KAMA傾き%": dict(k="トレンド"),
     "close vs LINREG%": dict(k="構造・位置"), "LINREG傾き%": dict(k="トレンド"),
-    "LRangle": dict(k="トレンド"),
     "VWMACD線%": dict(k="トレンド", note="出来高で重みづけた MACD"),
     "VWMACDシグナル%": dict(k="トレンド"), "VWMACDヒスト%": dict(k="トレンド"),
     # ボラ
@@ -4324,7 +4354,7 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "QQE": (("qqe",), "qqe が7列 返すうち、重ならない2列だけ入れた"),
     "QQE_RSIMA": (("qqe",), "同上"),
     "SMC_SWEEP": (("smc_sweep",), ""),
-    "SQZ": (("squeeze",), "squeeze が4列 返す"),
+    "SQZ%": (("squeeze",), "squeeze が4列 返す"),
     "SQZ_ON": (("squeeze",), "同上"),
     "SQZPRO_ON_WIDE": (("squeeze_pro",), "squeeze_pro が6列 返すうち、squeeze と重ならない3列だけ入れた"),
     "SQZPRO_ON_NARROW": (("squeeze_pro",), "同上"),
@@ -4449,6 +4479,7 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     # ── overlap 2回目（linregintercept〜rma）──
     "close vs LRb%": (("linregintercept",), "値段そのもの。うちは終値との距離%（H6）"),
     "LRb傾き%": (("linregintercept",), "同上（傾きの形）"),
+    "LRangle": (("linregangle",), "★角度は値段の単位に依存する（実測）。うちは傾きを%にしてから角度にする＝流儀が違う"),
     "LRslope%": (("linregslope",), "1本あたりの値段の増え方。うちは終値で割って%化（H6）"),
     "close vs MAMA%": (("mama",), "mama が MAMA・FAMA をまとめて返す"),
     "close vs FAMA%": (("mama",), "同上"),
@@ -4473,7 +4504,6 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "close vs JMA%": (("jma",), "同上"),
     "close vs KAMA%": (("kama",), "同上"), "KAMA傾き%": (("kama",), "同上"),
     "close vs LINREG%": (("linreg",), "同上"), "LINREG傾き%": (("linreg",), "同上"),
-    "LRangle": (("linregangle",), "角度なので値段に依存しない＝そのまま入れる"),
     "VWMACD線%": (("vwmacd",), "vwmacd が本体・ヒスト・シグナルをまとめて返す。うちは%化（H6）"),
     "VWMACDシグナル%": (("vwmacd",), "同上"), "VWMACDヒスト%": (("vwmacd",), "同上"),
     "EMA傾き": (("ema",), "ema そのものはライブラリに在る。うちは その変化率を傾きにしている"),
@@ -4568,9 +4598,7 @@ SKIP_APPROVED: dict[str, str] = {
 }
 
 INDUSTRY_SKIP: dict[str, str] = {
-    # (c) 同じ挙動＝片方を省く（まこさん決定 2026-08-09・逐語「willrは入れない。他にも同じ挙動の
-    #     指標があれば紛らわしいので片方を省いていく」）。★どれも「片方を定数倍して定数を足しただけで
-    #     ぴったり重なる」ことを実データで確かめた（ずれが値のばらつきの10億分の1 未満）。
+    # (2026-08-11・段6 の 6-9① で新しく「入れない」にしたもの)
     "willr": "うちの Stoch%K から 100 を引いただけ（実測＝最大差 1.4e-14・5,987本）",
     "rocp": "うちの ROC を 100 で割っただけ（実測＝最大差 1.1e-14）",
     "rocr": "うちの ROC に 1 を足して 100 で割っただけ（実測＝最大差 0）",

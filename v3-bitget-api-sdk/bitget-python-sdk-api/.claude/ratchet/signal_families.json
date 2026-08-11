@@ -22,23 +22,118 @@
     "ADX14",
     "ADX21",
     "ADX7",
+    "ADXR14",
+    "ADXR21",
+    "ADXR7",
+    "AMAT_LR",
+    "AR14",
+    "AR21",
+    "AR7",
+    "AR9",
+    "AROOND14",
+    "AROOND21",
+    "AROOND7",
     "ATR%14",
     "ATR%21",
     "ATR%7",
     "BB幅(20,2.0)",
-    "BB幅(20,3.0)",
     "BB幅(50,2.0)",
-    "BB幅(50,3.0)",
+    "CG14",
+    "CG21",
+    "CG7",
+    "CG9",
+    "CHOP14",
+    "CHOP21",
+    "CHOP7",
+    "CVI14",
+    "CVI21",
+    "CVI7",
+    "DI-14",
+    "DI-21",
+    "DI-7",
+    "DM-%14",
+    "DM-%21",
+    "DM-%7",
+    "DM-%9",
+    "DX14",
+    "DX21",
+    "DX7",
     "Donchian幅%20",
     "Donchian幅%48",
+    "ER14",
+    "ER21",
+    "ER7",
+    "ER9",
+    "ERI弱気%14",
+    "ERI弱気%21",
+    "ERI弱気%7",
+    "ERI弱気%9",
+    "HT_DCPERIOD",
+    "HT_DCPHASE",
+    "HT_LEADSINE",
+    "HT_QUAD%",
+    "HT_SINE",
+    "HT_TRENDMODE",
+    "HWC位置",
+    "HWC幅%",
+    "KVOシグナル比",
+    "KVO比",
+    "MAD比20",
+    "MAD比50",
+    "MARKETFI比10",
+    "MARKETFI比20",
+    "MASSI",
+    "MSW_LEAD",
+    "PDIST%",
+    "PPOヒスト(12,26,9)",
+    "PSAR加速",
+    "PSAR反転",
+    "PVO(12,26,9)",
+    "PVOL比10",
+    "PVOシグナル(12,26,9)",
+    "PVOヒスト(12,26,9)",
+    "RVGIヒスト(14,4)",
+    "RVGIヒスト(21,4)",
+    "RVGIヒスト(7,4)",
+    "RVGIヒスト(9,4)",
     "S-Rタッチ数(288,0.003)",
+    "SQZPRO_ON_NARROW",
+    "SQZPRO_ON_WIDE",
+    "SQZ_ON",
+    "TD_SEQ_DN",
+    "THERMO%",
+    "THERMO比",
+    "TR%",
+    "TRIXヒスト(14,9)",
+    "TRIXヒスト(21,9)",
+    "TRIXヒスト(7,9)",
+    "TRIXヒスト(9,9)",
+    "TSIヒスト(12,26,9)",
+    "UI14",
+    "UI21",
+    "UI7",
+    "VHF14",
+    "VHF21",
+    "VHF7",
+    "VOSC",
+    "VTXM14",
+    "VTXM21",
+    "VTXM7",
+    "VWMACDヒスト%(12,26,9)",
     "body比",
+    "kurtosis20",
+    "kurtosis50",
     "realized_vol20",
     "realized_vol50",
+    "skew20",
+    "skew50",
+    "stdev%50",
     "volume_ratio20",
     "volume_ratio50",
     "zscore_return20",
-    "zscore_return50"
+    "zscore_return50",
+    "出来高変化率%1",
+    "実体幅比10"
    ],
    "rule": "区分が 状態量・ボラ量 の部品は、向き（上昇/下落の優劣）の条件に使えない。強さ・量の条件には使える"
   },
@@ -101,6 +196,11 @@
      "tf": "1d"
     },
     {
+     "n_eff": 10.6,
+     "part": "RCI52",
+     "tf": "1d"
+    },
+    {
      "n_eff": 27.4,
      "part": "EMA20傾き%",
      "tf": "1d"
@@ -141,16 +241,6 @@
      "tf": "1d"
     },
     {
-     "n_eff": 27.4,
-     "part": "BB%b(20,3.0)",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 27.4,
-     "part": "BB幅(20,3.0)",
-     "tf": "1d"
-    },
-    {
      "n_eff": 11.0,
      "part": "BB%b(50,2.0)",
      "tf": "1d"
@@ -158,16 +248,6 @@
     {
      "n_eff": 11.0,
      "part": "BB幅(50,2.0)",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 11.0,
-     "part": "BB%b(50,3.0)",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 11.0,
-     "part": "BB幅(50,3.0)",
      "tf": "1d"
     },
     {
@@ -192,17 +272,7 @@
     },
     {
      "n_eff": 27.4,
-     "part": "zscore20",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 27.4,
      "part": "zscore_return20",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 11.0,
-     "part": "zscore50",
      "tf": "1d"
     },
     {
@@ -218,16 +288,6 @@
     {
      "n_eff": 11.0,
      "part": "volume_ratio50",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 22.9,
-     "part": "swing高値距離%24",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 22.9,
-     "part": "swing安値距離%24",
      "tf": "1d"
     },
     {
@@ -252,16 +312,6 @@
     },
     {
      "n_eff": 11.4,
-     "part": "swing高値距離%48",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 11.4,
-     "part": "swing安値距離%48",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 11.4,
      "part": "高値からの経過バー48",
      "tf": "1d"
     },
@@ -278,26 +328,6 @@
     {
      "n_eff": 11.4,
      "part": "W字(48,0.003)",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 22.9,
-     "part": "swing高値距離%96",
-     "tf": "6h"
-    },
-    {
-     "n_eff": 5.7,
-     "part": "swing高値距離%96",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 22.9,
-     "part": "swing安値距離%96",
-     "tf": "6h"
-    },
-    {
-     "n_eff": 5.7,
-     "part": "swing安値距離%96",
      "tf": "1d"
     },
     {
@@ -521,6 +551,11 @@
      "tf": "1d"
     },
     {
+     "n_eff": 27.4,
+     "part": "fib位置20",
+     "tf": "1d"
+    },
+    {
      "n_eff": 22.9,
      "part": "fib位置96",
      "tf": "6h"
@@ -608,6 +643,1596 @@
     {
      "n_eff": 1.9,
      "part": "S-Rタッチ数(288,0.003)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "BIAS21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "AR21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "CCI21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "CFO21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "CG21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "CMO21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "CTI21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "DM+%21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "DM-%21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "ER21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "ERI強気%21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "ERI弱気%21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "INERTIA21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "AO%(12,26)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "COPC(9,12,26)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "MOM%21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "PGO21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "PO21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "PSL21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "RSX21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "RVGI(21,4)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "RVGIシグナル(21,4)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "RVGIヒスト(21,4)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "PPO(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "PPOヒスト(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "PPOシグナル(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "PVO(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "PVOヒスト(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "PVOシグナル(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "StochRSI%K21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "StochRSI%D21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "TRIX(21,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "TRIXシグナル(21,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "TRIXヒスト(21,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "TSI(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "TSIシグナル(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "TSIヒスト(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "VWMACD線%(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "VWMACDヒスト%(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 21.1,
+     "part": "VWMACDシグナル%(12,26,9)",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs ALMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "ALMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs DEMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "DEMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs HMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "HMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs JMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs KAMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "KAMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs LINREG%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "LINREG20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs FWMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "FWMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs ALMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "ALMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs DEMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "DEMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs HMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "HMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs JMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs KAMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "KAMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs LINREG%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "LINREG50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs ALMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs ALMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs ALMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "ALMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "ALMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "ALMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs DEMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs DEMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs DEMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "DEMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "DEMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "DEMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs HMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs HMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs HMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "HMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "HMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "HMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs JMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs JMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs JMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs KAMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs KAMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs KAMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "KAMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "KAMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "KAMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs LINREG%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs LINREG%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs LINREG%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "LINREG200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "LINREG200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "LINREG200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs LRb%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "LRb20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs MCGD%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "MCGD20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs MIDPOINT%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "MIDPOINT20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs MIDPRICE%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "MIDPRICE20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs PWMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "PWMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs RMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "RMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "LRslope%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs LRb%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "LRb50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs MCGD%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "MCGD50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs MIDPOINT%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "MIDPOINT50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs MIDPRICE%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "MIDPRICE50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs PWMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "PWMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs RMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "RMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "LRslope%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs LRb%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs LRb%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs LRb%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "LRb200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "LRb200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "LRb200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs MCGD%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs MCGD%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs MCGD%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "MCGD200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "MCGD200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "MCGD200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs MIDPOINT%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs MIDPOINT%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs MIDPOINT%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "MIDPOINT200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "MIDPOINT200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "MIDPOINT200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs MIDPRICE%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs MIDPRICE%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs MIDPRICE%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "MIDPRICE200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "MIDPRICE200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "MIDPRICE200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs PWMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs PWMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs PWMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "PWMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "PWMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "PWMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs RMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs RMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs RMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "RMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "RMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "RMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "LRslope%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "LRslope%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "LRslope%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.0,
+     "part": "close vs MMAR%25",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 22.0,
+     "part": "MMAR25傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 18.3,
+     "part": "close vs MMAR%30",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 18.3,
+     "part": "MMAR30傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 15.7,
+     "part": "close vs MMAR%35",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 15.7,
+     "part": "MMAR35傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs SINWMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "SINWMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs SSF%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "SSF20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs SWMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "SWMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs T3%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "T320傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs TEMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "TEMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs TRIMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "TRIMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs TSF%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "TSF20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs VIDYA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "VIDYA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs VWMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "VWMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs WMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "WMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs ZLMA%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "ZLMA20傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs SINWMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "SINWMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs SSF%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "SSF50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs SWMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "SWMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs T3%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "T350傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs TEMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "TEMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs TRIMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "TRIMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs TSF%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "TSF50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs VIDYA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "VIDYA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs VWMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "VWMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs WMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "WMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs ZLMA%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "ZLMA50傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs SINWMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs SINWMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs SINWMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "SINWMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "SINWMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "SINWMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs SSF%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs SSF%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs SSF%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "SSF200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "SSF200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "SSF200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs SWMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs SWMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs SWMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "SWMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "SWMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "SWMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs T3%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs T3%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs T3%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "T3200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "T3200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "T3200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs TEMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs TEMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs TEMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "TEMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "TEMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "TEMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "TRIMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "TRIMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "TRIMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs TSF%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs TSF%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs TSF%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs VIDYA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs VIDYA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs VIDYA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "VIDYA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "VIDYA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "VIDYA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs VWMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs VWMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs VWMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "VWMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "VWMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "VWMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs WMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs WMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs WMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "WMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "WMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "WMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs ZLMA%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs ZLMA%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs ZLMA%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "ZLMA200傾き%",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "ZLMA200傾き%",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "ZLMA200傾き%",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "ADXR21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "DI+21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "DI-21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "DX21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "AROONU21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "AROOND21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "AROONOSC21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "CHOP21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "VHF21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "VTXP21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "VTXM21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "DPO%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "TTM_TREND20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "DPO%48",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "TTM_TREND48",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "EFI比20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "EOM比20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "MARKETFI比20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "NVI傾き20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "PVI傾き20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "PVT傾き20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "WAD傾き20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "VFI20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "skew20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "kurtosis20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "MAD比20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "skew50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "kurtosis50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "MAD比50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "stdev%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "close vs MEDIAN%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 27.4,
+     "part": "MEDIAN傾き%20",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs MEDIAN%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "MEDIAN傾き%50",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "close vs MEDIAN%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "close vs MEDIAN%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "close vs MEDIAN%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 16.5,
+     "part": "MEDIAN傾き%200",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 11.0,
+     "part": "MEDIAN傾き%200",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 2.7,
+     "part": "MEDIAN傾き%200",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "CVI21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "RVI21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 26.1,
+     "part": "UI21",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 18.3,
+     "part": "open_Z30",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 18.3,
+     "part": "high_Z30",
+     "tf": "1d"
+    },
+    {
+     "n_eff": 18.3,
+     "part": "low_Z30",
      "tf": "1d"
     }
    ],
@@ -710,6 +2335,16 @@
     50.0,
     75.0
    ],
+   "giveback_grid": [
+    0.25,
+    0.5,
+    0.75
+   ],
+   "hold_frac_grid": [
+    0.25,
+    0.5,
+    0.75
+   ],
    "hold_range_by_role": {
     "daytrade": {
      "hi_bars": 120,
@@ -732,6 +2367,15 @@
     24
    ],
    "k_max": 3,
+   "ladder_steps_grid": [
+    1,
+    2
+   ],
+   "loss_cap_grid": [
+    0.4,
+    0.6,
+    0.8
+   ],
    "max_adds_grid": [
     1,
     2,
@@ -765,38 +2409,253 @@
    ]
   },
   "lineage_of": {
+   "ABER位置": "構造・位置",
+   "ADOSC比": "出来高",
    "ADX14": "トレンド",
    "ADX21": "トレンド",
    "ADX7": "トレンド",
+   "ADXR14": "トレンド",
+   "ADXR21": "トレンド",
+   "ADXR7": "トレンド",
+   "ALMA200傾き%": "トレンド",
+   "ALMA20傾き%": "トレンド",
+   "ALMA50傾き%": "トレンド",
+   "AMAT_LR": "トレンド",
+   "AO%(12,26)": "トレンド",
+   "AOBV_LR": "出来高",
+   "AR14": "オシレーター",
+   "AR21": "オシレーター",
+   "AR7": "オシレーター",
+   "AR9": "オシレーター",
+   "AROOND14": "トレンド",
+   "AROOND21": "トレンド",
+   "AROOND7": "トレンド",
+   "AROONOSC14": "トレンド",
+   "AROONOSC21": "トレンド",
+   "AROONOSC7": "トレンド",
+   "AROONU14": "トレンド",
+   "AROONU21": "トレンド",
+   "AROONU7": "トレンド",
    "ATR%14": "ボラ",
    "ATR%21": "ボラ",
    "ATR%7": "ボラ",
    "BB%b(20,2.0)": "オシレーター",
-   "BB%b(20,3.0)": "オシレーター",
    "BB%b(50,2.0)": "オシレーター",
-   "BB%b(50,3.0)": "オシレーター",
    "BB幅(20,2.0)": "ボラ",
-   "BB幅(20,3.0)": "ボラ",
    "BB幅(50,2.0)": "ボラ",
-   "BB幅(50,3.0)": "ボラ",
+   "BIAS14": "オシレーター",
+   "BIAS21": "オシレーター",
+   "BIAS7": "オシレーター",
+   "BIAS9": "オシレーター",
+   "BOP": "ローソク",
+   "CCI14": "オシレーター",
+   "CCI21": "オシレーター",
+   "CCI7": "オシレーター",
+   "CCI9": "オシレーター",
+   "CFO14": "オシレーター",
+   "CFO21": "オシレーター",
+   "CFO7": "オシレーター",
+   "CFO9": "オシレーター",
+   "CG14": "オシレーター",
+   "CG21": "オシレーター",
+   "CG7": "オシレーター",
+   "CG9": "オシレーター",
+   "CHOP14": "ボラ",
+   "CHOP21": "ボラ",
+   "CHOP7": "ボラ",
    "CMF20": "出来高",
+   "CMO14": "オシレーター",
+   "CMO21": "オシレーター",
+   "CMO7": "オシレーター",
+   "CMO9": "オシレーター",
+   "COPC(9,12,26)": "トレンド",
+   "CTI14": "トレンド",
+   "CTI21": "トレンド",
+   "CTI7": "トレンド",
+   "CTI9": "トレンド",
+   "CVI14": "ボラ",
+   "CVI21": "ボラ",
+   "CVI7": "ボラ",
+   "DEMA200傾き%": "トレンド",
+   "DEMA20傾き%": "トレンド",
+   "DEMA50傾き%": "トレンド",
+   "DI+14": "トレンド",
+   "DI+21": "トレンド",
+   "DI+7": "トレンド",
+   "DI-14": "トレンド",
+   "DI-21": "トレンド",
+   "DI-7": "トレンド",
    "DI差14": "トレンド",
    "DI差21": "トレンド",
    "DI差7": "トレンド",
+   "DM+%14": "トレンド",
+   "DM+%21": "トレンド",
+   "DM+%7": "トレンド",
+   "DM+%9": "トレンド",
+   "DM-%14": "トレンド",
+   "DM-%21": "トレンド",
+   "DM-%7": "トレンド",
+   "DM-%9": "トレンド",
+   "DPO%20": "オシレーター",
+   "DPO%48": "オシレーター",
+   "DX14": "トレンド",
+   "DX21": "トレンド",
+   "DX7": "トレンド",
    "Donchian幅%20": "ボラ",
    "Donchian幅%48": "ボラ",
+   "EBSW": "オシレーター",
+   "EFI比10": "出来高",
+   "EFI比20": "出来高",
    "EMA200傾き%": "トレンド",
    "EMA20傾き%": "トレンド",
    "EMA50傾き%": "トレンド",
    "EMA9傾き%": "トレンド",
+   "EOM比10": "出来高",
+   "EOM比20": "出来高",
+   "ER14": "ボラ",
+   "ER21": "ボラ",
+   "ER7": "ボラ",
+   "ER9": "ボラ",
+   "ERI弱気%14": "トレンド",
+   "ERI弱気%21": "トレンド",
+   "ERI弱気%7": "トレンド",
+   "ERI弱気%9": "トレンド",
+   "ERI強気%14": "トレンド",
+   "ERI強気%21": "トレンド",
+   "ERI強気%7": "トレンド",
+   "ERI強気%9": "トレンド",
+   "FISHER(12,9)": "オシレーター",
+   "FISHERシグナル(12,9)": "オシレーター",
+   "FWMA20傾き%": "トレンド",
+   "HA上ヒゲ比": "ローソク",
+   "HA下ヒゲ比": "ローソク",
+   "HA実体%": "ローソク",
+   "HMA200傾き%": "トレンド",
+   "HMA20傾き%": "トレンド",
+   "HMA50傾き%": "トレンド",
+   "HT_DCPERIOD": "ボラ",
+   "HT_DCPHASE": "構造・位置",
+   "HT_INPHASE%": "オシレーター",
+   "HT_LEADSINE": "オシレーター",
+   "HT_QUAD%": "オシレーター",
+   "HT_SINE": "オシレーター",
+   "HT_TRENDMODE": "トレンド",
+   "HWC位置": "構造・位置",
+   "HWC幅%": "ボラ",
+   "INERTIA14": "トレンド",
+   "INERTIA21": "トレンド",
+   "INERTIA7": "トレンド",
+   "INERTIA9": "トレンド",
+   "KAMA200傾き%": "トレンド",
+   "KAMA20傾き%": "トレンド",
+   "KAMA50傾き%": "トレンド",
+   "KDJ%D(14,9)": "オシレーター",
+   "KDJ%D(5,9)": "オシレーター",
+   "KDJ%D(9,9)": "オシレーター",
+   "KDJ%J(14,9)": "オシレーター",
+   "KDJ%J(5,9)": "オシレーター",
+   "KDJ%J(9,9)": "オシレーター",
+   "KDJ%K(14,9)": "オシレーター",
+   "KDJ%K(5,9)": "オシレーター",
+   "KDJ%K(9,9)": "オシレーター",
+   "KST": "トレンド",
+   "KSTシグナル9": "トレンド",
+   "KVOシグナル比": "出来高",
+   "KVO比": "出来高",
+   "LINREG200傾き%": "トレンド",
+   "LINREG20傾き%": "トレンド",
+   "LINREG50傾き%": "トレンド",
+   "LRSI(0.5)": "オシレーター",
+   "LRb200傾き%": "トレンド",
+   "LRb20傾き%": "トレンド",
+   "LRb50傾き%": "トレンド",
+   "LRslope%20": "トレンド",
+   "LRslope%200": "トレンド",
+   "LRslope%50": "トレンド",
    "MACDシグナル線%(12,26,9)": "トレンド",
    "MACDヒスト%(12,26,9)": "トレンド",
    "MACD線%(12,26)": "トレンド",
+   "MAD比20": "ボラ",
+   "MAD比50": "ボラ",
+   "MARKETFI比10": "出来高",
+   "MARKETFI比20": "出来高",
+   "MASSI": "ボラ",
+   "MCGD200傾き%": "トレンド",
+   "MCGD20傾き%": "トレンド",
+   "MCGD50傾き%": "トレンド",
+   "MEDIAN傾き%20": "トレンド",
+   "MEDIAN傾き%200": "トレンド",
+   "MEDIAN傾き%50": "トレンド",
    "MFI14": "オシレーター",
+   "MIDPOINT200傾き%": "トレンド",
+   "MIDPOINT20傾き%": "トレンド",
+   "MIDPOINT50傾き%": "トレンド",
+   "MIDPRICE200傾き%": "トレンド",
+   "MIDPRICE20傾き%": "トレンド",
+   "MIDPRICE50傾き%": "トレンド",
+   "MMAR10傾き%": "トレンド",
+   "MMAR15傾き%": "トレンド",
+   "MMAR25傾き%": "トレンド",
+   "MMAR30傾き%": "トレンド",
+   "MMAR35傾き%": "トレンド",
+   "MOM%14": "トレンド",
+   "MOM%21": "トレンド",
+   "MOM%7": "トレンド",
+   "MOM%9": "トレンド",
+   "MSW_LEAD": "オシレーター",
+   "MSW_SINE": "オシレーター",
+   "NVI傾き10": "出来高",
+   "NVI傾き20": "出来高",
    "OBV傾き10": "出来高",
    "OBV傾き20": "出来高",
+   "PDIST%": "ボラ",
+   "PGO14": "オシレーター",
+   "PGO21": "オシレーター",
+   "PGO7": "オシレーター",
+   "PGO9": "オシレーター",
+   "PO14": "オシレーター",
+   "PO21": "オシレーター",
+   "PO7": "オシレーター",
+   "PO9": "オシレーター",
+   "PPO(12,26,9)": "トレンド",
+   "PPOシグナル(12,26,9)": "トレンド",
+   "PPOヒスト(12,26,9)": "トレンド",
+   "PSAR加速": "トレンド",
+   "PSAR反転": "構造・位置",
+   "PSL14": "オシレーター",
+   "PSL21": "オシレーター",
+   "PSL7": "オシレーター",
+   "PSL9": "オシレーター",
+   "PVI傾き10": "出来高",
+   "PVI傾き20": "出来高",
+   "PVO(12,26,9)": "出来高",
+   "PVOL比10": "出来高",
+   "PVOシグナル(12,26,9)": "出来高",
+   "PVOヒスト(12,26,9)": "出来高",
+   "PVT傾き10": "出来高",
+   "PVT傾き20": "出来高",
+   "PWMA200傾き%": "トレンド",
+   "PWMA20傾き%": "トレンド",
+   "PWMA50傾き%": "トレンド",
+   "QQE": "オシレーター",
+   "QQE_RSIMA": "オシレーター",
+   "RAINBOW10傾き%": "トレンド",
+   "RAINBOW1傾き%": "トレンド",
+   "RAINBOW2傾き%": "トレンド",
+   "RAINBOW3傾き%": "トレンド",
+   "RAINBOW4傾き%": "トレンド",
+   "RAINBOW5傾き%": "トレンド",
+   "RAINBOW6傾き%": "トレンド",
+   "RAINBOW7傾き%": "トレンド",
+   "RAINBOW8傾き%": "トレンド",
+   "RAINBOW9傾き%": "トレンド",
    "RCI26": "オシレーター",
+   "RCI52": "オシレーター",
+   "RCI7": "オシレーター",
    "RCI9": "オシレーター",
+   "RMA200傾き%": "トレンド",
+   "RMA20傾き%": "トレンド",
+   "RMA50傾き%": "トレンド",
    "ROC12": "オシレーター",
    "ROC24": "オシレーター",
    "ROC6": "オシレーター",
@@ -804,16 +2663,125 @@
    "RSI21": "オシレーター",
    "RSI7": "オシレーター",
    "RSI9": "オシレーター",
+   "RSX14": "オシレーター",
+   "RSX21": "オシレーター",
+   "RSX7": "オシレーター",
+   "RSX9": "オシレーター",
+   "RVGI(14,4)": "オシレーター",
+   "RVGI(21,4)": "オシレーター",
+   "RVGI(7,4)": "オシレーター",
+   "RVGI(9,4)": "オシレーター",
+   "RVGIシグナル(14,4)": "オシレーター",
+   "RVGIシグナル(21,4)": "オシレーター",
+   "RVGIシグナル(7,4)": "オシレーター",
+   "RVGIシグナル(9,4)": "オシレーター",
+   "RVGIヒスト(14,4)": "オシレーター",
+   "RVGIヒスト(21,4)": "オシレーター",
+   "RVGIヒスト(7,4)": "オシレーター",
+   "RVGIヒスト(9,4)": "オシレーター",
+   "RVI14": "ボラ",
+   "RVI21": "ボラ",
+   "RVI7": "ボラ",
    "S-Rタッチ数(288,0.003)": "構造・位置",
+   "SINWMA200傾き%": "トレンド",
+   "SINWMA20傾き%": "トレンド",
+   "SINWMA50傾き%": "トレンド",
+   "SMC_SWEEP": "構造・位置",
+   "SQZ%": "ボラ",
+   "SQZPRO_ON_NARROW": "ボラ",
+   "SQZPRO_ON_WIDE": "ボラ",
+   "SQZ_ON": "ボラ",
+   "SSF200傾き%": "トレンド",
+   "SSF20傾き%": "トレンド",
+   "SSF50傾き%": "トレンド",
+   "STC": "トレンド",
+   "STCstoch": "トレンド",
+   "SWMA200傾き%": "トレンド",
+   "SWMA20傾き%": "トレンド",
+   "SWMA50傾き%": "トレンド",
    "Stoch%D14": "オシレーター",
    "Stoch%D5": "オシレーター",
    "Stoch%D9": "オシレーター",
    "Stoch%K14": "オシレーター",
    "Stoch%K5": "オシレーター",
    "Stoch%K9": "オシレーター",
+   "StochRSI%D14": "オシレーター",
+   "StochRSI%D21": "オシレーター",
+   "StochRSI%D7": "オシレーター",
+   "StochRSI%D9": "オシレーター",
+   "StochRSI%K14": "オシレーター",
+   "StochRSI%K21": "オシレーター",
+   "StochRSI%K7": "オシレーター",
+   "StochRSI%K9": "オシレーター",
+   "T3200傾き%": "トレンド",
+   "T320傾き%": "トレンド",
+   "T350傾き%": "トレンド",
+   "TD_SEQ_DN": "ローソク",
+   "TD_SEQ_UP": "ローソク",
+   "TEMA200傾き%": "トレンド",
+   "TEMA20傾き%": "トレンド",
+   "TEMA50傾き%": "トレンド",
+   "THERMO%": "ボラ",
+   "THERMO比": "ボラ",
+   "TR%": "ボラ",
+   "TRIMA200傾き%": "トレンド",
+   "TRIMA20傾き%": "トレンド",
+   "TRIMA50傾き%": "トレンド",
+   "TRIX(14,9)": "トレンド",
+   "TRIX(21,9)": "トレンド",
+   "TRIX(7,9)": "トレンド",
+   "TRIX(9,9)": "トレンド",
+   "TRIXシグナル(14,9)": "トレンド",
+   "TRIXシグナル(21,9)": "トレンド",
+   "TRIXシグナル(7,9)": "トレンド",
+   "TRIXシグナル(9,9)": "トレンド",
+   "TRIXヒスト(14,9)": "トレンド",
+   "TRIXヒスト(21,9)": "トレンド",
+   "TRIXヒスト(7,9)": "トレンド",
+   "TRIXヒスト(9,9)": "トレンド",
+   "TSF20傾き%": "トレンド",
+   "TSF50傾き%": "トレンド",
+   "TSI(12,26,9)": "トレンド",
+   "TSIシグナル(12,26,9)": "トレンド",
+   "TSIヒスト(12,26,9)": "トレンド",
+   "TTM_TREND20": "トレンド",
+   "TTM_TREND48": "トレンド",
+   "UI14": "ボラ",
+   "UI21": "ボラ",
+   "UI7": "ボラ",
+   "UO": "オシレーター",
+   "VFI10": "出来高",
+   "VFI20": "出来高",
+   "VHF14": "ボラ",
+   "VHF21": "ボラ",
+   "VHF7": "ボラ",
+   "VIDYA200傾き%": "トレンド",
+   "VIDYA20傾き%": "トレンド",
+   "VIDYA50傾き%": "トレンド",
+   "VOSC": "出来高",
+   "VTXM14": "トレンド",
+   "VTXM21": "トレンド",
+   "VTXM7": "トレンド",
+   "VTXP14": "トレンド",
+   "VTXP21": "トレンド",
+   "VTXP7": "トレンド",
+   "VWMA200傾き%": "トレンド",
+   "VWMA20傾き%": "トレンド",
+   "VWMA50傾き%": "トレンド",
+   "VWMACDシグナル%(12,26,9)": "トレンド",
+   "VWMACDヒスト%(12,26,9)": "トレンド",
+   "VWMACD線%(12,26,9)": "トレンド",
+   "WAD傾き10": "出来高",
+   "WAD傾き20": "出来高",
+   "WMA200傾き%": "トレンド",
+   "WMA20傾き%": "トレンド",
+   "WMA50傾き%": "トレンド",
    "W字(24,0.003)": "構造・位置",
    "W字(48,0.003)": "構造・位置",
    "W字(96,0.003)": "構造・位置",
+   "ZLMA200傾き%": "トレンド",
+   "ZLMA20傾き%": "トレンド",
+   "ZLMA50傾き%": "トレンド",
    "body比": "ローソク",
    "close vs 24本安値%": "構造・位置",
    "close vs 24本高値%": "構造・位置",
@@ -821,48 +2789,154 @@
    "close vs 48本高値%": "構造・位置",
    "close vs 96本安値%": "構造・位置",
    "close vs 96本高値%": "構造・位置",
+   "close vs ABER_ZG%": "構造・位置",
+   "close vs ACCBL%": "構造・位置",
+   "close vs ACCBU%": "構造・位置",
+   "close vs ALMA%20": "構造・位置",
+   "close vs ALMA%200": "構造・位置",
+   "close vs ALMA%50": "構造・位置",
+   "close vs CE_L%": "構造・位置",
+   "close vs CE_S%": "構造・位置",
+   "close vs CKSPl%": "構造・位置",
+   "close vs CKSPs%": "構造・位置",
+   "close vs DEMA%20": "構造・位置",
+   "close vs DEMA%200": "構造・位置",
+   "close vs DEMA%50": "構造・位置",
    "close vs EMA20%": "構造・位置",
    "close vs EMA200%": "構造・位置",
    "close vs EMA50%": "構造・位置",
    "close vs EMA9%": "構造・位置",
+   "close vs FAMA%": "構造・位置",
+   "close vs FWMA%20": "構造・位置",
+   "close vs HILO%": "構造・位置",
+   "close vs HMA%20": "構造・位置",
+   "close vs HMA%200": "構造・位置",
+   "close vs HMA%50": "構造・位置",
+   "close vs HT_TRENDLINE%": "構造・位置",
+   "close vs HWMA%": "構造・位置",
+   "close vs JMA%20": "構造・位置",
+   "close vs JMA%200": "構造・位置",
+   "close vs JMA%50": "構造・位置",
+   "close vs KAMA%20": "構造・位置",
+   "close vs KAMA%200": "構造・位置",
+   "close vs KAMA%50": "構造・位置",
    "close vs Keltner上%(20,2.0)": "構造・位置",
    "close vs Keltner下%(20,2.0)": "構造・位置",
+   "close vs LINREG%20": "構造・位置",
+   "close vs LINREG%200": "構造・位置",
+   "close vs LINREG%50": "構造・位置",
+   "close vs LRb%20": "構造・位置",
+   "close vs LRb%200": "構造・位置",
+   "close vs LRb%50": "構造・位置",
+   "close vs MAMA%": "構造・位置",
+   "close vs MCGD%20": "構造・位置",
+   "close vs MCGD%200": "構造・位置",
+   "close vs MCGD%50": "構造・位置",
+   "close vs MEDIAN%20": "構造・位置",
+   "close vs MEDIAN%200": "構造・位置",
+   "close vs MEDIAN%50": "構造・位置",
+   "close vs MIDPOINT%20": "構造・位置",
+   "close vs MIDPOINT%200": "構造・位置",
+   "close vs MIDPOINT%50": "構造・位置",
+   "close vs MIDPRICE%20": "構造・位置",
+   "close vs MIDPRICE%200": "構造・位置",
+   "close vs MIDPRICE%50": "構造・位置",
+   "close vs MMAR%10": "構造・位置",
+   "close vs MMAR%15": "構造・位置",
+   "close vs MMAR%25": "構造・位置",
+   "close vs MMAR%30": "構造・位置",
+   "close vs MMAR%35": "構造・位置",
+   "close vs PMAX%": "構造・位置",
    "close vs POC%288": "構造・位置",
+   "close vs PSAR%": "構造・位置",
+   "close vs PWMA%20": "構造・位置",
+   "close vs PWMA%200": "構造・位置",
+   "close vs PWMA%50": "構造・位置",
+   "close vs RAINBOW%1": "構造・位置",
+   "close vs RAINBOW%10": "構造・位置",
+   "close vs RAINBOW%2": "構造・位置",
+   "close vs RAINBOW%3": "構造・位置",
+   "close vs RAINBOW%4": "構造・位置",
+   "close vs RAINBOW%5": "構造・位置",
+   "close vs RAINBOW%6": "構造・位置",
+   "close vs RAINBOW%7": "構造・位置",
+   "close vs RAINBOW%8": "構造・位置",
+   "close vs RAINBOW%9": "構造・位置",
+   "close vs RMA%20": "構造・位置",
+   "close vs RMA%200": "構造・位置",
+   "close vs RMA%50": "構造・位置",
+   "close vs SAREXT%": "構造・位置",
+   "close vs SINWMA%20": "構造・位置",
+   "close vs SINWMA%200": "構造・位置",
+   "close vs SINWMA%50": "構造・位置",
    "close vs SMA20%": "構造・位置",
    "close vs SMA200%": "構造・位置",
    "close vs SMA50%": "構造・位置",
+   "close vs SSF%20": "構造・位置",
+   "close vs SSF%200": "構造・位置",
+   "close vs SSF%50": "構造・位置",
+   "close vs SWMA%20": "構造・位置",
+   "close vs SWMA%200": "構造・位置",
+   "close vs SWMA%50": "構造・位置",
    "close vs Supertrend%(10,3.0)": "トレンド",
+   "close vs T3%20": "構造・位置",
+   "close vs T3%200": "構造・位置",
+   "close vs T3%50": "構造・位置",
+   "close vs TEMA%20": "構造・位置",
+   "close vs TEMA%200": "構造・位置",
+   "close vs TEMA%50": "構造・位置",
+   "close vs TRIMA%20": "構造・位置",
+   "close vs TRIMA%50": "構造・位置",
+   "close vs TSF%20": "構造・位置",
+   "close vs TSF%200": "構造・位置",
+   "close vs TSF%50": "構造・位置",
    "close vs VAH%288": "構造・位置",
    "close vs VAL%288": "構造・位置",
+   "close vs VIDYA%20": "構造・位置",
+   "close vs VIDYA%200": "構造・位置",
+   "close vs VIDYA%50": "構造・位置",
    "close vs VWAP%288": "構造・位置",
+   "close vs VWMA%20": "構造・位置",
+   "close vs VWMA%200": "構造・位置",
+   "close vs VWMA%50": "構造・位置",
+   "close vs WMA%20": "構造・位置",
+   "close vs WMA%200": "構造・位置",
+   "close vs WMA%50": "構造・位置",
+   "close vs ZLMA%20": "構造・位置",
+   "close vs ZLMA%200": "構造・位置",
+   "close vs ZLMA%50": "構造・位置",
    "close vs pivotPP%288": "構造・位置",
    "close vs pivotR1%288": "構造・位置",
    "close vs pivotS1%288": "構造・位置",
    "close vs 基準線%(26)": "トレンド",
    "close vs 転換線%(9)": "トレンド",
+   "fib位置20": "構造・位置",
    "fib位置96": "構造・位置",
+   "high_Z30": "オシレーター",
+   "kurtosis20": "ボラ",
+   "kurtosis50": "ボラ",
+   "low_Z30": "オシレーター",
+   "open_Z30": "オシレーター",
    "pinbar": "ローソク",
    "realized_vol20": "ボラ",
    "realized_vol50": "ボラ",
-   "swing安値距離%24": "構造・位置",
-   "swing安値距離%48": "構造・位置",
-   "swing安値距離%96": "構造・位置",
-   "swing高値距離%24": "構造・位置",
-   "swing高値距離%48": "構造・位置",
-   "swing高値距離%96": "構造・位置",
+   "skew20": "ボラ",
+   "skew50": "ボラ",
+   "stdev%50": "ボラ",
    "volume_ratio20": "出来高",
    "volume_ratio50": "出来高",
-   "zscore20": "オシレーター",
-   "zscore50": "オシレーター",
    "zscore_return20": "オシレーター",
    "zscore_return50": "オシレーター",
    "上ヒゲ比": "ローソク",
    "下ヒゲ比": "ローソク",
+   "内側バー": "ローソク",
+   "出来高変化率%1": "出来高",
    "包み足": "ローソク",
    "孕み足": "ローソク",
    "安値からの経過バー24": "構造・位置",
    "安値からの経過バー48": "構造・位置",
    "安値からの経過バー96": "構造・位置",
+   "実体幅比10": "ローソク",
    "形スコア24(V=+/M=−)": "構造・位置",
    "形スコア48(V=+/M=−)": "構造・位置",
    "形スコア96(V=+/M=−)": "構造・位置",
@@ -888,38 +2962,253 @@
   }
  },
  "kubun": {
+  "ABER位置": "順張り値",
+  "ADOSC比": "順張り値",
   "ADX14": "状態量",
   "ADX21": "状態量",
   "ADX7": "状態量",
+  "ADXR14": "状態量",
+  "ADXR21": "状態量",
+  "ADXR7": "状態量",
+  "ALMA200傾き%": "順張り値",
+  "ALMA20傾き%": "順張り値",
+  "ALMA50傾き%": "順張り値",
+  "AMAT_LR": "状態量",
+  "AO%(12,26)": "順張り値",
+  "AOBV_LR": "順張り値",
+  "AR14": "状態量",
+  "AR21": "状態量",
+  "AR7": "状態量",
+  "AR9": "状態量",
+  "AROOND14": "状態量",
+  "AROOND21": "状態量",
+  "AROOND7": "状態量",
+  "AROONOSC14": "順張り値",
+  "AROONOSC21": "順張り値",
+  "AROONOSC7": "順張り値",
+  "AROONU14": "順張り値",
+  "AROONU21": "順張り値",
+  "AROONU7": "順張り値",
   "ATR%14": "ボラ量",
   "ATR%21": "ボラ量",
   "ATR%7": "ボラ量",
   "BB%b(20,2.0)": "順張り値",
-  "BB%b(20,3.0)": "順張り値",
   "BB%b(50,2.0)": "順張り値",
-  "BB%b(50,3.0)": "順張り値",
   "BB幅(20,2.0)": "ボラ量",
-  "BB幅(20,3.0)": "ボラ量",
   "BB幅(50,2.0)": "ボラ量",
-  "BB幅(50,3.0)": "ボラ量",
+  "BIAS14": "順張り値",
+  "BIAS21": "順張り値",
+  "BIAS7": "順張り値",
+  "BIAS9": "順張り値",
+  "BOP": "順張り値",
+  "CCI14": "順張り値",
+  "CCI21": "順張り値",
+  "CCI7": "順張り値",
+  "CCI9": "順張り値",
+  "CFO14": "反転サイン",
+  "CFO21": "反転サイン",
+  "CFO7": "反転サイン",
+  "CFO9": "反転サイン",
+  "CG14": "状態量",
+  "CG21": "状態量",
+  "CG7": "状態量",
+  "CG9": "状態量",
+  "CHOP14": "状態量",
+  "CHOP21": "状態量",
+  "CHOP7": "状態量",
   "CMF20": "順張り値",
+  "CMO14": "順張り値",
+  "CMO21": "順張り値",
+  "CMO7": "順張り値",
+  "CMO9": "順張り値",
+  "COPC(9,12,26)": "順張り値",
+  "CTI14": "順張り値",
+  "CTI21": "順張り値",
+  "CTI7": "順張り値",
+  "CTI9": "順張り値",
+  "CVI14": "状態量",
+  "CVI21": "状態量",
+  "CVI7": "状態量",
+  "DEMA200傾き%": "順張り値",
+  "DEMA20傾き%": "順張り値",
+  "DEMA50傾き%": "順張り値",
+  "DI+14": "順張り値",
+  "DI+21": "順張り値",
+  "DI+7": "順張り値",
+  "DI-14": "状態量",
+  "DI-21": "状態量",
+  "DI-7": "状態量",
   "DI差14": "順張り値",
   "DI差21": "順張り値",
   "DI差7": "順張り値",
+  "DM+%14": "順張り値",
+  "DM+%21": "順張り値",
+  "DM+%7": "順張り値",
+  "DM+%9": "順張り値",
+  "DM-%14": "状態量",
+  "DM-%21": "状態量",
+  "DM-%7": "状態量",
+  "DM-%9": "状態量",
+  "DPO%20": "反転サイン",
+  "DPO%48": "反転サイン",
+  "DX14": "状態量",
+  "DX21": "状態量",
+  "DX7": "状態量",
   "Donchian幅%20": "ボラ量",
   "Donchian幅%48": "ボラ量",
+  "EBSW": "順張り値",
+  "EFI比10": "順張り値",
+  "EFI比20": "順張り値",
   "EMA200傾き%": "順張り値",
   "EMA20傾き%": "順張り値",
   "EMA50傾き%": "順張り値",
   "EMA9傾き%": "順張り値",
+  "EOM比10": "順張り値",
+  "EOM比20": "順張り値",
+  "ER14": "状態量",
+  "ER21": "状態量",
+  "ER7": "状態量",
+  "ER9": "状態量",
+  "ERI弱気%14": "状態量",
+  "ERI弱気%21": "状態量",
+  "ERI弱気%7": "状態量",
+  "ERI弱気%9": "状態量",
+  "ERI強気%14": "順張り値",
+  "ERI強気%21": "順張り値",
+  "ERI強気%7": "順張り値",
+  "ERI強気%9": "順張り値",
+  "FISHER(12,9)": "順張り値",
+  "FISHERシグナル(12,9)": "順張り値",
+  "FWMA20傾き%": "順張り値",
+  "HA上ヒゲ比": "反転サイン",
+  "HA下ヒゲ比": "反転サイン",
+  "HA実体%": "順張り値",
+  "HMA200傾き%": "順張り値",
+  "HMA20傾き%": "順張り値",
+  "HMA50傾き%": "順張り値",
+  "HT_DCPERIOD": "状態量",
+  "HT_DCPHASE": "状態量",
+  "HT_INPHASE%": "順張り値",
+  "HT_LEADSINE": "状態量",
+  "HT_QUAD%": "状態量",
+  "HT_SINE": "状態量",
+  "HT_TRENDMODE": "状態量",
+  "HWC位置": "状態量",
+  "HWC幅%": "ボラ量",
+  "INERTIA14": "順張り値",
+  "INERTIA21": "順張り値",
+  "INERTIA7": "順張り値",
+  "INERTIA9": "順張り値",
+  "KAMA200傾き%": "順張り値",
+  "KAMA20傾き%": "順張り値",
+  "KAMA50傾き%": "順張り値",
+  "KDJ%D(14,9)": "順張り値",
+  "KDJ%D(5,9)": "順張り値",
+  "KDJ%D(9,9)": "順張り値",
+  "KDJ%J(14,9)": "順張り値",
+  "KDJ%J(5,9)": "順張り値",
+  "KDJ%J(9,9)": "順張り値",
+  "KDJ%K(14,9)": "順張り値",
+  "KDJ%K(5,9)": "順張り値",
+  "KDJ%K(9,9)": "順張り値",
+  "KST": "順張り値",
+  "KSTシグナル9": "順張り値",
+  "KVOシグナル比": "状態量",
+  "KVO比": "状態量",
+  "LINREG200傾き%": "順張り値",
+  "LINREG20傾き%": "順張り値",
+  "LINREG50傾き%": "順張り値",
+  "LRSI(0.5)": "順張り値",
+  "LRb200傾き%": "順張り値",
+  "LRb20傾き%": "順張り値",
+  "LRb50傾き%": "順張り値",
+  "LRslope%20": "順張り値",
+  "LRslope%200": "順張り値",
+  "LRslope%50": "順張り値",
   "MACDシグナル線%(12,26,9)": "順張り値",
   "MACDヒスト%(12,26,9)": "順張り値",
   "MACD線%(12,26)": "順張り値",
+  "MAD比20": "ボラ量",
+  "MAD比50": "ボラ量",
+  "MARKETFI比10": "状態量",
+  "MARKETFI比20": "状態量",
+  "MASSI": "状態量",
+  "MCGD200傾き%": "順張り値",
+  "MCGD20傾き%": "順張り値",
+  "MCGD50傾き%": "順張り値",
+  "MEDIAN傾き%20": "順張り値",
+  "MEDIAN傾き%200": "順張り値",
+  "MEDIAN傾き%50": "順張り値",
   "MFI14": "順張り値",
+  "MIDPOINT200傾き%": "順張り値",
+  "MIDPOINT20傾き%": "順張り値",
+  "MIDPOINT50傾き%": "順張り値",
+  "MIDPRICE200傾き%": "順張り値",
+  "MIDPRICE20傾き%": "順張り値",
+  "MIDPRICE50傾き%": "順張り値",
+  "MMAR10傾き%": "順張り値",
+  "MMAR15傾き%": "順張り値",
+  "MMAR25傾き%": "順張り値",
+  "MMAR30傾き%": "順張り値",
+  "MMAR35傾き%": "順張り値",
+  "MOM%14": "順張り値",
+  "MOM%21": "順張り値",
+  "MOM%7": "順張り値",
+  "MOM%9": "順張り値",
+  "MSW_LEAD": "状態量",
+  "MSW_SINE": "順張り値",
+  "NVI傾き10": "順張り値",
+  "NVI傾き20": "順張り値",
   "OBV傾き10": "順張り値",
   "OBV傾き20": "順張り値",
+  "PDIST%": "状態量",
+  "PGO14": "順張り値",
+  "PGO21": "順張り値",
+  "PGO7": "順張り値",
+  "PGO9": "順張り値",
+  "PO14": "反転サイン",
+  "PO21": "反転サイン",
+  "PO7": "反転サイン",
+  "PO9": "反転サイン",
+  "PPO(12,26,9)": "順張り値",
+  "PPOシグナル(12,26,9)": "順張り値",
+  "PPOヒスト(12,26,9)": "状態量",
+  "PSAR加速": "状態量",
+  "PSAR反転": "状態量",
+  "PSL14": "順張り値",
+  "PSL21": "順張り値",
+  "PSL7": "順張り値",
+  "PSL9": "順張り値",
+  "PVI傾き10": "順張り値",
+  "PVI傾き20": "順張り値",
+  "PVO(12,26,9)": "状態量",
+  "PVOL比10": "状態量",
+  "PVOシグナル(12,26,9)": "状態量",
+  "PVOヒスト(12,26,9)": "状態量",
+  "PVT傾き10": "順張り値",
+  "PVT傾き20": "順張り値",
+  "PWMA200傾き%": "順張り値",
+  "PWMA20傾き%": "順張り値",
+  "PWMA50傾き%": "順張り値",
+  "QQE": "順張り値",
+  "QQE_RSIMA": "順張り値",
+  "RAINBOW10傾き%": "順張り値",
+  "RAINBOW1傾き%": "順張り値",
+  "RAINBOW2傾き%": "順張り値",
+  "RAINBOW3傾き%": "順張り値",
+  "RAINBOW4傾き%": "順張り値",
+  "RAINBOW5傾き%": "順張り値",
+  "RAINBOW6傾き%": "順張り値",
+  "RAINBOW7傾き%": "順張り値",
+  "RAINBOW8傾き%": "順張り値",
+  "RAINBOW9傾き%": "順張り値",
   "RCI26": "順張り値",
+  "RCI52": "順張り値",
+  "RCI7": "順張り値",
   "RCI9": "順張り値",
+  "RMA200傾き%": "順張り値",
+  "RMA20傾き%": "順張り値",
+  "RMA50傾き%": "順張り値",
   "ROC12": "順張り値",
   "ROC24": "順張り値",
   "ROC6": "順張り値",
@@ -927,16 +3216,125 @@
   "RSI21": "順張り値",
   "RSI7": "順張り値",
   "RSI9": "順張り値",
+  "RSX14": "順張り値",
+  "RSX21": "順張り値",
+  "RSX7": "順張り値",
+  "RSX9": "順張り値",
+  "RVGI(14,4)": "順張り値",
+  "RVGI(21,4)": "順張り値",
+  "RVGI(7,4)": "順張り値",
+  "RVGI(9,4)": "順張り値",
+  "RVGIシグナル(14,4)": "順張り値",
+  "RVGIシグナル(21,4)": "順張り値",
+  "RVGIシグナル(7,4)": "順張り値",
+  "RVGIシグナル(9,4)": "順張り値",
+  "RVGIヒスト(14,4)": "状態量",
+  "RVGIヒスト(21,4)": "状態量",
+  "RVGIヒスト(7,4)": "状態量",
+  "RVGIヒスト(9,4)": "状態量",
+  "RVI14": "順張り値",
+  "RVI21": "順張り値",
+  "RVI7": "順張り値",
   "S-Rタッチ数(288,0.003)": "状態量",
+  "SINWMA200傾き%": "順張り値",
+  "SINWMA20傾き%": "順張り値",
+  "SINWMA50傾き%": "順張り値",
+  "SMC_SWEEP": "反転サイン",
+  "SQZ%": "順張り値",
+  "SQZPRO_ON_NARROW": "状態量",
+  "SQZPRO_ON_WIDE": "状態量",
+  "SQZ_ON": "状態量",
+  "SSF200傾き%": "順張り値",
+  "SSF20傾き%": "順張り値",
+  "SSF50傾き%": "順張り値",
+  "STC": "順張り値",
+  "STCstoch": "順張り値",
+  "SWMA200傾き%": "順張り値",
+  "SWMA20傾き%": "順張り値",
+  "SWMA50傾き%": "順張り値",
   "Stoch%D14": "順張り値",
   "Stoch%D5": "順張り値",
   "Stoch%D9": "順張り値",
   "Stoch%K14": "順張り値",
   "Stoch%K5": "順張り値",
   "Stoch%K9": "順張り値",
+  "StochRSI%D14": "順張り値",
+  "StochRSI%D21": "順張り値",
+  "StochRSI%D7": "順張り値",
+  "StochRSI%D9": "順張り値",
+  "StochRSI%K14": "順張り値",
+  "StochRSI%K21": "順張り値",
+  "StochRSI%K7": "順張り値",
+  "StochRSI%K9": "順張り値",
+  "T3200傾き%": "順張り値",
+  "T320傾き%": "順張り値",
+  "T350傾き%": "順張り値",
+  "TD_SEQ_DN": "状態量",
+  "TD_SEQ_UP": "順張り値",
+  "TEMA200傾き%": "順張り値",
+  "TEMA20傾き%": "順張り値",
+  "TEMA50傾き%": "順張り値",
+  "THERMO%": "ボラ量",
+  "THERMO比": "状態量",
+  "TR%": "ボラ量",
+  "TRIMA200傾き%": "順張り値",
+  "TRIMA20傾き%": "順張り値",
+  "TRIMA50傾き%": "順張り値",
+  "TRIX(14,9)": "順張り値",
+  "TRIX(21,9)": "順張り値",
+  "TRIX(7,9)": "順張り値",
+  "TRIX(9,9)": "順張り値",
+  "TRIXシグナル(14,9)": "順張り値",
+  "TRIXシグナル(21,9)": "順張り値",
+  "TRIXシグナル(7,9)": "順張り値",
+  "TRIXシグナル(9,9)": "順張り値",
+  "TRIXヒスト(14,9)": "状態量",
+  "TRIXヒスト(21,9)": "状態量",
+  "TRIXヒスト(7,9)": "状態量",
+  "TRIXヒスト(9,9)": "状態量",
+  "TSF20傾き%": "順張り値",
+  "TSF50傾き%": "順張り値",
+  "TSI(12,26,9)": "順張り値",
+  "TSIシグナル(12,26,9)": "順張り値",
+  "TSIヒスト(12,26,9)": "状態量",
+  "TTM_TREND20": "順張り値",
+  "TTM_TREND48": "順張り値",
+  "UI14": "ボラ量",
+  "UI21": "ボラ量",
+  "UI7": "ボラ量",
+  "UO": "順張り値",
+  "VFI10": "順張り値",
+  "VFI20": "順張り値",
+  "VHF14": "状態量",
+  "VHF21": "状態量",
+  "VHF7": "状態量",
+  "VIDYA200傾き%": "順張り値",
+  "VIDYA20傾き%": "順張り値",
+  "VIDYA50傾き%": "順張り値",
+  "VOSC": "状態量",
+  "VTXM14": "状態量",
+  "VTXM21": "状態量",
+  "VTXM7": "状態量",
+  "VTXP14": "順張り値",
+  "VTXP21": "順張り値",
+  "VTXP7": "順張り値",
+  "VWMA200傾き%": "順張り値",
+  "VWMA20傾き%": "順張り値",
+  "VWMA50傾き%": "順張り値",
+  "VWMACDシグナル%(12,26,9)": "順張り値",
+  "VWMACDヒスト%(12,26,9)": "状態量",
+  "VWMACD線%(12,26,9)": "順張り値",
+  "WAD傾き10": "順張り値",
+  "WAD傾き20": "順張り値",
+  "WMA200傾き%": "順張り値",
+  "WMA20傾き%": "順張り値",
+  "WMA50傾き%": "順張り値",
   "W字(24,0.003)": "反転サイン",
   "W字(48,0.003)": "反転サイン",
   "W字(96,0.003)": "反転サイン",
+  "ZLMA200傾き%": "順張り値",
+  "ZLMA20傾き%": "順張り値",
+  "ZLMA50傾き%": "順張り値",
   "body比": "状態量",
   "close vs 24本安値%": "順張り値",
   "close vs 24本高値%": "順張り値",
@@ -944,48 +3342,154 @@
   "close vs 48本高値%": "順張り値",
   "close vs 96本安値%": "順張り値",
   "close vs 96本高値%": "順張り値",
+  "close vs ABER_ZG%": "順張り値",
+  "close vs ACCBL%": "順張り値",
+  "close vs ACCBU%": "順張り値",
+  "close vs ALMA%20": "反転サイン",
+  "close vs ALMA%200": "反転サイン",
+  "close vs ALMA%50": "反転サイン",
+  "close vs CE_L%": "順張り値",
+  "close vs CE_S%": "順張り値",
+  "close vs CKSPl%": "反転サイン",
+  "close vs CKSPs%": "反転サイン",
+  "close vs DEMA%20": "反転サイン",
+  "close vs DEMA%200": "反転サイン",
+  "close vs DEMA%50": "反転サイン",
   "close vs EMA20%": "順張り値",
   "close vs EMA200%": "順張り値",
   "close vs EMA50%": "順張り値",
   "close vs EMA9%": "順張り値",
+  "close vs FAMA%": "反転サイン",
+  "close vs FWMA%20": "反転サイン",
+  "close vs HILO%": "反転サイン",
+  "close vs HMA%20": "反転サイン",
+  "close vs HMA%200": "反転サイン",
+  "close vs HMA%50": "反転サイン",
+  "close vs HT_TRENDLINE%": "反転サイン",
+  "close vs HWMA%": "反転サイン",
+  "close vs JMA%20": "反転サイン",
+  "close vs JMA%200": "反転サイン",
+  "close vs JMA%50": "反転サイン",
+  "close vs KAMA%20": "反転サイン",
+  "close vs KAMA%200": "反転サイン",
+  "close vs KAMA%50": "反転サイン",
   "close vs Keltner上%(20,2.0)": "順張り値",
   "close vs Keltner下%(20,2.0)": "順張り値",
+  "close vs LINREG%20": "反転サイン",
+  "close vs LINREG%200": "反転サイン",
+  "close vs LINREG%50": "反転サイン",
+  "close vs LRb%20": "反転サイン",
+  "close vs LRb%200": "反転サイン",
+  "close vs LRb%50": "反転サイン",
+  "close vs MAMA%": "反転サイン",
+  "close vs MCGD%20": "反転サイン",
+  "close vs MCGD%200": "反転サイン",
+  "close vs MCGD%50": "反転サイン",
+  "close vs MEDIAN%20": "順張り値",
+  "close vs MEDIAN%200": "順張り値",
+  "close vs MEDIAN%50": "順張り値",
+  "close vs MIDPOINT%20": "反転サイン",
+  "close vs MIDPOINT%200": "反転サイン",
+  "close vs MIDPOINT%50": "反転サイン",
+  "close vs MIDPRICE%20": "反転サイン",
+  "close vs MIDPRICE%200": "反転サイン",
+  "close vs MIDPRICE%50": "反転サイン",
+  "close vs MMAR%10": "反転サイン",
+  "close vs MMAR%15": "反転サイン",
+  "close vs MMAR%25": "反転サイン",
+  "close vs MMAR%30": "反転サイン",
+  "close vs MMAR%35": "反転サイン",
+  "close vs PMAX%": "反転サイン",
   "close vs POC%288": "順張り値",
+  "close vs PSAR%": "反転サイン",
+  "close vs PWMA%20": "反転サイン",
+  "close vs PWMA%200": "反転サイン",
+  "close vs PWMA%50": "反転サイン",
+  "close vs RAINBOW%1": "反転サイン",
+  "close vs RAINBOW%10": "反転サイン",
+  "close vs RAINBOW%2": "反転サイン",
+  "close vs RAINBOW%3": "反転サイン",
+  "close vs RAINBOW%4": "反転サイン",
+  "close vs RAINBOW%5": "反転サイン",
+  "close vs RAINBOW%6": "反転サイン",
+  "close vs RAINBOW%7": "反転サイン",
+  "close vs RAINBOW%8": "反転サイン",
+  "close vs RAINBOW%9": "反転サイン",
+  "close vs RMA%20": "反転サイン",
+  "close vs RMA%200": "反転サイン",
+  "close vs RMA%50": "反転サイン",
+  "close vs SAREXT%": "反転サイン",
+  "close vs SINWMA%20": "反転サイン",
+  "close vs SINWMA%200": "反転サイン",
+  "close vs SINWMA%50": "反転サイン",
   "close vs SMA20%": "順張り値",
   "close vs SMA200%": "順張り値",
   "close vs SMA50%": "順張り値",
+  "close vs SSF%20": "反転サイン",
+  "close vs SSF%200": "反転サイン",
+  "close vs SSF%50": "反転サイン",
+  "close vs SWMA%20": "反転サイン",
+  "close vs SWMA%200": "反転サイン",
+  "close vs SWMA%50": "反転サイン",
   "close vs Supertrend%(10,3.0)": "順張り値",
+  "close vs T3%20": "反転サイン",
+  "close vs T3%200": "反転サイン",
+  "close vs T3%50": "反転サイン",
+  "close vs TEMA%20": "反転サイン",
+  "close vs TEMA%200": "反転サイン",
+  "close vs TEMA%50": "反転サイン",
+  "close vs TRIMA%20": "反転サイン",
+  "close vs TRIMA%50": "反転サイン",
+  "close vs TSF%20": "反転サイン",
+  "close vs TSF%200": "反転サイン",
+  "close vs TSF%50": "反転サイン",
   "close vs VAH%288": "順張り値",
   "close vs VAL%288": "順張り値",
+  "close vs VIDYA%20": "反転サイン",
+  "close vs VIDYA%200": "反転サイン",
+  "close vs VIDYA%50": "反転サイン",
   "close vs VWAP%288": "順張り値",
+  "close vs VWMA%20": "反転サイン",
+  "close vs VWMA%200": "反転サイン",
+  "close vs VWMA%50": "反転サイン",
+  "close vs WMA%20": "反転サイン",
+  "close vs WMA%200": "反転サイン",
+  "close vs WMA%50": "反転サイン",
+  "close vs ZLMA%20": "反転サイン",
+  "close vs ZLMA%200": "反転サイン",
+  "close vs ZLMA%50": "反転サイン",
   "close vs pivotPP%288": "順張り値",
   "close vs pivotR1%288": "順張り値",
   "close vs pivotS1%288": "順張り値",
   "close vs 基準線%(26)": "順張り値",
   "close vs 転換線%(9)": "順張り値",
+  "fib位置20": "順張り値",
   "fib位置96": "順張り値",
+  "high_Z30": "順張り値",
+  "kurtosis20": "状態量",
+  "kurtosis50": "状態量",
+  "low_Z30": "順張り値",
+  "open_Z30": "順張り値",
   "pinbar": "反転サイン",
   "realized_vol20": "ボラ量",
   "realized_vol50": "ボラ量",
-  "swing安値距離%24": "順張り値",
-  "swing安値距離%48": "順張り値",
-  "swing安値距離%96": "順張り値",
-  "swing高値距離%24": "順張り値",
-  "swing高値距離%48": "順張り値",
-  "swing高値距離%96": "順張り値",
+  "skew20": "状態量",
+  "skew50": "状態量",
+  "stdev%50": "ボラ量",
   "volume_ratio20": "状態量",
   "volume_ratio50": "状態量",
-  "zscore20": "順張り値",
-  "zscore50": "順張り値",
   "zscore_return20": "状態量",
   "zscore_return50": "状態量",
   "上ヒゲ比": "反転サイン",
   "下ヒゲ比": "反転サイン",
+  "内側バー": "反転サイン",
+  "出来高変化率%1": "状態量",
   "包み足": "反転サイン",
   "孕み足": "反転サイン",
   "安値からの経過バー24": "状態量",
   "安値からの経過バー48": "状態量",
   "安値からの経過バー96": "状態量",
+  "実体幅比10": "状態量",
   "形スコア24(V=+/M=−)": "反転サイン",
   "形スコア48(V=+/M=−)": "反転サイン",
   "形スコア96(V=+/M=−)": "反転サイン",
@@ -1023,8 +3527,10 @@
   "OBV傾き20",
   "close vs 転換線%(9)",
   "close vs 基準線%(26)",
+  "RCI7",
   "RCI9",
   "RCI26",
+  "RCI52",
   "EMA9傾き%",
   "EMA20傾き%",
   "EMA50傾き%",
@@ -1034,19 +3540,13 @@
   "ATR%21",
   "BB%b(20,2.0)",
   "BB幅(20,2.0)",
-  "BB%b(20,3.0)",
-  "BB幅(20,3.0)",
   "BB%b(50,2.0)",
   "BB幅(50,2.0)",
-  "BB%b(50,3.0)",
-  "BB幅(50,3.0)",
   "realized_vol20",
   "realized_vol50",
   "Donchian幅%20",
   "Donchian幅%48",
-  "zscore20",
   "zscore_return20",
-  "zscore50",
   "zscore_return50",
   "volume_ratio20",
   "volume_ratio50",
@@ -1057,20 +3557,14 @@
   "body比",
   "上ヒゲ比",
   "下ヒゲ比",
-  "swing高値距離%24",
-  "swing安値距離%24",
   "高値からの経過バー24",
   "安値からの経過バー24",
   "形スコア24(V=+/M=−)",
   "W字(24,0.003)",
-  "swing高値距離%48",
-  "swing安値距離%48",
   "高値からの経過バー48",
   "安値からの経過バー48",
   "形スコア48(V=+/M=−)",
   "W字(48,0.003)",
-  "swing高値距離%96",
-  "swing安値距離%96",
   "高値からの経過バー96",
   "安値からの経過バー96",
   "形スコア96(V=+/M=−)",
@@ -1095,11 +3589,451 @@
   "close vs pivotPP%288",
   "close vs pivotR1%288",
   "close vs pivotS1%288",
+  "fib位置20",
   "fib位置96",
   "close vs POC%288",
   "close vs VAH%288",
   "close vs VAL%288",
-  "S-Rタッチ数(288,0.003)"
+  "S-Rタッチ数(288,0.003)",
+  "BIAS7",
+  "AR7",
+  "CCI7",
+  "CFO7",
+  "CG7",
+  "CMO7",
+  "CTI7",
+  "DM+%7",
+  "DM-%7",
+  "ER7",
+  "ERI強気%7",
+  "ERI弱気%7",
+  "INERTIA7",
+  "BIAS9",
+  "AR9",
+  "CCI9",
+  "CFO9",
+  "CG9",
+  "CMO9",
+  "CTI9",
+  "DM+%9",
+  "DM-%9",
+  "ER9",
+  "ERI強気%9",
+  "ERI弱気%9",
+  "INERTIA9",
+  "BIAS14",
+  "AR14",
+  "CCI14",
+  "CFO14",
+  "CG14",
+  "CMO14",
+  "CTI14",
+  "DM+%14",
+  "DM-%14",
+  "ER14",
+  "ERI強気%14",
+  "ERI弱気%14",
+  "INERTIA14",
+  "BIAS21",
+  "AR21",
+  "CCI21",
+  "CFO21",
+  "CG21",
+  "CMO21",
+  "CTI21",
+  "DM+%21",
+  "DM-%21",
+  "ER21",
+  "ERI強気%21",
+  "ERI弱気%21",
+  "INERTIA21",
+  "LRSI(0.5)",
+  "BOP",
+  "KST",
+  "AO%(12,26)",
+  "COPC(9,12,26)",
+  "FISHER(12,9)",
+  "FISHERシグナル(12,9)",
+  "KSTシグナル9",
+  "KDJ%K(5,9)",
+  "KDJ%D(5,9)",
+  "KDJ%J(5,9)",
+  "KDJ%K(9,9)",
+  "KDJ%D(9,9)",
+  "KDJ%J(9,9)",
+  "KDJ%K(14,9)",
+  "KDJ%D(14,9)",
+  "KDJ%J(14,9)",
+  "MOM%7",
+  "PGO7",
+  "PO7",
+  "PSL7",
+  "RSX7",
+  "RVGI(7,4)",
+  "RVGIシグナル(7,4)",
+  "RVGIヒスト(7,4)",
+  "MOM%9",
+  "PGO9",
+  "PO9",
+  "PSL9",
+  "RSX9",
+  "RVGI(9,4)",
+  "RVGIシグナル(9,4)",
+  "RVGIヒスト(9,4)",
+  "MOM%14",
+  "PGO14",
+  "PO14",
+  "PSL14",
+  "RSX14",
+  "RVGI(14,4)",
+  "RVGIシグナル(14,4)",
+  "RVGIヒスト(14,4)",
+  "MOM%21",
+  "PGO21",
+  "PO21",
+  "PSL21",
+  "RSX21",
+  "RVGI(21,4)",
+  "RVGIシグナル(21,4)",
+  "RVGIヒスト(21,4)",
+  "PPO(12,26,9)",
+  "PPOヒスト(12,26,9)",
+  "PPOシグナル(12,26,9)",
+  "PVO(12,26,9)",
+  "PVOヒスト(12,26,9)",
+  "PVOシグナル(12,26,9)",
+  "QQE",
+  "QQE_RSIMA",
+  "SMC_SWEEP",
+  "SQZ%",
+  "SQZ_ON",
+  "SQZPRO_ON_WIDE",
+  "SQZPRO_ON_NARROW",
+  "STC",
+  "STCstoch",
+  "StochRSI%K7",
+  "StochRSI%D7",
+  "TRIX(7,9)",
+  "TRIXシグナル(7,9)",
+  "TRIXヒスト(7,9)",
+  "StochRSI%K9",
+  "StochRSI%D9",
+  "TRIX(9,9)",
+  "TRIXシグナル(9,9)",
+  "TRIXヒスト(9,9)",
+  "StochRSI%K14",
+  "StochRSI%D14",
+  "TRIX(14,9)",
+  "TRIXシグナル(14,9)",
+  "TRIXヒスト(14,9)",
+  "StochRSI%K21",
+  "StochRSI%D21",
+  "TRIX(21,9)",
+  "TRIXシグナル(21,9)",
+  "TRIXヒスト(21,9)",
+  "TD_SEQ_UP",
+  "TD_SEQ_DN",
+  "UO",
+  "TSI(12,26,9)",
+  "TSIシグナル(12,26,9)",
+  "TSIヒスト(12,26,9)",
+  "VWMACD線%(12,26,9)",
+  "VWMACDヒスト%(12,26,9)",
+  "VWMACDシグナル%(12,26,9)",
+  "close vs ALMA%20",
+  "ALMA20傾き%",
+  "close vs DEMA%20",
+  "DEMA20傾き%",
+  "close vs HMA%20",
+  "HMA20傾き%",
+  "close vs JMA%20",
+  "close vs KAMA%20",
+  "KAMA20傾き%",
+  "close vs LINREG%20",
+  "LINREG20傾き%",
+  "close vs FWMA%20",
+  "FWMA20傾き%",
+  "close vs ALMA%50",
+  "ALMA50傾き%",
+  "close vs DEMA%50",
+  "DEMA50傾き%",
+  "close vs HMA%50",
+  "HMA50傾き%",
+  "close vs JMA%50",
+  "close vs KAMA%50",
+  "KAMA50傾き%",
+  "close vs LINREG%50",
+  "LINREG50傾き%",
+  "close vs ALMA%200",
+  "ALMA200傾き%",
+  "close vs DEMA%200",
+  "DEMA200傾き%",
+  "close vs HMA%200",
+  "HMA200傾き%",
+  "close vs JMA%200",
+  "close vs KAMA%200",
+  "KAMA200傾き%",
+  "close vs LINREG%200",
+  "LINREG200傾き%",
+  "close vs HILO%",
+  "close vs HT_TRENDLINE%",
+  "close vs HWMA%",
+  "close vs LRb%20",
+  "LRb20傾き%",
+  "close vs MCGD%20",
+  "MCGD20傾き%",
+  "close vs MIDPOINT%20",
+  "MIDPOINT20傾き%",
+  "close vs MIDPRICE%20",
+  "MIDPRICE20傾き%",
+  "close vs PWMA%20",
+  "PWMA20傾き%",
+  "close vs RMA%20",
+  "RMA20傾き%",
+  "LRslope%20",
+  "close vs LRb%50",
+  "LRb50傾き%",
+  "close vs MCGD%50",
+  "MCGD50傾き%",
+  "close vs MIDPOINT%50",
+  "MIDPOINT50傾き%",
+  "close vs MIDPRICE%50",
+  "MIDPRICE50傾き%",
+  "close vs PWMA%50",
+  "PWMA50傾き%",
+  "close vs RMA%50",
+  "RMA50傾き%",
+  "LRslope%50",
+  "close vs LRb%200",
+  "LRb200傾き%",
+  "close vs MCGD%200",
+  "MCGD200傾き%",
+  "close vs MIDPOINT%200",
+  "MIDPOINT200傾き%",
+  "close vs MIDPRICE%200",
+  "MIDPRICE200傾き%",
+  "close vs PWMA%200",
+  "PWMA200傾き%",
+  "close vs RMA%200",
+  "RMA200傾き%",
+  "LRslope%200",
+  "close vs MAMA%",
+  "close vs FAMA%",
+  "close vs MMAR%10",
+  "MMAR10傾き%",
+  "close vs MMAR%15",
+  "MMAR15傾き%",
+  "close vs MMAR%25",
+  "MMAR25傾き%",
+  "close vs MMAR%30",
+  "MMAR30傾き%",
+  "close vs MMAR%35",
+  "MMAR35傾き%",
+  "close vs RAINBOW%1",
+  "RAINBOW1傾き%",
+  "close vs RAINBOW%2",
+  "RAINBOW2傾き%",
+  "close vs RAINBOW%3",
+  "RAINBOW3傾き%",
+  "close vs RAINBOW%4",
+  "RAINBOW4傾き%",
+  "close vs RAINBOW%5",
+  "RAINBOW5傾き%",
+  "close vs RAINBOW%6",
+  "RAINBOW6傾き%",
+  "close vs RAINBOW%7",
+  "RAINBOW7傾き%",
+  "close vs RAINBOW%8",
+  "RAINBOW8傾き%",
+  "close vs RAINBOW%9",
+  "RAINBOW9傾き%",
+  "close vs RAINBOW%10",
+  "RAINBOW10傾き%",
+  "close vs SINWMA%20",
+  "SINWMA20傾き%",
+  "close vs SSF%20",
+  "SSF20傾き%",
+  "close vs SWMA%20",
+  "SWMA20傾き%",
+  "close vs T3%20",
+  "T320傾き%",
+  "close vs TEMA%20",
+  "TEMA20傾き%",
+  "close vs TRIMA%20",
+  "TRIMA20傾き%",
+  "close vs TSF%20",
+  "TSF20傾き%",
+  "close vs VIDYA%20",
+  "VIDYA20傾き%",
+  "close vs VWMA%20",
+  "VWMA20傾き%",
+  "close vs WMA%20",
+  "WMA20傾き%",
+  "close vs ZLMA%20",
+  "ZLMA20傾き%",
+  "close vs SINWMA%50",
+  "SINWMA50傾き%",
+  "close vs SSF%50",
+  "SSF50傾き%",
+  "close vs SWMA%50",
+  "SWMA50傾き%",
+  "close vs T3%50",
+  "T350傾き%",
+  "close vs TEMA%50",
+  "TEMA50傾き%",
+  "close vs TRIMA%50",
+  "TRIMA50傾き%",
+  "close vs TSF%50",
+  "TSF50傾き%",
+  "close vs VIDYA%50",
+  "VIDYA50傾き%",
+  "close vs VWMA%50",
+  "VWMA50傾き%",
+  "close vs WMA%50",
+  "WMA50傾き%",
+  "close vs ZLMA%50",
+  "ZLMA50傾き%",
+  "close vs SINWMA%200",
+  "SINWMA200傾き%",
+  "close vs SSF%200",
+  "SSF200傾き%",
+  "close vs SWMA%200",
+  "SWMA200傾き%",
+  "close vs T3%200",
+  "T3200傾き%",
+  "close vs TEMA%200",
+  "TEMA200傾き%",
+  "TRIMA200傾き%",
+  "close vs TSF%200",
+  "close vs VIDYA%200",
+  "VIDYA200傾き%",
+  "close vs VWMA%200",
+  "VWMA200傾き%",
+  "close vs WMA%200",
+  "WMA200傾き%",
+  "close vs ZLMA%200",
+  "ZLMA200傾き%",
+  "ADXR7",
+  "DI+7",
+  "DI-7",
+  "DX7",
+  "AROONU7",
+  "AROOND7",
+  "AROONOSC7",
+  "CHOP7",
+  "VHF7",
+  "VTXP7",
+  "VTXM7",
+  "ADXR14",
+  "DI+14",
+  "DI-14",
+  "DX14",
+  "AROONU14",
+  "AROOND14",
+  "AROONOSC14",
+  "CHOP14",
+  "VHF14",
+  "VTXP14",
+  "VTXM14",
+  "ADXR21",
+  "DI+21",
+  "DI-21",
+  "DX21",
+  "AROONU21",
+  "AROOND21",
+  "AROONOSC21",
+  "CHOP21",
+  "VHF21",
+  "VTXP21",
+  "VTXM21",
+  "DPO%20",
+  "TTM_TREND20",
+  "DPO%48",
+  "TTM_TREND48",
+  "AMAT_LR",
+  "close vs CKSPl%",
+  "close vs CKSPs%",
+  "close vs PMAX%",
+  "close vs PSAR%",
+  "PSAR加速",
+  "PSAR反転",
+  "close vs SAREXT%",
+  "EFI比10",
+  "EOM比10",
+  "MARKETFI比10",
+  "NVI傾き10",
+  "PVI傾き10",
+  "PVOL比10",
+  "PVT傾き10",
+  "WAD傾き10",
+  "EFI比20",
+  "EOM比20",
+  "MARKETFI比20",
+  "NVI傾き20",
+  "PVI傾き20",
+  "PVT傾き20",
+  "WAD傾き20",
+  "ADOSC比",
+  "AOBV_LR",
+  "KVO比",
+  "KVOシグナル比",
+  "VOSC",
+  "VFI10",
+  "VFI20",
+  "出来高変化率%1",
+  "skew20",
+  "kurtosis20",
+  "MAD比20",
+  "skew50",
+  "kurtosis50",
+  "MAD比50",
+  "stdev%50",
+  "close vs MEDIAN%20",
+  "MEDIAN傾き%20",
+  "close vs MEDIAN%50",
+  "MEDIAN傾き%50",
+  "close vs MEDIAN%200",
+  "MEDIAN傾き%200",
+  "close vs ABER_ZG%",
+  "ABER位置",
+  "close vs ACCBL%",
+  "close vs ACCBU%",
+  "close vs CE_L%",
+  "close vs CE_S%",
+  "HWC位置",
+  "HWC幅%",
+  "MASSI",
+  "PDIST%",
+  "TR%",
+  "THERMO%",
+  "THERMO比",
+  "CVI7",
+  "RVI7",
+  "UI7",
+  "CVI14",
+  "RVI14",
+  "UI14",
+  "CVI21",
+  "RVI21",
+  "UI21",
+  "EBSW",
+  "HT_DCPERIOD",
+  "HT_DCPHASE",
+  "HT_INPHASE%",
+  "HT_QUAD%",
+  "HT_SINE",
+  "HT_LEADSINE",
+  "HT_TRENDMODE",
+  "MSW_SINE",
+  "MSW_LEAD",
+  "実体幅比10",
+  "内側バー",
+  "open_Z30",
+  "high_Z30",
+  "low_Z30",
+  "HA実体%",
+  "HA上ヒゲ比",
+  "HA下ヒゲ比"
  ],
  "purpose": "net利益を最大化させる条件（指標、閾値、時間、パラメータ）の組み合わせを、見つけることができる機械を作ることが目的（まこさん確定 2026-08-06 逐語）",
  "role_lineage": {

@@ -71,15 +71,57 @@ REASONS_MAKER = set(_score.MAKER_EXIT_REASONS)
 REASONS_TAKER = set(_score.TAKER_EXIT_REASONS)
 
 # ── 材料の名前組み立て（family×param×tf → カタログ名・G6 fail-closed）──
-# 単純数値パラメータの family だけ登録（複合パラメータ＝MACD 等は歩4 で拡張＝未登録は生成不可）。
-FAMILY_TEMPLATES = {
-    "RSI": "RSI{p}", "ROC": "ROC{p}", "ADX": "ADX{p}", "DI差": "DI差{p}",
-    "Stoch%K": "Stoch%K{p}", "Stoch%D": "Stoch%D{p}", "MFI": "MFI{p}", "CMF": "CMF{p}",
-    "ATR%": "ATR%{p}", "realized_vol": "realized_vol{p}", "Donchian幅": "Donchian幅%{p}",
-    "zscore": "zscore{p}", "zscore_return": "zscore_return{p}", "volume_ratio": "volume_ratio{p}",
-    "RCI": "RCI{p}", "EMA傾き": "EMA{p}傾き%", "close vs EMA": "close vs EMA{p}%",
-    "close vs SMA": "close vs SMA{p}%", "fib位置": "fib位置{p}",
-}
+# ★2026-08-11（マイルストーン①のフロー 段6 の 6-7）に、手書き19件から「参照表から機械で作る」形へ
+#   変えた。理由を残す。
+#   前は「指標の名前 ＋ 数字1つ」の形だけを手で19件 並べていた（2026-08-01 の commit 254066a で
+#   作られ、一度も増えていない。当時のコメントの逐語＝「単純数値パラメータの family だけ登録
+#   （複合パラメータ＝MACD 等は歩4 で拡張＝未登録は生成不可）」。その歩4 は同じ 2026-08-01 に
+#   承認されて終わり、拡張されなかった）。
+#   そのため、材料カタログに列が在っても engine_tuner が条件の材料に選べない指標が 232種類 あった
+#   （2026-08-09 実測＝MACD・BB%b・一目の転換線と基準線・ローソク足の形 ほか。5,049列 のうち
+#   選べるのは 432列＝8.6% だけ）。載っていない指標はレシピの読み込みの段階で G6 が拒否する。
+#   いまは参照表 indicator_reference_diag.REFS（材料カタログの列名の正本）の正規表現から、
+#   名前の組み立ての型を機械で作る。＝カタログに列が増えれば、そのまま選べるようになる
+#   （手書きの表に足し忘れる穴が構造的に消える）。
+#   番人＝--selftest の往復テスト＝材料カタログの全列名を family と数字に分解し、この表で組み立て
+#   直して1文字も違わないことを確かめる（違えば表が実物とずれている）。
+def _template_from_pattern(pat) -> str:
+    """参照表の正規表現 → 名前の組み立ての型。数字を捕まえる所を {} に置き換え、正規表現の印を外す。
+
+    例＝ ^MACD線%\\((\\d+),(\\d+)\\)$ → MACD線%({},{}) ／ ^RSI(\\d+)$ → RSI{} ／ ^包み足$ → 包み足
+    """
+    body = pat.pattern
+    if body.startswith("^"):
+        body = body[1:]
+    if body.endswith("$"):
+        body = body[:-1]
+    body = re.sub(r"\((?:\\d\+|\[\\d\.\]\+)\)", "\x00", body)   # 捕獲グループ＝数字の入る所
+    body = body.replace("\\", "")                                # \( \) \+ \. のエスケープを外す
+    return body.replace("\x00", "{}")
+
+
+FAMILY_TEMPLATES = {e["family"]: _template_from_pattern(e["pat"]) for e in iref.REFS}
+
+
+def build_name(m: dict) -> str:
+    """材料の指定（family と数字）→ 材料カタログの列名。
+
+    数字の渡し方は3つ＝①数字1つ（RSI14 のような形）②数字の並び（MACD線%(12,26) のような形）
+    ③無し（包み足のように数字を持たない形）。組み立ての型が要る個数と合わなければ G6 で拒否する。
+    """
+    fam = m.get("family")
+    tpl = FAMILY_TEMPLATES.get(fam)
+    if tpl is None:
+        _fail("G6", f"family の名前組み立てが未登録: {fam}（参照表 indicator_reference_diag に無い）")
+    prm = m.get("param")
+    vals = [] if prm is None else (list(prm) if isinstance(prm, (list, tuple)) else [prm])
+    need = tpl.count("{}")
+    if len(vals) != need:
+        _fail("G6", f"材料の数字の個数が合わない: {fam} は {need} 個 要る（渡された数字＝{vals}）")
+    for v in vals:
+        if isinstance(v, bool) or not isinstance(v, (int, float)):
+            _fail("G6", f"材料の数字が数でない: {fam} の {v!r}")
+    return tpl.format(*vals)
 # 実行時の列の別名（カタログ名 → prepare_df が付ける部品列）。式は同一＝e38_logic_parts が
 # 出典を observe_diag に固定した部品（prepare_df の各式と build_catalog の式が同式であること）。
 RUNTIME_ALIAS = {
@@ -162,13 +204,10 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
         if t not in iref.TIME_REF:
             _fail("G6", f"時間帯の材料に無い名前: {t}")
         return "time", t
-    fam, prm, tf = m.get("family"), m.get("param"), m.get("tf")
+    fam, tf = m.get("family"), m.get("tf")
     if not fam or not tf:
-        _fail("G6", f"材料の3軸（family×param×tf）が欠けている: {m}")
-    tpl = FAMILY_TEMPLATES.get(fam)
-    if tpl is None:
-        _fail("G6", f"family の名前組み立てが未登録: {fam}（複合パラメータ family は歩4 で拡張＝生成不可）")
-    name = tpl.format(p=prm)
+        _fail("G6", f"材料の2軸（family×tf）が欠けている: {m}（数字は family によって 0〜3 個）")
+    name = build_name(m)                      # 数字の個数の検査も build_name の中でやる（G6）
     ent, _p = iref.find(name)
     if ent is None:
         _fail("G6", f"カタログに無い材料: {name}（indicator_reference_diag に未登録）")
@@ -2355,6 +2394,58 @@ def _selftest_4_19() -> list[str]:
     return bad
 
 
+def _selftest_roundtrip() -> tuple[list[str], int]:
+    """名前の組み立ての往復テスト（2026-08-11・段6 の 6-7）。
+
+    ①材料カタログの列名を1つずつ参照表で family と数字に分解する
+    ②この表（FAMILY_TEMPLATES）で組み立て直す
+    ③元の名前と1文字も違わないことを確かめる
+    ④番人の番人＝わざと型を1件 壊すと、この検査が落ちることを確かめる
+
+    ★観察の道具（observe_diag）を import して、実物の列名を数える（名前を手で並べない）。
+    """
+    import contextlib
+    import io
+    bad: list[str] = []
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):
+            import observe_diag as _od
+            _cfg = _od.load_config()
+            names = [nm for nm, _fn, _dr in _od.build_catalog(_cfg)]
+    except Exception as e:                                        # noqa: BLE001
+        return [f"材料カタログを読めない: {str(e)[:80]}"], 0
+
+    def _mismatch(nms: list[str]) -> list[str]:
+        out = []
+        for nm in nms:
+            ent, prm = iref.find(nm)
+            if ent is None:
+                out.append(f"参照表に無い列: {nm}")
+                continue
+            try:
+                made = build_name({"family": ent["family"], "param": (list(prm) or None)})
+            except SystemExit as e:                               # RecipeError
+                out.append(f"{nm}: 組み立てで拒否された（{str(e)[:60]}）")
+                continue
+            if made != nm:
+                out.append(f"{nm}: 組み立て直すと {made}（食い違い）")
+        return out
+
+    bad += _mismatch(names)
+
+    # 番人の番人＝型を1件 壊すと落ちるか（この検査が生きていることの確認）
+    tgt = "RSI" if "RSI" in FAMILY_TEMPLATES else next(iter(FAMILY_TEMPLATES))
+    keep = FAMILY_TEMPLATES[tgt]
+    try:
+        FAMILY_TEMPLATES[tgt] = keep + "X"
+        if not _mismatch([nm for nm in names if iref.find(nm)[0]
+                          and iref.find(nm)[0]["family"] == tgt]):
+            bad.append("番人の番人: 型を1件 壊しても往復テストが落ちない")
+    finally:
+        FAMILY_TEMPLATES[tgt] = keep
+    return bad, len(names)
+
+
 def selftest() -> None:
     ng = []
     okr = _base_ok_recipe()
@@ -2648,6 +2739,17 @@ def selftest() -> None:
     miss = iref.lineage_coverage(list(FAMILY_TEMPLATES))
     if miss:
         ng.append(f"FAMILY_TEMPLATES の family が系統マップに無い: {miss}")
+
+    # ══ 名前の組み立ての往復テスト（2026-08-11・段6 の 6-7 で新設）══════════════════════
+    #   何を守るか＝「材料カタログに列が在るのに engine_tuner が選べない」を二度と作らない。
+    #   やり方＝材料カタログの列名を1つずつ family と数字に分解し（参照表 find）、この表で
+    #   組み立て直して、元の名前と1文字も違わないことを確かめる。1件でも違えば ❌。
+    #   ★番人の番人＝わざと1件の型を壊すと、この検査が落ちることも同時に確かめる。
+    _rt_ng, _rt_n = _selftest_roundtrip()
+    ng += _rt_ng
+    print(f"[番人 名前の組み立て] 材料カタログの全 {_rt_n} 列を family＋数字に分解して組み立て直す"
+          "（+ わざと型を1件 壊すと落ちるか） → "
+          + ("✅ 全部 一致・壊すと落ちた" if not _rt_ng else "❌ " + " ／ ".join(_rt_ng)))
     print("=" * 80)
     print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ32種で全部止まる・正しい4種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)

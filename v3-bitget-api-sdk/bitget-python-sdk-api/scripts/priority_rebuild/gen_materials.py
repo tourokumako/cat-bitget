@@ -107,11 +107,62 @@ def _engine_view() -> dict:
     v["unselectable_fams"] = [f for f in fams if f not in set(v["selectable_fams"])]
     v["cols_selectable"] = len(v["pool"]) * len(v["tfs"])
     # 期間がいま「点」で固定されている実測（マイルストーン③の対象・段5 は事実を出すだけ）
-    per: dict[str, list[int]] = {}
+    # ★2026-08-11（段6 の 6-7）＝数字の持ち方が3つになった（1つ／並び／無し）ので、
+    #   int() に丸めず、そのままの形で集める。数字を持たない指標（包み足 ほか）はこの表に出さない。
+    per: dict[str, list] = {}
     for p in v["pool"]:
-        per.setdefault(p["family"], []).append(int(p["param"]))
+        if p["param"] is None:
+            continue
+        per.setdefault(p["family"], []).append(p["param"])
     v["params"] = {k: sorted(set(x)) for k, x in sorted(per.items())}
     return v
+
+
+# ★段6（材料を足す作業）の前の材料の一覧＝git のこの commit の materials.md（2026-08-09・段5 の分）。
+#   ここを起点に「うちが元から持っていた指標が1件も消えていないか」を毎回 照らす（6-9②）。
+_STAGE6_BASE_COMMIT = "03aad50"
+
+
+def _kept_since_stage6(commit: str = _STAGE6_BASE_COMMIT) -> tuple[list[str], int]:
+    """段6 の前に「在る」だった指標が、いまも材料に在るかを照らす。戻り＝(消えた名前, 元の件数)。
+
+    ★一覧は git から取り出す（記憶や書き写しではない）。git が使えない環境では空を返す
+      （＝この検査は黙って通る。番人の出力に「照らせなかった」と出す作りにはしていない＝
+      次に触る人が気づけるよう、ここに書いておく）。
+    """
+    import subprocess
+    rel = "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/materials.md"
+    try:
+        old = subprocess.run(["git", "show", f"{commit}:{rel}"], capture_output=True, text=True,
+                             cwd=str(_HERE.parents[3]), timeout=60)
+        if old.returncode != 0:
+            return [], 0
+    except Exception:                                            # noqa: BLE001
+        return [], 0
+    base = [ln.split("|")[1].strip() for ln in old.stdout.splitlines()
+            if ln.startswith("|") and "| 在る |" in ln]
+    rows = build_body()["rows"]
+    now = {r["名前"] for r in rows if r["状態"] == "在る"}
+    # ★「同じ挙動なので省いた」と設定に理由つきで書いてあるものは、消えたとみなさない
+    #   （まこさん OK 2026-08-11・逐語「同じ挙動ならどちらかは使わないようにしていいよ」）。
+    #   ＝黙って消えた場合だけ ❌ にする。設定 observe_config.json の drop_columns が根拠。
+    dropped_fams = set()
+    for d, _k in _dropped_columns():
+        ent = iref.find(d)[0]
+        if ent is not None:
+            dropped_fams.add(ent["family"])
+    lost = [b for b in base if b not in now and b not in dropped_fams]
+    return lost, len(base)
+
+
+def _dropped_columns() -> list[tuple[str, str]]:
+    """同じ挙動なので省いた列の一覧（左＝省いた列・右＝残した列）。出どころ＝observe_config.json。"""
+    import json as _j
+    p = _HERE / "observe_config.json"
+    try:
+        return [(a, b) for a, b in (_j.loads(p.read_text(encoding="utf-8")).get("drop_columns") or [])]
+    except Exception:                                            # noqa: BLE001
+        return []
 
 
 def _row_engine(row: dict, ev: dict) -> str:
@@ -210,15 +261,39 @@ def build_body() -> dict:
     rbl = _roles_by_lineage()
     lib = _lib_funcs()
     rows = []
+    # ★いま材料カタログに実際に列が在る family を機械で数える（2026-08-11 に足した）。
+    #   理由＝この表は参照表 REFS から作っている。同じ挙動の列を省くと、カタログには無いのに
+    #   ここだけ「在る」と書いてしまう（正本が嘘をつく＝L-430・L-436 と同じ型）。
+    _drop_map = dict(_dropped_columns())
+
+    def _live_families() -> dict:
+        import contextlib as _c
+        import io as _i
+        with _c.redirect_stdout(_i.StringIO()):
+            import observe_diag as _od
+            _cfg = _od.load_config()
+            _names = [n for n, _f, _d in _od.build_catalog(_cfg)]
+        out: dict[str, int] = {}
+        for n in _names:
+            ent = iref.find(n)[0]
+            if ent is not None:
+                out[ent["family"]] = out.get(ent["family"], 0) + 1
+        return out
+    live = _live_families()
     # ── 状態「在る」＝いま材料カタログに在る指標の種類 ──
     for e in iref.REFS:
         fam = e["family"]
         lin = iref.FAMILY_LINEAGE.get(fam, {}).get("k", "")
         q = iref.LINEAGE_QUESTION.get(lin, ("", ""))[0]
+        if live.get(fam, 0) == 0:
+            keep = next((k for d, k in _drop_map.items() if (iref.find(d)[0] or {}).get("family") == fam), "")
+            st = ("省いた（同じ挙動＝残したのは " + keep + "）") if keep else "省いた（列が無い）"
+        else:
+            st = "在る"
         rows.append(dict(名前=fam, 系統=lin, 答える問い=q,
                          使える役割="・".join(rbl.get(lin, [])) or "（どの役割にも割り当てが無い）",
                          計算の出どころ=_source_note(fam, e["ext"] is not None),
-                         グループ=_GROUP_TBD, 状態="在る"))
+                         グループ=_GROUP_TBD, 状態=st))
     # ── 状態「在る」の続き＝参照表 REFS の外にある材料（別の定義表で管理されているもの）──
     #   ★2026-08-09 に、最初この3種類が抜けた材料の正本を出してしまい、自分で気づいて足した。
     #     「答える問い」の表に 需給・時間帯 が在るのに、その系統の行が1つも無かったのが手がかり。
@@ -327,9 +402,18 @@ def render_md(body: dict) -> str:
               f"| そのほかに選べるもの（レンジ幾何） | {'・'.join(e['レンジ幾何']) or '（無し）'} |",
               f"| そのほかに選べるもの（時間帯） | 時刻だけ（型の表は {'・'.join(e['時間帯'])} を許す） |",
               "",
-              "**なぜ選べないか**＝実行器の `FAMILY_TEMPLATES`（列名の組み立て表・手書き19件）に載っていない指標は、",
-              "レシピの読み込みの段階で `G6` が拒否します（`engine_tuner_exec.py:170` の逐語＝",
-              "「family の名前組み立てが未登録: …（複合パラメータ family は歩4 で拡張＝生成不可）」）。", "",
+              "**何が「選べる」を決めているか**＝実行器の `FAMILY_TEMPLATES`（列名の組み立て表）に",
+              "載っていない指標は、レシピの読み込みの段階で `G6` が拒否します。",
+              "**★2026-08-11（段6 の 6-7）に、この表を「手書き19件」から「参照表から機械で作る」形に変えました。**",
+              "参照表 `indicator_reference_diag.REFS`（材料カタログの列名の正本）の正規表現から、",
+              "名前の組み立ての型を機械で作ります＝材料カタログに列が増えれば、そのまま選べるようになります。",
+              "**直す前は 232種類 が選べませんでした**（MACD・BB%b・一目の転換線と基準線・ローソク足の形 ほか。",
+              "5,049列 のうち選べるのは 432列＝8.6% だけ）。**直したあとの実測は上の表のとおりです。**",
+              "番人＝`engine_tuner_exec.py --selftest` の往復テスト（カタログの全列名を分解して組み立て直し、",
+              "1文字も違わないこと＋わざと型を1件 壊すと落ちること）。", "",
+              "> ⚠️ **ここで言う「選べる」は、レシピの読み込みが拒否しないという意味です。**",
+              "> 生成器が実際にその部品を引くかどうかは、承認済みの型の表（`signal_families.json`）に",
+              "> その部品が載っているかで決まります（材料が増えたぶんを表に反映するのが 6-6 です）。", "",
               "## ★3｜パラメータ（指標を作るときのローソク足の本数）が、決まった数字だけに固定されている", "",
               "**（マイルストーン③の対象。段5 は事実を出すだけで、直しません。）**", "",
               "**ここで言う数字は、ローソク足の本数です。**指標を計算するとき、直近の何本分のローソク足を使うかを",
@@ -346,7 +430,12 @@ def render_md(body: dict) -> str:
               "当たる状態です。数字の出どころ＝`scripts/priority_rebuild/observe_config.json` の `*_periods` の行。", "",
               "| 指標の種類 | いま試せるローソク足の本数 |", "|---|---|"]
         for k, v in e["期間"].items():
-            L.append(f"| {k} | {' 本・'.join(str(x) for x in v)} 本（{len(v)} 通り） |")
+            # ★数字が2つ以上の指標（MACD線%(12,26) のような形）は、組で1通りと数える（6-7・2026-08-11）
+            if any(isinstance(x, (list, tuple)) for x in v):
+                s = "・".join("(" + ",".join(str(y) for y in x) + ")" for x in v)
+                L.append(f"| {k} | {s}（{len(v)} 通り・数字が2つ以上の指標は組で1通り） |")
+            else:
+                L.append(f"| {k} | {' 本・'.join(str(x) for x in v)} 本（{len(v)} 通り） |")
         _ok = sum(1 for s in body["skip_rows"] if s.get("承認", "").startswith("✅"))
         _po = sum(1 for s in body["skip_rows"] if s.get("承認", "").startswith("◯"))
         _no = len(body["skip_rows"]) - _ok - _po
@@ -440,8 +529,11 @@ def selftest() -> int:
     # T1 在るの行数＝4つの定義表の件数の合計と一致する（1つでも取りこぼしたら落ちる）
     want_n = (len(iref.REFS) + len(iref.DEMAND_REF) + len(getattr(iref, "TIME_REF", {}))
               + len(iref.RANGE_GEO_REF))
-    if body["counts"]["在る"] != want_n:
-        ng.append(f"T1: 『在る』の行数 {body['counts']['在る']} が定義表の合計 {want_n} 件と合わない"
+    # ★「省いた（同じ挙動）」の行も定義表の側では数える（2026-08-11・まこさん OK で省いたため）
+    _kept_or_dropped = body["counts"]["在る"] + sum(
+        1 for r in rows if str(r["状態"]).startswith("省いた"))
+    if _kept_or_dropped != want_n:
+        ng.append(f"T1: 『在る』＋『省いた』の行数 {_kept_or_dropped} が定義表の合計 {want_n} 件と合わない"
                   f"（参照表 {len(iref.REFS)}＋需給 {len(iref.DEMAND_REF)}"
                   f"＋時間帯 {len(getattr(iref, 'TIME_REF', {}))}＋レンジ幾何 {len(iref.RANGE_GEO_REF)}）")
     # T1-2 「答える問い」の表に在る系統は、材料の行にも必ず出てくる（表だけ在って中身が無いのを防ぐ）
@@ -464,7 +556,9 @@ def selftest() -> int:
     # T4 期間で行を分けていない。
     #   ★数字が入っているかでは見ない（pivotR1 の「1」は期間ではなく水準の名前）。
     #   参照表の照合にかけて「パラメータが付いた形（RSI14 など）」になっていないかで見る。
-    got_names = {r["名前"] for r in rows if r["状態"] == "在る"}
+    # ★「省いた（同じ挙動）」の行も、定義表には在る＝名前の突き合わせでは同じ側に数える
+    #   （2026-08-11・まこさん OK で同じ挙動の列を省いたため）。
+    got_names = {r["名前"] for r in rows if r["状態"] == "在る" or r["状態"].startswith("省いた")}
     want_names = ({e["family"] for e in iref.REFS} | set(iref.DEMAND_REF)
                   | set(getattr(iref, "TIME_REF", {}))
                   | {f"レンジ幾何 {k}" for k in iref.RANGE_GEO_REF})
@@ -492,6 +586,13 @@ def selftest() -> int:
     # T8-2 「選べない指標の種類」の数が、一覧 B の数と一致する
     if ga and ga["B"]["数"] != body["engine"]["選べない指標の種類"]:
         ng.append("T8-2: 一覧 B の数が engine_tuner の集計と合わない")
+    # T10 段6 の前に「在る」だった指標が、いま1件も消えていない（2026-08-11・段6 の 6-9②）
+    #   ★何を守るか＝業界のライブラリの指標を大量に足す作業（段6）の途中で、うちが元から持っていた
+    #     指標（cat 独自のもの＝外部に照合の相手がいないものを含む）を うっかり消していないこと。
+    #     一覧は git から取り出す＝記憶や書き写しではない。
+    _lost, _base_n = _kept_since_stage6()
+    if _lost:
+        ng.append(f"T10: 段6 の前に在った指標が消えている（{len(_lost)}/{_base_n} 件）: {'・'.join(_lost)}")
     # T9 わざと FAMILY_TEMPLATES から1件 消すと「選べない」が1件 増える（この検査が生きていることの確認）
     try:
         import engine_tuner_exec as _ex

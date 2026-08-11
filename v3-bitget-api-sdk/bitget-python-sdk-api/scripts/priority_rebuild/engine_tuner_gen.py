@@ -144,8 +144,15 @@ def hold_bars(limits: dict) -> tuple[int, int]:
 def material_pool(cfg: dict | None = None) -> tuple[list[dict], list[str], int]:
     """カタログから (family, param) の候補と時間足を機械で数える。戻り＝(プール, 足, カタログ総列数)。
 
-    候補に載るのは実行器 FAMILY_TEMPLATES で名前を組み立てられる family だけ（複合パラメータ family は
-    歩4 時点でも生成不可＝G6 と同じ線）。カタログ総列数は網羅度の分母。
+    ★2026-08-11（段6 の 6-7）に、数え方を変えた。理由を残す。
+      前は実行器の手書きの型（19件）を正規表現に直して、カタログの列名に当てていた。
+      ＝手書きの表に載っていない指標は、カタログに列が在っても候補に載らなかった
+      （2026-08-09 実測＝232種類が落ちていた。MACD・BB%b・一目・ローソク足の形 ほか）。
+      いまは逆向きに数える＝カタログの列名を1つずつ参照表で family と数字に分解する。
+      ＝カタログに在る列は全部 候補に載る（実行器の G6 も同じ参照表から名前を組み立てる）。
+
+    数字の持ち方は3つ＝①数字1つ（RSI14 → 14）②数字の並び（MACD線%(12,26) → (12, 26)）
+    ③無し（包み足 → None）。カタログ総列数は網羅度の分母。
     """
     import contextlib
     import io
@@ -154,14 +161,13 @@ def material_pool(cfg: dict | None = None) -> tuple[list[dict], list[str], int]:
         import observe_diag as od
         cfg = cfg or od.load_config()
         names = [name for name, _fn, _d in od.build_catalog(cfg)]
-    import re
     pool = []
-    for fam, tpl in ex.FAMILY_TEMPLATES.items():
-        pat = re.compile("^" + re.escape(tpl).replace(re.escape("{p}"), r"(\d+)") + "$")
-        for nm in names:
-            m = pat.match(nm)
-            if m:
-                pool.append({"family": fam, "param": int(m.group(1))})
+    for nm in names:
+        ent, prm = iref.find(nm)
+        if ent is None or ent["family"] not in ex.FAMILY_TEMPLATES:
+            continue
+        p = None if len(prm) == 0 else (prm[0] if len(prm) == 1 else tuple(prm))
+        pool.append({"family": ent["family"], "param": p})
     tfs = list(cfg["timeframes"])
     return pool, tfs, len(names) * len(tfs)
 
@@ -185,7 +191,7 @@ def _kubun_of(m: dict) -> str:
         return iref.RANGE_GEO_REF[m["geo"]]["houkou"].split("＝")[0]
     if "time" in m:
         return iref.TIME_REF[m["time"]]["houkou"].split("＝")[0]
-    name = ex.FAMILY_TEMPLATES[m["family"]].format(p=m.get("param"))
+    name = ex.build_name(m)
     ref, _ = iref.find(name)
     return ref["houkou"].split("＝")[0] if ref else "？"
 
@@ -239,7 +245,7 @@ def _banned_pair(m: dict, table) -> bool:
     """（部品×時間足）が禁止3（標本不足）に当たるか。"""
     if "family" not in m:
         return False
-    name = ex.FAMILY_TEMPLATES[m["family"]].format(p=m["param"])
+    name = ex.build_name(m)
     return (name, m["tf"]) in table["banned"]
 
 
@@ -284,7 +290,7 @@ def _pair_materials(rng, pool, tfs, role, table) -> list[dict]:
         if rng.random() < 0.4:
             ks = sorted(set(fams.get("Stoch%K", [])) & set(fams.get("Stoch%D", [])))
             if ks:
-                p = int(rng.choice(ks))
+                p = ks[int(rng.integers(len(ks)))]
                 pair = [{"family": "Stoch%K", "param": p, "tf": tf},
                         {"family": "Stoch%D", "param": p, "tf": tf}]
                 if not any(_banned_pair(m, table) for m in pair):
@@ -293,8 +299,12 @@ def _pair_materials(rng, pool, tfs, role, table) -> list[dict]:
         if not cands:
             raise SampleError(f"役割 {role} で列2本の形を組める family が無い（表の系統の中）")
         f = str(rng.choice(cands))
-        p1, p2 = rng.choice(sorted(set(fams[f])), size=2, replace=False)
-        pair = [{"family": f, "param": int(p1), "tf": tf}, {"family": f, "param": int(p2), "tf": tf}]
+        # ★数字は「並び」のこともある（MACD線%(12,26) のような形）ので、値そのものでなく
+        #   並びの場所を引く（2026-08-11・段6 の 6-7）。int() に丸めると小数の数字が壊れる。
+        opts = sorted(set(fams[f]))
+        i1, i2 = rng.choice(len(opts), size=2, replace=False)
+        pair = [{"family": f, "param": opts[int(i1)], "tf": tf},
+                {"family": f, "param": opts[int(i2)], "tf": tf}]
         if not any(_banned_pair(m, table) for m in pair):
             return pair
     raise SampleError(f"役割 {role} の列2本を30回引いても禁止3 を避けられない")
@@ -457,8 +467,11 @@ def _exit_indicator_cond(rng, limits, pool, tfs, table, side, spec) -> dict:
     forms = [f for f in (spec.get("forms") or ["level"]) if f in ("level", "cross", "slope", "diff", "candle_dir")]
     rev = bool(spec.get("reverse_of_side"))
     form = str(rng.choice(forms))
-    # ★ローソクの部品は「値のある列」ではない（実行器の FAMILY_TEMPLATES に無い＝材料として引けない）。
-    #   だから系統がローソクだけの枝は、材料の要らない形（陽線か陰線か）で作る。
+    # ★系統がローソクだけの枝で、その系統の部品がプールに1本も無いときは、材料の要らない形
+    #   （陽線か陰線か）で作る。★2026-08-11（段6 の 6-7）に注記を直した＝前は「ローソクの部品は
+    #   実行器の FAMILY_TEMPLATES に無い＝材料として引けない」と書いてあったが、6-7 で名前の
+    #   組み立てを参照表から機械で作る形にしたので、包み足・pinbar・body比 なども引けるようになった。
+    #   （実際に引けるかは、承認済みの型の表に部品が載っているかで決まる＝6-6 の再承認のあと）
     if "ローソク" in lineages and not any(iref.FAMILY_LINEAGE[b["family"]]["k"] in lineages for b in pool):
         form = "candle_dir"
     if form == "candle_dir":
@@ -475,7 +488,7 @@ def _exit_indicator_cond(rng, limits, pool, tfs, table, side, spec) -> dict:
         ks = sorted(set(fams.get("Stoch%K", [])) & set(fams.get("Stoch%D", [])))
         tf_pool = [t for t in tfs if t in table["tfs"]]
         if ks:
-            p = int(rng.choice(ks))
+            p = ks[int(rng.integers(len(ks)))]       # 数字は並びのこともある（6-7・2026-08-11）
             tf = str(rng.choice(tf_pool))
             pair = [{"family": "Stoch%K", "param": p, "tf": tf}, {"family": "Stoch%D", "param": p, "tf": tf}]
             if not any(_banned_pair(m, table) for m in pair):
@@ -706,7 +719,7 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
     """
     table = load_signal_table()
     pool = [b for b in pool
-            if ex.FAMILY_TEMPLATES[b["family"]].format(p=b["param"]) in table["parts"]
+            if ex.build_name(b) in table["parts"]
             and b["family"] in iref.FAMILY_LINEAGE]
     if not pool:
         raise SampleError("表に載っている部品が pool に1つも無い")
@@ -1884,7 +1897,7 @@ def selftest() -> int:
                 if kind not in rr["lineages"]:
                     v.append(f"{role} に系統 {kind}（対応表の外）")
                 if "family" in m:
-                    name = ex.FAMILY_TEMPLATES[m["family"]].format(p=m["param"])
+                    name = ex.build_name(m)
                     if name not in parts13 or m["tf"] not in tfs13_all:
                         v.append(f"表に無い部品/時間足 {name}__{m.get('tf')}")
                     if rr["tfs"] is not None and m["tf"] not in rr["tfs"]:
