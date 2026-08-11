@@ -1,0 +1,125 @@
+{
+  "_note": "条件の部品の一覧（マイルストーン①の段C＝C-1・2026-08-11 新設）。engine_tuner が『指標をどう条件にするか』の部品を、名前の一覧（11個の型）でなく部品で持つための正本。★この json が正本で、materials.md の ★6 は gen_materials.py が機械で作る（md を手で書かない）。",
+  "_why": "いまの engine_tuner は条件の形を11個の名前で持っている（engine_tuner_exec.py:51 の FORMS）。11個は 2026-08-01 の commit 254066a で一度に手で書かれ、以降1個も増えていない。＝『思いついたら私が1語 足す』運用になっていた（まこさん指摘 2026-08-11・逐語『これは手書きで思い付いたら増やす。みたいな運用になるのか？すごい原始的なんだが。』）。11個を実物のコードで分解したところ、全部が同じ小さい部品の組み合わせだった。だから部品で持つ形に変える。部品を1つ足すと 244種類の指標 全部に一度に効く。",
+  "_how_decided": "部品の一覧を CC が思いつきで決めない。業界の実物5件と1件ずつ照らして決めた（2026-08-11 の WebResearch）。判定（要る/要らない）は CC が書いた＝まこさんが1件ずつ読んで直せるように、理由を1行ずつ付ける。",
+  "_scope": "BTCUSDT の1銘柄・5分足・入口と出口の売買ルールの最適化。銘柄をまたぐ部品は対象外。",
+
+  "sources": [
+    {
+      "id": "alphagen",
+      "name": "alphagen（式を機械で探す研究の実装コード）",
+      "url": "https://github.com/RL-MLDM/alphagen/",
+      "taken": "2026-08-11",
+      "how": "record",
+      "n": 28,
+      "detail": "単項4（Abs・Sign・Log・CSRank）／二項7（Add・Sub・Mul・Div・Pow・Greater・Less）／時系列15（Ref・Mean・Sum・Std・Var・Skew・Kurt・Max・Min・Med・Mad・Rank・Delta・WMA・EMA）／2本の時系列2（Cov・Corr）"
+    },
+    {
+      "id": "gp_logic",
+      "name": "Vectorial GP の論文（強い型付け版が足す論理の部品）",
+      "url": "https://arxiv.org/html/2504.05418v1",
+      "taken": "2026-08-11",
+      "how": "record",
+      "n": 6,
+      "detail": "SUM_GT・AND・OR・XOR・NOT・IF_ELSE。標準の部品は11（ADD・MULT・SUB・DIV・GT・NEG・SIN・COS・TAN・SIGNUM）"
+    },
+    {
+      "id": "gplearn",
+      "name": "gplearn の function_set（式を機械で探す定番ライブラリ）",
+      "url": "https://gplearn.readthedocs.io/en/stable/reference.html",
+      "taken": "2026-08-11",
+      "how": "record",
+      "n": 14,
+      "detail": "add・sub・mul・div・sqrt・log・abs・neg・inv・max・min・sin・cos・tan。★このプロジェクトには入っていない（2026-08-11 実測）ので、機械で取り直せない＝記録のみ"
+    },
+    {
+      "id": "pandas_ta",
+      "name": "pandas-ta-classic の utils（うちが使っているライブラリ）",
+      "url": "installed",
+      "taken": "2026-08-11",
+      "how": "live",
+      "n": 10,
+      "detail": "above・above_value・below・below_value・cross・cross_value・crossany・crossover・lag・signals。★入っているので毎回 機械で取り直す（記録と食い違ったら ❌）"
+    },
+    {
+      "id": "pine",
+      "name": "TradingView Pine Script の ta 名前空間",
+      "url": "https://www.tradingview.com/pine-script-docs/language/built-ins/",
+      "taken": "2026-08-11",
+      "how": "record",
+      "n": null,
+      "detail": "取れた名前＝ta.sma・ta.ema・ta.macd・ta.rsi・ta.supertrend・ta.barssince・ta.crossover・ta.highest・ta.tr・ta.vwma。★総数は書かれていない（逐語＝『Pine Script has hundreds of built-in variables and functions』）"
+    }
+  ],
+
+  "_c2_found": "★段C の C-2（2026-08-11）で、部品が3つ 抜けていたことが分かった＝掛け算（touch が tol × |b| で使う）／値が在るか（実行器が条件ごとに np.where(isfinite, ok, na_pass) を掛けている）／条件そのものを n本 ずらす（streak・within_n の offset）。CC が実物のコードを読んで分解した表に抜けがあり、実データで突き合わせて初めて出た。＝『読んで分解する』だけでは足りず、『動かして1バーずつ比べる』が要るという実証。突き合わせの道具＝scripts/priority_rebuild/condition_parts_diag.py。",
+
+  "have": [
+    {"id": "value",      "name": "値を持ってくる",              "where": "全部の形",                          "impl": "engine_tuner_exec._col_array", "src": ["alphagen", "pandas_ta"]},
+    {"id": "lag",        "name": "n本 ずらす（値を）",          "where": "cross（1本前）・slope・slope_avg",   "impl": "np.roll（先頭 n 本は値なし）", "src": ["alphagen:Ref", "pandas_ta:lag"]},
+    {"id": "ma",         "name": "n本の平均",                   "where": "slope_avg",                         "impl": "rolling(m).mean()", "src": ["alphagen:Mean"]},
+    {"id": "sub",        "name": "引き算",                      "where": "diff・slope・slope_avg・touch・cross・candle_dir", "impl": "a - b", "src": ["alphagen:Sub/Delta", "gplearn:sub"]},
+    {"id": "mul",        "name": "掛け算",                      "where": "touch（許容幅 × 相手の絶対値）",     "impl": "tol * np.abs(b)（engine_tuner_exec:810）", "src": ["alphagen:Mul", "gplearn:mul"]},
+    {"id": "abs",        "name": "絶対値",                      "where": "touch",                             "impl": "np.abs(a - b)", "src": ["alphagen:Abs", "gplearn:abs"]},
+    {"id": "cmp",        "name": "比べる（以上・以下）",         "where": "level・band・band_exclude・diff・slope・slope_avg・touch・cross・candle_dir", "impl": "engine_tuner_exec._side_cmp", "src": ["pandas_ta:above/below", "gp_logic:GT"]},
+    {"id": "and",        "name": "かつ",                        "where": "band・band_exclude・cross・条件を並べたとき", "impl": "connective ／ & ", "src": ["gp_logic:AND"]},
+    {"id": "not",        "name": "でない",                      "where": "band_exclude・cross（より大きい を 以上 と 以下でない で書く）", "impl": "~x", "src": ["gp_logic:NOT"]},
+    {"id": "exists",     "name": "値が在るか（欠損でないか）",   "where": "全部の形（欠損は不成立にする）",      "impl": "np.where(np.isfinite(a), ok, na_pass)", "src": ["—（業界の一覧には無い。実行器の既定 na=fail）"]},
+    {"id": "all_n",      "name": "n本のうち 全部 成立",          "where": "streak",                            "impl": "rolling(n).sum() >= n", "src": ["gp_logic:SUM_GT"]},
+    {"id": "any_n",      "name": "n本のうち どれか 成立",        "where": "within_n",                          "impl": "rolling(n).max() >= 1", "src": ["gp_logic"]},
+    {"id": "shift_cond", "name": "n本 ずらす（条件を）",         "where": "streak・within_n の offset",         "impl": "np.roll(cond, off)（先頭は不成立）", "src": ["pandas_ta:lag（値の側のみ）"]}
+  ],
+
+  "missing": [
+    {"id": "ts_max",    "name": "n本の最大値",       "can_write": "過去20本の高値を更新した（新高値）",            "src": ["alphagen:Max", "pine:ta.highest"]},
+    {"id": "ts_min",    "name": "n本の最小値",       "can_write": "過去20本の安値を更新した（新安値）",            "src": ["alphagen:Min", "pine:ta.lowest"]},
+    {"id": "ts_rank",   "name": "n本の中の順位",     "can_write": "いまの値が 過去100本で上位20%",                 "src": ["alphagen:Rank"]},
+    {"id": "ts_std",    "name": "n本のばらつき",     "can_write": "値動きが荒れているとき限定",                    "src": ["alphagen:Std"]},
+    {"id": "barssince", "name": "何本前に成立したか", "can_write": "上抜けてから 3本 以内",                        "src": ["pine:ta.barssince"]},
+    {"id": "div",       "name": "割り算",            "can_write": "a が b の 1.2倍 を超えた（比）",                "src": ["alphagen:Div", "gplearn:div"]},
+    {"id": "corr",      "name": "2本の相関",         "can_write": "2つの指標が同じ向きに動いている",              "src": ["alphagen:Corr"]},
+    {"id": "cross_val", "name": "閾値とのクロス",    "can_write": "RSI が 70 を上抜けた",                          "src": ["pandas_ta:cross_value"],
+     "proof": "engine_tuner_exec の検証器に『列1本＋定数』の cross を渡すと G6 で拒否される（毎回 機械で確かめる）"},
+    {"id": "or",        "name": "どれか満たす（OR）", "can_write": "A または B",                                   "src": ["gp_logic:OR"],
+     "proof": "実行器は OR を評価できるが、生成器が作らない（欠陥 D5）"}
+  ],
+
+  "not_needed": [
+    {"name": "銘柄をまたいだ順位（CSRank）・銘柄間の相関", "why": "BTCUSDT の1銘柄だけなので、順位を付ける相手がいない", "src": ["alphagen:CSRank"]},
+    {"name": "sin・cos・tan",                              "why": "値段の系列に三角関数を当てる根拠が無い（★根拠が出れば入れる）", "src": ["gplearn", "gp_logic"]},
+    {"name": "べき乗・平方根・逆数・対数・符号反転",       "why": "正の値では 大小の並びが変わらない＝『◯◯以上』の条件では、掛けても掛けなくても同じ結果になる", "src": ["alphagen:Pow/Log", "gplearn:sqrt/inv/neg"]},
+    {"name": "中央値・平均偏差・歪み・尖り・WMA・EMA",     "why": "材料カタログ（535列）の側に既に在る＝条件の部品として重ねて持たない", "src": ["alphagen:Med/Mad/Skew/Kurt/WMA/EMA"]},
+    {"name": "どちらか一方（XOR）",                        "why": "かつ・でない・どれか の3つで書ける", "src": ["gp_logic:XOR"]},
+    {"name": "大きい方・小さい方（2項の max・min）",       "why": "条件では『比べる』で足りる", "src": ["alphagen:Greater/Less", "gplearn:max/min"]}
+  ],
+
+  "classic_crosses": [
+    {"name": "MACD のクロス",              "a": "MACD線%",     "b": "MACDシグナル線%",  "note": "テクニカルで最も基本のロジックの1つ"},
+    {"name": "VWMACD のクロス",            "a": "VWMACD線%",   "b": "VWMACDシグナル%",  "note": "出来高つきの MACD"},
+    {"name": "ストキャス %K × %D",          "a": "Stoch%K",     "b": "Stoch%D",          "note": "生成器のコードに直書きで例外扱いされている唯一の対"},
+    {"name": "ストキャスRSI %K × %D",       "a": "StochRSI%K",  "b": "StochRSI%D",       "note": "上と同じ形だが、直書きの例外に入っていない"},
+    {"name": "DI+ × DI−",                  "a": "DI+",         "b": "DI-",              "note": "DMI の基本。うちには DI差 も在る"},
+    {"name": "一目 転換線 × 基準線",        "a": "転換線",       "b": "基準線",            "note": "一目均衡表の基本"},
+    {"name": "KST × シグナル",              "a": "KST",         "b": "KSTシグナル",       "note": ""},
+    {"name": "FISHER × シグナル",           "a": "FISHER",      "b": "FISHERシグナル",    "note": ""},
+    {"name": "移動平均のゴールデンクロス（EMA）", "a": "close vs EMA", "b": "close vs EMA", "note": "同じ指標のパラメータ違い＝作れる側の例"},
+    {"name": "移動平均のゴールデンクロス（SMA）", "a": "close vs SMA", "b": "close vs SMA", "note": "同上"},
+    {"name": "RCI の短期 × 長期",           "a": "RCI",         "b": "RCI",              "note": "V9 P22 が使っている。2026-08-11 の 6-8 で RCI7 を足して作れるようになった"}
+  ],
+  "_classic_note": "★段C の C-3（2026-08-11）で、業界の定番のクロスを1件ずつ機械に判定させた。判定の根拠＝①実行器＝engine_tuner_exec._check_cond に実際に渡して通るか ②生成器＝engine_tuner_gen._pair_materials の決まり（同じ指標でパラメータが2つ以上／Stoch%K と %D の直書きの対だけ）。★この表は毎回 機械が作り直す＝CC が結果を手で書かない。",
+
+  "form_decomposition": {
+    "_note": "いまの11個の型が、上の部品のどれでできているか。★2026-08-11 の C-2 で、実データ 20,000本 に本物と部品の両方を当てて 1バーずつ突き合わせ、13件すべて 食い違い 0 を確認した表（道具＝condition_parts_diag.py）。読んで分解しただけの版には3つの抜けがあった。★番人＝engine_tuner_exec.FORMS に在るのにここに無い型が1つでもあれば ❌。",
+    "level":        ["value", "cmp"],
+    "band":         ["value", "cmp", "and"],
+    "band_exclude": ["value", "cmp", "and", "not", "exists"],
+    "slope":        ["value", "lag", "sub", "cmp"],
+    "slope_avg":    ["value", "ma", "lag", "sub", "cmp"],
+    "cross":        ["value", "lag", "sub", "cmp", "and", "not", "exists"],
+    "diff":         ["value", "sub", "cmp"],
+    "touch":        ["value", "sub", "abs", "mul", "cmp"],
+    "candle_dir":   ["value", "sub", "cmp", "and", "not"],
+    "streak":       ["value", "cmp", "all_n", "shift_cond"],
+    "within_n":     ["value", "cmp", "any_n", "shift_cond"]
+  }
+}

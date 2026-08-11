@@ -303,6 +303,146 @@
 `recipes/search_limits.json` の `int_grid` に並んだ数字だけです。**ここも ★3 と同じで、
 マイルストーン③（範囲で探せるようにする）の対象です。**
 
+## ★6｜条件の部品の一覧（engine_tuner が条件を組み立てる部品）
+
+**★この節は機械が作ります（手書きゼロ）。**中身の正本＝`.claude/ratchet/condition_parts.json`。
+
+**対象**＝BTCUSDT の1銘柄・5分足・入口と出口の売買ルールの最適化。銘柄をまたぐ部品は対象外。
+
+**なぜ部品で持つか。**いまの engine_tuner は条件の形を11個の名前で持っている（engine_tuner_exec.py:51 の FORMS）。11個は 2026-08-01 の commit 254066a で一度に手で書かれ、以降1個も増えていない。＝『思いついたら私が1語 足す』運用になっていた（まこさん指摘 2026-08-11・逐語『これは手書きで思い付いたら増やす。みたいな運用になるのか？すごい原始的なんだが。』）。11個を実物のコードで分解したところ、全部が同じ小さい部品の組み合わせだった。だから部品で持つ形に変える。部品を1つ足すと 244種類の指標 全部に一度に効く。
+
+**どうやって決めたか。**部品の一覧を CC が思いつきで決めない。業界の実物5件と1件ずつ照らして決めた（2026-08-11 の WebResearch）。判定（要る/要らない）は CC が書いた＝まこさんが1件ずつ読んで直せるように、理由を1行ずつ付ける。
+
+**照らした相手（業界の実物）**
+
+| 出どころ | 部品の数 | 取り方 | 中身 |
+|---|---|---|---|
+| [alphagen（式を機械で探す研究の実装コード）](https://github.com/RL-MLDM/alphagen/) | 28 | 記録（機械では数え直せない） | 単項4（Abs・Sign・Log・CSRank）／二項7（Add・Sub・Mul・Div・Pow・Greater・Less）／時系列15（Ref・Mean・Sum・Std・Var・Skew・Kurt・Max・Min・Med・Mad・Rank・Delta・WMA・EMA）／2本の時系列2（Cov・Corr） |
+| [Vectorial GP の論文（強い型付け版が足す論理の部品）](https://arxiv.org/html/2504.05418v1) | 6 | 記録（機械では数え直せない） | SUM_GT・AND・OR・XOR・NOT・IF_ELSE。標準の部品は11（ADD・MULT・SUB・DIV・GT・NEG・SIN・COS・TAN・SIGNUM） |
+| [gplearn の function_set（式を機械で探す定番ライブラリ）](https://gplearn.readthedocs.io/en/stable/reference.html) | 14 | 記録（機械では数え直せない） | add・sub・mul・div・sqrt・log・abs・neg・inv・max・min・sin・cos・tan。★このプロジェクトには入っていない（2026-08-11 実測）ので、機械で取り直せない＝記録のみ |
+| pandas-ta-classic の utils（うちが使っているライブラリ）（このプロジェクトに入っている） | 10 | **毎回 機械で数え直す** | above・above_value・below・below_value・cross・cross_value・crossany・crossover・lag・signals。★入っているので毎回 機械で取り直す（記録と食い違ったら ❌） |
+| [TradingView Pine Script の ta 名前空間](https://www.tradingview.com/pine-script-docs/language/built-ins/) | — | 記録（機械では数え直せない） | 取れた名前＝ta.sma・ta.ema・ta.macd・ta.rsi・ta.supertrend・ta.barssince・ta.crossover・ta.highest・ta.tr・ta.vwma。★総数は書かれていない（逐語＝『Pine Script has hundreds of built-in variables and functions』） |
+
+**いま在る部品＝13 個。足りない部品＝9 個。合計 22 個。**
+
+### いま在る部品
+
+| # | 部品 | どこに在るか | 実物 | 業界の同じもの |
+|---|---|---|---|---|
+| 1 | **値を持ってくる** | 全部の形 | engine_tuner_exec._col_array | alphagen・pandas_ta |
+| 2 | **n本 ずらす（値を）** | cross（1本前）・slope・slope_avg | np.roll（先頭 n 本は値なし） | alphagen:Ref・pandas_ta:lag |
+| 3 | **n本の平均** | slope_avg | rolling(m).mean() | alphagen:Mean |
+| 4 | **引き算** | diff・slope・slope_avg・touch・cross・candle_dir | a - b | alphagen:Sub/Delta・gplearn:sub |
+| 5 | **掛け算** | touch（許容幅 × 相手の絶対値） | tol * np.abs(b)（engine_tuner_exec:810） | alphagen:Mul・gplearn:mul |
+| 6 | **絶対値** | touch | np.abs(a - b) | alphagen:Abs・gplearn:abs |
+| 7 | **比べる（以上・以下）** | level・band・band_exclude・diff・slope・slope_avg・touch・cross・candle_dir | engine_tuner_exec._side_cmp | pandas_ta:above/below・gp_logic:GT |
+| 8 | **かつ** | band・band_exclude・cross・条件を並べたとき | connective ／ &  | gp_logic:AND |
+| 9 | **でない** | band_exclude・cross（より大きい を 以上 と 以下でない で書く） | ~x | gp_logic:NOT |
+| 10 | **値が在るか（欠損でないか）** | 全部の形（欠損は不成立にする） | np.where(np.isfinite(a), ok, na_pass) | —（業界の一覧には無い。実行器の既定 na=fail） |
+| 11 | **n本のうち 全部 成立** | streak | rolling(n).sum() >= n | gp_logic:SUM_GT |
+| 12 | **n本のうち どれか 成立** | within_n | rolling(n).max() >= 1 | gp_logic |
+| 13 | **n本 ずらす（条件を）** | streak・within_n の offset | np.roll(cond, off)（先頭は不成立） | pandas_ta:lag（値の側のみ） |
+
+### 足りない部品
+
+| # | 部品 | これがあると書ける条件 | 業界の同じもの |
+|---|---|---|---|
+| 14 | **n本の最大値** | 過去20本の高値を更新した（新高値） | alphagen:Max・pine:ta.highest |
+| 15 | **n本の最小値** | 過去20本の安値を更新した（新安値） | alphagen:Min・pine:ta.lowest |
+| 16 | **n本の中の順位** | いまの値が 過去100本で上位20% | alphagen:Rank |
+| 17 | **n本のばらつき** | 値動きが荒れているとき限定 | alphagen:Std |
+| 18 | **何本前に成立したか** | 上抜けてから 3本 以内 | pine:ta.barssince |
+| 19 | **割り算** | a が b の 1.2倍 を超えた（比） | alphagen:Div・gplearn:div |
+| 20 | **2本の相関** | 2つの指標が同じ向きに動いている | alphagen:Corr |
+| 21 | **閾値とのクロス** | RSI が 70 を上抜けた | pandas_ta:cross_value |
+| 22 | **どれか満たす（OR）** | A または B | gp_logic:OR |
+
+### 要らないと判断したもの（理由つき・★判定は CC が書きました）
+
+| 業界に在る部品 | 要らない理由 |
+|---|---|
+| 銘柄をまたいだ順位（CSRank）・銘柄間の相関 | BTCUSDT の1銘柄だけなので、順位を付ける相手がいない |
+| sin・cos・tan | 値段の系列に三角関数を当てる根拠が無い（★根拠が出れば入れる） |
+| べき乗・平方根・逆数・対数・符号反転 | 正の値では 大小の並びが変わらない＝『◯◯以上』の条件では、掛けても掛けなくても同じ結果になる |
+| 中央値・平均偏差・歪み・尖り・WMA・EMA | 材料カタログ（535列）の側に既に在る＝条件の部品として重ねて持たない |
+| どちらか一方（XOR） | かつ・でない・どれか の3つで書ける |
+| 大きい方・小さい方（2項の max・min） | 条件では『比べる』で足りる |
+
+### いまの11個の形が、どの部品でできているか（実物のコードを分解した）
+
+| 形 | 部品 |
+|---|---|
+| `level` | value・cmp |
+| `band` | value・cmp・and |
+| `band_exclude` | value・cmp・and・not・exists |
+| `slope` | value・lag・sub・cmp |
+| `slope_avg` | value・ma・lag・sub・cmp |
+| `cross` | value・lag・sub・cmp・and・not・exists |
+| `diff` | value・sub・cmp |
+| `touch` | value・sub・abs・mul・cmp |
+| `candle_dir` | value・sub・cmp・and・not |
+| `streak` | value・cmp・all_n・shift_cond |
+| `within_n` | value・cmp・any_n・shift_cond |
+
+### 番人（毎回 実物で確かめる）
+
+- pandas-ta の「使い方」の関数＝実測 **10 件**（above・above_value・below・below_value・cross・cross_value・crossany・crossover・lag・signals）
+- 「閾値とのクロス」（RSI が 70 を上抜けた）を実行器の検証器に渡した結果＝**拒否（[レシピ拒否 G6] 番人（閾値とのクロス）: 形 cross は列2本の材料が要る（1本））**
+
+**✅ ずれ 0 件**（形の数・部品の名前・業界の数・閾値とのクロス、すべて実物と一致）
+
+## ★7｜指標 × 部品 の突き合わせ（どの指標に、どの部品が使えるか）
+
+**★この節は機械が作ります（手書きゼロ）。**判定のたびに、実行器の検証器へ実際に条件を渡して確かめます。
+
+### 指標の内訳（列を2本 並べられるかが、ここで決まる）
+
+| 何 | 数 |
+|---|---|
+| 指標の種類 | **244** |
+| うち **パラメータを2つ以上 持つ**（同じ指標のパラメータ違いで 2本 並べられる） | **133** |
+| うち パラメータが1つだけ | 45 |
+| うち パラメータが無い | 66 |
+| 時間足 | 9 |
+
+### 部品を「何が要るか」で分けると
+
+| 何が要るか | 部品 | 使える指標の数 |
+|---|---|---|
+| **材料 1本** | 値を持ってくる・n本 ずらす・n本の平均・絶対値・比べる・掛け算・値が在るか（＋足りない部品の n本の最大値・最小値・順位・ばらつき） | **244（全部）** |
+| **材料 2本** | 引き算（差・クロス・タッチ）（＋足りない部品の 割り算・2本の相関） | **133**（同じ指標のパラメータ違いに限る） |
+| **条件を受ける** | かつ・でない・n本のうち 全部／どれか・条件を n本 ずらす（＋足りない部品の どれか満たす・何本前に成立したか） | 指標に依らない |
+
+### ★業界の定番のクロスが、いま作れるか（1件ずつ 機械が判定）
+
+**実行器**＝条件を検証器に渡して通るか。**生成器**＝engine_tuner が実際にその組を作るか。
+
+| 定番のクロス | 実行器 | 生成器 | 注 |
+|---|---|---|---|
+| MACD のクロス | ✅ 受け付ける | ❌ 作らない（別の指標どうし） | テクニカルで最も基本のロジックの1つ |
+| VWMACD のクロス | ✅ 受け付ける | ❌ 作らない（別の指標どうし） | 出来高つきの MACD |
+| ストキャス %K × %D | ✅ 受け付ける | ✅ 作る | 生成器のコードに直書きで例外扱いされている唯一の対 |
+| ストキャスRSI %K × %D | ✅ 受け付ける | ❌ 作らない（別の指標どうし） | 上と同じ形だが、直書きの例外に入っていない |
+| DI+ × DI− | ✅ 受け付ける | ❌ 作らない（別の指標どうし） | DMI の基本。うちには DI差 も在る |
+| 一目 転換線 × 基準線 | ✅ 受け付ける | ❌ 作らない（別の指標どうし） | 一目均衡表の基本 |
+| KST × シグナル | ✅ 受け付ける | ❌ 作らない（別の指標どうし） |  |
+| FISHER × シグナル | ✅ 受け付ける | ❌ 作らない（別の指標どうし） |  |
+| 移動平均のゴールデンクロス（EMA） | ✅ 受け付ける | ✅ 作る | 同じ指標のパラメータ違い＝作れる側の例 |
+| 移動平均のゴールデンクロス（SMA） | ✅ 受け付ける | ✅ 作る | 同上 |
+| RCI の短期 × 長期 | ✅ 受け付ける | ✅ 作る | V9 P22 が使っている。2026-08-11 の 6-8 で RCI7 を足して作れるようになった |
+
+**❌ 実行器は受け付けるのに、生成器が作らない定番のクロス＝7 件。**
+
+**理由**＝生成器が「列2本の形」を作るとき、**同じ指標のパラメータ違い**しか組みません
+（`engine_tuner_gen._pair_materials`）。**別の指標どうしの組は、Stoch%K と %D の1組だけが
+コードに直書きで例外扱いされています。**
+
+**＝MACD のクロスは、engine_tuner が何回 走っても出てきません。**
+これは 2026-08-08 のインシデント #15（組み立ての決まりで MACD のクロスを潰した）と同じものが、
+別の場所（生成器の対の作り方）に残っていたということです。
+
+**★直すのはマイルストーン②です。**この節は「いまどうなっているか」を出すところまでです。
+
 ## ★4｜入れないと判断したもの（理由つき・★承認の欄を1件ずつ出します）
 
 **45 件です。**既定は「入れる」なので、ここに載るのは

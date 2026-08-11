@@ -297,6 +297,184 @@ def forms_table() -> list[dict]:
                 doc=".claude/ratchet/" + doc.name)
 
 
+def condition_parts() -> dict:
+    """★条件の部品の一覧を出す（段C の C-1・2026-08-11 新設・まこさん OK）。
+
+    なぜ要るか。
+      いまの engine_tuner は「条件の形」を11個の名前で持っている（engine_tuner_exec.FORMS）。
+      11個は 2026-08-01 の commit 254066a で一度に手で書かれ、以降1個も増えていない。
+      ＝私が思いついたら1語 足す運用になっていた（まこさん指摘 2026-08-11
+      「これは手書きで思い付いたら増やす。みたいな運用になるのか？すごい原始的なんだが。」）。
+      11個を実物のコードで分解すると、全部が同じ小さい部品の組み合わせだった。
+
+    どこから引くか。
+      中身 … .claude/ratchet/condition_parts.json（業界5件と照らして決めた・判定の理由つき）
+      ★下の4つは毎回 実物から取り直す（json の記録がずれたら ❌ を出す）。
+
+    毎回 機械で確かめること（番人4件）。
+      ①いまの形（FORMS）が、分解の表に全部 載っているか（逆に、表に在って実物に無い形が無いか）
+      ②分解の表が使っている部品の名前が、「いま在る部品」に全部 在るか
+      ③pandas-ta の「使い方」の関数の数が、記録と合っているか（入っているので毎回 数え直す）
+      ④「閾値とのクロス」が、いまも本当に書けないか（実行器の検証器に渡して拒否されること）
+    """
+    import engine_tuner_exec as ex
+    src = _RATCHET / "condition_parts.json"
+    if not src.exists():
+        return dict(ng=[f"正本が無い: {src}"], rows_have=[], rows_missing=[],
+                    rows_no=[], sources=[], forms={}, live={})
+    d = json.loads(src.read_text(encoding="utf-8"))
+    ng: list[str] = []
+
+    # ── 番人① いまの形が、分解の表に全部 載っているか（両向き）──
+    dec = {k: v for k, v in d["form_decomposition"].items() if not k.startswith("_")}
+    miss = [f for f in ex.FORMS if f not in dec]
+    extra = [f for f in dec if f not in ex.FORMS]
+    if miss:
+        ng.append(f"実行器に在るのに分解の表に無い形: {miss}")
+    if extra:
+        ng.append(f"分解の表に在るのに実行器に無い形: {extra}")
+
+    # ── 番人② 分解の表が使っている部品が、「いま在る部品」に全部 在るか ──
+    have_ids = {p["id"] for p in d["have"]}
+    used = {pid for v in dec.values() for pid in v}
+    unknown = sorted(used - have_ids)
+    if unknown:
+        ng.append(f"分解の表が知らない部品を指している: {unknown}")
+    unused = sorted(have_ids - used)
+
+    # ── 番人③ pandas-ta の「使い方」の関数を数え直す ──
+    live: dict = {}
+    rec = {s["id"]: s for s in d["sources"]}
+    try:
+        import pandas_ta_classic.utils as _U
+        key = ("above", "below", "cross", "signals", "lag")
+        fns = sorted(n for n in dir(_U)
+                     if not n.startswith("_") and callable(getattr(_U, n))
+                     and any(k in n.lower() for k in key))
+        live["pandas_ta"] = fns
+        if len(fns) != rec["pandas_ta"]["n"]:
+            ng.append(f"pandas-ta の使い方の関数が {rec['pandas_ta']['n']} 件の記録と違う（実測 {len(fns)} 件）")
+    except Exception as e:                       # 入っていない時は黙らせず理由を出す
+        live["pandas_ta"] = []
+        ng.append(f"pandas-ta を数えられなかった: {str(e)[:60]}")
+
+    # ── 番人④「閾値とのクロス」が、いまも本当に書けないか ──
+    #   ★書けるようになったら、この部品は「足りない」から「在る」へ移す必要がある＝表が古いと分かる。
+    probe = {"form": "cross", "side": "above", "value": {"direction": "up"},
+             "material": [{"family": "RSI", "param": 14, "tf": "5m"}]}
+    try:
+        ex._check_cond(probe, "legacy", "番人（閾値とのクロス）", [])
+        live["cross_value"] = "通った"
+        ng.append("「閾値とのクロス」が通るようになっている＝部品の一覧が古い（cross_val を『在る』へ移す）")
+    except SystemExit as e:
+        live["cross_value"] = f"拒否（{str(e)[:60]}）"
+    except Exception as e:
+        live["cross_value"] = f"{type(e).__name__}"
+        ng.append(f"「閾値とのクロス」の番人が動かなかった: {type(e).__name__}")
+
+    # ── 番人⑤ 分解の表が、実際に動くコード（condition_parts_diag の組み立て）と一致するか ──
+    #   ★表だけを直しても、動くコードと食い違えばここで落ちる（2026-08-11 の C-2 で
+    #    「読んで分解した表」に3つの抜けが在ったため、表と実装を機械で結んだ）。
+    live["decomposition"] = _parts_from_diag(dec, ng)
+
+    return dict(ng=ng, unused=unused, sources=d["sources"], forms=dec,
+                rows_have=d["have"], rows_missing=d["missing"], rows_no=d["not_needed"],
+                live=live, note=d["_why"], scope=d["_scope"], how=d["_how_decided"],
+                c2=d.get("_c2_found", ""))
+
+
+def parts_matrix() -> dict:
+    """★指標 × 部品 の突き合わせ（段C の C-3・2026-08-11）。
+
+    何を出すか。
+      ①指標 244種類を「パラメータの数」で分ける＝列を2本 並べられるかが決まる
+      ②部品を「何が要るか」で分けて、使える指標の数を出す
+      ③★業界の定番のクロスを1件ずつ、実行器と生成器の両方で機械判定する
+
+    判定の根拠（全部 実物・CC が結果を手で書かない）。
+      実行器 … engine_tuner_exec._check_cond に実際に条件を渡して、通るか拒否されるか
+      生成器 … engine_tuner_gen._pair_materials の決まり（同じ指標でパラメータが2つ以上／
+               Stoch%K と %D の直書きの対だけ）
+    """
+    import collections
+    import engine_tuner_exec as ex
+    import engine_tuner_gen as gen
+    pool, tfs, _tot = _quiet(gen.material_pool)
+    by: dict[str, list] = collections.defaultdict(list)
+    for b in pool:
+        by[b["family"]].append(b["param"])
+    n_multi = sum(1 for ps in by.values() if len({str(p) for p in ps}) >= 2)
+    n_one = sum(1 for ps in by.values() if len({str(p) for p in ps}) == 1 and ps[0] is not None)
+    n_none = sum(1 for ps in by.values() if all(p is None for p in ps))
+
+    src = _RATCHET / "condition_parts.json"
+    d = json.loads(src.read_text(encoding="utf-8")) if src.exists() else {"classic_crosses": []}
+    rows = []
+    for cc in d.get("classic_crosses", []):
+        a, b = cc["a"], cc["b"]
+        pa, pb = by.get(a), by.get(b)
+        if pa is None or pb is None:
+            rows.append(dict(name=cc["name"], a=a, b=b, exec_ok="—（材料に無い）",
+                             gen_ok="—", note=cc.get("note", "")))
+            continue
+        # ① 実行器＝実際に検証器へ渡す
+        if a == b:
+            ps = sorted({str(x): x for x in pa}.values(), key=str)
+            m1, m2 = {"family": a, "param": ps[0], "tf": "5m"}, {"family": b, "param": ps[-1], "tf": "5m"}
+        else:
+            m1, m2 = {"family": a, "param": pa[0], "tf": "5m"}, {"family": b, "param": pb[0], "tf": "5m"}
+        cond = {"form": "cross", "value": {"direction": "up"}, "material": [m1, m2]}
+        try:
+            ex._check_cond(cond, "legacy", "C-3", [])
+            e_ok = "✅ 受け付ける"
+        except SystemExit as e:
+            e_ok = f"❌ 拒否（{str(e)[:40]}）"
+        except Exception as e:
+            e_ok = f"❌ {type(e).__name__}"
+        # ② 生成器＝_pair_materials の決まりをそのまま当てる
+        special = {a, b} == {"Stoch%K", "Stoch%D"}
+        same_multi = (a == b) and len({str(x) for x in pa}) >= 2
+        g_ok = "✅ 作る" if (special or same_multi) else "❌ 作らない（別の指標どうし）"
+        rows.append(dict(name=cc["name"], a=a, b=b, exec_ok=e_ok, gen_ok=g_ok, note=cc.get("note", "")))
+
+    ng = []
+    blocked = [r for r in rows if r["gen_ok"].startswith("❌") and r["exec_ok"].startswith("✅")]
+    return dict(n_fam=len(by), n_multi=n_multi, n_one=n_one, n_none=n_none,
+                n_tf=len(tfs), rows=rows, blocked=len(blocked), ng=ng)
+
+
+def _parts_from_diag(dec: dict, ng: list) -> str:
+    """condition_parts_diag.py の組み立て（_c_◯◯）が、どの部品（p_◯◯）を使っているかを構文木で数え、
+    json の分解の表と1件ずつ突き合わせる。★入れ子（_c_streak が _c_level を呼ぶ）は辿って足す。"""
+    import ast
+    src = _HERE / "condition_parts_diag.py"
+    if not src.exists():
+        ng.append(f"C-2 の突き合わせの道具が無い: {src.name}")
+        return "道具なし"
+    tree = ast.parse(src.read_text(encoding="utf-8"))
+    calls: dict[str, set] = {}
+    for n in tree.body:
+        if isinstance(n, ast.FunctionDef) and n.name.startswith("_c_"):
+            calls[n.name] = {c.func.id for c in ast.walk(n)
+                             if isinstance(c, ast.Call) and isinstance(c.func, ast.Name)
+                             and (c.func.id.startswith("p_") or c.func.id.startswith("_c_"))}
+    def _resolve(fn: str, seen: set) -> set:              # 入れ子を辿る
+        out: set = set()
+        for c in calls.get(fn, ()):
+            if c.startswith("p_"):
+                out.add(c[2:])
+            elif c not in seen:
+                out |= _resolve(c, seen | {c})
+        return out
+    bad = 0
+    for form, want in dec.items():
+        got = _resolve("_c_" + form, {"_c_" + form})
+        if got != set(want):
+            bad += 1
+            ng.append(f"分解の表と、動くコードが食い違う（{form}）＝表 {sorted(want)} ／ 実装 {sorted(got)}")
+    return f"{len(dec) - bad}/{len(dec)} 一致"
+
+
 def build_body() -> dict:
     """表の中身を作る（正本から機械で引く）。"""
     rbl = _roles_by_lineage()
@@ -401,6 +579,87 @@ def _body_hash(body: dict) -> str:
     return hashlib.sha256(json.dumps(body, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
 
 
+def _render_parts(p: dict) -> list[str]:
+    """★6｜条件の部品の一覧（段C の C-1）。中身は condition_parts.json＝ここで新しい事実を書かない。"""
+    L = ["", "## ★6｜条件の部品の一覧（engine_tuner が条件を組み立てる部品）", "",
+         "**★この節は機械が作ります（手書きゼロ）。**中身の正本＝`.claude/ratchet/condition_parts.json`。", "",
+         f"**対象**＝{p.get('scope', '')}", "",
+         "**なぜ部品で持つか。**" + p.get("note", ""), "",
+         "**どうやって決めたか。**" + p.get("how", ""), ""]
+    L += ["**照らした相手（業界の実物）**", "",
+          "| 出どころ | 部品の数 | 取り方 | 中身 |", "|---|---|---|---|"]
+    for s in p["sources"]:
+        n = "—" if s.get("n") is None else str(s["n"])
+        how = "**毎回 機械で数え直す**" if s["how"] == "live" else "記録（機械では数え直せない）"
+        # 出どころが URL でないもの（このプロジェクトに入っているライブラリ）はリンクにしない
+        nm = f"[{s['name']}]({s['url']})" if s["url"].startswith("http") else f"{s['name']}（このプロジェクトに入っている）"
+        L.append(f"| {nm} | {n} | {how} | {s['detail']} |")
+    L += ["", f"**いま在る部品＝{len(p['rows_have'])} 個。足りない部品＝{len(p['rows_missing'])} 個。"
+              f"合計 {len(p['rows_have']) + len(p['rows_missing'])} 個。**", ""]
+    L += ["### いま在る部品", "", "| # | 部品 | どこに在るか | 実物 | 業界の同じもの |", "|---|---|---|---|---|"]
+    for i, r in enumerate(p["rows_have"], 1):
+        L.append(f"| {i} | **{r['name']}** | {r['where']} | {r['impl']} | {'・'.join(r['src'])} |")
+    L += ["", "### 足りない部品", "", "| # | 部品 | これがあると書ける条件 | 業界の同じもの |", "|---|---|---|---|"]
+    for i, r in enumerate(p["rows_missing"], len(p["rows_have"]) + 1):
+        L.append(f"| {i} | **{r['name']}** | {r['can_write']} | {'・'.join(r['src'])} |")
+    L += ["", "### 要らないと判断したもの（理由つき・★判定は CC が書きました）", "",
+          "| 業界に在る部品 | 要らない理由 |", "|---|---|"]
+    for r in p["rows_no"]:
+        L.append(f"| {r['name']} | {r['why']} |")
+    L += ["", "### いまの11個の形が、どの部品でできているか（実物のコードを分解した）", "",
+          "| 形 | 部品 |", "|---|---|"]
+    for f, ps in p["forms"].items():
+        L.append(f"| `{f}` | {'・'.join(ps)} |")
+    L += ["", "### 番人（毎回 実物で確かめる）", ""]
+    L.append(f"- pandas-ta の「使い方」の関数＝実測 **{len(p['live'].get('pandas_ta', []))} 件**"
+             f"（{'・'.join(p['live'].get('pandas_ta', []))}）")
+    L.append(f"- 「閾値とのクロス」（RSI が 70 を上抜けた）を実行器の検証器に渡した結果＝**{p['live'].get('cross_value','')}**")
+    if p.get("unused"):
+        L.append(f"- ⚠️ 分解の表がどの形からも使っていない部品＝{p['unused']}")
+    if p["ng"]:
+        L += ["", f"**❌ {len(p['ng'])} 件**"] + [f"- {x}" for x in p["ng"]]
+    else:
+        L += ["", "**✅ ずれ 0 件**（形の数・部品の名前・業界の数・閾値とのクロス、すべて実物と一致）"]
+    return L
+
+
+def _render_matrix(m: dict) -> list[str]:
+    """★7｜指標 × 部品 の突き合わせ（段C の C-3）。判定は毎回 機械が実物に当てて出す。"""
+    L = ["", "## ★7｜指標 × 部品 の突き合わせ（どの指標に、どの部品が使えるか）", "",
+         "**★この節は機械が作ります（手書きゼロ）。**判定のたびに、実行器の検証器へ実際に条件を渡して確かめます。", "",
+         "### 指標の内訳（列を2本 並べられるかが、ここで決まる）", "",
+         "| 何 | 数 |", "|---|---|",
+         f"| 指標の種類 | **{m['n_fam']}** |",
+         f"| うち **パラメータを2つ以上 持つ**（同じ指標のパラメータ違いで 2本 並べられる） | **{m['n_multi']}** |",
+         f"| うち パラメータが1つだけ | {m['n_one']} |",
+         f"| うち パラメータが無い | {m['n_none']} |",
+         f"| 時間足 | {m['n_tf']} |", "",
+         "### 部品を「何が要るか」で分けると", "",
+         "| 何が要るか | 部品 | 使える指標の数 |", "|---|---|---|",
+         f"| **材料 1本** | 値を持ってくる・n本 ずらす・n本の平均・絶対値・比べる・掛け算・値が在るか"
+         f"（＋足りない部品の n本の最大値・最小値・順位・ばらつき） | **{m['n_fam']}（全部）** |",
+         f"| **材料 2本** | 引き算（差・クロス・タッチ）（＋足りない部品の 割り算・2本の相関） | "
+         f"**{m['n_multi']}**（同じ指標のパラメータ違いに限る） |",
+         "| **条件を受ける** | かつ・でない・n本のうち 全部／どれか・条件を n本 ずらす（＋足りない部品の どれか満たす・何本前に成立したか） | 指標に依らない |",
+         "", "### ★業界の定番のクロスが、いま作れるか（1件ずつ 機械が判定）", "",
+         "**実行器**＝条件を検証器に渡して通るか。**生成器**＝engine_tuner が実際にその組を作るか。", "",
+         "| 定番のクロス | 実行器 | 生成器 | 注 |", "|---|---|---|---|"]
+    for r in m["rows"]:
+        L.append(f"| {r['name']} | {r['exec_ok']} | {r['gen_ok']} | {r['note']} |")
+    if m["blocked"]:
+        L += ["", f"**❌ 実行器は受け付けるのに、生成器が作らない定番のクロス＝{m['blocked']} 件。**", "",
+              "**理由**＝生成器が「列2本の形」を作るとき、**同じ指標のパラメータ違い**しか組みません",
+              "（`engine_tuner_gen._pair_materials`）。**別の指標どうしの組は、Stoch%K と %D の1組だけが",
+              "コードに直書きで例外扱いされています。**", "",
+              "**＝MACD のクロスは、engine_tuner が何回 走っても出てきません。**",
+              "これは 2026-08-08 のインシデント #15（組み立ての決まりで MACD のクロスを潰した）と同じものが、",
+              "別の場所（生成器の対の作り方）に残っていたということです。", "",
+              "**★直すのはマイルストーン②です。**この節は「いまどうなっているか」を出すところまでです。"]
+    else:
+        L += ["", "**✅ 定番のクロスは全部 作れます。**"]
+    return L
+
+
 def render_md(body: dict) -> str:
     h = _body_hash(body)
     c = body["counts"]
@@ -502,6 +761,8 @@ def render_md(body: dict) -> str:
               "例＝`slope`（いまの値 − n本前の値）の n として engine_tuner が選べるのは、",
               "`recipes/search_limits.json` の `int_grid` に並んだ数字だけです。**ここも ★3 と同じで、",
               "マイルストーン③（範囲で探せるようにする）の対象です。**"]
+        L += _render_parts(condition_parts())
+        L += _render_matrix(parts_matrix())
         _ok = sum(1 for s in body["skip_rows"] if s.get("承認", "").startswith("✅"))
         _po = sum(1 for s in body["skip_rows"] if s.get("承認", "").startswith("◯"))
         _no = len(body["skip_rows"]) - _ok - _po
