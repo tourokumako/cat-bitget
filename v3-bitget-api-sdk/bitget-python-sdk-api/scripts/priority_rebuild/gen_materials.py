@@ -256,6 +256,250 @@ def _source_note(fam: str, ext_ok: bool) -> str:
     return f"うちの自前の式／{lib}／{chk}"
 
 
+# ══ 段A の A-1｜「決まった数字だけ」の場所を機械で数える（2026-08-12 新設）═══════════════════
+#
+# 何を数えるか。
+#   engine_tuner が試せる数字が、あらかじめ並べてある一覧に限られている場所。
+#   ＝要件の「作ってはいけないもの」2番（原文＝探す値を、CC が先に「点の一覧」で限定するもの）に
+#     当たっている場所を、実物のファイルを開いて機械で数える。
+#
+# なぜ機械で数えるか。
+#   CC が手で一覧を書くと、書き忘れたものは誰にも見えない（インシデント #15 と同じ型）。
+#   数字は1つも手で書かない＝下の4つの関数が毎回 実物から数え直す。
+#
+# 数え方（1か所に書く＝表記ゆれ防止）。
+#   「数の並び」＝要素が全部 数字の並び（例＝[7, 9, 14, 21]）を 1 と数える。
+#   説明のための鍵（`_` で始まるもの）は数えない＝機械が読む場所に説明が混ざっているため。
+#   検収専用の値は数えない＝`engine_tuner_gen.py` の `selftest` と `KENSHU_LIMITS`。
+#     出どころ＝`recipes/search_limits.json` の `_note` の逐語
+#     「検収専用の値は engine_tuner_gen.py の selftest の中にだけ存在する」。
+#
+# 番人＝T12（4か所のどれかに架空の数の並びを1つ 足すと、その場所の件数がちょうど1 増える）。
+
+_A1_CFG = _HERE / "observe_config.json"
+_A1_LIM = _HERE / "recipes" / "search_limits.json"
+_A1_GEN = _HERE / "engine_tuner_gen.py"
+_A1_E38 = _HERE / "e38_logics.json"
+
+
+def _is_num(x) -> bool:
+    """真偽値は数字に数えない（True/False は「本当に選択肢」であって点の一覧ではない）。"""
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+
+def _num_lists(obj, key: str = "") -> list[tuple[str, list]]:
+    """入れ子をたどって「数の並び」を全部 拾う。戻り＝(その並びが載っている鍵, 並び)。"""
+    out: list[tuple[str, list]] = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if str(k).startswith("_"):
+                continue
+            out += _num_lists(v, str(k))
+    elif isinstance(obj, list):
+        if obj and all(_is_num(x) for x in obj):
+            out.append((key, obj))
+        else:
+            for v in obj:
+                out += _num_lists(v, key)
+    return out
+
+
+def _fmt_nums(v: list) -> str:
+    return "・".join(str(x) for x in v)
+
+
+_A1_OD = _HERE / "observe_diag.py"
+
+
+def _catalog_keys(od_src: str | None = None) -> set[str]:
+    """`observe_diag.build_catalog` が読む設定の鍵を、コードから機械で拾う。
+
+    ★なぜ鍵の名前（`*_periods`）で決めないか。実物には `*_periods` でない指標のパラメータが在る
+      （`bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・`*_windows`・`sr_tol`・`w_tol`）。
+      名前で数えると、それを丸ごと取りこぼす＝A-1 が「全部 数える」にならない。
+      だから「材料カタログを作る関数が実際に読んでいる鍵か」で決める。
+    """
+    import ast
+    src = _A1_OD.read_text(encoding="utf-8") if od_src is None else od_src
+    fn = next((n for n in ast.walk(ast.parse(src))
+               if isinstance(n, ast.FunctionDef) and n.name == "build_catalog"), None)
+    keys: set[str] = set()
+    if fn is None:
+        return keys
+    for n in ast.walk(fn):
+        if isinstance(n, ast.Subscript) and isinstance(n.value, ast.Name) and n.value.id == "cfg" \
+                and isinstance(n.slice, ast.Constant) and isinstance(n.slice.value, str):
+            keys.add(n.slice.value)
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr == "get" \
+                and isinstance(n.func.value, ast.Name) and n.func.value.id == "cfg" \
+                and n.args and isinstance(n.args[0], ast.Constant) \
+                and isinstance(n.args[0].value, str):
+            keys.add(n.args[0].value)
+    return keys
+
+
+def _a1_place1(cfg: dict, cat_keys: set[str]) -> dict:
+    """場所1＝`observe_config.json` の、指標のパラメータ（材料カタログを作る関数が読む鍵）。
+
+    ★観察の道具（observe_diag）だけが使う格子（`sl_grid`・`wait_grid` ほか）は別に数える。
+      engine_tuner が条件の材料として振る値ではないため。
+    """
+    lists = _num_lists(cfg)
+    ind = sorted((k, v) for k, v in lists if k in cat_keys)
+    obs = sorted({k for k, _v in lists if k not in cat_keys})
+    return dict(並び=len(ind), 数字=sum(len(v) for _k, v in ind), 範囲=0,
+                観察だけの格子=obs,
+                明細=[dict(鍵=k, 中身=_fmt_nums(v)) for k, v in ind])
+
+
+def _a1_place2(lim: dict) -> dict:
+    """場所2＝`recipes/search_limits.json`（使い方の中の本数・閾値の段・上限）。"""
+    lists = _num_lists(lim)
+    # 範囲＝下限と上限の組で持っているもの（役割ごとの保有時間の上限）
+    rng_rows = [k for k, v in (lim.get("hold_range_by_role") or {}).items()
+                if isinstance(v, dict) and {"lo_bars", "hi_bars"} <= set(v)]
+    # 分位の段＝文字の並び（"q10" …）＝数ではないが、段の数は決まっている
+    qg = lim.get("quantile_grid")
+    q_n = len(qg) if isinstance(qg, list) else 0
+    single = sorted(k for k, v in lim.items() if not str(k).startswith("_") and _is_num(v))
+    nocap = sorted(k for k, v in lim.items()
+                   if not str(k).startswith("_") and isinstance(v, str) and v == "無制限")
+    return dict(並び=len(lists), 数字=sum(len(v) for _k, v in lists), 範囲=len(rng_rows),
+                分位の段=q_n, 単独の数字=single, 無制限=nocap,
+                明細=[dict(鍵=k, 中身=_fmt_nums(v)) for k, v in sorted(lists)],
+                範囲の明細=sorted(rng_rows))
+
+
+def _a1_place3(src: str) -> dict:
+    """場所3＝`engine_tuner_gen.py` が数字を選んでいる行（コードに直に書いた数字）。"""
+    import ast
+    tree = ast.parse(src)
+    skip: set[int] = set()                       # 検収専用＝本走・採否に使わないので数えない
+    for n in tree.body:
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and "selftest" in n.name:
+            skip.update(range(n.lineno, (n.end_lineno or n.lineno) + 1))
+        if isinstance(n, ast.Assign) and any(
+                getattr(t, "id", "") == "KENSHU_LIMITS" for t in n.targets):
+            skip.update(range(n.lineno, (n.end_lineno or n.lineno) + 1))
+    menu: list[tuple[int, str, int]] = []
+    prob: list[tuple[int, str]] = []
+    for n in ast.walk(tree):
+        ln = getattr(n, "lineno", None)
+        if ln is None or ln in skip:
+            continue
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) \
+                and n.func.attr in ("choice", "choices", "integers", "uniform"):
+            cnt = 0
+            for a in ast.walk(n):
+                if isinstance(a, (ast.List, ast.Tuple)) and a.elts and all(
+                        isinstance(e, ast.Constant) and _is_num(e.value) for e in a.elts):
+                    cnt += len(a.elts)
+            if cnt:
+                menu.append((ln, ast.unparse(n), cnt))
+        if isinstance(n, ast.Compare) and any(
+                isinstance(c, ast.Constant) and _is_num(c.value) for c in n.comparators):
+            s = ast.unparse(n)
+            if "random()" in s:
+                prob.append((ln, s))
+    menu.sort()
+    prob.sort()
+    return dict(並び=len(menu), 数字=sum(c for _l, _s, c in menu), 範囲=0, 確率=len(prob),
+                明細=[dict(行=str(ln), 中身=s) for ln, s, _c in menu],
+                確率の明細=[dict(行=str(ln), 中身=s) for ln, s in prob])
+
+
+def _a1_place4(e38: dict) -> dict:
+    """場所4＝`e38_logics.json` の `search_space`（E38 の探索が振る値）。"""
+    specs: list[tuple[str, dict]] = []
+
+    def flat(o, path: str = "") -> None:
+        """鍵は「どのロジックの、どの値か」で持つ（S5 と L5 の grid_n を区別するため）。"""
+        if not isinstance(o, dict):
+            return
+        for k, v in o.items():
+            if str(k).startswith("_") or not isinstance(v, dict):
+                continue
+            if "type" in v:
+                specs.append((f"{path}{k}", v))
+            else:
+                flat(v, f"{path}{k}.")
+
+    def find(o) -> None:
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if k == "search_space" and isinstance(v, dict):
+                    flat(v)
+                else:
+                    find(v)
+        elif isinstance(o, list):
+            for v in o:
+                find(v)
+    find(e38)
+    q = [k for k, v in specs if v.get("type") == "quantile"]
+    cat_num = [(k, v.get("choices") or []) for k, v in specs
+               if v.get("type") == "cat" and (v.get("choices") or [])
+               and all(_is_num(x) for x in v["choices"])]
+    cat_oth = [k for k, v in specs if v.get("type") == "cat"
+               and not (v.get("choices") and all(_is_num(x) for x in v["choices"]))]
+    rng_rows = [k for k, v in specs if v.get("type") in ("float", "int")]
+    empty = [k for k, v in specs if v.get("type") in ("float", "int")
+             and (v.get("lo") is None or v.get("hi") is None)]
+    return dict(並び=len(cat_num), 数字=sum(len(c) for _k, c in cat_num), 範囲=len(rng_rows),
+                分位=len(q), 選択肢=len(cat_oth), 合計=len(specs), 値が空=sorted(empty),
+                明細=[dict(鍵=k, 中身=_fmt_nums(c)) for k, c in sorted(cat_num)])
+
+
+def _param_kinds(params: dict) -> dict:
+    """パラメータを「本数（整数）」と「倍数・許容幅・係数（小数）」に分ける。
+
+    ★なぜ要るか。2026-08-11 まで ★3 の説明文は「ここで言う数字は、ローソク足の本数です」と
+      書いていたが、実物には本数でないものが混ざっていた（BB の 2.0＝標準偏差の倍数、
+      Supertrend の 3.0＝ATR の倍数、S-Rタッチ数の 0.003＝値段の許容幅、LRSI の 0.5＝減衰の係数）。
+      本数だけだと思って直すと、A-3 で「整数の範囲」しか作らず、小数を扱えなくなる。
+      ＝分ける判定も機械でやる（CC が一覧を手で書かない）。
+    """
+    def flat(v):
+        for x in v:
+            if isinstance(x, (list, tuple)):
+                yield from x
+            else:
+                yield x
+    ints, dec = [], []
+    for k, v in params.items():
+        xs = [float(x) for x in flat(v)]
+        (dec if any(x != int(x) for x in xs) else ints).append(k)
+    return dict(本数=sorted(ints), 小数=sorted(dec))
+
+
+def fixed_number_places(cfg: dict | None = None, lim: dict | None = None,
+                        gen_src: str | None = None, e38: dict | None = None,
+                        od_src: str | None = None) -> dict:
+    """段A の A-1＝「決まった数字だけ」の4か所を、実物から機械で数える。
+
+    引数は番人（T12）が架空の数の並びを混ぜるためだけに在る。既定は全部 実物から読む。
+    """
+    cfg = json.loads(_A1_CFG.read_text(encoding="utf-8")) if cfg is None else cfg
+    lim = json.loads(_A1_LIM.read_text(encoding="utf-8")) if lim is None else lim
+    gen_src = _A1_GEN.read_text(encoding="utf-8") if gen_src is None else gen_src
+    e38 = json.loads(_A1_E38.read_text(encoding="utf-8")) if e38 is None else e38
+    p1 = _a1_place1(cfg, _catalog_keys(od_src))
+    p2, p3, p4 = _a1_place2(lim), _a1_place3(gen_src), _a1_place4(e38)
+    places = [
+        dict(番号="1", 場所="scripts/priority_rebuild/observe_config.json",
+             何の数字か="指標を作るときのパラメータ（RSI14 の 14）", **p1),
+        dict(番号="2", 場所="scripts/priority_rebuild/recipes/search_limits.json",
+             何の数字か="使い方の中の本数（slope の n）・閾値の段・上限", **p2),
+        dict(番号="3", 場所="scripts/priority_rebuild/engine_tuner_gen.py",
+             何の数字か="生成器が数字を選ぶときに、コードに直に書いた数字", **p3),
+        dict(番号="4", 場所="scripts/priority_rebuild/e38_logics.json の search_space",
+             何の数字か="E38 の探索が振る値", **p4),
+    ]
+    return dict(places=places,
+                合計並び=sum(x["並び"] for x in places),
+                合計数字=sum(x["数字"] for x in places),
+                合計範囲=sum(x["範囲"] for x in places))
+
+
 def forms_table() -> list[dict]:
     """★使い方（条件の形）の一覧を、実物から機械で引く（まこさん指示 2026-08-11「すべて自動生成にして」）。
 
@@ -613,7 +857,8 @@ def build_body() -> dict:
     return dict(rows=rows, counts=counts,
                 lineage_question={k: dict(問い=v[0], 出典=v[1]) for k, v in iref.LINEAGE_QUESTION.items()},
                 library_ready=bool(lib), library_funcs=len(lib),
-                gaps=gaps, skip_rows=skip_rows, engine=engine)
+                gaps=gaps, skip_rows=skip_rows, engine=engine,
+                a1=fixed_number_places())   # 段A の A-1＝「決まった数字だけ」の4か所（2026-08-12）
 
 
 def _body_hash(body: dict) -> str:
@@ -720,6 +965,7 @@ def render_md(body: dict) -> str:
          "> ですからここに載っているのは「指標ではないもの」だけです。", "",
          "> ⚠️ 「グループ」の欄は、この段では全部 空です（フロー 段8 で埋めます）。", ""]
     e = body.get("engine") or {}
+    a1 = body.get("a1") or {}                # 段A の A-1＝「決まった数字だけ」の4か所（2026-08-12）
     if e:
         L += ["## ★1｜足すものの一覧（フロー 段5・まこさんが見るのはここです）", "",
               "**4か所に散っていた不足を、機械が1つにまとめました。**下の A〜G が、これから足す候補の全部です。",
@@ -759,28 +1005,105 @@ def render_md(body: dict) -> str:
               "> ⚠️ **ここで言う「選べる」は、レシピの読み込みが拒否しないという意味です。**",
               "> 生成器が実際にその部品を引くかどうかは、承認済みの型の表（`signal_families.json`）に",
               "> その部品が載っているかで決まります（材料が増えたぶんを表に反映するのが 6-6 です）。", "",
-              "## ★3｜パラメータ（指標を作るときのローソク足の本数）が、決まった数字だけに固定されている", "",
-              "**（マイルストーン③の対象。段5 は事実を出すだけで、直しません。）**", "",
-              "**ここで言う数字は、ローソク足の本数です。**指標を計算するとき、直近の何本分のローソク足を使うかを",
-              "先に決めます。RSI7 の「7」は 直近7本、RSI14 の「14」は 直近14本、という意味です。",
-              "5分足なら 7本＝35分ぶん、14本＝70分ぶんになります。本数が少ないほど直近の値動きに素早く反応し、",
-              "多いほどゆっくり動きます。", "",
+              "## ★3｜「決まった数字だけ」に固定されている場所（4か所）", "",
+              "**（マイルストーン③の対象。★この節は事実を出すだけで、直しません。"
+              "直すのは 段A の A-2〜A-6 です。）**", "",
+              "**「決まった数字だけ」とは何か。**engine_tuner が試せる数字が、"
+              "あらかじめ並べてある一覧に限られている状態のことです。",
+              "**その一覧に無い数字は、何回 試しても永久に出てきません。**",
+              "例＝RSI で試せるのは 7本・9本・14本・21本 の4つだけで、RSI12 も RSI30 も出てきません。",
+              "本来の形は「範囲で探す」＝下限と上限の間の、どの数字でもよい、という探し方です。",
+              "いまは、要件の「作ってはいけないもの」2番"
+              "（原文＝探す値を、CC が先に「点の一覧」で限定するもの）に当たる状態です。", "",
+              "**★数え方（この節の数字は、機械が実物のファイルを開いて毎回 数え直しています）**", "",
+              "- **「数の並び」**＝要素が全部 数字の並び（例＝`[7, 9, 14, 21]`）を **1** と数えます。",
+              "- 説明のための鍵（`_` で始まるもの）は数えません。",
+              "- 検収専用の値は数えません＝`engine_tuner_gen.py` の `selftest` と `KENSHU_LIMITS`"
+              "（出どころ＝`recipes/search_limits.json` の `_note` の逐語"
+              "「検収専用の値は engine_tuner_gen.py の selftest の中にだけ存在する」）。",
+              "- **番人**＝この4か所のどれかに架空の数の並びを1つ 足すと、"
+              "その場所の件数がちょうど 1 増えます（`--selftest` の T12・わざと壊して確かめています）。", "",
+              f"**★4か所 合わせて 数の並び {a1['合計並び']} 件（数字 {a1['合計数字']} 個）。"
+              f"範囲で探せるのは {a1['合計範囲']} 件だけです。**", "",
+              "| # | 場所 | 何の数字か | 決まった数字だけ（数の並び） | その中の数字 | 範囲で探せる |",
+              "|---|---|---|---|---|---|"]
+        for p in a1["places"]:
+            L.append(f"| {p['番号']} | {p['場所']} | {p['何の数字か']} | "
+                     f"**{p['並び']} 件** | {p['数字']} 個 | {p['範囲']} 件 |")
+        L += ["", "**場所ごとの中身（全部 実物から）**", "",
+              f"- **場所1**＝指標のパラメータ。この {a1['places'][0]['並び']} 件の並びが、"
+              f"下の表の {len(e['期間'])} 種類・{sum(len(v) for v in e['期間'].values())} 通りに広がります。"
+              "★数える鍵は「名前が `_periods` で終わるもの」ではなく、"
+              "**材料カタログを作る関数（`observe_diag.build_catalog`）が実際に読む鍵**です"
+              "（名前で数えると `bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・"
+              "`*_windows`・`sr_tol`・`w_tol` を丸ごと取りこぼします）。"
+              f"観察の道具だけが使う格子 {len(a1['places'][0]['観察だけの格子'])} 件"
+              f"（{'・'.join('`' + x + '`' for x in a1['places'][0]['観察だけの格子'])}）は、"
+              "engine_tuner が振る値ではないので ここでは数えていません。",
+              f"- **場所2**＝ほかに 分位の段 {a1['places'][1]['分位の段']} 段"
+              f"（`quantile_grid`）／単独の数字 {len(a1['places'][1]['単独の数字'])} 件"
+              f"（{'・'.join('`' + x + '`' for x in a1['places'][1]['単独の数字'])}）／"
+              f"上限を置かないもの {len(a1['places'][1]['無制限'])} 件"
+              f"（{'・'.join('`' + x + '`' for x in a1['places'][1]['無制限'])}"
+              "＝まこさん決定 2026-08-12）。",
+              f"- **場所3**＝ほかに、案を作るときの**確率の数字**が {a1['places'][2]['確率']} か所"
+              "（`rng.random() < 0.3` の形）。これは探す値ではありませんが、"
+              "CC がコードに直に書いた数字なので一緒に数えています。",
+              f"- **場所4**＝`search_space` は全部で {a1['places'][3]['合計']} 件です。"
+              f"内訳＝分位 {a1['places'][3]['分位']} ／メニュー {a1['places'][3]['並び'] + a1['places'][3]['選択肢']}"
+              f"（うち数の並び {a1['places'][3]['並び']}・本当に選択肢 {a1['places'][3]['選択肢']}）／"
+              f"範囲 {a1['places'][3]['範囲']}。"
+              + (f"★このうち {len(a1['places'][3]['値が空'])} 件は値が空です"
+                 f"（{'・'.join('`' + x + '`' for x in a1['places'][3]['値が空'])}"
+                 "＝まこさんの判断待ち・値が入るまで engine_tuner は走りません）。"
+                 if a1["places"][3]["値が空"] else ""), ""]
+        for p in a1["places"]:
+            key = "明細"
+            if not p.get(key):
+                continue
+            head = "| 鍵 | 決まった数字 |" if "鍵" in p[key][0] else "| 行 | 数字を選んでいる書き方 |"
+            L += [f"**場所{p['番号']} の明細（{len(p[key])} 件）**", "", head, "|---|---|"]
+            for r in p[key]:
+                a, b = (r["鍵"], r["中身"]) if "鍵" in r else (r["行"], "`" + r["中身"] + "`")
+                L.append(f"| `{a}` | {b} |")
+            L.append("")
+        _pk = _param_kinds(e["期間"])
+        _pk1 = _param_kinds({r["鍵"]: [float(x) for x in r["中身"].split("・")]
+                             for r in a1["places"][0]["明細"]})
+        L += ["**★パラメータは「ローソク足の本数」だけではありません（2026-08-12 に是正）。**", "",
+              "2026-08-11 まで、この節は「ここで言う数字は、ローソク足の本数です」と書いていました。",
+              "**実物には本数でないものが混ざっています。**倍数（標準偏差・ATR の何倍か）・",
+              "許容幅（値段の何%まで同じ水準とみなすか）・係数（減衰の強さ）です。",
+              "**分けないまま A-3 を直すと、整数の範囲しか作らず、小数を扱えなくなります。**", "",
+              "**★ここは正直に書きます。「本数か・倍数か」は、数字だけを見ても機械では分けられません。**",
+              "位置と鍵の名前で決まるからです（例＝`keltner` の `20・2.0` は 20 が本数・2.0 が ATR の倍数）。",
+              "**2.0 や 3.0 は きりのよい数なので、機械には本数と区別が付きません。**",
+              "機械で分かるのは「小数が入っているかどうか」だけです。下の表がその実測です。", "",
+              "| 機械で分かること | 件数 | 中身 |", "|---|---|---|",
+              f"| 小数が入っている鍵 | {len(_pk1['小数'])} 件 | "
+              + ("・".join("`" + x + "`" for x in _pk1["小数"]) or "—") + " |",
+              f"| 整数だけの鍵 | {len(_pk1['本数'])} 件 | "
+              "★この中に `bb_sigma`（標準偏差の倍数 2.0・3.0）のような"
+              "「本数でない きりのよい数」が混ざります |", "",
+              "**A-3 で範囲に直すときは、鍵ごとに「整数の範囲か・小数の範囲か」を1件ずつ決めます。**",
+              "下の指標ごとの表でも、小数が混ざるものには「本数ではない」と付けています"
+              f"（{len(_pk['小数'])} 種類）。", "",
               "**これは「パラメータ」です。「閾値」ではありません。**",
               "パラメータ＝指標を作るときの設定（RSI14 の 14＝本数）。",
-              "閾値＝できあがった値の区切り（「RSI が 70 を超えたら」の 70）。**この表に閾値は出てきません。**", "",
-              "**engine_tuner が試せる本数は、下の数字だけです。**この一覧に無い本数は、何回 試しても永久に出ません。",
-              "例＝RSI で試せるのは 7本・9本・14本・21本 の4つだけで、RSI12（12本）も RSI30（30本）も出てきません。",
-              "本来の形は「範囲で探す」＝7本 から 200本 までの、どの整数でもよい、という探し方です。",
-              "いまは、要件の「作ってはいけないもの」2番（原文＝探す値を、CC が先に「点の一覧」で限定するもの）に",
-              "当たる状態です。数字の出どころ＝`scripts/priority_rebuild/observe_config.json` の `*_periods` の行。", "",
-              "| 指標の種類 | いま試せるローソク足の本数 |", "|---|---|"]
+              "閾値＝できあがった値の区切り（「RSI が 70 を超えたら」の 70）。"
+              "**下の表に閾値は出てきません。**", "",
+              f"**下の表は、上の 場所1 が広がった姿です（{len(e['期間'])} 種類）。**", "",
+              "| 指標の種類 | いま試せるパラメータ |", "|---|---|"]
         for k, v in e["期間"].items():
             # ★数字が2つ以上の指標（MACD線%(12,26) のような形）は、組で1通りと数える（6-7・2026-08-11）
             if any(isinstance(x, (list, tuple)) for x in v):
                 s = "・".join("(" + ",".join(str(y) for y in x) + ")" for x in v)
                 L.append(f"| {k} | {s}（{len(v)} 通り・数字が2つ以上の指標は組で1通り） |")
-            else:
+            elif all(float(x) == int(x) for x in v):
                 L.append(f"| {k} | {' 本・'.join(str(x) for x in v)} 本（{len(v)} 通り） |")
+            else:
+                # ★小数は本数ではない（倍数・許容幅・係数）＝「本」を付けない（2026-08-12 是正）
+                L.append(f"| {k} | {'・'.join(str(x) for x in v)}（{len(v)} 通り・本数ではない） |")
         # ★★使い方（条件の形）の一覧＝2026-08-11 まこさん指示で材料の正本に入れた。
         #   逐語＝「一覧の正本は materials.md だと思うけど。そこには使い方一覧は入れないの？」
         #        「すべて自動生成にして」。だから この節は1行も手で書かず、実物から機械で引く。
@@ -1013,6 +1336,53 @@ def selftest() -> int:
             _ex11._check_cond = _keep11
     except Exception as _e11:                                    # noqa: BLE001
         ng.append(f"T11 メタ確認: 確かめられなかった（{type(_e11).__name__}: {str(_e11)[:60]}）")
+
+    # ── T12 A-1｜「決まった数字だけ」の4か所の数え上げ（2026-08-12 新設・段A の A-1）─────────
+    #   何を守るか＝4か所のどれかに新しい「数の並び」が増えたのに、★3 の表が気づかない状態を作らない。
+    #   確かめ方＝架空の数の並びを1つ 足すと、その場所の件数がちょうど 1 増えること（4か所とも）。
+    #   ★実物のファイルは1バイトも書き換えない（読み込んだ中身の写しに混ぜるだけ）。
+    try:
+        _b12 = fixed_number_places()
+        _cfg12 = json.loads(_A1_CFG.read_text(encoding="utf-8"))
+        _lim12 = json.loads(_A1_LIM.read_text(encoding="utf-8"))
+        _src12 = _A1_GEN.read_text(encoding="utf-8")
+        _e3812 = json.loads(_A1_E38.read_text(encoding="utf-8"))
+        _cfg12["zzz_uso_periods"] = [11, 13, 17]
+        _lim12["zzz_uso_grid"] = [11, 13, 17]
+        _src12 += "\n_zzz_uso = rng.choice([11, 13, 17])\n"
+        (_e3812.get("search_space") or {})["zzz_uso"] = {"type": "cat", "choices": [11, 13, 17]}
+        # ★場所1 は「設定に鍵が在る」だけでは数えない（材料カタログを作る関数が読む鍵だけを数える）。
+        #   だから番人も、設定の鍵と、それを読む行の両方を足す＝実物と同じ形で1件 増やす。
+        _od12 = _A1_OD.read_text(encoding="utf-8")
+        _od12 = _od12.replace("def build_catalog(cfg: dict) -> list[tuple]:\n",
+                              "def build_catalog(cfg: dict) -> list[tuple]:\n"
+                              '    _zzz_uso = cfg["zzz_uso_periods"]\n', 1)
+        _cases = [("1", dict(cfg=_cfg12, od_src=_od12)), ("2", dict(lim=_lim12)),
+                  ("3", dict(gen_src=_src12)), ("4", dict(e38=_e3812))]
+        for _no, _kw in _cases:
+            _got = fixed_number_places(**_kw)
+            _i = [p["番号"] for p in _b12["places"]].index(_no)
+            _was = _b12["places"][_i]["並び"]
+            _now = _got["places"][_i]["並び"]
+            if _now != _was + 1:
+                ng.append(f"T12: 場所{_no} に架空の数の並びを1つ 足しても件数が1 増えない"
+                          f"（{_was} → {_now}）＝A-1 の数え上げがその場所を見ていない")
+            # 足した1件のぶん以外が動いていないこと（別の場所を巻き込んでいない）
+            for _j, _p in enumerate(_got["places"]):
+                if _j != _i and _p["並び"] != _b12["places"][_j]["並び"]:
+                    ng.append(f"T12: 場所{_no} を触ったのに 場所{_p['番号']} の件数まで動いた"
+                              f"（{_b12['places'][_j]['並び']} → {_p['並び']}）")
+    except Exception as _e12:                                    # noqa: BLE001
+        ng.append(f"T12: A-1 の数え上げを確かめられなかった（{type(_e12).__name__}: {str(_e12)[:80]}）")
+    # T12-2 検収専用の値（selftest／KENSHU_LIMITS）を数えていないこと＝本走の数字だけを数える
+    try:
+        _src13 = _A1_GEN.read_text(encoding="utf-8")
+        _base13 = _a1_place3(_src13)["並び"]
+        _src13 += "\n\ndef selftest_zzz_uso():\n    return rng.choice([11, 13, 17])\n"
+        if _a1_place3(_src13)["並び"] != _base13:
+            ng.append("T12-2: 検収専用（selftest）の中の数字まで数えている＝本走の数字と混ざる")
+    except Exception as _e13:                                    # noqa: BLE001
+        ng.append(f"T12-2: 確かめられなかった（{type(_e13).__name__}: {str(_e13)[:80]}）")
 
     # T6 わざと書き換えると --verify が鳴る（メタ確認）
     if _MD.exists():
