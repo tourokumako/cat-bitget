@@ -67,21 +67,19 @@
     {"id": "exists",     "name": "値が在るか（欠損でないか）",   "where": "全部の形（欠損は不成立にする）",      "impl": "np.where(np.isfinite(a), ok, na_pass)", "src": ["—（業界の一覧には無い。実行器の既定 na=fail）"]},
     {"id": "all_n",      "name": "n本のうち 全部 成立",          "where": "streak",                            "impl": "rolling(n).sum() >= n", "src": ["gp_logic:SUM_GT"]},
     {"id": "any_n",      "name": "n本のうち どれか 成立",        "where": "within_n",                          "impl": "rolling(n).max() >= 1", "src": ["gp_logic"]},
-    {"id": "shift_cond", "name": "n本 ずらす（条件を）",         "where": "streak・within_n の offset",         "impl": "np.roll(cond, off)（先頭は不成立）", "src": ["pandas_ta:lag（値の側のみ）"]}
+    {"id": "shift_cond", "name": "n本 ずらす（条件を）",         "where": "streak・within_n の offset",         "impl": "np.roll(cond, off)（先頭は不成立）", "src": ["pandas_ta:lag（値の側のみ）"]},
+    {"id": "cross_val",  "name": "閾値とのクロス",              "where": "cross（列1本 ＋ value.th）",         "impl": "engine_tuner_exec._eval_cond の cross＝相手の列の代わりに閾値の定数列を置く（np.full）。閾値の書き方は level と同じ（分位・名前つき定数・整数グリッド）。★2026-08-13 の段C の C-6 で足した（それまでは『足りない部品』だった）", "src": ["pandas_ta:cross_value"]},
+    {"id": "ts_max",     "name": "n本の最大値",                "where": "材料の前処理（材料に pre:{op:ts_max, n} を付ける）", "impl": "engine_tuner_exec._apply_pre＝pd.Series(a).shift(1).rolling(n).max()。★いまのバーを含めない＝『過去n本の高値を更新した（新高値）』をクロスで書くため（含めると自分自身を超えられない）。過去だけを見る＝未来参照なし。★形（FORMS）を増やさず、材料の側に欄を1つ足した＝全部の形・全部の指標に一度に効く。★2026-08-13 の段C の C-6 で足した。番人＝engine_tuner_gen --selftest の T1-C6c ／ condition_parts_diag の『直前6本の最大値』2通り", "src": ["alphagen:Max", "pine:ta.highest"]},
+    {"id": "ts_min",     "name": "n本の最小値",                "where": "材料の前処理（材料に pre:{op:ts_min, n} を付ける）", "impl": "engine_tuner_exec._apply_pre＝pd.Series(a).shift(1).rolling(n).min()。ts_max と同じ理由で いまのバーを含めない（『過去n本の安値を更新した（新安値）』を書くため）。★2026-08-13 の段C の C-6 で足した。番人＝condition_parts_diag の『直前6本の最小値』2通り", "src": ["alphagen:Min", "pine:ta.lowest"]},
+    {"id": "or",         "name": "どれか満たす（OR）",          "where": "★形ではない。条件の木＝発火経路（entry.connective の any）", "impl": "実行器＝engine_tuner_exec._entry_fire が最上位の any を発火経路として扱う（前から動いていた）／生成器＝engine_tuner_gen.sample_structure が {\"any\": [経路1, 経路2, …]} を作る。★2026-08-13 の段C の C-6 で、生成器の側を足した（まこさん解禁・それまでは欠陥 D5）。経路ごとに引き金ちょうど1本（G1）。番人＝engine_tuner_gen --selftest の T1-C6b（100本の案の『経路数の分布』に 2 以上が出ること）", "src": ["gp_logic:OR"]}
   ],
 
   "missing": [
-    {"id": "ts_max",    "name": "n本の最大値",       "can_write": "過去20本の高値を更新した（新高値）",            "src": ["alphagen:Max", "pine:ta.highest"]},
-    {"id": "ts_min",    "name": "n本の最小値",       "can_write": "過去20本の安値を更新した（新安値）",            "src": ["alphagen:Min", "pine:ta.lowest"]},
     {"id": "ts_rank",   "name": "n本の中の順位",     "can_write": "いまの値が 過去100本で上位20%",                 "src": ["alphagen:Rank"]},
     {"id": "ts_std",    "name": "n本のばらつき",     "can_write": "値動きが荒れているとき限定",                    "src": ["alphagen:Std"]},
     {"id": "barssince", "name": "何本前に成立したか", "can_write": "上抜けてから 3本 以内",                        "src": ["pine:ta.barssince"]},
     {"id": "div",       "name": "割り算",            "can_write": "a が b の 1.2倍 を超えた（比）",                "src": ["alphagen:Div", "gplearn:div"]},
-    {"id": "corr",      "name": "2本の相関",         "can_write": "2つの指標が同じ向きに動いている",              "src": ["alphagen:Corr"]},
-    {"id": "cross_val", "name": "閾値とのクロス",    "can_write": "RSI が 70 を上抜けた",                          "src": ["pandas_ta:cross_value"],
-     "proof": "engine_tuner_exec の検証器に『列1本＋定数』の cross を渡すと G6 で拒否される（毎回 機械で確かめる）"},
-    {"id": "or",        "name": "どれか満たす（OR）", "can_write": "A または B",                                   "src": ["gp_logic:OR"],
-     "proof": "実行器は OR を評価できるが、生成器が作らない（欠陥 D5）"}
+    {"id": "corr",      "name": "2本の相関",         "can_write": "2つの指標が同じ向きに動いている",              "src": ["alphagen:Corr"]}
   ],
 
   "not_needed": [
@@ -115,7 +113,7 @@
     "band_exclude": ["value", "cmp", "and", "not", "exists"],
     "slope":        ["value", "lag", "sub", "cmp"],
     "slope_avg":    ["value", "ma", "lag", "sub", "cmp"],
-    "cross":        ["value", "lag", "sub", "cmp", "and", "not", "exists"],
+    "cross":        ["value", "lag", "sub", "cmp", "and", "not", "exists", "cross_val"],
     "diff":         ["value", "sub", "cmp"],
     "touch":        ["value", "sub", "abs", "mul", "cmp"],
     "candle_dir":   ["value", "sub", "cmp", "and", "not"],

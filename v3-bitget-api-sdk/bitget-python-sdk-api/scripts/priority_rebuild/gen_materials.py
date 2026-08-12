@@ -358,19 +358,35 @@ def condition_parts() -> dict:
         live["pandas_ta"] = []
         ng.append(f"pandas-ta を数えられなかった: {str(e)[:60]}")
 
-    # ── 番人④「閾値とのクロス」が、いまも本当に書けないか ──
-    #   ★書けるようになったら、この部品は「足りない」から「在る」へ移す必要がある＝表が古いと分かる。
-    probe = {"form": "cross", "side": "above", "value": {"direction": "up"},
-             "material": [{"family": "RSI", "param": 14, "tf": "5m"}]}
-    try:
-        ex._check_cond(probe, "legacy", "番人（閾値とのクロス）", [])
-        live["cross_value"] = "通った"
+    # ── 番人④「閾値とのクロス」（cross_val）の在る/無いが、実物と一致しているか ──
+    #   ★2026-08-13（段C の C-6・部品①）に両向きの検査へ直した。
+    #     直す前＝「拒否されること」だけを見ていた（書けるようになったら ❌ を出す片向き）。
+    #     直したあと＝json の側が「在る」なら通ること・「足りない」なら拒否されることを見る。
+    #     ＝どちらに動いても、表と実物がずれたら ❌ が出る。判定は json から引く＝ここに答えを書かない。
+    _m14 = [{"family": "RSI", "param": 14, "tf": "5m"}]
+    _cv_have = "cross_val" in have_ids
+
+    def _probe(cond, label):
+        try:
+            ex._check_cond(cond, "legacy", f"番人（{label}）", [])
+            return True, "通った"
+        except SystemExit as e:
+            return False, f"拒否（{str(e)[:50]}）"
+
+    #   ★閾値は整数グリッドの値で渡す（_check_value は n が int でないと拒否する＝実行器:246）。
+    ok_th, msg_th = _probe({"form": "cross", "value": {"direction": "up", "th": {"n": 70}},
+                            "material": _m14}, "閾値とのクロス")
+    ok_no, msg_no = _probe({"form": "cross", "value": {"direction": "up"},
+                            "material": _m14}, "閾値の無い列1本の cross")
+    live["cross_value"] = (f"閾値つき＝{msg_th} ／ 閾値なし＝{msg_no}"
+                           f"（部品の一覧では{'『在る』' if _cv_have else '『足りない』'}）")
+    if _cv_have and not ok_th:
+        ng.append("「閾値とのクロス」が部品の一覧では『在る』のに、実行器の検証器が拒否する"
+                  f"＝{msg_th}")
+    if (not _cv_have) and ok_th:
         ng.append("「閾値とのクロス」が通るようになっている＝部品の一覧が古い（cross_val を『在る』へ移す）")
-    except SystemExit as e:
-        live["cross_value"] = f"拒否（{str(e)[:60]}）"
-    except Exception as e:
-        live["cross_value"] = f"{type(e).__name__}"
-        ng.append(f"「閾値とのクロス」の番人が動かなかった: {type(e).__name__}")
+    if ok_no:
+        ng.append("閾値の無い列1本の cross が通る＝閾値の書き忘れを検証器が捕まえていない")
 
     # ── 番人⑤ 分解の表が、実際に動くコード（condition_parts_diag の組み立て）と一致するか ──
     #   ★表だけを直しても、動くコードと食い違えばここで落ちる（2026-08-11 の C-2 で
@@ -441,6 +457,31 @@ def parts_matrix() -> dict:
     blocked = [r for r in rows if r["gen_ok"].startswith("❌") and r["exec_ok"].startswith("✅")]
     return dict(n_fam=len(by), n_multi=n_multi, n_one=n_one, n_none=n_none,
                 n_tf=len(tfs), rows=rows, blocked=len(blocked), ng=ng)
+
+
+def section_ng() -> list[str]:
+    """★materials.md の節が印字する ❌ を、1か所に集める（2026-08-13 新設・まこさん指示）。
+
+    何を守るか。
+      節（★5 使い方の一覧／★6 条件の部品／★7 指標 × 部品）は、それぞれ自分の ❌ を
+      文書の中に印字する。ところが `--selftest` は、その ❌ を1件も見ていなかった。
+      ＝**文書に「❌ 1 件」と書いてあるのに、番人が「✅ 全部 pass」と出す**状態が作れた。
+      2026-08-13 に実際に起きた（番人④に渡す閾値を小数で書いた誤りが、文書には ❌ として
+      出ていたのに、`--selftest` は ✅ を出した。見つけたのは番人ではなく、人が文書を開いたとき）。
+    ★ここで集めた ❌ は、`--selftest` の T11 が落とす。`--write` は止めない
+      （❌ は文書に出すためのもの＝出せないと、まこさんが読めなくなる）。
+    """
+    out: list[str] = []
+    for name, fn in (("★5 使い方の一覧", forms_table),
+                     ("★6 条件の部品", condition_parts),
+                     ("★7 指標 × 部品", parts_matrix)):
+        try:
+            d = _quiet(fn)
+        except Exception as e:                                   # noqa: BLE001
+            out.append(f"{name}: 節そのものを作れない（{type(e).__name__}: {str(e)[:60]}）")
+            continue
+        out += [f"{name}: {x}" for x in (d.get("ng") or [])]
+    return out
 
 
 def _parts_from_diag(dec: dict, ng: list) -> str:
@@ -615,7 +656,11 @@ def _render_parts(p: dict) -> list[str]:
              f"（{'・'.join(p['live'].get('pandas_ta', []))}）")
     L.append(f"- 「閾値とのクロス」（RSI が 70 を上抜けた）を実行器の検証器に渡した結果＝**{p['live'].get('cross_value','')}**")
     if p.get("unused"):
-        L.append(f"- ⚠️ 分解の表がどの形からも使っていない部品＝{p['unused']}")
+        # ★2026-08-13＝ただ「使っていない」と出すのをやめ、どこで使うかを正本の欄から引いて出す。
+        #   例＝どれか満たす（OR）は「形」ではなく、条件の木（発火経路）で使う部品。
+        _w = {r["id"]: str(r.get("where", "")) for r in p["rows_have"]}
+        L.append("- 上の「形の分解」に出てこない部品（＝形ではなく、条件の木やつなぎ方で使うもの）＝"
+                 + " ／ ".join(f"**{u}**（{_w.get(u, '？')}）" for u in p["unused"]))
     if p["ng"]:
         L += ["", f"**❌ {len(p['ng'])} 件**"] + [f"- {x}" for x in p["ng"]]
     else:
@@ -824,6 +869,13 @@ def write() -> int:
     print(f"[作成] {_MD}（{len(render_md(body).splitlines())} 行）")
     print(f"[作成] {_JSON}")
     print(f"  在る {c['在る']} ／ 足す {c['足す']} ／ 入れない {c['入れない']} ／ 指紋 {_body_hash(body)}")
+    # ★節の中に ❌ が残っていたら、作った直後にここでも出す（2026-08-13・まこさん指示）。
+    #   書き出しは止めない（❌ は文書に出すためのもの）。落とすのは --selftest の T11。
+    _sng = section_ng()
+    if _sng:
+        print(f"  ❌ 節の中に ❌ が {len(_sng)} 件 残っています（--selftest の T11 が落ちます）")
+        for _x in _sng[:5]:
+            print(f"     - {_x[:140]}")
     return 0
 
 
@@ -937,6 +989,31 @@ def selftest() -> int:
             _ex.FAMILY_TEMPLATES.update(_keep)
         except Exception:                                        # noqa: BLE001
             pass
+    # ── T11 節の中の ❌ を、番人が見ているか（2026-08-13 新設・まこさん指示）──────────────
+    #   何を守るか＝materials.md の中に「❌ N 件」と印字されているのに、--selftest が
+    #   「✅ 全部 pass」と出す状態を作らない。2026-08-13 にそれが実際に起きた。
+    #   ★見つけたのは番人ではなく、人が文書を開いたとき。だから番人の側に足す。
+    _sng = section_ng()
+    if _sng:
+        ng.append(f"T11: materials.md の節の中に ❌ が {len(_sng)} 件 残っている"
+                  f"（1件目＝{_sng[0][:100]}）")
+    # T11 メタ確認＝わざと節の判定を壊すと、上の集め方が拾うか（拾わなければ T11 は飾り）
+    try:
+        import engine_tuner_exec as _ex11
+
+        def _boom(*_a, **_k):
+            raise _ex11.RecipeError("T11 メタ確認：わざと壊した")
+        _keep11 = _ex11._check_cond
+        _ex11._check_cond = _boom
+        try:
+            if not section_ng():
+                ng.append("T11 メタ確認: 節の判定をわざと壊しても ❌ が1件も出ない"
+                          "（節の ❌ を集める処理が効いていない）")
+        finally:
+            _ex11._check_cond = _keep11
+    except Exception as _e11:                                    # noqa: BLE001
+        ng.append(f"T11 メタ確認: 確かめられなかった（{type(_e11).__name__}: {str(_e11)[:60]}）")
+
     # T6 わざと書き換えると --verify が鳴る（メタ確認）
     if _MD.exists():
         keep = _MD.read_text(encoding="utf-8")

@@ -20,7 +20,7 @@
 ★この道具は読み取り専用。売買記録CSVを書かない・審判(score)を呼ばない・戦略を実行しない。
 
 使い方。
-  python3 condition_parts_diag.py            … 11個を突き合わせる
+  python3 condition_parts_diag.py            … 11個の形を突き合わせる（書き方の違いを含めて15通り）
   python3 condition_parts_diag.py --selftest … 番人（わざと壊すと食い違いが出るか）
 """
 from __future__ import annotations
@@ -116,6 +116,31 @@ def p_shift_cond(cond: np.ndarray, off: int) -> np.ndarray:
     return out
 
 
+def p_ts_max(a: np.ndarray, n: int) -> np.ndarray:
+    """⑮直前の n本の最大値（★2026-08-13 の段C の C-6 で足した部品）。
+
+    ★いまのバーを含めない（先に1本 ずらしてから n本の最大を取る）。
+      理由＝「過去n本の高値を更新した（新高値）」を書くため。いまのバーを含めると自分自身を
+      超えられず、クロスで「更新した瞬間」を書けない。過去だけを見る＝未来参照なし。
+    """
+    return pd.Series(a).shift(1).rolling(int(n)).max().to_numpy(float)
+
+
+def p_ts_min(a: np.ndarray, n: int) -> np.ndarray:
+    """⑯直前の n本の最小値（★2026-08-13 の段C の C-6 で足した部品）。ts_max と同じ理由で
+    いまのバーを含めない（「過去n本の安値を更新した（新安値）」を書くため）。"""
+    return pd.Series(a).shift(1).rolling(int(n)).min().to_numpy(float)
+
+
+def p_cross_val(n: int, th: float) -> np.ndarray:
+    """⑭閾値とのクロス（★2026-08-13 の段C の C-6 で足した部品）。
+
+    中身＝相手の列の代わりに「閾値の定数」を置く。これで「RSI が 70 を上抜けた」が書ける。
+    実行器の実物＝engine_tuner_exec._eval_cond の cross で b が無いときに np.full(len(a), 閾値)。
+    """
+    return np.full(int(n), float(th))
+
+
 # ══ 11個の形を、部品だけで組み立て直す ══════════════════════════════════════════════
 #    ★引数は実行器と同じもの（df・列名・値）。実行器のコードを1行も呼ばない。
 def _c_level(df, cols, v):
@@ -150,7 +175,9 @@ def _c_slope_avg(df, cols, v):
 
 
 def _c_cross(df, cols, v):
-    a, b = p_value(df, cols[0]), p_value(df, cols[1])
+    # ★2本の書き方＝①列2本 ②列1本 ＋ 閾値（部品 cross_val・2026-08-13）。式は下で共通。
+    a = p_value(df, cols[0])
+    b = p_cross_val(len(a), v["th"]) if "th" in v else p_value(df, cols[1])
     pa, pb = p_lag(a, 1), p_lag(b, 1)
     fin = p_and(p_exists(a), p_exists(b))
     if v["direction"] == "down":
@@ -188,7 +215,25 @@ def _c_within_n(df, cols, v):
     return p_shift_cond(p_any_n(inner, v["n"]), v.get("offset", 0))
 
 
-COMPOSE = {"level": _c_level, "band": _c_band, "band_exclude": _c_band_exclude,
+_PRE_PARTS = {"ts_max": p_ts_max, "ts_min": p_ts_min}
+
+
+def _c_cross_pre(df, cols, v):
+    """★材料の前処理を掛けた列とのクロス（部品 ts_max・ts_min・2026-08-13）＝新高値・新安値。
+    式は _c_cross と同じ。相手の列が「同じ列に部品を1つ掛けたもの」になるだけ。"""
+    a = p_value(df, cols[0])
+    b = _PRE_PARTS[v["op"]](a, v["n"])
+    pa, pb = p_lag(a, 1), p_lag(b, 1)
+    fin = p_and(p_exists(a), p_exists(b))
+    if v["direction"] == "down":
+        return p_and(fin, p_cmp(p_sub(pa, pb), 0.0, "above"), p_cmp(p_sub(b, a), 0.0, "above"),
+                     p_not(p_cmp(p_sub(b, a), 0.0, "below")))
+    return p_and(fin, p_cmp(p_sub(pb, pa), 0.0, "above"), p_cmp(p_sub(a, b), 0.0, "above"),
+                 p_not(p_cmp(p_sub(a, b), 0.0, "below")))
+
+
+COMPOSE = {"cross_pre": _c_cross_pre,
+           "level": _c_level, "band": _c_band, "band_exclude": _c_band_exclude,
            "slope": _c_slope, "slope_avg": _c_slope_avg, "cross": _c_cross,
            "diff": _c_diff, "touch": _c_touch, "candle_dir": _c_candle_dir,
            "streak": _c_streak, "within_n": _c_within_n}
@@ -220,6 +265,34 @@ def _cases(m1: dict, m2: dict) -> list[dict]:
         dict(form="cross", real={"form": "cross", "value": {"direction": "down"},
                                  "material": [m1, m2]},
              cols=2, v={"direction": "down"}),
+        # ★閾値とのクロス（部品 cross_val・2026-08-13 の段C の C-6 で足した）＝列1本 ＋ 閾値。
+        #   『RSI が 55 を上抜けた／下抜けた』。2026-08-13 より前は、この2件は書けなかった。
+        dict(form="cross", label="up（閾値55・列1本）",
+             real={"form": "cross", "value": {"direction": "up", "th": {"n": 55.0}},
+                   "material": [m1]},
+             cols=1, v={"direction": "up", "th": 55.0}),
+        dict(form="cross", label="down（閾値55・列1本）",
+             real={"form": "cross", "value": {"direction": "down", "th": {"n": 55.0}},
+                   "material": [m1]},
+             cols=1, v={"direction": "down", "th": 55.0}),
+        # ★材料の前処理（部品 ts_max・2026-08-13 の段C の C-6 で足した）＝新高値・新安値。
+        #   『RSI7 が 直前6本の最大値を上抜けた／下抜けた』。2026-08-13 より前は書けなかった。
+        dict(form="cross", compose="cross_pre", label="up（直前6本の最大値）",
+             real={"form": "cross", "value": {"direction": "up"},
+                   "material": [m1, {**m1, "pre": {"op": "ts_max", "n": 6}}]},
+             cols=1, v={"direction": "up", "n": 6, "op": "ts_max"}),
+        dict(form="cross", compose="cross_pre", label="down（直前6本の最大値）",
+             real={"form": "cross", "value": {"direction": "down"},
+                   "material": [m1, {**m1, "pre": {"op": "ts_max", "n": 6}}]},
+             cols=1, v={"direction": "down", "n": 6, "op": "ts_max"}),
+        dict(form="cross", compose="cross_pre", label="down（直前6本の最小値）",
+             real={"form": "cross", "value": {"direction": "down"},
+                   "material": [m1, {**m1, "pre": {"op": "ts_min", "n": 6}}]},
+             cols=1, v={"direction": "down", "n": 6, "op": "ts_min"}),
+        dict(form="cross", compose="cross_pre", label="up（直前6本の最小値）",
+             real={"form": "cross", "value": {"direction": "up"},
+                   "material": [m1, {**m1, "pre": {"op": "ts_min", "n": 6}}]},
+             cols=1, v={"direction": "up", "n": 6, "op": "ts_min"}),
         dict(form="diff", real={"form": "diff", "side": "above", "value": {"n": 0.5},
                                 "material": [m1, m2]},
              cols=2, v={"th": 0.5, "side": "above"}),
@@ -272,21 +345,26 @@ def run(break_form: str | None = None) -> int:
     m1 = {"family": "RSI", "param": 7, "tf": "5m"}
     m2 = {"family": "RSI", "param": 21, "tf": "5m"}
     cols_all = ["RSI7__5m", "RSI21__5m"]
+    cases = _cases(m1, m2)
+    n_forms = len({c["form"] for c in cases})
     ng = 0
     print(f"データ＝{_DATA.name} の終わりの {len(df):,} 本 ／ 材料＝RSI7__5m・RSI21__5m")
     print()
     print(f"{'形':14s} {'向き等':22s} {'本物の成立':>10s} {'部品の成立':>10s} {'食い違い':>8s}")
     print("-" * 72)
-    for c in _cases(m1, m2):
+    for c in cases:
         f = c["form"]
         real = ex._eval_cond(c["real"], df, {}, "legacy", None)
         v = dict(c["v"])
         if break_form == f:                       # 番人＝わざと1か所 壊す
             v = {**v, "th": v.get("th", 0.0) + 1.0} if "th" in v else {**v, "n": v.get("n", 1) + 1}
-        mine = COMPOSE[f](df, cols_all[:max(c["cols"], 1)], v)
+        mine = COMPOSE[c.get("compose", f)](df, cols_all[:max(c["cols"], 1)], v)
         diff = int((np.asarray(real, bool) != np.asarray(mine, bool)).sum())
-        label = str(c["real"]["value"].get("direction") or c["real"]["value"].get("dir")
-                    or c["real"]["value"].get("side") or c["v"].get("side") or "")[:20]
+        label = c.get("label") or str(c["real"]["value"].get("direction")
+                                      or c["real"]["value"].get("dir")
+                                      or c["real"]["value"].get("side")
+                                      or c["v"].get("side") or "")
+        label = label[:22]
         mark = "" if diff == 0 else "  ❌"
         print(f"{f:14s} {label:22s} {int(np.asarray(real, bool).sum()):10,d} "
               f"{int(np.asarray(mine, bool).sum()):10,d} {diff:8,d}{mark}")
@@ -294,7 +372,7 @@ def run(break_form: str | None = None) -> int:
             ng += 1
     print("-" * 72)
     if ng == 0:
-        print("✅ 11個の形すべて、部品の組み立てと 1バーも違いません（食い違い 0）")
+        print(f"✅ {n_forms}個の形（{len(cases)}通り）すべて、部品の組み立てと 1バーも違いません（食い違い 0）")
     else:
         print(f"❌ {ng} 件の形で食い違いました＝その形は部品が足りません")
     return ng

@@ -46,7 +46,10 @@ LIMITS_PATH = HERE / "recipes" / "search_limits.json"
 RUNS_DIR = HERE.parents[2] / "results" / "priority_rebuild" / "tuner_gen"
 
 # 生成器が組み立てに使う形（実行器 FORMS の全11種＝歩4 で band 系の実行も実装済み）
-TRIGGER_FORMS = ("cross", "level", "diff", "candle_dir", "slope", "streak", "within_n")
+# ★cross_val（2026-08-13・段C の C-6・部品①）は実行器の形ではない。実行器では cross の
+#   「列1本 ＋ 閾値」の書き方（＝『RSI が 70 を上抜けた』）を指す、生成器の中だけの名前。
+#   引き金（縁）だけに置く＝水準を跨いだ瞬間の1バーで成立する形のため。
+TRIGGER_FORMS = ("cross", "cross_val", "level", "diff", "candle_dir", "slope", "streak", "within_n")
 STATE_FORMS = ("level", "band", "band_exclude", "slope", "slope_avg", "diff", "touch",
                "candle_dir", "streak", "within_n")
 NEEDS_PAIR = ("cross", "diff", "touch")
@@ -318,9 +321,11 @@ def pair_allowed(a: str, b: str, pa, pb) -> bool:
     return (min(a, b), max(a, b)) in set(same_fn_family_pairs([a, b]))
 
 
-def _pair_materials(rng, pool, tfs, role, table) -> list[dict]:
-    """列2本の形（cross/diff/touch）＝①同 family の期間違い ②同じライブラリ関数から出た別の family。
-    D1＝対応表の系統×時間足・禁止3 を守る。②は D15 の直し（2026-08-11・段C の C-5）。"""
+def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list[dict]:
+    """列2本の形（cross/diff/touch）＝①同 family の期間違い ②同じライブラリ関数から出た別の family
+    ③同じ列の「素」と「前処理を掛けたもの」（＝新高値・新安値）。
+    D1＝対応表の系統×時間足・禁止3 を守る。②は D15 の直し（2026-08-11・段C の C-5）。
+    ③は部品 ts_max ほか（2026-08-13・段C の C-6）。"""
     rr = table["roles"][role]
     tf_pool = _role_tfs(tfs, table, role)
     fams = {}
@@ -331,6 +336,12 @@ def _pair_materials(rng, pool, tfs, role, table) -> list[dict]:
     cands: list[tuple[str, object]] = [("same", f) for f, ps in fams.items()
                                        if len({str(p) for p in ps}) >= 2]
     cands += [("fn", pr) for pr in same_fn_family_pairs(fams)]
+    # ③同じ列の「素」と「前処理を掛けたもの」＝『高値が 直前n本の最高値を上抜けた』（新高値）
+    #   ★クロスのときだけ足す。差・タッチは閾値が要るが、前処理を掛けた材料に分位はいま使えない
+    #     （分位の解決表が前処理を見ていない＝実行器が G5 で拒否する・2026-08-13）。
+    #     解決表を前処理に対応させたら、この「クロスのときだけ」を外す。
+    if form == "cross" and limits is not None and ex.MATERIAL_PRE:
+        cands += [("pre", f) for f in fams]
     if not cands:
         raise SampleError(f"役割 {role} で列2本の形を組める family が無い（表の系統の中）")
     for _ in range(30):
@@ -344,6 +355,14 @@ def _pair_materials(rng, pool, tfs, role, table) -> list[dict]:
             lo, hi = sorted((int(i1), int(i2)))       # ★短い方を先に置く（まこさん OK 2026-08-11）
             pair = [{"family": c, "param": opts[lo], "tf": tf},
                     {"family": c, "param": opts[hi], "tf": tf}]
+        elif kind == "pre":
+            # ★同じ列の「素」と「前処理を掛けたもの」。本数は int_grid から引く＝CC が数字を書かない。
+            opts = sorted({str(p): p for p in fams[c]}.values(), key=_pkey)
+            p0 = opts[int(rng.integers(len(opts)))]
+            op = str(rng.choice(sorted(ex.MATERIAL_PRE)))
+            n_pre = int(rng.choice([n for n in limits["int_grid"] if n >= 2]))
+            pair = [{"family": c, "param": p0, "tf": tf},
+                    {"family": c, "param": p0, "tf": tf, "pre": {"op": op, "n": n_pre}}]
         else:
             fa, fb = c                                # type: ignore[misc]
             oa = sorted({str(p): p for p in fams[fa]}.values(), key=_pkey)
@@ -379,6 +398,24 @@ def _dc1_side(rng, role, mats, side) -> str:
     return str(rng.choice(["above", "below"]))
 
 
+def _dc2_q(rng, role, m, limits, table, side) -> dict:
+    """DC2（表の向きの決まり・2026-08-07 まこさん承認）の閾値の選び方を1か所にまとめたもの。
+
+    レンジ系の引き金のオシレーターは行き過ぎを逆に取る＝SHORT は高分位（q70/q80/q90）・
+    LONG は低分位（q10/q20/q30）。それ以外は分位の格子から普通に引く。
+    ★2026-08-13（段C の C-6）に、level の中に直に書いてあったものを関数に出した。
+      理由＝閾値とのクロス（cross_val）が同じ決まりを使うため。決まりを2か所に書き写さない
+      （書き写すと片方だけ直って腐る＝2026-08-11 の C-5 と同じ轍）。中身は1文字も変えていない。
+    """
+    if role == "trigger" and _lineage_of(m) == "オシレーター":
+        grid = table["quantile_grid_hi"] if side == "SHORT" else table["quantile_grid_lo"]
+        qs = [q for q in limits["quantile_grid"] if q in grid]
+        if not qs:
+            raise SampleError("DC2 の分位が格子に無い")
+        return {"threshold_q": str(rng.choice(qs))}
+    return _q(rng, limits)
+
+
 def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, side, allow_nest=True) -> dict:
     forms = TRIGGER_FORMS if role == "trigger" else STATE_FORMS
     rr = table["roles"][role]
@@ -396,7 +433,7 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
             return {"role": role, "form": form, "inner": inner,
                     "value": {"n": n, "offset": int(rng.choice([0, 1]))}}
     if form in NEEDS_PAIR:
-        mats = _pair_materials(rng, pool, tfs, role, table)
+        mats = _pair_materials(rng, pool, tfs, role, table, limits, form)
         for m in mats:
             kind_count[_lineage_of(m)] = kind_count.get(_lineage_of(m), 0) + 0  # 数えは下で一括
         if form == "cross":
@@ -416,17 +453,22 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
         return {"role": role, "form": "level", "material": [m],
                 "side": str(rng.choice(["above", "below"])),
                 "value": {"n": int(rng.choice(limits["hour_grid"]))}}
+    if form == "cross_val":
+        # ★閾値とのクロス（部品 cross_val・2026-08-13・段C の C-6）＝『RSI が 70 を上抜けた』。
+        #   実行器へ渡す形は cross（列1本 ＋ value.th）＝新しい形の名前を実行器に作らない。
+        #   向き＝DC3 をそのまま使う（cross の direction は side と揃える）。
+        #   閾値＝DC2 をそのまま使う（レンジ系の引き金のオシレーターは行き過ぎを逆に取る）。
+        #   ★どちらも既に在る決まりで、この部品のために新しい決まりを作っていない。
+        return {"role": role, "form": "cross", "material": [m],
+                "value": {"direction": "down" if side == "SHORT" else "up",
+                          "th": _dc2_q(rng, role, m, limits, table, side)}}
     if form == "level":
         if role == "trigger" and _lineage_of(m) == "オシレーター":
             # DC2（表の向きの決まり）＝レンジ系の引き金のオシレーターは行き過ぎを逆に取る
             #   SHORT＝above かつ 高分位（q70/q80/q90）・LONG＝below かつ 低分位（q10/q20/q30）
-            grid = table["quantile_grid_hi"] if side == "SHORT" else table["quantile_grid_lo"]
-            qs = [q for q in limits["quantile_grid"] if q in grid]
-            if not qs:
-                raise SampleError("DC2 の分位が格子に無い")
             return {"role": role, "form": "level", "material": [m],
                     "side": "above" if side == "SHORT" else "below",
-                    "value": {"threshold_q": str(rng.choice(qs))}}
+                    "value": _dc2_q(rng, role, m, limits, table, side)}
         return {"role": role, "form": "level", "material": [m],
                 "side": _dc1_side(rng, role, [m], side), "value": _q(rng, limits)}
     if form in ("band", "band_exclude"):
@@ -837,14 +879,51 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
     if n_total is None and len(conds) > 1:
         # ★上限を持たないとき＝作れた最大までの中から、何本 残すかを一様に引く（引き金は必ず残す）
         conds = conds[:int(rng.integers(1, len(conds) + 1))]
-    # つなぎ方＝flat all／if-then 入り（深さは limits.depth_max の内側）
+    # ── 発火経路（部品② どれか満たす（OR）＝欠陥 D5・まこさん解禁 2026-08-13）─────────────
+    #   1経路＝引き金ちょうど1本 ＋ 状態条件0本以上（G1）。経路どうしは「どれか満たす」でつなぐ。
+    #   ★直し方の出どころ＝`engine_tuner_defects.md`「直し方 D5」の逐語
+    #     「確率で {"any": [経路1, 経路2]} を作れるようにします。経路ごとに引き金がちょうど1本 要ります（G1）」。
+    #   ★経路の数の決め方＝条件の本数とまったく同じ形（2026-08-12 の上限撤廃）。
+    #     上限の数字を持たない。**作れた条件の本数**を上限にして、その中から一様に引く。
+    #     ＝G3（役割 × 系統は1本まで）の枠が尽きるところが上限で、機械が決める。CC が数字を書かない。
+    #     （設定ファイルの p_max も 2026-08-12 に「無制限」になった。ここで数字を作り直さない。）
+    #   ★状態条件の配り方＝作った順に1本ずつ、経路へ順番に配る（1本目→経路1・2本目→経路2・…）。
+    #     ＝どの経路にも同じだけ配る。CC が「どの条件をどっちの経路に置くか」を選ばない。
+    #   ★入れ子（if-then）は1経路のときだけ作る。複数経路のときは経路の木をそのまま平らに置く。
     _dm, _ = ex.cap_of(limits, "depth_max")
-    kids: list = list(conds)
-    if len(conds) >= 3 and (_dm is None or _dm >= 2) and rng.random() < 0.3:
-        a = kids.pop(len(kids) - 1)
-        b = kids.pop(len(kids) - 1)
-        kids.append({"if": a, "then": b})
-    tree = {"all": kids}
+    _cr2, _ = ex.cap_of(limits, "count_range")
+    max_paths = len(conds)
+    if _cr2 is not None:                            # 範囲が在るとき＝増える引き金の分を範囲の中に残す
+        max_paths = max(1, min(max_paths, _cr2[1] - len(conds) + 1))
+    n_paths = int(rng.integers(1, max_paths + 1)) if max_paths > 1 else 1
+    extra_trigs = []
+    for _ in range(n_paths - 1):
+        t2 = None
+        for _try in range(20):
+            try:
+                cand = _make_cond(rng, "trigger", limits, pool, tfs, seen_rolekind, kind_count,
+                                  table, side)
+                _register(cand)
+                t2 = cand
+                break
+            except SampleError:
+                continue
+        if t2 is None:
+            break                                   # 引き金を作れなくなったところで止める
+        extra_trigs.append(t2)
+    if extra_trigs:
+        buckets: list[list] = [[t] for t in ([conds[0]] + extra_trigs)]
+        for _i, _c in enumerate(conds[1:]):
+            buckets[_i % len(buckets)].append(_c)
+        tree = {"any": [{"all": b} for b in buckets]}
+    else:
+        # つなぎ方＝flat all／if-then 入り（深さは limits.depth_max の内側）
+        kids: list = list(conds)
+        if len(conds) >= 3 and (_dm is None or _dm >= 2) and rng.random() < 0.3:
+            a = kids.pop(len(kids) - 1)
+            b = kids.pop(len(kids) - 1)
+            kids.append({"if": a, "then": b})
+        tree = {"all": kids}
     pos_adds = int(rng.choice(limits["max_adds_grid"]))    # 先に決める＝出口の枝が回数で切り替わるため
     return {
         "meta": {"strategy": "e38", "logic_id": logic_id, "side": side,
@@ -955,6 +1034,10 @@ def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
         if c["form"] == "diff" and "threshold_q" in v:
             b = ex._mat_key(mats[1], lane)
             keys[f"{a}−{b}"] = (a, b)
+        # ★閾値とのクロス（部品 cross_val・2026-08-13・段C の C-6）＝列1本の cross の value.th。
+        #   閾値は level とまったく同じ分布（その列そのもの）から解くので、鍵も level と同じ a。
+        if c["form"] == "cross" and len(mats) == 1 and "threshold_q" in v.get("th", {}):
+            keys[a] = (a,)
 
     for r in recipes:
         lane = r["meta"].get("lane", "")
@@ -1682,6 +1765,118 @@ def selftest() -> int:
         ng.append(f"T1-C5 番人③: 定番のクロスを組めない（{'／'.join(_ng5)}）")
     if pair_allowed("RSI", "ADX", [7, 21], [7, 21]):
         ng.append("T1-C5 番人③: 関係の無い2本（RSI × ADX）まで組めると言う＝法則が効いていない")
+
+    # ── T1-C6 閾値とのクロス（部品① cross_val・2026-08-13・段C の C-6）──────────────────
+    #   ①生成器が実際に「列1本 ＋ 閾値」の cross を作る
+    #     （作らなければ、直したのが実行器だけ＝「実行器は受け付けるのに生成器が作らない」D15 と同じ形）
+    #   ②作ったものを検証器がそのまま受け付ける（G5・G6 が拒否しない）
+    #   ③わざと閾値を外すと検証器が拒否する（＝①②の検査が効いている証拠・メタ確認）
+    _cv6 = []
+    for i in range(200):
+        _r6 = np.random.default_rng([66, 1, i])
+        try:
+            _c6 = _make_cond(_r6, "trigger", lm, pool, tfs_small, set(), {}, _tbl5,
+                             "SHORT" if i % 2 else "LONG")
+        except SampleError:
+            continue
+        if _c6.get("form") == "cross" and len(_c6.get("material") or []) == 1:
+            _cv6.append(_c6)
+    if not _cv6:
+        ng.append("T1-C6 番人①: 生成器が『閾値とのクロス』（列1本＋閾値）を200回 引いて1本も作らない"
+                  "＝実行器だけ直って生成器が追随していない（D15 と同じ形）")
+    for _c6 in _cv6[:20]:
+        if "th" not in (_c6.get("value") or {}):
+            ng.append("T1-C6 番人②: 生成した列1本の cross に閾値（value.th）が無い")
+            break
+        try:
+            ex._check_cond(_c6, "", "T1-C6", [])
+        except ex.RecipeError as e:
+            ng.append(f"T1-C6 番人②: 生成した閾値とのクロスを検証器が拒否する（{str(e)[:60]}）")
+            break
+    try:
+        ex._check_cond({"role": "trigger", "form": "cross", "value": {"direction": "up"},
+                        "material": [{"family": "RSI", "param": 14, "tf": "5m"}]},
+                       "", "T1-C6 メタ確認", [])
+        ng.append("T1-C6 番人③: 閾値の無い列1本の cross が通る＝書き忘れを検証器が捕まえていない")
+    except ex.RecipeError:
+        pass
+
+    # ── T1-C6b どれか満たす（OR）＝発火経路（部品②・欠陥 D5・まこさん解禁 2026-08-13）────────
+    #   ①T1 の100本（＝全部 検証器を通ったもの）に「経路が2本以上」が出る
+    #     ＝正本 engine_tuner_defects.md「直し方 D5」の完了の線の逐語
+    #       「100構造の内訳の『経路数の分布』に 2 が出ること（いまは {"1": 100}）」
+    #   ②経路が2本以上の案は、経路ごとに引き金がちょうど1本（G1）
+    #   ③メタ確認＝条件を1本に絞ると、経路も1本になる（経路の数の決め方が効いていることの確認）
+    _multi6 = {k: v for k, v in bd["経路数の分布"].items() if int(k) >= 2}
+    if not _multi6:
+        ng.append("T1-C6b 番人①: 100本の案に『経路が2本以上』が1本も出ない"
+                  "＝どれか満たす（OR）を生成器が作っていない（欠陥 D5 のまま）")
+    for _r6b in structs:
+        _t6 = _r6b["entry"]["connective"]
+        if set(_t6) != {"any"}:
+            continue
+        for _pi, _p6 in enumerate(_t6["any"]):
+            _c6b, _ = ex._walk(_p6)
+            _n6 = sum(1 for c in _c6b if c.get("role") == "trigger")
+            if _n6 != 1:
+                ng.append(f"T1-C6b 番人②: 経路{_pi + 1} の引き金が {_n6} 本（経路ごとに1本・G1）")
+                break
+    # ── T1-C6c 材料の前処理（部品③ ts_max ほか・2026-08-13・段C の C-6）──────────────────
+    #   ①生成器が「素の列 × 前処理を掛けた同じ列」の組を作る（＝新高値・新安値が書ける）
+    #   ②作った条件を検証器がそのまま受け付ける
+    #   ③メタ確認＝前処理の本数を壊すと拒否される／前処理に分位を渡すと拒否される
+    _pre6 = []
+    for i in range(200):
+        _r6c = np.random.default_rng([88, 1, i])
+        try:
+            _pr = _pair_materials(_r6c, pool, tfs_small, "trigger", _tbl5, lm, "cross")
+        except (SampleError, KeyError):
+            continue
+        if any(m.get("pre") for m in _pr):
+            _pre6.append(_pr)
+    if not _pre6:
+        ng.append("T1-C6c 番人①: 生成器が『素の列 × 前処理を掛けた同じ列』の組を200回 引いて1本も作らない"
+                  "（新高値・新安値を書けない＝部品 ts_max が生成器に届いていない）")
+    for _pr in _pre6[:20]:
+        try:
+            ex._check_cond({"role": "trigger", "form": "cross", "material": _pr,
+                            "value": {"direction": "up"}}, "", "T1-C6c", [])
+        except ex.RecipeError as e:
+            ng.append(f"T1-C6c 番人②: 生成した前処理つきの組を検証器が拒否する（{str(e)[:70]}）")
+            break
+    if _pre6:
+        _m_ok = [m for m in _pre6[0] if m.get("pre")][0]
+        for _broke, _why in ((({**_m_ok, "pre": {"op": _m_ok["pre"]["op"], "n": 1}}),
+                              "前処理の本数を 1 にしても通る"),
+                             (({**_m_ok, "pre": {"op": "存在しない部品", "n": 6}}),
+                              "一覧に無い前処理の名前でも通る")):
+            try:
+                ex._check_cond({"role": "trigger", "form": "cross",
+                                "material": [_pre6[0][0], _broke],
+                                "value": {"direction": "up"}}, "", "T1-C6c メタ確認", [])
+                ng.append(f"T1-C6c 番人③: {_why}")
+            except ex.RecipeError:
+                pass
+        try:
+            ex._check_cond({"role": "trigger", "form": "diff", "side": "above",
+                            "material": [_pre6[0][0], _m_ok],
+                            "value": {"threshold_q": "q50"}}, "", "T1-C6c メタ確認", [])
+            ng.append("T1-C6c 番人③: 前処理を掛けた材料に分位（threshold_q）を渡しても通る"
+                      "（分位の解決表は前処理を見ていない＝嘘の閾値になる）")
+        except ex.RecipeError:
+            pass
+
+    _lm6 = dict(lm)
+    _lm6["count_range"] = [1, 1]                      # 条件1本＝引き金だけ＝経路を増やす余地が無い
+    _s6 = []
+    for i in range(30):
+        try:
+            _s6.append(sample_structure(np.random.default_rng([77, 1, i]), _lm6, pool, tfs_small))
+        except (SampleError, ex.RecipeError):
+            continue
+    if _s6 and any(int(k) >= 2 for k in structure_breakdown(_s6, cat_total)["経路数の分布"]):
+        ng.append("T1-C6b メタ確認: 条件を1本に絞っても経路が2本以上 出る"
+                  "（経路の数を条件の本数から決める仕組みが効いていない）")
 
     # T2 BH 法の既知答え（q=0.05・p=[0.001,0.01,0.02,0.04,0.2,0.9] → 3 本採択）
     sel = bh_select([0.001, 0.01, 0.02, 0.04, 0.2, 0.9], 0.05)

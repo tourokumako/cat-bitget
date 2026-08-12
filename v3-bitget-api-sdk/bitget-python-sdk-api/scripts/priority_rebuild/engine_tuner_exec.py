@@ -181,10 +181,59 @@ def _tree_depth(node, depth=0) -> int:
     return depth
 
 
+# ══ 材料の前処理（部品・2026-08-13・段C の C-6）══════════════════════════════════════
+#   材料1本に "pre" を付けると、その列に部品を1つ掛けてから条件に使う。
+#   ★形（FORMS）を増やさない。1つの仕組みで、全部の形・全部の指標に一度に効く。
+#     形を1個ずつ手で足す運用は、まこさんが 2026-08-11 に指摘した形そのもの
+#     （逐語＝「これは手書きで思い付いたら増やす。みたいな運用になるのか？すごい原始的なんだが。」）。
+#   ★いまのバーを含めない（直前の n本を見る）。理由は2つ。
+#     ①部品の正本の「これがあると書ける条件」＝「過去20本の高値を更新した（新高値）」を書くため。
+#       いまのバーを含めると、自分自身を超えられない＝クロスで「更新した瞬間」を書けない。
+#     ②過去だけを見る＝未来参照なし（H2）。
+#   一覧の正本＝.claude/ratchet/condition_parts.json の "have"（id が下の鍵と同じ）。
+MATERIAL_PRE = {
+    "ts_max": "直前の n本の最大値（いまのバーを含めない）",
+    "ts_min": "直前の n本の最小値（いまのバーを含めない）",
+}
+
+
+def _apply_pre(a: np.ndarray, pre: dict) -> np.ndarray:
+    """材料の列に前処理の部品を1つ掛ける。★いまのバーを含めるかは部品ごとに違う（下に理由を書く）。"""
+    op, n = pre["op"], int(pre["n"])
+    s = pd.Series(a)
+    if op == "ts_max":
+        # H2OK: shift(1) は過去だけを見る（未来は見ない）。いまのバーを含めない理由＝上のブロック参照。
+        return s.shift(1).rolling(n).max().to_numpy(float)
+    if op == "ts_min":
+        # H2OK: shift(1) は過去だけを見る（未来は見ない）。ts_max と同じ理由で いまのバーを含めない。
+        return s.shift(1).rolling(n).min().to_numpy(float)
+    raise RecipeError(f"[実行器] 材料の前処理 {op} の実行が未実装")
+
+
+def _pre_of(m: dict) -> dict | None:
+    return m.get("pre") if isinstance(m, dict) else None
+
+
 def _material_name(m: dict, lane: str) -> tuple[str, str]:
-    """材料1本を検証して (種別, 解決名) を返す。種別＝col/geo/state/time/legacy_col。"""
+    """材料1本を検証して (種別, 解決名) を返す。種別＝col/geo/state/time/legacy_col。
+
+    ★解決名は「前処理を外した素の列名」を返す（2026-08-13）。材料の組み立て（attach_materials）と
+      実行時の列引きが、この名前で実データの列を探すため。前処理は _col_array が掛ける。
+    """
     if not isinstance(m, dict):
         _fail("G6", f"材料が dict でない: {m!r}")
+    pre = _pre_of(m)
+    if pre is not None:
+        if not isinstance(pre, dict):
+            _fail("G6", f"材料の pre が dict でない: {pre!r}")
+        bad = set(pre) - {"op", "n"}
+        if bad:
+            _fail("G6", f"材料の pre に未知のフィールド {sorted(bad)}（使えるのは op と n）")
+        if pre.get("op") not in MATERIAL_PRE:
+            _fail("G6", f"材料の前処理に無い部品: {pre.get('op')}"
+                        f"（使えるのは {sorted(MATERIAL_PRE)}／正本＝condition_parts.json）")
+        if not isinstance(pre.get("n"), int) or isinstance(pre.get("n"), bool) or pre["n"] < 2:
+            _fail("G5", f"材料の前処理の本数が不正: {pre.get('n')!r}（2 以上の整数）")
     if "legacy_col" in m:
         if lane != "legacy":
             _fail("G6", f"legacy 材料列は恒等検収レーン専用（探索は生成できない・§2.4-④）: {m['legacy_col']}")
@@ -286,13 +335,35 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         if not isinstance(vv.get("n"), int) or not isinstance(vv.get("m"), int):
             _fail("G5", f"{where}: 形 slope_avg は value.n（遡る本数）と value.m（平均の本数）が要る（§2.2）")
     mats = c.get("material") or []
-    need2 = form in ("cross", "diff", "touch")
+    # ★2026-08-13（段C の C-6・部品①＝閾値とのクロス cross_val）＝cross は2通りの書き方を受ける。
+    #   ①列2本（MACD線% × MACDシグナル線% のようなクロス）
+    #   ②列1本 ＋ 閾値（「RSI が 70 を上抜けた」）★これが 2026-08-13 まで書けなかった
+    #   閾値の書き方は level と同じ value（分位・名前つき定数・整数グリッド）を value.th に入れる形。
+    #   出どころ＝.claude/ratchet/condition_parts.json の部品 cross_val（業界の同じもの＝pandas-ta の
+    #   cross_value）。生の数字は _check_value が従来どおり拒否する（G6）。
+    if form == "cross" and len(mats) == 1 and "th" not in (c.get("value") or {}):
+        _fail("G5", f"{where}: 列1本の cross は value.th（閾値）が要る"
+                    "（閾値とのクロス＝『RSI が 70 を上抜けた』・部品 cross_val）")
+    need2 = form in ("diff", "touch") or (form == "cross" and len(mats) != 1)
     if need2 and len(mats) != 2:
-        _fail("G6", f"{where}: 形 {form} は列2本の材料が要る（{len(mats)}本）")
+        _fail("G6", f"{where}: 形 {form} は列2本の材料が要る（{len(mats)}本）"
+                    + ("／閾値とのクロスなら列1本＋value.th" if form == "cross" else ""))
     if form == "candle_dir":
         mats = []                                 # ローソク列＝バーそのもの（材料指定なし）
     elif not need2 and len(mats) != 1:
         _fail("G6", f"{where}: 形 {form} は列1本の材料（{len(mats)}本）")
+    # ★前処理（pre）を掛けた材料に分位（threshold_q）は使わせない（2026-08-13・fail-closed）。
+    #   理由＝分位の解決表（build_qtable）は前処理を見ずに素の列の分布から閾値を作る。いま許すと、
+    #   「前処理を掛けた値」を「素の列の分位」と比べることになり、嘘の閾値になる。
+    #   ★次に解決表を前処理に対応させたら、この行を外す（そのときは番人も一緒に直す）。
+    if any(_pre_of(m) for m in mats):
+        def _has_q(v):
+            if not isinstance(v, dict):
+                return False
+            return "threshold_q" in v or any(_has_q(v[k]) for k in ("lo", "hi", "th") if k in v)
+        if _has_q(c.get("value") or {}):
+            _fail("G5", f"{where}: 前処理（pre）を掛けた材料に分位（threshold_q）は使えない"
+                        "（分位の解決表が前処理を見ていない・2026-08-13）")
     for m in mats:
         kind, name = _material_name(m, lane)
         if kind == "geo" and iref.RANGE_GEO_REF[name]["kind"] != "ratio":
@@ -725,6 +796,10 @@ def _vnum_q(v: dict, qkey: str, qtable: dict | None) -> float:
 
 
 def _col_array(df: pd.DataFrame, m: dict, geo: dict, lane: str) -> np.ndarray:
+    """材料1本 → 各バーの値。★前処理（pre）が在れば、最後に部品を1つ掛ける（2026-08-13）。"""
+    pre = _pre_of(m)
+    if pre is not None:
+        return _apply_pre(_col_array(df, {k: v for k, v in m.items() if k != "pre"}, geo, lane), pre)
     kind, name = _material_name(m, lane)
     if kind == "geo":
         return geo[name]
@@ -749,8 +824,10 @@ def _col_array(df: pd.DataFrame, m: dict, geo: dict, lane: str) -> np.ndarray:
 
 
 def _mat_key(m: dict, lane: str) -> str:
-    """分位の解決表の鍵＝材料の解決名（列名）。"""
-    return _material_name(m, lane)[1]
+    """分位の解決表の鍵＝材料の解決名（列名）。★前処理が在れば分布が変わるので鍵も分ける（2026-08-13）。"""
+    name = _material_name(m, lane)[1]
+    pre = _pre_of(m)
+    return f"{pre['op']}{pre['n']}:{name}" if pre else name
 
 
 def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | None = None) -> np.ndarray:
@@ -808,6 +885,11 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
         return np.where(np.isfinite(d), ok, na_pass).astype(bool)
     b = _col_array(df, mats[1], geo, lane) if len(mats) > 1 else None
     if form == "cross":
+        if b is None:
+            # ★閾値とのクロス（部品 cross_val・2026-08-13・段C の C-6）＝相手の列の代わりに
+            #   閾値の定数を置く。閾値の解決は level と同じ（同じ鍵 akey の分位・定数・整数）。
+            #   ここから下の式は列2本のときと1文字も変えない＝同じ意味論で動く。
+            b = np.full(len(a), _vnum_q(v["th"], akey, qtable), dtype=float)
         pa, pb = np.roll(a, 1), np.roll(b, 1)
         pa[0] = pb[0] = np.nan
         fin = np.isfinite(a) & np.isfinite(b)

@@ -323,7 +323,7 @@
 | pandas-ta-classic の utils（うちが使っているライブラリ）（このプロジェクトに入っている） | 10 | **毎回 機械で数え直す** | above・above_value・below・below_value・cross・cross_value・crossany・crossover・lag・signals。★入っているので毎回 機械で取り直す（記録と食い違ったら ❌） |
 | [TradingView Pine Script の ta 名前空間](https://www.tradingview.com/pine-script-docs/language/built-ins/) | — | 記録（機械では数え直せない） | 取れた名前＝ta.sma・ta.ema・ta.macd・ta.rsi・ta.supertrend・ta.barssince・ta.crossover・ta.highest・ta.tr・ta.vwma。★総数は書かれていない（逐語＝『Pine Script has hundreds of built-in variables and functions』） |
 
-**いま在る部品＝13 個。足りない部品＝9 個。合計 22 個。**
+**いま在る部品＝17 個。足りない部品＝5 個。合計 22 個。**
 
 ### いま在る部品
 
@@ -342,20 +342,20 @@
 | 11 | **n本のうち 全部 成立** | streak | rolling(n).sum() >= n | gp_logic:SUM_GT |
 | 12 | **n本のうち どれか 成立** | within_n | rolling(n).max() >= 1 | gp_logic |
 | 13 | **n本 ずらす（条件を）** | streak・within_n の offset | np.roll(cond, off)（先頭は不成立） | pandas_ta:lag（値の側のみ） |
+| 14 | **閾値とのクロス** | cross（列1本 ＋ value.th） | engine_tuner_exec._eval_cond の cross＝相手の列の代わりに閾値の定数列を置く（np.full）。閾値の書き方は level と同じ（分位・名前つき定数・整数グリッド）。★2026-08-13 の段C の C-6 で足した（それまでは『足りない部品』だった） | pandas_ta:cross_value |
+| 15 | **n本の最大値** | 材料の前処理（材料に pre:{op:ts_max, n} を付ける） | engine_tuner_exec._apply_pre＝pd.Series(a).shift(1).rolling(n).max()。★いまのバーを含めない＝『過去n本の高値を更新した（新高値）』をクロスで書くため（含めると自分自身を超えられない）。過去だけを見る＝未来参照なし。★形（FORMS）を増やさず、材料の側に欄を1つ足した＝全部の形・全部の指標に一度に効く。★2026-08-13 の段C の C-6 で足した。番人＝engine_tuner_gen --selftest の T1-C6c ／ condition_parts_diag の『直前6本の最大値』2通り | alphagen:Max・pine:ta.highest |
+| 16 | **n本の最小値** | 材料の前処理（材料に pre:{op:ts_min, n} を付ける） | engine_tuner_exec._apply_pre＝pd.Series(a).shift(1).rolling(n).min()。ts_max と同じ理由で いまのバーを含めない（『過去n本の安値を更新した（新安値）』を書くため）。★2026-08-13 の段C の C-6 で足した。番人＝condition_parts_diag の『直前6本の最小値』2通り | alphagen:Min・pine:ta.lowest |
+| 17 | **どれか満たす（OR）** | ★形ではない。条件の木＝発火経路（entry.connective の any） | 実行器＝engine_tuner_exec._entry_fire が最上位の any を発火経路として扱う（前から動いていた）／生成器＝engine_tuner_gen.sample_structure が {"any": [経路1, 経路2, …]} を作る。★2026-08-13 の段C の C-6 で、生成器の側を足した（まこさん解禁・それまでは欠陥 D5）。経路ごとに引き金ちょうど1本（G1）。番人＝engine_tuner_gen --selftest の T1-C6b（100本の案の『経路数の分布』に 2 以上が出ること） | gp_logic:OR |
 
 ### 足りない部品
 
 | # | 部品 | これがあると書ける条件 | 業界の同じもの |
 |---|---|---|---|
-| 14 | **n本の最大値** | 過去20本の高値を更新した（新高値） | alphagen:Max・pine:ta.highest |
-| 15 | **n本の最小値** | 過去20本の安値を更新した（新安値） | alphagen:Min・pine:ta.lowest |
-| 16 | **n本の中の順位** | いまの値が 過去100本で上位20% | alphagen:Rank |
-| 17 | **n本のばらつき** | 値動きが荒れているとき限定 | alphagen:Std |
-| 18 | **何本前に成立したか** | 上抜けてから 3本 以内 | pine:ta.barssince |
-| 19 | **割り算** | a が b の 1.2倍 を超えた（比） | alphagen:Div・gplearn:div |
-| 20 | **2本の相関** | 2つの指標が同じ向きに動いている | alphagen:Corr |
-| 21 | **閾値とのクロス** | RSI が 70 を上抜けた | pandas_ta:cross_value |
-| 22 | **どれか満たす（OR）** | A または B | gp_logic:OR |
+| 18 | **n本の中の順位** | いまの値が 過去100本で上位20% | alphagen:Rank |
+| 19 | **n本のばらつき** | 値動きが荒れているとき限定 | alphagen:Std |
+| 20 | **何本前に成立したか** | 上抜けてから 3本 以内 | pine:ta.barssince |
+| 21 | **割り算** | a が b の 1.2倍 を超えた（比） | alphagen:Div・gplearn:div |
+| 22 | **2本の相関** | 2つの指標が同じ向きに動いている | alphagen:Corr |
 
 ### 要らないと判断したもの（理由つき・★判定は CC が書きました）
 
@@ -377,7 +377,7 @@
 | `band_exclude` | value・cmp・and・not・exists |
 | `slope` | value・lag・sub・cmp |
 | `slope_avg` | value・ma・lag・sub・cmp |
-| `cross` | value・lag・sub・cmp・and・not・exists |
+| `cross` | value・lag・sub・cmp・and・not・exists・cross_val |
 | `diff` | value・sub・cmp |
 | `touch` | value・sub・abs・mul・cmp |
 | `candle_dir` | value・sub・cmp・and・not |
@@ -387,7 +387,8 @@
 ### 番人（毎回 実物で確かめる）
 
 - pandas-ta の「使い方」の関数＝実測 **10 件**（above・above_value・below・below_value・cross・cross_value・crossany・crossover・lag・signals）
-- 「閾値とのクロス」（RSI が 70 を上抜けた）を実行器の検証器に渡した結果＝**拒否（[レシピ拒否 G6] 番人（閾値とのクロス）: 形 cross は列2本の材料が要る（1本））**
+- 「閾値とのクロス」（RSI が 70 を上抜けた）を実行器の検証器に渡した結果＝**閾値つき＝通った ／ 閾値なし＝拒否（[レシピ拒否 G5] 番人（閾値の無い列1本の cross）: 列1本の cross は value）（部品の一覧では『在る』）**
+- 上の「形の分解」に出てこない部品（＝形ではなく、条件の木やつなぎ方で使うもの）＝**or**（★形ではない。条件の木＝発火経路（entry.connective の any）） ／ **ts_max**（材料の前処理（材料に pre:{op:ts_max, n} を付ける）） ／ **ts_min**（材料の前処理（材料に pre:{op:ts_min, n} を付ける））
 
 **✅ ずれ 0 件**（形の数・部品の名前・業界の数・閾値とのクロス、すべて実物と一致）
 
