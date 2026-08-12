@@ -20,8 +20,11 @@
 ★この道具は読み取り専用。売買記録CSVを書かない・審判(score)を呼ばない・戦略を実行しない。
 
 使い方。
-  python3 condition_parts_diag.py            … 11個の形を突き合わせる（書き方の違いを含めて15通り）
+  python3 condition_parts_diag.py            … 全部の形を突き合わせる（書き方の違いも1件ずつ）
   python3 condition_parts_diag.py --selftest … 番人（わざと壊すと食い違いが出るか）
+
+★件数（何個の形・何通り）はここに書かない。実行すると最後の行に機械が数えて出す
+  （手で書くと、形や書き方が増えたときに黙って腐る）。
 """
 from __future__ import annotations
 
@@ -148,6 +151,35 @@ def p_ts_std(a: np.ndarray, n: int) -> np.ndarray:
     return pd.Series(a).rolling(int(n)).std().to_numpy(float)
 
 
+def p_div(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """⑲割り算（★2026-08-12 の段C の C-6 で足した部品）。
+
+    0 で割ると無限になるので、そこは値なし（NaN）にする＝実行器の既定 na=fail で不成立になる。
+    """
+    with np.errstate(invalid="ignore", divide="ignore"):
+        out = np.divide(a, b, out=np.full(len(a), np.nan, float), where=(b != 0))
+    return np.where(np.isfinite(out), out, np.nan)
+
+
+def p_corr(a: np.ndarray, b: np.ndarray, n: int) -> np.ndarray:
+    """⑳直近 n本の相関（★2026-08-12 の段C の C-6 で足した部品）。値は −1〜1。
+
+    rolling は過去 n本だけを見る＝未来は見ない。ばらつきがゼロの区間は相関を出せない（NaN）。
+    """
+    return pd.Series(a).rolling(int(n)).corr(pd.Series(b)).to_numpy(float)
+
+
+def p_barssince(cond: np.ndarray, n: int, side: str) -> np.ndarray:
+    """㉑最後に成立してから何本 経ったか（★2026-08-12 の段C の C-6 で足した部品）。
+
+    数えるのは過去に成立したバーだけ＝未来は見ない。まだ一度も成立していない所は値なし（不成立）。
+    """
+    idx = np.arange(len(cond))
+    last = np.maximum.accumulate(np.where(cond, idx, -1))
+    bs = np.where(last >= 0, idx - last, np.nan).astype(float)
+    return p_cmp(bs, float(n), side)
+
+
 def p_cross_val(n: int, th: float) -> np.ndarray:
     """⑭閾値とのクロス（★2026-08-13 の段C の C-6 で足した部品）。
 
@@ -208,6 +240,20 @@ def _c_diff(df, cols, v):
     return p_cmp(p_sub(a, b), v["th"], v["side"])
 
 
+def _c_div(df, cols, v):
+    """★材料2本の割り算（部品 div・2026-08-12 の段C の C-6）＝「a が b の 1.2倍 を超えた」。
+    式は _c_diff と同じ。2本を1本にまとめる部品が「引き算」から「割り算」に変わるだけ。"""
+    a, b = p_value(df, cols[0]), p_value(df, cols[1])
+    return p_cmp(p_div(a, b), v["th"], v["side"])
+
+
+def _c_corr(df, cols, v):
+    """★材料2本の相関（部品 corr・2026-08-12 の段C の C-6）＝「2つの指標が同じ向きに動いている」。
+    式は _c_diff と同じ。2本を1本にまとめる部品が「直近 n本の相関」に変わるだけ。"""
+    a, b = p_value(df, cols[0]), p_value(df, cols[1])
+    return p_cmp(p_corr(a, b, v["n"]), v["th"], v["side"])
+
+
 def _c_touch(df, cols, v):
     a, b = p_value(df, cols[0]), p_value(df, cols[1])
     d = p_abs(p_sub(a, b))
@@ -229,6 +275,12 @@ def _c_streak(df, cols, v):
 def _c_within_n(df, cols, v):
     inner = _c_level(df, cols, v["inner"])
     return p_shift_cond(p_any_n(inner, v["n"]), v.get("offset", 0))
+
+
+def _c_barssince(df, cols, v):
+    """★最後に成立してから何本 経ったか（部品 barssince・2026-08-12 の段C の C-6）。"""
+    inner = _c_level(df, cols, v["inner"])
+    return p_shift_cond(p_barssince(inner, v["n"], v["side"]), v.get("offset", 0))
 
 
 _PRE_PARTS = {"ts_max": p_ts_max, "ts_min": p_ts_min,
@@ -257,10 +309,11 @@ def _c_cross_pre(df, cols, v):
 
 
 COMPOSE = {"cross_pre": _c_cross_pre, "level_pre": _c_level_pre,
+           "div": _c_div, "corr": _c_corr,
            "level": _c_level, "band": _c_band, "band_exclude": _c_band_exclude,
            "slope": _c_slope, "slope_avg": _c_slope_avg, "cross": _c_cross,
            "diff": _c_diff, "touch": _c_touch, "candle_dir": _c_candle_dir,
-           "streak": _c_streak, "within_n": _c_within_n}
+           "streak": _c_streak, "within_n": _c_within_n, "barssince": _c_barssince}
 
 
 # ══ 実行器に渡すレシピ（同じ意味の条件を、実行器の書き方で書く）═══════════════════════
@@ -331,6 +384,32 @@ def _cases(m1: dict, m2: dict) -> list[dict]:
         dict(form="diff", real={"form": "diff", "side": "above", "value": {"n": 0.5},
                                 "material": [m1, m2]},
              cols=2, v={"th": 0.5, "side": "above"}),
+        # ★材料2本の割り算（部品 div・2026-08-12 の段C の C-6 で足した）＝『RSI7 が RSI21 の 1.1倍 を超えた』。
+        #   2026-08-12 より前は、比を条件にすることが1本もできなかった（引き算しか無かった）。
+        dict(form="diff", compose="div", label="割り算 ≥1.1倍",
+             real={"form": "diff", "side": "above", "value": {"op": "div", "th": {"n": 1.1}},
+                   "material": [m1, m2]},
+             cols=2, v={"th": 1.1, "side": "above"}),
+        dict(form="diff", compose="div", label="割り算 ≤0.9倍",
+             real={"form": "diff", "side": "below", "value": {"op": "div", "th": {"n": 0.9}},
+                   "material": [m1, m2]},
+             cols=2, v={"th": 0.9, "side": "below"}),
+        # ★材料2本の相関（部品 corr・2026-08-12 の段C の C-6 で足した）＝『直近20本で同じ向きに動いている』。
+        #   2026-08-12 より前は、2本が同じ向きに動いているかを条件にできなかった。
+        dict(form="diff", compose="corr", label="相関20 ≥0.5（同じ向き）",
+             real={"form": "diff", "side": "above",
+                   "value": {"op": "corr", "n": 20, "th": {"n": 0.5}},
+                   "material": [m1, m2]},
+             cols=2, v={"th": 0.5, "side": "above", "n": 20}),
+        # ★下側（below）の閾値は 0.90 にした。理由を残す＝この材料の組（RSI7 と RSI21）は
+        #   ほとんど常に同じ向きに動くので、実測の相関20 は最小 +0.1735・q25 が +0.9021 だった。
+        #   閾値を 0（逆の向き）にすると 本物も部品の組み立ても 成立 0本 で、0 と 0 を比べるだけになり
+        #   何も確かめられない。切れる所（q25）を選んで、下側の道が本当に同じかを確かめる。
+        dict(form="diff", compose="corr", label="相関20 ≤0.90（揃いが弱い）",
+             real={"form": "diff", "side": "below",
+                   "value": {"op": "corr", "n": 20, "th": {"n": 0.90}},
+                   "material": [m1, m2]},
+             cols=2, v={"th": 0.90, "side": "below", "n": 20}),
         dict(form="touch", real={"form": "touch", "value": {"n": 0.05}, "material": [m1, m2]},
              cols=2, v={"tol": 0.05}),
         dict(form="candle_dir", real={"form": "candle_dir", "value": {"dir": "bull"},
@@ -350,6 +429,25 @@ def _cases(m1: dict, m2: dict) -> list[dict]:
                                               "value": {"n": 45.0}, "material": [m1]},
                                     "material": []},
              cols=1, v={"n": 6, "offset": 1, "inner": {"th": 45.0, "side": "below"}}),
+        # ★最後に成立してから何本 経ったか（部品 barssince・2026-08-12 の段C の C-6 で足した）。
+        #   above＝「最後に成立してから 6本 以上 経っている」。★2026-08-12 より前は書く方法が1つも無かった
+        #   （within_n は『N本 以内』しか書けず、『経った』を書けない）。
+        dict(form="barssince", label="6本 以上 経った",
+             real={"form": "barssince", "side": "above", "value": {"n": 6, "offset": 0},
+                   "inner": {"form": "level", "side": "above",
+                             "value": {"n": 55.0}, "material": [m1]},
+                   "material": []},
+             cols=1, v={"n": 6, "offset": 0, "side": "above",
+                        "inner": {"th": 55.0, "side": "above"}}),
+        # below＝「5本 以内に成立」。これは within_n(n=6) と同じ結果になる（正規形の重なり）。
+        #   下の run() が、その一致も機械で確かめる（★同値の確認）。
+        dict(form="barssince", label="5本 以内に成立",
+             real={"form": "barssince", "side": "below", "value": {"n": 5, "offset": 0},
+                   "inner": {"form": "level", "side": "below",
+                             "value": {"n": 45.0}, "material": [m1]},
+                   "material": []},
+             cols=1, v={"n": 5, "offset": 0, "side": "below",
+                        "inner": {"th": 45.0, "side": "below"}}),
     ]
 
 
@@ -406,6 +504,23 @@ def run(break_form: str | None = None) -> int:
         if diff:
             ng += 1
     print("-" * 72)
+    if break_form is None:
+        # ★同値の確認（2026-08-12・段C の C-6）＝barssince(below, n) と within_n(n+1) が同じ結果か。
+        #   生成器が barssince の below を作らないのは「within_n が同じものを作るから」。
+        #   その理由が本当かを実データで確かめる（確かめずに決まりを書かない）。
+        _in = {"form": "level", "side": "below", "value": {"n": 45.0}, "material": [m1]}
+        _bs = ex._eval_cond({"form": "barssince", "side": "below", "value": {"n": 5, "offset": 0},
+                             "inner": _in, "material": []}, df, {}, "legacy", None)
+        _wn = ex._eval_cond({"form": "within_n", "value": {"n": 6, "offset": 0},
+                             "inner": _in, "material": []}, df, {}, "legacy", None)
+        _d = int((np.asarray(_bs, bool) != np.asarray(_wn, bool)).sum())
+        print(f"同値の確認: barssince(以内5本) {int(np.asarray(_bs, bool).sum()):,} 本 ／ "
+              f"within_n(6本) {int(np.asarray(_wn, bool).sum()):,} 本 ／ 食い違い {_d:,}"
+              + ("  ✅ 同じ＝生成器が below を作らない理由が実測で裏づいた"
+                 if _d == 0 else "  ❌ 違う＝生成器は below も作らないと条件を1つ失う"))
+        if _d:
+            ng += 1
+        print("-" * 72)
     if ng == 0:
         print(f"✅ {n_forms}個の形（{len(cases)}通り）すべて、部品の組み立てと 1バーも違いません（食い違い 0）")
     else:
@@ -419,7 +534,9 @@ def selftest() -> int:
     print("condition_parts_diag 番人（わざと壊すと食い違いが出るか）")
     print("=" * 72)
     ok = True
-    for f in ("level", "slope", "streak"):
+    # ★diff を足した（2026-08-12・段C の C-6）＝引き算・割り算・相関の3通りが、この1件で全部 壊れる
+    #   （どれも form は diff）。壊して食い違いが出なければ、新しく足した2部品の突き合わせは無意味。
+    for f in ("level", "slope", "streak", "diff", "barssince"):
         print(f"\n── わざと {f} の値を1つ ずらす ──")
         n = run(break_form=f)
         if n == 0:

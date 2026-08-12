@@ -280,7 +280,7 @@
 判定すると間違えます。**2026-08-11 に実際に間違えました**（RSI の差の列が無いことを理由に
 「作れない」と報告したが、下の `slope` で作れた）。**指標と使い方は、同じ1枚で突き合わせます。**
 
-**いま実行器が実行できる形＝11 種類。**
+**いま実行器が実行できる形＝12 種類。**
 
 | 形 | 何をするか | 使う材料 | 必要な値 | 実例 | 入れ子 |
 |---|---|---|---|---|---|
@@ -292,7 +292,8 @@
 | `cross` | クロス | **列2本** | 向き（上抜け/下抜け） | MACD×Signal・StochK×D | 内側に置ける |
 | `streak` | 連続 | **内側の条件1つ** | 連続本数 N・**offset（0 or 1）** | Stoch の N本連続 | 外側になる形（中に条件を1つ包む） |
 | `within_n` | 過去N本以内 | **内側の条件1つ** | 遡る本数 N・offset | P4 の押し目（過去10本） | 外側になる形（中に条件を1つ包む） |
-| `diff` | 差の量 | **列2本** | 閾値・side | StochK−D の差 >0.3 | 内側に置ける |
+| `barssince` | 何本前に成立したか | **内側の条件1つ** | 本数 N・side・offset | 上抜けてから3本 以上 経った | 外側になる形（中に条件を1つ包む） |
+| `diff` | 差の量 | **列2本** | 閾値・side（★組み方 op＝引き算／割り算／相関） | StochK−D の差 >0.3 | 内側に置ける |
 | `touch` | タッチ | **列2本** | 許容幅（名前つき定数） | EMA20 タッチ・BB上限タッチ | 内側に置ける |
 | `candle_dir` | ローソクの向き | ローソク列 | 陽/陰 | ほぼ全ロジック | 内側に置ける |
 
@@ -323,7 +324,7 @@
 | pandas-ta-classic の utils（うちが使っているライブラリ）（このプロジェクトに入っている） | 10 | **毎回 機械で数え直す** | above・above_value・below・below_value・cross・cross_value・crossany・crossover・lag・signals。★入っているので毎回 機械で取り直す（記録と食い違ったら ❌） |
 | [TradingView Pine Script の ta 名前空間](https://www.tradingview.com/pine-script-docs/language/built-ins/) | — | 記録（機械では数え直せない） | 取れた名前＝ta.sma・ta.ema・ta.macd・ta.rsi・ta.supertrend・ta.barssince・ta.crossover・ta.highest・ta.tr・ta.vwma。★総数は書かれていない（逐語＝『Pine Script has hundreds of built-in variables and functions』） |
 
-**いま在る部品＝19 個。足りない部品＝3 個。合計 22 個。**
+**いま在る部品＝22 個。足りない部品＝0 個。合計 22 個。**
 
 ### いま在る部品
 
@@ -348,14 +349,14 @@
 | 17 | **n本の中の順位** | 材料の前処理（材料に pre:{op:ts_rank, n} を付ける） | engine_tuner_exec._apply_pre＝pd.Series(a).rolling(n).rank(pct=True)。★いまのバーを含める＝書きたい条件が『いまの値が 過去100本で上位20%』だから（いまの値を外すと、いまの値の順位を出せない）。ts_max・ts_min とは含める・含めないが違う。値は 0〜1（一番小さい値が 1/n・一番大きい値が 1.0）。★分位（threshold_q）で閾値を置ける＝2026-08-12（18回目） の段C の 4-2 で、分位の解決表（engine_tuner_gen.build_qtable）が前処理を掛けてから分位を出す形に直したため。番人＝engine_tuner_gen --selftest の T1-C6c ／ condition_parts_diag の『直近20本の中の順位』 | alphagen:Rank |
 | 18 | **n本のばらつき** | 材料の前処理（材料に pre:{op:ts_std, n} を付ける） | engine_tuner_exec._apply_pre＝pd.Series(a).rolling(n).std()。★いまのバーを含める（『直近 n本のばらつき』＝いまを含めた n本の散らばり）。ts_rank と同じく水準で使う＝閾値が要るので、4-2 の分位の対応が前提。★2026-08-12（18回目） の段C の 4-2 で足した。番人＝condition_parts_diag の『直近20本のばらつき』 | alphagen:Std |
 | 19 | **どれか満たす（OR）** | ★形ではない。条件の木＝発火経路（entry.connective の any） | 実行器＝engine_tuner_exec._entry_fire が最上位の any を発火経路として扱う（前から動いていた）／生成器＝engine_tuner_gen.sample_structure が {"any": [経路1, 経路2, …]} を作る。★2026-08-13 の段C の C-6 で、生成器の側を足した（まこさん解禁・それまでは欠陥 D5）。経路ごとに引き金ちょうど1本（G1）。番人＝engine_tuner_gen --selftest の T1-C6b（100本の案の『経路数の分布』に 2 以上が出ること） | gp_logic:OR |
+| 20 | **割り算** | ★形ではない。列2本の形（diff）が材料2本を1本にまとめる部品の表（engine_tuner_exec.PAIR_OPS） | engine_tuner_exec._pair_series の op=div＝np.divide(a, b)。0 で割る所は値なし（NaN）に直す＝条件の既定 na=fail で不成立。書き方＝value に {"op":"div","th":<閾値>}。★形（FORMS）を増やさず、材料2本の組み方の表に1行 足した＝組める材料の組 全部に一度に効く。★分位の解決表（engine_tuner_gen.build_qtable）も同じ _pair_series を呼ぶ＝式を2か所に書かない。★2026-08-12（19回目）の段C の C-6 で足した。番人＝engine_tuner_gen --selftest の T1-C6f ／ condition_parts_diag の『割り算 ≥1.1倍』『≤0.9倍』 | alphagen:Div・gplearn:div |
+| 21 | **2本の相関** | ★形ではない。列2本の形（diff）が材料2本を1本にまとめる部品の表（engine_tuner_exec.PAIR_OPS） | engine_tuner_exec._pair_series の op=corr＝pd.Series(a).rolling(n).corr(pd.Series(b))。値は −1〜1。rolling は過去 n本だけ＝未来は見ない。ばらつきがゼロの区間は値なし（不成立）。書き方＝value に {"op":"corr","n":<窓の本数>,"th":<閾値>}（slope と同じ書き方＝n が窓・th が閾値）。★2026-08-12（19回目）の段C の C-6 で足した。番人＝engine_tuner_gen --selftest の T1-C6f ／ condition_parts_diag の『相関20 ≥0.5』『≤0.90』 | alphagen:Corr |
+| 22 | **何本前に成立したか** | ★入れ子の形（engine_tuner_exec.NEST_FORMS）＝条件に掛ける部品。streak・within_n の仲間 | engine_tuner_exec._eval_cond の barssince＝内側の条件が最後に成立したバーからの距離を数え、その本数を閾値と比べる（np.maximum.accumulate で最後に成立した位置を持つ）。まだ一度も成立していない所は値なし＝不成立。数えるのは過去に成立したバーだけ＝未来は見ない。書き方＝{"form":"barssince","side":"above","value":{"n":<本数>},"inner":<内側の条件>}。★within_n との違い＝barssince ≤ k は within_n(k+1) と同じ結果になる（実測で確認・食い違い 0）。**新しく書けるのは above の側**＝『最後に成立してから n本 以上 経っている』。★生成器は above だけを作る（below は within_n が同じものを作る＝二重に作らない・正規形）。検証器は above も below も受ける＝人が書いた恒等のレシピを壊さない。★2026-08-12（19回目）の段C の C-6 で足した。番人＝engine_tuner_gen --selftest の T1-C6g ／ condition_parts_diag の『6本 以上 経った』『5本 以内に成立』＋同値の確認 | pine:ta.barssince |
 
 ### 足りない部品
 
 | # | 部品 | これがあると書ける条件 | 業界の同じもの |
 |---|---|---|---|
-| 20 | **何本前に成立したか** | 上抜けてから 3本 以内 | pine:ta.barssince |
-| 21 | **割り算** | a が b の 1.2倍 を超えた（比） | alphagen:Div・gplearn:div |
-| 22 | **2本の相関** | 2つの指標が同じ向きに動いている | alphagen:Corr |
 
 ### 要らないと判断したもの（理由つき・★判定は CC が書きました）
 
@@ -383,12 +384,13 @@
 | `candle_dir` | value・sub・cmp・and・not |
 | `streak` | value・cmp・all_n・shift_cond |
 | `within_n` | value・cmp・any_n・shift_cond |
+| `barssince` | value・cmp・barssince・shift_cond |
 
 ### 番人（毎回 実物で確かめる）
 
 - pandas-ta の「使い方」の関数＝実測 **10 件**（above・above_value・below・below_value・cross・cross_value・crossany・crossover・lag・signals）
 - 「閾値とのクロス」（RSI が 70 を上抜けた）を実行器の検証器に渡した結果＝**閾値つき＝通った ／ 閾値なし＝拒否（[レシピ拒否 G5] 番人（閾値の無い列1本の cross）: 列1本の cross は value）（部品の一覧では『在る』）**
-- 上の「形の分解」に出てこない部品（＝形ではなく、条件の木やつなぎ方で使うもの）＝**or**（★形ではない。条件の木＝発火経路（entry.connective の any）） ／ **ts_max**（材料の前処理（材料に pre:{op:ts_max, n} を付ける）） ／ **ts_min**（材料の前処理（材料に pre:{op:ts_min, n} を付ける）） ／ **ts_rank**（材料の前処理（材料に pre:{op:ts_rank, n} を付ける）） ／ **ts_std**（材料の前処理（材料に pre:{op:ts_std, n} を付ける））
+- 上の「形の分解」に出てこない部品（＝形ではなく、条件の木やつなぎ方で使うもの）＝**corr**（★形ではない。列2本の形（diff）が材料2本を1本にまとめる部品の表（engine_tuner_exec.PAIR_OPS）） ／ **div**（★形ではない。列2本の形（diff）が材料2本を1本にまとめる部品の表（engine_tuner_exec.PAIR_OPS）） ／ **or**（★形ではない。条件の木＝発火経路（entry.connective の any）） ／ **ts_max**（材料の前処理（材料に pre:{op:ts_max, n} を付ける）） ／ **ts_min**（材料の前処理（材料に pre:{op:ts_min, n} を付ける）） ／ **ts_rank**（材料の前処理（材料に pre:{op:ts_rank, n} を付ける）） ／ **ts_std**（材料の前処理（材料に pre:{op:ts_std, n} を付ける））
 
 **✅ ずれ 0 件**（形の数・部品の名前・業界の数・閾値とのクロス、すべて実物と一致）
 

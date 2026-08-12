@@ -49,9 +49,10 @@ RUNS_DIR = HERE.parents[2] / "results" / "priority_rebuild" / "tuner_gen"
 # ★cross_val（2026-08-13・段C の C-6・部品①）は実行器の形ではない。実行器では cross の
 #   「列1本 ＋ 閾値」の書き方（＝『RSI が 70 を上抜けた』）を指す、生成器の中だけの名前。
 #   引き金（縁）だけに置く＝水準を跨いだ瞬間の1バーで成立する形のため。
-TRIGGER_FORMS = ("cross", "cross_val", "level", "diff", "candle_dir", "slope", "streak", "within_n")
+TRIGGER_FORMS = ("cross", "cross_val", "level", "diff", "candle_dir", "slope", "streak", "within_n",
+                 "barssince")
 STATE_FORMS = ("level", "band", "band_exclude", "slope", "slope_avg", "diff", "touch",
-               "candle_dir", "streak", "within_n")
+               "candle_dir", "streak", "within_n", "barssince")
 NEEDS_PAIR = ("cross", "diff", "touch")
 
 # §11 の対応（値待ちの可視化に使う・番号は設計書 §11）
@@ -423,7 +424,7 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
     rr = table["roles"][role]
     forms = tuple(f for f in forms if f != "candle_dir" or "ローソク" in rr["lineages"])
     form = str(rng.choice(forms))
-    if form in ("streak", "within_n"):
+    if form in ex.NEST_FORMS:
         if not allow_nest:
             form = "level"
         else:
@@ -432,8 +433,16 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
             inner.pop("role", None)
             inner["role"] = role
             n = int(rng.choice([n for n in limits["int_grid"] if n >= 2]))
-            return {"role": role, "form": form, "inner": inner,
-                    "value": {"n": n, "offset": int(rng.choice([0, 1]))}}
+            out = {"role": role, "form": form, "inner": inner,
+                   "value": {"n": n, "offset": int(rng.choice([0, 1]))}}
+            if form == "barssince":
+                # ★何本前に成立したか（部品 barssince・2026-08-12・段C の C-6）。
+                #   ★生成器は above だけを作る。理由＝below（「n本 以内に成立」）は within_n(n+1) と
+                #     同じ結果になり、同じ条件を2通りで作ることになる（正規形・CP3 提案7 と同じ考え）。
+                #   ★この決まりが潰す条件＝ありません。below で書ける条件は within_n が全部 作ります。
+                #   ★検証器（実行器）は above も below も受けます＝人が書いた恒等のレシピを壊さない。
+                out["side"] = "above"
+            return out
     if form in NEEDS_PAIR:
         mats = _pair_materials(rng, pool, tfs, role, table, limits, form)
         for m in mats:
@@ -443,8 +452,17 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
             return {"role": role, "form": "cross", "material": mats,
                     "value": {"direction": "down" if side == "SHORT" else "up"}}
         if form == "diff":
+            # ★材料2本の組み方（正本＝engine_tuner_exec.PAIR_OPS・2026-08-12・段C の C-6）を
+            #   一様に引く＝CC が「どれを何割で使うか」の数字を書かない。表に1行 足すと自動で増える。
+            #   ・向き（side）は既に在る決まり DC1 をそのまま使う＝この部品のために新しい決まりを作らない。
+            #   ・閾値は既に在る分位の格子（_q）をそのまま使う。
+            #   ・窓の本数は int_grid から引く＝CC が数字を書かない（点の一覧である件は段A で直す）。
+            op = str(rng.choice(ex.pair_ops()))
+            val = _q(rng, limits) if op == "sub" else {"op": op, "th": _q(rng, limits)}
+            if ex.PAIR_OPS[op]["needs_n"]:
+                val["n"] = int(rng.choice([n for n in limits["int_grid"] if n >= 2]))
             return {"role": role, "form": "diff", "material": mats,
-                    "side": _dc1_side(rng, role, mats, side), "value": _q(rng, limits)}
+                    "side": _dc1_side(rng, role, mats, side), "value": val}
         return {"role": role, "form": "touch", "material": mats, "value": {"const": "TOL_SR"}}
     if form == "candle_dir":
         # DC4（表の向きの決まり）＝反転サイン・ローソクは SHORT＝bear だけ・LONG＝bull だけ
@@ -1047,7 +1065,7 @@ def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
     def _cond_keys(c, lane):
         v = c.get("value", {})
         mats = c.get("material") or []
-        if c["form"] in ("streak", "within_n"):
+        if c["form"] in ex.NEST_FORMS:            # 入れ子形（barssince を足した 2026-08-12・段C の C-6）
             _cond_keys(c["inner"], lane)
             return
         if not mats:
@@ -1060,9 +1078,15 @@ def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
             for sub in ("lo", "hi"):
                 if "threshold_q" in v.get(sub, {}):
                     keys[a] = (sa,)
-        if c["form"] == "diff" and "threshold_q" in v:
-            b = ex._mat_key(mats[1], lane)
-            keys[f"{a}−{b}"] = (sa, _qspec(mats[1], lane))
+        # ★材料2本の組み方（部品 div・corr・2026-08-12・段C の C-6）＝鍵も分布も組み方ごとに違う
+        #   （a−b と a÷b と 相関 は別の分布）。鍵の作り方は実行器の _pair_key を呼ぶ＝2か所に書かない。
+        if c["form"] == "diff":
+            op = ex._pair_op_of(v)
+            tv = v.get("th", v)
+            if "threshold_q" in tv:
+                b = ex._mat_key(mats[1], lane)
+                n_win = int(v["n"]) if ex.PAIR_OPS[op]["needs_n"] else None
+                keys[ex._pair_key(a, b, op, n_win)] = (sa, _qspec(mats[1], lane), (op, n_win))
         # ★閾値とのクロス（部品 cross_val・2026-08-13・段C の C-6）＝列1本の cross の value.th。
         #   閾値は level とまったく同じ分布（その列そのもの）から解くので、鍵も level と同じ a。
         if c["form"] == "cross" and len(mats) == 1 and "threshold_q" in v.get("th", {}):
@@ -1121,7 +1145,13 @@ def build_qtable(df: pd.DataFrame, geo: dict, recipes: list[dict], grid: list[st
             # ★前処理（pre）が在れば、実行器とまったく同じ式を掛けてから分位を出す（2026-08-12（18回目）・4-2）。
             #   式は実行器の _apply_pre を呼ぶ＝ここに書き写さない（2か所に同じ式を持つと片方が腐る）。
             return ex._apply_pre(a, pre) if pre else a
-        s = _arr(specs[0]) if len(specs) == 1 else _arr(specs[0]) - _arr(specs[1])
+        if len(specs) == 1:
+            s = _arr(specs[0])
+        else:
+            # ★材料2本の組み方（2026-08-12・段C の C-6）＝実行器の _pair_series を呼ぶ。
+            #   式をここに書き写さない（書き写すと片方だけ直って黙って腐る＝4-2 の build_qtable と同じ考え）。
+            _op, _n = specs[2] if len(specs) > 2 else ("sub", None)
+            s = ex._pair_series(_arr(specs[0]), _arr(specs[1]), _op, _n)
         s = s[mask]
         s = s[np.isfinite(s)]
         if not len(s):
@@ -1350,19 +1380,28 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
 
     def _cond_slots(prefix, c):
         v = c.get("value", {})
-        if c["form"] in ("streak", "within_n"):
+        if c["form"] in ex.NEST_FORMS:            # 入れ子形（barssince を足した 2026-08-12・段C の C-6）
             slots.append((f"{prefix}.value.n", _cat([n for n in limits["int_grid"] if n >= 2])))
             _cond_slots(f"{prefix}.inner", c["inner"])
             return
         if "threshold_q" in v:
             slots.append((f"{prefix}.value.threshold_q", _cat(qg)))
-        for sub in ("lo", "hi"):
+        # ★"th" を足した（2026-08-12・段C の C-6）。★これは やることの表に無い直しです。
+        #   直す前は value.th の中の分位が『動かせる値』に出てこなかった＝生成のときに1回 引いた分位が
+        #   そのまま固定され、第2段の調整で1度も動かせなかった。当たるのは3か所
+        #   ＝閾値とのクロス（cross_val・2026-08-13）／傾きの閾値（slope・slope_avg）／
+        #     材料2本の割り算・相関（div・corr・2026-08-12）。
+        #   ＝直さないと、いま足す div・corr の閾値が探索の対象にならない（部品を足した意味が消える）。
+        for sub in ("lo", "hi", "th"):
             if "threshold_q" in v.get(sub, {}):
                 slots.append((f"{prefix}.value.{sub}.threshold_q", _cat(qg)))
         if c["form"] in ("slope", "slope_avg"):
             slots.append((f"{prefix}.value.n", _cat(limits["int_grid"])))
         if c["form"] == "slope_avg":
             slots.append((f"{prefix}.value.m", _cat(limits["int_grid"])))
+        # ★材料2本の組み方が窓を要るとき（corr）＝窓の本数も動かせる値（2026-08-12・段C の C-6）
+        if c["form"] == "diff" and ex.PAIR_OPS[ex._pair_op_of(v)]["needs_n"]:
+            slots.append((f"{prefix}.value.n", _cat([n for n in limits["int_grid"] if n >= 2])))
 
     tree = recipe["entry"]["connective"]
 
@@ -1985,6 +2024,112 @@ def selftest() -> int:
                       "（単位が違うものを大小で比べている）")
         except ex.RecipeError:
             pass
+
+    # ── T1-C6f 材料2本の組み方（部品 div・corr・2026-08-12・段C の C-6）──────────────────────
+    #   ①案の中に「割り算」「相関」の条件が実際に出る（＝表に登録しただけで終わっていない）
+    #   ②その条件を検証器が受け付ける（分位の閾値つき）
+    #   ③解決表に組み方ごとの鍵が立ち、その値が「引き算の分位」と違う
+    #     （同じなら解決表が組み方を掛けていない＝嘘の閾値になる。4-2 の番人③(c) と同じ考え方）
+    #   ④メタ確認＝書き忘れ（相関に窓が無い／割り算に閾値が無い）と、表に無い組み方が拒否されること
+    _ma6f = {"family": "RSI", "param": 7, "tf": "5m"}
+    _mb6f = {"family": "RSI", "param": 21, "tf": "5m"}
+    _seen_op6f: set = set()
+    for r in structs:
+        _cs6f, _dd6f = ex._walk(r["entry"]["connective"])
+        for c in list(_cs6f) + list(r.get("pre_filter", [])):
+            for cc in [c] + ([c["inner"]] if c.get("inner") else []):
+                if cc.get("form") == "diff":
+                    _seen_op6f.add(ex._pair_op_of(cc.get("value") or {}))
+    for _o6f in ex.pair_ops():
+        if _o6f not in _seen_op6f:
+            ng.append(f"T1-C6f 番人①: 案 {len(structs)} 本に材料2本の組み方 {_o6f} が1本も出ない"
+                      "（部品を登録しただけで、生成器が作れていない＝使えない部品）")
+    _val6f = {"sub": {"threshold_q": "q50"},
+              "div": {"op": "div", "th": {"threshold_q": "q50"}},
+              "corr": {"op": "corr", "n": 20, "th": {"threshold_q": "q50"}}}
+    for _o6f, _v6f in _val6f.items():
+        try:
+            ex._check_cond({"role": "trigger", "form": "diff", "side": "above",
+                            "material": [_ma6f, _mb6f], "value": _v6f}, "", "T1-C6f", [])
+        except ex.RecipeError as e:
+            ng.append(f"T1-C6f 番人②: 組み方 {_o6f} の条件を検証器が拒否する（{str(e)[:70]}）")
+    _len6f = 600
+    _df6f = pd.DataFrame({
+        "ts": pd.date_range("2024-03-01", periods=_len6f, freq="5min"),
+        "open": 60000.0, "high": 60010.0, "low": 59990.0, "close": 60000.0, "volume": 1.0,
+    })
+    _na6f = ex._material_name(_ma6f, "")[1]
+    _nb6f = ex._material_name(_mb6f, "")[1]
+    # 2本の波の位相をずらす＝引き算・割り算・相関の3つが別々の分布になる（同じなら比べる意味が無い）
+    _df6f[_na6f] = 50.0 + 30.0 * np.sin(np.arange(_len6f) / 7.0)
+    _df6f[_nb6f] = 50.0 + 30.0 * np.sin(np.arange(_len6f) / 7.0 + 1.1)
+    _qv6f: dict = {}
+    for _o6f, _v6f in _val6f.items():
+        _rec6f = {
+            "meta": {"strategy": "e38", "logic_id": "T1-C6f", "side": "SHORT", "lane": ""},
+            "pre_filter": [],
+            "entry": {"connective": {"all": [
+                {"role": "trigger", "form": "diff", "material": [_ma6f, _mb6f],
+                 "side": "above", "value": _v6f}]}},
+            "exits": [], "position": {"mode": "separate", "max_adds": 1},
+        }
+        _k6f = ex._pair_key(ex._mat_key(_ma6f, ""), ex._mat_key(_mb6f, ""), _o6f,
+                            _v6f.get("n") if ex.PAIR_OPS[_o6f]["needs_n"] else None)
+        try:
+            _qt6f = build_qtable(_df6f, {}, [_rec6f], ["q10", "q50", "q90"])
+        except (SystemExit, ex.RecipeError) as e:
+            ng.append(f"T1-C6f 番人③: 組み方 {_o6f} の分位の解決表が作れない（{str(e)[:70]}）")
+            continue
+        if _k6f not in _qt6f:
+            ng.append(f"T1-C6f 番人③: 解決表に組み方 {_o6f} の鍵 {_k6f} が無い（鍵={sorted(_qt6f)}）")
+        elif not np.isfinite(_qt6f[_k6f]["q50"]):
+            ng.append(f"T1-C6f 番人③: 組み方 {_o6f} の q50 が数値でない（{_qt6f[_k6f]['q50']}）")
+        else:
+            _qv6f[_o6f] = float(_qt6f[_k6f]["q50"])
+    for _o6f in ("div", "corr"):
+        if _o6f in _qv6f and "sub" in _qv6f and abs(_qv6f[_o6f] - _qv6f["sub"]) < 1e-9:
+            ng.append(f"T1-C6f 番人③ メタ確認: 組み方 {_o6f} の分位が引き算の分位と一致する"
+                      "＝解決表が組み方を掛けていない（嘘の閾値になる）")
+    for _bad6f, _why6f in (({"op": "corr", "th": {"threshold_q": "q50"}}, "相関に窓（value.n）が無くても通る"),
+                           ({"op": "div"}, "割り算に閾値（value.th）が無くても通る"),
+                           ({"op": "mul", "th": {"threshold_q": "q50"}}, "表に無い組み方 mul が通る")):
+        try:
+            ex._check_cond({"role": "trigger", "form": "diff", "side": "above",
+                            "material": [_ma6f, _mb6f], "value": _bad6f}, "", "T1-C6f メタ確認", [])
+            ng.append(f"T1-C6f 番人④: {_why6f}")
+        except ex.RecipeError:
+            pass
+
+    # ── T1-C6g 何本前に成立したか（部品 barssince・2026-08-12・段C の C-6）─────────────────────
+    #   ①案の中に barssince の条件が実際に出る（＝表に登録しただけで終わっていない）
+    #   ②生成器が作るのは above だけ（below は within_n と同じもの＝二重に作らない・正規形）
+    #   ③その条件を検証器が受け付ける
+    #   ④メタ確認＝side を書き忘れた barssince は拒否されること（数える形なので向きが要る）
+    _bs_sides: list = []
+    for r in structs:
+        _cs6g, _dd6g = ex._walk(r["entry"]["connective"])
+        for c in list(_cs6g) + list(r.get("pre_filter", [])):
+            if c.get("form") == "barssince":
+                _bs_sides.append(c.get("side"))
+    if not _bs_sides:
+        ng.append(f"T1-C6g 番人①: 案 {len(structs)} 本に『何本前に成立したか』（barssince）が1本も出ない"
+                  "（部品を登録しただけで、生成器が作れていない＝使えない部品）")
+    if any(s != "above" for s in _bs_sides):
+        ng.append(f"T1-C6g 番人②: 生成器が barssince の above 以外を作った（{sorted(set(_bs_sides))}）"
+                  "＝within_n と同じ条件を2通りで作っている（正規形）")
+    _in6g = {"role": "trigger", "form": "level", "side": "above",
+             "material": [_ma6f], "value": {"threshold_q": "q80"}}
+    try:
+        ex._check_cond({"role": "trigger", "form": "barssince", "side": "above",
+                        "inner": _in6g, "material": [], "value": {"n": 6}}, "", "T1-C6g", [])
+    except ex.RecipeError as e:
+        ng.append(f"T1-C6g 番人③: barssince の条件を検証器が拒否する（{str(e)[:70]}）")
+    try:
+        ex._check_cond({"role": "trigger", "form": "barssince",
+                        "inner": _in6g, "material": [], "value": {"n": 6}}, "", "T1-C6g メタ確認", [])
+        ng.append("T1-C6g 番人④: side の無い barssince が通る（数える形なので向きが要る）")
+    except ex.RecipeError:
+        pass
 
     _lm6 = dict(lm)
     _lm6["count_range"] = [1, 1]                      # 条件1本＝引き金だけ＝経路を増やす余地が無い

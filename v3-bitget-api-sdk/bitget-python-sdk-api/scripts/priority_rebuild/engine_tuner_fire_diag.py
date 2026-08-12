@@ -84,6 +84,11 @@ def cond_label(c: dict, lane: str) -> str:
     if form in ex.NEST_FORMS:
         inner = cond_label(c["inner"], lane)
         n = int(c.get("value", {}).get("n", 0))
+        if form == "barssince":
+            # ★何本前に成立したか（部品 barssince・2026-08-12・段C の C-6）＝n は窓でなく閾値の本数。
+            _sd = {"above": "以上", "below": "以内", "above_strict": "より多く",
+                   "below_strict": "より短く"}.get(c.get("side", ""), "")
+            return f"[{role}] 最後に成立してから {n}本 {_sd} 経った（内側＝{inner}）"
         kind = "連続" if form == "streak" else "N本以内"
         return f"[{role}] {kind}{n}本（内側＝{inner}）"
     mats = c.get("material") or []

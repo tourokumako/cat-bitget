@@ -49,8 +49,16 @@ GAP_DIAG = 0.5 / 100.0                       # ceil_type 診断の gap（v26_gap
 
 # ── 形（11種・設計書 §2.2）と役割（§2.1）──
 FORMS = ("level", "band", "band_exclude", "slope", "slope_avg", "cross",
-         "streak", "within_n", "diff", "touch", "candle_dir")
-NEST_FORMS = ("streak", "within_n")          # 入れ子形（内側は単純形のみ・1段まで）
+         "streak", "within_n", "barssince", "diff", "touch", "candle_dir")
+# 入れ子形（内側は単純形のみ・1段まで）＝「条件に掛ける部品」。
+# ★barssince（何本前に成立したか・2026-08-12・段C の C-6）を足した。
+#   出どころ＝.claude/ratchet/condition_parts.json の部品 barssince（業界の同じもの＝pine:ta.barssince）。
+#   中身＝内側の条件が最後に成立してから 何本 経ったかを数え、その本数を閾値と比べる。
+#   ★within_n との違い（大事）。
+#     barssince ≤ k は「過去 k+1 本のどこかで成立」＝ within_n(n=k+1) と同じ結果になる。
+#     **新しく書けるのは above の側**＝「最後に成立してから n本 以上 経っている」。
+#     直す前は、これを書く方法が1つも無かった（within_n は『経った』を書けない）。
+NEST_FORMS = ("streak", "within_n", "barssince")
 ROLES = ("env", "trigger", "sufficiency", "location")
 # 側の比較（歩6-1 里程標6 で strict を追加）。above/below は境界を含む（≥ / ≤）。
 # above_strict/below_strict は境界を含まない（> / <）＝過去実装が「〜未満」で書いている枝の写しに要る。
@@ -240,6 +248,62 @@ def _pre_of(m: dict) -> dict | None:
     return m.get("pre") if isinstance(m, dict) else None
 
 
+# ══ 材料2本を組む部品（2026-08-12・段C の C-6・部品 div・corr）══════════════════════════
+#   ★これは何か。列2本の形（diff）が、材料2本を「どう1本の列にまとめるか」の一覧。
+#     直す前は引き算（a − b）の1通りだけがコードに直接 書いてあった。
+#   ★材料の前処理（MATERIAL_PRE）と同じ作りにした＝**表に1行 足すと、組める材料の組 全部に
+#     一度に効く。**形（FORMS）を1個ずつ手で増やす運用はしない（まこさん指摘 2026-08-11・逐語
+#     ＝「これは手書きで思い付いたら増やす。みたいな運用になるのか？すごい原始的なんだが。」）。
+#   ★出どころ＝`.claude/ratchet/condition_parts.json` の足りない部品 div（alphagen:Div ／
+#     gplearn:div）と corr（alphagen:Corr）。CC が思いつきで足していない。
+#   ★書き方（value）。
+#     sub  … value 自体が閾値（2026-08-12 より前と1文字も変えない＝既に在るレシピを壊さない）
+#     div  … value.th が閾値（「a が b の 1.2倍 を超えた」＝a ÷ b と閾値を比べる）
+#     corr … value.th が閾値・value.n が窓の本数（slope と同じ書き方＝n が窓・th が閾値）
+#   ★これで潰れる条件＝ありません（div・corr は 2026-08-12 まで1本も書けなかった。sub は無変更）。
+PAIR_OPS = {
+    "sub":  {"desc": "引き算（a − b）", "sym": "−", "needs_n": False},
+    "div":  {"desc": "割り算（a ÷ b）＝比", "sym": "÷", "needs_n": False},
+    "corr": {"desc": "2本の相関（直近 n本・−1〜1）", "sym": "~", "needs_n": True},
+}
+
+
+def pair_ops() -> list[str]:
+    """材料2本を組む部品の名前（正本＝PAIR_OPS）。生成器がここから引く＝手で一覧を書かない。"""
+    return sorted(PAIR_OPS)
+
+
+def _pair_op_of(v: dict) -> str:
+    """条件の値から、材料2本の組み方を読む。書いていなければ引き算（＝直す前と同じ）。"""
+    return str((v or {}).get("op", "sub"))
+
+
+def _pair_key(akey: str, bkey: str, op: str, n=None) -> str:
+    """分位の解決表の鍵。★sub は 2026-08-12 より前と1文字も変えない（既に在る解決表を壊さない）。"""
+    sym = PAIR_OPS[op]["sym"]
+    return f"corr{int(n)}:{akey}{sym}{bkey}" if op == "corr" else f"{akey}{sym}{bkey}"
+
+
+def _pair_series(a: np.ndarray, b: np.ndarray, op: str, n=None) -> np.ndarray:
+    """材料2本 → 1本の列。
+
+    ★実行器（_eval_cond）と 分位の解決表（engine_tuner_gen.build_qtable）が、どちらもこれを呼ぶ
+      ＝式を2か所に書き写さない（書き写すと片方だけ直って黙って腐る）。
+    """
+    if op == "sub":
+        return a - b
+    if op == "div":
+        # 0 で割ると無限になる。無限は「値なし（NaN）」に直す＝条件の既定 na=fail で不成立になる。
+        with np.errstate(invalid="ignore", divide="ignore"):
+            out = np.divide(a, b, out=np.full(len(a), np.nan, float), where=(b != 0))
+        return np.where(np.isfinite(out), out, np.nan)
+    if op == "corr":
+        # 直近 n本の相関（−1〜1）。rolling は過去 n本だけを見る＝未来は見ない。
+        # ばらつきがゼロの区間（値が動かない）は相関を出せない＝NaN になる（不成立）。
+        return pd.Series(a).rolling(int(n)).corr(pd.Series(b)).to_numpy(float)
+    raise RecipeError(f"[実行器] 材料2本の部品 {op} の実行が未実装")
+
+
 def _material_name(m: dict, lane: str) -> tuple[str, str]:
     """材料1本を検証して (種別, 解決名) を返す。種別＝col/geo/state/time/legacy_col。
 
@@ -308,7 +372,7 @@ def _check_value(v: dict, lane: str, cond_desc: str, legacy_used: list):
     if not isinstance(v, dict):
         _fail("G6", f"{cond_desc}: 値が dict でない（生の数字の閾値は禁止・§2.4）: {v!r}")
     known = {"threshold_q", "const", "mult", "side_sign", "n", "legacy", "direction", "dir", "na", "offset",
-             "lo", "hi", "th", "m"}
+             "lo", "hi", "th", "m", "op"}     # op＝材料2本の組み方（PAIR_OPS・2026-08-12・段C の C-6）
     bad = set(v) - known
     if bad:
         _fail("G6", f"{cond_desc}: 値に未知のフィールド {sorted(bad)}（生の数字の閾値の混入経路＝拒否）")
@@ -341,7 +405,14 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         if inner.get("form") in NEST_FORMS:
             _fail("G5", f"{where}: {form} の内側は単純形のみ（設計書 §2.2）")
         n = (c.get("value") or {}).get("n")
-        if n == 1:
+        if form == "barssince":
+            # ★何本前に成立したか（2026-08-12・段C の C-6）＝数えた本数を閾値と比べる形なので side が要る。
+            #   value.n の意味は「閾値の本数」（streak・within_n の窓の本数とは別）。
+            #   n==1 の禁止（正規形・CP3 提案7）は当てない＝barssince ≤ 1 は「いま か 1本前に成立」で、
+            #   素の条件（いま成立）とは違うため（within_n(n=2) と同じもの）。
+            if c.get("side") not in SIDES:
+                _fail("G5", f"{where}: 形 barssince に side（{'/'.join(SIDES)}）が無い")
+        elif n == 1:
             _fail("G5", f"{where}: {form}(N=1) は素の条件と同値＝生成禁止（正規形・CP3 提案7）")
         _check_value(c.get("value", {}), lane, f"{where}/{form}", legacy_used)
         _check_cond(inner, lane, f"{where}/{form}の内側", legacy_used, in_nest=True)
@@ -360,6 +431,19 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         vv = c.get("value") or {}
         if not isinstance(vv.get("n"), int) or not isinstance(vv.get("m"), int):
             _fail("G5", f"{where}: 形 slope_avg は value.n（遡る本数）と value.m（平均の本数）が要る（§2.2）")
+    # ★材料2本の組み方（部品 div・corr・2026-08-12・段C の C-6）＝正本は PAIR_OPS（上のブロック）。
+    #   書いていなければ引き算（sub）＝2026-08-12 より前と同じ意味になる（既に在るレシピを壊さない）。
+    if form == "diff":
+        vv = c.get("value") or {}
+        op = _pair_op_of(vv)
+        if op not in PAIR_OPS:
+            _fail("G6", f"{where}: 材料2本の組み方に無い部品: {op}"
+                        f"（使えるのは {pair_ops()}／正本＝condition_parts.json）")
+        if op != "sub" and "th" not in vv:
+            _fail("G5", f"{where}: 形 diff の組み方 {op} は value.th（閾値）が要る"
+                        "（引き算だけが value 自体を閾値にする書き方＝2026-08-12 より前の形）")
+        if PAIR_OPS[op]["needs_n"] and not isinstance(vv.get("n"), int):
+            _fail("G5", f"{where}: 形 diff の組み方 {op} は value.n（窓の本数＝整数）が要る（§2.2 slope と同じ書き方）")
     mats = c.get("material") or []
     # ★2026-08-13（段C の C-6・部品①＝閾値とのクロス cross_val）＝cross は2通りの書き方を受ける。
     #   ①列2本（MACD線% × MACDシグナル線% のようなクロス）
@@ -870,6 +954,16 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
         s = pd.Series(inner.astype(float))
         if form == "streak":
             out = (s.rolling(n).sum() >= n).to_numpy()
+        elif form == "barssince":
+            # ★何本前に成立したか（部品 barssince・2026-08-12・段C の C-6）。
+            #   内側の条件が最後に成立したバーからの距離を数え、その本数を閾値 n と比べる。
+            #   まだ一度も成立していない所は「値なし」＝既定 na=fail で不成立になる。
+            #   数えるのは過去に成立したバーだけ＝未来は見ない。
+            idx = np.arange(len(inner))
+            last = np.maximum.accumulate(np.where(inner, idx, -1))
+            bs = np.where(last >= 0, idx - last, np.nan).astype(float)
+            ok = _side_cmp(bs, float(n), c.get("side"))
+            out = np.where(np.isfinite(bs), ok, na_pass).astype(bool)
         else:                                     # within_n＝過去N本のどこかで1回でも成立
             out = (s.rolling(n).max() >= 1).to_numpy()
         if off:
@@ -927,8 +1021,12 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
             out = fin & (pa <= pb) & (a > b)
         return out.astype(bool)
     if form == "diff":
-        d = a - b
-        th = _vnum_q(v, f"{akey}−{_mat_key(mats[1], lane)}", qtable)
+        # ★材料2本の組み方（部品 div・corr・2026-08-12・段C の C-6）＝正本は PAIR_OPS。
+        #   書いていなければ引き算＝鍵も式も 2026-08-12 より前と1文字も変わらない。
+        op = _pair_op_of(v)
+        n_win = int(v["n"]) if PAIR_OPS[op]["needs_n"] else None
+        d = _pair_series(a, b, op, n_win)
+        th = _vnum_q(v.get("th", v), _pair_key(akey, _mat_key(mats[1], lane), op, n_win), qtable)
         ok = (d >= th) if c.get("side") == "above" else (d <= th)
         return np.where(np.isfinite(d), ok, na_pass).astype(bool)
     if form == "touch":
