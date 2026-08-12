@@ -337,10 +337,12 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
                                        if len({str(p) for p in ps}) >= 2]
     cands += [("fn", pr) for pr in same_fn_family_pairs(fams)]
     # ③同じ列の「素」と「前処理を掛けたもの」＝『高値が 直前n本の最高値を上抜けた』（新高値）
-    #   ★クロスのときだけ足す。差・タッチは閾値が要るが、前処理を掛けた材料に分位はいま使えない
-    #     （分位の解決表が前処理を見ていない＝実行器が G5 で拒否する・2026-08-13）。
-    #     解決表を前処理に対応させたら、この「クロスのときだけ」を外す。
-    if form == "cross" and limits is not None and ex.MATERIAL_PRE:
+    #   ★2026-08-13 は「クロスのときだけ」に絞っていた（差・タッチは閾値が要るのに、前処理つきの材料に
+    #     分位を使えなかったため）。2026-08-12（18回目） に解決表を前処理に対応させたので、その絞りを外した
+    #     ＝差・タッチでも前処理つきの組を作る（段C の 4-2）。
+    #   ★使えるのは「元の列と同じ単位のまま」の部品だけ（ts_max・ts_min）。順位・ばらつきは単位が
+    #     変わるので、元の列と大小を比べても意味が無い＝水準（level・band）で使う（一覧＝MATERIAL_PRE）。
+    if limits is not None and ex.pre_ops(same_unit=True):
         cands += [("pre", f) for f in fams]
     if not cands:
         raise SampleError(f"役割 {role} で列2本の形を組める family が無い（表の系統の中）")
@@ -359,7 +361,7 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
             # ★同じ列の「素」と「前処理を掛けたもの」。本数は int_grid から引く＝CC が数字を書かない。
             opts = sorted({str(p): p for p in fams[c]}.values(), key=_pkey)
             p0 = opts[int(rng.integers(len(opts)))]
-            op = str(rng.choice(sorted(ex.MATERIAL_PRE)))
+            op = str(rng.choice(ex.pre_ops(same_unit=True)))
             n_pre = int(rng.choice([n for n in limits["int_grid"] if n >= 2]))
             pair = [{"family": c, "param": p0, "tf": tf},
                     {"family": c, "param": p0, "tf": tf, "pre": {"op": op, "n": n_pre}}]
@@ -453,6 +455,17 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
         return {"role": role, "form": "level", "material": [m],
                 "side": str(rng.choice(["above", "below"])),
                 "value": {"n": int(rng.choice(limits["hour_grid"]))}}
+    # ★水準の形（level・band・band_exclude）には、単位の変わる前処理を掛けられる（2026-08-12（18回目）・4-2）。
+    #   ＝『いまの値が 直近n本の中で上位20%』（ts_rank）／『直近n本のばらつきが大きいとき』（ts_std）。
+    #   ・掛けるか掛けないかは「素のまま」を選択肢の1つに入れて一様に引く＝CC が確率の数字を書かない。
+    #   ・閾値は下の既に在る決まり（DC1・DC2・分位の格子）がそのまま決める＝新しい決まりを作らない。
+    #   ・本数は int_grid から引く＝CC が数字を書かない。
+    if form in ("level", "band", "band_exclude"):
+        _pre_opts = [None] + ex.pre_ops(same_unit=False)
+        _op = _pre_opts[int(rng.integers(len(_pre_opts)))]
+        if _op is not None:
+            m = {**m, "pre": {"op": _op,
+                              "n": int(rng.choice([n for n in limits["int_grid"] if n >= 2]))}}
     if form == "cross_val":
         # ★閾値とのクロス（部品 cross_val・2026-08-13・段C の C-6）＝『RSI が 70 を上抜けた』。
         #   実行器へ渡す形は cross（列1本 ＋ value.th）＝新しい形の名前を実行器に作らない。
@@ -1012,8 +1025,23 @@ def structure_breakdown(recipes: list[dict], catalog_total: int) -> dict:
 
 
 # ══ 分位の解決表（値決め窓・探索開始時に1回固定・設計書 §5-4）═══════════════════════════════
+def _qspec(m: dict, lane: str) -> tuple:
+    """分位の解決表が1本の材料を読むのに要る指定＝(素の列名, 前処理 or None)。
+
+    ★前処理（pre）も一緒に返す（2026-08-12（18回目）・段C の 4-2）。直す前は列名だけを返していたので、
+      解決表は前処理を見ずに素の列の分布から閾値を作っていた＝前処理つきの材料に分位を当てると
+      嘘の閾値になるため、実行器が G5 で拒否していた（fail-closed）。ここで前処理を一緒に渡し、
+      build_qtable が列を読んだあとに同じ前処理を掛けてから分位を出す形にして、その拒否を外す。
+    """
+    return (ex._material_name(m, lane)[1], ex._pre_of(m))
+
+
 def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
-    """レシピ群が使う分位の鍵 → 列の組（単列 or 差の2列）。"""
+    """レシピ群が使う分位の鍵 → 材料の指定の組（単材料 or 差の2材料）。
+
+    ★指定1件＝`_qspec` が返す (素の列名, 前処理 or None)。鍵は `ex._mat_key` が作る（前処理を含む
+      ＝前処理を掛けると分布が変わるので、素の列とは別の鍵になる）。
+    """
     keys: dict[str, tuple] = {}
 
     def _cond_keys(c, lane):
@@ -1025,19 +1053,20 @@ def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
         if not mats:
             return
         a = ex._mat_key(mats[0], lane)
+        sa = _qspec(mats[0], lane)
         if c["form"] == "level" and "threshold_q" in v:
-            keys[a] = (a,)
+            keys[a] = (sa,)
         if c["form"] in ("band", "band_exclude"):
             for sub in ("lo", "hi"):
                 if "threshold_q" in v.get(sub, {}):
-                    keys[a] = (a,)
+                    keys[a] = (sa,)
         if c["form"] == "diff" and "threshold_q" in v:
             b = ex._mat_key(mats[1], lane)
-            keys[f"{a}−{b}"] = (a, b)
+            keys[f"{a}−{b}"] = (sa, _qspec(mats[1], lane))
         # ★閾値とのクロス（部品 cross_val・2026-08-13・段C の C-6）＝列1本の cross の value.th。
         #   閾値は level とまったく同じ分布（その列そのもの）から解くので、鍵も level と同じ a。
         if c["form"] == "cross" and len(mats) == 1 and "threshold_q" in v.get("th", {}):
-            keys[a] = (a,)
+            keys[a] = (sa,)
 
     for r in recipes:
         lane = r["meta"].get("lane", "")
@@ -1075,19 +1104,24 @@ def build_qtable(df: pd.DataFrame, geo: dict, recipes: list[dict], grid: list[st
         ts = pd.to_datetime(df["ts"])
         mask = (ts >= start) & (ts < end)
     table: dict[str, dict] = {}
-    for key, cols in needed_qkeys(recipes).items():
-        def _arr(name):
+    for key, specs in needed_qkeys(recipes).items():
+        def _arr(spec):
+            name, pre = spec
             if name in geo:
-                return np.asarray(geo[name], float)
-            if name in df.columns:
-                return df[name].to_numpy(float)
-            # 別名（D4 の直し・2026-08-07）＝実行器 _col_array（686行）と同じ扱いにそろえる。
-            # 直す前はここが別名を見ず、別名で持たれている7列のどれかに分位が当たると走行が丸ごと止まった。
-            run_col = ex.RUNTIME_ALIAS.get(name)
-            if run_col is not None and run_col in df.columns:
-                return df[run_col].to_numpy(float)
-            raise SystemExit(f"[解決表エラー] 列 {name} が実行データに無い（材料の組み立て漏れ）")
-        s = _arr(cols[0]) if len(cols) == 1 else _arr(cols[0]) - _arr(cols[1])
+                a = np.asarray(geo[name], float)
+            elif name in df.columns:
+                a = df[name].to_numpy(float)
+            else:
+                # 別名（D4 の直し・2026-08-07）＝実行器 _col_array（686行）と同じ扱いにそろえる。
+                # 直す前はここが別名を見ず、別名で持たれている7列のどれかに分位が当たると走行が丸ごと止まった。
+                run_col = ex.RUNTIME_ALIAS.get(name)
+                if run_col is None or run_col not in df.columns:
+                    raise SystemExit(f"[解決表エラー] 列 {name} が実行データに無い（材料の組み立て漏れ）")
+                a = df[run_col].to_numpy(float)
+            # ★前処理（pre）が在れば、実行器とまったく同じ式を掛けてから分位を出す（2026-08-12（18回目）・4-2）。
+            #   式は実行器の _apply_pre を呼ぶ＝ここに書き写さない（2か所に同じ式を持つと片方が腐る）。
+            return ex._apply_pre(a, pre) if pre else a
+        s = _arr(specs[0]) if len(specs) == 1 else _arr(specs[0]) - _arr(specs[1])
         s = s[mask]
         s = s[np.isfinite(s)]
         if not len(s):
@@ -1857,12 +1891,98 @@ def selftest() -> int:
                 ng.append(f"T1-C6c 番人③: {_why}")
             except ex.RecipeError:
                 pass
+    # ── T1-C6c 番人③（2026-08-12（18回目）・段C の 4-2 で逆向きに書き換えた）─────────────────────
+    #   直す前（2026-08-13）は「前処理つきの材料に分位を渡すと拒否される」を確かめていた
+    #   ＝解決表が前処理を見ていなかったので、拒否が正しい状態だった（fail-closed）。
+    #   いまは解決表が前処理を掛けてから分位を出すので、次の3つを確かめる。
+    #     (a) 前処理つき ＋ 分位の条件を検証器が受け付ける
+    #     (b) 解決表に「前処理込みの鍵」が立ち、その値が数値になる
+    #     (c) メタ確認＝その値が「素の列の分位」と違う（同じなら解決表が前処理を掛けていない＝嘘の閾値）
+    if _pre6:
+        try:
+            ex._check_cond({"role": "trigger", "form": "level", "side": "above",
+                            "material": [_m_ok], "value": {"threshold_q": "q90"}}, "", "T1-C6c", [])
+        except ex.RecipeError as e:
+            ng.append(f"T1-C6c 番人③(a): 前処理つきの材料に分位を渡すと拒否される（{str(e)[:70]}）")
+        _nm6 = ex._material_name(_m_ok, "")[1]
+        _k6 = ex._mat_key(_m_ok, "")
+        _n6 = 600
+        _df6 = pd.DataFrame({
+            "ts": pd.date_range("2024-03-01", periods=_n6, freq="5min"),
+            "open": 60000.0, "high": 60010.0, "low": 59990.0, "close": 60000.0, "volume": 1.0,
+        })
+        # 波にする＝直前n本の最大値が いまの値より大きい所が多く出る（素の分位との差が見える）
+        _df6[_nm6] = 50.0 + 45.0 * np.sin(np.arange(_n6) / 7.0)
+        _rec6 = {
+            "meta": {"strategy": "e38", "logic_id": "T1-C6c", "side": "SHORT", "lane": ""},
+            "pre_filter": [],
+            "entry": {"connective": {"all": [
+                {"role": "trigger", "form": "level", "material": [_m_ok],
+                 "side": "above", "value": {"threshold_q": "q90"}}]}},
+            "exits": [], "position": {"mode": "separate", "max_adds": 1},
+        }
+        try:
+            _qt6 = build_qtable(_df6, {}, [_rec6], ["q10", "q50", "q90"])
+        except (SystemExit, ex.RecipeError) as e:
+            _qt6 = None
+            ng.append(f"T1-C6c 番人③(b): 前処理つきの分位の解決表が作れない（{str(e)[:70]}）")
+        if _qt6 is not None:
+            if _k6 not in _qt6:
+                ng.append(f"T1-C6c 番人③(b): 解決表に前処理込みの鍵 {_k6} が無い（鍵={sorted(_qt6)}）")
+            elif not np.isfinite(_qt6[_k6]["q90"]):
+                ng.append(f"T1-C6c 番人③(b): 前処理つきの q90 が数値でない（{_qt6[_k6]['q90']}）")
+            elif abs(float(_qt6[_k6]["q90"])
+                     - float(np.quantile(_df6[_nm6].to_numpy(float), 0.9))) < 1e-9:
+                ng.append("T1-C6c 番人③(c) メタ確認: 前処理つきの分位が素の列の分位と一致する"
+                          "＝解決表が前処理を掛けていない（嘘の閾値になる）")
+
+    # ── T1-C6d 前処理つきの組は クロス以外（差・タッチ）にも出る（2026-08-12（18回目）・段C の 4-2）──
+    #   直す前は _pair_materials が「クロスのときだけ」前処理つきの組を足していた（分位が使えなかったため）。
+    _pre6d = 0
+    for i in range(200):
+        try:
+            _pr = _pair_materials(np.random.default_rng([89, 1, i]), pool, tfs_small,
+                                  "trigger", _tbl5, lm, "diff")
+        except (SampleError, KeyError):
+            continue
+        if any(m.get("pre") for m in _pr):
+            _pre6d += 1
+    if _pre6d == 0:
+        ng.append("T1-C6d: 差（diff）で『素の列 × 前処理を掛けた同じ列』の組を200回 引いて1本も作らない"
+                  "（クロス以外に前処理つきが出ない＝4-2 の絞り外しが効いていない）")
+
+    # ── T1-C6e 水準の前処理（部品 ts_rank・ts_std・2026-08-12（18回目）・段C の 4-2 の本体）──────────
+    #   ①案の中に「水準 ＋ 単位の変わる前処理」の条件が実際に出る（＝使える部品になっている）
+    #   ②その条件を検証器が受け付ける（分位の閾値つき）
+    #   ③メタ確認＝列2本の形に渡すと拒否される（単位が違うものを大小で比べさせない）
+    _lv_ops = ex.pre_ops(same_unit=False)
+    if not _lv_ops:
+        ng.append("T1-C6e: 単位の変わる前処理の部品が1つも登録されていない（ts_rank・ts_std）")
+    else:
+        _seen_lv: set = set()
+        for r in structs:
+            _cs, _dd = ex._walk(r["entry"]["connective"])
+            for c in list(_cs) + list(r.get("pre_filter", [])):
+                for cc in [c] + ([c["inner"]] if c.get("inner") else []):
+                    for m in (cc.get("material") or []):
+                        p = m.get("pre")
+                        if p and p["op"] in _lv_ops:
+                            _seen_lv.add((cc["form"], p["op"]))
+        if not _seen_lv:
+            ng.append(f"T1-C6e 番人①: 案 {len(structs)} 本に「水準 ＋ {_lv_ops}」の条件が1本も出ない"
+                      "（部品を登録しただけで、生成器が作れていない＝使えない部品）")
+        _m_lv = {"family": "RSI", "param": 14, "tf": "5m", "pre": {"op": _lv_ops[0], "n": 20}}
+        try:
+            ex._check_cond({"role": "trigger", "form": "level", "side": "above",
+                            "material": [_m_lv], "value": {"threshold_q": "q80"}}, "", "T1-C6e", [])
+        except ex.RecipeError as e:
+            ng.append(f"T1-C6e 番人②: 水準の前処理つきの条件を検証器が拒否する（{str(e)[:70]}）")
         try:
             ex._check_cond({"role": "trigger", "form": "diff", "side": "above",
-                            "material": [_pre6[0][0], _m_ok],
-                            "value": {"threshold_q": "q50"}}, "", "T1-C6c メタ確認", [])
-            ng.append("T1-C6c 番人③: 前処理を掛けた材料に分位（threshold_q）を渡しても通る"
-                      "（分位の解決表は前処理を見ていない＝嘘の閾値になる）")
+                            "material": [{"family": "RSI", "param": 14, "tf": "5m"}, _m_lv],
+                            "value": {"threshold_q": "q50"}}, "", "T1-C6e メタ確認", [])
+            ng.append(f"T1-C6e 番人③: 列2本の形（差）に単位の変わる前処理 {_lv_ops[0]} を渡しても通る"
+                      "（単位が違うものを大小で比べている）")
         except ex.RecipeError:
             pass
 

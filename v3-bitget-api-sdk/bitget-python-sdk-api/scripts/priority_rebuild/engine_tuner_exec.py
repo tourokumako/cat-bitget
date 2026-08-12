@@ -191,10 +191,27 @@ def _tree_depth(node, depth=0) -> int:
 #       いまのバーを含めると、自分自身を超えられない＝クロスで「更新した瞬間」を書けない。
 #     ②過去だけを見る＝未来参照なし（H2）。
 #   一覧の正本＝.claude/ratchet/condition_parts.json の "have"（id が下の鍵と同じ）。
+#   ★`same_unit`＝掛けたあとの値が、元の列と同じ単位のままか。
+#     ts_max・ts_min は同じ単位（RSI の最大値は RSI と同じ 0〜100）＝元の列と大小を比べられる
+#     ＝列2本の形（クロス・差・タッチ）に使える。
+#     ts_rank は 0〜1・ts_std はばらつきの幅で、元の列とは単位が違う＝元の列と大小を比べても
+#     意味が無い（RSI 0〜100 と 順位 0〜1 を比べても、いつも RSI の方が大きいだけ）。
+#     だから列2本の形には使わず、水準（level・band）で閾値と比べる形で使う。
+#     ★これは好みの決まりではなく、単位が違うものは比べられないという算数です。
+#     ★これで潰れる条件＝ありません（ts_rank・ts_std は 2026-08-12（18回目） まで1つも書けなかった）。
 MATERIAL_PRE = {
-    "ts_max": "直前の n本の最大値（いまのバーを含めない）",
-    "ts_min": "直前の n本の最小値（いまのバーを含めない）",
+    "ts_max": {"desc": "直前の n本の最大値（いまのバーを含めない）", "same_unit": True},
+    "ts_min": {"desc": "直前の n本の最小値（いまのバーを含めない）", "same_unit": True},
+    "ts_rank": {"desc": "いまの値が 直近 n本の中で何番目か（0〜1・いまのバーを含める）",
+                "same_unit": False},
+    "ts_std": {"desc": "直近 n本のばらつき（標準偏差・いまのバーを含める）", "same_unit": False},
 }
+
+
+def pre_ops(same_unit: bool | None = None) -> list[str]:
+    """前処理の部品の名前を返す。same_unit を指定すると、その種類だけに絞る。"""
+    return sorted(k for k, v in MATERIAL_PRE.items()
+                  if same_unit is None or v["same_unit"] is same_unit)
 
 
 def _apply_pre(a: np.ndarray, pre: dict) -> np.ndarray:
@@ -207,6 +224,15 @@ def _apply_pre(a: np.ndarray, pre: dict) -> np.ndarray:
     if op == "ts_min":
         # H2OK: shift(1) は過去だけを見る（未来は見ない）。ts_max と同じ理由で いまのバーを含めない。
         return s.shift(1).rolling(n).min().to_numpy(float)
+    if op == "ts_rank":
+        # ★いまのバーを含める。書きたい条件が「いまの値が 過去100本で上位20%」だから
+        #   （いまの値を外すと、いまの値の順位を出せない）。rolling は過去 n本だけ＝未来は見ない。
+        #   pct=True＝順位を 0〜1 に直す（一番小さい値が 1/n・一番大きい値が 1.0）。
+        return s.rolling(n).rank(pct=True).to_numpy(float)
+    if op == "ts_std":
+        # ★いまのバーを含める。「直近 n本のばらつき」＝いまを含めた n本の散らばりを見るため。
+        #   rolling は過去 n本だけ＝未来は見ない。
+        return s.rolling(n).std().to_numpy(float)
     raise RecipeError(f"[実行器] 材料の前処理 {op} の実行が未実装")
 
 
@@ -352,18 +378,20 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         mats = []                                 # ローソク列＝バーそのもの（材料指定なし）
     elif not need2 and len(mats) != 1:
         _fail("G6", f"{where}: 形 {form} は列1本の材料（{len(mats)}本）")
-    # ★前処理（pre）を掛けた材料に分位（threshold_q）は使わせない（2026-08-13・fail-closed）。
-    #   理由＝分位の解決表（build_qtable）は前処理を見ずに素の列の分布から閾値を作る。いま許すと、
-    #   「前処理を掛けた値」を「素の列の分位」と比べることになり、嘘の閾値になる。
-    #   ★次に解決表を前処理に対応させたら、この行を外す（そのときは番人も一緒に直す）。
-    if any(_pre_of(m) for m in mats):
-        def _has_q(v):
-            if not isinstance(v, dict):
-                return False
-            return "threshold_q" in v or any(_has_q(v[k]) for k in ("lo", "hi", "th") if k in v)
-        if _has_q(c.get("value") or {}):
-            _fail("G5", f"{where}: 前処理（pre）を掛けた材料に分位（threshold_q）は使えない"
-                        "（分位の解決表が前処理を見ていない・2026-08-13）")
+    # ★列2本の形（クロス・差・タッチ）には、単位の変わる前処理は使わせない（2026-08-12（18回目）・段C の 4-2）。
+    #   理由＝単位が違うものを大小で比べても意味が無い（RSI 0〜100 と 順位 0〜1）。一覧＝MATERIAL_PRE。
+    if form in ("cross", "diff", "touch") and len(mats) == 2:
+        for m in mats:
+            p = _pre_of(m)
+            # ★一覧に無い部品名・不正な本数は、この下の _material_name が拒否する（ここでは見ない）。
+            if p and MATERIAL_PRE.get(p.get("op"), {}).get("same_unit") is False:
+                _fail("G5", f"{where}: 列2本の形 {form} に、単位の変わる前処理 {p['op']} は使えない"
+                            f"（使えるのは {pre_ops(same_unit=True)}／{p['op']} は水準 level・band で使う）")
+    # ★前処理（pre）を掛けた材料にも分位（threshold_q）を使える（2026-08-12（18回目）・段C の 4-2）。
+    #   2026-08-13 はここで拒否していた（fail-closed）＝分位の解決表（engine_tuner_gen.build_qtable）が
+    #   前処理を見ずに素の列の分布から閾値を作っていて、許すと嘘の閾値になったため。
+    #   いまは解決表が列を読んだあとに実行器の _apply_pre を掛けてから分位を出す（鍵も _mat_key が
+    #   前処理込みで分ける）ので、拒否を外した。番人＝engine_tuner_gen の T1-C6c ③。
     for m in mats:
         kind, name = _material_name(m, lane)
         if kind == "geo" and iref.RANGE_GEO_REF[name]["kind"] != "ratio":

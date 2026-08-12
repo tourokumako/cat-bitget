@@ -132,6 +132,22 @@ def p_ts_min(a: np.ndarray, n: int) -> np.ndarray:
     return pd.Series(a).shift(1).rolling(int(n)).min().to_numpy(float)
 
 
+def p_ts_rank(a: np.ndarray, n: int) -> np.ndarray:
+    """⑰いまの値が 直近 n本の中で何番目か（★2026-08-12（18回目） の段C の 4-2 で足した部品）。
+
+    ★いまのバーを含める（ts_max・ts_min とは逆）。理由＝書きたい条件が「いまの値が
+      過去100本で上位20%」だから。いまの値を外すと、いまの値の順位を出せない。
+      値は 0〜1（一番小さい値が 1/n・一番大きい値が 1.0）。rolling は過去 n本だけ＝未来は見ない。
+    """
+    return pd.Series(a).rolling(int(n)).rank(pct=True).to_numpy(float)
+
+
+def p_ts_std(a: np.ndarray, n: int) -> np.ndarray:
+    """⑱直近 n本のばらつき（標準偏差・★2026-08-12（18回目） の段C の 4-2 で足した部品）。
+    ts_rank と同じく いまのバーを含める（「直近 n本の散らばり」だから）。"""
+    return pd.Series(a).rolling(int(n)).std().to_numpy(float)
+
+
 def p_cross_val(n: int, th: float) -> np.ndarray:
     """⑭閾値とのクロス（★2026-08-13 の段C の C-6 で足した部品）。
 
@@ -215,7 +231,15 @@ def _c_within_n(df, cols, v):
     return p_shift_cond(p_any_n(inner, v["n"]), v.get("offset", 0))
 
 
-_PRE_PARTS = {"ts_max": p_ts_max, "ts_min": p_ts_min}
+_PRE_PARTS = {"ts_max": p_ts_max, "ts_min": p_ts_min,
+              "ts_rank": p_ts_rank, "ts_std": p_ts_std}
+
+
+def _c_level_pre(df, cols, v):
+    """★材料の前処理を掛けた列の「水準」（部品 ts_rank・ts_std・2026-08-12（18回目） の段C の 4-2）。
+    式は _c_level と同じ。見る列が「同じ列に部品を1つ掛けたもの」になるだけ。"""
+    a = p_value(df, cols[0])
+    return p_cmp(_PRE_PARTS[v["op"]](a, v["n"]), v["th"], v["side"])
 
 
 def _c_cross_pre(df, cols, v):
@@ -232,7 +256,7 @@ def _c_cross_pre(df, cols, v):
                  p_not(p_cmp(p_sub(a, b), 0.0, "below")))
 
 
-COMPOSE = {"cross_pre": _c_cross_pre,
+COMPOSE = {"cross_pre": _c_cross_pre, "level_pre": _c_level_pre,
            "level": _c_level, "band": _c_band, "band_exclude": _c_band_exclude,
            "slope": _c_slope, "slope_avg": _c_slope_avg, "cross": _c_cross,
            "diff": _c_diff, "touch": _c_touch, "candle_dir": _c_candle_dir,
@@ -293,6 +317,17 @@ def _cases(m1: dict, m2: dict) -> list[dict]:
              real={"form": "cross", "value": {"direction": "up"},
                    "material": [m1, {**m1, "pre": {"op": "ts_min", "n": 6}}]},
              cols=1, v={"direction": "up", "n": 6, "op": "ts_min"}),
+        # ★材料の前処理の「水準」（部品 ts_rank・ts_std・2026-08-12（18回目） の段C の 4-2 で足した）。
+        #   『いまの値が 直近20本で上位20%』『直近20本のばらつきが 10 より大きい』。
+        #   2026-08-12（18回目） より前は、この2つは水準（閾値が要る）なので書けなかった。
+        dict(form="level", compose="level_pre", label="直近20本の中の順位 ≥0.8",
+             real={"form": "level", "side": "above", "value": {"n": 0.8},
+                   "material": [{**m1, "pre": {"op": "ts_rank", "n": 20}}]},
+             cols=1, v={"th": 0.8, "side": "above", "n": 20, "op": "ts_rank"}),
+        dict(form="level", compose="level_pre", label="直近20本のばらつき ≥10",
+             real={"form": "level", "side": "above", "value": {"n": 10.0},
+                   "material": [{**m1, "pre": {"op": "ts_std", "n": 20}}]},
+             cols=1, v={"th": 10.0, "side": "above", "n": 20, "op": "ts_std"}),
         dict(form="diff", real={"form": "diff", "side": "above", "value": {"n": 0.5},
                                 "material": [m1, m2]},
              cols=2, v={"th": 0.5, "side": "above"}),
