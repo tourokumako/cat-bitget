@@ -787,6 +787,12 @@ net = ゼロ（実験ゼロ・採点ゼロ・売買記録CSV 0本）
 | `.claude/ratchet/engine_tuner_step2_condition_format.md` | §2.2 の表に barssince の行と、diff の組み方の説明 |
 | `.claude/ratchet/materials.md` | 機械生成（★5・★6 が追随） |
 | `.claude/ratchet/engine_tuner_milestones.md` | C-6 に `✅済`／次にやることを段A へ |
-| `.claude/state/next_step.md`／`WORKFLOW.md`／本ファイル | 記録 |
+| `.claude/state/next_step.md`／`WORKFLOW.md`／`lessons_active.md`／本ファイル | 記録 |
 
-**★git commit は していません（まこさんの OK 待ち）。**
+## §9 git commit
+
+**★済み（まこさん OK 2026-08-12・逐語「コミットOK」）＝`d2e4417`（13ファイル・1,074行 追加・181行 削除）。**
+
+**★`condition_parts.json` の差分が 568行と大きいのは、書き出しのときの字下げの付け直し**（`json.dumps(indent=1)`）で、中身は落ちていません。前の版と機械で比べて確認しました＝鍵12個 一致／部品の id 落ちゼロ／`form_decomposition` は前から在る11件を1文字も変えていない／足したのは `barssince` の1件だけ。
+
+**★機密ファイル・売買記録CSV・`results/` は1つも commit していません**（`results/` は未追跡のまま）。**審判 `score.py`・戦略のコード・累積の試した回数は1バイトも触っていません。**
