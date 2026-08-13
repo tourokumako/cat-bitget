@@ -355,9 +355,22 @@ def _a1_place1(cfg: dict, cat_keys: set[str]) -> dict:
 def _a1_place2(lim: dict) -> dict:
     """場所2＝`recipes/search_limits.json`（使い方の中の本数・閾値の段・上限）。"""
     lists = _num_lists(lim)
-    # 範囲＝下限と上限の組で持っているもの（役割ごとの保有時間の上限）
-    rng_rows = [k for k, v in (lim.get("hold_range_by_role") or {}).items()
-                if isinstance(v, dict) and {"lo_bars", "hi_bars"} <= set(v)]
+    # 範囲＝下限と上限の組で持っているもの。
+    # ★2026-08-13（段A の A-5）に、鍵の名前を決め打ちにするのをやめた。
+    #   直す前は `hold_range_by_role` だけを見ていたので、範囲を新しく足しても この欄が増えなかった。
+    #   いまは中身の形（下限と上限の組を持つか）で見る＝範囲が増えれば機械が自分で数える。
+    def _is_range(v) -> bool:
+        return isinstance(v, dict) and any(
+            {lo, hi} <= set(v) for lo, hi in (("lo", "hi"), ("lo_bars", "hi_bars")))
+
+    rng_rows = []
+    for k, v in lim.items():
+        if str(k).startswith("_"):
+            continue
+        if _is_range(v):
+            rng_rows.append(k)
+        elif isinstance(v, dict):                      # 入れ子（役割ごとの保有時間の上限）
+            rng_rows += [f"{k}.{k2}" for k2, v2 in v.items() if _is_range(v2)]
     # 分位の段＝文字の並び（"q10" …）＝数ではないが、段の数は決まっている
     qg = lim.get("quantile_grid")
     q_n = len(qg) if isinstance(qg, list) else 0
@@ -1032,7 +1045,14 @@ def render_md(body: dict) -> str:
         for p in a1["places"]:
             L.append(f"| {p['番号']} | {p['場所']} | {p['何の数字か']} | "
                      f"**{p['並び']} 件** | {p['数字']} 個 | {p['範囲']} 件 |")
-        L += ["", "**場所ごとの中身（全部 実物から）**", "",
+        L += ["",
+              "**★この欄の「範囲で探せる」は、設定ファイルそのものに 下限と上限の形で書いてある項目の数です。**",
+              "2026-08-13（段A の A-4・A-5）から、**engine_tuner は 場所1 の数字を「範囲の両端」として使います**"
+              "＝いちばん小さい数字と いちばん大きい数字の間なら、どの数字でも試せます"
+              "（例＝RSI は 7〜21 の整数 全部。設定ファイルに並んでいるのは 7・9・14・21 の4つだけ）。"
+              "範囲の正本＝`engine_tuner_gen.material_ranges`。"
+              "**まこさんが範囲を決めたときの置き場所＝`recipes/search_limits.json` の `material_param_ranges`（いまは空）。**",
+              "", "**場所ごとの中身（全部 実物から）**", "",
               f"- **場所1**＝指標のパラメータ。この {a1['places'][0]['並び']} 件の並びが、"
               f"下の表の {len(e['期間'])} 種類・{sum(len(v) for v in e['期間'].values())} 通りに広がります。"
               "★数える鍵は「名前が `_periods` で終わるもの」ではなく、"

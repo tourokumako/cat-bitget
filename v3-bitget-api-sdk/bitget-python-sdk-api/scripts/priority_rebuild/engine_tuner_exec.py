@@ -357,6 +357,28 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
     return "col", f"{name}__{tf}"
 
 
+_INT_RANGE_MEMO = None
+
+
+def _check_int_range(n, where: str) -> None:
+    """★2026-08-13（段A の A-5）＝使い方の中の本数が「探せる範囲」の中かを見る（fail-closed）。
+
+    範囲の正本＝`engine_tuner_gen.int_range_of`（`recipes/search_limits.json` の `int_range`）。
+    ★恒等検収のレーン（lane="legacy"）は対象外＝**過去の実装の書き写しには範囲の外の本数が実際に在る**
+      （実測 2026-08-13＝`identity_l1_legacy.json` と `identity_s1_legacy.json` に 240本、
+        `identity_s2_legacy.json` に 30本）。これを止めると恒等検収が壊れる。
+    ★循環 import を避けるため、呼ばれた時に読む。
+    """
+    global _INT_RANGE_MEMO
+    if _INT_RANGE_MEMO is None:                  # 設定ファイルは1回だけ読む（条件ごとに読むと遅い）
+        import engine_tuner_gen as _gen
+        lm, _w = _gen.load_limits()
+        _INT_RANGE_MEMO = _gen.int_range_of(lm)
+    lo, hi = _INT_RANGE_MEMO
+    if not (lo <= int(n) <= hi):
+        _fail("G5", f"{where}: 本数 {n} が探せる範囲の外（{lo}〜{hi}・recipes/search_limits.json の int_range）")
+
+
 def _check_param_range(fam: str, param) -> None:
     """★2026-08-13（段A の A-4）＝パラメータが「その指標の範囲」の中かを見る（fail-closed）。
 
@@ -412,6 +434,14 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
     form = c.get("form")
     if form not in FORMS:
         _fail("G6", f"{where}: 対応表に無い形: {form}")
+    # ★2026-08-13（段A の A-5）＝「使い方の中の本数」が探せる範囲の中かを見る。
+    #   当てる形を限る＝value.n は形によって意味が違う（下の形は本数だが、出口の枝の hold_min は「分」）。
+    #   本数＝連続・以内・何本前（入れ子の形）／傾き（slope・slope_avg）の遡る本数と平均の本数。
+    if lane != "legacy" and (form in NEST_FORMS or form in ("slope", "slope_avg")):
+        _v5 = c.get("value") or {}
+        for _k5 in ("n", "m"):
+            if isinstance(_v5.get(_k5), int):
+                _check_int_range(_v5[_k5], f"{where}: {_k5}")
     if form in NEST_FORMS:
         if in_nest:
             _fail("G5", f"{where}: 入れ子は1段まで（{form} の中に入れ子形）")

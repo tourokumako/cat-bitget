@@ -291,6 +291,37 @@ def draw_param(rng, fam: str, ranges: dict | None = None):
     return vals[0] if len(vals) == 1 else tuple(vals)
 
 
+def int_range_of(limits: dict, n_min: int = 1) -> tuple[int, int]:
+    """使い方の中の本数（傾きを何本で見るか・何本 続いたか・何本 以内か）の範囲（段A の A-5・2026-08-13）。
+
+    ★直す前＝`int_grid` の 3・6・12・24 の**4つだけ**。一覧に無い本数（5本・7本・19本）は
+      何回 試しても出てこなかった（要件の「作ってはいけないもの」2番に当たる状態）。
+    ★直したあと＝下限と上限の間の整数を全部 試せる。
+    ★範囲の数字を CC は作っていません＝両端は `int_grid` の最小（3）と最大（24）です。
+      まこさんが決めた範囲が `int_range` に在れば、そちらを使います。
+    ★n_min＝形によって「2本 以上」しか意味を持たないものが在る（連続・以内・相関の窓）。
+      その形では下限を 2 に引き上げます（直す前も `if n >= 2` で同じことをしていた）。
+    """
+    r = limits.get("int_range")
+    if isinstance(r, dict) and r.get("lo") is not None and r.get("hi") is not None:
+        lo, hi = int(r["lo"]), int(r["hi"])
+    else:
+        g = limits.get("int_grid")
+        if not g:
+            raise SystemExit("[本数の範囲エラー] int_range も int_grid も無い（recipes/search_limits.json）")
+        lo, hi = int(min(g)), int(max(g))
+    lo = max(lo, int(n_min))
+    if hi < lo:
+        raise SystemExit(f"[本数の範囲エラー] 上限 {hi} が下限 {lo} より小さい（n_min={n_min}）")
+    return lo, hi
+
+
+def draw_int(rng, limits: dict, n_min: int = 1) -> int:
+    """使い方の中の本数を1つ 引く（範囲の中の、どの整数でもよい）。"""
+    lo, hi = int_range_of(limits, n_min)
+    return int(rng.integers(lo, hi + 1))
+
+
 def _pool_families(pool: list[dict]) -> list[str]:
     """候補に載っている指標の種類（重複を除く・並びは決定論）。"""
     return sorted({b["family"] for b in pool})
@@ -587,7 +618,7 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
             # ★同じ列の「素」と「前処理を掛けたもの」。本数は int_grid から引く＝CC が数字を書かない。
             p0 = draw_param(rng, c, ranges)
             op = str(rng.choice(ex.pre_ops(same_unit=True)))
-            n_pre = int(rng.choice([n for n in limits["int_grid"] if n >= 2]))
+            n_pre = draw_int(rng, limits, n_min=2)
             pair = [{"family": c, "param": p0, "tf": tf},
                     {"family": c, "param": p0, "tf": tf, "pre": {"op": op, "n": n_pre}}]
         else:
@@ -660,7 +691,7 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
                                allow_nest=False)
             inner.pop("role", None)
             inner["role"] = role
-            n = int(rng.choice([n for n in limits["int_grid"] if n >= 2]))
+            n = draw_int(rng, limits, n_min=2)
             out = {"role": role, "form": form, "inner": inner,
                    "value": {"n": n, "offset": int(rng.choice([0, 1]))}}
             if form == "barssince":
@@ -688,7 +719,7 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
             op = str(rng.choice(ex.pair_ops()))
             val = _q(rng, limits) if op == "sub" else {"op": op, "th": _q(rng, limits)}
             if ex.PAIR_OPS[op]["needs_n"]:
-                val["n"] = int(rng.choice([n for n in limits["int_grid"] if n >= 2]))
+                val["n"] = draw_int(rng, limits, n_min=2)
             return {"role": role, "form": "diff", "material": mats,
                     "side": _dc1_side(rng, role, mats, side), "value": val}
         return {"role": role, "form": "touch", "material": mats, "value": {"const": "TOL_SR"}}
@@ -711,7 +742,7 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
         _op = _pre_opts[int(rng.integers(len(_pre_opts)))]
         if _op is not None:
             m = {**m, "pre": {"op": _op,
-                              "n": int(rng.choice([n for n in limits["int_grid"] if n >= 2]))}}
+                              "n": draw_int(rng, limits, n_min=2)}}
     if form == "cross_val":
         # ★閾値とのクロス（部品 cross_val・2026-08-13・段C の C-6）＝『RSI が 70 を上抜けた』。
         #   実行器へ渡す形は cross（列1本 ＋ value.th）＝新しい形の名前を実行器に作らない。
@@ -738,11 +769,11 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
     if form == "slope":
         return {"role": role, "form": "slope", "material": [m],
                 "side": _dc1_side(rng, role, [m], side),
-                "value": {"n": int(rng.choice(limits["int_grid"]))}}
+                "value": {"n": draw_int(rng, limits)}}
     if form == "slope_avg":
         return {"role": role, "form": "slope_avg", "material": [m],
                 "side": _dc1_side(rng, role, [m], side),
-                "value": {"n": int(rng.choice(limits["int_grid"])), "m": int(rng.choice(limits["int_grid"]))}}
+                "value": {"n": draw_int(rng, limits), "m": draw_int(rng, limits)}}
     raise SampleError(f"形 {form} の値の組み立てが未定義")
 
 
@@ -858,7 +889,7 @@ def _exit_indicator_cond(rng, limits, pool, tfs, table, side, spec) -> dict:
     if form == "slope":
         return {"role": "env", "form": "slope", "material": [m],
                 "side": ("above" if side == "SHORT" else "below") if rev else str(rng.choice(["above", "below"])),
-                "value": {"n": int(rng.choice(limits["int_grid"]))}}
+                "value": {"n": draw_int(rng, limits)}}
     # ── 水準を見る形（level）──
     # ★実行器は出口の発火条件で分位（threshold_q）を解けない（_exit_fire_ok が解決表を受け取らない・
     #   1073行の _vnum）。だから出口の水準は、名前つき定数レジストリに登録済みの値だけで表す。
@@ -868,7 +899,7 @@ def _exit_indicator_cond(rng, limits, pool, tfs, table, side, spec) -> dict:
     if hi_lo is None:
         return {"role": "env", "form": "slope", "material": [m],
                 "side": ("above" if side == "SHORT" else "below") if rev else str(rng.choice(["above", "below"])),
-                "value": {"n": int(rng.choice(limits["int_grid"]))}}
+                "value": {"n": draw_int(rng, limits)}}
     hi, lo = hi_lo
     if rev:                       # 反転を見る＝SHORT の玉は下がり切った側（買われ過ぎの逆）で降りる
         sd, cst = ("below", lo) if side == "SHORT" else ("above", hi)
@@ -933,7 +964,7 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
               "k": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["state_mult_grid"]))}}
     else:
         lv = {"kind": "swing", "target": "low" if side == "SHORT" else "high",
-              "m": {"n": int(rng.choice(limits["int_grid"]))},
+              "m": {"n": draw_int(rng, limits)},
               "buf": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["state_mult_grid"]))},
               "fallback": {"kind": "zone", "target": "mid"}}
     exits.append(mk(tp_id, "TP2", placement={"kind": "resting", "fill": "profit", "level": lv}))
@@ -950,7 +981,7 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
                   "k": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["exit_mult_grid"])) / 10.0}}
         else:
             lv = {"kind": "swing", "target": "high" if side == "SHORT" else "low",
-                  "m": {"n": int(rng.choice(limits["int_grid"]))},
+                  "m": {"n": draw_int(rng, limits)},
                   "buf": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["state_mult_grid"]))},
                   "fallback": {"kind": "zone_sl", "w": "range", "k": _const100(1.0)}}
         exits.append(mk(sl_id, "SL", placement={"kind": "resting", "fill": "adverse",
@@ -1652,7 +1683,7 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
     def _cond_slots(prefix, c):
         v = c.get("value", {})
         if c["form"] in ex.NEST_FORMS:            # 入れ子形（barssince を足した 2026-08-12・段C の C-6）
-            slots.append((f"{prefix}.value.n", _cat([n for n in limits["int_grid"] if n >= 2])))
+            slots.append((f"{prefix}.value.n", _int_range(*int_range_of(limits, n_min=2))))
             _cond_slots(f"{prefix}.inner", c["inner"])
             return
         if "threshold_q" in v:
@@ -1667,12 +1698,12 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
             if "threshold_q" in v.get(sub, {}):
                 slots.append((f"{prefix}.value.{sub}.threshold_q", _cat(qg)))
         if c["form"] in ("slope", "slope_avg"):
-            slots.append((f"{prefix}.value.n", _cat(limits["int_grid"])))
+            slots.append((f"{prefix}.value.n", _int_range(*int_range_of(limits))))
         if c["form"] == "slope_avg":
-            slots.append((f"{prefix}.value.m", _cat(limits["int_grid"])))
+            slots.append((f"{prefix}.value.m", _int_range(*int_range_of(limits))))
         # ★材料2本の組み方が窓を要るとき（corr）＝窓の本数も動かせる値（2026-08-12・段C の C-6）
         if c["form"] == "diff" and ex.PAIR_OPS[ex._pair_op_of(v)]["needs_n"]:
-            slots.append((f"{prefix}.value.n", _cat([n for n in limits["int_grid"] if n >= 2])))
+            slots.append((f"{prefix}.value.n", _int_range(*int_range_of(limits, n_min=2))))
 
     tree = recipe["entry"]["connective"]
 

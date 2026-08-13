@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=fa715c34f2f298d2 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=7e5df5d675ec7be0 gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -87,14 +87,17 @@
 - 検収専用の値は数えません＝`engine_tuner_gen.py` の `selftest` と `KENSHU_LIMITS`（出どころ＝`recipes/search_limits.json` の `_note` の逐語「検収専用の値は engine_tuner_gen.py の selftest の中にだけ存在する」）。
 - **番人**＝この4か所のどれかに架空の数の並びを1つ 足すと、その場所の件数がちょうど 1 増えます（`--selftest` の T12・わざと壊して確かめています）。
 
-**★4か所 合わせて 数の並び 45 件（数字 109 個）。範囲で探せるのは 11 件だけです。**
+**★4か所 合わせて 数の並び 45 件（数字 109 個）。範囲で探せるのは 12 件だけです。**
 
 | # | 場所 | 何の数字か | 決まった数字だけ（数の並び） | その中の数字 | 範囲で探せる |
 |---|---|---|---|---|---|
 | 1 | scripts/priority_rebuild/observe_config.json | 指標を作るときのパラメータ（RSI14 の 14） | **28 件** | 60 個 | 0 件 |
-| 2 | scripts/priority_rebuild/recipes/search_limits.json | 使い方の中の本数（slope の n）・閾値の段・上限 | **10 件** | 32 個 | 2 件 |
+| 2 | scripts/priority_rebuild/recipes/search_limits.json | 使い方の中の本数（slope の n）・閾値の段・上限 | **10 件** | 32 個 | 3 件 |
 | 3 | scripts/priority_rebuild/engine_tuner_gen.py | 生成器が数字を選ぶときに、コードに直に書いた数字 | **2 件** | 3 個 | 0 件 |
 | 4 | scripts/priority_rebuild/e38_logics.json の search_space | E38 の探索が振る値 | **5 件** | 14 個 | 9 件 |
+
+**★この欄の「範囲で探せる」は、設定ファイルそのものに 下限と上限の形で書いてある項目の数です。**
+2026-08-13（段A の A-4・A-5）から、**engine_tuner は 場所1 の数字を「範囲の両端」として使います**＝いちばん小さい数字と いちばん大きい数字の間なら、どの数字でも試せます（例＝RSI は 7〜21 の整数 全部。設定ファイルに並んでいるのは 7・9・14・21 の4つだけ）。範囲の正本＝`engine_tuner_gen.material_ranges`。**まこさんが範囲を決めたときの置き場所＝`recipes/search_limits.json` の `material_param_ranges`（いまは空）。**
 
 **場所ごとの中身（全部 実物から）**
 
@@ -155,8 +158,8 @@
 
 | 行 | 数字を選んでいる書き方 |
 |---|---|
-| `665` | `rng.choice([0, 1])` |
-| `1030` | `rng.choice([a for a in limits['max_adds_grid'] if 2 <= a <= max_adds] or [2])` |
+| `696` | `rng.choice([0, 1])` |
+| `1061` | `rng.choice([a for a in limits['max_adds_grid'] if 2 <= a <= max_adds] or [2])` |
 
 **場所4 の明細（5 件）**
 
