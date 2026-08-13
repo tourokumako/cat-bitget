@@ -176,6 +176,172 @@ def material_pool(cfg: dict | None = None) -> tuple[list[dict], list[str], int]:
     return pool, tfs, len(names) * len(tfs)
 
 
+# ══ 材料のパラメータの「範囲」（段A の A-4・2026-08-13）════════════════════════════════════
+_RANGES: dict | None = None
+
+
+def material_ranges(cfg: dict | None = None, limits: dict | None = None) -> dict:
+    """指標の種類ごとに「パラメータの範囲」を作る（点の一覧でなく、下限と上限の間の全部）。
+
+    ★なぜ要るか＝直す前は、engine_tuner が試せる数字が設定ファイル observe_config.json に
+      並んでいる数字だけだった（RSI なら 7・9・14・21 の4つ。RSI12 は何回 引いても出ない）。
+      要件の「作ってはいけないもの」2番＝探す値を CC が先に「点の一覧」で限定するもの、に当たる。
+
+    ★範囲の数字を CC は作らない（ここが一番 大事）。
+      下限＝いま材料カタログに在る数字の最小。上限＝同じく最大。**新しい数字を1つも足していない。**
+      ＝RSI なら 7〜21 の整数が全部 試せる（12 も 13 も 20 も出る）。カタログの4つは全部この中に入る。
+      **上限を広げる（例＝RSI を 200 まで）かどうかは、まこさんが決めることです。**
+      決まったら、下の「まこさんが決めた範囲」に書けば、そちらが優先されます（CC は書きません）。
+
+    ★まこさんが決めた範囲の置き場所＝recipes/search_limits.json の material_param_ranges。
+      形＝{"RSI": [{"kind": "int", "lo": 30, "hi": 50}]}（軸＝名前の {} の数だけ並べる）。
+      出どころ＝まこさんの逐語（2026-08-07・engine_tuner_defects.md の D14 ⑥）
+      「疑似シミュで出た値の前後あたりで範囲を事前に指定して（例えば３０〜５０の間とか）探す」。
+      **いまは空です。**空のあいだは、上のカタログ由来の範囲を使います。
+
+    戻り＝{指標の種類: {"axes": [{"kind": "int"|"float", "lo": x, "hi": y, "dec": 小数の桁数}, ...],
+                        "src": "catalog"|"makosan"}}
+
+    ★正直に書く限界＝軸どうしの関係（MACD の 短い方 < 長い方 のような決まり）は、この表に持っていません。
+      いまはカタログ由来＝どの軸も1点なので問題は出ません。まこさんが範囲を広げるときに、
+      その決まりが要るかを1件ずつ決めます。
+    """
+    global _RANGES
+    default_call = cfg is None and limits is None      # 引数なしの呼び出しだけ 覚えておく（使い回す）
+    if _RANGES is not None and default_call:
+        return _RANGES
+    import contextlib
+    import io
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        import observe_diag as od
+        cfg = cfg or od.load_config()
+        names = [name for name, _fn, _d in od.build_catalog(cfg)]
+    seen: dict[str, list[list]] = {}
+    for nm in names:
+        ent, prm = iref.find(nm)
+        if ent is None:
+            continue
+        fam = ent["family"]
+        axes = seen.setdefault(fam, [[] for _ in range(len(prm))])
+        if len(axes) != len(prm):                     # 同じ指標で数字の個数が違う＝表の作りが崩れている
+            raise SystemExit(f"[範囲エラー] {fam} の数字の個数がカタログの中でそろっていない"
+                             f"（{len(axes)} 個 と {len(prm)} 個）")
+        for i, v in enumerate(prm):
+            axes[i].append(v)
+    out: dict[str, dict] = {}
+    for fam, axes in seen.items():
+        spec = []
+        for vals in axes:
+            is_int = all(float(v).is_integer() and not isinstance(v, float) for v in vals)
+            dec = max((len(str(v).split(".")[1]) if "." in str(v) else 0) for v in vals)
+            spec.append({"kind": "int" if is_int else "float",
+                         "lo": min(vals), "hi": max(vals), "dec": int(dec)})
+        out[fam] = {"axes": spec, "src": "catalog"}
+    # ── まこさんが決めた範囲が在れば、そちらを使う（CC は数字を書かない）──
+    if limits is None:
+        limits, _w = load_limits()
+    for fam, axes in (limits.get("material_param_ranges") or {}).items():
+        if fam not in out:
+            raise SystemExit(f"[範囲エラー] material_param_ranges に、カタログに無い指標の種類: {fam}")
+        if len(axes) != len(out[fam]["axes"]):
+            raise SystemExit(f"[範囲エラー] {fam} の軸の数が合わない"
+                             f"（カタログ {len(out[fam]['axes'])} 個 ／ 設定 {len(axes)} 個）")
+        out[fam] = {"axes": [dict(a) for a in axes], "src": "makosan"}
+    if default_call:
+        _RANGES = out
+    return out
+
+
+def param_in_range(fam: str, param, ranges: dict | None = None) -> tuple[bool, str]:
+    """この数字は、その指標の範囲の中か（検証器の番人が呼ぶ）。戻り＝(入っているか, 理由)。"""
+    ranges = ranges if ranges is not None else material_ranges()
+    spec = ranges.get(fam)
+    if spec is None:
+        return True, ""                                # カタログに無い指標＝別の関門（G6）が見る
+    vals = [] if param is None else (list(param) if isinstance(param, (list, tuple)) else [param])
+    if len(vals) != len(spec["axes"]):
+        return False, f"{fam} の数字の個数が範囲の表と合わない（{len(vals)} 個 ／ 表は {len(spec['axes'])} 個）"
+    for i, (v, ax) in enumerate(zip(vals, spec["axes"])):
+        if float(v) < float(ax["lo"]) or float(v) > float(ax["hi"]):
+            return False, (f"{fam} の {i + 1} 番目の数字 {v} が範囲の外"
+                           f"（{ax['lo']}〜{ax['hi']}・出どころ＝{spec['src']}）")
+        if ax["kind"] == "int" and float(v) != int(v):
+            return False, f"{fam} の {i + 1} 番目の数字 {v} は整数でない（範囲の表は整数）"
+    return True, ""
+
+
+def draw_param(rng, fam: str, ranges: dict | None = None):
+    """その指標のパラメータを1組 引く（範囲の中の、どの数字でもよい）。
+
+    ★点の一覧から選ぶのではありません。下限と上限の間から引きます。
+    ★小数の桁数は、カタログに在る数字の桁数に合わせます（CC が桁数を決めない）。
+    """
+    ranges = ranges if ranges is not None else material_ranges()
+    spec = ranges.get(fam)
+    if spec is None or not spec["axes"]:
+        return None
+    vals = []
+    for ax in spec["axes"]:
+        if ax["kind"] == "int":
+            vals.append(int(rng.integers(int(ax["lo"]), int(ax["hi"]) + 1)))
+        else:
+            v = float(rng.uniform(float(ax["lo"]), float(ax["hi"])))
+            vals.append(round(v, int(ax["dec"])) if ax["dec"] else float(round(v)))
+    return vals[0] if len(vals) == 1 else tuple(vals)
+
+
+def _pool_families(pool: list[dict]) -> list[str]:
+    """候補に載っている指標の種類（重複を除く・並びは決定論）。"""
+    return sorted({b["family"] for b in pool})
+
+
+_POOL_LINEAGE_MEMO: dict = {}
+
+
+def _pool_families_by_lineage(pool: list[dict]) -> dict:
+    """候補の指標の種類を、系統（オシレーター・トレンド…）で仕分けした表。
+
+    ★2026-08-13（段A の A-4）に足した。**引く中身は変えていない。空振りを減らすだけ。**
+      直す前は 535件の候補から1件 引いて、役割に使えない系統だったら引き直していた
+      （実測＝1回 引き当てるのに平均41回 空振り）。いまは役割に使える系統の中から引く
+      ＝同じものが同じ割合で出て、空振りだけが無くなる。
+    """
+    key = id(pool)
+    hit = _POOL_LINEAGE_MEMO.get(key)
+    if hit is None or hit[0] is not pool:
+        by: dict[str, list[str]] = {}
+        for b in pool:
+            by.setdefault(iref.FAMILY_LINEAGE[b["family"]]["k"], []).append(b["family"])
+        _POOL_LINEAGE_MEMO.clear()
+        _POOL_LINEAGE_MEMO[key] = (pool, by)
+        hit = _POOL_LINEAGE_MEMO[key]
+    return hit[1]
+
+
+def _as_param_list(p) -> list:
+    """数字の3通り（1つ／並び／無し）を、並びの形にそろえる。"""
+    if p is None:
+        return []
+    return list(p) if isinstance(p, (list, tuple)) else [p]
+
+
+def _from_param_list(vals: list):
+    """並びの形を、もとの3通りに戻す。"""
+    if not vals:
+        return None
+    return vals[0] if len(vals) == 1 else tuple(vals)
+
+
+def _range_has_two(fam: str, ranges: dict | None = None) -> bool:
+    """その指標の範囲は、違う数字を2つ 持てるか（同じ指標のパラメータ違い2本＝クロスが作れるか）。"""
+    ranges = ranges if ranges is not None else material_ranges()
+    spec = ranges.get(fam)
+    if spec is None or not spec["axes"]:
+        return False
+    return any(float(ax["hi"]) > float(ax["lo"]) for ax in spec["axes"])
+
+
 # ══ 構造のランダムサンプリング（第1段）═══════════════════════════════════════════════════
 class SampleError(Exception):
     """この乱数の引きでは条件を組めなかった（引き直す・黙って弱い構造に逃げない）。"""
@@ -245,12 +411,46 @@ def _role_tfs(tfs, table, role) -> list[str]:
     return out
 
 
+_SAMPLE_BAN_MEMO: dict = {}
+_SAMPLE_BAN_CONST = None        # (gen_signal_families, 値決め窓の日数, n_min)＝1回だけ読む
+
+
+def _insufficient_samples(name: str, tf: str) -> bool:
+    """禁止3（標本不足）を、その場で計算する（表に無い数字のため・2026-08-13・段A の A-4）。
+
+    ★なぜ要るか＝型の表の禁止3 は「材料カタログの535本 × 時間足」の組でしか作られていない。
+      A-4 で範囲から数字を引くようになったので、表に載っていない数字（例＝RSI12）が出る。
+      表を引くだけだと、**標本が足りない組をすり抜けて通してしまう**（禁止3 の穴）。
+    ★式はここに書き写さない＝表を作っている `gen_signal_families` の関数をそのまま呼ぶ
+      （n_eff＝値決め窓の日数 ÷ 値が独立に1つ決まる日数 ＜ n_min なら禁止）。
+    """
+    key = (name, tf)
+    if key in _SAMPLE_BAN_MEMO:
+        return _SAMPLE_BAN_MEMO[key]
+    import contextlib
+    import io
+    global _SAMPLE_BAN_CONST
+    if _SAMPLE_BAN_CONST is None:                    # 読み込みは1回だけ（毎回 読むと遅い）
+        with contextlib.redirect_stdout(io.StringIO()):
+            import gen_signal_families as gsf
+            _SAMPLE_BAN_CONST = gsf
+    out = _SAMPLE_BAN_CONST.insufficient_samples(name, tf)
+    _SAMPLE_BAN_MEMO[key] = out
+    return out
+
+
 def _banned_pair(m: dict, table) -> bool:
-    """（部品×時間足）が禁止3（標本不足）に当たるか。"""
+    """（部品×時間足）が禁止3（標本不足）に当たるか。
+
+    ★2026-08-13（段A の A-4）＝表に載っている組はそのまま拒否し、載っていない組（範囲から引いた
+      新しい数字）は、その場で同じ計算をして判定する（表の穴を塞ぐ）。
+    """
     if "family" not in m:
         return False
     name = ex.build_name(m)
-    return (name, m["tf"]) in table["banned"]
+    if (name, m["tf"]) in table["banned"]:
+        return True
+    return _insufficient_samples(name, m["tf"])
 
 
 def _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count, table) -> dict:
@@ -258,6 +458,8 @@ def _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count, tabl
     サンプリング時から守る（D1・2026-08-07 まこさん承認の表が正本）。"""
     rr = table["roles"][role]
     tf_pool = _role_tfs(tfs, table, role)
+    ranges = material_ranges()
+    by_lineage = _pool_families_by_lineage(pool)
     for _ in range(60):
         r = rng.random()
         if role == "location" and rr["geo"] and table["geo_ok"] and r < 0.5:
@@ -265,8 +467,19 @@ def _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count, tabl
         elif role == "env" and "時間帯" in rr["lineages"] and r < 0.10 and limits.get("hour_grid"):
             m = {"time": "時刻"}                  # 曜日の閾値格子は未定義＝時刻だけ（格子はまこさん §11-10）。表は両方許可
         else:
-            base = pool[int(rng.integers(len(pool)))]
-            m = {"family": base["family"], "param": base["param"], "tf": str(rng.choice(tf_pool))}
+            # ★2026-08-13（段A の A-4）＝パラメータは「範囲の中から引く」（点の一覧から選ばない）。
+            #   直す前は pool（カタログの列名を分解した (指標, 数字) の一覧）から1件 引いて、
+            #   その数字をそのまま使っていた＝設定ファイルに並んだ数字しか出なかった
+            #   （RSI なら 7・9・14・21 の4つだけ）。いまは 指標の種類だけを pool から引き、
+            #   数字はその指標の範囲から引く（RSI なら 7〜21 の整数どれでも＝RSI12 も出る）。
+            #   ★指標の種類の出方（どの指標がどれだけ出るか）は変えていない。候補を役割に使える
+            #     系統で先に絞ってから引く＝同じものが同じ割合で出て、空振りだけが無くなる。
+            cand_f = [f for k in rr["lineages"] for f in by_lineage.get(k, [])]
+            if not cand_f:
+                raise SampleError(f"役割 {role} に使える系統の指標が候補に無い")
+            fam = str(cand_f[int(rng.integers(len(cand_f)))])
+            m = {"family": fam, "param": draw_param(rng, fam, ranges),
+                 "tf": str(rng.choice(tf_pool))}
             if _banned_pair(m, table):
                 continue                                        # 禁止3（標本不足）＝引き直す
         kind = _lineage_of(m)
@@ -329,13 +542,16 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
     ③は部品 ts_max ほか（2026-08-13・段C の C-6）。"""
     rr = table["roles"][role]
     tf_pool = _role_tfs(tfs, table, role)
+    ranges = material_ranges()
     fams = {}
     for b in pool:
         if iref.FAMILY_LINEAGE[b["family"]]["k"] in rr["lineages"]:
             fams.setdefault(b["family"], []).append(b["param"])
     # ①同じ指標のパラメータ違い2本 ／ ②同じライブラリ関数から出た別の指標2本
-    cands: list[tuple[str, object]] = [("same", f) for f, ps in fams.items()
-                                       if len({str(p) for p in ps}) >= 2]
+    # ★2026-08-13（段A の A-4）＝「2本を作れるか」は、カタログに数字が2つ以上 在るかではなく、
+    #   **範囲が2つ以上の数字を持てるか**で決める（範囲が1点に潰れている指標だけが外れる）。
+    cands: list[tuple[str, object]] = [("same", f) for f in fams
+                                       if _range_has_two(f, ranges)]
     cands += [("fn", pr) for pr in same_fn_family_pairs(fams)]
     # ③同じ列の「素」と「前処理を掛けたもの」＝『高値が 直前n本の最高値を上抜けた』（新高値）
     #   ★2026-08-13 は「クロスのときだけ」に絞っていた（差・タッチは閾値が要るのに、前処理つきの材料に
@@ -351,33 +567,45 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
         tf = str(rng.choice(tf_pool))
         kind, c = cands[int(rng.integers(len(cands)))]
         if kind == "same":
-            # ★数字は「並び」のこともある（MACD線%(12,26) のような形）ので、値そのものでなく
-            #   並びの場所を引く（2026-08-11・段6 の 6-7）。int() に丸めると小数の数字が壊れる。
-            opts = sorted({str(p): p for p in fams[c]}.values(), key=_pkey)
-            i1, i2 = rng.choice(len(opts), size=2, replace=False)
-            lo, hi = sorted((int(i1), int(i2)))       # ★短い方を先に置く（まこさん OK 2026-08-11）
-            pair = [{"family": c, "param": opts[lo], "tf": tf},
-                    {"family": c, "param": opts[hi], "tf": tf}]
+            # ★2026-08-13（段A の A-4）＝範囲から2つ 引いて、違う数字なら採る。
+            #   直す前は「カタログに在る数字の並びから2つ 選ぶ」だった＝RSI7 と RSI21 は組めても、
+            #   RSI12 と RSI30 は永久に組めなかった（ゴールデンクロスの2本の期間が4つに縛られていた）。
+            #   ★数字は「並び」のこともある（MACD線%(12,26) のような形）＝そのまま組で扱う。
+            p1 = draw_param(rng, c, ranges)
+            p2 = None
+            for _t in range(20):
+                cand2 = draw_param(rng, c, ranges)
+                if str(cand2) != str(p1):
+                    p2 = cand2
+                    break
+            if p2 is None:
+                continue                              # 範囲が狭くて2本 引けない＝別の組み方を引き直す
+            a_, b_ = sorted((p1, p2), key=_pkey)      # ★短い方を先に置く（まこさん OK 2026-08-11）
+            pair = [{"family": c, "param": a_, "tf": tf},
+                    {"family": c, "param": b_, "tf": tf}]
         elif kind == "pre":
             # ★同じ列の「素」と「前処理を掛けたもの」。本数は int_grid から引く＝CC が数字を書かない。
-            opts = sorted({str(p): p for p in fams[c]}.values(), key=_pkey)
-            p0 = opts[int(rng.integers(len(opts)))]
+            p0 = draw_param(rng, c, ranges)
             op = str(rng.choice(ex.pre_ops(same_unit=True)))
             n_pre = int(rng.choice([n for n in limits["int_grid"] if n >= 2]))
             pair = [{"family": c, "param": p0, "tf": tf},
                     {"family": c, "param": p0, "tf": tf, "pre": {"op": op, "n": n_pre}}]
         else:
             fa, fb = c                                # type: ignore[misc]
-            oa = sorted({str(p): p for p in fams[fa]}.values(), key=_pkey)
-            ob = sorted({str(p): p for p in fams[fb]}.values(), key=_pkey)
-            # ★数字は「同じ回の呼び出しから出た2本」を組む＝並びの場所で揃える
+            # ★数字は「同じ回の呼び出しから出た2本」を組む＝共通の軸は同じ値にそろえる
             #   （Stoch%K14 と Stoch%D14／MACD線%(12,26) と MACDシグナル線%(12,26,9)）。
-            #   本数が違うときだけ、それぞれ別に引く（揃えようがないため）。
-            if len(oa) == len(ob):
-                i = int(rng.integers(len(oa)))
-                pa_, pb_ = oa[i], ob[i]
-            else:
-                pa_, pb_ = oa[int(rng.integers(len(oa)))], ob[int(rng.integers(len(ob)))]
+            #   そろえた結果が相手の範囲の外に出るときだけ、それぞれ別に引く。
+            pa_, pb_ = draw_param(rng, fa, ranges), draw_param(rng, fb, ranges)
+            la, lb = _as_param_list(pa_), _as_param_list(pb_)
+            k = min(len(la), len(lb))
+            if k:
+                if len(la) <= len(lb):
+                    lb[:k] = la[:k]
+                else:
+                    la[:k] = lb[:k]
+                ca, cb = _from_param_list(la), _from_param_list(lb)
+                if param_in_range(fa, ca, ranges)[0] and param_in_range(fb, cb, ranges)[0]:
+                    pa_, pb_ = ca, cb
             # ★別の指標どうしは、どちらを先に置くかの決まりが無い＝両方の向きを作る（乱数）。
             #   「短い方を先に置く」は同じ指標のパラメータ違いにだけ効く決まり。
             if rng.random() < 0.5:
@@ -1128,6 +1356,7 @@ def build_qtable(df: pd.DataFrame, geo: dict, recipes: list[dict], grid: list[st
         ts = pd.to_datetime(df["ts"])
         mask = (ts >= start) & (ts < end)
     table: dict[str, dict] = {}
+    unresolved: list[str] = []
     for key, specs in needed_qkeys(recipes).items():
         def _arr(spec):
             name, pre = spec
@@ -1158,8 +1387,19 @@ def build_qtable(df: pd.DataFrame, geo: dict, recipes: list[dict], grid: list[st
         s = s[mask]
         s = s[np.isfinite(s)]
         if not len(s):
-            raise SystemExit(f"[解決表エラー] {key} の有効標本がゼロ（窓とデータを確認）")
+            # ★2026-08-13（段A の A-4 で表面化）＝ここで走行を丸ごと止めない。
+            #   直す前＝有効標本がゼロの鍵が1つでも在ると、その場で全部の案が死んだ（SystemExit）。
+            #   実例＝TD_SEQ_UP（数字を持たない材料）と、その前処理つきの相関。合成データでは
+            #   値が動かず、相関が全部 欠損になる。案100本のうち1本が こうなると、残り99本も走らない。
+            #   直したあと＝**その鍵だけ解決できないものとして落とす**。この鍵を使う案は、実行器の
+            #   G5（解決表に鍵が無い＝fail-closed）で1本ずつ拒否される＝嘘の閾値は作らない。
+            unresolved.append(key)
+            continue
         table[key] = {q: float(np.quantile(s, int(q.lstrip("q")) / 100.0)) for q in grid}
+    if unresolved:
+        print(f"[解決表] 有効標本がゼロで解決できない鍵 {len(unresolved)} 件"
+              f"（この鍵を使う案は落とす・嘘の閾値は作らない）: {unresolved[:5]}"
+              + (" ほか" if len(unresolved) > 5 else ""))
     return table
 
 
@@ -2514,8 +2754,14 @@ def selftest() -> int:
                     v.append(f"{role} に系統 {kind}（対応表の外）")
                 if "family" in m:
                     name = ex.build_name(m)
-                    if name not in parts13 or m["tf"] not in tfs13_all:
-                        v.append(f"表に無い部品/時間足 {name}__{m.get('tf')}")
+                    # ★2026-08-13（段A の A-4）＝照合の単位を「列名そのもの」から
+                    #   「指標の種類が表に在るか ＋ 数字が範囲の中か」に変えた（表そのものは変えていない）。
+                    #   判定の実物は gen_signal_families._part_allowed 1か所だけ（写しを作らない）。
+                    ok13, why13 = gsf13._part_allowed(name, parts13)
+                    if not ok13:
+                        v.append(why13)
+                    elif m["tf"] not in tfs13_all:
+                        v.append(f"表に無い時間足 {name}__{m.get('tf')}")
                     if rr["tfs"] is not None and m["tf"] not in rr["tfs"]:
                         v.append(f"{role} に時間足 {m['tf']}（対応表の外）")
                     if (name, m["tf"]) in banned13:

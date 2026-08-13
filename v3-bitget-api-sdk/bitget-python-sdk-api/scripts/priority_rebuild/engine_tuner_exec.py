@@ -352,7 +352,23 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
         _fail("G6", f"カタログに無い材料: {name}（indicator_reference_diag に未登録）")
     if ent["family"] != fam:
         _fail("G6", f"材料の family がカタログと食い違う: {fam} → {name} は {ent['family']}")
+    if lane != "legacy":
+        _check_param_range(fam, m.get("param"))
     return "col", f"{name}__{tf}"
+
+
+def _check_param_range(fam: str, param) -> None:
+    """★2026-08-13（段A の A-4）＝パラメータが「その指標の範囲」の中かを見る（fail-closed）。
+
+    範囲の正本＝`engine_tuner_gen.material_ranges`（材料カタログ由来の範囲＋まこさんが決めた範囲）。
+    ★これが無いと、生成器の側だけを直しても、手で書いたレシピが範囲の外の数字で走ってしまう。
+    ★恒等検収のレーン（lane="legacy"）は対象外＝過去の実装の書き写しを壊さない。
+    ★循環 import を避けるため、呼ばれた時に読む（生成器は実行器を import している）。
+    """
+    import engine_tuner_gen as _gen
+    ok, why = _gen.param_in_range(fam, param)
+    if not ok:
+        _fail("G6", f"材料のパラメータが範囲の外: {why}")
 
 
 def _material_family(m: dict) -> str:

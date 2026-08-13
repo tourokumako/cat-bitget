@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=eb331da0a9e18258 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=fa715c34f2f298d2 gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -155,8 +155,8 @@
 
 | 行 | 数字を選んでいる書き方 |
 |---|---|
-| `437` | `rng.choice([0, 1])` |
-| `802` | `rng.choice([a for a in limits['max_adds_grid'] if 2 <= a <= max_adds] or [2])` |
+| `665` | `rng.choice([0, 1])` |
+| `1030` | `rng.choice([a for a in limits['max_adds_grid'] if 2 <= a <= max_adds] or [2])` |
 
 **場所4 の明細（5 件）**
 

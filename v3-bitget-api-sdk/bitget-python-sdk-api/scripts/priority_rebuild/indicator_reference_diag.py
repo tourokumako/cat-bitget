@@ -802,13 +802,28 @@ def _num(g):
     return int(f) if f == int(f) and "." not in g else f
 
 
+_FIND_MEMO: dict = {}
+
+
 def find(name: str):
-    """カタログ名 → (参照エントリ, パラメータのタプル)。無ければ (None, None)。"""
+    """カタログ名 → (参照エントリ, パラメータのタプル)。無ければ (None, None)。
+
+    ★2026-08-13（段A の A-4）に、一度 調べた名前を覚える形にした（中身は1文字も変えていない）。
+      理由＝A-4 でパラメータを範囲から引くようになり、名前の種類が増えた。この関数は
+      参照表 250件 の正規表現を上から順に当てるので、呼ぶたびに時間が掛かる
+      （実測＝案を30本 作るのに 22.2 秒。うち この関数と、その先の設定ファイルの読み直しで 6.6 秒）。
+    """
+    hit = _FIND_MEMO.get(name)
+    if hit is not None:
+        return hit
+    out = (None, None)
     for e in REFS:
         m = e["pat"].match(name)
         if m:
-            return e, tuple(_num(g) for g in m.groups())
-    return None, None
+            out = (e, tuple(_num(g) for g in m.groups()))
+            break
+    _FIND_MEMO[name] = out
+    return out
 
 
 def coverage(names: list[str]) -> list[str]:

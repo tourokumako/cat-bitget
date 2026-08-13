@@ -517,6 +517,52 @@ def collect_materials(st: dict) -> tuple[list, list, list]:
     return cols, outside, unread
 
 
+def insufficient_samples(name: str, tf: str) -> bool:
+    """（部品×時間足）が禁止3（標本不足）に当たるか＝表を作るときとまったく同じ計算。
+
+    ★2026-08-13（段A の A-4）に、表を作る処理の中から関数として出した（式は1文字も変えていない）。
+      理由＝A-4 でパラメータを範囲から引くようになり、表に載っていない数字（例＝RSI12）が出る。
+      表の一覧を引くだけだと、標本が足りない組をすり抜けて通してしまう。
+      呼ぶ側＝この文書の判定器（_judge_structure）と engine_tuner_gen._banned_pair。
+    """
+    wd = _window_days(name, tf)
+    if wd is None:
+        return False
+    n_eff = (SEARCH_END - SEARCH_START).days / wd if wd > 0 else float("inf")
+    return n_eff < _n_min()
+
+
+_PART_FAMILIES: dict = {}
+
+
+def _part_allowed(base: str, parts: set) -> tuple[bool, str]:
+    """その材料の列名は、承認済みの表の中と言えるか。戻り＝(言えるか, 言えない理由)。
+
+    ★2026-08-13（段A の A-4）に、照合の単位を変えた。**表そのものは1バイトも変えていない。**
+      直す前＝表に並んだ列名（RSI7・RSI9・RSI14・RSI21 …535本）と1文字ずつ照らす。
+      ＝A-4 で範囲から引いた RSI12 は、表に無いので全部 違反になった（実測＝適合率 0%）。
+      直したあと＝**指標の種類が表に在るか**（RSI が在るか）＋**その数字が範囲の中か**で照らす。
+      範囲の正本＝engine_tuner_gen.material_ranges（表の列名を分解して作る＝出どころは同じ表）。
+    """
+    if base in parts:
+        return True, ""
+    if not _PART_FAMILIES:
+        for p in parts:
+            ref, _ = iref.find(p)
+            if ref is not None:
+                _PART_FAMILIES.setdefault(ref["family"], set()).add(p)
+    ref, prm = iref.find(base)
+    if ref is None:
+        return False, f"部品 {base} がカタログに無い"
+    fam = ref["family"]
+    if fam not in _PART_FAMILIES:
+        return False, f"部品 {base} の指標の種類（{fam}）が表に無い"
+    import engine_tuner_gen as _gen                  # 循環 import を避けるため、呼ばれた時に読む
+    p = None if len(prm) == 0 else (prm[0] if len(prm) == 1 else tuple(prm))
+    ok, why = _gen.param_in_range(fam, p)
+    return (True, "") if ok else (False, f"部品 {base} のパラメータが範囲の外（{why}）")
+
+
 def _judge_structure(st: dict, parts: set, tfs: set, banned: set,
                      geo_ok: set = frozenset(), time_ok: set = frozenset()) -> tuple[list, list, list]:
     """構造1本を型の表と照合する。戻り＝(違反の一覧, 照合できた材料, 表の対象外)。
@@ -529,11 +575,12 @@ def _judge_structure(st: dict, parts: set, tfs: set, banned: set,
     ng = [f"材料が読めない（{u}）" for u in unread]
     matched = list(cols)
     for base, tf in cols:
-        if base not in parts:
-            ng.append(f"部品 {base} がカタログに無い")
+        allowed, why = _part_allowed(base, parts)
+        if not allowed:
+            ng.append(why)
         elif tf not in tfs:
             ng.append(f"時間足 {tf} が表に無い（{base}）")
-        elif (base, tf) in banned:
+        elif (base, tf) in banned or insufficient_samples(base, tf):
             ng.append(f"{base}__{tf} は標本不足の禁止（禁止3）")
     rest: list = []
     for kind, name in outside:
@@ -654,14 +701,15 @@ def g2_selftest() -> None:
     m = _first_col_cond(ban_st)
     if m is None:
         raise SystemExit("[番人エラー] 差し替えられる材料が構造に無い")
-    fam_of_ban = None
-    for fam, tpl in _templates().items():
-        mm = re.match("^" + re.escape(tpl).replace(re.escape("{p}"), r"(\d+)") + "$", bp)
-        if mm:
-            fam_of_ban, prm_of_ban = fam, int(mm.group(1))
-            break
-    if fam_of_ban is None:
+    # ★2026-08-13（段A の A-4）に直した。ここは 2026-08-11 から壊れていた（誰も走らせていなかった）。
+    #   直す前＝名前の型の中の `{p}` を数字に置き換えて照合していた。ところが名前の型は 2026-08-11 に
+    #   参照表から機械で作る形へ変わり、数字の入る所は `{}` になった＝`{p}` は1つも無い
+    #   ＝どの指標も分解できず、この番人はいつ走らせても `[番人エラー]` で落ちる状態だった。
+    #   直したあと＝名前の分解は参照表 iref.find に任せる（分解の処理を2か所に持たない）。
+    _ref_ban, _prm_ban = iref.find(bp)
+    if _ref_ban is None or len(_prm_ban) != 1:
         raise SystemExit(f"[番人エラー] 禁止3 の部品 {bp} の family を組み立てられない")
+    fam_of_ban, prm_of_ban = _ref_ban["family"], _prm_ban[0]
     m.clear(); m.update({"family": fam_of_ban, "param": prm_of_ban, "tf": btf})
 
     fake_st = copy.deepcopy(base_st)
