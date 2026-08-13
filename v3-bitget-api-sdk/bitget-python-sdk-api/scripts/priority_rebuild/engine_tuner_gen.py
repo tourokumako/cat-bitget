@@ -1173,6 +1173,15 @@ def attach_materials(df: pd.DataFrame, recipes: list[dict]) -> pd.DataFrame:
     ★2026-08-13（段A の A-2b）＝本走からは呼ばなくなった（列はその場で作る＝`ex.material_array`）。
       この関数を残しているのは、古いレシピの読み込みや診断が使えるようにするため。
       呼ばれた回数は `ATTACH_CALLS` に出る（完了の条件②＝本走で 0）。
+      いまの呼び出し元は1つだけ＝`engine_tuner_fire_diag.py`（発火の診断）。
+
+    ★2026-08-13（段A の A-3）＝設定ファイル（observe_config.json）に並んでいない数字でも列を作る。
+      直す前＝`observe_diag.build_catalog(cfg)`（設定の数字で作った535本）から、名前が一致する物だけを
+      拾っていた。＝`RSI12__5m` を要求すると、カタログに `RSI12` が無いので拾えず、
+      最後の「組み立てられなかった列」で止まっていた（2026-08-13 に実測して確認）。
+      直したあと＝要求された名前を1本ずつ材料の表で分解して（`observe_diag.find_material`）、
+      その場で組み立てる（`observe_diag.make_material`）。＝設定ファイルの数字に縛られない。
+      ★計算式はここに書き写さない（材料の表が正本）。★組み立て直した名前が要求と1文字でも違えば止める。
     """
     global ATTACH_CALLS
     ATTACH_CALLS += 1
@@ -1210,11 +1219,20 @@ def attach_materials(df: pd.DataFrame, recipes: list[dict]) -> pd.DataFrame:
     bars = df.set_index(pd.to_datetime(df["ts"]))[["open", "high", "low", "close", "volume"]]
     out = df.copy()
     with contextlib.redirect_stdout(buf):
-        cat_all = od.build_catalog(cfg)
         for tf, bases in by_tf.items():
             cfg_tf = dict(cfg)
             cfg_tf["timeframes"] = [tf]
-            cat = [t for t in cat_all if t[0] in bases]
+            cat = []
+            for base in sorted(bases):
+                fam, prm = od.find_material(base)
+                if fam is None:
+                    raise SystemExit(f"[材料エラー] 材料の表に無い名前: {base}"
+                                     f"（observe_diag の MATERIAL_FAMILIES＝計算式の正本）")
+                one = od.make_material(fam, *prm)
+                if one[0] != base:                       # 組み立て直した名前が要求と違う＝表と実物のずれ
+                    raise SystemExit(f"[材料エラー] 名前を組み立て直すと変わる: {base} → {one[0]}"
+                                     f"（材料の表 {fam} の名前の型と、分解した数字 {list(prm)} が噛み合っていない）")
+                cat.append(one)
             feats, _meta = od.build_features(bars, cfg_tf, catalog=cat)
             for col in feats.columns:
                 if col in need:
