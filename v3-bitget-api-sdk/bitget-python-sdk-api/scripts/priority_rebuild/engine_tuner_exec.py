@@ -907,6 +907,57 @@ def _vnum_q(v: dict, qkey: str, qtable: dict | None) -> float:
     return _vnum(v)
 
 
+# ══ 材料をその場で作る（段A の A-2b・2026-08-13）══════════════════════════════════════
+#   ★直す前＝走らせる前に「案が使う列」を全部 作って表に足していた（engine_tuner_gen.attach_materials）。
+#     その形だと、作れるのは材料カタログに名前が並んでいる列だけ＝設定ファイルの数字に縛られる。
+#   ★直したあと＝条件が「指標の種類・パラメータ・時間足」を渡すと、その組だけをここで計算する。
+#     同じ組が2回目に来たら、1回目の結果を使い回す。
+#   ★時間足の扱い（上位足に直す → 足が閉じた時刻へずらす → 5分足に合わせる）は書き写さない。
+#     observe_diag.build_features をそのまま呼ぶ（式を2か所に持つと片方だけ直って黙って腐る）。
+#   ★入れものの鍵に「渡された終値そのものの指紋」を入れる＝データを1本でも切ると計算し直す
+#     （未来を見ない・observe_diag の _CYC_MEMO と同じ作り）。
+_MAT_MEMO: dict = {"sig": None, "v": {}}
+
+
+def material_array(df: pd.DataFrame, full: str) -> np.ndarray:
+    """カタログ名の列（例＝`RSI12__15m`）を、その場で計算して返す。"""
+    close = df["close"].to_numpy(dtype=float)
+    sig = (len(df), hashlib.md5(close.tobytes()).hexdigest())
+    if _MAT_MEMO["sig"] != sig:
+        _MAT_MEMO["sig"], _MAT_MEMO["v"] = sig, {}
+    if full in _MAT_MEMO["v"]:
+        return _MAT_MEMO["v"][full]
+    if "__" not in full:
+        raise RecipeError(f"[実行器] 材料の名前に時間足が無い: {full}")
+    base, tf = full.rsplit("__", 1)
+    if iref.find(base)[0] is None:
+        raise RecipeError(f"[実行器] カタログに無い材料: {base}（indicator_reference_diag に未登録）")
+    import contextlib
+    import io
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        import observe_diag as _od
+        fam, prm = _od.find_material(base)
+        if fam is None:
+            raise RecipeError(f"[実行器] 材料の表に無い名前: {base}（observe_diag の MATERIAL_FAMILIES）")
+        cfg = _od.load_config()
+        drop = {a for a, _b in (cfg.get("drop_columns") or [])}
+        if base in drop:
+            raise RecipeError(f"[実行器] 省く設定に載っている材料: {base}（observe_config の drop_columns）")
+        if tf not in cfg["timeframes"]:
+            raise RecipeError(f"[実行器] 使えない時間足: {tf}（使えるのは {cfg['timeframes']}）")
+        cfg_tf = dict(cfg)
+        cfg_tf["timeframes"] = [tf]
+        bars = df.set_index(pd.to_datetime(df["ts"]))[["open", "high", "low", "close", "volume"]]
+        one = _od.make_material(fam, *prm)
+        feats, meta = _od.build_features(bars, cfg_tf, catalog=[one])
+    if full not in feats.columns:
+        raise RecipeError(f"[実行器] 材料 {full} をその場で作れなかった（{meta.get(full)}）")
+    a = feats[full].to_numpy(float)
+    _MAT_MEMO["v"][full] = a
+    return a
+
+
 def _col_array(df: pd.DataFrame, m: dict, geo: dict, lane: str) -> np.ndarray:
     """材料1本 → 各バーの値。★前処理（pre）が在れば、最後に部品を1つ掛ける（2026-08-13）。"""
     pre = _pre_of(m)
@@ -928,10 +979,10 @@ def _col_array(df: pd.DataFrame, m: dict, geo: dict, lane: str) -> np.ndarray:
         if name in df.columns:
             return df[name].to_numpy(float)
         run_col = RUNTIME_ALIAS.get(name)
-        if run_col is None or run_col not in df.columns:
-            raise RecipeError(f"[実行器] 材料列 {name} が実行データに無い"
-                              f"（生成器の材料組み立て（build_features 接続）でも別名でも見つからない）")
-        return df[run_col].to_numpy(float)
+        if run_col is not None and run_col in df.columns:
+            return df[run_col].to_numpy(float)
+        # ★2026-08-13（段A の A-2b）＝ここで、その場で計算する（列を先に全部 作らない）。
+        return material_array(df, name)
     raise RecipeError(f"[実行器] 入口の材料に使えない種別: {kind}（{name}）")
 
 

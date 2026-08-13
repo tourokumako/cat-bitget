@@ -383,30 +383,635 @@ def _cyc(d: pd.DataFrame, name: str, fn):
     return _CYC_MEMO["v"][name]
 
 
+# ══ 材料の表（指標の種類 → 名前の組み立て・計算式・方向あり?）════════════════════
+# ★2026-08-13（段A の A-2）に新設。build_catalog の for の中に埋まっていた計算式を、ここへ出した。
+#   ★計算式は1文字も変えていない。変えたのは数字の渡し方だけ＝
+#     いま（数字を式の中に固定する）  lambda d, n=n: _rsi(d.close, n)
+#     直したあと（数字を引数で受ける） lambda d, n:   _rsi(d.close, n)
+#   ★なぜ要るか＝前の形では、設定ファイルに並んだ数字（RSI なら 7・9・14・21）以外の列名が
+#     どこにも作られず、engine_tuner が RSI12 を何回 走っても引けなかった
+#     （要件「作ってはいけないもの」2番＝探す値を先に「決まった数字だけ」で限定するもの）。
+#   ★名前の組み立て＝`{}` の個数がパラメータの個数。組み立てた名前は、前と1文字も違わない
+#     （番人＝535本の名前・方向・値の指紋を、直す前と突き合わせる）。
+MATERIAL_FAMILIES: dict[str, tuple] = {}
+
+# ★業界のライブラリ（pandas-ta-classic）は重いので、実際に材料を作る時に読み込む。
+#   ★計算式の中の書き方（`_pta6.rsi(...)`）は、直す前と1文字も変えない。
+#   変えたのは「いつ読み込むか」だけ＝前は build_catalog の中で読み込んでいた。
+_pta6 = None
+
+
+def _load_pta():
+    """業界のライブラリを1回だけ読み込む（式が使う名前は `_pta6` のまま）。"""
+    global _pta6
+    if _pta6 is None:
+        import pandas_ta_classic as _m
+        _pta6 = _m
+    return _pta6
+
+
+# ★td_seq は行の見出しを整数に作り直して返す（ほかの列は日付）。そのまま入れると
+#   日付の表と突き合わせできず全部 欠損になる。日付を付け直す（2026-08-09 実測で発見）。
+def _tdseq(d, i):
+    r = _pta6.td_seq(close=d.close).iloc[:, i]
+    r.index = d.index
+    return r
+
+
+def _mama(d):
+    return _pta6.mama(close=d.close)
+
+
+# ★1回の計算で複数の列を返すもの＝呼び出しを1か所にまとめる（式は直す前と同じ）
+def _ck(d):
+    return _pta6.cksp(high=d.high, low=d.low, close=d.close)
+
+
+def _ps(d):
+    return _pta6.psar(high=d.high, low=d.low, close=d.close)
+
+
+def _kv(d):
+    return _pta6.kvo(high=d.high, low=d.low, close=d.close, volume=d.volume)
+
+
+def _ab(d):
+    return _pta6.aberration(high=d.high, low=d.low, close=d.close)
+
+
+def _acb(d):
+    return _pta6.accbands(high=d.high, low=d.low, close=d.close)
+
+
+def _cel(d):
+    return _pta6.ce(high=d.high, low=d.low, close=d.close)
+
+
+def _hw(d):
+    return _pta6.hwc(close=d.close, channel_eval=True)
+
+
+def _th(d):
+    return _pta6.thermo(high=d.high, low=d.low)
+
+
+def _ha(d):
+    return _cyc(d, "ha", lambda x: _pta6.ha(open_=x.open, high=x.high, low=x.low, close=x.close))
+
+
+# ★VFI＝教科書の式（Markos Katsanos）。ライブラリの実装は使わない（足切りが終値の20%で、
+#   5分足では一度も超えず全部ゼロになる＝2026-08-10 実測 157,851本すべて 0）。
+def _vfi(d, n):
+    typ = (d.high + d.low + d.close) / 3.0
+    inter = np.log(typ) - np.log(typ.shift(1))
+    cutoff = 0.2 * inter.rolling(30).std() * d.close        # 教科書＝標準偏差30本・係数 0.2
+    vave = d.volume.rolling(n).mean().shift(1)              # 前の足まで（未来を見ない）
+    vc = d.volume.clip(upper=vave * 2.5)                    # 教科書＝出来高の上を 2.5 倍で切る
+    mf = typ - typ.shift(1)
+    vcp = vc * np.sign(mf.where(mf.abs() > cutoff, 0.0))
+    return (vcp.rolling(n).sum() / vave.replace(0, np.nan)).ewm(span=3, adjust=False).mean()
+
+
+def _ebsw(d, length=40, bars=10):
+    """Even Better SineWave（J.F.Ehlers, Cycle Analytics for Traders 2014）。
+    ①ハイパスで length 本より長い波を落とす ②スーパースムーザー（2極）で bars 本より短い波を落とす
+    ③3本の平均を3本の実効値で割って −1〜1 にする。角度は度（教科書どおり）。"""
+    c = d.close.to_numpy(dtype=float)
+    m = len(c)
+    out = np.full(m, np.nan)
+    if m <= length:
+        return pd.Series(out, index=d.index)
+    out[length - 1] = 0.0
+    a_hp = (1.0 - np.sin(np.radians(360.0 / length))) / np.cos(np.radians(360.0 / length))
+    a1 = np.exp(-np.sqrt(2.0) * np.pi / bars)
+    c2 = 2.0 * a1 * np.cos(np.radians(np.sqrt(2.0) * 180.0 / bars))
+    c3 = -a1 * a1
+    c1 = 1.0 - c2 - c3
+    last_c = last_hp = 0.0
+    hist = [0.0, 0.0]
+    for i in range(length, m):
+        hp = 0.5 * (1.0 + a_hp) * (c[i] - last_c) + a_hp * last_hp
+        filt = c1 * (hp + last_hp) / 2.0 + c2 * hist[1] + c3 * hist[0]
+        wave = (filt + hist[1] + hist[0]) / 3.0
+        pwr = (filt * filt + hist[1] * hist[1] + hist[0] * hist[0]) / 3.0
+        out[i] = wave / np.sqrt(pwr) if pwr > 0 else 0.0
+        hist.append(filt)
+        hist.pop(0)
+        last_hp, last_c = hp, c[i]
+    return pd.Series(out, index=d.index)
+
+
+_DOJI_N = 10                                  # cdl_doji の既定（直前 n 本の平均値幅）
+_CDLZ_N = 30                                  # cdl_z の既定（本数・標本標準偏差 ddof=1）
+
+
+def _reg(family: str, name_tpl: str, directional: bool, fn):
+    """指標の種類を1つ登録する（表に1行 足す）。"""
+    if family in MATERIAL_FAMILIES:
+        raise SystemExit(f"[材料カタログ] 指標の種類が二重に登録された: {family}")
+    MATERIAL_FAMILIES[family] = (name_tpl, bool(directional), fn)
+
+
+_MAT_RE: dict = {}
+
+
+def find_material(name: str):
+    """列の名前（例＝`RSI12` `BB%b(20,2.0)`）→ (指標の種類, パラメータ)。無ければ (None, None)。
+
+    ★参照表（indicator_reference_diag）の family 名と、この表の鍵が違うものが在る
+      （例＝参照表は `VAH`／この表は `close vs VAH%`）。だから名前の組み立ての型で照合する。
+    ★番人＝535本の名前を全部 分解して組み立て直し、1文字も違わないことを確かめる。
+    """
+    if not _MAT_RE:
+        for fam, (tpl, _d, _f) in MATERIAL_FAMILIES.items():
+            parts = tpl.split("{}")
+            _MAT_RE[fam] = re.compile("^" + r"(-?\d+(?:\.\d+)?)".join(re.escape(p) for p in parts) + "$")
+    hits = []
+    for fam, rx in _MAT_RE.items():
+        m = rx.match(name)
+        if m:
+            hits.append((fam, tuple(float(g) if "." in g else int(g) for g in m.groups())))
+    if not hits:
+        return None, None
+    if len(hits) > 1:                      # 型が重なっている＝表の作りが悪い（黙って選ばない）
+        raise SystemExit(f"[材料カタログ] 名前 {name} に当たる指標の種類が複数ある: {[h[0] for h in hits]}")
+    return hits[0]
+
+
+def make_material(family: str, *params) -> tuple:
+    """指標の種類とパラメータ → (列名, 計算式, 方向あり?)。
+
+    ★設定ファイルに並んでいない数字でも作れる（A-3・A-4 が使う入口）。
+    """
+    if family not in MATERIAL_FAMILIES:
+        raise SystemExit(f"[材料カタログ] 知らない指標の種類: {family}"
+                         f"（登録済み＝{len(MATERIAL_FAMILIES)} 種類）")
+    _load_pta()
+    tpl, directional, fn = MATERIAL_FAMILIES[family]
+    need = tpl.count("{}")
+    if need != len(params):
+        raise SystemExit(f"[材料カタログ] {family} のパラメータの個数が合わない"
+                         f"（要る＝{need} 個 ／ 渡された＝{list(params)}）")
+    return (tpl.format(*params), (lambda d, _f=fn, _p=params: _f(d, *_p)), directional)
+
+
+# ── トレンド/モメンタム ──
+_reg("ADX", "ADX{}", False, lambda d, n: _adx_di(d.high, d.low, d.close, n)[0])
+_reg("DI差", "DI差{}", True, lambda d, n: (lambda a: a[1] - a[2])(_adx_di(d.high, d.low, d.close, n)))
+_reg("MACD線%", "MACD線%({},{})", True, lambda d, f_, s_:
+     (d.close.ewm(span=f_).mean() - d.close.ewm(span=s_).mean()) / d.close * 100)
+_reg("MACDシグナル線%", "MACDシグナル線%({},{},{})", True, lambda d, f_, s_, g_:
+     (d.close.ewm(span=f_).mean() - d.close.ewm(span=s_).mean())
+     .ewm(span=g_).mean() / d.close * 100)
+_reg("MACDヒスト%", "MACDヒスト%({},{},{})", True, lambda d, f_, s_, g_:
+     (lambda m: (m - m.ewm(span=g_).mean()) / d.close * 100)(
+         d.close.ewm(span=f_).mean() - d.close.ewm(span=s_).mean()))
+_reg("RSI", "RSI{}", True, lambda d, n: _rsi(d.close, n))
+_reg("ROC", "ROC{}", True, lambda d, n: d.close.pct_change(n) * 100)
+_reg("Stoch%K", "Stoch%K{}", True, lambda d, n: 100 * (d.close - d.low.rolling(n).min())
+     / (d.high.rolling(n).max() - d.low.rolling(n).min()).replace(0, np.nan))
+_reg("Stoch%D", "Stoch%D{}", True, lambda d, n: (100 * (d.close - d.low.rolling(n).min())
+     / (d.high.rolling(n).max() - d.low.rolling(n).min()).replace(0, np.nan)).rolling(3).mean())
+# 全部上昇の窓は 100（世界標準の慣例）。旧式は分母0を NaN に置換して欠損にしていた＝是正（2026-07-30）
+_reg("MFI", "MFI{}", True, lambda d, n: (lambda tp: 100 - 100 / (1 + (
+     (tp * d.volume).where(tp > tp.shift(), 0).rolling(n).sum()
+     / (tp * d.volume).where(tp < tp.shift(), 0).rolling(n).sum()
+     )))((d.high + d.low + d.close) / 3))
+_reg("CMF", "CMF{}", True, lambda d, n: (((d.close - d.low) - (d.high - d.close))
+                                         / (d.high - d.low).replace(0, np.nan) * d.volume).rolling(n).sum()
+     / d.volume.rolling(n).sum().replace(0, np.nan))
+_reg("OBV傾き", "OBV傾き{}", True, lambda d, n: (np.sign(d.close.diff()) * d.volume).fillna(0).cumsum().diff(n)
+     / d.volume.rolling(n).sum().replace(0, np.nan))
+_reg("close vs 転換線%", "close vs 転換線%({})", True, lambda d, t_:
+     (d.close / ((d.high.rolling(t_).max() + d.low.rolling(t_).min()) / 2) - 1) * 100)
+_reg("close vs 基準線%", "close vs 基準線%({})", True, lambda d, k_:
+     (d.close / ((d.high.rolling(k_).max() + d.low.rolling(k_).min()) / 2) - 1) * 100)
+_reg("RCI", "RCI{}", True, lambda d, n: _rci(d.close, n))
+_reg("EMA傾き", "EMA{}傾き%", True, lambda d, n: d.close.ewm(span=n, adjust=False).mean().pct_change(5) * 100)
+# ── ボラ ──
+_reg("ATR%", "ATR%{}", False, lambda d, n: _atr(d.high, d.low, d.close, n) / d.close * 100)
+# 標準偏差は母集団（ddof=0）＝TradingView・ta と同じ世界標準（2026-07-30 に標本 ddof=1 から統一）
+_reg("BB%b", "BB%b({},{})", True, lambda d, n, s: (d.close - (d.close.rolling(n).mean()
+     - s * d.close.rolling(n).std(ddof=0))) / (2 * s * d.close.rolling(n).std(ddof=0)).replace(0, np.nan))
+_reg("BB幅", "BB幅({},{})", False, lambda d, n, s:
+     2 * s * d.close.rolling(n).std(ddof=0) / d.close.rolling(n).mean())
+_reg("realized_vol", "realized_vol{}", False, lambda d, n:
+     np.log(d.close / d.close.shift()).rolling(n).std() * 100)
+_reg("Donchian幅%", "Donchian幅%{}", False, lambda d, n:
+     (d.high.rolling(n).max() - d.low.rolling(n).min()) / d.close * 100)
+_reg("zscore", "zscore{}", True, lambda d, n:
+     (d.close - d.close.rolling(n).mean()) / d.close.rolling(n).std().replace(0, np.nan))
+# 対数リターン基準の zスコア（軸カタログ E-c の zscore_return・2026-07-30 検査7 を受けて追加）
+_reg("zscore_return", "zscore_return{}", True, lambda d, n:
+     (lambda r: (r - r.rolling(n).mean()) / r.rolling(n).std().replace(0, np.nan))
+     (np.log(d.close / d.close.shift())))
+# ── 出来高 ──
+_reg("volume_ratio", "volume_ratio{}", False, lambda d, n:
+     d.volume / d.volume.rolling(n).mean().replace(0, np.nan))
+# ── ローソク ──
+# 教科書の包み足＝前バーと逆の色で実体を包む（2026-07-30 に前バーの色を問わない簡略形から是正）
+_reg("包み足", "包み足", True, lambda d: (((d.close.shift() < d.open.shift()) & (d.open < d.close.shift())
+                                       & (d.close > d.open.shift())).astype(float)
+                                      - ((d.close.shift() > d.open.shift()) & (d.open > d.close.shift())
+                                         & (d.close < d.open.shift())).astype(float)))
+# 教科書の孕み足＝前バーと逆の色で実体が前バーの実体の中に収まる（2026-07-30 検査7 の軸カタログ照合で追加）
+_reg("孕み足", "孕み足", True, lambda d: (((d.close.shift() < d.open.shift()) & (d.close > d.open)
+                                       & (d.open > d.close.shift()) & (d.close < d.open.shift())).astype(float)
+                                      - ((d.close.shift() > d.open.shift()) & (d.close < d.open)
+                                         & (d.open < d.close.shift()) & (d.close > d.open.shift())).astype(float)))
+_reg("pinbar", "pinbar", True, lambda d: ((d[["open", "close"]].min(axis=1) - d.low)
+                                          - (d.high - d[["open", "close"]].max(axis=1)))
+     / (d.high - d.low).replace(0, np.nan))
+_reg("連続本数", "連続本数", True, lambda d: (np.sign(d.close - d.open)
+     .groupby((np.sign(d.close - d.open) != np.sign(d.close - d.open).shift()).cumsum())
+     .cumcount() + 1) * np.sign(d.close - d.open))
+_reg("body比", "body比", False, lambda d: (d.close - d.open).abs() / (d.high - d.low).replace(0, np.nan))
+_reg("上ヒゲ比", "上ヒゲ比", False, lambda d:
+     (d.high - d[["open", "close"]].max(axis=1)) / (d.high - d.low).replace(0, np.nan))
+_reg("下ヒゲ比", "下ヒゲ比", False, lambda d:
+     (d[["open", "close"]].min(axis=1) - d.low) / (d.high - d.low).replace(0, np.nan))
+# ── 形 ──
+_reg("swing高値距離%", "swing高値距離%{}", True, lambda d, n: (d.close / d.high.rolling(n).max() - 1) * 100)
+_reg("swing安値距離%", "swing安値距離%{}", True, lambda d, n: (d.close / d.low.rolling(n).min() - 1) * 100)
+_reg("高値からの経過バー", "高値からの経過バー{}", False, lambda d, n:
+     d.high.rolling(n).apply(lambda x: len(x) - 1 - int(np.argmax(x)), raw=True))
+_reg("安値からの経過バー", "安値からの経過バー{}", False, lambda d, n:
+     d.low.rolling(n).apply(lambda x: len(x) - 1 - int(np.argmin(x)), raw=True))
+# 名前どおり V=+2（下げて上げ）・M=−2（上げて下げ）・一方向=0。旧式は和になっていて
+# V も M も 0 になる符号の間違いだった（2026-07-30 検査3 の定義照合で発見・是正）
+_reg("形スコア", "形スコア{}(V=+/M=−)", True, lambda d, n:
+     np.sign(d.close - d.close.shift(n // 2)) - np.sign(d.close.shift(n // 2) - d.close.shift(n)))
+# W字＝ダブルボトムの完成フラグ（2026-07-30 追加・定義と流儀は参照表）
+_reg("W字", "W字({},{})", True, lambda d, n, t: _w_flag(d.close, d.high, d.low, n, t))
+# ── 位置 ──
+_reg("close vs EMA", "close vs EMA{}%", True, lambda d, n:
+     (d.close / d.close.ewm(span=n, adjust=False).mean() - 1) * 100)
+_reg("close vs SMA", "close vs SMA{}%", True, lambda d, n: (d.close / d.close.rolling(n).mean() - 1) * 100)
+_reg("close vs VWAP%", "close vs VWAP%{}", True, lambda d, n: (d.close / ((d.close * d.volume).rolling(n).sum()
+     / d.volume.rolling(n).sum().replace(0, np.nan)) - 1) * 100)
+_reg("close vs Keltner上%", "close vs Keltner上%({},{})", True, lambda d, n, k:
+     (d.close / (d.close.ewm(span=n, adjust=False).mean() + k * _atr(d.high, d.low, d.close)) - 1) * 100)
+_reg("close vs Keltner下%", "close vs Keltner下%({},{})", True, lambda d, n, k:
+     (d.close / (d.close.ewm(span=n, adjust=False).mean() - k * _atr(d.high, d.low, d.close)) - 1) * 100)
+_reg("close vs Supertrend%", "close vs Supertrend%({},{})", True, lambda d, n, k:
+     (d.close / _supertrend(d.high, d.low, d.close, n, k) - 1) * 100)
+_reg("close vs 本高値%", "close vs {}本高値%", True, lambda d, n: (d.close / d.high.rolling(n).max() - 1) * 100)
+_reg("close vs 本安値%", "close vs {}本安値%", True, lambda d, n: (d.close / d.low.rolling(n).min() - 1) * 100)
+# ── 構造 ──
+_reg("close vs pivotPP%", "close vs pivotPP%{}", True, lambda d, n: (d.close / ((d.high.rolling(n).max()
+     + d.low.rolling(n).min() + d.close.shift(1)) / 3) - 1) * 100)
+# R1/S1 は PP と同じ移動窓の変形（教科書は前期間の高安・終値＝流儀は参照表に明記・2026-07-30 追加）
+_reg("close vs pivotR1%", "close vs pivotR1%{}", True, lambda d, n: (d.close / (2 * ((d.high.rolling(n).max()
+     + d.low.rolling(n).min() + d.close.shift(1)) / 3) - d.low.rolling(n).min()) - 1) * 100)
+_reg("close vs pivotS1%", "close vs pivotS1%{}", True, lambda d, n: (d.close / (2 * ((d.high.rolling(n).max()
+     + d.low.rolling(n).min() + d.close.shift(1)) / 3) - d.high.rolling(n).max()) - 1) * 100)
+_reg("fib位置", "fib位置{}", True, lambda d, n: (d.close - d.low.rolling(n).min())
+     / (d.high.rolling(n).max() - d.low.rolling(n).min()).replace(0, np.nan))
+_reg("close vs POC%", "close vs POC%{}", True, lambda d, n:
+     (d.close / _vp_levels(d.close, d.volume, n)[0] - 1) * 100)
+_reg("close vs VAH%", "close vs VAH%{}", True, lambda d, n:
+     (d.close / _vp_levels(d.close, d.volume, n)[1] - 1) * 100)
+_reg("close vs VAL%", "close vs VAL%{}", True, lambda d, n:
+     (d.close / _vp_levels(d.close, d.volume, n)[2] - 1) * 100)
+_reg("S-Rタッチ数", "S-Rタッチ数({},{})", False, lambda d, n, t: _sr_touch(d.close, d.high, d.low, n, t))
+# ── 業界の指標（pandas-ta 由来・フロー 段6-2・1回目＝アルファベット順 ao〜lrsi の19関数）──
+# ★ローソク足の本数は、ここで新しい数字を作らない。既にある一覧をそのまま使う
+#   （rsi_periods / stoch_periods / macd_params）。本数を3つ以上 使う指標（KST）は
+#   ライブラリの既定をそのまま使う。★どちらもマイルストーン③で「範囲で探す」に置き換える。
+# ★ドルの金額で出る指標（AO・APO・DM・ERI）は、その場で終値で割って%にする（H6・段6-3）。
+# ★照合の相手は参照表 indicator_reference_diag が持つ（pandas-ta 同士では照合にならないため）。
+_reg("BIAS", "BIAS{}", True, lambda d, n: _pta6.bias(d.close, length=n))
+_reg("AR", "AR{}", False, lambda d, n: _pta6.brar(open_=d.open, high=d.high, low=d.low,
+                                                  close=d.close, length=n).iloc[:, 0])
+_reg("BR", "BR{}", False, lambda d, n: _pta6.brar(open_=d.open, high=d.high, low=d.low,
+                                                  close=d.close, length=n).iloc[:, 1])
+_reg("CCI", "CCI{}", True, lambda d, n: _pta6.cci(high=d.high, low=d.low, close=d.close, length=n))
+_reg("CFO", "CFO{}", False, lambda d, n: _pta6.cfo(close=d.close, length=n))
+_reg("CG", "CG{}", False, lambda d, n: _pta6.cg(close=d.close, length=n))
+_reg("CMO", "CMO{}", True, lambda d, n: _pta6.cmo(close=d.close, length=n))
+_reg("CTI", "CTI{}", True, lambda d, n: _pta6.cti(close=d.close, length=n))
+_reg("DM+%", "DM+%{}", True, lambda d, n: _pta6.dm(high=d.high, low=d.low, length=n).iloc[:, 0] / d.close * 100)
+_reg("DM-%", "DM-%{}", False, lambda d, n: _pta6.dm(high=d.high, low=d.low, length=n).iloc[:, 1] / d.close * 100)
+_reg("ER", "ER{}", False, lambda d, n: _pta6.er(close=d.close, length=n))
+_reg("ERI強気%", "ERI強気%{}", True, lambda d, n: _pta6.eri(high=d.high, low=d.low, close=d.close,
+                                                          length=n).iloc[:, 0] / d.close * 100)
+_reg("ERI弱気%", "ERI弱気%{}", False, lambda d, n: _pta6.eri(high=d.high, low=d.low, close=d.close,
+                                                           length=n).iloc[:, 1] / d.close * 100)
+_reg("INERTIA", "INERTIA{}", True, lambda d, n: _pta6.inertia(close=d.close, high=d.high, low=d.low, length=n))
+# ★LRSI はローソク足の本数を計算に使わない（実物＝length は入力の長さの確認にしか使われず、
+#   計算に効くのは gamma だけ）。本数で4通り作ったら4本とも同じ値になった＝1本にした（2026-08-09 実測）。
+#   gamma はライブラリの既定 0.5 をそのまま使う。範囲で探せるようにするのはマイルストーン③。
+_reg("LRSI", "LRSI(0.5)", True, lambda d: _pta6.lrsi(close=d.close, gamma=0.5))
+_reg("BOP", "BOP", True, lambda d: _pta6.bop(open_=d.open, high=d.high, low=d.low, close=d.close))
+_reg("KST", "KST", True, lambda d: _pta6.kst(close=d.close).iloc[:, 0])
+_reg("AO%", "AO%({},{})", True, lambda d, f_, s_: _pta6.ao(high=d.high, low=d.low, fast=f_, slow=s_) / d.close * 100)
+_reg("APO%", "APO%({},{})", True, lambda d, f_, s_: _pta6.apo(close=d.close, fast=f_, slow=s_) / d.close * 100)
+_reg("COPC", "COPC({},{},{})", True, lambda d, g_, f_, s_: _pta6.coppock(close=d.close, length=g_, fast=f_, slow=s_))
+_reg("FISHER", "FISHER({},{})", True, lambda d, f_, g_:
+     _pta6.fisher(high=d.high, low=d.low, length=f_, signal=g_).iloc[:, 0])
+_reg("FISHERシグナル", "FISHERシグナル({},{})", True, lambda d, f_, g_:
+     _pta6.fisher(high=d.high, low=d.low, length=f_, signal=g_).iloc[:, 1])
+_reg("KSTシグナル", "KSTシグナル{}", True, lambda d, g_: _pta6.kst(close=d.close, signal=g_).iloc[:, 1])
+_reg("KDJ%K", "KDJ%K({},{})", True, lambda d, n, g_:
+     _pta6.kdj(high=d.high, low=d.low, close=d.close, length=n, signal=g_).iloc[:, 0])
+_reg("KDJ%D", "KDJ%D({},{})", True, lambda d, n, g_:
+     _pta6.kdj(high=d.high, low=d.low, close=d.close, length=n, signal=g_).iloc[:, 1])
+_reg("KDJ%J", "KDJ%J({},{})", True, lambda d, n, g_:
+     _pta6.kdj(high=d.high, low=d.low, close=d.close, length=n, signal=g_).iloc[:, 2])
+# ── 業界の指標（2回目＝アルファベット順 macdext〜stc）──
+# ★入れなかったもの＝macdext・macdfix・stc の MACD列（うちの MACD と同じ）／slope（mom と同じ）／
+#   smi（tsi を 100 で割っただけ）／rocp・rocr・rocr100（うちの ROC）。全部 実データで確かめた。
+_reg("MOM%", "MOM%{}", True, lambda d, n: _pta6.mom(close=d.close, length=n) / d.close * 100)
+_reg("PGO", "PGO{}", True, lambda d, n: _pta6.pgo(high=d.high, low=d.low, close=d.close, length=n))
+_reg("PO", "PO{}", False, lambda d, n: _pta6.po(close=d.close, length=n))
+_reg("PSL", "PSL{}", True, lambda d, n: _pta6.psl(close=d.close, length=n))
+_reg("RSX", "RSX{}", True, lambda d, n: _pta6.rsx(close=d.close, length=n))
+_reg("RVGI", "RVGI({},4)", True, lambda d, n: _pta6.rvgi(open_=d.open, high=d.high, low=d.low,
+                                                         close=d.close, length=n).iloc[:, 1])
+_reg("RVGIシグナル", "RVGIシグナル({},4)", True, lambda d, n: _pta6.rvgi(open_=d.open, high=d.high, low=d.low,
+                                                                     close=d.close, length=n).iloc[:, 2])
+_reg("RVGIヒスト", "RVGIヒスト({},4)", True, lambda d, n: _pta6.rvgi(open_=d.open, high=d.high, low=d.low,
+                                                                 close=d.close, length=n).iloc[:, 0])
+_reg("PPO", "PPO({},{},{})", True, lambda d, f_, s_, g_:
+     _pta6.ppo(close=d.close, fast=f_, slow=s_, signal=g_).iloc[:, 0])
+_reg("PPOヒスト", "PPOヒスト({},{},{})", True, lambda d, f_, s_, g_:
+     _pta6.ppo(close=d.close, fast=f_, slow=s_, signal=g_).iloc[:, 1])
+_reg("PPOシグナル", "PPOシグナル({},{},{})", True, lambda d, f_, s_, g_:
+     _pta6.ppo(close=d.close, fast=f_, slow=s_, signal=g_).iloc[:, 2])
+_reg("PVO", "PVO({},{},{})", False, lambda d, f_, s_, g_:
+     _pta6.pvo(volume=d.volume, fast=f_, slow=s_, signal=g_).iloc[:, 0])
+_reg("PVOヒスト", "PVOヒスト({},{},{})", False, lambda d, f_, s_, g_:
+     _pta6.pvo(volume=d.volume, fast=f_, slow=s_, signal=g_).iloc[:, 1])
+_reg("PVOシグナル", "PVOシグナル({},{},{})", False, lambda d, f_, s_, g_:
+     _pta6.pvo(volume=d.volume, fast=f_, slow=s_, signal=g_).iloc[:, 2])
+# ★下はライブラリの既定の設定をそのまま使う（本数を3つ以上 使う指標＝私が数字を選ばない）
+_reg("QQE", "QQE", True, lambda d: _pta6.qqe(close=d.close).iloc[:, 0])
+_reg("QQE_RSIMA", "QQE_RSIMA", True, lambda d: _pta6.qqe(close=d.close).iloc[:, 1])
+_reg("SMC_SWEEP", "SMC_SWEEP", False, lambda d: _pta6.smc_sweep(open_=d.open, high=d.high, low=d.low, close=d.close))
+# ★SQZ は値段の単位で出る（実測＝4本値を2倍にすると値も2倍・検査13）。H6 に直して % で入れる
+#   （2026-08-11・段6 の 6-9①）。前は `SQZ` の名前で値段のまま材料に入っていた。
+_reg("SQZ%", "SQZ%", False, lambda d: _pta6.squeeze(high=d.high, low=d.low, close=d.close).iloc[:, 0]
+     / d.close * 100)
+_reg("SQZ_ON", "SQZ_ON", False, lambda d: _pta6.squeeze(high=d.high, low=d.low, close=d.close).iloc[:, 1])
+# ★SQZ_OFF（=1−SQZ_ON）・SQZ_NO（実測で2,000本すべて0）・SQZPRO_OFF（=1−SQZPRO_ON_WIDE）は
+#   情報が増えないので入れない（2026-08-09 実測）。
+_reg("SQZPRO_ON_WIDE", "SQZPRO_ON_WIDE", False, lambda d, k="WIDE":
+     (lambda t: t[[c for c in t.columns if c.endswith(k)][0]])(
+         _pta6.squeeze_pro(high=d.high, low=d.low, close=d.close)))
+_reg("SQZPRO_ON_NARROW", "SQZPRO_ON_NARROW", False, lambda d, k="NARROW":
+     (lambda t: t[[c for c in t.columns if c.endswith(k)][0]])(
+         _pta6.squeeze_pro(high=d.high, low=d.low, close=d.close)))
+_reg("STC", "STC", True, lambda d: _pta6.stc(close=d.close).iloc[:, 0])
+_reg("STCstoch", "STCstoch", True, lambda d: _pta6.stc(close=d.close).iloc[:, 2])
+# ── 業界の指標（3回目＝アルファベット順 stochf〜willr）──
+# ★入れなかったもの＝stochf（うちの Stoch そのもの）／willr（うちの Stoch%K − 100・まこさん決定）／
+#   trixh の本体とシグナル（trix と同じ）。
+_reg("StochRSI%K", "StochRSI%K{}", True, lambda d, n:
+     _pta6.stochrsi(close=d.close, length=n, rsi_length=n).iloc[:, 0])
+_reg("StochRSI%D", "StochRSI%D{}", True, lambda d, n:
+     _pta6.stochrsi(close=d.close, length=n, rsi_length=n).iloc[:, 1])
+_reg("TRIX", "TRIX({},{})", True, lambda d, n, g_:
+     _pta6.trix(close=d.close, length=n, signal=g_).iloc[:, 0])
+_reg("TRIXシグナル", "TRIXシグナル({},{})", True, lambda d, n, g_:
+     _pta6.trix(close=d.close, length=n, signal=g_).iloc[:, 1])
+_reg("TRIXヒスト", "TRIXヒスト({},{})", False, lambda d, n, g_:
+     _pta6.trixh(close=d.close, length=n, signal=g_).iloc[:, 2])
+_reg("TD_SEQ_UP", "TD_SEQ_UP", True, lambda d: _tdseq(d, 0))
+_reg("TD_SEQ_DN", "TD_SEQ_DN", False, lambda d: _tdseq(d, 1))
+_reg("UO", "UO", True, lambda d: _pta6.uo(high=d.high, low=d.low, close=d.close))
+_reg("TSI", "TSI({},{},{})", True, lambda d, f_, s_, g_:
+     _pta6.tsi(close=d.close, fast=f_, slow=s_, signal=g_).iloc[:, 0])
+_reg("TSIシグナル", "TSIシグナル({},{},{})", True, lambda d, f_, s_, g_:
+     _pta6.tsi(close=d.close, fast=f_, slow=s_, signal=g_).iloc[:, 1])
+_reg("TSIヒスト", "TSIヒスト({},{},{})", False, lambda d, f_, s_, g_:
+     (lambda t: t.iloc[:, 0] - t.iloc[:, 1])(
+         _pta6.tsi(close=d.close, fast=f_, slow=s_, signal=g_)))
+_reg("VWMACD線%", "VWMACD線%({},{},{})", True, lambda d, f_, s_, g_:
+     _pta6.vwmacd(close=d.close, volume=d.volume, fast=f_, slow=s_,
+                  signal=g_).iloc[:, 0] / d.close * 100)
+_reg("VWMACDヒスト%", "VWMACDヒスト%({},{},{})", False, lambda d, f_, s_, g_:
+     _pta6.vwmacd(close=d.close, volume=d.volume, fast=f_, slow=s_,
+                  signal=g_).iloc[:, 1] / d.close * 100)
+_reg("VWMACDシグナル%", "VWMACDシグナル%({},{},{})", True, lambda d, f_, s_, g_:
+     _pta6.vwmacd(close=d.close, volume=d.volume, fast=f_, slow=s_,
+                  signal=g_).iloc[:, 2] / d.close * 100)
+# ── 業界の指標（overlap＝移動平均のなかま）──
+# ★移動平均は値段そのもの（H6 違反）なので、必ず2つの形にして入れる。
+#   ①close vs X%（終値との距離%）②X傾き%（5本前からの変化率%）＝うちの EMA・SMA と同じ形。
+# ★本数は既にある sma_periods（20・50・200）をそのまま使う。新しい数字を作らない。
+#   本数を持たない指標（HILO・HT_TRENDLINE・HWMA）はライブラリの既定をそのまま使う。
+_MA_FUNCS = [
+    ("ALMA", lambda d, n: _pta6.alma(close=d.close, length=n)),
+    ("DEMA", lambda d, n: _pta6.dema(close=d.close, length=n)),
+    ("HMA", lambda d, n: _pta6.hma(close=d.close, length=n)),
+    ("JMA", lambda d, n: _pta6.jma(close=d.close, length=n)),
+    ("KAMA", lambda d, n: _pta6.kama(close=d.close, length=n)),
+    ("LINREG", lambda d, n: _pta6.linreg(close=d.close, length=n)),
+    ("LRb", lambda d, n: _pta6.linregintercept(close=d.close, length=n)),
+    ("MCGD", lambda d, n: _pta6.mcgd(close=d.close, length=n)),
+    ("MIDPOINT", lambda d, n: _pta6.midpoint(close=d.close, length=n)),
+    ("MIDPRICE", lambda d, n: _pta6.midprice(high=d.high, low=d.low, length=n)),
+    ("PWMA", lambda d, n: _pta6.pwma(close=d.close, length=n)),
+    ("RMA", lambda d, n: _pta6.rma(close=d.close, length=n)),
+    ("SINWMA", lambda d, n: _pta6.sinwma(close=d.close, length=n)),
+    ("SSF", lambda d, n: _pta6.ssf(close=d.close, length=n)),
+    ("SWMA", lambda d, n: _pta6.swma(close=d.close, length=n)),
+    # ★t3 は先頭の欠損を落とした短い列を返す（実測）。日付で突き合わせ直して長さをそろえる。
+    #   データが短くて計算できないときは None を返すので、全部 欠損の列にして落ちないようにする。
+    ("T3", lambda d, n: (lambda r: pd.Series(np.nan, index=d.index) if r is None
+                         else r.reindex(d.index))(_pta6.t3(close=d.close, length=n))),
+    ("TEMA", lambda d, n: _pta6.tema(close=d.close, length=n)),
+    ("TRIMA", lambda d, n: _pta6.trima(close=d.close, length=n)),
+    ("TSF", lambda d, n: _pta6.tsf(close=d.close, length=n)),
+    ("VIDYA", lambda d, n: _pta6.vidya(close=d.close, length=n)),
+    ("VWMA", lambda d, n: _pta6.vwma(close=d.close, volume=d.volume, length=n)),
+    ("WMA", lambda d, n: _pta6.wma(close=d.close, length=n)),
+    ("ZLMA", lambda d, n: _pta6.zlma(close=d.close, length=n)),
+    ("FWMA", lambda d, n: _pta6.fwma(close=d.close, length=n)),
+]
+for _nm, _mafn in _MA_FUNCS:
+    _reg(f"close vs {_nm}%", f"close vs {_nm}%{{}}", True,
+         lambda d, n, f=_mafn: (d.close / f(d, n) - 1) * 100)
+    if _nm not in ("JMA",):        # JMA は独立実装を書いていない＝傾きも作らない
+        _reg(f"{_nm}傾き", f"{_nm}{{}}傾き%", True,
+             lambda d, n, f=_mafn: f(d, n).pct_change(5) * 100)
+# ★LRangle（直線あてはめの角度）＝2026-08-11 に一度 材料から外したが、同じ日に戻した。
+#   ★正しい形＝要件のハード制約（H6）に反する指標は、外すのではなく直して使う。
+#   だから「1本あたり何%動くか」の傾きの角度に直して入れる（SQZ% と同じ直し方）。
+_reg("LRangle", "LRangle{}", True, lambda d, n: np.degrees(np.arctan(
+     _pta6.linregslope(close=d.close, length=n) / d.close * 100)))
+_reg("LRslope%", "LRslope%{}", True, lambda d, n: _pta6.linregslope(close=d.close, length=n) / d.close * 100)
+_reg("close vs HILO%", "close vs HILO%", True, lambda d: (d.close / _pta6.hilo(high=d.high, low=d.low,
+                                                                              close=d.close).iloc[:, 0] - 1) * 100)
+_reg("close vs HT_TRENDLINE%", "close vs HT_TRENDLINE%", True,
+     lambda d: (d.close / _pta6.ht_trendline(close=d.close) - 1) * 100)
+_reg("close vs HWMA%", "close vs HWMA%", True, lambda d: (d.close / _pta6.hwma(close=d.close) - 1) * 100)
+_reg("close vs MAMA%", "close vs MAMA%", True, lambda d: (d.close / _mama(d).iloc[:, 0] - 1) * 100)
+_reg("close vs FAMA%", "close vs FAMA%", True, lambda d: (d.close / _mama(d).iloc[:, 1] - 1) * 100)
+_reg("close vs MMAR%", "close vs MMAR%{}", True,
+     lambda d, k: (d.close / _pta6.mmar(close=d.close)[f"MMAR_{k}"] - 1) * 100)
+_reg("MMAR傾き", "MMAR{}傾き%", True,
+     lambda d, k: _pta6.mmar(close=d.close)[f"MMAR_{k}"].pct_change(5) * 100)
+_reg("close vs RAINBOW%", "close vs RAINBOW%{}", True,
+     lambda d, k: (d.close / _pta6.rainbow(close=d.close)[f"RAINBOW_{k}"] - 1) * 100)
+_reg("RAINBOW傾き", "RAINBOW{}傾き%", True,
+     lambda d, k: _pta6.rainbow(close=d.close)[f"RAINBOW_{k}"].pct_change(5) * 100)
+# ── 業界の指標（trend 16関数）──
+# ★入れなかったもの＝plus_dm・minus_dm（うちの DM+% / DM-% と同じ・実測 最大差 1e-15）。
+# ★dpo は既定の centered=True が未来を見る（値を未来の足の方へずらす書き方を使う）ので、
+#   必ず centered=False で呼ぶ。
+_reg("ADXR", "ADXR{}", False, lambda d, n: _pta6.adxr(high=d.high, low=d.low, close=d.close,
+                                                      length=n).iloc[:, 0])
+_reg("DI+", "DI+{}", True, lambda d, n: _pta6.adxr(high=d.high, low=d.low, close=d.close,
+                                                   length=n).iloc[:, 1])
+_reg("DI-", "DI-{}", False, lambda d, n: _pta6.adxr(high=d.high, low=d.low, close=d.close,
+                                                    length=n).iloc[:, 2])
+_reg("DX", "DX{}", False, lambda d, n: _pta6.dx(high=d.high, low=d.low, close=d.close, length=n))
+_reg("AROONU", "AROONU{}", True, lambda d, n: _pta6.aroon(high=d.high, low=d.low, length=n).iloc[:, 1])
+_reg("AROOND", "AROOND{}", False, lambda d, n: _pta6.aroon(high=d.high, low=d.low, length=n).iloc[:, 0])
+_reg("AROONOSC", "AROONOSC{}", True, lambda d, n: _pta6.aroon(high=d.high, low=d.low, length=n).iloc[:, 2])
+_reg("CHOP", "CHOP{}", False, lambda d, n: _pta6.chop(high=d.high, low=d.low, close=d.close, length=n))
+_reg("VHF", "VHF{}", False, lambda d, n: _pta6.vhf(close=d.close, length=n))
+_reg("VTXP", "VTXP{}", True, lambda d, n: _pta6.vortex(high=d.high, low=d.low, close=d.close,
+                                                       length=n).iloc[:, 0])
+_reg("VTXM", "VTXM{}", False, lambda d, n: _pta6.vortex(high=d.high, low=d.low, close=d.close,
+                                                        length=n).iloc[:, 1])
+_reg("QSTICK%", "QSTICK%{}", True, lambda d, n:
+     _pta6.qstick(open_=d.open, close=d.close, length=n) / d.close * 100)
+_reg("DPO%", "DPO%{}", False, lambda d, n:
+     _pta6.dpo(close=d.close, length=n, centered=False) / d.close * 100)
+_reg("TTM_TREND", "TTM_TREND{}", True, lambda d, n: _pta6.ttm_trend(high=d.high, low=d.low, close=d.close,
+                                                                    length=n).iloc[:, 0])
+# ★AMAT は LR の1列だけ入れる（理由は式で決まる＝slow が打ち消されて効かない・2026-08-09 実測）。
+_reg("AMAT_LR", "AMAT_LR", True, lambda d: _pta6.amat(close=d.close).iloc[:, 0])
+_reg("close vs CKSPl%", "close vs CKSPl%", True, lambda d: (d.close / _ck(d).iloc[:, 0] - 1) * 100)
+_reg("close vs CKSPs%", "close vs CKSPs%", True, lambda d: (d.close / _ck(d).iloc[:, 1] - 1) * 100)
+_reg("close vs PMAX%", "close vs PMAX%", True,
+     lambda d: (d.close / _pta6.pmax(high=d.high, low=d.low, close=d.close) - 1) * 100)
+_reg("close vs PSAR%", "close vs PSAR%", True,
+     lambda d: (d.close / (lambda t: t.iloc[:, 0].fillna(t.iloc[:, 1]))(_ps(d)) - 1) * 100)
+_reg("PSAR加速", "PSAR加速", False, lambda d: _ps(d).iloc[:, 2])
+_reg("PSAR反転", "PSAR反転", False, lambda d: _ps(d).iloc[:, 3])
+_reg("close vs SAREXT%", "close vs SAREXT%", True,
+     lambda d: (d.close / _pta6.sarext(high=d.high, low=d.low, close=d.close) - 1) * 100)
+# ── 業界の指標（volume 16関数）──
+# ★出来高系は、ライブラリの値をそのままでは材料にできない（積み上げは増え続ける・
+#   出来高と値段の大きさに引きずられる＝H6 違反）。既に在る OBV傾き と同じ形にそろえる。
+_reg("EFI比", "EFI比{}", True, lambda d, n: _pta6.efi(close=d.close, volume=d.volume, length=n)
+     / (d.close * d.volume.rolling(n).mean()) * 100)
+# ★係数は 1e4＝%が2つ（中値の動き% × 値幅%）の積だから 100×100（100 だと片方ぶんしか戻らない）
+_reg("EOM比", "EOM比{}", True, lambda d, n: _pta6.eom(high=d.high, low=d.low, close=d.close,
+                                                      volume=d.volume, length=n)
+     * d.volume.rolling(n).mean() * 1e4 / (d.close * d.close * 1e8))
+_reg("MARKETFI比", "MARKETFI比{}", False, lambda d, n: _pta6.marketfi(high=d.high, low=d.low, volume=d.volume)
+     * d.volume.rolling(n).mean() * 100 / d.close)
+_reg("NVI傾き", "NVI傾き{}", True, lambda d, n: _pta6.nvi(close=d.close, volume=d.volume).diff(n))
+_reg("PVI傾き", "PVI傾き{}", True, lambda d, n: _pta6.pvi(close=d.close, volume=d.volume).diff(n))
+_reg("PVOL比", "PVOL比{}", False, lambda d, n: (lambda pv: pv / pv.rolling(n).mean())(
+     _pta6.pvol(close=d.close, volume=d.volume)))
+_reg("PVT傾き", "PVT傾き{}", True, lambda d, n: _pta6.pvt(close=d.close, volume=d.volume).diff(n)
+     / d.volume.rolling(n).sum().replace(0, np.nan))
+_reg("WAD傾き", "WAD傾き{}", True, lambda d, n: _pta6.wad(high=d.high, low=d.low, close=d.close).diff(n)
+     / d.close * 100)
+# 本数を2つ以上 自分で持つ指標＝ライブラリの既定をそのまま使う（本数を私が新しく作らない）
+_reg("ADOSC比", "ADOSC比", True, lambda d: _pta6.adosc(high=d.high, low=d.low, close=d.close, volume=d.volume)
+     / d.volume.rolling(10).mean())
+_reg("AOBV_LR", "AOBV_LR", True, lambda d: _pta6.aobv(close=d.close, volume=d.volume)["AOBV_LR_2"].astype(float))
+# ★KVO は「向きを持つ列」ではない（2026-08-10 実測）。理由は参照表の流儀の欄。
+_reg("KVO比", "KVO比", False, lambda d: _kv(d).iloc[:, 0] / d.volume.rolling(55).mean())
+_reg("KVOシグナル比", "KVOシグナル比", False, lambda d: _kv(d).iloc[:, 1] / d.volume.rolling(55).mean())
+_reg("VOSC", "VOSC", False, lambda d: _pta6.vosc(volume=d.volume))
+_reg("VFI", "VFI{}", True, lambda d, n: _vfi(d, n))
+# ★出来高変化率%＝pvr（1〜4 の区分）の中身の半分。本数は pvr の定義どおり 1 本。
+_reg("出来高変化率%", "出来高変化率%1", False, lambda d: (d.volume / d.volume.shift(1) - 1) * 100)
+# ── 業界の指標（statistics 13関数）──
+_reg("skew", "skew{}", False, lambda d, n: _pta6.skew(close=d.close, length=n))
+_reg("kurtosis", "kurtosis{}", False, lambda d, n: _pta6.kurtosis(close=d.close, length=n))
+_reg("MAD比", "MAD比{}", False, lambda d, n: _pta6.mad(close=d.close, length=n) / d.close * 100)
+_reg("stdev%", "stdev%{}", False, lambda d, n: _pta6.stdev(close=d.close, length=n) / d.close * 100)
+_reg("close vs MEDIAN%", "close vs MEDIAN%{}", True,
+     lambda d, n: (d.close / _pta6.median(close=d.close, length=n) - 1) * 100)
+_reg("MEDIAN傾き%", "MEDIAN傾き%{}", True,
+     lambda d, n: _pta6.median(close=d.close, length=n).pct_change(5) * 100)
+# ── 業界の指標（volatility 12関数）──
+# ★帯（中心線・上下の帯）は値段そのものなので、終値との距離%にする（H6・close vs SMA% と同じ流儀）。
+_reg("close vs ABER_ZG%", "close vs ABER_ZG%", True, lambda d: (d.close / _ab(d).iloc[:, 0] - 1) * 100)
+_reg("ABER位置", "ABER位置", True,
+     lambda d: (lambda a: (d.close - a.iloc[:, 2]) / (a.iloc[:, 1] - a.iloc[:, 2]))(_ab(d)))
+_reg("close vs ACCBL%", "close vs ACCBL%", True, lambda d: (d.close / _acb(d).iloc[:, 0] - 1) * 100)
+_reg("close vs ACCBU%", "close vs ACCBU%", True, lambda d: (d.close / _acb(d).iloc[:, 2] - 1) * 100)
+_reg("close vs CE_L%", "close vs CE_L%", True, lambda d: (d.close / _cel(d).iloc[:, 0] - 1) * 100)
+_reg("close vs CE_S%", "close vs CE_S%", True, lambda d: (d.close / _cel(d).iloc[:, 1] - 1) * 100)
+_reg("HWC位置", "HWC位置", False, lambda d: _hw(d)["HWPCT"])
+_reg("HWC幅%", "HWC幅%", False, lambda d: _hw(d)["HWW"] / d.close * 100)
+_reg("MASSI", "MASSI", False, lambda d: _pta6.massi(high=d.high, low=d.low))
+_reg("PDIST%", "PDIST%", False, lambda d: _pta6.pdist(open_=d.open, high=d.high, low=d.low,
+                                                      close=d.close) / d.close * 100)
+_reg("TR%", "TR%", False, lambda d: _pta6.true_range(high=d.high, low=d.low, close=d.close) / d.close * 100)
+_reg("THERMO%", "THERMO%", False, lambda d: _th(d).iloc[:, 0] / d.close * 100)
+_reg("THERMO比", "THERMO比", False, lambda d: (lambda t: t.iloc[:, 0] / t.iloc[:, 1])(_th(d)))
+_reg("CVI", "CVI{}", False, lambda d, n: _pta6.cvi(high=d.high, low=d.low, length=n))
+_reg("RVI", "RVI{}", True, lambda d, n: _pta6.rvi(close=d.close, length=n))
+_reg("UI", "UI{}", False, lambda d, n: _pta6.ui(close=d.close, length=n))
+# ── 業界の指標（cycles 8関数）──
+_reg("EBSW", "EBSW", True, lambda d: _ebsw(d))
+_reg("HT_DCPERIOD", "HT_DCPERIOD", False,
+     lambda d: _cyc(d, "dcperiod", lambda x: _pta6.ht_dcperiod(close=x.close)))
+_reg("HT_DCPHASE", "HT_DCPHASE", False,
+     lambda d: _cyc(d, "dcphase", lambda x: _pta6.ht_dcphase(close=x.close)))
+_reg("HT_INPHASE%", "HT_INPHASE%", True,
+     lambda d: _cyc(d, "phasor", lambda x: _pta6.ht_phasor(close=x.close)).iloc[:, 0] / d.close * 100)
+_reg("HT_QUAD%", "HT_QUAD%", False,
+     lambda d: _cyc(d, "phasor", lambda x: _pta6.ht_phasor(close=x.close)).iloc[:, 1] / d.close * 100)
+_reg("HT_SINE", "HT_SINE", False, lambda d: _cyc(d, "htsine", lambda x: _pta6.ht_sine(close=x.close)).iloc[:, 0])
+_reg("HT_LEADSINE", "HT_LEADSINE", False,
+     lambda d: _cyc(d, "htsine", lambda x: _pta6.ht_sine(close=x.close)).iloc[:, 1])
+_reg("HT_TRENDMODE", "HT_TRENDMODE", False,
+     lambda d: _cyc(d, "trendmode", lambda x: _pta6.ht_trendmode(close=x.close)))
+_reg("MSW_SINE", "MSW_SINE", True, lambda d: _cyc(d, "msw", lambda x: _pta6.msw(close=x.close)).iloc[:, 0])
+_reg("MSW_LEAD", "MSW_LEAD", False, lambda d: _cyc(d, "msw", lambda x: _pta6.msw(close=x.close)).iloc[:, 1])
+# ── 業界の指標（candles 4関数）──
+_reg("実体幅比", f"実体幅比{_DOJI_N}", False, lambda d: (d.close - d.open).abs()
+     / (d.high - d.low).rolling(_DOJI_N).mean().shift(1).replace(0, np.nan))
+_reg("内側バー", "内側バー", True, lambda d: (((d.high.diff() < 0) & (d.low.diff() > 0)).astype(float)
+                                        * np.where(d.close >= d.open, 1.0, -1.0)))
+for _k, _c in (("open", 0), ("high", 1), ("low", 2)):
+    _reg(f"{_k}_Z", f"{_k}_Z{_CDLZ_N}", True, lambda d, c=_c: _pta6.cdl_z(open_=d.open, high=d.high, low=d.low,
+                                                                          close=d.close).iloc[:, c])
+_reg("HA実体%", "HA実体%", True, lambda d: (lambda a: (a.iloc[:, 3] - a.iloc[:, 0]) / d.close * 100)(_ha(d)))
+_reg("HA上ヒゲ比", "HA上ヒゲ比", False, lambda d: (lambda a: (a.iloc[:, 1] - a.iloc[:, [0, 3]].max(axis=1))
+                                           / (a.iloc[:, 1] - a.iloc[:, 2]).replace(0, np.nan))(_ha(d)))
+_reg("HA下ヒゲ比", "HA下ヒゲ比", False, lambda d: (lambda a: (a.iloc[:, [0, 3]].min(axis=1) - a.iloc[:, 2])
+                                           / (a.iloc[:, 1] - a.iloc[:, 2]).replace(0, np.nan))(_ha(d)))
+
+
 # ══ 指標カタログ（この道具が正本・呼び出し側は足せない/減らせない）══════
 # (表示名, 計算関数, 方向あり?)  方向あり＝値が大きいほど「価格が上」を意味する
 def build_catalog(cfg: dict) -> list[tuple]:
-    """指標カタログ。期間・パラメータは observe_config.json から取る（コードに焼かない）。"""
+    """指標カタログ。期間・パラメータは observe_config.json から取る（コードに焼かない）。
+
+    ★2026-08-13（A-2）＝計算式は上の材料の表（MATERIAL_FAMILIES）に在る。
+      この関数がやるのは「設定ファイルの数字を読んで、その組を1つずつ作る」ことだけ。
+    """
     C = []
 
     def add(name, fn, directional):
         C.append((name, fn, directional))
 
+    def addf(family, *params):
+        """材料の表から1組 作って足す（パラメータは引数で渡す）。"""
+        C.append(make_material(family, *params))
+
     # ── トレンド/モメンタム ──
     for n in cfg["atr_periods"]:
-        add(f"ADX{n}", lambda d, n=n: _adx_di(d.high, d.low, d.close, n)[0], False)
-        add(f"DI差{n}", lambda d, n=n: (lambda a: a[1] - a[2])(_adx_di(d.high, d.low, d.close, n)), True)
+        addf("ADX", n)
+        addf("DI差", n)
     for (f_, s_, g_) in cfg["macd_params"]:
-        add(f"MACD線%({f_},{s_})", lambda d, f_=f_, s_=s_:
-            (d.close.ewm(span=f_).mean() - d.close.ewm(span=s_).mean()) / d.close * 100, True)
-        add(f"MACDシグナル線%({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            (d.close.ewm(span=f_).mean() - d.close.ewm(span=s_).mean())
-            .ewm(span=g_).mean() / d.close * 100, True)
-        add(f"MACDヒスト%({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            (lambda m: (m - m.ewm(span=g_).mean()) / d.close * 100)(
-                d.close.ewm(span=f_).mean() - d.close.ewm(span=s_).mean()), True)
+        addf("MACD線%", f_, s_)
+        addf("MACDシグナル線%", f_, s_, g_)
+        addf("MACDヒスト%", f_, s_, g_)
     for n in cfg["rsi_periods"]:
-        add(f"RSI{n}", lambda d, n=n: _rsi(d.close, n), True)
+        addf("RSI", n)
         # ★2026-08-11 に「RSI の差」の列を8本 足したが、同じ日に省いた（まこさん OK・逐語「１はOK」）。
         #   理由＝engine_tuner には元から「いまの値 − n本前の値」を作る形が在った
         #   （engine_tuner_exec.py の form="slope"＝`d = a - np.roll(a, n)`・n は条件ごとの欄）。
@@ -417,131 +1022,86 @@ def build_catalog(cfg: dict) -> list[tuple]:
         #   本当の穴は「使い方の側」＝slope の本数が 3・6・12・24 の4つに限定されていること
         #   （recipes/search_limits.json の int_grid）＝マイルストーン③で範囲にする。
     for n in cfg["roc_periods"]:
-        add(f"ROC{n}", lambda d, n=n: d.close.pct_change(n) * 100, True)
+        addf("ROC", n)
     for n in cfg["stoch_periods"]:
-        add(f"Stoch%K{n}", lambda d, n=n: 100 * (d.close - d.low.rolling(n).min())
-            / (d.high.rolling(n).max() - d.low.rolling(n).min()).replace(0, np.nan), True)
-        add(f"Stoch%D{n}", lambda d, n=n: (100 * (d.close - d.low.rolling(n).min())
-            / (d.high.rolling(n).max() - d.low.rolling(n).min()).replace(0, np.nan)).rolling(3).mean(), True)
+        addf("Stoch%K", n)
+        addf("Stoch%D", n)
     for n in cfg["mfi_periods"]:
-        # 全部上昇の窓は 100（世界標準の慣例）。旧式は分母0を NaN に置換して欠損にしていた＝是正（2026-07-30）
-        add(f"MFI{n}", lambda d, n=n: (lambda tp: 100 - 100 / (1 + (
-            (tp * d.volume).where(tp > tp.shift(), 0).rolling(n).sum()
-            / (tp * d.volume).where(tp < tp.shift(), 0).rolling(n).sum()
-        )))((d.high + d.low + d.close) / 3), True)
+        addf("MFI", n)
     for n in cfg["cmf_periods"]:
-        add(f"CMF{n}", lambda d, n=n: (((d.close - d.low) - (d.high - d.close))
-                                       / (d.high - d.low).replace(0, np.nan) * d.volume).rolling(n).sum()
-            / d.volume.rolling(n).sum().replace(0, np.nan), True)
+        addf("CMF", n)
     for n in cfg["obv_slope_periods"]:
-        add(f"OBV傾き{n}", lambda d, n=n: (np.sign(d.close.diff()) * d.volume).fillna(0).cumsum().diff(n)
-            / d.volume.rolling(n).sum().replace(0, np.nan), True)
+        addf("OBV傾き", n)
     for (t_, k_) in cfg["ichimoku"]:
-        add(f"close vs 転換線%({t_})", lambda d, t_=t_:
-            (d.close / ((d.high.rolling(t_).max() + d.low.rolling(t_).min()) / 2) - 1) * 100, True)
-        add(f"close vs 基準線%({k_})", lambda d, k_=k_:
-            (d.close / ((d.high.rolling(k_).max() + d.low.rolling(k_).min()) / 2) - 1) * 100, True)
+        addf("close vs 転換線%", t_)
+        addf("close vs 基準線%", k_)
     for n in cfg["rci_periods"]:
-        add(f"RCI{n}", lambda d, n=n: _rci(d.close, n), True)
+        addf("RCI", n)
     for n in cfg["ema_periods"]:
-        add(f"EMA{n}傾き%", lambda d, n=n: d.close.ewm(span=n, adjust=False).mean().pct_change(5) * 100, True)
+        addf("EMA傾き", n)
     # ── ボラ ──
     for n in cfg["atr_periods"]:
-        add(f"ATR%{n}", lambda d, n=n: _atr(d.high, d.low, d.close, n) / d.close * 100, False)
+        addf("ATR%", n)
     for n in cfg["bb_periods"]:
         for s in cfg["bb_sigma"]:
-            # 標準偏差は母集団（ddof=0）＝TradingView・ta と同じ世界標準（2026-07-30 に標本 ddof=1 から統一）
-            add(f"BB%b({n},{s})", lambda d, n=n, s=s: (d.close - (d.close.rolling(n).mean()
-                - s * d.close.rolling(n).std(ddof=0))) / (2 * s * d.close.rolling(n).std(ddof=0)).replace(0, np.nan), True)
-            add(f"BB幅({n},{s})", lambda d, n=n, s=s:
-                2 * s * d.close.rolling(n).std(ddof=0) / d.close.rolling(n).mean(), False)
+            addf("BB%b", n, s)
+            addf("BB幅", n, s)
     for n in cfg["realized_vol_periods"]:
-        add(f"realized_vol{n}", lambda d, n=n: np.log(d.close / d.close.shift()).rolling(n).std() * 100, False)
+        addf("realized_vol", n)
     for n in cfg["donchian_periods"]:
-        add(f"Donchian幅%{n}", lambda d, n=n:
-            (d.high.rolling(n).max() - d.low.rolling(n).min()) / d.close * 100, False)
+        addf("Donchian幅%", n)
     for n in cfg["zscore_periods"]:
-        add(f"zscore{n}", lambda d, n=n:
-            (d.close - d.close.rolling(n).mean()) / d.close.rolling(n).std().replace(0, np.nan), True)
-        # 対数リターン基準の zスコア（軸カタログ E-c の zscore_return・2026-07-30 検査7 を受けて追加）
-        add(f"zscore_return{n}", lambda d, n=n:
-            (lambda r: (r - r.rolling(n).mean()) / r.rolling(n).std().replace(0, np.nan))
-            (np.log(d.close / d.close.shift())), True)
+        addf("zscore", n)
+        addf("zscore_return", n)
     # ── 出来高 ──
     for n in cfg["volume_ratio_periods"]:
-        add(f"volume_ratio{n}", lambda d, n=n: d.volume / d.volume.rolling(n).mean().replace(0, np.nan), False)
+        addf("volume_ratio", n)
     # ── ローソク ──
-    # 教科書の包み足＝前バーと逆の色で実体を包む（2026-07-30 に前バーの色を問わない簡略形から是正）
-    add("包み足", lambda d: (((d.close.shift() < d.open.shift()) & (d.open < d.close.shift())
-                              & (d.close > d.open.shift())).astype(float)
-                            - ((d.close.shift() > d.open.shift()) & (d.open > d.close.shift())
-                               & (d.close < d.open.shift())).astype(float)), True)
-    # 教科書の孕み足＝前バーと逆の色で実体が前バーの実体の中に収まる（2026-07-30 検査7 の軸カタログ照合で追加）
-    add("孕み足", lambda d: (((d.close.shift() < d.open.shift()) & (d.close > d.open)
-                              & (d.open > d.close.shift()) & (d.close < d.open.shift())).astype(float)
-                            - ((d.close.shift() > d.open.shift()) & (d.close < d.open)
-                               & (d.open < d.close.shift()) & (d.close > d.open.shift())).astype(float)), True)
-    add("pinbar", lambda d: ((d[["open", "close"]].min(axis=1) - d.low)
-                             - (d.high - d[["open", "close"]].max(axis=1))) / (d.high - d.low).replace(0, np.nan), True)
-    add("連続本数", lambda d: (np.sign(d.close - d.open)
-                             .groupby((np.sign(d.close - d.open) != np.sign(d.close - d.open).shift()).cumsum())
-                             .cumcount() + 1) * np.sign(d.close - d.open), True)
-    add("body比", lambda d: (d.close - d.open).abs() / (d.high - d.low).replace(0, np.nan), False)
-    add("上ヒゲ比", lambda d: (d.high - d[["open", "close"]].max(axis=1)) / (d.high - d.low).replace(0, np.nan), False)
-    add("下ヒゲ比", lambda d: (d[["open", "close"]].min(axis=1) - d.low) / (d.high - d.low).replace(0, np.nan), False)
+    addf("包み足")
+    addf("孕み足")
+    addf("pinbar")
+    addf("連続本数")
+    addf("body比")
+    addf("上ヒゲ比")
+    addf("下ヒゲ比")
     # ── 形 ──
     for n in cfg["swing_windows"]:
-        add(f"swing高値距離%{n}", lambda d, n=n: (d.close / d.high.rolling(n).max() - 1) * 100, True)
-        add(f"swing安値距離%{n}", lambda d, n=n: (d.close / d.low.rolling(n).min() - 1) * 100, True)
-        add(f"高値からの経過バー{n}", lambda d, n=n:
-            d.high.rolling(n).apply(lambda x: len(x) - 1 - int(np.argmax(x)), raw=True), False)
-        add(f"安値からの経過バー{n}", lambda d, n=n:
-            d.low.rolling(n).apply(lambda x: len(x) - 1 - int(np.argmin(x)), raw=True), False)
-        # 名前どおり V=+2（下げて上げ）・M=−2（上げて下げ）・一方向=0。旧式は和になっていて
-        # V も M も 0 になる符号の間違いだった（2026-07-30 検査3 の定義照合で発見・是正）
-        add(f"形スコア{n}(V=+/M=−)", lambda d, n=n:
-            np.sign(d.close - d.close.shift(n // 2)) - np.sign(d.close.shift(n // 2) - d.close.shift(n)), True)
-        # W字＝ダブルボトムの完成フラグ（2026-07-30 追加・定義と流儀は参照表）
+        addf("swing高値距離%", n)
+        addf("swing安値距離%", n)
+        addf("高値からの経過バー", n)
+        addf("安値からの経過バー", n)
+        addf("形スコア", n)
         for t in cfg["w_tol"]:
-            add(f"W字({n},{t})", lambda d, n=n, t=t: _w_flag(d.close, d.high, d.low, n, t), True)
+            addf("W字", n, t)
     # ── 位置 ──
     for n in cfg["ema_periods"]:
-        add(f"close vs EMA{n}%", lambda d, n=n: (d.close / d.close.ewm(span=n, adjust=False).mean() - 1) * 100, True)
+        addf("close vs EMA", n)
     for n in cfg["sma_periods"]:
-        add(f"close vs SMA{n}%", lambda d, n=n: (d.close / d.close.rolling(n).mean() - 1) * 100, True)
+        addf("close vs SMA", n)
     for n in cfg["vwap_windows"]:
-        add(f"close vs VWAP%{n}", lambda d, n=n: (d.close / ((d.close * d.volume).rolling(n).sum()
-            / d.volume.rolling(n).sum().replace(0, np.nan)) - 1) * 100, True)
+        addf("close vs VWAP%", n)
     for (n, k) in cfg["keltner"]:
-        add(f"close vs Keltner上%({n},{k})", lambda d, n=n, k=k: (d.close / (d.close.ewm(span=n, adjust=False).mean()
-            + k * _atr(d.high, d.low, d.close)) - 1) * 100, True)
-        add(f"close vs Keltner下%({n},{k})", lambda d, n=n, k=k: (d.close / (d.close.ewm(span=n, adjust=False).mean()
-            - k * _atr(d.high, d.low, d.close)) - 1) * 100, True)
+        addf("close vs Keltner上%", n, k)
+        addf("close vs Keltner下%", n, k)
     for (n, k) in cfg["supertrend"]:
-        add(f"close vs Supertrend%({n},{k})", lambda d, n=n, k=k:
-            (d.close / _supertrend(d.high, d.low, d.close, n, k) - 1) * 100, True)
+        addf("close vs Supertrend%", n, k)
     for n in cfg["swing_windows"]:
-        add(f"close vs {n}本高値%", lambda d, n=n: (d.close / d.high.rolling(n).max() - 1) * 100, True)
-        add(f"close vs {n}本安値%", lambda d, n=n: (d.close / d.low.rolling(n).min() - 1) * 100, True)
+        addf("close vs 本高値%", n)
+        addf("close vs 本安値%", n)
     # ── 構造 ──
     for n in cfg["pivot_windows"]:
-        add(f"close vs pivotPP%{n}", lambda d, n=n: (d.close / ((d.high.rolling(n).max()
-            + d.low.rolling(n).min() + d.close.shift(1)) / 3) - 1) * 100, True)
-        # R1/S1 は PP と同じ移動窓の変形（教科書は前期間の高安・終値＝流儀は参照表に明記・2026-07-30 追加）
-        add(f"close vs pivotR1%{n}", lambda d, n=n: (d.close / (2 * ((d.high.rolling(n).max()
-            + d.low.rolling(n).min() + d.close.shift(1)) / 3) - d.low.rolling(n).min()) - 1) * 100, True)
-        add(f"close vs pivotS1%{n}", lambda d, n=n: (d.close / (2 * ((d.high.rolling(n).max()
-            + d.low.rolling(n).min() + d.close.shift(1)) / 3) - d.high.rolling(n).max()) - 1) * 100, True)
+        addf("close vs pivotPP%", n)
+        addf("close vs pivotR1%", n)
+        addf("close vs pivotS1%", n)
     for n in cfg["fib_windows"]:
-        add(f"fib位置{n}", lambda d, n=n: (d.close - d.low.rolling(n).min())
-            / (d.high.rolling(n).max() - d.low.rolling(n).min()).replace(0, np.nan), True)
+        addf("fib位置", n)
     for n in cfg["vp_windows"]:
-        add(f"close vs POC%{n}", lambda d, n=n: (d.close / _vp_levels(d.close, d.volume, n)[0] - 1) * 100, True)
-        add(f"close vs VAH%{n}", lambda d, n=n: (d.close / _vp_levels(d.close, d.volume, n)[1] - 1) * 100, True)
-        add(f"close vs VAL%{n}", lambda d, n=n: (d.close / _vp_levels(d.close, d.volume, n)[2] - 1) * 100, True)
+        addf("close vs POC%", n)
+        addf("close vs VAH%", n)
+        addf("close vs VAL%", n)
     for n in cfg["sr_windows"]:
         for t in cfg["sr_tol"]:
-            add(f"S-Rタッチ数({n},{t})", lambda d, n=n, t=t: _sr_touch(d.close, d.high, d.low, n, t), False)
+            addf("S-Rタッチ数", n, t)
 
     # ── 業界の指標（pandas-ta 由来・フロー 段6-2・1回目＝アルファベット順 ao〜lrsi の19関数）──
     # ★ローソク足の本数は、ここで新しい数字を作らない。既にある一覧をそのまま使う
@@ -549,167 +1109,60 @@ def build_catalog(cfg: dict) -> list[tuple]:
     #   ライブラリの既定をそのまま使う。★どちらもマイルストーン③で「範囲で探す」に置き換える。
     # ★ドルの金額で出る指標（AO・APO・DM・ERI）は、その場で終値で割って%にする（H6・段6-3）。
     # ★照合の相手は参照表 indicator_reference_diag が持つ（pandas-ta 同士では照合にならないため）。
-    import pandas_ta_classic as _pta6
+    _load_pta()
     for n in cfg["rsi_periods"]:
-        add(f"BIAS{n}", lambda d, n=n: _pta6.bias(d.close, length=n), True)
-        add(f"AR{n}", lambda d, n=n: _pta6.brar(open_=d.open, high=d.high, low=d.low,
-                                                close=d.close, length=n).iloc[:, 0], False)
-        add(f"BR{n}", lambda d, n=n: _pta6.brar(open_=d.open, high=d.high, low=d.low,
-                                                close=d.close, length=n).iloc[:, 1], False)
-        add(f"CCI{n}", lambda d, n=n: _pta6.cci(high=d.high, low=d.low, close=d.close, length=n), True)
-        add(f"CFO{n}", lambda d, n=n: _pta6.cfo(close=d.close, length=n), False)
-        add(f"CG{n}", lambda d, n=n: _pta6.cg(close=d.close, length=n), False)
-        add(f"CMO{n}", lambda d, n=n: _pta6.cmo(close=d.close, length=n), True)
-        add(f"CTI{n}", lambda d, n=n: _pta6.cti(close=d.close, length=n), True)
-        add(f"DM+%{n}", lambda d, n=n: _pta6.dm(high=d.high, low=d.low, length=n).iloc[:, 0] / d.close * 100, True)
-        add(f"DM-%{n}", lambda d, n=n: _pta6.dm(high=d.high, low=d.low, length=n).iloc[:, 1] / d.close * 100, False)
-        add(f"ER{n}", lambda d, n=n: _pta6.er(close=d.close, length=n), False)
-        add(f"ERI強気%{n}", lambda d, n=n: _pta6.eri(high=d.high, low=d.low, close=d.close,
-                                                    length=n).iloc[:, 0] / d.close * 100, True)
-        add(f"ERI弱気%{n}", lambda d, n=n: _pta6.eri(high=d.high, low=d.low, close=d.close,
-                                                    length=n).iloc[:, 1] / d.close * 100, False)
-        add(f"INERTIA{n}", lambda d, n=n: _pta6.inertia(close=d.close, high=d.high, low=d.low, length=n), True)
-    # ★LRSI はローソク足の本数を計算に使わない（実物＝length は入力の長さの確認にしか使われず、
-    #   計算に効くのは gamma だけ）。本数で4通り作ったら4本とも同じ値になった＝1本にした（2026-08-09 実測）。
-    #   gamma はライブラリの既定 0.5 をそのまま使う。範囲で探せるようにするのはマイルストーン③。
-    add("LRSI(0.5)", lambda d: _pta6.lrsi(close=d.close, gamma=0.5), True)
-    add("BOP", lambda d: _pta6.bop(open_=d.open, high=d.high, low=d.low, close=d.close), True)
-    add("KST", lambda d: _pta6.kst(close=d.close).iloc[:, 0], True)
+        for _fam in ("BIAS", "AR", "BR", "CCI", "CFO", "CG", "CMO", "CTI",
+                     "DM+%", "DM-%", "ER", "ERI強気%", "ERI弱気%", "INERTIA"):
+            addf(_fam, n)
+    addf("LRSI")
+    addf("BOP")
+    addf("KST")
     for (f_, s_, g_) in cfg["macd_params"]:
-        add(f"AO%({f_},{s_})", lambda d, f_=f_, s_=s_:
-            _pta6.ao(high=d.high, low=d.low, fast=f_, slow=s_) / d.close * 100, True)
-        add(f"APO%({f_},{s_})", lambda d, f_=f_, s_=s_:
-            _pta6.apo(close=d.close, fast=f_, slow=s_) / d.close * 100, True)
-        add(f"COPC({g_},{f_},{s_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.coppock(close=d.close, length=g_, fast=f_, slow=s_), True)
-        add(f"FISHER({f_},{g_})", lambda d, f_=f_, g_=g_:
-            _pta6.fisher(high=d.high, low=d.low, length=f_, signal=g_).iloc[:, 0], True)
-        add(f"FISHERシグナル({f_},{g_})", lambda d, f_=f_, g_=g_:
-            _pta6.fisher(high=d.high, low=d.low, length=f_, signal=g_).iloc[:, 1], True)
-        add(f"KSTシグナル{g_}", lambda d, g_=g_: _pta6.kst(close=d.close, signal=g_).iloc[:, 1], True)
+        addf("AO%", f_, s_)
+        addf("APO%", f_, s_)
+        addf("COPC", g_, f_, s_)
+        addf("FISHER", f_, g_)
+        addf("FISHERシグナル", f_, g_)
+        addf("KSTシグナル", g_)
         for n in cfg["stoch_periods"]:
-            add(f"KDJ%K({n},{g_})", lambda d, n=n, g_=g_:
-                _pta6.kdj(high=d.high, low=d.low, close=d.close, length=n, signal=g_).iloc[:, 0], True)
-            add(f"KDJ%D({n},{g_})", lambda d, n=n, g_=g_:
-                _pta6.kdj(high=d.high, low=d.low, close=d.close, length=n, signal=g_).iloc[:, 1], True)
-            add(f"KDJ%J({n},{g_})", lambda d, n=n, g_=g_:
-                _pta6.kdj(high=d.high, low=d.low, close=d.close, length=n, signal=g_).iloc[:, 2], True)
+            addf("KDJ%K", n, g_)
+            addf("KDJ%D", n, g_)
+            addf("KDJ%J", n, g_)
 
     # ── 業界の指標（2回目＝アルファベット順 macdext〜stc）──
-    # ★入れなかったもの＝macdext・macdfix・stc の MACD列（うちの MACD と同じ）／slope（mom と同じ）／
-    #   smi（tsi を 100 で割っただけ）／rocp・rocr・rocr100（うちの ROC）。全部 実データで確かめた。
     for n in cfg["rsi_periods"]:
-        add(f"MOM%{n}", lambda d, n=n: _pta6.mom(close=d.close, length=n) / d.close * 100, True)
-        add(f"PGO{n}", lambda d, n=n: _pta6.pgo(high=d.high, low=d.low, close=d.close, length=n), True)
-        add(f"PO{n}", lambda d, n=n: _pta6.po(close=d.close, length=n), False)
-        add(f"PSL{n}", lambda d, n=n: _pta6.psl(close=d.close, length=n), True)
-        add(f"RSX{n}", lambda d, n=n: _pta6.rsx(close=d.close, length=n), True)
-        add(f"RVGI({n},4)", lambda d, n=n: _pta6.rvgi(open_=d.open, high=d.high, low=d.low,
-                                                      close=d.close, length=n).iloc[:, 1], True)
-        add(f"RVGIシグナル({n},4)", lambda d, n=n: _pta6.rvgi(open_=d.open, high=d.high, low=d.low,
-                                                           close=d.close, length=n).iloc[:, 2], True)
-        add(f"RVGIヒスト({n},4)", lambda d, n=n: _pta6.rvgi(open_=d.open, high=d.high, low=d.low,
-                                                         close=d.close, length=n).iloc[:, 0], True)
+        for _fam in ("MOM%", "PGO", "PO", "PSL", "RSX", "RVGI", "RVGIシグナル", "RVGIヒスト"):
+            addf(_fam, n)
     for (f_, s_, g_) in cfg["macd_params"]:
-        add(f"PPO({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.ppo(close=d.close, fast=f_, slow=s_, signal=g_).iloc[:, 0], True)
-        add(f"PPOヒスト({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.ppo(close=d.close, fast=f_, slow=s_, signal=g_).iloc[:, 1], True)
-        add(f"PPOシグナル({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.ppo(close=d.close, fast=f_, slow=s_, signal=g_).iloc[:, 2], True)
-        add(f"PVO({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.pvo(volume=d.volume, fast=f_, slow=s_, signal=g_).iloc[:, 0], False)
-        add(f"PVOヒスト({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.pvo(volume=d.volume, fast=f_, slow=s_, signal=g_).iloc[:, 1], False)
-        add(f"PVOシグナル({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.pvo(volume=d.volume, fast=f_, slow=s_, signal=g_).iloc[:, 2], False)
-    # ★下はライブラリの既定の設定をそのまま使う（本数を3つ以上 使う指標＝私が数字を選ばない）
-    add("QQE", lambda d: _pta6.qqe(close=d.close).iloc[:, 0], True)
-    add("QQE_RSIMA", lambda d: _pta6.qqe(close=d.close).iloc[:, 1], True)
-    add("SMC_SWEEP", lambda d: _pta6.smc_sweep(open_=d.open, high=d.high, low=d.low, close=d.close), False)
-    # ★SQZ は値段の単位で出る（実測＝4本値を2倍にすると値も2倍・検査13）。H6 に直して % で入れる
-    #   （2026-08-11・段6 の 6-9①）。前は `SQZ` の名前で値段のまま材料に入っていた。
-    add("SQZ%", lambda d: _pta6.squeeze(high=d.high, low=d.low, close=d.close).iloc[:, 0]
-        / d.close * 100, False)
-    add("SQZ_ON", lambda d: _pta6.squeeze(high=d.high, low=d.low, close=d.close).iloc[:, 1], False)
-    # ★SQZ_OFF（=1−SQZ_ON）・SQZ_NO（実測で2,000本すべて0）・SQZPRO_OFF（=1−SQZPRO_ON_WIDE）は
-    #   情報が増えないので入れない（2026-08-09 実測）。
-    for _lbl, _key in [("SQZPRO_ON_WIDE", "WIDE"), ("SQZPRO_ON_NARROW", "NARROW")]:
-        add(_lbl, lambda d, k=_key: (lambda t: t[[c for c in t.columns if c.endswith(k)][0]])(
-            _pta6.squeeze_pro(high=d.high, low=d.low, close=d.close)), False)
-    add("STC", lambda d: _pta6.stc(close=d.close).iloc[:, 0], True)
-    add("STCstoch", lambda d: _pta6.stc(close=d.close).iloc[:, 2], True)
+        for _fam in ("PPO", "PPOヒスト", "PPOシグナル", "PVO", "PVOヒスト", "PVOシグナル"):
+            addf(_fam, f_, s_, g_)
+    for _fam in ("QQE", "QQE_RSIMA", "SMC_SWEEP", "SQZ%", "SQZ_ON",
+                 "SQZPRO_ON_WIDE", "SQZPRO_ON_NARROW", "STC", "STCstoch"):
+        addf(_fam)
 
     # ── 業界の指標（3回目＝アルファベット順 stochf〜willr）──
-    # ★入れなかったもの＝stochf（うちの Stoch そのもの）／willr（うちの Stoch%K − 100・まこさん決定）／
-    #   trixh の本体とシグナル（trix と同じ）。
     for n in cfg["rsi_periods"]:
-        add(f"StochRSI%K{n}", lambda d, n=n:
-            _pta6.stochrsi(close=d.close, length=n, rsi_length=n).iloc[:, 0], True)
-        add(f"StochRSI%D{n}", lambda d, n=n:
-            _pta6.stochrsi(close=d.close, length=n, rsi_length=n).iloc[:, 1], True)
+        addf("StochRSI%K", n)
+        addf("StochRSI%D", n)
         for (_f, _s, g_) in cfg["macd_params"]:
-            add(f"TRIX({n},{g_})", lambda d, n=n, g_=g_:
-                _pta6.trix(close=d.close, length=n, signal=g_).iloc[:, 0], True)
-            add(f"TRIXシグナル({n},{g_})", lambda d, n=n, g_=g_:
-                _pta6.trix(close=d.close, length=n, signal=g_).iloc[:, 1], True)
-            add(f"TRIXヒスト({n},{g_})", lambda d, n=n, g_=g_:
-                _pta6.trixh(close=d.close, length=n, signal=g_).iloc[:, 2], False)
-    # ★td_seq は行の見出しを整数に作り直して返す（ほかの列は日付）。そのまま入れると
-    #   日付の表と突き合わせできず全部 欠損になる。日付を付け直す（2026-08-09 実測で発見）。
-    def _tdseq(d, i):
-        r = _pta6.td_seq(close=d.close).iloc[:, i]
-        r.index = d.index
-        return r
-    add("TD_SEQ_UP", lambda d: _tdseq(d, 0), True)
-    add("TD_SEQ_DN", lambda d: _tdseq(d, 1), False)
-    add("UO", lambda d: _pta6.uo(high=d.high, low=d.low, close=d.close), True)
+            addf("TRIX", n, g_)
+            addf("TRIXシグナル", n, g_)
+            addf("TRIXヒスト", n, g_)
+    addf("TD_SEQ_UP")
+    addf("TD_SEQ_DN")
+    addf("UO")
     for (f_, s_, g_) in cfg["macd_params"]:
-        add(f"TSI({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.tsi(close=d.close, fast=f_, slow=s_, signal=g_).iloc[:, 0], True)
-        add(f"TSIシグナル({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.tsi(close=d.close, fast=f_, slow=s_, signal=g_).iloc[:, 1], True)
-        add(f"TSIヒスト({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            (lambda t: t.iloc[:, 0] - t.iloc[:, 1])(
-                _pta6.tsi(close=d.close, fast=f_, slow=s_, signal=g_)), False)
-        add(f"VWMACD線%({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.vwmacd(close=d.close, volume=d.volume, fast=f_, slow=s_,
-                         signal=g_).iloc[:, 0] / d.close * 100, True)
-        add(f"VWMACDヒスト%({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.vwmacd(close=d.close, volume=d.volume, fast=f_, slow=s_,
-                         signal=g_).iloc[:, 1] / d.close * 100, False)
-        add(f"VWMACDシグナル%({f_},{s_},{g_})", lambda d, f_=f_, s_=s_, g_=g_:
-            _pta6.vwmacd(close=d.close, volume=d.volume, fast=f_, slow=s_,
-                         signal=g_).iloc[:, 2] / d.close * 100, True)
+        for _fam in ("TSI", "TSIシグナル", "TSIヒスト",
+                     "VWMACD線%", "VWMACDヒスト%", "VWMACDシグナル%"):
+            addf(_fam, f_, s_, g_)
 
     # ── 業界の指標（overlap 1回目＝アルファベット順 alma〜linregangle）──
-    # ★移動平均は値段そのもの（H6 違反）なので、必ず2つの形にして入れる。
-    #   ①close vs X%（終値との距離%）②X傾き%（5本前からの変化率%）＝うちの EMA・SMA と同じ形。
-    # ★本数は既にある sma_periods（20・50・200）をそのまま使う。新しい数字を作らない。
-    #   本数を持たない指標（HILO・HT_TRENDLINE・HWMA）はライブラリの既定をそのまま使う。
     for n in cfg["sma_periods"]:
-        for _nm, _fn in [
-            ("ALMA", lambda d, n: _pta6.alma(close=d.close, length=n)),
-            ("DEMA", lambda d, n: _pta6.dema(close=d.close, length=n)),
-            ("HMA", lambda d, n: _pta6.hma(close=d.close, length=n)),
-            ("JMA", lambda d, n: _pta6.jma(close=d.close, length=n)),
-            ("KAMA", lambda d, n: _pta6.kama(close=d.close, length=n)),
-            ("LINREG", lambda d, n: _pta6.linreg(close=d.close, length=n)),
-        ]:
-            add(f"close vs {_nm}%{n}", lambda d, n=n, f=_fn: (d.close / f(d, n) - 1) * 100, True)
+        for _nm in ("ALMA", "DEMA", "HMA", "JMA", "KAMA", "LINREG"):
+            addf(f"close vs {_nm}%", n)
             if _nm not in ("JMA",):            # JMA は独立実装を書いていない＝傾きも作らない
-                add(f"{_nm}{n}傾き%", lambda d, n=n, f=_fn: f(d, n).pct_change(5) * 100, True)
-        # ★LRangle（直線あてはめの角度）＝2026-08-11 に一度 材料から外したが、同じ日に戻した。
-        #   経緯を残す。①検査13（4本値を定数倍して計算し直す）が「値段の単位に依存する」と出した
-        #   （業界の実装は arctan(1本あたり何ドル動くか) なので、値段の帯が変わると角度が変わる。
-        #   ★対応表には「角度なので値段に依存しない＝そのまま入れる」と書いてあったが実測で誤り）。
-        #   ②私はそこで「外す」と決めたが、これは私の勝手な判断だった（まこさん指摘 2026-08-11）。
-        #   ★正しい形＝要件のハード制約（H6）に反する指標は、外すのではなく直して使う。
-        #   だから「1本あたり何%動くか」の傾きの角度に直して入れる（SQZ% と同じ直し方）。
-        #   ③この形は既に在る LRslope% の単調変換（実測＝順位の相関 1.0000000000）＝重複の候補。
-        #   ★どちらを省くかは まこさんが決める（検査12 の一覧に出る）。CC は決めない。
-        add(f"LRangle{n}", lambda d, n=n: np.degrees(np.arctan(
-            _pta6.linregslope(close=d.close, length=n) / d.close * 100)), True)
+                addf(f"{_nm}傾き", n)
+        addf("LRangle", n)
         # ★FWMA はフィボナッチの重みが急に大きくなるので、本数を増やすと古い足の重みが
         #   数値の下限を割ってゼロになり、値が変わらなくなる（実測 2026-08-09＝n=200 では
         #   200本中144本の重みがゼロ・FWMA50 と最大差 8.6e-08＝実質 同じ）。
@@ -719,107 +1172,52 @@ def build_catalog(cfg: dict) -> list[tuple]:
             _fw.append(_fw[-1] + _fw[-2])
         _fwn = np.array(_fw[:n]) / np.sum(_fw[:n])
         if not (_fwn < 1e-12).any():
-            add(f"close vs FWMA%{n}", lambda d, n=n: (d.close / _pta6.fwma(close=d.close, length=n) - 1) * 100, True)
-            add(f"FWMA{n}傾き%", lambda d, n=n: _pta6.fwma(close=d.close, length=n).pct_change(5) * 100, True)
-    add("close vs HILO%", lambda d: (d.close / _pta6.hilo(high=d.high, low=d.low,
-                                                          close=d.close).iloc[:, 0] - 1) * 100, True)
-    add("close vs HT_TRENDLINE%", lambda d: (d.close / _pta6.ht_trendline(close=d.close) - 1) * 100, True)
-    add("close vs HWMA%", lambda d: (d.close / _pta6.hwma(close=d.close) - 1) * 100, True)
+            addf("close vs FWMA%", n)
+            addf("FWMA傾き", n)
+    addf("close vs HILO%")
+    addf("close vs HT_TRENDLINE%")
+    addf("close vs HWMA%")
 
     # ── 業界の指標（overlap 2回目＝linregintercept〜rma）──
-    # ★本数は sma_periods（20・50・200）。本数を自分で持つ帯（MMAR・RAINBOW）は
-    #   ライブラリの既定の並びをそのまま使う。mama・mavp は独立実装を書いていない。
     for n in cfg["sma_periods"]:
-        for _nm, _fn in [
-            ("LRb", lambda d, n: _pta6.linregintercept(close=d.close, length=n)),
-            ("MCGD", lambda d, n: _pta6.mcgd(close=d.close, length=n)),
-            ("MIDPOINT", lambda d, n: _pta6.midpoint(close=d.close, length=n)),
-            ("MIDPRICE", lambda d, n: _pta6.midprice(high=d.high, low=d.low, length=n)),
-            ("PWMA", lambda d, n: _pta6.pwma(close=d.close, length=n)),
-            ("RMA", lambda d, n: _pta6.rma(close=d.close, length=n)),
-        ]:
-            add(f"close vs {_nm}%{n}", lambda d, n=n, f=_fn: (d.close / f(d, n) - 1) * 100, True)
-            add(f"{_nm}{n}傾き%", lambda d, n=n, f=_fn: f(d, n).pct_change(5) * 100, True)
-        add(f"LRslope%{n}", lambda d, n=n: _pta6.linregslope(close=d.close, length=n) / d.close * 100, True)
-    _mama = lambda d: _pta6.mama(close=d.close)
-    add("close vs MAMA%", lambda d: (d.close / _mama(d).iloc[:, 0] - 1) * 100, True)
-    add("close vs FAMA%", lambda d: (d.close / _mama(d).iloc[:, 1] - 1) * 100, True)
+        for _nm in ("LRb", "MCGD", "MIDPOINT", "MIDPRICE", "PWMA", "RMA"):
+            addf(f"close vs {_nm}%", n)
+            addf(f"{_nm}傾き", n)
+        addf("LRslope%", n)
+    addf("close vs MAMA%")
+    addf("close vs FAMA%")
     # ★mavp は入れない＝既定の使い方が未来を見る（実物の逐語＝periods を
     #   np.linspace(minperiod, maxperiod, len(close)) で作る＝各足で使う本数がデータ全体の
     #   本数で決まる。データが増えると過去の足の値まで変わる）。2026-08-09 実測で検出。
     for _k in (10, 15, 20, 25, 30, 35):              # ライブラリの既定の帯（本数を5ずつ増やす）
         if _k in cfg["ema_periods"]:                 # ★既にある EMA と同じ本数は入れない（実測で一致）
             continue
-        add(f"close vs MMAR%{_k}", lambda d, k=_k: (d.close / _pta6.mmar(close=d.close)[f"MMAR_{k}"] - 1) * 100, True)
-        add(f"MMAR{_k}傾き%", lambda d, k=_k: _pta6.mmar(close=d.close)[f"MMAR_{k}"].pct_change(5) * 100, True)
+        addf("close vs MMAR%", _k)
+        addf("MMAR傾き", _k)
     for _k in range(1, 11):                          # ライブラリの既定＝10本 重ねがけ
-        add(f"close vs RAINBOW%{_k}", lambda d, k=_k: (d.close / _pta6.rainbow(close=d.close)[f"RAINBOW_{k}"] - 1) * 100, True)
-        add(f"RAINBOW{_k}傾き%", lambda d, k=_k: _pta6.rainbow(close=d.close)[f"RAINBOW_{k}"].pct_change(5) * 100, True)
+        addf("close vs RAINBOW%", _k)
+        addf("RAINBOW傾き", _k)
 
     # ── 業界の指標（overlap 3回目＝sinwma〜zlma）──
     for n in cfg["sma_periods"]:
-        for _nm, _fn in [
-            ("SINWMA", lambda d, n: _pta6.sinwma(close=d.close, length=n)),
-            ("SSF", lambda d, n: _pta6.ssf(close=d.close, length=n)),
-            ("SWMA", lambda d, n: _pta6.swma(close=d.close, length=n)),
-            # ★t3 は先頭の欠損を落とした短い列を返す（実測）。日付で突き合わせ直して長さをそろえる。
-            #   データが短くて計算できないときは None を返すので、全部 欠損の列にして落ちないようにする。
-            ("T3", lambda d, n: (lambda r: pd.Series(np.nan, index=d.index) if r is None
-                                 else r.reindex(d.index))(_pta6.t3(close=d.close, length=n))),
-            ("TEMA", lambda d, n: _pta6.tema(close=d.close, length=n)),
-            ("TRIMA", lambda d, n: _pta6.trima(close=d.close, length=n)),
-            ("TSF", lambda d, n: _pta6.tsf(close=d.close, length=n)),
-            ("VIDYA", lambda d, n: _pta6.vidya(close=d.close, length=n)),
-            ("VWMA", lambda d, n: _pta6.vwma(close=d.close, volume=d.volume, length=n)),
-            ("WMA", lambda d, n: _pta6.wma(close=d.close, length=n)),
-            ("ZLMA", lambda d, n: _pta6.zlma(close=d.close, length=n)),
-        ]:
-            add(f"close vs {_nm}%{n}", lambda d, n=n, f=_fn: (d.close / f(d, n) - 1) * 100, True)
-            add(f"{_nm}{n}傾き%", lambda d, n=n, f=_fn: f(d, n).pct_change(5) * 100, True)
+        for _nm in ("SINWMA", "SSF", "SWMA", "T3", "TEMA", "TRIMA",
+                    "TSF", "VIDYA", "VWMA", "WMA", "ZLMA"):
+            addf(f"close vs {_nm}%", n)
+            addf(f"{_nm}傾き", n)
 
     # ── 業界の指標（trend 16関数）──
-    # ★入れなかったもの＝plus_dm・minus_dm（うちの DM+% / DM-% と同じ・実測 最大差 1e-15）。
-    # ★dpo は既定の centered=True が未来を見る（値を未来の足の方へずらす書き方を使う）ので、
-    #   必ず centered=False で呼ぶ。★説明文に その書き方をそのまま書かない＝検査4 の静的検査が
-    #   コメントを拾って「未来参照 1 行」と出てしまう（2026-08-10 実測で誤検出を確認して直した）。
     for n in cfg["atr_periods"]:
-        add(f"ADXR{n}", lambda d, n=n: _pta6.adxr(high=d.high, low=d.low, close=d.close,
-                                                  length=n).iloc[:, 0], False)
-        add(f"DI+{n}", lambda d, n=n: _pta6.adxr(high=d.high, low=d.low, close=d.close,
-                                                 length=n).iloc[:, 1], True)
-        add(f"DI-{n}", lambda d, n=n: _pta6.adxr(high=d.high, low=d.low, close=d.close,
-                                                 length=n).iloc[:, 2], False)
-        add(f"DX{n}", lambda d, n=n: _pta6.dx(high=d.high, low=d.low, close=d.close, length=n), False)
-        add(f"AROONU{n}", lambda d, n=n: _pta6.aroon(high=d.high, low=d.low, length=n).iloc[:, 1], True)
-        add(f"AROOND{n}", lambda d, n=n: _pta6.aroon(high=d.high, low=d.low, length=n).iloc[:, 0], False)
-        add(f"AROONOSC{n}", lambda d, n=n: _pta6.aroon(high=d.high, low=d.low, length=n).iloc[:, 2], True)
-        add(f"CHOP{n}", lambda d, n=n: _pta6.chop(high=d.high, low=d.low, close=d.close, length=n), False)
-        add(f"VHF{n}", lambda d, n=n: _pta6.vhf(close=d.close, length=n), False)
-        add(f"VTXP{n}", lambda d, n=n: _pta6.vortex(high=d.high, low=d.low, close=d.close,
-                                                    length=n).iloc[:, 0], True)
-        add(f"VTXM{n}", lambda d, n=n: _pta6.vortex(high=d.high, low=d.low, close=d.close,
-                                                    length=n).iloc[:, 1], False)
+        for _fam in ("ADXR", "DI+", "DI-", "DX", "AROONU", "AROOND", "AROONOSC",
+                     "CHOP", "VHF", "VTXP", "VTXM"):
+            addf(_fam, n)
     for n in cfg["roc_periods"]:
-        add(f"QSTICK%{n}", lambda d, n=n: _pta6.qstick(open_=d.open, close=d.close, length=n) / d.close * 100, True)
+        addf("QSTICK%", n)
     for n in cfg["donchian_periods"]:
-        add(f"DPO%{n}", lambda d, n=n: _pta6.dpo(close=d.close, length=n, centered=False) / d.close * 100, False)
-        add(f"TTM_TREND{n}", lambda d, n=n: _pta6.ttm_trend(high=d.high, low=d.low, close=d.close,
-                                                            length=n).iloc[:, 0], True)
-    # ★AMAT は LR の1列だけ入れる。理由は式で決まる（ライブラリのコードの逐語）＝
-    #   long_run = (increasing(fast) & decreasing(slow)) | (increasing(fast) & increasing(slow))
-    #   ＝ increasing(fast) &（slow が下向き または 上向き）＝ slow が打ち消されて効かない。
-    #   short_run も同じ形なので SR は LR の裏返し。実測でも、食い違う足は全部 暖機の中だけだった
-    #   （2026-08-09＝slow 21 と 63 の違いは位置 23〜63 のみ・LR+SR≠1 は位置 0〜21 のみ）。
-    add("AMAT_LR", lambda d: _pta6.amat(close=d.close).iloc[:, 0], True)
-    _ck = lambda d: _pta6.cksp(high=d.high, low=d.low, close=d.close)
-    add("close vs CKSPl%", lambda d: (d.close / _ck(d).iloc[:, 0] - 1) * 100, True)
-    add("close vs CKSPs%", lambda d: (d.close / _ck(d).iloc[:, 1] - 1) * 100, True)
-    add("close vs PMAX%", lambda d: (d.close / _pta6.pmax(high=d.high, low=d.low, close=d.close) - 1) * 100, True)
-    _ps = lambda d: _pta6.psar(high=d.high, low=d.low, close=d.close)
-    add("close vs PSAR%", lambda d: (d.close / (lambda t: t.iloc[:, 0].fillna(t.iloc[:, 1]))(_ps(d)) - 1) * 100, True)
-    add("PSAR加速", lambda d: _ps(d).iloc[:, 2], False)
-    add("PSAR反転", lambda d: _ps(d).iloc[:, 3], False)
-    add("close vs SAREXT%", lambda d: (d.close / _pta6.sarext(high=d.high, low=d.low, close=d.close) - 1) * 100, True)
+        addf("DPO%", n)
+        addf("TTM_TREND", n)
+    for _fam in ("AMAT_LR", "close vs CKSPl%", "close vs CKSPs%", "close vs PMAX%",
+                 "close vs PSAR%", "PSAR加速", "PSAR反転", "close vs SAREXT%"):
+        addf(_fam)
 
     # ── 業界の指標（volume 16関数）──
     # ★出来高系は、ライブラリの値をそのままでは材料にできない（積み上げは増え続ける・
@@ -831,50 +1229,16 @@ def build_catalog(cfg: dict) -> list[tuple]:
     # ★vfi は「入れない」から「入れる」に変えた（まこさん承認 2026-08-10・逐語「１，２は修正して残す」）。
     #   ライブラリの実装は使わず、教科書の式（足切り＝対数リターンの標準偏差×0.2×終値）で下に書いた。
     for n in cfg["obv_slope_periods"]:
-        add(f"EFI比{n}", lambda d, n=n: _pta6.efi(close=d.close, volume=d.volume, length=n)
-            / (d.close * d.volume.rolling(n).mean()) * 100, True)
-        # ★係数は 1e4＝%が2つ（中値の動き% × 値幅%）の積だから 100×100（100 だと片方ぶんしか戻らない）
-        add(f"EOM比{n}", lambda d, n=n: _pta6.eom(high=d.high, low=d.low, close=d.close,
-                                                  volume=d.volume, length=n)
-            * d.volume.rolling(n).mean() * 1e4 / (d.close * d.close * 1e8), True)
-        add(f"MARKETFI比{n}", lambda d, n=n: _pta6.marketfi(high=d.high, low=d.low, volume=d.volume)
-            * d.volume.rolling(n).mean() * 100 / d.close, False)
-        add(f"NVI傾き{n}", lambda d, n=n: _pta6.nvi(close=d.close, volume=d.volume).diff(n), True)
-        add(f"PVI傾き{n}", lambda d, n=n: _pta6.pvi(close=d.close, volume=d.volume).diff(n), True)
-        add(f"PVOL比{n}", lambda d, n=n: (lambda pv: pv / pv.rolling(n).mean())(
-            _pta6.pvol(close=d.close, volume=d.volume)), False)
-        add(f"PVT傾き{n}", lambda d, n=n: _pta6.pvt(close=d.close, volume=d.volume).diff(n)
-            / d.volume.rolling(n).sum().replace(0, np.nan), True)
-        add(f"WAD傾き{n}", lambda d, n=n: _pta6.wad(high=d.high, low=d.low, close=d.close).diff(n)
-            / d.close * 100, True)
-    # 本数を2つ以上 自分で持つ指標＝ライブラリの既定をそのまま使う（本数を私が新しく作らない）
-    add("ADOSC比", lambda d: _pta6.adosc(high=d.high, low=d.low, close=d.close, volume=d.volume)
-        / d.volume.rolling(10).mean(), True)
-    add("AOBV_LR", lambda d: _pta6.aobv(close=d.close, volume=d.volume)["AOBV_LR_2"].astype(float), True)
-    # ★KVO は「向きを持つ列」ではない＝出来高が一定なら、ずっと上げでも ずっと下げでも 0 になる
-    #   （2026-08-10 実測。式の上でも 2つの EMA が同じ定数に収束して差が消える）。理由は参照表の流儀の欄。
-    _kv = lambda d: _pta6.kvo(high=d.high, low=d.low, close=d.close, volume=d.volume)
-    add("KVO比", lambda d: _kv(d).iloc[:, 0] / d.volume.rolling(55).mean(), False)
-    add("KVOシグナル比", lambda d: _kv(d).iloc[:, 1] / d.volume.rolling(55).mean(), False)
-    add("VOSC", lambda d: _pta6.vosc(volume=d.volume), False)
+        for _fam in ("EFI比", "EOM比", "MARKETFI比", "NVI傾き", "PVI傾き",
+                     "PVOL比", "PVT傾き", "WAD傾き"):
+            addf(_fam, n)
+    for _fam in ("ADOSC比", "AOBV_LR", "KVO比", "KVOシグナル比", "VOSC"):
+        addf(_fam)
 
     # ── まこさん承認で足した2件（2026-08-10・逐語「１，２は修正して残す」）──
-    # ★VFI＝教科書の式（Markos Katsanos）。ライブラリの実装は使わない（足切りが終値の20%で、
-    #   5分足では一度も超えず全部ゼロになる＝2026-08-10 実測 157,851本すべて 0）。
-    def _vfi(d, n):
-        typ = (d.high + d.low + d.close) / 3.0
-        inter = np.log(typ) - np.log(typ.shift(1))
-        cutoff = 0.2 * inter.rolling(30).std() * d.close        # 教科書＝標準偏差30本・係数 0.2
-        vave = d.volume.rolling(n).mean().shift(1)              # 前の足まで（未来を見ない）
-        vc = d.volume.clip(upper=vave * 2.5)                    # 教科書＝出来高の上を 2.5 倍で切る
-        mf = typ - typ.shift(1)
-        vcp = vc * np.sign(mf.where(mf.abs() > cutoff, 0.0))
-        return (vcp.rolling(n).sum() / vave.replace(0, np.nan)).ewm(span=3, adjust=False).mean()
     for n in cfg["obv_slope_periods"]:
-        add(f"VFI{n}", lambda d, n=n: _vfi(d, n), True)
-    # ★出来高変化率%＝pvr（1〜4 の区分）の中身の半分。既にある volume_ratio は「n 本平均の何倍か」で
-    #   別のもの（2026-08-10 実測＝「前の足より増えた」との一致率 0.6737）。本数は pvr の定義どおり 1 本。
-    add("出来高変化率%1", lambda d: (d.volume / d.volume.shift(1) - 1) * 100, False)
+        addf("VFI", n)
+    addf("出来高変化率%")
 
     # ── 業界の指標（statistics 13関数）──
     # ★入れなかったもの8件（理由は参照表の INDUSTRY_SKIP に1件ずつ）＝
@@ -882,13 +1246,11 @@ def build_catalog(cfg: dict) -> list[tuple]:
     #   entropy（★実データでほとんど動かない）／md（mad と同じ）／quantile（median と同じ）／
     #   stderr（stdev の定数倍）／variance（stdev の2乗＝条件として同じ並び）。
     for n in cfg["realized_vol_periods"]:
-        add(f"skew{n}", lambda d, n=n: _pta6.skew(close=d.close, length=n), False)
-        add(f"kurtosis{n}", lambda d, n=n: _pta6.kurtosis(close=d.close, length=n), False)
-        add(f"MAD比{n}", lambda d, n=n: _pta6.mad(close=d.close, length=n) / d.close * 100, False)
-        add(f"stdev%{n}", lambda d, n=n: _pta6.stdev(close=d.close, length=n) / d.close * 100, False)
+        for _fam in ("skew", "kurtosis", "MAD比", "stdev%"):
+            addf(_fam, n)
     for n in cfg["sma_periods"]:
-        add(f"close vs MEDIAN%{n}", lambda d, n=n: (d.close / _pta6.median(close=d.close, length=n) - 1) * 100, True)
-        add(f"MEDIAN傾き%{n}", lambda d, n=n: _pta6.median(close=d.close, length=n).pct_change(5) * 100, True)
+        addf("close vs MEDIAN%", n)
+        addf("MEDIAN傾き%", n)
 
     # ── 業界の指標（volatility 12関数）──
     # ★帯（中心線・上下の帯）は値段そのものなので、終値との距離%にする（H6・close vs SMA% と同じ流儀）。
@@ -899,33 +1261,19 @@ def build_catalog(cfg: dict) -> list[tuple]:
     #   aberration の ATR 列（うちの ATR% と同じ指標）／accbands の中心線（うちの close vs SMA% と実測 差 0）／
     #   hwc の上下の帯（HWC位置 と HWC幅% で表す＝BB%b・BB幅 と同じ流儀）／
     #   thermo の 0/1 の2列（THERMO比 に固定の閾値 2・0.5 を当てただけ＝閾値は engine_tuner が探す）。
-    _ab = lambda d: _pta6.aberration(high=d.high, low=d.low, close=d.close)
-    add("close vs ABER_ZG%", lambda d: (d.close / _ab(d).iloc[:, 0] - 1) * 100, True)
-    add("ABER位置", lambda d: (lambda a: (d.close - a.iloc[:, 2]) / (a.iloc[:, 1] - a.iloc[:, 2]))(_ab(d)), True)
-    _acb = lambda d: _pta6.accbands(high=d.high, low=d.low, close=d.close)
-    add("close vs ACCBL%", lambda d: (d.close / _acb(d).iloc[:, 0] - 1) * 100, True)
-    add("close vs ACCBU%", lambda d: (d.close / _acb(d).iloc[:, 2] - 1) * 100, True)
-    _cel = lambda d: _pta6.ce(high=d.high, low=d.low, close=d.close)
-    add("close vs CE_L%", lambda d: (d.close / _cel(d).iloc[:, 0] - 1) * 100, True)
-    add("close vs CE_S%", lambda d: (d.close / _cel(d).iloc[:, 1] - 1) * 100, True)
+    for _fam in ("close vs ABER_ZG%", "ABER位置", "close vs ACCBL%", "close vs ACCBU%",
+                 "close vs CE_L%", "close vs CE_S%"):
+        addf(_fam)
     # ★hwc の中心線（HWM）は入れない＝うちに既に在る close vs HWMA% の HWMA と同じ値だった
     #   （2026-08-10 実測＝40,000本すべて 最大差 0.0）。hwc から足すのは、HWMA には無い「帯」の2列だけ。
     #   ★総当たりの重複検出（定数倍＋定数）では捕まらなかった＝終値で割る形が入ると関係が曲がるため。
     #   捕まえたのは「相関 0.999 超の近い組」の報告（相関 −0.999973）。教訓 L-438。
-    _hw = lambda d: _pta6.hwc(close=d.close, channel_eval=True)
-    add("HWC位置", lambda d: _hw(d)["HWPCT"], False)
-    add("HWC幅%", lambda d: _hw(d)["HWW"] / d.close * 100, False)
-    add("MASSI", lambda d: _pta6.massi(high=d.high, low=d.low), False)
-    add("PDIST%", lambda d: _pta6.pdist(open_=d.open, high=d.high, low=d.low,
-                                        close=d.close) / d.close * 100, False)
-    add("TR%", lambda d: _pta6.true_range(high=d.high, low=d.low, close=d.close) / d.close * 100, False)
-    _th = lambda d: _pta6.thermo(high=d.high, low=d.low)
-    add("THERMO%", lambda d: _th(d).iloc[:, 0] / d.close * 100, False)
-    add("THERMO比", lambda d: (lambda t: t.iloc[:, 0] / t.iloc[:, 1])(_th(d)), False)
+    for _fam in ("HWC位置", "HWC幅%", "MASSI", "PDIST%", "TR%", "THERMO%", "THERMO比"):
+        addf(_fam)
     for n in cfg["atr_periods"]:
-        add(f"CVI{n}", lambda d, n=n: _pta6.cvi(high=d.high, low=d.low, length=n), False)
-        add(f"RVI{n}", lambda d, n=n: _pta6.rvi(close=d.close, length=n), True)
-        add(f"UI{n}", lambda d, n=n: _pta6.ui(close=d.close, length=n), False)
+        addf("CVI", n)
+        addf("RVI", n)
+        addf("UI", n)
 
     # ── 業界の指標（cycles 8関数）──
     # ★入れなかったもの1件（関数まるごと・理由は参照表の INDUSTRY_SKIP）＝
@@ -936,46 +1284,9 @@ def build_catalog(cfg: dict) -> list[tuple]:
     #   出てくる系列の相関は +0.5878＝別物）。VFI と同じ扱いで、教科書の式で書き直す。
     # ★ヒルベルト変換の5関数は1回の計算で複数の列を返すものがある（ht_phasor・ht_sine）ので、
     #   同じ入力なら計算を使い回す（_cyc）。1本 250,000 本で 12.8 秒かかる重い計算のため。
-    def _ebsw(d, length=40, bars=10):
-        """Even Better SineWave（J.F.Ehlers, Cycle Analytics for Traders 2014）。
-        ①ハイパスで length 本より長い波を落とす ②スーパースムーザー（2極）で bars 本より短い波を落とす
-        ③3本の平均を3本の実効値で割って −1〜1 にする。角度は度（教科書どおり）。"""
-        c = d.close.to_numpy(dtype=float)
-        m = len(c)
-        out = np.full(m, np.nan)
-        if m <= length:
-            return pd.Series(out, index=d.index)
-        out[length - 1] = 0.0
-        a_hp = (1.0 - np.sin(np.radians(360.0 / length))) / np.cos(np.radians(360.0 / length))
-        a1 = np.exp(-np.sqrt(2.0) * np.pi / bars)
-        c2 = 2.0 * a1 * np.cos(np.radians(np.sqrt(2.0) * 180.0 / bars))
-        c3 = -a1 * a1
-        c1 = 1.0 - c2 - c3
-        last_c = last_hp = 0.0
-        hist = [0.0, 0.0]
-        for i in range(length, m):
-            hp = 0.5 * (1.0 + a_hp) * (c[i] - last_c) + a_hp * last_hp
-            filt = c1 * (hp + last_hp) / 2.0 + c2 * hist[1] + c3 * hist[0]
-            wave = (filt + hist[1] + hist[0]) / 3.0
-            pwr = (filt * filt + hist[1] * hist[1] + hist[0] * hist[0]) / 3.0
-            out[i] = wave / np.sqrt(pwr) if pwr > 0 else 0.0
-            hist.append(filt)
-            hist.pop(0)
-            last_hp, last_c = hp, c[i]
-        return pd.Series(out, index=d.index)
-
-    add("EBSW", lambda d: _ebsw(d), True)
-    add("HT_DCPERIOD", lambda d: _cyc(d, "dcperiod", lambda x: _pta6.ht_dcperiod(close=x.close)), False)
-    add("HT_DCPHASE", lambda d: _cyc(d, "dcphase", lambda x: _pta6.ht_dcphase(close=x.close)), False)
-    add("HT_INPHASE%", lambda d: _cyc(d, "phasor", lambda x: _pta6.ht_phasor(close=x.close)).iloc[:, 0]
-        / d.close * 100, True)
-    add("HT_QUAD%", lambda d: _cyc(d, "phasor", lambda x: _pta6.ht_phasor(close=x.close)).iloc[:, 1]
-        / d.close * 100, False)
-    add("HT_SINE", lambda d: _cyc(d, "htsine", lambda x: _pta6.ht_sine(close=x.close)).iloc[:, 0], False)
-    add("HT_LEADSINE", lambda d: _cyc(d, "htsine", lambda x: _pta6.ht_sine(close=x.close)).iloc[:, 1], False)
-    add("HT_TRENDMODE", lambda d: _cyc(d, "trendmode", lambda x: _pta6.ht_trendmode(close=x.close)), False)
-    add("MSW_SINE", lambda d: _cyc(d, "msw", lambda x: _pta6.msw(close=x.close)).iloc[:, 0], True)
-    add("MSW_LEAD", lambda d: _cyc(d, "msw", lambda x: _pta6.msw(close=x.close)).iloc[:, 1], False)
+    for _fam in ("EBSW", "HT_DCPERIOD", "HT_DCPHASE", "HT_INPHASE%", "HT_QUAD%",
+                 "HT_SINE", "HT_LEADSINE", "HT_TRENDMODE", "MSW_SINE", "MSW_LEAD"):
+        addf(_fam)
 
     # ── 業界の指標（candles 4関数）──
     # ★入れなかったもの（理由は参照表の INDUSTRY_MAP／INDUSTRY_SKIP に1件ずつ）＝
@@ -985,21 +1296,13 @@ def build_catalog(cfg: dict) -> list[tuple]:
     #     スピアマン相関 1.0000000・最大差 5.3e-07）。始値・高値・安値の z 値は うちに無いので入れる。
     #   ③ha の4本値そのもの＝値段（H6）。実体%と上下のヒゲ比で表す。
     #   ④cdl_pattern＝うちの 包み足・孕み足 で既に入っている。
-    _DOJI_N = 10                                  # cdl_doji の既定（直前 n 本の平均値幅）
-    add(f"実体幅比{_DOJI_N}", lambda d: (d.close - d.open).abs()
-        / (d.high - d.low).rolling(_DOJI_N).mean().shift(1).replace(0, np.nan), False)
-    add("内側バー", lambda d: (((d.high.diff() < 0) & (d.low.diff() > 0)).astype(float)
-                             * np.where(d.close >= d.open, 1.0, -1.0)), True)
-    _CDLZ_N = 30                                  # cdl_z の既定（本数・標本標準偏差 ddof=1）
-    for _k, _c in (("open", 0), ("high", 1), ("low", 2)):
-        add(f"{_k}_Z{_CDLZ_N}", lambda d, c=_c: _pta6.cdl_z(open_=d.open, high=d.high, low=d.low,
-                                                            close=d.close).iloc[:, c], True)
-    _ha = lambda d: _cyc(d, "ha", lambda x: _pta6.ha(open_=x.open, high=x.high, low=x.low, close=x.close))
-    add("HA実体%", lambda d: (lambda a: (a.iloc[:, 3] - a.iloc[:, 0]) / d.close * 100)(_ha(d)), True)
-    add("HA上ヒゲ比", lambda d: (lambda a: (a.iloc[:, 1] - a.iloc[:, [0, 3]].max(axis=1))
-                              / (a.iloc[:, 1] - a.iloc[:, 2]).replace(0, np.nan))(_ha(d)), False)
-    add("HA下ヒゲ比", lambda d: (lambda a: (a.iloc[:, [0, 3]].min(axis=1) - a.iloc[:, 2])
-                              / (a.iloc[:, 1] - a.iloc[:, 2]).replace(0, np.nan))(_ha(d)), False)
+    addf("実体幅比")
+    addf("内側バー")
+    for _k in ("open", "high", "low"):
+        addf(f"{_k}_Z")
+    addf("HA実体%")
+    addf("HA上ヒゲ比")
+    addf("HA下ヒゲ比")
     # ★同じ挙動の列を省く（まこさん OK 2026-08-11・逐語「同じ挙動ならどちらかは使わないように
     #   していいよ」）。どれを省くかは observe_config.json の drop_columns（左＝省く・右＝残す）。
     #   ★ここで消す前に、残す側が本当にカタログに在るかを確かめる（書き間違いで両方 消えないため）。

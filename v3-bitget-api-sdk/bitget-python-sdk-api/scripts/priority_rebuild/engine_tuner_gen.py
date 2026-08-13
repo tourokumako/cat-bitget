@@ -1139,9 +1139,12 @@ def build_qtable(df: pd.DataFrame, geo: dict, recipes: list[dict], grid: list[st
                 # 別名（D4 の直し・2026-08-07）＝実行器 _col_array（686行）と同じ扱いにそろえる。
                 # 直す前はここが別名を見ず、別名で持たれている7列のどれかに分位が当たると走行が丸ごと止まった。
                 run_col = ex.RUNTIME_ALIAS.get(name)
-                if run_col is None or run_col not in df.columns:
-                    raise SystemExit(f"[解決表エラー] 列 {name} が実行データに無い（材料の組み立て漏れ）")
-                a = df[run_col].to_numpy(float)
+                if run_col is not None and run_col in df.columns:
+                    a = df[run_col].to_numpy(float)
+                else:
+                    # ★2026-08-13（段A の A-2b）＝実行器と同じく、その場で計算する
+                    #   （列を先に全部 作らない・式は observe_diag を呼ぶ＝ここに書き写さない）。
+                    a = ex.material_array(df, name)
             # ★前処理（pre）が在れば、実行器とまったく同じ式を掛けてから分位を出す（2026-08-12（18回目）・4-2）。
             #   式は実行器の _apply_pre を呼ぶ＝ここに書き写さない（2か所に同じ式を持つと片方が腐る）。
             return ex._apply_pre(a, pre) if pre else a
@@ -1161,8 +1164,18 @@ def build_qtable(df: pd.DataFrame, geo: dict, recipes: list[dict], grid: list[st
 
 
 # ══ 材料の組み立て（observe_diag build_features の再利用＝コピー禁止・H2）═══════════════════
+ATTACH_CALLS = 0        # ★A-2b の完了の条件②＝本走でこの処理が1回も呼ばれないこと（数えて 0）
+
+
 def attach_materials(df: pd.DataFrame, recipes: list[dict]) -> pd.DataFrame:
-    """レシピ群が使うカタログ列だけを組み立てて df に足す（全列は作らない＝時間とメモリの節約）。"""
+    """レシピ群が使うカタログ列だけを、走らせる前に組み立てて df に足す。
+
+    ★2026-08-13（段A の A-2b）＝本走からは呼ばなくなった（列はその場で作る＝`ex.material_array`）。
+      この関数を残しているのは、古いレシピの読み込みや診断が使えるようにするため。
+      呼ばれた回数は `ATTACH_CALLS` に出る（完了の条件②＝本走で 0）。
+    """
+    global ATTACH_CALLS
+    ATTACH_CALLS += 1
     need: set[str] = set()
     for r in recipes:
         lane = r["meta"].get("lane", "")
@@ -1531,8 +1544,13 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     import gen_signal_families as gsf
     gsf.check_structures(str(spath))
 
-    # ── 材料の組み立てと解決表（探索開始時に1回固定・§5-4）──
-    df2 = attach_materials(df, structures)
+    # ── 材料と解決表（探索開始時に1回固定・§5-4）──
+    # ★2026-08-13（段A の A-2b）＝ここで列を先に全部 作るのをやめた。
+    #   材料は、条件が要求した組だけを その場で計算する（`ex.material_array`・同じ組は使い回す）。
+    #   完了の条件②＝本走で `attach_materials` の呼び出し回数が 0 であること（下の行で機械が出す）。
+    df2 = df
+    print(f"[A-2b] 列を先に全部 作る処理（attach_materials）の呼び出し回数 = {ATTACH_CALLS}"
+          f"（0 なら、材料はその場で作っている）")
     geo = _geo_of(df2)
     qtable = build_qtable(df2, geo, structures, limits["quantile_grid"], start, end)
     (run_dir / "qtable.json").write_text(json.dumps(qtable, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
@@ -1700,7 +1718,7 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
         best_struct = structures[best_rec["idx"]]
         # 値決め窓でもう1回だけ走らせる＝journal は売買記録を残していないため（1試行ぶんの費用）
         rs_j = run_trial(df2, best_struct, qtable, judge, start, end)
-        df2c = attach_materials(df_confirm, [best_struct])
+        df2c = df_confirm            # ★A-2b＝列は その場で作る（先に全部 作らない）
         rc_j = run_trial(df2c, best_struct, qtable, judge, confirm_start, confirm_end)   # ★同じ qtable
         print(f"\n[確認窓の1走] 構造 #{best_rec['idx']}（値決め窓で最良）を確認窓で1回だけ走らせた"
               f"＝net ${rc_j['total']:+,.0f} ／ {rc_j['n']}玉 ／ {rc_j['per_day']:.2f}件/日"
@@ -2163,7 +2181,7 @@ def selftest() -> int:
     df = synth_df()
     geo = {"帯内位置%": ((df["close"] - df["v11_mid"]) / (df["v11_res_hi"] - df["v11_mid"])).to_numpy(float),
            "W%": ((df["v11_res_hi"] - df["v11_sup_lo"]) / df["close"] * 100.0).to_numpy(float)}
-    df_m = attach_materials(df, structs[:20])
+    df_m = df                        # ★A-2b＝列は その場で作る（先に全部 作らない）
     s4 = pd.Timestamp(df["ts"].iloc[0]).normalize()
     e4 = s4 + pd.Timedelta(days=10)               # 丸1日×10日＝日次分割（daily_net）の定義と整合させる
     q1 = build_qtable(df_m, geo, structs[:20], lm["quantile_grid"], s4, e4)
@@ -2571,7 +2589,7 @@ def selftest() -> int:
     df14 = synth_df(1500, seed=14)
     # ★材料の列を組み立ててから走らせる（本走と同じ経路＝attach_materials）。
     #   これを抜くと「列が実行データに無い」で走行が落ちる＝番人が枝の発火を見られない。
-    df14 = attach_materials(df14, sts14)
+    # ★A-2b＝列は その場で作る（先に全部 作らない）
     geo14 = _geo_of(df14)          # 本走と同じ作り方（帯の4隅・中央・帯内位置%・W%）
     fired14: set = set()
     # ★玉の動きで切り替わる枝の名前は、承認済みの表から機械で引く（手で一覧を書かない・2026-08-12）。
