@@ -402,6 +402,8 @@ _STATUS_JP = {
 
 def _md(t: dict, h: str) -> str:
     c = t["counts"]
+    # ★2026-08-15（段A の A-5-3）＝分位の範囲は設定ファイルから直に読む（承認済みの表には入れない）。
+    _QR = json.loads(LIMITS_JSON.read_text(encoding="utf-8")).get("quantile_range")
     L = [
         f"<!-- EXIT_FAMILIES hash={h} gen_exit_families.py が自動生成＝手で書き換えない -->",
         "# exit_families.md — 出口の枝の表（許可の一覧・全自動生成・CC の手書きの行ゼロ）",
@@ -465,7 +467,12 @@ def _md(t: dict, h: str) -> str:
         f"規則: {t['confirm_conditions']['rule']}",
         f"材料＝入口の型の表の部品 {t['confirm_conditions']['parts_count']} 種 × 時間足 "
         f"{len(t['confirm_conditions']['timeframes'])} 本 ／ 閾値＝分位 "
-        f"{len(t['confirm_conditions']['quantile_grid'] or [])} 段 ／ 標本不足の禁止 "
+        # ★2026-08-15（段A の A-5-3）＝分位は範囲になった。範囲は設定ファイルから直に読む。
+        #   ★承認済みの表（json）には入れない＝入れると表の指紋が変わり、再承認（まこさんの操作）が要る。
+        + (f"**範囲 q{int(_QR['lo'])}〜q{int(_QR['hi'])}**（`quantile_range`）"
+           if isinstance(_QR, dict) and _QR.get("lo") is not None else
+           f"{len(t['confirm_conditions']['quantile_grid'] or [])} 段")
+        + " ／ 標本不足の禁止 "
         f"{t['confirm_conditions']['banned_pairs']} 組も同じように効く",
         "",
         "## 軸カタログ X-a〜X-k の選択肢 全部（1つずつ・出典つき）",

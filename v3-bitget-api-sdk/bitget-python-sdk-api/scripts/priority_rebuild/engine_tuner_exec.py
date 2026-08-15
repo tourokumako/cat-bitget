@@ -419,6 +419,28 @@ def _check_num_range(key: str, v, where: str) -> None:
         _fail("G5", f"{where}: {why}")
 
 
+_Q_RANGE_LIMITS = None
+
+
+def _check_q_range(q, where: str) -> None:
+    """★2026-08-15（段A の A-5-3）＝分位（閾値の段）が「探せる範囲」の中かを見る（fail-closed）。
+
+    範囲の正本＝`engine_tuner_gen.q_range_of`（`recipes/search_limits.json` の `quantile_range`）。
+    ★これが無いと、生成器の側だけを直しても、手で書いたレシピが範囲の外の分位で走ってしまう。
+    ★恒等検収のレーン（lane="legacy"）は対象外＝過去の実装の書き写しを壊さない
+      （`_check_int_range`・`_check_num_range`・`_check_param_range` と同じ扱い）。
+    ★循環 import を避けるため、呼ばれた時に読む。
+    """
+    global _Q_RANGE_LIMITS
+    if _Q_RANGE_LIMITS is None:                  # 設定ファイルは1回だけ読む
+        import engine_tuner_gen as _gen0
+        _Q_RANGE_LIMITS, _w0 = _gen0.load_limits()
+    import engine_tuner_gen as _gen
+    ok, why = _gen.q_in_range(_Q_RANGE_LIMITS, q)
+    if not ok:
+        _fail("G5", f"{where}: {why}")
+
+
 def _material_family(m: dict) -> str:
     """系統マップ（G3）に使う family 名。"""
     if "geo" in m:
@@ -446,6 +468,9 @@ def _check_value(v: dict, lane: str, cond_desc: str, legacy_used: list):
         legacy_used.append(f"{cond_desc}: legacy={v['legacy']}")
     if "const" in v and v["const"] not in iref.CONST_REGISTRY:
         _fail("G6", f"{cond_desc}: 名前つき定数レジストリに無い定数: {v['const']}")
+    # ★2026-08-15（段A の A-5-3）＝分位が探せる範囲の中かを見る（恒等検収のレーンは対象外）。
+    if "threshold_q" in v and lane != "legacy":
+        _check_q_range(v["threshold_q"], f"{cond_desc}: 閾値の段")
     if "n" in v and (not isinstance(v["n"], int) or v["n"] < 1):
         _fail("G5", f"{cond_desc}: 整数グリッドの n が不正: {v['n']}")
     if "m" in v and (not isinstance(v["m"], int) or v["m"] < 1):
@@ -2952,6 +2977,25 @@ def selftest() -> None:
         r["meta"]["lane"] = "legacy"
         r["exits"][1]["scope"] = {"trend_caught": True}   # 印を付ける側（mode=mark）が無い＝一度も発火しない枝
     broke("㉜ 印を受ける枝はあるが印を付ける側が無い", _tc_without_mark, "G5")
+
+    # ★2026-08-15（段A の A-5-3）＝分位が範囲の外・書き方違いのレシピを止める（手書きのレシピ対策）。
+    def _q_out(r):
+        r["entry"]["connective"]["all"][1]["value"] = {"threshold_q": "q95"}   # 範囲は q10〜q90
+    broke("㉝ 分位が探せる範囲の外（q95）", _q_out, "G5")
+
+    def _q_bad(r):
+        r["entry"]["connective"]["all"][1]["value"] = {"threshold_q": "q12.5"}  # 整数でない
+    broke("㉞ 分位の書き方が違う（q12.5）", _q_bad, "G5")
+
+    def _q_in(r):
+        # メタ確認＝範囲の中（直す前の9段には無い q37）は通る＝止めすぎていない
+        r["entry"]["connective"]["all"][1]["value"] = {"threshold_q": "q37"}
+    _r_q_in = copy.deepcopy(okr)
+    _q_in(_r_q_in)
+    try:
+        validate_recipe(_r_q_in)
+    except RecipeError as e:
+        ng.append(f"範囲の中の分位 q37（直す前の9段には無い）が拒否された: {e}")
     # 既知答え（里程標9）＝v22 アンカーの TP1/TP2 が「同じ判定で必ず同時に切り替わる」ことを電卓式で確認。
     # e37_scalp 1531-1541行＝安値×(1+V11_SL_BUF) が建値より下なら TP2＝その値・TP1＝(建値+安値)/2。
     # 下でなければ TP2 も TP1 も元の置き方（TP2＝反対側ゾーン手前／TP1＝(建値+中央)/2）へ同時に戻る。
@@ -3114,7 +3158,7 @@ def selftest() -> None:
           "（+ わざと型を1件 壊すと落ちるか） → "
           + ("✅ 全部 一致・壊すと落ちた" if not _rt_ng else "❌ " + " ／ ".join(_rt_ng)))
     print("=" * 80)
-    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ32種で全部止まる・正しい4種は通る・歩4/歩6-1 拡張の既知答え込み）")
+    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ34種で全部止まる・正しい5種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)
     if ng:
         for x in ng:

@@ -415,8 +415,10 @@ def run_main(a) -> int:
           f"{', '.join(aliased)}")
         w("   ＝engine_tuner_gen.build_qtable が別名を見ない不具合の回避。道具は直していない（報告のみ）")
     geo = build_geo(df2)
-    qtable = gen.build_qtable(df2, geo, structures, lm["quantile_grid"], SEARCH_START, SEARCH_END)
-    w(f"[分位の解決表] {len(qtable)} 鍵 × {len(lm['quantile_grid'])} 分位を値決め窓から1回固定")
+    # ★2026-08-15（段A の A-5-3）＝分位は範囲になった（quantile_list が範囲の中の整数を全部 作る）。
+    _qs = gen.quantile_list(lm)
+    qtable = gen.build_qtable(df2, geo, structures, _qs, SEARCH_START, SEARCH_END)
+    w(f"[分位の解決表] {len(qtable)} 鍵 × {len(_qs)} 分位（{_qs[0]}〜{_qs[-1]}）を値決め窓から1回固定")
     w("")
 
     results = []

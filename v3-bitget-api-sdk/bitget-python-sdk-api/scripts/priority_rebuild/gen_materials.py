@@ -372,13 +372,21 @@ def _a1_place2(lim: dict) -> dict:
         elif isinstance(v, dict):                      # 入れ子（役割ごとの保有時間の上限）
             rng_rows += [f"{k}.{k2}" for k2, v2 in v.items() if _is_range(v2)]
     # 分位の段＝文字の並び（"q10" …）＝数ではないが、段の数は決まっている
+    # ★2026-08-15（段A の A-5-3）＝`quantile_range` が在れば、分位は「決まった段だけ」ではなく
+    #   範囲になった。`quantile_grid` はほかの道具がまだ読むので残してある（int_grid と同じ扱い）
+    #   ＝残っているからといって「9段だけ」と書かない（実物は範囲）。
     qg = lim.get("quantile_grid")
-    q_n = len(qg) if isinstance(qg, list) else 0
+    qr = lim.get("quantile_range")
+    q_rng = None
+    if isinstance(qr, dict) and qr.get("lo") is not None and qr.get("hi") is not None:
+        q_lo, q_hi = int(qr["lo"]), int(qr["hi"])
+        q_rng = f"q{q_lo}〜q{q_hi}（{q_hi - q_lo + 1} 通り）"
+    q_n = 0 if q_rng else (len(qg) if isinstance(qg, list) else 0)
     single = sorted(k for k, v in lim.items() if not str(k).startswith("_") and _is_num(v))
     nocap = sorted(k for k, v in lim.items()
                    if not str(k).startswith("_") and isinstance(v, str) and v == "無制限")
     return dict(並び=len(lists), 数字=sum(len(v) for _k, v in lists), 範囲=len(rng_rows),
-                分位の段=q_n, 単独の数字=single, 無制限=nocap,
+                分位の段=q_n, 分位の範囲=q_rng, 単独の数字=single, 無制限=nocap,
                 明細=[dict(鍵=k, 中身=_fmt_nums(v)) for k, v in sorted(lists)],
                 範囲の明細=sorted(rng_rows))
 
@@ -1062,8 +1070,13 @@ def render_md(body: dict) -> str:
               f"観察の道具だけが使う格子 {len(a1['places'][0]['観察だけの格子'])} 件"
               f"（{'・'.join('`' + x + '`' for x in a1['places'][0]['観察だけの格子'])}）は、"
               "engine_tuner が振る値ではないので ここでは数えていません。",
-              f"- **場所2**＝ほかに 分位の段 {a1['places'][1]['分位の段']} 段"
-              f"（`quantile_grid`）／単独の数字 {len(a1['places'][1]['単独の数字'])} 件"
+              "- **場所2**＝ほかに "
+              + (f"分位（閾値の段）＝**範囲 {a1['places'][1]['分位の範囲']}**（`quantile_range`・"
+                 "★2026-08-15 の段A の A-5-3 で 9段のメニューから範囲にした。"
+                 "`quantile_grid` の9段は ほかの道具がまだ読む分として残してある）"
+                 if a1['places'][1].get('分位の範囲') else
+                 f"分位の段 {a1['places'][1]['分位の段']} 段（`quantile_grid`）")
+              + f"／単独の数字 {len(a1['places'][1]['単独の数字'])} 件"
               f"（{'・'.join('`' + x + '`' for x in a1['places'][1]['単独の数字'])}）／"
               f"上限を置かないもの {len(a1['places'][1]['無制限'])} 件"
               f"（{'・'.join('`' + x + '`' for x in a1['places'][1]['無制限'])}"

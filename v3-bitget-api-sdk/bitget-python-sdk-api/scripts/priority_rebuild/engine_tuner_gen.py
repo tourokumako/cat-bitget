@@ -62,7 +62,9 @@ LIMIT_LABELS = {
     "role_max": "E_MAX/S_MAX/L_MAX（役割ごとの本数上限・§11-3）",
     "count_range": "条件の合計本数の範囲（§11-4）",
     "k_max": "K_MAX（同系統のレシピ全体での上限・§11-5）",
-    "quantile_grid": "分位の格子（§11-6）",
+    # ★2026-08-15（段A の A-5-3）＝分位も「決まった段だけ」から「範囲」に変えた
+    "quantile_range": "閾値の段（分位）の範囲（§11-6）",
+    "quantile_grid": "分位の格子（§11-6・ほかの道具がまだ読む）",
     "depth_max": "木の深さ上限（§11-7）",
     "p_max": "P_MAX（発火経路数の上限・§11-8）",
     # ★2026-08-15（段A の A-5-2）＝下の9つを「決まった数字だけ」から「範囲」に変えた（鍵の名前も変えた）
@@ -409,6 +411,69 @@ def max_ladder_steps(limits: dict) -> int:
     return max(1, n)
 
 
+# ══ 閾値の段（分位）の範囲（段A の A-5-3・2026-08-15）════════════════════════════════
+#   直す前は `quantile_grid` の 10・20・30・40・50・60・70・80・90 の **9段だけ**でした。
+#   RSI の 65%点・35%点 は、何回 試しても出てきません（要件の「作ってはいけないもの」2番）。
+#   ★両端の数字を CC は作っていません＝直す前の一覧の 最小（q10）と 最大（q90）です。
+def q_range_of(limits: dict, lo_min=None, hi_max=None) -> tuple[int, int]:
+    """分位の範囲（何%点から何%点まで）。戻り＝(下限, 上限) の整数。
+
+    ★まこさんが決めた範囲が `quantile_range` に在れば、それを使います。
+      無ければ、直す前の一覧 `quantile_grid` の最小と最大を範囲にします
+      （＝設定ファイルだけで元に戻せる。`int_range`／`*_range` と同じ扱い）。
+    ★lo_min・hi_max＝呼ぶ側の事情でさらに狭めるとき（例＝DC2 の高分位）。
+      **設定ファイルの範囲そのものは書き換えません。**
+    """
+    r = limits.get("quantile_range")
+    if isinstance(r, dict) and r.get("lo") is not None and r.get("hi") is not None:
+        lo, hi = int(r["lo"]), int(r["hi"])
+    else:
+        g = limits.get("quantile_grid")
+        if not g:
+            raise SystemExit("[分位の範囲エラー] quantile_range も quantile_grid も無い"
+                             "（recipes/search_limits.json）")
+        nums = [int(str(q).lstrip("q")) for q in g]
+        lo, hi = min(nums), max(nums)
+    if lo_min is not None:
+        lo = max(lo, int(lo_min))
+    if hi_max is not None:
+        hi = min(hi, int(hi_max))
+    if hi < lo:
+        raise SystemExit(f"[分位の範囲エラー] 上限 {hi} が下限 {lo} より小さい"
+                         f"（recipes/search_limits.json の quantile_range）")
+    return lo, hi
+
+
+def quantile_list(limits: dict) -> list[str]:
+    """解決表（分位 → 実値）を作るときに要る分位の全部（範囲の中の整数を全部）。
+
+    ★解決表は「値決め窓の分布から1回だけ固定する」もの（§2.4-①）なので、
+      引く前に、範囲の中のどの分位でも引けるように作っておきます。
+    """
+    lo, hi = q_range_of(limits)
+    return [f"q{i}" for i in range(lo, hi + 1)]
+
+
+def draw_q(rng, limits: dict, lo_min=None, hi_max=None) -> str:
+    """分位を1つ 引く（範囲の中の、どの整数でもよい）。戻り＝"q37" の形。"""
+    lo, hi = q_range_of(limits, lo_min, hi_max)
+    return f"q{int(rng.integers(lo, hi + 1))}"
+
+
+def q_in_range(limits: dict, q) -> tuple[bool, str]:
+    """その分位は範囲の中か（検証器の番人が呼ぶ）。戻り＝(入っているか, 理由)。"""
+    s = str(q)
+    if not s.startswith("q") or not s[1:].isdigit():
+        return False, (f"分位 {q!r} の書き方が違う（q と整数＝例 q37・"
+                       "recipes/search_limits.json の quantile_range）")
+    lo, hi = q_range_of(limits)
+    n = int(s[1:])
+    if n < lo or n > hi:
+        return False, (f"分位 {s} が探せる範囲の外（q{lo}〜q{hi}・"
+                       "recipes/search_limits.json の quantile_range）")
+    return True, ""
+
+
 def num_in_range(limits: dict, key: str, v) -> tuple[bool, str]:
     """その数字は範囲の中か（検証器の番人が呼ぶ）。戻り＝(入っているか, 理由)。"""
     r = num_range_of(limits, key)
@@ -747,7 +812,8 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
 
 
 def _q(rng, limits) -> dict:
-    return {"threshold_q": str(rng.choice(limits["quantile_grid"]))}
+    # ★2026-08-15（段A の A-5-3）＝分位を範囲から引く（直す前は9段のメニューからだけ）。
+    return {"threshold_q": draw_q(rng, limits)}
 
 
 def _dc1_side(rng, role, mats, side) -> str:
@@ -769,10 +835,20 @@ def _dc2_q(rng, role, m, limits, table, side) -> dict:
     """
     if role == "trigger" and _lineage_of(m) == "オシレーター":
         grid = table["quantile_grid_hi"] if side == "SHORT" else table["quantile_grid_lo"]
-        qs = [q for q in limits["quantile_grid"] if q in grid]
-        if not qs:
-            raise SampleError("DC2 の分位が格子に無い")
-        return {"threshold_q": str(rng.choice(qs))}
+        # ★2026-08-15（段A の A-5-3）＝表の逐語（高分位 q70・q80・q90 ／ 低分位 q10・q20・q30）の
+        #   **両端をそのまま範囲の両端にする**＝高分位なら q70〜q90 の整数 全部（q73 も引ける）。
+        #   ★CC は数字を作っていません＝両端は表の逐語の 最小 と 最大 です。
+        #   ★承認済みの型の表そのものは1バイトも書き換えていません（A-4 と同じやり方＝
+        #     「一覧に在るか」の照合を「範囲の中か」の照合に変えただけ）。
+        nums = [int(str(q).lstrip("q")) for q in grid]
+        lo_all, hi_all = q_range_of(limits)
+        lo_q, hi_q = max(lo_all, min(nums)), min(hi_all, max(nums))
+        if hi_q < lo_q:
+            # まこさんが quantile_range を狭めて、DC2 の帯と重ならなくなったとき。
+            # 走行を丸ごと止めず、この案だけ引き直す（SampleError＝直す前と同じ扱い）。
+            raise SampleError(f"DC2 の分位の帯（q{min(nums)}〜q{max(nums)}）が"
+                              f"探せる範囲（q{lo_all}〜q{hi_all}）と重ならない")
+        return {"threshold_q": draw_q(rng, limits, lo_min=lo_q, hi_max=hi_q)}
     return _q(rng, limits)
 
 
@@ -860,10 +936,16 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
         return {"role": role, "form": "level", "material": [m],
                 "side": _dc1_side(rng, role, [m], side), "value": _q(rng, limits)}
     if form in ("band", "band_exclude"):
-        qs = rng.choice(limits["quantile_grid"], size=2, replace=False)
-        lo, hi = sorted(qs, key=lambda s: int(str(s).lstrip("q")))
+        # ★2026-08-15（段A の A-5-3）＝帯の下限・上限も範囲から引く（直す前は9段のメニューから2つ）。
+        #   ★2つが同じ値にならないようにする＝下限と上限が同じ帯は幅ゼロで意味が無い
+        #     （直す前の replace=False と同じ意味を、範囲でやっているだけ）。
+        _lo_q, _hi_q = q_range_of(limits)
+        if _hi_q - _lo_q < 1:
+            raise SampleError(f"帯を作れない（分位の範囲が q{_lo_q}〜q{_hi_q} で2つ選べない）")
+        a = int(rng.integers(_lo_q, _hi_q))          # 下限＝上限より小さい所から引く
+        b = int(rng.integers(a + 1, _hi_q + 1))      # 上限＝下限より大きい所から引く
         return {"role": role, "form": form, "material": [m],
-                "value": {"lo": {"threshold_q": str(lo)}, "hi": {"threshold_q": str(hi)}}}
+                "value": {"lo": {"threshold_q": f"q{a}"}, "hi": {"threshold_q": f"q{b}"}}}
     if form == "slope":
         return {"role": role, "form": "slope", "material": [m],
                 "side": _dc1_side(rng, role, [m], side),
@@ -1770,6 +1852,14 @@ def _int_range(lo: int, hi: int, step: int = 1) -> dict:
     return {"kind": "int", "lo": int(lo), "hi": int(hi), "step": int(step)}
 
 
+def _q_range(lo: int, hi: int) -> dict:
+    """分位を下限から上限までの整数から選ぶ値（範囲方式・段A の A-5-3・2026-08-15 新設）。
+
+    ★整数で選んで `q37` の形に直します（レシピの中の書き方は直す前と同じ文字列）。
+    """
+    return {"kind": "q", "lo": int(lo), "hi": int(hi)}
+
+
 def suggest_slot(trial, name: str, spec: dict):
     """1つの値を Optuna に作らせる。メニュー方式と範囲方式の2つに対応する。
 
@@ -1780,6 +1870,9 @@ def suggest_slot(trial, name: str, spec: dict):
     """
     if spec.get("kind") == "int":
         return trial.suggest_int(name, spec["lo"], spec["hi"], step=spec.get("step", 1))
+    if spec.get("kind") == "q":
+        # ★2026-08-15（段A の A-5-3）＝分位も範囲方式にした（直す前は9段のメニュー方式）。
+        return f"q{trial.suggest_int(name, spec['lo'], spec['hi'])}"
     return trial.suggest_categorical(name, spec["choices"])
 
 
@@ -1789,7 +1882,8 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
     値の作り方は2つ。メニュー方式（候補の一覧から選ぶ）と 範囲方式（整数の範囲から選ぶ）。
     """
     slots: list[tuple[str, dict]] = []
-    qg = limits["quantile_grid"]
+    # ★2026-08-15（段A の A-5-3）＝分位の値スロットを メニュー方式 → 範囲方式にした。
+    qg = _q_range(*q_range_of(limits))
 
     def _cond_slots(prefix, c):
         v = c.get("value", {})
@@ -1798,7 +1892,7 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
             _cond_slots(f"{prefix}.inner", c["inner"])
             return
         if "threshold_q" in v:
-            slots.append((f"{prefix}.value.threshold_q", _cat(qg)))
+            slots.append((f"{prefix}.value.threshold_q", dict(qg)))
         # ★"th" を足した（2026-08-12・段C の C-6）。★これは やることの表に無い直しです。
         #   直す前は value.th の中の分位が『動かせる値』に出てこなかった＝生成のときに1回 引いた分位が
         #   そのまま固定され、第2段の調整で1度も動かせなかった。当たるのは3か所
@@ -1807,7 +1901,7 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
         #   ＝直さないと、いま足す div・corr の閾値が探索の対象にならない（部品を足した意味が消える）。
         for sub in ("lo", "hi", "th"):
             if "threshold_q" in v.get(sub, {}):
-                slots.append((f"{prefix}.value.{sub}.threshold_q", _cat(qg)))
+                slots.append((f"{prefix}.value.{sub}.threshold_q", dict(qg)))
         if c["form"] in ("slope", "slope_avg"):
             slots.append((f"{prefix}.value.n", _int_range(*int_range_of(limits))))
         if c["form"] == "slope_avg":
@@ -1952,10 +2046,10 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     print(f"[A-2b] 列を先に全部 作る処理（attach_materials）の呼び出し回数 = {ATTACH_CALLS}"
           f"（0 なら、材料はその場で作っている）")
     geo = _geo_of(df2)
-    qtable = build_qtable(df2, geo, structures, limits["quantile_grid"], start, end)
+    qtable = build_qtable(df2, geo, structures, quantile_list(limits), start, end)
     (run_dir / "qtable.json").write_text(json.dumps(qtable, ensure_ascii=False, indent=1, sort_keys=True) + "\n",
                                          encoding="utf-8")
-    print(f"[分位の解決表] {len(qtable)} 鍵 × {len(limits['quantile_grid'])} 分位を値決め窓から1回固定"
+    print(f"[分位の解決表] {len(qtable)} 鍵 × {len(quantile_list(limits))} 分位を値決め窓から1回固定"
           f"（rolling しない・保存 {run_dir / 'qtable.json'}）")
 
     # ── 第1段の実行 ──
@@ -2592,8 +2686,8 @@ def selftest() -> int:
     df_m = df                        # ★A-2b＝列は その場で作る（先に全部 作らない）
     s4 = pd.Timestamp(df["ts"].iloc[0]).normalize()
     e4 = s4 + pd.Timedelta(days=10)               # 丸1日×10日＝日次分割（daily_net）の定義と整合させる
-    q1 = build_qtable(df_m, geo, structs[:20], lm["quantile_grid"], s4, e4)
-    q2 = build_qtable(df_m, geo, structs[:20], lm["quantile_grid"], s4, e4)
+    q1 = build_qtable(df_m, geo, structs[:20], quantile_list(lm), s4, e4)
+    q2 = build_qtable(df_m, geo, structs[:20], quantile_list(lm), s4, e4)
     if json.dumps(q1, sort_keys=True) != json.dumps(q2, sort_keys=True):
         ng.append("T4: 解決表が決定論でない")
     if not q1:
@@ -2926,9 +3020,19 @@ def selftest() -> int:
             if (role == "trigger" and c["form"] == "level" and mats and "family" in mats[0]
                     and iref.FAMILY_LINEAGE[mats[0]["family"]]["k"] == "オシレーター"):
                 q13 = str(c.get("value", {}).get("threshold_q", ""))
-                if side_v == "SHORT" and not (c.get("side") == "above" and q13 in tbl13["quantile_grid_hi"]):
+                # ★2026-08-15（段A の A-5-3）＝照合を「一覧に在るか」から「帯の中か」に変えた。
+                #   帯の両端は 表の逐語（高分位 q70〜q90／低分位 q10〜q30）の 最小 と 最大＝
+                #   CC は数字を作っていない。承認済みの表そのものは1バイトも変えていない（A-4 と同じ）。
+                def _in_band13(q, band):
+                    if not (q.startswith("q") and q[1:].isdigit()):
+                        return False
+                    nb = [int(str(x).lstrip("q")) for x in band]
+                    return min(nb) <= int(q[1:]) <= max(nb)
+                if side_v == "SHORT" and not (c.get("side") == "above"
+                                              and _in_band13(q13, tbl13["quantile_grid_hi"])):
                     v.append(f"DC2 違反（SHORT・side {c.get('side')}・{q13}）")
-                if side_v == "LONG" and not (c.get("side") == "below" and q13 in tbl13["quantile_grid_lo"]):
+                if side_v == "LONG" and not (c.get("side") == "below"
+                                             and _in_band13(q13, tbl13["quantile_grid_lo"])):
                     v.append(f"DC2 違反（LONG・side {c.get('side')}・{q13}）")
             if c["form"] == "cross":
                 want = "down" if side_v == "SHORT" else "up"
@@ -3034,9 +3138,9 @@ def selftest() -> int:
                 # 条件の中身を1本ずつ弄る形だと、値を持たない形（傾き・交差）が壊れず残る。
                 b["fire"] = {"all": [_state_cond("hold_min", "above", {"n": 10 ** 6})]}
         try:
-            r14 = ex.run_recipe(df14, st, qtable=build_qtable(df14, geo14, [st], lm14["quantile_grid"]))
+            r14 = ex.run_recipe(df14, st, qtable=build_qtable(df14, geo14, [st], quantile_list(lm14)))
             r14b = ex.run_recipe(df14, broke,
-                                 qtable=build_qtable(df14, geo14, [broke], lm14["quantile_grid"]))
+                                 qtable=build_qtable(df14, geo14, [broke], quantile_list(lm14)))
         except BaseException:
             continue
         tr = r14[0] if isinstance(r14, tuple) else r14
@@ -3090,6 +3194,51 @@ def selftest() -> int:
         t16.append("割合の上限を 90% に上げても最大の段数が減らない（最小注文サイズの計算が効いていない）")
     ng += [f"T16: {x}" for x in t16]
 
+    # ══ T17 閾値の段（分位）の範囲（段A の A-5-3・2026-08-15）═══════════════════════════
+    #   ①本走の設定で、直す前の9段（q10・q20…q90）に無い分位が実際に作られる
+    #   ②範囲の外の分位（q95・q5）と、書き方が違うもの（q12.5・"50"）は検証器が止める
+    #   ③範囲を狭めると、その外の分位が作られなくなる（メタ確認＝範囲が効いている証拠）
+    #   ★実物のファイルは1バイトも書き換えません（読み込んだ中身の写しを壊すだけ）。
+    t17: list[str] = []
+    lm17 = dict(KENSHU_LIMITS)
+    lm17["quantile_range"] = json.loads(LIMITS_PATH.read_text(encoding="utf-8"))["quantile_range"]
+    lm17.pop("quantile_grid", None)
+    old9 = {10, 20, 30, 40, 50, 60, 70, 80, 90}          # 直す前の9段
+    seen17: set[int] = set()
+    slot17 = {"範囲方式": 0, "メニュー方式": 0}
+    for i in range(60):
+        rng = np.random.default_rng([17, 5, i])
+        try:
+            st = sample_structure(rng, lm17, pool, tfs_small, side="SHORT", logic_id="S3")
+        except SampleError:
+            continue
+        for _p, _sp in value_slots(st, lm17):
+            slot17["メニュー方式" if _sp.get("kind") == "cat" else "範囲方式"] += 1
+        def _walk17(c):
+            v = c.get("value") or {}
+            for holder in (v, v.get("lo") or {}, v.get("hi") or {}, v.get("th") or {}):
+                q = holder.get("threshold_q") if isinstance(holder, dict) else None
+                if isinstance(q, str) and q.startswith("q") and q[1:].isdigit():
+                    seen17.add(int(q[1:]))
+            if c.get("inner"):
+                _walk17(c["inner"])
+        _cs17, _d17 = ex._walk(st["entry"]["connective"])       # 条件は入口の木の中に在る
+        for _c in list(_cs17) + list(st.get("pre_filter", [])):
+            _walk17(_c)
+    fresh17 = sorted(seen17 - old9)
+    if not fresh17:
+        t17.append(f"直す前の9段に無い分位が1つも出ない（出た分位 {sorted(seen17)}）")
+    lo17, hi17 = q_range_of(lm17)
+    for bad in (f"q{hi17 + 5}", f"q{max(lo17 - 5, 0)}", "q12.5", "50"):
+        ok17, _why17 = q_in_range(lm17, bad)
+        if ok17:
+            t17.append(f"範囲の外・書き方違いの分位 {bad} を通した（範囲 q{lo17}〜q{hi17}）")
+    narrow17 = dict(lm17)
+    narrow17["quantile_range"] = {"lo": 40, "hi": 45, "kind": "int"}
+    if q_in_range(narrow17, f"q{hi17}")[0]:
+        t17.append("範囲を q40〜q45 に狭めても、その外の分位が通る（範囲が効いていない）")
+    ng += [f"T17: {x}" for x in t17]
+
     print("=" * 80)
     print("engine_tuner_gen 自己検査（合成データのみ・実データの試行ゼロ・累積試行の記録なし）")
     print("=" * 80)
@@ -3118,6 +3267,11 @@ def selftest() -> int:
           f" ／ 最小注文サイズ（玉の {mf16 * 100:.3f}%）を割る段 0 本"
           f" ／ 機械が出す最大の段数 {max_ladder_steps(lm16)} 段"
           f"（割合の上限を 90% にすると {max_ladder_steps(_wide16)} 段＝メタ確認）")
+    print(f"  T17 閾値の段（分位）の範囲（段A の A-5-3）: 案60本で出た分位 {len(seen17)} 種類"
+          f"（うち直す前の9段に無いもの {len(fresh17)} 種類・例 {fresh17[:8]}）"
+          f" ／ 範囲の外（q{hi17 + 5}・q{max(lo17 - 5, 0)}）と書き方違い（q12.5・50）は4通りとも止めた"
+          f" ／ 範囲を q40〜q45 に狭めると q{hi17} が通らなくなる（メタ確認）"
+          f" ／ 第2段の値スロット {slot17}")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")

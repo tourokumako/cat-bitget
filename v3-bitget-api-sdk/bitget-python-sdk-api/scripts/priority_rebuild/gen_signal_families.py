@@ -141,8 +141,13 @@ def build_table() -> dict:
             lineage_of=lineage_of,
             thresholds=dict(
                 quantile_grid=grids["quantile_grid"],
+                quantile_range=grids.get("quantile_range"),   # ★2026-08-15（段A の A-5-3）
                 note="閾値は USD の生の値でなく、値決め窓の分位（データを小さい順に並べた何%点か）で引く（H6 価格非依存）。"
-                     "9段より細かくしないのは、試す数が増えるほど合格の線が厳しくなる（多重検定の罰）ため",
+                     "★2026-08-15（段A の A-5-3）に 9段のメニューから範囲（quantile_range）へ変えた。"
+                     "直す前ここに書いてあった理由『9段より細かくしないのは、試す数が増えるほど合格の線が"
+                     "厳しくなる（多重検定の罰）ため』は事実と違う＝合格の線 DSR の N は tuner_stats.py の "
+                     "n_for_dsr ＝ n_eff（実際に走らせた試行を似た動きでまとめた数）＋ 過去の累積試行であって、"
+                     "候補の広さは入っていない",
             ),
             grids=grids,
         ),
@@ -318,7 +323,14 @@ def _md(table: dict, h: str) -> str:
         "",
         "、".join(table["timeframes"]),
         "",
-        f"### 閾値 … 分位 {len(inv['thresholds']['quantile_grid'])} 段（{'、'.join(inv['thresholds']['quantile_grid'])}）",
+        # ★2026-08-15（段A の A-5-3）＝分位は9段のメニューから範囲になった。
+        #   範囲が設定ファイルに在れば、それを印字する（無ければ直す前と同じ段の一覧を印字）。
+        (f"### 閾値 … 分位 **範囲 q{int(g['quantile_range']['lo'])}〜q{int(g['quantile_range']['hi'])}**"
+         f"（{int(g['quantile_range']['hi']) - int(g['quantile_range']['lo']) + 1} 通り・"
+         "★段A の A-5-3 で 9段のメニューから範囲にした）"
+         if isinstance(g.get("quantile_range"), dict) and g["quantile_range"].get("lo") is not None else
+         f"### 閾値 … 分位 {len(inv['thresholds']['quantile_grid'])} 段"
+         f"（{'、'.join(inv['thresholds']['quantile_grid'])}）"),
         "",
         f"（{inv['thresholds']['note']}）",
         "",
