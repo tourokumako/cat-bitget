@@ -65,13 +65,19 @@ LIMIT_LABELS = {
     "quantile_grid": "分位の格子（§11-6）",
     "depth_max": "木の深さ上限（§11-7）",
     "p_max": "P_MAX（発火経路数の上限・§11-8）",
-    "state_mult_grid": "状態列の定数倍数 k の格子（§11-9）",
-    "int_grid": "整数グリッド＝lookback・N（§11-10）",
+    # ★2026-08-15（段A の A-5-2）＝下の9つを「決まった数字だけ」から「範囲」に変えた（鍵の名前も変えた）
+    "state_mult_range": "状態列の定数倍数 k の範囲（§11-9）",
+    "int_range": "使い方の中の本数の範囲（§11-10）",
+    "int_grid": "整数グリッド＝lookback・N（§11-10・ほかの道具がまだ読む）",
     "hold_range_by_role": "保有時間の上限の範囲（役割ごと・5分足の本数・監査 4-19／要件 R6）",
-    "hour_grid": "整数グリッド＝時刻の閾値（§11-10）",
-    "frac_grid": "段階決済 mix の比率の格子（§11-10 に準ずる）",
-    "exit_mult_grid": "SL 幾何 k の倍率の格子（§11-10 に準ずる）",
-    "max_adds_grid": "max_adds の格子（§11-10 に準ずる）",
+    "hour_range": "時刻の閾値の範囲（§11-10）",
+    "frac_range": "段階決済 mix の比率の範囲（§11-10 に準ずる）",
+    "exit_mult_range": "SL 幾何 k の倍率の範囲（§11-10 に準ずる）",
+    "max_adds_range": "max_adds の範囲（§11-10 に準ずる）",
+    "hold_frac_range": "保有の門＝満期に対する割合の範囲（D2 出口の枝）",
+    "giveback_range": "含み益のピークから戻す割合の範囲（D2 出口の枝）",
+    "loss_cap_range": "1トレードの最大許容損失の範囲（D2 出口の枝）",
+    "ladder_steps_range": "部分利確の段数の範囲（D2 出口の枝）",
     "fdr_q": "BH 法の偽発見率の水準 q（歩4 新設・まこさんが決める）",
 }
 
@@ -322,6 +328,70 @@ def draw_int(rng, limits: dict, n_min: int = 1) -> int:
     return int(rng.integers(lo, hi + 1))
 
 
+# ══ 出口の枝などで使う数字の範囲（段A の A-5-2・2026-08-15）══════════════════════════
+#   直す前は、下の9つが「決まった数字だけ」の一覧でした。
+#     state_mult_grid ／ exit_mult_grid ／ frac_grid ／ giveback_grid ／ hold_frac_grid ／
+#     loss_cap_grid ／ hour_grid ／ max_adds_grid ／ ladder_steps_grid
+#   例＝`state_mult_grid` は 1.0・1.5・2.0・3.0 の4つだけ。手数料床の 1.2倍 は何回 試しても
+#   出てきません。要件の「作ってはいけないもの」2番（探す値を CC が先に点の一覧で限定する）に
+#   当たる状態でした。いまは下限と上限の間から引きます。
+#   ★両端の数字を CC は1つも作っていません＝直す前の一覧の 最小 と 最大 です。
+def num_range_of(limits: dict, key: str) -> dict:
+    """範囲を読む。戻り＝{"lo": 下限, "hi": 上限, "kind": "int" か "float", "dec": 小数の桁数}。
+
+    ★fail-closed＝範囲も、直す前の一覧も無ければ止めます（黙って別の数字を使いません）。
+    ★直す前の一覧（`*_grid`）が設定ファイルに残っている間は、その最小と最大を範囲にします
+      ＝まこさんが元に戻したくなったときに、設定ファイルだけで戻せます。
+    """
+    spec = limits.get(key)
+    if isinstance(spec, dict) and spec.get("lo") is not None and spec.get("hi") is not None:
+        lo, hi = float(spec["lo"]), float(spec["hi"])
+        kind = str(spec.get("kind") or ("int" if lo.is_integer() and hi.is_integer() else "float"))
+        dec = int(spec.get("dec") or 0)
+    else:
+        old = key[: -len("_range")] + "_grid" if key.endswith("_range") else key
+        g = limits.get(old)
+        if not g:
+            raise SystemExit(f"[範囲エラー] {key} も {old} も無い（recipes/search_limits.json）")
+        lo, hi = float(min(g)), float(max(g))
+        kind = "int" if all(float(v).is_integer() for v in g) else "float"
+        dec = max((len(str(v).split(".")[1]) if "." in str(v) else 0) for v in g)
+    if hi < lo:
+        raise SystemExit(f"[範囲エラー] {key} の上限 {hi} が下限 {lo} より小さい（recipes/search_limits.json）")
+    return {"lo": lo, "hi": hi, "kind": kind, "dec": int(dec)}
+
+
+def draw_num(rng, limits: dict, key: str, lo_min=None, hi_max=None):
+    """その範囲から数字を1つ 引く（範囲の中の、どの数字でもよい）。
+
+    lo_min・hi_max＝呼ぶ側の事情でさらに狭めるとき（例＝積み増した玉だけに当たる損切りは、
+    2回目 以上、かつ その案の積み増し回数 以下）。**設定ファイルの範囲そのものは書き換えません。**
+    """
+    r = num_range_of(limits, key)
+    lo, hi = r["lo"], r["hi"]
+    if lo_min is not None:
+        lo = max(lo, float(lo_min))
+    if hi_max is not None:
+        hi = min(hi, float(hi_max))
+    if hi < lo:
+        raise SystemExit(f"[範囲エラー] {key} を {lo_min}〜{hi_max} で狭めたら範囲が空になった")
+    if r["kind"] == "int":
+        return int(rng.integers(int(lo), int(hi) + 1))
+    v = float(rng.uniform(lo, hi))
+    return round(v, r["dec"]) if r["dec"] else float(round(v))
+
+
+def num_in_range(limits: dict, key: str, v) -> tuple[bool, str]:
+    """その数字は範囲の中か（検証器の番人が呼ぶ）。戻り＝(入っているか, 理由)。"""
+    r = num_range_of(limits, key)
+    if float(v) < r["lo"] or float(v) > r["hi"]:
+        return False, (f"{key} の値 {v} が探せる範囲の外"
+                       f"（{r['lo']}〜{r['hi']}・recipes/search_limits.json の {key}）")
+    if r["kind"] == "int" and float(v) != int(v):
+        return False, f"{key} の値 {v} は整数でない（範囲は整数・recipes/search_limits.json の {key}）"
+    return True, ""
+
+
 def _pool_families(pool: list[dict]) -> list[str]:
     """候補に載っている指標の種類（重複を除く・並びは決定論）。"""
     return sorted({b["family"] for b in pool})
@@ -495,7 +565,7 @@ def _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count, tabl
         r = rng.random()
         if role == "location" and rr["geo"] and table["geo_ok"] and r < 0.5:
             m = {"geo": str(rng.choice(table["geo_ok"]))}
-        elif role == "env" and "時間帯" in rr["lineages"] and r < 0.10 and limits.get("hour_grid"):
+        elif role == "env" and "時間帯" in rr["lineages"] and r < 0.10 and limits.get("hour_range"):
             m = {"time": "時刻"}                  # 曜日の閾値格子は未定義＝時刻だけ（格子はまこさん §11-10）。表は両方許可
         else:
             # ★2026-08-13（段A の A-4）＝パラメータは「範囲の中から引く」（点の一覧から選ばない）。
@@ -731,7 +801,7 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
     if "time" in m:
         return {"role": role, "form": "level", "material": [m],
                 "side": str(rng.choice(["above", "below"])),
-                "value": {"n": int(rng.choice(limits["hour_grid"]))}}
+                "value": {"n": int(draw_num(rng, limits, "hour_range"))}}
     # ★水準の形（level・band・band_exclude）には、単位の変わる前処理を掛けられる（2026-08-12（18回目）・4-2）。
     #   ＝『いまの値が 直近n本の中で上位20%』（ts_rank）／『直近n本のばらつきが大きいとき』（ts_std）。
     #   ・掛けるか掛けないかは「素のまま」を選択肢の1つに入れて一様に引く＝CC が確率の数字を書かない。
@@ -943,11 +1013,13 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
         return out
 
     tmax_min = int(rng.integers(hold_bars(limits)[0], hold_bars(limits)[1] + 1)) * 5
-    hf = limits["hold_frac_grid"]
-
     def hold_gate() -> dict:
-        """満期に対する割合で保有の門を作る（分・5の倍数に丸める・最低5分）。"""
-        n = int(round(tmax_min * float(rng.choice(hf)) / 5.0)) * 5
+        """満期に対する割合で保有の門を作る（分・5の倍数に丸める・最低5分）。
+
+        ★2026-08-15（段A の A-5-2）＝割合は 0.25・0.5・0.75 の3つだけでなく、
+          0.25〜0.75 の範囲から引く。
+        """
+        n = int(round(tmax_min * float(draw_num(rng, limits, "hold_frac_range")) / 5.0)) * 5
         return {"n": max(5, n)}
 
     exits: list[dict] = []
@@ -958,14 +1030,14 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
         lv = {"kind": "zone", "target": "mid"}
     elif tp_id == "TP_ZONE_OPP":
         lv = {"kind": "zone", "target": "opp", "fallback": "mid",
-              "buf": _floor_pct(float(rng.choice(limits["state_mult_grid"])) / 100.0)}
+              "buf": _floor_pct(float(draw_num(rng, limits, "state_mult_range")) / 100.0)}
     elif tp_id == "TP_PCT":
         lv = {"kind": "pct", "base": "entry",
-              "k": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["state_mult_grid"]))}}
+              "k": {"const": "SCALP_FLOOR", "mult": float(draw_num(rng, limits, "state_mult_range"))}}
     else:
         lv = {"kind": "swing", "target": "low" if side == "SHORT" else "high",
               "m": {"n": draw_int(rng, limits)},
-              "buf": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["state_mult_grid"]))},
+              "buf": {"const": "SCALP_FLOOR", "mult": float(draw_num(rng, limits, "state_mult_range"))},
               "fallback": {"kind": "zone", "target": "mid"}}
     exits.append(mk(tp_id, "TP2", placement={"kind": "resting", "fill": "profit", "level": lv}))
 
@@ -975,21 +1047,21 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
         sl_id = str(rng.choice(["SL_ZONE", "SL_PCT", "SL_SWING"]))
         if sl_id == "SL_ZONE":
             lv = {"kind": "zone_sl", "w": str(rng.choice(["range", "zone", "inner"])),
-                  "k": _const100(float(rng.choice(limits["exit_mult_grid"])) / 100.0)}
+                  "k": _const100(float(draw_num(rng, limits, "exit_mult_range")) / 100.0)}
         elif sl_id == "SL_PCT":
             lv = {"kind": "pct", "base": "entry",
-                  "k": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["exit_mult_grid"])) / 10.0}}
+                  "k": {"const": "SCALP_FLOOR", "mult": float(draw_num(rng, limits, "exit_mult_range")) / 10.0}}
         else:
             lv = {"kind": "swing", "target": "high" if side == "SHORT" else "low",
                   "m": {"n": draw_int(rng, limits)},
-                  "buf": {"const": "SCALP_FLOOR", "mult": float(rng.choice(limits["state_mult_grid"]))},
+                  "buf": {"const": "SCALP_FLOOR", "mult": float(draw_num(rng, limits, "state_mult_range"))},
                   "fallback": {"kind": "zone_sl", "w": "range", "k": _const100(1.0)}}
         exits.append(mk(sl_id, "SL", placement={"kind": "resting", "fill": "adverse",
                                                 "pessimistic": True, "level": lv}))
 
     # ── ③ 資金防衛（1トレードの最大許容損失・損切り無しの案では必ず入れる）──
     if no_sl or rng.random() < 0.30:
-        cap = float(rng.choice(limits["loss_cap_grid"]))
+        cap = float(draw_num(rng, limits, "loss_cap_range"))
         exits.append(mk("FINSTOP", "FINSTOP", placement={"kind": "on_close"}, risk="loss_cap",
                         fire={"all": [_state_cond("unreal_pct", "below",
                                                   {"const": "SCALP_FLOOR", "mult": -100.0 * cap / 0.08})]}))
@@ -1012,8 +1084,8 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
         exits.append(mk("PEAKLOCK", "PEAKLOCK",
                         placement={"kind": "resting", "fill": "adverse", "pessimistic": True,
                                    "level": {"kind": "peak_giveback",
-                                             "arm": _floor_pct(float(rng.choice(limits["state_mult_grid"]))),
-                                             "giveback": {"n": max(1, int(round(float(rng.choice(limits["giveback_grid"])) * 100)))},
+                                             "arm": _floor_pct(float(draw_num(rng, limits, "state_mult_range"))),
+                                             "giveback": {"n": max(1, int(round(float(draw_num(rng, limits, "giveback_range")) * 100)))},
                                              "floor": {"const": "SCALP_FLOOR"}}}))
     if rng.random() < 0.30:       # 一度 利が乗った後、建値+手数料床で降りる
         exits.append(mk("BEEXIT", "BEEXIT",
@@ -1021,7 +1093,7 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
                                    "level": {"kind": "pct", "base": "avg",
                                              "k": {"const": "SCALP_FLOOR", "side_sign": "profit"}}},
                         fire={"all": [_state_cond("mfe_prev_pct", "above",
-                                                  _floor_pct(float(rng.choice(limits["state_mult_grid"]))))]}))
+                                                  _floor_pct(float(draw_num(rng, limits, "state_mult_range"))))]}))
     if rng.random() < 0.30:       # 時間が経っても利が乗らない玉を、建値フロアで降りる（停滞・失速）
         exits.append(mk("BESTALE", "BESTALE",
                         placement={"kind": "resting", "fill": "profit",
@@ -1029,16 +1101,16 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
                                              "k": {"const": "SCALP_FLOOR", "side_sign": "profit"}}},
                         fire={"all": [_state_cond("hold_min", "above", hold_gate()),
                                       _state_cond("mfe_prev_pct", "below",
-                                                  _floor_pct(float(rng.choice(limits["state_mult_grid"]))))]}))
+                                                  _floor_pct(float(draw_num(rng, limits, "state_mult_range"))))]}))
     if rng.random() < 0.30:       # 利確に届かないまま満期が近い玉を、手前の位置で確定する
-        frac = float(rng.choice(limits["frac_grid"])) / 100.0
+        frac = float(draw_num(rng, limits, "frac_range")) / 100.0
         exits.append(mk("MFEEXIT", "MFEEXIT",
                         placement={"kind": "resting", "fill": "profit",
                                    "level": {"kind": "mix", "from": "entry", "to": "TP2",
                                              "frac": _const100(frac)}},
                         fire={"all": [_state_cond("hold_min", "above", hold_gate()),
                                       _state_cond("mfe_prev_pct", "above",
-                                                  _floor_pct(float(rng.choice(limits["state_mult_grid"]))))]}))
+                                                  _floor_pct(float(draw_num(rng, limits, "state_mult_range"))))]}))
     if pool and rng.random() < 0.30:    # 指標が反転したら、利益側に指値を置いて確定する
         try:
             c = _exit_indicator_cond(rng, limits, pool, tfs, sig, side, need("REVERSE_IND")["fire"][0])
@@ -1058,7 +1130,10 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
         except SampleError:
             pass
     if max_adds >= 2 and rng.random() < 0.30:   # 積み増した玉だけに当たる損切り（枝が回数で切り替わる）
-        lo = int(rng.choice([a for a in limits["max_adds_grid"] if 2 <= a <= max_adds] or [2]))
+        # ★2026-08-15（段A の A-5-2）＝直す前は「一覧の中から 2回目以上・その案の回数以下のものを拾い、
+        #   1つも無ければ 2 にする」でした（`or [2]` がコードに直に書いた数字＝場所3 の2件目）。
+        #   いまは 2回目 から その案の積み増し回数 までの整数から引きます＝直書きの数字が消えました。
+        lo = int(draw_num(rng, limits, "max_adds_range", lo_min=2, hi_max=max_adds))
         exits.append(mk("MAECUT_ADDS", "MAECUTADDS", placement={"kind": "on_close"},
                         scope={"adds": [lo, None]},
                         fire={"all": [_state_cond("hold_min", "above", hold_gate()),
@@ -1072,10 +1147,10 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
 
     # ── ⑥ 部分利確（段数は格子から・各段の量の合計が玉を超えない）──
     if rng.random() < 0.5:
-        steps = int(rng.choice(limits["ladder_steps_grid"]))
+        steps = int(draw_num(rng, limits, "ladder_steps_range"))
         rest = 1.0
         for s in range(steps):
-            frac = float(rng.choice(limits["frac_grid"])) / 100.0
+            frac = float(draw_num(rng, limits, "frac_range")) / 100.0
             if frac >= rest:
                 break
             exits.append(mk("TP1_LADDER", f"TP1{'' if s == 0 else s + 1}", size_ratio=frac, once=True,
@@ -1214,7 +1289,7 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
             b = kids.pop(len(kids) - 1)
             kids.append({"if": a, "then": b})
         tree = {"all": kids}
-    pos_adds = int(rng.choice(limits["max_adds_grid"]))    # 先に決める＝出口の枝が回数で切り替わるため
+    pos_adds = int(draw_num(rng, limits, "max_adds_range"))  # 先に決める＝出口の枝が回数で切り替わるため
     return {
         "meta": {"strategy": "e38", "logic_id": logic_id, "side": side,
                  "signal_family": fam_label,
@@ -2039,13 +2114,21 @@ KENSHU_LIMITS = {
     "role_max": ex.NO_CAP,
     "count_range": ex.NO_CAP, "k_max": ex.NO_CAP,
     "quantile_grid": ["q20", "q50", "q80"], "depth_max": ex.NO_CAP, "p_max": ex.NO_CAP,
-    "state_mult_grid": [1.0], "int_grid": [3, 6, 12],
+    # ★2026-08-15（段A の A-5-2）＝検収専用の値も「決まった数字だけ」から「範囲」に変えた。
+    #   ★幅を狭く取っている（検収は毎回 同じ結果が出ることを見るため）。本走は search_limits.json の範囲を使う。
+    "state_mult_range": {"lo": 1.0, "hi": 1.0, "kind": "float", "dec": 1}, "int_grid": [3, 6, 12],
+    "int_range": {"lo": 3, "hi": 12},
     # 保有時間の上限＝検収専用の範囲（本走は役割から決める＝resolve_hold_range・監査 4-19／要件 R6）
     "hold_bars": (1, 24), "hold_role": "検収専用",
-    "hour_grid": [6, 12, 18], "frac_grid": [50.0], "exit_mult_grid": [50.0, 100.0],
-    "max_adds_grid": [1, 2], "fdr_q": 0.10,
-    # 出口の枝（D2・2026-08-07）＝検収専用の値。本走は search_limits.json の格子を使う。
-    "hold_frac_grid": [0.5], "giveback_grid": [0.5], "loss_cap_grid": [0.6], "ladder_steps_grid": [1, 2],
+    "hour_range": {"lo": 6, "hi": 18, "kind": "int"},
+    "frac_range": {"lo": 50.0, "hi": 50.0, "kind": "float", "dec": 1},
+    "exit_mult_range": {"lo": 50.0, "hi": 100.0, "kind": "float", "dec": 1},
+    "max_adds_range": {"lo": 1, "hi": 2, "kind": "int"}, "fdr_q": 0.10,
+    # 出口の枝（D2・2026-08-07）＝検収専用の値。本走は search_limits.json の範囲を使う。
+    "hold_frac_range": {"lo": 0.5, "hi": 0.5, "kind": "float", "dec": 2},
+    "giveback_range": {"lo": 0.5, "hi": 0.5, "kind": "float", "dec": 2},
+    "loss_cap_range": {"lo": 0.6, "hi": 0.6, "kind": "float", "dec": 1},
+    "ladder_steps_range": {"lo": 1, "hi": 2, "kind": "int"},
 }
 
 
@@ -2848,7 +2931,7 @@ def selftest() -> int:
     et14 = load_exit_table()
     lm14 = dict(KENSHU_LIMITS)
     lm14.update({k: v for k, v in json.loads(LIMITS_PATH.read_text(encoding="utf-8")).items()
-                 if k in ("hold_frac_grid", "giveback_grid", "loss_cap_grid", "ladder_steps_grid")})
+                 if k in ("hold_frac_range", "giveback_range", "loss_cap_range", "ladder_steps_range")})
     sts14, reasons14, names14 = [], set(), set()
     for i in range(80):
         rng = np.random.default_rng([14, 8, i])

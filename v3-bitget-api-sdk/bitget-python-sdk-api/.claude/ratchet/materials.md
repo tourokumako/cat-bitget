@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=7e5df5d675ec7be0 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=c06f55e167c6fef7 gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -87,13 +87,13 @@
 - 検収専用の値は数えません＝`engine_tuner_gen.py` の `selftest` と `KENSHU_LIMITS`（出どころ＝`recipes/search_limits.json` の `_note` の逐語「検収専用の値は engine_tuner_gen.py の selftest の中にだけ存在する」）。
 - **番人**＝この4か所のどれかに架空の数の並びを1つ 足すと、その場所の件数がちょうど 1 増えます（`--selftest` の T12・わざと壊して確かめています）。
 
-**★4か所 合わせて 数の並び 45 件（数字 109 個）。範囲で探せるのは 12 件だけです。**
+**★4か所 合わせて 数の並び 35 件（数字 80 個）。範囲で探せるのは 21 件だけです。**
 
 | # | 場所 | 何の数字か | 決まった数字だけ（数の並び） | その中の数字 | 範囲で探せる |
 |---|---|---|---|---|---|
 | 1 | scripts/priority_rebuild/observe_config.json | 指標を作るときのパラメータ（RSI14 の 14） | **28 件** | 60 個 | 0 件 |
-| 2 | scripts/priority_rebuild/recipes/search_limits.json | 使い方の中の本数（slope の n）・閾値の段・上限 | **10 件** | 32 個 | 3 件 |
-| 3 | scripts/priority_rebuild/engine_tuner_gen.py | 生成器が数字を選ぶときに、コードに直に書いた数字 | **2 件** | 3 個 | 0 件 |
+| 2 | scripts/priority_rebuild/recipes/search_limits.json | 使い方の中の本数（slope の n）・閾値の段・上限 | **1 件** | 4 個 | 12 件 |
+| 3 | scripts/priority_rebuild/engine_tuner_gen.py | 生成器が数字を選ぶときに、コードに直に書いた数字 | **1 件** | 2 個 | 0 件 |
 | 4 | scripts/priority_rebuild/e38_logics.json の search_space | E38 の探索が振る値 | **5 件** | 14 個 | 9 件 |
 
 **★この欄の「範囲で探せる」は、設定ファイルそのものに 下限と上限の形で書いてある項目の数です。**
@@ -139,27 +139,17 @@
 | `w_tol` | 0.003 |
 | `zscore_periods` | 20・50 |
 
-**場所2 の明細（10 件）**
+**場所2 の明細（1 件）**
 
 | 鍵 | 決まった数字 |
 |---|---|
-| `exit_mult_grid` | 50.0・100.0・150.0 |
-| `frac_grid` | 25.0・50.0・75.0 |
-| `giveback_grid` | 0.25・0.5・0.75 |
-| `hold_frac_grid` | 0.25・0.5・0.75 |
-| `hour_grid` | 6・12・18 |
 | `int_grid` | 3・6・12・24 |
-| `ladder_steps_grid` | 1・2 |
-| `loss_cap_grid` | 0.4・0.6・0.8 |
-| `max_adds_grid` | 1・2・3・5 |
-| `state_mult_grid` | 1.0・1.5・2.0・3.0 |
 
-**場所3 の明細（2 件）**
+**場所3 の明細（1 件）**
 
 | 行 | 数字を選んでいる書き方 |
 |---|---|
-| `696` | `rng.choice([0, 1])` |
-| `1061` | `rng.choice([a for a in limits['max_adds_grid'] if 2 <= a <= max_adds] or [2])` |
+| `766` | `rng.choice([0, 1])` |
 
 **場所4 の明細（5 件）**
 

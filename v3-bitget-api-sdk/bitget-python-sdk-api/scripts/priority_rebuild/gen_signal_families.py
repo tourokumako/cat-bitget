@@ -298,6 +298,20 @@ def _md(table: dict, h: str) -> str:
         parts_s = "、".join(f"{nm}({kub.get(nm, '？')})" for nm in by_lin[lin])
         lines.append(f"- **{lin}**（{len(by_lin[lin])} 種）: {parts_s}")
     g = inv["grids"]
+
+    def _rng(key: str) -> str:
+        """範囲を人が読む形にする（★2026-08-15＝段A の A-5-2 で格子が範囲に変わったため）。
+
+        直す前は `[1.0, 1.5, 2.0, 3.0]` のような「決まった数字だけ」の一覧を、そのまま印字していた。
+        いまは下限と上限を印字する。設定ファイルに古い一覧が残っている間は、その一覧を印字する。
+        """
+        v = g.get(key)
+        if isinstance(v, dict) and v.get("lo") is not None:
+            kind = "整数" if str(v.get("kind")) == "int" else "小数"
+            return f"{v['lo']} 〜 {v['hi']}（{kind}）"
+        old = key[: -len("_range")] + "_grid" if key.endswith("_range") else key
+        return str(g.get(key, g.get(old, "（設定ファイルに無い）")))
+
     lines += [
         "",
         f"### 時間足 … {len(table['timeframes'])} 本",
@@ -317,13 +331,17 @@ def _md(table: dict, h: str) -> str:
         f"| k_max | {g['k_max']} | 同じ系統を重ねられる上限 |",
         f"| depth_max | {g['depth_max']} | 入れ子の深さの上限 |",
         f"| p_max | {g['p_max']} | 発火経路の数の上限（探索の既定は1経路） |",
-        f"| int_grid | {g['int_grid']} | 本数の格子（傾き・連続などの N） |",
-        f"| hour_grid | {g['hour_grid']} | 時刻の境界の格子 |",
+        f"| int_range | {_rng('int_range')} | 本数の範囲（傾き・連続などの N） |",
+        f"| hour_range | {_rng('hour_range')} | 時刻の境界の範囲 |",
         f"| hold_range_by_role | {json.dumps(g['hold_range_by_role'], ensure_ascii=False)} | 保有時間の上限の範囲（役割ごと・5分足の本数） |",
-        f"| state_mult_grid | {g['state_mult_grid']} | 出口の名前つき定数の倍数の格子 |",
-        f"| frac_grid | {g['frac_grid']} | 部分利確の割合の格子（%） |",
-        f"| exit_mult_grid | {g['exit_mult_grid']} | SL の帯幅の倍数の格子（%） |",
-        f"| max_adds_grid | {g['max_adds_grid']} | 積み増しの回数の格子 |",
+        f"| state_mult_range | {_rng('state_mult_range')} | 出口の名前つき定数の倍数の範囲 |",
+        f"| frac_range | {_rng('frac_range')} | 部分利確の割合の範囲（%） |",
+        f"| exit_mult_range | {_rng('exit_mult_range')} | SL の帯幅の倍数の範囲（%） |",
+        f"| max_adds_range | {_rng('max_adds_range')} | 積み増しの回数の範囲 |",
+        f"| hold_frac_range | {_rng('hold_frac_range')} | 保有の門＝満期に対する割合の範囲 |",
+        f"| giveback_range | {_rng('giveback_range')} | 含み益のピークから戻す割合の範囲 |",
+        f"| loss_cap_range | {_rng('loss_cap_range')} | 1トレードの最大許容損失の範囲（%） |",
+        f"| ladder_steps_range | {_rng('ladder_steps_range')} | 部分利確の段数の範囲 |",
         f"| n_min | {g['n_min']} | 列の有効標本数の下限（禁止3 の材料） |",
         f"| r_min | {g['r_min']} | リスクリワード比の下限 |",
         f"| fdr_q | {g['fdr_q']} | BH 法の偽発見率の線 |",

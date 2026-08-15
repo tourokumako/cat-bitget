@@ -393,6 +393,32 @@ def _check_param_range(fam: str, param) -> None:
         _fail("G6", f"材料のパラメータが範囲の外: {why}")
 
 
+_NUM_RANGE_LIMITS = None
+
+
+def _check_num_range(key: str, v, where: str) -> None:
+    """★2026-08-15（段A の A-5-2）＝出口の枝などの数字が「探せる範囲」の中かを見る（fail-closed）。
+
+    範囲の正本＝`engine_tuner_gen.num_range_of`（`recipes/search_limits.json` の `*_range`）。
+    ★これが無いと、生成器の側だけを直しても、手で書いたレシピが範囲の外の数字で走ってしまう。
+    ★恒等検収のレーン（lane="legacy"）は対象外＝過去の実装の書き写しを壊さない
+      （`_check_param_range`・`_check_int_range` と同じ扱い）。
+    ★いま当てているのは2件だけです（正直に書く）。
+      ①玉の積み増しの回数（`position.max_adds`）②時刻の閾値（材料が「時刻」のときの value.n）。
+      出口の枝の中の数字（手数料床の倍数・部分利確の割合・ピークからの戻し ほか）は、
+      レシピの中で別の形に変わって入る（例＝倍数は {"const": "SCALP_FLOOR", "mult": 1.2}）ので、
+      ここでは見ていません。＝**生成器は範囲から引くが、手で書いたレシピの出口の枝は機械が止めません。**
+    """
+    global _NUM_RANGE_LIMITS
+    if _NUM_RANGE_LIMITS is None:                # 設定ファイルは1回だけ読む（条件ごとに読むと遅い）
+        import engine_tuner_gen as _gen0
+        _NUM_RANGE_LIMITS, _w0 = _gen0.load_limits()
+    import engine_tuner_gen as _gen
+    ok, why = _gen.num_in_range(_NUM_RANGE_LIMITS, key, v)
+    if not ok:
+        _fail("G5", f"{where}: {why}")
+
+
 def _material_family(m: dict) -> str:
     """系統マップ（G3）に使う family 名。"""
     if "geo" in m:
@@ -491,6 +517,17 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         if PAIR_OPS[op]["needs_n"] and not isinstance(vv.get("n"), int):
             _fail("G5", f"{where}: 形 diff の組み方 {op} は value.n（窓の本数＝整数）が要る（§2.2 slope と同じ書き方）")
     mats = c.get("material") or []
+    # ★2026-08-15（段A の A-5-2）＝時刻の閾値が「探せる範囲」の中かを見る（fail-closed）。
+    #   範囲の正本＝recipes/search_limits.json の hour_range（直す前は 6・12・18 の3つだけだった）。
+    #   当てるのは材料が「時刻」のときだけ＝曜日など別の時間帯の材料には当てない（意味が違うため）。
+    if lane != "legacy" and any(m.get("time") == "時刻" for m in mats):
+        _v52 = c.get("value") or {}
+        if isinstance(_v52.get("n"), int):
+            _check_num_range("hour_range", _v52["n"], f"{where}: 時刻の閾値")
+        for _s52 in ("lo", "hi", "th"):
+            _in52 = _v52.get(_s52)
+            if isinstance(_in52, dict) and isinstance(_in52.get("n"), int):
+                _check_num_range("hour_range", _in52["n"], f"{where}: 時刻の閾値（{_s52}）")
     # ★2026-08-13（段C の C-6・部品①＝閾値とのクロス cross_val）＝cross は2通りの書き方を受ける。
     #   ①列2本（MACD線% × MACDシグナル線% のようなクロス）
     #   ②列1本 ＋ 閾値（「RSI が 70 を上抜けた」）★これが 2026-08-13 まで書けなかった
@@ -847,6 +884,10 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
         _fail("G5", f"position.mode が separate/avg でない: {pos.get('mode')}")
     if not (isinstance(pos.get("max_adds"), int) and pos["max_adds"] >= 1):
         _fail("G5", f"position.max_adds が不正: {pos.get('max_adds')}")
+    # ★2026-08-15（段A の A-5-2）＝積み増しの回数が「探せる範囲」の中かを見る（fail-closed）。
+    #   範囲の正本＝recipes/search_limits.json の max_adds_range（直す前は 1・2・3・5 の4つだけ）。
+    if lane != "legacy":
+        _check_num_range("max_adds_range", pos["max_adds"], "position.max_adds")
     if pos["mode"] == "avg" and (pos.get("add_trigger") or {}).get("kind") not in ("resignal", "adverse_pct", "time", "profit_confirm"):
         _fail("G5", f"avg 形の add_trigger.kind が X-i(9) の4種でない: {pos.get('add_trigger')}")
     return rep
