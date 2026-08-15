@@ -471,6 +471,13 @@ def _check_value(v: dict, lane: str, cond_desc: str, legacy_used: list):
     # ★2026-08-15（段A の A-5-3）＝分位が探せる範囲の中かを見る（恒等検収のレーンは対象外）。
     if "threshold_q" in v and lane != "legacy":
         _check_q_range(v["threshold_q"], f"{cond_desc}: 閾値の段")
+    # ★2026-08-15（段A の A-5-4）＝ずらす本数が探せる範囲の中かを見る（恒等検収のレーンは対象外）。
+    #   直す前は `offset` を「知っている鍵」として通すだけで、値を1つも見ていなかった
+    #   ＝生成器の側だけを直しても、手で書いたレシピが範囲の外の本数で走ってしまう。
+    if "offset" in v and lane != "legacy":
+        if not isinstance(v["offset"], int) or isinstance(v["offset"], bool):
+            _fail("G5", f"{cond_desc}: ずらす本数が整数でない: {v['offset']!r}")
+        _check_num_range("nest_offset_range", v["offset"], f"{cond_desc}: ずらす本数")
     if "n" in v and (not isinstance(v["n"], int) or v["n"] < 1):
         _fail("G5", f"{cond_desc}: 整数グリッドの n が不正: {v['n']}")
     if "m" in v and (not isinstance(v["m"], int) or v["m"] < 1):
@@ -2996,6 +3003,25 @@ def selftest() -> None:
         validate_recipe(_r_q_in)
     except RecipeError as e:
         ng.append(f"範囲の中の分位 q37（直す前の9段には無い）が拒否された: {e}")
+
+    # ★2026-08-15（段A の A-5-4）＝入れ子の「ずらす本数」が範囲の外・整数でないレシピを止める。
+    #   直す前は offset を「知っている鍵」として通すだけで、値を1つも見ていなかった。
+    def _nest_cond(off) -> dict:
+        return {"role": "env", "form": "streak", "value": {"n": 3, "offset": off},
+                "inner": {"role": "env", "form": "level", "side": "below",
+                          "value": {"const": "RSI_OB"},
+                          "material": [{"family": "RSI", "param": 14, "tf": "1h"}]}}
+    broke("㉟ ずらす本数が探せる範囲の外（offset=3）",
+          lambda r: r["entry"]["connective"]["all"].__setitem__(1, _nest_cond(3)), "G5")
+    broke("㊱ ずらす本数が整数でない（offset=0.5）",
+          lambda r: r["entry"]["connective"]["all"].__setitem__(1, _nest_cond(0.5)), "G5")
+    for _off_ok in (0, 1):                      # メタ確認＝範囲の中は通る（止めすぎていない）
+        _r_off = copy.deepcopy(okr)
+        _r_off["entry"]["connective"]["all"][1] = _nest_cond(_off_ok)
+        try:
+            validate_recipe(_r_off)
+        except RecipeError as e:
+            ng.append(f"範囲の中のずらす本数 offset={_off_ok} が拒否された: {e}")
     # 既知答え（里程標9）＝v22 アンカーの TP1/TP2 が「同じ判定で必ず同時に切り替わる」ことを電卓式で確認。
     # e37_scalp 1531-1541行＝安値×(1+V11_SL_BUF) が建値より下なら TP2＝その値・TP1＝(建値+安値)/2。
     # 下でなければ TP2 も TP1 も元の置き方（TP2＝反対側ゾーン手前／TP1＝(建値+中央)/2）へ同時に戻る。
@@ -3158,7 +3184,7 @@ def selftest() -> None:
           "（+ わざと型を1件 壊すと落ちるか） → "
           + ("✅ 全部 一致・壊すと落ちた" if not _rt_ng else "❌ " + " ／ ".join(_rt_ng)))
     print("=" * 80)
-    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ34種で全部止まる・正しい5種は通る・歩4/歩6-1 拡張の既知答え込み）")
+    print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ36種で全部止まる・正しい5種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)
     if ng:
         for x in ng:

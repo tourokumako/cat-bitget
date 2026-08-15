@@ -577,7 +577,15 @@ def load_signal_table() -> dict:
     rl = t["role_lineage"]
     roles = {}
     for rname, r in rl["roles"].items():
-        roles[rname] = {"lineages": set(r["lineages"]),
+        # ★2026-08-16＝lineages を set から「並びの決まったもの」に変えた。
+        #   直す前＝set。Python は走らせるたびに文字列の置き場所を変えるので、set を上から
+        #   順に見たときの並びが、同じコマンドでも実行のたびに違った（`_make_cond` の
+        #   `for k in rr["lineages"]` が候補の並びを作っている）。
+        #   ＝同じ種（seed）を渡しても、走らせるたびに違う案が出ていた（再現できない）。
+        #   実測 2026-08-16＝案20本を作り、PYTHONHASHSEED を 0・1・2 に変えて比べたら3通りとも別物。
+        #   並びを名前順に固定したら3通りとも同じ md5 になった。
+        #   ★ほかの使い方（`in` で入っているかを見るだけ）は、並びの決まったものでも同じ結果。
+        roles[rname] = {"lineages": tuple(sorted(r["lineages"])),
                         "tfs": None if r["tfs"] == "all" else set(r["tfs"]),   # None＝表の全足
                         "geo": bool(r.get("geo"))}
     _SIGNAL_TABLE = {
@@ -866,8 +874,10 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
             inner.pop("role", None)
             inner["role"] = role
             n = draw_int(rng, limits, n_min=2)
+            # ★2026-08-15（段A の A-5-4）＝ずらす本数を、コードに直に書いた 0・1 の2つから
+            #   設定ファイルの範囲（`nest_offset_range`）へ出した。両端は直す前の2つの 最小 と 最大。
             out = {"role": role, "form": form, "inner": inner,
-                   "value": {"n": n, "offset": int(rng.choice([0, 1]))}}
+                   "value": {"n": n, "offset": int(draw_num(rng, limits, "nest_offset_range"))}}
             if form == "barssince":
                 # ★何本前に成立したか（部品 barssince・2026-08-12・段C の C-6）。
                 #   ★生成器は above だけを作る。理由＝below（「n本 以内に成立」）は within_n(n+1) と
@@ -1889,6 +1899,12 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
         v = c.get("value", {})
         if c["form"] in ex.NEST_FORMS:            # 入れ子形（barssince を足した 2026-08-12・段C の C-6）
             slots.append((f"{prefix}.value.n", _int_range(*int_range_of(limits, n_min=2))))
+            # ★2026-08-15（段A の A-5-4）＝ずらす本数も『動かせる値』に出す。
+            #   直さないと、生成のときに1回 引いた本数がそのまま固定され、第2段で1度も動かせない
+            #   （2026-08-12 に value.th で同じ穴を塞いだのと同じ形）。
+            if "offset" in v:
+                _or = num_range_of(limits, "nest_offset_range")
+                slots.append((f"{prefix}.value.offset", _int_range(int(_or["lo"]), int(_or["hi"]))))
             _cond_slots(f"{prefix}.inner", c["inner"])
             return
         if "threshold_q" in v:
@@ -2259,6 +2275,9 @@ KENSHU_LIMITS = {
     "giveback_range": {"lo": 0.5, "hi": 0.5, "kind": "float", "dec": 2},
     "loss_cap_range": {"lo": 0.6, "hi": 0.6, "kind": "float", "dec": 1},
     "ladder_steps_range": {"lo": 1, "hi": 2, "kind": "int"},
+    # ★2026-08-15（段A の A-5-4）＝入れ子の「ずらす本数」も検収専用の範囲を持つ。
+    #   本走は search_limits.json の nest_offset_range を使う（T18 はそちらを読んで確かめる）。
+    "nest_offset_range": {"lo": 0, "hi": 1, "kind": "int"},
 }
 
 
@@ -3239,6 +3258,91 @@ def selftest() -> int:
         t17.append("範囲を q40〜q45 に狭めても、その外の分位が通る（範囲が効いていない）")
     ng += [f"T17: {x}" for x in t17]
 
+    # ══ T18 入れ子の「ずらす本数」の範囲（段A の A-5-4・2026-08-15）═════════════════════
+    #   ①コードに直に書いた数字が消えた（`materials.md` の ★3 の場所3 が 0件 になる根拠）
+    #   ②本走の設定で作られる本数が、全部 範囲の中に入っている
+    #   ③その本数が第2段の『動かせる値』に出る（生成のときの1回で固定されない）
+    #   ④範囲を 0〜0 に狭めると 1 が出なくなる（メタ確認＝範囲が効いている証拠）
+    #   ★実物のファイルは1バイトも書き換えません（読み込んだ中身の写しを壊すだけ）。
+    t18: list[str] = []
+    # ★探す文字を組み立ててから探す＝この行そのものに反応しないため（自己一致を避ける）。
+    _needle18 = "rng." + "choice([0, 1])"
+    if _needle18 in pathlib.Path(__file__).read_text(encoding="utf-8"):
+        t18.append(f"コードに直に書いた {_needle18} が残っている（設定ファイルへ出していない）")
+    lm18 = dict(KENSHU_LIMITS)
+    _lim_file18 = json.loads(LIMITS_PATH.read_text(encoding="utf-8"))
+    lm18["nest_offset_range"] = _lim_file18["nest_offset_range"]
+    lo18, hi18 = int(lm18["nest_offset_range"]["lo"]), int(lm18["nest_offset_range"]["hi"])
+    seen18: set[int] = set()
+    slot18 = 0
+
+    def _walk18(c):
+        v = c.get("value") or {}
+        if c.get("form") in ex.NEST_FORMS and "offset" in v:
+            seen18.add(int(v["offset"]))
+        if c.get("inner"):
+            _walk18(c["inner"])
+    for i in range(60):
+        rng = np.random.default_rng([18, 7, i])
+        try:
+            st = sample_structure(rng, lm18, pool, tfs_small, side="SHORT", logic_id="S3")
+        except SampleError:
+            continue
+        slot18 += sum(1 for _p, _sp in value_slots(st, lm18) if _p.endswith(".value.offset"))
+        _cs18, _d18 = ex._walk(st["entry"]["connective"])
+        for _c in list(_cs18) + list(st.get("pre_filter", [])):
+            _walk18(_c)
+    if not seen18:
+        t18.append("案60本で入れ子の条件が1つも作られず、ずらす本数を確かめられなかった")
+    if any(x < lo18 or x > hi18 for x in seen18):
+        t18.append(f"範囲の外のずらす本数が作られた（出た本数 {sorted(seen18)}・範囲 {lo18}〜{hi18}）")
+    if seen18 and slot18 == 0:
+        t18.append("ずらす本数が第2段の『動かせる値』に出ない（生成のときの1回で固定される）")
+    for bad18 in (hi18 + 2, 0.5):
+        if num_in_range(lm18, "nest_offset_range", bad18)[0]:
+            t18.append(f"範囲の外・整数でないずらす本数 {bad18} を通した（範囲 {lo18}〜{hi18}）")
+    narrow18 = dict(lm18)
+    narrow18["nest_offset_range"] = {"lo": 0, "hi": 0, "kind": "int"}
+    if num_in_range(narrow18, "nest_offset_range", hi18)[0] and hi18 != 0:
+        t18.append(f"範囲を 0〜0 に狭めても {hi18} が通る（範囲が効いていない）")
+    ng += [f"T18: {x}" for x in t18]
+
+    # ══ T19 同じ種なら同じ案が出る（2026-08-16 新設）════════════════════════════════════
+    #   何を守るか＝engine_tuner の探索が再現できる状態。
+    #   直す前は 型の表の「系統の一覧」が set で、Python が走らせるたびに文字列の置き場所を
+    #   変えるため、候補の並びが実行ごとに違った＝同じ種でも別の案が出ていた
+    #   （実測 2026-08-16＝案20本の md5 が PYTHONHASHSEED 0・1・2 で3通りとも別物）。
+    #   ①並びの決まったもの（同じ種→同じ案）になっていること
+    #   ②わざと set に戻すと並びが変わりうること（メタ確認＝実物のファイルは書き換えない）
+    t19: list[str] = []
+    _tbl19 = load_signal_table()
+    for _rn, _r in _tbl19["roles"].items():
+        if isinstance(_r["lineages"], (set, frozenset)):
+            t19.append(f"役割 {_rn} の系統の一覧が set のまま（走らせるたびに並びが変わる）")
+    def _plans19(tb) -> str:
+        outs = []
+        for i in range(12):
+            try:
+                outs.append(json.dumps(sample_structure(np.random.default_rng([19, 3, i]), lm18, pool,
+                                                        tfs_small, side="SHORT", logic_id="S3"),
+                                       ensure_ascii=False, sort_keys=True, default=str))
+            except SampleError:
+                outs.append("SampleError")
+        return hashlib.md5("\n".join(outs).encode("utf-8")).hexdigest()[:16]
+    _keep19 = {k: v["lineages"] for k, v in _tbl19["roles"].items()}
+    _h19a = _plans19(_tbl19)
+    if _plans19(_tbl19) != _h19a:
+        t19.append("同じ種なのに、続けて2回 作った案が違う（再現できない）")
+    try:                                          # メタ確認＝並びを崩すと案が変わりうる
+        for _k, _v in _keep19.items():
+            _tbl19["roles"][_k]["lineages"] = tuple(reversed(_v))
+        if _plans19(_tbl19) == _h19a:
+            t19.append("系統の並びを逆にしても案が同じ＝並びが案に効いていない（検査が無意味）")
+    finally:
+        for _k, _v in _keep19.items():            # 読み込んだ写しを元に戻す
+            _tbl19["roles"][_k]["lineages"] = _v
+    ng += [f"T19: {x}" for x in t19]
+
     print("=" * 80)
     print("engine_tuner_gen 自己検査（合成データのみ・実データの試行ゼロ・累積試行の記録なし）")
     print("=" * 80)
@@ -3272,6 +3376,14 @@ def selftest() -> int:
           f" ／ 範囲の外（q{hi17 + 5}・q{max(lo17 - 5, 0)}）と書き方違い（q12.5・50）は4通りとも止めた"
           f" ／ 範囲を q40〜q45 に狭めると q{hi17} が通らなくなる（メタ確認）"
           f" ／ 第2段の値スロット {slot17}")
+    print(f"  T18 入れ子のずらす本数の範囲（段A の A-5-4）: コードの直書き 0 件"
+          f" ／ 案60本で出た本数 {sorted(seen18)}（範囲 {lo18}〜{hi18}）"
+          f" ／ 第2段の値スロットに {slot18} 件 出た"
+          f" ／ 範囲の外（{hi18 + 2}）と整数でない（0.5）は2通りとも止めた"
+          f" ／ 範囲を 0〜0 に狭めると {hi18} が通らなくなる（メタ確認）")
+    print(f"  T19 同じ種なら同じ案が出る（2026-08-16）: 系統の一覧は並びの決まったもの"
+          f" ／ 案12本の md5 {_h19a}（続けて2回 とも同じ）"
+          f" ／ 並びを逆にすると案が変わる（メタ確認）")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")

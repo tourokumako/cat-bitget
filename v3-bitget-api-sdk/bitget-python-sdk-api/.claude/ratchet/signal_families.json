@@ -2390,6 +2390,11 @@
     "lo": 1
    },
    "n_min": 30,
+   "nest_offset_range": {
+    "hi": 1,
+    "kind": "int",
+    "lo": 0
+   },
    "p_max": "無制限",
    "quantile_grid": [
     "q10",

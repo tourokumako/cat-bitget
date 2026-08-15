@@ -1,4 +1,4 @@
-<!-- SIGNAL_FAMILIES hash=f78d89051483ea12 gen_signal_families.py が自動生成＝手で書き換えない -->
+<!-- SIGNAL_FAMILIES hash=9b46e462e9b9fc6d gen_signal_families.py が自動生成＝手で書き換えない -->
 # signal_families.md — 型の表（許可の一覧・全自動生成・CC の手書きの行ゼロ）
 
 作り（まこさん確定 2026-08-06）＝ 表の本体は広く展開 ／ 削るのは機械生成の禁止だけ ／ 検算は V9 の実物。
