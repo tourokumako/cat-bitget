@@ -45,5 +45,8 @@ v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
 .claude/state/*
 !.claude/state/session_worklog_*.md
 !.claude/state/next_step.md
+# ★2026-08-15 追加＝next_step.md から移した過去の節（まこさん決定「ABどちらもやる」で新設）。
+#   これを戻さないと、移した675行が git に入らない（移した直後に実測で発覚）。
+!.claude/state/next_step_archive_*.md
 # bitget 側 state はリポジトリ直下 .claude/state へのシンボリックリンク（2026-07-19 統合・パスミス無害化）＝リンク自体も無視（末尾スラッシュ無し）
 v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state
