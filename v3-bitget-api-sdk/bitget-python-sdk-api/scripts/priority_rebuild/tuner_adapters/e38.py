@@ -66,9 +66,39 @@ def logics() -> list[dict]:
     return out
 
 
+def assert_no_number_menu(decl: dict) -> None:
+    """数字だけのメニュー（type=cat で候補が全部 数字）を、E38 の探索の宣言に戻させない番人。
+
+    ★なぜ要るか。engine_tuner は「メニューに無い数字を、何回 走らせても出せません」。
+      2026-08-16 の段A の A-5-5 で、E38 の宣言に残っていた 5 件（tmax_bars・be_wait・
+      L2.k_bars・S3.confirm_bars・L3.confirm_bars）を範囲（type=int の lo〜hi）に直しました。
+      この関数が無いと、次に誰かが `{"type": "cat", "choices": [1, 2, 3]}` と書いたときに、
+      何も言わずに元の状態へ戻ります。
+    ★止めないもの＝候補が数字でないメニュー（例＝tp_mode の "zone"／"pct"、S4 の trigger の
+      "imm"／"rev"）。これは まこさん決定 2026-08-12（逐語「メニュー方式にせざるを得ない値以外は、
+      範囲で探す方針」）の「本当に選択肢のもの」に当たるので、メニューのままで正しい。
+    ★E37 は対象外です。E37 の接続ファイルには数字だけのメニューが 3 件 残っています
+      （V59_DOWN_WIN_MIN・V59_FLAT_WIN_MIN・V59_WAIT_MIN）。E37 は まこさん決定 2026-08-08
+      （逐語「E37とは保留」）で保留のため、この番人は E38 の宣言だけを見ます。
+    """
+    bad = [k for k, v in (decl or {}).items()
+           if isinstance(v, dict) and v.get("type") == "cat"
+           and (v.get("choices") or []) and all(isinstance(x, bool) is False
+                                                and isinstance(x, (int, float)) for x in v["choices"])]
+    if bad:
+        raise SystemExit(
+            f"[数字だけのメニュー] {', '.join(sorted(bad))} が type=cat の数の並びになっている。"
+            f"engine_tuner はメニューに無い数字を1回も出せない（段A の A-5-5 で全部 範囲にした）。"
+            f"直し方＝{CONFIG.name} の search_space で type=int の lo／hi に書き換える"
+            f"（両端は いまの一覧の最小と最大＝新しい数字を作らない）。"
+            f"数字でない候補のメニュー（zone／pct のような選択肢）は止めていない。")
+
+
 def space(logic_id: str) -> dict:
     """探索する値の宣言＝出口の共通 ＋ そのロジックの入口。
-    ★同名のキーはロジック側が勝つ（例 S2 の tmax_bars＝枠外の長い保有の除外・まこさん決定 2026-07-25）。"""
+    ★同名のキーはロジック側が勝つ（tmax_bars がその仕組みで差し替えられる＝下の 96-97 行）。
+      ★2026-08-16 実測＝いま tmax_bars を自分で宣言しているロジックは 11本のうち 0本。
+      直す前ここに書いてあった「例 S2 の tmax_bars」は実物と違ったので消した（S2 は宣言していない）。"""
     cfg = config()
     lg = _logic(logic_id)
     if lg.get("impl", {}).get("module") != "e38_logic_parts" or (
@@ -86,8 +116,10 @@ def space(logic_id: str) -> dict:
         #   tmax_bars＝保有の上限（役割から決めた整数の範囲＝hold_space）
         # 残り（tp1_frac / tp2_target / tp_mode / tp_pct_k / be_wait）は入れない＝意味の無い軸を探索しない。
         # grid_n の範囲は search_space.logics が正本＝null の間は engine_tuner が値待ちで止まる（fail-closed）。
-        return {"sl_zone_k": cfg["search_space"]["common_exit"]["sl_zone_k"],
-                "tmax_bars": hold_space(), **sp}
+        out = {"sl_zone_k": cfg["search_space"]["common_exit"]["sl_zone_k"],
+               "tmax_bars": hold_space(), **sp}
+        assert_no_number_menu(out)
+        return out
     out = {**cfg["search_space"]["common_exit"], **sp}
     # ★保有時間の上限を、役割から決めた整数の範囲へ差し替える（監査 4-19／要件 R6・まこさん OK 2026-08-03）。
     #   それまでは設定ファイルのメニュー（1・2・3・6・9・12 本）からしか選べなかった。
@@ -95,6 +127,7 @@ def space(logic_id: str) -> dict:
     #   ロジックが自分で tmax_bars を宣言している場合は、そちらを尊重する（ロジック側が勝つ・従来の決まり）。
     if "tmax_bars" in out and "tmax_bars" not in sp:
         out["tmax_bars"] = hold_space()
+    assert_no_number_menu(out)
     return out
 
 

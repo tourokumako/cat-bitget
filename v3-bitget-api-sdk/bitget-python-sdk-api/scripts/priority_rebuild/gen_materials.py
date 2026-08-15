@@ -1419,6 +1419,48 @@ def selftest() -> int:
     except Exception as _e13:                                    # noqa: BLE001
         ng.append(f"T12-2: 確かめられなかった（{type(_e13).__name__}: {str(_e13)[:80]}）")
 
+    # ── T13 A-5-5｜E38 の探索の宣言に「数字だけのメニュー」を戻させない（2026-08-16 新設）──
+    #   何を守るか＝engine_tuner は「メニューに無い数字を、何回 走らせても出せない」。段A の A-5-5 で
+    #   e38_logics.json の search_space から 数字だけのメニュー 5 件（tmax_bars・be_wait・L2.k_bars・
+    #   S3.confirm_bars・L3.confirm_bars）を範囲（type=int）に直した。ここが黙って戻る状態を作らない。
+    #   ★2段で守る。① 数え上げ（場所4 の「並び」が 0 件）② 物理の止め（接続ファイルの
+    #     tuner_adapters/e38.assert_no_number_menu が探索の宣言を作る瞬間に落とす）。
+    #   ★E37 は対象外（まこさん決定 2026-08-08「E37とは保留」）＝E37 の接続ファイルには
+    #     数字だけのメニューが 3 件 残っている（next_step.md の §6 に記録した）。
+    try:
+        _p4 = fixed_number_places()["places"][3]
+        if _p4["並び"] != 0:
+            ng.append(f"T13: 場所4（e38_logics.json の search_space）に 数字だけのメニューが"
+                      f" {_p4['並び']} 件 在る＝A-5-5 が戻っている"
+                      f"（{'／'.join(r['鍵'] for r in _p4['明細'])}）")
+        # ① のメタ確認＝写しに架空の数の並びを1件 混ぜたら、ちゃんと 1 件と数えること
+        _e3814 = json.loads(_A1_E38.read_text(encoding="utf-8"))
+        (_e3814.get("search_space") or {})["zzz_uso_a55"] = {"type": "cat", "choices": [4, 8]}
+        if fixed_number_places(e38=_e3814)["places"][3]["並び"] != 1:
+            ng.append("T13: 数字だけのメニューを1件 混ぜても 場所4 が 0 件のまま＝数え上げが効いていない")
+        # ② 物理の止め＝接続ファイルの番人が、数字のメニューで落ち・数字でないメニューでは落ちない
+        import tuner_adapters.e38 as _ad38
+        try:
+            _ad38.assert_no_number_menu({"zzz_uso": {"type": "cat", "choices": [1, 2, 3]}})
+            ng.append("T13: 接続ファイルの番人が 数字だけのメニューを止めない（物理の止めが死んでいる）")
+        except SystemExit:
+            pass
+        try:
+            _ad38.assert_no_number_menu({"tp_mode": {"type": "cat", "choices": ["zone", "pct"]},
+                                         "tmax_bars": {"type": "int", "lo": 1, "hi": 12, "step": 1}})
+        except SystemExit:
+            ng.append("T13: 接続ファイルの番人が 止めすぎている"
+                      "（数字でない選択肢のメニューと 範囲の宣言まで落とした）")
+        # ② の本走＝いま実物が返す宣言そのものが、番人を通ること（11本 全部）
+        for _lg in json.loads(_A1_E38.read_text(encoding="utf-8"))["logics"]:
+            try:
+                _ad38.space(_lg["id"])
+            except SystemExit as _se38:
+                if "数字だけのメニュー" in str(_se38):
+                    ng.append(f"T13: 実物の宣言が番人に落ちた（{_lg['id']}）＝{str(_se38)[:80]}")
+    except Exception as _e14:                                    # noqa: BLE001
+        ng.append(f"T13: 確かめられなかった（{type(_e14).__name__}: {str(_e14)[:100]}）")
+
     # T6 わざと書き換えると --verify が鳴る（メタ確認）
     if _MD.exists():
         keep = _MD.read_text(encoding="utf-8")
