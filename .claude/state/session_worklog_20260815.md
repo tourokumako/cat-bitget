@@ -402,3 +402,11 @@
 - **型の表（`signal_families.json`）と 出口の枝の表（`exit_families.json`）の `--verify` は落ちます。★今日の直しが原因ではありません。**食い違いの中身を機械で数えたら5件で、**全部 今日 触っていない項目**でした（`family_templates` 19≠251・`forms` 11≠12・`banned_pairs` 113≠419・`parts_count` 105≠535・`waiting` 0≠21）＝**2026-08-13 の A-2・A-4 で材料の表が 19種類 → 251種類 になったときからの食い違い**です。作り直すと表の指紋が変わり、**再承認（`--approve`＝まこさんの操作）が要ります**（`next_step.md` の A-1b と同じ件）。
 - **★型の表（`signal_families.json`）の「そもそもの一覧」には、範囲を入れました。**理由＝その節は「閾値の正本の写し」なので、範囲を入れないと写しが実物と違うことになるからです。**出口の枝の表には入れていません**＝あちらは説明文の中で段数に触れているだけで、写しではないからです。**どちらも `--write`（表の作り直し）はしていません＝作り直すと指紋が変わり、まこさんの再承認が要ります。**
 - **分位を読む道具は4本です**（機械で数えた＝`gen_materials.py`・`engine_tuner_gen.py`・`gen_signal_families.py`・`gen_exit_families.py`）。4本とも範囲に対応させました。
+
+### 14.9 git commit（★済み）
+
+**★A-5-3＝`5b5fa82`**（15ファイル・486行 追加・197行 削除）。**まこさん OK・逐語「コミットOK」。**
+
+**内訳**＝コード6本（`engine_tuner_gen.py` +194／`engine_tuner_exec.py` +46／`gen_materials.py` +21／`gen_signal_families.py` +16／`gen_exit_families.py` +9／`engine_tuner_fire_diag.py` +6）／設定1本（`recipes/search_limits.json`）／機械生成の文書2本（`materials.md`・`materials.json`）＋`decisions.md`（セッション開始時に機械が作り直したもの）／記録5本（`next_step.md`・`session_worklog_20260815.md`・`engine_tuner_milestones.md`・`WORKFLOW.md`・`lessons_active.md`）。
+
+**★機密ファイル（`config/bitget_keys.json`）の変更＝0件**（コミット前に機械で確認）。**`results/` 配下と CSV は1本も入れていません。**
