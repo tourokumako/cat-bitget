@@ -136,20 +136,27 @@ def build_table() -> dict:
         purpose="net利益を最大化させる条件（指標、閾値、時間、パラメータ）の組み合わせを、見つけることができる機械を作ることが目的（まこさん確定 2026-08-06 逐語）",
         built_by="gen_signal_families.py（全自動生成・CC の手書きの行ゼロ）",
         inventory=dict(
-            note="指標と時間足の正本＝observe_diag のカタログ。閾値と探索の格子の正本＝recipes/search_limits.json"
-                 "（まこさん承認 2026-08-01『たたき台でOK』・r_min は 2026-08-01 OK で 0.25）。ここは機械の写し",
             lineage_of=lineage_of,
-            thresholds=dict(
-                quantile_grid=grids["quantile_grid"],
-                quantile_range=grids.get("quantile_range"),   # ★2026-08-15（段A の A-5-3）
-                note="閾値は USD の生の値でなく、値決め窓の分位（データを小さい順に並べた何%点か）で引く（H6 価格非依存）。"
-                     "★2026-08-15（段A の A-5-3）に 9段のメニューから範囲（quantile_range）へ変えた。"
-                     "直す前ここに書いてあった理由『9段より細かくしないのは、試す数が増えるほど合格の線が"
-                     "厳しくなる（多重検定の罰）ため』は事実と違う＝合格の線 DSR の N は tuner_stats.py の "
-                     "n_for_dsr ＝ n_eff（実際に走らせた試行を似た動きでまとめた数）＋ 過去の累積試行であって、"
-                     "候補の広さは入っていない",
+            # ★limits_copy＝設定ファイル recipes/search_limits.json の写し（2026-08-16・まこさん決定 C）。
+            #   ここだけは「中身の指紋」に入れません＝設定ファイルに鍵を1つ足しても再承認になりません。
+            #   理由＝承認の指紋が守るべきものは「engine_tuner が何を作ってよいか」で、この写しは
+            #   まこさんが4要素（指標・閾値・時間・パラメータ）を1枚で確認するためのものだからです。
+            #   ★写しが古くなったら CC が --write で追随します（--verify がどちらのずれかを言い分けます）。
+            limits_copy=dict(
+                note="指標と時間足の正本＝observe_diag のカタログ。閾値と探索の格子の正本＝recipes/search_limits.json"
+                     "（まこさん承認 2026-08-01『たたき台でOK』・r_min は 2026-08-01 OK で 0.25）。ここは機械の写し",
+                thresholds=dict(
+                    quantile_grid=grids["quantile_grid"],
+                    quantile_range=grids.get("quantile_range"),   # ★2026-08-15（段A の A-5-3）
+                    note="閾値は USD の生の値でなく、値決め窓の分位（データを小さい順に並べた何%点か）で引く（H6 価格非依存）。"
+                         "★2026-08-15（段A の A-5-3）に 9段のメニューから範囲（quantile_range）へ変えた。"
+                         "直す前ここに書いてあった理由『9段より細かくしないのは、試す数が増えるほど合格の線が"
+                         "厳しくなる（多重検定の罰）ため』は事実と違う＝合格の線 DSR の N は tuner_stats.py の "
+                         "n_for_dsr ＝ n_eff（実際に走らせた試行を似た動きでまとめた数）＋ 過去の累積試行であって、"
+                         "候補の広さは入っていない",
+                ),
+                grids=grids,
             ),
-            grids=grids,
         ),
         # 表の本体（広さ）＝機械抽出。ここから下の禁止に当たらない組み合わせは全部 許可。
         families=fams,
@@ -266,6 +273,36 @@ def _canon(table: dict) -> str:
     return json.dumps(table, ensure_ascii=False, sort_keys=True, indent=1)
 
 
+# ══ 指紋を2つに分ける（2026-08-16・まこさん決定「C」）════════════════════════════════════
+#   何を分けるか。
+#     ①中身＝engine_tuner が何を作ってよいかを決めるもの（部品・時間足・型・区分・禁止の組・
+#       追加の部品・役割×系統の対応表・向きの決まり・系統の分類 lineage_of）。
+#       ここが変わったときだけ、まこさんの再承認が要る（G1 が生成器のコードの書き込みを止める）。
+#     ②写し＝設定ファイル recipes/search_limits.json のコピー（inventory.limits_copy）。
+#       まこさんが4要素を1枚で確認するためのもので、engine_tuner が何を作ってよいかは決めない。
+#       ここが変わっても再承認は要らない＝CC が --write で追随する。
+#   なぜ分けたか（まこさんの判断・2026-08-16）。設定ファイルに鍵を1つ足すだけで承認済みの表が
+#   古くなり、直近2回（2026-08-15・2026-08-16）とも「写しの追加1行だけ」で再承認になっていた。
+#   承認が毎回 押すだけのものになると、承認の重みが薄れる。
+#   ★承認の指紋の正本＝この core_hash（signal_families_approved.txt に入る値）。
+#     hook enforce_signal_table_gate.sh も同じ計算をする（--core-hash で突き合わせる番人つき）。
+def core_of(table: dict) -> dict:
+    """表から「中身」だけを取り出す＝承認の指紋の対象。"""
+    t = copy.deepcopy(table)
+    t.pop("approval", None)                      # 承認の指紋の欄そのもの（後から入る）
+    inv = t.get("inventory")
+    if isinstance(inv, dict):
+        inv.pop("limits_copy", None)             # 設定ファイルの写し（再承認の対象外）
+    return t
+
+
+def core_hash(table: dict | None = None) -> str:
+    """中身の指紋（md5・32桁）。table を省くと、ディスクの表から読む。"""
+    if table is None:
+        table = json.loads(OUT_JSON.read_text(encoding="utf-8"))
+    return hashlib.md5(_canon(core_of(table)).encode("utf-8")).hexdigest()
+
+
 def _md(table: dict, h: str) -> str:
     b = table["bans"]
     lines = [
@@ -284,6 +321,7 @@ def _md(table: dict, h: str) -> str:
     ep = table["extra_parts"]
     inv = table["inventory"]
     lin_of = inv["lineage_of"]
+    _lc = inv["limits_copy"]        # ★設定ファイルの写し（2026-08-16・まこさん決定 C＝再承認の対象外）
     kub = table["kubun"]
     by_lin: dict = {}
     for nm in table["parts"]:
@@ -294,7 +332,7 @@ def _md(table: dict, h: str) -> str:
         "",
         "## そもそもの一覧（目的の4要素＝指標・閾値・時間足・パラメータ・機械の写し）",
         "",
-        f"（{inv['note']}）",
+        f"（{_lc['note']}）",
         "",
         f"### 指標 … {len(table['parts'])} 種（系統ごと・括弧の中は方向の区分）",
         "",
@@ -302,7 +340,7 @@ def _md(table: dict, h: str) -> str:
     for lin in sorted(by_lin, key=lambda k: -len(by_lin[k])):
         parts_s = "、".join(f"{nm}({kub.get(nm, '？')})" for nm in by_lin[lin])
         lines.append(f"- **{lin}**（{len(by_lin[lin])} 種）: {parts_s}")
-    g = inv["grids"]
+    g = _lc["grids"]
 
     def _rng(key: str) -> str:
         """範囲を人が読む形にする（★2026-08-15＝段A の A-5-2 で格子が範囲に変わったため）。
@@ -329,10 +367,10 @@ def _md(table: dict, h: str) -> str:
          f"（{int(g['quantile_range']['hi']) - int(g['quantile_range']['lo']) + 1} 通り・"
          "★段A の A-5-3 で 9段のメニューから範囲にした）"
          if isinstance(g.get("quantile_range"), dict) and g["quantile_range"].get("lo") is not None else
-         f"### 閾値 … 分位 {len(inv['thresholds']['quantile_grid'])} 段"
-         f"（{'、'.join(inv['thresholds']['quantile_grid'])}）"),
+         f"### 閾値 … 分位 {len(_lc['thresholds']['quantile_grid'])} 段"
+         f"（{'、'.join(_lc['thresholds']['quantile_grid'])}）"),
         "",
-        f"（{inv['thresholds']['note']}）",
+        f"（{_lc['thresholds']['note']}）",
         "",
         "### 探索のパラメータの格子（正本＝recipes/search_limits.json・まこさん承認 2026-08-01）",
         "",
@@ -445,7 +483,10 @@ def write() -> None:
           f" ／ 生成不可の型 {'、'.join(rl['not_covered']['families'])}）"
           f" ／ 向きの矛盾の定義＝{len(table['direction_conflict']['items'])} 本"
           "（2026-08-06 の空欄2件を 2026-08-07 に出典つきの案で埋めた＝承認の指紋がまこさんの判断の記録）")
-    print(f"[指紋] md5 {h} ／ 承認の指紋 = {table['approval']['fingerprint']}（無し＝表は無効のまま）")
+    print(f"[指紋] ファイル全体 md5 {h}（手の改変の検出用）")
+    print(f"[指紋] ★中身の指紋 md5 {core_hash(table)}（まこさんの承認はこちら＝設定ファイルの写しを含まない）")
+    ok_a, why_a = _table_status()
+    print(f"[承認] {why_a}")
 
 
 def verify() -> None:
@@ -456,7 +497,16 @@ def verify() -> None:
     # 承認の指紋だけは後から入るので、指紋欄を除いて比べる
     strip = lambda s: re.sub(r'"fingerprint": "[^"]*"', '"fingerprint": null', s)  # noqa: E731
     if strip(disk) != strip(now):
-        raise SystemExit("[検証エラー] 表が入力と一致しない（手の改変か、入力の正本が変わった）＝ --write で作り直す")
+        # ★どちらのずれかを言い分ける（2026-08-16・まこさん決定 C）。
+        #   中身がずれた＝ --write のあと まこさんの再承認が要る。
+        #   写しだけがずれた＝ --write で追随するだけ（再承認は要らない）。
+        disk_t = json.loads(disk)
+        if core_hash(disk_t) == core_hash(json.loads(now)):
+            raise SystemExit(
+                "[検証エラー] 設定ファイルの写しだけが古い（中身は同じ）"
+                "＝ python3 gen_signal_families.py --write で追随する。★まこさんの再承認は要りません")
+        raise SystemExit("[検証エラー] ★中身が入力と一致しない（手の改変か、入力の正本が変わった）"
+                         "＝ --write で作り直したあと、まこさんの --approve（再承認）が要ります")
     h_md = re.search(r"hash=([0-9a-f]{16})", OUT_MD.read_text(encoding="utf-8"))
     h_now = hashlib.md5(disk.encode("utf-8")).hexdigest()[:16]
     if not h_md or (h_md.group(1) != h_now and strip(disk) == disk):
@@ -468,25 +518,30 @@ APPROVED_FILE = SDK / ".claude/ratchet/signal_families_approved.txt"
 
 
 def _table_status() -> tuple[bool, str]:
-    """表が有効か＝①json が在る ②承認の指紋が在る ③指紋が今の json と一致する。"""
+    """表が有効か＝①json が在る ②承認の指紋が在る ③指紋が今の json の「中身」と一致する。
+
+    ★2026-08-16（まこさん決定 C）＝比べるのは「中身の指紋」（core_hash）です。
+      ファイル全体の md5 ではありません＝設定ファイルの写しだけが変わっても無効になりません。"""
     if not OUT_JSON.exists():
         return False, "表（signal_families.json）が無い"
-    h = hashlib.md5(OUT_JSON.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+    h = core_hash()
     if not APPROVED_FILE.exists():
-        return False, f"承認の指紋が無い（まこさんが --approve を実行するまで表は無効）。今の表 md5 {h[:8]}…"
+        return False, f"承認の指紋が無い（まこさんが --approve を実行するまで表は無効）。今の中身 md5 {h[:8]}…"
     rec = APPROVED_FILE.read_text(encoding="utf-8").split()[0]
     if rec != h:
-        return False, f"承認の指紋（{rec[:8]}…）が今の表（{h[:8]}…）と一致しない＝表が変わった。再承認が要る"
-    return True, f"承認済み（md5 {h[:8]}…）"
+        return False, (f"承認の指紋（{rec[:8]}…）が今の中身（{h[:8]}…）と一致しない＝中身が変わった。再承認が要る"
+                       "（設定ファイルの写しだけの違いなら、ここは一致します）")
+    return True, f"承認済み（中身の md5 {h[:8]}…）"
 
 
 def approve() -> None:
     """★まこさんが実行する承認の操作（CC は実行しない＝実行した場合は worklog に残る不正）。"""
     verify()
-    h = hashlib.md5(OUT_JSON.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+    h = core_hash()                     # ★中身の指紋（2026-08-16・まこさん決定 C）
     import datetime
     APPROVED_FILE.write_text(f"{h}  approved {datetime.date.today()}\n", encoding="utf-8")
-    print(f"[承認] 指紋を記録した: {h}")
+    print(f"[承認] 中身の指紋を記録した: {h}")
+    print("[承認] ★これは『中身の指紋』です（設定ファイルの写しは含みません・2026-08-16 まこさん決定 C）")
     print("[注意] この操作はまこさんが行う。CC が自分で実行するのは false_positive 類型 G の不正")
 
 
@@ -699,6 +754,9 @@ def g2_selftest() -> None:
     生成器はその文字列を作らない（材料を family／param／tf の3つに分けて持つ）ので、
     本物の構造を渡すと 5本とも「読めない」で落ちる欠陥を、番人が見逃していた。
     """
+    # ★指紋の番人を先に走らせる（2026-08-16）。下の本体は、表が未承認だと fail-closed で
+    #   途中で止まる（構造を作れない）ので、後ろに置くと未承認の間ずっと走らない。
+    core_selftest()
     table = json.loads(OUT_JSON.read_text(encoding="utf-8"))
     parts = set(table["parts"])
     tfs = set(table["timeframes"])
@@ -786,6 +844,86 @@ def g2_selftest() -> None:
     if ng_all:
         raise SystemExit(f"[番人] 🚨 G2 が既知答えに正しく反応しない: {ng_all}")
     print("[番人] ✅ G2 の既知答え 7件 全部 期待どおり（★土台は本物の生成器が出した構造・geo/time は 0d の既知答え）")
+
+
+HOOK_G1 = SDK.parents[1] / ".claude/hooks/enforce_signal_table_gate.sh"
+
+
+def core_selftest() -> None:
+    """番人＝指紋を2つに分けた仕組みが本当に効いているか（2026-08-16・まこさん決定 C）。
+
+    ①設定ファイルの写しだけを変えても、中身の指紋は変わらない（＝再承認にならない）
+    ②中身（部品の一覧）を1つ変えると、中身の指紋は変わる（メタ確認＝守りが効いている証拠）
+    ③hook の計算と、この道具の計算が一致する（2か所に同じ計算を持つので、ずれたら止める）
+    ④hook を実際に走らせる＝いま承認が有効なら通る ／ 対象外のファイルは通る
+    ⑤承認の指紋をわざと違う値にすると hook が止める（メタ確認）。★記録ファイルは必ず元へ戻す
+    """
+    import subprocess
+    ng: list[str] = []
+    done: list[str] = []
+    skipped: list[str] = []
+    disk = json.loads(OUT_JSON.read_text(encoding="utf-8"))
+    h0 = core_hash(disk)
+
+    t1 = copy.deepcopy(disk)                                   # ①写しだけを変える
+    t1["inventory"]["limits_copy"]["grids"]["＿番人の作り物"] = {"lo": 1, "hi": 2, "kind": "int"}
+    if core_hash(t1) != h0:
+        ng.append("写しだけを変えたのに中身の指紋が変わった（分けた意味が無い）")
+    done.append("写しだけの変更では再承認にならない")
+
+    t2 = copy.deepcopy(disk)                                   # ②中身を変える（メタ確認）
+    t2["parts"] = list(t2["parts"])[:-1]
+    if core_hash(t2) == h0:
+        ng.append("部品を1つ減らしても中身の指紋が変わらない（守りが効いていない）")
+    done.append("中身を変えると指紋が変わる（メタ確認）")
+
+    if not HOOK_G1.exists():                                   # ③hook と計算が一致するか
+        ng.append(f"G1 の hook が見つからない: {HOOK_G1}")
+    else:
+        r = subprocess.run(["bash", str(HOOK_G1), "--core-hash"], capture_output=True, text=True)
+        if r.stdout.strip() != h0:
+            ng.append(f"hook の計算 {r.stdout.strip()[:8]}… と この道具の計算 {h0[:8]}… が食い違う")
+        done.append("hook と計算が一致")
+
+        def _run_hook(fp: str) -> int:                          # ④hook を実際に走らせる
+            payload = json.dumps({"tool_input": {"file_path": fp}})
+            return subprocess.run(["bash", str(HOOK_G1)], input=payload,
+                                  capture_output=True, text=True).returncode
+
+        target = str(HERE / "engine_tuner_gen.py")
+        approved_now, _why_now = _table_status()
+        # ★いま承認が有効かどうかで、確かめられる範囲が変わる。飛ばしたものは そのまま画面に出す。
+        if approved_now:
+            if _run_hook(target) != 0:
+                ng.append("承認が有効なのに hook が生成器の書き込みを止める")
+            done.append("承認が有効なら通す")
+        else:
+            skipped.append("『承認が有効なら通す』（いま未承認＝まこさんの --approve のあとに確かめられる）")
+        if _run_hook(str(HERE / "score.py")) != 0:
+            ng.append("対象外のファイル（score.py）まで hook が止める")
+        done.append("対象外のファイルは通す")
+
+        if APPROVED_FILE.exists():                              # ⑤わざと違う指紋にすると止まるか
+            keep = APPROVED_FILE.read_text(encoding="utf-8")
+            try:
+                APPROVED_FILE.write_text("0" * 32 + "  番人の作り物\n", encoding="utf-8")
+                if _run_hook(target) == 0:
+                    ng.append("承認の指紋が合わないのに hook が通す（G1 が効いていない）")
+            finally:
+                APPROVED_FILE.write_text(keep, encoding="utf-8")
+            if APPROVED_FILE.read_text(encoding="utf-8") != keep:
+                ng.append("★承認の記録ファイルを元へ戻せなかった（まこさんの再承認が要る）")
+            if approved_now:
+                done.append("指紋が合わなければ止める（メタ確認）")
+            else:
+                skipped.append("『指紋が合わなければ止める』のメタ確認（いま未承認＝もともと止まる状態なので、"
+                               "この検査だけでは何も言えない）")
+
+    if ng:
+        raise SystemExit(f"[番人] 🚨 指紋を2つに分けた仕組みが効いていない: {ng}")
+    print("[番人] ✅ 指紋の分離（まこさん決定 C・2026-08-16）: " + " ／ ".join(done))
+    for s in skipped:
+        print(f"[番人] ⏭️ 飛ばした検査: {s}")
 
 
 def _templates() -> dict:
@@ -902,6 +1040,10 @@ if __name__ == "__main__":
     ap.add_argument("--check-structures", default=None, metavar="FILE",
                     help="G2 判定器＝構造の一覧（json）を表と照合する。適合率100%%未満か表が無効なら終了コード1")
     ap.add_argument("--g2-selftest", action="store_true", help="G2 の番人（既知答え3件）")
+    ap.add_argument("--core-selftest", action="store_true",
+                    help="指紋を2つに分けた仕組みの番人（2026-08-16・まこさん決定 C）")
+    ap.add_argument("--core-hash", action="store_true",
+                    help="中身の指紋（承認の対象）を表示する")
     ap.add_argument("--v9-test", action="store_true", help="検算＝表に V9 の実物の部品が入っているか（入っていなければ不合格）")
     ap.add_argument("--v9-selftest", action="store_true", help="検算の番人＝わざと家族を消すと落ちるか")
     a = ap.parse_args()
@@ -919,6 +1061,10 @@ if __name__ == "__main__":
         check_structures(a.check_structures)
     elif a.g2_selftest:
         g2_selftest()
+    elif a.core_selftest:
+        core_selftest()
+    elif a.core_hash:
+        print(core_hash())
     elif a.v9_test:
         v9_test()
     elif a.v9_selftest:

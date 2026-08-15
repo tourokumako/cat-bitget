@@ -29,6 +29,7 @@ import hashlib
 import json
 import math
 import pathlib
+import re
 import sys
 import tempfile
 from collections import Counter
@@ -1820,6 +1821,40 @@ def run_trial(df: pd.DataFrame, recipe: dict, qtable: dict, judge, start, end) -
     return {"total": float(res["total"]), "n": len(t), "per_day": len(t) / days, "t": t, "rep": rep}
 
 
+def run_trial_guarded(df: pd.DataFrame, recipe: dict, qtable: dict, judge, start, end):
+    """案1本を走らせる。★その1本が拒否されても、走行を丸ごと止めない（まこさん指示 2026-08-16）。
+
+    戻り値＝(結果, 拒否の理由)。走れたら (結果, None)、拒否されたら (None, 理由の文字列)。
+
+    何を守るか＝探索の走行が、1本の案のせいで丸ごと死なないこと。
+    2026-08-16 に実際に起きました＝分位の解決表に鍵の無い案が1本 混ざると、`--selftest` が
+    8回中4回 丸ごと止まりました（`session_worklog_20260816.md` の §4）。
+
+    ★握りつぶすのは「レシピの拒否」（RecipeError）だけです。それ以外の例外は、そのまま上へ
+    投げます＝本当の不具合を「1本 落としました」で隠さないためです。
+    ★落とした件数と理由は、呼ぶ側が必ず画面に出します（黙って消さない）。
+    ★落とした案を「net $0 の案」として数に入れません＝嘘の数字を作らないためです。
+    """
+    try:
+        return run_trial(df, recipe, qtable, judge, start, end), None
+    except ex.RecipeError as e:
+        return None, str(e)
+
+
+def reject_code(msg: str) -> str:
+    """拒否の理由の文字列から、まとめて数えるための短い名前を取り出す。
+
+    実物の形＝`[レシピ拒否 G5] …`（`engine_tuner_exec._fail`）／`[実行器] 分位 q41 の解決表に …`。
+    前者は G 番号、後者は `[…]` の中身をそのまま名前にする。どちらでもなければ先頭20文字。"""
+    m = re.match(r"\[レシピ拒否 (G\d)\]", msg)
+    if m:
+        return m.group(1)
+    m = re.match(r"\[([^\]]+)\]", msg)
+    if m:
+        return m.group(1) + ("／解決表に鍵が無い" if "解決表" in msg else "")
+    return msg[:20]
+
+
 def zero_trade_gate(res: dict) -> tuple[bool, str]:
     """売買ゼロ（0玉）の案は、件数/日 の下限（min_per_day）が空欄でも候補に残さない（D3 の一部・0c）。
 
@@ -2072,6 +2107,8 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     legacy_total = 0
     results1: list[dict] = []
     reused = 0
+    run_rejects = Counter()          # ★走らせる段で拒否された案の 理由別の件数（2026-08-16）
+    run_reject_msgs: list[str] = []  # ★その中身（画面に出す・黙って消さない）
     for si, r in enumerate(structures):
         key = f"s1/{si}/{recipe_hash(r)}"
         got = jn.get(key)
@@ -2079,7 +2116,14 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
             reused += 1
             results1.append(got)
             continue
-        res = run_trial(df2, r, qtable, judge, start, end)
+        res, why_reject = run_trial_guarded(df2, r, qtable, judge, start, end)
+        if res is None:
+            # ★1本の案が拒否されても走行を止めない（まこさん指示 2026-08-16・A-1a-0 の1番）。
+            #   その1件だけ落として、件数と理由をこの段の終わりに画面へ出す。
+            #   ★results1 に入れません＝net $0 の案として数に入れると嘘の数字になるためです。
+            run_rejects[reject_code(why_reject)] += 1
+            run_reject_msgs.append(f"#{si}: {why_reject}")
+            continue
         legacy_total += len(res["rep"]["legacy使用"])
         ok, why = per_day_gate(res, min_per_day)   # 0玉の門（0c）＋件数/日 の下限（D6）を1本で
         if ok and net_floor is not None and res["total"] < net_floor:
@@ -2105,6 +2149,22 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
         results1.append(rec)
     if reused:
         print(f"[R12 再開] 済み {reused} 本を journal から再利用・今回実行 {trials1 - reused} 本")
+    # ★走らせる段で落とした案（2026-08-16・A-1a-0 の1番）＝黙って消さない
+    if run_reject_msgs:
+        print(f"[走行で落とした案] {len(run_reject_msgs)}/{len(structures)} 本"
+              f"（走行は止めません・理由別 {json.dumps(dict(run_rejects), ensure_ascii=False)}）")
+        for m in run_reject_msgs[:5]:
+            print(f"  {m}")
+        if len(run_reject_msgs) > 5:
+            print(f"  … ほか {len(run_reject_msgs) - 5} 本（全部は下の記録ファイルに出す）")
+        (run_dir / "run_rejects.json").write_text(
+            json.dumps({"件数": len(run_reject_msgs), "理由別": dict(run_rejects),
+                        "中身": run_reject_msgs}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        print(f"  全部の記録＝{run_dir / 'run_rejects.json'}")
+    if not results1:
+        raise SystemExit(f"[歩4 エラー] 走らせた案が1本も結果を出さなかった"
+                         f"（{len(structures)} 本 全部が拒否・理由別 {dict(run_rejects)}）"
+                         "＝落として先へ進む形では隠せないので、ここで止めます")
     if legacy_total:
         raise SystemExit(f"[歩4 エラー] 探索レシピに legacy が {legacy_total} 件（恒等レーン専用＝混入は不正）")
     print("[legacy 使用] 0 件（探索レシピに legacy なし＝番人）")
@@ -2180,6 +2240,8 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     top_pool = [r for r in kept if r["idx"] in survivors_idx] or kept
     top = sorted(top_pool, key=lambda z: -z["total"])[:top_k]
     stage2_best: list[dict] = []
+    s2_rejects = Counter()           # ★第2段で拒否された案の 理由別の件数（2026-08-16）
+    s2_reject_msgs: list[str] = []
     if trials2 > 0 and top:
         import optuna
         optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -2198,7 +2260,13 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                 if got is not None:
                     return got["total"] if got["ok"] else -1e9
                 r2 = apply_slots(recipe, choices)
-                res = run_trial(df2, r2, qtable, judge, start, end)
+                res, why_reject = run_trial_guarded(df2, r2, qtable, judge, start, end)
+                if res is None:
+                    # ★値を詰めた案1本が拒否されても、TPE の走行を止めない（2026-08-16・A-1a-0 の1番）。
+                    #   journal には書きません＝net の数字を1つも作らないためです（再実行すれば同じ結果）。
+                    s2_rejects[reject_code(why_reject)] += 1
+                    s2_reject_msgs.append(f"#{sidx}/試行{trial.number}: {why_reject}")
+                    return -1e9
                 ok, why = per_day_gate(res, min_per_day)   # 第1段と同じ1本の門（0玉＋件数/日 の下限）
                 gate_ok, _gw = strat_gate(base_trades, res["t"], atr_edges, judge)
                 if ok and gate_ok is False:
@@ -2212,6 +2280,14 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
             stage2_best.append({"idx": r1["idx"], "total": float(st.best_value),
                                 "params": dict(st.best_trial.params)})
         print(f"[第2段 TPE] 有望 {len(top)} 構造 × 各 {per} 本＝値の微調整（★統計判定に不使用＝CP1 解A）")
+        if s2_reject_msgs:                       # ★落とした案は黙って消さない（2026-08-16）
+            print(f"  [第2段で落とした案] {len(s2_reject_msgs)}/{len(top) * per} 本"
+                  f"（走行は止めません・理由別 {json.dumps(dict(s2_rejects), ensure_ascii=False)}）")
+            for m in s2_reject_msgs[:3]:
+                print(f"    {m}")
+            (run_dir / "run_rejects_stage2.json").write_text(
+                json.dumps({"件数": len(s2_reject_msgs), "理由別": dict(s2_rejects),
+                            "中身": s2_reject_msgs}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         for b in stage2_best:
             print(f"  構造 #{b['idx']}: 第1段 ${next(z['total'] for z in top if z['idx']==b['idx']):+,.0f}"
                   f" → 第2段 best ${b['total']:+,.0f}")
@@ -3343,6 +3419,49 @@ def selftest() -> int:
             _tbl19["roles"][_k]["lineages"] = _v
     ng += [f"T19: {x}" for x in t19]
 
+    # ══ T20 案1本が拒否されても走行を止めない（2026-08-16 新設・A-1a-0 の1番）════════════
+    #   何を守るか＝探索の走行が、1本の案のせいで丸ごと死なないこと。
+    #   直す前は 第1段（run_trial の呼び出し）と第2段が囲われておらず、解決表に鍵の無い案が
+    #   1本 混ざると `--selftest` が8回中4回 丸ごと止まりました（worklog 20260816 §4）。
+    #   ①本物の拒否（壊したレシピ）で (None, 理由) が返り、例外が外へ出ない
+    #   ②走れた案では (結果, None) が返る（＝止めすぎていないことのメタ確認）
+    #   ③拒否でない例外（ValueError）は握りつぶさず上へ投げる（＝本当の不具合を隠さない）
+    #   ④走行の本体が、第1段と第2段の両方で囲いのある形（run_trial_guarded）を呼んでいる
+    t20: list[str] = []
+    _t20s, _t20e = pd.Timestamp("2024-03-01"), pd.Timestamp("2024-04-01")
+    _r20, _w20 = run_trial_guarded(pd.DataFrame(), {"壊れたレシピ": 1}, {}, judge, _t20s, _t20e)
+    if _r20 is not None or not _w20:
+        t20.append("壊したレシピを渡しても (None, 理由) が返らない（拒否を捕まえていない）")
+    elif reject_code(_w20) == _w20[:20]:
+        t20.append(f"拒否の理由から短い名前を取り出せない（理由={_w20[:60]}）")
+    _keep20 = globals()["run_trial"]
+    try:
+        globals()["run_trial"] = lambda *a, **k: {"total": 12.0, "n": 3, "per_day": 0.1,
+                                                  "t": pd.DataFrame(), "rep": {}}
+        _r20b, _w20b = run_trial_guarded(pd.DataFrame(), {}, {}, judge, _t20s, _t20e)
+        if _r20b is None or _w20b is not None:
+            t20.append("走れた案なのに落としている（止めすぎ）")
+
+        def _boom20(*a, **k):
+            raise ValueError("これは拒否ではない本当の不具合")
+        globals()["run_trial"] = _boom20
+        try:
+            run_trial_guarded(pd.DataFrame(), {}, {}, judge, _t20s, _t20e)
+            t20.append("拒否でない例外（ValueError）まで握りつぶした＝本当の不具合を隠す")
+        except ValueError:
+            pass
+    finally:
+        globals()["run_trial"] = _keep20
+    _src20 = "\n".join(ln.split("#", 1)[0] for ln in inspect.getsource(run_generation).splitlines())
+    _bare20 = len(re.findall(r"(?<!_)run_trial\(", _src20))
+    _guard20 = len(re.findall(r"run_trial_guarded\(", _src20))
+    if _guard20 < 2:
+        t20.append(f"走行の本体で囲いのある形を呼んでいるのが {_guard20} か所（第1段・第2段の2か所が要る）")
+    if _bare20 > 2:
+        t20.append(f"走行の本体に囲いの無い run_trial の呼び出しが {_bare20} か所"
+                   "（確認窓の1走の2か所だけのはず）")
+    ng += [f"T20: {x}" for x in t20]
+
     print("=" * 80)
     print("engine_tuner_gen 自己検査（合成データのみ・実データの試行ゼロ・累積試行の記録なし）")
     print("=" * 80)
@@ -3384,6 +3503,10 @@ def selftest() -> int:
     print(f"  T19 同じ種なら同じ案が出る（2026-08-16）: 系統の一覧は並びの決まったもの"
           f" ／ 案12本の md5 {_h19a}（続けて2回 とも同じ）"
           f" ／ 並びを逆にすると案が変わる（メタ確認）")
+    print(f"  T20 案1本が拒否されても走行を止めない（2026-08-16）: 壊したレシピは"
+          f" 理由 {reject_code(_w20)} で落として先へ進む ／ 走れた案は落とさない（止めすぎない）"
+          f" ／ 拒否でない例外（ValueError）は握りつぶさず上へ投げる（メタ確認）"
+          f" ／ 走行の本体の囲い {_guard20} か所・囲い無し {_bare20} か所（確認窓の1走だけ）")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")

@@ -821,8 +821,13 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
                 _fail("G3", f"系統マップに無い family: {fam}（載っていない family は生成不可）")
             kind = lin["k"] if lin else "legacy"
             rep["系統"][fam] = kind
-        fams = {_material_family(m) for m in (c.get("material") or [])}
-        kinds = {iref.FAMILY_LINEAGE[f]["k"] for f in fams if f in iref.FAMILY_LINEAGE}
+        # ★並びの決まる形にする（2026-08-16・A-1a-0 の2番）。
+        #   直す前は set をそのまま上から順に見ていた＝Python は走らせるたびに文字列の置き場所を
+        #   変えるので、違反が2つ以上あるときに どちらのメッセージが先に出るかが実行ごとに変わった。
+        #   通る／止まるの結果は変わらないが、囲いが無いこと自体を塞ぐ
+        #   （2026-08-16 に生成器で同じ型の事故が実際に起きた＝worklog 20260816 §4）。
+        fams = sorted({_material_family(m) for m in (c.get("material") or [])})
+        kinds = sorted({iref.FAMILY_LINEAGE[f]["k"] for f in fams if f in iref.FAMILY_LINEAGE})
         for kind in kinds:
             key = (c.get("role"), kind)
             if key in seen_role_kind and c.get("role") != "trigger":
@@ -2841,6 +2846,56 @@ def _selftest_roundtrip() -> tuple[list[str], int]:
     return bad, len(names)
 
 
+def unordered_iteration_scan(src: str) -> list[tuple[int, str]]:
+    """「並びの決まらない入れ物（set）を上から順に見ている」所を、ソースから機械で全部 探す。
+
+    何を守るか＝同じ入力なら同じ結果が出ること（再現できること）。
+    Python の set は中身の並びが決まっていません。走らせるたびに文字列の置き場所が変わるので、
+    set を上から順に見ると、実行ごとに順番が変わります。
+    2026-08-16 に生成器で実際に起きました＝案の候補の並びが毎回 変わり、同じ種でも別の案が出て、
+    過去の探索をやり直せない状態でした（`session_worklog_20260816.md` の §4）。
+
+    ★手で場所の一覧を書きません（手書きの一覧は書き忘れると穴になる＝next_step §6 の50番）。
+    ★見るのは3つ＝①`for x in {…}` のように set を直に回す ②内包表記が set を直に回す
+      ③その関数の中で set として作った変数を、あとで回す。
+    ★`sorted(...)` で包んだものは並びが決まるので、ここには出ません（回す相手が Call になる）。
+    ★限界＝関数の外から渡ってきた set（引数・戻り値）は追えません。ここで見るのは
+      「その関数の中で作った set」だけです。
+    """
+    import ast
+    tree = ast.parse(src)
+
+    def _is_set_expr(n) -> bool:
+        return isinstance(n, (ast.Set, ast.SetComp)) or (
+            isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+            and n.func.id in ("set", "frozenset"))
+
+    hits: list[tuple[int, str]] = []
+    scopes = [tree] + [n for n in ast.walk(tree)
+                       if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+    for scope in scopes:
+        setvars: dict[str, int] = {}
+        for n in ast.walk(scope):
+            if isinstance(n, ast.Assign) and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name):
+                nm = n.targets[0].id
+                if _is_set_expr(n.value):
+                    setvars[nm] = n.lineno
+                elif nm in setvars:          # 同じ名前に別の物を入れ直したら set 扱いをやめる
+                    del setvars[nm]
+        for n in ast.walk(scope):
+            iters = []
+            if isinstance(n, ast.For):
+                iters.append(n.iter)
+            for gen in getattr(n, "generators", []) or []:
+                iters.append(gen.iter)
+            for it in iters:
+                if _is_set_expr(it):
+                    hits.append((n.lineno, "set を直に上から順に見ている"))
+                elif isinstance(it, ast.Name) and it.id in setvars:
+                    hits.append((n.lineno, f"set の変数 {it.id}（{setvars[it.id]}行で作成）を上から順に見ている"))
+    return sorted(set(hits))
+
+
 def selftest() -> None:
     ng = []
     okr = _base_ok_recipe()
@@ -3183,6 +3238,26 @@ def selftest() -> None:
     print(f"[番人 名前の組み立て] 材料カタログの全 {_rt_n} 列を family＋数字に分解して組み立て直す"
           "（+ わざと型を1件 壊すと落ちるか） → "
           + ("✅ 全部 一致・壊すと落ちた" if not _rt_ng else "❌ " + " ／ ".join(_rt_ng)))
+    # ══ 番人 並びの決まらない入れ物（2026-08-16 新設・A-1a-0 の2番）═══════════════════════
+    #   何を守るか＝同じ入力なら同じ結果が出ること。手で場所の一覧を書かず、機械が全部 数える。
+    #   ★番人の番人＝わざと set を回すコードを見せたら、ちゃんと見つけるか。
+    _uo_files = ["engine_tuner_exec.py", "engine_tuner_gen.py", "tuner_judgement.py", "tuner_stats.py"]
+    _uo_hits: list[str] = []
+    _uo_seen = 0
+    for _uf in _uo_files:
+        _up = pathlib.Path(__file__).resolve().parent / _uf
+        if not _up.exists():
+            _uo_hits.append(f"{_uf}: ファイルが無い（数え上げの対象が消えた）")
+            continue
+        _uo_seen += 1
+        for _ln, _why in unordered_iteration_scan(_up.read_text(encoding="utf-8")):
+            _uo_hits.append(f"{_uf}:{_ln} {_why}")
+    if not unordered_iteration_scan("def f():\n    s = {1, 2}\n    for x in s:\n        pass\n"):
+        _uo_hits.append("番人の番人: わざと set を回すコードを見せても見つけない（検査が効いていない）")
+    ng += _uo_hits
+    print(f"[番人 並びの決まらない入れ物] {_uo_seen} 本のファイルを機械で全部 数える"
+          "（+ わざと set を回すコードを見せると見つけるか） → "
+          + ("✅ 0 件・見せると見つけた" if not _uo_hits else "❌ " + " ／ ".join(_uo_hits)))
     print("=" * 80)
     print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ36種で全部止まる・正しい5種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)
