@@ -191,6 +191,22 @@ def load_rules() -> dict:
     return r
 
 
+def limit_key_of(grid_name: str, limits: dict) -> str | None:
+    """枝の定義が指す格子の名前を、設定ファイルの鍵に対応づける（無ければ None）。
+
+    ★2026-08-15 に足した。理由＝段A の A-5-2／A-5-3 で、設定ファイルの鍵の名前を
+      `◯◯_grid`（決まった数字の並び）から `◯◯_range`（下限と上限）へ変えた。
+      枝の規則ファイル（exit_families_rules.json）は古い名前で書いてあるので、
+      そのままだと「値が入っていない」と数えてしまう（実測 21 件・実際は値は在る）。
+    ★両方を見る＝まこさんが古い並びに戻しても、そのまま動く
+      （`engine_tuner_gen.num_range_of` が新旧どちらでも読むのと同じ考え）。
+    """
+    for k in (grid_name, grid_name[: -len("_grid")] + "_range" if grid_name.endswith("_grid") else None):
+        if k and k in limits and limits.get(k) is not None:
+            return k
+    return None
+
+
 def _grid_names(obj, out: set) -> None:
     """枝の定義の中に出てくる格子の名前（*_grid）を全部 集める。"""
     if isinstance(obj, dict):
@@ -292,7 +308,8 @@ def check(rules: dict, axes: list[dict], cap: dict, reasons: dict, limits: dict,
         for g in sorted(gs):
             if g in ROLE_DERIVED_GRIDS:
                 continue
-            if g not in limits or limits.get(g) is None:
+            # ★2026-08-15＝新しい名前（◯◯_range）でも古い名前（◯◯_grid）でも見つける。
+            if limit_key_of(g, limits) is None:
                 waiting.append(f"{g}（枝 {bid} が使う）")
 
     # (4) 規則が指す枝の型が実在するか
