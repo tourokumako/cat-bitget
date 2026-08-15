@@ -570,3 +570,11 @@ python3 gen_exit_families.py --approve
 | `exit_families.md` | 4 行 | 指紋の行と、分位の説明の行 |
 
 **枝の定義・部品の一覧・時間足・禁止の組は1件も変わっていません**（作り直す前に機械で1件ずつ書き出して確認済み）。
+
+### 17.4 git commit（★済み）
+
+**★`3cd0bdb`**（9ファイル・510行 追加・82行 削除）。**まこさん OK・逐語「コミットしていいよ」。**
+
+**内訳**＝コード1本（`gen_exit_families.py`）／機械生成の表4本（`signal_families.json`・`.md`／`exit_families.json`・`.md`）／承認の記録2本（`signal_families_approved.txt`・`exit_families_approved.txt`）／記録2本（`next_step.md`・`session_worklog_20260815.md`）。
+
+**★機密ファイル（`config/bitget_keys.json`）の変更＝0件**（コミット前に機械で確認）。**売買記録CSVは1本も書いていません。**
