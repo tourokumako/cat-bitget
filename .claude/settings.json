@@ -98,6 +98,15 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Write|Edit|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_interpretation.sh"
+          }
+        ]
+      },
+      {
         "matcher": "Write|Edit",
         "hooks": [
           {
@@ -302,6 +311,16 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_worklog_on_experiment.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/reset_interpretation.sh"
           }
         ]
       }
