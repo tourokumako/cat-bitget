@@ -381,6 +381,34 @@ def draw_num(rng, limits: dict, key: str, lo_min=None, hi_max=None):
     return round(v, r["dec"]) if r["dec"] else float(round(v))
 
 
+def ladder_min_frac() -> float:
+    """部分利確の1回で決済できる、いちばん小さい割合（玉1つに対する割合）。
+
+    ★数字を CC は作っていません＝取引所の最小注文サイズ（`eval_engine.MIN_ORDER_BTC`＝0.0001 BTC・
+      出どころは `exchange_spec.md` の audit#19）を、玉1つの量（`engine_tuner_exec.UNIT_LOT`）で割った値です。
+    """
+    import eval_engine as _ee
+    return float(_ee.MIN_ORDER_BTC) / float(ex.UNIT_LOT)
+
+
+def max_ladder_steps(limits: dict) -> int:
+    """どの割合を引いても最小注文サイズを割らない、部分利確の最大の段数。
+
+    ★数字を CC は作っていません。次の3つから機械で出します。
+      ①取引所の最小注文サイズ ②玉1つの量 ③各段の割合の上限（`frac_range` の hi）。
+    ★実行器は「**いま残っている量** × その段の割合」を決済します（2026-08-15 に実測で確認）。
+      ですから、いちばん厳しいのは「毎回 いちばん大きい割合を引いたとき」＝残りがいちばん速く小さくなる場合です。
+    ★2026-08-15 の実測＝玉 0.012 BTC・割合の上限 75% のとき **3段**。
+    """
+    mf = ladder_min_frac()
+    keep = 1.0 - float(num_range_of(limits, "frac_range")["hi"]) / 100.0   # 1段ごとに残る割合（最悪の場合）
+    n, rest = 0, 1.0
+    while keep > 0 and rest * keep >= mf:
+        rest *= keep
+        n += 1
+    return max(1, n)
+
+
 def num_in_range(limits: dict, key: str, v) -> tuple[bool, str]:
     """その数字は範囲の中か（検証器の番人が呼ぶ）。戻り＝(入っているか, 理由)。"""
     r = num_range_of(limits, key)
@@ -1145,19 +1173,27 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
                                              "tmax": {"n": max(1, tmax_min // 5)},
                                              "floor": {"const": "SCALP_FLOOR"}}}))
 
-    # ── ⑥ 部分利確（段数は格子から・各段の量の合計が玉を超えない）──
+    # ── ⑥ 部分利確（段数は範囲から・1回の決済が最小注文サイズを割らない）──
+    # ★2026-08-15（まこさん指示「3回以上に分けられるようにする」）＝打ち切りの決まりを直した。
+    #   直す前＝各段の割合を「**元の玉の量**に対する割合」として足し、残りより大きい割合が出たら打ち切る。
+    #     ＝割合が 25〜75% なので2段でほぼ埋まり、**3段は実際にはほとんど作られなかった**
+    #       （実測 2026-08-15＝上限を 5 にしても案200本で3段は0本）。
+    #   直したあと＝実行器の実物に合わせた。実行器は「**いま残っている量** × その段の割合」を決済する
+    #     ＝合計が玉の量を超えることは構造上 起きない（実測＝3段・各段0.3 で 0.0036／0.00252／0.001764）。
+    #     打ち切るのは「決済する分」か「残る分」が **取引所の最小注文サイズ** を割るときだけ（fail-closed）。
     if rng.random() < 0.5:
         steps = int(draw_num(rng, limits, "ladder_steps_range"))
+        mf = ladder_min_frac()                    # 玉に対する、最小注文サイズの割合（機械が出す）
         rest = 1.0
         for s in range(steps):
             frac = float(draw_num(rng, limits, "frac_range")) / 100.0
-            if frac >= rest:
-                break
+            if rest * frac < mf or rest * (1.0 - frac) < mf:
+                break                             # この段を作ると、決済の量か 残りの量が最小注文を割る
             exits.append(mk("TP1_LADDER", f"TP1{'' if s == 0 else s + 1}", size_ratio=frac, once=True,
                             placement={"kind": "resting", "fill": "profit",
                                        "level": {"kind": "mix", "from": "entry", "to": "TP2",
                                                  "frac": _const100(frac * (s + 1) / steps)}}))
-            rest -= frac
+            rest *= (1.0 - frac)
 
     order = rng.permutation(len(exits))          # 並び順もデータ（上から先勝ち・要件 R13）
     return [exits[i] for i in order]
@@ -3019,6 +3055,41 @@ def selftest() -> int:
                    "（完了の線④＝発火した売買記録が出ること）")
     ng += [f"T14: {x}" for x in t14]
 
+    # ══ T16 部分利確の段数（まこさん決定 2026-08-15「3回以上に分けられるようにする」）══════
+    #   ①本走の設定で 3段 が実際に作られる ②どの段も 取引所の最小注文サイズ を割らない
+    #   ③割合の上限を上げると、機械が出す最大の段数が減る（メタ確認＝計算が生きている証拠）
+    t16: list[str] = []
+    lm16 = dict(KENSHU_LIMITS)
+    lm16.update({k: v for k, v in json.loads(LIMITS_PATH.read_text(encoding="utf-8")).items()
+                 if k in ("ladder_steps_range", "frac_range")})
+    mf16 = ladder_min_frac()
+    seen16: dict = {}
+    for i in range(200):
+        rng = np.random.default_rng([16, 8, i])
+        try:
+            st = sample_structure(rng, lm16, pool, tfs_small, side="SHORT", logic_id="S3")
+        except SampleError:
+            continue
+        lad = [b for b in st["exits"] if str(b["name"]).startswith("TP1")]
+        seen16[len(lad)] = seen16.get(len(lad), 0) + 1
+        rest = 1.0                                  # 実行器と同じ数え方＝割合は「残っている量」に掛かる
+        for b in lad:
+            f = float(b["size_ratio"])
+            if rest * f < mf16 - 1e-12 or rest * (1.0 - f) < mf16 - 1e-12:
+                t16.append(f"最小注文サイズを割る段が出た（案 {i}・枝 {b['name']}・残り {rest:.5f}・割合 {f}）")
+                break
+            rest *= (1.0 - f)
+        if t16:
+            break
+    if max(seen16, default=0) < 3:
+        t16.append(f"3段の部分利確が1本も出ない（段数の分布 {dict(sorted(seen16.items()))}）")
+    if max_ladder_steps(lm16) < 3:
+        t16.append(f"機械が出す最大の段数が 3 未満（{max_ladder_steps(lm16)}）")
+    _wide16 = dict(lm16); _wide16["frac_range"] = {"lo": 25.0, "hi": 90.0, "kind": "float", "dec": 1}
+    if not (max_ladder_steps(_wide16) < max_ladder_steps(lm16)):
+        t16.append("割合の上限を 90% に上げても最大の段数が減らない（最小注文サイズの計算が効いていない）")
+    ng += [f"T16: {x}" for x in t16]
+
     print("=" * 80)
     print("engine_tuner_gen 自己検査（合成データのみ・実データの試行ゼロ・累積試行の記録なし）")
     print("=" * 80)
@@ -3042,6 +3113,11 @@ def selftest() -> int:
           f"（表の中だけ・4種類より増える）／枝の名前 {len(names14)} 種類 ／"
           f" 積み増しの回数で切り替わる枝あり ／ 実際に発火した枝 {sorted(fired14) or 'なし'}"
           f" ／ 条件を届かない値にすると発火しない（メタ確認）")
+    print(f"  T16 部分利確の段数（まこさん決定 2026-08-15「3回以上に分けられるようにする」）: "
+          f"案200本の段数の分布 {dict(sorted(seen16.items()))}"
+          f" ／ 最小注文サイズ（玉の {mf16 * 100:.3f}%）を割る段 0 本"
+          f" ／ 機械が出す最大の段数 {max_ladder_steps(lm16)} 段"
+          f"（割合の上限を 90% にすると {max_ladder_steps(_wide16)} 段＝メタ確認）")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
