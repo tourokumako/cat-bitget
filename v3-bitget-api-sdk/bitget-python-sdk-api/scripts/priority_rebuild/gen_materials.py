@@ -521,6 +521,120 @@ def fixed_number_places(cfg: dict | None = None, lim: dict | None = None,
                 合計範囲=sum(x["範囲"] for x in places))
 
 
+def _probe_points(spec: dict) -> list[tuple]:
+    """範囲の中から確かめる値を作る＝下限・上限・まん中（軸が2つ以上ならその組）。
+
+    ★新しい数字を作っているのではありません。範囲そのものの端と中を取っているだけです。
+    """
+    per_axis = []
+    for ax in spec["axes"]:
+        lo, hi = float(ax["lo"]), float(ax["hi"])
+        vals = [lo, hi, (lo + hi) / 2]
+        if ax["kind"] == "int":
+            vals = [int(round(v)) for v in vals]
+        else:
+            vals = [round(v, int(ax["dec"]) or 1) for v in vals]
+        per_axis.append(sorted(set(vals)))
+    n = max(len(v) for v in per_axis)
+    return [tuple(v[min(i, len(v) - 1)] for v in per_axis) for i in range(n)]
+
+
+def param_range_both_ways(break_family: str | None = None) -> tuple[int, list[str]]:
+    """段A の A-6｜パラメータの範囲を「両方向」で確かめる（2026-08-16 新設・まこさん指示）。
+
+    まこさんの指示（逐語 2026-08-16）＝
+      「『範囲の中の数字が全部 計算できるか』を両方向で確かめる形にします」。
+
+    ★なぜ要るか（この番人が生まれた事故）。
+      2026-08-13（段A の A-4）に、engine_tuner が指標のパラメータを「点の一覧」でなく
+      「範囲」から引く形にした。そのとき確かめたのは **片方向だけ** だった。
+        方向1（外）＝範囲の外の数字は止まるか … 確かめた
+        方向2（中）＝範囲の中の数字は本当に計算できるか … **確かめていなかった**
+      その結果、MMAR が「範囲は 10〜35 なのに、実際に作れるのは 10・15・20・25・30・35 の
+      6個だけ」の状態で3日間 残った。engine_tuner が 21 を引くと列が作れず、
+      **走行が丸ごと止まった**（2026-08-16 実測＝案100本のうち33本目で停止）。
+
+    ★この番人が見るもの（両方向）。
+      方向1（外）＝範囲の外の値・整数でない値を、検証器 param_in_range が止めること。
+      方向2（中）＝数字を持つ指標 **全種類** について、範囲の中の値（下限・上限・まん中）で
+        ①列の名前を組み立てられる ②材料の表がその名前を分解できる
+        ③組み立て直すと同じ名前に戻る ④実際に計算が通る、の4つが全部 成り立つこと。
+
+    break_family＝メタ確認用。その指標だけ「範囲の中なのに作れない」状態を作って、
+      この番人がちゃんと落ちるかを確かめるために使う（本走では None）。
+    """
+    import numpy as _np
+    import pandas as _pd
+    ng: list[str] = []
+    import engine_tuner_exec as exe
+    import engine_tuner_gen as gen
+    import observe_diag as od
+    ranges = _quiet(gen.material_ranges)
+    idx = _pd.date_range("2024-01-01", periods=1500, freq="5min")
+    rng = _np.random.default_rng(20260816)
+    close = _pd.Series(30000 + _np.cumsum(rng.normal(0, 20, 1500)), index=idx)
+    bars = _pd.DataFrame({"open": close.shift(1).fillna(close.iloc[0]), "high": close + 15,
+                          "low": close - 15, "close": close,
+                          "volume": _pd.Series(rng.uniform(1, 9, 1500), index=idx)}, index=idx)
+    keep = None
+    if break_family is not None:                     # メタ確認＝MMAR と同じ壊れ方を1つ作る
+        keep = od.MATERIAL_FAMILIES[break_family]
+        tpl, direc, fn = keep
+        allowed = {p for pp in _probe_points(ranges[break_family])[:1] for p in pp}
+
+        def _broken(d, *p, _fn=fn, _ok=allowed):
+            if p and p[0] not in _ok:
+                raise KeyError(f"わざと壊した（{p[0]} は作れない）")
+            return _fn(d, *p)
+        od.MATERIAL_FAMILIES[break_family] = (tpl, direc, _broken)
+        od._MAT_RE.clear()
+    tried = 0
+    try:
+        for fam, spec in sorted(ranges.items()):
+            if not spec["axes"]:
+                continue
+            # ── 方向1（外）＝範囲の外・整数でない値は止まる ──
+            out_lo = [float(a["lo"]) - 1 for a in spec["axes"]]
+            ok_out, _why = gen.param_in_range(fam, out_lo[0] if len(out_lo) == 1 else tuple(out_lo), ranges)
+            if ok_out:
+                ng.append(f"方向1: {fam} の範囲の外の値 {out_lo} を検証器が通した")
+            # ── 方向2（中）＝範囲の中の値は、実際に列を作れる ──
+            for prm in _probe_points(spec):
+                tried += 1
+                p = prm[0] if len(prm) == 1 else prm
+                ok_in, why = gen.param_in_range(fam, p, ranges)
+                if not ok_in:
+                    ng.append(f"方向2: {fam} の範囲の中の値 {p} を検証器が拒否した（{why}）")
+                    continue
+                try:
+                    name = exe.build_name({"family": fam, "param": p})
+                except BaseException as e:           # noqa: BLE001
+                    ng.append(f"方向2: {fam} {p} の列名を組み立てられない（{type(e).__name__}）")
+                    continue
+                fam2, prm2 = od.find_material(name)
+                if fam2 is None:
+                    ng.append(f"方向2: {name} を材料の表が分解できない（範囲の中の値なのに作れない）")
+                    continue
+                try:
+                    name2, fn2, _dd = od.make_material(fam2, *prm2)
+                except BaseException as e:           # noqa: BLE001
+                    ng.append(f"方向2: {name} を組み立て直せない（{type(e).__name__}: {str(e)[:60]}）")
+                    continue
+                if name2 != name:
+                    ng.append(f"方向2: 名前が往復しない（{name} → {name2}）")
+                    continue
+                try:
+                    _quiet(fn2, bars)
+                except BaseException as e:           # noqa: BLE001
+                    ng.append(f"方向2: {name} が計算できない（{type(e).__name__}: {str(e)[:60]}）"
+                              f"＝範囲の中の値なのに engine_tuner が引くと走行が止まる")
+    finally:
+        if keep is not None:
+            od.MATERIAL_FAMILIES[break_family] = keep
+            od._MAT_RE.clear()
+    return tried, ng
+
+
 def forms_table() -> list[dict]:
     """★使い方（条件の形）の一覧を、実物から機械で引く（まこさん指示 2026-08-11「すべて自動生成にして」）。
 
@@ -1460,6 +1574,26 @@ def selftest() -> int:
                     ng.append(f"T13: 実物の宣言が番人に落ちた（{_lg['id']}）＝{str(_se38)[:80]}")
     except Exception as _e14:                                    # noqa: BLE001
         ng.append(f"T13: 確かめられなかった（{type(_e14).__name__}: {str(_e14)[:100]}）")
+
+    # ── T14 A-6｜パラメータの範囲を「両方向」で確かめる（2026-08-16 新設・まこさん指示）──
+    #   まこさんの指示（逐語 2026-08-16）＝「『範囲の中の数字が全部 計算できるか』を両方向で確かめる形にします」。
+    #   中身の説明は param_range_both_ways の説明文に全部 書いた（ここでは呼ぶだけ）。
+    #   ★2段で守る。① 本走＝落ちた組が 0 件 ② メタ確認＝わざと1つ壊したら、この番人が鳴ること。
+    try:
+        _n14, _ng14 = param_range_both_ways()
+        if _n14 < 100:
+            ng.append(f"T14: 確かめた組が {_n14} 件しか無い＝範囲を持つ指標を取りこぼしている")
+        for _m14 in _ng14:
+            ng.append(f"T14: {_m14}")
+        _n14b, _ng14b = param_range_both_ways(break_family="RSI")
+        if not _ng14b:
+            ng.append("T14: わざと『範囲の中なのに作れない』指標を作っても鳴らない"
+                      "（片方向に戻っている＝2026-08-16 の MMAR の事故と同じ穴）")
+        _n14c, _ng14c = param_range_both_ways()
+        if _ng14c:
+            ng.append(f"T14: メタ確認のあと元に戻っていない（{_ng14c[0]}）")
+    except Exception as _e15:                                    # noqa: BLE001
+        ng.append(f"T14: 確かめられなかった（{type(_e15).__name__}: {str(_e15)[:100]}）")
 
     # T6 わざと書き換えると --verify が鳴る（メタ確認）
     if _MD.exists():

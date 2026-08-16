@@ -255,7 +255,33 @@
    26
   ]
  ],
- "_指標パラメータ": "上は各指標の期間。足すとその期間ぶんの列が増える。全部 timeframes と掛け算になる。",
+ "mmar_periods": [
+  10,
+  15,
+  20,
+  25,
+  30,
+  35
+ ],
+ "rainbow": [
+  [
+   2,
+   10
+  ]
+ ],
+ "cdl_z_periods": [
+  30
+ ],
+ "body_ratio_periods": [
+  10
+ ],
+ "volume_change_periods": [
+  1
+ ],
+ "lrsi_gamma": [
+  0.5
+ ],
+ "_a6_2026_08_16": "★段A の A-6（2026-08-16）で、observe_diag.py のコードに直に書いてあった数字を、上の6つの鍵としてここへ出した。★数字はどれも直す前と同じで、CC は新しい数字を1つも作っていない。出どころ＝mmar_periods は pandas-ta-classic の mmar の既定の帯（length=10・step=5・num_ribbons=6 → 10/15/20/25/30/35）／rainbow は同 rainbow の既定（[1回あたりの本数 2, 何回 重ねがけするか 10]）／cdl_z_periods は同 cdl_z の既定 30（旧 _CDLZ_N）／body_ratio_periods は cdl_doji の既定 10（旧 _DOJI_N）／volume_change_periods は pvr の定義どおり 1／lrsi_gamma は同 lrsi の既定 0.5。★engine_tuner が試せる範囲は、この一覧の最小〜最大になる（engine_tuner_gen.material_ranges）。1つしか無い鍵は範囲が1点＝動かない。広げるのは まこさんが recipes/search_limits.json の material_param_ranges に書く（CC は書かない）。★ema_periods に在る本数は mmar から自動で外れる（同じ値になるため・実測 最大差 0.0）。",
  "scenes": {
   "L1": {
    "type": "support_touch_long",

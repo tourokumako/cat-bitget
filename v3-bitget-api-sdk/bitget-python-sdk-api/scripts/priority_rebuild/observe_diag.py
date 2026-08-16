@@ -501,8 +501,9 @@ def _ebsw(d, length=40, bars=10):
     return pd.Series(out, index=d.index)
 
 
-_DOJI_N = 10                                  # cdl_doji の既定（直前 n 本の平均値幅）
-_CDLZ_N = 30                                  # cdl_z の既定（本数・標本標準偏差 ddof=1）
+# ★2026-08-16（段A の A-6）＝ここに在った直書きの2つ（_DOJI_N=10・_CDLZ_N=30）を消した。
+#   いまは設定ファイル observe_config.json の `body_ratio_periods`・`cdl_z_periods` から読む。
+#   数字そのものは 10・30 のままで変えていない（CC は数字を作らない）。
 
 
 def _reg(family: str, name_tpl: str, directional: bool, fn):
@@ -700,8 +701,10 @@ _reg("ERI弱気%", "ERI弱気%{}", False, lambda d, n: _pta6.eri(high=d.high, lo
 _reg("INERTIA", "INERTIA{}", True, lambda d, n: _pta6.inertia(close=d.close, high=d.high, low=d.low, length=n))
 # ★LRSI はローソク足の本数を計算に使わない（実物＝length は入力の長さの確認にしか使われず、
 #   計算に効くのは gamma だけ）。本数で4通り作ったら4本とも同じ値になった＝1本にした（2026-08-09 実測）。
-#   gamma はライブラリの既定 0.5 をそのまま使う。範囲で探せるようにするのはマイルストーン③。
-_reg("LRSI", "LRSI(0.5)", True, lambda d: _pta6.lrsi(close=d.close, gamma=0.5))
+# ★2026-08-16（段A の A-6）＝gamma をコードの直書き（0.5）から設定ファイル observe_config.json の
+#   `lrsi_gamma` へ出した。名前の型に {} を作ったので engine_tuner が gamma を動かせる。
+#   いまの値 0.5 は直す前と同じ（CC は数字を作っていない）。広げるのは まこさん。
+_reg("LRSI", "LRSI({})", True, lambda d, g_: _pta6.lrsi(close=d.close, gamma=g_))
 _reg("BOP", "BOP", True, lambda d: _pta6.bop(open_=d.open, high=d.high, low=d.low, close=d.close))
 _reg("KST", "KST", True, lambda d: _pta6.kst(close=d.close).iloc[:, 0])
 _reg("AO%", "AO%({},{})", True, lambda d, f_, s_: _pta6.ao(high=d.high, low=d.low, fast=f_, slow=s_) / d.close * 100)
@@ -848,14 +851,30 @@ _reg("close vs HT_TRENDLINE%", "close vs HT_TRENDLINE%", True,
 _reg("close vs HWMA%", "close vs HWMA%", True, lambda d: (d.close / _pta6.hwma(close=d.close) - 1) * 100)
 _reg("close vs MAMA%", "close vs MAMA%", True, lambda d: (d.close / _mama(d).iloc[:, 0] - 1) * 100)
 _reg("close vs FAMA%", "close vs FAMA%", True, lambda d: (d.close / _mama(d).iloc[:, 1] - 1) * 100)
+# ★MMAR（2026-08-16・段A の A-6 で直した）
+#   直す前＝`mmar(close=d.close)` を引数なしで呼び、ライブラリの既定の帯（10・15・20・25・30・35）
+#     から1本 取り出していた。だから engine_tuner が範囲 10〜35 から 21 を引くと `MMAR_21` が
+#     存在せず KeyError で走行が丸ごと止まった（2026-08-16 実測＝案100本の33本目で停止）。
+#   直したあと＝本数 k を `length` で渡し `num_ribbons=1` で1本だけ作る。実物の式は
+#     `period = length + i*step` の i=0 ＝ `ema(close, length=k)` なので、k がいまの一覧の
+#     どれであっても値は直す前と1ビットも変わらない（恒等の確認は gen_materials の番人）。
 _reg("close vs MMAR%", "close vs MMAR%{}", True,
-     lambda d, k: (d.close / _pta6.mmar(close=d.close)[f"MMAR_{k}"] - 1) * 100)
+     lambda d, k: (d.close / _pta6.mmar(close=d.close, length=k, num_ribbons=1)[f"MMAR_{k}"] - 1) * 100)
 _reg("MMAR傾き", "MMAR{}傾き%", True,
-     lambda d, k: _pta6.mmar(close=d.close)[f"MMAR_{k}"].pct_change(5) * 100)
-_reg("close vs RAINBOW%", "close vs RAINBOW%{}", True,
-     lambda d, k: (d.close / _pta6.rainbow(close=d.close)[f"RAINBOW_{k}"] - 1) * 100)
-_reg("RAINBOW傾き", "RAINBOW{}傾き%", True,
-     lambda d, k: _pta6.rainbow(close=d.close)[f"RAINBOW_{k}"].pct_change(5) * 100)
+     lambda d, k: _pta6.mmar(close=d.close, length=k, num_ribbons=1)[f"MMAR_{k}"].pct_change(5) * 100)
+# ★RAINBOW（2026-08-16・段A の A-6 で直した）
+#   RAINBOW は数字を2つ持つ＝①1回あたりの本数 L（ライブラリの既定 2）②何回 重ねがけするか i。
+#   直す前＝名前に i しか出ておらず、L はライブラリの既定に隠れていた。L を変えると
+#     `close vs RAINBOW%3` という同じ名前のまま中身が別の指標になる（名前の一意性が壊れる）。
+#   直したあと＝L も名前に出す（`close vs RAINBOW%(2,3)`＝BB%b(20,2.0) と同じ書き方）。
+#     `num_ribbons=i` で i 本目まで作るので、i がいくつでも作れる（重ねがけは前段の結果を
+#     さらに平均する漸化式なので、i 本目の値は何本まで作っても同じ）。
+_reg("close vs RAINBOW%", "close vs RAINBOW%({},{})", True,
+     lambda d, L_, k: (d.close / _pta6.rainbow(close=d.close, length=L_,
+                                               num_ribbons=k)[f"RAINBOW_{k}"] - 1) * 100)
+_reg("RAINBOW傾き", "RAINBOW({},{})傾き%", True,
+     lambda d, L_, k: _pta6.rainbow(close=d.close, length=L_,
+                                    num_ribbons=k)[f"RAINBOW_{k}"].pct_change(5) * 100)
 # ── 業界の指標（trend 16関数）──
 # ★入れなかったもの＝plus_dm・minus_dm（うちの DM+% / DM-% と同じ・実測 最大差 1e-15）。
 # ★dpo は既定の centered=True が未来を見る（値を未来の足の方へずらす書き方を使う）ので、
@@ -923,7 +942,8 @@ _reg("KVOシグナル比", "KVOシグナル比", False, lambda d: _kv(d).iloc[:,
 _reg("VOSC", "VOSC", False, lambda d: _pta6.vosc(volume=d.volume))
 _reg("VFI", "VFI{}", True, lambda d, n: _vfi(d, n))
 # ★出来高変化率%＝pvr（1〜4 の区分）の中身の半分。本数は pvr の定義どおり 1 本。
-_reg("出来高変化率%", "出来高変化率%1", False, lambda d: (d.volume / d.volume.shift(1) - 1) * 100)
+# ★2026-08-16（段A の A-6）＝その 1 を設定ファイルの `volume_change_periods` へ出した。
+_reg("出来高変化率%", "出来高変化率%{}", False, lambda d, n: (d.volume / d.volume.shift(n) - 1) * 100)
 # ── 業界の指標（statistics 13関数）──
 _reg("skew", "skew{}", False, lambda d, n: _pta6.skew(close=d.close, length=n))
 _reg("kurtosis", "kurtosis{}", False, lambda d, n: _pta6.kurtosis(close=d.close, length=n))
@@ -971,13 +991,17 @@ _reg("HT_TRENDMODE", "HT_TRENDMODE", False,
 _reg("MSW_SINE", "MSW_SINE", True, lambda d: _cyc(d, "msw", lambda x: _pta6.msw(close=x.close)).iloc[:, 0])
 _reg("MSW_LEAD", "MSW_LEAD", False, lambda d: _cyc(d, "msw", lambda x: _pta6.msw(close=x.close)).iloc[:, 1])
 # ── 業界の指標（candles 4関数）──
-_reg("実体幅比", f"実体幅比{_DOJI_N}", False, lambda d: (d.close - d.open).abs()
-     / (d.high - d.low).rolling(_DOJI_N).mean().shift(1).replace(0, np.nan))
+# ★2026-08-16（段A の A-6）＝本数を直書き（_DOJI_N=10）から設定ファイルの `body_ratio_periods` へ出した。
+_reg("実体幅比", "実体幅比{}", False, lambda d, n: (d.close - d.open).abs()
+     / (d.high - d.low).rolling(n).mean().shift(1).replace(0, np.nan))
 _reg("内側バー", "内側バー", True, lambda d: (((d.high.diff() < 0) & (d.low.diff() > 0)).astype(float)
                                         * np.where(d.close >= d.open, 1.0, -1.0)))
+# ★2026-08-16（段A の A-6）＝本数を直書き（_CDLZ_N=30）から設定ファイルの `cdl_z_periods` へ出し、
+#   ライブラリにも `length` を渡す形にした（直す前は既定の30が使われていた＝値は変わらない）。
 for _k, _c in (("open", 0), ("high", 1), ("low", 2)):
-    _reg(f"{_k}_Z", f"{_k}_Z{_CDLZ_N}", True, lambda d, c=_c: _pta6.cdl_z(open_=d.open, high=d.high, low=d.low,
-                                                                          close=d.close).iloc[:, c])
+    _reg(f"{_k}_Z", f"{_k}_Z{{}}", True,
+         lambda d, n, c=_c: _pta6.cdl_z(open_=d.open, high=d.high, low=d.low,
+                                        close=d.close, length=n).iloc[:, c])
 _reg("HA実体%", "HA実体%", True, lambda d: (lambda a: (a.iloc[:, 3] - a.iloc[:, 0]) / d.close * 100)(_ha(d)))
 _reg("HA上ヒゲ比", "HA上ヒゲ比", False, lambda d: (lambda a: (a.iloc[:, 1] - a.iloc[:, [0, 3]].max(axis=1))
                                            / (a.iloc[:, 1] - a.iloc[:, 2]).replace(0, np.nan))(_ha(d)))
@@ -1114,7 +1138,8 @@ def build_catalog(cfg: dict) -> list[tuple]:
         for _fam in ("BIAS", "AR", "BR", "CCI", "CFO", "CG", "CMO", "CTI",
                      "DM+%", "DM-%", "ER", "ERI強気%", "ERI弱気%", "INERTIA"):
             addf(_fam, n)
-    addf("LRSI")
+    for _g in cfg["lrsi_gamma"]:                     # 段A の A-6＝直書き 0.5 を設定ファイルへ出した
+        addf("LRSI", _g)
     addf("BOP")
     addf("KST")
     for (f_, s_, g_) in cfg["macd_params"]:
@@ -1189,14 +1214,17 @@ def build_catalog(cfg: dict) -> list[tuple]:
     # ★mavp は入れない＝既定の使い方が未来を見る（実物の逐語＝periods を
     #   np.linspace(minperiod, maxperiod, len(close)) で作る＝各足で使う本数がデータ全体の
     #   本数で決まる。データが増えると過去の足の値まで変わる）。2026-08-09 実測で検出。
-    for _k in (10, 15, 20, 25, 30, 35):              # ライブラリの既定の帯（本数を5ずつ増やす）
+    # ★段A の A-6（2026-08-16）＝本数の一覧をコードの直書きから設定ファイルへ出した。
+    #   一覧の数字は直す前と同じ（CC は数字を作っていない）。広げるのは まこさん。
+    for _k in cfg["mmar_periods"]:
         if _k in cfg["ema_periods"]:                 # ★既にある EMA と同じ本数は入れない（実測で一致）
             continue
         addf("close vs MMAR%", _k)
         addf("MMAR傾き", _k)
-    for _k in range(1, 11):                          # ライブラリの既定＝10本 重ねがけ
-        addf("close vs RAINBOW%", _k)
-        addf("RAINBOW傾き", _k)
+    for _L, _nrib in cfg["rainbow"]:                 # [1回あたりの本数, 何回 重ねがけするか]
+        for _k in range(1, int(_nrib) + 1):
+            addf("close vs RAINBOW%", _L, _k)
+            addf("RAINBOW傾き", _L, _k)
 
     # ── 業界の指標（overlap 3回目＝sinwma〜zlma）──
     for n in cfg["sma_periods"]:
@@ -1238,7 +1266,8 @@ def build_catalog(cfg: dict) -> list[tuple]:
     # ── まこさん承認で足した2件（2026-08-10・逐語「１，２は修正して残す」）──
     for n in cfg["obv_slope_periods"]:
         addf("VFI", n)
-    addf("出来高変化率%")
+    for n in cfg["volume_change_periods"]:           # 段A の A-6＝直書き 1 を設定ファイルへ出した
+        addf("出来高変化率%", n)
 
     # ── 業界の指標（statistics 13関数）──
     # ★入れなかったもの8件（理由は参照表の INDUSTRY_SKIP に1件ずつ）＝
@@ -1296,10 +1325,13 @@ def build_catalog(cfg: dict) -> list[tuple]:
     #     スピアマン相関 1.0000000・最大差 5.3e-07）。始値・高値・安値の z 値は うちに無いので入れる。
     #   ③ha の4本値そのもの＝値段（H6）。実体%と上下のヒゲ比で表す。
     #   ④cdl_pattern＝うちの 包み足・孕み足 で既に入っている。
-    addf("実体幅比")
+    # ★段A の A-6（2026-08-16）＝本数の直書き（実体幅比＝10／cdl_z＝30）を設定ファイルへ出した。
+    for n in cfg["body_ratio_periods"]:
+        addf("実体幅比", n)
     addf("内側バー")
     for _k in ("open", "high", "low"):
-        addf(f"{_k}_Z")
+        for n in cfg["cdl_z_periods"]:
+            addf(f"{_k}_Z", n)
     addf("HA実体%")
     addf("HA上ヒゲ比")
     addf("HA下ヒゲ比")

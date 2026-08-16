@@ -1848,12 +1848,13 @@ def _rainbow(c: np.ndarray, n: int, k: int) -> np.ndarray:
     return cur
 
 
+# ★2026-08-16（段A の A-6）＝1回あたりの本数（直す前は 2 の直書き）が名前に出たので、p[0] から取る。
 def _tb_pos_rainbow(d, p):
-    return _pos(_rainbow(d.close.to_numpy(float), 2, int(p[0])), d)
+    return _pos(_rainbow(d.close.to_numpy(float), int(p[0]), int(p[1])), d)
 
 
 def _tb_slp_rainbow(d, p):
-    return _slope(_rainbow(d.close.to_numpy(float), 2, int(p[0])), d)
+    return _slope(_rainbow(d.close.to_numpy(float), int(p[0]), int(p[1])), d)
 
 
 def _tb_pos_mmar(d, p):
@@ -2588,10 +2589,13 @@ _r(r"close vs PWMA%(\d+)", "close vs PWMA%",
    "終値が PWMA（パスカルの三角形を重みにした移動平均）から何%離れているか",
    "標準（Pascal's Weighted MA）。重みは二項係数", "反転サイン", "trend", tb=_tb_pos_pwma)
 _r(r"PWMA(\d+)傾き%", "PWMA傾き%", "PWMA の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_pwma)
-_r(r"close vs RAINBOW%(\d+)", "close vs RAINBOW%",
-   "終値が RAINBOW（2本の単純移動平均を k 回 重ねがけした線）から何%離れているか",
-   "ライブラリの計算式。前の出力にまた同じ移動平均を掛ける（k=1〜10）", "反転サイン", "trend", tb=_tb_pos_rainbow)
-_r(r"RAINBOW(\d+)傾き%", "RAINBOW傾き%", "その線の5本前からの変化率%", "同上", "順張り値", "trend", tb=_tb_slp_rainbow)
+# ★2026-08-16（段A の A-6）＝名前に数字を2つ出した＝(1回あたりの本数, 何回 重ねがけするか)。
+#   直す前は1回あたりの本数がライブラリの既定 2 に隠れていて、変えると同じ名前のまま中身が変わった。
+_r(r"close vs RAINBOW%\((\d+),(\d+)\)", "close vs RAINBOW%",
+   "終値が RAINBOW（n本の単純移動平均を k 回 重ねがけした線）から何%離れているか",
+   "ライブラリの計算式。前の出力にまた同じ移動平均を掛ける", "反転サイン", "trend", tb=_tb_pos_rainbow)
+_r(r"RAINBOW\((\d+),(\d+)\)傾き%", "RAINBOW傾き%", "その線の5本前からの変化率%", "同上", "順張り値", "trend",
+   tb=_tb_slp_rainbow)
 _r(r"close vs RMA%(\d+)", "close vs RMA%",
    "終値が RMA（Wilder の平滑移動平均）から何%離れているか",
    "Wilder。種は最初の n 本の単純平均・以後 alpha=1/n", "反転サイン", "trend", tb=_tb_pos_rma)

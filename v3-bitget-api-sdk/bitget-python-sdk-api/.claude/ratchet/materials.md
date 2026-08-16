@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=3ed0382e0a9d4202 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=66880586b26a5a6e gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -87,11 +87,11 @@
 - 検収専用の値は数えません＝`engine_tuner_gen.py` の `selftest` と `KENSHU_LIMITS`（出どころ＝`recipes/search_limits.json` の `_note` の逐語「検収専用の値は engine_tuner_gen.py の selftest の中にだけ存在する」）。
 - **番人**＝この4か所のどれかに架空の数の並びを1つ 足すと、その場所の件数がちょうど 1 増えます（`--selftest` の T12・わざと壊して確かめています）。
 
-**★4か所 合わせて 数の並び 29 件（数字 64 個）。範囲で探せるのは 28 件だけです。**
+**★4か所 合わせて 数の並び 35 件（数字 76 個）。範囲で探せるのは 28 件だけです。**
 
 | # | 場所 | 何の数字か | 決まった数字だけ（数の並び） | その中の数字 | 範囲で探せる |
 |---|---|---|---|---|---|
-| 1 | scripts/priority_rebuild/observe_config.json | 指標を作るときのパラメータ（RSI14 の 14） | **28 件** | 60 個 | 0 件 |
+| 1 | scripts/priority_rebuild/observe_config.json | 指標を作るときのパラメータ（RSI14 の 14） | **34 件** | 72 個 | 0 件 |
 | 2 | scripts/priority_rebuild/recipes/search_limits.json | 使い方の中の本数（slope の n）・閾値の段・上限 | **1 件** | 4 個 | 14 件 |
 | 3 | scripts/priority_rebuild/engine_tuner_gen.py | 生成器が数字を選ぶときに、コードに直に書いた数字 | **0 件** | 0 個 | 0 件 |
 | 4 | scripts/priority_rebuild/e38_logics.json の search_space | E38 の探索が振る値 | **0 件** | 0 個 | 14 件 |
@@ -101,28 +101,33 @@
 
 **場所ごとの中身（全部 実物から）**
 
-- **場所1**＝指標のパラメータ。この 28 件の並びが、下の表の 178 種類・469 通りに広がります。★数える鍵は「名前が `_periods` で終わるもの」ではなく、**材料カタログを作る関数（`observe_diag.build_catalog`）が実際に読む鍵**です（名前で数えると `bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・`*_windows`・`sr_tol`・`w_tol` を丸ごと取りこぼします）。観察の道具だけが使う格子 9 件（`adverse_marks`・`early_windows`・`favorable_marks`・`quantiles`・`scene_exit_sl_pcts`・`scene_exit_tmax_bars`・`scene_exit_tp_pcts`・`sl_grid`・`wait_grid`）は、engine_tuner が振る値ではないので ここでは数えていません。
+- **場所1**＝指標のパラメータ。この 34 件の並びが、下の表の 178 種類・469 通りに広がります。★数える鍵は「名前が `_periods` で終わるもの」ではなく、**材料カタログを作る関数（`observe_diag.build_catalog`）が実際に読む鍵**です（名前で数えると `bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・`*_windows`・`sr_tol`・`w_tol` を丸ごと取りこぼします）。観察の道具だけが使う格子 9 件（`adverse_marks`・`early_windows`・`favorable_marks`・`quantiles`・`scene_exit_sl_pcts`・`scene_exit_tmax_bars`・`scene_exit_tp_pcts`・`sl_grid`・`wait_grid`）は、engine_tuner が振る値ではないので ここでは数えていません。
 - **場所2**＝ほかに 分位（閾値の段）＝**範囲 q10〜q90（81 通り）**（`quantile_range`・★2026-08-15 の段A の A-5-3 で 9段のメニューから範囲にした。`quantile_grid` の9段は ほかの道具がまだ読む分として残してある）／単独の数字 3 件（`fdr_q`・`n_min`・`r_min`）／上限を置かないもの 5 件（`count_range`・`depth_max`・`k_max`・`p_max`・`role_max`＝まこさん決定 2026-08-12）。
 - **場所3**＝ほかに、案を作るときの**確率の数字**が 15 か所（`rng.random() < 0.3` の形）。これは探す値ではありませんが、CC がコードに直に書いた数字なので一緒に数えています。
 - **場所4**＝`search_space` は全部で 45 件です。内訳＝分位 21 ／メニュー 10（うち数の並び 0・本当に選択肢 10）／範囲 14。★このうち 2 件は値が空です（`logics.L5.grid_n`・`logics.S5.grid_n`＝まこさんの判断待ち・値が入るまで engine_tuner は走りません）。
 
-**場所1 の明細（28 件）**
+**場所1 の明細（34 件）**
 
 | 鍵 | 決まった数字 |
 |---|---|
 | `atr_periods` | 7・14・21 |
 | `bb_periods` | 20・50 |
 | `bb_sigma` | 2.0・3.0 |
+| `body_ratio_periods` | 10 |
+| `cdl_z_periods` | 30 |
 | `cmf_periods` | 20 |
 | `donchian_periods` | 20・48 |
 | `ema_periods` | 9・20・50・200 |
 | `fib_windows` | 20・96 |
 | `ichimoku` | 9・26 |
 | `keltner` | 20・2.0 |
+| `lrsi_gamma` | 0.5 |
 | `macd_params` | 12・26・9 |
 | `mfi_periods` | 14 |
+| `mmar_periods` | 10・15・20・25・30・35 |
 | `obv_slope_periods` | 10・20 |
 | `pivot_windows` | 288 |
+| `rainbow` | 2・10 |
 | `rci_periods` | 7・9・26・52 |
 | `realized_vol_periods` | 20・50 |
 | `roc_periods` | 6・12・24 |
@@ -133,6 +138,7 @@
 | `stoch_periods` | 5・9・14 |
 | `supertrend` | 10・3.0 |
 | `swing_windows` | 24・48・96 |
+| `volume_change_periods` | 1 |
 | `volume_ratio_periods` | 20・50 |
 | `vp_windows` | 288 |
 | `vwap_windows` | 288 |
@@ -159,8 +165,8 @@
 
 | 機械で分かること | 件数 | 中身 |
 |---|---|---|
-| 小数が入っている鍵 | 2 件 | `sr_tol`・`w_tol` |
-| 整数だけの鍵 | 26 件 | ★この中に `bb_sigma`（標準偏差の倍数 2.0・3.0）のような「本数でない きりのよい数」が混ざります |
+| 小数が入っている鍵 | 3 件 | `lrsi_gamma`・`sr_tol`・`w_tol` |
+| 整数だけの鍵 | 31 件 | ★この中に `bb_sigma`（標準偏差の倍数 2.0・3.0）のような「本数でない きりのよい数」が混ざります |
 
 **A-3 で範囲に直すときは、鍵ごとに「整数の範囲か・小数の範囲か」を1件ずつ決めます。**
 下の指標ごとの表でも、小数が混ざるものには「本数ではない」と付けています（3 種類）。
@@ -253,7 +259,7 @@
 | PVOヒスト | (12,26,9)（1 通り・数字が2つ以上の指標は組で1通り） |
 | PVT傾き | 10 本・20 本（2 通り） |
 | PWMA傾き% | 20 本・50 本・200 本（3 通り） |
-| RAINBOW傾き% | 1 本・2 本・3 本・4 本・5 本・6 本・7 本・8 本・9 本・10 本（10 通り） |
+| RAINBOW傾き% | (2,1)・(2,2)・(2,3)・(2,4)・(2,5)・(2,6)・(2,7)・(2,8)・(2,9)・(2,10)（10 通り・数字が2つ以上の指標は組で1通り） |
 | RCI | 7 本・9 本・26 本・52 本（4 通り） |
 | RMA傾き% | 20 本・50 本・200 本（3 通り） |
 | ROC | 6 本・12 本・24 本（3 通り） |
@@ -314,7 +320,7 @@
 | close vs MIDPRICE% | 20 本・50 本・200 本（3 通り） |
 | close vs MMAR% | 10 本・15 本・25 本・30 本・35 本（5 通り） |
 | close vs PWMA% | 20 本・50 本・200 本（3 通り） |
-| close vs RAINBOW% | 1 本・2 本・3 本・4 本・5 本・6 本・7 本・8 本・9 本・10 本（10 通り） |
+| close vs RAINBOW% | (2,1)・(2,2)・(2,3)・(2,4)・(2,5)・(2,6)・(2,7)・(2,8)・(2,9)・(2,10)（10 通り・数字が2つ以上の指標は組で1通り） |
 | close vs RMA% | 20 本・50 本・200 本（3 通り） |
 | close vs SINWMA% | 20 本・50 本・200 本（3 通り） |
 | close vs SMA | 20 本・50 本・200 本（3 通り） |
