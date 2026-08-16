@@ -20,6 +20,14 @@ LEDGER = ROOT / ".claude/ratchet/ledger.md"
 ACC_ARCHIVE = ROOT / ".claude/ratchet/acceptance_archive"
 NEXT_STEP = Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/next_step.md")
 
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   ★この道具は next_step.md の ARC_TABLE_START〜END の間だけを書き換えます＝「一部の節」。
+#   ★この道具には --verify がありません（2026-08-16 実測）＝古くなっても検出できない。
+#     足すかどうかは まこさんが決めます。集める道具＝gen_docmap.py。
+GENERATES = [
+    (".claude/state/next_step.md", "一部の節"),
+]
+
 ARC_RE = re.compile(r"<!--\s*ARC\b(.*?)-->", re.DOTALL)
 KV_RE = re.compile(r'(\w+)\s*=\s*"([^"]*)"|(\w+)\s*=\s*(\S+)')
 

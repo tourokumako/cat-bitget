@@ -41,6 +41,15 @@ import observe_diag as od          # noqa: E402
 from periods import SCORE_START, SCORE_END   # noqa: E402
 
 ROOT = HERE.parents[1]                                   # bitget-python-sdk-api/（HERE=priority_rebuild → parents[0]=scripts）
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   なぜ要るか＝名前で数えると必ず漏れる（出力先の変数名が道具ごとにバラバラで、
+#   読むファイルと作るファイルが同じ形で並んでいる＝外から見分けられない）。
+#   だから道具の側に名乗らせる。集める道具＝gen_docmap.py。
+#   形＝(リポジトリの根からのパス, "まるごと" か "一部の節")。
+GENERATES = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/observe_diag_manual.md", "まるごと"),
+]
+
 OUT = ROOT / ".claude" / "ratchet" / "observe_diag_manual.md"
 CFG = HERE / "observe_config.json"
 

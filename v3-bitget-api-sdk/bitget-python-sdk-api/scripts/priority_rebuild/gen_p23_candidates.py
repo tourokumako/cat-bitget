@@ -26,6 +26,12 @@ from decimal import Decimal
 import numpy as np
 import pandas as pd
 
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   ★この道具は **文書を1つも作りません**（書き出すのは売買記録の CSV だけ・実測で確認）。
+#     ですから空で名乗ります。空で名乗らないと、集める道具 gen_docmap.py が
+#     「名前が gen_ なのに名乗っていない＝漏れ」として毎回 挙げてしまいます。
+GENERATES: list[tuple[str, str]] = []
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "runner"))

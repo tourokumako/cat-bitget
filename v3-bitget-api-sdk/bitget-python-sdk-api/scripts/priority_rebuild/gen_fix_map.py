@@ -35,6 +35,15 @@ ROOT = Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget")
 SUB = ROOT / "v3-bitget-api-sdk" / "bitget-python-sdk-api"
 AUDIT = SUB / ".claude/audits/2026-07-27_engine_tuner_r3r13r14_design_cp2_audit_report.md"
 JSON_IN = SUB / ".claude/ratchet/engine_tuner_fix_map.json"
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   なぜ要るか＝名前で数えると必ず漏れる（出力先の変数名が道具ごとにバラバラで、
+#   読むファイルと作るファイルが同じ形で並んでいる＝外から見分けられない）。
+#   だから道具の側に名乗らせる。集める道具＝gen_docmap.py。
+#   形＝(リポジトリの根からのパス, "まるごと" か "一部の節")。
+GENERATES = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_fix_map.md", "まるごと"),
+]
+
 MD_OUT = SUB / ".claude/ratchet/engine_tuner_fix_map.md"
 
 HEAD_RE = re.compile(r"^#{3,4}\s+(?:不具合)?(\d+-\d+)\s*(.*)$")

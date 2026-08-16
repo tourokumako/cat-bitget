@@ -39,6 +39,19 @@ HERE = pathlib.Path(__file__).resolve().parent               # scripts/priority_
 ROOT = HERE.parent.parent                                    # bitget-python-sdk-api/
 RATCHET = ROOT / ".claude" / "ratchet"
 RULES = ROOT / ".claude" / "rules"
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   なぜ要るか＝名前で数えると必ず漏れる（出力先の変数名が道具ごとにバラバラで、
+#   読むファイルと作るファイルが同じ形で並んでいる＝外から見分けられない）。
+#   だから道具の側に名乗らせる。集める道具＝gen_docmap.py。
+#   形＝(リポジトリの根からのパス, "まるごと" か "一部の節")。
+GENERATES = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/windows.md", "まるごと"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/rules/acceptance_checklist.md", "一部の節"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/adopted_strategies.md", "一部の節"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/entry_exit_matrix.md", "一部の節"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/window_similarity_ranking.md", "一部の節"),
+]
+
 OUT = RATCHET / "windows.md"
 
 START = "<!-- WINDOWS_START hash={h} ここは gen_windows.py が自動生成＝手で書き換えない -->"

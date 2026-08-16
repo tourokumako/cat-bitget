@@ -40,6 +40,15 @@ HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent                                   # bitget-python-sdk-api/
 SRC = ROOT / "runner" / "replay_csv.py"                     # V9 の Exit 実装（改造禁止・読むだけ）
 PARAMS = ROOT / "config" / "cat_params_v9.json"             # V9 の値（改造禁止・読むだけ）
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   なぜ要るか＝名前で数えると必ず漏れる（出力先の変数名が道具ごとにバラバラで、
+#   読むファイルと作るファイルが同じ形で並んでいる＝外から見分けられない）。
+#   だから道具の側に名乗らせる。集める道具＝gen_docmap.py。
+#   形＝(リポジトリの根からのパス, "まるごと" か "一部の節")。
+GENERATES = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/v9_exits.md", "まるごと"),
+]
+
 OUT = ROOT / ".claude" / "ratchet" / "v9_exits.md"
 
 FUNCS = ("_check_exits_replay", "_calc_tp_price")

@@ -31,6 +31,17 @@ import indicator_reference_diag as iref                     # noqa: E402（方�
 
 MATRIX_MD = SDK / ".claude/ratchet/entry_exit_matrix.md"    # 軸カタログの正本（E-a シグナル家族）
 LIMITS_JSON = HERE / "recipes/search_limits.json"           # n_min=30（まこさん OK 2026-08-01「たたき台でOK」）
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   なぜ要るか＝名前で数えると必ず漏れる（出力先の変数名が道具ごとにバラバラで、
+#   読むファイルと作るファイルが同じ形で並んでいる＝外から見分けられない）。
+#   だから道具の側に名乗らせる。集める道具＝gen_docmap.py。
+#   形＝(リポジトリの根からのパス, "まるごと" か "一部の節")。
+GENERATES = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/signal_families.json", "まるごと"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/signal_families.md", "まるごと"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/signal_families_approved.txt", "まるごと"),
+]
+
 OUT_JSON = SDK / ".claude/ratchet/signal_families.json"     # 型の表（機械可読・G2 判定器が読む）
 OUT_MD = SDK / ".claude/ratchet/signal_families.md"         # 型の表（人が読む・同じ中身）
 

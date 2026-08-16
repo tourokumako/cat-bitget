@@ -50,6 +50,16 @@ sys.path.insert(0, str(_HERE))
 import indicator_reference_diag as iref   # noqa: E402
 
 _RATCHET = _HERE.parent.parent / ".claude" / "ratchet"
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   なぜ要るか＝名前で数えると必ず漏れる（出力先の変数名が道具ごとにバラバラで、
+#   読むファイルと作るファイルが同じ形で並んでいる＝外から見分けられない）。
+#   だから道具の側に名乗らせる。集める道具＝gen_docmap.py。
+#   形＝(リポジトリの根からのパス, "まるごと" か "一部の節")。
+GENERATES = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/materials.md", "まるごと"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/materials.json", "まるごと"),
+]
+
 _MD = _RATCHET / "materials.md"
 _JSON = _RATCHET / "materials.json"
 _SIGFAM = _RATCHET / "signal_families.json"

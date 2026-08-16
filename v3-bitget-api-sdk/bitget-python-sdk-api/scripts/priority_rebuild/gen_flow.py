@@ -20,6 +20,15 @@ import json
 import sys
 from pathlib import Path
 
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   ★この道具だけ出力先が引数（--out）で決まります。ですから「いま実際に使っている先」を
+#     ここに書きます（実物＝e38_flow.md の1行目に「gen_flow.py 自動生成」と書いてある）。
+#     別の先へ出すようになったら、この行を足します。
+#   形＝(リポジトリの根からのパス, "まるごと" か "一部の節")。集める道具＝gen_docmap.py。
+GENERATES = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e38_flow.md", "まるごと"),
+]
+
 # ── フローの型（固定・6段・変更はまこさん承認＋git commit のみ）─────────────────────────
 TEMPLATE = [
     {

@@ -44,6 +44,17 @@ SIGNAL_JSON = SDK / ".claude/ratchet/signal_families.json"        # 入口の型
 RULES_JSON = SDK / ".claude/ratchet/exit_families_rules.json"     # 規則（軸の選択肢 → 枝の型・出典つき）
 LIMITS_JSON = HERE / "recipes/search_limits.json"
 EXEC_PY = HERE / "engine_tuner_exec.py"
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   なぜ要るか＝名前で数えると必ず漏れる（出力先の変数名が道具ごとにバラバラで、
+#   読むファイルと作るファイルが同じ形で並んでいる＝外から見分けられない）。
+#   だから道具の側に名乗らせる。集める道具＝gen_docmap.py。
+#   形＝(リポジトリの根からのパス, "まるごと" か "一部の節")。
+GENERATES = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families.json", "まるごと"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families.md", "まるごと"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families_approved.txt", "まるごと"),
+]
+
 OUT_JSON = SDK / ".claude/ratchet/exit_families.json"
 OUT_MD = SDK / ".claude/ratchet/exit_families.md"
 APPROVED_FILE = SDK / ".claude/ratchet/exit_families_approved.txt"

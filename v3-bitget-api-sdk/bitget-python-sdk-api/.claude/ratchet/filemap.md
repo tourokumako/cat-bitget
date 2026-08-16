@@ -1,4 +1,4 @@
-<!-- FILEMAP_HASH=3af74e449379d076 -->
+<!-- FILEMAP_HASH=08eb439ac525cd1d -->
 # filemap.md — 何がどこにあるかの地図（gen_filemap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。ファイルの一覧も説明も、実体から機械で取っています。
@@ -38,14 +38,15 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | まこさんが何を決めたか知りたい | `decisions.md` | 決定の一覧。提案の前に必ず読む |
 | 次に何をするか知りたい | `next_step.md` | 次セッションの起点。セッション開始で全文表示される |
 
-## 全部の一覧（228 件）
+## 全部の一覧（231 件）
 
-### 売買と判定のスクリプト — scripts/priority_rebuild（80 件）
+### 売買と判定のスクリプト — scripts/priority_rebuild（82 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
 | analyze.py | 結果を見る道具 | 実行して使う | 採点後の深掘りバッテリー（手抜き分析を物理的に不可能にする・1コマンドで全部出す） |
 | build_labels_pct.py | データ・材料を作る | 読み込まれて使う／実行して使う | Phase 0: 5m bar × 1,462 指標 × 56 ラベル (28 MFE/MAE pct + 28 Triple Barrier) を生成 |
+| condition_parts_diag.py | 観察・診断（売買記録を出さない） | 実行して使う | 条件の部品の突き合わせ（段C の C-2・2026-08-11 新設・まこさん OK） |
 | doc_coverage_diag.py | 観察・診断（売買記録を出さない） | 実行して使う | 文書を作り直したときに「消えた中身」を機械で一覧に出す（読み取り専用の診断） |
 | dsr_pbo.py | その他 | 読み込まれて使う | 評価基盤 項目F: Deflated Sharpe Ratio + Probability of Backtest Overfitting（自前） |
 | e28_phase0_dollarbar.py | その他 | 読み込まれて使う／実行して使う | E28 Phase 0 Step 1: 情報バー(ドルバー)＋行き過ぎ分位＋FR フィルタ の素エッジ測定 |
@@ -73,6 +74,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | gen_composition_rules.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | 組み立ての決まりの生成器（2026-08-08 新設） |
 | gen_decisions.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | まこさんが決めたことの一覧を機械生成する（手書き禁止・2026-07-26 まこさん OK） |
 | gen_design.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | E38 設計書の機械生成（フロー段1・まこさん確定「設計書は手書きしない」） |
+| gen_docmap.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | 機械が作る文書の全数の一覧を、道具の名乗りから作る（2026-08-16 新設） |
 | gen_engine_tuner_manual.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | engine_tuner の取扱説明書を機械生成する（手書き禁止・2026-07-27 まこさん指示） |
 | gen_engine_tuner_requirements.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | engine_tuner の要件定義書を機械生成する（手書き禁止・2026-07-27 まこさん指示） |
 | gen_exit_families.py | 文書の生成器（手書き禁止の文書を作る） | 読み込まれて使う／実行して使う | 出口の枝の表（許可の一覧）の自動生成（D2 の前段・2026-08-07） |
@@ -133,7 +135,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | e37.py | 戦略の実装 | 探索器が名前で読む | e37 — E37 の接続ファイル（engine_tuner が読む・要件 R4／R1・まこさん承認 2026-07-27） |
 | e38.py | 戦略の実装 | 探索器が名前で読む | e38 — E38 の接続ファイル（engine_tuner が読む・要件 R4・まこさん承認 2026-07-27） |
 
-### 作業の正本・記録 — .claude/ratchet（37 件）
+### 作業の正本・記録 — .claude/ratchet（38 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
@@ -141,22 +143,23 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | analysis_playbook.md | 文書 | — | PDCA 分析プレイブック（原因分析の唯一の正本） |
 | composition_rules.md | 文書 | — | 組み立ての決まり（全自動生成） |
 | decisions.md | 文書 | — | まこさんが決めたこと（gen_decisions.py が自動生成＝手書き禁止） |
+| docmap.md | 文書 | — | 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止） |
 | e34_design.md | 文書 | — | E34 戦略設計書 v2 — レンジ逆張りBOT（行き過ぎ ∩ 投げ売り枯渇・LONG・add＋部分決済） |
 | e35_design.md | 文書 | — | E35 戦略設計書 v1 — レンジ上下オシレーション BOT（多TFレジサポで箱定義・両方向・高頻度） |
 | e37_design.md | 文書 | — | E37 戦略設計書 v5 — レンジ・スキャル 両側 maker MR ＋「稼げるレンジ」検出器ゲート |
-| e37_improvement_milestones.md | 文書 | ⚠️ どこからも参照されていない | E37 改善マイルストーン（正本・まこさん確定 2026-07-17） |
+| e37_improvement_milestones.md | 文書 | — | E37 改善マイルストーン（正本・まこさん確定 2026-07-17） |
 | e38_design.md | 文書 | — | E38 優先度スタック 設計書（gen_design.py 機械生成＝手書き禁止） |
 | e38_flow.md | 文書 | — | e38_priority_stack フロー（gen_flow.py 自動生成＝手書き禁止・型は gen_flow.py TEMPLATE が正本） |
 | engine_tuner_defects.md | 文書 | — | engine_tuner の欠陥の一覧（2026-08-06 のセッションで発覚した分） |
 | engine_tuner_fix_map.md | 文書 | — | engine_tuner 修正対応表（gen_fix_map.py が機械生成＝手書き禁止） |
 | engine_tuner_manual.md | 文書 | — | engine_tuner 取扱説明書（gen_engine_tuner_manual.py が自動生成＝手書き禁止） |
 | engine_tuner_materials.md | 文書 | — | 全体像を決めるための材料 |
-| engine_tuner_milestones.md | 文書 | ⚠️ どこからも参照されていない | engine_tuner マイルストーン ／ フロー ／ やることリスト |
+| engine_tuner_milestones.md | 文書 | — | engine_tuner マイルストーン ／ フロー ／ やることリスト |
 | engine_tuner_requirements.md | 文書 | — | engine_tuner 要件定義書（gen_engine_tuner_requirements.py が自動生成＝手書き禁止） |
 | engine_tuner_step2_condition_format.md | 文書 | — | engine_tuner 歩2 — 条件データ形式の設計（CP3 反映版） |
 | entry_exit_matrix.md | 文書 | — | Entry×Exit ロジック 網羅マトリクス（★全戦略共通） |
 | exit_families.md | 文書 | — | 出口の枝の表（許可の一覧・全自動生成・CC の手書きの行ゼロ） |
-| exit_opt_command_design.md | 文書 | ⚠️ どこからも参照されていない | Exit 最適化フローのスラッシュコマンド化【設計のみ・実装はまだ】 |
+| exit_opt_command_design.md | 文書 | — | Exit 最適化フローのスラッシュコマンド化【設計のみ・実装はまだ】 |
 | ledger.md | 文書 | — | ratchet ledger — PDCA 全記録（結果 / 原因究明 / 改善 / 修正 をすべて残す） |
 | materials.md | 文書 | — | 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ） |
 | observe_diag_manual.md | 文書 | — | observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止） |
@@ -208,14 +211,14 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | improvement_ideation_kb.md | 文書 | — | 改善案・アイデアの発想法カタログ |
 | improvements.md | 文書 | — | （見出しが無い） |
 | indicator_combination_kb.md | 文書 | — | 指標の組み合わせ方の法則（知識の正本） |
-| indicator_thresholds_outline.md | 文書 | ⚠️ どこからも参照されていない | A-2 閾値辞書 骨格（ターン A 成果物） |
+| indicator_thresholds_outline.md | 文書 | — | A-2 閾値辞書 骨格（ターン A 成果物） |
 | industry_benchmark_knowledge_base.md | 文書 | — | 業界相場・経験則 ナレッジベース |
 | learning_design_v3.md | 文書 | ⚠️ どこからも参照されていない | ML 学習デザイン v3 完成版 (2026-05-20 まこさん承認・exchange_spec.md 準拠版) |
 | lessons_active.md | 文書 | — | 現役教訓 (2026-05-02 以降・L-203〜L-153 + 新規 L-206 以降) |
 | lessons_archive.md | 文書 | — | L-102以前のアーカイブ（106件） |
 | ml_pipeline_baseline_v1.md | 文書 | — | ML pipeline 暫定ベース案 v2 (= 2026-05-27 セッション議論決着反映) |
 | ml_pipeline_execlog.md | 文書 | — | ML pipeline 実行ログ + 現在地（新セッション最初に読む正本） |
-| phase8_supervised_tool_survey.md | 文書 | ⚠️ どこからも参照されていない | 教師あり時系列分類 手法網羅リスト |
+| phase8_supervised_tool_survey.md | 文書 | — | 教師あり時系列分類 手法網羅リスト |
 | phase_flow_v4_reorder_proposal.md | 文書 | ⚠️ どこからも参照されていない | phase_flow_v4 改善案 — 月 $1,900 到達のための 4 箇所改訂 |
 | phase_flow_v4_with_recovery.md | 文書 | — | V4 学習フロー (Phase ごとの学習内容が主役・分かりやすく版) |
 | priority_rebuild.md | 文書 | — | Priority ゼロから再構築フェーズ (🧊 凍結・旧 framework) |
@@ -225,7 +228,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | regime_research.md | 文書 | — | レジーム判定研究（🧊 **凍結中** 2026-05-11〜） |
 | regime_trial_log.md | 文書 | — | レジーム試作版 詳細ログ |
 | seven_step_framework.md | 文書 | — | 7 工程フレーム全体構成 (= ⛔ 破綻判定済・参照用) |
-| signal_ledger.md | 文書 | ⚠️ どこからも参照されていない | シグナル候補検証台帳（唯一の正本） |
+| signal_ledger.md | 文書 | — | シグナル候補検証台帳（唯一の正本） |
 | step1_regime_design.md | 文書 | — | 工程 1 (相場の状態判定・レジーム判定) 詳細設計書 |
 | technical_analysis_knowledge_base.md | 文書 | — | テクニカル分析ナレッジベース (辞典レベル) |
 | trade_analysis_methods_kb.md | 文書 | — | トレード結果データ分析方法 ナレッジベース |
@@ -306,9 +309,6 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 
 どこからも名前を参照されていない文書です。役目を終えたか、書いたまま忘れられたものです。
 
-- e37_improvement_milestones.md
-- engine_tuner_milestones.md
-- exit_opt_command_design.md
 - session_log_20260610.md
 - session_log_20260610_pm.md
 - session_log_20260611.md
@@ -317,11 +317,8 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 - session_log_20260711.md
 - feedback_grid_conditions.md
 - handoff_to_web_claude_v4_phase1_7a.md
-- indicator_thresholds_outline.md
 - learning_design_v3.md
-- phase8_supervised_tool_survey.md
 - phase_flow_v4_reorder_proposal.md
-- signal_ledger.md
 - v10_experiments.md
 
 ## 足すときの決まり

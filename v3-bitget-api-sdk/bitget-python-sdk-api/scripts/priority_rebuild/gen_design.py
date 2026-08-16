@@ -29,6 +29,15 @@ RATCHET = SDK / ".claude" / "ratchet"
 REQ_JSON = RATCHET / "e38_requirements.json"
 LOGIC_JSON = HERE.parent / "e38_logics.json"
 FLOW_MD = RATCHET / "e38_flow.md"
+# ★GENERATES＝この道具が作る文書の名乗り（2026-08-16 新設・まこさん決定 A）。
+#   なぜ要るか＝名前で数えると必ず漏れる（出力先の変数名が道具ごとにバラバラで、
+#   読むファイルと作るファイルが同じ形で並んでいる＝外から見分けられない）。
+#   だから道具の側に名乗らせる。集める道具＝gen_docmap.py。
+#   形＝(リポジトリの根からのパス, "まるごと" か "一部の節")。
+GENERATES = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e38_design.md", "まるごと"),
+]
+
 OUT_MD = RATCHET / "e38_design.md"
 WORKLOG = REPO / ".claude" / "state" / "session_worklog_20260723.md"
 SEARCH_PY = HERE.parent / "engine_search_e37.py"
