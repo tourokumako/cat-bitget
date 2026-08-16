@@ -1,4 +1,4 @@
-<!-- FILEMAP_HASH=08eb439ac525cd1d -->
+<!-- FILEMAP_HASH=d0d963007ea5f64d -->
 # filemap.md — 何がどこにあるかの地図（gen_filemap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。ファイルの一覧も説明も、実体から機械で取っています。
@@ -38,7 +38,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | まこさんが何を決めたか知りたい | `decisions.md` | 決定の一覧。提案の前に必ず読む |
 | 次に何をするか知りたい | `next_step.md` | 次セッションの起点。セッション開始で全文表示される |
 
-## 全部の一覧（231 件）
+## 全部の一覧（233 件）
 
 ### 売買と判定のスクリプト — scripts/priority_rebuild（82 件）
 
@@ -135,7 +135,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | e37.py | 戦略の実装 | 探索器が名前で読む | e37 — E37 の接続ファイル（engine_tuner が読む・要件 R4／R1・まこさん承認 2026-07-27） |
 | e38.py | 戦略の実装 | 探索器が名前で読む | e38 — E38 の接続ファイル（engine_tuner が読む・要件 R4・まこさん承認 2026-07-27） |
 
-### 作業の正本・記録 — .claude/ratchet（38 件）
+### 作業の正本・記録 — .claude/ratchet（39 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
@@ -160,6 +160,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | entry_exit_matrix.md | 文書 | — | Entry×Exit ロジック 網羅マトリクス（★全戦略共通） |
 | exit_families.md | 文書 | — | 出口の枝の表（許可の一覧・全自動生成・CC の手書きの行ゼロ） |
 | exit_opt_command_design.md | 文書 | — | Exit 最適化フローのスラッシュコマンド化【設計のみ・実装はまだ】 |
+| improvement_arc.md | 文書 | — | 改善の経緯（機械生成・手で書き換えない） |
 | ledger.md | 文書 | — | ratchet ledger — PDCA 全記録（結果 / 原因究明 / 改善 / 修正 をすべて残す） |
 | materials.md | 文書 | — | 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ） |
 | observe_diag_manual.md | 文書 | — | observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止） |
@@ -235,7 +236,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | trade_methods_study.md | 文書 | — | トレード手法 → ML設計ノート（最低限・都度深掘り前提） |
 | v10_experiments.md | 文書 | ⚠️ どこからも参照されていない | （見出しが無い） |
 
-### 物理強制の hook — .claude/hooks（61 件）
+### 物理強制の hook — .claude/hooks（62 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
@@ -262,6 +263,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | enforce_search_quality.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on WebSearch |
 | enforce_signal_table_gate.sh | hook（条件を満たすまで手を動かせなくする） | — | G1【Critical・safety＝fast-mode でも有効】（CP4 監査・まこさん GO 2026-08-06） |
 | enforce_strategy_anchor.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-04 まこさん承認で新設） |
+| enforce_todo_declaration.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit／MultiEdit／Bash（2026-08-16 まこさん承認「件２はOK」・新設・safety hook） |
 | enforce_worklog_on_experiment.sh | hook（条件を満たすまで手を動かせなくする） | — | Stop（2026-07-16 まこさん指示・fast-mode 専用ガード／2026-07-17 まこさん承認で B/C 拡張） |
 | forbid_fixed_value_tuning.sh | hook（条件を満たすまで手を動かせなくする） | — | 固定値調整の物理禁止（まこさん命令 2026-06-12・L-261/E20 再演防止） |
 | force_read_ml_design.sh | hook（条件を満たすまで手を動かせなくする） | — | SessionStart hook: 必読の「警告・宣言義務」と、auto-load 対象外の小片だけを注入する。 |

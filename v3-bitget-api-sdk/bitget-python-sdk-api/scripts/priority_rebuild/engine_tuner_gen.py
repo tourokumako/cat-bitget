@@ -1988,39 +1988,59 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
     return slots
 
 
+def _slot_ref(recipe: dict, path: str):
+    """スロットのパスを辿って (その値を持つ入れ物, 鍵) を返す。
+
+    ★読むときも書くときも、この1か所だけを使う（辿り方を2か所に分けて持たない）。
+      2026-08-16（段A の A-7）に、前後の値を読む必要が出たので apply_slots から切り出した。
+    """
+    import re as _re
+    toks = path.split(".")
+    cur: object = None
+    i = 0
+    while i < len(toks):
+        tk = toks[i]
+        m = _re.match(r"^([^\[\]]+)(?:\[(\d+)\])?$", tk)
+        name, idx = m.group(1), m.group(2)
+        last = (i == len(toks) - 1)
+        if i == 0:
+            if name == "entry":
+                cur = recipe["entry"]["connective"]
+            elif name == "exits":
+                cur = recipe["exits"][int(idx)]
+            else:
+                raise SystemExit(f"[歩4 エラー] スロットのパスの根が不明: {path}")
+            i += 1
+            continue
+        if name == "fire":
+            conds, _d = ex._walk(cur["fire"])              # _walk は参照を返す＝直接書ける
+            cur = conds[int(idx)]
+            i += 1
+            continue
+        if last:
+            return cur, name
+        cur = cur[name] if idx is None else cur[name][int(idx)]
+        i += 1
+    raise SystemExit(f"[歩4 エラー] スロットのパスを辿りきれない: {path}")
+
+
 def apply_slots(recipe: dict, choices: dict[str, object]) -> dict:
     """スロットのパスに選んだ値を書き込んだレシピの複製を返す（構造は動かさない）。"""
-    import re as _re
     r = copy.deepcopy(recipe)
     for path, val in choices.items():
-        toks = path.split(".")
-        cur: object = None
-        i = 0
-        while i < len(toks):
-            tk = toks[i]
-            m = _re.match(r"^([^\[\]]+)(?:\[(\d+)\])?$", tk)
-            name, idx = m.group(1), m.group(2)
-            last = (i == len(toks) - 1)
-            if i == 0:
-                if name == "entry":
-                    cur = r["entry"]["connective"]
-                elif name == "exits":
-                    cur = r["exits"][int(idx)]
-                else:
-                    raise SystemExit(f"[歩4 エラー] スロットのパスの根が不明: {path}")
-                i += 1
-                continue
-            if name == "fire":
-                conds, _d = ex._walk(cur["fire"])          # _walk は参照を返す＝直接書ける
-                cur = conds[int(idx)]
-                i += 1
-                continue
-            if last:
-                cur[name] = val
-                break
-            cur = cur[name] if idx is None else cur[name][int(idx)]
-            i += 1
+        holder, key = _slot_ref(r, path)
+        holder[key] = val
     return r
+
+
+def read_slots(recipe: dict, slots: list[tuple[str, dict]]) -> dict[str, object]:
+    """いまレシピに入っている『動かせる値』を読み出す（B8＝選んだ値の前後・段A の A-7）。"""
+    out: dict[str, object] = {}
+    for path, _spec in slots:
+        holder, key = _slot_ref(recipe, path)
+        if isinstance(holder, dict) and key in holder:
+            out[path] = holder[key]
+    return out
 
 
 # ══ 本体＝2段サンプリング ═══════════════════════════════════════════════════════════════
@@ -2312,9 +2332,36 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
         bands = None
         if base_trades is not None and atr_edges:
             bands = tj.atr_bands(base_trades, rs_j["t"], atr_edges)
+        # ★B8＝選んだ値の前後（段A の A-7・2026-08-16 新設）。値を1刻みだけ動かして走らせ、
+        #   net が崩れないかを見る。崩れるならその値はまぐれの疑い。
+        #   前後の点は値スロットの宣言から機械で作る（CC は数字を作らない）。
+        #   ★線（どれだけ落ちてよいか）が設定に無いあいだは1本も走らせない。
+        neighbors = None
+        if (rules or {}).get("neighbor_drop_max") is not None:
+            _slots = value_slots(best_struct, limits)
+            _cur = read_slots(best_struct, _slots)
+            _pts, _skp = tj.neighbor_points(dict(_slots), _cur, rules)
+            print("\n[B8 選んだ値の前後（段A の A-7）＝1刻み動かしても net が崩れないかを見る]")
+            for _nm, _why in _skp:
+                print(f"  － {_nm}: 作らなかった（{_why}）")
+            neighbors = []
+            for _p in _pts:
+                # ★囲いを使う＝前後の1点が拒否されても走行を丸ごと止めない（まこさん指示 2026-08-16）。
+                _r, _why = run_trial_guarded(df2, apply_slots(best_struct, {_p["name"]: _p["value"]}),
+                                             qtable, judge, start, end)
+                if _r is None:
+                    print(f"  {_p['name']}{_p['dir']}: {_p['note']} → 走らせられなかった（{_why}）")
+                    continue
+                neighbors.append({**_p, "net": float(_r["total"]), "n": int(_r["n"]),
+                                  "per_day": float(_r["per_day"])})
+                print(f"  {_p['name']}{_p['dir']}: {_p['note']} → net ${_r['total']:+,.0f}"
+                      f" / {_r['n']}玉 / {_r['per_day']:.2f}件/日")
+            print(f"  ＝前後 {len(neighbors)} 点を走らせた。★この {len(neighbors)} 本は"
+                  "累積の試行数に足していない（値を選ぶ走行ではなく、選び終わった値を確かめる走行のため）。"
+                  "★前後のほうが net が高くても、最良の構造は選び直さない。")
         verdict = tj.print_judgement(base, rs_j, rc_j, min_per_day, stats, len(kept),
                                      rules=rules, rfloor=rfloor, trials=trials1 + trials2,
-                                     stage_bests=None, bands=bands,
+                                     stage_bests=None, bands=bands, neighbors=neighbors,
                                      save_tag=f"gen_{tag or 'run'}",
                                      save_note=f"新しい器（engine_tuner_gen）／構造 #{best_rec['idx']}"
                                                f"／第1段 {trials1} 本・第2段 {trials2} 本／目的 {purpose}")
@@ -3462,6 +3509,60 @@ def selftest() -> int:
                    "（確認窓の1走の2か所だけのはず）")
     ng += [f"T20: {x}" for x in t20]
 
+    # ══ T21 選んだ値の前後（段A の A-7・2026-08-16 新設・B8 の材料）═══════════════════════
+    #   何を守るか＝「選んだ値の1刻み前と1刻み後」を、設定ファイルの宣言から機械で作れること。
+    #   ①レシピの中の いまの値を読める（read_slots）＝書く側（apply_slots）と同じ道を通る
+    #   ②読んだ値を書き戻すと、そのまま同じ値が読み出せる（往復で崩れない）
+    #   ③前後の点が実際に作られ、動かした値だけが変わる（ほかの値は1つも動かない）
+    #   ④範囲の外は作らない・メニューは対象外（理由つきで残る）＝tuner_judgement 側の番人 ⑲㉒ と対
+    t21: list[str] = []
+    import tuner_judgement as _tj21
+    _lm21 = dict(KENSHU_LIMITS)
+    _lm21["quantile_range"] = json.loads(LIMITS_PATH.read_text(encoding="utf-8"))["quantile_range"]
+    _lm21.pop("quantile_grid", None)
+    _st21 = None
+    for _i in range(60):
+        try:
+            _st21 = sample_structure(np.random.default_rng([21, 5, _i]), _lm21, pool,
+                                     tfs_small, side="SHORT", logic_id="S3")
+            break
+        except SampleError:
+            continue
+    if _st21 is None:
+        t21.append("検収に使う案を1本も作れなかった")
+    else:
+        _sl21 = value_slots(_st21, _lm21)
+        _cur21 = read_slots(_st21, _sl21)
+        if len(_cur21) != len(_sl21):
+            t21.append(f"値スロット {len(_sl21)} 件のうち {len(_cur21)} 件しか読めない（read_slots）")
+        # ② 往復＝読んだ値をそのまま書き戻しても同じものが読める
+        if read_slots(apply_slots(_st21, _cur21), _sl21) != _cur21:
+            t21.append("読んだ値を書き戻すと別の値になる（read_slots と apply_slots が食い違う）")
+        # ③ 前後の点＝動かした値だけが変わる
+        _pt21, _sk21 = _tj21.neighbor_points(dict(_sl21), _cur21, {})
+        if not _pt21:
+            t21.append(f"前後の点が1つも作れない（スロット {len(_sl21)} 件・理由 {dict(_sk21)}）")
+        for _p in _pt21[:5]:
+            _after = read_slots(apply_slots(_st21, {_p["name"]: _p["value"]}), _sl21)
+            _moved = {k for k in _cur21 if _after.get(k) != _cur21[k]}
+            if _moved != {_p["name"]}:
+                t21.append(f"{_p['name']}{_p['dir']} を動かしたら、ほかの値まで動いた（{sorted(_moved)}）")
+                break
+            if _after[_p["name"]] != _p["value"]:
+                t21.append(f"{_p['name']}{_p['dir']} の値が書き込まれていない")
+                break
+        # ④ 範囲の外は作らない（メタ確認＝わざと1点しか無い範囲にすると前後が0点になる）
+        _sl21b = [(p, ({**s, "lo": s["hi"]} if s.get("kind") in ("int", "q") else s))
+                  for p, s in _sl21]
+        _pt21b, _ = _tj21.neighbor_points(dict(_sl21b),
+                                          {p: (s["hi"] if s.get("kind") == "int"
+                                               else (f"q{s['hi']}" if s.get("kind") == "q"
+                                                     else _cur21.get(p)))
+                                           for p, s in _sl21b}, {})
+        if _pt21b:
+            t21.append(f"下限＝上限に狭めたのに前後の点が {len(_pt21b)} 点 作られた（範囲を見ていない）")
+    ng += [f"T21: {x}" for x in t21]
+
     print("=" * 80)
     print("engine_tuner_gen 自己検査（合成データのみ・実データの試行ゼロ・累積試行の記録なし）")
     print("=" * 80)
@@ -3507,6 +3608,10 @@ def selftest() -> int:
           f" 理由 {reject_code(_w20)} で落として先へ進む ／ 走れた案は落とさない（止めすぎない）"
           f" ／ 拒否でない例外（ValueError）は握りつぶさず上へ投げる（メタ確認）"
           f" ／ 走行の本体の囲い {_guard20} か所・囲い無し {_bare20} か所（確認窓の1走だけ）")
+    print(f"  T21 選んだ値の前後（段A の A-7・B8 の材料）: 値スロット {len(_sl21) if _st21 else 0} 件を"
+          f" 読み書きの往復で確認 ／ 前後の点 {len(_pt21) if _st21 else 0} 点"
+          f"（動かした値だけが変わる） ／ 下限＝上限に狭めると 0 点になる（メタ確認）"
+          f" ／ 作らなかった理由 {len(_sk21) if _st21 else 0} 件は画面に残す")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")

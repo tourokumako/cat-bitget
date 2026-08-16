@@ -68,6 +68,7 @@ from tuner_adapters import available, load_adapter   # 戦略ごとの接続フ�
 #   理由＝作り直し中の新しい器（engine_tuner_gen.py）にも同じ判定を使わせるため。判定が1箇所に無いと、
 #   同じ設定に対して古い器と新しい器で別の合否が出る。引っ越しの恒等＝tuner_judgement.py --identity
 #   （判定表 md5 ccbfe65aedbdf639a120becaa45304a6 ／ ATR%帯 md5 ab1f16299bf309d0b580f7749df6cc84）。
+import tuner_judgement                                           # B8＝選んだ値の前後（段A の A-7）
 from tuner_judgement import assert_role_floor                    # B3 の関門＝役割の下限で止める
 from tuner_judgement import atr_bands as _atr_bands              # B4＝ATR% の帯ごとの土台比較
 from tuner_judgement import print_judgement as _print_judgement  # 判定の1枚表（A/B/C）
@@ -384,6 +385,46 @@ def _print_stats(strategy: str, logic: str, results: list, best_num: int) -> Non
     return r
 
 
+def _neighbor_runs(ad, df_s, a, space_decl: dict, best: dict, bank: dict, rules: dict,
+                   exit_keys, fixed_ep: dict, fixed_xp: dict) -> list | None:
+    """B8＝選んだ値の前後を1刻みずつ動かして走らせる（段A の A-7・2026-08-16 新設）。
+
+    ★何のためか。engine_tuner が「RSI の期間は 12 が一番よい」と選んだとき、11 や 13 で走らせて
+      net がほとんど変わらなければ、その 12 は本当に効いている。11 や 13 にした途端に崩れるなら、
+      その 12 はたまたまその期間に当たっただけ＝まぐれ。それを判定表の B8 に出す。
+
+    ★前後の点は CC が決めない。設定ファイルの宣言から機械で作る（tuner_judgement.neighbor_points）。
+    ★線（net がどれだけ落ちてよいか）が設定に無いあいだは、1本も走らせない（無駄に回さない）。
+    ★★ここで走らせた分は、累積の試行数に足さない。理由＝これは「値を選ぶ走行」ではなく、
+      既に選び終わった値を確かめる走行だから。★best は動かさない（前後のほうが net が高くても
+      選び直さない）＝この走行から値を選べない形にしてある。
+    """
+    if rules.get("neighbor_drop_max") is None:
+        return None
+    pts, skipped = tuner_judgement.neighbor_points(space_decl, best, rules, bank)
+    print("\n[B8 選んだ値の前後（段A の A-7）＝1刻み動かしても net が崩れないかを見る]")
+    for name, why in skipped:
+        print(f"  － {name}: 作らなかった（{why}）")
+    if not pts:
+        print("  ⚠️ 前後の点を1つも作れなかった＝B8 は判定不能になる（上の理由を見ること）")
+        return []
+    out = []
+    for p in pts:
+        bp2 = {**best, p["name"]: p["value"]}
+        ep2 = {**fixed_ep, **{k: v for k, v in bp2.items() if k not in exit_keys}}
+        xp2 = {**fixed_xp, **{k: v for k, v in bp2.items() if k in exit_keys}}
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            r = _run_window(ad, df_s, a.logic, ep2, xp2, SEARCH_START, SEARCH_END, a.minimize)
+        out.append({**p, "net": float(r["total"]), "n": int(r["n"]), "per_day": float(r["per_day"])})
+        print(f"  {p['name']}{p['dir']}: {p['note']} → net ${r['total']:+,.0f}"
+              f" / {r['n']}玉 / {r['per_day']:.2f}件/日")
+    print(f"  ＝前後 {len(out)} 点を走らせた。★この {len(out)} 本は累積の試行数に足していない"
+          "（値を選ぶ走行ではなく、選び終わった値を確かめる走行のため）。"
+          "★前後のほうが net が高くても、best は選び直さない。")
+    return out
+
+
 def _resolve_space(space_decl: dict, bank: dict) -> dict:
     """探索範囲の宣言 → Optuna 用の実レンジ（quantile は実行時実値・印字して透明化）。"""
     out = {}
@@ -540,7 +581,8 @@ def main() -> None:
     _print_regime(ad, a.logic, df_s)
 
     bank = ad.series_bank(df_s[df_s["ts"] >= SEARCH_START])
-    space = _resolve_space(ad.space(a.logic), bank)
+    space_decl = ad.space(a.logic)     # ★宣言そのまま（B8＝選んだ値の前後を作るのに要る・段A の A-7）
+    space = _resolve_space(space_decl, bank)
     for n, r in space.items():
         if r[0] == "float":
             print(f"[範囲] {n}: float {r[1]:.6g} 〜 {r[2]:.6g}")
@@ -710,11 +752,18 @@ def main() -> None:
         print("\n[B4 ATR% の帯ごとの比較（静かな相場だけで稼いで荒い相場で損を出す形を弾く）]")
         for lab, b, c, ok in bands:
             print(f"  ATR% {lab:>10} : 土台 ${b:+,.0f} → 候補 ${c:+,.0f}" + ("  ✅" if ok else "  ❌"))
+    # ★B8＝選んだ値の前後でも net が崩れないか（段A の A-7・2026-08-16 新設）。
+    #   選んだ値を1刻みだけ動かして走らせ、net がほとんど変わらないかを見る。
+    #   崩れるなら、その値はその期間にたまたま当たっただけ＝まぐれの疑い。
+    #   ★前後の点は設定ファイルの宣言から機械で作る（tuner_judgement.neighbor_points）＝CC は数字を作らない。
+    #   ★線（どれだけ落ちてよいか）が設定に無いあいだは走らせない＝判定表は「まこさん待ち」と出る。
+    neighbors = _neighbor_runs(ad, df_s, a, space_decl, bp, bank, rules,
+                               exit_keys, fixed_ep, fixed_xp)
     # ★判定表はファイルにも残す（まこさん指示 2026-08-01）＝画面だけだと走らせるたびに流れて消え、
     #   後から検収の証拠を見返せないため。置き場所は results/priority_rebuild/ratchet/judgement/。
     _print_judgement(base, rs, rc, min_per_day, stats, len(kept),
                      rules=rules, rfloor=rfloor, trials=a.trials,
-                     stage_bests=stage_bests, bands=bands,
+                     stage_bests=stage_bests, bands=bands, neighbors=neighbors,
                      save_tag=f"{a.strategy}_{a.logic}",
                      save_note=f"試行 {a.trials} ／ seed {a.seed}"
                                + (f" ／ 最小化 {a.minimize}" if a.minimize else "")

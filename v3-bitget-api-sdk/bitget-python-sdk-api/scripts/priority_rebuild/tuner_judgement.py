@@ -42,7 +42,23 @@
   B4 ATR% の帯     全帯で土台を悪化させないか。土台が無ければ判定不能
   B5 DSR           試した回数で割り引いた成績
   B6 PBO           過剰なあてはめの確率
+  B7 枠の占有      予算 0.12 BTC をどれだけ使ったか（合否には使わない）
+  B8 値の前後      選んだ値を1刻み動かしても net が崩れないか（段A の A-7・2026-08-16 新設）
   C  目標額        この道具では判定しない（統合の段で合算）
+
+★B8＝選んだ値の前後（段A の A-7・まこさん決定 2026-08-09 逐語「２と３はOK」）
+--------------------------------------------------------------------------
+engine_tuner が「RSI の期間は 12 が一番よい」と選んだとする。11 や 13 で走らせて net がほとんど
+変わらなければ、その 12 は本当に効いている。11 や 13 にした途端に崩れるなら、その 12 はたまたま
+その期間に当たっただけ＝まぐれ。**「前後でも成績が変わらないか」を見る行。**
+
+★「前後」を CC が決めない。設定ファイルの宣言から機械で作る（neighbor_points）。
+   int      … 選んだ値 ± step（step は設定ファイルの宣言）。範囲の外に出たら片側だけ。
+   quantile … 選んだ分位 ± 1点（q37 → q36・q38）。両端は宣言の q_lo・q_hi で止める。
+   float    … 刻みが宣言に無い＝まこさん待ち（stop_rules の neighbor_step_frac）。
+   cat      … 対象外。メニューには前後という順番が無い（玉の持ち方など）。
+★合格の線（net がどれだけ落ちてよいか）もまこさんが決める＝stop_rules の neighbor_drop_max。
+   決まるまでは「値がまこさん待ち」と出す。CC は線を引かない。
 
 守る制約
 --------------------------------------------------------------------------
@@ -334,6 +350,144 @@ def _row_b4(base, bands, sr: dict) -> tuple[str, str, str]:
     return UNKNOWN, label, "— 判定不能（帯ごとの比較が出ていない）"
 
 
+# ══ B8 の材料＝選んだ値の「前後」の点を、設定ファイルの宣言から機械で作る ═══════════════
+def neighbor_points(space_decl: dict, best: dict, rules: dict | None = None,
+                    bank: dict | None = None) -> tuple[list[dict], list[tuple[str, str]]]:
+    """選んだ値の1刻み前と1刻み後の点を作る（段A の A-7・2026-08-16 新設）。
+
+    ★CC は数字を1つも作らない。刻みは設定ファイルの宣言から読む。
+
+      int      … 選んだ値 ± step（step は宣言の値。無ければ 1）。範囲の外に出た側は作らない。
+      quantile … 選んだ分位 ± 1点。いまの値が系列の何分位かを数え、±1 した分位の値に戻す。
+                 両端は宣言の q_lo・q_hi で止める。系列（bank）が渡されないと作れない。
+      q        … 同じく分位 ± 1点。こちらは新しい方の器（engine_tuner_gen）の書き方で、
+                 レシピの中の値が "q37" という文字列。宣言の lo・hi は整数の分位。
+      float    … 刻みが宣言に無い。まこさんが stop_rules の neighbor_step_frac を決めるまで作らない。
+      cat      … 対象外。メニューには前後という順番が無い（玉の持ち方・つなぎ方など）。
+
+    ★宣言の型の名前は2通りある。古い方の器は "type"、新しい方の器は "kind"。両方 読む
+      （前後の作り方を2か所に分けて持たないため）。
+
+    返すもの
+      points  … [{"name": 値の名前, "dir": "-" か "+", "value": 動かした値, "note": 説明}, ...]
+      skipped … [(値の名前, 作れなかった理由), ...] ＝黙って落とさず必ず理由を出す。
+    """
+    sr = rules or {}
+    frac = sr.get("neighbor_step_frac")
+    points: list[dict] = []
+    skipped: list[tuple[str, str]] = []
+
+    for name, d in (space_decl or {}).items():
+        if name not in best:
+            skipped.append((name, "この試行で使われていない値"))
+            continue
+        cur = best[name]
+        # ★2つの器で宣言の書き方が違う。古い方（engine_tuner）は "type"、新しい方（engine_tuner_gen）は
+        #   "kind"。前後の作り方を2か所に分けて持たないよう、ここで両方 読む。
+        typ = d.get("type") or d.get("kind")
+
+        if typ == "q":
+            # 新しい方の分位＝整数の範囲で、レシピの中の書き方は "q37" という文字列。
+            lo, hi = int(d["lo"]), int(d["hi"])
+            try:
+                q_now = int(str(cur).lstrip("qQ"))
+            except ValueError:
+                skipped.append((name, f"分位の書き方が読めない（{cur}）"))
+                continue
+            for sign, tag in ((-1, "-"), (1, "+")):
+                q = q_now + sign
+                if q < lo or q > hi:
+                    skipped.append((f"{name}{tag}", f"分位 q{lo}〜q{hi} の外（q{q}）＝この側は作らない"))
+                    continue
+                points.append({"name": name, "dir": tag, "value": f"q{q}",
+                               "note": f"q{q_now} → q{q}（分位を1点・宣言 q{lo}〜q{hi}）"})
+
+        elif typ == "int":
+            step = int(d.get("step", 1) or 1)
+            lo, hi = int(d["lo"]), int(d["hi"])
+            for sign, tag in ((-1, "-"), (1, "+")):
+                v = int(cur) + sign * step
+                if v < lo or v > hi:
+                    skipped.append((f"{name}{tag}", f"範囲 {lo}〜{hi} の外（{v}）＝この側は作らない"))
+                    continue
+                points.append({"name": name, "dir": tag, "value": v,
+                               "note": f"{cur} → {v}（刻み {step}・設定ファイルの宣言）"})
+
+        elif typ == "quantile":
+            s = (bank or {}).get(d.get("series"))
+            if s is None:
+                skipped.append((name, f"系列 {d.get('series')} が渡されていないので分位を数えられない"))
+                continue
+            q_lo, q_hi = float(d["q_lo"]) * 100.0, float(d["q_hi"]) * 100.0
+            # いまの値が系列の何分位にいるかを数える（0〜100）
+            q_now = float((s <= float(cur)).mean()) * 100.0
+            for sign, tag in ((-1, "-"), (1, "+")):
+                q = q_now + sign * 1.0
+                if q < q_lo or q > q_hi:
+                    skipped.append((f"{name}{tag}",
+                                    f"分位 {q_lo:g}〜{q_hi:g} の外（{q:.0f}）＝この側は作らない"))
+                    continue
+                v = float(s.quantile(q / 100.0))
+                points.append({"name": name, "dir": tag, "value": v,
+                               "note": f"q{q_now:.0f} → q{q:.0f}（分位を1点・宣言 q{q_lo:g}〜q{q_hi:g}）"})
+
+        elif typ == "float":
+            if frac is None:
+                skipped.append((name, "小数の刻みが宣言に無い＝値がまこさん待ち（neighbor_step_frac）"))
+                continue
+            lo, hi = float(d["lo"]), float(d["hi"])
+            step = (hi - lo) * float(frac)
+            for sign, tag in ((-1, "-"), (1, "+")):
+                v = float(cur) + sign * step
+                if v < lo or v > hi:
+                    skipped.append((f"{name}{tag}", f"範囲 {lo:g}〜{hi:g} の外（{v:g}）＝この側は作らない"))
+                    continue
+                points.append({"name": name, "dir": tag, "value": v,
+                               "note": f"{cur:g} → {v:g}（幅の {float(frac):.1%}・まこさんが決めた割合）"})
+
+        elif typ == "cat":
+            skipped.append((name, "メニュー＝前後という順番が無い（対象外）"))
+        else:
+            skipped.append((name, f"未知の型 {typ}"))
+
+    return points, skipped
+
+
+def _row_b8(rs, neighbors, sr: dict) -> tuple[str, str, str]:
+    """B8＝選んだ値の前後でも net が崩れないか（段A の A-7）。
+
+    neighbors ＝ 走らせた結果のリスト [{"name","dir","value","net","note"}, ...]。
+      渡されなければ判定不能（合格の印は出さない）。
+    線 ＝ sr["neighbor_drop_max"]（net がどれだけ落ちてよいかの割合）。まこさんが決める。
+    """
+    label = "選んだ値の前後でも net が崩れないか"
+    tol = sr.get("neighbor_drop_max")
+    if tol is None:
+        return WAIT, label, "— 値がまこさん待ち（前後で net がどれだけ落ちてよいか＝neighbor_drop_max）"
+    if neighbors is None:
+        return UNKNOWN, label, "— 判定不能（前後の点を走らせた結果が渡されていない）"
+    if not neighbors:
+        return (UNKNOWN, label,
+                "— 判定不能（前後の点を1つも作れなかった。理由は上の探索の出力に出ている）")
+    base = float(rs["total"])
+    if base <= 0:
+        return (UNKNOWN, label,
+                f"— 判定不能（値決め窓の net が ${base:+,.0f}＝0 以下なので、落ち方の割合が出せない）")
+    worst, worst_name = None, None
+    for nb in neighbors:
+        drop = (base - float(nb["net"])) / base            # 正の値＝落ちた ／ 負の値＝増えた
+        if worst is None or drop > worst:
+            worst, worst_name = drop, f"{nb['name']}{nb['dir']}"
+    ok = worst <= float(tol)
+    if worst > 0:
+        how = f"一番きびしい点は {worst_name}／net が {worst:.1%} 落ちた"
+    else:
+        how = f"どの点でも net は落ちていない（一番きびしい {worst_name} でも {-worst:.1%} 増えた）"
+    return ((PASS if ok else FAIL), label,
+            f"前後 {len(neighbors)} 点 ／ {how} ／ 落ちてよい線は {float(tol):.1%}"
+            + ("  ✅" if ok else "  ❌ 1刻み動かすと崩れる＝この値はまぐれの疑い"))
+
+
 def slot_usage(t: pd.DataFrame, start, end) -> dict:
     """予算 0.12 BTC の枠をどれだけ使っているか（監査 4-13・要件 R14・H1）。
 
@@ -441,7 +595,8 @@ def _rows_b5b6(stats: dict | None, n_kept: int) -> list[tuple[str, str, str, str
 def build_rows(base, rs, rc, min_per_day, stats: dict | None, n_kept: int,
                rules: dict | None = None, rfloor: float | None = None,
                trials: int = 0, stage_bests=None,
-               bands: list | None = None) -> list[tuple[str, str, str, str]]:
+               bands: list | None = None,
+               neighbors: list | None = None) -> list[tuple[str, str, str, str]]:
     """判定表の全行を (番号, 見るもの, 結果, 状態) で組み立てる。印字と結論はこの表だけから出す。"""
     sr = rules or {}
     st, lab, txt = _row_a1(sr, stage_bests)
@@ -456,6 +611,8 @@ def build_rows(base, rs, rc, min_per_day, stats: dict | None, n_kept: int,
     rows += _rows_b5b6(stats, n_kept)
     st, lab, txt = _row_slots(base, rs, sr)
     rows.append(("B7", lab, txt, st))
+    st, lab, txt = _row_b8(rs, neighbors, sr)          # ★段A の A-7（2026-08-16 新設）
+    rows.append(("B8", lab, txt, st))
     st, lab, txt = _row_goal(rs, sr)
     rows.append(("参考", lab, txt, st))
     rows.append(("C", "目標額（月 net $1,900）に届いたか",
@@ -535,7 +692,8 @@ def save_judgement(text: str, tag: str, verdict: str, note: str = "",
 def print_judgement(base, rs, rc, min_per_day, stats: dict | None, n_kept: int,
                     rules: dict | None = None, rfloor: float | None = None,
                     trials: int = 0, stage_bests=None,
-                    bands: list | None = None, save_tag: str | None = None,
+                    bands: list | None = None, neighbors: list | None = None,
+                    save_tag: str | None = None,
                     save_note: str = "") -> str:
     """判定の1枚表を印字し、結論の種別を返す。save_tag を渡すとファイルにも残す。
 
@@ -545,7 +703,7 @@ def print_judgement(base, rs, rc, min_per_day, stats: dict | None, n_kept: int,
     """
     rows = build_rows(base, rs, rc, min_per_day, stats, n_kept,
                       rules=rules, rfloor=rfloor, trials=trials,
-                      stage_bests=stage_bests, bands=bands)
+                      stage_bests=stage_bests, bands=bands, neighbors=neighbors)
     verdict, text = render_judgement(rows)
     print(text)
     if save_tag:
@@ -612,6 +770,38 @@ def _cases() -> list[tuple[str, dict]]:
               rules={"delta_net": 20.0, "n_max": 100, "atr_band_edges": edges,
                      "slot_max_btc": 0.006},
               rfloor=5.0, trials=150, stage_bests=[100.0, 112.0, 118.0], bands=bands_ok)),
+        ("⑪ ★段A の A-7＝前後を動かしても net がほとんど変わらない＝B8 合格",
+         dict(base=base_a, rs=rs_a, rc=rc_a, min_per_day=5.0, stats=stats_ok, n_kept=90,
+              rules={"delta_net": 20.0, "n_max": 100, "atr_band_edges": edges,
+                     "neighbor_drop_max": 0.30},
+              rfloor=5.0, trials=150, stage_bests=[100.0, 112.0, 118.0], bands=bands_ok,
+              neighbors=_nb_stable())),
+        ("⑫ ★段A の A-7＝前後を1刻み動かすと net が崩れる＝B8 不合格（まぐれの疑い）",
+         dict(base=base_a, rs=rs_a, rc=rc_a, min_per_day=5.0, stats=stats_ok, n_kept=90,
+              rules={"delta_net": 20.0, "n_max": 100, "atr_band_edges": edges,
+                     "neighbor_drop_max": 0.30},
+              rfloor=5.0, trials=150, stage_bests=[100.0, 112.0, 118.0], bands=bands_ok,
+              neighbors=_nb_fragile())),
+    ]
+
+
+def _nb_stable() -> list[dict]:
+    """前後を動かしても net がほとんど変わらない例（rs_a の net 1234.5 に対して最大 -8%）。"""
+    return [
+        {"name": "rsi_period", "dir": "-", "value": 11, "net": 1180.0, "note": "12 → 11"},
+        {"name": "rsi_period", "dir": "+", "value": 13, "net": 1200.0, "note": "12 → 13"},
+        {"name": "tmax_bars", "dir": "-", "value": 6, "net": 1135.0, "note": "7 → 6"},
+        {"name": "tmax_bars", "dir": "+", "value": 8, "net": 1210.0, "note": "7 → 8"},
+    ]
+
+
+def _nb_fragile() -> list[dict]:
+    """1刻み動かすと崩れる例（-59%）＝選んだ値がその期間にたまたま当たっただけの形。"""
+    return [
+        {"name": "rsi_period", "dir": "-", "value": 11, "net": 500.0, "note": "12 → 11"},
+        {"name": "rsi_period", "dir": "+", "value": 13, "net": 1200.0, "note": "12 → 13"},
+        {"name": "tmax_bars", "dir": "-", "value": 6, "net": 1135.0, "note": "7 → 6"},
+        {"name": "tmax_bars", "dir": "+", "value": 8, "net": 1210.0, "note": "7 → 8"},
     ]
 
 
@@ -697,6 +887,17 @@ STEP2_BANDS_MD5: str | None = "ab1f16299bf309d0b580f7749df6cc84"
 STEP3_TABLE_MD5: str | None = "ccd550d57277dd3feed908e37426dc3c"
 STEP3_BANDS_MD5: str | None = "ab1f16299bf309d0b580f7749df6cc84"
 
+#   STEP4＝段A の A-7（2026-08-16・まこさん OK）。判定表の md5 が STEP3 から動いた理由は3つある。
+#     理由1＝B8「選んだ値の前後でも net が崩れないか」の行を新設した（段A の A-7 の本体）。
+#     理由2＝検収に使うケースを10個から12個へ増やした（⑪前後が安定＝合格 ／ ⑫前後で崩れる＝不合格）。
+#     理由3＝番人の kw に前後の線と前後の結果を足した（足さないと B8 が「まこさん待ち」で止まり、
+#            ⑤⑫⑬ が本来見たい合格の分岐に届かないため）。
+#   ★正直に＝md5 は「意図しない変更が入った」を後から見つける道具であって、A-7 が正しく入った証拠
+#     ではない。証拠は番人の ⑭〜㉑（8件）と、--selftest が印字する表そのもの。
+#   ATR% 帯の md5 は第1段からここまで一度も動いていない＝帯の計算に触れていないことの機械的な証拠。
+STEP4_TABLE_MD5: str | None = "2e4c1626173f26c6271c27d109251204"
+STEP4_BANDS_MD5: str | None = "ab1f16299bf309d0b580f7749df6cc84"
+
 
 def run_identity() -> int:
     """いまの判定表の md5 を出し、記録した基準と突き合わせる。engine_tuner.py の配線も確かめる。"""
@@ -725,15 +926,18 @@ def run_identity() -> int:
     elif h_tbl == STEP2_TABLE_MD5:
         ng += 1
         print(f"❌ [判定表] 第2段 {STEP2_TABLE_MD5} に戻っている＝窓の分離と土台なしの合格が消えている")
-    if STEP3_TABLE_MD5 is None:
-        print("⚠️ STEP3_TABLE_MD5 が未記入。上の判定表 md5 をこのファイルへ書き込むこと"
-              "（以後この値が動いたら、また意味が変わった証拠になる）。")
-    elif h_tbl != STEP3_TABLE_MD5:
+    elif h_tbl == STEP3_TABLE_MD5:
         ng += 1
-        print(f"❌ [判定表] 記録した第3段 {STEP3_TABLE_MD5} と違う＝意図しない変更が入っている")
+        print(f"❌ [判定表] 第3段 {STEP3_TABLE_MD5} に戻っている＝段A の A-7（B8 選んだ値の前後）が消えている")
+    if STEP4_TABLE_MD5 is None:
+        print("⚠️ STEP4_TABLE_MD5 が未記入。上の判定表 md5 をこのファイルへ書き込むこと"
+              "（以後この値が動いたら、また意味が変わった証拠になる）。")
+    elif h_tbl != STEP4_TABLE_MD5:
+        ng += 1
+        print(f"❌ [判定表] 記録した第4段 {STEP4_TABLE_MD5} と違う＝意図しない変更が入っている")
     else:
-        print(f"[判定表] 記録した第3段 {STEP3_TABLE_MD5} と一致 → ✅"
-              "（第3段＝窓の分離＋土台なしの合格の新設）")
+        print(f"[判定表] 記録した第4段 {STEP4_TABLE_MD5} と一致 → ✅"
+              "（第4段＝段A の A-7＝B8「選んだ値の前後でも net が崩れないか」の新設）")
 
     # ── engine_tuner.py がこのファイルの判定表を呼んでいるか（案B の配線） ──
     try:
@@ -789,11 +993,15 @@ def _sentinels() -> list[str]:
         pass
 
     # ⑤ 土台なしで他が全部合格でも「これ以上出ない」を出さない（監査 1-3 の穴）
+    # ★B8（段A の A-7）を足したので、合格まで届く道には前後の線と前後の結果が要る。
+    #   足さないと B8 が「まこさん待ち」で止まり、⑤⑫⑬ が本来見たい分岐に届かない。
     kw = dict(base=None, rs=rs, rc=rs, min_per_day=5.0,
               stats={"dsr": {"dsr": 0.99}, "pbo": {"pbo": 0.1}}, n_kept=90,
-              rules={"delta_net": 20.0, "n_max": 100, "atr_band_edges": [1.0]},
+              rules={"delta_net": 20.0, "n_max": 100, "atr_band_edges": [1.0],
+                     "neighbor_drop_max": 0.3},
               rfloor=5.0, trials=150, stage_bests=[1.0, 2.0, 3.0],
-              bands=[("〜1", 1.0, 2.0, True)])
+              bands=[("〜1", 1.0, 2.0, True)],
+              neighbors=[{"name": "x", "dir": "-", "value": 1, "net": 95.0}])
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         verdict = print_judgement(**kw)
@@ -860,6 +1068,80 @@ def _sentinels() -> list[str]:
         v3 = print_judgement(**kw3)
     if v3 == PASS:
         ng.append("⑦ 判定不能（B5・B6）が残っているのに『これ以上出ない』が出る")
+
+    # ══ 段A の A-7＝B8「選んだ値の前後」（2026-08-16 新設）═══════════════════════════
+    rs8 = {"total": 1000.0, "n": 100, "per_day": 8.0}
+    # ⑭ 線が決まっていなければ「まこさん待ち」（CC が線を引かない）
+    if _row_b8(rs8, _nb_stable(), {})[0] != WAIT:
+        ng.append("⑭ B8 の線が未設定なのに『まこさん待ち』にならない＝CC が線を引いている")
+    # ⑮ 前後の結果が渡されなければ判定不能（合格の印を出さない）
+    if _row_b8(rs8, None, {"neighbor_drop_max": 0.3})[0] != UNKNOWN:
+        ng.append("⑮ 前後の結果が無いのに B8 が判定不能にならない")
+    if _row_b8(rs8, [], {"neighbor_drop_max": 0.3})[0] != UNKNOWN:
+        ng.append("⑮ 前後の点が0個なのに B8 が判定不能にならない")
+    # ⑯ わざと崩れる結果を渡すと落ちる／崩れない結果なら通る
+    frag = [{"name": "x", "dir": "-", "value": 1, "net": 400.0}]      # -60%
+    firm = [{"name": "x", "dir": "-", "value": 1, "net": 900.0}]      # -10%
+    if _row_b8(rs8, frag, {"neighbor_drop_max": 0.3})[0] != FAIL:
+        ng.append("⑯ 前後で 60% 落ちているのに B8 が落ちない")
+    if _row_b8(rs8, firm, {"neighbor_drop_max": 0.3})[0] != PASS:
+        ng.append("⑯ 前後で 10% しか落ちていないのに B8 が通らない")
+    # ⑰ net が 0 以下なら割合が出せない＝判定不能（0 割りで嘘の合格を出さない）
+    if _row_b8({"total": 0.0}, firm, {"neighbor_drop_max": 0.3})[0] != UNKNOWN:
+        ng.append("⑰ 値決め窓の net が 0 なのに B8 が判定不能にならない")
+    if _row_b8({"total": -50.0}, firm, {"neighbor_drop_max": 0.3})[0] != UNKNOWN:
+        ng.append("⑰ 値決め窓の net がマイナスなのに B8 が判定不能にならない")
+    # ⑱ B8 が不合格なら結論も合格にならない（集計に入っている）
+    kw8 = dict(kw, base={"search": {"total": 1.0}, "confirm": {"total": 1.0}},
+               rs=rs8, rc=rs8,
+               rules={**kw["rules"], "neighbor_drop_max": 0.3}, neighbors=frag)
+    with contextlib.redirect_stdout(io.StringIO()):
+        v8 = print_judgement(**kw8)
+    if v8 != FAIL:
+        ng.append(f"⑱ B8 が不合格なのに結論が『調整しきれていない』にならない（{v8}）")
+
+    # ⑲ 前後の点は設定ファイルの宣言から作る（CC が数字を作っていないことの確認）
+    decl = {"tmax_bars": {"type": "int", "lo": 1, "hi": 12, "step": 1},
+            "k_bars": {"type": "int", "lo": 6, "hi": 24, "step": 3},
+            "hold": {"type": "cat", "choices": [1, 2]},
+            "sl": {"type": "float", "lo": 0.5, "hi": 2.0}}
+    pts, skp = neighbor_points(decl, {"tmax_bars": 7, "k_bars": 6, "hold": 1, "sl": 1.0}, {})
+    got = {(p["name"], p["dir"], p["value"]) for p in pts}
+    if got != {("tmax_bars", "-", 6), ("tmax_bars", "+", 8), ("k_bars", "+", 9)}:
+        ng.append(f"⑲ 前後の点が宣言どおりに作られていない（{sorted(got)}）")
+    why = dict(skp)
+    if "k_bars-" not in why:
+        ng.append("⑲ 範囲の下端で作れない側が、理由つきで残っていない")
+    if "hold" not in why or "対象外" not in why["hold"]:
+        ng.append("⑲ メニューの値が『対象外』として残っていない")
+    if "sl" not in why or "まこさん待ち" not in why["sl"]:
+        ng.append("⑲ 小数の刻みが『まこさん待ち』として残っていない")
+    # ⑳ 小数の刻みをまこさんが決めれば、前後が作られる
+    pts2, _ = neighbor_points({"sl": {"type": "float", "lo": 0.0, "hi": 2.0}},
+                              {"sl": 1.0}, {"neighbor_step_frac": 0.1})
+    if {round(p["value"], 6) for p in pts2} != {0.8, 1.2}:
+        ng.append(f"⑳ 小数の前後が幅の割合から作られていない（{[p['value'] for p in pts2]}）")
+    # ㉑ 分位は宣言の q_lo〜q_hi の中で1点ずつ動かす（系列から機械で戻す）
+    ser = pd.Series(range(1, 101), dtype=float)
+    pts3, _ = neighbor_points({"th": {"type": "quantile", "series": "s", "q_lo": 0.10, "q_hi": 0.90}},
+                              {"th": 50.0}, {}, bank={"s": ser})
+    if len(pts3) != 2 or not all(p["name"] == "th" for p in pts3):
+        ng.append(f"㉑ 分位の前後が2点 作られていない（{pts3}）")
+    pts4, skp4 = neighbor_points({"th": {"type": "quantile", "series": "s", "q_lo": 0.10, "q_hi": 0.90}},
+                                 {"th": 90.0}, {}, bank={"s": ser})
+    if len(pts4) != 1 or "th+" not in dict(skp4):
+        ng.append(f"㉑ 分位の上端で片側だけにならない（点 {len(pts4)} ／ 理由 {dict(skp4)}）")
+    # ㉒ 新しい方の器の書き方（kind＝int / q / cat・値は "q37" の文字列）も同じ1か所で作れる
+    decl_g = {"a.threshold_q": {"kind": "q", "lo": 10, "hi": 90},
+              "b.n": {"kind": "int", "lo": 2, "hi": 20, "step": 1},
+              "c.mode": {"kind": "cat", "choices": ["x", "y"]}}
+    pts5, skp5 = neighbor_points(decl_g, {"a.threshold_q": "q37", "b.n": 2, "c.mode": "x"}, {})
+    got5 = {(p["name"], p["dir"], p["value"]) for p in pts5}
+    if got5 != {("a.threshold_q", "-", "q36"), ("a.threshold_q", "+", "q38"), ("b.n", "+", 3)}:
+        ng.append(f"㉒ 新しい方の器の宣言から前後が作れていない（{sorted(map(str, got5))}）")
+    why5 = dict(skp5)
+    if "b.n-" not in why5 or "c.mode" not in why5:
+        ng.append(f"㉒ 作れない側とメニューが理由つきで残っていない（{why5}）")
     return ng
 
 
@@ -887,7 +1169,11 @@ def selftest() -> int:
                  "④台帳の実値でも同じ ⑤土台なしで『これ以上出ない』を出さない ⑥段が無いと A1 は判定不能 "
                  "⑦判定不能を数える ⑧土台なしの下限 $0 ⑨参考の行は合否に入らない "
                  "⑩枠の占有の既知答え ⑪枠の占有は既定では合否に入らない "
-                 "⑫土台なしで全部通れば『土台なしの合格』が出る ⑬土台ありで全部通れば『これ以上出ない』が出る")
+                 "⑫土台なしで全部通れば『土台なしの合格』が出る ⑬土台ありで全部通れば『これ以上出ない』が出る "
+                 "／★段A の A-7（B8）＝⑭線が未設定ならまこさん待ち ⑮前後の結果が無ければ判定不能 "
+                 "⑯崩れれば落ちる・崩れなければ通る ⑰net が 0 以下なら判定不能 ⑱B8 の不合格が結論に効く "
+                 "⑲前後の点は宣言から作る（メニューは対象外・小数はまこさん待ち・範囲の端は片側） "
+                 "⑳小数はまこさんが割合を決めれば作られる ㉑分位は q_lo〜q_hi の中で1点ずつ動かす")
     for x in ng:
         lines.append(f"  ❌ {x}")
     if not ng:

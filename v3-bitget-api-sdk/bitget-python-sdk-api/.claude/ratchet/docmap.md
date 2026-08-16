@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=87f19623d718c754 -->
+<!-- DOCMAP_HASH=83834c1c26d63bb5 -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -20,17 +20,17 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 - 名乗っている道具＝**19 本**
 - その道具が作る文書＝**29 本**
-- **検証コマンドを持たない道具＝2 本**（gen_improvement_arc.py／gen_p23_candidates.py）
-- **いま検証が通らない道具＝0 本**
+- **検証コマンドを持たない道具＝1 本**（gen_p23_candidates.py）
+- **いま検証が通らない道具＝1 本**（gen_auditor_brief.py）
 - **名乗っていない道具＝0 本**（明らかな漏れ）／ 26 本（要確認）＝表3
-- 誰にも作られていない文書＝**311 本**（表4＝人が手で書いているもの）
+- 誰にも作られていない文書＝**313 本**（表4＝人が手で書いているもの）
 
 ## 表1｜道具 → 作る文書
 
 | 道具 | 作る文書 | 検証コマンド | いまの結果 |
 |---|---|---|---|
-| `gen_improvement_arc.py` | next_step.md（一部の節） | ❌ なし | — （検証コマンドが無い） |
-| `gen_auditor_brief.py` | auditor_template.md（一部の節） | あり | ✅  |
+| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり | ✅  |
+| `gen_auditor_brief.py` | auditor_template.md（一部の節） | あり | ❌    直し方: python3 scripts/priority_rebuild/gen_auditor_brief.py --write |
 | `gen_cat_requirements.py` | cat_requirements.md（まるごと） | あり | ✅  |
 | `gen_composition_rules.py` | composition_rules.json（まるごと）<br>composition_rules.md（まるごと） | あり | ✅  |
 | `gen_decisions.py` | decisions.md（まるごと） | あり | ✅  |
@@ -53,7 +53,6 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 | 文書 | 作る道具 | 作り方 | 実在 |
 |---|---|---|---|
-| `.claude/state/next_step.md` | `gen_improvement_arc.py` | 一部の節 | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/auditor_template.md` | `gen_auditor_brief.py` | 一部の節 | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/adopted_strategies.md` | `gen_windows.py` | 一部の節 | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/composition_rules.json` | `gen_composition_rules.py` | まるごと | ✅ |
@@ -71,6 +70,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families.md` | `gen_exit_families.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families_approved.txt` | `gen_exit_families.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/filemap.md` | `gen_filemap.py` | まるごと | ✅ |
+| `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/improvement_arc.md` | `gen_improvement_arc.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/materials.json` | `gen_materials.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/materials.md` | `gen_materials.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/observe_diag_manual.md` | `gen_observe_manual.py` | まるごと | ✅ |
@@ -133,7 +133,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## 表4｜誰にも作られていない文書（人が手で書いているもの）
 
-**311 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
+**313 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
 
 <details><summary>全部を開く</summary>
 
@@ -154,11 +154,13 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/state/forward_action.md`
 - `.claude/state/goal_block.md`
 - `.claude/state/interpretation.md`
+- `.claude/state/next_step.md`
 - `.claude/state/next_step_archive_202608.md`
 - `.claude/state/next_step_milestone2.md`
 - `.claude/state/observation_design.md`
 - `.claude/state/read_log.txt`
 - `.claude/state/search_log.txt`
+- `.claude/state/session_todo.md`
 - `.claude/state/session_worklog_20260715.md`
 - `.claude/state/session_worklog_20260716.md`
 - `.claude/state/session_worklog_20260717.md`
