@@ -220,9 +220,9 @@
       },
       {
        "kind": "code",
-       "name": "dsr",
-       "file": "scripts/priority_rebuild/score.py",
-       "how": "合格の条件の後半＝DSR>0.95・PBO<0.5 を確かめる仕組み。★2026-08-08 に旧版 H11 で「✅ score.py」と書かれていたが実物は0件だった件を、ここで機械に毎回 確かめさせる。"
+       "name": "deflated_sharpe_ratio",
+       "file": "scripts/priority_rebuild/dsr_pbo.py",
+       "how": "DSR と PBO の計算の実物（`pbo_cscv` も同居・既知答えテスト＝test_dsr_pbo_known_answers.py）。★score.py はこれを呼ばない＝単発の採点では DSR を判定しない。engine_tuner の経路では tuner_stats.py（試した回数から合格の線＝DSR）と判定表（tuner_judgement）が使う。score.py に合否の自動判定を組み込むかは next_step §6 の38番（まこさん指示 2026-08-08「あとで修正する」）。★2026-08-16 に、実在しない担保（score.py の dsr）を指していた欄を実物へ合わせた（まこさん指示「これも直して」・worklog §47）。"
       }
      ]
     },
@@ -892,7 +892,7 @@
      "body": [
       "- **値 / 内容**: t で取得可能な値のみ・特徴量に未来参照なし・出口判定は次bar以降",
       "- **出典**: CLAUDE §0-1 / 類型A / L-179",
-      "- **強制方法（原文の主張）**: ⬜ **E8b 学習スクリプト(`train_p23_entry_E8b.py`)で assert**＝特徴量 grep(`.shift(-`/`center=True`) + `assert train末<採点始` + embargo（売買記録に出ない＝boundary 違い・審判では不可）"
+      "- **強制方法**: いま動いている守り役＝**`require_leak_annotation` hook**（下の表・穴2つは next_step §6 の39番で別途 塞ぐ）。ML 用の担保（学習スクリプトの assert＝特徴量 grep(`.shift(-`/`center=True`) + `assert train末<採点始` + embargo）の実物は **`scripts/priority_rebuild/archive/train_p23_entry_E8b.py`**＝いまは固定ルール改善中（§8.5）で出番が無いため archive に置いてある。ML を再開するときに現役へ戻す（★2026-08-16 実物に合わせて修正・まこさん指示「以下は直して」・worklog §47）"
      ],
      "sources": [
       {
@@ -905,8 +905,8 @@
       {
        "kind": "code",
        "name": "train_p23_entry_E8b",
-       "file": "scripts/priority_rebuild/train_p23_entry_E8b.py",
-       "how": "★原文が担保先に挙げているファイルは現役の場所に無い。実物は `archive/train_p23_entry_E8b.py` にある（2026-08-08 実測）。"
+       "file": "scripts/priority_rebuild/archive/train_p23_entry_E8b.py",
+       "how": "ML 用の担保の実物（archive）。いまは固定ルール改善中（§8.5）で出番が無い＝ML を再開するときに現役へ戻して使う。★2026-08-16 に、実在しない現役の場所を指していた欄を実物の場所へ合わせた（まこさん指示「以下は直して」・worklog §47）。"
       },
       {
        "kind": "code",
@@ -998,7 +998,7 @@
      "body": [
       "- **値 / 内容**: %/比率/BTC単位のみ・USD絶対値の閾値/ラベル禁止",
       "- **出典**: phase_compliance §-1 / L-179",
-      "- **強制方法（原文の主張）**: ⬜ **E8b 学習スクリプトで assert**＝feature 名 blacklist + pct check（学習側・特徴量は売買記録に出ない）"
+      "- **強制方法**: いま動いている守り役＝**① `warn_usd_absolute_in_e37` hook**（下の表・警告のみ・対象は e37 だけ）**② observe_diag の検査13**＝4本値を 2.0倍・0.5倍にして全材料を計算し直し、ドルの金額のままの列が無いかを実測する（2026-08-16 実測＝535種で 0件）。ML 用の担保（feature 名 blacklist + pct check）の実物は **`scripts/priority_rebuild/archive/train_p23_entry_E8b.py`**（archive・いまは出番なし・★2026-08-16 実物に合わせて修正・worklog §47）"
      ],
      "sources": [
       {
@@ -1011,8 +1011,14 @@
       {
        "kind": "code",
        "name": "train_p23_entry_E8b",
-       "file": "scripts/priority_rebuild/train_p23_entry_E8b.py",
-       "how": "★H2 と同じ担保先。現役の場所に無い。実物は archive にある（2026-08-08 実測）。"
+       "file": "scripts/priority_rebuild/archive/train_p23_entry_E8b.py",
+       "how": "ML 用の担保の実物（archive・H2 と同じファイル）。いまは固定ルール改善中で出番が無い。★2026-08-16 に実物の場所へ合わせた（まこさん指示「以下は直して」・worklog §47）。"
+      },
+      {
+       "kind": "code",
+       "name": "検査13",
+       "file": "scripts/priority_rebuild/observe_diag.py",
+       "how": "材料側の実測の守り役＝4本値を 2.0倍・0.5倍にして全材料（535種）を計算し直し、値が変わる列（ドルの金額のまま）が無いかを機械で確かめる（段6 の 6-9①・2026-08-16 実測＝0種 ✅）。"
       },
       {
        "kind": "code",
@@ -1126,7 +1132,7 @@
      "body": [
       "- **値 / 内容**: 合格=全月 net≥$1,900+DSR>0.95/PBO<0.5 ／ 地面=手動 採点$172・通し$354",
       "- **出典**: CLAUDE §目標 / ledger E0.1",
-      "- **強制方法（原文の主張）**: ✅ score.py"
+      "- **強制方法**: net の月次計算＝✅ score.py（機械・改造禁止 H13）。**全月 ≥$1,900 の合否と DSR>0.95・PBO<0.5 の自動判定は、score.py には無い**＝判定は人が月ごとの数字を見て行う。DSR・PBO の計算の実物は dsr_pbo.py（既知答えテスト済み）で、engine_tuner の経路（tuner_stats.py・tuner_judgement）が使う。score.py への組み込みは next_step §6 の38番（まこさん指示 2026-08-08「あとで修正する」）（★2026-08-16 実物に合わせて修正・worklog §47）"
      ],
      "sources": [
       {
@@ -1138,9 +1144,15 @@
      "enforced_by": [
       {
        "kind": "code",
-       "name": "dsr",
+       "name": "def score(",
        "file": "scripts/priority_rebuild/score.py",
-       "how": "★原文は「✅ score.py」と主張しているが、score.py に「dsr」の文字は無い（下の実測）。score.py は月ごとの net の金額を出すだけで、『全月 $1,900 以上か』『DSR>0.95 か』を判定する処理はいまありません。まこさん指示（2026-08-08）＝『あとで修正する』。"
+       "how": "net の月次計算の実物（機械・改造禁止 H13）。合否の文言は出さない＝『全月 $1,900 以上か』の判定は人が月ごとの数字を見て行う。"
+      },
+      {
+       "kind": "code",
+       "name": "deflated_sharpe_ratio",
+       "file": "scripts/priority_rebuild/dsr_pbo.py",
+       "how": "DSR・PBO の計算の実物（既知答えテスト＝test_dsr_pbo_known_answers.py）。engine_tuner の経路（tuner_stats.py・tuner_judgement）が使う。★score.py はこれを呼ばない＝score.py への組み込みは next_step §6 の38番（まこさん指示 2026-08-08「あとで修正する」）。★2026-08-16 に、実物と食い違っていた欄（score.py に dsr が0件のまま「✅ score.py」）を実物へ合わせた（まこさん指示「これも直して」・worklog §47）。"
       }
      ]
     },

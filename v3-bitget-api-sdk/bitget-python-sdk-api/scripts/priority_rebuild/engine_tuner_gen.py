@@ -3812,5 +3812,14 @@ def main() -> int:
     return 0
 
 
+# ── H2 実行時の守り（2026-08-16 まこさん GO「H2 完全化」の層3・穴④）──────────────────
+#    自分のコードに未来参照の典型（shift にマイナスの数字・rolling の center を True）が無いことを、
+#    読み込みのたびに ratchet_guards で機械確認する。違反が入ると import の瞬間に止まる＝
+#    偽の数字を出す前に落ちる。説明文では誤発火しない（行内コメントを外してから見る）。
+import pathlib as _h2_pathlib                            # noqa: E402
+import ratchet_guards as _h2_rg                          # noqa: E402
+_h2_rg.assert_no_future_ref(_h2_pathlib.Path(__file__).read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

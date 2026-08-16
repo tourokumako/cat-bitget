@@ -37,7 +37,11 @@ def main():
         return 0
     bad = []
     for i, line in enumerate(c.splitlines(), 1):
-        if PAT.search(line) and "H2OK:" not in line:
+        # 行内コメント（# 以降）を外してから探す＝説明の文章では止めない（2026-08-16 まこさん GO
+        # 「H2 完全化」の層1・next_step §6 の41番＝2026-08-09 に実際に説明文で CC が止められた誤発火の修正。
+        # ratchet_guards.assert_no_future_ref と同じやり方）。docstring の中の文章は今も止まる（限界）。
+        code = line.split("#", 1)[0]
+        if PAT.search(code) and "H2OK:" not in line:
             bad.append((i, line.strip()[:120]))
     if not bad:
         return 0

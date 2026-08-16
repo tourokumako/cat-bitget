@@ -1,4 +1,4 @@
-<!-- CATREQ_HASH=6e55087200a436d5 -->
+<!-- CATREQ_HASH=f0fc0fe5392dad69 -->
 <h1 style="font-size:2.4em;border-bottom:3px solid #888;padding-bottom:.2em">要件定義書 — cat-bitget ML トレード BOT</h1>
 
 作成: 2026-06-02 / 版: v3（v2 の手書きを json 正本＋機械生成へ移した。v1 は制約チェックリストのみ＝要件定義書として不備 → v2 で標準4部構成に書き直し）
@@ -294,7 +294,7 @@ regime（相場状態：上げ/下げ/横ばい）/ MFE・MAE（保有中の最�
 | 決まり | 破ったときに止まる仕組み | 根拠（見たファイルと行） |
 |---|---|---|
 | **1.1** 背景・課題 | **無し**。機械の強制はありません。事実の記録です。 | <sub>`.claude/ratchet/adopted_strategies.md` 147行目</sub> ＝手動 cat_v9 の月 net の実数（$172／$354）の出どころ。ここが「唯一の実利資産」の根拠 |
-| **1.2** 目的・ゴール | **無し**。★合否の判定は機械がしていません。score.py は月ごとの net を出しますが、『全月 net ≥ $1,900 か』を判定する処理はありません（2026-08-08 実測＝score.py に $1,900 が出るのは異常値の警告文の1箇所だけ）。合否は人が月ごとの数字を見て決めています。<br>**見当たりません**。合格の条件の後半＝DSR>0.95・PBO<0.5 を確かめる仕組み。★2026-08-08 に旧版 H11 で「✅ score.py」と書かれていたが実物は0件だった件を、ここで機械に毎回 確かめさせる。（❌ 見当たらない（scripts/priority_rebuild/score.py に「dsr」が0件）） | <sub>`../CLAUDE.md` 13行目</sub> ＝合格ラインの数字の正本 |
+| **1.2** 目的・ゴール | **無し**。★合否の判定は機械がしていません。score.py は月ごとの net を出しますが、『全月 net ≥ $1,900 か』を判定する処理はありません（2026-08-08 実測＝score.py に $1,900 が出るのは異常値の警告文の1箇所だけ）。合否は人が月ごとの数字を見て決めています。<br>DSR と PBO の計算の実物（`pbo_cscv` も同居・既知答えテスト＝test_dsr_pbo_known_answers.py）。★score.py はこれを呼ばない＝単発の採点では DSR を判定しない。engine_tuner の経路では tuner_stats.py（試した回数から合格の線＝DSR）と判定表（tuner_judgement）が使う。score.py に合否の自動判定を組み込むかは next_step §6 の38番（まこさん指示 2026-08-08「あとで修正する」）。★2026-08-16 に、実在しない担保（score.py の dsr）を指していた欄を実物へ合わせた（まこさん指示「これも直して」・worklog §47）。（実物（scripts/priority_rebuild/dsr_pbo.py の 68 行目ほか 1 件に「deflated_sharpe_ratio」）） | <sub>`../CLAUDE.md` 13行目</sub> ＝合格ラインの数字の正本 |
 | **1.2.1** 全体戦略 | 設計書（acceptance.md）を書く瞬間に、その戦略の 担当局面・方向 を台帳のマーカーから引き、外れた案を止める。（実物（../../.claude/hooks/enforce_strategy_anchor.sh の 4 行目ほか 1 件に「STRATEGY_ANCHOR」））<br>設計書を書く瞬間に、その戦略の役割（スキャル＝件数を上げる等）に反する案を止める。（実物（../../.claude/hooks/enforce_role_criteria.sh の 10 行目ほか 3 件に「ROLE_CHECK」）） | <sub>`.claude/ratchet/adopted_strategies.md` 9行目</sub> ＝★各戦略の 担当局面・方向・頻度役割 の機械可読の実物。本文の記述と食い違っていないかを、まこさんが並べて確かめられるように引用しています<br><sub>`.claude/ratchet/adopted_strategies.md` 8行目</sub> ＝各戦略の役割（スキャル／デイトレ等）の機械可読の実物<br><sub>`.claude/ratchet/adopted_strategies.md` 7行目</sub> ＝いまの最大の地面と、採用されている柱の機械可読の実物 |
 | **1.3** ターゲットユーザー・利用環境 | **無し**。機械の強制はありません。 | <sub>`.claude/rules/exchange_spec.md` 3行目</sub> ＝取引所・銘柄・注文単位・手数料の正本 |
 | **1.4** 用語定義 | **無し**。機械の強制はありません。言葉の定義です。 | <sub>`.claude/rules/exchange_spec.md` 9行目</sub> ＝maker・taker の実数の出どころ<br><sub>`.claude/rules/false_positive_incident_policy.md` 39行目</sub> ＝leak（未来漏れ）の定義の出どころ |
@@ -554,7 +554,7 @@ demo（paptrading）→ 本番の段階移行（Phase7）。
 2. 類型A
 3. L-179
 
-- **強制方法（原文の主張）**: ⬜ **E8b 学習スクリプト(`train_p23_entry_E8b.py`)で assert**＝特徴量 grep(`.shift(-`/`center=True`) + `assert train末<採点始` + embargo（売買記録に出ない＝boundary 違い・審判では不可）
+- **強制方法**: いま動いている守り役＝**`require_leak_annotation` hook**（下の表・穴2つは next_step §6 の39番で別途 塞ぐ）。ML 用の担保（学習スクリプトの assert＝特徴量 grep(`.shift(-`/`center=True`) + `assert train末<採点始` + embargo）の実物は **`scripts/priority_rebuild/archive/train_p23_entry_E8b.py`**＝いまは固定ルール改善中（§8.5）で出番が無いため archive に置いてある。ML を再開するときに現役へ戻す（★2026-08-16 実物に合わせて修正・まこさん指示「以下は直して」・worklog §47）
 
 ### §4.6.H3 net 判定
 
@@ -594,7 +594,7 @@ demo（paptrading）→ 本番の段階移行（Phase7）。
 
 - **値 / 内容**: %/比率/BTC単位のみ・USD絶対値の閾値/ラベル禁止
 - **出典**: phase_compliance §-1 / L-179
-- **強制方法（原文の主張）**: ⬜ **E8b 学習スクリプトで assert**＝feature 名 blacklist + pct check（学習側・特徴量は売買記録に出ない）
+- **強制方法**: いま動いている守り役＝**① `warn_usd_absolute_in_e37` hook**（下の表・警告のみ・対象は e37 だけ）**② observe_diag の検査13**＝4本値を 2.0倍・0.5倍にして全材料を計算し直し、ドルの金額のままの列が無いかを実測する（2026-08-16 実測＝535種で 0件）。ML 用の担保（feature 名 blacklist + pct check）の実物は **`scripts/priority_rebuild/archive/train_p23_entry_E8b.py`**（archive・いまは出番なし・★2026-08-16 実物に合わせて修正・worklog §47）
 
 ### §4.6.H7 足の標準
 
@@ -641,7 +641,7 @@ demo（paptrading）→ 本番の段階移行（Phase7）。
 
 - **値 / 内容**: 合格=全月 net≥$1,900+DSR>0.95/PBO<0.5 ／ 地面=手動 採点$172・通し$354
 - **出典**: CLAUDE §目標 / ledger E0.1
-- **強制方法（原文の主張）**: ✅ score.py
+- **強制方法**: net の月次計算＝✅ score.py（機械・改造禁止 H13）。**全月 ≥$1,900 の合否と DSR>0.95・PBO<0.5 の自動判定は、score.py には無い**＝判定は人が月ごとの数字を見て行う。DSR・PBO の計算の実物は dsr_pbo.py（既知答えテスト済み）で、engine_tuner の経路（tuner_stats.py・tuner_judgement）が使う。score.py への組み込みは next_step §6 の38番（まこさん指示 2026-08-08「あとで修正する」）（★2026-08-16 実物に合わせて修正・worklog §47）
 
 ### §4.6.H12 異常値STOP
 
@@ -727,16 +727,16 @@ demo（paptrading）→ 本番の段階移行（Phase7）。
 | **4.5** 移行 | **無し**。機械の強制はありません。demo から本番への切り替えは `paper_trading` フラグ（§4.3・H14）が実体です。 | <sub>`.claude/rules/exchange_spec.md` 280行目</sub> ＝demo（paptrading ヘッダ）の仕様の正本 |
 | **4.6** ハード制約チェックリスト | **無し**。この項目自体は見出し（目次）です。個々の強制は H1〜H16 のそれぞれにあります。 | <sub>`.claude/rules/archive/cat_requirements_20260808.md` 4行目</sub> ＝この関所の位置づけの出どころ（旧版の同じ文言） |
 | **4.6.H1** ポジション合計上限 | 原文の主張どおり実在。売買記録の時系列で合計を確かめ、0.12 BTC を超えたら採点を拒否する。（実物（scripts/priority_rebuild/score.py の 65 行目ほか 3 件に「assert_hard_constraints」））<br>原文の主張どおり実在（点版）。（実物（scripts/priority_rebuild/eval_engine.py の 33 行目ほか 2 件に「assert_position_cap」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 44行目</sub> ＝ポジション合計 0.12 BTC 上限の正本 |
-| **4.6.H2** leak なし / 本番再現性 | **見当たりません**。★原文が担保先に挙げているファイルは現役の場所に無い。実物は `archive/train_p23_entry_E8b.py` にある（2026-08-08 実測）。（❌ ファイルが無い（scripts/priority_rebuild/train_p23_entry_E8b.py））<br>★原文とは別の仕組みが実際に動いている（2026-08-09 追記）。`require_leak_annotation` フック＝scripts/priority_rebuild/*.py に未来参照の典型（.shift(-・center=True）を新しく書く瞬間、その行に「# H2OK: 理由」が無ければ書き込みをブロックする。設定ファイルへの登録済み・構文エラーなし・無言死の記録なし（2026-08-09 実測）。★穴＝①理由が本当に正しいかは機械が見ない（嘘の理由でも通る）②既に書いてある古いコードは対象外（新しく書く瞬間だけ）。次セッションでこの穴を塞ぐ（次項参照）。（実物（../../.claude/hooks/require_leak_annotation.py の 6 行目ほか 4 件に「H2OK」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 15行目</sub> ＝leak 禁止の正本（Prime Directive） |
+| **4.6.H2** leak なし / 本番再現性 | ML 用の担保の実物（archive）。いまは固定ルール改善中（§8.5）で出番が無い＝ML を再開するときに現役へ戻して使う。★2026-08-16 に、実在しない現役の場所を指していた欄を実物の場所へ合わせた（まこさん指示「以下は直して」・worklog §47）。（実物（scripts/priority_rebuild/archive/train_p23_entry_E8b.py の 2 行目ほか 2 件に「train_p23_entry_E8b」））<br>★原文とは別の仕組みが実際に動いている（2026-08-09 追記）。`require_leak_annotation` フック＝scripts/priority_rebuild/*.py に未来参照の典型（.shift(-・center=True）を新しく書く瞬間、その行に「# H2OK: 理由」が無ければ書き込みをブロックする。設定ファイルへの登録済み・構文エラーなし・無言死の記録なし（2026-08-09 実測）。★穴＝①理由が本当に正しいかは機械が見ない（嘘の理由でも通る）②既に書いてある古いコードは対象外（新しく書く瞬間だけ）。次セッションでこの穴を塞ぐ（次項参照）。（実物（../../.claude/hooks/require_leak_annotation.py の 6 行目ほか 4 件に「H2OK」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 15行目</sub> ＝leak 禁止の正本（Prime Directive） |
 | **4.6.H3** net 判定 | 原文の主張どおり実在。（実物（scripts/priority_rebuild/score.py の 149 行目ほか 1 件に「def score(」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 104行目</sub> ＝gross と net の取り違えの類型の正本 |
 | **4.6.H4** コスト確定値 | 原文の主張どおり実在。（実物（scripts/priority_rebuild/eval_engine.py の 48 行目ほか 2 件に「MAKER_FEE」）） | <sub>`.claude/rules/exchange_spec.md` 16行目</sub> ＝手数料・注文単位の確定値の正本（audit#19） |
 | **4.6.H5** 約定モデル | 原文の主張どおり実在。（実物（scripts/priority_rebuild/eval_engine.py の 100 行目ほか 1 件に「def simulate_trade」）） | <sub>`.claude/rules/exchange_spec.md` 96行目</sub> ＝約定モデルの仕様の正本 |
-| **4.6.H6** 価格非依存 | **見当たりません**。★H2 と同じ担保先。現役の場所に無い。実物は archive にある（2026-08-08 実測）。（❌ ファイルが無い（scripts/priority_rebuild/train_p23_entry_E8b.py））<br>★原文とは別の仕組みが実際に動いている（2026-08-09 追記）。`warn_usd_absolute_in_e37` フック＝USD 絶対値っぽい数値閾値を書くと警告する。設定ファイルへの登録済み（2026-08-09 実測）。★穴＝①警告だけでブロックしない ②対象は e37_range_scalp.py だけ（E36・E38 など他のファイルは対象外）。（実物（../../.claude/hooks/warn_usd_absolute_in_e37.sh の 2 行目ほか 4 件に「H6」）） | <sub>`.claude/rules/phase_compliance_checklist.md` 18行目</sub> ＝価格非依存 blacklist の正本 |
+| **4.6.H6** 価格非依存 | ML 用の担保の実物（archive・H2 と同じファイル）。いまは固定ルール改善中で出番が無い。★2026-08-16 に実物の場所へ合わせた（まこさん指示「以下は直して」・worklog §47）。（実物（scripts/priority_rebuild/archive/train_p23_entry_E8b.py の 2 行目ほか 2 件に「train_p23_entry_E8b」））<br>材料側の実測の守り役＝4本値を 2.0倍・0.5倍にして全材料（535種）を計算し直し、値が変わる列（ドルの金額のまま）が無いかを機械で確かめる（段6 の 6-9①・2026-08-16 実測＝0種 ✅）。（実物（scripts/priority_rebuild/observe_diag.py の 754 行目ほか 6 件に「検査13」））<br>★原文とは別の仕組みが実際に動いている（2026-08-09 追記）。`warn_usd_absolute_in_e37` フック＝USD 絶対値っぽい数値閾値を書くと警告する。設定ファイルへの登録済み（2026-08-09 実測）。★穴＝①警告だけでブロックしない ②対象は e37_range_scalp.py だけ（E36・E38 など他のファイルは対象外）。（実物（../../.claude/hooks/warn_usd_absolute_in_e37.sh の 2 行目ほか 4 件に「H6」）） | <sub>`.claude/rules/phase_compliance_checklist.md` 18行目</sub> ＝価格非依存 blacklist の正本 |
 | **4.6.H7** 足の標準 | **無し**。★強制が無く人任せの4件のうちの1つ。機械の強制はありません。5m 以外を採用してよいかは、score.py の net の実測だけで判断します（機械が自動で止めるものではない）。 | <sub>`../CLAUDE.md` 11行目</sub> ＝1m/3m 撤回の記録 |
 | **4.6.H8** 期間分割 | 原文の主張どおり実在。（実物（scripts/priority_rebuild/periods.py の 71 行目ほか 5 件に「TRAIN_END」）） | <sub>`scripts/priority_rebuild/periods.py` 71行目</sub> ＝期間分割の数値の正本（SSOT） |
 | **4.6.H9** 最小注文 | 原文の主張どおり実在。（実物（scripts/priority_rebuild/score.py の 117 行目ほか 1 件に「def assert_min_order」）） | <sub>`.claude/rules/exchange_spec.md` 16行目</sub> ＝最小注文の仕様の正本 |
 | **4.6.H10** サイズ固定値扱い禁止 | **無し**。★強制が無く人任せの4件のうちの1つ。この決まり単独の機械の強制はありません。合計 0.12 BTC を超えないことだけは H1 が強制します（0.024 を使うこと自体は強制されていません）。 | <sub>`../CLAUDE.md` 13行目</sub> ＝サイズ固定値扱い禁止の記録 |
-| **4.6.H11** 合格ライン / 地面 | **見当たりません**。★原文は「✅ score.py」と主張しているが、score.py に「dsr」の文字は無い（下の実測）。score.py は月ごとの net の金額を出すだけで、『全月 $1,900 以上か』『DSR>0.95 か』を判定する処理はいまありません。まこさん指示（2026-08-08）＝『あとで修正する』。（❌ 見当たらない（scripts/priority_rebuild/score.py に「dsr」が0件）） | <sub>`../CLAUDE.md` 13行目</sub> ＝合格ラインの数字の正本 |
+| **4.6.H11** 合格ライン / 地面 | net の月次計算の実物（機械・改造禁止 H13）。合否の文言は出さない＝『全月 $1,900 以上か』の判定は人が月ごとの数字を見て行う。（実物（scripts/priority_rebuild/score.py の 149 行目ほか 1 件に「def score(」））<br>DSR・PBO の計算の実物（既知答えテスト＝test_dsr_pbo_known_answers.py）。engine_tuner の経路（tuner_stats.py・tuner_judgement）が使う。★score.py はこれを呼ばない＝score.py への組み込みは next_step §6 の38番（まこさん指示 2026-08-08「あとで修正する」）。★2026-08-16 に、実物と食い違っていた欄（score.py に dsr が0件のまま「✅ score.py」）を実物へ合わせた（まこさん指示「これも直して」・worklog §47）。（実物（scripts/priority_rebuild/dsr_pbo.py の 68 行目ほか 1 件に「deflated_sharpe_ratio」）） | <sub>`../CLAUDE.md` 13行目</sub> ＝合格ラインの数字の正本 |
 | **4.6.H12** 異常値STOP | 原文の主張どおり実在。（実物（scripts/priority_rebuild/score.py の 192 行目ほか 7 件に「anomaly」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 196行目</sub> ＝異常値の自動 STOP の正本 |
 | **4.6.H13** judge 固定 | **無し**。test_precheck_band_known_answers.py は `def test_` の形式ではなく main() 関数の形式＝上の2ファイルと数え方が違う。3つ目の数字が食い違う原因はここ（2026-08-08 実測）。 | <sub>`scripts/priority_rebuild/test_eval_engine_known_answers.py` 53行目</sub> ＝既知答えテストの実物 |
 | **4.6.H14** 発注フラグ | ★原文の値は False という前提だが、実物の代入行は True（2026-08-08 実測）。CC は触っていません。変更できるのはまこさんだけです。（実物（runner/run_once_v9.py の 4 行目ほか 1 件に「ALLOW_LIVE_ORDERS = True」）） | <sub>`../CLAUDE.md` 30行目</sub> ＝発注フラグの正本 |
@@ -1096,7 +1096,7 @@ python3 scripts/priority_rebuild/gen_cat_requirements.py --verify  # 手で書�
 
 **★機械が git から毎回 数えます。**2026-08-08 に まこさんが3回 続けて「いまやっていることが書かれていない」と指摘したため足しました（E38 ／ いまは固定ルールで動いている事実 ／ engine_tuner）。3回とも見つけたのは まこさんです。
 
-- 直近 14 日に `scripts/priority_rebuild` で手を入れた .py は **37 本**。そのうち この文書に名前が出ているのは **12 本**、出ていないのは **25 本**。
+- 直近 14 日に `scripts/priority_rebuild` で手を入れた .py は **37 本**。そのうち この文書に名前が出ているのは **14 本**、出ていないのは **23 本**。
 
 この文書に名前が出ていないもの（★載せるかどうかは まこさんが決めます）
 
@@ -1123,5 +1123,3 @@ python3 scripts/priority_rebuild/gen_cat_requirements.py --verify  # 手で書�
 - `gen_v9_exits.py`
 - `indicator_reference_diag.py`
 - `leak_causality_diag.py`
-- `tuner_judgement.py`
-- `tuner_stats.py`

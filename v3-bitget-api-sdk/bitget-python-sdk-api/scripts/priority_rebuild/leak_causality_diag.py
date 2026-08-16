@@ -50,15 +50,31 @@ CUT より前の結果が1つでも違えば、それは CUT より後のデー�
   売買記録のファイルを1つも出さない。審判を呼ばない。採用の書き出しをしない。
   戦略の実関数を import して呼ぶだけ（cat_requirements 診断レーン免除の条件どおり）。
 
+  検査1-c｜engine_tuner の経路の打ち切り再現テスト（2026-08-16 まこさん GO「H2 完全化」の層3）
+      探索が実際に使う道具立て（接続ファイルのデータ準備 → 実行器 run_recipe）を、打ち切りあり/なしで
+      走らせて突き合わせる。①データの全列（探索の指標の経路）②売買（恒等3本＝S2・L1・S1 ＋
+      種を固定した生成の案）。分位の解決表（qtable）は探索の実物と同じく「窓から1回 固定」＝
+      両方の走行で同じものを使う（値の選定であって leak ではない・H8 値決め窓の中）。
+      番人3本を同梱（データ経路の細工を見つける／レシピが毎回 同じ／同じ入力なら同じ出力）。
+
 使い方:
   python3 scripts/priority_rebuild/leak_causality_diag.py --selftest   # 検査3 だけ（番人）
   python3 scripts/priority_rebuild/leak_causality_diag.py --scan       # 検査2 だけ（全数スキャン・一瞬）
   python3 scripts/priority_rebuild/leak_causality_diag.py --features   # 検査1-a だけ（指標の突き合わせ）
-  python3 scripts/priority_rebuild/leak_causality_diag.py              # 検査2 → 3 → 1-a → 1-b の順に全部
+  python3 scripts/priority_rebuild/leak_causality_diag.py --tuner      # 検査1-c だけ（engine_tuner の経路）
+  python3 scripts/priority_rebuild/leak_causality_diag.py              # 検査2 → 3 → 1-a → 1-b → 1-c の順に全部
+
+★検査済みの印（層2・enforce_h2_pass hook と対）:
+  全部の検査が pass したときだけ、この道具が .claude/state/h2_pass.json に「対象のコードと設定の
+  指紋」を書く。engine_tuner・実行器・生成器・E38 は、この印がいまの指紋と一致しないと回れない
+  （enforce_h2_pass hook が実行前に止める）＝コードか設定が1文字でも変わったら、検査し直すまで
+  探索は物理的に回らない。
 """
 from __future__ import annotations
 import argparse
+import hashlib
 import inspect
+import json
 import pathlib
 import re
 import sys
@@ -187,6 +203,224 @@ def run_e38_trades(cut=None) -> pd.DataFrame:
         t["entry_time"] = pd.to_datetime(t["entry_time"])
         t["exit_time"] = pd.to_datetime(t["exit_time"])
     return t
+
+
+# ============================================================================
+# 検査1-c｜engine_tuner の経路の打ち切り再現テスト（2026-08-16 まこさん GO「H2 完全化」の層3）
+# ============================================================================
+TUNER_QUICK_DAYS = 90          # 1-c の窓の長さ（値決め窓の先頭から・実行時間を抑える）
+TUNER_CUT_DAYS = 45            # 打ち切り日（窓の先頭から何日目か）
+TUNER_GEN_N = 3                # 種を固定した生成の案の本数
+TUNER_SEED = 20260816          # 生成の種（固定＝打ち切りあり/なしで同じ案になる）
+
+ROOT = HERE.parents[4]                                   # cat-bitget（リポジトリの根）
+H2_PASS = ROOT / ".claude" / "state" / "h2_pass.json"    # 検査済みの印（enforce_h2_pass hook が読む）
+_PR = "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild"
+WATCHED = [                                              # 指紋の対象＝engine_tuner の経路の実物ぜんぶ
+    f"{_PR}/engine_tuner.py", f"{_PR}/engine_tuner_gen.py", f"{_PR}/engine_tuner_exec.py",
+    f"{_PR}/e38_priority_stack.py", f"{_PR}/e38_logic_parts.py", f"{_PR}/e37_scalp.py",
+    f"{_PR}/periods.py", f"{_PR}/e38_logics.json", f"{_PR}/leak_causality_diag.py",
+    f"{_PR}/tuner_adapters/__init__.py", f"{_PR}/tuner_adapters/e37.py", f"{_PR}/tuner_adapters/e38.py",
+    f"{_PR}/recipes/search_limits.json", f"{_PR}/recipes/identity_s2_legacy.json",
+    f"{_PR}/recipes/identity_l1_legacy.json", f"{_PR}/recipes/identity_s1_legacy.json",
+    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/signal_families.json",
+    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families.json",
+]
+
+
+def h2_fingerprint(root: pathlib.Path, files: list[str]) -> tuple[str, list[str]]:
+    """対象ファイル一式の指紋。無いファイルは指紋に「無い」と刻む（黙って飛ばさない）。"""
+    h = hashlib.sha256()
+    missing = []
+    for rel in sorted(files):
+        p = root / rel
+        h.update(rel.encode())
+        if p.exists():
+            h.update(hashlib.sha256(p.read_bytes()).digest())
+        else:
+            missing.append(rel)
+            h.update(b"<missing>")
+    return h.hexdigest(), missing
+
+
+def _write_h2_pass() -> None:
+    fp, missing = h2_fingerprint(ROOT, WATCHED)
+    H2_PASS.parent.mkdir(parents=True, exist_ok=True)
+    H2_PASS.write_text(json.dumps({
+        "when": str(pd.Timestamp.now()).split(".")[0],
+        "fingerprint": fp,
+        "files": WATCHED,
+        "missing": missing,
+        "note": "leak_causality_diag の全部の検査（2→3→1-a→1-b→1-c）が pass したときにだけ、この道具が書く。"
+                "対象のコードか設定が1文字でも変わると指紋が合わなくなり、enforce_h2_pass hook が"
+                " engine_tuner を実行の前に止める。手でこのファイルを作るのは TODO_OK=1 の乱用と同じ明示の違反。",
+    }, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"[H2 印] 検査済みの印を書いた: {H2_PASS}（指紋 {fp[:16]}…）")
+    if missing:
+        print(f"  ⚠️ 対象のうち実在しないファイル {len(missing)} 件（指紋には『無い』と刻んだ）: {missing}")
+
+
+def _tuner_mods():
+    import engine_tuner as tuner
+    import engine_tuner_exec as ex
+    import engine_tuner_gen as gen
+    from tuner_adapters import e38 as ad
+    return tuner, ex, gen, ad
+
+
+def _tuner_window():
+    s = pd.Timestamp(periods.SEARCH_START)
+    return s, s + pd.Timedelta(days=TUNER_QUICK_DAYS)
+
+
+def load_tuner_df(cut=None) -> pd.DataFrame:
+    """探索と同じ経路（接続ファイル → 指標つきデータ）で読み込む。cut があれば生データを先に切る。
+
+    キャッシュは使わない＝打ち切った生データから指標を作り直させる（キャッシュを使うと
+    打ち切りが指標計算に届かず、検査にならない）。
+    """
+    tuner, _ex, _gen, ad = _tuner_mods()
+    s, e = _tuner_window()
+    orig = e37.load_5m
+    if cut is not None:
+        e37.load_5m = _cut_loader(orig, cut)
+    try:
+        (dfp,) = tuner.load_windows_cached(ad, [(s, e)], tuner.WARM, use_cache=False)
+    finally:
+        e37.load_5m = orig
+    return dfp
+
+
+def tuner_recipes() -> list[tuple[str, dict]]:
+    """恒等3本＋種を固定した生成の案。データを一切 見ずに決まる＝打ち切りあり/なしで同じ。"""
+    import numpy as np
+    _t, ex, gen, _ad = _tuner_mods()
+    recs = [("恒等S2", ex.identity_recipe()), ("恒等L1", ex.identity_l1_recipe()),
+            ("恒等S1", ex.identity_s1_recipe())]
+    lm, _warn = gen.load_limits()
+    lm = gen.resolve_hold_range(lm, "e38")     # 保有時間の範囲＝役割（scalp）から先に解決（監査 4-19／要件 R6）
+    pool, _rej, _n = gen.material_pool()
+    got, i = 0, 0
+    while got < TUNER_GEN_N and i < 60:
+        i += 1
+        try:
+            r = gen.sample_structure(np.random.default_rng([TUNER_SEED, i]), lm, pool, ["5m", "15m"])
+        except (Exception, SystemExit):                   # noqa: BLE001  引けない種は次へ（種の番号で再現可能）
+            continue
+        recs.append((f"生成{got + 1}(種{TUNER_SEED}-{i})", r))
+        got += 1
+    return recs
+
+
+def _run_one(ex, dfp: pd.DataFrame, rec: dict, qt: dict):
+    """レシピ1本を実行器で走らせて売買の表を返す。拒否・失敗は文字列で返す（黙って飛ばさない）。"""
+    try:
+        d2 = ex.attach_recipe_columns(dfp, rec)
+        trades, _rep = ex.run_recipe(d2, rec, qtable=qt)
+    except BaseException as err:                          # noqa: BLE001  実行器の拒否（SystemExit）も拾う
+        return f"走れない（{type(err).__name__}: {str(err)[:80]}）"
+    t = pd.DataFrame(trades)
+    if len(t):
+        t["entry_time"] = pd.to_datetime(t["entry_time"])
+        t["exit_time"] = pd.to_datetime(t["exit_time"])
+    return t
+
+
+def tuner_check(margin_days: float) -> int:
+    """検査1-c 本体。戻り＝食い違い（と番人の失敗）の件数。"""
+    _t, ex, gen, _ad = _tuner_mods()
+    s, e = _tuner_window()
+    cut = s + pd.Timedelta(days=TUNER_CUT_DAYS)
+    print(f"[検査1-c] engine_tuner の経路の打ち切り再現テスト"
+          f"（窓 {s.date()}〜{e.date()} / 打ち切り {cut.date()} / キャッシュ不使用）")
+    ng = 0
+
+    t0 = time.time()
+    full = load_tuner_df(cut=None)
+    part = load_tuner_df(cut=cut)
+    print(f"  データ: {len(full)} 行 {len(full.columns)} 列（読み込み2回 {time.time() - t0:.0f} 秒）")
+
+    # ── 番人（この検査自体が壊れていないか・3本）─────────────────────────────
+    def _sab(d):
+        x = d.copy()
+        x["stoch_k"] = pd.Series(x["stoch_k"]).shift(-6).to_numpy()   # H2OK: 番人の細工＝わざと未来を見せて検査が落ちるかを確かめる行。実戦の経路からは呼ばれない
+        return x
+    hit = [b for b in compare_features(_sab(full), _sab(part), cut) if b.startswith("stoch_k")]
+    print(f"  番人1c-1 データ経路の細工（stoch_k を6本先の値に）を見つける: "
+          f"{'✅ 見つけた' if hit else '❌ 見逃した＝この検査は信用できない'}")
+    if not hit:
+        return 1
+
+    recs = tuner_recipes()
+    same_rec = (json.dumps([r for _, r in recs], sort_keys=True, default=str)
+                == json.dumps([r for _, r in tuner_recipes()], sort_keys=True, default=str))
+    print(f"  番人1c-2 レシピが毎回 同じ（種の固定＝再現できる）: {'✅' if same_rec else '❌'}")
+    if not same_rec:
+        return 1
+
+    # ── (a) データの全列（探索の指標の経路）────────────────────────────────
+    bad = compare_features(full, part, cut)
+    if bad:
+        ng += 1
+        print(f"  [1-c 列] ⛔ 打ち切りより前の値が違う列 {len(bad)} 本")
+        for b in bad[:10]:
+            print(f"        - {b}")
+    else:
+        print(f"  [1-c 列] ✅ 全 {len(full.columns)} 列 一致（探索のデータ経路に leak なし）")
+
+    # ── (b) 売買（恒等3本＋生成の案）────────────────────────────────────
+    lm, _ = gen.load_limits()
+    lm = gen.resolve_hold_range(lm, "e38")     # tuner_recipes と同じ解決（分位の一覧も同じ limits から）
+    grid = gen.quantile_list(lm)
+    ran_gen = 0
+    rep_done = False
+    for name, rec in recs:
+        is_identity = name.startswith("恒等")
+        try:
+            d2f = ex.attach_recipe_columns(full, rec)
+            # ★分位の解決表は、入口の条件のつなぎ（connective）を読んで作る。天井 resting 型
+            #   （恒等S1）は入口に connective を持たない＝実物の恒等検収（run_identity_s1）と同じく
+            #   解決表なしで走らせる（legacy 値は解決表を使わない）。
+            qt = (gen.build_qtable(d2f, gen._geo_of(d2f), [rec], grid)
+                  if "connective" in (rec.get("entry") or {}) else None)
+        except BaseException as err:                      # noqa: BLE001
+            print(f"  [1-c {name}] ⛔ 分位の解決表を作れない（{type(err).__name__}: {str(err)[:60]}）")
+            ng += 1
+            continue
+        a = _run_one(ex, full, rec, qt)
+        if is_identity and not rep_done and not isinstance(a, str):
+            a2 = _run_one(ex, full, rec, qt)
+            same_run = (isinstance(a2, pd.DataFrame)
+                        and a.to_csv(index=False) == a2.to_csv(index=False))
+            print(f"  番人1c-3 同じ入力なら同じ出力（{name} を2回）: {'✅' if same_run else '❌ 出力が揺れる'}")
+            if not same_run:
+                return ng + 1
+            rep_done = True
+        b = _run_one(ex, part, rec, qt)
+        if isinstance(a, str) or isinstance(b, str):
+            if isinstance(a, str) and a == b:
+                print(f"  [1-c {name}] {'⛔ 恒等なのに走れない: ' + a if is_identity else '⚠️ 両方 走れない（同じ理由）＝突き合わせ対象外: ' + a}")
+                ng += 1 if is_identity else 0
+            else:
+                print(f"  [1-c {name}] ⛔ 片方だけ走れない＝要調査: {str(a)[:60]} / {str(b)[:60]}")
+                ng += 1
+            continue
+        badt, n = compare_trades(a, b, cut, margin_days)
+        if badt:
+            ng += 1
+            print(f"  [1-c {name}] ⛔ 食い違い（突き合わせ {n} 件）")
+            for x in badt[:5]:
+                print(f"        - {x}")
+        elif n == 0:
+            print(f"  [1-c {name}] ⚠️ 打ち切りより前に決済した売買が 0 件＝この案は突き合わせの中身が無い（窓全体では {len(a)} 件）")
+        else:
+            print(f"  [1-c {name}] ✅ {n} 件 全一致（窓全体では {len(a)} 件）")
+            if not is_identity:
+                ran_gen += 1
+    if ran_gen == 0:
+        print(f"  ⚠️ 生成の案で突き合わせまで走れたものが 0 本＝生成レーンの覆いが無い（恒等3本だけの結果）")
+        ng += 1
+    return ng
 
 
 # ============================================================================
@@ -339,6 +573,7 @@ def main() -> int:
     ap.add_argument("--selftest", action="store_true", help="検査3（番人）だけ走らせる")
     ap.add_argument("--scan", action="store_true", help="検査2（全数スキャン）だけ走らせる")
     ap.add_argument("--features", action="store_true", help="検査1-a（指標の突き合わせ）だけ走らせる")
+    ap.add_argument("--tuner", action="store_true", help="検査1-c（engine_tuner の経路）だけ走らせる")
     a = ap.parse_args()
 
     print("=" * 78)
@@ -349,6 +584,8 @@ def main() -> int:
         return 0 if not scan_existing_code() else 1
     if a.selftest:
         return 0 if selftest(a.margin_days) else 1
+    if a.tuner:
+        return 0 if tuner_check(a.margin_days) == 0 else 1
 
     ng = 0
     scan_hits = scan_existing_code()
@@ -395,10 +632,17 @@ def main() -> int:
             print(f"  [1-b] 打ち切り {cut.date()}: ✅ {n} 件 全一致（{time.time() - t0:.0f} 秒）")
 
     print()
+    ng += tuner_check(a.margin_days)
+
+    print()
     print("=" * 78)
-    print(f"まとめ: 検査2 の注記なし未来参照 {len(scan_hits)} 件 / 打ち切り再現テストの食い違い {ng} 件")
+    print(f"まとめ: 検査2 の注記なし未来参照 {len(scan_hits)} 件 / 打ち切り再現テスト（1-a・1-b・1-c）の食い違い {ng} 件")
     print("★この結果が言えるのは「この設定（e38_logics.json）とこの期間で leak が出なかった」までです。")
     print("  設定やロジックを変えたら測り直してください。未来を見ていても結果が変わらない場合は捕まりません。")
+    if ng == 0 and not scan_hits:
+        _write_h2_pass()
+    else:
+        print("⛔ 落ちがあるので、検査済みの印（h2_pass）は書かない＝engine_tuner は回れないまま。")
     print("=" * 78)
     return 0 if (ng == 0 and not scan_hits) else 1
 
