@@ -18,7 +18,13 @@
 #   5. 「✅済」の行に、worklog の節の番号（§NN）が書いてある
 #   6. その §NN が、今日の session_worklog_YYYYMMDD.md に見出しとして本当に在る
 #      ＝ToDo だけ「終わった」にして記録を書かない、を止める
-#   7. ファイルの指紋が .claude/state/session_todo_posted と一致する
+#   7. ★この版の ToDo が、一度この hook の止まりで画面に表示されている
+#      表示の記録（.claude/state/session_todo_shown）は、hook が止まって全文を画面に出したときに
+#      だけ、hook 自身が作る。CC は作らない。
+#      ＝2026-08-16（30回目）に CC が「チャットに貼らずに、印だけ先に作る」で すり抜けた穴を塞ぐ
+#      （まこさん指示・逐語「hookが効いてないのであれば、修正して」「todoフローナシで進める
+#      ことは禁止にする」。フロー宣言ゲートの「必ず1回ブロックして全文をこの場に出す」と同型）
+#   8. ファイルの指紋が .claude/state/session_todo_posted と一致する
 #      ＝チャットに貼っていない ToDo で作業を進められない（解釈ゲートと同じ仕組み）
 #
 # safety hook: fast-mode 無効化行を入れない。
@@ -29,7 +35,9 @@
 #
 # 限界（正直に）:
 #   ToDo の中身が実物と合っているかは、機械には分からない。CC が「A-7 は終わった」と嘘を書けば
-#   そのまま通る。§NN の中身が空でも通る（節が在るかしか見ない）。最後の関所はまこさんの目。
+#   そのまま通る。§NN の中身が空でも通る（節が在るかしか見ない）。
+#   表示の記録（session_todo_shown）を CC が echo で偽造すれば通る＝TODO_OK=1 の乱用と同じ
+#   明示の違反で、機械では見抜けない。最後の関所はまこさんの目。
 
 import glob
 import hashlib
@@ -42,6 +50,7 @@ ROOT = "/Users/tachiharamasako/Documents/GitHub/cat-bitget"
 STATE = os.path.join(ROOT, ".claude", "state")
 TODO = os.path.join(STATE, "session_todo.md")
 MARK = os.path.join(STATE, "session_todo_posted")
+SHOWN = os.path.join(STATE, "session_todo_shown")   # hook が全文を画面に出したときにだけ hook が作る
 
 HEADS = ("【いまの工程】", "【ToDo】", "【止まっているもの】", "【次】")
 DONE, DOING, YET = "✅済", "★いまここ", "まだ"
@@ -135,6 +144,10 @@ def check():
     #     ＝作業中にファイルを読むたびに「前のセッションのまま」と誤って止まりました。
     #     この hook の最初の実走で、私自身が止められて分かりました。
     h = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    if read(SHOWN).strip() != h:
+        return ("★この版の ToDo は、まだ画面に表示されていない（印だけ先に作っても通らない・"
+                "2026-08-16 の穴ふさぎ）。いまの止まりで全文が画面に出て、表示の記録は機械が作った。"
+                "同じ内容をチャットに貼り、印を作ってから再実行する")
     if read(MARK).strip() != h:
         return "ToDo をチャットに貼った確認マーカーが無い、または ToDo を書き換えた後で貼り直していない"
 
@@ -153,6 +166,12 @@ def fail(reason):
         print(read(TODO), file=e)
         print("──────────────────────────────────────────────────", file=e)
         print("", file=e)
+        # ★表示の記録は、全文を画面に出した「いま」だけ作る（CC は作らない・検査7の実体）
+        try:
+            with open(SHOWN, "w", encoding="utf-8") as f:
+                f.write(hashlib.sha256(read(TODO).encode("utf-8")).hexdigest())
+        except Exception:
+            pass
     print("対処: ①ToDo を直す ②同じ内容をチャットに貼る ③下のコマンドで印を作る ④再実行する", file=e)
     print(f'  shasum -a 256 "{TODO}" | awk \'{{print $1}}\' > "{MARK}"', file=e)
     print("（TODO_OK=1 はまこさん明示 OK 時のみ）", file=e)
@@ -203,33 +222,41 @@ def hook_main():
 
 # ---------------- 番人（わざと壊して、止まることを確かめる） ----------------
 
-STALE = "前のセッションの ToDo を持ち越すと止まる（SessionStart で印が消えるため）"
+STALE = "前のセッションの ToDo を持ち越すと止まる（SessionStart で印と表示の記録が消えるため）"
+NOSHOW = "★チャットに貼らずに印だけ先に作っても止まる（2026-08-16 の穴ふさぎ）"
 
 
 def selftest():
     import shutil
     import tempfile
 
-    global TODO, MARK, STATE
-    keep = (TODO, MARK, STATE)
+    global TODO, MARK, STATE, SHOWN
+    keep = (TODO, MARK, STATE, SHOWN)
     tmp = tempfile.mkdtemp()
     STATE = tmp
     TODO = os.path.join(tmp, "session_todo.md")
     MARK = os.path.join(tmp, "session_todo_posted")
+    SHOWN = os.path.join(tmp, "session_todo_shown")
 
-    def put(body, wl="# §33 やった\n# §34 やった\n", mark=True, stale=False):
+    def put(body, wl="# §33 やった\n# §34 やった\n", mark=True, stale=False, shown=True):
         with open(TODO, "w", encoding="utf-8") as f:
             f.write(body)
         with open(os.path.join(tmp, "session_worklog_20260816.md"), "w", encoding="utf-8") as f:
             f.write(wl)
-        if stale:                                      # 前セッションの持ち越し＝印だけが残っている形
+        if stale:                    # 前セッションの持ち越し＝SessionStart が印も表示の記録も消した形
             mark = False
+            shown = False
+        h = hashlib.sha256(body.encode("utf-8")).hexdigest()
         if mark:
-            h = hashlib.sha256(body.encode("utf-8")).hexdigest()
             with open(MARK, "w", encoding="utf-8") as f:
                 f.write(h)
         elif os.path.exists(MARK):
             os.remove(MARK)
+        if shown:
+            with open(SHOWN, "w", encoding="utf-8") as f:
+                f.write(h)
+        elif os.path.exists(SHOWN):
+            os.remove(SHOWN)
 
     head = ("【いまの工程】x\n【ToDo】x\n【止まっているもの】なし\n【次】x\n\n"
             "| # | やること | 状態 | 記録 |\n|---|---|---|---|\n")
@@ -251,12 +278,14 @@ def selftest():
         ("§NN が worklog に無いと止まる",
          head + f"| 1 | a | {DONE} | §99 |\n| 2 | b | {DOING} | — |\n", None, True, "見出しに無い"),
         ("チャットに貼っていないと止まる", ok_body, None, False, "確認マーカー"),
-        (STALE, ok_body, None, True, "確認マーカー"),
+        (NOSHOW, ok_body, None, True, "表示されていない"),
+        (STALE, ok_body, None, True, "表示されていない"),
     ]
 
     ng = 0
     for name, body, wl, mark, want in cases:
-        put(body, wl or "# §33 やった\n# §34 やった\n", mark, stale=(name == STALE))
+        put(body, wl or "# §33 やった\n# §34 やった\n", mark,
+            stale=(name == STALE), shown=(name != NOSHOW))
         got = check()
         if want is None:
             good = got is None
@@ -275,7 +304,7 @@ def selftest():
         ng += 1
 
     shutil.rmtree(tmp, ignore_errors=True)
-    TODO, MARK, STATE = keep
+    TODO, MARK, STATE, SHOWN = keep
     total = len(cases) + 1
     print(f"\n番人: {total - ng}/{total} pass")
     sys.exit(1 if ng else 0)
