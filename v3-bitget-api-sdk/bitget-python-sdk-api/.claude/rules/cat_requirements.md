@@ -1,4 +1,4 @@
-<!-- CATREQ_HASH=e16e2ed69ff26843 -->
+<!-- CATREQ_HASH=6e55087200a436d5 -->
 <h1 style="font-size:2.4em;border-bottom:3px solid #888;padding-bottom:.2em">要件定義書 — cat-bitget ML トレード BOT</h1>
 
 作成: 2026-06-02 / 版: v3（v2 の手書きを json 正本＋機械生成へ移した。v1 は制約チェックリストのみ＝要件定義書として不備 → v2 で標準4部構成に書き直し）
@@ -358,7 +358,7 @@ regime（相場状態：上げ/下げ/横ばい）/ MFE・MAE（保有中の最�
 
 **実物を数えた結果**
 
-- `scripts/priority_rebuild/engine_tuner_gen.py` に `def ` が **64** 件
+- `scripts/priority_rebuild/engine_tuner_gen.py` に `def ` が **99** 件
 - `strategies/cat_v9_decider.py` に `lightgbm` が **0** 件
 - `scripts/priority_rebuild/e38_priority_stack.py` に `lightgbm` が **0** 件
 - `scripts/priority_rebuild/engine_tuner_gen.py` に `lightgbm` が **0** 件
@@ -737,7 +737,7 @@ demo（paptrading）→ 本番の段階移行（Phase7）。
 | **4.6.H9** 最小注文 | 原文の主張どおり実在。（実物（scripts/priority_rebuild/score.py の 117 行目ほか 1 件に「def assert_min_order」）） | <sub>`.claude/rules/exchange_spec.md` 16行目</sub> ＝最小注文の仕様の正本 |
 | **4.6.H10** サイズ固定値扱い禁止 | **無し**。★強制が無く人任せの4件のうちの1つ。この決まり単独の機械の強制はありません。合計 0.12 BTC を超えないことだけは H1 が強制します（0.024 を使うこと自体は強制されていません）。 | <sub>`../CLAUDE.md` 13行目</sub> ＝サイズ固定値扱い禁止の記録 |
 | **4.6.H11** 合格ライン / 地面 | **見当たりません**。★原文は「✅ score.py」と主張しているが、score.py に「dsr」の文字は無い（下の実測）。score.py は月ごとの net の金額を出すだけで、『全月 $1,900 以上か』『DSR>0.95 か』を判定する処理はいまありません。まこさん指示（2026-08-08）＝『あとで修正する』。（❌ 見当たらない（scripts/priority_rebuild/score.py に「dsr」が0件）） | <sub>`../CLAUDE.md` 13行目</sub> ＝合格ラインの数字の正本 |
-| **4.6.H12** 異常値STOP | 原文の主張どおり実在。（実物（scripts/priority_rebuild/score.py の 192 行目ほか 7 件に「anomaly」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 192行目</sub> ＝異常値の自動 STOP の正本 |
+| **4.6.H12** 異常値STOP | 原文の主張どおり実在。（実物（scripts/priority_rebuild/score.py の 192 行目ほか 7 件に「anomaly」）） | <sub>`.claude/rules/false_positive_incident_policy.md` 196行目</sub> ＝異常値の自動 STOP の正本 |
 | **4.6.H13** judge 固定 | **無し**。test_precheck_band_known_answers.py は `def test_` の形式ではなく main() 関数の形式＝上の2ファイルと数え方が違う。3つ目の数字が食い違う原因はここ（2026-08-08 実測）。 | <sub>`scripts/priority_rebuild/test_eval_engine_known_answers.py` 53行目</sub> ＝既知答えテストの実物 |
 | **4.6.H14** 発注フラグ | ★原文の値は False という前提だが、実物の代入行は True（2026-08-08 実測）。CC は触っていません。変更できるのはまこさんだけです。（実物（runner/run_once_v9.py の 4 行目ほか 1 件に「ALLOW_LIVE_ORDERS = True」）） | <sub>`../CLAUDE.md` 30行目</sub> ＝発注フラグの正本 |
 | **4.6.H15** Entry ボラ逃げ禁止 | **無し**。★強制が無く人任せの4件のうちの1つ。機械の強制はありません。entry_fix_6axis_gate.md の表に沿って、Entry の設計を報告する瞬間に CC が自分で照合します。 | <sub>`.claude/rules/entry_fix_6axis_gate.md` 30行目</sub> ＝軸1（ボラ逃げ）の正本 |
@@ -1096,31 +1096,32 @@ python3 scripts/priority_rebuild/gen_cat_requirements.py --verify  # 手で書�
 
 **★機械が git から毎回 数えます。**2026-08-08 に まこさんが3回 続けて「いまやっていることが書かれていない」と指摘したため足しました（E38 ／ いまは固定ルールで動いている事実 ／ engine_tuner）。3回とも見つけたのは まこさんです。
 
-- 直近 14 日に `scripts/priority_rebuild` で手を入れた .py は **40 本**。そのうち この文書に名前が出ているのは **16 本**、出ていないのは **24 本**。
+- 直近 14 日に `scripts/priority_rebuild` で手を入れた .py は **37 本**。そのうち この文書に名前が出ているのは **12 本**、出ていないのは **25 本**。
 
 この文書に名前が出ていないもの（★載せるかどうかは まこさんが決めます）
 
 - `__init__.py`
+- `condition_parts_diag.py`
 - `doc_coverage_diag.py`
 - `e38_logic_parts.py`
-- `engine_search_e38.py`
 - `engine_tuner_exec.py`
 - `engine_tuner_fire_diag.py`
 - `gen_auditor_brief.py`
 - `gen_composition_rules.py`
 - `gen_decisions.py`
 - `gen_design.py`
+- `gen_docmap.py`
 - `gen_engine_tuner_manual.py`
 - `gen_engine_tuner_requirements.py`
 - `gen_exit_families.py`
 - `gen_fix_map.py`
 - `gen_flow.py`
+- `gen_materials.py`
 - `gen_observe_manual.py`
+- `gen_p23_candidates.py`
 - `gen_signal_families.py`
 - `gen_v9_exits.py`
 - `indicator_reference_diag.py`
-- `tuner_backcalc.py`
+- `leak_causality_diag.py`
 - `tuner_judgement.py`
 - `tuner_stats.py`
-- `tuner_window_diag.py`
-- `tuner_writeback.py`
