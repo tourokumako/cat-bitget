@@ -11,7 +11,7 @@
 #     ＝hook_health_check が拾って無言死に気づける。ふだんの「止めた」は log に書かない（毎回 非空になると警告が意味を失う）。
 #
 # safety hook: fast-mode 無効化行を入れない（fast-mode は今後オフにしない方針＝入れると1回も動かない）。
-# 解除: TODO_OK=1（まこさんの明示 OK 時のみ）。
+# 解除: 無し（2026-08-16 まこさん指示「じゃあ強制解除できない状態にしろ」で廃止）。
 # 番人: python3 .claude/hooks/enforce_todo_declaration.py --selftest
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

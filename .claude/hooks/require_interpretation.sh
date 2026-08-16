@@ -28,7 +28,7 @@
 # 対象外（通す）: 読む・調べる系の Bash（grep/ls/cat/find/git 等）／--selftest・py_compile・--help・--verify／
 #   宣言ファイル自身とマーカーの操作（デッドロック回避）／サブエージェント。
 # safety hook: fast-mode 無効化行を入れない（勝手な補完は fast-mode 中にこそ起きた）。
-# 解除: INTERP_OK=1（まこさんの明示 OK 時のみ・乱用禁止）。
+# 解除: 無し（2026-08-16 まこさん指示「じゃあ強制解除できない状態にしろ」で廃止）。
 # 限界: 「埋めた空白: なし」と嘘を書けば機械では見抜けない。埋めたことに CC 自身が気づいていない
 #   場合も同じ。最後の関所はまこさんの目（ただし何を勝手に決めたかが手を動かす前に3行で出る）。
 
@@ -36,7 +36,7 @@ INPUT=$(cat)
 AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(sys.stdin).get('agent_type',''))" 2>/dev/null)
 [ -n "$AGENT_TYPE" ] && exit 0   # サブエージェントは通す（デッドロック回避）
 
-printf '%s' "$INPUT" | grep -qE 'INTERP_OK=1' && exit 0
+# ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
 TOOL=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(sys.stdin).get('tool_name',''))" 2>/dev/null)
 CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('command',''))" 2>/dev/null)
@@ -95,7 +95,7 @@ fail() {
   echo "  開いて読むファイル: <指示に出てくるファイル・文書。無ければ「なし」>" >&2
   echo "" >&2
   echo "  shasum -a 256 \"$DECL\" | awk '{print \$1}' > \"$MARK\"" >&2
-  echo "（まこさんが次に発言するとマーカーは消える＝指示のたびに解釈をやり直す・INTERP_OK=1 はまこさん明示 OK 時のみ）" >&2
+  echo "（まこさんが次に発言するとマーカーは消える＝指示のたびに解釈をやり直す・解除は 2026-08-16 に廃止）" >&2
   exit 2
 }
 

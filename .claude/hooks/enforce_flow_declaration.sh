@@ -22,14 +22,14 @@
 # 対象外（通す）: --selftest・py_compile・--help・読み取り系（grep/ls/cat 等）・引用符/ヒアドキュメント内の言及・
 #   サブエージェント（デッドロック回避・他 hook と同型）。
 # safety hook: fast-mode 無効化行を入れない（宣言なし実行は fast-mode 中に起きた＝fast-mode でこそ要る）。
-# 解除: FLOW_DECL_OK=1（まこさんの明示 OK 時のみ・乱用禁止）。
+# 解除: 無し（2026-08-16 まこさん指示「じゃあ強制解除できない状態にしろ」で廃止）。
 # 限界: 宣言の中身が工程と一致しているかの意味判定はできない（まこさんの目と併用）。
 
 INPUT=$(cat)
 AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(sys.stdin).get('agent_type',''))" 2>/dev/null)
 [ -n "$AGENT_TYPE" ] && exit 0   # サブエージェントは通す（デッドロック回避）
 
-printf '%s' "$INPUT" | grep -qE 'FLOW_DECL_OK=1' && exit 0
+# ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
 CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('command',''))" 2>/dev/null)
 
@@ -66,7 +66,7 @@ fail() {
   echo "  工程: <策定4段のどれ（例 3️⃣層3 候補選定）>" >&2
   echo "  実行: <スクリプト名と主な引数>" >&2
   echo "  目的: <1行>" >&2
-  echo "（同じ工程で同じスクリプトを回し直す間は宣言1回でよい・工程が変わったら書き直す・FLOW_DECL_OK=1 はまこさん明示 OK 時のみ）" >&2
+  echo "（同じ工程で同じスクリプトを回し直す間は宣言1回でよい・工程が変わったら書き直す・解除は 2026-08-16 に廃止）" >&2
   exit 2
 }
 

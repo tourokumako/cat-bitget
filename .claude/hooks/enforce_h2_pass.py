@@ -13,10 +13,10 @@
 # 対象外（通す）: --selftest・py_compile・--help・--verify・--identity（恒等検収）・
 #   leak_causality_diag 自身（これが走れないと印を作れない＝デッドロック回避）・
 #   引用符/ヒアドキュメントの中の言及・サブエージェント。
-# 解除: H2PASS_OK=1（まこさんの明示 OK 時のみ・乱用禁止）。
+# 解除: 無し（2026-08-16 まこさん指示「じゃあ強制解除できない状態にしろ」で廃止）。
 #
 # 限界（正直に）:
-#   印そのもの（h2_pass.json）を手で偽造すれば通る＝TODO_OK=1 の乱用と同じ明示の違反で、機械では
+#   印そのもの（h2_pass.json）を手で偽造すれば通る＝hook のファイル自体を書き換えるのと同じ明示の違反で、機械では
 #   見抜けない。検査そのものの限界は leak_causality_diag の冒頭（結果を変えない未来参照は捕まらない）。
 #
 # 番人: python3 .claude/hooks/enforce_h2_pass.py --selftest
@@ -88,7 +88,7 @@ def fail(reason: str):
     print("対処: 次を走らせて、全部の検査を pass させる（pass したときだけ印が書かれる）:", file=e)
     print("  python3 scripts/priority_rebuild/leak_causality_diag.py", file=e)
     print("（コードか設定を変えるたびに、検査のやり直しが要る＝それがこのゲートの目的です。", file=e)
-    print("  H2PASS_OK=1 はまこさん明示 OK 時のみ）", file=e)
+    print("  （解除は 2026-08-16 に廃止＝合言葉では通りません）", file=e)
     sys.exit(2)
 
 
@@ -100,8 +100,7 @@ def hook_main():
         sys.exit(0)                                    # 読めない入力では止めない（他 hook と同型）
     if data.get("agent_type"):
         sys.exit(0)
-    if "H2PASS_OK=1" in raw:
-        sys.exit(0)
+    # ★解除（H2PASS_OK=1）は 2026-08-16 に廃止（まこさん指示）＝通す道は無い。
     if data.get("tool_name") != "Bash":
         sys.exit(0)
     cmd = (data.get("tool_input") or {}).get("command", "") or ""

@@ -15,7 +15,7 @@ INPUT=$(cat)
 AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(sys.stdin).get('agent_type',''))" 2>/dev/null)
 [ -n "$AGENT_TYPE" ] && exit 0
 
-printf '%s' "$INPUT" | grep -qE 'FALSE_REPORT_OK=1' && exit 0
+# ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
 FP=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('file_path',''))" 2>/dev/null)
 # 対象＝CC が書く記録文書（結果と評価を書く場所）
@@ -54,7 +54,7 @@ if [ "$rc" -eq 8 ]; then
   echo "      背景＝機械のどこにも無い「+\$19」を CC が2ファイルの手計算で作り虚偽報告した（2026-07-20）。" >&2
   echo "      設計の出典＝SmartSnap 型 proactive evidence seeking（照合でなく証拠提出・中身の当否はまこさんが判断）。" >&2
   echo "" >&2
-  echo "（正当に不要な時のみ FALSE_REPORT_OK=1）" >&2
+  echo "（解除は 2026-08-16 に廃止＝合言葉では通りません）" >&2
   exit 2
 fi
 if [ "$rc" -eq 7 ]; then
@@ -66,7 +66,7 @@ if [ "$rc" -eq 7 ]; then
   echo "      背景＝CC が hook のコードを1行も読まずに『デバッグ表示です・実行時エラーではありません』と断定し、" >&2
   echo "      まこさんに判断を求めた（2026-07-20）。まこさんの「意味がわからない」で読み直して誤りと判明。" >&2
   echo "" >&2
-  echo "（正当に不要な時のみ FALSE_REPORT_OK=1）" >&2
+  echo "（解除は 2026-08-16 に廃止＝合言葉では通りません）" >&2
   exit 2
 fi
 
@@ -85,5 +85,5 @@ else
   echo "      背景＝安全装置が外れて損失計上が消えただけの変化に『改善』と付け、まこさんの採用判断を汚した。" >&2
 fi
 echo "" >&2
-echo "（正当に不要な時のみ FALSE_REPORT_OK=1）" >&2
+echo "（解除は 2026-08-16 に廃止＝合言葉では通りません）" >&2
 exit 2

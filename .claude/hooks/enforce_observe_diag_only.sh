@@ -17,7 +17,7 @@
 # safety hook: fast-mode 無効化行を入れない（自作 probe の暴走は fast-mode 中に起きた＝fast-mode でこそ要る）。
 # 対象外（通す）: 引用符・ヒアドキュメントの中身（git commit メッセージ・echo 等での言及は除去して判定）。
 #   サブエージェント（Workflow/Agent 内）も通す（デッドロック回避・他 hook と同型）。
-# 解除: VERIFY_TOOL_OK=1（まこさんの明示 OK 時のみ・乱用禁止）。
+# 解除: 無し（2026-08-16 まこさん指示「じゃあ強制解除できない状態にしろ」で廃止）。
 # 限界: 置き場所（scratchpad/tmp）で判別＝正本ディレクトリに自作を書けば素通り（他の命名/acceptance ゲートが担保）。
 #   引用符を除去するので実行パスを引用符で囲めば素通りしうる（＝意図的 bypass は cc_role §1.4.6.2 で禁止）。テキスト検査＝まこさんの目と併用。
 
@@ -25,7 +25,7 @@ INPUT=$(cat)
 AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(sys.stdin).get('agent_type',''))" 2>/dev/null)
 [ -n "$AGENT_TYPE" ] && exit 0   # サブエージェントは通す（デッドロック回避）
 
-printf '%s' "$INPUT" | grep -qE 'VERIFY_TOOL_OK=1' && exit 0
+# ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
 CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('command',''))" 2>/dev/null)
 
@@ -57,5 +57,5 @@ echo "  ・層3 探索  = engine_tuner.py" >&2
 echo "  ・採否/分析 = score.py / report.py / analyze.py / precheck.py" >&2
 echo "" >&2
 echo "observe_diag に足りない観察があれば、自作せず observe_diag に節を足す（まこさん承認）＝道具を再発明しない。" >&2
-echo "（正当な理由がある単発のみ VERIFY_TOOL_OK=1・まこさんの明示 OK 時だけ）" >&2
+echo "（解除は 2026-08-16 に廃止。足りない観察は observe_diag に節を足す）" >&2
 exit 2

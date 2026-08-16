@@ -8,7 +8,7 @@
 #
 # 判定は enforce_h2_pass.py（別ファイル＝pdca_mark の -c 埋め込み無言死の教訓・pdca_flow.md）。
 # safety hook: fast-mode 無効化行を入れない。
-# 解除: H2PASS_OK=1（まこさんの明示 OK 時のみ）。
+# 解除: 無し（2026-08-16 まこさん指示「じゃあ強制解除できない状態にしろ」で廃止）。
 # 番人: python3 .claude/hooks/enforce_h2_pass.py --selftest
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

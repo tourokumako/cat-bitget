@@ -31,12 +31,12 @@
 #   理由＝まこさんが 2026-08-16 に「fast-modeをオフにすると実行する強制内容は、今後は使わないと
 #   思う」と言った。fast-mode で止まる形にすると、この hook は1回も動かない。
 #
-# 解除: TODO_OK=1（まこさんの明示 OK 時のみ・乱用禁止）。
+# 解除: 無し（2026-08-16 まこさん指示「じゃあ強制解除できない状態にしろ」で廃止）。
 #
 # 限界（正直に）:
 #   ToDo の中身が実物と合っているかは、機械には分からない。CC が「A-7 は終わった」と嘘を書けば
 #   そのまま通る。§NN の中身が空でも通る（節が在るかしか見ない）。
-#   表示の記録（session_todo_shown）を CC が echo で偽造すれば通る＝TODO_OK=1 の乱用と同じ
+#   表示の記録（session_todo_shown）を CC が echo で偽造すれば通る＝hook のファイル自体を書き換えるのと同じ
 #   明示の違反で、機械では見抜けない。最後の関所はまこさんの目。
 
 import glob
@@ -174,7 +174,7 @@ def fail(reason):
             pass
     print("対処: ①ToDo を直す ②同じ内容をチャットに貼る ③下のコマンドで印を作る ④再実行する", file=e)
     print(f'  shasum -a 256 "{TODO}" | awk \'{{print $1}}\' > "{MARK}"', file=e)
-    print("（TODO_OK=1 はまこさん明示 OK 時のみ）", file=e)
+    print("（解除は 2026-08-16 に廃止＝合言葉では通りません）", file=e)
     sys.exit(2)
 
 
@@ -192,8 +192,7 @@ def hook_main():
     cmd = ti.get("command", "") or ""
     fpath = ti.get("file_path", "") or ""
 
-    if "TODO_OK=1" in raw:
-        sys.exit(0)
+    # ★解除（TODO_OK=1）は 2026-08-16 に廃止（まこさん指示）＝通す道は無い。
 
     # ToDo ファイル自身と印の操作は通す（止めると ToDo が書けない＝デッドロック）
     if fpath in (TODO, MARK) or "session_todo" in cmd:

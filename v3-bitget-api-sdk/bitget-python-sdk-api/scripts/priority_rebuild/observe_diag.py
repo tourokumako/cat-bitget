@@ -173,9 +173,18 @@ def _print_mode_info(cfg: dict) -> None:
 #   probe は広く試すためのものなので、値をコードに焼かない。
 #   使った値は出力の先頭に全部印字する＝狭めたら見える。
 CONFIG_PATH = __file__.rsplit("/", 1)[0] + "/observe_config.json"
-TF_RULE = {"5m": "5min", "10m": "10min", "15m": "15min", "30m": "30min", "1h": "1h",
+TF_RULE = {"1m": "1min", "3m": "3min",
+           "5m": "5min", "10m": "10min", "15m": "15min", "30m": "30min", "1h": "1h",
            "2h": "2h", "4h": "4h", "6h": "6h", "12h": "12h", "1d": "1D"}
 # ↑ 10m は 2026-08-07 まこさん指示「時間足に10mも追加したい」で追加（5m データからの resample＝他の足と同じ作り）
+# ↑ 1m・3m は 2026-08-16 の段7 で追加（要件 R15「扱う時間足を1分足から1日足まで広げる」）。
+#   ★この2つだけは 5分足から作れない（5分足を細かく割ることはできない）＝1分足の元データを読む。
+#   作り方＝1m はそのまま／3m は1分足からの resample。未来を見ない式は他の足と同じものを使う
+#   （足が閉じた時刻まで index を進めてから 5分足の index へ ffill）。
+SUB_5M_TF = ("1m", "3m")                      # 5分足より短い足＝1分足の元データが材料
+ONE_MIN_CSV = "data/BTCUSDT-1m-binance-taker-2024-03-01_2026-06-30.csv"
+# ↑ 段7 の 7-1 で作ったもの（2026-08-11・1,226,880本・1分グリッドの欠け0・重複0・境目の段差0）。
+#   5分足の正本（Binance Spot 系列）と同じ作りで、時刻はバーの始まりの時刻。
 
 
 def load_config(path: str | None = None) -> dict:
@@ -187,8 +196,18 @@ def load_config(path: str | None = None) -> dict:
     bad = [t for t in cfg["timeframes"] if t not in TF_RULE]
     if bad:
         raise SystemExit(f"[設定] 知らない足: {bad}（使えるのは {list(TF_RULE)}）")
-    if "1m" in cfg["timeframes"]:
-        raise SystemExit("[設定] 1m は使わない（CLAUDE.md 提案禁止リスト）")
+    # ★2026-08-16（段7）＝「1m は使わない」の拒否を外した。
+    #   外した根拠は2つ。①CLAUDE.md の 1m 禁止は 2026-06-02 に まこさんが撤回している
+    #   （逐語「ML 学習で 1m/3m が有効と実証されれば有効化可」）②engine_tuner の要件 R15
+    #   ＝「扱う時間足を1分足から1日足まで広げる」（まこさん指示 2026-08-08）。
+    #   代わりに、1m・3m を使うなら元データが実在することを、走らせる前に確かめる。
+    if any(t in cfg["timeframes"] for t in SUB_5M_TF):
+        import pathlib
+        p = (pathlib.Path(__file__).resolve().parent.parent.parent / ONE_MIN_CSV)
+        if not p.exists():
+            raise SystemExit(
+                f"[設定] {sorted(set(cfg['timeframes']) & set(SUB_5M_TF))} を使う設定だが、"
+                f"1分足の元データが無い: {p}")
     return cfg
 
 
@@ -1354,13 +1373,54 @@ def _resample(df, rule):
         {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}).dropna()
 
 
+_ONE_MIN_CACHE: dict = {}
+
+
+def load_1m(start, end, path: str | None = None) -> pd.DataFrame:
+    """1分足の元データを読む（1m・3m の材料・2026-08-16 段7 で新設）。
+
+    ★なぜ要るか。5分足のバーは、1分足へ細かく割れない。だから 1m と 3m だけは
+    元データを別に読む。ほかの足（10m 以上）は、いままで通り5分足からまとめて作る。
+    start・end は5分足のバーの範囲。その範囲だけを切り出して返す（全部を持たない）。
+    path はデータ検査の番人が別のファイルを入れるためだけの引数＝通常は渡さない。"""
+    import pathlib
+    p = pathlib.Path(path) if path else (
+        pathlib.Path(__file__).resolve().parent.parent.parent / ONE_MIN_CSV)
+    key = (str(p), pd.Timestamp(start), pd.Timestamp(end))
+    if key in _ONE_MIN_CACHE:
+        return _ONE_MIN_CACHE[key]
+    if not p.exists():
+        raise SystemExit(f"[1分足] 元データが無い: {p}")
+    d = pd.read_csv(p, usecols=["timestamp", "open", "high", "low", "close", "volume"],
+                    parse_dates=["timestamp"]).set_index("timestamp").sort_index()
+    if d.index.tz is not None:
+        d.index = d.index.tz_localize(None)
+    s, e = pd.Timestamp(start), pd.Timestamp(end)
+    # ★元データが5分足の範囲を覆っていなければ、黙って NaN を作らずに止める。
+    if d.index.min() > s or d.index.max() < e:
+        raise SystemExit(
+            f"[1分足] 元データが5分足の範囲を覆っていない: 元データ {d.index.min()}〜{d.index.max()} ／ "
+            f"必要 {s}〜{e}（取り足しが要る）")
+    d = d.loc[s:e]
+    _ONE_MIN_CACHE[key] = d
+    return d
+
+
 def build_features(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> tuple[pd.DataFrame, dict]:
     """指標 × 時間軸 を全部つくる。上位足は『足が閉じた時刻』から使う（未来を見ない）。
     catalog はデータ検査（歩0）の番人がわざと壊した式を注入するためだけの引数＝通常は渡さない。"""
     out, meta = {}, {}
     catalog = catalog or build_catalog(cfg)
+    # ★1m・3m を使うときだけ、1分足の元データを読む（使わないなら読まない＝重いので）。
+    one = (load_1m(bars.index[0], bars.index[-1])
+           if any(t in cfg["timeframes"] for t in SUB_5M_TF) else None)
     for tf in cfg["timeframes"]:
-        src = bars if tf == "5m" else _resample(bars, TF_RULE[tf])
+        if tf == "5m":
+            src = bars
+        elif tf in SUB_5M_TF:                            # 5分足より短い足＝1分足から作る
+            src = one if tf == "1m" else _resample(one, TF_RULE[tf])
+        else:
+            src = _resample(bars, TF_RULE[tf])
         for name, fn, directional in catalog:
             col = f"{name}__{tf}"
             # ★囲いは「上位足へのずらし」まで含める（2026-08-10 まこさん OK で広げた）。
@@ -3370,12 +3430,34 @@ def _insp_resample(bars: pd.DataFrame, cfg: dict) -> list[str]:
     print(f"  閉じる前のバーへの漏れ（人工データ・15m と 2h）: {'なし' if not leak else '検出'}")
     ng += leak
     print(f"  足の内訳（observe_config.json の timeframes・全 {len(cfg['timeframes'])} 種＝指標はこの全部で組む）:")
+    one = (load_1m(sample.index[0], sample.index[-1])
+           if any(t in cfg["timeframes"] for t in SUB_5M_TF) else None)
     for tf in cfg["timeframes"]:
         if tf == "5m":
             print("     5m: 元データそのまま（resample しない）")
+        elif tf in SUB_5M_TF:
+            # ★5分足より短い足＝1分足の元データが材料（5分足は細かく割れない・2026-08-16 段7）
+            rr = one if tf == "1m" else _resample(one, TF_RULE[tf])
+            mis = int((rr.index.asi8 % pd.Timedelta(TF_RULE[tf]).value != 0).sum())
+            print(f"     {tf}: 1分足の元データから作る・規則 {TF_RULE[tf]}・"
+                  f"直近40日で {len(rr)} 本・区切り時刻ずれ {mis} 本")
+            if mis:
+                ng.append(f"{tf} の区切り時刻がずれたバー {mis} 本")
         else:
             rr = _resample(sample, TF_RULE[tf])
             print(f"     {tf}: resample 規則 {TF_RULE[tf]}・label=left/closed=left・直近40日で {len(rr)} 本")
+    # ★5分足より短い足だけの追加検査（2026-08-16 段7・7-4）＝実データで数える。
+    #   5分足のバー t で使う1分足・3分足のバーが、t までに閉じているか。
+    #   閉じていないバー（＝5分足のバーの途中の1分足）を1本でも使っていたら未来参照（H2 違反）。
+    for tf in [t for t in cfg["timeframes"] if t in SUB_5M_TF]:
+        src = one if tf == "1m" else _resample(one, TF_RULE[tf])
+        closed_at = src.index + pd.Timedelta(TF_RULE[tf])          # 足が閉じた時刻
+        used = pd.Series(closed_at, index=closed_at).reindex(sample.index, method="ffill")
+        bad = int((used.dropna() > used.dropna().index).sum())
+        print(f"  {tf} が5分足のバーの途中を使っていないか（実データ {len(sample)} 本）: "
+              f"閉じていないバーを使った回数 {bad}")
+        if bad:
+            ng.append(f"{tf} が閉じる前のバーを {bad} 回 使っている（未来参照＝H2 違反）")
     return ng
 
 
@@ -5217,8 +5299,14 @@ def selftest() -> None:
     cat = build_catalog(cfg)
     if len(cat) < 40:
         ng.append(f"指標カタログが {len(cat)} 種しかない")
-    if len(cfg["timeframes"]) < 3 or "1m" in cfg["timeframes"]:
+    if len(cfg["timeframes"]) < 3:
         ng.append(f"足が不正: {cfg['timeframes']}")
+    # ★「1m は不正」を外した（2026-08-16・段7）。根拠＝CLAUDE.md の 1m 禁止は 2026-06-02 に
+    #   まこさんが撤回済み／要件 R15「扱う時間足を1分足から1日足まで広げる」。
+    #   代わりに、設定に無い足が混じっていないかだけを見る（TF_RULE が正本）。
+    _bad_tf = [t for t in cfg["timeframes"] if t not in TF_RULE]
+    if _bad_tf:
+        ng.append(f"知らない足が設定に在る: {_bad_tf}")
     for key in ("quantiles", "sl_grid", "favorable_marks", "wait_grid", "early_windows"):
         if key not in cfg or len(cfg[key]) < 3:
             ng.append(f"{key} の候補が足りない（probe は広く試す）")

@@ -33,8 +33,19 @@ for lg in "$STATE_DIR"/*_error.log; do
   NG=$((NG+1))
 done
 
+# ④ ★合言葉（XXX_OK=1 で通す抜け道）が hook に戻っていないか（2026-08-16 まこさん指示「じゃあ強制解除できない状態にしろ」）
+#    背景＝CC が同日に VERIFY_TOOL_OK=1 と FLOW_DECL_OK=1 を許可なく使った（worklog 20260816 §52.6）。
+#    16箇所の通し判定を全部 消した。ここでは「通し判定の形」の行を数え、1件でも在れば 🔴 を出す。
+#    ★注意＝説明文の中の文字列は数えない（通し判定の形＝grep -qE '…_OK=1' && exit 0 ／ "…_OK=1" in raw ／ '…_OK=1' in cmd）。
+ESC=$(grep -nE "grep -qE '[A-Z0-9_]+_OK=1' && exit 0|\"[A-Z0-9_]+_OK=1\" in raw|'[A-Z0-9_]+_OK=1' in cmd" "$HOOKS_DIR"/*.sh "$HOOKS_DIR"/*.py 2>/dev/null)
+if [ -n "$ESC" ]; then
+  echo "🔴 合言葉（強制の解除）が hook に戻っている＝2026-08-16 に廃止したもの。まこさんへ報告:"
+  printf '%s\n' "$ESC" | sed 's/^/     /'
+  NG=$((NG+1))
+fi
+
 if [ "$NG" -eq 0 ]; then
-  echo "✅ hook 健全性: 登録 .sh 実在/実行権限・hooks/*.py 構文・エラーログ ぜんぶ異常なし"
+  echo "✅ hook 健全性: 登録 .sh 実在/実行権限・hooks/*.py 構文・エラーログ・合言葉0件 ぜんぶ異常なし"
 else
   echo "🔴 hook 健全性: 異常 ${NG} 件（上記）＝強制が効いていない可能性＝作業前にまこさんへ報告"
 fi

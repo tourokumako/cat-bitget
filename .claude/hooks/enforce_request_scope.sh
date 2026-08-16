@@ -15,7 +15,7 @@ INPUT=$(cat)
 AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(sys.stdin).get('agent_type',''))" 2>/dev/null)
 [ -n "$AGENT_TYPE" ] && exit 0   # サブエージェントは通す（デッドロック回避・他 hook と同型）
 
-printf '%s' "$INPUT" | grep -qE 'REQUEST_SCOPE_OK=1' && exit 0
+# ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
 CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('command',''))" 2>/dev/null)
 
@@ -47,5 +47,5 @@ echo "" >&2
 echo "背景（2026-07-20）: 依頼「切り方を％にしろ」に対し CC が水準 1.5% を無断で決めて本走（月−$41.30）。" >&2
 echo "  さらにその 1.5% はショート側の実績値をロングへ流用したもので、ロング側は測定していなかった。" >&2
 echo "  ＝値を勝手に決めた時点で、実験そのものが依頼と別物になる。" >&2
-echo "（正当に不要な時のみ REQUEST_SCOPE_OK=1）" >&2
+echo "（解除は 2026-08-16 に廃止＝合言葉では通りません）" >&2
 exit 2

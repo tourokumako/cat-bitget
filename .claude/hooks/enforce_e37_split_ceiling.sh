@@ -12,7 +12,7 @@
 #   頻度は2型の適切な天井に錨を打ったまま上げる（現値売りで下端に散らさない）。
 # 対象外（通す）: 非出力/テスト/診断/自己検査（--smoke/--diagnostic/--selftest 系/--param-schema-selftest/
 #   guard-check/py_compile/--help）／判定器（score/precheck/report/analyze/plot）・probe/deep_analysis（e37 本体の python 実行でない）。
-# override: 将来 2型切り分けを別の下端対策機構に置き換える等の正当時のみ SPLIT_CEILING_OK=1 を付ける（うっかり外し防止が主目的）。
+# override: 無し（2026-08-16 まこさん指示で廃止）。置き換えるときは、この hook 自体をまこさんが直す。
 
 INPUT=$(cat)
 
@@ -23,7 +23,7 @@ AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(
 CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('command',''))" 2>/dev/null)
 
 # 明示オーバーライド（正当時のみ・うっかり外し防止が主目的）
-printf '%s' "$CMD" | grep -qE 'SPLIT_CEILING_OK=1' && exit 0
+# ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
 # python 実行コマンドの時だけ判定
 has_python=$(printf '%s' "$CMD" | grep -cE 'python[0-9.]*[[:space:]]')
@@ -48,5 +48,5 @@ echo "2型切り分け（--v26-split-ceiling）＝下落系レンジは天井=�
 echo "" >&2
 echo "対処: 実行コマンドに --v26-split-ceiling（＋その付随フラグ --v26-gap/--v26-down-hours）を付ける。頻度は【2型の適切な天井に錨を打ったまま】上げる（現値売りで下端に散らさない）。" >&2
 echo "  例（v27lock 恒等ベース）: --v20-rg5 ... --v26-split-ceiling --v26-gap 0.5 --v26-down-hours 1.0 --tag <名前>" >&2
-echo "正当に 2型切り分けを別の下端対策機構へ置き換える時のみ SPLIT_CEILING_OK=1 を付ける。" >&2
+echo "解除は 2026-08-16 に廃止。置き換えるときは、この hook 自体をまこさんが直す。" >&2
 exit 2

@@ -18,7 +18,7 @@
 #
 # 発火: /tmp・scratchpad の *_probe.py / *_deep_analysis.py を python 実行する時。
 #   （実験本走は require_comprehension_check が担当＝二重にしない）
-# 解除: OBSERVATION_OK=1（設計不要な単純確認のみ・乱用禁止）
+# 解除: 無し（2026-08-16 まこさん指示「じゃあ強制解除できない状態にしろ」で廃止）。
 # 限界: テキスト検査＝書けば通る。中身が本当に多次元かはまこさんの目（他 hook と同じ）。
 
 MARK="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode"
@@ -28,7 +28,7 @@ INPUT=$(cat)
 AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(sys.stdin).get('agent_type',''))" 2>/dev/null)
 [ -n "$AGENT_TYPE" ] && exit 0   # サブエージェントは通す（デッドロック回避）
 
-printf '%s' "$INPUT" | grep -qE 'OBSERVATION_OK=1' && exit 0
+# ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
 CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('command',''))" 2>/dev/null)
 
@@ -94,5 +94,5 @@ echo "  E 巻き込み  : 見つけた特徴が勝ち玉に当たる量を同時
 echo "" >&2
 echo "⛔ 禁止: 「カタログを機械的に当てる」「全指標を測る」等のチェックリスト埋め。目的は分離力のある特徴を" >&2
 echo "   見つけること であって、一覧を消し込むことではない（entry_exit_matrix.md 90行目）。" >&2
-echo "（設計不要な単純確認のみ OBSERVATION_OK=1・乱用禁止）" >&2
+echo "（解除は 2026-08-16 に廃止＝合言葉では通りません）" >&2
 exit 2

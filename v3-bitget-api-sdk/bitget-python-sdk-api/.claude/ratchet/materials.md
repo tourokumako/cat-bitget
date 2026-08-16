@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=66880586b26a5a6e gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=84ec7632ffce7800 gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -35,7 +35,7 @@
 - **C（3 件）** … taker_ls・L-S比・CVD
 - **D（62 件）** … 転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S
 - **E（1 件）** … トレンド/モメンタム＝MTF傾き整合
-- **F（2 本）** … いま 9 本＝5m・10m・15m・30m・1h・2h・4h・6h・1d
+- **F（2 本）** … いま 11 本＝1m・3m・5m・10m・15m・30m・1h・2h・4h・6h・1d
 - **G（1 件）** … 曜日
 
 > ★印 B・C・G は、検査9・検査10・検査7 が出したものではありません。**段5 で新しく数えたものです。**
@@ -49,8 +49,8 @@
 
 | 何 | 数 |
 |---|---|
-| 材料カタログの列（部品 × 時間足） | 4815 列 |
-| **engine_tuner が選べる列** | **4815 列（100.0%）** |
+| 材料カタログの列（部品 × 時間足） | 5885 列 |
+| **engine_tuner が選べる列** | **5885 列（100.0%）** |
 | engine_tuner が選べる指標の種類 | **244 種類** |
 | **engine_tuner が選べない指標の種類** | **7 種類**（上の一覧 B） |
 | そのほかに選べるもの（レンジ幾何） | W%・帯内位置% |
@@ -494,7 +494,7 @@
 | うち **パラメータを2つ以上 持つ**（同じ指標のパラメータ違いで 2本 並べられる） | **133** |
 | うち パラメータが1つだけ | 45 |
 | うち パラメータが無い | 66 |
-| 時間足 | 9 |
+| 時間足 | 11 |
 
 ### 部品を「何が要るか」で分けると
 

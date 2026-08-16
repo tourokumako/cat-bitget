@@ -8,7 +8,7 @@
 #   Hook 1(require_data_read_before_improve の ledger 読了)は「読んだか」まで、本 hook は「読んで過去照合を宣言したか」まで縛る。
 # 判別: fast-mode ON かつ 編集対象が e37_range_scalp.py の時だけ発火。
 #   最新 session_worklog_*.md に「過去照合:」を含む行があり、その行が ARC番号(ARC\d+ or ARCなし=none 明記)＋
-#   （Yes または No）を含めば通す。無ければブロック。明示解除 PASTCHECK_OK=1。
+#   （Yes または No）を含めば通す。無ければブロック。解除は 2026-08-16 に廃止。
 MARK="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode"
 [ ! -f "$MARK" ] && exit 0   # fast-mode 限定（OFF では enforce_pdca_chain 等の普段の連結強制に任せる）
 
@@ -20,7 +20,7 @@ FP=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.std
 # 戦略実装 e37 の編集の時だけ発火（worklog/docs 等の編集は対象外＝worklog に宣言を書く編集自体はブロックしない）
 printf '%s' "$FP" | grep -qE 'e37_range_scalp\.py$' || exit 0
 
-printf '%s' "$INPUT" | grep -qE 'PASTCHECK_OK=1' && exit 0   # 明示オーバーライド
+# ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
 WLDIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state"
 # 最新の session_worklog を探し、過去照合宣言行を照合
@@ -40,5 +40,5 @@ echo "  ・過去にやっていない新規なら「過去照合: ARCなし（o
 echo "  ・過去にやったが差分があるなら「過去照合: ARC24 でタッチ3回をやった=Yes・今回は○○が違う(退行でない)」。" >&2
 echo "" >&2
 echo "理由: 「新設計」と称した退行の再発防止（next_step 失敗(c)＝タッチ3回は ARC24 でやって v11 でタッチ2回に差替済なのに確認せず戻そうとした）。" >&2
-echo "対処: 最新 session_worklog_<日付>.md に上記の「過去照合:」行を追記してから編集を再実行。正当に不要な時のみ PASTCHECK_OK=1。" >&2
+echo "対処: 最新 session_worklog_<日付>.md に上記の「過去照合:」行を追記してから編集を再実行。解除は 2026-08-16 に廃止。" >&2
 exit 2

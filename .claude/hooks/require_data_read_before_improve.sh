@@ -6,7 +6,7 @@
 # 判別: fast-mode ON かつ 編集対象が e37_range_scalp.py の時だけ発火。
 #   このセッションで trades_*.csv と e37 を読んだ証跡（track_fastmode_data_read のマーカー or read_log の Read）が
 #   両方無ければブロック。マーカーは reset_read_log が SessionStart でクリア（前セッション持ち越さない）。
-#   ML に戻る(fast-mode OFF)時は黙る。明示解除 DATAREAD_OK=1。
+#   ML に戻る(fast-mode OFF)時は黙る。解除は 2026-08-16 に廃止。
 MARK="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode"
 [ ! -f "$MARK" ] && exit 0   # fast-mode 限定（OFF では普段の require_instrument_read_before_impl 等に任せる）
 
@@ -20,7 +20,7 @@ FP=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.std
 # 戦略実装 e37 の編集の時だけ発火（worklog/docs 等の編集は対象外）
 printf '%s' "$FP" | grep -qE 'e37_range_scalp\.py$' || exit 0
 
-printf '%s' "$INPUT" | grep -qE 'DATAREAD_OK=1' && exit 0   # 明示オーバーライド
+# ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
 # データ(trades CSV) を読んだ証跡: マーカー or read_log
 trades_ok=0
@@ -45,5 +45,5 @@ echo "" >&2
 [ "$ledger_ok" -eq 0 ] && echo "  ❌ ledger.md（e37 の ARC 履歴＝過去にやったこと）を今セッションで読んだ証跡なし（grep/sed で該当 ARC 群 or Read tool）" >&2
 echo "" >&2
 echo "理由: ①実装・データを読まず推測して二度外し激怒（memory feedback_fastmode_read_history_code_data）②過去にやったこと(ARC)を確認せず退行（next_step 失敗(c)＝タッチ3回は ARC24 でやって v11 でタッチ2回に差替済なのに戻そうとした）。" >&2
-echo "対処: 該当 trades CSV・e37・ledger の該当 ARC 群 を実際に開いてから編集を再実行。ML 復帰時など正当な時は DATAREAD_OK=1。" >&2
+echo "対処: 該当 trades CSV・e37・ledger の該当 ARC 群 を実際に開いてから編集を再実行。解除は 2026-08-16 に廃止。" >&2
 exit 2

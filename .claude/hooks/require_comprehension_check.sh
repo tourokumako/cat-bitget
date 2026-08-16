@@ -5,7 +5,7 @@
 #   するまで、e37 戦略の編集・本走をブロック＝「読んで理解した」ことを物理で担保（keyword 通過≠理解＝最終判断はまこさんの目）。
 # 判別: e37_scalp.py / e37_range_scalp.py の Write|Edit、または python での e37 本走（出力モード）の時だけ発火。
 #   comprehension_check.md に Q1〜Q5 の要点キーワードが揃っていなければブロック。marker は reset_read_log が SessionStart で消す。
-#   明示解除 COMPREHENSION_OK=1（正当時のみ）。
+#   解除は 2026-08-16 に廃止（まこさん指示）。
 MARK="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode"
 [ ! -f "$MARK" ] && exit 0   # fast-mode 限定（ML復帰時は別運用）
 
@@ -13,7 +13,7 @@ INPUT=$(cat)
 AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(sys.stdin).get('agent_type',''))" 2>/dev/null)
 [ -n "$AGENT_TYPE" ] && exit 0   # サブエージェントは通す（デッドロック回避・他 hook と同型）
 
-printf '%s' "$INPUT" | grep -qE 'COMPREHENSION_OK=1' && exit 0
+# ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
 # 発火対象か判定: e37 の編集（file_path）or e37 の python 本走（command・出力モード）
 FP=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('file_path',''))" 2>/dev/null)
@@ -55,5 +55,5 @@ echo "" >&2
 echo "背景: next_step に詳細に書いても CC は読まず同じミス（早切りで悪化・思い込み断言・無断変更・全5年走行）を繰り返す。" >&2
 echo "対処: .claude/state/comprehension_check.md に Q1〜Q5 を【自分の言葉で】回答し、チャットにも出す（まこさんが理解を判断）。next_step の【理解確認テスト】に各問の正答の要点あり。" >&2
 echo "  Q1=早切り/損切りは TP(勝ち玉)も同時に切る＝負けだけ切るのは原理的に不可能／Q2=前CCの Exit 結論は思い込み・嘘＝信用しない／Q3=CCは損切り提案せずまこさんに相談・まこさんが導く／Q4=fast-modeは6ヶ月(採点窓)だけ・全5年で走らせない／Q5=実データ/コード/ledgerを読み思い込みで結論しない／Q6=次タスク＝入口2パターン(down型:天井直近高値/flat_up:天井res_hi)の entry後の建玉の動きをパターン別に詳細分析・entry_exit_matrix.md 必読。" >&2
-echo "（正当に不要な時のみ COMPREHENSION_OK=1）" >&2
+echo "（解除は 2026-08-16 に廃止＝合言葉では通りません）" >&2
 exit 2
