@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=83834c1c26d63bb5 -->
+<!-- DOCMAP_HASH=45ad3ebc40f95e3f -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -23,7 +23,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - **検証コマンドを持たない道具＝1 本**（gen_p23_candidates.py）
 - **いま検証が通らない道具＝1 本**（gen_auditor_brief.py）
 - **名乗っていない道具＝0 本**（明らかな漏れ）／ 26 本（要確認）＝表3
-- 誰にも作られていない文書＝**313 本**（表4＝人が手で書いているもの）
+- 誰にも作られていない文書＝**314 本**（表4＝人が手で書いているもの）
 
 ## 表1｜道具 → 作る文書
 
@@ -133,7 +133,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## 表4｜誰にも作られていない文書（人が手で書いているもの）
 
-**313 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
+**314 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
 
 <details><summary>全部を開く</summary>
 
@@ -153,6 +153,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/state/flow_declaration.md`
 - `.claude/state/forward_action.md`
 - `.claude/state/goal_block.md`
+- `.claude/state/h2_pass.json`
 - `.claude/state/interpretation.md`
 - `.claude/state/next_step.md`
 - `.claude/state/next_step_archive_202608.md`

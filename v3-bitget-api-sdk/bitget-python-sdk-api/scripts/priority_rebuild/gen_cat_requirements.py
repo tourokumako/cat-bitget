@@ -455,6 +455,21 @@ def build() -> tuple[str, list[str]]:
         L.extend(check_recent(d["recent_check"], "\n".join(L)))
         L.append("")
 
+    # ── 付録C 食い違いの一覧（2026-08-16 新設・next_step §6 の 61番の直し）───────────
+    #   直す前は、画面に「文書の末尾に一覧が出ています」と出るのに、実際は書き出していなかった。
+    #   ＝件数しか分からず、中身を見るにはこの生成器を import して build() を呼ぶしかなかった。
+    L.append("## 付録C 書いてあることと実物が食い違っている箇所")
+    L.append("")
+    if bad:
+        L.append(f"**★{len(bad)} 件あります。**"
+                 "下は機械が実物のコード・hook・ファイルを開いて照らした結果です。手で書いていません。")
+        L.append("")
+        for i, b in enumerate(bad, 1):
+            L.append(f"{i}. {b}")
+    else:
+        L.append("**★0 件です。**書いてあることと実物は、いま全部 一致しています。")
+    L.append("")
+
     body = "\n".join(L).rstrip() + "\n"
     return f"<!-- CATREQ_HASH={_sha(body)} -->\n{body}", bad
 
@@ -601,7 +616,10 @@ def main() -> None:
     else:
         print(txt)
     if bad:
-        print(f"\n⚠️ 書いてあることと実物が食い違っている箇所 {len(bad)} 件（文書の末尾に一覧が出ています）")
+        print(f"\n⚠️ 書いてあることと実物が食い違っている箇所 {len(bad)} 件"
+              "（文書の末尾の「付録C」に、1件ずつ出ています）")
+        for i, b in enumerate(bad, 1):
+            print(f"   {i}. {b}")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-<!-- CATREQ_HASH=f0fc0fe5392dad69 -->
+<!-- CATREQ_HASH=5e97406f49ebf756 -->
 <h1 style="font-size:2.4em;border-bottom:3px solid #888;padding-bottom:.2em">要件定義書 — cat-bitget ML トレード BOT</h1>
 
 作成: 2026-06-02 / 版: v3（v2 の手書きを json 正本＋機械生成へ移した。v1 は制約チェックリストのみ＝要件定義書として不備 → v2 で標準4部構成に書き直し）
@@ -1054,7 +1054,7 @@ demo（paptrading）→ 本番の段階移行（Phase7）。
 
 | 決まり | 破ったときに止まる仕組み | 根拠（見たファイルと行） |
 |---|---|---|
-| **8.1** セッション開始時に読む順 | 必読3本（WORKFLOW.md/next_step.md/adopted_strategies.md）を Read tool で開くまで Bash/Edit/Write をブロックする。（実物（../../.claude/hooks/require_read_before_work.sh の 3 行目ほか 1 件に「require_read_before_work」）） | <sub>`.claude/state/next_step.md` 1行目</sub> ＝次セッションの起点1枚の実物 |
+| **8.1** セッション開始時に読む順 | 必読3本（WORKFLOW.md/next_step.md/adopted_strategies.md）を Read tool で開くまで Bash/Edit/Write をブロックする。（実物（../../.claude/hooks/require_read_before_work.sh の 3 行目ほか 1 件に「require_read_before_work」）） | <sub>`.claude/state/next_step.md` 17行目</sub> ＝★次にやることが書いてある場所（2026-08-16 に next_step.md の いちばん上へ §0 として置いた・まこさん指示「どこにつぎにやることがかいてあるのかわからない」） |
 | **8.2** 文書マップ＆更新ルール | **無し**。機械の強制はありません。どの文書に何を書くかは、CC が本表を見て自分で守ります。 | <sub>`.claude/memory/improvement_ideation_kb.md` 1行目</sub> ＝improvement_ideation_kb.md の実在確認 |
 | **8.2.1** ファイル・データの地図 | **無し**。機械の強制はありません。手書きの地図が古くなることの対策として filemap.md（機械生成）を正本にしています。 | <sub>`.claude/ratchet/filemap.md` 2行目</sub> ＝全ファイル一覧の正本の実在確認 |
 | **8.2.1.1** 5m足データの取得・期間延長手順 | **無し**。機械の強制はありません。取得・延長は人が手順どおりに実行します。 | <sub>`.claude/rules/exchange_spec.md` 16行目</sub> ＝コスト側（手数料・funding・slippage）の確定値の正本（H4 と同じ出典） |
@@ -1096,7 +1096,7 @@ python3 scripts/priority_rebuild/gen_cat_requirements.py --verify  # 手で書�
 
 **★機械が git から毎回 数えます。**2026-08-08 に まこさんが3回 続けて「いまやっていることが書かれていない」と指摘したため足しました（E38 ／ いまは固定ルールで動いている事実 ／ engine_tuner）。3回とも見つけたのは まこさんです。
 
-- 直近 14 日に `scripts/priority_rebuild` で手を入れた .py は **37 本**。そのうち この文書に名前が出ているのは **14 本**、出ていないのは **23 本**。
+- 直近 14 日に `scripts/priority_rebuild` で手を入れた .py は **36 本**。そのうち この文書に名前が出ているのは **13 本**、出ていないのは **23 本**。
 
 この文書に名前が出ていないもの（★載せるかどうかは まこさんが決めます）
 
@@ -1123,3 +1123,7 @@ python3 scripts/priority_rebuild/gen_cat_requirements.py --verify  # 手で書�
 - `gen_v9_exits.py`
 - `indicator_reference_diag.py`
 - `leak_causality_diag.py`
+
+## 付録C 書いてあることと実物が食い違っている箇所
+
+**★0 件です。**書いてあることと実物は、いま全部 一致しています。

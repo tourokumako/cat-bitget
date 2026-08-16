@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "83834c1c26d63bb5",
+ "_本文の指紋": "45ad3ebc40f95e3f",
  "body": {
   "docs": [
    {
@@ -310,6 +310,7 @@
    ".claude/state/flow_declaration.md",
    ".claude/state/forward_action.md",
    ".claude/state/goal_block.md",
+   ".claude/state/h2_pass.json",
    ".claude/state/interpretation.md",
    ".claude/state/next_step.md",
    ".claude/state/next_step_archive_202608.md",
