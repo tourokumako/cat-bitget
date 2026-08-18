@@ -102,10 +102,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_interpretation.sh"
-          },
-          {
-            "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_todo_declaration.sh"
           }
         ]
@@ -319,19 +315,14 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_worklog_on_experiment.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_chat_writing.sh"
           }
         ]
       }
     ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/reset_interpretation.sh"
-          }
-        ]
-      }
-    ]
+    "UserPromptSubmit": []
   }
 }
