@@ -1,4 +1,4 @@
-<!-- FILEMAP_HASH=6770e51bcdb9705c -->
+<!-- FILEMAP_HASH=99eb6544e2714092 -->
 # filemap.md — 何がどこにあるかの地図（gen_filemap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。ファイルの一覧も説明も、実体から機械で取っています。
@@ -38,7 +38,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | まこさんが何を決めたか知りたい | `decisions.md` | 決定の一覧。提案の前に必ず読む |
 | 次に何をするか知りたい | `next_step.md` | 次セッションの起点。セッション開始で全文表示される |
 
-## 全部の一覧（234 件）
+## 全部の一覧（235 件）
 
 ### 売買と判定のスクリプト — scripts/priority_rebuild（82 件）
 
@@ -135,7 +135,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | e37.py | 戦略の実装 | 探索器が名前で読む | e37 — E37 の接続ファイル（engine_tuner が読む・要件 R4／R1・まこさん承認 2026-07-27） |
 | e38.py | 戦略の実装 | 探索器が名前で読む | e38 — E38 の接続ファイル（engine_tuner が読む・要件 R4・まこさん承認 2026-07-27） |
 
-### 作業の正本・記録 — .claude/ratchet（39 件）
+### 作業の正本・記録 — .claude/ratchet（40 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
@@ -155,6 +155,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | engine_tuner_manual.md | 文書 | — | engine_tuner 取扱説明書（gen_engine_tuner_manual.py が自動生成＝手書き禁止） |
 | engine_tuner_materials.md | 文書 | — | 全体像を決めるための材料 |
 | engine_tuner_milestones.md | 文書 | — | engine_tuner マイルストーン ／ フロー ／ やることリスト |
+| engine_tuner_milestones2.md | 文書 | — | engine_tuner マイルストーン② ／ フロー ／ やることリスト |
 | engine_tuner_requirements.md | 文書 | — | engine_tuner 要件定義書（gen_engine_tuner_requirements.py が自動生成＝手書き禁止） |
 | engine_tuner_step2_condition_format.md | 文書 | — | engine_tuner 歩2 — 条件データ形式の設計（CP3 反映版） |
 | entry_exit_matrix.md | 文書 | — | Entry×Exit ロジック 網羅マトリクス（★全戦略共通） |

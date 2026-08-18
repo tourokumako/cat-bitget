@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "45ad3ebc40f95e3f",
+ "_本文の指紋": "5dfaa764df480fc5",
  "body": {
   "docs": [
    {
@@ -571,6 +571,7 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_fix_map.json",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_materials.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_requirements.json",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_step2_condition_format.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_timing.json",
