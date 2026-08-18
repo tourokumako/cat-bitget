@@ -226,10 +226,86 @@ def check_reported_files(text, changed):
     return None
 
 
+# ---------------- 検査6＝言い換えの表に載っている語を使っていないか（2026-08-18 新設） ----------------
+#
+# なぜ足したか:
+#   まこさんの言葉（2026-08-18）＝「このCCしかわからないよな用語のせいで毎回今回のように時間が
+#   無駄にされてきてるんだけど。本当にどうにかならないのか？これ以上同じことを繰り返したくない」。
+#   1〜5番の検査は文の長さと並び順だけを見ていて、語を1つも見ていなかった。だから効かなかった。
+#
+# 表の在りか: .claude/rules/word_replacements.md
+#   「使わない語 | これから書く言い方」の2列の表。行が増えるたびに、この検査も自動で増える。
+#   「そのまま使ってよい語」の節に載っている語は、含んでいても止めない（例＝機械学習）。
+#
+# 限界（正直に）:
+#   私がこれから新しく作る語は、初回だけ通る。機械には、初めて見る語が伝わるか分からない。
+#   効くのは2回目からで、まこさんの「同じことを繰り返したくない」に直接 効く。
+
+WORDS_FILE = os.path.join(ROOT, ".claude", "rules", "word_replacements.md")
+
+
+def load_word_table(path=None):
+    """（使わない語 → これから書く言い方）の一覧と、そのまま使ってよい語の一覧を返す。"""
+    path = path or WORDS_FILE
+    pairs, allow, in_allow, in_skip = [], [], False, False
+    try:
+        lines = open(path, encoding="utf-8").read().splitlines()
+    except Exception:
+        return [], []
+    for raw in lines:
+        s = raw.strip()
+        if s.startswith("#"):
+            # ★大見出し（# と ##）だけが区分けを切り替える。
+            #   小見出し（###）では切り替えない＝2026-08-18 にここで取りこぼした。
+            level = len(s) - len(s.lstrip("#"))
+            if level <= 2:
+                in_allow = "そのまま使ってよい語" in s
+            # ★短い語（線・器・点・取る・引く・位置）は、別の語の一部にも当たる。
+            #   プログラムに見せると正しい文まで止めるので、この節の行は読み飛ばす。
+            in_skip = "プログラムでは見ない" in s
+            continue
+        if not s.startswith("|") or in_skip:
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        left, right = cells[0], cells[1]
+        if not left or set(left) <= set("-: "):
+            continue
+        if left in ("使わない語", "語", "私が使っていた語"):
+            continue
+        if in_allow:
+            allow.append(left)
+            continue
+        left = re.sub(r"（[^）]*）", "", left).strip()
+        for w in re.split(r"[／/]", left):
+            w = w.strip()
+            if w:
+                pairs.append((w, right))
+    return pairs, allow
+
+
+def check_words(text, path=None):
+    pairs, allow = load_word_table(path)
+    if not pairs:
+        return None
+    for no, s in target_lines(text):
+        for w, right in pairs:
+            if w not in s:
+                continue
+            # そのまま使ってよい語の一部なら見逃す（例＝「機械学習」の中の「機械」）
+            if any(w in a and a in s for a in allow):
+                continue
+            return (f"{no}行目に「{w}」を使っている。**この語は使わないと決めている。**"
+                    f"代わりに「{right}」と書く（.claude/rules/word_replacements.md）。\n"
+                    f"    いまの行: {s[:80]}")
+    return None
+
+
 def check_text(text, changed=None):
     # ★check_head（先頭に「決めてほしいこと」を求める検査）は 2026-08-18 に外した。
     #   まこさんの指摘＝決めてほしいことは毎回 発生しない。関数は残すが、判定には使わない。
-    for f in (check_name_list, check_sentence, check_paragraph, check_conclusion_first):
+    for f in (check_words, check_name_list, check_sentence, check_paragraph, check_conclusion_first):
         bad = f(text)
         if bad:
             return bad
@@ -348,7 +424,16 @@ def selftest():
     ok_head = ""
     cases = [
         ("正しい文章は通る",
-         ok_head + "- engine_tuner の乱数を機械で数えました。57件ありました。\n- 法則の表を読む回数は0回でした。\n",
+         ok_head + "- engine_tuner の乱数をプログラムで数えました。57件ありました。\n- 法則の表を読む回数は0回でした。\n",
+         None),
+        ("★言い換えの表に載っている語を使うと止まる",
+         "直しました。\n\n- 乱数を機械で数えました。57件でした。\n",
+         "この語は使わないと決めている"),
+        ("言い換えた言い方なら通る",
+         "直しました。\n\n- 乱数をプログラムで数えました。57件でした。\n",
+         None),
+        ("そのまま使ってよい語（機械学習）は止まらない",
+         "直しました。\n\n- 機械学習は使っていません。\n",
          None),
         ("★先頭に「決めてほしいこと」が無くても通る（2026-08-18 に検査を外した）",
          "報告します。\n\n- 乱数を数えました。57件でした。\n",
@@ -357,7 +442,7 @@ def selftest():
          "いいえ、毎回は発生しません。質問に答えるだけのやり取りのほうが多いです。\n",
          None),
         ("名前だけを並べた行は止まる",
-         ok_head + "同じだった数字＝乱数の呼び出し 57・法則の表を読む回数 0・表2つの指紋・上限5つ「無制限」\n",
+         ok_head + "同じだった数字＝乱数の呼び出し 57・法則の表を読む回数 0・表2つのハッシュ値・上限5つ「無制限」\n",
          "名前を並べただけ"),
         ("長い文は止まる",
          ok_head + "私は" + "あ" * 130 + "。\n",
