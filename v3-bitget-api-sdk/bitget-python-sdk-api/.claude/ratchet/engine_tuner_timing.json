@@ -32,11 +32,11 @@
     "trials": 100
   },
   "e38/S2": {
-    "load_sec": 0.2,
-    "measured_at": "2026-07-29",
-    "opt_sec": 38.6,
-    "per_trial_sec": 0.39,
-    "search_bars": 52416,
-    "trials": 100
+    "load_sec": 103.4,
+    "measured_at": "2026-08-19",
+    "opt_sec": 29.0,
+    "per_trial_sec": 1.45,
+    "search_bars": 175392,
+    "trials": 20
   }
 }

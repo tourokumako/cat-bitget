@@ -53,13 +53,27 @@ def fingerprint(files: list) -> str:
     return h.hexdigest()
 
 
+def _runs_target(cmd_x: str) -> bool:
+    """このコマンドが、対象のスクリプトを python で実行しようとしているか。
+
+    ★2026-08-19（まこさん決定「直す」）＝コマンド全体でなく、区切り（; & | 改行）で分けた
+      断片ごとに見る。直す前は「コマンドのどこかに python が在り、どこかに対象の名前が在る」で
+      止めていたので、grep でファイルの名前を数えるだけでも止まった（2026-08-18 に2回・worklog §11.6）。
+      直したあとは「python が、その対象のファイルを実行しようとしている断片」だけを見る。
+    """
+    for seg in re.split(r"[;&|\n]+", cmd_x):
+        if not re.search(r"(^|\s)python[0-9.]*(\s|$)", seg):
+            continue                                   # この断片は python 実行でない
+        if EXEMPT.search(seg):
+            continue                                   # 検査・検収・印を作る道具は通す
+        if TARGET.search(seg):
+            return True
+    return False
+
+
 def check(cmd_x: str):
     """止める理由を返す（無ければ None）。cmd_x＝引用符・ヒアドキュメントを外したコマンド。"""
-    if not re.search(r"python[0-9.]*[ \t]", cmd_x):
-        return None                                    # python 実行でなければ見ない
-    if EXEMPT.search(cmd_x):
-        return None                                    # 検査・検収・印を作る道具は通す
-    if not TARGET.search(cmd_x):
+    if not _runs_target(cmd_x):
         return None
     if not os.path.exists(PASS):
         return "検査済みの印が無い（h2_pass.json がまだ書かれていない）"
@@ -155,9 +169,19 @@ def selftest():
     case("検査・検収は印なしでも通る（--selftest）", None, run.replace("--purpose search", "--selftest"))
     case("leak_causality_diag 自身は通る", None, "python3 scripts/priority_rebuild/leak_causality_diag.py")
     case("対象外のスクリプトは見ない", None, "python3 scripts/priority_rebuild/observe_diag.py x.csv")
+    # ★2026-08-19（まこさん決定「直す」）＝走らせずに名前を数えるだけなら止めない（worklog §11.6 の誤った止まり）
+    case("grep で名前を数えるだけなら通る", None,
+         "grep -c regime scripts/priority_rebuild/engine_tuner_gen.py")
+    case("grep と python が同じコマンドに在っても、python が対象を実行していなければ通る", None,
+         "grep -c regime scripts/priority_rebuild/engine_tuner_gen.py ; python3 - ")
+    case("grep と python が同じでも、印が正しければ通る（本当に実行する形）", None,
+         "grep -c regime x.py ; python3 scripts/priority_rebuild/engine_tuner.py --purpose search")
     with open(os.path.join(tmp, MUST[0]), "a", encoding="utf-8") as f:
         f.write("# 1文字 変えた\n")
     case("コードを1文字でも変えると止まる", "指紋の不一致")
+    # ★2026-08-19＝区切りの後ろで本当に実行する形は、印が壊れていればちゃんと止まる（緩めすぎていないかの確認）
+    case("区切りの後ろで本当に実行する形は、印が壊れていれば止まる", "指紋の不一致",
+         "grep -c regime x.py ; python3 scripts/priority_rebuild/engine_tuner.py --purpose search")
     write_pass(files=[m for m in MUST if m != f"{_PR}/e38_logics.json"])
     case("印の対象一覧から必須ファイルを外すと止まる", "必須のファイル")
     write_pass(fp="deadbeef")
@@ -165,7 +189,7 @@ def selftest():
 
     shutil.rmtree(tmp, ignore_errors=True)
     ROOT, PASS = keep
-    print(f"\n番人: {8 - ng}/8 pass")
+    print(f"\n番人: {12 - ng}/12 pass")
     sys.exit(1 if ng else 0)
 
 

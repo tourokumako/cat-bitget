@@ -10,12 +10,14 @@
 #   更新されていることを要求。満たさなければブロック（exit 2）。同じ工程で同じスクリプトを
 #   回し直す間は宣言は1回でよい（工程が変わったら書き直す）。チャットにも同内容を出す（運用）。
 #
-# 宣言の型（4行・チャットと flow_declaration.md の両方）:
+# 宣言の型（5行・チャットと flow_declaration.md の両方）:
 #   【フロー宣言】
 #   段: E38 段3 Entry 策定
 #   工程: 3️⃣層3 候補選定
 #   実行: engine_tuner.py --logic S2
 #   目的: 時間系候補の是正後の再探索
+#   数え方: 値を選ぶ（search・累積に数える） ← --purpose を使う走行では必須（2026-08-19 まこさん決定「2」）
+#          ／ プログラムの確認なら「確認する（check・累積に数えない）」と書く
 #
 # 対象（実行系のみ）: e38_priority_stack / engine_tuner / engine_search_e37 / observe_diag /
 #   slot_opportunity_diag / e37_scalp / e35_* / e36_* / score.py / precheck.py / report.py / analyze.py / plot_trades
@@ -42,14 +44,18 @@ s = re.sub(r'\"[^\"]*\"', ' ', s); s = re.sub(r\"'[^']*'\", ' ', s)             
 print(s)" 2>/dev/null)
 [ -z "$CMD_X" ] && CMD_X="$CMD"
 
-# python 実行の時だけ判定
-printf '%s' "$CMD_X" | grep -qE 'python[0-9.]*[[:space:]]' || exit 0
-
-# 検査でない実行は通す（自己検査・コンパイル確認・ヘルプ・改変検出）
-printf '%s' "$CMD_X" | grep -qE -- '--selftest|py_compile|--help|--verify' && exit 0
-
 # 実行系スクリプトの抽出（読み取り系・文書生成は対象外）
-TARGETS=$(printf '%s' "$CMD_X" | grep -oE '(e38_priority_stack|engine_tuner|engine_search_e37|observe_diag|slot_opportunity_diag|e37_scalp|e3[56]_[a-z_]+|score|precheck|report|analyze|plot_trades)\.py' | sort -u)
+# ★2026-08-19（まこさん決定「直す」）＝コマンド全体でなく、区切り（; & | 改行）で分けた断片ごとに見る。
+#   直す前＝「コマンドのどこかに python が在り、どこかに対象の名前が在る」で止めていた。
+#   ＝grep でファイルの名前を数えるだけでも止まった（2026-08-18 に2回・worklog §11.6）。
+#   直したあと＝「python が、その対象のファイルを実行しようとしている断片」からだけ名前を拾う。
+#   番人＝.claude/hooks/selftest_flow_declaration.sh（わざと壊して止まるかを実測する）
+#   ★末尾は printf '%s\n'（改行なしだと while read が最後の断片を読み落とす）
+TARGETS=$(printf '%s\n' "$CMD_X" | tr ';&|' '\n' | while IFS= read -r seg; do
+  printf '%s' "$seg" | grep -qE '(^|[[:space:]])python[0-9.]*([[:space:]]|$)' || continue
+  printf '%s' "$seg" | grep -qE -- '--selftest|py_compile|--help|--verify' && continue
+  printf '%s' "$seg" | grep -oE '(e38_priority_stack|engine_tuner|engine_search_e37|observe_diag|slot_opportunity_diag|e37_scalp|e3[56]_[a-z_]+|score|precheck|report|analyze|plot_trades)\.py'
+done | sort -u)
 [ -z "$TARGETS" ] && exit 0
 
 DECL="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/flow_declaration.md"
@@ -66,6 +72,7 @@ fail() {
   echo "  工程: <策定4段のどれ（例 3️⃣層3 候補選定）>" >&2
   echo "  実行: <スクリプト名と主な引数>" >&2
   echo "  目的: <1行>" >&2
+  echo "  数え方: 値を選ぶ（search・累積に数える） ／ 確認する（check・累積に数えない）  ← --purpose を使う走行では必須" >&2
   echo "（同じ工程で同じスクリプトを回し直す間は宣言1回でよい・工程が変わったら書き直す・解除は 2026-08-16 に廃止）" >&2
   exit 2
 }
@@ -83,6 +90,24 @@ grep -q "工程" "$DECL" || fail "「工程:」の行が無い"
 for t in $TARGETS; do
   grep -q "$t" "$DECL" || fail "宣言に $t が書かれていない（このスクリプトの実行を宣言していない）"
 done
+
+# ★数え方の一致（2026-08-19 まこさん決定「2」・新設）
+#   経緯: 2026-08-19 に CC が、プログラムの確認の走行を --purpose search で走らせ、
+#   この窓の累積の試行数を 0本 → 16本 に増やした（決まり24番「プログラムの確認は必ず check」に違反）。
+#   ★宣言の中で食い違っていた＝目的の欄には「実測する」（＝確認）、補足には「値を選ぶ走行」（＝search）。
+#   どのプログラムもその食い違いを見ていなかった。まこさん決定「2」＝宣言と --purpose の一致を見る。
+#   検査するのは --purpose を持つ走行だけ（いまは engine_tuner）。
+PURPOSE=$(printf '%s\n' "$CMD_X" | grep -oE -- '--purpose[= ]+(search|check)' | grep -oE '(search|check)' | head -1)
+if [ -n "$PURPOSE" ]; then
+  grep -q "数え方" "$DECL" || fail "宣言に「数え方:」の行が無い（--purpose を使う走行では必須。値を選ぶ＝search ／ 確認する＝check）"
+  D_SEARCH=0; D_CHECK=0
+  grep -qE '数え方:.*値を選ぶ' "$DECL" && D_SEARCH=1
+  grep -qE '数え方:.*確認する' "$DECL" && D_CHECK=1
+  [ "$D_SEARCH" = "1" ] && [ "$D_CHECK" = "1" ] && fail "宣言の「数え方:」に『値を選ぶ』と『確認する』が両方 書いてある（どちらか1つにする）"
+  [ "$D_SEARCH" = "0" ] && [ "$D_CHECK" = "0" ] && fail "宣言の「数え方:」が読み取れない（『値を選ぶ』か『確認する』のどちらかを書く）"
+  DECL_KIND="check"; [ "$D_SEARCH" = "1" ] && DECL_KIND="search"
+  [ "$DECL_KIND" = "$PURPOSE" ] || fail "宣言の数え方（$DECL_KIND）と、コマンドの --purpose（$PURPOSE）が食い違っている。★プログラムの確認は必ず check（恒久の決まり24番）。累積の試行数に足してよいのは、値を選ぶ走行だけ"
+fi
 
 # ★チャット表示ゲート（2026-07-26 まこさん指示）
 #   経緯: CC は宣言を flow_declaration.md に書いて済ませ、チャットに出していなかった。
