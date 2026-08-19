@@ -192,12 +192,26 @@
   > "The backtest of this strategy is carried out from 1st January 2005 to 31st December 2014, without retraining the Hidden Markov Model along the way. In particular this means the HMM is being used out-of-sample and not on in-sample training data."
 - **★弱点（別の検索結果の要約）**＝短い動きと長い動きを同時に捉えられず、短い揺れを長いトレンドの変化と読み違えることがある。
 
-### B-2｜★HMM の未来参照の落とし穴（filtered と smoothed）【要約】
+### B-2｜★HMM の未来参照の落とし穴（filtered と smoothed）【本文】
 
 - **filtered**＝いまの時刻までの観測だけで、いまの状態を出す。**本番で使える。**
 - **smoothed**＝**最後まで全部のデータ**を使って、過去の各時刻の状態を出し直す。**未来参照です。**
 - **★ここを間違えると、バックテストだけ非常に良い数字が出ます。**うちの H2（本番の推論時点 t で取れる値だけを使う）に直接 当たります。
-- **出どころ**＝検索結果の要約（filtering は「観測が現在までのもの」・smoothing は「未来のデータも使う後処理」）。**本文は未読。**
+- **出どころ**＝mathandmarkets「Filtering vs. Smoothing: Why Backtests Lie About Regime Detection」。**2026-08-19 に本文を開いて逐語を取りました。**
+
+**【本文】の逐語**
+
+> "This is the hindsight illusion in backtests. When you fit an HMM to historical data and plot the state probabilities, you're looking at smoothed estimates. The model 'knows' there's a regime change coming because it has seen the future data."
+
+> "The filtered estimate is noisier and lags behind the true transitions."
+
+**【本文】遅れの実測（この記事の数字・日足）**
+
+| 何 | 値 |
+|---|---|
+| 上げ → 下げ の検出の遅れ（中央値） | 2〜3日 |
+| 同（上位10%） | 7日 |
+| 下げ → 上げ の検出の遅れ（中央値） | 1〜2日 |
 
 ### B-3｜閾値のモデル（SETAR ほか）【要約】
 
@@ -330,6 +344,34 @@ HMM の使い方の逐語（上の B-1）＝ "Long entry trades will only be car
 
 **★うちの E38 はレンジ（平均回帰）のスキャルです。**この指摘が正しければ相性は良い側ですが、**本文を読んでいないので根拠としては弱いです。**
 
+## 4-6｜★判定を安定させる仕組みは2つある（別のもの・混ぜない）【本文】
+
+**場面の判定は、1本のバーで切り替わると使えません。**外の資料は、安定させる仕組みを2つ挙げています。**この2つは別のものです。**
+
+| # | 仕組み | 中身 | うちで書けるか |
+|---|---|---|---|
+| 1 | **何本 続いたら成立とみなすか** | 3〜5本 続けて線を超えたら成立とみなす | **書けます**（条件の形 `streak`） |
+| 2 | **入る線と出る線を別にする** | 0.6 を超えたら入り、0.4 を割るまで出ない | **書けません**（2026-08-19 実測＝状態を保つ形が条件の部品に0件） |
+
+**【本文】mathandmarkets「Filtering vs. Smoothing: Why Backtests Lie About Regime Detection」の逐語**
+
+> "Require sustained signal. Don't act on P(Bear) > 0.5 for one day. Require 3+ consecutive days above threshold."
+
+> "Use hysteresis. Entry threshold: P(Bear) > 0.6. Exit threshold: P(Bear) < 0.4."
+
+> "Confirmation signals. Combine HMM with other indicators (VIX level, trend breaks)."
+
+**【本文】traderssecondbrain「Market Regime: Trending vs Ranging vs Volatile」の逐語**
+
+> "Only switch strategies when regime signals are unambiguously confirming new regime AND have been confirming for 3-5+ bars."
+
+> "ADX (Average Directional Index) for trend strength — above 25 indicates trending, below 20 indicates ranging."
+
+> "Bollinger Band Width for volatility regime — expansion above historical average indicates volatile expansion, contraction below indicates compression."
+
+**★うちの RG-v5 は 2番の形です。**上げの判定が、発火の条件4つと解除の条件3つを持ち、発火してから解除されるまで真であり続けます（`build_regime_gate_rg._uptrend_state_5m`）。
+**★数字（0.6／0.4／3〜5本／ADX 25・20）は目安であって、うちの正解ではありません。**engine_tuner が範囲から探します。
+
 ---
 
 # §5 ★未来参照（H2）に当たるもの — 使う前に必ず見る
@@ -372,6 +414,11 @@ HMM の使い方の逐語（上の B-1）＝ "Long entry trades will only be car
 7. [Clustering Market Regimes using the Wasserstein Distance — arXiv 2110.11848](https://arxiv.org/abs/2110.11848)
 8. [Optimizing Returns Using the Hurst Exponent and Q Learning — arXiv 2205.11122](https://arxiv.org/abs/2205.11122)
 9. [The Label Horizon Paradox — arXiv 2602.03395v4](https://arxiv.org/html/2602.03395v4)
+
+**★2026-08-19（42回目）に本文を開いたもの（2本）**
+
+- [Filtering vs. Smoothing: Why Backtests Lie About Regime Detection — mathandmarkets](https://mathandmarkets.com/p/regime-detection-part-2-the-latency)（§3-B-2 と §4-6 に逐語）
+- [Market Regime: Trending vs Ranging vs Volatile — traderssecondbrain](https://traderssecondbrain.com/guides/market-regime-identification)（§4-6 に逐語）
 
 **検索結果の要約だけのもの**
 
