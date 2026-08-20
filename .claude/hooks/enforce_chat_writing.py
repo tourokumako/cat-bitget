@@ -42,6 +42,16 @@
 #   中身が薄いことは機械には分からない。2番の検査は「名前の羅列らしい形」を見ているだけで、
 #   その行に中身があるかは見ていない。CC が形だけ整えて意味の無い行を並べることはできる。
 #   最後の関所はまこさんの目である。
+#
+# ★2026-08-20 の直し3件（まこさん承認・逐語「すべてOK」・44回目に6回 連続で止まった問題の対応）:
+#   ①違反を全部 一度に出す。直す前は最初の1件で止まる作りだった＝CC が1件 直すたびに再送し、
+#     次の違反でまた止まった（「当たるまで生成し続ける」に見えた挙動の正体）。
+#   ②回数の記録の穴を塞いだ。この hook の差し戻しは、会話の記録に type=user の文字列
+#     「Stop hook feedback:…」として残る（44回目の記録 749de1c4… の559〜582行で実測）。
+#     直す前は それを「まこさんの発言」に数えて鍵の uuid が毎回 変わり、回数が0に戻っていた
+#     ＝上限2回が効かず6回 止まった。いまは差し戻しの行を発言に数えない。
+#   ③「--check 下書きファイル」の口を足した。CC は返信を出す前に、下書きをこの検査へ通す
+#     ＝出してから止められる運任せをやめ、まこさんの画面に同じ長文が並ぶのを防ぐ。
 
 import glob
 import json
@@ -101,30 +111,35 @@ def check_head(text):
 
 
 def check_name_list(text):
+    """★2026-08-20 直し①＝1件で止めず、全部の行を返す（一覧で出す）。"""
+    out = []
     for no, s in target_lines(text):
         marks = s.count("・") + s.count("＋") + s.count("→") + s.count("+")
         if marks >= 3 and s.count("。") == 0:
-            return (f"{no}行目が「名前を並べただけの行」になっている（中黒・プラス・矢印が {marks} 個、句点が0個）。"
-                    f"1件を1行にして、その行に「何をしたか」と「どうなったか」を書く。\n"
-                    f"    いまの行: {s[:80]}")
-    return None
+            out.append(f"{no}行目が「名前を並べただけの行」になっている（中黒・プラス・矢印が {marks} 個、句点が0個）。"
+                       f"1件を1行にして、その行に「何をしたか」と「どうなったか」を書く。\n"
+                       f"    いまの行: {s[:80]}")
+    return out
 
 
 def check_sentence(text):
+    """★2026-08-20 直し①＝長すぎる文を全部 返す。"""
+    out = []
     for no, s in target_lines(text):
         s2 = re.sub(r"^[-*\d]+[.、)]?\s*", "", s)     # 箇条書きの行頭の印を外す
         for sent in re.split(r"(?<=[。！？])", s2):
             sent = sent.strip()
             if len(sent) > MAX_SENTENCE:
-                return (f"{no}行目に {len(sent)} 字の文がある（上限 {MAX_SENTENCE} 字）。文を分ける。\n"
-                        f"    いまの文: {sent[:80]}…")
-    return None
+                out.append(f"{no}行目に {len(sent)} 字の文がある（上限 {MAX_SENTENCE} 字）。文を分ける。\n"
+                           f"    いまの文: {sent[:80]}…")
+    return out
 
 
 def check_paragraph(text):
-    """空行で区切られたかたまりのうち、箇条書きでも表でもないものが長すぎたら止める。"""
+    """空行で区切られたかたまりのうち、箇条書きでも表でもないものが長すぎたら止める。
+    ★2026-08-20 直し①＝長すぎる段落を全部 返す。"""
     in_code = False
-    block, start = [], 0
+    block, start, out = [], 0, []
 
     def judge(block, start):
         if not block:
@@ -148,13 +163,16 @@ def check_paragraph(text):
         if skip:
             bad = judge(block, start)
             if bad:
-                return bad
+                out.append(bad)
             block, start = [], 0
             continue
         if not block:
             start = i
         block.append(s)
-    return judge(block, start)
+    bad = judge(block, start)
+    if bad:
+        out.append(bad)
+    return out
 
 
 # ---------------- 検査4＝結論を先頭に置く（形だけ・2026-08-18 まこさん OK） ----------------
@@ -286,30 +304,47 @@ def load_word_table(path=None):
 
 
 def check_words(text, path=None):
+    """★2026-08-20 直し①＝使っている語を全部 返す（同じ語は1回だけ）。"""
     pairs, allow = load_word_table(path)
     if not pairs:
-        return None
+        return []
+    out, seen = [], set()
     for no, s in target_lines(text):
         for w, right in pairs:
-            if w not in s:
+            if w not in s or w in seen:
                 continue
             # そのまま使ってよい語の一部なら見逃す（例＝「機械学習」の中の「機械」）
             if any(w in a and a in s for a in allow):
                 continue
-            return (f"{no}行目に「{w}」を使っている。**この語は使わないと決めている。**"
-                    f"代わりに「{right}」と書く（.claude/rules/word_replacements.md）。\n"
-                    f"    いまの行: {s[:80]}")
-    return None
+            seen.add(w)
+            out.append(f"{no}行目に「{w}」を使っている。**この語は使わないと決めている。**"
+                       f"代わりに「{right}」と書く（.claude/rules/word_replacements.md）。\n"
+                       f"    いまの行: {s[:80]}")
+    return out
 
 
 def check_text(text, changed=None):
     # ★check_head（先頭に「決めてほしいこと」を求める検査）は 2026-08-18 に外した。
     #   まこさんの指摘＝決めてほしいことは毎回 発生しない。関数は残すが、判定には使わない。
-    for f in (check_words, check_name_list, check_sentence, check_paragraph, check_conclusion_first):
-        bad = f(text)
-        if bad:
-            return bad
-    return check_reported_files(text, changed)
+    # ★2026-08-20 直し①＝違反を1件ずつ出すのをやめ、全部を一度に出す。
+    #   直す前は最初の1件で止まる作りで、CC が1件 直すたびに再送して6回 止まった（44回目）。
+    found = []
+    found += check_words(text)
+    found += check_name_list(text)
+    found += check_sentence(text)
+    found += check_paragraph(text)
+    bad = check_conclusion_first(text)
+    if bad:
+        found.append(bad)
+    bad = check_reported_files(text, changed)
+    if bad:
+        found.append(bad)
+    if not found:
+        return None
+    if len(found) == 1:
+        return found[0]
+    return (f"全部で {len(found)} 件（★1回の書き直しで全部 直す）:\n"
+            + "\n".join("  ◆ " + m for m in found))
 
 
 # ---------------- 会話のファイルから、CC の直前の本文を取り出す ----------------
@@ -321,12 +356,20 @@ def last_chat_text(path, want_files=False):
     except Exception:
         return None, None
 
+    def is_hook_feedback(c):
+        # hook の差し戻しは type=user の文字列「◯◯ hook feedback:…」として記録される
+        # （2026-08-20 に44回目の記録 749de1c4… で実測）。
+        return isinstance(c, str) and re.match(r"^\S+ hook feedback:", c.strip()) is not None
+
     def is_user_say(r):
         if r.get("type") != "user":
             return False
         c = (r.get("message") or {}).get("content")
         if isinstance(c, str):
-            return bool(c.strip())
+            # ★2026-08-20 直し②＝hook の差し戻しを「まこさんの発言」に数えない。
+            #   数えると、止めるたびに鍵の uuid が変わって回数が0に戻る＝上限2回が効かず、
+            #   44回目に6回 連続で止まった（559〜582行で実測）。
+            return bool(c.strip()) and not is_hook_feedback(c)
         if isinstance(c, list):
             return any(isinstance(b, dict) and b.get("type") == "text" for b in c)
         return False
@@ -502,12 +545,65 @@ def selftest():
         if not good:
             ng += 1
 
-    total = len(cases) + len(extra)
+    # ★2026-08-20 の直しの確かめ（まこさん承認の3件に対応）
+    multi_text = "直しました。\n\n- 乱数を機械で数えました。\n- 私は" + "あ" * 130 + "。\n"
+    got = check_text(multi_text)
+    good = (got is not None and "この語は使わないと決めている" in got
+            and "字の文がある" in got and "全部で" in got)
+    print(f"  {'✅' if good else '❌'} ★直し①＝違反が2件あれば、2件とも一度に出る"
+          + ("" if good else f"   ← 出た理由: {got}"))
+    if not good:
+        ng += 1
+
+    import tempfile
+    fake_rows = [
+        {"type": "user", "uuid": "U-real", "message": {"content": "直して"}},
+        {"type": "assistant", "message": {"content": [{"type": "text", "text": "一回目の返信。"}]}},
+        {"type": "user", "uuid": "U-hook", "message": {"content": "Stop hook feedback:\n[チャット文章の検査] 止めた"}},
+        {"type": "assistant", "message": {"content": [{"type": "text", "text": "二回目の返信。"}]}},
+    ]
+    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False, encoding="utf-8") as f:
+        for r in fake_rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+        tmp = f.name
+    text2, uid2 = last_chat_text(tmp)
+    os.unlink(tmp)
+    good = (uid2 == "U-real" and text2 == "二回目の返信。")
+    print(f"  {'✅' if good else '❌'} ★直し②＝hook の差し戻し行では回数の鍵（uuid）が変わらない"
+          + ("" if good else f"   ← uid={uid2!r} text={text2!r}"))
+    if not good:
+        ng += 1
+
+    total = len(cases) + len(extra) + 2
     print(f"\n番人: {total - ng}/{total} pass")
     sys.exit(1 if ng else 0)
+
+
+def check_draft():
+    """★2026-08-20 直し③＝出す前の照合の口。
+    使い方: python3 enforce_chat_writing.py --check <下書きファイル>
+    CC は返信をチャットに出す前に、下書きをこの検査へ通す＝出してから止められる運任せをやめる。
+    判定の本体は hook と同じ check_text（二重に作らない＝検査がずれない）。"""
+    i = sys.argv.index("--check")
+    if i + 1 >= len(sys.argv):
+        print("使い方: --check <下書きファイル>")
+        sys.exit(1)
+    try:
+        text = open(sys.argv[i + 1], encoding="utf-8").read()
+    except Exception as e:
+        print(f"下書きが読めない: {e}")
+        sys.exit(1)
+    bad = check_text(text)
+    if bad:
+        print(f"❌ 直すところ: {bad}")
+        sys.exit(1)
+    print("✅ 検査を通った（語・行の形・文の長さ・段落・結論の位置）")
+    sys.exit(0)
 
 
 if __name__ == "__main__":
     if "--selftest" in sys.argv:
         selftest()
+    if "--check" in sys.argv:
+        check_draft()
     hook_main()
