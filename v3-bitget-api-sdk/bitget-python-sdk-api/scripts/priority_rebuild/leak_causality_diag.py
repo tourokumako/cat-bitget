@@ -225,6 +225,9 @@ WATCHED = [                                              # 指紋の対象＝eng
     f"{_PR}/recipes/identity_l1_legacy.json", f"{_PR}/recipes/identity_s1_legacy.json",
     "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/signal_families.json",
     "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families.json",
+    # ★2026-08-20（M2-1-9・まこさん OK）＝経路に載っているのに対象に無かった2本を足した（62番の穴）。
+    #   engine_tuner_exec.py:1077 が observe_diag.build_features を呼ぶ＝この2本が変われば結果が変わりうる。
+    f"{_PR}/observe_diag.py", f"{_PR}/observe_config.json",
 ]
 
 

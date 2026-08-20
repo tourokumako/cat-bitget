@@ -924,7 +924,7 @@ def _regime_decl_view(names: tuple | None = None, decls: list | None = None,
 
     ★M2-1-2（2026-08-20 まこさん承認）で足した分＝名前ごとの判定の列の表。
       宣言＝e38_logics.json の global.regime ＋ tuner_adapters/e37.py の REGIME（ソースから引く）。
-      列を作る側＝e37_range_scalp._apply_rg5_to_5m のソースの df["…"] = の列名。
+      列を作る側＝e37_scalp._apply_rg5_to_5m のソースの df["…"] = の列名（★2026-08-20 一本化後の正本）。
       ⚠️ 照合は「列を付けるコードに在るか」＝実データは読み込まない（軽く保ち毎回 数え直すため）。
         データそのものの突き合わせは M2-1-7（range_ok_rg5 と1バーずつ）でやる。
     """
@@ -959,7 +959,9 @@ def _regime_decl_view(names: tuple | None = None, decls: list | None = None,
                  dict(誰が="e37（`tuner_adapters/e37.py` の REGIME）",
                       **{k: e37rg.get(k) for k in ("name", "entry_col", "block_col")})]
     if builder_cols is None:
-        _bsrc = (_HERE / "e37_range_scalp.py").read_text(encoding="utf-8")
+        # ★2026-08-20 一本化（まこさん決定）の後＝_apply_rg5_to_5m の正本は e37_scalp.py。
+        #   e37_range_scalp.py の複製は import に置き換えられて定義が消えた＝読み先を正本へ変えた。
+        _bsrc = (_HERE / "e37_scalp.py").read_text(encoding="utf-8")
         _mfn = _re.search(r"def _apply_rg5_to_5m.*?(?=\ndef )", _bsrc, _re.S)
         builder_cols = sorted(set(_re.findall(r'df\["([A-Za-z0-9_]+)"\]\s*=', _mfn.group(0)))) if _mfn else []
 
@@ -1205,7 +1207,7 @@ def _render_regime(rd: dict) -> list[str]:
         L.append(f"| `{r['名前']}` | {r['建ててよい列']} | {r['止める列']} |")
     L += ["",
           "**宣言の出どころ（実物）**＝" + "／".join(d["誰が"] for d in rd["宣言"]) + "。",
-          f"**列を作る側（`e37_range_scalp._apply_rg5_to_5m`）が付ける列＝{len(rd['列を作る側の列'])} 本**"
+          f"**列を作る側（`e37_scalp._apply_rg5_to_5m`＝一本化後の正本）が付ける列＝{len(rd['列を作る側の列'])} 本**"
           f"（{'・'.join('`' + c + '`' for c in rd['列を作る側の列'])}）。",
           "⚠️ `rg5_uptrend` は上げトレンドの判定の列ですが、宣言の上では range の止める列として使われています",
           "＝uptrend の行に宣言はありません（M2-6 で上げの判定を組むときの、比べる相手になります）。",

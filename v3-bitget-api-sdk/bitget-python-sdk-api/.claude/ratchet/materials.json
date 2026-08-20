@@ -4822,7 +4822,8 @@
    "鍵": [
     "name",
     "entry_col",
-    "block_col"
+    "block_col",
+    "build"
    ],
    "要る列": [
     "entry_col",
@@ -4837,7 +4838,7 @@
     {
      "どこで": "レシピの読み込み時（G5）",
      "実物": "`engine_tuner_exec._check_regime_meta`",
-     "件数": 4
+     "件数": 10
     },
     {
      "どこで": "実行時（列が実データに無ければ止める・fail-closed）",
@@ -4845,7 +4846,7 @@
      "件数": 2
     }
    ],
-   "検査の合計": 10,
+   "検査の合計": 16,
    "宣言": [
     {
      "誰が": "e38（`e38_logics.json` の global.regime）",
@@ -4863,7 +4864,9 @@
    "列を作る側の列": [
     "range_ok_rg5",
     "range_ok_v11",
+    "rg5_break",
     "rg5_uptrend",
+    "rg5_zone_ok",
     "v11_mid",
     "v11_res_hi",
     "v11_res_lo",
@@ -4894,5 +4897,5 @@
    ]
   }
  },
- "_本文の指紋": "329df40705295a05"
+ "_本文の指紋": "21511bc18967e490"
 }

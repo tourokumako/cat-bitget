@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=329df40705295a05 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=21511bc18967e490 gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -604,7 +604,7 @@ M2-1 の実装（engine_tuner が組み立てた判定を、売買に渡す道�
 | `downtrend` |
 | `spike` |
 
-**② 宣言に要る鍵＝3 件（うち列の名前は 2 件）**
+**② 宣言に要る鍵＝4 件（うち列の名前は 2 件）**
 検査のコード（`_check_regime_meta`）が実際に読む鍵から機械で引きました。
 
 | 鍵 | 何か |
@@ -612,13 +612,14 @@ M2-1 の実装（engine_tuner が組み立てた判定を、売買に渡す道�
 | `name` | 相場の名前（上の一覧のどれか） |
 | `entry_col` | このバーだけ玉を建ててよい、を表す列の名前（真偽値） |
 | `block_col` | このバーでは新規の発注を止める、を表す列の名前（要らなければ null） |
+| `build` | 相場の名前（上の一覧のどれか） |
 
-**③ 止める検査＝合計 10 件（3か所・件数は関数の実物から数えた）**
+**③ 止める検査＝合計 16 件（3か所・件数は関数の実物から数えた）**
 
 | どこで | 実物 | 検査の数 |
 |---|---|---|
 | 実行前（接続ファイルの宣言の検査） | `tuner_adapters.check_regime` | 4 件 |
-| レシピの読み込み時（G5） | `engine_tuner_exec._check_regime_meta` | 4 件 |
+| レシピの読み込み時（G5） | `engine_tuner_exec._check_regime_meta` | 10 件 |
 | 実行時（列が実データに無ければ止める・fail-closed） | `engine_tuner_exec._regime_series` | 2 件 |
 
 **④ 名前ごとの、いま在る判定の列（M2-1-2・宣言と、列を作る側の照合）**
@@ -631,7 +632,7 @@ M2-1 の実装（engine_tuner が組み立てた判定を、売買に渡す道�
 | `spike` | 宣言なし | 宣言なし |
 
 **宣言の出どころ（実物）**＝e38（`e38_logics.json` の global.regime）／e37（`tuner_adapters/e37.py` の REGIME）。
-**列を作る側（`e37_range_scalp._apply_rg5_to_5m`）が付ける列＝8 本**（`range_ok_rg5`・`range_ok_v11`・`rg5_uptrend`・`v11_mid`・`v11_res_hi`・`v11_res_lo`・`v11_sup_hi`・`v11_sup_lo`）。
+**列を作る側（`e37_scalp._apply_rg5_to_5m`＝一本化後の正本）が付ける列＝10 本**（`range_ok_rg5`・`range_ok_v11`・`rg5_break`・`rg5_uptrend`・`rg5_zone_ok`・`v11_mid`・`v11_res_hi`・`v11_res_lo`・`v11_sup_hi`・`v11_sup_lo`）。
 ⚠️ `rg5_uptrend` は上げトレンドの判定の列ですが、宣言の上では range の止める列として使われています
 ＝uptrend の行に宣言はありません（M2-6 で上げの判定を組むときの、比べる相手になります）。
 **正直に書く注意**＝この照合は「列を付けるコードに在るか」であって、実データは読み込みません。
