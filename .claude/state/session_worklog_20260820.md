@@ -245,6 +245,51 @@ net はゼロ。実験ゼロ・採点ゼロ・売買記録CSV 0本。engine_tune
 - 列を実データに付けている実物は戦略の側＝e37_range_scalp.py の 1614行（rg5_uptrend）と 1615行（range_ok_rg5）。
 - ＝M2-1-6（条件の束から真偽の列を作る処理の新設）が、本当に「無い道を作る」作業であることが実物で確かめられた。
 
+## §24 M2-1-4＝レシピに「判定の中身」を書く形が決まった（まこさん OK・2026-08-20）
+
+- **決めごと4つ**＝①meta.regime に build の欄を足す（entry_col・block_col の読む道は残す＝後方互換）②束の中身は入口と同じ仕組みを再利用（形12種・all/any/if-then・G5/G6・分位の範囲検査）＝**束の中の閾値は threshold_q で書け、engine_tuner の探索の対象になる** ③新しい形は bool_col（真偽の列の参照・want=true/false）の1つだけ ④見本の一致のために、RG-v5 の中間の列2本（rg5_zone_ok・rg5_break）を _apply_rg5_to_5m から出す（計算は1ビットも変えない）。
+- **見本**＝RG-v5 と同じ判定を bool_col 3本の all で書いたもの（帯あり ∩ 帯の外へ抜けていない ∩ 非 uptrend）。実物＝engine_tuner_milestones2.md の「M2-1-4 の決定」の節に全文を書いた。
+- **設計の前提の実測**＝RG-v5 と同じ判定は、いまの材料と形だけでは書けない（§3.4 の書けない9件＋帯の価格の列は H6 で条件の材料に使えない）。だから見本は RG-v5 の実物の部品を bool_col で参照する＝道の検証専用（RG-v5 を写して最終形にするものではない）。
+- 否定の一般形（not）と帯を作る形は M2-2 で足す（この決定では作らない）。
+
+過去照合: この改善(=RG-v5 の中間の列2本 rg5_zone_ok・rg5_break を df に出す)は過去 ARC でやったか＝ARCなし（該当なし）＝No・新規（M2-1-4 の決めごと4・まこさん承認 2026-08-20）。売買の判断と計算は1ビットも変えず、既に計算している値を列に出すだけ＝退行の余地なし（確かめは M2-1-8 の3本の走行のハッシュ値一致）。
+
+## §25 M2-1-5 を実装した（受け入れ条件 7873e412…・まこさん承認「OK」）
+
+- **engine_tuner_exec.py＝読み込みの検査を build 対応に広げた。**_check_regime_meta に build（entry＝out_col・tree／block＝null 可）の検査を足し、束の木は _walk_build_tree で歩く。普通の条件は入口と同じ _check_cond に通す＝分位の範囲検査がそのまま掛かる。新しい形 bool_col は build の中だけ（入口の木は従来どおり拒否）。out_col が宣言の列と同名なら止める。
+- **e37_range_scalp.py＝中間の列2本を出した。**_rg5_frames に with_parts 引数を足し（既定 False＝返り値は従来どおり7個）、_apply_rg5_to_5m だけが with_parts=True で okz・brk を受け取り df["rg5_zone_ok"]・df["rg5_break"] に出す。**★当初の案（返り値を全員9個に変える）は、呼び出し元を数えたら8か所あって6か所を壊すため、引数の形に直した**（受け入れ条件の「呼び出し元を全部 数えて確かめる」の実施）。
+- **確かめの結果**＝見本が読み込まれた／わざと壊すテスト5通り止まった（want・name・build の形・q99＝分位が範囲の外・out_col 同名）／q50 の条件は build の中で通る＝束の値が探索の対象になる形／入口の木の bool_col は拒否／py_compile 2本 OK／engine_tuner_exec --selftest 全部 pass（監査4-19 の番人含む）。
+- **H2 の印は失効した**（対象2本を触ったため）。M2-1-8 の前に leak_causality_diag を走らせ直して作り直す（M2-1-9）。
+- 途中で hook 2本に止められて従った＝①過去照合の宣言（この節の上の「過去照合:」行）②改善前データ必読（trades CSV・ledger の記録を開いた）。
+
+## §26 M2-1-6 を実装した（受け入れ条件 f8dcabb6…・まこさん承認「OK」）
+
+- **engine_tuner_exec.py に build_regime_columns を新設した。**bool_col＝列を真偽で読む（want=false は反転・列が無ければ止まる）。普通の条件＝入口と同じ _eval_cond を再利用。束ね方＝入口と同じ意味論。out_col と同名の列が df に既に在れば止まる。同じ df への2回目は何もしない（作った列の名前を df.attrs に覚える）。
+- **つなぎ込み2か所**＝run_recipe（幾何 geo を組んだ直後・宣言の列を読む前）と _ceiling_fire（_regime_series の手前）。run_recipe 側は、build の条件が W% などの幾何を使えるよう、_regime_series の呼び出しを幾何の後ろへ移した（間の行は ok/up を使っていないことを確かめて移した）。
+- **確かめの結果**＝合成データ8通りで手計算と全部 一致／わざと壊すテスト3通り止まった（列が無い・同名の列・want の反転で列が変わる）／2回目の呼び出しは何もしない／py_compile OK／engine_tuner_exec --selftest 全部 pass（build の無いレシピの後方互換）。
+- ★この段では、できた列はまだ売買の判定に使われない（entry_col が指す列は従来どおり）。**メモ＝M2-11 で判定を差し替えるとき、entry_col に out_col と同じ名前を書くと M2-1-5 の上書き防止の検査に当たる**＝そのときに検査の形を見直す（承認をもらってから）。
+
+## §27 ★M2-1-7 の準備で見つけた事実＝RG-v5 の処理が2か所に複製されている（まこさんの判断待ち）
+
+- **見つけた事実**＝接続ファイル（tuner_adapters/e37.py と e38.py）が import しているのは **e37_scalp.py**（18行・20行＝import e37_scalp as e37）。その e37_scalp.py は、RG-v5 の処理（_rg5_frames＝517行・_apply_rg5_to_5m＝542行）を **e37_range_scalp.py（1584行〜）と同じ中身で自前に持っている**＝複製が2組ある。
+- **何が困るか**＝engine_tuner の実走のデータは e37_scalp 側が作る。私が M2-1-5 で列2本を足したのは e37_range_scalp 側（M2 の文書が実物として挙げていた側）＝**engine_tuner の経路には、まだ列が無い。**見本のレシピは合成データでは動くが、engine の実走（M2-1-7 の実データ確かめ・M2-1-8）では bool_col の列が無くて止まる。
+- **記録**＝next_step §6 の63番に足した（複製の一本化は まこさんの判断）。
+- **提案（承認待ち）**＝M2-1-5 と同じ承認済みの内容（with_parts 引数＋列2本）を e37_scalp.py にも足す（1ファイル・2か所）。呼び出し元は e37_scalp の中の2か所＝546行（_apply_rg5_to_5m＝ここだけ with_parts=True にする）と1729行（そのまま＝返り値は従来どおり7個で壊れない）。
+
+## §28 e37_scalp.py への同じ書き足しと、RG-v5 の2関数の一本化（まこさん OK・承認の指紋 76252628…）
+
+- **①e37_scalp.py に、M2-1-5 と同じ書き足しをした**（まこさん OK）＝_rg5_frames に with_parts 引数／_apply_rg5_to_5m が rg5_zone_ok・rg5_break の列2本を出す。計算は1ビットも変えていない。
+- **②RG-v5 の2関数を一本化した**（まこさん決定・逐語「１冊にまとめる」）＝正本は e37_scalp.py（engine_tuner の経路が読む側）。e37_range_scalp.py の複製（1584〜1631行）を消し、import の1行に置き換えた。診断8本（rg5_*_diag.py ほか）は今までどおりの名前で使える。
+- **確かめの結果**＝py_compile 2本 OK／2関数とも同じ実体（is で一致）／消した定義の残り0件／循環 import なし（e37_scalp は e37_range_scalp を読んでいない・grep 0件）。
+- **一本化の範囲を正直に書く**＝まとめたのは報告した複製（RG-v5 の2関数）だけ。ファイル全体はほかにも差分が大きい（diff 3,259行）＝63番を「残り＝ファイル全体の重複」に書き直した。
+
+## §29 M2-1-7＝実データの突き合わせが通った（食い違い0件）
+
+- **やり方**＝engine_tuner の経路と同じ作り方で実データを作り（e37_scalp._load を 2023-11-01 から・RG-v6 適応帯＝e38 の実走設定）、見本のレシピから build_regime_columns で列を作り、range_ok_rg5 と1バーずつ突き合わせた。
+- **結果**＝値決め窓（periods.SEARCH_START 2024-03-01 〜 SEARCH_END 2025-09-01）のバー数 158,112。**食い違い 0件。**
+- **わざと条件を1本 外す確かめ**＝非 uptrend の1本を外した束で作り直すと、**食い違い 29,840件**＝突き合わせが実際に効いている。
+- ＝M2-1 の終わったと言える条件の①（M2-1-7 の食い違い0件）が満たされた。残り＝②M2-1-8（3本の走行のハッシュ値一致）③M2-1-9（H2 の印の作り直し）。
+
 ## §20 net（45回目）
 
 net はゼロ。実験ゼロ・採点ゼロ・売買記録CSV 0本。engine_tuner のコード・戦略のコード・審判 score.py は1バイトも触っていない。触ったのは hook 1本（enforce_chat_writing.py）と文書4本（chat_writing_rules.md・engine_tuner_milestones2.md・next_step.md・WORKFLOW.md）と記録（worklog・lessons・session_todo・goal_block）。

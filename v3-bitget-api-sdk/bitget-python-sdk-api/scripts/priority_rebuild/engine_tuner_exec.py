@@ -610,8 +610,58 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
 #     entry_col  … このバーだけ玉を建ててよい、を表す列の名前
 #     block_col  … このバーでは新規の発注を止める、を表す列の名前（要らなければ null）
 #   ⚠️ 名前を downtrend にしても下げ相場は扱えない。判定の列そのものが要る（実行時に列の有無を検査する）。
-def _check_regime_meta(meta: dict) -> None:
-    """meta.regime の形を検査する（G5）。壊れていたらレシピを読み込まない。"""
+def _check_bool_cond(c: dict, where: str) -> None:
+    """build 専用の形 bool_col＝真偽の列の参照（M2-1-4 の決めごと3・2026-08-20 まこさん承認）。
+
+    ★bool_col は build（判定の中身）の中だけで使える。入口の条件の木（_walk）は form の無い
+      辞書を拒否するので、入口に書くと従来どおり G5 で止まる＝場面の判定はふるい（C5）を保つ。
+    ★列が実データに在るかは、ここでは見られない（データがまだ無い）＝実行時に fail-closed で
+      止める（_regime_series と同じ思想・実装は M2-1-6）。
+    """
+    extra = set(c) - {"bool_col", "want"}
+    if extra:
+        _fail("G5", f"{where}: bool_col に未知のフィールド {sorted(extra)}")
+    if not c.get("bool_col") or not isinstance(c["bool_col"], str):
+        _fail("G5", f"{where}: bool_col の列の名前が文字列でない: {c.get('bool_col')!r}")
+    if not isinstance(c.get("want"), bool):
+        _fail("G5", f"{where}: bool_col の want が true/false でない: {c.get('want')!r}")
+
+
+def _walk_build_tree(node, lane: str, where: str, legacy_used: list, depth: int = 0) -> None:
+    """build の木を検査する（M2-1-5・2026-08-20 まこさん承認）。
+
+    入口の木（_walk）との違い＝bool_col を条件として受けること だけ。
+    普通の条件は入口と同じ _check_cond に通す＝G5/G6・分位の範囲検査（_check_q_range）が
+    そのまま掛かる＝束の中の閾値（threshold_q）は engine_tuner の探索の対象になる（決めごと2）。
+    """
+    if isinstance(node, dict) and "bool_col" in node:
+        _check_bool_cond(node, where)
+        return
+    if _is_cond(node):
+        _check_cond(node, lane, where, legacy_used)
+        return
+    if isinstance(node, dict) and ("all" in node or "any" in node):
+        kids = node.get("all", node.get("any", []))
+        if not isinstance(kids, list) or not kids:
+            _fail("G5", f"{where}: build の all/any の中身が空")
+        for ch in kids:
+            _walk_build_tree(ch, lane, where, legacy_used, depth + 1)
+        return
+    if isinstance(node, dict) and "if" in node and "then" in node:
+        _walk_build_tree(node["if"], lane, where, legacy_used, depth + 1)
+        _walk_build_tree(node["then"], lane, where, legacy_used, depth + 1)
+        return
+    _fail("G5", f"{where}: build の木のノードが bool_col/条件/all/any/if-then のどれでもない: "
+                f"{sorted(node) if isinstance(node, dict) else node!r}")
+
+
+def _check_regime_meta(meta: dict, lane: str = "", legacy_used: list | None = None) -> None:
+    """meta.regime の形を検査する（G5）。壊れていたらレシピを読み込まない。
+
+    ★2026-08-20（M2-1-5・まこさん承認）＝meta.regime.build（判定の中身＝条件の束）を受け取れるように
+      広げた。build は書かなくてもよい（後方互換＝entry_col・block_col の読む道はそのまま）。
+      build の形＝entry（out_col＝作る列の名前・tree＝条件の束）と block（null 可・在れば同じ形）。
+    """
     from tuner_adapters import REGIME_NAMES
     rg = meta.get("regime")
     if not isinstance(rg, dict):
@@ -624,6 +674,29 @@ def _check_regime_meta(meta: dict) -> None:
         _fail("G5", "meta.regime.entry_col が無い（玉を建ててよいバーを表す列の名前が要る）")
     if rg.get("block_col") is not None and not isinstance(rg.get("block_col"), str):
         _fail("G5", f"meta.regime.block_col が文字列でない: {rg.get('block_col')!r}（要らないときは null）")
+    # ── build（判定の中身・M2-1-4 の決定・2026-08-20 まこさん承認）────────────────────
+    bd = rg.get("build")
+    if bd is None:
+        return
+    legacy_used = [] if legacy_used is None else legacy_used
+    if not isinstance(bd, dict):
+        _fail("G5", f"meta.regime.build が辞書でない: {bd!r}（形＝entry・block）")
+    extra = set(bd) - {"entry", "block"}
+    if extra:
+        _fail("G5", f"meta.regime.build に未知のフィールド {sorted(extra)}（形＝entry・block）")
+    if bd.get("entry") is None:
+        _fail("G5", "meta.regime.build.entry が無い（out_col と tree が要る・block だけの build は不可）")
+    for slot in ("entry", "block"):
+        one = bd.get(slot)
+        if one is None:
+            continue                                   # block は null 可
+        if not isinstance(one, dict) or not one.get("out_col") or not isinstance(one.get("out_col"), str):
+            _fail("G5", f"meta.regime.build.{slot} に out_col（作る列の名前）が無い")
+        if one["out_col"] in (rg.get("entry_col"), rg.get("block_col")):
+            _fail("G5", f"meta.regime.build.{slot}.out_col が宣言の列と同じ名前（上書きの防止）: {one['out_col']}")
+        if "tree" not in one:
+            _fail("G5", f"meta.regime.build.{slot} に tree（条件の束）が無い")
+        _walk_build_tree(one["tree"], lane, f"meta.regime.build.{slot}", legacy_used)
 
 
 def regime_cols(recipe: dict) -> tuple[str, str | None]:
@@ -686,7 +759,7 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
             _fail("G5", f"meta.{key} が無い")
     if meta["side"] not in ("SHORT", "LONG"):
         _fail("G5", f"meta.side が不正: {meta['side']}")
-    _check_regime_meta(meta)
+    _check_regime_meta(meta, lane, rep["legacy使用"])
     # record（記録スタイル）＝過去資産の書き写しで診断列（W_entry/k_entry）の出し方を実装に合わせる指定。
     # 歩6-1（L1）で追加。net に不関与の診断列だが、md5 恒等の対象なので実装と同じ出し方が要る。
     # 恒等検収レーン専用＝探索レシピには存在しない（生成器は作らない・番人で隔離）。
@@ -1211,6 +1284,66 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
     raise RecipeError(f"[実行器] 形 {form} の実行が未実装")
 
 
+def build_regime_columns(df: pd.DataFrame, recipe: dict, geo: dict | None = None,
+                         qtable: dict | None = None) -> None:
+    """meta.regime.build（判定の中身＝条件の束）から真偽の列を作って df に足す（M2-1-6・2026-08-20 まこさん承認）。
+
+    - build が無いレシピでは何もしない（後方互換＝既存のレシピは1バイトも動きが変わらない）。
+    - bool_col＝df の列を真偽で読む（want=false なら反転）。列が無ければ止める（fail-closed・_regime_series と同じ思想）。
+    - 普通の条件＝入口と同じ _eval_cond を再利用（二重に作らない）。束ね方も入口と同じ意味論
+      （all＝全部 真／any＝どれか真／if-then＝if が真なら then を要求＝_entry_fire の _eval_tree と同式）。
+    - できた列は out_col の名前で df に足す。df に同名の列が既に在れば止める（上書きの防止）。
+    - 同じ df に2回 呼ばれたら2回目は何もしない（run_recipe が作った列を _ceiling_fire の経路がそのまま読む。
+      作った列の名前は df.attrs に覚える＝「元から在った同名の列」との区別）。
+    ★この段（M2-1）では、できた列はまだ売買の判定に使われない＝entry_col が指す列は従来どおり。
+      中身の確かめ（range_ok_rg5 との1バーずつ一致）は M2-1-7。判定の差し替えは M2-11。
+    """
+    rg = (recipe.get("meta") or {}).get("regime") or {}
+    bd = rg.get("build")
+    if not bd:
+        return
+    lane = (recipe.get("meta") or {}).get("lane", "")
+    built = df.attrs.setdefault("_regime_built", set())
+
+    def _eval_node(node) -> np.ndarray:
+        if isinstance(node, dict) and "bool_col" in node:
+            col = node["bool_col"]
+            if col not in df.columns:
+                raise RecipeError(
+                    f"[相場の列が無い] build の bool_col {col} がデータにありません"
+                    f"（判定の材料の列が要ります・fail-closed）")
+            arr = df[col].to_numpy(bool)
+            return arr if node["want"] else ~arr
+        if _is_cond(node):
+            return _eval_cond(node, df, geo or {}, lane, qtable)
+        if "all" in node:
+            out = np.ones(len(df), bool)
+            for ch in node["all"]:
+                out &= _eval_node(ch)
+            return out
+        if "any" in node:
+            out = np.zeros(len(df), bool)
+            for ch in node["any"]:
+                out |= _eval_node(ch)
+            return out
+        cond_if = _eval_node(node["if"])              # if-then＝if が真のときだけ then を要求（入口と同式）
+        cond_th = _eval_node(node["then"])
+        return ~cond_if | cond_th
+
+    for slot in ("entry", "block"):
+        one = bd.get(slot)
+        if one is None:
+            continue
+        out_col = one["out_col"]
+        if out_col in built:
+            continue
+        if out_col in df.columns:
+            raise RecipeError(
+                f"[上書きの防止] build.{slot}.out_col {out_col} と同じ名前の列が、データに既にあります")
+        df[out_col] = _eval_node(one["tree"])
+        built.add(out_col)
+
+
 def _entry_fire(recipe: dict, df: pd.DataFrame, geo: dict, qtable: dict | None = None) -> np.ndarray:
     """エントリー発火＝経路の木が当バーで真 ∧ その経路の引き金が当バーで縁（設計書 §2.1・確定意味論）。"""
     lane = recipe["meta"].get("lane", "")
@@ -1367,6 +1500,7 @@ def _ceiling_fire(recipe: dict, df: pd.DataFrame, geo: dict) -> tuple[np.ndarray
     no_age_dn = bool(sp.get("down_no_age", False))
     c = df["close"].to_numpy(float)
     h = df["high"].to_numpy(float)
+    build_regime_columns(df, recipe, geo)         # M2-1-6＝build が在れば判定の列を作る（2回目は何もしない）
     ok, _up = _regime_series(df, recipe)          # 監査 4-19＝列の名前はレシピの宣言から読む（直書きをやめた）
     res_lo = geo["res_lo"]
     res_hi = geo["res_hi"]
@@ -1544,7 +1678,6 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
     atr = df["atr"].to_numpy(float)
     adx = df["adx"].to_numpy(float)
     kk = df["stoch_k"].to_numpy(float)
-    ok, up = _regime_series(df, recipe)           # 監査 4-19＝列の名前はレシピの宣言から読む（直書きをやめた）
     res_lo = df["v11_res_lo"].to_numpy(float)
     res_hi = df["v11_res_hi"].to_numpy(float)
     sup_lo = df["v11_sup_lo"].to_numpy(float)
@@ -1556,6 +1689,10 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
         wpct_arr = np.where(np.isfinite(res_hi) & np.isfinite(sup_lo), (res_hi - sup_lo) / c * 100.0, np.nan)
     geo = {"res_hi": res_hi, "res_lo": res_lo, "sup_hi": sup_hi, "sup_lo": sup_lo,
            "mid": mid, "W%": wpct_arr, "帯内位置%": pos_arr}
+    # ★M2-1-6（2026-08-20 まこさん承認）＝build が在れば、幾何（geo）を組んだ直後・宣言の列を読む前に
+    #   判定の列を作る（build の中の普通の条件が W% などの幾何を使えるように、この位置に置いた）。
+    build_regime_columns(df, recipe, geo, qtable)
+    ok, up = _regime_series(df, recipe)           # 監査 4-19＝列の名前はレシピの宣言から読む（直書きをやめた）
     for _tgt, _m in _swing_specs(recipe):         # v22 アンカー（里程標9）＝直近 m 本の安値／高値
         _k = f"swing:{_tgt}:{_m}"                 # 当該バーは含めない（shift(1)＝H2・e37_scalp 984行と同式）
         if _k in geo:

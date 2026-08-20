@@ -1581,43 +1581,11 @@ def _import_rg5():
     return rgmod
 
 
-def _rg5_frames(df: pd.DataFrame, adaptive_k=None):
-    """v20: RG-v5 の 1h 帯と 5分判定（range/uptrend）を計算して返す（_apply_rg5_to_5m と selftest の共通実体）。
-    未来値ゼロ（H2）＝1h/15分は確定バーのみ ffill・状態機械 rg5_uptrend_state は過去 close の逐次更新
-    （RG 仕様欄「因果性」と同一・ロジックは build_regime_gate_rg.py を import 再利用＝コピー禁止）。
-    adaptive_k=None（既定）＝RG-v5 固定束ね幅（v24 まで恒等）／指定時＝RG-v6 束ね幅ボラ連動（v25・
-    tol=clamp(adaptive_k×ATR%_1h,0.15%,0.6%)＝_adaptive_tol_1h）＝平坦は帯が鋭く/高ボラでゾーンが立つ。"""
-    rgmod = _import_rg5()
-    d5 = df.set_index(pd.DatetimeIndex(df["ts"]))[["open", "high", "low", "close", "volume"]]
-    _d1h = rgmod.v17._resample(d5, "1h")
-    _tol = rgmod._adaptive_tol_1h(_d1h, adaptive_k) if adaptive_k is not None else None   # v25: RG-v6 適応束ね幅
-    z1h = rgmod._zones_1h_rg(_d1h, tol_arr=_tol)
-    idx5 = pd.DatetimeIndex(df["ts"])
-    okz = z1h["zone_ok"].reindex(idx5, method="ffill").fillna(False).astype(bool).to_numpy()
-    res_lo = z1h["res_lo"].reindex(idx5, method="ffill").to_numpy(float)
-    res_hi = z1h["res_hi"].reindex(idx5, method="ffill").to_numpy(float)
-    sup_lo = z1h["sup_lo"].reindex(idx5, method="ffill").to_numpy(float)
-    sup_hi = z1h["sup_hi"].reindex(idx5, method="ffill").to_numpy(float)
-    c = df["close"].to_numpy(float)
-    brk = (c > res_hi) | (c < sup_lo)
-    brk = np.where(np.isfinite(res_hi) & np.isfinite(sup_lo), brk, False)
-    up = rgmod._uptrend_state_5m(d5)                   # rg5_uptrend_state＝上げトレンド状態機械（上げ専用・過去のみ）
-    rng = okz & ~brk & ~up                             # range_ok_rg5（GATE_IDENT）＝帯あり ∩ 5分帯内 ∩ 非 uptrend
-    return z1h, up, rng, res_lo, res_hi, sup_lo, sup_hi
-
-
-def _apply_rg5_to_5m(df: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:
-    """v20: RG-v5（帯対拡張＋上げトレンド状態機械・視認校正3巡）で range_ok_rg5（GATE_IDENT）と
-    rg5_uptrend を計算し、v11 エンジンの帯列へ供給する（acceptance 2026-07-12・実体は _rg5_frames）。
-    adaptive_k 指定時＝RG-v6 束ね幅ボラ連動（v25・acceptance 2026-07-16）＝既定 None は RG-v5 恒等。"""
-    _, up, rng, res_lo, res_hi, sup_lo, sup_hi = _rg5_frames(df, adaptive_k)
-    df["rg5_uptrend"] = up
-    df["range_ok_rg5"] = rng
-    df["v11_res_lo"] = res_lo; df["v11_res_hi"] = res_hi
-    df["v11_sup_lo"] = sup_lo; df["v11_sup_hi"] = sup_hi
-    df["v11_mid"] = (res_lo + sup_hi) / 2.0
-    df["range_ok_v11"] = rng                           # v11 エンジン・入口候補はこの列を読む（v20 では RG-v5 が正）
-    return df
+# ★2026-08-20 一本化（まこさん決定・逐語「１冊にまとめる」）＝RG-v5 の2関数（_rg5_frames・_apply_rg5_to_5m）の
+#   正本は e37_scalp.py（engine_tuner の経路＝接続ファイル・e38_priority_stack・observe_diag ほかが読む側）。
+#   ここに在った同じ中身の複製は消し、import に置き換えた（片方だけ直して黙って食い違う事故の元を消す）。
+#   このファイルを読む診断（rg5_*_diag.py ほか8本）は、今までどおり e37_range_scalp._rg5_frames の名前で使える。
+from e37_scalp import _apply_rg5_to_5m, _rg5_frames  # noqa: E402,F401
 
 
 def v22_uptrend_warning(df: pd.DataFrame) -> pd.DataFrame:
