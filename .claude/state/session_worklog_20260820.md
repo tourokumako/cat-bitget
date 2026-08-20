@@ -223,6 +223,28 @@ net はゼロ。実験ゼロ・採点ゼロ・売買記録CSV 0本。engine_tune
 - `lessons_active.md`＝L-514 を足した（Stop hook の差し戻しは「発言」として記録される＝直前の発言を鍵にする状態管理は hook 自身の差し戻しで壊れる）。
 - git commit＝まこさんの OK 待ち。
 
+## §21 M2-1-1 を実装した（受け入れ条件 8d3c45b7…・まこさん承認「OK」）
+
+- **gen_materials.py に「相場の宣言」を数える処理を足した。**①数える関数 _regime_decl_view（名前の一覧＝tuner_adapters.REGIME_NAMES／宣言の鍵＝検査のコードが実際に読む鍵から正規表現で引く／止める検査の件数＝関数3つの実物から数える）②表示 _render_regime（materials.md の ★8 の節）③テスト T15（名前を わざと1件 消すと数がちょうど1 減ること）。
+- **受け入れ判定の結果＝4件とも通った。**①--write で ★8 の節が出た（970行）②--verify ✅ ③--selftest 全部 pass（T15 含む）④py_compile 通過。
+- **★8 の節の中身（実測）**＝名前4件（range・uptrend・downtrend・spike）／鍵3件（name・entry_col・block_col・うち列の名前2件）／止める検査 合計10件（実行前4・読み込み時4・実行時2）。
+- 決まり（§6 の22番）どおり、機械生成の文書5本の --verify も走らせた＝gen_composition_rules・gen_exit_families・gen_signal_families・gen_engine_tuner_requirements・gen_cat_requirements 全部 ✅。
+- **★正直に書く注意1件**＝節の番号が既存の ★7 と衝突したのを直すとき、1回だけ Edit でなく Bash の文字列置き換えで直した（承認済みの範囲内の直し）。以後は Edit を使う。
+
+## §22 M2-1-2 を実装した（受け入れ条件 1d811f7d…・まこさん承認「OK」）
+
+- **gen_materials.py の ★8 の節に「④ 名前ごとの、いま在る判定の列」の4×2 の表を足した。**宣言＝e38_logics.json の global.regime と tuner_adapters/e37.py の REGIME（ソースから引く）。列を作る側＝e37_range_scalp._apply_rg5_to_5m のソースの df["…"] = の列名（8本）。
+- **表の実測**＝range＝range_ok_rg5（在る）・rg5_uptrend（在る）／uptrend・downtrend・spike＝宣言なし。rg5_uptrend が「range の止める列」として使われている事実の注記も印字した。
+- **受け入れ判定＝4件とも通った**＝--write で表が出た（987行）／--verify ✅／--selftest 全部 pass（T16 新設＝架空の列を宣言の写しに足すと欄が変わり「★列を作る側に無い」と出る）／py_compile 通過。
+- 正直に書く注意＝照合は「列を付けるコードに在るか」で、実データは読み込まない（データそのものの突き合わせは M2-1-7）。この注意は文書にも印字した。
+
+## §23 M2-1-3＝判定の列を自分で作る道が在るかを、実物で数えた（読み取りだけ）
+
+- **答え＝作る道は0件。**engine_tuner_exec.py と engine_tuner_gen.py に、判定の列（range_ok_rg5・rg5_uptrend）を df に代入する行は無い（grep で0件）。
+- 実行器が持つのは読む道だけ＝meta.regime（宣言）→ regime_cols（629行）→ _regime_series（列が無ければ止める）。
+- 列を実データに付けている実物は戦略の側＝e37_range_scalp.py の 1614行（rg5_uptrend）と 1615行（range_ok_rg5）。
+- ＝M2-1-6（条件の束から真偽の列を作る処理の新設）が、本当に「無い道を作る」作業であることが実物で確かめられた。
+
 ## §20 net（45回目）
 
 net はゼロ。実験ゼロ・採点ゼロ・売買記録CSV 0本。engine_tuner のコード・戦略のコード・審判 score.py は1バイトも触っていない。触ったのは hook 1本（enforce_chat_writing.py）と文書4本（chat_writing_rules.md・engine_tuner_milestones2.md・next_step.md・WORKFLOW.md）と記録（worklog・lessons・session_todo・goal_block）。

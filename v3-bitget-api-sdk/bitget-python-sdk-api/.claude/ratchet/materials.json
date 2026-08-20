@@ -4810,7 +4810,89 @@
    "合計並び": 35,
    "合計数字": 76,
    "合計範囲": 28
+  },
+  "regime_decl": {
+   "名前の一覧": [
+    "range",
+    "uptrend",
+    "downtrend",
+    "spike"
+   ],
+   "名前の数": 4,
+   "鍵": [
+    "name",
+    "entry_col",
+    "block_col"
+   ],
+   "要る列": [
+    "entry_col",
+    "block_col"
+   ],
+   "検査": [
+    {
+     "どこで": "実行前（接続ファイルの宣言の検査）",
+     "実物": "`tuner_adapters.check_regime`",
+     "件数": 4
+    },
+    {
+     "どこで": "レシピの読み込み時（G5）",
+     "実物": "`engine_tuner_exec._check_regime_meta`",
+     "件数": 4
+    },
+    {
+     "どこで": "実行時（列が実データに無ければ止める・fail-closed）",
+     "実物": "`engine_tuner_exec._regime_series`",
+     "件数": 2
+    }
+   ],
+   "検査の合計": 10,
+   "宣言": [
+    {
+     "誰が": "e38（`e38_logics.json` の global.regime）",
+     "name": "range",
+     "entry_col": "range_ok_rg5",
+     "block_col": "rg5_uptrend"
+    },
+    {
+     "誰が": "e37（`tuner_adapters/e37.py` の REGIME）",
+     "name": "range",
+     "entry_col": "range_ok_rg5",
+     "block_col": "rg5_uptrend"
+    }
+   ],
+   "列を作る側の列": [
+    "range_ok_rg5",
+    "range_ok_v11",
+    "rg5_uptrend",
+    "v11_mid",
+    "v11_res_hi",
+    "v11_res_lo",
+    "v11_sup_hi",
+    "v11_sup_lo"
+   ],
+   "名前ごと": [
+    {
+     "名前": "range",
+     "建ててよい列": "`range_ok_rg5`（列を作る側に在る）",
+     "止める列": "`rg5_uptrend`（列を作る側に在る）"
+    },
+    {
+     "名前": "uptrend",
+     "建ててよい列": "宣言なし",
+     "止める列": "宣言なし"
+    },
+    {
+     "名前": "downtrend",
+     "建ててよい列": "宣言なし",
+     "止める列": "宣言なし"
+    },
+    {
+     "名前": "spike",
+     "建ててよい列": "宣言なし",
+     "止める列": "宣言なし"
+    }
+   ]
   }
  },
- "_本文の指紋": "84ec7632ffce7800"
+ "_本文の指紋": "329df40705295a05"
 }

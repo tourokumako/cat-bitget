@@ -905,6 +905,84 @@ def _parts_from_diag(dec: dict, ng: list) -> str:
     return f"{len(dec) - bad}/{len(dec)} 一致"
 
 
+def _regime_decl_view(names: tuple | None = None, decls: list | None = None,
+                      builder_cols: list | None = None) -> dict:
+    """M2-1-1（2026-08-20 まこさん承認）＝売買を回すプログラム（engine_tuner_exec.py）が要求する
+    「相場の宣言」の形を、実物から数える。CC が決める数字は0件（全部 実物からの引き写し）。
+
+    どこから引くか（書き写さない）:
+      tuner_adapters.REGIME_NAMES          … 相場の名前の一覧（正本＝cat_requirements §1.2.1 の写し）
+      tuner_adapters.check_regime          … 実行前の検査（接続ファイルの宣言を見る・RegimeDeclError）
+      engine_tuner_exec._check_regime_meta … レシピの読み込み時の検査（G5）
+      engine_tuner_exec._regime_series     … 実行時の検査（列が実データに無ければ止める・fail-closed）
+    宣言の鍵（name・entry_col・block_col）も手で書かない＝検査のコードが実際に読む鍵
+    （rg.get("…")）から正規表現で引く。
+
+    names 引数＝番人（T15）専用。わざと1件 消した一覧を渡すと、数がちょうど1 減ることを確かめる。
+    decls・builder_cols 引数＝番人（T16・M2-1-2）専用。架空の宣言や列の写しを渡すと、
+    名前ごとの表の欄が変わることを確かめる。実物のファイルは1バイトも書き換えない。
+
+    ★M2-1-2（2026-08-20 まこさん承認）で足した分＝名前ごとの判定の列の表。
+      宣言＝e38_logics.json の global.regime ＋ tuner_adapters/e37.py の REGIME（ソースから引く）。
+      列を作る側＝e37_range_scalp._apply_rg5_to_5m のソースの df["…"] = の列名。
+      ⚠️ 照合は「列を付けるコードに在るか」＝実データは読み込まない（軽く保ち毎回 数え直すため）。
+        データそのものの突き合わせは M2-1-7（range_ok_rg5 と1バーずつ）でやる。
+    """
+    import inspect
+    import re as _re
+
+    import engine_tuner_exec as _ex
+    import tuner_adapters as _ta
+    nm = tuple(names) if names is not None else tuple(_ta.REGIME_NAMES)
+    src_pre = inspect.getsource(_ta.check_regime)
+    src_meta = inspect.getsource(_ex._check_regime_meta)
+    src_run = inspect.getsource(_ex._regime_series)
+    keys = list(dict.fromkeys(_re.findall(r'rg\.get\("([a-z_]+)"\)', src_meta)))
+    cols = [k for k in keys if k.endswith("_col")]
+    checks = [
+        dict(どこで="実行前（接続ファイルの宣言の検査）", 実物="`tuner_adapters.check_regime`",
+             件数=src_pre.count("raise RegimeDeclError")),
+        dict(どこで="レシピの読み込み時（G5）", 実物="`engine_tuner_exec._check_regime_meta`",
+             件数=src_meta.count("_fail(")),
+        dict(どこで="実行時（列が実データに無ければ止める・fail-closed）", 実物="`engine_tuner_exec._regime_series`",
+             件数=src_run.count("raise RecipeError")),
+    ]
+    # ── ④ 名前ごとの判定の列（M2-1-2・2026-08-20 まこさん承認）──────────────────────
+    import ast as _ast
+    if decls is None:
+        e38rg = (json.loads(_A1_E38.read_text(encoding="utf-8"))["global"].get("regime") or {})
+        _e37src = (_HERE / "tuner_adapters" / "e37.py").read_text(encoding="utf-8")
+        _m37 = _re.search(r"^REGIME = (\{.*\})", _e37src, _re.M)
+        e37rg = _ast.literal_eval(_m37.group(1)) if _m37 else {}
+        decls = [dict(誰が="e38（`e38_logics.json` の global.regime）",
+                      **{k: e38rg.get(k) for k in ("name", "entry_col", "block_col")}),
+                 dict(誰が="e37（`tuner_adapters/e37.py` の REGIME）",
+                      **{k: e37rg.get(k) for k in ("name", "entry_col", "block_col")})]
+    if builder_cols is None:
+        _bsrc = (_HERE / "e37_range_scalp.py").read_text(encoding="utf-8")
+        _mfn = _re.search(r"def _apply_rg5_to_5m.*?(?=\ndef )", _bsrc, _re.S)
+        builder_cols = sorted(set(_re.findall(r'df\["([A-Za-z0-9_]+)"\]\s*=', _mfn.group(0)))) if _mfn else []
+
+    def _cell(cols_for_name: list) -> str:
+        if not cols_for_name:
+            return "宣言なし"
+        out = []
+        for col in dict.fromkeys(cols_for_name):
+            ok = "列を作る側に在る" if col in builder_cols else "★列を作る側に無い"
+            out.append(f"`{col}`（{ok}）")
+        return "・".join(out)
+
+    per_name = []
+    for n in nm:
+        ent = [d["entry_col"] for d in decls if d.get("name") == n and d.get("entry_col")]
+        blk = [d["block_col"] for d in decls if d.get("name") == n and d.get("block_col")]
+        per_name.append(dict(名前=n, 建ててよい列=_cell(ent), 止める列=_cell(blk)))
+
+    return dict(名前の一覧=list(nm), 名前の数=len(nm), 鍵=keys, 要る列=cols,
+                検査=checks, 検査の合計=sum(c["件数"] for c in checks),
+                宣言=decls, 列を作る側の列=builder_cols, 名前ごと=per_name)
+
+
 def build_body() -> dict:
     """表の中身を作る（正本から機械で引く）。"""
     rbl = _roles_by_lineage()
@@ -1003,7 +1081,8 @@ def build_body() -> dict:
                 lineage_question={k: dict(問い=v[0], 出典=v[1]) for k, v in iref.LINEAGE_QUESTION.items()},
                 library_ready=bool(lib), library_funcs=len(lib),
                 gaps=gaps, skip_rows=skip_rows, engine=engine,
-                a1=fixed_number_places())   # 段A の A-1＝「決まった数字だけ」の4か所（2026-08-12）
+                a1=fixed_number_places(),   # 段A の A-1＝「決まった数字だけ」の4か所（2026-08-12）
+                regime_decl=_regime_decl_view())   # M2-1-1＝相場の宣言の形（2026-08-20 まこさん承認）
 
 
 def _body_hash(body: dict) -> str:
@@ -1092,6 +1171,52 @@ def _render_matrix(m: dict) -> list[str]:
               "**★直すのはマイルストーン②です。**この節は「いまどうなっているか」を出すところまでです。"]
     else:
         L += ["", "**✅ 定番のクロスは全部 作れます。**"]
+    return L
+
+
+def _render_regime(rd: dict) -> list[str]:
+    """★8｜相場の宣言（M2-1-1・2026-08-20 まこさん承認）。数字と一覧は全部 _regime_decl_view が実物から引く。"""
+    L = ["", "## ★8｜相場の宣言（M2-1-1）＝売買を回すプログラムが要求する形", "",
+         "**★この節は機械が実物から引いて書きます（数字と一覧の手書きゼロ・まこさん承認 2026-08-20）。**",
+         "レシピの `meta.regime` がこの宣言を持ち、3か所の検査が守ります。",
+         "M2-1 の実装（engine_tuner が組み立てた判定を、売買に渡す道）は、この形の上に乗ります。", "",
+         f"**① 相場の名前の一覧＝{rd['名前の数']} 件**"
+         "（実物＝`tuner_adapters.REGIME_NAMES`・正本＝`cat_requirements.md` §1.2.1 の4局面の写し）", "",
+         "| 名前 |", "|---|"]
+    for n in rd["名前の一覧"]:
+        L.append(f"| `{n}` |")
+    L += ["", f"**② 宣言に要る鍵＝{len(rd['鍵'])} 件（うち列の名前は {len(rd['要る列'])} 件）**",
+          "検査のコード（`_check_regime_meta`）が実際に読む鍵から機械で引きました。", "",
+          "| 鍵 | 何か |", "|---|---|"]
+    for k in rd["鍵"]:
+        if k in rd["要る列"]:
+            imi = ("このバーだけ玉を建ててよい、を表す列の名前（真偽値）" if k == "entry_col"
+                   else "このバーでは新規の発注を止める、を表す列の名前（要らなければ null）")
+        else:
+            imi = "相場の名前（上の一覧のどれか）"
+        L.append(f"| `{k}` | {imi} |")
+    L += ["", f"**③ 止める検査＝合計 {rd['検査の合計']} 件（3か所・件数は関数の実物から数えた）**", "",
+          "| どこで | 実物 | 検査の数 |", "|---|---|---|"]
+    for c in rd["検査"]:
+        L.append(f"| {c['どこで']} | {c['実物']} | {c['件数']} 件 |")
+    L += ["", "**④ 名前ごとの、いま在る判定の列（M2-1-2・宣言と、列を作る側の照合）**", "",
+          "| 名前 | 建ててよい列（entry_col） | 止める列（block_col） |", "|---|---|---|"]
+    for r in rd["名前ごと"]:
+        L.append(f"| `{r['名前']}` | {r['建ててよい列']} | {r['止める列']} |")
+    L += ["",
+          "**宣言の出どころ（実物）**＝" + "／".join(d["誰が"] for d in rd["宣言"]) + "。",
+          f"**列を作る側（`e37_range_scalp._apply_rg5_to_5m`）が付ける列＝{len(rd['列を作る側の列'])} 本**"
+          f"（{'・'.join('`' + c + '`' for c in rd['列を作る側の列'])}）。",
+          "⚠️ `rg5_uptrend` は上げトレンドの判定の列ですが、宣言の上では range の止める列として使われています",
+          "＝uptrend の行に宣言はありません（M2-6 で上げの判定を組むときの、比べる相手になります）。",
+          "**正直に書く注意**＝この照合は「列を付けるコードに在るか」であって、実データは読み込みません。",
+          "データそのものの突き合わせは M2-1-7（`range_ok_rg5` と1バーずつ）でやります。", "",
+          "**⚠️ 名前を書いただけでは、その相場を扱えません。**判定の列が実データに無ければ、実行時に止まります",
+          "（`_regime_series` の逐語＝「判定を作る処理が要ります（engine_tuner の外側の作業）」）。",
+          "**★いまの engine_tuner は、判定の中身を組み立てられません**（できあがった列の名前を読むだけ）。",
+          "組み立てて渡す道を作るのが M2-1 です（やることリスト＝`engine_tuner_milestones2.md` §4）。",
+          "番人＝`--selftest` の T15（名前を わざと1件 消すと数がちょうど1 減ること）と",
+          "T16（架空の列を宣言の写しに足すと、欄が変わり「★列を作る側に無い」と出ること）。"]
     return L
 
 
@@ -1311,6 +1436,9 @@ def render_md(body: dict) -> str:
               "| ライブラリの関数 | 承認 | 入れない理由 |", "|---|---|---|"]
         for s in body["skip_rows"]:
             L.append(f"| {s['名前']} | {s.get('承認', '★未承認')} | {s['理由']} |")
+        L += [""]
+    if body.get("regime_decl"):
+        L += _render_regime(body["regime_decl"])
         L += [""]
     L += ["## 答える問いの出どころ（系統ごと・1行ずつ）", "",
           "| 系統 | 答える問い | 出典 |", "|---|---|---|"]
@@ -1604,6 +1732,50 @@ def selftest() -> int:
             ng.append(f"T14: メタ確認のあと元に戻っていない（{_ng14c[0]}）")
     except Exception as _e15:                                    # noqa: BLE001
         ng.append(f"T14: 確かめられなかった（{type(_e15).__name__}: {str(_e15)[:100]}）")
+
+    # ── T15 M2-1-1｜相場の宣言の数え上げ（2026-08-20 新設・まこさん承認）─────────────────
+    #   何を守るか＝★7 の節（相場の名前・鍵・止める検査）が、実物とずれた数字を出さないこと。
+    #   確かめ方＝やることリストの逐語「名前の一覧から わざと1件 消すと、件数が 4 → 3 に変わること」。
+    #   ★実物の REGIME_NAMES は1バイトも書き換えない（写しを渡すだけ）。
+    try:
+        import tuner_adapters as _ta15
+        _rd15 = _regime_decl_view()
+        if _rd15["名前の数"] != len(_ta15.REGIME_NAMES):
+            ng.append(f"T15: 名前の数 {_rd15['名前の数']} が実物 REGIME_NAMES の"
+                      f" {len(_ta15.REGIME_NAMES)} 件と合わない")
+        _cut15 = _regime_decl_view(names=_ta15.REGIME_NAMES[:-1])
+        if _cut15["名前の数"] != _rd15["名前の数"] - 1:
+            ng.append(f"T15: 名前を わざと1件 消しても数がちょうど1 減らない"
+                      f"（{_rd15['名前の数']} → {_cut15['名前の数']}）")
+        if _rd15["要る列"] != ["entry_col", "block_col"]:
+            ng.append(f"T15: 宣言の列の鍵が entry_col・block_col でない: {_rd15['要る列']}"
+                      "（検査のコードから鍵を引けていない）")
+        for _c15 in _rd15["検査"]:
+            if _c15["件数"] <= 0:
+                ng.append(f"T15: 『{_c15['どこで']}』の検査の数が 0＝数え上げがその場所を見ていない")
+    except Exception as _e16:                                    # noqa: BLE001
+        ng.append(f"T15: 確かめられなかった（{type(_e16).__name__}: {str(_e16)[:80]}）")
+
+    # ── T16 M2-1-2｜名前ごとの判定の列の表（2026-08-20 新設・まこさん承認）─────────────────
+    #   確かめ方＝やることリストの逐語「架空の列を1本 足すと欄が変わること」。
+    #   ★実物のファイルは1バイトも書き換えない（宣言の写しを渡すだけ）。
+    try:
+        _rd16 = _regime_decl_view()
+        _row16 = {r["名前"]: r for r in _rd16["名前ごと"]}
+        if "range_ok_rg5" not in _row16["range"]["建ててよい列"] or "列を作る側に在る" not in _row16["range"]["建ててよい列"]:
+            ng.append(f"T16: range の建ててよい列が実物と合わない: {_row16['range']['建ててよい列']}")
+        if _row16["downtrend"]["建ててよい列"] != "宣言なし" or _row16["spike"]["建ててよい列"] != "宣言なし":
+            ng.append("T16: 宣言の無い名前（downtrend・spike）の欄が「宣言なし」になっていない")
+        _fake16 = list(_rd16["宣言"]) + [dict(誰が="番人の試験", name="downtrend",
+                                              entry_col="zzz_uso_col", block_col=None)]
+        _cut16 = _regime_decl_view(decls=_fake16)
+        _dcell = {r["名前"]: r for r in _cut16["名前ごと"]}["downtrend"]["建ててよい列"]
+        if "zzz_uso_col" not in _dcell:
+            ng.append(f"T16: 架空の列を宣言の写しに足しても欄が変わらない: {_dcell}")
+        elif "★列を作る側に無い" not in _dcell:
+            ng.append(f"T16: 架空の列（列を作る側に無いはず）が「無い」と出ない: {_dcell}")
+    except Exception as _e17:                                    # noqa: BLE001
+        ng.append(f"T16: 確かめられなかった（{type(_e17).__name__}: {str(_e17)[:80]}）")
 
     # T6 わざと書き換えると --verify が鳴る（メタ確認）
     if _MD.exists():
