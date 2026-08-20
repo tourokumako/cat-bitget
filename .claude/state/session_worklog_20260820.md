@@ -298,6 +298,12 @@ net はゼロ。実験ゼロ・採点ゼロ・売買記録CSV 0本。engine_tune
 - **＝M2-1 の終わったと言える条件3つが全部 満たされた。**milestones2 §4 の M2-1 の10行と、§3.1 のフローの表の M2-1 の行に ✅済（2026-08-20）を付けた。
 - 次のフェーズ＝M2-2（足りない条件の形と部品を、全部 足す・11件）。最初の承認で止まる番号＝M2-2-4（足す形の設計）。
 
+## §31 セッションの終わり（45回目・まこさんの問い「セッション切り替えなくて大丈夫なの？」→ CC 推奨＝切り替え）
+
+- M2-1 完了の区切りで新セッションへ切り替える。引き継ぎ＝next_step の（0-b）（0-c）を45回目版に更新・WORKFLOW 改訂232・milestones2 の ✅済 10行。
+- **M2-2-1 の受け入れ条件は承認済み**（まこさん「良いけど」・承認のハッシュ値 d09563e7…）＝新セッションはそのまま実装に入れる。
+- 教訓の追記は無し（今回の型は L-514 までに書いた型の再演なし）。lessons は45回目の前半（L-514）で更新済み。
+
 ## §20 net（45回目）
 
-net はゼロ。実験ゼロ・採点ゼロ・売買記録CSV 0本。engine_tuner のコード・戦略のコード・審判 score.py は1バイトも触っていない。触ったのは hook 1本（enforce_chat_writing.py）と文書4本（chat_writing_rules.md・engine_tuner_milestones2.md・next_step.md・WORKFLOW.md）と記録（worklog・lessons・session_todo・goal_block）。
+net はゼロ。実験ゼロ・採点ゼロ・売買記録CSV 0本。審判 score.py は1バイトも触っていない。3本の走行は「直す前との一致確認」で、新しい採点はしていない。触ったコード＝hook 1本（enforce_chat_writing.py）・engine_tuner_exec.py・gen_materials.py・e37_scalp.py・e37_range_scalp.py・leak_causality_diag.py。文書＝chat_writing_rules.md・engine_tuner_milestones2.md・next_step.md・WORKFLOW.md・materials.md/json。記録＝worklog・lessons・session_todo・goal_block・acceptance。
