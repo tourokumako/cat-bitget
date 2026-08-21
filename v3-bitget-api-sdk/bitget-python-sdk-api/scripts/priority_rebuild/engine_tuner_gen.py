@@ -50,11 +50,42 @@ RUNS_DIR = HERE.parents[2] / "results" / "priority_rebuild" / "tuner_gen"
 # ★cross_val（2026-08-13・段C の C-6・部品①）は実行器の形ではない。実行器では cross の
 #   「列1本 ＋ 閾値」の書き方（＝『RSI が 70 を上抜けた』）を指す、生成器の中だけの名前。
 #   引き金（縁）だけに置く＝水準を跨いだ瞬間の1バーで成立する形のため。
-TRIGGER_FORMS = ("cross", "cross_val", "level", "diff", "candle_dir", "slope", "streak", "within_n",
-                 "barssince")
-STATE_FORMS = ("level", "band", "band_exclude", "slope", "slope_avg", "diff", "touch",
-               "candle_dir", "streak", "within_n", "barssince")
-NEEDS_PAIR = ("cross", "diff", "touch")
+# ★M2-2-3b（2026-08-21 まこさん承認 e4b86277…）＝下の3つは、手で並べるのをやめて
+#   形の性質表（engine_tuner_exec.FORM_SPEC）から作る。直す前は手書きで、形を足すたびに
+#   入れ忘れの危険があった（next_step §6 の66番）。
+#
+# ★★並びの「順番」は直す前のまま残す（大事）。
+#   理由＝`_make_cond` が `rng.choice(forms)` で上から選ぶ＝順番が変わると、同じ種でも
+#   違う案が出る（＝過去の探索をやり直せない）。2026-08-16 に同じ型の事故が起きている
+#   （set を上から順に見ていて、走らせるたびに案が変わった・worklog 20260816 の §4）。
+#   ★最初、性質表の順番（FORMS の順）で作ったら、実際に順番が変わっていた。使われ方を
+#     読んで気づいたので、順番を保つ形に直した。
+#
+# ★では何が良くなったか＝**中身（どの形が入るか）は性質表から作る。**
+#   順番の一覧と中身がずれたら、読み込みの瞬間に止まる（fail-closed）＝入れ忘れが
+#   「黙って通る」から「必ず止まる」に変わった。
+_TRIGGER_ORDER = ("cross", "cross_val", "level", "diff", "candle_dir", "slope", "streak",
+                  "within_n", "barssince")
+_STATE_ORDER = ("level", "band", "band_exclude", "slope", "slope_avg", "diff", "touch",
+                "candle_dir", "streak", "within_n", "barssince")
+
+
+def _ordered_like(order: tuple, members: tuple, name: str) -> tuple:
+    """中身は性質表から・順番は order のまま。ずれたら止める（M2-2-3b）。"""
+    if set(order) != set(members):
+        raise SystemExit(
+            f"[{name}] 形の性質表と、並びの順番の一覧がずれています（engine_tuner_gen.py）。\n"
+            f"  性質表にだけ在る: {sorted(set(members) - set(order))}\n"
+            f"  順番の一覧にだけ在る: {sorted(set(order) - set(members))}\n"
+            f"  ★形を足したときは、engine_tuner_exec.FORM_SPEC と、この順番の一覧の両方に足す。\n"
+            f"  ★順番は案の中身を左右するので、機械では決められません（どこに入れるかは人が決める）。")
+    return tuple(order)
+
+
+TRIGGER_FORMS = _ordered_like(_TRIGGER_ORDER, ex.forms_where("trigger_ok") + ("cross_val",),
+                              "TRIGGER_FORMS")
+STATE_FORMS = _ordered_like(_STATE_ORDER, ex.forms_where("state_free"), "STATE_FORMS")
+NEEDS_PAIR = ex.forms_pair_in("2", "2or1th")     # ★順番は効かない（in で見るだけ）
 
 # §11 の対応（値待ちの可視化に使う・番号は設計書 §11）
 LIMIT_LABELS = {
@@ -922,7 +953,7 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
     #   ・掛けるか掛けないかは「素のまま」を選択肢の1つに入れて一様に引く＝CC が確率の数字を書かない。
     #   ・閾値は下の既に在る決まり（DC1・DC2・分位の格子）がそのまま決める＝新しい決まりを作らない。
     #   ・本数は int_grid から引く＝CC が数字を書かない。
-    if form in ("level", "band", "band_exclude"):
+    if form in ex.forms_where("pre_ok"):       # ★手書き → 性質表から（M2-2-3b）
         _pre_opts = [None] + ex.pre_ops(same_unit=False)
         _op = _pre_opts[int(rng.integers(len(_pre_opts)))]
         if _op is not None:
@@ -946,7 +977,7 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
                     "value": _dc2_q(rng, role, m, limits, table, side)}
         return {"role": role, "form": "level", "material": [m],
                 "side": _dc1_side(rng, role, [m], side), "value": _q(rng, limits)}
-    if form in ("band", "band_exclude"):
+    if form in ex.forms_where("band"):        # ★手書き → 性質表から（M2-2-3b）
         # ★2026-08-15（段A の A-5-3）＝帯の下限・上限も範囲から引く（直す前は9段のメニューから2つ）。
         #   ★2つが同じ値にならないようにする＝下限と上限が同じ帯は幅ゼロで意味が無い
         #     （直す前の replace=False と同じ意味を、範囲でやっているだけ）。
@@ -1044,7 +1075,7 @@ def _exit_indicator_cond(rng, limits, pool, tfs, table, side, spec) -> dict:
     """
     lineages = set(spec.get("lineage_any") or ([spec["lineage"]] if spec.get("lineage") else
                                                ["オシレーター", "トレンド", "ボラ", "ローソク", "出来高", "構造・位置"]))
-    forms = [f for f in (spec.get("forms") or ["level"]) if f in ("level", "cross", "slope", "diff", "candle_dir")]
+    forms = [f for f in (spec.get("forms") or ["level"]) if f in ex.forms_where("exit_ok")]   # ★手書き → 性質表から（M2-2-3b）
     rev = bool(spec.get("reverse_of_side"))
     form = str(rng.choice(forms))
     # ★系統がローソクだけの枝で、その系統の部品がプールに1本も無いときは、材料の要らない形
@@ -1537,7 +1568,7 @@ def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
         sa = _qspec(mats[0], lane)
         if c["form"] == "level" and "threshold_q" in v:
             keys[a] = (sa,)
-        if c["form"] in ("band", "band_exclude"):
+        if c["form"] in ex.forms_where("band"):        # ★手書き → 性質表から（M2-2-3b）
             for sub in ("lo", "hi"):
                 if "threshold_q" in v.get(sub, {}):
                     keys[a] = (sa,)
@@ -1953,7 +1984,7 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
         for sub in ("lo", "hi", "th"):
             if "threshold_q" in v.get(sub, {}):
                 slots.append((f"{prefix}.value.{sub}.threshold_q", dict(qg)))
-        if c["form"] in ("slope", "slope_avg"):
+        if c["form"] in ex.forms_where("slope_n"):     # ★手書き → 性質表から（M2-2-3b）
             slots.append((f"{prefix}.value.n", _int_range(*int_range_of(limits))))
         if c["form"] == "slope_avg":
             slots.append((f"{prefix}.value.m", _int_range(*int_range_of(limits))))
@@ -3153,7 +3184,7 @@ def selftest() -> int:
                     if (name, m["tf"]) in banned13:
                         v.append(f"禁止3 の組 {name}__{m['tf']}")
             mats = c.get("material") or []
-            if (c.get("side") and c["form"] in ("level", "diff", "slope", "slope_avg")
+            if (c.get("side") and c["form"] in ex.forms_where("needs_side")   # ★性質表から（M2-2-3b）
                     and role in ("env", "sufficiency")
                     and any(_kubun_of(m) == "順張り値" for m in mats)):
                 want = "below" if side_v == "SHORT" else "above"

@@ -259,6 +259,10 @@
           },
           {
             "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_g2_pass.sh"
+          },
+          {
+            "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_tag_for_experiment.sh"
           },
           {

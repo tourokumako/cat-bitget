@@ -682,6 +682,27 @@ def forms_table() -> list[dict]:
         wa = d["和名"].split(" ", 1)[1] if " " in d["和名"] else d["和名"]
         rows.append(dict(形=f, 和名=wa, 材料=d["材料"], 必要な値=d["必要な値"],
                          実例=d["実例"], 入れ子=nest))
+    # ── ★M2-2-3b（2026-08-21 まこさん承認 e4b86277…）＝説明の表と、形の性質表を突き合わせる ──
+    #   なぜ要るか＝この節は直す前、**形の名前しか照らしていなかった**（①に在って②に無い形）。
+    #     説明の欄（材料・必要な値）と、プログラムが実際に使う性質表（FORM_SPEC）がずれても
+    #     気づけなかった。M2-2-3b で性質表を作ったので、そこと1件ずつ照らす。
+    #   ★照らすのは「材料の本数」と「帯の値を持つか」の2つ＝説明の欄から機械で読み取れるもの。
+    #     ほかの欄（向き・本数）は説明の書き方が1つに決まっていないので照らさない（正直に書く）。
+    for r in rows:
+        f = r["形"]
+        sp = ex.FORM_SPEC.get(f)
+        if sp is None:
+            ng.append(f"{f}: 形の性質表（FORM_SPEC）に無い")
+            continue
+        mat = r["材料"]
+        want_pair = {"1": "列1本", "2": "列2本", "2or1th": "列2本",
+                     "inner": "内側の条件1つ", "none": "ローソク列"}[sp["pair"]]
+        if want_pair not in mat:
+            ng.append(f"{f}: 説明の「材料」（{mat}）と性質表（{sp['pair']}＝{want_pair}）が食い違う")
+        has_band_txt = ("下限" in r["必要な値"]) and ("上限" in r["必要な値"])
+        if has_band_txt != bool(sp["band"]):
+            ng.append(f"{f}: 説明の「必要な値」に下限・上限が"
+                      f"{'在る' if has_band_txt else '無い'}のに、性質表の帯は {sp['band']}")
     return dict(rows=rows, ng=ng, n_forms=len(ex.FORMS),
                 doc=".claude/ratchet/" + doc.name)
 
@@ -863,7 +884,8 @@ def section_ng() -> list[str]:
     out: list[str] = []
     for name, fn in (("★5 使い方の一覧", forms_table),
                      ("★6 条件の部品", condition_parts),
-                     ("★7 指標 × 部品", parts_matrix)):
+                     ("★7 指標 × 部品", parts_matrix),
+                     ("★9 M2-2 の基準値", _m2_baseline_view)):
         try:
             d = _quiet(fn)
         except Exception as e:                                   # noqa: BLE001
@@ -985,6 +1007,91 @@ def _regime_decl_view(names: tuple | None = None, decls: list | None = None,
                 宣言=decls, 列を作る側の列=builder_cols, 名前ごと=per_name)
 
 
+def _m2_baseline_view(forms: tuple | None = None, parts: list | None = None) -> dict:
+    """M2-2-1（2026-08-20 まこさん承認）＝M2-2 で足す前の数（基準値）を、実物から数える。
+
+    なぜ要るか。
+      M2-2 は「足りない条件の形と部品を、全部 足す」フェーズ（書けない9件 → 0件）。
+      足したあとに「何が いくつ 増えたか」を、CC の申告ではなく プログラムの数え直しで示すため、
+      **直す前の数をここに固定する。**CC が決める数字は0件（全部 実物からの引き写し）。
+
+    どこから引くか（書き写さない）:
+      engine_tuner_exec.FORMS           … 条件の形
+      engine_tuner_exec.NEST_FORMS      … そのうち「外側になる形」（中に条件を1つ包む）
+      engine_tuner_exec._walk           … 束ね方（つなぎ木が受ける鍵）＝ソースから正規表現で引く
+      engine_tuner_exec._walk_build_tree … 判定の中身（build）の側の鍵＝同じ束ね方か・build 専用の形は何か
+      engine_tuner_exec.MATERIAL_PRE    … 材料の前処理
+      engine_tuner_exec.PAIR_OPS        … 材料2本の組み方
+      signal_families.json の parts / timeframes … 部品と時間足
+
+    ★束ね方は2通りで引いて突き合わせる（片方だけだと、コードが変わっても気づけない）。
+      ①止める文の逐語（「つなぎ木のノードが all/any/if-then/条件 のどれでもない」）
+      ②コードの鍵（`"all" in node` の形）
+      2つが食い違ったら ❌ を出す。
+
+    forms・parts 引数＝番人（T17）専用。わざと1種 消した写しを渡すと、数がちょうど1 減ることを
+      確かめる。★実物のファイルは1バイトも書き換えない（写しを渡すだけ）。
+    """
+    import inspect
+    import re as _re
+
+    import engine_tuner_exec as _ex
+    ng: list[str] = []
+    fm = tuple(forms) if forms is not None else tuple(_ex.FORMS)
+    nest = tuple(f for f in _ex.NEST_FORMS if f in fm)
+
+    # ── 束ね方＝つなぎ木の実物から2通りで引いて、両方が合うことを確かめる ──
+    src_walk = inspect.getsource(_ex._walk)
+    keys_node = list(dict.fromkeys(_re.findall(r'"([a-z]+)" in node', src_walk)))
+    _m = _re.search(r"つなぎ木のノードが ([a-z/\-]+)/条件", src_walk)
+    joins = _m.group(1).split("/") if _m else []
+    atoms = [a for j in joins for a in j.split("-")]
+    if not joins:
+        ng.append("束ね方を止める文から引けない（`_walk` の逐語が変わった）")
+    elif sorted(atoms) != sorted(keys_node):
+        ng.append(f"束ね方の引き方が2通りで食い違う（止める文＝{joins} ／ コードの鍵＝{keys_node}）")
+
+    # ── 判定の中身（build）の側＝同じ束ね方を受けるか・build だけで使える形は何か ──
+    src_build = inspect.getsource(_ex._walk_build_tree)
+    keys_build = list(dict.fromkeys(_re.findall(r'"([a-z_]+)" in node', src_build)))
+    lack = [a for a in atoms if a not in keys_build]
+    if lack:
+        ng.append(f"判定の中身（build）の側が受けない束ね方がある: {lack}")
+    build_only = [k for k in keys_build if k not in set(atoms) and k not in fm]
+
+    # ── 部品と時間足＝承認済みの型の表から ──
+    _sf = _RATCHET / "signal_families.json"
+    sf = json.loads(_sf.read_text(encoding="utf-8")) if _sf.exists() else {"parts": [], "timeframes": []}
+    if not _sf.exists():
+        ng.append(f"型の表が無い: {_sf}")
+    pt = list(parts) if parts is not None else list(sf["parts"])
+    tfs = list(sf["timeframes"])
+
+    def _join(xs) -> str:
+        return "・".join(f"`{x}`" for x in xs) if xs else "（無し）"
+
+    rows = [
+        dict(何="条件の形", 数=len(fm), 単位="種", 実物="`engine_tuner_exec.FORMS`", 中身=_join(fm)),
+        dict(何="うち 外側になる形（中に条件を1つ包む）", 数=len(nest), 単位="種",
+             実物="`engine_tuner_exec.NEST_FORMS`", 中身=_join(nest)),
+        dict(何="判定の中身（build）の中だけで使える形", 数=len(build_only), 単位="種",
+             実物="`engine_tuner_exec._walk_build_tree`", 中身=_join(build_only)),
+        dict(何="束ね方", 数=len(joins), 単位="通り", 実物="`engine_tuner_exec._walk`", 中身=_join(joins)),
+        dict(何="部品", 数=len(pt), 単位="種", 実物="`signal_families.json` の `parts`",
+             中身="（一覧は ★2 と ★7）"),
+        dict(何="時間足", 数=len(tfs), 単位="本", 実物="`signal_families.json` の `timeframes`",
+             中身=_join(tfs)),
+        dict(何="材料の列（部品 × 時間足）", 数=len(pt) * len(tfs), 単位="列",
+             実物="上の2つの掛け算", 中身="—"),
+        dict(何="材料の前処理", 数=len(_ex.MATERIAL_PRE), 単位="種",
+             実物="`engine_tuner_exec.MATERIAL_PRE`", 中身=_join(_ex.MATERIAL_PRE)),
+        dict(何="材料2本の組み方", 数=len(_ex.PAIR_OPS), 単位="種",
+             実物="`engine_tuner_exec.PAIR_OPS`", 中身=_join(_ex.PAIR_OPS)),
+    ]
+    return dict(rows=rows, ng=ng, 形の数=len(fm), 部品の数=len(pt), 時間足の数=len(tfs),
+                束ね方=joins, buildだけの形=build_only)
+
+
 def build_body() -> dict:
     """表の中身を作る（正本から機械で引く）。"""
     rbl = _roles_by_lineage()
@@ -1084,7 +1191,8 @@ def build_body() -> dict:
                 library_ready=bool(lib), library_funcs=len(lib),
                 gaps=gaps, skip_rows=skip_rows, engine=engine,
                 a1=fixed_number_places(),   # 段A の A-1＝「決まった数字だけ」の4か所（2026-08-12）
-                regime_decl=_regime_decl_view())   # M2-1-1＝相場の宣言の形（2026-08-20 まこさん承認）
+                regime_decl=_regime_decl_view(),   # M2-1-1＝相場の宣言の形（2026-08-20 まこさん承認）
+                m2_baseline=_m2_baseline_view())   # M2-2-1＝足す前の数（2026-08-20 まこさん承認）
 
 
 def _body_hash(body: dict) -> str:
@@ -1219,6 +1327,36 @@ def _render_regime(rd: dict) -> list[str]:
           "組み立てて渡す道を作るのが M2-1 です（やることリスト＝`engine_tuner_milestones2.md` §4）。",
           "番人＝`--selftest` の T15（名前を わざと1件 消すと数がちょうど1 減ること）と",
           "T16（架空の列を宣言の写しに足すと、欄が変わり「★列を作る側に無い」と出ること）。"]
+    return L
+
+
+def _render_m2_baseline(b: dict) -> list[str]:
+    """★9｜M2-2 の基準値（M2-2-1・2026-08-20 まこさん承認）。数字は全部 _m2_baseline_view が実物から引く。"""
+    L = ["", "## ★9｜M2-2 の基準値（M2-2-1）＝足す前の数", "",
+         "**★M2-2 で増える前の数（基準値）＝2026-08-20 時点。**", "",
+         "**★この節は機械が実物から引いて書きます（数字の手書きゼロ・まこさん承認 2026-08-20）。**",
+         "**なぜ要るか。**M2-2 は「足りない条件の形と部品を、全部 足す」フェーズです。",
+         "足したあとに「何が いくつ 増えたか」を、私の申告ではなく、プログラムの数え直しで示します。",
+         "そのために、直す前の数をここに固定します。", "",
+         "| 何 | 数 | 実物（どこから数えたか） | 中身 |", "|---|---|---|---|"]
+    for r in b["rows"]:
+        L.append(f"| {r['何']} | **{r['数']} {r['単位']}** | {r['実物']} | {r['中身']} |")
+    L += ["",
+          "**M2-2 で足すもの（やることリスト §4 の M2-2-4）**＝否定（not）／状態を保つ形"
+          "（入る線と出る線・続く長さは探す値）／帯を作る形（山谷の確定遅延・束ね・連動する閾値）／"
+          "切り上げの部品。**この節の数が、そのぶん増えます。**", "",
+          "**★数の読み方（大事なところ）**", "",
+          "- **「条件の形」と「束ね方」は別のものです。**形＝1つの条件の書き方（水準・クロスなど）。",
+          "  束ね方＝条件どうしのつなぎ方（`all`＝全部・`any`＝どれか・`if-then`＝ならば）。",
+          "- **「判定の中身（build）の中だけで使える形」**は、M2-1 で足した最小の1つです"
+          "（真偽の列を参照する形）。入口の条件では使えません。",
+          "- **「材料の列」は掛け算です**（部品 × 時間足）。部品が1種 増えると、列は時間足の本数ぶん 増えます。", ""]
+    if b["ng"]:
+        L += [f"**❌ {len(b['ng'])} 件**"] + [f"- {x}" for x in b["ng"]] + [""]
+    else:
+        L += ["**✅ ずれ 0 件**（束ね方を2通りで引いて一致・判定の中身の側も同じ束ね方を受ける）", ""]
+    L += ["番人＝`--selftest` の T17（形と部品を わざと1種 消した写しを渡すと、"
+          "数がちょうど1 減ること）。"]
     return L
 
 
@@ -1441,6 +1579,9 @@ def render_md(body: dict) -> str:
         L += [""]
     if body.get("regime_decl"):
         L += _render_regime(body["regime_decl"])
+        L += [""]
+    if body.get("m2_baseline"):
+        L += _render_m2_baseline(body["m2_baseline"])
         L += [""]
     L += ["## 答える問いの出どころ（系統ごと・1行ずつ）", "",
           "| 系統 | 答える問い | 出典 |", "|---|---|---|"]
@@ -1778,6 +1919,47 @@ def selftest() -> int:
             ng.append(f"T16: 架空の列（列を作る側に無いはず）が「無い」と出ない: {_dcell}")
     except Exception as _e17:                                    # noqa: BLE001
         ng.append(f"T16: 確かめられなかった（{type(_e17).__name__}: {str(_e17)[:80]}）")
+
+    # ── T17 M2-2-1｜M2-2 の基準値（2026-08-20 新設・まこさん承認）─────────────────────────
+    #   確かめ方＝受け入れ条件の逐語「わざと1種 消した写しを渡すと、数がちょうど1 減ること
+    #   （形・部品の2か所で確かめる）」。★実物のファイルは1バイトも書き換えない（写しを渡すだけ）。
+    try:
+        import engine_tuner_exec as _ex17
+        _b17 = _m2_baseline_view()
+        _row17 = {r["何"]: r for r in _b17["rows"]}
+        # ① 実物の数と一致するか（形・部品・時間足・前処理・2本組み）
+        for _nm17, _got17, _want17 in (
+                ("条件の形", _b17["形の数"], len(_ex17.FORMS)),
+                ("材料の前処理", _row17["材料の前処理"]["数"], len(_ex17.MATERIAL_PRE)),
+                ("材料2本の組み方", _row17["材料2本の組み方"]["数"], len(_ex17.PAIR_OPS))):
+            if _got17 != _want17:
+                ng.append(f"T17: 『{_nm17}』の数 {_got17} が実物の {_want17} と合わない")
+        _sf17 = json.loads((_RATCHET / "signal_families.json").read_text(encoding="utf-8"))
+        if _b17["部品の数"] != len(_sf17["parts"]) or _b17["時間足の数"] != len(_sf17["timeframes"]):
+            ng.append(f"T17: 部品 {_b17['部品の数']}・時間足 {_b17['時間足の数']} が型の表の"
+                      f" {len(_sf17['parts'])}・{len(_sf17['timeframes'])} と合わない")
+        # ② 材料の列は掛け算になっているか
+        if _row17["材料の列（部品 × 時間足）"]["数"] != _b17["部品の数"] * _b17["時間足の数"]:
+            ng.append("T17: 材料の列が『部品 × 時間足』の掛け算になっていない"
+                      f"（{_row17['材料の列（部品 × 時間足）']['数']}）")
+        # ③ わざと1種 消すと、数がちょうど1 減るか（形）
+        _cutf = _m2_baseline_view(forms=tuple(_ex17.FORMS)[:-1])
+        if _cutf["形の数"] != _b17["形の数"] - 1:
+            ng.append(f"T17: 形を わざと1種 消しても数がちょうど1 減らない"
+                      f"（{_b17['形の数']} → {_cutf['形の数']}）")
+        # ④ わざと1種 消すと、数がちょうど1 減るか（部品）＋ 掛け算も追随するか
+        _cutp = _m2_baseline_view(parts=list(_sf17["parts"])[:-1])
+        _rowp = {r["何"]: r for r in _cutp["rows"]}
+        if _cutp["部品の数"] != _b17["部品の数"] - 1:
+            ng.append(f"T17: 部品を わざと1種 消しても数がちょうど1 減らない"
+                      f"（{_b17['部品の数']} → {_cutp['部品の数']}）")
+        elif _rowp["材料の列（部品 × 時間足）"]["数"] != (_b17["部品の数"] - 1) * _b17["時間足の数"]:
+            ng.append("T17: 部品を1種 消しても、材料の列の掛け算が追随しない")
+        # ⑤ 束ね方が実物から引けているか（2通りの引き方が食い違えば ng に出る）
+        if len(_b17["束ね方"]) == 0:
+            ng.append("T17: 束ね方を1つも引けていない")
+    except Exception as _e18:                                    # noqa: BLE001
+        ng.append(f"T17: 確かめられなかった（{type(_e18).__name__}: {str(_e18)[:80]}）")
 
     # T6 わざと書き換えると --verify が鳴る（メタ確認）
     if _MD.exists():

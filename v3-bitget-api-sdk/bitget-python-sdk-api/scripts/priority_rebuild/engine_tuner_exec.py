@@ -58,7 +58,64 @@ FORMS = ("level", "band", "band_exclude", "slope", "slope_avg", "cross",
 #     barssince ≤ k は「過去 k+1 本のどこかで成立」＝ within_n(n=k+1) と同じ結果になる。
 #     **新しく書けるのは above の側**＝「最後に成立してから n本 以上 経っている」。
 #     直す前は、これを書く方法が1つも無かった（within_n は『経った』を書けない）。
-NEST_FORMS = ("streak", "within_n", "barssince")
+
+# ══ 形の性質表（M2-2-3b・2026-08-21 まこさん承認 e4b86277…）════════════════════════════
+#   なぜ要るか。
+#     形の「性質」（材料が何本 要るか・帯の値を持つか・向きが要るか…）が、直す前は
+#     **13か所に手で書き写されていた**（M2-2-3 の数え上げ＝プログラムに構文木を読ませて実測）。
+#     ＝形を1つ足したとき、13か所のどれかに入れ忘れると、**足した形が黙って効かない。**
+#     いちばん効いたのは engine_tuner_gen.py:1047（出口で使う形を5件に手で絞る）。
+#     ★これを「性質を1か所に持ち、使う側はそこから作る」形に変えた。
+#     形を足すときは、この表に1行 書くだけでよい。
+#   ★中身は、直す前の手書きの並びを1件も変えずに写したもの。
+#     写しが1件も違わないことは selftest（form_spec_selftest）が毎回 照合する。
+#   ★人が読む説明の表（.claude/ratchet/engine_tuner_step2_condition_format.md §2.2）にも
+#     「材料」「必要な値」の欄が在る。gen_materials.forms_table がこの表と突き合わせる。
+#
+#   欄の意味（★「だいたい同じだからまとめる」をしない＝同じにならない所は別の欄にした）:
+#     nest        … 入れ子形（内側に条件を1つ包む）           → NEST_FORMS
+#     pair        … 材料の本数。"1"／"2"（必ず2本）／"2or1th"（2本 か 1本＋閾値）／"none"／"inner"
+#     band        … 下限・上限（lo/hi）を持つ                 → 帯の形
+#     needs_side  … 向き（side）が要る（入れ子の外側で見る分） → level・diff・slope・slope_avg
+#     slope_n     … 傾きの本数 n を探索の枠に出す             → slope・slope_avg
+#     pre_ok      … 材料に前処理を付けられる                  → level・band・band_exclude
+#     state_free  … 玉の状態を見ない                          → STATE_FORMS（cross 以外）
+#     exit_ok     … 出口の確認条件で使ってよい                → level・cross・slope・diff・candle_dir
+#     trigger_ok  … 引き金（縁で発火）に置いてよい            → TRIGGER_FORMS
+#   ★trigger_ok は、最初の数え上げが取りこぼした欄。
+#     理由＝TRIGGER_FORMS の並びに、形ではない名前（cross_val＝生成器の中だけの呼び名）が
+#     混ざっていて、「全部が形の名前」で探す数え方に引っかからなかった。
+#     取りこぼしを見つけたあと、「形の名前が2件以上 混ざった並び」で数え直したら、この1件だけだった。
+FORM_SPEC = {
+    "level":        dict(nest=False, pair="1",      band=False, needs_side=True,  slope_n=False, pre_ok=True,  state_free=True,  exit_ok=True,  trigger_ok=True),
+    "band":         dict(nest=False, pair="1",      band=True,  needs_side=False, slope_n=False, pre_ok=True,  state_free=True,  exit_ok=False, trigger_ok=False),
+    "band_exclude": dict(nest=False, pair="1",      band=True,  needs_side=False, slope_n=False, pre_ok=True,  state_free=True,  exit_ok=False, trigger_ok=False),
+    "slope":        dict(nest=False, pair="1",      band=False, needs_side=True,  slope_n=True,  pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True),
+    "slope_avg":    dict(nest=False, pair="1",      band=False, needs_side=True,  slope_n=True,  pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=False),
+    "cross":        dict(nest=False, pair="2or1th", band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=False, exit_ok=True,  trigger_ok=True),
+    "streak":       dict(nest=True,  pair="inner",  band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=True),
+    "within_n":     dict(nest=True,  pair="inner",  band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=True),
+    "barssince":    dict(nest=True,  pair="inner",  band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=True),
+    "diff":         dict(nest=False, pair="2",      band=False, needs_side=True,  slope_n=False, pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True),
+    "touch":        dict(nest=False, pair="2",      band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=False),
+    "candle_dir":   dict(nest=False, pair="none",   band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True),
+}
+
+
+def forms_where(field: str, want=True) -> tuple:
+    """性質表から「その性質を持つ形」の並びを作る。★手で並べない（M2-2-3b）。
+
+    並びは FORMS の順を保つ（同じ入力なら同じ並び＝再現できる・next_step §6 の56番と同じ思想）。
+    """
+    return tuple(f for f in FORMS if FORM_SPEC[f][field] == want)
+
+
+def forms_pair_in(*kinds: str) -> tuple:
+    """材料の本数の種類で絞る（例＝forms_pair_in("2", "2or1th")）。"""
+    return tuple(f for f in FORMS if FORM_SPEC[f]["pair"] in kinds)
+
+
+NEST_FORMS = forms_where("nest")                             # ★手書きから性質表由来へ（M2-2-3b）
 ROLES = ("env", "trigger", "sufficiency", "location")
 # 側の比較（歩6-1 里程標6 で strict を追加）。above/below は境界を含む（≥ / ≤）。
 # above_strict/below_strict は境界を含まない（> / <）＝過去実装が「〜未満」で書いている枝の写しに要る。
@@ -495,7 +552,7 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
     # ★2026-08-13（段A の A-5）＝「使い方の中の本数」が探せる範囲の中かを見る。
     #   当てる形を限る＝value.n は形によって意味が違う（下の形は本数だが、出口の枝の hold_min は「分」）。
     #   本数＝連続・以内・何本前（入れ子の形）／傾き（slope・slope_avg）の遡る本数と平均の本数。
-    if lane != "legacy" and (form in NEST_FORMS or form in ("slope", "slope_avg")):
+    if lane != "legacy" and (form in NEST_FORMS or form in forms_where("slope_n")):
         _v5 = c.get("value") or {}
         for _k5 in ("n", "m"):
             if isinstance(_v5.get(_k5), int):
@@ -521,11 +578,11 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         _check_value(c.get("value", {}), lane, f"{where}/{form}", legacy_used)
         _check_cond(inner, lane, f"{where}/{form}の内側", legacy_used, in_nest=True)
         return
-    if form in ("level", "diff", "slope", "slope_avg") and c.get("side") not in SIDES:
+    if form in forms_where("needs_side") and c.get("side") not in SIDES:
         _fail("G5", f"{where}: 形 {form} に side（{'/'.join(SIDES)}）が無い")
     if form == "cross" and (c.get("value") or {}).get("direction") not in ("up", "down"):
         _fail("G5", f"{where}: cross に向き（up/down）が無い")
-    if form in ("band", "band_exclude"):
+    if form in forms_where("band"):
         vv = c.get("value") or {}
         if "lo" not in vv or "hi" not in vv:
             _fail("G5", f"{where}: 形 {form} は value.lo と value.hi（下限・上限）が要る（§2.2）")
@@ -569,7 +626,7 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
     if form == "cross" and len(mats) == 1 and "th" not in (c.get("value") or {}):
         _fail("G5", f"{where}: 列1本の cross は value.th（閾値）が要る"
                     "（閾値とのクロス＝『RSI が 70 を上抜けた』・部品 cross_val）")
-    need2 = form in ("diff", "touch") or (form == "cross" and len(mats) != 1)
+    need2 = form in forms_pair_in("2") or (form == "cross" and len(mats) != 1)
     if need2 and len(mats) != 2:
         _fail("G6", f"{where}: 形 {form} は列2本の材料が要る（{len(mats)}本）"
                     + ("／閾値とのクロスなら列1本＋value.th" if form == "cross" else ""))
@@ -579,7 +636,7 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         _fail("G6", f"{where}: 形 {form} は列1本の材料（{len(mats)}本）")
     # ★列2本の形（クロス・差・タッチ）には、単位の変わる前処理は使わせない（2026-08-12（18回目）・段C の 4-2）。
     #   理由＝単位が違うものを大小で比べても意味が無い（RSI 0〜100 と 順位 0〜1）。一覧＝MATERIAL_PRE。
-    if form in ("cross", "diff", "touch") and len(mats) == 2:
+    if form in forms_pair_in("2", "2or1th") and len(mats) == 2:
         for m in mats:
             p = _pre_of(m)
             # ★一覧に無い部品名・不正な本数は、この下の _material_name が拒否する（ここでは見ない）。
@@ -1230,7 +1287,7 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
         ok = _side_cmp(a, th, c.get("side"))
         res = np.where(np.isfinite(a), ok, na_pass)
         return res.astype(bool)
-    if form in ("band", "band_exclude"):
+    if form in forms_where("band"):
         lo = _vnum_q(v["lo"], akey, qtable)
         hi = _vnum_q(v["hi"], akey, qtable)
         if lo > hi:

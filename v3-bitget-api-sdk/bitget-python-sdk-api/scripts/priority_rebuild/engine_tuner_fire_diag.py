@@ -97,7 +97,7 @@ def cond_label(c: dict, lane: str) -> str:
     side = {"above": "以上", "below": "以下"}.get(c.get("side", ""), "")
     if form == "level":
         return f"[{role}] {names} が しきい値{v.get('threshold_q', v.get('n', ''))} {side}"
-    if form in ("band", "band_exclude"):
+    if form in ex.forms_where("band"):            # ★手書きの並び → 性質表から（M2-2-3b・2026-08-21）
         w = "の帯の中" if form == "band" else "の帯の外"
         return (f"[{role}] {names} が {v.get('lo', {}).get('threshold_q', '')}〜"
                 f"{v.get('hi', {}).get('threshold_q', '')}{w}")

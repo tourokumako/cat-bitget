@@ -19,6 +19,7 @@ import argparse
 import copy
 import hashlib
 import json
+import os
 import pathlib
 import re
 import sys
@@ -522,7 +523,32 @@ def verify() -> None:
     h_now = hashlib.md5(disk.encode("utf-8")).hexdigest()[:16]
     if not h_md or (h_md.group(1) != h_now and strip(disk) == disk):
         raise SystemExit("[検証エラー] md の指紋が json と食い違う")
-    print("[検証] ✅ 表は入力の正本と一致（手の改変なし）")
+
+    # ── M2-2-2（2026-08-21 まこさん承認 09ce8d0c…）＝G2 を、自動で走る所に繋ぐ ─────────────
+    #   何を守るか＝G2 は「表に沿った案かどうかの判定（_judge_structure）」が既知答え7件に
+    #     正しく反応するかを試すテスト。これが壊れると、表で禁止している材料を使った案が通る（D1 の抜け）。
+    #   なぜここに置くか（3つ・実測）:
+    #     ① approve() が最初に verify() を呼ぶ＝まこさんが表を承認する操作で必ず通る道
+    #     ② --verify は毎セッション走らせる6本の1つ（あとで直すこと22番）＝G2 の名前を思い出さなくても走る
+    #     ③ --verify は「表は正本と一致」と ✅ を出す所＝判定が壊れたまま ✅ を出すのが一番危ない嘘
+    #   直す前の実測＝g2_selftest を呼んでいるのは自分のコマンド1か所だけ（下の main の --g2-selftest）。
+    #     リポジトリ全体で他の呼び出しは0件・hook からも0件＝手で打たない限り一生 走らなかった（L-467）。
+    #     実害＝2026-08-11 から2日間、走らせれば必ず落ちる状態だったのに誰も気づかなかった。
+    #   ★表が未承認のときは走らせない（行き止まりを避ける）:
+    #     G2 は本物の案を作って試す → 案を作るには承認済みの表が要る
+    #     （engine_tuner_gen.load_signal_table が未承認なら SystemExit・fail-closed・D1）。
+    #     表を作り直した直後は必ず未承認なので、無条件に呼ぶと approve() の中の verify() で落ち、
+    #     **まこさんが二度と承認できなくなる。**だから未承認のときは飛ばして、その旨を印字する。
+    ok_g2, why_g2 = _table_status()
+    if not ok_g2:
+        print(f"[検証] ⏭ G2 は走らせていない＝表が未承認（{why_g2}）"
+              "。まこさんの --approve のあと、もう一度 --verify で走ります")
+    else:
+        print("[検証] G2（表に沿った案かの判定・既知答え7件）を走らせます（25秒ほど）…")
+        g2_selftest()          # 既知答えに正しく反応しなければ SystemExit＝この下の ✅ は出ない
+
+    print("[検証] ✅ 表は入力の正本と一致（手の改変なし）"
+          + ("／G2 も期待どおり" if ok_g2 else "／G2 は未実行（表が未承認）"))
 
 
 APPROVED_FILE = SDK / ".claude/ratchet/signal_families_approved.txt"
@@ -628,7 +654,69 @@ def insufficient_samples(name: str, tf: str) -> bool:
     return n_eff < _n_min()
 
 
-_PART_FAMILIES: dict = {}
+# ★M2-2-3b（2026-08-21 まこさん承認 e4b86277…）＝下の2件を直した（next_step §6 の64番・65番）。
+#
+# 【64番】覚え書きが作り直されなかった。
+#   直す前＝`_PART_FAMILIES` は入れ物1つで、一度 中身を作ったら二度と作り直さなかった。
+#   ＝1回の走行の途中で表が変わっても、古い一覧のまま判定していた。
+#   実測（2026-08-21）＝表の写しから「RCI」の部品を全部 抜いて渡したのに、違反が0件で通った。
+#   直したあと＝**部品の一覧そのものを鍵にする**（表が変われば別の鍵＝作り直される）。
+#
+# 【65番】同じ判定が2か所に在り、2か所目に一度も来なかった。
+#   直す前＝1か所目（材料の名前を組み立てる `engine_tuner_exec._material_name`＝G6）と
+#   2か所目（この `_part_allowed`）が、**どちらもカタログ由来の同じ範囲**を見ていた。
+#   1か所目が先に走るので、2か所目には何も来ない＝二重の守りの2枚目が死んでいた。
+#   直したあと＝**2か所目は「承認済みの表に載っている部品」から範囲を作って見る。**
+#   ＝1か所目は「カタログに在るか」・2か所目は「表で承認された範囲か」＝別のものを見る。
+#   ★表がカタログより狭いとき（＝承認の範囲を超えた案）に、2か所目が初めて働く。
+_PART_FAMILIES: dict = {}                        # 鍵＝部品の一覧（frozenset）→ {種類: {部品}}
+_TABLE_RANGES: dict = {}                         # 鍵＝同上 → 承認済みの表から作った範囲の表
+
+
+def _families_of(parts: set) -> dict:
+    """部品の一覧から「指標の種類 → その部品たち」を作る。★一覧そのものを鍵にして覚える（64番）。"""
+    key = frozenset(parts)
+    got = _PART_FAMILIES.get(key)
+    if got is None:
+        got = {}
+        for p in parts:
+            ref, _ = iref.find(p)
+            if ref is not None:
+                got.setdefault(ref["family"], set()).add(p)
+        _PART_FAMILIES[key] = got
+    return got
+
+
+def table_ranges(parts: set) -> dict:
+    """★承認済みの表に載っている部品から、指標ごとのパラメータの範囲を作る（65番）。
+
+    出どころは「表」＝カタログではありません。ここが1か所目（G6）との違いです。
+    形は engine_tuner_gen.material_ranges と同じ（axes に lo・hi・kind／src）。
+    ★新しい数字を作りません。下限＝表に在る数字の最小、上限＝同じく最大です。
+    """
+    key = frozenset(parts)
+    got = _TABLE_RANGES.get(key)
+    if got is not None:
+        return got
+    by: dict[str, list] = {}
+    for p in parts:
+        ref, prm = iref.find(p)
+        if ref is None or not prm:
+            continue                                   # 数字を持たない部品は範囲を作れない
+        by.setdefault(ref["family"], []).append([float(x) for x in prm])
+    out: dict = {}
+    for fam, rows in by.items():
+        n = len(rows[0])
+        if any(len(r) != n for r in rows):
+            continue                                   # 数字の個数がそろわない種類は作らない
+        axes = []
+        for i in range(n):
+            col = [r[i] for r in rows]
+            axes.append({"kind": "int" if all(float(v).is_integer() for v in col) else "float",
+                         "lo": min(col), "hi": max(col)})
+        out[fam] = {"axes": axes, "src": "approved_table"}
+    _TABLE_RANGES[key] = out
+    return out
 
 
 def _part_allowed(base: str, parts: set) -> tuple[bool, str]:
@@ -642,21 +730,19 @@ def _part_allowed(base: str, parts: set) -> tuple[bool, str]:
     """
     if base in parts:
         return True, ""
-    if not _PART_FAMILIES:
-        for p in parts:
-            ref, _ = iref.find(p)
-            if ref is not None:
-                _PART_FAMILIES.setdefault(ref["family"], set()).add(p)
+    fams = _families_of(parts)                       # ★64番＝一覧を鍵にして覚える（作り直される）
     ref, prm = iref.find(base)
     if ref is None:
         return False, f"部品 {base} がカタログに無い"
     fam = ref["family"]
-    if fam not in _PART_FAMILIES:
+    if fam not in fams:
         return False, f"部品 {base} の指標の種類（{fam}）が表に無い"
     import engine_tuner_gen as _gen                  # 循環 import を避けるため、呼ばれた時に読む
     p = None if len(prm) == 0 else (prm[0] if len(prm) == 1 else tuple(prm))
-    ok, why = _gen.param_in_range(fam, p)
-    return (True, "") if ok else (False, f"部品 {base} のパラメータが範囲の外（{why}）")
+    # ★65番＝見る先を「承認済みの表から作った範囲」にする（1か所目＝G6 はカタログを見る）。
+    #   ＝表がカタログより狭いとき（承認の範囲を超えた案）に、ここが初めて働く。
+    ok, why = _gen.param_in_range(fam, p, ranges=table_ranges(parts))
+    return (True, "") if ok else (False, f"部品 {base} のパラメータが表の範囲の外（{why}）")
 
 
 def _judge_structure(st: dict, parts: set, tfs: set, banned: set,
@@ -758,7 +844,116 @@ def _real_structures(n: int, seed: int) -> list:
     return out
 
 
+# ══ M2-2-2b（2026-08-21 まこさん承認 e9fa2ae6…）＝G2 の「検査済みの印」════════════════
+#   まこさんの逐語＝「H2 と同じ形にする＝G2 が通ったときだけ『検査済みの印』を書き、
+#   その印が今のコードと合わないうちは engine_tuner を走らせない」。
+#   なぜ要るか＝M2-2-2 で G2 を --verify の中から走るようにしたが、--verify を打たなければ
+#   走らない＝「打ち忘れ」に頼った状態だった。印にすると、プログラムが止める。
+#   ★印に入れる一覧は、私（CC）が書かない。G2 の走行中に実際に読まれたファイルを集める。
+#     手で一覧を書くと、書き忘れたものが黙って通る穴になる（L-468。H2 の一覧は手書きで、
+#     2026-08-20 に「2本 足りない」ことが分かって直した＝旧62番）。
+REPO_ROOT = SDK.parents[1]                                   # リポジトリの根（HOOK_G1 と同じ引き方）
+G2_PASS_PATH = REPO_ROOT / ".claude" / "state" / "g2_pass.json"   # 検査済みの印（hook が読む）
+
+
+class _G2FileSpy:
+    """G2 の走行のあいだだけ、このリポジトリの中で読まれたファイルを記録する。
+
+    ★必ず元に戻す（try/finally）。戻さないと、以降の全部の読み書きが遅くなる。
+    ★書き込みは記録しない（読んだものだけが、判定の結果を左右する）。
+    """
+
+    def __init__(self, root: pathlib.Path) -> None:
+        self.root = str(root)
+        self.hits: set = set()
+        self._keep: tuple = ()
+
+    def _rec(self, p) -> None:
+        try:
+            a = os.path.abspath(str(p))
+            if a.startswith(self.root) and not a.endswith(".pyc"):
+                self.hits.add(os.path.relpath(a, self.root))
+        except Exception:                                    # noqa: BLE001（記録は本筋でない）
+            pass
+
+    def __enter__(self):
+        import builtins
+        self._keep = (builtins.open, pathlib.Path.read_text, pathlib.Path.read_bytes)
+        _open, _rt, _rb = self._keep
+
+        def spy_open(file, mode="r", *a, **k):
+            if "w" not in mode and "a" not in mode and "x" not in mode:
+                self._rec(file)
+            return _open(file, mode, *a, **k)
+
+        builtins.open = spy_open
+        pathlib.Path.read_text = lambda s, *a, **k: (self._rec(s), _rt(s, *a, **k))[1]
+        pathlib.Path.read_bytes = lambda s, *a, **k: (self._rec(s), _rb(s, *a, **k))[1]
+        return self
+
+    def __exit__(self, *exc) -> bool:
+        import builtins
+        builtins.open, pathlib.Path.read_text, pathlib.Path.read_bytes = self._keep
+        return False
+
+    def files(self) -> list:
+        """読まれたファイル ＋ このリポジトリから import された .py（走行の途中で読み込まれた分）。"""
+        out = set(self.hits)
+        for m in list(sys.modules.values()):
+            f = getattr(m, "__file__", "") or ""
+            if f.startswith(self.root):
+                out.add(os.path.relpath(os.path.abspath(f), self.root))
+        out.discard(os.path.relpath(str(G2_PASS_PATH), self.root))    # 印そのものは対象外
+        return sorted(out)
+
+
+def g2_fingerprint(root: pathlib.Path, files: list) -> tuple:
+    """対象ファイル一式の指紋。★leak_causality_diag.h2_fingerprint と同じ計算（同じ入力→同じ指紋）。"""
+    h = hashlib.sha256()
+    missing = []
+    for rel in sorted(files):
+        p = root / rel
+        h.update(rel.encode())
+        if p.exists():
+            h.update(hashlib.sha256(p.read_bytes()).digest())
+        else:
+            missing.append(rel)
+            h.update(b"<missing>")
+    return h.hexdigest(), missing
+
+
+def _write_g2_pass(files: list) -> None:
+    """G2 が全部 期待どおりだったときにだけ書く「検査済みの印」（enforce_g2_pass hook が読む）。"""
+    import datetime
+    fp, missing = g2_fingerprint(REPO_ROOT, files)
+    G2_PASS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    G2_PASS_PATH.write_text(json.dumps({
+        "when": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "fingerprint": fp,
+        "files": files,
+        "missing": missing,
+        "note": "G2（型の表に沿った案かの審査が、11件の見本に正しく反応するか）が全部 期待どおりだった"
+                "ときにだけ、gen_signal_families が書く。一覧は手書きでなく、G2 の走行中に実際に"
+                "読まれたファイルを集めたもの。対象が1文字でも変わると指紋が合わなくなり、"
+                "enforce_g2_pass hook が engine_tuner を実行の前に止める。"
+                "手でこのファイルを作るのは、hook のファイルを書き換えるのと同じ明示の違反。",
+    }, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    print(f"[印] 検査済みの印を書いた: {G2_PASS_PATH.name}"
+          f"（対象 {len(files)} 件 ／ 無いファイル {len(missing)} 件 ／ 指紋 {fp[:8]}…）")
+
+
 def g2_selftest() -> None:
+    """G2＝既知答えの試験 ＋ 検査済みの印を書く（M2-2-2b・2026-08-21 まこさん承認 e9fa2ae6…）。
+
+    ★中身は `_g2_selftest_body`。ここは「走行中に読まれたファイルを集めて、通ったら印を書く」包み。
+      落ちたとき（SystemExit）は印を書かない＝壊れたまま engine_tuner が回る道を作らない。
+    """
+    with _G2FileSpy(REPO_ROOT) as spy:
+        _g2_selftest_body()                                  # 落ちたらここで抜ける＝印は書かれない
+    _write_g2_pass(spy.files())
+
+
+def _g2_selftest_body() -> None:
     """G2 の番人＝既知答え。★本物の生成器が出す構造で試す（2026-08-07・D10 の直し）。
 
     2026-08-06 版の番人は、CC が手で書いた『RSI9__15m』という文字列の形で試していた。
@@ -844,6 +1039,80 @@ def g2_selftest() -> None:
         if got_ok != want_ok:
             ng_all.append(label)
 
+    # ── ★M2-2-2a（2026-08-21 まこさん承認 60462a0c…）＝試していなかった違反を4件 足す ──────
+    #   なぜ足すか。
+    #     審査する処理（_judge_structure と _part_allowed）は違反を 9種類 見つける。
+    #     ところが上の6件が実際に試していたのは 3種類 だけだった（2026-08-21 に実測で数えた）
+    #     ＝材料が読めない ／ 標本不足の禁止3 ／ レンジ幾何の値段（H6）。
+    #     残る5種類は、判定が壊れても鳴らなかった。
+    #     M2-2-2b で「G2 の合格」を engine_tuner の通行証にするので、その前に中身を厚くする。
+    #   ★弾いただけでは合格にしない＝出た違反の文が、狙ったものかを照らす。
+    #     理由＝2026-08-21 の実測で、素朴に作った見本の多くが「狙いと違う理由」で弾かれていた
+    #     （例＝表に無い指標を差し込んだら、種類の照合ではなく「材料が読めない」で落ちていた）。
+    #     文を照らさないと、判定のその分岐を試したつもりで1度も通っていない状態になる。
+    #   ★足さなかった1件＝「パラメータが範囲の外」。engine_tuner_exec.py:391 と、この上の
+    #     _part_allowed が、どちらも同じ関数（engine_tuner_gen.param_in_range）を呼ぶ。
+    #     材料の名前を組み立てる側（G6）が先に走るので、本物の案では2枚目に届かない（実測）。
+    #   ★実物の表・設定・コードは1バイトも書き換えない＝写しを渡すだけ。
+    import engine_tuner_exec as _ex22                        # 重い import は使う時だけ
+    _lane = str(base_st.get("meta", {}).get("lane", "")) if isinstance(base_st.get("meta"), dict) else ""
+    _col0 = _ex22._material_name(_first_col_cond(base_st), _lane)[1].rpartition("__")[0]
+    _fam0 = (iref.find(_col0)[0] or {}).get("family")
+    if not _fam0:
+        raise SystemExit(f"[番人エラー] 見本に使う材料 {_col0} の指標の種類を引けない")
+
+    # ③ 指標の種類が表に無い＝表の部品の写しから、その種類を全部 抜く。
+    _thin_parts = {p for p in parts if (iref.find(p)[0] or {}).get("family") != _fam0}
+
+    # ⑤ 時間足が表に無い＝本物の案の時間足を、表に無いものへ差し替える。
+    _tf_ng = next((t for t in ("7m", "8m", "13m", "9m") if t not in tfs), None)
+    if _tf_ng is None:
+        raise SystemExit("[番人エラー] 表に無い時間足を作れない＝この見本を作れない")
+    _tf_st = copy.deepcopy(base_st)
+    _first_col_cond(_tf_st)["tf"] = _tf_ng
+
+    # ⑧ 時間帯の列が表に無い＝表の時間帯の許可の写しを空にして、時間帯の材料を使う案を渡す。
+    _time_one = sorted(time_ok)[0]
+    _time_ng_st = copy.deepcopy(base_st)
+    _mt = _first_col_cond(_time_ng_st)
+    _mt.clear()
+    _mt.update({"time": _time_one})
+
+    # ⑨ 材料が1つも見つからない＝材料を持たない案。
+    _empty_st = copy.deepcopy(base_st)
+    _empty_st["entry"] = {"connective": {"all": []}}
+    _empty_st["pre_filter"] = []
+    _empty_st["exits"] = []
+
+    #   ★③ だけ「覚え書きを消す」が要る。_part_allowed の _PART_FAMILIES は一度 作ったら
+    #     作り直されない（:670）ので、前の判定で作った種類の一覧が残っていると、痩せさせた
+    #     表でも通ってしまう（2026-08-21 実測＝消す前は違反0件・消したら出た）。
+    #     ★覚え書きが作り直されないこと自体は別の穴＝next_step の「あとで直すこと」に記録した。
+    extra = [
+        (dict(st=copy.deepcopy(base_st), parts=_thin_parts, clear_cache=True),
+         f"表から、使っている指標の種類（{_fam0}）を抜いた写しで判定",
+         f"の指標の種類（{_fam0}）が表に無い"),
+        (dict(st=_tf_st), f"材料の時間足を、表に無い {_tf_ng} へ差し替え",
+         f"時間足 {_tf_ng} が表に無い"),
+        (dict(st=_time_ng_st, time_ok=set()),
+         f"時間帯の材料（{_time_one}）を、許可を空にした写しで判定",
+         f"時間帯の列 {_time_one} は表に無い"),
+        (dict(st=_empty_st), "材料を1つも持たない構造", "材料が1つも見つからない"),
+    ]
+    for _spec, _label, _want_msg in extra:
+        if _spec.get("clear_cache"):
+            _PART_FAMILIES.clear()
+        _ng, _c22, _o22 = _judge_structure(
+            _spec["st"], _spec.get("parts", parts), _spec.get("tfs", tfs), banned,
+            _spec.get("geo_ok", geo_ok), _spec.get("time_ok", time_ok))
+        if _spec.get("clear_cache"):
+            _PART_FAMILIES.clear()                            # 後始末＝痩せた一覧を持ち越さない
+        _hit = any(_want_msg in x for x in _ng)
+        print(f"  {'✅' if _hit else '🚨'} {_label}: 期待=❌「{_want_msg}」 ／ 実際="
+              + (f"❌（{_ng[0][:70]}）" if _ng else "★通ってしまった"))
+        if not _hit:
+            ng_all.append(f"{_label}＝狙った違反の文「{_want_msg}」が出ない")
+
     # ★2026-08-06 の欠陥そのものの再発検出＝本物の構造で材料が1つも読めない状態に戻っていないか
     cols0, out0, unread0 = collect_materials(base_st)
     ok4 = bool(cols0) and not unread0
@@ -854,7 +1123,11 @@ def g2_selftest() -> None:
 
     if ng_all:
         raise SystemExit(f"[番人] 🚨 G2 が既知答えに正しく反応しない: {ng_all}")
-    print("[番人] ✅ G2 の既知答え 7件 全部 期待どおり（★土台は本物の生成器が出した構造・geo/time は 0d の既知答え）")
+    # ★件数は数えて出す（手で書いた数字が実物とずれないように・2026-08-21 の M2-2-2a で
+    #   6件＋4件＋材料が読めること1件＝11件になった。足せば自動で増える）。
+    print(f"[番人] ✅ G2 の既知答え {len(cases) + len(extra) + 1}件 全部 期待どおり"
+          "（★土台は本物の生成器が出した構造・geo/time は 0d の既知答え・"
+          "足した4件は出た違反の文まで照らしている）")
 
 
 HOOK_G1 = SDK.parents[1] / ".claude/hooks/enforce_signal_table_gate.sh"
