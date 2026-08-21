@@ -90,8 +90,38 @@ import e37_scalp as e37             # noqa: E402  実エンジン（S1/L1 の売
 import e38_logic_parts              # noqa: E402  汎用ロジックの売買部品（S2〜L5）
 import e38_priority_stack as e38    # noqa: E402  E38 の設定解釈（load_logic_config / build_run_kwargs）
 
-# 既存 hook（require_leak_annotation.py）と同じ探し方＝検査2 はこの hook と同じ限界を持つ
-SCAN_PAT = re.compile(r"\.shift\(\s*-|center\s*=\s*True")
+# ══ 探し方の正本＝hook（require_leak_annotation.py）そのもの ═══════════════════════════
+#   ★2026-08-21（48回目・M2-2-8）に、書き写しをやめて hook の関数を直接 呼ぶ形にした。
+#     直す前＝同じ正規表現を hook と ここの2か所に書き写していた（下の元の1行）。
+#       SCAN_PAT = re.compile(r"\.shift\(\s*-|center\s*=\s*True")
+#     何が起きたか＝41番（説明の文章の中の語で誤って止まる）を hook だけ直したら、
+#     **この検査だけが古い探し方のまま残り、H2 の検査が落ちた**（2026-08-21 に実際に起きた）。
+#     ＝「hook と同じ探し方」と説明文に書いてあっても、写しは黙ってずれる。
+#   ★読み込めなければ止まる（fail-closed）＝探し方の正本が無いまま「0件」と出さない。
+def _load_scanner():
+    import importlib.util
+    # ★階層の数を書かない＝上へ辿って探す（数え間違いで黙って別の場所を指すのを防ぐ）
+    p = None
+    for up in [HERE] + list(HERE.parents):
+        cand = up / ".claude" / "hooks" / "require_leak_annotation.py"
+        if cand.exists():
+            p = cand
+            break
+    if p is None:
+        raise SystemExit("[検査2] 探し方の正本（.claude/hooks/require_leak_annotation.py）が"
+                         f"{HERE} から上に見つからない"
+                         "（hook と同じ探し方でなければ、この検査は検査になりません）")
+    spec = importlib.util.spec_from_file_location("require_leak_annotation_scanner", p)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    for need in ("find_bad", "PAT"):
+        if not hasattr(mod, need):
+            raise SystemExit(f"[検査2] 探し方の正本に {need} が無い: {p}")
+    return mod
+
+
+_SCANNER = _load_scanner()
+SCAN_PAT = _SCANNER.PAT                    # 表示・番人のためだけに持つ（判定は find_bad が行う）
 SCAN_DIR = HERE.parent
 # 突き合わせから外す列（診断のための記録で、売買の判断にも net にも関与しない）
 IGNORE_COLS = ("logic",)
@@ -101,8 +131,17 @@ IGNORE_COLS = ("logic",)
 # 検査2｜既存コードの全数スキャン（穴② に対応・探し方は hook と同じなので穴③ は塞がらない）
 # ============================================================================
 def scan_line(line: str) -> bool:
-    """1行が「注記なしの未来参照」か。コメントを外してから見る（穴⑤＝説明文での誤発火を塞ぐ）。"""
-    return bool(SCAN_PAT.search(line.split("#", 1)[0])) and "H2OK:" not in line
+    """1行が「注記なしの未来参照」か。★判定は hook の関数がする（写しを持たない）。"""
+    return bool(_SCANNER.find_bad(line + "\n"))
+
+
+def scan_text(text: str) -> list[tuple[int, str]]:
+    """ファイルの全文を見て、注記なしの未来参照の行を返す。★判定は hook の関数がする。
+
+    ★1行ずつでなく全文を渡す理由＝説明の文章（docstring）は複数行にまたがるので、
+      1行だけ見ても「いま文字列の中か」が分からない（2026-08-21 に この取り違えで H2 が落ちた）。
+    """
+    return _SCANNER.find_bad(text)
 
 
 def scan_existing_code() -> list[tuple[str, int, str]]:
@@ -115,9 +154,8 @@ def scan_existing_code() -> list[tuple[str, int, str]]:
     hits: list[tuple[str, int, str]] = []
     files = sorted(p for p in SCAN_DIR.glob("*.py") if p.name not in skip_names and not p.name.startswith("build_labels"))
     for p in files:
-        for i, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
-            if scan_line(line):
-                hits.append((p.name, i, line.strip()[:120]))
+        for i, line in scan_text(p.read_text(encoding="utf-8")):
+            hits.append((p.name, i, line))
     print(f"[検査2] 全数スキャン: {len(files)} 本を見て、注記なしの未来参照パターン {len(hits)} 件")
     for name, i, line in hits[:20]:
         print(f"        {name}:{i}  {line}")
@@ -560,7 +598,17 @@ def selftest(margin_days: float) -> bool:
     prose = not scan_line("# 説明文です。ここで未来参照の書き方に触れても誤発火しない")
     print(f"  番人5 全数スキャンの判定（注記なしは拾う・注記ありは拾わない）: {'✅' if hit else '❌'}")
     print(f"  番人6 説明文で誤発火しない（穴⑤ を塞いだ確認）: {'✅' if prose else '❌'}")
-    ok = ok and hit and prose
+    # ★番人7（2026-08-21・M2-2-8 で新設）＝**説明の文章（docstring）の中の語で誤発火しない**。
+    #   なぜ足したか＝番人6 は行内コメント（# 以降）だけを見ていて、複数行にまたがる説明の文章を
+    #   1件も試していなかった。そのため 41番（説明の文章での誤発火）が残っていることに気づけず、
+    #   2026-08-21 に H2 の検査が実際に落ちた。**番人が居るのに何も守らない状態だった。**
+    _doc = 'def f():\n    """うしろを覗く' + _probe_line("plain").strip() + ' も使っていません。"""\n    return 1\n'
+    doc_ok = not scan_text(_doc)
+    _real = 'def f():\n    """説明。"""\n    ' + _probe_line("plain").strip() + '\n'
+    real_ok = bool(scan_text(_real))
+    print(f"  番人7 説明の文章（docstring）で誤発火しない（41番・2026-08-21 に直した）: {'✅' if doc_ok else '❌'}")
+    print(f"  番人7' 説明の文章の下の本物のコードは拾う（甘くなっていない）: {'✅' if real_ok else '❌'}")
+    ok = ok and hit and prose and doc_ok and real_ok
 
     print(f"  → 番人の結果: {'全部 pass ✅' if ok else '❌ 落ちた＝この道具の出す結果は信用できない'}")
     return ok

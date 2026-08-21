@@ -1486,6 +1486,8 @@
    "close vs WMA%",
    "close vs ZLMA%",
    "fib位置",
+   "fractal安値距離%",
+   "fractal高値距離%",
    "high_Z",
    "kurtosis",
    "low_Z",
@@ -1512,11 +1514,14 @@
    "基準線",
    "孕み足",
    "安値からの経過バー",
+   "安値切り上げ幅%",
    "実体幅比",
    "形スコア",
+   "構造破断距離%",
    "転換線",
    "連続本数",
-   "高値からの経過バー"
+   "高値からの経過バー",
+   "高値切り上げ幅%"
   ],
   "forms": [
    "level",
@@ -1569,8 +1574,8 @@
   ]
  },
  "confirm_conditions": {
-  "banned_pairs": 419,
-  "parts_count": 535,
+  "banned_pairs": 436,
+  "parts_count": 551,
   "quantile_grid": [
    "q10",
    "q20",

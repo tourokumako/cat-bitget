@@ -796,7 +796,7 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
     #     ＝差・タッチでも前処理つきの組を作る（段C の 4-2）。
     #   ★使えるのは「元の列と同じ単位のまま」の部品だけ（ts_max・ts_min）。順位・ばらつきは単位が
     #     変わるので、元の列と大小を比べても意味が無い＝水準（level・band）で使う（一覧＝MATERIAL_PRE）。
-    if limits is not None and ex.pre_ops(same_unit=True):
+    if limits is not None and ex.pre_ops(same_unit=True, needs_state=False):
         cands += [("pre", f) for f in fams]
     if not cands:
         raise SampleError(f"役割 {role} で列2本の形を組める family が無い（表の系統の中）")
@@ -823,7 +823,10 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
         elif kind == "pre":
             # ★同じ列の「素」と「前処理を掛けたもの」。本数は int_grid から引く＝CC が数字を書かない。
             p0 = draw_param(rng, c, ranges)
-            op = str(rng.choice(ex.pre_ops(same_unit=True)))
+            # ★「状態に入って以降」の3つ（since_min・since_max・at_entry）は引かせない
+            #   ＝state（基準にする状態の列の名前）が要るが、案を作る段では決められない。
+            #   直す前は引いてしまい、出した案が必ず拒否されていた（2026-08-21・M2-2-8 で直した）。
+            op = str(rng.choice(ex.pre_ops(same_unit=True, needs_state=False)))
             n_pre = draw_int(rng, limits, n_min=2)
             pair = [{"family": c, "param": p0, "tf": tf},
                     {"family": c, "param": p0, "tf": tf, "pre": {"op": op, "n": n_pre}}]
@@ -1551,6 +1554,39 @@ def _qspec(m: dict, lane: str) -> tuple:
     return (ex._material_name(m, lane)[1], ex._pre_of(m))
 
 
+def _tree_conds(node, out=None) -> list[dict]:
+    """木の中の「本物の条件」を全部 集める（2026-08-21・48回目・M2-2-8 で新設）。
+
+    ★何のために足したか。
+      直す前は `ex._walk` だけを使っていた。`ex._walk` は「つなぎ木」を歩く関数で、
+      次の2つを歩けない（歩く先として持っていない）。
+        ①**判定の中身（meta.regime.build）の木**＝`bool_col`（真偽の列を読む形）が混ざる
+        ②**状態を保つ形（hysteresis）の中の on と off**＝つなぎ木の外側にぶら下がる
+      その結果、①②の中で分位（threshold_q）を使うと、分位の解決表に鍵が入らず、
+      走らせた瞬間に「分位の解決表に無い」で止まった（2026-08-21 に実測）。
+    ★`bool_col` は材料を取らないので集めない（分位も要らない）。
+    ★入れ子形（streak 等）の内側は、ここでは降りない＝`_cond_keys` が降りる（役割を1か所に）。
+    """
+    out = [] if out is None else out
+    if not isinstance(node, dict):
+        return out
+    if "bool_col" in node:
+        return out
+    if "not" in node:
+        return _tree_conds(node["not"], out)
+    if "all" in node or "any" in node:
+        for ch in node.get("all", node.get("any", [])):
+            _tree_conds(ch, out)
+        return out
+    if "if" in node and "then" in node:
+        _tree_conds(node["if"], out)
+        _tree_conds(node["then"], out)
+        return out
+    if "form" in node:
+        out.append(node)
+    return out
+
+
 def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
     """レシピ群が使う分位の鍵 → 材料の指定の組（単材料 or 差の2材料）。
 
@@ -1565,11 +1601,29 @@ def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
         if c["form"] in ex.NEST_FORMS:            # 入れ子形（barssince を足した 2026-08-12・段C の C-6）
             _cond_keys(c["inner"], lane)
             return
+        # ★状態を保つ形（hysteresis）＝内側の「入る条件（on）」と「出る条件（off）」を歩く
+        #   （2026-08-21・48回目・M2-2-8 で直した）。
+        #   直す前＝この形は材料を直接 持たないので `if not mats: return` で素通りしていた。
+        #   ＝on と off の中で分位（threshold_q）を使うと、分位の解決表に鍵が入らず、
+        #     走らせた瞬間に「分位の解決表に無い」で止まっていた（2026-08-21 に実測）。
+        #   ＝M2-2-5 で足した形が、実際には1回も走らない状態だった。
+        if c["form"] == "hysteresis":
+            for sub in ("on", "off"):
+                for cc in _tree_conds(c.get(sub)):
+                    _cond_keys(cc, lane)
+            return
         if not mats:
             return
         a = ex._mat_key(mats[0], lane)
         sa = _qspec(mats[0], lane)
         if c["form"] == "level" and "threshold_q" in v:
+            keys[a] = (sa,)
+        # ★連動する閾値（ref）の上下の挟み（clip_lo・clip_hi）を分位で書いたとき（2026-08-21・M2-2-8 で直した）。
+        #   挟みは、その条件の材料と同じ鍵で解く（実行器 _vnum_q が同じ qkey を渡す）。
+        #   直す前＝この条件は value に threshold_q を持たない（ref を持つ）ので、上の行に当たらず
+        #   鍵が1つも入らなかった。＝走らせた瞬間に「分位の解決表に無い」で止まった（2026-08-21 に実測）。
+        #   ＝M2-2-5 で足した「1バーごとに動く閾値」が、挟みつきでは1回も使えない状態だった。
+        if "ref" in v and any("threshold_q" in v.get(s, {}) for s in ("clip_lo", "clip_hi")):
             keys[a] = (sa,)
         if c["form"] in ex.forms_where("band"):        # ★手書き → 性質表から（M2-2-3b）
             for sub in ("lo", "hi"):
@@ -1591,13 +1645,26 @@ def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
 
     for r in recipes:
         lane = r["meta"].get("lane", "")
-        conds, _d = ex._walk(r["entry"]["connective"])
+        ex._walk(r["entry"]["connective"])        # ★木の形の検査は今までどおり通す（副作用を残す）
+        conds = _tree_conds(r["entry"]["connective"])
         # ★出口の枝の発火条件も歩く（D2・2026-08-07）。直す前は入口と事前の足切りしか見ておらず、
         #   出口に指標を見る条件（例＝レンジが壊れたことを見る枝）を入れると、分位の解決表に鍵が無くて止まった。
         for b in (r.get("exits") or []):
             if b.get("fire"):
-                ec, _ed = ex._walk(b["fire"])
-                conds += ec
+                ex._walk(b["fire"])
+                conds += _tree_conds(b["fire"])
+        # ★判定の中身（meta.regime.build）の木も歩く（2026-08-21・48回目・M2-2-8 で直した）。
+        #   直す前＝ここを1行も見ていなかった。
+        #   ＝束の中で分位（threshold_q）を使うと、分位の解決表に鍵が入らず、走らせた瞬間に止まった。
+        #   ★これは、M2-1-4 の承認材料に書いた逐語
+        #     「束の中の値（閾値・パラメータ）が分位の範囲で書かれ、engine_tuner の探索の対象になる」
+        #     が、実際には効いていなかったということ（2026-08-21 に実測して分かった）。
+        #     M2-1 の見本は `bool_col`（真偽の列を読むだけ）で閾値を1つも使わなかったので表に出なかった。
+        bd = ((r.get("meta") or {}).get("regime") or {}).get("build") or {}
+        for slot in ("entry", "block"):
+            one = bd.get(slot)
+            if one and one.get("tree") is not None:
+                conds += _tree_conds(one["tree"])
         for c in conds + list(r.get("pre_filter", [])):
             _cond_keys(c, lane)
     return keys
@@ -1645,7 +1712,12 @@ def build_qtable(df: pd.DataFrame, geo: dict, recipes: list[dict], grid: list[st
                     a = ex.material_array(df, name)
             # ★前処理（pre）が在れば、実行器とまったく同じ式を掛けてから分位を出す（2026-08-12（18回目）・4-2）。
             #   式は実行器の _apply_pre を呼ぶ＝ここに書き写さない（2か所に同じ式を持つと片方が腐る）。
-            return ex._apply_pre(a, pre) if pre else a
+            # ★df を渡す（2026-08-21・48回目・M2-2-8 で直した）。
+            #   「状態に入って以降」の3つ（since_min・since_max・at_entry）は、基準にする状態の列を
+            #   データから読む。直す前はここが df を渡しておらず、その3つを材料に使って分位を書くと
+            #   「基準にする状態の列がデータにありません」で止まった（2026-08-21 に実測）。
+            #   ＝M2-2-5 で足した前処理3つが、分位と一緒には1回も使えない状態だった。
+            return ex._apply_pre(a, pre, df) if pre else a
         if len(specs) == 1:
             s = _arr(specs[0])
         else:
@@ -3646,6 +3718,87 @@ def selftest() -> int:
           f" 読み書きの往復で確認 ／ 前後の点 {len(_pt21) if _st21 else 0} 点"
           f"（動かした値だけが変わる） ／ 下限＝上限に狭めると 0 点になる（メタ確認）"
           f" ／ 作らなかった理由 {len(_sk21) if _st21 else 0} 件は画面に残す")
+    # ── T22 分位の解決表が、条件の在る所を全部 歩く（2026-08-21・48回目・M2-2-8 で新設）─────────
+    #   ★なぜ足したか。この日、次の2つが数え上げから丸ごと漏れていた（実測で見つけた）。
+    #     ①**状態を保つ形（hysteresis）の on と off の中**
+    #     ②**判定の中身（meta.regime.build）の木の中**
+    #     どちらも「分位で閾値を書くと、解決表に鍵が入らない」＝走らせた瞬間に止まる。
+    #     ＝M2-2-5 で足した形が1回も走らず、M2-1-4 の承認材料の逐語
+    #       「束の中の値が分位の範囲で書かれ、engine_tuner の探索の対象になる」も効いていなかった。
+    #   ★メタ確認＝歩く所を1つ外すと、この番人が落ちること（＝番人が本当に効いている）。
+    def _lv22(fam, p, tf, q):
+        return {"role": "env", "form": "level", "side": "above", "value": {"threshold_q": q},
+                "material": [{"family": fam, "param": p, "tf": tf}]}
+    _r22 = {"meta": {"lane": "", "regime": {"name": "range", "entry_col": "x", "build": {
+                "entry": {"out_col": "t22_built", "tree": {"all": [
+                    _lv22("RSI", 14, "5m", "q30"),
+                    {"bool_col": "rg5_uptrend", "want": False},
+                    {"not": _lv22("DI差", 14, "1h", "q30")}]}},
+                "block": None}}},
+            "entry": {"connective": {"all": [
+                _lv22("ROC", 6, "5m", "q50"),
+                {"form": "hysteresis", "on": _lv22("ADX", 14, "15m", "q70"),
+                 "off": _lv22("ADX", 14, "15m", "q40"), "value": {"n": 288}}]}}}
+    _k22 = needed_qkeys([_r22])
+    _want22 = {"入口のふつうの条件": "ROC6__5m", "状態を保つ形の中": "ADX14__15m",
+               "判定の中身の中": "RSI14__5m", "判定の中身の否定の中": "DI差14__1h"}
+    _miss22 = [f"{lbl}（{key}）" for lbl, key in _want22.items() if key not in _k22]
+    if _miss22:
+        ng.append(f"T22: 分位の解決表に鍵が入らない所がある: {_miss22}"
+                  "（そこで分位を使うと、走らせた瞬間に『解決表に無い』で止まる）")
+    _r22b = json.loads(json.dumps(_r22))          # メタ確認＝判定の中身を消すと鍵が減ること
+    _r22b["meta"]["regime"]["build"] = None
+    _k22b = needed_qkeys([_r22b])
+    if "RSI14__5m" in _k22b or "DI差14__1h" in _k22b:
+        ng.append("T22 メタ確認: 判定の中身を消しても鍵が残る＝この番人は中身を見ていない")
+
+    # ── T22b 連動する閾値（ref）の上下の挟みを分位で書いたときの鍵（2026-08-21・M2-2-8）──────────
+    #   ★直す前＝この条件は value に threshold_q を持たない（ref を持つ）ので鍵が1つも入らず、
+    #     走らせた瞬間に「分位の解決表に無い」で止まった。挟みは条件の材料と同じ鍵で解く。
+    _r22c = {"meta": {"lane": ""}, "entry": {"connective": {"all": [{
+        "role": "env", "form": "level", "side": "below",
+        "value": {"ref": {"family": "ATR%", "param": 14, "tf": "1h"}, "mult": 0.5,
+                  "clip_lo": {"threshold_q": "q10"}, "clip_hi": {"threshold_q": "q90"}},
+        "material": [{"family": "fractal安値距離%", "param": 2, "tf": "1h"}]}]}}}
+    _k22c = needed_qkeys([_r22c])
+    if "fractal安値距離%(2)__1h" not in _k22c:
+        ng.append("T22b: 連動する閾値の挟み（clip_lo・clip_hi）を分位で書くと鍵が入らない"
+                  "（走らせた瞬間に『解決表に無い』で止まる）")
+    _r22d = json.loads(json.dumps(_r22c))         # メタ確認＝挟みを外すと鍵が要らなくなる
+    for _s in ("clip_lo", "clip_hi"):
+        _r22d["entry"]["connective"]["all"][0]["value"].pop(_s)
+    if needed_qkeys([_r22d]):
+        ng.append("T22b メタ確認: 挟みを外しても鍵が残る＝この番人は挟みを見ていない")
+
+    # ── T22c 分位の解決表が「状態に入って以降」の前処理を解ける（2026-08-21・M2-2-8）──────────
+    #   ★直す前＝解決表を作る所が状態の列（df）を渡しておらず、
+    #     「基準にする状態の列がデータにありません」で止まった＝M2-2-5 で足した前処理3つが
+    #     分位と一緒には1回も使えなかった。
+    _n22 = 400
+    _idx22 = pd.date_range("2026-03-01", periods=_n22, freq="5min")
+    _c22 = 100.0 + np.sin(np.arange(_n22) / 7.0)
+    _df22 = pd.DataFrame({"ts": _idx22, "open": _c22, "high": _c22 + 0.2, "low": _c22 - 0.2,
+                          "close": _c22, "volume": 1.0})
+    _df22["t22_state"] = (np.arange(_n22) % 80) < 40          # 入ったり出たりする状態の列
+    _r22e = {"meta": {"lane": ""}, "entry": {"connective": {"all": [{
+        "role": "env", "form": "level", "side": "above", "value": {"threshold_q": "q50"},
+        "material": [{"family": "RSI", "param": 14, "tf": "5m",
+                      "pre": {"op": "since_min", "state": "t22_state"}}]}]}}}
+    try:
+        _q22 = build_qtable(_df22, {}, [_r22e], quantile_list(lm))
+        if not _q22:
+            ng.append("T22c: 状態に入って以降の前処理で、分位の解決表が空になった")
+    except Exception as _e22:
+        ng.append(f"T22c: 状態に入って以降の前処理で、分位の解決表を作れない: {type(_e22).__name__} {_e22}")
+        _q22 = {}
+
+    print(f"  T22 分位の解決表が条件の在る所を全部 歩く（2026-08-21・M2-2-8）: 鍵 {len(_k22)} 件"
+          f"（入口・状態を保つ形の中・判定の中身の中・否定の中の4か所とも入る）"
+          f" ／ 判定の中身を消すと鍵が {len(_k22) - len(_k22b)} 件 減る（メタ確認）")
+    print(f"  T22b 連動する閾値の挟み（clip）を分位で書いたときの鍵: {len(_k22c)} 件"
+          f" ／ 挟みを外すと 0 件になる（メタ確認）")
+    print(f"  T22c 状態に入って以降の前処理で、分位の解決表を作れる: 鍵 {len(_q22)} 件"
+          f"（直す前は『基準にする状態の列がデータにありません』で止まった）")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")

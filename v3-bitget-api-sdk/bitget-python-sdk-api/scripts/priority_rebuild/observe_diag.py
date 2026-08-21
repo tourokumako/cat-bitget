@@ -384,6 +384,42 @@ def _w_flag(c, h, l, n, tol):
     return ok.astype(float).where(lo1.notna() & lo2.notna() & neck.notna())
 
 
+def _fractal_levels(s, k: int, is_high: bool):
+    """前後 k本 より高い（安い）中央のバーを山（谷）とし、**k本 遅らせて確定**させる。
+
+    戻り＝(直近で確定した水準, その1つ前に確定した水準) の2本。どちらも値段そのもの＝
+    使う側が終値で割って % にする（H6・値段の絶対値を列にしない）。
+
+    ★未来を見ません（M2-2-6・法則 C10 の②）。使っているずらしは全部 過去向き（ずらす本数は正の数だけ）で、
+      `.shift(-` も `center=True` も1つも使っていません。バー t で見ているのは high[t-2k] 〜 high[t] だけです。
+      ★この2つの語を説明の文章に書けるようになったのは 2026-08-21 に41番の不具合を直したからです
+        （直す前は、説明の文章に書いただけで書き込みが止まりました）。
+
+    ★確定の仕組み。中央のバー j が山かどうかは、j より後ろの k本 が出そろうまで決まりません。
+      だからバー t＝j+k になって初めて「バー j は山だった」と分かります。この関数は、その t で
+      初めて水準を書き込みます。＝実例の「j+2 確定」（k=2）と同じ形です。
+
+    ★1つ前の水準の作り方＝確定したバーで「その直前まで有効だった水準」を写し、あとは持ち回します。
+      直近の水準と1つ前の水準の2本があると、「終値が直近2本の確定安値を割った」（法則 U9・構造破断）が
+      条件の束として書けます。
+    """
+    k = int(k)
+    if k < 1:
+        raise SystemExit(f"[材料カタログ] 山と谷の確定の本数は 1 以上（渡された＝{k}）")
+    if is_high:
+        left = s.rolling(k).max().shift(1)         # 中央のバー j の直前 k本（j の時点で分かる）
+        right = s.rolling(k).max()                 # j+1 〜 j+k（バー j+k の時点で分かる）
+        hit = (s.shift(k) > left.shift(k)) & (s.shift(k) > right)
+    else:
+        left = s.rolling(k).min().shift(1)
+        right = s.rolling(k).min()
+        hit = (s.shift(k) < left.shift(k)) & (s.shift(k) < right)
+    lvl = s.shift(k).where(hit)                    # 確定したバーにだけ、その山（谷）の値段が入る
+    last = lvl.ffill()                             # 直近で確定した水準
+    prev = last.shift(1).where(hit).ffill()        # その1つ前に確定した水準
+    return last, prev
+
+
 # ══ cycles（サイクル系）の重い計算を使い回す入れもの ══════════════════════
 # ★なぜ要るか＝ヒルベルト変換の関数は1本 250,000 本で 12.8 秒かかる（2026-08-11 実測）。
 #   ht_phasor と ht_sine は1回の計算で2つの列を返すので、列ごとに呼ぶと同じ計算を2回する。
@@ -663,6 +699,24 @@ _reg("形スコア", "形スコア{}(V=+/M=−)", True, lambda d, n:
      np.sign(d.close - d.close.shift(n // 2)) - np.sign(d.close.shift(n // 2) - d.close.shift(n)))
 # W字＝ダブルボトムの完成フラグ（2026-07-30 追加・定義と流儀は参照表）
 _reg("W字", "W字({},{})", True, lambda d, n, t: _w_flag(d.close, d.high, d.low, n, t))
+# ── 山と谷（2026-08-21・M2-2-6・受け入れ条件 24a453d6… の C-1 と D）──
+# ★山と谷は k本 遅らせて確定させる（法則 C10 の②）。確定の中身は _fractal_levels に1か所だけ在る。
+# ★全部 % で持つ（H6・値段の絶対値を列にしない）。真偽にするのは既存の形（level・cross）＝部品と形を混ぜない。
+_reg("fractal高値距離%", "fractal高値距離%({})", True, lambda d, k:
+     (d.close / _fractal_levels(d.high, k, True)[0] - 1) * 100)
+_reg("fractal安値距離%", "fractal安値距離%({})", True, lambda d, k:
+     (d.close / _fractal_levels(d.low, k, False)[0] - 1) * 100)
+_reg("高値切り上げ幅%", "高値切り上げ幅%({})", True, lambda d, k:
+     (lambda a: (a[0] / a[1] - 1) * 100)(_fractal_levels(d.high, k, True)))
+_reg("安値切り上げ幅%", "安値切り上げ幅%({})", True, lambda d, k:
+     (lambda a: (a[0] / a[1] - 1) * 100)(_fractal_levels(d.low, k, False)))
+# ★構造破断＝終値と「1つ前に確定した谷」との距離。直近の谷との距離は fractal安値距離% が持つので、
+#   2本を AND で束ねると法則 U9 の実例「close < 直近2本の確定安値」がそのまま書ける。
+#   ★受け入れ条件の本文は「直近で確定した谷」と書いてあるが、そのとおりに作ると fractal安値距離% と
+#     1ビットも変わらない重複列になる（47回目の swing高値距離% と同じ型・L-518）。法則 U9 の本文
+#     （regime_detection_kb.md §11 の逐語「close < 直近2本の確定15分安値」）に合わせて1つ前の谷にした。
+_reg("構造破断距離%", "構造破断距離%({})", True, lambda d, k:
+     (d.close / _fractal_levels(d.low, k, False)[1] - 1) * 100)
 # ── 位置 ──
 _reg("close vs EMA", "close vs EMA{}%", True, lambda d, n:
      (d.close / d.close.ewm(span=n, adjust=False).mean() - 1) * 100)
@@ -1116,6 +1170,13 @@ def build_catalog(cfg: dict) -> list[tuple]:
         addf("形スコア", n)
         for t in cfg["w_tol"]:
             addf("W字", n, t)
+    # ── 山と谷（2026-08-21・M2-2-6）──
+    for k in cfg["fractal_k"]:
+        addf("fractal高値距離%", k)
+        addf("fractal安値距離%", k)
+        addf("高値切り上げ幅%", k)
+        addf("安値切り上げ幅%", k)
+        addf("構造破断距離%", k)
     # ── 位置 ──
     for n in cfg["ema_periods"]:
         addf("close vs EMA", n)
@@ -5696,6 +5757,25 @@ def selftest() -> None:
         _ng3b, _v3b, _r3b = _insp_indicator_match(_sb3, cfg)
     if _ng3b:
         ng.append(f"検査3 が正しいカタログで不一致を出す（許容差の線を疑う）: {_ng3b[:3]}")
+    # ★山と谷の部品の番人（2026-08-21・M2-2-6・受け入れ条件 24a453d6… の確かめ方8）
+    #   ＝足した5部品の式をわざと壊すと、検査3 が1件ずつ見つけること。
+    #   ★RSI だけを壊す上の番人では、あとから足した部品が照合の対象に入っているかを確かめられない
+    #     （47回目の教訓 L-516＝効かない壊し方のまま置くと、番人が居るのに何も守らない）。
+    _frk = cfg["fractal_k"][0]
+    for _frf in ("fractal高値距離%", "fractal安値距離%", "高値切り上げ幅%",
+                 "安値切り上げ幅%", "構造破断距離%"):
+        _frn = make_material(_frf, _frk)[0]
+        with _cl2.redirect_stdout(_q):
+            _ng3c, _v3c, _r3c = _insp_indicator_match(
+                _sb3, cfg, catalog=[(_frn, lambda d: d.close * 0.0, True)])
+        if not any("不一致" in x for x in _ng3c):
+            ng.append(f"検査3 がわざと壊した式（{_frn} を定数化）を見逃す")
+    # 山と谷の確定の本数が 0 以下なら止まること（未来を見ない作りの前提が崩れるため）
+    try:
+        _fractal_levels(_sb3.high, 0, True)
+        ng.append("山と谷の確定の本数 0 で止まらない（_fractal_levels）")
+    except SystemExit:
+        pass
     # ★列の作り方の番人（2026-08-10 まこさん OK）＝計算が None を返しても全体が止まらず、
     #   「計算できず」として記録されること。前は囲いが fn(src) の1行だけで、囲いの外の
     #   s.copy() で止まった（実測＝69日ぶんのデータで AttributeError）。ライブラリには

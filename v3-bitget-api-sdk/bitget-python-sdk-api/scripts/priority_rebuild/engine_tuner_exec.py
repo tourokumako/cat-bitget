@@ -347,10 +347,23 @@ MATERIAL_PRE = {
 SINCE_OPS = tuple(k for k, v in MATERIAL_PRE.items() if v.get("needs_state"))
 
 
-def pre_ops(same_unit: bool | None = None) -> list[str]:
-    """前処理の部品の名前を返す。same_unit を指定すると、その種類だけに絞る。"""
+def pre_ops(same_unit: bool | None = None, needs_state: bool | None = None) -> list[str]:
+    """前処理の部品の名前を返す。same_unit・needs_state を指定すると、その種類だけに絞る。
+
+    ★needs_state は 2026-08-21（48回目・M2-2-8）に足した。理由を書く。
+      M2-2-5 で「状態に入って以降」の3つ（since_min・since_max・at_entry）を足したとき、
+      3つとも same_unit=True で登録した（元の列と同じ単位だから・これは正しい）。
+      ところが案を作るプログラムは `pre_ops(same_unit=True)` を使って前処理を引いていたので、
+      **この3つも引くようになり、`{"op": ..., "n": ...}` の形で出していた。**
+      3つは n（本数）ではなく state（基準にする状態の列の名前）が要るので、
+      **出した案は必ず拒否される**（`[レシピ拒否 G5] 材料の前処理 since_max に state が無い`）。
+      ＝`engine_tuner_gen --selftest` が 47回目から丸ごと止まっていた（2026-08-21 に実測して発見）。
+      ★案を作る側は、まだ状態の列の名前を決められない（状態の列は判定の中身が作る）ので、
+        この3つは引かせない＝needs_state=False で絞る。
+    """
     return sorted(k for k, v in MATERIAL_PRE.items()
-                  if same_unit is None or v["same_unit"] is same_unit)
+                  if (same_unit is None or v["same_unit"] is same_unit)
+                  and (needs_state is None or bool(v.get("needs_state")) is needs_state))
 
 
 def _since_stat(a: np.ndarray, state: np.ndarray, op: str) -> np.ndarray:

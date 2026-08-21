@@ -139,10 +139,12 @@
   200
  ],
  "roc_periods": [
+  3,
   6,
   12,
   24
  ],
+ "_roc_periods": "★2026-08-21（M2-2-6）に 3 を足した。理由＝engine_tuner の探す範囲が 6〜24 で、まこさんの実例の8番『15分足 陽線3連続∩累積+0.5%』の 3本ぶんの累積が書けなかった。★新しい数字は作っていない。3 の出どころ＝まこさんの実例の逐語『15分足 陽線3連続∩累積+0.5%』（engine_tuner_milestones2.md の 0.4）。これで範囲が 3〜24 になる。",
  "macd_params": [
   [
    12,
@@ -178,6 +180,7 @@
   ["LRangle50", "LRslope%50"],
   ["LRangle200", "LRslope%200"],
   ["APO%(12,26)", "PPO(12,26,9)"],
+  ["QSTICK%3", "ROC3"],
   ["QSTICK%6", "ROC6"],
   ["QSTICK%12", "ROC12"],
   ["QSTICK%24", "ROC24"],
@@ -191,7 +194,7 @@
   ["close vs TRIMA%200", "close vs SWMA%200"],
   ["TSF200傾き%", "LINREG200傾き%"]
  ],
- "_drop_columns": "★同じ挙動の列を省く（まこさん OK 2026-08-11・逐語『同じ挙動ならどちらかは使わないようにしていいよ』／方針の初出 2026-08-09・逐語『他にも同じ挙動の指標があれば紛らわしいので片方を省いていく』）。左が省く列・右が残す列。どれも検査12（重複の総当たり）で『実質 同じもの』（値の相関か順位の相関が 0.99999 以上）と出た組。残す側の決め方＝①V9 が計算している／engine_tuner のレシピが材料に使っている方を残す ②業界のライブラリに同じ関数が在る方 ③暖機が短い方 ④名前の並び順。★2件だけ ④で決まった結果を私が入れ替えた＝LRangle（今日 私が定義を変えた列＝名前は角度だが中身は%の傾きから作る）より LRslope%（定義を変えていない）を残す／APO%（うちが%化した）より PPO（もともと%）を残す。実物の一覧＝results/dup7_20260811.log",
+ "_drop_columns": "★同じ挙動の列を省く（まこさん OK 2026-08-11・逐語『同じ挙動ならどちらかは使わないようにしていいよ』／方針の初出 2026-08-09・逐語『他にも同じ挙動の指標があれば紛らわしいので片方を省いていく』）。左が省く列・右が残す列。どれも検査12（重複の総当たり）で『実質 同じもの』（値の相関か順位の相関が 0.99999 以上）と出た組。残す側の決め方＝①V9 が計算している／engine_tuner のレシピが材料に使っている方を残す ②業界のライブラリに同じ関数が在る方 ③暖機が短い方 ④名前の並び順。★2件だけ ④で決まった結果を私が入れ替えた＝LRangle（今日 私が定義を変えた列＝名前は角度だが中身は%の傾きから作る）より LRslope%（定義を変えていない）を残す／APO%（うちが%化した）より PPO（もともと%）を残す。実物の一覧＝results/dup7_20260811.log。★2026-08-21（M2-2-6）に1行 足した＝[\"QSTICK%3\", \"ROC3\"]。理由＝この工程で roc_periods に 3 を足したので、同じ設定を回す QSTICK% にも 3 が新しくできた（QSTICK% は roc_periods を回す＝observe_diag.py:1320）。QSTICK%6・12・24 は既に3行とも省く設定に入っていて、3 だけが漏れる形になっていた。実測（値決め窓の先頭 20,000本）＝QSTICK%3 × ROC3 の順位の相関 0.9998018577／QSTICK%6 × ROC6 は 0.9997734391＝既に省いている組と同じ関係。★新しい判断はしていない＝まこさんが決めた方針（2026-08-09 逐語『他にも同じ挙動の指標があれば紛らわしいので片方を省いていく』／2026-08-11 逐語『同じ挙動ならどちらかは使わないようにしていいよ』）を、同じ指標の組の 3 に当てただけ。",
  "rci_periods": [
   7,
   9,
@@ -216,6 +219,11 @@
   48,
   96
  ],
+ "fractal_k": [
+  2,
+  5
+ ],
+ "_fractal_k": "★2026-08-21（M2-2-6）に新設。山と谷を確定させるまでに待つ本数。中央のバーが前後 k本 より高い（安い）ときに山（谷）とし、k本 遅らせて確定する（法則 C10 の②・未来を見ないため）。★新しい数字は1つも作っていない。【下限 2 の出どころ・3件】①まこさんの実例の逐語『確定 fractal スイング（j+2 確定）』②実物 scripts/regime/structure_features.py の _detect_fractals（j±2・j+2 で確定記録）③MetaTrader 5 公式ヘルプの逐語（Bill Williams の定義）『a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides』＝中央の前後 2本 が定義。【上限 5 の出どころ・1件】FXOpen の記事本文の逐語『You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.』＝挙げられている一番大きい数字が 5。【上げ下げで何が変わるか】LuxAlgo の記事本文の逐語『The default setting considers two candles on each side of the potential extreme, but increasing this count demands more surrounding candles with lower highs or higher lows.』『This adjustment results in fewer signals but can enhance reliability. Conversely, lowering the count generates more frequent signals, though it raises the risk of false positives.』＝大きくすると信号は減るが確からしさが上がる。★これで engine_tuner の探す範囲は 2〜5 になり、3 と 4 も試せる（直す前は 2〜2 の幅ゼロ＝何回 走らせても 2 しか出なかった＝恒久の決まり42番に反する状態だった）。★範囲を狭める・広げるのは まこさんが決めます。",
  "vwap_windows": [
   288
  ],
@@ -235,11 +243,16 @@
   288
  ],
  "sr_windows": [
+  144,
   288
  ],
+ "_sr_windows": "★2026-08-21（M2-2-6）に 144 を足した。理由＝帯を束ねる窓が 288 の1つだけで、engine_tuner の探す範囲が 288〜288（幅ゼロ）だった＝恒久の決まり42番の『決まった数字だけに限定しない』に反する状態。★新しい数字は作っていない。144 の出どころ＝scripts/priority_rebuild/e37_scalp.py:569 の逐語『直近144本（12h）のスイング高値を、RG-v6 と同じボラ連動 tol=clamp(0.5×ATR%_1h,0.15%,0.6%) で束ねる』＝同じ『帯を束ねる窓』の実物。これで範囲が 144〜288 になる（V11_ZONE_LOOKBACK=168 もこの中に入る）。",
  "sr_tol": [
-  0.003
+  0.0015,
+  0.003,
+  0.006
  ],
+ "_sr_tol": "★2026-08-21（M2-2-6）に 0.0015 と 0.006 を足した。理由＝上と同じ（幅が 0.003 の1つだけ＝範囲がゼロ）。★新しい数字は作っていない。出どころ＝scripts/priority_rebuild/e37_scalp.py:213 の逐語『V25_K = 0.5 # 束ね幅 tol=clamp(K×ATR%_1h,0.15%,0.6%)』＝実物の束ね幅が動く下端 0.15%（=0.0015）と上端 0.6%（=0.006）。いまの 0.003 はその真ん中で、既存の列 S-Rタッチ数(288,0.003) はそのまま残る。",
  "w_tol": [
   0.003
  ],

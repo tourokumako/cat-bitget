@@ -448,6 +448,69 @@ def _tb_bars_since_low(d, p):
     return _S(out, d)
 
 
+def _tb_fractal(d, k: int, is_high: bool):
+    """山と谷を、素直な繰り返し（1バーずつ）で確定させる（2026-08-21・M2-2-6）。
+
+    ★observe_diag のまとめ計算とは別の書き方＝これで照合になる（同じ書き方を2回 書いても照合にならない）。
+    ★未来を見ない＝バー t で使うのは t までの値だけ。中央のバー j＝t−k が前後 k本 より高い（安い）とき、
+      バー t で初めて「バー j は山（谷）だった」と分かる。＝実例の「j+2 確定」（k=2）と同じ。
+    戻り＝(直近で確定した水準, その1つ前に確定した水準)。
+    """
+    k = int(k)
+    s = (d.high if is_high else d.low).to_numpy(float)
+    n = len(s)
+    last = np.full(n, np.nan)
+    prev = np.full(n, np.nan)
+    cur_last, cur_prev = np.nan, np.nan
+    for t in range(n):
+        j = t - k
+        if j - k >= 0:
+            mid = s[j]
+            lft, rgt = s[j - k:j], s[j + 1:j + k + 1]
+            ok = (mid > lft.max() and mid > rgt.max()) if is_high else (mid < lft.min() and mid < rgt.min())
+            if ok:
+                cur_prev, cur_last = cur_last, mid
+        last[t], prev[t] = cur_last, cur_prev
+    return last, prev
+
+
+def _tb_fr_hi_dist(d, p):
+    return _S((d.close.to_numpy(float) / _tb_fractal(d, p[0], True)[0] - 1) * 100, d)
+
+
+def _tb_fr_lo_dist(d, p):
+    return _S((d.close.to_numpy(float) / _tb_fractal(d, p[0], False)[0] - 1) * 100, d)
+
+
+def _tb_fr_hi_step(d, p):
+    a = _tb_fractal(d, p[0], True)
+    return _S((a[0] / a[1] - 1) * 100, d)
+
+
+def _tb_fr_lo_step(d, p):
+    a = _tb_fractal(d, p[0], False)
+    return _S((a[0] / a[1] - 1) * 100, d)
+
+
+def _tb_fr_break(d, p):
+    return _S((d.close.to_numpy(float) / _tb_fractal(d, p[0], False)[1] - 1) * 100, d)
+
+
+def _fr_case(k: int, hi: bool, first: float, second: float):
+    """山（谷）がちょうど2回 確定する見本。終値はずっと 100。
+
+    並び＝[100 が k本][1つ目の山（谷）][100 が k+1本][2つ目の山（谷）][100 が k+3本]。
+    間を k+1本 あけるので、2つとも前後 k本 より高い（安い）＝両方が確定する。最後のバーでは
+    直近の水準＝2つ目・1つ前の水準＝1つ目 になる。
+    """
+    k = int(k)
+    base = 100.0
+    ext = np.r_[np.full(k, base), first, np.full(k + 1, base), second, np.full(k + 3, base)]
+    flat = np.full(len(ext), base)
+    return _mk(c=flat, o=flat,
+               h=(ext if hi else flat + 1.0), l=(flat - 1.0 if hi else ext))
+
+
 def _tb_shape(d, p):
     n = p[0]
     c = d.close.to_numpy(float)
@@ -1025,6 +1088,39 @@ _r(r"W字\((\d+),([\d.]+)\)", "W字",
    "反転サイン＝1 は買い転換（ダブルボトム完成）の示唆", "reversal", tb=_tb_wpat,
    known=lambda p: [(_w_case(int(p[0]), 100.2), [(-1, 1.0, 1e-9)]),
                     (_w_case(int(p[0]), 92.0), [(-1, 0.0, 1e-9)])])
+# ── 山と谷（2026-08-21・M2-2-6・受け入れ条件 24a453d6… の C-1 と D）──
+_r(r"fractal高値距離%\((\d+)\)", "fractal高値距離%",
+   "終値と、直近で確定した山（前後 k本 より高い中央のバー）との乖離%",
+   "確定は k本 遅れ＝まこさんの実例の「j+2 確定」（k=2）と同じ形（法則 C10 の②・未来を見ないため）。"
+   "%化は価格非依存 H6 のための本プロジェクトの流儀。★rolling の最高値との距離（swing高値距離%・"
+   "close vs n本高値%）とは別物＝あちらは窓の中の最高値、こちらは前後が下がった実際の山",
+   "順張り値＝0 に近いほど直近の山に近い", "trend", tb=_tb_fr_hi_dist,
+   known=lambda p: [(_fr_case(p[0], True, 110.0, 121.0), [(-1, (100.0 / 121.0 - 1) * 100, 1e-9)])])
+_r(r"fractal安値距離%\((\d+)\)", "fractal安値距離%",
+   "終値と、直近で確定した谷（前後 k本 より安い中央のバー）との乖離%",
+   "上と同じ（k本 遅れで確定・%化は H6 のための流儀）",
+   "順張り値＝0 に近いほど直近の谷に近い", "trend", tb=_tb_fr_lo_dist,
+   known=lambda p: [(_fr_case(p[0], False, 90.0, 81.0), [(-1, (100.0 / 81.0 - 1) * 100, 1e-9)])])
+_r(r"高値切り上げ幅%\((\d+)\)", "高値切り上げ幅%",
+   "直近で確定した山と、その1つ前に確定した山との差%。プラスなら高値を切り上げている",
+   "ダウ理論の Higher High（法則 U1）を1つの数字にしたもの＝本プロジェクトの流儀。真偽にするのは"
+   "既存の形（level・cross）＝部品と形を混ぜない",
+   "順張り値＝プラスで上昇の構造", "trend", tb=_tb_fr_hi_step,
+   known=lambda p: [(_fr_case(p[0], True, 110.0, 121.0), [(-1, 10.0, 1e-9)])])
+_r(r"安値切り上げ幅%\((\d+)\)", "安値切り上げ幅%",
+   "直近で確定した谷と、その1つ前に確定した谷との差%。プラスなら安値を切り上げている",
+   "ダウ理論の Higher Low（法則 U1）／マイナスなら Lower Low（法則 D1）。流儀は上と同じ",
+   "順張り値＝プラスで上昇の構造・マイナスで下降の構造", "trend", tb=_tb_fr_lo_step,
+   known=lambda p: [(_fr_case(p[0], False, 90.0, 81.0), [(-1, -10.0, 1e-9)])])
+_r(r"構造破断距離%\((\d+)\)", "構造破断距離%",
+   "終値と、**1つ前に確定した谷**との乖離%。マイナスならその谷を割っている",
+   "法則 U9（構造破断）の逐語「close < 直近2本の確定15分安値」を1つの数字にしたもの＝本プロジェクトの流儀。"
+   "★直近の谷との距離は fractal安値距離% が持つので、2本を AND で束ねると「直近2本の確定安値を割った」が"
+   "そのまま書ける。★受け入れ条件の本文は「直近で確定した谷」と書いてあるが、そのとおりに作ると"
+   "fractal安値距離% と1ビットも変わらない重複列になるため、法則 U9 の本文に合わせて1つ前の谷にした"
+   "（2026-08-21・M2-2-6）",
+   "順張り値＝マイナスで上げの構造が壊れた", "trend", tb=_tb_fr_break,
+   known=lambda p: [(_fr_case(p[0], False, 90.0, 81.0), [(-1, (100.0 / 90.0 - 1) * 100, 1e-9)])])
 # ── 位置 ──
 _r(r"close vs EMA(\d+)%", "close vs EMA",
    "EMA からの乖離%", "EMA は標準の漸化式", "順張り値", "trend", tb=_tb_vs_ema, ext=_ext_vs_ema,
@@ -4279,6 +4375,12 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "fib位置": dict(k="構造・位置"), "POC": dict(k="構造・位置"), "VAH": dict(k="構造・位置"),
     "VAL": dict(k="構造・位置"), "S-Rタッチ数": dict(k="構造・位置"),
     "レンジ幾何": dict(k="構造・位置", note="RG ゾーンビルダーの帯＝構造そのもの"),
+    # 山と谷（2026-08-21・M2-2-6）＝高値と安値の並びそのもの＝構造・位置
+    "fractal高値距離%": dict(k="構造・位置", note="前後が下がった実際の山との距離（k本 遅れで確定）"),
+    "fractal安値距離%": dict(k="構造・位置", note="同じく谷との距離"),
+    "高値切り上げ幅%": dict(k="構造・位置", note="ダウ理論の Higher High（法則 U1）を数字にしたもの"),
+    "安値切り上げ幅%": dict(k="構造・位置", note="同じく Higher Low／マイナスなら Lower Low（法則 D1）"),
+    "構造破断距離%": dict(k="構造・位置", note="1つ前に確定した谷との距離（法則 U9・構造破断）"),
     # 需給・時間帯
     "taker_ls": dict(k="需給"), "L-S比": dict(k="需給"), "CVD": dict(k="需給"),
     "時刻": dict(k="時間帯"), "曜日": dict(k="時間帯"),
@@ -4553,6 +4655,11 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "安値からの経過バー": ((), "同上"),
     "形スコア": ((), "V字・M字の判定。ライブラリに相当する関数が無い"),
     "W字": ((), "ダブルボトムの完成。ライブラリに相当する関数が無い"),
+    "fractal高値距離%": ((), "前後 k本 より高い中央のバー（山）との距離%。ライブラリに相当する関数が無い"),
+    "fractal安値距離%": ((), "同上（谷）"),
+    "高値切り上げ幅%": ((), "確定した山どうしの差%。ライブラリに相当する関数が無い"),
+    "安値切り上げ幅%": ((), "同上（谷）"),
+    "構造破断距離%": ((), "終値と1つ前に確定した谷の距離%。ライブラリに相当する関数が無い"),
     "close vs EMA": (("ema",), "終値と EMA の距離%"),
     "close vs SMA": (("sma",), "終値と SMA の距離%"),
     "close vs VWAP": (("vwap",), "終値と VWAP の距離%"),
