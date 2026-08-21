@@ -2414,7 +2414,18 @@
      "lo": 10
     },
     "r_min": 0.25,
+    "ref_mult_range": {
+     "dec": 2,
+     "hi": 1.5,
+     "kind": "float",
+     "lo": 0.5
+    },
     "role_max": "無制限",
+    "state_hold_bars_range": {
+     "hi": 288,
+     "kind": "int",
+     "lo": 24
+    },
     "state_mult_range": {
      "dec": 1,
      "hi": 3.0,

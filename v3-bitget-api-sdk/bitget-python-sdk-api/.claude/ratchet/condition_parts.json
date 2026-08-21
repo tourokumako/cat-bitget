@@ -258,6 +258,24 @@
    "src": [
     "pine:ta.barssince"
    ]
+  },
+  {
+   "id": "barssince_dist",
+   "name": "最後に成立してからの本数そのもの",
+   "where": "★部品どうしの土台。上の barssince（本数を閾値と比べる）と、状態を保つ形（hysteresis）の両方が、この距離を使う",
+   "impl": "condition_parts_diag.p_barssince_dist＝np.maximum.accumulate で最後に成立した位置を持ち、いまの位置との差を返す（真偽ではなく数）。まだ一度も成立していない所は値なし。数えるのは過去に成立したバーだけ＝未来は見ない。★2026-08-21（M2-2-5・まこさん承認 24a453d6…）に、barssince の中から切り出して部品にした（実装の中身は1文字も変えていない＝barssince はこの部品を呼ぶ形に直した）。",
+   "src": [
+    "pine:ta.barssince"
+   ]
+  },
+  {
+   "id": "hold_state",
+   "name": "入る線と出る線を別にして、状態を保つ",
+   "where": "★形（engine_tuner_exec.FORMS の hysteresis）。on で真になり、off で偽に戻り、どちらも成立しないバーは前の値を保つ",
+   "impl": "engine_tuner_exec._hold_state＝最後に on が立った位置と最後に off が立った位置を比べ、on の方が新しく、かつ on から n本 以内なら真。同じバーで両方 成立したら off を優先する。★部品だけでの組み立て直しは condition_parts_diag._c_hysteresis（距離2本＝barssince_dist ＋ cmp ＋ and ＋ not ＋ exists ＋ sub）＝実データ 20,000本で食い違い 0 を実測（2026-08-21）。★2026-08-21（M2-2-5・まこさん承認 24a453d6…）に足した。法則＝regime_detection_kb.md §11 の U10・C6・C7。名前の出どころ＝同 KB §4-6 の逐語 'Use hysteresis. Entry threshold: P(Bear) > 0.6. Exit threshold: P(Bear) < 0.4.'",
+   "src": [
+    "—（業界の部品の一覧には無い。出どころは相場の判定の手法＝hysteresis）"
+   ]
   }
  ],
  "missing": [],
@@ -454,6 +472,15 @@
    "cmp",
    "barssince",
    "shift_cond"
+  ],
+  "hysteresis": [
+   "value",
+   "cmp",
+   "barssince_dist",
+   "sub",
+   "exists",
+   "and",
+   "not"
   ]
  }
 }

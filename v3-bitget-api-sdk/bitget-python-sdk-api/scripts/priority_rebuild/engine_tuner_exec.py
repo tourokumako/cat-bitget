@@ -49,7 +49,15 @@ GAP_DIAG = 0.5 / 100.0                       # ceil_type 診断の gap（v26_gap
 
 # ── 形（11種・設計書 §2.2）と役割（§2.1）──
 FORMS = ("level", "band", "band_exclude", "slope", "slope_avg", "cross",
-         "streak", "within_n", "barssince", "diff", "touch", "candle_dir")
+         "streak", "within_n", "barssince", "diff", "touch", "candle_dir", "hysteresis")
+# ★hysteresis（入る線と出る線を別にして、状態を保つ形）＝M2-2-5・2026-08-21 まこさん承認 24a453d6…。
+#   法則＝U10（一度「上げ」と判定したら解除まで保つ）・C6（安定させる仕組みは2つ・別物）・
+#         C7（続く長さは探す値）。正本＝.claude/memory/regime_detection_kb.md §11。
+#   ★名前の出どころ＝同 KB §4-6 の逐語 "Use hysteresis. Entry threshold: P(Bear) > 0.6.
+#     Exit threshold: P(Bear) < 0.4."（CC が作った造語ではない）。
+#   ★既存の streak（何本 続いたら成立）とは別物＝混ぜない（C6 が「2つ・別のもの」と明記）。
+#   ★末尾に足した理由＝生成器の並び（_STATE_ORDER）の順番を1つも動かさないため
+#     （順番が変わると、同じ種から違う案が出る＝過去の探索をやり直せない・M2-2-3b の教訓 L-514）。
 # 入れ子形（内側は単純形のみ・1段まで）＝「条件に掛ける部品」。
 # ★barssince（何本前に成立したか・2026-08-12・段C の C-6）を足した。
 #   出どころ＝.claude/ratchet/condition_parts.json の部品 barssince（業界の同じもの＝pine:ta.barssince）。
@@ -75,6 +83,7 @@ FORMS = ("level", "band", "band_exclude", "slope", "slope_avg", "cross",
 #   欄の意味（★「だいたい同じだからまとめる」をしない＝同じにならない所は別の欄にした）:
 #     nest        … 入れ子形（内側に条件を1つ包む）           → NEST_FORMS
 #     pair        … 材料の本数。"1"／"2"（必ず2本）／"2or1th"（2本 か 1本＋閾値）／"none"／"inner"
+#                   ／"inner2"（内側の条件2つ＝入る on と 出る off・M2-2-5 で足した）
 #     band        … 下限・上限（lo/hi）を持つ                 → 帯の形
 #     needs_side  … 向き（side）が要る（入れ子の外側で見る分） → level・diff・slope・slope_avg
 #     slope_n     … 傾きの本数 n を探索の枠に出す             → slope・slope_avg
@@ -99,6 +108,11 @@ FORM_SPEC = {
     "diff":         dict(nest=False, pair="2",      band=False, needs_side=True,  slope_n=False, pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True),
     "touch":        dict(nest=False, pair="2",      band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=False),
     "candle_dir":   dict(nest=False, pair="none",   band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True),
+    # ★hysteresis（M2-2-5）＝材料を直接は取らない（on と off の中の条件が取る）。
+    #   trigger_ok=False の理由＝縁で発火する形ではない（状態を保つ形）。C5＝場面の判定はふるいであって
+    #   「いま建てろ」の合図ではない。exit_ok=False の理由＝出口の確認条件は玉ごとの判定で、
+    #   状態を保つ形の意味（相場の場面が続いているか）と噛み合わないため（要るなら別途 承認をもらう）。
+    "hysteresis":   dict(nest=False, pair="inner2", band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=False),
 }
 
 
@@ -214,7 +228,21 @@ def _is_cond(node) -> bool:
     return isinstance(node, dict) and "form" in node
 
 
-def _walk(node, depth=0, out=None, depths=None):
+def _check_not_node(node: dict, in_not: bool, where: str) -> None:
+    """否定のノードの形を見る（M2-2-5・2026-08-21 まこさん承認 24a453d6…・法則 R8）。
+
+    ★禁止2＝否定の中に否定は書けない（二重の否定は元の条件と同じ＝形を1つに決める。
+      入れ子の本数 1 を禁じている既存の決まり［正規形・CP3 提案7］と同じ考え方）。
+    ★これで潰れる条件はありません（二重の否定は、否定を外した式と同じ結果になるため）。
+    """
+    if in_not:
+        _fail("G5", f"{where}: 否定の中に否定は書けない（二重の否定は元の条件と同じ＝正規形）")
+    extra = set(node) - {"not"}
+    if extra:
+        _fail("G5", f"{where}: 否定のノードに未知のフィールド {sorted(extra)}（書けるのは not だけ）")
+
+
+def _walk(node, depth=0, out=None, depths=None, in_not=False):
     """つなぎ木を歩いて (条件, 深さ) を集める。未知ノードは拒否。"""
     out = [] if out is None else out
     depths = [] if depths is None else depths
@@ -224,20 +252,54 @@ def _walk(node, depth=0, out=None, depths=None):
         return out, depths
     if not isinstance(node, dict):
         _fail("G5", f"つなぎ木に不明なノード: {node!r}")
+    if "not" in node:
+        # ★否定（M2-2-5・法則 R8）。内側も数え上げに乗せる
+        #   ＝役割の数え方・系統の数え方・条件の本数が、否定の中でも同じに効く。
+        #   ★禁止1（否定の中に引き金を置けない）＝validate_recipe が明示のメッセージで止める。
+        #     加えて、既存の G1（引き金は経路の最上位 all の直下にだけ置ける）でも弾かれる＝二重に守る。
+        _check_not_node(node, in_not, "つなぎ木")
+        _walk(node["not"], depth + 1, out, depths, in_not=True)
+        return out, depths
     if "all" in node or "any" in node:
         for ch in node.get("all", node.get("any", [])):
-            _walk(ch, depth + 1, out, depths)
+            _walk(ch, depth + 1, out, depths, in_not)
         return out, depths
     if "if" in node and "then" in node:
-        _walk(node["if"], depth + 1, out, depths)
-        _walk(node["then"], depth + 1, out, depths)
+        _walk(node["if"], depth + 1, out, depths, in_not)
+        _walk(node["then"], depth + 1, out, depths, in_not)
         return out, depths
-    _fail("G5", f"つなぎ木のノードが all/any/if-then/条件 のどれでもない: {list(node)}")
+    _fail("G5", f"つなぎ木のノードが not/all/any/if-then/条件 のどれでもない: {list(node)}")
+
+
+def _conds_under_not(node) -> list:
+    """否定（not）の中に在る条件を集める（M2-2-5・2026-08-21）。
+
+    ★何のためか＝**禁止1＝引き金（trigger）を否定の中に置かせない**ため。
+      引き金は「縁で発火する」もので、その否定は「発火していないほとんど全部のバー」になります。
+      経路ごとに引き金はちょうど1本、という決まり（G1）が意味を失います。
+    ★既存の G1（引き金は経路の最上位 all の直下にだけ置ける）でも弾かれますが、
+      そのメッセージでは「なぜ止まったか」が読み取れないので、この検査で名指しにします＝二重に守る。
+    """
+    out = []
+    if not isinstance(node, dict):
+        return out
+    if "not" in node:
+        inner, _d = _walk(node["not"], in_not=True)
+        return inner
+    if "all" in node or "any" in node:
+        for ch in node.get("all", node.get("any", [])):
+            out += _conds_under_not(ch)
+        return out
+    if "if" in node and "then" in node:
+        return _conds_under_not(node["if"]) + _conds_under_not(node["then"])
+    return out
 
 
 def _tree_depth(node, depth=0) -> int:
     if _is_cond(node):
         return depth
+    if isinstance(node, dict) and "not" in node:       # ★否定も1段と数える（M2-2-5）
+        return _tree_depth(node["not"], depth + 1)
     if "all" in node or "any" in node:
         kids = node.get("all", node.get("any", []))
         return max([_tree_depth(ch, depth + 1) for ch in kids] + [depth])
@@ -264,13 +326,25 @@ def _tree_depth(node, depth=0) -> int:
 #     だから列2本の形には使わず、水準（level・band）で閾値と比べる形で使う。
 #     ★これは好みの決まりではなく、単位が違うものは比べられないという算数です。
 #     ★これで潰れる条件＝ありません（ts_rank・ts_std は 2026-08-12（18回目） まで1つも書けなかった）。
+#   ★2026-08-21（M2-2-5・まこさん承認 24a453d6…）＝状態に入って以降を見る部品を3つ 足した。
+#     これが無いと、まこさんの実例の9番（「前回解除以降かつ直近90分」の安値から+1.0%）と
+#     11番（解除＝半値戻し）が1行も書けない（決まった長さの窓しか見られないため）。
+#     ★窓の長さを数字で決めない＝区間は「状態を保つ形（hysteresis）が真である間」が決める。
+#     ★どの状態を基準にするかは `state`（真偽の列の名前）で指定する（`n` は書かない）。
 MATERIAL_PRE = {
     "ts_max": {"desc": "直前の n本の最大値（いまのバーを含めない）", "same_unit": True},
     "ts_min": {"desc": "直前の n本の最小値（いまのバーを含めない）", "same_unit": True},
     "ts_rank": {"desc": "いまの値が 直近 n本の中で何番目か（0〜1・いまのバーを含める）",
                 "same_unit": False},
     "ts_std": {"desc": "直近 n本のばらつき（標準偏差・いまのバーを含める）", "same_unit": False},
+    "since_min": {"desc": "指定した状態に入って以降の最小値（状態の外は値なし）",
+                  "same_unit": True, "needs_state": True},
+    "since_max": {"desc": "指定した状態に入って以降の最大値（状態の外は値なし）",
+                  "same_unit": True, "needs_state": True},
+    "at_entry": {"desc": "指定した状態に入ったバーの値（状態の外は値なし）",
+                 "same_unit": True, "needs_state": True},
 }
+SINCE_OPS = tuple(k for k, v in MATERIAL_PRE.items() if v.get("needs_state"))
 
 
 def pre_ops(same_unit: bool | None = None) -> list[str]:
@@ -279,9 +353,43 @@ def pre_ops(same_unit: bool | None = None) -> list[str]:
                   if same_unit is None or v["same_unit"] is same_unit)
 
 
-def _apply_pre(a: np.ndarray, pre: dict) -> np.ndarray:
+def _since_stat(a: np.ndarray, state: np.ndarray, op: str) -> np.ndarray:
+    """状態に入って以降の 最小・最大・入ったバーの値（M2-2-5・2026-08-21 まこさん承認 24a453d6…）。
+
+    ★窓の長さを数字で決めない＝区間は「状態が真である間」が決める。
+      これで、まこさんの実例の「前回解除以降かつ直近90分の安値」（since_min）と
+      「解除＝半値戻し」（at_entry と since_max の組み合わせ）が書けるようになる。
+    ★状態の外は値なし（NaN）＝条件は既定 na=fail で不成立になる。
+    ★未来を見ない（H2）＝`cummin`・`cummax`・`maximum.accumulate` はどれも過去だけを積み上げる。
+      うしろのバーの値は1つも使わない。
+    """
+    idx = np.arange(len(a))
+    prev = np.roll(state, 1)
+    prev[0] = False
+    entry = state & ~prev                          # 状態に入ったバー（前が偽・いまが真）
+    seg = np.cumsum(entry)                         # 何回目の状態か（0＝まだ一度も入っていない）
+    s = pd.Series(a)
+    if op == "since_min":
+        v = s.groupby(seg).cummin().to_numpy(float)
+    elif op == "since_max":
+        v = s.groupby(seg).cummax().to_numpy(float)
+    else:                                          # at_entry
+        last_entry = np.maximum.accumulate(np.where(entry, idx, -1))
+        v = np.where(last_entry >= 0, a[np.maximum(last_entry, 0)], np.nan)
+    return np.where(state, v, np.nan)
+
+
+def _apply_pre(a: np.ndarray, pre: dict, df: pd.DataFrame | None = None) -> np.ndarray:
     """材料の列に前処理の部品を1つ掛ける。★いまのバーを含めるかは部品ごとに違う（下に理由を書く）。"""
-    op, n = pre["op"], int(pre["n"])
+    op = pre["op"]
+    if op in SINCE_OPS:                            # ★状態に入って以降（M2-2-5）
+        col = pre["state"]
+        if df is None or col not in df.columns:
+            raise RecipeError(
+                f"[実行器] 前処理 {op} の基準にする状態の列 {col} がデータにありません"
+                "（状態を保つ形［hysteresis］が作る列を、先に判定の中身［build］で作る・fail-closed）")
+        return _since_stat(a, df[col].to_numpy(bool), op)
+    n = int(pre["n"])
     s = pd.Series(a)
     if op == "ts_max":
         # H2OK: shift(1) は過去だけを見る（未来は見ない）。いまのバーを含めない理由＝上のブロック参照。
@@ -373,14 +481,23 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
     if pre is not None:
         if not isinstance(pre, dict):
             _fail("G6", f"材料の pre が dict でない: {pre!r}")
-        bad = set(pre) - {"op", "n"}
+        bad = set(pre) - {"op", "n", "state"}
         if bad:
-            _fail("G6", f"材料の pre に未知のフィールド {sorted(bad)}（使えるのは op と n）")
+            _fail("G6", f"材料の pre に未知のフィールド {sorted(bad)}（使えるのは op・n・state）")
         if pre.get("op") not in MATERIAL_PRE:
             _fail("G6", f"材料の前処理に無い部品: {pre.get('op')}"
                         f"（使えるのは {sorted(MATERIAL_PRE)}／正本＝condition_parts.json）")
-        if not isinstance(pre.get("n"), int) or isinstance(pre.get("n"), bool) or pre["n"] < 2:
-            _fail("G5", f"材料の前処理の本数が不正: {pre.get('n')!r}（2 以上の整数）")
+        if pre["op"] in SINCE_OPS:                 # ★状態に入って以降（M2-2-5）＝窓の本数ではなく状態が区間を決める
+            if not isinstance(pre.get("state"), str) or not pre["state"]:
+                _fail("G5", f"材料の前処理 {pre['op']} に state（基準にする状態の列の名前）が無い")
+            if "n" in pre:
+                _fail("G5", f"材料の前処理 {pre['op']} に n は書けない"
+                            "（区間は『状態が真である間』が決める＝本数では決めない）")
+        else:
+            if "state" in pre:
+                _fail("G5", f"材料の前処理 {pre['op']} に state は書けない（本数 n で窓を決める形）")
+            if not isinstance(pre.get("n"), int) or isinstance(pre.get("n"), bool) or pre["n"] < 2:
+                _fail("G5", f"材料の前処理の本数が不正: {pre.get('n')!r}（2 以上の整数）")
     if "legacy_col" in m:
         if lane != "legacy":
             _fail("G6", f"legacy 材料列は恒等検収レーン専用（探索は生成できない・§2.4-④）: {m['legacy_col']}")
@@ -515,10 +632,33 @@ def _check_value(v: dict, lane: str, cond_desc: str, legacy_used: list):
     if not isinstance(v, dict):
         _fail("G6", f"{cond_desc}: 値が dict でない（生の数字の閾値は禁止・§2.4）: {v!r}")
     known = {"threshold_q", "const", "mult", "side_sign", "n", "legacy", "direction", "dir", "na", "offset",
-             "lo", "hi", "th", "m", "op"}     # op＝材料2本の組み方（PAIR_OPS・2026-08-12・段C の C-6）
+             "lo", "hi", "th", "m", "op",     # op＝材料2本の組み方（PAIR_OPS・2026-08-12・段C の C-6）
+             "ref", "clip_lo", "clip_hi"}     # ★連動する閾値（M2-2-5・2026-08-21）
     bad = set(v) - known
     if bad:
         _fail("G6", f"{cond_desc}: 値に未知のフィールド {sorted(bad)}（生の数字の閾値の混入経路＝拒否）")
+    # ══ 他の材料に連動する閾値（M2-2-5・2026-08-21 まこさん承認 24a453d6…・法則 R1／実例の3番）══
+    #   ★何を書けるようになるか＝「価格帯 clamp(0.5×ATR%_1h, 0.15%, 0.6%)」のような、
+    #     1バーごとに動く閾値。直す前の4区分（分位・名前つき定数・整数グリッド・恒等検収専用）は
+    #     4つとも「その場で数字1つに決まる」形だった。
+    #   ★H6（値段の絶対値を使わない）の守り＝連動先に使えるのは比率の列だけ。
+    #     価格そのものの列（帯の4隅）と、玉の状態の列は拒否する（下）。
+    if "ref" in v:
+        if "legacy" in v:
+            _fail("G6", f"{cond_desc}: 連動する閾値（ref）と legacy は一緒に書けない")
+        kind_r, name_r = _material_name(v["ref"], lane)
+        if kind_r == "geo" and iref.RANGE_GEO_REF[name_r]["kind"] != "ratio":
+            _fail("G6", f"{cond_desc}: 連動する閾値の材料に、価格水準のレンジ幾何列 {name_r} は使えない（H6）")
+        if kind_r == "state":
+            _fail("G6", f"{cond_desc}: 連動する閾値の材料に、ポジション状態列 {name_r} は使えない"
+                        "（入口では建玉が無い）")
+        if lane != "legacy":
+            _check_num_range("ref_mult_range", float(v.get("mult", 1.0)), f"{cond_desc}: 連動する閾値の係数")
+        for sub in ("clip_lo", "clip_hi"):
+            if sub in v:
+                _check_value(v[sub], lane, f"{cond_desc}/{sub}", legacy_used)
+    elif "clip_lo" in v or "clip_hi" in v:
+        _fail("G5", f"{cond_desc}: clip_lo／clip_hi は連動する閾値（ref）と一緒にだけ書ける")
     if "legacy" in v and lane != "legacy":
         _fail("G6", f"{cond_desc}: legacy 値は恒等検収レーン専用（探索は生成できない・§2.4-④）")
     if "legacy" in v:
@@ -544,11 +684,60 @@ def _check_value(v: dict, lane: str, cond_desc: str, legacy_used: list):
             _check_value(v[sub], lane, f"{cond_desc}/{sub}", legacy_used)
 
 
-def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False):
+def _check_hysteresis(c: dict, lane: str, where: str, legacy_used: list,
+                      in_nest: bool, in_build: bool) -> None:
+    """状態を保つ形の検査（M2-2-5・2026-08-21 まこさん承認 24a453d6…・法則 U10・C6・C7）。
+
+    形＝{"form":"hysteresis", "on": <条件または木>, "off": <条件または木>, "value": {"n": 本数}}
+      on  … この条件が成立したバーから、真になる
+      off … この条件が成立したバーで、偽に戻る
+      どちらも成立しないバー … 前のバーの値を保つ（＝状態を保つ）
+      value.n … 真を保てる最大の本数。ここを超えたら自動で偽に戻る（＝C7 の「続く長さ」＝範囲で探す）
+    ★入る線と出る線を別にできる＝on と off に別の閾値を書ける（C6 の②）。
+      既存の streak（何本 続いたら成立＝C6 の①）とは別物。混ぜない。
+    ★内側に引き金を置けない＝縁で発火する形ではないため（否定と同じ理由・C5）。
+    """
+    if in_nest:
+        _fail("G5", f"{where}: 状態を保つ形（hysteresis）は入れ子の内側に置けない"
+                    "（入れ子の内側は単純形のみ・設計書 §2.2）")
+    extra = set(c) - {"form", "on", "off", "value", "role"}
+    if extra:
+        _fail("G5", f"{where}: hysteresis に未知のフィールド {sorted(extra)}"
+                    "（書けるのは on・off・value・role）")
+    for slot in ("on", "off"):
+        if not isinstance(c.get(slot), dict) or not c[slot]:
+            _fail("G5", f"{where}: hysteresis に {slot} が無い"
+                        "（入る条件 on と 出る条件 off を、別々に書く）")
+    v = c.get("value") or {}
+    if set(v) - {"n"}:
+        _fail("G5", f"{where}: hysteresis の value に書けるのは n だけ（{sorted(set(v) - {'n'})}）")
+    n = v.get("n")
+    if not isinstance(n, int) or isinstance(n, bool) or n < 1:
+        _fail("G5", f"{where}: hysteresis の value.n（真を保てる最大の本数）が 1以上の整数でない: {n!r}")
+    if lane != "legacy":
+        _check_num_range("state_hold_bars_range", n, f"{where}: 真を保てる最大の本数")
+    for slot in ("on", "off"):
+        node = c[slot]
+        if in_build:
+            _walk_build_tree(node, lane, f"{where}/{slot}", legacy_used)   # build の中は bool_col も可
+        else:
+            inner, _d = _walk(node)
+            for ic in inner:
+                if ic.get("role") == "trigger":
+                    _fail("G1", f"{where}/{slot}: 引き金を状態を保つ形の中に置けない"
+                                "＝この形は縁で発火するものではなく、状態が続いているかを表すため"
+                                "（否定の中に置けないのと同じ理由）")
+                _check_cond(ic, lane, f"{where}/{slot}", legacy_used)
+
+
+def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False, in_build=False):
     """条件1つ＝役割・形・材料・側・値（設計書 §2）の検査。"""
     form = c.get("form")
     if form not in FORMS:
         _fail("G6", f"{where}: 対応表に無い形: {form}")
+    if form == "hysteresis":                          # ★状態を保つ形（M2-2-5）＝材料を直接は取らない
+        _check_hysteresis(c, lane, where, legacy_used, in_nest, in_build)
+        return
     # ★2026-08-13（段A の A-5）＝「使い方の中の本数」が探せる範囲の中かを見る。
     #   当てる形を限る＝value.n は形によって意味が違う（下の形は本数だが、出口の枝の hold_min は「分」）。
     #   本数＝連続・以内・何本前（入れ子の形）／傾き（slope・slope_avg）の遡る本数と平均の本数。
@@ -684,31 +873,37 @@ def _check_bool_cond(c: dict, where: str) -> None:
         _fail("G5", f"{where}: bool_col の want が true/false でない: {c.get('want')!r}")
 
 
-def _walk_build_tree(node, lane: str, where: str, legacy_used: list, depth: int = 0) -> None:
+def _walk_build_tree(node, lane: str, where: str, legacy_used: list, depth: int = 0,
+                     in_not: bool = False) -> None:
     """build の木を検査する（M2-1-5・2026-08-20 まこさん承認）。
 
     入口の木（_walk）との違い＝bool_col を条件として受けること だけ。
     普通の条件は入口と同じ _check_cond に通す＝G5/G6・分位の範囲検査（_check_q_range）が
     そのまま掛かる＝束の中の閾値（threshold_q）は engine_tuner の探索の対象になる（決めごと2）。
+    ★2026-08-21（M2-2-5）＝否定（not）を足した。入口の木と同じ形・同じ禁止（二重の否定は不可）。
     """
     if isinstance(node, dict) and "bool_col" in node:
         _check_bool_cond(node, where)
         return
     if _is_cond(node):
-        _check_cond(node, lane, where, legacy_used)
+        _check_cond(node, lane, where, legacy_used, in_build=True)   # ★build の中＝内側に bool_col も可
+        return
+    if isinstance(node, dict) and "not" in node:
+        _check_not_node(node, in_not, where)
+        _walk_build_tree(node["not"], lane, f"{where}/not", legacy_used, depth + 1, in_not=True)
         return
     if isinstance(node, dict) and ("all" in node or "any" in node):
         kids = node.get("all", node.get("any", []))
         if not isinstance(kids, list) or not kids:
             _fail("G5", f"{where}: build の all/any の中身が空")
         for ch in kids:
-            _walk_build_tree(ch, lane, where, legacy_used, depth + 1)
+            _walk_build_tree(ch, lane, where, legacy_used, depth + 1, in_not)
         return
     if isinstance(node, dict) and "if" in node and "then" in node:
-        _walk_build_tree(node["if"], lane, where, legacy_used, depth + 1)
-        _walk_build_tree(node["then"], lane, where, legacy_used, depth + 1)
+        _walk_build_tree(node["if"], lane, where, legacy_used, depth + 1, in_not)
+        _walk_build_tree(node["then"], lane, where, legacy_used, depth + 1, in_not)
         return
-    _fail("G5", f"{where}: build の木のノードが bool_col/条件/all/any/if-then のどれでもない: "
+    _fail("G5", f"{where}: build の木のノードが bool_col/条件/not/all/any/if-then のどれでもない: "
                 f"{sorted(node) if isinstance(node, dict) else node!r}")
 
 
@@ -901,6 +1096,12 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
             if conds:
                 _fail("G5", "ceiling_resting の entry は条件の木を持たない（発火は天井の幾何＝engine 側・歩6-1）")
             continue
+        # ★否定の中に引き金を置けない（M2-2-5 の禁止1・2026-08-21 まこさん承認 24a453d6…）
+        for c in _conds_under_not(path):
+            if c.get("role") == "trigger":
+                _fail("G1", f"経路{pi + 1}: 引き金を否定（not）の中に置けない"
+                            "＝引き金は縁で発火するもので、その否定は『発火していないほとんど全部のバー』"
+                            "になり、経路ごとに引き金ちょうど1本 の決まりが意味を失う")
         trigs = [c for c in conds if c.get("role") == "trigger"]
         if len(trigs) == 0:
             _fail("G1", f"経路{pi + 1}: 引き金がゼロ（原理的に発火しない構成は作れない）")
@@ -1149,9 +1350,27 @@ def _vnum(v: dict) -> float:
     raise RecipeError(f"[実行器] 値を解決できない（分位は解決表＝qtable が要る）: {v}")
 
 
-def _vnum_q(v: dict, qkey: str, qtable: dict | None) -> float:
+def _vnum_q(v: dict, qkey: str, qtable: dict | None, ctx: tuple | None = None):
     """値の解決（分位対応・歩4）。threshold_q は解決表（値決め窓の分布から探索開始時に1回固定・§2.4-①・
-    §5-4）でしか実値にならない＝表に無ければ止まる（fail-closed・rolling 解決の混入経路を持たない）。"""
+    §5-4）でしか実値にならない＝表に無ければ止まる（fail-closed・rolling 解決の混入経路を持たない）。
+
+    ★2026-08-21（M2-2-5・まこさん承認 24a453d6…）＝連動する閾値（ref）を足した。
+      ref が在るときだけ、戻り値が「1バーごとの並び」になる（ほかは今までどおり数字1つ）。
+      比べる側（_side_cmp・帯の中か・クロス・差）は、数字1つでも並びでも同じ式で動く。
+      ctx＝(df, geo, lane)。入口と判定の中身の条件からしか渡されない＝出口の枝では使えない。
+    ★未来を見ない（H2）＝連動先の列は、その材料をそのまま読むだけ（うしろのバーは見ない）。
+    """
+    if "ref" in v:
+        if ctx is None:
+            raise RecipeError("[実行器] 連動する閾値（ref）は、入口と判定の中身の条件でだけ使える"
+                              "（出口の枝では使えない・fail-closed）")
+        _df, _geo, _lane = ctx
+        out = _col_array(_df, v["ref"], _geo, _lane) * float(v.get("mult", 1.0))
+        if "clip_lo" in v:
+            out = np.maximum(out, _vnum_q(v["clip_lo"], qkey, qtable, ctx))
+        if "clip_hi" in v:
+            out = np.minimum(out, _vnum_q(v["clip_hi"], qkey, qtable, ctx))
+        return out
     if "threshold_q" in v:
         q = v["threshold_q"]
         if qtable is None or qkey not in qtable or q not in qtable[qkey]:
@@ -1216,7 +1435,8 @@ def _col_array(df: pd.DataFrame, m: dict, geo: dict, lane: str) -> np.ndarray:
     """材料1本 → 各バーの値。★前処理（pre）が在れば、最後に部品を1つ掛ける（2026-08-13）。"""
     pre = _pre_of(m)
     if pre is not None:
-        return _apply_pre(_col_array(df, {k: v for k, v in m.items() if k != "pre"}, geo, lane), pre)
+        # ★df も渡す（M2-2-5）＝状態に入って以降を見る部品（since_min ほか）が、基準の列を読むため
+        return _apply_pre(_col_array(df, {k: v for k, v in m.items() if k != "pre"}, geo, lane), pre, df)
     kind, name = _material_name(m, lane)
     if kind == "geo":
         return geo[name]
@@ -1244,7 +1464,38 @@ def _mat_key(m: dict, lane: str) -> str:
     """分位の解決表の鍵＝材料の解決名（列名）。★前処理が在れば分布が変わるので鍵も分ける（2026-08-13）。"""
     name = _material_name(m, lane)[1]
     pre = _pre_of(m)
-    return f"{pre['op']}{pre['n']}:{name}" if pre else name
+    if not pre:
+        return name
+    if pre["op"] in SINCE_OPS:                     # ★状態に入って以降（M2-2-5）＝基準の状態ごとに分布が違う
+        return f"{pre['op']}:{pre['state']}:{name}"
+    return f"{pre['op']}{pre['n']}:{name}"
+
+
+def _hold_state(on: np.ndarray, off: np.ndarray, n: int) -> np.ndarray:
+    """入る条件・出る条件・保てる最大の本数 → 各バーの真偽（M2-2-5・状態を保つ形の中身）。
+
+    決めごと（設計 24a453d6… のとおり）:
+      ① on が成立したバーから真になる。
+      ② off が成立したバーで偽に戻る。
+      ③ どちらも成立しないバーは、前のバーの値を保つ。
+      ④ 真になってから n本 経ったら、off が来なくても偽に戻る（＝C7 の「続く長さ」）。
+         ★**on がもう一度 成立したら、そこから数え直す**＝続いているあいだは保つ。
+           出どころ＝RG-v5 の実物の「継続」（`scripts/dashboard/build_regime_gate_rg.py`:19 の逐語
+           「解除後24h内に前回高値+0.3%超え＝継続再発火」）。＝上げが続いているのに n本 で必ず切る、
+           という作りにはしない。
+      ⑤ 同じバーで on と off が両方 成立したら、off を優先する（出る側を優先＝安全側）。
+    ★未来を見ない（H2）＝`np.maximum.accumulate` は「そのバーまでの最後の成立の位置」を作る。
+      うしろのバーの値は1つも使わない。
+    ★1バーずつのループで書いても同じ結果になる（①〜⑤のとおりに書いた場合）。走らせる回数が多い
+      （案 × 158,112バー）ので並びの計算で書いた。両方が同じ結果になることは selftest（T-HYST）が
+      乱数200通りで実測する。★最初、④を「最初の on から数える」と読んで書いたループ版とは
+      200通り中131通りで食い違った＝どちらの意味かを決めずに書くと、ここがずれる。
+    """
+    idx = np.arange(len(on))
+    last_on = np.maximum.accumulate(np.where(on, idx, -1))     # そのバーまでで on が真だった最後の位置
+    last_off = np.maximum.accumulate(np.where(off, idx, -1))   # 同じく off
+    held = idx - last_on                                        # 真になってから何本 経ったか
+    return (last_on > last_off) & (held < int(n))               # off と同じバーなら偽＝⑤
 
 
 def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | None = None) -> np.ndarray:
@@ -1252,6 +1503,10 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
     form = c["form"]
     v = c.get("value", {})
     na_pass = (v.get("na") == "pass")
+    if form == "hysteresis":                       # ★状態を保つ形（M2-2-5・法則 U10・C6・C7）
+        on = _eval_tree(c["on"], df, geo, lane, qtable, allow_bool_col=True)
+        off = _eval_tree(c["off"], df, geo, lane, qtable, allow_bool_col=True)
+        return _hold_state(on, off, int(v["n"]))
     if form in NEST_FORMS:
         inner = _eval_cond(c["inner"], df, geo, lane, qtable)
         n = int(v["n"])
@@ -1279,17 +1534,18 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
         o = df["open"].to_numpy(float)
         cl = df["close"].to_numpy(float)
         return (cl > o) if v.get("dir") == "bull" else (cl < o)
+    ctx = (df, geo, lane)          # ★連動する閾値（ref）が材料の列を引くための持ち物（M2-2-5）
     mats = c.get("material") or []
     a = _col_array(df, mats[0], geo, lane)
     akey = _mat_key(mats[0], lane)
     if form == "level":
-        th = _vnum_q(v, akey, qtable)
+        th = _vnum_q(v, akey, qtable, ctx)
         ok = _side_cmp(a, th, c.get("side"))
         res = np.where(np.isfinite(a), ok, na_pass)
         return res.astype(bool)
     if form in forms_where("band"):
-        lo = _vnum_q(v["lo"], akey, qtable)
-        hi = _vnum_q(v["hi"], akey, qtable)
+        lo = _vnum_q(v["lo"], akey, qtable, ctx)
+        hi = _vnum_q(v["hi"], akey, qtable, ctx)
         if lo > hi:
             lo, hi = hi, lo                       # 分位の取り違えで帯が裏返っても空帯にしない（正規化）
         inside = (a >= lo) & (a <= hi)
@@ -1299,7 +1555,7 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
         n = int(v["n"])
         d = a - np.roll(a, n)
         d[:n] = np.nan
-        th = _vnum_q(v["th"], f"Δ{n}:{akey}", qtable) if "th" in v else 0.0
+        th = _vnum_q(v["th"], f"Δ{n}:{akey}", qtable, ctx) if "th" in v else 0.0
         ok = (d >= th) if c.get("side") == "above" else (d <= th)
         return np.where(np.isfinite(d), ok, na_pass).astype(bool)
     if form == "slope_avg":
@@ -1307,7 +1563,7 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
         ma = pd.Series(a).rolling(m_).mean().to_numpy()
         d = ma - np.roll(ma, n)
         d[:n + m_] = np.nan
-        th = _vnum_q(v["th"], f"Δ{n}:MA{m_}:{akey}", qtable) if "th" in v else 0.0
+        th = _vnum_q(v["th"], f"Δ{n}:MA{m_}:{akey}", qtable, ctx) if "th" in v else 0.0
         ok = (d >= th) if c.get("side") == "above" else (d <= th)
         return np.where(np.isfinite(d), ok, na_pass).astype(bool)
     b = _col_array(df, mats[1], geo, lane) if len(mats) > 1 else None
@@ -1316,7 +1572,7 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
             # ★閾値とのクロス（部品 cross_val・2026-08-13・段C の C-6）＝相手の列の代わりに
             #   閾値の定数を置く。閾値の解決は level と同じ（同じ鍵 akey の分位・定数・整数）。
             #   ここから下の式は列2本のときと1文字も変えない＝同じ意味論で動く。
-            b = np.full(len(a), _vnum_q(v["th"], akey, qtable), dtype=float)
+            b = np.full(len(a), _vnum_q(v["th"], akey, qtable, ctx), dtype=float)
         pa, pb = np.roll(a, 1), np.roll(b, 1)
         pa[0] = pb[0] = np.nan
         fin = np.isfinite(a) & np.isfinite(b)
@@ -1331,7 +1587,7 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
         op = _pair_op_of(v)
         n_win = int(v["n"]) if PAIR_OPS[op]["needs_n"] else None
         d = _pair_series(a, b, op, n_win)
-        th = _vnum_q(v.get("th", v), _pair_key(akey, _mat_key(mats[1], lane), op, n_win), qtable)
+        th = _vnum_q(v.get("th", v), _pair_key(akey, _mat_key(mats[1], lane), op, n_win), qtable, ctx)
         ok = (d >= th) if c.get("side") == "above" else (d <= th)
         return np.where(np.isfinite(d), ok, na_pass).astype(bool)
     if form == "touch":
@@ -1339,6 +1595,47 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
         d = np.abs(a - b)
         return np.where(np.isfinite(d), d <= tol * np.abs(b), na_pass).astype(bool)
     raise RecipeError(f"[実行器] 形 {form} の実行が未実装")
+
+
+def _eval_tree(node, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | None = None,
+               allow_bool_col: bool = False) -> np.ndarray:
+    """条件の木 → 各バーの真偽（M2-2-5 で1か所にまとめた）。
+
+    ★直す前は、同じ式が3か所（入口の発火・判定の中身・…）に書き写されていた。
+      いまは、入口の発火（_entry_fire）・判定の中身（build_regime_columns）・状態を保つ形の
+      内側（_eval_cond の hysteresis）が、この1つを呼ぶ＝式を書き写さない
+      （書き写すと片方だけ直って黙って腐る＝M2-2-3b と同じ思想）。
+    ★意味は直す前と1つも変えていない＝all（全部 真）・any（どれか真）・if-then（if が真なら then を要求）。
+      足したのは not（否定）だけ。
+    ★bool_col（真偽の列の参照）は判定の中身（build）の中だけ＝入口では検査が先に拒否する（C5）。
+    """
+    if isinstance(node, dict) and "bool_col" in node:
+        if not allow_bool_col:
+            raise RecipeError("[実行器] bool_col は判定の中身（build）の中だけで使える（入口では使えない）")
+        col = node["bool_col"]
+        if col not in df.columns:
+            raise RecipeError(
+                f"[相場の列が無い] build の bool_col {col} がデータにありません"
+                f"（判定の材料の列が要ります・fail-closed）")
+        arr = df[col].to_numpy(bool)
+        return arr if node["want"] else ~arr
+    if _is_cond(node):
+        return _eval_cond(node, df, geo or {}, lane, qtable)
+    if "not" in node:                                  # ★否定（M2-2-5・法則 R8）
+        return ~_eval_tree(node["not"], df, geo, lane, qtable, allow_bool_col)
+    if "all" in node:
+        out = np.ones(len(df), bool)
+        for ch in node["all"]:
+            out &= _eval_tree(ch, df, geo, lane, qtable, allow_bool_col)
+        return out
+    if "any" in node:
+        out = np.zeros(len(df), bool)
+        for ch in node["any"]:
+            out |= _eval_tree(ch, df, geo, lane, qtable, allow_bool_col)
+        return out
+    cond_if = _eval_tree(node["if"], df, geo, lane, qtable, allow_bool_col)
+    cond_th = _eval_tree(node["then"], df, geo, lane, qtable, allow_bool_col)
+    return ~cond_if | cond_th                          # if-then＝if が真のときだけ then を要求
 
 
 def build_regime_columns(df: pd.DataFrame, recipe: dict, geo: dict | None = None,
@@ -1362,31 +1659,7 @@ def build_regime_columns(df: pd.DataFrame, recipe: dict, geo: dict | None = None
     lane = (recipe.get("meta") or {}).get("lane", "")
     built = df.attrs.setdefault("_regime_built", set())
 
-    def _eval_node(node) -> np.ndarray:
-        if isinstance(node, dict) and "bool_col" in node:
-            col = node["bool_col"]
-            if col not in df.columns:
-                raise RecipeError(
-                    f"[相場の列が無い] build の bool_col {col} がデータにありません"
-                    f"（判定の材料の列が要ります・fail-closed）")
-            arr = df[col].to_numpy(bool)
-            return arr if node["want"] else ~arr
-        if _is_cond(node):
-            return _eval_cond(node, df, geo or {}, lane, qtable)
-        if "all" in node:
-            out = np.ones(len(df), bool)
-            for ch in node["all"]:
-                out &= _eval_node(ch)
-            return out
-        if "any" in node:
-            out = np.zeros(len(df), bool)
-            for ch in node["any"]:
-                out |= _eval_node(ch)
-            return out
-        cond_if = _eval_node(node["if"])              # if-then＝if が真のときだけ then を要求（入口と同式）
-        cond_th = _eval_node(node["then"])
-        return ~cond_if | cond_th
-
+    # ★木の評価は _eval_tree（モジュールの関数）を呼ぶ＝入口と同じ1つの式（M2-2-5 で1か所にまとめた）
     for slot in ("entry", "block"):
         one = bd.get(slot)
         if one is None:
@@ -1397,7 +1670,7 @@ def build_regime_columns(df: pd.DataFrame, recipe: dict, geo: dict | None = None
         if out_col in df.columns:
             raise RecipeError(
                 f"[上書きの防止] build.{slot}.out_col {out_col} と同じ名前の列が、データに既にあります")
-        df[out_col] = _eval_node(one["tree"])
+        df[out_col] = _eval_tree(one["tree"], df, geo or {}, lane, qtable, allow_bool_col=True)
         built.add(out_col)
 
 
@@ -1411,30 +1684,14 @@ def _entry_fire(recipe: dict, df: pd.DataFrame, geo: dict, qtable: dict | None =
         pre &= _eval_cond(c, df, geo, lane, qtable)
     fire = np.zeros(len(df), bool)
 
-    def _eval_tree(node) -> np.ndarray:
-        if _is_cond(node):
-            return _eval_cond(node, df, geo, lane, qtable)
-        if "all" in node:
-            out = np.ones(len(df), bool)
-            for ch in node["all"]:
-                out &= _eval_tree(ch)
-            return out
-        if "any" in node:
-            out = np.zeros(len(df), bool)
-            for ch in node["any"]:
-                out |= _eval_tree(ch)
-            return out
-        cond_if = _eval_tree(node["if"])          # if-then＝if が真のときだけ then を要求
-        cond_th = _eval_tree(node["then"])
-        return ~cond_if | cond_th
-
+    # ★木の評価は _eval_tree（モジュールの関数）＝判定の中身（build）と同じ1つの式（M2-2-5）
     for path in paths:
         conds, _d = _walk(path)
         trig = next(c for c in conds if c.get("role") == "trigger")
         t_true = _eval_cond(trig, df, geo, lane, qtable)
         edge = t_true & ~np.roll(t_true, 1)       # 縁＝前バー不成立→今バー成立（cross は形が縁を内包）
         edge[0] = False
-        fire |= _eval_tree(path) & edge & pre
+        fire |= _eval_tree(path, df, geo, lane, qtable) & edge & pre
     return fire
 
 
@@ -3452,6 +3709,48 @@ def selftest() -> None:
     print(f"[番人 並びの決まらない入れ物] {_uo_seen} 本のファイルを機械で全部 数える"
           "（+ わざと set を回すコードを見せると見つけるか） → "
           + ("✅ 0 件・見せると見つけた" if not _uo_hits else "❌ " + " ／ ".join(_uo_hits)))
+    # ══ T-HYST 状態を保つ形（M2-2-5・2026-08-21 まこさん承認 24a453d6…）═══════════════════
+    #   何を守るか＝並びの計算で書いた `_hold_state` が、決めごと①〜⑤のとおりに動くこと。
+    #   ★確かめ方＝同じ決めごとを1バーずつのループで書いたものと、乱数200通りで突き合わせる。
+    #     ループ版はここにだけ在る（速度が要らないため）＝2つが食い違ったら、どちらかが決めごとから外れた。
+    #   ★番人の番人＝わざと「保つ最大の本数」を無視した版と比べたら、ちゃんと食い違うか。
+    def _hold_loop(on_, off_, n_):
+        """決めごと①〜⑤を、1バーずつ書いたもの（照合の相手・実行には使わない）。"""
+        out_ = np.zeros(len(on_), bool)
+        st, held = False, 0
+        for i_ in range(len(on_)):
+            if st:
+                held += 1
+            if off_[i_]:                        # ⑤ 同じバーで両方なら off を優先
+                st, held = False, 0
+            elif on_[i_]:                       # ①④ on のたびに数え直す
+                st, held = True, 0
+            if st and held >= int(n_):          # ④ n本 経ったら偽
+                st, held = False, 0
+            out_[i_] = st                       # ③ どちらも成立しなければ前の値を保つ
+        return out_
+
+    _hy_rng = np.random.default_rng(20260821)
+    _hy_bad = 0
+    for _t in range(200):
+        _on = _hy_rng.random(300) < 0.05
+        _off = _hy_rng.random(300) < 0.05
+        _n = int(_hy_rng.integers(1, 60))
+        if not np.array_equal(_hold_loop(_on, _off, _n), _hold_state(_on, _off, _n)):
+            _hy_bad += 1
+    if _hy_bad:
+        ng.append(f"T-HYST: 並びの計算と1バーずつのループが {_hy_bad} 通りで食い違う（決めごと①〜⑤）")
+    _hy_on = np.zeros(12, bool)
+    _hy_on[1] = True
+    _hy_off = np.zeros(12, bool)
+    if int(_hold_state(_hy_on, _hy_off, 3).sum()) != 3:
+        ng.append("T-HYST: 保つ最大の本数 3 を渡したのに、真になった本数が 3 でない（④が効いていない）")
+    if _hold_state(_hy_on, _hy_on, 99).any():
+        ng.append("T-HYST: 同じバーで on と off が両方 成立したのに真になった（⑤ off の優先が効いていない）")
+    if np.array_equal(_hold_state(_hy_on, _hy_off, 3), _hold_state(_hy_on, _hy_off, 99)):
+        ng.append("T-HYST の番人の番人: 保つ最大の本数を変えても結果が同じ＝上限が効いていない")
+    print(f"[T-HYST 状態を保つ形] 乱数200通りでループ版と突き合わせ・上限・off の優先・番人の番人 → "
+          + ("✅ 全部 pass" if not [x for x in ng if x.startswith('T-HYST')] else "❌ 落ちた"))
     print("=" * 80)
     print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ36種で全部止まる・正しい5種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)

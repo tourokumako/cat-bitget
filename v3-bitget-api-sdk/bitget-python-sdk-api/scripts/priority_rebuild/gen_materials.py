@@ -696,7 +696,9 @@ def forms_table() -> list[dict]:
             continue
         mat = r["材料"]
         want_pair = {"1": "列1本", "2": "列2本", "2or1th": "列2本",
-                     "inner": "内側の条件1つ", "none": "ローソク列"}[sp["pair"]]
+                     "inner": "内側の条件1つ",
+                     "inner2": "内側の条件2つ",     # ★状態を保つ形（入る on・出る off）＝M2-2-5
+                     "none": "ローソク列"}[sp["pair"]]
         if want_pair not in mat:
             ng.append(f"{f}: 説明の「材料」（{mat}）と性質表（{sp['pair']}＝{want_pair}）が食い違う")
         has_band_txt = ("下限" in r["必要な値"]) and ("上限" in r["必要な値"])

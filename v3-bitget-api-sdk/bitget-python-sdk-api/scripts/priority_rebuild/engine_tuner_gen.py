@@ -67,7 +67,10 @@ RUNS_DIR = HERE.parents[2] / "results" / "priority_rebuild" / "tuner_gen"
 _TRIGGER_ORDER = ("cross", "cross_val", "level", "diff", "candle_dir", "slope", "streak",
                   "within_n", "barssince")
 _STATE_ORDER = ("level", "band", "band_exclude", "slope", "slope_avg", "diff", "touch",
-                "candle_dir", "streak", "within_n", "barssince")
+                "candle_dir", "streak", "within_n", "barssince", "hysteresis")
+# ★hysteresis（状態を保つ形）を末尾に足した（M2-2-5・2026-08-21 まこさん承認 24a453d6…）。
+#   ★末尾にした理由＝既存の形の並びの順番を1つも動かさないため（順番が変わると同じ種から違う案が出る）。
+#   ★引き金の並び（_TRIGGER_ORDER）には足さない＝縁で発火する形ではないため（FORM_SPEC の trigger_ok=False）。
 
 
 def _ordered_like(order: tuple, members: tuple, name: str) -> tuple:

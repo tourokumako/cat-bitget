@@ -1530,7 +1530,8 @@
    "barssince",
    "diff",
    "touch",
-   "candle_dir"
+   "candle_dir",
+   "hysteresis"
   ],
   "legacy_only": [
    "position_exits",

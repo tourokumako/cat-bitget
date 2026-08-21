@@ -169,15 +169,24 @@ def p_corr(a: np.ndarray, b: np.ndarray, n: int) -> np.ndarray:
     return pd.Series(a).rolling(int(n)).corr(pd.Series(b)).to_numpy(float)
 
 
+def p_barssince_dist(cond: np.ndarray) -> np.ndarray:
+    """㉓最後に成立してからの本数そのもの（★2026-08-21・M2-2-5 で足した部品）。
+
+    ★なぜ切り出したか＝下の p_barssince（本数を閾値と比べる）と、状態を保つ形（hysteresis）の
+      両方が、この「距離」を使うため。真偽ではなく数として返す。
+    数えるのは過去に成立したバーだけ＝未来は見ない。まだ一度も成立していない所は値なし。
+    """
+    idx = np.arange(len(cond))
+    last = np.maximum.accumulate(np.where(cond, idx, -1))
+    return np.where(last >= 0, idx - last, np.nan).astype(float)
+
+
 def p_barssince(cond: np.ndarray, n: int, side: str) -> np.ndarray:
     """㉑最後に成立してから何本 経ったか（★2026-08-12 の段C の C-6 で足した部品）。
 
     数えるのは過去に成立したバーだけ＝未来は見ない。まだ一度も成立していない所は値なし（不成立）。
     """
-    idx = np.arange(len(cond))
-    last = np.maximum.accumulate(np.where(cond, idx, -1))
-    bs = np.where(last >= 0, idx - last, np.nan).astype(float)
-    return p_cmp(bs, float(n), side)
+    return p_cmp(p_barssince_dist(cond), float(n), side)
 
 
 def p_cross_val(n: int, th: float) -> np.ndarray:
@@ -308,12 +317,32 @@ def _c_cross_pre(df, cols, v):
                  p_not(p_cmp(p_sub(a, b), 0.0, "below")))
 
 
+def _c_hysteresis(df, cols, v):
+    """状態を保つ形（★2026-08-21・M2-2-5）を、部品だけで組み立て直す。
+
+    実行器の中身＝「最後に on が立った位置」と「最後に off が立った位置」を比べ、
+    on の方が新しく、かつ on から n本 以内なら真。
+    部品で書くと＝距離を2本 出して（p_barssince_dist）、
+      ①off の距離が on の距離 以下 ＝ off の方が新しい か 同じバー → 偽（決めごと⑤の off 優先）
+      ②on から n本 以内（距離 ≤ n−1）
+    """
+    a = p_value(df, cols[0])
+    on = p_cmp(a, v["on_th"], "above")
+    off = p_cmp(a, v["off_th"], "below")
+    d_on, d_off = p_barssince_dist(on), p_barssince_dist(off)
+    off_is_newer = p_and(p_exists(d_off), p_cmp(p_sub(d_off, d_on), 0.0, "below"))
+    newer = p_and(p_exists(d_on), p_not(off_is_newer))
+    within = p_cmp(d_on, float(int(v["n"]) - 1), "below")
+    return p_and(newer, within)
+
+
 COMPOSE = {"cross_pre": _c_cross_pre, "level_pre": _c_level_pre,
            "div": _c_div, "corr": _c_corr,
            "level": _c_level, "band": _c_band, "band_exclude": _c_band_exclude,
            "slope": _c_slope, "slope_avg": _c_slope_avg, "cross": _c_cross,
            "diff": _c_diff, "touch": _c_touch, "candle_dir": _c_candle_dir,
-           "streak": _c_streak, "within_n": _c_within_n, "barssince": _c_barssince}
+           "streak": _c_streak, "within_n": _c_within_n, "barssince": _c_barssince,
+           "hysteresis": _c_hysteresis}
 
 
 # ══ 実行器に渡すレシピ（同じ意味の条件を、実行器の書き方で書く）═══════════════════════
@@ -323,6 +352,14 @@ def _cases(m1: dict, m2: dict) -> list[dict]:
         dict(form="level", real={"form": "level", "side": "above", "value": {"n": 55.0},
                                  "material": [m1]},
              cols=1, v={"th": 55.0, "side": "above"}),
+        # ★状態を保つ形（2026-08-21・M2-2-5）＝入る線 60・出る線 40・最大 24本 保つ。
+        #   直す前は、この形そのものが1つも無かった（＝「上げの状態が続いている」を書けなかった）。
+        dict(form="hysteresis", compose="hysteresis", label="入る60・出る40・最大24本",
+             real={"form": "hysteresis",
+                   "on": {"form": "level", "side": "above", "value": {"n": 60.0}, "material": [m1]},
+                   "off": {"form": "level", "side": "below", "value": {"n": 40.0}, "material": [m1]},
+                   "value": {"n": 24}},
+             cols=1, v={"on_th": 60.0, "off_th": 40.0, "n": 24}),
         dict(form="band", real={"form": "band", "value": {"lo": {"n": 40.0}, "hi": {"n": 60.0}},
                                 "material": [m1]},
              cols=1, v={"lo": 40.0, "hi": 60.0}),
@@ -490,7 +527,15 @@ def run(break_form: str | None = None) -> int:
         real = ex._eval_cond(c["real"], df, {}, "legacy", None)
         v = dict(c["v"])
         if break_form == f:                       # 番人＝わざと1か所 壊す
-            v = {**v, "th": v.get("th", 0.0) + 1.0} if "th" in v else {**v, "n": v.get("n", 1) + 1}
+            if f == "hysteresis":
+                # ★壊すのは「入る線」（2026-08-21・M2-2-5）。
+                #   ★最初は「保つ最大の本数」を1つ ずらしたが、食い違いが1件も出なかった＝
+                #     この材料（RSI7 が 60 を超える）は on が頻繁に立ち、距離が小さいので
+                #     24本 でも 25本 でも結果が変わらない。＝壊し方として効かない。
+                #   ＝入る線をずらす（成立するバーそのものが変わる＝必ず食い違う）。
+                v = {**v, "on_th": v["on_th"] + 1.0}
+            else:
+                v = {**v, "th": v.get("th", 0.0) + 1.0} if "th" in v else {**v, "n": v.get("n", 1) + 1}
         mine = COMPOSE[c.get("compose", f)](df, cols_all[:max(c["cols"], 1)], v)
         diff = int((np.asarray(real, bool) != np.asarray(mine, bool)).sum())
         label = c.get("label") or str(c["real"]["value"].get("direction")
@@ -536,7 +581,8 @@ def selftest() -> int:
     ok = True
     # ★diff を足した（2026-08-12・段C の C-6）＝引き算・割り算・相関の3通りが、この1件で全部 壊れる
     #   （どれも form は diff）。壊して食い違いが出なければ、新しく足した2部品の突き合わせは無意味。
-    for f in ("level", "slope", "streak", "diff", "barssince"):
+    # ★hysteresis を足した（2026-08-21・M2-2-5）＝壊し方は「保つ最大の本数を1つ ずらす」。
+    for f in ("level", "slope", "streak", "diff", "barssince", "hysteresis"):
         print(f"\n── わざと {f} の値を1つ ずらす ──")
         n = run(break_form=f)
         if n == 0:

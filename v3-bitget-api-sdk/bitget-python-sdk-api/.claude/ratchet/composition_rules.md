@@ -1,4 +1,4 @@
-<!-- COMPOSITION_RULES hash=7ceaa097c91e6a39 gen_composition_rules.py が自動生成＝手で書き換えない -->
+<!-- COMPOSITION_RULES hash=8e660c50ec3cd61a gen_composition_rules.py が自動生成＝手で書き換えない -->
 # composition_rules.md — 組み立ての決まり（全自動生成）
 
 engine_tuner が売買ルールの案を組み立てるときに守る決まり。手で書いた行は recipes/composition_rules_src.json の 23 件だけ。部品・時間足・使えない部品・向きの決まり・格子は正本から機械で引いた。
@@ -118,7 +118,7 @@ engine_tuner が売買ルールの案を組み立てるときに守る決まり�
 | 正本 | 指紋 |
 |---|---|
 | composition_rules_src.json | 0d3af0bf24803d51… |
-| exit_families.json | bcf2d03ebd284532… |
-| search_limits.json | cde0f043dca0518d… |
-| signal_families.json | 2d3ecd4122d69579… |
+| exit_families.json | 814909ddc2d14655… |
+| search_limits.json | 0396ff1b4eed6d93… |
+| signal_families.json | a277f2096bbcb4a5… |
 

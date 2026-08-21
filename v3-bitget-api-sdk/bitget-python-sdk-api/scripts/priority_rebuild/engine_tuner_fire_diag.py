@@ -91,6 +91,12 @@ def cond_label(c: dict, lane: str) -> str:
             return f"[{role}] 最後に成立してから {n}本 {_sd} 経った（内側＝{inner}）"
         kind = "連続" if form == "streak" else "N本以内"
         return f"[{role}] {kind}{n}本（内側＝{inner}）"
+    if form == "hysteresis":
+        # ★状態を保つ形（M2-2-5・2026-08-21）＝材料を直接は取らない（on と off の中の条件が取る）。
+        #   mats を取る下の行より前で返す（材料なしの形＝candle_dir と同じ扱い）。
+        _n = int(c.get("value", {}).get("n", 0))
+        return (f"[{role}] 状態を保つ（入る＝{cond_label_tree(c['on'], lane)} ／ "
+                f"出る＝{cond_label_tree(c['off'], lane)} ／ 最大 {_n}本 保つ）")
     mats = c.get("material") or []
     names = " と ".join(ex._mat_key(m, lane) for m in mats) if mats else "（材料なし）"
     v = c.get("value", {}) or {}
@@ -116,26 +122,34 @@ def cond_label(c: dict, lane: str) -> str:
     return f"[{role}] {form}（{names}）"
 
 
+def cond_label_tree(node, lane: str) -> str:
+    """条件の木を1行の説明にする（M2-2-5＝状態を保つ形の on／off の中身を人が読める形で出すため）。"""
+    if isinstance(node, dict) and "bool_col" in node:
+        return f"列 {node['bool_col']} が {'真' if node.get('want') else '偽'}"
+    if ex._is_cond(node):
+        return cond_label(node, lane)
+    if isinstance(node, dict) and "not" in node:
+        return f"〜でない（{cond_label_tree(node['not'], lane)}）"
+    if isinstance(node, dict) and "all" in node:
+        return " かつ ".join(cond_label_tree(ch, lane) for ch in node["all"])
+    if isinstance(node, dict) and "any" in node:
+        return " または ".join(cond_label_tree(ch, lane) for ch in node["any"])
+    if isinstance(node, dict) and "if" in node and "then" in node:
+        return f"{cond_label_tree(node['if'], lane)} なら {cond_label_tree(node['then'], lane)}"
+    return str(node)
+
+
 # ══ 木の評価（実行器と同じ意味・関門2 を数えるために再帰する）═══════════════════════════
 def eval_tree(node, df, geo, lane, qtable) -> np.ndarray:
-    """all／any／if-then を実行器 _entry_fire の中の _eval_tree と同じ規則でたどる。
+    """★2026-08-21（M2-2-5）＝実行器の `_eval_tree` を、そのまま呼ぶ形にした。
 
+    直す前は、同じ式（all／any／if-then）をこのファイルに書き写していた。
+    ＝実行器に形（否定 not など）を足したとき、ここに足し忘れると、**診断だけが古い規則で数える**
+      （しかも黙ってずれる）。M2-2-3b で形の性質を1か所にまとめたのと同じ思想。
     ★同じ規則であることは、この関数を使って数えた関門4 が実行器 _entry_fire の合計と
       一致することで機械確認する（番人④・自分だけの解釈で数えない）。
     """
-    if ex._is_cond(node):
-        return ex._eval_cond(node, df, geo, lane, qtable)
-    if "all" in node:
-        out = np.ones(len(df), bool)
-        for ch in node["all"]:
-            out &= eval_tree(ch, df, geo, lane, qtable)
-        return out
-    if "any" in node:
-        out = np.zeros(len(df), bool)
-        for ch in node["any"]:
-            out |= eval_tree(ch, df, geo, lane, qtable)
-        return out
-    return ~eval_tree(node["if"], df, geo, lane, qtable) | eval_tree(node["then"], df, geo, lane, qtable)
+    return ex._eval_tree(node, df, geo, lane, qtable)
 
 
 def build_geo(df: pd.DataFrame) -> dict:

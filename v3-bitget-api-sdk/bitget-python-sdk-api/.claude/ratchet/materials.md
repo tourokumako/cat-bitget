@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=827433565b3dd338 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=e4421844afb834bd gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -87,12 +87,12 @@
 - 検収専用の値は数えません＝`engine_tuner_gen.py` の `selftest` と `KENSHU_LIMITS`（出どころ＝`recipes/search_limits.json` の `_note` の逐語「検収専用の値は engine_tuner_gen.py の selftest の中にだけ存在する」）。
 - **番人**＝この4か所のどれかに架空の数の並びを1つ 足すと、その場所の件数がちょうど 1 増えます（`--selftest` の T12・わざと壊して確かめています）。
 
-**★4か所 合わせて 数の並び 35 件（数字 76 個）。範囲で探せるのは 28 件だけです。**
+**★4か所 合わせて 数の並び 35 件（数字 76 個）。範囲で探せるのは 30 件だけです。**
 
 | # | 場所 | 何の数字か | 決まった数字だけ（数の並び） | その中の数字 | 範囲で探せる |
 |---|---|---|---|---|---|
 | 1 | scripts/priority_rebuild/observe_config.json | 指標を作るときのパラメータ（RSI14 の 14） | **34 件** | 72 個 | 0 件 |
-| 2 | scripts/priority_rebuild/recipes/search_limits.json | 使い方の中の本数（slope の n）・閾値の段・上限 | **1 件** | 4 個 | 14 件 |
+| 2 | scripts/priority_rebuild/recipes/search_limits.json | 使い方の中の本数（slope の n）・閾値の段・上限 | **1 件** | 4 個 | 16 件 |
 | 3 | scripts/priority_rebuild/engine_tuner_gen.py | 生成器が数字を選ぶときに、コードに直に書いた数字 | **0 件** | 0 個 | 0 件 |
 | 4 | scripts/priority_rebuild/e38_logics.json の search_space | E38 の探索が振る値 | **0 件** | 0 個 | 14 件 |
 
@@ -368,7 +368,7 @@
 判定すると間違えます。**2026-08-11 に実際に間違えました**（RSI の差の列が無いことを理由に
 「作れない」と報告したが、下の `slope` で作れた）。**指標と使い方は、同じ1枚で突き合わせます。**
 
-**いま実行器が実行できる形＝12 種類。**
+**いま実行器が実行できる形＝13 種類。**
 
 | 形 | 何をするか | 使う材料 | 必要な値 | 実例 | 入れ子 |
 |---|---|---|---|---|---|
@@ -384,6 +384,7 @@
 | `diff` | 差の量 | **列2本** | 閾値・side（★組み方 op＝引き算／割り算／相関） | StochK−D の差 >0.3 | 内側に置ける |
 | `touch` | タッチ | **列2本** | 許容幅（名前つき定数） | EMA20 タッチ・BB上限タッチ | 内側に置ける |
 | `candle_dir` | ローソクの向き | ローソク列 | 陽/陰 | ほぼ全ロジック | 内側に置ける |
+| `hysteresis` | 状態を保つ | **内側の条件2つ（入る on・出る off）** | 真を保てる最大の本数 n | RG-v5 の上げトレンドの状態（発火4経路・解除3条件） | 内側に置ける |
 
 **✅ 実行器の形すべてに説明が付いています（実物と説明のずれ 0 件）。**
 
@@ -412,7 +413,7 @@
 | pandas-ta-classic の utils（うちが使っているライブラリ）（このプロジェクトに入っている） | 10 | **毎回 機械で数え直す** | above・above_value・below・below_value・cross・cross_value・crossany・crossover・lag・signals。★入っているので毎回 機械で取り直す（記録と食い違ったら ❌） |
 | [TradingView Pine Script の ta 名前空間](https://www.tradingview.com/pine-script-docs/language/built-ins/) | — | 記録（機械では数え直せない） | 取れた名前＝ta.sma・ta.ema・ta.macd・ta.rsi・ta.supertrend・ta.barssince・ta.crossover・ta.highest・ta.tr・ta.vwma。★総数は書かれていない（逐語＝『Pine Script has hundreds of built-in variables and functions』） |
 
-**いま在る部品＝22 個。足りない部品＝0 個。合計 22 個。**
+**いま在る部品＝24 個。足りない部品＝0 個。合計 24 個。**
 
 ### いま在る部品
 
@@ -440,6 +441,8 @@
 | 20 | **割り算** | ★形ではない。列2本の形（diff）が材料2本を1本にまとめる部品の表（engine_tuner_exec.PAIR_OPS） | engine_tuner_exec._pair_series の op=div＝np.divide(a, b)。0 で割る所は値なし（NaN）に直す＝条件の既定 na=fail で不成立。書き方＝value に {"op":"div","th":<閾値>}。★形（FORMS）を増やさず、材料2本の組み方の表に1行 足した＝組める材料の組 全部に一度に効く。★分位の解決表（engine_tuner_gen.build_qtable）も同じ _pair_series を呼ぶ＝式を2か所に書かない。★2026-08-12（19回目）の段C の C-6 で足した。番人＝engine_tuner_gen --selftest の T1-C6f ／ condition_parts_diag の『割り算 ≥1.1倍』『≤0.9倍』 | alphagen:Div・gplearn:div |
 | 21 | **2本の相関** | ★形ではない。列2本の形（diff）が材料2本を1本にまとめる部品の表（engine_tuner_exec.PAIR_OPS） | engine_tuner_exec._pair_series の op=corr＝pd.Series(a).rolling(n).corr(pd.Series(b))。値は −1〜1。rolling は過去 n本だけ＝未来は見ない。ばらつきがゼロの区間は値なし（不成立）。書き方＝value に {"op":"corr","n":<窓の本数>,"th":<閾値>}（slope と同じ書き方＝n が窓・th が閾値）。★2026-08-12（19回目）の段C の C-6 で足した。番人＝engine_tuner_gen --selftest の T1-C6f ／ condition_parts_diag の『相関20 ≥0.5』『≤0.90』 | alphagen:Corr |
 | 22 | **何本前に成立したか** | ★入れ子の形（engine_tuner_exec.NEST_FORMS）＝条件に掛ける部品。streak・within_n の仲間 | engine_tuner_exec._eval_cond の barssince＝内側の条件が最後に成立したバーからの距離を数え、その本数を閾値と比べる（np.maximum.accumulate で最後に成立した位置を持つ）。まだ一度も成立していない所は値なし＝不成立。数えるのは過去に成立したバーだけ＝未来は見ない。書き方＝{"form":"barssince","side":"above","value":{"n":<本数>},"inner":<内側の条件>}。★within_n との違い＝barssince ≤ k は within_n(k+1) と同じ結果になる（実測で確認・食い違い 0）。**新しく書けるのは above の側**＝『最後に成立してから n本 以上 経っている』。★生成器は above だけを作る（below は within_n が同じものを作る＝二重に作らない・正規形）。検証器は above も below も受ける＝人が書いた恒等のレシピを壊さない。★2026-08-12（19回目）の段C の C-6 で足した。番人＝engine_tuner_gen --selftest の T1-C6g ／ condition_parts_diag の『6本 以上 経った』『5本 以内に成立』＋同値の確認 | pine:ta.barssince |
+| 23 | **最後に成立してからの本数そのもの** | ★部品どうしの土台。上の barssince（本数を閾値と比べる）と、状態を保つ形（hysteresis）の両方が、この距離を使う | condition_parts_diag.p_barssince_dist＝np.maximum.accumulate で最後に成立した位置を持ち、いまの位置との差を返す（真偽ではなく数）。まだ一度も成立していない所は値なし。数えるのは過去に成立したバーだけ＝未来は見ない。★2026-08-21（M2-2-5・まこさん承認 24a453d6…）に、barssince の中から切り出して部品にした（実装の中身は1文字も変えていない＝barssince はこの部品を呼ぶ形に直した）。 | pine:ta.barssince |
+| 24 | **入る線と出る線を別にして、状態を保つ** | ★形（engine_tuner_exec.FORMS の hysteresis）。on で真になり、off で偽に戻り、どちらも成立しないバーは前の値を保つ | engine_tuner_exec._hold_state＝最後に on が立った位置と最後に off が立った位置を比べ、on の方が新しく、かつ on から n本 以内なら真。同じバーで両方 成立したら off を優先する。★部品だけでの組み立て直しは condition_parts_diag._c_hysteresis（距離2本＝barssince_dist ＋ cmp ＋ and ＋ not ＋ exists ＋ sub）＝実データ 20,000本で食い違い 0 を実測（2026-08-21）。★2026-08-21（M2-2-5・まこさん承認 24a453d6…）に足した。法則＝regime_detection_kb.md §11 の U10・C6・C7。名前の出どころ＝同 KB §4-6 の逐語 'Use hysteresis. Entry threshold: P(Bear) > 0.6. Exit threshold: P(Bear) < 0.4.' | —（業界の部品の一覧には無い。出どころは相場の判定の手法＝hysteresis） |
 
 ### 足りない部品
 
@@ -473,12 +476,13 @@
 | `streak` | value・cmp・all_n・shift_cond |
 | `within_n` | value・cmp・any_n・shift_cond |
 | `barssince` | value・cmp・barssince・shift_cond |
+| `hysteresis` | value・cmp・barssince_dist・sub・exists・and・not |
 
 ### 番人（毎回 実物で確かめる）
 
 - pandas-ta の「使い方」の関数＝実測 **10 件**（above・above_value・below・below_value・cross・cross_value・crossany・crossover・lag・signals）
 - 「閾値とのクロス」（RSI が 70 を上抜けた）を実行器の検証器に渡した結果＝**閾値つき＝通った ／ 閾値なし＝拒否（[レシピ拒否 G5] 番人（閾値の無い列1本の cross）: 列1本の cross は value）（部品の一覧では『在る』）**
-- 上の「形の分解」に出てこない部品（＝形ではなく、条件の木やつなぎ方で使うもの）＝**corr**（★形ではない。列2本の形（diff）が材料2本を1本にまとめる部品の表（engine_tuner_exec.PAIR_OPS）） ／ **div**（★形ではない。列2本の形（diff）が材料2本を1本にまとめる部品の表（engine_tuner_exec.PAIR_OPS）） ／ **or**（★形ではない。条件の木＝発火経路（entry.connective の any）） ／ **ts_max**（材料の前処理（材料に pre:{op:ts_max, n} を付ける）） ／ **ts_min**（材料の前処理（材料に pre:{op:ts_min, n} を付ける）） ／ **ts_rank**（材料の前処理（材料に pre:{op:ts_rank, n} を付ける）） ／ **ts_std**（材料の前処理（材料に pre:{op:ts_std, n} を付ける））
+- 上の「形の分解」に出てこない部品（＝形ではなく、条件の木やつなぎ方で使うもの）＝**corr**（★形ではない。列2本の形（diff）が材料2本を1本にまとめる部品の表（engine_tuner_exec.PAIR_OPS）） ／ **div**（★形ではない。列2本の形（diff）が材料2本を1本にまとめる部品の表（engine_tuner_exec.PAIR_OPS）） ／ **hold_state**（★形（engine_tuner_exec.FORMS の hysteresis）。on で真になり、off で偽に戻り、どちらも成立しないバーは前の値を保つ） ／ **or**（★形ではない。条件の木＝発火経路（entry.connective の any）） ／ **ts_max**（材料の前処理（材料に pre:{op:ts_max, n} を付ける）） ／ **ts_min**（材料の前処理（材料に pre:{op:ts_min, n} を付ける）） ／ **ts_rank**（材料の前処理（材料に pre:{op:ts_rank, n} を付ける）） ／ **ts_std**（材料の前処理（材料に pre:{op:ts_std, n} を付ける））
 
 **✅ ずれ 0 件**（形の数・部品の名前・業界の数・閾値とのクロス、すべて実物と一致）
 
@@ -657,14 +661,14 @@ T16（架空の列を宣言の写しに足すと、欄が変わり「★列を�
 
 | 何 | 数 | 実物（どこから数えたか） | 中身 |
 |---|---|---|---|
-| 条件の形 | **12 種** | `engine_tuner_exec.FORMS` | `level`・`band`・`band_exclude`・`slope`・`slope_avg`・`cross`・`streak`・`within_n`・`barssince`・`diff`・`touch`・`candle_dir` |
+| 条件の形 | **13 種** | `engine_tuner_exec.FORMS` | `level`・`band`・`band_exclude`・`slope`・`slope_avg`・`cross`・`streak`・`within_n`・`barssince`・`diff`・`touch`・`candle_dir`・`hysteresis` |
 | うち 外側になる形（中に条件を1つ包む） | **3 種** | `engine_tuner_exec.NEST_FORMS` | `streak`・`within_n`・`barssince` |
 | 判定の中身（build）の中だけで使える形 | **1 種** | `engine_tuner_exec._walk_build_tree` | `bool_col` |
-| 束ね方 | **3 通り** | `engine_tuner_exec._walk` | `all`・`any`・`if-then` |
+| 束ね方 | **4 通り** | `engine_tuner_exec._walk` | `not`・`all`・`any`・`if-then` |
 | 部品 | **535 種** | `signal_families.json` の `parts` | （一覧は ★2 と ★7） |
 | 時間足 | **11 本** | `signal_families.json` の `timeframes` | `1m`・`3m`・`5m`・`10m`・`15m`・`30m`・`1h`・`2h`・`4h`・`6h`・`1d` |
 | 材料の列（部品 × 時間足） | **5885 列** | 上の2つの掛け算 | — |
-| 材料の前処理 | **4 種** | `engine_tuner_exec.MATERIAL_PRE` | `ts_max`・`ts_min`・`ts_rank`・`ts_std` |
+| 材料の前処理 | **7 種** | `engine_tuner_exec.MATERIAL_PRE` | `ts_max`・`ts_min`・`ts_rank`・`ts_std`・`since_min`・`since_max`・`at_entry` |
 | 材料2本の組み方 | **3 種** | `engine_tuner_exec.PAIR_OPS` | `sub`・`div`・`corr` |
 
 **M2-2 で足すもの（やることリスト §4 の M2-2-4）**＝否定（not）／状態を保つ形（入る線と出る線・続く長さは探す値）／帯を作る形（山谷の確定遅延・束ね・連動する閾値）／切り上げの部品。**この節の数が、そのぶん増えます。**
