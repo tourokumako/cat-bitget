@@ -155,6 +155,9 @@ def expand_rules(s: dict) -> dict:
         "redundancy": src["redundancy"],
         "count_range": src["count_range"],
         "regime_rules": src["regime_rules"],
+        # ★場面ごとの決まり K-1〜K-7（M2-4-2・2026-08-22 まこさん承認「どちらもOK」・acceptance 6ce1dccad1a5…）。
+        #   engine_tuner_exec の G7 が照合の実体。ここは完成品（composition_rules.json）へ通す配線。
+        "scene_rules": src["scene_rules"],
         "direction_conflict": sig["direction_conflict"],   # 表から引く（書き写さない）
         "grids": s["limits"],                              # 探索の格子は正本のまま
         "exit_branch_count": len((s["exits"].get("branches") or s["exits"].get("枝") or [])),
@@ -331,6 +334,13 @@ def write_outputs(rules: dict, report: list) -> tuple[str, str]:
     lines += ["", "## 上位足の優先", "", f"- {rules['timeframe_precedence']['決まり']}"]
     lines += ["", "## 場面の判定（レンジ判定）の組み立て", ""]
     lines += [f"- **{g['id']}** {g['決まり']}" for g in rules["regime_rules"]]
+    lines += ["", "## ★場面ごとの決まり（K-1〜K-7・まこさん承認 2026-08-22・プログラムが強制する）", "",
+              "engine_tuner が場面の判定の束（meta.regime.build）を作るとき、下の形を満たさない案は"
+              "条件データを調べる部分（engine_tuner_exec.py の G7）が拒否する。"
+              "数字は1つも持たない（閾値・本数・保つ長さは範囲で探す）。", "",
+              "| # | 決まり | 掛かる場面 | 出典 |", "|---|---|---|---|"]
+    for g in rules["scene_rules"]:
+        lines.append(f"| {g['id']} | {g['決まり']} | {'・'.join(g['掛かる場面'])} | {g['出典'][:60]}… |")
     lines += ["", "## 正本の指紋（元を直したら作り直す・--verify が照合する）", "",
               "| 正本 | 指紋 |", "|---|---|"]
     for k, v in sorted(payload["_正本の指紋"].items()):
@@ -432,7 +442,8 @@ def selftest() -> int:
     # T7 手書きの行数が、元ファイルの申告と一致する
     src = json.loads(src_path.read_text())
     n = (len(src["roles"]) + 1 + 1 + len(src["trigger_weakness"]) + len(src["family_trigger"]) + 1
-         + len(src["redundancy"]) + 1 + len(src["regime_rules"]))
+         + len(src["redundancy"]) + 1 + len(src["regime_rules"])
+         + len(src["scene_rules"]))     # ★K-1〜K-7（M2-4-2・2026-08-22 まこさん承認）
     if n != src["_手で書いた行数"]:
         ng.append(f"T7: 手書きの行数の申告 {src['_手で書いた行数']} と実際 {n} が違う")
 
@@ -466,13 +477,16 @@ def selftest() -> int:
             if isinstance(_x, dict) and "仕分け" in _x:
                 _graded.append(_x)
     _enf = [x for x in _graded if x.get("機械が強制するか")]
-    if len(_graded) != 23:
-        ng.append(f"T10: 仕分け済みの決まりが 23 件でない（{len(_graded)} 件）")
-    if len(_enf) != 2:
-        ng.append(f"T10: 機械が強制する決まりが 2 件でない（{len(_enf)} 件）"
-                  "＝CC の判断が強制に戻された疑い。まこさんの確認なしに戻さない")
+    # ★2026-08-22（M2-4-2・まこさん承認・acceptance 6ce1dccad1a5…）＝場面ごとの決まり K-1〜K-7 を
+    #   強制に足した（23件 → 30件・強制 2件 → 9件）。T10 の目的（まこさんの確認なしに強制を変えたら
+    #   止める）は保つ＝新しい正解も固定値で書く。次に黙って変えたら、また落ちる。
+    if len(_graded) != 30:
+        ng.append(f"T10: 仕分け済みの決まりが 30 件でない（{len(_graded)} 件）")
+    if len(_enf) != 9:
+        ng.append(f"T10: 機械が強制する決まりが 9 件でない（{len(_enf)} 件）"
+                  "＝まこさんの確認なしに強制を変えない（2026-08-22 承認の状態が正）")
     _ids = {x["id"] for x in _enf}
-    if _ids != {"Q-1", "RD-2"}:
+    if _ids != {"Q-1", "RD-2", "K-1", "K-2", "K-3", "K-4", "K-5", "K-6", "K-7"}:
         ng.append(f"T10: 機械が強制する決まりの中身が変わった（{sorted(_ids)}）")
 
     print(f"[番人] {'✅ 全部 pass（T1〜T9）' if not ng else f'❌ {len(ng)} 件'}")

@@ -5471,6 +5471,21 @@ def _independent_step(tf: str, n: int) -> int:
     return max(per, int(n))
 
 
+def _rank_record_unmeasured(expected: set, measured: set, dropped: dict) -> dict:
+    """測れなかった列を「省いた列」に理由つきで記録する（M2-3-4・2026-08-22 まこさん承認・acceptance 086a13df606d…）。
+
+    ★何の穴か＝1回目の本走（2026-08-22）で、close vs T3%200__1d ほか4本が
+      成績にも「省いた列」にも載らず、黙って消えていた（worklog 20260822 §28.4・恒久の決まり59番）。
+      原因＝値決め窓で値が全部 NaN（助走が窓より長い）や、良い/悪いの片側が10未満のとき、
+      分離力の辞書に入らないだけで、どこにも記録されなかった。
+    ★既に理由が付いている列（重複で省いた等）は上書きしない。順位の値は1つも変えない。
+    """
+    for c in sorted(expected - measured - set(dropped)):
+        dropped[c] = ("分離力を測れなかった（値決め窓で値が全部 NaN＝助走が窓より長い、"
+                      "または 良い/悪いの片側の標本が10未満）＝黙って消さず記録（M2-3-4）")
+    return dropped
+
+
 def rank_materials_for_regime(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
                               horizons: tuple | None = None, tfs: list | None = None,
                               calc_rows: int | None = None) -> dict:
@@ -5558,6 +5573,9 @@ def rank_materials_for_regime(bars: pd.DataFrame, cfg: dict, catalog: list | Non
     #   実測（1回目）＝6,057 測れて、載ったのは 5,937＝差の 120 は ローソク系15種 × 時間足8本
     #   （ローソクは trigger の役割にしか入っておらず、trigger が使える時間足は3本だけ）。
     #   直す前は「測れた列」しか出しておらず、この 120本 が見えなかった。
+    # ★測れなかった列を黙って消さない（M2-3-4・2026-08-22 まこさん承認）
+    expected_cols = {f"{name}__{t}" for name, _fn, _d in cat_use for t in use_tfs}
+    _rank_record_unmeasured(expected_cols, set(auc), dropped)
     listed = {c for bl in order.values() for bn in bl.values() for got in bn.values() for c, _a in got}
     return dict(窓=(str(win.index.min()), str(win.index.max())), 行数=int(len(win)),
                 先を見るバー数=list(horizons), 時間足=use_tfs, 測れた列=len(auc),
@@ -6515,6 +6533,20 @@ def selftest() -> None:
         ng.append("場面の分離力 番人7: 行数と時刻の本数が合わないのに止まらない")
     except SystemExit:
         pass
+
+    # ★M2-3-4 の番人（2026-08-22 まこさん承認）＝測れなかった列が「省いた列」に理由つきで載る。
+    #   全部 NaN の列は分離力の辞書（measured）に入らない＝この経路がそのまま「測れなかった」になる。
+    #   本物の4本（close vs T3%200__1d ほか）が載ることは、成績表の作り直し（--rank-regime 本走）で確かめる。
+    _d0 = {"既存__5m": "重複で省いた（既存の理由）"}
+    _out0 = _rank_record_unmeasured({"A__5m", "B__5m", "既存__5m"}, {"A__5m"}, dict(_d0))
+    if "B__5m" not in _out0 or "測れなかった" not in _out0.get("B__5m", ""):
+        ng.append("M2-3-4 番人: 測れなかった列が「省いた列」に載らない（黙って消える穴が開いたまま）")
+    if _out0.get("既存__5m") != _d0["既存__5m"]:
+        ng.append("M2-3-4 番人: 既に理由の付いた列を上書きしている")
+    if "A__5m" in _out0:
+        ng.append("M2-3-4 番人: 測れた列まで「省いた列」に載せている")
+    if "_rank_record_unmeasured(expected_cols" not in inspect.getsource(rank_materials_for_regime):
+        ng.append("M2-3-4 番人: 記録の穴ふさぎが順位づけの本体に配線されていない")
 
     print("=" * 80)
     print("observe_diag 自己検査")

@@ -10,9 +10,9 @@
     "検査5 型 4 種のうち、組み立てられるのは 1 種（E-a1）。組み立てられない 3 種は理由つきで記録（E-a4／E-a5／E-a8）"
   ],
   "_作った道具": "gen_composition_rules.py",
-  "_本文の指紋": "10e477fcf10712ea",
+  "_本文の指紋": "b772d31fc32ae31a",
   "_正本の指紋": {
-    "composition_rules_src.json": "0d3af0bf24803d510c29b91d20992c9f7d27f55feb27a357f49f89ed4702894b",
+    "composition_rules_src.json": "6173c66dd3307b790a39103dd4aba7764108aec2f4669d103ba353c3d2785dce",
     "exit_families.json": "0919661ccf00ea44b405bf95a276b5c4126447df82b47695bd819124dadc9d6e",
     "search_limits.json": "0396ff1b4eed6d933e6dff2b111a2be711bbd7f87e59b5151c84c3fa75421f6f",
     "signal_families.json": "b20d007cec4ba53f4b2a149dda56d288ac7f9ec5224818bd4532d933ccc97810"
@@ -39513,6 +39513,90 @@
         "候補": null,
         "出典": "excavo 逐語『every tool on your chart should either generate a trade, filter a trade, or size a trade. If it does none of these, it's adding noise.』（『量を決める』はサイジングの軸＝入口の条件の対象外）",
         "決まり": "建てる合図・ふるい・裏づけ のどれでもない条件は、案に入れない"
+      }
+    ],
+    "scene_rules": [
+      {
+        "id": "K-1",
+        "仕分け": "①まこさんが決めた制約（★機械が強制する）",
+        "仕分けの理由": "まこさん承認 2026-08-22（逐語「どちらもOK」「進めていいよ」）。何を潰すかの列挙＝session_worklog_20260822.md §30.2",
+        "出典": "regime_detection_kb.md §11 C1【本文】StockCharts 逐語『measures the strength of the trend (regardless of direction)』＝強さと向きは別の物差し",
+        "掛かる場面": [
+          "uptrend",
+          "downtrend"
+        ],
+        "機械が強制するか": true,
+        "決まり": "「上げ」「下げ」を名乗る場面の判定の束には、向きを測る部品を1本以上 入れる（向きを持たない部品＝型の表の bans は数えない）。レンジ・スパイクには掛けない"
+      },
+      {
+        "id": "K-2",
+        "仕分け": "①まこさんが決めた制約（★機械が強制する）",
+        "仕分けの理由": "まこさん承認 2026-08-22（逐語「どちらもOK」「進めていいよ」）。何を潰すかの列挙＝session_worklog_20260822.md §30.2",
+        "出典": "regime_detection_kb.md §11 C4【本文】LuxAlgo 逐語『Entries come from below; permission comes from above.』＋R3【正本】range_scalping_kb §2（上位足でゾーン・下位足で執行）",
+        "掛かる場面": [
+          "range",
+          "uptrend",
+          "downtrend"
+        ],
+        "機械が強制するか": true,
+        "決まり": "レンジ・上げ・下げの場面の判定の束には、執行足（5分足）より上の時間足の部品を1本以上 入れる。スパイクには掛けない（S1 は5分足1本の検定）"
+      },
+      {
+        "id": "K-3",
+        "仕分け": "①まこさんが決めた制約（★機械が強制する）",
+        "仕分けの理由": "まこさん承認 2026-08-22（逐語「どちらもOK」「進めていいよ」）。何を潰すかの列挙＝session_worklog_20260822.md §30.2",
+        "出典": "regime_detection_kb.md §11 C6【本文】（安定させる仕組みは2つ）＋U10【実装】RG-v5＋D8【正本】step1_regime_design §2.1（まこさん確定）。★まこさん指示 2026-08-22 逐語「精度を上げるなら成立と解除の条件は分けるべき」",
+        "掛かる場面": [
+          "range",
+          "uptrend",
+          "downtrend"
+        ],
+        "機械が強制するか": true,
+        "決まり": "レンジ・上げ・下げの場面の判定の束には、成立の条件（on）と解除の条件（off）を別々に持つ、状態を保つ形（hysteresis）を1つ以上 入れる。スパイクには掛けない"
+      },
+      {
+        "id": "K-4",
+        "仕分け": "①まこさんが決めた制約（★機械が強制する）",
+        "仕分けの理由": "まこさん承認 2026-08-22（逐語「どちらもOK」「進めていいよ」）。何を潰すかの列挙＝session_worklog_20260822.md §30.2",
+        "出典": "regime_detection_kb.md §11 R1【正本】range_scalping_kb §2 逐語『統計量（横ばい度・ADX 等）ではなく、機能しているレベルの実績で認識する』",
+        "掛かる場面": [
+          "range"
+        ],
+        "機械が強制するか": true,
+        "決まり": "レンジの場面の判定の束には、構造・位置の系統の部品（帯・S/R タッチ実績）を1本以上 入れる"
+      },
+      {
+        "id": "K-5",
+        "仕分け": "①まこさんが決めた制約（★機械が強制する）",
+        "仕分けの理由": "まこさん承認 2026-08-22（逐語「どちらもOK」「進めていいよ」）。何を潰すかの列挙＝session_worklog_20260822.md §30.2",
+        "出典": "regime_detection_kb.md §11 R8【実装】RG-v5 range_ok_rg5（帯あり ∩ 帯内 ∩ 非 uptrend・e37_scalp）",
+        "掛かる場面": [
+          "range"
+        ],
+        "機械が強制するか": true,
+        "決まり": "レンジの場面の判定の束には、トレンド状態の否定（not）を1本以上 入れる"
+      },
+      {
+        "id": "K-6",
+        "仕分け": "①まこさんが決めた制約（★機械が強制する）",
+        "仕分けの理由": "まこさん承認 2026-08-22（逐語「どちらもOK」「進めていいよ」）。何を潰すかの列挙＝session_worklog_20260822.md §30.2",
+        "出典": "regime_detection_kb.md §11 R7【正本】SCALP_FLOOR（e38_logic_parts.py:23＝手数料の床）＋まこさんの実例の『幅≥0.4%』",
+        "掛かる場面": [
+          "range"
+        ],
+        "機械が強制するか": true,
+        "決まり": "レンジの場面の判定の束には、帯の幅の条件を1本 入れる（下限の値は範囲で探す・幅を測る部品＝レンジ幾何の W% か、チャネルの幅の family）"
+      },
+      {
+        "id": "K-7",
+        "仕分け": "①まこさんが決めた制約（★機械が強制する）",
+        "仕分けの理由": "まこさん承認 2026-08-22（逐語「どちらもOK」「進めていいよ」）。何を潰すかの列挙＝session_worklog_20260822.md §30.2",
+        "出典": "regime_detection_kb.md §11 S1【実装】Lee-Mykland 2008（e36_short_oscillation.py:372-382・E36 で稼働中）",
+        "掛かる場面": [
+          "spike"
+        ],
+        "機械が強制するか": true,
+        "決まり": "スパイクの場面の判定の束には、「いまの値動き ÷ ふだんの揺れ」の比を測る部品を1本以上 入れる（★2026-08-22 時点で該当の部品は0件＝スパイクの束はまだ組めない・部品は M2-8 で足す）"
       }
     ],
     "timeframe_layers": {

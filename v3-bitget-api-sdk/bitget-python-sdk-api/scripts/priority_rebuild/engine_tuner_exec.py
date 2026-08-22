@@ -920,6 +920,133 @@ def _walk_build_tree(node, lane: str, where: str, legacy_used: list, depth: int 
                 f"{sorted(node) if isinstance(node, dict) else node!r}")
 
 
+# ══ G7 場面ごとの組み立ての決まり（M2-4-3・2026-08-22 まこさん承認「どちらもOK」・acceptance 6ce1dccad1a5…）══
+#   正本＝.claude/ratchet/composition_rules.json の scene_rules（K-1〜K-7）。元＝regime_detection_kb.md §11。
+#   照合の対象＝meta.regime.build を持つレシピの entry の木だけ。
+#     ・build の無いレシピ（列名の宣言だけ＝いまの E38 の全レシピ・後方互換）には掛けない＝既存を壊さない。
+#     ・恒等検収レーン（lane="legacy"）には掛けない＝RG-v5 の写しは生成物ではない（G6 の legacy と同じ思想）。
+#     ・block の木には掛けない＝block は補助の止める列で、場面の判定そのものは entry が持つ。
+#   ★数字は1つも持たない＝閾値・本数・保つ長さは既存の範囲検査（G5/G6）が見る。
+
+_SCENE_DIRLESS = None                   # 向きを持たない部品の一覧（型の表の bans・遅延で1回だけ読む）
+
+# ★K-7（スパイク＝「いまの値動き ÷ ふだんの揺れ」の比）を満たせる部品の family の一覧。
+#   2026-08-22 時点で 0件（機械で数えた＝材料551種に S1（Lee-Mykland）型の部品が無い）。
+#   ＝スパイクの束は、いまは組めない（fail-closed）。部品を作るのは M2-8 のやることリストを書くとき。
+#   足したら、部品を作ったうえで この並びに family 名を登録する。
+_SPIKE_RATIO_FAMILIES: tuple = ()
+
+# ★K-6（帯の幅）を満たせる部品＝レンジ幾何の幅の列と、チャネルの幅を測る family。
+#   幅の意味を持つ family の仕分け（2026-08-22・カタログの実物から）＝BB幅・Donchian幅・HWC幅%。
+#   「実体幅比」（ローソク1本の実体）と「高値切り上げ幅%」（切り上げの1歩の大きさ）は帯の幅ではない＝入れない。
+_WIDTH_GEO = ("W%",)
+_WIDTH_FAMILIES = ("BB幅", "Donchian幅", "HWC幅%")
+
+
+def _dirless_parts() -> set:
+    """向きを持たない部品の一覧（型の表 signal_families.json の bans が正本＝2026-08-06 の全種実測・まこさん OK）。"""
+    global _SCENE_DIRLESS
+    if _SCENE_DIRLESS is None:
+        import gen_signal_families as gsf
+        t = json.loads(gsf.OUT_JSON.read_text(encoding="utf-8"))
+        out = set()
+        for key in ("direction_note", "direction_stateful"):
+            out.update((t.get("bans") or {}).get(key, {}).get("parts") or [])
+        _SCENE_DIRLESS = out
+    return _SCENE_DIRLESS
+
+
+def _scene_scan(node, seen: dict) -> None:
+    """build の木から、G7 の照合に要る事実だけを集める（形の検査はしない＝_walk_build_tree が済ませている）。"""
+    if not isinstance(node, dict):
+        return
+    if "bool_col" in node:
+        return
+    if "not" in node:
+        seen["not"] = True
+        _scene_scan(node["not"], seen)
+        return
+    if "all" in node or "any" in node:
+        for ch in (node.get("all") or node.get("any") or []):
+            _scene_scan(ch, seen)
+        return
+    if "if" in node and "then" in node:
+        _scene_scan(node["if"], seen)
+        _scene_scan(node["then"], seen)
+        return
+    if node.get("form") == "hysteresis":
+        seen["hysteresis"] = True
+        _scene_scan(node.get("on"), seen)
+        _scene_scan(node.get("off"), seen)
+        return
+    for m in (node.get("material") or []):
+        if not isinstance(m, dict):
+            continue
+        if "geo" in m:
+            seen["geo"].add(str(m["geo"]))
+        fam = m.get("family")
+        if fam:
+            seen["fams"].add(str(fam))
+            if m.get("tf"):
+                seen["tfs"].add(str(m["tf"]))
+            try:
+                seen["parts"].add(build_name(m))
+            except SystemExit:
+                pass                       # 名前が組めない材料は _walk_build_tree が既に拒否している
+    inner = node.get("inner")
+    if isinstance(inner, dict):
+        _scene_scan(inner, seen)
+
+
+def _check_scene_rules(rg: dict, lane: str) -> None:
+    """G7＝場面ごとの組み立ての決まり K-1〜K-7（正本＝composition_rules.json の scene_rules）。"""
+    if lane == "legacy":
+        return
+    bd = rg.get("build")
+    if not isinstance(bd, dict) or not isinstance(bd.get("entry"), dict):
+        return
+    name = rg.get("name")
+    seen = {"geo": set(), "fams": set(), "tfs": set(), "parts": set(),
+            "not": False, "hysteresis": False}
+    _scene_scan((bd["entry"] or {}).get("tree"), seen)
+
+    def _kind(f):
+        return (iref.FAMILY_LINEAGE.get(f) or {}).get("k")
+
+    def _has_upper():
+        import engine_tuner_gen as _gen
+        tfs_all = _gen.load_signal_table()["tfs"]
+        base = tfs_all.index("5m")
+        return any(t in tfs_all and tfs_all.index(t) > base for t in seen["tfs"])
+
+    ng = []
+    if name in ("uptrend", "downtrend"):
+        dirless = _dirless_parts()
+        if not any(p not in dirless for p in seen["parts"]):
+            ng.append("K-1: 向きを測る部品が1本も無い（強さだけでは上げ・下げを名乗れない・法則 C1）")
+    if name in ("range", "uptrend", "downtrend"):
+        if not _has_upper():
+            ng.append("K-2: 執行足（5m）より上の時間足の部品が1本も無い（法則 C4・R3）")
+        if not seen["hysteresis"]:
+            ng.append("K-3: 成立（on）と解除（off）を別々に持つ形（hysteresis）が無い"
+                      "（法則 C6・U10・D8・まこさん指示 2026-08-22「成立と解除の条件は分けるべき」）")
+    if name == "range":
+        if not seen["geo"] and not any(_kind(f) == "構造・位置" for f in seen["fams"]):
+            ng.append("K-4: 構造・位置の部品（帯・S/R タッチ実績）が1本も無い（法則 R1）")
+        if not seen["not"]:
+            ng.append("K-5: トレンド状態の否定（not）が無い（法則 R8）")
+        if not (seen["geo"] & set(_WIDTH_GEO)) and not (seen["fams"] & set(_WIDTH_FAMILIES)):
+            ng.append("K-6: 帯の幅の条件が無い（法則 R7・使える部品＝レンジ幾何 W% か "
+                      + "・".join(_WIDTH_FAMILIES) + "）")
+    if name == "spike":
+        if not (seen["fams"] & set(_SPIKE_RATIO_FAMILIES)):
+            ng.append("K-7: 「いまの値動き ÷ ふだんの揺れ」の比の部品が無い"
+                      "（法則 S1・★2026-08-22 時点で該当の部品は0件＝部品を足すのは M2-8）")
+    if ng:
+        _fail("G7", f"場面ごとの決まり（{name}）に反する: " + " ／ ".join(ng)
+                    + "（正本＝composition_rules.json の scene_rules・まこさん承認 2026-08-22）")
+
+
 def _check_regime_meta(meta: dict, lane: str = "", legacy_used: list | None = None) -> None:
     """meta.regime の形を検査する（G5）。壊れていたらレシピを読み込まない。
 
@@ -962,6 +1089,7 @@ def _check_regime_meta(meta: dict, lane: str = "", legacy_used: list | None = No
         if "tree" not in one:
             _fail("G5", f"meta.regime.build.{slot} に tree（条件の束）が無い")
         _walk_build_tree(one["tree"], lane, f"meta.regime.build.{slot}", legacy_used)
+    _check_scene_rules(rg, lane)               # G7＝場面ごとの決まり（M2-4-3・2026-08-22 まこさん承認）
 
 
 def regime_cols(recipe: dict) -> tuple[str, str | None]:
@@ -3764,6 +3892,67 @@ def selftest() -> None:
         ng.append("T-HYST の番人の番人: 保つ最大の本数を変えても結果が同じ＝上限が効いていない")
     print(f"[T-HYST 状態を保つ形] 乱数200通りでループ版と突き合わせ・上限・off の優先・番人の番人 → "
           + ("✅ 全部 pass" if not [x for x in ng if x.startswith('T-HYST')] else "❌ 落ちた"))
+    # ══ G7 場面ごとの決まり（M2-4-3・2026-08-22 まこさん承認・acceptance 6ce1dccad1a5…）══════════
+    #   通る束2種（range・uptrend）が通り、わざと決まりを破った束7通り（K-1〜K-7 を1件ずつ）が
+    #   それぞれの K の名前で止まることを確かめる（M2-4-5 の拒否の実測の土台）。
+    def _g7_meta(name, tree):
+        return {"regime": {"name": name, "entry_col": "g7_ent", "block_col": None,
+                           "build": {"entry": {"out_col": "g7_out", "tree": tree}, "block": None}}}
+
+    def _g7_run(name, tree):
+        try:
+            _check_regime_meta(_g7_meta(name, tree), lane="", legacy_used=[])
+            return None
+        except SystemExit as e:
+            return str(e)
+
+    def _g7_level(fam, param, tf, side, q):
+        return {"role": "env", "form": "level", "side": side,
+                "material": [{"family": fam, "param": param, "tf": tf}],
+                "value": {"threshold_q": q}}
+
+    def _g7_hys(on, off):
+        return {"form": "hysteresis", "on": on, "off": off, "value": {"n": 100}}
+
+    _g7_w = _g7_level("BB幅", [20, 2], "1h", "above", "q30")
+    _g7_w_off = _g7_level("BB幅", [20, 2], "1h", "below", "q10")
+    _g7_struct = {"role": "location", "form": "band",
+                  "material": [{"family": "S-Rタッチ数", "param": [144, 0.006], "tf": "15m"}],
+                  "value": {"lo": {"threshold_q": "q10"}, "hi": {"threshold_q": "q90"}}}
+    _g7_dir = _g7_level("DI差", 14, "1h", "above", "q70")
+    _g7_dir_off = _g7_level("DI差", 14, "1h", "below", "q30")
+    _g7_dir5m = _g7_level("DI差", 14, "5m", "above", "q70")
+    _g7_dir5m_off = _g7_level("DI差", 14, "5m", "below", "q30")
+    _g7_adx = _g7_level("ADX", 14, "1h", "above", "q70")
+    _g7_adx_off = _g7_level("ADX", 14, "1h", "below", "q30")
+    _g7_adx5m = _g7_level("ADX", 14, "5m", "above", "q70")
+
+    _g7_range_ok = {"all": [_g7_hys({"all": [_g7_struct, _g7_w]}, _g7_w_off), {"not": _g7_adx}]}
+    _g7_cases = [
+        ("通る束: range", "range", _g7_range_ok, None),
+        ("通る束: uptrend", "uptrend", {"all": [_g7_hys(_g7_dir, _g7_dir_off)]}, None),
+        ("K-1 破り: 強さだけの uptrend", "uptrend", {"all": [_g7_hys(_g7_adx, _g7_adx_off)]}, "K-1"),
+        ("K-2 破り: 5分足だけ", "uptrend", {"all": [_g7_hys(_g7_dir5m, _g7_dir5m_off)]}, "K-2"),
+        ("K-3 破り: hysteresis なし", "downtrend", {"all": [_g7_dir]}, "K-3"),
+        ("K-4 破り: 帯なし", "range",
+         {"all": [_g7_hys({"all": [_g7_w]}, _g7_w_off), {"not": _g7_adx}]}, "K-4"),
+        ("K-5 破り: 否定なし", "range",
+         {"all": [_g7_hys({"all": [_g7_struct, _g7_w]}, _g7_w_off)]}, "K-5"),
+        ("K-6 破り: 幅なし", "range",
+         {"all": [_g7_hys({"all": [_g7_struct, _g7_dir]}, _g7_dir_off), {"not": _g7_adx}]}, "K-6"),
+        ("K-7 破り: スパイクに比の部品なし", "spike", {"all": [_g7_adx5m]}, "K-7"),
+    ]
+    _g7_ng = []
+    for _lbl, _nm, _tr, _want in _g7_cases:
+        _msg = _g7_run(_nm, _tr)
+        if _want is None:
+            if _msg is not None:
+                _g7_ng.append(f"G7: {_lbl} が通らない: {str(_msg)[:160]}")
+        elif _msg is None or "G7" not in _msg or _want not in _msg:
+            _g7_ng.append(f"G7: {_lbl} が {_want} で止まらない（{str(_msg)[:100]}）")
+    ng += _g7_ng
+    print(f"[G7 場面ごとの決まり] 通る束2種・わざと破った束7通り（K-1〜K-7） → "
+          + ("✅ 全部 期待どおり" if not _g7_ng else "❌ " + " ／ ".join(_g7_ng)))
     print("=" * 80)
     print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ36種で全部止まる・正しい5種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)

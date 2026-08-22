@@ -639,6 +639,85 @@ def load_signal_table() -> dict:
     return _SIGNAL_TABLE
 
 
+_SCENE_RULES = None
+
+
+def load_scene_rules() -> list:
+    """場面ごとの決まり K-1〜K-7 を完成品（composition_rules.json）から読む（M2-4-2・2026-08-22 まこさん承認）。
+
+    ★照合の実体は engine_tuner_exec の G7（_check_scene_rules）＝満たさない束を拒否する。
+      生成の側は M2-5（レンジを組み立てる）で、この一覧を見て決まりを満たす束だけを組む。
+      ここは読む口だけ（読めなければ止める＝fail-closed・場所は gen_composition_rules の出力に追従）。
+    """
+    global _SCENE_RULES
+    if _SCENE_RULES is None:
+        import gen_composition_rules as gcr
+        if not gcr.out_json.exists():
+            raise SystemExit("[場面ごとの決まり] composition_rules.json が無い"
+                             "（gen_composition_rules.py --write で作る・fail-closed）")
+        body = json.loads(gcr.out_json.read_text(encoding="utf-8"))["body"]
+        rules = body.get("scene_rules")
+        if not rules:
+            raise SystemExit("[場面ごとの決まり] composition_rules.json に scene_rules が無い"
+                             "（gen_composition_rules.py --write で作り直す・fail-closed）")
+        _SCENE_RULES = list(rules)
+    return _SCENE_RULES
+
+
+# ══ 材料の順位を読む（M2-3-4・2026-08-22 まこさん承認・acceptance 086a13df606d…）════════════════
+#   正本＝.claude/ratchet/material_ranking.json（observe_diag --rank-regime が値決め窓だけで作った成績表）。
+#   使い方＝M2-5（レンジの束を組む）で、役割ごとの材料を「場面を分ける力」の上位 K 列に絞る。
+#   ★上位 K は engine_tuner が探す値（まこさん承認済みの基準・worklog 20260822 §2）＝
+#     下限1・上限＝その役割の載った全列数（＝絞らない状態も選べる）。数字は設定ファイルに書かない。
+#   ★パラメータ違い（ATR%7／14／21 など）は別々の列として順位に並ぶ＝良いパラメータの列が自然に上へ来る。
+#   ★成績表に無い列は、順位からは引けない（fail-closed）。
+
+_MATERIAL_RANKING = None
+_RANK_PATH = pathlib.Path(__file__).resolve().parent.parent.parent / ".claude" / "ratchet" / "material_ranking.json"
+
+
+def load_material_ranking() -> dict:
+    """材料の成績表を読む。無ければ止まる（fail-closed）。"""
+    global _MATERIAL_RANKING
+    if _MATERIAL_RANKING is None:
+        if not _RANK_PATH.exists():
+            raise SystemExit("[材料の順位] material_ranking.json が無い"
+                             "（observe_diag.py --rank-regime で作る・fail-closed・M2-3-4）")
+        d = json.loads(_RANK_PATH.read_text(encoding="utf-8"))
+        if not d.get("順位"):
+            raise SystemExit("[材料の順位] 順位が空（--rank-regime で作り直す・fail-closed）")
+        _MATERIAL_RANKING = d
+    return _MATERIAL_RANKING
+
+
+def _rank_list(role: str, label: str, horizon) -> list:
+    """役割 × ラベル（強さ・向き・大きさ）× 先読みバー数 の順位の並びを返す（|分離力−0.5| の降順）。"""
+    d = load_material_ranking()["順位"]
+    try:
+        got = d[role][label][str(horizon)]
+    except (KeyError, TypeError):
+        raise SystemExit(f"[材料の順位] 順位に無い組み合わせ: {role}/{label}/{horizon}"
+                         f"（在る役割＝{sorted(d)}・fail-closed）")
+    if not got:
+        raise SystemExit(f"[材料の順位] {role}/{label}/{horizon} の順位が空（fail-closed）")
+    return got
+
+
+def rank_top_k_range(role: str, label: str, horizon) -> tuple[int, int]:
+    """上位 K の探せる範囲＝(1, その役割の載った全列数)。実物から数える＝数字を設定に書かない。"""
+    return (1, len(_rank_list(role, label, horizon)))
+
+
+def rank_top_cols(role: str, label: str, horizon, k) -> list[str]:
+    """場面を分ける力の上位 K 列の名前を返す。K が範囲の外なら止まる（fail-closed）。"""
+    got = _rank_list(role, label, horizon)
+    lo, hi = 1, len(got)
+    if not isinstance(k, int) or isinstance(k, bool) or not (lo <= k <= hi):
+        raise SystemExit(f"[材料の順位] 上位 K が範囲の外: {k!r}（{lo}〜{hi}＝下限1・上限は全列・"
+                         "上限で切れば絞らない状態）")
+    return [c for c, _a in got[:k]]
+
+
 def _role_tfs(tfs, table, role) -> list[str]:
     """役割に使える時間足＝呼び出し側の足 ∩ 表の足 ∩ 対応表の役割の足（D1・表が正本）。"""
     rr = table["roles"][role]
@@ -3799,6 +3878,59 @@ def selftest() -> int:
           f" ／ 挟みを外すと 0 件になる（メタ確認）")
     print(f"  T22c 状態に入って以降の前処理で、分位の解決表を作れる: 鍵 {len(_q22)} 件"
           f"（直す前は『基準にする状態の列がデータにありません』で止まった）")
+
+    # ══ T23 材料の順位を読む口（M2-3-4・2026-08-22 まこさん承認・acceptance 086a13df606d…）══════════
+    #   ①上位 K の切り出し＝K=10 で10列・並びが |分離力−0.5| の降順 ②K が範囲の外（0・全列+1）は拒否
+    #   ③成績表が無いと止まる（fail-closed） ④成績表とカタログの突き合わせ（載っていない列の数を出す）
+    global _MATERIAL_RANKING, _RANK_PATH
+    _t23_n = 0
+    try:
+        _rk = load_material_ranking()
+        _roles23 = sorted(_rk["順位"])
+        _role23 = _roles23[0]
+        _lab23 = sorted(_rk["順位"][_role23])[0]
+        _hor23 = sorted(_rk["順位"][_role23][_lab23])[0]
+        _lo23, _hi23 = rank_top_k_range(_role23, _lab23, _hor23)
+        if _lo23 != 1 or _hi23 < 1:
+            ng.append(f"T23①: K の範囲が (1, 全列) になっていない: ({_lo23}, {_hi23})")
+        _k23 = min(10, _hi23)
+        _cols23 = rank_top_cols(_role23, _lab23, _hor23, _k23)
+        _t23_n = len(_cols23)
+        if _t23_n != _k23:
+            ng.append(f"T23①: 上位 {_k23} を頼んだのに {_t23_n} 列 返った")
+        _sc23 = dict((c, a) for c, a in _rk["順位"][_role23][_lab23][_hor23])
+        _dist23 = [abs(_sc23[c] - 0.5) for c in _cols23]
+        if _dist23 != sorted(_dist23, reverse=True):
+            ng.append("T23①: 並びが分離力の強い順（|分離力−0.5| の降順）になっていない")
+        for _bad_k in (0, _hi23 + 1):
+            try:
+                rank_top_cols(_role23, _lab23, _hor23, _bad_k)
+                ng.append(f"T23②: 範囲の外の K={_bad_k} が拒否されない")
+            except SystemExit:
+                pass
+        _tbl23 = load_signal_table()
+        _all23 = {f"{p}__{t}" for p in _tbl23["parts"] for t in _tbl23["tfs"]}
+        _listed23 = {c for bl in _rk["順位"].values() for bn in bl.values()
+                     for got in bn.values() for c, _a in got}
+        print(f"  T23 材料の順位: {_role23}/{_lab23}/{_hor23} の上位 {_k23} 列を切り出し・並びは強い順"
+              f" ／ K の範囲 ({_lo23}, {_hi23}) ／ 範囲の外 2通りは拒否"
+              f" ／ ★突き合わせ＝型の表の列 {len(_all23)} 本のうち順位に載っているのは {len(_all23 & _listed23)} 本"
+              f"（載っていない {len(_all23 - _listed23)} 本＝役割の枠の外と、測れなかった列）")
+    except SystemExit as _e23:
+        ng.append(f"T23: 順位の読み出しが止まった: {_e23}")
+    # ③fail-closed＝成績表が無いと止まる（パスを一時的に無い場所へ差し替えて確かめ、必ず戻す）
+    _keep_rank, _keep_path = _MATERIAL_RANKING, _RANK_PATH
+    try:
+        _MATERIAL_RANKING = None
+        _RANK_PATH = _RANK_PATH.with_name("material_ranking__無いはず.json")
+        try:
+            load_material_ranking()
+            ng.append("T23③: 成績表が無いのに止まらない（fail-closed が効いていない）")
+        except SystemExit:
+            pass
+    finally:
+        _MATERIAL_RANKING, _RANK_PATH = _keep_rank, _keep_path
+
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
