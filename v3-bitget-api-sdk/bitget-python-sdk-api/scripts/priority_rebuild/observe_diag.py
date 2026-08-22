@@ -1628,6 +1628,45 @@ def rank_separation(df: pd.DataFrame, mask: pd.Series, cols: list[str], taut: se
             .head(top).reset_index(drop=True))
 
 
+def rank_separation_independent(df: pd.DataFrame, mask: pd.Series, cols: list[str], times,
+                                taut: set | None = None, top: int = 15) -> pd.DataFrame:
+    """分離力の順位づけを、独立な標本だけで出す（★2026-08-22 新設・まこさん指示「今直してほしい」）。
+
+    ★何を直すか。
+      上位足の列は、5分足の並びへ引き伸ばして（前の値で埋めて）持っている。
+      そのまま1行ずつ数えると、同じ値を何百回も数えることになり、分離力が実力より離れて出る。
+      実測（M2-3-3 の1回目の本走）＝日足の分離力が 0.803 と出た。同じ計算を独立な標本だけに
+      直したら 0.44〜0.54 に落ちた（worklog 20260822 の §6）。
+    ★どう直すか。
+      列ごとに時間足が違うので、時間足ごとにまとめて、**その足のバー1本につき1行だけ残して**測る。
+      戻り値に「標本数」の欄を足す＝何個で測ったかが必ず見える（黙って数を減らさない）。
+    ★限界（正直に）＝勝ち負けの決着が重なる分（保有が長い玉どうし）は、ここでは直していない。
+      決着までの長さが玉ごとに違うので、間引く間隔を1つに決められないため。
+    """
+    ts = pd.DatetimeIndex(times)
+    if len(ts) != len(df):
+        raise SystemExit(f"[分離力] 行数と時刻の本数が合わない: {len(df)} 行 と {len(ts)} 本")
+    by_tf: dict = {}
+    for c in cols:
+        tf = c.rsplit("__", 1)[1] if "__" in c else "5m"
+        by_tf.setdefault(tf if tf in TF_RULE else "5m", []).append(c)
+    out = []
+    for tf, cs in by_tf.items():
+        keep = ~pd.Series(ts).dt.floor(TF_RULE[tf]).duplicated().to_numpy()
+        sub, m = df.loc[keep], mask[keep]
+        if int(m.sum()) < 10 or int((~m).sum()) < 10:
+            continue
+        r = rank_separation(sub, m, cs, taut, top=len(cs))
+        if len(r):
+            r = r.copy()
+            r["標本数"] = int(len(sub))
+            out.append(r)
+    if not out:
+        return pd.DataFrame()
+    return (pd.concat(out, ignore_index=True).sort_values("|0.5との差|", ascending=False)
+            .head(top).reset_index(drop=True))
+
+
 # ══ 印字 ════════════════════════════════════════════════════════════════
 def _h(t):
     print("\n" + "=" * 100); print(f"■ {t}"); print("=" * 100)
@@ -3052,9 +3091,15 @@ def observe_scene(scene_id: str, config_path: str | None = None) -> None:
 
     _h(SECTIONS_SCENE[1])
     fcols = [c for c in feat.columns if sdf[c].notna().sum() >= max(int(len(sdf) * 0.5), cfg["min_n"])]
-    r = rank_separation(sdf, sdf["win"].astype(bool), fcols, TAUTOLOGY_COLS, top=20)
+    # ★独立な標本だけで測る（2026-08-22・まこさん指示「今直してほしい」）。
+    #   直す前は、上位足の列を5分足の並びに引き伸ばしたまま1行ずつ数えていた＝同じ値を重複して数え、
+    #   分離力が実力より離れて出る（M2-3-3 の1回目の本走で実際に踏んだ・worklog 20260822 の §6）。
+    r = rank_separation_independent(sdf, sdf["win"].astype(bool), fcols, times,
+                                    TAUTOLOGY_COLS, top=20)
     print(r.to_string(index=False) if len(r) else "     分離する特徴なし")
     print("  ＝1個ずつの材料。ここでは決めない（前回の1軸検索の失敗を繰り返さない）。")
+    print("  ★標本数＝その列の時間足のバー1本につき1行だけ残して数えた個数"
+          "（上位足の値を重複して数えない・2026-08-22 に直した）。")
 
     _h(SECTIONS_SCENE[2])
     rows, conds_raw = _conf_search(sdf, fcols, cfg, first, second, base1, base2, d1, d2, floor)
@@ -4244,6 +4289,11 @@ def _insp_price_scale(bars: pd.DataFrame, cfg: dict, catalog: list | None = None
 # ★総当たりは行列の掛け算で出す（1組ずつ回さない）＝列 564 でも数秒。
 _DUP_NEAR = 0.999      # これを超える組を「近い組」として一覧に出す（L-438 の hwc は 0.999973 だった）
 _DUP_SAME = 0.99999    # これを超える組は「実質 同じもの」＝省く候補
+# ★計算に使う本数（検査12 と、場面を分ける材料の順位づけ M2-3-3 が共有する）。
+#   2026-08-22 に定数へ出した＝同じ数字を2か所に書き写すと片方だけ直って黙って腐るため（教訓 L-519）。
+#   値は 2026-08-11 の実測のまま変えていない（下の _dup_pairs の説明が出どころ）。
+_DUP_CALC_ROWS = 60000   # 列を作る本数（値決め窓の後ろから）
+_DUP_ROWS = 20000        # そのうち実際に測る本数（暖機を除くため後ろから取る）
 
 
 def _corr_matrix(x: np.ndarray) -> np.ndarray:
@@ -4256,7 +4306,7 @@ def _corr_matrix(x: np.ndarray) -> np.ndarray:
 
 
 def _dup_pairs(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
-               tf: str = "5m", rows: int = 20000, calc_rows: int = 60000) -> dict:
+               tf: str = "5m", rows: int = _DUP_ROWS, calc_rows: int = _DUP_CALC_ROWS) -> dict:
     """材料の列を値決め窓で作り、重複の組を総当たりで出す。戻り＝機械が読む形。
 
     ★calc_rows＝計算に使う本数（値決め窓の後ろから）。値決め窓 158,000本 の全部で 561列 を作ると
@@ -5324,6 +5374,271 @@ def check_materials_meta(bars_csv: str, config_path: str | None = None) -> None:
     print("  メタ確認3件 全部落ちた＝材料検査は機能している")
 
 
+# ══ 場面を分ける材料の順位（M2-3-3・2026-08-22 新設・まこさん承認「実装に入っていいよ」）═════════
+# ★何のための処理か。
+#   案を作るプログラム（engine_tuner_gen）は、材料を「どれが効くか」を1つも知らないまま引いている
+#   （2026-08-22 実測＝順位を読む所は 0か所）。役割4つに材料を1本ずつ割り当てるだけで 6,052億通り
+#   ＝乱数で条件をつなぐのと変わらない（要件が名指しで禁止しているもの 1番）。
+#   そこで、値決め窓のデータだけで「場面を分ける力」の順位を出し、engine_tuner に渡せる形にする。
+# ★ラベル（正解の印）の作り方＝場面の名前を借りてこない。
+#   出どころの逐語（engine_tuner_milestones2.md の 0.3.1）＝「今、どの手法が通用する市場か？」
+#   ＝場面の判定の本体は「どの手法が通用するか」で、それは そのあとの値動きの性質で決まる。
+#   だから「そのバーから先 N本の値動きの性質」を3つの見方で真偽に直したものをラベルにする。
+#   ★RG-v5 の判定は借りない（決まり2＝写さない。写すと、見つかるものの上限が RG-v5 になる）。
+# ★3本に分ける理由＝法則 C1「トレンドか否か（強さ）と、上か下か（向き）は別の指標」。
+#   1本にすると、向きの材料（DI差 など）は上でも下でもトレンドなので分離力が 0.5 に寄り、順位の
+#   下に沈む＝場面を4つに分ける材料が、順位づけの段階で消える。
+# ★数字を1つも作っていない。
+#   N（先を見る本数）＝実物（recipes/search_limits.json の state_hold_bars_range）の両端をその場で読む
+#     ＝コードに写さない（2か所に持つと片方だけ直って黙って腐る・教訓 L-519）。
+#   群の分け方＝中央値で半分（＝選ぶ数字が無い）。
+#   大きさの物差し＝「先 N本で動いた幅 ÷ 直前 N本で動いた幅」＝同じ N しか使わない（新しい数字が要らない）。
+#   重複の線＝_DUP_NEAR・_DUP_SAME（実物）。計算に使う本数＝検査12 と同じ定数を共有する。
+# ★材料の値は当該バーまでの確定値だけ（build_features をそのまま呼ぶ＝式を写さない）。
+#   ラベルは先 N本を見る＝正解の印を作る側であって、本番の判断には入らない（build_labels_pct と同じ作り）。
+#   窓の外へはみ出す分は欠損になって落ちる。
+# ★C10 の④＝分け方は値決め窓だけで決める。_assert_search_window_only が物理で止める。
+# ★限界（正直に）＝①ラベルの中央値は値決め窓の全体から出している。走る時の閾値ではなく、順位を
+#   出すためだけの印なので本番には入らないが、「窓全体の統計を使っている」ことは事実として書いておく。
+#   ②順位が良いかどうかは net でしか決まらない＝ここでは判定しない（見るのは M2-11）。
+REGIME_LABELS = ("強さ", "向き", "大きさ")
+
+
+def _regime_horizons() -> tuple[int, ...]:
+    """先を見るバー数（N）。実物の範囲の両端をその場で読む＝コードに数字を写さない。
+
+    出どころ＝recipes/search_limits.json の state_hold_bars_range（M2-2-5・まこさん承認 24a453d6…）。
+    """
+    import json
+    p = pathlib.Path(__file__).resolve().parent / "recipes" / "search_limits.json"
+    d = json.loads(p.read_text(encoding="utf-8"))["state_hold_bars_range"]
+    return (int(d["lo"]), int(d["hi"]))
+
+
+def _assert_search_window_only(idx, where: str) -> None:
+    """使うバーが値決め窓の中だけであることを、その場で確かめる（法則 C10 の④の物理化）。
+
+    ★採点窓のバーが1本でも混ざったら止める＝順位づけに採点窓の情報を入れない。
+    """
+    if len(idx) == 0:
+        raise SystemExit(f"[{where}] 値決め窓のバーが1本も無い")
+    lo, hi = pd.Timestamp(min(idx)), pd.Timestamp(max(idx))
+    if lo < SEARCH_START or hi >= SEARCH_END:
+        raise SystemExit(
+            f"[{where}] 値決め窓の外のバーが混ざっている: {lo} 〜 {hi} ／ "
+            f"値決め窓＝{SEARCH_START} 以上 {SEARCH_END} 未満（periods.py が正本）")
+
+
+def _regime_labels(win: pd.DataFrame, n: int) -> dict:
+    """そのバーから先 n本の値動きの性質を、3つの見方で真偽に直す（＝正解の印）。
+
+    ①強さ   … 先 n本の ER（まっすぐ進んだ距離 ÷ 実際に歩いた距離）が、この窓の中央値以上か
+    ②向き   … 先 n本の終値が、いまの終値より上か
+    ③大きさ … 先 n本で動いた幅 ÷ 直前 n本で動いた幅 が、この窓の中央値以上か
+    戻り＝{名前: (真偽の並び, その行が使えるか)}。先が足りない末尾は「使えない」になる。
+    ★どれも比か上下だけ＝ドルの絶対値を1つも使わない（H6）。
+    """
+    c = win["close"].astype(float)
+    fwd = c.shift(-n) - c  # H2OK: 正解の印（ラベル）を作る側＝本番の判断には入らない。build_labels_pct の Triple Barrier と同じ作り。値決め窓に閉じ、窓の外へはみ出す分は欠損になって落ちる
+    walk = c.diff().abs().rolling(n).sum().shift(-n)  # H2OK: 同上（ラベル側の未来参照）。材料の列は build_features が当該バーまでの確定値だけで作る＝判断に未来は入らない
+    er = (fwd.abs() / walk).where(walk > 0)
+    past = (c - c.shift(n)).abs()                             # 直前 n本で動いた幅（未来を見ない）
+    size = (fwd.abs() / past).where(past > 0)
+    return {"強さ": (er >= er.median(), er.notna()),
+            "向き": (fwd > 0, fwd.notna()),
+            "大きさ": (size >= size.median(), size.notna())}
+
+
+def _role_lineage_table() -> dict:
+    """役割ごとの絞り（系統・時間足）を、承認済みの型の表から読む＝コードに写さない。"""
+    import json
+    p = pathlib.Path(__file__).resolve().parents[2] / ".claude" / "ratchet" / "signal_families.json"
+    return json.loads(p.read_text(encoding="utf-8"))["role_lineage"]["roles"]
+
+
+def _independent_step(tf: str, n: int) -> int:
+    """独立な標本を取るときの、5分足での間隔（本数）。
+
+    ★なぜ要るか（2026-08-22 の1回目の本走で見つけた問題）。
+      ①上位足の列は、5分足の並びへ引き伸ばして（前の値で埋めて）持っている。20,000本の5分足＝69日
+        の中に、日足のバーは 69本 しか無い。それを 20,000個 の標本として数えると、69個の値を
+        290回ずつ重複して数えることになり、分離力が実力より大きく（または小さく）出る。
+      ②ラベルも先 n本を見るので、隣り合う行はほとんど同じ先を見ている＝これも重複。
+      ★実測（1回目の本走）＝先を見る本数 288 の順位で、上位50の 23〜31件 が日足だった。
+    ★だから「その足のバー1本ぶん」と「先を見る本数」の、大きい方の間隔で間引く。
+    """
+    per = max(1, int(round(pd.Timedelta(TF_RULE[tf]) / pd.Timedelta("5min"))))
+    return max(per, int(n))
+
+
+def rank_materials_for_regime(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
+                              horizons: tuple | None = None, tfs: list | None = None,
+                              calc_rows: int | None = None) -> dict:
+    """材料の列を値決め窓で作り、場面のラベル3本に対する分離力で順位づけする。戻り＝機械が読む形。
+
+    ★売買しない・採点しない・金額を出さない（この道具の決まりのまま）。
+    ★calc_rows＝列を作る本数（既定＝値決め窓の全部）。上位足の独立な標本を増やすため、
+      1回目の本走のあと「後ろ 60,000本」から「全部」に広げた（2026-08-22・下の _independent_step）。
+    """
+    cat = catalog or build_catalog(cfg)
+    horizons = tuple(horizons or _regime_horizons())
+    _nm, a0, b0 = _insp_windows()[0]                          # 値決め窓（採点窓は1バーも使わない）
+    win = bars.loc[(bars.index >= a0) & (bars.index < b0)]
+    if calc_rows:
+        win = win.iloc[-calc_rows:]
+    _assert_search_window_only(win.index, "順位づけ")
+
+    # ── ふるい（法則 C2・C3）＝「実質 同じもの」の省く側を、順位から外す（検査12 をそのまま使う）──
+    dup = _dup_pairs(bars, cfg, cat)
+    dropped: dict = {}
+    for grp in _dup_groups([p for p in dup["pairs"] if p["判定"] == "実質 同じもの"]):
+        keep, why, _tbl = _dup_keep_of_group(grp, dup.get("warm"))
+        for g in grp:
+            if g != keep:
+                dropped[g] = f"{keep} と実質 同じ（残す理由＝{why}）"
+    cat_use = [c for c in cat if c[0] not in dropped]
+
+    roles = _role_lineage_table()
+    use_tfs = list(tfs or cfg["timeframes"])
+    labels = {n: _regime_labels(win, n) for n in horizons}
+    auc: dict = {}                                            # 列名 → {ラベル: {N: 分離力}}
+    nsample: dict = {}                                        # (ラベル, N, 時間足) → 独立な標本の数
+    # ★進み具合を出す（2026-08-22 に足した）。1回目の本走が 2時間14分 のあいだ1行も出さず、
+    #   まこさんが「あとどのくらい？」を聞けない状態だった。時間足を1本 終えるごとに出す。
+    _t_begin = datetime.datetime.now()
+    print(f"  … 始めます（時間足 {len(use_tfs)} 本 × 材料 {len(cat_use)} 種）", flush=True)
+    for _i_tf, tf in enumerate(use_tfs, 1):
+        cfg_tf = dict(cfg)
+        cfg_tf["timeframes"] = [tf]
+        df, _meta = build_features(win, cfg_tf, cat_use)
+        cols = [c for c in df.columns if c.endswith(f"__{tf}")]
+        for n in horizons:
+            step = _independent_step(tf, n)                   # 独立な標本だけを取る間隔（重複して数えない）
+            grid = df.iloc[::step]
+            for lab in REGIME_LABELS:
+                mask, usable = labels[n][lab]
+                ok = usable.reindex(grid.index).fillna(False).to_numpy()
+                sub = grid.loc[ok, cols]
+                m = mask.reindex(sub.index)
+                if int(m.sum()) < 10 or int((~m).sum()) < 10:
+                    continue
+                nsample[(lab, n, tf)] = int(len(sub))
+                r = rank_separation(sub, m, cols, set(), top=len(cols))
+                for _i, row in r.iterrows():
+                    auc.setdefault(row["特徴"], {}).setdefault(lab, {})[n] = float(row["分離力"])
+            del grid
+        del df
+        _el = (datetime.datetime.now() - _t_begin).total_seconds()
+        _rest = _el / _i_tf * (len(use_tfs) - _i_tf)
+        print(f"  … 時間足 {tf} 終わり（{_i_tf}/{len(use_tfs)} 本）"
+              f"／ 経過 {_el/60:.1f} 分 ／ 残りの見込み {_rest/60:.1f} 分", flush=True)
+
+    # ── 役割ごとに並べる（法則 C1＝ラベルごとに別々の順位。1本にまとめない）──
+    order: dict = {}
+    for role, spec in roles.items():
+        lins = set(spec.get("lineages") or [])
+        role_tfs = (use_tfs if spec.get("tfs") == "all"
+                    else [t for t in (spec.get("tfs") or []) if t in use_tfs])
+        want = []
+        for name, _fn, _d in cat_use:
+            ent, _prm = iref.find(name)
+            if ent is None or iref.FAMILY_LINEAGE[ent["family"]]["k"] not in lins:
+                continue
+            want += [f"{name}__{t}" for t in role_tfs]
+        order[role] = {}
+        for lab in REGIME_LABELS:
+            order[role][lab] = {}
+            for n in horizons:
+                got = [(c, auc[c][lab][n]) for c in want
+                       if c in auc and lab in auc[c] and n in auc[c][lab]]
+                got.sort(key=lambda t: -abs(t[1] - 0.5))
+                order[role][lab][n] = got
+    # ★「測れた列」と「順位に載った列」は別の数（2026-08-22 に両方 出すようにした）。
+    #   役割の絞り（系統 × 時間足）に当たらない列は、測れていてもどの順位にも載らない。
+    #   実測（1回目）＝6,057 測れて、載ったのは 5,937＝差の 120 は ローソク系15種 × 時間足8本
+    #   （ローソクは trigger の役割にしか入っておらず、trigger が使える時間足は3本だけ）。
+    #   直す前は「測れた列」しか出しておらず、この 120本 が見えなかった。
+    listed = {c for bl in order.values() for bn in bl.values() for got in bn.values() for c, _a in got}
+    return dict(窓=(str(win.index.min()), str(win.index.max())), 行数=int(len(win)),
+                先を見るバー数=list(horizons), 時間足=use_tfs, 測れた列=len(auc),
+                順位に載った列=len(listed), どの役割にも入らなかった列=sorted(set(auc) - listed),
+                省いた列=dropped, 独立な標本の数={f"{a}/{b}/{c}": v for (a, b, c), v in nsample.items()},
+                順位=order)
+
+
+def _insp_regime_rank(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
+                      tfs: list | None = None) -> list[str]:
+    """場面を分ける材料の順位を出して印字し、機械が読む形でも書き出す（M2-3-3）。
+
+    ❌ は出さない＝どの列を使うかは engine_tuner が探す（この道具は線を引かない）。
+    """
+    import json
+    r = rank_materials_for_regime(bars, cfg, catalog, tfs=tfs)
+    print(f"  値決め窓 {r['窓'][0]} 〜 {r['窓'][1]} の {r['行数']} 本 ／ 時間足 {r['時間足']}")
+    print(f"  先を見るバー数 N＝{r['先を見るバー数']}"
+          "（出どころ＝search_limits.json の state_hold_bars_range の両端）")
+    print(f"  ラベル3本＝{list(REGIME_LABELS)}（法則 C1＝強さと向きは別の指標なので1本にまとめない）")
+    miss = r.get("どの役割にも入らなかった列") or []
+    print(f"  分離力を測れた列 {r['測れた列']} 本 ／ そのうち どれかの役割の順位に載った列 "
+          f"{r.get('順位に載った列', 0)} 本 ／ どの役割にも入らなかった列 {len(miss)} 本"
+          f" ／ 重複で省いた列 {len(r['省いた列'])} 本")
+    if miss:
+        from collections import Counter as _C
+        c = _C(x.rsplit("__", 1)[1] for x in miss)
+        print("     ★どの役割にも入らなかった列の内訳（時間足ごと）＝"
+              + " ／ ".join(f"{k} {v}本" for k, v in sorted(c.items())))
+        print("     ＝役割の絞り（系統 × その役割が使える時間足）に当たらない列。型の表のとおりの動き")
+    ns = r.get("独立な標本の数") or {}
+    if ns:
+        print("  ★独立な標本の数（重複して数えない＝上位足は その足のバー1本ぶん、"
+              "ラベルは先を見る本数、の大きい方で間引いた）")
+        for k in sorted(ns, key=lambda x: ns[x]):
+            print(f"     {k} = {ns[k]} 個")
+    for nm, why in list(r["省いた列"].items())[:20]:
+        print(f"     ・省いた: {nm}（{why}）")
+    for role, by_lab in r["順位"].items():
+        for lab, by_n in by_lab.items():
+            for n, got in by_n.items():
+                if not got:
+                    print(f"  [{role} / {lab} / N={n}] 測れた列なし")
+                    continue
+                head = " ／ ".join(f"{c}={a:.3f}" for c, a in got[:5])
+                print(f"  [{role} / {lab} / N={n}] {len(got)} 列 ／ 上位5＝{head}")
+    out = pathlib.Path(__file__).resolve().parents[2] / ".claude" / "ratchet" / "material_ranking.json"
+    body = dict(r)
+    body["順位"] = {ro: {la: {str(n): v for n, v in bn.items()} for la, bn in bl.items()}
+                    for ro, bl in r["順位"].items()}
+    out.write_text(json.dumps(body, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"  ★機械が読む形で書き出した: {out}（M2-3-4 で案を作るプログラムが読む）")
+    return []
+
+
+def rank_regime(bars_csv: str, config_path: str | None = None, tfs: str | None = None,
+                cols: str | None = None) -> None:
+    """--rank-regime の入口。5分足CSVを1つ渡す（売買記録は使わない）。"""
+    cfg = load_config(config_path)
+    bars = pd.read_csv(bars_csv, parse_dates=["timestamp"]).set_index("timestamp").sort_index()
+    cat_all = build_catalog(cfg)
+    cat = cat_all
+    if cols:                                   # 絞ったことは必ず印字する（黙って一部だけ測らない）
+        rx = re.compile(cols)
+        cat = [c for c in cat_all if rx.search(c[0])]
+        if not cat:
+            raise SystemExit(f"[--cols] その名前の列は材料に無い: {cols}")
+    print("#" * 100)
+    print("# 場面を分ける材料の順位（M2-3-3・read-only・売買しない・採点しない・金額を出さない）")
+    print(f"# 対象: {bars_csv}（{len(bars)} 行 / {bars.index.min()} 〜 {bars.index.max()}）")
+    print(f"# 設定: {cfg['_source']} ／ 指標 {len(cat_all)} 種")
+    if cols:
+        print(f"# ⚠️ --cols 指定＝材料 {len(cat_all)} 種のうち {len(cat)} 種だけを測る"
+              f"（ほかの列は測っていない）: {[c[0] for c in cat][:20]}")
+    if tfs:
+        print(f"# ⚠️ --rank-tf 指定＝時間足 {cfg['timeframes']} のうち {tfs} だけを測る")
+    print("#" * 100)
+    _insp_regime_rank(bars, cfg, catalog=cat,
+                      tfs=[t.strip() for t in tfs.split(",")] if tfs else None)
+
+
 # ══ 自己検査 ════════════════════════════════════════════════════════════
 def _J(a: str, b: str) -> str:
     """検査文字列を分割して連結する（自己一致よけ）。
@@ -6142,6 +6457,65 @@ def selftest() -> None:
             if not (_d == 0.0 or np.isnan(_d)):
                 ng.append(f"RCI{_w}（{_lbl}）: 速い実装と元の実装の最大差 {_d:.3g}（0 でない）")
 
+    # ── 場面を分ける材料の順位（M2-3-3・2026-08-22 新設）＝わざと壊して止まるか試す ──
+    #   ★4件。どれも「止まるはずのものが止まるか」「見ないはずの所を見ていないか」を実測する。
+    _t0 = pd.Timestamp(SEARCH_START) + pd.Timedelta("1D")
+    _idx_ok = pd.date_range(_t0, periods=100, freq="5min")
+    try:                                                        # 番人1: 値決め窓の中だけなら通る
+        _assert_search_window_only(_idx_ok, "自己検査")
+    except SystemExit as e:                                     # noqa: BLE001
+        ng.append(f"順位づけ 番人1: 値決め窓の中なのに止まった（{e}）")
+    _idx_ng = _idx_ok.append(pd.DatetimeIndex([pd.Timestamp(SCORE_START)]))
+    try:                                                        # 番人2: 採点窓を1本 混ぜたら止まる
+        _assert_search_window_only(_idx_ng, "自己検査")
+        ng.append("順位づけ 番人2: 採点窓のバーを1本 混ぜても止まらない（C10 の④が効いていない）")
+    except SystemExit:
+        pass
+    try:                                                        # 番人3: 値決め窓より前でも止まる
+        _assert_search_window_only(pd.DatetimeIndex([pd.Timestamp(SEARCH_START) - pd.Timedelta("5min")]),
+                                   "自己検査")
+        ng.append("順位づけ 番人3: 値決め窓より前のバーでも止まらない")
+    except SystemExit:
+        pass
+    #   番人4: ラベルは先 n本を見る＝末尾 n本は「使えない」になる（窓の外へはみ出さない）
+    _n4 = 5
+    _w4 = pd.DataFrame({"close": np.arange(50, dtype=float) + 100.0},
+                       index=pd.date_range(_t0, periods=50, freq="5min"))
+    _lab4 = _regime_labels(_w4, _n4)
+    for _nm4, (_m4, _ok4) in _lab4.items():
+        if bool(_ok4.iloc[-_n4:].any()):
+            ng.append(f"順位づけ 番人4: ラベル「{_nm4}」の末尾 {_n4} 本が使える扱いになっている"
+                      "（先が足りないのに使っている＝窓の外を見る芽）")
+    #   番人5: 先を見る本数を、コードに写さず実物から読んでいるか（教訓 L-519）
+    try:
+        _h5 = _regime_horizons()
+        if len(_h5) != 2 or _h5[0] >= _h5[1]:
+            ng.append(f"順位づけ 番人5: 先を見る本数の範囲がおかしい（{_h5}）")
+    except Exception as e:                                      # noqa: BLE001
+        ng.append(f"順位づけ 番人5: 先を見る本数を実物から読めない（{e}）")
+
+    #   番人6・7＝場面の観察の分離力を、独立な標本だけで測っているか（2026-08-22・まこさん指示で直した所）
+    _ts6 = pd.date_range(_t0, periods=288 * 40, freq="5min")          # 40日ぶんの5分足
+    _df6 = pd.DataFrame({"X__5m": np.arange(len(_ts6), dtype=float),
+                         "X__1d": pd.Series(_ts6).dt.floor("1D").astype("int64").to_numpy() * 1.0})
+    _m6 = pd.Series((np.arange(len(_ts6)) // 288) % 2 == 0)           # 1日ごとに真と偽が入れ替わる
+    _r6 = rank_separation_independent(_df6, _m6, ["X__5m", "X__1d"], _ts6)
+    if len(_r6) != 2:
+        ng.append(f"場面の分離力 番人6: 2列 出るはずが {len(_r6)} 列")
+    else:
+        _n6 = {row["特徴"]: int(row["標本数"]) for _i, row in _r6.iterrows()}
+        if _n6.get("X__1d") != 40:
+            ng.append(f"場面の分離力 番人6: 日足の標本数が {_n6.get('X__1d')} 個"
+                      f"（40日ぶんなので 40個 のはず＝重複して数えている）")
+        if _n6.get("X__5m") != len(_ts6):
+            ng.append(f"場面の分離力 番人6: 5分足の標本数が {_n6.get('X__5m')} 個"
+                      f"（{len(_ts6)}個 のはず＝間引きすぎている）")
+    try:                                                              # 番人7: 行数と時刻の本数が違えば止まる
+        rank_separation_independent(_df6, _m6, ["X__5m"], _ts6[:-1])
+        ng.append("場面の分離力 番人7: 行数と時刻の本数が合わないのに止まらない")
+    except SystemExit:
+        pass
+
     print("=" * 80)
     print("observe_diag 自己検査")
     print("=" * 80)
@@ -6177,6 +6551,12 @@ def build_parser():
     ap.add_argument("--only", default=None,
                     help="--inspect と一緒に使う＝走らせる検査の番号（例 14 や 11,14）。"
                          "指定した検査だけを走らせる（全部だと2時間10分かかる・一部だけ走らせたことは出力に印字する）")
+    ap.add_argument("--rank-regime", action="store_true",
+                    help="場面を分ける材料の順位を出す（M2-3-3・read-only）＝5分足CSVのパスを1つ渡す。"
+                         "値決め窓だけで測る（採点窓が1本でも混ざれば止まる）。売買記録は使わない")
+    ap.add_argument("--rank-tf", default=None,
+                    help="--rank-regime と一緒に使う＝測る時間足を絞る（例 5m や 5m,1h）。"
+                         "絞ったことは出力の冒頭に印字する")
     ap.add_argument("--plan", action="store_true",
                     help="検証計画だけを自動生成して印字（本走しない・まこさんへ提出する1枚）")
     ap.add_argument("--config", default=None, help="observe_config.json のパス（既定は同ディレクトリ）")
@@ -6205,6 +6585,12 @@ if __name__ == "__main__":
             else:
                 with _Tee(_out_path("materials", pathlib.Path(path).stem)):
                     check_materials(path, a.config)
+        elif a.rank_regime:
+            path = a.trades_csv or a.bars_csv          # 位置引数の1つ目に5分足CSVを渡してよい
+            if not path:
+                ap.error("--rank-regime には 5分足CSV のパスが必要（売買記録は使わない）")
+            with _Tee(_out_path("rank_regime", pathlib.Path(path).stem)):
+                rank_regime(path, a.config, a.rank_tf, a.cols)
         elif a.inspect:
             path = a.trades_csv or a.bars_csv          # 位置引数の1つ目に5分足CSVを渡してよい
             if not path:
