@@ -146,6 +146,14 @@ if tn == "Bash":
         touch(need_forward)
 elif tn in ("Edit", "Write", "MultiEdit"):
     fp = ti.get("file_path", "") or ""
+    # ★2026-08-22（50回目・まこさん決定 A・next_step §6 の20番）＝プログラムを直した作業も記録の対象にする。
+    #   直す前の穴＝worklog を強制する見張り（enforce_worklog_on_experiment.py）が見ていたのは
+    #   ①売買記録CSV の更新時刻 ②分析の印 の2つだけ。
+    #   ＝売買記録CSVを出さない作業（プログラムを直す・文書を直す・検査を走らせる）は、まるごと検知の外だった。
+    #   実例＝50回目のセッション。CC が5本のファイルを書き換えても、見張りは1度も止めなかった。
+    #   ここで印を立て、enforce_worklog_on_experiment.py がその時刻を「作業した時刻」として見る。
+    if re.search(r"scripts/priority_rebuild/.*\.py$", fp):
+        touch(os.path.join(state, "tool_change_pending"))
     if fp.endswith("ledger.md"):
         rm(need_ledger)
         # ★file-state ベース判定（2026-06-29 まこさん改善）: ledger の【最新エントリ】(最後の "## " セクション)に
@@ -169,9 +177,20 @@ elif tn in ("Edit", "Write", "MultiEdit"):
             full = open(os.path.join(state, "next_step.md"), encoding="utf-8").read()
         except Exception:
             full = (ti.get("new_string", "") or "") + (ti.get("content", "") or "")
-        m = re.search(r"ARC_TABLE_START hash=(\w+).*?-->\n(.*?)\n<!-- ARC_TABLE_END", full, re.DOTALL)
-        arc_ok = bool(m) and hashlib.sha256(m.group(2).encode("utf-8")).hexdigest()[:12] == m.group(1)
-        if all(t in full for t in ("本筋", "やってはいけない", "出典", "改善アーク")) and arc_ok:
+        # ★2026-08-22（50回目・まこさん決定 A・next_step §6 の59番）＝判定を いまの実物に合わせた。
+        #   直す前は next_step.md の中の ARC_TABLE_START〜ARC_TABLE_END を探していたが、2026-08-16 に
+        #   改善の経緯の表を作るプログラムの出す先が improvement_arc.md へ変わり、印は 0件 になった
+        #   ＝この条件は永久に真にならず、旗が立つとセッションを閉じられなくなっていた（実測）。
+        #   ★判定は pdca_gate_body.judge_next_step の1か所だけが持つ（2か所に写さない・教訓 L-519）。
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        try:
+            from arc_doc_ok import arc_doc_ok as _arc_doc_ok
+            from pdca_gate_body import judge_next_step as _judge_ns
+            arc_ok, _why = _arc_doc_ok()
+            _ns_ok = _judge_ns(full, arc_ok)
+        except Exception:
+            _ns_ok = False           # 読めない＝通さない（fail-closed）
+        if _ns_ok:
             rm(need_next_step); rm(score_bg_pending); rm(diagnostic_active)   # セッション境界の安全側クリア
     if fp.endswith("forward_action.md"):
         # ★前向きな達成案を書いた→need_forward を下ろす（必須3見出しが揃う編集でだけ解除・2026-06-27）。

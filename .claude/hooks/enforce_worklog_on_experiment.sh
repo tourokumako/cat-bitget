@@ -44,7 +44,8 @@ if [ "$rc" -eq 9 ]; then
   exit 2
 fi
 
-echo "🔒 [引き継ぎ記録ゲート・fast-mode] 実験(新 trades_*.csv) または 分析(report/analyze/score/probe) を回したのに session_worklog が未更新です。" >&2
+echo "🔒 [引き継ぎ記録ゲート・fast-mode] 実験(新 trades_*.csv) ／ 分析(report/analyze/score/probe) ／ ★プログラムの直し(scripts/priority_rebuild/*.py) のどれかをしたのに session_worklog が未更新です。" >&2
+echo "★2026-08-22（まこさん決定 A・next_step §6 の20番）＝プログラムを直した作業も対象に足しました。直す前は 売買記録CSV と 分析の印 の2つしか見ておらず、プログラムを直すだけの作業は まるごと検知の外でした。" >&2
 echo "" >&2
 echo "fast-mode は改善アーク自動生成が使えない＝都度ログで引き継ぎの「改善内容・経緯（＝なぜそうしたか）」に誤解/ヌケモレを残さない（next_step 運転方式2・cat_requirements §8.5）。実験だけでなく分析の結論・方針判断も記録する（今回たまたま書けただけ＝再現性がないので強制・まこさん 2026-07-16）。" >&2
 echo "対処: session_worklog_<日付>.md に追記してからターンを終える。記載＝①何を変えた/何を分析した ②結論（採点窓 score.py の net・学習窓を持ち込まない）③merit/demerit ④次の一手（なぜ）。" >&2

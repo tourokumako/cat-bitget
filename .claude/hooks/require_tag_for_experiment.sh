@@ -19,12 +19,15 @@ CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.st
 # 明示オーバーライドは 2026-08-16 に廃止（まこさん指示）。
 # ★解除（合言葉）は 2026-08-16 に廃止＝まこさん指示「じゃあ強制解除できない状態にしろ」。通す道は無い。
 
-# python 実行コマンドの時だけ判定
-has_python=$(printf '%s' "$CMD" | grep -cE 'python[0-9.]*[[:space:]]')
-[ "$has_python" -eq 0 ] && exit 0
-
-# 実行する戦略 .py（e3N_ / strat_ / measure_）を抽出（probe/deep_analysis は分析＝除外）
-strat=$(printf '%s' "$CMD" | grep -oE '(e3[0-9][a-z0-9_]*|strat_[a-z0-9_]*|measure_[a-z0-9_]*)\.py' | grep -vE '(_probe|_deep_analysis)\.py$' | head -1)
+# ★2026-08-22（50回目・まこさん決定 A・next_step §6 の24番）＝探し方を直した。
+#   直す前＝①どこかに python の語が在るか ②どこかに 戦略の .py の名前が在るか、を別々に見ていた。
+#   ＝2つが別の場所に在っても「実験だ」と判断していた。
+#   実際に止まった例（2026-08-22）＝1つのコマンドの中に、ファイルを読む sed と、
+#   設定を読む python3 -c が並んでいただけ。どちらも実験ではない（41番と同じ型）。
+#   直したあと＝shell_cmd_scan.py が ①ヒアドキュメントの中身と注記を外し
+#   ②python と同じ ひとかたまり の中で引数として続く .py だけを拾う。
+#   確かめ方＝python3 .claude/hooks/shell_cmd_scan.py --selftest（11/11 pass・2026-08-22）
+strat=$(printf '%s' "$CMD" | python3 "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/shell_cmd_scan.py" --strategy 2>/dev/null)
 [ -z "$strat" ] && exit 0
 
 # テスト/非出力モード（出力を書かない or 動作確認）は通す

@@ -20,16 +20,30 @@ trades = glob.glob(os.path.join(ratchet, "trades_*.csv"))
 newest_trade = max((os.path.getmtime(p) for p in trades), default=0)
 marker = os.path.join(state, "fastmode_record_pending")
 newest_pending = os.path.getmtime(marker) if os.path.exists(marker) else 0
-newest_action = max(newest_trade, newest_pending)
+# ★2026-08-22（50回目・まこさん決定 A・next_step §6 の20番）＝プログラムを直した作業も対象にする。
+#   直す前の穴＝見ていたのは ①売買記録CSV ②分析の印 の2つだけ＝売買記録CSVを出さない作業
+#   （プログラムを直す・文書を直す・検査を走らせる）が、まるごと検知の外だった。
+#   実例＝50回目のセッション。CC が5本のファイルを書き換えても、この見張りは1度も止めなかった。
+#   印を立てるのは pdca_mark.py（Edit/Write/MultiEdit で scripts/priority_rebuild/*.py を触ったとき）。
+tool_marker = os.path.join(state, "tool_change_pending")
+newest_tool = os.path.getmtime(tool_marker) if os.path.exists(tool_marker) else 0
+newest_exp = max(newest_trade, newest_pending)             # B/C は実験・分析のときだけ見る
+newest_action = max(newest_exp, newest_tool)               # A は道具の直しも見る
 if newest_action == 0:
-    sys.exit(0)                                            # 実験も分析もしていない → 通す
+    sys.exit(0)                                            # 実験も分析も道具の直しもしていない → 通す
 
 wls = glob.glob(os.path.join(wldir, "session_worklog_*.md"))
 newest_wl = max((os.path.getmtime(p) for p in wls), default=0)
-if newest_wl < newest_action:                              # A) 記録が実験/分析より古い
+if newest_wl < newest_action:                              # A) 記録が実験/分析/道具の直しより古い
     sys.stderr.write("EXPERIMENT " if newest_trade > newest_wl else "")
     sys.stderr.write("ANALYSIS " if newest_pending > newest_wl else "")
+    sys.stderr.write("TOOLCHANGE " if newest_tool > newest_wl else "")
     sys.exit(7)
+
+# ★B と C は「実験・分析をした」ときだけ見る。
+#   道具を直しただけのターンで、過去の採点CSVの report/analysis を求めると、誤って止めてしまう。
+if newest_exp == 0:
+    sys.exit(0)
 
 scs = glob.glob(os.path.join(ratchet, "trades_*_score.csv"))
 if not scs:

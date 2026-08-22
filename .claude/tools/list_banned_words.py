@@ -32,22 +32,26 @@ HOOKS = Path(__file__).resolve().parent.parent / "hooks"
 #         "findall"     = 捕捉正規表現を text 全体に findall（group1 のリスト）
 #         "first"       = findall の先頭ユニーク
 REQUIRED = [
-    {"doc": "ledger", "file": "pdca_gate.sh",
+    # ★2026-08-22（50回目）＝読む先を pdca_gate.sh から pdca_gate_body.py に移した。
+    #   理由＝同日に、pdca_gate.sh の中に埋め込まれていた判定を pdca_gate_body.py へ出したため
+    #   （直したあとに走らせて確かめられるようにする・pdca_flow.md の「hook の python は別ファイル」）。
+    #   移す前は、この地図が pdca_gate.sh から見出しを取れず「drift（地図と実体のズレ）」を4件 出していた。
+    {"doc": "ledger", "file": "pdca_gate_body.py",
      "label": "6つの問い（最新 ## エントリに厳密一致で全部必須・そのままコピペ）",
-     "capture": r'toks\s*=\s*\[([^\]]*)\]', "mode": "quoted",
+     "capture": r'TOKS\s*=\s*\[([^\]]*)\]', "mode": "quoted",
      "note": "pdca_need_5q。見出しが1字でも違うと旗が残る（2026-07-06 事案）。下をコピペして各問の見出しにする。"},
-    {"doc": "ledger", "file": "pdca_gate.sh",
+    {"doc": "ledger", "file": "pdca_gate_body.py",
      "label": "方針（下のいずれか1語を含む見出しが必須・例『【方針/狙い】』）",
      "capture": r'in latest for k in \(([^)]*)\)', "mode": "quoted",
      "note": "pdca_need_5q。方針/狙い/目的 のどれかを含む見出し。"},
-    {"doc": "ledger", "file": "pdca_gate.sh",
+    {"doc": "ledger", "file": "pdca_gate_body.py",
      "label": "主張（必須・厳密一致）",
-     "capture": r'if "([^"]+)" in latest', "mode": "first",
+     "capture": r'return "([^"]+)" in latest', "mode": "first",
      "note": "pdca_need_claim。【主張】1行（件数/日 と net を含む結論）。"},
-    {"doc": "next_step", "file": "pdca_gate.sh",
-     "label": "必須見出し（4つ・厳密一致）",
-     "capture": r'all\(t in ns for t in \(([^)]*)\)', "mode": "quoted",
-     "note": "pdca_need_next_step。＋改善アーク表は『python3 .claude/ratchet/gen_improvement_arc.py --write』で生成（ARC_TABLE hash 一致必須・手書き禁止）。"},
+    {"doc": "next_step", "file": "pdca_gate_body.py",
+     "label": "必須見出し（4つ・厳密一致。★本筋 と 次にやること は どちらか1つで満たす）",
+     "capture": r'NS_HEAD_WORDS\s*=\s*\[([^\]]*)\]', "mode": "quoted",
+     "note": "pdca_need_next_step。＋改善の経緯の表は『python3 .claude/ratchet/gen_improvement_arc.py --write』で作る（improvement_arc.md の1行目の印 ARC_DOC hash と本文の一致が必須・手書き禁止・2026-08-22 に判定を実物へ合わせた）。"},
     {"doc": "analysis_block", "file": "require_analysis_before_proposal.sh",
      "label": "必須見出し（B完了ゲート・9+）",
      "capture": r'grep -q "([^"]+)"\s+"\$BLOCK"', "mode": "findall",

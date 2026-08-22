@@ -1262,7 +1262,13 @@ def v9_test(exclude_family: str | None = None) -> None:
     """検算＝できた表に V9 の実物の組み合わせ（の部品）が入っているか。入っていなければ表が不合格。
     exclude_family はメタ確認専用＝わざとその family を表から消して、検算が落ちることを確かめる。
     ★範囲の正直な明示＝この検算が見るのは Entry の部品（指標×5分足）まで。Exit の枝は D2 の段。
-    location_prev / entry_risk_score はカタログに機械対応が無く対象外（隠さず印字する）。"""
+    ★対象外の件数は、この関数が毎回 実測して印字する（隠さない）。
+      2026-08-22 の実測＝対象外 0 種。V9 の10種は全部 表に入っている。
+    ★2026-08-22 に、ここに在った古い文を直した（まこさん決定「５．修正する」・next_step §6 の27・28番）。
+      直す前の文＝「location_prev / entry_risk_score はカタログに機械対応が無く対象外（隠さず印字する）」。
+      その2件は 2026-08-11 に実測で対応が決まり、下の _V9_MAP に入っている
+      （location_prev→fib位置 は値の相関 +1.0000000 ／ entry_risk_score→BB幅 は +0.9999464）。
+      ＝コードは直っていたのに、この説明の文だけが古い版のまま残っていた。"""
     table = json.loads(OUT_JSON.read_text(encoding="utf-8"))
     parts = set(table["parts"])
     banned3 = {(p["part"], p["tf"]) for p in table["bans"]["insufficient_samples"]["pairs"]}
