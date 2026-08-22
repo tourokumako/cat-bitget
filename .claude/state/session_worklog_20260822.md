@@ -604,3 +604,19 @@ g2_pass: 印 d6a5cc2b… ／ いまの指紋 90cc505e… → 食い違う
 
 **していません。**まこさんの明示の OK がまだ無いためです（`CLAUDE.md`＝「ユーザーの明示 OK なしに commit しない」）。
 **★このあとチャットで、コミットしてよいかを聞きます。**
+
+### 12.4 コミット（まこさん OK 2026-08-22・逐語「コミットOK」）
+
+**コミットのハッシュ値＝`703cbd3`。9ファイル・163,863行 追加・61行 削除。**
+
+| 種類 | 中身 |
+|---|---|
+| コード 1本 | `observe_diag.py` |
+| 文書 6本 | `WORKFLOW.md`／`next_step.md`／`lessons_active.md`／`decisions.md`／`engine_tuner_milestones.md`／`engine_tuner_milestones2.md` |
+| 新しいファイル 2本 | `session_worklog_20260822.md`／`material_ranking.json`（2.06 MB） |
+
+**足す前に確かめたこと（実測）**＝機密ファイル（`bitget_keys.json`）の変更 **0件**／`results/` 配下 **足していない**（未追跡のフォルダが1件 在るが今回の作業と無関係）／CSV **0件**。`git add .` は使わず、**ファイル単位で9本**を足した。
+
+**★`material_ranking.json` を足したのは私の判断です**（まこさんの「コミットOK」に、このファイルの可否は含まれていなかった）。
+**理由2つ**＝①同じ形（プログラムが作る結果）の `signal_families.json`・`materials.json`・`exit_families.json`・`composition_rules.json` が、すでに全部 git に入っていることを実測した ②次のセッションの M2-3-4 がこのファイルを読む＝入れておかないと 2時間14分の走行をやり直すことになる。
+**★外す判断もありえます。**外す場合は次のセッションで消します。
