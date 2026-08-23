@@ -690,32 +690,29 @@ def load_material_ranking() -> dict:
     return _MATERIAL_RANKING
 
 
-def _rank_list(role: str, label: str, horizon) -> list:
-    """役割 × ラベル（強さ・向き・大きさ）× 先読みバー数 の順位の並びを返す（|分離力−0.5| の降順）。"""
+def ranked_materials(role: str, label: str | None = None) -> list[tuple[str, float, str, str]]:
+    """役割の材料を「場面を分ける力」の降順に並べた1本の一覧（M2-5 の B・2026-08-23 まこさん承認 327e7f80008f…）。
+
+    戻り＝[(列名, 分離力, ラベル, 先読み), ...]。ラベル（強さ・向き・大きさ）× 先読み（24・288）を全部 混ぜて
+    |分離力−0.5| の降順に並べる。label を指定したら、そのラベルだけ。
+    ★K（上位 K 列の中から乱数で1本）は 2026-08-23 に無くした＝まこさん決定「成績表の1位から順に使う」。
+      前の「上位 K」の基準（49回目・2026-08-22）は、この関数で置き換えた。数字（K）を持たない。
+    """
     d = load_material_ranking()["順位"]
-    try:
-        got = d[role][label][str(horizon)]
-    except (KeyError, TypeError):
-        raise SystemExit(f"[材料の順位] 順位に無い組み合わせ: {role}/{label}/{horizon}"
-                         f"（在る役割＝{sorted(d)}・fail-closed）")
-    if not got:
-        raise SystemExit(f"[材料の順位] {role}/{label}/{horizon} の順位が空（fail-closed）")
-    return got
-
-
-def rank_top_k_range(role: str, label: str, horizon) -> tuple[int, int]:
-    """上位 K の探せる範囲＝(1, その役割の載った全列数)。実物から数える＝数字を設定に書かない。"""
-    return (1, len(_rank_list(role, label, horizon)))
-
-
-def rank_top_cols(role: str, label: str, horizon, k) -> list[str]:
-    """場面を分ける力の上位 K 列の名前を返す。K が範囲の外なら止まる（fail-closed）。"""
-    got = _rank_list(role, label, horizon)
-    lo, hi = 1, len(got)
-    if not isinstance(k, int) or isinstance(k, bool) or not (lo <= k <= hi):
-        raise SystemExit(f"[材料の順位] 上位 K が範囲の外: {k!r}（{lo}〜{hi}＝下限1・上限は全列・"
-                         "上限で切れば絞らない状態）")
-    return [c for c, _a in got[:k]]
+    if role not in d:
+        raise SystemExit(f"[材料の順位] 成績表に役割 {role} が無い（在る役割＝{sorted(d)}・fail-closed）")
+    labels = [str(label)] if label is not None else sorted(d[role])
+    rows = []
+    for lab in labels:
+        if lab not in d[role]:
+            raise SystemExit(f"[材料の順位] 成績表に {role}/{lab} が無い（fail-closed）")
+        for hor in sorted(d[role][lab], key=lambda x: int(x)):
+            for col, acc in d[role][lab][hor]:
+                rows.append((abs(float(acc) - 0.5), str(col), float(acc), lab, str(hor)))
+    if not rows:
+        raise SystemExit(f"[材料の順位] {role}/{label} の順位が空（fail-closed）")
+    rows.sort(key=lambda r: (-r[0], r[1], r[3], r[4]))       # 強い順・同点は名前順（並びを決定論に）
+    return [(c, a, lab, hor) for _s, c, a, lab, hor in rows]
 
 
 def _role_tfs(tfs, table, role) -> list[str]:
@@ -977,11 +974,55 @@ def _dc2_q(rng, role, m, limits, table, side) -> dict:
     return _q(rng, limits)
 
 
+def _loose_q(rng, limits, q: str, side: str) -> str:
+    """出る線（off）の分位＝入る線（on）より緩い側を、分位の範囲の中から引く（法則 C6 の②）。
+
+    above（上に抜けたら入る）なら off は on より小さい分位・below なら大きい分位。
+    ★数字を書かない＝範囲は `q_range_of`（recipes/search_limits.json）。緩める余地が無ければ SampleError。
+    """
+    lo, hi = q_range_of(limits)
+    n = int(str(q).lstrip("q"))
+    if side == "above":
+        if n - 1 < lo:
+            raise SampleError("hysteresis: 入る線が分位の下限＝出る線を緩められない（above）")
+        return f"q{int(rng.integers(lo, n))}"
+    if n + 1 > hi:
+        raise SampleError("hysteresis: 入る線が分位の上限＝出る線を緩められない（below）")
+    return f"q{int(rng.integers(n + 1, hi + 1))}"
+
+
+def _make_hysteresis(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, side) -> dict:
+    """状態を保つ形（hysteresis）を1つ 組む（★72番の直し・M2-5-1・2026-08-23 まこさん承認 2b56024e711f…）。
+
+    直す前＝`STATE_FORMS` に hysteresis が在るのに、ここに分岐が無く、引くたびに
+    `SampleError 形 hysteresis の値の組み立てが未定義` で黙って引き直していた＝1本も案に入らなかった。
+    ★組み方（法則 C6 の②・U10・C7）＝
+      on  … 内側の条件1本（既存の `_make_cond`・入れ子なし・水準の形で分位を持つもの）
+      off … 同じ材料・同じ形で、閾値の分位だけを「入る線より緩い側」にずらしたもの（`_loose_q`）
+      value.n … 真を保てる最大の本数＝`state_hold_bars_range` から引く（範囲・数字を書かない）
+    ★閾値を持たない形（candle_dir・touch・cross・time）は内側に選ばない＝線をずらせないため。
+    """
+    for _try in range(20):
+        inner = _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, side,
+                           allow_nest=False)
+        v = inner.get("value") or {}
+        if inner.get("form") == "level" and "threshold_q" in v and inner.get("side") in ("above", "below"):
+            off = json.loads(json.dumps(inner))
+            off["value"]["threshold_q"] = _loose_q(rng, limits, v["threshold_q"], inner["side"])
+            return {"role": role, "form": "hysteresis", "on": inner, "off": off,
+                    "value": {"n": int(draw_num(rng, limits, "state_hold_bars_range"))}}
+    raise SampleError("hysteresis: 内側に置ける『水準×分位』の条件を20回 引いても作れない")
+
+
 def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, side, allow_nest=True) -> dict:
     forms = TRIGGER_FORMS if role == "trigger" else STATE_FORMS
     rr = table["roles"][role]
     forms = tuple(f for f in forms if f != "candle_dir" or "ローソク" in rr["lineages"])
+    if not allow_nest:
+        forms = tuple(f for f in forms if f != "hysteresis")   # 入れ子の内側には置けない（実行器 G5）
     form = str(rng.choice(forms))
+    if form == "hysteresis":                    # ★72番の直し（M2-5-1）＝分岐が無くて引き直していた
+        return _make_hysteresis(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, side)
     if form in ex.NEST_FORMS:
         if not allow_nest:
             form = "level"
@@ -1408,6 +1449,127 @@ def _make_exits(rng, limits, pool=None, tfs=None, table=None, side="SHORT", max_
     return [exits[i] for i in order]
 
 
+# ══ 場面の判定の束を組む（M2-5-1・2026-08-23 まこさん承認 2b56024e711f…）═══════════════════
+#   ★何を作るか＝meta.regime.build（判定の中身＝条件の束）を、案を作るプログラム自身が組む。
+#     52回目までは「読む口」（順位・決まり）と「拒否する側」（実行器 G7）だけで、組む側は0か所だった。
+#   ★組み方＝決まり1件に部品1つを対応させる（足りない部品が出ない作り・法則の番号は regime_detection_kb §11）。
+#     A 帯の幅      … K-6・R7  … geo W% が分位より上（下限の値は探す値）
+#     B 構造・位置  … K-4・R1  … location の順位（場面を分ける力）の r_b 位（1位から順・乱数でない）
+#     C 非トレンド  … K-5・R8・R5 … env「強さ」の順位の r_c 位 を not で包む（同上）
+#     D 上位足      … K-2・R3・C4 … C の時間足は 5m より上からだけ引く
+#     E 状態を保つ  … K-3・C6・C7・R4 … hysteresis（on＝A∩B∩C・off＝それぞれを緩い側へずらした any・n は範囲）
+#   ★数字を1つも書かない＝閾値は分位の範囲・n は state_hold_bars_range。順位は成績表の実物。
+#   ★K（上位 K 列の中から乱数で1本）は 2026-08-23 に無くした（まこさん決定「成績表の1位から順に使う」）。
+#     (r_b, r_c, 向き) は `regime_draw_order(order_n)` が決まった並びで割り当てる＝乱数を使わない。
+#   ★見本（RG-v5）の列（rg5_zone_ok など）は使わない＝bool_col は組まない（milestones2 §0 の 0.5 の2番）。
+#   ★実行器の G7 は最後にもう一度 見る＝生成の側で満たす作り ＋ 拒否の二重。
+
+REGIME_OUT_COL = {"range": "regime_range_built"}
+
+
+def _material_from_col(col: str) -> dict:
+    """成績表の列名（例 ER21__1h）を材料の辞書 {family, param, tf} に戻す（参照表＝indicator_reference_diag）。"""
+    if "__" not in col:
+        raise SampleError(f"順位の列名に時間足が無い: {col}")
+    name, tf = col.rsplit("__", 1)
+    ent, prm = iref.find(name)
+    if ent is None or ent["family"] not in ex.FAMILY_TEMPLATES:
+        raise SampleError(f"順位の列がカタログに無い: {col}")
+    p = None if len(prm) == 0 else (prm[0] if len(prm) == 1 else tuple(prm))
+    return {"family": ent["family"], "param": p, "tf": tf}
+
+
+def _ranked_material_at(role, rank_pos: int, tfs, table, label=None, tf_ok=None) -> tuple[dict, dict]:
+    """役割の材料を、成績表の rank_pos 位（1始まり）から取る（乱数を使わない・M2-5 の B）。
+
+    型の表（役割×系統・時間足）と禁止3（標本不足）を満たすものだけを数えて rank_pos 位。
+    戻り＝(材料, 記録{rank, col, label, horizon})。足りなければ SampleError（＝試行数がその役割の候補を使い切った）。
+    """
+    rr = table["roles"][role]
+    ok_tfs = set(tf_ok if tf_ok is not None else _role_tfs(tfs, table, role))
+    n = 0
+    for col, acc, lab, hor in ranked_materials(role, label):
+        tf = col.rsplit("__", 1)[1] if "__" in col else None
+        if tf not in ok_tfs:
+            continue
+        try:
+            m = _material_from_col(col)
+        except SampleError:
+            continue
+        if _lineage_of(m) not in rr["lineages"] or _banned_pair(m, table):
+            continue
+        n += 1
+        if n == int(rank_pos):
+            return m, {"rank": int(rank_pos), "col": col, "label": lab, "horizon": hor, "分離力": acc}
+    raise SampleError(f"{role}/{label or '全ラベル'} の順位に {rank_pos} 位が無い（使える候補 {n} 本）")
+
+
+def regime_draw_order(n: int) -> tuple[int, int, str]:
+    """案 n 番目（0始まり）に割り当てる (部品B の順位, 部品C の順位, 部品B の向き)＝1位から順・決まった並び。
+    並び＝順位の和が小さい順 → 同じ和なら部品B の順位が小さい順 → 向き above・below の順。
+    (1,1,above) (1,1,below) (1,2,above) (1,2,below) (2,1,above) (2,1,below) (1,3,…) …
+    ★乱数を使わない。どこまで下位を試すかは試行数（search_limits.json・まこさんの値）で決まる。"""
+    if n < 0:
+        raise SampleError("案の番号が負")
+    i = int(n) // 2
+    side = ("above", "below")[int(n) % 2]
+    s = 2
+    while True:
+        cnt = s - 1                                   # 和 s の組は (1,s-1) … (s-1,1) の s-1 通り
+        if i < cnt:
+            return i + 1, s - (i + 1), side
+        i -= cnt
+        s += 1
+
+
+def _flip_loose(rng, limits, c: dict) -> dict:
+    """水準の条件を「緩い側へずらして反転」した条件＝出る線（off）の部品（法則 C6 の②）。
+    above q → below q'（q' < q）／ below q → above q'（q' > q）。"""
+    out = json.loads(json.dumps(c))
+    out["value"]["threshold_q"] = _loose_q(rng, limits, c["value"]["threshold_q"], c["side"])
+    out["side"] = "below" if c["side"] == "above" else "above"
+    return out
+
+
+def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: int = 0) -> tuple[dict, dict]:
+    """場面の判定の束（meta.regime.build）を1つ 組む。戻り＝(build, 引いた記録)。いまはレンジだけ。
+
+    ★指標と向きは乱数で引かない（2026-08-23 まこさん決定）＝order_n 番目の (部品B の順位, 部品C の順位, 向き) を
+      `regime_draw_order` が決め、成績表の その順位の材料を使う。乱数が残るのは閾値の分位と続く長さ n だけ
+      （承認済みの「値は範囲で探す」）。
+    """
+    if name != "range":
+        raise SampleError(f"場面 {name} の束の組み方は未定義（レンジ以外は M2-6〜M2-8 で作る）")
+    load_scene_rules()                                  # 決まりの正本が読めることを確かめる（fail-closed）
+    tfs_all = list(table["tfs"])
+    upper = [t for t in tfs_all if tfs_all.index(t) > tfs_all.index("5m")]      # 執行足より上（K-2）
+    r_b, r_c, side_b = regime_draw_order(order_n)
+    draw: dict = {"order_n": int(order_n)}
+    # A 帯の幅（K-6・R7）＝geo W% が分位より上
+    cond_a = {"role": "location", "form": "level", "material": [{"geo": "W%"}],
+              "side": "above", "value": {"threshold_q": draw_q(rng, limits)}}
+    # B 構造・位置（K-4・R1）＝location の成績表の r_b 位（ラベルは混ぜる）・向きは order_n で決まる
+    m_b, draw["B"] = _ranked_material_at("location", r_b, tfs, table)
+    cond_b = {"role": "location", "form": "level", "material": [m_b],
+              "side": side_b, "value": {"threshold_q": draw_q(rng, limits)}}
+    # C 非トレンド（K-5・R8・R5）＝env「強さ」の r_c 位・時間足は 5m より上（D・K-2）
+    m_c, draw["C"] = _ranked_material_at("env", r_c, tfs, table, label="強さ",
+                                         tf_ok=[t for t in _role_tfs(tfs, table, "env") if t in upper])
+    strong = {"role": "env", "form": "level", "material": [m_c],
+              "side": "above", "value": {"threshold_q": draw_q(rng, limits)}}
+    cond_c = {"not": strong}
+    # E 状態を保つ（K-3・C6・C7・R4）＝on＝A∩B∩C／off＝それぞれを緩い側へずらした any／n は範囲
+    off_c = json.loads(json.dumps(strong))
+    off_c["value"]["threshold_q"] = _loose_q(rng, limits, strong["value"]["threshold_q"], "below")
+    # ↑ 「強さが上の線を超えたら解除」＝入る線（on の not の閾値）より上の分位＝below の緩め方と同じ向き
+    hyst = {"form": "hysteresis",
+            "on": {"all": [cond_a, cond_b, cond_c]},
+            "off": {"any": [_flip_loose(rng, limits, cond_a), _flip_loose(rng, limits, cond_b), off_c]},
+            "value": {"n": int(draw_num(rng, limits, "state_hold_bars_range"))}}
+    build = {"entry": {"out_col": REGIME_OUT_COL[name], "tree": {"all": [hyst]}}, "block": None}
+    return build, draw
+
+
 def default_regime() -> dict:
     """既定の相場の宣言＝接続ファイル e38 が設定ファイルから読んだもの（監査 4-19／要件 R5）。
 
@@ -1418,7 +1580,8 @@ def default_regime() -> dict:
     return _e38.regime("S2")
 
 
-def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id="GEN") -> dict:
+def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id="GEN",
+                     build_regime: bool = False, regime_order_n: int = 0) -> dict:
     """構造1本＝役割構成・本数・つなぎ方・形・材料・出口の枝・玉の持ち方 をランダムに組む。
 
     ★D1（2026-08-07 まこさん承認の型の表が正本）＝乱数は表の中だけで振る。
@@ -1444,7 +1607,9 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
     conds = []
 
     def _register(c):
-        for m in (c.get("material") or []) + ([c["inner"]["material"][0]] if c.get("inner", {}).get("material") else []):
+        # ★状態を保つ形（hysteresis）は材料を直接 持たない＝内側（on）の材料を数える（M2-5-1・72番の直し）
+        _hy = [c["on"]["material"][0]] if c.get("form") == "hysteresis" and (c.get("on") or {}).get("material") else []
+        for m in (c.get("material") or []) + ([c["inner"]["material"][0]] if c.get("inner", {}).get("material") else []) + _hy:
             kind = _lineage_of(m)
             key = (c["role"], kind)
             if c["role"] != "trigger" and key in seen_rolekind:
@@ -1535,10 +1700,19 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
             kids.append({"if": a, "then": b})
         tree = {"all": kids}
     pos_adds = int(draw_num(rng, limits, "max_adds_range"))  # 先に決める＝出口の枝が回数で切り替わるため
+    rg = dict(regime if regime is not None else default_regime())
+    meta_extra = {}
+    if build_regime:
+        # ★M2-5-1＝場面の判定の束を、案を作るプログラム自身が組んで meta.regime.build に入れる。
+        #   既定 False＝従来どおり（案の中身も乱数の消費も変えない・ここは最後に引く）。
+        bd, draw = sample_regime_build(rng, limits, pool, tfs, table, name=str(rg.get("name") or "range"),
+                                       order_n=int(regime_order_n))
+        rg["build"] = bd
+        meta_extra["regime_draw"] = draw             # 引いた記録（ラベル・先読み・K）＝人が追えるように残す
     return {
         "meta": {"strategy": "e38", "logic_id": logic_id, "side": side,
                  "signal_family": fam_label,
-                 "regime": dict(regime if regime is not None else default_regime())},
+                 "regime": rg, **meta_extra},
         "pre_filter": [],
         "entry": {"connective": tree},
         "exits": _make_exits(rng, limits, pool=pool, tfs=tfs, table=table, side=side,
@@ -2236,7 +2410,8 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                    base_trades=None, atr_edges=None, min_per_day=None, net_floor=None,
                    purpose: str, tag: str = "",
                    df_confirm: pd.DataFrame | None = None, confirm_start=None, confirm_end=None,
-                   base=None, rules: dict | None = None, rfloor: float | None = None) -> dict:
+                   base=None, rules: dict | None = None, rfloor: float | None = None,
+                   build_regime: bool = False) -> dict:
     """第1段＝構造をランダムに撒く（統計の土台）→ BH 法 → 第2段＝有望構造の値を TPE で詰める。"""
     meta = {"seed": seed, "trials1": trials1, "trials2": trials2, "top_k": top_k,
             "window": [str(start), str(end)], "side": side,
@@ -2259,7 +2434,8 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
         i += 1
         try:
             r = sample_structure(rng, limits, pool, tfs, side=side, regime=regime,
-                                 logic_id=f"GEN{len(structures):04d}")
+                                 logic_id=f"GEN{len(structures):04d}", build_regime=build_regime,
+                                 regime_order_n=len(structures))      # ★判定の束＝1位から順（乱数でない）
         except SampleError as e:
             rejects[f"サンプル不能: {e}"] += 1
             continue
@@ -2586,6 +2762,9 @@ KENSHU_LIMITS = {
     # ★2026-08-15（段A の A-5-4）＝入れ子の「ずらす本数」も検収専用の範囲を持つ。
     #   本走は search_limits.json の nest_offset_range を使う（T18 はそちらを読んで確かめる）。
     "nest_offset_range": {"lo": 0, "hi": 1, "kind": "int"},
+    # ★状態を保つ形（hysteresis）の続く長さ＝検収専用の範囲（M2-5-1・72番の直しで生成器が hysteresis を
+    #   組めるようになったため、検収の limits にも要る。本走は search_limits.json の state_hold_bars_range）。
+    "state_hold_bars_range": {"lo": 24, "hi": 288, "kind": "int"},
 }
 
 
@@ -3879,43 +4058,32 @@ def selftest() -> int:
     print(f"  T22c 状態に入って以降の前処理で、分位の解決表を作れる: 鍵 {len(_q22)} 件"
           f"（直す前は『基準にする状態の列がデータにありません』で止まった）")
 
-    # ══ T23 材料の順位を読む口（M2-3-4・2026-08-22 まこさん承認・acceptance 086a13df606d…）══════════
-    #   ①上位 K の切り出し＝K=10 で10列・並びが |分離力−0.5| の降順 ②K が範囲の外（0・全列+1）は拒否
-    #   ③成績表が無いと止まる（fail-closed） ④成績表とカタログの突き合わせ（載っていない列の数を出す）
+    # ══ T23 材料の順位（M2-3-4・2026-08-22 → ★2026-08-23 K を無くした版・まこさん承認 327e7f80008f…）══════════
+    #   ①`ranked_materials` の並びが |分離力−0.5| の降順 ②location の1位＝実物で確かめた S-Rタッチ数(144,0.006)__15m
+    #   ③型の表の外（役割に使えない系統・禁止3）は `_ranked_material_at` が飛ばす ④`regime_draw_order` が決まった並び
     global _MATERIAL_RANKING, _RANK_PATH
-    _t23_n = 0
     try:
         _rk = load_material_ranking()
-        _roles23 = sorted(_rk["順位"])
-        _role23 = _roles23[0]
-        _lab23 = sorted(_rk["順位"][_role23])[0]
-        _hor23 = sorted(_rk["順位"][_role23][_lab23])[0]
-        _lo23, _hi23 = rank_top_k_range(_role23, _lab23, _hor23)
-        if _lo23 != 1 or _hi23 < 1:
-            ng.append(f"T23①: K の範囲が (1, 全列) になっていない: ({_lo23}, {_hi23})")
-        _k23 = min(10, _hi23)
-        _cols23 = rank_top_cols(_role23, _lab23, _hor23, _k23)
-        _t23_n = len(_cols23)
-        if _t23_n != _k23:
-            ng.append(f"T23①: 上位 {_k23} を頼んだのに {_t23_n} 列 返った")
-        _sc23 = dict((c, a) for c, a in _rk["順位"][_role23][_lab23][_hor23])
-        _dist23 = [abs(_sc23[c] - 0.5) for c in _cols23]
+        _lst23 = ranked_materials("location")
+        _dist23 = [abs(a - 0.5) for _c, a, _l, _h in _lst23]
         if _dist23 != sorted(_dist23, reverse=True):
             ng.append("T23①: 並びが分離力の強い順（|分離力−0.5| の降順）になっていない")
-        for _bad_k in (0, _hi23 + 1):
-            try:
-                rank_top_cols(_role23, _lab23, _hor23, _bad_k)
-                ng.append(f"T23②: 範囲の外の K={_bad_k} が拒否されない")
-            except SystemExit:
-                pass
+        if _lst23[0][0] != "S-Rタッチ数(144,0.006)__15m":
+            ng.append(f"T23②: location の1位が実物と違う: {_lst23[0]}（成績表を作り直したなら この見本も直す）")
         _tbl23 = load_signal_table()
+        _pool23, _tfs23, _ = material_pool()
+        _m1, _d1 = _ranked_material_at("location", 1, _tfs23, _tbl23)
+        if ex.build_name(_m1) + "__" + _m1["tf"] != _d1["col"] or _d1["rank"] != 1:
+            ng.append(f"T23③: 1位の材料が列名と食い違う: {_m1} / {_d1}")
+        _ord = [regime_draw_order(i) for i in range(6)]
+        if _ord != [(1, 1, "above"), (1, 1, "below"), (1, 2, "above"), (1, 2, "below"), (2, 1, "above"), (2, 1, "below")]:
+            ng.append(f"T23④: 案の並びが決まった順でない: {_ord}")
         _all23 = {f"{p}__{t}" for p in _tbl23["parts"] for t in _tbl23["tfs"]}
         _listed23 = {c for bl in _rk["順位"].values() for bn in bl.values()
                      for got in bn.values() for c, _a in got}
-        print(f"  T23 材料の順位: {_role23}/{_lab23}/{_hor23} の上位 {_k23} 列を切り出し・並びは強い順"
-              f" ／ K の範囲 ({_lo23}, {_hi23}) ／ 範囲の外 2通りは拒否"
-              f" ／ ★突き合わせ＝型の表の列 {len(_all23)} 本のうち順位に載っているのは {len(_all23 & _listed23)} 本"
-              f"（載っていない {len(_all23 - _listed23)} 本＝役割の枠の外と、測れなかった列）")
+        print(f"  T23 材料の順位: location の並び {len(_lst23)} 本（降順）／ 1位 {_lst23[0][0]}（分離力 {_lst23[0][1]}）"
+              f" ／ 案の並び {_ord[:4]}… ／ ★突き合わせ＝型の表の列 {len(_all23)} 本のうち順位に載っているのは"
+              f" {len(_all23 & _listed23)} 本（載っていない {len(_all23 - _listed23)} 本＝役割の枠の外と、測れなかった列）")
     except SystemExit as _e23:
         ng.append(f"T23: 順位の読み出しが止まった: {_e23}")
     # ③fail-closed＝成績表が無いと止まる（パスを一時的に無い場所へ差し替えて確かめ、必ず戻す）
@@ -3930,6 +4098,81 @@ def selftest() -> int:
             pass
     finally:
         _MATERIAL_RANKING, _RANK_PATH = _keep_rank, _keep_path
+
+    # ══ T24 場面の判定の束を組む（M2-5-1・2026-08-23 まこさん承認 2b56024e711f…）══════════════════
+    #   ①72番の直し＝hysteresis を必ず引かせても SampleError にならず、on と off の分位が違う
+    #   ②レンジの束 N本 が実行器の検査（G5・G6・G7）を通る本数（M2-5-3 の数え方の土台・数字は決めない）
+    #   ③わざと A（K-6）・C（K-5）・hysteresis（K-3）を外した束は G7 で落ちる（番人）
+    #   ④材料が順位の上位 K の中から出ている＝K=1 なら1列しか候補に無い ⑤K が範囲の外なら止まる（T23②と同じ口）
+    try:
+        _tbl24 = load_signal_table()
+        _pool24, _tfs24, _ = material_pool()
+        _lm24, _w24 = load_limits()
+        _lm24 = resolve_hold_range(_lm24, "e38")
+        _lim24 = {"n_min": None, "p_max": _lm24.get("p_max"), "count_range": _lm24.get("count_range"),
+                  "role_max": _lm24.get("role_max"), "depth_max": _lm24.get("depth_max"),
+                  "k_max": _lm24.get("k_max"), "r_min": _lm24.get("r_min")}
+
+        class _R24:                                   # hysteresis を必ず引く rng（①の道具）
+            def __init__(self, s): self.r = np.random.default_rng(s)
+            def choice(self, a, *k, **kw):
+                a = list(a)
+                return "hysteresis" if "hysteresis" in a else self.r.choice(a, *k, **kw)
+            def __getattr__(self, n): return getattr(self.r, n)
+        _c24 = _make_cond(_R24(1), "env", _lm24, _pool24, _tfs24, set(), {}, _tbl24, "SHORT")
+        if _c24.get("form") != "hysteresis" or _c24["on"]["value"]["threshold_q"] == _c24["off"]["value"]["threshold_q"]:
+            ng.append(f"T24①: hysteresis が組めない・または on と off の分位が同じ: {_c24}")
+        _n24, _ok24 = 100, 0
+        _rej24: Counter = Counter()
+        _r24 = None
+        _orders24 = []
+        for _i in range(_n24):
+            _rng = np.random.default_rng([24, 1, _i])
+            try:
+                _rr = sample_structure(_rng, _lm24, _pool24, _tfs24, side="SHORT", logic_id=f"T24_{_i}",
+                                       build_regime=True, regime_order_n=_i)
+                ex.validate_recipe(_rr, limits=_lim24)
+                _ok24 += 1
+                _r24 = _r24 or _rr
+                _dr = _rr["meta"]["regime_draw"]
+                _orders24.append((_i, (_dr["B"]["rank"], _dr["C"]["rank"])))
+                # ★同じ order_n なら同じ指標（乱数でない）
+                _rr2 = sample_structure(np.random.default_rng([99, 1, _i]), _lm24, _pool24, _tfs24, side="SHORT",
+                                        logic_id="x", build_regime=True, regime_order_n=_i)
+                if _rr2["meta"]["regime_draw"]["B"]["col"] != _dr["B"]["col"] or _rr2["meta"]["regime_draw"]["C"]["col"] != _dr["C"]["col"]:
+                    ng.append(f"T24②: 同じ案の番号 {_i} なのに指標が変わった（乱数で引いている）")
+            except SampleError as _e:
+                _rej24[f"サンプル不能: {str(_e)[:30]}"] += 1
+            except ex.RecipeError as _e:
+                _rej24[str(_e)[:40]] += 1
+        if _ok24 == 0 or _r24 is None:
+            ng.append(f"T24②: レンジの束が1本も検査を通らない: {dict(_rej24)}")
+        else:
+            _hy = _r24["meta"]["regime"]["build"]["entry"]["tree"]["all"][0]
+            _on, _off = _hy["on"]["all"], _hy["off"]["any"]
+            # ★外すときは on と off の両方から外す（off に同じ部品が残ると G7 はそちらで満たされる）
+            for _lbl, _mk in (("A（K-6 帯の幅）", lambda t: {"all": [{"form": "hysteresis", "on": {"all": _on[1:]}, "off": {"any": _off[1:]}, "value": _hy["value"]}]}),
+                              ("C（K-5 否定）", lambda t: {"all": [{"form": "hysteresis", "on": {"all": _on[:2]}, "off": {"any": _off[:2]}, "value": _hy["value"]}]}),
+                              ("hysteresis（K-3）", lambda t: {"all": _on})):
+                _bad = json.loads(json.dumps(_r24))
+                _bad["meta"]["regime"]["build"]["entry"]["tree"] = _mk(None)
+                try:
+                    ex.validate_recipe(_bad, limits=_lim24)
+                    ng.append(f"T24③: {_lbl} を外した束が拒否されない")
+                except ex.RecipeError as _e:
+                    if "G7" not in str(_e)[:12]:
+                        ng.append(f"T24③: {_lbl} を外した束が G7 以外で止まった: {str(_e)[:60]}")
+            if _r24["meta"]["regime_draw"]["B"]["rank"] != 1 or _r24["meta"]["regime_draw"]["C"]["rank"] != 1:
+                ng.append(f"T24④: 0番目の案が (1,1) でない: {_r24['meta']['regime_draw']}")
+            _bad24 = [(i, got, regime_draw_order(i)[:2]) for i, got in _orders24 if got != regime_draw_order(i)[:2]]
+            if _bad24:
+                ng.append(f"T24④: 案の (B,C) の順位が並びどおりでない（番号, 実物, 期待）: {_bad24[:4]}")
+        print(f"  T24 場面の判定の束（レンジ）: ①hysteresis on {_c24['on']['value']} → off {_c24['off']['value']}"
+              f"（n={_c24['value']['n']}）／ ②{_n24}本 組んで検査（G5・G6・G7）を通った {_ok24}本"
+              f"（通らなかった内訳 {dict(_rej24) or 'なし'}）／ ③A・C・hysteresis を外すと G7 で落ちる"
+              f" ／ ④0番目は (1,1)・並びどおり・同じ番号なら同じ指標 ／ 引いた記録の例 {(_r24 or {}).get('meta', {}).get('regime_draw')}")
+    except SystemExit as _e24:
+        ng.append(f"T24: 途中で止まった: {_e24}")
 
     if ng:
         for x in ng:
@@ -4059,7 +4302,7 @@ def run_main(a) -> int:
                          atr_edges=rules.get("atr_band_edges"), min_per_day=mpd,
                          net_floor=a.net_floor, purpose=a.purpose, tag=a.tag,
                          df_confirm=df_c, confirm_start=CONFIRM_START, confirm_end=CONFIRM_END,
-                         base=base, rules=rules, rfloor=rfloor)
+                         base=base, rules=rules, rfloor=rfloor, build_regime=bool(a.build_regime))
     print(f"\n[本走まとめ] 通った {out['kept']} 本 ／ 捨てた {out['dropped']} 本 ／ 再利用 {out['reused']} 本"
           f" ／ 結論 {out.get('verdict') or '（判定表を出していない）'} ／ 記録 {run_dir}")
     return 0
@@ -4073,6 +4316,8 @@ def main() -> int:
     # ── 本走（2026-08-05 新設・next_step §6.5 の13番・まこさん OK「OK」）────────────
     ap.add_argument("--run", action="store_true",
                     help="本走＝実データで構造を撒いて売買を回す（--purpose 必須・値決め窓のみ）")
+    ap.add_argument("--build-regime", action="store_true",
+                    help="★M2-5-1＝全案に場面の判定の束（meta.regime.build）を付ける（既定 off＝従来どおり）")
     ap.add_argument("--strategy", default="e38", help="宣言の出どころの戦略（接続ファイル tuner_adapters/<名前>.py）")
     ap.add_argument("--logic", default="S2",
                     help="宣言を借りるロジック id。側・局面・件数の下限・ATR%%帯・δ・N_max・土台をここから機械で読む")
