@@ -3832,13 +3832,17 @@ def _insp_lookahead(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) 
     切り詰めて値が変わる／消える列＝t より後の情報を使っている疑い。"""
     ng = []
     src = pathlib.Path(__file__).read_text(encoding="utf-8")
-    for pat, why in ((_J(".shift", "(-"), "負の shift＝未来参照"),
-                     (_J("center", "=True"), "中央寄せ rolling＝未来参照")):
-        hits = [i + 1 for i, line in enumerate(src.splitlines())
-                if pat in line and "H2OK" not in line]
-        print(f"  静的検査 {why}: {len(hits)} 行 {hits if hits else ''}")
-        for ln in hits:
-            ng.append(f"静的検査: {why} が {ln} 行目にある")
+    # ★2026-08-23（54回目・77番・まこさん承認 eb6f38734142e25c…）＝探し方を hook の正本（h2_scan 経由）にした。
+    #   直す前＝行をそのまま見て「H2OK が無ければ ❌」＝説明の文章（docstring）の語にも反応した
+    #   （:394 の「`.shift(-` も `center=True` も1つも使っていません」で ❌ 2件・実測）。
+    #   41番（説明の文章での誤発火）を hook と leak_causality_diag では直してあったが、ここだけ古いままだった。
+    #   いま＝hook の find_bad（コメント・docstring を外してから見る）を h2_scan 経由で呼ぶ＝写しを持たない。
+    import h2_scan
+    hits = h2_scan.scan_text(src)
+    print(f"  静的検査（探し方の正本＝{pathlib.Path(h2_scan.SOURCE).name}・説明の文章は外して見る）: "
+          f"注記なしの未来参照の書き方 {len(hits)} 行 {[i for i, _ in hits] if hits else ''}")
+    for ln, line in hits:
+        ng.append(f"静的検査: 注記なしの未来参照の書き方が {ln} 行目にある: {line.strip()[:60]}")
     span = bars.loc[bars.index.max() - pd.Timedelta(days=int(cfg["warmup_days"]) + 3):]
     feat_full, meta_full = build_features(span, cfg, catalog)
     # ★この検査は本走より短い期間（助走+3日）で計算し直す＝長い本数が要る指標は、その期間では
@@ -6189,6 +6193,13 @@ def selftest() -> None:
         _ng4 = _insp_lookahead(_sb3, {**cfg, "timeframes": ["5m"], "warmup_days": 3}, catalog=_leaky)
     if not any("未来を見る列" in x for x in _ng4):
         ng.append("検査4 がわざと入れた未来参照列（1本先の close）を見逃す")
+    # ★検査4 の静的検査の番人（2026-08-23・77番）＝本物のコード行は拾い、説明の文章（docstring）の同じ語は拾わない
+    import h2_scan as _h2s
+    _probe = "x = c" + ".shift(" + "-1)"                     # ここに直接 書くと hook が止まる（穴⑤）ので組み立てる
+    if not _h2s.scan_text("def f():\n    " + _probe + "\n"):
+        ng.append("検査4 の静的検査が、本物の未来参照の書き方を拾わない（甘くなっている）")
+    if _h2s.scan_text('def f():\n    """説明: ' + _probe + ' は使っていません。"""\n    return 1\n'):
+        ng.append("検査4 の静的検査が、説明の文章（docstring）の語で誤って止まる（77番が戻った）")
     for need in INSPECT_SECTIONS:
         if need not in src:
             ng.append(f"データと指標の検査の節が実装されていない: {need}")

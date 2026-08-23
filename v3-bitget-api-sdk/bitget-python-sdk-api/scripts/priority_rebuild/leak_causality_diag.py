@@ -25,11 +25,13 @@ CUT より前の結果が1つでも違えば、それは CUT より後のデー�
       ★局所的な未来参照（6本先の値を今の行に置く型）はここで捕まる＝CUT の直前 6 行がずれるため。
 
   検査1-b｜売買記録の突き合わせ（遅い・売買ループ自体を見る）
-      E38 を2回 走らせ、CUT より前に決済が終わった売買を1行ずつ突き合わせる。
-      ★売買ループの中で先の足を覗く型（出口判定が未来を走査する等）はここで捕まる。
-      境目の扱い＝CUT の時点でまだ持っている玉は、打ち切り側だけ強制決済されうる。それは未来参照
-      ではなくデータの終わりの都合なので、余白（既定3日）を取り、CUT−余白 より前に決済が
-      終わった売買だけを厳密に突き合わせる。
+      E38 を2回 走らせ、CUT より前に決済が終わった売買を、CUT の直前の玉まで1行ずつ突き合わせる。
+      ★売買ループの中で先の足を覗く型（出口判定が未来を走査する等）は、覗いた先が CUT を越える玉
+        （＝CUT の直前の玉）で違いが出るので、ここで捕まる（番人1c-4 が実物で確かめる）。
+      境目の扱い＝CUT の時点でまだ持っている玉は、打ち切り側だけ強制決済される（決済理由 FORCE_CLOSE_EOD）。
+      それは未来参照ではなくデータの終わりの都合なので、**その玉だけを名指しで外す**。
+      ★2026-08-23（74番）に直した＝直す前は「CUT−3日 より前の玉だけ」を比べていたので、3日（864本）
+        より近くを覗く型が捕まらなかった（余白の中に違いが出る玉が居た）。余白の既定は 0 日にした。
 
   検査2｜既存コードの全数スキャン（穴② に対応）
       scripts/priority_rebuild の .py を全部 見て、注記なしの未来参照パターンを出す。
@@ -76,7 +78,6 @@ import hashlib
 import inspect
 import json
 import pathlib
-import re
 import sys
 import time
 
@@ -92,36 +93,16 @@ import e38_priority_stack as e38    # noqa: E402  E38 の設定解釈（load_log
 
 # ══ 探し方の正本＝hook（require_leak_annotation.py）そのもの ═══════════════════════════
 #   ★2026-08-21（48回目・M2-2-8）に、書き写しをやめて hook の関数を直接 呼ぶ形にした。
-#     直す前＝同じ正規表現を hook と ここの2か所に書き写していた（下の元の1行）。
-#       SCAN_PAT = re.compile(r"\.shift\(\s*-|center\s*=\s*True")
+#     直す前＝同じ正規表現を hook と ここの2か所に書き写していた。
 #     何が起きたか＝41番（説明の文章の中の語で誤って止まる）を hook だけ直したら、
 #     **この検査だけが古い探し方のまま残り、H2 の検査が落ちた**（2026-08-21 に実際に起きた）。
 #     ＝「hook と同じ探し方」と説明文に書いてあっても、写しは黙ってずれる。
-#   ★読み込めなければ止まる（fail-closed）＝探し方の正本が無いまま「0件」と出さない。
-def _load_scanner():
-    import importlib.util
-    # ★階層の数を書かない＝上へ辿って探す（数え間違いで黙って別の場所を指すのを防ぐ）
-    p = None
-    for up in [HERE] + list(HERE.parents):
-        cand = up / ".claude" / "hooks" / "require_leak_annotation.py"
-        if cand.exists():
-            p = cand
-            break
-    if p is None:
-        raise SystemExit("[検査2] 探し方の正本（.claude/hooks/require_leak_annotation.py）が"
-                         f"{HERE} から上に見つからない"
-                         "（hook と同じ探し方でなければ、この検査は検査になりません）")
-    spec = importlib.util.spec_from_file_location("require_leak_annotation_scanner", p)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    for need in ("find_bad", "PAT"):
-        if not hasattr(mod, need):
-            raise SystemExit(f"[検査2] 探し方の正本に {need} が無い: {p}")
-    return mod
+#   ★2026-08-23（54回目・77番）＝読み込む処理を h2_scan.py（共有モジュール）へ移した。
+#     理由＝observe_diag の検査4 が同じ型（古い探し方のまま）で誤って ❌ を出していた＝使う側が2つに
+#     なったので、読み込む処理も1か所にする。fail-closed は h2_scan の中（正本が無ければ止まる）。
+import h2_scan                      # noqa: E402
 
-
-_SCANNER = _load_scanner()
-SCAN_PAT = _SCANNER.PAT                    # 表示・番人のためだけに持つ（判定は find_bad が行う）
+SCAN_PAT = h2_scan.PAT                     # 表示・番人のためだけに持つ（判定は find_bad が行う）
 SCAN_DIR = HERE.parent
 # 突き合わせから外す列（診断のための記録で、売買の判断にも net にも関与しない）
 IGNORE_COLS = ("logic",)
@@ -131,8 +112,8 @@ IGNORE_COLS = ("logic",)
 # 検査2｜既存コードの全数スキャン（穴② に対応・探し方は hook と同じなので穴③ は塞がらない）
 # ============================================================================
 def scan_line(line: str) -> bool:
-    """1行が「注記なしの未来参照」か。★判定は hook の関数がする（写しを持たない）。"""
-    return bool(_SCANNER.find_bad(line + "\n"))
+    """1行が「注記なしの未来参照」か。★判定は hook の関数がする（写しを持たない・h2_scan 経由）。"""
+    return h2_scan.scan_line(line)
 
 
 def scan_text(text: str) -> list[tuple[int, str]]:
@@ -141,7 +122,7 @@ def scan_text(text: str) -> list[tuple[int, str]]:
     ★1行ずつでなく全文を渡す理由＝説明の文章（docstring）は複数行にまたがるので、
       1行だけ見ても「いま文字列の中か」が分からない（2026-08-21 に この取り違えで H2 が落ちた）。
     """
-    return _SCANNER.find_bad(text)
+    return h2_scan.scan_text(text)
 
 
 def scan_existing_code() -> list[tuple[str, int, str]]:
@@ -266,6 +247,8 @@ WATCHED = [                                              # 指紋の対象＝eng
     # ★2026-08-20（M2-1-9・まこさん OK）＝経路に載っているのに対象に無かった2本を足した（62番の穴）。
     #   engine_tuner_exec.py:1077 が observe_diag.build_features を呼ぶ＝この2本が変われば結果が変わりうる。
     f"{_PR}/observe_diag.py", f"{_PR}/observe_config.json",
+    # ★2026-08-23（77番）＝探し方の正本を読む共有モジュール（検査2・検査4 が使う）。
+    f"{_PR}/h2_scan.py",
 ]
 
 
@@ -399,6 +382,39 @@ def tuner_check(margin_days: float) -> int:
     if not same_rec:
         return 1
 
+    # ── 番人1c-4（2026-08-23・54回目・75番・まこさん承認 eb6f38734142e25c…）＝売買ループの細工を見つける ──
+    #   なぜ要るか＝番人3・4 は作り物の売買記録で「比べる関数」だけを試し、番人1c-1 は列の細工だけ。
+    #   「実エンジンの売買ループに未来参照を入れたら落ちる」を一度も実物で確かめていなかった。
+    #   ＝余白3日の穴（74番＝CUT の直前の玉を比べない）が在ることに、テストでは気づけなかった。
+    #   細工＝実行器に渡す high・low（TP/SL の約定判定に使う列）を6本先の値にずらす。切った走行では
+    #   最後の6本が NaN になって約定が変わる＝CUT の直前の玉が違う＝余白0日なら必ず捕まる。
+    def _sab_hl(d):
+        x = d.copy()
+        for _col in ("high", "low"):
+            x[_col] = pd.Series(x[_col]).shift(-6).to_numpy()   # H2OK: 番人1c-4 の細工＝わざと未来を見せて検査が落ちるかを確かめる行。実戦の経路からは呼ばれない
+        return x
+    #   ★切る所＝「細工で変わる足（最後の6本）に玉が掛かっている時刻」にする（2026-08-23 実測＝本番の
+    #     打ち切り日 4/15 0:00 の直前は1日以上 玉が無く、どこも変わらなかった）。細工した切らない走行の
+    #     S1 の玉のうち、CUT より前で最後に決済した玉の決済の足の直後を CUT4 にする＝その玉は切った走行
+    #     では最後の6本（NaN）で約定できず強制決済（FORCE_CLOSE_EOD）になる＝余白0日なら件数が違って捕まる。
+    s1 = dict(recs)["恒等S1"]                                  # 玉が多い（90日で約1,700件）
+    a4 = _run_one(ex, _sab_hl(full), s1, None)
+    if isinstance(a4, str) or not len(a4):
+        print(f"  番人1c-4 売買ループの細工（high・low を6本先に）: ❌ 走れない／玉が無い（{a4 if isinstance(a4, str) else 0}）")
+        return 1
+    last_exit = a4.loc[a4["exit_time"] < cut, "exit_time"].max()
+    cut4 = pd.Timestamp(last_exit) + pd.Timedelta(minutes=5)   # 決済の足を含めて切る（ts < cut4）
+    part4 = load_tuner_df(cut=cut4)
+    b4 = _run_one(ex, _sab_hl(part4), s1, None)
+    if isinstance(b4, str):
+        print(f"  番人1c-4 売買ループの細工（high・low を6本先に）: ❌ 走れない（{b4}）")
+        return 1
+    bad4, n4 = compare_trades(a4, b4, cut4, margin_days)
+    print(f"  番人1c-4 売買ループの細工（high・low を6本先に）を見つける（切る所 {cut4}＝玉が掛かる足・突き合わせ {n4} 件）: "
+          f"{('✅ 見つけた → ' + bad4[0][:80]) if bad4 else '❌ 見逃した＝売買の突き合わせが CUT の直前の玉を見ていない（74番）'}")
+    if not bad4:
+        return 1
+
     # ── (a) データの全列（探索の指標の経路）────────────────────────────────
     bad = compare_features(full, part, cut)
     if bad:
@@ -492,12 +508,32 @@ def compare_features(full: pd.DataFrame, cut_df: pd.DataFrame, cut) -> list[str]
     return _diff_cols(a, b, "ts")
 
 
-def compare_trades(full: pd.DataFrame, cut_df: pd.DataFrame, cut, margin_days: float) -> tuple[list[str], int]:
-    """検査1-b｜CUT−余白 より前に決済が終わった売買を1行ずつ突き合わせる。"""
+FORCED_EOD = "FORCE_CLOSE_EOD"   # データの終わりで強制決済された玉の決済理由（e37._record・score.py の taker に登録済み）
+
+
+def compare_trades(full: pd.DataFrame, cut_df: pd.DataFrame, cut, margin_days: float = 0.0) -> tuple[list[str], int]:
+    """検査1-b｜CUT より前に決済が終わった売買を、CUT の直前の玉まで1行ずつ突き合わせる。
+
+    ★2026-08-23（54回目・74番・まこさん承認 eb6f38734142e25c…）に直した。
+      直す前＝CUT−3日 より前に決済した玉だけを比べていた（余白3日）。余白を取った理由は「切った走行では
+      データの終わりで持っている玉が強制決済される＝未来参照ではない違いが出る」だった。
+      ところが、売買ループの中の未来参照で結果が変わるのは「見ようとした先が CUT を越える玉＝CUT の直前の玉」
+      だけで、その玉が余白の中に居た＝3日（864本）より近くを覗く型は捕まらなかった（番人1c-4 で実測＝見逃し）。
+      直した後＝余白で一律に外すのをやめ、外すべき玉（強制決済＝決済理由 FORCE_CLOSE_EOD）だけを名指しで外す。
+        a＝切らない走行の、CUT より前に決済した玉
+        b＝切った走行の、強制決済ではない玉（切った走行の玉は全部 CUT より前に決済している）
+      margin_days は残すが既定 0＝0 が正しい状態（余白は検査を甘くする・どうしても要るときだけ）。
+    """
     edge = cut - pd.Timedelta(days=margin_days)
     srt = ["entry_time", "exit_time", "side"]
     a = full[full["exit_time"] < edge].sort_values(srt, kind="stable").reset_index(drop=True) if len(full) else full
-    b = cut_df[cut_df["exit_time"] < edge].sort_values(srt, kind="stable").reset_index(drop=True) if len(cut_df) else cut_df
+    if len(cut_df):
+        keep = cut_df["exit_time"] < edge
+        if "exit_reason" in cut_df.columns:
+            keep &= cut_df["exit_reason"] != FORCED_EOD
+        b = cut_df[keep].sort_values(srt, kind="stable").reset_index(drop=True)
+    else:
+        b = cut_df
     if len(a) != len(b):
         return ([f"（件数が違う: 打ち切りなし {len(a)} 件 / 打ち切りあり {len(b)} 件）"], max(len(a), len(b)))
     if len(a) == 0:
@@ -542,7 +578,8 @@ def _synthetic_trades(peek: bool) -> pd.DataFrame:
         rows.append({"entry_time": base + pd.Timedelta(hours=i),
                      "exit_time": base + pd.Timedelta(hours=i, minutes=30),
                      "side": "SHORT", "entry_price": 100.0 + i,
-                     "exit_price": 99.0 + i + (0.5 if peek else 0.0)})
+                     "exit_price": 99.0 + i + (0.5 if peek else 0.0),
+                     "exit_reason": "TP_FILLED"})
     return pd.DataFrame(rows)
 
 
@@ -619,8 +656,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="H2（leak なし）を打ち切り再現テストで確かめる読み取り専用の診断")
     ap.add_argument("--cut-days", type=int, nargs="*", default=[45, 90],
                     help="採点窓の開始から何日目で打ち切るか（複数可・既定 45 と 90）")
-    ap.add_argument("--margin-days", type=float, default=3.0,
-                    help="売買記録の突き合わせで打ち切り日の手前に取る余白（日・既定3）")
+    ap.add_argument("--margin-days", type=float, default=0.0,
+                    help="売買記録の突き合わせで打ち切り日の手前に取る余白（日・既定0＝0 が正しい状態。"
+                         "2026-08-23 の74番の直しで 3→0。余白は検査を甘くする）")
     ap.add_argument("--selftest", action="store_true", help="検査3（番人）だけ走らせる")
     ap.add_argument("--scan", action="store_true", help="検査2（全数スキャン）だけ走らせる")
     ap.add_argument("--features", action="store_true", help="検査1-a（指標の突き合わせ）だけ走らせる")
