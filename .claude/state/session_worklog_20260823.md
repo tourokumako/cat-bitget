@@ -875,6 +875,26 @@ python3 scripts/priority_rebuild/verify_design_contract.py --write <設計書>
 **入れないもの**＝`.claude/state/acceptance.md`（承認の対象・追跡外）／`.claude/state/design_approved.json`（いま中身は空）／CSV・results・ログ。
 **`config/bitget_keys.json` に変更が無いことを、add の前にプログラムで確かめました（0件）。**
 
+### 38.4 コミット（まこさん OK・逐語「記録の仕上げとコミットしていいよ」）
+
+- **`7fa3b54`** feat: 56回目＝設計書と実装の齟齬を止める仕組みを作った（まこさん指示の1件目）。**13ファイル・1,893行 追加／75行 削除。**
+- **push はしていません。**
+- 内訳＝hook 2本（`require_design_contract_before_run.sh`・`approve_design.sh` 新設）／プログラム1本（`verify_design_contract.py`・677行）／設計書2本（`contract_check_design.md` 新設・`contract_check_design.md.actual.md` 新設）／文書8本（`next_step.md`・本 worklog・`lessons_active.md`・`decisions.md`・`e37_design.md`・`engine_tuner_milestones2.md`・`WORKFLOW.md`・`word_replacements.md`）。
+
+### 38.5 ★次のセッションの起点
+
+**2件目＝確かめる側の判断を CC から外す5件**（`next_step.md` の（0-B））。
+
+| 順 | 何をするか |
+|---|---|
+| 1 | 「作ってはいけないものとの照合」を、手書きの表から、実物を数えて自動で作る表に変える |
+| 2 | 目的ゲート（`enforce_purpose_gate.sh`）を作り直して登録する（79番・17日 放置） |
+| 3 | 登録されていない hook を、毎セッションの点検で画面に出す（83番） |
+| 4 | やることリストの「確かめ方」欄を、要件の逐語から降ろす |
+| 5 | ✅済 の根拠を、走らせた出力に限る |
+
+**そのあと**＝78番（場面の判定でパラメータが範囲から探されていない）を直す → M2 を再開（`next_step.md` の（0-C））。
+
 ### 36.12 直した文書1本（`e37_design.md`・`next_step.md` §6 の87番）
 
 **契約が箇条書きで書かれていて、json の囲みが無かった**＝照合の対象から外れたままだった。**json の囲みに直した。中身は1文字も変えていない。**直す前の2行は履歴として残した。
