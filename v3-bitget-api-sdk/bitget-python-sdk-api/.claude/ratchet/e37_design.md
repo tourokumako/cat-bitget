@@ -65,5 +65,23 @@
 - 採点窓の特徴は labels_mfe_mae_pct_test_2025 / test_2026_q1 parquet から読む（評価のみ・fit 不使用）。
 
 ## §10 DESIGN_CONTRACT（acceptance で実装と機械照合）
+
+> ★2026-08-23（56回目）に、書き方だけを直しました。**中身は1文字も変えていません。**
+> 直す前は下の箇条書きで、`verify_design_contract.py` が読める形（json の囲み）ではありませんでした。
+> ＝**この設計書は、照合の対象から外れたままでした**（`--scan-contracts` の実測で「囲みが無い」）。
+> 直す前の2行は、そのまま下に残してあります。
+
+DESIGN_CONTRACT
+
+```json
+{
+  "impl_file": "scripts/priority_rebuild/e37_range_scalp.py",
+  "design_ref": "e37_design.md v5",
+  "self_check_calls": ["micro_rev_event", "detector_gate", "oof_theta", "purged_fold", "label_exclude_assert", "SCALP_FLOOR", "_verify_cap"]
+}
+```
+
+**直す前の2行（履歴・消さない）**
+
 - impl_file = scripts/priority_rebuild/e37_range_scalp.py（v5 で作り直し）。
 - self_check_calls = ["micro_rev_event", "detector_gate", "oof_theta", "purged_fold", "label_exclude_assert", "SCALP_FLOOR", "_verify_cap"]。

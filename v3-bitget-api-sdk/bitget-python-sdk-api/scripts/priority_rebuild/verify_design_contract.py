@@ -3,10 +3,23 @@
 
 なぜこれがあるか:
   CC は設計書に時間をかけても、まこさんが確認できない工程で設計の核心成分を実装から
-  抜くこと（虚偽報告・false_positive 類型G）を繰り返した（例: E35 設計 §5.2 の RANGE_OK は
-  Jump Model を成分に含むのに実装に無い）。net は score.py が V9 計算で出すので偽れないが、
+  抜くこと（虚偽報告・false_positive 類型G・例: E35 設計 §5.2 の RANGE_OK は
+  Jump Model を成分に含むのに実装に無い）を繰り返した。net は score.py が V9 計算で出すので偽れないが、
   「設計通り作った」という工程の報告だけは私の言葉に頼っていて物理チェックが無かった。
   本スクリプトはその唯一の穴（設計↔実装の照合）を機械で塞ぐ。
+
+★2026-08-23（56回目・まこさん承認 97598f50ee8d…）で足したこと（受け入れ条件 C-1〜C-4）:
+  設計書＝.claude/ratchet/contract_check_design.md（v2）。
+  C-1 目印の行の見分け方を直した（extract_block）。
+      直す前＝md_text.find("DESIGN_CONTRACT") で語の最初の1件を拾っていた。
+      説明の文の中で語に触れただけの所を目印だと思い、まったく別の囲みを読んでいた。
+      実測＝e38_design.md（impl_file が空に見えていた）と ledger.md（読めない扱いだった）の2本。
+      直した後＝目印として数えるのは3通りだけ（その語だけの行／見出しの行／囲みの見出しに語が在る）。
+      囲みの中の行は数えない。
+  C-2 黙って素通りする道を消す（hook 側・require_design_contract_before_run.sh）。
+  C-3 設計書と実物を両方向で突き合わせる（spec_from_impl / spec_from_design / diff_spec）。
+      ★「実物に在るのに設計書に書いていないもの」を出す向きが、いままで1つも無かった。
+  C-4 実物から、設計書と同じ形の文書を書き出す（write_actual）。9つの節のうち5つ。
 
 仕組み:
   設計書(.md)に機械可読な DESIGN_CONTRACT（fenced json）を埋め込む（＝まこさんが設計 GO 時に見る面に置く）。
@@ -18,25 +31,149 @@
   本物であることは --self-test（わざと成分を抜いて落ちるか）のメタ確認で証明する。
 
 使い方:
-  python3 verify_design_contract.py <design.md>      # 設計書の contract で実装を照合（FAIL=exit 1）
-  python3 verify_design_contract.py --self-test      # メタ確認: わざと壊して検出するか
+  python3 verify_design_contract.py <design.md>            # 設計書の contract で実装を照合（FAIL=exit 1）
+  python3 verify_design_contract.py --scan-contracts       # 読めない contract を名指しで出す（1件でも在れば exit 1）
+  python3 verify_design_contract.py --diff <design.md>     # 設計書の SPEC と実物を両方向で突き合わせる
+  python3 verify_design_contract.py --write <design.md>    # 実物から設計書と同じ形の文書を書き出す
+  python3 verify_design_contract.py --self-test            # メタ確認: わざと壊して検出するか（8件）
 """
 import ast
+import glob
 import json
 import os
 import re
+import shutil
 import sys
+import tempfile
+
+CONTRACT_MARK = "DESIGN_CONTRACT"
+SPEC_MARK = "SPEC"
+
+# わざと壊して止まるか試すテスト（設計書 §6・受け入れ条件 6）。write_actual が「テスト一覧」の節に写す。
+SELF_TESTS = [
+    ("T1", "目印を囲みの見出しに書いた文書を読める"),
+    ("T2", "json の閉じ括弧を消すと読めない側に入る"),
+    ("T3", "impl_file が空だと読めない側に入る"),
+    ("T4", "目印が文章の中だけの文書は対象外に入る"),
+    ("T5", "設計の SPEC から関数を1つ消すと『実物にあるが設計に無い関数』で落ちる"),
+    ("T6", "実物から関数を1つ消すと『設計にあるが実物に無い関数』で落ちる"),
+    ("T7", "関数の中身を空にすると『呼ぶはずの名前が実物に無い』で落ちる"),
+    ("T8", "全部そろっていれば通る"),
+    ("T9", "SPEC が無い設計書は『SPEC が無い』と分かる（engine_tuner はこれで止める）"),
+    ("T10", "設計書を1文字 書き換えると承認が外れる"),
+    ("T11", "--write が書き出した SPEC を使うと、突き合わせが 0件 になる"),
+]
+
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_SDK = os.path.dirname(os.path.dirname(_HERE))                 # bitget-python-sdk-api
+_REPO = os.path.dirname(os.path.dirname(_SDK))                 # cat-bitget
+_RATCHET = os.path.join(_SDK, ".claude", "ratchet")
+_ACCEPTANCE = os.path.join(_REPO, ".claude", "state", "acceptance.md")
+_REQUIREMENTS = os.path.join(_SDK, ".claude", "rules", "cat_requirements.md")
+_DESIGN_APPROVED = os.path.join(_REPO, ".claude", "state", "design_approved.json")
+
+
+def extract_block(md_text: str, mark: str):
+    """設計書から『目印の行』を探し、その後ろの fenced json を1つ取り出す。
+
+    ★2026-08-23 新設（C-1）。直す前は md_text.find(mark) で語の最初の1件を拾っていた。
+      説明の文の中で語に触れただけの所を目印だと思い、別の囲みを読んでいた（実測2本）。
+
+    目印の行として数えるのは3通りだけ。囲みの中の行は数えない:
+      1. その語だけの行           例: DESIGN_CONTRACT
+      2. 見出しの行（# で始まる）   例: ## §12 DESIGN_CONTRACT（機械可読）
+      3. 囲みの見出しに語が在る     例: ```json DESIGN_CONTRACT
+
+    ★探す範囲には区切りを入れる（2026-08-23 の実走で分かった）。
+      区切りが無いと、小見出しの中で語に触れただけの所を目印にして、
+      ずっと後ろの別の囲みを読んでしまう（実測＝§5.2 の小見出しの SPEC から §10 の
+      DESIGN_CONTRACT の囲みを読み、食い違いを14件 誤って出した）。
+      区切り＝見出しが目印なら「同じか それより大きい見出し」まで。
+              その語だけの行が目印なら「次の見出し」まで。
+
+    戻り: (取り出した dict, 理由の文字列)。取れたら理由は None。
+          目印の行が1つも無ければ (None, "対象外") ＝説明で言及しているだけの文書。
+    """
+    lines = md_text.splitlines()
+    marks, infence = [], False
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("```"):
+            if not infence and mark in s[3:]:
+                marks.append(("fence_head", i, 0))
+            infence = not infence
+            continue
+        if infence:
+            continue
+        if s == mark:
+            marks.append(("alone", i, 99))
+        elif s.startswith("#") and mark in s:
+            marks.append(("heading", i, len(s) - len(s.lstrip("#"))))
+    if not marks:
+        return None, "対象外"
+
+    reason = "囲みが無い"
+    for kind, i, level in marks:
+        if kind == "fence_head":
+            body = _fence_body(lines, i)
+        else:
+            body = _next_fence_json(lines, i, level)
+        if body is None:
+            continue
+        try:
+            obj = json.loads(body)
+        except Exception as e:
+            reason = f"json が壊れている（{e}）"
+            continue
+        if not isinstance(obj, dict):
+            reason = "json が辞書の形でない"
+            continue
+        return obj, None
+    return None, reason
+
+
+def _fence_body(lines, start):
+    """囲みの見出しに目印が在る形＝その囲みの中身を返す。"""
+    buf, j = [], start + 1
+    while j < len(lines) and not lines[j].strip().startswith("```"):
+        buf.append(lines[j])
+        j += 1
+    body = "\n".join(buf).strip()
+    return body if body.startswith("{") else None
+
+
+def _next_fence_json(lines, start, level=99):
+    """start より後ろの、最初の『中身が { で始まる囲み』を返す。
+
+    level ＝ 目印が見出しだったときの見出しの深さ（`#` の数）。
+    同じか それより大きい見出し（`#` の数が同じか少ない）が出たら、そこで探すのをやめる。
+    ＝別の節の囲みを読まないための区切り。目印が『その語だけの行』のときは level=99 ＝
+      次の見出しで止まる。
+    """
+    i = start + 1
+    while i < len(lines):
+        s = lines[i].strip()
+        if s.startswith("#"):
+            depth = len(s) - len(s.lstrip("#"))
+            if depth <= level:
+                return None
+        if lines[i].strip().startswith("```"):
+            body = _fence_body(lines, i)
+            if body is not None:
+                return body
+            j = i + 1
+            while j < len(lines) and not lines[j].strip().startswith("```"):
+                j += 1
+            i = j + 1
+            continue
+        i += 1
+    return None
 
 
 def extract_contract(md_text: str):
-    """設計書から 'DESIGN_CONTRACT' 直後の fenced json を1つ取り出す。"""
-    idx = md_text.find("DESIGN_CONTRACT")
-    if idx < 0:
-        return None
-    m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", md_text[idx:], re.S)
-    if not m:
-        return None
-    return json.loads(m.group(1))
+    """設計書から DESIGN_CONTRACT を取り出す（従来の呼び出し口・戻りは dict か None）。"""
+    obj, _reason = extract_block(md_text, CONTRACT_MARK)
+    return obj
 
 
 def rhs_names_for_symbol(tree: ast.AST, symbol: str):
@@ -55,6 +192,18 @@ def rhs_names_for_symbol(tree: ast.AST, symbol: str):
 
 
 def _resolve_impl(md_path: str, impl_file: str) -> str:
+    """設計書に書かれた相対のパスから、実物のファイルの場所を決める。
+
+    ★2026-08-23（56回目）に穴を1つ塞いだ。
+      直す前＝設計書の場所から上へ順にたどるだけだった。
+      `.claude/state/acceptance.md` はリポジトリ直下に在り、そこから上へたどっても
+      `scripts/priority_rebuild/` には行き着かない＝この受け入れ条件の照合は
+      一度も相手のファイルに届いていなかった（56回目の実走で発覚）。
+      直した後＝上へたどって見つからなければ、bitget-python-sdk-api の直下と
+      リポジトリの直下も見る。
+    """
+    if not impl_file:
+        raise FileNotFoundError("impl_file の欄が空")
     if os.path.isabs(impl_file):
         return impl_file
     start = os.path.abspath(md_path)
@@ -63,7 +212,315 @@ def _resolve_impl(md_path: str, impl_file: str) -> str:
         cand = os.path.join(start, impl_file)
         if os.path.exists(cand):
             return cand
-    raise FileNotFoundError(f"impl_file が見つからない: {impl_file}（{md_path} から上位探索）")
+    for base in (_SDK, _REPO):
+        cand = os.path.join(base, impl_file)
+        if os.path.exists(cand):
+            return cand
+    raise FileNotFoundError(f"impl_file が見つからない: {impl_file}（{md_path} から上位探索・"
+                            f"bitget-python-sdk-api の直下・リポジトリの直下）")
+
+
+def scan_contracts(paths=None):
+    """対象の .md を走査し、(読めた, 読めない, 対象外) を返す。
+
+    ★2026-08-23 新設（C-1）。読めない contract が黙って素通りしていた穴を、名指しで出す形に変える。
+    戻りの中身（★2026-08-23 に、名前でなくパスを返す形にした）:
+      読めた   = [(パス, contract の dict)]
+      読めない = [(パス, 理由)]
+      対象外   = [パス]   ＝目印の行が無い＝説明で言及しているだけ
+
+    ★パスにした理由＝「どれが設計書か」を決める判定が2か所に在り、片方（この関数）だけ
+      `.actual.md` を外していた。もう片方（require_design_contract_before_run.sh の中の
+      同じ処理）は外しておらず、書き出した文書を設計書として扱って誤って止めた（実測）。
+      hook がこの関数をそのまま使えるようにして、判定を1か所にまとめる。
+    """
+    if paths is None:
+        paths = sorted(glob.glob(os.path.join(_RATCHET, "*.md"))) + [_ACCEPTANCE]
+    ok, ng, outside = [], [], []
+    for p in paths:
+        if not os.path.exists(p):
+            continue
+        # ★`--write` が作った文書は、設計書ではなく「突き合わせる相手」＝設計書として数えない
+        #   （2026-08-23 の実走で、6件目として数えられていたので外した）
+        if p.endswith(".actual.md"):
+            continue
+        try:
+            t = open(p, encoding="utf-8", errors="ignore").read()
+        except Exception:
+            continue
+        if CONTRACT_MARK not in t:
+            continue
+        obj, reason = extract_block(t, CONTRACT_MARK)
+        if obj is None:
+            if reason == "対象外":
+                outside.append(p)
+            else:
+                ng.append((p, reason))
+            continue
+        impl = str(obj.get("impl_file", "") or "")
+        if not impl:
+            ng.append((p, "impl_file の欄が空"))
+            continue
+        try:
+            _resolve_impl(p, impl)
+        except FileNotFoundError:
+            ng.append((p, f"impl_file の実物が無い（{impl}）"))
+            continue
+        ok.append((p, obj))
+    return ok, ng, outside
+
+
+def spec_from_impl(impl_path: str) -> dict:
+    """実物のコードを構文の木として読み、設計書の SPEC と同じ形を作る。
+
+    ★2026-08-23 新設（C-3）。文字を探すのではなく構文の木で見るので、
+      コメントや説明の文章の中に書いた名前は数えない。
+    集めるもの:
+      public_functions = 一番外側の def / class のうち、アンダースコアで始まらないもの。
+                         値＝その中で呼んでいる、同じファイルで定義された公開の名前。
+      constants        = 一番外側の代入のうち、名前が大文字と数字と下線だけで、右辺が数字・文字・真偽のもの。
+      cli_flags        = 関数・クラスの外に書かれた文字のうち、2つのハイフンで始まるもの。
+    """
+    src = open(impl_path, encoding="utf-8", errors="ignore").read()
+    tree = ast.parse(src)
+
+    defined = set()
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            defined.add(node.name)
+
+    funcs = {}
+    for node in tree.body:
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        if node.name.startswith("_"):
+            continue
+        calls = set()
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Call) and isinstance(sub.func, ast.Name):
+                nm = sub.func.id
+                if nm in defined and not nm.startswith("_") and nm != node.name:
+                    calls.add(nm)
+        funcs[node.name] = sorted(calls)
+
+    consts = {}
+    for node in tree.body:
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1:
+            continue
+        t = node.targets[0]
+        if not isinstance(t, ast.Name) or not re.fullmatch(r"[A-Z0-9_]+", t.id):
+            continue
+        v = node.value
+        if isinstance(v, ast.Constant) and isinstance(v.value, (int, float, str, bool)):
+            consts[t.id] = v.value
+
+    # ★コマンドの旗の見分け方（2026-08-23 の実走で厳しくした）
+    #   直す前＝「-- で始まる文字」を全部 拾っていた。
+    #   テストの説明文（例＝「--write が書き出した SPEC を使うと…」）まで旗として数え、
+    #   食い違いを1件 誤って出した。
+    #   直した後＝英小文字・数字・ハイフンだけでできた形に限る（空白や日本語を含むものは旗ではない）。
+    flag_re = re.compile(r"^--[a-z0-9][a-z0-9-]*$")
+    flags = set()
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Constant) and isinstance(sub.value, str) and flag_re.match(sub.value):
+                flags.add(sub.value)
+
+    return {"impl_file": impl_path, "public_functions": funcs,
+            "constants": consts, "cli_flags": sorted(flags)}
+
+
+def spec_from_design(md_path: str):
+    """設計書から SPEC を取り出す。戻り: (dict, 理由)。"""
+    t = open(md_path, encoding="utf-8", errors="ignore").read()
+    return extract_block(t, SPEC_MARK)
+
+
+def diff_spec(design: dict, actual: dict) -> list:
+    """設計書の SPEC と実物を両方向で突き合わせ、違いの一覧を返す（空なら齟齬なし）。
+
+    ★「実物に在るのに設計書に書いていないもの」を出す向きが、いままで1つも無かった（C-3 の核心）。
+    """
+    out = []
+    d_f = design.get("public_functions", {}) or {}
+    a_f = actual.get("public_functions", {}) or {}
+    for name in sorted(set(d_f) - set(a_f)):
+        out.append(f"設計にあるが実物に無い関数: {name}")
+    for name in sorted(set(a_f) - set(d_f)):
+        out.append(f"実物にあるが設計に無い関数: {name}")
+    for name in sorted(set(d_f) & set(a_f)):
+        want, got = set(d_f[name] or []), set(a_f[name] or [])
+        for miss in sorted(want - got):
+            out.append(f"{name} が呼ぶはずの {miss} が実物に無い")
+        for extra in sorted(got - want):
+            out.append(f"{name} が実物では {extra} を呼んでいるが設計に書いていない")
+
+    d_c = design.get("constants", {}) or {}
+    a_c = actual.get("constants", {}) or {}
+    for name in sorted(set(d_c) - set(a_c)):
+        out.append(f"定数 {name} が実物に無い")
+    for name in sorted(set(d_c) & set(a_c)):
+        if d_c[name] != a_c[name]:
+            out.append(f"定数 {name} の値が違う（設計={d_c[name]!r} 実物={a_c[name]!r}）")
+
+    d_g = set(design.get("cli_flags", []) or [])
+    a_g = set(actual.get("cli_flags", []) or [])
+    for g in sorted(d_g - a_g):
+        out.append(f"コマンドの旗 {g} が実物に無い")
+    for g in sorted(a_g - d_g):
+        out.append(f"コマンドの旗 {g} が設計に無い")
+    return out
+
+
+def write_actual(md_path: str) -> str:
+    """実物から、設計書と同じ形の文書を書き出す（C-4）。手書きの設計書は1バイトも変えない。
+
+    書き出すのは9つの節のうち5つ:
+      §1 制約        = 要件定義書 §4.6 の H1〜H16 の見出しを引く（CC が飛ばせなくなる）
+      §2 ベンチマーク = scan_contracts() の実測
+      §5 仕様        = spec_from_impl() の結果
+      §6 テスト一覧   = SELF_TESTS
+      DESIGN_CONTRACT = 実物に在る公開の名前から作る
+    """
+    t = open(md_path, encoding="utf-8", errors="ignore").read()
+    contract, reason = extract_block(t, CONTRACT_MARK)
+    if contract is None:
+        raise ValueError(f"DESIGN_CONTRACT が読めない: {md_path}（{reason}）")
+    impl = _resolve_impl(md_path, str(contract.get("impl_file", "")))
+    spec = spec_from_impl(impl)
+
+    hs = []
+    if os.path.exists(_REQUIREMENTS):
+        for line in open(_REQUIREMENTS, encoding="utf-8", errors="ignore"):
+            m = re.match(r"^#+\s*§4\.6\.(H\d+)\s+(.*)$", line.strip())
+            if m:
+                hs.append((m.group(1), m.group(2).strip()))
+
+    ok, ng, outside = scan_contracts()
+
+    L = []
+    L.append(f"# {os.path.basename(md_path)}.actual.md — 実物から書き出した文書（手で書き換えない）")
+    L.append("")
+    L.append("> このファイルはプログラムが実物から作ります（`--write`）。**手で書き換えないでください。**")
+    L.append("> 手書きの設計書と突き合わせるための相手です。違いは `--diff` が出します。")
+    L.append("")
+    L.append("## §1 制約（要件定義書 §4.6 から引いた）")
+    L.append("")
+    L.append("| # | 制約 |")
+    L.append("|---|---|")
+    for k, v in hs:
+        L.append(f"| {k} | {v} |")
+    L.append("")
+    L.append("## §2 ベンチマーク（いまの実測）")
+    L.append("")
+    L.append(f"- DESIGN_CONTRACT が読める文書: {len(ok)}本")
+    for n, c in ok:
+        L.append(f"    - {os.path.basename(n)} -> {c.get('impl_file','')}")
+    L.append(f"- 読めない文書: {len(ng)}本")
+    for n, w in ng:
+        L.append(f"    - {os.path.basename(n)} : {w}")
+    L.append(f"- 対象外（目印の行が無い）: {len(outside)}本")
+    for n in outside:
+        L.append(f"    - {os.path.basename(n)}")
+    L.append("")
+    L.append("## §5 仕様（実物のコードから書き出した）")
+    L.append("")
+    L.append("| 公開する関数 | その中で呼んでいる公開の名前 |")
+    L.append("|---|---|")
+    for name in sorted(spec["public_functions"]):
+        calls = spec["public_functions"][name]
+        L.append(f"| `{name}` | {'・'.join(calls) if calls else '（無し）'} |")
+    L.append("")
+    L.append("| 定数 | 値 |")
+    L.append("|---|---|")
+    for name in sorted(spec["constants"]):
+        L.append(f"| `{name}` | `{spec['constants'][name]!r}` |")
+    L.append("")
+    L.append(f"- コマンドの旗: {'・'.join(spec['cli_flags']) if spec['cli_flags'] else '（無し）'}")
+    L.append("")
+    L.append("## §6 テスト一覧（わざと壊して止まるか試すテスト）")
+    L.append("")
+    L.append("| # | 中身 |")
+    L.append("|---|---|")
+    for k, v in SELF_TESTS:
+        L.append(f"| {k} | {v} |")
+    L.append("")
+    L.append("## DESIGN_CONTRACT（実物から作った）")
+    L.append("")
+    L.append("DESIGN_CONTRACT")
+    L.append("")
+    L.append("```json")
+    L.append(json.dumps({"impl_file": str(contract.get("impl_file", "")),
+                         "self_check_calls": sorted(spec["public_functions"])},
+                        ensure_ascii=False, indent=1))
+    L.append("```")
+    L.append("")
+    # ★C-7（2026-08-23 まこさん承認 67da88ef9ca8…）＝照らす中身を実物から書き出す。
+    #   まこさんの逐語「極力自動生成で作成してほしい」。
+    #   次に直すときは、下の SPEC を出発点にして「今回 何を変えるか」だけを手で書く。
+    L.append("## SPEC（実物から作った・★次の設計書はここを出発点にする）")
+    L.append("")
+    L.append("> **手で書く欄を減らすための節です。**この中身を設計書の SPEC に写し、")
+    L.append("> 今回 変えるところだけを手で直します。写したあと `--diff` が「齟齬: 0件」になります。")
+    L.append("")
+    L.append("SPEC")
+    L.append("")
+    L.append("```json")
+    L.append(json.dumps({"impl_file": str(contract.get("impl_file", "")),
+                         "public_functions": spec["public_functions"],
+                         "constants": spec["constants"],
+                         "cli_flags": spec["cli_flags"]},
+                        ensure_ascii=False, indent=1))
+    L.append("```")
+    L.append("")
+
+    out_path = md_path + ".actual.md"
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(L))
+    print(f"書き出した: {out_path}")
+    print(f"H1〜H16: {len(hs)}件")
+    print(f"SPEC を書き出した: 公開する関数 {len(spec['public_functions'])}件 / 定数 {len(spec['constants'])}件 / コマンドの旗 {len(spec['cli_flags'])}件")
+    return out_path
+
+
+def check_approval(md_path: str):
+    """設計書が、まこさんの承認どおりのままかを見る（C-6・2026-08-23 まこさん承認 67da88ef9ca8…）。
+
+    ★なぜ要るか＝56回目に、実物と設計書の食い違いが2件 出たとき、CC（私）が設計書の側を
+      書き換えて0件にした。これを繰り返せば、食い違いはいつでも0件にできる。
+      まこさんの逐語「不正を働かないよう」に、いちばん直接 当たるのがここ。
+
+    戻り: (通すか, 画面に出す文字列)
+      ・記録が在って一致    → (True,  "設計書の承認: 一致")
+      ・記録が在って不一致  → (False, "設計書の承認: 外れています ...")
+      ・記録が無い          → (True,  "設計書の承認: 記録なし（未承認）")
+        ★記録が無いものを止めない理由＝いま承認の記録は0件で、止めると e35・e37・e38 が
+          いきなり走らなくなる（既存を壊さない）。engine_tuner だけは hook 側で
+          「記録が無ければ止める」にする。
+    """
+    if not os.path.exists(md_path):
+        return False, f"設計書が無い: {md_path}"
+    import hashlib
+    now = hashlib.sha256(open(md_path, "rb").read()).hexdigest()
+    key = os.path.abspath(md_path)
+    table = {}
+    if os.path.exists(_DESIGN_APPROVED):
+        try:
+            table = json.load(open(_DESIGN_APPROVED, encoding="utf-8"))
+        except Exception:
+            table = {}
+    want = table.get(key)
+    if want is None:
+        return True, "設計書の承認: 記録なし（未承認）"
+    if want == now:
+        return True, "設計書の承認: 一致"
+    return False, (f"設計書の承認: 外れています（承認後に設計書が変わりました）\n"
+                   f"    承認された値: {want[:16]}…\n"
+                   f"    いまの値    : {now[:16]}…\n"
+                   f"    もう一度 承認するには: bash "
+                   f"/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/approve_design.sh {md_path}")
 
 
 def check(md_path: str) -> bool:
@@ -82,6 +539,8 @@ def check(md_path: str) -> bool:
         # contract-driven 方式: 実装が設計書を読んで自己チェックする「配線」が在るか。
         # 配線が在れば実装は設計書の部品リスト通りにしか動けない（成分欠落なら実行時に自停止）。
         # 配線を外す＝自己チェックを無力化する改変は、ここで検出してブロックする。
+        # ★限界（2026-08-23 に明記）＝これは文字が在るかを見るだけ。中身が空の関数でも通る。
+        #   その穴は diff_spec（--diff）が塞ぐ＝二段で守る。
         for c in calls:
             if c in src:
                 print(f"  [PASS] 自己チェック配線あり: {c}")
@@ -108,32 +567,182 @@ def check(md_path: str) -> bool:
 
 
 def self_test() -> bool:
-    """メタ確認: 健全な実装は通し、自己チェックを外した/成分を抜いた実装は検出するか。"""
-    # 方式1（配線チェック・contract-driven）
-    calls = ["_entry_contract(", "_assemble_signals("]
-    wired = "x = _entry_contract()\ny = _assemble_signals(c, x)\n"
-    ripped = "range_ok = a & b\n"                     # 自己チェック配線を外した
-    w_ok = all(c in wired for c in calls)
-    r_ok = all(c in ripped for c in calls)
-    # 方式2（成分チェック・literal assignment）
-    good = "a=1\nb=1\nc=1\nrange_ok = a & b & c\n"
-    bad = "a=1\nb=1\nrange_ok = a & b\n"              # c（=設計要求成分）を抜いた
+    """メタ確認: わざと壊して検出するか（設計書 §6・8件）。
 
-    def comp(src):
-        found, names = rhs_names_for_symbol(ast.parse(src), "range_ok")
-        return found and not [x for x in ["a", "b", "c"] if x not in names]
+    ★T6・T7 は本物のファイルを1バイトも変えない。一時の場所に写して、写した方だけを削る。
+    """
+    me = os.path.abspath(__file__)
+    design_md = os.path.join(_RATCHET, "contract_check_design.md")
+    results = {}
 
-    g_ok, b_ok = comp(good), comp(bad)
-    print(f"配線: 健全→{'PASS' if w_ok else 'FAIL'}(期待PASS) / 外し→{'PASS' if r_ok else 'FAIL'}(期待FAIL=検出)")
-    print(f"成分: 健全→{'PASS' if g_ok else 'FAIL'}(期待PASS) / 欠落→{'PASS' if b_ok else 'FAIL'}(期待FAIL=検出)")
-    ok = w_ok and not r_ok and g_ok and not b_ok
-    print("メタ確認:", "成立（健全=通過・外し/欠落=検出）" if ok else "不成立＝番人が壊れている")
-    return ok
+    # T1 目印を囲みの見出しに書いた形を読める
+    t1_text = "説明の文\n\n```json DESIGN_CONTRACT\n{\"impl_file\": \"a.py\"}\n```\n"
+    obj, _r = extract_block(t1_text, CONTRACT_MARK)
+    results["T1"] = (obj is not None and obj.get("impl_file") == "a.py")
+
+    # T2 json の閉じ括弧を消す
+    t2_text = "DESIGN_CONTRACT\n\n```json\n{\"impl_file\": \"a.py\"\n```\n"
+    obj, r2 = extract_block(t2_text, CONTRACT_MARK)
+    results["T2"] = (obj is None and r2 is not None and "壊れ" in r2)
+
+    # T3 impl_file が空
+    t3 = os.path.join(tempfile.mkdtemp(), "t3.md")
+    open(t3, "w", encoding="utf-8").write("DESIGN_CONTRACT\n\n```json\n{\"impl_file\": \"\"}\n```\n")
+    _ok, ng, _out = scan_contracts([t3])
+    results["T3"] = (len(ng) == 1 and "空" in ng[0][1])
+    shutil.rmtree(os.path.dirname(t3), ignore_errors=True)
+
+    # T4 目印が文章の中だけ＝対象外
+    t4_text = "- DESIGN_CONTRACT を設計書に適用する\n\n```json\n{\"foo\": 1}\n```\n"
+    obj, r4 = extract_block(t4_text, CONTRACT_MARK)
+    results["T4"] = (obj is None and r4 == "対象外")
+
+    # T5〜T8 は、この設計書とこのファイル自身で試す
+    d_spec, r5 = spec_from_design(design_md) if os.path.exists(design_md) else (None, "設計書が無い")
+    a_spec = spec_from_impl(me)
+    if d_spec is None:
+        for k in ("T5", "T6", "T7", "T8"):
+            results[k] = False
+        print(f"  ★設計書の SPEC が読めない（{r5}）＝T5〜T8 は試せない")
+    else:
+        # T8 全部そろっていれば通る
+        results["T8"] = (diff_spec(d_spec, a_spec) == [])
+
+        # T5 設計から関数を1つ消す
+        cut = json.loads(json.dumps(d_spec))
+        victim = sorted(cut["public_functions"])[0]
+        cut["public_functions"].pop(victim)
+        results["T5"] = any("実物にあるが設計に無い関数" in x for x in diff_spec(cut, a_spec))
+
+        # T6 実物から関数を1つ消す（一時のコピー）
+        tmpdir = tempfile.mkdtemp()
+        try:
+            src = open(me, encoding="utf-8").read()
+            lines = src.splitlines()
+            tree = ast.parse(src)
+            target = None
+            for node in tree.body:
+                if isinstance(node, ast.FunctionDef) and node.name == "diff_spec":
+                    target = node
+            if target is not None:
+                cut_lines = lines[:target.lineno - 1] + lines[target.end_lineno:]
+                p6 = os.path.join(tmpdir, "cut.py")
+                open(p6, "w", encoding="utf-8").write("\n".join(cut_lines))
+                results["T6"] = any("設計にあるが実物に無い関数" in x
+                                    for x in diff_spec(d_spec, spec_from_impl(p6)))
+            else:
+                results["T6"] = False
+
+            # T7 関数の中身を空にする（呼び出しを消す）
+            target7 = None
+            for node in ast.parse(src).body:
+                if isinstance(node, ast.FunctionDef) and node.name == "extract_contract":
+                    target7 = node
+            if target7 is not None:
+                head = lines[target7.lineno - 1]
+                indent = " " * (len(head) - len(head.lstrip()) + 4)
+                empty = lines[:target7.lineno] + [f"{indent}return None"] + lines[target7.end_lineno:]
+                p7 = os.path.join(tmpdir, "empty.py")
+                open(p7, "w", encoding="utf-8").write("\n".join(empty))
+                results["T7"] = any("呼ぶはずの" in x
+                                    for x in diff_spec(d_spec, spec_from_impl(p7)))
+            else:
+                results["T7"] = False
+        finally:
+            shutil.rmtree(tmpdir, ignore_errors=True)
+
+        # T9 SPEC が無い設計書は「SPEC が無い」と分かる（C-5 の判定の元）
+        t9_text = "## §10 DESIGN_CONTRACT\n\nDESIGN_CONTRACT\n\n```json\n{\"impl_file\": \"x.py\"}\n```\n"
+        t9_dir = tempfile.mkdtemp()
+        try:
+            p9 = os.path.join(t9_dir, "no_spec.md")
+            open(p9, "w", encoding="utf-8").write(t9_text)
+            s9, r9 = spec_from_design(p9)
+            results["T9"] = (s9 is None and r9 == "対象外")
+        finally:
+            shutil.rmtree(t9_dir, ignore_errors=True)
+
+        # T10 設計書を1文字 書き換えると承認が外れる（C-6）
+        t10_dir = tempfile.mkdtemp()
+        try:
+            p10 = os.path.join(t10_dir, "approved.md")
+            open(p10, "w", encoding="utf-8").write("設計書の中身\n")
+            import hashlib
+            table = {}
+            if os.path.exists(_DESIGN_APPROVED):
+                try:
+                    table = json.load(open(_DESIGN_APPROVED, encoding="utf-8"))
+                except Exception:
+                    table = {}
+            keep = dict(table)
+            table[os.path.abspath(p10)] = hashlib.sha256(open(p10, "rb").read()).hexdigest()
+            os.makedirs(os.path.dirname(_DESIGN_APPROVED), exist_ok=True)
+            json.dump(table, open(_DESIGN_APPROVED, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+            ok_before, _m1 = check_approval(p10)
+            open(p10, "a", encoding="utf-8").write("1文字\n")
+            ok_after, _m2 = check_approval(p10)
+            results["T10"] = (ok_before and not ok_after)
+            json.dump(keep, open(_DESIGN_APPROVED, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        finally:
+            shutil.rmtree(t10_dir, ignore_errors=True)
+
+        # T11 --write が書き出した SPEC を使うと、突き合わせが 0件 になる（C-7）
+        out11 = write_actual(design_md)
+        gen_spec, _r11 = extract_block(open(out11, encoding="utf-8").read(), SPEC_MARK)
+        results["T11"] = (gen_spec is not None and diff_spec(gen_spec, a_spec) == [])
+
+    good = 0
+    for k, v in SELF_TESTS:
+        got = results.get(k, False)
+        print(f"  {k} {'期待どおり' if got else '★合わない'} : {v}")
+        good += 1 if got else 0
+    print(f"テスト {good}/{len(SELF_TESTS)} 期待どおり")
+    return good == len(SELF_TESTS)
 
 
 if __name__ == "__main__":
     if "--self-test" in sys.argv:
         sys.exit(0 if self_test() else 1)
+
+    if "--scan-contracts" in sys.argv:
+        _ok, _ng, _out = scan_contracts()
+        print(f"読めた契約: {len(_ok)}件")
+        for _n, _c in _ok:
+            print(f"    {os.path.basename(_n)} -> {_c.get('impl_file','')}")
+        print(f"読めない契約: {len(_ng)}件")
+        for _n, _w in _ng:
+            print(f"    {os.path.basename(_n)} : {_w}")
+        print(f"対象外: {len(_out)}件")
+        for _n in _out:
+            print(f"    {os.path.basename(_n)}")
+        sys.exit(1 if _ng else 0)
+
+    if "--diff" in sys.argv:
+        _md = sys.argv[sys.argv.index("--diff") + 1]
+        _d, _r = spec_from_design(_md)
+        if _d is None:
+            print(f"[STOP] SPEC が設計書に無い: {_md}（{_r}）")
+            sys.exit(1)
+        _impl = _resolve_impl(_md, str(_d.get("impl_file", "")))
+        _diff = diff_spec(_d, spec_from_impl(_impl))
+        print(f"design : {_md}")
+        print(f"impl   : {_d.get('impl_file','')}")
+        print(f"齟齬: {len(_diff)}件")
+        for _x in _diff:
+            print(f"    {_x}")
+        sys.exit(1 if _diff else 0)
+
+    if "--check-approval" in sys.argv:
+        _md = sys.argv[sys.argv.index("--check-approval") + 1]
+        _ok2, _msg = check_approval(_md)
+        print(_msg)
+        sys.exit(0 if _ok2 else 1)
+
+    if "--write" in sys.argv:
+        _md = sys.argv[sys.argv.index("--write") + 1]
+        write_actual(_md)
+        sys.exit(0)
+
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(2)
