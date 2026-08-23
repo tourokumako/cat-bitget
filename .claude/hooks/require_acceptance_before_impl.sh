@@ -36,11 +36,12 @@ case "$FILE" in
   *) TOOLGATE=0 ;;
 esac
 
-# [fast-mode] process hook の一時無効化（touch/rm pdca_fast_mode で切替・2026-07-16）。
-#   ただし TOOLGATE=1（計器・レポート・判定器）は fast-mode でも通さない＝上の撤回の実体。
-if [ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && [ "$TOOLGATE" -eq 0 ]; then
-  exit 0
-fi
+# ★2026-08-23（55回目・まこさん指示）＝fast-mode の一時無効化を外した＝safety へ格上げ。
+#   まこさんの逐語＝「これをやれって言ってると思うんだが」。
+#   経緯＝2026-07-15 に fast-mode が ON になってから、この hook は1回も動いていなかった（55回目に実測）。
+#   その間、engine_tuner の実装は「受け入れ条件＋まこさんの承認」の物理強制なしで書かれ続けた。
+#   ★fast-mode 自体は ON のまま（まこさん指示「全部起動しないでほしい」）＝外したのはこの hook の分岐だけ。
+#   ★旧仕様＝fast-mode かつ TOOLGATE=0 のとき通していた（下の TOOLGATE=1 は fast-mode でも通さない扱いだった）。
 # 診断レーン免除（2026-07-14 まこさん承認）: *_diag.py ＝ read-only の検証/診断（戦略の実関数を import で再利用・
 #   print/集計のみ）。改善フロー（新レバー提案）でない検証実装に acceptance ゲートは過剰＝report/analyze と同じ思想。
 #   ★歯止め（骨抜き防止）: 新内容 or 既存ファイルに 売買記録CSV出力(to_csv/write_sidecar)・score 呼び出し(import score/

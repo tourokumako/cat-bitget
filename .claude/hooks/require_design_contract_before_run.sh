@@ -1,5 +1,9 @@
 #!/bin/bash
-[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
+# ★2026-08-23（55回目・まこさん指示）＝fast-mode の一時無効化の行を外した＝safety へ格上げ。
+#   まこさんの逐語＝「設計と実装と齟齬をなくすをまず作れっていったんだけど」「これをやれって言ってると思うんだが」。
+#   経緯＝2026-07-15 に fast-mode が ON になってから、この hook は1回も動いていなかった（55回目に実測）。
+#   その間、engine_tuner の実装は「設計と実装の照合なし」で書かれ続けた（違反＝場面の判定の束のパラメータ）。
+#   ★fast-mode 自体は ON のまま（まこさん指示「全部起動しないでほしい」）＝外したのはこの hook の1行だけ。
 # require_design_contract_before_run.sh — PreToolUse on Bash
 # 戦略スクリプト（設計書に DESIGN_CONTRACT を持つ実装）を python で実行する前に、
 # 設計書 ↔ 実装 の機械照合（verify_design_contract.py）を走らせ、FAIL なら exit 2 でブロック。
