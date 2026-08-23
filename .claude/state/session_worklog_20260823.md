@@ -272,3 +272,7 @@ $ python3 scripts/priority_rebuild/leak_causality_diag.py --selftest
 - `engine_tuner_milestones2.md`＝M2-9-2 に ✅済・0.9 を「いまのフェーズ＝M2-10」に。`next_step.md`＝§0（0-a）（0-b）（0-b-2）（0-d）を M2-9 完了の状態に・§6 の 74・75・77 を ✅済。`WORKFLOW.md`＝改訂241 の 0・4 を更新。
 - 消さない印の出現数＝36→36（54回目の最初の「40」は見出しの説明文の中の文字列4つを含んでいた＝書き換えで消えたのは説明文の文字列で、節は消していない・git 差分で印の行の増減0）。
 - 触ったファイル（このコミットに入れる）＝コード4本（`leak_causality_diag.py`・`h2_scan.py`（新）・`observe_diag.py`・`.claude/hooks/enforce_flow_declaration.sh`）／決まり2本（`permanent_rules.md`・`pdca_flow.md`）／記録4本（worklog・`next_step.md`・`engine_tuner_milestones2.md`・`WORKFLOW.md`）／印2本（`h2_pass.json`・`g2_pass.json`）／`decisions.md`（自動生成）。
+
+### 22.1 コミット（まこさん OK 2026-08-23・逐語「コミットはOK」）
+- `9365bd1` feat: 54回目＝M2-9（未来参照の検査）3件を完了。11ファイル（コード4・決まり2・記録4・新規1）。CSV・results・ログは入れていない。bitget_keys.json は変更なし。
+- **セッション終了（まこさん指示）。**次のセッションの起点＝`next_step.md` の（0-b）＝M2-10-1 から。
