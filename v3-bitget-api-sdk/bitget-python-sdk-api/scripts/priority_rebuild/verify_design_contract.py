@@ -570,9 +570,15 @@ def self_test() -> bool:
     """メタ確認: わざと壊して検出するか（設計書 §6・8件）。
 
     ★T6・T7 は本物のファイルを1バイトも変えない。一時の場所に写して、写した方だけを削る。
+
+    ★2026-08-24（58回目・まこさん承認 selftest-standalone-20260824）に、寄りかかりを外した。
+      直す前＝本物の設計書（.claude/ratchet/contract_check_design.md）を名前で直に指していた。
+      設計書は文書なので書き替わる。だから文書を1回 触るだけで検査が落ちた
+      （57回目に実際に 11/11 → 4/11 になった）。
+      直した後＝実物のコードから書き出した一覧を、その場で作る一時の設計書に書いて試す。
+      本物の設計書がどうなっていても、この検査は動く。
     """
     me = os.path.abspath(__file__)
-    design_md = os.path.join(_RATCHET, "contract_check_design.md")
     results = {}
 
     # T1 目印を囲みの見出しに書いた形を読める
@@ -597,13 +603,23 @@ def self_test() -> bool:
     obj, r4 = extract_block(t4_text, CONTRACT_MARK)
     results["T4"] = (obj is None and r4 == "対象外")
 
-    # T5〜T8 は、この設計書とこのファイル自身で試す
-    d_spec, r5 = spec_from_design(design_md) if os.path.exists(design_md) else (None, "設計書が無い")
+    # ★T5〜T8・T11 で使う設計書を、その場で作る（本物の設計書に寄りかからない・58回目）
+    _tmp_design_dir = tempfile.mkdtemp()
+    design_md = os.path.join(_tmp_design_dir, "self_test_design.md")
+    open(design_md, "w", encoding="utf-8").write(
+        "# 自己テスト専用の設計書（走るたびに作り、走り終わったら消す）\n\n"
+        + CONTRACT_MARK + "\n\n```json\n"
+        + json.dumps({"impl_file": os.path.relpath(me, _SDK)}, ensure_ascii=False)
+        + "\n```\n\n" + SPEC_MARK + "\n\n```json\n"
+        + json.dumps(spec_from_impl(me), ensure_ascii=False, indent=1) + "\n```\n")
+
+    # T5〜T8 は、この一時の設計書とこのファイル自身で試す
+    d_spec, r5 = spec_from_design(design_md)
     a_spec = spec_from_impl(me)
     if d_spec is None:
-        for k in ("T5", "T6", "T7", "T8"):
+        for k in ("T5", "T6", "T7", "T8", "T11"):
             results[k] = False
-        print(f"  ★設計書の SPEC が読めない（{r5}）＝T5〜T8 は試せない")
+        print(f"  ★一時の設計書の SPEC が読めない（{r5}）＝T5〜T8・T11 は試せない")
     else:
         # T8 全部そろっていれば通る
         results["T8"] = (diff_spec(d_spec, a_spec) == [])
@@ -651,45 +667,52 @@ def self_test() -> bool:
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 
-        # T9 SPEC が無い設計書は「SPEC が無い」と分かる（C-5 の判定の元）
-        t9_text = "## §10 DESIGN_CONTRACT\n\nDESIGN_CONTRACT\n\n```json\n{\"impl_file\": \"x.py\"}\n```\n"
-        t9_dir = tempfile.mkdtemp()
-        try:
-            p9 = os.path.join(t9_dir, "no_spec.md")
-            open(p9, "w", encoding="utf-8").write(t9_text)
-            s9, r9 = spec_from_design(p9)
-            results["T9"] = (s9 is None and r9 == "対象外")
-        finally:
-            shutil.rmtree(t9_dir, ignore_errors=True)
-
-        # T10 設計書を1文字 書き換えると承認が外れる（C-6）
-        t10_dir = tempfile.mkdtemp()
-        try:
-            p10 = os.path.join(t10_dir, "approved.md")
-            open(p10, "w", encoding="utf-8").write("設計書の中身\n")
-            import hashlib
-            table = {}
-            if os.path.exists(_DESIGN_APPROVED):
-                try:
-                    table = json.load(open(_DESIGN_APPROVED, encoding="utf-8"))
-                except Exception:
-                    table = {}
-            keep = dict(table)
-            table[os.path.abspath(p10)] = hashlib.sha256(open(p10, "rb").read()).hexdigest()
-            os.makedirs(os.path.dirname(_DESIGN_APPROVED), exist_ok=True)
-            json.dump(table, open(_DESIGN_APPROVED, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-            ok_before, _m1 = check_approval(p10)
-            open(p10, "a", encoding="utf-8").write("1文字\n")
-            ok_after, _m2 = check_approval(p10)
-            results["T10"] = (ok_before and not ok_after)
-            json.dump(keep, open(_DESIGN_APPROVED, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-        finally:
-            shutil.rmtree(t10_dir, ignore_errors=True)
-
         # T11 --write が書き出した SPEC を使うと、突き合わせが 0件 になる（C-7）
         out11 = write_actual(design_md)
         gen_spec, _r11 = extract_block(open(out11, encoding="utf-8").read(), SPEC_MARK)
         results["T11"] = (gen_spec is not None and diff_spec(gen_spec, a_spec) == [])
+
+    # 一時の設計書は、ここまでで用が済んだので消す
+    shutil.rmtree(_tmp_design_dir, ignore_errors=True)
+
+    # ★T9・T10 は、設計書を1バイトも使わない（どちらも自分で一時のファイルを作る）。
+    #   直す前は「設計書が読めたとき」の分かれ道の中に在り、設計書が読めないだけで
+    #   巻き添えで落ちていた（58回目に外へ出した）。だから、ここで必ず試す。
+
+    # T9 SPEC が無い設計書は「SPEC が無い」と分かる（C-5 の判定の元）
+    t9_text = "## §10 DESIGN_CONTRACT\n\nDESIGN_CONTRACT\n\n```json\n{\"impl_file\": \"x.py\"}\n```\n"
+    t9_dir = tempfile.mkdtemp()
+    try:
+        p9 = os.path.join(t9_dir, "no_spec.md")
+        open(p9, "w", encoding="utf-8").write(t9_text)
+        s9, r9 = spec_from_design(p9)
+        results["T9"] = (s9 is None and r9 == "対象外")
+    finally:
+        shutil.rmtree(t9_dir, ignore_errors=True)
+
+    # T10 設計書を1文字 書き換えると承認が外れる（C-6）
+    t10_dir = tempfile.mkdtemp()
+    try:
+        p10 = os.path.join(t10_dir, "approved.md")
+        open(p10, "w", encoding="utf-8").write("設計書の中身\n")
+        import hashlib
+        table = {}
+        if os.path.exists(_DESIGN_APPROVED):
+            try:
+                table = json.load(open(_DESIGN_APPROVED, encoding="utf-8"))
+            except Exception:
+                table = {}
+        keep = dict(table)
+        table[os.path.abspath(p10)] = hashlib.sha256(open(p10, "rb").read()).hexdigest()
+        os.makedirs(os.path.dirname(_DESIGN_APPROVED), exist_ok=True)
+        json.dump(table, open(_DESIGN_APPROVED, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+        ok_before, _m1 = check_approval(p10)
+        open(p10, "a", encoding="utf-8").write("1文字\n")
+        ok_after, _m2 = check_approval(p10)
+        results["T10"] = (ok_before and not ok_after)
+        json.dump(keep, open(_DESIGN_APPROVED, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    finally:
+        shutil.rmtree(t10_dir, ignore_errors=True)
 
     good = 0
     for k, v in SELF_TESTS:

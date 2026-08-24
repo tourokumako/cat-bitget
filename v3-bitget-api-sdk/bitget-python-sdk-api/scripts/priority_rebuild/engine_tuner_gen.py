@@ -334,6 +334,153 @@ def draw_param(rng, fam: str, ranges: dict | None = None):
     return vals[0] if len(vals) == 1 else tuple(vals)
 
 
+# ★4つの要素の使い方を強制する印（58回目・2026-08-24・まこさん承認 9d085e391c3e…）
+#   まこさんの1行（逐語 2026-08-24）＝
+#     「指標、閾値、パラメータ、時間足の役割に基づき、法則に則って４つを組み合わせ、
+#       Entry/Exit やレジーム判定などの条件を作る」
+#   守るべき6つのうち、2番（閾値が範囲から）と3番（パラメータが範囲から）を、この印で強制する。
+#   ★印は検査のためだけに付ける。検査が終わったら strip_marks() が外すので、
+#     実行器にも案のハッシュ値（recipe_hash）にも渡らない＝挙動は変わらない。
+#   ★印の持たせ方（2026-08-24・2回 試して決めた）。
+#     1回目＝辞書に鍵を足す → 実行器が「値に未知のフィールド」で拒否した
+#       （engine_tuner_exec.py:652・自己テスト T1-C6 で発覚）。
+#     2回目＝辞書の「種類」で印にする → 案を組み立てる途中で消えた
+#       （json.loads(json.dumps(…)) が6か所・{**m, …} が1か所・copy.deepcopy が2か所）。
+#     決めた形＝1回目に戻し、案を返す直前に strip_marks() で外す。
+#       外したあとは普通の辞書なので、実行器にも案のハッシュ値にも影響しない。
+PARAM_SRC = "_param_src"      # 材料に付ける「範囲から引いた」印
+Q_SRC = "_q_src"              # 閾値に付ける「範囲から引いた」印
+
+
+def _mat(family, param, tf, **kw) -> dict:
+    """材料の辞書を作る唯一の入口。ここが「範囲から引いた」印を付ける（58回目）。
+
+    ★なぜ1つの関数にまとめたか。
+      直す前＝材料の辞書 {"family":…, "param":…, "tf":…} を 20 か所で直に書いていた。
+      できあがった案には値だけが残り、「範囲から引いたのか、決まった一覧から取ったのか」が
+      案からは分からなかった。だから 78番（場面の判定でパラメータが範囲から探されていない）は、
+      実装してからしばらく経つまで誰も気づかなかった。
+    ★_material_from_col（成績表の列名から材料を作る所）は、この関数を通さない。
+      だから印が付かず、下の assert_marks で拒否される＝78番がプログラムで止まる。
+    """
+    m = {"family": family, "param": param, "tf": tf, PARAM_SRC: "range"}
+    m.update(kw)
+    return m
+
+
+def _thr(q, **kw) -> dict:
+    """閾値の辞書を作る唯一の入口。ここが「範囲から引いた」印を付ける（58回目）。"""
+    d = {"threshold_q": q, Q_SRC: "range"}
+    d.update(kw)
+    return d
+
+
+def _walk_dicts(obj):
+    """案の中の辞書を全部たどる（材料と閾値を見つけるため）。"""
+    if isinstance(obj, dict):
+        yield obj
+        for v in obj.values():
+            yield from _walk_dicts(v)
+    elif isinstance(obj, (list, tuple)):
+        for v in obj:
+            yield from _walk_dicts(v)
+
+
+def assert_marks(obj, where: str = "案") -> None:
+    """印の無い材料・閾値が1つでも在れば止める（58回目・fail-closed）。
+
+    材料＝family と tf を持つ辞書。閾値＝threshold_q を持つ辞書。
+    """
+    for d in _walk_dicts(obj):
+        if "family" in d and "tf" in d and PARAM_SRC not in d:
+            raise SampleError(
+                f"[4要素ゲート] {where} に、範囲から引いていない材料が在る: "
+                f"{d.get('family')}(param={d.get('param')}, tf={d.get('tf')})。"
+                f"材料は _mat() を通して作る（成績表の列名から取った材料は使えない）")
+        if "threshold_q" in d and Q_SRC not in d:
+            raise SampleError(
+                f"[4要素ゲート] {where} に、範囲から引いていない閾値が在る: "
+                f"{d.get('threshold_q')}。閾値は _thr() を通して作る")
+
+
+def assert_roles(obj, table: dict, where: str = "案") -> None:
+    """★4つの要素が「役割に基づいて」使われているかを確かめる（58回目・2026-08-25）。
+
+    まこさんの依頼（逐語 2026-08-24）＝
+      「指標、閾値、パラメータ、時間足の**役割に基づき**、法則に則って４つを組み合わせ、
+        Entry/Exit やレジーム判定などの条件を作る」
+
+    ★何を見るか。
+      型の表（signal_families_approved.txt）は、役割ごとに使える指標の系統を持っている。
+        env（相場の向き）        … トレンド・ボラ・時間帯
+        location（レンジの中の位置）… 構造・位置
+        sufficiency（値動きの大きさ）… オシレーター・ボラ・出来高・需給
+        trigger（建てる合図）     … オシレーター・ローソク
+      条件の役割（role）と、その条件が使う指標の系統が、この表に合っているかを1件ずつ見る。
+      1つでも合わなければ、その案は作れない（fail-closed）。
+
+    ★なぜ 58回目まで無かったか（正直に書く）。
+      CC が設計書に「既に在る」と書いて、作る対象から外していた。
+      2026-08-25 に実測したら止まらなかった（trigger にトレンド系の ADX を使っても通った）。
+      まこさんの指摘で発覚。CC は確かめずに「在る」と書いていた。
+
+    ★見る範囲は「入口の条件」と「場面の判定」だけ（2026-08-25 に実測して絞った）。
+      出口の枝も role という名前を使うが、出口の枝の表（exit_families）は
+      「役割 → 使える系統」の欄を1件も持たない（19件とも lineages が無い＝実測）。
+      ＝出口には判定の基準が無いので、ここでは見ない。
+      ★入口の条件は、実測では 20本の案で違反0件だった（役割の決まりを既に守っている）。
+        止まったのは全部 出口の枝だった（9件）。だから範囲を絞った。
+    """
+    roles = (table or {}).get("roles") or {}
+    if not roles:
+        raise SampleError("[4要素ゲート] 型の表に役割の一覧が無い（役割の照合ができない）")
+    for d in _walk_dicts(obj):
+        role = d.get("role")
+        mats = d.get("material")
+        if not role or not isinstance(mats, list):
+            continue                                  # 条件でない（役割を持たない）＝対象外
+        rr = roles.get(role)
+        if rr is None:
+            raise SampleError(f"[4要素ゲート] {where} に、型の表に無い役割が在る: {role}")
+        ok_lineages = tuple(rr.get("lineages") or ())
+        for m in mats:
+            if not isinstance(m, dict) or "family" not in m:
+                continue
+            lineage = _lineage_of(m)
+            if lineage not in ok_lineages:
+                raise SampleError(
+                    f"[4要素ゲート] {where} に、役割に合わない指標が在る: "
+                    f"役割 {role} に 系統 {lineage} の指標 {m.get('family')}。"
+                    f"役割 {role} が使える系統は {ok_lineages}（型の表）")
+
+
+def _cc(cond, *a, **k):
+    """自己テストが検証器（条件1つ）を呼ぶときの包み。印を外してから渡す（58回目）。
+
+    本走は sample_structure が案を返す直前で印を外すので、実行器に印は届かない。
+    自己テストは検証器を直に呼ぶので、その一手をここで入れる。
+    """
+    import engine_tuner_exec as _ex
+    return getattr(_ex, "_check_cond")(strip_marks(cond), *a, **k)
+
+
+def _vr(recipe, *a, **k):
+    """自己テストが検証器（案まるごと）を呼ぶときの包み。印を外してから渡す（58回目）。"""
+    import engine_tuner_exec as _ex
+    return _ex.validate_recipe(strip_marks(recipe), *a, **k)
+
+
+def strip_marks(obj):
+    """印を外す（実行器と案のハッシュ値に印が漏れないようにする・58回目）。"""
+    if isinstance(obj, dict):
+        return {k: strip_marks(v) for k, v in obj.items() if k not in (PARAM_SRC, Q_SRC)}
+    if isinstance(obj, list):
+        return [strip_marks(v) for v in obj]
+    if isinstance(obj, tuple):
+        return tuple(strip_marks(v) for v in obj)
+    return obj
+
+
 def int_range_of(limits: dict, n_min: int = 1) -> tuple[int, int]:
     """使い方の中の本数（傾きを何本で見るか・何本 続いたか・何本 以内か）の範囲（段A の A-5・2026-08-13）。
 
@@ -791,8 +938,7 @@ def _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count, tabl
             if not cand_f:
                 raise SampleError(f"役割 {role} に使える系統の指標が候補に無い")
             fam = str(cand_f[int(rng.integers(len(cand_f)))])
-            m = {"family": fam, "param": draw_param(rng, fam, ranges),
-                 "tf": str(rng.choice(tf_pool))}
+            m = _mat(fam, draw_param(rng, fam, ranges), str(rng.choice(tf_pool)))
             if _banned_pair(m, table):
                 continue                                        # 禁止3（標本不足）＝引き直す
         kind = _lineage_of(m)
@@ -894,8 +1040,7 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
             if p2 is None:
                 continue                              # 範囲が狭くて2本 引けない＝別の組み方を引き直す
             a_, b_ = sorted((p1, p2), key=_pkey)      # ★短い方を先に置く（まこさん OK 2026-08-11）
-            pair = [{"family": c, "param": a_, "tf": tf},
-                    {"family": c, "param": b_, "tf": tf}]
+            pair = [_mat(c, a_, tf), _mat(c, b_, tf)]
         elif kind == "pre":
             # ★同じ列の「素」と「前処理を掛けたもの」。本数は int_grid から引く＝CC が数字を書かない。
             p0 = draw_param(rng, c, ranges)
@@ -904,8 +1049,7 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
             #   直す前は引いてしまい、出した案が必ず拒否されていた（2026-08-21・M2-2-8 で直した）。
             op = str(rng.choice(ex.pre_ops(same_unit=True, needs_state=False)))
             n_pre = draw_int(rng, limits, n_min=2)
-            pair = [{"family": c, "param": p0, "tf": tf},
-                    {"family": c, "param": p0, "tf": tf, "pre": {"op": op, "n": n_pre}}]
+            pair = [_mat(c, p0, tf), _mat(c, p0, tf, pre={"op": op, "n": n_pre})]
         else:
             fa, fb = c                                # type: ignore[misc]
             # ★数字は「同じ回の呼び出しから出た2本」を組む＝共通の軸は同じ値にそろえる
@@ -926,8 +1070,7 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
             #   「短い方を先に置く」は同じ指標のパラメータ違いにだけ効く決まり。
             if rng.random() < 0.5:
                 fa, fb, pa_, pb_ = fb, fa, pb_, pa_
-            pair = [{"family": fa, "param": pa_, "tf": tf},
-                    {"family": fb, "param": pb_, "tf": tf}]
+            pair = [_mat(fa, pa_, tf), _mat(fb, pb_, tf)]
         if not any(_banned_pair(m, table) for m in pair):
             return pair
     raise SampleError(f"役割 {role} の列2本を30回引いても禁止3 を避けられない")
@@ -935,7 +1078,7 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
 
 def _q(rng, limits) -> dict:
     # ★2026-08-15（段A の A-5-3）＝分位を範囲から引く（直す前は9段のメニューからだけ）。
-    return {"threshold_q": draw_q(rng, limits)}
+    return _thr(draw_q(rng, limits))
 
 
 def _dc1_side(rng, role, mats, side) -> str:
@@ -970,7 +1113,7 @@ def _dc2_q(rng, role, m, limits, table, side) -> dict:
             # 走行を丸ごと止めず、この案だけ引き直す（SampleError＝直す前と同じ扱い）。
             raise SampleError(f"DC2 の分位の帯（q{min(nums)}〜q{max(nums)}）が"
                               f"探せる範囲（q{lo_all}〜q{hi_all}）と重ならない")
-        return {"threshold_q": draw_q(rng, limits, lo_min=lo_q, hi_max=hi_q)}
+        return _thr(draw_q(rng, limits, lo_min=lo_q, hi_max=hi_q))
     return _q(rng, limits)
 
 
@@ -1113,7 +1256,7 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
         a = int(rng.integers(_lo_q, _hi_q))          # 下限＝上限より小さい所から引く
         b = int(rng.integers(a + 1, _hi_q + 1))      # 上限＝下限より大きい所から引く
         return {"role": role, "form": form, "material": [m],
-                "value": {"lo": {"threshold_q": f"q{a}"}, "hi": {"threshold_q": f"q{b}"}}}
+                "value": {"lo": _thr(f"q{a}"), "hi": _thr(f"q{b}")}}
     if form == "slope":
         return {"role": role, "form": "slope", "material": [m],
                 "side": _dc1_side(rng, role, [m], side),
@@ -1187,7 +1330,7 @@ def _pick_exit_material(rng, pool, tfs, table, lineages: set) -> dict:
     tf_pool = [t for t in tfs if t in table["tfs"]]
     for _ in range(40):
         b = cand[int(rng.integers(len(cand)))]
-        m = {"family": b["family"], "param": b["param"], "tf": str(rng.choice(tf_pool))}
+        m = _mat(b["family"], b["param"], str(rng.choice(tf_pool)))
         if not _banned_pair(m, table):
             return m
     raise SampleError("出口の材料を40回 引いても禁止3 を避けられない")
@@ -1227,7 +1370,7 @@ def _exit_indicator_cond(rng, limits, pool, tfs, table, side, spec) -> dict:
         if ks:
             p = ks[int(rng.integers(len(ks)))]       # 数字は並びのこともある（6-7・2026-08-11）
             tf = str(rng.choice(tf_pool))
-            pair = [{"family": "Stoch%K", "param": p, "tf": tf}, {"family": "Stoch%D", "param": p, "tf": tf}]
+            pair = [_mat("Stoch%K", p, tf), _mat("Stoch%D", p, tf)]
             if not any(_banned_pair(m, table) for m in pair):
                 return {"role": "env", "form": "cross", "material": pair,
                         "value": {"direction": ("up" if side == "SHORT" else "down") if rev
@@ -1547,16 +1690,16 @@ def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: in
     draw: dict = {"order_n": int(order_n)}
     # A 帯の幅（K-6・R7）＝geo W% が分位より上
     cond_a = {"role": "location", "form": "level", "material": [{"geo": "W%"}],
-              "side": "above", "value": {"threshold_q": draw_q(rng, limits)}}
+              "side": "above", "value": _thr(draw_q(rng, limits))}
     # B 構造・位置（K-4・R1）＝location の成績表の r_b 位（ラベルは混ぜる）・向きは order_n で決まる
     m_b, draw["B"] = _ranked_material_at("location", r_b, tfs, table)
     cond_b = {"role": "location", "form": "level", "material": [m_b],
-              "side": side_b, "value": {"threshold_q": draw_q(rng, limits)}}
+              "side": side_b, "value": _thr(draw_q(rng, limits))}
     # C 非トレンド（K-5・R8・R5）＝env「強さ」の r_c 位・時間足は 5m より上（D・K-2）
     m_c, draw["C"] = _ranked_material_at("env", r_c, tfs, table, label="強さ",
                                          tf_ok=[t for t in _role_tfs(tfs, table, "env") if t in upper])
     strong = {"role": "env", "form": "level", "material": [m_c],
-              "side": "above", "value": {"threshold_q": draw_q(rng, limits)}}
+              "side": "above", "value": _thr(draw_q(rng, limits))}
     cond_c = {"not": strong}
     # E 状態を保つ（K-3・C6・C7・R4）＝on＝A∩B∩C／off＝それぞれを緩い側へずらした any／n は範囲
     off_c = json.loads(json.dumps(strong))
@@ -1709,7 +1852,7 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
                                        order_n=int(regime_order_n))
         rg["build"] = bd
         meta_extra["regime_draw"] = draw             # 引いた記録（ラベル・先読み・K）＝人が追えるように残す
-    return {
+    recipe = {
         "meta": {"strategy": "e38", "logic_id": logic_id, "side": side,
                  "signal_family": fam_label,
                  "regime": rg, **meta_extra},
@@ -1722,6 +1865,18 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
                      **({"add_trigger": {"kind": "resignal"}}
                         if True else {})},
     }
+    # ★4要素ゲート（58回目・2026-08-24・まこさん承認 9d085e391c3e…）
+    #   まこさんの1行＝「指標、閾値、パラメータ、時間足の役割に基づき、法則に則って４つを
+    #   組み合わせ、Entry/Exit やレジーム判定などの条件を作る」。
+    #   そのうち「閾値が範囲から」「パラメータが範囲から」を、印の有無で確かめる。
+    #   印が1つでも欠けていれば SampleError＝その案は作れない（fail-closed）。
+    assert_marks(recipe, where=f"案（logic_id={logic_id}）")
+    # ★役割に基づいて使われているかを見る（58回目・まこさんの依頼の中心）。
+    #   見るのは入口の条件と場面の判定だけ＝出口の枝には「役割→使える系統」の表が無い（実測）。
+    assert_roles(recipe.get("entry"), table, where=f"案（logic_id={logic_id}）の入口")
+    assert_roles((recipe.get("meta") or {}).get("regime"), table,
+                 where=f"案（logic_id={logic_id}）の場面の判定")
+    return strip_marks(recipe)   # 印は外して返す＝実行器にも案のハッシュ値にも渡さない
 
 
 def recipe_hash(recipe: dict) -> str:
@@ -2809,7 +2964,7 @@ def selftest() -> int:
         rng = np.random.default_rng([11, 1, i])
         try:
             r = sample_structure(rng, lm, pool, tfs_small)
-            ex.validate_recipe(r, limits={"p_max": lm["p_max"], "count_range": lm["count_range"],
+            _vr(r, limits={"p_max": lm["p_max"], "count_range": lm["count_range"],
                                           "role_max": lm["role_max"], "depth_max": lm["depth_max"],
                                           "k_max": lm["k_max"]})
             structs.append(r)
@@ -2888,13 +3043,16 @@ def selftest() -> int:
             ng.append("T1-C6 番人②: 生成した列1本の cross に閾値（value.th）が無い")
             break
         try:
-            ex._check_cond(_c6, "", "T1-C6", [])
+            # ★strip_marks を通す（58回目）＝本走と同じ条件にするため。
+            #   本走は sample_structure が案を返す直前で印を外すので、実行器に印は届かない。
+            #   ここは生成器の中の関数を直に呼ぶテストなので、その一手を自分で入れる。
+            _cc(strip_marks(_c6), "", "T1-C6", [])
         except ex.RecipeError as e:
             ng.append(f"T1-C6 番人②: 生成した閾値とのクロスを検証器が拒否する（{str(e)[:60]}）")
             break
     try:
-        ex._check_cond({"role": "trigger", "form": "cross", "value": {"direction": "up"},
-                        "material": [{"family": "RSI", "param": 14, "tf": "5m"}]},
+        _cc({"role": "trigger", "form": "cross", "value": {"direction": "up"},
+                        "material": [_mat("RSI", 14, "5m")]},
                        "", "T1-C6 メタ確認", [])
         ng.append("T1-C6 番人③: 閾値の無い列1本の cross が通る＝書き忘れを検証器が捕まえていない")
     except ex.RecipeError:
@@ -2938,7 +3096,7 @@ def selftest() -> int:
                   "（新高値・新安値を書けない＝部品 ts_max が生成器に届いていない）")
     for _pr in _pre6[:20]:
         try:
-            ex._check_cond({"role": "trigger", "form": "cross", "material": _pr,
+            _cc({"role": "trigger", "form": "cross", "material": _pr,
                             "value": {"direction": "up"}}, "", "T1-C6c", [])
         except ex.RecipeError as e:
             ng.append(f"T1-C6c 番人②: 生成した前処理つきの組を検証器が拒否する（{str(e)[:70]}）")
@@ -2950,7 +3108,7 @@ def selftest() -> int:
                              (({**_m_ok, "pre": {"op": "存在しない部品", "n": 6}}),
                               "一覧に無い前処理の名前でも通る")):
             try:
-                ex._check_cond({"role": "trigger", "form": "cross",
+                _cc({"role": "trigger", "form": "cross",
                                 "material": [_pre6[0][0], _broke],
                                 "value": {"direction": "up"}}, "", "T1-C6c メタ確認", [])
                 ng.append(f"T1-C6c 番人③: {_why}")
@@ -2965,8 +3123,8 @@ def selftest() -> int:
     #     (c) メタ確認＝その値が「素の列の分位」と違う（同じなら解決表が前処理を掛けていない＝嘘の閾値）
     if _pre6:
         try:
-            ex._check_cond({"role": "trigger", "form": "level", "side": "above",
-                            "material": [_m_ok], "value": {"threshold_q": "q90"}}, "", "T1-C6c", [])
+            _cc({"role": "trigger", "form": "level", "side": "above",
+                            "material": [_m_ok], "value": _thr("q90")}, "", "T1-C6c", [])
         except ex.RecipeError as e:
             ng.append(f"T1-C6c 番人③(a): 前処理つきの材料に分位を渡すと拒否される（{str(e)[:70]}）")
         _nm6 = ex._material_name(_m_ok, "")[1]
@@ -2983,7 +3141,7 @@ def selftest() -> int:
             "pre_filter": [],
             "entry": {"connective": {"all": [
                 {"role": "trigger", "form": "level", "material": [_m_ok],
-                 "side": "above", "value": {"threshold_q": "q90"}}]}},
+                 "side": "above", "value": _thr("q90")}]}},
             "exits": [], "position": {"mode": "separate", "max_adds": 1},
         }
         try:
@@ -3036,16 +3194,16 @@ def selftest() -> int:
         if not _seen_lv:
             ng.append(f"T1-C6e 番人①: 案 {len(structs)} 本に「水準 ＋ {_lv_ops}」の条件が1本も出ない"
                       "（部品を登録しただけで、生成器が作れていない＝使えない部品）")
-        _m_lv = {"family": "RSI", "param": 14, "tf": "5m", "pre": {"op": _lv_ops[0], "n": 20}}
+        _m_lv = _mat("RSI", 14, "5m", pre={"op": _lv_ops[0], "n": 20})
         try:
-            ex._check_cond({"role": "trigger", "form": "level", "side": "above",
-                            "material": [_m_lv], "value": {"threshold_q": "q80"}}, "", "T1-C6e", [])
+            _cc({"role": "trigger", "form": "level", "side": "above",
+                            "material": [_m_lv], "value": _thr("q80")}, "", "T1-C6e", [])
         except ex.RecipeError as e:
             ng.append(f"T1-C6e 番人②: 水準の前処理つきの条件を検証器が拒否する（{str(e)[:70]}）")
         try:
-            ex._check_cond({"role": "trigger", "form": "diff", "side": "above",
-                            "material": [{"family": "RSI", "param": 14, "tf": "5m"}, _m_lv],
-                            "value": {"threshold_q": "q50"}}, "", "T1-C6e メタ確認", [])
+            _cc({"role": "trigger", "form": "diff", "side": "above",
+                            "material": [_mat("RSI", 14, "5m"), _m_lv],
+                            "value": _thr("q50")}, "", "T1-C6e メタ確認", [])
             ng.append(f"T1-C6e 番人③: 列2本の形（差）に単位の変わる前処理 {_lv_ops[0]} を渡しても通る"
                       "（単位が違うものを大小で比べている）")
         except ex.RecipeError:
@@ -3057,8 +3215,8 @@ def selftest() -> int:
     #   ③解決表に組み方ごとの鍵が立ち、その値が「引き算の分位」と違う
     #     （同じなら解決表が組み方を掛けていない＝嘘の閾値になる。4-2 の番人③(c) と同じ考え方）
     #   ④メタ確認＝書き忘れ（相関に窓が無い／割り算に閾値が無い）と、表に無い組み方が拒否されること
-    _ma6f = {"family": "RSI", "param": 7, "tf": "5m"}
-    _mb6f = {"family": "RSI", "param": 21, "tf": "5m"}
+    _ma6f = _mat("RSI", 7, "5m")
+    _mb6f = _mat("RSI", 21, "5m")
     _seen_op6f: set = set()
     for r in structs:
         _cs6f, _dd6f = ex._walk(r["entry"]["connective"])
@@ -3070,12 +3228,12 @@ def selftest() -> int:
         if _o6f not in _seen_op6f:
             ng.append(f"T1-C6f 番人①: 案 {len(structs)} 本に材料2本の組み方 {_o6f} が1本も出ない"
                       "（部品を登録しただけで、生成器が作れていない＝使えない部品）")
-    _val6f = {"sub": {"threshold_q": "q50"},
-              "div": {"op": "div", "th": {"threshold_q": "q50"}},
-              "corr": {"op": "corr", "n": 20, "th": {"threshold_q": "q50"}}}
+    _val6f = {"sub": _thr("q50"),
+              "div": {"op": "div", "th": _thr("q50")},
+              "corr": {"op": "corr", "n": 20, "th": _thr("q50")}}
     for _o6f, _v6f in _val6f.items():
         try:
-            ex._check_cond({"role": "trigger", "form": "diff", "side": "above",
+            _cc({"role": "trigger", "form": "diff", "side": "above",
                             "material": [_ma6f, _mb6f], "value": _v6f}, "", "T1-C6f", [])
         except ex.RecipeError as e:
             ng.append(f"T1-C6f 番人②: 組み方 {_o6f} の条件を検証器が拒否する（{str(e)[:70]}）")
@@ -3116,11 +3274,11 @@ def selftest() -> int:
         if _o6f in _qv6f and "sub" in _qv6f and abs(_qv6f[_o6f] - _qv6f["sub"]) < 1e-9:
             ng.append(f"T1-C6f 番人③ メタ確認: 組み方 {_o6f} の分位が引き算の分位と一致する"
                       "＝解決表が組み方を掛けていない（嘘の閾値になる）")
-    for _bad6f, _why6f in (({"op": "corr", "th": {"threshold_q": "q50"}}, "相関に窓（value.n）が無くても通る"),
+    for _bad6f, _why6f in (({"op": "corr", "th": _thr("q50")}, "相関に窓（value.n）が無くても通る"),
                            ({"op": "div"}, "割り算に閾値（value.th）が無くても通る"),
-                           ({"op": "mul", "th": {"threshold_q": "q50"}}, "表に無い組み方 mul が通る")):
+                           ({"op": "mul", "th": _thr("q50")}, "表に無い組み方 mul が通る")):
         try:
-            ex._check_cond({"role": "trigger", "form": "diff", "side": "above",
+            _cc({"role": "trigger", "form": "diff", "side": "above",
                             "material": [_ma6f, _mb6f], "value": _bad6f}, "", "T1-C6f メタ確認", [])
             ng.append(f"T1-C6f 番人④: {_why6f}")
         except ex.RecipeError:
@@ -3144,14 +3302,14 @@ def selftest() -> int:
         ng.append(f"T1-C6g 番人②: 生成器が barssince の above 以外を作った（{sorted(set(_bs_sides))}）"
                   "＝within_n と同じ条件を2通りで作っている（正規形）")
     _in6g = {"role": "trigger", "form": "level", "side": "above",
-             "material": [_ma6f], "value": {"threshold_q": "q80"}}
+             "material": [_ma6f], "value": _thr("q80")}
     try:
-        ex._check_cond({"role": "trigger", "form": "barssince", "side": "above",
+        _cc({"role": "trigger", "form": "barssince", "side": "above",
                         "inner": _in6g, "material": [], "value": {"n": 6}}, "", "T1-C6g", [])
     except ex.RecipeError as e:
         ng.append(f"T1-C6g 番人③: barssince の条件を検証器が拒否する（{str(e)[:70]}）")
     try:
-        ex._check_cond({"role": "trigger", "form": "barssince",
+        _cc({"role": "trigger", "form": "barssince",
                         "inner": _in6g, "material": [], "value": {"n": 6}}, "", "T1-C6g メタ確認", [])
         ng.append("T1-C6g 番人④: side の無い barssince が通る（数える形なので向きが要る）")
     except ex.RecipeError:
@@ -3287,7 +3445,7 @@ def selftest() -> int:
     rng8 = np.random.default_rng(8)
     r8 = sample_structure(rng8, bad, pool, tfs_small)
     try:
-        ex.validate_recipe(r8, limits={"count_range": bad["count_range"], "role_max": bad["role_max"]})
+        _vr(r8, limits={"count_range": bad["count_range"], "role_max": bad["role_max"]})
         ng.append("T8: 本数を満たせない構造が検証を素通り（G5 で止まるはず）")
     except ex.RecipeError:
         pass
@@ -3400,8 +3558,8 @@ def selftest() -> int:
             "pre_filter": [],
             "entry": {"connective": {"all": [
                 {"role": "trigger", "form": "level",
-                 "material": [{"family": "ADX", "param": 14, "tf": "2h"}],
-                 "side": "above", "value": {"threshold_q": "q50"}}]}},
+                 "material": [_mat("ADX", 14, "2h")],
+                 "side": "above", "value": _thr("q50")}]}},
             "exits": [], "position": {"mode": "separate", "max_adds": 1},
         }
         try:
@@ -3985,8 +4143,8 @@ def selftest() -> int:
     #       「束の中の値が分位の範囲で書かれ、engine_tuner の探索の対象になる」も効いていなかった。
     #   ★メタ確認＝歩く所を1つ外すと、この番人が落ちること（＝番人が本当に効いている）。
     def _lv22(fam, p, tf, q):
-        return {"role": "env", "form": "level", "side": "above", "value": {"threshold_q": q},
-                "material": [{"family": fam, "param": p, "tf": tf}]}
+        return {"role": "env", "form": "level", "side": "above", "value": _thr(q),
+                "material": [_mat(fam, p, tf)]}
     _r22 = {"meta": {"lane": "", "regime": {"name": "range", "entry_col": "x", "build": {
                 "entry": {"out_col": "t22_built", "tree": {"all": [
                     _lv22("RSI", 14, "5m", "q30"),
@@ -4015,9 +4173,9 @@ def selftest() -> int:
     #     走らせた瞬間に「分位の解決表に無い」で止まった。挟みは条件の材料と同じ鍵で解く。
     _r22c = {"meta": {"lane": ""}, "entry": {"connective": {"all": [{
         "role": "env", "form": "level", "side": "below",
-        "value": {"ref": {"family": "ATR%", "param": 14, "tf": "1h"}, "mult": 0.5,
-                  "clip_lo": {"threshold_q": "q10"}, "clip_hi": {"threshold_q": "q90"}},
-        "material": [{"family": "fractal安値距離%", "param": 2, "tf": "1h"}]}]}}}
+        "value": {"ref": _mat("ATR%", 14, "1h"), "mult": 0.5,
+                  "clip_lo": _thr("q10"), "clip_hi": _thr("q90")},
+        "material": [_mat("fractal安値距離%", 2, "1h")]}]}}}
     _k22c = needed_qkeys([_r22c])
     if "fractal安値距離%(2)__1h" not in _k22c:
         ng.append("T22b: 連動する閾値の挟み（clip_lo・clip_hi）を分位で書くと鍵が入らない"
@@ -4039,9 +4197,9 @@ def selftest() -> int:
                           "close": _c22, "volume": 1.0})
     _df22["t22_state"] = (np.arange(_n22) % 80) < 40          # 入ったり出たりする状態の列
     _r22e = {"meta": {"lane": ""}, "entry": {"connective": {"all": [{
-        "role": "env", "form": "level", "side": "above", "value": {"threshold_q": "q50"},
-        "material": [{"family": "RSI", "param": 14, "tf": "5m",
-                      "pre": {"op": "since_min", "state": "t22_state"}}]}]}}}
+        "role": "env", "form": "level", "side": "above", "value": _thr("q50"),
+        "material": [_mat("RSI", 14, "5m",
+                          pre={"op": "since_min", "state": "t22_state"})]}]}}}
     try:
         _q22 = build_qtable(_df22, {}, [_r22e], quantile_list(lm))
         if not _q22:
@@ -4131,7 +4289,7 @@ def selftest() -> int:
             try:
                 _rr = sample_structure(_rng, _lm24, _pool24, _tfs24, side="SHORT", logic_id=f"T24_{_i}",
                                        build_regime=True, regime_order_n=_i)
-                ex.validate_recipe(_rr, limits=_lim24)
+                _vr(_rr, limits=_lim24)
                 _ok24 += 1
                 _r24 = _r24 or _rr
                 _dr = _rr["meta"]["regime_draw"]
@@ -4157,7 +4315,7 @@ def selftest() -> int:
                 _bad = json.loads(json.dumps(_r24))
                 _bad["meta"]["regime"]["build"]["entry"]["tree"] = _mk(None)
                 try:
-                    ex.validate_recipe(_bad, limits=_lim24)
+                    _vr(_bad, limits=_lim24)
                     ng.append(f"T24③: {_lbl} を外した束が拒否されない")
                 except ex.RecipeError as _e:
                     if "G7" not in str(_e)[:12]:
