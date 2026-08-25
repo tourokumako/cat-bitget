@@ -328,7 +328,9 @@ def tuner_recipes() -> list[tuple[str, dict]]:
     while got < TUNER_GEN_N and i < 60:
         i += 1
         try:
-            r = gen.sample_structure(np.random.default_rng([TUNER_SEED, i]), lm, pool, ["5m", "15m"])
+            # ★59回目（まこさん承認 2026-08-25）＝案は印（値の出どころ）つきで返る。実行器へ直に渡すので印を外す
+            #   （本走の run_trial と同じ一手・設計書 v2 やること7）。
+            r = gen.strip_marks(gen.sample_structure(np.random.default_rng([TUNER_SEED, i]), lm, pool, ["5m", "15m"]))
         except (Exception, SystemExit):                   # noqa: BLE001  引けない種は次へ（種の番号で再現可能）
             continue
         recs.append((f"生成{got + 1}(種{TUNER_SEED}-{i})", r))
