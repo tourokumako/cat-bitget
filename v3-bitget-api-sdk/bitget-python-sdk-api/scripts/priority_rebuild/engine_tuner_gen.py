@@ -730,9 +730,10 @@ def assert_exit_roles(exits, where: str = "案の出口") -> list[str]:
     """★出口の指標の条件＝「その枝が使える系統」（出口の表の lineage_any／lineage）に材料の系統が在るか。
 
     印 LIN_SRC（_exit_indicator_cond が付ける）＝{"branch": 枝, "lineages": [...], "from_table": 表に欄が在ったか}。
-    ★表に欄が無い枝（from_table=False・いまは19件中18件）は、判定の基準が無い＝止めずに
-      「未実装（表の承認待ち）」として戻り値に載せる（黙って通したことを隠さない・設計書 やること5）。
-    戻り＝未判定の一覧（表の承認が出るまで、ここは空にならない）。
+    ★2026-08-25（60回目・設計書 v2 の やること5）＝出口の表に系統の欄が入り、まこさんが承認した
+      （`exit_families_approved.txt` の指紋 f5d53842ff40ab09…）。だから **from_table=False は止める**。
+      直す前は「未判定」として戻り値に載せ、そのまま通していた（表の承認待ちの間だけの形）。
+    戻り＝いまは常に空（表に欄が無い枝は、そもそも組み立てられない＝_exit_indicator_cond が止める）。
     """
     notes: list[str] = []
     for d in _walk_dicts(exits or []):
@@ -745,8 +746,9 @@ def assert_exit_roles(exits, where: str = "案の出口") -> list[str]:
                 continue
             lineage = _lineage_of(m)
             if not src.get("from_table"):
-                notes.append(f"{src.get('branch')}: 表に系統の欄が無い＝未判定（既定 {sorted(src.get('lineages') or [])}）")
-                continue
+                raise SampleError(f"[4要素ゲート] {where}: 枝 {src.get('branch')} は、使える系統の欄が"
+                                  f"出口の表に無い（印 from_table=False）＝判定の基準が無いので通さない"
+                                  f"（設計書 v2 の やること5・2026-08-25）")
             if lineage not in set(src.get("lineages") or []):
                 raise SampleError(f"[4要素ゲート] {where}: 枝 {src.get('branch')} に 系統 {lineage} の指標 "
                                   f"{m.get('family')}。枝が使える系統は {sorted(src.get('lineages') or [])}（出口の表）")
@@ -1657,13 +1659,19 @@ def _exit_indicator_cond(rng, limits, pool, tfs, table, side, spec, bid: str = "
     表の規則に reverse_of_side が在る枝＝入口と逆の向きを見る（例＝SHORT の玉は、下げ止まり側で降りる）。
     無い枝＝広がる側・強い側を見る（例＝レンジが壊れたことを見る BREAKOUT）。
     ★59回目＝印 LIN_SRC（この枝が使える系統・表に欄が在ったか）を付ける＝assert_exit_roles が見る。
-      表に欄が無い枝（19件中18件）は、既定の6系統で組んだうえで from_table=False と正直に記す
-      （黙って通さない。表の再承認まで「未実装（表の承認待ち）」として印字される＝設計書 やること5）。
+    ★60回目（2026-08-25・設計書 v2 の やること5）＝**コードに直に書いてあった既定の6系統を消した。**
+      使える系統は出口の表（`exit_families.json` の枝の `lineage_any`／`lineage`）だけが決める。
+      表に欄が無い枝は、ここで止める（＝組み立てない）。
+      直す前＝欄が無い枝は既定の6系統で組み、from_table=False と記して そのまま通していた。
+      実測（案300本・2026-08-25）＝REVERSE_IND がその形で、ローソク4回・出来高3回を引いていた
+      （包み足の傾きのような、指標の役割と噛み合わない条件が作られていた）。
+      表の欄はまこさんが承認する（`exit_families_approved.txt` の指紋 f5d53842ff40ab09…）。
     """
-    from_table = bool(spec.get("lineage_any") or spec.get("lineage"))
-    lineages = set(spec.get("lineage_any") or ([spec["lineage"]] if spec.get("lineage") else
-                                               ["オシレーター", "トレンド", "ボラ", "ローソク", "出来高", "構造・位置"]))
-    lin = {"branch": str(bid), "lineages": sorted(lineages), "from_table": from_table}
+    lineages = set(spec.get("lineage_any") or ([spec["lineage"]] if spec.get("lineage") else []))
+    if not lineages:
+        raise SampleError(f"[4要素ゲート] 出口の枝 {bid} に、使える系統の欄（lineage_any／lineage）が"
+                          f"出口の表に無い＝この枝は組み立てない（設計書 v2 の やること5・2026-08-25）")
+    lin = {"branch": str(bid), "lineages": sorted(lineages), "from_table": True}
     forms = [f for f in (spec.get("forms") or ["level"]) if f in ex.forms_where("exit_ok")]   # ★手書き → 性質表から（M2-2-3b）
     rev = bool(spec.get("reverse_of_side"))
     form = str(rng.choice(forms))
@@ -1676,9 +1684,12 @@ def _exit_indicator_cond(rng, limits, pool, tfs, table, side, spec, bid: str = "
         form = "candle_dir"
     if form == "candle_dir":
         # 出口のローソク＝入口の逆（SHORT の玉は陽線の形で降りる・DC4 の逆）
+        # ★60回目（2026-08-25）＝印 LIN_SRC を足した。直す前はこの形だけ印が付かず、
+        #   assert_exit_roles を素通りしていた（材料を持たない形なので材料の系統は見られないが、
+        #   「どの枝の条件か・その枝が使える系統は何か」を記録に残す＝穴を塞ぐ）。
         return {"role": "env", "form": "candle_dir",
                 "value": {"dir": ("bull" if side == "SHORT" else "bear") if rev else
-                                 ("bear" if side == "SHORT" else "bull")}}
+                                 ("bear" if side == "SHORT" else "bull")}, LIN_SRC: lin}
     if form == "cross" and "ローソク" not in lineages:
         # 2本の線の交差＝入口の逆向き（DC3 の逆）
         fams = {b["family"] for b in pool if iref.FAMILY_LINEAGE[b["family"]]["k"] in lineages}
@@ -2800,9 +2811,16 @@ def per_day_gate(res: dict, min_per_day) -> tuple[bool, str]:
 #   未使用のまま残しておくと1行で点の一覧に戻せる（監査 観点①）。値の作り方は範囲方式だけ。
 
 
-def _int_range(lo: int, hi: int, step: int = 1) -> dict:
-    """下限から上限までの整数から選ぶ値（範囲方式・監査 4-19／要件 R6 で新設）。"""
-    return {"kind": "int", "lo": int(lo), "hi": int(hi), "step": int(step)}
+def _int_range(lo: int, hi: int, step: int = 1, name: str = "__int__") -> dict:
+    """下限から上限までの整数から選ぶ値（範囲方式・監査 4-19／要件 R6 で新設）。
+
+    ★60回目（2026-08-25）＝`name`（この範囲の出どころ＝設定ファイルの鍵の名前）を持たせた。
+      直す前は apply_slots が印の名前をパスから当てていて、**ずらす本数（offset）の印に
+      `__int__`（ふつうの整数の範囲）を書いていた。**正本は `nest_offset_range` なので、
+      印の範囲が正本の外と判定され、**第2段（TPE）の試行が全部 4要素ゲートで落ちていた**
+      （実測 2026-08-25＝ミニ走行で 6/6 本・理由「offset の印の範囲 0.0〜1.0 が正本（__int__）3.0〜12.0 の外」）。
+    """
+    return {"kind": "int", "lo": int(lo), "hi": int(hi), "step": int(step), "name": str(name)}
 
 
 def _q_range(lo: int, hi: int) -> dict:
@@ -2848,7 +2866,8 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
             #   （2026-08-12 に value.th で同じ穴を塞いだのと同じ形）。
             if "offset" in v:
                 _or = num_range_of(limits, "nest_offset_range")
-                slots.append((f"{prefix}.value.offset", _int_range(int(_or["lo"]), int(_or["hi"]))))
+                slots.append((f"{prefix}.value.offset",
+                              _int_range(int(_or["lo"]), int(_or["hi"]), name="nest_offset_range")))
             _cond_slots(f"{prefix}.inner", c["inner"])
             return
         if "threshold_q" in v:
@@ -2893,7 +2912,8 @@ def value_slots(recipe: dict, limits: dict) -> list[tuple[str, dict]]:
                 if mats and "state" in mats[0] and mats[0]["state"] == "hold_min":
                     # 監査 4-19／要件 R6＝保有時間の上限は範囲方式（単位は分・5分足なので刻みは5）
                     _lo, _hi = hold_bars(limits)
-                    slots.append((f"exits[{bi}].fire[{ci}].value.n", _int_range(_lo * 5, _hi * 5, 5)))
+                    slots.append((f"exits[{bi}].fire[{ci}].value.n",
+                                  _int_range(_lo * 5, _hi * 5, 5, name="hold_bars")))
     return slots
 
 
@@ -2950,7 +2970,11 @@ def apply_slots(recipe: dict, choices: dict[str, object], specs: dict | None = N
         if key == "threshold_q" and sp.get("kind") == "q":
             holder[Q_SRC] = {"kind": "q", "lo": int(sp["lo"]), "hi": int(sp["hi"]), "slot": path}
         elif sp.get("kind") == "int":
-            nm = "hold_bars" if path.endswith(".value.n") and path.startswith("exits[") else "__int__"
+            # ★60回目（2026-08-25）＝印の名前は、その値スロット自身が持つ出どころ（name）から取る。
+            #   直す前はパスから当てていて、ずらす本数（offset）に `__int__` を書いていた
+            #   ＝正本（nest_offset_range）と食い違い、第2段の試行が全部 落ちていた（実測 6/6 本）。
+            nm = str(sp.get("name") or ("hold_bars" if path.endswith(".value.n")
+                                        and path.startswith("exits[") else "__int__"))
             lo, hi = int(sp["lo"]), int(sp["hi"])
             raw = int(val)
             mk = {"kind": "int", "name": nm, "lo": lo, "hi": hi, "raw": raw, "slot": path}
@@ -3047,7 +3071,9 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     print(f"[D11] 案そのもの {len(structures)} 本を {spath} に記録（journal の idx と1対1）"
           f"／印つき＝{run_dir / 'structures_marked.json'}")
     if _notes:
-        print(f"[4要素ゲート] 出口の役割＝未判定（表に系統の欄が無い枝・表の承認待ち） {len(_notes)} 種: {_notes[:6]}")
+        # ★60回目（2026-08-25）＝ここは本来 0 種（表に系統の欄が無い枝は組み立てない＝S2 で止まる）。
+        #   出たときは、印の付かない道が残っているという合図＝見張りとして残す。
+        print(f"★[4要素ゲート] 出口の役割の未判定が {len(_notes)} 種 出た（本来 0 種）: {_notes[:6]}")
     import gen_signal_families as gsf
     gsf.check_structures(str(spath))
 
@@ -5119,7 +5145,9 @@ def gate_matrix(verbose: bool = True) -> int:
     """18マス（守るべき6つ × 入口・場面の判定・出口）を、プログラムの中の表のとおりに壊して測る（K4・K5・K7・K8・K14）。
 
     ★壊し方は CC がその場で選ばない＝下の MUTATIONS が正本（監査 P-3）。各マス＝どの値を・どう壊すか・止まるはずの瞬間。
-    ★出口の5番（役割）は、出口の表に系統の欄が無い枝では「未実装（表の承認待ち）＝通る」と印字する（止まったと書かない）。
+    ★60回目（2026-08-25・設計書 v2 の やること5）＝出口の5番（役割）の例外を外した。
+      直す前＝表に系統の欄が無い枝では「未実装（表の承認待ち）＝通る」と印字して、合格の線の外に置いていた。
+      いま＝まこさんが表を承認したので（指紋 f5d53842ff40ab09…）、18マスとも同じに測る。
     """
     pool, tfs, _ct = material_pool()
     table = load_signal_table()
@@ -5234,8 +5262,10 @@ def gate_matrix(verbose: bool = True) -> int:
     def mut_role_exit(r):
         c = exit_cond(r, has_fam)
         src = c.get(LIN_SRC) or {}
-        if not src.get("from_table"):
-            raise LookupError("未実装（表の承認待ち）＝通る")
+        # ★60回目（2026-08-25）＝「表に欄が無い枝は測らない」という例外を外した。
+        #   まこさんが表を承認したので、出口5番も他の17マスと同じに測る（設計書 v2 の やること5）。
+        if not src.get("lineages"):
+            raise LookupError("出口の条件に系統の印が無い（印が付かない道が残っている）")
         fam, lin = other_lineage_family(src["lineages"])
         c["material"][0] = _mat_drawn(np.random.default_rng(3), fam, c["material"][0]["tf"], ranges, table=table)
 
@@ -5281,10 +5311,10 @@ def gate_matrix(verbose: bool = True) -> int:
         try:
             fn(r)
         except LookupError as e:
+            # ★60回目（2026-08-25）＝出口5番の例外（表の承認待ち＝合格の線の外）を外した。
+            #   いまは18マスとも同じ扱い＝壊せなければ不合格。
             got, msg = "未実装", str(e)
             rows.append((k, place, want, got, msg))
-            if k == 5 and place == "出口":
-                continue                                  # 表の承認待ち＝合格の線の外（設計書 やること5）
             ok_all = False
             continue
         got, msg = _stage_of(r, lm, table, vlim)
@@ -5328,7 +5358,7 @@ def gate_matrix(verbose: bool = True) -> int:
         print(f"  K7 第2段で範囲の外の値: {k7}（S2 が合格）")
         print(f"  K14 走らせる入口に直に渡す: {k14}")
     ok_all = ok_all and passed >= 20 and k7 == "S2" and k14 == "止まる"
-    print(f"  ＝{'合格' if ok_all else '★不合格'}（出口5番は表の承認待ち＝未実装と印字）")
+    print(f"  ＝{'合格' if ok_all else '★不合格'}（18マスとも同じに測る＝出口5番の例外は 2026-08-25 に外した）")
     return 0 if ok_all else 1
 
 

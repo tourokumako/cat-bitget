@@ -216,6 +216,12 @@
             "slope",
             "diff"
           ],
+          "lineage_any": [
+            "オシレーター",
+            "トレンド",
+            "ボラ",
+            "構造・位置"
+          ],
           "reverse_of_side": true
         },
         {
@@ -225,7 +231,7 @@
         }
       ],
       "confirm_max": 2,
-      "basis": "V9 STOCH_REVERSE_EXIT／RSI_REVERSE_EXIT（v9_exits.md の枝7・10＝利益ゲート unreal≥0 つき）／maker 化＝v24 TREND_CAUGHT_TP と同じ置き方（反転を待たず利益側 resting）／cat_requirements §6（maker 優先）",
+      "basis": "V9 STOCH_REVERSE_EXIT／RSI_REVERSE_EXIT（v9_exits.md の枝7・10＝利益ゲート unreal≥0 つき）／maker 化＝v24 TREND_CAUGHT_TP と同じ置き方（反転を待たず利益側 resting）／cat_requirements §6（maker 優先）／★使える系統4つは 2026-08-25（60回目）に足した（案＝CC・出典つき／まこさん決定＝『A＝いまやる』／承認は exit_families_approved.txt の指紋）＝オシレーター（v9_exits.md:28 ストキャス %D・%K ／ :31 RSI）・トレンド（v9_exits.md:31 の同じ枝が ADX を条件に使う／軸 X-g3・X-g4）・ボラ（軸 X-g2・X-g7）・構造・位置（軸 X-g5）。★外した2つ＝ローソク（軸 X-g11 が blocked＝実行器が出口の発火条件で材料の無い形を扱えない・2026-08-07 実測）／出来高（軸 X-g8 は partial で、どの枝にも紐づいていない）",
       "reason_pending_side": "maker"
     },
     "SL_ZONE": {
@@ -331,12 +337,13 @@
           "lineage_any": [
             "ボラ",
             "オシレーター",
-            "構造・位置"
+            "構造・位置",
+            "トレンド"
           ]
         }
       ],
       "confirm_max": 2,
-      "basis": "v9_exits.md の枝1 BREAKOUT_CUT（BB幅≥X ∩ RSI≥Y）／軸 X-f3・X-g6・X-g7／閾値は分位（H6・絶対値を持ち込まない）",
+      "basis": "v9_exits.md の枝1 BREAKOUT_CUT（BB幅≥X ∩ RSI≥Y）／軸 X-f3・X-g6・X-g7／閾値は分位（H6・絶対値を持ち込まない）／★トレンドは 2026-08-25（60回目）に足した（案＝CC／まこさん決定＝『A＝いまやる』）＝軸 X-g4（ADX decay）の branches に BREAKOUT が在り、ADX は系統トレンドのため（それまでの3系統では ADX を引けなかった）",
       "reason_pending_side": "taker"
     },
     "FINSTOP": {
