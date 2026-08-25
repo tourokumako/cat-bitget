@@ -1,0 +1,142 @@
+{
+ "synth_df": {
+  "n": 3000,
+  "seed": 7
+ },
+ "window": [
+  "2024-05-01 00:00:00",
+  "2024-05-11 10:00:00"
+ ],
+ "seed_base": [
+  61,
+  5
+ ],
+ "recipes": {
+  "state_only": {
+   "file": "recipe_state_only.json",
+   "sha256": "2d9b2108e7fa8c3ed7629687e315ba8b72d3532429df88eaf3d8c66374a683ef",
+   "seed_index": 1,
+   "trades_md5": "f522362349fd601c50d8e8bc4dba41f7",
+   "n": 780,
+   "exit_reason_counts": {
+    "MFE_DRAWDOWN_CUT": 586,
+    "TP_FILLED": 189,
+    "SL_FILLED": 5
+   },
+   "branches": [
+    [
+     "SL",
+     "SL_FILLED"
+    ],
+    [
+     "BESTALE",
+     "BE_EXIT"
+    ],
+    [
+     "PEAKLOCK",
+     "MFE_DRAWDOWN_CUT"
+    ],
+    [
+     "TIME",
+     "TIME_EXIT"
+    ],
+    [
+     "TP2",
+     "TP_FILLED"
+    ]
+   ]
+  },
+  "level_both": {
+   "file": "recipe_level_both.json",
+   "sha256": "c29e6cb4dbfc3e74b331367d15d1923236a4b00ec72065c507e20f5de219982b",
+   "seed_index": 0,
+   "synth_n": 3000,
+   "window": [
+    "2024-05-01 00:00:00",
+    "2024-05-11 10:00:00"
+   ],
+   "trades_md5": "9ee158d88a58ff7f17d006d3fb2fcc54",
+   "n": 663,
+   "exit_reason_counts": {
+    "BREAKOUT_CUT": 257,
+    "INDICATOR_REVERSE_TP": 206,
+    "MFE_DRAWDOWN_CUT": 157,
+    "TP_FILLED": 26,
+    "SL_FILLED": 16,
+    "FORCE_CLOSE_EOD": 1
+   },
+   "branches": [
+    [
+     "BREAKOUT",
+     "BREAKOUT_CUT"
+    ],
+    [
+     "REVIND",
+     "INDICATOR_REVERSE_TP"
+    ],
+    [
+     "PEAKLOCK",
+     "MFE_DRAWDOWN_CUT"
+    ],
+    [
+     "TIME",
+     "TIME_EXIT"
+    ],
+    [
+     "TP2",
+     "TP_FILLED"
+    ],
+    [
+     "SL",
+     "SL_FILLED"
+    ]
+   ],
+   "how": "sample_structure の案のうち BREAKOUT_CUT と INDICATOR_REVERSE_TP を持つものの指標の条件を、_exit_indicator_cond(forms=['level']) で引き直した"
+  }
+ },
+ "identity_before": {
+  "S2": {
+   "cmd": "engine_tuner_exec.py --identity",
+   "n": 165,
+   "md5": "7b01f51b5a9b29b3c05a7b340c203ba1",
+   "exit_reason_counts": {
+    "BE_EXIT": 101,
+    "TIME_EXIT": 42,
+    "PARTIAL_TP": 17,
+    "TP_FILLED": 5
+   },
+   "real_sec": 6.72
+  },
+  "L1": {
+   "cmd": "engine_tuner_exec.py --identity-l1",
+   "n": 367,
+   "md5": "96a9102ec8a34f94cf01e9e463f6aade",
+   "exit_reason_counts": {
+    "PARTIAL_TP": 169,
+    "TP_FILLED": 141,
+    "TIME_EXIT": 36,
+    "SL_FILLED": 21
+   },
+   "real_sec": 3.91
+  },
+  "S1": {
+   "cmd": "engine_tuner_exec.py --identity-s1",
+   "n": 6569,
+   "md5": "18b3d31a5fe71c4a4b5f83cf1771a46c",
+   "exit_reason_counts": {
+    "PARTIAL_TP": 1739,
+    "TP_FILLED": 1354,
+    "MFE_DRAWDOWN_CUT": 1169,
+    "TREND_CONT": 1004,
+    "TREND_CAUGHT_TP": 932,
+    "TIME_EXIT": 160,
+    "BE_EXIT": 158,
+    "SL_FILLED": 30,
+    "RANGE_BREAK_EXIT": 23
+   },
+   "real_sec": 17.52,
+   "note": "TREND_CONT 1004 は指標の level を持つ3枝（MTFCUT・V59DOWN・V59FLAT）と状態だけの FASTCUT の合計＝枝ごとの件数は売買記録に無い（理由しか記録しない）"
+  },
+  "log": "scratchpad/identity_before.log（2026-08-25 22:46:13〜22:46:41）"
+ }
+}

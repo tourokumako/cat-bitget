@@ -1,0 +1,447 @@
+{
+ "entry": {
+  "connective": {
+   "any": [
+    {
+     "all": [
+      {
+       "form": "level",
+       "material": [
+        {
+         "family": "HA下ヒゲ比",
+         "param": null,
+         "tf": "5m"
+        }
+       ],
+       "role": "trigger",
+       "side": "above",
+       "value": {
+        "threshold_q": "q76"
+       }
+      },
+      {
+       "form": "within_n",
+       "inner": {
+        "form": "band_exclude",
+        "material": [
+         {
+          "family": "kurtosis",
+          "param": 22,
+          "pre": {
+           "n": 11,
+           "op": "ts_rank"
+          },
+          "tf": "15m"
+         }
+        ],
+        "role": "sufficiency",
+        "value": {
+         "hi": {
+          "threshold_q": "q74"
+         },
+         "lo": {
+          "threshold_q": "q60"
+         }
+        }
+       },
+       "role": "sufficiency",
+       "value": {
+        "n": 3,
+        "offset": 1
+       }
+      }
+     ]
+    },
+    {
+     "all": [
+      {
+       "form": "cross",
+       "material": [
+        {
+         "family": "HA下ヒゲ比",
+         "param": null,
+         "tf": "15m"
+        },
+        {
+         "family": "HA上ヒゲ比",
+         "param": null,
+         "tf": "15m"
+        }
+       ],
+       "role": "trigger",
+       "value": {
+        "direction": "down"
+       }
+      },
+      {
+       "form": "within_n",
+       "inner": {
+        "form": "band",
+        "material": [
+         {
+          "family": "RCI",
+          "param": 44,
+          "pre": {
+           "n": 4,
+           "op": "ts_std"
+          },
+          "tf": "5m"
+         }
+        ],
+        "role": "sufficiency",
+        "value": {
+         "hi": {
+          "threshold_q": "q76"
+         },
+         "lo": {
+          "threshold_q": "q74"
+         }
+        }
+       },
+       "role": "sufficiency",
+       "value": {
+        "n": 5,
+        "offset": 0
+       }
+      }
+     ]
+    },
+    {
+     "all": [
+      {
+       "form": "barssince",
+       "inner": {
+        "form": "level",
+        "material": [
+         {
+          "family": "CMO",
+          "param": 18,
+          "pre": {
+           "n": 9,
+           "op": "ts_rank"
+          },
+          "tf": "5m"
+         }
+        ],
+        "role": "trigger",
+        "side": "above",
+        "value": {
+         "threshold_q": "q77"
+        }
+       },
+       "role": "trigger",
+       "side": "above",
+       "value": {
+        "n": 12,
+        "offset": 0
+       }
+      },
+      {
+       "form": "barssince",
+       "inner": {
+        "form": "level",
+        "material": [
+         {
+          "family": "PVOシグナル",
+          "param": [
+           12,
+           26,
+           9
+          ],
+          "pre": {
+           "n": 11,
+           "op": "ts_rank"
+          },
+          "tf": "15m"
+         }
+        ],
+        "role": "sufficiency",
+        "side": "below",
+        "value": {
+         "threshold_q": "q57"
+        }
+       },
+       "role": "sufficiency",
+       "side": "above",
+       "value": {
+        "n": 11,
+        "offset": 0
+       }
+      }
+     ]
+    },
+    {
+     "all": [
+      {
+       "form": "diff",
+       "material": [
+        {
+         "family": "open_Z",
+         "param": 30,
+         "tf": "5m"
+        },
+        {
+         "family": "open_Z",
+         "param": 30,
+         "pre": {
+          "n": 8,
+          "op": "ts_min"
+         },
+         "tf": "5m"
+        }
+       ],
+       "role": "trigger",
+       "side": "below",
+       "value": {
+        "n": 3,
+        "op": "corr",
+        "th": {
+         "threshold_q": "q69"
+        }
+       }
+      },
+      {
+       "form": "within_n",
+       "inner": {
+        "form": "touch",
+        "material": [
+         {
+          "family": "THERMO比",
+          "param": null,
+          "tf": "5m"
+         },
+         {
+          "family": "THERMO比",
+          "param": null,
+          "pre": {
+           "n": 11,
+           "op": "ts_min"
+          },
+          "tf": "5m"
+         }
+        ],
+        "role": "env",
+        "value": {
+         "const": "TOL_SR"
+        }
+       },
+       "role": "env",
+       "value": {
+        "n": 11,
+        "offset": 1
+       }
+      }
+     ]
+    },
+    {
+     "all": [
+      {
+       "form": "diff",
+       "material": [
+        {
+         "family": "Stoch%K",
+         "param": 9,
+         "tf": "5m"
+        },
+        {
+         "family": "Stoch%K",
+         "param": 9,
+         "pre": {
+          "n": 6,
+          "op": "ts_max"
+         },
+         "tf": "5m"
+        }
+       ],
+       "role": "trigger",
+       "side": "below",
+       "value": {
+        "threshold_q": "q71"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "exits": [
+  {
+   "exec": {
+    "method": "maker",
+    "placement": {
+     "fill": "adverse",
+     "kind": "resting",
+     "level": {
+      "base": "entry",
+      "k": {
+       "const": "SCALP_FLOOR",
+       "mult": 6.46
+      },
+      "kind": "pct"
+     },
+     "pessimistic": true
+    }
+   },
+   "name": "SL",
+   "reason": "SL_FILLED",
+   "size_ratio": 1.0
+  },
+  {
+   "exec": {
+    "method": "maker",
+    "placement": {
+     "fill": "profit",
+     "kind": "resting",
+     "level": {
+      "base": "avg",
+      "k": {
+       "const": "SCALP_FLOOR",
+       "side_sign": "profit"
+      },
+      "kind": "pct"
+     }
+    }
+   },
+   "fire": {
+    "all": [
+     {
+      "form": "level",
+      "material": [
+       {
+        "state": "hold_min"
+       }
+      ],
+      "role": "env",
+      "side": "above",
+      "value": {
+       "n": 10
+      }
+     },
+     {
+      "form": "level",
+      "material": [
+       {
+        "state": "mfe_prev_pct"
+       }
+      ],
+      "role": "env",
+      "side": "below",
+      "value": {
+       "const": "SCALP_FLOOR",
+       "mult": 100.0
+      }
+     }
+    ]
+   },
+   "name": "BESTALE",
+   "reason": "BE_EXIT",
+   "size_ratio": 1.0
+  },
+  {
+   "exec": {
+    "method": "maker",
+    "placement": {
+     "fill": "adverse",
+     "kind": "resting",
+     "level": {
+      "arm": {
+       "const": "SCALP_FLOOR",
+       "mult": 100.0
+      },
+      "floor": {
+       "const": "SCALP_FLOOR"
+      },
+      "giveback": {
+       "n": 50
+      },
+      "kind": "peak_giveback"
+     },
+     "pessimistic": true
+    }
+   },
+   "name": "PEAKLOCK",
+   "reason": "MFE_DRAWDOWN_CUT",
+   "size_ratio": 1.0
+  },
+  {
+   "exec": {
+    "be_wait": {
+     "level": {
+      "base": "avg",
+      "k": {
+       "const": "SCALP_FLOOR",
+       "side_sign": "profit"
+      },
+      "kind": "pct"
+     },
+     "ttl": {
+      "const": "BE_TTL_BARS"
+     }
+    },
+    "method": "taker",
+    "placement": {
+     "kind": "on_close"
+    }
+   },
+   "fire": {
+    "all": [
+     {
+      "form": "level",
+      "material": [
+       {
+        "state": "hold_min"
+       }
+      ],
+      "role": "env",
+      "side": "above",
+      "value": {
+       "n": 25
+      }
+     }
+    ]
+   },
+   "name": "TIME",
+   "reason": "TIME_EXIT",
+   "size_ratio": 1.0
+  },
+  {
+   "exec": {
+    "method": "maker",
+    "placement": {
+     "fill": "profit",
+     "kind": "resting",
+     "level": {
+      "base": "entry",
+      "k": {
+       "const": "SCALP_FLOOR",
+       "mult": 1.0
+      },
+      "kind": "pct"
+     }
+    }
+   },
+   "name": "TP2",
+   "reason": "TP_FILLED",
+   "size_ratio": 1.0
+  }
+ ],
+ "meta": {
+  "logic_id": "GEN",
+  "regime": {
+   "block_col": "rg5_uptrend",
+   "entry_col": "range_ok_rg5",
+   "name": "range"
+  },
+  "side": "SHORT",
+  "signal_family": "E-a1",
+  "strategy": "e38"
+ },
+ "position": {
+  "add_trigger": {
+   "kind": "resignal"
+  },
+  "max_adds": 1,
+  "mode": "avg"
+ },
+ "pre_filter": []
+}

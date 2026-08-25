@@ -511,6 +511,18 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
                 _fail("G5", f"材料の前処理 {pre['op']} に state は書けない（本数 n で窓を決める形）")
             if not isinstance(pre.get("n"), int) or isinstance(pre.get("n"), bool) or pre["n"] < 2:
                 _fail("G5", f"材料の前処理の本数が不正: {pre.get('n')!r}（2 以上の整数）")
+    # ★種別の鍵は1つだけ（97番の設計 v3 やること3(g)・監査 cp7b 新1・2026-08-25）。
+    #   直す前は上から順に見る（legacy_col → geo → state → time → family）だけで、2つ書いても止まらず、
+    #   出口の実行（_exit_fire_ok）は state を先に見ていた＝検査は「列」・実行は「玉の状態」の黙って別物。
+    #   種別を決める規則は、この関数の1か所だけにする（実行の側は別の規則を持たない）。
+    #   ★例外＝legacy_col の材料には family を添えてよい。恒等レシピ3本（recipes/identity_*_legacy.json）に
+    #     8か所 在る既存の書き方で、family は注記ではなく系統の判定（gen の _lineage_of・下の G3）が読む鍵。
+    #     設計書 v3 やること3(g) の文「5つの鍵が2つ以上なら拒否」からの差＝実装の記録 §9 に書いた（2026-08-25）。
+    _excl = [k for k in ("legacy_col", "geo", "state", "time") if k in m]
+    if len(_excl) >= 2:
+        _fail("G6", f"材料の種別の鍵が2つ以上 在る {_excl}（種別は1つだけ書く）: {m}")
+    if "family" in m and _excl and _excl != ["legacy_col"]:
+        _fail("G6", f"材料の種別の鍵が2つ以上 在る {_excl + ['family']}（family を添えてよいのは legacy_col だけ）: {m}")
     if "legacy_col" in m:
         if lane != "legacy":
             _fail("G6", f"legacy 材料列は恒等検収レーン専用（探索は生成できない・§2.4-④）: {m['legacy_col']}")
@@ -741,6 +753,66 @@ def _check_hysteresis(c: dict, lane: str, where: str, legacy_used: list,
                                 "＝この形は縁で発火するものではなく、状態が続いているかを表すため"
                                 "（否定の中に置けないのと同じ理由）")
                 _check_cond(ic, lane, f"{where}/{slot}", legacy_used)
+
+
+def _has_ref(v) -> bool:
+    """value の中（lo・hi・th の入れ子を含む）に連動する閾値 ref が在るか。"""
+    if isinstance(v, dict):
+        return "ref" in v or any(_has_ref(x) for x in v.values())
+    return False
+
+
+def _check_exit_fire_cond(c: dict, lane: str, where: str) -> None:
+    """出口の発火条件（fire）だけに掛ける検査（97番の設計 v3 やること3・全部 fail-closed・2026-08-25）。
+
+    なぜ要るか＝直す前は形の書式（_check_cond）しか見ておらず、実行（_exit_fire_ok）は形を見なかった。
+    出口でも形を見るようにした先で「検査が通す × 実行が黙って別物」が残らないよう、出口で使える形と
+    材料の組み合わせをここで閉じる（監査 cp7・cp7b が直呼びで実測した5件＝strict・状態の pre・ref・
+    混在・種別の鍵の二重、に当たるもの）。拒否コード＝形・側・値の書式は G5／材料の種別は G6。
+      (a) 指標の条件の形は性質表 exit_ok の形だけ【G5】
+      (b) 玉の状態の条件は形 level だけ・値は n／const／legacy だけ（分位・ref は解決表を持たない）【G6】
+      (c) needs_side の形（level 以外）で side が strict なら拒否＝入口の評価器 _eval_cond の3行が strict を
+          逆向きに評価する（next_step §6 の101番）が直るまで。外す判断は まこさん【G5】
+      (d) 玉の状態の材料に pre・pre_ok=False の形の材料に pre は拒否（性質表 pre_ok を検査に接続）【G6】
+      (e) value に ref（連動する閾値）は拒否＝出口の枝では使えない（_vnum_q の決まりの前倒し）【G5】
+      (f) 玉の状態の材料と指標の材料を1つの条件に混ぜない【G6】
+      (g) 種別の鍵が2つ以上＝_material_name が入口・出口とも拒否【G6】
+      (h) candle_dir に材料は書けない（黙って捨てない）【G5】
+    """
+    form = c.get("form")
+    mats = c.get("material") or []
+    v = c.get("value") or {}
+    if form == "candle_dir":
+        if mats:
+            _fail("G5", f"{where}: 形 candle_dir に材料は書けない（ローソクそのものを見る形・材料は黙って捨てない）: {mats}")
+        return
+    kinds = [_material_name(m, lane)[0] for m in mats]
+    if "state" in kinds and any(k != "state" for k in kinds):
+        _fail("G6", f"{where}: 玉の状態の材料と指標の材料を1つの条件に混ぜられない"
+                    f"（玉の状態は指標と組み合わせて評価できない）: {kinds}")
+    if kinds and all(k == "state" for k in kinds):
+        if form != "level":
+            _fail("G6", f"{where}: 玉の状態の条件は形 level だけ（{form} は列の形＝玉ごとの値には掛けられない）")
+        if "threshold_q" in v or _has_ref(v):
+            _fail("G6", f"{where}: 玉の状態の条件の値に分位（threshold_q）・連動する閾値（ref）は書けない"
+                        f"（玉の状態は分位の解決表を持たない・値は n／const／legacy）: {v}")
+        if not any(k in v for k in ("n", "const", "legacy")):
+            _fail("G6", f"{where}: 玉の状態の条件の値は n／const／legacy のどれかが要る: {v}")
+        for m in mats:
+            if _pre_of(m) is not None:
+                _fail("G6", f"{where}: 玉の状態の材料に前処理（pre）は掛けられない（実行が黙って無視する形を残さない）: {m}")
+        return
+    if form not in forms_where("exit_ok"):
+        _fail("G5", f"{where}: 形 {form} は出口の発火条件で使えない（使えるのは {forms_where('exit_ok')}＝性質表 exit_ok）")
+    if form in forms_where("needs_side") and form != "level" and c.get("side") in ("above_strict", "below_strict"):
+        _fail("G5", f"{where}: 形 {form} の向き {c.get('side')}（strict）は出口で使えない"
+                    "（評価器がこの3形の strict を逆向きに評価する＝next_step §6 の101番が直るまで拒否）")
+    if not FORM_SPEC[form]["pre_ok"]:
+        for m in mats:
+            if _pre_of(m) is not None:
+                _fail("G6", f"{where}: 形 {form} の材料に前処理（pre）は掛けられない（性質表 pre_ok＝level・band・band_exclude だけ）: {m}")
+    if _has_ref(v):
+        _fail("G5", f"{where}: 出口の発火条件の値に連動する閾値（ref）は書けない（出口の枝では使えない）: {v}")
 
 
 def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False, in_build=False):
@@ -1361,6 +1433,7 @@ def validate_recipe(recipe: dict, limits: dict | None = None, samples: dict | No
             conds, _d = _walk(fire)
             for c in conds:
                 _check_cond({**c, "role": c.get("role", "env")}, lane, f"exit枝{nm}", rep["legacy使用"])
+                _check_exit_fire_cond(c, lane, f"exit枝{nm}")     # ★出口だけの検査8つ（97番の設計 v3）
         bw = ex.get("be_wait")
         if bw is not None:
             _check_level(bw.get("level"), lane, f"exit枝{nm}/be_wait", rep["legacy使用"])
@@ -2033,22 +2106,47 @@ def _peak_giveback_level(lv: dict, lot: dict, side: str) -> float | None:
     return float(max(pk - gb * gain, avg * (1.0 + fl)))
 
 
-def _collect_fire_cols(recipe: dict, df: pd.DataFrame, geo: dict, lane: str) -> dict:
-    """出口 fire が使う材料列を、ループの前に1回だけ解決して配列にする（歩6-1 里程標7）。
-    ★毎バー解決すると列の作り直しが走って遅い＝ここで1回だけ作る。値そのものは変えない。"""
-    out: dict[str, np.ndarray] = {}
+def _fire_key(c: dict) -> str:
+    """出口の発火条件1つの鍵＝条件の canonical JSON（97番の設計 v3 やること1）。
+    印（_num_src など）は生成器が実行器へ渡す直前に外す（strip_marks）＝鍵に入らない。
+    json にできない値（numpy の int64・bool_ など）が混じったら、黙って別の鍵にせず止める。"""
+    try:
+        return json.dumps(c, sort_keys=True, ensure_ascii=False)
+    except TypeError as e:
+        raise RecipeError(f"[実行器] 出口の発火条件を鍵にできない（json にできない値が混じっている）: {e}") from None
+
+
+def _collect_fire_cols(recipe: dict, df: pd.DataFrame, geo: dict, lane: str,
+                       qtable: dict | None = None) -> dict:
+    """出口 fire の条件を、ループの前に1回だけ「条件ごとの真偽の配列」にする（97番の設計 v3 やること1・2026-08-25）。
+
+    直す前（歩6-1 里程標7）＝材料の生の値の配列を鍵「素の列名」で持ち、_exit_fire_ok が値と数字を1点比較していた
+    ＝形（傾き・交差・差・ローソク）を見なかった（97番・60回目に実測で確定）。同じ列に違う pre を掛けた2条件は
+    鍵が衝突して先勝ちだった（監査 cp7 実測⑩）。
+    いま＝指標の条件（材料の種別が state でないもの・材料の無い candle_dir を含む）は、入口と同じ評価器
+    _eval_cond で全バーの真偽の配列にする（評価の式をここに書き写さない＝2か所に同じ式を持たない）。
+    玉の状態の条件は玉ごとに値が変わるので配列にせず、種別と名前だけ記録して _exit_fire_ok が1点比較する。
+    ★種別は _material_name の1か所で決める（"state" in m で決めない＝監査 cp7b 新1）。
+    戻り値＝{"by_key": {鍵: ("bool", 配列) or ("state", 状態の名前)}, "by_id": {id(条件): 鍵}}。
+    by_id は同じ辞書をループの中で毎バー json にしないための控え＝鍵の正本は canonical JSON。
+    """
+    out: dict = {"by_key": {}, "by_id": {}}
     for b in recipe.get("exits") or []:
         fire = b.get("fire")
         if fire is None:
             continue
         conds, _d = _walk(fire)
         for c in conds:
-            for m in (c.get("material") or []):
-                if "state" in m:
-                    continue                      # ポジション状態列は毎バー計算（配列にできない）
-                key = _material_name(m, lane)[1]
-                if key not in out:
-                    out[key] = _col_array(df, m, geo, lane)
+            key = _fire_key(c)
+            out["by_id"][id(c)] = key
+            if key in out["by_key"]:
+                continue
+            mats = c.get("material") or []
+            kinds = [_material_name(m, lane)[0] for m in mats]
+            if kinds and all(k == "state" for k in kinds):
+                out["by_key"][key] = ("state", str(mats[0]["state"]))
+            else:
+                out["by_key"][key] = ("bool", _eval_cond(c, df, geo, lane, qtable))
     return out
 
 
@@ -2090,19 +2188,24 @@ def _exit_fire_ok(b: dict, lot: dict, i: int, df: pd.DataFrame, geo: dict, lane:
 
     def _ev(node) -> bool:
         if _is_cond(node):
-            m = (node.get("material") or [{}])[0]
-            nm = m.get("state")
-            if nm is not None:
-                val = state[nm]
-            else:                                  # 指標の列（歩6-1 里程標7 で拡張・先に配列にしてある）
-                key = _material_name(m, lane)[1]
-                if fire_cols is None or key not in fire_cols:
-                    raise RecipeError(f"[実行器] 出口 fire の材料列が解決されていない: {key}")
-                val = float(fire_cols[key][i])
-                if not np.isfinite(val):           # 欠損は不成立（入口の条件と同じ既定・na=pass で反転）
-                    return bool((node.get("value") or {}).get("na") == "pass")
+            # ★97番の設計 v3 やること2（2026-08-25）＝指標の条件は、ループの前に入口と同じ評価器で作った
+            #   「全バーの真偽の配列」の i 番目を引くだけ（形はそこで見ている）。玉の状態の条件は、いままでどおり
+            #   玉ごとの値と数字の1点比較（値の評価の式は変えない・欠損の既定は104番＝範囲外）。
+            #   どちらかは _collect_fire_cols が _material_name で決めて記録した種別で分ける
+            #   （直す前の m.get("state") は消した＝検査と実行で種別の規則を2つ持たない）。
+            fc = fire_cols or {}
+            key = fc.get("by_id", {}).get(id(node)) or _fire_key(node)
+            ent = fc.get("by_key", {}).get(key)
+            if ent is None:
+                raise RecipeError(f"[実行器] 出口 fire の条件が解決されていない（ループの前に _collect_fire_cols を通す）: {key[:120]}")
+            kind, payload = ent
+            if kind == "bool":
+                return bool(payload[i])
+            val = state[payload]
             th = _vnum(node.get("value", {}))
             return bool(_side_cmp(val, th, node.get("side")))
+        if "not" in node:                          # ★否定（97番の設計 v3 やること2＝入口の _eval_tree と同じ意味）
+            return not _ev(node["not"])
         if "all" in node:
             return all(_ev(ch) for ch in node["all"])
         if "any" in node:
@@ -2171,7 +2274,7 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
         fire = _entry_fire(recipe, df, geo, qtable)
         ceil_arr = isdn_arr = None
     last_fup_px = None                            # 同一レンジ内の直近 flat_up 約定価格（e37 956行・v37/v38 の基準）
-    fire_cols = _collect_fire_cols(recipe, df, geo, lane)   # 出口 fire の指標列（ループ前に1回だけ解決）
+    fire_cols = _collect_fire_cols(recipe, df, geo, lane, qtable)   # 出口 fire の条件ごとの真偽の配列（ループ前に1回・97番）
     pex = recipe.get("position_exits") or {}
     uc = pex.get("uptrend_cut")
     uc_mark = (uc is not None and uc.get("mode") == "mark")   # 里程標9＝確定させず印を付けるだけ
@@ -3954,6 +4057,139 @@ def selftest() -> None:
     print(f"[G7 場面ごとの決まり] 通る束2種・わざと破った束7通り（K-1〜K-7） → "
           + ("✅ 全部 期待どおり" if not _g7_ng else "❌ " + " ／ ".join(_g7_ng)))
     print("=" * 80)
+    # ══ 97番＝出口の発火条件が「形」を見る（設計書 v3 やること4・2026-08-25・まこさん承認 9231be44…）═══
+    #   何を守るか＝出口の指標の条件が、入口と同じ評価器（_eval_cond）で評価されること（傾き・交差・差・ローソク）。
+    #   直す前（60回目・worklog 20260825 §27 の実測）＝材料の値と数字の1点比較だけ＝上がる列でも下がる列でも同じ結果。
+    #   ★壊し方の見本は固定（C7 の偽レシピ11通り）。数字は列の作り方だけ（閾値は名前つき定数・分位は見本の解決表）。
+    _x_ng: list[str] = []
+    _xn = 60
+    _xdf = pd.DataFrame({"ts": pd.date_range("2024-05-01", periods=_xn, freq="5min"),
+                         "open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0})
+    _xdf["close"] = np.where(np.arange(_xn) % 2 == 0, 101.0, 99.0)     # 陽線・陰線が交互（candle_dir 用）
+    _xup = np.linspace(50.0, 90.0, _xn)                                 # 上がり続ける列（最後 90）
+    _xdn = np.linspace(90.0, 50.0, _xn)                                 # 下がり続ける列（最後 50）
+    _xm14 = {"family": "RSI", "param": [14], "tf": "5m"}               # 列名 RSI14__5m（名前は組み立て表が決める）
+    _xm7 = {"family": "RSI", "param": [7], "tf": "5m"}                 # 列名 RSI7__5m
+    _xlot = {"side": "SHORT", "avg": 100.0, "first_idx": 0, "add_count": 1, "max_fav": 100.0, "max_adv": 100.0}
+
+    def _xdata(col14, col7=None):
+        d = _xdf.copy()
+        d["RSI14__5m"] = np.asarray(col14, float)
+        if col7 is not None:
+            d["RSI7__5m"] = np.asarray(col7, float)
+        return d
+
+    def _xfire(fire, d, qtable=None, i=None):
+        b = {"name": "X", "reason": "BREAKOUT_CUT", "fire": fire}
+        fc = _collect_fire_cols({"exits": [b]}, d, {}, "", qtable)
+        return _exit_fire_ok(b, dict(_xlot), (_xn - 1) if i is None else int(i), d, {}, "", fc)
+
+    def _xc(form, **kw):
+        c = {"role": "env", "form": form}
+        c.update(kw)
+        return c
+
+    # C1 slope が傾きを見る（side=above：上がる列→成立・下がる列→不成立／below：その逆）
+    _xs = _xc("slope", side="above", material=[_xm14], value={"n": 5})
+    _xs_b = _xc("slope", side="below", material=[_xm14], value={"n": 5})
+    _got1 = (_xfire({"all": [_xs]}, _xdata(_xup)), _xfire({"all": [_xs]}, _xdata(_xdn)),
+             _xfire({"all": [_xs_b]}, _xdata(_xup)), _xfire({"all": [_xs_b]}, _xdata(_xdn)))
+    if _got1 != (True, False, False, True):
+        _x_ng.append(f"C1: slope が傾きを見ていない（above 上/下・below 上/下＝{_got1}・期待 (True, False, False, True)）")
+    # C3(i) cross＝交差のバーだけ真・前後は偽・最初のバーは偽
+    _xcr = _xc("cross", material=[_xm14, _xm7], value={"direction": "up"})
+    _x70 = np.full(_xn, 70.0)
+    _xk = int(np.argmax(_xup > 70.0))                                   # 70 を初めて上抜くバー
+    _dcr = _xdata(_xup, _x70)
+    _got3 = (_xfire({"all": [_xcr]}, _dcr, i=_xk), _xfire({"all": [_xcr]}, _dcr, i=_xk - 1),
+             _xfire({"all": [_xcr]}, _dcr, i=_xk + 1), _xfire({"all": [_xcr]}, _dcr, i=0))
+    if _got3 != (True, False, False, False):
+        _x_ng.append(f"C3: cross が交差のバーだけ真にならない（交差/前/後/最初＝{_got3}）")
+    # C4 diff＝2本目の材料が効く（2本目を入れ替えると結果が変わる）
+    _xdf2 = _xc("diff", side="above", material=[_xm14, _xm7], value={"th": {"n": 5}})
+    _got4 = (_xfire({"all": [_xdf2]}, _xdata(_xup, np.zeros(_xn))), _xfire({"all": [_xdf2]}, _xdata(_xup, np.full(_xn, 1000.0))))
+    if _got4 != (True, False):
+        _x_ng.append(f"C4: diff の2本目が効いていない（2本目=0／1000＝{_got4}・期待 (True, False)）")
+    # C5 candle_dir＝陽線／陰線で逆の結果
+    _xcd = _xc("candle_dir", value={"dir": "bull"})
+    _xcd_b = _xc("candle_dir", value={"dir": "bear"})
+    _dcd = _xdata(_xup)
+    _got5 = (_xfire({"all": [_xcd]}, _dcd, i=10), _xfire({"all": [_xcd]}, _dcd, i=11),
+             _xfire({"all": [_xcd_b]}, _dcd, i=10), _xfire({"all": [_xcd_b]}, _dcd, i=11))
+    if _got5 != (True, False, False, True):
+        _x_ng.append(f"C5: candle_dir が陽線／陰線で逆にならない（bull 偶/奇・bear 偶/奇＝{_got5}）")
+    # C12 分位が出口で解ける（鍵1つの解決表・鍵が無ければ fail-closed）
+    _xq = _xc("level", side="above", material=[_xm14], value={"threshold_q": "q50"})
+    _got12 = (_xfire({"all": [_xq]}, _xdata(_xup), qtable={"RSI14__5m": {"q50": 70.0}}),
+              _xfire({"all": [_xq]}, _xdata(_xup), qtable={"RSI14__5m": {"q50": 95.0}}))
+    if _got12 != (True, False):
+        _x_ng.append(f"C12: 出口で分位（q50）が解けていない（q50=70／95＝{_got12}・期待 (True, False)）")
+    try:
+        _xfire({"all": [_xq]}, _xdata(_xup), qtable=None)
+        _x_ng.append("C12: 解決表が無いのに分位の条件が通った（fail-closed が効いていない）")
+    except RecipeError:
+        pass
+    # C13 not が評価される（内側が真なら偽・KeyError が出ない）
+    _xlv = _xc("level", side="above", material=[_xm14], value={"n": 5})
+    try:
+        _got13 = (_xfire({"not": {"all": [_xlv]}}, _xdata(_xup)), _xfire({"all": [_xlv]}, _xdata(_xup)))
+        if _got13 != (False, True):
+            _x_ng.append(f"C13: not が評価されていない（not/素＝{_got13}・期待 (False, True)）")
+    except KeyError as e:
+        _x_ng.append(f"C13: not を出口 fire に置くと KeyError（{e}）")
+    # C2 入口の評価器との一致＝8組（level・slope・diff × na=fail／na=pass ＝6・cross・candle_dir＝各1）
+    _xnan = _xup.copy()
+    _xnan[30] = np.nan                                                  # 欠損を1バー入れる
+    _pairs2 = []
+    for _na in (None, "pass"):
+        _v = {"n": 5} if _na is None else {"n": 5, "na": "pass"}
+        _pairs2.append(("level", _xc("level", side="above", material=[_xm14], value=_v), _xdata(_xnan)))
+        _pairs2.append(("slope", _xc("slope", side="above", material=[_xm14], value=_v), _xdata(_xnan)))
+        _vd = {"th": {"n": 5}} if _na is None else {"th": {"n": 5}, "na": "pass"}
+        _pairs2.append(("diff", _xc("diff", side="above", material=[_xm14, _xm7], value=_vd), _xdata(_xnan, _x70)))
+    _pairs2.append(("cross", _xcr, _xdata(_xnan, _x70)))
+    _pairs2.append(("candle_dir", _xcd, _xdata(_xnan)))
+    for _nm2, _c2, _d2 in _pairs2:
+        _arr = _eval_cond(_c2, _d2, {}, "", None)
+        _per = [_xfire({"all": [_c2]}, _d2, i=_i2) for _i2 in range(_xn)]
+        if [bool(x) for x in _arr] != _per:
+            _bad2 = [j for j in range(_xn) if bool(_arr[j]) != _per[j]]
+            _x_ng.append(f"C2: {_nm2} で出口の判定が入口の評価器と食い違うバーが {len(_bad2)} 本（例 {_bad2[:3]}）")
+    # C7 検査が締まる＝偽レシピ11通りが指定のコード（G5／G6）と理由の言葉で拒否される
+    def _xbroke(name, cond, want_code, want_word):
+        r = copy.deepcopy(okr)
+        r["exits"][1]["fire"] = {"all": [cond]}
+        try:
+            validate_recipe(r)
+            _x_ng.append(f"C7: {name} が検査を素通り（{want_code}・『{want_word}』で止まるはず）")
+        except RecipeError as e:
+            if want_code not in str(e) or want_word not in str(e):
+                _x_ng.append(f"C7: {name} の止まり方が違う＝{str(e)[:90]}（期待 {want_code}・『{want_word}』）")
+    _xpre = {"op": "ts_max", "n": 20}
+    _xbroke("① band を出口の fire に", _xc("band", material=[_xm14], value={"lo": {"const": "RSI_OS"}, "hi": {"const": "RSI_OB"}}), "G5", "出口の発火条件で使えない")
+    _xbroke("② state×slope", _xc("slope", side="above", material=[{"state": "hold_min"}], value={"n": 5}), "G6", "玉の状態の条件は形 level だけ")
+    _xbroke("③ slope の above_strict", _xc("slope", side="above_strict", material=[_xm14], value={"n": 5}), "G5", "strict")
+    _xbroke("④ diff の below_strict", _xc("diff", side="below_strict", material=[_xm14, _xm7], value={"th": {"const": "NEUTRAL_0"}}), "G5", "strict")
+    _xbroke("⑤ state＋pre", _xc("level", side="above", material=[{"state": "hold_min", "pre": _xpre}], value={"n": 60}), "G6", "前処理")
+    _xbroke("⑥ slope（pre_ok=False）＋pre", _xc("slope", side="above", material=[{**_xm14, "pre": _xpre}], value={"n": 5}), "G6", "前処理")
+    _xbroke("⑦ value に ref", _xc("level", side="above", material=[_xm14], value={"ref": _xm7}), "G5", "出口")
+    _xbroke("⑧ 材料に state と指標の混在", _xc("diff", side="above", material=[_xm14, {"state": "mfe_pct"}], value={"th": {"const": "NEUTRAL_0"}}), "G6", "混ぜられない")
+    _xbroke("⑨ 種別の鍵が2つ（geo＋state）", _xc("level", side="above", material=[{"geo": "W%", "state": "hold_min"}], value={"n": 60}), "G6", "種別の鍵が2つ以上")
+    _xbroke("⑩ state に threshold_q", _xc("level", side="above", material=[{"state": "hold_min"}], value={"threshold_q": "q50"}), "G6", "分位")
+    _xbroke("⑪ candle_dir に材料", _xc("candle_dir", material=[_xm14], value={"dir": "bull"}), "G5", "材料は書けない")
+    # 正しい出口の条件5形は検査を通る（過剰に弾いていないこと）
+    for _nm_ok, _c_ok in (("level", _xc("level", side="above", material=[_xm14], value={"const": "RSI_OB"})),
+                          ("slope", _xs), ("cross", _xcr), ("diff", _xdf2), ("candle_dir", _xcd)):
+        r_ok = copy.deepcopy(okr)
+        r_ok["exits"][1]["fire"] = {"all": [_c_ok]}
+        try:
+            validate_recipe(r_ok)
+        except RecipeError as e:
+            _x_ng.append(f"C7: 正しい出口の条件（{_nm_ok}）が拒否された＝{str(e)[:90]}")
+    ng += _x_ng
+    print("[番人 97番 出口の発火条件が形を見る] C1 傾き／C3 交差／C4 差の2本目／C5 ローソク／C12 分位／C13 not／"
+          "C2 入口の評価器と一致8組／C7 偽レシピ11通り＋正しい5形 → "
+          + ("✅ 全部 期待どおり" if not _x_ng else "❌ " + " ／ ".join(_x_ng)))
     print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ36種で全部止まる・正しい5種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)
     if ng:

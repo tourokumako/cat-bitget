@@ -1,0 +1,422 @@
+{
+ "entry": {
+  "connective": {
+   "any": [
+    {
+     "all": [
+      {
+       "form": "candle_dir",
+       "role": "trigger",
+       "value": {
+        "dir": "bear"
+       }
+      },
+      {
+       "form": "within_n",
+       "inner": {
+        "form": "band_exclude",
+        "material": [
+         {
+          "family": "close vs RAINBOW%",
+          "param": [
+           2,
+           1
+          ],
+          "pre": {
+           "n": 6,
+           "op": "ts_rank"
+          },
+          "tf": "15m"
+         }
+        ],
+        "role": "location",
+        "value": {
+         "hi": {
+          "threshold_q": "q80"
+         },
+         "lo": {
+          "threshold_q": "q79"
+         }
+        }
+       },
+       "role": "location",
+       "value": {
+        "n": 12,
+        "offset": 1
+       }
+      }
+     ]
+    },
+    {
+     "all": [
+      {
+       "form": "barssince",
+       "inner": {
+        "form": "level",
+        "material": [
+         {
+          "family": "RSX",
+          "param": 9,
+          "pre": {
+           "n": 7,
+           "op": "ts_std"
+          },
+          "tf": "15m"
+         }
+        ],
+        "role": "trigger",
+        "side": "above",
+        "value": {
+         "threshold_q": "q78"
+        }
+       },
+       "role": "trigger",
+       "side": "above",
+       "value": {
+        "n": 4,
+        "offset": 0
+       }
+      },
+      {
+       "form": "streak",
+       "inner": {
+        "form": "level",
+        "material": [
+         {
+          "family": "TRIXシグナル",
+          "param": [
+           10,
+           9
+          ],
+          "pre": {
+           "n": 6,
+           "op": "ts_std"
+          },
+          "tf": "5m"
+         }
+        ],
+        "role": "env",
+        "side": "below",
+        "value": {
+         "threshold_q": "q67"
+        }
+       },
+       "role": "env",
+       "value": {
+        "n": 4,
+        "offset": 0
+       }
+      }
+     ]
+    },
+    {
+     "all": [
+      {
+       "form": "streak",
+       "inner": {
+        "form": "level",
+        "material": [
+         {
+          "family": "RVGI",
+          "param": [
+           20,
+           4
+          ],
+          "tf": "15m"
+         }
+        ],
+        "role": "trigger",
+        "side": "above",
+        "value": {
+         "threshold_q": "q80"
+        }
+       },
+       "role": "trigger",
+       "value": {
+        "n": 5,
+        "offset": 1
+       }
+      },
+      {
+       "form": "hysteresis",
+       "off": {
+        "form": "level",
+        "material": [
+         {
+          "family": "volume_ratio",
+          "param": 30,
+          "tf": "5m"
+         }
+        ],
+        "role": "sufficiency",
+        "side": "below",
+        "value": {
+         "threshold_q": "q80"
+        }
+       },
+       "on": {
+        "form": "level",
+        "material": [
+         {
+          "family": "volume_ratio",
+          "param": 30,
+          "tf": "5m"
+         }
+        ],
+        "role": "sufficiency",
+        "side": "below",
+        "value": {
+         "threshold_q": "q79"
+        }
+       },
+       "role": "sufficiency",
+       "value": {
+        "n": 128
+       }
+      }
+     ]
+    },
+    {
+     "all": [
+      {
+       "form": "barssince",
+       "inner": {
+        "form": "slope",
+        "material": [
+         {
+          "family": "CG",
+          "param": 20,
+          "tf": "15m"
+         }
+        ],
+        "role": "trigger",
+        "side": "above",
+        "value": {
+         "n": 8
+        }
+       },
+       "role": "trigger",
+       "side": "above",
+       "value": {
+        "n": 12,
+        "offset": 1
+       }
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "exits": [
+  {
+   "exec": {
+    "method": "taker",
+    "placement": {
+     "kind": "on_close"
+    }
+   },
+   "fire": {
+    "all": [
+     {
+      "form": "level",
+      "material": [
+       {
+        "family": "RSI",
+        "param": 19,
+        "tf": "15m"
+       }
+      ],
+      "role": "env",
+      "side": "above",
+      "value": {
+       "const": "RSI_OB"
+      }
+     }
+    ]
+   },
+   "name": "BREAKOUT",
+   "reason": "BREAKOUT_CUT",
+   "size_ratio": 1.0
+  },
+  {
+   "exec": {
+    "method": "maker",
+    "placement": {
+     "fill": "profit",
+     "kind": "resting",
+     "level": {
+      "base": "avg",
+      "k": {
+       "const": "SCALP_FLOOR",
+       "side_sign": "profit"
+      },
+      "kind": "pct"
+     }
+    }
+   },
+   "fire": {
+    "all": [
+     {
+      "form": "level",
+      "material": [
+       {
+        "family": "Stoch%K",
+        "param": 9,
+        "tf": "15m"
+       }
+      ],
+      "role": "env",
+      "side": "below",
+      "value": {
+       "const": "STOCH_OS"
+      }
+     },
+     {
+      "form": "level",
+      "material": [
+       {
+        "state": "unreal_pct"
+       }
+      ],
+      "role": "env",
+      "side": "above",
+      "value": {
+       "const": "NEUTRAL_0"
+      }
+     }
+    ]
+   },
+   "name": "REVIND",
+   "reason": "INDICATOR_REVERSE_TP",
+   "size_ratio": 1.0
+  },
+  {
+   "exec": {
+    "method": "maker",
+    "placement": {
+     "fill": "adverse",
+     "kind": "resting",
+     "level": {
+      "arm": {
+       "const": "SCALP_FLOOR",
+       "mult": 100.0
+      },
+      "floor": {
+       "const": "SCALP_FLOOR"
+      },
+      "giveback": {
+       "n": 50
+      },
+      "kind": "peak_giveback"
+     },
+     "pessimistic": true
+    }
+   },
+   "name": "PEAKLOCK",
+   "reason": "MFE_DRAWDOWN_CUT",
+   "size_ratio": 1.0
+  },
+  {
+   "exec": {
+    "be_wait": {
+     "level": {
+      "base": "avg",
+      "k": {
+       "const": "SCALP_FLOOR",
+       "side_sign": "profit"
+      },
+      "kind": "pct"
+     },
+     "ttl": {
+      "const": "BE_TTL_BARS"
+     }
+    },
+    "method": "taker",
+    "placement": {
+     "kind": "on_close"
+    }
+   },
+   "fire": {
+    "all": [
+     {
+      "form": "level",
+      "material": [
+       {
+        "state": "hold_min"
+       }
+      ],
+      "role": "env",
+      "side": "above",
+      "value": {
+       "n": 60
+      }
+     }
+    ]
+   },
+   "name": "TIME",
+   "reason": "TIME_EXIT",
+   "size_ratio": 1.0
+  },
+  {
+   "exec": {
+    "method": "maker",
+    "placement": {
+     "fill": "profit",
+     "kind": "resting",
+     "level": {
+      "buf": {
+       "const": "SCALP_FLOOR",
+       "mult": 1.0
+      },
+      "fallback": "mid",
+      "kind": "zone",
+      "target": "opp"
+     }
+    }
+   },
+   "name": "TP2",
+   "reason": "TP_FILLED",
+   "size_ratio": 1.0
+  },
+  {
+   "exec": {
+    "method": "maker",
+    "placement": {
+     "fill": "adverse",
+     "kind": "resting",
+     "level": {
+      "base": "entry",
+      "k": {
+       "const": "SCALP_FLOOR",
+       "mult": 7.91
+      },
+      "kind": "pct"
+     },
+     "pessimistic": true
+    }
+   },
+   "name": "SL",
+   "reason": "SL_FILLED",
+   "size_ratio": 1.0
+  }
+ ],
+ "meta": {
+  "logic_id": "GEN",
+  "regime": {
+   "block_col": "rg5_uptrend",
+   "entry_col": "range_ok_rg5",
+   "name": "range"
+  },
+  "side": "SHORT",
+  "signal_family": "E-a8",
+  "strategy": "e38"
+ },
+ "position": {
+  "add_trigger": {
+   "kind": "resignal"
+  },
+  "max_adds": 1,
+  "mode": "avg"
+ },
+ "pre_filter": []
+}

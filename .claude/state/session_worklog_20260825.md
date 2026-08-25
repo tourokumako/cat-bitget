@@ -426,3 +426,140 @@
 **私の受け取り方**＝①§0 以外（§0-4・§5・§6）も、古い記述が無いかを実物で確かめる ②直すのは「実物との食い違い」だけ＝**読みやすさの大改造は勝手にしない**（別に提案として出す）。
 
 **★①は「作っても落ちる」だけでなく「黙って別物になる」を含む。**`slope` の条件は拒否されずに走り、実行器の中で「値 vs 本数」の比較になる（例＝RSI の傾き ≥ 5本 のつもりが「RSI ≥ 5」）。**これは §0.2 の「虚偽の数字を作らない」に触れる。**
+
+---
+
+# ★ここから 61回目のセッション（2026-08-25・同じ日）
+
+## §30 開始＝E（実行器を直す・97番）の手順①②＝実物を読み、量を出した
+
+**まこさんの言葉（逐語）**＝「続きできる？」→「進めて」。
+
+### 手順①の結論＝入口の「形ごとの評価」は、出口へ持ってこられる（根拠4つ・全部 実物）
+
+1. **入口の評価の実物**＝`_eval_cond`（`engine_tuner_exec.py`:1642-1738）。条件1つを「全バーの真偽の配列」にする。13形 全部の式が実装済み。閾値は `_vnum_q`（分位の解決表 qtable を受ける）。木は `_eval_tree`（:1741-1779）で、入口の発火・判定の中身・hysteresis の内側が同じ1つを呼ぶ（M2-2-5 で一本化済み）。
+2. **出口の発火条件は2種類だけ**＝(a) 玉の状態を見る条件（hold_min・mfe_pct など＝玉ごとに変わる・生成器 `_state_cond`:1632 が **form="level" で固定**）(b) 指標を見る条件（玉に依存しない）。**(b) は玉に依存しないので、入口と同じく「ループの前に1回だけ」全バーの真偽の配列にできる**（`_eval_cond` をそのまま呼ぶ）。ループの中は i 番目を引くだけ。(a) はいまの1点比較の道をそのまま残せる。
+3. **分位の解決表の鍵は、出口の発火条件のぶんも既に集めている**＝`needed_qkeys`（`engine_tuner_gen.py`:2458-2461・D2 の直し 2026-08-07）。実行器が qtable を受けて解けば、表の決まり「閾値は分位」も効くようになる。
+4. **評価のタイミングは入口と同じ on_close**＝バー i の close 時点。cross は i-1 と i（過去だけ）＝**新しい未来参照は増えない（H2）**。
+
+### 手順②の結論＝量（全部 機械で数えた）
+
+- **宣言と実装の食い違いの大きさ**＝出口で使えると宣言された形（`FORM_SPEC` の exit_ok）は5種（level・cross・slope・diff・candle_dir）。**正しく動くのは level だけ＝1/5**。slope は「値 vs 本数」に化ける（黙って別物）・cross は案ごと拒否・diff は2本目無視・candle_dir は材料が無く列引きで落ちる。
+- **指標の条件を持つ出口の枝＝19枝中2枝**（表の元 `exit_families_rules.json` の fire の欄・機械で数えた）＝REVERSE_IND（forms=cross・level・slope・diff）・BREAKOUT（forms=level・slope・diff）＝**枝×形の組み合わせ 7件**。玉の状態だけの枝＝7枝（条件12個・全部 level）・発火条件なしの枝＝10枝。
+- **level の水準はいま定数3部品だけ**（`_EXIT_LEVEL_CONST`:1624＝RSI・Stoch%K/%D・ADX）。**表の決まり「閾値は分位」（`exit_families.json` の confirm_conditions.rule）と食い違う。**gen:1711-1714 のコメントが理由を明記＝「実行器は出口の発火条件で分位を解けない」＝**実行器を直せば、この縛りの理由が消える**。
+- **手が入る場所（実行器）＝3か所**＝①`_collect_fire_cols`（:2036・生の列の配列 → 条件ごとの真偽の配列へ。呼び出し1か所 :2174 で qtable を渡す）②`_exit_fire_ok` の `_ev` の指標の道（:2097-2103 → 配列の i 番目を引く）③`validate_recipe` の出口の検査（:1359-1363 に「指標の条件は exit_ok の形だけ・状態の条件は level だけ」を足す＝fail-closed）。
+- **`_exit_fire_ok` の呼び出し＝売買ループ5か所＋自己テスト2か所**（:2301・:2337・:2356・:2371・:2386・:3712・:3714）。引数の形を変えなければ **7か所とも無変更**。
+- **生成器＝必須の変更なし。**任意1件＝level の閾値の定数縛り（:1711-1726）を分位に戻す（表の決まりに合わせる）＝**まこさんの判断**。
+
+## §31 手順③＝設計書を書いた（実装前・監査待ち）
+
+- **設計書＝`.claude/state/acceptance.md` に上書き**（§0-2 の運用・v2 の承認済みの控えは `acceptance_archive` に在る）。目印＝`ARC iter="exit-fire-forms-20260825"`。**245行・sha256 先頭16桁 99f2056e79d4fd08。**
+- **中身（やること4件）**＝①`_collect_fire_cols` を「条件ごとの真偽の配列」の事前計算に置き換える（`_eval_cond` を呼ぶ＝式を書き写さない）②`_exit_fire_ok` の `_ev` の指標の道を配列参照に置き換える（状態の条件の1点比較と引数の形は不変＝呼び出し7か所 無変更）③`validate_recipe` に出口の形の検査2つ（fail-closed）④自己テストに「形が効くこと」の実測を足す。**完成の条件は C1〜C11（全部 走らせた出力）。**
+- **SPEC は手書きしていない**＝`verify_design_contract.py --write` の出力（公開する関数29件・定数1件）をそのまま写した。**`--diff` 齟齬 0件**（実測）。今回 変える関数は全部 内部の関数＝公開の一覧は実装の前後で変わらない。
+- **必読ゲートが3本を要求して1回 止まった**（leak_causality_diag.py＝ディスクに残っていた v2 の TARGET のぶん・exit_families.json・v9_exits.md）＝3本を Read で開いてから書いた。
+- **監査依頼書＝`.claude/audits/inputs/2026-08-25_exit_fire_forms_design_cp7_audit_request.md`**（cp6 の雛形と同じ形・cp7＝**実装前の設計だけの監査**）。事実データ（行数・ハッシュ値・97番の実測の逐語）は機械の出力から複写した。
+- **見つけた不具合2件を `next_step.md` §6 に足した（99番・100番）**＝(99) 出口の水準の定数縛りが表の決まり「閾値は分位」と食い違う（理由コメントは97番の直しで消える）(100) 生成器が diff を1回も作らない（表の forms に在るのに slope か level に化ける）。**どちらも生成器側＝この設計には入れていない**（1ターン1変更・設計書 §7 に明示）。
+
+## §32 監査 cp7 の結果（NO-GO）と、私の裏取り
+
+**まこさんの言葉（逐語）**＝「監査できたよ」。報告書＝`.claude/audits/2026-08-25_exit_fire_forms_design_cp7_audit_report.md`。**Verdict＝NO-GO（方向は正しい＝維持。検査を2件→6件に、C1・C3・C6・C8・C11 を書き直して再提出すれば GO）。Critical 2・Major 5・Minor 1。**
+
+### 私が実物で裏取りした結果（監査の所見を写していない・全部 一致）
+
+| 指摘 | 私が測ったこと | 結果 |
+|---|---|---|
+| Critical-1＝`_eval_cond` の strict 反転（:1700・:1708・:1732） | 3行は §30 で自分が Read した行そのもの＝`(d >= th) if side == "above" else (d <= th)`。露出＝gen 全文 grep で strict **0件**／`recipes/*.json` は `identity_s1_legacy.json` に **3件・全部 level** | ✅ 一致。**入口にも効く不具合**＝101番に登録 |
+| Critical-2＝状態の材料の pre の無視（:2094-2096）・pre_ok を守る検査 0件 | :2091-2105 は §30 で Read 済み（`m.get("state")` だけ読む）。`grep -n pre_ok` ＝性質表（:90-115）だけで validate に **0件** | ✅ 一致 |
+| Major-3＝`_ev` に `not` が無い・except は RecipeError と SampleError だけ | `_walk`（:255-262）は not を持つ／`_ev`（:2106-2110）は持たない／gen:2759 `except (ex.RecipeError, SampleError)` | ✅ 一致（KeyError は上へ抜ける） |
+| Major-4＝C6 が付け替える道を通らない・恒等ハーネスの出口の材料は state だけ | `grep '"state": "'`＝:2605 の hold_min 1件（:3625 は別用途） | ✅ 一致 |
+| Major-5＝T6 は gen の selftest | selftest の定義＝gen:3412・exec:3491。T6＝gen:3841-3877（seed=11・第1段10本・第2段6本・top_k=2・purpose=check）。合成データ＝`synth_df(n=3000, seed=7)`（gen:3386） | ✅ 一致 |
+| Major-6＝resting は約定の後に close の条件で取り消す | :2361-2371 を Read＝`hit = (l[i] <= lvl)` → `_exit_fire_ok(...)`。§30 の「入口と同じ on_close」は BREAKOUT にしか当てはまらない＝**私の言い過ぎ** | ✅ 一致＝102番に登録 |
+| Major-7＝slope の閾値の鍵が無い | gen 全文で「Δ」**0件** | ✅ 一致＝103番に登録 |
+| Minor-8＝ref が出口で使えるようになる・混在・12→11・行番号 | `_vnum_q`:1501-1507（ctx が None のときだけ拒否＝`_eval_cond` は ctx を必ず作る）／状態だけの7枝の条件は 11個（12 は REVERSE_IND の状態の条件を足した数＝**§30 の私の数え間違い**）／gen:1711 は見出し行・コメントは :1712-1715 | ✅ 一致 |
+| 実測⑦＝状態の道は na=pass を無視 | :2094-2105 に isfinite が無い | ✅ 一致＝104番に登録 |
+
+### 私が v1 で外していたこと（正直に）
+
+- **寄せる先の評価器を「13形 全部 実装済み」と書いて、SIDES×形の組み合わせを1つも直呼びしなかった**（監査 ⑦の指摘どおり）。
+- **C6（恒等）を「触らない道」で取り、付け替える道（指標の level）で取らなかった**（監査 ③）。
+- 「評価のタイミングは入口と同じ on_close」（§30）は resting の枝で成り立たない＝言い過ぎ。
+- 数え間違い1件（条件12個 → 11個）・行番号の1行ずれ1件（:1711-1714 → :1712-1715）。
+
+### 対応＝設計書を v2 に書き直す（実装はまだ入れない）
+
+監査 §6 の8件を全部 反映する＝検査 (c)〜(f)（strict・pre・ref・混在・not）を足す／C1・C2・C3・C6・C8・C11 を書き直す／qtable の直呼びの条件を足す／§7(a) の範囲を限定する／数と行番号を直す。**入口の評価器の3行の直し（101番）は、監査の提案どおり別の1変更として登録した**（いつやるかは まこさん）。
+
+## §33 設計書 v2 を書いた（監査 cp7 の8件を反映・実装はまだ入れない）
+
+- **`.claude/state/acceptance.md` を v2 に上書き**＝**279行・sha256 先頭16桁 8eff7af3b2c16ada**。`verify_design_contract.py --diff`＝**齟齬 0件**（SPEC は v1 と同じ＝変える関数が全部 内部の関数のため）。
+- **監査 §6 の8件 → v2 のどこ**＝Critical-1（strict の反転）→ 検査 (c) で出口の strict を拒否・C1・C7・評価器の3行の直しは101番／Critical-2（状態の pre）→ 検査 (d)・C7・入口の pre_ok は105番／Major-3（not）→ `_ev` に not を足す・C13／Major-4（恒等）→ C6 を「付け替える道（指標の level）＋--identity 3本＋状態だけ」の3つに書き直し、基準値を実装の前に測る（やること5）／Major-5（selftest の所在）→ C8 を exec と gen の2本に分け、C3 に種・設定・前提（cross の案 ≥1本）を書いた／Major-6（on_close の言い過ぎ）→ C11 を「配列方式は新しい未来参照を増やさない」に限定し、resting の順序は102番／Major-7（分位）→ C12（直呼びで q50 が解ける）・§7(a) の範囲を level・band・diff・cross(1本) に限定・slope の鍵は103番／Minor-8 → 検査 (e) ref・(f) 混在・条件11個・行番号 :1712-1715・鍵は `sort_keys=True, ensure_ascii=False` ＋ json にできない値は RecipeError。
+- **検査は2件 → 6件**（(a) exit_ok の形だけ (b) 状態は level だけ (c) strict 拒否 (d) pre 拒否 (e) ref 拒否 (f) 混在 拒否）。**完成の条件は C1〜C11 → C1〜C13**（C2 を「入口の評価器との一致 10組」に差し替え）。
+- **入っていないもの（§7）は 6件 → 11件**＝(g) 101番 (h) 102番 (i) 103番 (j) 104番 (k) 105番 を足した。
+- **必読ゲートが2回 止めた**＝監査のセッションが SessionStart で読了の記録（read_log）を消していたため。要求された4本を Read で開き直してから書いた。**ToDo ゲートが2回 止めた**＝「5b」の番号を hook が行として数えなかった（★いまここ が無い扱い）→ 6〜9 に振り直した。
+- **再監査用の依頼書（cp7b）も作った**＝`.claude/audits/inputs/2026-08-25_exit_fire_forms_design_v2_cp7b_audit_request.md`。使うかどうかは まこさんが決める。
+
+## §34 再監査 cp7b の結果（OTHER＝条件つき GO）と、私の裏取り・v3
+
+**まこさんの言葉（逐語）**＝「監査が終わりました。…Verdict＝OTHER（条件つき GO）。改善1・2 を設計書に足した版なら承認できます」。報告書＝`.claude/audits/2026-08-25_exit_fire_forms_design_v2_cp7b_audit_report.md`。**cp7 の8件は 8/8 反映。Critical 0・Major 2・Minor 5。**
+
+### 私が実物で裏取りした結果（全部 一致）
+
+| 指摘 | 私が測ったこと | 結果 |
+|---|---|---|
+| Major-1＝材料の種別の規則が検査と実行で違う | `_material_name` :514-535 を Read＝優先順 legacy_col（:514）→ geo（:518）→ state（:523）→ time（:528）→ family（:533）。`_ev` :2094 は `m.get("state")` だけ（§30 で Read 済み） | ✅ 一致＝legacy_col＋state・geo＋state で検査は列・実行は状態 |
+| Major-2＝C6 が空の成立を許す | v2 の C6 にレシピの保存も発火件数も無い。`_md5_trades`（:2529-2534）が売買記録の md5 を取る実物 | ✅ 一致 |
+| 好材料＝S1 の恒等レシピの出口 fire に指標が3枝 | `recipes/identity_s1_legacy.json` をプログラムで数えた＝MTFCUT（state＋legacy_col 2本）・V59DOWN（legacy_col）・V59FLAT（legacy_col） | ✅ 一致＝**v2 の「指標の材料は0件」は私の誤り**（§32 で exec.py だけを grep して cp7 の主張を「一致」と写した） |
+| Minor＝:2605 は S2・except は :2760・行の範囲・numpy | `run_identity` :2537／`_l1` :2729／`_s1` :2866（:2605 は S2）／gen :2760／`_side_cmp` は :1479 まで・T7 は :3881 から／`json.dumps`＝int64・bool_ は TypeError・float64 は通る／candle_dir は :835-836 で `mats = []`／`_check_value` :659-672 は ref を出口でも通す | ✅ 全部 一致 |
+
+### 私が v2 で外していたこと（正直に）
+
+- **監査の主張の裏取りで grep の範囲を主張の全部に広げなかった**（exec.py だけを見て、恒等レシピの json を見なかった）＝監査の主張は「反証を探す対象」であって「写す対象」ではない。
+- **「材料に state を含む」と4か所に書きながら、それを決める関数名を書かなかった**＝検査と実行で規則が違うことを見ていない。
+- **恒等にレシピの固定と発火の証拠を添えなかった**＝空の成立を許していた。
+
+### v3 に反映したこと
+
+改善1（Major）→ 種別の判定を `_material_name` に一本化（やること1・2）＋検査 (g) 種別の鍵が2つ以上は拒否／改善2（Major）→ C6 にレシピの保存（`.claude/ratchet/golden/exit_forms_20260825/`）・sha256・md5・exit_reason ごとの件数 ≥1（やること5）／改善3 → (c) を `forms_where("needs_side")` から導く／改善4 → (b) に value の制限（threshold_q・ref 拒否）／改善5 → C2 を8組・C3(ii) を理由を問わず0／改善6 → 各検査に拒否コード（G5／G6）／改善7 → §2 の7件を直した。加えて (h) candle_dir に材料が在れば拒否（新3）。**検査は6件 → 8件・偽レシピは8通り → 11通り。**
+
+## §35 承認（まこさん・逐語「承認した」・2026-08-25）
+
+- **承認の印＝設計書 v3 の指紋と一致**＝`verify_design_contract.py --check-approval`＝「設計書の承認: 一致」。`design_approved.json`＝`9231be4469b082e8…`＝いまの `acceptance.md` の sha256 と同じ。控え＝`acceptance_archive/exit-fire-forms-20260825.md`（実在）。
+- **ここから ToDo 9番（実装）**。設計書の順＝**やること5（恒等の基準値を実装の前に測って保存）が先**。コードは基準値を保存した後に触る。
+- 走らせる前の確認＝`--identity` と `--selftest` は H2/G2 の印の hook では対象外（`enforce_h2_pass.py`:39・`enforce_g2_pass.py`:51 の EXEMPT に実在）。フロー宣言の hook は `--identity` を対象外にしていない（grep 0件）＝走らせる前に宣言が要る。過去の実測＝記録に「--identity の所要時間」は無い（grep で0件）＝先に `--identity-quick`（短窓）で1回 測ってから本走の見込みを出す。
+
+## §36 やること5＝恒等の基準値（golden master）を実装の前に測った（2026-08-25）
+
+- **保存先**＝`.claude/ratchet/golden/exit_forms_20260825/`（`recipe_level_both.json`・`recipe_state_only.json`・`baseline_before.json`）。合成データ＝`synth_df(3000, seed=7)`（2024-05-01 00:00〜2024-05-11 10:00・3000本）。
+- **付け替える道（level_both）**＝生成器の案（`sample_structure`・種 [61,5,0]）のうち BREAKOUT_CUT と INDICATOR_REVERSE_TP の両方の枝を持つもの（600本中1本）の指標の条件を、生成器の関数 `_exit_indicator_cond` に forms=['level'] を渡して引き直した（数字は生成器が定数レジストリから引く＝RSI19__15m ≥ RSI_OB／Stoch%K9__15m ≤ STOCH_OS）。**いまの実行器の走行＝663行・md5 9ee158d88a58ff7f17d006d3fb2fcc54・BREAKOUT_CUT 257・INDICATOR_REVERSE_TP 206**（≥1 の条件を満たす）。sha256＝c29e6cb4dbfc3e74…。同じ列に違う pre を掛けた2条件は無い（プログラムで確かめた）。
+- **触らない道（state_only）**＝生成器の案（種 [61,5,1]）＝指標の条件なし。**780行・md5 f522362349fd601c50d8e8bc4dba41f7**（MFE_DRAWDOWN_CUT 586・TP_FILLED 189・SL_FILLED 5）。sha256＝2d9b2108e7fa8c3e…。
+- **★生成器の案600本には「両方の枝を level で持つ案」が1本も無かった**（両方の枝を持つ案が1本・その指標の条件は level でなかった）＝付け替える道の恒等は、生成器がそのまま出す案では取れない。だから指標の条件だけを生成器の関数で level に引き直した（レシピは手書きしていない・数字も作っていない）。
+- **恒等検収の短窓（--identity-quick・S2・90日）**＝real 103.99秒・✅ 全部一致（21行・md5 6241b0277b4a75da9b24d9faf9a7d39c・出口理由 BE_EXIT 12・TIME_EXIT 5・PARTIAL_TP 3・TP_FILLED 1）。**本走3本の見込み＝約30分**（18ヶ月≈6倍×3本）＝フロー宣言に書いて裏で起動した（ログ＝scratchpad/identity_before.log）。**走り終わるまで engine_tuner_exec.py は触らない**（途中で直すと基準値が汚れる）。
+- **恒等検収3本の本走（直す前・実測）**＝S2 `--identity`＝165行・md5 7b01f51b5a9b29b3c05a7b340c203ba1・✅（BE_EXIT 101・TIME_EXIT 42・PARTIAL_TP 17・TP_FILLED 5）／L1＝367行・96a9102ec8a34f94cf01e9e463f6aade・✅／S1＝6,569行・18b3d31a5fe71c4a4b5f83cf1771a46c・✅（TREND_CONT 1004 ほか）。**所要＝6.72秒＋3.91秒＋17.52秒＝28秒**（22:46:13〜22:46:41）。**見込み「約30分」は大きく外れた**＝短窓（キャッシュ無し）104秒の大半はデータの読み込みで、本走はキャッシュを使う。次に走らせるときは「3本で約30秒」が根拠。★S1 の指標3枝の枝ごとの発火件数は売買記録に無い（理由 TREND_CONT しか記録しない）＝設計書 C6(ii) の「S1 の指標3枝の発火件数」は理由 TREND_CONT の合計（1004）で代える（正直に書く）。
+
+## §37 実装（やること1〜4）と、走らせた結果（2026-08-25・実装は基準値の保存の後）
+
+- **書き換えた場所（engine_tuner_exec.py・4か所＋自己テスト）**＝①`_material_name` に (g)＝種別の鍵が2つ以上なら G6（**★設計書の文からの差**＝legacy_col には family を添えてよい。恒等レシピ3本に8か所 在る既存の書き方で、family は系統の判定（gen `_lineage_of`・exec の G3）が読む鍵＝最初 5つの鍵で「2つ以上」にしたら恒等レシピの検証で止まった。監査が問題にした組＝legacy_col＋state・geo＋state と、state／geo／time に family を添える形は拒否のまま）②`_check_exit_fire_cond` を新設し `validate_recipe` の出口の検査から呼ぶ（(a)〜(h)・拒否コード G5／G6）③`_collect_fire_cols` を「条件ごとの真偽の配列」に置き換え（鍵＝canonical JSON・by_id の控え・json にできない値は RecipeError・qtable を受ける）④`_exit_fire_ok` の `_ev`＝配列の i 番目を引く・not を評価・種別は `_collect_fire_cols` が `_material_name` で決めた記録で分ける（`m.get("state")` は消した）。呼び出し（run_recipe）に qtable を渡す。⑤自己テストに「97番 出口の発火条件が形を見る」の番人を足した（C1・C2 8組・C3(i)・C4・C5・C7 偽レシピ11通り＋正しい5形・C12・C13）。
+- **`engine_tuner_exec.py --selftest`（real 5.61秒）**＝**97番の番人 ✅ 全部 期待どおり**。**ただし全体は ❌3件**＝「並びの決まらない入れ物」の検査が gen の3行（:1352・:1362・:4708）を指す。**git の HEAD の gen でも同じ3件**（実測）＝私の変更とは無関係・元から。中身＝検査が変数の名前だけで set を判定していて、dict の `fams`（gen:1348）とループ変数の `got`（gen:4708）を別の関数の同名の set と取り違える誤検知。**next_step §6 に106番で登録**（直すには gen の変数名を変える＝gen の受け入れ条件が要る／または検査の作り直し＝まこさんが決める）。**C8 の「exec の自己テスト全部 pass」は、この3件が残るかぎり満たせない（正直に書く）。**
+- **C6 恒等（3つとも ✅）**＝(i) 付け替える道 `recipe_level_both.json`（sha256 一致）＝md5 9ee158d88a58ff7f17d006d3fb2fcc54・663行・BREAKOUT_CUT 257・INDICATOR_REVERSE_TP 206＝直す前と完全一致 (iii) 状態だけ `recipe_state_only.json`＝md5 f522362349fd601c50d8e8bc4dba41f7・780行・一致 (ii) `--identity` 3本＝S2 165行 7b01f51b…／L1 367行 96a9102e…／S1 6,569行 18b3d31a…＝全部 直す前と同じ md5・同じ出口理由の内訳（S1 の TREND_CONT 1004 も同じ）。結果＝`golden/exit_forms_20260825/baseline_after.json`・`scratchpad/identity_after.log`。
+- **hook に1回 止められた**＝恒等検収の引数を変数（`$a`）で渡したため、G2 の印の hook が「--identity」の文字を見つけられず対象外にならなかった（印は exec を直したので失効中）。引数を文字で書き直して通った。
+
+## §38 走らせた結果の続き（C3(ii)・C8 の gen・C9 の G2・C10）
+
+- **C3(ii)**＝T6 と同じ設定のミニ走行（`synth_df()`・seed=11・第1段10本・第2段6本）を `sample_structure` を包んで案を記録しながら走らせた＝**案10本・出口に cross を含む案 1本・第1段の拒否 0**（直す前は同じ種で 1/10 が「値を解決できない {'direction': 'up'}」で拒否＝60回目 §25）。**第2段の拒否は 2/6**（理由「実行器／解決表に鍵が無い」＝**98番・既知・別件**）＝設計書 v3 の C3(ii)「理由を問わず拒否が0」は、この既知の件のぶんは満たせない（正直に §9 に書く）。
+- **C8 の gen**＝`engine_tuner_gen.py --selftest`＝**✅ 全部 pass（real 297.73秒）**＝T6（再開の再利用 10/10）✅・18マス ✅・`--lint-provenance` 0件 ✅。**60回目の ❌1件（T6）が消えた。**
+- **C9 の G2**＝`gen_signal_families.py --verify`＝**✅ 見本11件 全部 期待どおり・印 g2_pass.json（対象37件・指紋 d8cad53a…）**（real 27.57秒）。★1回目は「承認が要るが承認の経路が一時的に使えない」で止まり、2回目で通った。
+- **C10**＝`verify_design_contract.py --diff`＝**齟齬 0件**（公開する関数は実装の前後で変わらない＝設計書のとおり）。
+- **C9 の H2**＝`leak_causality_diag.py` を裏で起動（実測 4分49秒の見込み・ログ＝scratchpad/h2_after.log）。
+
+## §39 H2 の印・設計書 §9・再承認待ち（2026-08-25）
+
+- **H2**＝`leak_causality_diag.py`＝**✅ 全部 pass（real 285.48秒）**＝検査2（全数スキャン81本）注記なし0件・番人7件 pass・打ち切り再現 1-a（30列×2）・1-b（1,337件＋1,974件 全一致）・1-c 食い違い0件・**印 h2_pass.json＝指紋 29277f8ba7a1b987…（対象21ファイル・2026-08-25 23:06:17）**。
+- **設計書 §9（実装の記録）を書いた**＝9-1 恒等の基準値／9-2 C1〜C13 の実測／9-3 設計書からの差3件（(g) の legacy_col＋family・C8 の exec 全体の ❌3件＝106番・C3(ii) の第2段 2/6＝98番）／9-4 hook に止められた回数3・見込みの外れ1。**§9 を書いたので設計書の指紋が変わった＝再承認（approve_impl・approve_design）が要る＝まこさん待ち。**
+- **記録**＝`next_step.md` §0（61回目の状態・E の行・印の値）・§6（97番＝直した・106番）／`WORKFLOW.md` 改訂248・CP 監査一覧に cp7・cp7b／`lessons_active.md` L-547〜L-549。**コミットは まこさんの OK 待ち。**
+- **★まこさんの判断が要るもの（4つ）**＝①§9 を足した設計書の再承認 ②コミットの OK ③歯止め（97番が直るまで探索の本走をしない）を解除するか ④106番（exec の自己テストに元から在る ❌3件）を どう直すか（gen の変数名2つ＝gen の受け入れ条件が要る／検査の作り直し）。
+
+## §40 再承認（まこさん・逐語「承認した」・2026-08-25 23:19）
+
+- **§9（実装の記録）を足した設計書（323行・指紋 f77e149ec04d9a63…）を まこさんが再承認した。**`--check-approval`＝「設計書の承認: 一致」・`design_approved.json`＝f77e149e…・`acceptance.approved`＝f77e149e…・控え `acceptance_archive/exit-fire-forms-20260825.md`（23:19・同じ指紋）。
+- **これで engine_tuner の3つの印が全部 そろった**＝設計書の承認（f77e149e…）・H2（29277f8b…）・G2（d8cad53a…）＝道具としては回れる状態。**ただし探索の本走は、まこさんが歯止めの解除を決めるまでしない。**
+- **残りの判断（まこさん）**＝②コミットの OK ③歯止め（本走しない）の解除 ④106番の直し方。

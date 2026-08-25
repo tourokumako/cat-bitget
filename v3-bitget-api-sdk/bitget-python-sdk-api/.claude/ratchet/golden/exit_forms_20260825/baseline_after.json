@@ -1,0 +1,44 @@
+{
+ "state_only": {
+  "sha256_same": true,
+  "md5_before": "f522362349fd601c50d8e8bc4dba41f7",
+  "md5_after": "f522362349fd601c50d8e8bc4dba41f7",
+  "n_before": 780,
+  "n_after": 780,
+  "counts_before": {
+   "MFE_DRAWDOWN_CUT": 586,
+   "TP_FILLED": 189,
+   "SL_FILLED": 5
+  },
+  "counts_after": {
+   "MFE_DRAWDOWN_CUT": 586,
+   "TP_FILLED": 189,
+   "SL_FILLED": 5
+  },
+  "all_same": true
+ },
+ "level_both": {
+  "sha256_same": true,
+  "md5_before": "9ee158d88a58ff7f17d006d3fb2fcc54",
+  "md5_after": "9ee158d88a58ff7f17d006d3fb2fcc54",
+  "n_before": 663,
+  "n_after": 663,
+  "counts_before": {
+   "BREAKOUT_CUT": 257,
+   "INDICATOR_REVERSE_TP": 206,
+   "MFE_DRAWDOWN_CUT": 157,
+   "TP_FILLED": 26,
+   "SL_FILLED": 16,
+   "FORCE_CLOSE_EOD": 1
+  },
+  "counts_after": {
+   "BREAKOUT_CUT": 257,
+   "INDICATOR_REVERSE_TP": 206,
+   "MFE_DRAWDOWN_CUT": 157,
+   "TP_FILLED": 26,
+   "SL_FILLED": 16,
+   "FORCE_CLOSE_EOD": 1
+  },
+  "all_same": true
+ }
+}
