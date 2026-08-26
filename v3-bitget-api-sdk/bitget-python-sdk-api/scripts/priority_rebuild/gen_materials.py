@@ -326,6 +326,28 @@ _FB_TARGETS = [
     (_RATCHET / "engine_tuner_milestones2.md", "マイルストーン②（場面の判定）"),
 ]
 
+# ══ B-4｜やることリストの確かめ方を、要件の逐語と並べて出す（2026-08-26・承認 a3be50c30e7ea827）══
+#
+# まこさんの指示（逐語 2026-08-23）＝「やることリストの『確かめ方』欄を、要件の逐語から降ろす形にする
+#   （CC が自由に書かない）」／消えるもの＝「CC が合格の条件を書く欄が消える」。
+#
+# 何をするか
+#   ① やることリスト2本から、表の行（# ／ やること ／ 触るファイル ／ 出るもの・確かめ方 ／ 状態）を機械で拾う
+#   ② 対応表 milestone_req_map.json から「その行がどの要件に効くか」を引く（★どの要件かを選ぶのは作る側の判断）
+#   ③ 要件の正本 engine_tuner_requirements.json から accept の全文を引く（★何をもって満たしたと言うかは要件の側）
+#   ④ 4列の表にして、2つの文書へ印つきで差し込む
+#
+# ★CC が文を書く欄は、対応表の basis だけ。差し込む4列は全部 実物からの複写。
+# ★止める条件（--verify が落ちる）＝行が対応表に無い／要件の番号が正本に無い／basis が空／
+#   差し込んだ逐語が正本と1文字でも違う。
+_RA_REQ_JSON = _RATCHET / "engine_tuner_requirements.json"
+_REQ_MAP = _RATCHET / "milestone_req_map.json"
+_RA_START = ("<!-- REQ_ACCEPT_START hash={h} "
+             "ここは gen_materials.py が自動生成＝手で書き換えない -->")
+_RA_START_RE = re.compile(r"<!-- REQ_ACCEPT_START hash=[0-9a-f]* [^>]*-->")
+_RA_END = "<!-- REQ_ACCEPT_END -->"
+_RA_HEAD = ["#", "やること", "触るファイル", "出るもの・確かめ方", "状態"]
+
 # ★答えの文字列＝この4つだけ（設計書 §3.2・番人 F5 が「4つ以外が出ない」を確かめる）。
 _FB_MISS = "当たりません"
 _FB_HIT = "当たっています"
@@ -1830,6 +1852,130 @@ def forbidden_block(req_json: dict | None = None, gen_src: str | None = None) ->
     return _FB_START.format(h=h) + "\n" + body + "\n" + _FB_END
 
 
+def milestone_rows(paths=None) -> list[dict]:
+    """やることリストの表の行を機械で拾う。
+
+    ★見出しの行と「完全に一致」する表だけを見る。
+      理由＝本文に「確かめ方＝…」と書いてある行を見出しと取り違えると、そこで表が切れる
+      （2026-08-26 に実際に起き、34行しか数えられなかった＝worklog §49）。
+    戻り: [{"file": 名前, "id": 行の番号, "todo": やること, "check": 確かめ方の欄}, ...]
+    """
+    out = []
+    for p, _why in (paths or _FB_TARGETS):
+        if not p.exists():
+            continue
+        idx = None
+        for ln in p.read_text(encoding="utf-8").splitlines():
+            s = ln.strip()
+            if not s.startswith("|"):
+                idx = None
+                continue
+            cells = [c.strip() for c in s.strip("|").split("|")]
+            if [re.sub(r"\*+", "", c).strip() for c in cells] == _RA_HEAD:
+                idx = _RA_HEAD.index("出るもの・確かめ方")
+                continue
+            if set(s) <= set("|-: "):
+                continue
+            if idx is None or len(cells) <= idx:
+                continue
+            out.append({"file": p.name,
+                        "id": re.sub(r"\*+", "", cells[0]).strip(),
+                        "todo": re.sub(r"\*+", "", cells[1]).strip(),
+                        "check": cells[idx]})
+    return out
+
+
+def _req_index(path=_RA_REQ_JSON) -> dict:
+    """要件の正本から {番号: {title, accept, state}} を作る（★複写・縮めない）。"""
+    try:
+        j = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return {r["id"]: {"title": r.get("title", ""), "accept": r.get("accept", ""),
+                      "state": r.get("state", "")} for r in j.get("requirements", [])}
+
+
+def _req_map(path=_REQ_MAP) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("map", {})
+    except Exception:
+        return {}
+
+
+def req_accept_problems(rows=None, mp=None, idx=None) -> list[str]:
+    """止める条件（4つのうち、対応表そのものを見る3つ）。1件でも在れば --verify が落ちる。"""
+    rows = milestone_rows() if rows is None else rows
+    mp = _req_map() if mp is None else mp
+    idx = _req_index() if idx is None else idx
+    ng = []
+    for r in rows:
+        if r["id"] not in mp:
+            ng.append(f"やることリストの行 {r['id']}（{r['file']}）が対応表 milestone_req_map.json に無い")
+    for k, v in mp.items():
+        if not str(v.get("basis", "")).strip():
+            ng.append(f"対応表 {k}: basis（なぜその要件かの1行）が空")
+        for rid in v.get("req", []):
+            if rid not in idx:
+                ng.append(f"対応表 {k}: 要件の番号 {rid} が要件の正本に無い")
+    return ng
+
+
+def req_accept_block(rows=None, mp=None, idx=None) -> str:
+    """差し込む固まり（印つき）を作る。★4列とも実物からの複写＝CC が文を書く欄は無い。"""
+    rows = milestone_rows() if rows is None else rows
+    mp = _req_map() if mp is None else mp
+    idx = _req_index() if idx is None else idx
+    n_empty = sum(1 for r in rows if not (mp.get(r["id"], {}).get("req") or []))
+    L = [
+        f"**やることリストの行 {len(rows)} 件を、要件の逐語と並べた表です。**",
+        "",
+        f"- **どの要件も指していない行＝{n_empty} 件**"
+        "（要件17件のどれにも直接は効かない行。理由は『なぜその要件か』の欄に書いてあります）",
+        "- **要件の欄と『なぜその要件か』の欄は、対応表 `milestone_req_map.json` からの複写です**"
+        "（どの要件に効くかを選ぶのは作る側の判断＝まこさんの承認をもらいます）。",
+        "- **『要件の逐語』の欄は `engine_tuner_requirements.json` の `accept` の全文です**"
+        "（★縮めません。何をもって満たしたと言うかは要件の側が持ちます）。",
+        "- **『いま確かめ方の欄に書いてあること』は、やることリストの表の4列目そのままです。**",
+        "",
+        "| 行 | 要件 | 要件の逐語（何ができたら満たしたと言えるか） | いま確かめ方の欄に書いてあること | なぜその要件か |",
+        "|---|---|---|---|---|",
+    ]
+    for r in rows:
+        v = mp.get(r["id"], {})
+        ids = v.get("req") or []
+        if ids:
+            req_cell = "・".join(ids)
+            acc = "<br>".join(f"**{i}**（{idx[i]['title']}）: {idx[i]['accept']}"
+                              for i in ids if i in idx)
+        else:
+            req_cell = "**★無し**"
+            acc = "**（どの要件も指していません）**"
+        cell = lambda s: str(s).replace("|", "\\|")          # noqa: E731
+        L.append(f"| {cell(r['id'])} | {cell(req_cell)} | {cell(acc)}"
+                 f" | {cell(r['check'])} | {cell(v.get('basis', ''))} |")
+    L += [
+        "",
+        "> **この表は `gen_materials.py` が実物から作ります。手で書き換えると `--verify` が落ちます。**",
+        "> **`--verify` が落ちる条件4つ**＝①やることリストの行が対応表に無い ②対応表の要件の番号が正本に無い"
+        " ③『なぜその要件か』が空 ④差し込んだ逐語が要件の正本と1文字でも違う。",
+        "> **★入っていないもの**＝「確かめ方が要件を満たしているか」の判定は、この表には在りません。"
+        "**並べて出すまでです。判定は まこさんがします**"
+        "（出どころ＝`session_worklog_20260823.md` の §39.6 の段D）。",
+    ]
+    body = "\n".join(L)
+    h = hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
+    return _RA_START.format(h=h) + "\n" + body + "\n" + _RA_END
+
+
+def _ra_splice(text: str, blk: str) -> tuple[str, bool]:
+    """REQ_ACCEPT_START〜END を差し替える。印が無ければ差し込まない（False）。"""
+    mt = _RA_START_RE.search(text)
+    if not mt or _RA_END not in text[mt.end():]:
+        return text, False
+    e = text.index(_RA_END, mt.end()) + len(_RA_END)
+    return text[:mt.start()] + blk + text[e:], True
+
+
 def _fb_splice(text: str, blk: str) -> tuple[str, bool]:
     """FORBIDDEN_CHECK_START〜END を差し替える。印が無ければ差し込まない（False）。"""
     mt = _FB_START_RE.search(text)
@@ -1874,6 +2020,26 @@ def write() -> int:
             print(f"  [差し込み] {p.name}（作ってはいけないものとの照合）")
         else:
             print(f"  [変更なし] {p.name}（作ってはいけないものとの照合）")
+    # ★「やることリストの確かめ方 × 要件の逐語」の差し込み（2026-08-26・B-4）
+    _ra_ng = req_accept_problems()
+    if _ra_ng:
+        print(f"  ❌ 要件との対応に {len(_ra_ng)} 件の不足（--verify が落ちます）")
+        for _x in _ra_ng[:5]:
+            print(f"     - {_x}")
+    rblk = req_accept_block()
+    for p, _why in _FB_TARGETS:
+        if not p.exists():
+            continue
+        t = p.read_text(encoding="utf-8")
+        new, ok = _ra_splice(t, rblk)
+        if not ok:
+            print(f"  ⚠️ [未差し込み] {p.name}: REQ_ACCEPT_START/END の印が無い（先に印を置く）")
+            continue
+        if new != t:
+            p.write_text(new, encoding="utf-8")
+            print(f"  [差し込み] {p.name}（やることリストの確かめ方 × 要件の逐語）")
+        else:
+            print(f"  [変更なし] {p.name}（やることリストの確かめ方 × 要件の逐語）")
     return 0
 
 
@@ -1910,6 +2076,21 @@ def verify() -> list[str]:
         cur = t[mt.start():t.index(_FB_END, mt.end()) + len(_FB_END)]
         if cur != blk:
             ng.append(f"{p.name}: 作ってはいけないものとの照合の差し込みが実物と食い違う"
+                      "（手で書き換えたか、元が変わったのに作り直していない）")
+    # ★「やることリストの確かめ方 × 要件の逐語」（2026-08-26・B-4）＝止める条件4つ
+    ng += req_accept_problems()                       # ①行が対応表に無い ②番号が正本に無い ③basis が空
+    rblk = req_accept_block()
+    for p, _why in _FB_TARGETS:
+        if not p.exists():
+            continue
+        t = p.read_text(encoding="utf-8")
+        mt = _RA_START_RE.search(t)
+        if not mt or _RA_END not in t[mt.end():]:
+            ng.append(f"{p.name}: REQ_ACCEPT_START/END の印が無い")
+            continue
+        cur = t[mt.start():t.index(_RA_END, mt.end()) + len(_RA_END)]
+        if cur != rblk:                               # ④差し込んだ逐語が正本と1文字でも違う
+            ng.append(f"{p.name}: やることリストの確かめ方 × 要件の逐語 の差し込みが実物と食い違う"
                       "（手で書き換えたか、元が変わったのに作り直していない）")
     return ng
 
@@ -2337,6 +2518,76 @@ def selftest() -> int:
             ng.append("T6: 元に戻したのに --verify が鳴る（番人の後始末ができていない）")
     else:
         ng.append("T6: materials.md が無いので改変検出を確かめられない（先に --write）")
+    # ══ B-4｜やることリストの確かめ方 × 要件の逐語（2026-08-26・承認 a3be50c30e7ea827）══
+    #   ★設計書 §11 の10件と1件ずつ対応する。わざと壊して、止まることを確かめる。
+    _ra_msg = "やることリストの確かめ方 × 要件の逐語"
+    try:
+        _rows = milestone_rows()
+        _mp = _req_map()
+        _idx = _req_index()
+
+        # R1 対応表に無い行を1つ作ると落ちる
+        _fake = _rows + [{"file": "x.md", "id": "M9-9-9", "todo": "架空", "check": "架空"}]
+        if not req_accept_problems(_fake, _mp, _idx):
+            ng.append("R1: 対応表に無い行を足しても落ちない（対応の抜けを見ていない）")
+
+        # R2 要件に無い番号を書くと落ちる
+        _bad = dict(_mp); _bad["M2-1-1"] = {"req": ["R99"], "basis": "架空"}
+        if not req_accept_problems(_rows, _bad, _idx):
+            ng.append("R2: 要件の正本に無い番号（R99）を書いても落ちない")
+
+        # R3 basis を空にすると落ちる
+        _bad = dict(_mp); _bad["M2-1-1"] = {"req": ["R5"], "basis": "  "}
+        if not req_accept_problems(_rows, _bad, _idx):
+            ng.append("R3: なぜその要件かの1行が空でも落ちない")
+
+        # R7 いまの状態は問題ゼロ
+        if req_accept_problems(_rows, _mp, _idx):
+            ng.append("R7: いまの対応表に不足が在る（--write の前に直す）")
+
+        # R6 要件の accept を1文字 変えると、差し込む表も同じだけ変わる（写しではない）
+        _idx2 = {k: dict(v) for k, v in _idx.items()}
+        _idx2["R5"]["accept"] = _idx2["R5"]["accept"] + "＿番人"
+        if req_accept_block(_rows, _mp, _idx) == req_accept_block(_rows, _mp, _idx2):
+            ng.append("R6: 要件の逐語を変えても差し込む表が変わらない（その場で引いていない）")
+
+        # R8 やることリストの確かめ方の欄を変えると、差し込む表の欄も変わる
+        _rows2 = [dict(r) for r in _rows]
+        _rows2[0]["check"] = _rows2[0]["check"] + "＿番人"
+        if req_accept_block(_rows, _mp, _idx) == req_accept_block(_rows2, _mp, _idx):
+            ng.append("R8: 確かめ方の欄を変えても差し込む表が変わらない（実物から引いていない）")
+
+        # R9 対応表から1件 消すと落ちる（R1 と同じ道）
+        _bad = {k: v for k, v in _mp.items() if k != "M2-1-1"}
+        if not req_accept_problems(_rows, _bad, _idx):
+            ng.append("R9: 対応表から1件 消しても落ちない")
+
+        # R4 差し込んだ逐語を手で1文字 変えると --verify が鳴る（メタ確認）
+        # R5 印を消すと「印が無い」で鳴る
+        # R10 印の外の本文を変えても鳴らない
+        _ra_p = _FB_TARGETS[0][0]
+        if _ra_p.exists() and _RA_START_RE.search(_ra_p.read_text(encoding="utf-8")):
+            _keep = _ra_p.read_text(encoding="utf-8")
+            try:
+                _ra_p.write_text(_keep.replace(_RA_END, "手で足しました\n" + _RA_END, 1),
+                                 encoding="utf-8")
+                if not any(_ra_msg in x for x in verify()):
+                    ng.append("R4: 差し込みを書き換えても --verify が鳴らない（改変検出が死んでいる）")
+                _ra_p.write_text(_keep.replace(_RA_END, "", 1), encoding="utf-8")
+                if not any("REQ_ACCEPT_START/END の印が無い" in x for x in verify()):
+                    ng.append("R5: 印を消しても --verify が鳴らない")
+                _ra_p.write_text(_keep + "\n印の外に足した行\n", encoding="utf-8")
+                if any(_ra_msg in x for x in verify()):
+                    ng.append("R10: 印の外を変えただけで鳴る（印の間だけを見ていない）")
+            finally:
+                _ra_p.write_text(_keep, encoding="utf-8")
+            if any(_ra_msg in x for x in verify()):
+                ng.append("R4: 元に戻したのに --verify が鳴る（番人の後始末ができていない）")
+        else:
+            ng.append("R4・R5・R10: 印が無いので改変検出を確かめられない（先に印を置く）")
+    except Exception as _era:                                    # noqa: BLE001
+        ng.append(f"R1〜R10: 確かめられなかった（{type(_era).__name__}: {str(_era)[:100]}）")
+
     print("=" * 70)
     print("gen_materials 自己検査")
     print("=" * 70)

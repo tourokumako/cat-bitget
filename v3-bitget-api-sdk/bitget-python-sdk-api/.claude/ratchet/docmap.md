@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=5dfaa764df480fc5 -->
+<!-- DOCMAP_HASH=f2f62f816924ef74 -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -19,17 +19,17 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 ## いまの数
 
 - 名乗っている道具＝**19 本**
-- その道具が作る文書＝**29 本**
+- その道具が作る文書＝**31 本**
 - **検証コマンドを持たない道具＝1 本**（gen_p23_candidates.py）
-- **いま検証が通らない道具＝1 本**（gen_auditor_brief.py）
-- **名乗っていない道具＝0 本**（明らかな漏れ）／ 26 本（要確認）＝表3
-- 誰にも作られていない文書＝**315 本**（表4＝人が手で書いているもの）
+- **いま検証が通らない道具＝3 本**（gen_improvement_arc.py／gen_auditor_brief.py／gen_filemap.py）
+- **名乗っていない道具＝1 本**（明らかな漏れ）／ 27 本（要確認）＝表3
+- 誰にも作られていない文書＝**385 本**（表4＝人が手で書いているもの）
 
 ## 表1｜道具 → 作る文書
 
 | 道具 | 作る文書 | 検証コマンド | いまの結果 |
 |---|---|---|---|
-| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり | ✅  |
+| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり | ❌ ❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9e975d2abeef ／ 源から作り直すと 378c0153d5b6） |
 | `gen_auditor_brief.py` | auditor_template.md（一部の節） | あり | ❌    直し方: python3 scripts/priority_rebuild/gen_auditor_brief.py --write |
 | `gen_cat_requirements.py` | cat_requirements.md（まるごと） | あり | ✅  |
 | `gen_composition_rules.py` | composition_rules.json（まるごと）<br>composition_rules.md（まるごと） | あり | ✅  |
@@ -39,10 +39,10 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 | `gen_engine_tuner_manual.py` | engine_tuner_manual.md（まるごと） | あり | ✅  |
 | `gen_engine_tuner_requirements.py` | engine_tuner_requirements.md（まるごと） | あり | ✅  |
 | `gen_exit_families.py` | exit_families.json（まるごと）<br>exit_families.md（まるごと）<br>exit_families_approved.txt（まるごと） | あり | ✅  |
-| `gen_filemap.py` | filemap.md（まるごと） | あり | ✅  |
+| `gen_filemap.py` | filemap.md（まるごと） | あり | ❌    直し方: python3 scripts/priority_rebuild/gen_filemap.py --write |
 | `gen_fix_map.py` | engine_tuner_fix_map.md（まるごと） | あり | ✅  |
 | `gen_flow.py` | e38_flow.md（まるごと） | あり | ⚠️ 引数が要る＝そのままでは検証を走らせられない |
-| `gen_materials.py` | materials.md（まるごと）<br>materials.json（まるごと） | あり | ✅  |
+| `gen_materials.py` | materials.md（まるごと）<br>materials.json（まるごと）<br>engine_tuner_milestones.md（一部の節）<br>engine_tuner_milestones2.md（一部の節） | あり | ✅  |
 | `gen_observe_manual.py` | observe_diag_manual.md（まるごと） | あり | ✅  |
 | `gen_p23_candidates.py` |  | ❌ なし | — （検証コマンドが無い） |
 | `gen_signal_families.py` | signal_families.json（まるごと）<br>signal_families.md（まるごと）<br>signal_families_approved.txt（まるごと） | あり | ✅  |
@@ -64,6 +64,8 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e38_flow.md` | `gen_flow.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_fix_map.md` | `gen_fix_map.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_manual.md` | `gen_engine_tuner_manual.py` | まるごと | ✅ |
+| `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones.md` | `gen_materials.py` | 一部の節 | ✅ |
+| `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md` | `gen_materials.py` | 一部の節 | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_requirements.md` | `gen_engine_tuner_requirements.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/entry_exit_matrix.md` | `gen_windows.py` | 一部の節 | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families.json` | `gen_exit_families.py` | まるごと | ✅ |
@@ -89,11 +91,15 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 **A＝明らかな漏れ**（名前が `gen_` で始まるのに名乗っていない）。
 **B＝要確認**（`.md` を書き出す処理が在るのに名乗っていない。凍結した研究の道具を含む）。
 
-**A＝0 本 ／ B＝26 本。**
+**A＝1 本 ／ B＝27 本。**
 
 ### A｜明らかな漏れ
 
-**0 本。**
+| 道具 | 理由 |
+|---|---|
+| `.claude/tools/gen_audit_index.py` | 名前が gen_ で始まるのに名乗っていない |
+
+**★この道具に `GENERATES` を足すか、文書を作らない道具だと確かめてください。**
 
 ### B｜要確認
 
@@ -101,6 +107,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 | 道具 | 理由 |
 |---|---|
+| `.claude/hooks/test_worklog_toolchange.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/dashboard/build_dashboard_json.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/doc_coverage_diag.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | md を書き出す処理が在るのに名乗っていない |
@@ -133,7 +140,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## 表4｜誰にも作られていない文書（人が手で書いているもの）
 
-**315 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
+**385 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
 
 <details><summary>全部を開く</summary>
 
@@ -142,23 +149,31 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/rules/experiment_result_procedure.md`
 - `.claude/rules/pdca_flow.md`
 - `.claude/rules/permanent_rules.md`
+- `.claude/rules/word_replacements.md`
 - `.claude/settings.json`
 - `.claude/settings.local.json`
 - `.claude/state/acceptance.md`
+- `.claude/state/acceptance.md.actual.md`
 - `.claude/state/acceptance_20260806_signal_table.md`
+- `.claude/state/chat_check_blocks.json`
+- `.claude/state/chat_check_last.json`
 - `.claude/state/current_request.md`
+- `.claude/state/design_approved.json`
 - `.claude/state/e37_sl_step1_result.md`
 - `.claude/state/e37_spike_sign_step2_result.md`
 - `.claude/state/exhaustion_check.md`
 - `.claude/state/flow_declaration.md`
 - `.claude/state/forward_action.md`
+- `.claude/state/g2_pass.json`
 - `.claude/state/goal_block.md`
 - `.claude/state/h2_pass.json`
-- `.claude/state/interpretation.md`
+- `.claude/state/next_step.bak2_20260824.md`
+- `.claude/state/next_step.bak_20260824.md`
 - `.claude/state/next_step.md`
 - `.claude/state/next_step_archive_202608.md`
 - `.claude/state/next_step_milestone2.md`
 - `.claude/state/observation_design.md`
+- `.claude/state/purpose_check.md`
 - `.claude/state/read_log.txt`
 - `.claude/state/search_log.txt`
 - `.claude/state/session_todo.md`
@@ -191,6 +206,15 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/state/session_worklog_20260813.md`
 - `.claude/state/session_worklog_20260815.md`
 - `.claude/state/session_worklog_20260816.md`
+- `.claude/state/session_worklog_20260818.md`
+- `.claude/state/session_worklog_20260819.md`
+- `.claude/state/session_worklog_20260820.md`
+- `.claude/state/session_worklog_20260821.md`
+- `.claude/state/session_worklog_20260822.md`
+- `.claude/state/session_worklog_20260823.md`
+- `.claude/state/session_worklog_20260824.md`
+- `.claude/state/session_worklog_20260825.md`
+- `.claude/state/session_worklog_20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit15_routeB_records.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit16_ml_options_review.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-19_audit17_phase_a_evaluation.md`
@@ -205,6 +229,11 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-07-27_engine_tuner_r3r7_design_cp1_audit_report.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-07-30_engine_tuner_step2_condition_format_cp3_audit_report.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-06_engine_tuner_purpose_enforcement_cp4_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-25_exit_fire_forms_design_cp7_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-25_exit_fire_forms_design_v2_cp7b_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-25_four_elements_gate_design_impl_cp6_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-26_permission_gate_r17_design_cp8_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-26_unordered_scan_docstring_match_report.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-15_ml_usage_options_overview.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-19_phase_a_cap_exit_cluster_threshold.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-26_phase1_v6_6cases_methodology_audit_request.md`
@@ -216,6 +245,11 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-07-30_engine_tuner_step2_condition_format_cp3_audit_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-06_engine_tuner_purpose_enforcement_cp4_audit_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-09_engine_tuner_milestone2_flow_cp5_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-25_exit_fire_forms_design_cp7_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-25_exit_fire_forms_design_v2_cp7b_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-25_four_elements_gate_design_impl_cp6_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-26_permission_gate_r17_design_cp8_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-26_unordered_scan_docstring_match_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_template.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/context/cat_v9_regime_map.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/context/project_spec.md`
@@ -352,6 +386,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/priority_v9_trade_logic_analysis.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/project_v9_progress.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/range_scalping_kb.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/regime_detection_kb.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/regime_research.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/regime_trial_log.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/seven_step_framework.md`
@@ -363,7 +398,20 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/v10_experiments.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ml_axis_catalog.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/pm_review_template.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/086a13df606d.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/09ce8d0cea4f.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/1d811f7d6951.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/24a453d6cf22.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/2b56024e711f.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/327e7f80008f.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/60462a0c5624.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/67da88ef9ca8.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/6ce1dccad1a5.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/6cf9f79eb179.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/76252628537d.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/7873e412f893.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/8d3c45b79b10.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/97598f50ee8d.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/D2_出口の状態機械.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E36_高ATR発火拡張.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E37_MVP_レンジ学習ゲート+確認済みエッジ.md`
@@ -395,14 +443,37 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E37_v8_選定計器の是正（母数一致+side別be+型相互排他）.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E37_v9_型×side_Entry_Exitセット共同選定（フェーズ1）.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E37_リファクタ（挙動不変・デバッグ後整理）.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/c2d1df43ef91.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/c783e0685012.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/d09563e7fd4c.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/doc-fix-v9test-20260822.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/e4b86277508f.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/e9fa2ae6725a.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/eb6f38734142.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/engine_tuner_組み立ての決まり（段2）.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/entry-gate.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/exit-fire-forms-20260825.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/exit-fire-forms-probe-fix-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/f09836454729.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/f8dcabb66248.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/forbidden-check-auto-20260826.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-20260824.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-v2-drawn-only-20260825.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/hold-mom-exit.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/milestone-req-accept-20260826.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-not-applicable-20260826.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-rebuild-20260826.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-map-r17-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/selftest-standalone-20260824.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-four-elements-gate-v58-20260825.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-permission-gate-20260824.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unordered-scan-scope-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/analysis_playbook.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/cat_requirements.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/condition_parts.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/contract_check_design.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/contract_check_design.md.actual.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e34_design.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e35_design.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e37_design.md`
@@ -413,15 +484,21 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_defects.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_fix_map.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_materials.md`
-- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones.md`
-- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_requirements.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_step2_condition_format.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_timing.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_trials_cumulative.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families_rules.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_opt_command_design.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/forbidden_check_design.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/baseline_after.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/baseline_before.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/recipe_level_both.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/recipe_state_only.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/ledger.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/logic_rules.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/material_ranking.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/milestone_req_map.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/research_e35_rangebot.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/session_log_20260609.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/session_log_20260610.md`

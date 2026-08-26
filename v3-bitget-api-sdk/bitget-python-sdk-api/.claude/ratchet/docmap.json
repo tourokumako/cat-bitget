@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "5dfaa764df480fc5",
+ "_本文の指紋": "f2f62f816924ef74",
  "body": {
   "docs": [
    {
@@ -111,6 +111,26 @@
     ],
     "実在": true,
     "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_manual.md"
+   },
+   {
+    "作る道具": [
+     {
+      "作り方": "一部の節",
+      "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_materials.py"
+     }
+    ],
+    "実在": true,
+    "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones.md"
+   },
+   {
+    "作る道具": [
+     {
+      "作り方": "一部の節",
+      "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_materials.py"
+     }
+    ],
+    "実在": true,
+    "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md"
    },
    {
     "作る道具": [
@@ -299,23 +319,31 @@
    ".claude/rules/experiment_result_procedure.md",
    ".claude/rules/pdca_flow.md",
    ".claude/rules/permanent_rules.md",
+   ".claude/rules/word_replacements.md",
    ".claude/settings.json",
    ".claude/settings.local.json",
    ".claude/state/acceptance.md",
+   ".claude/state/acceptance.md.actual.md",
    ".claude/state/acceptance_20260806_signal_table.md",
+   ".claude/state/chat_check_blocks.json",
+   ".claude/state/chat_check_last.json",
    ".claude/state/current_request.md",
+   ".claude/state/design_approved.json",
    ".claude/state/e37_sl_step1_result.md",
    ".claude/state/e37_spike_sign_step2_result.md",
    ".claude/state/exhaustion_check.md",
    ".claude/state/flow_declaration.md",
    ".claude/state/forward_action.md",
+   ".claude/state/g2_pass.json",
    ".claude/state/goal_block.md",
    ".claude/state/h2_pass.json",
-   ".claude/state/interpretation.md",
+   ".claude/state/next_step.bak2_20260824.md",
+   ".claude/state/next_step.bak_20260824.md",
    ".claude/state/next_step.md",
    ".claude/state/next_step_archive_202608.md",
    ".claude/state/next_step_milestone2.md",
    ".claude/state/observation_design.md",
+   ".claude/state/purpose_check.md",
    ".claude/state/read_log.txt",
    ".claude/state/search_log.txt",
    ".claude/state/session_todo.md",
@@ -348,6 +376,15 @@
    ".claude/state/session_worklog_20260813.md",
    ".claude/state/session_worklog_20260815.md",
    ".claude/state/session_worklog_20260816.md",
+   ".claude/state/session_worklog_20260818.md",
+   ".claude/state/session_worklog_20260819.md",
+   ".claude/state/session_worklog_20260820.md",
+   ".claude/state/session_worklog_20260821.md",
+   ".claude/state/session_worklog_20260822.md",
+   ".claude/state/session_worklog_20260823.md",
+   ".claude/state/session_worklog_20260824.md",
+   ".claude/state/session_worklog_20260825.md",
+   ".claude/state/session_worklog_20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit15_routeB_records.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit16_ml_options_review.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-19_audit17_phase_a_evaluation.md",
@@ -362,6 +399,11 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-07-27_engine_tuner_r3r7_design_cp1_audit_report.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-07-30_engine_tuner_step2_condition_format_cp3_audit_report.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-06_engine_tuner_purpose_enforcement_cp4_audit_report.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-25_exit_fire_forms_design_cp7_audit_report.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-25_exit_fire_forms_design_v2_cp7b_audit_report.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-25_four_elements_gate_design_impl_cp6_audit_report.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-26_permission_gate_r17_design_cp8_audit_report.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-26_unordered_scan_docstring_match_report.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-15_ml_usage_options_overview.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-19_phase_a_cap_exit_cluster_threshold.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-26_phase1_v6_6cases_methodology_audit_request.md",
@@ -373,6 +415,11 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-07-30_engine_tuner_step2_condition_format_cp3_audit_request.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-06_engine_tuner_purpose_enforcement_cp4_audit_request.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-09_engine_tuner_milestone2_flow_cp5_audit_request.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-25_exit_fire_forms_design_cp7_audit_request.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-25_exit_fire_forms_design_v2_cp7b_audit_request.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-25_four_elements_gate_design_impl_cp6_audit_request.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-26_permission_gate_r17_design_cp8_audit_request.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-26_unordered_scan_docstring_match_request.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_template.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/context/cat_v9_regime_map.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/context/project_spec.md",
@@ -509,6 +556,7 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/priority_v9_trade_logic_analysis.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/project_v9_progress.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/range_scalping_kb.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/regime_detection_kb.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/regime_research.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/regime_trial_log.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/seven_step_framework.md",
@@ -520,7 +568,20 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/memory/v10_experiments.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ml_axis_catalog.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/pm_review_template.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/086a13df606d.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/09ce8d0cea4f.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/1d811f7d6951.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/24a453d6cf22.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/2b56024e711f.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/327e7f80008f.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/60462a0c5624.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/67da88ef9ca8.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/6ce1dccad1a5.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/6cf9f79eb179.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/76252628537d.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/7873e412f893.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/8d3c45b79b10.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/97598f50ee8d.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/D2_出口の状態機械.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E36_高ATR発火拡張.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E37_MVP_レンジ学習ゲート+確認済みエッジ.md",
@@ -552,14 +613,37 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E37_v8_選定計器の是正（母数一致+side別be+型相互排他）.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E37_v9_型×side_Entry_Exitセット共同選定（フェーズ1）.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E37_リファクタ（挙動不変・デバッグ後整理）.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/c2d1df43ef91.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/c783e0685012.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/d09563e7fd4c.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/doc-fix-v9test-20260822.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/e4b86277508f.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/e9fa2ae6725a.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/eb6f38734142.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/engine_tuner_組み立ての決まり（段2）.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/entry-gate.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/exit-fire-forms-20260825.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/exit-fire-forms-probe-fix-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/f09836454729.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/f8dcabb66248.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/forbidden-check-auto-20260826.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-20260824.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-v2-drawn-only-20260825.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/hold-mom-exit.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/milestone-req-accept-20260826.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-not-applicable-20260826.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-rebuild-20260826.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-map-r17-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/selftest-standalone-20260824.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-four-elements-gate-v58-20260825.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-permission-gate-20260824.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unordered-scan-scope-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/analysis_playbook.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/cat_requirements.json",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/condition_parts.json",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/contract_check_design.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/contract_check_design.md.actual.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e34_design.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e35_design.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e37_design.md",
@@ -570,15 +654,21 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_defects.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_fix_map.json",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_materials.md",
-   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones.md",
-   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_requirements.json",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_step2_condition_format.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_timing.json",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_trials_cumulative.json",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families_rules.json",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_opt_command_design.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/forbidden_check_design.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/baseline_after.json",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/baseline_before.json",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/recipe_level_both.json",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/recipe_state_only.json",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/ledger.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/logic_rules.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/material_ranking.json",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/milestone_req_map.json",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/research_e35_rangebot.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/session_log_20260609.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/session_log_20260610.md",
@@ -612,14 +702,14 @@
   ],
   "tools": [
    {
-    "一言": "",
+    "一言": "❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9e975d2abeef ／ 源から作り直すと 378c0153d5b6）",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/improvement_arc.md"
      }
     ],
-    "検証の結果": "✅",
+    "検証の結果": "❌",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/gen_improvement_arc.py"
    },
@@ -748,14 +838,14 @@
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_exit_families.py"
    },
    {
-    "一言": "",
+    "一言": "   直し方: python3 scripts/priority_rebuild/gen_filemap.py --write",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/filemap.md"
      }
     ],
-    "検証の結果": "✅",
+    "検証の結果": "❌",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_filemap.py"
    },
@@ -793,6 +883,14 @@
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/materials.json"
+     },
+     {
+      "作り方": "一部の節",
+      "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones.md"
+     },
+     {
+      "作り方": "一部の節",
+      "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md"
      }
     ],
     "検証の結果": "✅",
@@ -880,6 +978,16 @@
    }
   ],
   "unnamed": [
+   {
+    "理由": "md を書き出す処理が在るのに名乗っていない",
+    "種類": "B｜要確認",
+    "道具": ".claude/hooks/test_worklog_toolchange.py"
+   },
+   {
+    "理由": "名前が gen_ で始まるのに名乗っていない",
+    "種類": "A｜明らかな漏れ",
+    "道具": ".claude/tools/gen_audit_index.py"
+   },
    {
     "理由": "md を書き出す処理が在るのに名乗っていない",
     "種類": "B｜要確認",
