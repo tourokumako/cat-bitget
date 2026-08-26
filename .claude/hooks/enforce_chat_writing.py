@@ -62,6 +62,8 @@ import sys
 ROOT = "/Users/tachiharamasako/Documents/GitHub/cat-bitget"
 STATE = os.path.join(ROOT, ".claude", "state")
 COUNT = os.path.join(STATE, "chat_check_blocks.json")
+LAST = os.path.join(STATE, "chat_check_last.json")       # ★2026-08-26 新設＝前の返信の違反の型
+DRAFT = os.path.join(STATE, "chat_draft.md")             # ★2026-08-26 新設＝長い返信の下書き
 PROJECTS = os.path.expanduser("~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget")
 
 # ★長さの2つは、わざとゆるくしてある（まこさん指示 2026-08-18・逐語
@@ -70,7 +72,15 @@ PROJECTS = os.path.expanduser("~/.claude/projects/-Users-tachiharamasako-Documen
 #   ＝形がひどく崩れたときだけ止まる歯止めとして置く。
 MAX_SENTENCE = 120      # 1つの文の上限（字）
 MAX_PARAGRAPH = 300     # 箇条書きにせずに書いてよい段落の上限（字）
-MAX_BLOCKS = 2          # 1回のやり取りで止める回数の上限
+MAX_BLOCKS = 1          # 1回のやり取りで止める回数の上限（★2026-08-26 に 2 → 1）
+
+# ★2026-08-26 新設（まこさん指示・逐語「同じ文章を連続で出すのをやめてほしいので、この修正をやる」）
+#   違反を2種類に分ける。
+#     重い＝報告の中身が減っている（書き換えたファイルの名前が返信に出ていない）。1回目から止める。
+#     軽い＝形だけ（文の長さ・段落の長さ・名前の羅列・結論の位置）。1回目は止めず、記録して通す。
+#           次の返信でも同じ型が出たら止める（＝直していない）。
+KIND_HEAVY = "報告漏れ"
+KIND_LIGHT = ("名前の羅列", "文が長い", "段落が長い", "結論の位置")
 HEAD_WORDS = ("決めてほしいこと", "決めることはありません")
 HEAD_LINES = 3          # 先頭から何行目までに上の言葉が在ればよいか
 
@@ -323,6 +333,48 @@ def check_words(text, path=None):
     return out
 
 
+def check_detail(text, changed=None):
+    """（画面に出す文字列, 違反の型の集合）を返す（★2026-08-26 新設）。
+
+    型の名前は KIND_HEAVY・KIND_LIGHT のとおり。止めるかどうかの判定（gate_decision）が これを使う。
+    ★判定の中身は check_text と同じ関数を呼ぶ＝二重に作らない（検査がずれない）。
+    """
+    kinds = set()
+    if check_name_list(text):
+        kinds.add("名前の羅列")
+    if check_sentence(text):
+        kinds.add("文が長い")
+    if check_paragraph(text):
+        kinds.add("段落が長い")
+    if check_conclusion_first(text):
+        kinds.add("結論の位置")
+    if check_reported_files(text, changed):
+        kinds.add(KIND_HEAVY)
+    return check_text(text, changed), kinds
+
+
+def gate_decision(kinds, last_kinds, blocked_n):
+    """止めるか通すかを決める（★2026-08-26 新設・番人がここを直に試す）。
+
+    戻り: ("block", 理由) か ("pass", 理由)
+      ・違反が無い                      → pass
+      ・止めた回数が上限に達している      → pass（まこさんの目が最後の関所）
+      ・重い違反（報告漏れ）が在る        → block
+      ・軽い違反だけで、前の返信と同じ型   → block（直していない）
+      ・軽い違反だけで、前の返信に無い型   → pass（1回目は通す＝同じ文章を続けて出さない）
+    """
+    if not kinds:
+        return "pass", "違反なし"
+    if blocked_n >= MAX_BLOCKS:
+        return "pass", f"すでに {blocked_n} 回 止めた"
+    if KIND_HEAVY in kinds:
+        return "block", "報告の中身が減っている"
+    same = kinds & set(last_kinds or [])
+    if same:
+        return "block", "前の返信と同じ型を繰り返している: " + "・".join(sorted(same))
+    return "pass", "形だけの違反の1回目（記録して次の返信で見る）"
+
+
 def check_text(text, changed=None):
     # ★check_head（先頭に「決めてほしいこと」を求める検査）は 2026-08-18 に外した。
     #   まこさんの指摘＝決めてほしいことは毎回 発生しない。関数は残すが、判定には使わない。
@@ -389,6 +441,19 @@ def last_chat_text(path, want_files=False):
             last_user = i
     uid = rows[last_user].get("uuid") if last_user >= 0 else None
 
+    # ★2026-08-26（63回目・まこさん指示「不具合の109と110はすぐに直してほしい」）＝109番の直し。
+    #   直す前＝編集の道具の呼び出しを拾うだけで、それが通ったか hook に止められたかを見ていなかった。
+    #   ＝1バイトも変わっていないファイルの名前を、報告に書かされた（同じ日に2回 起きた）。
+    #   直した後＝呼び出しの id ごとに結果（tool_result）を見て、止められたもの（is_error）は数えない。
+    blocked = set()
+    for r in rows[last_user + 1:]:
+        if r.get("type") != "user":
+            continue
+        for b in (r.get("message") or {}).get("content") or []:
+            if isinstance(b, dict) and b.get("type") == "tool_result" and b.get("is_error"):
+                if b.get("tool_use_id"):
+                    blocked.add(b["tool_use_id"])
+
     text, files = None, []
     for r in rows[last_user + 1:]:
         if r.get("type") != "assistant":
@@ -399,6 +464,8 @@ def last_chat_text(path, want_files=False):
             if b.get("type") == "text" and b.get("text", "").strip():
                 text = b["text"]
             if b.get("type") == "tool_use" and b.get("name") in ("Write", "Edit", "MultiEdit", "NotebookEdit"):
+                if b.get("id") in blocked:
+                    continue                     # ★止められた＝ファイルは1バイトも変わっていない
                 fp = (b.get("input") or {}).get("file_path") or ""
                 if fp:
                     n = os.path.basename(fp)
@@ -425,6 +492,26 @@ def record_block(uid, n):
         pass
 
 
+def load_last_kinds():
+    """前の返信の違反の型を読む（★2026-08-26 新設）。
+
+    ★まこさんの発言をまたいでも持ち越す。理由＝またぐたびに忘れると、
+      「文が長い」を毎回 1回ずつ出せば永久に止まらない＝検査が死ぬ。
+    """
+    try:
+        return set(json.load(open(LAST, encoding="utf-8")).get("kinds") or [])
+    except Exception:
+        return set()
+
+
+def save_last_kinds(kinds):
+    try:
+        with open(LAST, "w", encoding="utf-8") as f:
+            json.dump({"kinds": sorted(kinds)}, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+
 # ---------------- hook の入口 ----------------
 
 def hook_main():
@@ -445,28 +532,82 @@ def hook_main():
     if not text:
         sys.exit(0)                      # 本文が無いターン（道具だけ動かした）は対象外
 
-    bad = check_text(text, changed)
+    bad, kinds = check_detail(text, changed)
     if not bad:
+        save_last_kinds(set())
         sys.exit(0)
 
     n = blocked_count(uid)
-    if n >= MAX_BLOCKS:
-        print(f"⚠️ [チャット文章の検査] {n} 回 止めたので、今回は通します。まこさんの目で見てください。\n"
-              f"   直らなかった点: {bad}", file=sys.stderr)
+    last = load_last_kinds()
+    what, why = gate_decision(kinds, last, n)
+    save_last_kinds(kinds)
+
+    if what == "pass":
+        # ★2026-08-26＝形だけの違反の1回目は止めない（同じ長文を続けて出さないため）。
+        #   ただし黙って通さない＝指摘は画面に出す。次の返信で同じ型が出たら止める。
+        print(f"⚠️ [チャット文章の検査] 今回は通します（{why}）。\n"
+              f"   直すところ: {bad}\n"
+              f"   ★次の返信でも同じ型が出たら止めます。", file=sys.stderr)
         sys.exit(0)
 
     record_block(uid, n + 1)
     e = sys.stderr
     print("🔒 [チャット文章の検査・Stop hook] いまの返信は、まこさんに伝わる形になっていません。", file=e)
     print("   まこさん指示 2026-08-18「チャットに出すCCの文章が私に伝わらない」「強制できないの？」。", file=e)
+    print(f"   止めた理由: {why}", file=e)
     print("", file=e)
     print(f"直すところ: {bad}", file=e)
     print("", file=e)
-    print("対処: 同じ内容を減らさずに、形だけ直して、もう一度チャットに書く。", file=e)
+    print("対処: ★前の返信を貼り直さない（まこさん指示 2026-08-26「同じ文章を連続で出すのをやめてほしい」）。", file=e)
+    print("  ・**足りない所・直した所だけ**を短く出す。長い報告を丸ごと貼り直さない。", file=e)
     print("  ・報告の中身は減らさない（まこさん 2026-08-18「私はすべての作業内容を把握したい」）。", file=e)
-    print("  ・1件を1行以上で書く。その行に「何をしたか」と「どうなったか」を入れる。", file=e)
-    print("  ・長くなるときは箇条書きにする。", file=e)
+    print("    ＝抜けていたファイル名や説明は、この短い返信の中で足す。", file=e)
+    print("  ・長い返信を出す前は、下書きを次の口へ通す（出してから止められるのをやめる）:", file=e)
+    print(f"      {DRAFT} に全文を Write する（書き込みの瞬間に検査が走る）", file=e)
     print(f"（止めるのは1回のやり取りにつき {MAX_BLOCKS} 回まで。それ以上は通します）", file=e)
+    sys.exit(2)
+
+
+# ---------------- 下書きの検査（PreToolUse・★2026-08-26 新設） ----------------
+#
+# なぜ要るか（まこさんの問い 2026-08-26・逐語「１文の長さは書く前にどうにかできないのか？」）:
+#   Stop hook は、私の文章が まこさんの画面に出た「後」にしか走らない。
+#   だから止めると、書き直した文章がもう一度 並ぶ＝同じ文章が連続で出る。
+#   道具を使う「前」なら止められる。だから長い返信は下書きのファイルに一度 書く。
+#   その書き込みの瞬間に、この検査が走る。ここで止まっても、まこさんの画面には何も出ていない。
+#
+# 限界（正直に）:
+#   下書きを作らずに直接チャットへ出す道は塞げない（私の文章の前に走る hook は存在しない）。
+#   ＝これは「守る回数を増やす」もので、「守らせる」ものではない。
+
+def pretool_main():
+    raw = sys.stdin.read()
+    try:
+        data = json.loads(raw)
+    except Exception:
+        sys.exit(0)
+    ti = data.get("tool_input") or {}
+    fp = ti.get("file_path") or ""
+    if os.path.basename(fp) != os.path.basename(DRAFT):
+        sys.exit(0)
+
+    name = data.get("tool_name") or ""
+    if name in ("Edit", "MultiEdit"):
+        print("🔒 [下書きの検査] 下書きは Write で全文を書いてください（Edit だと全文を検査できません）。",
+              file=sys.stderr)
+        sys.exit(2)
+
+    text = ti.get("content") or ""
+    if not text.strip():
+        sys.exit(0)
+    bad = check_text(text)
+    if not bad:
+        sys.exit(0)
+    e = sys.stderr
+    print("🔒 [下書きの検査・PreToolUse] この下書きは、まこさんに伝わる形になっていません。", file=e)
+    print("   ★まこさんの画面にはまだ何も出ていません。ここで直せば、同じ文章が並びません。", file=e)
+    print("", file=e)
+    print(f"直すところ: {bad}", file=e)
     sys.exit(2)
 
 
@@ -478,9 +619,9 @@ def selftest():
         ("正しい文章は通る",
          ok_head + "- engine_tuner の乱数をプログラムで数えました。57件ありました。\n- 法則の表を読む回数は0回でした。\n",
          None),
-        ("★言い換えの表に載っている語を使うと止まる",
+        ("★語の検査は外してある＝表に載っている語を使っても止まらない（2026-08-24 まこさん指示）",
          "直しました。\n\n- 乱数を機械で数えました。57件でした。\n",
-         "この語は使わないと決めている"),
+         None),
         ("言い換えた言い方なら通る",
          "直しました。\n\n- 乱数をプログラムで数えました。57件でした。\n",
          None),
@@ -555,9 +696,12 @@ def selftest():
             ng += 1
 
     # ★2026-08-20 の直しの確かめ（まこさん承認の3件に対応）
-    multi_text = "直しました。\n\n- 乱数を機械で数えました。\n- 私は" + "あ" * 130 + "。\n"
+    #   ★2026-08-26 に見本を差し替えた＝語の検査を外した（2026-08-24）ので、
+    #     別の2件（名前を並べただけの行 ＋ 長い文）で「2件が一度に出る」ことを確かめる。
+    multi_text = ("直しました。\n\n乱数の呼び出し 57・法則の表を読む回数 0・上限5つ・表2つ\n"
+                  + "私は" + "あ" * 130 + "。\n")
     got = check_text(multi_text)
-    good = (got is not None and "この語は使わないと決めている" in got
+    good = (got is not None and "名前を並べただけ" in got
             and "字の文がある" in got and "全部で" in got)
     print(f"  {'✅' if good else '❌'} ★直し①＝違反が2件あれば、2件とも一度に出る"
           + ("" if good else f"   ← 出た理由: {got}"))
@@ -583,7 +727,67 @@ def selftest():
     if not good:
         ng += 1
 
-    total = len(cases) + len(extra) + 2
+    # ★2026-08-26 の直しの確かめ（まこさん指示「同じ文章を連続で出すのをやめてほしい」）
+    long_one = "直しました。\n\n私は" + "あ" * 130 + "。\n"
+    miss_one = "直しました。\n\n- 検査を1つ足しました。\n"
+
+    gate_cases = [
+        ("★直し②＝形だけの違反は、1回目は止めない",
+         gate_decision({"文が長い"}, set(), 0), "pass"),
+        ("★直し②＝同じ型を2回 続けると止まる",
+         gate_decision({"文が長い"}, {"文が長い"}, 0), "block"),
+        ("★直し②＝前と違う型なら、また1回は通る",
+         gate_decision({"段落が長い"}, {"文が長い"}, 0), "pass"),
+        ("★直し③＝報告の中身が減っていたら、1回目から止める",
+         gate_decision({KIND_HEAVY}, set(), 0), "block"),
+        ("★直し④＝止めるのは1回まで（2回目は通す）",
+         gate_decision({KIND_HEAVY}, set(), MAX_BLOCKS), "pass"),
+        ("違反が無ければ通る",
+         gate_decision(set(), {"文が長い"}, 0), "pass"),
+    ]
+    for name, got, want in gate_cases:
+        good = (got[0] == want)
+        print(f"  {'✅' if good else '❌'} {name}" + ("" if good else f"   ← 出た答え: {got}"))
+        if not good:
+            ng += 1
+
+    # 違反の型が正しく付くか（判定の入口）
+    _m, k1 = check_detail(long_one)
+    _m, k2 = check_detail(miss_one, ["engine_tuner_gen.py"])
+    for name, got, want in [("長い文には「文が長い」の型が付く", k1, {"文が長い"}),
+                            ("報告漏れには「報告漏れ」の型が付く", k2, {KIND_HEAVY})]:
+        good = (got == want)
+        print(f"  {'✅' if good else '❌'} {name}" + ("" if good else f"   ← 出た型: {got}"))
+        if not good:
+            ng += 1
+
+    # ★2026-08-26＝109番の直しの確かめ（止められた編集は「書き換えた」に数えない）
+    rows109 = [
+        {"type": "user", "uuid": "U1", "message": {"content": "やって"}},
+        {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "T-ok", "name": "Edit",
+             "input": {"file_path": "/x/tootta.py"}},
+            {"type": "tool_use", "id": "T-ng", "name": "Edit",
+             "input": {"file_path": "/x/tomerareta.py"}}]}},
+        {"type": "user", "message": {"content": [
+            {"type": "tool_result", "tool_use_id": "T-ok", "content": "ok"},
+            {"type": "tool_result", "tool_use_id": "T-ng", "is_error": True,
+             "content": "PreToolUse:Edit hook error: ..."}]}},
+        {"type": "assistant", "message": {"content": [{"type": "text", "text": "直しました。"}]}},
+    ]
+    with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False, encoding="utf-8") as f:
+        for r in rows109:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+        tmp109 = f.name
+    _t, _u, files109 = last_chat_text(tmp109, want_files=True)
+    os.unlink(tmp109)
+    good = (files109 == ["tootta.py"])
+    print(f"  {'✅' if good else '❌'} ★109番＝hook に止められた編集は『書き換えた』に数えない"
+          + ("" if good else f"   ← 出たファイル: {files109}"))
+    if not good:
+        ng += 1
+
+    total = len(cases) + len(extra) + 3 + len(gate_cases) + 2
     print(f"\n番人: {total - ng}/{total} pass")
     sys.exit(1 if ng else 0)
 
@@ -615,4 +819,6 @@ if __name__ == "__main__":
         selftest()
     if "--check" in sys.argv:
         check_draft()
+    if "--pretool" in sys.argv:
+        pretool_main()
     hook_main()

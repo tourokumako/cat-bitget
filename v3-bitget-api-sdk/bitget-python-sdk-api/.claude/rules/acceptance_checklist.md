@@ -8,38 +8,53 @@
 
 ---
 
+## ★項目の群（2026-08-26・まこさん指示「見出しを2つの群に分け、道具が相手を見て、要る方だけを出す」）
+
+**なぜ分けたか**＝この一覧は 2026-06-18 に「戦略の実験の出戻り」を防ぐために作られました。**だから売買のロジックを触ることを前提にした項目が多く、道具や hook や文書を直す設計では、大半が「非該当」になります。**
+**実測（2026-08-26）**＝道具を直す設計書で「非該当」と書いた件数＝13件。**非該当を毎回13件 書いていると、中身を見ずに書き流す癖がつき、本当に該当する1件を見落とします。**
+
+| 印 | 意味 | 件数 |
+|---|---|---|
+| **【群1】** | **どんな設計でも見出しを必ず書く**（hook が止めるものを含む） | **12件** |
+| **【群2】** | **売買のロジックか審判を触るときだけ、1件ずつ照合する。**触らないときは「まとめて非該当（理由）」の1行でよい | **18件** |
+
+**群2 を1件ずつ照合する相手（TARGET がこれらのとき）**＝`e35_*` / `e36_*` / `e37_*` / `e38_*` / `strat_*` / `measure_*` / `score.py` / `eval_engine.py` / `report.py` / `analyze.py` / `precheck.py`。
+**★この印を読んで出し分けるのは `.claude/tools/list_banned_words.py` です**（`acceptance` を指定すると、要る群だけを出します）。
+
+---
+
 ## A. ヘッダ（hook が物理強制・無いと Write ブロック）
-- ☐ `TARGET: scripts/priority_rebuild/<1ファイル>.py`（編集する実体1ファイル。複数ファイルに跨るなら分割 or 主ファイル＋やることに明記）
-- ☐ `DESIGN_CONTRACT`（fenced json）= `impl_file` / `self_check_calls`（実装ソースに文字列で在る識別子）/ 必要なら `must_combine`
+- ☐ 【群1】 `TARGET: scripts/priority_rebuild/<1ファイル>.py`（編集する実体1ファイル。複数ファイルに跨るなら分割 or 主ファイル＋やることに明記）
+- ☐ 【群1】 `DESIGN_CONTRACT`（fenced json）= `impl_file` / `self_check_calls`（実装ソースに文字列で在る識別子）/ 必要なら `must_combine`
 
 ## B. 深掘り4点（hook が見出し語を物理強制・改善案の前に）
-- ☐ **① 真因**（root cause・損/不足の構造的原因）
-- ☐ **② 期待値分解**（勝率 / 平均利益 / 敗率 / 平均損失 のどれを何 pt 動かすか）
-- ☐ **③ root か symptom か**（最易パッチ＝symptom 患いを避ける・Y/N＋理由）
-- ☐ **④ ベースアップ**（参照した KB / WebSearch の証跡・記憶ベース禁止）
+- ☐ 【群1】 **① 真因**（root cause・損/不足の構造的原因）
+- ☐ 【群1】 **② 期待値分解**（勝率 / 平均利益 / 敗率 / 平均損失 のどれを何 pt 動かすか）
+- ☐ 【群1】 **③ root か symptom か**（最易パッチ＝symptom 患いを避ける・Y/N＋理由）
+- ☐ 【群1】 **④ ベースアップ**（参照した KB / WebSearch の証跡・記憶ベース禁止）
 
 ## C. 変更の単位（H16・1ターン1変更）
-- ☐ 変更は **1レバー**か（複数混ぜない）
-- ☐ **既定 OFF で恒等**（新パラメータ None 等で既存ベースと完全一致）を設計で保証し、自己検査で確認するか
-- ☐ 過去に破棄した失敗（lessons / 破棄した E / 6軸）を再演していないか（する場合は差分を1行）
-- ☐ **★疑似シミュ由来の固定値ゼロ宣言（必須・require_acceptance hook が物理強制・まこさん承認 2026-06-26）**: probe（疑似シミュ・静的後処理）は **あたりを付ける専用＝決定的根拠でない**。設計の閾値/段数/パラメータの出所を1つずつ明示する。`★疑似シミュ由来の固定値ゼロ` の見出しを acceptance に立て、(a) 各値は probe で出した特定数値でなく **実エンジンの学習窓選定** or **分析の構造由来の a-priori** か (b) probe の数値（θ=X・段数=N・AUC=Y 等）を設計の固定値に焼いていないか (c) 採否は probe でなく **実エンジン両窓 score.py の数字**で決めると明記。背景＝2026-06-26 add ゲート設計で probe の θ≤0.4/段数3 を「クリア」扱いし焼き込んだ事案（STRUCT_SL 近似 +$895 が実エンジンで消失した轍と同型）。
-- ☐ **★ARC マーカー（改善アーク自動生成の源・まこさん指示 2026-06-27）**: acceptance に機械可読 ARC マーカーを1ブロック入れる＝承認時に approve_impl が `.claude/ratchet/acceptance_archive/<iter>.md`（git 永続・指紋保護）へ凍結保存し、`gen_improvement_arc.py` が next_step の改善アーク表を**自動生成**する（CC は改善アークを手書きしない＝改ざん不可）。形式: `<!-- ARC order=N iter="..." 前提="nofloor ON/OFF" 採否="採用/採用せず/採用に至らず" base_csv="..." score_csv="..." train_csv="..." 狙い="ledger 方針の逐語" 内容="レバー/機構" 方法="検証方針" -->`。**数字（結果/採点窓）は書かない**（score.py が source＝改ざん不可・採否ラベルの自己検証）。採点後に score_csv/train_csv の実 stem を埋め、ledger にも同マーカーを残す（過去 iter フォールバック）。
+- ☐ 【群1】 変更は **1レバー**か（複数混ぜない）
+- ☐ 【群2】 **既定 OFF で恒等**（新パラメータ None 等で既存ベースと完全一致）を設計で保証し、自己検査で確認するか
+- ☐ 【群1】 過去に破棄した失敗（lessons / 破棄した E / 6軸）を再演していないか（する場合は差分を1行）
+- ☐ 【群1】 **★疑似シミュ由来の固定値ゼロ宣言（必須・require_acceptance hook が物理強制・まこさん承認 2026-06-26）**: probe（疑似シミュ・静的後処理）は **あたりを付ける専用＝決定的根拠でない**。設計の閾値/段数/パラメータの出所を1つずつ明示する。`★疑似シミュ由来の固定値ゼロ` の見出しを acceptance に立て、(a) 各値は probe で出した特定数値でなく **実エンジンの学習窓選定** or **分析の構造由来の a-priori** か (b) probe の数値（θ=X・段数=N・AUC=Y 等）を設計の固定値に焼いていないか (c) 採否は probe でなく **実エンジン両窓 score.py の数字**で決めると明記。背景＝2026-06-26 add ゲート設計で probe の θ≤0.4/段数3 を「クリア」扱いし焼き込んだ事案（STRUCT_SL 近似 +$895 が実エンジンで消失した轍と同型）。
+- ☐ 【群1】 **★ARC マーカー（改善アーク自動生成の源・まこさん指示 2026-06-27）**: acceptance に機械可読 ARC マーカーを1ブロック入れる＝承認時に approve_impl が `.claude/ratchet/acceptance_archive/<iter>.md`（git 永続・指紋保護）へ凍結保存し、`gen_improvement_arc.py` が next_step の改善アーク表を**自動生成**する（CC は改善アークを手書きしない＝改ざん不可）。形式: `<!-- ARC order=N iter="..." 前提="nofloor ON/OFF" 採否="採用/採用せず/採用に至らず" base_csv="..." score_csv="..." train_csv="..." 狙い="ledger 方針の逐語" 内容="レバー/機構" 方法="検証方針" -->`。**数字（結果/採点窓）は書かない**（score.py が source＝改ざん不可・採否ラベルの自己検証）。採点後に score_csv/train_csv の実 stem を埋め、ledger にも同マーカーを残す（過去 iter フォールバック）。
 
 ## D. ★審判（score.py / eval_engine）整合 — 出戻り最頻ポイント（2026-06-18 追加）
-- ☐ **新しい exit_reason を出すか？** → YES なら「やること」に **score.py の MAKER_EXIT_REASONS / TAKER_EXIT_REASONS へ登録 ＋ 既知答えテスト再pass」**を含める（H3/H13・§2.9 未登録 exit_reason は採点・分析を STOP）。maker/taker は約定方式で判定（指値 resting=maker / 成行・トリガ=taker）。
-- ☐ **entry/exit のコスト種別（maker/taker）が変わるか？** → eval_engine / score の分類と一致するか確認
-- ☐ **judge（score.py / eval_engine）の計算式に触れるか？** → 原則触らない（H13）。触るなら既知答えテスト再pass を必須に
-- ☐ **新スクリプト名・出力CSV名は pdca 命名規約に乗るか**（実験= strat_/train_/measure_/e3N_ ／ 分析= *_probe / *_deep_analysis ／ 審判= score.py CLI or score_*.py）。外れる名前は pdca_mark に登録 or 改名（pdca_flow.md §5）
-- ☐ **使用パラメータ・Entry/Exit ロジックのサイドカー出力を含めるか**（新戦略は必須・2026-06-19）→ 売買記録CSVの隣に `<stem>_params.json` を `params_sidecar.write_sidecar` で出す。sections に **その戦略で実際に使った** 指標/閾値/TP/SL/TimeExit/期間/サイズ ＋ **Entry ロジック・Exit ロジック（ルールの流れ・exit_reason）** を入れる。report.py 節0 が戦略名非依存で自動表示する（E35 が手本・E36/E37 も同パターン）。read 専用メタ＝net 計算に不関与。
-- ☐ **出力は共通の書き出し処理を使うか（命名/archive/上書き防止の踏襲・2026-06-22 まこさん確定・全戦略汎用）**→ 新しい戦略（e37/38/39…）は売買記録を共通の書き出し処理 `_output_and_report`（いま e35 内・将来は中立モジュール・`ratchet_io` を呼ぶ）で出す＝タグ連番命名（`--tag` で `_<tag>_<NNN>`・タグ無=安定名 base）・新実験前の旧実験 archive・書き出し前の上書き防止を**自動で踏襲**する（戦略ごとに命名/archive を手書きしない）。report/analyze/png も `ratchet_io.archive_if_exists` で上書きしない。詳細＝analysis_playbook §3.1。
-- ☐ **共通土台 `strat_base.py` を import するか（2026-06-23 新設・中立）**→ 新戦略は `strat_base` から ①load_5m ／ ⑤_verify_cap・_funding_cost ／ ⑥_output_and_report ／ ⑦取引所・予算定数 を import し、戦略固有ロジック（箱・売買エンジン・hold-ML 判別）だけ自前で書く（個別に命名/archive/コスト定数を書かない＝E35/E36 が手本）。
+- ☐ 【群2】 **新しい exit_reason を出すか？** → YES なら「やること」に **score.py の MAKER_EXIT_REASONS / TAKER_EXIT_REASONS へ登録 ＋ 既知答えテスト再pass」**を含める（H3/H13・§2.9 未登録 exit_reason は採点・分析を STOP）。maker/taker は約定方式で判定（指値 resting=maker / 成行・トリガ=taker）。
+- ☐ 【群2】 **entry/exit のコスト種別（maker/taker）が変わるか？** → eval_engine / score の分類と一致するか確認
+- ☐ 【群2】 **judge（score.py / eval_engine）の計算式に触れるか？** → 原則触らない（H13）。触るなら既知答えテスト再pass を必須に
+- ☐ 【群2】 **新スクリプト名・出力CSV名は pdca 命名規約に乗るか**（実験= strat_/train_/measure_/e3N_ ／ 分析= *_probe / *_deep_analysis ／ 審判= score.py CLI or score_*.py）。外れる名前は pdca_mark に登録 or 改名（pdca_flow.md §5）
+- ☐ 【群2】 **使用パラメータ・Entry/Exit ロジックのサイドカー出力を含めるか**（新戦略は必須・2026-06-19）→ 売買記録CSVの隣に `<stem>_params.json` を `params_sidecar.write_sidecar` で出す。sections に **その戦略で実際に使った** 指標/閾値/TP/SL/TimeExit/期間/サイズ ＋ **Entry ロジック・Exit ロジック（ルールの流れ・exit_reason）** を入れる。report.py 節0 が戦略名非依存で自動表示する（E35 が手本・E36/E37 も同パターン）。read 専用メタ＝net 計算に不関与。
+- ☐ 【群2】 **出力は共通の書き出し処理を使うか（命名/archive/上書き防止の踏襲・2026-06-22 まこさん確定・全戦略汎用）**→ 新しい戦略（e37/38/39…）は売買記録を共通の書き出し処理 `_output_and_report`（いま e35 内・将来は中立モジュール・`ratchet_io` を呼ぶ）で出す＝タグ連番命名（`--tag` で `_<tag>_<NNN>`・タグ無=安定名 base）・新実験前の旧実験 archive・書き出し前の上書き防止を**自動で踏襲**する（戦略ごとに命名/archive を手書きしない）。report/analyze/png も `ratchet_io.archive_if_exists` で上書きしない。詳細＝analysis_playbook §3.1。
+- ☐ 【群2】 **共通土台 `strat_base.py` を import するか（2026-06-23 新設・中立）**→ 新戦略は `strat_base` から ①load_5m ／ ⑤_verify_cap・_funding_cost ／ ⑥_output_and_report ／ ⑦取引所・予算定数 を import し、戦略固有ロジック（箱・売買エンジン・hold-ML 判別）だけ自前で書く（個別に命名/archive/コスト定数を書かない＝E35/E36 が手本）。
 
 ## E. §4.6 ハード制約 照合（該当する H を1つずつ・非該当は「非該当」と明記）
-- ☐ **H1** cap 合計 0.12 BTC（_verify_cap / score.assert_hard_constraints で実測）
-- ☐ **H2** leak なし（特徴量 t 時点・`shift(-`/`center=True` grep assert・学習末 < 採点始）
-- ☐ **H5** 約定モデル（entry 指値maker・TTL3 / 出口 TP・SL=maker / TIME・能動=taker+slip）
-- ☐ **H6** 価格非依存（%/比率/BTC 単位・USD 絶対値の閾値/ラベル禁止）
-- ☐ **H8** 期間分割（学習窓で fit・採点窓は評価のみ・封印は不参照・値決め窓で選んだ値は確認窓で選び直さない）。**実値は下の機械生成の表**＝`gen_windows.py` が periods.py から差し込む（手で数字を書かない・2026-07-27）。意味と経緯＝[windows.md](../ratchet/windows.md)。
+- ☐ 【群2】 **H1** cap 合計 0.12 BTC（_verify_cap / score.assert_hard_constraints で実測）
+- ☐ 【群2】 **H2** leak なし（特徴量 t 時点・`shift(-`/`center=True` grep assert・学習末 < 採点始）
+- ☐ 【群2】 **H5** 約定モデル（entry 指値maker・TTL3 / 出口 TP・SL=maker / TIME・能動=taker+slip）
+- ☐ 【群2】 **H6** 価格非依存（%/比率/BTC 単位・USD 絶対値の閾値/ラベル禁止）
+- ☐ 【群2】 **H8** 期間分割（学習窓で fit・採点窓は評価のみ・封印は不参照・値決め窓で選んだ値は確認窓で選び直さない）。**実値は下の機械生成の表**＝`gen_windows.py` が periods.py から差し込む（手で数字を書かない・2026-07-27）。意味と経緯＝[windows.md](../ratchet/windows.md)。
 
 <!-- WINDOWS_START hash=7f0a1c828847d7bd ここは gen_windows.py が自動生成＝手で書き換えない -->
 | 期間の名前 | いつ | 何に使うか |
@@ -54,15 +69,15 @@
 > 数値の正本＝`scripts/priority_rebuild/periods.py`。意味と経緯＝`.claude/ratchet/windows.md`。
 > どちらも手で書き換えない（`gen_windows.py --write` が作る・`--verify` が改変を検出する）。
 <!-- WINDOWS_END -->
-- ☐ **H13** judge 固定（score.py/eval_engine は実験で改造しない・改造時 既知答えテスト再pass）
-- ☐ **H15** ボラ逃げ禁止（方向スコアで atr/ボラ 非支配・feature importance で確認）
-- ☐ **H16** 1変更・過去失敗の不再演
+- ☐ 【群2】 **H13** judge 固定（score.py/eval_engine は実験で改造しない・改造時 既知答えテスト再pass）
+- ☐ 【群2】 **H15** ボラ逃げ禁止（方向スコアで atr/ボラ 非支配・feature importance で確認）
+- ☐ 【群1】 **H16** 1変更・過去失敗の不再演
 
 ## F. 受け入れ判定（採点前ゲート・PDCA §8.4）
-- ☐ **自己検査**を列挙（恒等 / 会計保存 / cap / leak grep 等・「わざと壊して落ちるか」のメタ確認 §2.9③）
-- ☐ **学習窓で純増を先に測る**（採点窓 不参照・H8）→ プラスかつ非degenerate なら採点
-- ☐ **公式判定は score.py / score.score**（CC は net 計算に触れない＝import のみ）・**両窓で改善**を確認するまで「効いた」と言わない
-- ☐ degenerate（near-inaction＝ほぼ無取引で損が小さいだけ）でないか（件数/伸びを玉単位で確認）
+- ☐ 【群1】 **自己検査**を列挙（恒等 / 会計保存 / cap / leak grep 等・「わざと壊して落ちるか」のメタ確認 §2.9③）
+- ☐ 【群2】 **学習窓で純増を先に測る**（採点窓 不参照・H8）→ プラスかつ非degenerate なら採点
+- ☐ 【群2】 **公式判定は score.py / score.score**（CC は net 計算に触れない＝import のみ）・**両窓で改善**を確認するまで「効いた」と言わない
+- ☐ 【群2】 degenerate（near-inaction＝ほぼ無取引で損が小さいだけ）でないか（件数/伸びを玉単位で確認）
 
 ---
 

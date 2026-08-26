@@ -48,6 +48,10 @@ import tempfile
 
 CONTRACT_MARK = "DESIGN_CONTRACT"
 SPEC_MARK = "SPEC"
+# ★2026-08-26（63回目・まこさん承認 5f8758324866caea…・要件 R17）＝要件と設計書の対応表。
+#   目印は半角・大文字・コロン込みの1つだけ（設計書 v2 §3.4 の決まり1）。
+REQ_MARK = "REQUIREMENTS:"
+_REQ_ID_RE = re.compile(r"^R\d+$")
 
 # わざと壊して止まるか試すテスト（設計書 §6・受け入れ条件 6）。write_actual が「テスト一覧」の節に写す。
 SELF_TESTS = [
@@ -62,6 +66,13 @@ SELF_TESTS = [
     ("T9", "SPEC が無い設計書は『SPEC が無い』と分かる（engine_tuner はこれで止める）"),
     ("T10", "設計書を1文字 書き換えると承認が外れる"),
     ("T11", "--write が書き出した SPEC を使うと、突き合わせが 0件 になる"),
+    # ★2026-08-26（要件 R17・まこさん承認 5f8758324866caea…・設計書 v2 §5）
+    ("T12", "目印を囲みの中だけに書いた設計書は、要件の番号を数えない"),
+    ("T13", "引用の行・全角の目印・行の途中の目印は、どれも数えない"),
+    ("T14", "目印の行が2つあれば番号を合わせ、同じ番号は1件に畳む"),
+    ("T15", "要件に無い番号は『要件に無い番号』として表に出る（止めない）"),
+    ("T16", "表に出る要件の言葉は、要件の json からの複写である"),
+    ("T17", "どの設計書も指していない要件が、表で分かる"),
 ]
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -71,6 +82,38 @@ _RATCHET = os.path.join(_SDK, ".claude", "ratchet")
 _ACCEPTANCE = os.path.join(_REPO, ".claude", "state", "acceptance.md")
 _REQUIREMENTS = os.path.join(_SDK, ".claude", "rules", "cat_requirements.md")
 _DESIGN_APPROVED = os.path.join(_REPO, ".claude", "state", "design_approved.json")
+_REQ_JSON = os.path.join(_RATCHET, "engine_tuner_requirements.json")   # 要件の正本（R17・2026-08-26）
+
+
+def outside_fence_lines(md_text: str):
+    """行を1つずつ見て、``` の囲みの内側かどうかを決めて返す（★2026-08-26 新設・要件 R17）。
+
+    戻り: [(行番号(0始まり), 前後の空白を外した行, 種別)]
+      種別 = "text"        囲みの外の普通の行
+             "quote"       囲みの外の引用（> で始まる）
+             "fence_open"  囲みの始まりの行（```json DESIGN_CONTRACT など）
+             "fence_close" 囲みの終わりの行
+             "inside"      囲みの内側
+
+    ★なぜ1か所にまとめるか（監査 cp8 の指摘 P-2）＝同じ判定を2か所に作ると、
+      片方だけ直して事故になる。実例はこのファイルの scan_contracts の説明（2026-08-23）＝
+      「どれが設計書か」を決める判定が2か所に在り、片方だけ `.actual.md` を外していた。
+      だから extract_block も extract_requirements も、囲みの判定はここだけを使う。
+    """
+    out, infence = [], False
+    for i, line in enumerate(md_text.splitlines()):
+        s = line.strip()
+        if s.startswith("```"):
+            out.append((i, s, "fence_close" if infence else "fence_open"))
+            infence = not infence
+            continue
+        if infence:
+            out.append((i, s, "inside"))
+        elif s.startswith(">"):
+            out.append((i, s, "quote"))
+        else:
+            out.append((i, s, "text"))
+    return out
 
 
 def extract_block(md_text: str, mark: str):
@@ -95,15 +138,15 @@ def extract_block(md_text: str, mark: str):
           目印の行が1つも無ければ (None, "対象外") ＝説明で言及しているだけの文書。
     """
     lines = md_text.splitlines()
-    marks, infence = [], False
-    for i, line in enumerate(lines):
-        s = line.strip()
-        if s.startswith("```"):
-            if not infence and mark in s[3:]:
+    marks = []
+    # ★2026-08-26＝囲みの判定を自前で持つのをやめ、outside_fence_lines に寄せた（監査 cp8 の P-2）。
+    #   判定の中身は変えていない（囲みの中は数えない・囲みの見出し／その語だけの行／見出しの行の3通り）。
+    for i, s, kind in outside_fence_lines(md_text):
+        if kind == "fence_open":
+            if mark in s[3:]:
                 marks.append(("fence_head", i, 0))
-            infence = not infence
             continue
-        if infence:
+        if kind in ("inside", "fence_close"):
             continue
         if s == mark:
             marks.append(("alone", i, 99))
@@ -485,6 +528,131 @@ def write_actual(md_path: str) -> str:
     return out_path
 
 
+def requirements_index():
+    """要件の json を読み、{"R17": {title, accept, state}} の形で返す（★2026-08-26・要件 R17）。
+
+    ★黙って空を返さない＝json が無い・壊れている・要件が0件 のときは例外を投げる
+      （設計書 v2 §3.2 の1番）。黙って空を返すと「どの設計書も指していない要件は0件」に見えてしまう。
+    """
+    with open(_REQ_JSON, encoding="utf-8") as f:
+        data = json.load(f)
+    reqs = data.get("requirements") or []
+    if not reqs:
+        raise ValueError(f"要件が1件も無い: {_REQ_JSON}")
+    out = {}
+    for r in reqs:
+        rid = str(r.get("id", "")).strip()
+        if not rid:
+            raise ValueError(f"id の無い要件が在る: {_REQ_JSON}")
+        out[rid] = {"title": str(r.get("title", "")),
+                    "accept": str(r.get("accept", "")),
+                    "state": str(r.get("state", ""))}
+    return out
+
+
+def extract_requirements(md_text: str):
+    """設計書から要件の番号を取り出す（★2026-08-26・決まりは設計書 v2 §3.4 の8つ）。
+
+    1 目印は REQUIREMENTS: の1つだけ（半角・大文字・コロンも半角）
+    2 行の先頭に在るものだけ（前に在ってよいのは空白だけ＝strip 済みの行で判定）
+    3 ``` の囲みの中と、> の引用の行は数えない（outside_fence_lines の種別で外す）
+    4 番号は R＋半角の数字。区切りは半角のカンマ。前後の空白は無視
+    5 目印の行が2つ以上あれば、番号を全部 合わせる（和にする）
+    6 同じ番号が2回 出たら1件に畳む
+    7・8 番号が0件・要件に無い番号 は、ここでは落とさずそのまま返す（止めない＝表に出す）
+    """
+    ids = []
+    for _i, s, kind in outside_fence_lines(md_text):
+        if kind != "text" or not s.startswith(REQ_MARK):
+            continue
+        for w in s[len(REQ_MARK):].split(","):
+            w = w.strip()
+            if _REQ_ID_RE.match(w) and w not in ids:
+                ids.append(w)
+    return ids
+
+
+def req_map():
+    """要件と設計書の対応表のデータを作る（★2026-08-26・要件 R17）。
+
+    ★数える相手は scan_contracts が返す全部（読める／読めない／対象外）。
+      acceptance.md は scan_contracts が最初から含むので、ここで足さない（監査 cp8 の F-1＝二重足し）。
+    戻り: {"requirements": [...], "documents": [...]}
+    """
+    index = requirements_index()
+    ok, ng, out = scan_contracts()
+    docs, seen = [], set()
+
+    def add(path, state, impl):
+        if path in seen:
+            return
+        seen.add(path)
+        try:
+            text = open(path, encoding="utf-8", errors="replace").read()
+        except Exception as e:
+            text, state = "", f"{state}（読めない: {e}）"
+        found = extract_requirements(text)
+        # ★決まり7（設計書 v2 §3.4）＝目印は在るのに番号が0件、を「無し」と区別して出す。
+        #   ★限界＝この見分けだけは囲みの中も数える（囲みを外す判定を2か所に作らないため）。
+        has_mark = any(ln.strip().startswith(REQ_MARK) for ln in text.splitlines())
+        docs.append({"path": path, "name": os.path.basename(path), "contract": state,
+                     "impl_file": impl, "has_mark": has_mark,
+                     "ids": [i for i in found if i in index],
+                     "unknown_ids": [i for i in found if i not in index]})
+
+    for p, c in ok:
+        add(p, "読める", str(c.get("impl_file", "")))
+    for p, why in ng:
+        add(p, f"読めない（{why}）", "")
+    for p in out:
+        add(p, "対象外", "")
+
+    pointed = {rid: [] for rid in index}
+    for d in docs:
+        for rid in d["ids"]:
+            pointed[rid].append(d["name"])
+    reqs = [dict(id=rid, pointed_by=pointed[rid], **index[rid]) for rid in index]
+    return {"requirements": reqs, "documents": docs}
+
+
+def format_req_map(data) -> str:
+    """req_map のデータを、画面に出す文字列にする（★2026-08-26・要件 R17）。
+
+    ★要件の言葉（title・accept・state）は要件の json からの複写をそのまま出す（縮めない）。
+    """
+    reqs = data.get("requirements") or []
+    docs = data.get("documents") or []
+    L = [f"■ 要件から見た表（{len(reqs)}件）"]
+    for r in reqs:
+        who = "、".join(r["pointed_by"]) if r["pointed_by"] else "（無し）"
+        L.append(f"  {r['id']} {r['title']} ［{r['state']}］")
+        L.append(f"      何ができたら満たしたと言えるか: {r['accept']}")
+        L.append(f"      指している設計書: {who}")
+    L.append("")
+    L.append(f"■ 設計書から見た表（{len(docs)}本）")
+    for d in docs:
+        if d["ids"]:
+            ids = "、".join(d["ids"])
+        elif d.get("has_mark"):
+            ids = "（目印は在るが番号が0件）"
+        else:
+            ids = "（無し）"
+        impl = f"({os.path.basename(d['impl_file'])})" if d["impl_file"] else ""
+        line = f"  {d['name']:26s} 契約: {d['contract']}{impl}  要件: {ids}"
+        if d["unknown_ids"]:
+            line += f"  ← 要件に無い番号: {'、'.join(d['unknown_ids'])}"
+        L.append(line)
+    none_ids = [r["id"] for r in reqs if not r["pointed_by"]]
+    bad = [d for d in docs if d["unknown_ids"]]
+    L.append("")
+    L.append("■ まとめ")
+    L.append(f"  どの設計書も指していない要件: {len(none_ids)}件"
+             + (f"（{' '.join(none_ids)}）" if none_ids else ""))
+    L.append(f"  要件に無い番号を書いている設計書: {len(bad)}本"
+             + (f"（{'、'.join(d['name'] + ' の ' + '、'.join(d['unknown_ids']) for d in bad)}）" if bad else ""))
+    return "\n".join(L)
+
+
 def check_approval(md_path: str):
     """設計書が、まこさんの承認どおりのままかを見る（C-6・2026-08-23 まこさん承認 67da88ef9ca8…）。
 
@@ -714,6 +882,48 @@ def self_test() -> bool:
     finally:
         shutil.rmtree(t10_dir, ignore_errors=True)
 
+    # ── ★2026-08-26（要件 R17・設計書 v2 §5）＝T12〜T17。本物のファイルは1バイトも変えない ──
+    results["T12"] = extract_requirements(
+        "# 見出し\n\n```\nREQUIREMENTS: R3\n```\n") == []
+    results["T13"] = extract_requirements(
+        "> REQUIREMENTS: R3\n"
+        "ＲＥＱＵＩＲＥＭＥＮＴＳ: R4\n"
+        "REQUIREMENTS： R5\n"
+        "★REQUIREMENTS: R6\n"
+        "requirements: R7\n") == []
+    results["T14"] = extract_requirements(
+        "REQUIREMENTS: R3, R5\n\nなにか\n\nREQUIREMENTS:  R5 ,R17\n") == ["R3", "R5", "R17"]
+
+    fake = {"requirements": [
+        {"id": "R1", "title": "あ", "accept": "い", "state": "完了", "pointed_by": ["x.md"]},
+        {"id": "R2", "title": "う", "accept": "え", "state": "作業中", "pointed_by": []}],
+        "documents": [
+        {"name": "x.md", "contract": "読める", "impl_file": "", "ids": ["R1"], "unknown_ids": ["R99"]}]}
+    shown = format_req_map(fake)
+    results["T15"] = ("要件に無い番号: R99" in shown
+                      and "要件に無い番号を書いている設計書: 1本" in shown)
+    results["T17"] = ("どの設計書も指していない要件: 1件（R2）" in shown)
+
+    # T16＝要件の json の写しで accept を1文字 変えると、表に出る文字も変わる。
+    #   ★読む先（_REQ_JSON）を写しへ向け、終わったら必ず戻す。本物は1バイトも変えない。
+    t16_dir = tempfile.mkdtemp()
+    global _REQ_JSON
+    keep_req = _REQ_JSON
+    try:
+        d16 = json.load(open(keep_req, encoding="utf-8"))
+        first = d16["requirements"][0]
+        marker = "★T16の目印★"
+        first["accept"] = str(first.get("accept", "")) + marker
+        p16 = os.path.join(t16_dir, "req.json")
+        json.dump(d16, open(p16, "w", encoding="utf-8"), ensure_ascii=False)
+        before = format_req_map(req_map())
+        _REQ_JSON = p16
+        after = format_req_map(req_map())
+        results["T16"] = (marker not in before) and (marker in after)
+    finally:
+        _REQ_JSON = keep_req
+        shutil.rmtree(t16_dir, ignore_errors=True)
+
     good = 0
     for k, v in SELF_TESTS:
         got = results.get(k, False)
@@ -754,6 +964,11 @@ if __name__ == "__main__":
         for _x in _diff:
             print(f"    {_x}")
         sys.exit(1 if _diff else 0)
+
+    if "--req-map" in sys.argv:
+        # ★2026-08-26（要件 R17）＝要件と設計書の対応表を出す。止めない（いつも 0 で終わる）。
+        print(format_req_map(req_map()))
+        sys.exit(0)
 
     if "--check-approval" in sys.argv:
         _md = sys.argv[sys.argv.index("--check-approval") + 1]

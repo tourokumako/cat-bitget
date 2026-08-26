@@ -57,6 +57,42 @@ SHOWN = os.path.join(STATE, "session_todo_shown")   # hook が全文を画面に
 HEADS = ("【いまの工程】", "【ToDo】", "【止まっているもの】", "【次】")
 DONE, DOING, YET = "✅済", "★いまここ", "まだ"
 
+# ★2026-08-26（63回目・まこさん指示「不具合の109と110はすぐに直してほしい」）＝110番の直し。
+#   直す前＝「表示された」と数えるのは、この hook が止まって全文を画面に出したときだけだった。
+#     ＝ToDo を1文字 直すたびに、必ず1回 止まってから貼り直すことになり、
+#       同じ長文が続けて画面に出た（2026-08-26 に5回）。まこさんの逐語「同じ文章を連続で出すのをやめてほしい」。
+#   直した後＝会話の記録を読み、CC が実際にチャットへ貼っていれば「表示された」と数える。
+#     ＝先に貼っておけば、止まらずに通る。貼っていなければ、今までどおり止まる（守りは減らない）。
+PROJECTS = os.path.expanduser("~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget")
+
+
+def pasted_in_chat(text, transcript=None):
+    """CC がこのセッションのチャットに、この ToDo の全文を貼ったかを会話の記録で確かめる。
+
+    ★中身の一致で見る（ハッシュではない）＝``` で囲んで貼っても、そのまま中に入っているので当たる。
+    ★読むだけ・何も書かない。記録が読めないときは False（安全側＝今までどおり止まる）。
+    """
+    body = (text or "").strip()
+    if not body:
+        return False
+    path = transcript
+    if not path or not os.path.exists(path):
+        files = sorted(glob.glob(os.path.join(PROJECTS, "*.jsonl")), key=os.path.getmtime)
+        if not files:
+            return False
+        path = files[-1]
+    try:
+        rows = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
+    except Exception:
+        return False
+    for r in rows:
+        if r.get("type") != "assistant":
+            continue
+        for b in (r.get("message") or {}).get("content") or []:
+            if isinstance(b, dict) and b.get("type") == "text" and body in (b.get("text") or ""):
+                return True
+    return False
+
 
 def read(p):
     try:
@@ -96,7 +132,7 @@ def worklog_sections():
     return secs, os.path.basename(p)
 
 
-def check():
+def check(transcript=None):
     """問題があれば理由の文字列を返す。無ければ None。"""
     if not os.path.exists(TODO):
         return f"ToDo のファイルが無い（{TODO}）"
@@ -147,9 +183,19 @@ def check():
     #     この hook の最初の実走で、私自身が止められて分かりました。
     h = hashlib.sha256(text.encode("utf-8")).hexdigest()
     if read(SHOWN).strip() != h:
-        return ("★この版の ToDo は、まだ画面に表示されていない（印だけ先に作っても通らない・"
-                "2026-08-16 の穴ふさぎ）。いまの止まりで全文が画面に出て、表示の記録は機械が作った。"
-                "同じ内容をチャットに貼り、印を作ってから再実行する")
+        # ★2026-08-26＝110番の直し。CC が自分でチャットへ貼っていれば、それも「表示された」と数える。
+        #   ＝ToDo を直すたびに1回 止まって貼り直す（同じ長文が続けて出る）のをやめる。
+        if pasted_in_chat(text, transcript):
+            try:
+                with open(SHOWN, "w", encoding="utf-8") as f:
+                    f.write(h)
+            except Exception:
+                pass
+        else:
+            return ("★この版の ToDo は、まだ画面に表示されていない（印だけ先に作っても通らない・"
+                    "2026-08-16 の穴ふさぎ）。**先にチャットへ全文を貼れば、止まらずに通る**"
+                    "（2026-08-26 の直し）。いまの止まりでも全文が画面に出た。"
+                    "同じ内容をチャットに貼り、印を作ってから再実行する")
     if read(MARK).strip() != h:
         return "ToDo をチャットに貼った確認マーカーが無い、または ToDo を書き換えた後で貼り直していない"
 
@@ -215,7 +261,7 @@ def hook_main():
     else:
         sys.exit(0)
 
-    reason = check()
+    reason = check(data.get("transcript_path"))
     if reason:
         fail(reason)
     sys.exit(0)
@@ -283,11 +329,19 @@ def selftest():
         (STALE, ok_body, None, True, "表示されていない"),
     ]
 
+    # ★2026-08-26（110番の直し）＝会話の記録を、番人の中でも作り物にする。
+    #   本物の記録を読ませると、結果がその日のチャットの中身で変わってしまう。
+    empty_tr = os.path.join(tmp, "empty.jsonl")
+    with open(empty_tr, "w", encoding="utf-8") as f:
+        f.write(json.dumps({"type": "assistant",
+                            "message": {"content": [{"type": "text", "text": "なにも貼っていない"}]}},
+                           ensure_ascii=False) + "\n")
+
     ng = 0
     for name, body, wl, mark, want in cases:
         put(body, wl or "# §33 やった\n# §34 やった\n", mark,
             stale=(name == STALE), shown=(name != NOSHOW))
-        got = check()
+        got = check(empty_tr)
         if want is None:
             good = got is None
         else:
@@ -296,9 +350,39 @@ def selftest():
         if not good:
             ng += 1
 
+    # ★2026-08-26＝110番の直しの確かめ。先にチャットへ貼っていれば、止まらずに通る。
+    put(ok_body, mark=True, shown=False)
+    pasted_tr = os.path.join(tmp, "pasted.jsonl")
+    with open(pasted_tr, "w", encoding="utf-8") as f:
+        f.write(json.dumps({"type": "assistant",
+                            "message": {"content": [{"type": "text",
+                                                     "text": "ToDo を貼ります。\n\n```\n" + ok_body + "```\n"}]}},
+                           ensure_ascii=False) + "\n")
+    got = check(pasted_tr)
+    good = got is None
+    print(f"  {'✅' if good else '❌'} ★110番＝先にチャットへ貼っていれば、止まらずに通る"
+          + ("" if good else f"   ← 出た理由: {got}"))
+    if not good:
+        ng += 1
+
+    # 貼った本文が1文字でも違えば、今までどおり止まる（守りは減らない）
+    put(ok_body, mark=True, shown=False)
+    other_tr = os.path.join(tmp, "other.jsonl")
+    with open(other_tr, "w", encoding="utf-8") as f:
+        f.write(json.dumps({"type": "assistant",
+                            "message": {"content": [{"type": "text",
+                                                     "text": "```\n" + ok_body.replace("| a |", "| z |") + "```"}]}},
+                           ensure_ascii=False) + "\n")
+    got = check(other_tr)
+    good = got is not None and "表示されていない" in got
+    print(f"  {'✅' if good else '❌'} ★110番＝違う中身を貼っても通らない"
+          + ("" if good else f"   ← 出た理由: {got}"))
+    if not good:
+        ng += 1
+
     # ToDo ファイルが無いときも止まる
     os.remove(TODO)
-    got = check()
+    got = check(empty_tr)
     good = got is not None and "ファイルが無い" in got
     print(f"  {'✅' if good else '❌'} ToDo のファイルが無いと止まる")
     if not good:
@@ -306,7 +390,7 @@ def selftest():
 
     shutil.rmtree(tmp, ignore_errors=True)
     TODO, MARK, STATE, SHOWN = keep
-    total = len(cases) + 1
+    total = len(cases) + 3
     print(f"\n番人: {total - ng}/{total} pass")
     sys.exit(1 if ng else 0)
 

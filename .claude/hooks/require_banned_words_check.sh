@@ -1,5 +1,13 @@
 #!/bin/bash
-[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
+# ★2026-08-26（63回目・まこさん指示・逐語「強制に戻せよ。修正したのに強制してなかったら意味がないよね？」）
+#   ＝fast-mode で自分を無効にする行を外した＝safety hook へ格上げ。
+#   直す前の2行目: [ -f ".../pdca_fast_mode" ] && exit 0
+#   なぜ外したか（同日の実測）＝この hook が止まっていたので、私は見出しの一覧を見ずに設計書を書き、
+#     必須の見出しを2回 落として実装で止まり、まこさんに2回 再承認をお願いした
+#     （1回目＝真因・期待値・symptom・ベースアップ／2回目＝★疑似シミュ由来の固定値ゼロ宣言）。
+#   ★fast-mode 自体は ON のまま（まこさん指示 2026-08-23「全部起動しないでほしい」）＝外したのはこの1行だけ。
+#   前例＝55回目に、まこさん指示で require_design_contract_before_run と require_acceptance_before_impl の
+#     2本だけ同じ行を外した（next_step.md §6 の80番）。
 # require_banned_words_check.sh — PreToolUse(Write|Edit) 禁止語チェックの事前実行を物理強制
 #   （2026-07-11 まこさん指示「acceptance 等を書く前に list_banned_words.py を通すことを強制化しておいて」）
 # 対象: list_banned_words.py が扱う5文書＝ledger.md / next_step.md / acceptance.md / improvement_plan.md / analysis_block.md

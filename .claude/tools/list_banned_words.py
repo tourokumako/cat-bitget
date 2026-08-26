@@ -61,11 +61,79 @@ REQUIRED = [
      "capture": r'grep -q "([^"]+)"\s+"\$PLAN"', "mode": "findall",
      "note": "＋LEVER『<!-- LEVER: X -->』・異手法2種以上・件数/前後比較（enforce_pdca_chain）。STEP3.5 は各行『出典: N番号』5つ以上。"},
 ]
-# acceptance は必須項目が多い（TARGET/DESIGN_CONTRACT/深掘り4点/★疑似シミュ由来の固定値ゼロ/ARC マーカー/
-#   ★戦略照合/スキャル⑦⑨⑫）＝acceptance_checklist.md が正本。ここでは静的ポインタで案内する。
-ACCEPTANCE_NOTE = ("acceptance の必須見出しは acceptance_checklist.md が正本（TARGET / DESIGN_CONTRACT[impl_file は "
-                   "repo root .claude/state からの相対 v3-bitget-api-sdk/...] / LEVER 逐語 / ★戦略照合[GATE_IDENT/SIDE_IDENT/ARC 鉤括弧引用] / "
-                   "深掘り4点 / ★疑似シミュ由来の固定値ゼロ / ARC マーカー / スキャル⑦⑨⑫）。")
+# ── ★2026-08-26（63回目・まこさん指示）＝設計書（acceptance）の必須見出しを、名前で出す ─────
+#
+# なぜ直したか:
+#   直す前、この道具は設計書のときだけ「必須見出しは acceptance_checklist.md が正本」としか出さず、
+#   見出しの名前を1つも出していなかった（ほかの文書はコピペできる形で出していた）。
+#   ＝私（CC）は設計書を白紙から書き、必須の見出しを落とした（2026-08-26 に実際に4つ落として hook に止められた）。
+#   実測＝承認済みの控え66本のうち、深掘り4点がそろっていないものが3本。
+#
+# まこさんの指示（逐語 2026-08-26）:
+#   「見出しを2つの群に分け、道具が相手を見て、要る方だけを出します。
+#     →このようにして、acceptanceを書くときに、見出しを読み込める状態に修正して」
+#
+# 作り（腐らせない・この道具の元からの思想と同じ）:
+#   ・hook が止める見出し（TARGET / DESIGN_CONTRACT / 深掘り4点 / 疑似シミュ由来の固定値ゼロ）は
+#     hook の実物から live 抽出する（下の REQUIRED_ACC）。
+#   ・照合の項目（30件）と その群（【群1】【群2】）は acceptance_checklist.md から読む（正本はあちら）。
+#   ・どちらの群を出すかは、いまの設計書の TARGET を見て決める。
+REQUIRED_ACC = [
+    {"file": "require_acceptance_before_impl.sh",
+     "label": "深掘り4点（hook が語で止める・見出しに入れる）",
+     "capture": r'for kw in ((?:"[^"]+"\s*)+); do', "mode": "quoted"},
+    {"file": "require_acceptance_before_impl.sh",
+     "label": "機械照合の部品リスト（無いと止まる）",
+     "capture": r'grep -q "(DESIGN_CONTRACT)" "\$LIST"', "mode": "first"},
+    {"file": "require_acceptance_before_impl.sh",
+     "label": "疑似シミュ由来の固定値ゼロ宣言（無いと止まる・どちらの言い方でもよい）",
+     "capture": r'grep -qE "([^"]*固定値ゼロ[^"]*)" "\$LIST"', "mode": "first"},
+]
+
+CHECKLIST = (Path(__file__).resolve().parent.parent.parent
+             / "v3-bitget-api-sdk" / "bitget-python-sdk-api" / ".claude" / "rules" / "acceptance_checklist.md")
+ACCEPTANCE_MD = Path(__file__).resolve().parent.parent / "state" / "acceptance.md"
+
+# 群2（売買のロジック・審判）を1件ずつ照合する相手＝TARGET の名前がこれで始まる/一致するとき。
+#   正本＝acceptance_checklist.md の「★項目の群」。ここは判定だけを持つ。
+G2_PREFIX = ("e35_", "e36_", "e37_", "e38_", "strat_", "measure_")
+G2_EXACT = ("score.py", "eval_engine.py", "report.py", "analyze.py", "precheck.py")
+
+
+def acceptance_target(path=None):
+    """いまの設計書の TARGET（直す相手のファイル）を返す。無ければ None。"""
+    p = Path(path) if path else ACCEPTANCE_MD
+    if not p.exists():
+        return None
+    for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
+        s = line.strip()
+        if s.startswith("TARGET:"):
+            return s[len("TARGET:"):].strip()
+    return None
+
+
+def needs_group2(target):
+    """その相手が『売買のロジックか審判』かを判定する（群2 を1件ずつ照合するか）。"""
+    if not target:
+        return True                     # 分からないときは広い方＝群2 も出す（安全側）
+    name = target.replace("\\", "/").split("/")[-1]
+    return name in G2_EXACT or name.startswith(G2_PREFIX)
+
+
+def checklist_items():
+    """acceptance_checklist.md から（群, 見出しの文）の一覧を読む。"""
+    if not CHECKLIST.exists():
+        return []
+    out = []
+    for line in CHECKLIST.read_text(encoding="utf-8", errors="replace").splitlines():
+        s = line.strip()
+        if not s.startswith("- ☐"):
+            continue
+        g = "群1" if "【群1】" in s else ("群2" if "【群2】" in s else "印なし")
+        body = re.sub(r"^- ☐\s*【群[12]】\s*|^- ☐\s*", "", s)
+        body = body.replace("**", "")
+        out.append((g, body))
+    return out
 
 # ── ② 禁止ワード/形式の在りか地図（書いたらブロック） ──────────────────────────
 SOURCES = [
@@ -144,7 +212,80 @@ def _extract_required(text, entry):
     return []
 
 
+def skeleton():
+    """設計書の骨組み（見出しだけ）を出す（★2026-08-26 新設・まこさん指示）。
+
+    ★白紙から書くのをやめるための口。中身は1文字も書かない＝私が埋める。
+      群2 を1件ずつ照合するかどうかは、いまの設計書の TARGET で決める。
+    """
+    target = acceptance_target()
+    g2 = needs_group2(target)
+    items = checklist_items()
+    g1 = [b for g, b in items if g == "群1"]
+    g2list = [b for g, b in items if g == "群2"]
+    L = []
+    L.append("# 設計書｜<何を作るか>")
+    L.append("")
+    L.append(f"TARGET: {target or 'scripts/priority_rebuild/<直す相手>.py'}")
+    L.append("")
+    L.append("REQUIREMENTS: <要件の番号（例 R17）>")
+    L.append("")
+    L.append("**承認の状態＝未承認。**実装はまだ1行も入れていません。")
+    L.append("")
+    L.append('<!-- ARC order=1 iter="<意味のある名前>" 前提="" 採否="未定" 狙い="" 内容="" 方法="" -->')
+    L.append("")
+    L.append("## 0｜まこさんの決定（逐語）")
+    L.append("")
+    L.append("## 1｜いまの状態（実測）")
+    L.append("")
+    L.append("★走らせたもの・走らせた場所・除外設定の影響 を先に書く。")
+    L.append("")
+    L.append("## 2｜深掘り4点")
+    L.append("")
+    L.append("### ① 真因（root cause）")
+    L.append("")
+    L.append("### ② 期待値分解")
+    L.append("")
+    L.append("### ③ root を直すか symptom か")
+    L.append("")
+    L.append("### ④ ベースアップ（参照した証跡）")
+    L.append("")
+    L.append("## 3｜何を作るか")
+    L.append("")
+    L.append("## 4｜★疑似シミュ由来の固定値ゼロ宣言")
+    L.append("")
+    L.append("## 5｜わざと壊して止まるか試すテスト")
+    L.append("")
+    L.append("## 6｜何ができたら完成か（★目的の欄つき）")
+    L.append("")
+    L.append("## 7｜既存を壊さないこと（副作用）")
+    L.append("")
+    L.append(f"## 8｜照合（群2＝{'1件ずつ' if g2 else 'まとめて非該当の1行でよい'}）")
+    L.append("")
+    for b in g1:
+        L.append(f"- [ ] 【群1】{b[:110]}")
+    if g2:
+        for b in g2list:
+            L.append(f"- [ ] 【群2】{b[:110]}")
+    else:
+        L.append(f"- [ ] 【群2・{len(g2list)}件】まとめて非該当（理由＝<売買のロジックにも審判にも触れないため>）")
+    L.append("")
+    L.append("## 9｜限界（隠さない）")
+    L.append("")
+    L.append("## 10｜SPEC（★手書きしない＝verify_design_contract.py --write の出力を写す）")
+    L.append("")
+    L.append("DESIGN_CONTRACT")
+    L.append("")
+    L.append("```json")
+    L.append('{"impl_file": "scripts/priority_rebuild/<直す相手>.py", "self_check_calls": []}')
+    L.append("```")
+    print("\n".join(L))
+
+
 def main():
+    if "--skeleton" in sys.argv:
+        skeleton()
+        return
     filt = sys.argv[1].lower() if len(sys.argv) > 1 else None
     print("=" * 70)
     print("文書ゲート要件（hook 実体から live 抽出・書く前に確認）")
@@ -174,9 +315,44 @@ def main():
             print(f"  必須  : {' / '.join(items)}")
         print(f"  → {r['note']}")
     if (not filt) or ("acceptance" in filt):
-        print(f"\n■ [acceptance] 必須見出しは acceptance_checklist.md が正本")
-        print(f"  → {ACCEPTANCE_NOTE}")
         req_shown += 1
+        target = acceptance_target()
+        g2 = needs_group2(target)
+        print(f"\n■ [acceptance] 設計書の必須見出し")
+        print(f"  いまの相手（TARGET）: {target or '（設計書がまだ無い）'}")
+        print(f"  群2（売買のロジック・審判の照合 18件）: "
+              f"{'1件ずつ照合する' if g2 else 'まとめて非該当の1行でよい（相手が戦略でも審判でもない）'}")
+        for r in REQUIRED_ACC:
+            fp = HOOKS / r["file"]
+            if not fp.exists():
+                drift.append(f"{r['file']}: ファイルが無い"); continue
+            items = _extract_required(fp.read_text(encoding="utf-8", errors="replace"), r)
+            if not items:
+                drift.append(f"{r['file']}: 『{r['label']}』の抽出が空（構造が変わった＝地図要更新）")
+                print(f"  ⚠️ {r['label']}: 抽出できず（地図を要更新）")
+            else:
+                print(f"  必須  : {' / '.join(items)}   ← {r['label']}")
+        items = checklist_items()
+        if not items:
+            drift.append("acceptance_checklist.md: 項目（- ☐ の行）が読めない")
+        else:
+            g1 = [b for g, b in items if g == "群1"]
+            g2list = [b for g, b in items if g == "群2"]
+            none_mark = [b for g, b in items if g == "印なし"]
+            print(f"\n  【群1＝どんな設計でも書く（{len(g1)}件）】")
+            for b in g1:
+                print(f"    ・{b[:110]}")
+            if g2:
+                print(f"\n  【群2＝1件ずつ照合する（{len(g2list)}件）】")
+                for b in g2list:
+                    print(f"    ・{b[:110]}")
+            else:
+                print(f"\n  【群2（{len(g2list)}件）＝この設計書では1件ずつ書かない。"
+                      f"『H1〜H16 と審判整合は 非該当（理由）』の1行でよい】")
+            if none_mark:
+                drift.append(f"acceptance_checklist.md: 群の印が無い項目 {len(none_mark)}件")
+        print(f"  → 正本＝acceptance_checklist.md（群の印もあちらが正本）。"
+              f"骨組みが要るときは『python3 .claude/tools/list_banned_words.py --skeleton』。")
     if req_shown == 0:
         print("  （この絞り込みに該当する必須見出しなし）")
 
