@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "4273c9e9e47cd676",
+ "_本文の指紋": "144aa0c0a549bc81",
  "body": {
   "docs": [
    {
@@ -323,7 +323,6 @@
    ".claude/settings.json",
    ".claude/settings.local.json",
    ".claude/state/acceptance.md",
-   ".claude/state/acceptance.md.actual.md",
    ".claude/state/acceptance_20260806_signal_table.md",
    ".claude/state/chat_check_blocks.json",
    ".claude/state/chat_check_last.json",
@@ -629,6 +628,7 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/forbidden-check-auto-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-20260824.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-v2-drawn-only-20260825.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/gen-minimize-loss-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/hold-mom-exit.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/milestone-req-accept-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-not-applicable-20260826.md",
@@ -703,7 +703,7 @@
   ],
   "tools": [
    {
-    "一言": "❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9e975d2abeef ／ 源から作り直すと c33c453df3ea）",
+    "一言": "❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9e975d2abeef ／ 源から作り直すと 9c8c5c1e08d4）",
     "作る文書": [
      {
       "作り方": "まるごと",

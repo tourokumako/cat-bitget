@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=4273c9e9e47cd676 -->
+<!-- DOCMAP_HASH=144aa0c0a549bc81 -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -29,7 +29,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 | 道具 | 作る文書 | 検証コマンド | いまの結果 |
 |---|---|---|---|
-| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり | ❌ ❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9e975d2abeef ／ 源から作り直すと c33c453df3ea） |
+| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり | ❌ ❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9e975d2abeef ／ 源から作り直すと 9c8c5c1e08d4） |
 | `gen_auditor_brief.py` | auditor_template.md（一部の節） | あり | ❌    直し方: python3 scripts/priority_rebuild/gen_auditor_brief.py --write |
 | `gen_cat_requirements.py` | cat_requirements.md（まるごと） | あり | ✅  |
 | `gen_composition_rules.py` | composition_rules.json（まるごと）<br>composition_rules.md（まるごと） | あり | ✅  |
@@ -153,7 +153,6 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/settings.json`
 - `.claude/settings.local.json`
 - `.claude/state/acceptance.md`
-- `.claude/state/acceptance.md.actual.md`
 - `.claude/state/acceptance_20260806_signal_table.md`
 - `.claude/state/chat_check_blocks.json`
 - `.claude/state/chat_check_last.json`
@@ -459,6 +458,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/forbidden-check-auto-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-20260824.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-v2-drawn-only-20260825.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/gen-minimize-loss-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/hold-mom-exit.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/milestone-req-accept-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-not-applicable-20260826.md`

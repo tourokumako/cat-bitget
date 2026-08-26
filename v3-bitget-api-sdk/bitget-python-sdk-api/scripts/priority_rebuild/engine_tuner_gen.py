@@ -2719,8 +2719,51 @@ class Journal:
             f.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
 
 
+# ══ 減らしたい損失（要件 R8・まこさん確定 2026-07-27・実装 2026-08-26）═══════════════════
+#   まこさんの逐語＝「損失最小化というのは、例えばTIMEExitの損失が大きい場合に、その損失額を
+#   最小化させるために、指標、閾値、時間足、パラメータ等を調整して損失を最小限にするために
+#   調整するという意味」。★何を減らすかは診断の結果で毎回変わるので、コードに焼かず実行時に渡す。
+#   ★動かす値は入口も出口も両方（まこさん承認 2026-08-26・逐語「それでOK」）＝目的の値だけを
+#     差し替える。探せる範囲（材料・閾値・時間足・パラメータ）には1バイトも触らない。
+#   ★式は engine_tuner.py（数字を調整する方）491-495行の写し。net の計算は審判がする（H13）。
+def assert_known_exit_reason(name: str | None) -> None:
+    """審判が知らない決済の理由なら、走らせる前に止める（fail-closed）。
+
+    ★なぜ要るか＝名前を打ち間違えても、どの玉にも当たらないので損の額が常に 0.0 になり、
+      全部の案が同点に見える。走り切ってから気づくのでは遅い。
+    一覧の出どころ＝score.py の KNOWN_EXIT_REASONS（手書きの一覧を作らない）。
+    """
+    if not name:
+        return
+    import score as _sc
+    known = set(_sc.KNOWN_EXIT_REASONS)
+    if name not in known:
+        raise SystemExit(f"[R8 エラー] 決済した理由 '{name}' を審判が知らない"
+                         f"（使えるのは {len(known)} 種）＝{sorted(known)}")
+
+
+def _focus_net(t, judge, minimize: str | None) -> tuple:
+    """指定した決済の理由の玉だけを審判に通した net 合計と、その玉数を返す。
+
+    戻り＝(損の額, 玉数)。マイナスなら損＝大きくするほど損が減る。
+    ★この関数は net を1行も計算しない＝judge.score() を呼ぶだけ（H13）。
+    """
+    if not minimize or t is None or not len(t) or "exit_reason" not in t.columns:
+        return 0.0, 0
+    sub = t[t["exit_reason"] == minimize].reset_index(drop=True)
+    if not len(sub):
+        return 0.0, 0
+    return float(judge.score(sub)["total"]), len(sub)
+
+
+def _obj_key(rec: dict, minimize: str | None) -> float:
+    """並べ替えと選択に使う値＝指定があれば その決済の理由の損の額、無ければ合計 net。"""
+    return float(rec.get("focus", 0.0)) if minimize else float(rec.get("total", 0.0))
+
+
 # ══ 試行の実行（1本＝実行器で売買 → 審判で net）══════════════════════════════════════════
-def run_trial(df: pd.DataFrame, recipe: dict, qtable: dict, judge, start, end) -> dict:
+def run_trial(df: pd.DataFrame, recipe: dict, qtable: dict, judge, start, end,
+              minimize: str | None = None) -> dict:
     recipe = strip_marks(recipe)                      # ★実行器に渡す直前で印を外す（C-7）
     if isinstance(recipe, dict) and isinstance(recipe.get("meta"), dict):
         recipe["meta"].pop("exit_role_notes", None)
@@ -2731,12 +2774,16 @@ def run_trial(df: pd.DataFrame, recipe: dict, qtable: dict, judge, start, end) -
         t = t[(et >= start) & (et < end)].reset_index(drop=True)
     days = max((end - start).days, 1)
     if not len(t):
-        return {"total": 0.0, "n": 0, "per_day": 0.0, "t": t, "rep": rep}
+        return {"total": 0.0, "n": 0, "per_day": 0.0, "t": t, "rep": rep,
+                "focus": 0.0, "focus_n": 0}
     res = judge.score(t)
-    return {"total": float(res["total"]), "n": len(t), "per_day": len(t) / days, "t": t, "rep": rep}
+    focus, focus_n = _focus_net(t, judge, minimize)
+    return {"total": float(res["total"]), "n": len(t), "per_day": len(t) / days, "t": t, "rep": rep,
+            "focus": focus, "focus_n": focus_n}
 
 
-def run_trial_guarded(df: pd.DataFrame, recipe: dict, qtable: dict, judge, start, end):
+def run_trial_guarded(df: pd.DataFrame, recipe: dict, qtable: dict, judge, start, end,
+                      minimize: str | None = None):
     """案1本を走らせる。★その1本が拒否されても、走行を丸ごと止めない（まこさん指示 2026-08-16）。
 
     戻り値＝(結果, 拒否の理由)。走れたら (結果, None)、拒否されたら (None, 理由の文字列)。
@@ -2756,7 +2803,7 @@ def run_trial_guarded(df: pd.DataFrame, recipe: dict, qtable: dict, judge, start
     try:
         if isinstance(recipe, dict) and recipe and not _is_identity_recipe(recipe):
             _gate_recipe(recipe, where="走らせる入口")
-        return run_trial(df, recipe, qtable, judge, start, end), None
+        return run_trial(df, recipe, qtable, judge, start, end, minimize), None
     except (ex.RecipeError, SampleError) as e:
         return None, str(e)
 
@@ -3003,6 +3050,7 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                    run_dir: pathlib.Path, pool, tfs, catalog_total: int,
                    side="SHORT", regime=None,
                    base_trades=None, atr_edges=None, min_per_day=None, net_floor=None,
+                   minimize: str | None = None,
                    purpose: str, tag: str = "",
                    df_confirm: pd.DataFrame | None = None, confirm_start=None, confirm_end=None,
                    base=None, rules: dict | None = None, rfloor: float | None = None,
@@ -3014,9 +3062,26 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
             "window": [str(start), str(end)], "side": side,
             "limits_hash": hashlib.sha256(json.dumps(limits, sort_keys=True, default=str).encode()).hexdigest()[:12],
             "tag": tag}
+    # ★減らしたい損失（R8）＝指定したときだけ meta に足す。指定なしのときの meta は直す前と同じ
+    #   ＝前に作った journal がそのまま再利用できる（恒等を壊さない）。指定の有無や中身が変われば
+    #   meta が食い違って Journal が止める＝目的が入れ替わったまま再開する事故を防ぐ（2026-08-26）。
+    if minimize:
+        meta["minimize"] = minimize
     jn = Journal(run_dir / "journal.jsonl", meta)
     print(f"[歩4 生成器] 窓 {start}〜{end} ／ 第1段 {trials1} 本（ランダム＝統計の土台）／ "
           f"第2段 {trials2} 本（TPE＝統計判定に不使用）／ journal {jn.path}")
+    # ★何を目標にして探すかを、走り始めに必ず出す（R8・まこさん確定 2026-07-27）
+    if minimize:
+        print(f"[目的] {minimize} の損失を最小化する"
+              f"（審判に {minimize} の玉だけを通した net 合計を最大化＝マイナスを 0 に近づける）")
+        if net_floor is None:
+            print("[net の歯止め] なし（--net-floor 未指定）。"
+                  "⚠️ 損失だけを見ると、ほとんど建てない形が上位に来ます")
+        else:
+            print(f"[net の歯止め] 値決め窓の合計 net < ${net_floor:,.0f} の試行は捨てる")
+    else:
+        print("[目的] 合計 net を最大化する"
+              "（--minimize を指定すると、特定の決済した理由の損失を減らす形になる）")
 
     # ── 構造の撒き（決定論＝seed と番号だけから再現できる＝R12 の前提）──
     vlim = {"n_min": None,          # G2 は検査5 の補正後表と接続（本走時・samples 引数）＝ここでは構造検査
@@ -3104,7 +3169,7 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
             reused += 1
             results1.append(got)
             continue
-        res, why_reject = run_trial_guarded(df2, r, qtable, judge, start, end)
+        res, why_reject = run_trial_guarded(df2, r, qtable, judge, start, end, minimize)
         if res is None:
             # ★1本の案が拒否されても走行を止めない（まこさん指示 2026-08-16・A-1a-0 の1番）。
             #   その1件だけ落として、件数と理由をこの段の終わりに画面へ出す。
@@ -3133,6 +3198,9 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                "per_day": round(res["per_day"], 4), "ok": ok, "why": why,
                "gate": gate_why if gate_ok is not None else "判定不能（土台なし or 帯の値がまこさん待ち）",
                "daily": daily}
+        if minimize:                      # ★指定したときだけ足す＝指定なしの記録は直す前と同じ形（恒等）
+            rec["focus"] = res["focus"]           # その決済した理由の玉だけの net 合計（R8）
+            rec["focus_n"] = res["focus_n"]       # その玉数
         jn.put(key, rec)
         results1.append(rec)
     if reused:
@@ -3162,6 +3230,19 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     print(f"[第1段] 通過 {len(kept)} 本 ／ ゲートで捨てた試行 {len(dropped)}/{len(results1)} 本（黙って消さない）")
     for r in sorted(dropped, key=lambda z: -z["total"])[:3]:
         print(f"  #{r['idx']}: net ${r['total']:+,.0f} / {r['n']}玉 / {r['per_day']:.2f}件/日 ← {r['why']}")
+    # ★R8＝損の額と合計 net の両方を並べて出す（片方だけだと、損を減らすつもりで勝ち玉まで
+    #   削った形が上位に来ても気づけない）。指定が無いときは1行も増やさない（恒等）。
+    if minimize and kept:
+        print(f"  [{minimize} の損失が小さい順・上位3]")
+        for r in sorted(kept, key=lambda z: -_obj_key(z, minimize))[:3]:
+            print(f"    #{r['idx']}: {minimize} ${r.get('focus', 0.0):+,.0f}"
+                  f"（{r.get('focus_n', 0)}玉） / 合計 net ${r['total']:+,.0f}"
+                  f" / {r['n']}玉 / {r['per_day']:.2f}件/日")
+    # ★名前は審判の一覧に在っても、この戦略の売買記録には1本も出ないことがある（例＝その枝を持たない）。
+    #   そのときは損の額が全部 $0 になり、案の優劣が付かない＝黙って進めず警告を出す（R8）。
+    if minimize and not any(r.get("focus_n", 0) for r in results1):
+        print(f"  ⚠️ [警告] 指定した決済した理由 {minimize} は、どの試行の売買記録にも1本も出ていない"
+              "＝損の額が全部 $0 で、案の優劣が付いていません")
     write_kakikudashi(run_dir, [strip_marks(s) for s in structures], results1, kept, seed)   # D1 完了の線①＋監査 G4の材料
 
     # ── BH 法（第1段のサンプルだけ・CP1 提案4(e)）──
@@ -3226,7 +3307,7 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
 
     # ── 第2段＝有望構造の値を TPE で詰める（統計判定に不使用）──
     top_pool = [r for r in kept if r["idx"] in survivors_idx] or kept
-    top = sorted(top_pool, key=lambda z: -z["total"])[:top_k]
+    top = sorted(top_pool, key=lambda z: -_obj_key(z, minimize))[:top_k]   # ★R8＝指定時は損の額の順
     stage2_best: list[dict] = []
     s2_rejects = Counter()           # ★第2段で拒否された案の 理由別の件数（2026-08-16）
     s2_reject_msgs: list[str] = []
@@ -3238,7 +3319,8 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
             recipe = structures[r1["idx"]]
             slots = value_slots(recipe, limits)
             if not slots:
-                stage2_best.append({"idx": r1["idx"], "total": r1["total"], "params": {}})
+                # ★"total" の欄には「目的の値」が入る＝指定が無ければ合計 net、在れば損の額（R8）
+                stage2_best.append({"idx": r1["idx"], "total": _obj_key(r1, minimize), "params": {}})
                 continue
             def obj(trial, recipe=recipe, slots=slots, sidx=r1["idx"]):
                 choices = {p: suggest_slot(trial, p.replace(".", "_"), sp) for p, sp in slots}
@@ -3246,11 +3328,13 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                     json.dumps(choices, sort_keys=True, default=str).encode()).hexdigest()[:12]
                 got = jn.get(key)
                 if got is not None:
-                    return got["total"] if got["ok"] else -1e9
+                    # ★R8＝再開のときも、指定が在れば損の額を返す。指定の有無が変わると meta が
+                    #   食い違って Journal が止まるので、ここで目的が入れ替わることはない
+                    return (_obj_key(got, minimize)) if got["ok"] else -1e9
                 r2 = apply_slots(recipe, choices, dict(slots))       # ★印つきで書き込む（C-2）
                 try:
                     ex.validate_recipe(strip_marks(r2), limits=vlim)   # ★S3 を第2段でも掛け直す（C-2・B4）
-                    res, why_reject = run_trial_guarded(df2, r2, qtable, judge, start, end)
+                    res, why_reject = run_trial_guarded(df2, r2, qtable, judge, start, end, minimize)
                 except ex.RecipeError as _e2:
                     res, why_reject = None, str(_e2)
                 if res is None:
@@ -3263,9 +3347,13 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
                 gate_ok, _gw = strat_gate(base_trades, res["t"], atr_edges, judge)
                 if ok and gate_ok is False:
                     ok, why = False, "層化の門"
-                jn.put(key, {"stage": 2, "idx": sidx, "trial": trial.number, "total": res["total"],
-                             "n": res["n"], "per_day": round(res["per_day"], 4), "ok": ok, "why": why})
-                return res["total"] if ok else -1e9
+                rec2 = {"stage": 2, "idx": sidx, "trial": trial.number, "total": res["total"],
+                        "n": res["n"], "per_day": round(res["per_day"], 4), "ok": ok, "why": why}
+                if minimize:              # ★指定時だけ足す＝指定なしの記録は直す前と同じ形（恒等）
+                    rec2["focus"] = res["focus"]
+                    rec2["focus_n"] = res["focus_n"]
+                jn.put(key, rec2)
+                return _obj_key(res, minimize) if ok else -1e9
             st = optuna.create_study(direction="maximize",
                                      sampler=optuna.samplers.TPESampler(seed=int(seed * 1000 + rank)))
             st.optimize(obj, n_trials=per, show_progress_bar=False)
@@ -3280,8 +3368,10 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
             (run_dir / "run_rejects_stage2.json").write_text(
                 json.dumps({"件数": len(s2_reject_msgs), "理由別": dict(s2_rejects),
                             "中身": s2_reject_msgs}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        _lab = f"{minimize} の損失" if minimize else "合計 net"      # ★何の値を並べているかを明示（R8）
         for b in stage2_best:
-            print(f"  構造 #{b['idx']}: 第1段 ${next(z['total'] for z in top if z['idx']==b['idx']):+,.0f}"
+            print(f"  構造 #{b['idx']}（{_lab}）: 第1段 "
+                  f"${next(_obj_key(z, minimize) for z in top if z['idx']==b['idx']):+,.0f}"
                   f" → 第2段 best ${b['total']:+,.0f}")
     # ══ tuner_judgement（判定表）＝A と B の合否を1枚で出す（2026-08-05 新設・まこさん OK「OK」）══
     #   直す前は、この器が判定表を1行も出していなかった。出すには確認窓の成績が要る（B2 が要求する）が、
@@ -3292,14 +3382,15 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     verdict = None
     if df_confirm is not None and kept:
         import tuner_judgement as tj
-        best_rec = max(kept, key=lambda z: z["total"])
+        best_rec = max(kept, key=lambda z: _obj_key(z, minimize))     # ★R8＝指定時は損の額で選ぶ
         best_struct = structures[best_rec["idx"]]
         # 値決め窓でもう1回だけ走らせる＝journal は売買記録を残していないため（1試行ぶんの費用）
-        rs_j = run_trial(df2, best_struct, qtable, judge, start, end)
+        rs_j = run_trial(df2, best_struct, qtable, judge, start, end, minimize)
         df2c = df_confirm            # ★A-2b＝列は その場で作る（先に全部 作らない）
-        rc_j = run_trial(df2c, best_struct, qtable, judge, confirm_start, confirm_end)   # ★同じ qtable
+        rc_j = run_trial(df2c, best_struct, qtable, judge, confirm_start, confirm_end, minimize)
+        _fx = (f" ／ {minimize} ${rc_j['focus']:+,.0f}（{rc_j['focus_n']}玉）") if minimize else ""
         print(f"\n[確認窓の1走] 構造 #{best_rec['idx']}（値決め窓で最良）を確認窓で1回だけ走らせた"
-              f"＝net ${rc_j['total']:+,.0f} ／ {rc_j['n']}玉 ／ {rc_j['per_day']:.2f}件/日"
+              f"＝net ${rc_j['total']:+,.0f}{_fx} ／ {rc_j['n']}玉 ／ {rc_j['per_day']:.2f}件/日"
               "（★ここで選び直しはしない・分位は値決め窓のものを流用）")
         bands = None
         if base_trades is not None and atr_edges:
@@ -3877,6 +3968,68 @@ def selftest() -> int:
             ng.append("T6: meta 食い違いの journal が拒否されない")
         except SystemExit:
             pass
+
+    # ── T29 減らしたい損失の実走（要件 R8・2026-08-26 新設・T6 と同じ合成データの小さい本走）──
+    #   ★T28 は部品を1つずつ見る検査。T29 は「本走の経路を実際に通したときに、目的が入れ替わり、
+    #     損の額と合計 net の両方が画面に出て、再開の記録に指定が残る」ことを見る。
+    #   ★メタ確認＝指定が無いときは、画面も記録も直す前のまま（恒等が壊れていないこと）。
+    t29: list[str] = []
+    _t29_note = ""
+    try:
+        import contextlib as _c29
+        import io as _io29
+        with tempfile.TemporaryDirectory() as _td29:
+            _rd29 = pathlib.Path(_td29) / "run29"
+            _rd29.mkdir(parents=True)
+            _rd29b = pathlib.Path(_td29) / "run29b"
+            _rd29b.mkdir(parents=True)
+            _kw29 = dict(limits=lm, judge=judge, start=s4, end=e4, trials1=10, trials2=6, top_k=2,
+                         seed=11, pool=pool, tfs=tfs_small, catalog_total=cat_total,
+                         purpose=_ts.PURPOSE_CHECK, tag="selftest29")
+            _rc29, _rk29 = _ts.CUMULATIVE, _ts.CHECK_RUNS
+            _ts.CUMULATIVE = pathlib.Path(_td29) / "cum.json"
+            _ts.CHECK_RUNS = pathlib.Path(_td29) / "chk.json"
+            _b29, _b29b = _io29.StringIO(), _io29.StringIO()
+            try:
+                with _c29.redirect_stdout(_b29):
+                    _o29 = run_generation(df, run_dir=_rd29, minimize="TIME_EXIT", **_kw29)
+                with _c29.redirect_stdout(_b29b):
+                    _o29b = run_generation(df, run_dir=_rd29b, **_kw29)
+            finally:
+                _ts.CUMULATIVE, _ts.CHECK_RUNS = _rc29, _rk29
+            _s29, _s29b = _b29.getvalue(), _b29b.getvalue()
+            # ① 何を目標にするかが画面に出る
+            if "[目的] TIME_EXIT の損失を最小化する" not in _s29:
+                t29.append("指定しても『何を目標にするか』が画面に出ない")
+            # ② 記録の1本1本に損の額が入る
+            _miss = [r for r in _o29["results1"] if "focus" not in r]
+            if _miss:
+                t29.append(f"記録に損の額が入っていない案が {len(_miss)} 本 在る")
+            # ③ 損の額と合計 net の両方が並ぶ ／ 1本も出なければ警告
+            _n29 = sum(r.get("focus_n", 0) for r in _o29["results1"])
+            if _n29:
+                if "合計 net $" not in _s29:
+                    t29.append("損の額と合計 net の両方が並んだ行が出ていない")
+                _t29_note = f"TIME_EXIT が {_n29} 玉 出た＝両方を並べて表示した"
+            else:
+                if "1本も出ていない" not in _s29:
+                    t29.append("指定した理由が1本も出ていないのに警告が出ない")
+                _t29_note = "TIME_EXIT が 0玉＝警告の道を通った"
+            # ④ 再開の記録に指定が残る（目的の入れ替わりを防ぐ土台）
+            _m29 = json.loads((_rd29 / "journal.jsonl").read_text(encoding="utf-8").splitlines()[0])
+            if _m29.get("meta", {}).get("minimize") != "TIME_EXIT":
+                t29.append("再開の記録に指定が残っていない")
+            # ⑤ メタ確認＝指定が無ければ、画面も記録も直す前のまま（恒等）
+            if "[目的] 合計 net を最大化する" not in _s29b:
+                t29.append("メタ確認: 指定なしで『合計 net を最大化する』が出ない")
+            if any("focus" in r for r in _o29b["results1"]):
+                t29.append("メタ確認: 指定が無いのに記録へ損の額が入っている（恒等が壊れる）")
+            _m29b = json.loads((_rd29b / "journal.jsonl").read_text(encoding="utf-8").splitlines()[0])
+            if "minimize" in _m29b.get("meta", {}):
+                t29.append("メタ確認: 指定が無いのに再開の記録の欄が増えている（恒等が壊れる）")
+    except Exception as _e29:
+        t29.append(f"検査が走らない: {type(_e29).__name__} {_e29}")
+    ng += [f"T29: {x}" for x in t29]
 
     # T7 値待ち＝limits に null が在れば「まこさん待ち」として検出できる（fail-closed の仕組みの検査）
     #
@@ -4855,6 +5008,70 @@ def selftest() -> int:
     except Exception as _e27:
         ng.append(f"T27: 再判定の検査が走らない: {type(_e27).__name__} {_e27}")
 
+    # ── T28 減らしたい損失（要件 R8・2026-08-26 新設）────────────────────────────────────
+    #   ★何を守るか＝「この決済した理由の損を減らして」と指示できること、その損の額が審判の値と
+    #     一致すること、名前の打ち間違いと再開の食い違いで止まること、指定が無ければ何も変わらないこと。
+    #   ★メタ確認＝絞りを外すと値が変わること（＝本当に絞っている）／正しい名前は止めないこと（止めすぎない）。
+    t28: list[str] = []
+    try:
+        class _J28:                      # 審判の代わり（合成データ・net の欄を足すだけ）
+            @staticmethod
+            def score(df):
+                return {"total": float(df["net"].sum())}
+
+        _t28 = pd.DataFrame({"exit_reason": ["TIME_EXIT", "TP_FILLED", "TIME_EXIT"],
+                             "net": [-10.0, 5.0, -3.0]})
+        # ① 絞った合計が、審判に通した値と一致する
+        _f28, _n28 = _focus_net(_t28, _J28, "TIME_EXIT")
+        if not (abs(_f28 - (-13.0)) < 1e-9 and _n28 == 2):
+            t28.append(f"絞った損の額が合わない（{_f28} / {_n28}玉・期待 -13.0 / 2玉）")
+        # ①メタ確認＝絞らずに全部 足すと別の値になる（＝本当に絞っている）
+        if abs(float(_t28["net"].sum()) - _f28) < 1e-9:
+            t28.append("メタ確認: 絞っても絞らなくても同じ値＝絞りが効いていない")
+        # ② その理由が1本も無ければ 0.0 / 0玉（＝全部の案が同点に見える状態を、呼ぶ側が警告できる）
+        if _focus_net(_t28, _J28, "SL_FILLED") != (0.0, 0):
+            t28.append("売買記録に無い理由で 0.0/0玉 を返さない")
+        # ③ 指定が無ければ 0.0 / 0玉（恒等＝目的は合計 net のまま）
+        if _focus_net(_t28, _J28, None) != (0.0, 0):
+            t28.append("指定が無いのに損の額を作っている（恒等が壊れる）")
+        # ④ 目的の値の切り替え（指定時＝損の額 ／ 指定なし＝合計 net）
+        _rec28 = {"total": 5.0, "focus": -13.0}
+        if _obj_key(_rec28, "TIME_EXIT") != -13.0:
+            t28.append("指定時に目的の値が損の額になっていない")
+        if _obj_key(_rec28, None) != 5.0:
+            t28.append("指定なしのときに目的の値が合計 net でない（恒等が壊れる）")
+        # ⑤ 審判が知らない名前は、走らせる前に止める（fail-closed）
+        try:
+            assert_known_exit_reason("NO_SUCH_EXIT_REASON")
+            t28.append("審判が知らない決済の理由で止まらない")
+        except SystemExit:
+            pass
+        # ⑤メタ確認＝正しい名前と指定なしは止めない（止めすぎない）
+        for _ok28 in ("TIME_EXIT", None):
+            try:
+                assert_known_exit_reason(_ok28)
+            except SystemExit:
+                t28.append(f"メタ確認: 止めてはいけないもので止まった（{_ok28}）")
+        # ⑥ 再開の記録と指定が食い違えば止まる（R12 の meta の食い違い＝目的の入れ替わりを防ぐ）
+        with tempfile.TemporaryDirectory() as _d28:
+            _jp28 = pathlib.Path(_d28) / "journal.jsonl"
+            Journal(_jp28, {"seed": 1})                      # 指定なしで作る
+            try:
+                Journal(_jp28, {"seed": 1, "minimize": "TIME_EXIT"})   # 指定つきで再開
+                t28.append("再開のときに指定の食い違いで止まらない")
+            except SystemExit:
+                pass
+            Journal(_jp28, {"seed": 1})                      # 同じ指定なら通る（止めすぎない）
+    except Exception as _e28:
+        t28.append(f"検査が走らない: {type(_e28).__name__} {_e28}")
+    ng += [f"T28: {x}" for x in t28]
+    print("  T28 減らしたい損失（R8）: 絞った損の額が審判の値と一致（絞りを外すと変わる＝メタ確認）／"
+          "売買記録に無い理由と指定なしは 0.0/0玉（恒等）／目的の値の切り替え／"
+          "審判が知らない名前は止め、正しい名前と指定なしは止めない／再開の指定の食い違いで止まる")
+    print(f"  T29 減らしたい損失の実走（R8）: 小さい本走で目的が入れ替わる（{_t29_note}）／"
+          "記録の1本1本に損の額が入る／再開の記録に指定が残る／"
+          "★メタ確認＝指定なしなら画面も記録も直す前のまま（恒等）")
+
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
@@ -4906,6 +5123,9 @@ def run_main(a) -> int:
     import tuner_stats as ts
     from periods import CONFIRM_END, CONFIRM_START, SEARCH_END, SEARCH_START
 
+    # ★R8＝減らしたい損失の名前は、走らせる前に審判の一覧と照らす（fail-closed・2026-08-26）。
+    #   打ち間違いを走り切ってから気づくのでは遅い（損の額が全部 $0 になり、案の優劣が付かない）。
+    assert_known_exit_reason(a.minimize)
     ad = et.load_adapter(a.strategy)           # ★戦略の中身を知るのは接続ファイルだけ（要件 R4）
     known = {z["id"]: z for z in ad.logics()}
     if a.logic not in known:
@@ -4981,7 +5201,8 @@ def run_main(a) -> int:
                          run_dir=run_dir, pool=pool, tfs=tfs, catalog_total=cat_total,
                          side=side, regime=regime, base_trades=base_trades,
                          atr_edges=rules.get("atr_band_edges"), min_per_day=mpd,
-                         net_floor=a.net_floor, purpose=a.purpose, tag=a.tag,
+                         net_floor=a.net_floor, minimize=a.minimize,
+                         purpose=a.purpose, tag=a.tag,
                          df_confirm=df_c, confirm_start=CONFIRM_START, confirm_end=CONFIRM_END,
                          base=base, rules=rules, rfloor=rfloor, build_regime=bool(a.build_regime))
     print(f"\n[本走まとめ] 通った {out['kept']} 本 ／ 捨てた {out['dropped']} 本 ／ 再利用 {out['reused']} 本"
@@ -5010,6 +5231,12 @@ def main() -> int:
                     help="この走行の目的。search＝値を選ぶ（試した回数に数える）／check＝道具の動作確認"
                          "（数えない・帳簿に残る）。書き忘れは止める＝既定に黙って倒れない")
     ap.add_argument("--tag", default="", help="この走行の名前（記録の置き場と、確認の走行の帳簿の理由の欄に入る）")
+    # ★減らしたい損失（要件 R8・まこさん確定 2026-07-27）＝診断で見つけた出血源を、形の探索で減らす。
+    #   何を減らすかは診断の結果で毎回変わるので、コードに焼かず実行時に渡す（engine_tuner.py と同じ形）。
+    ap.add_argument("--minimize", default=None,
+                    help="減らしたい損失の、決済した理由（例 TIME_EXIT）。指定するとその損失を最小化する。"
+                         "省略すると合計 net を最大化する（従来どおり）。"
+                         "審判が知らない名前なら走らせる前に止まる")
     ap.add_argument("--net-floor", type=float, default=None,
                     help="合計 net の下限。値決め窓の合計 net がこれを下回った試行は捨てる（値はまこさん）")
     ap.add_argument("--resume", default=None, metavar="DIR",
