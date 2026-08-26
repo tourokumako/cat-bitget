@@ -3551,13 +3551,49 @@ def unordered_iteration_scan(src: str) -> list[tuple[int, str]]:
     過去の探索をやり直せない状態でした（`session_worklog_20260816.md` の §4）。
 
     ★手で場所の一覧を書きません（手書きの一覧は書き忘れると穴になる＝next_step §6 の50番）。
-    ★見るのは3つ＝①`for x in {…}` のように set を直に回す ②内包表記が set を直に回す
-      ③その関数の中で set として作った変数を、あとで回す。
-    ★`sorted(...)` で包んだものは並びが決まるので、ここには出ません（回す相手が Call になる）。
-    ★限界＝関数の外から渡ってきた set（引数・戻り値）は追えません。ここで見るのは
-      「その関数の中で作った set」だけです。
+
+    ★何を set と見なすか＝波括弧 `{…}` ／ 集合の内包表記 ／ **`set(...)`・`frozenset(...)` の
+      呼び出し**の3つです。`sorted(...)` が出ないのは「Call だから」ではなく、**名前が set・
+      frozenset でない Call だから**です（`for x in set(y)` は見つかります）。
+    ★見る場所＝①`for`／`async for` が回す相手 ②内包表記が回す相手（`for … in …` の右側）。
+    ★見る単位＝**関数1つ＝1つの単位**。それに加えて、**ファイル直下とクラスの本体**を
+      「関数の外」としてまとめて1つの単位で見ます（入れ子の関数はそこから外して、別の単位に）。
+    ★数え方＝**同じ行に2つ以上あっても1件に丸めます**（行と理由が同じものは1件）。
+
+    ★set 扱いをやめる場合が2つ＝①同じ名前に別の物を代入し直したとき ②同じ名前を for 文か
+      内包表記の**ループ変数**として使ったとき（星つき `*s` も含む）。どちらも「入れ直し」です。
+      **★やめるのは「その行より後ろ」だけです**（下の1周の走査で、行の順に見ています）。
+
+    ★限界（6つ）
+      (a) 関数の外から渡ってきた set（引数・戻り値）は追えません。
+      (b) 入れ子の関数で、外側が作った set を内側で回す形は追えません。
+      (c) 内包表記のループ変数が set を受け取る形は追えません（代入ではないため）。
+      (d) set を作って、その同じ名前をループ変数にも使い、**その後に**その set を回す形は
+          追えません（②で set 扱いをやめるため）。engine_tuner の4本には在りません（実測 0件）。
+      (e) **包んでから回す形**は追えません＝`for x in list(s)` ／ `for x in (s | t)` ／
+          `[*s]`（星つきの展開）。どれも set の並びが結果に出ますが、回す相手が set の形に
+          見えないためです（実測でどれも 0件）。
+      (f) **ループが繰り返して、次の周で回す形**は追えません＝ループの本体の後ろで set を作り、
+          次の周の頭でそれを回す形。行の順に1回 見るだけなので、周をまたぐ関係は見ません。
+
+    ★★この関数は「回している所の形」を見ています。守りたいのは「並びの決まらない値が結果に
+      出ないこと」です。**この2つは同じではありません**（前者は後者の一部分）。
+      `"".join(s)`・`next(iter(s))`・`s.pop()`・set から作った dict を回す、なども並びが結果に
+      出ますが、この関数は見ません（2026-08-26 の読み比べの所見 §6）。
+
+    ★2026-08-26（106番・まこさん承認 29ebcd26…）の直し。**別セッションの Claude Code に
+      説明文と実装の読み比べを頼み（まこさん決定）、条件つき GO ＋ 指摘11件を受けて直しました。**
+      ①走査を ast.walk から _own_nodes へ＝ファイル全体を見る回で入れ子の関数の中まで潜り、
+        別の関数の同名の変数と結び付いていた（生成器 :1352・:1362 の誤報）。
+      ②ループ変数として使われた名前の set 扱いをやめる（生成器 :4708 の誤報）。
+      ③**3周を1周にして、行と桁の順に見る**＝直す前は「関数を見終わった後の1枚の答え」で
+        位置を見ておらず、**見逃しと誤報が両方 出せた**（読み比べの所見 Q1-1・実測）。
+        内包表記の中も、`for … in …` を1つずつ「回す相手を見る → 入れる名前をやめる」の順に。
+      ④`async for` を、回す相手を見る所でも見るようにした（直す前は片方だけ見ていた）。
+      ⑤ループ変数の星つき（`*s`）を開くようにした。
     """
     import ast
+    import collections
     tree = ast.parse(src)
 
     def _is_set_expr(n) -> bool:
@@ -3565,29 +3601,71 @@ def unordered_iteration_scan(src: str) -> list[tuple[int, str]]:
             isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
             and n.func.id in ("set", "frozenset"))
 
+    def _own_nodes(scope) -> list:
+        """その scope 直属のノードだけを返す（入れ子の関数の中には入らない）。
+
+        ★入れ子の関数の中身は、その関数自身が scope になった回で見ます＝取りこぼしません。
+        ★並べ直しは、これを呼ぶ側が行と桁の順で行います（下の1周の走査）。
+        """
+        out: list = []
+        q = collections.deque(ast.iter_child_nodes(scope))
+        while q:
+            n = q.popleft()
+            out.append(n)
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue          # 入れ子の関数は、それ自身が別の scope として見られる
+            q.extend(ast.iter_child_nodes(n))
+        return out
+
+    def _bound_names(target) -> list:
+        """ループが名前に入れる先を集める（`for a, (b, c) in …` の入れ子と `*s` も開く）。"""
+        if isinstance(target, ast.Name):
+            return [target.id]
+        if isinstance(target, ast.Starred):
+            return _bound_names(target.value)
+        if isinstance(target, (ast.Tuple, ast.List)):
+            return [nm for e in target.elts for nm in _bound_names(e)]
+        return []
+
     hits: list[tuple[int, str]] = []
     scopes = [tree] + [n for n in ast.walk(tree)
                        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
     for scope in scopes:
+        # ★2026-08-26（106番・読み比べの所見 Q1-1／Q1-2）＝3周を1周にした。
+        #   直す前は「代入を全部 集める → ループ変数を全部 消す → 回す所を全部 見る」の3周で、
+        #   set の記録が『関数を見終わった後の1枚の答え』になっていた＝回している所が代入より
+        #   前か後かを見ておらず、見逃しと誤報が両方 出せた（所見の実測A・B）。
+        #   いまは行と桁の順に1回だけ見て、その行までに分かっていることだけで判定する。
         setvars: dict[str, int] = {}
-        for n in ast.walk(scope):
+        for n in sorted(_own_nodes(scope),
+                        key=lambda x: (getattr(x, "lineno", 0), getattr(x, "col_offset", 0))):
+
+            def _look(it, ln: int) -> None:
+                """回す相手を1つ見る（この行までに分かっている set の記録で判定する）。"""
+                if _is_set_expr(it):
+                    hits.append((ln, "set を直に上から順に見ている"))
+                elif isinstance(it, ast.Name) and it.id in setvars:
+                    hits.append((ln, f"set の変数 {it.id}"
+                                     f"（{setvars[it.id]}行で作成）を上から順に見ている"))
+
+            # ①for／async for＝回す相手を先に見て、そのあとループ変数の set 扱いをやめる
+            if isinstance(n, (ast.For, ast.AsyncFor)):
+                _look(n.iter, n.lineno)
+                for nm in _bound_names(n.target):
+                    setvars.pop(nm, None)
+            # ②内包表記＝`for … in …` を1つずつ、同じ順で処理する。
+            #   ★1つの内包表記の中で入れて回す形が在るため（生成器 :4708 がこれ）。
+            for gen in getattr(n, "generators", []) or []:
+                _look(gen.iter, n.lineno)
+                for nm in _bound_names(gen.target):
+                    setvars.pop(nm, None)
+            # ③代入＝set を作ったら覚え、別の物を入れ直したらやめる
             if isinstance(n, ast.Assign) and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name):
                 nm = n.targets[0].id
                 if _is_set_expr(n.value):
                     setvars[nm] = n.lineno
-                elif nm in setvars:          # 同じ名前に別の物を入れ直したら set 扱いをやめる
+                elif nm in setvars:
                     del setvars[nm]
-        for n in ast.walk(scope):
-            iters = []
-            if isinstance(n, ast.For):
-                iters.append(n.iter)
-            for gen in getattr(n, "generators", []) or []:
-                iters.append(gen.iter)
-            for it in iters:
-                if _is_set_expr(it):
-                    hits.append((n.lineno, "set を直に上から順に見ている"))
-                elif isinstance(it, ast.Name) and it.id in setvars:
-                    hits.append((n.lineno, f"set の変数 {it.id}（{setvars[it.id]}行で作成）を上から順に見ている"))
     return sorted(set(hits))
 
 
@@ -3936,23 +4014,95 @@ def selftest() -> None:
     # ══ 番人 並びの決まらない入れ物（2026-08-16 新設・A-1a-0 の2番）═══════════════════════
     #   何を守るか＝同じ入力なら同じ結果が出ること。手で場所の一覧を書かず、機械が全部 数える。
     #   ★番人の番人＝わざと set を回すコードを見せたら、ちゃんと見つけるか。
-    _uo_files = ["engine_tuner_exec.py", "engine_tuner_gen.py", "tuner_judgement.py", "tuner_stats.py"]
+    #   ★2026-08-26（106番・読み比べの所見 Q3-3）＝対象の一覧の手書きをやめた。
+    #     直す前は4本の名前をここに手で書いていた＝この検査の説明文が引いている
+    #     「手書きの一覧は書き忘れると穴になる」が、テストの側で守られていなかった。
+    #     いまは H2 の印（h2_pass.json＝engine_tuner の経路のファイル）から .py を引く。
+    #     印が読めないときだけ、元の4本に落ちる（fail-open にせず、その旨を画面に出す）。
+    #   ★印に書いてあるパスは、リポジトリの入口からの相対（下の階層＝tuner_adapters/ も入る）。
+    #     ファイル名だけで探すと、その3本を落とす（2026-08-26 に実測して気づいた）。
+    _uo_here = pathlib.Path(__file__).resolve()
+    _uo_root = _uo_here.parents[4]                  # …/cat-bitget（リポジトリの入口）
+    _uo_note = "H2 の印から引いた"
+    try:
+        _uo_mark = json.loads((_uo_here.parents[2] / ".claude" / "state" / "h2_pass.json")
+                              .read_text(encoding="utf-8"))
+        _uo_files = sorted(str(f) for f in (_uo_mark.get("files") or {}) if str(f).endswith(".py"))
+        if not _uo_files:
+            raise ValueError("印に .py が1本も無い")
+        _uo_paths = [(f, _uo_root / f) for f in _uo_files]
+    except Exception as _uo_e:
+        _uo_note = f"★印を読めないので手書きの4本に落ちた（{str(_uo_e)[:40]}）"
+        _uo_paths = [(f, _uo_here.parent / f) for f in
+                     ("engine_tuner_exec.py", "engine_tuner_gen.py",
+                      "tuner_judgement.py", "tuner_stats.py")]
     _uo_hits: list[str] = []
     _uo_seen = 0
-    for _uf in _uo_files:
-        _up = pathlib.Path(__file__).resolve().parent / _uf
+    for _uf, _up in _uo_paths:
         if not _up.exists():
             _uo_hits.append(f"{_uf}: ファイルが無い（数え上げの対象が消えた）")
             continue
         _uo_seen += 1
         for _ln, _why in unordered_iteration_scan(_up.read_text(encoding="utf-8")):
-            _uo_hits.append(f"{_uf}:{_ln} {_why}")
+            _uo_hits.append(f"{pathlib.Path(_uf).name}:{_ln} {_why}")
+    if _uo_seen == 0:
+        _uo_hits.append("数え上げの対象が0本になった（一覧の引き方が壊れた）")
     if not unordered_iteration_scan("def f():\n    s = {1, 2}\n    for x in s:\n        pass\n"):
         _uo_hits.append("番人の番人: わざと set を回すコードを見せても見つけない（検査が効いていない）")
+    #   ★番人の番人2つ目（2026-08-26・106番・まこさん承認 462031cb…）＝見つけすぎないか。
+    #     直す前はこの見本で 1件 出た（＝生成器の3行の誤報と同じ形・実装の前に実測）。
+    #     別々の関数で同じ名前を使っているだけで、並びが決まらない所は1つも無い。
+    #     dict は入れた順を保つ（Python 3.7 以降・実測で確認）。
+    _uo_false = ("def a():\n"
+                 "    fams = {}\n"
+                 "    fams.setdefault('x', []).append(1)\n"
+                 "    return [f for f in fams]\n"
+                 "\n"
+                 "\n"
+                 "def b():\n"
+                 "    fams = {1, 2}\n"
+                 "    return fams\n")
+    _uo_fp = unordered_iteration_scan(_uo_false)
+    if _uo_fp:
+        _uo_hits.append(f"番人の番人: 別の関数の同じ名前を誤って結び付けた（106番の誤報が戻った）: {_uo_fp}")
+    #   ★番人の番人3つ目（同上）＝弱めすぎていないか。
+    #     同じ関数の中で作った set を回すのは、今までどおり 1件 見つける（行も合う）。
+    _uo_true = "def c():\n    got = {1, 2}\n    for x in got:\n        print(x)\n"
+    _uo_tp = unordered_iteration_scan(_uo_true)
+    if len(_uo_tp) != 1 or _uo_tp[0][0] != 3:
+        _uo_hits.append(f"番人の番人: 同じ関数の中の set を回すのを見つけられない（検査が弱まった）: {_uo_tp}")
+    #   ★番人の番人4〜9つ目（2026-08-26・読み比べの所見・まこさん承認 29ebcd26…）。
+    #     どれも所見が実測で出した見本＝直す前は、この6件のうち5件が期待と逆だった。
+    _uo_more = [
+        # 位置を見るか（重い指摘 Q1-1）＝回すのが先、入れ直しが後なら、本物として見つける
+        ("位置①本物（回した後で入れ直す）", 1,
+         "def f():\n    s = {1, 2}\n    for x in s:\n        pass\n    s = sorted(s)\n    return s\n"),
+        # 位置②＝入れ直しが先、回すのが後なら、見つけない
+        ("位置②誤報（入れ直した後で回す）", 0,
+         "def f(q):\n    for i in q:\n        s = {1, 2}\n    s = sorted(q)\n    for y in s:\n        pass\n"),
+        # クラスの本体でも、別々の入れ物の同名を結び付けない（Q3-1・106番と同じ形）
+        ("クラスの本体（106番と同じ形）", 0,
+         "class A:\n    fams = {}\n    z = [f for f in fams]\n\n\nclass B:\n    fams = {1, 2}\n"),
+        # async for も見る（Q2-2）
+        ("async for", 1,
+         "async def f(s):\n    s = {1, 2}\n    async for x in s:\n        pass\n"),
+        # ループ変数の星つき（Q1-5）
+        ("星つきのループ変数", 0,
+         "def f(pairs):\n    s = {1, 2}\n    for a, *s in pairs:\n        pass\n    for x in s:\n        pass\n"),
+        # 1つの内包表記の中で入れて回す（生成器 :4708 と同じ形）
+        ("内包表記の中で入れて回す", 0,
+         "def f(d, got):\n    got = {1, 2}\n"
+         "    return [c for bn in d.values() for got in bn.values() for c in got]\n"),
+    ]
+    for _nm, _want, _sample in _uo_more:
+        _got = unordered_iteration_scan(_sample)
+        if len(_got) != _want:
+            _uo_hits.append(f"番人の番人「{_nm}」: {_want} 件のはずが {len(_got)} 件: {_got}")
     ng += _uo_hits
-    print(f"[番人 並びの決まらない入れ物] {_uo_seen} 本のファイルを機械で全部 数える"
-          "（+ わざと set を回すコードを見せると見つけるか） → "
-          + ("✅ 0 件・見せると見つけた" if not _uo_hits else "❌ " + " ／ ".join(_uo_hits)))
+    print(f"[番人 並びの決まらない入れ物] {_uo_seen} 本のファイルを機械で全部 数える（{_uo_note}）"
+          "（+ 番人の番人9つ＝set を回すと見つける・別の関数の同名は結び付けない・同じ関数の中は"
+          "見つける・位置を見る2つ・クラスの本体・async for・星つき・内包表記の中で入れて回す） → "
+          + ("✅ 0 件・番人の番人9つとも期待どおり" if not _uo_hits else "❌ " + " ／ ".join(_uo_hits)))
     # ══ T-HYST 状態を保つ形（M2-2-5・2026-08-21 まこさん承認 24a453d6…）═══════════════════
     #   何を守るか＝並びの計算で書いた `_hold_state` が、決めごと①〜⑤のとおりに動くこと。
     #   ★確かめ方＝同じ決めごとを1バーずつのループで書いたものと、乱数200通りで突き合わせる。
