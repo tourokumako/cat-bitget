@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=f2f62f816924ef74 -->
+<!-- DOCMAP_HASH=4273c9e9e47cd676 -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -23,13 +23,13 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - **検証コマンドを持たない道具＝1 本**（gen_p23_candidates.py）
 - **いま検証が通らない道具＝3 本**（gen_improvement_arc.py／gen_auditor_brief.py／gen_filemap.py）
 - **名乗っていない道具＝1 本**（明らかな漏れ）／ 27 本（要確認）＝表3
-- 誰にも作られていない文書＝**385 本**（表4＝人が手で書いているもの）
+- 誰にも作られていない文書＝**386 本**（表4＝人が手で書いているもの）
 
 ## 表1｜道具 → 作る文書
 
 | 道具 | 作る文書 | 検証コマンド | いまの結果 |
 |---|---|---|---|
-| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり | ❌ ❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9e975d2abeef ／ 源から作り直すと 378c0153d5b6） |
+| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり | ❌ ❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9e975d2abeef ／ 源から作り直すと c33c453df3ea） |
 | `gen_auditor_brief.py` | auditor_template.md（一部の節） | あり | ❌    直し方: python3 scripts/priority_rebuild/gen_auditor_brief.py --write |
 | `gen_cat_requirements.py` | cat_requirements.md（まるごと） | あり | ✅  |
 | `gen_composition_rules.py` | composition_rules.json（まるごと）<br>composition_rules.md（まるごと） | あり | ✅  |
@@ -140,7 +140,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## 表4｜誰にも作られていない文書（人が手で書いているもの）
 
-**385 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
+**386 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
 
 <details><summary>全部を開く</summary>
 
@@ -464,6 +464,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-not-applicable-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-rebuild-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-map-r17-20260826.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-progress-machine-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/selftest-standalone-20260824.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-four-elements-gate-v58-20260825.md`

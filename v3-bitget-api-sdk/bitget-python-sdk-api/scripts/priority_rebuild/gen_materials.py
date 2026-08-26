@@ -348,6 +348,27 @@ _RA_START_RE = re.compile(r"<!-- REQ_ACCEPT_START hash=[0-9a-f]* [^>]*-->")
 _RA_END = "<!-- REQ_ACCEPT_END -->"
 _RA_HEAD = ["#", "やること", "触るファイル", "出るもの・確かめ方", "状態"]
 
+# ══ B-5｜「満たした」の根拠を、走らせた出力に限る（2026-08-26・承認 03f797a70c978b3e）══
+#
+# まこさんが貼った5番の逐語（session_worklog_20260823.md の §29）＝
+#   「✅済 の根拠を、走らせた出力に限る（手で打った数字を弾く）／CC が数字を打ち込む欄が消える」。
+#
+# 何が問題だったか（実測 2026-08-26・worklog §62）
+#   要件の state（完了／作業中）も progress（いまどこまで）も CC の手書き。
+#   実例＝R3 の progress「完了の線9項目のうち7項目を満たす」。この 7 を書いたのは CC で、走らせた出力ではない。
+#   ★CC の「完了」と、機械が見える数字がずれている要件が 2件（R8・R10）。
+#   ★✅済 63件のうち、走らせた記録の指し先（§NN）が無い行が 30件。
+#
+# 何をするか
+#   ① progress の「達成度の数字」を弾く（--verify が落ちる）。★日付は止めない。
+#   ② 要件17件について「効く行 N件／うち ✅済 M件／state とのずれ」を機械で出す。
+#   ③ ✅済 なのに走らせた記録の指し先が無い行を、件数つきで出す（★止めない・見せるだけ）。
+#
+# ★入っていないもの＝「要件を本当に満たしたか」の判定は入れない。
+#   やることリストが全部 ✅済 でも、要件を満たしたとは限らない（要件は別の作業でも満たせる）。判定は まこさん。
+_ACH_NUM = re.compile(r"\d+\s*項目|\d+\s*つとも|\d+\s*つのうち|\d+\s*件とも")
+_EVIDENCE = re.compile(r"§\s*\d+|worklog")
+
 # ★答えの文字列＝この4つだけ（設計書 §3.2・番人 F5 が「4つ以外が出ない」を確かめる）。
 _FB_MISS = "当たりません"
 _FB_HIT = "当たっています"
@@ -1881,8 +1902,59 @@ def milestone_rows(paths=None) -> list[dict]:
             out.append({"file": p.name,
                         "id": re.sub(r"\*+", "", cells[0]).strip(),
                         "todo": re.sub(r"\*+", "", cells[1]).strip(),
-                        "check": cells[idx]})
+                        "check": cells[idx],
+                        # ★状態の欄（2026-08-26・B-5）＝✅済 かどうかと、その根拠の指し先を見るため
+                        "state": cells[_RA_HEAD.index("状態")] if len(cells) > 4 else ""})
     return out
+
+
+def req_state_rows(rows=None, mp=None, idx=None) -> list[dict]:
+    """要件17件について、機械で数えた実測を作る（★CC が打つ数字は1つも無い・2026-08-26・B-5）。
+
+    戻り: [{"id","title","state","n","done","gap"}, ...]
+      state ＝ CC が手書きした 完了／作業中（そのまま出す）
+      n     ＝ その要件に効くやることリストの行の数（機械が数える）
+      done  ＝ そのうち ✅済 の数（機械が数える）
+      gap   ＝ state が「完了」なのに done < n（機械が判定する）
+    ★n == done でも「要件を満たした」とは限らない（要件は やることリスト以外の作業でも満たせる）。
+      だから gap は「ずれ」であって「未達」ではない。判定は まこさん。
+    """
+    rows = milestone_rows() if rows is None else rows
+    mp = _req_map() if mp is None else mp
+    idx = _req_index() if idx is None else idx
+    done_by_id = {r["id"]: ("✅済" in str(r.get("state", ""))) for r in rows}
+    out = []
+    for rid, meta in idx.items():
+        ids = [k for k, v in mp.items() if rid in (v.get("req") or [])]
+        n = len(ids)
+        d = sum(1 for k in ids if done_by_id.get(k))
+        st = str(meta.get("state", ""))
+        out.append({"id": rid, "title": meta.get("title", ""), "state": st,
+                    "n": n, "done": d, "gap": (st == "完了" and n > 0 and d < n)})
+    return out
+
+
+def req_progress_problems(idx=None) -> list[str]:
+    """progress に「達成度の数字」が在れば止める（★日付は止めない・2026-08-26・B-5）。
+
+    なぜ＝その数字は走らせた出力ではなく CC が打ったもの。
+    まこさんの逐語（2026-08-23）＝「✅済 の根拠を、走らせた出力に限る（手で打った数字を弾く）」。
+    """
+    idx = _req_index() if idx is None else idx
+    ng = []
+    for rid, meta in idx.items():
+        m = _ACH_NUM.search(str(meta.get("progress", "")))
+        if m:
+            ng.append(f"要件 {rid}: progress に手で打った達成度の数字が在る（『{m.group(0)}』）"
+                      "＝機械が出す欄に任せる（日付や説明はそのままでよい）")
+    return ng
+
+
+def unevidenced_done(rows=None) -> list[str]:
+    """✅済 なのに、走らせた記録の指し先（§NN / worklog）が無い行（★止めない・見せるだけ）。"""
+    rows = milestone_rows() if rows is None else rows
+    return [r["id"] for r in rows
+            if "✅済" in str(r.get("state", "")) and not _EVIDENCE.search(str(r.get("state", "")))]
 
 
 def _req_index(path=_RA_REQ_JSON) -> dict:
@@ -1892,7 +1964,8 @@ def _req_index(path=_RA_REQ_JSON) -> dict:
     except Exception:
         return {}
     return {r["id"]: {"title": r.get("title", ""), "accept": r.get("accept", ""),
-                      "state": r.get("state", "")} for r in j.get("requirements", [])}
+                      "state": r.get("state", ""), "progress": r.get("progress", "")}
+            for r in j.get("requirements", [])}
 
 
 def _req_map(path=_REQ_MAP) -> dict:
@@ -1926,7 +1999,37 @@ def req_accept_block(rows=None, mp=None, idx=None) -> str:
     mp = _req_map() if mp is None else mp
     idx = _req_index() if idx is None else idx
     n_empty = sum(1 for r in rows if not (mp.get(r["id"], {}).get("req") or []))
+    # ★B-5（2026-08-26）＝要件ごとの実測を、この差し込みの先頭に置く。新しい印も文書も作らない。
+    st = req_state_rows(rows, mp, idx)
+    n_gap = sum(1 for s in st if s["gap"])
+    unev = unevidenced_done(rows)
     L = [
+        "## ① 要件17件の実測（機械が数えた数字と、CC が手書きした宣言を並べます）",
+        "",
+        f"- **CC の宣言と、機械が見える数字がずれている要件＝{n_gap} 件**"
+        "（`state` が『完了』なのに、効くやることリストの行が全部 `✅済` になっていない）",
+        f"- **`✅済` なのに、走らせた記録の指し先（`§NN`）が無い行＝{len(unev)} 件**",
+        "",
+        "> **★『効く行が全部 `✅済`』＝『要件を満たした』ではありません。**"
+        "要件は やることリストに載っていない作業でも満たせます。**判定は まこさんがします。**",
+        "> **★`progress` に「N項目のうち」のような達成度の数字は書けません**"
+        "（`--verify` が落ちます）。その数字は走らせた出力ではなく CC が打ったものだからです。",
+        "",
+        "| 要件 | 題 | CC が書いた `state` | 効く行 | うち `✅済` | ずれ |",
+        "|---|---|---|---|---|---|",
+    ]
+    for s in st:
+        L.append(f"| {s['id']} | {str(s['title']).replace('|', chr(92) + '|')}"
+                 f" | {s['state']} | {s['n']} | {s['done']} | {'**★ずれ**' if s['gap'] else '—'} |")
+    if unev:
+        L += ["",
+              f"**`✅済` なのに走らせた記録の指し先が無い行（{len(unev)} 件）**＝"
+              + "・".join(unev),
+              "> **★この設計では止めません。**いま在る分を見えるようにするところまでです。"]
+    L += [
+        "",
+        "## ② やることリストの行 × 要件の逐語",
+        "",
         f"**やることリストの行 {len(rows)} 件を、要件の逐語と並べた表です。**",
         "",
         f"- **どの要件も指していない行＝{n_empty} 件**"
@@ -2079,6 +2182,7 @@ def verify() -> list[str]:
                       "（手で書き換えたか、元が変わったのに作り直していない）")
     # ★「やることリストの確かめ方 × 要件の逐語」（2026-08-26・B-4）＝止める条件4つ
     ng += req_accept_problems()                       # ①行が対応表に無い ②番号が正本に無い ③basis が空
+    ng += req_progress_problems()                     # ★B-5＝progress に手で打った達成度の数字が在る
     rblk = req_accept_block()
     for p, _why in _FB_TARGETS:
         if not p.exists():
@@ -2587,6 +2691,81 @@ def selftest() -> int:
             ng.append("R4・R5・R10: 印が無いので改変検出を確かめられない（先に印を置く）")
     except Exception as _era:                                    # noqa: BLE001
         ng.append(f"R1〜R10: 確かめられなかった（{type(_era).__name__}: {str(_era)[:100]}）")
+
+    # ══ B-5｜「満たした」の根拠を、走らせた出力に限る（2026-08-26・承認 03f797a70c978b3e）══
+    #   ★設計書 §11 の10件のうち、9番（差し込みを手で書き換えると落ちる）と
+    #     10番（印の外を変えても落ちない）は、B-4 の番人 R4・R10 が同じことを確かめている。
+    #     だからここで新しく足すのは 8件（S1〜S8）。
+    try:
+        _s_rows = milestone_rows()
+        _s_mp = _req_map()
+        _s_idx = _req_index()
+
+        # S1 progress に「9項目のうち7項目を満たす」を入れると落ちる
+        _i = {k: dict(v) for k, v in _s_idx.items()}
+        _i["R3"]["progress"] = "完了の線9項目のうち7項目を満たす。"
+        if not req_progress_problems(_i):
+            ng.append("S1: progress に『9項目のうち7項目』を入れても落ちない（手で打った数字を弾いていない）")
+
+        # S2 「2つとも満たした」でも落ちる
+        _i = {k: dict(v) for k, v in _s_idx.items()}
+        _i["R1"]["progress"] = "完了の条件2つとも満たした＝①②。"
+        if not req_progress_problems(_i):
+            ng.append("S2: progress に『2つとも』を入れても落ちない")
+
+        # S3 日付だけなら落ちない（★日付は止めない）
+        _i = {k: dict(v) for k, v in _s_idx.items()}
+        _i["R1"]["progress"] = "完了（2026-08-02）。engine_tuner から S1 と L1 を回せる。"
+        if req_progress_problems(_i):
+            ng.append("S3: 日付だけの progress で落ちる（日付まで止めてしまっている）")
+
+        # S4 いまの17件は落ちない
+        if req_progress_problems(_s_idx):
+            ng.append("S4: いまの要件の progress に達成度の数字が残っている（先に外す）")
+
+        # S5 state=完了 の要件の行を1つ「まだ」に変えると、ずれが1 増える
+        _base_gap = sum(1 for s in req_state_rows(_s_rows, _s_mp, _s_idx) if s["gap"])
+        _done_ok = [r for r in _s_rows
+                    if "✅済" in str(r.get("state", ""))
+                    and any(_s_idx.get(x, {}).get("state") == "完了"
+                            for x in (_s_mp.get(r["id"], {}).get("req") or []))]
+        if _done_ok:
+            _r2 = [dict(r) for r in _s_rows]
+            for r in _r2:
+                if r["id"] == _done_ok[0]["id"]:
+                    r["state"] = "まだ"
+            if sum(1 for s in req_state_rows(_r2, _s_mp, _s_idx) if s["gap"]) <= _base_gap:
+                ng.append("S5: ✅済 を1つ『まだ』に変えても、ずれの件数が増えない")
+        else:
+            ng.append("S5: 確かめる相手（state=完了 の要件に効く ✅済 の行）が見つからない")
+
+        # S6 対応表から1件 消すと、効く行の数が変わる
+        _k = next((k for k, v in _s_mp.items() if v.get("req")), None)
+        if _k:
+            _m2 = {k: v for k, v in _s_mp.items() if k != _k}
+            if req_state_rows(_s_rows, _s_mp, _s_idx) == req_state_rows(_s_rows, _m2, _s_idx):
+                ng.append("S6: 対応表から1件 消しても、効く行の数が変わらない（実物から引いていない）")
+
+        # S7 ✅済 の行から根拠の指し先を消すと、件数が1 増える
+        _with = [r for r in _s_rows
+                 if "✅済" in str(r.get("state", "")) and _EVIDENCE.search(str(r.get("state", "")))]
+        if _with:
+            _r3 = [dict(r) for r in _s_rows]
+            for r in _r3:
+                if r["id"] == _with[0]["id"]:
+                    r["state"] = "✅済（2026-08-20）"
+            if len(unevidenced_done(_r3)) <= len(unevidenced_done(_s_rows)):
+                ng.append("S7: 根拠の指し先を消しても、件数が増えない")
+        else:
+            ng.append("S7: 確かめる相手（根拠の指し先が在る ✅済 の行）が見つからない")
+
+        # S8 要件の題を1文字 変えると、差し込む表も同じだけ変わる
+        _i = {k: dict(v) for k, v in _s_idx.items()}
+        _i["R1"]["title"] = _i["R1"]["title"] + "＿番人"
+        if req_accept_block(_s_rows, _s_mp, _s_idx) == req_accept_block(_s_rows, _s_mp, _i):
+            ng.append("S8: 要件の題を変えても差し込む表が変わらない（その場で引いていない）")
+    except Exception as _es:                                     # noqa: BLE001
+        ng.append(f"S1〜S8: 確かめられなかった（{type(_es).__name__}: {str(_es)[:100]}）")
 
     print("=" * 70)
     print("gen_materials 自己検査")

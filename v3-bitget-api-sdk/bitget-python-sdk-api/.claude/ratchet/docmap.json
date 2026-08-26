@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "f2f62f816924ef74",
+ "_本文の指紋": "4273c9e9e47cd676",
  "body": {
   "docs": [
    {
@@ -634,6 +634,7 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-not-applicable-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-rebuild-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-map-r17-20260826.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-progress-machine-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/selftest-standalone-20260824.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-four-elements-gate-v58-20260825.md",
@@ -702,7 +703,7 @@
   ],
   "tools": [
    {
-    "一言": "❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9e975d2abeef ／ 源から作り直すと 378c0153d5b6）",
+    "一言": "❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9e975d2abeef ／ 源から作り直すと c33c453df3ea）",
     "作る文書": [
      {
       "作り方": "まるごと",
