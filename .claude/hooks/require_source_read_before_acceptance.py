@@ -30,6 +30,7 @@ import json
 import pathlib
 import re
 import sys
+import tempfile
 
 _REPO = pathlib.Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget")
 _SDK = _REPO / "v3-bitget-api-sdk" / "bitget-python-sdk-api"
@@ -146,8 +147,22 @@ def check(text: str, log: list[str]) -> list[str]:
 
 
 def _payload_text(d: dict) -> str:
+    """検査に掛ける文章を組み立てる。
+
+    ★まるごと書き換えるとき（Write＝`content` が在る）は、いま在るファイルを読まない
+      （2026-08-27・まこさん承認「どちらもOK」）。
+      なぜ直したか＝設計書は毎回 `acceptance.md` へ**上書き**する決まり（恒久の決まり §0-2 の1番）。
+      直す前は、いま在るファイルの中身も一緒に読んで対象を拾っていたので、**対象が変わるたびに
+      「前の設計書の対象」と、その対象が作る文書を開けと要求していた**（2026-08-26 に実際に起きた
+      ＝前の設計の `gen_materials.py` と関連文書4本を、関係が無いのに開かされた）。
+    ★一部だけ書き換えるとき（Edit／MultiEdit）は、いまのまま読む。書き込む中身に `TARGET:` の
+      行が入らないので、いま在るファイルから拾わないと A と B の検査が効かなくなるため。
+    ★この直しで新しい穴は開かない＝まるごと書き換えでも、書き込む中身に `TARGET:` が在れば
+      A と B は今までどおり効く（下の T11〜T13 で実測）。
+    """
     ti = d.get("tool_input", {}) or {}
     parts: list[str] = []
+    full_overwrite = isinstance(ti.get("content"), str)     # Write＝まるごと書き換え
     for k in ("content", "new_string"):
         v = ti.get(k)
         if isinstance(v, str):
@@ -158,7 +173,7 @@ def _payload_text(d: dict) -> str:
             parts.append(v)
     fp = ti.get("file_path") or ""
     p = pathlib.Path(fp) if fp else None
-    if p is not None and p.exists():
+    if p is not None and p.exists() and not full_overwrite:
         try:
             parts.append(p.read_text(encoding="utf-8"))
         except Exception:
@@ -200,12 +215,14 @@ def main(argv: list) -> int:
 # ── わざと壊して止まるか試すテスト ──────────────────────────────────────────
 def selftest() -> int:
     ng: list[str] = []
-    log_ok = [
-        "/x/scripts/priority_rebuild/gen_materials.py",
-        "/x/.claude/ratchet/materials.md",
-        "/x/.claude/ratchet/materials.json",
-        "/x/.claude/memory/regime_detection_kb.md",
-    ]
+    real = _SDK / "scripts" / "priority_rebuild" / "gen_materials.py"
+    # ★「全部 開いた」の見本は手書きしない＝実物の GENERATES から作る（2026-08-27）。
+    #   直す前は materials.md と materials.json の2本を手で書いていた。65回目（2026-08-26）に
+    #   gen_materials.py が やることリスト2本も作るようになり、見本が古くなって T3 と T5 が
+    #   落ちたまま気づかれなかった（＝手書きの一覧は腐る。印の一覧を機械で集めるのと同じ理由）。
+    log_ok = (["/x/scripts/priority_rebuild/gen_materials.py"]
+              + [f"/x/{g}" for g in generates_of(real)]
+              + ["/x/.claude/memory/regime_detection_kb.md"])
     tgt = "TARGET: scripts/priority_rebuild/gen_materials.py\n"
 
     # T1 何も開いていない → A で止まる
@@ -230,7 +247,6 @@ def selftest() -> int:
     if check("ただの文章です。\n", []):
         ng.append("T6: TARGET も『読んだ』も無いのに止まった")
     # T7 GENERATES の取り出しが実物で動く
-    real = _SDK / "scripts" / "priority_rebuild" / "gen_materials.py"
     gens = generates_of(real)
     if not any(g.endswith("materials.md") for g in gens):
         ng.append(f"T7: 実物から GENERATES を取り出せない（取れたもの＝{gens}）")
@@ -249,9 +265,30 @@ def selftest() -> int:
     if any("nonexistent_kb" in x for x in check(sec2, log_ok)):
         ng.append("T10: 別の節のファイル名まで『読んだ』として巻き込んでいる")
 
+    # ── T11〜T13 まるごと書き換えのとき、いま在るファイルを読まない（2026-08-27・まこさん承認）──
+    #   ★直す前は、前の設計書の対象を開けと要求していた（2026-08-26 に実際に起きた）。
+    with tempfile.TemporaryDirectory() as _td:
+        _old = pathlib.Path(_td) / "acceptance.md"
+        _old.write_text("TARGET: scripts/priority_rebuild/gen_materials.py\n"
+                        "\n読んだもの＝`.claude/ratchet/materials.md`\n", encoding="utf-8")
+        _new_tgt = "TARGET: scripts/priority_rebuild/engine_tuner_gen.py\n"
+        # T11 まるごと書き換え（Write）＝新しい対象だけを見る（前の対象を持ち込まない）
+        _w = _payload_text({"tool_input": {"file_path": str(_old), "content": _new_tgt}})
+        if "gen_materials.py" in _w:
+            ng.append("T11: まるごと書き換えなのに、前の設計書の対象を持ち込んでいる")
+        if "engine_tuner_gen.py" not in _w:
+            ng.append("T11: 書き込む中身の対象が拾えていない")
+        # T12 一部だけ書き換え（Edit）＝いまのまま、いま在るファイルから対象を拾う
+        _e = _payload_text({"tool_input": {"file_path": str(_old), "new_string": "1行だけ足す\n"}})
+        if "gen_materials.py" not in _e:
+            ng.append("T12: 一部だけの書き換えで、いま在るファイルの対象を拾えていない（穴が開く）")
+        # T13 メタ確認＝まるごと書き換えでも、その対象を開いていなければ やはり止まる
+        if not any(x.startswith("A ") for x in check(_w, [])):
+            ng.append("T13 メタ確認: まるごと書き換えで、対象を開いていないのに通ってしまう")
+
     for x in ng:
         print(f"❌ {x}")
-    print(f"{'❌' if ng else '✅'} わざと壊して止まるか試すテスト {10 - len(ng)}/10 pass")
+    print(f"{'❌' if ng else '✅'} わざと壊して止まるか試すテスト {13 - len(ng)}/13 pass")
     return 1 if ng else 0
 
 
