@@ -107,6 +107,10 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/forbid_interpretation_file.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_purpose_gate.sh"
           }
         ]
       },
