@@ -1270,7 +1270,8 @@
    "vwap"
   ],
   "exit_fire_forms": [
-   "state"
+   "state",
+   "candle_dir"
   ],
   "family_templates": [
    "ABER位置",

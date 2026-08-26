@@ -143,6 +143,13 @@ def exec_capability() -> dict:
     # ★出口の発火条件で実際に使える形＝実行器を呼んで確かめる（2026-08-07）。
     #   AST では読み切れないので、形ごとに1本ずつ実物へ渡して、例外が出ないものだけを「使える」とする。
     #   事案＝ローソクの向き（材料の無い形）を出口の条件に入れたら、実行器が材料を探しに行って落ちた。
+    #
+    # ★2026-08-26（64回目・不具合111番・承認 919b9e4256943b2e…）＝渡す前に下ごしらえを通す。
+    #   61回目（2026-08-25・97番）に、実行器が「ループの前に条件を真偽の配列へ直す」形になった
+    #   （_collect_fire_cols・engine_tuner_exec.py:2119）。この道具はそれを通さずに見本を渡していたので、
+    #   2つとも落ちて一覧が空になっていた＝作り直すと「出口では何も使えない」という嘘が表に入る状態だった。
+    #   落ちた理由の逐語＝「出口 fire の条件が解決されていない（ループの前に _collect_fire_cols を通す）」。
+    #   ★直し方は実行器自身が文字で指示している（CC が考えた呼び方ではない）。
     fire_forms = []
     _df = pd.DataFrame({"ts": pd.date_range("2024-01-01", periods=3, freq="5min"),
                         "open": [1.0] * 3, "high": [1.0] * 3, "low": [1.0] * 3,
@@ -155,7 +162,9 @@ def exec_capability() -> dict:
         ("candle_dir", {"role": "env", "form": "candle_dir", "value": {"dir": "bull"}}),
     ):
         try:
-            ex._exit_fire_ok({"fire": {"all": [cond]}}, _lot, 1, _df, {}, "", {})
+            _recipe = {"exits": [{"fire": {"all": [cond]}}]}
+            _fc = ex._collect_fire_cols(_recipe, _df, {}, "", {})   # ★下ごしらえ（111番）
+            ex._exit_fire_ok(_recipe["exits"][0], _lot, 1, _df, {}, "", _fc)
             fire_forms.append(label)
         except BaseException:
             pass
@@ -657,6 +666,54 @@ def selftest() -> None:
     if ngs:
         raise GenError(f"[番人] 🚨 既知答えに正しく反応しない: {ngs}")
     print(f"[番人] ✅ 既知答え {len(cases)} 件 全部 期待どおり")
+
+    # ── G1〜G3｜出口の発火条件で使える形の数え上げ（2026-08-26・64回目・不具合111番）──
+    #   何を守るか＝この一覧は「実行器へ見本を渡して、落ちなければ使える」で作る。
+    #   実行器の呼び方が変わると黙って空になり、作り直した表に嘘が入る（111番で実際に起きた）。
+    #   ★実物のファイルは1バイトも書き換えない（写しを渡すだけ）。
+    import engine_tuner_exec as _ex
+    _gng = []
+    _df_g = pd.DataFrame({"ts": pd.date_range("2024-01-01", periods=3, freq="5min"),
+                          "open": [1.0] * 3, "high": [1.0] * 3, "low": [1.0] * 3,
+                          "close": [1.0] * 3, "volume": [1.0] * 3})
+    _lot_g = {"first_idx": 0, "add_count": 1, "avg": 1.0, "max_fav": 1.0, "max_adv": 1.0,
+              "side": "SHORT", "pk_prev": 1.0}
+    _cond_g = {"state": {"role": "env", "form": "level", "side": "above",
+                         "material": [{"state": "hold_min"}], "value": {"n": 1}},
+               "candle_dir": {"role": "env", "form": "candle_dir", "value": {"dir": "bull"}}}
+
+    def _probe(conds: dict, prep: bool) -> list:
+        """見本を渡して、落ちなかったものだけを返す（prep=False は 111番より前の呼び方）。"""
+        out = []
+        for lb, cd in conds.items():
+            try:
+                rc = {"exits": [{"fire": {"all": [cd]}}]}
+                fc = _ex._collect_fire_cols(rc, _df_g, {}, "", {}) if prep else {}
+                _ex._exit_fire_ok(rc["exits"][0], _lot_g, 1, _df_g, {}, "", fc)
+                out.append(lb)
+            except BaseException:                                # noqa: BLE001
+                pass
+        return out
+
+    # G1 下ごしらえを通さない呼び方（111番より前）に戻すと、一覧が空になる
+    if _probe(_cond_g, prep=False):
+        _gng.append("G1: 下ごしらえを通さなくても形が数えられた"
+                    "（実行器が下ごしらえを求めなくなった＝この番人の前提が変わった）")
+    # G2 実行器に無い形の名前を混ぜると、その1件だけが落ちる
+    _bad_g = dict(_cond_g)
+    _bad_g["candle_dir"] = {"role": "env", "form": "zzz_uso_form", "value": {"dir": "bull"}}
+    if _probe(_bad_g, prep=True) != ["state"]:
+        _gng.append(f"G2: 実行器に無い形を混ぜても落ちない（{_probe(_bad_g, prep=True)}）"
+                    "＝『落ちなければ使える』の数え方が効いていない")
+    # G3 いまの実物の一覧が、表に入っている一覧と同じか（作り直し忘れの検出）
+    _now_g = _probe(_cond_g, prep=True)
+    if _now_g != cap["exit_fire_forms"]:
+        _gng.append(f"G3: 実測 {_now_g} と 表の中身 {cap['exit_fire_forms']} が食い違う")
+    for _x in _gng:
+        print(f"  🚨 {_x}")
+    if _gng:
+        raise GenError(f"[番人] 🚨 出口の発火条件で使える形の数え上げ: {_gng}")
+    print(f"[番人] ✅ 出口の発火条件で使える形 G1〜G3 全部 期待どおり（いま使える形＝{_now_g}）")
 
 
 def v9_test() -> None:
