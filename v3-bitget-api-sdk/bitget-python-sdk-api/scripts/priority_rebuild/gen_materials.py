@@ -39,9 +39,11 @@
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import pathlib
+import re
 import sys
 
 _HERE = pathlib.Path(__file__).resolve().parent
@@ -58,6 +60,9 @@ _RATCHET = _HERE.parent.parent / ".claude" / "ratchet"
 GENERATES = [
     ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/materials.md", "まるごと"),
     ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/materials.json", "まるごと"),
+    # ★「作ってはいけないものとの照合」の表（2026-08-26・64回目）＝印の間だけを書き換える。
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones.md", "一部の節"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md", "一部の節"),
 ]
 
 _MD = _RATCHET / "materials.md"
@@ -290,6 +295,59 @@ _A1_CFG = _HERE / "observe_config.json"
 _A1_LIM = _HERE / "recipes" / "search_limits.json"
 _A1_GEN = _HERE / "engine_tuner_gen.py"
 _A1_E38 = _HERE / "e38_logics.json"
+
+
+# ══ 「作ってはいけないものとの照合」を実物から数える（2026-08-26・64回目・承認 b034352a6940f601…）══
+#
+# なぜ要るか。
+#   要件定義書に「作ってはいけないもの」の表が在り、作業に入る前に CC が1件ずつ照合して
+#   「当たる／当たらない」を書く決まり（恒久の決まり §1）。その答えの欄を CC が文章で書いていた。
+#   2026-08-23 に、その欄が嘘だったことが分かった（next_step.md §6 の78番・まこさん認定＝重大な不正）。
+#   当たっているのに「当たりません」と書いてあった。
+#
+# まこさんの指示（逐語 2026-08-23）。
+#   「作ってはいけないものとの照合」を、手書きの表から、実物を数えて自動で作る表に変える。
+#   （消すもの）CC が「当たりません」と書ける欄が消える。
+#
+# 何をするか。
+#   ① 一覧そのものを要件の json から読む（CC が写さない）
+#   ② 実物を数える（乱数の呼び出し／法則の表を読む所／決まった数字だけの一覧／範囲を通さずに作る所）
+#   ③ 数字から答えを決める（返す文字列は下の4つだけ・プログラムに固定）
+#   ④ 2つの文書へ印つきで差し込む（手で書き換えると --verify が落ちる）
+#
+# ★止めない。見えるようにするだけ（設計書 §3.3）。
+_FB_REQ_JSON = _RATCHET / "engine_tuner_requirements.json"
+_FB_START = ("<!-- FORBIDDEN_CHECK_START hash={h} "
+             "ここは gen_materials.py が自動生成＝手で書き換えない -->")
+_FB_START_RE = re.compile(r"<!-- FORBIDDEN_CHECK_START hash=[0-9a-f]* [^>]*-->")
+_FB_END = "<!-- FORBIDDEN_CHECK_END -->"
+_FB_TARGETS = [
+    (_RATCHET / "engine_tuner_milestones.md", "マイルストーン①のフローと やることリスト"),
+    (_RATCHET / "engine_tuner_milestones2.md", "マイルストーン②（場面の判定）"),
+]
+
+# ★答えの文字列＝この4つだけ（設計書 §3.2・番人 F5 が「4つ以外が出ない」を確かめる）。
+_FB_MISS = "当たりません"
+_FB_HIT = "当たっています"
+_FB_SUSPECT = "当たっている疑いあり"
+_FB_TBD = "測り方が未定"
+_FB_VERDICTS = (_FB_MISS, _FB_HIT, _FB_SUSPECT, _FB_TBD)
+
+# 乱数を「引く操作」の名前＝呼び出しの最後の名前がこれなら1件と数える。
+#   ★2段の書き方（rng.choice）だけでなく、3段の書き方（np.random.default_rng）も拾う。
+#   57回目の設計書は2段だけを見ていて、実物の29件を丸ごと落としていた（worklog 20260826 §28.1）。
+_FB_DRAW_METHODS = frozenset({
+    "choice", "integers", "random", "uniform", "permutation", "normal", "shuffle",
+    "standard_normal", "exponential", "beta", "poisson", "binomial", "randint",
+    "randrange", "sample", "gauss", "default_rng", "Random", "seed", "spawn", "bit_generator",
+})
+
+# 法則の表（承認済みの型の表・場面の決まり・パラメータの範囲の表）を読む関数。
+#   ★乱数だけで組んでいるなら、この表を1つも読まないはず＝1番の白黒の材料。
+_FB_LAW_FUNCS = frozenset({
+    "load_signal_table", "load_scene_rules", "material_ranges", "ranked_groups",
+    "role_lineage", "forms_where", "regime_draw_order",
+})
 
 
 def _is_num(x) -> bool:
@@ -1612,6 +1670,175 @@ def render_md(body: dict) -> str:
     return "\n".join(L) + "\n"
 
 
+def forbidden_items(req_json: dict | None = None) -> list[dict]:
+    """要件の json から「作ってはいけないもの」の一覧を読み取る（★CC が写さない）。
+
+    形＝`| 番号 | 文 | いつ・なぜ足したか |` の表の行。まこさんが3番を足せば、自動で3番が現れる。
+    引数は番人（F1）が架空の番号を混ぜるためだけに在る。既定は実物から読む。
+    """
+    d = json.loads(_FB_REQ_JSON.read_text(encoding="utf-8")) if req_json is None else req_json
+    out: list[dict] = []
+    for s in d.get("purpose_reading", []):
+        if not isinstance(s, str) or "作ってはいけないもの" not in s:
+            continue
+        for line in s.split("\n"):
+            line = line.strip()
+            if not line.startswith("|"):
+                continue
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if len(cells) < 2 or not cells[0].isdigit():
+                continue          # 見出しの行と区切りの行はここで落ちる
+            out.append({"番号": cells[0], "文": cells[1]})
+    return out
+
+
+def _fb_dotted(f) -> list[str]:
+    """呼び出しの名前を点で分けた並びにする（np.random.default_rng → [np, random, default_rng]）。"""
+    parts: list[str] = []
+    while isinstance(f, ast.Attribute):
+        parts.append(f.attr)
+        f = f.value
+    parts.append(f.id if isinstance(f, ast.Name) else "?")
+    return list(reversed(parts))
+
+
+def _fb_enclosing(node, parent: dict) -> str:
+    """その呼び出しを囲んでいる関数の名前。"""
+    while node in parent:
+        node = parent[node]
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            return node.name
+    return "(モジュール直下)"
+
+
+def count_random_draws(src: str | None = None) -> dict:
+    """案を作るプログラムの中の乱数の呼び出しを、構文木で数える（1番の材料）。
+
+    数え方＝呼び出しの名前を点でつないだ全体にして、
+      ・最後の名前が「引く操作」の一覧（_FB_DRAW_METHODS）に在る、または
+      ・途中に `random` が在る（np.random.… の形）
+    のどちらかなら 1 件。
+    ★引数は番人（F2）が写しに1件 足すためだけに在る。既定は実物から読む。
+    """
+    src = _A1_GEN.read_text(encoding="utf-8") if src is None else src
+    tree = ast.parse(src)
+    parent: dict = {}
+    for n in ast.walk(tree):
+        for ch in ast.iter_child_nodes(n):
+            parent[ch] = n
+    per: dict[str, int] = {}
+    total = 0
+    for n in ast.walk(tree):
+        if not (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)):
+            continue
+        segs = _fb_dotted(n.func)
+        if "random" in segs[:-1] or segs[-1] in _FB_DRAW_METHODS:
+            total += 1
+            k = _fb_enclosing(n, parent)
+            per[k] = per.get(k, 0) + 1
+    return {"合計": total, "内訳": sorted(per.items(), key=lambda kv: (-kv[1], kv[0]))}
+
+
+def count_law_reads(src: str | None = None) -> dict:
+    """法則の表を読む呼び出しを、構文木で数える（1番の白黒の材料）。
+
+    ★乱数だけで条件をつないでいるなら、承認済みの型の表も 場面の決まりも 範囲の表も読まない。
+    だから「乱数が在る」だけでは白黒が付かず、「法則の表を1つも読まない」で初めて当たると言える。
+    """
+    src = _A1_GEN.read_text(encoding="utf-8") if src is None else src
+    tree = ast.parse(src)
+    per: dict[str, int] = {}
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in _FB_LAW_FUNCS:
+            per[n.func.id] = per.get(n.func.id, 0) + 1
+    return {"合計": sum(per.values()), "内訳": sorted(per.items(), key=lambda kv: (-kv[1], kv[0]))}
+
+
+def _fb_outside_range() -> tuple[int | None, str]:
+    """範囲から引く処理を通さずに材料を作っている所の件数（2番の材料その2）。
+
+    ★関数の名前を決め打ちしない。engine_tuner_gen が自分で持っている検査を呼ぶ。
+      理由＝59回目に 78番を直したとき、間に2つ 処理をはさむ形になった。
+      名前を決め打ちすると、直っているのに「当たっています」と出る（設計書 §1.5）。
+    戻り＝(件数, 理由)。読み込めなければ (None, 理由)＝表に「測れませんでした」と出す。
+    """
+    import contextlib
+    import io
+    try:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            import engine_tuner_gen as _g               # noqa: PLC0415
+            rc = _g.lint_provenance(verbose=False)
+        return (0 if rc == 0 else 1), ""
+    except Exception as e:                              # noqa: BLE001
+        return None, f"{type(e).__name__}: {str(e)[:60]}"
+
+
+def forbidden_verdict(no: str, m: dict) -> str:
+    """実物を数えた数字から、答えの文字列を決める（設計書 §3.2）。
+
+    ★返すのは _FB_VERDICTS の4つだけ。CC が文章で上書きできる欄はここに無い。
+    """
+    if no == "1":
+        if m.get("乱数", 0) == 0:
+            return _FB_MISS
+        return _FB_HIT if m.get("法則", 0) == 0 else _FB_SUSPECT
+    if no == "2":
+        if m.get("数の並び", 0) > 0 or m.get("範囲を通さない", 0) > 0:
+            return _FB_HIT
+        return _FB_MISS
+    return _FB_TBD
+
+
+def forbidden_block(req_json: dict | None = None, gen_src: str | None = None) -> str:
+    """差し込む固まり（印つき）を作る。★引数は番人が写しを渡すためだけに在る。"""
+    items = forbidden_items(req_json)
+    rnd = count_random_draws(gen_src)
+    law = count_law_reads(gen_src)
+    fx = fixed_number_places()
+    out_n, out_why = _fb_outside_range()
+    m = {"乱数": rnd["合計"], "法則": law["合計"],
+         "数の並び": fx["合計並び"], "範囲を通さない": (out_n or 0)}
+
+    rnd_top = "／".join(f"{k} {v}" for k, v in rnd["内訳"][:6])
+    law_top = "／".join(f"{k} {v}" for k, v in law["内訳"][:6])
+    places = "／".join(f"場所{p['番号']} {p['並び']}" for p in fx["places"])
+    outside = (f"{out_n}件（{'合格' if out_n == 0 else '不合格'}）" if out_n is not None
+               else f"測れませんでした（{out_why}）")
+    facts = {
+        "1": (f"乱数の呼び出し **{rnd['合計']}件**（{rnd_top}）"
+              f"・法則の表を読む所 **{law['合計']}件**（{law_top}）"),
+        "2": (f"決まった数字だけの一覧 **{fx['合計並び']}件**（{places}）"
+              f"・範囲を通さずに作っている所 **{outside}**"),
+    }
+    L = ["| # | 作ってはいけないもの | 実物を数えた結果 | 答え |", "|---|---|---|---|"]
+    for it in items:
+        no = it["番号"]
+        L.append(f"| {no} | {it['文']} | {facts.get(no, '（この番号の測り方はまだ在りません）')}"
+                 f" | **{forbidden_verdict(no, m)}** |")
+    L += [
+        "",
+        "> **この表は `gen_materials.py` が実物を数えて作ります。手で書き換えると `--verify` が落ちます。**",
+        "> 一覧そのものも `.claude/ratchet/engine_tuner_requirements.json` からの複写です（CC が写しません）。",
+        "> **数え方**＝乱数の呼び出し（`engine_tuner_gen.py` の構文木）／法則の表を読む呼び出し／"
+        "決まった数字だけの一覧（4か所）／範囲を通さずに作っている所（`engine_tuner_gen.lint_provenance`）。",
+        "> **限界**＝1番は白黒が付かない場合があります。乱数が「案の骨格を決めている」のか"
+        "「同じ点数のときの並び順を決めている」のかは、構文木では分けられません。**白黒は まこさんが付けます。**",
+    ]
+    body = "\n".join(L)
+    h = hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
+    return _FB_START.format(h=h) + "\n" + body + "\n" + _FB_END
+
+
+def _fb_splice(text: str, blk: str) -> tuple[str, bool]:
+    """FORBIDDEN_CHECK_START〜END を差し替える。印が無ければ差し込まない（False）。"""
+    mt = _FB_START_RE.search(text)
+    if not mt or _FB_END not in text[mt.end():]:
+        return text, False
+    e = text.index(_FB_END, mt.end()) + len(_FB_END)
+    return text[:mt.start()] + blk + text[e:], True
+
+
 def write() -> int:
     body = build_body()
     if not body["library_ready"]:
@@ -1631,6 +1858,22 @@ def write() -> int:
         print(f"  ❌ 節の中に ❌ が {len(_sng)} 件 残っています（--selftest の T11 が落ちます）")
         for _x in _sng[:5]:
             print(f"     - {_x[:140]}")
+    # ★「作ってはいけないものとの照合」の差し込み（2026-08-26・64回目）
+    blk = forbidden_block()
+    for p, _why in _FB_TARGETS:
+        if not p.exists():
+            print(f"  ⚠️ [未差し込み] {p.name}: ファイルが無い")
+            continue
+        t = p.read_text(encoding="utf-8")
+        new, ok = _fb_splice(t, blk)
+        if not ok:
+            print(f"  ⚠️ [未差し込み] {p.name}: FORBIDDEN_CHECK_START/END の印が無い（先に印を置く）")
+            continue
+        if new != t:
+            p.write_text(new, encoding="utf-8")
+            print(f"  [差し込み] {p.name}（作ってはいけないものとの照合）")
+        else:
+            print(f"  [変更なし] {p.name}（作ってはいけないものとの照合）")
     return 0
 
 
@@ -1653,6 +1896,21 @@ def verify() -> list[str]:
             ng.append("materials.json の指紋が正本と合わない（--write で作り直す）")
     else:
         ng.append("materials.json が無い（--write で作る）")
+    # ★「作ってはいけないものとの照合」の差し込みが、実物と一致するか（2026-08-26・64回目）
+    blk = forbidden_block()
+    for p, _why in _FB_TARGETS:
+        if not p.exists():
+            ng.append(f"{p.name}: ファイルが無い（作ってはいけないものとの照合の差し込み先）")
+            continue
+        t = p.read_text(encoding="utf-8")
+        mt = _FB_START_RE.search(t)
+        if not mt or _FB_END not in t[mt.end():]:
+            ng.append(f"{p.name}: FORBIDDEN_CHECK_START/END の印が無い")
+            continue
+        cur = t[mt.start():t.index(_FB_END, mt.end()) + len(_FB_END)]
+        if cur != blk:
+            ng.append(f"{p.name}: 作ってはいけないものとの照合の差し込みが実物と食い違う"
+                      "（手で書き換えたか、元が変わったのに作り直していない）")
     return ng
 
 
@@ -1963,16 +2221,119 @@ def selftest() -> int:
     except Exception as _e18:                                    # noqa: BLE001
         ng.append(f"T17: 確かめられなかった（{type(_e18).__name__}: {str(_e18)[:80]}）")
 
+    # ── F1〜F6｜「作ってはいけないものとの照合」（2026-08-26・64回目・承認 b034352a6940f601…）──
+    #   何を守るか＝照合の答えの欄が、CC の文章でなく実物の数字から出ていること。
+    #   ★F1〜F5 は写しを渡して確かめる（実物のファイルは1バイトも書き換えない）。
+    try:
+        _fb_req = json.loads(_FB_REQ_JSON.read_text(encoding="utf-8"))
+        _fb_gen = _A1_GEN.read_text(encoding="utf-8")
+        _fb_items0 = forbidden_items()
+        _fb_rnd0 = count_random_draws()
+        _fb_law0 = count_law_reads()
+
+        # F1 要件の json の写しに架空の3番を足す → 表に3番が出て、答えが「測り方が未定」
+        _fb_req_u = json.loads(json.dumps(_fb_req, ensure_ascii=False))
+        for _i, _s in enumerate(_fb_req_u.get("purpose_reading", [])):
+            if isinstance(_s, str) and _s.lstrip().startswith("| # | 作ってはいけないもの"):
+                _fb_req_u["purpose_reading"][_i] = _s + "\n| 3 | **架空の3番（番人）** | 番人が足した |"
+                break
+        _fb_items_u = forbidden_items(_fb_req_u)
+        if len(_fb_items_u) != len(_fb_items0) + 1:
+            ng.append(f"F1: 要件の写しに3番を足しても一覧がちょうど1 増えない"
+                      f"（{len(_fb_items0)} → {len(_fb_items_u)}）＝一覧を json から読めていない")
+        elif forbidden_verdict("3", {}) != _FB_TBD:
+            ng.append(f"F1: 測り方の無い番号の答えが『{_FB_TBD}』にならない")
+        elif f"| 3 | **架空の3番（番人）** |" not in forbidden_block(req_json=_fb_req_u):
+            ng.append("F1: 差し込みの表に3番が出ない（一覧が表に反映されない）")
+
+        # F2 生成器の写しに乱数の呼び出しを1つ 足す → 合計がちょうど1 増える
+        _fb_gen_u = _fb_gen + "\n\ndef _zzz_uso_fb2(rng):\n    return rng.choice([1, 2, 3])\n"
+        _got2 = count_random_draws(_fb_gen_u)["合計"]
+        if _got2 != _fb_rnd0["合計"] + 1:
+            ng.append(f"F2: 乱数の呼び出しを1つ 足しても合計がちょうど1 増えない"
+                      f"（{_fb_rnd0['合計']} → {_got2}）")
+        # ★3段の書き方も拾えること（57回目の数え方はここを落としていた）
+        _fb_gen_u3 = _fb_gen + "\n\ndef _zzz_uso_fb2b():\n    return np.random.default_rng(1)\n"
+        if count_random_draws(_fb_gen_u3)["合計"] != _fb_rnd0["合計"] + 1:
+            ng.append("F2: 3段の書き方（np.random.default_rng）を数えていない")
+
+        # F3 設定ファイルの写しに架空の数の並びを1つ 足す → その場所の件数がちょうど1 増える
+        #     （既存の T12 と同じ形＝ここでは 場所2 で1件だけ確かめる）
+        _fb_lim_u = json.loads(_A1_LIM.read_text(encoding="utf-8"))
+        _fb_lim_u["zzz_uso_fb3_grid"] = [11, 13, 17]
+        _fb_base3 = fixed_number_places()["places"][1]["並び"]
+        _fb_got3 = fixed_number_places(lim=_fb_lim_u)["places"][1]["並び"]
+        if _fb_got3 != _fb_base3 + 1:
+            ng.append(f"F3: 数の並びを1つ 足しても件数がちょうど1 増えない（{_fb_base3} → {_fb_got3}）")
+
+        # F4 写しから法則の表を読む呼び出しを全部 消す → 1番の答えが「疑いあり」→「当たっています」
+        _m_now = {"乱数": _fb_rnd0["合計"], "法則": _fb_law0["合計"]}
+        if forbidden_verdict("1", _m_now) != _FB_SUSPECT:
+            ng.append(f"F4: いまの1番の答えが『{_FB_SUSPECT}』でない"
+                      f"（乱数 {_fb_rnd0['合計']}件・法則 {_fb_law0['合計']}件）")
+        if forbidden_verdict("1", {"乱数": _fb_rnd0["合計"], "法則": 0}) != _FB_HIT:
+            ng.append("F4: 法則の表を1つも読まない状態でも『当たっています』にならない"
+                      "＝1番が永久に白黒の付かない検査になっている")
+        if forbidden_verdict("1", {"乱数": 0, "法則": 0}) != _FB_MISS:
+            ng.append("F4: 乱数が0件でも『当たりません』にならない")
+        # ★数え方のメタ確認＝法則の表を読む呼び出しを写しから消すと、件数が減ること
+        _fb_gen_nolaw = _fb_gen
+        for _fn in sorted(_FB_LAW_FUNCS):
+            _fb_gen_nolaw = _fb_gen_nolaw.replace(f"{_fn}(", f"_zzz_uso_{_fn}_(")
+        if count_law_reads(_fb_gen_nolaw)["合計"] != 0:
+            ng.append("F4: 法則の表を読む呼び出しを全部 消しても件数が 0 にならない")
+
+        # F5 答えの文字列が4種類だけ（決めた4つ以外が1つも出ない）
+        _seen = set()
+        for _no in ("1", "2", "3", "99"):
+            for _mm in ({"乱数": 0, "法則": 0, "数の並び": 0, "範囲を通さない": 0},
+                        {"乱数": 5, "法則": 0, "数の並び": 0, "範囲を通さない": 0},
+                        {"乱数": 5, "法則": 9, "数の並び": 3, "範囲を通さない": 0},
+                        {"乱数": 5, "法則": 9, "数の並び": 0, "範囲を通さない": 2}):
+                _seen.add(forbidden_verdict(_no, _mm))
+        if not _seen <= set(_FB_VERDICTS):
+            ng.append(f"F5: 決めた4種類 以外の答えが出た: {sorted(_seen - set(_FB_VERDICTS))}")
+        if len(_FB_VERDICTS) != 4 or len(set(_FB_VERDICTS)) != 4:
+            ng.append(f"F5: 答えの文字列の一覧が4つでない（{len(set(_FB_VERDICTS))}）")
+
+        # F6 差し込みを1文字 変えると --verify が鳴る（メタ確認・実物を必ず元へ戻す）
+        #   ★先に「いまの差し込みが最新か」を見る。古いまま壊すと、鳴った理由が
+        #     「私が壊したから」なのか「元から古いから」なのか区別できない（106番と同じ型）。
+        _fb_p = _FB_TARGETS[0][0]
+        _fb_msg = "作ってはいけないものとの照合の差し込みが実物と食い違う"
+        if not (_fb_p.exists() and _FB_START_RE.search(_fb_p.read_text(encoding="utf-8"))):
+            ng.append("F6: 差し込みの印がまだ無いので改変検出を確かめられない（先に印を置いて --write）")
+        elif any(_fb_msg in x for x in verify()):
+            ng.append(f"F6: 壊す前から差し込みが古い＝先に --write が要る（{_fb_p.name}）")
+        else:
+            _keep_fb = _fb_p.read_text(encoding="utf-8")
+            try:
+                _fb_p.write_text(_keep_fb.replace(_FB_END, "書き換えました\n" + _FB_END, 1),
+                                 encoding="utf-8")
+                if not any(_fb_msg in x for x in verify()):
+                    ng.append("F6: 差し込みを書き換えても --verify が鳴らない（改変検出が死んでいる）")
+            finally:
+                _fb_p.write_text(_keep_fb, encoding="utf-8")
+            if any(_fb_msg in x for x in verify()):
+                ng.append("F6: 元に戻したのに --verify が鳴る（番人の後始末ができていない）")
+    except Exception as _efb:                                    # noqa: BLE001
+        ng.append(f"F1〜F6: 確かめられなかった（{type(_efb).__name__}: {str(_efb)[:100]}）")
+
     # T6 わざと書き換えると --verify が鳴る（メタ確認）
+    # ★2026-08-26（64回目）＝見るのは materials.md についての言い分だけにした。
+    #   理由＝verify() に「作ってはいけないものとの照合の差し込み」の検査を足したので、
+    #   差し込みが古いだけでも verify() が鳴る。それを T6 が「後始末ができていない」と
+    #   誤って説明していた（実測で確認）。106番と同じ型なので、範囲を絞って直した。
+    _t6_msg = "materials.md が正本と一致しない"
     if _MD.exists():
         keep = _MD.read_text(encoding="utf-8")
         try:
             _MD.write_text(keep + "この行は手で足しました\n", encoding="utf-8")
-            if not verify():
+            if not any(_t6_msg in x for x in verify()):
                 ng.append("T6: 手で書き足しても --verify が鳴らない（改変検出が死んでいる）")
         finally:
             _MD.write_text(keep, encoding="utf-8")
-        if verify():
+        if any(_t6_msg in x for x in verify()):
             ng.append("T6: 元に戻したのに --verify が鳴る（番人の後始末ができていない）")
     else:
         ng.append("T6: materials.md が無いので改変検出を確かめられない（先に --write）")
