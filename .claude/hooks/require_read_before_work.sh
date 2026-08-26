@@ -42,8 +42,12 @@ input=$(cat)
 #   next_step.md に置いてあったが、next_step.md は毎セッション上書きされるので恒久の置き場所として弱く、
 #   実際に2回 消えた（2026-08-02 の CC ／ 2026-08-08 の CC＝教訓 L-410）。リポジトリ直下の rules/ へ移し、
 #   auto-load（毎回 自動で読み込まれる）＋本ゲート（Read tool で開くまでブロック）の二重で毎回 読ませる。
-REQUIRED=("WORKFLOW" "next_step" "adopted_strategies" "permanent_rules")
-LABEL=("WORKFLOW.md(現在地)" "next_step.md(改善アーク=次セッション起点)" "adopted_strategies.md(採用ポートフォリオ台帳)" "permanent_rules.md(恒久の決まり・リポジトリ直下 .claude/rules/)")
+# ★2026-08-25（61回目・まこさん指示「next_step.md を唯一の起点にする」）＝WORKFLOW.md を必読から外した。
+#   理由＝WORKFLOW.md の現在地は next_step.md §0 と同じ事実の二重書きで、実際の起点は next_step.md だった
+#   （2,692行のうち読まれていたのは先頭80行・CP 監査一覧は5月で止まっていた）。
+#   いま WORKFLOW.md の現在地は「next_step.md §0 を見る」の1行だけ。
+REQUIRED=("next_step" "adopted_strategies" "permanent_rules")
+LABEL=("next_step.md(唯一の起点＝§0 次にやること・§6 あとで直すこと)" "adopted_strategies.md(採用ポートフォリオ台帳)" "permanent_rules.md(恒久の決まり・リポジトリ直下 .claude/rules/)")
 
 missing=()
 for idx in "${!REQUIRED[@]}"; do

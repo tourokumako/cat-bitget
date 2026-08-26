@@ -31,10 +31,11 @@ cat > "$STATE_DIR/goal_block.md" <<'EOF'
 EOF
 
 echo "=== [読了強制ゲート 有効] ==="
-echo "必読3本を Read tool で実際に開くまで、Bash/Edit/Write は block されます（読んだふり防止・require_read_before_work と一致）:"
-echo "  1. WORKFLOW.md（現在地・次タスク）"
-echo "  2. next_step.md（改善アーク＝前提/狙い/内容/方法/結果/採否・次セッション起点・2026-07-05 ledger.md 全文読了強制から差替）"
-echo "  3. adopted_strategies.md（採用ポートフォリオ台帳）"
+echo "必読を Read tool で実際に開くまで、Bash/Edit/Write は block されます（読んだふり防止・require_read_before_work と一致）:"
+echo "  1. next_step.md（★唯一の起点＝§0 次にやること・§6 あとで直すこと。2026-08-25 まこさん指示で WORKFLOW.md を必読から外した）"
+echo "  2. adopted_strategies.md（採用ポートフォリオ台帳）"
+echo "  3. permanent_rules.md（恒久の決まり・リポジトリ直下 .claude/rules/・自動で読み込まれるが Read も要る）"
+echo "（WORKFLOW.md＝現在地は「next_step.md §0 を見る」の1行だけ。改訂の履歴は archive/workflow/ に移した）"
 echo "→ grep や表示だけでは解除されません。Read tool で開いてください。"
 echo "（ledger.md 本体＝特定の過去実験を深掘りする時に読む参照資料。毎回の必読からは外した）"
 echo "★ cat_requirements.md / exchange_spec.md（決済方法）は『設計書を書く瞬間』に強制 read（just-in-time・require_spec_read_before_design.sh）。"

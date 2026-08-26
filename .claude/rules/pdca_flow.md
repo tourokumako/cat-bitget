@@ -30,7 +30,7 @@
 | force_read_ml_design | SessionStart | — | 必読・6軸ゲート・保管ルール等を表示 |
 | reset_read_log | SessionStart | — | read_log をリセット（前セッションの読了を持ち越さない） |
 | show_latest_state | SessionStart | — | next_step.md 全文表示（起点） |
-| require_read_before_work | PreToolUse | Bash/Edit/Write/MultiEdit | 必読3本（WORKFLOW/**next_step**/adopted_strategies）＋目標逆算ブロック＋器の現在値が採用ポートフォリオの積み上げ（最大地面＋採用柱2本以上）になるまで作業ブロック（ゲート3＝近視眼防止・2026-06-22）＋**改善アーク列ゲート＝goal_block「改善の経緯」が 狙い だけでなく 内容（動かしたレバー/機構）・方法（検証/採否理由＝失敗の型）も列に持つ（2026-06-26・狙いだけでは過去 iter の失敗の型が見えず同型を再提案する穴を塞ぐ）**（**2026-07-05 改訂＝ledger.md 全文読了強制を next_step.md 読了に差替**。判定は「文字列が read_log に1回出るか」だけで全文読了の担保になっておらず、CC が534KB/1465行を全文読もうと手探りし時間浪費。next_step.md の改善アーク表（gen_improvement_arc.py 自動生成）は既に各iterの前提/狙い/内容/方法/結果/採否を持ち「改善の経緯」ゲートの実質を満たす。ledger.md 本体は特定の過去実験の深掘り時に読む参照資料に位置づけ変更） |
+| require_read_before_work | PreToolUse | Bash/Edit/Write/MultiEdit | 必読（**next_step**＝唯一の起点／adopted_strategies／permanent_rules。★2026-08-25 まこさん指示で WORKFLOW.md を外した＝現在地は next_step §0 と同じ事実の二重書きだった）＋目標逆算ブロック＋器の現在値が採用ポートフォリオの積み上げ（最大地面＋採用柱2本以上）になるまで作業ブロック（ゲート3＝近視眼防止・2026-06-22）＋**改善アーク列ゲート＝goal_block「改善の経緯」が 狙い だけでなく 内容（動かしたレバー/機構）・方法（検証/採否理由＝失敗の型）も列に持つ（2026-06-26・狙いだけでは過去 iter の失敗の型が見えず同型を再提案する穴を塞ぐ）**（**2026-07-05 改訂＝ledger.md 全文読了強制を next_step.md 読了に差替**。判定は「文字列が read_log に1回出るか」だけで全文読了の担保になっておらず、CC が534KB/1465行を全文読もうと手探りし時間浪費。next_step.md の改善アーク表（gen_improvement_arc.py 自動生成）は既に各iterの前提/狙い/内容/方法/結果/採否を持ち「改善の経緯」ゲートの実質を満たす。ledger.md 本体は特定の過去実験の深掘り時に読む参照資料に位置づけ変更） |
 | record_read | PostToolUse | Read | Read した .md を read_log.txt に記録 |
 | check_websearch_before_design_write | PreToolUse | Write/Edit | 設計書 Write 前に直近60分の検索ベースアップを要求 |
 | enforce_search_quality | PreToolUse | WebSearch | 検索品質（12語以内・allowed_domains 指定） |
@@ -86,7 +86,7 @@
 
 ### B. 最初の Bash/Edit/Write の前（必読＋目標逆算＋器の現在値の積み上げ照合）
 - **require_read_before_work**（PreToolUse）: 3ゲートを順に物理強制。全 Bash/Edit/Write をブロック。
-  - **ゲート1（読了）**: 必読3本（WORKFLOW.md / ledger.md / **adopted_strategies.md＝採用ポートフォリオ台帳**）を Read tool で開く。
+  - **ゲート1（読了）**: 必読（**next_step.md＝唯一の起点** / adopted_strategies.md＝採用ポートフォリオ台帳 / permanent_rules.md）を Read tool で開く。★ledger.md は 2026-07-05 に next_step.md へ差し替え、WORKFLOW.md は 2026-08-25 に外した（まこさん指示）。
   - **ゲート2（目標逆算）**: goal_block.md に必須見出し（大目標/器の現在値/ギャップ/候補/天井/選定/3行ゲート/届く構成/戦略照合/**改善の経緯**）を書く。**改善の経緯**（2026-06-26 まこさん指示）＝対象戦略の直近イテレーション系譜を ledger から箇条書きで再構成し、各 iter に前提フラグ（nofloor ON/OFF 等・どの base の上か）を書く。最新1実験の局所結論を起点に改善議論へ走る穴（(A)DYING_CUT を nofloor OFF=base に当てた前提を見落とした 2026-06-26 事案）を塞ぐ。next_step「改善アーク」と対＝開始時(goal_block)と末(next_step)の二重強制。
   - **ゲート3（器の現在値＝近視眼防止・2026-06-22 まこさん指示）**: goal_block の「器の現在値」セクションに、採用台帳マーカー `<!-- PORTFOLIO_CHECK: BASE_MAX=… ; PILLARS=… -->` の「最大 deployable 地面（E32b）」＋「採用柱 計2本以上」が書かれているか照合。無ければブロック。＝最新の1実験だけを現在値にする近視眼（2026-06-22 E36 単独事案）を物理的に弾く。hook に戦略名を焼かず台帳マーカーから動的に読む（採用が変われば台帳1行更新で hook 追従）。
 - 解除: read_log に3本が載り、goal_block の必須見出しが揃い、器の現在値が積み上げ照合を通る。記録は record_read（PostToolUse Read）。

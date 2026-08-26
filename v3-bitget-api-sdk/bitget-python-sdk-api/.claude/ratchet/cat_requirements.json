@@ -1520,7 +1520,7 @@
           "title": "セッション開始時に読む順（2026-06-13 まこさん指示で cat_requirements を just-in-time へ移し 3→2・読了強制 hook と同期・2026-07-05 ②を ledger.md→next_step.md に差替）",
           "protects": "セッション開始時に何を読むかを1つに固定します。ここが緩むと、前セッションの結論を読まずに、また同じ調査をやり直してしまいます。",
           "body": [
-            "1. **`WORKFLOW.md` 改訂N active** ＝ 今どこ・次に何をするか（現在地5行・詳細は ledger）",
+            "1. **`.claude/state/next_step.md` の §0** ＝ 唯一の起点（次にやること・あとで直すこと）。★2026-08-25 まこさん指示で WORKFLOW.md を必読から外した（現在地は next_step §0 と同じ事実の二重書きだったため。WORKFLOW.md の現在地は「next_step.md §0 を見る」の1行だけ）",
             "2. **`.claude/state/next_step.md`** ＝ 改善アーク（前提/狙い/内容/方法/結果/採否を全iterationにわたり1行ずつ・`gen_improvement_arc.py` 自動生成・ARC マーカー由来で改ざん不可）＝次セッションの起点。**2026-07-05 まこさん指摘で ledger.md（534KB・1465行）の全文読了強制から差替**＝旧ゲートは「read_log に'ledger.md'の文字列が1回出るか」しか見ておらず全文読了の担保になっていなかった一方、next_step.md の改善アーク表は既に「改善の経緯」ゲートが要る情報を凝縮済み。**ledger.md 本体は特定の過去実験を深掘りする時に読む参照資料**（振り返り用・毎回の必読ではない）",
             "",
             "> ★ **cat_requirements.md（全体像・制約 H1-H16・PDCA）と exchange_spec.md（決済方法）は「設計書を書く瞬間」に強制 read**（just-in-time・`require_spec_read_before_design.sh`）。セッション開始時に読んでもインプットされない実証（まこさん 2026-06-13・add/決済を毎回誤解）→ 必要な箇所を使う瞬間に読む方式へ。",
@@ -1539,7 +1539,7 @@
               "kind": "hook",
               "name": "require_read_before_work",
               "file": "../../.claude/hooks/require_read_before_work.sh",
-              "how": "必読3本（WORKFLOW.md/next_step.md/adopted_strategies.md）を Read tool で開くまで Bash/Edit/Write をブロックする。"
+              "how": "必読（next_step.md／adopted_strategies.md／permanent_rules.md）を Read tool で開くまで Bash/Edit/Write をブロックする（★2026-08-25 に WORKFLOW.md を外した）。"
             }
           ]
         },
@@ -1559,7 +1559,7 @@
             "| **session_log_YYYYMMDD.md** | その日の経緯・学び・失敗の物語（**異常・方針転換があった日のみ詳細。通常日は ledger へのポインタ数行で可**＝時短④ まこさん承認 2026-06-12） | 設計の決定事項（→ 設計書へ） | セッション毎 |",
             "| **analysis_playbook.md** | 分析の手順（Check 工程） | 実験結果・設計 | 分析手順を足した時 |",
             "| **lessons_active.md** | 教訓 L-XX | — | セッション毎 |",
-            "| **WORKFLOW.md** | 現フェーズ・次タスク・引き継ぎ（改訂 N active・**現在地は5行程度＝詳細は ledger 参照**＝時短④ まこさん承認 2026-06-12） | 設計の細部・知識辞典 | セッション毎 |",
+            "| **WORKFLOW.md** | ★起点ではない（2026-08-25 まこさん指示）＝現在地は「next_step.md §0 を見る」の1行だけ。残すのは作業の決まり（Step 0・ファイル配置規則・監査エージェント ほか）と、機械で作る CP 監査一覧 | 現在地・引き継ぎ・改訂の履歴（→ next_step / worklog / archive） | 決まりが変わった時のみ |",
             "| **`.claude/state/next_step.md`**（**新セッションの起点・SessionStart 全文表示**） | 次セッションの起点1枚＝①本筋 ②今セッションの確定(ledger E番号参照) ③やってはいけないこと ④数字の出典 | 履歴（→ ledger/WORKFLOW 改訂）・確定知見の重複（→ ledger） | **毎セッション末に上書き**（最新1枚・pdca_gate で物理強制・§8.3） |",
             "| **KB 各種**（technical / industry / trade_methods 等） | 知識（辞典レベル） | 実験結果・設計 | 知識を足した時 |",
             "| **improvement_ideation_kb.md** | 改善案・アイデアの**発想法**（複数の型・状況での選び方・強制でない引き出し） | 実験結果・分析手法（→ ledger / trade_analysis_methods_kb）・設計の決定（→ 設計書） | 効いた/効かなかった発想法を足した時 |",

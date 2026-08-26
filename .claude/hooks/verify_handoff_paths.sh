@@ -62,8 +62,9 @@ def block(path, start_pat, end_pat=None):
     return "\n".join(out)
 
 
-# WORKFLOW active ブロック (🔴 現在地/現在のフェーズ → 次の 🧊 改訂N ブロック)
-wf = block(f"{SDK}/WORKFLOW.md", r"🔴 現在(のフェーズ|地)", r"🧊 改訂\d+ ブロック")
+# WORKFLOW の現在地 (🔴 現在地 → 次の見出し)。★2026-08-25 から現在地は「next_step.md §0 を見る」の1行だけ
+#   （まこさん指示・改訂ブロックは archive/workflow/ へ移した）＝パスは next_step.md 側から拾う。
+wf = block(f"{SDK}/WORKFLOW.md", r"🔴 現在(のフェーズ|地)", r"^## (改訂の履歴|🧊 改訂\d+ ブロック)")
 # next_step.md（新セッションの起点・現行正本）
 ns = block(f"{REPO}/.claude/state/next_step.md", r".")
 text = wf + "\n" + ns
