@@ -64,6 +64,19 @@ MAX_AGE_HOURS = 24                                  # フロー宣言のチェ�
 MARK_MOKUTEKI = ("目的1", "目的2")                   # 目的（この機械が何のためにあるか）
 MARK_JOKEN = ("条件1", "条件2", "条件3", "条件4")     # 条件（何を探すのか）
 
+# ★2026-08-26（2回目の直し・まこさん指示「あとで直さず、今直してほしい」・承認 7d1f2a8f62cef2f9）
+#   条件の行に書ける3つ目の印。「この変更は、その条件の探索に1バイトも触らない」の意味。
+#   なぜ要るか＝印が ✅／❌ の2つしかないと、探索の経路に触れない設計（文書を作るプログラム・hook 等）でも、
+#     当てはまらない問い4つに ✅ を書かせることになる＝中身を見ずに書き流す癖がつく。
+#     まこさんの逐語（2026-08-26・acceptance_checklist.md:14）＝
+#     「非該当を毎回13件 書いていると、中身を見ずに書き流す癖がつき、本当に該当する1件を見落とします。」
+#   ★CC が自由には使えない＝探索の経路のファイルを触るときは、この印を書いても止める（下の touches_search_path）。
+#   ★目的1・目的2 には使えない（目的はどんな変更にも当てはまるため）。
+MARK_KAENAI = "変えない"
+
+# 探索の経路のファイルの一覧＝H2 の印から読む（★手書きしない＝教訓 L-468）。
+_H2_PASS = os.path.join(ROOT, ".claude", "state", "h2_pass.json")
+
 _RE_PY = re.compile(r"python[0-9.]*\s")
 _RE_SKIP = re.compile(r"--selftest|--verify|--identity|--help|py_compile|--dry-run")
 _RE_TUNER_PY = re.compile(r"(engine_tuner[a-z_]*\.py)")
@@ -86,7 +99,15 @@ TEMPLATE = """  【目的の照合】
   条件4 パラメータ（指標を作るときの設定）を、範囲から探して見つけられるか: ✅ ＋ 根拠1行
 
   作ってはいけないものの一覧との照合: <一覧の1件ずつ・当たらないことを書く>
-  ★入っていないもの: <明示・無ければ「なし」>"""
+  ★入っていないもの: <明示・無ければ「なし」>
+
+  ★条件の行に書ける印は3つ（2026-08-26）
+    ✅       ＝ この変更で、その条件を探して見つけられる状態になる（または良くなる）
+    ❌       ＝ 探して見つけられない。1つでも在れば止まる
+    変えない ＝ この変更は、その条件の探索に1バイトも触らない（狭めも広げもしない）
+  ★「変えない」を書けるのは、探索の経路のファイルを触らないときだけ。
+    触るのに書くと止まる（判定はプログラム＝H2 の印 h2_pass.json の一覧で見る）。
+  ★目的1・目的2 に「変えない」は使えない（目的はどんな変更にも当てはまるため）。"""
 
 
 def strip_text(cmd):
@@ -121,6 +142,47 @@ def is_target(tool, file_path, cmd, content):
             return "run", m.group(1)
         return None, None
     return None, None
+
+
+def search_path_files(path=_H2_PASS):
+    """探索の経路のファイルの名前（basename）の集合を H2 の印から読む。
+
+    ★手書きの一覧を作らない（教訓 L-468＝手書きは書き忘れが黙って通る）。
+    読めないときは空の集合を返す＝「変えない」を書ける側に倒す。
+      理由＝ここで止めると、H2 の印が無い状態（検査のやり直し中）で何も書けなくなる。
+      その状態では enforce_h2_pass が別に engine_tuner の実行を止めている。
+    """
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return set()
+    return {os.path.basename(p) for p in (data.get("files") or []) if p}
+
+
+def _names_in_design(content):
+    """設計書の中から、これから触る相手の名前を拾う（TARGET の行と impl_file の値）。"""
+    names = set()
+    for line in (content or "").splitlines():
+        s = line.strip()
+        if s.startswith("TARGET:"):
+            for tok in re.findall(r"[\w./-]+\.(?:py|json)", s):
+                names.add(os.path.basename(tok))
+    for m in re.finditer(r'"impl_file"\s*:\s*"([^"]+)"', content or ""):
+        names.add(os.path.basename(m.group(1)))
+    return names
+
+
+def touches_search_path(kind, name, content):
+    """この変更は、探索の経路のファイルを触るか。触るなら「変えない」は書けない。"""
+    files = search_path_files()
+    if not files:
+        return False
+    if kind in ("code", "run"):
+        return name in files
+    if kind == "design":
+        return bool(_names_in_design(content) & files)
+    return False
 
 
 def load_decl(path=DECL):
@@ -194,6 +256,21 @@ def judge(tool, file_path, cmd, content, decl_text, now=None, agent_type=""):
     if ng:
         return "❌ が在る＝これは作ってはいけないものです ／ " + " ／ ".join(ng)
 
+    # ★「変えない」の印（2026-08-26）＝❌ の判定の後に見る（❌ が優先）。
+    mk = [_line_starting(decl_text, m) for m in MARK_MOKUTEKI
+          if MARK_KAENAI in (_line_starting(decl_text, m) or "")]
+    if mk:
+        return ("目的の行に「" + MARK_KAENAI + "」は書けません（目的はどんな変更にも当てはまります）"
+                " ／ " + " ／ ".join(mk))
+
+    jk = [_line_starting(decl_text, m) for m in MARK_JOKEN
+          if MARK_KAENAI in (_line_starting(decl_text, m) or "")]
+    if jk and touches_search_path(kind, name, content):
+        hit = sorted(_names_in_design(content) & search_path_files()) if kind == "design" else [name]
+        return ("「" + MARK_KAENAI + "」は、探索の経路のファイルを触るときには書けません"
+                f" ／ 触る相手＝{'・'.join(hit)}（H2 の印の一覧に在る）"
+                " ／ " + " ／ ".join(jk))
+
     if _line_starting(decl_text, "作ってはいけないものの一覧との照合:") is None:
         return "「作ってはいけないものの一覧との照合:」の行が無い（要件定義書の一覧と1件ずつ突き合わせる）"
     if "入っていないもの" not in decl_text:
@@ -223,6 +300,9 @@ def _message(reason):
     out.append(TEMPLATE)
     out.append("")
     out.append("⛔ 目的2つ・条件4つのどれか1つでも ❌ が在るものは、作ってはいけません（まこさん確定 2026-08-06）。")
+    out.append("★条件の行には「" + MARK_KAENAI + "」も書けます（＝その条件の探索に1バイトも触らない）。")
+    out.append("   ただし探索の経路のファイルを触るときは書けません（判定はプログラム＝H2 の印の一覧）。")
+    out.append("   目的の行には使えません。")
     out.append("   ❌ になるものを作りたいときは、まこさんに理由を出して確認してください（CC が勝手に進めません）。")
     out.append("（解除は 2026-08-16 に廃止＝合言葉では通りません）")
     return "\n".join(out)
@@ -262,8 +342,8 @@ def hook_main():
 
 # ---------------- 番人（わざと壊して、止まることを確かめる） ----------------
 
-def _decl(now, target="engine_tuner_gen.py", drop=(), ng=()):
-    """見本の宣言を作る。drop＝落とす行の印／ng＝❌ にする行の印。"""
+def _decl(now, target="engine_tuner_gen.py", drop=(), ng=(), kaenai=()):
+    """見本の宣言を作る。drop＝落とす行の印／ng＝❌ にする行の印／kaenai＝「変えない」にする行の印。"""
     rows = [
         ("head", "【目的の照合】"),
         ("対象", f"対象: {target}"),
@@ -281,7 +361,8 @@ def _decl(now, target="engine_tuner_gen.py", drop=(), ng=()):
     for key, text in rows:
         if key in drop:
             continue
-        out.append(text.replace("{m}", "❌" if key in ng else "✅"))
+        mark = "❌" if key in ng else (MARK_KAENAI if key in kaenai else "✅")
+        out.append(text.replace("{m}", mark))
     return "\n".join(out)
 
 
@@ -324,6 +405,28 @@ def selftest():
         ("21 宣言のファイル自身は通る", W, DECL, "", "", None, "", False),
         ("22 サブエージェントは通る", W, gen, "", "", None, "general-purpose", False),
         ("23 読むだけのコマンドは通る", B, "", f"cat {DECL} ; grep -n engine_tuner_gen.py x.md", "", None, "", False),
+
+        # ---- ★2026-08-26（2回目の直し）＝「変えない」の印 ----
+        ("24 ★文書を作るプログラムの設計書で、条件4つを 変えない にすると通る", W, acc, "",
+         "TARGET: scripts/priority_rebuild/gen_materials.py\nengine_tuner のやることリストに差し込む",
+         _decl(now, target="acceptance.md", kaenai=MARK_JOKEN), "", False),
+        ("25 engine_tuner_gen.py を書くときに 変えない を書くと止まる", W, gen, "",
+         "", _decl(now, target="engine_tuner_gen.py", kaenai=MARK_JOKEN), "", True),
+        ("26 engine_tuner.py を走らせるときに 変えない を書くと止まる", B, "",
+         "python3 engine_tuner.py --purpose search", "",
+         _decl(now, target="engine_tuner.py", kaenai=("条件2",)), "", True),
+        ("27 設計書の TARGET が engine_tuner_exec.py なら 変えない は書けない", W, acc, "",
+         "TARGET: scripts/priority_rebuild/engine_tuner_exec.py",
+         _decl(now, target="acceptance.md", kaenai=MARK_JOKEN), "", True),
+        ("28 設計書の impl_file が engine_tuner_gen.py なら 変えない は書けない", W, acc, "",
+         'TARGET: .claude/hooks/x.py\n"impl_file": "scripts/priority_rebuild/engine_tuner_gen.py"',
+         _decl(now, target="acceptance.md", kaenai=MARK_JOKEN), "", True),
+        ("29 目的1 に 変えない を書くと止まる", W, gen, "", "",
+         _decl(now, kaenai=("目的1",)), "", True),
+        ("30 目的2 に 変えない を書くと止まる", W, gen, "", "",
+         _decl(now, kaenai=("目的2",)), "", True),
+        ("31 条件に 変えない と ❌ が混ざると止まる（❌ が優先）", W, gen, "", "",
+         _decl(now, ng=("条件1",), kaenai=("条件2",)), "", True),
     ]
     ng_count = 0
     for name, tool, fp, cmd, content, decl, agent, want_block in cases:
