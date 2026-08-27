@@ -2987,6 +2987,29 @@ async function rpRenderDayTable() {
   document.getElementById("rp-day-count").textContent = `表示中: ${count}日`;
 }
 
+// ★2026-08-27（68回目・まこさん承認「OK実装していいよ」・設計書 iter=regime-build-dashboard-20260827）
+//   月の選択肢を「その版が出している月」だけにする。
+//   なぜ＝月の選択肢は版ごとでなく全体で1つだったので、その版が出していない月を選ぶと
+//        読み込みに失敗し、画面が「読み込み中...」のまま残った（2807行の fetchJSON）。
+//   index.json の版の行に months（年月の一覧）が在ればそれを使う。無ければ今までどおり全部。
+//   ＝既に在る24版には months を足していないので、いままでどおり動く。
+function rpFillMonths(version) {
+  const ms = document.getElementById("rp-month");
+  if (!ms) return;
+  const keep = ms.value;
+  const proto = (RP_INDEX.prototypes || []).find(p => p.version === version);
+  const own = proto && Array.isArray(proto.months) && proto.months.length ? proto.months : null;
+  const list = own || (RP_INDEX.available_months || []);
+  ms.innerHTML = '<option value="all">全期間</option>';
+  for (const ym of list) {
+    const opt = document.createElement("option");
+    opt.value = ym; opt.textContent = ym;
+    ms.appendChild(opt);
+  }
+  if (list.includes(keep)) ms.value = keep;
+  else ms.value = own ? own[0] : "all";
+}
+
 async function renderRegimeProto() {
   RP_INDEX = await fetchJSON("regime_prototype/index.json");
   if (!RP_INDEX.prototypes || !RP_INDEX.prototypes.length) return;
@@ -3000,13 +3023,7 @@ async function renderRegimeProto() {
   }
   vs.value = RP_INDEX.prototypes[RP_INDEX.prototypes.length - 1].version;
 
-  const ms = document.getElementById("rp-month");
-  ms.innerHTML = '<option value="all" selected>全期間</option>';
-  for (const ym of (RP_INDEX.available_months || [])) {
-    const opt = document.createElement("option");
-    opt.value = ym; opt.textContent = ym;
-    ms.appendChild(opt);
-  }
+  rpFillMonths(vs.value);
 
   // 結果重ね（トレードオーバーレイ）選択肢＝index.json の trade_overlays（新しい順）
   const tsel = document.getElementById("rp-trades");
@@ -3021,7 +3038,8 @@ async function renderRegimeProto() {
     tsel.addEventListener("change", rpRenderChart);
   }
 
-  document.getElementById("rp-version").addEventListener("change", async () => {
+  document.getElementById("rp-version").addEventListener("change", async (ev) => {
+    rpFillMonths(ev.target.value);        // ★版を変えたら、その版が出している月だけに入れ替える
     rpRenderSummary(); await rpRenderChart(); await rpRenderDayTable();
   });
   document.getElementById("rp-granularity").addEventListener("change", rpRenderChart);

@@ -14,6 +14,33 @@
   B: TARGET が自動で作る文書（その .py の GENERATES の欄）を開いたか
   C: 受け入れ条件の本文で「読んだ」「開いた」と書いた行に出てくるファイルを、本当に開いたか
 
+★2026-08-27（68回目・まこさん承認「進めて良い」・設計書 iter=new-file-target-gate-20260827）
+  新しく作るファイルを TARGET に書けるようにした（next_step.md §6 の86番＝2026-08-23 から放置）。
+
+  なぜ要ったか
+    A は「TARGET のパスを開いたか」だけを見て、そのファイルが実在するかを見ていなかった。
+    新しく作るファイルは存在しない＝開けない＝必ず止まる。
+    ＝新しいファイルを作る受け入れ条件が、1本も書けなかった（56回目と68回目の2回 当たった）。
+
+  何を足したか（2行）
+    NEW_FILE: … 新しく作るファイルのパス（カンマ区切りで複数可）
+    MODEL:    … 手本にしたファイルのパス（カンマ区切り・1本以上）
+    ★TARGET の行の書き方は1文字も変えていない。
+      理由＝TARGET の行を読む仕組みが5本 在り、そのうち require_acceptance_before_impl.sh は
+      行の中身をそのままファイル名として使う（同 87行）＝印を足すとファイル名が壊れる。
+
+  判定（TARGET 1件ごと）
+    ① NEW_FILE に書いていない                   → 今までどおり（開いていなければ ❌）
+    ② NEW_FILE に書いた ＋ 実在しない ＋ MODEL を全部 開いた → 通す（★新しく通るのはここだけ）
+    ③ NEW_FILE に書いた ＋ 実在する             → ❌（宣言が嘘）
+    ④ NEW_FILE に書いた ＋ MODEL の行が無い     → ❌
+    ⑤ NEW_FILE に書いた ＋ MODEL を開いていない → ❌
+    ★②のとき、そのパスは C の検査からも外す（新しいファイルは開けないため）。
+
+  取らなかった直し方
+    「ファイルが無ければ A を飛ばす」は取らない。
+    ファイル名を打ち間違えただけでも「無い」と判定され、何も開かずに書けてしまうため（86番に記載）。
+
 判定の材料
   .claude/state/read_log.txt … record_read.sh（PostToolUse on Read）が Read tool の実績を
   絶対パスで1行ずつ書く。SessionStart の reset_read_log.sh が毎セッション消す。
@@ -21,6 +48,10 @@
 限界（正直に書く）
   ・Read tool の offset/limit（一部だけ読む）を区別できない。1行でも開けば「読んだ」になる。
   ・本文に書かないファイルは C の対象外＝「書かなければ通る」。A と B は書かなくても効く。
+  ・手本（MODEL）に何を挙げるかは CC が決める＝関係の薄いファイルを挙げても通る。
+  ・新規と宣言せずに、既に在る別のファイルを TARGET にして回る道は残る（68回目に CC がやった）。
+  ・囲み（```）の中に書いた見本の行も、TARGET・MODEL の宣言として読む（next_step.md §6 の113番）。
+    避け方＝見本の行の頭に空白を入れる。
   ・受け入れ条件の中身が正しいかは見ない。まこさんの目と併用する。
 """
 from __future__ import annotations
@@ -90,16 +121,43 @@ def generates_of(py_path: pathlib.Path) -> list[str]:
     return out
 
 
-def targets_in(text: str) -> list[str]:
+def _line_values(text: str, prefix: str) -> list[str]:
+    """行の頭が prefix の行から、カンマ区切りのパスを集める（重複は残す）。"""
     out: list[str] = []
     for ln in text.splitlines():
-        if not ln.startswith("TARGET:"):
+        if not ln.startswith(prefix):
             continue
-        for part in ln[len("TARGET:"):].split(","):
+        for part in ln[len(prefix):].split(","):
             p = part.strip()
             if p:
                 out.append(p)
     return out
+
+
+def targets_in(text: str) -> list[str]:
+    return _line_values(text, "TARGET:")
+
+
+def new_files_in(text: str) -> list[str]:
+    """NEW_FILE: の行＝これから新しく作るファイル（2026-08-27・86番の直し）。"""
+    return _line_values(text, "NEW_FILE:")
+
+
+def models_in(text: str) -> list[str]:
+    """MODEL: の行＝手本にしたファイル（新しく作るときに、A の代わりに読了を確かめる相手）。"""
+    return _line_values(text, "MODEL:")
+
+
+def _exists_anywhere(rel: str) -> bool:
+    """そのパスが実在するか。リポジトリの直下と bitget-python-sdk-api の直下の2か所を見る。
+
+    ★2か所を見る理由＝受け入れ条件の TARGET は、両方の書き方で書かれてきたため
+      （例＝.claude/hooks/… はリポジトリ直下／scripts/priority_rebuild/… は sdk 直下）。
+    """
+    r = rel.strip(_STRIP)
+    if not r:
+        return False
+    return (_REPO / r).exists() or (_SDK / r).exists()
 
 
 def claimed_files(text: str) -> list[str]:
@@ -133,14 +191,44 @@ def claimed_files(text: str) -> list[str]:
 def check(text: str, log: list[str]) -> list[str]:
     """足りないものの一覧を返す（空なら通す）。"""
     ng: list[str] = []
+    news = {n.strip(_STRIP) for n in new_files_in(text)}
+    models = models_in(text)
+    declared_new: set[str] = set()          # ②が成り立った＝C の検査からも外すもの
     for tgt in targets_in(text):
         cand = _SDK / tgt
+        t = tgt.strip(_STRIP)
+        if t in news:
+            # ③ 新規と書いたのに実在する＝宣言が嘘
+            if _exists_anywhere(t):
+                ng.append(f"A 新規（NEW_FILE:）と書いたのに実在する: {tgt}"
+                          "（新規の宣言を外して、そのファイルを開く）")
+                continue
+            # ④ 手本の行が無い
+            if not models:
+                ng.append(f"A 新規（NEW_FILE:）なのに手本（MODEL:）の行が無い: {tgt}"
+                          "（手本にしたファイルを1本以上 書く）")
+                continue
+            # ⑤ 手本を開いていない
+            miss = [m for m in models if not _opened(m, log)]
+            if miss:
+                for m in miss:
+                    ng.append(f"A 手本（MODEL:）を開いていない: {m}")
+                continue
+            # ② 通す（B は実在しないので元から飛ぶ）
+            declared_new.add(t)
+            continue
         if not _opened(tgt, log):
-            ng.append(f"A 直す対象を開いていない: {tgt}")
+            if not _exists_anywhere(t):
+                ng.append(f"A 直す対象が実在しない: {tgt}"
+                          "（新しく作るなら NEW_FILE: と MODEL: の2行を足す）")
+            else:
+                ng.append(f"A 直す対象を開いていない: {tgt}")
         for gen in generates_of(cand):
             if not _opened(gen, log):
                 ng.append(f"B その対象が作る文書を開いていない: {gen}")
     for f in claimed_files(text):
+        if f.strip(_STRIP) in declared_new:  # 新しく作るファイルは開けない＝C の対象外
+            continue
         if not _opened(f, log):
             ng.append(f"C 『読んだ』と書いたのに開いていない: {f}")
     return list(dict.fromkeys(ng))
@@ -286,9 +374,42 @@ def selftest() -> int:
         if not any(x.startswith("A ") for x in check(_w, [])):
             ng.append("T13 メタ確認: まるごと書き換えで、対象を開いていないのに通ってしまう")
 
+    # ── N1〜N6 新しく作るファイルを TARGET に書ける（2026-08-27・86番・まこさん承認「進めて良い」）──
+    _new = "scripts/dashboard/nonexistent_new_file_for_selftest.py"
+    _exist = "scripts/priority_rebuild/gen_materials.py"
+    _m1 = "scripts/dashboard/build_regime_gate_rg.py"
+    _m2 = "scripts/priority_rebuild/regime_r9_diag.py"
+    _log_models = [f"/x/{_m1}", f"/x/{_m2}"]
+    if _exists_anywhere(_new):
+        ng.append(f"N0: 見本に使う『実在しないパス』が実在する（見本を変える）: {_new}")
+    if not _exists_anywhere(_exist):
+        ng.append(f"N0: 見本に使う『実在するパス』が実在しない（見本を変える）: {_exist}")
+    # N1 新規＋実在しない＋手本を全部 開いた → 通る（★この設計で新しく通る唯一の形）
+    n1 = f"TARGET: {_new}\nNEW_FILE: {_new}\nMODEL: {_m1}, {_m2}\n"
+    if check(n1, _log_models):
+        ng.append(f"N1: 新規＋手本を開いているのに止まった（{check(n1, _log_models)}）")
+    # N2 新規と書いたのに実在する → 止まる
+    n2 = f"TARGET: {_exist}\nNEW_FILE: {_exist}\nMODEL: {_m1}\n"
+    if not any("実在する" in x for x in check(n2, _log_models)):
+        ng.append("N2: 新規と書いたのに実在するのに通った")
+    # N3 新規なのに手本の行が無い → 止まる
+    n3 = f"TARGET: {_new}\nNEW_FILE: {_new}\n"
+    if not any("手本（MODEL:）の行が無い" in x for x in check(n3, _log_models)):
+        ng.append("N3: 手本の行が無いのに通った")
+    # N4 新規＋手本を1本も開いていない → 止まる
+    if not any("手本（MODEL:）を開いていない" in x for x in check(n1, [])):
+        ng.append("N4: 手本を開いていないのに通った")
+    # N5 新規と宣言していない＋実在しない → 止まる（画面の文が「実在しない」に変わる）
+    n5 = f"TARGET: {_new}\n"
+    if not any("直す対象が実在しない" in x for x in check(n5, [])):
+        ng.append("N5: 新規と宣言していない実在しない対象で通った、または文が変わっていない")
+    # N6 新規＋手本2本のうち1本だけ開いた → 止まる
+    if not any("手本（MODEL:）を開いていない" in x for x in check(n1, [f"/x/{_m1}"])):
+        ng.append("N6: 手本を1本しか開いていないのに通った")
+
     for x in ng:
         print(f"❌ {x}")
-    print(f"{'❌' if ng else '✅'} わざと壊して止まるか試すテスト {13 - len(ng)}/13 pass")
+    print(f"{'❌' if ng else '✅'} わざと壊して止まるか試すテスト {19 - len(ng)}/19 pass")
     return 1 if ng else 0
 
 

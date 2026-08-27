@@ -1,4 +1,4 @@
-<!-- FILEMAP_HASH=14c0e2f45b011898 -->
+<!-- FILEMAP_HASH=b42627116b3a83a9 -->
 # filemap.md — 何がどこにあるかの地図（gen_filemap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。ファイルの一覧も説明も、実体から機械で取っています。
@@ -38,9 +38,9 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | まこさんが何を決めたか知りたい | `decisions.md` | 決定の一覧。提案の前に必ず読む |
 | 次に何をするか知りたい | `next_step.md` | 次セッションの起点。セッション開始で全文表示される |
 
-## 全部の一覧（248 件）
+## 全部の一覧（249 件）
 
-### 売買と判定のスクリプト — scripts/priority_rebuild（84 件）
+### 売買と判定のスクリプト — scripts/priority_rebuild（85 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
@@ -69,6 +69,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | engine_tuner_gen.py | 値を調整する探索器 | 読み込まれて使う／実行して使う | 歩4 生成器（2段サンプリング＝構造をランダムに撒く→有望構造の値を TPE で詰める） |
 | entry_pos_diag.py | 観察・診断（売買記録を出さない） | 実行して使う | read-only 検証（診断レーン・acceptance 免除・2026-07-16 まこさん指示） |
 | eval_engine.py | 審判・期間の正本（改造禁止） | 読み込まれて使う | 評価基盤 項目A: 約定・コスト計器（自前・replay_csv 準拠 + 楽観3点是正） |
+| gen_audit_request.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | 監査の依頼書を、既に在るテンプレのとおりに機械で組み立てる（92番） |
 | gen_auditor_brief.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | 監査テンプレの「プロジェクトの現在地」を実体から機械生成する（まこさん指摘 2026-07-27） |
 | gen_cat_requirements.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | 要件定義書 cat_requirements.md を機械生成する（手書き禁止） |
 | gen_composition_rules.py | 文書の生成器（手書き禁止の文書を作る） | 読み込まれて使う／実行して使う | 組み立ての決まりの生成器（2026-08-08 新設） |

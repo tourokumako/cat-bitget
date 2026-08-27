@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=76b224b718cbd272 -->
+<!-- DOCMAP_HASH=908ab8498578e9ab -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -18,18 +18,19 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## いまの数
 
-- 名乗っている道具＝**19 本**
+- 名乗っている道具＝**20 本**
 - その道具が作る文書＝**31 本**
-- **検証コマンドを持たない道具＝1 本**（gen_p23_candidates.py）
-- **いま検証が通らない道具＝1 本**（gen_auditor_brief.py）
+- **検証コマンドを持たない道具＝2 本**（gen_audit_request.py／gen_p23_candidates.py）
+- **いま検証が通らない道具＝2 本**（gen_improvement_arc.py／gen_auditor_brief.py）
 - **名乗っていない道具＝1 本**（明らかな漏れ）／ 28 本（要確認）＝表3
-- 誰にも作られていない文書＝**389 本**（表4＝人が手で書いているもの）
+- 誰にも作られていない文書＝**394 本**（表4＝人が手で書いているもの）
 
 ## 表1｜道具 → 作る文書
 
 | 道具 | 作る文書 | 検証コマンド | いまの結果 |
 |---|---|---|---|
-| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり | ✅  |
+| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり | ❌ ❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 3eb794c21a44 ／ 源から作り直すと 8361865aa067） |
+| `gen_audit_request.py` |  | ❌ なし | — （検証コマンドが無い） |
 | `gen_auditor_brief.py` | auditor_template.md（一部の節） | あり | ❌    直し方: python3 scripts/priority_rebuild/gen_auditor_brief.py --write |
 | `gen_cat_requirements.py` | cat_requirements.md（まるごと） | あり | ✅  |
 | `gen_composition_rules.py` | composition_rules.json（まるごと）<br>composition_rules.md（まるごと） | あり | ✅  |
@@ -141,7 +142,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## 表4｜誰にも作られていない文書（人が手で書いているもの）
 
-**389 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
+**394 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
 
 <details><summary>全部を開く</summary>
 
@@ -251,6 +252,8 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-25_four_elements_gate_design_impl_cp6_audit_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-26_permission_gate_r17_design_cp8_audit_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-26_unordered_scan_docstring_match_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-27_regime_element04_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_frozen_question_regime.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_template.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/context/cat_v9_regime_map.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/context/project_spec.md`
@@ -461,9 +464,12 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/forbidden-check-auto-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-20260824.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-v2-drawn-only-20260825.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/gen-audit-request-20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/gen-minimize-loss-20260826.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/h2g2-entry-scan-20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/hold-mom-exit.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/milestone-req-accept-20260826.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/new-file-target-gate-20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-not-applicable-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-rebuild-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-map-r17-20260826.md`

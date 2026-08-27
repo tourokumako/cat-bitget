@@ -37,6 +37,21 @@ MUST = [   # 印の対象一覧に必ず入っていなければならないも�
 ]
 TARGET = re.compile(r"(engine_tuner|engine_tuner_gen|engine_tuner_exec|e38_priority_stack)\.py")
 EXEMPT = re.compile(r"--selftest|py_compile|--help|--verify|--identity|leak_causality_diag")
+_ANY_PY = re.compile(r"[A-Za-z0-9_./\-]+\.py")
+
+# ★2026-08-27（68回目・まこさん承認「了解、修正を進めていいよ」・設計書 iter=h2g2-entry-scan-20260827）
+#   止める相手を「4つのファイル名」だけで決めるのをやめ、
+#   「走らせる .py が engine の入口の関数を使うか」を中身で見る部品を足した。
+#   ＝別の名前のプログラムを作って中から engine の部品を呼んでも、印が古ければ止まる。
+#   判定は 1か所（lib_engine_entry_scan.py）にまとめ、G2 の見張りも同じものを呼ぶ
+#   （同じ判定を2か所に書き写すと片方だけ直る＝next_step.md §6 の89番の型）。
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    import lib_engine_entry_scan as _scan
+    _SCAN_ERR = ""
+except Exception as _e:                                # noqa: BLE001
+    _scan = None
+    _SCAN_ERR = f"{type(_e).__name__}: {_e}"
 
 
 def fingerprint(files: list) -> str:
@@ -68,11 +83,31 @@ def _runs_target(cmd_x: str) -> bool:
             continue                                   # 検査・検収・印を作る道具は通す
         if TARGET.search(seg):
             return True
+        if _scan is not None and _scan.uses_engine_entry(seg):
+            return True                                # ★名前が違っても、engine の入口を使うなら止める
+    return False
+
+
+def _scan_broken_on(cmd_x: str) -> bool:
+    """判定の部品が読めないのに、.py を走らせようとしているか（＝判定できない）。"""
+    if _scan is not None:
+        return False
+    for seg in re.split(r"[;&|\n]+", cmd_x):
+        if not re.search(r"(^|\s)python[0-9.]*(\s|$)", seg):
+            continue
+        if EXEMPT.search(seg):
+            continue
+        if _ANY_PY.search(seg):
+            return True
     return False
 
 
 def check(cmd_x: str):
     """止める理由を返す（無ければ None）。cmd_x＝引用符・ヒアドキュメントを外したコマンド。"""
+    # ★判定の部品が読めないときは止める（fail-closed）。通すと守りが黙って消えるため。
+    #   行き止まりにはならない＝印を作る道具（leak_causality_diag）は、その手前の除外で通る。
+    if _scan_broken_on(cmd_x):
+        return f"判定の部品（lib_engine_entry_scan.py）が読めない（{_SCAN_ERR}）"
     if not _runs_target(cmd_x):
         return None
     if not os.path.exists(PASS):
@@ -187,9 +222,27 @@ def selftest():
     write_pass(fp="deadbeef")
     case("指紋を書き換えた印は止まる", "指紋の不一致")
 
+    # ── ★2026-08-27 新設＝名前でなく中身で止める（設計書 iter=h2g2-entry-scan-20260827）──
+    #   印は「指紋を書き換えた」状態のまま＝止まるべき所は止まる。
+    _real = "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild"
+    case("★別の名前でも、engine の入口を使うなら止まる（regime_r9_diag）", "指紋の不一致",
+         f"python3 {_real}/regime_r9_diag.py --build 3")
+    case("★審判を呼ぶだけのものも止まる（tuner_judgement）", "指紋の不一致",
+         f"python3 {_real}/tuner_judgement.py")
+    case("文書を作るだけのものは、印が古くても通る（gen_materials）", None,
+         f"python3 {_real}/gen_materials.py --write")
+    case("文書を作るだけのものは、印が古くても通る（gen_exit_families）", None,
+         f"python3 {_real}/gen_exit_families.py --write")
+    case("印を作る道具は通る（leak_causality_diag）", None,
+         f"python3 {_real}/leak_causality_diag.py")
+    case("除外の言葉が在れば通る（--selftest）", None,
+         f"python3 {_real}/regime_r9_diag.py --selftest")
+    case("走らせずに名前を数えるだけなら通る（grep）", None,
+         f"grep -c run_recipe {_real}/regime_r9_diag.py")
+
     shutil.rmtree(tmp, ignore_errors=True)
     ROOT, PASS = keep
-    print(f"\n番人: {12 - ng}/12 pass")
+    print(f"\n番人: {19 - ng}/19 pass")
     sys.exit(1 if ng else 0)
 
 
