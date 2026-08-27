@@ -343,6 +343,11 @@
           },
           {
             "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_next_step_tidy.sh",
+            "timeout": 15
+          },
+          {
+            "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_worklog_on_experiment.sh"
           },
           {
