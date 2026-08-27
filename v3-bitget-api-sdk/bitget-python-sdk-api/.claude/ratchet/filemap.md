@@ -1,4 +1,4 @@
-<!-- FILEMAP_HASH=62fb7efd44cb410e -->
+<!-- FILEMAP_HASH=14c0e2f45b011898 -->
 # filemap.md — 何がどこにあるかの地図（gen_filemap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。ファイルの一覧も説明も、実体から機械で取っています。
@@ -38,7 +38,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | まこさんが何を決めたか知りたい | `decisions.md` | 決定の一覧。提案の前に必ず読む |
 | 次に何をするか知りたい | `next_step.md` | 次セッションの起点。セッション開始で全文表示される |
 
-## 全部の一覧（247 件）
+## 全部の一覧（248 件）
 
 ### 売買と判定のスクリプト — scripts/priority_rebuild（84 件）
 
@@ -244,7 +244,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | trade_methods_study.md | 文書 | — | トレード手法 → ML設計ノート（最低限・都度深掘り前提） |
 | v10_experiments.md | 文書 | ⚠️ どこからも参照されていない | （見出しが無い） |
 
-### 物理強制の hook — .claude/hooks（68 件）
+### 物理強制の hook — .claude/hooks（69 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
@@ -257,6 +257,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | doc_map_guard.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse(Edit／Write): ledger.md / strat_v9ml_design.md に「経緯・失敗のログ」を書く違反(文書マップ §8.2)を物理ブロック。 |
 | enforce_chat_writing.sh | hook（条件を満たすまで手を動かせなくする） | — | チャット文章の検査の入口（Stop hook・2026-08-18 新設・まこさん指示「強制できないの？」） |
 | enforce_combo_matrix.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-06 まこさん指示で新設） |
+| enforce_design_consistency.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit／MultiEdit |
 | enforce_e37_pdca.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-02 まこさん指示・共通/E37専用を明確に分離） |
 | enforce_e37_scalp_frequency.sh | hook（条件を満たすまで手を動かせなくする） | — | PostToolUse on Bash（2026-07-16 まこさん指示・fast-mode 専用ガード） |
 | enforce_e37_split_ceiling.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-16 まこさん指示） |
