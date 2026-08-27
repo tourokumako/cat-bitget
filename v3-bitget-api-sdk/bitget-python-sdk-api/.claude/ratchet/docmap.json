@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "79058aba49cd0607",
+ "_本文の指紋": "76b224b718cbd272",
  "body": {
   "docs": [
    {
@@ -639,6 +639,7 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-progress-machine-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/selftest-standalone-20260824.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/todo-gate-diff-paste-20260827.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-four-elements-gate-v58-20260825.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-permission-gate-20260824.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unordered-scan-scope-20260826.md",
@@ -705,14 +706,14 @@
   ],
   "tools": [
    {
-    "一言": "❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 9c8c5c1e08d4 ／ 源から作り直すと c4f6905cd3ed）",
+    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/improvement_arc.md"
      }
     ],
-    "検証の結果": "❌",
+    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/gen_improvement_arc.py"
    },

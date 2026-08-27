@@ -1,4 +1,4 @@
-<!-- ARC_DOC hash=c4f6905cd3ed gen=gen_improvement_arc.py 手書き禁止 -->
+<!-- ARC_DOC hash=3eb794c21a44 gen=gen_improvement_arc.py 手書き禁止 -->
 # improvement_arc.md — 改善の経緯（機械生成・手で書き換えない）
 
 ⚠️ **この文書は `gen_improvement_arc.py` が作ります。手で書き換えないでください。**
@@ -9,7 +9,7 @@
 
 ---
 
-## 表1｜戦略の改善（61 件）
+## 表1｜戦略の改善（62 件）
 
 **源**＝`ledger.md` と `acceptance_archive/` の `<!-- ARC ... -->` マーカー。
 **数字の源**＝売買記録CSVの `net_usd`（`score.py` と同じ実値）。**CC は数字を手書きしません。**
@@ -76,6 +76,7 @@
 | design-consistency-gate-20260827 | fast-mode ON・実験ゼロ・売買記録0本 | 設計書の中で同じ対象に食い違う判定が2つ書かれていても機械が止めない穴（監査 cp6 の P-1）を塞ぐ | acceptance.md を書く瞬間に、同じ名前についての反対の判定と、全部を否定する文＋同じ動詞の個別の肯定を見つけて止める hook を新設し、設定に登録する | わざと壊して止まるか試すテスト10件＋承認済みの控え58件を通した誤報の実測 | （CSV不在） | 採用｜（CSV不在） |
 | gen-minimize-loss-20260826 | engine_tuner_gen は合計 net だけを目的にしている | 出血している決済の理由を名指しして、その損を小さくする形を探せるようにする（要件 R8 の①②が、形を組み立てる方に無い） | run_trial に focus（その決済理由の玉だけの net 合計）を足し、--minimize 指定時は目的の値と並びと最後の best を focus に切り替える | 恒等（指定なしで直す前と一致）＋番人8件＋わざと壊すメタ確認＋H2/G2 の印の取り直し | （CSV不在） | 未｜（CSV不在） |
 | milestone-req-accept-20260826 | fast-mode ON・engine_tuner は探索の本走をしていない・目的ゲートは 65回目に直して登録済み | やることリストの合格の条件を CC が自由に書ける状態をやめ、要件定義書の逐語（accept）を機械が差し込んで並べる形にする | 対応表 milestone_req_map.json を新設し、gen_materials.py が要件の逐語を印の間へ差し込む。対応の無い行は --verify で止める | わざと壊して止まるか試すテスト（--selftest）と --verify の実測 | （CSV不在） | 採用｜（CSV不在） |
+| todo-gate-diff-paste-20260827 | fast-mode ON・実験ゼロ・売買記録0本 | ToDo を1文字 直すたびに全文の貼り直しを求める作りをやめ、変わった行だけで通るようにする | 表示の記録に本文を保存し、前の本文といまの本文の差分の行がチャットに在れば通す。4行の型は毎回 求める | わざと壊して止まるか試すテスト（既存14件＋新しい6件）と、本物の呼び出しの形での実測 | （CSV不在） | 採用｜（CSV不在） |
 | req-progress-machine-20260826 | fast-mode ON・B-4 の対応表 milestone_req_map.json が在る・engine_tuner は探索の本走をしていない | 要件の『満たした』の宣言を CC が手で書ける状態をやめ、機械が数えた数字と並べて出す | progress の達成度の数字を弾く／要件ごとの実測（効く行 N件・うち ✅済 M件）を機械で出す／✅済 の根拠が無い行の件数を出す | わざと壊して止まるか試すテスト（--selftest）と --verify の実測 | （CSV不在） | 採用｜（CSV不在） |
 
 ---

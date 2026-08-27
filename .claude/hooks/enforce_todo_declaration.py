@@ -66,32 +66,82 @@ DONE, DOING, YET = "✅済", "★いまここ", "まだ"
 PROJECTS = os.path.expanduser("~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget")
 
 
-def pasted_in_chat(text, transcript=None):
-    """CC がこのセッションのチャットに、この ToDo の全文を貼ったかを会話の記録で確かめる。
+def chat_texts(transcript=None):
+    """このセッションで CC がチャットに出した文章を、古い順に返す（★読むだけ・何も書かない）。
 
-    ★中身の一致で見る（ハッシュではない）＝``` で囲んで貼っても、そのまま中に入っているので当たる。
-    ★読むだけ・何も書かない。記録が読めないときは False（安全側＝今までどおり止まる）。
+    記録が読めないときは空の一覧（安全側＝今までどおり止まる）。
     """
-    body = (text or "").strip()
-    if not body:
-        return False
     path = transcript
     if not path or not os.path.exists(path):
         files = sorted(glob.glob(os.path.join(PROJECTS, "*.jsonl")), key=os.path.getmtime)
         if not files:
-            return False
+            return []
         path = files[-1]
     try:
         rows = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
     except Exception:
-        return False
+        return []
+    out = []
     for r in rows:
         if r.get("type") != "assistant":
             continue
         for b in (r.get("message") or {}).get("content") or []:
-            if isinstance(b, dict) and b.get("type") == "text" and body in (b.get("text") or ""):
-                return True
-    return False
+            if isinstance(b, dict) and b.get("type") == "text":
+                out.append(b.get("text") or "")
+    return out
+
+
+def pasted_in_chat(text, transcript=None):
+    """CC がこのセッションのチャットに、この ToDo の全文を貼ったかを会話の記録で確かめる。
+
+    ★中身の一致で見る（ハッシュではない）＝``` で囲んで貼っても、そのまま中に入っているので当たる。
+    """
+    body = (text or "").strip()
+    if not body:
+        return False
+    return any(body in t for t in chat_texts(transcript))
+
+
+# ★2026-08-27（67回目・まこさん決定「案Aにする」・承認 299703af231e2314）＝案A。
+#   直す前＝ToDo を1文字 直すたびに『全文』を貼らないと通らなかった。
+#     理由＝表示の記録（SHOWN）がハッシュ値だけを持ち、前の本文が残らないので差分を出せなかった。
+#     まこさんの逐語（2026-08-26）＝「同じ文章を連続で出すのをやめてほしい」と逆になっていた。
+#     67回目に、この作りで5回 止まった（そのうち1回は、この直しの作業そのものの中）。
+#   直した後＝SHOWN に本文を保存し、前の本文といまの本文の『変わった行』が全部チャットに在れば通す。
+#     ★4行の型（いまの版）は毎回 求める＝現在地は毎回 まこさんの画面に出る。
+#     ★守りは減らない＝貼っていない中身では通らない（番人 N2 で確かめる）。
+
+def changed_lines(old, new):
+    """前の本文に無くて、いまの本文に在る行（空行は数えない・前後の空白は落とす）。"""
+    prev = {ln.strip() for ln in (old or "").splitlines() if ln.strip()}
+    out = []
+    for ln in (new or "").splitlines():
+        s = ln.strip()
+        if s and s not in prev and s not in out:
+            out.append(s)
+    return out
+
+
+def heads_in_chat(text, transcript=None):
+    """4行の型（いまの版）のうち、チャットに出ていないものの一覧を返す（空なら全部 出ている）。"""
+    texts = chat_texts(transcript)
+    missing = []
+    for ln in (text or "").splitlines():
+        s = ln.strip()
+        if any(s.startswith(h) for h in HEADS) and not any(s in t for t in texts):
+            missing.append(s)
+    return missing
+
+
+def read_shown_body():
+    """表示の記録の中身を返す。★古い形（ハッシュ値だけ）のときは None。"""
+    raw = read(SHOWN)
+    s = raw.strip()
+    if not s:
+        return None
+    if re.fullmatch(r"[0-9a-f]{64}", s):
+        return None                                # 2026-08-27 より前の形（ハッシュ値）
+    return raw
 
 
 def read(p):
@@ -182,19 +232,43 @@ def check(transcript=None):
     #     ＝作業中にファイルを読むたびに「前のセッションのまま」と誤って止まりました。
     #     この hook の最初の実走で、私自身が止められて分かりました。
     h = hashlib.sha256(text.encode("utf-8")).hexdigest()
-    if read(SHOWN).strip() != h:
+    shown_raw = read(SHOWN).strip()
+    if shown_raw != h:                             # 古い形（ハッシュ値）で一致していれば、そのまま通す
         # ★2026-08-26＝110番の直し。CC が自分でチャットへ貼っていれば、それも「表示された」と数える。
-        #   ＝ToDo を直すたびに1回 止まって貼り直す（同じ長文が続けて出る）のをやめる。
+        # ★2026-08-27＝案A。全文でなく『変わった行』でもよい（前の本文が残っているときだけ）。
+        ok = False
+        why = ""
         if pasted_in_chat(text, transcript):
+            ok = True                              # 全文を貼った＝いままでどおり通る
+        else:
+            prev = read_shown_body()
+            if prev is None:
+                why = ("★前に貼った本文が残っていない（このセッションで まだ1回も貼っていないか、"
+                       "古い形の記録）。**このときは全文を貼る**")
+            else:
+                need = changed_lines(prev, text)
+                texts = chat_texts(transcript)
+                miss = [ln for ln in need if not any(ln in t for t in texts)]
+                heads_miss = heads_in_chat(text, transcript)
+                if miss or heads_miss:
+                    parts = []
+                    if heads_miss:
+                        parts.append("4行の型が貼られていない＝" + " ／ ".join(heads_miss[:4]))
+                    if miss:
+                        parts.append(f"変わった行のうち {len(miss)} 行が貼られていない＝"
+                                     + " ／ ".join(m[:60] for m in miss[:5]))
+                    why = ("★変わった行だけを貼る形（2026-08-27・案A）で見たが、足りない＝"
+                           + " ／ ".join(parts))
+                else:
+                    ok = True                      # 変わった行と4行の型が全部 貼られている
+        if ok:
             try:
                 with open(SHOWN, "w", encoding="utf-8") as f:
-                    f.write(h)
+                    f.write(text)                  # ★次回の差分のために本文を残す（案A）
             except Exception:
                 pass
         else:
-            return ("★この版の ToDo は、まだ画面に表示されていない（印だけ先に作っても通らない・"
-                    "2026-08-16 の穴ふさぎ）。**先にチャットへ全文を貼れば、止まらずに通る**"
-                    "（2026-08-26 の直し）。いまの止まりでも全文が画面に出た。"
+            return (why + "。いまの止まりでも全文が画面に出た。"
                     "同じ内容をチャットに貼り、印を作ってから再実行する")
     if read(MARK).strip() != h:
         return "ToDo をチャットに貼った確認マーカーが無い、または ToDo を書き換えた後で貼り直していない"
@@ -215,9 +289,10 @@ def fail(reason):
         print("──────────────────────────────────────────────────", file=e)
         print("", file=e)
         # ★表示の記録は、全文を画面に出した「いま」だけ作る（CC は作らない・検査7の実体）
+        # ★2026-08-27（案A）＝ハッシュ値ではなく本文を残す（次回の差分の材料）
         try:
             with open(SHOWN, "w", encoding="utf-8") as f:
-                f.write(hashlib.sha256(read(TODO).encode("utf-8")).hexdigest())
+                f.write(read(TODO))
         except Exception:
             pass
     print("対処: ①ToDo を直す ②同じ内容をチャットに貼る ③下のコマンドで印を作る ④再実行する", file=e)
@@ -285,7 +360,8 @@ def selftest():
     MARK = os.path.join(tmp, "session_todo_posted")
     SHOWN = os.path.join(tmp, "session_todo_shown")
 
-    def put(body, wl="# §33 やった\n# §34 やった\n", mark=True, stale=False, shown=True):
+    def put(body, wl="# §33 やった\n# §34 やった\n", mark=True, stale=False, shown=True,
+            shown_val=None):
         with open(TODO, "w", encoding="utf-8") as f:
             f.write(body)
         with open(os.path.join(tmp, "session_worklog_20260816.md"), "w", encoding="utf-8") as f:
@@ -301,7 +377,7 @@ def selftest():
             os.remove(MARK)
         if shown:
             with open(SHOWN, "w", encoding="utf-8") as f:
-                f.write(h)
+                f.write(h if shown_val is None else shown_val)
         elif os.path.exists(SHOWN):
             os.remove(SHOWN)
 
@@ -325,8 +401,8 @@ def selftest():
         ("§NN が worklog に無いと止まる",
          head + f"| 1 | a | {DONE} | §99 |\n| 2 | b | {DOING} | — |\n", None, True, "見出しに無い"),
         ("チャットに貼っていないと止まる", ok_body, None, False, "確認マーカー"),
-        (NOSHOW, ok_body, None, True, "表示されていない"),
-        (STALE, ok_body, None, True, "表示されていない"),
+        (NOSHOW, ok_body, None, True, "全文を貼る"),
+        (STALE, ok_body, None, True, "全文を貼る"),
     ]
 
     # ★2026-08-26（110番の直し）＝会話の記録を、番人の中でも作り物にする。
@@ -374,8 +450,53 @@ def selftest():
                                                      "text": "```\n" + ok_body.replace("| a |", "| z |") + "```"}]}},
                            ensure_ascii=False) + "\n")
     got = check(other_tr)
-    good = got is not None and "表示されていない" in got
+    good = got is not None and "全文を貼る" in got
     print(f"  {'✅' if good else '❌'} ★110番＝違う中身を貼っても通らない"
+          + ("" if good else f"   ← 出た理由: {got}"))
+    if not good:
+        ng += 1
+
+    # ──────── ★2026-08-27（案A）＝変わった行だけで通す・6件 ────────
+    #   前の本文＝ok_body ／ いまの本文＝1行だけ変えたもの。
+    new_body = ok_body.replace("| 3 | c | まだ | — |", "| 3 | c | ★いまここ | §34 |")
+    new_body = new_body.replace(f"| 2 | b | {DOING} | — |", f"| 2 | b | {DONE} | §34 |")
+    diff_line = f"| 2 | b | {DONE} | §34 |\n| 3 | c | {DOING} | §34 |"   # ★変えた行は2つ
+    heads4 = "【いまの工程】x\n【ToDo】x\n【止まっているもの】なし\n【次】x"
+
+    def tr(name, text):
+        p = os.path.join(tmp, name)
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(json.dumps({"type": "assistant",
+                                "message": {"content": [{"type": "text", "text": text}]}},
+                               ensure_ascii=False) + "\n")
+        return p
+
+    n_cases = [
+        ("N1 変わった行＋4行の型を貼れば通る（案A の狙い）",
+         True, heads4 + "\n" + diff_line, None),
+        ("N2 変わった行を貼っていないと止まる（守りは減らない）",
+         True, heads4 + "\nなにも貼っていない", "変わった行"),
+        ("N3 4行の型を貼っていないと止まる",
+         True, diff_line, "4行の型"),
+        ("N4 前の本文が無い＋全文を貼れば通る",
+         False, "```\n" + new_body + "```", None),
+        ("N5 前の本文が無い＋変わった行だけでは止まる",
+         False, heads4 + "\n" + diff_line, "全文を貼る"),
+    ]
+    for name, has_prev, chat, want in n_cases:
+        put(new_body, mark=True, shown=has_prev, shown_val=(ok_body if has_prev else None))
+        got = check(tr("n.jsonl", chat))
+        good = (got is None) if want is None else (got is not None and want in got)
+        print(f"  {'✅' if good else '❌'} {name}" + ("" if good else f"   ← 出た理由: {got}"))
+        if not good:
+            ng += 1
+
+    # N6 古い形の記録（ハッシュ値）でも壊れない＝全文を貼れば通る
+    put(new_body, mark=True, shown=True,
+        shown_val=hashlib.sha256(ok_body.encode("utf-8")).hexdigest())
+    got = check(tr("n6.jsonl", "```\n" + new_body + "```"))
+    good = got is None
+    print(f"  {'✅' if good else '❌'} N6 古い形の記録（ハッシュ値）でも壊れない"
           + ("" if good else f"   ← 出た理由: {got}"))
     if not good:
         ng += 1
@@ -390,7 +511,7 @@ def selftest():
 
     shutil.rmtree(tmp, ignore_errors=True)
     TODO, MARK, STATE, SHOWN = keep
-    total = len(cases) + 3
+    total = len(cases) + 3 + len(n_cases) + 1
     print(f"\n番人: {total - ng}/{total} pass")
     sys.exit(1 if ng else 0)
 
