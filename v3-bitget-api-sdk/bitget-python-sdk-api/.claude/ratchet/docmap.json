@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "908ab8498578e9ab",
+ "_本文の指紋": "18a877523b918832",
  "body": {
   "docs": [
    {
@@ -323,6 +323,7 @@
    ".claude/settings.json",
    ".claude/settings.local.json",
    ".claude/state/acceptance.md",
+   ".claude/state/acceptance.md.actual.md",
    ".claude/state/acceptance_20260806_signal_table.md",
    ".claude/state/chat_check_blocks.json",
    ".claude/state/chat_check_last.json",
@@ -404,6 +405,7 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-25_four_elements_gate_design_impl_cp6_audit_report.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-26_permission_gate_r17_design_cp8_audit_report.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-26_unordered_scan_docstring_match_report.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-27_regime_element04_audit_report.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-15_ml_usage_options_overview.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-19_phase_a_cap_exit_cluster_threshold.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-26_phase1_v6_6cases_methodology_audit_request.md",
@@ -420,6 +422,7 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-25_four_elements_gate_design_impl_cp6_audit_request.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-26_permission_gate_r17_design_cp8_audit_request.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-26_unordered_scan_docstring_match_request.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-27_m2_todo_rewrite_cp10_audit_request.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-27_regime_element04_audit_request.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_frozen_question_regime.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_template.md",
@@ -640,6 +643,7 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/new-file-target-gate-20260827.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-not-applicable-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-rebuild-20260826.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/regime-build-callers-and-usable-groups-20260827.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-map-r17-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-progress-machine-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md",
@@ -711,7 +715,7 @@
   ],
   "tools": [
    {
-    "一言": "❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 3eb794c21a44 ／ 源から作り直すと 8361865aa067）",
+    "一言": "❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 3eb794c21a44 ／ 源から作り直すと bcf3ce452091）",
     "作る文書": [
      {
       "作り方": "まるごと",

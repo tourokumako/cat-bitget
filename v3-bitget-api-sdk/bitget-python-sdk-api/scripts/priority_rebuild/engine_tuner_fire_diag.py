@@ -389,7 +389,7 @@ def run_main(a) -> int:
         try:
             r = gen.sample_structure(rng, lm, pool, tfs, side=side, regime=regime,
                                      logic_id=f"GEN{len(structures):04d}")
-            ex.validate_recipe(r, limits={
+            gen.validate_drawn(r, limits={               # ★69回目＝印を外してから検査に通す（原因A の直し・番人 T31）
                 "n_min": None, "p_max": lm.get("p_max"), "count_range": lm.get("count_range"),
                 "role_max": lm.get("role_max"), "depth_max": lm.get("depth_max"),
                 "k_max": lm.get("k_max"), "r_min": lm.get("r_min")})

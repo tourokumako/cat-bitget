@@ -189,7 +189,7 @@ def build_bundles(n: int, seed: int, strategy: str = "e38") -> tuple:
         try:
             r = g.sample_structure(rng, lm, pool, tfs, side="SHORT", regime=regime,
                                    logic_id=f"R9_{i}", build_regime=True, regime_order_n=i)
-            ex.validate_recipe(r, limits=lim)
+            g.validate_drawn(r, limits=lim)              # ★69回目＝印を外してから検査に通す（原因A の直し・番人 T31）
         except (g.SampleError, ex.RecipeError) as e:
             print(f"  [組めない] 案 {i}: {str(e)[:80]}（同じ番号で引き直す）")
             continue

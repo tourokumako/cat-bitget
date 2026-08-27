@@ -804,10 +804,57 @@ def _cc(cond, *a, **k):
     return getattr(_ex, "_check_cond")(strip_marks(cond), *a, **k)
 
 
-def _vr(recipe, *a, **k):
-    """自己テストが検証器（案まるごと）を呼ぶときの包み。印を外してから渡す。"""
+def validate_drawn(recipe, *a, **k):
+    """案を作るプログラムが返した案（印つき）を、実行器の検査 `validate_recipe` に通す **唯一の公開の口**。
+
+    ★69回目（2026-08-27・原因A の直し・承認 d7448952c357c306…）。
+      `sample_structure` は印（_num_src ほか・`_MARK_KEYS`）を付けたまま案を返す（C-7＝保存する案に出どころを残す）。
+      実行器の検査は印を知らないので、印を外さずに渡すと G5/G6 で拒否される（68回目の実測＝0/96）。
+      直す前は、印を外す包みが自己テスト用の `_vr` にしか無く、外から呼ぶ3本（regime_r9_diag／
+      build_regime_from_tuner／engine_tuner_fire_diag）が `ex.validate_recipe` を直に呼んで落ちていた。
+    ★外のプログラムが案を検査に通すときは、必ずここを通る（番人 T31 が、直に呼ぶ所を構文木で数える）。
+    """
     import engine_tuner_exec as _ex
     return _ex.validate_recipe(strip_marks(recipe), *a, **k)
+
+
+def _vr(recipe, *a, **k):
+    """自己テストが検証器（案まるごと）を呼ぶときの包み＝`validate_drawn` を呼ぶだけ（判定を2か所に書かない・89番の型）。"""
+    return validate_drawn(recipe, *a, **k)
+
+
+def _scan_direct_validate_calls(paths) -> list[str]:
+    """`sample_structure(` を呼ぶ .py の中で、`validate_recipe(` を印を外さずに直に呼ぶ所を、構文木で数える（番人 T31・69回目）。
+
+    経由していると数えるもの＝1つ目の引数が `strip_marks(...)` か `validate_drawn(...)` の呼び出し。
+    ★一覧は手で並べない＝渡された .py を全部 読む（L-563 の型）。構文の木にできないファイルは、飛ばさずに1件として返す。
+    戻り＝["ファイル名:行", ...]（0件なら空）。
+    """
+    import ast
+    out: list[str] = []
+
+    def _fn(node):
+        f = node.func
+        return f.attr if isinstance(f, ast.Attribute) else (f.id if isinstance(f, ast.Name) else "")
+
+    for p in paths:
+        p = pathlib.Path(p)
+        try:
+            tree = ast.parse(p.read_text(encoding="utf-8"), filename=str(p))
+        except SyntaxError as e:
+            out.append(f"{p.name}: 構文の木にできない ({e})")
+            continue
+        calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)]
+        if not any(_fn(n) == "sample_structure" for n in calls):
+            continue
+        for n in calls:
+            if _fn(n) != "validate_recipe" or not n.args:
+                continue
+            a0 = n.args[0]
+            if isinstance(a0, ast.Call) and _fn(a0) in ("strip_marks", "validate_drawn"):
+                continue
+            out.append(f"{p.name}:{n.lineno}")
+    return out
 
 
 def strip_marks(obj):
@@ -1247,10 +1294,19 @@ def _banned_pair(m: dict, table) -> bool:
     """
     if "family" not in m:
         return False
-    name = ex.build_name(m)
-    if (name, m["tf"]) in table["banned"]:
+    return _banned_name(ex.build_name(m), m["tf"], table)
+
+
+def _banned_name(name: str, tf: str, table) -> bool:
+    """（列の名前×時間足）が禁止3（標本不足）に当たるか＝`_banned_pair` の中身（69回目に切り出した）。
+
+    ★なぜ切り出したか＝`_group_usable`（原因B の直し）が範囲の数字を全部 走査するときに、材料の辞書
+      （family と tf の両方を持つ辞書）を印の外で作らずに済むようにするため（`--lint-provenance` の K1）。
+      判定の式は1文字も変えていない（表に載っていれば拒否・載っていなければその場で計算）。
+    """
+    if (name, tf) in table["banned"]:
         return True
-    return _insufficient_samples(name, m["tf"])
+    return _insufficient_samples(name, tf)
 
 
 def _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count, table) -> dict:
@@ -1972,6 +2028,56 @@ def _family_tf_from_col(col: str) -> tuple[str, str]:
 
 
 _RANKED_GROUPS_MEMO: dict = {}
+_GROUP_USABLE_MEMO: dict = {}
+
+
+def _group_usable(fam: str, tf: str, ranges: dict | None = None, table: dict | None = None) -> bool:
+    """その組（種類×時間足）に、範囲の中で禁止3（標本不足）を通る数字が **1つでも在るか**（69回目・原因B の直し・承認 d7448952c357c306…）。
+
+    ★なぜ要るか＝成績表を種類×時間足でまとめた順位（`ranked_groups`）には、範囲のどの数字を引いても
+      標本不足で使えない組が混ざる（68回目の実測＝env の順位1・3・4・6・7 が 0/200）。`_ranked_material_at` は
+      その組で10回 引いて全部だめなら案を諦めるので、その順位に当たる案は必ず落ちていた。
+    ★範囲を **全部 走査** する（乱数で引いて確かめない＝結果が種に依らない・「1位から順」を保つ）。
+      整数の軸＝lo〜hi の全部／小数の軸＝dec（カタログの小数の桁数）の刻みで全部＝`draw_param` が丸める桁と同じ
+      ＝引ける数字を1つ残らず見る／軸が複数なら直積。判定の式は `_banned_pair` と同じ（表 → `_insufficient_samples`）。
+    ★範囲そのもの（`material_ranges`）と引き方（`draw_param`・`_mat_drawn`）には触らない＝探す範囲は変わらない。
+    ★走査が 200,000 通りを超えるときは止める（fail-closed）＝刻みは まこさんが決める。
+    """
+    import itertools
+    ranges = ranges if ranges is not None else material_ranges()
+    spec = ranges.get(fam)
+    if spec is None:
+        return False
+    key = (str(fam), str(tf), json.dumps(spec["axes"], sort_keys=True, default=str))
+    if key in _GROUP_USABLE_MEMO:
+        return _GROUP_USABLE_MEMO[key]
+    axes_vals: list[list] = []
+    for ax in spec["axes"]:
+        lo, hi = ax["lo"], ax["hi"]
+        if ax["kind"] == "int":
+            axes_vals.append(list(range(int(lo), int(hi) + 1)))
+        else:
+            dec = int(ax.get("dec", 0) or 0)
+            if dec:
+                step = 10.0 ** (-dec)
+                n = int(round((float(hi) - float(lo)) / step))
+                axes_vals.append([round(float(lo) + i * step, dec) for i in range(n + 1)])
+            else:                                          # draw_param は dec=0 の小数を float(round(v)) にする
+                axes_vals.append([float(v) for v in range(int(round(float(lo))), int(round(float(hi))) + 1)])
+    total = 1
+    for v in axes_vals:
+        total *= max(1, len(v))
+    if total > 200_000:
+        raise SampleError(f"[原因B の走査] {fam} の範囲が広すぎて全走査できない（{total:,} 通り）＝刻みは まこさんが決める")
+    usable = False
+    for combo in itertools.product(*axes_vals):
+        param = combo[0] if len(combo) == 1 else tuple(combo)
+        # ★材料の辞書（family＋tf）は作らない＝印を付ける関数の外で材料を作らない決まり（K1）。名前だけを組んで判定する
+        if not _banned_name(ex.build_name({"family": str(fam), "param": param}), str(tf), table):
+            usable = True
+            break
+    _GROUP_USABLE_MEMO[key] = usable
+    return usable
 
 
 def ranked_groups(role: str, label: str | None = None) -> list[tuple]:
@@ -2021,6 +2127,8 @@ def _ranked_material_at(rng, role, rank_pos: int, tfs, table, label=None, tf_ok=
         if tf not in ok_tfs or fam not in iref.FAMILY_LINEAGE or fam not in ranges:
             continue
         if iref.FAMILY_LINEAGE[fam]["k"] not in rr["lineages"]:
+            continue
+        if not _group_usable(fam, tf, ranges, table):    # ★69回目（原因B）＝範囲のどの数字でも禁止3 の組は順位に数えない
             continue
         n += 1
         if n != int(rank_pos):
@@ -5071,6 +5179,109 @@ def selftest() -> int:
     print(f"  T29 減らしたい損失の実走（R8）: 小さい本走で目的が入れ替わる（{_t29_note}）／"
           "記録の1本1本に損の額が入る／再開の記録に指定が残る／"
           "★メタ確認＝指定なしなら画面も記録も直す前のまま（恒等）")
+
+    # ══ T30〜T32 外から呼ぶ道と、使えない組（69回目・2026-08-27・承認 d7448952c357c306…・原因A・原因B）══════
+    #   T30 外の道＝案を作るプログラムが返した案（印つき）を、実行器の検査に直に渡すと止まり、validate_drawn なら通る
+    #   T31 呼び出し元の走査＝sample_structure を呼ぶ .py で validate_recipe を直に呼ぶ所が 0件（一覧は機械で集める）
+    #       ＋わざと直に呼ぶ写しを走査すると 1件 出る（走査が本物であるメタ確認）
+    #   T32 使えない組＝範囲のどの数字でも禁止3 の組は順位に数えない／禁止3 を外すと直す前の1位に戻る（メタ確認）／
+    #       種を変えても同じ組（乱数に依らない）
+    t3x: list[str] = []
+    try:
+        _tbl30 = load_signal_table()
+        _pool30, _tfs30, _ = material_pool()
+        _lm30, _w30 = load_limits()
+        _lm30 = resolve_hold_range(_lm30, "e38")
+        _lim30 = {"n_min": None, "p_max": _lm30.get("p_max"), "count_range": _lm30.get("count_range"),
+                  "role_max": _lm30.get("role_max"), "depth_max": _lm30.get("depth_max"),
+                  "k_max": _lm30.get("k_max"), "r_min": _lm30.get("r_min")}
+        _rr30 = None
+        for _i in range(20):
+            try:
+                _cand = sample_structure(np.random.default_rng([30, 1, _i]), _lm30, _pool30, _tfs30, side="SHORT",
+                                         logic_id=f"T30_{_i}", build_regime=True, regime_order_n=_i)
+                validate_drawn(_cand, limits=_lim30)
+                _rr30 = _cand
+                break
+            except (SampleError, ex.RecipeError):
+                continue
+        if _rr30 is None:
+            t3x.append("T30: 場面の判定の束つきの案が、包み（validate_drawn）で1本も通らない（20本 試した）")
+        else:
+            try:
+                # ★わざと印を外さずに直に渡す（getattr 経由＝番人 T31 の走査の対象にしないため）
+                getattr(ex, "validate_recipe")(_rr30, limits=_lim30)
+                t3x.append("T30-a: 印つきの案を実行器の検査に直に渡しても止まらない（印が外れている？＝C-7 が崩れている）")
+            except ex.RecipeError as _e30:
+                if "_src" not in str(_e30):
+                    t3x.append(f"T30-a: 直に渡すと止まるが、理由が印ではない: {str(_e30)[:80]}")
+        # T31
+        _scan_dirs = [HERE, HERE.parent / "dashboard"]
+        _hits31 = _scan_direct_validate_calls(sorted(p for d in _scan_dirs for p in d.glob("*.py")))
+        if _hits31:
+            t3x.append("T31-a: 印を外さずに検査を直に呼ぶ所: " + " ／ ".join(_hits31[:6]))
+        with tempfile.TemporaryDirectory() as _td:
+            _bad31 = pathlib.Path(_td) / "bad_caller.py"
+            _bad31.write_text("import engine_tuner_gen as g\nimport engine_tuner_exec as ex\n"
+                              "r = g.sample_structure(None, {}, [], [], build_regime=True)\n"
+                              "ex.validate_recipe(r, limits={})\n", encoding="utf-8")
+            _good31 = pathlib.Path(_td) / "good_caller.py"
+            _good31.write_text("import engine_tuner_gen as g\n"
+                               "r = g.sample_structure(None, {}, [], [], build_regime=True)\n"
+                               "g.validate_drawn(r, limits={})\n", encoding="utf-8")
+            if len(_scan_direct_validate_calls([_bad31])) != 1:
+                t3x.append("T31-b: わざと直に呼ぶ写しを走査しても 1件 出ない（走査が本物でない）")
+            if _scan_direct_validate_calls([_good31]):
+                t3x.append("T31-b: 包みで呼ぶ写しが誤って引っかかる")
+        # T32
+        _tfs_all32 = list(_tbl30["tfs"])
+        _upper32 = [t for t in _tfs_all32 if _tfs_all32.index(t) > _tfs_all32.index("5m")]
+        _tfok32 = [t for t in _role_tfs(_tfs30, _tbl30, "env") if t in _upper32]
+        _ok32 = set(_tfok32)
+        _rr32 = _tbl30["roles"]["env"]
+        _ranges32 = material_ranges()
+        _first32 = None                                   # 直す前の1位（型の表・時間足・系統だけで数えた最初の組）
+        for _fam, _tf, _lab, _hor, _med, _ncol, _col in ranked_groups("env", "強さ"):
+            if _tf not in _ok32 or _fam not in iref.FAMILY_LINEAGE or _fam not in _ranges32:
+                continue
+            if iref.FAMILY_LINEAGE[_fam]["k"] not in _rr32["lineages"]:
+                continue
+            _first32 = (_fam, _tf)
+            break
+        _m32, _d32 = _ranked_material_at(np.random.default_rng(32), "env", 1, _tfs30, _tbl30, label="強さ", tf_ok=_tfok32)
+        if not _group_usable(_d32["種類"], _d32["時間足"], _ranges32, _tbl30):
+            t3x.append(f"T32-a: 1位に「範囲のどの数字でも禁止3」の組が残っている: {_d32['種類']}×{_d32['時間足']}")
+        if _banned_pair(_m32, _tbl30):
+            t3x.append(f"T32-a: 1位から引いた数字が禁止3: {_m32}")
+        if str(_d32["種類"]).startswith("stdev"):
+            t3x.append(f"T32-a: 1位が直す前と同じ stdev%×1d のまま（68回目の実測＝0/200 の組）: {_d32}")
+        if _first32 is not None and _group_usable(_first32[0], _first32[1], _ranges32, _tbl30):
+            print(f"  T32 注記: 直す前の1位の組 {_first32} は使える組（成績表を作り直したなら見本を見直す）")
+        # (b) メタ確認＝禁止3 を「全部 使える」に差し替えると、直す前の1位に戻る
+        _keep_bp = globals()["_banned_name"]
+        _keep_memo = dict(_GROUP_USABLE_MEMO)
+        try:
+            globals()["_banned_name"] = lambda name, tf, table: False
+            _GROUP_USABLE_MEMO.clear()
+            _m32b, _d32b = _ranked_material_at(np.random.default_rng(32), "env", 1, _tfs30, _tbl30, label="強さ", tf_ok=_tfok32)
+            if _first32 is not None and (_d32b["種類"], _d32b["時間足"]) != _first32:
+                t3x.append(f"T32-b: 禁止3 を外しても直す前の1位に戻らない: {(_d32b['種類'], _d32b['時間足'])} ≠ {_first32}")
+        finally:
+            globals()["_banned_name"] = _keep_bp
+            _GROUP_USABLE_MEMO.clear()
+            _GROUP_USABLE_MEMO.update(_keep_memo)
+        # (c) 乱数に依らない
+        _m32c, _d32c = _ranked_material_at(np.random.default_rng(999), "env", 1, _tfs30, _tbl30, label="強さ", tf_ok=_tfok32)
+        if (_d32c["種類"], _d32c["時間足"]) != (_d32["種類"], _d32["時間足"]):
+            t3x.append("T32-c: 種を変えると1位の組が変わる（乱数に依っている）")
+        print(f"  T32 実測: env「強さ」の1位＝{_d32['種類']}×{_d32['時間足']}（直す前の1位＝{_first32}）"
+              f" ／ 走査した組 {len(_GROUP_USABLE_MEMO)} 件")
+    except Exception as _e3x:
+        t3x.append(f"T30〜T32: 検査が走らない: {type(_e3x).__name__} {_e3x}")
+    ng += t3x
+    print("  T30 外の道: 印つきの案を実行器の検査に直に渡すと止まる／包み validate_drawn なら通る")
+    print("  T31 呼び出し元の走査: sample_structure を呼ぶ .py で validate_recipe を直に呼ぶ所 0件／わざと直に呼ぶ写しは 1件 出る")
+    print("  T32 使えない組: 範囲のどの数字でも禁止3 の組は順位に数えない／禁止3 を外すと直す前の1位に戻る／種を変えても同じ組")
 
     if ng:
         for x in ng:
