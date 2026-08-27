@@ -77,12 +77,20 @@ def chat_texts(transcript=None):
         if not files:
             return []
         path = files[-1]
+    # ★2026-08-27＝1行ずつ読む。直す前は1行でも JSON として壊れていると全部を捨てていた
+    #   ＝貼った行まで見えなくなり、止まり続ける。壊れた行だけ飛ばし、読める行は生かす。
     try:
-        rows = [json.loads(l) for l in open(path, encoding="utf-8") if l.strip()]
+        lines = open(path, encoding="utf-8", errors="ignore").read().splitlines()
     except Exception:
         return []
     out = []
-    for r in rows:
+    for l in lines:
+        if not l.strip():
+            continue
+        try:
+            r = json.loads(l)
+        except Exception:
+            continue
         if r.get("type") != "assistant":
             continue
         for b in (r.get("message") or {}).get("content") or []:
@@ -110,6 +118,15 @@ def pasted_in_chat(text, transcript=None):
 #   直した後＝SHOWN に本文を保存し、前の本文といまの本文の『変わった行』が全部チャットに在れば通す。
 #     ★4行の型（いまの版）は毎回 求める＝現在地は毎回 まこさんの画面に出る。
 #     ★守りは減らない＝貼っていない中身では通らない（番人 N2 で確かめる）。
+
+# ★2026-08-27（69回目・まこさん指示「この修正をここで対応してほしい」・auditor セッションで実測）＝
+#   VSCode 拡張では、CC の本文が会話の記録（jsonl）に書かれるのがターンの終わり頃で、
+#   同じターンの中では hook が貼りを読めないことがある（短い本文は読めた・長い本文は読めなかった。
+#   ToDo を正しく貼っても5回 止まった）。直し2つ＝
+#   1. chat_texts を1行ずつ読む形に（壊れた行が1つ在ると記録全体が見えなくなる作りだった）。
+#   2. 表示の記録（SHOWN＝hook 自身が全文を画面に出したときにだけ書く本文）が いまの本文と
+#      同じなら通す（check() の elif prev == text）。番人 N7〜N9 で確かめる。
+
 
 def changed_lines(old, new):
     """前の本文に無くて、いまの本文に在る行（空行は数えない・前後の空白は落とす）。"""
@@ -245,6 +262,16 @@ def check(transcript=None):
             if prev is None:
                 why = ("★前に貼った本文が残っていない（このセッションで まだ1回も貼っていないか、"
                        "古い形の記録）。**このときは全文を貼る**")
+            elif prev == text:
+                # ★2026-08-27（まこさん指示「この修正をここで対応してほしい」→「２」で編集を承認）＝
+                #   SHOWN は hook 自身が全文を画面に出したときにだけ本文を書く＝同じ本文なら既に
+                #   まこさんの画面に出ている＝もう一度は求めない。古い形（ハッシュ値）の頃に在った
+                #   「一度 止まって全文が出たら、同じ版は通る」の道の復元（案A で消えていた）。
+                #   なぜ要るか＝VSCode 拡張では CC の本文が会話の記録に書かれるのがターンの終わり頃で、
+                #   同じターンの中の貼り付けを hook が読めない（2026-08-27 実測・5回 止まった）。
+                #   守りは減らない＝本文を1文字でも変えれば、貼るか、もう一度 止まって全文が画面に
+                #   出るかの どちらかが要る。印（指紋）の検査も従来どおり（番人 N8）。
+                ok = True
             else:
                 need = changed_lines(prev, text)
                 texts = chat_texts(transcript)
@@ -501,6 +528,22 @@ def selftest():
     if not good:
         ng += 1
 
+    # N9 記録に JSON として壊れた行が混ざっても、貼った全文は読める（1行ずつ読む直し・2026-08-27）
+    put(new_body, mark=True, shown=False)
+    p9 = os.path.join(tmp, "n9.jsonl")
+    with open(p9, "w", encoding="utf-8") as f:
+        f.write("{これは JSON として壊れた行\n")
+        f.write(json.dumps({"type": "assistant",
+                            "message": {"content": [{"type": "text",
+                                                     "text": "```\n" + new_body + "```"}]}},
+                           ensure_ascii=False) + "\n")
+    got = check(p9)
+    good = got is None
+    print(f"  {'✅' if good else '❌'} N9 壊れた行が混ざっても、貼った全文は読める"
+          + ("" if good else f"   ← 出た理由: {got}"))
+    if not good:
+        ng += 1
+
     # ToDo ファイルが無いときも止まる
     os.remove(TODO)
     got = check(empty_tr)
@@ -511,7 +554,7 @@ def selftest():
 
     shutil.rmtree(tmp, ignore_errors=True)
     TODO, MARK, STATE, SHOWN = keep
-    total = len(cases) + 3 + len(n_cases) + 1
+    total = len(cases) + 3 + len(n_cases) + 1 + 1     # 末尾の +1 ＝ N9（2026-08-27）
     print(f"\n番人: {total - ng}/{total} pass")
     sys.exit(1 if ng else 0)
 
