@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=144aa0c0a549bc81 -->
+<!-- DOCMAP_HASH=c9d6c598cf5b2284 -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -21,9 +21,9 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - 名乗っている道具＝**19 本**
 - その道具が作る文書＝**31 本**
 - **検証コマンドを持たない道具＝1 本**（gen_p23_candidates.py）
-- **いま検証が通らない道具＝3 本**（gen_improvement_arc.py／gen_auditor_brief.py／gen_filemap.py）
-- **名乗っていない道具＝1 本**（明らかな漏れ）／ 27 本（要確認）＝表3
-- 誰にも作られていない文書＝**386 本**（表4＝人が手で書いているもの）
+- **いま検証が通らない道具＝2 本**（gen_improvement_arc.py／gen_auditor_brief.py）
+- **名乗っていない道具＝1 本**（明らかな漏れ）／ 28 本（要確認）＝表3
+- 誰にも作られていない文書＝**387 本**（表4＝人が手で書いているもの）
 
 ## 表1｜道具 → 作る文書
 
@@ -39,7 +39,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 | `gen_engine_tuner_manual.py` | engine_tuner_manual.md（まるごと） | あり | ✅  |
 | `gen_engine_tuner_requirements.py` | engine_tuner_requirements.md（まるごと） | あり | ✅  |
 | `gen_exit_families.py` | exit_families.json（まるごと）<br>exit_families.md（まるごと）<br>exit_families_approved.txt（まるごと） | あり | ✅  |
-| `gen_filemap.py` | filemap.md（まるごと） | あり | ❌    直し方: python3 scripts/priority_rebuild/gen_filemap.py --write |
+| `gen_filemap.py` | filemap.md（まるごと） | あり | ✅  |
 | `gen_fix_map.py` | engine_tuner_fix_map.md（まるごと） | あり | ✅  |
 | `gen_flow.py` | e38_flow.md（まるごと） | あり | ⚠️ 引数が要る＝そのままでは検証を走らせられない |
 | `gen_materials.py` | materials.md（まるごと）<br>materials.json（まるごと）<br>engine_tuner_milestones.md（一部の節）<br>engine_tuner_milestones2.md（一部の節） | あり | ✅  |
@@ -91,7 +91,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 **A＝明らかな漏れ**（名前が `gen_` で始まるのに名乗っていない）。
 **B＝要確認**（`.md` を書き出す処理が在るのに名乗っていない。凍結した研究の道具を含む）。
 
-**A＝1 本 ／ B＝27 本。**
+**A＝1 本 ／ B＝28 本。**
 
 ### A｜明らかな漏れ
 
@@ -107,6 +107,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 | 道具 | 理由 |
 |---|---|
+| `.claude/hooks/require_source_read_before_acceptance.py` | md を書き出す処理が在るのに名乗っていない |
 | `.claude/hooks/test_worklog_toolchange.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/dashboard/build_dashboard_json.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/doc_coverage_diag.py` | md を書き出す処理が在るのに名乗っていない |
@@ -140,7 +141,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## 表4｜誰にも作られていない文書（人が手で書いているもの）
 
-**386 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
+**387 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
 
 <details><summary>全部を開く</summary>
 
@@ -214,6 +215,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/state/session_worklog_20260824.md`
 - `.claude/state/session_worklog_20260825.md`
 - `.claude/state/session_worklog_20260826.md`
+- `.claude/state/session_worklog_20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit15_routeB_records.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit16_ml_options_review.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-19_audit17_phase_a_evaluation.md`

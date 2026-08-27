@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "144aa0c0a549bc81",
+ "_本文の指紋": "c9d6c598cf5b2284",
  "body": {
   "docs": [
    {
@@ -384,6 +384,7 @@
    ".claude/state/session_worklog_20260824.md",
    ".claude/state/session_worklog_20260825.md",
    ".claude/state/session_worklog_20260826.md",
+   ".claude/state/session_worklog_20260827.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit15_routeB_records.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit16_ml_options_review.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-19_audit17_phase_a_evaluation.md",
@@ -839,14 +840,14 @@
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_exit_families.py"
    },
    {
-    "一言": "   直し方: python3 scripts/priority_rebuild/gen_filemap.py --write",
+    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/filemap.md"
      }
     ],
-    "検証の結果": "❌",
+    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_filemap.py"
    },
@@ -979,6 +980,11 @@
    }
   ],
   "unnamed": [
+   {
+    "理由": "md を書き出す処理が在るのに名乗っていない",
+    "種類": "B｜要確認",
+    "道具": ".claude/hooks/require_source_read_before_acceptance.py"
+   },
    {
     "理由": "md を書き出す処理が在るのに名乗っていない",
     "種類": "B｜要確認",

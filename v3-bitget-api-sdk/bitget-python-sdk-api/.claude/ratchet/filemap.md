@@ -1,4 +1,4 @@
-<!-- FILEMAP_HASH=99eb6544e2714092 -->
+<!-- FILEMAP_HASH=62fb7efd44cb410e -->
 # filemap.md — 何がどこにあるかの地図（gen_filemap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。ファイルの一覧も説明も、実体から機械で取っています。
@@ -38,9 +38,9 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | まこさんが何を決めたか知りたい | `decisions.md` | 決定の一覧。提案の前に必ず読む |
 | 次に何をするか知りたい | `next_step.md` | 次セッションの起点。セッション開始で全文表示される |
 
-## 全部の一覧（235 件）
+## 全部の一覧（247 件）
 
-### 売買と判定のスクリプト — scripts/priority_rebuild（82 件）
+### 売買と判定のスクリプト — scripts/priority_rebuild（84 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
@@ -71,7 +71,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | eval_engine.py | 審判・期間の正本（改造禁止） | 読み込まれて使う | 評価基盤 項目A: 約定・コスト計器（自前・replay_csv 準拠 + 楽観3点是正） |
 | gen_auditor_brief.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | 監査テンプレの「プロジェクトの現在地」を実体から機械生成する（まこさん指摘 2026-07-27） |
 | gen_cat_requirements.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | 要件定義書 cat_requirements.md を機械生成する（手書き禁止） |
-| gen_composition_rules.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | 組み立ての決まりの生成器（2026-08-08 新設） |
+| gen_composition_rules.py | 文書の生成器（手書き禁止の文書を作る） | 読み込まれて使う／実行して使う | 組み立ての決まりの生成器（2026-08-08 新設） |
 | gen_decisions.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | まこさんが決めたことの一覧を機械生成する（手書き禁止・2026-07-26 まこさん OK） |
 | gen_design.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | E38 設計書の機械生成（フロー段1・まこさん確定「設計書は手書きしない」） |
 | gen_docmap.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | 機械が作る文書の全数の一覧を、道具の名乗りから作る（2026-08-16 新設） |
@@ -87,6 +87,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | gen_signal_families.py | 文書の生成器（手書き禁止の文書を作る） | 読み込まれて使う／実行して使う | 型の表（許可の一覧）の自動生成（CP4 監査フィードバック①・2026-08-06） |
 | gen_v9_exits.py | 文書の生成器（手書き禁止の文書を作る） | 実行して使う | V9 の Exit 実装を実コードから機械で表にする（まこさん指摘 2026-07-27 を受けて新設） |
 | gen_windows.py | 文書の生成器（手書き禁止の文書を作る） | 読み込まれて使う／実行して使う | 期間（窓）の説明を機械生成する（まこさん OK 2026-07-27「各書類へ自動生成するように」） |
+| h2_scan.py | その他 | 読み込まれて使う | 未来参照の「書き方」を探す探し方の正本（hook）を読み込む、小さい共有モジュール。 |
 | indicator_reference_diag.py | 観察・診断（売買記録を出さない） | 読み込まれて使う／実行して使う | 指標カタログの正しさの証明に使う参照表（read-only・診断レーン） |
 | leak_causality_diag.py | 観察・診断（売買記録を出さない） | 実行して使う | H2（leak なし）を「動かした結果」で確かめる読み取り専用の診断（2026-08-09 まこさん OK） |
 | measure_e28_phase2.py | その他 | 実行して使う | E28 Phase 2: 下げ相場 LONG 確定エッジを連続モードで採点用 CSV 化 |
@@ -99,6 +100,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | preload_cache.py | データ・材料を作る | 実行して使う | replay preload(=ローソク足読込+指標計算) の parquet キャッシュ（時短③・承認済 2026-06-12） |
 | ratchet_guards.py | その他 | 読み込まれて使う／実行して使う | ① 普遍的に常にダメ（正しさ・正直さ）を機械で自動中断する番人。 |
 | ratchet_io.py | 全戦略の共通土台 | 読み込まれて使う／実行して使う | 全戦略・全ツール共有の「出力の保管インフラ」（read 専用の命名/移動のみ・net 不関与）。 |
+| regime_r9_diag.py | 観察・診断（売買記録を出さない） | 実行して使う | 場面の判定（レンジ）について、法則 R9 の測るもの3つを出す読み取り専用の診断（M2-5-4）。 |
 | report.py | 結果を見る道具 | 読み込まれて使う／実行して使う | 結果レポート1本化（V9検証時代の散らばった出力を A〜I に統合） |
 | rg5_dec17_diag.py | 観察・診断（売買記録を出さない） | 実行して使う | read-only 診断（診断レーン・CSV/score 出力なし・print のみ） |
 | rg5_entry_pos_diag.py | 観察・診断（売買記録を出さない） | 実行して使う | read-only 診断（診断レーン・売買記録CSV/score を出さない・print/集計のみ） |
@@ -135,13 +137,15 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | e37.py | 戦略の実装 | 探索器が名前で読む | e37 — E37 の接続ファイル（engine_tuner が読む・要件 R4／R1・まこさん承認 2026-07-27） |
 | e38.py | 戦略の実装 | 探索器が名前で読む | e38 — E38 の接続ファイル（engine_tuner が読む・要件 R4・まこさん承認 2026-07-27） |
 
-### 作業の正本・記録 — .claude/ratchet（40 件）
+### 作業の正本・記録 — .claude/ratchet（44 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
 | adopted_strategies.md | 文書 | — | 全戦略ポートフォリオ地図 ＋ 採用済み戦略 台帳（正本インデックス） |
 | analysis_playbook.md | 文書 | — | PDCA 分析プレイブック（原因分析の唯一の正本） |
 | composition_rules.md | 文書 | — | 組み立ての決まり（全自動生成） |
+| contract_check_design.md | 文書 | — | 要件 → 設計書 → 実装 の齟齬を、プログラムが見つけて止める |
+| contract_check_design.md.actual.md | 文書 | — | 実物から書き出した文書（手で書き換えない） |
 | decisions.md | 文書 | — | まこさんが決めたこと（gen_decisions.py が自動生成＝手書き禁止） |
 | docmap.md | 文書 | — | 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止） |
 | e34_design.md | 文書 | — | E34 戦略設計書 v2 — レンジ逆張りBOT（行き過ぎ ∩ 投げ売り枯渇・LONG・add＋部分決済） |
@@ -155,14 +159,16 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | engine_tuner_manual.md | 文書 | — | engine_tuner 取扱説明書（gen_engine_tuner_manual.py が自動生成＝手書き禁止） |
 | engine_tuner_materials.md | 文書 | — | 全体像を決めるための材料 |
 | engine_tuner_milestones.md | 文書 | — | engine_tuner マイルストーン ／ フロー ／ やることリスト |
-| engine_tuner_milestones2.md | 文書 | — | engine_tuner マイルストーン② ／ フロー ／ やることリスト |
+| engine_tuner_milestones2.md | 文書 | — | M2｜場面の判定（レンジ・上げ・下げ・スパイク）を組み立てられるようにする |
 | engine_tuner_requirements.md | 文書 | — | engine_tuner 要件定義書（gen_engine_tuner_requirements.py が自動生成＝手書き禁止） |
 | engine_tuner_step2_condition_format.md | 文書 | — | engine_tuner 歩2 — 条件データ形式の設計（CP3 反映版） |
 | entry_exit_matrix.md | 文書 | — | Entry×Exit ロジック 網羅マトリクス（★全戦略共通） |
 | exit_families.md | 文書 | — | 出口の枝の表（許可の一覧・全自動生成・CC の手書きの行ゼロ） |
 | exit_opt_command_design.md | 文書 | — | Exit 最適化フローのスラッシュコマンド化【設計のみ・実装はまだ】 |
+| forbidden_check_design.md | 文書 | — | 「作ってはいけないものとの照合」を、私が書ける欄から、実物を数えて作る表に変える |
 | improvement_arc.md | 文書 | — | 改善の経緯（機械生成・手で書き換えない） |
 | ledger.md | 文書 | — | ratchet ledger — PDCA 全記録（結果 / 原因究明 / 改善 / 修正 をすべて残す） |
+| logic_rules.md | 文書 | — | 守るべき決まりの一覧（指標・閾値・パラメータ・時間足を使ったロジック） |
 | materials.md | 文書 | — | 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ） |
 | observe_diag_manual.md | 文書 | — | observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止） |
 | research_e35_rangebot.md | 文書 | — | レンジ/逆張り BOT 設計の厳密ソース調査（deep-research 合成） |
@@ -195,7 +201,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | web_claude_role.md | 文書 | — | 機械照合担当 (降格・短縮版) |
 | web_claude_self_check.md | 文書 | — | Web Claude セルフチェック (読了ゲート → 指示書発行前 → 完了報告受領時 → 重大判断時) |
 
-### 知識と教訓 — .claude/memory（37 件）
+### 知識と教訓 — .claude/memory（38 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
@@ -227,6 +233,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | priority_v9_trade_logic_analysis.md | 文書 | — | 旧 Priority v9 トレードロジック構造分析 |
 | project_v9_progress.md | 文書 | — | V9実装進捗（2026-04-03 更新 セッション2） |
 | range_scalping_kb.md | 文書 | — | レンジ×スキャルで稼ぐ方法（知識の正本） |
+| regime_detection_kb.md | 文書 | — | 相場の場面（上げ・下げ・横ばい）を判定する手法の知識 |
 | regime_research.md | 文書 | — | レジーム判定研究（🧊 **凍結中** 2026-05-11〜） |
 | regime_trial_log.md | 文書 | — | レジーム試作版 詳細ログ |
 | seven_step_framework.md | 文書 | — | 7 工程フレーム全体構成 (= ⛔ 破綻判定済・参照用) |
@@ -237,20 +244,24 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | trade_methods_study.md | 文書 | — | トレード手法 → ML設計ノート（最低限・都度深掘り前提） |
 | v10_experiments.md | 文書 | ⚠️ どこからも参照されていない | （見出しが無い） |
 
-### 物理強制の hook — .claude/hooks（63 件）
+### 物理強制の hook — .claude/hooks（68 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
+| approve_design.sh | hook（条件を満たすまで手を動かせなくする） | — | まこさんが設計書を承認する（2026-08-23・56回目・まこさん承認 67da88ef9ca8…・受け入れ条件 C-6） |
 | approve_impl.sh | hook（条件を満たすまで手を動かせなくする） | — | まこさんが受け入れ条件リスト(.claude/state/acceptance.md)を承認する。 |
 | block_premature_giveup.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit |
 | block_uchikiri.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit |
+| check_chat_draft.sh | hook（条件を満たすまで手を動かせなくする） | — | 長い返信の下書きを、書き込みの瞬間に検査する（PreToolUse・2026-08-26 新設） |
 | check_websearch_before_design_write.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit — 設計書前 しっかりベースアップ ゲート（2026-06-15 まこさん承認）。 |
 | doc_map_guard.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse(Edit／Write): ledger.md / strat_v9ml_design.md に「経緯・失敗のログ」を書く違反(文書マップ §8.2)を物理ブロック。 |
+| enforce_chat_writing.sh | hook（条件を満たすまで手を動かせなくする） | — | チャット文章の検査の入口（Stop hook・2026-08-18 新設・まこさん指示「強制できないの？」） |
 | enforce_combo_matrix.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-06 まこさん指示で新設） |
 | enforce_e37_pdca.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-02 まこさん指示・共通/E37専用を明確に分離） |
 | enforce_e37_scalp_frequency.sh | hook（条件を満たすまで手を動かせなくする） | — | PostToolUse on Bash（2026-07-16 まこさん指示・fast-mode 専用ガード） |
 | enforce_e37_split_ceiling.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-16 まこさん指示） |
 | enforce_flow_declaration.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-25 まこさん指示・新設・safety hook＝両モードで有効） |
+| enforce_g2_pass.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-08-21 まこさん承認 e9fa2ae6…・M2-2-2b・新設・safety hook） |
 | enforce_h2_pass.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-08-16 まこさん GO「H2 完全化」の層2・新設・safety hook） |
 | enforce_ml_honesty.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-13 まこさん指示・機械学習の不正防止の1枚目=doc 層） |
 | enforce_ml_wiring.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-13 まこさん指示・機械学習の不正防止の2枚目＝実行前コード照合） |
@@ -258,7 +269,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | enforce_observation_design.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-20 まこさん指示「今後そんな解釈しないように強制しろ」・新設） |
 | enforce_observe_diag_only.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-24 まこさん指示・新設・safety hook＝両モードで有効） |
 | enforce_pdca_chain.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-02 まこさん指示「PDCAとすべての思考がつながる仕組みを入れて」） |
-| enforce_purpose_gate.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit／MultiEdit／Bash（2026-08-06 まこさん指示・新設・safety hook） |
+| enforce_purpose_gate.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit／MultiEdit／Bash |
 | enforce_request_scope.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-20 まこさん指示・fast-mode 限定） |
 | enforce_role_criteria.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-06-29 まこさん承認で新設） |
 | enforce_scoring_window_only.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-16 まこさん指示で新設・fast-mode 専用ガード） |
@@ -268,6 +279,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | enforce_todo_declaration.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit／MultiEdit／Bash（2026-08-16 まこさん承認「件２はOK」・新設・safety hook） |
 | enforce_worklog_on_experiment.sh | hook（条件を満たすまで手を動かせなくする） | — | Stop（2026-07-16 まこさん指示・fast-mode 専用ガード／2026-07-17 まこさん承認で B/C 拡張） |
 | forbid_fixed_value_tuning.sh | hook（条件を満たすまで手を動かせなくする） | — | 固定値調整の物理禁止（まこさん命令 2026-06-12・L-261/E20 再演防止） |
+| forbid_interpretation_file.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit／MultiEdit／Bash（2026-08-22 まこさん承認・新設・safety hook） |
 | force_read_ml_design.sh | hook（条件を満たすまで手を動かせなくする） | — | SessionStart hook: 必読の「警告・宣言義務」と、auto-load 対象外の小片だけを注入する。 |
 | hook_health_check.sh | hook（条件を満たすまで手を動かせなくする） | — | SessionStart（2026-07-04 まこさん承認で新設） |
 | pdca_fast.sh | hook（条件を満たすまで手を動かせなくする） | — | PDCA 強制フローの一時オンオフトグル（まこさん承認 2026-07-16・高速ループ用） |
@@ -278,23 +290,23 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | require_acceptance_before_impl.sh | hook（条件を満たすまで手を動かせなくする） | — | ⚠️ fast-mode の早期 exit は「編集対象を判定した後」に移した（2026-07-20）。 |
 | require_analysis_before_proposal.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-06-24 まこさん承認で新設） |
 | require_arc_crosscheck_before_improve.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-16 まこさん承認・fast-mode 専用ガード） |
-| require_banned_words_check.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse(Write／Edit) 禁止語チェックの事前実行を物理強制 |
+| require_banned_words_check.sh | hook（条件を満たすまで手を動かせなくする） | — | ★2026-08-26（63回目・まこさん指示・逐語「強制に戻せよ。修正したのに強制してなかったら意味がないよね？」） |
 | require_comprehension_check.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash／Edit／Write（2026-07-16 まこさん指示・新設） |
 | require_data_read_before_improve.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-16 まこさん指示・fast-mode 専用ガード） |
-| require_design_contract_before_run.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash |
+| require_design_contract_before_run.sh | hook（条件を満たすまで手を動かせなくする） | — | ★2026-08-23（55回目・まこさん指示）＝fast-mode の一時無効化の行を外した＝safety へ格上げ。 |
 | require_direct_csv_for_analysis.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-06-24 まこさん指示で新設） |
 | require_instrument_read_before_impl.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-06-12 まこさん指示で新設） |
-| require_interpretation.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit／MultiEdit／Bash（2026-07-26 まこさん指示・新設・safety hook） |
 | require_leak_annotation.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-04 まこさん承認で新設） |
 | require_period_source.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash |
 | require_precheck_before_score.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash |
 | require_probe_naming.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-06-26 まこさん承認で新設） |
 | require_read_before_work.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash／Edit／Write／MultiEdit |
+| require_source_read_before_acceptance.sh | hook（条件を満たすまで手を動かせなくする） | — | 受け入れ条件を書く瞬間の必読ゲート（入口） |
 | require_spec_read_before_design.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-06-13 まこさん指示で新設） |
 | require_tag_for_experiment.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-06-29 まこさん承認で新設） |
 | require_workflow_for_impl.sh | hook（条件を満たすまで手を動かせなくする） | — | cc_role §1.4.6.3 物理強制: メインセッションが実装スクリプト(scripts/priority_rebuild/*.py)を |
-| reset_interpretation.sh | hook（条件を満たすまで手を動かせなくする） | — | UserPromptSubmit（2026-07-26 まこさん指示・新設・safety hook＝両モードで有効） |
 | reset_read_log.sh | hook（条件を満たすまで手を動かせなくする） | — | SessionStart |
+| selftest_flow_declaration.sh | hook（条件を満たすまで手を動かせなくする） | — | enforce_flow_declaration.sh の番人（2026-08-19 新設・まこさん決定「直す」） |
 | show_budget_before_design.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit |
 | show_decisions.sh | hook（条件を満たすまで手を動かせなくする） | — | セッション開始時に「まこさんが決めたこと」の一覧を作り直して表示する |
 | show_latest_state.sh | hook（条件を満たすまで手を動かせなくする） | — | SessionStart hook（現在地の機械表示・2026-06-12 まこさん指示で新設） |
