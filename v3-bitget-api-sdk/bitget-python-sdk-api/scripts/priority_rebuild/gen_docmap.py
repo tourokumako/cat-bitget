@@ -402,7 +402,8 @@ def status() -> int:
     print(f"名乗っている道具 {len(b['tools'])} ／ 作る文書 {len(b['docs'])} "
           f"／ 名乗っていない道具 {len(b['unnamed'])} ／ 人が書く文書 {len(b['handmade'])}")
     print("  いまの検証の結果（ここで1本ずつ走らせています）:")
-    ng = 0
+    ng = 0     # ❌＝走らせたが通らなかった
+    cant = 0   # ⚠️＝そもそも走らせられない（引数が要る等）＝「通らない」とは別に数える
     for t in b["tools"]:
         rel = t["道具"]
         name = rel.split("/")[-1]
@@ -416,9 +417,14 @@ def status() -> int:
         res, why = _run_verify(_ROOT / rel)
         if res == "✅":
             continue
-        ng += 1
+        if res == "⚠️":
+            cant += 1
+        else:
+            ng += 1
         print(f"  {res} {name}: {why}")
-    print(f"  ＝検証が通らない道具 {ng} 本" if ng else "  ＝検証が通らない道具はありません")
+    print(f"  ＝検証が通らない道具 {ng} 本"
+          + (f" ／ そもそも走らせられない道具 {cant} 本" if cant else "")
+          if ng or cant else "  ＝検証が通らない道具はありません")
     for u in b["unnamed"]:
         print(f"  ⚠️ 名乗っていない: {u['道具']}")
     return 0
