@@ -23,7 +23,10 @@
   .claude/ratchet/docmap.md   … 人が読む1枚
   .claude/ratchet/docmap.json … 機械が読む同じ中身
 
-  表1 … 道具 → 作る文書 → 検証コマンドの有無 → いまの検証の結果
+  表1 … 道具 → 作る文書 → 検証コマンドの有無
+        ★「いまの検証の結果」は文書に書かない（2026-08-28・まこさん承認 案A）。
+          時とともに変わる値を焼くと、ほかの道具を直すたびにこの文書が古くなるため。
+          いまの結果は --status がその場で走らせ直して画面に出す。
   表2 … 文書 → それを作る道具 → 「まるごと」か「一部の節」
   表3 … ★名乗っていない道具（この一覧から漏れているもの）
   表4 … ★誰にも作られていない文書（人が手で書いているもの）
@@ -181,18 +184,16 @@ def collect(run_verify: bool = True, extra_src: dict | None = None) -> dict:
                                     理由="md を書き出す処理が在るのに名乗っていない"))
             continue
         v = _has_verify(src)
-        if p.resolve() == pathlib.Path(__file__).resolve():
-            # ★自分自身の検証の結果は、この一覧に書かない。
-            #   書くと「文書を作る → 自分の結果が ❌ から ✅ に変わる → 文書が古くなる」を
-            #   永久に繰り返す（2026-08-16 に実際にそうなった）。
-            #   自分の検証は `python3 gen_docmap.py --verify` を直に打って見る。
-            res, why = ("—", "自分自身（ここでは走らせない）")
-        elif not v:
-            res, why = ("—", "（検証コマンドが無い）")
-        else:
-            res, why = _run_verify(p) if run_verify else ("未実行", "")
+        # ★ほかの道具の「いまの検証の結果」は、この一覧に書かない（2026-08-28・まこさん承認 案A）。
+        #   もともと 2026-08-16 に、自分自身の結果だけを外す形にしてあった。理由は当時のコメント＝
+        #     「書くと『文書を作る → 自分の結果が ❌ から ✅ に変わる → 文書が古くなる』を永久に繰り返す」
+        #   ★同じ理屈が、ほかの19本にも当てはまる。それが自分の行にしか当てられていなかった。
+        #   実際に起きたこと＝`gen_filemap --write` で filemap.md を直すと、その道具の結果が
+        #   ❌ から ✅ に変わり、この文書が古くなって `--verify` が落ちた（3回・2026-08-28 に原因を特定）。
+        #   ＝走らせる順番の話ではない。時とともに変わる値を、変わらない前提の文書に焼いていたのが原因。
+        #   いまの結果は `--status` が、その場で走らせ直して画面に出す（文書には書かない）。
         tools.append(dict(道具=rel, 作る文書=[dict(文書=a, 作り方=b) for a, b in gens],
-                          検証コマンド=("あり" if v else "❌ なし"), 検証の結果=res, 一言=why))
+                          検証コマンド=("あり" if v else "❌ なし")))
 
     # 表2＝文書 → 道具
     by_doc: dict[str, list] = {}
@@ -252,24 +253,24 @@ def render_md(b: dict) -> str:
          "**分かる**＝機械が作る文書が全部で何本か ／ 検証できない道具はどれか ／ 人が手で書く文書はどれか。", "",
          "**分からない**＝**文書の中身が正しいかは分かりません**（「作り直した状態と同じか」だけです）。",
          "＝**道具が名乗り忘れたら、その文書はこの一覧に出ません**（実在しないパスは落とせます）。", ""]
-    ng = [t for t in b["tools"] if t["検証の結果"] == "❌"]
     nov = [t for t in b["tools"] if t["検証コマンド"].startswith("❌")]
     L += [f"## いまの数", "",
           f"- 名乗っている道具＝**{len(b['tools'])} 本**",
           f"- その道具が作る文書＝**{len(b['docs'])} 本**",
           f"- **検証コマンドを持たない道具＝{len(nov)} 本**"
           + (f"（{'／'.join(t['道具'].split('/')[-1] for t in nov)}）" if nov else ""),
-          f"- **いま検証が通らない道具＝{len(ng)} 本**"
-          + (f"（{'／'.join(t['道具'].split('/')[-1] for t in ng)}）" if ng else ""),
           f"- **名乗っていない道具＝{len([u for u in b['unnamed'] if u['種類'].startswith('A')])} 本**"
           f"（明らかな漏れ）／ {len([u for u in b['unnamed'] if u['種類'].startswith('B')])} 本（要確認）＝表3",
           f"- 誰にも作られていない文書＝**{len(b['handmade'])} 本**（表4＝人が手で書いているもの）", ""]
     L += ["## 表1｜道具 → 作る文書", "",
-          "| 道具 | 作る文書 | 検証コマンド | いまの結果 |", "|---|---|---|---|"]
+          "**★「いまの検証の結果」の欄は、ここには書きません**（2026-08-28・まこさん承認 案A）。"
+          "時とともに変わる値を焼くと、ほかの道具を直すたびにこの文書が古くなるためです。", "",
+          "いまの結果は `python3 scripts/priority_rebuild/gen_docmap.py --status` が、"
+          "その場で走らせ直して画面に出します（文書より新しい結果が出ます）。", "",
+          "| 道具 | 作る文書 | 検証コマンド |", "|---|---|---|"]
     for t in b["tools"]:
         docs = "<br>".join(f"{d['文書'].split('/')[-1]}（{d['作り方']}）" for d in t["作る文書"])
-        L.append(f"| `{t['道具'].split('/')[-1]}` | {docs} | {t['検証コマンド']} "
-                 f"| {t['検証の結果']} {t['一言']} |")
+        L.append(f"| `{t['道具'].split('/')[-1]}` | {docs} | {t['検証コマンド']} |")
     L += ["", "## 表2｜文書 → それを作る道具", "", "| 文書 | 作る道具 | 作り方 | 実在 |", "|---|---|---|---|"]
     for d in b["docs"]:
         for g in d["作る道具"]:
@@ -357,10 +358,18 @@ def selftest() -> int:
     if not hit or hit[0]["実在"]:
         ng.append("T3: 実在しないパスを名乗っても ❌ が立たない")
 
-    # T4 検証コマンドを持たない道具が、そう出ること（いまの実物＝gen_improvement_arc）
-    nov = [t["道具"] for t in base["tools"] if t["検証コマンド"].startswith("❌")]
-    if not any(x.endswith("gen_improvement_arc.py") for x in nov):
-        ng.append("T4: --verify を持たない道具（gen_improvement_arc.py）を『あり』と出している")
+    # T4 検証コマンドの有無を、中身で見ていること（★2026-08-28 に直した）
+    #   直す前＝道具の名前（gen_improvement_arc.py）を焼き込んでいた。
+    #   その道具に `--verify` が付いた時点で、中身は正しいのにこのテストだけが落ちた（実測）。
+    #   だから名前を焼くのをやめ、わざと `--verify` を消した中身を差し込んで確かめる（T2・T3 と同じやり方）。
+    no_v = src.replace('"--verify"', '"--UsO--"').replace("'--verify'", "'--UsO--'")
+    b4 = collect(run_verify=False, extra_src={victim: no_v})
+    row = [t for t in b4["tools"] if t["道具"] == victim]
+    if not row or not row[0]["検証コマンド"].startswith("❌"):
+        ng.append("T4: --verify を消した道具を『あり』と出している（中身を見ていない）")
+    row0 = [t for t in base["tools"] if t["道具"] == victim]
+    if not row0 or row0[0]["検証コマンド"] != "あり":
+        ng.append("T4: --verify を持つ本物の道具を『あり』と出していない（過剰に落としている）")
 
     # T5 数がゼロでないこと（集め方が丸ごと壊れていないか）
     if len(base["tools"]) < 10 or len(base["docs"]) < 10:
@@ -383,13 +392,33 @@ def selftest() -> int:
 
 
 def status() -> int:
+    """いまの状態を画面に出す（文書は書かない）。
+
+    ★ここが「いまの検証の結果」を見る唯一の口（2026-08-28・まこさん承認 案A）。
+      文書に焼くのをやめたので、見たい人はこれを打つ。その場で走らせ直すから、
+      文書に書いてある写しより新しい結果が出る。
+    """
     b = collect()
     print(f"名乗っている道具 {len(b['tools'])} ／ 作る文書 {len(b['docs'])} "
           f"／ 名乗っていない道具 {len(b['unnamed'])} ／ 人が書く文書 {len(b['handmade'])}")
+    print("  いまの検証の結果（ここで1本ずつ走らせています）:")
+    ng = 0
     for t in b["tools"]:
-        if t["検証の結果"] == "❌" or t["検証コマンド"].startswith("❌"):
-            print(f"  ❌ {t['道具'].split('/')[-1]}: 検証コマンド={t['検証コマンド']} "
-                  f"結果={t['検証の結果']} {t['一言']}")
+        rel = t["道具"]
+        name = rel.split("/")[-1]
+        if t["検証コマンド"].startswith("❌"):
+            print(f"  — {name}: 検証コマンドが無い")
+            continue
+        if pathlib.Path(_ROOT / rel).resolve() == pathlib.Path(__file__).resolve():
+            print(f"  — {name}: 自分自身（ここでは走らせない）"
+                  f"＝`gen_docmap.py --verify` を直に打つ")
+            continue
+        res, why = _run_verify(_ROOT / rel)
+        if res == "✅":
+            continue
+        ng += 1
+        print(f"  {res} {name}: {why}")
+    print(f"  ＝検証が通らない道具 {ng} 本" if ng else "  ＝検証が通らない道具はありません")
     for u in b["unnamed"]:
         print(f"  ⚠️ 名乗っていない: {u['道具']}")
     return 0

@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "18a877523b918832",
+ "_本文の指紋": "f352aa7189d3052a",
  "body": {
   "docs": [
    {
@@ -323,7 +323,6 @@
    ".claude/settings.json",
    ".claude/settings.local.json",
    ".claude/state/acceptance.md",
-   ".claude/state/acceptance.md.actual.md",
    ".claude/state/acceptance_20260806_signal_table.md",
    ".claude/state/chat_check_blocks.json",
    ".claude/state/chat_check_last.json",
@@ -386,6 +385,7 @@
    ".claude/state/session_worklog_20260825.md",
    ".claude/state/session_worklog_20260826.md",
    ".claude/state/session_worklog_20260827.md",
+   ".claude/state/session_worklog_20260828.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit15_routeB_records.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit16_ml_options_review.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-19_audit17_phase_a_evaluation.md",
@@ -406,6 +406,8 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-26_permission_gate_r17_design_cp8_audit_report.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-26_unordered_scan_docstring_match_report.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-27_regime_element04_audit_report.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-28_m2_range_laws_cp10a_audit_report.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-28_m2_todo_rewrite_cp10b_audit_report.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-15_ml_usage_options_overview.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-19_phase_a_cap_exit_cluster_threshold.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-26_phase1_v6_6cases_methodology_audit_request.md",
@@ -424,6 +426,8 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-26_unordered_scan_docstring_match_request.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-27_m2_todo_rewrite_cp10_audit_request.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-27_regime_element04_audit_request.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-28_m2_range_laws_cp10a_audit_request.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-28_m2_todo_rewrite_cp10b_audit_request.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_frozen_question_regime.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_template.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/context/cat_v9_regime_map.md",
@@ -623,6 +627,7 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/d09563e7fd4c.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/design-consistency-gate-20260827.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/doc-fix-v9test-20260822.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/docmap-drop-verify-column-20260828.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/e4b86277508f.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/e9fa2ae6725a.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/eb6f38734142.md",
@@ -648,6 +653,7 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-progress-machine-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/selftest-standalone-20260824.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/tidy-next-step-20260828.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/todo-gate-diff-paste-20260827.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-four-elements-gate-v58-20260825.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-permission-gate-20260824.md",
@@ -715,50 +721,41 @@
   ],
   "tools": [
    {
-    "一言": "❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 3eb794c21a44 ／ 源から作り直すと bcf3ce452091）",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/improvement_arc.md"
      }
     ],
-    "検証の結果": "❌",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/gen_improvement_arc.py"
    },
    {
-    "一言": "（検証コマンドが無い）",
     "作る文書": [],
-    "検証の結果": "—",
     "検証コマンド": "❌ なし",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_audit_request.py"
    },
    {
-    "一言": "   直し方: python3 scripts/priority_rebuild/gen_auditor_brief.py --write",
     "作る文書": [
      {
       "作り方": "一部の節",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/auditor_template.md"
      }
     ],
-    "検証の結果": "❌",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_auditor_brief.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/rules/cat_requirements.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_cat_requirements.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
@@ -769,36 +766,30 @@
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/composition_rules.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_composition_rules.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/decisions.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_decisions.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e38_design.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_design.py"
    },
    {
-    "一言": "自分自身（ここでは走らせない）",
     "作る文書": [
      {
       "作り方": "まるごと",
@@ -809,36 +800,30 @@
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/docmap.json"
      }
     ],
-    "検証の結果": "—",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_docmap.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_manual.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_engine_tuner_manual.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_requirements.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_engine_tuner_requirements.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
@@ -853,48 +838,40 @@
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families_approved.txt"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_exit_families.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/filemap.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_filemap.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_fix_map.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_fix_map.py"
    },
    {
-    "一言": "引数が要る＝そのままでは検証を走らせられない",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/e38_flow.md"
      }
     ],
-    "検証の結果": "⚠️",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_flow.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
@@ -913,31 +890,25 @@
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_materials.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/observe_diag_manual.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_observe_manual.py"
    },
    {
-    "一言": "（検証コマンドが無い）",
     "作る文書": [],
-    "検証の結果": "—",
     "検証コマンド": "❌ なし",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_p23_candidates.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
@@ -952,24 +923,20 @@
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/signal_families_approved.txt"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_signal_families.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/v9_exits.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_v9_exits.py"
    },
    {
-    "一言": "",
     "作る文書": [
      {
       "作り方": "まるごと",
@@ -992,7 +959,6 @@
       "文書": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/window_similarity_ranking.md"
      }
     ],
-    "検証の結果": "✅",
     "検証コマンド": "あり",
     "道具": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_windows.py"
    }
@@ -1012,6 +978,11 @@
     "理由": "名前が gen_ で始まるのに名乗っていない",
     "種類": "A｜明らかな漏れ",
     "道具": ".claude/tools/gen_audit_index.py"
+   },
+   {
+    "理由": "md を書き出す処理が在るのに名乗っていない",
+    "種類": "B｜要確認",
+    "道具": ".claude/tools/tidy_next_step.py"
    },
    {
     "理由": "md を書き出す処理が在るのに名乗っていない",

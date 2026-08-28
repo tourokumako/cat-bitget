@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=18a877523b918832 -->
+<!-- DOCMAP_HASH=f352aa7189d3052a -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -21,34 +21,37 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - 名乗っている道具＝**20 本**
 - その道具が作る文書＝**31 本**
 - **検証コマンドを持たない道具＝2 本**（gen_audit_request.py／gen_p23_candidates.py）
-- **いま検証が通らない道具＝2 本**（gen_improvement_arc.py／gen_auditor_brief.py）
-- **名乗っていない道具＝1 本**（明らかな漏れ）／ 28 本（要確認）＝表3
-- 誰にも作られていない文書＝**398 本**（表4＝人が手で書いているもの）
+- **名乗っていない道具＝1 本**（明らかな漏れ）／ 29 本（要確認）＝表3
+- 誰にも作られていない文書＝**404 本**（表4＝人が手で書いているもの）
 
 ## 表1｜道具 → 作る文書
 
-| 道具 | 作る文書 | 検証コマンド | いまの結果 |
-|---|---|---|---|
-| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり | ❌ ❌ 源（マーカー・売買記録CSV）が変わっています。`--write` で作り直してください（いまの文書 3eb794c21a44 ／ 源から作り直すと bcf3ce452091） |
-| `gen_audit_request.py` |  | ❌ なし | — （検証コマンドが無い） |
-| `gen_auditor_brief.py` | auditor_template.md（一部の節） | あり | ❌    直し方: python3 scripts/priority_rebuild/gen_auditor_brief.py --write |
-| `gen_cat_requirements.py` | cat_requirements.md（まるごと） | あり | ✅  |
-| `gen_composition_rules.py` | composition_rules.json（まるごと）<br>composition_rules.md（まるごと） | あり | ✅  |
-| `gen_decisions.py` | decisions.md（まるごと） | あり | ✅  |
-| `gen_design.py` | e38_design.md（まるごと） | あり | ✅  |
-| `gen_docmap.py` | docmap.md（まるごと）<br>docmap.json（まるごと） | あり | — 自分自身（ここでは走らせない） |
-| `gen_engine_tuner_manual.py` | engine_tuner_manual.md（まるごと） | あり | ✅  |
-| `gen_engine_tuner_requirements.py` | engine_tuner_requirements.md（まるごと） | あり | ✅  |
-| `gen_exit_families.py` | exit_families.json（まるごと）<br>exit_families.md（まるごと）<br>exit_families_approved.txt（まるごと） | あり | ✅  |
-| `gen_filemap.py` | filemap.md（まるごと） | あり | ✅  |
-| `gen_fix_map.py` | engine_tuner_fix_map.md（まるごと） | あり | ✅  |
-| `gen_flow.py` | e38_flow.md（まるごと） | あり | ⚠️ 引数が要る＝そのままでは検証を走らせられない |
-| `gen_materials.py` | materials.md（まるごと）<br>materials.json（まるごと）<br>engine_tuner_milestones.md（一部の節）<br>engine_tuner_milestones2.md（一部の節） | あり | ✅  |
-| `gen_observe_manual.py` | observe_diag_manual.md（まるごと） | あり | ✅  |
-| `gen_p23_candidates.py` |  | ❌ なし | — （検証コマンドが無い） |
-| `gen_signal_families.py` | signal_families.json（まるごと）<br>signal_families.md（まるごと）<br>signal_families_approved.txt（まるごと） | あり | ✅  |
-| `gen_v9_exits.py` | v9_exits.md（まるごと） | あり | ✅  |
-| `gen_windows.py` | windows.md（まるごと）<br>acceptance_checklist.md（一部の節）<br>adopted_strategies.md（一部の節）<br>entry_exit_matrix.md（一部の節）<br>window_similarity_ranking.md（一部の節） | あり | ✅  |
+**★「いまの検証の結果」の欄は、ここには書きません**（2026-08-28・まこさん承認 案A）。時とともに変わる値を焼くと、ほかの道具を直すたびにこの文書が古くなるためです。
+
+いまの結果は `python3 scripts/priority_rebuild/gen_docmap.py --status` が、その場で走らせ直して画面に出します（文書より新しい結果が出ます）。
+
+| 道具 | 作る文書 | 検証コマンド |
+|---|---|---|
+| `gen_improvement_arc.py` | improvement_arc.md（まるごと） | あり |
+| `gen_audit_request.py` |  | ❌ なし |
+| `gen_auditor_brief.py` | auditor_template.md（一部の節） | あり |
+| `gen_cat_requirements.py` | cat_requirements.md（まるごと） | あり |
+| `gen_composition_rules.py` | composition_rules.json（まるごと）<br>composition_rules.md（まるごと） | あり |
+| `gen_decisions.py` | decisions.md（まるごと） | あり |
+| `gen_design.py` | e38_design.md（まるごと） | あり |
+| `gen_docmap.py` | docmap.md（まるごと）<br>docmap.json（まるごと） | あり |
+| `gen_engine_tuner_manual.py` | engine_tuner_manual.md（まるごと） | あり |
+| `gen_engine_tuner_requirements.py` | engine_tuner_requirements.md（まるごと） | あり |
+| `gen_exit_families.py` | exit_families.json（まるごと）<br>exit_families.md（まるごと）<br>exit_families_approved.txt（まるごと） | あり |
+| `gen_filemap.py` | filemap.md（まるごと） | あり |
+| `gen_fix_map.py` | engine_tuner_fix_map.md（まるごと） | あり |
+| `gen_flow.py` | e38_flow.md（まるごと） | あり |
+| `gen_materials.py` | materials.md（まるごと）<br>materials.json（まるごと）<br>engine_tuner_milestones.md（一部の節）<br>engine_tuner_milestones2.md（一部の節） | あり |
+| `gen_observe_manual.py` | observe_diag_manual.md（まるごと） | あり |
+| `gen_p23_candidates.py` |  | ❌ なし |
+| `gen_signal_families.py` | signal_families.json（まるごと）<br>signal_families.md（まるごと）<br>signal_families_approved.txt（まるごと） | あり |
+| `gen_v9_exits.py` | v9_exits.md（まるごと） | あり |
+| `gen_windows.py` | windows.md（まるごと）<br>acceptance_checklist.md（一部の節）<br>adopted_strategies.md（一部の節）<br>entry_exit_matrix.md（一部の節）<br>window_similarity_ranking.md（一部の節） | あり |
 
 ## 表2｜文書 → それを作る道具
 
@@ -92,7 +95,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 **A＝明らかな漏れ**（名前が `gen_` で始まるのに名乗っていない）。
 **B＝要確認**（`.md` を書き出す処理が在るのに名乗っていない。凍結した研究の道具を含む）。
 
-**A＝1 本 ／ B＝28 本。**
+**A＝1 本 ／ B＝29 本。**
 
 ### A｜明らかな漏れ
 
@@ -110,6 +113,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 |---|---|
 | `.claude/hooks/require_source_read_before_acceptance.py` | md を書き出す処理が在るのに名乗っていない |
 | `.claude/hooks/test_worklog_toolchange.py` | md を書き出す処理が在るのに名乗っていない |
+| `.claude/tools/tidy_next_step.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/dashboard/build_dashboard_json.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/doc_coverage_diag.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | md を書き出す処理が在るのに名乗っていない |
@@ -142,7 +146,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## 表4｜誰にも作られていない文書（人が手で書いているもの）
 
-**398 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
+**404 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
 
 <details><summary>全部を開く</summary>
 
@@ -155,7 +159,6 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/settings.json`
 - `.claude/settings.local.json`
 - `.claude/state/acceptance.md`
-- `.claude/state/acceptance.md.actual.md`
 - `.claude/state/acceptance_20260806_signal_table.md`
 - `.claude/state/chat_check_blocks.json`
 - `.claude/state/chat_check_last.json`
@@ -218,6 +221,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/state/session_worklog_20260825.md`
 - `.claude/state/session_worklog_20260826.md`
 - `.claude/state/session_worklog_20260827.md`
+- `.claude/state/session_worklog_20260828.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit15_routeB_records.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit16_ml_options_review.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-19_audit17_phase_a_evaluation.md`
@@ -238,6 +242,8 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-26_permission_gate_r17_design_cp8_audit_report.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-26_unordered_scan_docstring_match_report.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-27_regime_element04_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-28_m2_range_laws_cp10a_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-28_m2_todo_rewrite_cp10b_audit_report.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-15_ml_usage_options_overview.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-19_phase_a_cap_exit_cluster_threshold.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-26_phase1_v6_6cases_methodology_audit_request.md`
@@ -256,6 +262,8 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-26_unordered_scan_docstring_match_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-27_m2_todo_rewrite_cp10_audit_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-27_regime_element04_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-28_m2_range_laws_cp10a_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-28_m2_todo_rewrite_cp10b_audit_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_frozen_question_regime.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_template.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/context/cat_v9_regime_map.md`
@@ -455,6 +463,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/d09563e7fd4c.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/design-consistency-gate-20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/doc-fix-v9test-20260822.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/docmap-drop-verify-column-20260828.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/e4b86277508f.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/e9fa2ae6725a.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/eb6f38734142.md`
@@ -480,6 +489,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-progress-machine-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/selftest-standalone-20260824.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/tidy-next-step-20260828.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/todo-gate-diff-paste-20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-four-elements-gate-v58-20260825.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-permission-gate-20260824.md`

@@ -11,12 +11,13 @@
   python3 .claude/tools/tidy_next_step.py --write      # 「消す」印の節を archive へ移し、(0-b-2) を json から書き、最後に --verify
   python3 .claude/tools/tidy_next_step.py --selftest   # わざと壊して止まるか試すテスト（実物は触らない）
 
-検査する5つ（--verify）:
+検査する6つ（--verify）:
   (a)「次の書き替えで消す」を見出しに含む節が 0件
   (b) 0-1 の見出しの日付が、いちばん新しい session_worklog_YYYYMMDD.md の日付と同じ
   (c) (0-b-2) に書いてある H2・G2 の印の値（先頭16桁）が h2_pass.json / g2_pass.json の fingerprint と一致
   (d) `# §0` から `## §0-4` の前までの行数が上限（LIMIT・まこさんが決める）以下
   (e) 0-2 の節の「★いまここ」がちょうど1件
+  (f) 0-2 の表に「✅済」か取り消し線の行が0件（★2026-08-28 追加・終わった行を残せなくする）
 
 決まり:
   ・移すときは1文字も変えない。🔴／★消さない／毎回消さない の数を前後で照らし、合わなければ書かない（fail-closed）。
@@ -52,6 +53,14 @@ H02 = "### 0-2 "
 HB2 = "### （0-b-2）"
 HD = "### （0-d）"
 HERE_MARK = "★いまここ"
+# ★(f) 2026-08-28（まこさん指示「直して」）＝0-2 の表に「終わった行」を残せなくする。
+#   なぜ要るか＝(a)〜(e) はどれも「終わった行が表に残っているか」を見ていない。
+#   実測（同日）＝0-2 の表に ✅済 10行・取り消し線 4行・これからやる行 1行。
+#   それでも §0 は 77行で上限 100 の中だったので、検査は ✅ を出していた。
+#   ＝上限に当たるまで汚れ続ける作りだった（まこさんの指示による整理は これで5回目）。
+#   ★別の言い方（「完了」「done」）は捕まえない＝恒久の決まり55番で「✅済 の4文字だけ」と決まっているため。
+DONE_MARK = "✅済"
+STRIKE_RE = re.compile(r"~~[^~]+~~")
 DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
 WORKLOG_RE = re.compile(r"session_worklog_(\d{4})(\d{2})(\d{2})\.md$")
 
@@ -186,7 +195,7 @@ def sec0_lines(lines: list[str]) -> int | None:
 
 
 def verify(next_text: str, h2: dict, g2: dict, worklog_date: str | None, limit: int = LIMIT) -> list[str]:
-    """5つの検査。戻り＝❌ の一覧（空なら ✅）。"""
+    """6つの検査。戻り＝❌ の一覧（空なら ✅）。"""
     ng: list[str] = []
     lines = next_text.splitlines()
     n_disp = len(find_disposable_sections(lines))
@@ -219,9 +228,17 @@ def verify(next_text: str, h2: dict, g2: dict, worklog_date: str | None, limit: 
     if s2 is None:
         ng.append(f"(e) 見出し『{H02.strip()}』が無い")
     else:
-        n_here = "\n".join(lines[s2:_section_end(lines, s2)]).count(HERE_MARK)
+        sec2 = lines[s2:_section_end(lines, s2)]
+        n_here = "\n".join(sec2).count(HERE_MARK)
         if n_here != 1:
             ng.append(f"(e) 0-2 の『{HERE_MARK}』が {n_here} 件（ちょうど1件のはず）")
+        # (f) 終わった行を表に残せない（表の行だけを見る＝説明の文に書いても止めない）
+        done = [l for l in sec2
+                if l.lstrip().startswith("|") and (DONE_MARK in l or STRIKE_RE.search(l))]
+        if done:
+            ng.append(f"(f) 0-2 の表に、終わった行が {len(done)} 行 残っている"
+                      f"（『{DONE_MARK}』か 取り消し線）→ archive へ移して表から消す"
+                      f"／1行目＝{done[0].strip()[:50]}")
     return ng
 
 
@@ -235,7 +252,7 @@ def do_verify(next_path: pathlib.Path, limit: int) -> int:
             print(f"   ・{x}")
         return 2
     n0 = sec0_lines(text.splitlines())
-    print(f"✅ [tidy --verify] 5つとも通った（§0 {n0} 行／上限 {limit}）")
+    print(f"✅ [tidy --verify] 6つとも通った（§0 {n0} 行／上限 {limit}）")
     return 0
 
 
@@ -276,7 +293,7 @@ SAMPLE = """# 次のセッションの起点
 
 | 番号 | やること | 状態 |
 |---|---|---|
-| 1 | あれ | ✅済 |
+| 1 | あれ | まだ |
 | 2 | これ | ★いまここ |
 
 ### （0-b-2）🔴 印の状態（2026-01-01 時点）
@@ -331,12 +348,25 @@ def selftest() -> int:
     if not any(x.startswith("(d)") for x in r5):
         ng.append(f"T5: 上限超えで (d) が出ない {r5}")
     r6a = verify(clean.replace(HERE_MARK, "まだ"), h2, g2, today, LIMIT)
-    r6b = verify(clean.replace("| ✅済 |", f"| {HERE_MARK} |"), h2, g2, today, LIMIT)
+    r6b = verify(clean.replace("| まだ |", f"| {HERE_MARK} |"), h2, g2, today, LIMIT)
     if not (any(x.startswith("(e)") for x in r6a) and any(x.startswith("(e)") for x in r6b)):
         ng.append(f"T6: ★いまここ 0件/2件で (e) が出ない {r6a} {r6b}")
     ra = verify(refresh_marks(src, h2, g2, today), h2, g2, today, LIMIT)
     if not any(x.startswith("(a)") for x in ra):
         ng.append(f"T1': 消す印が残るのに (a) が出ない {ra}")
+
+    # T9 (f) 0-2 の表に「終わった行」が残ると止まる（✅済／取り消し線）。説明の文なら止まらない
+    r9a = verify(clean.replace("| 1 | あれ | まだ |", f"| 1 | あれ | {DONE_MARK} |"), h2, g2, today, LIMIT)
+    if not any(x.startswith("(f)") for x in r9a):
+        ng.append(f"T9a: 0-2 の表に『{DONE_MARK}』の行が在るのに (f) が出ない {r9a}")
+    r9b = verify(clean.replace("| 1 | あれ | まだ |", "| 1 | ~~あれ~~ | まだ |"), h2, g2, today, LIMIT)
+    if not any(x.startswith("(f)") for x in r9b):
+        ng.append(f"T9b: 0-2 の表に取り消し線の行が在るのに (f) が出ない {r9b}")
+    r9c = verify(clean.replace("### 0-2 🔴 次にやること",
+                               f"### 0-2 🔴 次にやること\n\n終わった行（{DONE_MARK}）は archive へ移します。"),
+                 h2, g2, today, LIMIT)
+    if any(x.startswith("(f)") for x in r9c):
+        ng.append(f"T9c: 説明の文に『{DONE_MARK}』が在るだけで (f) が出た（誤報）{r9c}")
 
     # T8 hook を見本で直に呼ぶ（❌ の見本＝exit 2／✅ の見本＝exit 0）★実物の json と worklog の日付で
     if HOOK.exists():
@@ -360,10 +390,11 @@ def selftest() -> int:
     else:
         ng.append("T8: hook が無い")
 
-    print("[selftest] T1 移せる／T2 数が合わなければ止まる／T3 日付／T4 印／T5 行数／T6 ★いまここ／T7 きれい／T8 hook／T1' 消す印")
+    print("[selftest] T1 移せる／T2 数が合わなければ止まる／T3 日付／T4 印／T5 行数／T6 ★いまここ／T7 きれい／T8 hook／T1' 消す印"
+          "／T9a ✅済 の行／T9b 取り消し線／T9c 説明の文は止めない")
     for x in ng:
         print(f"  ❌ {x}")
-    total = 9
+    total = 12
     print(f"  {'❌' if ng else '✅'} わざと壊して止まるか試すテスト {total - len(ng)}/{total} pass")
     return 1 if ng else 0
 

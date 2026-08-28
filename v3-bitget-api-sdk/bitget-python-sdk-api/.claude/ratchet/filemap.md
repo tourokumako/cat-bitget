@@ -1,4 +1,4 @@
-<!-- FILEMAP_HASH=b42627116b3a83a9 -->
+<!-- FILEMAP_HASH=ae151eb6e1ca7be6 -->
 # filemap.md — 何がどこにあるかの地図（gen_filemap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。ファイルの一覧も説明も、実体から機械で取っています。
@@ -38,7 +38,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | まこさんが何を決めたか知りたい | `decisions.md` | 決定の一覧。提案の前に必ず読む |
 | 次に何をするか知りたい | `next_step.md` | 次セッションの起点。セッション開始で全文表示される |
 
-## 全部の一覧（249 件）
+## 全部の一覧（250 件）
 
 ### 売買と判定のスクリプト — scripts/priority_rebuild（85 件）
 
@@ -245,7 +245,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | trade_methods_study.md | 文書 | — | トレード手法 → ML設計ノート（最低限・都度深掘り前提） |
 | v10_experiments.md | 文書 | ⚠️ どこからも参照されていない | （見出しが無い） |
 
-### 物理強制の hook — .claude/hooks（69 件）
+### 物理強制の hook — .claude/hooks（70 件）
 
 | ファイル | 種類 | 使われ方 | 1行目の説明 |
 |---|---|---|---|
@@ -267,6 +267,7 @@ python3 scripts/priority_rebuild/gen_filemap.py --verify   # 改変・未更新�
 | enforce_h2_pass.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-08-16 まこさん GO「H2 完全化」の層2・新設・safety hook） |
 | enforce_ml_honesty.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Write／Edit（2026-07-13 まこさん指示・機械学習の不正防止の1枚目=doc 層） |
 | enforce_ml_wiring.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-13 まこさん指示・機械学習の不正防止の2枚目＝実行前コード照合） |
+| enforce_next_step_tidy.sh | hook（条件を満たすまで手を動かせなくする） | — | Stop: next_step.md の §0 の形を検査し、❌ が1つでも在ればターンを終われない |
 | enforce_no_false_report.sh | hook（条件を満たすまで手を動かせなくする） | — | PostToolUse on Write／Edit（2026-07-20 まこさん指示・fast-mode 限定） |
 | enforce_observation_design.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-20 まこさん指示「今後そんな解釈しないように強制しろ」・新設） |
 | enforce_observe_diag_only.sh | hook（条件を満たすまで手を動かせなくする） | — | PreToolUse on Bash（2026-07-24 まこさん指示・新設・safety hook＝両モードで有効） |
