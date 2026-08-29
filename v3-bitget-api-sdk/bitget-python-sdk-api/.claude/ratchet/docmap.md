@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=f352aa7189d3052a -->
+<!-- DOCMAP_HASH=efac4556c745bc81 -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -22,7 +22,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - その道具が作る文書＝**31 本**
 - **検証コマンドを持たない道具＝2 本**（gen_audit_request.py／gen_p23_candidates.py）
 - **名乗っていない道具＝1 本**（明らかな漏れ）／ 29 本（要確認）＝表3
-- 誰にも作られていない文書＝**404 本**（表4＝人が手で書いているもの）
+- 誰にも作られていない文書＝**405 本**（表4＝人が手で書いているもの）
 
 ## 表1｜道具 → 作る文書
 
@@ -146,7 +146,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## 表4｜誰にも作られていない文書（人が手で書いているもの）
 
-**404 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
+**405 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
 
 <details><summary>全部を開く</summary>
 
@@ -222,6 +222,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/state/session_worklog_20260826.md`
 - `.claude/state/session_worklog_20260827.md`
 - `.claude/state/session_worklog_20260828.md`
+- `.claude/state/session_worklog_20260829.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit15_routeB_records.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit16_ml_options_review.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-19_audit17_phase_a_evaluation.md`

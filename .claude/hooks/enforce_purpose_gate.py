@@ -74,6 +74,14 @@ MARK_JOKEN = ("条件1", "条件2", "条件3", "条件4")     # 条件（何を�
 #   ★目的1・目的2 には使えない（目的はどんな変更にも当てはまるため）。
 MARK_KAENAI = "変えない"
 
+# ★2026-08-29（3回目の直し・まこさん承認 12478b53a6d9abfa）＝「足すだけ」の目印。
+#   なぜ要るか＝「変えない」をファイルの名前だけで止めていたので、
+#   「探索の経路のファイルの中の、探索に関わらない所へ、読むだけの処理を足す」設計を表せなかった。
+#   二段構え＝①設計書にこの目印が在るときだけ「変えない」を書ける
+#            ②プログラムを書く瞬間に、実際に既存の行を1行も消していないかを機械で確かめる。
+MARK_ADD_ONLY = "★足すだけ"
+_OLD_SEP = "\x00"                                     # 消される側どうしの区切り（本文に出ない文字）
+
 # 探索の経路のファイルの一覧＝H2 の印から読む（★手書きしない＝教訓 L-468）。
 _H2_PASS = os.path.join(ROOT, ".claude", "state", "h2_pass.json")
 
@@ -107,6 +115,8 @@ TEMPLATE = """  【目的の照合】
     変えない ＝ この変更は、その条件の探索に1バイトも触らない（狭めも広げもしない）
   ★「変えない」を書けるのは、探索の経路のファイルを触らないときだけ。
     触るのに書くと止まる（判定はプログラム＝H2 の印 h2_pass.json の一覧で見る）。
+    ★例外（2026-08-29）＝既存の行を1行も消さないなら、設計書に「★足すだけ」と書けば、触っても書ける。
+      その場合、プログラムを書く瞬間に「本当に1行も消していないか」を機械が確かめる（二段構え）。
   ★目的1・目的2 に「変えない」は使えない（目的はどんな変更にも当てはまるため）。"""
 
 
@@ -185,6 +195,37 @@ def touches_search_path(kind, name, content):
     return False
 
 
+def _is_add_only(tool, file_path, content, old_content):
+    """この変更は「足すだけ」か（既存の行を1行も消さないか）＝2026-08-29 新設。
+
+    Edit/MultiEdit … 消される側（old_string）が、書かれる側（new_string 等）に丸ごと残っていれば足すだけ。
+    Write          … いまのファイルの全行が、新しい中身に順序を保って在れば足すだけ。
+    それ以外       … ファイルを変えないので True（走らせるだけ 等）。
+    ★限界＝見るのは行の増減だけ。足した処理が探索を変えることまでは見ない。
+    """
+    if tool in ("Edit", "MultiEdit"):
+        for old in (old_content or "").split(_OLD_SEP):
+            o = old.strip("\n")
+            if o and o not in (content or ""):
+                return False
+        return True
+    if tool == "Write":
+        try:
+            with open(file_path, encoding="utf-8") as f:
+                cur = f.read()
+        except Exception:
+            return True                               # 新しく作るファイル＝消される行が無い
+        it = iter((content or "").splitlines())
+        for line in cur.splitlines():
+            for cand in it:
+                if cand == line:
+                    break
+            else:
+                return False
+        return True
+    return True
+
+
 def load_decl(path=DECL):
     """宣言のファイルを読む。無ければ None。"""
     try:
@@ -217,7 +258,7 @@ def decl_age_hours(text, now=None):
     return None
 
 
-def judge(tool, file_path, cmd, content, decl_text, now=None, agent_type=""):
+def judge(tool, file_path, cmd, content, decl_text, now=None, agent_type="", old_content=""):
     """止めるなら理由の文字列、通すなら None。"""
     if agent_type:
         return None                                   # サブエージェントは通す
@@ -267,9 +308,25 @@ def judge(tool, file_path, cmd, content, decl_text, now=None, agent_type=""):
           if MARK_KAENAI in (_line_starting(decl_text, m) or "")]
     if jk and touches_search_path(kind, name, content):
         hit = sorted(_names_in_design(content) & search_path_files()) if kind == "design" else [name]
-        return ("「" + MARK_KAENAI + "」は、探索の経路のファイルを触るときには書けません"
-                f" ／ 触る相手＝{'・'.join(hit)}（H2 の印の一覧に在る）"
-                " ／ " + " ／ ".join(jk))
+        # ★2026-08-29（まこさん承認 12478b53a6d9abfa）＝「足すだけ」なら書ける（二段構え）。
+        #   設計書の瞬間＝目印が在るかを見る（まだプログラムを書き換えていないので、実物では確かめられない）。
+        #   プログラムを書く瞬間＝実際に既存の行を1行も消していないかを機械で確かめる。
+        if kind == "design":
+            if MARK_ADD_ONLY not in (content or ""):
+                return ("「" + MARK_KAENAI + "」は、探索の経路のファイルを触るときには書けません"
+                        f" ／ 触る相手＝{'・'.join(hit)}（H2 の印の一覧に在る）"
+                        " ／ ★ただし、既存の行を1行も消さないなら、設計書に「" + MARK_ADD_ONLY + "」と書けば書けます"
+                        "（プログラムを書く瞬間に機械が確かめます）"
+                        " ／ " + " ／ ".join(jk))
+        elif kind == "code" and _is_add_only(tool, file_path, content, old_content):
+            pass                                      # 足すだけ＝通す
+        else:
+            # ★走らせる瞬間（kind=run）は、いままでどおり止める＝走らせる相手は既に在るコード。
+            return ("「" + MARK_KAENAI + "」は、"
+                    + ("既存の行を消す変更には書けません" if kind == "code"
+                       else "探索の経路のプログラムを走らせるときには書けません")
+                    + f" ／ 相手＝{'・'.join(hit)}（H2 の印の一覧に在る）"
+                    " ／ " + " ／ ".join(jk))
 
     if _line_starting(decl_text, "作ってはいけないものの一覧との照合:") is None:
         return "「作ってはいけないものの一覧との照合:」の行が無い（要件定義書の一覧と1件ずつ突き合わせる）"
@@ -302,6 +359,8 @@ def _message(reason):
     out.append("⛔ 目的2つ・条件4つのどれか1つでも ❌ が在るものは、作ってはいけません（まこさん確定 2026-08-06）。")
     out.append("★条件の行には「" + MARK_KAENAI + "」も書けます（＝その条件の探索に1バイトも触らない）。")
     out.append("   ただし探索の経路のファイルを触るときは書けません（判定はプログラム＝H2 の印の一覧）。")
+    out.append("   ★例外（2026-08-29）＝既存の行を1行も消さないなら、設計書に「" + MARK_ADD_ONLY + "」と書けば書けます。")
+    out.append("     プログラムを書く瞬間に「本当に1行も消していないか」を機械が確かめます（二段構え）。")
     out.append("   目的の行には使えません。")
     out.append("   ❌ になるものを作りたいときは、まこさんに理由を出して確認してください（CC が勝手に進めません）。")
     out.append("（解除は 2026-08-16 に廃止＝合言葉では通りません）")
@@ -333,7 +392,17 @@ def hook_main():
             pass
     content = "\n".join(parts)
 
-    reason = judge(tool, file_path, cmd, content, load_decl(), agent_type=data.get("agent_type", ""))
+    # ★2026-08-29＝「足すだけ」かを見るために、消される側（old_string）も集める。
+    old_parts = []
+    if tool in ("Edit", "MultiEdit"):
+        old_parts.append(ti.get("old_string", "") or "")
+        for e in (ti.get("edits") or []):
+            if isinstance(e, dict):
+                old_parts.append(e.get("old_string", "") or "")
+    old_content = _OLD_SEP.join([p for p in old_parts if p])
+
+    reason = judge(tool, file_path, cmd, content, load_decl(),
+                   agent_type=data.get("agent_type", ""), old_content=old_content)
     if reason:
         print(_message(reason), file=sys.stderr)
         sys.exit(2)
@@ -427,10 +496,28 @@ def selftest():
          _decl(now, kaenai=("目的2",)), "", True),
         ("31 条件に 変えない と ❌ が混ざると止まる（❌ が優先）", W, gen, "", "",
          _decl(now, ng=("条件1",), kaenai=("条件2",)), "", True),
+
+        # ---- ★2026-08-29（3回目の直し）＝「足すだけ」なら「変えない」を書ける（二段構え）----
+        ("32 ★設計書に ★足すだけ と書けば、探索の経路のファイルでも 変えない を書ける", W, acc, "",
+         "TARGET: scripts/priority_rebuild/observe_diag.py\n"
+         "engine_tuner の正解の印を数える節を足す\n★足すだけ（既存の行を1行も消さない）",
+         _decl(now, target="acceptance.md", kaenai=MARK_JOKEN), "", False),
+        ("33 設計書に ★足すだけ が無ければ、いままでどおり止まる", W, acc, "",
+         "TARGET: scripts/priority_rebuild/observe_diag.py\n"
+         "engine_tuner の正解の印を数える節を足す",
+         _decl(now, target="acceptance.md", kaenai=MARK_JOKEN), "", True),
+        ("34 ★プログラムを書く瞬間＝足すだけの Edit なら 変えない が書ける", "Edit", gen, "",
+         "既存の行\n足した行", _decl(now, target="engine_tuner_gen.py", kaenai=MARK_JOKEN), "", False,
+         "既存の行"),
+        ("35 プログラムを書く瞬間＝既存の行を消す Edit なら止まる", "Edit", gen, "",
+         "足した行だけ", _decl(now, target="engine_tuner_gen.py", kaenai=MARK_JOKEN), "", True,
+         "既存の行"),
     ]
     ng_count = 0
-    for name, tool, fp, cmd, content, decl, agent, want_block in cases:
-        got = judge(tool, fp, cmd, content, decl, now=now, agent_type=agent)
+    for row in cases:
+        name, tool, fp, cmd, content, decl, agent, want_block = row[:8]
+        old_c = row[8] if len(row) > 8 else ""
+        got = judge(tool, fp, cmd, content, decl, now=now, agent_type=agent, old_content=old_c)
         good = (got is not None) == want_block
         print(f"  {'✅' if good else '❌'} {name}" + ("" if good else f"   ← 出た結果: {got}"))
         ng_count += (not good)

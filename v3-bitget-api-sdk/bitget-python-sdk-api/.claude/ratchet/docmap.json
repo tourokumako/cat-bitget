@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "f352aa7189d3052a",
+ "_本文の指紋": "efac4556c745bc81",
  "body": {
   "docs": [
    {
@@ -386,6 +386,7 @@
    ".claude/state/session_worklog_20260826.md",
    ".claude/state/session_worklog_20260827.md",
    ".claude/state/session_worklog_20260828.md",
+   ".claude/state/session_worklog_20260829.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit15_routeB_records.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit16_ml_options_review.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-19_audit17_phase_a_evaluation.md",
