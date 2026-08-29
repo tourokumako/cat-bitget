@@ -3412,6 +3412,7 @@ INSPECT_SECTIONS = [
     "検査12 材料どうしの重複を総当たりで出す（値そのものの相関と、順位の相関の2つで見る・段6 の 6-9③）",
     "検査13 4本値を定数倍しても材料の値が変わらないかを実測する（H6 価格非依存・段6 の 6-9①）",
     "検査14 V9 の実物の列と、うちの材料の列の対応を実測で決める（名前で決めない・2026-08-11 新設）",
+    "検査15 いまの正解の印が「レンジだった」とした区間を、片道の度合いで測り直す（判定なし・報告だけ・2026-08-29 新設・M2-A-2）",
 ]
 # 検査の線（全部この場で印字する＝黙って変えられない）。指標照合の許容差は
 # indicator_reference_diag（参照表の tol）が正本。
@@ -4659,6 +4660,8 @@ def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None
                ("検査12", INSPECT_SECTIONS[11], lambda: _insp_duplicates(bars, cfg, cat)),
                ("検査13", INSPECT_SECTIONS[12], lambda: _insp_price_scale(bars, cfg, cat)),
                ("検査14", INSPECT_SECTIONS[13], lambda: _insp_v9_columns(bars, cfg, cat))]
+    # ★2026-08-29（M2-A-2・まこさん承認 9449761de0135c8f）＝検査15 を足す（判定なし・報告だけ）。
+    stages += [("検査15", INSPECT_SECTIONS[14], lambda: _insp_regime_label_oneway(bars))]
     if only:
         want = {"検査" + x.strip() for x in str(only).split(",") if x.strip()}
         unknown = want - {k for k, _t, _r in stages}
@@ -4682,6 +4685,10 @@ def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None
             for x in fails[key]:
                 print(f"  ❌ {key}: {x}")
             bad += len(fails[key])
+        elif key == "検査15":
+            # ★2026-08-29＝検査15 は判定しない（報告だけ）。「異常なし」と出すと、
+            #   何かを判定して問題が無かったと読めてしまうので、そう書かない。
+            print(f"  📄 {key}: 判定なし（報告だけ＝レンジの本当の正解は誰も持っていないため）")
         else:
             print(f"  ✅ {key}: 異常なし")
     print("  検査5: 判定なし（欠損・助走・有効標本数の報告＝歩2 の適合制約の基礎データ・下限はまこさんが決める）")
@@ -5451,6 +5458,73 @@ def _regime_labels(win: pd.DataFrame, n: int) -> dict:
     return {"強さ": (er >= er.median(), er.notna()),
             "向き": (fwd > 0, fwd.notna()),
             "大きさ": (size >= size.median(), size.notna())}
+
+
+def _oneway_ratio(win: pd.DataFrame, n: int) -> pd.Series:
+    """先 n本の「片道の度合い」＝始まりと終わりの価格差 ÷ その区間の値幅（2026-08-29 新設・M2-A-2）。
+
+    0 に近いほど行って戻った（レンジらしい）／1 に近いほど片道（レンジではない）。
+    ★いまの正解の印（_regime_labels の ①強さ）とは分母が違う。
+      あちらの分母は「歩いた距離の合計」＝細かく揺れるほど分母が増えて値が下がるので、
+      ただ荒れているだけの区間も「レンジ」に入る。こちらの分母は「その区間の値幅」。
+    ★これも正解ではない。レンジの本当の答えは誰も持っていない（M2-A-1 の一次の逐語
+      "Since market regimes are latent unobservable processes"）。
+      分かるのは「レンジという言葉の意味と、どれだけ食い違っているか」の量だけ。
+    ★どれも比＝ドルの絶対値を1つも使わない（H6）。
+    """
+    c = win["close"].astype(float)
+    fwd = (c.shift(-n) - c).abs()   # H2OK: 正解の印を測り直す側（ラベル）＝本番の判断には入らない。_regime_labels と同じ作り
+    hi = win["high"].astype(float).rolling(n + 1).max().shift(-n)  # H2OK: 同上（ラベル側）。始まりのバーを含めた n+1本の高値
+    lo = win["low"].astype(float).rolling(n + 1).min().shift(-n)   # H2OK: 同上（ラベル側）。始まりのバーを含めた n+1本の安値
+    width = hi - lo
+    return (fwd / width).where(width > 0)             # 値幅が 0 の区間は数から外す（0 で割らない）
+
+
+def _insp_regime_label_oneway(bars: pd.DataFrame) -> list:
+    """検査15＝いまの正解の印が「レンジだった」とした区間を、片道の度合いで測り直す（2026-08-29・M2-A-2）。
+
+    ★判定はしない（報告だけ）＝戻りは必ず空の一覧。
+      レンジの本当の正解は誰も持っていないので、「合っている・間違っている」を機械では決められない。
+    ★レンジの札だけでなくトレンドの札も並べて出す＝2つが分かれていなければ、
+      いまの印はレンジらしさを捉えていないことになる（この比較が無いと多い少ないを判断できない）。
+    """
+    _nm, a0, b0 = _insp_windows()[0]                  # 値決め窓（採点窓は1バーも使わない）
+    win = bars.loc[(bars.index >= a0) & (bars.index < b0)]
+    _assert_search_window_only(win.index, "検査15")
+    print(f"  窓＝値決め（{a0.date()} 〜 {b0.date()} の手前）／バー {len(win):,} 本")
+    print("  片道の度合い＝|終わりの終値 − 始まりの終値| ÷ (始まりのバーを含めた n+1本の高値 − 同じ範囲の安値)")
+    print("  ★分母に始まりのバーを含めるのは、分子が同じ n+1本ぶんを見ているから（含めないと比が 1 を超える）")
+    print("  0 に近い＝行って戻った（レンジらしい）／1 に近い＝片道（レンジではない）")
+    for n in _regime_horizons():
+        ratio = _oneway_ratio(win, n)
+        mask, usable = _regime_labels(win, n)["強さ"]
+        step = _independent_step("5m", n)             # 重なった区間を何度も数えない
+        idx = win.index[::step]
+        r = ratio.reindex(idx)
+        m = mask.reindex(idx)
+        u = usable.reindex(idx).fillna(False) & r.notna()
+        rng = r[u & ~m.fillna(True)]                  # レンジの札＝強さ（ER）が窓の中央値 未満
+        trd = r[u & m.fillna(False)]                  # トレンドの札＝強さ（ER）が窓の中央値 以上
+        print(f"\n  ── 先 {n} 本（5分足なので {n * 5} 分）／{step} 本ごとに1つ数える ──────────")
+        print(f"     使えた区間＝レンジの札 {len(rng):,} 本 ／ トレンドの札 {len(trd):,} 本")
+        if len(rng) == 0 or len(trd) == 0:
+            print("     ⚠️ 片方が 0 本＝この本数では比べられない")
+            continue
+        print(f"     中央値＝レンジの札 {rng.median():.3f} ／ トレンドの札 {trd.median():.3f}"
+              f" ／ 差 {trd.median() - rng.median():+.3f}")
+        for line in (0.5, 0.7, 0.9):
+            k = int((rng >= line).sum())
+            print(f"     レンジの札のうち 比 {line:.1f} 以上＝{k:,} 本（{k / len(rng) * 100:.1f}%）"
+                  f"＝言葉の意味と食い違う区間")
+        print("     分布（10%刻み・左＝レンジの札 ／ 右＝トレンドの札）")
+        for b in range(10):
+            lo_, hi_ = b / 10, (b + 1) / 10
+            ka = int(((rng >= lo_) & (rng < hi_)).sum()) if b < 9 else int((rng >= lo_).sum())
+            kb = int(((trd >= lo_) & (trd < hi_)).sum()) if b < 9 else int((trd >= lo_).sum())
+            print(f"       {lo_:.1f}〜{hi_:.1f}   {ka / len(rng) * 100:5.1f}%  |  {kb / len(trd) * 100:5.1f}%")
+    print("\n  ★この数字は「正解との一致」ではない。レンジの本当の正解は誰も持っていない。")
+    print("    分かるのは「レンジという言葉の意味と、どれだけ食い違っているか」の量だけ。")
+    return []
 
 
 def _role_lineage_table() -> dict:
@@ -6558,6 +6632,41 @@ def selftest() -> None:
         ng.append("M2-3-4 番人: 測れた列まで「省いた列」に載せている")
     if "_rank_record_unmeasured(expected_cols" not in inspect.getsource(rank_materials_for_regime):
         ng.append("M2-3-4 番人: 記録の穴ふさぎが順位づけの本体に配線されていない")
+
+    # ★2026-08-29（M2-A-2・まこさん承認 9449761de0135c8f）＝検査15（片道の度合い）の番人 T1〜T6。
+    _ix15 = pd.date_range("2024-06-01", periods=40, freq="5min")   # 値決め窓の中の作り物
+    _n15 = 4
+
+    def _mk15(cl):
+        return pd.DataFrame({"close": cl, "high": cl, "low": cl}, index=_ix15)
+
+    # T1 一直線に上がるだけ＝片道＝比は 1.0
+    _r1 = _oneway_ratio(_mk15([100.0 + i for i in range(40)]), _n15).dropna()
+    if len(_r1) == 0 or abs(float(_r1.iloc[0]) - 1.0) > 0.01:
+        ng.append("検査15 T1: 一直線の区間で比が 1.0 にならない"
+                  f"（{'なし' if len(_r1) == 0 else round(float(_r1.iloc[0]), 3)}）")
+    # T2 同じ幅を行き来して元に戻る＝比は 0.0
+    _r2 = _oneway_ratio(_mk15([100.0 + (2.0 if i % 2 else 0.0) for i in range(40)]), _n15).dropna()
+    if len(_r2) == 0 or float(_r2.iloc[0]) > 0.01:
+        ng.append("検査15 T2: 行って戻る区間で比が 0 にならない"
+                  f"（{'なし' if len(_r2) == 0 else round(float(_r2.iloc[0]), 3)}）")
+    # T3 全部 同じ値＝値幅 0＝数から外す（0 で割らない）
+    if int(_oneway_ratio(_mk15([100.0] * 40), _n15).notna().sum()) != 0:
+        ng.append("検査15 T3: 値幅 0 の区間を数から外していない（0 で割っている）")
+    # T4 欠損を含む区間は外れる
+    _na15 = _mk15([100.0 + i for i in range(40)])
+    _na15.loc[_na15.index[5], "high"] = float("nan")
+    if bool(_oneway_ratio(_na15, _n15).notna().iloc[2]):
+        ng.append("検査15 T4: 欠損を含む区間を数から外していない")
+    # T5 採点窓のバーを混ぜたら止まる
+    try:
+        _assert_search_window_only(pd.DatetimeIndex([SCORE_START]), "検査15 番人")
+        ng.append("検査15 T5: 採点窓のバーを混ぜても止まらない")
+    except SystemExit:
+        pass
+    # T6 重なりを避ける間隔が、先の本数ぶん空く
+    if _independent_step("5m", 288) != 288:
+        ng.append("検査15 T6: 重なりを避ける間隔が先の本数と合っていない")
 
     print("=" * 80)
     print("observe_diag 自己検査")

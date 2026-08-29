@@ -128,7 +128,7 @@ def strip_text(cmd):
     return s
 
 
-def is_target(tool, file_path, cmd, content):
+def is_target(tool, file_path, cmd, content, decl_text=None):
     """止める相手か。返すのは (種類, いま触るものの名前)。相手でなければ (None, None)。
 
     種類＝ code（engine_tuner のコード）／ design（設計書）／ run（engine_tuner を走らせる）
@@ -137,6 +137,13 @@ def is_target(tool, file_path, cmd, content):
     if tool in ("Write", "Edit", "MultiEdit"):
         if _RE_TUNER_NAME.match(base):
             return "code", base                      # ★中身に関わらず必ず止める
+        # ★2026-08-29（3回目の直し）＝「変えない」と宣言した相手は、書く瞬間にも確かめる。
+        #   なぜ要るか＝「★足すだけ」の宣言を機械が確かめられるのは、ここを通る相手だけ。
+        #   通らないと、宣言が嘘でも誰も気づかない（observe_diag.py が まさにその状態だった）。
+        if base and decl_text and MARK_KAENAI in decl_text:
+            taisho = _line_starting(decl_text, "対象:") or ""
+            if base in taisho and base in search_path_files():
+                return "code", base
         if base == "acceptance.md" or base.endswith("_design.md"):
             if "engine_tuner" in (content or ""):    # ★プログラムが中身を読んで決める
                 return "design", base
@@ -195,14 +202,20 @@ def touches_search_path(kind, name, content):
     return False
 
 
-def _is_add_only(tool, file_path, content, old_content):
+def _is_add_only(tool, file_path, content, old_content, replace_all=False):
     """この変更は「足すだけ」か（既存の行を1行も消さないか）＝2026-08-29 新設。
+
+    ★replace_all=True は必ず False を返す（2026-08-29 の3回目の直し）。
+      同じ文字列が複数箇所に在ると、new_string に old_string が含まれていても、
+      ほかの箇所は置き換わって消える＝「足すだけ」とは言えない。
 
     Edit/MultiEdit … 消される側（old_string）が、書かれる側（new_string 等）に丸ごと残っていれば足すだけ。
     Write          … いまのファイルの全行が、新しい中身に順序を保って在れば足すだけ。
     それ以外       … ファイルを変えないので True（走らせるだけ 等）。
     ★限界＝見るのは行の増減だけ。足した処理が探索を変えることまでは見ない。
     """
+    if replace_all:
+        return False                                  # ★同じ文字列を全部 置き換える＝ほかの箇所が消える
     if tool in ("Edit", "MultiEdit"):
         for old in (old_content or "").split(_OLD_SEP):
             o = old.strip("\n")
@@ -258,14 +271,24 @@ def decl_age_hours(text, now=None):
     return None
 
 
-def judge(tool, file_path, cmd, content, decl_text, now=None, agent_type="", old_content=""):
-    """止めるなら理由の文字列、通すなら None。"""
+def judge(tool, file_path, cmd, content, decl_text, now=None, agent_type="", old_content="",
+          new_content=None, replace_all=False):
+    """止めるなら理由の文字列、通すなら None。
+
+    ★content と new_content の違い（2026-08-29 の2回目の直し・まこさん指示「その修正をしていいよ」）
+      content     … 何の設計かを見分けるための中身。Edit のときは編集前のファイル全体も混ざる。
+      new_content … 「足すだけか」を見るための中身＝これから書かれる部分だけ。ファイル全体を含まない。
+      ★1回目の直しでは content を「足すだけか」の判定に使っていた＝編集前のファイル全体に
+        消される行が必ず在るので、いつでも「足すだけ」と判定していた（実測で分かった）。
+    """
+    if new_content is None:
+        new_content = content
     if agent_type:
         return None                                   # サブエージェントは通す
     if os.path.abspath(file_path or "") == os.path.abspath(DECL):
         return None                                   # 宣言のファイル自身は通す（行き止まり回避）
 
-    kind, name = is_target(tool, file_path, cmd, content)
+    kind, name = is_target(tool, file_path, cmd, content, decl_text)
     if kind is None:
         return None
 
@@ -318,7 +341,7 @@ def judge(tool, file_path, cmd, content, decl_text, now=None, agent_type="", old
                         " ／ ★ただし、既存の行を1行も消さないなら、設計書に「" + MARK_ADD_ONLY + "」と書けば書けます"
                         "（プログラムを書く瞬間に機械が確かめます）"
                         " ／ " + " ／ ".join(jk))
-        elif kind == "code" and _is_add_only(tool, file_path, content, old_content):
+        elif kind == "code" and _is_add_only(tool, file_path, new_content, old_content, replace_all):
             pass                                      # 足すだけ＝通す
         else:
             # ★走らせる瞬間（kind=run）は、いままでどおり止める＝走らせる相手は既に在るコード。
@@ -367,6 +390,41 @@ def _message(reason):
     return "\n".join(out)
 
 
+def _inputs_from_tool(tool, ti):
+    """tool_input から、判定に使う4つを作る（2026-08-29 の3回目の直しで hook_main から切り出した）。
+
+    返すのは (content, new_content, old_content, replace_all)。
+      content     … 何の設計かを見分けるための中身（Edit のときは編集前のファイル全体も混ざる）
+      new_content … 「足すだけか」を見るための中身＝これから書かれる部分だけ
+      old_content … 消される側（old_string）を _OLD_SEP でつないだもの
+      replace_all … 同じ文字列を全部 置き換える指定か（True なら足すだけとは言えない）
+    ★なぜ切り出したか＝テストが本物と同じ作り方を通れるようにするため。
+      2026-08-29 に、ここで間違ったデータを渡していたのを、テストが1件も捕まえられなかった。
+    """
+    parts = [ti.get("content", "") or "", ti.get("new_string", "") or ""]
+    for e in (ti.get("edits") or []):
+        if isinstance(e, dict):
+            parts.append(e.get("new_string", "") or "")
+    new_content = "\n".join(parts)
+    content = new_content
+    if tool in ("Edit", "MultiEdit") and ti.get("file_path"):
+        try:
+            with open(ti["file_path"], encoding="utf-8") as f:
+                content = new_content + "\n" + f.read()
+        except Exception:
+            pass
+    old_parts = []
+    if tool in ("Edit", "MultiEdit"):
+        old_parts.append(ti.get("old_string", "") or "")
+        for e in (ti.get("edits") or []):
+            if isinstance(e, dict):
+                old_parts.append(e.get("old_string", "") or "")
+    old_content = _OLD_SEP.join([p for p in old_parts if p])
+    ra = bool(ti.get("replace_all")) or any(
+        bool(e.get("replace_all")) for e in (ti.get("edits") or []) if isinstance(e, dict))
+    return content, new_content, old_content, ra
+
+
 def hook_main():
     try:
         data = json.loads(sys.stdin.read())
@@ -377,32 +435,14 @@ def hook_main():
     file_path = ti.get("file_path", "") or ""
     cmd = ti.get("command", "") or ""
 
-    # 設計書かどうかを見るための中身。
-    #   Write＝これから書く中身が、その設計書の中身そのもの。
-    #   Edit/MultiEdit＝いま在る中身が、その設計書が何の設計かを決める。だから両方 見る。
-    parts = [ti.get("content", "") or "", ti.get("new_string", "") or ""]
-    for e in (ti.get("edits") or []):
-        if isinstance(e, dict):
-            parts.append(e.get("new_string", "") or "")
-    if tool in ("Edit", "MultiEdit") and file_path:
-        try:
-            with open(file_path, encoding="utf-8") as f:
-                parts.append(f.read())
-        except Exception:
-            pass
-    content = "\n".join(parts)
-
-    # ★2026-08-29＝「足すだけ」かを見るために、消される側（old_string）も集める。
-    old_parts = []
-    if tool in ("Edit", "MultiEdit"):
-        old_parts.append(ti.get("old_string", "") or "")
-        for e in (ti.get("edits") or []):
-            if isinstance(e, dict):
-                old_parts.append(e.get("old_string", "") or "")
-    old_content = _OLD_SEP.join([p for p in old_parts if p])
+    # ★2026-08-29（3回目の直し）＝入口の組み立ては _inputs_from_tool に切り出した。
+    #   なぜ＝テストが本物と同じ道を通れるようにするため（それまでテストは judge を直接 呼んでいて、
+    #   ここで間違ったデータを渡していたことを1件も捕まえられなかった）。
+    content, new_content, old_content, replace_all = _inputs_from_tool(tool, ti)
 
     reason = judge(tool, file_path, cmd, content, load_decl(),
-                   agent_type=data.get("agent_type", ""), old_content=old_content)
+                   agent_type=data.get("agent_type", ""), old_content=old_content,
+                   new_content=new_content, replace_all=replace_all)
     if reason:
         print(_message(reason), file=sys.stderr)
         sys.exit(2)
@@ -442,6 +482,7 @@ def selftest():
     W, B = "Write", "Bash"
     gen = os.path.join(ROOT, "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py")
     acc = os.path.join(ROOT, ".claude/state/acceptance.md")
+    obs = os.path.join(ROOT, "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py")
     todo = os.path.join(ROOT, ".claude/state/session_todo.md")
 
     cases = [
@@ -506,22 +547,71 @@ def selftest():
          "TARGET: scripts/priority_rebuild/observe_diag.py\n"
          "engine_tuner の正解の印を数える節を足す",
          _decl(now, target="acceptance.md", kaenai=MARK_JOKEN), "", True),
+        # ★2026-08-29（2回目の直し）＝content は本物と同じ形にする＝Edit のときは
+        #   「編集前のファイル全体」も混ざる。だから content には消される行が必ず在る。
+        #   「足すだけか」は new_content（これから書く部分だけ）で見なければならない。
         ("34 ★プログラムを書く瞬間＝足すだけの Edit なら 変えない が書ける", "Edit", gen, "",
-         "既存の行\n足した行", _decl(now, target="engine_tuner_gen.py", kaenai=MARK_JOKEN), "", False,
-         "既存の行"),
+         "既存の行\n足した行\n既存の行\nほかの行", _decl(now, target="engine_tuner_gen.py", kaenai=MARK_JOKEN),
+         "", False, "既存の行", "既存の行\n足した行"),
         ("35 プログラムを書く瞬間＝既存の行を消す Edit なら止まる", "Edit", gen, "",
-         "足した行だけ", _decl(now, target="engine_tuner_gen.py", kaenai=MARK_JOKEN), "", True,
-         "既存の行"),
+         "足した行だけ\n既存の行\nほかの行", _decl(now, target="engine_tuner_gen.py", kaenai=MARK_JOKEN),
+         "", True, "既存の行", "足した行だけ"),
+
+        # ---- ★2026-08-29（3回目の直し）＝replace_all ／ 宣言した相手を書く瞬間にも確かめる ----
+        ("37 replace_all の Edit では 変えない を書けない（ほかの箇所も置き換わる）", "Edit", gen, "",
+         "既存の行\n足した行", _decl(now, target="engine_tuner_gen.py", kaenai=MARK_JOKEN),
+         "", True, "既存の行", "既存の行\n足した行", True),
+        ("40 ★変えない と宣言した observe_diag.py を Edit で行を消すと止まる", "Edit", obs, "",
+         "足した行だけ\n既存の行", _decl(now, target="observe_diag.py", kaenai=MARK_JOKEN),
+         "", True, "既存の行", "足した行だけ"),
+        ("41 ★同じ observe_diag.py でも 足すだけなら通る", "Edit", obs, "",
+         "既存の行\n足した行\nほかの行", _decl(now, target="observe_diag.py", kaenai=MARK_JOKEN),
+         "", False, "既存の行", "既存の行\n足した行"),
+        ("42 宣言に 変えない が無ければ observe_diag.py は対象外（従来どおり通る）", "Edit", obs, "",
+         "足した行だけ", _decl(now, target="observe_diag.py"), "", False, "既存の行", "足した行だけ"),
     ]
     ng_count = 0
     for row in cases:
         name, tool, fp, cmd, content, decl, agent, want_block = row[:8]
         old_c = row[8] if len(row) > 8 else ""
-        got = judge(tool, fp, cmd, content, decl, now=now, agent_type=agent, old_content=old_c)
+        new_c = row[9] if len(row) > 9 else None
+        ra = row[10] if len(row) > 10 else False
+        got = judge(tool, fp, cmd, content, decl, now=now, agent_type=agent,
+                    old_content=old_c, new_content=new_c, replace_all=ra)
         good = (got is not None) == want_block
         print(f"  {'✅' if good else '❌'} {name}" + ("" if good else f"   ← 出た結果: {got}"))
         ng_count += (not good)
-    print(f"\n番人: {len(cases) - ng_count}/{len(cases)} pass")
+    # ★2026-08-29（3回目の直し）＝本物の入口（_inputs_from_tool）と Write の分岐を、直に確かめる。
+    #   なぜ＝それまでテストは judge を直接 呼んでいて、入口で間違ったデータを作っていたことを
+    #   1件も捕まえられなかった（2026-08-29 に実測で発覚）。
+    extra = []
+    _c, _nc, _oc, _ra = _inputs_from_tool("Edit", {"file_path": gen, "old_string": "既存の行",
+                                                   "new_string": "既存の行\n足した行"})
+    if "def " not in _c:
+        extra.append("36 入口: content に編集前のファイルが混ざっていない（設計かどうかを見分けられない）")
+    if "def " in _nc:
+        extra.append("36 入口: new_content に編集前のファイル全体が混ざっている（足すだけの判定が壊れる）")
+    if _oc != "既存の行":
+        extra.append(f"36 入口: old_content が正しく取れていない（{_oc[:30]}）")
+    if _ra:
+        extra.append("36 入口: replace_all の指定が無いのに True になっている")
+    _c2, _nc2, _oc2, _ra2 = _inputs_from_tool("Edit", {"file_path": gen, "old_string": "x",
+                                                       "new_string": "y", "replace_all": True})
+    if not _ra2:
+        extra.append("36 入口: replace_all=True を取れていない")
+    _cur = open(gen, encoding="utf-8").read()
+    if not _is_add_only("Write", gen, _cur + "\n足した行", ""):
+        extra.append("38 Write: 全行を残して1行 足したのに「足すだけ」と判定されない")
+    if _is_add_only("Write", gen, "\n".join(_cur.splitlines()[10:]), ""):
+        extra.append("39 Write: 先頭10行を消したのに「足すだけ」と判定される")
+    for x in extra:
+        print(f"  ❌ {x}")
+    if not extra:
+        print("  ✅ 36・38・39 本物の入口（_inputs_from_tool）と Write の分岐を直に確かめた")
+    ng_count += len(extra)
+
+    total = len(cases) + 3                            # 36・38・39 の3件を足す
+    print(f"\n番人: {total - ng_count}/{total} pass")
     sys.exit(1 if ng_count else 0)
 
 
