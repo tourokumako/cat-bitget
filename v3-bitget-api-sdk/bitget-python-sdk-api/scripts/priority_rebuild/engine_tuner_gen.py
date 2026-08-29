@@ -1173,29 +1173,9 @@ def load_signal_table() -> dict:
     return _SIGNAL_TABLE
 
 
-_SCENE_RULES = None
-
-
-def load_scene_rules() -> list:
-    """場面ごとの決まり K-1〜K-7 を完成品（composition_rules.json）から読む（M2-4-2・2026-08-22 まこさん承認）。
-
-    ★照合の実体は engine_tuner_exec の G7（_check_scene_rules）＝満たさない束を拒否する。
-      生成の側は M2-5（レンジを組み立てる）で、この一覧を見て決まりを満たす束だけを組む。
-      ここは読む口だけ（読めなければ止める＝fail-closed・場所は gen_composition_rules の出力に追従）。
-    """
-    global _SCENE_RULES
-    if _SCENE_RULES is None:
-        import gen_composition_rules as gcr
-        if not gcr.out_json.exists():
-            raise SystemExit("[場面ごとの決まり] composition_rules.json が無い"
-                             "（gen_composition_rules.py --write で作る・fail-closed）")
-        body = json.loads(gcr.out_json.read_text(encoding="utf-8"))["body"]
-        rules = body.get("scene_rules")
-        if not rules:
-            raise SystemExit("[場面ごとの決まり] composition_rules.json に scene_rules が無い"
-                             "（gen_composition_rules.py --write で作り直す・fail-closed）")
-        _SCENE_RULES = list(rules)
-    return _SCENE_RULES
+# ★場面ごとの読み込み口（旧 load_scene_rules）は 2026-08-30（M2-B0・まこさん承認
+#   iter="m2-b0-law-reader-20260830"）に消した。場面の審査の正本は regime_laws.json の
+#   「機械が読む判定」になり、読むのは ex.load_regime_laws（engine_tuner_exec）＝1か所だけ。
 
 
 # ══ 材料の順位を読む（M2-3-4・2026-08-22 まこさん承認・acceptance 086a13df606d…）════════════════
@@ -2185,7 +2165,8 @@ def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: in
     """
     if name != "range":
         raise SampleError(f"場面 {name} の束の組み方は未定義（レンジ以外は M2-6〜M2-8 で作る）")
-    load_scene_rules()                                  # 決まりの正本が読めることを確かめる（fail-closed）
+    ex.load_regime_laws()                               # 相場の法則の正本が読めることを確かめる（fail-closed・
+    #   M2-B0・2026-08-30。読んだ法則から組むのは M2-E＝ここではまだ使わない）
     tfs_all = list(table["tfs"])
     upper = [t for t in tfs_all if tfs_all.index(t) > tfs_all.index("5m")]      # 執行足より上（K-2）
     r_b, r_c, side_b = regime_draw_order(order_n)

@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=59957e3edb80af39 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=b2a9eec51e9ea3f3 gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。

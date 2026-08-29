@@ -210,17 +210,11 @@ def build_premise(d: dict) -> str:
     laws = d["法則"]
     scenes = d["場面"]
 
-    # 読み込ませる法則の件数は、実物の設定ファイルから機械で数える
-    src = RATCHET.parent.parent / "scripts/priority_rebuild/recipes/composition_rules_src.json"
-    rules = json.loads(src.read_text(encoding="utf-8"))
-    counts = {}
-    total = 0
-    for k, v in rules.items():
-        if k.startswith("_"):
-            continue
-        n = len(v) if isinstance(v, list) else 1
-        counts[k] = n
-        total += n
+    # 「機械が読む判定」を持つ法則の件数は、この正本そのものから機械で数える（M2-B0・2026-08-30）。
+    #   ★それより前は composition_rules_src.json の枠を数えていた＝scene_rules ごと
+    #     regime_laws.json へ移したので、数える相手も移した。
+    with_j = [x for x in laws if isinstance(x, dict) and "機械が読む判定" in x]
+    total = len(with_j)
 
     add("# §0 読む前に知っておくこと（★この節は機械が作ります・手で書き換えない）")
     add("")
@@ -229,7 +223,7 @@ def build_premise(d: dict) -> str:
 
     # 1
     one = p["1_法則と決まりは別のもの"]
-    add("## 0-1 「相場の法則」と「読み込ませる法則」は別のものです")
+    add("## 0-1 「相場の法則」と「読み込ませる法則」は、1つになりました（M2-B0・2026-08-30）")
     add("")
     add(f"**{one['説明']}**")
     add("")
@@ -238,7 +232,8 @@ def build_premise(d: dict) -> str:
     for r in one["表"]:
         add(f"| **{_esc(r['項目'])}** | {_esc(r['法則'])} | {_esc(r['決まり'])} |")
     add("")
-    add(f"**いまの件数（機械が数えました）**＝相場の法則 **{len(laws)}件** ／ 読み込ませる法則 **{total}件**")
+    add(f"**いまの件数（機械が数えました）**＝相場の法則 **{len(laws)}件** ／ "
+        f"うち「機械が読む判定」を持つもの **{total}件**")
     add("")
 
     # 相場の法則の場面ごとの件数
@@ -254,15 +249,14 @@ def build_premise(d: dict) -> str:
 
     # 2
     two = p["2_決まりの記号の意味"]
-    add("## 0-2 読み込ませる法則の記号の意味")
+    add("## 0-2 機械が読む判定の記号（旧・読み込ませる法則）")
     add("")
     add(f"**{two['説明']}**")
     add("")
-    add("| 記号 | 件数 | 何の読み込ませる法則か | どの段で扱うか |")
+    add("| 記号 | 件数 | 何の判定か | どの段で扱うか |")
     add("|---|---|---|---|")
     for r in two["記号"]:
-        n = counts.get(r["枠"], 0)
-        add(f"| **{_esc(r['記号'])}** | {n} | {_esc(r['何の決まりか'])} | {_esc(r.get('どの段で扱うか', '?'))} |")
+        add(f"| **{_esc(r['記号'])}** | {total} | {_esc(r['何の決まりか'])} | {_esc(r.get('どの段で扱うか', '?'))} |")
     add(f"| **合計** | **{total}** | | |")
     add("")
     if two.get("★段の分け方"):
@@ -272,63 +266,37 @@ def build_premise(d: dict) -> str:
         add(f"**★消した記号（2026-08-29）**＝{_esc(two['★消した記号（2026-08-29）'])}")
         add("")
 
-    # 2b 30件を1件ずつ出す（まこさん指摘 2026-08-29「30件全部書いてないけど」）
-    add(f"## 0-2b 読み込ませる法則{total}件の全部（1件ずつ・機械が実物から書き出します）")
+    # 2b 「機械が読む判定」を持つ法則を1件ずつ出す（★2026-08-30・M2-B0＝正本が regime_laws.json になった）
+    add(f"## 0-2b 機械が読む判定を持つ法則{total}件の全部（1件ずつ・機械が実物から書き出します）")
     add("")
-    add("> **★この表の読み方（3つ・2026-08-29 に実物で確かめた）**")
+    add("> **★この表の読み方（3つ・2026-08-30 の M2-B0 で直した後の実物）**")
     add("> ")
-    add("> - **engine_tuner は、この7件の『中身』を読んでいません。**"
-        "`engine_tuner_gen.py`:2188 が設定ファイルを開きますが、**ファイルが開けるかだけを確かめて、"
-        "返ってきた中身を捨てています。**")
-    add("> - **同じ7つの判定が、`engine_tuner_exec.py` の1094〜1119行にコードとして直接 書いてあります。**"
-        "案を捨てているのは、そちらです。**＝この表を直しても、engine_tuner の動きは変わりません。**")
-    add("> - **どの段で扱うか**＝この法則を、どのマイルストーンで整理するかです（まこさん決定 2026-08-29）。"
-        "**M2-B0 で、engine_tuner が設定ファイルの中身を実際に読む形に直します。**")
+    add("> - **engine_tuner は、この7件を regime_laws.json から読み込んで審査します**"
+        "（読み込み＝`engine_tuner_exec.load_regime_laws`:1057 → 審査＝G7 `_check_scene_rules`:1157）。")
+    add("> - **法則を1件 書き替えると、審査がそのとおり変わります。**読めない・知らない型・知らない場面名・"
+        "知らない系統名は止まります（fail-closed）。")
+    add("> - **「機械が読む判定」を持たない法則（R9・R10 ほか）は、審査に使いません**＝M2-B で足します。")
     add("")
-    add("| # | 記号 | 何をする法則か | いま案を捨てているか | どの段で扱うか |")
+    add("| # | 番号 | 相場の法則（一文） | 審査に使っているか | 掛かる場面 |")
     add("|---|---|---|---|---|")
 
-    # engine の本体を読んで、枠ごとに「読んでいるか」を機械で数える
+    # engine の本体を読んで、読み込み口が配線されているかを機械で確かめる
     body = ""
     for nm in ("engine_tuner_gen.py", "engine_tuner_exec.py"):
         f = RATCHET.parent.parent / "scripts/priority_rebuild" / nm
         if f.exists():
             body += f.read_text(encoding="utf-8", errors="ignore")
-    seg_of = {r["枠"]: r.get("どの段で扱うか", "?") for r in two["記号"]}
-
-    n_block = n_read = 0
-    i = 0
-    for k, v in rules.items():
-        if k.startswith("_"):
-            continue
-        読む = k in body
-        for r in (v if isinstance(v, list) else [v]):
-            if not isinstance(r, dict):
-                continue
-            i += 1
-            rid = r.get("id", "?")
-            # 説明は「やさしい説明」を第一に使う（まこさん指摘 2026-08-29「中身が圧縮しすぎて、意味不明」）
-            text = r.get("やさしい説明") or r.get("決まり") or "（説明の欄が無い）"
-            hard = bool(r.get("機械が強制するか"))
-            # ★2026-08-29＝engine_tuner はこの設定ファイルの中身を読んでいない。
-            #   案を捨てているのは engine_tuner_exec.py の1094〜1119行のコード。
-            #   だから「読んでいるか」ではなく「案を捨てているか」を書く（実物に合わせる）。
-            if 読む and hard:
-                mark = "**捨てている**（ただし判定はコードの側）"
-                n_block += 1
-                n_read += 1
-            elif 読む:
-                mark = "捨てていない"
-                n_read += 1
-            else:
-                mark = "**枠ごと読まれていない**"
-            add(f"| {i} | **{rid}** | {_esc(text)} | {mark} | {_esc(seg_of.get(k, '?'))} |")
+    wired = "load_regime_laws" in body
+    for i, x in enumerate(with_j, 1):
+        j = x["機械が読む判定"]
+        mark = "**使っている**（load_regime_laws が読む）" if wired else "**★配線が見つからない**"
+        add(f"| {i} | **{_esc(str(x['番号']))}** | {_esc(str(x['一文']))} | {mark} "
+            f"| {_esc('・'.join(j.get('掛かる場面', [])))} |")
     add("")
-    add(f"**内訳（機械が数えました）**＝案を捨てている **{n_block}件** ／ "
-        f"捨てていない **{n_read - n_block}件** ／ 枠ごと読まれていない **{total - n_read}件**（合計 {total}件）")
+    add(f"**内訳（機械が数えました）**＝審査に使う **{total}件** ／ "
+        f"持たない **{len(laws) - total}件**（合計 {len(laws)}件）")
     add("")
-    add("**★「捨てている」の中身**＝判定は `engine_tuner_exec.py` の1094〜1119行にコードとして書いてあります。"
-        "この設定ファイルの中身は使われていません。**設定ファイルを直しても、捨てる動きは変わりません。**")
+    add("**★判定の正本はこのファイル（regime_laws.json）です。**コードに直書きの判定は 2026-08-30（M2-B0）に消しました。")
     add("")
 
     # 3
@@ -359,7 +327,7 @@ def build_premise(d: dict) -> str:
     # 6（2026-08-29 新設・まこさん指示「ここまでの状況を整理して書き直して」）
     six = p.get("6_engine_tuner のどこで使われているか")
     if six:
-        add("## 0-6 engine_tuner の、どこで使われているか（★2026-08-29 に実物の行を読んで確かめた）")
+        add("## 0-6 engine_tuner の、どこで使われているか（★2026-08-30 の M2-B0 の後の実物）")
         add("")
         add(f"**{_esc(six['説明'])}**")
         add("")
@@ -385,7 +353,7 @@ def build_premise(d: dict) -> str:
     # 7（2026-08-29 新設・まこさん承認「この形に変えてよい」）
     seven = p.get("7_これからの形（まこさん承認 2026-08-29）")
     if seven:
-        add("## 0-7 ★これからの形（まこさん承認 2026-08-29）")
+        add("## 0-7 ★いまの形（まこさん承認 2026-08-29・2026-08-30 に実装済み）")
         add("")
         add(f"**{_esc(seven['説明'])}**")
         add("")

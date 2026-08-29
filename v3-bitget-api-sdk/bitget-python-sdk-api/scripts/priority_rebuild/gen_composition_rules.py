@@ -10,8 +10,11 @@
   ★CC はこの状態を 2026-08-08 から 2026-08-29 まで確かめず「engine_tuner が守る法則」として報告し続けた。
 
 これは何か。
-  場面（レンジ・上げ・下げ・スパイク）の判定を組み立てるときの法則を、機械が読める形で作る道具。
-  手で書くのは recipes/composition_rules_src.json の7件（K-1〜K-7）だけ。
+  engine_tuner の設定のうち、型の表・格子・出口の枝から機械で引く部分を、1つの完成品に集める道具。
+  ★2026-08-30（M2-B0・まこさん承認 iter="m2-b0-law-reader-20260830"）＝場面ごとの7件（K-1〜K-7）は
+    recipes/composition_rules_src.json から消し、regime_laws.json の各法則の「機械が読む判定」へ移した。
+    読むのは engine_tuner_exec.load_regime_laws・審査は G7＝この道具は場面ごとの法則をもう持たない。
+    手で書く行は 0件（composition_rules_src.json に残るのは移動と削除の記録だけ）。
   ★2026-08-29（まこさん承認 rules30-to-7-20260829）に30件から7件へ減らした。
     消した23件（ROLE-・TF-・TW-・FT-・Q-・RD-・CN-・RG-）は engine_tuner の2本のコードに
     記号が1回も出なかった＝案の作り方にも捨て方にも効いていなかった。
@@ -32,10 +35,10 @@
   .claude/ratchet/composition_rules.json … ★「engine_tuner が読む完成品」と書いてあったが、読んでいない
   .claude/ratchet/composition_rules.md  … 人が読む説明（同じ中身）
 
-いま実際に使われている先（2026-08-29 に機械で数えた）。
+いま実際に使われている先（2026-08-30 に直した）。
   gen_audit_request.py:129   … 監査依頼書の必読6本の1本として composition_rules.md を渡す
-  .claude/tools/gen_regime_kb.py:214 … M2 の文書に件数を出すために composition_rules_src.json を数える
-  engine_tuner_gen.py:2188   … ファイルが開けるかだけを確かめる（中身は使わない）
+  ★engine_tuner はこのファイルを読まない＝場面の審査の正本は regime_laws.json（M2-B0）。
+    旧 engine_tuner_gen.py:2188 の「開けるかの確かめ」も ex.load_regime_laws へ向け直した。
 
 使い方。
   python3 gen_composition_rules.py --write     … 作る
@@ -127,16 +130,14 @@ def expand_rules(s: dict) -> dict:
       記号が1回も出なかった＝案の作り方にも捨て方にも効いていなかった。
       逐語の出典がほかに無かった6件は technical_analysis_knowledge_base.md の §J へ移した。
     """
-    src, sig = s["src"], s["signal"]
+    sig = s["signal"]
     lineage = dict(s["lineage_of"])
     lineage.update(_extra_lineage(sig))
 
     return {
-        # ★場面ごとの法則 K-1〜K-7（M2-4-2・2026-08-22 まこさん承認「どちらもOK」・acceptance 6ce1dccad1a5…）。
-        #   engine_tuner_exec の G7 が照合の実体。ここは完成品（composition_rules.json）へ通す配線。
-        #   ★ただし engine_tuner はこの完成品の中身を読んでいない（2026-08-29 に実物で確認）。
-        #     engine_tuner_gen.py:2188 が load_scene_rules() の返り値を捨てている＝開けるかだけ確かめている。
-        "scene_rules": src["scene_rules"],
+        # ★場面ごとの法則（旧 scene_rules・K-1〜K-7）は 2026-08-30（M2-B0・まこさん承認
+        #   iter="m2-b0-law-reader-20260830"）に regime_laws.json の「機械が読む判定」へ移した＝
+        #   この完成品はもう持たない。読むのは engine_tuner_exec.load_regime_laws・審査は G7。
         "direction_conflict": sig["direction_conflict"],   # 表から引く（書き写さない）
         "grids": s["limits"],                              # 探索の格子は正本のまま
         "exit_branch_count": len((s["exits"].get("branches") or s["exits"].get("枝") or [])),
@@ -250,13 +251,11 @@ def write_outputs(rules: dict, report: list) -> tuple[str, str]:
              "`technical_analysis_knowledge_base.md` の §J へ移した。", "",
              f"手で書いた行は recipes/composition_rules_src.json の "
              f"{json.loads(src_path.read_text())['_手で書いた行数']} 件だけ。", ""]
-    lines += ["", "## ★場面ごとの読み込ませる法則（K-1〜K-7・まこさん承認 2026-08-22・プログラムが強制する）", "",
-              "engine_tuner が場面の判定の束（meta.regime.build）を作るとき、下の形を満たさない案は"
-              "条件データを調べる部分（engine_tuner_exec.py の G7）が拒否する。"
-              "数字は1つも持たない（閾値・本数・保つ長さは範囲で探す）。", "",
-              "| # | 読み込ませる法則 | 掛かる場面 | 出典 |", "|---|---|---|---|"]
-    for g in rules["scene_rules"]:
-        lines.append(f"| {g['id']} | {g['決まり']} | {'・'.join(g['掛かる場面'])} | {g['出典'][:60]}… |")
+    lines += ["", "## ★場面ごとの読み込ませる法則は、このファイルから regime_laws.json へ移した（M2-B0・2026-08-30）", "",
+              "**まこさん承認 iter=\"m2-b0-law-reader-20260830\"。**7件（K-1〜K-7）は、相場の法則の正本 "
+              "`regime_laws.json` の各法則（C1・C4・C6・R1・R8・R7・S1）の「機械が読む判定」になった。"
+              "読むのは `engine_tuner_exec.load_regime_laws`・審査は G7。**法則を1件 書き替えると審査が変わる。**"
+              "対応の記録＝`composition_rules_src.json` の `_M2-B0で移した7件`。", ""]
     lines += ["", "## 正本の指紋（元を直したら作り直す・--verify が照合する）", "",
               "| 正本 | 指紋 |", "|---|---|"]
     for k, v in sorted(payload["_正本の指紋"].items()):
@@ -318,12 +317,8 @@ def selftest() -> int:
 
     # ★2026-08-29（まこさん承認 rules30-to-7-20260829）＝T2〜T5 を消した。
     #   どれも消した23件（役目の系統・時間足の層・答える問い・合図の弱点）をわざと壊す試験だった。
-    # T5b 場面ごとの法則を1件 消すと、生成が止まるか（7件が正本であることの担保）
-    def _drop_scene(d):
-        d["scene_rules"] = [r for r in d["scene_rules"] if r["id"] != "K-4"]
-        return d
-    if _mutated(_drop_scene):
-        pass  # 止まらなくてよい（scene_rules は素通しで完成品へ渡すだけ）。件数の検査は T7 が見る
+    # ★2026-08-30（M2-B0）＝T5b（scene_rules を1件 消す試験）も消した＝scene_rules ごと
+    #   regime_laws.json へ移したため。移した7件の見張りは T10 が引き継ぐ。
 
     # T6 正本の指紋のずれを検出する（記録を偽の値にして verify が鳴るか）
     if out_json.exists():
@@ -337,38 +332,31 @@ def selftest() -> int:
         finally:
             out_json.write_text(keep)
 
-    # T7 手書きの行数が、元ファイルの申告と一致する（★2026-08-29＝7件に直した）
+    # T7 場面ごとの法則が src に残っていない（★2026-08-30・M2-B0＝regime_laws.json へ移した）
     src = json.loads(src_path.read_text())
-    n = len(src["scene_rules"])
-    if n != src["_手で書いた行数"]:
-        ng.append(f"T7: 手書きの行数の申告 {src['_手で書いた行数']} と実際 {n} が違う")
-    if n != 7:
-        ng.append(f"T7: 場面ごとの法則が 7件でない（{n} 件）"
-                  "＝まこさん承認 2026-08-29 で30件から7件へ減らした状態が正")
+    if "scene_rules" in src:
+        ng.append("T7: composition_rules_src.json に scene_rules が戻っている"
+                  "＝M2-B0（まこさん承認 iter=m2-b0-law-reader-20260830）で regime_laws.json へ移した状態が正")
+    if src.get("_手で書いた行数") != 0:
+        ng.append(f"T7: 手で書いた行数の申告が 0 でない（{src.get('_手で書いた行数')}）")
 
     # ★2026-08-29＝T8・T9 を消した（どちらも消した family_trigger をわざと壊す試験だった）
 
     for x in ng:
         print(f"  ❌ {x}")
 
-    # T10（2026-08-08 新設・★2026-08-29 に7件へ直した）＝仕分けが勝手に戻されていないか。
-    #   まこさん承認 2026-08-29（rules30-to-7-20260829）＝30件から7件（K-1〜K-7）へ減らした。
-    #   engine_tuner の2本のコードに記号が出るのは この7件だけだったため。
-    #   次に黙って件数や顔ぶれを変えたら、ここで落ちる。
+    # T10（★2026-08-30・M2-B0 に合わせて作り直した）＝移した7件が regime_laws.json に在り続けるか。
+    #   黙って消したり、審査に効かない形（機械が読む判定なし）へ戻したりしたら、ここで落ちる。
+    #   直す前の T10 は src の scene_rules 7件（K-1〜K-7）を見ていた＝見張りの相手を移った先へ引き継いだ。
     import json as _json
-    _src = _json.loads(src_path.read_text())
-    _graded = [x for x in _src["scene_rules"] if isinstance(x, dict) and "仕分け" in x]
-    _enf = [x for x in _graded if x.get("機械が強制するか")]
-    if len(_graded) != 7:
-        ng.append(f"T10: 仕分け済みの法則が 7件でない（{len(_graded)} 件）")
-    if len(_enf) != 7:
-        ng.append(f"T10: 機械が強制する法則が 7件でない（{len(_enf)} 件）"
-                  "＝まこさんの確認なしに強制を変えない（2026-08-29 承認の状態が正）")
-    _ids = {x["id"] for x in _enf}
-    if _ids != {"K-1", "K-2", "K-3", "K-4", "K-5", "K-6", "K-7"}:
-        ng.append(f"T10: 機械が強制する法則の中身が変わった（{sorted(_ids)}）")
+    _laws = _json.loads((ratchet / "regime_laws.json").read_text(encoding="utf-8"))
+    _with = {str(x.get("番号")) for x in _laws.get("法則", [])
+             if isinstance(x, dict) and "機械が読む判定" in x}
+    if not {"C1", "C4", "C6", "R1", "R8", "R7", "S1"} <= _with:
+        ng.append(f"T10: 移した7件（C1・C4・C6・R1・R8・R7・S1）の「機械が読む判定」が regime_laws.json に"
+                  f"揃っていない（在るもの＝{sorted(_with)}）＝まこさんの確認なしに減らさない")
 
-    print(f"[番人] {'✅ 全部 pass（T1・T5b・T6・T7・T10）' if not ng else f'❌ {len(ng)} 件'}")
+    print(f"[番人] {'✅ 全部 pass（T1・T6・T7・T10）' if not ng else f'❌ {len(ng)} 件'}")
     return 1 if ng else 0
 
 
@@ -405,8 +393,7 @@ def main(argv: list) -> int:
         print(f"[本文の指紋] {h}")
         print(f"[手で書いた行数] {src['_手で書いた行数']} 件"
               f"（残りは正本から機械で引いた）")
-        for g in rules["scene_rules"]:
-            print(f"  {g['id']}（{'・'.join(g['掛かる場面'])}）… {g['決まり'][:56]}")
+        print("  場面ごとの法則＝regime_laws.json の「機械が読む判定」へ移した（M2-B0・2026-08-30）")
         return 0
     print(__doc__)
     return 0

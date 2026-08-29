@@ -249,6 +249,9 @@ WATCHED = [                                              # 指紋の対象＝eng
     f"{_PR}/observe_diag.py", f"{_PR}/observe_config.json",
     # ★2026-08-23（77番）＝探し方の正本を読む共有モジュール（検査2・検査4 が使う）。
     f"{_PR}/h2_scan.py",
+    # ★2026-08-30（M2-B0・まこさん承認 iter="m2-b0-law-reader-20260830"）＝場面の審査（G7）が読む
+    #   相場の法則の正本。engine が読む設定は印の対象に入れる（2026-08-20 の observe_config.json と同じ型）。
+    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regime_laws.json",
 ]
 
 
