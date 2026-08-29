@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=efac4556c745bc81 -->
+<!-- DOCMAP_HASH=680eda7edaa57b9c -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -22,7 +22,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - その道具が作る文書＝**31 本**
 - **検証コマンドを持たない道具＝2 本**（gen_audit_request.py／gen_p23_candidates.py）
 - **名乗っていない道具＝1 本**（明らかな漏れ）／ 29 本（要確認）＝表3
-- 誰にも作られていない文書＝**405 本**（表4＝人が手で書いているもの）
+- 誰にも作られていない文書＝**409 本**（表4＝人が手で書いているもの）
 
 ## 表1｜道具 → 作る文書
 
@@ -146,7 +146,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## 表4｜誰にも作られていない文書（人が手で書いているもの）
 
-**405 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
+**409 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
 
 <details><summary>全部を開く</summary>
 
@@ -159,6 +159,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/settings.json`
 - `.claude/settings.local.json`
 - `.claude/state/acceptance.md`
+- `.claude/state/acceptance.md.actual.md`
 - `.claude/state/acceptance_20260806_signal_table.md`
 - `.claude/state/chat_check_blocks.json`
 - `.claude/state/chat_check_last.json`
@@ -483,9 +484,12 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/hold-mom-exit.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/milestone-req-accept-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/new-file-target-gate-20260827.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-add-only-20260829.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-not-applicable-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-rebuild-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/regime-build-callers-and-usable-groups-20260827.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/regime-label-oneway-20260829.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/regime-label-synthetic-20260829.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-map-r17-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-progress-machine-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md`

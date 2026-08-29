@@ -1,5 +1,5 @@
 {
- "_本文の指紋": "efac4556c745bc81",
+ "_本文の指紋": "680eda7edaa57b9c",
  "body": {
   "docs": [
    {
@@ -323,6 +323,7 @@
    ".claude/settings.json",
    ".claude/settings.local.json",
    ".claude/state/acceptance.md",
+   ".claude/state/acceptance.md.actual.md",
    ".claude/state/acceptance_20260806_signal_table.md",
    ".claude/state/chat_check_blocks.json",
    ".claude/state/chat_check_last.json",
@@ -647,9 +648,12 @@
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/hold-mom-exit.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/milestone-req-accept-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/new-file-target-gate-20260827.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-add-only-20260829.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-not-applicable-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-rebuild-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/regime-build-callers-and-usable-groups-20260827.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/regime-label-oneway-20260829.md",
+   "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/regime-label-synthetic-20260829.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-map-r17-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-progress-machine-20260826.md",
    "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md",

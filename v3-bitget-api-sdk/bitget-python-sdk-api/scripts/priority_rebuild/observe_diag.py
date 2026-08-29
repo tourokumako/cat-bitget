@@ -5480,6 +5480,33 @@ def _oneway_ratio(win: pd.DataFrame, n: int) -> pd.Series:
     return (fwd / width).where(width > 0)             # 値幅が 0 の区間は数から外す（0 で割らない）
 
 
+def _synth_regime_bars(block: int = 60, blocks: int = 8) -> tuple[pd.DataFrame, pd.Series]:
+    """答えが分かっているニセの4本値を作る（2026-08-29 新設・M2-A-4・まこさん承認 21dcfabff3d44a64）。
+
+    ★乱数を1つも使わない。決まった式で作る。
+      トレンドの区間＝1本ごとに +1.0 で一直線に上がる（まっすぐ進んだ割合が高い）。
+      レンジの区間  ＝+2.0 と −2.0 を交互に繰り返して元に戻る（割合が低い）。
+      この2つを同じ本数ずつ交互に並べる（いまの印は窓の中央値で切るので、半々にする）。
+    ★何のために要るか＝正解データを作る _regime_labels にバグが入っても誰も気づかない状態を、
+      毎回の自己検査でなくすため。M2-A-1 で調べた外のやり方（答えの分かるデータで先に確かめてから
+      実データへ移る）と同じ考え方。★数字は外から採らない＝うちの印に合わせて作る。
+    戻り＝(4本値のデータ, その行がトレンドの区間かどうか)。
+    """
+    idx = pd.date_range("2024-06-01", periods=block * blocks, freq="5min")
+    cl: list = []
+    is_trend: list = []
+    price = 100.0
+    for b in range(blocks):
+        trend = (b % 2 == 0)                          # 偶数番目＝トレンド／奇数番目＝レンジ
+        for i in range(block):
+            price = price + 1.0 if trend else (price + 2.0 if i % 2 == 0 else price - 2.0)
+            cl.append(price)
+            is_trend.append(trend)
+    s = pd.Series(cl, index=idx, dtype=float)
+    return (pd.DataFrame({"close": s, "high": s, "low": s}, index=idx),
+            pd.Series(is_trend, index=idx))
+
+
 def _insp_regime_label_oneway(bars: pd.DataFrame) -> list:
     """検査15＝いまの正解の印が「レンジだった」とした区間を、片道の度合いで測り直す（2026-08-29・M2-A-2）。
 
@@ -6667,6 +6694,36 @@ def selftest() -> None:
     # T6 重なりを避ける間隔が、先の本数ぶん空く
     if _independent_step("5m", 288) != 288:
         ng.append("検査15 T6: 重なりを避ける間隔が先の本数と合っていない")
+
+    # ★2026-08-29（M2-A-4・まこさん承認 21dcfabff3d44a64）＝答えが分かっているニセのデータで、
+    #   正解データを作るプログラム（_regime_labels）が壊れていないかを確かめる（N1〜N4）。
+    #   ★これが無いと、計算式を1文字 間違えても、出る数字が変わるだけで誰も気づかない。
+    _sdf, _str15 = _synth_regime_bars()
+    _sn = 24
+    _slab = _regime_labels(_sdf, _sn)
+    # 先 _sn本 が同じ区間に収まる行だけを見る（区間の境目をまたぐ行は、答えが決まらないので外す）
+    _fwd_tr = _str15.shift(-_sn)   # H2OK: ニセのデータの中だけで完結する検査＝実データを1バイトも読まない。本番の判断にも入らない
+    _nx_tr = _str15.shift(-1)      # H2OK: 同上（ニセのデータの区間の境目を外すためだけに使う）
+    _same15 = ((_fwd_tr == _str15) & (_nx_tr == _str15)).fillna(False)
+    for _nm15, _tag15 in (("強さ", "N1"), ("向き", "N2"), ("大きさ", "N3")):
+        _mk15, _us15 = _slab[_nm15]
+        _use15 = _us15 & _same15
+        if int(_use15.sum()) < 10:
+            ng.append(f"検査15 {_tag15}: ニセのデータで使える行が {int(_use15.sum())} 行しか無い")
+            continue
+        _hit15 = float((_mk15[_use15] == _str15[_use15]).mean())
+        if _hit15 < 1.0:
+            ng.append(f"検査15 {_tag15}: 「{_nm15}」の札が、作った答えと一致しない"
+                      f"（一致率 {_hit15:.3f}／使えた行 {int(_use15.sum())}）")
+    # N4 わざと壊した版（まっすぐ進んだ距離と歩いた距離を入れ替えた）では一致率が落ちる＝この検査が効く証拠
+    _c4 = _sdf["close"].astype(float)
+    _fwd4 = (_c4.shift(-_sn) - _c4).abs()   # H2OK: ニセのデータの中だけで完結する検査（実データを1バイトも読まない）
+    _walk4 = _c4.diff().abs().rolling(_sn).sum().shift(-_sn)  # H2OK: 同上
+    _er4 = (_walk4 / _fwd4).where(_fwd4 > 0)          # ★わざと分子と分母を入れ替えた
+    _m4 = _er4 >= _er4.median()
+    _u4 = _er4.notna() & _same15
+    if int(_u4.sum()) >= 10 and float((_m4[_u4] == _str15[_u4]).mean()) >= 1.0:
+        ng.append("検査15 N4: わざと壊した版でも一致率が 100% のまま＝この検査は何も捕まえていない")
 
     print("=" * 80)
     print("observe_diag 自己検査")
