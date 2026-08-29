@@ -1,0 +1,399 @@
+{
+  "_これは何か": "regime_detection_kb.md の §12 を機械で作るための元データ。2026-08-29（72回目）に調べた結果を、逐語つきで入れてある。手で md を書かない。",
+  "_作り方": "python3 .claude/tools/gen_regime_kb_findings.py --write（書く） ／ --verify（手で書き換えられていないかの検出）",
+  "_書き替えるとき": "この json を直してから --write を走らせる。md を直接 直さない（--verify が ❌ を出す）。",
+  "_調べた日": "2026-08-29",
+  "_調べた理由": "まこさんの指示（逐語 2026-08-29）＝「この定義の方法は系統ごとで良いのかというところから、WEBResearchして調べてほしい。調べて根拠のある状態で法則を定義したい」／「そもそも分類する必要や M2-G での複数ロジックの組み合わせ方は、分類したもの別が良いのかなど、根拠が薄い状態なので、調べたい。」",
+  "_決まり": [
+    "一次ページを開いて逐語を取る。検索の要約は根拠にしない（恒久の決まり43番）。",
+    "開けなかったものは「開けなかった」と書く。",
+    "外の数字はそのまま持ち込まない。採るのは考え方だけ（違反の記録 #23）。"
+  ],
+
+  "A_外を調べた結果": {
+    "_問い": [
+      "外は指標を、どういう単位で整理しているか。",
+      "「同じ系統を重ねない」に、外の根拠はあるか。",
+      "指標の「系統」の分類は、何を基準に決まっているか。",
+      "場面ごとに法則を分けるのは、外でも同じか。"
+    ],
+    "開けた": [
+      {
+        "出どころ": "StockCharts ChartSchool「Introduction to Technical Indicators and Oscillators」",
+        "url": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/introduction-to-technical-indicators-and-oscillators",
+        "級": "本文",
+        "答える問い": 1,
+        "逐語": "Indicators that use the same scale as prices are typically plotted on top of the price bars and are therefore referred to as 'Overlays.'",
+        "うちにとっての意味": "整理の単位の1つ目＝価格と同じ目盛りで描くかどうか。"
+      },
+      {
+        "出どころ": "同上",
+        "url": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/introduction-to-technical-indicators-and-oscillators",
+        "級": "本文",
+        "答える問い": 1,
+        "逐語": "Leading indicators are designed to lead price movements / lagging indicators follow the price action and are commonly referred to as trend-following indicators.",
+        "うちにとっての意味": "整理の単位の2つ目＝先行か遅行か。"
+      },
+      {
+        "出どころ": "同上",
+        "url": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/introduction-to-technical-indicators-and-oscillators",
+        "級": "本文",
+        "答える問い": 2,
+        "逐語": "it would be redundant to use two indicators that are good for showing overbought and oversold levels, such as Stochastics and RSI. Both of these indicators measure momentum and both have overbought/oversold levels.",
+        "うちにとっての意味": "★同じものを測る指標を重ねるなという根拠。ただし「何本まで」という上限は書かれていない。"
+      },
+      {
+        "出どころ": "同上",
+        "url": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/introduction-to-technical-indicators-and-oscillators",
+        "級": "本文",
+        "答える問い": 2,
+        "逐語": "Try to choose indicators that complement each other, instead of those that move in unison and generate the same signals.",
+        "うちにとっての意味": "選び方の基準＝補い合うもの。同じ動きをして同じ合図を出すものを避ける。"
+      },
+      {
+        "出どころ": "同上",
+        "url": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/introduction-to-technical-indicators-and-oscillators",
+        "級": "本文",
+        "答える問い": 4,
+        "逐語": "Trend-following indicators work best when markets or securities develop strong trends / are not effective in trading or sideways markets.",
+        "うちにとっての意味": "★場面ごとに使い分けるという根拠。うちの法則 C5（場面の判定は、入口を通すか止めるかを決めるもの）と同じ向き。"
+      },
+      {
+        "出どころ": "同上",
+        "url": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/introduction-to-technical-indicators-and-oscillators",
+        "級": "本文",
+        "答える問い": 4,
+        "逐語": "These indicators can be used in trending markets, but usually with the major trend, not against it",
+        "うちにとっての意味": "先行の指標をトレンド中に使うときは、大きな流れの向きに合わせる。うちの法則 C4・R8 と同じ向き。"
+      },
+      {
+        "出どころ": "StockCharts ChartSchool「Technical Indicators」の一覧ページ",
+        "url": "https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators",
+        "級": "本文",
+        "答える問い": 3,
+        "逐語": "（実測＝カテゴリの見出しが無く、アルファベット順の1つの一覧だった）",
+        "うちにとっての意味": "★教科書サイトの指標の一覧は、系統でカテゴリ分けされていない。"
+      },
+      {
+        "出どころ": "TA-Lib「Functions」",
+        "url": "https://ta-lib.org/functions/",
+        "級": "本文",
+        "答える問い": 3,
+        "逐語": "Cycle Indicators / Math Operators / Math Transform / Momentum Indicators / Overlap Studies / Pattern Recognition / Price Transform / Statistic Functions / Volatility Indicators / Volume Indicators",
+        "うちにとっての意味": "★整理の単位の3つ目＝計算の種類で10群。「トレンド」という群が無く、移動平均は Overlap Studies に入る。10群のうち3群（Math Operators・Math Transform・Statistic Functions）はそもそも相場の指標ではない。"
+      },
+      {
+        "出どころ": "arXiv 2508.11338「RegimeNAS」§III-E",
+        "url": "https://arxiv.org/html/2508.11338v1",
+        "級": "本文",
+        "答える問い": 4,
+        "逐語": "Central to RegimeNAS is the concept of specialized neural blocks, each designed to effectively model distinct market characteristics.",
+        "うちにとっての意味": "★場面ごとに専用の部品を持つという設計。うちの「場面ごとに法則を分ける」と同じ向き。"
+      },
+      {
+        "出どころ": "同 §III-C",
+        "url": "https://arxiv.org/html/2508.11338v1",
+        "級": "本文",
+        "答える問い": 4,
+        "逐語": "The framework dynamically combines or selects the specialized blocks based on the regime probabilities",
+        "うちにとっての意味": "場面の確からしさで、専用の部品を選ぶか混ぜるかを切り替える。"
+      },
+      {
+        "出どころ": "同 §V-D",
+        "url": "https://arxiv.org/html/2508.11338v1",
+        "級": "本文",
+        "答える問い": 4,
+        "逐語": "Periods with ADX>25 were classified as 'Trend', periods with high ATR (>75th percentile) and low ADX were 'High Volatility', and remaining periods were 'Range'.",
+        "うちにとっての意味": "★この数字は持ち込まない。論文自身が「あとから分けるための線であって、運用時の判定ではない」と書いている（違反の記録 #23 の再演を避ける）。"
+      },
+      {
+        "出どころ": "Fidelity「What is an indicator?」",
+        "url": "https://www.fidelity.com/learning-center/trading-investing/what-is-an-indicator",
+        "級": "本文",
+        "答える問い": 3,
+        "逐語": "（実測＝指標を3つ挙げるだけで、分類の記述が無かった）",
+        "うちにとっての意味": "開けたが、この問いには使えなかった。"
+      }
+    ],
+    "開けなかった": [
+      { "出どころ": "Charles Schwab「Choosing Technical Indicators to Analyze Stocks」", "url": "https://www.schwab.com/learn/story/choosing-technical-indicators-to-analyze-stocks", "理由": "認証エラーの画面が返る" },
+      { "出どころ": "CMT Association「Technically Speaking, December 2011」", "url": "https://cmtassociation.org/technically_speaking/technically-speaking-december-2011/", "理由": "HTTP 403" },
+      { "出どころ": "arXiv 2509.14401（LSTM・指標の相関）", "url": "https://arxiv.org/pdf/2509.14401", "理由": "PDF の本文が取り出せない" },
+      { "出どころ": "pandas-ta（カテゴリの一覧）", "url": "https://github.com/twopirllc/pandas-ta", "理由": "GitHub が 404・PyPI にカテゴリの記載なし・公式サイトは名前が引けない" },
+      { "出どころ": "Investopedia", "url": "https://www.investopedia.com/", "理由": "★この道具からは検索できない（提供元が拒否）" }
+    ],
+    "答え": [
+      { "問い": "外は指標を、どういう単位で整理しているか", "答え": "1つの単位ではない。少なくとも3通りが併存する＝①価格と同じ目盛りか（Overlay）②先行か遅行か ③計算の種類（TA-Lib の10群）。" },
+      { "問い": "「同じ系統を重ねない」に、外の根拠はあるか", "答え": "ある。ただし「何本まで」という上限は、開けたどのページにも書かれていない。" },
+      { "問い": "分類の基準は何か", "答え": "唯一の標準は無い。情報源ごとに切り方が違う。教科書サイトの一覧はカテゴリ分けすらしていない。" },
+      { "問い": "場面ごとに分けるのは外でも同じか", "答え": "同じ。教科書サイトも論文も、場面ごとに使う道具を替える。" }
+    ]
+  },
+
+  "B_組み合わせの根拠": {
+    "_問い": [
+      "複数の判定ロジックを組み合わせると、1本より精度が上がるのか。上がるとしたら何が効いているのか。",
+      "組み合わせる相手を「分類が違うもの」から選ぶと精度が上がる、という根拠はあるか。",
+      "分類は、何を基準に切ると効くのか。"
+    ],
+    "開けた": [
+      {
+        "出どころ": "Hyndman・Athanasopoulos『Forecasting: Principles and Practice』3rd ed. 13.4 Forecast combinations",
+        "url": "https://otexts.com/fpp3/combinations.html",
+        "級": "本文",
+        "答える問い": 1,
+        "逐語": "John Bates and Clive Granger wrote a famous paper (Bates & Granger, 1969), showing that combining forecasts often leads to better forecast accuracy.",
+        "うちにとっての意味": "★組み合わせると精度が上がることの、いちばん古い根拠（1969年）。"
+      },
+      {
+        "出どころ": "同上",
+        "url": "https://otexts.com/fpp3/combinations.html",
+        "級": "本文",
+        "答える問い": 1,
+        "逐語": "using a simple average has proven hard to beat",
+        "うちにとっての意味": "★重みを凝った付け方より、単純な平均のほうが強いことが多い。うちの束ね方に「K本以上が真」（多数決）を足すことの後押しになる。"
+      },
+      {
+        "出どころ": "scikit-learn ユーザーガイド「Ensemble methods」",
+        "url": "https://scikit-learn.org/stable/modules/ensemble.html",
+        "級": "本文",
+        "答える問い": 1,
+        "逐語": "The injected randomness in forests yield decision trees with somewhat decoupled prediction errors. By taking an average of those predictions, some errors can cancel out.",
+        "うちにとっての意味": "★何が効いているかの答え＝間違い方がずれていると、平均したとき間違いが打ち消し合う。"
+      },
+      {
+        "出どころ": "同 「Voting Classifier」",
+        "url": "https://scikit-learn.org/stable/modules/ensemble.html",
+        "級": "本文",
+        "答える問い": 2,
+        "逐語": "The idea behind the VotingClassifier is to combine conceptually different machine learning classifiers and use a majority vote or the average predicted probabilities (soft vote) to predict the class labels. Such a classifier can be useful for a set of equally well performing models in order to balance out their individual weaknesses.",
+        "うちにとっての意味": "★「作りが違うものを組み合わせて、弱点を打ち消し合う」という考え方の根拠。"
+      },
+      {
+        "出どころ": "スタンフォード哲学百科事典「Jury Theorems」（コンドルセの陪審定理）",
+        "url": "https://plato.stanford.edu/entries/jury-theorems/",
+        "級": "本文",
+        "答える問い": 2,
+        "逐語": "Unconditional Independence (UI): The individual correctness events R1, R2, ... are (unconditionally) independent. / Unconditional Competence (UC): The (unconditional) individual correctness probability P(Ri) - the general competence - exceeds 1/2 and is the same for all individuals i.",
+        "うちにとっての意味": "★多数決が効く条件は2つ＝①1本ずつが半分より当たる ②間違い方が独立している。"
+      },
+      {
+        "出どころ": "同上",
+        "url": "https://plato.stanford.edu/entries/jury-theorems/",
+        "級": "本文",
+        "答える問い": 2,
+        "逐語": "Common causes create correlations. / undermine diversity and reinforce tendencies and errors",
+        "うちにとっての意味": "★条件が崩れると何が起きるか＝共通の原因があると多様性が損なわれ、間違いを強め合う。同じものを測る判定を並べて多数決を取ると、精度は上がらず悪くなる。"
+      }
+    ],
+    "開けなかった": [
+      { "出どころ": "arXiv 2205.04216「Forecast combinations: an over 50-year review」", "url": "https://arxiv.org/abs/2205.04216", "理由": "PDF の本文が取り出せない（要旨だけ取れた）" }
+    ],
+    "答え": [
+      { "問い": "組み合わせると精度が上がるか", "答え": "上がる。効いているのは「間違い方がずれていること」。ずれているから、平均すると間違いが打ち消し合う。" },
+      { "問い": "分類が違う相手を選ぶ根拠はあるか", "答え": "ある。ただし本体は「分類が違うこと」ではなく「間違い方が重ならないこと」。分類はその代理でしかない。" },
+      { "問い": "分類は何を基準に切ると効くか", "答え": "★社内の正本に既に答えが在った＝人が付けた系統の札は粗い。最後は実データで動きの重なりを測る（法則6）。切るなら「系統」より「相場の何を見ているか」のほうが正確（§2）。" }
+    ]
+  },
+
+  "C_社内の正本で確かめたこと": [
+    {
+      "出どころ": "indicator_combination_kb.md 法則1（20-29行）",
+      "級": "正本",
+      "逐語": "Every indicator belongs to one of four categories: trend, momentum, volume, or volatility. Combining two indicators from the same category doubles the noise, not the signal.（excavo）",
+      "うちにとっての意味": "相場の指標でも「同じ系統を重ねると雑音が増える」と書かれている。"
+    },
+    {
+      "出どころ": "indicator_combination_kb.md 法則6（90-103行）",
+      "級": "正本",
+      "逐語": "法則1と2は「人が付けた系統の札」で重複を防ぎます。粗いです。／ ADX と DI差 は同じトレンド系ですが、見ているものが違います（強さと向き）。／ RSI9 と RSI21 は同じオシレーター系ですが、動きが違います（反応の速さ）。／ 実データで動きの重なりを測れば、札に頼らずに重複を落とせます。系統の札は最初のおおまかな仕分け、実データの相関が本番です。",
+      "うちにとっての意味": "★分類の切り方の答え。系統の札だけで重複を決めない。最後は実データで測る。★測る期間は値決め窓だけ（H2・H8）。"
+    },
+    {
+      "出どころ": "indicator_combination_kb.md §2（109-121行）",
+      "級": "正本",
+      "逐語": "★ADX は「トレンド」にも「相場の状態」にも答えます。系統で分けると、この違いが消えます。",
+      "うちにとっての意味": "★1つの指標が2つのことを見ていることがある。系統の札1枚では、その違いが消える。"
+    }
+  ],
+
+  "D_法則40件を10の型に畳んだ結果": {
+    "_何をしたか": "§11 の場面ごとの法則40件（レンジ10・上げ10・下げ9・スパイク6・変わり始め5）が、場面をまたぐ共通の骨格に畳めるかを1件ずつ照らした。★これは CC の分類であって、外の文献がそう言っているのではない。",
+    "_根拠": "★正本自身が3か所で「鏡像」と書いている＝D1「（U1 の鏡像）」／D6「U4 の向きを逆にしただけ」／D7「U6 の向きを逆にしただけ」／11-4 の末尾「下げは『上げの鏡像＋D5』で、下げ特有の別系統は見つからなかった」（743・748・749・753行）。",
+    "型": [
+      { "番号": 1, "骨格": "トレンドの強さの水準", "畳める法則": "U2前半・D2前半・R5・R10の1軸目", "場面ごとに変わるもの": "上か下か（上げ下げ＝上／レンジ＝下）" },
+      { "番号": 2, "骨格": "向き（DI差の符号・傾きの符号・終値と移動平均の上下・Supertrend の札）", "畳める法則": "U2後半・D2後半・U3・D3・U4・D6・U5", "場面ごとに変わるもの": "符号（プラスかマイナスか）" },
+      { "番号": 3, "骨格": "スイングの並び（切り上げ・更新・破断）", "畳める法則": "U1・D1・U7・U9・T1", "場面ごとに変わるもの": "向き（切り上げか切り下げか）と使い方（成立か解除か）" },
+      { "番号": 4, "骨格": "チャネルの抜け（直近N本の最高値・最安値）", "畳める法則": "U6・D7", "場面ごとに変わるもの": "上抜けか下抜けか" },
+      { "番号": 5, "骨格": "基準になる値幅と、その中の位置", "畳める法則": "R1・R7・U8", "場面ごとに変わるもの": "何を基準の幅にするか（帯か、直前の上昇か）" },
+      { "番号": 6, "骨格": "ばらつきの水準（BB 幅・ATR% の広い狭い）", "畳める法則": "R6・S6・R10の2軸目", "場面ごとに変わるもの": "狭い側か広い側か" },
+      { "番号": 7, "骨格": "1本の動き ÷ ふだんの動き", "畳める法則": "S1・S2・S4", "場面ごとに変わるもの": "閾値の高さ" },
+      { "番号": 8, "骨格": "多時間軸の一致", "畳める法則": "R3・D4・T3（共通 C4 と同じ）", "場面ごとに変わるもの": "どの足の組か・重み" },
+      { "番号": 9, "骨格": "判定の安定（連続本数・入る線と出る線を別に）", "畳める法則": "R4・U10・D8（共通 C6 と同じ）", "場面ごとに変わるもの": "本数・線の間隔" },
+      { "番号": 10, "骨格": "変化を見る（水準でなく傾き・急拡大）", "畳める法則": "T2・T5・S6", "場面ごとに変わるもの": "どの指標の変化か" }
+    ],
+    "畳めなかった": [
+      { "法則": "D5", "中身": "下向きのばらつきで測る", "理由": "下げ特有の物差し。上げ側に鏡像が無い" },
+      { "法則": "D9", "中身": "かたまりに名前を付ける手順", "理由": "判定の法則ではなく、分けた後の名付けの手順" },
+      { "法則": "R9", "中身": "測るもの3つ", "理由": "測る側の物差し。判定を組み立てる法則ではない" },
+      { "法則": "S3", "中身": "出来高スパイク", "理由": "材料が0件で、いまは書けない（§11-7 の穴1）" },
+      { "法則": "S5", "中身": "ニュース由来の出来高は短命", "理由": "同上" },
+      { "法則": "R8", "中身": "レンジ＝上げの否定を含める", "理由": "場面と場面の関係。型ではなく、場面どうしのつながり" },
+      { "法則": "T4", "中身": "「いまどれか」と「変わり始めたか」は別の判定", "理由": "場面をまたぐ作法。型に畳むのではなく、共通の法則へ昇格させるべき" }
+    ],
+    "件数": { "場面ごとの法則": 40, "畳めた": 33, "畳めなかった": 7 }
+  },
+
+  "E_数の実測": [
+    { "何を数えたか": "regime_detection_kb.md §11 の法則", "結果": "50件（共通10・レンジ10・上げ10・下げ9・スパイク6・変わり始め5）", "出どころ": "665-788行を機械で数えた" },
+    { "何を数えたか": "そのうち engine_tuner の設定ファイル composition_rules_src.json に入っているもの", "結果": "7件（scene_rules の K-1〜K-7）。入っていないのは43件", "出どころ": "実測" },
+    { "何を数えたか": "法則の根拠の級", "結果": "本文23・正本13・要約8・実装6・別AI 5（1件に複数付くことがある）", "出どころ": "694-775行を機械で数えた" },
+    { "何を数えたか": "「相場の何を見ているか」の一覧", "結果": "8件（question_map）。★付いているのは部品だけで、法則には付いていない", "出どころ": "composition_rules_src.json" },
+    { "何を数えたか": "指標の種類", "結果": "256種類（engine_tuner が選べる249＋選べない7）", "出どころ": "materials.md:54" },
+    { "何を数えたか": "材料の一覧の行", "結果": "261件（在る。ほかに「入れない」45件）", "出どころ": "materials.md:8" },
+    { "何を数えたか": "パラメータまで展開した部品", "結果": "551件（＋帯と時間帯4件＝555）。内訳＝トレンド190・構造/位置159・オシレーター110・ボラ46・出来高31・ローソク15", "出どころ": "signal_families.json の lineage_of" },
+    { "何を数えたか": "★555 に膨らむ理由", "結果": "ADX7・ADX14・ADX21 のように、同じ指標のパラメータ違いを別々に数えているため", "出どころ": "部品の名前の実測" },
+    { "何を数えたか": "ta の43種に限ったとき残るもの", "結果": "種類64・部品135。法則が名指しする分を足して、目安 約70種類（部品 約150）", "出どころ": "session_worklog_20260827.md §59" }
+  ],
+
+  "F_穴": [
+    {
+      "穴": "G3 の「同じ役割に、同じ系統の指標は1本まで」の『1本』に、外の根拠が無い",
+      "中身": "engine_tuner_exec.py:513 の決まり。2026-08-29 に外を4件 開いて調べたが、『同じものを測る指標を重ねるな』という考え方は在っても、本数の上限を書いたページは1件も無かった。社内の法則3 も『2〜4本』と『3〜5本』で出典が食い違い、2〜5本を探索の範囲にすると決めてある。",
+      "どうするか": "★本数を1に固定する根拠が無い。範囲で探す形にすべきか（恒久の決まり42番）は まこさんが決める。next_step.md §5 の11番と同じ件。"
+    },
+    {
+      "穴": "予測の組み合わせと機械学習の資料は「モデル」の話で、相場の場面判定のロジックを組み合わせた実証ではない",
+      "中身": "B の一次ページ3件は、予測モデルや分類器を組み合わせた話。場面の判定ロジックを束ねた実証は、2026-08-29 の調べでは一次で見つけていない。",
+      "どうするか": "考え方の裏づけとして使う。うちのデータでの証明ではないので、M2-G で実データの重なりを測って確かめる。"
+    }
+  ],
+
+  "G_レンジの正解の作り方": {
+    "_調べた日": "2026-08-29（71回目・M2-A-1）",
+    "_調べた理由": "「実際にレンジだったか」の正解の印（ラベル）を、外はどう作っているかを確かめるため。まこさんの承認＝12478b53a6d9abfa。",
+    "_問い": [
+      "レンジをどう定義しているか。",
+      "正解のラベルをどう作っているか。",
+      "正解が目に見えないものを、どう採点しているか。",
+      "先を見る本数（ホライズン）をどう決めているか。"
+    ],
+    "開けた": [
+      {
+        "まとまり": "レンジは「トレンドの否定」として定義されている",
+        "決まり": "連続トレンド＝隣り合う山と谷の変動幅が閾値 ω を超えたとき。超えなければ「通常の変動」＝トレンドなし。レンジを直接 定義せず、トレンドの否定として置く",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7597331/",
+        "級": "本文",
+        "逐語": "the continuous trend was defined as the fluctuation amplitude between the two adjacent peak and trough points exceeding the given threshold parameter omega, otherwise the fluctuation was considered a normal fluctuation without a continuous trend.",
+        "開けた場所": "Section 2.3"
+      },
+      {
+        "まとまり": "レンジは「トレンドの否定」として定義されている",
+        "決まり": "横ばい＝上げでも下げでもない、残り全部（VIX の分位と3ヶ月のトレンドの向きで上げ下げを決め、それ以外を横ばいにする）",
+        "url": "https://arxiv.org/html/2506.06356v1",
+        "級": "本文",
+        "逐語": "Market regimes are defined based on volatility levels and trend directions: Bull Market (Low Vol): VIX < 20th percentile, positive 3-month trend; ... Sideways Market: All other periods",
+        "開けた場所": "Section V-C"
+      },
+      {
+        "まとまり": "正解ラベルの作り方",
+        "決まり": "閾値は絶対の数字で置く（中央値で半分に切らない）。omega=0.15＝15% 動いたらトレンド。試した範囲は 0.05〜0.25。窓の長さ lambda=11",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7597331/",
+        "級": "本文",
+        "逐語": "a suboptimal parameter value omega = 0.15 was chosen instead and the average value ranged from 0.05 to 0.25. Therefore, if the price rose or fell by more than 15%, it would be regarded as an upward or downward trend / The sliding window parameter lambda was set to 11 in this paper",
+        "開けた場所": "Section 4.1・2.2.1"
+      },
+      {
+        "まとまり": "正解ラベルの作り方",
+        "決まり": "短い先を見て今と比べるやり方は、短期のでたらめさを拾う＝この論文が「連続トレンド」を作った理由",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7597331/",
+        "級": "本文",
+        "逐語": "financial time series data are typically non-linear with obvious short-term randomness. Therefore, these labeling methods have not captured the continuous trend features of financial time series data",
+        "開けた場所": "Section 1"
+      },
+      {
+        "まとまり": "正解ラベルの作り方",
+        "決まり": "3つに分けるとき、真ん中に「どちらでもない」の帯を置く（0.4〜0.6 が Neutral）。★先の本数 n の選び方は書いていない",
+        "url": "https://ar5iv.labs.arxiv.org/html/1907.03010",
+        "級": "本文",
+        "逐語": "Class 0: %Q>=0.6 means Up; Class 1: 0.4<%Q<0.6 means Neutral; Class 2: %Q<=0.4 means Down / N bars Up/Down: Classifier on Ct+n>Ct",
+        "開けた場所": "Section 6"
+      },
+      {
+        "まとまり": "正解が目に見えないものを、どう採点しているか",
+        "決まり": "場面は目に見えないものなので、①期間を分けて確かめる ②正解が既知の合成データを作って混同行列で測る。合成の作り方＝AR(1) 係数0.9・正規化して 0〜1・0.7 超を高ボラ・高ボラ期は誤差項を3倍。★誤りのコストは左右で違う",
+        "url": "https://ar5iv.labs.arxiv.org/html/2104.03667",
+        "級": "本文",
+        "逐語": "Since market regimes are latent unobservable processes, the detected regimes should be validated in an out-of-sample framework. / classifying a highly volatile regime as a calm one is a more costly misclassification compared to classifying a calm regime as a highly volatile one.",
+        "開けた場所": "Section 4"
+      },
+      {
+        "まとまり": "正解が目に見えないものを、どう採点しているか",
+        "決まり": "正解ラベルの付いたデータで先に確かめてから、ラベルの無い実データへ移る。窓の選び方はデータの性質しだい",
+        "url": "https://ar5iv.labs.arxiv.org/html/2306.15835",
+        "級": "本文",
+        "逐語": "In Section 5, we evaluate our clustering methodology on labelled data so as to verify our class assignments before moving onto unlabelled data. / The choice of h = (h1, h2) is largely dependent on the characteristics of the data one is working with.",
+        "開けた場所": "Section 1.4・Remark 3.4"
+      },
+      {
+        "まとまり": "先を見る本数（ホライズン）の決め方",
+        "決まり": "★推論したい先の本数と、教える先の本数は、一致させるのが最適とは限らない。中間の本数がいちばん効く場合がある。推奨＝本数を学習で決めさせる",
+        "url": "https://arxiv.org/html/2602.03395v1",
+        "級": "本文",
+        "逐語": "Minimizing training error on the canonical target horizon t+Delta does not guarantee optimal generalization on t+Delta. Contrary to intuition, the most effective supervision signal is often misaligned with the inference target, residing at an intermediate horizon t+delta (where delta != Delta).",
+        "開けた場所": "Introduction・Section 3.4・4"
+      },
+      {
+        "まとまり": "先を見る本数（ホライズン）の決め方",
+        "決まり": "本数と閾値を、ラベルの割合が釣り合うように探索して選ぶ（5〜29日 × 7〜15%）。★保有期間と結びつける記述は無い（開いて確かめた）",
+        "url": "https://arxiv.org/html/2504.02249v2",
+        "級": "本文",
+        "逐語": "To ensure balanced label proportions during training, we optimized the labeling parameters by testing various combinations of time horizons (5-29 days with a step size of 1 day) / percentage thresholds (7%-15% with a step size of 1%)",
+        "開けた場所": "Section III-B"
+      },
+      {
+        "まとまり": "先を見る本数（ホライズン）の決め方",
+        "決まり": "本数は「短い揺れを構造の変化と見なさない」長さに合わせる（この論文は月次を選んだ）",
+        "url": "https://ar5iv.labs.arxiv.org/html/2104.03667",
+        "級": "本文",
+        "逐語": "We choose to detect regime switches at monthly frequency to allow the underlying mean-reverting data generating processes to have deviations that are not regarded as structural breaks.",
+        "開けた場所": "Section 3"
+      }
+    ],
+    "開けなかった": [
+      { "出どころ": "Poterba & Summers「Mean Reversion in Stock Prices」（分散比の定義とホライズンの選び方）", "url": "https://papers.ssrn.com/sol3/delivery.cfm/nber_w2343.pdf?abstractid=227278", "理由": "HTTP 403" },
+      { "出どころ": "同じ arXiv 論文2本の PDF 版（2104.03667 と 1907.03010）", "url": "https://arxiv.org/pdf/2104.03667", "理由": "PDF を文字に直す道具が この環境に無い（pdftoppm is not installed）。★HTML 版（ar5iv）で開き直して逐語を取った" }
+    ],
+    "検索の要約が本文と違っていた件": {
+      "検索の要約に出た文": "dynamic volatility threshold ／ square root of time rule ／ sideways conditions are identified when the absolute value of cumulative returns over k days does not exceed the threshold",
+      "本文を開いた結果": "その式は書いていなかった。本文の定義は「Sideways Market: All other periods」＝残りもの。",
+      "意味": "★検索の要約だけで表を書いていたら、実在しない定義を1件 載せていた。恒久の決まり43番（検索結果の要約で設計を書かない）が要る理由の実例。"
+    },
+    "いまの印と外の違い": [
+      {
+        "番号": 1,
+        "いまの印": "窓の中央値で切る（er >= er.median()）",
+        "外": "絶対の数字で切る（omega=0.15＝15%）",
+        "何が変わるか": "中央値だと、どの期間でも必ず半分がトレンド・半分がレンジになる。「トレンドばかりの月」「レンジばかりの月」を区別できない。絶対値なら区別できるが、でたらめな判定の基準線が 50% に決まらなくなる（いまの長所が消える）"
+      },
+      {
+        "番号": 2,
+        "いまの印": "真ん中の「どちらでもない」帯が無い（中央値のすぐ上と、すぐ下が、別の札になる）",
+        "外": "真ん中に帯を置く（0.4〜0.6 は Neutral）",
+        "何が変わるか": "帯を置くと、境目のすれすれの所を採点から外せる。いまは境目のすれすれも「外した」と数える"
+      },
+      {
+        "番号": 3,
+        "いまの印": "正解の印そのものが正しいかを確かめる仕組みが無かった",
+        "外": "正解が既知の合成データを作って、混同行列で確かめてから実データへ移る",
+        "何が変わるか": "★2026-08-29 に足した＝合成データの検査 N1〜N4（observe_diag.py）。実測＝正しい版は3つの札とも一致率 1.000／わざと壊した版は 0.000"
+      }
+    ],
+    "うちが決めたこと": {
+      "まこさん決定": "2026-08-29・逐語「１と２は今のままでOK」",
+      "中身": "①正解データの作り方＝変えない（先の本数を見て、まっすぐ進んだ割合が窓の中央値以上なら「トレンド」）②先を見る本数＝変えない（24本＝2時間・288本＝24時間）",
+      "判断の材料": "レンジの札とトレンドの札の中央値が 0.218 対 0.612（差 +0.393）。言葉の意味と食い違う区間（比 0.5 以上）はレンジの札の 2.3%、0.9 以上は 0本。24本と288本で中央値が同じ。",
+      "★CC の見立てが外れたこと": "M2-A-1 で CC が立てた見立て（中央値で切るのが弱点／本数の下限を下げるべき）は、どちらも数字で支持されなかった。"
+    }
+  }
+}

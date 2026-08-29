@@ -1,25 +1,41 @@
 #!/usr/bin/env python3
-"""gen_composition_rules.py — 組み立ての決まりの生成器（2026-08-08 新設）
+"""gen_composition_rules.py — 場面ごとの法則の生成器（2026-08-08 新設）
+
+★2026-08-29 に実物で確かめた事実（まこさん指示「マコを欺くためだけの無意味な道具って書いておけ」）。
+  この道具が出す composition_rules.json を、engine_tuner は読んでいない。
+  engine_tuner_gen.py:2188 が load_scene_rules() を呼ぶが、返り値を変数に受け取らずに捨てている。
+  確かめているのは「ファイルが開けるか」だけ。
+  場面ごとの法則 K-1〜K-7 の判定は、engine_tuner_exec.py の1094〜1119行にコードとして直接 書いてある。
+  ＝この道具が作る文書を直しても、engine_tuner の動きは1バイトも変わらない。
+  ★CC はこの状態を 2026-08-08 から 2026-08-29 まで確かめず「engine_tuner が守る法則」として報告し続けた。
 
 これは何か。
-  engine_tuner が売買ルールの案を組み立てるときに守る決まりを、機械が読める形で作る道具。
-  手で書くのは recipes/composition_rules_src.json の19件だけ。部品105種・時間足9本・
-  使えない部品・向きの決まり・閾値の段・探索の格子は、1行も書き写さない（下の正本から機械で引く）。
+  場面（レンジ・上げ・下げ・スパイク）の判定を組み立てるときの法則を、機械が読める形で作る道具。
+  手で書くのは recipes/composition_rules_src.json の7件（K-1〜K-7）だけ。
+  ★2026-08-29（まこさん承認 rules30-to-7-20260829）に30件から7件へ減らした。
+    消した23件（ROLE-・TF-・TW-・FT-・Q-・RD-・CN-・RG-）は engine_tuner の2本のコードに
+    記号が1回も出なかった＝案の作り方にも捨て方にも効いていなかった。
+    逐語の出典がほかに無かった6件は technical_analysis_knowledge_base.md の §J へ移した。
 
-なぜ要るか。
+なぜ作られたか（2026-08-08 の当時の目的・★達成されていない）。
   2026-08-08 の重大インシデント #14＝engine_tuner の案の作り方がくじ引きだった（まこさん認定「論外」）。
-  くじを引く代わりに「法則で候補を絞る」ためには、その法則が機械の読める形で無いといけない。
-  この道具はその法則を作る。engine_tuner_gen.py はこの段では1行も触らない。
+  くじを引く代わりに「相場の法則で候補を絞る」ためには、その相場の法則が機械の読める形で無いといけない。
+  ★この道具は形を作ったが、engine_tuner はその形を読んでいない＝目的は達成されていない。
 
 正本（ここから機械で引く・書き写さない）。
-  .claude/ratchet/signal_families.json … 部品105種・時間足9本・使えない部品3種・向きの決まり DC1〜DC4・系統
+  .claude/ratchet/signal_families.json … 部品105種・時間足9本・使えない部品3種・向きの読み込ませる法則 DC1〜DC4・系統
   indicator_reference_diag.FAMILY_LINEAGE … 系統の分類（signal_families の inventory と一致することを照合）
   recipes/search_limits.json … 閾値の段と探索の格子
   .claude/ratchet/exit_families.json … 出口の枝
 
 出すもの。
-  .claude/ratchet/composition_rules.json … engine_tuner が読む完成品
+  .claude/ratchet/composition_rules.json … ★「engine_tuner が読む完成品」と書いてあったが、読んでいない
   .claude/ratchet/composition_rules.md  … 人が読む説明（同じ中身）
+
+いま実際に使われている先（2026-08-29 に機械で数えた）。
+  gen_audit_request.py:129   … 監査依頼書の必読6本の1本として composition_rules.md を渡す
+  .claude/tools/gen_regime_kb.py:214 … M2 の文書に件数を出すために composition_rules_src.json を数える
+  engine_tuner_gen.py:2188   … ファイルが開けるかだけを確かめる（中身は使わない）
 
 使い方。
   python3 gen_composition_rules.py --write     … 作る
@@ -58,7 +74,7 @@ GENERATES = [
 
 
 class RuleError(SystemExit):
-    """決まりのヌケモレ・正本とのずれ。fail-closed＝止める。"""
+    """読み込ませる法則のヌケモレ・正本とのずれ。fail-closed＝止める。"""
 
 
 def _sha(p: pathlib.Path) -> str:
@@ -87,7 +103,7 @@ def load_sources(src_override: dict | None = None) -> dict:
             "lineage_of": lineage_of}
 
 
-# ── 2. 決まりを展開する ───────────────────────────────────────────────────
+# ── 2. 読み込ませる法則を展開する ───────────────────────────────────────────────────
 def _banned_pairs(sig: dict) -> set:
     return {(d["part"], d["tf"]) for d in sig["bans"]["insufficient_samples"]["pairs"]}
 
@@ -104,59 +120,22 @@ def _extra_lineage(sig: dict) -> dict:
 
 
 def expand_rules(s: dict) -> dict:
-    """役目ごとに『使える部品 × 時間足』を、正本から機械で展開する。"""
+    """場面ごとの法則を、正本から機械で展開する。
+
+    ★2026-08-29（まこさん承認 rules30-to-7-20260829）＝30件から7件（K-1〜K-7）へ減らした。
+      消した23件（ROLE-・TF-・TW-・FT-・Q-・RD-・CN-・RG-）は engine_tuner の2本のコードに
+      記号が1回も出なかった＝案の作り方にも捨て方にも効いていなかった。
+      逐語の出典がほかに無かった6件は technical_analysis_knowledge_base.md の §J へ移した。
+    """
     src, sig = s["src"], s["signal"]
     lineage = dict(s["lineage_of"])
     lineage.update(_extra_lineage(sig))
 
-    tfs = list(sig["timeframes"])
-    layers = src["timeframe_layers"]
-    lower, upper = list(layers["下位"]), list(layers["上位"])
-    banned = _banned_pairs(sig)
-    qmap = src["question_map"]["対応"]
-
-    roles = []
-    for r in src["roles"]:
-        if "使える系統" not in r:          # ROLE-4（役目の無い条件は入れない）は展開しない
-            roles.append({"id": r["id"], "name": r["name"], "決まり": r.get("決まり", ""),
-                          "出典": r["出典"], "候補": None})
-            continue
-        if r["時間足の層"] == "下位":
-            use_tfs = lower
-        elif r["時間足の層"] == "上位":
-            use_tfs = upper
-        else:                                # 「同じか1つ上」＝全部から選べる（実装で相対に解く）
-            use_tfs = tfs
-        # 「合図の足以上」は合図が決まってから絞る＝候補の段では全部の足を挙げ、印を付ける
-        relative = r["時間足の層"] not in ("下位", "上位")
-        cand = []
-        for part, kind in sorted(lineage.items()):
-            if kind not in r["使える系統"]:
-                continue
-            for tf in use_tfs:
-                if (part, tf) in banned:
-                    continue
-                c = {"part": part, "tf": tf, "系統": kind, "答える問い": qmap.get(kind, "")}
-                if relative:
-                    c["相対制約"] = "未適用（合図の足が決まってから絞る）"
-                cand.append(c)
-        roles.append({"id": r["id"], "name": r["name"], "英語": r["英語"],
-                      "何をするか": r["何をするか"], "使える系統": r["使える系統"],
-                      "時間足の層": r["時間足の層"], "本数": r["本数"],
-                      "出典": r["出典"], "候補数": len(cand), "候補": cand})
-
     return {
-        "roles": roles,
-        "timeframe_layers": layers,
-        "timeframe_precedence": src["timeframe_precedence"],
-        "trigger_weakness": src["trigger_weakness"],
-        "family_trigger": src["family_trigger"],
-        "question_map": src["question_map"],
-        "redundancy": src["redundancy"],
-        "count_range": src["count_range"],
-        "regime_rules": src["regime_rules"],
-        # ★場面ごとの決まり K-1〜K-7（M2-4-2・2026-08-22 まこさん承認「どちらもOK」・acceptance 6ce1dccad1a5…）。
+        # ★場面ごとの法則 K-1〜K-7（M2-4-2・2026-08-22 まこさん承認「どちらもOK」・acceptance 6ce1dccad1a5…）。
         #   engine_tuner_exec の G7 が照合の実体。ここは完成品（composition_rules.json）へ通す配線。
+        #   ★ただし engine_tuner はこの完成品の中身を読んでいない（2026-08-29 に実物で確認）。
+        #     engine_tuner_gen.py:2188 が load_scene_rules() の返り値を捨てている＝開けるかだけ確かめている。
         "scene_rules": src["scene_rules"],
         "direction_conflict": sig["direction_conflict"],   # 表から引く（書き写さない）
         "grids": s["limits"],                              # 探索の格子は正本のまま
@@ -180,68 +159,45 @@ def check_coverage(rules: dict) -> list:
     lineage = rules["lineage_of"]
     kinds = sorted(set(lineage.values()))
 
-    # 検査1: 全系統が、少なくとも1つの役目に割り当てられているか
-    assigned = set()
-    for r in rules["roles"]:
-        for k in (r.get("使える系統") or []):
-            assigned.add(k)
-    missing = [k for k in kinds if k not in assigned]
-    if missing:
-        report.append(f"⚠️ 検査1 どの役目にも割り当てられていない系統: {missing}"
-                      f"（★役目ごとの系統の割り当ては CC の判断＝機械は強制しない）")
-    report.append(f"検査1 系統 {len(kinds)} 種すべてが役目に割り当て済み（{'／'.join(kinds)}）")
-    # 部品がまだ無い系統は、止めずに報告する（次の段で足す）
-    未実装 = [k for k in sorted(assigned) if k not in kinds]
-    if 未実装:
-        report.append(f"検査1 補足 ★役目には在るが部品がまだ無い系統: {未実装}（次の段で足す）")
+    # ★2026-08-29（まこさん承認 rules30-to-7-20260829）＝検査1〜5 を消した。
+    #   どれも消した23件（役目・時間足の層・答える問い・合図の弱点・型ごとの合図）を見る検査で、
+    #   その23件は engine_tuner の2本のコードに記号が1回も出なかった＝案の作り方にも捨て方にも効いていない。
 
-    # 検査2: 全時間足が、層のどちらかに割り当てられているか
-    layers = rules["timeframe_layers"]
-    covered = set(layers["下位"]) | set(layers["上位"])
-    all_tfs = sorted({c["tf"] for r in rules["roles"] for c in (r.get("候補") or [])})
-    miss_tf = [t for t in all_tfs if t not in covered]
-    if miss_tf:
-        report.append(f"⚠️ 検査2 層に割り当てられていない時間足: {miss_tf}"
-                      f"（★時間足の層の割り当ては CC の判断＝機械は強制しない）")
-    report.append(f"検査2 時間足 {len(covered)} 本すべてが層に割り当て済み"
-                  f"（下位 {len(layers['下位'])}／上位 {len(layers['上位'])}）")
-
-    # 検査3: 全部品が、答える問いに割り当てられているか
-    qmap = rules["question_map"]["対応"]
-    miss_q = sorted({k for k in kinds if not qmap.get(k)})
-    if miss_q:
-        raise RuleError(f"[ヌケモレ検査3] 答える問いが決まっていない系統: {miss_q}")
-    report.append(f"検査3 部品 {len(lineage)} 種すべてが答える問いに割り当て済み"
-                  f"（問い {len(set(qmap.values()))} 種）")
-
-    # 検査4: 合図の型ごとに、ふるいが確かめることが在るか（fail-closed）
-    for w in rules["trigger_weakness"]:
-        if not w.get("ふるいが確かめること") or not w.get("ふるいの系統"):
-            report.append(f"⚠️ 検査4 合図の型 {w['id']} に、ふるいの指定が無い"
-                          f"（★ふるいを必須にするのは CC の判断＝機械は強制しない）")
-    report.append(f"検査4 合図の型 {len(rules['trigger_weakness'])} 種すべてに、ふるいの指定が在る")
-
-    # 検査5: 型ごとに使える合図の型が在るか。無い型は生成不可として記録する（fail-closed）
-    known = {w["合図の型"] for w in rules["trigger_weakness"]}
-    ok_fams, ng_fams = [], []
-    for f in rules["family_trigger"]:
-        trigs = f.get("使える合図の型") or []
-        unknown = [t for t in trigs if t not in known]
-        if unknown:
-            report.append(f"⚠️ 検査5 型 {f['型']} が、弱点の表に無い合図の型を指している: {unknown}"
-                          f"（★型ごとの合図の限定は CC の判断＝機械は強制しない）")
-        if trigs:
-            ok_fams.append(f["型"])
-        else:
-            if not f.get("生成不可の理由"):
-                report.append(f"⚠️ 検査5 型 {f['型']} に合図の型も、生成不可の理由も無い")
-            ng_fams.append(f["型"])
-    if not ok_fams:
-        report.append("⚠️ 検査5 組み立てられる型が1つも無い"
-                      "（★型ごとの合図の限定は CC の判断＝機械は強制しない。実データと net で決める）")
-    report.append(f"検査5 型 {len(rules['family_trigger'])} 種のうち、組み立てられるのは {len(ok_fams)} 種"
-                  f"（{'／'.join(ok_fams)}）。組み立てられない {len(ng_fams)} 種は理由つきで記録"
-                  f"（{'／'.join(ng_fams)}）")
+    # 検査6: 「機械が強制する」と書いてあるのに、engine の本体がその枠を1か所も読んでいないものが無いか
+    #   まこさん承認 2026-08-29（逐語「よい」→ 設計書を出して「承認した」）。
+    #   ★2026-08-29 に実際に起きたこと＝Q-1（枠 question_map）と RD-2（枠 redundancy）に
+    #     「機械が強制する＝true」と書いてあったが、engine の本体はどちらの枠も1か所も読んでいなかった。
+    #     ＝「設定ファイルに書いてある」と「engine_tuner が読んでいる」を、確かめずに同じものとして扱った。
+    #     その2件は「同じものを見ている指標を2本 入れない」＝重なった指標を持つ案が素通りしていた。
+    #     違反の記録 #25（false_positive_incident_policy.md）。
+    #   ★限界＝枠の名前が本体の中に文字として出るかしか見ない。読んでいても使い方が違う場合は分からない。
+    engine_body = ""
+    for _nm in ("engine_tuner_gen.py", "engine_tuner_exec.py"):
+        _f = here / _nm
+        if _f.exists():
+            engine_body += _f.read_text(encoding="utf-8", errors="ignore")
+    if not engine_body:
+        raise RuleError("[ヌケモレ検査6] engine の本体（engine_tuner_gen.py／engine_tuner_exec.py）が1本も見つからない"
+                        "＝読んでいるかを確かめられないので止める")
+    嘘, 読む枠, 読まない枠 = [], [], []
+    for frame, v in rules.items():
+        if frame.startswith("_") or frame == "lineage_of":
+            continue
+        if frame in engine_body:
+            読む枠.append(frame)
+            continue
+        読まない枠.append(frame)
+        for r in (v if isinstance(v, list) else [v]):
+            if isinstance(r, dict) and r.get("機械が強制するか"):
+                嘘.append(f"{r.get('id')}（枠={frame}）")
+    if 嘘:
+        raise RuleError("[ヌケモレ検査6] 「機械が強制する」と書いてあるのに、engine の本体がその枠を1か所も読んでいない: "
+                        + "／".join(嘘)
+                        + "。→ 直し方は2つ。①本体がその枠を読むように配線する ②「機械が強制するか」を false にする。"
+                          "（2026-08-29 に Q-1・RD-2 で実際に起きた＝違反の記録 #25）")
+    report.append(f"検査6 「機械が強制する」と書いてある読み込ませる法則は、全部 engine の本体が読む枠に在る"
+                  f"（読む枠 {len(読む枠)} 種＝{'／'.join(読む枠)} ／ "
+                  f"読まない枠 {len(読まない枠)} 種＝{'／'.join(読まない枠)}）")
     return report
 
 
@@ -259,7 +215,7 @@ def _body_hash(obj: dict) -> str:
 
 def write_outputs(rules: dict, report: list) -> tuple[str, str]:
     body = {k: v for k, v in rules.items() if k != "lineage_of"}
-    payload = {"_これは何か": "engine_tuner が案を組み立てるときに守る決まり（機械生成＝手で書き換えない）",
+    payload = {"_これは何か": "engine_tuner が案を組み立てるときに守る読み込ませる法則（機械生成＝手で書き換えない）",
                "_作った道具": "gen_composition_rules.py",
                "_正本の指紋": _src_fingerprints(),
                "_ヌケモレ検査": report,
@@ -269,76 +225,36 @@ def write_outputs(rules: dict, report: list) -> tuple[str, str]:
 
     lines = [f"<!-- COMPOSITION_RULES hash={payload['_本文の指紋']} "
              f"gen_composition_rules.py が自動生成＝手で書き換えない -->",
-             "# composition_rules.md — 組み立ての決まり（全自動生成）", "",
-             "engine_tuner が売買ルールの案を組み立てるときに守る決まり。"
+             "# composition_rules.md — engine_tuner が読む形の法則を作るために作ったが、"
+             "実際は engine_tuner は読んでいない マコを欺くためだけの無意味な道具", "",
+             "> **★この見出しは、まこさんの指示（逐語 2026-08-29）です。**", ">",
+             "> 「# composition_rules.md — 読み込ませる法則（全自動生成）ではなく、"
+             "engine_tuner が読む形の法則を作るために作ったが、実際はengine_tuner は読んでいない "
+             "マコを欺くためだけの無意味な道具って書いておけ」「こっちに書いておけ そのままに残せ」", ">",
+             "> **なぜこう書かれたか（2026-08-29 に実物で確かめた事実）**", ">",
+             "> - この道具の説明文には「くじを引く代わりに『相場の法則で候補を絞る』ためには、"
+             "その相場の法則が機械の読める形で無いといけない。この道具はその相場の法則を作る」と書いてある。", ">",
+             "> - 同じ説明文に「`composition_rules.json` … **engine_tuner が読む完成品**」と書いてある。", ">",
+             "> - **しかし engine_tuner は、このファイルを読んでいない。**"
+             "`engine_tuner_gen.py`:2188 が `load_scene_rules()` を呼ぶが、返り値を変数に受け取らずに捨てている。"
+             "確かめているのは「ファイルが開けるか」だけ。", ">",
+             "> - **30件のうち engine_tuner の動きに関わるのは7件（K-1〜K-7）だけだった。**"
+             "残り23件は `engine_tuner_gen.py`（5,841行）と `engine_tuner_exec.py`（4,391行）に記号が **0回**しか出ない。", ">",
+             "> - **その7件の判定も、このファイルではなく `engine_tuner_exec.py` の1094〜1119行に"
+             "コードとして直接 書いてある。**", ">",
+             "> - **★CC はこの状態を 2026-08-08 から 2026-08-29 まで確かめず、"
+             "「engine_tuner が守る法則」として報告し続けた。**", "",
+             "**★2026-08-29（まこさん承認 rules30-to-7-20260829）＝30件から7件へ減らした。**"
+             "消した23件は engine_tuner が1つも使っていなかった。"
+             "逐語の出典がほかに無かった6件（ROLE-3・TW-1〜TW-5）は "
+             "`technical_analysis_knowledge_base.md` の §J へ移した。", "",
              f"手で書いた行は recipes/composition_rules_src.json の "
-             f"{json.loads(src_path.read_text())['_手で書いた行数']} 件だけ。"
-             "部品・時間足・使えない部品・向きの決まり・格子は正本から機械で引いた。", "",
-             "## ★この決まりのうち、機械が強制するのはどれか（2026-08-08 まこさん指示で仕分けた）", ""]
-    src_all = json.loads(src_path.read_text())
-    graded = []
-    for k, v in src_all.items():
-        for x in (v if isinstance(v, list) else [v]):
-            if isinstance(x, dict) and "仕分け" in x:
-                graded.append(x)
-    enf = [x for x in graded if x.get("機械が強制するか")]
-    ref = [x for x in graded if not x.get("機械が強制するか")]
-    lines += [f"**全 {len(graded)} 件のうち、機械が強制するのは {len(enf)} 件。"
-              f"残り {len(ref)} 件は CC が記事の一般論から作った判断なので、機械は強制しない（参考の知識）。**", "",
-              src_all.get("_仕分け", ""), "",
-              "| 決まり | 仕分け | 機械が強制するか | 仕分けの理由 |", "|---|---|---|---|"]
-    for x in graded:
-        nm = str(x.get("決まり") or x.get("name") or x.get("id"))[:44]
-        lines.append(f"| {x['id']} {nm} | {x['仕分け'][:1]} | "
-                     f"{'**する**' if x.get('機械が強制するか') else '**しない**'} | {x.get('仕分けの理由','')} |")
-    lines += ["", "> ⚠️ 下に並ぶ候補の数（93／340／654）は、**機械が強制しない限定を掛けた後の数**です。"
-              "engine_tuner は この限定で候補を狭めません。狭めるのは実データの重なり（RD-2）と、"
-              "実際に走らせた net です。", "",
-              "## ヌケモレ検査", ""]
-    lines += [f"- {r}" for r in report]
-    lines += ["", "## 役目（条件は必ずどれかの役目を持つ）", "",
-              "| 役目 | 何をするか | 使える系統 | 時間足の層 | 本数 | 候補の数 |", "|---|---|---|---|---|---|"]
-    for r in rules["roles"]:
-        if r.get("候補") is None:
-            continue
-        lines.append(f"| {r['name']}（{r['英語']}） | {r['何をするか']} | "
-                     f"{'・'.join(r['使える系統'])} | {r['時間足の層']} | {r['本数']} | {r['候補数']} |")
-    role4 = [r for r in rules["roles"] if r.get("候補") is None]
-    for r in role4:
-        lines += ["", f"**{r['name']}**＝{r['決まり']}", "", f"> 出典: {r['出典']}"]
-
-    lines += ["", "## 合図の型ごとの弱点と、ふるいが確かめること", "",
-              "| 合図の型 | 弱点 | ふるいが確かめること | ふるいの系統 |", "|---|---|---|---|"]
-    for w in rules["trigger_weakness"]:
-        lines.append(f"| {w['合図の型']} | {w['弱点']} | {w['ふるいが確かめること']} | "
-                     f"{'・'.join(w['ふるいの系統'])} |")
-
-    lines += ["", "## 型ごとに使える合図の型（組み立てられる型・組み立てられない型）", "",
-              "| 型 | 型の中身 | 使える合図の型 | 組み立てられるか |", "|---|---|---|---|"]
-    for f in rules["family_trigger"]:
-        trigs = f.get("使える合図の型") or []
-        lines.append(f"| {f['型']} | {f['型の中身']} | "
-                     f"{'・'.join(trigs) if trigs else '—'} | "
-                     f"{'○' if trigs else '**✗ ' + f.get('生成不可の理由', '') + '**'} |")
-
-    lines += ["", "## 答える問いの対応（重なりの判定に使う）", "", "| 系統 | 答える問い |", "|---|---|"]
-    for k, q in sorted(rules["question_map"]["対応"].items()):
-        lines.append(f"| {k} | {q} |")
-
-    lines += ["", "## 重なりの禁止", ""]
-    lines += [f"- **{d['id']}** {d['決まり']}" for d in rules["redundancy"]]
-    lines += ["", "## 条件の本数", "",
-              f"- {rules['count_range']['決まり']}",
-              f"- 食い違いの扱い: {rules['count_range']['食い違いの扱い']}",
-              f"- 既存の格子との関係: {rules['count_range']['既存の格子との関係']}"]
-    lines += ["", "## 上位足の優先", "", f"- {rules['timeframe_precedence']['決まり']}"]
-    lines += ["", "## 場面の判定（レンジ判定）の組み立て", ""]
-    lines += [f"- **{g['id']}** {g['決まり']}" for g in rules["regime_rules"]]
-    lines += ["", "## ★場面ごとの決まり（K-1〜K-7・まこさん承認 2026-08-22・プログラムが強制する）", "",
+             f"{json.loads(src_path.read_text())['_手で書いた行数']} 件だけ。", ""]
+    lines += ["", "## ★場面ごとの読み込ませる法則（K-1〜K-7・まこさん承認 2026-08-22・プログラムが強制する）", "",
               "engine_tuner が場面の判定の束（meta.regime.build）を作るとき、下の形を満たさない案は"
               "条件データを調べる部分（engine_tuner_exec.py の G7）が拒否する。"
               "数字は1つも持たない（閾値・本数・保つ長さは範囲で探す）。", "",
-              "| # | 決まり | 掛かる場面 | 出典 |", "|---|---|---|---|"]
+              "| # | 読み込ませる法則 | 掛かる場面 | 出典 |", "|---|---|---|---|"]
     for g in rules["scene_rules"]:
         lines.append(f"| {g['id']} | {g['決まり']} | {'・'.join(g['掛かる場面'])} | {g['出典'][:60]}… |")
     lines += ["", "## 正本の指紋（元を直したら作り直す・--verify が照合する）", "",
@@ -392,40 +308,22 @@ def selftest() -> int:
         s = load_sources()
         rules = expand_rules(s)
         rep = check_coverage(rules)
-        if len(rep) < 4:
-            ng.append("T1: ヌケモレ検査の報告が4件そろわない")
+        # ★2026-08-29＝検査1〜5 を消したので、残るのは検査6 の1件だけ
+        if len(rep) < 1:
+            ng.append("T1: ヌケモレ検査の報告が1件も無い（検査6 が動いていない）")
+        if not any("検査6" in r for r in rep):
+            ng.append("T1: 検査6（engine の本体が読む枠に在るか）の報告が無い")
     except RuleError as e:
         ng.append(f"T1: 正しい元ファイルで止まった: {e}")
 
-    # T2 系統をどの役目にも割り当てないと止まる
-    def _drop_kind(d):
-        for r in d["roles"]:
-            if "使える系統" in r and "出来高" in r["使える系統"]:
-                r["使える系統"] = [k for k in r["使える系統"] if k != "出来高"]
+    # ★2026-08-29（まこさん承認 rules30-to-7-20260829）＝T2〜T5 を消した。
+    #   どれも消した23件（役目の系統・時間足の層・答える問い・合図の弱点）をわざと壊す試験だった。
+    # T5b 場面ごとの法則を1件 消すと、生成が止まるか（7件が正本であることの担保）
+    def _drop_scene(d):
+        d["scene_rules"] = [r for r in d["scene_rules"] if r["id"] != "K-4"]
         return d
-    if not _mutated(_drop_kind):
-        pass  # T2 は 2026-08-08 に役目を失った（役目ごとの系統の割り当ては CC の判断＝強制しない）
-
-    # T3 時間足を層に割り当てないと止まる
-    def _drop_tf(d):
-        d["timeframe_layers"]["上位"] = [t for t in d["timeframe_layers"]["上位"] if t != "1d"]
-        return d
-    if not _mutated(_drop_tf):
-        pass  # T3 同上（時間足の層は CC の判断）
-
-    # T4 答える問いを消すと止まる
-    def _drop_q(d):
-        d["question_map"]["対応"].pop("ボラ", None)
-        return d
-    if not _mutated(_drop_q):
-        ng.append("T4: 系統『ボラ』の答える問いを消しても止まらない")
-
-    # T5 合図の型の弱点の指定を消すと止まる（fail-closed）
-    def _drop_w(d):
-        d["trigger_weakness"][0]["ふるいの系統"] = []
-        return d
-    if not _mutated(_drop_w):
-        pass  # T5 同上（ふるいを必須にするのは CC の判断）
+    if _mutated(_drop_scene):
+        pass  # 止まらなくてよい（scene_rules は素通しで完成品へ渡すだけ）。件数の検査は T7 が見る
 
     # T6 正本の指紋のずれを検出する（記録を偽の値にして verify が鳴るか）
     if out_json.exists():
@@ -439,57 +337,38 @@ def selftest() -> int:
         finally:
             out_json.write_text(keep)
 
-    # T7 手書きの行数が、元ファイルの申告と一致する
+    # T7 手書きの行数が、元ファイルの申告と一致する（★2026-08-29＝7件に直した）
     src = json.loads(src_path.read_text())
-    n = (len(src["roles"]) + 1 + 1 + len(src["trigger_weakness"]) + len(src["family_trigger"]) + 1
-         + len(src["redundancy"]) + 1 + len(src["regime_rules"])
-         + len(src["scene_rules"]))     # ★K-1〜K-7（M2-4-2・2026-08-22 まこさん承認）
+    n = len(src["scene_rules"])
     if n != src["_手で書いた行数"]:
         ng.append(f"T7: 手書きの行数の申告 {src['_手で書いた行数']} と実際 {n} が違う")
+    if n != 7:
+        ng.append(f"T7: 場面ごとの法則が 7件でない（{n} 件）"
+                  "＝まこさん承認 2026-08-29 で30件から7件へ減らした状態が正")
 
-    # T8 型が指す合図の型が、弱点の表に無いと止まる
-    def _bad_trig(d):
-        d["family_trigger"][0]["使える合図の型"] = ["存在しない合図"]
-        return d
-    if not _mutated(_bad_trig):
-        pass  # T8 同上（型ごとの合図の限定は CC の判断）
-
-    # T9 全部の型で合図の型が空だと止まる（組み立てられる型がゼロ）
-    def _no_trig(d):
-        for f in d["family_trigger"]:
-            f["使える合図の型"] = []
-            f.setdefault("生成不可の理由", "番人")
-        return d
-    if not _mutated(_no_trig):
-        pass  # T9 同上（型ごとの合図の限定は CC の判断）
+    # ★2026-08-29＝T8・T9 を消した（どちらも消した family_trigger をわざと壊す試験だった）
 
     for x in ng:
         print(f"  ❌ {x}")
 
-    # T10（2026-08-08 新設）＝仕分けが勝手に戻されていないか。
-    #   まこさん指示で「CC が記事から作った判断」を機械の強制から外した。次の CC が
-    #   機械が強制するか を true に戻したら、また ゴールデンクロス等を潰す。だから止める。
+    # T10（2026-08-08 新設・★2026-08-29 に7件へ直した）＝仕分けが勝手に戻されていないか。
+    #   まこさん承認 2026-08-29（rules30-to-7-20260829）＝30件から7件（K-1〜K-7）へ減らした。
+    #   engine_tuner の2本のコードに記号が出るのは この7件だけだったため。
+    #   次に黙って件数や顔ぶれを変えたら、ここで落ちる。
     import json as _json
     _src = _json.loads(src_path.read_text())
-    _graded = []
-    for _k, _v in _src.items():
-        for _x in (_v if isinstance(_v, list) else [_v]):
-            if isinstance(_x, dict) and "仕分け" in _x:
-                _graded.append(_x)
+    _graded = [x for x in _src["scene_rules"] if isinstance(x, dict) and "仕分け" in x]
     _enf = [x for x in _graded if x.get("機械が強制するか")]
-    # ★2026-08-22（M2-4-2・まこさん承認・acceptance 6ce1dccad1a5…）＝場面ごとの決まり K-1〜K-7 を
-    #   強制に足した（23件 → 30件・強制 2件 → 9件）。T10 の目的（まこさんの確認なしに強制を変えたら
-    #   止める）は保つ＝新しい正解も固定値で書く。次に黙って変えたら、また落ちる。
-    if len(_graded) != 30:
-        ng.append(f"T10: 仕分け済みの決まりが 30 件でない（{len(_graded)} 件）")
-    if len(_enf) != 9:
-        ng.append(f"T10: 機械が強制する決まりが 9 件でない（{len(_enf)} 件）"
-                  "＝まこさんの確認なしに強制を変えない（2026-08-22 承認の状態が正）")
+    if len(_graded) != 7:
+        ng.append(f"T10: 仕分け済みの法則が 7件でない（{len(_graded)} 件）")
+    if len(_enf) != 7:
+        ng.append(f"T10: 機械が強制する法則が 7件でない（{len(_enf)} 件）"
+                  "＝まこさんの確認なしに強制を変えない（2026-08-29 承認の状態が正）")
     _ids = {x["id"] for x in _enf}
-    if _ids != {"Q-1", "RD-2", "K-1", "K-2", "K-3", "K-4", "K-5", "K-6", "K-7"}:
-        ng.append(f"T10: 機械が強制する決まりの中身が変わった（{sorted(_ids)}）")
+    if _ids != {"K-1", "K-2", "K-3", "K-4", "K-5", "K-6", "K-7"}:
+        ng.append(f"T10: 機械が強制する法則の中身が変わった（{sorted(_ids)}）")
 
-    print(f"[番人] {'✅ 全部 pass（T1〜T9）' if not ng else f'❌ {len(ng)} 件'}")
+    print(f"[番人] {'✅ 全部 pass（T1・T5b・T6・T7・T10）' if not ng else f'❌ {len(ng)} 件'}")
     return 1 if ng else 0
 
 
@@ -526,10 +405,8 @@ def main(argv: list) -> int:
         print(f"[本文の指紋] {h}")
         print(f"[手で書いた行数] {src['_手で書いた行数']} 件"
               f"（残りは正本から機械で引いた）")
-        for r in rules["roles"]:
-            if r.get("候補") is not None:
-                print(f"  役目「{r['name']}」… 候補 {r['候補数']} 通り"
-                      f"（系統 {'・'.join(r['使える系統'])} × 時間足の層 {r['時間足の層']}）")
+        for g in rules["scene_rules"]:
+            print(f"  {g['id']}（{'・'.join(g['掛かる場面'])}）… {g['決まり'][:56]}")
         return 0
     print(__doc__)
     return 0
