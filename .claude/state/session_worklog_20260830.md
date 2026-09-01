@@ -372,3 +372,7 @@
 - **decisions.md の差分**＝SessionStart の `show_decisions.sh` が作り直すファイル（私の手書きではない）。
 - **git**＝コミットしていない（まこさんの指示待ち）。書き換えたファイル＝`engine_tuner_exec.py`／`gen_materials.py`／`regime_laws.json`／`gen_regime_kb.py`／`m2_todo.json`／生成し直した `regime_detection_kb.md`・`engine_tuner_milestones2.md`／`lessons_active.md`／`next_step.md`・`next_step_archive_202608.md`／この worklog。
 - **net はゼロ**（実験ゼロ・採点ゼロ・売買記録0本）。
+
+### §12 の追記（2026-09-01）＝承認済みのコミットを実行した
+
+- まこさん「コミットOK」（8/30 と 9/1 の2回）→ **コミット 59cffaf**（2026-09-01 10:54・13ファイル・889行 追加／136行 削除・ファイル単位で add・`git add .` 不使用・機密 0件）。tracked の未コミットは 0件になった。

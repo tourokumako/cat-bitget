@@ -87,6 +87,56 @@ def coverage(d: dict) -> tuple[int, list[str]]:
     return rc, lines
 
 
+_SDK = ROOT / "v3-bitget-api-sdk/bitget-python-sdk-api"
+_CITE_ROOTS = [_SDK / "scripts/priority_rebuild", _SDK / "scripts/regime", _SDK / "strategies",
+               _SDK / "runner", ROOT / ".claude/tools"]
+_CITE_RE = re.compile(r"`([\w./]+\.py):(\d+)`")
+_TICK_RE = re.compile(r"`([^`]+)`")
+
+
+def check_citations(d: dict) -> tuple[int, list[str]]:
+    """法則の 出どころ・注意・説明 の `名前.py:行` 引用を、実物のコードと突き合わせる
+    （M2-B-3・監査 CP11 改善1・2026-09-01・iter=m2-b3-audit-fixes-20260901）。
+
+    なぜ＝行番号は手書きで、コードを編集すると黙ってずれる（監査 CP11 の E1・E2 がこれ）。
+    違反の記録 #25 と同じ「引用と実物を突き合わせる関所の不在」なので、--verify に載せて機械で止める。
+
+    見るもの3つ＝①ファイルが実在する ②行番号がファイルの行数の中に在る
+    ③引用の直前の backtick の識別子（空白と = より前を切る）が、引用した行の前後5行に在る。
+    ★③の「直前の識別子・空白と = より前」は、`V11_ZONE_MIN_W = 0.004` のような書き方を
+      正しく対応づけるための決めごと（試作の検査で1件 誤検知した穴を塞いだ形）。
+    戻り＝(1 なら ❌ あり, 表示する行)。"""
+    rc, bad = 0, []
+    n = 0
+    for law_row in d["法則"]:
+        fields = [law_row.get("出どころ") or ""] + list(law_row.get("注意") or []) + [law_row.get("説明") or ""]
+        for f in fields:
+            for m in _CITE_RE.finditer(f):
+                n += 1
+                name, ln = Path(m.group(1)).name, int(m.group(2))
+                path = next((r / name for r in _CITE_ROOTS if (r / name).exists()), None)
+                if path is None:
+                    rc = 1
+                    bad.append(f"❌ {law_row['番号']}: `{m.group(1)}` が見つからない")
+                    continue
+                body = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+                if ln > len(body):
+                    rc = 1
+                    bad.append(f"❌ {law_row['番号']}: `{name}:{ln}` は行数（全{len(body)}行）を超えている")
+                    continue
+                toks = []
+                for t in _TICK_RE.findall(f[: m.start()]):
+                    t = t.split()[0].split("=")[0] if t.split() else ""
+                    if t and not t.endswith((".py", ".md", ".json")):
+                        toks.append(t)
+                ident = toks[-1] if toks else None
+                if ident and ident not in "\n".join(body[max(0, ln - 6): ln + 5]):
+                    rc = 1
+                    bad.append(f"❌ {law_row['番号']}: `{name}:{ln}` の前後5行に `{ident}` が無い")
+    lines = bad + [f"{'❌' if rc else '✅'} file:line 引用の実在検査＝{n}件のうち ずれ {len(bad)}件"]
+    return rc, lines
+
+
 def build_flow(d: dict) -> str:
     """json から §2（フロー13段）を組み立てる。
 
@@ -821,6 +871,10 @@ def verify(target: str = "all") -> int:
         for ln in lines:
             print(ln)
         rc |= crc
+        crc2, lines2 = check_citations(d)              # ★M2-B-3＝file:line 引用の実在検査（監査 CP11 改善1）
+        for ln in lines2:
+            print(ln)
+        rc |= crc2
     return rc
 
 
@@ -850,6 +904,37 @@ def selftest() -> int:
             else:
                 print(f"   T{total} {SEC[kind]} 1行 足しても ✅ のまま → fail")
             dest.write_text(base, encoding="utf-8")
+        # ★M2-B-3（監査 CP11 改善1・2026-09-01）＝file:line 引用の実在検査の自己検査（ファイルは書かない）
+        d = json.loads(SRC["laws"].read_text(encoding="utf-8"))
+        total += 1
+        if check_citations(d)[0] == 0:
+            ok += 1
+            print(f"   T{total} 引用の実在検査 いまの引用は全部 実物と一致 → pass")
+        else:
+            print(f"   T{total} 引用の実在検査 いまの引用に ❌ が在る → fail")
+        total += 1
+        broken_d = json.loads(json.dumps(d))
+        for law_row in broken_d["法則"]:
+            src = law_row.get("出どころ") or ""
+            if _CITE_RE.search(src):
+                law_row["出どころ"] = _CITE_RE.sub(lambda mm: f"`{mm.group(1)}:99999`", src, count=1)
+                break
+        if check_citations(broken_d)[0] == 1:
+            ok += 1
+            print(f"   T{total} 引用の実在検査 わざと行番号を 99999 にずらすと ❌ → pass")
+        else:
+            print(f"   T{total} 引用の実在検査 ずらしても ✅ のまま → fail")
+        total += 1
+        broken_c = json.loads(json.dumps(d))
+        for law_row in broken_c["法則"]:
+            if law_row.get("判定の置き場") and not isinstance(law_row.get("機械が読む判定"), dict):
+                law_row.pop("判定の置き場")
+                break
+        if coverage(broken_c)[0] == 1:
+            ok += 1
+            print(f"   T{total} 判定を揃えた場面 わざと置き場を消すと ❌ → pass")
+        else:
+            print(f"   T{total} 判定を揃えた場面 置き場を消しても ✅ のまま → fail")
     finally:
         for p, t in orig.items():
             p.write_text(t, encoding="utf-8")

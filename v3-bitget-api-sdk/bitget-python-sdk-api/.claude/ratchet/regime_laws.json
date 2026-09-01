@@ -544,7 +544,8 @@
       "説明": "ADX などの「横ばい度の統計」で決めるのではない。実際に価格が跳ね返された実績（タッチ）が最低3回ある線だけを、本物のサポート・レジスタンスと認める。その線が close の上下に揃っていたらレンジ。",
       "出どころ": "RG-1（`range_scalping_kb.md` §2・`indicator_combination_kb.md` §7）",
       "注意": [
-        "正本の逐語＝「統計量（横ばい度・ADX 等）ではなく、機能しているレベルの実績で認識する」"
+        "正本の逐語＝「統計量（横ばい度・ADX 等）ではなく、機能しているレベルの実績で認識する」",
+        "★「最低3回」の数字は目安＝範囲で探す（C9）。外部の幅＝StockCharts Rectangle は片側2（逐語 \"At least two equivalent reaction highs are required to form the upper resistance line and two equivalent reaction lows to form the lower support line.\"）／LuxAlgo ≥3／自前実装 `V11_ZONE_TOUCH`＝2（`e37_scalp.py:123`）＝穴7の材料（監査 CP11 改善5・2026-09-01）。"
       ],
       "機械が読む判定": {
         "掛かる場面": [
@@ -590,7 +591,9 @@
       "書けるか": "△ RG-v5 の帯を読む列だけ在る",
       "説明": "RG-3＝多時間軸の黄金律。",
       "出どころ": "`range_scalping_kb.md` §2・`indicator_combination_kb.md` §7",
-      "注意": [],
+      "注意": [
+        "★C4（執行足より上の部品1本）とは別物＝C4 は部品C（強さ×上位足）で常に満たす。R3 は構造・位置の部品が上位足に在ることを求める。実測＝組む側の30案のうち12案は C4 を通るのに R3 を破る（worklog 20260830 §7（4）・監査 CP11 Q3）。"
+      ],
       "機械が読む判定": {
         "掛かる場面": [
           "range"
@@ -616,7 +619,10 @@
       "書けるか": "○ `streak` で書ける",
       "説明": "RG-4＝1本だけ成立してもレンジと言わない。",
       "出どころ": "`range_scalping_kb.md` §2・`indicator_combination_kb.md` §7",
-      "注意": [],
+      "注意": [
+        "★レンジ中は帯の外へのヒゲ抜け（だまし）が頻発する＝帯の外の1タッチでレンジ終了と判定せず、終値と確認本数で見る（LuxAlgo・逐語 \"False breakouts are common in sideways markets.\"・https://www.luxalgo.com/blog/neutral-trading-profit-in-sideways-markets/・2026-09-01 に本文を開いた・監査 CP11 N2）。",
+        "★C6①（何本 続いたら成立）のレンジ適用＝同じ機構。統合はしない（C6 は共通の法則・R4 はレンジへの要求）＝相互参照だけ（監査 CP11 Q3・まこさん確認 2026-09-01）。"
+      ],
       "機械が読む判定": {
         "掛かる場面": [
           "range"
@@ -632,7 +638,7 @@
       "見ているもの": "トレンドの強さ",
       "級": "本文",
       "書けるか": "○ 材料に在る",
-      "説明": "具体的には4つ。①ADX が 20 未満（トレンドなし）②CHOP が 61.8 超（CHOP＝値動きのゴチャゴチャ度。1本ずつの値動きの合計 ÷ 全体で進んだ幅。高いほど行ったり来たり＝横ばい）③ER が低い（ER＝まっすぐ進んだ距離 ÷ 実際に歩いた距離。低いほど行ったり来たり）④MMI が高い（MMI＝値動きがランダムに近いかの割合。高いほどレンジ寄り）。",
+      "説明": "具体的には4つ。①ADX が 20 未満（トレンドなし）②CHOP が 61.8 超（CHOP＝値動きのゴチャゴチャ度。1本ずつの値動きの合計 ÷ n本ぜんぶで動いた幅（最高値−最安値）。高いほど行ったり来たり＝横ばい）③ER が低い（ER＝まっすぐ進んだ距離 ÷ 実際に歩いた距離。低いほど行ったり来たり）④MMI が高い（MMI＝値動きがランダムに近いかの割合。高いほどレンジ寄り）。",
       "出どころ": "この KB §3-A",
       "注意": [
         "★数字は目安＝範囲で探す（C9）。"
@@ -664,11 +670,15 @@
       "場面": "レンジ",
       "一文": "BB 幅の縮小（スクイーズ）は、低ボラ＝レンジ寄り",
       "見ているもの": "ばらつきの水準",
-      "級": "要約",
+      "級": "本文",
       "書けるか": "○ BB幅は在る",
       "説明": "幅が過去より狭い状態。抜けの向きは教えない。",
-      "出どころ": "StockCharts Squeeze（この KB A-7）",
-      "注意": [],
+      "出どころ": "StockCharts Squeeze（この KB A-7・https://chartschool.stockcharts.com/table-of-contents/trading-strategies-and-models/trading-strategies/bollinger-band-squeeze・2026-09-01 に本文を開いた＝【要約】から【本文】へ昇格・監査 CP11 改善4）",
+      "注意": [
+        "逐語＝\"A Bollinger Band Squeeze is a condition that occurs when the Bollinger Bands narrow due to decreased volatility.\"／\"Note that narrowing bands do not provide any directional clues.\"（2026-09-01 に本文を開いた）。",
+        "★スクイーズは大きな動きの前触れでもある（逐語 \"can foreshadow a significant advance or decline\"）＝レンジの終わりの接近と同じ現象。",
+        "★役割＝レンジ検出の入力（低ボラ＝レンジ寄り）。R10（検出の後の下位分類）とは役割が違う（監査 CP11 Q3）。"
+      ],
       "機械が読む判定": {
         "掛かる場面": [
           "range"
@@ -705,7 +715,7 @@
       "注意": [
         "★数字は相場の法則で決めない＝範囲で探す（C9）。",
         "★出どころの数字の訂正（2026-08-27・監査 第4要素 Q3-3 の指摘）＝手数料の床 `SCALP_FLOOR` は 0.08%（`e38_logic_parts.py:23`＝`e37.SCALP_FLOOR`）。一例の「幅≥0.4%」の実体は `V11_ZONE_MIN_W = 0.004`（`e37_scalp.py:124`・a-priori の値）で、0.08% の5倍。直す前は「SCALP_FLOOR が 0.4% の根拠」と読める書き方だったが、数字が合わない。",
-        "★もう1つの穴＝「幅」の測り方が2つ在る（判定＝帯の内側の隙間 res_lo−sup_hi・`e37_scalp.py:479`／engine_tuner の条件＝全幅 (res_hi−sup_lo)/close＝W%・`engine_tuner_exec.py:2247`）。この相場の法則はどちらを指すかを定めていない（11-7 の穴6）。"
+        "★もう1つの穴＝「幅」の測り方が2つ在る（判定＝帯の内側の隙間が `V11_ZONE_MIN_W` 以上（`e37_scalp.py:479`）／engine_tuner の条件＝全幅 (res_hi−sup_lo)/close＝W%＝`wpct_arr`（`engine_tuner_exec.py:2464`））。この相場の法則はどちらを指すかを定めていない（11-7 の穴6）。★行参照の直し（監査 CP11 E2・2026-09-01）＝直す前は 2247行 を指していたが、行ドリフトで W% の式ではない行になっていた。"
       ],
       "機械が読む判定": {
         "掛かる場面": [
@@ -739,7 +749,7 @@
       "級": "実装",
       "書けるか": "✕ 否定（not）が無い",
       "説明": "レンジ＝帯あり ∩ 帯内 ∩ 非 uptrend。",
-      "出どころ": "RG-v5 `range_ok_rg5`（`e37_range_scalp.py:1615`）",
+      "出どころ": "RG-v5 `_rg5_frames`（`e37_scalp.py:517`）・`_apply_rg5_to_5m`（`e37_scalp.py:548`）＝正本。`_rg5_frames` は `e37_range_scalp.py:1588` で import（2026-08-20 の一本化）。★行参照の直し（監査 CP11 E1・2026-09-01）＝直す前は e37_range_scalp.py の 1615行 を指していたが、行ドリフトで R:R 検査（tp_ge_sl_check_v11）の中になっていた",
       "注意": [],
       "機械が読む判定": {
         "掛かる場面": [
@@ -770,7 +780,9 @@
       "書けるか": "未確認（ATR% の自分の平均との比較で数える）",
       "説明": "トレンド性 × ばらつき の2軸で4分類。",
       "出どころ": "QuantMonitor（`engine_tuner_milestones2.md` §3.5（6））＋【別AI】ChatGPT の4分類（この KB §10-4）",
-      "注意": [],
+      "注意": [
+        "★役割＝検出の後の下位分類（静かなレンジと荒いレンジを分けて、出口とサイズに効かせる）。R6（検出の入力）とは役割が違う。動きがほぼ同じ2本を重ねる件は C3 が別に見る（監査 CP11 Q3）。"
+      ],
       "機械が読む判定": {
         "掛かる場面": [
           "range"
@@ -781,6 +793,21 @@
         },
         "本数": 1
       }
+    },
+    {
+      "番号": "R11",
+      "場面": "レンジ",
+      "一文": "レンジ判定の頻度と閾値は、時間帯（欧米株式市場の取引時間）と曜日（平日/週末）で水準が変わる前提で扱う",
+      "見ているもの": "時間帯・曜日の周期性",
+      "級": "本文",
+      "書けるか": "—",
+      "説明": "BTC は24時間 動くが、値動きの密度は一様ではない。出来高とボラティリティは1日の中で逆V字（欧米株式市場の昼の時間帯に高く）、平日が週末より はっきり高い。だからレンジ判定の頻度と閾値の水準は、時間帯と曜日で変わる前提で扱う（固定の1つの水準を全時間に当てない）。",
+      "出どころ": "Wang, Jying-Nan／Liu, Hung-Chun／Hsu, Yuan-Teng（2020）「Time-of-day periodicities of trading volume and volatility in Bitcoin exchange」Finance Research Letters 34（https://ideas.repec.org/a/eee/finlet/v34y2020ics1544612319301904.html・2026-09-01 に要旨を開いた・逐語＝\"the trading activity resembles a reverse V-shaped pattern throughout the day\"／\"noticeably higher trading volume and volatility during hours that coincide with the daytime trading hours of European and US stock exchanges\"／\"Both variables are substantially higher on weekdays than weekends.\"）",
+      "注意": [
+        "★数字は目安＝範囲で探す（C9）。",
+        "★測る部品（UTC の時刻・曜日の列・時間帯別のボラ・出来高の分位）は いまの材料に0件＝部品を足すのは M2-C（監査 CP11 N1・2026-09-01 追加）。"
+      ],
+      "判定の置き場": "M2-C で UTC の時刻・曜日の列を足した後に決める（閾値の探索を時間帯別に扱う＝探索の側。束1つの審査の形にならないので、部品が入るまで「機械が読む判定」は持たせない）"
     },
     {
       "番号": "U1",
@@ -1157,7 +1184,7 @@
     {
       "番号": 1,
       "穴": "出来高・需給の材料が0件",
-      "中身": "S3（出来高スパイク）が書けない。既存の「あとで直すこと」26番と同じ"
+      "中身": "S3（出来高スパイク）が書けない。既存の「あとで直すこと」26番と同じ。★逆向きの警告（監査 CP11・2026-09-01）＝出来高の材料を足すとき「低出来高＝レンジ」を法則として焼かない。StockCharts Rectangle の逐語＝\"Unlike symmetrical triangles, rectangles don't exhibit standard volume patterns.\"（レンジの原型パターンの資料自身が、標準の型は無いと書いている）"
     },
     {
       "番号": 2,
