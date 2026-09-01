@@ -388,9 +388,9 @@ _FB_DRAW_METHODS = frozenset({
 # 法則の表（承認済みの型の表・場面の決まり・パラメータの範囲の表）を読む関数。
 #   ★乱数だけで組んでいるなら、この表を1つも読まないはず＝1番の白黒の材料。
 _FB_LAW_FUNCS = frozenset({
-    "load_signal_table", "load_scene_rules", "material_ranges", "ranked_groups",
+    "load_signal_table", "load_regime_laws", "material_ranges", "ranked_groups",
     "role_lineage", "forms_where", "regime_draw_order",
-})
+})   # ★2026-08-30（M2-B-2b・next_step §6 の126番）＝消した load_scene_rules を外し、新しい正本 load_regime_laws を足した
 
 
 def _is_num(x) -> bool:

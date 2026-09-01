@@ -60,6 +60,33 @@ def _esc(s: str) -> str:
     return str(s).replace("|", "／").replace("\n", " ")
 
 
+def _kakeru(r: dict) -> str:
+    """11-x の表の「engine_tuner で書けるか」の欄＝判定の有無から機械で出す（M2-B-2b・2026-08-30）。
+    手書きの `書けるか` は、判定も置き場も無い法則にだけ使う（R1 が判定を持つのに「✕」のままだった穴を塞ぐ）。"""
+    j = r.get("機械が読む判定")
+    if isinstance(j, dict):
+        return f"○ 判定あり（{j.get('型')}）"
+    if r.get("判定の置き場"):
+        return f"— 置き場＝{r['判定の置き場']}"
+    return r.get("書けるか", "—")
+
+
+def coverage(d: dict) -> tuple[int, list[str]]:
+    """「判定を揃えた場面」の法則が、全部「機械が読む判定」か「判定の置き場」を持つかを数える（M2-B-2b の確かめ方）。
+    戻り＝(1 なら ❌ あり, 表示する行)。"""
+    rc, lines = 0, []
+    for sc in d.get("判定を揃えた場面") or []:
+        rows = [x for x in d["法則"] if x.get("場面") == sc]
+        a = sum(1 for x in rows if isinstance(x.get("機械が読む判定"), dict))
+        b = sum(1 for x in rows if x.get("判定の置き場") and not isinstance(x.get("機械が読む判定"), dict))
+        c = len(rows) - a - b
+        mark = "✅" if c == 0 and rows else "❌"
+        if c or not rows:
+            rc = 1
+        lines.append(f"{mark} 判定を揃えた場面「{sc}」＝{len(rows)}件＝機械が読む判定 {a}件＋判定の置き場 {b}件＋どちらも無い {c}件")
+    return rc, lines
+
+
 def build_flow(d: dict) -> str:
     """json から §2（フロー13段）を組み立てる。
 
@@ -235,6 +262,13 @@ def build_premise(d: dict) -> str:
     add(f"**いまの件数（機械が数えました）**＝相場の法則 **{len(laws)}件** ／ "
         f"うち「機械が読む判定」を持つもの **{total}件**")
     add("")
+    _, _cov = coverage(d)
+    if _cov:
+        add("**判定を揃えた場面の数え（M2-B-2b・機械が数えました）**")
+        add("")
+        for ln in _cov:
+            add(f"- {ln}")
+        add("")
 
     # 相場の法則の場面ごとの件数
     add("**相場の法則の場面ごとの件数**")
@@ -271,11 +305,12 @@ def build_premise(d: dict) -> str:
     add("")
     add("> **★この表の読み方（3つ・2026-08-30 の M2-B0 で直した後の実物）**")
     add("> ")
-    add("> - **engine_tuner は、この7件を regime_laws.json から読み込んで審査します**"
-        "（読み込み＝`engine_tuner_exec.load_regime_laws`:1057 → 審査＝G7 `_check_scene_rules`:1157）。")
-    add("> - **法則を1件 書き替えると、審査がそのとおり変わります。**読めない・知らない型・知らない場面名・"
-        "知らない系統名は止まります（fail-closed）。")
-    add("> - **「機械が読む判定」を持たない法則（R9・R10 ほか）は、審査に使いません**＝M2-B で足します。")
+    add(f"> - **engine_tuner は、この{total}件を regime_laws.json から読み込んで審査します**"
+        "（読み込み＝`engine_tuner_exec.load_regime_laws` → 審査＝G7 `_check_scene_rules`）。")
+    add("> - **法則を1件 書き替えると、審査がそのとおり変わります。**読めない・知らない型・知らない形・知らない場面名・"
+        "知らない系統名・知らない側・知らない性質は止まります（fail-closed）。")
+    add("> - **「機械が読む判定」を持たない法則は、審査に使いません。**「判定を揃えた場面」（いま＝レンジ）の法則は、"
+        "判定か「判定の置き場」（例＝R9＝regime_r9_diag.py）のどちらかを必ず持ちます（無ければ読み込みが止まる）。")
     add("")
     add("| # | 番号 | 相場の法則（一文） | 審査に使っているか | 掛かる場面 |")
     add("|---|---|---|---|---|")
@@ -472,7 +507,7 @@ def build_laws(d: dict) -> str:
             add("|---|---|---|---|---|")
             for r in rows:
                 add(f"| **{r['番号']}** | {_esc(r['一文'])} | {_esc(r['見ているもの'])} "
-                    f"| 【{r['級']}】 | {_esc(r['書けるか'])} |")
+                    f"| 【{r['級']}】 | {_esc(_kakeru(r))} |")
         add("")
         add(f"### 11-{i} の1件ずつの説明")
         add("")
@@ -780,6 +815,12 @@ def verify(target: str = "all") -> int:
     rc = 0
     for k in _kinds(target):
         rc |= verify_one(k)
+    if "laws" in _kinds(target):                       # ★M2-B-2b＝判定を揃えた場面の数え（10行すべてに判定か置き場）
+        d = json.loads(SRC["laws"].read_text(encoding="utf-8"))
+        crc, lines = coverage(d)
+        for ln in lines:
+            print(ln)
+        rc |= crc
     return rc
 
 

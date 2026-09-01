@@ -1023,9 +1023,31 @@ def _dirless_parts() -> set:
 LAWS_PATH = HERE.parent.parent / ".claude" / "ratchet" / "regime_laws.json"
 _REGIME_LAWS = None                     # 読んだ法則の覚え（既定の読み込みだけ覚える）
 _LAW_SCENES = ("range", "uptrend", "downtrend", "spike")
-_LAW_TYPES = ("部品を数える", "形を持つ")
-_LAW_FORMS = ("hysteresis", "not")
-_LAW_PICK_KEYS = ("向きを持つ", "時間足", "系統", "family", "geo")
+# ★M2-B-2b（2026-08-30・まこさん承認 iter="m2-b-2b-range-laws-20260830"）＝型を1つ・形を1つ・鍵を3つ 広げた。
+#   型「系統を重ねない」（R2）／形 streak（R4）／鍵「側」（R5・R6・R7＝on 側の部品だけを数える）・
+#   「かつ」（R3＝同じ1本で系統と時間足を満たす）・「性質」（R10＝REFS の prop を読む）。
+#   「判定の置き場」（R9）＝判定を持たない法則が、どこで持つかを書く欄（load_regime_laws が数える）。
+_LAW_TYPES = ("部品を数える", "形を持つ", "系統を重ねない")
+_LAW_FORMS = ("hysteresis", "not", "streak")
+_LAW_PICK_KEYS = ("向きを持つ", "時間足", "系統", "family", "geo", "側", "かつ", "性質")
+_LAW_SIDES = ("above", "below")
+_REGIME_LAW_COUNTS = None               # 読み込みの数え（審査に使う／置き場あり／持たない）
+_REFS_PROP = None                       # family → REFS の prop（性質）・遅延で1回だけ作る
+
+
+def _refs_prop() -> dict:
+    """family → 性質（indicator_reference_diag.REFS の prop）。★一覧を手で書かない（R10 の鍵「性質」の正本）。"""
+    global _REFS_PROP
+    if _REFS_PROP is None:
+        _REFS_PROP = {r["family"]: r.get("prop") for r in iref.REFS
+                      if isinstance(r, dict) and r.get("family") and r.get("prop")}
+    return _REFS_PROP
+
+
+def regime_law_counts() -> dict:
+    """読み込みの数え＝{審査に使う, 置き場あり, 持たない}（M2-B-2b・黙って無視しない）。"""
+    load_regime_laws()
+    return dict(_REGIME_LAW_COUNTS or {})
 
 
 def _validate_law(no: str, j: dict) -> None:
@@ -1037,18 +1059,42 @@ def _validate_law(no: str, j: dict) -> None:
     typ = j.get("型")
     if typ not in _LAW_TYPES:
         raise SystemExit(f"[相場の法則] {no}: 知らない型: {typ}"
-                         f"（使える型＝{list(_LAW_TYPES)}・新しい型は M2-B で足す・fail-closed）")
+                         f"（使える型＝{list(_LAW_TYPES)}・fail-closed）")
     if typ == "形を持つ":
         if j.get("形") not in _LAW_FORMS:
             raise SystemExit(f"[相場の法則] {no}: 知らない形: {j.get('形')}（使える形＝{list(_LAW_FORMS)}・fail-closed）")
         return
+    kinds = {(v or {}).get("k") for v in iref.FAMILY_LINEAGE.values()}
+    if typ == "系統を重ねない":                       # ★R2（M2-B-2b）＝同じ系統の部品を上限より多く入れない
+        exk = j.get("除く系統")
+        if not isinstance(exk, list) or any(k not in kinds for k in exk):
+            raise SystemExit(f"[相場の法則] {no}: 除く系統が不正: {exk}（系統名の一覧・fail-closed）")
+        lim = j.get("上限")
+        if not isinstance(lim, int) or isinstance(lim, bool) or lim < 1:
+            raise SystemExit(f"[相場の法則] {no}: 上限が不正: {lim}（1以上の整数・fail-closed）")
+        return
     sel = j.get("数える部品")
     if not isinstance(sel, dict) or not sel or any(k not in _LAW_PICK_KEYS for k in sel):
         raise SystemExit(f"[相場の法則] {no}: 数える部品が不正: {sel}（使える鍵＝{list(_LAW_PICK_KEYS)}・fail-closed）")
-    kinds = {(v or {}).get("k") for v in iref.FAMILY_LINEAGE.values()}
     for k in (sel.get("系統") or []):
         if k not in kinds:
             raise SystemExit(f"[相場の法則] {no}: 知らない系統名: {k}（fail-closed）")
+    side = sel.get("側")                              # ★R5・R6・R7（M2-B-2b）＝family／geo ごとに above か below
+    if side is not None:
+        fams = list(sel.get("family") or [])
+        geos = [] if sel.get("geo") in (None, "any") else list(sel.get("geo") or [])
+        if not isinstance(side, dict) or not side or not (fams or geos):
+            raise SystemExit(f"[相場の法則] {no}: 側が不正: {side}（family か geo と一緒に、名前ごとに above／below を書く・fail-closed）")
+        for f, s in side.items():
+            if f not in fams and f not in geos:
+                raise SystemExit(f"[相場の法則] {no}: 側の名前 {f} が family／geo の一覧に無い（fail-closed）")
+            if s not in _LAW_SIDES:
+                raise SystemExit(f"[相場の法則] {no}: 側の値が不正: {f}={s}（{'/'.join(_LAW_SIDES)}・fail-closed）")
+    if "かつ" in sel and not isinstance(sel.get("かつ"), bool):      # ★R3（M2-B-2b）
+        raise SystemExit(f"[相場の法則] {no}: かつ が真偽でない: {sel.get('かつ')!r}（fail-closed）")
+    if "性質" in sel and sel.get("性質") not in set(_refs_prop().values()):   # ★R10（M2-B-2b）
+        raise SystemExit(f"[相場の法則] {no}: 知らない性質: {sel.get('性質')}"
+                         f"（使える値＝REFS の prop {sorted(set(_refs_prop().values()))}・fail-closed）")
     n = j.get("本数")
     if not isinstance(n, int) or isinstance(n, bool) or n < 1:
         raise SystemExit(f"[相場の法則] {no}: 本数が不正: {n}（1以上の整数・fail-closed）")
@@ -1061,7 +1107,7 @@ def load_regime_laws(path: pathlib.Path | None = None) -> list:
     使わない（黙って無視ではない＝正本の全件と戻りの件数の差で見える）。1回 読んだら覚える。
     path はテスト用＝指定したときは覚えに触らない。
     """
-    global _REGIME_LAWS
+    global _REGIME_LAWS, _REGIME_LAW_COUNTS
     if path is None and _REGIME_LAWS is not None:
         return _REGIME_LAWS
     p = path if path is not None else LAWS_PATH
@@ -1074,23 +1120,84 @@ def load_regime_laws(path: pathlib.Path | None = None) -> list:
     laws = body.get("法則")
     if not isinstance(laws, list) or not laws:
         raise SystemExit(f"[相場の法則] {p} に「法則」の一覧が無い（fail-closed）")
+    # ★M2-B-2b＝「判定を揃えた場面」（json の上の欄・今回＝レンジ）の法則は、「機械が読む判定」か
+    #   「判定の置き場」のどちらかを必ず持つ。どちらも無ければ止まる（fail-closed・黙って無視しない）。
+    ready = body.get("判定を揃えた場面") or []
+    if not isinstance(ready, list) or any(not isinstance(s, str) for s in ready):
+        raise SystemExit(f"[相場の法則] {p} の「判定を揃えた場面」が一覧でない: {ready!r}（fail-closed）")
     out = []
+    counts = {"審査に使う": 0, "置き場あり": 0, "持たない": 0}
     for law in laws:
-        if not isinstance(law, dict) or "機械が読む判定" not in law:
+        if not isinstance(law, dict):
             continue
         no = str(law.get("番号"))
-        j = law["機械が読む判定"]
-        _validate_law(no, j)
-        out.append({"番号": no, "一文": str(law.get("一文") or ""), "判定": j})
+        if "機械が読む判定" in law:
+            j = law["機械が読む判定"]
+            _validate_law(no, j)
+            out.append({"番号": no, "一文": str(law.get("一文") or ""), "判定": j})
+            counts["審査に使う"] += 1
+        elif law.get("判定の置き場"):
+            if not isinstance(law["判定の置き場"], str):
+                raise SystemExit(f"[相場の法則] {no}: 判定の置き場が文字でない: {law['判定の置き場']!r}（fail-closed）")
+            counts["置き場あり"] += 1
+        else:
+            counts["持たない"] += 1
+            if law.get("場面") in ready:
+                raise SystemExit(f"[相場の法則] {no}: 判定を揃えた場面（{law.get('場面')}）なのに"
+                                 "「機械が読む判定」も「判定の置き場」も無い（M2-B-2b・fail-closed）")
     if not out:
         raise SystemExit(f"[相場の法則] {p} に「機械が読む判定」を持つ法則が0件（fail-closed）")
     if path is None:
         _REGIME_LAWS = out
+        _REGIME_LAW_COUNTS = counts
     return out
 
 
+def _upper_tfs() -> set:
+    """執行足（5m）より上の時間足の一覧（型の表の tfs の並びから・数字を持たない）。"""
+    import engine_tuner_gen as _gen
+    tfs_all = _gen.load_signal_table()["tfs"]
+    base = tfs_all.index("5m")
+    return {t for t in tfs_all if tfs_all.index(t) > base}
+
+
+def _law_count_and(sel: dict, seen: dict) -> int:
+    """「かつ」＝同じ1本の部品が、書かれた鍵を全部 満たすときだけ数える（R3・M2-B-2b）。
+    family の部品＝系統・時間足・向きを持つ・family・側・性質 の全部。geo の部品＝geo の鍵（と側）で数える。
+    ★数えるのは on 側の部品だけ（hysteresis の off の中は数えない）。"""
+    n = 0
+    up = _upper_tfs() if sel.get("時間足") == "執行足より上" else None
+    side = sel.get("側") or {}
+    pm = _refs_prop() if "性質" in sel else None
+    for p in seen["on_parts"]:
+        if p["geo"] is not None:
+            g = sel.get("geo")
+            if g is None or not (g == "any" or p["geo"] in g):
+                continue
+            if side and side.get(p["geo"]) != p["side"]:
+                continue
+            n += 1
+            continue
+        if "系統" in sel and p["kind"] not in (sel.get("系統") or []):
+            continue
+        if up is not None and p["tf"] not in up:
+            continue
+        if sel.get("向きを持つ") and (p["name"] is None or p["name"] in _dirless_parts()):
+            continue
+        if "family" in sel and p["fam"] not in (sel.get("family") or []):
+            continue
+        if side and side.get(p["fam"]) != p["side"]:
+            continue
+        if pm is not None and pm.get(p["fam"]) != sel["性質"]:
+            continue
+        n += 1
+    return n
+
+
 def _law_count(sel: dict, seen: dict) -> int:
-    """束の中で「数える部品」の条件に合う数を数える（鍵が複数なら いずれか＝合算）。"""
+    """束の中で「数える部品」の条件に合う数を数える（鍵が複数なら いずれか＝合算。「かつ」が真なら全部）。"""
+    if sel.get("かつ"):
+        return _law_count_and(sel, seen)
     n = 0
     if sel.get("向きを持つ"):
         n += sum(1 for pt in seen["parts"] if pt not in _dirless_parts())
@@ -1102,56 +1209,92 @@ def _law_count(sel: dict, seen: dict) -> int:
     for k in (sel.get("系統") or []):
         n += sum(1 for f in seen["fams"] if (iref.FAMILY_LINEAGE.get(f) or {}).get("k") == k)
     fams = set(sel.get("family") or [])
+    side = sel.get("側")
     if fams:
-        n += len(seen["fams"] & fams)
+        if side:                                   # ★「側」（M2-B-2b）＝on 側の部品だけ・名前ごとの向きが合うものだけ
+            n += sum(1 for p in seen["on_parts"]
+                     if p["fam"] in fams and p["side"] is not None and side.get(p["fam"]) == p["side"])
+        else:
+            n += len(seen["fams"] & fams)
+    if "性質" in sel:                              # ★「性質」（M2-B-2b・R10）＝REFS の prop が同じ family（on 側）
+        pm = _refs_prop()
+        n += sum(1 for p in seen["on_parts"] if p["fam"] and pm.get(p["fam"]) == sel["性質"])
     geo = sel.get("geo")
-    if geo == "any":
+    if geo is not None and side:                   # 側つきの geo＝on 側・向きが合うものだけ
+        n += sum(1 for p in seen["on_parts"]
+                 if p["geo"] is not None and (geo == "any" or p["geo"] in geo)
+                 and p["side"] is not None and side.get(p["geo"]) == p["side"])
+    elif geo == "any":
         n += len(seen["geo"])
     elif geo:
         n += len(seen["geo"] & set(geo))
     return n
 
 
-def _scene_scan(node, seen: dict) -> None:
-    """build の木から、G7 の照合に要る事実だけを集める（形の検査はしない＝_walk_build_tree が済ませている）。"""
+def _scene_scan(node, seen: dict, in_off: bool = False, neg: bool = False) -> None:
+    """build の木から、G7 の照合に要る事実だけを集める（形の検査はしない＝_walk_build_tree が済ませている）。
+
+    ★M2-B-2b（2026-08-30）で足した2つ＝
+      ・seen["forms"]＝通った形の名前の全部（hysteresis・not・streak …）＝「形を持つ」の判定はこれを見る。
+      ・seen["on_parts"]＝on 側の部品の一覧（fam／tf／geo／side／kind／name）＝「側」「かつ」「性質」「系統を重ねない」が見る。
+        hysteresis の off の中の部品は入れない（組む側が off に「側を反転した写し」を置くため）。
+        not の中の部品は side を反転する（not（ADX above）＝ADX below）。
+    既存の集合（geo／fams／tfs／parts／not／hysteresis）は変えない＝直す前の7件の判定は同じ結果。
+    """
     if not isinstance(node, dict):
         return
     if "bool_col" in node:
         return
     if "not" in node:
         seen["not"] = True
-        _scene_scan(node["not"], seen)
+        seen["forms"].add("not")
+        _scene_scan(node["not"], seen, in_off, not neg)
         return
     if "all" in node or "any" in node:
         for ch in (node.get("all") or node.get("any") or []):
-            _scene_scan(ch, seen)
+            _scene_scan(ch, seen, in_off, neg)
         return
     if "if" in node and "then" in node:
-        _scene_scan(node["if"], seen)
-        _scene_scan(node["then"], seen)
+        _scene_scan(node["if"], seen, in_off, neg)
+        _scene_scan(node["then"], seen, in_off, neg)
         return
     if node.get("form") == "hysteresis":
         seen["hysteresis"] = True
-        _scene_scan(node.get("on"), seen)
-        _scene_scan(node.get("off"), seen)
+        seen["forms"].add("hysteresis")
+        _scene_scan(node.get("on"), seen, in_off, neg)
+        _scene_scan(node.get("off"), seen, True, neg)
         return
+    if node.get("form"):
+        seen["forms"].add(str(node["form"]))
+    s = node.get("side")
+    side = "above" if s in ("above", "above_strict") else ("below" if s in ("below", "below_strict") else None)
+    if side is not None and neg:
+        side = "below" if side == "above" else "above"
     for m in (node.get("material") or []):
         if not isinstance(m, dict):
             continue
         if "geo" in m:
             seen["geo"].add(str(m["geo"]))
+            if not in_off:
+                seen["on_parts"].append({"fam": None, "tf": None, "geo": str(m["geo"]), "side": side,
+                                         "kind": None, "name": None})
         fam = m.get("family")
         if fam:
             seen["fams"].add(str(fam))
             if m.get("tf"):
                 seen["tfs"].add(str(m["tf"]))
+            name = None
             try:
-                seen["parts"].add(build_name(m))
+                name = build_name(m)
+                seen["parts"].add(name)
             except SystemExit:
                 pass                       # 名前が組めない材料は _walk_build_tree が既に拒否している
+            if not in_off:
+                seen["on_parts"].append({"fam": str(fam), "tf": str(m.get("tf") or ""), "geo": None, "side": side,
+                                         "kind": (iref.FAMILY_LINEAGE.get(str(fam)) or {}).get("k"), "name": name})
     inner = node.get("inner")
     if isinstance(inner, dict):
-        _scene_scan(inner, seen)
+        _scene_scan(inner, seen, in_off, neg)
 
 
 def _check_scene_rules(rg: dict, lane: str) -> None:
@@ -1163,7 +1306,7 @@ def _check_scene_rules(rg: dict, lane: str) -> None:
         return
     name = rg.get("name")
     seen = {"geo": set(), "fams": set(), "tfs": set(), "parts": set(),
-            "not": False, "hysteresis": False}
+            "not": False, "hysteresis": False, "forms": set(), "on_parts": []}
     _scene_scan((bd["entry"] or {}).get("tree"), seen)
 
     ng = []
@@ -1172,9 +1315,16 @@ def _check_scene_rules(rg: dict, lane: str) -> None:
         if name not in j["掛かる場面"]:
             continue
         if j["型"] == "形を持つ":
-            ok = seen["hysteresis"] if j["形"] == "hysteresis" else seen["not"]
-            if not ok:
+            if j["形"] not in seen["forms"]:
                 ng.append(f"{law['番号']}: {j['形']} の形が束に無い（法則 {law['番号']}＝{law['一文']}）")
+        elif j["型"] == "系統を重ねない":            # ★R2（M2-B-2b）＝on 側の部品を系統ごとに数える
+            from collections import Counter as _Cnt
+            exk = set(j.get("除く系統") or [])
+            cnt = _Cnt(p["kind"] for p in seen["on_parts"] if p["kind"] and p["kind"] not in exk)
+            over = [(k, c) for k, c in sorted(cnt.items()) if c > int(j["上限"])]
+            if over:
+                ng.append(f"{law['番号']}: 同じ系統が重なっている＝" + "・".join(f"{k} {c}本" for k, c in over)
+                          + f"（上限 {int(j['上限'])}本・除く系統＝{sorted(exk)}）（法則 {law['番号']}＝{law['一文']}）")
         else:
             got = _law_count(j["数える部品"], seen)
             if got < int(j["本数"]):
@@ -4247,7 +4397,19 @@ def selftest() -> None:
     _g7_adx_off = _g7_level("ADX", 14, "1h", "below", "q30")
     _g7_adx5m = _g7_level("ADX", 14, "5m", "above", "q70")
 
-    _g7_range_ok = {"all": [_g7_hys({"all": [_g7_struct, _g7_w]}, _g7_w_off), {"not": _g7_adx}]}
+    # ★M2-B-2b（2026-08-30）＝通る束: range は、レンジの法則10件（判定9＋置き場1）を全部 満たす形に作り直した。
+    #   帯＝S-Rタッチ数 15m（R1・R3＝構造・位置 かつ 上位足）／幅がコストを超える＝geo W% above（R7）／
+    #   幅が狭い＝BB幅 below（R6・R10＝性質 ボラ量）を streak で包む（R4）／not（ADX above）＝ADX below（R5・R8）／
+    #   hysteresis（C6）／系統は 構造・位置 を除いて ボラ1・トレンド1（R2）。
+    _g7_geo_w = {"role": "location", "form": "level", "material": [{"geo": "W%"}],
+                 "side": "above", "value": {"threshold_q": "q30"}}
+    _g7_sq = _g7_level("BB幅", [20, 2], "1h", "below", "q30")
+    _g7_streak = {"role": "env", "form": "streak", "value": {"n": 3}, "inner": _g7_sq}
+    _g7_struct5m = {"role": "location", "form": "band",
+                    "material": [{"family": "S-Rタッチ数", "param": [144, 0.006], "tf": "5m"}],
+                    "value": {"lo": {"threshold_q": "q10"}, "hi": {"threshold_q": "q90"}}}
+    _g7_atr = _g7_level("ATR%", 14, "1h", "above", "q50")
+    _g7_range_ok = {"all": [_g7_hys({"all": [_g7_struct, _g7_geo_w, _g7_streak]}, _g7_w_off), {"not": _g7_adx}]}
     _g7_cases = [
         ("通る束: range", "range", _g7_range_ok, None),
         ("通る束: uptrend", "uptrend", {"all": [_g7_hys(_g7_dir, _g7_dir_off)]}, None),
@@ -4261,6 +4423,25 @@ def selftest() -> None:
         ("R7 破り: 幅なし", "range",
          {"all": [_g7_hys({"all": [_g7_struct, _g7_dir]}, _g7_dir_off), {"not": _g7_adx}]}, "R7"),
         ("S1 破り: スパイクに比の部品なし", "spike", {"all": [_g7_adx5m]}, "S1"),
+        # ── M2-B-2b の破り7通り（R2・R3・R4・R5・R6・R7 側逆・R10）＝通る束: range を1か所ずつ壊す ──
+        ("R2 破り: ボラ系統が2本（BB幅＋ATR%）", "range",
+         {"all": [_g7_hys({"all": [_g7_struct, _g7_geo_w, _g7_streak, _g7_atr]}, _g7_w_off), {"not": _g7_adx}]}, "R2"),
+        ("R3 破り: 帯の部品が 5m だけで geo なし", "range",
+         {"all": [_g7_hys({"all": [_g7_struct5m, _g7_streak]}, _g7_w_off), {"not": _g7_adx}]}, "R3"),
+        ("R4 破り: streak なし", "range",
+         {"all": [_g7_hys({"all": [_g7_struct, _g7_geo_w, _g7_sq]}, _g7_w_off), {"not": _g7_adx}]}, "R4"),
+        ("R5 破り: not（ADX below）＝強い側", "range",
+         {"all": [_g7_hys({"all": [_g7_struct, _g7_geo_w, _g7_streak]}, _g7_w_off), {"not": _g7_adx_off}]}, "R5"),
+        ("R6 破り: 幅が above だけ（off 側の below の写しは数えない）", "range",
+         {"all": [_g7_hys({"all": [_g7_struct, _g7_geo_w,
+                                   {"role": "env", "form": "streak", "value": {"n": 3}, "inner": _g7_w}]}, _g7_w_off),
+                  {"not": _g7_adx}]}, "R6"),
+        ("R7 破り: 幅が below だけ（コスト超えの above が無い）", "range",
+         {"all": [_g7_hys({"all": [_g7_struct, _g7_streak]}, _g7_w_off), {"not": _g7_adx}]}, "R7"),
+        ("R10 破り: ボラ量の部品なし", "range",
+         {"all": [_g7_hys({"all": [_g7_struct, _g7_geo_w,
+                                   {"role": "env", "form": "streak", "value": {"n": 3}, "inner": _g7_adx_off}]},
+                          _g7_w_off)]}, "R10"),
     ]
     _g7_ng = []
     for _lbl, _nm, _tr, _want in _g7_cases:
@@ -4271,8 +4452,12 @@ def selftest() -> None:
         elif _msg is None or "G7" not in _msg or _want not in _msg:
             _g7_ng.append(f"G7: {_lbl} が {_want} で止まらない（{str(_msg)[:100]}）")
     ng += _g7_ng
-    print(f"[G7 場面ごとの相場の法則] 通る束2種・わざと破った束7通り（C1・C4・C6・R1・R8・R7・S1） → "
+    print(f"[G7 場面ごとの相場の法則] 通る束2種・わざと破った束14通り（既存7＝C1・C4・C6・R1・R8・R7・S1 ＋ "
+          f"M2-B-2b の7＝R2・R3・R4・R5・R6・R7側逆・R10） → "
           + ("✅ 全部 期待どおり" if not _g7_ng else "❌ " + " ／ ".join(_g7_ng)))
+    _cnt = regime_law_counts()
+    print(f"[相場の法則の読み込み] 審査に使う {_cnt.get('審査に使う')}件 ／ 置き場あり {_cnt.get('置き場あり')}件 ／ "
+          f"持たない {_cnt.get('持たない')}件")
     # ── B0 M2-B0 の壊しテスト（設計書 iter="m2-b0-law-reader-20260830" §4・2026-08-30）──────────────
     #   法則の読み込みが fail-closed か（B0-1〜B0-4）・審査が法則に追従するか（B0-5・B0-6＝差し替え注入。
     #   ファイルは書き替えない＝覚えを一時差し替えて戻す。実ファイルでの1回の実測は検収で別に行う）。
@@ -4318,8 +4503,40 @@ def selftest() -> None:
             _b0_ng.append(f"B0-6: C6 を外したのに hysteresis の無い束が通らない（{str(_b0_msg)[:80]}）")
     finally:
         _REGIME_LAWS = _b0_keep
+    # ── M2-B-2b の fail-closed 6通り（B0-7〜B0-12）＝知らない形・側・上限・置き場なし・性質・かつ ──
+    for _lbl, _j in (
+        ("B0-7: 知らない形（within_n）で止まらない", {"掛かる場面": ["range"], "型": "形を持つ", "形": "within_n"}),
+        ("B0-8a: 側の値が above/below 以外で止まらない",
+         {"掛かる場面": ["range"], "型": "部品を数える", "数える部品": {"family": ["ADX"], "側": {"ADX": "left"}}, "本数": 1}),
+        ("B0-8b: family の無い側で止まらない",
+         {"掛かる場面": ["range"], "型": "部品を数える", "数える部品": {"系統": ["ボラ"], "側": {"ADX": "below"}}, "本数": 1}),
+        ("B0-9: 系統を重ねない の上限 0 で止まらない",
+         {"掛かる場面": ["range"], "型": "系統を重ねない", "除く系統": [], "上限": 0}),
+        ("B0-11: 知らない性質で止まらない",
+         {"掛かる場面": ["range"], "型": "部品を数える", "数える部品": {"性質": "無い性質"}, "本数": 1}),
+        ("B0-12: かつ が真偽でなくて止まらない",
+         {"掛かる場面": ["range"], "型": "部品を数える", "数える部品": {"かつ": "yes", "系統": ["ボラ"]}, "本数": 1}),
+    ):
+        try:
+            _validate_law("B0", _j)
+            _b0_ng.append(_lbl)
+        except SystemExit:
+            pass
+    import tempfile as _tmpf
+    with _tmpf.TemporaryDirectory() as _td:
+        _pth = pathlib.Path(_td) / "regime_laws_b0.json"
+        _pth.write_text(json.dumps({"判定を揃えた場面": ["レンジ"],
+                                    "法則": [{"番号": "R99", "場面": "レンジ", "一文": "見本"},
+                                             {"番号": "C99", "場面": "共通", "一文": "見本",
+                                              "機械が読む判定": {"掛かる場面": ["range"], "型": "形を持つ", "形": "not"}}]},
+                                   ensure_ascii=False), encoding="utf-8")
+        try:
+            load_regime_laws(path=_pth)
+            _b0_ng.append("B0-10: 判定を揃えた場面の法則に判定も置き場も無いのに止まらない")
+        except SystemExit:
+            pass
     ng += _b0_ng
-    print("[B0 相場の法則の読み込み] fail-closed 4通り・差し替え注入2通り → "
+    print("[B0 相場の法則の読み込み] fail-closed 10通り・差し替え注入2通り → "
           + ("✅ 全部 期待どおり" if not _b0_ng else "❌ " + " ／ ".join(_b0_ng)))
     print("=" * 80)
     # ══ 97番＝出口の発火条件が「形」を見る（設計書 v3 やること4・2026-08-25・まこさん承認 9231be44…）═══
