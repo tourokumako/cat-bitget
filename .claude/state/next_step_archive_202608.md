@@ -1687,3 +1687,13 @@ H2（leak なし）・H6（価格非依存）について、最初は「担保�
 > **★着手の前に読む**＝`session_worklog_20260830.md` の §7・§8・§11。
 > **★net はゼロ**（実験ゼロ・採点ゼロ・売買記録0本）。
 
+
+
+# 2026-09-01 に tidy_next_step.py が next_step.md から移した節（「次の書き替えで消す」の印つき 1 節・1文字も変えていない）
+
+### 0-2b（次の書き替えで消す）★この文書が唯一の起点になった（まこさん指示 2026-08-25・61回目）
+
+- **まこさんの言葉（逐語）**＝「next_step.md を唯一の起点にする。WORKFLOW.md の現在地は「next_step.md §0 を見る」の1行だけにする。…これらはすべて実施してほしい」。
+- **やったこと4件**＝①`WORKFLOW.md` の現在地を1行にし、改訂189〜248 の全文（2,285行）を `archive/workflow/WORKFLOW_archive_revisions189-248_20260825.md` へ1文字も変えずに移した（sha256 `8aa1c01e2e100d25…`）。残したのは「改訂番号・日付・1行」の表178行。**2,692行 → 582行**。改訂の番号は248で止める ②CP 監査一覧を `.claude/tools/gen_audit_index.py`（新設・`--write`／`--verify`）で `.claude/audits/` から機械で作る形にした（20件・手書きの22行を置き換え・わざと1文字 変えると ❌ を実測）③必読の hook から `WORKFLOW.md` を外した（`require_read_before_work.sh`・`reset_read_log.sh`・`verify_handoff_paths.sh`。番人＝next_step 未読は止まる・WORKFLOW だけ未読は通る、を実測）④文書を実物に合わせた（`pdca_flow.md`・`CLAUDE.md`・要件定義の json → `gen_cat_requirements --final`／`--verify` ✅）。
+- **★セッションの終わりに書くのは、この文書と `session_worklog_YYYYMMDD.md` と `lessons_active.md` の3本**（`WORKFLOW.md` には現在地を書かない）。記録＝worklog §44・教訓 L-550。
+
