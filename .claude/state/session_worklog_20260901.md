@@ -82,3 +82,12 @@
 - **next_step**＝0-1 を「M2-B-3 が終わった」に書き替え、0-2 の表の いまここを **M2-B-4** にした。`tidy_next_step.py --write`（(0-b-2) を json から）→ `--verify` **6つとも ✅（§0 47行／上限100）**。
 - **★コミットしていません**（まこさんの OK 待ち）。触ったファイル＝regime_laws.json／m2_todo.json／gen_regime_kb.py／regime_detection_kb.md／engine_tuner_milestones2.md／next_step.md／session_worklog_20260901.md／session_todo.md／acceptance.md（＋印 g2_pass.json・h2_pass.json・acceptance.approved・acceptance_archive/m2-b3-audit-fixes-20260901.md）。
 - **net はゼロ**（実験ゼロ・採点ゼロ・売買記録0本）。
+
+## §7 コミットした（2026-09-01・まこさん「コミットOK」）
+
+- **コミット 6c9bab1**（**13ファイル**・760行 追加／114行 削除・ファイル単位で add・`git add .` は不使用）。
+- **入れたもの**＝`regime_laws.json`／`gen_regime_kb.py`／`m2_todo.json`／機械が作り直した `regime_detection_kb.md`・`engine_tuner_milestones2.md`／`next_step.md`・`next_step_archive_202608.md`／`session_worklog_20260830.md`（§12 の追記）・`session_worklog_20260901.md`（新）／`decisions.md`（SessionStart の hook が作り直すもの）／監査の依頼書と結果（新2本）／設計書の控え `acceptance_archive/m2-b3-audit-fixes-20260901.md`（新）。
+- **機密の確認**＝`bitget_keys.json`・`*.csv`・`results/` は **0件**（add の前に機械で確かめた）。
+- **入れなかったもの（未追跡のまま）**＝ログ4本（engine_tuner_*.log）／`results/`／`settings.json.bak_*` 3本／`e38_logics.backup_20260802_005140.json`／**★`.claude/audits/inputs/2026-08-09_engine_tuner_milestone2_flow_cp5_audit_request.md`**（2026-08-09 の監査の依頼書。今回の作業と関係が無いので入れなかった。★入れるかは まこさんが決める＝監査の記録は残す決まり〔cc_role §1.4.5〕なので、次のセッションで確認する）。
+- **コミットの後**＝追跡しているファイルの未コミットは **0件**。
+- **net はゼロ**（実験ゼロ・採点ゼロ・売買記録0本）。
