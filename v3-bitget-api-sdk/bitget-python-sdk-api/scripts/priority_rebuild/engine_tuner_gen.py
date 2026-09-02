@@ -213,6 +213,10 @@ def material_pool(cfg: dict | None = None) -> tuple[list[dict], list[str], int]:
         ent, prm = iref.find(nm)
         if ent is None or ent["family"] not in ex.FAMILY_TEMPLATES:
             continue
+        # ★指標のオン・オフの印（M2-C-2・呼ぶ側 1/5＝案を作る・材料の候補）。
+        #   判定は実行器の1つの関数だけ＝ここに条件を書き写さない。
+        if not ex.indicator_enabled(ent["family"]):
+            continue
         p = None if len(prm) == 0 else (prm[0] if len(prm) == 1 else tuple(prm))
         pool.append({"family": ent["family"], "param": p})
     tfs = list(cfg["timeframes"])
@@ -266,6 +270,10 @@ def material_ranges(cfg: dict | None = None, limits: dict | None = None) -> dict
         if ent is None:
             continue
         fam = ent["family"]
+        # ★指標のオン・オフの印（M2-C-2・呼ぶ側 2/5＝案を作る・パラメータの範囲）。
+        #   使わない指標の範囲は作らない＝範囲の表そのものが小さくなる。
+        if not ex.indicator_enabled(fam):
+            continue
         axes = seen.setdefault(fam, [[] for _ in range(len(prm))])
         if len(axes) != len(prm):                     # 同じ指標で数字の個数が違う＝表の作りが崩れている
             raise SystemExit(f"[範囲エラー] {fam} の数字の個数がカタログの中でそろっていない"
@@ -627,6 +635,11 @@ def assert_provenance(obj, limits: dict | None = None, ranges: dict | None = Non
 
     for d in _walk_dicts(obj):
         if "family" in d and "tf" in d:
+            # ★指標のオン・オフの印（M2-C-2・呼ぶ側 3/5＝案を審査する）。
+            #   範囲の表からも消えているので 641行 でも落ちるが、そこだと「カタログに無い」という
+            #   別の理由に見える。印で落ちたことが分かるように、先にここで止める。
+            if not ex.indicator_enabled(d["family"]):
+                bad(f"印が「使わない」の指標 {d['family']}（indicator_switch.json・M2-C-2）")
             src = d.get(PARAM_SRC)
             if not isinstance(src, dict) or src.get("kind") != "param":
                 bad(f"範囲から引いた印の無い材料 {d.get('family')}(param={d.get('param')}, tf={d.get('tf')})")
@@ -1222,6 +1235,12 @@ def ranked_materials(role: str, label: str | None = None) -> list[tuple[str, flo
             raise SystemExit(f"[材料の順位] 成績表に {role}/{lab} が無い（fail-closed）")
         for hor in sorted(d[role][lab], key=lambda x: int(x)):
             for col, acc in d[role][lab][hor]:
+                # ★指標のオン・オフの印（M2-C-2・呼ぶ側 4/5＝順位の表を作る）。
+                #   使わない指標の列は順位から外す＝場面の判定の束が、その材料を1位に引かなくなる。
+                #   ★成績表そのものは書き換えない（読むときに外すだけ）＝印を戻せば順位も戻る。
+                nm = str(col).rsplit("__", 1)[0] if "__" in str(col) else str(col)
+                if not ex.indicator_enabled(nm):
+                    continue
                 rows.append((abs(float(acc) - 0.5), str(col), float(acc), lab, str(hor)))
     if not rows:
         raise SystemExit(f"[材料の順位] {role}/{label} の順位が空（fail-closed）")
@@ -3156,6 +3175,10 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     #   meta が食い違って Journal が止める＝目的が入れ替わったまま再開する事故を防ぐ（2026-08-26）。
     if minimize:
         meta["minimize"] = minimize
+    # ★指標のオン・オフの印（M2-C-2・呼ぶ側 5/5＝走行を再開する）。
+    #   印が前回と違う状態で続きから再開すると、前半と後半で使える指標が変わった1本の走行になる＝
+    #   試行の母集団が途中で入れ替わり、DSR・PBO の判定が意味を失う。だから meta に入れて食い違いで止める。
+    meta["indicator_switch"] = ex.indicator_switch_fingerprint()
     jn = Journal(run_dir / "journal.jsonl", meta)
     print(f"[歩4 生成器] 窓 {start}〜{end} ／ 第1段 {trials1} 本（ランダム＝統計の土台）／ "
           f"第2段 {trials2} 本（TPE＝統計判定に不使用）／ journal {jn.path}")
@@ -5263,6 +5286,62 @@ def selftest() -> int:
     print("  T30 外の道: 印つきの案を実行器の検査に直に渡すと止まる／包み validate_drawn なら通る")
     print("  T31 呼び出し元の走査: sample_structure を呼ぶ .py で validate_recipe を直に呼ぶ所 0件／わざと直に呼ぶ写しは 1件 出る")
     print("  T32 使えない組: 範囲のどの数字でも禁止3 の組は順位に数えない／禁止3 を外すと直す前の1位に戻る／種を変えても同じ組")
+
+    # ══ T33 指標のオン・オフの印（M2-C-2・設計書 iter="indicator-switch-20260902"）══════════
+    #   確かめ方＝設計書 §5 の7つのうち、生成器で試せる5つ（残り2つ＝恒等3本の md5／印を手で
+    #   書き換えたら検出、は それぞれ --identity と gen_indicator_switch.py --verify が持つ）。
+    t33: list[str] = []
+    try:
+        _sw = ex.load_indicator_switch()
+        _on, _off = list(_sw["on"]), list(_sw["off"])
+        if not _off:
+            t33.append("T33: 「使わない」が0件＝この検査が何も試せない（印が効いていない）")
+        else:
+            # (a) 「使わない」の指標は、案を作るときの候補に1件も出ない
+            _pool, _tf33, _tot33 = material_pool()
+            _leak = sorted({b["family"] for b in _pool} & set(_off))
+            if _leak:
+                t33.append(f"T33-a: 「使わない」の指標が候補に出た: {_leak[:5]}")
+            # (b) 「使わない」の指標を使った案は、審査が捨てる
+            _bad33 = {"role": "trigger", "form": "level", "side": "above",
+                      "material": [{"family": _off[0], "param": None, "tf": "5m"}],
+                      "value": {"threshold_q": 0.7}}
+            try:
+                assert_provenance(_bad33, where="T33")
+                t33.append(f"T33-b: 「使わない」の指標 {_off[0]} を使った案を審査が通した")
+            except SampleError as _e33:
+                if "印が「使わない」" not in str(_e33):
+                    t33.append(f"T33-b: 止まったが理由が印ではない: {str(_e33)[:60]}")
+            # (c) 「使う」に戻すと通る＝印を戻せば元に戻る（片道でない）
+            _keep33 = set(_sw["_on_set"])
+            try:
+                _sw["_on_set"].add(_off[0])
+                try:
+                    assert_provenance(_bad33, where="T33")
+                except SampleError as _e33c:
+                    if "印が「使わない」" in str(_e33c):
+                        t33.append(f"T33-c: 「使う」に戻しても印で止まる（片道になっている）")
+            finally:
+                _sw["_on_set"] = _keep33
+            # (d) 順位の表からも「使わない」の指標が外れる
+            try:
+                _rk = ranked_materials("env")
+                _leak_d = sorted({str(c).rsplit("__", 1)[0] for c, _a, _l, _h in _rk} & set(_off))
+                if _leak_d:
+                    t33.append(f"T33-d: 「使わない」の指標が順位に残った: {_leak_d[:5]}")
+            except SystemExit:
+                pass                                  # 成績表がまだ無い環境＝この枝は試さない
+            # (e) 印の指紋が走行の記録の meta に入る＝切り替えたまま再開すると止まる
+            if not ex.indicator_switch_fingerprint():
+                t33.append("T33-e: 印の指紋が空（走行の再開の食い違いを検出できない）")
+        print(f"  T33 実測: 使う {len(_on)} 種／使わない {len(_off)} 種"
+              f"／候補に出た種類 {len({b['family'] for b in material_pool()[0]})} 種"
+              f"／印の指紋 {ex.indicator_switch_fingerprint()}")
+    except Exception as _e33x:                        # noqa: BLE001
+        t33.append(f"T33: 検査が走らない: {type(_e33x).__name__} {_e33x}")
+    ng += t33
+    print("  T33 指標のオン・オフの印: (a)候補に出ない (b)審査が捨てる (c)戻せば通る"
+          " (d)順位から外れる (e)指紋が記録に入る")
 
     if ng:
         for x in ng:

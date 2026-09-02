@@ -39,10 +39,13 @@
 """
 import ast
 import glob
+import hashlib
 import json
 import os
+import pathlib
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -691,6 +694,159 @@ def check_approval(md_path: str):
                    f"/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/approve_design.sh {md_path}")
 
 
+# ══ 設計書どおりにしか実装できなくする（M2 の外・汎用・2026-09-02 まこさん承認 iter="impl-lock-20260902"）══
+#
+# なぜ要るか（実測）＝2026-09-02 に、設計書に「4通りを展開する」と書いて実装は2通りだった。
+#   既に在る照合3つ（self_check_calls・must_combine・--diff）は どれも止めなかった。
+#   見つけたのは既存のテストが3分12秒 走った後で、CC が作ったテスト14件はどれも通した。
+#
+# 4つの照合（設計書 §3.3）:
+#   A  git の差分で触った関数 ⊆ impl_functions   ＝設計書に書いていない関数を触ったら止める
+#   B  impl_functions ⊆ git の差分で触った関数   ＝設計書に書いたのに実装していないなら止める
+#   C  must_use の名前が、その関数の中に在るか    ＝中身が設計と違うなら止める
+#   D  spec_lists の一覧が、実装で読まれているか  ＝一覧をコードに焼いたら止める
+SPEC_LISTS_PATH = (pathlib.Path(__file__).resolve().parents[2]
+                   / ".claude" / "ratchet" / "spec_lists.json")
+
+
+def load_spec_lists() -> dict:
+    """承認のときに設計書から書き出された一覧を読む（設計書 §3.1 の段2 が作る）。
+
+    ★実装はこの一覧を読む。コードに一覧を焼かない＝設計書と実装で一覧が2か所に無い。
+    """
+    if not SPEC_LISTS_PATH.exists():
+        return {}
+    return json.loads(SPEC_LISTS_PATH.read_text(encoding="utf-8"))
+
+
+def names_in_function(tree, func: str) -> tuple[bool, set]:
+    """関数 func の中に現れる名前を全部 集める（戻り＝(関数が在るか, 名前の集合)）。
+
+    ★must_combine（変数の代入の右辺だけ）との違い＝関数の中身を丸ごと見る。
+      2026-09-02 の食い違いは、代入ではなく関数の中の for 文だったので、must_combine では見えなかった。
+    """
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == func:
+            got = set()
+            for sub in ast.walk(node):
+                if isinstance(sub, ast.Name):
+                    got.add(sub.id)
+                elif isinstance(sub, ast.Attribute):
+                    got.add(sub.attr)
+            return True, got
+    return False, set()
+
+
+def touched_functions(path: str) -> set:
+    """git の差分から「この実装で触った関数」を機械で集める。
+
+    ★CC の申告ではなく git が出す＝「設計書に書かずに実装する」道を塞ぐ（設計書 §3.4 の1）。
+      git diff -U0 の見出し行は `@@ -a,b +c,d @@ def 関数名(...)` の形で、触った関数の名前がそのまま出る。
+    """
+    out = set()
+    for args in (["git", "diff", "-U0", "--", path], ["git", "diff", "-U0", "--staged", "--", path]):
+        try:
+            r = subprocess.run(args, capture_output=True, text=True, timeout=30)
+        except Exception:                                  # noqa: BLE001
+            continue
+        for m in re.finditer(r"^@@[^@]*@@\s*(?:async\s+)?def\s+(\w+)", r.stdout, re.M):
+            out.add(m.group(1))
+    # ★新しく作ったファイルは、git の差分が「全部 追加」になり、上の見出しに関数名が出ない
+    #   （2026-09-02 に実測＝新規の gen_indicator_switch.py で 0 件だった）。
+    #   そのときは「ファイルの中の全部の関数」を触った関数とする＝新規ファイルでも照合A・B が効く。
+    if not out:
+        try:
+            st = subprocess.run(["git", "status", "--porcelain", "--", path],
+                                capture_output=True, text=True, timeout=30).stdout
+        except Exception:                                  # noqa: BLE001
+            st = ""
+        if st.strip().startswith(("??", "A")):
+            try:
+                tree = ast.parse(open(path, encoding="utf-8").read())
+            except Exception:                              # noqa: BLE001
+                return out
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    out.add(node.name)
+    return out
+
+
+def check_impl_functions(contract: dict, md_path: str) -> list:
+    """照合A・B＝git の差分で触った関数と、設計書の impl_functions を両方向で照らす。
+
+    ★あわせて、この道具自身が承認のときから書き換えられていないかも見る（設計書 §3.4 の5・抜け道5）。
+      印は approve_impl.sh が承認の瞬間に書く＝まこさんの承認なしに道具を書き換えると、ここで止まる。
+    """
+    ng = []
+    mark = pathlib.Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/verify_tool.approved")
+    if mark.exists():
+        me = pathlib.Path(__file__).resolve()
+        now = hashlib.sha256(me.read_bytes()).hexdigest()
+        want = mark.read_text(encoding="utf-8").strip()
+        if want and now != want:
+            ng.append(f"照合の道具が承認のときから変わっている（いま {now[:16]}… ／ 承認時 {want[:16]}…）"
+                      "＝まこさんの承認を取り直すこと")
+    spec = contract.get("impl_functions") or {}
+    for rel, want in spec.items():
+        impl = _resolve_impl(md_path, rel)
+        got = touched_functions(impl)
+        if not got:
+            print(f"  [SKIP] {rel}: git の差分に触った関数が無い（まだ実装していない／commit 済み）")
+            continue
+        for extra in sorted(got - set(want)):
+            ng.append(f"A {rel}: 設計書に書いていない関数を触った → {extra}")
+        for miss in sorted(set(want) - got):
+            ng.append(f"B {rel}: 設計書に書いたのに実装していない → {miss}")
+        if not (got - set(want)) and not (set(want) - got):
+            print(f"  [PASS] {rel}: 触った関数と設計書が一致（{len(got)} 件）")
+    return ng
+
+
+def check_must_use(contract: dict, src: str) -> list:
+    """照合C＝must_use に書いた名前が、その関数の中に在るか（AST で関数の中身を見る）。"""
+    ng = []
+    spec = contract.get("must_use") or {}
+    if not spec:
+        return ng
+    tree = ast.parse(src)
+    for func, required in spec.items():
+        found, got = names_in_function(tree, func)
+        if not found:
+            ng.append(f"C {func}: 設計書の must_use に在るのに、実装にその関数が無い")
+            continue
+        missing = [c for c in required if c not in got]
+        if missing:
+            ng.append(f"C {func}: 設計書が要求する名前が中身に無い → {missing}")
+        else:
+            print(f"  [PASS] must_use {func}: 全部あり {required}")
+    return ng
+
+
+def check_spec_lists(contract: dict, src: str) -> list:
+    """照合D＝spec_lists の一覧を、実装が読んでいるか（コードに焼いていないか）。
+
+    ★見るのは2つ＝①一覧を読む関数を呼んでいるか ②一覧の中身がコードに直書きされていないか。
+    """
+    ng = []
+    spec = contract.get("spec_lists") or {}
+    if not spec:
+        return ng
+    tree = ast.parse(src)
+    reads = "load_spec_lists" in src
+    for key, items in spec.items():
+        if not reads:
+            ng.append(f"D {key}: 一覧を読む処理（load_spec_lists）が実装に無い＝コードに焼いた疑い")
+            continue
+        baked = [s for s in items
+                 if isinstance(s, str)
+                 and any(isinstance(n, ast.Constant) and n.value == s for n in ast.walk(tree))]
+        if len(baked) == len(items) and items:
+            ng.append(f"D {key}: 一覧の中身が実装に直書きされている → {baked}")
+        else:
+            print(f"  [PASS] spec_lists {key}: 読む形（直書き {len(baked)}/{len(items)}）")
+    return ng
+
+
 def check(md_path: str) -> bool:
     with open(md_path) as f:
         contract = extract_contract(f.read())
@@ -715,8 +871,12 @@ def check(md_path: str) -> bool:
             else:
                 print(f"  [FAIL] 自己チェック配線が無い（外された疑い）: {c}")
                 ok = False
-    else:
-        # 旧方式: 実装の代入式に設計要求成分が連結されているか（literal assignment・contract-driven でない実装用）
+    # ★2026-09-02（まこさん承認 iter="impl-lock-20260902"）＝ここは else だった。
+    #   ＝self_check_calls（名前が在るかだけ）を書くと、must_combine（中身を見る）が一度も走らなかった。
+    #   今日の食い違い（4通り→2通り）は、名前を4つ書いたので中身の検査が動かず、素通りした。
+    #   直した後＝書いてあるものを全部 走らせる。
+    if contract.get("must_combine"):
+        # 実装の代入式に設計要求成分が連結されているか（literal assignment）
         tree = ast.parse(src)
         for symbol, required in contract.get("must_combine", {}).items():
             found, names = rhs_names_for_symbol(tree, symbol)
@@ -730,6 +890,13 @@ def check(md_path: str) -> bool:
                 ok = False
             else:
                 print(f"  [PASS] {symbol}: 全成分あり {required}")
+    # ★設計書どおりにしか実装できなくする照合A〜D（2026-09-02・iter="impl-lock-20260902"）。
+    #   書いてある欄だけ走る＝既存の設計書（3つの欄が無いもの）は今までどおり通る。
+    for msg in (check_impl_functions(contract, md_path)
+                + check_must_use(contract, src)
+                + check_spec_lists(contract, src)):
+        print(f"  [FAIL] {msg}")
+        ok = False
     print("RESULT:", "PASS（設計通り）" if ok else "FAIL（設計と実装が乖離＝採点に進めない）")
     return ok
 

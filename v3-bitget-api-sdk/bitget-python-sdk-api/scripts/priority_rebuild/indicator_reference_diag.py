@@ -4191,6 +4191,53 @@ def range_geo_known_check(geo_fn, zone_tol: float, zone_touch: int, zone_lookbac
     return ng
 
 
+# ══ ta のクラスとの対応（M2-C-2・まこさん承認 2026-09-02「書き込んでよい」）════════════════
+# 何のためか＝まこさん決定 2026-08-27（逐語「本来の目的が達成できるまでは、指標一覧はta 43種にする」）を
+#   機械で実行するには、ta のクラス名（BollingerBands）と、うちの材料の名前（BB）を突き合わせる必要がある。
+#   文字が違うので自動では突き合わない。だからここに対応を持つ。
+#
+# ★CC が指標を選んでいるのではない。作り方の順序は次の3段:
+#   ① gen_indicator_switch.py --ta-candidates が、機械の規則（クラス名の略号の前方一致）で候補を出す
+#   ② まこさんが1回 見て承認する（2026-09-02）
+#   ③ 承認されたものだけをここに書く
+#
+# ★ここに書かないもの＝ta を呼ぶ照合式（ext=）が定義表に在る19クラス。
+#   そちらは gen_indicator_switch.py が関数のソースから機械で引くので、二重に持たない。
+#
+# ★除いたもの（1件）＝PercentageVolumeOscillator の候補に出た「PVOL比」。
+#   機械は略号 PVO の前方一致で拾ったが、実物の定義が別物だった（2026-09-02 に定義表で確認）＝
+#   PVO は出来高の短期 EMA と長期 EMA の差／PVOL比 は 売買代金が n 本平均の何倍か。
+#
+# 形＝{ta のクラス名: (材料の種類, ...)}。材料の種類が定義表に実在するかは
+#   gen_indicator_switch.py --selftest が毎回 確かめる（打ち間違いは そこで止まる）。
+TA_CLASS_MAP: dict[str, tuple[str, ...]] = {
+    # ── 略号の一致で候補が出た15クラス（まこさん承認 2026-09-02）──
+    "AroonIndicator": ("AROONU", "AROOND", "AROONOSC"),
+    "DPOIndicator": ("DPO%",),
+    "KAMAIndicator": ("KAMA傾き%", "close vs KAMA%"),
+    "KSTIndicator": ("KST", "KSTシグナル"),
+    "KeltnerChannel": ("Keltner上", "Keltner下"),
+    "MassIndex": ("MASSI",),
+    "PSARIndicator": ("PSAR加速", "PSAR反転", "close vs PSAR%"),
+    "PercentagePriceOscillator": ("PPO", "PPOシグナル", "PPOヒスト"),
+    "PercentageVolumeOscillator": ("PVO", "PVOシグナル", "PVOヒスト"),
+    "STCIndicator": ("STC", "STCstoch"),
+    "StochRSIIndicator": ("StochRSI%K", "StochRSI%D"),
+    "TRIXIndicator": ("TRIX", "TRIXシグナル", "TRIXヒスト"),
+    "TSIIndicator": ("TSI", "TSIシグナル", "TSIヒスト"),
+    "VolumeWeightedAveragePrice": ("close vs VWAP",),
+    "WMAIndicator": ("WMA傾き%", "close vs WMA%"),
+    # ── 略号では当たらないが材料に相当が在る4クラス（まこさん承認 2026-09-02）──
+    "VortexIndicator": ("VTXP", "VTXM"),                 # 名前が Vortex と VTX で違う
+    "UlcerIndex": ("UI",),                               # 略号が2文字＝機械の照合から外してある
+    "NegativeVolumeIndexIndicator": ("NVI傾き",),         # 名前が長く略号を作れない
+    # ★OBV傾き＝ta に相当は在るが、値の照合はしない（定義表 954行の逐語＝
+    #   「外部ライブラリ ta は同値を上昇扱いする変種のため外部照合の対象外」）。
+    #   ＝照合式が無いのは登録漏れではなく、意図した状態。だから ta 由来の対応はここで持つ。
+    "OnBalanceVolumeIndicator": ("OBV傾き",),
+}
+
+
 # ══ 系統マップ（G3 同系統制限の正本・CP3 Q4・全 family を単一割当＝載っていない family は生成不可）══
 # 8系統＝トレンド／オシレーター／ボラ／出来高／ローソク／構造・位置／需給／時間帯（設計書 G3）。
 # 両属性の family は主用途で単一割当し、理由を note に書く（例＝MFI はオシレーター・CP3 の例示どおり）。

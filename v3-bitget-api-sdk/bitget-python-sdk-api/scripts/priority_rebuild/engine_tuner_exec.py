@@ -149,6 +149,55 @@ EXEC_REGISTERED_ONLY = ("iceberg", "twap", "vwap")              # 登録済み�
 REASONS_MAKER = set(_score.MAKER_EXIT_REASONS)
 REASONS_TAKER = set(_score.TAKER_EXIT_REASONS)
 
+# ── 指標のオン・オフの印（M2-C-2・設計書 iter="indicator-switch-20260902"・まこさん承認 2026-09-02）──
+# 何のためか＝まこさん決定 2026-08-27（逐語「本来の目的が達成できるまでは、指標一覧はta 43種にする」）を
+#   engine_tuner に効かせる。印は .claude/ratchet/indicator_switch.json（gen_indicator_switch.py が機械で作る）。
+#
+# ★判定はこの1つの関数だけ。生成器（engine_tuner_gen）も実行器も、ここを呼ぶ＝同じ判定を2か所に書き写さない。
+# ★印でできるのは減らすことだけ＝承認済みの型の表に無い指標は、印をオンにしても使えない
+#   （使える指標＝型の表 ∩ 印がオン の積）。だから型の表の承認とハッシュ値は、印を切り替えても変わらない。
+# ★印が無ければ止まる（fail-closed）＝「印を消せば全部 使える」という緩む方向の道を作らない。
+INDICATOR_SWITCH_PATH = HERE.parents[1] / ".claude" / "ratchet" / "indicator_switch.json"
+_SWITCH_CACHE: dict | None = None
+
+
+def load_indicator_switch() -> dict:
+    """指標のオン・オフの印を読む。無ければ止まる（fail-closed・M2-C-2）。"""
+    global _SWITCH_CACHE
+    if _SWITCH_CACHE is None:
+        if not INDICATOR_SWITCH_PATH.exists():
+            raise SystemExit(
+                f"[指標の印] {INDICATOR_SWITCH_PATH.name} が無い"
+                "（python3 gen_indicator_switch.py --write で作る・fail-closed・M2-C-2）")
+        d = json.loads(INDICATOR_SWITCH_PATH.read_text(encoding="utf-8"))
+        d["_on_set"] = set(d.get("on") or [])
+        d["_geo_set"] = set(d.get("geo_on") or [])
+        _SWITCH_CACHE = d
+    return _SWITCH_CACHE
+
+
+def indicator_enabled(name: str) -> bool:
+    """材料が「使う」に入っているか。name＝カタログの部品名（RSI14）でも 種類名（RSI）でもよい。
+
+    ★種類名で照らす＝印は種類に付く（M2-C-2）。部品名で渡されたときは、参照表で種類に直してから見る。
+    """
+    sw = load_indicator_switch()
+    if name in sw["_on_set"]:
+        return True
+    ent, _prm = iref.find(name)
+    return bool(ent is not None and ent["family"] in sw["_on_set"])
+
+
+def geo_enabled(name: str) -> bool:
+    """レンジ幾何の列（W%・帯内位置%）が「使う」に入っているか。"""
+    return name in load_indicator_switch()["_geo_set"]
+
+
+def indicator_switch_fingerprint() -> str:
+    """印の指紋（走行の再開のときに、前回と同じ印かを照らすため）。"""
+    return str(load_indicator_switch().get("fingerprint", ""))
+
+
 # ── 材料の名前組み立て（family×param×tf → カタログ名・G6 fail-closed）──
 # ★2026-08-11（マイルストーン①のフロー 段6 の 6-7）に、手書き19件から「参照表から機械で作る」形へ
 #   変えた。理由を残す。

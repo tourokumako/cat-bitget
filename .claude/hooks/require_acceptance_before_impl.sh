@@ -59,6 +59,30 @@ case "$FILE" in
     fi
     ;;
 esac
+# ★2026-09-02（まこさん承認 iter="impl-lock-20260902"）＝Bash で .py を書く道を塞ぐ。
+#   なぜ要るか＝この hook は Write と Edit にしか登録されておらず、Bash（リダイレクト・tee・cp・mv・sed -i）で
+#   .py を書けば、承認なしで実装できた。2026-08-26 の監査 cp8 が実測で再現した穴（指摘②）。
+#   ここでは Bash の command から書き込み先の .py を取り出し、FILE として下の通常ゲートへ落とす。
+#   ★引用符とヒアドキュメントの中身は外してから見る＝文章の中でファイル名に触れただけでは止めない
+#     （forbid_interpretation_file と同じ考え方）。
+if [ -z "$FILE" ]; then
+  CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(((json.load(sys.stdin).get('tool_input',{}) or {}).get('command') or ''))" 2>/dev/null)
+  if [ -n "$CMD" ]; then
+    FILE=$(printf '%s' "$CMD" | python3 -c "
+import re, sys
+cmd = sys.stdin.read()
+cmd = re.sub(r'<<\s*[\'\"]?(\w+)[\'\"]?.*?^\1', ' ', cmd, flags=re.S | re.M)   # ヒアドキュメントの中身を外す
+pats = [r'>>?\s*([^\s;|&]+\.py)', r'\btee\s+(?:-a\s+)?([^\s;|&]+\.py)',
+        r'\bcp\s+[^\s;|&]+\s+([^\s;|&]+\.py)', r'\bmv\s+[^\s;|&]+\s+([^\s;|&]+\.py)',
+        r'\bsed\s+-i[^\s]*\s+(?:[^\s;|&]+\s+)?([^\s;|&]+\.py)']
+for p in pats:
+    m = re.search(p, cmd)
+    if m:
+        print(m.group(1)); break
+" 2>/dev/null)
+  fi
+fi
+
 case "$FILE" in
   *scripts/priority_rebuild/*.py) ;;
   *) exit 0 ;;
@@ -81,6 +105,19 @@ if [ -z "$TARGETS" ]; then
   echo "$GUIDE" >&2
   exit 2
 fi
+# ★2026-09-02（まこさん承認 iter="impl-lock-20260902"）＝設計書に impl_functions を書かせる。
+#   なぜ要るか＝2026-09-02 に、設計書に「4通り展開する」と書いて実装は2通りだった。
+#   既に在る照合は どれも止めなかった。書いてなければ照合しようがないので、書くところを強制する。
+#   ★これで塞がるのは「1件も書かない」だけ＝「1件だけ書く」は照合A・B（git の差分と両方向）が塞ぐ。
+if ! grep -q '"impl_functions"' "$LIST" 2>/dev/null; then
+  echo "🔒 [受け入れ条件ゲート] 設計書に impl_functions がありません（2026-09-02 まこさん承認 impl-lock-20260902）。" >&2
+  echo "   何を書くか＝この実装で作る・変える関数を、ファイルごとに全部。DESIGN_CONTRACT の中に置く:" >&2
+  echo '     "impl_functions": {"scripts/priority_rebuild/<file>.py": ["関数名", ...]}' >&2
+  echo "   なぜ＝設計書に書いた関数と、git の差分で実際に触った関数を、両方向で照らすため。" >&2
+  echo "        書いていない関数を触ったら止まり、書いたのに触っていなくても止まります。" >&2
+  exit 2
+fi
+
 MATCH=0
 while IFS= read -r tgt; do
   [ -z "$tgt" ] && continue

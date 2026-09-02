@@ -292,6 +292,10 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_request_scope.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_acceptance_before_impl.sh"
           }
         ]
       },

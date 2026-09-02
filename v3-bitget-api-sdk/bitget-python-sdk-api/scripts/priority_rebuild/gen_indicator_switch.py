@@ -1,0 +1,413 @@
+#!/usr/bin/env python3
+"""gen_indicator_switch.py — 指標のオン・オフの印（使う・使わない）の自動生成（M2-C-2・2026-09-02）
+
+設計書＝.claude/state/acceptance.md（iter="indicator-switch-20260902"・まこさん承認 2026-09-02）。
+
+まこさんの決定（逐語）:
+  2026-08-27「本来の目的が達成できるまでは、指標一覧はta 43種にする」＋「レンジ判定で必要な指標は入れろ」
+  2026-09-01「一律でtaの指標のみを使うという切り替えをする」
+
+★すべて自動生成（CC の手書きの一覧はゼロ）:
+  印は3つの源から機械で作る＝
+    源1 ta の43種   … 定義表 indicator_reference_diag の ta 照合式（ext）と ta_class の欄から引く
+    源2 法則の名指し … .claude/ratchet/regime_laws.json の「機械が読む判定」の family と geo
+    源3 恒等レシピ   … recipes/identity_*.json 3本が実際に使う材料
+  機械で対応が決まらない ta のクラスは「使わない」に倒し、一覧に出す（fail-closed）。
+
+★印でできるのは減らすことだけ:
+  使える指標は「承認済みの型の表 ∩ 印がオン」の積で決まる。印をオンにしても、型の表に無い指標は使えない。
+
+このスクリプトがやらないこと: 売買しない・値を選ばない・採点しない・型の表を書き換えない。
+
+使い方:
+  python3 gen_indicator_switch.py --ta-candidates  … ta のクラスと材料の対応の候補を出す（まこさんが1回 見る）
+  python3 gen_indicator_switch.py --write          … 印のファイルを作る
+  python3 gen_indicator_switch.py --verify         … 印のファイルが手で書き換えられていないかを見る
+  python3 gen_indicator_switch.py --selftest       … わざと壊して止まるかを試す
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import importlib
+import inspect
+import json
+import pathlib
+import re
+import sys
+
+HERE = pathlib.Path(__file__).resolve().parent
+SDK = HERE.parents[1]
+sys.path.insert(0, str(HERE))
+
+import indicator_reference_diag as iref                      # noqa: E402  材料の定義表（正本）
+
+LAWS_JSON = SDK / ".claude/ratchet/regime_laws.json"          # 相場の法則の正本
+IDENTITY = ["recipes/identity_s1_legacy.json",
+            "recipes/identity_s2_legacy.json",
+            "recipes/identity_l1_legacy.json"]                # 恒等レシピ3本
+OUT_JSON = SDK / ".claude/ratchet/indicator_switch.json"      # 印（機械可読・engine_tuner が読む）
+
+# ★GENERATES＝この道具が作る文書の名乗り（gen_docmap.py が集める・2026-08-16 の決まり）
+GENERATES = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/indicator_switch.json", "まるごと"),
+]
+
+_TA_MODULES = ("ta.volume", "ta.volatility", "ta.trend", "ta.momentum", "ta.others")
+_TA_CALL = re.compile(r"_ta\.(\w+)\.(\w+)")
+# クラス名から落とす接尾辞（ta の命名の型。CC が指標を選んでいるのではなく、語尾を落としているだけ）
+_SUFFIX = re.compile(r"(Indicator|Index|Channel|Oscillator|Bands|Average|Return)$")
+
+
+# ══ 源の材料を集める ════════════════════════════════════════════════════
+def ta_classes() -> list[tuple[str, str]]:
+    """ta ライブラリの指標クラス（IndicatorMixin を継ぐもの）を機械で数える。手書きの一覧を持たない。"""
+    import ta
+    out = []
+    for m in _TA_MODULES:
+        mod = importlib.import_module(m)
+        for n, o in vars(mod).items():
+            if (inspect.isclass(o) and issubclass(o, ta.utils.IndicatorMixin)
+                    and o is not ta.utils.IndicatorMixin and o.__module__ == m):
+                out.append((m.split(".")[-1], n))
+    return sorted(out)
+
+
+def families() -> list[str]:
+    """材料の種類（family）の異なり。定義表 indicator_reference_diag が正本。並びも定義表の順。"""
+    seen: list[str] = []
+    for e in iref.REFS:
+        if e["family"] not in seen:
+            seen.append(e["family"])
+    return seen
+
+
+def ta_map_from_ext() -> dict[str, set[str]]:
+    """ta 照合式（ext）のソースから「ta のクラス → 材料の種類」を機械で取る（確定分）。"""
+    out: dict[str, set[str]] = {}
+    for e in iref.REFS:
+        if e["ext"] is None:
+            continue
+        try:
+            src = inspect.getsource(e["ext"])
+        except (OSError, TypeError):
+            continue
+        for _mod, cls in _TA_CALL.findall(src):
+            out.setdefault(cls, set()).add(e["family"])
+    return out
+
+
+def _abbrev(cls: str) -> list[str]:
+    """ta のクラス名から、照合に使う略号を機械で作る（CC が指標ごとに決めない）。
+
+    2通りだけ＝①接尾辞を落とした語（AroonIndicator → AROON）②大文字の頭文字
+    （PercentagePriceOscillator → PPO）。当たらなければ「対応が決まらない」に倒す。
+    """
+    base = _SUFFIX.sub("", cls)
+    head = "".join(c for c in cls if c.isupper())
+    return [base.upper(), head.upper()]
+
+
+def ta_map_by_abbrev(exclude: set[str]) -> dict[str, set[str]]:
+    """略号の一致で「ta のクラス → 材料の種類」の候補を作る。exclude＝確定済みのクラス。
+
+    ★これは候補であって、印には入れない（まこさんが1回 見て決めたものだけが ta_class の欄に入る）。
+    """
+    fams = families()
+    out: dict[str, set[str]] = {}
+    for _grp, cls in ta_classes():
+        if cls in exclude:
+            continue
+        hit = set()
+        for ab in _abbrev(cls):
+            if len(ab) < 3:                       # 2文字以下は当たりすぎる（ER・AR など）＝使わない
+                continue
+            for f in fams:
+                fu = f.upper()
+                if fu == ab or fu.startswith(ab) or fu.startswith("CLOSE VS " + ab):
+                    hit.add(f)
+        if hit:
+            out[cls] = hit
+    return out
+
+
+def ta_map_approved() -> dict[str, set[str]]:
+    """定義表に書き込まれた承認済みの対応（indicator_reference_diag.TA_CLASS_MAP）を読む。
+
+    ★まこさんが1回だけ見て承認した対応が、ここに入る（設計書 §9.1 の案A・承認 2026-09-02）。
+    ★1か所の辞書で持つ理由＝材料38件それぞれの登録行に書き足すと、手の作業が38回になって
+      打ち間違いが混じる。1か所なら、下の --selftest が名前の実在を毎回 確かめられる。
+    """
+    m = getattr(iref, "TA_CLASS_MAP", {}) or {}
+    return {cls: set(fams) for cls, fams in m.items()}
+
+
+def source_ta() -> tuple[set[str], list[str]]:
+    """源1＝ta の43種に対応する材料の種類。戻り＝(種類の集合, 対応が決まらない ta のクラス)。"""
+    m = ta_map_from_ext()
+    for cls, fs in ta_map_approved().items():
+        m.setdefault(cls, set()).update(fs)
+    fams: set[str] = set()
+    for fs in m.values():
+        fams |= fs
+    unresolved = [c for _g, c in ta_classes() if c not in m]
+    return fams, unresolved
+
+
+def law_named() -> tuple[set[str], set[str], set[str]]:
+    """相場の法則が「機械が読む判定」で名指ししている中身を、そのまま取り出す。
+
+    戻り＝(family の集合, 系統の集合, 性質の集合)。★ここでは材料に展開しない（生のまま返す）。
+    ★下の source_law と、--selftest の照合が、別々にこれを使う＝同じ展開を2回 書かない。
+    """
+    d = json.loads(LAWS_JSON.read_text(encoding="utf-8"))
+    fams: set[str] = set()
+    lins: set[str] = set()
+    props: set[str] = set()
+    for law in d.get("法則", []):
+        cnt = (law.get("機械が読む判定") or {}).get("数える部品") or {}
+        for f in (cnt.get("family") or []):
+            fams.add(f)
+        for k in (cnt.get("系統") or []):
+            lins.add(k)
+        p = cnt.get("性質")
+        if p:
+            props.add(str(p))
+    return fams, lins, props
+
+
+def law_geo() -> set[str]:
+    """相場の法則が名指しするレンジ幾何の列（例＝W%）。"""
+    d = json.loads(LAWS_JSON.read_text(encoding="utf-8"))
+    out: set[str] = set()
+    for law in d.get("法則", []):
+        cnt = (law.get("機械が読む判定") or {}).get("数える部品") or {}
+        g = cnt.get("geo")
+        if isinstance(g, list):
+            out.update(g)
+    return out
+
+
+def source_law() -> tuple[set[str], set[str]]:
+    """源2＝相場の法則が名指しする指標。戻り＝(種類の集合, レンジ幾何の集合)。
+
+    ★設計書 §3.3 の逐語＝「regime_laws.json の「機械が読む判定」から、family・系統・性質・geo の
+      4通りを展開」。**4通り全部を展開する。**
+
+    ★2026-09-02 の直し（まこさん指摘「設計通りに実装したのか」）＝
+      直す前は family と geo の2通りしか展開しておらず、系統（構造・位置）と性質（vol）を落としていた。
+      その結果、レンジ判定の核心部品（fractal・S-Rタッチ数・pivot・POC/VAH/VAL・n本高安・swing・W字）が
+      全部「使わない」に倒れ、既存の自己テストが落ちた。**設計書は最初から4通りと書いてあった。**
+    """
+    fams, lins, props = law_named()
+    out = set(fams)
+    if lins:                                   # ③系統での名指し（R1・R3＝構造・位置）
+        out |= {f for f in families()
+                if iref.FAMILY_LINEAGE.get(f, {}).get("k") in lins}
+    if props:                                  # ④性質での名指し（R10＝vol）
+        out |= {e["family"] for e in iref.REFS if e["prop"] in props}
+    return out, law_geo()
+
+
+def source_identity() -> tuple[set[str], set[str]]:
+    """源3＝恒等レシピ3本が実際に使う材料。戻り＝(種類の集合, レンジ幾何の集合)。
+
+    ★この源が無いと、ta にも法則にも入らない材料（実測＝volume_ratio）が「使わない」になり、
+      恒等レシピ S2 が壊れる。だから飾りではない（設計書 §1 の実測）。
+    """
+    fams: set[str] = set()
+    geos: set[str] = set()
+
+    def walk(o):
+        if isinstance(o, dict):
+            f = o.get("family")
+            if isinstance(f, str):
+                fams.add(f)
+            g = o.get("geo")
+            if isinstance(g, str):
+                geos.add(g)
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+
+    for rel in IDENTITY:
+        walk(json.loads((HERE / rel).read_text(encoding="utf-8")))
+    return fams, geos
+
+
+# ══ 印を組み立てる ═════════════════════════════════════════════════════
+def build() -> dict:
+    """3つの源から印を組み立てる。CC の手書きの一覧はゼロ。"""
+    ta_f, unresolved = source_ta()
+    law_f, law_g = source_law()
+    id_f, id_g = source_identity()
+    all_f = families()
+    want = ta_f | law_f | id_f
+    on = [f for f in all_f if f in want]           # 定義表に在る種類だけ（並びも定義表に合わせる）
+    off = [f for f in all_f if f not in want]
+    d = {
+        "_これは何か": "engine_tuner が読む指標の種類ごとの「使う・使わない」の印（M2-C-2）。",
+        "_作り方": "gen_indicator_switch.py が3つの源から機械で作る。手で書き換えない（--verify が検出する）。",
+        "_源": {
+            "1_ta": "定義表の ta 照合式（ext）と ta_class の欄から引いた種類",
+            "2_法則": "regime_laws.json の「機械が読む判定」の family と geo",
+            "3_恒等レシピ": "recipes/identity_*.json 3本が実際に使う材料",
+        },
+        "_できること": "減らすことだけ。型の表に無い指標は、印をオンにしても使えない。",
+        "built_by": "gen_indicator_switch.py（全自動生成・CC の手書きの行ゼロ）",
+        "counts": {
+            "定義表の種類": len(all_f),
+            "使う": len(on),
+            "使わない": len(off),
+            "源1_ta": len(ta_f),
+            "源2_法則": len(law_f),
+            "源3_恒等レシピ": len(id_f),
+            "対応が決まらない_taのクラス": len(unresolved),
+        },
+        "on": on,
+        "off": off,
+        "geo_on": sorted(law_g | id_g),
+        "sources": {"ta": sorted(ta_f), "law": sorted(law_f), "identity": sorted(id_f)},
+        "ta_unresolved": sorted(unresolved),
+    }
+    d["fingerprint"] = _fp(d)
+    return d
+
+
+def _fp(d: dict) -> str:
+    """印の指紋＝中身（fingerprint 以外）の sha256 の先頭16文字。"""
+    x = {k: v for k, v in d.items() if k != "fingerprint"}
+    return hashlib.sha256(json.dumps(x, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:16]
+
+
+# ══ 出し入れ ═══════════════════════════════════════════════════════════
+def cmd_write() -> int:
+    d = build()
+    OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
+    OUT_JSON.write_text(json.dumps(d, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    c = d["counts"]
+    print(f"✅ --write 完了: {OUT_JSON.name}（使う {c['使う']} 種／使わない {c['使わない']} 種"
+          f"／指紋 {d['fingerprint']}）")
+    print(f"   源の内訳＝ta {c['源1_ta']} 種／法則 {c['源2_法則']} 種／恒等レシピ {c['源3_恒等レシピ']} 種"
+          f"（重なりを含む・和集合が「使う」）")
+    if d["ta_unresolved"]:
+        print(f"   ⚠️ 対応が決まらない ta のクラス {len(d['ta_unresolved'])} 件（使わないに倒した）")
+        print("   → --ta-candidates で候補を出し、まこさんが1回 見て決める（設計書 §9.1 の案A）")
+    return 0
+
+
+def cmd_verify() -> int:
+    if not OUT_JSON.exists():
+        print(f"❌ --verify: {OUT_JSON.name} が無い（--write で作る）")
+        return 1
+    now = json.loads(OUT_JSON.read_text(encoding="utf-8"))
+    want = build()
+    if now.get("fingerprint") != _fp(now):
+        print("❌ --verify: 印のファイルが手で書き換えられている（中身と指紋が合わない）")
+        return 1
+    if now.get("fingerprint") != want["fingerprint"]:
+        print(f"❌ --verify: 源が変わっている（いま {now.get('fingerprint')} ／ 作り直すと {want['fingerprint']}）")
+        print("   → --write で作り直す")
+        return 1
+    print(f"✅ --verify: 印は機械が書いたままです（指紋 {now['fingerprint']}"
+          f"／使う {now['counts']['使う']} 種）")
+    return 0
+
+
+def cmd_ta_candidates() -> int:
+    """ta のクラスと材料の種類の対応の候補を出す（まこさんが1回 見て決める・設計書 §9.1 の案A）。"""
+    fixed = ta_map_from_ext()
+    for cls, fs in ta_map_approved().items():
+        fixed.setdefault(cls, set()).update(fs)
+    cand = ta_map_by_abbrev(set(fixed))
+    allc = ta_classes()
+    print(f"ta のクラス {len(allc)} 件")
+    print(f"  ① 照合式・承認済みで確定 … {len(fixed)} 件")
+    print(f"  ② 略号の一致で候補が出た  … {len(cand)} 件（★まこさんが見て決める）")
+    print(f"  ③ 候補が出なかった        … {len(allc) - len(fixed) - len(cand)} 件")
+    print()
+    print("② 候補（略号の一致・機械が出したもの）")
+    for cls in sorted(cand):
+        print(f"   {cls:<32} -> {sorted(cand[cls])}")
+    print()
+    print("③ 候補が出なかった ta のクラス（このままなら「使わない」に倒す）")
+    for _g, cls in allc:
+        if cls not in fixed and cls not in cand:
+            print(f"   {cls}")
+    return 0
+
+
+# ══ わざと壊して止まるか試すテスト ═══════════════════════════════════════
+def cmd_selftest() -> int:
+    ng: list[str] = []
+    d = build()
+    all_f = families()
+
+    id_f, _ = source_identity()
+    if [f for f in id_f if f in d["off"]]:
+        ng.append("T1")                            # 恒等レシピの材料が「使わない」に入った
+    law_f, _ = source_law()
+    if [f for f in law_f if f in d["off"]]:
+        ng.append("T2")                            # 法則が名指しする指標が「使わない」に入った
+    if len(d["on"]) + len(d["off"]) != len(all_f):
+        ng.append("T3")                            # 取りこぼしが在る
+    if set(d["on"]) & set(d["off"]):
+        ng.append("T4")                            # 同じ種類が両方に在る
+    d2 = json.loads(json.dumps(d, ensure_ascii=False))
+    d2["on"] = d2["on"][:-1]
+    if _fp(d2) == d["fingerprint"]:
+        ng.append("T5")                            # 中身を変えても指紋が変わらない
+    if build()["fingerprint"] != d["fingerprint"]:
+        ng.append("T6")                            # 2回 作ると違う（決定論でない）
+    if not set(d["on"]) <= set(all_f):
+        ng.append("T7")                            # 定義表に無い種類が「使う」に入った
+
+    # T8 承認済みの対応に書いた材料の名前が、定義表に実在するか（打ち間違いをここで止める）
+    bad8 = sorted({f for fs in ta_map_approved().values() for f in fs if f not in all_f})
+    if bad8:
+        ng.append("T8")
+        print(f"      T8 の中身＝定義表に無い材料の名前: {bad8}")
+
+    # T9 承認済みの対応の ta のクラス名が、ta ライブラリに実在するか
+    known = {c for _g, c in ta_classes()}
+    bad9 = sorted(c for c in ta_map_approved() if c not in known)
+    if bad9:
+        ng.append("T9")
+        print(f"      T9 の中身＝ta に無いクラス名: {bad9}")
+
+    names = {"T1": "恒等レシピの材料は必ず使う", "T2": "法則の名指しは必ず使う",
+             "T3": "取りこぼしゼロ", "T4": "重なりゼロ", "T5": "指紋は中身から決まる",
+             "T6": "2回 作って同じ", "T7": "定義表に無い種類は増やせない",
+             "T8": "承認済みの対応の材料名が実在する", "T9": "承認済みの対応の ta クラス名が実在する"}
+    for t, nm in names.items():
+        print(f"   {t} {nm} → {'ng' if t in ng else 'pass'}")
+    if ng:
+        print(f"\n❌ selftest {len(names) - len(ng)}/{len(names)} pass（落ちた＝{', '.join(ng)}）")
+        return 1
+    print(f"\n✅ selftest {len(names)}/{len(names)} pass")
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--write", action="store_true")
+    ap.add_argument("--verify", action="store_true")
+    ap.add_argument("--ta-candidates", action="store_true")
+    ap.add_argument("--selftest", action="store_true")
+    a = ap.parse_args()
+    if a.write:
+        return cmd_write()
+    if a.verify:
+        return cmd_verify()
+    if a.ta_candidates:
+        return cmd_ta_candidates()
+    if a.selftest:
+        return cmd_selftest()
+    ap.print_help()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
