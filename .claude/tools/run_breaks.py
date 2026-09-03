@@ -120,7 +120,14 @@ def parse_table(md_text: str) -> list:
         s = ln.strip()
         if not s.startswith("|"):
             continue
-        cells = [c.strip() for c in s.strip("|").split("|")]
+        # ★2026-09-03（まこさん指示・設計書 §3.8）＝打ち消した縦棒は、列の区切りにしない。
+        #   直す前＝欄の中に書いた縦棒（前に \ を付けたもの）で列がずれ、
+        #   別の欄の文字を「壊すプログラムの名前」として拾い、記録に実在しない行が1つ 増えた。
+        #   まこさんの逐語＝「これは『表の書き方の問題』ではありません。実際に起きたのは
+        #     記録に実在しない行が1つ 増えたことです。…記録の信頼性の問題です。」
+        #   実測＝記録21行のうち、名前が入っている行が 15（本当は 14）。画面の分母も狂っていた。
+        s = s.replace("\\|", "\x00")
+        cells = [c.strip().replace("\x00", "\\|") for c in s.strip("|").split("|")]
         if set("".join(cells)) <= set("-: "):
             continue
         rows.append(cells)
@@ -168,11 +175,37 @@ def main(argv: list) -> int:
     ap.add_argument("--out")
     ap.add_argument("--freeze", action="store_true")
     ap.add_argument("--check-frozen", action="store_true")
+    ap.add_argument("--parse-only", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args(argv)
 
     if a.selftest:
         return selftest()
+
+    # ★2026-09-03（まこさん指示・設計書 §3.8 の2番）＝読むだけの口。
+    #   表を読んで、拾った名前と「実物が在るか」を並べるだけ。
+    #   **壊すプログラムを1本も走らせない**ので、呼び合いが起きない＝深さに関わらず動く。
+    #   なぜ要るか＝これが無いと、§3.8 の完成の条件に壊すプログラムを書けない
+    #   （run_breaks.py を壊すプログラムの中から呼ぶと、呼び合いを止める仕組みで
+    #     測る前に戻るため）。まこさんの逐語＝「— にすると人が画面を見て確かめることに
+    #     なります。この工事は『人が目で確かめる項目を完成条件に入れない』ためにやってきました。」
+    #   ★限界（設計書 §9 の 1c）＝「読むだけ」という前提が本当かは、私は確かめていない。
+    #     監査に確かめてもらう。
+    if a.parse_only:
+        md_path = pathlib.Path(a.design)
+        if not md_path.exists():
+            print(f"[STOP] 設計書がありません: {md_path}", file=sys.stderr)
+            return 2
+        rows = parse_table(md_path.read_text(encoding="utf-8"))
+        if not rows:
+            print("[STOP] 完成の条件の表に「壊すプログラム」の欄がありません", file=sys.stderr)
+            return 2
+        for r in rows:
+            if not r["script"]:
+                continue
+            mark = "OK" if (BREAKS_DIR / r["script"]).exists() else "MISSING"
+            print(f"{r['no']}\t{r['script']}\t{mark}")
+        return 0
 
     if a.freeze:
         FROZEN.parent.mkdir(parents=True, exist_ok=True)
@@ -250,6 +283,7 @@ SELF_TESTS = (
     ("T4", "凍結が無ければ止める"),
     ("T5", "凍結と食い違えば止める"),
     ("T6", "凍結と合っていれば通る"),
+    ("T7", "打ち消した縦棒を、列の区切りにしない（幽霊の行を作らない）"),
 )
 
 
@@ -270,6 +304,17 @@ def selftest() -> int:
         ng.append("T2")
     if parse_table("| 1 | あ | `b01_x.sh` |\n") != []:
         ng.append("T3")
+
+    # T7 ★打ち消した縦棒（欄の中に書いた縦棒）で列がずれないか
+    #    直す前＝ここで「bash` ほか」のような、実在しない名前を拾っていた
+    body7 = ("<!-- ACCEPT_TABLE_START -->\n"
+             "| # | 完成の条件 | 壊すプログラム | いまの状態 |\n"
+             "|---|---|---|---|\n"
+             "| 19 | `base64 -d \\| bash` ほかを掛ける | `—`（※2） | 未着手 |\n"
+             "<!-- ACCEPT_TABLE_END -->\n")
+    r7 = parse_table(body7)
+    if len(r7) != 1 or r7[0]["script"] is not None:
+        ng.append("T7")
 
     global FROZEN, BREAKS_DIR
     _kf, _kb = FROZEN, BREAKS_DIR

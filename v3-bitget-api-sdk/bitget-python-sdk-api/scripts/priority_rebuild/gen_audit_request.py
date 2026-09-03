@@ -544,6 +544,30 @@ def selftest() -> int:
     return 1 if ng else 0
 
 
+def approval_matches() -> tuple[bool, str]:
+    """設計書の指紋が、まこさんの承認の記録と合っているか（監査 cp14 の P-5）。
+
+    ★監査の逐語＝「監査依頼書を作る道具が、acceptance.md の指紋と acceptance.approved を
+      照合し、食い違ったら依頼書を作らせない」。
+    ★なぜ要るか（実測）＝79回目に、承認の後に設計書の §6 を3行 書き換えて監査に出した。
+      監査に渡ったデータの中核（RESULT: PASS）が、その書き換えた3行から来ていた。
+    戻り＝(合っているか, 説明の文)
+    """
+    acc = pathlib.Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget/"
+                       ".claude/state/acceptance.md")
+    mark = acc.with_name("acceptance.approved")
+    if not acc.exists():
+        return False, f"設計書がありません: {acc}"
+    if not mark.exists():
+        return False, f"承認の記録がありません: {mark}（まこさんの承認が要ります）"
+    now = hashlib.sha256(acc.read_bytes()).hexdigest()
+    want = mark.read_text(encoding="utf-8").strip()
+    if now != want:
+        return False, (f"設計書が承認と食い違います（いま {now[:16]}… ／ 承認 {want[:16]}…）"
+                       "＝承認の後に設計書を書き換えた疑い。再承認を打ってもらってください。")
+    return True, f"設計書は承認どおり（{now[:16]}…）"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="監査の依頼書をテンプレのとおりに機械で組み立てる")
     ap.add_argument("--element", type=int, help=f"物差しの要素の番号（1〜{N_ELEMENTS}）")
@@ -553,6 +577,12 @@ def main() -> int:
         return selftest()
     if not a.element:
         ap.error("--element <番号> を指定してください")
+    # ★2026-09-03（監査 cp14 の P-5）＝承認と食い違う設計書では依頼書を作らせない。
+    ok, why = approval_matches()
+    if not ok:
+        print(f"[STOP] 依頼書は作れません（監査 cp14 の P-5）: {why}")
+        return 2
+    print(f"  ✅ {why}")
     body = build_request(a.element)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out = OUT_DIR / f"2026-08-27_regime_element{a.element:02d}_audit_request.md"

@@ -1,0 +1,91 @@
+5,6d4
+< NEW_FILE: .claude/breaks/b18_embedded_run.sh
+< 
+28a27
+> | 9 | **「Aにする」**（G-4 を入れた後、CC が `.claude/tools/` の下の .py を走らせられなくなる件＝設計を緩めず、まこさんが端末から打つ） | 2026-09-04 |
+59c58
+< | 改善方向性（§6） | G-4 | Critical ／ **E-1 を許可リストへ反転する。**具体＝土台の名前が現れたら、`cat`・`grep`・`ls`・`wc`・`head`・`tail`・`diff`・`shasum`・`stat`・`git status\ ／ log\ ／ diff\ ／ show` **以外は全部 `?BASE?`**（いまは書き込みの語を列挙して当てている）／ 実測＝11通り試して10通りが rc=0（`rsync`・`ln -sf`・`touch`・`git checkout`・`git restore`・`python3 <別の.py>`・`base64 -d \ ／ bash`・`gsed -i`・`rm -f`・`chmod`）。GHSA-w7qc-6grj-w7r8 と同じ型 |
+---
+> | 改善方向性（§6） | G-4 | Critical ／ **E-1 を許可リストへ反転する。**具体＝土台の名前が現れたら、`cat`・`grep`・`ls`・`wc`・`head`・`tail`・`diff`・`shasum`・`stat`・`git status\ ／ log\ ／ diff\ ／ show` **以外は全部 `?BASE?`**（いまは書き込みの語を列挙して当てている）／ 実測＝11通り試して10通りが rc=0（`rsync`・`ln -sf`・`touch`・`git checkout`・`git restore`・`python3 <別の.py>`・`base64 -d\ ／ bash`・`gsed -i`・`rm -f`・`chmod`）。GHSA-w7qc-6grj-w7r8 と同じ型 |
+189a189
+> | 承認②の前に作った4本目 | `.claude/breaks/b18_embedded_run.sh` |
+218c218
+< | 3 | **`git` のときは、2番目の語も見る**＝`status`・`log`・`diff`・`show`・`add`・`ls-files`・`rev-parse`・`cat-file`・`grep` だけ通す |
+---
+> | 3 | **`git` のときは、2番目の語も見る**＝`status`・`log`・`diff`・`show`・`add`・`commit`・`ls-files`・`rev-parse`・`cat-file`・`grep` だけ通す |
+225a226
+> **★`git commit` を3番の一覧に入れた理由**＝`commit` は git の記録に書くだけで、**守っているファイルの中身を1文字も変えられません**（中身を変えられる `checkout`・`restore`・`stash`・`clean` は入れていません）。入れないと、G-5 で commit できなくなります。
+272c273
+< | 2 | Write／Edit／MultiEdit の判定（土台ゲートの `case`） | `*/acceptance_archive/*.breaks.json` と `*.frozen.json` を足します |
+---
+> | 2 | Write／Edit／MultiEdit の判定（土台ゲートの `case`） | `*.breaks.json` と `*.frozen.json` を足します |
+310a312,313
+> **★2番を、誰が打つか（2026-09-04・まこさん決定「Aにする」）**＝G-4 を入れた後、私は `.claude/tools/` の下の .py を1本も走らせられません（既定 deny）。`gen_impl_functions.py` もそこに在ります。**だから まこさんが端末から打ち、出た文字を私が写します。**私が走らせられるように設計を緩めることはしません。
+> 
+496c499
+< | `.claude/breaks/b18_embedded_run.sh` | **在りません** | 埋め込みの中の `$(`・逆引用符を測る | 承認をもらった設計書の TARGET に書いたときだけ |
+---
+> | `.claude/breaks/b18_embedded_run.sh` | **★作りました** | 埋め込みの中の `$(`・逆引用符を測る | 承認をもらった設計書の TARGET に書いたときだけ |
+503c506
+< | `require_acceptance_before_impl.sh` | 在ります | G-1〜G-4 を入れる。**★いちど壊して戻しました** | 同上 |
+---
+> | `require_acceptance_before_impl.sh` | 在ります | **★G-1〜G-4 を入れました**（`bash -n` を6回 通しました） | 同上 |
+510a514
+> **★実測（2026-09-04）**＝`python3 .claude/tools/run_breaks.py --parse-only …` が止まりました。**＝私は `.claude/tools/` の下の .py・`.claude/breaks/` の下の .sh・`.claude/hooks/` の下の .sh を1本も走らせられません。**まこさん決定「Aにする」＝この形のまま進め、必要なときは まこさんが端末から打ちます。
+542a547
+> | **12** | **★`must_use` の3件は、私が手で選びました** | 正本が無いので機械で作れません。**「その関数の中に この名前が在るか」しか見ないので、中身が正しいかは分かりません** |
+550,552c555,590
+<   "impl_file": "scripts/priority_rebuild/gen_audit_request.py",
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "設計の段階では、G-1〜G-5 で触る関数が確定しない（触るのは .sh が7本と、run_breaks.py と、gen_audit_request.py の未 commit の30行）。★実装の後に確定させる＝それが G-6 の本体（まこさん指示＝G-6 は最後に）。gen_impl_functions.py が実物から機械で作った一覧を、そのまま書く。私は手打ちしない。",
+---
+>   "impl_file": ".claude/tools/run_breaks.py",
+>   "impl_functions": {
+>     ".claude/tools/run_breaks.py": [
+>       "<モジュール直下>",
+>       "break_scripts",
+>       "check_frozen",
+>       "freeze_breaks",
+>       "main",
+>       "parse_table",
+>       "run_one",
+>       "selftest",
+>       "sha"
+>     ],
+>     "scripts/priority_rebuild/gen_audit_request.py": [
+>       "<モジュール直下>",
+>       "_facts",
+>       "_headline",
+>       "_line_of",
+>       "_meta",
+>       "_reading",
+>       "_sha",
+>       "_table_rows",
+>       "approval_matches",
+>       "build_request",
+>       "copy_all_laws",
+>       "copy_element_row",
+>       "copy_measure",
+>       "copy_template_section",
+>       "copy_todo_rows",
+>       "load_frozen_question",
+>       "main",
+>       "print_source",
+>       "selftest",
+>       "template_heads"
+>     ]
+>   },
+554c592,596
+<   "must_use": {},
+---
+>   "must_use": {
+>     "parse_table": ["replace"],
+>     "main": ["parse_only"],
+>     "selftest": ["parse_table"]
+>   },
+558,559c600,601
+<     "impl_functions": "実装の後に gen_impl_functions.py（実物のコード＝ファイルの中の全関数）から作る＝循環。承認の画面に必ず ⚠️ が出る。それが正しい状態（まこさんの指定）",
+<     "must_use": "実装の後に、私が手で書く（正本が無いため）",
+---
+>     "impl_functions": "★2026-09-04 に、まこさんが端末から gen_impl_functions.py を打ち、その出力をそのまま写した。私は1文字も手打ちしていない。出どころは実物のコード（ファイルの中の全関数）＝循環。承認の画面に必ず ⚠️ が出る。それが正しい状態（まこさんの指定）。★なぜ まこさんが打ったか＝G-4 を入れた後、私は .claude/tools/ の下の .py を走らせられない（既定 deny）。まこさん決定＝Aにする（設計を緩めない）",
+>     "must_use": "私が手で書いた（正本が無いため・§9 の12番に限界を書いた）。中身は §3.8 の直し2件から取った＝parse_table は打ち消した縦棒を列の区切りにしないための replace ／ main は読むだけの口 parse_only ／ selftest はその番人（T7）",

@@ -30,6 +30,102 @@ INPUT=$(cat)
 #   直し方＝python を必ず UTF-8 で動かす（locale に左右されない）。
 export PYTHONUTF8=1
 
+# ★2026-09-04（監査 cp17 の G-3・G-4・Critical・まこさん指名・承認 435439e9f92e88df）
+#   ＝G-3 と G-4 が使う判定を、1か所だけに置く（同じ判定を2か所に書き写さない）。
+#   下の2つの埋め込み python が、この変数を読み込んで同じ関数を使う。
+#
+#   判定＝「この断片は、読み取りだけか」。読み取りだけでなければ False（既定 deny）。
+#   ★直す前は「書き込みの語を並べて当てる」形（拒否リスト）でした。
+#     並べた語の外は全部 通るので、監査が11通り試すと10通りが素通りしました。
+#   外の基準＝GHSA-w7qc-6grj-w7r8『許可された命令が入力の中に部分文字列として
+#     現れるかで検証すると、埋め込むだけで迂回できる』
+#     ／MITRE ATT&CK T1202『命令を実行できる道具を悪用して、
+#       コマンド解釈器の制限を迂回する』。
+#
+#   ★この中に二重引用符を1文字も書きません（bash の文字列が途中で閉じるため）。
+#   ★$( と逆引用符も書きません（3回 壊したため・設計書 §3.9）。要るときは chr() で作ります。
+PYJUDGE=$(cat <<'PYJUDGE_EOF'
+import re as _re_j
+_READONLY_J = ('cat', 'grep', 'egrep', 'fgrep', 'rg', 'ls', 'wc', 'head', 'tail',
+               'diff', 'shasum', 'sha256sum', 'md5', 'md5sum', 'stat', 'file',
+               'find', 'awk', 'sed', 'echo', 'printf', 'basename', 'dirname',
+               'realpath', 'which', 'true', 'test', 'git')
+# ★git は、そのファイルの中身を変えられない副命令だけ通す。
+#   checkout・restore・stash・clean は中身を変えられるので入れない（監査が実測した抜け道）。
+_GIT_OK_J = ('status', 'log', 'diff', 'show', 'add', 'commit', 'ls-files',
+             'rev-parse', 'cat-file', 'grep')
+_RUN_TOK_J = ('eval', 'xargs', 'source', '.', 'bash', 'sh', 'zsh', 'ksh', 'csh',
+              'make', 'perl', 'ruby', 'node', 'osascript', 'env', 'nohup',
+              'timeout', 'nice', 'sudo', 'command', 'exec', 'tee', 'cp', 'mv',
+              'rm', 'ln', 'touch', 'chmod', 'chown', 'dd', 'install', 'rsync',
+              'truncate', 'patch', 'tar', 'ed', 'ex', 'gsed', 'base64', 'open')
+_RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
+              'popen(', 'os.system', chr(36) + chr(40), chr(96))
+_DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')
+_SYNTAX_J = ('if', 'then', 'else', 'elif', 'fi', 'for', 'while', 'until', 'do',
+             'done', 'case', 'esac', 'in', 'set', 'shopt', 'local', 'return',
+             'break', 'continue', 'wait', 'time', 'then')
+
+
+def _readonly_seg(seg):
+    # ①走らせる形が文字として在れば、その時点で False（先頭の語を見るより前）
+    for _w in _RUN_SUB_J:
+        if _w in seg:
+            return False
+    # ②リダイレクトの先が捨て先でなければ False
+    for _t in _re_j.findall(r'>>?\s*([^\s;|&]+)', seg):
+        if _t not in _DEVNULL_J:
+            return False
+    _toks = seg.split()
+    # ③先頭の VAR=値 と、シェルの構文の語を外す
+    while _toks and (_re_j.match(r'^[A-Za-z_][A-Za-z_0-9]*=', _toks[0])
+                     or _toks[0] in _SYNTAX_J
+                     or _toks[0] in ('cd', 'pushd', 'popd')):
+        if _toks[0] in ('cd', 'pushd', 'popd'):
+            _toks.pop(0)
+            if _toks and not _toks[0].startswith('-'):
+                _toks.pop(0)
+        else:
+            _toks.pop(0)
+    if not _toks:
+        return True
+    _head = _toks[0].rsplit('/', 1)[-1]
+    # ④文法の確認（bash -n）だけは通す。
+    #   ★これを止めると、私は hook の文法を1度も確かめられません（まこさん指示
+    #     2026-09-03＝hook を編集したら、次の操作の前に必ず bash -n を通す）。
+    #   ★この例外が本当に安全かは、私は確かめていません（設計書 §9 の 1b）。
+    if _head in ('bash', 'sh', 'zsh') and '-n' in _toks:
+        return True
+    # ⑤走らせる語・書き込む語は False
+    if _head in _RUN_TOK_J or _re_j.match(r'^python[0-9.]*$', _head):
+        return False
+    # ⑥読み取りの許可リストに無ければ False（★既定 deny＝ここが G-4 の本体）
+    if _head not in _READONLY_J:
+        return False
+    # ⑦git は、2番目の語も見る
+    if _head == 'git':
+        _rest = [_t for _t in _toks[1:] if not _t.startswith('-')]
+        if not _rest or _rest[0] not in _GIT_OK_J:
+            return False
+    # ⑧sed の書き換え（-i・-i.bak・--in-place）は False
+    if _head == 'sed':
+        for _t in _toks[1:]:
+            if _t.startswith('-i') or _t == '--in-place':
+                return False
+    return True
+
+
+def _first_bad_seg(cmd_j):
+    # ★断片の1つでも読み取りだけでなければ、その断片を返す（全部 通れば空）
+    for _seg in _re_j.split(r'[;|&\n]+', cmd_j):
+        if not _seg.strip():
+            continue
+        if not _readonly_seg(_seg):
+            return _seg.strip()
+    return ''
+PYJUDGE_EOF
+)
+
 # ★2026-09-03（監査 cp16 の E-3・Critical・まこさん指名・承認 36051934db6eede3）
 #   ＝承認スクリプトを、CC の Bash から打てなくする。
 #   監査の逐語＝「approve_impl.sh と approve_design.sh の実行を PreToolUse で rc=2 にし、
@@ -46,34 +142,26 @@ export PYTHONUTF8=1
 #     いまは区切り（; | & 改行）で断片に分け、断片ごとに見る。
 #     読むだけの先頭の語（git・cat・grep・ls・shasum・wc・head・tail・diff ほか）と
 #     文法確認（bash -n）は通す。それ以外は止める（既定 deny）。
+#   ★2026-09-04（監査 cp17 の G-3・Critical・まこさん指名・承認 435439e9f92e88df）
+#     ＝「断片の先頭の語だけ見る」短絡をやめた。
+#     監査の逐語＝「82-83行の if toks[0] in READONLY: continue を、断片の全体に
+#       承認スクリプトの名前が在るかで判定する形に変える
+#       （読み取りの語で始まっても -exec・system() で走らせられる）」。
+#     直す前の実測（監査 cp17）＝find の -exec で rc=0・awk の system() で rc=0。
+#     直した後＝名前がどこかに在れば、断片を全部 上の共通の判定に掛ける。
+#       1つでも読み取りだけでなければ止める（既定 deny）。
 APPROVE_CMD=$(printf '%s' "$INPUT" | python3 -c "
 import sys, json, re
+$PYJUDGE
 try:
     d = json.load(sys.stdin)
 except Exception:
     print('')
     sys.exit(0)
 cmd = ((d.get('tool_input', {}) or {}).get('command') or '')
-READONLY = ('git', 'cat', 'grep', 'egrep', 'rg', 'ls', 'shasum', 'sha256sum', 'md5',
-            'wc', 'head', 'tail', 'diff', 'file', 'stat', 'which', 'echo', 'printf',
-            'awk', 'find', 'basename', 'dirname', 'realpath')
 hit = ''
-for seg in re.split(r'[;|&\n]+', cmd):
-    if 'approve_impl.sh' not in seg and 'approve_design.sh' not in seg:
-        continue
-    toks = seg.split()
-    while toks and re.match(r'^[A-Za-z_][A-Za-z_0-9]*=', toks[0]):
-        toks.pop(0)
-    if toks and toks[0] in ('cd',):
-        continue
-    if not toks:
-        continue
-    if toks[0] in READONLY:
-        continue
-    if toks[0] in ('bash', 'sh', 'zsh') and '-n' in toks:
-        continue
-    hit = seg.strip()
-    break
+if 'approve_impl.sh' in cmd or 'approve_design.sh' in cmd:
+    hit = _first_bad_seg(cmd)
 print(hit)
 " 2>/dev/null)
 case "$APPROVE_CMD" in
@@ -152,6 +240,7 @@ if [ -z "$FILE" ]; then
     #             ③読むだけの動きは、いままでどおり通す
     FILE=$(printf '%s' "$CMD" | python3 -c "
 import re, sys
+$PYJUDGE
 cmd = sys.stdin.read()
 bare = re.sub(r'<<\s*[\'\"]?(\w+)[\'\"]?.*?^\1', ' ', cmd, flags=re.S | re.M)  # ヒアドキュメントの中身を外す
 pats = [r'>>?\s*([^\s;|&]+\.py)', r'\btee\s+(?:-a\s+)?([^\s;|&]+\.py)',
@@ -174,8 +263,10 @@ WRITE_RE = (r'(?:^|[\s;|&(])(?:tee|cp|mv|patch|dd|install|truncate|ed|ex|tar)\s'
             r'|python[0-9.]*\s+-c'
             # ★2026-09-03（監査 cp14 の B-4）＝間接的に走らせる形も、書き込み先を決められない扱いにする。
             #   監査の実測＝変数経由／相対パスに移ってから書く／python のヒアドキュメント／tar 展開 が抜けた。
-            # ★「-c で中身を渡す形」「xargs」「eval」だけを見る。`bash 何とか.sh` のように
+            # ★「-c で中身を渡す形」「xargs」「eval」だけを見る。'bash 何とか.sh' のように
             #   走らせる相手がはっきりしている形は、いままでどおり通す（2026-09-03 に実測して直した）。
+            # ★2026-09-04＝上の2文字は逆引用符だった（監査 cp17 の G-7）。単引用符に直した。
+            #   まこさん指示「直す」。b18 が「埋め込みに 2 個 在ります」と出したのが、この2文字。
             r'|(?:^|[\s;|&(])(?:sh|bash|zsh)\s+-[a-z]*c\b'
             r'|(?:^|[\s;|&(])(?:xargs|eval)\s')
 # ★2026-09-03（監査 cp16 の E-1・Critical・まこさん指名・承認 36051934db6eede3）
@@ -188,40 +279,44 @@ WRITE_RE = (r'(?:^|[\s;|&(])(?:tee|cp|mv|patch|dd|install|truncate|ed|ex|tar)\s'
 #     原因＝下の判定が『scripts/priority_rebuild と .py の両方』を求めるので、
 #     土台のファイル（.json・.approved）には1つも当たらなかった。
 #   ★土台は6つ（breaks_frozen.json は 2026-09-03 の E-12 で足す）。
+# ★2026-09-04（監査 cp17 の G-1・G-2・G-4・Critical・まこさん指名・承認 435439e9f92e88df）
+#   G-4＝語の拒否リストを、読み取りだけの許可リスト＋既定 deny へ反転する。
+#     監査の逐語＝『土台の名前が現れたら、cat・grep・ls・wc・head・tail・diff・
+#       shasum・stat・git status|log|diff|show 以外は全部 ?BASE?
+#       （いまは書き込みの語を列挙して当てている）』。
+#     直す前の実測（監査 cp17）＝11通り試して10通りが rc=0
+#       （rsync・ln -sf・touch・git checkout・git restore・別の .py・
+#         base64 で復元して走らせる・gsed -i・rm -f・chmod）。
+#     直した後＝断片を全部 上の共通の判定（PYJUDGE）に掛け、
+#       1つでも読み取りだけでなければ止める。
+#   G-1＝壊し方の記録（<iter>.breaks.json ／ <iter>.frozen.json）を土台に足す。
+#     直す前の実測＝Write rc=0・Bash のリダイレクト rc=0
+#       ＝run_breaks.py を1回も走らせずに、終了コードを好きな値で書けた。
+#   G-2＝.claude/breaks/*.sh を、守る場所に足す。
 BASE_NAMES = ('impl_functions_frozen.json', 'spec_lists.json', 'breaks_frozen.json',
               'acceptance.approved', 'verify_tool.approved', 'design_approved.json')
-GATE_RE = re.compile(r'\.claude/hooks/[^\s;|&]*\.sh|\.claude/tools/[^\s;|&]*\.py')
+# ★G-1＝名前が iter ごとに変わるので、末尾で見る
+BASE_SUFFIX = ('.breaks.json', '.frozen.json')
+GATE_RE = re.compile(r'\.claude/hooks/[^\s;|&]*\.sh|\.claude/tools/[^\s;|&]*\.py'
+                     r'|\.claude/breaks/[^\s;|&]*\.sh')
 raw_cmd = cmd
-# ★捨て先（/dev/null ほか）は書き込みに数えない（2026-09-03 に実測して直した
-#   ＝読み取りのコマンドの >/dev/null まで止まった）
-_DEVNULL = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2')
-redir_all = [t for t in re.findall(r'>>?\s*([^\s;|&]+)', bare) if t not in _DEVNULL]
 # ★ヒアドキュメントの中身を見るのは、それを何かに食わせているときだけ
 #   （2026-09-03 に実測して狭めた＝git commit の本文に道具の名前が出ただけで止まった）。
 INTERP = re.compile(r'(?:^|[\s;|&(])(?:python[0-9.]*|perl|ruby|node|sh|bash|zsh)\b')
 feeds = bool(INTERP.search(bare))
-has_heredoc = feeds and re.search(r'<<-?\s*[\'\"]?\w+', raw_cmd) is not None
 # ★名前は『ヒアドキュメントを外した後』で探す。外す前の生も見るのは、
 #   ヒアドキュメントを何かに食わせているときだけ（隠した名前を拾うため・監査の実測③）
 hit_base = [n for n in BASE_NAMES if (n in bare or (feeds and n in raw_cmd))]
+if not hit_base:
+    _look = bare + ' ' + (raw_cmd if feeds else '')
+    for _t in re.findall(r'[^\s;|&()<>]+', _look):
+        if _t.strip(chr(39) + chr(34)).endswith(BASE_SUFFIX):
+            hit_base = [_t]
+            break
 hit_gate = bool(GATE_RE.search(bare)) or (feeds and bool(GATE_RE.search(raw_cmd)))
 if hit_base or hit_gate:
-    wrote = bool(re.search(WRITE_RE, bare))
-    # ★2026-09-03 に実測して直した＝リダイレクトが在れば、先が何であっても書き込みと見なす。
-    #   直す前＝先が .json / .approved / .sh / .py で終わるときだけ見ていた。
-    #   ＝変数に入れる形（T=<パス>; echo x > $T）が抜けた（壊すプログラム b08 が
-    #     6通りのうち1通り 通ったので分かった＝終了コード 0）。
-    #   ★読むだけのコマンドでも、リダイレクトが在れば止まります（既定 deny）。
-    def _redir_write(t):
-        # ①先に土台の名前が出ている ②先が .sh/.py/.json/.approved
-        # ③先が変数で、拡張子も無い＝どこへ書くか決められない（既定 deny）
-        if any(n in t for n in BASE_NAMES):
-            return True
-        if t.endswith(('.sh', '.py', '.json', '.approved')):
-            return True
-        return '$' in t and '.' not in t.rsplit('/', 1)[-1]
-    redir_hit = any(_redir_write(t) for t in redir_all)
-    if wrote or redir_hit or has_heredoc:
+    # ★生のコマンド（ヒアドキュメントの中身も含む）を見る＝隠す道を残さない
+    if _first_bad_seg(raw_cmd):
         print('?BASE?')
         sys.exit(0)
 # ★リダイレクトの先が .py のときだけ「書き込み」とみなす（> out.txt は関係ない）
@@ -252,9 +347,14 @@ if 'scripts/priority_rebuild' in whole and '.py' in whole:
       echo "   （2026-09-03・監査 cp16 の E-1・Critical）。" >&2
       echo "   対象＝impl_functions_frozen.json ／ spec_lists.json ／ breaks_frozen.json ／" >&2
       echo "         acceptance.approved ／ verify_tool.approved ／ design_approved.json ／" >&2
-      echo "         .claude/hooks/*.sh ／ .claude/tools/*.py" >&2
-      echo "   ＝直す前は、Write・Edit では止まるのに Bash では8通り全部 通っていました（監査の実測）。" >&2
-      echo "   ★読むだけ（cat・grep・shasum・wc・ls・head・tail・diff・git）は通ります。" >&2
+      echo "         <iter>.breaks.json ／ <iter>.frozen.json（2026-09-04・G-1）／" >&2
+      echo "         .claude/hooks/*.sh ／ .claude/tools/*.py ／ .claude/breaks/*.sh（G-2）" >&2
+      echo "   ＝直す前は、書き込みの語を並べて当てていたので、監査が11通り試すと10通りが" >&2
+      echo "     通りました（rsync・ln -sf・touch・git checkout・git restore・別の .py ほか）。" >&2
+      echo "   ★2026-09-04（G-4）＝読み取りだけの語を並べ、それ以外は全部 止める形にしました。" >&2
+      echo "   ★通るもの＝cat・grep・ls・wc・head・tail・diff・shasum・stat・find・awk・sed（-i なし）" >&2
+      echo "     ／ git status・log・diff・show・add・commit・ls-files・rev-parse・cat-file・grep" >&2
+      echo "     ／ bash -n（文法の確認）。リダイレクトは /dev/null 以外 止まります。" >&2
       echo "   直す道＝①hook と道具は Write / Edit ツールで書く（承認の確認が掛かります）" >&2
       echo "           ②土台のファイルは、まこさんに承認を打ってもらう" >&2
       exit 2
@@ -299,9 +399,16 @@ esac
 #     承認スクリプト（approve_impl.sh／approve_design.sh）は Bash で走るので止まらない。
 #   ★2026-09-03（監査 cp16 の E-1）＝Bash 経由も上で塞いだ（?BASE?）。
 #   ★2026-09-03（監査 cp16 の E-12）＝breaks_frozen.json（壊すプログラムの凍結）を足して6つにした。
+#   ★2026-09-04（監査 cp17 の G-1・Critical・まこさん指名・承認 435439e9f92e88df）
+#     ＝壊し方の記録（<iter>.breaks.json）と、承認のときの控え（<iter>.frozen.json）を足した。
+#     監査の逐語＝「BASE_NAMES に .breaks.json と .frozen.json を足し、case にも足す」。
+#     直す前の実測＝<iter>.breaks.json へ Write rc=0・Bash のリダイレクト rc=0。
+#     ＝run_breaks.py を1回も走らせずに終了コードを書けたので、
+#       E-12（壊し方を機械が走らせて記録に残す）の記録が根拠にならなかった。
 case "$FILE" in
   */.claude/ratchet/impl_functions_frozen.json|*/.claude/ratchet/spec_lists.json|\
 */.claude/ratchet/breaks_frozen.json|\
+*.breaks.json|*.frozen.json|\
 */.claude/state/acceptance.approved|*/.claude/state/verify_tool.approved|\
 */.claude/state/design_approved.json)
     echo "🔒 [土台ゲート] このファイルは、承認の道具だけが書きます（2026-09-03・監査 cp15 の C-2）。" >&2
@@ -317,17 +424,37 @@ esac
 #   ＝土台のファイルの判定（上の2つ＝Bash の ?BASE? と、この case）を抜けた後だけ。
 #   なぜここか＝監査ができなくなる恐れがあるのは戦略の .py と hook・道具の方であって、
 #   土台のファイルをサブエージェントが書く理由は無い（監査の逐語）。
-if [ -n "$AGENT_TYPE" ]; then
-  exit 0
-fi
+#   ★2026-09-04（監査 cp17 の G-2・承認② の実測で見つけた）
+#     ＝壊すプログラム（.claude/breaks/*.sh）だけは、サブエージェントでも通さない。
+#     承認② の実測＝`b16_breaks_write.sh` が rc=0（記録の note＝「抜けた道: サブエージェントのWrite」）。
+#     原因＝ここの通り抜けが、承認ゲートの case より手前に在った。
+#     ＝壊すプログラムは 土台ゲートではなく承認ゲートに入れた（設計書 §3.4）ので、
+#       サブエージェントは素通りしていた。
+case "$FILE" in
+  */.claude/breaks/*.sh) ;;
+  *)
+    if [ -n "$AGENT_TYPE" ]; then
+      exit 0
+    fi
+    ;;
+esac
 
 # ★2026-09-03（監査 cp15 の C-2）＝承認ゲートの対象を、hook 本体と道具にも広げる。
 #   直す前＝scripts/priority_rebuild/*.py だけが対象で、hook や道具は承認なしで書けた。
 #   直した後＝設計書の TARGET に書いて承認をもらわないと書けない（判定は下の既存のものを使う）。
+#   ★2026-09-04（監査 cp17 の G-2・Critical・まこさん指名・承認 435439e9f92e88df）
+#     ＝壊すプログラム（.claude/breaks/*.sh）を、この関所の相手に足した。
+#     監査の逐語＝「同じ2か所に .claude/breaks/[^\s;|&]*\.sh を足す」。
+#     直す前の実測＝Write rc=0・Bash のリダイレクト rc=0。
+#     凍結（breaks_frozen.json）は承認の「後」にしか効かないので、
+#     承認の「前」に壊すプログラムを骨抜きにできた。
+#     ★ここは土台ゲート（承認の道具だけが書く）ではなく、承認ゲートにする。
+#       理由＝私が書かないと、壊すプログラムそのものを作れなくなるため。
 case "$FILE" in
   *scripts/priority_rebuild/*.py) ;;
   */.claude/hooks/*.sh) ;;
   */.claude/tools/*.py) ;;
+  */.claude/breaks/*.sh) ;;
   *) exit 0 ;;
 esac
 

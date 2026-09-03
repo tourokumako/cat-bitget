@@ -1,0 +1,144 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）",
+ "iter": "impl-lock-fix-cp17-20260903",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b01_missing_func.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "2",
+   "script": "b02_extra_func.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "3",
+   "script": "b03_must_use.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "4",
+   "script": "b05_design_changed.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "5",
+   "script": "b06_tool_changed.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "6",
+   "script": "b07_no_approval.sh",
+   "code": 2,
+   "note": ""
+  },
+  {
+   "no": "7",
+   "script": "b08_bash_write.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "8",
+   "script": "b09_run_bypass.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "9",
+   "script": "b11_subagent.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "10",
+   "script": "b12_no_record.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "11",
+   "script": "b13_approve_by_cc.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "12",
+   "script": "b14_breaks_tampered.sh",
+   "code": 2,
+   "note": ""
+  },
+  {
+   "no": "13",
+   "script": "b15_record_write.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "14",
+   "script": "b16_breaks_write.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "15",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "16",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "17",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "18",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "19",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "20",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "21",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "22",
+   "script": "b17_pipe_in_table.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "23",
+   "script": "b18_embedded_run.sh",
+   "code": 0,
+   "note": "抜けた道: いまの hook の埋め込みに 2 個 在ります（0個であるはず）"
+  }
+ ]
+}

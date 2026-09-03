@@ -334,6 +334,15 @@
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_signal_table_gate.sh"
           }
         ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_acceptance_before_impl.sh"
+          }
+        ]
       }
     ],
     "Stop": [
