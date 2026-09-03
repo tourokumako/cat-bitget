@@ -37,6 +37,13 @@ ACC="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance
 
 INPUT=$(cat)
 
+# ★2026-09-03（監査 cp16 の実装中に実測して足した）＝python を必ず UTF-8 で動かす。
+#   なぜ要るか＝この hook の中の python は `python3 -c "…"` の形で、その中に日本語のコメントが在る。
+#   macOS で `LC_CTYPE=UTF-8`（言語の指定が無い形）だと、python がその日本語を読めずに落ちる。
+#   この hook は「読めなければ止める」作り（fail-closed）なので通しはしないが、
+#   **読めるコマンドまで全部 止まる**側に振れる。locale に左右されない形にする。
+export PYTHONUTF8=1
+
 # ★2026-09-02（監査 cp13 の A-2・Critical）＝直す前は穴が2つ在った。
 #   ①旧 49-53行が「コマンドの文字列 全体」に対する部分一致だった。
 #     ＝コマンドの末尾に `# --help` と書き足すだけで、照合A〜D が1つも走らなかった（監査が実測）。
@@ -57,6 +64,12 @@ except Exception:
     print('UNREADABLE')
     sys.exit(0)
 cmd = (d.get('tool_input', {}) or {}).get('command', '') or ''
+# ★2026-09-03（監査 cp16 の実装中に実測して足した）＝ヒアドキュメントの中身は外してから見る。
+#   なぜ＝中身は「走らせる形」ではなく「渡す文字」。git commit の本文に python の語が出ただけで
+#   止まった（実測）。承認ゲートは前から外していたので、そちらに合わせる。
+#   ★限界＝ヒアドキュメントを python や sh に食わせる形は、外側の語（python3 - / bash -s）で見る。
+_HD = re.compile(r'<<-?\s*[' + Q + r']?(\w+)[' + Q + r']?.*?^\1', re.S | re.M)
+cmd = _HD.sub(' ', cmd)
 clean = []
 for ln in cmd.splitlines():
     q = None

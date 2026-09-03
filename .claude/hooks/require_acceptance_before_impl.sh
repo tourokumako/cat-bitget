@@ -19,6 +19,17 @@ APPROVED="$STATE/acceptance.approved"
 
 INPUT=$(cat)
 
+# ★2026-09-03（監査 cp16 の実装中に実測して見つけた・Critical）
+#   ＝この hook は `LC_CTYPE=UTF-8` が立っていると、何も言わずに全部 通していた。
+#   なぜか＝この hook の中の python は `python3 -c "…"` の形で、その中に日本語のコメントが在る。
+#     macOS で `LC_CTYPE=UTF-8`（言語の指定が無い形）だと、python がその日本語を読めずに落ちる。
+#     落ちたことは `2>/dev/null` で消え、書き込み先が空のまま先へ進み、最後の exit 0 に落ちる。
+#   どこで起きるか＝python から子プロセスとして呼ばれたとき（`subprocess.run`）に
+#     `LC_CTYPE=UTF-8` が立つ。＝run_breaks.py から呼んだ壊すプログラムは、全部この状態で測っていた。
+#   実測＝同じ入力・同じ hook で、そのままなら rc=2、`LC_CTYPE=UTF-8` を立てると rc=0（6通りとも）。
+#   直し方＝python を必ず UTF-8 で動かす（locale に左右されない）。
+export PYTHONUTF8=1
+
 # ★2026-09-03（監査 cp16 の E-3・Critical・まこさん指名・承認 36051934db6eede3）
 #   ＝承認スクリプトを、CC の Bash から打てなくする。
 #   監査の逐語＝「approve_impl.sh と approve_design.sh の実行を PreToolUse で rc=2 にし、
@@ -181,7 +192,10 @@ BASE_NAMES = ('impl_functions_frozen.json', 'spec_lists.json', 'breaks_frozen.js
               'acceptance.approved', 'verify_tool.approved', 'design_approved.json')
 GATE_RE = re.compile(r'\.claude/hooks/[^\s;|&]*\.sh|\.claude/tools/[^\s;|&]*\.py')
 raw_cmd = cmd
-redir_all = re.findall(r'>>?\s*([^\s;|&]+)', bare)
+# ★捨て先（/dev/null ほか）は書き込みに数えない（2026-09-03 に実測して直した
+#   ＝読み取りのコマンドの >/dev/null まで止まった）
+_DEVNULL = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2')
+redir_all = [t for t in re.findall(r'>>?\s*([^\s;|&]+)', bare) if t not in _DEVNULL]
 # ★ヒアドキュメントの中身を見るのは、それを何かに食わせているときだけ
 #   （2026-09-03 に実測して狭めた＝git commit の本文に道具の名前が出ただけで止まった）。
 INTERP = re.compile(r'(?:^|[\s;|&(])(?:python[0-9.]*|perl|ruby|node|sh|bash|zsh)\b')
@@ -198,10 +212,20 @@ if hit_base or hit_gate:
     #   ＝変数に入れる形（T=<パス>; echo x > $T）が抜けた（壊すプログラム b08 が
     #     6通りのうち1通り 通ったので分かった＝終了コード 0）。
     #   ★読むだけのコマンドでも、リダイレクトが在れば止まります（既定 deny）。
-    if wrote or bool(redir_all) or has_heredoc:
+    def _redir_write(t):
+        # ①先に土台の名前が出ている ②先が .sh/.py/.json/.approved
+        # ③先が変数で、拡張子も無い＝どこへ書くか決められない（既定 deny）
+        if any(n in t for n in BASE_NAMES):
+            return True
+        if t.endswith(('.sh', '.py', '.json', '.approved')):
+            return True
+        return '$' in t and '.' not in t.rsplit('/', 1)[-1]
+    redir_hit = any(_redir_write(t) for t in redir_all)
+    if wrote or redir_hit or has_heredoc:
         print('?BASE?')
         sys.exit(0)
 # ★リダイレクトの先が .py のときだけ「書き込み」とみなす（> out.txt は関係ない）
+
 redir_py = [t for t in re.findall(r'>>?\s*([^\s;|&]+)', bare) if t.endswith('.py')]
 # ★見るのはヒアドキュメントの中身を外した後（既存の考え方＝文章の中でファイル名に触れただけでは
 #   止めない）。★限界＝python のヒアドキュメントの中に書き込みを隠す道は残る（設計書 §9）。
@@ -210,6 +234,17 @@ if 'scripts/priority_rebuild' in whole and '.py' in whole:
     if redir_py or re.search(WRITE_RE, whole):
         print('?UNKNOWN?')
 " 2>/dev/null)
+
+    FILE_RC=$?
+    # ★2026-09-03（監査 cp16 の実装中に実測して足した・Critical）＝読み取りに失敗したら止める。
+    #   直す前＝ここの python が落ちても 2>/dev/null で消え、書き込み先が空のまま先へ進み、
+    #   最後の exit 0 に落ちていた（＝この hook が丸ごと no-op になっていた）。
+    #   実測＝LC_CTYPE=UTF-8 を立てると、6通り全部が rc=0 で通った。
+    if [ "$FILE_RC" -ne 0 ] && [ -n "$CMD" ]; then
+      echo "🔒 [受け入れ条件ゲート] コマンドの読み取りに失敗しました（2026-09-03・fail-closed）。" >&2
+      echo "   ＝判定できないので止めます。直す前は、黙って通していました。" >&2
+      exit 2
+    fi
 
     # ★2026-09-03（監査 cp16 の E-1）＝Bash から土台のファイル・hook・道具を書く道を塞ぐ。
     if [ "$FILE" = "?BASE?" ]; then
