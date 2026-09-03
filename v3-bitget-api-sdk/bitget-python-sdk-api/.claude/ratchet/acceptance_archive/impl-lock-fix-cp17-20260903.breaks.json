@@ -137,8 +137,8 @@
   {
    "no": "23",
    "script": "b18_embedded_run.sh",
-   "code": 0,
-   "note": "抜けた道: いまの hook の埋め込みに 2 個 在ります（0個であるはず）"
+   "code": 1,
+   "note": ""
   }
  ]
 }
