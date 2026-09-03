@@ -76,6 +76,25 @@ SELF_TESTS = [
     ("T15", "要件に無い番号は『要件に無い番号』として表に出る（止めない）"),
     ("T16", "表に出る要件の言葉は、要件の json からの複写である"),
     ("T17", "どの設計書も指していない要件が、表で分かる"),
+    # ★2026-09-02（監査 cp13 の A-7）＝照合A〜D を、わざと壊して試す。
+    #   直す前＝T1〜T17 は全部、この強制を作る前から在ったもの＝新しいコードを1行も試さずに
+    #   「自己テストが通る」を満たせた（監査 E-6）。
+    #   ★監査の8件のうち「空の辞書」は hook（require_acceptance_before_impl.sh）の判定なので、
+    #     ここでは試せない。実際に走る経路のテストで測る（設計書 §5）。
+    ("N1", "照合A＝触っていない関数を『触った』と言わない（誤検出しない）"),
+    ("N2", "照合A＝新しく足した関数を拾う（見落とさない）"),
+    ("N3", "照合B＝設計書に書いた関数が実装に無ければ落ちる"),
+    ("N4", "照合C＝正本から作った名前が中身に無ければ落ちる（自明な名前では通らない）"),
+    ("N5", "照合D＝一覧の一部だけを直書きすると落ちる"),
+    ("N6", "照合A＝道具の承認の印が無ければ落ちる"),
+    ("N7", "差分がゼロ（commit 済み）でも照合B は走る"),
+    # ★2026-09-03（監査 cp14・まこさん承認 iter="impl-lock-fix-cp14-20260903"）
+    ("N8", "照合A・B＝設計書の impl_functions が凍結された版と違えば落ちる（B-1）"),
+    ("N9", "照合A・B＝凍結された版が無ければ落ちる（B-1・fail-closed）"),
+    ("N10", "照合C＝kind の掘り下げの経路で正本から名前が取れる（B-3）"),
+    ("N11", "照合C＝正本に無い kind は、黙って全体に落ちずに落ちる（B-3）"),
+    ("N12", "承認と同じ形＝{from,kind} を配列へ展開できる（B-2・resolve_spec_list）"),
+    ("N5b", "照合D＝承認が書き出す形（展開済みの配列）で成立する（B-2）"),
 ]
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -666,10 +685,16 @@ def check_approval(md_path: str):
     戻り: (通すか, 画面に出す文字列)
       ・記録が在って一致    → (True,  "設計書の承認: 一致")
       ・記録が在って不一致  → (False, "設計書の承認: 外れています ...")
-      ・記録が無い          → (True,  "設計書の承認: 記録なし（未承認）")
-        ★記録が無いものを止めない理由＝いま承認の記録は0件で、止めると e35・e37・e38 が
-          いきなり走らなくなる（既存を壊さない）。engine_tuner だけは hook 側で
-          「記録が無ければ止める」にする。
+      ・記録が無い          → (False, "設計書の承認: 記録なし（未承認）")
+
+    ★2026-09-03（監査 cp16 の E-9・まこさん指名・承認 36051934db6eede3）＝止める側へ変えた。
+      監査の逐語＝「『記録なし（未承認）→ 通す』を『止める』に変える」。
+      直す前の実測（監査 cp16 の Q2 の7番）＝design_approved.json を消すと
+        --check-approval が rc=0（「記録なし（未承認）」）で、上流ゲートも rc=0 だった。
+        ＝承認の記録を消せば、承認なしで通る道が開いていた。
+      ★旧の理由（消さずに残す）＝「止めると e35・e37・e38 がいきなり走らなくなる」。
+        これは いまも当たる。承認の記録が無い設計書は、
+        `bash .claude/hooks/approve_design.sh <設計書>` を1回 打つまで走らない。
     """
     if not os.path.exists(md_path):
         return False, f"設計書が無い: {md_path}"
@@ -684,7 +709,9 @@ def check_approval(md_path: str):
             table = {}
     want = table.get(key)
     if want is None:
-        return True, "設計書の承認: 記録なし（未承認）"
+        # ★2026-09-03（監査 cp16 の E-9）＝記録が無いときは止める（fail-closed）
+        return False, ("設計書の承認: 記録なし（未承認）\n"
+                       f"    承認: bash .claude/hooks/approve_design.sh {md_path}")
     if want == now:
         return True, "設計書の承認: 一致"
     return False, (f"設計書の承認: 外れています（承認後に設計書が変わりました）\n"
@@ -713,10 +740,54 @@ def load_spec_lists() -> dict:
     """承認のときに設計書から書き出された一覧を読む（設計書 §3.1 の段2 が作る）。
 
     ★実装はこの一覧を読む。コードに一覧を焼かない＝設計書と実装で一覧が2か所に無い。
+
+    ★2026-09-02（監査 cp13 の A-1）＝ファイルが無ければ例外を出す（fail-closed）。
+      直す前＝無ければ空の辞書を返していた＝一覧を1件も照らさずに通っていた（監査 S-2・S-3）。
     """
     if not SPEC_LISTS_PATH.exists():
-        return {}
+        raise FileNotFoundError(
+            f"一覧のファイルがありません: {SPEC_LISTS_PATH}\n"
+            "    ＝承認のときに作られます。まこさんに承認を打ってもらってください:\n"
+            "      bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/approve_impl.sh")
     return json.loads(SPEC_LISTS_PATH.read_text(encoding="utf-8"))
+
+
+# ★2026-09-03（監査 cp14 の B-1・Critical）＝承認の瞬間に凍結した impl_functions の置き場。
+#   監査の逐語＝「impl_functions は『実装の後に実物から取り直す』ことを禁止する。具体＝承認の瞬間に
+#   impl_functions を一覧のファイルと同じ場所へ凍結保存し、照合A・B は凍結された版と比べる。
+#   承認後に impl_functions が変わったら止める」。
+FROZEN_PATH = SPEC_LISTS_PATH.with_name("impl_functions_frozen.json")
+
+
+def frozen_impl_functions() -> dict:
+    """承認のときに凍結された impl_functions を読む（監査 cp14 の B-1）。
+
+    ★なぜ要るか＝79回目に、照合が食い違いを9件 指摘したので、CC が設計書の impl_functions を
+      実装から作り直して通した（監査 P-4＝自明なテスト）。期待値を実装から作れる限り、
+      照合A・B は永久に通る。だから期待値は承認の瞬間に凍結し、以後 変えられないようにする。
+    ★無ければ例外（fail-closed）＝黙って設計書の側を使わない。
+    """
+    p = pathlib.Path(FROZEN_PATH)
+    if not p.exists():
+        raise FileNotFoundError(
+            f"凍結された impl_functions がありません: {p}\n"
+            "    ＝承認のときに作られます。まこさんに承認を打ってもらってください:\n"
+            "      bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/approve_impl.sh")
+    data = json.loads(p.read_text(encoding="utf-8"))
+    return {k: v for k, v in data.items() if not str(k).startswith("_")}
+
+
+def resolve_spec_list(spec: dict) -> tuple[list, str]:
+    """設計書の {"from","kind"} を、正本から配列へ展開する（監査 cp14 の B-2・Critical）。
+
+    ★監査の逐語＝「承認スクリプトが spec_lists の {"from","kind"} を その場で解決して配列に
+      展開してから 一覧のファイルへ書く（いまは辞書をそのまま写している＝65-66行）」。
+    ★直す前に何が起きていたか（実測）＝承認は辞書をそのまま書き、照合D は「2件以上の配列」を
+      求めていた。だから 辞書は必ず落ち、配列は hook が拒否する＝どちらの道でも照合D は成立しない。
+    ★展開のやり方は must_use_from_source と同じ（1か所に書く＝2か所に書き写さない）。
+    戻り＝(配列, 出どころの説明)。展開できなければ配列は空。
+    """
+    return must_use_from_source(spec)
 
 
 def names_in_function(tree, func: str) -> tuple[bool, set]:
@@ -737,61 +808,172 @@ def names_in_function(tree, func: str) -> tuple[bool, set]:
     return False, set()
 
 
-def touched_functions(path: str) -> set:
-    """git の差分から「この実装で触った関数」を機械で集める。
+def functions_ast(src: str) -> dict:
+    """ソースを構文木にして、関数ごとの値（ast.dump）を返す。
 
-    ★CC の申告ではなく git が出す＝「設計書に書かずに実装する」道を塞ぐ（設計書 §3.4 の1）。
-      git diff -U0 の見出し行は `@@ -a,b +c,d @@ def 関数名(...)` の形で、触った関数の名前がそのまま出る。
+    ★2026-09-02（監査 cp13 の A-3・Critical）に新設。
+      戻り＝{関数の名前: 構文木を文字にしたもの}。クラスの中の関数は「クラス名.関数名」。
+      **モジュール直下（import・定数・トップレベルの処理）も 1つのまとまりとして入れる**
+      ＝監査 E-2・抜け道8（モジュール直下を変えても照合A に掛からない）への答え。
+      空白とコメントだけの違いは、構文木が同じなので拾わない。
     """
-    out = set()
-    for args in (["git", "diff", "-U0", "--", path], ["git", "diff", "-U0", "--staged", "--", path]):
-        try:
-            r = subprocess.run(args, capture_output=True, text=True, timeout=30)
-        except Exception:                                  # noqa: BLE001
-            continue
-        for m in re.finditer(r"^@@[^@]*@@\s*(?:async\s+)?def\s+(\w+)", r.stdout, re.M):
-            out.add(m.group(1))
-    # ★新しく作ったファイルは、git の差分が「全部 追加」になり、上の見出しに関数名が出ない
-    #   （2026-09-02 に実測＝新規の gen_indicator_switch.py で 0 件だった）。
-    #   そのときは「ファイルの中の全部の関数」を触った関数とする＝新規ファイルでも照合A・B が効く。
-    if not out:
-        try:
-            st = subprocess.run(["git", "status", "--porcelain", "--", path],
-                                capture_output=True, text=True, timeout=30).stdout
-        except Exception:                                  # noqa: BLE001
-            st = ""
-        if st.strip().startswith(("??", "A")):
-            try:
-                tree = ast.parse(open(path, encoding="utf-8").read())
-            except Exception:                              # noqa: BLE001
-                return out
-            for node in ast.walk(tree):
-                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    out.add(node.name)
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return {}
+    out, top = {}, []
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            out[node.name] = ast.dump(node)
+        elif isinstance(node, ast.ClassDef):
+            for sub in node.body:
+                if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    out[f"{node.name}.{sub.name}"] = ast.dump(sub)
+        else:
+            top.append(ast.dump(node))
+    if top:
+        out["<モジュール直下>"] = "\n".join(top)
     return out
 
 
-def check_impl_functions(contract: dict, md_path: str) -> list:
-    """照合A・B＝git の差分で触った関数と、設計書の impl_functions を両方向で照らす。
+def head_source(path: str) -> tuple[str, bool]:
+    """HEAD の版のソースを取る。戻り＝(ソース, 取れたか)。
+
+    ★取れなかったこと（新しく作ったファイル・git が落ちた）を、呼ぶ側に必ず伝える
+      ＝黙って空を返さない。
+    """
+    try:
+        root = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                              cwd=os.path.dirname(os.path.realpath(path)),
+                              capture_output=True, text=True, timeout=30).stdout.strip()
+        if not root:
+            return "", False
+        rel = os.path.relpath(os.path.realpath(path), root)
+        r = subprocess.run(["git", "-C", root, "show", f"HEAD:{rel}"],
+                           capture_output=True, text=True, timeout=30)
+        return (r.stdout, True) if r.returncode == 0 else ("", False)
+    except Exception:                                      # noqa: BLE001
+        return "", False
+
+
+def touched_functions(path: str) -> set:
+    """この実装で触った関数を、構文木の前後比較で集める（監査 cp13 の A-3）。
+
+    ★直す前＝`git diff -U0` の見出し行を正規表現で読んでいた。
+      見出しに出るのは「変更行を含む **直前の** 関数」であって「触った関数」ではない。
+      監査の実測＝新しく足した6関数が1件も検出されず、触っていない関数を1件 誤検出した。
+    ★直した後＝HEAD の版と いまの版を、関数ごとに構文木で比べる。
+      触った関数 ＝ 値が変わった関数 ＋ 増えた関数 ＋ 消えた関数。
+    ★HEAD に無いファイル（新しく作った）＝ファイルの中の全部の関数を「触った」とする。
+    ★差分がゼロのときは空を返す＝呼ぶ側が「全関数と照合」に落とす（監査 A-3 の指示）。
+    """
+    try:
+        now = functions_ast(open(path, encoding="utf-8").read())
+    except Exception:                                      # noqa: BLE001
+        return set()
+    src, got = head_source(path)
+    if not got:
+        return set(now)                                    # 新しく作ったファイル＝全部が触った関数
+    old = functions_ast(src)
+    changed = {k for k in set(now) | set(old) if now.get(k) != old.get(k)}
+    return changed
+
+
+def check_impl_functions(contract: dict, md_path: str, frozen: dict | None = None) -> list:
+    """照合A・B＝git の差分で触った関数と、承認のときに凍結した impl_functions を両方向で照らす。
 
     ★あわせて、この道具自身が承認のときから書き換えられていないかも見る（設計書 §3.4 の5・抜け道5）。
       印は approve_impl.sh が承認の瞬間に書く＝まこさんの承認なしに道具を書き換えると、ここで止まる。
+
+    ★2026-09-03（監査 cp14 の B-1・Critical）＝比べる相手を「設計書」から「凍結された版」に変えた。
+      直す前＝期待値が設計書の中に在った＝照合が食い違いを指摘したら、設計書の側を実装から
+      作り直せば通った（79回目に実際にそうした＝監査 P-4）。
+      直した後＝期待値は承認の瞬間に凍結され、設計書が凍結版と違えば止まる。
+    ★frozen を渡せるのは番人（--self-test）のためだけ。本番では None＝凍結ファイルを読む。
     """
     ng = []
     mark = pathlib.Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/verify_tool.approved")
-    if mark.exists():
+    # ★2026-09-02（監査 cp13 の A-1・Critical）＝印が無ければ落とす（fail-closed）。
+    #   直す前＝`if mark.exists():` だった＝印を消すと、道具の改ざんの検査が丸ごと消えた
+    #   （監査の抜け道9・I-3 の枝(b)）。しかも本番では印が1度も作られていなかった（監査 S-1）。
+    if not mark.exists():
+        ng.append(f"照合の道具の承認の印がありません（{mark}）"
+                  "＝まこさんに承認を打ってもらってください: "
+                  "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/approve_impl.sh")
+    else:
         me = pathlib.Path(__file__).resolve()
         now = hashlib.sha256(me.read_bytes()).hexdigest()
         want = mark.read_text(encoding="utf-8").strip()
         if want and now != want:
             ng.append(f"照合の道具が承認のときから変わっている（いま {now[:16]}… ／ 承認時 {want[:16]}…）"
                       "＝まこさんの承認を取り直すこと")
-    spec = contract.get("impl_functions") or {}
+    # ★B-1＝期待値は凍結された版。設計書の側は「凍結と同じか」を見るためだけに使う。
+    #   ★2026-09-03 に実測して範囲を決めた＝いま作業している設計書のときだけ凍結と比べる。
+    #     凍結は「いま承認されている1本」の期待値なので、過去の工程の控え（別の iter の記録）と
+    #     比べると必ず食い違う。実測＝控え93件のうち71件が落ちた（直す前は8件）。
+    #     控えは過去の記録なので、その控え自身に書いてある impl_functions で照らす。
+    design = contract.get("impl_functions") or {}
+    _live_md = os.path.join(_REPO, ".claude", "state", "acceptance.md")
+    _is_live = bool(md_path) and os.path.realpath(md_path) == os.path.realpath(_live_md)
+    if frozen is None and not _is_live:
+        # ★2026-09-03（監査 cp15 の C-5）＝控えにも、その控えの凍結と比べる。
+        #   監査の逐語＝「控えごとに承認時の凍結を acceptance_archive/<iter>.frozen.json として
+        #   一緒に保存し、控えを照合するときはその控えの凍結と比べる」。
+        #   ★2026-09-03（監査 cp16 の E-9・まこさん指名・承認 36051934db6eede3）
+        #     ＝凍結が無い控えは止める。
+        #     監査の逐語＝「控えも同じで、凍結が無い控えは止める」。
+        #     直す前の実測（監査 cp16 の C-5）＝凍結ファイルを消すと rc=0
+        #       （「この控えには凍結がありません＝設計書自身と比べます」＝循環に戻る）。
+        #       しかも控えは git 未追跡なので、消しても跡が残らなかった。
+        #     ★旧の理由（消さずに残す）＝「既存の控え93本を落とさないため」。
+        #       これは いまも当たる。凍結の無い控えを照らすと、ここで止まる。
+        _arch = pathlib.Path(str(md_path)).with_suffix(".frozen.json")
+        if _arch.exists():
+            try:
+                _d = json.loads(_arch.read_text(encoding="utf-8"))
+                frozen = {k: v for k, v in _d.items() if not str(k).startswith("_")}
+                print(f"  [INFO] 控えの凍結と比べます: {_arch.name}")
+            except Exception:                                # noqa: BLE001
+                ng.append(f"控えの凍結が読めません: {_arch.name}"
+                          "（監査 cp16 の E-9＝記録が読めないときは止める）")
+                return ng
+        else:
+            ng.append(f"この控えには凍結がありません: {_arch.name}"
+                      "（監査 cp16 の E-9＝記録が無いときは止める）"
+                      "／直す前は、設計書自身と比べて通していた＝循環に戻っていた")
+            return ng
+    if frozen is None:
+        try:
+            frozen = frozen_impl_functions()
+        except FileNotFoundError as e:                       # noqa: BLE001
+            ng.append(str(e))
+            return ng
+    _d = json.dumps(design, sort_keys=True, ensure_ascii=False)
+    _f = json.dumps(frozen, sort_keys=True, ensure_ascii=False)
+    if _d != _f:
+        ng.append("impl_functions が承認のときから変わっています"
+                  "（＝実装に合わせて期待値を作り直した疑い・監査 cp14 の B-1／P-4）。"
+                  f"\n    設計書 {hashlib.sha256(_d.encode()).hexdigest()[:16]}…"
+                  f" ／ 凍結 {hashlib.sha256(_f.encode()).hexdigest()[:16]}…"
+                  "\n    実装を設計書どおりに直すか、まこさんに再承認を打ってもらってください。")
+        return ng
+    spec = frozen
     for rel, want in spec.items():
         impl = _resolve_impl(md_path, rel)
         got = touched_functions(impl)
         if not got:
-            print(f"  [SKIP] {rel}: git の差分に触った関数が無い（まだ実装していない／commit 済み）")
+            # ★2026-09-02（監査 cp13 の A-3）＝[SKIP] をやめ、ファイルの中の全関数と照合する。
+            #   直す前＝差分がゼロ（commit 済み）だと、照合A・B が丸ごと消えた（監査の抜け道1）。
+            #   ★照合A（設計書に書いていない関数を触ったか）は、差分がゼロだと判定できない。
+            #     黙って通さず、その旨を画面に出す。
+            try:
+                allf = set(functions_ast(open(impl, encoding="utf-8").read()))
+            except Exception:                              # noqa: BLE001
+                allf = set()
+            for miss in sorted(set(want) - allf):
+                ng.append(f"B {rel}: 設計書に書いたのに実装に無い → {miss}")
+            print(f"  [INFO] {rel}: 差分がゼロ（commit 済み）＝照合B だけを"
+                  f"ファイルの中の全関数（{len(allf)}件）と行いました。照合A は判定できません")
             continue
         for extra in sorted(got - set(want)):
             ng.append(f"A {rel}: 設計書に書いていない関数を触った → {extra}")
@@ -799,51 +981,230 @@ def check_impl_functions(contract: dict, md_path: str) -> list:
             ng.append(f"B {rel}: 設計書に書いたのに実装していない → {miss}")
         if not (got - set(want)) and not (set(want) - got):
             print(f"  [PASS] {rel}: 触った関数と設計書が一致（{len(got)} 件）")
+
+    # ★2026-09-02（監査 cp13 の A-5・双方向）＝設計書に列挙していないファイルを触ったら落とす。
+    #   直す前＝impl_functions に書いたファイルしか見なかった＝中身を別のファイルへ移せば通った
+    #   （監査の抜け道7）。範囲＝scripts/priority_rebuild／.claude/hooks／.claude/tools の .py。
+    #
+    # ★2026-09-03＝いま作業している設計書のときだけ行う（実測して直した）。
+    #   直す前＝承認済みの控え（過去の工程の設計書）にも掛けていた。控えは別の工程の記録なので、
+    #   いま触っているファイルと照らしても意味が無く、控え91件が全部 落ちた。
+    _live = os.path.join(_REPO, ".claude", "state", "acceptance.md")
+    if not md_path or os.path.realpath(md_path) != os.path.realpath(_live):
+        return ng
+    try:
+        _root = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                               capture_output=True, text=True, timeout=30).stdout.strip()
+        _st = subprocess.run(["git", "-C", _root, "status", "--porcelain"],
+                             capture_output=True, text=True, timeout=30).stdout if _root else ""
+    except Exception:                                      # noqa: BLE001
+        _st = ""
+    for _line in _st.splitlines():
+        _f = _line[3:].strip().split(" -> ")[-1]
+        if not _f.endswith(".py"):
+            continue
+        if not any(s in _f for s in ("scripts/priority_rebuild/", ".claude/hooks/", ".claude/tools/")):
+            continue
+        if not any(_f.endswith(_k) or _k.endswith(_f) for _k in spec):
+            ng.append(f"A(双方向) {_f}: 設計書の impl_functions に書いていないファイルを触った")
     return ng
 
 
-def check_must_use(contract: dict, src: str) -> list:
-    """照合C＝must_use に書いた名前が、その関数の中に在るか（AST で関数の中身を見る）。"""
+def must_use_from_source(spec: dict) -> tuple[list, str]:
+    """正本のファイルから「その関数が使うはずの名前」を機械で作る（監査 cp13 の A-6）。
+
+    ★監査の逐語＝「must_use を CC に手書きさせず、spec_lists から機械で導く」。
+      CC が名前を選べると、壊れても消えない名前だけを書いて通せる（監査の抜け道4・Q2 の実測）。
+    ★設計書には from（正本のファイル）と kind（その中のどの枠か）だけを書く。値は書かない。
+    戻り＝(名前の一覧, 出どころの説明)
+    """
+    src_path = str((spec or {}).get("from") or "")
+    if not src_path:
+        return [], "設計書に from（正本のファイル）が書いていない"
+    p = pathlib.Path(src_path)
+    if not p.is_absolute():
+        p = pathlib.Path(_REPO) / src_path
+    if not p.exists():
+        return [], f"正本のファイルがない: {p}"
+    kind = str((spec or {}).get("kind") or "")
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:                                 # noqa: BLE001
+        return [], f"正本を json として読めない: {p} → {e}"
+    # ★2026-09-03（監査 cp14 の B-3・Critical）＝kind に「掘り下げの経路」を許し、
+    #   正本に無い kind は 黙って全体に落ちずに止める。
+    #   監査の逐語＝「kind に 掘り下げの経路 を許し、kind が正本に存在しないときは
+    #     黙って全体に落ちず、例外で止める（925行）」。
+    #   直す前の実測（監査 N-c）＝存在しない kind を渡すと、エラーにならず先頭15鍵を返した
+    #     ＝正本の指し間違いが検出されない。
+    #   ★経路の書き方＝"機械が読む判定/次元" のように "/" で区切る。1段だけなら いままでと同じ。
+    node = data
+    for seg in [s for s in kind.split("/") if s != ""]:
+        if isinstance(node, dict):
+            if seg not in node:
+                return [], (f"正本に kind の段がない: {p.name} の「{seg}」"
+                            f"（経路＝{kind}／その段に在る鍵＝{sorted(node.keys())[:8]}…）")
+            node = node[seg]
+            continue
+        if isinstance(node, list) and seg.isdigit() and int(seg) < len(node):
+            node = node[int(seg)]
+            continue
+        return [], f"正本の「{seg}」が掘り下げられない（経路＝{kind}／型＝{type(node).__name__}）"
+    if isinstance(node, dict):
+        return sorted(node.keys()), f"{p.name} の {kind or 'ぜんぶ'} の鍵 {len(node)} 件"
+    if isinstance(node, list):
+        return [str(x) for x in node], f"{p.name} の {kind or 'ぜんぶ'} の要素 {len(node)} 件"
+    return [], f"正本の {kind} が辞書でも配列でもない"
+
+
+def check_must_use(contract: dict, src: str, md_path: str = "") -> list:
+    """照合C＝要求された名前が、その関数の中に在るか（構文木で関数の中身を見る）。
+
+    ★2026-09-02（監査 cp13 の A-6）＝要求する名前の出どころを2つに分けた。
+      ①must_use_from … 正本のファイルから機械が作る（CC は名前を選べない）
+      ②must_use      … CC が手で書く（正本が無いとき）。**これは「機械で照らせない」に数える**
+    ★2026-09-02（監査 cp13 の E-3）＝impl_functions に書いた全部の .py を見る。
+      直す前＝impl_file の1本だけを見ていた＝別のファイルに在る関数を「実装に無い」と誤って言った。
+    """
     ng = []
-    spec = contract.get("must_use") or {}
-    if not spec:
-        return ng
-    tree = ast.parse(src)
-    for func, required in spec.items():
-        found, got = names_in_function(tree, func)
-        if not found:
+    trees = {}
+    for rel in (contract.get("impl_functions") or {}):
+        if not str(rel).endswith(".py"):
+            continue
+        try:
+            trees[rel] = ast.parse(open(_resolve_impl(md_path, rel), encoding="utf-8").read())
+        except Exception:                                  # noqa: BLE001
+            continue
+    if not trees:
+        try:
+            trees[str(contract.get("impl_file") or "<impl_file>")] = ast.parse(src)
+        except SyntaxError:
+            return ["C: 実装を構文木にできない"]
+
+    def _find(func: str, need=()) -> tuple:
+        """その関数を持つファイルを探す。
+
+        ★2026-09-03（実測して直した）＝同じ名前の関数が複数のファイルに在ると、
+          先に見つかった方だけを見て「名前が無い」と誤って言った（実測＝selftest が
+          gen_audit_request.py と gen_audit_todo.py の両方に在る）。
+          ＝要求を満たす候補が在れば、それを返す。無ければ最初の候補を返す（落とすため）。
+        """
+        first = ("", set())
+        for rel, t in trees.items():
+            ok, got = names_in_function(t, func)
+            if not ok:
+                continue
+            if not first[0]:
+                first = (rel, got)
+            if all(c in got for c in need):
+                return rel, got
+        return first
+
+    for func, s in (contract.get("must_use_from") or {}).items():
+        required, why = must_use_from_source(s if isinstance(s, dict) else {})
+        if not required:
+            ng.append(f"C {func}: 正本から名前を作れない（{why}）")
+            continue
+        where, got = _find(func, required)
+        if not where:
+            ng.append(f"C {func}: 設計書の must_use_from に在るのに、実装にその関数が無い")
+            continue
+        missing = [c for c in required if c not in got]
+        if missing:
+            ng.append(f"C {func}: 正本が要求する名前が中身に無い → {missing}（出どころ＝{why}）")
+        else:
+            print(f"  [PASS] must_use_from {func}: 全部あり（出どころ＝{why}／{where}）")
+    for func, required in (contract.get("must_use") or {}).items():
+        where, got = _find(func, required)
+        if not where:
             ng.append(f"C {func}: 設計書の must_use に在るのに、実装にその関数が無い")
             continue
         missing = [c for c in required if c not in got]
         if missing:
-            ng.append(f"C {func}: 設計書が要求する名前が中身に無い → {missing}")
+            ng.append(f"C {func}: 設計書が要求する名前が中身に無い → {missing}（{where}）")
         else:
-            print(f"  [PASS] must_use {func}: 全部あり {required}")
+            print(f"  [PASS] must_use {func}: 全部あり {required}"
+                  f"（{where}・★手書き＝機械で照らせないに数える）")
     return ng
 
 
-def check_spec_lists(contract: dict, src: str) -> list:
-    """照合D＝spec_lists の一覧を、実装が読んでいるか（コードに焼いていないか）。
+def probe_spec_lists(key: str, spec: dict) -> tuple[bool, str]:
+    """一覧を1件 減らして、実装の出力が変わるかを測る（監査 cp13 の A-4・Critical）。
 
-    ★見るのは2つ＝①一覧を読む関数を呼んでいるか ②一覧の中身がコードに直書きされていないか。
+    ★監査の逐語＝「実装を import し、spec_lists.json を差し替えて出力が変わるかを測る。
+      文字の検査と『全部 直書きのときだけ落とす』判定は捨てる」。
+    ★設計書には `probe`（その一覧を使う関数の呼び方＝"モジュール名:関数名"）を書く。
+    戻り＝(読んでいるか, 理由の文)
+    """
+    global SPEC_LISTS_PATH
+    import importlib
+    import tempfile
+    probe = str((spec or {}).get("probe") or "")
+    if ":" not in probe:
+        return False, "設計書に probe（この一覧を使う関数の呼び方）が無い＝振る舞いで照らせない"
+    mod_name, func_name = probe.split(":", 1)
+    keep = SPEC_LISTS_PATH
+    if not keep.exists():
+        return False, f"一覧のファイルが無い（{keep}）＝承認を打ち直すこと"
+    base = json.loads(keep.read_text(encoding="utf-8"))
+    items = base.get(key)
+    if not isinstance(items, list) or len(items) < 2:
+        return False, f"一覧 {key} が2件以上でない＝1件 減らして比べられない"
+
+    # ★2026-09-03（監査 cp14 の B-2）＝差し替え先を「この場」と「import された同じ道具」の両方に置く。
+    #   なぜ要るか＝この道具を `python3 verify_design_contract.py …` で走らせると、この場の名前は
+    #   __main__ になる。実装の側は `from verify_design_contract import load_spec_lists` で
+    #   別の複写を読み込むので、__main__ の差し替えが実装に届かなかった（N5b で実測して分かった）。
+    #   ＝直さないと、照合D は実際に走る経路では必ず「出力が変わらない」になる。
+    def _set(pth):
+        global SPEC_LISTS_PATH
+        SPEC_LISTS_PATH = pth
+        _twin = sys.modules.get("verify_design_contract")
+        if _twin is not None:
+            _twin.SPEC_LISTS_PATH = pth
+
+    try:                                                   # 先に同じ道具を読み込んでおく（下の _set が届く）
+        importlib.import_module("verify_design_contract")
+    except Exception:                                      # noqa: BLE001
+        pass
+
+    outs = []
+    try:
+        for keep_all in (True, False):
+            d = dict(base)
+            d[key] = items if keep_all else items[:-1]
+            p = pathlib.Path(tempfile.mkdtemp()) / "spec_lists.json"
+            p.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+            _set(p)
+            m = importlib.reload(importlib.import_module(mod_name))
+            outs.append(repr(getattr(m, func_name)()))
+    except Exception as e:                                 # noqa: BLE001
+        return False, f"probe を呼べなかった（{mod_name}:{func_name}）→ {e}"
+    finally:
+        _set(keep)
+    if outs[0] == outs[1]:
+        return False, "一覧を1件 減らしても出力が変わらない＝一覧を使っていない（コードに焼いた疑い）"
+    return True, "一覧を1件 減らすと出力が変わる＝一覧を使っている"
+
+
+def check_spec_lists(contract: dict, src: str) -> list:
+    """照合D＝spec_lists の一覧を、実装が本当に使っているかを振る舞いで測る。
+
+    ★2026-09-02（監査 cp13 の A-4）に作り直した。
+      直す前＝①文字 `load_spec_lists` が在るか ②一覧を全部 直書きしたときだけ落とす。
+      ＝コメントに書くだけで通り、4つのうち2つだけ直書きした型（2026-09-02 の食い違い）は
+        素通りした。**この2つの判定は捨てた。**
     """
     ng = []
     spec = contract.get("spec_lists") or {}
     if not spec:
         return ng
-    tree = ast.parse(src)
-    reads = "load_spec_lists" in src
-    for key, items in spec.items():
-        if not reads:
-            ng.append(f"D {key}: 一覧を読む処理（load_spec_lists）が実装に無い＝コードに焼いた疑い")
-            continue
-        baked = [s for s in items
-                 if isinstance(s, str)
-                 and any(isinstance(n, ast.Constant) and n.value == s for n in ast.walk(tree))]
-        if len(baked) == len(items) and items:
-            ng.append(f"D {key}: 一覧の中身が実装に直書きされている → {baked}")
+    for key, val in spec.items():
+        ok, why = probe_spec_lists(key, val if isinstance(val, dict) else {})
+        if ok:
+            print(f"  [PASS] spec_lists {key}: {why}")
         else:
-            print(f"  [PASS] spec_lists {key}: 読む形（直書き {len(baked)}/{len(items)}）")
+            ng.append(f"D {key}: {why}")
     return ng
 
 
@@ -865,8 +1226,19 @@ def check(md_path: str) -> bool:
         # 配線を外す＝自己チェックを無力化する改変は、ここで検出してブロックする。
         # ★限界（2026-08-23 に明記）＝これは文字が在るかを見るだけ。中身が空の関数でも通る。
         #   その穴は diff_spec（--diff）が塞ぐ＝二段で守る。
+        # ★2026-09-03（監査 cp14 の E-3 の残り）＝impl_functions に書いた全部の .py を見る。
+        #   直す前＝impl_file の1本だけを見ていたので、別のファイルに作った関数を
+        #   「配線が無い」と誤って言った（実測＝approval_matches・choose_variant）。
+        _srcs = [src]
+        for _rel in (contract.get("impl_functions") or {}):
+            if not str(_rel).endswith(".py"):
+                continue
+            try:
+                _srcs.append(open(_resolve_impl(md_path, _rel), encoding="utf-8").read())
+            except Exception:                              # noqa: BLE001
+                continue
         for c in calls:
-            if c in src:
+            if any(c in s for s in _srcs):
                 print(f"  [PASS] 自己チェック配線あり: {c}")
             else:
                 print(f"  [FAIL] 自己チェック配線が無い（外された疑い）: {c}")
@@ -893,7 +1265,7 @@ def check(md_path: str) -> bool:
     # ★設計書どおりにしか実装できなくする照合A〜D（2026-09-02・iter="impl-lock-20260902"）。
     #   書いてある欄だけ走る＝既存の設計書（3つの欄が無いもの）は今までどおり通る。
     for msg in (check_impl_functions(contract, md_path)
-                + check_must_use(contract, src)
+                + check_must_use(contract, src, md_path)
                 + check_spec_lists(contract, src)):
         print(f"  [FAIL] {msg}")
         ok = False
@@ -1026,27 +1398,25 @@ def self_test() -> bool:
         shutil.rmtree(t9_dir, ignore_errors=True)
 
     # T10 設計書を1文字 書き換えると承認が外れる（C-6）
+    # ★2026-09-02（監査 cp13 の A-7・E-7）＝本番の承認の記録を1バイトも触らない。
+    #   直す前＝本番の design_approved.json を書き替え、戻す処理が try の中に在った
+    #   （途中で例外が出れば偽の記録が残る）。監査の1回の実行で、実際にこのファイルが書き替わった。
+    #   直した後＝読む先をモジュールの変数ごと一時の場所へ向け、finally で必ず戻す（手本＝T16）。
+    global _DESIGN_APPROVED
     t10_dir = tempfile.mkdtemp()
+    _keep_da = _DESIGN_APPROVED
     try:
         p10 = os.path.join(t10_dir, "approved.md")
         open(p10, "w", encoding="utf-8").write("設計書の中身\n")
-        import hashlib
-        table = {}
-        if os.path.exists(_DESIGN_APPROVED):
-            try:
-                table = json.load(open(_DESIGN_APPROVED, encoding="utf-8"))
-            except Exception:
-                table = {}
-        keep = dict(table)
-        table[os.path.abspath(p10)] = hashlib.sha256(open(p10, "rb").read()).hexdigest()
-        os.makedirs(os.path.dirname(_DESIGN_APPROVED), exist_ok=True)
+        _DESIGN_APPROVED = os.path.join(t10_dir, "design_approved.json")
+        table = {os.path.abspath(p10): hashlib.sha256(open(p10, "rb").read()).hexdigest()}
         json.dump(table, open(_DESIGN_APPROVED, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         ok_before, _m1 = check_approval(p10)
         open(p10, "a", encoding="utf-8").write("1文字\n")
         ok_after, _m2 = check_approval(p10)
         results["T10"] = (ok_before and not ok_after)
-        json.dump(keep, open(_DESIGN_APPROVED, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     finally:
+        _DESIGN_APPROVED = _keep_da
         shutil.rmtree(t10_dir, ignore_errors=True)
 
     # ── ★2026-08-26（要件 R17・設計書 v2 §5）＝T12〜T17。本物のファイルは1バイトも変えない ──
@@ -1090,6 +1460,132 @@ def self_test() -> bool:
     finally:
         _REQ_JSON = keep_req
         shutil.rmtree(t16_dir, ignore_errors=True)
+
+    # ── ★2026-09-02（監査 cp13 の A-7）＝照合A〜D を、わざと壊して試す（N1〜N7）──
+    #   一時の場所に小さな git のリポジトリを作って試す＝本物のファイルは1バイトも変えない。
+    global SPEC_LISTS_PATH
+    global FROZEN_PATH          # ★2026-09-03（監査 cp14 の B-1）＝N9 で一時に付け替えて必ず戻す
+    nd = tempfile.mkdtemp()
+    try:
+        for _a in (["git", "init", "-q", nd],
+                   ["git", "-C", nd, "config", "user.email", "t@example.com"],
+                   ["git", "-C", nd, "config", "user.name", "t"]):
+            subprocess.run(_a, check=False, capture_output=True)
+        fn = os.path.join(nd, "impl.py")
+        md_n = os.path.join(nd, "design.md")
+        open(md_n, "w", encoding="utf-8").write("見本の設計書\n")
+        open(fn, "w", encoding="utf-8").write(
+            "import json\n\n\ndef alpha():\n    return 1\n\n\ndef beta():\n    return 2\n")
+        subprocess.run(["git", "-C", nd, "add", "impl.py"], check=False, capture_output=True)
+        subprocess.run(["git", "-C", nd, "commit", "-qm", "first"], check=False, capture_output=True)
+
+        # N7 差分がゼロ（commit 済み）でも照合B は走る
+        # ★2026-09-03（B-1）＝番人は凍結された版を明示で渡す（本番は凍結ファイルを読む）
+        ng7 = check_impl_functions({"impl_functions": {fn: ["alpha", "beta", "zeta"]}}, md_n,
+                                   frozen={fn: ["alpha", "beta", "zeta"]})
+        results["N7"] = (touched_functions(fn) == set() and any("zeta" in x for x in ng7))
+
+        # 変更＝alpha を書き換え、gamma を足す。beta は1文字も触らない
+        open(fn, "w", encoding="utf-8").write(
+            "import json\n\n\ndef alpha():\n    return 10\n\n\ndef beta():\n    return 2\n"
+            "\n\ndef gamma():\n    return 3\n")
+        got_n = touched_functions(fn)
+        results["N2"] = ("gamma" in got_n and "alpha" in got_n)   # 新しく足した関数を拾う
+        results["N1"] = ("beta" not in got_n)                     # 触っていない関数を誤検出しない
+
+        # N3 照合B＝設計書に書いた関数が実装に無ければ落ちる
+        ng3 = check_impl_functions({"impl_functions": {fn: ["alpha", "gamma", "delta"]}}, md_n,
+                                   frozen={fn: ["alpha", "gamma", "delta"]})
+        results["N3"] = any("delta" in x for x in ng3)
+
+        # N6 道具の承認の印が無ければ落ちる（印は一時に隠して、必ず戻す）
+        _mark = pathlib.Path(_REPO) / ".claude" / "state" / "verify_tool.approved"
+        _bak = _mark.with_name(_mark.name + ".selftest_bak")
+        _moved = _mark.exists()
+        if _moved:
+            _mark.rename(_bak)
+        try:
+            ng6 = check_impl_functions({"impl_functions": {}}, md_n, frozen={})
+            results["N6"] = any("印がありません" in x for x in ng6)
+        finally:
+            if _moved:
+                _bak.rename(_mark)
+
+        # N4 照合C＝正本から作った名前が中身に無ければ落ちる（自明な名前では通らない）
+        _law = os.path.join(nd, "law.json")
+        json.dump({"枠": {"FAMILY": 1, "LINEAGE": 2}}, open(_law, "w", encoding="utf-8"),
+                  ensure_ascii=False)
+        ng4 = check_must_use({"must_use_from": {"alpha": {"from": _law, "kind": "枠"}}},
+                             open(fn, encoding="utf-8").read())
+        results["N4"] = any("FAMILY" in x for x in ng4)
+
+        # N5 照合D＝一覧の一部だけを直書きすると落ちる（2026-09-02 の食い違いと同じ型）
+        _sl = pathlib.Path(nd) / "spec_lists.json"
+        _sl.write_text(json.dumps({"kinds": ["a", "b", "c", "d"]}, ensure_ascii=False),
+                       encoding="utf-8")
+        open(os.path.join(nd, "half_impl.py"), "w", encoding="utf-8").write(
+            "def build():\n    return ['a', 'b']\n")
+        _keep_sl = SPEC_LISTS_PATH
+        sys.path.insert(0, nd)
+        try:
+            SPEC_LISTS_PATH = _sl
+            ng5 = check_spec_lists({"spec_lists": {"kinds": {"probe": "half_impl:build"}}}, "")
+            results["N5"] = any("出力が変わらない" in x for x in ng5)
+        finally:
+            SPEC_LISTS_PATH = _keep_sl
+            if nd in sys.path:
+                sys.path.remove(nd)
+
+        # ★2026-09-03（監査 cp14）＝ここから N8〜N12・N5b
+        # N8 設計書の impl_functions が凍結された版と違えば落ちる（B-1）
+        ng8 = check_impl_functions({"impl_functions": {fn: ["alpha", "gamma"]}}, md_n,
+                                   frozen={fn: ["alpha"]})
+        results["N8"] = any("承認のときから変わっています" in x for x in ng8)
+
+        # N9 凍結された版が無ければ落ちる（B-1・fail-closed）
+        #   ★いま作業している設計書のときだけ凍結と比べる形にしたので（控えを壊さないため）、
+        #     ここでは凍結を読む関数そのものを試す。
+        _keep_fz = FROZEN_PATH
+        try:
+            FROZEN_PATH = pathlib.Path(nd) / "no_such_frozen.json"
+            try:
+                frozen_impl_functions()
+                results["N9"] = False
+            except FileNotFoundError as _e9:
+                results["N9"] = "凍結された impl_functions がありません" in str(_e9)
+        finally:
+            FROZEN_PATH = _keep_fz
+
+        # N10・N11・N12 正本の掘り下げ（B-3）と、承認の展開（B-2）
+        _deep = os.path.join(nd, "deep.json")
+        json.dump({"機械が読む判定": {"次元": {"family": 1, "系統": 2}}},
+                  open(_deep, "w", encoding="utf-8"), ensure_ascii=False)
+        got10, why10 = must_use_from_source({"from": _deep, "kind": "機械が読む判定/次元"})
+        results["N10"] = (got10 == ["family", "系統"])
+        got11, why11 = must_use_from_source({"from": _deep, "kind": "在りません"})
+        results["N11"] = (got11 == [] and "kind の段がない" in why11)
+        got12, _why12 = resolve_spec_list({"from": _deep, "kind": "機械が読む判定/次元"})
+        results["N12"] = (got12 == ["family", "系統"])
+
+        # N5b 照合D＝承認が書き出す形（展開済みの配列）で成立する（B-2）
+        _sl2 = pathlib.Path(nd) / "spec_lists2.json"
+        _sl2.write_text(json.dumps({"kinds": got12}, ensure_ascii=False), encoding="utf-8")
+        open(os.path.join(nd, "full_impl.py"), "w", encoding="utf-8").write(
+            "import json, pathlib\n"
+            "from verify_design_contract import load_spec_lists\n\n\n"
+            "def build():\n    return list(load_spec_lists().get('kinds') or [])\n")
+        _keep_sl2 = SPEC_LISTS_PATH
+        sys.path.insert(0, nd)
+        try:
+            SPEC_LISTS_PATH = _sl2
+            ok5b, why5b = probe_spec_lists("kinds", {"probe": "full_impl:build"})
+            results["N5b"] = bool(ok5b)
+        finally:
+            SPEC_LISTS_PATH = _keep_sl2
+            if nd in sys.path:
+                sys.path.remove(nd)
+    finally:
+        shutil.rmtree(nd, ignore_errors=True)
 
     good = 0
     for k, v in SELF_TESTS:

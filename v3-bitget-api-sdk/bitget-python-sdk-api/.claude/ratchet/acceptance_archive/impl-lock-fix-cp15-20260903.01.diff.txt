@@ -1,0 +1,59 @@
+247c247,253
+< | 1〜10 | 実装の後に貼る | 実装の後に貼る |
+---
+> | 承認の画面 | `bash .claude/hooks/approve_impl.sh`（まこさんが打った・14:16） | `📋 spec_lists: 0 件` ／ `🧊 impl_functions: 0 件を凍結しました` ／ `機械で照らせる: 0件` ／ `機械で照らせない: 4件（手で書いた名前 0件／bash の判定 3件／設計書に書いた理由 1件／実装から作ったもの 0件）` ／ `逃げ道の件数: 空＋理由で通した一覧 1件／部品だけで確かめた完成の条件 3件` ／ `── もう一方の承認の記録（design_approved.json）も同時に更新します（監査 cp15 の C-3）──` ／ `✅ 設計書を承認しました（ハッシュ値を記録）` |
+> | 番人（部品） | `python3 …/verify_design_contract.py --self-test` | `テスト 30/30 期待どおり` |
+> | 道具の番人（部品） | `python3 .claude/tools/gen_audit_todo.py --selftest` | `✅ 番人 6/6 pass` |
+> | 訂正の印（C-9②） | `python3 .claude/tools/gen_audit_todo.py --check-corrections <cp13 の結果>` | `✅ 訂正の印が在ります: 2026-09-02_impl_lock_cp13_audit_report.md` |
+> | 1〜10 のズラし方 | **★測るのは監査です。**私は測りません（まこさん決定 2026-09-03） | — |
+> 
+> **★「部品だけで確かめた完成の条件 3件」は、C-8① を直す前の数字です。**直した後にどう変わるかは、次の承認の画面に出ます。**私は判定しません。**
+339,340c345,389
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "設計の段階では、これから作る関数を正確に書けない（監査 cp14 の N-e＝未着手のファイルに機械生成の道具を掛けると空の配列になる）。正直に書くと落ち、実装からコピーすると通る形だったので、コピーを選び続けた。だから空で出し、実装の後に確定させて凍結する（§6 の14番）。",
+---
+>   "impl_functions": {
+>     "scripts/priority_rebuild/verify_design_contract.py": [
+>       "<モジュール直下>",
+>       "check",
+>       "check_impl_functions",
+>       "check_must_use",
+>       "check_spec_lists",
+>       "frozen_impl_functions",
+>       "functions_ast",
+>       "head_source",
+>       "load_spec_lists",
+>       "must_use_from_source",
+>       "probe_spec_lists",
+>       "resolve_spec_list",
+>       "self_test",
+>       "touched_functions"
+>     ],
+>     "scripts/priority_rebuild/gen_audit_request.py": [
+>       "approval_matches",
+>       "main"
+>     ],
+>     ".claude/tools/gen_audit_todo.py": [
+>       "<モジュール直下>",
+>       "check_corrections"
+>     ]
+>   },
+>   "no_impl_functions_reason": "設計の段階では空で出した（監査 cp14 の N-e＝未着手のファイルに機械生成の道具を掛けると空の配列になる。正直に書くと落ち、実装からコピーすると通る形だった）。★実装の後に確定させたのが、いまの一覧である。★この一覧は実物から機械で作ったので、承認の画面に『実装から作った期待値＝循環』と出るのが正しい（§9 の2番）。",
+>   "must_use": {
+>     "frozen_impl_functions": ["json", "pathlib"],
+>     "check_impl_functions": ["frozen_impl_functions", "touched_functions"],
+>     "resolve_spec_list": ["must_use_from_source"],
+>     "must_use_from_source": ["json", "pathlib", "kind"],
+>     "check_spec_lists": ["probe_spec_lists"],
+>     "probe_spec_lists": ["importlib", "tempfile"],
+>     "functions_ast": ["ast", "dump"],
+>     "head_source": ["subprocess", "os"],
+>     "touched_functions": ["functions_ast", "head_source"],
+>     "check_must_use": ["must_use_from_source", "names_in_function"],
+>     "check": ["check_impl_functions", "check_must_use", "check_spec_lists"],
+>     "self_test": ["results", "SELF_TESTS"],
+>     "load_spec_lists": ["SPEC_LISTS_PATH", "json"],
+>     "approval_matches": ["hashlib", "pathlib"],
+>     "main": ["approval_matches"],
+>     "check_corrections": ["CORRECTIONS", "open"]
+>   },

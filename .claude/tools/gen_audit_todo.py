@@ -294,7 +294,37 @@ def selftest() -> int:
     return 1 if ng else 0
 
 
+CORRECTIONS = {
+    # 監査レポートの相対パス: その中に在るべき訂正の印
+    "2026-09-02_impl_lock_cp13_audit_report.md": "【訂正・2026-09-03・監査 cp15 の C-9②】",
+}
+
+
+def check_corrections(audit_md: str) -> int:
+    """誤った外部引用に、訂正の印が付いたままかを見る（監査 cp15 の C-9②）。
+
+    ★監査の逐語＝「cp13 の結果 296行の誤った引用に訂正の印を付ける」。
+    ★印を付けるだけでは「壊し方」が書けないので、印が在るかを機械で見る形にした。
+      ＝印を消したら、この検査が落ちる。
+    """
+    import os
+    name = os.path.basename(audit_md)
+    want = CORRECTIONS.get(name)
+    if want is None:
+        print(f"✅ この監査レポートには、訂正の印の決まりがありません: {name}")
+        return 0
+    text = open(audit_md, encoding="utf-8").read()
+    if want in text:
+        print(f"✅ 訂正の印が在ります: {name}（{want}）")
+        return 0
+    print(f"❌ 訂正の印がありません: {name}（要る印＝{want}）")
+    print("   ＝誤った外部引用が、訂正なしで残っています（監査 cp15 の C-9②）。")
+    return 1
+
+
 if __name__ == "__main__":
+    if "--check-corrections" in sys.argv:
+        sys.exit(check_corrections(sys.argv[sys.argv.index("--check-corrections") + 1]))
     if "--selftest" in sys.argv:
         sys.exit(selftest())
     if "--show" in sys.argv:

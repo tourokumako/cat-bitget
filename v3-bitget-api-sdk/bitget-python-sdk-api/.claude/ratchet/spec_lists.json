@@ -1,0 +1,5 @@
+{
+ "_これは何か": "設計書の spec_lists を承認のときに機械で書き出したもの。実装はここを読む（コードに一覧を焼かない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md"
+}

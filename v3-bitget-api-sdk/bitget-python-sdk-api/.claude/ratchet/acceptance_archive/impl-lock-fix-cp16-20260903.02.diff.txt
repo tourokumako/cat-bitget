@@ -1,0 +1,212 @@
+5,8d4
+< NEW_FILE: .claude/tools/run_breaks.py, .claude/breaks/b01_missing_func.sh, .claude/breaks/b02_extra_func.sh, .claude/breaks/b03_must_use.sh, .claude/breaks/b05_design_changed.sh, .claude/breaks/b06_tool_changed.sh, .claude/breaks/b07_no_approval.sh, .claude/breaks/b08_bash_write.sh, .claude/breaks/b09_run_bypass.sh, .claude/breaks/b11_subagent.sh, .claude/breaks/b12_no_record.sh, .claude/breaks/b13_approve_by_cc.sh, .claude/breaks/b14_breaks_tampered.sh
+< 
+< MODEL: .claude/tools/gen_impl_functions.py, .claude/tools/gen_audit_todo.py, .claude/hooks/approve_impl.sh
+< 
+12a9,31
+> **★新しく作ったファイル（実装が終わったので、新規（`NEW_FILE:`）の宣言は外しました）**＝`.claude/tools/run_breaks.py` ／ **`.claude/breaks/` の13本**。手本にしたのは `.claude/tools/gen_impl_functions.py`・`.claude/tools/gen_audit_todo.py`・`.claude/hooks/approve_impl.sh` です。
+> 
+> **★`.claude/breaks/` の13本（1本ずつ）**
+> 
+> | # | ファイル | 何のためのものか |
+> |---|---|---|
+> | 1 | **`lib.sh`** | **共通の部品。**控えを作る → 壊す → 測る → 必ず戻す → ハッシュ値を照らす。★これ自身は走らせません（12本から読み込まれます）。★凍結の対象には入ります |
+> | 2 | `b01_missing_func.sh` | 凍結に在る関数を消すと止まるか（完成の条件 #1） |
+> | 3 | `b02_extra_func.sh` | 凍結に無い関数を足すと止まるか（#2） |
+> | 4 | `b03_must_use.sh` | `must_use` の名前を関数の中から消すと止まるか（#3） |
+> | 5 | `b05_design_changed.sh` | 承認の後に設計書を変えると止まるか（#4） |
+> | 6 | `b06_tool_changed.sh` | 照合の道具を変えると止まるか（#5） |
+> | 7 | `b07_no_approval.sh` | 承認の印を消すと止まるか（#6） |
+> | 8 | `b08_bash_write.sh` | Bash から土台6ファイルを書く6通りが止まるか（#7） |
+> | 9 | `b09_run_bypass.sh` | `py_compile` の語を足しても上流ゲートが外れないか（#8） |
+> | 10 | `b11_subagent.sh` | サブエージェントでも土台6ファイルを書けないか（#9） |
+> | 11 | `b12_no_record.sh` | 承認の記録が無いときに止まるか（#10） |
+> | 12 | `b13_approve_by_cc.sh` | CC の Bash から承認スクリプトを打てないか（#11） |
+> | 13 | `b14_breaks_tampered.sh` | 壊すプログラムを承認の後に書き換えると止まるか（#12） |
+> 
+> **★13本のうち、機械が走らせるのは壊すプログラム12本です**（`lib.sh` は読み込まれるだけ）。**凍結する（ハッシュ値を記録する）のは13本 全部です。**
+> **★`_lib.sh` から `lib.sh` へ改名しました**（先頭の `_` が、凍結の照合で印の欄と同じ扱いになり、「増えたファイル」と誤判定したため）。
+> 
+134c153
+< **もう1つが、承認の操作を私が打てることです。**照合の道具を壊しても、私が `bash approve_impl.sh` を打てば、壊した道具の指紋が新しい正解として記録されます（監査が実測しました）。
+---
+> **もう1つが、承認の操作を私が打てることです。**照合の道具を壊しても、私が承認スクリプトを打てば、壊した道具の指紋が新しい正解として記録されます（監査が実測しました）。
+165,166c184,186
+< | 期待値を作るプログラム（E-2 の手本） | `.claude/tools/gen_impl_functions.py` |
+< | 直す対象を抜き出すプログラム（手本） | `.claude/tools/gen_audit_todo.py` |
+---
+> | 期待値を作るプログラム（E-2 で直した） | `.claude/tools/gen_impl_functions.py` |
+> | 新しく作った走らせるプログラム | `.claude/tools/run_breaks.py` |
+> | 必読ゲートの実物（新規の宣言の判定を確かめた） | `.claude/hooks/require_source_read_before_acceptance.py` |
+188c208
+< **判定**＝コマンドの文字列に `approve_impl.sh` か `approve_design.sh` が現れたら `exit 2`。
+---
+> **判定**＝コマンドの文字列に承認スクリプトの名前が現れたら `exit 2`。
+193a214
+> **★あわせて失うもの**＝コマンドの文字列に名前が出るだけで止まるので、**私は承認スクリプトの文法確認（`bash -n`）もできません。**
+205,207c226,229
+< | 1 | **壊すプログラム**（1つのズラし方につき1本） | `.claude/breaks/bNN_<名前>.sh` |
+< | 2 | **それを走らせるプログラム** | `.claude/tools/run_breaks.py`（新設） |
+< | 3 | **記録** | `.claude/ratchet/acceptance_archive/<iter>.breaks.json` |
+---
+> | 1 | **壊すプログラム**（1つのズラし方につき1本・**12本**） | `.claude/breaks/bNN_<名前>.sh` |
+> | 2 | **12本が読み込む共通の部品**（控えを作る・必ず戻す・ハッシュ値を照らす） | `.claude/breaks/lib.sh` |
+> | 3 | **それを走らせるプログラム** | `.claude/tools/run_breaks.py`（新設） |
+> | 4 | **記録** | `.claude/ratchet/acceptance_archive/<iter>.breaks.json` |
+226c248
+< 3. **★承認の瞬間に、壊すプログラム11本のハッシュ値を凍結する**（下の 3.2b）
+---
+> 3. **★承認の瞬間に、壊すプログラムのハッシュ値を凍結する**（下の 3.2b）
+303c325
+< **直す場所**＝22-24行の3行を消し、**土台ゲート（いまの154-165行）の直後**に置き直します。
+---
+> **直す場所**＝22-24行の3行を消し、**土台ゲートの直後**に置き直します。
+318a341,342
+> **★この直しで起きること（正直に）**＝承認の記録が無い設計書は、走らなくなります。**e35・e37・e38 の設計書は、いま記録がありません。**動かすときは `bash .claude/hooks/approve_design.sh <設計書>` を1回 打つ必要があります。
+> 
+332c356,358
+< **直した後**＝比べる相手を、`gen_impl_functions.py` と同じ「**そのファイルの中の全関数**」にします。git を一切 見ません。
+---
+> **直した後**＝比べる相手を「**そのファイルの中の全関数**」（`functions_ast`）にします。git を一切 見ません。
+> 
+> **★あわせて `gen_impl_functions.py` も同じ出どころに変えます。**理由＝この道具も `touched_functions`（git の差分）を使っていたので、**設計書に書く `impl_functions` の側だけが git の差分のままだと、承認の画面が「設計書の側が出どころ」という嘘に反転します。**設計書 §7 に「中身は触りません」と書いた相手ですが、**触らないと E-2 が成立しません。**触ったことを、この行と §7 に書きます。
+363c389
+< **★わざと壊して落ちるかのメタ確認**＝これが E-12 の本体です。**私が手で確かめるのではなく、承認のたびに機械が12本の壊すプログラムを走らせ、終了コードを控えに残します。**
+---
+> **★わざと壊して落ちるかのメタ確認**＝これが E-12 の本体です。**私が手で確かめるのではなく、承認のたびに機械が `.claude/breaks/` の13本のうち、壊すプログラム12本を走らせ、終了コードを控えに残します**（残る1本 `lib.sh` は、12本から読み込まれる共通の部品です）。
+368,369c394,395
+< **★12本は、承認のたびに機械が走らせ、終了コードが `<iter>.breaks.json` に残ります。**
+< **★12本のハッシュ値は、承認の瞬間に凍結されます**（§3.2b）。**後から1文字でも変えたら、走らせるプログラムが rc=2 で止まります。**
+---
+> **★走らせるのは13本のうち12本です**（`lib.sh` を除く）。承認のたびに機械が走らせ、終了コードが `<iter>.breaks.json` に残ります。
+> **★凍結するのは13本 全部です**（`lib.sh` を含む・§3.2b）。**後から1文字でも変えたら、走らせるプログラムが rc=2 で止まります。**
+375,378c401,404
+< | 承認の画面 | まこさんが端末から `bash .claude/hooks/approve_impl.sh` | 実装の後に貼る |
+< | 壊し方の記録 | `cat .claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.breaks.json` | 実装の後に貼る |
+< | 壊すプログラムの凍結 | `cat .claude/ratchet/breaks_frozen.json` | 実装の後に貼る |
+< | 番人（部品） | `python3 …/verify_design_contract.py --self-test` | 実装の後に貼る |
+---
+> | 承認の画面 | まこさんが端末から承認スクリプトを打つ | 承認の後に貼る |
+> | 壊し方の記録 | `cat .claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.breaks.json` | 承認の後に貼る |
+> | 壊すプログラムの凍結 | `cat .claude/ratchet/breaks_frozen.json` | 承認の後に貼る |
+> | 番人（部品） | `python3 .claude/tools/run_breaks.py --selftest` | 承認の後に貼る |
+414c440
+< | 11 | **CC の Bash から承認スクリプトを打てない**（E-3） | 実経路 | `bash .claude/hooks/approve_impl.sh` の判定を呼ぶ | `b13_approve_by_cc.sh` | — | **未着手** |
+---
+> | 11 | **CC の Bash から承認スクリプトを打てない**（E-3） | 実経路 | 承認スクリプトを打つコマンドの判定を呼ぶ | `b13_approve_by_cc.sh` | — | **未着手** |
+437,438c463,464
+< | `.claude/tools/run_breaks.py` | **在りません** | 壊すプログラムを走らせて記録を作る。走る前に凍結と照らす |
+< | `.claude/breaks/` の12本 | **在りません** | 承認のたびに機械が走らせる |
+---
+> | `.claude/tools/run_breaks.py` | **★作りました** | 壊すプログラムを走らせて記録を作る。走る前に凍結と照らす |
+> | `.claude/breaks/` の13本 | **★作りました**（共通の部品 `lib.sh` ＋ 壊すプログラム12本・一覧は冒頭の表） | 承認のたびに、機械が12本を走らせる。**凍結は13本 全部** |
+440,445c466,471
+< | `.claude/ratchet/breaks_frozen.json` | **在りません** | 承認の瞬間に、壊すプログラム12本のハッシュ値を凍結する（**土台のファイルに入れる**） |
+< | `require_acceptance_before_impl.sh` | 在ります | E-3・E-1・E-11・E-12（済の判定・監査確認の欄）を足す |
+< | `require_design_contract_before_run.sh` | 在ります | E-5（免除の判定）だけ直す |
+< | `approve_impl.sh` | 在ります | E-2（比べる相手）・E-12（記録を作る・凍結する）を直す |
+< | `verify_design_contract.py` | 在ります | E-9（記録が無いときは止める）だけ直す |
+< | `.claude/tools/gen_impl_functions.py` | 在ります | **中身は触りません。**★TARGET に残す理由＝E-2 でこの中の関数を呼ぶためです |
+---
+> | `.claude/ratchet/breaks_frozen.json` | **在りません** | 承認の瞬間に、壊すプログラムのハッシュ値を凍結する（**土台のファイルに入れる**） |
+> | `require_acceptance_before_impl.sh` | 在ります | E-3・E-1・E-11・E-12（済の判定・監査確認の欄）を足した |
+> | `require_design_contract_before_run.sh` | 在ります | E-5（免除の判定）だけ直した |
+> | `approve_impl.sh` | 在ります | E-2（比べる相手）・E-12（記録を作る・凍結する）を直した |
+> | `verify_design_contract.py` | 在ります | E-9（記録が無いときは止める）だけ直した |
+> | `.claude/tools/gen_impl_functions.py` | 在ります | **★中身を触りました。**設計書に「中身は触りません」と書いた相手です。**出どころを `touched_functions`（git の差分）から `functions_ast`（ファイルの中の全関数）に変えました。**理由＝これを直さないと、設計書の `impl_functions` だけが git の差分のままになり、**承認の画面が「設計書の側が出どころ」という嘘に反転します**（§3.7） |
+450a477
+> **★E-9 を入れた後、承認の記録が無い設計書は走らなくなります**（§3.5）。
+474c501
+< | 4b | **`must_use_from`（正本から作る名前）の使用が 93本中 0件**（監査 Q5 の3） | 正本が無い部分は、私が手で書いた名前に落ちます。**この設計書の `must_use` も、実装の後に私が手で書きます**（§10 の `generated_from`）。件数は承認の画面の「手で書いた名前」に出ます |
+---
+> | 4b | **`must_use_from`（正本から作る名前）の使用が 93本中 0件**（監査 Q5 の3） | 正本が無い部分は、私が手で書いた名前に落ちます。**この設計書の `must_use` も、私が手で書きました**（§10 の `generated_from`）。件数は承認の画面の「手で書いた名前」に出ます |
+477,478c504,505
+< | 7 | **★これは塞ぎます（まこさん指示 2026-09-03）**＝壊すプログラム自身を、私が書き換える道 | 直す前の私の書き方＝「E-1 の対象に入れると作ることもできなくなる」。**まこさんの解き方＝順番で解く**＝承認の前は自由に書け、**承認の瞬間に凍結し、後で1文字でも変われば `run_breaks.py` が rc=2 で止める**（§3.2b）。**＝この行は限界ではなくなります** |
+< | 8 | **hook 本体と照合の道具を、変更したまま commit していない** | いま5本が `M`（変更済み・未 commit）です。**★実装が終わったら commit します**（まこさん指示 2026-09-03「実装後に commit してください。しないと git diff で確かめられません」）。commit の前に `git status` を出して、ファイル単位で `git add` します |
+---
+> | 7 | **★これは塞ぎました（まこさん指示 2026-09-03）**＝壊すプログラム自身を、私が書き換える道 | 直す前の私の書き方＝「E-1 の対象に入れると作ることもできなくなる」。**まこさんの解き方＝順番で解く**＝承認の前は自由に書け、**承認の瞬間に凍結し、後で1文字でも変われば `run_breaks.py` が rc=2 で止める**（§3.2b） |
+> | 8 | **hook 本体と照合の道具を、変更したまま commit していない** | いま6本が `M`（変更済み・未 commit）です。**★実装が終わったら commit します**（まこさん指示 2026-09-03「実装後に commit してください。しないと git diff で確かめられません」）。commit の前に `git status` を出して、ファイル単位で `git add` します |
+479a507
+> | 10 | **壊すプログラムを、承認の前に骨抜きにできる** | 凍結が効くのは承認の後です。**承認の前に「必ず 0 以外を返すだけ」の中身に書き換えて凍結させる道は残ります。**中身が本当に測りたいものを測っているかは、監査が見ます |
+488,491c516,585
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "設計の段階では、これから作る関数を正確に書けない（監査 cp14 の N-e＝未着手のファイルに機械生成のプログラムを掛けると空の配列になる）。だから空で出し、実装の後に確定させて凍結する。★この一覧は実物から機械で作るので、承認の画面に『実装から作った期待値＝循環』と出るのが正しい（§9 の5番・まこさんの指定＝⚠️ が出続けるのが正しい状態）。",
+<   "self_check_calls": [],
+<   "must_use": {},
+---
+>   "impl_functions": {
+>     ".claude/tools/run_breaks.py": [
+>       "<モジュール直下>",
+>       "break_scripts",
+>       "check_frozen",
+>       "freeze_breaks",
+>       "main",
+>       "parse_table",
+>       "run_one",
+>       "selftest",
+>       "sha"
+>     ],
+>     "scripts/priority_rebuild/verify_design_contract.py": [
+>       "<モジュール直下>",
+>       "_fence_body",
+>       "_next_fence_json",
+>       "_resolve_impl",
+>       "check",
+>       "check_approval",
+>       "check_impl_functions",
+>       "check_must_use",
+>       "check_spec_lists",
+>       "diff_spec",
+>       "extract_block",
+>       "extract_contract",
+>       "extract_requirements",
+>       "format_req_map",
+>       "frozen_impl_functions",
+>       "functions_ast",
+>       "head_source",
+>       "load_spec_lists",
+>       "must_use_from_source",
+>       "names_in_function",
+>       "outside_fence_lines",
+>       "probe_spec_lists",
+>       "req_map",
+>       "requirements_index",
+>       "resolve_spec_list",
+>       "rhs_names_for_symbol",
+>       "scan_contracts",
+>       "self_test",
+>       "spec_from_design",
+>       "spec_from_impl",
+>       "touched_functions",
+>       "write_actual"
+>     ],
+>     ".claude/tools/gen_impl_functions.py": [
+>       "<モジュール直下>",
+>       "main",
+>       "rel_of"
+>     ]
+>   },
+>   "self_check_calls": [
+>     "check_frozen",
+>     "freeze_breaks",
+>     "parse_table",
+>     "run_one",
+>     "functions_ast",
+>     "frozen_impl_functions"
+>   ],
+>   "must_use": {
+>     "check_frozen": ["FROZEN", "freeze_breaks"],
+>     "parse_table": ["AT_START"],
+>     "run_one": ["BREAKS_DIR", "DEPTH_ENV"],
+>     "freeze_breaks": ["break_scripts", "sha"],
+>     "break_scripts": ["BREAKS_DIR"],
+>     "check_approval": ["_DESIGN_APPROVED"],
+>     "check_impl_functions": ["frozen_impl_functions", "functions_ast"],
+>     "rel_of": ["ROOT"]
+>   },
+495,496c589,590
+<     "impl_functions": "実装の後に gen_impl_functions.py（実物のコード）から作る＝循環。承認の画面に必ず ⚠️ が出る",
+<     "must_use": "実装の後に、私が手で書く",
+---
+>     "impl_functions": "実物のコードから機械で作った（gen_impl_functions.py＝ファイルの中の全関数）。＝実装から作った期待値＝循環。承認の画面に必ず ⚠️ が出る。それが正しい状態（まこさんの指定・§3.7）",
+>     "must_use": "私が手で書いた（正本が無いため・§9 の 4b）",
