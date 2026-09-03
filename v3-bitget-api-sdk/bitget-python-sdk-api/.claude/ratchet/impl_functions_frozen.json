@@ -1,0 +1,41 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "scripts/priority_rebuild/verify_design_contract.py": [
+  "<モジュール直下>",
+  "check",
+  "check_impl_functions",
+  "check_must_use",
+  "check_spec_lists",
+  "frozen_impl_functions",
+  "functions_ast",
+  "head_source",
+  "load_spec_lists",
+  "must_use_from_source",
+  "probe_spec_lists",
+  "resolve_spec_list",
+  "self_test",
+  "touched_functions"
+ ],
+ "scripts/priority_rebuild/gen_audit_request.py": [
+  "approval_matches",
+  "main"
+ ],
+ ".claude/tools/gen_audit_todo.py": [
+  "<モジュール直下>",
+  "build_block",
+  "choose_variant",
+  "collect",
+  "section_text",
+  "selftest",
+  "swap",
+  "table_rows",
+  "verify"
+ ],
+ ".claude/tools/gen_impl_functions.py": [
+  "<モジュール直下>",
+  "main",
+  "rel_of"
+ ]
+}
