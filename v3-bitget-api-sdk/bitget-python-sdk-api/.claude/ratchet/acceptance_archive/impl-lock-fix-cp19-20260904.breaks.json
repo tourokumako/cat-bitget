@@ -1,0 +1,138 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）",
+ "iter": "impl-lock-fix-cp19-20260904",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b19_bash_c_dash_n.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b19_bash_c_dash_n.sh"
+  },
+  {
+   "no": "2",
+   "script": "b20_path_shape.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b20_path_shape.sh"
+  },
+  {
+   "no": "3",
+   "script": "b21_subagent_wider.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b21_subagent_wider.sh"
+  },
+  {
+   "no": "4",
+   "script": "b19_bash_c_dash_n.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b19_bash_c_dash_n.sh"
+  },
+  {
+   "no": "5",
+   "script": "b22_tool_allow_exact.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b22_tool_allow_exact.sh"
+  },
+  {
+   "no": "6",
+   "script": "b22_tool_allow_exact.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b22_tool_allow_exact.sh"
+  },
+  {
+   "no": "7",
+   "script": "b01_missing_func.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "8",
+   "script": "b02_extra_func.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "9",
+   "script": "b03_must_use.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "10",
+   "script": "b05_design_changed.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "11",
+   "script": "b06_tool_changed.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "12",
+   "script": "b07_no_approval.sh",
+   "code": 2,
+   "note": ""
+  },
+  {
+   "no": "13",
+   "script": "b08_bash_write.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "14",
+   "script": "b09_run_bypass.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "15",
+   "script": "b11_subagent.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "16",
+   "script": "b12_no_record.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "17",
+   "script": "b13_approve_by_cc.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "18",
+   "script": "b14_breaks_tampered.sh",
+   "code": 2,
+   "note": ""
+  },
+  {
+   "no": "19",
+   "script": "b15_record_write.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "20",
+   "script": "b16_breaks_write.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "21",
+   "script": "b17_pipe_in_table.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "22",
+   "script": "b18_embedded_run.sh",
+   "code": 1,
+   "note": ""
+  }
+ ]
+}

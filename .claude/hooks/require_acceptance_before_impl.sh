@@ -13,6 +13,8 @@
 #   まこさんの承認操作が要る）。運用＝承認コマンドはまこさんが打つ。実行はログに残る。中身の骨抜きは
 #   score.py の数字＋独立レビューで見る。
 
+# ★2026-09-04（監査 cp18 の J-2）＝相対パスを絶対に直すときの起点
+REPO="/Users/tachiharamasako/Documents/GitHub/cat-bitget"
 STATE="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 LIST="$STATE/acceptance.md"
 APPROVED="$STATE/acceptance.approved"
@@ -59,6 +61,10 @@ _RUN_TOK_J = ('eval', 'xargs', 'source', '.', 'bash', 'sh', 'zsh', 'ksh', 'csh',
               'timeout', 'nice', 'sudo', 'command', 'exec', 'tee', 'cp', 'mv',
               'rm', 'ln', 'touch', 'chmod', 'chown', 'dd', 'install', 'rsync',
               'truncate', 'patch', 'tar', 'ed', 'ex', 'gsed', 'base64', 'open')
+# ★2026-09-04（まこさん決定「A」）＝python で走らせてよい道具を、名前で完全一致させる2本だけ。
+#   まこさんの逐語＝「list_banned_words.py と gen_impl_functions.py の2本を
+#     名前で完全一致させたときだけ通す」「run_breaks.py は入れない。記録を直接 書ける道具だから」。
+_TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py')
 _RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')
@@ -94,10 +100,29 @@ def _readonly_seg(seg):
     #   ★これを止めると、私は hook の文法を1度も確かめられません（まこさん指示
     #     2026-09-03＝hook を編集したら、次の操作の前に必ず bash -n を通す）。
     #   ★この例外が本当に安全かは、私は確かめていません（設計書 §9 の 1b）。
-    if _head in ('bash', 'sh', 'zsh') and '-n' in _toks:
+    #   ★2026-09-04（監査 cp18 の J-1・Critical・まこさん指名・承認 3f22cb79abff786f）
+    #     ＝語が ちょうど3つ（先頭・-n・ファイル1つ）のときだけ通す形に狭めた。
+    #     監査の逐語＝「bash -c '<コマンド>' -n の -n は、bash にとってオプションではなく
+    #       $0（プログラムの名前）になります。bash は -c の中身を実行します。」
+    #     直す前＝語のどこかに -n が在れば通した＝bash -c "…" -n が万能の鍵になった
+    #       （監査の実測＝承認ゲートも土台ゲートも 6通りとも rc=0）。
+    if (_head in ('bash', 'sh', 'zsh') and len(_toks) == 3
+            and _toks[1] == '-n'):
         return True
     # ⑤走らせる語・書き込む語は False
-    if _head in _RUN_TOK_J or _re_j.match(r'^python[0-9.]*$', _head):
+    #   ★2026-09-04（まこさん決定「A」）＝python だけ、名前を完全一致させる例外を2本 置く。
+    #     なぜ要ったか＝G-4（既定 deny）を入れた後、禁止語チェックのゲートが求める
+    #       list_banned_words.py を1本も走らせられず、設計書を1文字も書けない
+    #       行き止まりになった（3つのゲートが輪になった）。
+    #     ★リダイレクトの判定は、この例外でも外さない＝上の②で既に見ている。
+    #     ★危険＝例外そのものが鍵になりうる（設計書 §9 に書く）。
+    if _re_j.match(r'^python[0-9.]*$', _head):
+        _args = [_t.strip(chr(39) + chr(34)) for _t in _toks[1:]
+                 if not _t.startswith('-')]
+        if _args and _args[0].rsplit('/', 1)[-1] in _TOOL_OK_J:
+            return True
+        return False
+    if _head in _RUN_TOK_J:
         return False
     # ⑥読み取りの許可リストに無ければ False（★既定 deny＝ここが G-4 の本体）
     if _head not in _READONLY_J:
@@ -187,7 +212,24 @@ esac
 AGENT_TYPE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print(json.load(sys.stdin).get('agent_type',''))" 2>/dev/null)
 
 # 2) 編集対象を取得。戦略実装(scripts/priority_rebuild/*.py)だけ対象（hook/設計書/state は対象外）
-FILE=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.stdin).get('tool_input',{}) or {}).get('file_path',''))" 2>/dev/null)
+# ★2026-09-04（監査 cp18 の J-2・Critical・まこさん指名・承認 3f22cb79abff786f）
+#   ＝file_path を、下の case に掛ける前に1つの絶対パスへ直す。
+#   監査の実測＝先頭に / を付けない相対の Write が、hook・道具・戦略の .py の3つとも rc=0。
+#   直し方＝引用符を外す ／ 相対ならリポジトリの場所に足す ／ スラッシュの重なりと . と .. を畳む。
+FILE=$(printf '%s' "$INPUT" | python3 -c "
+import sys, json, os
+try:
+    _p = (json.load(sys.stdin).get('tool_input', {}) or {}).get('file_path', '') or ''
+except Exception:
+    _p = ''
+if _p:
+    _p = _p.strip().strip(chr(39)).strip(chr(34))
+    _p = _p.replace(chr(39) + chr(39), '').replace(chr(34) + chr(34), '')
+    if not os.path.isabs(_p):
+        _p = os.path.join('$REPO', _p)
+    _p = os.path.normpath(_p)
+print(_p)
+" 2>/dev/null)
 
 # ★計器・レポートツールは fast-mode でも承認必須（2026-07-20 まこさん指示「report.pyは勝手に変更できないようにしてよ」）
 #   旧仕様＝report.py / plot_trades.py / analyze.py は「表示専用で net 判定も戦略実装もしない」として
@@ -239,7 +281,7 @@ if [ -z "$FILE" ]; then
     #               先を1つに決められないときは ?UNKNOWN? を返す（下で止める）
     #             ③読むだけの動きは、いままでどおり通す
     FILE=$(printf '%s' "$CMD" | python3 -c "
-import re, sys
+import os, re, sys
 $PYJUDGE
 cmd = sys.stdin.read()
 bare = re.sub(r'<<\s*[\'\"]?(\w+)[\'\"]?.*?^\1', ' ', cmd, flags=re.S | re.M)  # ヒアドキュメントの中身を外す
@@ -314,7 +356,35 @@ if not hit_base:
             hit_base = [_t]
             break
 hit_gate = bool(GATE_RE.search(bare)) or (feeds and bool(GATE_RE.search(raw_cmd)))
-if hit_base or hit_gate:
+# ★2026-09-04（監査 cp18 の J-2・Critical・まこさん指名・承認 3f22cb79abff786f）
+#   ＝パスらしい語を1つの絶対パスに直してから、守る場所の一覧と照らす。
+#   監査の実測＝cd してから相対名で書く3通り・スラッシュ2つ・空の引用符 の5通りとも rc=0。
+#   監査の逐語＝「GATE_RE は .claude/hooks/ で始まって .sh で終わる形を探すので、
+#     書き込み先が同じファイルでも、書き方を変えると当たりません。」
+_GATE_ABS = re.compile(r'^' + re.escape('$REPO')
+                       + r'/\.claude/(hooks/[^/]+\.sh|tools/[^/]+\.py|breaks/[^/]+\.sh)$')
+_cwd = '$REPO'
+_abs_hit = False
+for _seg in re.split(r'[;|&\n]+', raw_cmd):
+    _tk = _seg.split()
+    if _tk and _tk[0] == 'cd' and len(_tk) > 1:
+        _d = _tk[1].strip(chr(39)).strip(chr(34))
+        _cwd = os.path.normpath(_d if os.path.isabs(_d) else os.path.join(_cwd, _d))
+        continue
+    for _t in re.findall(r'[^\s;|&()<>]+', _seg):
+        _t = _t.strip(chr(39)).strip(chr(34))
+        _t = _t.replace(chr(39) + chr(39), '').replace(chr(34) + chr(34), '')
+        if not _t or _t.startswith('-'):
+            continue
+        if not (_t.endswith(('.sh', '.py', '.json', '.approved')) or '/' in _t):
+            continue
+        _a = os.path.normpath(_t if os.path.isabs(_t) else os.path.join(_cwd, _t))
+        if _GATE_ABS.match(_a):
+            _abs_hit = True
+            break
+    if _abs_hit:
+        break
+if hit_base or hit_gate or _abs_hit:
     # ★生のコマンド（ヒアドキュメントの中身も含む）を見る＝隠す道を残さない
     if _first_bad_seg(raw_cmd):
         print('?BASE?')
@@ -430,8 +500,15 @@ esac
 #     原因＝ここの通り抜けが、承認ゲートの case より手前に在った。
 #     ＝壊すプログラムは 土台ゲートではなく承認ゲートに入れた（設計書 §3.4）ので、
 #       サブエージェントは素通りしていた。
+#   ★2026-09-04（監査 cp18 の J-3・Critical・まこさん指名・承認 3f22cb79abff786f）
+#     ＝通さない相手を、壊すプログラムだけから4つへ広げた。
+#     監査の逐語＝「.claude/hooks/*.sh が素通りするということは、
+#       require_acceptance_before_impl.sh そのものを1回の Write で空にできるということです。
+#       そうすれば、G-1〜G-4 も、承認ゲートも、土台ゲートも、同時に消えます。」
+#     監査の実測＝agent_type を入れた Write が hook・道具・戦略の .py の3つとも rc=0。
+#     ★監査のサブエージェントは読むだけなので、監査は今までどおり行える。
 case "$FILE" in
-  */.claude/breaks/*.sh) ;;
+  */.claude/breaks/*.sh|*/.claude/hooks/*.sh|*/.claude/tools/*.py|*scripts/priority_rebuild/*.py) ;;
   *)
     if [ -n "$AGENT_TYPE" ]; then
       exit 0
