@@ -5,38 +5,38 @@
   {
    "no": "1",
    "script": "b19_bash_c_dash_n.sh",
-   "code": null,
-   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b19_bash_c_dash_n.sh"
+   "code": 1,
+   "note": ""
   },
   {
    "no": "2",
    "script": "b20_path_shape.sh",
-   "code": null,
-   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b20_path_shape.sh"
+   "code": 0,
+   "note": "抜けた道: cd してから道具へ 相対パスの Write（hook）"
   },
   {
    "no": "3",
    "script": "b21_subagent_wider.sh",
-   "code": null,
-   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b21_subagent_wider.sh"
+   "code": 0,
+   "note": "抜けた道: サブエージェントの Write（hook）"
   },
   {
    "no": "4",
    "script": "b19_bash_c_dash_n.sh",
-   "code": null,
-   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b19_bash_c_dash_n.sh"
+   "code": 1,
+   "note": ""
   },
   {
    "no": "5",
    "script": "b22_tool_allow_exact.sh",
-   "code": null,
-   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b22_tool_allow_exact.sh"
+   "code": 1,
+   "note": ""
   },
   {
    "no": "6",
    "script": "b22_tool_allow_exact.sh",
-   "code": null,
-   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b22_tool_allow_exact.sh"
+   "code": 1,
+   "note": ""
   },
   {
    "no": "7",
@@ -89,7 +89,7 @@
   {
    "no": "15",
    "script": "b11_subagent.sh",
-   "code": 1,
+   "code": 0,
    "note": ""
   },
   {
@@ -133,6 +133,18 @@
    "script": "b18_embedded_run.sh",
    "code": 1,
    "note": ""
+  },
+  {
+   "no": "23",
+   "script": "b11_subagent.sh",
+   "code": 0,
+   "note": ""
+  },
+  {
+   "no": "24",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
   }
  ]
 }

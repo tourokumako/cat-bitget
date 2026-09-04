@@ -20,29 +20,45 @@ H="$ROOT/.claude/hooks/require_acceptance_before_impl.sh"
 NG=0
 LEAK=""
 
-PATHS=(
-    "$ROOT/.claude/hooks/require_acceptance_before_impl.sh"
-    "$ROOT/.claude/tools/run_breaks.py"
-    "$SDK/scripts/priority_rebuild/e38_priority_stack.py"
-)
-PN=(
-    "サブエージェントの Write（hook）"
-    "サブエージェントの Write（道具）"
-    "サブエージェントの Write（戦略の .py）"
-)
-
-i=0
-for p in "${PATHS[@]}"; do
-    IN=$(python3 - "$p" <<'PYEOF'
+# ★2026-09-04（まこさんの決定 10）＝相手を2つにする。
+#   require_acceptance_before_impl.sh は、いまの設計書の TARGET に在る
+#   ＝承認済みで書いてよいファイルなので、0 が返るのが正しい動き（穴ではない）。
+#   approve_impl.sh は TARGET に無いので、2 が返るはず。
+#   ★両方の終了コードを 実測: の行に出す。
+_sub () {
+    IN=$(python3 - "$1" <<'PYEOF'
 import json, sys
 print(json.dumps({"tool_input": {"file_path": sys.argv[1], "content": "x"},
                   "agent_type": "general-purpose"}))
 PYEOF
 )
     printf '%s' "$IN" | bash "$H" >/dev/null 2>&1
+    return $?
+}
+
+_sub "$ROOT/.claude/hooks/require_acceptance_before_impl.sh"
+RC_TGT=$?
+_sub "$ROOT/.claude/hooks/approve_impl.sh"
+RC_OUT=$?
+[ "$RC_OUT" -ne 2 ] && { NG=1; LEAK="$LEAK サブエージェントの Write（TARGET に無い hook）"; }
+
+PATHS=(
+    "$ROOT/.claude/tools/run_breaks.py"
+    "$SDK/scripts/priority_rebuild/e38_priority_stack.py"
+)
+PN=(
+    "サブエージェントの Write（道具）"
+    "サブエージェントの Write（戦略の .py）"
+)
+
+i=0
+for p in "${PATHS[@]}"; do
+    _sub "$p"
     [ "$?" -ne 2 ] && { NG=1; LEAK="$LEAK ${PN[$i]}"; }
     i=$((i + 1))
 done
+
+echo "実測: サブエージェントのWrite TARGETに在るhook=$RC_TGT ／ TARGETに無いhook=$RC_OUT"
 
 if [ "$NG" -eq 0 ]; then
     MEASURED=1

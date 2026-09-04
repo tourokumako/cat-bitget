@@ -15,6 +15,10 @@
  "b16_breaks_write.sh": "5f730086d7e1b1c103b6612a74597b1c06f2cc8499c9939c169ea1bb6322945c",
  "b17_pipe_in_table.sh": "1feb960089b94c9c561c416ed42622f0fb71a1be9b15191fc5fafe98febd1723",
  "b18_embedded_run.sh": "7ebdf9c1e8caf9725c5354dde4f5a98800f885f6aa2cbe6e46e094bebaa3f5c2",
+ "b19_bash_c_dash_n.sh": "e4569c5c6eb02cc035c2fefb677f17ed0a895bf9ce235a1b73a14b0a67d54f72",
+ "b20_path_shape.sh": "a3aa6683d16e20b6b05cc71b99591c6d3a6f654dc88bb094e70530e2fd397faa",
+ "b21_subagent_wider.sh": "b46cb210b02815b1bc674440b6cbceaa1a11f52807c0e2a538eb07c7f206fa8d",
+ "b22_tool_allow_exact.sh": "3bbd9f22726671f588723dee45e139237bbf7823e7dacb925a9d1e1890597c37",
  "lib.sh": "5a0a37aae9c45eee32954ed1d29d1fee6f17c1f3cd95f4fa17d1be6be20ceead",
  "_なにこれ": "承認の瞬間に凍結した、壊すプログラムのハッシュ値。run_breaks.py が走る前に照らす（監査 cp16 の E-12）"
 }

@@ -51,28 +51,44 @@ PYEOF
 done
 
 # ── 型⑤＝相対パスの Write（3通り・先頭に / を付けない） ──
+#   ★2026-09-04（まこさんの決定 10）＝相手を2つにする。
+#     require_acceptance_before_impl.sh は、いまの設計書の TARGET に在る
+#     ＝承認済みで書いてよいファイルなので、0 が返るのが正しい動き（穴ではない）。
+#     approve_impl.sh は TARGET に無いので、2 が返るはず。
+#     ★両方の終了コードを 実測: の行に出す（まこさんも監査も自分で確かめられるように）。
+_wr () {
+    IN=$(python3 - "$1" <<'PYEOF'
+import json, sys
+print(json.dumps({"tool_input": {"file_path": sys.argv[1], "content": "x"}}))
+PYEOF
+)
+    printf '%s' "$IN" | bash "$H" >/dev/null 2>&1
+    return $?
+}
+
+_wr ".claude/hooks/require_acceptance_before_impl.sh"
+RC_TGT=$?
+_wr ".claude/hooks/approve_impl.sh"
+RC_OUT=$?
+[ "$RC_OUT" -ne 2 ] && { NG=1; LEAK="$LEAK 相対パスの Write（TARGET に無い hook）"; }
+
 PATHS=(
-    ".claude/hooks/require_acceptance_before_impl.sh"
     ".claude/tools/run_breaks.py"
     ".claude/breaks/b01_missing_func.sh"
 )
 PN=(
-    "相対パスの Write（hook）"
     "相対パスの Write（道具）"
     "相対パスの Write（壊すプログラム）"
 )
 
 i=0
 for p in "${PATHS[@]}"; do
-    IN=$(python3 - "$p" <<'PYEOF'
-import json, sys
-print(json.dumps({"tool_input": {"file_path": sys.argv[1], "content": "x"}}))
-PYEOF
-)
-    printf '%s' "$IN" | bash "$H" >/dev/null 2>&1
+    _wr "$p"
     [ "$?" -ne 2 ] && { NG=1; LEAK="$LEAK ${PN[$i]}"; }
     i=$((i + 1))
 done
+
+echo "実測: 相対Write TARGETに在るhook=$RC_TGT ／ TARGETに無いhook=$RC_OUT"
 
 if [ "$NG" -eq 0 ]; then
     MEASURED=1

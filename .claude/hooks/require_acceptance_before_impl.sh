@@ -291,10 +291,34 @@ pats = [r'>>?\s*([^\s;|&]+\.py)', r'\btee\s+(?:-a\s+)?([^\s;|&]+\.py)',
         r'\bpatch\s+(?:[^\s;|&]+\s+)*([^\s;|&]+\.py)',
         r'\binstall\s+(?:-\S+\s+)*[^\s;|&]+\s+([^\s;|&]+\.py)',
         r'\bdd\b[^;|&]*\bof=([^\s;|&]+\.py)']
+# ★2026-09-04（監査 cp18 の J-2・足りなかった1か所・承認 926459e54ff9eba9）
+#   ＝ここで返す書き込み先を、返す前に1つの絶対パスへ直す。
+#   なぜ要ったか＝承認の画面で b20 が「cd してから道具へ」を素通りさせた。
+#     この処理が `run_breaks.py` という相対の名前のまま返していたので、
+#     下のどの形（.claude/tools/*.py など）にも当たらなかった。
+#   直し方＝その語より前に在る cd を全部 たどって、いまの場所を出し、そこへ足す。
+_REPO_LIT = '$REPO'
+
+
+def _cwd_before(_idx):
+    _c = _REPO_LIT
+    for _m in re.finditer(r'(?:^|[;|&\n])\s*cd\s+([^\s;|&]+)', bare[:_idx]):
+        _d = _m.group(1).strip(chr(39)).strip(chr(34))
+        _c = os.path.normpath(_d if os.path.isabs(_d) else os.path.join(_c, _d))
+    return _c
+
+
+def _abs_of(_tok, _idx):
+    _t = _tok.strip(chr(39)).strip(chr(34))
+    _t = _t.replace(chr(39) + chr(39), '').replace(chr(34) + chr(34), '')
+    return os.path.normpath(_t if os.path.isabs(_t)
+                            else os.path.join(_cwd_before(_idx), _t))
+
+
 for p in pats:
     m = re.search(p, bare)
     if m:
-        print(m.group(1)); sys.exit(0)
+        print(_abs_of(m.group(1), m.start())); sys.exit(0)
 # ★書き込む動きの語（リダイレクトは上のパターンで先を見るので、ここには入れない）
 #   ★単語の境界で見る（2026-09-03 に実測して直した）。
 #     直す前は 'ed ' のような文字の一部で当てていたので、'sed -n'（読むだけ）を
