@@ -1,0 +1,819 @@
+1c1
+< # 設計書｜指標のオン・オフを一律で切り替えられるようにする（M2-C-2）
+---
+> # 設計書｜生成器の自己テストの静的検査 T25 を通す（見本の関数に「使わない」指標の分岐を足す）
+3c3
+< TARGET: scripts/priority_rebuild/engine_tuner_exec.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/gen_indicator_switch.py, scripts/priority_rebuild/indicator_reference_diag.py
+---
+> TARGET: scripts/priority_rebuild/engine_tuner_gen.py
+5,11c5
+< NEW_FILE: scripts/priority_rebuild/gen_indicator_switch.py, v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/indicator_switch.json
+< 
+< **★TARGET が4本ある理由**（2026-09-02 に足した・**中身は §3 のとおりで1文字も変えていません**）＝①engine_tuner_exec.py＝判定の関数を置く主ファイル ②engine_tuner_gen.py＝判定を呼ぶ5か所 ③gen_indicator_switch.py＝印を作る道具（新規）④indicator_reference_diag.py＝ta のクラスとの対応（ta_class の欄）を書き込む先。**足したのはこの行だけです**（受け入れ条件ゲートは TARGET の行しか見ないため・複数はカンマ区切りで書ける＝2026-06-22 まこさん承認）。
+< 
+< MODEL: scripts/priority_rebuild/gen_signal_families.py
+< 
+< REQUIREMENTS: 直接 当たる要件の番号はありません（まこさん決定 2026-08-27 と 2026-09-01 が出どころ）。効く先＝R3（あらゆる組み合わせから最適なセットを見つけられるようにする）の探索の深さ。
+---
+> REQUIREMENTS: 直接 当たる要件の番号はありません（M2-C-2 の設計書 iter="indicator-switch-20260902" の検収の残り）。効く先＝R17（CC が要件どおりに作っているかを、プログラムが確かめられるようにする）の一部＝生成器の自己テストが「落ちたまま」だと、次の工程で自己テストを完成の条件に使えない。
+15c9,11
+< <!-- ARC order=1 iter="indicator-switch-20260902" 前提="M2-C-1 の実測（2026-09-02）＝材料カタログの部品551件を全部 読む・絞る仕組み0件" 採否="未定" 狙い="読む指標の範囲を設定1つで切り替えられるようにして、同じ時間でより深く探せるようにする" 内容="指標の種類ごとのオン・オフの印と、engine_tuner の5か所から呼ぶ1つの判定" 方法="わざと壊して止まるか試すテストと、恒等3本のハッシュ値が変わらないことで確かめる" -->
+---
+> <!-- ARC order=1 iter="t25-fixture-off-20260904" 前提="M2-C-2 の印を作り直したあと、生成器の自己テストで静的検査 T25 が落ちた（82回目・worklog 20260904 §9.2）" 採否="未定" 狙い="78回目に足した印のテスト T33 が、材料の辞書を直に書いていて静的検査に当たる。見本の関数を通す形に直し、静的検査を通す" 内容="_mat_fixture に off_ok の分岐を足す（1か所）＋ T33 の材料の辞書を _mat_fixture に替える（1か所）＋ T33 に6つ目 (f)＝「使う」指標に off_ok を渡すと止まる恒久テストを足す（1か所・まこさんの条件 2026-09-04）" 方法="--lint-provenance が合計 0件・--selftest の T33 が (a)〜(f) の6つとも pass・恒等3本の md5 不変・G2 → H2 の印" -->
+> 
+> **★2026-09-04 の再提出（まこさんの条件・逐語「§5 の 3 を恒久テストにする」「T33 の6つ目（T33-f）として足し、以後 --selftest で毎回走る形にすること」「§6 の完成の条件 4 を「部品」から「実経路」に変えること」）**＝§3.3・§5 の3・§6 の4 を直した。**理由（まこさんの逐語）**＝「この変更に対して verify_design_contract の突き合わせは監視力を持たない（SPEC は公開関数だけが対象で _mat_fixture は対象外）。must_use の indicator_enabled も実装後に足す申告のみ。つまり off_ok の fail-closed を機械で守るものが現状ゼロになる。T33-f を恒久で置けば、そこが唯一かつ十分な番人になる」。
+23,26c19,21
+< | 1 | 「本来の目的が達成できるまでは、指標一覧はta 43種にする」 | 2026-08-27 | 初期値の源1 |
+< | 2 | 「レンジ判定で必要な指標は入れろ」 | 2026-08-27 | 初期値の源2 |
+< | 3 | 「一律でtaの指標のみを使うという切り替えをする」 | 2026-09-01 | 印は1種類だけ・用途別の印を作らない |
+< | 4 | 「支障がないということが証明できるのであれば、milestones2に追記して良い」 | 2026-09-01 | 証明5点（milestones2 の M2-C の前置き） |
+---
+> | 1 | 「直すべきなら直せば？」 | 2026-09-04 | この設計を書く根拠（生成器の自己テストの ❌ を直す） |
+> | 2 | 「書いてよい」 | 2026-09-04 | 設計書を書く許可 |
+> | 3 | 「とにかく、不具合はすべて直すように」 | 2026-08-21 | 恒久の決まり59番＝「いま実害が無い」を理由に置かない |
+28c23
+< ---
+---
+> **★私が まこさんに言った「テストの1行」は誤りでした。**見本の関数 `_mat_fixture` は「使わない」指標の見本を作れない（範囲の表に無い指標は作れない作り）ので、**直す場所は2か所**です（§3）。
+30c25
+< ## 1｜いまの状態（実測・2026-09-02 に私が数えた）
+---
+> ---
+32c27
+< **走らせた場所**＝リポジトリの実物。**除外の設定は使っていません。**売買は1件も回していません。
+---
+> ## 1｜いまの状態（実測・2026-09-04 に私が数えた）
+36,45c31,37
+< | 材料カタログの部品 | **551件**（種類249） | signal_families.json を import して len(parts) |
+< | 読む部品を絞る仕組み | **0件** | build_catalog を呼ぶ側10か所を grep。絞る条件は1つも無い |
+< | まこさんが決めた範囲の中の部品 | **種類68**（77回目の実測） | milestones2 の539行 |
+< | ta の指標クラス | **43件**（volume9・volatility5・trend15・momentum11・others3） | ta の IndicatorMixin を継ぐクラスを import して数えた |
+< | ta の照合式が付いている材料の種類 | **26件** | indicator_reference_diag の ext=_ext_ を数えた |
+< | 材料の定義表の登録 | **256件** | 同ファイルの _r( の呼び出しを数えた |
+< | 法則が family を名指しする件数 | **9種**（R5 4種・R6 5種・R7 3種＝重なりあり） | regime_laws.json を import して数えた |
+< | 法則が系統で名指し | 構造・位置（R1・R3） | 同上 |
+< | 法則が性質で名指し | vol（R10） | 同上 |
+< | 恒等レシピが使う材料 | **14件**（S1 7・S2 5・L1 2） | recipes/identity_*.json 3本を機械で走査 |
+---
+> | `engine_tuner_gen.py --selftest` | ❌ 4件（T24②・T25・T26・T30） | 82回目に走らせた（21:08〜21:14・worklog §9.1） |
+> | T25 の中身 | `--lint-provenance` 合計 1件＝「材料の辞書: 1 件 行=[5307]」 | 同じ走行の出力 |
+> | 5307行の実物 | `"material": [{"family": _off[0], "param": None, "tf": "5m"}]`＝family と tf の両方の鍵を持つ辞書リテラル | Read tool で開いた（5306-5308行） |
+> | その行を足した commit | `4ac4405`（78回目・2026-09-02）＝T33 のテストと同時に入った | `git show 4ac4405` の差分（115行目） |
+> | 材料の辞書を書いてよい関数 | `_MAT_CTORS = {"_mat_drawn", "_mat_fixture"}`（5573行） | Read tool で開いた |
+> | 見本の関数 `_mat_fixture` が「使わない」指標で何を返すか | `SampleError("[見本] 範囲の表に無い指標: …")`（473-474行）＝範囲の表 `material_ranges` が印で「使わない」を除くため（275-276行） | Read tool で開いた |
+> | T33 の5つ (a)〜(e) | 全部 pass（この T25 は T33 の書き方の問題で、印の仕組みの問題ではない） | 同じ走行の出力 |
+47c39
+< **★この設計が生まれた1件**＝恒等レシピ S2 が使う `volume_ratio`（期間20・15分足）は、**ta の43種にも、法則の名指しにも入りません**。区分は「状態量」で、性質 vol にも当たりません。**既存の記録もこれを裏づけています**＝要件定義書 R16 の534行の逐語「うちの材料53種類のうち14種類はライブラリに無い自作＝RCI／S-Rタッチ数／W字／body比／fib位置／swing安値距離%／swing高値距離%／volume_ratio／…」。
+---
+> **★T24②・T26・T30 はこの設計に入れません**（原因が別＝場面の判定の束を組む関数に法則 R4 の形 streak が無い＝M2-E の工程・next_step §6 の128番）。
+55c47
+< **engine_tuner は材料カタログの部品551件を毎回 全部 読み、絞る仕組みを1つも持っていません。**
+---
+> **T33 のテストが、見本の関数を使わずに材料の辞書を直に書いた**（78回目）。静的検査 `lint_provenance` は「引く関数と見本の関数の外で材料の辞書を書いてはいけない」と決めている（59回目の設計書 v2 の K1）。**78回目は T33 を書いたあとに `--selftest` を走らせていない**（走らせていれば T25 でその場で落ちた）。
+57c49
+< だから、いま探せる組み合わせの数が、値決め窓で現実の時間に終わる量を超えています。まこさんは 2026-08-27 に範囲を決められましたが、**その決定を実行する仕組みが実物に入っていません**（決定は文書にだけ在る状態）。
+---
+> **なぜ見本の関数を使わなかったか**＝見本の関数 `_mat_fixture` は、印が「使わない」の指標では作れない（範囲の表に無いため止まる）。T33 の (b)（「使わない」指標を使った案を審査が捨てる）は、まさに「使わない」指標の見本が要る。＝**見本の関数に、その用途の道が無かった。**
+61c53
+< **★この設計は売買のロジックを1行も変えません。だから勝率・平均利益・敗率・平均損失は1つも動きません。**動くのは探索の効率です。
+---
+> **★この設計は売買のロジックを1行も変えません。**勝率・平均利益・敗率・平均損失は1つも動きません。動くのは「生成器の自己テストが通るか」だけです。
+63,66c55,58
+< | 何が | 直す前 | 直した後（見込み） | 出どころ |
+< |---|---|---|---|
+< | 読む部品 | 551件 | 約147件 | 77回目の実測（milestones2:539） |
+< | 同じ時間で試せる案の本数 | 1 | 約3.7倍 | 551 ÷ 147 の比。★これは部品の数の比であって、走行時間の実測ではありません |
+---
+> | 何が | 直す前 | 直した後（見込み） |
+> |---|---|---|
+> | `--lint-provenance` の合計 | 1件（★不合格） | 0件（合格） |
+> | `--selftest` の ❌ | 4件 | 3件（T24②・T26・T30＝別の原因・M2-E） |
+68c60
+< **★net の数字は1つも書けません。**M2 は売買を1件も回していないためです（実験ゼロ・採点ゼロ）。net で比べるのは M2-L からです。
+---
+> **★net の数字は書けません**（M2 は売買を1件も回していない）。
+70c62
+< ### ③ root を直すか symptom か
+---
+> ### ③ root か symptom か
+74,76c66,68
+< **symptom の直し方＝「時間がかかるから、CC が候補を手で減らす」。**これは恒久の決まり42番（探す値を点の一覧で先に限定しない）と、要件の「作ってはいけないもの」2番に当たります。
+< 
+< **root＝まこさんが決めた範囲を、設定ファイル1つで切り替えられる形にする。**CC が判断で足し引きする余地を消すため、初期値は3つの源から機械で作ります。
+---
+> - symptom の直し方＝T33 のその1行を消す（テストを減らす）。**取りません**（印の審査 (b) を確かめるテストが消える＝守りが減る・恒久の決まり59番）。
+> - symptom の直し方2＝静的検査の免除の一覧 `_MAT_CTORS` に `selftest` を足す。**取りません**（自己テストの中で材料の辞書を自由に書ける道が開く＝K1 が緩む）。
+> - root＝**見本の関数に「使わない」指標の見本を作る道を足す。**その道は「使わない」指標でしか使えない（「使う」指標では、いままでどおり範囲の中の数字しか作れない）＝守りは減らない。
+78c70
+< ### ④ ベースアップ（参照した証跡）
+---
+> ### ④ ベースアップ（このセッションで Read tool を使って開いたもの）
+82,88c74,83
+< | 材料カタログの部品と絞る仕組み | signal_families.json ／ build_catalog を呼ぶ10か所 |
+< | ta の43種 | ta ライブラリを import して IndicatorMixin を継ぐクラスを数えた |
+< | 法則の名指しの形 | regime_laws.json の「機械が読む判定」9件 |
+< | 恒等レシピの材料 | recipes/identity_s1_legacy.json ／ identity_s2_legacy.json ／ identity_l1_legacy.json |
+< | 型の表を機械で作る前例 | gen_signal_families.py（この設計の手本） |
+< | ライブラリに無い自作14種 | engine_tuner_requirements.md の534行 |
+< | 証明5点 | engine_tuner_milestones2.md の M2-C の前置き |
+---
+> | T25 が指す行と、静的検査の免除の一覧 | scripts/priority_rebuild/engine_tuner_gen.py（5290-5344行・5571-5576行・5579-5626行） |
+> | 見本の関数の作り | 同（460-499行） |
+> | 範囲の表が印で「使わない」を除く所 | 同（262-291行） |
+> | 審査が印で止める順番（印 → 印の鍵 → 範囲の表） | 同（617-653行） |
+> | 印を読む判定4つ | scripts/priority_rebuild/engine_tuner_exec.py（150-201行） |
+> | 印を作る道具の源2の展開 | scripts/priority_rebuild/gen_indicator_switch.py（185-215行） |
+> | ta のクラスと材料の対応 | scripts/priority_rebuild/indicator_reference_diag.py（4195-4219行） |
+> | いまの印（140種） | v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/indicator_switch.json |
+> | 元の設計（M2-C-2） | v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/indicator-switch-20260902.md |
+> | 78回目の記録（印を作り直していない件） | .claude/state/session_worklog_20260902.md（185-215行） |
+90c85
+< **★WebSearch は使っていません。**外の知識ではなく、うちの実物を数える話だからです。
+---
+> **★WebSearch は使っていません。**うちの実物を読む話だからです。
+94,105c89
+< ## 3｜何を作るか
+< 
+< ### 3.1 部品（4つ）
+< 
+< | # | 何を | どこに | 中身 |
+< |---|---|---|---|
+< | 1 | **印のファイル** | .claude/ratchet/indicator_switch.json（新規） | 指標の種類ごとに「使う・使わない」と、その理由（どの源で拾ったか） |
+< | 2 | **印を作る道具** | scripts/priority_rebuild/gen_indicator_switch.py（新規） | 3つの源から機械で印を作る。--write／--verify／--selftest を持つ |
+< | 3 | **判定の関数** | scripts/priority_rebuild/engine_tuner_exec.py（TARGET） | 部品の名前を受け取り、使ってよいかを返す1つの関数 |
+< | 4 | **呼ぶ側** | scripts/priority_rebuild/engine_tuner_gen.py | 下の5か所から 3 を呼ぶ |
+< 
+< **★判定は1つの関数だけです。**同じ判定を2か所に書き写しません（M2-C-2 の逐語）。
+---
+> ## 3｜何を作るか（2か所・どちらも `engine_tuner_gen.py`）
+107c91
+< **★なぜ判定を実行器に置くか**＝生成器は既に実行器を import しています（`import engine_tuner_exec as ex`）。実行器に置けば、生成器からも実行器からも同じ関数を呼べます。新しい .py を1本 増やさずに済みます。
+---
+> ### 3.1 見本の関数 `_mat_fixture` に、「使わない」指標の見本の道を足す（466-482行）
+109c93,114
+< ### 3.2 呼ぶ側の5か所（実物の行番号つき）
+---
+> ```
+> 直す前
+>     def _mat_fixture(family, param, tf, **kw):
+>         ranges = material_ranges()
+>         spec = ranges.get(family)
+>         if spec is None:
+>             raise SampleError(f"[見本] 範囲の表に無い指標: {family}")
+>         ...
+> 
+> 直した後
+>     def _mat_fixture(family, param, tf, off_ok=False, **kw):
+>         if off_ok:
+>             # ★「使わない」指標の見本＝印の審査（T33-b）を試すためだけの道。
+>             #   印が「使う」の指標では作れない（fail-closed）＝範囲の検査を飛ばす道にならない。
+>             if ex.indicator_enabled(family):
+>                 raise SampleError(f"[見本] {family} は印が「使う」＝off_ok の見本は作れない")
+>             m = {"family": family, "param": param, "tf": str(tf)}
+>             m.update(kw)
+>             return m
+>         ranges = material_ranges()
+>         ...（以下 1文字も変えない）
+> ```
+111,117c116,117
+< | # | 場面 | 実物 | 何をするか |
+< |---|---|---|---|
+< | 1 | 案を作る（材料の候補） | engine_tuner_gen.py:191 material_pool | 印がオフの種類を候補から落とす |
+< | 2 | 案を作る（パラメータの範囲） | engine_tuner_gen.py:262 material_ranges | 同上 |
+< | 3 | 案を審査する | engine_tuner_gen.py:609 assert_provenance | オフの種類を使った案を拒否する |
+< | 4 | 順位の表を作る | engine_tuner_gen.py:1194 load_material_ranking | オフの種類の列を順位から外す |
+< | 5 | 走行を再開する | engine_tuner_gen.py:2791 journal の meta | 印の状態が前回と違えば止める |
+---
+> - **足す分岐は「印が使わない」のときだけ動く。**「使う」指標に `off_ok=True` を渡すと止まる＝この道で範囲の検査を飛ばすことはできない。
+> - 印の鍵（PARAM_SRC）は付けない＝T33 が試す「印で止まる」は、審査の**先頭**（641-642行）で止まるため、鍵の有無は結果に関係ない（直す前の辞書も鍵を持っていない＝挙動は同じ）。
+119c119
+< **★5番は milestones2 の逐語「再開の食い違い検査（seed・窓・limits）に「印の状態」を1項目 足す」に当たります。**実物のエラー文＝「[R12 エラー] journal の meta（seed・窓・limits）が今回と食い違う」。
+---
+> ### 3.2 T33 の材料の辞書を、見本の関数に替える（5306-5308行）
+121c121,131
+< ### 3.3 印の初期値の作り方（3つの源・全部 機械）
+---
+> ```
+> 直す前
+>     _bad33 = {"role": "trigger", "form": "level", "side": "above",
+>               "material": [{"family": _off[0], "param": None, "tf": "5m"}],
+>               "value": {"threshold_q": 0.7}}
+> 
+> 直した後
+>     _bad33 = {"role": "trigger", "form": "level", "side": "above",
+>               "material": [_mat_fixture(_off[0], None, "5m", off_ok=True)],
+>               "value": {"threshold_q": 0.7}}
+> ```
+123,127c133,134
+< | 源 | 何から引くか | 何件になるか |
+< |---|---|---|
+< | 1 | **ta の43種**＝indicator_reference_diag の ext=_ext_（ta を呼ぶ照合式）が付いている種類 | 26件（実測） |
+< | 2 | **法則が名指しする指標**＝regime_laws.json の「機械が読む判定」から、family・系統・性質・geo の4通りを展開 | 数える（実装で出す） |
+< | 3 | **恒等レシピが使う材料**＝recipes/identity_*.json 3本を走査して family・geo を集める | 14件（実測） |
+---
+> - 外側の辞書（role・form・side・value）は family と tf を持たないので、静的検査の対象ではない。
+> - `_mat_fixture` は `_FIXTURE_CTORS`（自己テストの見本だけが呼んでよい関数）に在り、呼ぶ場所は `selftest` の中＝静的検査の⑤（見本の関数を selftest の外で呼ぶ）にも当たらない。
+129c136
+< **★手で書く一覧はありません。**3つとも実物から機械で引きます。
+---
+> ### 3.3 T33 に6つ目 (f) を足す＝「使う」指標に `off_ok=True` を渡すと止まる恒久テスト（5326行の (d) の前・★まこさんの条件 2026-09-04）
+131c138,154
+< **★源1 には穴があります（正直に書きます）。**まこさんが決められたのは「ta の43種」ですが、**うちの材料に ta の照合式が付いているのは26種だけ**です。ta のクラス名（BollingerBands）と材料名（BB）は文字が違うので、機械では自動で突き合いません。
+---
+> ```
+> 足す行（T33 の (c) と (d) の間）
+>             # (f) 「使う」指標に off_ok=True を渡すと止まる＝off_ok が範囲の検査を飛ばす道にならない
+>             #     ★恒久のテスト（まこさんの条件 2026-09-04）＝この fail-closed を機械で守るのは、ここだけ
+>             #     （SPEC は下線で始まる _mat_fixture を見ない・must_use は申告）。
+>             try:
+>                 _mat_fixture(_on[0], None, "5m", off_ok=True)
+>                 t33.append(f"T33-f: 「使う」指標 {_on[0]} に off_ok=True を渡しても止まらない（fail-closed が崩れている）")
+>             except SampleError as _e33f:
+>                 print(f"  T33-f 実測: SampleError: {_e33f}")
+>                 if "off_ok" not in str(_e33f):
+>                     t33.append(f"T33-f: 止まったが理由が off_ok ではない: {str(_e33f)[:60]}")
+> 
+> 直す行（T33 の説明の印字・5343-5344行）
+>     直す前  " (d)順位から外れる (e)指紋が記録に入る"
+>     直した後 " (d)順位から外れる (e)指紋が記録に入る (f)「使う」指標に off_ok は作れない"
+> ```
+133c156,158
+< **この穴の埋め方＝§9 に3つの案を書きました。**
+---
+> - **`_on[0]` は印の on の先頭（いまの印では ADX）**＝印を作り直して先頭が変わっても、テストは「使う」指標の先頭を毎回 引く（名前を焼かない）。
+> - **止まった理由をそのまま印字する**＝標準出力に `SampleError: [見本] ADX は印が「使う」＝off_ok の見本は作れない` が出る（まこさんの求める「実際の標準出力」）。
+> - 止まらなければ T33-f が ng に入り、`--selftest` が ❌ になる＝以後 毎回 走る。
+135c160
+< ### 3.4 印がオンでもオフでも変わらないもの
+---
+> ### 3.4 触らないもの
+137,139c162,164
+< - **型の表（signal_families.json）**＝1行も変えません。行も鍵の構成も触りません（証明5点の2番）。
+< - **閾値・時間足・パラメータの探せる範囲**＝1つも狭めません。
+< - **材料カタログ（build_catalog）**＝絞りません。型の表がここから作られるので、絞ると表が変わってしまいます。
+---
+> - 静的検査 `lint_provenance` と免除の一覧（`_MAT_CTORS`・`_MARK_WRITERS`・`_FIXTURE_CTORS`・`_DRAW_CTORS`）＝**1文字も変えない**。
+> - 本走の経路（`sample_structure`・`assert_provenance`・`material_pool`・`material_ranges`・`_mat_drawn`）＝**1文字も変えない**。
+> - 印（`indicator_switch.json`）と印を読む判定（`engine_tuner_exec.py`）＝**触らない**。
+143c168
+< ## 4｜★疑似シミュ由来の固定値ゼロ宣言
+---
+> ## 4｜★疑似シミュ由来の固定値ゼロ
+145,147c170,172
+< - **疑似シミュ（probe）を1回も使っていません。**この設計に出てくる数字は全部、実物のファイルを機械で数えたものです。
+< - **閾値・段数・確率の数字を1つも作っていません。**印は「使う・使わない」の2択で、数字ではありません。
+< - **採否は score.py の数字で決めます。**ただし この工程では売買を回さないので、採否の判定は M2-L 以降です。
+---
+> - **疑似シミュ（probe）を1回も使っていません。**この設計に出てくる数字は全部、実物のファイルの行番号と、自己テストの出力です。
+> - **閾値・段数・確率の数字を1つも作っていません。**見本の `param` は `None`（直す前と同じ）。
+> - **採否は score.py の数字で決めます。**ただしこの工程では売買を回さないので、採否の判定は M2-L 以降です。
+151c176
+< ## 5｜わざと壊して止まるか試すテスト（milestones2 の確かめ方5つ＋2つ）
+---
+> ## 5｜わざと壊して止まるか試すテスト
+155,161c180,185
+< | 1 | 「使わない」にした種類で条件を作らせる | 案に1件も出ない |
+< | 2 | その種類を使った案を審査に渡す | 審査が拒否する |
+< | 3 | 「使う」に戻して同じことをする | 通る |
+< | 4 | 印を切り替えたまま走行を再開する | 止まる（R12 エラー） |
+< | 5 | 恒等3本（S1・S2・L1）を走らせる | ハッシュ値が直す前と同じ |
+< | 6 | 印のファイルを手で書き換える | gen_indicator_switch.py --verify が ❌ を出す |
+< | 7 | 印のファイルを消す | engine_tuner が止まる（印が無いまま動かない） |
+---
+> | 1 | `engine_tuner_gen.py --lint-provenance` | 合計 0件（合格） |
+> | 2 | `engine_tuner_gen.py --selftest` の T33 | (a)〜(e) 5つとも pass のまま（T33-b＝「使わない」指標の案を審査が「印が「使わない」」で捨てる） |
+> | 3 | **T33-f（恒久・3.3）**＝`--selftest` の中で、「使う」指標の先頭（印の on の先頭＝いまは ADX）を `_mat_fixture(..., off_ok=True)` で作る | `SampleError`（印が「使う」＝off_ok の見本は作れない）で止まり、その文が標準出力に出る＝この道で範囲の検査を飛ばせない。**一時的な行ではなく、以後 毎回 走る** |
+> | 4 | 直す前の形（材料の辞書を直に書く）を1行 足して `--lint-provenance` | 合計 1件（★不合格）に戻る＝静的検査が生きている |
+> | 5 | 恒等3本（`--identity`・`--identity-l1`・`--identity-s1`） | md5 が 2026-08-05 以来の基準値と同じ（S2 7b01f51b…／L1 96a9102e…／S1 18b3d31a…） |
+> | 6 | `engine_tuner_exec.py --selftest` | 全部 pass のまま |
+163c187
+< **★件数は実装のときに「◯/◯ pass」の形で出します。**
+---
+> **★4 だけは、一時的に書いた行をテストの後に元へ戻します**（設計の外の行を残さない）。**3 は恒久のテスト（T33-f）です。件数は実装のときに「◯/◯ pass」の形で出します。**
+167c191
+< ## 6｜何ができたら完成か（★目的の欄つき）
+---
+> ## 6｜何ができたら完成か
+169,175c193
+< | # | 完成の条件 | それが目的（net 最大化）にどう効くか |
+< |---|---|---|
+< | 1 | 上の7つのテストが全部 期待どおり | 壊していないことを機械が示す |
+< | 2 | 恒等3本のハッシュ値が変わらない | いま稼いでいるロジックを壊していない |
+< | 3 | 印を切り替えると、読む部品の数が実際に減ることを数字で出せる | 同じ時間で探せる深さが増える |
+< | 4 | 印のファイルに、CC が手で書いた行が0件 | CC の判断で範囲が動く道を消す |
+< | 5 | H2 と G2 の印を取り直して pass | engine_tuner が回れる状態に戻る |
+---
+> <!-- ACCEPT_TABLE_START -->
+177c195,211
+< **★私が自分で合格ラインを引いていないこと**＝1・2・4・5 は「壊していないか」の確認です。3 は数字を出すだけで、いくつなら合格という線を私は引いていません。
+---
+> **★「経路」＝`実経路`（コマンドで走らせた）か `部品`（関数を直接 呼んだ）。**
+> **★「壊すプログラム」＝この回は `.claude/breaks/` に新しく足しません（.py の2か所の直しで、既存の20本が承認のたびに走ります）。壊し方は §5 のコマンドで、出力をそのまま貼ります。**
+> 
+> | # | 完成の条件 | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+> |---|---|---|---|---|---|---|
+> | 1 | `--lint-provenance` の合計が 0件 | 実経路 | §5 の4（直す前の形を1行 戻すと 1件 に戻る） | — | — | **未着手** |
+> | 2 | `--selftest` の ❌ が T24②・T26・T30 の3件だけ（T25 が消える） | 実経路 | §5 の2 | — | — | **未着手** |
+> | 3 | T33 の (a)〜(e) が5つとも pass のまま | 実経路 | §5 の2 | — | — | **未着手** |
+> | 4 | **T33-f**＝「使う」指標に `off_ok=True` を渡すと止まり、その `SampleError` の文が `--selftest` の標準出力に出る | **実経路**（`--selftest` の中で毎回 走る） | §5 の3 | — | — | **未着手** |
+> | 5 | 恒等3本の md5 が基準値と同じ | 実経路 | §5 の5 | — | — | **未着手** |
+> | 6 | 実行器の自己テストが全部 pass のまま | 実経路 | §5 の6 | — | — | **未着手** |
+> | 7 | G2 → H2 の印を取り直して pass | 実経路 | 印の指紋が新しくなる | — | — | **未着手** |
+> 
+> <!-- ACCEPT_TABLE_END -->
+> 
+> **★私が自分で合格ラインを引いていないこと**＝全部「壊していないか」の確認で、いくつなら合格という数字を私は作っていません。
+> **★「完成」の判定は私がしません**（恒久の決まり64番・§0-3 の体制）。数字を貼るだけです。
+186c220,221
+< | H2 の印 | **取り直しが要ります**（engine_tuner の経路のコードを触るため）。走らせ方＝leak_causality_diag.py |
+---
+> | 印（`indicator_switch.json`） | **変わりません**（触らない） |
+> | H2 の印 | **取り直しが要ります**（`engine_tuner_gen.py` は H2 の印の対象22ファイルの中）。走らせ方＝`leak_causality_diag.py`（約5分） |
+188c223
+< | 恒等3本 | 変わりません（テスト5で確かめます） |
+---
+> | 恒等3本 | 変わりません（§5 の5で確かめます） |
+189a225
+> | `_mat_fixture` を使っている既存の自己テスト（T22 ほか） | `off_ok` の既定値は False＝**既存の呼び出しの挙動は1つも変わりません** |
+195c231
+< **H1〜H16 と審判整合（群2の18件）は、まとめて非該当です。**理由＝TARGET は戦略でも審判でもない道具（engine_tuner_exec.py）で、売買記録を1本も書かず、score.py と eval_engine に1行も触れないためです。
+---
+> **H1〜H16 と審判整合（群2の18件）は、まとめて非該当です。**理由＝TARGET は戦略でも審判でもない道具（`engine_tuner_gen.py`）で、直すのは自己テストの見本の作り方だけ。売買記録を1本も書かず、`score.py` と `eval_engine.py` に1行も触れないためです。
+197c233
+< **★1変更か（H16）**＝1つです。指標のオン・オフの切り替えだけを作ります。部品を足すこと（M2-C-4）は別の工程で、この設計には入っていません。
+---
+> **★1変更か（H16）**＝1つです。「見本の関数に、使わない指標の見本の道を足す」だけです。T24②・T26・T30 の直し（M2-E）は入れていません。
+199c235
+< **★過去に破棄した失敗の再演か**＝当たりません。過去の失敗は「CC が候補を点の一覧で限定した」（D14・決まり42番）ですが、この設計は逆で、**限定の範囲を まこさんの決定から機械で作り、CC が手で書く行を0にします。**
+---
+> **★過去に破棄した失敗の再演か**＝当たりません。過去の失敗は「CC が候補を点の一覧で限定した」（D14・決まり42番）ですが、この設計は探す値に触れません。
+203c239
+< ## 9｜★正直に書く（限界と、まこさんに決めてほしいこと）
+---
+> ## 9｜★正直に書く（限界と、まこさんに知っておいてほしいこと）
+205c241,244
+< ### 9.1 源1（ta の43種）の穴
+---
+> 1. **私の説明の誤り**＝チャットで「テストの1行を直す」と言いましたが、2か所です（§0）。
+> 2. **この設計が確かめないこと**＝T24②・T26・T30（場面の判定の束）は直りません。生成器の自己テストは、この設計の後も ❌3件 のままです。それは M2-E の工程で直します（next_step §6 の128番）。
+> 3. **恒等 L1・S1 は、この設計書が承認されるまで走らせられません**（hook `require_design_contract_before_run` が engine_tuner を指す設計書を求めるため）。承認のあと、実装の前に1回、実装の後に1回 走らせます（実装の前の1回＝M2-C-2 の検収の残り）。
+> 4. **`off_ok` の道は自己テスト専用です。**本走のコードから呼ぶと静的検査の⑤（見本の関数を selftest の外で呼ぶ）で止まります。ただし、静的検査を通すかどうかは `--selftest` を走らせたときに分かるもので、書く瞬間には止まりません。
+207c246
+< **ta のクラス43件と、うちの材料の種類256件は、名前が違うので機械では突き合いません。**照合式が付いているのは26種だけです。
+---
+> ---
+209c248
+< **★私は案A で作ります**（技術のやり方は CC が決める・恒久の決まり49番）。ほかの2案も、なぜ採らないかを添えて残します。
+---
+> ## 10｜DESIGN_CONTRACT
+211,215c250
+< | 案 | 中身 | よい点 | 難しい点 |
+< |---|---|---|---|
+< | **A（これで作ります）** | 機械が「対応の候補」を出し、**まこさんが1回だけ見て承認する**。承認した対応は定義表に書き込み、以後は機械で引く | 手書きが1回で終わる。以後ずれない。範囲を決めるのが まこさんのままで変わらない | 1回だけ まこさんの時間を使う |
+< | B（採りません） | 照合式が無い種類にも ta の照合式を足す | 正本が1つになる | **ta に無い指標には書けません**（自作が14種＝要件 R16 の534行）。埋まらない穴が残ります |
+< | C（採りません） | 名前を正規化して自動で当てる | 手間ゼロ | **当たらないものが出て、間違えても誰も気づきません。**恒久の決まり53番（確かめてから書く）と合いません |
+---
+> **★`impl_functions` は `python3 .claude/tools/gen_impl_functions.py scripts/priority_rebuild/engine_tuner_gen.py` の出力をそのまま貼ったものです（2026-09-04・手打ちしていません）。**触るのはそのうち `_mat_fixture` と `selftest` の2つで、関数を足しも消しもしません。
+217c252,404
+< **★どの案でも、対応が決まらない種類は「使わない」に倒します**（fail-closed）。そのうえで一覧に出して、まこさんが見られるようにします。
+---
+> ```json
+> {
+>   "impl_file": "scripts/priority_rebuild/engine_tuner_gen.py",
+>   "impl_functions": {
+>     "scripts/priority_rebuild/engine_tuner_gen.py": [
+>       "<モジュール直下>",
+>       "Journal.__init__",
+>       "Journal.get",
+>       "Journal.put",
+>       "_allowed_tfs",
+>       "_as_param_list",
+>       "_banned_name",
+>       "_banned_pair",
+>       "_cc",
+>       "_check_tf",
+>       "_const100",
+>       "_current_num_bounds",
+>       "_dc1_side",
+>       "_dc2_q",
+>       "_exit_indicator_cond",
+>       "_family_tf_from_col",
+>       "_flip_loose",
+>       "_floor_pct",
+>       "_focus_net",
+>       "_from_param_list",
+>       "_gate_recipe",
+>       "_geo_of",
+>       "_group_usable",
+>       "_insufficient_samples",
+>       "_int_range",
+>       "_is_identity_recipe",
+>       "_iv",
+>       "_iv_from",
+>       "_kubun_of",
+>       "_lineage_of",
+>       "_loose_q",
+>       "_make_cond",
+>       "_make_exits",
+>       "_make_hysteresis",
+>       "_mat_drawn",
+>       "_mat_fixture",
+>       "_mat_pair_drawn",
+>       "_mat_two_drawn",
+>       "_mat_with_pre",
+>       "_nv",
+>       "_nvd",
+>       "_nvs",
+>       "_obj_key",
+>       "_ordered_like",
+>       "_pair_materials",
+>       "_pick_exit_material",
+>       "_pick_material",
+>       "_pkey",
+>       "_pool_families",
+>       "_pool_families_by_lineage",
+>       "_q",
+>       "_q_range",
+>       "_qspec",
+>       "_range_has_two",
+>       "_ranked_material_at",
+>       "_role_tfs",
+>       "_scan_direct_validate_calls",
+>       "_slot_ref",
+>       "_stage_of",
+>       "_state_cond",
+>       "_thr_band_drawn",
+>       "_thr_drawn",
+>       "_thr_fixture",
+>       "_tree_conds",
+>       "_vr",
+>       "_walk_dicts",
+>       "_walk_materials",
+>       "apply_slots",
+>       "assert_exit_roles",
+>       "assert_known_exit_reason",
+>       "assert_provenance",
+>       "assert_roles",
+>       "attach_materials",
+>       "bh_select",
+>       "build_qtable",
+>       "default_regime",
+>       "draw_int",
+>       "draw_num",
+>       "draw_param",
+>       "draw_q",
+>       "gate_matrix",
+>       "hold_bars",
+>       "int_range_of",
+>       "ladder_min_frac",
+>       "lint_provenance",
+>       "load_exit_table",
+>       "load_limits",
+>       "load_material_ranking",
+>       "load_signal_table",
+>       "main",
+>       "material_pool",
+>       "material_ranges",
+>       "max_ladder_steps",
+>       "needed_qkeys",
+>       "num_in_range",
+>       "num_range_of",
+>       "pair_allowed",
+>       "param_in_range",
+>       "per_day_gate",
+>       "pre_run_gate",
+>       "pvalue_daily",
+>       "q_in_range",
+>       "q_range_of",
+>       "quantile_list",
+>       "ranked_groups",
+>       "ranked_materials",
+>       "read_slots",
+>       "recipe_hash",
+>       "regime_draw_order",
+>       "reject_code",
+>       "resolve_hold_range",
+>       "run_generation",
+>       "run_main",
+>       "run_trial",
+>       "run_trial_guarded",
+>       "same_fn_family_pairs",
+>       "sample_regime_build",
+>       "sample_structure",
+>       "selftest",
+>       "strat_gate",
+>       "strip_marks",
+>       "structure_breakdown",
+>       "suggest_slot",
+>       "synth_df",
+>       "validate_drawn",
+>       "value_slots",
+>       "verify_provenance",
+>       "write_kakikudashi",
+>       "zero_trade_gate"
+>     ]
+>   },
+>   "self_check_calls": [
+>     "_mat_fixture",
+>     "lint_provenance",
+>     "indicator_enabled"
+>   ],
+>   "must_use": {
+>     "selftest": ["_mat_fixture"]
+>   },
+>   "spec_lists": {},
+>   "no_spec_lists_reason": "この設計で作るものは、正本の一覧を読む形ではない（自己テストの見本の作り方を直すだけ）。照合D の相手になる正本の配列が存在しない。",
+>   "generated_from": {
+>     "impl_functions": "gen_impl_functions.py の出力をそのまま（2026-09-04）。関数を足しも消しもしない",
+>     "must_use": "selftest が _mat_fixture を使うこと（3.2）。_mat_fixture が indicator_enabled を使うこと（3.1）は、実装の後に must_use へ足す（実装の前は無い名前を要求できないため）",
+>     "spec_lists": "無し（理由は no_spec_lists_reason）"
+>   }
+> }
+> ```
+219c406
+< ### 9.2 この設計が確かめないこと
+---
+> ---
+221,222c408
+< - **印の中身が「正しい範囲」かどうかは、機械には分かりません。**機械が確かめるのは「3つの源から機械で作られたか」だけです。範囲そのものの妥当性は まこさんの目です。
+< - **走行時間が実際にどれだけ縮むかは、まだ測っていません。**部品の数の比（約3.7分の1）は時間の比ではありません。測るのは実装の後です。
+---
+> ## 11｜まこさんにお願いすること
+224c410
+< ### 9.3 入っていないもの
+---
+> **実装に入ってよいか、の1点です。**承認は `approve_impl.sh` と `approve_design.sh` の両方が要ります（next_step §6 の126番＝承認の仕組みが2つ在る）。
+226,229c412
+< - 部品を足すこと（需給3件・MMI・曜日の格子・ATR 連動の許容幅）＝**M2-C-4**
+< - materials.md の970行の指し先の直し＝**M2-C-4**
+< - regime_detection_kb.md の704行の件数の訂正＝**まこさんが書き方を決める**
+< - net の数字＝売買を1件も回さないため
+---
+> **承認のあとに私がやること（順番）**＝①恒等 L1・S1 を実装の前に走らせて md5 を貼る（M2-C-2 の検収の残り）②3.1 → 3.2 → 3.3 の順に直す ③§5 の1〜6 ④G2 → H2 ⑤記録（worklog・next_step）。**報告は §5 の1〜6 と G2 → H2 を終えてから1回**（まこさん指示 2026-09-04「中間報告は不要」）＝「◯/◯ pass」・恒等3本の md5・T33-f の標準出力を、そのまま貼る。
+233c416,420
+< ## 10｜DESIGN_CONTRACT（機械が実装と照合する部品の一覧）
+---
+> ## 12｜SPEC（★`verify_design_contract.py --write acceptance.md --dry-run` が実物から書き出したもの・2026-09-04・手で直していない）
+> 
+> **★この設計は公開する関数を足しも消しもしないので、実装の後も この SPEC と実物の突き合わせは 0件 のままの見込みです**（触る `_mat_fixture` は下線で始まる関数＝SPEC の対象外・`selftest` が呼ぶ公開の関数は変わらない）。
+> 
+> SPEC
+237,242c424,653
+<   "impl_file": "scripts/priority_rebuild/engine_tuner_exec.py",
+<   "self_check_calls": [
+<     "INDICATOR_SWITCH_PATH",
+<     "load_indicator_switch",
+<     "indicator_enabled",
+<     "indicator_switch_fingerprint"
+---
+>  "impl_file": "scripts/priority_rebuild/engine_tuner_gen.py",
+>  "public_functions": {
+>   "load_limits": [],
+>   "HoldRangeError": [],
+>   "resolve_hold_range": [
+>    "HoldRangeError"
+>   ],
+>   "hold_bars": [
+>    "HoldRangeError"
+>   ],
+>   "material_pool": [],
+>   "material_ranges": [
+>    "load_limits"
+>   ],
+>   "param_in_range": [
+>    "material_ranges"
+>   ],
+>   "draw_param": [
+>    "material_ranges"
+>   ],
+>   "assert_provenance": [
+>    "SampleError",
+>    "material_ranges",
+>    "param_in_range",
+>    "q_range_of"
+>   ],
+>   "assert_roles": [
+>    "SampleError"
+>   ],
+>   "assert_exit_roles": [
+>    "SampleError"
+>   ],
+>   "validate_drawn": [
+>    "strip_marks"
+>   ],
+>   "strip_marks": [],
+>   "int_range_of": [],
+>   "draw_int": [
+>    "int_range_of"
+>   ],
+>   "num_range_of": [],
+>   "draw_num": [
+>    "num_range_of"
+>   ],
+>   "ladder_min_frac": [],
+>   "max_ladder_steps": [
+>    "ladder_min_frac",
+>    "num_range_of"
+>   ],
+>   "q_range_of": [],
+>   "quantile_list": [
+>    "q_range_of"
+>   ],
+>   "draw_q": [
+>    "q_range_of"
+>   ],
+>   "q_in_range": [
+>    "q_range_of"
+>   ],
+>   "num_in_range": [
+>    "num_range_of"
+>   ],
+>   "SampleError": [],
+>   "load_signal_table": [],
+>   "load_material_ranking": [],
+>   "ranked_materials": [
+>    "load_material_ranking"
+>   ],
+>   "same_fn_family_pairs": [],
+>   "pair_allowed": [
+>    "same_fn_family_pairs"
+>   ],
+>   "load_exit_table": [],
+>   "ranked_groups": [
+>    "ranked_materials"
+>   ],
+>   "regime_draw_order": [
+>    "SampleError"
+>   ],
+>   "sample_regime_build": [
+>    "SampleError",
+>    "regime_draw_order"
+>   ],
+>   "default_regime": [],
+>   "sample_structure": [
+>    "SampleError",
+>    "default_regime",
+>    "load_signal_table",
+>    "sample_regime_build"
+>   ],
+>   "recipe_hash": [
+>    "strip_marks"
+>   ],
+>   "write_kakikudashi": [],
+>   "structure_breakdown": [],
+>   "needed_qkeys": [],
+>   "build_qtable": [
+>    "needed_qkeys"
+>   ],
+>   "attach_materials": [],
+>   "pvalue_daily": [],
+>   "bh_select": [],
+>   "strat_gate": [],
+>   "Journal": [],
+>   "assert_known_exit_reason": [],
+>   "run_trial": [
+>    "strip_marks"
+>   ],
+>   "run_trial_guarded": [
+>    "run_trial"
+>   ],
+>   "reject_code": [],
+>   "zero_trade_gate": [],
+>   "per_day_gate": [
+>    "zero_trade_gate"
+>   ],
+>   "suggest_slot": [],
+>   "value_slots": [
+>    "hold_bars",
+>    "int_range_of",
+>    "num_range_of",
+>    "q_range_of"
+>   ],
+>   "apply_slots": [],
+>   "read_slots": [],
+>   "run_generation": [
+>    "Journal",
+>    "apply_slots",
+>    "bh_select",
+>    "build_qtable",
+>    "per_day_gate",
+>    "pvalue_daily",
+>    "quantile_list",
+>    "read_slots",
+>    "recipe_hash",
+>    "reject_code",
+>    "run_trial",
+>    "run_trial_guarded",
+>    "sample_structure",
+>    "strat_gate",
+>    "strip_marks",
+>    "structure_breakdown",
+>    "suggest_slot",
+>    "value_slots",
+>    "write_kakikudashi"
+>   ],
+>   "synth_df": [],
+>   "selftest": [
+>    "Journal",
+>    "apply_slots",
+>    "assert_known_exit_reason",
+>    "assert_provenance",
+>    "bh_select",
+>    "build_qtable",
+>    "gate_matrix",
+>    "ladder_min_frac",
+>    "lint_provenance",
+>    "load_exit_table",
+>    "load_limits",
+>    "load_material_ranking",
+>    "load_signal_table",
+>    "material_pool",
+>    "material_ranges",
+>    "max_ladder_steps",
+>    "needed_qkeys",
+>    "num_in_range",
+>    "pair_allowed",
+>    "param_in_range",
+>    "per_day_gate",
+>    "pre_run_gate",
+>    "pvalue_daily",
+>    "q_in_range",
+>    "q_range_of",
+>    "quantile_list",
+>    "ranked_groups",
+>    "ranked_materials",
+>    "read_slots",
+>    "regime_draw_order",
+>    "reject_code",
+>    "resolve_hold_range",
+>    "run_generation",
+>    "run_trial_guarded",
+>    "sample_structure",
+>    "strat_gate",
+>    "strip_marks",
+>    "structure_breakdown",
+>    "synth_df",
+>    "validate_drawn",
+>    "value_slots",
+>    "verify_provenance",
+>    "zero_trade_gate"
+>   ],
+>   "pre_run_gate": [],
+>   "run_main": [
+>    "assert_known_exit_reason",
+>    "hold_bars",
+>    "load_limits",
+>    "material_pool",
+>    "pre_run_gate",
+>    "resolve_hold_range",
+>    "run_generation"
+>   ],
+>   "main": [
+>    "gate_matrix",
+>    "lint_provenance",
+>    "load_limits",
+>    "material_pool",
+>    "run_main",
+>    "sample_structure",
+>    "selftest",
+>    "strip_marks",
+>    "structure_breakdown",
+>    "verify_provenance"
+>   ],
+>   "lint_provenance": [],
+>   "gate_matrix": [
+>    "apply_slots",
+>    "load_limits",
+>    "load_signal_table",
+>    "material_pool",
+>    "material_ranges",
+>    "resolve_hold_range",
+>    "run_trial_guarded",
+>    "sample_structure",
+>    "value_slots"
+>   ],
+>   "verify_provenance": [
+>    "load_limits",
+>    "load_signal_table",
+>    "resolve_hold_range"
+243a655,663
+>  },
+>  "constants": {
+>   "PARAM_SRC": "_param_src",
+>   "Q_SRC": "_q_src",
+>   "NUM_SRC": "_num_src",
+>   "LIN_SRC": "_lineage_src",
+>   "ATTACH_CALLS": 0
+>  },
+>  "cli_flags": []
+246,255d665
+< 
+< **★この一覧は、実装が終わったあとに `verify_design_contract.py --write` で実物から書き直します**（手書きのまま残しません・permanent_rules §0-2 の3）。
+< 
+< ---
+< 
+< ## 11｜まこさんにお願いすること
+< 
+< **実装に入ってよいか、の1点です。**
+< 
+< **★実装の途中で1回だけ、まこさんの目が要ります**（§9.1 の案A）＝ta のクラスと材料の対応の候補を機械が出すので、それを1回 見て承認していただきます。**そこは実装の中の手順で、いま決めることではありません。**

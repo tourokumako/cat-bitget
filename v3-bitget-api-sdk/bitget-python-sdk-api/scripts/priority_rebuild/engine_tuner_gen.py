@@ -463,11 +463,22 @@ def _mat_with_pre(m: dict, pre: dict) -> dict:
     return out
 
 
-def _mat_fixture(family: str, param, tf: str, **kw) -> dict:
+def _mat_fixture(family: str, param, tf: str, off_ok: bool = False, **kw) -> dict:
     """★自己テストの見本だけが使う材料（本走のコードからは呼ばない＝--lint-provenance が見張る）。
 
     印は本物の範囲を写す＝見本の数字が範囲の外なら作れない（見本が嘘の材料にならない）。
+
+    ★off_ok（2026-09-04・設計書 iter="t25-fixture-off-20260904"・まこさん承認）＝
+      印（indicator_switch.json）が「使わない」の指標の見本を作る道。印の審査（T33-b）を試すためだけに在る。
+      印が「使う」の指標に off_ok=True を渡すと止まる（fail-closed）＝この道で範囲の検査を飛ばすことはできない。
+      この fail-closed を機械で守るのは自己テストの T33-f だけ（SPEC は下線で始まる この関数を見ない）。
     """
+    if off_ok:
+        if ex.indicator_enabled(family):
+            raise SampleError(f"[見本] {family} は印が「使う」＝off_ok の見本は作れない")
+        m = {"family": family, "param": param, "tf": str(tf)}
+        m.update(kw)
+        return m
     ranges = material_ranges()
     spec = ranges.get(family)
     if spec is None:
@@ -5304,7 +5315,7 @@ def selftest() -> int:
                 t33.append(f"T33-a: 「使わない」の指標が候補に出た: {_leak[:5]}")
             # (b) 「使わない」の指標を使った案は、審査が捨てる
             _bad33 = {"role": "trigger", "form": "level", "side": "above",
-                      "material": [{"family": _off[0], "param": None, "tf": "5m"}],
+                      "material": [_mat_fixture(_off[0], None, "5m", off_ok=True)],
                       "value": {"threshold_q": 0.7}}
             try:
                 assert_provenance(_bad33, where="T33")
@@ -5323,6 +5334,17 @@ def selftest() -> int:
                         t33.append(f"T33-c: 「使う」に戻しても印で止まる（片道になっている）")
             finally:
                 _sw["_on_set"] = _keep33
+            # (f) 「使う」指標に off_ok=True を渡すと止まる＝off_ok が範囲の検査を飛ばす道にならない
+            #     ★恒久のテスト（まこさんの条件 2026-09-04・設計書 iter="t25-fixture-off-20260904"）
+            #       ＝この fail-closed を機械で守るのは、ここだけ（SPEC は下線で始まる _mat_fixture を見ない・
+            #         must_use は申告）。止まらなければ t33 に入り、ng に加算されて --selftest が ❌ になる。
+            try:
+                _mat_fixture(_on[0], None, "5m", off_ok=True)
+                t33.append(f"T33-f: 「使う」指標 {_on[0]} に off_ok=True を渡しても止まらない（fail-closed が崩れている）")
+            except SampleError as _e33f:
+                print(f"  T33-f 実測: SampleError: {_e33f}")
+                if "off_ok" not in str(_e33f):
+                    t33.append(f"T33-f: 止まったが理由が off_ok ではない: {str(_e33f)[:60]}")
             # (d) 順位の表からも「使わない」の指標が外れる
             try:
                 _rk = ranked_materials("env")
@@ -5341,7 +5363,7 @@ def selftest() -> int:
         t33.append(f"T33: 検査が走らない: {type(_e33x).__name__} {_e33x}")
     ng += t33
     print("  T33 指標のオン・オフの印: (a)候補に出ない (b)審査が捨てる (c)戻せば通る"
-          " (d)順位から外れる (e)指紋が記録に入る")
+          " (d)順位から外れる (e)指紋が記録に入る (f)「使う」指標に off_ok は作れない")
 
     if ng:
         for x in ng:
