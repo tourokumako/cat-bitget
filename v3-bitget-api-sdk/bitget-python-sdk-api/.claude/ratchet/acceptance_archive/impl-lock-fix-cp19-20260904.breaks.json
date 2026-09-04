@@ -11,14 +11,14 @@
   {
    "no": "2",
    "script": "b20_path_shape.sh",
-   "code": 0,
-   "note": "抜けた道: cd してから道具へ 相対パスの Write（hook）"
+   "code": 1,
+   "note": "実測: 相対Write TARGETに在るhook=0 ／ TARGETに無いhook=2"
   },
   {
    "no": "3",
    "script": "b21_subagent_wider.sh",
-   "code": 0,
-   "note": "抜けた道: サブエージェントの Write（hook）"
+   "code": 1,
+   "note": "実測: サブエージェントのWrite TARGETに在るhook=0 ／ TARGETに無いhook=2"
   },
   {
    "no": "4",
@@ -89,7 +89,7 @@
   {
    "no": "15",
    "script": "b11_subagent.sh",
-   "code": 0,
+   "code": 1,
    "note": ""
   },
   {
@@ -131,13 +131,13 @@
   {
    "no": "22",
    "script": "b18_embedded_run.sh",
-   "code": 1,
-   "note": ""
+   "code": 0,
+   "note": "抜けた道: いまの hook の埋め込みに 2 個 在ります（0個であるはず）"
   },
   {
    "no": "23",
    "script": "b11_subagent.sh",
-   "code": 0,
+   "code": 1,
    "note": ""
   },
   {
