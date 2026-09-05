@@ -9,8 +9,18 @@
 #   確かめたが、道具を止める設定はどれにも無い＝原因は Claude Code 側で CC からは直せない。
 #   ＝「CC が気をつける」では守れない。ファイルに書かせて、機械で照合する。
 #
-# 検査（7件）:
-#   1. .claude/state/session_todo.md が在る
+# ★2026-09-06（まこさん指示・逐語「今後は並走するのでToDo ゲートの状態ファイルをセッションごとに
+#   分ける直しをやってほしい」・承認 iter="todo-gate-per-session-20260906"）＝状態ファイル3つの置き場を
+#   セッションごとにした。
+#   直す前＝.claude/state/ に session_todo.md・session_todo_posted・session_todo_shown が1組しか無く、
+#     2つのセッションを並走させると、片方が ToDo を書くと もう片方の hook が止まり、片方の SessionStart が
+#     もう片方の印を消した（85回目・worklog 20260904 §37（3）・§39）。
+#   直した後＝.claude/state/sessions/<セッションの id>/ の下に3つを置く。id は hook の入力の session_id
+#     （無ければ transcript_path の名前）から読む＝session_id_of()。置き場は paths_of()。
+#     id が無ければ止める（fail-closed）。判定の中身（下の検査）は1文字も変えていない。
+#
+# 検査（8件）:
+#   1. .claude/state/sessions/<セッションの id>/session_todo.md が在る
 #   2. 4行の型が在る（【いまの工程】【ToDo】【止まっているもの】【次】）
 #   3. 表の行が1行以上 在る
 #   4. 「★いまここ」がちょうど1件（全部 ✅済 のときだけ 0 でよい）
@@ -19,12 +29,12 @@
 #   6. その §NN が、今日の session_worklog_YYYYMMDD.md に見出しとして本当に在る
 #      ＝ToDo だけ「終わった」にして記録を書かない、を止める
 #   7. ★この版の ToDo が、一度この hook の止まりで画面に表示されている
-#      表示の記録（.claude/state/session_todo_shown）は、hook が止まって全文を画面に出したときに
+#      表示の記録（同じ置き場の session_todo_shown）は、hook が止まって全文を画面に出したときに
 #      だけ、hook 自身が作る。CC は作らない。
 #      ＝2026-08-16（30回目）に CC が「チャットに貼らずに、印だけ先に作る」で すり抜けた穴を塞ぐ
 #      （まこさん指示・逐語「hookが効いてないのであれば、修正して」「todoフローナシで進める
 #      ことは禁止にする」。フロー宣言ゲートの「必ず1回ブロックして全文をこの場に出す」と同型）
-#   8. ファイルの指紋が .claude/state/session_todo_posted と一致する
+#   8. ファイルの指紋が 同じ置き場の session_todo_posted と一致する
 #      ＝チャットに貼っていない ToDo で作業を進められない
 #      （同じ「指紋の印」の仕組みを 解釈ゲートも使っていたが、そちらは 2026-08-18 に まこさんの指示で
 #        廃止し、2026-08-22 にファイルごと消した＝いま在るのはこの ToDo ゲートだけ）
@@ -40,6 +50,8 @@
 #   そのまま通る。§NN の中身が空でも通る（節が在るかしか見ない）。
 #   表示の記録（session_todo_shown）を CC が echo で偽造すれば通る＝hook のファイル自体を書き換えるのと同じ
 #   明示の違反で、機械では見抜けない。最後の関所はまこさんの目。
+#   ★2026-09-06＝セッションの id は Claude Code が入力に入れるものに頼る（うちのコードでは決められない）。
+#     別のセッションの置き場に ToDo を書く道は残る（書いても自分の検査には効かない＝自分は通らない）。
 
 import glob
 import hashlib
@@ -50,9 +62,7 @@ import sys
 
 ROOT = "/Users/tachiharamasako/Documents/GitHub/cat-bitget"
 STATE = os.path.join(ROOT, ".claude", "state")
-TODO = os.path.join(STATE, "session_todo.md")
-MARK = os.path.join(STATE, "session_todo_posted")
-SHOWN = os.path.join(STATE, "session_todo_shown")   # hook が全文を画面に出したときにだけ hook が作る
+SESSIONS = os.path.join(STATE, "sessions")   # ★2026-09-06＝セッションごとの置き場の親（下に <セッションの id>/）
 
 HEADS = ("【いまの工程】", "【ToDo】", "【止まっているもの】", "【次】")
 DONE, DOING, YET = "✅済", "★いまここ", "まだ"
@@ -64,6 +74,42 @@ DONE, DOING, YET = "✅済", "★いまここ", "まだ"
 #   直した後＝会話の記録を読み、CC が実際にチャットへ貼っていれば「表示された」と数える。
 #     ＝先に貼っておけば、止まらずに通る。貼っていなければ、今までどおり止まる（守りは減らない）。
 PROJECTS = os.path.expanduser("~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget")
+
+
+def session_id_of(data):
+    """hook の入力（stdin の json）からセッションの id を返す。無ければ None（→ 止める側）。
+
+    ★2026-09-06 新設。読む順＝①session_id ②transcript_path のファイル名（.jsonl を除く）。
+    パスに使えない文字（/ や空白など）は _ に置き換える＝置き場の外へ出ない。
+    """
+    if not isinstance(data, dict):
+        return None
+    sid = data.get("session_id")
+    if not (isinstance(sid, str) and sid.strip()):
+        tp = data.get("transcript_path")
+        base = os.path.basename(tp.strip()) if isinstance(tp, str) and tp.strip() else ""
+        sid = base[:-6] if base.endswith(".jsonl") else base
+    # 使えない文字は _ に。先頭の . は落とす（"../x" → "_x"＝隠しディレクトリにも上の階層にもならない）
+    sid = re.sub(r"[^A-Za-z0-9._-]", "_", (sid or "").strip()).lstrip(".")
+    if not sid or set(sid) <= set("._"):
+        return None
+    return sid
+
+
+def paths_of(sid):
+    """そのセッションの置き場と、状態ファイル3つのパスを返す。置き場のディレクトリが無ければ作る。
+
+    ★2026-09-06 新設。返すもの＝dir ／ todo（ToDo の本文）／ mark（貼った印）／ shown（表示の記録）。
+    """
+    d = os.path.join(SESSIONS, sid)
+    try:
+        os.makedirs(d, exist_ok=True)
+    except Exception:
+        pass
+    return {"dir": d,
+            "todo": os.path.join(d, "session_todo.md"),
+            "mark": os.path.join(d, "session_todo_posted"),
+            "shown": os.path.join(d, "session_todo_shown")}
 
 
 def chat_texts(transcript=None):
@@ -150,9 +196,9 @@ def heads_in_chat(text, transcript=None):
     return missing
 
 
-def read_shown_body():
-    """表示の記録の中身を返す。★古い形（ハッシュ値だけ）のときは None。"""
-    raw = read(SHOWN)
+def read_shown_body(sid):
+    """そのセッションの表示の記録の中身を返す。★古い形（ハッシュ値だけ）のときは None。"""
+    raw = read(paths_of(sid)["shown"])
     s = raw.strip()
     if not s:
         return None
@@ -251,12 +297,17 @@ def body_problems(text):
     return probs
 
 
-def check(transcript=None):
-    """問題があれば理由の文字列を返す。無ければ None。"""
-    if not os.path.exists(TODO):
-        return f"ToDo のファイルが無い（{TODO}）"
+def check(transcript=None, sid=None):
+    """問題があれば理由の文字列を返す。無ければ None。★2026-09-06＝見る置き場は paths_of(sid)。"""
+    if not sid:
+        return "セッションの id が hook の入力に無い（session_id も transcript_path も無い）＝fail-closed"
+    P = paths_of(sid)
+    todo, mark, shown = P["todo"], P["mark"], P["shown"]
 
-    text = read(TODO)
+    if not os.path.exists(todo):
+        return f"このセッションの ToDo のファイルが無い（{todo}）"
+
+    text = read(todo)
 
     probs = body_problems(text)
     if len(probs) == 1:
@@ -266,14 +317,14 @@ def check(transcript=None):
                 + "\n".join(f"   {i}. {p}" for i, p in enumerate(probs, 1)))
 
     # ★前のセッションの ToDo を持ち越さない仕組みは、この中では見ません。
-    #   reset_read_log.sh（SessionStart）が session_todo_posted を消します＝印が消えるので、
-    #   このセッションで貼り直すまで下の指紋の検査が落ちます。
+    #   reset_read_log.sh（SessionStart）が、自分のセッションの置き場の session_todo_posted を消します
+    #   ＝印が消えるので、このセッションで貼り直すまで下の指紋の検査が落ちます。
     #   ★2026-08-16 に一度、read_log.txt の更新時刻と比べる形で書いて、間違えました。
     #     read_log.txt は SessionStart だけでなく、Read を1回するたびに record_read.sh が追記します
     #     ＝作業中にファイルを読むたびに「前のセッションのまま」と誤って止まりました。
     #     この hook の最初の実走で、私自身が止められて分かりました。
     h = hashlib.sha256(text.encode("utf-8")).hexdigest()
-    shown_raw = read(SHOWN).strip()
+    shown_raw = read(shown).strip()
     if shown_raw != h:                             # 古い形（ハッシュ値）で一致していれば、そのまま通す
         # ★2026-08-26＝110番の直し。CC が自分でチャットへ貼っていれば、それも「表示された」と数える。
         # ★2026-08-27＝案A。全文でなく『変わった行』でもよい（前の本文が残っているときだけ）。
@@ -282,7 +333,7 @@ def check(transcript=None):
         if pasted_in_chat(text, transcript):
             ok = True                              # 全文を貼った＝いままでどおり通る
         else:
-            prev = read_shown_body()
+            prev = read_shown_body(sid)
             if prev is None:
                 why = ("★前に貼った本文が残っていない（このセッションで まだ1回も貼っていないか、"
                        "古い形の記録）。**このときは全文を貼る**")
@@ -314,40 +365,48 @@ def check(transcript=None):
                     ok = True                      # 変わった行と4行の型が全部 貼られている
         if ok:
             try:
-                with open(SHOWN, "w", encoding="utf-8") as f:
+                with open(shown, "w", encoding="utf-8") as f:
                     f.write(text)                  # ★次回の差分のために本文を残す（案A）
             except Exception:
                 pass
         else:
             return (why + "。いまの止まりでも全文が画面に出た。"
                     "同じ内容をチャットに貼り、印を作ってから再実行する")
-    if read(MARK).strip() != h:
+    if read(mark).strip() != h:
         return "ToDo をチャットに貼った確認マーカーが無い、または ToDo を書き換えた後で貼り直していない"
 
     return None
 
 
-def fail(reason):
+def fail(reason, sid=None):
     e = sys.stderr
     print("🔒 [ToDo ゲート・safety hook] ToDo をチャットに正確に出してから作業してください。", file=e)
     print("   まこさん指示 2026-08-16「私はこのチャットにtodoを正確に表示して進めてほしいんだけど」。", file=e)
     print("", file=e)
     print(f"不足: {reason}", file=e)
     print("", file=e)
-    if os.path.exists(TODO):
+    if not sid:
+        # ★2026-09-06＝id が無いときは置き場を決められない＝案内も出せない。CC は hook を外さない（決まり57番）。
+        print("★セッションの id が hook の入力に無い＝ToDo の置き場を決められません。", file=e)
+        print("  Claude Code の入力（session_id・transcript_path）の問題です。まこさんに報告してください。", file=e)
+        print("（解除は 2026-08-16 に廃止＝合言葉では通りません）", file=e)
+        sys.exit(2)
+    P = paths_of(sid)
+    print(f"このセッションの ToDo の置き場＝{P['todo']}", file=e)
+    if os.path.exists(P["todo"]):
         print("───────── いまの ToDo（この全文をそのままチャットに貼る）─────────", file=e)
-        print(read(TODO), file=e)
+        print(read(P["todo"]), file=e)
         print("──────────────────────────────────────────────────", file=e)
         print("", file=e)
         # ★表示の記録は、全文を画面に出した「いま」だけ作る（CC は作らない・検査7の実体）
         # ★2026-08-27（案A）＝ハッシュ値ではなく本文を残す（次回の差分の材料）
         try:
-            with open(SHOWN, "w", encoding="utf-8") as f:
-                f.write(read(TODO))
+            with open(P["shown"], "w", encoding="utf-8") as f:
+                f.write(read(P["todo"]))
         except Exception:
             pass
-    print("対処: ①ToDo を直す ②同じ内容をチャットに貼る ③下のコマンドで印を作る ④再実行する", file=e)
-    print(f'  shasum -a 256 "{TODO}" | awk \'{{print $1}}\' > "{MARK}"', file=e)
+    print("対処: ①ToDo を直す（上の置き場に書く）②同じ内容をチャットに貼る ③下のコマンドで印を作る ④再実行する", file=e)
+    print(f'  shasum -a 256 "{P["todo"]}" | awk \'{{print $1}}\' > "{P["mark"]}"', file=e)
     print("（解除は 2026-08-16 に廃止＝合言葉では通りません）", file=e)
     sys.exit(2)
 
@@ -358,18 +417,38 @@ def fail(reason):
 PASS_FLAGS = r"--selftest|py_compile|--help|--verify|--check"
 
 
-def cli_check():
+def cli_check(argv=None):
     """ToDo を書く前に、CC が自分で中身を確かめる口（2026-09-05・まこさん承認「進めて」）。
 
-    使い方＝python3 .claude/hooks/enforce_todo_declaration.py --check
+    使い方＝python3 .claude/hooks/enforce_todo_declaration.py --check [--session <セッションの id>]
+    ★2026-09-06＝--session を省くと、いちばん新しく書かれた置き場を見る（並走中は別のセッションの
+      ことがある）。どの置き場を見たかを1行目に必ず出す。
     ★チャットに貼ったかは見ない。貼る前に使う口なので、そこは必ず落ちるため。
       貼ったかの検査（表示の記録・印）は hook 本体では今までどおり効く＝守りは減らない。
     ★判定は body_problems（hook 本体と同じ関数）を呼ぶ＝2か所に書き写さない。
     """
-    if not os.path.exists(TODO):
-        print(f"❌ ToDo のファイルが無い（{TODO}）")
+    argv = list(argv or [])
+    sid = None
+    if "--session" in argv:
+        i = argv.index("--session")
+        if i + 1 < len(argv) and argv[i + 1].strip():
+            sid = argv[i + 1].strip()
+    if sid:
+        todo = paths_of(sid)["todo"]
+        how = f"--session {sid}"
+    else:
+        files = sorted(glob.glob(os.path.join(SESSIONS, "*", "session_todo.md")), key=os.path.getmtime)
+        if not files:
+            print(f"❌ セッションの置き場に ToDo が1つも無い（{SESSIONS}/*/session_todo.md）。"
+                  f"--session <セッションの id> で指定するか、先に ToDo を書く")
+            return 1
+        todo = files[-1]
+        how = "--session を省いたので、いちばん新しく書かれた置き場（並走中は別のセッションのことがある）"
+    print(f"見た置き場＝{todo}（{how}）")
+    if not os.path.exists(todo):
+        print(f"❌ ToDo のファイルが無い（{todo}）")
         return 1
-    probs = body_problems(read(TODO))
+    probs = body_problems(read(todo))
     if probs:
         print(f"❌ 中身の不足 {len(probs)} 件（貼る前に全部 直す）")
         for i, p in enumerate(probs, 1):
@@ -389,14 +468,22 @@ def hook_main():
     if data.get("agent_type"):
         sys.exit(0)                                    # サブエージェントは通す（デッドロック回避）
 
+    # ★2026-09-06＝先にセッションの id を読む。置き場（入口の例外・検査・案内）は全部 これで決まる。
+    sid = session_id_of(data)
+    own = ()
+    if sid:
+        P = paths_of(sid)
+        own = (P["todo"], P["mark"])
+
     ti = data.get("tool_input") or {}
     cmd = ti.get("command", "") or ""
     fpath = ti.get("file_path", "") or ""
 
     # ★解除（TODO_OK=1）は 2026-08-16 に廃止（まこさん指示）＝通す道は無い。
 
-    # ToDo ファイル自身と印の操作は通す（止めると ToDo が書けない＝デッドロック）
-    if fpath in (TODO, MARK) or "session_todo" in cmd:
+    # 自分のセッションの ToDo ファイルと印の操作は通す（止めると ToDo が書けない＝デッドロック）
+    # ★2026-09-06＝例外は「自分の置き場」だけ。別のセッションの置き場への書き込みは例外に入らない。
+    if fpath in own or "session_todo" in cmd:
         sys.exit(0)
 
     tool = data.get("tool_name", "")
@@ -414,9 +501,13 @@ def hook_main():
     else:
         sys.exit(0)
 
-    reason = check(data.get("transcript_path"))
+    # ★2026-09-06＝id が無ければ止める（fail-closed）。固定の置き場に戻る道は作らない。
+    if not sid:
+        fail("セッションの id が hook の入力に無い（session_id も transcript_path も無い）＝fail-closed", None)
+
+    reason = check(data.get("transcript_path"), sid)
     if reason:
-        fail(reason)
+        fail(reason, sid)
     sys.exit(0)
 
 
@@ -427,16 +518,19 @@ NOSHOW = "★チャットに貼らずに印だけ先に作っても止まる（2
 
 
 def selftest():
+    import contextlib
+    import io
     import shutil
     import tempfile
 
-    global TODO, MARK, STATE, SHOWN
-    keep = (TODO, MARK, STATE, SHOWN)
+    global STATE, SESSIONS
+    keep = (STATE, SESSIONS)
     tmp = tempfile.mkdtemp()
     STATE = tmp
-    TODO = os.path.join(tmp, "session_todo.md")
-    MARK = os.path.join(tmp, "session_todo_posted")
-    SHOWN = os.path.join(tmp, "session_todo_shown")
+    SESSIONS = os.path.join(tmp, "sessions")           # ★2026-09-06＝置き場も作り物の中
+    SID = "A"                                          # 番人が使うセッションの id
+    PA = paths_of(SID)
+    TODO, MARK, SHOWN = PA["todo"], PA["mark"], PA["shown"]
 
     def put(body, wl="# §33 やった\n# §34 やった\n", mark=True, stale=False, shown=True,
             shown_val=None):
@@ -495,7 +589,7 @@ def selftest():
     for name, body, wl, mark, want in cases:
         put(body, wl or "# §33 やった\n# §34 やった\n", mark,
             stale=(name == STALE), shown=(name != NOSHOW))
-        got = check(empty_tr)
+        got = check(empty_tr, SID)
         if want is None:
             good = got is None
         else:
@@ -512,7 +606,7 @@ def selftest():
                             "message": {"content": [{"type": "text",
                                                      "text": "ToDo を貼ります。\n\n```\n" + ok_body + "```\n"}]}},
                            ensure_ascii=False) + "\n")
-    got = check(pasted_tr)
+    got = check(pasted_tr, SID)
     good = got is None
     print(f"  {'✅' if good else '❌'} ★110番＝先にチャットへ貼っていれば、止まらずに通る"
           + ("" if good else f"   ← 出た理由: {got}"))
@@ -527,7 +621,7 @@ def selftest():
                             "message": {"content": [{"type": "text",
                                                      "text": "```\n" + ok_body.replace("| a |", "| z |") + "```"}]}},
                            ensure_ascii=False) + "\n")
-    got = check(other_tr)
+    got = check(other_tr, SID)
     good = got is not None and "全文を貼る" in got
     print(f"  {'✅' if good else '❌'} ★110番＝違う中身を貼っても通らない"
           + ("" if good else f"   ← 出た理由: {got}"))
@@ -563,7 +657,7 @@ def selftest():
     ]
     for name, has_prev, chat, want in n_cases:
         put(new_body, mark=True, shown=has_prev, shown_val=(ok_body if has_prev else None))
-        got = check(tr("n.jsonl", chat))
+        got = check(tr("n.jsonl", chat), SID)
         good = (got is None) if want is None else (got is not None and want in got)
         print(f"  {'✅' if good else '❌'} {name}" + ("" if good else f"   ← 出た理由: {got}"))
         if not good:
@@ -572,7 +666,7 @@ def selftest():
     # N6 古い形の記録（ハッシュ値）でも壊れない＝全文を貼れば通る
     put(new_body, mark=True, shown=True,
         shown_val=hashlib.sha256(ok_body.encode("utf-8")).hexdigest())
-    got = check(tr("n6.jsonl", "```\n" + new_body + "```"))
+    got = check(tr("n6.jsonl", "```\n" + new_body + "```"), SID)
     good = got is None
     print(f"  {'✅' if good else '❌'} N6 古い形の記録（ハッシュ値）でも壊れない"
           + ("" if good else f"   ← 出た理由: {got}"))
@@ -588,7 +682,7 @@ def selftest():
                             "message": {"content": [{"type": "text",
                                                      "text": "```\n" + new_body + "```"}]}},
                            ensure_ascii=False) + "\n")
-    got = check(p9)
+    got = check(p9, SID)
     good = got is None
     print(f"  {'✅' if good else '❌'} N9 壊れた行が混ざっても、貼った全文は読める"
           + ("" if good else f"   ← 出た理由: {got}"))
@@ -598,7 +692,7 @@ def selftest():
     # N10 不足が2件あるとき、2件とも出る（2026-09-05・1件ずつ止まる形をやめた直し）
     two = (head + f"| 1 | a | 完了 | §33 |\n| 2 | b | {DONE} | — |\n| 3 | c | {DOING} | — |\n")
     put(two)
-    got = check(empty_tr)
+    got = check(empty_tr, SID)
     good = (got is not None and "2 件あります" in got
             and "3つの言葉のどれでもない" in got and "§NN" in got)
     print(f"  {'✅' if good else '❌'} N10 不足が2件あるとき、2件とも一度に出る")
@@ -608,7 +702,7 @@ def selftest():
     # N11 --check（書く前の口）は中身だけを見る＝貼っていなくても中身が正しければ空
     put(ok_body, mark=False, shown=False)
     probs = body_problems(read(TODO))
-    stopped = check(empty_tr)
+    stopped = check(empty_tr, SID)
     good = (probs == [] and stopped is not None)
     print(f"  {'✅' if good else '❌'} N11 --check は中身だけを見る（貼ったかの検査は hook 本体に残る）")
     if not good:
@@ -621,17 +715,178 @@ def selftest():
     if not good:
         ng += 1
 
+    # ──────── ★2026-09-06（セッションごとの置き場）＝4件 ────────
+    # N13 A に正しい ToDo・印・表示の記録が在っても、B の入力では止まる（B の置き場に ToDo が無い）。A はそのまま通る
+    put(ok_body, mark=True, shown=True)
+    got_b = check(empty_tr, "B")
+    got_a = check(empty_tr, SID)
+    good = (got_b is not None and "ファイルが無い" in got_b
+            and os.path.join("sessions", "B") in got_b and got_a is None)
+    print(f"  {'✅' if good else '❌'} N13 別のセッション（B）の入力では止まり、A は通ったまま（互いに影響しない）"
+          + ("" if good else f"   ← B: {got_b} ／ A: {got_a}"))
+    if not good:
+        ng += 1
+
+    # N14 セッションの id の読み方＝session_id → transcript_path の名前 → None。パスに使えない文字は _ に
+    s_none = session_id_of({})
+    s_tp = session_id_of({"transcript_path": "/x/abc.jsonl"})
+    s_id = session_id_of({"session_id": "s-1"})
+    s_bad = session_id_of({"session_id": "../x"})
+    good = (s_none is None and s_tp == "abc" and s_id == "s-1"
+            and s_bad is not None and "/" not in s_bad and ".." not in s_bad
+            and session_id_of("not a dict") is None)
+    print(f"  {'✅' if good else '❌'} N14 セッションの id の読み方（session_id → transcript_path → None・危ない文字は _）"
+          + ("" if good else f"   ← {s_none!r} {s_tp!r} {s_id!r} {s_bad!r}"))
+    if not good:
+        ng += 1
+
+    # N15 固定の置き場（旧＝.claude/state/session_todo.md）にだけ ToDo が在り、自分の置き場に無い → 止まる。理由に自分の置き場のパス
+    legacy = os.path.join(STATE, "session_todo.md")
+    with open(legacy, "w", encoding="utf-8") as f:
+        f.write(ok_body)
+    for p in (TODO, MARK, SHOWN):
+        if os.path.exists(p):
+            os.remove(p)
+    got = check(empty_tr, SID)
+    good = got is not None and TODO in got
+    print(f"  {'✅' if good else '❌'} N15 固定の置き場の ToDo は読まない＝自分の置き場に無ければ止まり、理由にそのパスが在る"
+          + ("" if good else f"   ← 出た理由: {got}"))
+    if not good:
+        ng += 1
+
+    # N16 --check は --session A でも省略（A が最新）でも A の置き場を見て、1行目にそのパスを出す
+    put(ok_body, mark=True, shown=True)
+    PB = paths_of("B")
+    with open(PB["todo"], "w", encoding="utf-8") as f:
+        f.write(ok_body)
+    os.utime(PB["todo"], (1, 1))                       # B を古くする＝A が いちばん新しい
+    buf1, buf2 = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(buf1):
+        rc1 = cli_check(["--check", "--session", SID])
+    with contextlib.redirect_stdout(buf2):
+        rc2 = cli_check(["--check"])
+    l1 = (buf1.getvalue().splitlines() or [""])[0]
+    l2 = (buf2.getvalue().splitlines() or [""])[0]
+    good = rc1 == 0 and rc2 == 0 and TODO in l1 and TODO in l2 and "見た置き場" in l1
+    print(f"  {'✅' if good else '❌'} N16 --check は見た置き場を1行目に出す（--session A／省略＝いちばん新しい A）"
+          + ("" if good else f"   ← rc={rc1},{rc2} ／ {l1} ／ {l2}"))
+    if not good:
+        ng += 1
+
     # ToDo ファイルが無いときも止まる
     os.remove(TODO)
-    got = check(empty_tr)
+    got = check(empty_tr, SID)
     good = got is not None and "ファイルが無い" in got
     print(f"  {'✅' if good else '❌'} ToDo のファイルが無いと止まる")
     if not good:
         ng += 1
 
+    # ──────── ★2026-09-06（実経路・2件）＝この .py 自身と reset_read_log.sh を subprocess で呼ぶ ────────
+    #   壊すプログラム（.claude/breaks）は承認が増えるので作らない（まこさん指示「何回も承認させるな」）。
+    #   本物の .claude/state/sessions/ の下に一時の id の置き場を作り、終わったら必ず消す。
+    import subprocess
+    real_state, real_sessions = keep
+    sa, sb = f"selftest_A_{os.getpid()}", f"selftest_B_{os.getpid()}"
+    da, db = os.path.join(real_sessions, sa), os.path.join(real_sessions, sb)
+    body17 = head + f"| 1 | a | {DOING} | — |\n| 2 | b | {YET} | — |\n"   # ✅済 の行を入れない＝worklog に頼らない
+
+    def real_put(d, body):
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, "session_todo.md"), "w", encoding="utf-8") as f:
+            f.write(body)
+        hh = hashlib.sha256(body.encode("utf-8")).hexdigest()
+        for nm in ("session_todo_posted", "session_todo_shown"):
+            with open(os.path.join(d, nm), "w", encoding="utf-8") as f:
+                f.write(hh)
+
+    def call_hook(payload):
+        r = subprocess.run([sys.executable, os.path.abspath(__file__)],
+                           input=json.dumps(payload, ensure_ascii=False), capture_output=True, text=True)
+        return r.returncode, r.stderr
+
+    try:
+        os.makedirs(da, exist_ok=True)
+        os.makedirs(db, exist_ok=True)
+        tr17 = os.path.join(da, "tr.jsonl")               # 会話の記録は作り物（本物を読ませない）
+        with open(tr17, "w", encoding="utf-8") as f:
+            f.write(json.dumps({"type": "assistant",
+                                "message": {"content": [{"type": "text", "text": "なにも貼っていない"}]}},
+                               ensure_ascii=False) + "\n")
+
+        def inp(sid_):
+            return {"session_id": sid_, "transcript_path": tr17, "tool_name": "Write",
+                    "tool_input": {"file_path": os.path.join(da, "dummy.md"), "content": "x"}}
+
+        # N17 ①A 通る ②B 止まる（案内は B の置き場・固定の置き場は出ない）③B が書けば両方 通る ④id なしは止まる
+        real_put(da, body17)
+        rc1, _ = call_hook(inp(sa))
+        rc2, err2 = call_hook(inp(sb))
+        ok2 = (rc2 == 2 and os.path.join(db, "session_todo.md") in err2
+               and os.path.join(".claude", "state", "session_todo.md") not in err2)
+        real_put(db, body17.replace("| a |", "| z |"))
+        rc3b, _ = call_hook(inp(sb))
+        rc3a, _ = call_hook(inp(sa))
+        rc4, err4 = call_hook({"tool_name": "Write",
+                               "tool_input": {"file_path": os.path.join(da, "dummy.md"), "content": "x"}})
+        ok4 = rc4 == 2 and "セッションの id" in err4
+        good = rc1 == 0 and ok2 and rc3b == 0 and rc3a == 0 and ok4
+        print(f"  {'✅' if good else '❌'} N17 実経路＝①A 0 ②B 2＋B の置き場の案内 ③B 0・A 0 ④id なし 2＋「セッションの id」"
+              + ("" if good else f"   ← rc1={rc1} rc2={rc2} ok2={ok2} rc3b={rc3b} rc3a={rc3a} rc4={rc4} ok4={ok4}"))
+        if not good:
+            ng += 1
+
+        # N18 SessionStart（reset_read_log.sh）＝A の印と表示の記録だけ消え、B は残る。共有のファイル13本は控えて戻す
+        reset_sh = os.path.join(ROOT, ".claude", "hooks", "reset_read_log.sh")
+        shared = [os.path.join(real_state, n) for n in (
+            "read_log.txt", "budget_rule_shown", "banned_words_checked", "analysis_block.md",
+            "improvement_plan.md", "fastmode_trades_seen", "fastmode_e37_seen", "fastmode_ledger_seen",
+            "worklog_ok", "fastmode_record_pending", "comprehension_check.md", "flow_declaration_posted",
+            "goal_block.md")]
+        saved = {p: (open(p, "rb").read() if os.path.exists(p) else None) for p in shared}
+        real_put(da, body17)
+        real_put(db, body17)
+        out18 = ""
+        try:
+            r = subprocess.run(["bash", reset_sh],
+                               input=json.dumps({"session_id": sa, "transcript_path": tr17,
+                                                 "hook_event_name": "SessionStart"}),
+                               capture_output=True, text=True)
+            out18 = r.stdout
+        finally:
+            restore_ok = True
+            for p, b in saved.items():
+                try:
+                    if b is None:
+                        if os.path.exists(p):
+                            os.remove(p)
+                    else:
+                        with open(p, "wb") as f:
+                            f.write(b)
+                except Exception:
+                    restore_ok = False
+            for p, b in saved.items():
+                cur = open(p, "rb").read() if os.path.exists(p) else None
+                if cur != b:
+                    restore_ok = False
+        a_gone = (not os.path.exists(os.path.join(da, "session_todo_posted"))
+                  and not os.path.exists(os.path.join(da, "session_todo_shown")))
+        b_kept = (os.path.exists(os.path.join(db, "session_todo_posted"))
+                  and os.path.exists(os.path.join(db, "session_todo_shown")))
+        good = a_gone and b_kept and os.path.join(da, "session_todo.md") in out18 and restore_ok
+        print(f"  {'✅' if good else '❌'} N18 実経路＝SessionStart は自分（A）の印と表示の記録だけ消し、B は残す。置き場のパスを画面に出す。共有のファイル13本は元どおり"
+              + ("" if good else f"   ← a_gone={a_gone} b_kept={b_kept} path_shown={os.path.join(da, 'session_todo.md') in out18} restore_ok={restore_ok}"))
+        if not restore_ok:
+            print("  🔴 N18＝共有のファイルを元に戻せなかった。.claude/state を git diff で確かめて、まこさんに報告する", file=sys.stderr)
+        if not good:
+            ng += 1
+    finally:
+        shutil.rmtree(da, ignore_errors=True)
+        shutil.rmtree(db, ignore_errors=True)
+
     shutil.rmtree(tmp, ignore_errors=True)
-    TODO, MARK, STATE, SHOWN = keep
-    total = len(cases) + 3 + len(n_cases) + 1 + 1 + 3  # 末尾の +1 ＝ N9（2026-08-27）／+3 ＝ N10・N11・N12（2026-09-05）
+    STATE, SESSIONS = keep
+    # 末尾の +1 ＝ N9（2026-08-27）／+3 ＝ N10・N11・N12（2026-09-05）／+4 ＝ N13〜N16／+2 ＝ N17・N18（2026-09-06）
+    total = len(cases) + 3 + len(n_cases) + 1 + 1 + 3 + 4 + 2
     print(f"\n番人: {total - ng}/{total} pass")
     sys.exit(1 if ng else 0)
 
@@ -640,5 +895,5 @@ if __name__ == "__main__":
     if "--selftest" in sys.argv:
         selftest()
     if "--check" in sys.argv:
-        sys.exit(cli_check())
+        sys.exit(cli_check(sys.argv[1:]))
     hook_main()

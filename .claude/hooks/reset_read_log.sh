@@ -13,8 +13,44 @@ rm -f "$STATE_DIR/improvement_plan.md" # 改善案生成(STEP1〜5)を新セッ�
 rm -f "$STATE_DIR/fastmode_trades_seen" "$STATE_DIR/fastmode_e37_seen" "$STATE_DIR/fastmode_ledger_seen" "$STATE_DIR/worklog_ok" "$STATE_DIR/fastmode_record_pending"  # fast-mode ガード(改善前データ必読[trades/e37/ledger ARC]/引き継ぎ記録/分析後記録)のマーカーを新セッションでリセット（2026-07-16）
 rm -f "$STATE_DIR/comprehension_check.md"   # 理解確認テストの回答を新セッションでリセット＝毎セッション再回答を強制（require_comprehension_check.sh・2026-07-16 まこさん指示）
 rm -f "$STATE_DIR/flow_declaration_posted"  # フロー宣言の「チャットに貼った」確認マーカーを新セッションでリセット＝新しいセッションでも実行前に必ずまこさんの目に入る（enforce_flow_declaration.sh・2026-07-26 まこさん指示）
-rm -f "$STATE_DIR/session_todo_posted"      # ToDo の「チャットに貼った」確認マーカーを新セッションでリセット＝前のセッションの ToDo を持ち越したまま作業できない（enforce_todo_declaration.sh・2026-08-16 まこさん承認「件２はOK」）
-rm -f "$STATE_DIR/session_todo_shown"       # ToDo の「画面に表示した」記録も新セッションでリセット＝前の日の表示を持ち越して、印だけ作り直してすり抜ける道を塞ぐ（enforce_todo_declaration.py・2026-08-16 まこさん指示「todoフローナシで進めることは禁止にする」）
+# ★2026-09-06（まこさん承認・iter="todo-gate-per-session-20260906"）＝ToDo ゲートの状態ファイル3つは、
+#   セッションごとの置き場（$STATE_DIR/sessions/<セッションの id>/）に在る（enforce_todo_declaration.py の paths_of）。
+#   消すのは「自分のセッション」の印（session_todo_posted）と表示の記録（session_todo_shown）だけ。
+#   直す前＝固定の置き場（$STATE_DIR/session_todo_posted・session_todo_shown）を消していた
+#     ＝新しいセッションを開くと、動いている別のセッションの印が消え、そのセッションが次の操作で止まった
+#     （85回目・並走・worklog 20260904 §37（3）・§39）。
+#   id は stdin の json（session_id、無ければ transcript_path のファイル名）から読む＝hook 本体と同じ順。
+#   （元の狙いは変えない＝前のセッションの ToDo を持ち越したまま作業できない・2026-08-16 まこさん承認「件２はOK」／
+#     印だけ作り直してすり抜ける道を塞ぐ・2026-08-16 まこさん指示「todoフローナシで進めることは禁止にする」）
+INPUT=$(cat 2>/dev/null)
+SID=$(python3 - "$INPUT" <<'PYEOF'
+import json, os, re, sys
+raw = sys.argv[1] if len(sys.argv) > 1 else ""
+try:
+    d = json.loads(raw or "{}")
+except Exception:
+    d = {}
+if not isinstance(d, dict):
+    d = {}
+sid = d.get("session_id")
+if not (isinstance(sid, str) and sid.strip()):
+    tp = d.get("transcript_path")
+    base = os.path.basename(tp.strip()) if isinstance(tp, str) and tp.strip() else ""
+    sid = base[:-6] if base.endswith(".jsonl") else base
+sid = re.sub(r"[^A-Za-z0-9._-]", "_", (sid or "").strip()).lstrip(".")
+if not sid or set(sid) <= set("._"):
+    sid = ""
+print(sid)
+PYEOF
+)
+if [ -n "$SID" ]; then
+  SESS_DIR="$STATE_DIR/sessions/$SID"
+  mkdir -p "$SESS_DIR"
+  rm -f "$SESS_DIR/session_todo_posted" "$SESS_DIR/session_todo_shown"
+  echo "=== [ToDo ゲート] このセッションの ToDo の置き場＝$SESS_DIR/session_todo.md（印と表示の記録は消した・ToDo を書いて貼って印を作るまで Bash/Edit/Write は止まる）==="
+else
+  echo "⚠️ [ToDo ゲート] セッションの id が読めない（stdin の json に session_id も transcript_path も無い）＝ToDo ゲートは最初の操作で止まる（fail-closed）。まこさんに報告する。"
+fi
 # 目標逆算ゲート（ゲート2）リセット: 前セッションの逆算ブロックは引き継がないが、
 # 引き継ぎ前提（本筋・やってはいけないこと）は残す。必須見出しの語は入れないので
 # ゲートは維持され、新セッションは前提を見てから自分で目標逆算を Write し直す（2026-06-12 まこさん指示）。

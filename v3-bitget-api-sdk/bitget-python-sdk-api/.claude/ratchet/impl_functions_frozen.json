@@ -1,5 +1,16 @@
 {
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
- "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md"
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ ".claude/hooks/enforce_todo_declaration.py": [
+  "<モジュール直下>",
+  "session_id_of",
+  "paths_of",
+  "read_shown_body",
+  "check",
+  "fail",
+  "cli_check",
+  "hook_main",
+  "selftest"
+ ]
 }
