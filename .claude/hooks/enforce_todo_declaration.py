@@ -199,33 +199,41 @@ def worklog_sections():
     return secs, os.path.basename(p)
 
 
-def check(transcript=None):
-    """問題があれば理由の文字列を返す。無ければ None。"""
-    if not os.path.exists(TODO):
-        return f"ToDo のファイルが無い（{TODO}）"
+def body_problems(text):
+    """ToDo の「中身」の検査。見つけた不足を全部 返す（リスト）。チャットに貼ったかは見ない。
 
-    text = read(TODO)
+    ★2026-09-05（まこさん承認・逐語「進めて」）＝1件目で止める形をやめた。
+      直す前は最初の1件で return していたので、CC が1件 直すたびに止まり、そのたびに
+      ToDo の全文を貼り直していた（2026-09-05 に同じ日で4回・まこさん指摘
+      「todo作成でトークン代を無駄にされるのは勘弁してほしいので、1回で書けるように修正すること」）。
+      チャットの文章の検査には 2026-08-20 に同じ直しが入っている（pdca_flow §1 の逐語
+      「違反を全部 一度に出す形にしました」）。この hook だけ残っていた。
+    ★判定は1つも消していない・緩めていない。変えたのは「出し方」だけ。
+    ★この関数は `--check`（書く前に自分で確かめる口）からも呼ぶ＝判定を2か所に書き写さない。
+    """
+    probs = []
 
     for h in HEADS:
         if h not in text:
-            return f"「{h}」の行が無い（4行の型＝{' '.join(HEADS)}）"
+            probs.append(f"「{h}」の行が無い（4行の型＝{' '.join(HEADS)}）")
 
     rows = todo_rows(text)
     if not rows:
-        return "ToDo の表に行が1つも無い（| 番号 | やること | 状態 | 記録 | の形で書く）"
+        probs.append("ToDo の表に行が1つも無い（| 番号 | やること | 状態 | 記録 | の形で書く）")
+        return probs                                   # 行が無いと、これ以降は判定できない
 
     for r in rows:
         if r["state"] not in (DONE, DOING, YET):
-            return (f"{r['no']}番の状態が「{r['state']}」＝決めた3つの言葉のどれでもない。"
-                    f"使うのは {DONE} ／ {DOING} ／ {YET} の3つだけ（言い方を散らさない）")
+            probs.append(f"{r['no']}番の状態が「{r['state']}」＝決めた3つの言葉のどれでもない。"
+                         f"使うのは {DONE} ／ {DOING} ／ {YET} の3つだけ（言い方を散らさない）")
 
     doing = [r for r in rows if r["state"] == DOING]
     if len(doing) > 1:
-        return (f"「{DOING}」が {len(doing)} 件ある（{'・'.join(r['no'] + '番' for r in doing)}）。"
-                f"同時に1件だけにする（恒久の決まり §3-3）")
+        probs.append(f"「{DOING}」が {len(doing)} 件ある（{'・'.join(r['no'] + '番' for r in doing)}）。"
+                     f"同時に1件だけにする（恒久の決まり §3-3）")
     if not doing and any(r["state"] == YET for r in rows):
-        return (f"「{DOING}」が1件も無いのに、まだ終わっていない ToDo が残っている。"
-                f"いまやっている1件に {DOING} を付ける")
+        probs.append(f"「{DOING}」が1件も無いのに、まだ終わっていない ToDo が残っている。"
+                     f"いまやっている1件に {DOING} を付ける")
 
     secs, wl = worklog_sections()
     for r in rows:
@@ -233,13 +241,29 @@ def check(transcript=None):
             continue
         m = re.search(r"§\s*([0-9]+(?:\.[0-9]+)?)", r["rec"])
         if not m:
-            return (f"{r['no']}番が {DONE} なのに、「記録」の欄に worklog の節の番号（§NN）が無い"
-                    f"（いまの中身＝「{r['rec']}」）。終わったことは worklog に書いてから {DONE} にする")
-        if wl is None:
-            return "worklog のファイルが1本も無い（.claude/state/session_worklog_*.md）"
-        if m.group(1) not in secs:
-            return (f"{r['no']}番が指す §{m.group(1)} が {wl} の見出しに無い。"
-                    f"worklog にその節を書いてから {DONE} にする")
+            probs.append(f"{r['no']}番が {DONE} なのに、「記録」の欄に worklog の節の番号（§NN）が無い"
+                         f"（いまの中身＝「{r['rec']}」）。終わったことは worklog に書いてから {DONE} にする")
+        elif wl is None:
+            probs.append("worklog のファイルが1本も無い（.claude/state/session_worklog_*.md）")
+        elif m.group(1) not in secs:
+            probs.append(f"{r['no']}番が指す §{m.group(1)} が {wl} の見出しに無い。"
+                         f"worklog にその節を書いてから {DONE} にする")
+    return probs
+
+
+def check(transcript=None):
+    """問題があれば理由の文字列を返す。無ければ None。"""
+    if not os.path.exists(TODO):
+        return f"ToDo のファイルが無い（{TODO}）"
+
+    text = read(TODO)
+
+    probs = body_problems(text)
+    if len(probs) == 1:
+        return probs[0]
+    if probs:
+        return (f"中身の不足が {len(probs)} 件あります（全部 直してから貼り直してください）\n"
+                + "\n".join(f"   {i}. {p}" for i, p in enumerate(probs, 1)))
 
     # ★前のセッションの ToDo を持ち越さない仕組みは、この中では見ません。
     #   reset_read_log.sh（SessionStart）が session_todo_posted を消します＝印が消えるので、
@@ -328,6 +352,33 @@ def fail(reason):
     sys.exit(2)
 
 
+# 検査だけの実行＝止めない旗の一覧（hook 本体と番人 N12 が同じものを見る＝書き写さない）
+# ★--check は 2026-09-05 に足した。足す前は、書く前に確かめる口を打とうとすると
+#   この hook 自身に止められて、口が使えなかった（実測・その場で見つけた）。
+PASS_FLAGS = r"--selftest|py_compile|--help|--verify|--check"
+
+
+def cli_check():
+    """ToDo を書く前に、CC が自分で中身を確かめる口（2026-09-05・まこさん承認「進めて」）。
+
+    使い方＝python3 .claude/hooks/enforce_todo_declaration.py --check
+    ★チャットに貼ったかは見ない。貼る前に使う口なので、そこは必ず落ちるため。
+      貼ったかの検査（表示の記録・印）は hook 本体では今までどおり効く＝守りは減らない。
+    ★判定は body_problems（hook 本体と同じ関数）を呼ぶ＝2か所に書き写さない。
+    """
+    if not os.path.exists(TODO):
+        print(f"❌ ToDo のファイルが無い（{TODO}）")
+        return 1
+    probs = body_problems(read(TODO))
+    if probs:
+        print(f"❌ 中身の不足 {len(probs)} 件（貼る前に全部 直す）")
+        for i, p in enumerate(probs, 1):
+            print(f"   {i}. {p}")
+        return 1
+    print("✅ 中身は通ります。このあと チャットに全文を貼り、印を作れば hook を通ります。")
+    return 0
+
+
 def hook_main():
     raw = sys.stdin.read()
     try:
@@ -358,7 +409,7 @@ def hook_main():
         x = re.sub(r"'[^']*'", " ", x)
         if not re.search(r"python[0-9.]*[ \t]", x):
             sys.exit(0)                                # 読む・調べる系は止めない
-        if re.search(r"--selftest|py_compile|--help|--verify", x):
+        if re.search(PASS_FLAGS, x):
             sys.exit(0)                                # 検査だけの実行は通す
     else:
         sys.exit(0)
@@ -544,6 +595,32 @@ def selftest():
     if not good:
         ng += 1
 
+    # N10 不足が2件あるとき、2件とも出る（2026-09-05・1件ずつ止まる形をやめた直し）
+    two = (head + f"| 1 | a | 完了 | §33 |\n| 2 | b | {DONE} | — |\n| 3 | c | {DOING} | — |\n")
+    put(two)
+    got = check(empty_tr)
+    good = (got is not None and "2 件あります" in got
+            and "3つの言葉のどれでもない" in got and "§NN" in got)
+    print(f"  {'✅' if good else '❌'} N10 不足が2件あるとき、2件とも一度に出る")
+    if not good:
+        ng += 1
+
+    # N11 --check（書く前の口）は中身だけを見る＝貼っていなくても中身が正しければ空
+    put(ok_body, mark=False, shown=False)
+    probs = body_problems(read(TODO))
+    stopped = check(empty_tr)
+    good = (probs == [] and stopped is not None)
+    print(f"  {'✅' if good else '❌'} N11 --check は中身だけを見る（貼ったかの検査は hook 本体に残る）")
+    if not good:
+        ng += 1
+
+    # N12 --check のコマンド自身は、この hook に止められない（止まると口が使えない）
+    good = bool(re.search(PASS_FLAGS,
+                          "python3 .claude/hooks/enforce_todo_declaration.py --check"))
+    print(f"  {'✅' if good else '❌'} N12 --check のコマンドは ToDo ゲートに止められない")
+    if not good:
+        ng += 1
+
     # ToDo ファイルが無いときも止まる
     os.remove(TODO)
     got = check(empty_tr)
@@ -554,7 +631,7 @@ def selftest():
 
     shutil.rmtree(tmp, ignore_errors=True)
     TODO, MARK, STATE, SHOWN = keep
-    total = len(cases) + 3 + len(n_cases) + 1 + 1     # 末尾の +1 ＝ N9（2026-08-27）
+    total = len(cases) + 3 + len(n_cases) + 1 + 1 + 3  # 末尾の +1 ＝ N9（2026-08-27）／+3 ＝ N10・N11・N12（2026-09-05）
     print(f"\n番人: {total - ng}/{total} pass")
     sys.exit(1 if ng else 0)
 
@@ -562,4 +639,6 @@ def selftest():
 if __name__ == "__main__":
     if "--selftest" in sys.argv:
         selftest()
+    if "--check" in sys.argv:
+        sys.exit(cli_check())
     hook_main()
