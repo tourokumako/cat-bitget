@@ -598,16 +598,21 @@ SDK = ("/Users/tachiharamasako/Documents/GitHub/cat-bitget/"
 md = open(sys.argv[1], encoding='utf-8').read()
 ng = []
 obj = None
-for b in re.findall(FENCE + r'json\s*(\{.*?\})\s*' + FENCE, md, re.S):
-    try:
-        d = json.loads(b)
-    except Exception:
-        continue
-    if 'impl_file' in d:
-        obj = d
-        break
+# ★2026-09-05（監査 cp20 の C2・Critical・まこさん承認 iter="freeze-fail-closed-cp20-20260905"）
+#   ＝囲みの選択を、照合の道具の extract_block（目印の行の後ろの囲み）に寄せた。
+#   直す前＝最初の impl_file の囲みを契約と見た（承認スクリプトは最後＝選択規則が3通り）。
+#   ★道具を読み込めないときは止める（黙って通さない・設計書 §4 の13）。
+_why = ''
+try:
+    sys.path.insert(0, SDK + '/scripts/priority_rebuild')
+    from verify_design_contract import extract_block
+    obj, _why = extract_block(md, 'DESIGN_CONTRACT')
+except Exception as _e:
+    ng.append('  ・照合の道具（verify_design_contract.py）を読み込めません: ' + str(_e))
+    obj = None
+    _why = '道具を読み込めない'
 if obj is None:
-    ng.append('  ・DESIGN_CONTRACT（impl_file を持つ json）が読めません')
+    ng.append('  ・DESIGN_CONTRACT（目印の行の後ろの json）が読めません（' + str(_why) + '）')
 else:
     impl = obj.get('impl_functions')
     # ★2026-09-03（監査 cp15 の C-4）＝設計の段階では正確に書けないので、空でも通す。

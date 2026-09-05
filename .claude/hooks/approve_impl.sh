@@ -55,22 +55,23 @@ python3 - "$LIST" "$SPEC_OUT" "$FROZEN_OUT" <<'PY'
 import json, re, sys, pathlib
 sys.path.insert(0, "/Users/tachiharamasako/Documents/GitHub/cat-bitget/"
                    "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild")
-from verify_design_contract import resolve_spec_list      # noqa: E402
+from verify_design_contract import resolve_spec_list, contract_for_freeze      # noqa: E402
 md = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
 out = pathlib.Path(sys.argv[2])
 frozen_out = pathlib.Path(sys.argv[3])
-blocks = re.findall(r"```json\s*(\{.*?\})\s*```", md, re.S)
-lists = {}
-obj = {}
-for b in blocks:
-    try:
-        d = json.loads(b)
-    except Exception:
-        continue
-    if isinstance(d.get("spec_lists"), dict):
-        lists.update(d["spec_lists"])
-    if "impl_file" in d:
-        obj = d
+# ★2026-09-05（監査 cp20 の C1・C2・Critical・まこさん承認 iter="freeze-fail-closed-cp20-20260905"）
+#   ＝囲みを自前の regex で選ぶのをやめ、照合の道具と同じ関数（contract_for_freeze → extract_block）で
+#     契約を1つ取る＝囲みの選択規則を1つにする（C2）。
+#   直す前＝「最後の impl_file の囲み」を取り、impl_functions が無ければ黙って {} を凍結した
+#     （2026-09-04 に3回・空が凍結されたのは2本）。spec_lists も「どの囲みでも在れば集める」だった。
+#   直した後＝契約が読めない／impl_functions が無い／空で理由なし、のどれかなら
+#     凍結を書く前に承認を中止する（C1・fail-closed）。理由の在る空（cp19 の形）は通す。
+obj, why = contract_for_freeze(md)
+if obj is None:
+    print("❌ 承認を中止します（監査 cp20 の C1＝空の凍結を書かない）:", file=sys.stderr)
+    print(f"   ・{why}", file=sys.stderr)
+    sys.exit(3)
+lists = dict(obj.get("spec_lists") or {})
 # ★2026-09-03（監査 cp14 の B-2・Critical）＝{"from","kind"} を、ここで配列へ展開してから書く。
 #   直す前＝辞書をそのまま写していた。照合D は「2件以上の配列」を求めるので、必ず落ちた。
 #   ＝承認が書く形と、照合が求める形が食い違っていた（どちらの道でも照合D が成立しない）。
@@ -105,6 +106,8 @@ print(f"   📋 spec_lists: {len(lists)} 件を書き出しました → {out.na
 # ★2026-09-03（監査 cp14 の B-1・Critical）＝impl_functions を凍結保存する。
 #   監査の逐語＝「承認の瞬間に impl_functions を一覧のファイルと同じ場所へ凍結保存し、
 #   照合A・B は凍結された版と比べる。承認後に impl_functions が変わったら止める」。
+# ★2026-09-05（監査 cp20 の C1）＝ここに来る obj は contract_for_freeze を通っている
+#   ＝impl_functions は辞書で、空なら no_impl_functions_reason が在る。空で理由なしは上で止めた。
 _fz = obj.get("impl_functions") or {}
 frozen_out.parent.mkdir(parents=True, exist_ok=True)
 frozen_out.write_text(json.dumps(

@@ -1,0 +1,129 @@
+3c3
+< TARGET: scripts/priority_rebuild/verify_design_contract.py, .claude/hooks/approve_impl.sh, .claude/hooks/require_acceptance_before_impl.sh, .claude/breaks/b23_empty_freeze_stops.sh, .claude/breaks/b24_both_empty_ng.sh, .claude/breaks/b25_block_choice_unified.sh
+---
+> TARGET: scripts/priority_rebuild/verify_design_contract.py, .claude/hooks/approve_impl.sh, .claude/hooks/require_acceptance_before_impl.sh, .claude/breaks/b23_empty_freeze_stops.sh, .claude/breaks/b24_both_empty_ng.sh, .claude/breaks/b25_block_choice_unified.sh, .claude/breaks/b26_narrowed_list_enforced.sh
+5c5
+< NEW_FILE: .claude/breaks/b23_empty_freeze_stops.sh, .claude/breaks/b24_both_empty_ng.sh, .claude/breaks/b25_block_choice_unified.sh
+---
+> NEW_FILE: .claude/breaks/b23_empty_freeze_stops.sh, .claude/breaks/b24_both_empty_ng.sh, .claude/breaks/b25_block_choice_unified.sh, .claude/breaks/b26_narrowed_list_enforced.sh
+29a30,33
+> | 10 | 「【壊すプログラムを1本 足してください】b26＝impl_functions に載せた「触る関数4件」のうち1件を抜いたとき、照合が実際に NG を出すこと。終了コードと標準出力で示すこと。」「★4件を増やせという話ではありません。4件が本当に照合されているかの確認です。」（1回目の承認のあと・2026-09-05） | §5 の10・§6 の8・§9 の O |
+> | 11 | 「【この書き方の変更を記録すること】next_step §6 に1行 足してください。「impl_functions の意味を、実物の全関数から触る関数へ変えた（2026-09-05・理由＝照合B の定義 impl_functions ⊆ 触った関数）」。」 | next_step §6 の132番（記録・この設計書の外） |
+> 
+> **★1回目の承認のあとに、この設計書を書き直した理由（2026-09-05）**＝実装に入ろうとしたら、書き込みの門が「impl_functions がありません」で止めた。門は「最初の impl_file の囲み」を契約と見る（C2 で直す当の規則）ので、SPEC の節（impl_file だけの json）が契約の節より前に在ると、SPEC を契約として読む。★これは §9 の M の不変条件が、門の側では「逆向き」に効くことの実測＝承認スクリプトは「最後」、門は「最初」を見るので、どちらの並びでも片方が壊れる。この版では契約の節（§10）を SPEC の節（§11）より前に置き、まこさんの追加（b26）を入れた。承認は取り直し（2回目）。
+162c166
+< | 7 | 承認と実装のあと `python3 scripts/priority_rebuild/verify_design_contract.py .claude/state/acceptance.md` | 照合A・B が PASS（凍結の impl_functions が §11 の4件と同じ・空でない）。★実装の差分が commit される前は、触っていない関数を照合B が「設計書に書いたのに実装していない」と言う作りなので、貼るのは出力そのもの | 私（出力を貼る） |
+---
+> | 7 | 承認と実装のあと `python3 scripts/priority_rebuild/verify_design_contract.py .claude/state/acceptance.md` | 照合A・B が PASS（凍結の impl_functions が §10 の4件と同じ・空でない）。★実装の差分が commit される前は、触っていない関数を照合B が「設計書に書いたのに実装していない」と言う作りなので、貼るのは出力そのもの | 私（出力を貼る） |
+164a169
+> | 10 | `bash .claude/breaks/b26_narrowed_list_enforced.sh; echo rc=$?`＝いまの設計書の写しを一時の場所に作り、契約の impl_functions から1件（`contract_for_freeze`）を抜き、同じ1件を抜いた凍結（`<名前>.frozen.json`）を並べて照合 → 出力に「設計書に書いていない関数を触った → contract_for_freeze」（照合A）が在れば 1。★まこさんの追加（決定10）＝「触る関数4件」に絞った見張りが効いているかの確認 | 1 | 承認スクリプト（run_breaks.py）。私も走らせて出力を貼る |
+166c171
+< **★壊すプログラムは承認の後にしか書けない**（書き込みの門が `.claude/breaks/*.sh` を止める＝G-2）。だから承認は2回 要る＝①この設計書の承認（壊すプログラム3本は「MISSING」と記録される）②実装と壊すプログラムを書いたあとの再承認（凍結に3本が入り、走って終了コードが記録される）。★cp19 と同じ手順。
+---
+> **★壊すプログラムは承認の後にしか書けない**（書き込みの門が `.claude/breaks/*.sh` を止める＝G-2）。**承認は3回 要る**＝①1回目（済・2026-09-05）②この書き直した版の承認（壊すプログラム4本は「MISSING」と記録される）③実装と壊すプログラムを書いたあとの再承認（凍結に4本が入り、走って終了コードが記録される）。★cp19 と同じ手順に、書き直しの1回が足された。**★②の承認スクリプトは まだ直す前の版**（C1・C2 が入るのは②のあと）＝「最後の impl_file の囲み」＝§11 の SPEC を契約と読み、**空を凍結する**（監査 cp20 の Q1 と同じ事故がもう1回 起きる）。その出力（「0 件を凍結しました」）をそのまま記録に残す。③では直した承認スクリプトが §10 の契約を取り、4件を凍結する。
+175c180
+< **★「壊すプログラム」＝承認スクリプトが走らせ、終了コードを控えに残す（0 以外のときだけ ✅ を書ける）。私は ✅ を書かない＝判定は監査（恒久の決まり64番）。**
+---
+> **★「壊すプログラム」＝承認スクリプトが走らせ、終了コードを控えに残す（0 以外のときだけ「済」の印を書ける）。私は「済」の印を書かない＝判定は監査（恒久の決まり64番）。**
+184c189
+< | 6 | 承認と実装のあと、単体の照合で凍結の impl_functions が §11 の4件と同じ（空でない） | 実経路 | §5 の8（承認の前は NG） | b06_tool_changed.sh | — | **未着手** |
+---
+> | 6 | 承認と実装のあと、単体の照合で凍結の impl_functions が §10 の4件と同じ（空でない） | 実経路 | §5 の8（承認の前は NG） | b06_tool_changed.sh | — | **未着手** |
+185a191
+> | 8 | b26＝impl_functions の「触る関数4件」から1件を抜くと、照合A が「設計書に書いていない関数を触った」で NG（まこさんの決定10） | 実経路 | §5 の10（写しと凍結の両方から `contract_for_freeze` を抜く） | b26_narrowed_list_enforced.sh | — | **未着手** |
+229a236,237
+> | O | **b26 の結果も commit の前後で変わる**＝差分がゼロだと照合A は走らず（§4 の11）、抜いた1件はファイルに在るので照合B も落とさない＝b26 は「実装の差分が在るとき」だけ 1 を返す | 照合A が git の差分で触った関数を集める作り（`touched_functions`） | 3回目の承認（commit の前）で走らせて終了コードを記録する。commit のあとに走らせた結果も貼る（0 になるはず＝その旨を書く） |
+> | P | **1回目の承認で、書き込みの門が SPEC の囲みを契約と読んで実装を止めた**＝この版で契約の節を前にしたが、2回目の承認（直す前の承認スクリプト）は「最後の impl_file の囲み」＝SPEC を取って空を凍結する | 承認スクリプトを直す（C1・C2）には、その前に承認が要る＝直す前の版で1回 通るしかない | 3回目の承認で直した版が4件を凍結する。2回目の「0 件を凍結しました」は記録に残す（§5 の末尾） |
+235c243
+< | D | **照合D が実経路で1度も走っていない**（監査 Q5 の1） | この設計書も `spec_lists` は空（理由は §11 の `no_spec_lists_reason`）＝照合D はこの回も走らない |
+---
+> | D | **照合D が実経路で1度も走っていない**（監査 Q5 の1） | この設計書も `spec_lists` は空（理由は §10 の `no_spec_lists_reason`）＝照合D はこの回も走らない |
+237c245
+< | F | **照合A・B の期待値が、実装から作られる**（監査 Q5 の3） | この回の `impl_functions` は「触る関数4件」を手で列挙したもの＝実装から作っていない（§11 の `generated_from`）。承認の画面には 📐（設計書の側が出どころ）が出るはず＝その出力を貼る |
+---
+> | F | **照合A・B の期待値が、実装から作られる**（監査 Q5 の3） | この回の `impl_functions` は「触る関数4件」を手で列挙したもの＝実装から作っていない（§10 の `generated_from`）。承認の画面には 📐（設計書の側が出どころ）が出るはず＝その出力を貼る |
+243c251,289
+< ## 10｜SPEC（★この節は `verify_design_contract.py --write` が照合の道具そのものから書き出したものを貼り、今回 足す1件（`contract_for_freeze`）と旗（`--freeze-contract`）だけを手で足す。★この節を契約の節（§11）より前に置く＝いまの承認スクリプトが直るまでの回り道（131番の暫定の決まり）。★見出しに契約の目印の語は書かない）
+---
+> ## 10｜DESIGN_CONTRACT
+> 
+> **★`impl_functions` は「この回で触る関数」だけを列挙したものです（手書き・4件）。**理由＝照合A（触った関数 ⊆ impl_functions）と照合B（impl_functions ⊆ 触った関数）の定義に合わせるため。`python3 .claude/tools/gen_impl_functions.py scripts/priority_rebuild/verify_design_contract.py` の出力（32件・2026-09-05 に走らせた）のうち触る3件＋新設1件。★新設の `contract_for_freeze` は道具の出力に無いので、手で足しました。
+> 
+> ```json
+> {
+>   "impl_file": "scripts/priority_rebuild/verify_design_contract.py",
+>   "impl_functions": {
+>     "scripts/priority_rebuild/verify_design_contract.py": [
+>       "<モジュール直下>",
+>       "check_impl_functions",
+>       "contract_for_freeze",
+>       "self_test"
+>     ]
+>   },
+>   "self_check_calls": [
+>     "contract_for_freeze",
+>     "no_impl_functions_reason",
+>     "凍結された impl_functions が空です"
+>   ],
+>   "must_use": {
+>     "contract_for_freeze": ["extract_block", "CONTRACT_MARK"],
+>     "check_impl_functions": ["frozen_impl_functions"],
+>     "self_test": ["contract_for_freeze", "check_impl_functions"]
+>   },
+>   "spec_lists": {},
+>   "no_spec_lists_reason": "この設計書は承認の仕組みと照合の道具を直すもの。照合D の相手になる正本の配列（機械が読む一覧）は存在しない。",
+>   "generated_from": {
+>     "impl_functions": "手書き＝この回で触る関数4件（<モジュール直下>＝SELF_TESTS と __main__ の旗／check_impl_functions＝C3／contract_for_freeze＝新設／self_test＝N13〜N17）。gen_impl_functions.py の出力32件（2026-09-05）のうち触る3件＋新設1件。実物の全関数の写しではない",
+>     "must_use": "手書き＝§3.2・§3.3 の設計から（contract_for_freeze は extract_block と CONTRACT_MARK を使う／check_impl_functions は frozen_impl_functions を使う／self_test は新しい2つを呼ぶ）",
+>     "self_check_calls": "手書き＝新設の関数名・理由の鍵の名前・C3 の文（3つとも実装の後に文字として在るはずのもの）",
+>     "spec_lists": "無し（理由は no_spec_lists_reason）"
+>   }
+> }
+> ```
+> 
+> ---
+> 
+> ## 11｜SPEC（★この節は `verify_design_contract.py --write` が照合の道具そのものから書き出したものを貼り、今回 足す1件（`contract_for_freeze`）と旗（`--freeze-contract`）だけを手で足す。★この節は契約の節（§10）の後ろに置く＝書き込みの門が「最初の impl_file の囲み」を契約と見るため（C2 で直す当の規則・§0 の末尾）。★見出しに契約の目印の語は書かない）
+362,399d407
+< ## 11｜DESIGN_CONTRACT
+< 
+< **★`impl_functions` は「この回で触る関数」だけを列挙したものです（手書き・4件）。**理由＝照合A（触った関数 ⊆ impl_functions）と照合B（impl_functions ⊆ 触った関数）の定義に合わせるため。`python3 .claude/tools/gen_impl_functions.py scripts/priority_rebuild/verify_design_contract.py` の出力（32件・2026-09-05 に走らせた）のうち触る3件＋新設1件。★新設の `contract_for_freeze` は道具の出力に無いので、手で足しました。
+< 
+< ```json
+< {
+<   "impl_file": "scripts/priority_rebuild/verify_design_contract.py",
+<   "impl_functions": {
+<     "scripts/priority_rebuild/verify_design_contract.py": [
+<       "<モジュール直下>",
+<       "check_impl_functions",
+<       "contract_for_freeze",
+<       "self_test"
+<     ]
+<   },
+<   "self_check_calls": [
+<     "contract_for_freeze",
+<     "no_impl_functions_reason",
+<     "凍結された impl_functions が空です"
+<   ],
+<   "must_use": {
+<     "contract_for_freeze": ["extract_block", "CONTRACT_MARK"],
+<     "check_impl_functions": ["frozen_impl_functions"],
+<     "self_test": ["contract_for_freeze", "check_impl_functions"]
+<   },
+<   "spec_lists": {},
+<   "no_spec_lists_reason": "この設計書は承認の仕組みと照合の道具を直すもの。照合D の相手になる正本の配列（機械が読む一覧）は存在しない。",
+<   "generated_from": {
+<     "impl_functions": "手書き＝この回で触る関数4件（<モジュール直下>＝SELF_TESTS と __main__ の旗／check_impl_functions＝C3／contract_for_freeze＝新設／self_test＝N13〜N17）。gen_impl_functions.py の出力32件（2026-09-05）のうち触る3件＋新設1件。実物の全関数の写しではない",
+<     "must_use": "手書き＝§3.2・§3.3 の設計から（contract_for_freeze は extract_block と CONTRACT_MARK を使う／check_impl_functions は frozen_impl_functions を使う／self_test は新しい2つを呼ぶ）",
+<     "self_check_calls": "手書き＝新設の関数名・理由の鍵の名前・C3 の文（3つとも実装の後に文字として在るはずのもの）",
+<     "spec_lists": "無し（理由は no_spec_lists_reason）"
+<   }
+< }
+< ```
+< 
+< ---
+< 
+402c410
+< **承認の1点です**（`approve_design.sh` と `approve_impl.sh`）。承認のあと、§3 のとおり実装し、壊すプログラム3本を書き、§5 の1〜8 の出力を貼って、**2回目の承認**をお願いします（壊すプログラムの凍結と終了コードの記録のため）。そのあと §5 の9（`--selftest` 1回）を走らせ、凍結された impl_functions の件数を報告します。
+---
+> **2回目の承認の1点です**（`approve_design.sh` と `approve_impl.sh`）。★この承認では、直す前の承認スクリプトが「0 件を凍結しました」と出すはずです（§5 の末尾・§9 の P）。それで構いません＝止めずに通してください。承認のあと、§3 のとおり実装し、壊すプログラム4本（b23〜b26）を書き、§5 の1〜8・10 の出力を貼って、**3回目の承認**をお願いします（壊すプログラムの凍結と終了コードの記録のため）。そのあと §5 の9（`--selftest` 1回）を走らせ、凍結された impl_functions の件数を報告します。

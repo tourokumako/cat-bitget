@@ -95,6 +95,12 @@ SELF_TESTS = [
     ("N11", "照合C＝正本に無い kind は、黙って全体に落ちずに落ちる（B-3）"),
     ("N12", "承認と同じ形＝{from,kind} を配列へ展開できる（B-2・resolve_spec_list）"),
     ("N5b", "照合D＝承認が書き出す形（展開済みの配列）で成立する（B-2）"),
+    # ★2026-09-05（監査 cp20 の C1〜C3・まこさん承認 iter="freeze-fail-closed-cp20-20260905"）
+    ("N13", "照合A・B＝凍結が空（理由なし）なら、比較の前に落ちる（C3）"),
+    ("N14", "照合A・B＝理由の在る空（cp19 の形）は、その文では落ちない（C3 の対）"),
+    ("N15", "凍結する契約＝契約の後ろに impl_file だけの囲みが在っても、契約の側を取る（C2）"),
+    ("N16", "凍結する契約＝impl_file だけの囲みが先に在っても、契約の側を取る（並び順に影響されない・C2）"),
+    ("N17", "凍結する契約＝impl_functions が空で理由が無ければ止まる側（C1）"),
 ]
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -239,6 +245,33 @@ def extract_contract(md_text: str):
     """設計書から DESIGN_CONTRACT を取り出す（従来の呼び出し口・戻りは dict か None）。"""
     obj, _reason = extract_block(md_text, CONTRACT_MARK)
     return obj
+
+
+def contract_for_freeze(md_text: str):
+    """承認の瞬間に凍結する契約を、設計書から1つ取る（監査 cp20 の C1・C2・
+    まこさん承認 2026-09-05 iter="freeze-fail-closed-cp20-20260905"）。
+
+    ★なぜ要るか＝承認スクリプトは「最後の impl_file の囲み」を自前の regex で取り、
+      impl_functions が無ければ黙って {} を凍結した（2026-09-04 に3回・空が凍結されたのは2本）。
+      書き込みの門は「最初の impl_file の囲み」を取っていた＝囲みの選択規則が3通り在った。
+    ★直した後＝承認・門・照合の3つが、extract_block（目印の行の後ろの囲み）で契約を選ぶ。
+
+    戻り: (契約の dict, None) ＝通す ／ (None, 理由の文) ＝止める（fail-closed）。
+      止めるのは3通り＝①契約が読めない ②impl_functions が辞書でない
+      ③impl_functions が空で no_impl_functions_reason が無い。
+      理由の在る空（cp19 の形）は通す＝凍結は {} のまま書かれ、照合の側（C3）が理由の有無で区別する。
+    ★限界（正直に）＝理由の中身は見ない。何か1文字でも書けば「正しい空」として通る（設計書 §9 の I）。
+    """
+    obj, reason = extract_block(md_text, CONTRACT_MARK)
+    if obj is None:
+        return None, f"DESIGN_CONTRACT（目印の行の後ろの json）が読めない（{reason}）"
+    fz = obj.get("impl_functions")
+    if not isinstance(fz, dict):
+        return None, "impl_functions が無い（辞書の形でない）"
+    if not fz and not obj.get("no_impl_functions_reason"):
+        return None, ("impl_functions が空なのに no_impl_functions_reason が無い"
+                      "（監査 cp20 の C1＝空を凍結しない）")
+    return obj, None
 
 
 def rhs_names_for_symbol(tree: ast.AST, symbol: str):
@@ -948,6 +981,15 @@ def check_impl_functions(contract: dict, md_path: str, frozen: dict | None = Non
         except FileNotFoundError as e:                       # noqa: BLE001
             ng.append(str(e))
             return ng
+    # ★2026-09-05（監査 cp20 の C3・Critical・まこさん承認 iter="freeze-fail-closed-cp20-20260905"）
+    #   ＝凍結が空なら、比較の前に止める。
+    #   直す前＝design も {} なら文字列が一致して通った＝1関数も照合していないのに「設計通り」。
+    #   理由の在る空（cp19 の形＝設計書に no_impl_functions_reason が在る）は通す。
+    if not frozen and not contract.get("no_impl_functions_reason"):
+        ng.append("凍結された impl_functions が空です（承認のときに空が凍結された疑い・監査 cp20 の C3）"
+                  "＝設計書に no_impl_functions_reason が無い限り、比較の前に止めます。"
+                  "\n    設計書の impl_functions を書いて、まこさんに承認を打ち直してもらってください。")
+        return ng
     _d = json.dumps(design, sort_keys=True, ensure_ascii=False)
     _f = json.dumps(frozen, sort_keys=True, ensure_ascii=False)
     if _d != _f:
@@ -1584,6 +1626,37 @@ def self_test() -> bool:
             SPEC_LISTS_PATH = _keep_sl2
             if nd in sys.path:
                 sys.path.remove(nd)
+
+        # ★2026-09-05（監査 cp20 の C1〜C3・まこさん承認 iter="freeze-fail-closed-cp20-20260905"）
+        # N13 凍結が空（理由なし）なら、比較の前に落ちる（C3）
+        _empty_msg = "凍結された impl_functions が空です"
+        ng13 = check_impl_functions({"impl_functions": {}}, md_n, frozen={})
+        results["N13"] = any(_empty_msg in x for x in ng13)
+        # N14 理由の在る空（cp19 の形）は、その文では落ちない
+        ng14 = check_impl_functions({"impl_functions": {},
+                                     "no_impl_functions_reason": "設計の段階では書けない"},
+                                    md_n, frozen={})
+        results["N14"] = not any(_empty_msg in x for x in ng14)
+        # N15 契約の後ろに impl_file だけの囲み（SPEC の形）が在っても、契約の側を取る（C2）
+        _dc = json.dumps({"impl_file": "a.py", "impl_functions": {"a.py": ["f", "g", "h"]}})
+        _sp = json.dumps({"impl_file": "a.py", "public_functions": {}})
+        _f3 = chr(96) * 3
+        t15 = ("## 契約\n\nDESIGN_CONTRACT\n\n" + _f3 + "json\n" + _dc + "\n" + _f3 + "\n\n"
+               "## 仕様\n\nSPEC\n\n" + _f3 + "json\n" + _sp + "\n" + _f3 + "\n")
+        o15, w15 = contract_for_freeze(t15)
+        results["N15"] = (w15 is None and o15 is not None
+                          and len(o15["impl_functions"]["a.py"]) == 3)
+        # N16 impl_file だけの囲みが先に在っても、契約の側を取る（並び順に影響されない）
+        t16 = ("## 仕様\n\nSPEC\n\n" + _f3 + "json\n" + _sp + "\n" + _f3 + "\n\n"
+               "## 契約\n\nDESIGN_CONTRACT\n\n" + _f3 + "json\n" + _dc + "\n" + _f3 + "\n")
+        o16, w16 = contract_for_freeze(t16)
+        results["N16"] = (w16 is None and o16 is not None
+                          and len(o16["impl_functions"]["a.py"]) == 3)
+        # N17 空で理由なしの契約は止まる側（C1）
+        t17 = ("DESIGN_CONTRACT\n\n" + _f3 + "json\n"
+               + json.dumps({"impl_file": "a.py", "impl_functions": {}}) + "\n" + _f3 + "\n")
+        o17, w17 = contract_for_freeze(t17)
+        results["N17"] = (o17 is None and w17 is not None and "no_impl_functions_reason" in w17)
     finally:
         shutil.rmtree(nd, ignore_errors=True)
 
@@ -1638,6 +1711,19 @@ if __name__ == "__main__":
         _ok2, _msg = check_approval(_md)
         print(_msg)
         sys.exit(0 if _ok2 else 1)
+
+    if "--freeze-contract" in sys.argv:
+        # ★2026-09-05（監査 cp20 の C1・まこさん承認 iter="freeze-fail-closed-cp20-20260905"）
+        #   ＝承認の瞬間に凍結する契約を、同じ規則（contract_for_freeze）で取って出す口。
+        #   壊すプログラム（b23）がここで測る（承認スクリプトは CC の Bash から打てないため）。
+        #   通れば契約の json を出して 0、通らなければ理由を stderr に出して 3。
+        _md = sys.argv[sys.argv.index("--freeze-contract") + 1]
+        _obj, _why = contract_for_freeze(open(_md, encoding="utf-8", errors="ignore").read())
+        if _obj is None:
+            print(f"❌ 凍結できません（監査 cp20 の C1）: {_why}", file=sys.stderr)
+            sys.exit(3)
+        print(json.dumps(_obj, ensure_ascii=False, indent=1))
+        sys.exit(0)
 
     if "--write" in sys.argv:
         _md = sys.argv[sys.argv.index("--write") + 1]
