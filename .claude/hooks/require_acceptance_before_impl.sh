@@ -89,7 +89,17 @@ _RUN_TOK_J = ('eval', 'xargs', 'source', '.', 'bash', 'sh', 'zsh', 'ksh', 'csh',
 #   通してよい理由＝この道具が書くのは engine_tuner_milestones2.md の §0・§2・§3 と
 #   regime_detection_kb.md の §11・§12（どちらも文書）だけ（同 .py の 800〜806行 DEST）
 #   ＝承認の記録にも凍結の記録にも触らない（pre_audit_check.py を足した理由と同じ）。
-_TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.py', 'gen_regime_kb.py')
+# ★2026-09-06（next_step §6 の137番・まこさん指示「いますぐ直すもの・優先度の高いものを対応してほしい」）
+#   ＝5本目に tidy_next_step.py を足した。
+#   何が起きていたか＝Stop hook（enforce_next_step_tidy.sh）は「tidy_next_step.py --write を打て」と言うのに、
+#     この一覧に無いので土台ゲートがその行を止めた＝Stop hook が求める直しを CC が実行できなかった
+#     （82回目・85回目・86回目の3回、CC は (0-b-2) を Edit ツールで手で写して回避した）。
+#   通してよい理由＝この道具が書くのは next_step.md と next_step_archive_202608.md（どちらも文書）だけ
+#     （同 .py の 39-40行 NEXT・ARCHIVE）。読むのは h2_pass.json・g2_pass.json（読むだけ）。
+#     ＝承認の記録にも凍結の記録にも触らない（gen_regime_kb.py を足した理由と同じ）。
+#   hook の直しは承認不要（まこさん指示 2026-09-06「hookの修正ごときで承認いれるな」）。
+_TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.py', 'gen_regime_kb.py',
+              'tidy_next_step.py')
 _RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')
