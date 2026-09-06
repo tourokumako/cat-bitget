@@ -1,0 +1,6 @@
+77,78c77,78
+< | 1 | 完成の条件の表の1行に生の縦棒を1本 足すと、表を読む口が止まる | `python3 .claude/tools/run_breaks.py --parse-only --design .claude/state/acceptance.md` | 実経路 | 表の欄に生の縦棒を1本 足す | `b31_column_count.sh` | 終了コードが0でない | **未着手** |
+< | 2 | `impl_functions`（触る関数の一覧）は**実装の後に確定させる**＝実装が終わってから `verify_design_contract.py --write` が実物から書き出す（手書きしない） | `python3 scripts/priority_rebuild/verify_design_contract.py --write .claude/state/acceptance.md` | 実経路 | 凍結に在る関数を実装から消す | `b01_missing_func.sh` | 終了コードが0でない | **未着手** |
+---
+> | 1 | 完成の条件の表の1行に生の縦棒を1本 足すと、表を読む口が止まる | `python3 .claude/tools/run_breaks.py --parse-only --design .claude/state/acceptance.md` | 実経路 | 表の欄に生の縦棒を1本 足す | `b31_column_count.sh` | 終了コードが0でない | **✅済**＝壊すと **rc=2**（列がずれた表を読ませない） |
+> | 2 | `impl_functions`（触る関数の一覧）は**実装の後に確定させる**＝実装が終わってから `verify_design_contract.py --write` が実物から書き出す（手書きしない） | `python3 scripts/priority_rebuild/verify_design_contract.py --write .claude/state/acceptance.md` | 実経路 | 凍結に在る関数を実装から消す | `b01_missing_func.sh` | 終了コードが0でない | **✅済**＝関数 8件／定数 4件を書き出した。壊すと **rc=1** |

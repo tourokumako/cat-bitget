@@ -237,8 +237,12 @@ def _tautology(cfg) -> set:
 _DEMAND_FILES = {
     "taker_ls": ("../../data/oi_BTCUSDT_5y.csv", "time", "taker_ls"),
     "L-S比": ("../../data/oi_BTCUSDT_5y.csv", "time", "ls_global"),
-    # 2026-07-30 取り直し（2024-04〜2026-06・値決め窓と採点窓を被覆）。旧 2025-06〜2026-02 版は data/ に温存
-    "CVD": ("../../data/BTCUSDT-1m-binance-taker-2024-04-01_2026-06-30.csv", "timestamp", None),
+    # 2026-07-30 取り直し（2024-04〜2026-06）。旧 2025-06〜2026-02 版は data/ に温存
+    # ★2026-09-05（M2-C-4）＝値決め窓の先頭（2024-03-01）から在るファイルへ指し先を移した。
+    #   直す前は 2024-04-01 版で、値決め窓の最初の1ヶ月が空のままだった（next_step §6 の26番）。
+    #   ★データの取り足しはしていない＝2024-03-01 版のファイルは既に在った（実測＝1,226,881行・
+    #   先頭 2024-03-01 00:00:00／末尾 2026-06-30 23:59:00）。
+    "CVD": ("../../data/BTCUSDT-1m-binance-taker-2024-03-01_2026-06-30.csv", "timestamp", None),
 }
 
 
@@ -361,13 +365,101 @@ def _vp_levels(c, v, win=288):
 
 
 def _sr_touch(c, h, l, win=288, tol=0.003):
-    """いまの価格帯に、窓内で何回タッチしているか。"""
+    """いまの価格帯に、窓内で何回タッチしているか。
+
+    ★2026-09-05（M2-C-4・まこさん承認 iter="m2c4-add-parts-20260905"）＝tol は
+      「数」（値段に対する固定の割合）でも「並び」（バーごとに変わる割合）でもよくした。
+      直す前は数だけで、相場の荒れ方が変わっても帯の幅が動かなかった。
+      ★判定そのものは1文字も変えていない＝tol が数のときの結果は、直す前と同じ。
+    """
     out = np.full(len(c), np.nan)
     ca, ha, la = c.to_numpy(), h.to_numpy(), l.to_numpy()
+    ta = np.asarray(tol, dtype=float) if np.ndim(tol) else None   # 並びなら配列・数なら None
     for i in range(win, len(ca)):
         lvl = ca[i]
-        band = lvl * tol
+        t = tol if ta is None else ta[i]
+        if t != t:                                   # NaN（ATR がまだ出ていない区間）は空のまま
+            continue
+        band = lvl * t
         out[i] = int(((ha[i - win:i] >= lvl - band) & (la[i - win:i] <= lvl + band)).sum())
+    return pd.Series(out, index=c.index)
+
+
+# ★2026-09-06（再監査 cp22 の N-1）＝S-RタッチATR（帯の許容幅が値動きの幅に連動する部品）を、
+#   部品の一覧から外した。ここに理由を残すのは、次に作る人が同じ誤りを繰り返さないため。
+#
+#   【外した理由】実装が出どころの逐語と違っていた。
+#     出どころ＝`e37_scalp.py`:213 の逐語 `V25_K = 0.5 # 束ね幅 tol=clamp(K×ATR%_1h,0.15%,0.6%)`
+#       ＝許容幅は「1時間足の値動きの幅（ATR%_1h）× 倍率」で決める。
+#     直す前の実装＝`_atr(d.high, d.low, d.close, atr_n) / d.close`
+#       ＝渡された足の値動きの幅。5分足に展開されると 5分足の ATR% になる。
+#   【何が起きたか】5分足の値動きの幅は1時間足より小さいので、0.5×それ は下端 0.15% を割る。
+#     すると許容幅がいつも 0.15% に固定され、既存の部品 `S-Rタッチ数(288,0.0015)`（固定 0.15%）と
+#     同じ列になった。実測（検査12・値決め窓 20000本×571列）＝相関 +0.9999978。
+#     この工事は、材料カタログで唯一の「実質 同じもの」5組を作っていた（工事の前は0組）。
+#   【正しい形】許容幅は1時間足の値動きの幅で決め、タッチはその足の高安で数える
+#     （RG-v6 と同じ混ぜ方）。上位足の値を引く仕組みが要るので、M2-E で作る
+#     （`next_step.md` §6 の136番）。
+#   ★`_sr_touch` の「許容幅を並びでも受けられる」直しは残してある（実害なし・正しい形で使う）。
+#   ★下の `_sr_touch_atr` も関数としては残す（どこからも呼ばれない）。理由＝正しい形を M2-E で
+#     作るとき、直すのは「ATR をどの足で測るか」の1行だけで済むため。**部品の一覧には登録しない**
+#     ＝`_reg` の登録と `build_catalog` の展開を外したので、材料カタログには1列も出ない。
+_SR_ATR_TOL_LO, _SR_ATR_TOL_HI = 0.0015, 0.006
+
+
+def _sr_touch_atr(d, win, k, atr_n):
+    """帯の許容幅を値動きの幅に連動させた S-R タッチ数。★2026-09-06 に部品の一覧から外した＝呼ばれない。
+
+    ★このまま使ってはいけない＝`_atr(d…)` は「渡された足」の値動きの幅で、
+      出どころの逐語 `tol=clamp(K×ATR%_1h,0.15%,0.6%)` の「1時間足」ではない。
+      M2-E で正しい形（1時間足の ATR% を引いてくる）に直してから登録し直す。
+    """
+    atr_pct = _atr(d.high, d.low, d.close, atr_n) / d.close
+    tol = (k * atr_pct).clip(lower=_SR_ATR_TOL_LO, upper=_SR_ATR_TOL_HI)
+    return _sr_touch(d.close, d.high, d.low, win, tol.to_numpy(float))
+
+
+def _mmi(c, n):
+    """Market Meanness Index（MMI）＝値動きがランダムに近いかの割合（0〜100）。高いほどレンジ寄り。
+
+    ★2026-09-05（M2-C-4・まこさん決定「1・2・4・5・6 を足す」）に足した。
+    ★計算は原典のとおり（The Financial Hacker「The Market Meanness Index」の本文の C のコードの逐語）。
+      ★2026-09-06（再監査 cp22 の N-6）＝落ちていた2行（宣言の行と、並び順の注意書き）を足した:
+        double m = Median(Data,Length);
+        int i, nh=0, nl=0;
+        for(i=1; i<Length; i++) {
+          if(Data[i] > m && Data[i] > Data[i-1]) // mind Data order: Data[0] is newest!
+            nl++;
+          else if(Data[i] < m && Data[i] < Data[i-1])
+            nh++;
+        }
+        return 100.*(nl+nh)/(Length-1);
+    ★向きは測らない（regime_detection_kb.md §A-4 の逐語「向きは測りません」）。
+    ★建てる合図には使わない＝原典の書いた人自身の逐語
+      「Predicting the next price with the MMI would work as well as flipping a coin.」。
+    ★未来を見ない＝窓は「いまのバーまでの n本」だけ（H2）。
+    """
+    a = c.to_numpy(float)
+    med = c.rolling(n).median().to_numpy(float)      # いまのバーを含む n本の中央値
+    # ★2026-09-05（監査 cp21 の C2）＝向きを原典に合わせて直した。
+    #   原典（Zorro）の Data は **Data[0] が最新・Data[i] が i 本前**の並び。だから原典の
+    #   `Data[i] > Data[i-1]` は「i 本前の値 > (i-1) 本前の値」＝**時系列では『その値が、次の値より大きい』**。
+    #   直す前の私の実装は時系列順に読み替えて「前の値より大きい」で数えていた＝**原典と向きが逆**。
+    #   監査の実測＝[0,1,0,1,0,1,5,6,7] で 原典 37.5 ／ 直す前 62.5（別物）。
+    gt = np.zeros(len(a), dtype=bool)
+    lt = np.zeros(len(a), dtype=bool)
+    gt[:-1] = a[:-1] > a[1:]                         # 原典の Data[i] > Data[i-1]
+    lt[:-1] = a[:-1] < a[1:]                         # 原典の Data[i] < Data[i-1]
+    out = np.full(len(a), np.nan)
+    for i in range(n - 1, len(a)):
+        m = med[i]
+        if m != m:
+            continue
+        # ★原典の i=1..Length-1 ＝ Data[0]（最新）を除く n-1 本＝時系列では「最新のバーを除く」
+        s = slice(i - n + 1, i)
+        w = a[s]
+        cnt = int(((w > m) & gt[s]).sum() + ((w < m) & lt[s]).sum())
+        out[i] = 100.0 * cnt / (n - 1)
     return pd.Series(out, index=c.index)
 
 
@@ -748,6 +840,10 @@ _reg("close vs VAH%", "close vs VAH%{}", True, lambda d, n:
 _reg("close vs VAL%", "close vs VAL%{}", True, lambda d, n:
      (d.close / _vp_levels(d.close, d.volume, n)[2] - 1) * 100)
 _reg("S-Rタッチ数", "S-Rタッチ数({},{})", False, lambda d, n, t: _sr_touch(d.close, d.high, d.low, n, t))
+# ── 2026-09-05（M2-C-4・まこさん承認 iter="m2c4-add-parts-20260905"）に足した ──
+#   ★向きを持たない（False）＝状態量。MMI は原典が「向きは測らない」と書いている。
+#   ★S-RタッチATR は 2026-09-06（再監査 cp22 の N-1）に外した（理由は _sr_touch の下のコメント）。
+_reg("MMI", "MMI{}", False, lambda d, n: _mmi(d.close, n))
 # ── 業界の指標（pandas-ta 由来・フロー 段6-2・1回目＝アルファベット順 ao〜lrsi の19関数）──
 # ★ローソク足の本数は、ここで新しい数字を作らない。既にある一覧をそのまま使う
 #   （rsi_periods / stoch_periods / macd_params）。本数を3つ以上 使う指標（KST）は
@@ -1206,6 +1302,12 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for n in cfg["sr_windows"]:
         for t in cfg["sr_tol"]:
             addf("S-Rタッチ数", n, t)
+    # ★2026-09-06（再監査 cp22 の N-1）＝S-RタッチATR の展開をここから外した。
+    #   理由＝実装が出どころの逐語（ATR%_1h）と違い、5分足で既存の部品の複製になっていた
+    #   （相関 +0.9999978）。正しい形は M2-E で作る。詳しくは _sr_touch の下のコメント。
+    # ★2026-09-05（M2-C-4）＝MMI（値動きがランダムに近いかの割合）。
+    for n in cfg["mmi_periods"]:
+        addf("MMI", n)
 
     # ── 業界の指標（pandas-ta 由来・フロー 段6-2・1回目＝アルファベット順 ao〜lrsi の19関数）──
     # ★ローソク足の本数は、ここで新しい数字を作らない。既にある一覧をそのまま使う
@@ -6377,6 +6479,27 @@ def selftest() -> None:
         _got6 = [float(_g6["CVD"].iloc[i]) for i in range(3)]
         if any(abs(a - b) > 1e-9 for a, b in zip(_got6, _exp6)):
             ng.append(f"検査6 の CVD 組み立てが手計算の既知答えと合わない: {_got6} ≠ {_exp6}")
+        # ★T-e（2026-09-05・監査 cp21 の M4）＝需給の元データが、値決め窓の先頭から在るか。
+        #   本物の元データを load_demand に渡し、値決め窓の最初のバーで3種とも値が出ることを実測する。
+        #   ★指し先が古い版（2024-04-01）だと、値決め窓の先頭（2024-03-01）は空のまま＝ここが ❌ になる。
+        #   ★なぜ selftest に置くか（ほかに道が無いから）
+        #     ①CLI の道（`--inspect … --only 6`）は、検査6 の前に必ず走る検査5 が例外で落ちて届かない
+        #       （next_step §6 の134番・実測で切り分け済み）。
+        #     ②検査6 の被覆の判定は画面に ⚠️ を出すだけで `ng` に足していない（この下の _insp_demand）
+        #       ＝被覆が 0% でも終了コードは 0 のまま＝わざと壊しても止まらない。
+        #   ★私は cp21 の報告で「検査5 が落ちるので T-e は走れず」と書いたが、それは誤りだった。
+        #     load_demand を直接 呼べば、検査5 を1行も通さずに測れる（監査 cp21 の M4・P3）。
+        _w0 = SEARCH_START
+        _bars_te = pd.DataFrame(
+            {"open": 1.0, "high": 1.0, "low": 1.0, "close": 1.0, "volume": 1.0},
+            index=pd.date_range(_w0, periods=12, freq="5min"))
+        _dem_te, _cov_te = load_demand(_bars_te.index)
+        for _nm_te in _DEMAND_FILES:
+            if _nm_te not in _dem_te.columns:
+                ng.append(f"T-e: 需給の列 {_nm_te} が作れない（被覆＝{_cov_te.get(_nm_te)}）")
+            elif not bool(pd.notna(_dem_te[_nm_te]).any()):
+                ng.append(f"T-e: 需給の列 {_nm_te} が、値決め窓の先頭 {_w0.date()} で1本も値を持たない"
+                          f"（元データの指し先が値決め窓の先頭より後＝被覆 {_cov_te.get(_nm_te)}）")
         # 定義表 DEMAND_REF の網羅＝登録の無い需給列は検査6 が ❌ を出すこと（ドリフト検出）
         _ref_ng = []
         with _cl2.redirect_stdout(_q):

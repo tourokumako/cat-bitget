@@ -63,6 +63,10 @@ TIMEOUT_SEC = 120
 
 AT_START = r"^<!--\s*ACCEPT_TABLE_START\s*-->\s*$(.*?)^<!--\s*ACCEPT_TABLE_END\s*-->\s*$"
 
+# ★2026-09-06（監査 cp23 の X-7 後半）＝列がずれた行に付ける説明の頭。
+#   ここを1か所に置いて、parse_table と main が同じ文字で照らす（2か所に書き写さない）。
+COL_NG = "列の数が見出しと違う"
+
 
 def sha(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -138,9 +142,22 @@ def parse_table(md_text: str) -> list:
     i_brk = next((i for i, c in enumerate(head) if "壊すプログラム" in c), -1)
     if i_brk < 0:
         return []
+    n_col = len(head)
     out = []
     for cells in rows[1:]:
         no = cells[i_no] if i_no < len(cells) else ""
+        # ★2026-09-06（監査 cp23 の X-7 後半・設計書 iter="x7-column-count-20260906"）
+        #   ＝見出しと列の数が違う行は読まない。
+        #   直す前は、欄の中に生の縦棒を書くと列がずれ、**別の欄の文字を
+        #   「壊すプログラムの名前」として拾った**（実測＝m2c4-add-parts-20260905.breaks.json
+        #   の 24-27行＝"no": "4" だけ "script": "実経路"）。
+        #   2026-09-03 に打ち消した縦棒（\|）は区切りにしない直しを入れたが、
+        #   生の縦棒は そのままずれていた。
+        if len(cells) != n_col:
+            out.append({"no": no, "script": None, "code": None,
+                        "note": f"列の数が見出しと違う（見出し {n_col} 列／この行 {len(cells)} 列）"
+                                "＝欄の中に生の縦棒を書いていないか（打ち消して書く）"})
+            continue
         raw = cells[i_brk] if i_brk < len(cells) else ""
         name = raw.strip().strip("`")
         name = re.sub(r"（.*?）", "", name).strip().strip("`")
@@ -205,6 +222,14 @@ def main(argv: list) -> int:
                 continue
             mark = "OK" if (BREAKS_DIR / r["script"]).exists() else "MISSING"
             print(f"{r['no']}\t{r['script']}\t{mark}")
+        # ★2026-09-06（監査 cp23 の X-7 後半）＝列がずれた表は、読めたことにしない。
+        bad = [r for r in rows if COL_NG in (r.get("note") or "")]
+        if bad:
+            print("[STOP] 完成の条件の表に、列の数が見出しと違う行があります"
+                  "（監査 cp23 の X-7）", file=sys.stderr)
+            for r in bad:
+                print(f"  ❌ 行 {r['no']}: {r['note']}", file=sys.stderr)
+            return 2
         return 0
 
     if a.freeze:
@@ -243,6 +268,15 @@ def main(argv: list) -> int:
     if not rows:
         print("[STOP] 完成の条件の表に「壊すプログラム」の欄がありません"
               "（監査 cp16 の E-12）", file=sys.stderr)
+        return 2
+
+    # ★2026-09-06（監査 cp23 の X-7 後半）＝本走でも、列がずれた表は読まずに止める。
+    bad = [r for r in rows if COL_NG in (r.get("note") or "")]
+    if bad:
+        print("[STOP] 完成の条件の表に、列の数が見出しと違う行があります"
+              "（監査 cp23 の X-7）", file=sys.stderr)
+        for r in bad:
+            print(f"  ❌ 行 {r['no']}: {r['note']}", file=sys.stderr)
         return 2
 
     before = {p.name: sha(p) for p in break_scripts()}

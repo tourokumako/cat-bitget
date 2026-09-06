@@ -1,0 +1,6 @@
+116c116,118
+< **★`approve_impl.sh` は既に一部を見ています**（実測＝1回目の `no_impl_functions_reason` はこの承認スクリプトが拒否しました）。**その判定を、Write ゲートと同じ全判定に広げます。**
+---
+> **★`approve_impl.sh` は既に一部を見ています。**
+> 実測＝1回目の `no_impl_functions_reason` は、`bash .claude/hooks/approve_impl.sh` が拒否しました。
+> **その判定を、Write ゲートと同じ全判定に広げます。**

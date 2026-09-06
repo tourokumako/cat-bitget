@@ -1,0 +1,42 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）",
+ "iter": "cp23-selftest-audit-req-20260906",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b27_skipped_not_counted.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "2",
+   "script": "b28_counts_break_dead.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "3",
+   "script": "b29_dirty_verify_stops.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "4",
+   "script": "b30_missing_section.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "5",
+   "script": "b29_dirty_verify_stops.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "6",
+   "script": "b01_missing_func.sh",
+   "code": 1,
+   "note": ""
+  }
+ ]
+}

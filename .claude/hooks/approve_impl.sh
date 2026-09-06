@@ -19,6 +19,24 @@ if [ ! -f "$LIST" ]; then
   exit 1
 fi
 
+# ★2026-09-06（まこさん指示「だから、強制でミスを繰り返さないようにしろよ」・設計書 iter="pre-audit-check-20260906"）
+#   ＝承認の前に、設計書ゲートの全判定をここでも走らせ、不足を全部 出す。
+#   なぜ要るか（実測）＝2026-09-06 に CC は同じ設計書で承認を7回 求めた。毎回 違う判定に当たり、
+#   出た分だけ直して残りを確かめずに出していた。承認の瞬間に全部 出せば、その往復が消える。
+#   ★CC が --check-design を打ち忘れても、ここで止まる（これが強制の本体）。
+#   ★2026-09-06 に直した＝直す前は require_acceptance_before_impl.sh を --check で呼んでいたが、
+#     hook 側の口は --check-md なので分岐に入らず、標準入力も渡していなかったので file_path が空になり、
+#     対象外として何も見ずに通っていた（＝この強制は空振りしていた）。
+#     いまは pre_audit_check.py --check-design を呼ぶ＝設計書ゲートを2群とも走らせる
+#     （群1＝実装ファイルを書く瞬間の判定を TARGET 全部に対して ／ 群2＝設計書そのものを書く瞬間の判定）。
+_PRE_CHECK=$(python3 "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/pre_audit_check.py" --check-design "$LIST" 2>&1)
+if [ $? -ne 0 ]; then
+  echo "❌ 承認を中止します（設計書に不足が在ります・2026-09-06 の強制）:" >&2
+  printf '%s\n' "$_PRE_CHECK" | sed 's/^/   /' >&2
+  echo "   ★上の不足を全部 直してから、もう一度 承認してください。" >&2
+  exit 1
+fi
+
 # ★2026-09-02（まこさん承認 iter="impl-lock-20260902"）＝承認の前に、前に承認した控えとの差分を出す。
 #   なぜ要るか＝CC が設計書を書き換えて実装に合わせる道（抜け道3）を、まこさんが見える形にする。
 #   実測＝2026-09-02 に CC が TARGET の行を書き換えて再承認を頼んだ。そのときは CC が手で差分を出した。
@@ -335,6 +353,54 @@ if [ -f "$RUNB" ]; then
     echo "❌ 壊し方の記録を作れませんでした。承認を取り消します（監査 cp16 の E-12・P-9 と同じ扱い）。" >&2
     rm -f "$STATE/acceptance.approved"
     exit 1
+  fi
+
+  # ★2026-09-06（まこさん指示「承認3回は多い」→「できるならやれよ」）
+  #   ＝走らせた終了コードを、設計書の「いまの状態」の欄へ**機械が**書き込む。
+  #   直す前＝CC が手で「✅済」に書き換え、そのために**もう1回 承認**が要った。
+  #     実測（同日）＝1つの工事で承認 5回（X-5・X-9）と 3回（X-7）＝合計8回。
+  #   ★書き込むのは機械が測った終了コードだけ（CC の文章は1文字も入らない）。
+  #   ★「未着手」の行だけを書き換える＝CC が既に説明を書いた行はそのまま。
+  #   ★書き換えたら指紋を取り直す＝まこさんが打った1回で、承認と設計書が食い違わない。
+  BJ="$ARC_DIR_PRE/$ITER.breaks.json"
+  if [ -f "$BJ" ]; then
+    python3 - "$LIST" "$BJ" <<'PYEOF'
+import json
+import sys
+md_p, bj_p = sys.argv[1], sys.argv[2]
+rows = (json.loads(open(bj_p, encoding='utf-8').read()) or {}).get('rows') or []
+code = {str(r.get('no')): r.get('code') for r in rows}
+src = open(md_p, encoding='utf-8').read()
+n, out = 0, []
+for ln in src.splitlines(True):
+    t = ln.strip()
+    if t.startswith('|') and '**未着手**' in t:
+        cells = [c.strip() for c in t.strip('|').split('|')]
+        c = code.get(cells[0] if cells else '')
+        if c not in (0, None):
+            ln = ln.replace('**未着手**',
+                            f'**✅済**＝壊すと rc={c}（承認のときに機械が測った）')
+            n += 1
+    out.append(ln)
+if n:
+    open(md_p, 'w', encoding='utf-8').write(''.join(out))
+    print(f"   ✍️ 完成の条件 {n} 行を「済」にしました（機械が測った終了コードを書き込み）")
+PYEOF
+    NEW_H=$(shasum -a 256 "$LIST" | awk '{print $1}')
+    OLD_H=$(cat "$STATE/acceptance.approved" 2>/dev/null)
+    if [ "$NEW_H" != "$OLD_H" ]; then
+      printf '%s' "$NEW_H" > "$STATE/acceptance.approved"
+      python3 - "$LIST" "$NEW_H" "$STATE/design_approved.json" <<'PYEOF'
+import json
+import sys
+md, h, p = sys.argv[1], sys.argv[2], sys.argv[3]
+with open(p, 'w', encoding='utf-8') as f:
+    json.dump({md: h}, f, ensure_ascii=False, indent=1)
+    f.write('\n')
+PYEOF
+      echo "   🔏 承認の指紋を取り直しました: $(printf '%s' "$NEW_H" | cut -c1-16)…"
+      echo "   ＝この1回で「済」まで確定します（承認をもう一度 打つ必要はありません）"
+    fi
   fi
 else
   echo "   ⚠️ 走らせるプログラムがまだありません（$RUNB）＝壊し方の記録は作られません。" >&2

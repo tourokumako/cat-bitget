@@ -1,0 +1,25 @@
+84c84,85
+< 5分足の値動きの幅は1時間足より小さいので、`0.5 × それ` は下端 0.15% を割ります。**すると許容幅はいつも 0.15% に固定され、既存の部品（`S-Rタッチ数(288,0.0015)`）と同じ列になります。**監査の実測＝相関 **+0.9999978**。
+---
+> 5分足の値動きの幅は1時間足より小さいので、`0.5 × それ` は下端 0.15% を割ります。**すると許容幅はいつも 0.15% に固定され、既存の部品（`S-Rタッチ数(288,0.0015)`）と同じ列になります。**
+> 監査の実測＝相関 **+0.9999978**（`python3 scripts/priority_rebuild/observe_diag.py --inspect data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv --only 12`・347秒・rc=0）。
+90c91
+< | 番人 | 焼き込んだ鍵 | いまの実物 |
+---
+> | 番人 | 焼き込んだ鍵 | いまの実物（実測のコマンドつき） |
+92,94c93,95
+< | R9 | `M2-1-1`（やることリストの行） | **`grep -c "M2-1-1"` ＝ `engine_tuner_milestones.md` 0件／`engine_tuner_milestones2.md` 0件**（やることリストが M2-C・M2-D へ進んで消えた） |
+< | R6 | `R5`（要件の番号） | 差し込む表に `R5` の行が出てこない |
+< | S5 | `state=完了` の要件に効く `✅済` の行 | 1件も無い |
+---
+> | R9 | `M2-1-1`（やることリストの行） | **0件**（`grep -c "M2-1-1" .claude/ratchet/engine_tuner_milestones.md .claude/ratchet/engine_tuner_milestones2.md` ＝ 2本とも 0）。やることリストが M2-C・M2-D へ進んで消えた |
+> | R6 | `R5`（要件の番号） | 差し込む表に `R5` の行が出てこない（`python3 scripts/priority_rebuild/gen_materials.py --selftest` が ❌ R6 を出す・36.9秒・rc=1） |
+> | S5 | `state=完了` の要件に効く `✅済` の行 | **1件も無い**（`python3 scripts/priority_rebuild/gen_materials.py --selftest` が ❌ S5「確かめる相手が見つからない」を出す） |
+308c309
+< | 4 | **★2026-09-05（監査 cp22 の N-1）に置き換えた。**AUDIT-2＝S-RタッチATR を部品から外したので、**材料どうしに「実質 同じもの」が0組に戻る** | `python3 scripts/priority_rebuild/observe_diag.py --inspect <5分足CSV> --only 12`（**約6分**）の「実質 同じもの（|相関| ≥ 0.99999）＝ N 組」の行 | 実経路 | §7 の T-c（部品を戻す） | — | 対象 | **未着手** |
+---
+> | 4 | **★2026-09-05（監査 cp22 の N-1）に置き換えた。**AUDIT-2＝S-RタッチATR を部品から外したので、**材料どうしに「実質 同じもの」が0組に戻る**（実測の行のコマンドは右の欄） | `python3 scripts/priority_rebuild/observe_diag.py --inspect <5分足CSV> --only 12`（**約6分**）の「実質 同じもの（|相関| ≥ 0.99999）＝ N 組」の行 | 実経路 | §7 の T-c（部品を戻す） | — | 対象 | **未着手** |
+322c323
+< | 18 | **（2026-09-05・監査 cp22 の N-4・N-5 で足した）**`gen_materials.py` の自己テストが通り、KB の件数の仕組みに番人が在る | `python3 scripts/priority_rebuild/gen_materials.py --selftest` の rc と ❌ の件数 | 実経路 | 番人そのもの | — | 対象 | **未着手** |
+---
+> | 18 | **（2026-09-05・監査 cp22 の N-4・N-5 で足した）**`gen_materials.py` の自己テストが通り、KB の件数の仕組みに番人が在る | `python3 scripts/priority_rebuild/gen_materials.py --selftest` の rc と ❌ の件数 | 実経路 | 番人そのもの | — | — | **未着手** |

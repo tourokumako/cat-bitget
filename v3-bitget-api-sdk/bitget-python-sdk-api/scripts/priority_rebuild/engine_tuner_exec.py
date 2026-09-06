@@ -172,6 +172,8 @@ def load_indicator_switch() -> dict:
         d = json.loads(INDICATOR_SWITCH_PATH.read_text(encoding="utf-8"))
         d["_on_set"] = set(d.get("on") or [])
         d["_geo_set"] = set(d.get("geo_on") or [])
+        # ★2026-09-05（監査 cp21 の M1①）＝需給の列（別枠）も、レンジ幾何と同じ形で印と照らす。
+        d["_demand_set"] = set(d.get("demand_on") or [])
         _SWITCH_CACHE = d
     return _SWITCH_CACHE
 
@@ -191,6 +193,18 @@ def indicator_enabled(name: str) -> bool:
 def geo_enabled(name: str) -> bool:
     """レンジ幾何の列（W%・帯内位置%）が「使う」に入っているか。"""
     return name in load_indicator_switch()["_geo_set"]
+
+
+def demand_enabled(name: str) -> bool:
+    """需給の列（taker_ls・L-S比・CVD）が「使う」に入っているか。
+
+    ★2026-09-05（M2-C-4 の直し・監査 cp21 の M1①）に足した。
+      直す前は、需給の材料が定義表（DEMAND_REF）に在るかだけを見ていて、
+      **指標のオン・オフの印（indicator_switch.json の demand_on）と1度も照らしていなかった。**
+      ＝まこさんが印から需給を外しても、案は通ってしまう状態だった。
+    ★印の作り手＝gen_indicator_switch.source_mako（源4「まこさんが個別に決めたもの」）。
+    """
+    return name in load_indicator_switch()["_demand_set"]
 
 
 def indicator_switch_fingerprint() -> str:
@@ -567,7 +581,7 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
     #   ★例外＝legacy_col の材料には family を添えてよい。恒等レシピ3本（recipes/identity_*_legacy.json）に
     #     8か所 在る既存の書き方で、family は注記ではなく系統の判定（gen の _lineage_of・下の G3）が読む鍵。
     #     設計書 v3 やること3(g) の文「5つの鍵が2つ以上なら拒否」からの差＝実装の記録 §9 に書いた（2026-08-25）。
-    _excl = [k for k in ("legacy_col", "geo", "state", "time") if k in m]
+    _excl = [k for k in ("legacy_col", "geo", "state", "time", "demand") if k in m]
     if len(_excl) >= 2:
         _fail("G6", f"材料の種別の鍵が2つ以上 在る {_excl}（種別は1つだけ書く）: {m}")
     if "family" in m and _excl and _excl != ["legacy_col"]:
@@ -591,6 +605,17 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
         if t not in iref.TIME_REF:
             _fail("G6", f"時間帯の材料に無い名前: {t}")
         return "time", t
+    # ★2026-09-05（M2-C-4・まこさん承認 iter="m2c4-add-parts-20260905"）＝需給の列（別枠）。
+    #   元データが5分足の1本しか無いので時間足に展開しない＝レンジ幾何・時間帯と同じ扱い。
+    if "demand" in m:
+        d = m["demand"]
+        if d not in iref.DEMAND_REF:
+            _fail("G6", f"需給の材料に無い名前: {d}（登録済み＝{list(iref.DEMAND_REF)}）")
+        # ★2026-09-05（監査 cp21 の M1①）＝印（indicator_switch.json の demand_on）とも照らす。
+        if not demand_enabled(d):
+            _fail("G6", f"需給の材料 {d} は、指標のオン・オフの印で「使わない」になっている"
+                        "（印＝indicator_switch.json の demand_on・作り直しは gen_indicator_switch.py --write）")
+        return "demand", d
     fam, tf = m.get("family"), m.get("tf")
     if not fam or not tf:
         _fail("G6", f"材料の2軸（family×tf）が欠けている: {m}（数字は family によって 0〜3 個）")
@@ -1927,6 +1952,11 @@ def _col_array(df: pd.DataFrame, m: dict, geo: dict, lane: str) -> np.ndarray:
     if kind == "time":
         ts = pd.DatetimeIndex(df["ts"])
         return (ts.hour if name == "時刻" else ts.weekday).to_numpy(float)
+    if kind == "demand":                             # ★2026-09-05（M2-C-4）＝需給の列
+        if name not in df.columns:
+            raise RecipeError(f"[実行器] 需給の列が実行データに無い: {name}"
+                              "（生成器の attach_materials が observe_diag.load_demand で載せる）")
+        return df[name].to_numpy(float)
     if kind == "col":
         # 歩4 拡張＝カタログ名の列が実行データに直接あればそれを使う（生成器が observe_diag
         # build_features で必要列だけ組み立てて df に付けて渡す）。無ければ従来の別名（恒等系）。
@@ -3937,6 +3967,50 @@ def unordered_iteration_scan(src: str) -> list[tuple[int, str]]:
 
 def selftest() -> None:
     ng = []
+    # ★T-f・T-d（2026-09-06・再監査 cp22 の N-10・N-11）＝需給と前処理の見本を、この自己テストで通す。
+    #   直す前は、この関数に需給（demand）の見本が1件も無く、設計書が「--selftest で測る」と
+    #   宣言していたのに、そのコマンドではこの条件を測れなかった（監査が実測）。
+    #   ★束を組む工程（M2-E）は要らない＝_material_name を直接 呼べば足りる（監査の逐語）。
+    # T-f-1 印に在る需給の材料は通る
+    for _nm_d in sorted(iref.DEMAND_REF):
+        try:
+            _k_d, _n_d = _material_name({"demand": _nm_d}, "search")
+            if (_k_d, _n_d) != ("demand", _nm_d):
+                ng.append(f"T-f-1: 需給の材料 {_nm_d} の種別か名前が違う（{_k_d}/{_n_d}）")
+        except SystemExit as e:
+            ng.append(f"T-f-1: 印に在る需給の材料 {_nm_d} が拒否された: {str(e)[:80]}")
+    # T-f-2 印に無い需給の名前は G6 が拒否する
+    try:
+        _material_name({"demand": "存在しない需給"}, "search")
+        ng.append("T-f-2: 需給の定義表に無い名前が通ってしまう（G6 が拒否していない）")
+    except SystemExit:
+        pass
+    # T-f-3 印（demand_on）から外れている需給は G6 が拒否する
+    _sw_d = load_indicator_switch()
+    _keep_d = set(_sw_d["_demand_set"])
+    if _keep_d:
+        _drop_d = sorted(_keep_d)[0]
+        try:
+            _sw_d["_demand_set"] = _keep_d - {_drop_d}
+            try:
+                _material_name({"demand": _drop_d}, "search")
+                ng.append(f"T-f-3: 印から外した需給 {_drop_d} が通ってしまう（印と照らしていない）")
+            except SystemExit:
+                pass
+        finally:
+            _sw_d["_demand_set"] = _keep_d
+    # T-d 前処理を付けた材料も、名前が登録に無ければ G6 が拒否する
+    try:
+        _material_name({"family": "RSI", "tf": "5m", "param": 14, "pre": {"op": "ts_max", "n": 5}},
+                       "search")
+    except SystemExit as e:
+        ng.append(f"T-d-1: 前処理を付けた正しい材料が拒否された: {str(e)[:80]}")
+    try:
+        _material_name({"family": "RSIX", "tf": "5m", "param": 14, "pre": {"op": "ts_max", "n": 5}},
+                       "search")
+        ng.append("T-d-2: 前処理を付けると、登録に無い名前が通ってしまう（G6 をすり抜けた）")
+    except SystemExit:
+        pass
     okr = _base_ok_recipe()
     try:
         rep = validate_recipe(okr)

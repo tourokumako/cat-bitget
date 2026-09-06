@@ -237,14 +237,35 @@ def source_identity() -> tuple[set[str], set[str]]:
     return fams, geos
 
 
+def source_mako() -> tuple[set[str], set[str]]:
+    """源4＝まこさんが個別に「使う」と決めたもの。戻り＝(種類の集合, 需給の列の集合)。
+
+    ★2026-09-05（M2-C-4・まこさんの決定「案A にします」）に足した。
+      まこさんの逐語（2026-09-05）＝「1・2・4・5・6 を足す／3 は外す／**需給は「使う」にする**」
+      ＋「§6 の8番に3つ目の源「まこさんが個別に決めたもの」を足してください。
+         そこに 需給3種と MMI の両方が入ります。…**手書きの一覧は作らないこと**」。
+
+    ★だから中身は2つとも機械で引く（CC の手書きの一覧はゼロ）:
+      ①需給3種＝`indicator_reference_diag.DEMAND_REF` の鍵（定義・流儀・出典が既に在る正本）
+      ②材料の定義表 `REFS` のうち `mako` の欄が書かれているもの（いまは MMI の1件）
+
+    ★なぜ需給を種類の集合に入れないか＝需給は元データが5分足の1本しかなく、時間足11本に
+      展開できない。だからレンジ幾何（geo）や時間帯（time）と同じ「別枠」で持つ
+      （型の表の extra_parts）。印でも別の欄（demand_on）に置く。
+    """
+    fams = {e["family"] for e in iref.REFS if e.get("mako")}
+    return fams, set(iref.DEMAND_REF)
+
+
 # ══ 印を組み立てる ═════════════════════════════════════════════════════
 def build() -> dict:
     """3つの源から印を組み立てる。CC の手書きの一覧はゼロ。"""
     ta_f, unresolved = source_ta()
     law_f, law_g = source_law()
     id_f, id_g = source_identity()
+    mako_f, mako_demand = source_mako()          # 源4（2026-09-05・案A）
     all_f = families()
-    want = ta_f | law_f | id_f
+    want = ta_f | law_f | id_f | mako_f
     on = [f for f in all_f if f in want]           # 定義表に在る種類だけ（並びも定義表に合わせる）
     off = [f for f in all_f if f not in want]
     d = {
@@ -254,6 +275,11 @@ def build() -> dict:
             "1_ta": "定義表の ta 照合式（ext）と ta_class の欄から引いた種類",
             "2_法則": "regime_laws.json の「機械が読む判定」の family と geo",
             "3_恒等レシピ": "recipes/identity_*.json 3本が実際に使う材料",
+            "4_まこさんが個別に決めたもの":
+                "①需給3種＝indicator_reference_diag.DEMAND_REF の鍵"
+                "（まこさんの逐語 2026-09-05「需給は「使う」にする」）"
+                "②材料の定義表 REFS の mako の欄が書かれているもの（いまは MMI）。"
+                "★どちらも機械で引く＝CC の手書きの一覧はゼロ（まこさんの指示「手書きの一覧は作らないこと」）",
         },
         "_できること": "減らすことだけ。型の表に無い指標は、印をオンにしても使えない。",
         "built_by": "gen_indicator_switch.py（全自動生成・CC の手書きの行ゼロ）",
@@ -264,12 +290,15 @@ def build() -> dict:
             "源1_ta": len(ta_f),
             "源2_法則": len(law_f),
             "源3_恒等レシピ": len(id_f),
+            "源4_まこさんが個別に決めたもの": len(mako_f) + len(mako_demand),
             "対応が決まらない_taのクラス": len(unresolved),
         },
         "on": on,
         "off": off,
         "geo_on": sorted(law_g | id_g),
-        "sources": {"ta": sorted(ta_f), "law": sorted(law_f), "identity": sorted(id_f)},
+        "demand_on": sorted(mako_demand),        # 需給の列（別枠・2026-09-05・案A）
+        "sources": {"ta": sorted(ta_f), "law": sorted(law_f), "identity": sorted(id_f),
+                    "mako": sorted(mako_f | mako_demand)},
         "ta_unresolved": sorted(unresolved),
     }
     d["fingerprint"] = _fp(d)

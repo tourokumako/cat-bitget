@@ -4,17 +4,19 @@
  "_源": {
   "1_ta": "定義表の ta 照合式（ext）と ta_class の欄から引いた種類",
   "2_法則": "regime_laws.json の「機械が読む判定」の family と geo",
-  "3_恒等レシピ": "recipes/identity_*.json 3本が実際に使う材料"
+  "3_恒等レシピ": "recipes/identity_*.json 3本が実際に使う材料",
+  "4_まこさんが個別に決めたもの": "①需給3種＝indicator_reference_diag.DEMAND_REF の鍵（まこさんの逐語 2026-09-05「需給は「使う」にする」）②材料の定義表 REFS の mako の欄が書かれているもの（いまは MMI）。★どちらも機械で引く＝CC の手書きの一覧はゼロ（まこさんの指示「手書きの一覧は作らないこと」）"
  },
  "_できること": "減らすことだけ。型の表に無い指標は、印をオンにしても使えない。",
  "built_by": "gen_indicator_switch.py（全自動生成・CC の手書きの行ゼロ）",
  "counts": {
-  "定義表の種類": 256,
-  "使う": 140,
+  "定義表の種類": 257,
+  "使う": 141,
   "使わない": 116,
   "源1_ta": 64,
   "源2_法則": 89,
   "源3_恒等レシピ": 8,
+  "源4_まこさんが個別に決めたもの": 4,
   "対応が決まらない_taのクラス": 5
  },
  "on": [
@@ -64,6 +66,7 @@
   "POC",
   "VAH",
   "VAL",
+  "MMI",
   "S-Rタッチ数",
   "AO%",
   "CCI",
@@ -281,6 +284,11 @@
   "W%",
   "帯内位置%"
  ],
+ "demand_on": [
+  "CVD",
+  "L-S比",
+  "taker_ls"
+ ],
  "sources": {
   "ta": [
    "ADX",
@@ -448,6 +456,12 @@
    "volume_ratio",
    "レンジ幾何",
    "基準線"
+  ],
+  "mako": [
+   "CVD",
+   "L-S比",
+   "MMI",
+   "taker_ls"
   ]
  },
  "ta_unresolved": [
@@ -457,5 +471,5 @@
   "DailyReturnIndicator",
   "WilliamsRIndicator"
  ],
- "fingerprint": "dec5519430b997b0"
+ "fingerprint": "caa0d4c9547f8062"
 }

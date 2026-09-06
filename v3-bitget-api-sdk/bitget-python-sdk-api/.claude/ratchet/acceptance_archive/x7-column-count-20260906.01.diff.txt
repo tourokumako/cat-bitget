@@ -1,0 +1,6 @@
+7,9c7
+< NEW_FILE: .claude/breaks/b31_column_count.sh
+< 
+< MODEL: .claude/breaks/b14_breaks_tampered.sh, .claude/breaks/lib.sh
+---
+> （`b31_column_count.sh` は 2026-09-06 に作りました。手本＝`.claude/breaks/b14_breaks_tampered.sh` と `.claude/breaks/lib.sh`）

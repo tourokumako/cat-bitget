@@ -396,6 +396,40 @@ def _facts(n: int) -> list[str]:
 
 
 # ══ 依頼書を組み立てる（節の並びはテンプレから読む）════════════════════════════
+_REF_MD_RE = re.compile(r"([\w./-]+\.md)")
+_REF_SEC_RE = re.compile(r"§\s*(\d+)")
+
+
+def section_refs_missing(body: str) -> list[str]:
+    """依頼書が指した節（§NN）が、指した先の .md に実在するかを確かめる（2026-09-06）。
+
+    なぜ要るか＝監査 cp23 の X-9 の逐語＝「依頼書 §1 の3が『§36 と §38 ← CC が出した実測』と
+    指示しているが、**§38 は存在しない**」。＝**申告を突き合わせる相手が無いまま監査に出した。**
+
+    ★見るのは「同じ行に .md の名前と §数字 の両方が在る行」だけ。
+    ★限界（正直に）＝①節の中身が申告と合っているかは見ない ②`§NN` の形でないと見つけられない
+      ③同じ行に無いと（ファイル名と節が離れて書かれると）拾えない。
+    """
+    out: list[str] = []
+    for ln in body.splitlines():
+        names = _REF_MD_RE.findall(ln)
+        nums = _REF_SEC_RE.findall(ln)
+        if not names or not nums:
+            continue
+        for name in names:
+            base = pathlib.Path(name).name
+            hit = next((c for c in (ROOT / name, ROOT / ".claude" / "state" / base)
+                        if c.exists()), None)
+            if hit is None:
+                out.append(f"{name}: 依頼書が指したファイルが見つからない（行＝{ln.strip()[:50]}）")
+                continue
+            t = hit.read_text(encoding="utf-8", errors="ignore")
+            for num in nums:
+                if not re.search(rf"§\s*{num}(?!\d)", t):
+                    out.append(f"{name}: 依頼書が指した §{num} が、そのファイルに無い")
+    return out
+
+
 def build_request(n: int) -> str:
     frozen = load_frozen_question()
     heads = template_heads()
@@ -437,7 +471,13 @@ def build_request(n: int) -> str:
             p.append("")
             p += _facts(n)
         p.append("")
-    return "\n".join(p) + "\n"
+    body = "\n".join(p) + "\n"
+    # ★2026-09-06（監査 cp23 の X-9）＝指した節が実在しなければ、依頼書を作らない（fail-closed）。
+    miss = section_refs_missing(body)
+    if miss:
+        raise SystemExit("[依頼書] 指した節が実在しないので作れません（監査 cp23 の X-9）:\n  - "
+                         + "\n  - ".join(miss))
+    return body
 
 
 # ══ わざと壊して止まるか試すテスト ════════════════════════════════════════════════
@@ -533,10 +573,19 @@ def selftest() -> int:
     if bad:
         ng.append(f"Q7: 依頼書へ入る自由記述が在る: {bad[:3]}")
 
+    # Q11 依頼書が指した節が実在しないときに、問題として返すか（2026-09-06・監査 cp23 の X-9）
+    _q11_ng = section_refs_missing("- `session_worklog_20260904.md` の §99 ← CC が出した実測\n")
+    if not _q11_ng:
+        ng.append("Q11: 存在しない節を指しても、問題として返さない")
+    _q11_ok = section_refs_missing("- `session_worklog_20260904.md` の §43 ← CC が出した実測\n")
+    if _q11_ok:
+        ng.append(f"Q11: 実在する節なのに問題として返す: {_q11_ok[:2]}")
+
     print(f"[selftest] Q1 凍結の改変で止まる ／ Q2 凍結が無ければ止まる ／ Q3 番号の範囲外で止まる ／"
           f" Q4 複写元が無ければ止まる ／ Q5 法則の件数が変われば止まる ／"
           f" Q6 1〜{N_ELEMENTS} のどれでも作れる ／ Q7 自由記述0件 ／"
-          f" Q8 テンプレが無ければ止まる ／ Q9 テンプレの節が全部 在る ／ Q10 知らない見出しで止まる")
+          f" Q8 テンプレが無ければ止まる ／ Q9 テンプレの節が全部 在る ／ Q10 知らない見出しで止まる ／"
+          f" Q11 指した節が実在しなければ作らせない")
     for x in ng:
         print(f"  ❌ {x}")
     total = 11

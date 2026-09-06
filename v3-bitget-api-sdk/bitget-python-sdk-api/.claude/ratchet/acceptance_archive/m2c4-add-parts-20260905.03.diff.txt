@@ -1,0 +1,14 @@
+3c3
+< TARGET: scripts/priority_rebuild/observe_diag.py, scripts/priority_rebuild/indicator_reference_diag.py, scripts/priority_rebuild/observe_config.json, scripts/priority_rebuild/gen_signal_families.py, scripts/priority_rebuild/gen_indicator_switch.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/engine_tuner_exec.py, .claude/memory/regime_detection_kb.md, .claude/ratchet/engine_tuner_milestones2.md
+---
+> TARGET: scripts/priority_rebuild/observe_diag.py, scripts/priority_rebuild/indicator_reference_diag.py, scripts/priority_rebuild/observe_config.json, scripts/priority_rebuild/gen_signal_families.py, scripts/priority_rebuild/gen_indicator_switch.py, scripts/priority_rebuild/gen_materials.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/engine_tuner_exec.py, .claude/memory/regime_detection_kb.md, .claude/ratchet/engine_tuner_milestones2.md
+90a91
+> | **1-i** | **gen_materials.py:197-198** | **材料の正本（materials.md）の「選べる・選べない」の判定に、需給の別枠を足す。**直す前＝需給なら一律に「選べない（材料カタログに列が無い）」と書く。**直した後＝型の表の `extra_parts.demand.parts` に入っていれば「選べる（需給・別枠）」と書く**（手書きの一覧を作らない＝型の表から機械で引く）。**★なぜ要るか**＝この設計で需給を別枠に入れて「選べる」状態にしたのに、文書が「選べない」と書いたままだと、**文書が実物と食い違う**（違反の記録25番と同じ型）。**★1件だけ実測で確かめた**＝MMI は「選べる」に変わったが、需給3種は古い判定のまま（2026-09-05） |
+171c172
+< | 9 | 文書の食い違いが0件（regime_detection_kb.md の数字と機械の実測が合う） | 実経路 | §7 の T-b と同じ経路（数え方を壊す） | — | — | **未着手** |
+---
+> | 9 | 文書の食い違いが0件（regime_detection_kb.md の数字と機械の実測が合う ／ materials.md で需給3種が「選べる（需給・別枠）」に変わる） | 実経路 | §7 の T-b と同じ経路（数え方を壊す） | — | — | **未着手** |
+327a329,331
+>     "scripts/priority_rebuild/gen_materials.py": [
+>       "_row_engine"
+>     ],

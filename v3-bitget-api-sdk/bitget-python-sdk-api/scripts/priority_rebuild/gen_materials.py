@@ -117,6 +117,8 @@ def _engine_view() -> dict:
     extra = (_j.loads(_SIGFAM.read_text(encoding="utf-8")).get("extra_parts") or {})
     v["geo_ok"] = list((extra.get("geo") or {}).get("parts") or [])
     v["time_ok"] = list((extra.get("time") or {}).get("parts") or [])
+    # ★2026-09-05（M2-C-4）＝需給の別枠。型の表から機械で引く（手書きの一覧を作らない）
+    v["demand_ok"] = list((extra.get("demand") or {}).get("parts") or [])
     fams = list(dict.fromkeys(e["family"] for e in iref.REFS))
     v["selectable_fams"] = sorted({p["family"] for p in v["pool"]})
     v["unselectable_fams"] = [f for f in fams if f not in set(v["selectable_fams"])]
@@ -195,7 +197,12 @@ def _row_engine(row: dict, ev: dict) -> str:
         return (_SEL_OK + "（時間帯）") if nm == "時刻" else \
             "選べない（型の表は許すが、閾値の格子が未定義＝engine_tuner_gen.py:256）"
     if nm in ev["demand"]:
-        return _SEL_NO_COL
+        # ★2026-09-05（M2-C-4・まこさん承認 iter="m2c4-add-parts-20260905"）＝需給は
+        #   型の表の別枠（extra_parts.demand）に入った＝engine_tuner が条件の材料に選べる。
+        #   直す前は「需給なら一律に選べない」と書く作りで、別枠に入った後もそのままだった
+        #   ＝文書が実物と食い違う（違反の記録25番と同じ型）。
+        #   ★判定は型の表そのものから引く＝CC の手書きの一覧は作らない。
+        return (_SEL_OK + "（需給・別枠）") if nm in ev.get("demand_ok", []) else _SEL_NO_COL
     return _SEL_OK if nm in set(ev["selectable_fams"]) else _SEL_NO_TPL
 
 
@@ -2088,6 +2095,72 @@ def _fb_splice(text: str, blk: str) -> tuple[str, bool]:
     return text[:mt.start()] + blk + text[e:], True
 
 
+# ══ 向きを持たない部品の件数を、知識の正本へ書き出す（2026-09-05・監査 cp21 の C1）═══════
+#   ★なぜ機械にしたか＝CC が手で「126件」と書いた15分後に型の表を作り直したら実物は 148件になり、
+#     文書だけが古いまま残った（監査 cp21 が実測）。手で数字を書ける場所を残す限り、同じことが起きる。
+_BANS_START = "<!-- BANS_COUNT_START gen_materials.py --write が型の表から書き出す＝手で書き換えない -->"
+_BANS_END = "<!-- BANS_COUNT_END -->"
+_BANS_TARGET = _HERE.parent.parent / ".claude" / "memory" / "regime_detection_kb.md"
+# ★2026-09-06（再監査 cp22 の N-3）＝KB §12-5 の表の 5〜8番も機械が書き出す。
+_COUNTS_START = "<!-- COUNTS_START gen_materials.py --write が実物から書き出す＝手で書き換えない -->"
+_COUNTS_END = "<!-- COUNTS_END -->"
+
+
+def bans_count_block(kind: str = "bans") -> str:
+    """KB に差し込む「機械が数えた件数」の文を作る（CC は数字を書かない）。
+
+    kind="bans"  ＝ 向きを持たない部品の件数（型の表の bans から数える）
+    kind="counts" ＝ ★2026-09-06（再監査 cp22 の N-3）に足した。
+      KB §12-5 の表の 5〜8番（指標の種類・材料の一覧の行・部品の件数・膨らむ理由）。
+      **なぜ足したか**＝この4つは手書きで、この工事で古くなった（監査が実測＝
+      種類 256→実際は選べる140／材料 261→263／部品 551→573）。
+      cp21 の P1 が「手で数字を書ける場所を残す限り、注意では止まらない」と診断したのに、
+      P1 の対策を入れた**同じファイルの10行 下**で同じ事故が起きていた。
+    """
+    t = json.loads((_RATCHET / "signal_families.json").read_text(encoding="utf-8"))
+    if kind == "bans":
+        st = list((t.get("bans") or {}).get("direction_stateful", {}).get("parts") or [])
+        nt = list((t.get("bans") or {}).get("direction_note", {}).get("parts") or [])
+        ov = len(set(st) & set(nt))
+        total = len(st) + len(nt) - ov
+        return (f"{_BANS_START}\n"
+                f"5. 逆に、仕分けで消えるものは在る＝向きを持たない部品**{total}件**（型の表の bans）は"
+                f"「向き」の物差しには使えない。内訳は `direction_stateful`（状態量・ボラ量）**{len(st)}件**"
+                f" ＋ `direction_note`（カタログ注記）**{len(nt)}件**、重なり **{ov}件**。\n"
+                f"{_BANS_END}")
+    b = build_body()
+    ev = _engine_view()
+    sel = len(ev["selectable_fams"])
+    unsel = len(ev["unselectable_fams"])
+    parts = len(t.get("parts") or [])
+    extra = sum(len((v or {}).get("parts") or []) for v in (t.get("extra_parts") or {}).values())
+    return (f"{_COUNTS_START}\n"
+            f"| 5 | 指標の種類 | **{sel + unsel}種類**"
+            f"（engine_tuner が選べる **{sel}**／選べない **{unsel}**） |"
+            f" materials.md の「engine_tuner が選べる指標の種類」の行 |\n"
+            f"| 6 | 材料の一覧の行 | **{b['counts']['在る']}件**（在る。ほかに「入れない」"
+            f"{b['counts']['入れない']}件） | materials.md の一覧 |\n"
+            f"| 7 | パラメータまで展開した部品 | **{parts}件**（＋別枠 {extra}件＝**{parts + extra}**） |"
+            f" signal_families.json の parts と extra_parts |\n"
+            f"| 8 | ★{parts + extra} に膨らむ理由 | ADX7・ADX14・ADX21 のように、"
+            f"同じ指標のパラメータ違いを別々に数えているため | 部品の名前の実測 |\n"
+            f"{_COUNTS_END}")
+
+
+def _bans_splice(text: str, blk: str, start: str = "", end: str = "") -> tuple[str, bool]:
+    """印の START〜END を差し替える。印が無ければ差し込まない（False）。
+
+    ★2026-09-06（再監査 cp22 の N-3）＝印を引数で受けられるようにした（既定は BANS）。
+    """
+    start = start or _BANS_START
+    end = end or _BANS_END
+    if start not in text or end not in text:
+        return text, False
+    s = text.index(start)
+    e = text.index(end, s) + len(end)
+    return text[:s] + blk + text[e:], True
+
+
 def write() -> int:
     body = build_body()
     if not body["library_ready"]:
@@ -2123,6 +2196,29 @@ def write() -> int:
             print(f"  [差し込み] {p.name}（作ってはいけないものとの照合）")
         else:
             print(f"  [変更なし] {p.name}（作ってはいけないものとの照合）")
+    # ★向きを持たない部品の件数を、知識の正本へ書き出す（2026-09-05・監査 cp21 の C1）
+    if not _BANS_TARGET.exists():
+        print(f"  ⚠️ [未差し込み] {_BANS_TARGET.name}: ファイルが無い")
+    else:
+        _bt = _BANS_TARGET.read_text(encoding="utf-8")
+        _bn, _bok = _bans_splice(_bt, bans_count_block())
+        if not _bok:
+            print(f"  ⚠️ [未差し込み] {_BANS_TARGET.name}: BANS_COUNT_START/END の印が無い（先に印を置く）")
+        elif _bn != _bt:
+            _BANS_TARGET.write_text(_bn, encoding="utf-8")
+            print(f"  [差し込み] {_BANS_TARGET.name}（向きを持たない部品の件数）")
+        else:
+            print(f"  [変更なし] {_BANS_TARGET.name}（向きを持たない部品の件数）")
+        # ★KB §12-5 の表の 5〜8番も書き出す（2026-09-06・再監査 cp22 の N-3）
+        _ct = _BANS_TARGET.read_text(encoding="utf-8")
+        _cn, _cok = _bans_splice(_ct, bans_count_block("counts"), _COUNTS_START, _COUNTS_END)
+        if not _cok:
+            print(f"  ⚠️ [未差し込み] {_BANS_TARGET.name}: COUNTS_START/END の印が無い（先に印を置く）")
+        elif _cn != _ct:
+            _BANS_TARGET.write_text(_cn, encoding="utf-8")
+            print(f"  [差し込み] {_BANS_TARGET.name}（指標の種類・材料の行・部品の件数）")
+        else:
+            print(f"  [変更なし] {_BANS_TARGET.name}（指標の種類・材料の行・部品の件数）")
     # ★「やることリストの確かめ方 × 要件の逐語」の差し込み（2026-08-26・B-4）
     _ra_ng = req_accept_problems()
     if _ra_ng:
@@ -2180,6 +2276,29 @@ def verify() -> list[str]:
         if cur != blk:
             ng.append(f"{p.name}: 作ってはいけないものとの照合の差し込みが実物と食い違う"
                       "（手で書き換えたか、元が変わったのに作り直していない）")
+    # ★向きを持たない部品の件数（2026-09-05・監査 cp21 の C1）＝手で書き換えたか、
+    #   型の表が変わったのに書き直していないかを、両方 検出する
+    if not _BANS_TARGET.exists():
+        ng.append(f"{_BANS_TARGET.name}: ファイルが無い（向きを持たない部品の件数の差し込み先）")
+    else:
+        _bt = _BANS_TARGET.read_text(encoding="utf-8")
+        if _BANS_START not in _bt or _BANS_END not in _bt:
+            ng.append(f"{_BANS_TARGET.name}: BANS_COUNT_START/END の印が無い")
+        else:
+            _s = _bt.index(_BANS_START)
+            _cur = _bt[_s:_bt.index(_BANS_END, _s) + len(_BANS_END)]
+            if _cur != bans_count_block():
+                ng.append(f"{_BANS_TARGET.name}: 向きを持たない部品の件数が型の表と食い違う"
+                          "（手で書き換えたか、型の表が変わったのに作り直していない）")
+        # ★KB §12-5 の表の 5〜8番（2026-09-06・再監査 cp22 の N-3）
+        if _COUNTS_START not in _bt or _COUNTS_END not in _bt:
+            ng.append(f"{_BANS_TARGET.name}: COUNTS_START/END の印が無い")
+        else:
+            _s2 = _bt.index(_COUNTS_START)
+            _cur2 = _bt[_s2:_bt.index(_COUNTS_END, _s2) + len(_COUNTS_END)]
+            if _cur2 != bans_count_block("counts"):
+                ng.append(f"{_BANS_TARGET.name}: 指標の種類・材料の行・部品の件数が実物と食い違う"
+                          "（手で書き換えたか、実物が変わったのに作り直していない）")
     # ★「やることリストの確かめ方 × 要件の逐語」（2026-08-26・B-4）＝止める条件4つ
     ng += req_accept_problems()                       # ①行が対応表に無い ②番号が正本に無い ③basis が空
     ng += req_progress_problems()                     # ★B-5＝progress に手で打った達成度の数字が在る
@@ -2201,6 +2320,11 @@ def verify() -> list[str]:
 
 def selftest() -> int:
     ng: list[str] = []
+    # ★2026-09-06（監査 cp23 の X-5・設計書 iter="cp23-selftest-audit-req-20260906"）
+    #   ＝当てる相手が1件も無くて飛ばした番人の名前を、ここに集める。
+    #   直す前は画面に出すだけで、合否の数にも出力にも残らなかった＝「✅ 全部 pass」が
+    #   「番人を全部 当てた」を意味しない状態だった（このファイルの :988・:2411 が禁じている状態）。
+    skipped: list[str] = []
     body = build_body()
     rows = body["rows"]
     # T1 在るの行数＝4つの定義表の件数の合計と一致する（1つでも取りこぼしたら落ちる）
@@ -2610,7 +2734,15 @@ def selftest() -> int:
     #   差し込みが古いだけでも verify() が鳴る。それを T6 が「後始末ができていない」と
     #   誤って説明していた（実測で確認）。106番と同じ型なので、範囲を絞って直した。
     _t6_msg = "materials.md が正本と一致しない"
-    if _MD.exists():
+    if not _MD.exists():
+        ng.append("T6: materials.md が無いので改変検出を確かめられない（先に --write）")
+    elif any(_t6_msg in x for x in verify()):
+        # ★2026-09-06（監査 cp23 の X-4）＝素の状態で鳴っていたら、壊して戻す番人は成立しない。
+        #   直す前はそのまま実行し、戻しても鳴るので「後始末ができていない」が必ず立った
+        #   ＝赤の原因が本当の欠陥かどうかを、この番人では区別できなかった。
+        ng.append("T6: 素の状態で --verify が鳴っている（先に --write で直す）"
+                  "＝壊して戻す番人を当てられない")
+    else:
         keep = _MD.read_text(encoding="utf-8")
         try:
             _MD.write_text(keep + "この行は手で足しました\n", encoding="utf-8")
@@ -2620,8 +2752,6 @@ def selftest() -> int:
             _MD.write_text(keep, encoding="utf-8")
         if any(_t6_msg in x for x in verify()):
             ng.append("T6: 元に戻したのに --verify が鳴る（番人の後始末ができていない）")
-    else:
-        ng.append("T6: materials.md が無いので改変検出を確かめられない（先に --write）")
     # ══ B-4｜やることリストの確かめ方 × 要件の逐語（2026-08-26・承認 a3be50c30e7ea827）══
     #   ★設計書 §11 の10件と1件ずつ対応する。わざと壊して、止まることを確かめる。
     _ra_msg = "やることリストの確かめ方 × 要件の逐語"
@@ -2649,11 +2779,57 @@ def selftest() -> int:
         if req_accept_problems(_rows, _mp, _idx):
             ng.append("R7: いまの対応表に不足が在る（--write の前に直す）")
 
+        # ★B1・B2（2026-09-06・再監査 cp22 の N-4）＝KB の件数の差し込みに番人が0件だったので足す。
+        #   B1＝差し込んだ件数を1文字 変えると verify が ❌ を出す ／ B2＝元に戻すと出ない。
+        #   ★実物のファイルを一度だけ書き換えて、必ず元に戻す（try/finally）。
+        # ★2026-09-06（監査 cp23 の X-4・X-5・設計書 iter="cp23-selftest-audit-req-20260906"）＝2つ直した。
+        #   ①**素の状態で verify が鳴っていたら、番人を実行せず不合格に数える。**
+        #     直す前は print するだけで先へ進み、壊して戻しても鳴ったままなので
+        #     「元に戻したのに鳴る」が必ず立った＝赤の原因が本当の欠陥かどうか分からなかった。
+        #   ②**COUNTS の差し込みにも同じ壊し方を当てる（B3・B4）。**
+        #     直す前は bans の差し込みだけを壊していた＝cp22 の N-3 で足した COUNTS は番人ゼロだった。
+        _bt_now = _BANS_TARGET.read_text(encoding="utf-8") if _BANS_TARGET.exists() else ""
+        for _bn, _bmark, _bkind, _bmsg in (
+            ("B1・B2", _BANS_START, "bans", "向きを持たない部品の件数"),
+            ("B3・B4", _COUNTS_START, "counts", "指標の種類・材料の行・部品の件数"),
+        ):
+            if _bmark not in _bt_now:
+                print(f"     [{_bn}] KB に {_bkind} の差し込みの印が無い＝この番人は今回は当てられない")
+                skipped.append(_bn)
+                continue
+            if any(_bmsg in x for x in (verify() or [])):
+                ng.append(f"{_bn}: 素の状態で verify が鳴っている（先に --write で直す）"
+                          "＝壊して戻す番人を当てられない")
+                continue
+            _b_keep = _BANS_TARGET.read_text(encoding="utf-8")
+            try:
+                _b_cur = bans_count_block(_bkind)
+                _BANS_TARGET.write_text(
+                    _b_keep.replace(_b_cur, _b_cur.replace("件**", "件★**", 1)), encoding="utf-8")
+                if not any(_bmsg in x for x in (verify() or [])):
+                    ng.append(f"{_bn}: KB の件数を書き換えても verify が ❌ を出さない（番人が効いていない）")
+            finally:
+                _BANS_TARGET.write_text(_b_keep, encoding="utf-8")
+            if any(_bmsg in x for x in (verify() or [])):
+                ng.append(f"{_bn}: 元に戻したのに verify が ❌ を出す（書き換えが残っている）")
+
         # R6 要件の accept を1文字 変えると、差し込む表も同じだけ変わる（写しではない）
-        _idx2 = {k: dict(v) for k, v in _idx.items()}
-        _idx2["R5"]["accept"] = _idx2["R5"]["accept"] + "＿番人"
-        if req_accept_block(_rows, _mp, _idx) == req_accept_block(_rows, _mp, _idx2):
-            ng.append("R6: 要件の逐語を変えても差し込む表が変わらない（その場で引いていない）")
+        # ★2026-09-06（再監査 cp22 の N-5）＝壊す相手の鍵を焼き込むのをやめた。
+        #   直す前は "R5" と書いていたが、やることリストが M2-C・M2-D へ進んで
+        #   差し込む表に R5 の行が出なくなり、わざと壊しても落ちなくなっていた（空振り）。
+        #   手本＝同じ自己テストの S6（その場で実物から選ぶ形）。
+        #   ★選ぶ相手は「やることリストに在る行が指している要件」＝差し込む表に実際に出るもの。
+        _r6_key = next((rid for r in _rows
+                        for rid in (_mp.get(r["id"], {}).get("req") or [])
+                        if rid in _idx), None)
+        if _r6_key is None:
+            print("     [R6] 差し込む表に出る要件が1件も無い＝この番人は今回は当てられない")
+            skipped.append("R6")
+        else:
+            _idx2 = {k: dict(v) for k, v in _idx.items()}
+            _idx2[_r6_key]["accept"] = _idx2[_r6_key]["accept"] + "＿番人"
+            if req_accept_block(_rows, _mp, _idx) == req_accept_block(_rows, _mp, _idx2):
+                ng.append(f"R6: 要件の逐語（{_r6_key}）を変えても差し込む表が変わらない（その場で引いていない）")
 
         # R8 やることリストの確かめ方の欄を変えると、差し込む表の欄も変わる
         _rows2 = [dict(r) for r in _rows]
@@ -2662,9 +2838,17 @@ def selftest() -> int:
             ng.append("R8: 確かめ方の欄を変えても差し込む表が変わらない（実物から引いていない）")
 
         # R9 対応表から1件 消すと落ちる（R1 と同じ道）
-        _bad = {k: v for k, v in _mp.items() if k != "M2-1-1"}
-        if not req_accept_problems(_rows, _bad, _idx):
-            ng.append("R9: 対応表から1件 消しても落ちない")
+        # ★2026-09-06（再監査 cp22 の N-5）＝壊す相手の鍵を焼き込むのをやめた。
+        #   直す前は "M2-1-1" と書いていたが、やることリストが M2-C・M2-D へ進んで
+        #   その行が2本の md から消え（実測＝どちらも 0件）、わざと壊しても落ちなくなっていた。
+        _r9_key = next((r["id"] for r in _rows if r["id"] in _mp), None)
+        if _r9_key is None:
+            print("     [R9] やることリストと対応表の両方に在る行が1件も無い＝この番人は今回は当てられない")
+            skipped.append("R9")
+        else:
+            _bad = {k: v for k, v in _mp.items() if k != _r9_key}
+            if not req_accept_problems(_rows, _bad, _idx):
+                ng.append(f"R9: 対応表から1件（{_r9_key}）消しても落ちない")
 
         # R4 差し込んだ逐語を手で1文字 変えると --verify が鳴る（メタ確認）
         # R5 印を消すと「印が無い」で鳴る
@@ -2737,7 +2921,11 @@ def selftest() -> int:
             if sum(1 for s in req_state_rows(_r2, _s_mp, _s_idx) if s["gap"]) <= _base_gap:
                 ng.append("S5: ✅済 を1つ『まだ』に変えても、ずれの件数が増えない")
         else:
-            ng.append("S5: 確かめる相手（state=完了 の要件に効く ✅済 の行）が見つからない")
+            # ★2026-09-06（再監査 cp22 の N-5）＝相手が居ないときに ❌ を出すのをやめた。
+            #   やることリストが進むと「state=完了 の要件に効く ✅済 の行」は普通に0件になる。
+            #   0件は「番人が壊れている」ではなく「今回は当てる相手が居ない」＝画面に出すだけにする。
+            print("     [S5] state=完了 の要件に効く ✅済 の行が0件＝この番人は今回は当てられない")
+            skipped.append("S5")
 
         # S6 対応表から1件 消すと、効く行の数が変わる
         _k = next((k for k, v in _s_mp.items() if v.get("req")), None)
@@ -2772,7 +2960,10 @@ def selftest() -> int:
     print("=" * 70)
     for x in ng:
         print("  ❌ " + x)
-    print("  ✅ 全部 pass" if not ng else f"  ❌ {len(ng)} 件")
+    # ★2026-09-06（監査 cp23 の X-5）＝当てられなかった番人を、合否の行に必ず出す。
+    #   直す前は「✅ 全部 pass」だけで、飛ばした番人が在ることが合否の行から分からなかった。
+    _sk = f"（該当なし {len(skipped)}件: {'・'.join(skipped)}）" if skipped else ""
+    print(f"  ✅ 全部 pass{_sk}" if not ng else f"  ❌ {len(ng)} 件{_sk}")
     return 1 if ng else 0
 
 

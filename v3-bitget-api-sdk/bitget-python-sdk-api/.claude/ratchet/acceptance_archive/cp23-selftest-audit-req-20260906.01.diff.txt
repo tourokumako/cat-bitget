@@ -1,0 +1,24 @@
+5c5,9
+< TARGET: scripts/priority_rebuild/gen_materials.py, scripts/priority_rebuild/gen_audit_request.py
+---
+> TARGET: scripts/priority_rebuild/gen_materials.py, scripts/priority_rebuild/gen_audit_request.py, .claude/breaks/b27_skipped_not_counted.sh, .claude/breaks/b28_counts_break_dead.sh, .claude/breaks/b29_dirty_verify_stops.sh, .claude/breaks/b30_missing_section.sh
+> 
+> NEW_FILE: .claude/breaks/b27_skipped_not_counted.sh, .claude/breaks/b28_counts_break_dead.sh, .claude/breaks/b29_dirty_verify_stops.sh, .claude/breaks/b30_missing_section.sh
+> 
+> MODEL: .claude/breaks/b01_missing_func.sh, .claude/breaks/lib.sh
+60a65
+> | **Q5 の6** | 壊すプログラムが本当に効いているか | **壊し方は私が選んでいます。**別の壊し方（たとえば `skipped` の中身を空文字にする）では、この4本は落ちません。**＝「この4通りの壊し方では落ちる」ことしか言えません** |
+74,79c79,84
+< | 1 | `--selftest` の合否行に「該当なし N件」が出る | `python3 scripts/priority_rebuild/gen_materials.py --selftest` | 実経路 | 飛ばす番人を1件 増やして、N が増えるか | `gen_materials.py --selftest` の C3 | 出力の最終行 | **未着手** |
+< | 2 | COUNTS のブロックをわざと書き換えると `--verify` が ❌ を出し、戻すと出ない | `python3 scripts/priority_rebuild/gen_materials.py --selftest` | 実経路 | COUNTS の件数を1つ書き換える | 同上の C4 | 出力の C4 の行 | **未着手** |
+< | 3 | 素の状態で `--verify` が鳴っていれば、T6・B1 は実行せず不合格に数える | `python3 scripts/priority_rebuild/gen_materials.py --selftest` | 実経路 | `materials.md` を1文字 書き換えてから `--selftest` を打つ | 同上の C5 | 出力の T6・B1 の行 | **未着手** |
+< | 4 | 依頼書が指す節が無いとき、`gen_audit_request.py` が依頼書を書かない | `python3 scripts/priority_rebuild/gen_audit_request.py --selftest` | 実経路 | 存在しない節（`§99`）を指す入力を渡す | 同上の番人 | 終了コードが0でない | **未着手** |
+< | 5 | 上の4つを直した後も、`--verify` が ✅ 一致のまま | `python3 scripts/priority_rebuild/gen_materials.py --verify` | 実経路 | `materials.md` を1文字 書き換える | `gen_materials.py --verify` | `✅ 一致` の行 | **未着手** |
+< | 6 | `impl_functions`（触る関数の一覧）は**実装の後に確定させる**＝実装が終わってから `verify_design_contract.py --write` が実物から書き出す（手書きしない） | `python3 scripts/priority_rebuild/verify_design_contract.py --write .claude/state/acceptance.md` | 実経路 | 一覧に無い関数を触ってから照合を打つ | `verify_design_contract.py` | 終了コードが0でない | **未着手** |
+---
+> | 1 | `--selftest` の合否行に「該当なし N件」が出る | `python3 scripts/priority_rebuild/gen_materials.py --selftest` | 実経路 | `skipped` に積む行を消すと、合否行から「該当なし」が消える | `.claude/breaks/b27_skipped_not_counted.sh` | 終了コードが0でない | **未着手** |
+> | 2 | COUNTS のブロックをわざと書き換えると `--verify` が ❌ を出し、戻すと出ない | `python3 scripts/priority_rebuild/gen_materials.py --selftest` | 実経路 | COUNTS の文から `件**` を消すと、壊し方が効かなくなる | `.claude/breaks/b28_counts_break_dead.sh` | 終了コードが0でない | **未着手** |
+> | 3 | 素の状態で `--verify` が鳴っていれば、T6・B1 は実行せず不合格に数える | `python3 scripts/priority_rebuild/gen_materials.py --selftest` | 実経路 | `materials.md` を1文字 書き換えてから `--selftest` を打つ | `.claude/breaks/b29_dirty_verify_stops.sh` | 終了コードが0でない | **未着手** |
+> | 4 | 依頼書が指す節が無いとき、`gen_audit_request.py` が依頼書を書かない | `python3 scripts/priority_rebuild/gen_audit_request.py --selftest` | 実経路 | 節の実在確認を空返しにすると、Q11 が落ちる | `.claude/breaks/b30_missing_section.sh` | 終了コードが0でない | **未着手** |
+> | 5 | 上の4つを直した後も、`--verify` が ✅ 一致のまま | `python3 scripts/priority_rebuild/gen_materials.py --verify` | 実経路 | `materials.md` を1文字 書き換える | `.claude/breaks/b29_dirty_verify_stops.sh` | 終了コードが0でない | **未着手** |
+> | 6 | `impl_functions`（触る関数の一覧）は**実装の後に確定させる**＝実装が終わってから `verify_design_contract.py --write` が実物から書き出す（手書きしない） | `python3 scripts/priority_rebuild/verify_design_contract.py --write .claude/state/acceptance.md` | 実経路 | 凍結に在る関数を実装から消す | `.claude/breaks/b01_missing_func.sh` | 終了コードが0でない | **未着手** |

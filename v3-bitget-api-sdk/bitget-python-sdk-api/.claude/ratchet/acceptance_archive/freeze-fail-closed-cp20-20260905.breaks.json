@@ -1,0 +1,54 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）",
+ "iter": "freeze-fail-closed-cp20-20260905",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b23_empty_freeze_stops.sh",
+   "code": 1,
+   "note": "②理由あり rc=0"
+  },
+  {
+   "no": "2",
+   "script": "b23_empty_freeze_stops.sh",
+   "code": 1,
+   "note": "②理由あり rc=0"
+  },
+  {
+   "no": "3",
+   "script": "b25_block_choice_unified.sh",
+   "code": 1,
+   "note": "gate rc=2 hit=0 (0=found) bytes=771"
+  },
+  {
+   "no": "4",
+   "script": "b24_both_empty_ng.sh",
+   "code": 1,
+   "note": "verify rc=1 hit=0 (0=found) out_bytes=590 stderr_bytes=0 stderr_head=[]"
+  },
+  {
+   "no": "5",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "6",
+   "script": "b06_tool_changed.sh",
+   "code": 0,
+   "note": ""
+  },
+  {
+   "no": "7",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "8",
+   "script": "b26_narrowed_list_enforced.sh",
+   "code": 1,
+   "note": "verify rc=1 hitA=0 hitName=0 (0=found) out_bytes=1196 stderr_bytes=0 stderr_head=[]"
+  }
+ ]
+}

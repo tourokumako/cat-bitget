@@ -1362,6 +1362,7 @@
    "MIDPOINT傾き%",
    "MIDPRICE傾き%",
    "MMAR傾き%",
+   "MMI",
    "MOM%",
    "MSW_LEAD",
    "MSW_SINE",
@@ -1582,8 +1583,8 @@
   ]
  },
  "confirm_conditions": {
-  "banned_pairs": 436,
-  "parts_count": 551,
+  "banned_pairs": 452,
+  "parts_count": 555,
   "quantile_grid": [
    "q10",
    "q20",

@@ -1,0 +1,114 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）",
+ "iter": "m2c4-add-parts-20260905",
+ "rows": [
+  {
+   "no": "1",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "2",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "3",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "4",
+   "script": "実経路",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/実経路"
+  },
+  {
+   "no": "5",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "6",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "7",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "8",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "9",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "10",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "11",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "12",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "13",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "14",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "15",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "16",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "17",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "18",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  }
+ ]
+}

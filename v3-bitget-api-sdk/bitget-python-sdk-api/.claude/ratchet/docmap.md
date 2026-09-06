@@ -1,4 +1,4 @@
-<!-- DOCMAP_HASH=680eda7edaa57b9c -->
+<!-- DOCMAP_HASH=c0b51b531e708d30 -->
 # docmap.md — 機械が作る文書の全数の一覧（gen_docmap.py が自動生成＝手書き禁止）
 
 ⚠️ 手で書き換えないでください。**道具の側の名乗り（`GENERATES`）を機械で集めています。**
@@ -18,11 +18,11 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## いまの数
 
-- 名乗っている道具＝**20 本**
-- その道具が作る文書＝**31 本**
+- 名乗っている道具＝**21 本**
+- その道具が作る文書＝**32 本**
 - **検証コマンドを持たない道具＝2 本**（gen_audit_request.py／gen_p23_candidates.py）
-- **名乗っていない道具＝1 本**（明らかな漏れ）／ 29 本（要確認）＝表3
-- 誰にも作られていない文書＝**409 本**（表4＝人が手で書いているもの）
+- **名乗っていない道具＝4 本**（明らかな漏れ）／ 32 本（要確認）＝表3
+- 誰にも作られていない文書＝**568 本**（表4＝人が手で書いているもの）
 
 ## 表1｜道具 → 作る文書
 
@@ -46,6 +46,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 | `gen_filemap.py` | filemap.md（まるごと） | あり |
 | `gen_fix_map.py` | engine_tuner_fix_map.md（まるごと） | あり |
 | `gen_flow.py` | e38_flow.md（まるごと） | あり |
+| `gen_indicator_switch.py` | indicator_switch.json（まるごと） | あり |
 | `gen_materials.py` | materials.md（まるごと）<br>materials.json（まるごと）<br>engine_tuner_milestones.md（一部の節）<br>engine_tuner_milestones2.md（一部の節） | あり |
 | `gen_observe_manual.py` | observe_diag_manual.md（まるごと） | あり |
 | `gen_p23_candidates.py` |  | ❌ なし |
@@ -77,6 +78,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/exit_families_approved.txt` | `gen_exit_families.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/filemap.md` | `gen_filemap.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/improvement_arc.md` | `gen_improvement_arc.py` | まるごと | ✅ |
+| `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/indicator_switch.json` | `gen_indicator_switch.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/materials.json` | `gen_materials.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/materials.md` | `gen_materials.py` | まるごと | ✅ |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/observe_diag_manual.md` | `gen_observe_manual.py` | まるごと | ✅ |
@@ -95,13 +97,16 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 **A＝明らかな漏れ**（名前が `gen_` で始まるのに名乗っていない）。
 **B＝要確認**（`.md` を書き出す処理が在るのに名乗っていない。凍結した研究の道具を含む）。
 
-**A＝1 本 ／ B＝29 本。**
+**A＝4 本 ／ B＝32 本。**
 
 ### A｜明らかな漏れ
 
 | 道具 | 理由 |
 |---|---|
 | `.claude/tools/gen_audit_index.py` | 名前が gen_ で始まるのに名乗っていない |
+| `.claude/tools/gen_audit_todo.py` | 名前が gen_ で始まるのに名乗っていない |
+| `.claude/tools/gen_impl_functions.py` | 名前が gen_ で始まるのに名乗っていない |
+| `.claude/tools/gen_regime_kb.py` | 名前が gen_ で始まるのに名乗っていない |
 
 **★この道具に `GENERATES` を足すか、文書を作らない道具だと確かめてください。**
 
@@ -113,12 +118,15 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 |---|---|
 | `.claude/hooks/require_source_read_before_acceptance.py` | md を書き出す処理が在るのに名乗っていない |
 | `.claude/hooks/test_worklog_toolchange.py` | md を書き出す処理が在るのに名乗っていない |
+| `.claude/tools/run_breaks.py` | md を書き出す処理が在るのに名乗っていない |
 | `.claude/tools/tidy_next_step.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/dashboard/build_dashboard_json.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/doc_coverage_diag.py` | md を書き出す処理が在るのに名乗っていない |
+| `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/ratchet_io.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/tuner_judgement.py` | md を書き出す処理が在るのに名乗っていない |
+| `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/verify_design_contract.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/regime/analyze_intra_axis_correlation.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/regime/analyze_label_runs.py` | md を書き出す処理が在るのに名乗っていない |
 | `v3-bitget-api-sdk/bitget-python-sdk-api/scripts/regime/analyze_no_window_drift.py` | md を書き出す処理が在るのに名乗っていない |
@@ -146,7 +154,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 
 ## 表4｜誰にも作られていない文書（人が手で書いているもの）
 
-**409 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
+**568 本。**この一覧に出るものは、機械の検証の対象外です（＝古くなっても検出されません。それでよいかは人が決めます）。
 
 <details><summary>全部を開く</summary>
 
@@ -163,6 +171,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/state/acceptance_20260806_signal_table.md`
 - `.claude/state/chat_check_blocks.json`
 - `.claude/state/chat_check_last.json`
+- `.claude/state/chat_draft.md`
 - `.claude/state/current_request.md`
 - `.claude/state/design_approved.json`
 - `.claude/state/e37_sl_step1_result.md`
@@ -224,6 +233,10 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `.claude/state/session_worklog_20260827.md`
 - `.claude/state/session_worklog_20260828.md`
 - `.claude/state/session_worklog_20260829.md`
+- `.claude/state/session_worklog_20260830.md`
+- `.claude/state/session_worklog_20260901.md`
+- `.claude/state/session_worklog_20260902.md`
+- `.claude/state/session_worklog_20260904.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit15_routeB_records.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-15_audit16_ml_options_review.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-05-19_audit17_phase_a_evaluation.md`
@@ -246,6 +259,15 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-27_regime_element04_audit_report.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-28_m2_range_laws_cp10a_audit_report.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-08-28_m2_todo_rewrite_cp10b_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-01_m2b3_range_laws_cp11_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-02_impl_lock_cp13_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-03_impl_lock_fix_cp14_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-03_impl_lock_fix_cp15_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-03_impl_lock_fix_cp16_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-03_impl_lock_fix_cp17_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-04_impl_lock_fix_cp18_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-04_impl_lock_fix_cp19_audit_report.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-05_m2c2_indicator_switch_cp20_audit_report.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-15_ml_usage_options_overview.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-19_phase_a_cap_exit_cluster_threshold.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-05-26_phase1_v6_6cases_methodology_audit_request.md`
@@ -266,6 +288,16 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-27_regime_element04_audit_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-28_m2_range_laws_cp10a_audit_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-08-28_m2_todo_rewrite_cp10b_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-01_m2b3_range_laws_cp11_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-01_m2c_indicator_onoff_cp12_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-02_impl_lock_cp13_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-03_impl_lock_fix_cp14_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-03_impl_lock_fix_cp15_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-03_impl_lock_fix_cp16_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-03_impl_lock_fix_cp17_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-04_impl_lock_fix_cp18_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-04_impl_lock_fix_cp19_audit_request.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-05_m2c2_indicator_switch_cp20_audit_request.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_frozen_question_regime.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/_template.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/context/cat_v9_regime_map.md`
@@ -364,6 +396,9 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/2026-05-22_phase1_layer_inversion_instruction.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/2026-05-23_phase4b_forward_design_spec.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/2026-05-23_step_i4_1_case_a_v2_v3_critical1_spec.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/2026-09-04_identity_l1s1_exec_contract_design_spec.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/2026-09-04_t25_fixture_off_design_spec.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/2026-09-05_freeze_fail_closed_cp20_design_spec.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/audit_summary_20260514_audit9_audit10.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/handoff_to_web_claude_v12_session_20260519.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/handoff_to_web_claude_v13_session_20260519.md`
@@ -372,6 +407,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/handoff_to_web_claude_v16_session_20260520.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/handoff_to_web_claude_v17_session_20260521.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/handoff_to_web_claude_v18_session_20260521.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/handoff_to_web_claude_v19_session_20260904.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/handoff_to_web_claude_v5_session_20260514.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/handoff_to_web_claude_v6_session_20260515.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/instructions/handoff_to_web_claude_v9_session_20260518.md`
@@ -462,6 +498,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/E37_リファクタ（挙動不変・デバッグ後整理）.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/c2d1df43ef91.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/c783e0685012.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/check6-unread-rule-20260829.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/d09563e7fd4c.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/design-consistency-gate-20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/doc-fix-v9test-20260822.md`
@@ -478,10 +515,127 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/forbidden-check-auto-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-20260824.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/four-elements-gate-v2-drawn-only-20260825.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.01.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.01.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.01.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.02.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.02.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.02.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.03.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.03.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.03.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.04.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.04.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.04.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.05.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.05.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.05.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.06.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.06.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.06.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.breaks.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.frozen.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/freeze-fail-closed-cp20-20260905.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/gen-audit-request-20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/gen-minimize-loss-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/h2g2-entry-scan-20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/hold-mom-exit.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/identity-l1s1-exec-contract-20260904.01.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/identity-l1s1-exec-contract-20260904.01.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/identity-l1s1-exec-contract-20260904.01.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/identity-l1s1-exec-contract-20260904.breaks.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/identity-l1s1-exec-contract-20260904.frozen.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/identity-l1s1-exec-contract-20260904.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-20260902.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp13-20260902.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp14-20260903.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp15-20260903.01.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp15-20260903.01.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp15-20260903.01.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp15-20260903.02.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp15-20260903.02.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp15-20260903.02.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp15-20260903.frozen.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp15-20260903.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.01.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.01.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.01.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.02.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.02.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.02.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.03.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.03.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.03.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.04.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.04.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.04.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.breaks.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.frozen.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp16-20260903.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.01.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.01.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.01.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.02.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.02.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.02.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.03.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.03.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.03.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.04.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.04.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.04.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.05.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.05.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.05.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.06.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.06.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.06.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.07.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.07.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.07.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.breaks.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.frozen.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp17-20260903.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.01.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.01.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.01.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.02.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.02.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.02.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.03.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.03.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.03.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.04.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.04.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.04.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.05.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.05.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.05.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.breaks.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.frozen.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/impl-lock-fix-cp19-20260904.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/indicator-switch-20260902.01.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/indicator-switch-20260902.01.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/indicator-switch-20260902.01.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/indicator-switch-20260902.breaks.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/indicator-switch-20260902.frozen.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/indicator-switch-20260902.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/indicator-switch-20260902.md.actual.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2-b-2b-range-laws-20260830.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2-b0-law-reader-20260830.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2-b3-audit-fixes-20260901.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.01.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.01.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.01.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.02.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.02.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.02.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.03.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.03.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.03.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.breaks.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.frozen.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2c4-add-parts-20260905.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/milestone-req-accept-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/new-file-target-gate-20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/purpose-gate-add-only-20260829.md`
@@ -492,14 +646,22 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/regime-label-synthetic-20260829.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-map-r17-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/req-progress-machine-20260826.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/rules30-to-7-20260829.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/scene-cap.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/selftest-standalone-20260824.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/t25-fixture-off-20260904.01.diff.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/t25-fixture-off-20260904.01.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/t25-fixture-off-20260904.01.sha.txt`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/t25-fixture-off-20260904.breaks.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/t25-fixture-off-20260904.frozen.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/t25-fixture-off-20260904.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/tidy-next-step-20260828.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/todo-gate-diff-paste-20260827.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-four-elements-gate-v58-20260825.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unapproved-permission-gate-20260824.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/unordered-scan-scope-20260826.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/analysis_playbook.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/breaks_frozen.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/cat_requirements.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/condition_parts.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/contract_check_design.md`
@@ -525,10 +687,14 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/baseline_before.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/recipe_level_both.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/golden/exit_forms_20260825/recipe_state_only.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/impl_functions_frozen.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/ledger.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/logic_rules.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/m2_todo.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/material_ranking.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/milestone_req_map.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regime_kb_findings.json`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regime_laws.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/research_e35_rangebot.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/session_log_20260609.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/session_log_20260610.md`
@@ -537,6 +703,7 @@ python3 scripts/priority_rebuild/gen_docmap.py --verify   # 改変・古くな�
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/session_log_20260612.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/session_log_20260612_night.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/session_log_20260711.md`
+- `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/spec_lists.json`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/strat_v9ml_design.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/v9_logic.md`
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/review_lens.md`

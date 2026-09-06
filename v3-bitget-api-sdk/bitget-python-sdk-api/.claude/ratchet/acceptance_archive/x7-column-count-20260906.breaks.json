@@ -1,0 +1,18 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）",
+ "iter": "x7-column-count-20260906",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b31_column_count.sh",
+   "code": 2,
+   "note": ""
+  },
+  {
+   "no": "2",
+   "script": "b01_missing_func.sh",
+   "code": 1,
+   "note": ""
+  }
+ ]
+}

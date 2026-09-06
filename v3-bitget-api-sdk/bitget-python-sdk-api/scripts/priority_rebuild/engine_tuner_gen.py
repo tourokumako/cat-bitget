@@ -709,6 +709,11 @@ def assert_provenance(obj, limits: dict | None = None, ranges: dict | None = Non
         if "geo" in m:
             if table is not None and str(m["geo"]) not in set(table.get("geo_ok") or []):
                 bad(f"候補の表に無いかたちの列 {m['geo']}（geo_ok={table.get('geo_ok')}）")
+        elif "demand" in m:
+            # ★2026-09-05（監査 cp21 の M1②）＝需給の列も、レンジ幾何と同じ形で型の表と照らす。
+            #   直す前は、需給だけ型の表（extra_parts の demand）と1度も照らしていなかった。
+            if table is not None and str(m["demand"]) not in set(table.get("demand_ok") or []):
+                bad(f"候補の表に無い需給の列 {m['demand']}（demand_ok={table.get('demand_ok')}）")
         elif "time" in m:
             if str(m["time"]) != "時刻":
                 bad(f"時刻以外の時間の材料 {m['time']}（使えるのは 時刻 だけ）")
@@ -1187,6 +1192,8 @@ def load_signal_table() -> dict:
         "banned": {(p["part"], p["tf"]) for p in t["bans"]["insufficient_samples"]["pairs"]},
         "geo_ok": list((t.get("extra_parts") or {}).get("geo", {}).get("parts") or []),
         "time_ok": list((t.get("extra_parts") or {}).get("time", {}).get("parts") or []),
+        # ★2026-09-05（M2-C-4）＝需給の列（別枠・時間足に展開しない）
+        "demand_ok": list((t.get("extra_parts") or {}).get("demand", {}).get("parts") or []),
         "roles": roles,
         "families": list(rl["applies_to"]),
         "quantile_grid_hi": ("q70", "q80", "q90"),   # DC2 の高分位（表の DC2 の逐語＝q70・q80・q90）
@@ -2186,12 +2193,22 @@ def _flip_loose(rng, limits, c: dict) -> dict:
     return out
 
 
-def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: int = 0) -> tuple[dict, dict]:
+def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: int = 0,
+                        pre_b: dict | None = None) -> tuple[dict, dict]:
     """場面の判定の束（meta.regime.build）を1つ 組む。戻り＝(build, 引いた記録)。いまはレンジだけ。
 
     ★指標と向きは乱数で引かない（2026-08-23 まこさん決定）＝order_n 番目の (部品B の順位, 部品C の順位, 向き) を
       `regime_draw_order` が決め、成績表の その順位の材料を使う。乱数が残るのは閾値の分位と続く長さ n だけ
       （承認済みの「値は範囲で探す」）。
+
+    ★pre_b（2026-09-05・M2-C-4・まこさん承認 iter="m2c4-add-parts-20260905"）＝
+      条件B の材料に付ける前処理（例＝{"op": "ts_rank", "n": 20}＝直前の n本の中での順位）。
+      **既定は None＝付けない。**＝この直しでは、いまの動きが1バーも変わらない（恒等3本の md5 で確かめる）。
+      ★道を通しただけ。実際に付けるかどうかを相場の法則から決めるのは M2-E。
+      ★乱数で「付ける／付けない」を選ばない（違反の記録 #14・#24＝くじ引きにしない）。
+      ★水準（level）の形にだけ付く＝engine_tuner_exec.py の MATERIAL_PRE の逐語
+        「ts_rank は 0〜1・ts_std はばらつきの幅で、元の列とは単位が違う…だから列2本の形には使わず、
+         水準（level・band）で閾値と比べる形で使う」。条件B は form="level"。
     """
     if name != "range":
         raise SampleError(f"場面 {name} の束の組み方は未定義（レンジ以外は M2-6〜M2-8 で作る）")
@@ -2207,6 +2224,9 @@ def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: in
     # B 構造・位置（K-4・R1）＝location の成績表（種類×時間足の中央値）の r_b 位・向きは order_n で決まる
     #   ★数字は _ranked_material_at の中の _mat_drawn が範囲から引く（決定 (a')・78番の直し）
     m_b, draw["B"] = _ranked_material_at(rng, "location", r_b, tfs, table)
+    if pre_b is not None:                               # ★2026-09-05（M2-C-4）＝前処理の道（既定は通らない）
+        m_b = {**m_b, "pre": dict(pre_b)}
+        draw["B_pre"] = dict(pre_b)
     cond_b = {"role": "location", "form": "level", "material": [m_b],
               "side": side_b, "value": _thr_drawn(rng, limits)}
     # C 非トレンド（K-5・R8・R5）＝env「強さ」の r_c 位・時間足は 5m より上（D・K-2）
@@ -2692,6 +2712,7 @@ def attach_materials(df: pd.DataFrame, recipes: list[dict]) -> pd.DataFrame:
     global ATTACH_CALLS
     ATTACH_CALLS += 1
     need: set[str] = set()
+    need_demand: set[str] = set()                # ★2026-09-05（M2-C-4）＝需給の列（別枠）
     for r in recipes:
         lane = r["meta"].get("lane", "")
         conds, _d = ex._walk(r["entry"]["connective"])
@@ -2704,12 +2725,31 @@ def attach_materials(df: pd.DataFrame, recipes: list[dict]) -> pd.DataFrame:
             stack = [c] + ([c["inner"]] if c.get("inner") else [])
             for cc in stack:
                 for m in (cc.get("material") or []):
+                    # ★2026-09-05（M2-C-4）＝需給の列（別枠）は、時間足の展開をせずに
+                    #   observe_diag.load_demand が作った列をそのまま載せる（式を2か所に持たない）。
+                    if "demand" in m:
+                        _kind, _name = ex._material_name(m, lane)
+                        if _name not in df.columns:
+                            need_demand.add(_name)
+                        continue
                     if "family" in m and "legacy_col" not in m:
                         kind, name = ex._material_name(m, lane)
                         if kind == "col" and name not in df.columns:
                             alias = ex.RUNTIME_ALIAS.get(name)
                             if alias is None or alias not in df.columns:
                                 need.add(name)
+    if need_demand:
+        import contextlib as _cl
+        import io as _io
+        import observe_diag as _od
+        _buf = _io.StringIO()
+        with _cl.redirect_stdout(_buf):
+            _dem, _cov = _od.load_demand(pd.to_datetime(df["ts"]))
+        df = df.copy()
+        for _c in sorted(need_demand):
+            if _c not in _dem.columns:
+                raise SystemExit(f"[材料エラー] 需給の列を作れなかった: {_c}（被覆＝{_cov}）")
+            df[_c] = _dem[_c].to_numpy(float)
     if not need:
         return df
     import contextlib

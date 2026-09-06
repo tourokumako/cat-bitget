@@ -19,6 +19,15 @@
  "b20_path_shape.sh": "a16895983d83fe13adc4965e62ac283735bf12ef7cd3bf21ffee5e410ad2ad38",
  "b21_subagent_wider.sh": "e33b84d8171711287563c9a4fba986fa43d1247234c731f8a70ea150d2df4c1d",
  "b22_tool_allow_exact.sh": "3bbd9f22726671f588723dee45e139237bbf7823e7dacb925a9d1e1890597c37",
+ "b23_empty_freeze_stops.sh": "5c3f71d4bee7e0266894e65a1a1525c01ec0a3b9020f0a96ce4a7963c9664667",
+ "b24_both_empty_ng.sh": "d4f439930305d930b4b6b797563c3dafa7857f628ce4f558bef1810514008795",
+ "b25_block_choice_unified.sh": "9c40b1e67613d7eae07292593d6ce87a5e3d3fbbaec2e70c2791da71317a745f",
+ "b26_narrowed_list_enforced.sh": "0cec9dc1292d747e2284fc418d8c57ca49290956e813762c269911315bbcc52c",
+ "b27_skipped_not_counted.sh": "da6c156bff86a06281d7a36fc74e1a7c389f8e956e9cfa148148e4390e4d9f3c",
+ "b28_counts_break_dead.sh": "517bca1056e837443116a6cff4e57d72b7339f09417c381605222f0207a7d13e",
+ "b29_dirty_verify_stops.sh": "e2044abbe12daa364c0891a7441ccaab2a833c790f57f093d062553c49bed1c3",
+ "b30_missing_section.sh": "bb910c0e5963b50d10e43b0a42dcdf49b82711b4bc0b03b1fa3adc3e02a1c01a",
+ "b31_column_count.sh": "0e2e587828a98e6828150d2dc19a210c04b5e1c98ee201ee0c32bb510b7aed0f",
  "lib.sh": "5a0a37aae9c45eee32954ed1d29d1fee6f17c1f3cd95f4fa17d1be6be20ceead",
  "_なにこれ": "承認の瞬間に凍結した、壊すプログラムのハッシュ値。run_breaks.py が走る前に照らす（監査 cp16 の E-12）"
 }

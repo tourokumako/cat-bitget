@@ -1,0 +1,47 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "scripts/priority_rebuild/observe_diag.py": [
+  "<モジュール直下>",
+  "_sr_touch",
+  "_mmi",
+  "_sr_touch_atr",
+  "build_catalog",
+  "selftest"
+ ],
+ "scripts/priority_rebuild/indicator_reference_diag.py": [
+  "<モジュール直下>",
+  "_r"
+ ],
+ "scripts/priority_rebuild/gen_signal_families.py": [
+  "build_table"
+ ],
+ "scripts/priority_rebuild/gen_indicator_switch.py": [
+  "build",
+  "source_mako"
+ ],
+ "scripts/priority_rebuild/gen_materials.py": [
+  "<モジュール直下>",
+  "_row_engine",
+  "_engine_view",
+  "bans_count_block",
+  "_bans_splice",
+  "write",
+  "verify",
+  "selftest"
+ ],
+ "scripts/priority_rebuild/engine_tuner_gen.py": [
+  "load_signal_table",
+  "attach_materials",
+  "sample_regime_build",
+  "assert_provenance"
+ ],
+ "scripts/priority_rebuild/engine_tuner_exec.py": [
+  "_col_array",
+  "_material_name",
+  "load_indicator_switch",
+  "demand_enabled",
+  "selftest"
+ ]
+}

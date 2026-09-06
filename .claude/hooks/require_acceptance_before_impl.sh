@@ -19,6 +19,24 @@ STATE="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 LIST="$STATE/acceptance.md"
 APPROVED="$STATE/acceptance.approved"
 
+# ★2026-09-06（まこさん指示「だから、強制でミスを繰り返さないようにしろよ」）＝書く前に確かめる口。
+#   `bash require_acceptance_before_impl.sh --check <設計書>` で、設計書に対する判定を全部 走らせ、
+#   不足を一度に出す。判定は hook 本体と同じ python を呼ぶ（2か所に書き写さない）。
+#   なぜ要るか（実測）＝2026-09-06 に CC は同じ設計書で承認を7回 求めた。毎回 違う判定に当たり、
+#   出た分だけ直して残りを確かめずに出していた。ToDo ゲートとチャットの検査には
+#   2026-08-20／2026-09-05 に同じ形（--check）を入れてあり、設計書ゲートだけ入っていなかった。
+CHECK_MODE=0
+if [ "$1" = "--check-md" ] && [ -n "$2" ]; then
+  # ★見る設計書を差し替える（入力は stdin のまま）。呼ぶのは pre_audit_check.py --check-design。
+  #   ★これが無いと、壊した見本を渡しても本物の acceptance.md を見て通ってしまう
+  #     （2026-09-06 に実測して気づいた）。
+  if [ ! -f "$2" ]; then
+    echo "❌ 設計書が見つかりません: $2" >&2
+    exit 1
+  fi
+  LIST="$2"
+  CHECK_MODE=1
+fi
 INPUT=$(cat)
 
 # ★2026-09-03（監査 cp16 の実装中に実測して見つけた・Critical）
@@ -64,7 +82,10 @@ _RUN_TOK_J = ('eval', 'xargs', 'source', '.', 'bash', 'sh', 'zsh', 'ksh', 'csh',
 # ★2026-09-04（まこさん決定「A」）＝python で走らせてよい道具を、名前で完全一致させる2本だけ。
 #   まこさんの逐語＝「list_banned_words.py と gen_impl_functions.py の2本を
 #     名前で完全一致させたときだけ通す」「run_breaks.py は入れない。記録を直接 書ける道具だから」。
-_TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py')
+# ★2026-09-06（まこさん決定「通して良い」）＝3本目に pre_audit_check.py を足した。
+#   通してよい理由＝この道具は承認の印にも凍結の記録にも触らない。書くのは自分の結果
+#   （どの検査が rc いくつだったか）だけ＝run_breaks.py を外した理由（記録を直接 書ける）に当たらない。
+_TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.py')
 _RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')
@@ -481,6 +502,20 @@ case "$FILE" in
       echo "   ＝79回目に、承認の後に設計書の3行を書き換えて監査に出しました（監査 P-5）。" >&2
       echo "   対処＝まこさんに再承認を打ってもらってから、依頼書を書いてください。" >&2
       exit 2
+    fi
+    # ★2026-09-06（まこさん指示「監査前チェックの物理化」・設計書 iter="pre-audit-check-20260906"）
+    #   ＝監査に出す前のチェック（決まった順番で作り直し、全部の検査が rc=0）を通していなければ止める。
+    #   なぜ＝cp23 の Critical は「作り直しの順番が逆」だった。順番は CC の記憶の中にしか無く、
+    #   依頼書は手で書けたので、機械が何も見ていなかった（cp13・cp14 と同じ抜け道）。
+    PAC="$REPO/.claude/tools/pre_audit_check.py"
+    if [ -f "$PAC" ]; then
+      PAC_OUT=$(python3 "$PAC" --verify 2>&1)
+      if [ $? -ne 0 ]; then
+        echo "🔒 [監査に出す前のチェック] 通していないので、依頼書を作れません（2026-09-06・まこさん指示）。" >&2
+        printf '%s\n' "$PAC_OUT" | sed 's/^/   /' >&2
+        echo "   対処＝ python3 .claude/tools/pre_audit_check.py --run を打ち、全部 rc=0 にしてから依頼書を書く。" >&2
+        exit 2
+      fi
     fi
     ;;
 esac
@@ -912,6 +947,14 @@ if [ "$HAS_CRUDE_MERIT" = "1" ]; then
     echo "   ・採否は crude でなく実エンジン両窓 score.py で決めると明記" >&2
     exit 2
   fi
+fi
+
+# ★2026-09-06＝--check の口は、ここまでの「設計書の中身」の判定だけを見る。
+#   承認そのもの（下の 6）は見ない＝これから承認をお願いする前に打つ道具だから。
+if [ "$CHECK_MODE" = "1" ]; then
+  echo "✅ 設計書の中身は通ります（不足0件）。このあと まこさんに承認を打ってもらえます。"
+  echo "   見た設計書: $LIST"
+  exit 0
 fi
 
 # 6) 承認(内容指紋一致)確認
