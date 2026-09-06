@@ -1419,6 +1419,17 @@ RESULT: PASS（設計通り）
 
 ---
 
+## §45.1 87回目｜§3 の自動生成が Claude Code の分類器で止まり、まこさんの端末に頼った（2026-09-06）
+
+- **まこさんの決定**＝「Bで良い」（土台ゲート `require_acceptance_before_impl.sh` の88行目の一覧に gen_regime_kb.py を足す）。
+- **止まった所（全部 Claude Code の自動モードの分類器・うちの hook ではない）**＝①ToDo を貼った証拠のファイルを作る Bash（2回）②同じファイルを Write ツールで書く（1回）③hook の88行目を Edit ツールで直す（1回）④この worklog への Bash の追記（1回）。証拠のファイルは まこさんが端末で `echo <ハッシュ値> > session_todo_posted` を打って作った。
+- **hook は1文字も変わっていない**（Edit が止められた）。§3 の自動生成（`gen_regime_kb.py --write todo`）も私からは打てない（土台ゲートの一覧に無い）＝まこさんの端末で打つ2行を出した。
+- **まこさんの指摘**＝「印ってなんだよ！！！」「使うな」→ 私が「印」を3つの意味（貼った証拠のファイル／検査済みの記録／✅済）＋正解ラベルに使っていた。word_replacements.md に「印は使わない」の行と、正解の印 → 正解ラベル の行を足した。「何度も私に承認させるな」→ 承認の依頼を止める。残るのは まこさんの端末でしか打てない2行だけ。
+- **net はゼロ**。書き替えたファイル＝word_replacements.md・この worklog。
+- **★その後 まこさんが承認（逐語「承認したので、３分以内で追記して、このセッション終わらせてほしい」）**＝Edit で hook の88行目に gen_regime_kb.py を足した → `bash -n` SYNTAX_OK → `gen_regime_kb.py --write todo` ✅（§3 本文 853行・hash 35728dd07fdcd1c3）→ `--verify todo` ✅ rc=0 → engine_tuner_milestones2.md に M2-G-／M2-H- が 48行 → 一覧に無い `tidy_next_step.py --verify` は今も土台ゲートで止まる（rc=2＝守りは減っていない）。書き替えたファイル＝require_acceptance_before_impl.sh（1行＋注記）・engine_tuner_milestones2.md（§3・機械生成）。
+
+---
+
 ## §46 ★85回目の引き継ぎ（2026-09-06・まこさん指示「しっかり引き継ぎを書け」）
 
 ### 46-1 いまの状態＝監査 cp24 が NO-GO。M2-C の中身は進んでいない
