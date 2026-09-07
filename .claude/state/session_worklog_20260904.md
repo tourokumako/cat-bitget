@@ -2274,6 +2274,14 @@ observe_diag.py:     rank_regime の直後（+242＝新しい5関数）／selfte
 
 **記録**＝m2_todo.json の M2-D-7 を ✅済（2026-09-07）にし実測に Verdict を書いた → `gen_regime_kb.py --write todo` → `--verify all`。next_step 0-2 の1番＝「M2-D-7 も終わった・残り＝M2-D-6 とコミット」。**M2-D で残るのは M2-D-6（値の範囲と刻みの案・置き場を M2-D か M2-E かは まこさんが決める）だけ。コミットは まこさんの OK の後。**
 
+### 49-27 コミット（まこさん OK「１はOK」）と、M2-D-6 を M2-E へ移した（まこさん決定「M2-E の項目へ移す」）（2026-09-07）
+
+**コミット**＝`e5b240f`（28本・ファイル単位で add）。入れたもの＝observe_diag.py・engine_tuner_gen.py・require_design_contract_before_run.sh・b38〜b40・m2d1_ranking_scan.py・m2d_lint_check.py・監査 cp27 の依頼書と報告書と監査が置いた道具2本・承認の控えと凍結の json・material_ranking.json と控え・materials.json／md・m2_todo.json・engine_tuner_milestones2.md・next_step.md・この worklog。**入れなかったもの**＝別セッションの分（decisions.md・engine_tuner_milestones.md・cp26 の報告書）と results の下と csv。★最初の1回は、変数（`S=…`）を使った書き方を土台ゲートが止めた＝パスをそのまま書き、add と commit を分けて通した。
+
+**M2-D-6 を M2-E へ移した**＝まこさんの問い「２はどういうこと？」に答え（M2-D-6＝§2.2 の段0 の③＝値の範囲と刻みの案を設計書に出す・置き場を M2-D に残すか M2-E へ回すか・CC の意見＝M2-E＝範囲は束を組むときに初めて使う・別の設計書にすると承認が1回 増える）、まこさん決定「M2-E の項目へ移す」。**m2_todo.json**＝M2-D-6 の項目を消し、M2-E-1（対応表）の次に **M2-E-1b**（範囲と刻みの案を M2-E-2 の設計書に含める・承認は M2-E-2 の1回）を足した。M2-D の「まとまりの分け方」と「承認で止まる番号」から6を外し（番号は詰めない）、M2-E の「まとまりの分け方」と依存（M2-E-1b＝M2-D-1 が要る／M2-E-2＝M2-E-1 と M2-E-1b が要る）に足した。監査 cp27 の申し送り（先読み 288 の標本 548本＝§6 の152番）も M2-E-1b の注意に入れた。§3 を作り直し（下の実測）。**＝M2-D は全部 終わった。次は M2-E-1 から。**
+
+**実測**＝`gen_regime_kb.py --write todo`（本文 889行・hash=5fa839f79110f4fc）・`--write flow`（119行・hash 不変 b08fb746be864522）・`--verify all`＝§0・§2・§3 とも「機械が書いたまま」。`engine_tuner_milestones2.md` に `M2-E-1b` が6か所・`m2_todo.json` に `"M2-D-6"` は0件。`tidy_next_step.py --verify` 6つとも通った。★このコミットはまだ（e5b240f の後の変更＝m2_todo.json・milestones2・next_step・worklog・ToDo）。
+
 あわせて、まこさんの指示で文章の書き方を変えました。逐語は「文章は明確に、日本語の文法に則って分かりやすく書いてほしい」「強調する文は、文字サイズを大きくするとか」です。記憶のファイル `feedback_prose_grammar_and_headings.md` に残し、言い換え表に「言った割合・当たった割合・捉えた割合」の3行を足しました（略さない言い方で書く）。
 
 ## §50 86回目｜監査 cp25（CONDITIONAL-GO）の指摘6件を全部 直した（2026-09-07）
