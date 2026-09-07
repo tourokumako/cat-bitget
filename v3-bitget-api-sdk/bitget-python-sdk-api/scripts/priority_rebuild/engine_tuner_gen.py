@@ -706,17 +706,29 @@ def assert_provenance(obj, limits: dict | None = None, ranges: dict | None = Non
     for m in _walk_materials(obj):
         if "family" in m:
             continue
+        # ★2026-09-06（監査 cp24 の §6-1・Critical・設計書 A-4）＝別枠3種は、型の表に加えて
+        #   **オン・オフの印も見る**。直す前は型の表としか照らしておらず、まこさんが印から外しても
+        #   案が通った（＝「一律で切り替えられる」を満たしていなかった）。
+        #   判定は実行器の1つの関数だけを呼ぶ＝同じ判定をここに書き写さない。
         if "geo" in m:
             if table is not None and str(m["geo"]) not in set(table.get("geo_ok") or []):
                 bad(f"候補の表に無いかたちの列 {m['geo']}（geo_ok={table.get('geo_ok')}）")
+            elif not ex.geo_enabled(str(m["geo"])):
+                bad(f"印が「使わない」のレンジ幾何の列 {m['geo']}（indicator_switch.json の geo_on）")
         elif "demand" in m:
             # ★2026-09-05（監査 cp21 の M1②）＝需給の列も、レンジ幾何と同じ形で型の表と照らす。
             #   直す前は、需給だけ型の表（extra_parts の demand）と1度も照らしていなかった。
             if table is not None and str(m["demand"]) not in set(table.get("demand_ok") or []):
                 bad(f"候補の表に無い需給の列 {m['demand']}（demand_ok={table.get('demand_ok')}）")
+            elif not ex.demand_enabled(str(m["demand"])):
+                bad(f"印が「使わない」の需給の列 {m['demand']}（indicator_switch.json の demand_on）")
         elif "time" in m:
-            if str(m["time"]) != "時刻":
-                bad(f"時刻以外の時間の材料 {m['time']}（使えるのは 時刻 だけ）")
+            # ★2026-09-06＝「時刻だけ」の決め打ちをやめ、型の表の time_ok と印で見る。
+            #   直す前は 時刻 以外を全部 弾いていたので、曜日は表に在っても永久に使えなかった。
+            if table is not None and str(m["time"]) not in set(table.get("time_ok") or []):
+                bad(f"候補の表に無い時間帯の材料 {m['time']}（time_ok={table.get('time_ok')}）")
+            elif not ex.time_enabled(str(m["time"])):
+                bad(f"印が「使わない」の時間帯の材料 {m['time']}（indicator_switch.json の time_on）")
         elif "state" in m:
             if str(m["state"]) not in iref.STATE_COLS:
                 bad(f"玉の状態の列に無い名前 {m['state']}（使えるのは {iref.STATE_COLS}）")
@@ -1144,6 +1156,11 @@ def _lineage_of(m: dict) -> str:
         return "構造・位置"
     if "time" in m:
         return "時間帯"
+    if "demand" in m:
+        # ★2026-09-06（監査 cp24 の §6-2・設計書 B）＝需給は8つの系統の1つ
+        #   （indicator_reference_diag.LINEAGE_KINDS）。直す前は枝が無く、需給の材料を渡すと
+        #   FAMILY_LINEAGE を引きに行って落ちた（＝需給は1度も引かれていなかった証拠でもある）。
+        return "需給"
     return iref.FAMILY_LINEAGE[m["family"]]["k"]
 
 
@@ -1153,6 +1170,10 @@ def _kubun_of(m: dict) -> str:
         return iref.RANGE_GEO_REF[m["geo"]]["houkou"].split("＝")[0]
     if "time" in m:
         return iref.TIME_REF[m["time"]]["houkou"].split("＝")[0]
+    if "demand" in m:
+        # ★2026-09-06（監査 cp24 の §6-2・設計書 B）＝需給の列も、レンジ幾何・時間帯と同じ形で
+        #   定義表から区分を引く。直す前は需給が案に出なかったので、ここに枝が無かった。
+        return iref.DEMAND_REF[m["demand"]]["houkou"].split("＝")[0]
     name = ex.build_name(m)
     ref, _ = iref.find(name)
     return ref["houkou"].split("＝")[0] if ref else "？"
@@ -1326,32 +1347,84 @@ def _banned_name(name: str, tf: str, table) -> bool:
     return _insufficient_samples(name, tf)
 
 
+def _lineage_candidates(role, rr, table, by_lineage, limits) -> dict:
+    """役割ごとに「使える系統 → その系統の中の候補」を作る（承認済みの型の表が正本）。
+
+    戻り＝{系統名: [候補, ...]}。候補は2種類ある。
+      ・別枠の部品＝`{"geo": "W%"}` `{"demand": "CVD"}` `{"time": "時刻"}`（時間足を持たない）
+      ・指標の種類＝`"RSI"` のような文字列（時間足と数字は引く側が付ける）
+
+    ★2026-09-06（監査 cp24 の §6-1・§6-2・設計書 B）に新設。
+      直す前＝別枠を引くかどうかを、CC が書いた割合の数字で決めていた
+        （レンジ幾何は `r < 0.5`＝2回に1回・時間帯は `r < 0.10`＝10回に1回）。
+        **この2つの数字は出どころの記録が無い**（`git log -S` の実測＝どちらも commit 863935a＝
+        まこさんが「論外」とした乱数のくじ引きを作った回に入り、決定の記録が無い）。
+        そして**需給は枝そのものが無く、何回 走らせても案に出なかった**（監査の実測）。
+      直した後＝表が宣言している「その役割が使える系統」を そのまま候補の単位にする。
+        ＝引く先を決めるのが CC の数字ではなく、まこさんが承認した表になる。
+
+    ★別枠3種は、ここでオン・オフの印を見る（監査 §6-1「別枠にオン・オフを効かせる」）。
+      印がオフの部品は候補に入らない＝「使わない」と決めたものが案に出ない。
+    ★時間帯は「閾値の格子が在るものだけ」を候補にする。実測（2026-09-06）＝
+      `時刻` は格子 `hour_range` が在る／`曜日` は格子が無い（まこさん §11-10 の判断待ち）。
+      印では両方オンだが、格子が無いものを引くと値を作れない。**格子が決まれば自動で増える。**
+    """
+    out: dict[str, list] = {}
+    for k in rr["lineages"]:
+        cand: list = []
+        if k == "構造・位置" and rr.get("geo"):
+            cand += [{"geo": str(g)} for g in (table.get("geo_ok") or []) if ex.geo_enabled(str(g))]
+        if k == "需給":
+            cand += [{"demand": str(d)} for d in (table.get("demand_ok") or [])
+                     if ex.demand_enabled(str(d))]
+        if k == "時間帯":
+            cand += [{"time": str(t)} for t in (table.get("time_ok") or [])
+                     if ex.time_enabled(str(t)) and limits.get(_TIME_GRID.get(str(t)))]
+        cand += [str(f) for f in by_lineage.get(k, [])]     # その系統の指標の種類
+        if cand:
+            out[k] = cand
+    return out
+
+
+# ★時間帯の列 → その列の閾値の格子の名前（設定ファイル search_limits.json の鍵）。
+#   ★手書きの対応はこの1行だけ＝格子の名前は設定ファイル側に在り、CC が数字を作っていない。
+#   曜日は格子が未定義（まこさん §11-10 の判断待ち）＝ここに載らない＝候補に入らない。
+_TIME_GRID = {"時刻": "hour_range"}
+
+
 def _pick_material(rng, pool, tfs, limits, role, seen_rolekind, kind_count, table) -> dict:
     """材料1本＝G3（同系統×同役割は1本・K_MAX）＋型の表（対応表の系統×時間足・禁止3・許可 geo/time）を
-    サンプリング時から守る（D1・2026-08-07 まこさん承認の表が正本）。"""
+    サンプリング時から守る（D1・2026-08-07 まこさん承認の表が正本）。
+
+    ★2026-09-06（監査 cp24 の §6-1・§6-2・設計書 B）＝引き方を「系統を引く → その系統の中を引く」
+      に変えた。理由と、消した数字2つの出どころは `_lineage_candidates` の説明に書いた。
+    """
     rr = table["roles"][role]
     tf_pool = _role_tfs(tfs, table, role)
     ranges = material_ranges()
     by_lineage = _pool_families_by_lineage(pool)
+    cands = _lineage_candidates(role, rr, table, by_lineage, limits)
+    if not cands:
+        raise SampleError(f"役割 {role} に使える系統の候補が1つも無い")
+    # ★並びは表が宣言した順（rr["lineages"]）のまま使う。sorted で並べ替えない。
+    #   理由＝並べ替えると「表の並びを変えても案が変わらない」＝表の並びが効かなくなる
+    #   （番人 T19 が実測で捕まえた・2026-09-06）。表が正本なら、並びも表のものを使う。
+    lin_keys = [k for k in rr["lineages"] if k in cands]
     for _ in range(60):
-        r = rng.random()
-        if role == "location" and rr["geo"] and table["geo_ok"] and r < 0.5:
-            m = {"geo": str(rng.choice(table["geo_ok"]))}
-        elif role == "env" and "時間帯" in rr["lineages"] and r < 0.10 and limits.get("hour_range"):
-            m = {"time": "時刻"}                  # 曜日の閾値格子は未定義＝時刻だけ（格子はまこさん §11-10）。表は両方許可
+        k0 = str(lin_keys[int(rng.integers(len(lin_keys)))])  # ①系統を引く（表が宣言した系統から一様に）
+        bag = cands[k0]
+        pick = bag[int(rng.integers(len(bag)))]               # ②その系統の中を引く（一様）
+        if isinstance(pick, dict):
+            m = dict(pick)                                    # 別枠（レンジ幾何・需給・時間帯）＝時間足なし
         else:
             # ★2026-08-13（段A の A-4）＝パラメータは「範囲の中から引く」（点の一覧から選ばない）。
             #   直す前は pool（カタログの列名を分解した (指標, 数字) の一覧）から1件 引いて、
             #   その数字をそのまま使っていた＝設定ファイルに並んだ数字しか出なかった
             #   （RSI なら 7・9・14・21 の4つだけ）。いまは 指標の種類だけを pool から引き、
             #   数字はその指標の範囲から引く（RSI なら 7〜21 の整数どれでも＝RSI12 も出る）。
-            #   ★指標の種類の出方（どの指標がどれだけ出るか）は変えていない。候補を役割に使える
-            #     系統で先に絞ってから引く＝同じものが同じ割合で出て、空振りだけが無くなる。
-            cand_f = [f for k in rr["lineages"] for f in by_lineage.get(k, [])]
-            if not cand_f:
-                raise SampleError(f"役割 {role} に使える系統の指標が候補に無い")
-            fam = str(cand_f[int(rng.integers(len(cand_f)))])
-            m = _mat_drawn(rng, fam, str(rng.choice(tf_pool)), ranges, table=table)   # ★数字は引く関数の中で（59回目）
+            #   ★2026-09-06＝どの指標を引くかは `_lineage_candidates` が系統ごとに用意する。
+            #     ここでやるのは「引いた種類に、時間足と数字を付ける」ことだけ。
+            m = _mat_drawn(rng, str(pick), str(rng.choice(tf_pool)), ranges, table=table)   # ★数字は引く関数の中で（59回目）
             if _banned_pair(m, table):
                 continue                                        # 禁止3（標本不足）＝引き直す
         kind = _lineage_of(m)
@@ -2461,6 +2534,7 @@ def write_kakikudashi(run_dir, structures: list[dict], results1: list[dict], kep
 # ══ 構造の内訳（機械出力・R3 完了の線⑤）══════════════════════════════════════════════════
 def structure_breakdown(recipes: list[dict], catalog_total: int) -> dict:
     forms, roles, counts, modes, nexits = Counter(), Counter(), Counter(), Counter(), Counter()
+    used = Counter()                      # ★2026-09-06（監査 cp24 の §6-4）＝材料ごとに何回 使ったか
     touched: set = set()
     paths = Counter()
     for r in recipes:
@@ -2475,8 +2549,19 @@ def structure_breakdown(recipes: list[dict], catalog_total: int) -> dict:
                 if "family" in m:
                     kind, name = ex._material_name(m, r["meta"].get("lane", ""))
                     touched.add(name)
+                    used[name] += 1
                 elif "geo" in m:
                     touched.add(m["geo"])
+                    used[str(m["geo"])] += 1
+                # ★2026-09-06（監査 cp24 の §6-4・完成の条件④）＝別枠（需給・時間帯）も数える。
+                #   直す前＝ここが指標とレンジ幾何しか集めていなかったので、
+                #   「足した部品が案に実際に出てきたか」を数える道が無かった（監査の問いそのもの）。
+                elif "demand" in m:
+                    touched.add(str(m["demand"]))
+                    used[str(m["demand"])] += 1
+                elif "time" in m:
+                    touched.add(str(m["time"]))
+                    used[str(m["time"])] += 1
         modes[r["position"]["mode"]] += 1
         nexits[len(r["exits"])] += 1
     return {"構造数": len(recipes), "条件本数の分布": dict(sorted(counts.items())),
@@ -2484,6 +2569,9 @@ def structure_breakdown(recipes: list[dict], catalog_total: int) -> dict:
             "経路数の分布": dict(sorted(paths.items())), "玉の持ち方": dict(modes),
             "出口の枝数": dict(sorted(nexits.items())),
             "触れた列": len(touched),
+            # ★2026-09-06（監査 cp24 の §6-4・完成の条件④）＝使った材料の名前と回数を出す。
+            #   これが無いと「足した部品が案に実際に出てきたか」を機械で数えられない。
+            "使った材料と回数": dict(used.most_common()),
             "網羅度%": round(len(touched) / catalog_total * 100.0, 2) if catalog_total else None}
 
 
@@ -3309,7 +3397,12 @@ def run_generation(df: pd.DataFrame, limits: dict, judge, start, end, *,
     # ★2026-08-13（段A の A-2b）＝ここで列を先に全部 作るのをやめた。
     #   材料は、条件が要求した組だけを その場で計算する（`ex.material_array`・同じ組は使い回す）。
     #   完了の条件②＝本走で `attach_materials` の呼び出し回数が 0 であること（下の行で機械が出す）。
-    df2 = df
+    # ★2026-09-06（監査 cp24 の §6-2・設計書 B）＝需給の列（別枠）だけは、その場で作れないので
+    #   走らせる前に載せる（元データが別ファイルで、時間足に展開しないため）。
+    # ★2026-09-07（next_step §6 の139番・設計書の やること D）＝載せる処理そのものは実行器へ移した。
+    #   ここで呼ぶことは残す＝下の分位の解決表（build_qtable）は、候補になりうる需給の列を
+    #   全部 見て作るため（案が使う分だけでは足りない）。だから型の表の demand_ok を全部 渡す。
+    df2 = ex.attach_demand_columns(df, load_signal_table().get("demand_ok") or [])
     print(f"[A-2b] 列を先に全部 作る処理（attach_materials）の呼び出し回数 = {ATTACH_CALLS}"
           f"（0 なら、材料はその場で作っている）")
     geo = _geo_of(df2)
@@ -3660,7 +3753,76 @@ def synth_df(n: int = 3000, seed: int = 7) -> pd.DataFrame:
         "v11_res_hi": mid + 3.2 * S, "v11_res_lo": mid + 2.8 * S, "v11_sup_hi": mid - 2.8 * S,
         "v11_sup_lo": mid - 3.2 * S, "v11_mid": mid,
         "e38_htf_roc24_2h": 0.0, "e38_vol_volr20_15m": 2.0,
+        # ★2026-09-06（監査 cp24 の §6-2・設計書 B）＝需給の列（別枠）。
+        #   なぜ要るか＝この直しで、案に需給の条件が入るようになった。合成データにこの列が無いと、
+        #   番人が「材料の名前に時間足が無い: L-S比」で落ちる（2026-09-06 に実測）。
+        #   ★これは合成の値です（実データではありません）。ほかの合成の列（帯の4隅・stoch_k）と同じ扱い。
+        #   ★名前は型の表の extra_parts.demand.parts の3件と同じ（表が正本）。
+        "taker_ls": 1.0 + 0.3 * np.sin(np.arange(n) / 11.0),
+        "L-S比": 1.0 + 0.2 * np.cos(np.arange(n) / 13.0),
+        "CVD": np.cumsum(rng.normal(0, 1.0, n)),
     })
+
+
+def _check_extra_gate() -> list:
+    """別枠3種（レンジ幾何・需給・時間帯）の審査が、オン・オフの印を見ているか。
+
+    ★2026-09-07（監査 cp25 の §5-2・Major・設計書 C）に足した。
+      直す前＝テストの枝は7つで、**7つとも指標（family）を試していた**。
+      2026-09-06 に新しく作った審査の枝3本（assert_provenance の中のレンジ幾何・需給・
+      時間帯）を試す枝が **0件** だった＝明日その3枝が消えても、誰も気づかない。
+    ★壊すプログラム b33 では代わりにならない（監査 cp25 の §5-2 の実測）＝b33 が測るのは
+      候補の側（--count-extra-candidates）だけで、審査の3枝を消しても同じ結果を返す。
+    ★形は T33-b・T33-c と同じ＝①オンなら通す ②オフなら止める ③戻せば通る。
+
+    ★なぜ selftest の中から切り出したか（2026-09-07・実測）
+      `--selftest` の全体は **6分23秒（383秒）** かかる。承認のときに機械が壊すプログラムを
+      走らせる打ち切りは **120秒**（run_breaks.py の TIMEOUT_SEC）。
+      2026-09-07 の承認で、実際に b35 が打ち切られた。打ち切りは強制終了なので
+      **壊した行を元に戻す処理が走らず、審査の需給の枝が消えたまま残った**
+      （記録の逐語＝「時間切れ（120秒）: b35_gate_branch_gone.sh」）。
+      だから、この枝だけを数秒で走らせる口 `--selftest-extra-gate` を作り、
+      selftest と その口が **この1本の関数を呼ぶ**（同じ判定を2か所に書き写さない）。
+
+    戻り＝ダメだった説明の一覧（空なら3種とも期待どおり）。
+    """
+    out: list = []
+    sw = ex.load_indicator_switch()
+    tbl = load_signal_table()
+    for kind, key, parts in (
+            ("geo", "_geo_set", tbl.get("geo_ok") or []),
+            ("demand", "_demand_set", tbl.get("demand_ok") or []),
+            ("time", "_time_set", tbl.get("time_ok") or [])):
+        if not parts:
+            out.append(f"型の表に {kind} の部品が1件も無い（この枝が何も試せない）")
+            continue
+        part = str(parts[0])
+        cand = {"role": "sufficiency", "form": "level", "side": "above",
+                "material": [{kind: part}], "value": _thr_fixture("q70")}
+        keep = set(sw[key])
+        try:
+            sw[key] = set(keep) | {part}                      # ①オンなら通す
+            try:
+                assert_provenance(cand, where="T33-g")
+            except SampleError as e1:
+                if "印が「使わない」" in str(e1):
+                    out.append(f"{kind} の {part} がオンなのに印で止まった")
+            sw[key] = set()                                   # ②オフなら止める
+            try:
+                assert_provenance(cand, where="T33-g")
+                out.append(f"{kind} の {part} がオフなのに審査が通した")
+            except SampleError as e2:
+                if "印が「使わない」" not in str(e2):
+                    out.append(f"{kind} が止まったが理由が印ではない: {str(e2)[:60]}")
+            sw[key] = set(keep) | {part}                      # ③戻せば通る（片道でない）
+            try:
+                assert_provenance(cand, where="T33-g")
+            except SampleError as e3:
+                if "印が「使わない」" in str(e3):
+                    out.append(f"{kind} を戻しても印で止まる（片道になっている）")
+        finally:
+            sw[key] = keep
+    return out
 
 
 def selftest() -> int:
@@ -5393,9 +5555,47 @@ def selftest() -> int:
                     t33.append(f"T33-d: 「使わない」の指標が順位に残った: {_leak_d[:5]}")
             except SystemExit:
                 pass                                  # 成績表がまだ無い環境＝この枝は試さない
+            # (g) 別枠3種（レンジ幾何・需給・時間帯）の審査も、印を見ているか
+            #   ★2026-09-07（監査 cp25 の §5-2・Major・設計書 C）に足した。
+            #     直す前＝テストの枝は7つで、**7つとも指標（family）を試していた**。
+            #     2026-09-06 に新しく作った審査の枝3本（assert_provenance の中の
+            #     レンジ幾何・需給・時間帯）を試す枝が **0件** だった＝明日その3枝が消えても、
+            #     誰も気づかない。
+            #   ★壊すプログラム b33 では代わりにならない（監査 cp25 の §5-2 の実測）＝
+            #     b33 が測るのは候補の側（--count-extra-candidates）だけで、審査の3枝を消しても
+            #     同じ結果を返す。だから審査の側を直に呼ぶ枝が要る。
+            #   ★形は T33-b・T33-c と同じ＝①オンなら通す ②オフなら止める ③戻せば通る。
+            #   ★中身は `_check_extra_gate()` の1本に置いた（2026-09-07）＝`--selftest` の全体は
+            #     6分23秒 かかり、承認のときの打ち切り（120秒）を超えて壊れたまま残ったため、
+            #     この枝だけを数秒で走らせる口 `--selftest-extra-gate` を作った。
+            #     selftest と その口が同じ1本を呼ぶ＝同じ判定を2か所に書き写さない。
+            t33 += [f"T33-g: {_x33}" for _x33 in _check_extra_gate()]
             # (e) 印の指紋が走行の記録の meta に入る＝切り替えたまま再開すると止まる
-            if not ex.indicator_switch_fingerprint():
+            #   ★2026-09-06（監査 cp24 の §6-8・Major・設計書 E）＝**わざと食い違わせて試す**形にした。
+            #     直す前＝「指紋が空でないこと」しか見ておらず、**本当に止まるかを1度も試していなかった**
+            #     （監査の逐語＝「ハッシュ値が空でないことしか見ていない。わざと食い違うハッシュ値で
+            #       再開して、本当に止まるかを1度も試していません」）。
+            #     直した後＝走行の記録（journal）を一時の場所に作り、印の指紋だけを違う値にした
+            #     `meta` でもう一度 開いて、`SystemExit` が出ることを確かめる。
+            _fp33 = ex.indicator_switch_fingerprint()
+            if not _fp33:
                 t33.append("T33-e: 印の指紋が空（走行の再開の食い違いを検出できない）")
+            else:
+                import tempfile as _tf33
+                with _tf33.TemporaryDirectory() as _d33:
+                    _p33 = pathlib.Path(_d33) / "journal.jsonl"
+                    _meta33 = {"seed": 0, "indicator_switch": _fp33}
+                    Journal(_p33, dict(_meta33))                 # 1回目＝記録を作る
+                    try:
+                        Journal(_p33, {**_meta33, "indicator_switch": _fp33 + "x"})
+                        t33.append("T33-e: 印の指紋を変えて再開しても止まらない"
+                                   "（前半と後半で使える指標が違う1本の走行になる）")
+                    except SystemExit:
+                        pass                                     # 期待どおり止まった
+                    try:
+                        Journal(_p33, dict(_meta33))             # 同じ印なら続けられる（止めすぎない）
+                    except SystemExit:
+                        t33.append("T33-e: 印が同じなのに再開できない（止めすぎ）")
         print(f"  T33 実測: 使う {len(_on)} 種／使わない {len(_off)} 種"
               f"／候補に出た種類 {len({b['family'] for b in material_pool()[0]})} 種"
               f"／印の指紋 {ex.indicator_switch_fingerprint()}")
@@ -5581,7 +5781,39 @@ def main() -> int:
                     help="18マス（守るべき6つ×入口・場面の判定・出口）を機械が壊して、どの瞬間に止まるかを印字する（K4〜K8・K14）")
     ap.add_argument("--verify-provenance", default=None, metavar="PATH",
                     help="保存した案（structures_marked.json・または走行の置き場）の値の出どころを後から数え直す（K9）")
+    ap.add_argument("--count-extra-candidates", action="store_true",
+                    help="別枠（レンジ幾何・需給・時間帯）が、いまの印で何件 候補に出るかを数えて印字する"
+                         "（監査 cp24 の §6-1 の確かめ方・壊すプログラム b33 が使う・読むだけ）")
+    ap.add_argument("--selftest-extra-gate", action="store_true",
+                    help="別枠3種（レンジ幾何・需給・時間帯）の審査の枝だけを試す（数秒）"
+                         "＝T33-g と同じ本体（_check_extra_gate）を呼ぶ。壊すプログラム b35 が使う")
     a = ap.parse_args()
+    if a.selftest_extra_gate:
+        # ★2026-09-07（監査 cp25 の §5-2・設計書 C）＝T33-g だけを短く走らせる口。
+        #   なぜ要るか（実測）＝`--selftest` の全体は 6分23秒 かかり、承認のときに機械が
+        #   壊すプログラムを走らせる打ち切り（120秒）を超える。2026-09-07 の承認で実際に
+        #   打ち切られ、b35 が壊した行が元に戻らないまま残った。
+        #   ★判定の中身は selftest と同じ1本（_check_extra_gate）＝2か所に書き写さない。
+        _ng33 = _check_extra_gate()
+        for _x in _ng33:
+            print(f"  ❌ T33-g: {_x}")
+        print(f"  {'❌' if _ng33 else '✅'} T33-g 別枠3種の審査（レンジ幾何・需給・時間帯）"
+              "＝(1)オンなら通す (2)オフなら止める (3)戻せば通る"
+              f"／ダメだった件 {len(_ng33)}")
+        return 1 if _ng33 else 0
+    if a.count_extra_candidates:
+        # ★2026-09-06（監査 cp24 の §6-1・設計書 A）＝別枠3種が候補に何件 出るかを数える。
+        #   印を空にすると 0 になる＝オン・オフが効いている、を機械で測るための口（b33 が使う）。
+        _pool, _tfs, _ = material_pool()
+        _tbl = load_signal_table()
+        _by = _pool_families_by_lineage(_pool)
+        _lm = dict(KENSHU_LIMITS)
+        _n = 0
+        for _role, _rr in _tbl["roles"].items():
+            for _k, _c in _lineage_candidates(_role, _rr, _tbl, _by, _lm).items():
+                _n += sum(1 for x in _c if isinstance(x, dict))
+        print(_n)
+        return 0
     if a.lint_provenance:
         return lint_provenance()
     if a.gate_matrix:

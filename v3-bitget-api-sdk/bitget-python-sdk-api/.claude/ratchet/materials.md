@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=896265c0afbeac78 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=af1a3f1234c516ae gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -22,7 +22,7 @@
 |---|---|---|---|
 | A | 業界のライブラリに在って、うちの材料に無い指標 | **0 種類** | 検査10（observe_diag） |
 | B | ★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標 | **118 種類** | 段5 で新しく数えた（検査には無い） |
-| C | ★参照表に在るのに、材料カタログに列が無い（需給） | **3 件** | 段5 で新しく数えた（検査7 は『あり』と出る＝別の道で見ている） |
+| C | ★参照表に在るのに、材料カタログにも別枠にも無い（需給） | **0 件** | 段5 で新しく数えた（検査7 は『あり』と出る＝別の道で見ている）／2026-09-06 に「型の表の別枠に在るものは除く」を足した |
 | D | 「終値と◯◯の距離%」に対する「◯◯ そのものの向き」 | **62 件** | 検査9（observe_diag） |
 | E | 軸カタログ（入口 E-c）の未実装 | **1 件** | 検査7（observe_diag） |
 | F | 時間足（1分足・3分足） | **2 本** | 要件 R15（フロー 段7 で足す） |
@@ -32,7 +32,7 @@
 
 - **A（0 種類）** … 下の『材料の一覧』で状態が「足す」の行
 - **B（118 種類）** … RCI・zscore・zscore_return・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・Supertrend・APO%・BIAS・BOP・AR・BR・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・LRSI・MOM%・PGO・PO・PSL・RSX・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SQZ%・SQZPRO_ON_WIDE・TD_SEQ_UP・TD_SEQ_DN・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・ALMA傾き%・DEMA傾き%・FWMA傾き%・HMA傾き%・LINREG傾き%・LRangle・LRb傾き%・LRslope%・MCGD傾き%・MIDPOINT傾き%・MIDPRICE傾き%・MMAR傾き%・PWMA傾き%・RAINBOW傾き%・RMA傾き%・SINWMA傾き%・SSF傾き%・SWMA傾き%・T3傾き%・TEMA傾き%・TRIMA傾き%・TSF傾き%・VIDYA傾き%・VWMA傾き%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・QSTICK%・TTM_TREND・ADOSC比・AOBV_LR・MARKETFI比・PVI傾き・PVOL比・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MEDIAN傾き%・VOSC・CVI・PDIST%・RVI・THERMO比・EBSW・HT_DCPERIOD・HT_INPHASE%・HT_QUAD%・HT_SINE・HT_LEADSINE・HT_TRENDMODE・MSW_SINE・MSW_LEAD・実体幅比・内側バー・open_Z・high_Z・low_Z・HA実体%・HA上ヒゲ比・HA下ヒゲ比
-- **C（3 件）** … taker_ls・L-S比・CVD
+- **C（0 件）** … （無し＝3件とも型の表の別枠に在る）
 - **D（62 件）** … 転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S
 - **E（1 件）** … トレンド/モメンタム＝MTF傾き整合
 - **F（2 本）** … いま 11 本＝1m・3m・5m・10m・15m・30m・1h・2h・4h・6h・1d

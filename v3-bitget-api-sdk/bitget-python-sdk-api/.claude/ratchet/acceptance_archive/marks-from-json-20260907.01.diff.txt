@@ -1,0 +1,98 @@
+7,8d6
+< NEW_FILE: .claude/breaks/b37_marks_from_json_gone.sh
+< 
+10a9,10
+> ★新しく作るファイルの宣言（NEW_FILE）の行は外しました＝壊すプログラム `b37_marks_from_json_gone.sh` は、1回目の承認のあとに作り終えて実在するためです。中身は Read tool で開いて確かめました（46行）。
+> 
+13c13
+< **往復：2回／内訳＝1回目で書く権利をもらい、2回目で機械が測ります。**
+---
+> **往復：2回目／内訳＝1回目で書く権利をもらい、2回目で機械が測ります。**
+15c15
+< **なぜ1回で終わらないか**＝壊すプログラム `b37_marks_from_json_gone.sh` は、これから作るファイルです。承認のプログラムは、承認を打ったその場で壊すプログラムを走らせて終了コードを記録します。**まだ実在しないファイルは走らせられないので、1回目は「未着手」のまま残ります。**
+---
+> **なぜ1回で終わらなかったか**＝壊すプログラム `b37_marks_from_json_gone.sh` は、1回目の承認の時点では存在しませんでした。承認のプログラムは、承認を打ったその場で壊すプログラムを走らせて終了コードを記録します。**実在しないファイルは走らせられないので、1回目は「未着手」のまま残りました**（記録＝`rc=None`）。
+17c17
+< **net に直結するか**＝しません。売買のロジックには1行も触れません。直すのは、文書に印の値を書き写している所です。
+---
+> **net に直結するか**＝しません。売買のロジックには1行も触れていません。
+21c21
+< **やることリスト（`m2_todo.json` の M2-C-7）の印の値を、私が手で書き写すのをやめます。**プログラムが `g2_pass.json` と `h2_pass.json` から読んで書きます。
+---
+> **やることリスト（`m2_todo.json` の M2-C-7）の印の値を、私が手で書き写すのをやめました。**プログラムが `g2_pass.json` と `h2_pass.json` から読んで書きます。
+43c43
+< ## 4. やること（5つ）
+---
+> ## 4. やったこと（6つ）
+45c45
+< | # | 触るファイル | 何をするか |
+---
+> | # | 触るファイル | 何をしたか |
+47,51c47,52
+< | **A** | `gen_regime_kb.py` | **`marks_now()` を新しく作る**＝`g2_pass.json` と `h2_pass.json` から、印の値（先頭16桁）・書かれた時刻・対象ファイル数を読む。手本＝`tidy_next_step.py` の `_pass` |
+< | **B** | `gen_regime_kb.py` | **`apply_marks(text)` を新しく作る**＝本文の中の目印（`G2_FP`・`G2_N`・`H2_FP`・`H2_N` を二重の波かっこで囲んだもの）を A の値に置き換える。**置き換えられない目印が1つでも残ったら止める**（fail-closed） |
+< | **C** | `gen_regime_kb.py` | **`build(kind, d)` を新しく作る**＝`BUILDER[kind](d)` の結果に B を掛けて返す。`write_one` と `verify_one` の両方が これを呼ぶ（同じ処理を2か所に書き写さない） |
+< | **D** | `.claude/ratchet/m2_todo.json` | **M2-C-7 の印の値を、目印に置き換える。**手で書く値を0個にする |
+< | **E** | `gen_regime_kb.py` | **`--selftest` に番人を2つ足す**＝①やることリストの本文に、いまの印の値がそのまま出る ②本文に目印の始まりの文字が1つも残っていない |
+---
+> | **A** | `gen_regime_kb.py` | **`marks_now()` と `_pass_json()` を新しく作った**＝`g2_pass.json` と `h2_pass.json` から、印の値（先頭16桁）・対象ファイル数・書かれた時刻を読む。手本＝`tidy_next_step.py` の `_pass` |
+> | **B** | `gen_regime_kb.py` | **`apply_marks(text)` を新しく作った**＝本文の中の目印を A の値に置き換える。**置き換えられない目印が1つでも残ったら止める**（fail-closed） |
+> | **C** | `gen_regime_kb.py` | **`build(kind, d)` を新しく作った**＝組み立てた本文に B を掛けて返す。`write_one` と `verify_one` の両方が これを呼ぶ（同じ処理を2か所に書き写さない） |
+> | **D** | `.claude/ratchet/m2_todo.json` | **M2-C-7 の印の値を、目印に置き換えた。**手で書く値を0個にした |
+> | **E** | `gen_regime_kb.py` | **番人を2つ足した**（`marks_checks`）＝①やることリストの本文に、いまの印の値がそのまま出る ②置き換えられていない目印が本文に残っていない。**`--selftest`（全体）と `--selftest-marks`（この2件だけ）の両方が、この1本を呼ぶ** |
+> | **F** | `.claude/hooks/require_design_contract_before_run.sh` | **「確認のための走行」の旗の一覧に `--selftest-marks` を足した。**旗は独立した語として完全一致で見るため、足さないとこの口が走りません。★hook の `.sh` は 2026-09-06 のまこさん指示で承認ゲートの相手から外れているため、TARGET には入れていません |
+63c64
+< 1レバーです。「**印の値の写しを置くのをやめ、正本の json から書く**」1つです。A から E は、その1つを成り立たせる部品です。
+---
+> 1レバーです。「**印の値の写しを置くのをやめ、正本の json から書く**」1つです。A から F は、その1つを成り立たせる部品です。
+75c76
+< | **監査 Q5 の5** | 目印の書き方を間違えたら | **止まります**（B が fail-closed）。ただし、目印を書き忘れて生の値を直接 書いた場合は止められません |
+---
+> | **監査 Q5 の5** | 目印を書き忘れて生の値を直接 書いたら | **止められません。**目印の書き方を間違えた場合は止まります（B が fail-closed） |
+87c88,93
+< **★作る関数の一覧（`impl_functions`）は、実装の後に確定させます。**いまは空です。理由は、まだ触っていないファイルに対して機械で一覧を書き出すと空の配列しか出ないためです（監査 cp15 の C-4）。実装を終えたら `python3 scripts/priority_rebuild/verify_design_contract.py --write .claude/state/acceptance.md` で実物から書き出し、その版で承認を取り直します。
+---
+> **★作る関数の一覧（`impl_functions`）は、実装の後に確定させると1回目の設計書に書きました。**実装を終えたので、`git diff` の変更の位置から機械で引いて §10 に書きました。
+> 
+> **★コマンドに `--selftest-marks` を選んだ理由は2つあります。**
+> 
+> 1. **`--verify` だけでは足りません。**目印を置き換えないまま文書に書いても、印（hash）は本文と一致するので `--verify` は通ってしまいます。だから「本文にいまの印の値が出ているか」を直に見ます。
+> 2. **全体の `--selftest` は、いま rc=1 のままです。**その数字を出したコマンドは `python3 .claude/tools/gen_regime_kb.py --selftest` で、❌ は T7・T9・T11 の3件です。中身は §11・§12 の未反映と引用の行番号のずれで、どれも別の工事（M2-B）のものです。全体を測ると、この工事の完成の条件を永久に測れません。
+89c95
+< **★コマンドに自己検査を選んだ理由**＝`--verify` だけでは足りないためです。目印を置き換えないまま文書に書いても、印（hash）は本文と一致するので `--verify` は通ってしまいます。**だから「本文にいまの印の値が出ているか」を直に見る番人を足し、そこを測ります。**
+---
+> **時間の実測**＝`python3 .claude/tools/gen_regime_kb.py --selftest-marks` は 0.17秒です。承認のときの打ち切り（120秒）に十分 収まります。
+95c101
+< | 1 | やることリストの本文に、いまの印の値がそのまま出る（目印は1つも残らない） | `python3 .claude/tools/gen_regime_kb.py --selftest` | 実経路 | `build` から `apply_marks` の呼び出しを消すと、自己検査が落ちる | `b37_marks_from_json_gone.sh` | 終了コードが0でない | **未着手**（この工事の前は、印の値を私が手で書き写している） |
+---
+> | 1 | やることリストの本文に、いまの印の値がそのまま出る（置き換えられていない目印が1つも残らない） | `python3 .claude/tools/gen_regime_kb.py --selftest-marks` | 実経路 | `build` から `apply_marks` の呼び出しを外すと、自己検査が落ちる | `b37_marks_from_json_gone.sh` | 終了コードが0でない | **未着手**（この工事の前は、印の値を私が手で書き写している） |
+104,107c110,129
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "verify_design_contract.py --write で実物から書き出す（手書きしない）",
+<   "self_check_calls": ["marks_now", "apply_marks", "build", "selftest"],
+<   "must_use": {},
+---
+>   "impl_functions": {
+>     ".claude/tools/gen_regime_kb.py": [
+>       "_pass_json",
+>       "marks_now",
+>       "apply_marks",
+>       "build",
+>       "write_one",
+>       "verify_one",
+>       "marks_checks",
+>       "selftest_marks",
+>       "selftest",
+>       "main"
+>     ]
+>   },
+>   "self_check_calls": ["marks_now", "apply_marks", "build", "marks_checks", "selftest_marks"],
+>   "must_use": {
+>     "build": ["apply_marks"],
+>     "write_one": ["build"],
+>     "verify_one": ["build"]
+>   },
+111c133
+<     "impl_functions": "verify_design_contract.py --write"
+---
+>     "impl_functions": "実装のあとに、直した行がどの関数に入っているかを機械で引いて書いた（git diff -U0 の位置と、直前の def を照らした・2026-09-07 実測）"

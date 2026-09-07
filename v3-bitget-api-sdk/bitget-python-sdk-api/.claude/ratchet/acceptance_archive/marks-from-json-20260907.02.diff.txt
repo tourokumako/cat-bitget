@@ -1,0 +1,7 @@
+96a97,98
+> **★コマンドを絶対パスで書く理由（2026-09-07 に実際に外した）**＝承認のプログラムは、完成の条件のコマンドを **SDK の場所**（`v3-bitget-api-sdk/bitget-python-sdk-api`）で走らせます（`approve_impl.sh` の `_run` の `cwd`）。この道具は**リポジトリ直下**の `.claude/tools/` に在るので、`.claude/tools/…` と短く書くと SDK の下を指してしまい、ファイルが無くて rc=2 になります。**2回目の承認で実際にそうなりました**（記録＝`⏸ #1 は「未着手」のまま＝条件のコマンドが rc=2`）。だから絶対パスで書きます。その形で走らせると 終了コードは 0 です。
+> 
+101c103
+< | 1 | やることリストの本文に、いまの印の値がそのまま出る（置き換えられていない目印が1つも残らない） | `python3 .claude/tools/gen_regime_kb.py --selftest-marks` | 実経路 | `build` から `apply_marks` の呼び出しを外すと、自己検査が落ちる | `b37_marks_from_json_gone.sh` | 終了コードが0でない | **未着手**（この工事の前は、印の値を私が手で書き写している） |
+---
+> | 1 | やることリストの本文に、いまの印の値がそのまま出る（置き換えられていない目印が1つも残らない） | `python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/gen_regime_kb.py --selftest-marks` | 実経路 | `build` から `apply_marks` の呼び出しを外すと、自己検査が落ちる | `b37_marks_from_json_gone.sh` | 終了コードが0でない | **未着手**（この工事の前は、印の値を私が手で書き写している） |

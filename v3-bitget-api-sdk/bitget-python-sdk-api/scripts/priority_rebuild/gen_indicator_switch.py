@@ -41,6 +41,7 @@ SDK = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 
 import indicator_reference_diag as iref                      # noqa: E402  材料の定義表（正本）
+import engine_tuner_exec as ex                               # noqa: E402  材料の種類の分岐と判定関数の正本
 
 LAWS_JSON = SDK / ".claude/ratchet/regime_laws.json"          # 相場の法則の正本
 IDENTITY = ["recipes/identity_s1_legacy.json",
@@ -214,6 +215,18 @@ def source_identity() -> tuple[set[str], set[str]]:
 
     ★この源が無いと、ta にも法則にも入らない材料（実測＝volume_ratio）が「使わない」になり、
       恒等レシピ S2 が壊れる。だから飾りではない（設計書 §1 の実測）。
+
+    ★2026-09-06（監査 cp24 の §6-6・Major・設計書 D-1）＝`legacy_col` を持つ材料の
+      `family` ラベルを拾わないようにした。
+      直す前＝`walk` が全部の `family` を拾っていたので、`BB`（identity_s1_legacy.json）と
+        `レンジ幾何`（identity_l1_legacy.json）という **定義表に無い名前**が源3 に混じっていた
+        （監査の実測＝源3 は 8件と出るが、定義表に在るのは 6件）。
+      なぜ混じるか＝その2件は `{"legacy_col": "e37_v47_bb2", "family": "BB", …}` の形で、
+        **`family` は説明のラベル**（実際に指しているのは昔からの列）。
+      なぜ拾ってはいけないか＝オン・オフの対象は「昔からの列を含めない」と決めた
+        （監査 §6-5・設計書 C）。対象外にしたものを材料として数えているのが食い違い。
+      ★いま実害は出ていない（審査は `tf` を持つ材料にしかオン・オフを当てないため）。
+        将来、昔からの列をカタログの列に置き換えたときに、黙ってオフ側に落ちる。
     """
     fams: set[str] = set()
     geos: set[str] = set()
@@ -221,7 +234,7 @@ def source_identity() -> tuple[set[str], set[str]]:
     def walk(o):
         if isinstance(o, dict):
             f = o.get("family")
-            if isinstance(f, str):
+            if isinstance(f, str) and "legacy_col" not in o:
                 fams.add(f)
             g = o.get("geo")
             if isinstance(g, str):
@@ -257,6 +270,20 @@ def source_mako() -> tuple[set[str], set[str]]:
     return fams, set(iref.DEMAND_REF)
 
 
+def source_time() -> set[str]:
+    """時間帯の列（別枠）＝`indicator_reference_diag.TIME_REF` の鍵。
+
+    ★2026-09-06（監査 cp24 の §6-1・Critical・設計書 A-3）に足した。
+      直す前＝印に time_on の欄そのものが無く、時間帯だけオン・オフの外に在った。
+      ＝生成器が m = {"time": "時刻"} を無条件で作れた（監査の実測＝has("time_on") が false）。
+    ★中身＝時刻 と 曜日 の両方（まこさん決定 2026-09-06・逐語「3は時刻と曜日を入れる」）。
+    ★手書きの一覧は作らない（まこさんの指示 2026-09-05「手書きの一覧は作らないこと」）＝
+      定義表 TIME_REF の鍵をそのまま使う。型の表 signal_families.json の
+      extra_parts.time.parts と同じ2件（一致は gen_indicator_switch.py --selftest が見る）。
+    """
+    return set(iref.TIME_REF)
+
+
 # ══ 印を組み立てる ═════════════════════════════════════════════════════
 def build() -> dict:
     """3つの源から印を組み立てる。CC の手書きの一覧はゼロ。"""
@@ -264,6 +291,7 @@ def build() -> dict:
     law_f, law_g = source_law()
     id_f, id_g = source_identity()
     mako_f, mako_demand = source_mako()          # 源4（2026-09-05・案A）
+    time_on = source_time()                      # 別枠の時間帯（2026-09-06・監査 cp24 の §6-1）
     all_f = families()
     want = ta_f | law_f | id_f | mako_f
     on = [f for f in all_f if f in want]           # 定義表に在る種類だけ（並びも定義表に合わせる）
@@ -289,7 +317,10 @@ def build() -> dict:
             "使わない": len(off),
             "源1_ta": len(ta_f),
             "源2_法則": len(law_f),
-            "源3_恒等レシピ": len(id_f),
+            # ★2026-09-06（監査 cp24 の §6-6・設計書 D-2）＝「拾ったラベルの数」でなく
+            #   「定義表に実在して、実際にオンに入った数」を出す。
+            #   直す前＝len(id_f) だったので、定義表に無い名前（BB・レンジ幾何）も1件として数えていた。
+            "源3_恒等レシピ": len(id_f & set(all_f)),
             "源4_まこさんが個別に決めたもの": len(mako_f) + len(mako_demand),
             "対応が決まらない_taのクラス": len(unresolved),
         },
@@ -297,6 +328,9 @@ def build() -> dict:
         "off": off,
         "geo_on": sorted(law_g | id_g),
         "demand_on": sorted(mako_demand),        # 需給の列（別枠・2026-09-05・案A）
+        # ★2026-09-06（監査 cp24 の §6-1・Critical）＝時間帯の列（別枠）。
+        #   これが無いと「一律で切り替えられる」を満たさない（時間帯だけ印の外に在った）。
+        "time_on": sorted(time_on),
         "sources": {"ta": sorted(ta_f), "law": sorted(law_f), "identity": sorted(id_f),
                     "mako": sorted(mako_f | mako_demand)},
         "ta_unresolved": sorted(unresolved),
@@ -406,10 +440,49 @@ def cmd_selftest() -> int:
         ng.append("T9")
         print(f"      T9 の中身＝ta に無いクラス名: {bad9}")
 
+    # T10 源3（恒等レシピ）が拾った材料の名前が、定義表に実在するか（監査 cp24 の §6-6・設計書 D-3）
+    #   なぜ要るか＝T8 は「承認済みの対応」にしか掛かっておらず、源3 は素通りだった。
+    #   その結果、定義表に無い名前（BB・レンジ幾何）が源3 に混じっても誰も気づかなかった。
+    bad10 = sorted(id_f - set(all_f))
+    if bad10:
+        ng.append("T10")
+        print(f"      T10 の中身＝定義表に無い材料の名前（源3）: {bad10}")
+
+    # T11 オン・オフの対象にする材料の種類が、実装の分岐と1件ずつ合うか（監査 cp24 の §6-5・設計書 C）
+    #   ★一覧を手書きで決め打ちしない＝実行器の _material_name が分岐する鍵を機械で拾い、
+    #     対象（印で切り替える）＋対象外（切り替えない）が、その分岐の全部と一致するかを見る。
+    #     分岐が1つ増えたら合わなくなって落ちる＝新しい種類を黙って足せない。
+    #   ★対象・対象外の決め方の出どころ＝監査 cp24 の §6-5（相場を測る材料か／自分の玉の話か／
+    #     恒等の走行が使うか）。
+    #   ★2026-09-06 の実測＝分岐は 6つ（family・geo・demand・time・legacy_col・state）。
+    #     監査 §6-5 は tf・param も対象外に挙げていたが、**その2つは種別の分岐ではない**
+    #     （指標に付く時間足と数字＝family の材料の中身）。だからこの検査の相手にしない。
+    _ON_KINDS = {"family", "geo", "demand", "time"}      # 印で切り替える（一律＝M2-C の見出し）
+    _OFF_KINDS = {"legacy_col", "state"}                 # 切り替えない（理由＝監査 §6-5）
+    _src = inspect.getsource(ex._material_name)          # noqa: SLF001  実物の分岐を機械で拾う
+    _kinds = set(re.findall(r'"(\w+)" in m\b', _src))
+    if _kinds != (_ON_KINDS | _OFF_KINDS):
+        ng.append("T11")
+        print(f"      T11 の中身＝実装の分岐 {sorted(_kinds)} と "
+              f"対象+対象外 {sorted(_ON_KINDS | _OFF_KINDS)} が食い違う")
+    if _ON_KINDS & _OFF_KINDS:
+        ng.append("T11")
+        print("      T11 の中身＝対象と対象外に同じ種類が在る")
+    # ★対象の4つには、実行器に判定関数が在ること（無ければ「切り替えられる」と言えない）
+    _missing = [k for k, fn in (("family", "indicator_enabled"), ("geo", "geo_enabled"),
+                                ("demand", "demand_enabled"), ("time", "time_enabled"))
+                if not hasattr(ex, fn)]
+    if _missing:
+        ng.append("T11")
+        print(f"      T11 の中身＝対象なのに判定関数が無い種類: {_missing}")
+
     names = {"T1": "恒等レシピの材料は必ず使う", "T2": "法則の名指しは必ず使う",
              "T3": "取りこぼしゼロ", "T4": "重なりゼロ", "T5": "指紋は中身から決まる",
              "T6": "2回 作って同じ", "T7": "定義表に無い種類は増やせない",
-             "T8": "承認済みの対応の材料名が実在する", "T9": "承認済みの対応の ta クラス名が実在する"}
+             "T8": "承認済みの対応の材料名が実在する", "T9": "承認済みの対応の ta クラス名が実在する",
+             "T10": "源3 が拾った材料名が定義表に実在する",
+             "T11": "オン・オフの対象4つ（family・geo・demand・time）＋対象外2つ"
+                    "（legacy_col・state）が、実装の分岐6つと一致する"}
     for t, nm in names.items():
         print(f"   {t} {nm} → {'ng' if t in ng else 'pass'}")
     if ng:

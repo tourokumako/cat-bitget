@@ -56,7 +56,31 @@ export PYTHONUTF8=1
 SCAN=$(printf '%s' "$INPUT" | python3 -c "
 import sys, json, re, os
 CHECK = set(['--selftest', '--self-test', '--verify', '--identity', '--help',
-             '--scan-contracts', '--diff', '--write', '--dry-run'])
+             '--scan-contracts', '--diff', '--write', '--dry-run',
+             # ★2026-09-06（監査 cp24 の §6-7・Major「S1・L1 の走行」）＝S1 と L1 の恒等の走行を足した。
+             #   直す前＝この一覧に在るのは '--identity'（S2）だけ。旗は「独立した語として完全一致」で
+             #     見るので '--identity-s1' と '--identity-l1' は一致せず、hook が走行を止めていた。
+             #   何が起きていたか＝「直す前と後で結果が同じか確かめる3本の走行」のうち、測れるのは
+             #     S2 の1本だけ。S1（BB・DI差・RSI・基準線）と L1（レンジ幾何）は壊れても気づけない。
+             #   旗の綴りは実物で確かめた＝engine_tuner_exec.py:4812-4815 の add_argument。
+             #   ★性質＝S2 の '--identity' と同じ「確認のための走行」（売買記録を出さない・採否に使わない）。
+             '--identity-l1', '--identity-l1-quick',
+             '--identity-s1', '--identity-s1-quick',
+             # ★2026-09-06（監査 cp24 の §6-1 の確かめ方）＝別枠（レンジ幾何・需給・時間帯）が
+             #   いまの印で何件 候補に出るかを数えて印字するだけの口。読むだけで、案も売買も作らない。
+             #   壊すプログラム b33 が使う（--dry-run と同じ「確認のための走行」）。
+             '--count-extra-candidates',
+             # ★2026-09-07（監査 cp25 の §5-2）＝別枠3種の審査の枝だけを数秒で試す口。
+             #   性質は '--selftest' と同じ（合成の案を1本 作って審査に掛けるだけ・
+             #   売買記録を出さない・累積の試行数に足さない）。壊すプログラム b35 が使う。
+             #   なぜ足したか＝旗は「独立した語として完全一致」で見るので、
+             #   '--selftest-extra-gate' は '--selftest' に一致せず、hook が止めていた。
+             '--selftest-extra-gate',
+             # ★2026-09-07（next_step §6 の144番）＝印（H2・G2）の値が正本の json から
+             #   書かれているかだけを試す口（2件・0.2秒）。文書も売買記録も書かない。
+             #   足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、
+             #   '--selftest-marks' は '--selftest' に一致しない。
+             '--selftest-marks'])
 Q = chr(39) + chr(34)
 try:
     d = json.load(sys.stdin)

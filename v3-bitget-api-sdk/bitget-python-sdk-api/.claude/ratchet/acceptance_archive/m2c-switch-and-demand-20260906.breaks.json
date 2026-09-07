@@ -1,0 +1,72 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）",
+ "iter": "m2c-switch-and-demand-20260906",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b33_extra_switch_off.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "2",
+   "script": "b34_identity_name_missing.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "3",
+   "script": "b33_extra_switch_off.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "4",
+   "script": "b33_extra_switch_off.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "5",
+   "script": "b34_identity_name_missing.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "6",
+   "script": "b34_identity_name_missing.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "7",
+   "script": "b33_extra_switch_off.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "8",
+   "script": "b33_extra_switch_off.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "9",
+   "script": "b34_identity_name_missing.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "11",
+   "script": "b33_extra_switch_off.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "10",
+   "script": "b33_extra_switch_off.sh",
+   "code": 1,
+   "note": ""
+  }
+ ]
+}

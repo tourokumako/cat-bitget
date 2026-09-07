@@ -28,6 +28,12 @@
  "b29_dirty_verify_stops.sh": "e2044abbe12daa364c0891a7441ccaab2a833c790f57f093d062553c49bed1c3",
  "b30_missing_section.sh": "bb910c0e5963b50d10e43b0a42dcdf49b82711b4bc0b03b1fa3adc3e02a1c01a",
  "b31_column_count.sh": "0e2e587828a98e6828150d2dc19a210c04b5e1c98ee201ee0c32bb510b7aed0f",
+ "b32_approve_mark_gone.sh": "107caf5d4097175f002cddadd001a194c3ac1312eca4b8ab6f712aadc1578b8f",
+ "b33_extra_switch_off.sh": "a40bee41339625bed8d21735728c4d3e9078dc2fce35d9f23724daf33633ab42",
+ "b34_identity_name_missing.sh": "f46036412e1e49bd616b321f605fb86498f23ddc18fd7a7e91c407fa19478616",
+ "b35_gate_branch_gone.sh": "8c537c98c417360c689c8b1ab78beb1f2617a84cacf868e27741c5015e9f5fcf",
+ "b36_demand_attach_gone.sh": "2d3a08a492f9362566d2ff9b34bf81f6e77bbf7f75d4ecc55041c8bf4992eab3",
+ "b37_marks_from_json_gone.sh": "8d8f525673bb0dd9807928aaa7c19defc98212bfd24b80cf6e12d8cc9ba0ed55",
  "lib.sh": "5a0a37aae9c45eee32954ed1d29d1fee6f17c1f3cd95f4fa17d1be6be20ceead",
  "_なにこれ": "承認の瞬間に凍結した、壊すプログラムのハッシュ値。run_breaks.py が走る前に照らす（監査 cp16 の E-12）"
 }

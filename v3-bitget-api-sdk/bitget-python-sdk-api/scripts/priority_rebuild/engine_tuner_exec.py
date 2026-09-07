@@ -174,6 +174,11 @@ def load_indicator_switch() -> dict:
         d["_geo_set"] = set(d.get("geo_on") or [])
         # ★2026-09-05（監査 cp21 の M1①）＝需給の列（別枠）も、レンジ幾何と同じ形で印と照らす。
         d["_demand_set"] = set(d.get("demand_on") or [])
+        # ★2026-09-06（監査 cp24 の §6-1・Critical「別枠にオン・オフを効かせる」・設計書 A-1）＝
+        #   時間帯の列（時刻・曜日）も、レンジ幾何・需給と同じ形で印と照らす。
+        #   直す前＝印に time_on の欄そのものが無く、時間帯だけオン・オフの外に在った
+        #   （監査の実測＝has("time_on") が false）。＝「一律で切り替えられる」を満たしていなかった。
+        d["_time_set"] = set(d.get("time_on") or [])
         _SWITCH_CACHE = d
     return _SWITCH_CACHE
 
@@ -205,6 +210,19 @@ def demand_enabled(name: str) -> bool:
     ★印の作り手＝gen_indicator_switch.source_mako（源4「まこさんが個別に決めたもの」）。
     """
     return name in load_indicator_switch()["_demand_set"]
+
+
+def time_enabled(name: str) -> bool:
+    """時間帯の列（時刻・曜日）が「使う」に入っているか。
+
+    ★2026-09-06（監査 cp24 の §6-1・Critical・設計書 A-2）に足した。
+      直す前＝印に time_on の欄そのものが無く、時間帯だけオン・オフの外に在った
+      （監査の実測＝欄も判定関数も無い）。生成器は m = {"time": "時刻"} を無条件で作っていた。
+      ＝まこさんが「時間帯は使わない」と決めても、案に出てしまう状態だった。
+    ★中身＝時刻 と 曜日 の両方（まこさん決定 2026-09-06・逐語「3は時刻と曜日を入れる」）。
+      型の表 signal_families.json の extra_parts.time.parts と同じ2件。
+    """
+    return name in load_indicator_switch()["_time_set"]
 
 
 def indicator_switch_fingerprint() -> str:
@@ -720,6 +738,13 @@ def _material_family(m: dict) -> str:
         return "レンジ幾何"
     if "time" in m:
         return m["time"]
+    if "demand" in m:
+        # ★2026-09-06（監査 cp24 の §6-2・設計書 B）＝需給の列の系統の名前。
+        #   直す前＝枝が無く `m.get("family", "?")` に落ちたので、需給を材料にした案が
+        #   G3 で「系統マップに無い family: ?」と拒否されていた（2026-09-06 に実測＝
+        #   `--dry-run 20` の生成拒否が この理由 5件・番人 T1 が 75/100 に落ちた原因）。
+        #   ＝需給は案に入れられない状態だった（監査の実測「使えるようになった部品は 0件」の一部）。
+        return m["demand"]
     if "legacy_col" in m:
         return m.get("family", "レンジ幾何" if m["legacy_col"] in GEO_COLS else "legacy")
     return m.get("family", "?")
@@ -3050,6 +3075,67 @@ def legacy_cols_in(recipe: dict) -> set:
     return found
 
 
+def demand_cols_in(recipe: dict) -> set:
+    """レシピの中で使っている需給の列の名前を全部拾う（入れ子の中まで）。
+
+    ★2026-09-07（next_step §6 の139番・設計書 iter="demand-attach-shared-path-20260907" の やること A）。
+      形は上の legacy_cols_in と同じにそろえた（材料の名前の拾い方を2通りにしない）。
+    """
+    found: set = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            v = node.get("demand")
+            if isinstance(v, str):
+                found.add(v)
+            for x in node.values():
+                walk(x)
+        elif isinstance(node, list):
+            for x in node:
+                walk(x)
+
+    walk(recipe)
+    return found
+
+
+def attach_demand_columns(df: pd.DataFrame, names) -> pd.DataFrame:
+    """需給の列（別枠）を、走らせるデータに載せる。
+
+    ★2026-09-07（next_step §6 の139番・設計書の やること B）＝生成器から ここへ移した。
+      直す前＝この処理は `engine_tuner_gen._attach_demand` にあり、呼んでいたのは
+      生成器の本走（run_generation）の1か所だけだった。実行器の共通の道
+      （attach_recipe_columns）には入っていなかった。
+      ＝本走の外から案を走らせる道具は、需給の条件を持つ案を走らせられなかった。
+      実測（2026-09-07・H2 の走行）＝種を固定した生成の案3本のうち2本が
+      「[実行器] 需給の列が実行データに無い: L-S比」で走れず、突き合わせの対象外になった。
+
+    ★式はここに書き写さない＝`observe_diag.load_demand`（元データの読み込み・被覆の検査つき）を呼ぶ。
+    ★既に在る列は触らない＝番人の合成データは自分で需給の列を持っている。
+      ここで元データを読みに行くと、合成の時刻と合わずに落ちる（2026-09-06 に実測）。
+    """
+    parts = [c for c in (names or []) if c not in df.columns]
+    if not parts:
+        return df
+    import contextlib as _cl
+    import io as _io
+    import observe_diag as _od
+    _buf = _io.StringIO()
+    # ★渡すのは DatetimeIndex（Series ではない）。
+    #   移す前は `pd.to_datetime(df["ts"])`（＝Series）を渡していた。load_demand の中は
+    #   `s.reindex(bars_index)` で行の並びを時刻に張り替えたあと `s[bars_index > 終端] = NaN` を
+    #   するので、渡したものが Series（行番号を持つ）だと並びが合わず、
+    #   pandas が「Unalignable boolean Series provided as indexer」で落ちる。
+    #   ＝2026-09-07 に この検査を足して初めて分かった（移す前から需給の列は作れていなかった）。
+    with _cl.redirect_stdout(_buf):
+        dem, cov = _od.load_demand(pd.DatetimeIndex(pd.to_datetime(df["ts"])))
+    out = df.copy()
+    for c in parts:
+        if c not in dem.columns:
+            raise RecipeError(f"[実行器] 需給の列を作れなかった: {c}（被覆＝{cov}）")
+        out[c] = dem[c].to_numpy(float)
+    return out
+
+
 def source_logic(recipe: dict) -> dict:
     """レシピの元になった設定（e38_logics.json のロジック）＝値の正本。レシピに数字を二重化しない。"""
     from tuner_adapters import e38 as ad
@@ -3087,6 +3173,13 @@ def attach_recipe_columns(dfp: pd.DataFrame, recipe: dict) -> pd.DataFrame:
     if "l1" in src and "e37_l1_in_sup" not in out.columns:
         out = _l1_attach_legacy_cols(out, float(source_logic(recipe)["params"]["gap_pct"]),
                                      regime_cols(recipe)[0])
+    # ★2026-09-07（next_step §6 の139番・設計書の やること C）＝需給の列（別枠）を、
+    #   その案が実際に使うときだけ載せる。使わない案では元データを読みに行かない（速さを変えない）。
+    #   ここに置く理由＝この関数を呼ぶ所は5か所（実行器 2・H2 の道具 2・E37 の接続 1）で、
+    #   共通の道に置けば5か所ぜんぶに効くため。呼ぶ側それぞれに書き足さない。
+    _dem = demand_cols_in(recipe)
+    if _dem:
+        out = attach_demand_columns(out, sorted(_dem))
     return out
 
 
@@ -4795,6 +4888,36 @@ def selftest() -> None:
     print("[番人 97番 出口の発火条件が形を見る] C1 傾き／C3 交差／C4 差の2本目／C5 ローソク／C12 分位／C13 not／"
           "C2 入口の評価器と一致8組／C7 偽レシピ11通り＋正しい5形 → "
           + ("✅ 全部 期待どおり" if not _x_ng else "❌ " + " ／ ".join(_x_ng)))
+    # ★2026-09-07（next_step §6 の139番・設計書 iter="demand-attach-shared-path-20260907"）
+    #   ＝需給の列を使う案が、共通の道（attach_recipe_columns）を通ると走るか。
+    #   直す前＝需給の列を載せていたのは生成器の本走の1か所だけで、共通の道には無かった。
+    #     ＝本走の外から案を走らせる道具は、需給の条件を持つ案を走らせられなかった
+    #       （2026-09-07 の実測＝H2 の生成の案3本のうち2本が突き合わせの対象外になった）。
+    #   ★使う列の名前は observe_diag の元データの定義から取る（ここに書き写さない）。
+    #   ★時刻は periods の値決め窓の先頭から取る（日付を手打ちしない＝H8）。
+    _dm_ng: list = []
+    try:
+        import observe_diag as _od9
+        import periods as _pd9
+        _dname = next(iter(_od9._DEMAND_FILES))
+        _drec = {"entry": {}, "exits": [], "conditions": [{"material": [{"demand": _dname}]}]}
+        if _dname not in demand_cols_in(_drec):
+            _dm_ng.append(f"需給①: demand_cols_in が {_dname} を拾えない")
+        _ddf = pd.DataFrame({"ts": pd.date_range(_pd9.SEARCH_START, periods=200, freq="5min"),
+                             "close": 1.0})
+        _dout = attach_recipe_columns(_ddf, _drec)
+        if _dname not in _dout.columns:
+            _dm_ng.append(f"需給②: 共通の道を通しても列 {_dname} が付かない"
+                          "（attach_recipe_columns が attach_demand_columns を呼んでいない）")
+        elif not _dout[_dname].notna().any():
+            _dm_ng.append(f"需給③: 列 {_dname} は付いたが値が全部 空（元データを読めていない）")
+        if _dname in attach_recipe_columns(_ddf, {"entry": {}, "exits": []}).columns:
+            _dm_ng.append("需給④: 需給を使わない案にも列が付いた（要るときだけ載せる形になっていない）")
+    except Exception as _e9:                              # noqa: BLE001
+        _dm_ng.append(f"需給: 検査が走らない: {type(_e9).__name__} {_e9}")
+    ng += _dm_ng
+    print("[番人 139番 需給の列を共通の道が載せる] ①名前を拾う ②要る案には付く ③値が入る ④要らない案には付けない → "
+          + ("✅ 全部 期待どおり" if not _dm_ng else "❌ " + " ／ ".join(_dm_ng)))
     print("engine_tuner_exec 自己検査（スキーマ検証器の番人＝壊したレシピ36種で全部止まる・正しい5種は通る・歩4/歩6-1 拡張の既知答え込み）")
     print("=" * 80)
     if ng:

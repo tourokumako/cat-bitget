@@ -1,0 +1,33 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "scripts/priority_rebuild/engine_tuner_gen.py": [
+  "_lineage_of",
+  "_kubun_of",
+  "_lineage_candidates",
+  "_pick_material",
+  "_attach_demand",
+  "assert_provenance",
+  "structure_breakdown",
+  "run_generation",
+  "synth_df",
+  "selftest",
+  "main"
+ ],
+ "scripts/priority_rebuild/engine_tuner_exec.py": [
+  "load_indicator_switch",
+  "time_enabled",
+  "_material_family"
+ ],
+ "scripts/priority_rebuild/gen_indicator_switch.py": [
+  "source_time",
+  "source_identity",
+  "build",
+  "cmd_selftest"
+ ],
+ "scripts/priority_rebuild/gen_materials.py": [
+  "_demand_missing",
+  "_gaps"
+ ]
+}

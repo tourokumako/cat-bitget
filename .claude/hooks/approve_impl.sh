@@ -366,25 +366,82 @@ if [ -f "$RUNB" ]; then
   if [ -f "$BJ" ]; then
     python3 - "$LIST" "$BJ" <<'PYEOF'
 import json
+import re
+import shlex
+import subprocess
 import sys
 md_p, bj_p = sys.argv[1], sys.argv[2]
 rows = (json.loads(open(bj_p, encoding='utf-8').read()) or {}).get('rows') or []
 code = {str(r.get('no')): r.get('code') for r in rows}
 src = open(md_p, encoding='utf-8').read()
+
+# ★2026-09-07（監査 cp25 の §5-1・Critical・まこさん承認 iter="cp25-done-mark-and-extra-tests-20260907"）
+#   ＝「済」を書く条件を2つにした。
+#   直す前＝壊すプログラムの終了コードが 0 以外なら、それだけで「済」を書いていた。
+#     ＝壊すプログラムは2本しか無いのに、完成の条件11件とも「済」になった（監査 cp25 の実測）。
+#     b33 は MMI にも 出口の枝の順番にも T33-e の行にも触れないのに、その3行まで済になった。
+#     さらに #4 は「いま 0本」と書いてあるセルに済が付いた＝条件を満たしていない行が済になった。
+#   直した後＝次の2つが**両方**そろったときだけ「済」を書く。
+#     ①壊すプログラムの終了コードが 0 以外（＝その検査は本物）
+#     ②その行の「その数字を出したコマンド」を実際に走らせ、終了コードが 0（＝条件が満たされている）
+#   ★どちらか一方でも欠ければ「未着手」のまま残す。走らせた結果は画面に出す。
+#   ★壊すプログラムの欄が空の行は済にしない（①が測れないため）。
+#   限界（正直に）＝そのコマンドが条件を測っているかは見ない（終了コードだけ）。
+#     時間のかかる行は打ち切りで未着手のまま残る。
+SDK = ("/Users/tachiharamasako/Documents/GitHub/cat-bitget/"
+       "v3-bitget-api-sdk/bitget-python-sdk-api")
+TIMEOUT_SEC = 120
+
+
+def _cmd_of(cell):
+    """セルから、走らせるコマンドを取り出す（`…` で囲まれた最初のもの）。無ければ None。"""
+    m = re.search(r'`([^`]+)`', cell or '')
+    if not m:
+        return None
+    c = m.group(1).strip()
+    return c if c.startswith('python3 ') or c.startswith('bash ') else None
+
+
+def _run(cmd):
+    """そのコマンドを走らせて終了コードを返す。走らせられなければ None。"""
+    try:
+        r = subprocess.run(shlex.split(cmd), cwd=SDK, capture_output=True,
+                           text=True, timeout=TIMEOUT_SEC)
+        return r.returncode
+    except Exception:                                        # noqa: BLE001
+        return None
+
+
 n, out = 0, []
 for ln in src.splitlines(True):
     t = ln.strip()
     if t.startswith('|') and '**未着手**' in t:
         cells = [c.strip() for c in t.strip('|').split('|')]
-        c = code.get(cells[0] if cells else '')
-        if c not in (0, None):
-            ln = ln.replace('**未着手**',
-                            f'**✅済**＝壊すと rc={c}（承認のときに機械が測った）')
-            n += 1
+        no = cells[0] if cells else ''
+        c = code.get(no)
+        # 壊すプログラムの欄（見出しの並び＝# / 完成の条件 / コマンド / 経路 / 壊し方 / 壊すプログラム / …）
+        brk = cells[5] if len(cells) > 5 else ''
+        cmd = _cmd_of(cells[2] if len(cells) > 2 else '')
+        if c in (0, None):
+            print(f"   ⏸ #{no} は「未着手」のまま＝壊すプログラムが落ちていない（rc={c}）")
+        elif not brk or brk in ('—', '-', ''):
+            print(f"   ⏸ #{no} は「未着手」のまま＝壊すプログラムの欄が空")
+        elif cmd is None:
+            print(f"   ⏸ #{no} は「未着手」のまま＝走らせるコマンドを読み取れない")
+        else:
+            rc2 = _run(cmd)
+            if rc2 == 0:
+                ln = ln.replace(
+                    '**未着手**',
+                    f'**✅済**＝壊すと rc={c}／条件のコマンドも rc=0（承認のときに機械が2つとも測った）')
+                n += 1
+                print(f"   ✅ #{no} 済＝壊すと rc={c}／条件のコマンド rc=0")
+            else:
+                print(f"   ⏸ #{no} は「未着手」のまま＝条件のコマンドが rc={rc2}（0 でない）")
     out.append(ln)
 if n:
     open(md_p, 'w', encoding='utf-8').write(''.join(out))
-    print(f"   ✍️ 完成の条件 {n} 行を「済」にしました（機械が測った終了コードを書き込み）")
+    print(f"   ✍️ 完成の条件 {n} 行を「済」にしました（壊すプログラムと条件のコマンドの両方が通った行だけ）")
 PYEOF
     NEW_H=$(shasum -a 256 "$LIST" | awk '{print $1}')
     OLD_H=$(cat "$STATE/acceptance.approved" 2>/dev/null)

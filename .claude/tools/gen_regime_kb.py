@@ -60,6 +60,60 @@ def _esc(s: str) -> str:
     return str(s).replace("|", "／").replace("\n", " ")
 
 
+# ══ 印（H2・G2）の値を、正本の json から書く ═══════════════════════════════════════════════
+#   ★2026-09-07（監査 cp25 の §5-4・next_step §6 の144番・設計書 iter="marks-from-json-20260907"）
+#   直す前＝やることリスト（m2_todo.json の M2-C-7）に、印の値を CC が手で書き写していた。
+#     ＝コードを直して印を取り直すたびに古くなる。**実測で4回 続けて古くなった**
+#       （①2026-09-05 の値 ②cp24 で 2026-09-06 12時台へ ③cp25 でまた古い
+#        ④2026-09-07 に139番の直しでコードを触り、また古い）。
+#   監査 cp25 の逐語＝「プログラムが g2_pass.json／h2_pass.json から書く形にしてください
+#     （tidy_next_step.py が next_step の (0-b-2) でやっているのと同じ形）」。
+#   直した後＝元データには目印だけを書き、ここで正本の json から読んで置き換える。
+#     ＝手で書く値が0個になる＝二度と古くならない。
+_STATE = ROOT / ".claude" / "state"
+_MARK_RE = re.compile(r"\{\{([A-Z0-9_]+)\}\}")
+
+
+def _pass_json(path: Path) -> dict:
+    """印の json を読む（手本＝tidy_next_step.py の _pass・無ければ止まる）。"""
+    if not path.exists():
+        raise SystemExit(f"[gen_regime_kb] 印の json が無い: {path}")
+    d = json.loads(path.read_text(encoding="utf-8"))
+    for k in ("fingerprint", "files"):
+        if k not in d:
+            raise SystemExit(f"[gen_regime_kb] 印の json に {k} が無い: {path}")
+    return {"fp": str(d["fingerprint"])[:16], "n": len(d["files"]), "when": str(d.get("when", ""))}
+
+
+def marks_now() -> dict:
+    """いまの印の値を、正本の json 2本から読んで返す。"""
+    g2 = _pass_json(_STATE / "g2_pass.json")
+    h2 = _pass_json(_STATE / "h2_pass.json")
+    return {"G2_FP": g2["fp"], "G2_N": str(g2["n"]), "G2_WHEN": g2["when"],
+            "H2_FP": h2["fp"], "H2_N": str(h2["n"]), "H2_WHEN": h2["when"]}
+
+
+def apply_marks(text: str) -> str:
+    """本文の目印を、いまの印の値に置き換える。
+
+    ★置き換えられない目印が1つでも残ったら止める（fail-closed）＝黙って目印のまま
+      文書に書かない。書いてしまうと、印（hash）は本文と合うので --verify では気づけない。
+    """
+    now = marks_now()
+    unknown = sorted({m for m in _MARK_RE.findall(text) if m not in now})
+    if unknown:
+        raise SystemExit(f"[gen_regime_kb] 知らない目印が在る: {unknown}（使えるのは {sorted(now)}）")
+    return _MARK_RE.sub(lambda m: now[m.group(1)], text)
+
+
+def build(kind: str, d: dict) -> str:
+    """節の本文を組み立てて、目印を置き換えて返す。
+
+    ★--write と --verify の両方が これを呼ぶ＝同じ処理を2か所に書き写さない。
+    """
+    return apply_marks(BUILDER[kind](d))
+
+
 def _kakeru(r: dict) -> str:
     """11-x の表の「engine_tuner で書けるか」の欄＝判定の有無から機械で出す（M2-B-2b・2026-08-30）。
     手書きの `書けるか` は、判定も置き場も無い法則にだけ使う（R1 が判定を持つのに「✕」のままだった穴を塞ぐ）。"""
@@ -812,7 +866,7 @@ def _kinds(arg: str) -> list[str]:
 
 def write_one(kind: str, dry: bool = False) -> int:
     d = json.loads(SRC[kind].read_text(encoding="utf-8"))
-    body = BUILDER[kind](d)
+    body = build(kind, d)                    # ★144番＝印の目印を json の値に置き換えてから書く
     dest = DEST[kind]
     kb = dest.read_text(encoding="utf-8")
     end_mark = _end(kind)
@@ -849,7 +903,7 @@ def verify_one(kind: str) -> int:
         print(f"   → 直すのは {SRC[kind].name}。直したら --write を走らせる。")
         return 1
     d = json.loads(SRC[kind].read_text(encoding="utf-8"))
-    if _h(BUILDER[kind](d)) != want:
+    if _h(build(kind, d)) != want:           # ★144番＝置き換えた後の本文と照らす
         print(f"❌ --verify: {SRC[kind].name} が変わったのに --write を走らせていません")
         return 1
     print(f"✅ --verify: {SEC[kind]} は機械が書いたままです（hash={want}）")
@@ -878,6 +932,41 @@ def verify(target: str = "all") -> int:
             print(ln)
         rc |= crc2
     return rc
+
+
+def marks_checks() -> list:
+    """印の値が、正本の json から書かれているかを試す（2件）。
+
+    ★2026-09-07（監査 cp25 の §5-4・next_step §6 の144番）に新設。
+      なぜ `--verify` だけでは足りないか＝目印を置き換えないまま文書に書いても、
+      印（hash）は本文と一致するので `--verify` は通ってしまう。だから本文を直に見る。
+    ★`--selftest`（全体）と `--selftest-marks`（この2件だけ）の両方が これを呼ぶ
+      ＝同じ判定を2か所に書き写さない。
+    戻り＝(説明, 通ったか) の一覧。
+    """
+    now = marks_now()
+    body = build("todo", json.loads(SRC["todo"].read_text(encoding="utf-8")))
+    return [
+        ("いまの G2・H2 の値が やることリストの本文に出る",
+         now["G2_FP"] in body and now["H2_FP"] in body),
+        ("置き換えられていない目印が本文に残っていない", "{" + "{" not in body),
+    ]
+
+
+def selftest_marks() -> int:
+    """印の値の枝だけを走らせる（★全体の `--selftest` は、別の工事の未反映で今も rc=1 のため）。
+
+    実測（2026-09-07）＝`--selftest` の全体は T7・T9・T11 が ❌。中身は §11・§12 の
+    未反映と引用の行番号のずれで、どれも別の工事（M2-B）のもの。
+    全体の終了コードを使うと、この工事の完成の条件を測れない。
+    """
+    rows = marks_checks()
+    for i, (msg, okk) in enumerate(rows, 1):
+        print(f"  {'✅' if okk else '❌'} 印{i} {msg}")
+    ng = [m for m, okk in rows if not okk]
+    print(f"  {'✅' if not ng else '❌'} 印の値は正本の json から書かれている"
+          f"（通った {len(rows) - len(ng)}/{len(rows)}）")
+    return 0 if not ng else 1
 
 
 def selftest() -> int:
@@ -937,6 +1026,11 @@ def selftest() -> int:
             print(f"   T{total} 判定を揃えた場面 わざと置き場を消すと ❌ → pass")
         else:
             print(f"   T{total} 判定を揃えた場面 置き場を消しても ✅ のまま → fail")
+        for _msg, _pass_ok in marks_checks():
+            total += 1
+            if _pass_ok:
+                ok += 1
+            print(f"   T{total} 印の値 {_msg} → {'pass' if _pass_ok else 'fail'}")
     finally:
         for p, t in orig.items():
             p.write_text(t, encoding="utf-8")
@@ -950,7 +1044,13 @@ def main() -> int:
     p.add_argument("--verify", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "laws", "findings"])
     p.add_argument("--dry-run", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "laws", "findings"])
     p.add_argument("--selftest", action="store_true")
+    # ★2026-09-07（144番）＝印の値の枝だけを走らせる口。全体の --selftest は、別の工事
+    #   （M2-B の §11・§12）の未反映で今も rc=1 のため、この工事の完成の条件を測れない。
+    p.add_argument("--selftest-marks", action="store_true",
+                   help="印（H2・G2）の値が、正本の json から書かれているかだけを試す（2件）")
     a = p.parse_args()
+    if a.selftest_marks:
+        return selftest_marks()
     if a.selftest:
         return selftest()
     if a.write:

@@ -206,6 +206,19 @@ def _row_engine(row: dict, ev: dict) -> str:
     return _SEL_OK if nm in set(ev["selectable_fams"]) else _SEL_NO_TPL
 
 
+def _demand_missing(ev: dict) -> list[str]:
+    """需給のうち、材料カタログにも 型の表の別枠にも無いもの（＝本当に「これから足す」もの）。
+
+    ★2026-09-06（監査 cp24 の §6-10 の4件目・設計書 H）に新設。
+      直す前＝参照表に在る需給3件を、そのまま「これから足す候補」に数えていた。
+      いま＝型の表の `extra_parts.demand.parts` に在るものは、もう足し終わっている（別枠で使える）。
+      ★手で 0 と書かない＝表から機械で引いて差を数える（表から外れれば、また候補に戻る）。
+    """
+    extra = (json.loads(_SIGFAM.read_text(encoding="utf-8")).get("extra_parts") or {})
+    have = set((extra.get("demand") or {}).get("parts") or [])
+    return [d for d in ev["demand"] if d not in have]
+
+
 def _gaps(ev: dict, body_counts: dict, add_n: int, skip: list) -> list[dict]:
     """段5＝足すものの一覧。4か所に散っている不足を1つにまとめる（数は全部 実物から）。"""
     # 検査9（向きの穴）
@@ -227,9 +240,18 @@ def _gaps(ev: dict, body_counts: dict, add_n: int, skip: list) -> list[dict]:
         dict(印="B", 何を足すか="★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標",
              数=len(ev["unselectable_fams"]), 単位="種類", 出どころ="段5 で新しく数えた（検査には無い）",
              中身="・".join(ev["unselectable_fams"])),
-        dict(印="C", 何を足すか="★参照表に在るのに、材料カタログに列が無い（需給）",
-             数=len(ev["demand"]), 単位="件", 出どころ="段5 で新しく数えた（検査7 は『あり』と出る＝別の道で見ている）",
-             中身="・".join(ev["demand"])),
+        # ★2026-09-06（監査 cp24 の §6-10 の4件目・設計書 H）＝「別枠で使えるようになったもの」を除く。
+        #   直す前＝参照表に在る需給3件を、そのまま「これから足す候補」に数えていた。
+        #     ＝2026-09-05 に3件とも足し終わった（まこさん決定「需給は『使う』にする」・型の表の
+        #     extra_parts.demand に3件）のに、いつまでも「足りない3件」と出ていた。
+        #     ＝M2-C-6 の確かめ方（★1 の該当行が0件）を満たせない状態だった。
+        #   ★手で 0 と書かない＝型の表の別枠（extra_parts）から機械で引いて、差を数える。
+        #     型の表から需給が外れれば、また候補に戻る（数字を焼かない）。
+        dict(印="C", 何を足すか="★参照表に在るのに、材料カタログにも別枠にも無い（需給）",
+             数=len(_demand_missing(ev)), 単位="件",
+             出どころ="段5 で新しく数えた（検査7 は『あり』と出る＝別の道で見ている）"
+                      "／2026-09-06 に「型の表の別枠に在るものは除く」を足した",
+             中身="・".join(_demand_missing(ev)) or "（無し＝3件とも型の表の別枠に在る）"),
         dict(印="D", 何を足すか="「終値と◯◯の距離%」に対する「◯◯ そのものの向き」",
              数=len(gap), 単位="件", 出どころ="検査9（observe_diag）", 中身="・".join(gap)),
         dict(印="E", 何を足すか="軸カタログ（入口 E-c）の未実装",

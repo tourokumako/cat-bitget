@@ -1,0 +1,4 @@
+103c103
+< | 1 | やることリストの本文に、いまの印の値がそのまま出る（置き換えられていない目印が1つも残らない） | `python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/gen_regime_kb.py --selftest-marks` | 実経路 | `build` から `apply_marks` の呼び出しを外すと、自己検査が落ちる | `b37_marks_from_json_gone.sh` | 終了コードが0でない | **未着手**（この工事の前は、印の値を私が手で書き写している） |
+---
+> | 1 | やることリストの本文に、いまの印の値がそのまま出る（置き換えられていない目印が1つも残らない） | `python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/gen_regime_kb.py --selftest-marks` | 実経路 | `build` から `apply_marks` の呼び出しを外すと、自己検査が落ちる | `b37_marks_from_json_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った）（この工事の前は、印の値を私が手で書き写している） |

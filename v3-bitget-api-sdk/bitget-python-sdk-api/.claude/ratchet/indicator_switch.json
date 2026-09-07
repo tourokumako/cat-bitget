@@ -15,7 +15,7 @@
   "使わない": 116,
   "源1_ta": 64,
   "源2_法則": 89,
-  "源3_恒等レシピ": 8,
+  "源3_恒等レシピ": 2,
   "源4_まこさんが個別に決めたもの": 4,
   "対応が決まらない_taのクラス": 5
  },
@@ -289,6 +289,10 @@
   "L-S比",
   "taker_ls"
  ],
+ "time_on": [
+  "時刻",
+  "曜日"
+ ],
  "sources": {
   "ta": [
    "ADX",
@@ -448,14 +452,8 @@
    "高値切り上げ幅%"
   ],
   "identity": [
-   "BB",
-   "DI差",
    "ROC",
-   "RSI",
-   "Stoch%D",
-   "volume_ratio",
-   "レンジ幾何",
-   "基準線"
+   "volume_ratio"
   ],
   "mako": [
    "CVD",
@@ -471,5 +469,5 @@
   "DailyReturnIndicator",
   "WilliamsRIndicator"
  ],
- "fingerprint": "caa0d4c9547f8062"
+ "fingerprint": "3b43702a792e8a83"
 }

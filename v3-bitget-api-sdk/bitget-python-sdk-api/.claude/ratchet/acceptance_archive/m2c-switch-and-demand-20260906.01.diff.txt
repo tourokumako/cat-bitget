@@ -1,0 +1,105 @@
+7,8d6
+< NEW_FILE: .claude/breaks/b33_extra_switch_off.sh, .claude/breaks/b34_identity_name_missing.sh
+< 
+10a9,10
+> ★新しく作るファイルの宣言の行は外しました＝壊すプログラム2本（`b33_extra_switch_off.sh`・`b34_identity_name_missing.sh`）は、もう作り終えて実在するためです。2本とも中身を開いて確かめてあります。
+> 
+31c31
+< **① 真因**＝オン・オフの判定と、材料を引く処理が、指標（`family`）だけを見る形でできています。別枠3種は「型の表に在るか」しか見ておらず、印を見ていません。需給は引く枝そのものが在りません。
+---
+> **① 真因**＝オン・オフの判定と、材料を引く処理が、指標（`family`）だけを見る形でできています。別枠3種は「型の表に在るか」しか見ておらず、印を見ていません。需給は引く枝そのものが在りません。**さらに実装のときに実測して分かった真因が2つ**＝(a) 実行器が材料から系統を引く処理（`_material_family`）に需給の枝が無く、需給を使った案が「系統マップに無い family」で拒否されていた (b) 需給の列を本走のデータに載せる道が無かった（載せていたのは診断の道だけ）。
+45c45
+< | **A-3** | `gen_indicator_switch.py` | 印に `time_on` の欄を新設。中身＝`時刻` と `曜日`（まこさん決定 2026-09-06・逐語「3は時刻と曜日を入れる」）。型の表の `extra_parts.time.parts` と一致 |
+---
+> | **A-3** | `gen_indicator_switch.py` | 印に `time_on` の欄を新設。中身＝`時刻` と `曜日`（まこさん決定 2026-09-06・逐語「3は時刻と曜日を入れる」）。手書きの一覧は作らず、定義表 `TIME_REF` の鍵から機械で引く |
+47,49c47,49
+< | **B** | `engine_tuner_gen.py` | 材料を引く処理を、役割ごとに使える系統を表から引き、系統を選んでから その系統の部品を選ぶ形にする。別枠3種は判定関数がオフなら候補から外す。CC が書いた割合の数字（`0.5`・`0.10`）を消す |
+< | **C** | `gen_indicator_switch.py` | オン・オフの対象を、機械で数えられる形にする＝対象4系統（指標・レンジ幾何・需給・時間帯）と対象外3つ（玉の状態・昔からの列・`tf`／`param`）の合計が、実物の分岐の数と一致するかを自己検査で見る |
+< | **D** | `gen_indicator_switch.py` | `source_identity` が、`legacy_col` を持つ材料の `family` ラベルを拾わないようにする。`counts.源3_恒等レシピ` を「オンに入った数」にする。定義表に無い名前が混じったら落ちる検査を1本 足す |
+---
+> | **B** | `engine_tuner_gen.py`／`engine_tuner_exec.py` | 材料を引く処理を、役割ごとに使える系統を表から引き、系統を選んでから その系統の部品を選ぶ形にする。別枠3種は判定関数がオフなら候補から外す。CC が書いた割合の数字（`0.5`・`0.10`）を消す。**あわせて、需給を案に入れられない原因2つを直す**＝実行器の系統の引き方に需給の枝を足す／本走のデータに需給の列を載せる |
+> | **C** | `gen_indicator_switch.py` | オン・オフの対象を、機械で数えられる形にする＝対象4つ（family・geo・demand・time）と対象外2つ（legacy_col・state）の合計が、実物の分岐と一致するかを自己検査で見る |
+> | **D** | `gen_indicator_switch.py` | `source_identity` が、`legacy_col` を持つ材料の `family` ラベルを拾わないようにする。`counts.源3_恒等レシピ` を「定義表に在ってオンに入った数」にする。定義表に無い名前が混じったら落ちる検査を1本 足す |
+91a92,93
+> **★状態はすべて「未着手」にしてあります。**私が測った数字は「いまの状態」の欄に根拠として書きますが、**「済」にするのは機械です**（承認のコマンドが壊すプログラムを走らせ、終了コードが 0 以外のときだけ済にします）。**自分で「直った」と判定しない**（恒久の決まり64番）。
+> 
+96,105c98,107
+< | 1 | 別枠3種の判定関数が、生成器から呼ばれる（0件でない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 印の別枠の欄を空にして、案に別枠が出ないことを見る | `b33_extra_switch_off.sh` | 終了コードが0でない | **未着手**（いま 0件） |
+< | 2 | 別枠3種を試すテストの枝が在る（0件でない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 同上 | `b33_extra_switch_off.sh` | 枝の数が0でない | **未着手**（いま 0件） |
+< | 3 | 需給が案に出る（0回でない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --purpose check` | 実経路 | 印の `demand_on` を空にすると0回になる | `b33_extra_switch_off.sh` | 回数が0でない | **未着手**（いま 0回） |
+< | 4 | MMI が場面の判定で引ける（0本でない） | `python3 scripts/priority_rebuild/observe_diag.py --rank-regime <5分足CSV>` | 実経路 | 印の MMI をオフにすると順位から消える | `b33_extra_switch_off.sh` | 行数が0でない | **未着手**（いま 0本） |
+< | 5 | 材料名の実在テストが在り、源3 の数が実物と合う | `python3 scripts/priority_rebuild/gen_indicator_switch.py --write` | 実経路 | 定義表に無い名前を印に混ぜる | `b34_identity_name_missing.sh` | 終了コードが0でない | **未着手**（いま 8・実態 6） |
+< | 6 | オン・オフの対象の件数が、実装の分岐の数と一致する | `python3 scripts/priority_rebuild/gen_indicator_switch.py --selftest` | 実経路 | 分岐を1つ増やして件数を合わなくする | `b34_identity_name_missing.sh` | 終了コードが0でない | **未着手** |
+< | 7 | 再開の食い違いで止まる | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 止める行を外すと T33-e が ❌ を出さなくなる | `b33_extra_switch_off.sh` | ❌ の件数が変わる | **未着手**（いま 指紋が空でないことしか見ていない） |
+< | 8 | 既存が壊れていない（3本の md5 が変わらない） | `python3 scripts/priority_rebuild/engine_tuner_exec.py --identity` | 実経路 | 別枠の材料を恒等レシピの経路にも入る形にすると md5 が変わる | `b33_extra_switch_off.sh` | 3本とも一致 | **未着手**（直す前の値は測ってある＝S2 `7b01f51b5a9b29b3c05a7b340c203ba1`／L1 `96a9102ec8a34f94cf01e9e463f6aade`／S1 `18b3d31a5fe71c4a4b5f83cf1771a46c`。**直した後に測り直して、同じ値であることを確かめる**） |
+< | 9 | 材料の一覧の「これから足す候補」の需給が0件になる | `python3 scripts/priority_rebuild/gen_materials.py --write` | 実経路 | 除く処理を外すと3件に戻る | `b34_identity_name_missing.sh` | 数が0 | **未着手**（いま 3件） |
+< | 10 | `impl_functions`（触る関数の一覧）は実装の後に確定させる＝実装が終わってから `verify_design_contract.py --write` が実物から書き出す（手書きしない） | `python3 scripts/priority_rebuild/verify_design_contract.py --write .claude/state/acceptance.md` | 実経路 | 凍結に在る関数を実装から消す | `b01_missing_func.sh` | 終了コードが0でない | **未着手** |
+---
+> | 1 | 別枠3種が候補に出る（0件でない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --count-extra-candidates` | 実経路 | 印の別枠の欄を空にすると候補が0件になる | `b33_extra_switch_off.sh` | 終了コードが0でない | **未着手**（私が測った値＝**6件**。レンジ幾何2・需給3・時刻1。直す前は 0件） |
+> | 2 | オン・オフの対象4つに、実行器の判定関数が全部 在る | `python3 scripts/priority_rebuild/gen_indicator_switch.py --selftest` | 実経路 | 分岐を1つ増やして件数を合わなくする | `b34_identity_name_missing.sh` | 終了コードが0でない | **未着手**（私が測った値＝T11 を新設して 11/11 pass。直す前は時間帯の判定関数が無かった） |
+> | 3 | 需給を使った案が拒否されない | `python3 scripts/priority_rebuild/engine_tuner_gen.py --dry-run 20` | 実経路 | 印の `demand_on` を空にすると候補から消える | `b33_extra_switch_off.sh` | 生成拒否が0件 | **未着手**（私が測った値＝生成拒否 **5件 → 0件**。直す前は「系統マップに無い family」で拒否） |
+> | 4 | MMI が場面の判定で引ける（0本でない） | `python3 scripts/priority_rebuild/observe_diag.py --rank-regime <5分足CSV>` | 実経路 | 印の MMI をオフにすると順位から消える | `b33_extra_switch_off.sh` | 行数が0でない | **未着手**（いま 0本・1〜2時間15分の走行） |
+> | 5 | 材料名の実在テストが在り、源3 の数が実物と合う | `python3 scripts/priority_rebuild/gen_indicator_switch.py --write` | 実経路 | 定義表に無い名前を印に混ぜる | `b34_identity_name_missing.sh` | 終了コードが0でない | **未着手**（私が測った値＝源3 が **8 → 2**。監査の見込みは6・実物は2） |
+> | 6 | オン・オフの対象の件数が、実装の分岐と一致する | `python3 scripts/priority_rebuild/gen_indicator_switch.py --selftest` | 実経路 | 分岐を1つ増やして件数を合わなくする | `b34_identity_name_missing.sh` | 終了コードが0でない | **未着手**（私が測った値＝**11/11 pass**。T10・T11 を新設） |
+> | 7 | 再開の食い違いで止まる | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 止める行を外すと T33-e が ❌ を出さなくなる | `b33_extra_switch_off.sh` | ❌ の件数が変わる | **未着手**（私が測った値＝T33-e が実際に試す形になり、自己テストで pass） |
+> | 8 | 既存が壊れていない（3本の md5 が変わらない） | `python3 scripts/priority_rebuild/engine_tuner_exec.py --identity` | 実経路 | 出口の枝の順番を入れ替える | `b33_extra_switch_off.sh` | 3本とも一致 | **未着手**（私が測った値＝**直した後も3本とも同じ**。S2 `7b01f51b5a9b29b3c05a7b340c203ba1`／L1 `96a9102ec8a34f94cf01e9e463f6aade`／S1 `18b3d31a5fe71c4a4b5f83cf1771a46c`） |
+> | 9 | 材料の一覧の「これから足す候補」の需給が0件になる | `python3 scripts/priority_rebuild/gen_materials.py --write` | 実経路 | 除く処理を外すと3件に戻る | `b34_identity_name_missing.sh` | 数が0 | **未着手**（私が測った値＝**3件 → 0件**） |
+> | 10 | 生成器の自己テストで、私の直しが壊した検査が0件 | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 需給の枝を消すと生成が弱くなる | `b33_extra_switch_off.sh` | ❌ が前からの3件だけ | **未着手**（私が測った値＝❌ **3件のみ**＝T24②・T26・T30＝前からの M2-E の工事。T1・T19 は私が壊して直した・6分24秒） |
+114,115c116,144
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "verify_design_contract.py --write で実物から書き出す（手書きしない）",
+---
+>   "impl_functions": {
+>     "scripts/priority_rebuild/engine_tuner_gen.py": [
+>       "_lineage_of",
+>       "_kubun_of",
+>       "_lineage_candidates",
+>       "_pick_material",
+>       "_attach_demand",
+>       "assert_provenance",
+>       "run_generation",
+>       "synth_df",
+>       "selftest",
+>       "main"
+>     ],
+>     "scripts/priority_rebuild/engine_tuner_exec.py": [
+>       "load_indicator_switch",
+>       "time_enabled",
+>       "_material_family"
+>     ],
+>     "scripts/priority_rebuild/gen_indicator_switch.py": [
+>       "source_time",
+>       "source_identity",
+>       "build",
+>       "cmd_selftest"
+>     ],
+>     "scripts/priority_rebuild/gen_materials.py": [
+>       "_demand_missing",
+>       "_gaps"
+>     ]
+>   },
+117c146,163
+<   "must_use": {},
+---
+>   "must_use": {
+>     "_pick_material": ["_lineage_candidates", "_lineage_of"],
+>     "_lineage_candidates": ["geo_enabled", "demand_enabled", "time_enabled"],
+>     "assert_provenance": ["geo_enabled", "demand_enabled", "time_enabled"],
+>     "_attach_demand": ["load_demand"],
+>     "run_generation": ["_attach_demand"],
+>     "selftest": ["T33-e"],
+>     "synth_df": ["taker_ls"],
+>     "load_indicator_switch": ["_time_set"],
+>     "time_enabled": ["_time_set"],
+>     "_material_family": ["demand"],
+>     "source_time": ["TIME_REF"],
+>     "source_identity": ["legacy_col"],
+>     "build": ["source_time", "time_on"],
+>     "cmd_selftest": ["T10", "T11"],
+>     "_demand_missing": ["extra_parts"],
+>     "_gaps": ["_demand_missing"]
+>   },
+121c167
+<     "impl_functions": "verify_design_contract.py --write"
+---
+>     "impl_functions": "実装のあとに、直した行がどの関数に入っているかを機械で引いて書いた（awk で 行→関数）。SPEC の書き出しは verify_design_contract.py --write（acceptance.md.actual.md）"

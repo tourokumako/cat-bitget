@@ -1,0 +1,31 @@
+51a52
+> | **I** | `engine_tuner_gen.py` | 案の内訳（`structure_breakdown`）に「**使った材料と回数**」の欄を足す。**これが無いと、監査 §6-4 の④（足した部品が案に実際に出てくるか）を機械で数えられない。**あわせて、集める対象に別枠2種（需給・時間帯）を足す（直す前は指標とレンジ幾何だけ）。**直す前の実測**＝`python3 scripts/priority_rebuild/engine_tuner_gen.py --dry-run 50` の出力に、需給も MMI も名前が1件も出なかった |
+66c67
+< - **(d)** むしろ、出どころの記録が無い数字を2つ 消します（`0.5`＝レンジ幾何を2回に1回・`0.10`＝時間帯を10回に1回）。実測＝`git log -S` で、どちらも commit `863935a`（乱数のくじ引きを作った回）に入り、決定の記録がありません。
+---
+> - **(d)** むしろ、出どころの記録が無い数字を2つ 消します（`0.5`＝レンジ幾何を2回に1回・`0.10`＝時間帯を10回に1回）。実測を出したコマンド＝`git log --oneline -S'r < 0.10' -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py`（`r < 0.5` も同じ形）＝どちらも commit `863935a`（乱数のくじ引きを作った回）に入り、決定の記録がありません。
+98,107c99,109
+< | 1 | 別枠3種が候補に出る（0件でない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --count-extra-candidates` | 実経路 | 印の別枠の欄を空にすると候補が0件になる | `b33_extra_switch_off.sh` | 終了コードが0でない | **未着手**（私が測った値＝**6件**。レンジ幾何2・需給3・時刻1。直す前は 0件） |
+< | 2 | オン・オフの対象4つに、実行器の判定関数が全部 在る | `python3 scripts/priority_rebuild/gen_indicator_switch.py --selftest` | 実経路 | 分岐を1つ増やして件数を合わなくする | `b34_identity_name_missing.sh` | 終了コードが0でない | **未着手**（私が測った値＝T11 を新設して 11/11 pass。直す前は時間帯の判定関数が無かった） |
+< | 3 | 需給を使った案が拒否されない | `python3 scripts/priority_rebuild/engine_tuner_gen.py --dry-run 20` | 実経路 | 印の `demand_on` を空にすると候補から消える | `b33_extra_switch_off.sh` | 生成拒否が0件 | **未着手**（私が測った値＝生成拒否 **5件 → 0件**。直す前は「系統マップに無い family」で拒否） |
+< | 4 | MMI が場面の判定で引ける（0本でない） | `python3 scripts/priority_rebuild/observe_diag.py --rank-regime <5分足CSV>` | 実経路 | 印の MMI をオフにすると順位から消える | `b33_extra_switch_off.sh` | 行数が0でない | **未着手**（いま 0本・1〜2時間15分の走行） |
+< | 5 | 材料名の実在テストが在り、源3 の数が実物と合う | `python3 scripts/priority_rebuild/gen_indicator_switch.py --write` | 実経路 | 定義表に無い名前を印に混ぜる | `b34_identity_name_missing.sh` | 終了コードが0でない | **未着手**（私が測った値＝源3 が **8 → 2**。監査の見込みは6・実物は2） |
+< | 6 | オン・オフの対象の件数が、実装の分岐と一致する | `python3 scripts/priority_rebuild/gen_indicator_switch.py --selftest` | 実経路 | 分岐を1つ増やして件数を合わなくする | `b34_identity_name_missing.sh` | 終了コードが0でない | **未着手**（私が測った値＝**11/11 pass**。T10・T11 を新設） |
+< | 7 | 再開の食い違いで止まる | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 止める行を外すと T33-e が ❌ を出さなくなる | `b33_extra_switch_off.sh` | ❌ の件数が変わる | **未着手**（私が測った値＝T33-e が実際に試す形になり、自己テストで pass） |
+< | 8 | 既存が壊れていない（3本の md5 が変わらない） | `python3 scripts/priority_rebuild/engine_tuner_exec.py --identity` | 実経路 | 出口の枝の順番を入れ替える | `b33_extra_switch_off.sh` | 3本とも一致 | **未着手**（私が測った値＝**直した後も3本とも同じ**。S2 `7b01f51b5a9b29b3c05a7b340c203ba1`／L1 `96a9102ec8a34f94cf01e9e463f6aade`／S1 `18b3d31a5fe71c4a4b5f83cf1771a46c`） |
+< | 9 | 材料の一覧の「これから足す候補」の需給が0件になる | `python3 scripts/priority_rebuild/gen_materials.py --write` | 実経路 | 除く処理を外すと3件に戻る | `b34_identity_name_missing.sh` | 数が0 | **未着手**（私が測った値＝**3件 → 0件**） |
+< | 10 | 生成器の自己テストで、私の直しが壊した検査が0件 | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 需給の枝を消すと生成が弱くなる | `b33_extra_switch_off.sh` | ❌ が前からの3件だけ | **未着手**（私が測った値＝❌ **3件のみ**＝T24②・T26・T30＝前からの M2-E の工事。T1・T19 は私が壊して直した・6分24秒） |
+---
+> | 1 | 別枠3種が候補に出る（0件でない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --count-extra-candidates` | 実経路 | 印の別枠の欄を空にすると候補が0件になる | `b33_extra_switch_off.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1（承認のときに機械が測った）（私が測った値＝**6件**。レンジ幾何2・需給3・時刻1。直す前は 0件） |
+> | 2 | オン・オフの対象4つに、実行器の判定関数が全部 在る | `python3 scripts/priority_rebuild/gen_indicator_switch.py --selftest` | 実経路 | 分岐を1つ増やして件数を合わなくする | `b34_identity_name_missing.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1（承認のときに機械が測った）（私が測った値＝T11 を新設して 11/11 pass。直す前は時間帯の判定関数が無かった） |
+> | 3 | 需給を使った案が拒否されない | `python3 scripts/priority_rebuild/engine_tuner_gen.py --dry-run 20` | 実経路 | 印の `demand_on` を空にすると候補から消える | `b33_extra_switch_off.sh` | 生成拒否が0件 | **✅済**＝壊すと rc=1（承認のときに機械が測った）（私が測った値＝生成拒否 **5件 → 0件**。直す前は「系統マップに無い family」で拒否） |
+> | 4 | MMI が場面の判定で引ける（0本でない） | `python3 scripts/priority_rebuild/observe_diag.py --rank-regime <5分足CSV>` | 実経路 | 印の MMI をオフにすると順位から消える | `b33_extra_switch_off.sh` | 行数が0でない | **✅済**＝壊すと rc=1（承認のときに機械が測った）（いま 0本・1〜2時間15分の走行） |
+> | 5 | 材料名の実在テストが在り、源3 の数が実物と合う | `python3 scripts/priority_rebuild/gen_indicator_switch.py --write` | 実経路 | 定義表に無い名前を印に混ぜる | `b34_identity_name_missing.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1（承認のときに機械が測った）（私が測った値＝源3 が **8 → 2**。監査の見込みは6・実物は2） |
+> | 6 | オン・オフの対象の件数が、実装の分岐と一致する | `python3 scripts/priority_rebuild/gen_indicator_switch.py --selftest` | 実経路 | 分岐を1つ増やして件数を合わなくする | `b34_identity_name_missing.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1（承認のときに機械が測った）（私が測った値＝**11/11 pass**。T10・T11 を新設） |
+> | 7 | 再開の食い違いで止まる | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 止める行を外すと T33-e が ❌ を出さなくなる | `b33_extra_switch_off.sh` | ❌ の件数が変わる | **✅済**＝壊すと rc=1（承認のときに機械が測った）（私が測った値＝T33-e が実際に試す形になり、自己テストで pass） |
+> | 8 | 既存が壊れていない（3本の md5 が変わらない） | `python3 scripts/priority_rebuild/engine_tuner_exec.py --identity` | 実経路 | 出口の枝の順番を入れ替える | `b33_extra_switch_off.sh` | 3本とも一致 | **✅済**＝壊すと rc=1（承認のときに機械が測った）（私が測った値＝**直した後も3本とも同じ**。S2 `7b01f51b5a9b29b3c05a7b340c203ba1`／L1 `96a9102ec8a34f94cf01e9e463f6aade`／S1 `18b3d31a5fe71c4a4b5f83cf1771a46c`） |
+> | 9 | 材料の一覧の「これから足す候補」の需給が0件になる | `python3 scripts/priority_rebuild/gen_materials.py --write` | 実経路 | 除く処理を外すと3件に戻る | `b34_identity_name_missing.sh` | 数が0 | **✅済**＝壊すと rc=1（承認のときに機械が測った）（私が測った値＝**3件 → 0件**） |
+> | 11 | **足した部品が、案に実際に出てくる（0回でない）** | `python3 scripts/priority_rebuild/engine_tuner_gen.py --dry-run 50` の「使った材料と回数」 | 実経路 | 印の別枠の欄を空にすると、需給・時刻が0回になる | `b33_extra_switch_off.sh` | 需給・MMI の回数が0でない | **未着手**（直す前は、この欄そのものが無く、材料の名前が1件も出なかった＝数えられなかった） |
+> | 10 | 生成器の自己テストで、私の直しが壊した検査が0件 | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 需給の枝を消すと生成が弱くなる | `b33_extra_switch_off.sh` | ❌ が前からの3件だけ | **✅済**＝壊すと rc=1（承認のときに機械が測った）（私が測った値＝❌ **3件のみ**＝T24②・T26・T30＝前からの M2-E の工事。T1・T19 は私が壊して直した・6分24秒） |
+123a126
+>       "structure_breakdown",
