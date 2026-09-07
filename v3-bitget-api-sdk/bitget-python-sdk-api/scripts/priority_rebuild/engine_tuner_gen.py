@@ -3778,8 +3778,18 @@ def synth_df(n: int = 3000, seed: int = 7) -> pd.DataFrame:
     })
 
 
-def _check_extra_gate() -> list:
+def _selftest_extra_gate() -> list:
     """別枠3種（レンジ幾何・需給・時間帯）の審査が、オン・オフの印を見ているか。
+
+    ★2026-09-07（next_step §6 の149番・設計書 iter="approval-audit-plumbing-20260907"）に
+      `_check_extra_gate` から改名した。**中身は1行も変えていない。**
+      なぜ＝静的検査（lint_provenance の⑤）は「見本の関数（_thr_fixture ほか）は、
+      名前に selftest が入った関数の中でだけ呼んでよい」という決まりを見る。
+      直す前の名前には selftest が入っていなかったので、この関数の中の `_thr_fixture("q70")`
+      が「自己テストの外で見本を使った」と数えられ、静的検査が 1件 の赤のままだった
+      （実測＝`python3 .claude/audits/m2d_lint_check.py` の逐語「見本の関数: 1 件 行=[3815]」）。
+      ★検査を緩めていない＝この関数は selftest からしか呼ばれない自己テストの本体なので、
+      名前を実体に合わせただけ。
 
     ★2026-09-07（監査 cp25 の §5-2・Major・設計書 C）に足した。
       直す前＝テストの枝は7つで、**7つとも指標（family）を試していた**。
@@ -5654,11 +5664,11 @@ def selftest() -> int:
             #     b33 が測るのは候補の側（--count-extra-candidates）だけで、審査の3枝を消しても
             #     同じ結果を返す。だから審査の側を直に呼ぶ枝が要る。
             #   ★形は T33-b・T33-c と同じ＝①オンなら通す ②オフなら止める ③戻せば通る。
-            #   ★中身は `_check_extra_gate()` の1本に置いた（2026-09-07）＝`--selftest` の全体は
+            #   ★中身は `_selftest_extra_gate()` の1本に置いた（2026-09-07）＝`--selftest` の全体は
             #     6分23秒 かかり、承認のときの打ち切り（120秒）を超えて壊れたまま残ったため、
             #     この枝だけを数秒で走らせる口 `--selftest-extra-gate` を作った。
             #     selftest と その口が同じ1本を呼ぶ＝同じ判定を2か所に書き写さない。
-            t33 += [f"T33-g: {_x33}" for _x33 in _check_extra_gate()]
+            t33 += [f"T33-g: {_x33}" for _x33 in _selftest_extra_gate()]
             # (e) 印の指紋が走行の記録の meta に入る＝切り替えたまま再開すると止まる
             #   ★2026-09-06（監査 cp24 の §6-8・Major・設計書 E）＝**わざと食い違わせて試す**形にした。
             #     直す前＝「指紋が空でないこと」しか見ておらず、**本当に止まるかを1度も試していなかった**
@@ -5876,7 +5886,7 @@ def main() -> int:
                          "（監査 cp24 の §6-1 の確かめ方・壊すプログラム b33 が使う・読むだけ）")
     ap.add_argument("--selftest-extra-gate", action="store_true",
                     help="別枠3種（レンジ幾何・需給・時間帯）の審査の枝だけを試す（数秒）"
-                         "＝T33-g と同じ本体（_check_extra_gate）を呼ぶ。壊すプログラム b35 が使う")
+                         "＝T33-g と同じ本体（_selftest_extra_gate）を呼ぶ。壊すプログラム b35 が使う")
     ap.add_argument("--selftest-rank-demand", action="store_true",
                     help="需給の列を順位から読む枝だけを試す（数秒）＝T23-demand と同じ本体（selftest_rank_demand）を呼ぶ。"
                          "壊すプログラム b38 が使う（設計書 demand-in-ranking-20260907）")
@@ -5894,8 +5904,8 @@ def main() -> int:
         #   なぜ要るか（実測）＝`--selftest` の全体は 6分23秒 かかり、承認のときに機械が
         #   壊すプログラムを走らせる打ち切り（120秒）を超える。2026-09-07 の承認で実際に
         #   打ち切られ、b35 が壊した行が元に戻らないまま残った。
-        #   ★判定の中身は selftest と同じ1本（_check_extra_gate）＝2か所に書き写さない。
-        _ng33 = _check_extra_gate()
+        #   ★判定の中身は selftest と同じ1本（_selftest_extra_gate）＝2か所に書き写さない。
+        _ng33 = _selftest_extra_gate()
         for _x in _ng33:
             print(f"  ❌ T33-g: {_x}")
         print(f"  {'❌' if _ng33 else '✅'} T33-g 別枠3種の審査（レンジ幾何・需給・時間帯）"
@@ -6007,7 +6017,12 @@ def lint_provenance(verbose: bool = True) -> int:
             if isinstance(ch, ast.Call) and isinstance(ch.func, ast.Name):
                 if ch.func.id in draw_names and not (set(st) & _DRAW_CTORS):
                     bad["draw_*"].append(ch.lineno)
-                if ch.func.id in _FIXTURE_CTORS and "selftest" not in st:
+                # ★2026-09-07（next_step §6 の149番）＝囲っている関数の名前に selftest が
+                #   含まれるかで見る。直す前は「名前がちょうど selftest」のときだけ許していたので、
+                #   selftest から呼ばれる自己テストの本体（_selftest_extra_gate など）が
+                #   「自己テストの外」と数えられた。★決まりは変えていない＝
+                #   「見本の関数は、自己テストの中でだけ呼んでよい」はそのまま。
+                if ch.func.id in _FIXTURE_CTORS and not any("selftest" in _s for _s in st):
                     bad["見本の関数"].append(ch.lineno)
             walk(ch, st)
 

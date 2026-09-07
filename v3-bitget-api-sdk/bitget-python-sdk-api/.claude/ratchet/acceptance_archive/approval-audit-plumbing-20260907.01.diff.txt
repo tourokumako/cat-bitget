@@ -1,0 +1,14 @@
+169,170c169,170
+< | 3 | 承認のときに、空の impl_functions を凍結しようとすると止まる | `bash .claude/breaks/b43_approve_empty_freeze_gone.sh` | 実経路 | 承認スクリプトから、空を止める枝を消すと、承認が通ってしまう | `b43_approve_empty_freeze_gone.sh` | 終了コードが0でない | **未着手** |
+< | 4 | 承認のときに、壊し方の記録が設計書へ書き込まれる | `bash .claude/breaks/b44_approve_record_write_gone.sh` | 実経路 | 承認スクリプトから、記録を書き込む処理を消すと、記録が残らない | `b44_approve_record_write_gone.sh` | 終了コードが0でない | **未着手** |
+---
+> | 3 | 承認のときに空の impl_functions を凍結しない判定（承認スクリプトが呼ぶ `contract_for_freeze`）が、番人で確かめられる | `python3 v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/verify_design_contract.py --self-test` | 実経路 | その判定から「理由の無い空」を止める2行を消すと、番人 N17 が落ちる | `b43_approve_empty_freeze_gone.sh` | 終了コードが0でない | **未着手** |
+> | 4 | 承認の「済」の材料になる記録（壊すプログラムの終了コード）を、機械が書く | `python3 .claude/tools/run_breaks.py --selftest` | 実経路 | 記録を書く処理（`write_record`）の中身を消すと、番人 T8 が落ちる | `b44_approve_record_write_gone.sh` | 終了コードが0でない | **未着手** |
+172c172
+< | 6 | AUDIT-2＝照合の道具を1文字 変えると、照合が止まる（直す前は b06 が rc=0＝測れていない） | `bash .claude/breaks/b06_tool_changed.sh` | 実経路 | b06 の測る道を `--diff` に戻すと、道具を変えても止まらない | `b06_tool_changed.sh` | 対象 | **未着手** |
+---
+> | 6 | AUDIT-2＝照合の道具が承認のときのままなら、本物の照合が通る（直す前は b06 が rc=0＝測れていない） | `python3 v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/verify_design_contract.py .claude/state/acceptance.md` | 実経路 | 照合の道具の末尾に1行 足すと、道具の指紋が承認のときと合わずに照合が rc≠0 になる | `b06_tool_changed.sh` | 対象 | **未着手** |
+174c174
+< | 8 | AUDIT-3＝承認の時点で既に汚れていた .py を、照合A(双方向) が「設計書に書いていないファイルを触った」に数えない | `bash .claude/breaks/b47_dirty_baseline_gone.sh` | 実経路 | その一覧を数えない処理を消すと、汚れた .py が在るときに番人が落ちる | `b47_dirty_baseline_gone.sh` | 対象 | **未着手** |
+---
+> | 8 | AUDIT-3＝承認の時点で既に汚れていた .py を、照合A(双方向) が「設計書に書いていないファイルを触った」に数えない | `python3 v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/verify_design_contract.py --self-test` | 実経路 | その一覧を数えない2行を消すと、番人 N18 が落ちる（N19 は通ったまま＝緩めていない） | `b47_dirty_baseline_gone.sh` | 対象 | **未着手** |

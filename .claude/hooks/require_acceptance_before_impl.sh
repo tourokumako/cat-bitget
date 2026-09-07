@@ -168,6 +168,26 @@ def _readonly_seg(seg):
                  if not _t.startswith('-')]
         if _args and _args[0].rsplit('/', 1)[-1] in _TOOL_OK_J:
             return True
+        # ★2026-09-07（next_step §6 の150番・設計書 iter="approval-audit-plumbing-20260907"）
+        #   ＝run_breaks.py は「測るだけ」の旗が在るときだけ通す。
+        #   なぜ名前だけの一覧（_TOOL_OK_J）に入れないか＝この道具は既定では
+        #     <iter>.breaks.json と凍結の記録を書ける（まこさん決定 2026-09-04＝
+        #     「run_breaks.py は入れない。記録を直接 書ける道具だから」）。
+        #   何が困っていたか（実測）＝承認より後にコードを直したとき、壊すプログラムを
+        #     走らせ直せるのが まこさんだけだった。2026-09-07 に監査 cp27 が、これを理由に
+        #     壊し方を写した再現プログラムで代行した（別枠 6-2）。
+        #   通す条件（3つとも要る）＝①先頭の .py が run_breaks.py ②--measure-only が在る
+        #     ③書き込みの旗（--freeze・--out）が1つも無い。
+        #   ★--measure-only の中身は、書き込みを1バイトもしない（道具の側で保証する）。
+        #   ★2026-09-07（同日・146番）＝`--selftest` も通す。番人は本物のファイルを1つも触らず、
+        #     一時の置き場に見本を書いて確かめるだけ（run_breaks.py の selftest の逐語
+        #     「わざと壊して止まるか試すテスト（本物のファイルは1つも触らない）」）。
+        #     通さないと、この道具の番人を1回も走らせられない。
+        if (_args and _args[0].rsplit('/', 1)[-1] == 'run_breaks.py'
+                and ('--measure-only' in _toks or '--selftest' in _toks)
+                and not any(_t.startswith('--freeze') or _t.startswith('--out')
+                            for _t in _toks)):
+            return True
         return False
     if _head in _RUN_TOK_J:
         return False
@@ -187,9 +207,65 @@ def _readonly_seg(seg):
     return True
 
 
+def _split_segs_j(cmd_j):
+    # ★コマンドを断片に分ける。引用符の中の ; | & 改行 では分けない
+    #   （★2026-09-07・next_step §6 の151番・hook の直しは承認不要）
+    #   何が起きていたか（実測）＝直す前は `[;|&\n]+` でそのまま分けていたので、
+    #     引用符の中に縦棒が在る読むだけの命令まで止まった。
+    #     実測＝`grep -c 'READONLY\|RUNTOK' .claude/hooks/require_acceptance_before_impl.sh`
+    #     が止まる（断片 `RUNTOK\` の先頭の語が読み取りの一覧に無いため）。
+    #     同じ型を、監査 cp27 も別枠 6-3 で報告した（凍結の記録を読むのに git diff へ迂回した）。
+    #   なぜ守りが減らないか＝シェル自身も、引用符の中の ; | & を区切りとして扱わない。
+    #     ＝ここで分けないのは、シェルの動きに合わせただけ。
+    #     引用符が閉じていないときは、今までどおり全部で分ける（安全側）。
+    _sq = chr(39)
+    _dq = chr(34)
+    _bs = chr(92)
+    _nl = chr(10)
+    _out = []
+    _cur = []
+    _st = 0          # 0＝引用符の外 ／ 1＝一重引用符の中 ／ 2＝二重引用符の中
+    _i = 0
+    _n = len(cmd_j)
+    while _i < _n:
+        _c = cmd_j[_i]
+        if _st == 0:
+            if _c == _bs and _i + 1 < _n:
+                _cur.append(_c)
+                _cur.append(cmd_j[_i + 1])
+                _i += 2
+                continue
+            if _c == _sq:
+                _st = 1
+            elif _c == _dq:
+                _st = 2
+            elif _c in (';', '|', '&', _nl):
+                _out.append(''.join(_cur))
+                _cur = []
+                _i += 1
+                continue
+        elif _st == 1:
+            if _c == _sq:
+                _st = 0
+        else:
+            if _c == _bs and _i + 1 < _n:
+                _cur.append(_c)
+                _cur.append(cmd_j[_i + 1])
+                _i += 2
+                continue
+            if _c == _dq:
+                _st = 0
+        _cur.append(_c)
+        _i += 1
+    if _st != 0:
+        return _re_j.split(r'[;|&\n]+', cmd_j)
+    _out.append(''.join(_cur))
+    return _out
+
+
 def _first_bad_seg(cmd_j):
     # ★断片の1つでも読み取りだけでなければ、その断片を返す（全部 通れば空）
-    for _seg in _re_j.split(r'[;|&\n]+', cmd_j):
+    for _seg in _split_segs_j(cmd_j):
         if not _seg.strip():
             continue
         if not _readonly_seg(_seg):
@@ -518,7 +594,20 @@ fi
 #   食い違ったら依頼書を作らせない」。
 #   ★道具（gen_audit_request.py）だけに置くと素通りする＝cp13・cp14 の依頼書は道具を使わず
 #     Write ツールで手で書いた。だから書き込みの道にも同じ判定を置く。
+# ★2026-09-07（next_step §6 の141番・設計書 iter="approval-audit-plumbing-20260907"）
+#   ＝止める相手から「依頼書の元になるファイル」（先頭が _ のもの）を外す。
+#   何が起きたか（実測 2026-09-07）＝141番の直しで `gen_audit_request.py --selftest` を
+#     監査の前のチェックに足した。その検査が赤の原因は、凍結ファイル
+#     `_frozen_question_regime.md` が、まこさんが止めた13分割の前提を指していること。
+#     ところが、このゲートは `.claude/audits/inputs/*.md` を全部 止めるので、
+#     **その凍結ファイルを直さないと検査が通らず、検査が通らないと直せない**輪ができた。
+#   ★守りは減らない＝止める目的は「チェックを通さずに監査へ出すこと」。
+#     出す相手は `<日付>_<名前>_audit_request.md`（先頭が _ ではない）で、そこは今までどおり止まる。
+#     先頭が _ のもの（`_template.md`・`_frozen_*.md`）は、依頼書そのものではなく元のファイル。
 case "$FILE" in
+  */.claude/audits/inputs/_*.md)
+    # 依頼書の元になるファイル（先頭が _）＝この2つのゲートの相手にしない
+    : ;;
   */.claude/audits/inputs/*.md)
     NOWSHA=$(shasum -a 256 "$LIST" 2>/dev/null | awk '{print $1}')
     WANTSHA=$(cat "$APPROVED" 2>/dev/null)

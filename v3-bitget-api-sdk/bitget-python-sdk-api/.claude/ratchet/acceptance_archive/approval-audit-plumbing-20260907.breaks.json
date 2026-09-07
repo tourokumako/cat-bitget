@@ -1,0 +1,72 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）",
+ "iter": "approval-audit-plumbing-20260907",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b41_req_frozen_section_gone.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "2",
+   "script": "b42_pre_audit_list_gone.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "3",
+   "script": "b43_approve_empty_freeze_gone.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "4",
+   "script": "b44_approve_record_write_gone.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "5",
+   "script": "b45_measure_only_gone.sh",
+   "code": 2,
+   "note": ""
+  },
+  {
+   "no": "6",
+   "script": "b06_tool_changed.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "7",
+   "script": "b46_spec_lineno_gone.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "8",
+   "script": "b47_dirty_baseline_gone.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "9",
+   "script": "b48_fence_skip_gone.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "10",
+   "script": "b49_foreign_block_gone.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "11",
+   "script": "b50_fixture_name_gone.sh",
+   "code": 1,
+   "note": ""
+  }
+ ]
+}

@@ -12,7 +12,7 @@
 使い方:
   python3 .claude/tools/pre_audit_check.py --run       # 決まった順番で走らせ、結果を json に書く
   python3 .claude/tools/pre_audit_check.py --verify    # その json が在る・新しい・全部 rc=0 かを確かめる（違えば exit 1）
-  python3 .claude/tools/pre_audit_check.py --selftest  # 番人 P1〜P6
+  python3 .claude/tools/pre_audit_check.py --selftest  # 番人 P1〜P8
 
 決まり:
   ・順番は下の ORDER が正本。CC が走らせる順番を思い出す必要は無い。
@@ -61,7 +61,18 @@ CHECKS = [
     "gen_exit_families.py --verify",
     "engine_tuner_exec.py --selftest",
     "observe_diag.py --selftest",
+    # ★2026-09-07（next_step §6 の145番・141番・設計書 iter="approval-audit-plumbing-20260907"）
+    #   ＝赤のまま放置されていた2本を、監査の前に必ず走らせる。
+    #   141番＝監査の依頼書を作るプログラムの自己テストが -4/11 のまま、cp24・cp25・cp26 と
+    #     3回の監査をまたいでいた。この一覧に無いので、赤が画面に出なかった。
+    #   145番＝2026-09-07 に足した別枠3種の審査のテスト（T33-g）を、毎回 走らせる所が無かった。
+    #     （全体の --selftest は約6分半かかるので、その枝だけを数秒で走らせる口を使う）
+    "gen_audit_request.py --selftest",
+    "engine_tuner_gen.py --selftest-extra-gate",
 ]
+# ★この2行が消されたら番人 P8 が落ちる（一覧から黙って外せなくする・145番・141番）
+_MUST_IN_CHECKS = ("gen_audit_request.py --selftest",
+                   "engine_tuner_gen.py --selftest-extra-gate")
 
 # ── 指紋の対象（このどれかが変わったら、チェックはやり直し）────────────────────
 FINGERPRINT_FILES = [
@@ -197,7 +208,7 @@ def verify() -> int:
 
 
 def selftest() -> int:
-    """番人 P1〜P7（設計書 §4）。"""
+    """番人 P1〜P8（設計書 §4。P8 は 2026-09-07・145番・141番で足した）。"""
     ng = []
     keep = OUT.read_text(encoding="utf-8") if OUT.exists() else None
     fp = code_fingerprint()
@@ -231,10 +242,20 @@ def selftest() -> int:
                 "gen_signal_families.py --verify", "leak_causality_diag.py"]
         if [c for c, _k, _w in ORDER] != want:
             ng.append(f"P5: 順番の一覧が設計書の表と違う: {[c for c, _k, _w in ORDER]}")
+        # ★P8（2026-09-07・next_step §6 の145番・141番）
+        #   ＝監査の前に必ず走らせる2本が、一覧（CHECKS）から消されていないか。
+        #   なぜ要るか＝この2本は「赤が画面に出ない」ことが問題だった。
+        #     一覧から黙って外せば、また出なくなる。だから外したら番人が落ちる形にする。
+        for _m in _MUST_IN_CHECKS:
+            if _m not in CHECKS:
+                ng.append(f"P8: 監査の前に走らせる一覧から外されている: {_m}")
         # P6（実経路）hook を呼ぶ＝依頼書の Write が止まるか／この判定で止まらないか
         hook = ROOT / ".claude/hooks/require_acceptance_before_impl.sh"
         inp = json.dumps(dict(tool_name="Write", tool_input=dict(
-            file_path=str(ROOT / ".claude/audits/inputs/_selftest_dummy.md"), content="x")))
+            # ★名前の頭に下線を付けない（2026-09-07・141番）。
+            #   依頼書ゲートは `.claude/audits/inputs/_*.md`（凍結ファイル・テンプレ）を
+            #   相手にしない形に直したので、下線で始めると番人が素通りする。
+            file_path=str(ROOT / ".claude/audits/inputs/selftest_dummy.md"), content="x")))
         OUT.write_text(json.dumps(dict(fingerprint="0" * 64, rows=[]), ensure_ascii=False),
                        encoding="utf-8")
         r_bad = subprocess.run(["bash", str(hook)], input=inp, capture_output=True, text=True)
@@ -283,7 +304,7 @@ def selftest() -> int:
         elif OUT.exists():
             OUT.unlink()
     print("=" * 70)
-    print("pre_audit_check 自己検査（番人 P1〜P7）")
+    print("pre_audit_check 自己検査（番人 P1〜P8）")
     print("=" * 70)
     for x in ng:
         print(f"  NG {x}")

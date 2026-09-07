@@ -55,6 +55,89 @@ def _h(body: str) -> str:
     return hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
 
 
+# ══ 他のプログラムが持つ囲み（2026-09-07・next_step §6 の154番）═══════════════════════════
+#   何が起きていたか（実測 2026-09-07・CC が実際に踏んだ）
+#     この道具は regime_detection_kb.md の §11・§12 を丸ごと書き、その本文の指紋を印として持つ。
+#     ところが その §11・§12 の中に、別のプログラム gen_materials.py が書く囲みが2つ入っている
+#     （gen_materials.py:2123-2127 の BANS_COUNT_START と COUNTS_START・書く先は同じファイル）。
+#     ＝gen_materials.py --write が走ると、この道具の印と本文が必ずずれる。
+#     ①--verify が毎回 ❌ を出し、しかも文言は「手で書き換えられています」＝人のせいにする誤り
+#     ②その ❌ を消そうとして --write を走らせると、新しい数字が古い数字に戻る
+#       （実測＝17行が戻った。部品 555件 → 551件・指標 257種 → 256種 ほか。git で戻した）
+#   直した後（2つとも要る）
+#     ①--write のとき、いまの文書に在る囲みの中身を、そのまま新しい本文へ差し戻す（壊さない）
+#     ②指紋を出すときは、囲みの中身を決まった文字に置き換えてから数える（数えない）
+#   ★限界（正直に）＝囲みの中身は この道具の指紋で守られなくなる。
+#     代わりに持ち主（gen_materials.py --verify）が同じ囲みを見ている＝守るのは持ち主の側。
+_FOREIGN = (("<!-- BANS_COUNT_START", "<!-- BANS_COUNT_END -->"),
+            ("<!-- COUNTS_START", "<!-- COUNTS_END -->"))
+_FOREIGN_MASK = "<<他のプログラムが書く囲み・指紋では数えない>>"
+
+
+def _foreign_span(text: str, start_head: str, end_mark: str):
+    """囲みの中身（開始の行の次から、終わりの目印の手前まで）の位置を返す。無ければ None。"""
+    i = text.find(start_head)
+    if i < 0:
+        return None
+    j = text.find("\n", i)
+    if j < 0:
+        return None
+    k = text.find(end_mark, j)
+    if k < 0:
+        return None
+    return (j + 1, k)
+
+
+def mask_foreign(body: str) -> str:
+    """他のプログラムが書く囲みの中身を、決まった文字に置き換える（指紋を出す前に通す）。"""
+    out = body
+    for _head, _end in _FOREIGN:
+        sp = _foreign_span(out, _head, _end)
+        if sp:
+            out = out[:sp[0]] + _FOREIGN_MASK + "\n" + out[sp[1]:]
+    return out
+
+
+def keep_foreign(new_body: str, cur_text: str) -> str:
+    """いまの文書に在る囲みを、目印ごと 新しい本文へ差し戻す（壊さない）。
+
+    ★なぜ「目印ごと」か（2026-09-07 に実測して分かった 154番の本当の根っこ）
+      囲みの目印（BANS_COUNT_START ほか）は、この道具の元データ（json）に1つも書かれていない。
+      だから --write は毎回 目印ごと消していた。持ち主（gen_materials.py）は
+      「目印が無い」と言って中身を書けない（同 :2228 の逐語「[未差し込み] … 印が無い」）。
+      ＝2つのプログラムが、互いの結果を消し合っていた。
+    ★入れる場所＝いまの文書で、その囲みの直前に在る「空でない行」を目印にする。
+      その行が新しい本文に見つからなければ、黙って落とさずに止める（fail-closed）。
+    """
+    out = new_body
+    for _head, _end in _FOREIGN:
+        i = cur_text.find(_head)
+        if i < 0:
+            continue                       # いまの文書に囲みが無い＝差し戻すものが無い
+        k = cur_text.find(_end, i)
+        if k < 0:
+            continue
+        blk = cur_text[i:k + len(_end)]
+        if _head in out:                   # 新しい本文にも目印が在る＝中身だけ差し替える
+            sp_new, sp_cur = _foreign_span(out, _head, _end), _foreign_span(cur_text, _head, _end)
+            if sp_new and sp_cur:
+                out = out[:sp_new[0]] + cur_text[sp_cur[0]:sp_cur[1]] + out[sp_new[1]:]
+            continue
+        # 新しい本文に目印が無い＝囲みごと入れ直す。位置は「直前の空でない行」で決める
+        anchor = ""
+        for ln in reversed(cur_text[:i].splitlines()):
+            if ln.strip():
+                anchor = ln
+                break
+        if not anchor or anchor not in out:
+            raise SystemExit(
+                "[gen_regime_kb] 他のプログラムの囲みを入れ直す場所が分かりません"
+                f"（目印={_head} ／ 直前の行={anchor[:40]}）。"
+                "黙って消さずに止めました（154番・fail-closed）。")
+        out = out.replace(anchor, anchor + "\n" + blk, 1)
+    return out
+
+
 def _esc(s: str) -> str:
     """表のセルに入れるとき、| を壊さないようにする。"""
     return str(s).replace("|", "／").replace("\n", " ")
@@ -587,6 +670,10 @@ def build_laws(d: dict) -> str:
     add("")
     for i, t in enumerate(pre["この一覧に名前が出ていない指標について"], 1):
         add(f"{i}. {t}")
+    # ★2026-09-07（next_step §6 の154番）＝他のプログラム（gen_materials.py）が中身を書く囲み。
+    #   この道具は目印と置き場だけを作り、中身には触らない（keep_foreign が いまの中身を残す）。
+    for _ln in pre.get("他のプログラムが書く囲み", []):
+        add(_ln)
     add("")
     add("**調べ方と打ち切り**")
     add("")
@@ -770,12 +857,29 @@ def build_body(d: dict) -> str:
 
     # ── E ─────────────────────────────────────────────
     e = d["E_数の実測"]
-    add(f"## 12-5 数の実測（{len(e)}件・全部 プログラムで数えた）")
+    # ★2026-09-07（154番）＝囲みの項目は1つだが、中に表の行が何本も入る。
+    #   だから件数は「囲みの中の表の行」を数えて足す（見出しの数字が減らないため）。
+    _n_rows = sum(sum(1 for _ln in r["他のプログラムが書く囲み"] if _ln.startswith("|"))
+                  if isinstance(r, dict) and r.get("他のプログラムが書く囲み") else 1
+                  for r in e)
+    add(f"## 12-5 数の実測（{_n_rows}件・全部 プログラムで数えた）")
     add("")
     add("| # | 何を数えたか | 結果 | 出どころ |")
     add("|---|---|---|---|")
-    for i, r in enumerate(e, 1):
-        add(f"| {i} | {_esc(r['何を数えたか'])} | {_esc(r['結果'])} | {_esc(r['出どころ'])} |")
+    # ★2026-09-07（next_step §6 の154番）＝表の途中に、他のプログラムが中身を書く囲みを置ける。
+    #   置き方＝元データに {"他のプログラムが書く囲み": [行, 行, …]} の項目を1つ入れる。
+    #   その中の「| で始まる行」の本数だけ、番号を進める（次の行の番号がずれないため）。
+    #   この道具は目印と置き場だけを作り、中身には触らない（keep_foreign が いまの中身を残す）。
+    _n = 0
+    for r in e:
+        _blk = r.get("他のプログラムが書く囲み") if isinstance(r, dict) else None
+        if _blk:
+            for _ln in _blk:
+                add(_ln)
+            _n += sum(1 for _ln in _blk if _ln.startswith("|"))
+            continue
+        _n += 1
+        add(f"| {_n} | {_esc(r['何を数えたか'])} | {_esc(r['結果'])} | {_esc(r['出どころ'])} |")
     add("")
 
     # ── G ─────────────────────────────────────────────
@@ -870,9 +974,14 @@ def write_one(kind: str, dry: bool = False) -> int:
     dest = DEST[kind]
     kb = dest.read_text(encoding="utf-8")
     end_mark = _end(kind)
-    block = _begin(kind, _h(body)) + "\n" + body + end_mark + "\n"
-
     m = _begin_re(kind).search(kb)
+    # ★2026-09-07（154番）＝他のプログラムが書く囲みは、いまの文書のものを目印ごと残す。
+    #   ★見るのは「この節の中だけ」＝文書ぜんたいを見ると、別の節に在る囲みを
+    #     この節へ入れようとして止まる（2026-09-07 に実測＝§11 の処理で §12 の囲みを探した）。
+    _cur_body = kb[m.end():kb.index(end_mark)] if (m and end_mark in kb) else ""
+    body = keep_foreign(body, _cur_body)
+    block = _begin(kind, _h(mask_foreign(body))) + "\n" + body + end_mark + "\n"
+
     if m and end_mark in kb:
         start = m.start()
         end = kb.index(end_mark) + len(end_mark) + 1
@@ -885,7 +994,7 @@ def write_one(kind: str, dry: bool = False) -> int:
         return 0
     dest.write_text(new, encoding="utf-8")
     print(f"✅ --write 完了: {SEC[kind]} を {dest.name} に書きました"
-          f"（本文 {len(body.splitlines())} 行・hash={_h(body)}）")
+          f"（本文 {len(body.splitlines())} 行・hash={_h(mask_foreign(body))}）")
     return 0
 
 
@@ -897,13 +1006,17 @@ def verify_one(kind: str) -> int:
         print(f"❌ --verify: KB に {TAG[kind]} のマーカーがありません（--write を先に走らせる）")
         return 1
     body = kb[m.end():kb.index(end_mark)].lstrip("\n")
-    now, want = _h(body), m.group(1)
+    # ★2026-09-07（154番）＝他のプログラムが書く囲みの中身は、指紋では数えない。
+    now, want = _h(mask_foreign(body)), m.group(1)
     if now != want:
         print(f"❌ --verify: {SEC[kind]} が手で書き換えられています（印={want} ／ いま={now}）")
         print(f"   → 直すのは {SRC[kind].name}。直したら --write を走らせる。")
         return 1
     d = json.loads(SRC[kind].read_text(encoding="utf-8"))
-    if _h(build(kind, d)) != want:           # ★144番＝置き換えた後の本文と照らす
+    # ★144番＝置き換えた後の本文と照らす。
+    # ★154番（2026-09-07）＝照らす前に、いまの節に在る囲みを目印ごと入れ直す。
+    #   元データ（json）に囲みの目印が無いので、入れ直さないと必ず食い違う。
+    if _h(mask_foreign(keep_foreign(build(kind, d), body))) != want:
         print(f"❌ --verify: {SRC[kind].name} が変わったのに --write を走らせていません")
         return 1
     print(f"✅ --verify: {SEC[kind]} は機械が書いたままです（hash={want}）")

@@ -101,6 +101,11 @@ SELF_TESTS = [
     ("N15", "凍結する契約＝契約の後ろに impl_file だけの囲みが在っても、契約の側を取る（C2）"),
     ("N16", "凍結する契約＝impl_file だけの囲みが先に在っても、契約の側を取る（並び順に影響されない・C2）"),
     ("N17", "凍結する契約＝impl_functions が空で理由が無ければ止まる側（C1）"),
+    # ★2026-09-07（next_step §6 の138番・設計書 iter="approval-audit-plumbing-20260907"）
+    ("N18", "照合A(双方向)＝承認の時点で汚れていた .py は数えない（並走で落ちない）"),
+    ("N19", "照合A(双方向)＝基準に無い .py は、いままでどおり数える（緩めていない）"),
+    # ★2026-09-07（next_step §6 の93番・監査 cp6 の P-2）
+    ("N20", "SPEC の書き出し＝関数の名前 → 定義の行 を実物から作る（手で写さない）"),
 ]
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -387,6 +392,17 @@ def spec_from_impl(impl_path: str) -> dict:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             defined.add(node.name)
 
+    # ★2026-09-07（next_step §6 の93番・設計書 iter="approval-audit-plumbing-20260907"）
+    #   ＝関数の名前 → 定義の行 を集める。設計書はこの表を引く（行番号を手で写さない）。
+    #   何が困っていたか＝`--write` は公開する関数・定数・コマンドの旗を書き出すが、
+    #     定義の行番号を出さなかった。だから設計書の行番号は CC が grep の出力を手で写しており、
+    #     実装のたびにずれた（監査 cp6 の P-2。同じずれは §6 の155番でも2回 起きている）。
+    #   ★アンダースコアで始まる関数も入れる＝設計書は非公開の関数も指すため。
+    def_lines = {}
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            def_lines[node.name] = int(node.lineno)
+
     funcs = {}
     for node in tree.body:
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
@@ -427,7 +443,9 @@ def spec_from_impl(impl_path: str) -> dict:
                 flags.add(sub.value)
 
     return {"impl_file": impl_path, "public_functions": funcs,
-            "constants": consts, "cli_flags": sorted(flags)}
+            "constants": consts, "cli_flags": sorted(flags),
+            # ★2026-09-07（93番）＝関数の名前 → 定義の行。設計書はここを引く（手で写さない）。
+            "def_lines": dict(sorted(def_lines.items()))}
 
 
 def spec_from_design(md_path: str):
@@ -573,6 +591,21 @@ def write_actual(md_path: str) -> str:
                         ensure_ascii=False, indent=1))
     L.append("```")
     L.append("")
+    # ★2026-09-07（next_step §6 の93番・監査 cp6 の P-2）＝関数の定義の行を機械で書き出す。
+    #   設計書はこの表を引く＝行番号を手で写さない（写すと実装のたびにずれる）。
+    #   ★SPEC の囲みの中には入れない＝入れると設計書の SPEC と実物の突き合わせ（--diff）が
+    #     行番号の違いだけで食い違う。だから別の表にする。
+    L.append("## 関数の定義の行（実物から作った・★設計書はここを引く／手で写さない）")
+    L.append("")
+    L.append("> **なぜ機械が出すか**＝直す前は CC が `grep -n` の出力を手で写していました。")
+    L.append("> 実装すると行がずれるので、写し直すたびに写し間違いと古い行番号の危険が戻ります。")
+    L.append("> 同じずれは相場の法則 R7 の引用でも2回 起きています（§6 の155番）。")
+    L.append("")
+    L.append("| 関数・クラスの名前 | 定義の行 |")
+    L.append("|---|---|")
+    for _nm, _ln in (spec.get("def_lines") or {}).items():
+        L.append(f"| `{_nm}` | {_ln} |")
+    L.append("")
 
     out_path = md_path + ".actual.md"
     with open(out_path, "w", encoding="utf-8") as f:
@@ -580,6 +613,8 @@ def write_actual(md_path: str) -> str:
     print(f"書き出した: {out_path}")
     print(f"H1〜H16: {len(hs)}件")
     print(f"SPEC を書き出した: 公開する関数 {len(spec['public_functions'])}件 / 定数 {len(spec['constants'])}件 / コマンドの旗 {len(spec['cli_flags'])}件")
+    print(f"関数の定義の行を書き出した: {len(spec.get('def_lines') or {})}件"
+          "（★設計書はこの表を引く＝行番号を手で写さない・93番）")
     return out_path
 
 
@@ -1041,15 +1076,58 @@ def check_impl_functions(contract: dict, md_path: str, frozen: dict | None = Non
                              capture_output=True, text=True, timeout=30).stdout if _root else ""
     except Exception:                                      # noqa: BLE001
         _st = ""
+    # ★2026-09-07（next_step §6 の138番・設計書 iter="approval-audit-plumbing-20260907"）
+    #   ＝承認の時点で「もう汚れていた .py」は数えない。
+    #   何が困っていたか（実測 2026-09-06）＝この検査は git status の .py を全部 見て、
+    #     その .py が中で何を呼ぶかは見ない。だから並走している別のセッションが .py を
+    #     編集中なら、どの設計書でも落ちた（FAIL の10本は、その時点で未コミットだった
+    #     10本と1本も違わなかった）。
+    #   基準の作り方＝approve_impl.sh が承認の瞬間に <iter>.dirty.json へ書く。
+    #   ★基準が無いときは、今までどおり全部 数える（fail-closed＝黙って緩めない）。
+    _baseline = dirty_baseline(md_path)
     for _line in _st.splitlines():
         _f = _line[3:].strip().split(" -> ")[-1]
         if not _f.endswith(".py"):
             continue
         if not any(s in _f for s in ("scripts/priority_rebuild/", ".claude/hooks/", ".claude/tools/")):
             continue
-        if not any(_f.endswith(_k) or _k.endswith(_f) for _k in spec):
+        if counts_as_touched(_f, spec, _baseline):
             ng.append(f"A(双方向) {_f}: 設計書の impl_functions に書いていないファイルを触った")
     return ng
+
+
+def dirty_baseline(md_path) -> set:
+    """承認の瞬間に凍結した『もう汚れていた .py』の一覧を返す（無ければ空）。
+
+    ★2026-09-07（next_step §6 の138番・設計書 iter="approval-audit-plumbing-20260907"）
+      作るのは approve_impl.sh（承認の瞬間に git status から <iter>.dirty.json へ書く）。
+    ★基準が無ければ空を返す＝今までどおり全部 数える（黙って緩めない）。
+    """
+    if not md_path or not os.path.exists(md_path):
+        return set()
+    _it = re.search(r'iter="([^"]+)"', open(md_path, encoding="utf-8").read())
+    if not _it:
+        return set()
+    _dp = os.path.join(_REPO, "v3-bitget-api-sdk", "bitget-python-sdk-api",
+                       ".claude", "ratchet", "acceptance_archive",
+                       _it.group(1).replace(" ", "_").replace("/", "_") + ".dirty.json")
+    if not os.path.exists(_dp):
+        return set()
+    try:
+        return set(json.load(open(_dp, encoding="utf-8")).get("files") or [])
+    except Exception:                                      # noqa: BLE001
+        return set()
+
+
+def counts_as_touched(rel: str, spec: dict, baseline: set) -> bool:
+    """その .py を『設計書に書いていないファイルを触った』として数えるか（138番）。
+
+    ★数えない条件は2つだけ＝①承認の時点で もう汚れていた（baseline に在る）
+      ②設計書の impl_functions に書いてある。
+    """
+    if rel in baseline:
+        return False
+    return not any(rel.endswith(_k) or _k.endswith(rel) for _k in spec)
 
 
 def must_use_from_source(spec: dict) -> tuple[list, str]:
@@ -1657,6 +1735,17 @@ def self_test() -> bool:
                + json.dumps({"impl_file": "a.py", "impl_functions": {}}) + "\n" + _f3 + "\n")
         o17, w17 = contract_for_freeze(t17)
         results["N17"] = (o17 is None and w17 is not None and "no_impl_functions_reason" in w17)
+        # ★N18・N19（2026-09-07・138番）＝承認の時点で汚れていた .py の基準
+        _rel18 = ".claude/hooks/other_session_edit.py"
+        results["N18"] = (counts_as_touched(_rel18, {}, {_rel18}) is False)
+        results["N19"] = (counts_as_touched(_rel18, {}, set()) is True
+                          and counts_as_touched(_rel18, {_rel18: ["f"]}, set()) is False)
+        # ★N20（2026-09-07・93番）＝定義の行を実物から作る。見本の .py を書いて数える。
+        _p20 = os.path.join(str(nd), "n20.py")
+        with open(_p20, "w", encoding="utf-8") as _f20:
+            _f20.write("import os\n\n\ndef alpha():\n    pass\n\n\ndef _beta():\n    pass\n")
+        _s20 = spec_from_impl(_p20)
+        results["N20"] = (_s20.get("def_lines") == {"_beta": 8, "alpha": 4})
     finally:
         shutil.rmtree(nd, ignore_errors=True)
 

@@ -121,10 +121,35 @@ def generates_of(py_path: pathlib.Path) -> list[str]:
     return out
 
 
-def _line_values(text: str, prefix: str) -> list[str]:
-    """行の頭が prefix の行から、カンマ区切りのパスを集める（重複は残す）。"""
+def outside_fence(text: str) -> list[str]:
+    """囲み（``` で始まる行から次の ``` まで）の中を空行に置き換えて返す。
+
+    ★なぜ要るか（2026-09-07・next_step §6 の113番・設計書 iter="approval-audit-plumbing-20260907"）
+      直す前＝この道具は行の頭が TARGET: かどうかだけを見て、囲みの中かどうかを見ていなかった。
+      そのため設計書に「書き方の見本」を載せると、その見本のパスまで「開いたか」を確かめられて
+      止まった（実測＝2026-08-27・68回目に実際に止まり、見本の行の頭に空白を2つ入れて回り道した）。
+      同じ形が claimed_files（囲みの中のファイル名を「読んだ」として拾う）にも在った。
+    ★行の数は変えない＝行番号がずれると、ほかの判定の意味が変わるため、中身だけを空にする。
+    ★守りは減らない＝囲みの外の宣言は今までどおり全部 見る。
+    """
     out: list[str] = []
+    in_fence = False
     for ln in text.splitlines():
+        if ln.lstrip().startswith(chr(96) * 3):
+            in_fence = not in_fence
+            out.append("")
+            continue
+        out.append("" if in_fence else ln)
+    return out
+
+
+def _line_values(text: str, prefix: str) -> list[str]:
+    """行の頭が prefix の行から、カンマ区切りのパスを集める（重複は残す）。
+
+    ★2026-09-07（113番）＝囲みの中は見ない（outside_fence）。
+    """
+    out: list[str] = []
+    for ln in outside_fence(text):
         if not ln.startswith(prefix):
             continue
         for part in ln[len(prefix):].split(","):
@@ -167,10 +192,13 @@ def claimed_files(text: str) -> list[str]:
       CC は見出しの文に「実際に開いて読んだものだけを書きます」と書き、
       その下の表の行にはファイル名だけを書いた＝行に「読んだ」の語が無い。
     だから「名乗りの文が出てから、次の見出しか区切り線までの間」をまとめて見る。
+
+    ★2026-09-07（113番）＝囲みの中は見ない（outside_fence）。囲みは書き方の見本を載せる所で、
+      そこに出るファイル名は「読んだ」の名乗りではない。
     """
     out: list[str] = []
     in_claim = False
-    for ln in text.splitlines():
+    for ln in outside_fence(text):
         s = ln.strip()
         # 見出し・区切り線で名乗りの範囲を閉じる
         if s.startswith("#") or s.startswith("---"):
@@ -374,6 +402,26 @@ def selftest() -> int:
         if not any(x.startswith("A ") for x in check(_w, [])):
             ng.append("T13 メタ確認: まるごと書き換えで、対象を開いていないのに通ってしまう")
 
+    # ── F1〜F3 囲みの中の見本は、宣言として読まない（2026-09-07・113番・
+    #    設計書 iter="approval-audit-plumbing-20260907"）──
+    _fence = chr(96) * 3
+    _real = "scripts/priority_rebuild/gen_materials.py"
+    _fake = "scripts/priority_rebuild/only_in_fence_sample.py"
+    # F1 囲みの中に書いた TARGET の見本は拾わない
+    f1 = (f"TARGET: {_real}\n\n{_fence}\nTARGET: {_fake}\n{_fence}\n")
+    if _fake in targets_in(f1):
+        ng.append("F1: 囲みの中の TARGET の見本を、直す相手として拾ってしまう")
+    if _real not in targets_in(f1):
+        ng.append("F1 メタ確認: 囲みの外の TARGET を拾えていない（読み飛ばしすぎ）")
+    # F2 囲みの中のファイル名は「読んだ」の名乗りとして拾わない
+    f2 = (f"## 読んだもの\n\n{_real}\n\n{_fence}\n読んだ: {_fake}\n{_fence}\n")
+    if _fake in claimed_files(f2):
+        ng.append("F2: 囲みの中のファイル名を『読んだ』として拾ってしまう")
+    # F3 メタ確認＝囲みが1つも無い文では、今までどおり拾う
+    f3 = f"TARGET: {_fake}\n"
+    if _fake not in targets_in(f3):
+        ng.append("F3 メタ確認: 囲みの無い文で TARGET を拾えていない")
+
     # ── N1〜N6 新しく作るファイルを TARGET に書ける（2026-08-27・86番・まこさん承認「進めて良い」）──
     _new = "scripts/dashboard/nonexistent_new_file_for_selftest.py"
     _exist = "scripts/priority_rebuild/gen_materials.py"
@@ -409,7 +457,9 @@ def selftest() -> int:
 
     for x in ng:
         print(f"❌ {x}")
-    print(f"{'❌' if ng else '✅'} わざと壊して止まるか試すテスト {19 - len(ng)}/19 pass")
+    # ★2026-09-07（113番）＝F1〜F3（囲みの中の見本を宣言として読まない）を足して 19 → 22。
+    _n_tests = 22
+    print(f"{'❌' if ng else '✅'} わざと壊して止まるか試すテスト {_n_tests - len(ng)}/{_n_tests} pass")
     return 1 if ng else 0
 
 

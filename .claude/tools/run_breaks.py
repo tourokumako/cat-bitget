@@ -193,6 +193,16 @@ def main(argv: list) -> int:
     ap.add_argument("--freeze", action="store_true")
     ap.add_argument("--check-frozen", action="store_true")
     ap.add_argument("--parse-only", action="store_true")
+    # ★2026-09-07（next_step §6 の150番・設計書 iter="approval-audit-plumbing-20260907"）
+    #   ＝壊すプログラムを走らせて終了コードを画面に出すだけの口。
+    #   **記録も凍結も1バイトも書かない。**
+    #   なぜ要るか（実測）＝承認より後にコードを直したとき、壊すプログラムを走らせ直せるのが
+    #     まこさんだけだった（この道具は土台ゲートの通す一覧に入っていない）。
+    #     2026-09-07 に監査 cp27 が、これを理由に「壊し方を1文字も変えずに写した
+    #     再現プログラム」で代行した（別枠 6-2）。
+    #   ★土台ゲートは、この旗が在るときだけ この道具を通す
+    #     （require_acceptance_before_impl.sh の _readonly_seg の枝。--freeze・--out が在れば止める）。
+    ap.add_argument("--measure-only", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args(argv)
 
@@ -298,16 +308,36 @@ def main(argv: list) -> int:
               "（元に戻していない）", file=sys.stderr)
         return 2
 
+    # ★2026-09-07（150番）＝測るだけの口は、ここで終わる（記録も凍結も書かない）。
+    if a.measure_only:
+        print(f"   🧪 測るだけ（記録は書きません）: 止まった {n_stop}/{n_run}")
+        return 0
+
     iter_name = a.iter_name or "unknown"
     out = pathlib.Path(a.out) if a.out else (ARCHIVE / f"{iter_name}.breaks.json")
+    write_record(out, iter_name, rows)
+    print(f"   🧪 壊して確かめた件数: {n_stop}/{n_run} → {out.name}")
+    return 0
+
+
+def write_record(out: pathlib.Path, iter_name: str, rows: list) -> None:
+    """壊すプログラムの終了コードを、設計書の控えの隣に記録として書く。
+
+    ★2026-09-07（next_step §6 の146番・設計書 iter="approval-audit-plumbing-20260907"）
+      ＝承認スクリプトの「済」の付け方は、次の2つが**両方**そろったときだけ書く形にしてある
+      （approve_impl.sh:414-424）。
+        ①壊すプログラムの終了コードが 0 以外 ②その行の条件のコマンドが rc=0
+      ①の材料が、ここで書く記録（<iter>.breaks.json）。
+      ★この直し自体を守る完成の条件が1件も無かった（監査 cp26 の別枠の指摘3）。
+      だから、書く処理を関数に切り出して番人 T8 で試せるようにした
+      （承認スクリプトを直に走らせると、本物の承認の印を書いてしまうため）。
+    """
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(
         {"_なにこれ": ("完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。"
                         "終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）"),
          "iter": iter_name, "rows": rows},
         ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"   🧪 壊して確かめた件数: {n_stop}/{n_run} → {out.name}")
-    return 0
 
 
 SELF_TESTS = (
@@ -318,6 +348,8 @@ SELF_TESTS = (
     ("T5", "凍結と食い違えば止める"),
     ("T6", "凍結と合っていれば通る"),
     ("T7", "打ち消した縦棒を、列の区切りにしない（幽霊の行を作らない）"),
+    # ★2026-09-07（next_step §6 の146番）＝承認の「済」の材料になる記録を、本当に書くか。
+    ("T8", "壊すプログラムの終了コードを、記録のファイルへ書く（済の材料が残る）"),
 )
 
 
@@ -367,6 +399,13 @@ def selftest() -> int:
             FROZEN.write_text(json.dumps(freeze_breaks()), encoding="utf-8")
             if check_frozen():
                 ng.append("T6")
+            # ★T8（2026-09-07・146番）＝記録を本当に書くか（本物のファイルは触らない）
+            _o8 = pathlib.Path(d) / "rec" / "t8.breaks.json"
+            write_record(_o8, "t8", [{"no": "1", "script": "b01_x.sh", "code": 1}])
+            _d8 = json.loads(_o8.read_text(encoding="utf-8")) if _o8.exists() else {}
+            if (_d8.get("iter") != "t8"
+                    or [r.get("code") for r in (_d8.get("rows") or [])] != [1]):
+                ng.append("T8")
     finally:
         FROZEN, BREAKS_DIR = _kf, _kb
 

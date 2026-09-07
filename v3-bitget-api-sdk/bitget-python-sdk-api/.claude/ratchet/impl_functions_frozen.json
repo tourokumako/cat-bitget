@@ -1,21 +1,5 @@
 {
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
- "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
- "scripts/priority_rebuild/observe_diag.py": [
-  "_demand_rank_name",
-  "rank_demand_for_regime",
-  "merge_demand_into_ranking",
-  "add_demand_to_ranking",
-  "selftest_rank_demand",
-  "selftest",
-  "build_parser"
- ],
- "scripts/priority_rebuild/engine_tuner_gen.py": [
-  "ranked_materials",
-  "_family_tf_from_col",
-  "selftest_rank_demand",
-  "selftest",
-  "main"
- ]
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md"
 }

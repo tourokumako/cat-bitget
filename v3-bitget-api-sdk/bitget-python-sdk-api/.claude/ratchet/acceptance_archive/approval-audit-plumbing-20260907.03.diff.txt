@@ -1,0 +1,6 @@
+7d6
+< NEW_FILE: .claude/breaks/b41_req_frozen_section_gone.sh, .claude/breaks/b42_pre_audit_list_gone.sh, .claude/breaks/b43_approve_empty_freeze_gone.sh, .claude/breaks/b44_approve_record_write_gone.sh, .claude/breaks/b45_measure_only_gone.sh, .claude/breaks/b46_spec_lineno_gone.sh, .claude/breaks/b47_dirty_baseline_gone.sh, .claude/breaks/b48_fence_skip_gone.sh, .claude/breaks/b49_foreign_block_gone.sh, .claude/breaks/b50_fixture_name_gone.sh
+172c171
+< | 6 | AUDIT-2＝照合の道具が承認のときのままなら、本物の照合が通る（直す前は b06 が rc=0＝測れていない） | `python3 scripts/priority_rebuild/verify_design_contract.py .claude/state/acceptance.md` | 実経路 | 照合の道具の末尾に1行 足すと、道具の指紋が承認のときと合わずに照合が rc≠0 になる | `b06_tool_changed.sh` | 対象 | **未着手** |
+---
+> | 6 | AUDIT-2＝照合の道具が承認のときのままなら、本物の照合が通る（直す前は b06 が rc=0＝測れていない） | `python3 scripts/priority_rebuild/verify_design_contract.py .claude/state/acceptance.md` | 実経路 | 照合の道具の末尾に1行 足すと、道具の指紋が承認のときと合わずに照合が rc≠0 になる | `b06_tool_changed.sh` | 対象 | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |

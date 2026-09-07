@@ -81,6 +81,12 @@ CHECK = set(['--selftest', '--self-test', '--verify', '--identity', '--help',
              #   足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、
              #   '--selftest-marks' は '--selftest' に一致しない。
              '--selftest-marks',
+             # ★2026-09-07（next_step §6 の149番・設計書 iter="approval-audit-plumbing-20260907"）
+             #   ＝生成器の静的検査だけを走らせる口。自分のソースを構文の木として読んで数えるだけで、
+             #   案も売買記録も作らず、累積の試行数にも足さない（engine の入口の関数を1つも呼ばない）。
+             #   足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、
+             #   '--lint-provenance' はどれにも一致せず、hook が止めていた。
+             '--lint-provenance',
              # ★2026-09-07（設計書 iter="demand-in-ranking-20260907"・まこさん承認）＝需給3列を成績表の順位に足す工事の
              #   「確認のための走行」2つ。'--selftest-rank-demand'＝observe_diag.py と engine_tuner_gen.py の
              #   その工事の枝だけを数秒で試す口（合成データ・売買記録を出さない・累積の試行数に足さない）。

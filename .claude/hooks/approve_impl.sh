@@ -135,6 +135,42 @@ frozen_out.write_text(json.dumps(
 print(f"   🧊 impl_functions: {sum(len(v) for v in _fz.values() if isinstance(v, list))} 件を凍結しました"
       f" → {frozen_out.name}（以後この版と比べます）")
 
+# ★2026-09-07（next_step §6 の138番・設計書 iter="approval-audit-plumbing-20260907"）
+#   ＝承認の時点で「もう汚れていた .py」の一覧を凍結する。
+#   何が困っていたか（実測）＝照合A(双方向)（verify_design_contract.py の 1044-1051行）は
+#     git status に出る .py を全部 見て、設計書の impl_functions に無ければ落とす。
+#     その .py が中で何を呼ぶかは見ない＝**並走している別のセッションが .py を編集中なら、
+#     どの設計書でも同じように落ちる**（2026-09-06 に実測＝FAIL の10本は、その時点で
+#     未コミットだった10本と1本も違わなかった）。
+#   直した後＝承認の瞬間の「もう汚れていた .py」を基準として残し、照合A(双方向) はそれを数えない。
+#     ＝この工事で触った .py だけが照合の相手になる。
+#   ★限界（正直に）＝承認の前にわざと .py を汚しておけば、その1本は照合の外に出る。
+#     ただし scripts/priority_rebuild/*.py と .claude/tools/*.py は承認の前に書けない
+#     （承認ゲート）ので、この道が使えるのは hook の .py だけ（設計書 §7 の Q5 の5）。
+import subprocess as _sp
+_dirty_out = frozen_out.parent / "acceptance_archive" / (
+    (re.search(r'iter="([^"]+)"', md).group(1).replace(" ", "_").replace("/", "_")
+     if re.search(r'iter="([^"]+)"', md) else "noiter") + ".dirty.json")
+_watch = ("scripts/priority_rebuild/", ".claude/hooks/", ".claude/tools/")
+try:
+    _root = _sp.run(["git", "rev-parse", "--show-toplevel"],
+                    capture_output=True, text=True, timeout=30).stdout.strip()
+    _st = _sp.run(["git", "-C", _root, "status", "--porcelain"],
+                  capture_output=True, text=True, timeout=30).stdout if _root else ""
+except Exception:                                          # noqa: BLE001
+    _st = ""
+_dirty = sorted({_l[3:].strip().split(" -> ")[-1] for _l in _st.splitlines()
+                 if _l[3:].strip().endswith(".py")
+                 and any(_w in _l for _w in _watch)})
+_dirty_out.parent.mkdir(parents=True, exist_ok=True)
+_dirty_out.write_text(json.dumps(
+    {"_これは何か": "承認の瞬間に、もう汚れていた .py の一覧。照合A(双方向) はここに在るものを数えない。",
+     "_なぜ": "並走している別のセッションが編集中の .py で、どの設計書でも落ちるのを止めるため（138番）。",
+     "_作り方": "approve_impl.sh が承認の瞬間に git status から書き出す。手で書き換えない。",
+     "files": _dirty}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+print(f"   🧊 承認の時点で汚れていた .py: {len(_dirty)} 本を基準として凍結しました"
+      f" → {_dirty_out.name}（照合A(双方向) はこれを数えません）")
+
 # ★方針③（監査 §6-A の3・2026-09-02）＝機械で照らせる件数と、照らせない件数を、2行だけ出す。
 #   ★これは「数字の確認」ではない。監査の逐語＝「合っているかを確かめるものではなく、
 #     『照らせないものが何件 残っているか』の報告である。まこさんは、その件数が増えたときだけ

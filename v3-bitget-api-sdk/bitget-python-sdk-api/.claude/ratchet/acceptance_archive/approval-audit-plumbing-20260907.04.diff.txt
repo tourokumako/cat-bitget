@@ -1,0 +1,20 @@
+168,170c168,170
+< | 3 | 承認のときに空の impl_functions を凍結しない判定（承認スクリプトが呼ぶ `contract_for_freeze`）が、番人で確かめられる | `python3 scripts/priority_rebuild/verify_design_contract.py --self-test` | 実経路 | その判定から「理由の無い空」を止める2行を消すと、番人 N17 が落ちる | `b43_approve_empty_freeze_gone.sh` | 終了コードが0でない | **未着手** |
+< | 4 | 承認の「済」の材料になる記録（壊すプログラムの終了コード）を、機械が書く | `python3 ../../.claude/tools/run_breaks.py --selftest` | 実経路 | 記録を書く処理（`write_record`）の中身を消すと、番人 T8 が落ちる | `b44_approve_record_write_gone.sh` | 終了コードが0でない | **未着手** |
+< | 5 | 壊すプログラムを、書き込みなしで測り直す口が CC の Bash から走る | `python3 ../../.claude/tools/run_breaks.py --measure-only --iter approval-audit-plumbing-20260907` | 実経路 | 土台ゲートの通す判定から、その旗の条件を消すと止まる | `b45_measure_only_gone.sh` | 終了コードが0でない | **未着手** |
+---
+> | 3 | 承認のときに空の impl_functions を凍結しない判定（承認スクリプトが呼ぶ `contract_for_freeze`）が、番人で確かめられる | `python3 scripts/priority_rebuild/verify_design_contract.py --self-test` | 実経路 | その判定から「理由の無い空」を止める2行を消すと、番人 N17 が落ちる | `b43_approve_empty_freeze_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
+> | 4 | 承認の「済」の材料になる記録（壊すプログラムの終了コード）を、機械が書く | `python3 ../../.claude/tools/run_breaks.py --selftest` | 実経路 | 記録を書く処理（`write_record`）の中身を消すと、番人 T8 が落ちる | `b44_approve_record_write_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
+> | 5 | 壊すプログラムを、書き込みなしで測り直す口が CC の Bash から走る | `python3 ../../.claude/tools/run_breaks.py --measure-only --iter approval-audit-plumbing-20260907` | 実経路 | 土台ゲートの通す判定から、その旗の条件を消すと止まる | `b45_measure_only_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=2／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
+172,176c172,176
+< | 7 | 照合の道具が書き出す SPEC に「関数の名前 → 定義の行」が入っている | `python3 scripts/priority_rebuild/verify_design_contract.py --self-test` | 実経路 | その表を書き出す処理を消すと、番人が落ちる | `b46_spec_lineno_gone.sh` | 終了コードが0でない | **未着手** |
+< | 8 | AUDIT-3＝承認の時点で既に汚れていた .py を、照合A(双方向) が「設計書に書いていないファイルを触った」に数えない | `python3 scripts/priority_rebuild/verify_design_contract.py --self-test` | 実経路 | その一覧を数えない2行を消すと、番人 N18 が落ちる（N19 は通ったまま＝緩めていない） | `b47_dirty_baseline_gone.sh` | 対象 | **未着手** |
+< | 9 | 設計書の囲みの中に書いた見本の行を、宣言として読まない | `python3 ../../.claude/hooks/require_source_read_before_acceptance.py --selftest` | 実経路 | 囲みを読み飛ばす処理を消すと、番人が落ちる | `b48_fence_skip_gone.sh` | 終了コードが0でない | **未着手** |
+< | 10 | AUDIT-4＝文書を作る2つのプログラムの検査が、同時に両方とも通る（直す前は片方が3件 ❌） | `python3 ../../.claude/tools/gen_regime_kb.py --verify` | 実経路 | 他のプログラムの囲みを差し戻す処理を消すと、片方の検査が落ちる | `b49_foreign_block_gone.sh` | 対象 | **未着手** |
+< | 11 | 生成器の静的検査が0件になる（直す前は「見本の関数」1件） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --lint-provenance` | 実経路 | 関数の名前を元に戻すと、静的検査が1件に戻る | `b50_fixture_name_gone.sh` | 終了コードが0でない | **未着手** |
+---
+> | 7 | 照合の道具が書き出す SPEC に「関数の名前 → 定義の行」が入っている | `python3 scripts/priority_rebuild/verify_design_contract.py --self-test` | 実経路 | その表を書き出す処理を消すと、番人が落ちる | `b46_spec_lineno_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
+> | 8 | AUDIT-3＝承認の時点で既に汚れていた .py を、照合A(双方向) が「設計書に書いていないファイルを触った」に数えない | `python3 scripts/priority_rebuild/verify_design_contract.py --self-test` | 実経路 | その一覧を数えない2行を消すと、番人 N18 が落ちる（N19 は通ったまま＝緩めていない） | `b47_dirty_baseline_gone.sh` | 対象 | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
+> | 9 | 設計書の囲みの中に書いた見本の行を、宣言として読まない | `python3 ../../.claude/hooks/require_source_read_before_acceptance.py --selftest` | 実経路 | 囲みを読み飛ばす処理を消すと、番人が落ちる | `b48_fence_skip_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
+> | 10 | AUDIT-4＝文書を作る2つのプログラムの検査が、同時に両方とも通る（直す前は片方が3件 ❌） | `python3 ../../.claude/tools/gen_regime_kb.py --verify` | 実経路 | 他のプログラムの囲みを差し戻す処理を消すと、片方の検査が落ちる | `b49_foreign_block_gone.sh` | 対象 | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
+> | 11 | 生成器の静的検査が0件になる（直す前は「見本の関数」1件） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --lint-provenance` | 実経路 | 関数の名前を元に戻すと、静的検査が1件に戻る | `b50_fixture_name_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
