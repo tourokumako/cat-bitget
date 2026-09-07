@@ -1,0 +1,24 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）",
+ "iter": "demand-in-ranking-20260907",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b39_rank_demand_merge_gone.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "2",
+   "script": "b40_rank_demand_touch_indicator.sh",
+   "code": 1,
+   "note": ""
+  },
+  {
+   "no": "3",
+   "script": "b38_rank_demand_reader_gone.sh",
+   "code": 1,
+   "note": ""
+  }
+ ]
+}

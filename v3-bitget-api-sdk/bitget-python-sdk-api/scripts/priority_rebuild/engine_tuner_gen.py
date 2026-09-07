@@ -1278,6 +1278,14 @@ def ranked_materials(role: str, label: str | None = None) -> list[tuple[str, flo
                 #   使わない指標の列は順位から外す＝場面の判定の束が、その材料を1位に引かなくなる。
                 #   ★成績表そのものは書き換えない（読むときに外すだけ）＝印を戻せば順位も戻る。
                 nm = str(col).rsplit("__", 1)[0] if "__" in str(col) else str(col)
+                # ★需給の列（別枠・設計書 iter="demand-in-ranking-20260907" の E・まこさん承認 2026-09-07）
+                #   ＝需給の名前は参照表 REFS に無いので indicator_enabled は必ず False を返す。印は demand_on で見る。
+                #   既存の判定（下の if）の手前に置いて continue で抜ける＝既存の行は触らない（足すだけ）。
+                if nm in iref.DEMAND_REF:
+                    if not ex.demand_enabled(nm):
+                        continue
+                    rows.append((abs(float(acc) - 0.5), str(col), float(acc), lab, str(hor)))
+                    continue
                 if not ex.indicator_enabled(nm):
                     continue
                 rows.append((abs(float(acc) - 0.5), str(col), float(acc), lab, str(hor)))
@@ -2111,6 +2119,10 @@ def _family_tf_from_col(col: str) -> tuple[str, str]:
     if "__" not in col:
         raise SampleError(f"順位の列名に時間足が無い: {col}")
     name, tf = col.rsplit("__", 1)
+    # ★需給の列（別枠・設計書 demand-in-ranking-20260907 の E）＝参照表 REFS に無いので find は None を返す。
+    #   種類＝需給の名前そのもの・時間足＝列名のまま（成績表では 5m の1本だけ）。既存の行は触らない（足すだけ）。
+    if name in iref.DEMAND_REF:
+        return str(name), str(tf)
     ent, _prm = iref.find(name)
     if ent is None or ent["family"] not in ex.FAMILY_TEMPLATES:
         raise SampleError(f"順位の列がカタログに無い: {col}")
@@ -2214,6 +2226,8 @@ def _ranked_material_at(rng, role, rank_pos: int, tfs, table, label=None, tf_ok=
     n = 0
     for fam, tf, lab, hor, med, ncol, col in ranked_groups(role, label):
         # ★順位 → 組（種類×時間足）の対応は乱数に依らない（種類・時間足・系統・範囲の表に在るか だけで決める）
+        # ★需給の組（設計書 demand-in-ranking-20260907 の E）＝`fam not in ranges` で今までどおり飛ぶ（需給はパラメータの範囲を持たない）
+        #   ＝この工事では需給を束に引かない。引く道は M2-E で相場の法則から決める。
         if tf not in ok_tfs or fam not in iref.FAMILY_LINEAGE or fam not in ranges:
             continue
         if iref.FAMILY_LINEAGE[fam]["k"] not in rr["lineages"]:
@@ -3822,6 +3836,81 @@ def _check_extra_gate() -> list:
                     out.append(f"{kind} を戻しても印で止まる（片道になっている）")
         finally:
             sw[key] = keep
+    return out
+
+
+def selftest_rank_demand() -> list:
+    """T23-demand＝需給の列を、順位を読む側が落とさずに読めるか（設計書 iter="demand-in-ranking-20260907" の F・数秒）。
+
+    ①`ranked_materials("sufficiency")` に需給3列が出る ②`demand_on` から1件 外すと、その列だけ消える ③戻すと出る
+    ④`_family_tf_from_col("CVD__5m")` が `("CVD", "5m")` を返す ⑤`ranked_groups("sufficiency")` に需給の組が出て、
+      `ranked_groups("location")`・`ranked_groups("env")` には1つも出ない。
+    ★成績表は本物を使わず、小さな成績表を一時的に差し込む（本物の順位に依らず、毎回 同じ結果になる）。
+    ★口 `--selftest-rank-demand` と `selftest()` の末尾が、この1本を呼ぶ（判定を2か所に書き写さない）。
+    ★壊すプログラム b38（`ranked_materials` の需給の枝を消す）が、この口を測る。
+    戻り＝ダメだった説明の一覧（空なら全部 期待どおり）。
+    """
+    global _MATERIAL_RANKING
+    out: list = []
+    names = sorted(iref.DEMAND_REF)
+    dem_cols = [f"{n}__5m" for n in names]
+    ind_rows = [["RSI14__5m", 0.61], ["ADX14__1h", 0.42]]
+    dem_rows = [[f"{n}__5m", a] for n, a in zip(names, (0.48, 0.53, 0.47))]
+    roles = list(load_signal_table()["roles"])
+    fake = {"順位": {ro: {la: {hz: (ind_rows + (dem_rows if ro == "sufficiency" else []))
+                                for hz in ("24", "288")} for la in ("強さ", "向き", "大きさ")} for ro in roles}}
+    keep_rank, keep_memo = _MATERIAL_RANKING, dict(_RANKED_GROUPS_MEMO)
+    sw = ex.load_indicator_switch()
+    keep_dem = set(sw["_demand_set"])
+    try:
+        _MATERIAL_RANKING = fake
+        _RANKED_GROUPS_MEMO.clear()
+        # ① 需給3列が sufficiency の順位に出る
+        got = {c for c, _a, _l, _h in ranked_materials("sufficiency")}
+        miss = [c for c in dem_cols if c not in got]
+        if miss:
+            out.append(f"①需給の列が順位に出ない: {miss}")
+        # ② demand_on から1件 外すと、その列だけ消える
+        off = names[0]
+        sw["_demand_set"] = set(keep_dem) - {off}
+        got2 = {c for c, _a, _l, _h in ranked_materials("sufficiency")}
+        if f"{off}__5m" in got2:
+            out.append(f"②demand_on から {off} を外しても順位に残る")
+        for n in names[1:]:
+            if f"{n}__5m" not in got2:
+                out.append(f"②外していない {n} まで順位から消えた")
+        # ③ 戻すと出る
+        sw["_demand_set"] = set(keep_dem)
+        got3 = {c for c, _a, _l, _h in ranked_materials("sufficiency")}
+        if f"{off}__5m" not in got3:
+            out.append(f"③demand_on に戻しても {off} が順位に出ない（片道になっている）")
+        # ④ 列名 → 種類と時間足
+        try:
+            f4, t4 = _family_tf_from_col(f"{names[0]}__5m")
+            if (f4, t4) != (names[0], "5m"):
+                out.append(f"④_family_tf_from_col が違う: {(f4, t4)}")
+        except SampleError as _e4:
+            out.append(f"④_family_tf_from_col が需給で止まる: {_e4}")
+        # ⑤ 組の順位＝sufficiency にだけ需給の組が出る
+        _RANKED_GROUPS_MEMO.clear()
+        # ★set は並びが決まらないので、回す前に sorted で並べる（H2 の番人「並びの決まらない入れ物」）
+        g_suf = sorted({g[0] for g in ranked_groups("sufficiency")})
+        if not any(f in iref.DEMAND_REF for f in g_suf):
+            out.append("⑤ranked_groups('sufficiency') に需給の組が1つも出ない")
+        for ro in ("location", "env"):
+            g = sorted({g[0] for g in ranked_groups(ro)})
+            leak = [f for f in g if f in iref.DEMAND_REF]
+            if leak:
+                out.append(f"⑤ranked_groups('{ro}') に需給の組が混ざった: {leak}")
+    except SystemExit as _e:                              # fail-closed の止まりも ❌ として数える
+        out.append(f"T23-demand が途中で止まった: {_e}")
+    finally:
+        _MATERIAL_RANKING = keep_rank
+        _RANKED_GROUPS_MEMO.clear()
+        _RANKED_GROUPS_MEMO.update(keep_memo)
+        sw["_demand_set"] = set(keep_dem)
+    print(f"  T23-demand 需給の列を順位から読む: ①sufficiency に3列 ②印から外すと消える ③戻すと出る "
+          f"④列名→(名前, 5m) ⑤location・env の組に混ざらない ／ ダメだった件 {len(out)}")
     return out
 
 
@@ -5604,6 +5693,7 @@ def selftest() -> int:
     ng += t33
     print("  T33 指標のオン・オフの印: (a)候補に出ない (b)審査が捨てる (c)戻せば通る"
           " (d)順位から外れる (e)指紋が記録に入る (f)「使う」指標に off_ok は作れない")
+    ng += [f"T23-demand: {_x}" for _x in selftest_rank_demand()]   # 需給の列を順位から読む（設計書 demand-in-ranking-20260907）
 
     if ng:
         for x in ng:
@@ -5787,7 +5877,18 @@ def main() -> int:
     ap.add_argument("--selftest-extra-gate", action="store_true",
                     help="別枠3種（レンジ幾何・需給・時間帯）の審査の枝だけを試す（数秒）"
                          "＝T33-g と同じ本体（_check_extra_gate）を呼ぶ。壊すプログラム b35 が使う")
+    ap.add_argument("--selftest-rank-demand", action="store_true",
+                    help="需給の列を順位から読む枝だけを試す（数秒）＝T23-demand と同じ本体（selftest_rank_demand）を呼ぶ。"
+                         "壊すプログラム b38 が使う（設計書 demand-in-ranking-20260907）")
     a = ap.parse_args()
+    if a.selftest_rank_demand:
+        # ★2026-09-07（設計書 demand-in-ranking-20260907 の F）＝T23-demand だけを短く走らせる口。
+        #   `--selftest` の全体は約6分半で、承認のときの打ち切り（120秒）を超えるため（--selftest-extra-gate と同じ理由）。
+        _ngd = selftest_rank_demand()
+        for _x in _ngd:
+            print(f"  ❌ T23-demand: {_x}")
+        print(f"  {'❌' if _ngd else '✅'} T23-demand 需給の列を順位から読む／ダメだった件 {len(_ngd)}")
+        return 1 if _ngd else 0
     if a.selftest_extra_gate:
         # ★2026-09-07（監査 cp25 の §5-2・設計書 C）＝T33-g だけを短く走らせる口。
         #   なぜ要るか（実測）＝`--selftest` の全体は 6分23秒 かかり、承認のときに機械が

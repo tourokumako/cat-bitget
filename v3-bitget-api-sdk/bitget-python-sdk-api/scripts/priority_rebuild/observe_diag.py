@@ -5864,6 +5864,253 @@ def rank_regime(bars_csv: str, config_path: str | None = None, tfs: str | None =
                       tfs=[t.strip() for t in tfs.split(",")] if tfs else None)
 
 
+# ══ 需給3列を成績表に足す（差分の口・M2-D-4／M2-D-5・設計書 iter="demand-in-ranking-20260907"・まこさん承認 2026-09-07）══
+#   なぜ在るか＝成績表を作る本体（rank_materials_for_regime）は build_catalog の指標の列だけを採点し、
+#     別枠の需給（load_demand の3列）を読まない＝需給は成績表に0本のまま（2026-09-06 実測・worklog 20260904 §49-2）。
+#     まこさん決定（2026-09-06・逐語「需給に関しては、2-Cでの判断がどうであれ、順位に入れるべき」）＝需給を順位に入れる。
+#     全走（約2時間17分）はやり直さず、需給3列だけを同じ物差しで採点して いまの成績表に足す（まこさん OK 2026-09-07）。
+#   ★足すだけ＝既存の関数は1行も触らない。全走の本体と同じ関数（_regime_labels・_independent_step・rank_separation・
+#     _role_lineage_table・load_demand）だけを呼ぶ＝式を2か所に持たない。
+#   ★需給は元データが5分足1本だけ（型の表 extra_parts.demand の rule「時間足には展開しない」）＝成績表の列名は
+#     `名前__5m` の1本だけ。11本に広げない。
+#   ★重複のふるい（_dup_pairs・法則 C2・C3）は需給に掛けない（カタログの列どうしを比べる作りで、別枠を渡す形が無い）
+#     ＝設計書 §7 の補3。走らせるときに「未適用」と印字する。
+DEMAND_RANK_TF = "5m"
+
+
+def _demand_rank_name(col: str) -> str:
+    """成績表の列名（CVD__5m）から需給の名前（CVD）を返す。需給でなければ空。"""
+    nm = col.rsplit("__", 1)[0] if "__" in col else col
+    return nm if nm in _DEMAND_FILES else ""
+
+
+def rank_demand_for_regime(bars: pd.DataFrame, cfg: dict, horizons: tuple | None = None,
+                           calc_rows: int | None = None, files: dict | None = None) -> dict:
+    """需給3列を値決め窓で作り、指標と同じ物差し（正解ラベル3本×先読み）で分離力を出す（差分の口・設計書 §4 の A）。
+
+    戻り＝{"auc": {列名: {ラベル: {N: 分離力}}}, "unmeasured": {列名: 理由}, "cov": {需給の名前: 被覆率の文字列},
+           "窓": (先頭, 末尾), "行数": 本数, "先を見るバー数": [N, ...]}
+    ★売買しない・採点しない・金額を出さない。★files は自己検査が偽の元データを注入するためだけ（通常は渡さない）。
+    """
+    horizons = tuple(horizons or _regime_horizons())
+    _nm, a0, b0 = _insp_windows()[0]                          # 値決め窓（採点窓は1バーも使わない）
+    win = bars.loc[(bars.index >= a0) & (bars.index < b0)]
+    if calc_rows:
+        win = win.iloc[-calc_rows:]
+    _assert_search_window_only(win.index, "需給の順位づけ")
+    dem, cov = load_demand(win.index, files=files)            # 全走の材料と同じ元データの読み方（式を書き写さない）
+    df = dem.copy()
+    df.columns = [f"{c}__{DEMAND_RANK_TF}" for c in dem.columns]
+    cols = list(df.columns)
+    labels = {n: _regime_labels(win, n) for n in horizons}
+    auc: dict = {}
+    for n in horizons:
+        step = _independent_step(DEMAND_RANK_TF, n)           # 全走と同じ間引き（独立な標本だけ）
+        grid = df.iloc[::step]
+        for lab in REGIME_LABELS:
+            mask, usable = labels[n][lab]
+            ok = usable.reindex(grid.index).fillna(False).to_numpy()
+            sub = grid.loc[ok, cols]
+            m = mask.reindex(sub.index)
+            if int(m.sum()) < 10 or int((~m).sum()) < 10:
+                continue
+            r = rank_separation(sub, m, cols, set(), top=len(cols))
+            for _i, row in r.iterrows():
+                auc.setdefault(row["特徴"], {}).setdefault(lab, {})[n] = float(row["分離力"])
+    unmeasured = {c: ("分離力を測れなかった（値決め窓で値が全部 NaN、または 良い/悪いの片側の標本が10未満）"
+                      "＝黙って消さず記録（需給・差分の口）") for c in cols if c not in auc}
+    return dict(auc=auc, unmeasured=unmeasured, cov=dict(cov),
+                窓=(str(win.index.min()), str(win.index.max())), 行数=int(len(win)),
+                先を見るバー数=[int(n) for n in horizons])
+
+
+def merge_demand_into_ranking(rank: dict, r: dict) -> tuple[dict, list]:
+    """A の結果を、いまの成績表（json を読んだ辞書）に足す（設計書 §4 の B）。指標の列は1本も書き換えない。
+
+    戻り＝(足した後の成績表, 足した行の一覧 [(役割, ラベル, N, 列名, 分離力), ...])。
+    fail-closed＝窓・先読み・時間足が成績表と一致しなければ止める。
+    """
+    import json as _json
+    if list(rank.get("窓") or []) != list(r["窓"]):
+        raise SystemExit(f"[需給の順位づけ] 窓が成績表と違う: 成績表={rank.get('窓')} ／ 今回={r['窓']}（fail-closed）")
+    if [int(x) for x in (rank.get("先を見るバー数") or [])] != [int(x) for x in r["先を見るバー数"]]:
+        raise SystemExit(f"[需給の順位づけ] 先を見るバー数が成績表と違う: 成績表={rank.get('先を見るバー数')} ／ "
+                         f"今回={r['先を見るバー数']}（fail-closed）")
+    if DEMAND_RANK_TF not in (rank.get("時間足") or []):
+        raise SystemExit(f"[需給の順位づけ] 成績表の時間足に {DEMAND_RANK_TF} が無い: {rank.get('時間足')}（fail-closed）")
+    order = rank["順位"]
+    # 指標の列の控え（需給を除いた中身）＝足した後に1本も変わっていないことを照らす
+    def _wo_demand(o: dict) -> dict:
+        return {ro: {la: {str(nn): [x for x in got if not _demand_rank_name(str(x[0]))]
+                          for nn, got in bn.items()} for la, bn in bl.items()} for ro, bl in o.items()}
+    before = _json.dumps(_wo_demand(order), sort_keys=True, ensure_ascii=False)
+    listed_before = {c for bl in order.values() for bn in bl.values() for got in bn.values() for c, _a in got}
+    roles = _role_lineage_table()
+    added: list = []
+    for role, spec in roles.items():
+        if "需給" not in (spec.get("lineages") or []):
+            continue                                          # 需給の系統を持つ役割にだけ足す（型の表が正本）
+        if spec.get("tfs") != "all" and DEMAND_RANK_TF not in (spec.get("tfs") or []):
+            continue
+        if role not in order:
+            continue
+        for lab in REGIME_LABELS:
+            for n in r["先を見るバー数"]:
+                key = str(n) if str(n) in order[role].get(lab, {}) else n
+                got = list(order[role].get(lab, {}).get(key, []))
+                kept = [x for x in got if not _demand_rank_name(str(x[0]))]      # 古い需給の行だけ入れ替える
+                new = [(c, r["auc"][c][lab][n]) for c in sorted(r["auc"])
+                       if lab in r["auc"][c] and n in r["auc"][c][lab]]
+                merged = [list(x) for x in kept] + [[c, float(a)] for c, a in new]
+                merged.sort(key=lambda t: -abs(float(t[1]) - 0.5))            # 全走と同じ並び（|分離力−0.5| の降順）
+                order[role].setdefault(lab, {})[key] = merged
+                added += [(role, lab, int(n), c, float(a)) for c, a in new]
+    after = _json.dumps(_wo_demand(order), sort_keys=True, ensure_ascii=False)
+    if before != after:
+        raise SystemExit("[需給の順位づけ] 指標の列が変わった（足す処理が需給以外に触った＝fail-closed）")
+    listed = {c for bl in order.values() for bn in bl.values() for got in bn.values() for c, _a in got}
+    measured = sorted(set(r["auc"]))                       # ★set は回す前に sorted で並べる（H2 の番人）
+    # 測れた列＝前の数 ＋ 今回 新しく測れた需給の列（前から載っていた需給の列は数え直さない＝2回 走らせても増えない）
+    rank["測れた列"] = int(rank.get("測れた列", 0)) + len([c for c in measured if c not in listed_before])
+    rank["順位に載った列"] = len(listed)
+    omitted = dict(rank.get("省いた列") or {})
+    for c, why in r["unmeasured"].items():
+        omitted.setdefault(c, why)
+    rank["省いた列"] = omitted
+    rank["需給の被覆"] = dict(r["cov"])                        # 生成器は読まない欄＝順位の中身は変わらない
+    rank["需給の重複のふるい"] = "未適用（_dup_pairs はカタログの列どうしを比べる作り＝設計書 §7 の補3）"
+    return rank, added
+
+
+def add_demand_to_ranking(bars_csv: str, config_path: str | None = None) -> None:
+    """--rank-regime --add-demand の入口（設計書 §4 の C）＝成績表を読み → A → B → 同じファイルに書き戻す。"""
+    import json as _json
+    import time as _time
+    t0 = _time.time()
+    cfg = load_config(config_path)
+    bars = pd.read_csv(bars_csv, parse_dates=["timestamp"]).set_index("timestamp").sort_index()
+    out = pathlib.Path(__file__).resolve().parents[2] / ".claude" / "ratchet" / "material_ranking.json"
+    if not out.exists():
+        raise SystemExit(f"[需給の順位づけ] 成績表が無い: {out}（先に --rank-regime の本走で作る・fail-closed）")
+    bak = out.with_name("material_ranking.before_add_demand.json")   # 走らせる前の控え（前後の突き合わせに使う・上書きしてよい）
+    bak.write_bytes(out.read_bytes())
+    rank = _json.loads(out.read_text(encoding="utf-8"))
+    n_meas0, n_list0 = int(rank.get("測れた列", 0)), int(rank.get("順位に載った列", 0))
+    print("#" * 100)
+    print("# 需給3列を成績表に足す（差分の口・read-only の採点・売買しない・採点しない・金額を出さない）")
+    print(f"# 対象: {bars_csv}（{len(bars)} 行 / {bars.index.min()} 〜 {bars.index.max()}）")
+    print(f"# 成績表: {out}（足す前＝測れた列 {n_meas0} ／ 載った列 {n_list0}）")
+    print("# ⚠️ 重複のふるい（_dup_pairs・法則 C2・C3）は需給に未適用（設計書 §7 の補3）")
+    print("#" * 100)
+    t1 = _time.time()
+    r = rank_demand_for_regime(bars, cfg)
+    t2 = _time.time()
+    print(f"  値決め窓 {r['窓'][0]} 〜 {r['窓'][1]} の {r['行数']} 本 ／ 先を見るバー数 N＝{r['先を見るバー数']}")
+    for nm, cv in r["cov"].items():
+        print(f"  被覆 {nm}: {cv}")
+    for c, why in r["unmeasured"].items():
+        print(f"     ・省いた: {c}（{why}）")
+    rank2, added = merge_demand_into_ranking(rank, r)
+    t3 = _time.time()
+    for role, lab, n, c, a in added:
+        pos = [x[0] for x in rank2["順位"][role][lab][str(n) if str(n) in rank2["順位"][role][lab] else n]].index(c) + 1
+        print(f"  [{role} / {lab} / N={n}] {c}={a:.3f}（{pos} 位）")
+    body = dict(rank2)
+    out.write_text(_json.dumps(body, ensure_ascii=False, indent=1), encoding="utf-8")
+    t4 = _time.time()
+    print(f"  ★足した後＝測れた列 {rank2['測れた列']} ／ 載った列 {rank2['順位に載った列']}"
+          f"（足した行 {len(added)} 件・列 {len(r['auc'])} 本）")
+    print(f"  ★機械が読む形で書き戻した: {out}")
+    print(f"  経過時間＝読み込み {t1 - t0:.1f}秒 ／ 採点（ラベル作りを含む） {t2 - t1:.1f}秒 ／ 足す {t3 - t2:.1f}秒 ／ 書く {t4 - t3:.1f}秒")
+
+
+def selftest_rank_demand(exit_: bool = True) -> list:
+    """T-f＝需給を成績表に足す枝だけを、合成データで数秒 試す（設計書 §4 の D・口 --selftest-rank-demand）。
+
+    ①A の分離力が、同じ入力で rank_separation を直に呼んだ値と一致する ②B が需給の系統を持つ役割にだけ3列を足す
+    ③B の前後で指標の列が1つも変わらない ④先読みが違う成績表には止まる。
+    """
+    import json as _json
+    import tempfile as _tf
+    ng: list = []
+    rng = np.random.default_rng(7)
+    n_bars = 9000
+    idx = pd.date_range(SEARCH_START, periods=n_bars, freq="5min")
+    c = 100.0 + np.cumsum(rng.normal(0, 0.1, n_bars))
+    bars = pd.DataFrame({"open": c, "high": c + 0.05, "low": c - 0.05, "close": c, "volume": 1.0}, index=idx)
+    with _tf.TemporaryDirectory() as d:
+        p_oi = pathlib.Path(d) / "oi.csv"
+        p_tk = pathlib.Path(d) / "taker.csv"
+        # ★偽のファイルは write_text で書く（検査6 と同じ）＝read-only 診断の番人が to_csv を止めるため
+        _tl = 1.0 + rng.normal(0, 0.1, n_bars)
+        _lg = 1.0 + rng.normal(0, 0.1, n_bars)
+        _tb = rng.uniform(1, 3, n_bars)
+        _ts = [t.strftime("%Y-%m-%d %H:%M:%S") for t in idx]
+        p_oi.write_text("time,taker_ls,ls_global\n" + "\n".join(
+            f"{t},{a:.6f},{b:.6f}" for t, a, b in zip(_ts, _tl, _lg)) + "\n", encoding="utf-8")
+        p_tk.write_text("timestamp,taker_buy_base,volume\n" + "\n".join(
+            f"{t},{a:.6f},4.0" for t, a in zip(_ts, _tb)) + "\n", encoding="utf-8")
+        files = {"taker_ls": (str(p_oi), "time", "taker_ls"), "L-S比": (str(p_oi), "time", "ls_global"),
+                 "CVD": (str(p_tk), "timestamp", None)}
+        r = rank_demand_for_regime(bars, {}, files=files)
+        # ① 同じ入力で rank_separation を直に呼んだ値と一致する（1つのラベル×先読みで照らす）
+        n0 = r["先を見るバー数"][0]
+        lab0 = REGIME_LABELS[0]
+        dem, _cov = load_demand(bars.index, files=files)
+        df = dem.copy()
+        df.columns = [f"{x}__{DEMAND_RANK_TF}" for x in dem.columns]
+        mask, usable = _regime_labels(bars, n0)[lab0]
+        grid = df.iloc[::_independent_step(DEMAND_RANK_TF, n0)]
+        ok = usable.reindex(grid.index).fillna(False).to_numpy()
+        sub = grid.loc[ok, list(df.columns)]
+        direct = rank_separation(sub, mask.reindex(sub.index), list(df.columns), set(), top=len(df.columns))
+        for _i, row in direct.iterrows():
+            got = r["auc"].get(row["特徴"], {}).get(lab0, {}).get(n0)
+            if got is None or abs(float(got) - float(row["分離力"])) > 1e-9:
+                ng.append(f"T-f①: {row['特徴']} の分離力が直に呼んだ値と違う: A={got} ／ 直={row['分離力']}")
+        if len(r["auc"]) != 3:
+            ng.append(f"T-f①: 需給3列のうち採点できたのが {len(r['auc'])} 列（合成データでは3列とも測れるはず）")
+        # ② ③ ④ 小さな成績表に足す
+        roles = _role_lineage_table()
+        hz = r["先を見るバー数"]
+        rank = {"窓": list(r["窓"]), "行数": r["行数"], "先を見るバー数": hz, "時間足": ["5m", "1h"],
+                "測れた列": 2, "順位に載った列": 2, "省いた列": {},
+                "順位": {ro: {la: {str(n): [["RSI14__5m", 0.61], ["ADX14__1h", 0.42]] for n in hz}
+                              for la in REGIME_LABELS} for ro in roles}}
+        keep = _json.dumps(rank["順位"], sort_keys=True, ensure_ascii=False)
+        rank2, added = merge_demand_into_ranking(_json.loads(_json.dumps(rank)), r)
+        want_roles = {ro for ro, sp in roles.items() if "需給" in (sp.get("lineages") or [])}
+        for ro in roles:
+            n_dem = sum(1 for la in REGIME_LABELS for n in hz
+                        for x in rank2["順位"][ro][la][str(n)] if _demand_rank_name(str(x[0])))
+            if ro in want_roles and n_dem != 3 * len(REGIME_LABELS) * len(hz):
+                ng.append(f"T-f②: 役割 {ro} に需給が {n_dem} 行（期待 {3 * len(REGIME_LABELS) * len(hz)}）")
+            if ro not in want_roles and n_dem:
+                ng.append(f"T-f②: 需給の系統を持たない役割 {ro} に需給が {n_dem} 行 混ざった")
+        rest = {ro: {la: {n: [x for x in got if not _demand_rank_name(str(x[0]))] for n, got in bn.items()}
+                     for la, bn in bl.items()} for ro, bl in rank2["順位"].items()}
+        if _json.dumps(rest, sort_keys=True, ensure_ascii=False) != keep:
+            ng.append("T-f③: 足した後に指標の列が変わった")
+        if rank2.get("順位に載った列") != 2 + 3:
+            ng.append(f"T-f③: 載った列の数え直しが違う: {rank2.get('順位に載った列')}（期待 5）")
+        if not rank2.get("需給の被覆"):
+            ng.append("T-f③: 被覆率が成績表に残っていない")
+        bad = _json.loads(_json.dumps(rank))
+        bad["先を見るバー数"] = [int(hz[0]) + 1] + [int(x) for x in hz[1:]]
+        try:
+            merge_demand_into_ranking(bad, r)
+            ng.append("T-f④: 先読みが違う成績表に足しても止まらない（fail-closed が効いていない）")
+        except SystemExit:
+            pass
+    print(f"  T-f 需給を成績表に足す（差分の口）: ①直に呼んだ値と一致 ②需給の系統を持つ役割 {sorted(want_roles)} にだけ3列 "
+          f"③指標の列は不変 ④先読み違いは止まる ／ 採点できた列 {len(r['auc'])} 本 ／ ❌ {len(ng)} 件")
+    if exit_:
+        for x in ng:
+            print(f"  ❌ {x}")
+        raise SystemExit(1 if ng else 0)
+    return ng
+
+
 # ══ 自己検査 ════════════════════════════════════════════════════════════
 def _J(a: str, b: str) -> str:
     """検査文字列を分割して連結する（自己一致よけ）。
@@ -6858,6 +7105,7 @@ def selftest() -> None:
     print(f"  探索 {cfg.get('search_modes')} × side×型の分岐 / 切る探索＝逆行側プールのみ / 建値%TP探索なし")
     print(f"  設定ファイル {cfg['_source']}")
     print(f"  結果の保存先 {OBSERVE_DIR}（本走のみ・既存は observe/archive へ退避＝上書きしない）")
+    ng += selftest_rank_demand(exit_=False)          # T-f（需給を成績表に足す差分の口・設計書 demand-in-ranking-20260907）
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
@@ -6889,6 +7137,10 @@ def build_parser():
     ap.add_argument("--rank-tf", default=None,
                     help="--rank-regime と一緒に使う＝測る時間足を絞る（例 5m や 5m,1h）。"
                          "絞ったことは出力の冒頭に印字する")
+    ap.add_argument("--add-demand", action="store_true",
+                    help="--rank-regime と一緒に使う＝需給3列（taker_ls・L-S比・CVD）だけを指標と同じ物差しで採点し、"
+                         "いまの成績表に足す（差分の口・全走はしない・指標の列は触らない・設計書 demand-in-ranking-20260907）。"
+                         "--cols・--rank-tf とは同時に使えない")
     ap.add_argument("--plan", action="store_true",
                     help="検証計画だけを自動生成して印字（本走しない・まこさんへ提出する1枚）")
     ap.add_argument("--config", default=None, help="observe_config.json のパス（既定は同ディレクトリ）")
@@ -6902,6 +7154,8 @@ def build_parser():
 
 
 if __name__ == "__main__":
+    if "--selftest-rank-demand" in sys.argv:          # T-f だけを数秒で（設計書 demand-in-ranking-20260907・壊すプログラム b39・b40 が使う）
+        selftest_rank_demand()                        # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest" in sys.argv:
         selftest()
     else:
@@ -6917,6 +7171,14 @@ if __name__ == "__main__":
             else:
                 with _Tee(_out_path("materials", pathlib.Path(path).stem)):
                     check_materials(path, a.config)
+        elif a.rank_regime and a.add_demand:           # ★差分の口（設計書 demand-in-ranking-20260907）＝既存の分岐の手前に置く
+            path = a.trades_csv or a.bars_csv
+            if not path:
+                ap.error("--rank-regime --add-demand には 5分足CSV のパスが必要（売買記録は使わない）")
+            if a.cols or a.rank_tf:
+                ap.error("--add-demand は --cols・--rank-tf と同時に使えない（需給は5分足1本・絞りの対象ではない）")
+            with _Tee(_out_path("rank_regime_add_demand", pathlib.Path(path).stem)):
+                add_demand_to_ranking(path, a.config)
         elif a.rank_regime:
             path = a.trades_csv or a.bars_csv          # 位置引数の1つ目に5分足CSVを渡してよい
             if not path:

@@ -1,0 +1,78 @@
+7,8d6
+< NEW_FILE: .claude/breaks/b38_rank_demand_reader_gone.sh, .claude/breaks/b39_rank_demand_merge_gone.sh, .claude/breaks/b40_rank_demand_touch_indicator.sh
+< 
+13c11,13
+< **★足すだけ**＝`observe_diag.py` と `engine_tuner_gen.py` の既存の行は1行も消さず、書き換えもしません（書き換えは「消して足す」なので、機械の照らしで消した行に数えられます）。足すのは、新しい関数と、既存の関数の中に**前置きで挿し込む新しい枝**だけです。具体的には ①既存の関数の引数は増やさない（新しい入口は新しい関数にする）②既存の `if … continue` の行は触らず、その手前に需給用の枝を入れて `continue` で抜ける ③CLI の分岐は、既存の分岐の手前に新しい `if` を置く、の3つの形で書きます。
+---
+> **★2回目の承認の版（2026-09-07 14:40）**＝壊すプログラム3本（b38・b39・b40）は工程表の5で作って実在するので、`NEW_FILE:` の行を外した（新規と書いたまま実在すると承認が止まるため）。`impl_functions` は §10 に、実物の `git diff -U0` の塊の見出しから列挙して埋めた。工程表の1〜7（承認の手前まで）の実測は worklog 20260904 §49-22〜§49-24。
+> 
+> **★足すだけ**＝`observe_diag.py` と `engine_tuner_gen.py` の既存の行は1行も消さず、書き換えもしません（書き換えは「消して足す」なので、機械の照らしで消した行に数えられます）。足すのは、新しい関数と、既存の関数の中に**前置きで挿し込む新しい枝**だけです。具体的には ①既存の関数の引数は増やさない（新しい入口は新しい関数にする）②既存の `if … continue` の行は触らず、その手前に需給用の枝を入れて `continue` で抜ける ③CLI の分岐は、既存の分岐の手前に新しい `if` を置く、の3つの形で書きます。**実測（2026-09-07 14:35）**＝`git diff -U0` に「-」で始まる行は0本。
+64,67c64,67
+< | **B** | `observe_diag.py` | **`merge_demand_into_ranking(rank, auc_demand, unmeasured)` を新しく作る**＝いまの成績表（辞書）に、A の結果を足す。①窓・先読み・時間足の欄が成績表と一致しなければ止める（fail-closed） ②役割は `_role_lineage_table()` で系統「需給」を持つ役割だけ ③足した後に |分離力−0.5| の降順に並べ直す ④`測れた列`・`順位に載った列` を数え直す ⑤測れなかった列は `省いた列` に理由つきで記録する ⑥**指標の列は1本も書き換えない** |
+< | **C** | `observe_diag.py` | **新しい入口 `add_demand_to_ranking(bars_csv, config_path)` を作り、CLI に `--add-demand` を足す**＝`--rank-regime --add-demand <5分足CSV>` で、成績表を読み → A → B → 同じファイルに書き戻す。前後の本数（測れた列・載った列）と、足した列の分離力と、**需給3列の被覆率（A の cov の3行＝この分離力が何%の標本で出たか）**と、「重複のふるいは未適用」の1行と、段ごとの経過時間を印字する。被覆率は成績表の json にも `需給の被覆` の欄として書き残す（生成器はこの欄を読まない＝順位の中身は変わらない）。`--cols`・`--rank-tf` と同時に指定されたら止める。**★既存の `rank_regime` の引数は増やさない**＝`main` の既存の分岐の手前に `if args.add_demand:` の枝を置いて新しい入口へ回す（足すだけ） |
+< | **D** | `observe_diag.py` | **自己検査に T-f を足し、その枝だけを数秒で走らせる口 `--selftest-rank-demand` を作る**＝合成の5分足と、偽の需給ファイル（検査6 と同じ作り＝`load_demand` の `files=` に一時ファイルを渡す）で ①A の分離力が、同じ入力で `rank_separation` を直に呼んだ値と一致する ②B が sufficiency に3列を足し、ほかの役割には足さない ③B の前後で指標の列の分離力が1つも変わらない ④窓が違う成績表には止まる、を確かめる。**T-f は既存の `selftest` の中に足すのではなく、新しい関数 `selftest_rank_demand()` にし、`selftest()` の末尾から呼ぶ行を1行 足す**（足すだけ） |
+< | **E** | `engine_tuner_gen.py` | **`ranked_materials` の印の判定に需給の枝を足す**＝既存の `if not ex.indicator_enabled(nm): continue` の**手前**に、「列名の種類が `iref.DEMAND_REF` に在れば `ex.demand_enabled` で見て、通れば rows に足して `continue`、通らなければ `continue`」の枝を置く（既存の行は触らない）。**`_family_tf_from_col` に需給の枝を足す**＝`name, tf = col.rsplit("__", 1)` の直後に「名前が `DEMAND_REF` に在れば `(名前, 時間足)` を返す」の2行を置く（参照表を通さない・既存の行は触らない）。**`ranked_groups` のコードは触らないが、挙動は変わる**＝いまは `_family_tf_from_col` が需給で止まるので需給の列を飛ばしている。直した後は需給の組（種類＝需給の名前・時間足＝5m）を拾う。拾うのは B が需給を足した役割（sufficiency）だけで、location と env の群には混ざらない（成績表の側で需給がその役割に無いため）。`_ranked_material_at` は需給を引かない（`fam not in ranges` で今までどおり飛ぶ＝説明を1行 足すだけ） |
+---
+> | **B** | `observe_diag.py` | **`merge_demand_into_ranking(rank, r)` を新しく作る**（`r`＝A の戻り）＝いまの成績表（辞書）に、A の結果を足す。①窓・先読み・時間足の欄が成績表と一致しなければ止める（fail-closed） ②役割は `_role_lineage_table()` で系統「需給」を持つ役割だけ ③足した後に |分離力−0.5| の降順に並べ直す ④`測れた列`・`順位に載った列` を数え直す ⑤測れなかった列は `省いた列` に理由つきで記録する ⑥**指標の列は1本も書き換えない**（足す前後で需給以外の中身を照らし、変わっていれば止める） |
+> | **C** | `observe_diag.py` | **新しい入口 `add_demand_to_ranking(bars_csv, config_path)` を作り、CLI に `--add-demand` を足す**＝`--rank-regime --add-demand <5分足CSV>` で、成績表を読み → A → B → 同じファイルに書き戻す。前後の本数（測れた列・載った列）と、足した列の分離力と、**需給3列の被覆率（A の cov の3行＝この分離力が何%の標本で出たか）**と、「重複のふるいは未適用」の1行と、段ごとの経過時間を印字する。被覆率は成績表の json にも `需給の被覆` の欄として書き残す（生成器はこの欄を読まない＝順位の中身は変わらない）。`--cols`・`--rank-tf` と同時に指定されたら止める。走らせる前に控え `material_ranking.before_add_demand.json` を同じ場所に書く。**★既存の `rank_regime` の引数は増やさない**＝`main` の既存の分岐の手前に `elif a.rank_regime and a.add_demand:` の枝を置いて新しい入口へ回す（足すだけ） |
+> | **D** | `observe_diag.py` | **自己検査に T-f を足し、その枝だけを数秒で走らせる口 `--selftest-rank-demand` を作る**＝合成の5分足と、偽の需給ファイル（検査6 と同じ作り＝`load_demand` の `files=` に一時ファイルを渡す）で ①A の分離力が、同じ入力で `rank_separation` を直に呼んだ値と一致する ②B が sufficiency に3列を足し、ほかの役割には足さない ③B の前後で指標の列の分離力が1つも変わらない ④先読みが違う成績表には止まる、を確かめる。**T-f は既存の `selftest` の中に足すのではなく、新しい関数 `selftest_rank_demand()` にし、`selftest()` の末尾から呼ぶ行を1行 足す**（足すだけ） |
+> | **E** | `engine_tuner_gen.py` | **`ranked_materials` の印の判定に需給の枝を足す**＝既存の `if not ex.indicator_enabled(nm): continue` の**手前**に、「列名の種類が `iref.DEMAND_REF` に在れば `ex.demand_enabled` で見て、通れば rows に足して `continue`、通らなければ `continue`」の枝を置く（既存の行は触らない）。**`_family_tf_from_col` に需給の枝を足す**＝`name, tf = col.rsplit("__", 1)` の直後に「名前が `DEMAND_REF` に在れば `(名前, 時間足)` を返す」の2行を置く（参照表を通さない・既存の行は触らない）。**`ranked_groups` のコードは触らないが、挙動は変わる**＝いまは `_family_tf_from_col` が需給で止まるので需給の列を飛ばしている。直した後は需給の組（種類＝需給の名前・時間足＝5m）を拾う。拾うのは B が需給を足した役割（sufficiency）だけで、location と env の群には混ざらない（成績表の側で需給がその役割に無いため）。`_ranked_material_at` は需給を引かない（`fam not in ranges` で今までどおり飛ぶ＝説明を2行 足すだけ） |
+70,71c70,71
+< | **H** | `.claude/breaks/b38_rank_demand_reader_gone.sh`・`b39_rank_demand_merge_gone.sh`・`b40_rank_demand_touch_indicator.sh` | **壊すプログラム3本を新しく作る**（手本＝b36・lib.sh）。b38＝`ranked_materials` の需給の枝を消し `engine_tuner_gen.py --selftest-rank-demand` を測る（条件3）。b39＝B の「足す」処理を消し `observe_diag.py --selftest-rank-demand` を測る（条件1・T-f の②が落ちる）。b40＝B の中に「足した後に指標の列の分離力を1つ書き換える」行を注入し `observe_diag.py --selftest-rank-demand` を測る（条件2・T-f の③が落ちる）。3本とも数秒（承認のときの打ち切り 120秒 の中） |
+< | **I** | `.claude/audits/m2d1_ranking_scan.py` | **`--assert-demand` の口を足す**＝実物の成績表を読み、需給3列（`iref.DEMAND_REF` の鍵）が順位に載っていなければ rc=1。承認のプログラムは完成の条件の「その数字を出したコマンド」を実際に走らせて rc=0 を求める（`approve_impl.sh` の386行・432行）ので、条件1のコマンド欄をこの1本にする。★この口は 2026-09-07 に足した（設計書を書く前に足したので、承認の相手として TARGET に入れる）。**あわせて⑥（生成器が実際に使う順位）に sufficiency（ラベル全部）の上位15組と、需給3列がその中で何位かを出す行を足す**＝工程表 4 で まこさんが目で見る材料。★この道具は読むだけ（成績表を書き換えない） |
+---
+> | **H** | `.claude/breaks/b38_rank_demand_reader_gone.sh`・`b39_rank_demand_merge_gone.sh`・`b40_rank_demand_touch_indicator.sh` | **壊すプログラム3本を新しく作る**（手本＝b36・lib.sh）。b38＝`ranked_materials` の需給の枝を消し `engine_tuner_gen.py --selftest-rank-demand` を測る（条件3）。b39＝B の「足す」処理を消し `observe_diag.py --selftest-rank-demand` を測る（条件1・T-f の②が落ちる）。b40＝B の中に「足した後に指標の列の分離力を1つ書き換える」行を注入し `observe_diag.py --selftest-rank-demand` を測る（条件2・B の fail-closed か T-f の③が落ちる）。3本とも数秒（承認のときの打ち切り 120秒 の中） |
+> | **I** | `.claude/audits/m2d1_ranking_scan.py` | **`--assert-demand` の口を足す**＝実物の成績表を読み、需給3列（`iref.DEMAND_REF` の鍵）が順位に載っていなければ rc=1。承認のプログラムは完成の条件の「その数字を出したコマンド」を実際に走らせて rc=0 を求める（`approve_impl.sh` の386行・432行）ので、条件1のコマンド欄をこの1本にする。★この口は 2026-09-07 に足した（設計書を書く前に足したので、承認の相手として TARGET に入れる）。**あわせて⑥b（成績表の json そのままで、需給3列の役割×ラベル×先読みごとの位置と分離力を出す）と `--diff-before`（控えと今の成績表を比べ、需給以外の列が変わっていないかを照らす）を足す**＝工程表 3・4 の目視と突き合わせの材料。★この道具は読むだけ（成績表を書き換えない） |
+82c82
+< | 6 | `engine_tuner_gen.py --selftest`（約6分半・❌ は既知3件のまま・T23② の location の1位が変わっていないことを実測する）と `engine_tuner_exec.py --identity`（S2） | M2-D-5 |
+---
+> | 6 | `engine_tuner_gen.py --selftest`（約6分半・❌ が既知の件のまま増えない・T23② の location の1位が変わっていないことを実測する）と `engine_tuner_exec.py --identity`（S2） | M2-D-5 |
+143c143
+< **★触る関数の一覧（`impl_functions`）は、実装の後に確定させる。**中身は「触る関数だけ」を手で列挙します。いまは空です。書き方の決まり（2026-09-05・worklog 20260904 §22 の逐語「前の設計書までは『実物の全関数の写し』を貼っていたが、この回は『触る関数4件』を手で列挙した。理由＝照合B（impl_functions ⊆ 触った関数）の定義＝全関数を貼ると、差分が commit されるまで触っていない関数が全部 落ちる」・next_step §6 の132番）に従います。`verify_design_contract.py --write` は公開する関数の一覧（SPEC）を `.actual.md` に書き出す道具で、`impl_functions` の出どころではありません。
+---
+> **★触る関数の一覧（`impl_functions`）は、実装の後に確定させる。**中身は「触る関数だけ」を手で列挙します。**2回目の版で埋めた**＝実物の `git diff -U0` の塊の見出し（`@@ … @@ def 関数名`）から列挙した（2026-09-07 14:35・消した行「-」は0本＝足すだけ・見出しの全文は worklog 20260904 §49-24）。`_ranked_material_at` は説明の2行だけを足したので、列挙に入れていない（照合B は「impl_functions ⊆ 触った関数」なので、入れなくても落ちない）。書き方の決まり（2026-09-05・worklog 20260904 §22 の逐語「前の設計書までは『実物の全関数の写し』を貼っていたが、この回は『触る関数4件』を手で列挙した。理由＝照合B（impl_functions ⊆ 触った関数）の定義＝全関数を貼ると、差分が commit されるまで触っていない関数が全部 落ちる」・next_step §6 の132番）に従います。`verify_design_contract.py --write` は公開する関数の一覧（SPEC）を `.actual.md` に書き出す道具で、`impl_functions` の出どころではありません。
+145c145
+< **列挙する予定（実装のときに実物で確定させる）**＝2ファイルです。①`scripts/priority_rebuild/observe_diag.py`＝A〜D で新しく作る4関数（`rank_demand_for_regime`・`merge_demand_into_ranking`・`add_demand_to_ranking`・`selftest_rank_demand`）と、行を足す既存の関数（`main` の引数と分岐・`selftest` の末尾の呼び出し）。②`scripts/priority_rebuild/engine_tuner_gen.py`＝E で行を足す `ranked_materials`・`_family_tf_from_col`、F で新しく作る `selftest_rank_demand` と、行を足す `selftest`・`main`。**★照合A(双方向) が見るディレクトリは `scripts/priority_rebuild`・`.claude/hooks`・`.claude/tools` の3つ**（`verify_design_contract.py` の1048行で実物を確かめた）＝`.claude/audits/m2d1_ranking_scan.py` は対象の外なので `impl_functions` に入れません。`.claude/hooks/require_design_contract_before_run.sh` は .sh なので照合A の対象（.py）の外です。
+---
+> **列挙したもの**＝2ファイルです。①`scripts/priority_rebuild/observe_diag.py`＝A〜D で新しく作った5関数（`_demand_rank_name`・`rank_demand_for_regime`・`merge_demand_into_ranking`・`add_demand_to_ranking`・`selftest_rank_demand`）と、行を足した既存の関数（`selftest` の末尾の呼び出し・`build_parser` の引数）。`__main__` の分岐は関数ではないので列挙の外。②`scripts/priority_rebuild/engine_tuner_gen.py`＝E で行を足した `ranked_materials`・`_family_tf_from_col`、F で新しく作った `selftest_rank_demand` と、行を足した `selftest`・`main`。**★照合A(双方向) が見るディレクトリは `scripts/priority_rebuild`・`.claude/hooks`・`.claude/tools` の3つ**（`verify_design_contract.py` の1048行で実物を確かめた）＝`.claude/audits/m2d1_ranking_scan.py` は対象の外なので `impl_functions` に入れません。`.claude/hooks/require_design_contract_before_run.sh` は .sh なので照合A の対象（.py）の外です。
+147c147
+< **★コマンドに数秒で走る口を選んだ理由**＝`engine_tuner_gen.py --selftest` は約6分半かかり、承認のときの打ち切り（120秒）を超えます。しかも既知の ❌3件（T24②・T26・T30・M2-E で直す）で終了コードが既に 0 ではないので、「壊すと落ちる」の測りに使えません。だから、この工事の枝だけを走らせる口を2本（`observe_diag.py` と `engine_tuner_gen.py` に1つずつ）作り、そこを測ります（`--selftest-extra-gate`・`--selftest-marks` と同じ形）。
+---
+> **★コマンドに数秒で走る口を選んだ理由**＝`engine_tuner_gen.py --selftest` は約6分半かかり、承認のときの打ち切り（120秒）を超えます。しかも既知の ❌（T24②・T26・T30＝M2-E で直す。2026-09-07 の実測では T25 も ❌＝別セッションの既存の行が原因・next_step §6 の149番）で終了コードが既に 0 ではないので、「壊すと落ちる」の測りに使えません。だから、この工事の枝だけを走らせる口を2本（`observe_diag.py` と `engine_tuner_gen.py` に1つずつ）作り、そこを測ります（`--selftest-extra-gate`・`--selftest-marks` と同じ形）。
+149c149
+< **★1回目の承認では3行とも「未着手」のまま**＝条件1のコマンドは、差分の走行の前なので rc=1（実測済み）。条件2と3のコマンドは、口がまだ無いので走りません。壊すプログラムもまだ在りません。2回目の承認で、機械が3本の壊すプログラムと3行のコマンドを走らせて測ります。
+---
+> **★1回目の承認では3行とも「未着手」のまま**＝条件1のコマンドは、差分の走行の前なので rc=1（実測済み）。条件2と3のコマンドは、口がまだ無いので走りません。壊すプログラムもまだ在りません。2回目の承認で、機械が3本の壊すプログラムと3行のコマンドを走らせて測ります。**2回目の版（2026-09-07 14:40）**＝条件1のコマンドは rc=0（差分の走行の後に実測）、条件2・3のコマンドは rc=0（実測）、壊すプログラム3本は実在＝機械が測れる状態。
+155,156c155,156
+< | 1 | 成績表に需給3列（taker_ls__5m・L-S比__5m・CVD__5m）が順位に載っている（いま 0本＝いまは rc=1） | `python3 .claude/audits/m2d1_ranking_scan.py --assert-demand` | 実経路 | B の「足す」処理を消して差分の走行をやり直すと、成績表に需給が載らず rc=1 に戻る（承認のときの測りは b39＝T-f の②） | `b39_rank_demand_merge_gone.sh` | 終了コードが0でない | **未着手** |
+< | 2 | AUDIT-1＝差分で足した需給の分離力が、同じ入力で `rank_separation` を直に呼んだ値と一致し、足す前後で指標の列の分離力が1つも変わらない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-rank-demand`（T-f の①③） | 実経路 | B の中に「足した後に指標の列の分離力を1つ書き換える」行を注入すると、T-f の③が落ちる | `b40_rank_demand_touch_indicator.sh` | 対象 | **未着手** |
+---
+> | 1 | 成績表に需給3列（taker_ls__5m・L-S比__5m・CVD__5m）が順位に載っている（1回目の承認の時点では 0本＝rc=1） | `python3 .claude/audits/m2d1_ranking_scan.py --assert-demand` | 実経路 | B の「足す」処理を消して差分の走行をやり直すと、成績表に需給が載らず rc=1 に戻る（承認のときの測りは b39＝T-f の②） | `b39_rank_demand_merge_gone.sh` | 終了コードが0でない | **未着手** |
+> | 2 | AUDIT-1＝差分で足した需給の分離力が、同じ入力で `rank_separation` を直に呼んだ値と一致し、足す前後で指標の列の分離力が1つも変わらない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-rank-demand`（T-f の①③） | 実経路 | B の中に「足した後に指標の列の分離力を1つ書き換える」行を注入すると、B の fail-closed か T-f の③が落ちる | `b40_rank_demand_touch_indicator.sh` | 対象 | **未着手** |
+161c161
+< **自己検査（完成の条件の外で、実装の後に必ず走らせて記録するもの）**＝①`engine_tuner_gen.py --selftest`（約6分半・❌ が既知の3件のまま増えない・T23② の location の1位が変わっていないことを実測する）②`engine_tuner_exec.py --identity`（S2・直す前と後で結果が同じか確かめる走行・md5 不変）③`gen_signal_families.py --verify`（G2）と `leak_causality_diag.py`（H2）④成績表の前後の突き合わせ（載った列 5,981本 → 5,984本・指標の列の分離力は不変）。
+---
+> **自己検査（完成の条件の外で、実装の後に必ず走らせて記録するもの）**＝①`engine_tuner_gen.py --selftest`（約6分半・❌ が既知の件のまま増えない・T23② の location の1位が変わっていないことを実測する）②`engine_tuner_exec.py --identity`（S2・直す前と後で結果が同じか確かめる走行・md5 不変）③`gen_signal_families.py --verify`（G2）と `leak_causality_diag.py`（H2）④成績表の前後の突き合わせ（載った列 5,981本 → 5,984本・指標の列の分離力は不変＝`m2d1_ranking_scan.py --diff-before`）。**実測の全文＝worklog 20260904 §49-22〜§49-24。**
+168,169c168,171
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "実装の後に、触る関数だけを手で列挙する（照合B＝impl_functions ⊆ 触った関数・worklog 20260904 §22 の決まり）。対象は observe_diag.py と engine_tuner_gen.py の2ファイル（§9 に予定の一覧）。2回目の承認の版で埋める",
+---
+>   "impl_functions": {
+>     "scripts/priority_rebuild/observe_diag.py": ["_demand_rank_name", "rank_demand_for_regime", "merge_demand_into_ranking", "add_demand_to_ranking", "selftest_rank_demand", "selftest", "build_parser"],
+>     "scripts/priority_rebuild/engine_tuner_gen.py": ["ranked_materials", "_family_tf_from_col", "selftest_rank_demand", "selftest", "main"]
+>   },
+171c173,179
+<   "must_use": {},
+---
+>   "must_use": {
+>     "rank_demand_for_regime": ["load_demand", "_regime_labels", "_independent_step", "rank_separation", "_assert_search_window_only"],
+>     "merge_demand_into_ranking": ["_role_lineage_table"],
+>     "add_demand_to_ranking": ["rank_demand_for_regime", "merge_demand_into_ranking"],
+>     "ranked_materials": ["DEMAND_REF", "demand_enabled"],
+>     "_family_tf_from_col": ["DEMAND_REF"]
+>   },
+175c183,184
+<     "impl_functions": "実装の後に、触る関数だけを CC が手で列挙する（実物の diff で確かめてから書く・全関数の写しにしない・worklog 20260904 §22）",
+---
+>     "impl_functions": "実物の git diff -U0（2026-09-07 14:35・消した行0本）の塊の見出しから、触った関数だけを CC が手で列挙した（全関数の写しにしない・worklog 20260904 §22 の決まり・§49-24 に diff の見出しを貼った）",
+>     "must_use": "この設計書 §4 の A・B・C・E に書いた「その関数が呼ぶ既存の関数・読む名前」を、関数ごとに写した（★手書き＝機械で照らせないに数える。正本の一覧が無いので must_use_from は使えない）",

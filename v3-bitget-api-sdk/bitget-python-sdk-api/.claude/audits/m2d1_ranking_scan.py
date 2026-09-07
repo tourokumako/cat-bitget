@@ -8,6 +8,7 @@
 
 使い方:
   python3 .claude/audits/m2d1_ranking_scan.py
+  python3 .claude/audits/m2d1_ranking_scan.py --assert-demand   # 需給3列が成績表に載っていなければ rc=1（設計書 demand-in-ranking-20260907 の完成の条件1）
 
 正直な限界:
   ・⑤の「候補」の一覧（CANDIDATES）は、worklog 20260901 §19 の逐語から CC が名前を写したもの＝人が書いた。
@@ -71,7 +72,57 @@ def _name(n: str) -> str:
     return n.rsplit("__", 1)[0] if "__" in n else n
 
 
+def assert_demand() -> int:
+    """需給3列（DEMAND_REF の鍵）が成績表の順位に載っているか。載っていなければ rc=1（承認のプログラムが走らせる口）。
+
+    ★測るのは実物の成績表（material_ranking.json）＝合成データではない。
+    ★載ったかどうかだけを見る（分離力の良し悪しは見ない＝線を引かない）。
+    """
+    rk = json.loads(RANK.read_text(encoding="utf-8"))
+    listed: set[str] = set()
+    for labs in rk["順位"].values():
+        for hors in labs.values():
+            for rows in hors.values():
+                for col, _acc in rows:
+                    listed.add(_name(col))
+    want = sorted(iref.DEMAND_REF)
+    hit = [n for n in want if n in listed]
+    miss = [n for n in want if n not in listed]
+    print(f"[--assert-demand] 需給 {len(want)} 列のうち成績表の順位に載っているのは {len(hit)} 列: 載っている={hit} 載っていない={miss}")
+    return 0 if not miss else 1
+
+
+def diff_before() -> int:
+    """控え（material_ranking.before_add_demand.json）と いまの成績表を比べ、需給以外の列が1本も変わっていないかを照らす。
+
+    ★差分の走行（--rank-regime --add-demand）の前後の突き合わせ（設計書 demand-in-ranking-20260907 の自己検査④）。
+    変わっていれば rc=1。
+    """
+    bak = RANK.with_name("material_ranking.before_add_demand.json")
+    if not bak.exists():
+        print(f"[--diff-before] 控えが無い: {bak}")
+        return 1
+    a = json.loads(bak.read_text(encoding="utf-8"))
+    b = json.loads(RANK.read_text(encoding="utf-8"))
+
+    def _wo(o):
+        return {ro: {la: {hn: [x for x in rows if _name(str(x[0])) not in iref.DEMAND_REF]
+                          for hn, rows in hors.items()} for la, hors in labs.items()} for ro, labs in o["順位"].items()}
+
+    same = json.dumps(_wo(a), sort_keys=True, ensure_ascii=False) == json.dumps(_wo(b), sort_keys=True, ensure_ascii=False)
+    keys = ["窓", "行数", "先を見るバー数", "時間足", "どの役割にも入らなかった列"]
+    same_meta = all(a.get(k) == b.get(k) for k in keys)
+    print(f"[--diff-before] 需給以外の順位の中身: {'一致' if same else '違う'} ／ 窓・行数・先読み・時間足・役割外の列: {'一致' if same_meta else '違う'}")
+    print(f"[--diff-before] 測れた列 {a.get('測れた列')} → {b.get('測れた列')} ／ 載った列 {a.get('順位に載った列')} → {b.get('順位に載った列')}"
+          f" ／ 省いた列 {len(a.get('省いた列') or {})} → {len(b.get('省いた列') or {})}")
+    return 0 if (same and same_meta) else 1
+
+
 def main() -> int:
+    if "--assert-demand" in sys.argv:
+        return assert_demand()
+    if "--diff-before" in sys.argv:
+        return diff_before()
     rk = json.loads(RANK.read_text(encoding="utf-8"))
     sf = json.loads(SF.read_text(encoding="utf-8"))
     sw = json.loads(SW.read_text(encoding="utf-8"))
@@ -172,6 +223,22 @@ def main() -> int:
         for i, (fam, tf, lab, hor, med, n, col) in enumerate(rows[:15], 1):
             print(f"| {i} | {fam} | {tf} | {lab} | {hor} | {med:.3f} | {n} | {col} |")
         print(f"（{role} の組の総数＝{len(rows)}）")
+
+    # ⑥b 需給3列が、成績表の生の順位（json そのまま・印を当てない）で何位か（設計書 demand-in-ranking-20260907・工程表 3 の目視の材料）
+    #   ★生成器の ranked_groups を通さない＝読む側（E）を直す前でも見える。並びは |分離力−0.5| の降順（json に書かれた順）。
+    print("═══ ⑥b 需給3列の、成績表の生の順位（役割×ラベル×先読み ごとの位置と分離力・印は当てない） ═══")
+    found = 0
+    for role, labs in rk["順位"].items():
+        for lab, hors in labs.items():
+            for hor, rows2 in hors.items():
+                for i, (col, acc) in enumerate(rows2, 1):
+                    if _name(col) in iref.DEMAND_REF:
+                        found += 1
+                        print(f"| {role} | {lab} | {hor} | {col} | {float(acc):.3f} | {i} 位 ／ {len(rows2)} 本 |")
+    print(f"（需給の行＝{found} 件。0 件なら、まだ成績表に需給は載っていない）")
+    if rk.get("需給の被覆"):
+        for nm, cv in rk["需給の被覆"].items():
+            print(f"  被覆 {nm}: {cv}")
     return 0
 
 

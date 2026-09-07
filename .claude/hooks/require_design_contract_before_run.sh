@@ -80,7 +80,15 @@ CHECK = set(['--selftest', '--self-test', '--verify', '--identity', '--help',
              #   書かれているかだけを試す口（2件・0.2秒）。文書も売買記録も書かない。
              #   足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、
              #   '--selftest-marks' は '--selftest' に一致しない。
-             '--selftest-marks'])
+             '--selftest-marks',
+             # ★2026-09-07（設計書 iter="demand-in-ranking-20260907"・まこさん承認）＝需給3列を成績表の順位に足す工事の
+             #   「確認のための走行」2つ。'--selftest-rank-demand'＝observe_diag.py と engine_tuner_gen.py の
+             #   その工事の枝だけを数秒で試す口（合成データ・売買記録を出さない・累積の試行数に足さない）。
+             #   '--add-demand'＝'--rank-regime' と一緒に使い、需給3列だけを採点して いまの成績表に足す差分の口
+             #   （成績表 material_ranking.json を書く＝印（H2・G2）の対象外・売買記録を出さない）。
+             #   足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、
+             #   '--selftest-rank-demand' は '--selftest' に一致しない。壊すプログラム b38〜b40 が使う。
+             '--selftest-rank-demand', '--add-demand'])
 Q = chr(39) + chr(34)
 try:
     d = json.load(sys.stdin)

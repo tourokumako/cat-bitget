@@ -34,6 +34,9 @@
  "b35_gate_branch_gone.sh": "8c537c98c417360c689c8b1ab78beb1f2617a84cacf868e27741c5015e9f5fcf",
  "b36_demand_attach_gone.sh": "2d3a08a492f9362566d2ff9b34bf81f6e77bbf7f75d4ecc55041c8bf4992eab3",
  "b37_marks_from_json_gone.sh": "8d8f525673bb0dd9807928aaa7c19defc98212bfd24b80cf6e12d8cc9ba0ed55",
+ "b38_rank_demand_reader_gone.sh": "9c86221c672cdfaad97b6235403fed9735e01d39b1ee5e495c7cac9284a6012e",
+ "b39_rank_demand_merge_gone.sh": "5d6fc8b87f9b12225b792aa22cac3fee813812afeddc02a1fd694bc9513e3592",
+ "b40_rank_demand_touch_indicator.sh": "458cba7c70f366bca9437daa4d8a2bd98b69806d06940167631ef635a95f8604",
  "lib.sh": "5a0a37aae9c45eee32954ed1d29d1fee6f17c1f3cd95f4fa17d1be6be20ceead",
  "_なにこれ": "承認の瞬間に凍結した、壊すプログラムのハッシュ値。run_breaks.py が走る前に照らす（監査 cp16 の E-12）"
 }
