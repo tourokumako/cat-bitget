@@ -42,11 +42,11 @@
   {
    "no": "5",
    "script": "b57_h2_fingerprint_stale.sh",
-   "code": 97,
-   "note": "❌ 壊す前から印が合っていない＝この壊すプログラムは何も測れない（先に印を取り直す）",
+   "code": 1,
+   "note": "",
    "expect": 1,
    "means": "その検査が落ちた（守りが働いた）",
-   "match": false
+   "match": true
   }
  ]
 }
