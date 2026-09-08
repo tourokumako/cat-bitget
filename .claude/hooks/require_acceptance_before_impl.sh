@@ -485,7 +485,16 @@ WRITE_RE = (r'(?:^|[\s;|&(])(?:tee|cp|mv|patch|dd|install|truncate|ed|ex|tar)\s'
 BASE_NAMES = ('impl_functions_frozen.json', 'spec_lists.json', 'breaks_frozen.json',
               'acceptance.approved', 'verify_tool.approved', 'design_approved.json')
 # ★G-1＝名前が iter ごとに変わるので、末尾で見る
-BASE_SUFFIX = ('.breaks.json', '.frozen.json')
+# ★2026-09-08（監査 cp28 の C-1・Critical）＝'.dirty.json' を足した。
+#   何が起きていたか＝2026-09-07 に、承認のときに「汚れていた .py」を凍結する記録
+#     （<設計書の名前>.dirty.json）を新しく作ったのに、この一覧に足さなかった。
+#     兄弟2本（.breaks.json・.frozen.json）は止まるのに、この1本だけ Write でも
+#     Bash でも書けた。書けば、照合A(双方向) が読む「数えない一覧」に任意の .py を
+#     足せる＝設計書に書いていない .py を触っても照合が落ちない。
+#   ★同じ型は 2026-09-04（監査 cp17 の G-1）で一度 塞いである。3本目を作りながら
+#     その型を当てなかった＝「新しく記録を作ったら、この一覧にも足す」を忘れた。
+#   ★次に記録を1本 足す人へ＝この一覧と、下の case の両方に足す（2か所ある）。
+BASE_SUFFIX = ('.breaks.json', '.frozen.json', '.dirty.json')
 GATE_RE = re.compile(r'\.claude/hooks/[^\s;|&]*\.sh|\.claude/tools/[^\s;|&]*\.py'
                      r'|\.claude/breaks/[^\s;|&]*\.sh')
 raw_cmd = cmd
@@ -565,6 +574,7 @@ if 'scripts/priority_rebuild' in whole and '.py' in whole:
       echo "   対象＝impl_functions_frozen.json ／ spec_lists.json ／ breaks_frozen.json ／" >&2
       echo "         acceptance.approved ／ verify_tool.approved ／ design_approved.json ／" >&2
       echo "         <iter>.breaks.json ／ <iter>.frozen.json（2026-09-04・G-1）／" >&2
+      echo "         <iter>.dirty.json（2026-09-08・監査 cp28 の C-1）／" >&2
       echo "         .claude/hooks/*.sh ／ .claude/tools/*.py ／ .claude/breaks/*.sh（G-2）" >&2
       echo "   ＝直す前は、書き込みの語を並べて当てていたので、監査が11通り試すと10通りが" >&2
       echo "     通りました（rsync・ln -sf・touch・git checkout・git restore・別の .py ほか）。" >&2
@@ -652,7 +662,7 @@ esac
 case "$FILE" in
   */.claude/ratchet/impl_functions_frozen.json|*/.claude/ratchet/spec_lists.json|\
 */.claude/ratchet/breaks_frozen.json|\
-*.breaks.json|*.frozen.json|\
+*.breaks.json|*.frozen.json|*.dirty.json|\
 */.claude/state/acceptance.approved|*/.claude/state/verify_tool.approved|\
 */.claude/state/design_approved.json)
     echo "🔒 [土台ゲート] このファイルは、承認の道具だけが書きます（2026-09-03・監査 cp15 の C-2）。" >&2
