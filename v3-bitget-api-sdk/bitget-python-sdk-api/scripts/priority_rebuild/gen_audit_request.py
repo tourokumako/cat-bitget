@@ -13,8 +13,12 @@
 
 何をするか
 --------------------------------------------------------------------------
-物差しの13要素（engine_tuner_milestones2.md §3.4 の表）のうち **1件だけ**を指定すると、
+凍結ファイル（CC が書ける4節だけを置いたもの。既定＝`_frozen_question_regime.md`）を渡すと、
 `_template.md`（編集禁止・構造を維持する）の **節の並びどおり**に依頼書を組み立てる。
+
+★2026-09-08（監査 cp28 の M-1）＝ここに「物差しの13要素のうち1件だけを指定すると」と
+  書いてあった。**その指定の口（--element）は 2026-09-07 に外してある。**
+  読んだ人が打つと必ず失敗するので、いまの形に書き直した。
 
   節の出どころは3つだけ:
     template … テンプレからそのまま複写（auditor 宣言・大目的・監査観点(一般)・結果の形・守則・呼びかけ）
@@ -26,7 +30,8 @@
 
 使い方
 --------------------------------------------------------------------------
-  python3 scripts/priority_rebuild/gen_audit_request.py --element 4
+  python3 scripts/priority_rebuild/gen_audit_request.py
+  python3 scripts/priority_rebuild/gen_audit_request.py --frozen <凍結ファイル>
   python3 scripts/priority_rebuild/gen_audit_request.py --selftest
 
 限界（正直に書く）

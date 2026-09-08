@@ -67,6 +67,12 @@
    "script": "b50_fixture_name_gone.sh",
    "code": 1,
    "note": ""
+  },
+  {
+   "no": "12",
+   "script": "b51_dirty_json_unguarded.sh",
+   "code": 1,
+   "note": ""
   }
  ]
 }

@@ -1,0 +1,5 @@
+6,7d5
+< NEW_FILE: .claude/breaks/b51_dirty_json_unguarded.sh
+< MODEL: .claude/breaks/b45_measure_only_gone.sh, .claude/breaks/lib.sh
+10d7
+< MODEL: .claude/breaks/b36_demand_attach_gone.sh, .claude/breaks/b37_marks_from_json_gone.sh, .claude/breaks/lib.sh

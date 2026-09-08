@@ -47,6 +47,7 @@
  "b48_fence_skip_gone.sh": "28a272431384b869bec664ce0f1d3f3e61ac56e928af3c7f891ed396c5426e03",
  "b49_foreign_block_gone.sh": "773fdfa1b34481d3c309c27db04afac28c6b51c8237ee1932c3ba9cd62361686",
  "b50_fixture_name_gone.sh": "681d03a81499e15497a1664eaa26c088b3b895d8332d17af4507bb322eb122de",
+ "b51_dirty_json_unguarded.sh": "d63a8caa87117cbf909343d75b062f75f902fd50f4af5f23ab7b085f483625e7",
  "lib.sh": "5a0a37aae9c45eee32954ed1d29d1fee6f17c1f3cd95f4fa17d1be6be20ceead",
  "_なにこれ": "承認の瞬間に凍結した、壊すプログラムのハッシュ値。run_breaks.py が走る前に照らす（監査 cp16 の E-12）"
 }

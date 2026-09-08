@@ -2,10 +2,9 @@
 
 # 設計書｜承認と監査の仕組みの7件＋作業を止めている6件を、まとめて直す（2026-09-07・§6 の修正対応）
 
-TARGET: .claude/tools/gen_regime_kb.py, .claude/tools/pre_audit_check.py, .claude/tools/run_breaks.py, scripts/priority_rebuild/gen_audit_request.py, scripts/priority_rebuild/verify_design_contract.py, scripts/priority_rebuild/engine_tuner_gen.py, .claude/breaks/b06_tool_changed.sh, .claude/breaks/b41_req_frozen_section_gone.sh, .claude/breaks/b42_pre_audit_list_gone.sh, .claude/breaks/b43_approve_empty_freeze_gone.sh, .claude/breaks/b44_approve_record_write_gone.sh, .claude/breaks/b45_measure_only_gone.sh, .claude/breaks/b46_spec_lineno_gone.sh, .claude/breaks/b47_dirty_baseline_gone.sh, .claude/breaks/b48_fence_skip_gone.sh, .claude/breaks/b49_foreign_block_gone.sh, .claude/breaks/b50_fixture_name_gone.sh
+TARGET: .claude/tools/gen_regime_kb.py, .claude/tools/pre_audit_check.py, .claude/tools/run_breaks.py, scripts/priority_rebuild/gen_audit_request.py, scripts/priority_rebuild/verify_design_contract.py, scripts/priority_rebuild/engine_tuner_gen.py, .claude/breaks/b06_tool_changed.sh, .claude/breaks/b41_req_frozen_section_gone.sh, .claude/breaks/b42_pre_audit_list_gone.sh, .claude/breaks/b43_approve_empty_freeze_gone.sh, .claude/breaks/b44_approve_record_write_gone.sh, .claude/breaks/b45_measure_only_gone.sh, .claude/breaks/b46_spec_lineno_gone.sh, .claude/breaks/b47_dirty_baseline_gone.sh, .claude/breaks/b48_fence_skip_gone.sh, .claude/breaks/b49_foreign_block_gone.sh, .claude/breaks/b50_fixture_name_gone.sh, .claude/breaks/b51_dirty_json_unguarded.sh
 
 
-MODEL: .claude/breaks/b36_demand_attach_gone.sh, .claude/breaks/b37_marks_from_json_gone.sh, .claude/breaks/lib.sh
 
 REQUIREMENTS: `next_step.md` の §6「★★あとで直すことの一覧」。まこさんの指示（逐語 2026-09-07）＝「ここでやることは、M-2-Eではなく、§6 ★★あとで直すことの一覧の修正対応とする」「「承認と監査の仕組み」の7件を1本の設計書でまとめて直す →OK」「他にも作業に支障がでているものがあれば、まとめて直して」。
 
@@ -84,6 +83,7 @@ REQUIREMENTS: `next_step.md` の §6「★★あとで直すことの一覧」�
 | **K** | `.claude/ratchet/regime_laws.json` | **R7 の引用の行番号を 2464 → 2568 に直す**（J を入れた後に `gen_regime_kb.py --write` を走らせる） | 155 |
 | **L** | `scripts/priority_rebuild/engine_tuner_gen.py` | **`_check_extra_gate` を `_selftest_extra_gate` に改名し、静的検査の⑤の判定を「囲っている関数の名前に selftest が含まれるか」に変える**（いまは名前がちょうど `selftest` のときだけ許す）。★検査を緩める側ではない＝「自己テストの中でだけ見本を使う」という決まりはそのまま | 149 |
 | **M** | `.claude/breaks/b41〜b50` | **壊すプログラム10本を新しく作る**（手本＝b36・b37・lib.sh）。それぞれ、上の直しの1本を消して、対応する検査が落ちることを測る。測る相手は 120秒 に収まる口だけにする | 全件 |
+| **N** | `.claude/hooks/require_acceptance_before_impl.sh` ＋ `.claude/breaks/b51_dirty_json_unguarded.sh` | **★2026-09-08 に足した（監査 cp28 の C-1・Critical）。**G が新しく作った「汚れの記録」（`<設計書の名前>.dirty.json`）が、土台ゲートの守りに入っていなかった。**兄弟2本（`.breaks.json`・`.frozen.json`）は止まるのに、この1本だけ Write でも Bash でも書けた。**書けば、照合A(双方向) が読む「数えない一覧」に任意の .py を足せる＝設計書に書いていない .py を触っても照合が落ちない。**直す中身**＝①Bash 側の一覧（`BASE_SUFFIX`）に `'.dirty.json'` を足す ②Write 側の場合分け（`case`）に `*.dirty.json` を足す ③画面に出す文言に1行 足す ④壊すプログラム b51 を作る（②の1行を消すと、Write が素通りすることを測る）。**★同じ型は 2026-09-04（監査 cp17 の G-1）で一度 塞いである。**3本目を作りながら、その型を当てなかった | 監査 cp28 の C-1 |
 
 **工程表（止まっている度合いが強いものから）**
 
@@ -126,6 +126,8 @@ REQUIREMENTS: `next_step.md` の §6「★★あとで直すことの一覧」�
 | **監査 Q5 の4** | 直す対象の道具自身を書き換えられたら | **無効にできます。**`.claude/tools/*.py` と `scripts/priority_rebuild/*.py` は承認ゲートの相手なので承認は要りますが、hook（`.claude/hooks/*.sh`・`.py`）は まこさんの決定（2026-09-06）で承認が要りません。**＝hook 側の直し（D の hook 側・I）は、CC が後からいつでも戻せます。**git の差分には必ず出ます |
 | **監査 Q5 の5** | G（並走の基準）で、照合が甘くならないか | **甘くなります。**承認の時点で既に汚れていた .py は、以後 数えません。**＝承認の前にわざと .py を汚しておけば、その1本は照合A(双方向) の外に出ます。**★ただし `scripts/priority_rebuild/*.py` と `.claude/tools/*.py` は承認の前に書けない（承認ゲート）ので、この道が使えるのは hook の .py だけです。それも まこさんの決定（hook は承認不要）から来るもので、この工事が新しく開ける穴ではありません |
 | **補1** | J（囲みの持ち主）で、`gen_regime_kb.py` の指紋の守りが弱くなるか | **弱くなります。**囲みの中身を数えないので、その中だけは手で書き換えても `gen_regime_kb.py --verify` は気づきません。**代わりに `gen_materials.py --verify` が同じ囲みを見ています**（実測＝`python3 scripts/priority_rebuild/gen_materials.py --verify` が「✅ 一致（手で書き換えられていない）」）。＝守るのは持ち主の側という形にします |
+| **補3** | **★2026-09-08 に足した（監査 cp28 の C-3）。**触る関数の一覧を埋めるまで、この設計書で設計↔実装の照合は効いていたか | **効いていませんでした。**承認の 2026-09-07 の時点で一覧は空で、凍結された中身も0件でした。**＝関数の欠落・余分・組み合わせを見る守りは、この工事に対して空振りでした。**監査の逐語＝「理由を1行 書けば、設計↔実装の照合を丸ごと無効にできます」。**★2026-09-08 に一覧を埋めた**（`gen_impl_functions.py` の出力・5ファイル・CC は1文字も手で書いていない）。**まだ塞げていないこと**＝「理由を1行 書けば空で通る」という道そのものは残っています。閉じるには「触った .py に関数の変更が在るのに一覧が空なら承認が止まる」形にします＝道具と承認の直し（`next_step.md` の §6 の158番） |
+| **補4** | **★2026-09-08 に足した（監査 cp28 の M-2）。**「この道が使えるのは hook の .py だけ」は正しかったか | **正しくありませんでした。**汚れの記録の7本のうち **6本が hook 以外**でした（道具3本・生成器や照合の道具3本）。**理由**＝この設計書の承認は2回目以降が本番で、1回目で書く権利をもらって `.py` を直し、そのうえで2回目を打ちます。**そのとき、直した `.py` は全部 汚れています。**＝「承認の前には書けない」は1回目の承認にしか当てはまりません。**結果として、この工事で触った `.py` は7本とも照合A(双方向) の外に出ました。**監査の逐語＝「塞げないことを書く節ほど、実物で数えてから書いてください」 |
 | **補2** | A（依頼書の作り直し）で、CC の自由記述が本当に減るか | **減りますが、0にはなりません。**凍結ファイルの4節は CC が書きます。まこさん指示 2026-08-25 の形（事実データは機械が埋める・CC の自由記述の欄を作らない）に近づけますが、監査への問いの文面は CC が書いて凍結する形のままです |
 
 ## 8. §4.6 ハード制約の照合
@@ -163,8 +165,8 @@ REQUIREMENTS: `next_step.md` の §6「★★あとで直すことの一覧」�
 
 | # | 完成の条件 | その数字を出したコマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
 |---|---|---|---|---|---|---|---|
-| 1 | AUDIT-1＝監査の依頼書を作るプログラムの自己テストが全部 通る（直す前は -4/11・Q6 は 0/13） | `python3 scripts/priority_rebuild/gen_audit_request.py --selftest` | 実経路 | 凍結ファイルから節を1つ消すと、依頼書を作れずに落ちる | `b41_req_frozen_section_gone.sh` | 対象 | **未着手** |
-| 2 | 監査の前の検査の一覧に、依頼書の自己テストと別枠3種の審査のテストが入っている（直す前は0件） | `python3 ../../.claude/tools/pre_audit_check.py --selftest` | 実経路 | 一覧からその2行を消すと、番人が落ちる | `b42_pre_audit_list_gone.sh` | 終了コードが0でない | **未着手** |
+| 1 | AUDIT-1＝監査の依頼書を作るプログラムの自己テストが全部 通る（直す前は -4/11・Q6 は 0/13） | `python3 scripts/priority_rebuild/gen_audit_request.py --selftest` | 実経路 | 凍結ファイルから節を1つ消すと、依頼書を作れずに落ちる | `b41_req_frozen_section_gone.sh` | 対象 | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
+| 2 | 監査の前の検査の一覧に、依頼書の自己テストと別枠3種の審査のテストが入っている（直す前は0件） | `python3 ../../.claude/tools/pre_audit_check.py --selftest` | 実経路 | 一覧からその2行を消すと、番人が落ちる | `b42_pre_audit_list_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
 | 3 | 承認のときに空の impl_functions を凍結しない判定（承認スクリプトが呼ぶ `contract_for_freeze`）が、番人で確かめられる | `python3 scripts/priority_rebuild/verify_design_contract.py --self-test` | 実経路 | その判定から「理由の無い空」を止める2行を消すと、番人 N17 が落ちる | `b43_approve_empty_freeze_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
 | 4 | 承認の「済」の材料になる記録（壊すプログラムの終了コード）を、機械が書く | `python3 ../../.claude/tools/run_breaks.py --selftest` | 実経路 | 記録を書く処理（`write_record`）の中身を消すと、番人 T8 が落ちる | `b44_approve_record_write_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
 | 5 | 壊すプログラムを、書き込みなしで測り直す口が CC の Bash から走る | `python3 ../../.claude/tools/run_breaks.py --measure-only --iter approval-audit-plumbing-20260907` | 実経路 | 土台ゲートの通す判定から、その旗の条件を消すと止まる | `b45_measure_only_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=2／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
@@ -174,6 +176,7 @@ REQUIREMENTS: `next_step.md` の §6「★★あとで直すことの一覧」�
 | 9 | 設計書の囲みの中に書いた見本の行を、宣言として読まない | `python3 ../../.claude/hooks/require_source_read_before_acceptance.py --selftest` | 実経路 | 囲みを読み飛ばす処理を消すと、番人が落ちる | `b48_fence_skip_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
 | 10 | AUDIT-4＝文書を作る2つのプログラムの検査が、同時に両方とも通る（直す前は片方が3件 ❌） | `python3 ../../.claude/tools/gen_regime_kb.py --verify` | 実経路 | 他のプログラムの囲みを差し戻す処理を消すと、片方の検査が落ちる | `b49_foreign_block_gone.sh` | 対象 | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
 | 11 | 生成器の静的検査が0件になる（直す前は「見本の関数」1件） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --lint-provenance` | 実経路 | 関数の名前を元に戻すと、静的検査が1件に戻る | `b50_fixture_name_gone.sh` | 終了コードが0でない | **✅済**＝壊すと rc=1／条件のコマンドも rc=0（承認のときに機械が2つとも測った） |
+| 12 | AUDIT-5＝汚れの記録（`<設計書の名前>.dirty.json`）が、土台ゲートの守りに入っている（直す前は Write でも Bash でも書けた） | `python3 ../../.claude/tools/run_breaks.py --measure-only --iter approval-audit-plumbing-20260907` | 実経路 | Write 側の場合分けから `*.dirty.json` を消すと、その形のファイルへの Write が素通りする | `b51_dirty_json_unguarded.sh` | 対象 | **未着手** |
 
 <!-- ACCEPT_TABLE_END -->
 
@@ -184,14 +187,56 @@ REQUIREMENTS: `next_step.md` の §6「★★あとで直すことの一覧」�
 ```json
 {
   "impl_file": "scripts/priority_rebuild/gen_audit_request.py",
-  "impl_functions": {},
-  "no_impl_functions_reason": "13件が8ファイルにまたがり、どの関数に行を足すかは実装しながら決まる所が残っている（とくに A の依頼書の作り直しと G の並走の基準の持たせ方）。実装の後に確定させる。",
-  "must_use": {},
+  "impl_functions": {
+    ".claude/tools/gen_regime_kb.py": [
+      "<モジュール直下>", "_begin", "_begin_re", "_end", "_esc", "_foreign_span", "_h",
+      "_kakeru", "_kinds", "_pass_json", "apply_marks", "build", "build_body", "build_flow",
+      "build_laws", "build_premise", "build_todo", "check_citations", "coverage",
+      "keep_foreign", "main", "marks_checks", "marks_now", "mask_foreign", "selftest",
+      "selftest_marks", "verify", "verify_one", "write", "write_one"
+    ],
+    ".claude/tools/pre_audit_check.py": [
+      "<モジュール直下>", "_input_shape_miss", "_run", "approve_problem", "check_design",
+      "code_fingerprint", "design_hooks", "main", "run", "selftest", "verify", "verify_problems"
+    ],
+    ".claude/tools/run_breaks.py": [
+      "<モジュール直下>", "break_scripts", "check_frozen", "freeze_breaks", "main",
+      "parse_table", "run_one", "selftest", "sha", "write_record"
+    ],
+    "scripts/priority_rebuild/gen_audit_request.py": [
+      "<モジュール直下>", "_facts", "_headline", "_line_of", "_meta", "_reading", "_sha",
+      "_table_rows", "_tmp_md", "approval_matches", "build_request", "copy_all_laws",
+      "copy_measure", "copy_template_section", "copy_todo_rows", "frozen_title",
+      "load_frozen_question", "main", "print_source", "section_refs_missing", "selftest",
+      "template_heads"
+    ],
+    "scripts/priority_rebuild/verify_design_contract.py": [
+      "<モジュール直下>", "_fence_body", "_next_fence_json", "_resolve_impl", "check",
+      "check_approval", "check_impl_functions", "check_must_use", "check_spec_lists",
+      "contract_for_freeze", "counts_as_touched", "diff_spec", "dirty_baseline",
+      "extract_block", "extract_contract", "extract_requirements", "format_req_map",
+      "frozen_impl_functions", "functions_ast", "head_source", "load_spec_lists",
+      "must_use_from_source", "names_in_function", "outside_fence_lines", "probe_spec_lists",
+      "req_map", "requirements_index", "resolve_spec_list", "rhs_names_for_symbol",
+      "scan_contracts", "self_test", "spec_from_design", "spec_from_impl",
+      "touched_functions", "write_actual"
+    ]
+  },
+  "must_use": {
+    "section_refs_missing": ["extra_dirs"],
+    "selftest": ["_tmp_md"],
+    "write_one": ["keep_foreign", "mask_foreign"],
+    "verify_one": ["mask_foreign"],
+    "counts_as_touched": ["baseline"],
+    "spec_from_impl": ["def_lines"],
+    "write_record": ["json"],
+    "main": ["write_record"]
+  },
   "spec_lists": {},
   "no_spec_lists_reason": "この工事は値の一覧を持たない（直すのは配管の判定で、閾値も期間も1つも決めない）",
   "generated_from": {
-    "impl_functions": "空。実装の後に、実物の git diff -U0 の塊の見出しから触った関数だけを CC が手で列挙して埋める（全関数の写しにしない・worklog 20260904 §22 の決まり・next_step §6 の132番）",
-    "must_use": "空。impl_functions が空の間は、どの関数に何を要求するかも決まらない（監査 cp15 の C-4 の対）",
+    "impl_functions": "gen_impl_functions.py の出力をそのまま（2026-09-08・監査 cp28 の C-3 で埋めた）。CC は1文字も手で書いていない・関数を足しも消しもしていない。★出るのは『いまファイルに在る全関数』なので、この工事で触っていない関数も入る＝承認の画面に ⚠️ が出るのが正しい状態（まこさん指定 2026-09-03）。★engine_tuner_gen.py は入れていない＝この工事での変更は関数1つの名前を変えただけで、そのファイルを入れると SPEC（作る関数と、その関数が呼ぶもの・定数・コマンドの旗の一覧）が必須になり、この工事の範囲を超えるため",
+    "must_use": "★手で書いた（機械で照らせないに数える）。正本の json から作る道（must_use_from）は、この工事に外から取る一覧が無いので使えない。★選び方＝この工事で実際に直した所だけを要求する＝その直しを消すと照合が落ちる形。8件の中身＝section_refs_missing が extra_dirs を使う（番人だけが探す場所を足せる・Q11 の直し）／selftest が _tmp_md を使う（見本を一時のファイルにした・Q11 の直し）／write_one が keep_foreign と mask_foreign を使う（他のプログラムの囲みを差し戻す・指紋から外す＝J）／verify_one が mask_foreign を使う（同じ考え方で照らす＝J）／counts_as_touched が baseline を使う（承認のときに汚れていた .py を数えない＝G）／spec_from_impl が def_lines を使う（関数の定義の行を書き出す＝F）／write_record が json を使う（壊し方の記録を本当に書く＝E）／main が write_record を使う（呼び出しを消させない＝E）",
     "spec_lists": "空。外から取る一覧が無い"
   }
 }
