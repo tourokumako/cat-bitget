@@ -49,10 +49,10 @@
  "b50_fixture_name_gone.sh": "aaabff2a9c54573876148d0cdccff48a4448a0662ab3b1c99899c1385bf9e3fa",
  "b51_dirty_json_unguarded.sh": "4a8958dfcc2ff936f74578913e698f129d5bf371e8d43e6143a531a954d14376",
  "b52_expect_rc_gone.sh": "1750cb6b40441d41f59b28ca3b40892ae99588072008644d3075625c75504c10",
- "b53_insp5_frame_and_key_gone.sh": "42f1586f4499d00cfd934370d75ddd664f4ab590517e1b249c6ea7e34a254f07",
+ "b53_insp5_frame_and_key_gone.sh": "78d8d1444d5fad4348caefc7785b61f2deea9b6c1e6ab8e5eb7c373a4f7460ff",
  "b54_table_tidy_gone.sh": "78472d14527ddb487335611bbf8fbdcef3dcc493c8f8730f62cae2a143c905fa",
- "b55_cyc_key_time_gone.sh": "8c6bc0a3a0425cae8d298a711b36e25e971cc39b0baf1958ac0be70a037123ee",
- "b56_one_min_csv_old.sh": "c03a0815bf4b08952ae8567df114ec969b4878d392aaf77fc3f8c492b9a881eb",
+ "b55_cyc_key_time_gone.sh": "3cf14c1482a31bb7760fa51f8336b758c0a2ce9b73fa4ab28de023b0eeaf95d9",
+ "b56_one_min_csv_old.sh": "764128ccf57b902e0575ed712e11d7eab1757357fb6e619d42d624cf99bf64c7",
  "b57_h2_fingerprint_stale.sh": "3fb2c53e9764c49e71d4d61dfca260da7d73c486c2b5382a593f96d0bbbeb5b3",
  "lib.sh": "5a0a37aae9c45eee32954ed1d29d1fee6f17c1f3cd95f4fa17d1be6be20ceead",
  "_なにこれ": "承認の瞬間に凍結した、壊すプログラムのハッシュ値。run_breaks.py が走る前に照らす（監査 cp16 の E-12）"

@@ -165,9 +165,17 @@ def move_done_rows(next_text: str, arc_text: str, today: str) -> tuple[str, str,
     moved = "".join(moved_rows)
     if not moved.endswith("\n"):
         moved += "\n"
+    # ★2026-09-08（監査 cp30 の別枠7）＝見出しを、元の表の見出し行からそのまま取る。
+    #   直す前＝3列（番号・やること・状態）を手で書いていたが、本物の 0-2 の表は5列。
+    #   ＝控えに入った行の列数と、見出しの列数が合わなかった（見た目だけの話）。
+    _hdr = [ln for ln in lines[s2:end]
+            if ln.lstrip().startswith("|") and "---" not in ln and DONE_MARK not in ln
+            and not STRIKE_RE.search(ln)]
+    head_rows = "".join(_hdr[:2]) if len(_hdr) >= 1 else "| 番号 | やること | 状態 |\n|---|---|---|\n"
+    if len(_hdr) == 1:                                  # 見出しの行しか無いときは区切りを足す
+        head_rows = _hdr[0] + "|" + "---|" * max(1, _hdr[0].count("|") - 1) + "\n"
     head = (f"\n\n# {today} に tidy_next_step.py が next_step.md の 0-2 の表から移した行"
-            f"（終わった行 {len(moved_rows)} 行・1文字も変えていない）\n\n"
-            "| 番号 | やること | 状態 |\n|---|---|---|\n")
+            f"（終わった行 {len(moved_rows)} 行・1文字も変えていない）\n\n" + head_rows)
     new_arc = arc_text + head + moved
     before, after, mv = count_marks(next_text), count_marks(new_next), count_marks(moved)
     check_marks(before, after, mv)
