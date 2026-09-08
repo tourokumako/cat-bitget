@@ -127,6 +127,43 @@ def check(cmd_x: str):
     return None
 
 
+def check_fingerprint() -> int:
+    """印（h2_pass.json）が、いまのコードと一致しているかだけを見る（読むだけ・何も書かない）。
+
+    ★2026-09-08（設計書 insp5-frame-and-table-tidy-20260908 の J・Web Claude の2回目の重い2）
+      なぜ要るか＝「H2 の印を取り直したか」を確かめる口が、どこにも無かった。
+      いちばん近いのは tidy_next_step.py の検査 (c) だが、それが照らしているのは
+      「next_step.md に書いてある文字」と「json の中の文字」だけで、
+      いまのコードの指紋は1行も見ていない（実測 2026-09-08＝tidy_next_step.py:218）。
+      ＝コードを書き替えて印を放置しても、その検査は通ってしまう。
+      この口は、上の check() が使っているのと同じ照合（125行）だけを取り出したもの。
+    終了コード＝0（一致）／1（違う・印が無い・印が読めない）。
+    ★番人＝壊すプログラム b57（observe_diag.py にコメントを1行 足すと、この口が 1 を返す）。
+    """
+    if not os.path.exists(PASS):
+        print("❌ 検査済みの印が無い（h2_pass.json がまだ書かれていない）")
+        return 1
+    try:
+        with open(PASS, encoding="utf-8") as f:
+            rec = json.load(f)
+        files = rec.get("files") or []
+        fp = rec.get("fingerprint") or ""
+    except Exception as e:                             # noqa: BLE001
+        print(f"❌ 検査済みの印が読めない（h2_pass.json が壊れている）: {e}")
+        return 1
+    lack = [m for m in MUST if m not in files]
+    if lack:
+        print(f"❌ 印の対象一覧に必須のファイルが入っていない（一覧を狭めない）: {lack[:3]}")
+        return 1
+    now = fingerprint(files)
+    if now != fp:
+        print(f"❌ 印と、いまのコードが違う（印 {fp[:16]}… ／ いま {now[:16]}…）"
+              "＝leak_causality_diag.py を走らせて印を取り直してください")
+        return 1
+    print(f"✅ 印と、いまのコードが一致（{fp[:16]}… ／ 対象 {len(files)} 件）")
+    return 0
+
+
 def fail(reason: str):
     e = sys.stderr
     print("🔒 [H2 検査済みゲート・safety hook] H2（未来参照なし）の検査を通してから engine_tuner を回してください。", file=e)
@@ -247,6 +284,10 @@ def selftest():
 
 
 if __name__ == "__main__":
+    # ★2026-09-08＝指紋を照らすだけの口（設計書 insp5-frame-and-table-tidy-20260908 の J）。
+    #   hook 本体より前に置き、必ずここで終える（後ろに置くと hook 本体が標準入力を待つ）。
+    if "--check-fingerprint" in sys.argv:
+        sys.exit(check_fingerprint())
     if "--selftest" in sys.argv:
         selftest()
     hook_main()

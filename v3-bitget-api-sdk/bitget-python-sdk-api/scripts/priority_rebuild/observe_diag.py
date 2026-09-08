@@ -182,7 +182,7 @@ TF_RULE = {"1m": "1min", "3m": "3min",
 #   作り方＝1m はそのまま／3m は1分足からの resample。未来を見ない式は他の足と同じものを使う
 #   （足が閉じた時刻まで index を進めてから 5分足の index へ ffill）。
 SUB_5M_TF = ("1m", "3m")                      # 5分足より短い足＝1分足の元データが材料
-ONE_MIN_CSV = "data/BTCUSDT-1m-binance-taker-2023-11-01_2026-06-30.csv"   # ★73番（2026-08-23 まこさん承認 327e7f80008f…）＝助走60日を覆うよう 2023-11 から取り足した
+ONE_MIN_CSV = "data/BTCUSDT-1m-binance-taker-2023-06-01_2026-06-30.csv"   # ★2026-09-08（設計書 insp5-frame-and-table-tidy-20260908 の G）＝助走250日を覆うよう 2023-06 から取り足した（旧＝2023-11-01 から。値決め窓 2024-03-01 の250日前＝2023-06-25 に約4か月 足りなかった）
 # ↑ 段7 の 7-1 で作ったもの（2026-08-11・1,226,880本・1分グリッドの欠け0・重複0・境目の段差0）。
 #   5分足の正本（Binance Spot 系列）と同じ作りで、時刻はバーの始まりの時刻。
 
@@ -522,7 +522,15 @@ _CYC_MEMO: dict = {"sig": None, "v": {}}
 
 
 def _cyc(d: pd.DataFrame, name: str, fn):
-    sig = (len(d), hashlib.md5(d.close.to_numpy(dtype=float).tobytes()).hexdigest())
+    # ★2026-09-08（設計書 insp5-frame-and-table-tidy-20260908 の B・§6 の134番の②）
+    #   ＝鍵に「並んでいる時刻の指紋」を足した。
+    #   直す前＝鍵は「本数」と「終値」の2つだけ。終値が同じで時刻だけ違う枠を続けて渡すと、
+    #   前の結果がそのまま返る。返ってきた列は前の枠の時刻を持つので、次の枠の終値で割ると
+    #   pandas が2つの時刻をつなげて本数が膨らむ（実測 2026-09-08＝317,376 → 528,960）。
+    #   直した後＝時刻が1本でも違えば鍵が変わって計算し直す。
+    #   ★番人＝T-h（終値が同じで時刻だけ違う2つを渡すと、別の値が返る）。
+    sig = (len(d), hashlib.md5(d.close.to_numpy(dtype=float).tobytes()).hexdigest(),
+           hashlib.md5(np.ascontiguousarray(d.index.values).tobytes()).hexdigest())
     if _CYC_MEMO["sig"] != sig:
         _CYC_MEMO["sig"], _CYC_MEMO["v"] = sig, {}
     if name not in _CYC_MEMO["v"]:
@@ -1567,6 +1575,31 @@ def load_1m(start, end, path: str | None = None) -> pd.DataFrame:
     d = d.loc[s:e]
     _ONE_MIN_CACHE[key] = d
     return d
+
+
+def insp5_frame(span: pd.DataFrame, tf: str, one: pd.DataFrame | None = None):
+    """検査5 が使う「その足の枠」を作る（2026-09-08・設計書 insp5-frame-and-table-tidy-20260908 の A）。
+
+    ★なぜ切り出したか＝直す前は、検査5 が 1m・3m を「5分足を入れ直したもの」で作っていた
+      （`src = span if tf == "5m" else _resample(span, TF_RULE[tf])`）。5分足は1分・3分に割れないので、
+      本数も終値も5分足のまま＝1m・3m の欄を偽の足で数えていた。
+      実測（2026-09-08 の やること H）＝`HT_DCPERIOD__1m` の有効本数が 158,112＝5分足と同じ
+      （1分足なら 790,560本・3分足なら 263,520本）。
+      正しい作りは build_features に在ったのに、検査5 だけ古い形で取り残されていた。
+    ★同じ判定を2か所に書き写さないため、検査5 と番人（T-g・T-j）が この関数を呼ぶ。
+    返すもの＝(src, closed)。closed＝その足が閉じた時刻（5分足は index そのまま＝未来を見ない）。
+    one＝1分足の元データ（渡さなければ、要るときだけ読む）。
+    """
+    if tf == "5m":
+        src = span
+    elif tf in SUB_5M_TF:                                # 5分足より短い足＝1分足の元データから作る
+        if one is None:
+            one = load_1m(span.index[0], span.index[-1])
+        src = one if tf == "1m" else _resample(one, TF_RULE[tf])
+    else:
+        src = _resample(span, TF_RULE[tf])
+    closed = src.index if tf == "5m" else src.index + pd.Timedelta(TF_RULE[tf])
+    return src, closed
 
 
 def build_features(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> tuple[pd.DataFrame, dict]:
@@ -4005,9 +4038,11 @@ def _insp_samples(bars: pd.DataFrame, cfg: dict) -> None:
           f"／ 助走データ {cfg['warmup_days']} 日")
     print("  列 … 欠損率%（値決め窓・その足のバー基準）／助走（最初に値が出るまでのバー数）"
           "／独立の有効標本数（値決め窓・採点窓）／補正後独立標本数＝有効÷名目窓長（G2 の基礎データ）")
+    # ★1m・3m を使うときだけ、1分足の元データを1回だけ読む（使わないなら読まない＝重いので）。
+    one = (load_1m(span.index[0], span.index[-1])
+           if any(t in cfg["timeframes"] for t in SUB_5M_TF) else None)
     for tf in cfg["timeframes"]:
-        src = span if tf == "5m" else _resample(span, TF_RULE[tf])
-        closed = src.index if tf == "5m" else src.index + pd.Timedelta(TF_RULE[tf])
+        src, closed = insp5_frame(span, tf, one)       # ★2026-09-08＝枠づくりは1か所（134番の①）
         in_w = (closed >= w0) & (closed < w1)
         in_s = (closed >= s0) & (closed < s1)
         tot = int(in_w.sum())
@@ -6111,6 +6146,83 @@ def selftest_rank_demand(exit_: bool = True) -> list:
     return ng
 
 
+def selftest_insp5(exit_: bool = True) -> list:
+    """T-g・T-h・T-i・T-j＝検査5 の枠と、重い計算の使い回しの鍵を確かめる。
+
+    設計書 insp5-frame-and-table-tidy-20260908 の やること F。口＝`--selftest-insp5`。
+    ★軽い口にしている理由＝承認のプログラムの打ち切りは 120秒（approve_impl.sh:436）。
+      全部の番人は 1分48秒 かかるので、この4件だけを短い切れ端で走らせる。
+    ★全部の番人（selftest）からも、この関数を呼ぶ＝同じ判定を2か所に書き写さない。
+
+      T-g＝1m の枠が、1分足の元データから作られている（本数が5分足と違う）
+      T-h＝使い回しの鍵が、終値が同じで時刻だけ違う2つのデータで別の値を返す
+      T-i＝1分足の元データが、値決め窓の助走ぶん前から採点窓の末まで覆っている
+      T-j＝1m・3m を続けて計算しても、返った列の長さと、期間の当てはめの長さが一致する
+           （直す前は 528,960 と 317,376 で食い違い、例外で止まった）
+    """
+    ng: list = []
+    cfg = load_config()
+    need_s = SEARCH_START - pd.Timedelta(days=int(cfg["warmup_days"]))
+    # ★採点窓の末そのもの（1日 足さない）。1分足の元データの最後のバーは 23:59 なので、
+    #   1日 足すと「覆っていない」と誤って落ちる（2026-09-08 の承認で実測して直した）。
+    need_e = SCORE_END
+
+    # ── T-i＝1分足の元データが、要る期間を覆っているか ──────────────────
+    #   load_1m は覆っていなければ SystemExit を投げる（黙って値なしを作らない）。
+    try:
+        load_1m(need_s, need_e)
+    except SystemExit as e:
+        ng.append(f"T-i: 1分足の元データが要る期間を覆っていない（要 {need_s.date()}〜{need_e.date()}）: {e}")
+
+    # ── T-h＝使い回しの鍵が、終値が同じで時刻だけ違うデータを見分けるか ──
+    n = 64
+    c = np.arange(n, dtype=float) + 100.0
+    d1 = pd.DataFrame({"close": c}, index=pd.date_range("2024-01-01", periods=n, freq="5min"))
+    d2 = pd.DataFrame({"close": c}, index=pd.date_range("2024-01-01", periods=n, freq="3min"))
+    v1 = _cyc(d1, "selftest_th", lambda x: x.index[-1])
+    v2 = _cyc(d2, "selftest_th", lambda x: x.index[-1])
+    if v1 == v2:
+        ng.append(f"T-h: 終値が同じで時刻だけ違う2つに、同じ値を返した（{v1}）＝鍵に時刻が入っていない")
+
+    # ── T-g・T-j＝枠の作りと、長さの一致（短い切れ端で足りる）──────────
+    #   ★短い切れ端で足りる理由＝長さの食い違いはデータの長さと無関係に、
+    #     時刻の並びが違うことだけで起きる（2026-09-08 の やること H で確かめた噛み合わせ）。
+    if not ng or all("T-i" not in x for x in ng):       # 元データが無いと、この2件は測れない
+        days = 3
+        span_s, span_e = SEARCH_START, SEARCH_START + pd.Timedelta(days=days)
+        idx5 = pd.date_range(span_s, span_e, freq="5min", inclusive="left")
+        c5 = 100.0 + np.arange(len(idx5), dtype=float) * 0.01
+        span = pd.DataFrame({"open": c5, "high": c5 + 0.05, "low": c5 - 0.05,
+                             "close": c5, "volume": 1.0}, index=idx5)
+        one = load_1m(span.index[0], span.index[-1])
+        src1, _cl1 = insp5_frame(span, "1m", one)
+        if len(src1) <= len(span):
+            ng.append(f"T-g: 1m の枠の本数が5分足以下（1m {len(src1)} 本 ／ 5分足 {len(span)} 本）"
+                      "＝5分足を入れ直したものになっている")
+        # T-j＝使い回しを通る指標を、1分 → 3分 の順に、入れものを共有したまま計算する。
+        #      通らない指標は渡した枠の時刻をそのまま返すので、長さは必ず一致して素通りする。
+        fn = next((f for nm, f, _d in build_catalog(cfg) if nm == "HT_INPHASE%"), None)
+        if fn is None:
+            ng.append("T-j: 材料の一覧に HT_INPHASE% が無い（使い回しを通る指標が選べない）")
+        else:
+            for tf in ("1m", "3m"):
+                src, closed = insp5_frame(span, tf, one)
+                try:
+                    v = pd.to_numeric(fn(src), errors="coerce").notna().to_numpy()
+                except Exception as e:                  # noqa: BLE001
+                    ng.append(f"T-j: {tf} の列が計算できない: {str(e)[:60]}")
+                    continue
+                if len(v) != len(closed):
+                    ng.append(f"T-j: {tf} で、返った列の長さ {len(v)} と、枠の長さ {len(closed)} が違う"
+                              "（この食い違いが検査5 を例外で止めていた）")
+    print(f"  T-g/T-h/T-i/T-j 検査5 の枠と使い回しの鍵（軽い口）: ❌ {len(ng)} 件")
+    if exit_:
+        for x in ng:
+            print(f"  ❌ {x}")
+        raise SystemExit(1 if ng else 0)
+    return ng
+
+
 # ══ 自己検査 ════════════════════════════════════════════════════════════
 def _J(a: str, b: str) -> str:
     """検査文字列を分割して連結する（自己一致よけ）。
@@ -7106,6 +7218,7 @@ def selftest() -> None:
     print(f"  設定ファイル {cfg['_source']}")
     print(f"  結果の保存先 {OBSERVE_DIR}（本走のみ・既存は observe/archive へ退避＝上書きしない）")
     ng += selftest_rank_demand(exit_=False)          # T-f（需給を成績表に足す差分の口・設計書 demand-in-ranking-20260907）
+    ng += selftest_insp5(exit_=False)                # T-g・T-h・T-i・T-j（検査5 の枠と使い回しの鍵・設計書 insp5-frame-and-table-tidy-20260908）
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
@@ -7156,6 +7269,8 @@ def build_parser():
 if __name__ == "__main__":
     if "--selftest-rank-demand" in sys.argv:          # T-f だけを数秒で（設計書 demand-in-ranking-20260907・壊すプログラム b39・b40 が使う）
         selftest_rank_demand()                        # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
+    if "--selftest-insp5" in sys.argv:                # ★T-g・T-h・T-i・T-j だけを短い切れ端で
+        selftest_insp5()                              # （設計書 insp5-frame-and-table-tidy-20260908・承認の打ち切り 120秒 に収めるため）
     if "--selftest" in sys.argv:
         selftest()
     else:

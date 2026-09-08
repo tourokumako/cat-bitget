@@ -1,0 +1,242 @@
+6,7d5
+< NEW_FILE: .claude/breaks/b53_insp5_frame_and_key_gone.sh, .claude/breaks/b54_table_tidy_gone.sh, .claude/breaks/b55_cyc_key_time_gone.sh, .claude/breaks/b56_one_min_csv_old.sh, .claude/breaks/b57_h2_fingerprint_stale.sh
+< MODEL: .claude/breaks/lib.sh, .claude/breaks/b47_dirty_baseline_gone.sh
+13c11
+< **往復：2回。**1回目で書く権利をもらい、2回目で機械が測ります。
+---
+> **往復：2回。**1回目で書く権利をいただき、2回目で機械が測ります。
+15c13
+< **★1回目の承認は 2026-09-08 15:15 にいただきました**（実測＝`ls .claude/state/acceptance.approved`）。**この書き直しで指紋が変わるので、承認を打ち直していただく必要があります。**まこさん指示（逐語 2026-09-08）＝「結構クリティカルな内容っぽので、設計書は完璧な状態になるまで修正し続ける」。
+---
+> **★1回目の承認は 2026-09-08 15:37 にいただき、実装は全部 終わりました**（実測＝`ls .claude/state/acceptance.approved`）。**この版は2回目の承認をお願いするものです。**まこさん指示（逐語 2026-09-08）＝「結構クリティカルな内容っぽので、設計書は完璧な状態になるまで修正し続ける」。
+17c15
+< **なぜ2回に分けるか**＝完成の条件に付ける壊すプログラム5本は、これから作るファイルです。承認のプログラムは、承認を打ったその場で壊すプログラムを走らせて終了コードを記録します。**まだ実在しないファイルは走らせられないので、それまでは「未着手」のまま残ります。**
+---
+> **なぜ2回に分けたか**＝完成の条件に付ける壊すプログラム5本は、1回目の時点で存在しないファイルでした。承認のプログラムは、承認を打ったその場で壊すプログラムを走らせて終了コードを記録します。**実在しないファイルは走らせられないので、1回目は「未着手」のまま残りました。**
+19c17
+< **★壊すプログラムを書き終えたら、私がこの設計書から2行 消します**＝`NEW_FILE:` と `MODEL:` の2行です。理由＝必読ゲートは「新しく作ると書いたのに実在する」を止めます。**書き終えた時点で、その2行は嘘になるので消します。**（`next_step.md` §6 の84番＝この行き止まりに当たるのは4回目です。今回は先に手順へ書いておきます。）
+---
+> **★`NEW_FILE:` と `MODEL:` の2行は、5本を書き終えたので消しました。**必読ゲートは「新しく作ると書いたのに実在する」を止めるためです（`next_step.md` §6 の84番＝この行き止まりに当たるのは5回目。★Edit ツールでは hook が古い中身を見るので、全文を Write で書き替えました）。
+21c19
+< **net に直結するか**＝しません。売買のロジックには1行も触れません。直すのは、指標を数える検査の枠の作り方と、文書を整える道具と、印を照らす口です。
+---
+> **net に直結するか**＝しません。売買のロジックには1行も触れていません。直したのは、指標を数える検査の枠の作り方と、文書を整える道具と、印を照らす口です。
+29c27
+< | 重さ | # | 指摘 | この設計書のどこで閉じるか |
+---
+> | 重さ | # | 指摘 | この設計書のどこで閉じたか |
+33c31
+< | **重い** | 3 | やること H が、H2 の印の対象ファイル（`observe_config.json`）を書き替える読み方になっている | **§4 の H に、書き替えない方法を書きました**＝控えを一時置き場に作って `--config` で渡し、`--cols` で列を絞る。**本物の設定ファイルは1文字も触りません** |
+---
+> | **重い** | 3 | やること H が、H2 の印の対象ファイル（`observe_config.json`）を書き替える読み方になっている | **§4 の H に、書き替えない方法を書きました**＝控えを一時置き場に作って別のファイルとして渡す。**本物の設定ファイルは1文字も触っていません** |
+35c33
+< | **中** | 2 | J の口を、hook 本体より前に置いて必ずそこで終わらせないと動かない | **§4 の J に書きました**（いまの入口は 249行から 252行） |
+---
+> | **中** | 2 | J の口を、hook 本体より前に置いて必ずそこで終わらせないと動かない | **そう作りました**（§4 の J・実測＝`python3 ../../.claude/hooks/enforce_h2_pass.py --check-fingerprint` が標準入力を待たずに終わる） |
+37c35
+< | **軽** | 1 | 恒久の決まり §0-5 の「対象20ファイル」が、実物22件とずれている | **この設計書で直す話ではないので、`next_step.md` の §6 に記録します。**恒久の決まりは まこさんしか直せません（同 文書の冒頭） |
+---
+> | **軽** | 1 | 恒久の決まり §0-5 の「対象20ファイル」が、実物22件とずれている | **この設計書で直す話ではないので、`next_step.md` の §6 に161番として記録しました。**恒久の決まりは まこさんしか直せません（同 文書の冒頭） |
+44c42
+< | **重い** | 2 | H2 の印の行のコマンドが、取り直したかを見ていない | やること J（`--check-fingerprint` の口） |
+---
+> | **重い** | 2 | H2 の印の行のコマンドが、取り直したかを見ていない | やること J（指紋を照らす口） |
+64c62
+< | **軽** | 1 | 触る関数の一覧が1本だけ | 2本とも入れる（§10） |
+---
+> | **軽** | 1 | 触る関数の一覧が1本だけ | 2本とも入れた（§10） |
+73c71
+< | 観察の道具の軽い口（新設・番人4件だけ） | まだ在りません | **15秒 以下の見込み**（1分足の元データを1回 読む＋短い切れ端でヒルベルト変換を2回） | **収める。**やること I で実測して、この欄を埋めます |
+---
+> | 観察の道具の軽い口（新設・番人4件だけ） | まだ測っていません | **15秒 以下の見込み**（1分足の元データを1回 読む＋短い切れ端でヒルベルト変換を2回） | **収める見込み。**やること I で実測して、この欄を埋めます |
+76,78c74,76
+< | 文書を整える道具の番人 | **1秒 未満**（実測＝`python3 .claude/tools/tidy_next_step.py --selftest`） | 同じ見込み | 収まる |
+< | H2 の指紋を照らす口（新設） | まだ在りません | **1秒 未満の見込み**（22件のファイルのハッシュ値を数えるだけ） | 収まる |
+< | **★壊すプログラム5本（それぞれが中で条件のコマンドを走らせる）** | まだ在りません | **各20秒 以下の見込み**（控えを取る＋条件のコマンド1回＋戻す） | **収める。**やること I で1本ずつ実測します。**手本の `b47_dirty_baseline_gone.sh` の 17行 にも同じ注意書きがあります**（逐語＝「承認のときの打ち切りは 120秒」） |
+---
+> | 文書を整える道具の番人 | **1秒 未満**（実測＝`python3 .claude/tools/tidy_next_step.py --selftest` ＝ 15/15 pass） | 同じ見込み | 収まる |
+> | H2 の指紋を照らす口（新設） | **1秒 未満**（実測＝`python3 ../../.claude/hooks/enforce_h2_pass.py --check-fingerprint`） | 同じ | 収まる |
+> | **★壊すプログラム5本（それぞれが中で条件のコマンドを走らせる）** | まだ測っていません | **各20秒 以下の見込み**（控えを取る＋条件のコマンド1回＋戻す） | **収める見込み。**やること I で1本ずつ実測します。**手本の `b47_dirty_baseline_gone.sh` の 17行 にも同じ注意書きがあります**（逐語＝「承認のときの打ち切りは 120秒」） |
+83c81
+< **★設計と実装を照らす hook が、H を止めないか**（3回目の「材料として足りないもの」の1番）＝**実測しました。止まりません。**`python3 scripts/priority_rebuild/verify_design_contract.py ../../.claude/state/acceptance.md` ＝ `RESULT: PASS（設計通り）`・終了コード 0。双方向の照合も `[STOP] SPEC が設計書に無い（対象外）` で飛ばされます。**触る関数の一覧が空でも、観察の道具は走らせられます。**
+---
+> **★設計と実装を照らす hook が、H を止めないか**（3回目の「材料として足りないもの」の1番）＝**実測しました。止まりませんでした。**`python3 scripts/priority_rebuild/verify_design_contract.py ../../.claude/state/acceptance.md` ＝ `RESULT: PASS（設計通り）`・終了コード 0。**★ただし、これは「照合が何も見ていない」ということでもあります**＝触る関数の一覧が空だったためです。**この版では §10 を埋めたので、中身の照合が効き始めます。**
+96c94
+< **（あ）検査5 が、1分足と3分足を「5分足を入れ直したもの」で作っています。**実測＝`grep -n 'src = span if tf' scripts/priority_rebuild/observe_diag.py` ＝ 4009行。**5分足はもう5分でまとまっているので、1分・3分には割れません。**
+---
+> **（あ）検査5 が、1分足と3分足を「5分足を入れ直したもの」で作っていました。**実測＝`grep -n 'src = span if tf' scripts/priority_rebuild/observe_diag.py`（直す前は 4009行に在りました）。**5分足はもう5分でまとまっているので、1分・3分には割れません。**
+98c96
+< **（い）正しい作り方は、同じファイルの別の場所に在ります。**実測＝`grep -n 'SUB_5M_TF' scripts/priority_rebuild/observe_diag.py` ＝ 1579行と 1583行。`build_features` は 1m・3m のとき `load_1m` で**1分足の元データ**を読みます。**検査5 だけが古い形で残っていました。**
+---
+> **（い）正しい作り方は、同じファイルの別の場所に在りました。**実測＝`grep -n 'SUB_5M_TF' scripts/priority_rebuild/observe_diag.py`。`build_features` は 1m・3m のとき `load_1m` で**1分足の元データ**を読みます。**検査5 だけが古い形で残っていました。**
+100c98
+< **（う）重い計算の使い回しが、間違ったものを返す見込みです。**実測＝`grep -n 'def _cyc' scripts/priority_rebuild/observe_diag.py` ＝ 524行。**見分けるのは「本数」と「終値」の2つだけで、時刻は入っていません。**
+---
+> **（う）重い計算の使い回しが、間違ったものを返していました。**実測＝`grep -n 'def _cyc' scripts/priority_rebuild/observe_diag.py`。**直す前の鍵は「本数」と「終値」の2つだけで、時刻は入っていませんでした。**
+102c100
+< **（え）そこで本数が食い違って止まります。**逐語＝`IndexError: boolean index did not match indexed array along axis 0; size of axis is 528960 but size of corresponding boolean axis is 317376`（317,376 の 5/3 倍が 528,960）。落ちる場所＝4021行。
+---
+> **（え）そこで本数が食い違って止まりました。**逐語＝`IndexError: boolean index did not match indexed array along axis 0; size of axis is 528960 but size of corresponding boolean axis is 317376`（317,376 の 5/3 倍が 528,960）。
+106c104
+< 1. 足を作り直す処理は、中身の無い箱を捨てます。実測＝`grep -n 'def _resample' scripts/priority_rebuild/observe_diag.py` ＝ 1534行から 1536行に `dropna` が在ります。
+---
+> 1. 足を作り直す処理は、中身の無い箱を捨てます。実測＝`grep -n 'def _resample' scripts/priority_rebuild/observe_diag.py`（`dropna` が在ります）。
+116,117c114,115
+< | 例外が出るか | **出た。**`observe_diag.py` の 4021行・`IndexError ... size of axis is 528960 but size of corresponding boolean axis is 317376`＝**行番号も数字も記録どおり**（実測＝`grep -n 'IndexError' <走行の記録>`） |
+< | 落ちる列 | **`HT_INPHASE%__3m`。**記録の最後は `HT_DCPHASE__3m` で、その次に来る列がこれ（実測＝`grep -n 'HT_INPHASE' <走行の記録>` ＝ 1m 側は 556行目） |
+---
+> | 例外が出るか | **出た。**`IndexError ... size of axis is 528960 but size of corresponding boolean axis is 317376`＝**行番号も数字も記録どおり**（実測＝`grep -n 'IndexError' <走行の記録>`） |
+> | 落ちる列 | **`HT_INPHASE%__3m`。**記録の最後は `HT_DCPHASE__3m` で、その次に来る列がこれ（実測＝`grep -n 'HT_INPHASE' <走行の記録>`） |
+122c120
+< **（お）★1分足の元データが、必要な期間を覆っていませんでした。**実測＝`grep -n 'ONE_MIN_CSV' scripts/priority_rebuild/observe_diag.py` ＝ 185行が指すのは 2023-11-01 から。**要る始まりは 2023-06-25**（値決め窓 2024-03-01 の250日前）。**約4か月 足りません。**同じファイルの 1563行は「覆っていなければ、黙って値なしを作らずに止める」＝**A を実装すると、検査5 は例外ではなく「元データが足りない」で止まります。**
+---
+> **（お）★1分足の元データが、必要な期間を覆っていませんでした。**実測＝`grep -n 'ONE_MIN_CSV' scripts/priority_rebuild/observe_diag.py`（直す前は 2023-11-01 からを指していました）。**要る始まりは 2023-06-25**（値決め窓 2024-03-01 の250日前）。**約4か月 足りませんでした。**`load_1m` は「覆っていなければ、黙って値なしを作らずに止める」作りです＝**A を実装すると、検査5 は例外ではなく「元データが足りない」で止まります。**
+124c122
+< **（か）文書を整える道具は、表の行を移せません。**実測＝`grep -n 'def move_to_archive' .claude/tools/tidy_next_step.py` ＝ 104行「DISPOSE の節を archive の末尾へ1文字も変えずに移す」＝**節だけ**。**ところが検査 (f) は「archive へ移して表から消す」と求めます**（同じファイルの 239行から 241行）。
+---
+> **（か）文書を整える道具は、表の行を移せませんでした。**実測＝`grep -n 'def move_to_archive' .claude/tools/tidy_next_step.py`（「DISPOSE の節を archive の末尾へ1文字も変えずに移す」＝**節だけ**）。**ところが検査 (f) は「archive へ移して表から消す」と求めます。**
+130c128
+< **（け）観察の道具の番人に、検査5 を見るものが1件もありません。**実測＝`grep -n '_insp_samples' scripts/priority_rebuild/observe_diag.py` は2件 出ますが、どちらも番人の本体（6124行から 6520行）の外です。同じ範囲で `SUB_5M_TF` も `load_1m` も `_cyc` も0件です。**＝A・B を実装しても、いまの番人は今までどおり通ります。**
+---
+> **（け）観察の道具の番人に、検査5 を見るものが1件もありませんでした。**実測＝`grep -n '_insp_samples' scripts/priority_rebuild/observe_diag.py`（2件 出ますが、どちらも番人の本体の外でした）。**＝A・B を実装しても、直す前の番人は今までどおり通っていました。**
+132c130
+< **（こ）★H2 の印の行のコマンドは、取り直したかを見ていませんでした**（2回目の差し戻しの重い2）。実測＝`grep -n 'not in body' .claude/tools/tidy_next_step.py` ＝ 218行。**照らしているのは「`next_step.md` に書いてある文字」と「json の中の文字」だけ**で、いまの `observe_diag.py` の指紋は1行も見ていません。**正しい照合は別の所に在ります**＝実測＝`grep -n 'fingerprint(files)' .claude/hooks/enforce_h2_pass.py` ＝ 125行。
+---
+> **（こ）★H2 の印の行のコマンドは、取り直したかを見ていませんでした**（2回目の差し戻しの重い2）。実測＝`grep -n 'not in body' .claude/tools/tidy_next_step.py`。**照らしているのは「`next_step.md` に書いてある文字」と「json の中の文字」だけ**で、いまの `observe_diag.py` の指紋は1行も見ていません。**正しい照合は別の所に在りました**＝実測＝`grep -n 'fingerprint(files)' .claude/hooks/enforce_h2_pass.py`。
+154c152
+< **④ ベースアップ**＝外の検索は使いません。手本は同じリポジトリの実物で、この設計書を書く前に Read tool で開きました＝`scripts/priority_rebuild/observe_diag.py`（足の作り方 `build_features` と `load_1m`・使い回し `_cyc`）／`.claude/tools/tidy_next_step.py`（節を移す `move_to_archive` と印の照合 `check_marks`）／`.claude/hooks/enforce_h2_pass.py`（指紋の照合）／`.claude/hooks/approve_impl.sh`（済 の書き方と打ち切り）／`.claude/breaks/lib.sh` と `.claude/breaks/b47_dirty_baseline_gone.sh`（本物のファイルを一時的に書き替えて必ず戻す形＝壊すプログラムの手本）／`scripts/priority_rebuild/verify_design_contract.py`（設計と実装を照らす道具）／`scripts/data/extend_1m_taker.py`（データの取り足し＝要件定義書 §8.2.1.1 の②③④）。
+---
+> **④ ベースアップ**＝外の検索は使いません。手本は同じリポジトリの実物で、この設計書を書く前に Read tool で開きました＝`scripts/priority_rebuild/observe_diag.py`（足の作り方 `build_features` と `load_1m`・使い回し `_cyc`）／`.claude/tools/tidy_next_step.py`（節を移す `move_to_archive` と印の照合 `check_marks`）／`.claude/hooks/enforce_h2_pass.py`（指紋の照合）／`.claude/hooks/approve_impl.sh`（済 の書き方と打ち切り）／`.claude/breaks/lib.sh` と `.claude/breaks/b47_dirty_baseline_gone.sh`（本物のファイルを一時的に書き替えて必ず戻す形＝壊すプログラムの手本）／`scripts/priority_rebuild/verify_design_contract.py`（設計と実装を照らす道具）／`.claude/tools/gen_impl_functions.py`（触る関数の一覧を機械で書き出す道具）／`scripts/data/extend_1m_taker.py`（データの取り足し＝要件定義書 §8.2.1.1 の②③④）。
+160,169c158,167
+< | **H** | （走らせるだけ・コードも設定も触らない） | **★実装の前に、原因を確かめる＝2026-09-08 に走らせて済ませました**（54分51秒・結果は §2 の（え-3））。**★本物の `observe_config.json` は1文字も書き替えていません**（それは H2 の印の対象22件に入っています＝実測＝`grep -n 'observe_config' .claude/state/h2_pass.json` ＝ 24行）。**やり方**＝設定の控えを一時置き場に作って時間足を 1m・3m の2つに絞り、`--config` でそれを渡した。**★`--cols` は使えませんでした**＝実物の逐語「絞れる検査だけに効く（材料の一覧を受け取れる検査＝3・4・9・12・13・14）」（実測＝`sed -n '4741p' scripts/priority_rebuild/observe_diag.py`）。**検査5 はこの一覧に入っていないので、列は絞れません**（この設計書の前の版には「`--cols` で落ちた列に絞る」と書いてありました＝誤りでした） | Web Claude の3回目の重い3 |
+< | **G** | `scripts/priority_rebuild/observe_diag.py` の 185行 | **1分足の指し先を、取り足した新しいファイルに書き替える**（`data/BTCUSDT-1m-binance-taker-2023-06-01_2026-06-30.csv`） | §2 の（お） |
+< | **A** | `scripts/priority_rebuild/observe_diag.py` | **検査5 の枠を `build_features` と同じ作りに揃える**＝1m・3m のときは `load_1m` で1分足の元データを読む。**枠づくりを `_insp5_frame` という1つの関数に切り出し、検査5 と番人が同じものを呼ぶ。計算式は1文字も変えない** | §6 の134番の① |
+< | **B** | `scripts/priority_rebuild/observe_diag.py` | **使い回しの鍵に「時刻の指紋」を足す**＝`_cyc` の鍵に、並んでいる時刻のハッシュ値を入れる | §6 の134番の② |
+< | **F** | `scripts/priority_rebuild/observe_diag.py` の番人 ＋ 新しい軽い口 | **★番人を4件 足す（いま 0件 → 4件）**＝**T-g**（`_insp5_frame` が 1m のとき、5分足と違う本数を返す）／**T-h**（使い回しの鍵が、終値が同じで時刻だけ違う2つのデータで別の値を返す）／**T-i**（1分足の元データが、値決め窓の助走ぶん前から採点窓の末まで覆っている）／**T-j**（落ちた噛み合わせが起きない）。**★T-j の中身を、ここで決めます**＝①**使い回しを通る指標を使う**（通らない指標は渡した枠の時刻をそのまま返すので、長さは必ず一致して素通りします。実測＝`grep -c '_cyc(d,' scripts/priority_rebuild/observe_diag.py` ＝ 10か所）②**選ぶのは `HT_INPHASE%`**（落ちた列そのもの）③**1分の枠 → 3分の枠 の順に計算する**（入れものは直近の1組しか持たないので、順番が違うと再現しません＝520行）④**入れものを共有したまま**、返った列の長さが枠の長さと一致することを見る ⑤**短い切れ端（数千本）で足りる**（食い違いはデータの長さと無関係に、時刻の並びが違うことだけで起きるため）。**あわせて軽い口 `--selftest-insp5` を作る**＝この4件だけを走らせる（120秒 に収めるため）。**全部の番人からも同じ4件を呼ぶ**（同じ判定を2か所に書き写さない） | Web Claude の1回目の重い1・3回目の重い2 |
+< | **J** | `.claude/hooks/enforce_h2_pass.py` | **`--check-fingerprint` の口を足す**＝印の一覧のファイルから いま指紋を数え直し、印に書いてある値と合えば 0、違えば 1 を返す（読むだけ・何も書かない）。**判定は既に在る `fingerprint` と `check` の中身をそのまま呼ぶ**（125行）。**★置く場所＝いまの入口（249行から 252行）の hook 本体より前に置き、必ずそこで終える**（後ろに置くと hook 本体が動いて標準入力を待ちます）。★この hook は承認ゲートの相手ではありません（実測＝`grep -n 'claude/tools' .claude/hooks/require_acceptance_before_impl.sh` の 721行から 723行に `.claude/hooks` の .py は在りません） | Web Claude の2回目の重い2・3回目の中2 |
+< | **C** | `.claude/tools/tidy_next_step.py` | **書き替えの口が、0-2 の表の「✅済」と取り消し線の行を控えへ移して表から消す**。移す形は既存の `move_to_archive` と同じ＝1文字も変えず、印の数を前後で照らし、合わなければ書かずに止まる。実測＝`grep -n 'def move_to_archive' .claude/tools/tidy_next_step.py` ＝ 104行（いまは節だけを移す） | 監査 cp26 の 6-7・案2 |
+< | **D** | `.claude/tools/tidy_next_step.py` の番人 | **番人を3件 足す（いま 12件 → 15件）**＝①表の「✅済」の行が控えへ移る ②取り消し線の行も移る ③説明の文（表でない行）は移さない。実測＝`python3 .claude/tools/tidy_next_step.py --selftest` が いま 12件 | 同上 |
+< | **E** | `.claude/breaks/` の5本 | **壊すプログラムを5本 作る**＝`b53_insp5_frame_and_key_gone.sh`（**枠と鍵を同時に戻す＝落ちた噛み合わせを再現する**）／`b54_table_tidy_gone.sh`／`b55_cyc_key_time_gone.sh`／`b56_one_min_csv_old.sh`／`b57_h2_fingerprint_stale.sh`。**宣言の2行（期待する終了コードとその意味）を付ける**（恒久の決まり159番の形）。**手本＝`lib.sh` と `b47_dirty_baseline_gone.sh`**（控えを取り、壊し、必ず戻し、ハッシュ値で戻ったことを確かめる） | Web Claude の2回目の重い1・3回目の重い1 |
+< | **I** | （走らせるだけ・コードは触らない） | **★実装の後に、時間を実測して §0-3 の表を埋める**＝軽い口・全部の番人・**壊すプログラム5本の1本ずつ**。**★検査5 の全部の走行は測りません**（直すと 1m が5倍に増えて、いまの 54分51秒 より確実に伸びるため＝§7 の補8。完成の条件は軽い口だけで測ります）。**そのあと `leak_causality_diag.py` を走らせて H2 の印を取り直す**（恒久の決まり §0-5・309.9秒）。**★どれか1つでも見込みの2倍を超えたら、そこで止めて まこさんに報告します**（2026-09-08 に私の見込みが 15分 → 54分51秒 と外れたため） | Web Claude の1回目の中あ・2回目の中1と中2・3回目の中3 |
+---
+> | **H** | （走らせるだけ・コードも設定も触らない）**＝済みました** | **★実装の前に、原因を確かめる＝2026-09-08 に走らせました**（54分51秒・結果は §2 の（え-3））。**★本物の `observe_config.json` は1文字も書き替えていません**（それは H2 の印の対象22件に入っています＝実測＝`grep -n 'observe_config' .claude/state/h2_pass.json`）。**やり方**＝設定の控えを一時置き場に作って時間足を 1m・3m の2つに絞り、別のファイルとして渡した。**★列を名前で絞る旗は使えませんでした**＝実物の逐語「絞れる検査だけに効く（材料の一覧を受け取れる検査＝3・4・9・12・13・14）」（実測＝`sed -n '4741p' scripts/priority_rebuild/observe_diag.py`）。**検査5 はこの一覧に入っていないので、列は絞れません**（この設計書の前の版には「その旗で落ちた列に絞る」と書いてありました＝誤りでした） | Web Claude の3回目の重い3 |
+> | **G** | `scripts/priority_rebuild/observe_diag.py` の 185行**＝済みました** | **1分足の指し先を、取り足した新しいファイルに書き替えた**（`data/BTCUSDT-1m-binance-taker-2023-06-01_2026-06-30.csv`） | §2 の（お） |
+> | **A** | `scripts/priority_rebuild/observe_diag.py`**＝済みました** | **検査5 の枠を `build_features` と同じ作りに揃えた**＝1m・3m のときは `load_1m` で1分足の元データを読む。**枠づくりを `insp5_frame` という1つの関数に切り出し、検査5 と番人が同じものを呼ぶ。計算式は1文字も変えていない** | §6 の134番の① |
+> | **B** | `scripts/priority_rebuild/observe_diag.py`**＝済みました** | **使い回しの鍵に「時刻の指紋」を足した**＝`_cyc` の鍵に、並んでいる時刻のハッシュ値を入れた | §6 の134番の② |
+> | **F** | `scripts/priority_rebuild/observe_diag.py` の番人 ＋ 新しい軽い口**＝済みました** | **★番人を4件 足した（いま 0件 → 4件）**＝**T-g**（`insp5_frame` が 1m のとき、5分足と違う本数を返す）／**T-h**（使い回しの鍵が、終値が同じで時刻だけ違う2つのデータで別の値を返す）／**T-i**（1分足の元データが、値決め窓の助走ぶん前から採点窓の末まで覆っている）／**T-j**（落ちた噛み合わせが起きない）。**★T-j の中身**＝①**使い回しを通る指標を使う**（通らない指標は渡した枠の時刻をそのまま返すので、長さは必ず一致して素通りします。実測＝`grep -c '_cyc(d,' scripts/priority_rebuild/observe_diag.py` ＝ 10か所）②**選ぶのは `HT_INPHASE%`**（落ちた列そのもの）③**1分の枠 → 3分の枠 の順に計算する**（入れものは直近の1組しか持たないので、順番が違うと再現しません）④**入れものを共有したまま**、返った列の長さが枠の長さと一致することを見る ⑤**短い切れ端（3日ぶん）で足りる**（食い違いはデータの長さと無関係に、時刻の並びが違うことだけで起きるため）。**あわせて軽い口 `--selftest-insp5` を作った**＝この4件だけを走らせる（120秒 に収めるため）。**全部の番人からも同じ4件を呼ぶ**（同じ判定を2か所に書き写さない） | Web Claude の1回目の重い1・3回目の重い2 |
+> | **J** | `.claude/hooks/enforce_h2_pass.py`**＝済みました** | **指紋を照らす口（`--check-fingerprint`）を足した**＝印の一覧のファイルから いま指紋を数え直し、印に書いてある値と合えば 0、違えば 1 を返す（読むだけ・何も書かない）。**判定は既に在る `fingerprint` と `check` の中身をそのまま呼ぶ。****★置き場所＝hook 本体より前に置き、必ずそこで終える**（後ろに置くと hook 本体が動いて標準入力を待ちます）。★この hook は承認ゲートの相手ではありません（実測＝`grep -n 'claude/tools' .claude/hooks/require_acceptance_before_impl.sh` に `.claude/hooks` の .py は在りません）。**★見張り本体の番人は 19/19 pass のまま**（実測＝`python3 ../../.claude/hooks/enforce_h2_pass.py --selftest`） | Web Claude の2回目の重い2・3回目の中2 |
+> | **C** | `.claude/tools/tidy_next_step.py`**＝済みました** | **書き替えの口が、0-2 の表の「✅済」と取り消し線の行を控えへ移して表から消す**（`move_done_rows` を新設）。移す形は既存の `move_to_archive` と同じ＝1文字も変えず、印の数を前後で照らし、合わなければ書かずに止まる。実測＝`grep -n 'def move_done_rows' .claude/tools/tidy_next_step.py` | 監査 cp26 の 6-7・案2 |
+> | **D** | `.claude/tools/tidy_next_step.py` の番人**＝済みました** | **番人を3件 足した（12件 → 15件）**＝①表の「✅済」の行が控えへ移る ②取り消し線の行も移る ③説明の文（表でない行）は移さない。実測＝`python3 .claude/tools/tidy_next_step.py --selftest` ＝ **15/15 pass** | 同上 |
+> | **E** | `.claude/breaks/` の5本**＝済みました** | **壊すプログラムを5本 作った**＝`b53_insp5_frame_and_key_gone.sh`（**枠と鍵を同時に戻す＝落ちた噛み合わせを再現する**）／`b54_table_tidy_gone.sh`／`b55_cyc_key_time_gone.sh`／`b56_one_min_csv_old.sh`／`b57_h2_fingerprint_stale.sh`。**宣言の2行（期待する終了コードとその意味）を付けた**（恒久の決まり159番の形・実測＝`grep -c 'EXPECT_RC' .claude/breaks/b53_insp5_frame_and_key_gone.sh`）。**手本＝`lib.sh` と `b47_dirty_baseline_gone.sh`**（控えを取り、壊し、必ず戻し、ハッシュ値で戻ったことを確かめる） | Web Claude の2回目の重い1・3回目の重い1 |
+> | **I** | （走らせるだけ・コードは触らない）**＝これから** | **★時間を実測して §0-3 の表を埋める**＝軽い口・全部の番人・**壊すプログラム5本の1本ずつ**。**★検査5 の全部の走行は測りません**（直すと 1m が5倍に増えて、いまの 54分51秒 より確実に伸びるため＝§7 の補8。完成の条件は軽い口だけで測ります）。**そのあと `leak_causality_diag.py` を走らせて H2 の印を取り直す**（恒久の決まり §0-5・309.9秒）。**★どれか1つでも見込みの2倍を超えたら、そこで止めて まこさんに報告します**（2026-09-08 に私の見込みが 15分 → 54分51秒 と外れたため） | Web Claude の1回目の中あ・2回目の中1と中2・3回目の中3 |
+171c169,171
+< **工程表**＝**承認①（打ち直し）** → H（落ちることを確かめる）→ G（指し先）→ A（枠）→ B（鍵）→ F（番人4件と軽い口）→ J（指紋の口）→ C（表の片づけ）→ D（番人3件）→ E（壊すプログラム5本）→ I（時間の実測と H2 の印の取り直し）→ **この設計書から `NEW_FILE:` と `MODEL:` の2行を消す** → 表の「壊すプログラム」の欄に5本の名前を書く → **承認②**。
+---
+> **工程表**＝承認①（済） → H（済） → G（済） → A（済） → B（済） → F（済） → J（済） → C（済） → D（済） → E（済） → `NEW_FILE:` と `MODEL:` の2行を消す（済） → 触る関数の一覧を埋める（済） → 表の「壊すプログラム」の欄に5本の名前を書く（済） → **I（時間の実測と H2 の印の取り直し）** → **承認②**。
+> 
+> **★I を承認②の前に置いた理由**＝H2 の印を取り直すと `observe_diag.py` の指紋が固まります。**承認②で機械が走らせる `b57` は、その印を1行のコメントで壊して 1 が返ることを試すので、印が いまのコードと合っている必要があります。**もし承認②の時点で印が古ければ、`b57` は「壊す前から印が合っていない」と言って 97 で落ちます（黙って「守れた」と言わない作りにしました）。
+175c175
+< **この工事に、疑似シミュから取った値は1つもありません。**閾値・段数・AUC のたぐいは1つも決めません。**採否は score.py ではなく、①観察の番人4件が pass するか ②表の行が機械で移るか ③H2 の印が いまのコードと一致するか の3つだけで決まります。**
+---
+> **この工事に、疑似シミュから取った値は1つもありません。**閾値・段数・AUC のたぐいは1つも決めていません。**採否は score.py ではなく、①観察の番人4件が pass するか ②表の行が機械で移るか ③H2 の印が いまのコードと一致するか の3つだけで決まります。**
+188c188
+< | **監査 Q5 の2** | 記録や印が正しいか | **手で偽造されたら見抜けません**（H2・G2 と同じ限界）。**J で足す口も、印そのものを偽造されれば通ります**（見張り本体と同じ限界） |
+---
+> | **監査 Q5 の2** | 記録や印が正しいか | **手で偽造されたら見抜けません**（H2・G2 と同じ限界）。**J で足した口も、印そのものを偽造されれば通ります**（見張り本体と同じ限界） |
+190c190
+< | **監査 Q5 の4** | 直す対象の道具自身を書き換えられたら | **無効にできます。**`scripts/priority_rebuild` の .py と `.claude/tools` の .py と `.claude/breaks` の .sh は承認ゲートの相手なので承認は要ります。**★`.claude/hooks` の .py（J で触るもの）は承認ゲートの相手ではありません**（まこさん指示 2026-09-06「hookの修正ごときで承認いれるな」）。**git の差分には必ず出ます** |
+---
+> | **監査 Q5 の4** | 直す対象の道具自身を書き換えられたら | **無効にできます。**`scripts/priority_rebuild` の .py と `.claude/tools` の .py と `.claude/breaks` の .sh は承認ゲートの相手なので承認は要ります。**★`.claude/hooks` の .py（J で触ったもの）は承認ゲートの相手ではありません**（まこさん指示 2026-09-06「hookの修正ごときで承認いれるな」）。**git の差分には必ず出ます** |
+194c194
+< | **補3** | 原因（（あ）から（え-2））は確かめたか | **走らせて確かめてはいません。**コードを読み取って特定しました（§2 の冒頭）。**やること H で、実際に落ちる／落ちないを確かめます** |
+---
+> | **補3** | 原因（（あ）から（え-2））は確かめたか | **確かめました**（§2 の（え-3）＝2026-09-08 の やること H・54分51秒）。★ただし**確かめたのは「直す前に落ちること」まで**で、**直した後に検査5 が最後まで走ることは測っていません**（補2 のとおり時間が足りないため） |
+198,199c198,199
+< | **補7** | 承認の後に H を走らせたとき、設計と実装を照らす hook が止めないか | **止めませんでした（実測）。**`python3 scripts/priority_rebuild/verify_design_contract.py ../../.claude/state/acceptance.md` ＝ `RESULT: PASS`・終了コード 0。**触る関数の一覧が空でも通ります。**★ただし、これは「照合が何も見ていない」ということでもあります＝**中身の照合が効き始めるのは、やること I のあとに一覧を埋めてからです** |
+< | **補8** | **★直すと、検査5 は いまより遅くなります** | **速くなりません。逆です。**いまの 1m・3m は5分足を入れ直したもので **158,112本**しかありません（実測＝`grep 'HT_DCPERIOD__1m' <走行の記録>`）。**直すと 1m は本物の1分足になり 790,560本＝5倍になります。**3m も 263,520本 に増えます。**＝検査5 を全部 走らせる時間は、いまの 54分51秒 より確実に伸びます。****この工事では、その時間を測りません**（完成の条件は軽い口だけで測るため＝§7 の補2）。**どれだけ伸びるかは、まこさんが「全部 走らせたい」と判断されたときに、先に小さく測ってから出します**（恒久の決まり61番） |
+---
+> | **補7** | 触る関数の一覧を埋めると、何が変わるか | **照合が中身を見るようになります。**1回目の承認のときは一覧が空で、`RESULT: PASS` は「何も見ていない」という意味でした（実測＝`python3 scripts/priority_rebuild/verify_design_contract.py ../../.claude/state/acceptance.md`）。**★ただし、一覧は「いまファイルに在る全関数」です**（`gen_impl_functions.py` の限界①）＝この工事で触っていない関数も入ります。**承認の画面に ⚠️ が出るのが正しい状態です**（まこさん指定 2026-09-03） |
+> | **補8** | **★直すと、検査5 は いまより遅くなります** | **速くなりません。逆です。**いまの 1m・3m は5分足を入れ直したもので **158,112本**しかありませんでした（実測＝`grep 'HT_DCPERIOD__1m' <走行の記録>`）。**直すと 1m は本物の1分足になり 790,560本＝5倍になります。**3m も 263,520本 に増えます。**＝検査5 を全部 走らせる時間は、いまの 54分51秒 より確実に伸びます。****この工事では、その時間を測りません**（完成の条件は軽い口だけで測るため＝補2）。**どれだけ伸びるかは、まこさんが「全部 走らせたい」と判断されたときに、先に小さく測ってから出します**（恒久の決まり61番） |
+217,221c217,221
+< | 1 | AUDIT-1＝**枠と、長さの一致**＝①検査5 の 1m の枠が1分足の元データから作られる（番人 T-g が、本数が5分足と違うことを見る）②1m と 3m を続けて計算しても、返った列の長さが枠の長さと一致する（番人 T-j。直す前は 528960 と 317376 で食い違い、例外で止まった） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 検査5 の枠づくりと、使い回しの鍵の時刻を**同時に**直す前へ戻すと、番人 T-g と T-j が落ちる | — | 対象 | **未着手** |
+< | 2 | AUDIT-2＝**鍵**＝終値が同じで時刻だけ違う2つのデータを渡すと、返る値が別になる（番人 T-h。直す前は同じ値が返った） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 鍵から時刻の指紋だけを外すと、番人 T-h が落ちる | — | 対象 | **未着手** |
+< | 3 | AUDIT-3＝1分足の元データが、値決め窓の助走ぶん前から採点窓の末まで覆っている（番人 T-i。直す前は 2023-11-01 からで、要る 2023-06-25 に約4か月 足りなかった） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 指し先を古いファイルに戻すと、番人 T-i が落ちる | — | 対象 | **未着手** |
+< | 4 | AUDIT-4＝表の行の片づけを機械がやる＝①「✅済」の行が控えへ移る ②取り消し線の行も移る ③**説明の文（表でない行）は移さない**（番人3件で別々に見る） | `python3 ../../.claude/tools/tidy_next_step.py --selftest` | 実経路 | 表の行を移す処理を消すと、番人が落ちる | — | 対象 | **未着手** |
+< | 5 | AUDIT-5＝H2 の印が、いまの `observe_diag.py` と一致している（0 を返す＝印を取り直した証拠） | `python3 ../../.claude/hooks/enforce_h2_pass.py --check-fingerprint` | 実経路 | `observe_diag.py` にコメントを1行 足して印と食い違わせると、この口が 1 を返す | — | 対象 | **未着手** |
+---
+> | 1 | AUDIT-1＝**枠と、長さの一致**＝①検査5 の 1m の枠が1分足の元データから作られる（番人 T-g が、本数が5分足と違うことを見る）②1m と 3m を続けて計算しても、返った列の長さが枠の長さと一致する（番人 T-j。直す前は 528960 と 317376 で食い違い、例外で止まった） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 検査5 の枠づくりと、使い回しの鍵の時刻を**同時に**直す前へ戻すと、番人 T-g と T-j が落ちる | `b53_insp5_frame_and_key_gone.sh` | 対象 | **未着手** |
+> | 2 | AUDIT-2＝**鍵**＝終値が同じで時刻だけ違う2つのデータを渡すと、返る値が別になる（番人 T-h。直す前は同じ値が返った） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 鍵から時刻の指紋だけを外すと、番人 T-h が落ちる | `b55_cyc_key_time_gone.sh` | 対象 | **未着手** |
+> | 3 | AUDIT-3＝1分足の元データが、値決め窓の助走ぶん前から採点窓の末まで覆っている（番人 T-i。直す前は 2023-11-01 からで、要る 2023-06-25 に約4か月 足りなかった） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 指し先を古いファイルに戻すと、番人 T-i が落ちる | `b56_one_min_csv_old.sh` | 対象 | **未着手** |
+> | 4 | AUDIT-4＝表の行の片づけを機械がやる＝①「✅済」の行が控えへ移る ②取り消し線の行も移る ③**説明の文（表でない行）は移さない**（番人3件で別々に見る） | `python3 ../../.claude/tools/tidy_next_step.py --selftest` | 実経路 | 表の行を移す処理を消すと、番人が落ちる | `b54_table_tidy_gone.sh` | 対象 | **未着手** |
+> | 5 | AUDIT-5＝H2 の印が、いまの `observe_diag.py` と一致している（0 を返す＝印を取り直した証拠） | `python3 ../../.claude/hooks/enforce_h2_pass.py --check-fingerprint` | 実経路 | `observe_diag.py` にコメントを1行 足して印と食い違わせると、この口が 1 を返す | `b57_h2_fingerprint_stale.sh` | 対象 | **未着手** |
+225,226d224
+< **★壊すプログラムの欄を、この回は「—」にしています。**b53 から b57 はこれから作るファイルで、**まだ実在しないものは走らせられない**ためです（実測＝`ls .claude/ratchet/acceptance_archive/`）。**2回目の承認で、欄に名前を戻して測ります。**
+< 
+239c237
+< **★触る関数の一覧は、実装の後に確定させます。**いまは空です（監査 cp15 の C-4）。**実装の後に `gen_impl_functions.py` の出力をそのまま入れて、承認を打ち直します。****★2本とも入れます**（`observe_diag.py` と `tidy_next_step.py`）。CC は1文字も手で書きません（まこさん指示 2026-09-02「全部自動生成で、お前が手打ちするな」）。
+---
+> **★触る関数の一覧は、実装の後に機械が書き出したものを、そのまま §10 に入れました。**CC は1文字も手で書いていません（まこさん指示 2026-09-02「全部自動生成で、お前が手打ちするな」）。**出どころ**＝`python3 .claude/tools/gen_impl_functions.py`（2本ぶん）。
+248,251c246,297
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "実装の前です。実装の後に gen_impl_functions.py の出力を、observe_diag.py と tidy_next_step.py の2本ぶん そのまま入れて、承認を打ち直します（監査 cp28 の C-3 で指摘された形＝実装の後に埋める／Web Claude の1回目の軽1＝2本とも入れる）。",
+<   "must_use": {},
+<   "no_must_use_reason": "触る関数の一覧が空の間は、どの関数に何を要求するかも決まりません（監査 cp15 の C-4 の対）。実装の後に、この工事で直した所を要求する形で入れます。",
+---
+>   "impl_functions": {
+>     "scripts/priority_rebuild/observe_diag.py": [
+>       "<モジュール直下>", "_J", "_Tee.__enter__", "_Tee.__exit__", "_Tee.__init__", "_Tee.flush",
+>       "_Tee.write", "_ab", "_acb", "_adx_di", "_assert_search_window_only", "_atr", "_auc",
+>       "_category", "_cel", "_ck", "_cond_mask", "_conf_search", "_corr_matrix", "_cyc",
+>       "_demand_rank_name", "_demand_tail_ok", "_direction_gap", "_dup_groups", "_dup_keep_of_group",
+>       "_dup_pairs", "_dup_used_in_repo", "_dup_used_in_strategies", "_ebsw", "_fractal_levels",
+>       "_free_bars", "_gap_runs", "_grid_touch", "_h", "_ha", "_hold_band", "_hw",
+>       "_independent_step", "_insp_axis", "_insp_close_leak", "_insp_demand", "_insp_direction_gap",
+>       "_insp_direction_known", "_insp_duplicates", "_insp_indicator_match", "_insp_indicator_stage",
+>       "_insp_industry", "_insp_lineage_range", "_insp_lookahead", "_insp_price_scale",
+>       "_insp_property", "_insp_range_geo", "_insp_ref_coverage", "_insp_regime_label_oneway",
+>       "_insp_regime_rank", "_insp_resample", "_insp_samples", "_insp_source", "_insp_v9_columns",
+>       "_insp_v9_freshness", "_insp_v9_periods", "_insp_windows", "_kv", "_load_pta", "_mama",
+>       "_mat_series", "_mech_decompose", "_mmi", "_nominal_wlen", "_one_side", "_oneway_ratio",
+>       "_out_path", "_pct_exit_scan", "_price_scale_check", "_print_mode_info", "_ps",
+>       "_rank_record_unmeasured", "_rci", "_rci_slow", "_recipe_families", "_ref_coverage_counts",
+>       "_reg", "_regime_horizons", "_regime_labels", "_resample", "_resolve_period",
+>       "_rg_zone_consts", "_role_lineage_table", "_rsi", "_scene_ctx", "_scene_data",
+>       "_scene_exit_eval", "_scene_exit_grid", "_scene_exit_rows", "_scene_exit_scan",
+>       "_scene_floor", "_scene_header", "_scene_labels", "_scene_mask", "_search",
+>       "_sk_crash_rebound_long", "_sk_fade_long", "_sk_fade_short", "_sk_grid_long",
+>       "_sk_grid_short", "_sk_pullback_short", "_sk_resistance_touch_short",
+>       "_sk_support_touch_long", "_sk_zscore_long", "_sk_zscore_short", "_skip", "_sr_touch",
+>       "_sr_touch_atr", "_sub", "_summary", "_supertrend", "_synth_regime_bars", "_tautology",
+>       "_tdseq", "_th", "_touch_filter", "_v9_col_matches", "_v9_families", "_v9_part_grid",
+>       "_v9_part_matches", "_v9_part_variants", "_v9_periods", "_v9_preprocess_frame",
+>       "_v9_price_kinds", "_v9_rank", "_v9_z", "_vfi", "_vp_levels", "_w_flag",
+>       "add_demand_to_ranking", "build_catalog", "build_features", "build_parser",
+>       "build_range_geometry", "check_materials", "check_materials_meta", "find_material",
+>       "grow_search", "insp5_frame", "inspect_data", "load_1m", "load_config", "load_demand",
+>       "make_material", "mech_thresholds", "merge_demand_into_ranking", "neighbors",
+>       "next_actions", "observe", "observe_scene", "plan", "plan_scene", "post_exit",
+>       "rank_demand_for_regime", "rank_materials_for_regime", "rank_regime", "rank_separation",
+>       "rank_separation_independent", "round_trip_cost", "selftest", "selftest_insp5",
+>       "selftest_rank_demand", "trajectory", "verdict"
+>     ],
+>     ".claude/tools/tidy_next_step.py": [
+>       "<モジュール直下>", "_level", "_pass", "_section_end", "check_marks", "count_marks",
+>       "do_verify", "do_write", "find_disposable_sections", "latest_worklog_date", "main",
+>       "marks_block", "move_done_rows", "move_to_archive", "refresh_marks", "sec0_lines",
+>       "selftest", "verify"
+>     ]
+>   },
+>   "must_use": {
+>     "insp5_frame": ["load_1m", "SUB_5M_TF", "_resample"],
+>     "_insp_samples": ["insp5_frame", "load_1m", "SUB_5M_TF"],
+>     "_cyc": ["hashlib", "np"],
+>     "selftest_insp5": ["insp5_frame", "load_1m", "_cyc", "build_catalog", "load_config"],
+>     "move_done_rows": ["check_marks", "count_marks", "DONE_MARK", "STRIKE_RE", "_section_end"],
+>     "do_write": ["move_done_rows", "move_to_archive", "refresh_marks"]
+>   },
+255,256c301,302
+<     "impl_functions": "空。実装の後に gen_impl_functions.py の出力をそのまま入れる（CC は手で書かない・2本ぶん）",
+<     "must_use": "空。実装の後に、この工事で直した所を要求する形で入れる",
+---
+>     "impl_functions": "gen_impl_functions.py の出力を、2本ぶん そのまま入れた（CC は手で書いていない）。★出るのは『いまファイルに在る全関数』＝この工事で触っていない関数も入る＝承認の画面に ⚠️ が出るのが正しい状態（まこさん指定 2026-09-03）",
+>     "must_use": "この工事で直した6つの関数に、その中で必ず使う名前を書いた（枠づくりは1分足の元データを読む／使い回しの鍵はハッシュ値を使う／表の行を移す処理は印の数を照らす、など）",

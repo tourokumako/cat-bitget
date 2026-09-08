@@ -132,6 +132,51 @@ def move_to_archive(next_text: str, arc_text: str, today: str) -> tuple[str, str
     return new_next, new_arc, rep
 
 
+def move_done_rows(next_text: str, arc_text: str, today: str) -> tuple[str, str, dict]:
+    """0-2 の表から、終わった行（✅済・取り消し線）を archive の末尾へ1文字も変えずに移す。
+
+    ★2026-09-08（設計書 insp5-frame-and-table-tidy-20260908 の C・監査 cp26 の §6-7）
+      直す前＝検査 (f) は「終わった行が表に残っていると止める」と求めるのに、移す手段が
+      節（DISPOSE の印つき）にしか無く、表の行は人が手で消すしかなかった。
+      そのせいで、並走した2つのセッションが同じ Stop hook で同時に止まり、どちらも
+      ターンを終えられなくなった（監査 cp26 の逐語）。さらに、人が手で消すと行を間違える
+      （2026-09-08 に、行の位置を確かめずに消して §6 の別の行を消した）。
+    ★見るのは 0-2 の節の「表の行」だけ＝説明の文に ✅済 と書いても移さない（検査 (f) と同じ見方）。
+    ★印の数の照合は check_marks を呼ぶ＝合わなければ1文字も書かずに止まる（move_to_archive と同じ）。
+    """
+    lines = next_text.splitlines(keepends=True)
+    s2 = next((i for i, l in enumerate(lines) if l.startswith(H02)), None)
+    zero = tuple(0 for _ in MARKS)
+    rep = {"moved_rows": 0, "before": count_marks(next_text),
+           "after": count_marks(next_text), "moved": zero}
+    if s2 is None:
+        return next_text, arc_text, rep
+    end = _section_end(lines, s2)
+    keep: list[str] = []
+    moved_rows: list[str] = []
+    for k, ln in enumerate(lines):
+        if s2 <= k < end and ln.lstrip().startswith("|") and (DONE_MARK in ln or STRIKE_RE.search(ln)):
+            moved_rows.append(ln)
+        else:
+            keep.append(ln)
+    if not moved_rows:
+        return next_text, arc_text, rep
+    new_next = "".join(keep)
+    moved = "".join(moved_rows)
+    if not moved.endswith("\n"):
+        moved += "\n"
+    head = (f"\n\n# {today} に tidy_next_step.py が next_step.md の 0-2 の表から移した行"
+            f"（終わった行 {len(moved_rows)} 行・1文字も変えていない）\n\n"
+            "| 番号 | やること | 状態 |\n|---|---|---|\n")
+    new_arc = arc_text + head + moved
+    before, after, mv = count_marks(next_text), count_marks(new_next), count_marks(moved)
+    check_marks(before, after, mv)
+    if moved not in new_arc:
+        raise SystemExit("[tidy] 移した行が archive に1文字も変わらずに入っていない＝書かずに止まる")
+    rep.update(moved_rows=len(moved_rows), before=before, after=after, moved=mv)
+    return new_next, new_arc, rep
+
+
 def check_marks(before: tuple, after: tuple, moved: tuple) -> None:
     """印の数＝前 − 移した分 ＝ 後、でなければ止まる。"""
     for k, m in enumerate(MARKS):
@@ -261,12 +306,15 @@ def do_write(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) -> int
     text = next_path.read_text(encoding="utf-8")
     arc = arc_path.read_text(encoding="utf-8") if arc_path.exists() else ""
     new_next, new_arc, rep = move_to_archive(text, arc, today)
+    # ★2026-09-08＝節を移したあと、0-2 の表の「終わった行」も移す（設計書 の C・監査 cp26 の §6-7）
+    new_next, new_arc, rep2 = move_done_rows(new_next, new_arc, today)
     new_next = refresh_marks(new_next, _pass(H2), _pass(G2), today)
     if new_arc != arc:
         arc_path.write_text(new_arc, encoding="utf-8")
     next_path.write_text(new_next, encoding="utf-8")
     print(f"[tidy --write] 移した節 {rep['moved_sections']}／行 {rep['moved_lines']}"
-          f"／印の数 前 {rep['before']} → 後 {count_marks(new_next)}（移した分 {rep['moved']}）"
+          f"／0-2 の表から移した行 {rep2['moved_rows']}"
+          f"／印の数 前 {rep['before']} → 後 {count_marks(new_next)}（移した分 {rep['moved']}＋{rep2['moved']}）"
           f"／(0-b-2) を json から書いた")
     return do_verify(next_path, limit)
 
@@ -368,6 +416,24 @@ def selftest() -> int:
     if any(x.startswith("(f)") for x in r9c):
         ng.append(f"T9c: 説明の文に『{DONE_MARK}』が在るだけで (f) が出た（誤報）{r9c}")
 
+    # T10 (C) 0-2 の表の「終わった行」を、機械が archive へ移す（2026-09-08・設計書 の D）
+    #   ①✅済 の行が移る ②取り消し線の行も移る ③説明の文（表でない行）は移さない
+    d10 = clean.replace("| 1 | あれ | まだ |", f"| 1 | あれ | {DONE_MARK} |")
+    n10, a10, r10 = move_done_rows(d10, "# archive\n", today)
+    if r10["moved_rows"] != 1 or DONE_MARK in n10.split(H02)[1].split("###")[0]:
+        ng.append(f"T10a: 0-2 の表の『{DONE_MARK}』の行が移らない（移した行 {r10['moved_rows']}）")
+    if f"| 1 | あれ | {DONE_MARK} |" not in a10:
+        ng.append("T10a': 移した行が archive に1文字も変わらずに入っていない")
+    d11 = clean.replace("| 1 | あれ | まだ |", "| 1 | ~~あれ~~ | まだ |")
+    _n11, _a11, r11 = move_done_rows(d11, "# archive\n", today)
+    if r11["moved_rows"] != 1:
+        ng.append(f"T10b: 0-2 の表の取り消し線の行が移らない（移した行 {r11['moved_rows']}）")
+    d12 = clean.replace("### 0-2 🔴 次にやること",
+                        f"### 0-2 🔴 次にやること\n\n終わった行（{DONE_MARK}）は archive へ移します。")
+    n12, _a12, r12 = move_done_rows(d12, "# archive\n", today)
+    if r12["moved_rows"] != 0 or f"終わった行（{DONE_MARK}）は archive へ移します。" not in n12:
+        ng.append(f"T10c: 説明の文（表でない行）を移してしまった（移した行 {r12['moved_rows']}）")
+
     # T8 hook を見本で直に呼ぶ（❌ の見本＝exit 2／✅ の見本＝exit 0）★実物の json と worklog の日付で
     if HOOK.exists():
         real_h2, real_g2 = _pass(H2), _pass(G2)
@@ -391,10 +457,11 @@ def selftest() -> int:
         ng.append("T8: hook が無い")
 
     print("[selftest] T1 移せる／T2 数が合わなければ止まる／T3 日付／T4 印／T5 行数／T6 ★いまここ／T7 きれい／T8 hook／T1' 消す印"
-          "／T9a ✅済 の行／T9b 取り消し線／T9c 説明の文は止めない")
+          "／T9a ✅済 の行／T9b 取り消し線／T9c 説明の文は止めない"
+          "／T10a 表の ✅済 を移す／T10b 表の取り消し線を移す／T10c 説明の文は移さない")
     for x in ng:
         print(f"  ❌ {x}")
-    total = 12
+    total = 15
     print(f"  {'❌' if ng else '✅'} わざと壊して止まるか試すテスト {total - len(ng)}/{total} pass")
     return 1 if ng else 0
 
