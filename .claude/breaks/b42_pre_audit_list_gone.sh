@@ -1,4 +1,6 @@
 #!/bin/bash
+# EXPECT_RC: 1
+# MEANS: その検査が落ちた（守りが働いた）
 # b42 — 監査の前に走らせる一覧から1行 消すと、番人が落ちるか
 #
 #   守っているもの＝next_step §6 の145番・141番（設計書 iter="approval-audit-plumbing-20260907"

@@ -1,4 +1,6 @@
 #!/bin/bash
+# EXPECT_RC: 1
+# MEANS: その検査が落ちた（守りが働いた）
 # b41 — 凍結ファイルから節を1つ消すと、依頼書を作れずに落ちるか
 #
 #   守っているもの＝next_step §6 の121番・92番・141番（設計書 iter="approval-audit-plumbing-20260907"

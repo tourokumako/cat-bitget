@@ -1,4 +1,6 @@
 #!/bin/bash
+# EXPECT_RC: 1
+# MEANS: その検査が落ちた（守りが働いた）
 # b47 — 「承認の時点で汚れていた .py」を数えない処理を消すと、番人が落ちるか
 #
 #   守っているもの＝next_step §6 の138番（設計書 iter="approval-audit-plumbing-20260907" の

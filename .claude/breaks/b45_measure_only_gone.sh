@@ -1,4 +1,6 @@
 #!/bin/bash
+# EXPECT_RC: 2
+# MEANS: 土台ゲートが止めた（通す判定が消えた）
 # b45 — 土台ゲートの「測るだけの口を通す」判定を消すと、その口が止まるか
 #
 #   守っているもの＝next_step §6 の150番（設計書 iter="approval-audit-plumbing-20260907" の

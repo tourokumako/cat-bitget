@@ -1,0 +1,6 @@
+5c5,7
+< TARGET: .claude/tools/run_breaks.py, .claude/hooks/approve_impl.sh, .claude/breaks/b06_tool_changed.sh, .claude/breaks/b41_req_frozen_section_gone.sh, .claude/breaks/b42_pre_audit_list_gone.sh, .claude/breaks/b43_approve_empty_freeze_gone.sh, .claude/breaks/b44_approve_record_write_gone.sh, .claude/breaks/b45_measure_only_gone.sh, .claude/breaks/b46_spec_lineno_gone.sh, .claude/breaks/b47_dirty_baseline_gone.sh, .claude/breaks/b48_fence_skip_gone.sh, .claude/breaks/b49_foreign_block_gone.sh, .claude/breaks/b50_fixture_name_gone.sh, .claude/breaks/b51_dirty_json_unguarded.sh
+---
+> TARGET: .claude/tools/run_breaks.py, .claude/hooks/approve_impl.sh, .claude/breaks/b06_tool_changed.sh, .claude/breaks/b41_req_frozen_section_gone.sh, .claude/breaks/b42_pre_audit_list_gone.sh, .claude/breaks/b43_approve_empty_freeze_gone.sh, .claude/breaks/b44_approve_record_write_gone.sh, .claude/breaks/b45_measure_only_gone.sh, .claude/breaks/b46_spec_lineno_gone.sh, .claude/breaks/b47_dirty_baseline_gone.sh, .claude/breaks/b48_fence_skip_gone.sh, .claude/breaks/b49_foreign_block_gone.sh, .claude/breaks/b50_fixture_name_gone.sh, .claude/breaks/b51_dirty_json_unguarded.sh, .claude/breaks/b52_expect_rc_gone.sh
+> NEW_FILE: .claude/breaks/b52_expect_rc_gone.sh
+> MODEL: .claude/breaks/b45_measure_only_gone.sh, .claude/breaks/lib.sh

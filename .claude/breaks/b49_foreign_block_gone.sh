@@ -1,4 +1,6 @@
 #!/bin/bash
+# EXPECT_RC: 1
+# MEANS: その検査が落ちた（守りが働いた）
 # b49 — 他のプログラムが書く囲みを差し戻す処理を消すと、相手の検査が落ちるか
 #
 #   守っているもの＝next_step §6 の154番（設計書 iter="approval-audit-plumbing-20260907" の

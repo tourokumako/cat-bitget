@@ -169,6 +169,47 @@ def parse_table(md_text: str) -> list:
     return out
 
 
+def expect_of(name: str) -> tuple:
+    """壊すプログラムの宣言（期待する終了コードと、その意味）を読む。
+
+    ★2026-09-08（next_step §6 の159番・監査 cp29 の §4-2 と §5-5）
+      監査の逐語＝「あとで記録だけを読む人は、#12 を『壊したら検査が落ちた』と読みます。
+        実際に起きたのは『壊したら土台ゲートが通った』です。**意味が反対です。**」
+      直す前＝合格の決め方が「終了コードが 0 以外」の1つだけだった。
+        11本は「検査が落ちる」＝0 以外で意味が合っていたので、誰も気づかなかった。
+        12本目（b51）は向きが反対なので、記録も表示も逆の意味になっていた。
+        さらに、中で異常が起きた終了コード（lib.sh の 99＝控えから戻せなかった）も
+        「止まった」に数えていた＝b51 の「正しい成功」の 1 と見分けが付かなかった。
+      直した後＝壊すプログラムが自分で「期待する終了コードと、その意味」を宣言し、
+        この道具がそれと照らす。**宣言が無ければ止める（fail-closed）。**
+
+    書き方（.sh の先頭・#! の次あたり）
+      # EXPECT_RC: 1
+      # MEANS: その検査が落ちた（守りが働いた）
+
+    戻り＝(期待する終了コード or None, 意味の文, 読めなかった理由 or "")
+    ★読めなかったときは、呼ぶ側が止める（この関数は例外を投げない）。
+    ★限界（正直に）＝宣言した値が正しいかは見ない。CC が実測から書き写す。
+      間違った値を書くと、その壊すプログラムは永久に不合格になる（合格側には倒れない）。
+    """
+    p = BREAKS_DIR / name
+    if not p.exists():
+        return None, "", f"壊すプログラムがありません: {p}"
+    rc = means = None
+    for ln in p.read_text(encoding="utf-8", errors="ignore").splitlines()[:40]:
+        m = re.match(r"^#\s*EXPECT_RC:\s*(-?\d+)\s*$", ln)
+        if m and rc is None:
+            rc = int(m.group(1))
+        m = re.match(r"^#\s*MEANS:\s*(.+?)\s*$", ln)
+        if m and means is None:
+            means = m.group(1)
+    if rc is None:
+        return None, "", f"宣言 # EXPECT_RC: がありません: {name}"
+    if not means:
+        return None, "", f"宣言 # MEANS: がありません: {name}"
+    return rc, means, ""
+
+
 def run_one(name: str, depth: int) -> tuple:
     """壊すプログラムを1本 走らせる。戻り＝(終了コード, 説明)。"""
     p = BREAKS_DIR / name
@@ -294,13 +335,29 @@ def main(argv: list) -> int:
     for r in rows:
         if not r["script"]:
             continue
+        # ★2026-09-08（159番）＝走らせる前に宣言を読む。
+        #   **ファイルは在るのに宣言が無い**ときだけ止める（fail-closed）。
+        #   ★ファイルがまだ無いときは止めない＝今までどおり run_one が None を返し、
+        #     その行は「未着手」のまま残る。
+        #     これを止めると、新しい壊すプログラムを作る流れ
+        #     （①承認で書く権利をもらう ②書く ③承認で測る）が塞がる。
+        #     実測（2026-09-08）＝止める形にしたら、b52 を書く前の承認が取り消された。
+        exp, means, why = expect_of(r["script"])
+        if why and (BREAKS_DIR / r["script"]).exists():
+            print(f"[STOP] 壊すプログラムの宣言を読めません（159番）: {why}", file=sys.stderr)
+            print("  ★書き方＝.sh の先頭に # EXPECT_RC: <数字> と # MEANS: <その意味> の2行",
+                  file=sys.stderr)
+            return 2
         code, note = run_one(r["script"], depth)
         r["code"], r["note"] = code, note
+        r["expect"], r["means"] = exp, means
+        r["match"] = (code == exp)
         n_run += 1
-        if code not in (0, None):
+        if r["match"]:
             n_stop += 1
-        mark = "✅ 止まった" if code not in (0, None) else "❌ 止まらなかった"
-        print(f"   {mark}  #{r['no']:>3}  {r['script']}  rc={code}")
+        mark = "✅ 期待どおり" if r["match"] else "❌ 期待と違う"
+        print(f"   {mark}  #{r['no']:>3}  {r['script']}  rc={code}（期待 {exp}）")
+        print(f"        意味＝{means}")
 
     after = {p.name: sha(p) for p in break_scripts()}
     if before != after:
@@ -335,7 +392,11 @@ def write_record(out: pathlib.Path, iter_name: str, rows: list) -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(
         {"_なにこれ": ("完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。"
-                        "終了コードが 0 以外の行だけ「済」にできる（監査 cp16 の E-12）"),
+                        "match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）"),
+         "_欄の読み方": ("code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ "
+                         "means＝その値が意味すること ／ match＝一致したか。"
+                         "★b51 だけは向きが裏返っている（意味の文に書いてある）＝"
+                         "1 は『検査が落ちた』ではなく『土台ゲートが通った』"),
          "iter": iter_name, "rows": rows},
         ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
@@ -350,6 +411,9 @@ SELF_TESTS = (
     ("T7", "打ち消した縦棒を、列の区切りにしない（幽霊の行を作らない）"),
     # ★2026-09-07（next_step §6 の146番）＝承認の「済」の材料になる記録を、本当に書くか。
     ("T8", "壊すプログラムの終了コードを、記録のファイルへ書く（済の材料が残る）"),
+    ("T9", "宣言（EXPECT_RC・MEANS）の無い .sh は、理由つきで読み取りを止める"),
+    ("T10", "宣言が在れば、期待する終了コードと意味の文をそのまま読み取る"),
+    ("T11", "期待と違う終了コードなら、記録の match が偽になる"),
 )
 
 
@@ -406,6 +470,23 @@ def selftest() -> int:
             if (_d8.get("iter") != "t8"
                     or [r.get("code") for r in (_d8.get("rows") or [])] != [1]):
                 ng.append("T8")
+            # ★T9・T10・T11（2026-09-08・159番）＝宣言の読み取りと、期待との照らし
+            _t9 = BREAKS_DIR / "b90_no_decl.sh"
+            _t9.write_text("#!/bin/bash\n# 宣言を書いていない見本\nexit 1\n", encoding="utf-8")
+            if not expect_of("b90_no_decl.sh")[2]:
+                ng.append("T9")
+            _t10 = BREAKS_DIR / "b91_decl.sh"
+            _t10.write_text("#!/bin/bash\n# EXPECT_RC: 2\n# MEANS: 見本の意味\nexit 2\n",
+                            encoding="utf-8")
+            _e10, _m10, _w10 = expect_of("b91_decl.sh")
+            if _w10 or _e10 != 2 or _m10 != "見本の意味":
+                ng.append("T10")
+            _o11 = pathlib.Path(d) / "rec" / "t11.breaks.json"
+            write_record(_o11, "t11", [{"no": "1", "script": "b91_decl.sh", "code": 1,
+                                        "expect": 2, "means": "見本の意味", "match": False}])
+            _d11 = json.loads(_o11.read_text(encoding="utf-8")) if _o11.exists() else {}
+            if [r.get("match") for r in (_d11.get("rows") or [])] != [False]:
+                ng.append("T11")
     finally:
         FROZEN, BREAKS_DIR = _kf, _kb
 

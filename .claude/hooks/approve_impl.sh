@@ -409,6 +409,13 @@ import sys
 md_p, bj_p = sys.argv[1], sys.argv[2]
 rows = (json.loads(open(bj_p, encoding='utf-8').read()) or {}).get('rows') or []
 code = {str(r.get('no')): r.get('code') for r in rows}
+# ★2026-09-08（next_step §6 の159番・監査 cp29 の §5-5）＝「済」の材料を、
+#   「終了コードが 0 以外」から「宣言した期待値と一致したか（match）」に変える。
+#   なぜ＝b51 は向きが裏返っている（土台ゲートが通った＝守りが消えた が「正しい成功」）。
+#     0 以外なら何でも合格だと、中で異常が起きた終了コード（lib.sh の 99＝控えから
+#     戻せなかった）まで「止まった」に数えた＝b51 の 1 と見分けが付かなかった。
+#   ★古い記録には match が無い。そのときは今までどおり「0 以外」で判定する（後方互換）。
+match = {str(r.get('no')): r.get('match') for r in rows if 'match' in r}
 src = open(md_p, encoding='utf-8').read()
 
 # ★2026-09-07（監査 cp25 の §5-1・Critical・まこさん承認 iter="cp25-done-mark-and-extra-tests-20260907"）
@@ -458,8 +465,11 @@ for ln in src.splitlines(True):
         # 壊すプログラムの欄（見出しの並び＝# / 完成の条件 / コマンド / 経路 / 壊し方 / 壊すプログラム / …）
         brk = cells[5] if len(cells) > 5 else ''
         cmd = _cmd_of(cells[2] if len(cells) > 2 else '')
-        if c in (0, None):
-            print(f"   ⏸ #{no} は「未着手」のまま＝壊すプログラムが落ちていない（rc={c}）")
+        ok_brk = match[no] if no in match else (c not in (0, None))
+        if not ok_brk:
+            _w = ("期待した終了コードと違う" if no in match
+                  else "壊すプログラムが落ちていない")
+            print(f"   ⏸ #{no} は「未着手」のまま＝{_w}（rc={c}）")
         elif not brk or brk in ('—', '-', ''):
             print(f"   ⏸ #{no} は「未着手」のまま＝壊すプログラムの欄が空")
         elif cmd is None:
@@ -467,11 +477,16 @@ for ln in src.splitlines(True):
         else:
             rc2 = _run(cmd)
             if rc2 == 0:
+                _mn = next((r.get('means') for r in rows if str(r.get('no')) == no), '')
+                _sfx = f'／壊した意味＝{_mn}' if _mn else ''
                 ln = ln.replace(
                     '**未着手**',
-                    f'**✅済**＝壊すと rc={c}／条件のコマンドも rc=0（承認のときに機械が2つとも測った）')
+                    f'**✅済**＝壊すと rc={c}（宣言どおり）／条件のコマンドも rc=0'
+                    f'（承認のときに機械が2つとも測った）{_sfx}')
                 n += 1
-                print(f"   ✅ #{no} 済＝壊すと rc={c}／条件のコマンド rc=0")
+                print(f"   ✅ #{no} 済＝壊すと rc={c}（宣言どおり）／条件のコマンド rc=0")
+                if _mn:
+                    print(f"        意味＝{_mn}")
             else:
                 print(f"   ⏸ #{no} は「未着手」のまま＝条件のコマンドが rc={rc2}（0 でない）")
     out.append(ln)
@@ -493,6 +508,18 @@ with open(p, 'w', encoding='utf-8') as f:
 PYEOF
       echo "   🔏 承認の指紋を取り直しました: $(printf '%s' "$NEW_H" | cut -c1-16)…"
       echo "   ＝この1回で「済」まで確定します（承認をもう一度 打つ必要はありません）"
+      # ★2026-09-08（監査 cp29 の §5-6・next_step §6 の160番）＝控えを取り直す。
+      #   何が起きていたか＝控えは 322行 あたりで取るが、それは「済」を書き込む前の版だった。
+      #     ＝控えだけを読むと、最後に「済」になった行が永久に未着手に見えた（実測＝12行目）。
+      #   照合はどこも落ちていなかった（印は書き込んだ後の版を指すため）が、
+      #   控えは「後から中身が分かる」ために残すもの（恒久の決まり §0-2）。
+      #   ★上書きするのは <iter>.md（いちばん新しい承認版）だけ。連番の控え（.01〜）は触らない
+      #     ＝あれは「前の版」の記録なので、書き替えると経緯が消える。
+      if [ -n "$ITER" ]; then
+        _SAFE_A=$(printf '%s' "$ITER" | tr ' /' '__')
+        cp "$LIST" "$ARC_DIR/${_SAFE_A}.md" \
+          && echo "   📦 控えを取り直しました: ${_SAFE_A}.md（「済」を書き込んだ後の版・160番）"
+      fi
     fi
   fi
 else

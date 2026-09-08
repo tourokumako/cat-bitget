@@ -1,4 +1,6 @@
 #!/bin/bash
+# EXPECT_RC: 1
+# MEANS: その検査が落ちた（守りが働いた）
 # b50 — 見本の関数を呼ぶ所の名前を戻すと、静的検査が赤に戻るか
 #
 #   守っているもの＝next_step §6 の149番（設計書 iter="approval-audit-plumbing-20260907" の
