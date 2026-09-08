@@ -208,9 +208,8 @@ REQUIREMENTS: 監査レポート `.claude/audits/2026-09-08_insp5_path_cp32_audi
     ]
   },
   "must_use": {
-    "_newer_5m_files": ["_tail_timestamps", "BARS_CSV", "pathlib", "bitget", "rglob"],
-    "selftest_insp5": ["_newer_5m_files", "tempfile", "BARS_CSV", "_insp_stage_plan"],
-    "verify": ["_pass", "when"]
+    "_newer_5m_files": ["_tail_timestamps", "BARS_CSV", "pathlib"],
+    "selftest_insp5": ["_newer_5m_files", "tempfile", "BARS_CSV", "_insp_stage_plan", "SCORE_END"]
   },
   "spec_lists": {},
   "no_spec_lists_reason": "外から取る一覧はありません。見分ける範囲は、要件定義書 §8.2.1.1 の②（採点に使うのは Binance Spot 系列だけ）という決めごとを、名前の見分け方に写したものです。",

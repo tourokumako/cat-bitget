@@ -6363,7 +6363,10 @@ def selftest_insp5(exit_: bool = True, bars_csv: str | None = None) -> list:
     #   T-o＝下の階層に置かれた5分足を見つける／末が読めないものを黙って飛ばさない。
     with tempfile.TemporaryDirectory() as _td5:
         _dd = pathlib.Path(_td5)
-        _later = "2026-12-31 23:55:00"
+        # ★期間の日付は手打ちしない（H8・periods.py が唯一の正本）。
+        #   基準＝採点窓の最後の5分足のバー。見本は、そこから半年 後にする。
+        _base5 = SCORE_END + pd.Timedelta("1D") - pd.Timedelta("5min")
+        _later = str(_base5 + pd.Timedelta(days=184))
         (_dd / "BTCUSDT-5m-bitget-selftest.csv").write_text(
             f"timestamp,close\n{_later},1\n", encoding="utf-8")
         (_dd / "sub").mkdir()
@@ -6371,7 +6374,7 @@ def selftest_insp5(exit_: bool = True, bars_csv: str | None = None) -> list:
             f"timestamp,close\n{_later},1\n", encoding="utf-8")
         (_dd / "BTCUSDT-5m-selftest-badtail.csv").write_text(
             "timestamp,close\nこれは時刻ではない,1\n", encoding="utf-8")
-        _n5, _b5 = _newer_5m_files(pd.Timestamp("2026-06-30 23:55:00"), data_dir=_dd)
+        _n5, _b5 = _newer_5m_files(_base5, data_dir=_dd)
         _names5 = [x[0] for x in _n5]
         if any("bitget" in x.lower() for x in _names5):
             ng.append(f"T-n: Bitget 先物の5分足を、正本の候補として指した（{_names5}）"

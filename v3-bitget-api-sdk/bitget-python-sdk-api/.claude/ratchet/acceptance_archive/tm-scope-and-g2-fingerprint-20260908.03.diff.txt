@@ -1,0 +1,7 @@
+211,213c211,212
+<     "_newer_5m_files": ["_tail_timestamps", "BARS_CSV", "pathlib", "bitget", "rglob"],
+<     "selftest_insp5": ["_newer_5m_files", "tempfile", "BARS_CSV", "_insp_stage_plan"],
+<     "verify": ["_pass", "when"]
+---
+>     "_newer_5m_files": ["_tail_timestamps", "BARS_CSV", "pathlib"],
+>     "selftest_insp5": ["_newer_5m_files", "tempfile", "BARS_CSV", "_insp_stage_plan", "SCORE_END"]
