@@ -1,0 +1,2716 @@
+{
+ "_説明": "observe_diag.py が使う探索範囲。probe を走らせる前にここを編集して、値を足す・減らす。使った値は出力の先頭に全部印字される。",
+ "period": {
+  "start": null,
+  "end": null
+ },
+ "_period": "検証期間。null なら periods.py の採点窓全部。指定する時は 2026-01-01 の形。採点窓の外（学習窓・封印期間）は指定しても止まる。",
+ "search_modes": [
+  "entry_filter"
+ ],
+ "_search_modes": "この走行で検証する系統。一気に回さず順番に1系統ずつ（まこさん 2026-07-21）。exit_cut=切る（エントリー価格からの%・逆行側シグナル）/ entry_filter=入口で建てない / set=入口と切るの同時。どのモードも side×型の分岐ごとに別々に回る。建値% TP の探索（旧 exit_take）は削除済み＝TP は現行ロジックのまま。",
+ "timeframes": [
+  "1m",
+  "3m",
+  "5m"
+ ],
+ "_timeframes": "指標を計算する足。足を増やすと計算時間が伸びる。1m と 3m は 2026-08-16 の段7 で足した（要件 R15『扱う時間足を1分足から1日足まで広げる』・旧『1m は使わない』は 2026-06-02 に まこさんが撤回済み）。この2つだけは5分足から作れないので、1分足の元データ data/BTCUSDT-1m-binance-taker-2023-06-01_2026-06-30.csv を読む（2026-09-08 に 2023-06 から取り足した＝助走250日を覆うため。旧＝2023-11-01 から・監査 cp30 の別枠3 で この説明文も直した）。未来を見ない式は他の足と同じ（足が閉じた時刻まで進めてから ffill）。",
+ "quantiles": [
+  0.5,
+  0.6,
+  0.7,
+  0.8,
+  0.9,
+  0.95,
+  0.99
+ ],
+ "_quantiles": "閾値を作る分位。指標ごとの分布の何%の位置で切るか。逆行方向へ向きを揃えた上での上側。順行側は 1-q の下側を自動で対にする。",
+ "sl_grid": [
+  0.15,
+  0.2,
+  0.25,
+  0.3,
+  0.4,
+  0.5,
+  0.6,
+  0.75,
+  1.0,
+  1.25,
+  1.5,
+  2.0,
+  2.5,
+  3.0
+ ],
+ "_sl_grid": "建値から何%で切るかの候補。",
+ "favorable_marks": [
+  0.1,
+  0.15,
+  0.2,
+  0.25,
+  0.3,
+  0.4,
+  0.5,
+  0.75,
+  1.0,
+  1.5
+ ],
+ "_favorable_marks": "保有中に何%順行したかを刻む位置（観察の記述用・探索の値ではない）。旧 tp_grid＝建値% TP の探索は削除済み。",
+ "wait_grid": [
+  0,
+  5,
+  10,
+  15,
+  20,
+  30,
+  45,
+  60
+ ],
+ "_wait_grid": "建ててから判定を始めるまでの待ち（分）。",
+ "early_windows": [
+  10,
+  15,
+  20,
+  30,
+  45,
+  60,
+  90,
+  120,
+  180,
+  240,
+  360
+ ],
+ "_early_windows": "建ててから何分以内の発火を判定材料にするか。",
+ "adverse_marks": [
+  0.2,
+  0.3,
+  0.5,
+  0.75,
+  1.0,
+  1.5,
+  2.0
+ ],
+ "_adverse_marks": "保有中に何%逆行したかを刻む位置（結果の記述用）。",
+ "rsi_periods": [
+  7,
+  9,
+  14,
+  21
+ ],
+ "_rsi_slope_bars": "★2026-08-11 に足して、同じ日に省いた（まこさん OK・逐語「１はOK」）。理由＝engine_tuner に元から form=slope（いまの値 − n本前の値・n は条件ごとの欄）が在り、列で持つと同じものを2通りで持つことになるため。キーは消して、この経緯だけ残す。",
+ "stoch_periods": [
+  5,
+  9,
+  14
+ ],
+ "atr_periods": [
+  7,
+  14,
+  21
+ ],
+ "bb_periods": [
+  20,
+  50
+ ],
+ "bb_sigma": [
+  2.0,
+  3.0
+ ],
+ "donchian_periods": [
+  20,
+  48
+ ],
+ "ema_periods": [
+  9,
+  20,
+  50,
+  200
+ ],
+ "sma_periods": [
+  20,
+  50,
+  200
+ ],
+ "roc_periods": [
+  3,
+  6,
+  12,
+  24
+ ],
+ "_roc_periods": "★2026-08-21（M2-2-6）に 3 を足した。理由＝engine_tuner の探す範囲が 6〜24 で、まこさんの実例の8番『15分足 陽線3連続∩累積+0.5%』の 3本ぶんの累積が書けなかった。★新しい数字は作っていない。3 の出どころ＝まこさんの実例の逐語『15分足 陽線3連続∩累積+0.5%』（engine_tuner_milestones2.md の 0.4）。これで範囲が 3〜24 になる。",
+ "macd_params": [
+  [
+   12,
+   26,
+   9
+  ]
+ ],
+ "mfi_periods": [
+  14
+ ],
+ "cmf_periods": [
+  20
+ ],
+ "obv_slope_periods": [
+  10,
+  20
+ ],
+ "drop_columns": [
+  [
+   "ADX7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DI差7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ADX14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DI差14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ADX21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DI差21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MACD線%(12,26)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MACDシグナル線%(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MACDヒスト%(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RSI7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RSI9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RSI14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RSI21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ROC3",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ROC6",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ROC12",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ROC24",
+   "HT_DCPERIOD"
+  ],
+  [
+   "Stoch%K5",
+   "HT_DCPERIOD"
+  ],
+  [
+   "Stoch%D5",
+   "HT_DCPERIOD"
+  ],
+  [
+   "Stoch%K9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "Stoch%D9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "Stoch%K14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "Stoch%D14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MFI14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CMF20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "OBV傾き10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "OBV傾き20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs 転換線%(9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs 基準線%(26)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RCI7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RCI9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RCI26",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RCI52",
+   "HT_DCPERIOD"
+  ],
+  [
+   "EMA9傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "EMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "EMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "EMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ATR%7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ATR%14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ATR%21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BB%b(20,2.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BB幅(20,2.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BB%b(20,3.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BB幅(20,3.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BB%b(50,2.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BB幅(50,2.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BB%b(50,3.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BB幅(50,3.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "realized_vol20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "realized_vol50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "Donchian幅%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "Donchian幅%48",
+   "HT_DCPERIOD"
+  ],
+  [
+   "zscore20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "zscore_return20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "zscore50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "zscore_return50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "volume_ratio20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "volume_ratio50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "包み足",
+   "HT_DCPERIOD"
+  ],
+  [
+   "孕み足",
+   "HT_DCPERIOD"
+  ],
+  [
+   "pinbar",
+   "HT_DCPERIOD"
+  ],
+  [
+   "連続本数",
+   "HT_DCPERIOD"
+  ],
+  [
+   "body比",
+   "HT_DCPERIOD"
+  ],
+  [
+   "上ヒゲ比",
+   "HT_DCPERIOD"
+  ],
+  [
+   "下ヒゲ比",
+   "HT_DCPERIOD"
+  ],
+  [
+   "swing高値距離%24",
+   "HT_DCPERIOD"
+  ],
+  [
+   "swing安値距離%24",
+   "HT_DCPERIOD"
+  ],
+  [
+   "高値からの経過バー24",
+   "HT_DCPERIOD"
+  ],
+  [
+   "安値からの経過バー24",
+   "HT_DCPERIOD"
+  ],
+  [
+   "形スコア24(V=+/M=−)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "W字(24,0.003)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "swing高値距離%48",
+   "HT_DCPERIOD"
+  ],
+  [
+   "swing安値距離%48",
+   "HT_DCPERIOD"
+  ],
+  [
+   "高値からの経過バー48",
+   "HT_DCPERIOD"
+  ],
+  [
+   "安値からの経過バー48",
+   "HT_DCPERIOD"
+  ],
+  [
+   "形スコア48(V=+/M=−)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "W字(48,0.003)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "swing高値距離%96",
+   "HT_DCPERIOD"
+  ],
+  [
+   "swing安値距離%96",
+   "HT_DCPERIOD"
+  ],
+  [
+   "高値からの経過バー96",
+   "HT_DCPERIOD"
+  ],
+  [
+   "安値からの経過バー96",
+   "HT_DCPERIOD"
+  ],
+  [
+   "形スコア96(V=+/M=−)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "W字(96,0.003)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "fractal高値距離%(2)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "fractal安値距離%(2)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "高値切り上げ幅%(2)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "安値切り上げ幅%(2)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "構造破断距離%(2)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "fractal高値距離%(5)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "fractal安値距離%(5)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "高値切り上げ幅%(5)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "安値切り上げ幅%(5)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "構造破断距離%(5)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs EMA9%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs EMA20%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs EMA50%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs EMA200%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SMA20%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SMA50%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SMA200%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs VWAP%288",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs Keltner上%(20,2.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs Keltner下%(20,2.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs Supertrend%(10,3.0)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs 24本高値%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs 24本安値%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs 48本高値%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs 48本安値%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs 96本高値%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs 96本安値%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs pivotPP%288",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs pivotR1%288",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs pivotS1%288",
+   "HT_DCPERIOD"
+  ],
+  [
+   "fib位置20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "fib位置96",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs POC%288",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs VAH%288",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs VAL%288",
+   "HT_DCPERIOD"
+  ],
+  [
+   "S-Rタッチ数(144,0.0015)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "S-Rタッチ数(144,0.003)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "S-Rタッチ数(144,0.006)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "S-Rタッチ数(288,0.0015)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "S-Rタッチ数(288,0.003)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "S-Rタッチ数(288,0.006)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MMI200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MMI300",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MMI400",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MMI500",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BIAS7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AR7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BR7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CCI7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CFO7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CG7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CMO7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CTI7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DM+%7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DM-%7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ER7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ERI強気%7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ERI弱気%7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "INERTIA7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BIAS9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AR9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BR9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CCI9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CFO9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CG9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CMO9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CTI9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DM+%9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DM-%9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ER9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ERI強気%9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ERI弱気%9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "INERTIA9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BIAS14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AR14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BR14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CCI14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CFO14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CG14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CMO14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CTI14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DM+%14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DM-%14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ER14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ERI強気%14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ERI弱気%14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "INERTIA14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BIAS21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AR21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BR21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CCI21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CFO21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CG21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CMO21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CTI21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DM+%21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DM-%21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ER21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ERI強気%21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ERI弱気%21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "INERTIA21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LRSI(0.5)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "BOP",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KST",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AO%(12,26)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "APO%(12,26)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "COPC(9,12,26)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "FISHER(12,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "FISHERシグナル(12,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KSTシグナル9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KDJ%K(5,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KDJ%D(5,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KDJ%J(5,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KDJ%K(9,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KDJ%D(9,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KDJ%J(9,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KDJ%K(14,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KDJ%D(14,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KDJ%J(14,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MOM%7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PGO7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PO7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PSL7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RSX7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGI(7,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGIシグナル(7,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGIヒスト(7,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MOM%9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PGO9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PO9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PSL9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RSX9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGI(9,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGIシグナル(9,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGIヒスト(9,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MOM%14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PGO14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PO14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PSL14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RSX14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGI(14,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGIシグナル(14,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGIヒスト(14,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MOM%21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PGO21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PO21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PSL21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RSX21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGI(21,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGIシグナル(21,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVGIヒスト(21,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PPO(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PPOヒスト(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PPOシグナル(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PVO(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PVOヒスト(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PVOシグナル(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "QQE",
+   "HT_DCPERIOD"
+  ],
+  [
+   "QQE_RSIMA",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SMC_SWEEP",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SQZ%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SQZ_ON",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SQZPRO_ON_WIDE",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SQZPRO_ON_NARROW",
+   "HT_DCPERIOD"
+  ],
+  [
+   "STC",
+   "HT_DCPERIOD"
+  ],
+  [
+   "STCstoch",
+   "HT_DCPERIOD"
+  ],
+  [
+   "StochRSI%K7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "StochRSI%D7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIX(7,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIXシグナル(7,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIXヒスト(7,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "StochRSI%K9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "StochRSI%D9",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIX(9,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIXシグナル(9,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIXヒスト(9,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "StochRSI%K14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "StochRSI%D14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIX(14,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIXシグナル(14,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIXヒスト(14,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "StochRSI%K21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "StochRSI%D21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIX(21,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIXシグナル(21,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIXヒスト(21,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TD_SEQ_UP",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TD_SEQ_DN",
+   "HT_DCPERIOD"
+  ],
+  [
+   "UO",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TSI(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TSIシグナル(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TSIヒスト(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VWMACD線%(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VWMACDヒスト%(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VWMACDシグナル%(12,26,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs ALMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ALMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs DEMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DEMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs HMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs JMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs KAMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KAMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs LINREG%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LINREG20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LRangle20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs FWMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "FWMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs ALMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ALMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs DEMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DEMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs HMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs JMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs KAMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KAMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs LINREG%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LINREG50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LRangle50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs FWMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "FWMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs ALMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ALMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs DEMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DEMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs HMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs JMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs KAMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KAMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs LINREG%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LINREG200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LRangle200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs HILO%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs HT_TRENDLINE%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs HWMA%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs LRb%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LRb20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MCGD%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MCGD20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MIDPOINT%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MIDPOINT20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MIDPRICE%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MIDPRICE20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs PWMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PWMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LRslope%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs LRb%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LRb50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MCGD%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MCGD50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MIDPOINT%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MIDPOINT50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MIDPRICE%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MIDPRICE50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs PWMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PWMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LRslope%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs LRb%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LRb200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MCGD%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MCGD200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MIDPOINT%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MIDPOINT200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MIDPRICE%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MIDPRICE200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs PWMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PWMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "LRslope%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MAMA%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs FAMA%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MMAR%10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MMAR10傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MMAR%15",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MMAR15傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MMAR%25",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MMAR25傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MMAR%30",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MMAR30傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MMAR%35",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MMAR35傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RAINBOW%(2,1)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RAINBOW(2,1)傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RAINBOW%(2,2)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RAINBOW(2,2)傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RAINBOW%(2,3)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RAINBOW(2,3)傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RAINBOW%(2,4)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RAINBOW(2,4)傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RAINBOW%(2,5)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RAINBOW(2,5)傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RAINBOW%(2,6)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RAINBOW(2,6)傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RAINBOW%(2,7)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RAINBOW(2,7)傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RAINBOW%(2,8)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RAINBOW(2,8)傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RAINBOW%(2,9)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RAINBOW(2,9)傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs RAINBOW%(2,10)",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RAINBOW(2,10)傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SINWMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SINWMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SSF%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SSF20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SWMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SWMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs T3%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "T320傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs TEMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TEMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs TRIMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs TSF%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TSF20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs VIDYA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VIDYA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs VWMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VWMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs WMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "WMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs ZLMA%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ZLMA20傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SINWMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SINWMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SSF%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SSF50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SWMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SWMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs T3%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "T350傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs TEMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TEMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs TRIMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs TSF%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TSF50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs VIDYA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VIDYA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs VWMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VWMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs WMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "WMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs ZLMA%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ZLMA50傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SINWMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SINWMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SSF%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SSF200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SWMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "SWMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs T3%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "T3200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs TEMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TEMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs TRIMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TRIMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs TSF%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TSF200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs VIDYA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VIDYA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs VWMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VWMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs WMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "WMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs ZLMA%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ZLMA200傾き%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ADXR7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DI+7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DI-7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DX7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AROONU7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AROOND7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AROONOSC7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CHOP7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VHF7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VTXP7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VTXM7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ADXR14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DI+14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DI-14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DX14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AROONU14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AROOND14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AROONOSC14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CHOP14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VHF14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VTXP14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VTXM14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ADXR21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DI+21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DI-21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DX21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AROONU21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AROOND21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AROONOSC21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CHOP21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VHF21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VTXP21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VTXM21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "QSTICK%3",
+   "HT_DCPERIOD"
+  ],
+  [
+   "QSTICK%6",
+   "HT_DCPERIOD"
+  ],
+  [
+   "QSTICK%12",
+   "HT_DCPERIOD"
+  ],
+  [
+   "QSTICK%24",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DPO%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TTM_TREND20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "DPO%48",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TTM_TREND48",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AMAT_LR",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs CKSPl%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs CKSPs%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs PMAX%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs PSAR%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PSAR加速",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PSAR反転",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs SAREXT%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "EFI比10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "EOM比10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MARKETFI比10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "NVI傾き10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PVI傾き10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PVOL比10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PVT傾き10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "WAD傾き10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "EFI比20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "EOM比20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MARKETFI比20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "NVI傾き20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PVI傾き20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PVOL比20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PVT傾き20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "WAD傾き20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ADOSC比",
+   "HT_DCPERIOD"
+  ],
+  [
+   "AOBV_LR",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KVO比",
+   "HT_DCPERIOD"
+  ],
+  [
+   "KVOシグナル比",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VOSC",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VFI10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "VFI20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "出来高変化率%1",
+   "HT_DCPERIOD"
+  ],
+  [
+   "skew20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "kurtosis20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MAD比20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "stdev%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "skew50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "kurtosis50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MAD比50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "stdev%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MEDIAN%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MEDIAN傾き%20",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MEDIAN%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MEDIAN傾き%50",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs MEDIAN%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MEDIAN傾き%200",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs ABER_ZG%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "ABER位置",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs ACCBL%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs ACCBU%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs CE_L%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "close vs CE_S%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HWC位置",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HWC幅%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MASSI",
+   "HT_DCPERIOD"
+  ],
+  [
+   "PDIST%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "TR%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "THERMO%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "THERMO比",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CVI7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVI7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "UI7",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CVI14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVI14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "UI14",
+   "HT_DCPERIOD"
+  ],
+  [
+   "CVI21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "RVI21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "UI21",
+   "HT_DCPERIOD"
+  ],
+  [
+   "EBSW",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HT_DCPHASE",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HT_QUAD%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HT_SINE",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HT_LEADSINE",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HT_TRENDMODE",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MSW_SINE",
+   "HT_DCPERIOD"
+  ],
+  [
+   "MSW_LEAD",
+   "HT_DCPERIOD"
+  ],
+  [
+   "実体幅比10",
+   "HT_DCPERIOD"
+  ],
+  [
+   "内側バー",
+   "HT_DCPERIOD"
+  ],
+  [
+   "open_Z30",
+   "HT_DCPERIOD"
+  ],
+  [
+   "high_Z30",
+   "HT_DCPERIOD"
+  ],
+  [
+   "low_Z30",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HA実体%",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HA上ヒゲ比",
+   "HT_DCPERIOD"
+  ],
+  [
+   "HA下ヒゲ比",
+   "HT_DCPERIOD"
+  ]
+ ],
+ "_drop_columns": "★同じ挙動の列を省く（まこさん OK 2026-08-11・逐語『同じ挙動ならどちらかは使わないようにしていいよ』／方針の初出 2026-08-09・逐語『他にも同じ挙動の指標があれば紛らわしいので片方を省いていく』）。左が省く列・右が残す列。どれも検査12（重複の総当たり）で『実質 同じもの』（値の相関か順位の相関が 0.99999 以上）と出た組。残す側の決め方＝①V9 が計算している／engine_tuner のレシピが材料に使っている方を残す ②業界のライブラリに同じ関数が在る方 ③暖機が短い方 ④名前の並び順。★2件だけ ④で決まった結果を私が入れ替えた＝LRangle（今日 私が定義を変えた列＝名前は角度だが中身は%の傾きから作る）より LRslope%（定義を変えていない）を残す／APO%（うちが%化した）より PPO（もともと%）を残す。実物の一覧＝results/dup7_20260811.log。★2026-08-21（M2-2-6）に1行 足した＝[\"QSTICK%3\", \"ROC3\"]。理由＝この工程で roc_periods に 3 を足したので、同じ設定を回す QSTICK% にも 3 が新しくできた（QSTICK% は roc_periods を回す＝observe_diag.py:1320）。QSTICK%6・12・24 は既に3行とも省く設定に入っていて、3 だけが漏れる形になっていた。実測（値決め窓の先頭 20,000本）＝QSTICK%3 × ROC3 の順位の相関 0.9998018577／QSTICK%6 × ROC6 は 0.9997734391＝既に省いている組と同じ関係。★新しい判断はしていない＝まこさんが決めた方針（2026-08-09 逐語『他にも同じ挙動の指標があれば紛らわしいので片方を省いていく』／2026-08-11 逐語『同じ挙動ならどちらかは使わないようにしていいよ』）を、同じ指標の組の 3 に当てただけ。",
+ "rci_periods": [
+  7,
+  9,
+  26,
+  52
+ ],
+ "_rci_periods": "★2026-08-11（段6 の 6-8）に 7 と 52 を足した。理由＝V9 が実際に使っている本数で、ここに無いと engine_tuner が何回 試しても出てこなかった（V9 P22 は RCI7 と RCI9 のクロスで判定する）。出どころ＝strategies/cat_v9_decider.py:66 の逐語『for period in [7, 52]:』／cat/indicators.py:66 の逐語『rci_windows = params.get(\"RCI_WINDOWS\", [7, 9, 26, 52])』。検査11 が毎回 突き合わせる。",
+ "zscore_periods": [
+  20,
+  50
+ ],
+ "realized_vol_periods": [
+  20,
+  50
+ ],
+ "volume_ratio_periods": [
+  20,
+  50
+ ],
+ "swing_windows": [
+  24,
+  48,
+  96
+ ],
+ "fractal_k": [
+  2,
+  5
+ ],
+ "_fractal_k": "★2026-08-21（M2-2-6）に新設。山と谷を確定させるまでに待つ本数。中央のバーが前後 k本 より高い（安い）ときに山（谷）とし、k本 遅らせて確定する（法則 C10 の②・未来を見ないため）。★新しい数字は1つも作っていない。【下限 2 の出どころ・3件】①まこさんの実例の逐語『確定 fractal スイング（j+2 確定）』②実物 scripts/regime/structure_features.py の _detect_fractals（j±2・j+2 で確定記録）③MetaTrader 5 公式ヘルプの逐語（Bill Williams の定義）『a series of at least five successive bars, with the highest HIGH in the middle, and two lower HIGHs on both sides』＝中央の前後 2本 が定義。【上限 5 の出どころ・1件】FXOpen の記事本文の逐語『You can increase its accuracy by changing this period to 3, 4, or 5, but this will also result in less frequent signals.』＝挙げられている一番大きい数字が 5。【上げ下げで何が変わるか】LuxAlgo の記事本文の逐語『The default setting considers two candles on each side of the potential extreme, but increasing this count demands more surrounding candles with lower highs or higher lows.』『This adjustment results in fewer signals but can enhance reliability. Conversely, lowering the count generates more frequent signals, though it raises the risk of false positives.』＝大きくすると信号は減るが確からしさが上がる。★これで engine_tuner の探す範囲は 2〜5 になり、3 と 4 も試せる（直す前は 2〜2 の幅ゼロ＝何回 走らせても 2 しか出なかった＝恒久の決まり42番に反する状態だった）。★範囲を狭める・広げるのは まこさんが決めます。",
+ "vwap_windows": [
+  288
+ ],
+ "keltner": [
+  [
+   20,
+   2.0
+  ]
+ ],
+ "supertrend": [
+  [
+   10,
+   3.0
+  ]
+ ],
+ "vp_windows": [
+  288
+ ],
+ "sr_windows": [
+  144,
+  288
+ ],
+ "_sr_windows": "★2026-08-21（M2-2-6）に 144 を足した。理由＝帯を束ねる窓が 288 の1つだけで、engine_tuner の探す範囲が 288〜288（幅ゼロ）だった＝恒久の決まり42番の『決まった数字だけに限定しない』に反する状態。★新しい数字は作っていない。144 の出どころ＝scripts/priority_rebuild/e37_scalp.py:569 の逐語『直近144本（12h）のスイング高値を、RG-v6 と同じボラ連動 tol=clamp(0.5×ATR%_1h,0.15%,0.6%) で束ねる』＝同じ『帯を束ねる窓』の実物。これで範囲が 144〜288 になる（V11_ZONE_LOOKBACK=168 もこの中に入る）。",
+ "sr_tol": [
+  0.0015,
+  0.003,
+  0.006
+ ],
+ "_sr_tol": "★2026-08-21（M2-2-6）に 0.0015 と 0.006 を足した。理由＝上と同じ（幅が 0.003 の1つだけ＝範囲がゼロ）。★新しい数字は作っていない。出どころ＝scripts/priority_rebuild/e37_scalp.py:213 の逐語『V25_K = 0.5 # 束ね幅 tol=clamp(K×ATR%_1h,0.15%,0.6%)』＝実物の束ね幅が動く下端 0.15%（=0.0015）と上端 0.6%（=0.006）。いまの 0.003 はその真ん中で、既存の列 S-Rタッチ数(288,0.003) はそのまま残る。",
+ "_sr_atr_k_外した記録": "★2026-09-06（再監査 cp22 の N-1）に sr_atr_k（帯の許容幅を値動きの幅に連動させる倍率 0.5・1.0・1.5）を外した。理由＝実装が出どころの逐語と違っていた。出どころ＝scripts/priority_rebuild/e37_scalp.py:213 の逐語『V25_K = 0.5 # 束ね幅 tol=clamp(K×ATR%_1h,0.15%,0.6%)』＝許容幅は『1時間足の値動きの幅（ATR%_1h）× 倍率』で決める。ところが私の実装は『渡された足の値動きの幅』を使っていた。5分足の値動きの幅は1時間足より小さいので 0.5×それ は下端 0.15% を割り、許容幅がいつも 0.15% に固定され、既存の部品 S-Rタッチ数(288,0.0015) と同じ列になった（実測＝観察の検査12 で相関 +0.9999978。この工事は材料カタログで唯一の『実質 同じもの』5組を作っていた＝工事の前は0組）。★正しい形（許容幅は1時間足の値動きの幅で決め、タッチはその足の高安で数える）は M2-E で作る＝next_step.md §6 の136番。",
+ "mmi_periods": [
+  200,
+  300,
+  400,
+  500
+ ],
+ "_mmi_periods": "★2026-09-05（M2-C-4・まこさん決定「1・2・4・5・6 を足す」）に足した。MMI（Market Meanness Index＝値動きがランダムに近いかの割合・高いほどレンジ寄り）を計算する本数。★新しい数字は作っていない。出どころ＝The Financial Hacker「Boosting Strategies with MMI」（https://financial-hacker.com/boosting-systems-by-trade-filtering/）の本文の逐語『int MMIPeriod = optimize(0,200,500,100);』＝200 から 500 まで 100 刻み。★2026-09-05（監査 cp21 の m1）に記事名を直した＝直す前は「The Market Meanness Index」と書いていたが、その記事の本文にこの行は無い（監査が原典を開いて実測）。計算の式そのものの出どころは「The Market Meanness Index」で合っている＝記事が2本 在り、私が片方の名前でまとめて書いていた。★engine_tuner が探す範囲は、この並びの最小〜最大（200〜500 の整数）になる。★MMI は向きを測らない・建てる合図に使わない（原典の書いた人自身の逐語『Predicting the next price with the MMI would work as well as flipping a coin.』）。",
+ "w_tol": [
+  0.003
+ ],
+ "fib_windows": [
+  20,
+  96
+ ],
+ "_fib_windows": "★2026-08-11（段6 の 6-8）に 20 を足した。理由＝V9 の『直近レンジ内での位置』（location_prev）が 直近20本の高安の中の位置で、うちの fib位置 と同じ形。出どころ＝strategies/cat_v9_decider.py:119 の逐語『n_look = 20』。検査11 が毎回 突き合わせる。",
+ "pivot_windows": [
+  288
+ ],
+ "ichimoku": [
+  [
+   9,
+   26
+  ]
+ ],
+ "mmar_periods": [
+  10,
+  15,
+  20,
+  25,
+  30,
+  35
+ ],
+ "rainbow": [
+  [
+   2,
+   10
+  ]
+ ],
+ "cdl_z_periods": [
+  30
+ ],
+ "body_ratio_periods": [
+  10
+ ],
+ "volume_change_periods": [
+  1
+ ],
+ "lrsi_gamma": [
+  0.5
+ ],
+ "_a6_2026_08_16": "★段A の A-6（2026-08-16）で、observe_diag.py のコードに直に書いてあった数字を、上の6つの鍵としてここへ出した。★数字はどれも直す前と同じで、CC は新しい数字を1つも作っていない。出どころ＝mmar_periods は pandas-ta-classic の mmar の既定の帯（length=10・step=5・num_ribbons=6 → 10/15/20/25/30/35）／rainbow は同 rainbow の既定（[1回あたりの本数 2, 何回 重ねがけするか 10]）／cdl_z_periods は同 cdl_z の既定 30（旧 _CDLZ_N）／body_ratio_periods は cdl_doji の既定 10（旧 _DOJI_N）／volume_change_periods は pvr の定義どおり 1／lrsi_gamma は同 lrsi の既定 0.5。★engine_tuner が試せる範囲は、この一覧の最小〜最大になる（engine_tuner_gen.material_ranges）。1つしか無い鍵は範囲が1点＝動かない。広げるのは まこさんが recipes/search_limits.json の material_param_ranges に書く（CC は書かない）。★ema_periods に在る本数は mmar から自動で外れる（同じ値になるため・実測 最大差 0.0）。",
+ "scenes": {
+  "L1": {
+   "type": "support_touch_long",
+   "side": "LONG",
+   "fresh_only": true,
+   "flat_up_only": true,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "S2": {
+   "type": "pullback_short",
+   "side": "SHORT",
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "S3": {
+   "type": "fade_short",
+   "side": "SHORT",
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "S4": {
+   "type": "zscore_short",
+   "side": "SHORT",
+   "z_th": 2.0,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "L2": {
+   "type": "crash_rebound_long",
+   "side": "LONG",
+   "k_bars": 12,
+   "drop_pct": 1.0,
+   "vol_mult": 1.5,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "L3": {
+   "type": "fade_long",
+   "side": "LONG",
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "L4": {
+   "type": "zscore_long",
+   "side": "LONG",
+   "z_th": 2.0,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "L1w": {
+   "type": "support_touch_long",
+   "side": "LONG",
+   "fresh_only": false,
+   "flat_up_only": true,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "L1a": {
+   "type": "support_touch_long",
+   "side": "LONG",
+   "fresh_only": false,
+   "flat_up_only": false,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12
+  },
+  "L1ap": {
+   "type": "support_touch_long",
+   "side": "LONG",
+   "fresh_only": false,
+   "flat_up_only": false,
+   "lose_barrier_w": 1.0,
+   "tmax_bars": 12,
+   "win_target": "pct",
+   "win_pct_k": 2.0
+  }
+ },
+ "_scenes": "Entry 候補観察（--scene）の場面定義。type は道具側の実装済み場面型・パラメータはここで差し替える（レンジ専用でなく場面を足せば他戦略でも使える）。勝ち=場面バー時点の mid 到達／負け=災害線（SHORT: res_hi+w×レジ帯厚・LONG: sup_lo−w×サポ帯厚）到達 or tmax_bars 時間切れ（時間切れは負け扱い）。z_th 2.0=BB2σ相当の標準値・L2 の k_bars/drop_pct/vol_mult は段0 L2 定義由来の仮置き＝--plan でまこさん確認。★保持時間の上限 tmax_bars は全場面 12本＝60分に統一（まこさん指示 2026-07-26「全部６０分に揃える」）＝勝ち負けを決めるまでの保持時間の上限。旧 48本＝240分（4時間）は E38 の役割（§8.6 スキャル・保有は分単位）の枠外で、探索側からは 2026-07-25 に撤去済みだったが場面定義に残っていた。",
+ "scene_floor_pct": null,
+ "_scene_floor_pct": "戻り幅の下限%（S2 の場面条件）。null なら e37_scalp.SCALP_FLOOR（手数料床）を実行時に解決して印字。",
+ "scene_exit_tp_pcts": [
+  0.1,
+  0.2,
+  0.3,
+  0.5
+ ],
+ "scene_exit_sl_pcts": [
+  0.2,
+  0.3,
+  0.5,
+  1.0
+ ],
+ "scene_exit_tmax_bars": [
+  2,
+  6,
+  12
+ ],
+ "_scene_exit": "新規ロジックの検証 フェーズ4＝出口の組み合わせの刻み（まこさん確定 2026-07-26・粗い版）。tp=建値からの順行%（これに『レンジ中央』が常に加わる）／sl=建値からの逆行%（これに『災害線』が常に加わる）／tmax_bars=5分足の本数＝10/30/60分。値の根拠（a-priori・net で選んでいない）＝tp 0.1 は手数料床 0.080% の1.25倍で届く最小・0.2 は段2 観察の取れ幅の中央値・0.3/0.5 は上振れ側／sl 0.2 は tp 0.2 と1対1・0.3 は時間切れ負けの最大逆行の中央 0.346% の手前・1.0 は災害線負けの最大逆行の中央 0.832% の外／保有はまこさん提示の刻み 5/10/15/30/45/60分から倍々で3つ。合計 5×5×3=75通り。★場面ごとに上書き可＝scenes の各場面に同名キーを書けばその場面だけ別の刻みになる（段4 Entry 調整・段5 Exit 調整で細かく刻む時はコードでなく場面定義に書く）。",
+ "conf_and_min": 2,
+ "conf_and_max": 3,
+ "_conf_and": "コンフルエンス探索の AND 条件数の範囲（2〜3・異種カテゴリから選ぶ＝同族の二度掛け禁止）。",
+ "conf_min_bars_per_day": 12.0,
+ "_conf_min_bars_per_day": "組の成立バー/日の下限＝これ未満の組は勝率が良くても棄却（条件を厳しくして件数を消す逃げの禁止・段2 最低ライン9.8件/日と観察の上限性を踏まえた仮置き＝--plan で確認）。",
+ "conf_trials": 500,
+ "_conf_trials": "コンフルエンス探索の Optuna 試行回数。",
+ "warmup_days": 250,
+ "_warmup_days": "指標の暖機。period の開始より何日前から5分足を読むか。最長の指標（SMA200×日足=200日）より長くする。観察対象の玉は period で決まる＝暖機は観察を狭めない。",
+ "episode_gap_h": 6.0,
+ "_episode_gap_h": "レンジの区切り。この時間あいたら別のレンジと見なす。",
+ "min_n": 20,
+ "_min_n": "この件数未満の枠は数字を出さず『計算できず』と書く。",
+ "optuna_trials": 500,
+ "_optuna_trials": "探索の試行回数。",
+ "_cp32": "監査 cp32｜足は1m・3m・5m・材料2種。本物ではない。"
+}

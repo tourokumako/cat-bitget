@@ -1,0 +1,12 @@
+================================================================================
+observe_diag 自己検査
+================================================================================
+  指標カタログ 555 種 × 足 ['1m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h', '6h', '1d'] = 6105 列
+  期間 2026-03-01 〜 2026-06-30（採点窓 2026-03-01〜2026-06-30 の範囲内のみ・periods.py）
+  節 13 / 分位 [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99] / SL候補 [0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0]（エントリー価格からの%）
+  探索 ['entry_filter'] × side×型の分岐 / 切る探索＝逆行側プールのみ / 建値%TP探索なし
+  設定ファイル /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json
+  結果の保存先 /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/results/priority_rebuild/ratchet/observe（本走のみ・既存は observe/archive へ退避＝上書きしない）
+  T-f 需給を成績表に足す（差分の口）: ①直に呼んだ値と一致 ②需給の系統を持つ役割 ['sufficiency'] にだけ3列 ③指標の列は不変 ④先読み違いは止まる ／ 採点できた列 3 本 ／ ❌ 0 件
+  T-g/T-h/T-i/T-j/T-k/T-l/T-m 検査5 の枠・使い回しの鍵・渡すファイルの見分け（軽い口）: ❌ 0 件
+  ✅ 全部 pass
