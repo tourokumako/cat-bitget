@@ -6393,7 +6393,10 @@ def selftest_insp5(exit_: bool = True, bars_csv: str | None = None) -> list:
                 if len(v) != len(closed):
                     ng.append(f"T-j: {tf} で、返った列の長さ {len(v)} と、枠の長さ {len(closed)} が違う"
                               "（この食い違いが検査5 を例外で止めていた）")
-    print(f"  T-g/T-h/T-i/T-j 検査5 の枠と使い回しの鍵（軽い口）: ❌ {len(ng)} 件")
+    # ★2026-09-08（監査 cp31 の直しで T-k・T-l・T-m を足した）＝表示の名前も7件にそろえる
+    #   （直す前は4件の名前のままで、足した3件が画面に出なかった＝別枠 D と同じ型）
+    print(f"  T-g/T-h/T-i/T-j/T-k/T-l/T-m 検査5 の枠・使い回しの鍵・渡すファイルの見分け"
+          f"（軽い口）: ❌ {len(ng)} 件")
     if exit_:
         for x in ng:
             print(f"  ❌ {x}")
