@@ -4023,7 +4023,7 @@ def _nominal_wlen(name: str, lead: int) -> int:
     return max(nums + [lead + 1, 1])
 
 
-def _insp_samples(bars: pd.DataFrame, cfg: dict) -> None:
+def _insp_samples(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -> None:
     """検査5 列ごとの欠損率・助走・有効標本数（値決め窓・採点窓）。判定はしない＝
     適合制約の下限はまこさんが決める（歩2）。独立の有効標本数は『その足のバー』で数える
     （5分へ ffill した見かけの本数で数えると上位足が実際より多く見えるため）。
@@ -4033,7 +4033,9 @@ def _insp_samples(bars: pd.DataFrame, cfg: dict) -> None:
     w0, w1 = SEARCH_START, SEARCH_END
     s0, s1 = SCORE_START, SCORE_END + pd.Timedelta("1D")
     span = bars.loc[w0 - pd.Timedelta(days=int(cfg["warmup_days"])):]
-    catalog = build_catalog(cfg)
+    # ★2026-09-08（監査 cp30 の別枠2）＝渡された一覧が在ればそれを使う（--cols で絞れるようにした）。
+    #   直す前＝自分で build_catalog を呼ぶので、列を名前で絞る旗が検査5 に1つも効かなかった。
+    catalog = catalog if catalog is not None else build_catalog(cfg)
     print(f"  値決め窓 {w0.date()}〜{(w1 - pd.Timedelta('1D')).date()} ／ 採点窓 {s0.date()}〜{SCORE_END.date()} "
           f"／ 助走データ {cfg['warmup_days']} 日")
     print("  列 … 欠損率%（値決め窓・その足のバー基準）／助走（最初に値が出るまでのバー数）"
@@ -4799,17 +4801,32 @@ def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None
                ("検査14", INSPECT_SECTIONS[13], lambda: _insp_v9_columns(bars, cfg, cat))]
     # ★2026-08-29（M2-A-2・まこさん承認 9449761de0135c8f）＝検査15 を足す（判定なし・報告だけ）。
     stages += [("検査15", INSPECT_SECTIONS[14], lambda: _insp_regime_label_oneway(bars))]
+    # ★2026-09-08（監査 cp30 の別枠1）＝検査5 を名指しできるようにした。
+    #   直す前＝検査5 は上の一覧に入っておらず、検査6 の直前に必ず走る作りだった。
+    #   だから `--only 5` と打つと「そんな検査は無い」で止まり、
+    #   検査5 だけを走らせる道が無かった（監査が実際に当たった）。
+    #   直した後＝`--only 5` は「検査5 だけを走らせる」。`--only 6` は今までどおり
+    #   検査5 を挟んでから検査6 を走らせる（順番の意味を変えない）。
+    only5 = False
     if only:
         want = {"検査" + x.strip() for x in str(only).split(",") if x.strip()}
-        unknown = want - {k for k, _t, _r in stages}
+        only5 = "検査5" in want
+        unknown = want - {k for k, _t, _r in stages} - {"検査5"}
         if unknown:
             raise SystemExit(f"[--only] そんな検査は無い: {sorted(unknown)}")
         stages = [s for s in stages if s[0] in want]
         print(f"# ⚠️ --only 指定＝{sorted(want)} だけを走らせる（ほかの検査は走っていない）")
+    if only5 and not stages:                   # 検査5 だけを名指しされたとき
+        _h(INSPECT_SECTIONS[4])
+        _insp_samples(bars, cfg, cat)
+        print("\n" + "=" * 100)
+        print("  検査5: 判定なし（欠損・助走・有効標本数の報告＝歩2 の適合制約の基礎データ）")
+        print("=" * 100)
+        return
     for key, title, run in stages:
         if key == "検査6":                     # 検査5（判定なしの報告）を順番どおり挟む
             _h(INSPECT_SECTIONS[4])
-            _insp_samples(bars, cfg)
+            _insp_samples(bars, cfg, cat)      # ★2026-09-08（別枠2）＝絞った一覧を渡す
         _h(title)
         fails[key] = run()
         if fails[key]:

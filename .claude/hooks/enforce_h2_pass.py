@@ -277,9 +277,26 @@ def selftest():
     case("走らせずに名前を数えるだけなら通る（grep）", None,
          f"grep -c run_recipe {_real}/regime_r9_diag.py")
 
+    # ── ★2026-09-08 新設＝指紋を照らす口（--check-fingerprint）そのものを試す ──────
+    #   監査 cp30 の M-2＝この口を守っているのが壊すプログラム b57 だけで、
+    #   そして b57 は承認の流れでしか走らない（土台ゲートが Bash からの実行を止める）。
+    #   ＝この口が腐っても、次の承認まで誰も気づかない状態だった。
+    def case_fp(name, want_rc):
+        nonlocal ng
+        got = check_fingerprint()
+        good = (got == want_rc)
+        print(f"  {'✅' if good else '❌'} {name}" + ("" if good else f"   ← 出た終了コード: {got}"))
+        ng += 0 if good else 1
+
+    write_pass()                                       # 印を いまの中身で書き直す
+    case_fp("★指紋を照らす口＝印と いまのコードが合っていれば 0 を返す", 0)
+    with open(os.path.join(tmp, MUST[1]), "a", encoding="utf-8") as f:
+        f.write("# 1文字 変えた（指紋を照らす口の番人）\n")
+    case_fp("★指紋を照らす口＝コードを1文字でも変えると 1 を返す", 1)
+
     shutil.rmtree(tmp, ignore_errors=True)
     ROOT, PASS = keep
-    print(f"\n番人: {19 - ng}/19 pass")
+    print(f"\n番人: {21 - ng}/21 pass")
     sys.exit(1 if ng else 0)
 
 
