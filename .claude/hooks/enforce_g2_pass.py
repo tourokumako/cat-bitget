@@ -294,10 +294,21 @@ def selftest():
     _bad_fp = _now_fp[:8] + ("1" if _now_fp[8:9] != "1" else "2") + _now_fp[9:]
     write_pass(fp=_bad_fp)
     case_fp("★印を照らす口＝先頭8文字だけが同じ印は通さない（照合を緩めない）", 1)
+    # ★2026-09-09（監査 cp33 の Major 1）＝H2 と同じ4件にそろえる。
+    #   直す前＝G2 は2件しか無く、「口の中の必須ファイルの検査だけを外す」壊し方が
+    #   生き残った（監査 cp33 が5通りに壊して実測＝20/20 のまま通った）。
+    #   設計書 tm-scope-and-g2-fingerprint-20260908 は「H2 と同じ作り」と書いたが、
+    #   番人の数は H2 が4件・G2 が2件で、実物が食い違っていた。
+    write_pass(files=[m for m in MUST if m != f"{_RT}/signal_families.json"])
+    case_fp("★印を照らす口＝印の対象一覧から必須ファイルを外すと 1 を返す", 1)
+    write_pass()                                       # 印を いまの中身で書き直す
+    with open(os.path.join(tmp, MUST[1]), "a", encoding="utf-8") as f:
+        f.write("# 1文字 変えた（印を照らす口の番人）\n")
+    case_fp("★印を照らす口＝コードを1文字でも変えると 1 を返す", 1)
 
     shutil.rmtree(tmp, ignore_errors=True)
     ROOT, PASS = keep
-    print(f"\n番人: {20 - ng}/20 pass")
+    print(f"\n番人: {22 - ng}/22 pass")
     sys.exit(1 if ng else 0)
 
 
