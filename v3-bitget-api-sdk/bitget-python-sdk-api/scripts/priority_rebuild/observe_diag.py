@@ -6146,7 +6146,7 @@ def selftest_rank_demand(exit_: bool = True) -> list:
     return ng
 
 
-def selftest_insp5(exit_: bool = True) -> list:
+def selftest_insp5(exit_: bool = True, bars_csv: str | None = None) -> list:
     """T-g・T-h・T-i・T-j＝検査5 の枠と、重い計算の使い回しの鍵を確かめる。
 
     設計書 insp5-frame-and-table-tidy-20260908 の やること F。口＝`--selftest-insp5`。
@@ -6163,9 +6163,25 @@ def selftest_insp5(exit_: bool = True) -> list:
     ng: list = []
     cfg = load_config()
     need_s = SEARCH_START - pd.Timedelta(days=int(cfg["warmup_days"]))
-    # ★採点窓の末そのもの（1日 足さない）。1分足の元データの最後のバーは 23:59 なので、
-    #   1日 足すと「覆っていない」と誤って落ちる（2026-09-08 の承認で実測して直した）。
-    need_e = SCORE_END
+    # ★2026-09-08（監査 cp30 の Critical 1）＝要る末を、定数からではなく
+    #   「検査5 が実際に使う5分足の最後のバー」から取る。
+    #   直す前＝need_e = SCORE_END（＝その日の 00:00）。ところが検査5 が要るのは
+    #   渡された5分足の最後のバー（いまのファイルだと 23:55）＝23時間55分 手前を見ていた。
+    #   監査が「番人4件が全部 通るのに、検査5 は止まる」1分足を実際に作って再現した。
+    #   ★危険の本命は5分足の側＝5分足だけを取り足して1分足をそのままにすると、
+    #     定数を見ている限り番人は何も言わないまま、検査5 だけが落ちる。
+    #   ★限界＝5分足のパスを渡されないときは、採点窓の最後の5分足のバーを既定にする。
+    #     採点窓より先まで5分足を取り足した場合、この既定では足りない
+    #     （そのときはパスを渡す＝完成の条件 #1〜#3 はそうしている）。
+    if bars_csv:
+        try:
+            _b = pd.read_csv(bars_csv, usecols=["timestamp"], parse_dates=["timestamp"])
+            need_e = pd.Timestamp(_b["timestamp"].max())
+        except Exception as e:                          # noqa: BLE001
+            ng.append(f"T-i: 渡された5分足のファイルを読めない（{bars_csv}）: {str(e)[:60]}")
+            need_e = SCORE_END + pd.Timedelta("1D") - pd.Timedelta("5min")
+    else:
+        need_e = SCORE_END + pd.Timedelta("1D") - pd.Timedelta("5min")
 
     # ── T-i＝1分足の元データが、要る期間を覆っているか ──────────────────
     #   load_1m は覆っていなければ SystemExit を投げる（黙って値なしを作らない）。
@@ -7270,7 +7286,13 @@ if __name__ == "__main__":
     if "--selftest-rank-demand" in sys.argv:          # T-f だけを数秒で（設計書 demand-in-ranking-20260907・壊すプログラム b39・b40 が使う）
         selftest_rank_demand()                        # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest-insp5" in sys.argv:                # ★T-g・T-h・T-i・T-j だけを短い切れ端で
-        selftest_insp5()                              # （設計書 insp5-frame-and-table-tidy-20260908・承認の打ち切り 120秒 に収めるため）
+        # ★2026-09-08（監査 cp30 の Critical 1）＝すぐ後ろに5分足のパスを書けるようにした。
+        #   渡すと T-i が「その5分足の最後のバーまで1分足が覆っているか」を見る
+        #   ＝番人と検査5 が同じファイルを見る（定数と実物のずれを塞ぐ）。
+        _i5 = sys.argv.index("--selftest-insp5")
+        _bc5 = (sys.argv[_i5 + 1] if len(sys.argv) > _i5 + 1
+                and not sys.argv[_i5 + 1].startswith("-") else None)
+        selftest_insp5(bars_csv=_bc5)                 # （承認の打ち切り 120秒 に収めるための軽い口）
     if "--selftest" in sys.argv:
         selftest()
     else:

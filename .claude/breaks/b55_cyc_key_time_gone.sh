@@ -35,5 +35,5 @@ if new not in s:
 open(p, 'w', encoding='utf-8').write(s.replace(new, old))
 PYEOF
 
-measure python3 "$OBS" --selftest-insp5
+measure python3 "$OBS" --selftest-insp5 "$SDK/data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv"
 finish
