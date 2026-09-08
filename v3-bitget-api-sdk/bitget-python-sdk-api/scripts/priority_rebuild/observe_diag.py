@@ -186,6 +186,17 @@ ONE_MIN_CSV = "data/BTCUSDT-1m-binance-taker-2023-06-01_2026-06-30.csv"   # ★2
 # ↑ 段7 の 7-1 で作ったもの（2026-08-11・1,226,880本・1分グリッドの欠け0・重複0・境目の段差0）。
 #   5分足の正本（Binance Spot 系列）と同じ作りで、時刻はバーの始まりの時刻。
 
+# ★2026-09-08（監査 cp31 の Critical 1・設計書 insp5-path-and-tidy-head-20260908 の A）
+#   ＝5分足の正本のパスを、ここ1か所に置く。
+#   直す前＝番人 T-i を呼ぶコマンドの6か所（壊すプログラム3本と、完成の条件3行）に
+#     同じファイル名が書き写してあった。このプロジェクトは5分足を取り足すとき
+#     「新ファイルを別名で保存」する決まりなので（要件定義書 §8.2.1.1 の④）、
+#     取り足すと6か所とも古いファイルを指したままになる。
+#     ＝番人は古いファイルの末を見て「覆っている」と言い、検査5 は新しいファイルで走って落ちる
+#     （監査 cp31 が、その状態を実際に作って再現した）。
+#   ★取り足したら、ここだけを直す。直し忘れは番人 T-m が見つける（_newer_5m_files）。
+BARS_CSV = "data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv"
+
 
 def load_config(path: str | None = None) -> dict:
     import json
@@ -1542,6 +1553,73 @@ def build_catalog(cfg: dict) -> list[tuple]:
 def _resample(df, rule):
     return df.resample(rule, label="left", closed="left").agg(
         {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}).dropna()
+
+
+def _tail_timestamps(path, n: int = 6) -> list:
+    """CSV の末尾の n 本の時刻を返す（★末尾の 8KB だけを読む＝全部は読まない）。
+
+    ★2026-09-08（監査 cp31 の Critical 1・設計書 insp5-path-and-tidy-head-20260908 の B・C・D）。
+    読めなければ空の一覧を返す（呼ぶ側が「読めない」として扱う）。
+    """
+    try:
+        with open(path, "rb") as f:
+            f.seek(0, 2)                                   # 2 ＝ ファイルの末
+            size = f.tell()
+            f.seek(max(0, size - 8192))
+            tail = f.read().decode("utf-8", "ignore").splitlines()
+    except Exception:                                      # noqa: BLE001
+        return []
+    out: list = []
+    for ln in reversed(tail):
+        s = ln.split(",")[0].strip()
+        try:
+            t = pd.Timestamp(s)
+        except Exception:                                  # noqa: BLE001
+            continue
+        if not pd.isna(t):
+            out.append(t)
+        if len(out) >= n:
+            break
+    return list(reversed(out))
+
+
+def _bars_step_minutes(path) -> float | None:
+    """その CSV のバーの間隔（分）を返す。測れなければ None。
+
+    ★2026-09-08（監査 cp31 の別枠 F）＝番人 T-i は「渡されたのが5分足か」を見ていなかった。
+      1分足のファイルを渡しても通っていた（監査が実測）。末尾の数本の差の中央値で見分ける。
+    """
+    ts = _tail_timestamps(path, n=6)
+    if len(ts) < 2:
+        return None
+    d = [(ts[i + 1] - ts[i]).total_seconds() for i in range(len(ts) - 1)]
+    d = sorted(x for x in d if x > 0)
+    if not d:
+        return None
+    return d[len(d) // 2] / 60.0
+
+
+def _newer_5m_files(base_end) -> list:
+    """data の中に、5分足の正本より後まで在る5分足が置かれていないかを見る。
+
+    ★2026-09-08（監査 cp31 の Critical 1）＝取り足したのに BARS_CSV の指し先が古いままだと、
+      番人は古いファイルの末を見て「覆っている」と言い、検査5 は新しいファイルで走って落ちる。
+      その状態を番人 T-m が見つける。
+    戻り＝(ファイルの名前, その末) の一覧（無ければ空）。
+    ★限界＝名前で見分ける（data/BTCUSDT-5m-*.csv）。別の名前で置かれたら見つけられない。
+    """
+    out: list = []
+    d = pathlib.Path(__file__).resolve().parent.parent.parent / "data"
+    if not d.exists():
+        return out
+    keep = pathlib.Path(BARS_CSV).name
+    for p in sorted(d.glob("BTCUSDT-5m-*.csv")):
+        if p.name == keep:
+            continue
+        ts = _tail_timestamps(p, n=1)
+        if ts and ts[-1] > base_end:
+            out.append((p.name, ts[-1]))
+    return out
 
 
 _ONE_MIN_CACHE: dict = {}
@@ -4750,6 +4828,28 @@ def _dup_keep_of_group(grp: list[str], warm: dict | None = None) -> tuple[str, s
     return c3[0], "決まり4＝上の3つが同点＝名前の並び順で前の方", tbl
 
 
+def _insp_stage_plan(only, stage_keys: list) -> tuple[list, bool]:
+    """`--only` の指定から「走らせる段」と「検査5 を走らせるか」を決める。
+
+    ★2026-09-08（監査 cp31 の Major 2・設計書 insp5-path-and-tidy-head-20260908 の F）
+      ＝この判定を1か所に集めた。本体（inspect_data）も番人（T-k）も、ここを呼ぶ。
+      直す前＝本体の中に直に書いてあり、検査5 が走る道は2つだけだった
+        （①検査5 だけを名指ししたとき ②検査6 の直前）。
+        `--only 5,7` は走らせる段が「検査7」だけになるので、どちらにも当たらず、
+        検査5 は黙って走らなかった（監査 cp31 が実測・3秒で終わった）。
+      直した後＝検査5 を名指ししたら、ほかの検査を一緒に指定していても走らせる。
+    戻り＝(走らせる段の鍵の一覧, 検査5 を走らせるか)。
+    ★指定が無ければ、全部の段と検査5 を走らせる（今までどおり）。
+    """
+    if not only:
+        return list(stage_keys), True
+    want = {"検査" + x.strip() for x in str(only).split(",") if x.strip()}
+    unknown = want - set(stage_keys) - {"検査5"}
+    if unknown:
+        raise SystemExit(f"[--only] そんな検査は無い: {sorted(unknown)}")
+    return [k for k in stage_keys if k in want], ("検査5" in want)
+
+
 def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None = None,
                  cols: str | None = None) -> None:
     """データと指標の検査（歩0）＝5段を順に走らせ、まとめを機械出力する。❌ が1つでもあれば終了コード1。
@@ -4807,26 +4907,29 @@ def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None
     #   検査5 だけを走らせる道が無かった（監査が実際に当たった）。
     #   直した後＝`--only 5` は「検査5 だけを走らせる」。`--only 6` は今までどおり
     #   検査5 を挟んでから検査6 を走らせる（順番の意味を変えない）。
-    only5 = False
+    # ★2026-09-08（監査 cp31 の Major 2・別枠 I）＝判定を `_insp_stage_plan` へ集めた。
+    #   走ったかどうかは `ran5` の1つの値で持ち、まとめの行もその値を見る
+    #   （＝走っていない検査の行を出さない）。
+    _keys, only5 = _insp_stage_plan(only, [k for k, _t, _r in stages])
     if only:
-        want = {"検査" + x.strip() for x in str(only).split(",") if x.strip()}
-        only5 = "検査5" in want
-        unknown = want - {k for k, _t, _r in stages} - {"検査5"}
-        if unknown:
-            raise SystemExit(f"[--only] そんな検査は無い: {sorted(unknown)}")
-        stages = [s for s in stages if s[0] in want]
-        print(f"# ⚠️ --only 指定＝{sorted(want)} だけを走らせる（ほかの検査は走っていない）")
-    if only5 and not stages:                   # 検査5 だけを名指しされたとき
+        _shown = sorted(set(_keys) | ({"検査5"} if only5 else set()))
+        print(f"# ⚠️ --only 指定＝{_shown} だけを走らせる（ほかの検査は走っていない）")
+    stages = [s for s in stages if s[0] in _keys]
+    ran5 = False
+    if only5:                                  # ★検査5 を名指ししたら、ほかの検査と一緒でも先に走らせる
         _h(INSPECT_SECTIONS[4])
         _insp_samples(bars, cfg, cat)
-        print("\n" + "=" * 100)
-        print("  検査5: 判定なし（欠損・助走・有効標本数の報告＝歩2 の適合制約の基礎データ）")
-        print("=" * 100)
-        return
+        ran5 = True
+        if not stages:                         # 検査5 だけを名指しされたとき
+            print("\n" + "=" * 100)
+            print("  検査5: 判定なし（欠損・助走・有効標本数の報告＝歩2 の適合制約の基礎データ）")
+            print("=" * 100)
+            return
     for key, title, run in stages:
-        if key == "検査6":                     # 検査5（判定なしの報告）を順番どおり挟む
+        if key == "検査6" and not ran5:        # 検査5（判定なしの報告）を順番どおり挟む（二重に走らせない）
             _h(INSPECT_SECTIONS[4])
             _insp_samples(bars, cfg, cat)      # ★2026-09-08（別枠2）＝絞った一覧を渡す
+            ran5 = True
         _h(title)
         fails[key] = run()
         if fails[key]:
@@ -4845,7 +4948,10 @@ def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None
             print(f"  📄 {key}: 判定なし（報告だけ＝レンジの本当の正解は誰も持っていないため）")
         else:
             print(f"  ✅ {key}: 異常なし")
-    print("  検査5: 判定なし（欠損・助走・有効標本数の報告＝歩2 の適合制約の基礎データ・下限はまこさんが決める）")
+    # ★2026-09-08（監査 cp31 の別枠 I）＝検査5 が実際に走ったときだけ、この行を出す。
+    #   直す前＝走らなくても必ず出たので、`--only 5,7`（検査5 が走らなかった）のときに嘘になった。
+    if ran5:
+        print("  検査5: 判定なし（欠損・助走・有効標本数の報告＝歩2 の適合制約の基礎データ・下限はまこさんが決める）")
     print("=" * 100)
     if bad:
         raise SystemExit(1)
@@ -6187,18 +6293,57 @@ def selftest_insp5(exit_: bool = True, bars_csv: str | None = None) -> list:
     #   監査が「番人4件が全部 通るのに、検査5 は止まる」1分足を実際に作って再現した。
     #   ★危険の本命は5分足の側＝5分足だけを取り足して1分足をそのままにすると、
     #     定数を見ている限り番人は何も言わないまま、検査5 だけが落ちる。
-    #   ★限界＝5分足のパスを渡されないときは、採点窓の最後の5分足のバーを既定にする。
-    #     採点窓より先まで5分足を取り足した場合、この既定では足りない
-    #     （そのときはパスを渡す＝完成の条件 #1〜#3 はそうしている）。
-    if bars_csv:
-        try:
-            _b = pd.read_csv(bars_csv, usecols=["timestamp"], parse_dates=["timestamp"])
-            need_e = pd.Timestamp(_b["timestamp"].max())
-        except Exception as e:                          # noqa: BLE001
-            ng.append(f"T-i: 渡された5分足のファイルを読めない（{bars_csv}）: {str(e)[:60]}")
-            need_e = SCORE_END + pd.Timedelta("1D") - pd.Timedelta("5min")
+    #   ★2026-09-08（監査 cp31 の Critical 1・別枠 E・F／設計書 insp5-path-and-tidy-head-20260908）
+    #     ＝要る末の既定を、採点窓の定数ではなく **5分足の正本（BARS_CSV）の最後のバー** にした。
+    #     直す前＝パスを渡さなければ定数を使ったので、番人を呼ぶ6か所がパスを書き写していた。
+    #       取り足して名前が変わると、6か所とも古いファイルを指したままになった。
+    #     直した後＝①既定は正本の末（パスを書き写さなくてよい）
+    #               ②渡されたときは「正本の末」と「渡されたファイルの末」の**遅いほう**を使う
+    #                 （別枠 E＝短い切れ端を渡しても守りが弱くならない）
+    #               ③渡されたのが5分足かを見る（別枠 F＝1分足を渡しても通っていた）
+    #     ★読むのはファイルの末尾 8KB だけ（全部は読まない）。
+    _root5 = pathlib.Path(__file__).resolve().parent.parent.parent
+    _base_ts = _tail_timestamps(_root5 / BARS_CSV, n=1)
+    if _base_ts:
+        need_e = _base_ts[-1]
     else:
+        ng.append(f"T-i: 5分足の正本が読めない（{BARS_CSV}）")
         need_e = SCORE_END + pd.Timedelta("1D") - pd.Timedelta("5min")
+    if bars_csv:
+        _ts5 = _tail_timestamps(bars_csv, n=6)
+        if not _ts5:
+            ng.append(f"T-i: 渡された5分足のファイルを読めない（{bars_csv}）")
+        else:
+            _step5 = _bars_step_minutes(bars_csv)
+            if _step5 is None or abs(_step5 - 5.0) > 1e-9:
+                ng.append(f"T-l: 渡されたファイルが5分足ではない（バーの間隔 {_step5} 分）: {bars_csv}")
+            need_e = max(need_e, _ts5[-1])
+
+    # ── T-m＝data に、5分足の正本より後まで在るファイルが置かれていないか ──
+    #   ★2026-09-08（監査 cp31 の Critical 1）＝取り足したのに BARS_CSV の指し先が古いままなら、
+    #     ここで必ず落ちる（＝書き替え忘れを機械が見つける）。
+    if _base_ts:
+        _newer5 = _newer_5m_files(_base_ts[-1])
+        if _newer5:
+            ng.append("T-m: data に、5分足の正本より後まで在るファイルが在る"
+                      f"（正本 {pathlib.Path(BARS_CSV).name} の末 {_base_ts[-1]} ／ "
+                      f"{_newer5[0][0]} の末 {_newer5[0][1]}）"
+                      "＝5分足を取り足したなら BARS_CSV の指し先を直す")
+
+    # ── T-k＝検査5 とほかの検査を一緒に名指ししても、検査5 が走るか ────────
+    #   ★2026-09-08（監査 cp31 の Major 2）＝直す前は「検査5 だけを名指ししたとき」と
+    #     「検査6 の直前」の2つの道しか無く、`--only 5,7` はどちらにも当たらずに黙って走らなかった。
+    #     しかも まとめには「検査5: 判定なし」の行が出た（＝走っていないのに出た・別枠 I）。
+    #   ★判定は本体と同じ `_insp_stage_plan` を呼ぶ（同じ判定を2か所に書き写さない）。
+    try:
+        _keys_k, _want5_k = _insp_stage_plan("5,7", ["検査6", "検査7", "検査8"])
+    except SystemExit as e:                             # noqa: BLE001
+        ng.append(f"T-k: 検査5 とほかの検査を一緒に名指しすると止まる: {str(e)[:60]}")
+    else:
+        if not _want5_k:
+            ng.append("T-k: `--only 5,7` で検査5 が走らない（検査5 を名指ししたのに走らせない形）")
+        if "検査7" not in _keys_k:
+            ng.append(f"T-k: `--only 5,7` で検査7 が走らない（走る段＝{_keys_k}）")
 
     # ── T-i＝1分足の元データが、要る期間を覆っているか ──────────────────
     #   load_1m は覆っていなければ SystemExit を投げる（黙って値なしを作らない）。

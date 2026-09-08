@@ -1,0 +1,221 @@
+7,8c7
+< NEW_FILE: .claude/breaks/b58_five_min_newer_ignored.sh, .claude/breaks/b59_tidy_head_dup_live.sh, .claude/breaks/b60_only5_with_others.sh, .claude/breaks/b61_insp5_bars_kind.sh, .claude/breaks/b62_fingerprint_loose.sh
+< MODEL: .claude/breaks/b56_one_min_csv_old.sh, .claude/breaks/b55_cyc_key_time_gone.sh, .claude/breaks/lib.sh
+---
+> ★新しく作った5本（b58 から b62）は書き終えたので、新規のファイルを宣言する2行は消しました（必読ゲートは「新しく作ると書いたのに実在する」を止めるためです）。手本にしたのは `.claude/breaks/b56_one_min_csv_old.sh`・`b55_cyc_key_time_gone.sh`・`lib.sh` の3本です。
+14,16c13
+< **往復：1回目／上限2回。**1回目で書く権利をいただき、実装のあと2回目で機械が測ります。
+< 
+< **なぜ2回に分かれるか**＝完成の条件に付ける壊すプログラム5本は、いま存在しないファイルです。承認のプログラムは、承認を打ったその場で壊すプログラムを走らせて終了コードを記録します。**実在しないファイルは走らせられないので、1回目は「未着手」のまま残ります。**前の工事（`insp5-frame-and-table-tidy-20260908`）も同じ形でした。
+---
+> **往復：3回目（最後）。**1回目で書く権利をいただき、2回目は下の穴の直しのために打ち直していただきました。**この3回目で、機械が壊すプログラム5本を実際に走らせて測ります。**
+20c17
+< **時間の見積もり**＝実装 1時間30分・番人と壊すプログラムの実測 1時間。**★どれか1つでも見込みの2倍を超えたら、そこで止めて まこさんに報告します。**
+---
+> **時間の見積もり**＝実装 1時間30分（済）・番人と壊すプログラムの実測 1時間。**★どれか1つでも見込みの2倍を超えたら、そこで止めて まこさんに報告します。**
+22c19
+< ### ★2026-09-08 に、1回目の承認の直後で作業が止まりました（この版で直します）
+---
+> ### ★2026-09-08 に、1回目の承認の直後で作業が止まりました（やること N で直しました）
+24c21
+< **何が起きたか**＝まこさんが1回目の承認を打った直後、**承認のプログラムが完成の条件5行を「済」にしました。**ところが**その根拠にした壊すプログラム5本は、まだ存在しません。**存在しないので終了コードは None です。
+---
+> **何が起きたか**＝まこさんが1回目の承認を打った直後、**承認のプログラムが完成の条件5行を「済」にしました。**ところが**その根拠にした壊すプログラム5本は、まだ存在しませんでした。**存在しないので終了コードは None です。
+26c23
+< **なぜ「済」になったか**＝`run_breaks.py` の 354行が `match = (code == exp)` です。**ファイルが無いと、実際の終了コードも、宣言した期待値も、どちらも None になります。**＝`None == None` が真になり、「期待どおり」と数えられました。
+---
+> **なぜ「済」になったか**＝`run_breaks.py` の 354行が `match = (code == exp)` でした。**ファイルが無いと、実際の終了コードも、宣言した期待値も、どちらも None になります。**＝`None == None` が真になり、「期待どおり」と数えられました。
+28c25
+< **何が困るか**＝**書き込みの門は、同じ None を「止まっていない」と見て実装を止めます。**＝承認のプログラムと門で判定が食い違い、**どのファイルも書けなくなりました**（実測＝門の逐語「完成の条件の『済』の壊すプログラムが止まっていません（b58…・終了コード None）」）。
+---
+> **何が困るか**＝**書き込みの門は、同じ None を「止まっていない」と見て実装を止めます。**＝承認のプログラムと門で判定が食い違い、**どのファイルも書けなくなりました**（門の逐語＝「完成の条件の『済』の壊すプログラムが止まっていません（b58…・終了コード None）」）。
+30c27
+< **★この穴は、2026-09-08 の159番の直し（期待する終了コードの宣言）が新しく作ったものです。**前の工事のときは「未着手」のまま残りました（前の設計書 §0 に そう書いてあります）。**＝監査 cp31 が指摘した「直しが新しい不具合を作る」型の3件目です。**
+---
+> **★この穴は、2026-09-08 の159番の直し（期待する終了コードの宣言）が新しく作ったものです。**前の工事のときは「未着手」のまま残りました。**＝監査 cp31 が指摘した「直しが新しい不具合を作る」型の3件目です。**
+32c29
+< **どう直すか**＝やること N。**期待値が読めない行（＝壊すプログラムがまだ無い行）を、一致とみなさない形にします。**あわせて、この版では完成の条件の「いまの状態」を「まだ」に戻しました（実物を測っていないため）。
+---
+> **どう直したか**＝やること N。**期待値が読めない行（＝壊すプログラムがまだ無い行）を、一致とみなさない形にしました。**
+59c56
+< **T-i が見るファイルは、コマンドに書いた文字で決まります。**そのコマンドは6か所に在り、6か所とも同じ古い名前を書いています。
+---
+> **T-i が見るファイルは、コマンドに書いた文字で決まります。**そのコマンドは6か所に在り、6か所とも同じ古い名前を書いていました。
+61c58
+< | # | 場所 | 実物 |
+---
+> | # | 場所 | 直す前の中身 |
+70c67
+< **書き替え忘れを見つける仕組みは、いま在りません。**これが監査の判定した本体です。
+---
+> **書き替え忘れを見つける仕組みが在りませんでした。**これが監査の判定した本体です。
+74c71
+< **実物**＝`.claude/tools/tidy_next_step.py` の 171-176行。区切りの行を外してから先頭2本を取るので、表に生きている行が1本でも在ると、2本目が「生きている行」になります。
+---
+> **実物**＝`.claude/tools/tidy_next_step.py` の 171-176行。区切りの行を外してから先頭2本を取るので、表に生きている行が1本でも在ると、2本目が「生きている行」になりました。
+80c77
+< **実物**＝`scripts/priority_rebuild/observe_diag.py` の 4819行と 4827行。**`--only 5,7` は走らせる段の一覧が「検査7」だけになるので、どちらの道にも当たりません。**それなのに、まとめには 4848行 の「検査5: 判定なし」が必ず出ます。
+---
+> **実物**＝`scripts/priority_rebuild/observe_diag.py` の 4819行と 4827行。**`--only 5,7` は走らせる段の一覧が「検査7」だけになるので、どちらの道にも当たりませんでした。**それなのに、まとめには 4848行 の「検査5: 判定なし」が必ず出ていました。
+84c81
+< **① 真因**＝**同じ値を複数の場所に書き写したこと**（Critical 1）と、**直しにテストを足さなかったこと**（Major 1・Major 2）です。前の工事では、テストを足したのは指紋の口だけで、控えの見出しの直しと `--only` の直しには1件も足しませんでした。**だから壊れても誰も気づきませんでした。**
+---
+> **① 真因**＝**同じ値を複数の場所に書き写したこと**（Critical 1）と、**直しにテストを足さなかったこと**（Major 1・Major 2）です。前の工事では、テストを足したのは指紋の口だけで、控えの見出しの直しと検査5 の名指しの直しには1件も足しませんでした。**だから壊れても誰も気づきませんでした。**
+86c83
+< **② 期待値分解**＝売買のロジックには触れません。勝率・平均利益・敗率・平均損失は動きません。動くのは、**5分足のパスが書いてある場所の数**（6か所 → 1か所）と、**控えに複製される生きている行の数**（1本 → 0本）と、**`--only 5,7` で走る検査の数**（検査7 だけ → 検査5 と検査7）と、**この3件を見る番人の数**（0件 → 8件）です。
+---
+> **② 期待値分解**＝売買のロジックには触れません。勝率・平均利益・敗率・平均損失は動きません。動くのは、**5分足のパスが書いてある場所の数**（6か所 → 1か所）と、**控えに複製される生きている行の数**（1本 → 0本）と、**`--only 5,7` で走る検査の数**（検査7 だけ → 検査5 と検査7）と、**この3件を見る番人の数**（0件 → 9件）です。
+88c85
+< **③ root か symptom か**＝root です。5分足のパスは正本を1か所に置き、**取り足したのに指し先が古いままなら番人が落ちる形**にします。控えの見出しは「表の1行目と2行目をそのまま取る」に変え、**その振る舞いを番人が見ます。**検査5 の名指しは「走ったかどうか」を1つの値で持ち、**まとめの行もその値を見ます**（同じ判定を2か所に書き写さない）。
+---
+> **③ root か symptom か**＝root です。5分足のパスは正本を1か所に置き、**取り足したのに指し先が古いままなら番人が落ちる形**にしました。控えの見出しは「表の1行目と2行目をそのまま取る」に変え、**その振る舞いを番人が見ます。**検査5 の名指しは「走ったかどうか」を1つの値で持ち、**まとめの行もその値を見ます**（同じ判定を2か所に書き写さない）。
+90c87
+< **④ ベースアップ**＝外の検索は使いません。手本は同じリポジトリの実物で、この設計書を書く前に Read tool で開きました＝`scripts/priority_rebuild/observe_diag.py`（名指しの分岐 4806-4850行 と `selftest_insp5` 6166-6260行）／`.claude/tools/tidy_next_step.py`（`move_done_rows` の 160-189行）／`.claude/hooks/enforce_h2_pass.py`（`check_fingerprint` の 110-169行）／`.claude/breaks/b56_one_min_csv_old.sh`（壊すプログラムの手本・全文）／`.claude/breaks/b55_cyc_key_time_gone.sh`（30-39行）／`.claude/breaks/b53_insp5_frame_and_key_gone.sh`（50-60行）／`.claude/breaks/lib.sh`（共通の部品・全文）／`.claude/audits/2026-09-08_insp5_frame_cp31_audit_report.md`（監査レポート・全文）。
+---
+> **④ ベースアップ**＝外の検索は使いません。手本は同じリポジトリの実物で、この設計書を書く前に Read tool で開きました＝`scripts/priority_rebuild/observe_diag.py`（名指しの分岐 4806-4850行 と `selftest_insp5` 6166-6260行）／`.claude/tools/tidy_next_step.py`（`move_done_rows` の 160-189行）／`.claude/hooks/enforce_h2_pass.py`（`check_fingerprint` の 110-169行）／`.claude/tools/run_breaks.py`（`expect_of` の 193-210行・走らせる所の 320-364行）／`.claude/breaks/b56_one_min_csv_old.sh`（壊すプログラムの手本・全文）／`.claude/breaks/b55_cyc_key_time_gone.sh`（30-39行）／`.claude/breaks/b53_insp5_frame_and_key_gone.sh`（50-60行）／`.claude/breaks/lib.sh`（共通の部品・全文）／`.claude/audits/2026-09-08_insp5_frame_cp31_audit_report.md`（監査レポート・全文）。
+96,98c93,95
+< | **A** | `scripts/priority_rebuild/observe_diag.py` | **5分足の正本のパスを、定数 `BARS_CSV` に置く。**`selftest_insp5` は、パスを渡されなければ その正本を読む（いまは採点窓の末という定数を使う） | Critical 1 |
+< | **B** | 同上 | **T-i に「data の中に、正本より後まで在る5分足が在れば ❌」を足す。**＝取り足したのに正本の指し先が古いままなら、番人が必ず落ちる。読むのはファイルの末尾だけ（全部は読まない） | Critical 1 |
+< | **C** | 同上 | **T-i に「渡されたのが5分足か」の判定を足す。**バーの間隔の最頻値が5分でなければ ❌ にする（いまは1分足のファイルを渡しても通る） | 別枠 F |
+---
+> | **A** | `scripts/priority_rebuild/observe_diag.py` | **5分足の正本のパスを、定数 `BARS_CSV` に置く。**`selftest_insp5` は、パスを渡されなければ その正本を読む（直す前は採点窓の末という定数を使っていた） | Critical 1 |
+> | **B** | 同上 | **T-i に「data の中に、正本より後まで在る5分足が在れば ❌」を足す。**＝取り足したのに正本の指し先が古いままなら、番人が必ず落ちる。読むのはファイルの末尾 8KB だけ（全部は読まない） | Critical 1 |
+> | **C** | 同上 | **T-i に「渡されたのが5分足か」の判定を足す。**バーの間隔の中央値が5分でなければ ❌ にする（直す前は1分足のファイルを渡しても通った） | 別枠 F |
+101c98
+< | **F** | `scripts/priority_rebuild/observe_diag.py` | **検査5 の名指しが在れば、ほかの検査を指定していても検査5 を先に走らせる。**走ったかどうかを1つの値で覚え、検査6 の直前で二重に走らせない | Major 2 |
+---
+> | **F** | `scripts/priority_rebuild/observe_diag.py` | **検査5 の名指しが在れば、ほかの検査を指定していても検査5 を先に走らせる。**判定を `_insp_stage_plan` の1か所に集め、走ったかどうかを1つの値で覚えて、検査6 の直前で二重に走らせない | Major 2 |
+104,105c101,102
+< | **I** | 同上（番人） | **番人を3件 足す（15件 → 18件）**＝①控えの見出しが「見出し＋区切り」の2行になる ②生きている行が控えに複製されない ③見出しが無い表でも落ちない | 別枠 G |
+< | **J** | `scripts/priority_rebuild/observe_diag.py`（番人） | **番人を3件 足す（4件 → 7件）**＝**T-k**（ほかの検査と一緒に名指ししても検査5 が走る）／**T-l**（渡されたのが5分足でなければ ❌）／**T-m**（data に正本より後の5分足が在れば ❌）。**軽い切れ端で測る**（T-g・T-j と同じ作り） | Major 2・別枠 E・F |
+---
+> | **I** | 同上（番人） | **番人を3件 足す（15件 → 18件）**＝①控えに区切りの行が入る ②生きている行が控えに複製されない ③見出しが無い表でも落ちない | 別枠 G |
+> | **J** | `scripts/priority_rebuild/observe_diag.py`（番人） | **番人を3件 足す（4件 → 7件）**＝**T-k**（ほかの検査と一緒に名指ししても検査5 が走る）／**T-l**（渡されたのが5分足でなければ ❌）／**T-m**（data に正本より後の5分足が在れば ❌） | Major 2・別枠 E・F |
+107c104
+< | **L** | `.claude/breaks/` に5本 新設 | **b58**（data に正本より後の5分足を置くと T-m が落ちる）／**b59**（控えの見出しの取り方を直す前へ戻すと落ちる）／**b60**（検査5 を走らせる条件を戻すと T-k が落ちる）／**b61**（5分足かの判定を消すと T-l が落ちる）／**b62**（指紋の照合を先頭8文字だけに戻すと落ちる）。**宣言の2行（期待する終了コードとその意味）を付ける** | 完成の条件 |
+---
+> | **L** | `.claude/breaks/` に5本 新設 | **b58**（data に正本より後の5分足を置くと T-m が落ちる）／**b59**（控えの見出しの取り方を直す前へ戻すと落ちる）／**b60**（検査5 を走らせる条件を戻すと T-k が落ちる）／**b61**（5分足かの判定を消すと、1分足を渡しても通ってしまう）／**b62**（指紋の照合を先頭8文字だけに戻すと落ちる）。**宣言の2行（期待する終了コードとその意味）を付ける** | 完成の条件 |
+109c106
+< | **N** | `.claude/tools/run_breaks.py` | **壊すプログラムがまだ無い行を「期待どおり」と数えるのをやめる**（354行）。**期待値が読めないとき（None）は、一致とみなさない。**画面にも「まだ測れない（壊すプログラムがまだ無い）」と出す。**番人を1件 足す**（12件 → 13件）＝ファイルが無い行で、記録の一致が偽になる | 1回目の承認の直後に作業が止まった（§0 の下） |
+---
+> | **N** | `.claude/tools/run_breaks.py` | **壊すプログラムがまだ無い行を「期待どおり」と数えるのをやめる。**判定を `match_of` の1か所に切り出し、**期待値が読めないときは一致とみなさない。**画面にも「まだ測れない（壊すプログラムがまだ無い）」と出す。**番人を1件 足す**（11件 → 12件） | 1回目の承認の直後に作業が止まった（§0 の下） |
+119c116
+< **過去に取りやめた失敗の再演か**＝いいえ。**★近い型が1つあります**＝前の工事で、直しにテストを足さなかったために2件が壊れました（監査 cp31 の Major 1・Major 2）。**今回は、直す3件それぞれに番人を足します**（やること I・J・K＝8件）。
+---
+> **過去に取りやめた失敗の再演か**＝いいえ。**★近い型が1つあります**＝前の工事で、直しにテストを足さなかったために2件が壊れました（監査 cp31 の Major 1・Major 2）。**今回は、直す3件それぞれに番人を足しました**（やること I・J・K・N＝9件）。
+123c120
+< **自己検査は3つの口で列挙します。**
+---
+> **自己検査は4つの口で列挙します。**
+125c122
+< | 口 | いま | この工事の後 | わざと壊して落ちるかの確認 |
+---
+> | 口 | 直す前 | この工事の後 | わざと壊して落ちるかの確認 |
+130c127
+< | `run_breaks.py --selftest` | 12件 | **13件**（やること N） | ★完成の条件には入れていません（下の補8） |
+---
+> | `run_breaks.py --selftest` | 11件 | **12件**（やること N） | ★完成の条件には入れていません（下の補8） |
+145c142
+< | **補3** | T-k は、検査5 が最後まで走ることを確かめるか | **確かめません。**確かめるのは「検査5 が走り始めたか」だけです。**全部の列を最後まで走らせると何十分もかかり、承認の打ち切り 120秒 を超えます** |
+---
+> | **補3** | T-k は、検査5 が最後まで走ることを確かめるか | **確かめません。**確かめるのは「検査5 を走らせる判定が正しいか」だけです。**全部の列を最後まで走らせると何十分もかかり、承認の打ち切り 120秒 を超えます** |
+149d145
+< | **補8** | やること N（承認のプログラムの穴）は、完成の条件で測るか | **測りません。**完成の条件は5行までで、札（AUDIT-1 から AUDIT-5）も5つで固定です。**N は、この工事を進めるために踏んだ穴の直しで、監査 cp31 の指摘ではありません。**確かめるのは番人1件だけです（`run_breaks.py --selftest` が 12件 → 13件）。**★＝N は「直った」と第三者が言った状態になりません。**正直に書きます |
+150a147,148
+> | **補8** | やること N（承認のプログラムの穴）は、完成の条件で測るか | **測りません。**完成の条件は5行までで、札（AUDIT-1 から AUDIT-5）も5つで固定です。**N は、この工事を進めるために踏んだ穴の直しで、監査 cp31 の指摘ではありません。**確かめるのは番人1件だけです（`run_breaks.py --selftest` が 11件 → 12件）。**★＝N は「直った」と第三者が言った状態になりません。**正直に書きます |
+> | **補9** | b61 は、守りが働くことを直に測るか | **測りません。**b61 は「守りを消すと、1分足を渡しても通ってしまう」ことを測り、その値を入れ替えて 1 を返します（b51 と同じ向きの裏返し）。**＝守りが在るときに落ちることは、番人 T-l が別に見ます** |
+156c154
+< **★H2（未来を見ない）は当てはまります。**A から D は「どのファイルを読むか」を変えるだけで、**未来を見る道は1つも増えません。**読み方（`load_1m`・`insp5_frame`）は1文字も変えません。**`observe_diag.py` は H2 の印の対象なので、印を取り直します。**
+---
+> **★H2（未来を見ない）は当てはまります。**A から D は「どのファイルを読むか」を変えるだけで、**未来を見る道は1つも増えません。**読み方（`load_1m`・`insp5_frame`）は1文字も変えていません。**`observe_diag.py` は H2 の印の対象なので、印を取り直します。**
+168,172c166,170
+< | 1 | AUDIT-1＝**5分足のパスが1か所**＝①パスを渡さずに走らせても、番人が正本の5分足を見る ②data に正本より後まで在る5分足が置かれると、番人 T-m が落ちる（取り足したのに指し先が古いままを見つける） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | data に正本より後の末を持つ5分足の控えを置くと、番人 T-m が落ちる | `b58_five_min_newer_ignored.sh` | 対象 | **まだ**（壊すプログラムを作ってから、次の承認で機械が測る） |
+< | 2 | AUDIT-2＝**控えの見出し**＝①控えに入る見出しが「見出しの行1本＋区切りの行1本」になる ②いま生きている行が控えに複製されない（番人2件で別々に見る） | `python3 ../../.claude/tools/tidy_next_step.py --selftest` | 実経路 | 見出しの取り方を直す前（区切りを外して先頭2本）へ戻すと、番人が落ちる | `b59_tidy_head_dup_live.sh` | 対象 | **まだ**（壊すプログラムを作ってから、次の承認で機械が測る） |
+< | 3 | AUDIT-3＝**検査5 の名指し**＝①ほかの検査と一緒に名指ししても検査5 が走る（番人 T-k）②走らなかったときは、まとめに検査5 の行を出さない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 検査5 を走らせる条件を、ほかの検査が無いときだけに戻すと、番人 T-k が落ちる | `b60_only5_with_others.sh` | 対象 | **まだ**（壊すプログラムを作ってから、次の承認で機械が測る） |
+< | 4 | AUDIT-4＝**渡されたファイルの見分け**＝①1分足のファイルを渡すと番人 T-l が落ちる ②短い切れ端を渡しても、要る末が正本の末より手前に下がらない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 5分足かどうかの判定と、遅いほうを取る処理を消すと、番人 T-l が落ちる | `b61_insp5_bars_kind.sh` | 対象 | **まだ**（壊すプログラムを作ってから、次の承認で機械が測る） |
+< | 5 | AUDIT-5＝**指紋の照合を緩められない**＝①ハッシュ値を先頭8文字だけで比べる形に変えると番人が落ちる ②「印の対象一覧を狭めない」検査を外すと番人が落ちる | `python3 ../../.claude/hooks/enforce_h2_pass.py --selftest` | 実経路 | 指紋の照合を先頭8文字だけに変えると、足した番人が落ちる | `b62_fingerprint_loose.sh` | 対象 | **まだ**（壊すプログラムを作ってから、次の承認で機械が測る） |
+---
+> | 1 | AUDIT-1＝**5分足のパスが1か所**＝①パスを渡さずに走らせても、番人が正本の5分足を見る ②data に正本より後まで在る5分足が置かれると、番人 T-m が落ちる（取り足したのに指し先が古いままを見つける） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | data に正本より後の末を持つ5分足の控えを置くと、番人 T-m が落ちる | `b58_five_min_newer_ignored.sh` | 対象 | **未着手** |
+> | 2 | AUDIT-2＝**控えの見出し**＝①控えに入る見出しに区切りの行が入る ②いま生きている行が控えに複製されない（番人2件で別々に見る） | `python3 ../../.claude/tools/tidy_next_step.py --selftest` | 実経路 | 見出しの取り方を直す前（区切りを外して先頭2本）へ戻すと、番人が落ちる | `b59_tidy_head_dup_live.sh` | 対象 | **未着手** |
+> | 3 | AUDIT-3＝**検査5 の名指し**＝①ほかの検査と一緒に名指ししても検査5 が走る（番人 T-k）②走らなかったときは、まとめに検査5 の行を出さない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 検査5 を走らせる条件を、ほかの検査が無いときだけに戻すと、番人 T-k が落ちる | `b60_only5_with_others.sh` | 対象 | **未着手** |
+> | 4 | AUDIT-4＝**渡されたファイルの見分け**＝①1分足のファイルを渡すと番人 T-l が落ちる ②短い切れ端を渡しても、要る末が正本の末より手前に下がらない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 5分足かどうかの判定を消すと、1分足を渡しても通ってしまう（値を入れ替えて 1 を返す） | `b61_insp5_bars_kind.sh` | 対象 | **未着手** |
+> | 5 | AUDIT-5＝**指紋の照合を緩められない**＝①ハッシュ値を先頭8文字だけで比べる形に変えると番人が落ちる ②「印の対象一覧を狭めない」検査を外すと番人が落ちる | `python3 ../../.claude/hooks/enforce_h2_pass.py --selftest` | 実経路 | 指紋の照合を先頭8文字だけに変えると、足した番人が落ちる | `b62_fingerprint_loose.sh` | 対象 | **未着手** |
+183c181
+< | `b61_insp5_bars_kind.sh` | **#4** | 渡されたファイルが5分足かの判定を消す | **1** |
+---
+> | `b61_insp5_bars_kind.sh` | **#4** | 渡されたファイルが5分足かの判定を消す（値を入れ替えて 1 を返す＝補9） | **1** |
+188c186
+< **★触る関数の一覧は、実装の後に確定させます。**いまは空です。実装が終わってから `python3 .claude/tools/gen_impl_functions.py` が書き出したものを、そのまま §10 に入れます（CC は1文字も手で書きません）。
+---
+> **★触る関数の一覧は、実装の後に機械が書き出したものを、そのまま §10 に入れました。**CC は1文字も手で書いていません（まこさん指示 2026-09-02「全部自動生成で、お前が手打ちするな」）。**出どころ**＝`python3 .claude/tools/gen_impl_functions.py`（3本ぶん）。
+197,199c195,252
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "この設計書は実装の前に書いています。触る関数の一覧は、実装の後に gen_impl_functions.py が書き出したものを、そのまま入れます（CC は手で書きません）。",
+<   "must_use": {},
+---
+>   "impl_functions": {
+>     "scripts/priority_rebuild/observe_diag.py": [
+>       "<モジュール直下>", "_J", "_Tee.__enter__", "_Tee.__exit__", "_Tee.__init__", "_Tee.flush",
+>       "_Tee.write", "_ab", "_acb", "_adx_di", "_assert_search_window_only", "_atr", "_auc",
+>       "_bars_step_minutes", "_category", "_cel", "_ck", "_cond_mask", "_conf_search",
+>       "_corr_matrix", "_cyc", "_demand_rank_name", "_demand_tail_ok", "_direction_gap",
+>       "_dup_groups", "_dup_keep_of_group", "_dup_pairs", "_dup_used_in_repo",
+>       "_dup_used_in_strategies", "_ebsw", "_fractal_levels", "_free_bars", "_gap_runs",
+>       "_grid_touch", "_h", "_ha", "_hold_band", "_hw", "_independent_step", "_insp_axis",
+>       "_insp_close_leak", "_insp_demand", "_insp_direction_gap", "_insp_direction_known",
+>       "_insp_duplicates", "_insp_indicator_match", "_insp_indicator_stage", "_insp_industry",
+>       "_insp_lineage_range", "_insp_lookahead", "_insp_price_scale", "_insp_property",
+>       "_insp_range_geo", "_insp_ref_coverage", "_insp_regime_label_oneway", "_insp_regime_rank",
+>       "_insp_resample", "_insp_samples", "_insp_source", "_insp_stage_plan", "_insp_v9_columns",
+>       "_insp_v9_freshness", "_insp_v9_periods", "_insp_windows", "_kv", "_load_pta", "_mama",
+>       "_mat_series", "_mech_decompose", "_mmi", "_newer_5m_files", "_nominal_wlen", "_one_side",
+>       "_oneway_ratio", "_out_path", "_pct_exit_scan", "_price_scale_check", "_print_mode_info",
+>       "_ps", "_rank_record_unmeasured", "_rci", "_rci_slow", "_recipe_families",
+>       "_ref_coverage_counts", "_reg", "_regime_horizons", "_regime_labels", "_resample",
+>       "_resolve_period", "_rg_zone_consts", "_role_lineage_table", "_rsi", "_scene_ctx",
+>       "_scene_data", "_scene_exit_eval", "_scene_exit_grid", "_scene_exit_rows",
+>       "_scene_exit_scan", "_scene_floor", "_scene_header", "_scene_labels", "_scene_mask",
+>       "_search", "_sk_crash_rebound_long", "_sk_fade_long", "_sk_fade_short", "_sk_grid_long",
+>       "_sk_grid_short", "_sk_pullback_short", "_sk_resistance_touch_short",
+>       "_sk_support_touch_long", "_sk_zscore_long", "_sk_zscore_short", "_skip", "_sr_touch",
+>       "_sr_touch_atr", "_sub", "_summary", "_supertrend", "_synth_regime_bars",
+>       "_tail_timestamps", "_tautology", "_tdseq", "_th", "_touch_filter", "_v9_col_matches",
+>       "_v9_families", "_v9_part_grid", "_v9_part_matches", "_v9_part_variants", "_v9_periods",
+>       "_v9_preprocess_frame", "_v9_price_kinds", "_v9_rank", "_v9_z", "_vfi", "_vp_levels",
+>       "_w_flag", "add_demand_to_ranking", "build_catalog", "build_features", "build_parser",
+>       "build_range_geometry", "check_materials", "check_materials_meta", "find_material",
+>       "grow_search", "insp5_frame", "inspect_data", "load_1m", "load_config", "load_demand",
+>       "make_material", "mech_thresholds", "merge_demand_into_ranking", "neighbors",
+>       "next_actions", "observe", "observe_scene", "plan", "plan_scene", "post_exit",
+>       "rank_demand_for_regime", "rank_materials_for_regime", "rank_regime", "rank_separation",
+>       "rank_separation_independent", "round_trip_cost", "selftest", "selftest_insp5",
+>       "selftest_rank_demand", "trajectory", "verdict"
+>     ],
+>     ".claude/tools/tidy_next_step.py": [
+>       "<モジュール直下>", "_level", "_pass", "_section_end", "check_marks", "count_marks",
+>       "do_verify", "do_write", "find_disposable_sections", "latest_worklog_date", "main",
+>       "marks_block", "move_done_rows", "move_to_archive", "refresh_marks", "sec0_lines",
+>       "selftest", "verify"
+>     ],
+>     ".claude/tools/run_breaks.py": [
+>       "<モジュール直下>", "break_scripts", "check_frozen", "expect_of", "freeze_breaks", "main",
+>       "match_of", "parse_table", "run_one", "selftest", "sha", "write_record"
+>     ]
+>   },
+>   "must_use": {
+>     "selftest_insp5": ["_tail_timestamps", "_newer_5m_files", "_bars_step_minutes",
+>                        "_insp_stage_plan", "BARS_CSV", "load_1m"],
+>     "_newer_5m_files": ["_tail_timestamps", "BARS_CSV", "pathlib"],
+>     "_bars_step_minutes": ["_tail_timestamps"],
+>     "inspect_data": ["_insp_stage_plan", "_insp_samples"],
+>     "move_done_rows": ["check_marks", "count_marks", "DONE_MARK", "STRIKE_RE"],
+>     "match_of": ["exp", "code"]
+>   },
+203,205c256,258
+<     "impl_functions": "実装の後に gen_impl_functions.py（実物のコードから機械で書き出す）",
+<     "must_use": "実装の後に、impl_functions と同時に確定させる",
+<     "spec_lists": "該当なし（外から取る一覧が無い）"
+---
+>     "impl_functions": "gen_impl_functions.py の出力を、3本ぶん そのまま入れた（CC は手で書いていない）。★出るのは『いまファイルに在る全関数』＝この工事で触っていない関数も入る＝承認の画面に ⚠️ が出るのが正しい状態（まこさん指定 2026-09-03）",
+>     "must_use": "この工事で直した6つの関数に、その中で必ず使う名前を書いた（番人は5分足の正本と末尾読みを使う／検査5 の名指しは判定の関数を通す／控えの片づけは印の数を照らす、など）",
+>     "spec_lists": "空。外から取る一覧が無い"

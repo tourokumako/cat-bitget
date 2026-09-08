@@ -56,5 +56,8 @@ for name, new, old in (("枠づくり", frame_new, frame_old), ("使い回しの
 open(p, 'w', encoding='utf-8').write(s)
 PYEOF
 
-measure python3 "$OBS" --selftest-insp5 "$SDK/data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv"
+# ★2026-09-08（監査 cp31 の Critical 1）＝5分足のパスを書かない。
+#   番人は observe_diag.py の定数 BARS_CSV（5分足の正本）を自分で読む。
+#   直す前＝ここに同じファイル名が書き写してあり、取り足して名前が変わると古いものを指したままになった。
+measure python3 "$OBS" --selftest-insp5
 finish

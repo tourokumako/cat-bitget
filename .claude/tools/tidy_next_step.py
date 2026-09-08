@@ -165,15 +165,26 @@ def move_done_rows(next_text: str, arc_text: str, today: str) -> tuple[str, str,
     moved = "".join(moved_rows)
     if not moved.endswith("\n"):
         moved += "\n"
-    # ★2026-09-08（監査 cp30 の別枠7）＝見出しを、元の表の見出し行からそのまま取る。
-    #   直す前＝3列（番号・やること・状態）を手で書いていたが、本物の 0-2 の表は5列。
-    #   ＝控えに入った行の列数と、見出しの列数が合わなかった（見た目だけの話）。
-    _hdr = [ln for ln in lines[s2:end]
-            if ln.lstrip().startswith("|") and "---" not in ln and DONE_MARK not in ln
-            and not STRIKE_RE.search(ln)]
-    head_rows = "".join(_hdr[:2]) if len(_hdr) >= 1 else "| 番号 | やること | 状態 |\n|---|---|---|\n"
-    if len(_hdr) == 1:                                  # 見出しの行しか無いときは区切りを足す
-        head_rows = _hdr[0] + "|" + "---|" * max(1, _hdr[0].count("|") - 1) + "\n"
+    # ★2026-09-08（監査 cp31 の Major 1・設計書 insp5-path-and-tidy-head-20260908 の H）
+    #   ＝見出しを「表の1行目（見出し）＋2行目（区切り）」から、並びのまま取る。
+    #   直す前（cp30 の別枠7 の直し）＝区切りの行を外してから先頭2本を取っていた。
+    #     ＝表に生きている行が1本でも在ると、2本目がその行になり、**控えに複製された**。
+    #       しかも区切りが入らないので、控えの表が表として描画されなかった。
+    #       複製された行が消してはいけない印を持つと、印が1個 増えるが、
+    #       印の数の照合（check_marks）は移した行の分しか数えないので、それを数えない
+    #       （監査 cp31 が実測＝控えに 🔴 が1個 複製された）。
+    #   直した後＝1行目が区切りか、終わった行のときは、いままでどおり既定の3列の見出しを使う。
+    _rows = [ln for ln in lines[s2:end] if ln.lstrip().startswith("|")]
+    _head_ln = None
+    if (_rows and "---" not in _rows[0] and DONE_MARK not in _rows[0]
+            and not STRIKE_RE.search(_rows[0])):
+        _head_ln = _rows[0]
+    if _head_ln is None:
+        head_rows = "| 番号 | やること | 状態 |\n|---|---|---|\n"
+    else:
+        _sep_ln = (_rows[1] if len(_rows) >= 2 and "---" in _rows[1]
+                   else "|" + "---|" * max(1, _head_ln.count("|") - 1) + "\n")
+        head_rows = _head_ln + _sep_ln
     head = (f"\n\n# {today} に tidy_next_step.py が next_step.md の 0-2 の表から移した行"
             f"（終わった行 {len(moved_rows)} 行・1文字も変えていない）\n\n" + head_rows)
     new_arc = arc_text + head + moved
@@ -442,6 +453,22 @@ def selftest() -> int:
     if r12["moved_rows"] != 0 or f"終わった行（{DONE_MARK}）は archive へ移します。" not in n12:
         ng.append(f"T10c: 説明の文（表でない行）を移してしまった（移した行 {r12['moved_rows']}）")
 
+    # ★2026-09-08（監査 cp31 の Major 1・設計書 insp5-path-and-tidy-head-20260908 の I）
+    #   ＝控えに入る見出しの取り方を見る番人3件。
+    #   ①「見出しの行＋区切りの行」の2行になる（区切りが無いと、控えの表が表として描画されない）
+    #   ②いま生きている行が控えに複製されない（直す前は `_hdr[:2]` が生きている行を拾っていた）
+    #   ③見出しが無い表（1行目が区切り）でも落ちず、既定の3列の見出しを使う
+    #   ★見本の 0-2 の表には、生きている行が2本 在る（| 1 | あれ | まだ |／| 2 | これ | ★いまここ |）。
+    #     d10 は1本目を ✅済 にしたものなので、2本目は生きたまま残る＝複製の有無を測れる。
+    if "|---|---|---|" not in a10:
+        ng.append("T10d: 控えに区切りの行が入っていない（表として描画されない・監査 cp31 の Major 1）")
+    if "| 2 | これ | ★いまここ |" in a10:
+        ng.append("T10e: いま生きている行が控えに複製された（監査 cp31 の Major 1）")
+    d15 = d10.replace("| 番号 | やること | 状態 |\n", "", 1)
+    _n15, a15, r15 = move_done_rows(d15, "# archive\n", today)
+    if r15["moved_rows"] != 1 or "| 番号 | やること | 状態 |" not in a15:
+        ng.append(f"T10f: 見出しが無い表で、既定の見出しが入らない（移した行 {r15['moved_rows']}）")
+
     # T8 hook を見本で直に呼ぶ（❌ の見本＝exit 2／✅ の見本＝exit 0）★実物の json と worklog の日付で
     if HOOK.exists():
         real_h2, real_g2 = _pass(H2), _pass(G2)
@@ -466,10 +493,11 @@ def selftest() -> int:
 
     print("[selftest] T1 移せる／T2 数が合わなければ止まる／T3 日付／T4 印／T5 行数／T6 ★いまここ／T7 きれい／T8 hook／T1' 消す印"
           "／T9a ✅済 の行／T9b 取り消し線／T9c 説明の文は止めない"
-          "／T10a 表の ✅済 を移す／T10b 表の取り消し線を移す／T10c 説明の文は移さない")
+          "／T10a 表の ✅済 を移す／T10b 表の取り消し線を移す／T10c 説明の文は移さない"
+          "／T10d 控えに区切りの行が入る／T10e 生きている行を複製しない／T10f 見出しが無い表でも落ちない")
     for x in ng:
         print(f"  ❌ {x}")
-    total = 15
+    total = 18
     print(f"  {'❌' if ng else '✅'} わざと壊して止まるか試すテスト {total - len(ng)}/{total} pass")
     return 1 if ng else 0
 

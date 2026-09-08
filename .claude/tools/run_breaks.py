@@ -210,6 +210,19 @@ def expect_of(name: str) -> tuple:
     return rc, means, ""
 
 
+def match_of(code, exp) -> bool:
+    """実際の終了コードが、宣言した期待値と一致したか（本体も番人も、ここを呼ぶ）。
+
+    ★2026-09-08（設計書 insp5-path-and-tidy-head-20260908 の N）
+      ＝期待値が読めないとき（None＝壊すプログラムがまだ無い・宣言が無い）は、一致とみなさない。
+      直す前＝本体に `match = (code == exp)` と直に書いてあった。ファイルが無いと
+        実際の終了コードも期待値も None になるので、`None == None` が真になり
+        「期待どおり」に数えた。＝承認のプログラムが完成の条件を「済」にする一方で、
+        書き込みの門は同じ None を「止まっていない」と見て実装を止めた。
+    """
+    return (exp is not None) and (code == exp)
+
+
 def run_one(name: str, depth: int) -> tuple:
     """壊すプログラムを1本 走らせる。戻り＝(終了コード, 説明)。"""
     p = BREAKS_DIR / name
@@ -351,11 +364,19 @@ def main(argv: list) -> int:
         code, note = run_one(r["script"], depth)
         r["code"], r["note"] = code, note
         r["expect"], r["means"] = exp, means
-        r["match"] = (code == exp)
+        # ★2026-09-08（設計書 insp5-path-and-tidy-head-20260908 の N）
+        #   ＝期待値が読めない行（＝壊すプログラムがまだ無い行）を、一致とみなさない。
+        #   直す前＝`match = (code == exp)` だけだった。ファイルが無いと、実際の終了コードも
+        #     期待値も どちらも None になるので、`None == None` が真になり「期待どおり」に数えた。
+        #     ＝承認のプログラムが完成の条件を「済」にする一方で、書き込みの門は同じ None を
+        #       「止まっていない」と見て実装を止めた（判定の食い違いで作業が止まった）。
+        #   ★この穴は 2026-09-08 の159番の直し（期待する終了コードの宣言）が新しく作ったもの。
+        r["match"] = match_of(code, exp)
         n_run += 1
         if r["match"]:
             n_stop += 1
-        mark = "✅ 期待どおり" if r["match"] else "❌ 期待と違う"
+        mark = ("✅ 期待どおり" if r["match"]
+                else ("— まだ測れない（壊すプログラムがまだ無い）" if exp is None else "❌ 期待と違う"))
         print(f"   {mark}  #{r['no']:>3}  {r['script']}  rc={code}（期待 {exp}）")
         print(f"        意味＝{means}")
 
@@ -414,6 +435,7 @@ SELF_TESTS = (
     ("T9", "宣言（EXPECT_RC・MEANS）の無い .sh は、理由つきで読み取りを止める"),
     ("T10", "宣言が在れば、期待する終了コードと意味の文をそのまま読み取る"),
     ("T11", "期待と違う終了コードなら、記録の match が偽になる"),
+    ("T12", "壊すプログラムがまだ無い行は、一致とみなさない（期待値が読めない＝未着手のまま）"),
 )
 
 
@@ -487,6 +509,15 @@ def selftest() -> int:
             _d11 = json.loads(_o11.read_text(encoding="utf-8")) if _o11.exists() else {}
             if [r.get("match") for r in (_d11.get("rows") or [])] != [False]:
                 ng.append("T11")
+            # ★T12（2026-09-08・設計書 insp5-path-and-tidy-head-20260908 の N）
+            #   ＝壊すプログラムがまだ無い行を「期待どおり」と数えない。
+            #   直す前＝ファイルが無いと 実際の終了コードも期待値も None になり、
+            #     `None == None` が真＝「一致」に数えていた（作業が止まる食い違いの元）。
+            _e12, _m12, _w12 = expect_of("b99_not_exist_yet.sh")
+            if match_of(None, _e12) or not _w12:
+                ng.append("T12")
+            if not match_of(2, 2) or match_of(1, 2):     # ふつうの一致・不一致は今までどおり
+                ng.append("T12")
     finally:
         FROZEN, BREAKS_DIR = _kf, _kb
 

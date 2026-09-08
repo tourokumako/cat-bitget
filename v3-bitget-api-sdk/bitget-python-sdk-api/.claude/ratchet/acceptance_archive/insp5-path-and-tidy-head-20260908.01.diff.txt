@@ -1,0 +1,39 @@
+5c5
+< TARGET: scripts/priority_rebuild/observe_diag.py, .claude/tools/tidy_next_step.py, .claude/breaks/b53_insp5_frame_and_key_gone.sh, .claude/breaks/b55_cyc_key_time_gone.sh, .claude/breaks/b56_one_min_csv_old.sh, .claude/breaks/b58_five_min_newer_ignored.sh, .claude/breaks/b59_tidy_head_dup_live.sh, .claude/breaks/b60_only5_with_others.sh, .claude/breaks/b61_insp5_bars_kind.sh, .claude/breaks/b62_fingerprint_loose.sh
+---
+> TARGET: scripts/priority_rebuild/observe_diag.py, .claude/tools/tidy_next_step.py, .claude/tools/run_breaks.py, .claude/breaks/b53_insp5_frame_and_key_gone.sh, .claude/breaks/b55_cyc_key_time_gone.sh, .claude/breaks/b56_one_min_csv_old.sh, .claude/breaks/b58_five_min_newer_ignored.sh, .claude/breaks/b59_tidy_head_dup_live.sh, .claude/breaks/b60_only5_with_others.sh, .claude/breaks/b61_insp5_bars_kind.sh, .claude/breaks/b62_fingerprint_loose.sh
+21a22,33
+> ### ★2026-09-08 に、1回目の承認の直後で作業が止まりました（この版で直します）
+> 
+> **何が起きたか**＝まこさんが1回目の承認を打った直後、**承認のプログラムが完成の条件5行を「済」にしました。**ところが**その根拠にした壊すプログラム5本は、まだ存在しません。**存在しないので終了コードは None です。
+> 
+> **なぜ「済」になったか**＝`run_breaks.py` の 354行が `match = (code == exp)` です。**ファイルが無いと、実際の終了コードも、宣言した期待値も、どちらも None になります。**＝`None == None` が真になり、「期待どおり」と数えられました。
+> 
+> **何が困るか**＝**書き込みの門は、同じ None を「止まっていない」と見て実装を止めます。**＝承認のプログラムと門で判定が食い違い、**どのファイルも書けなくなりました**（実測＝門の逐語「完成の条件の『済』の壊すプログラムが止まっていません（b58…・終了コード None）」）。
+> 
+> **★この穴は、2026-09-08 の159番の直し（期待する終了コードの宣言）が新しく作ったものです。**前の工事のときは「未着手」のまま残りました（前の設計書 §0 に そう書いてあります）。**＝監査 cp31 が指摘した「直しが新しい不具合を作る」型の3件目です。**
+> 
+> **どう直すか**＝やること N。**期待値が読めない行（＝壊すプログラムがまだ無い行）を、一致とみなさない形にします。**あわせて、この版では完成の条件の「いまの状態」を「まだ」に戻しました（実物を測っていないため）。
+> 
+80c92
+< ## 4. やること（13）
+---
+> ## 4. やること（14）
+96a109
+> | **N** | `.claude/tools/run_breaks.py` | **壊すプログラムがまだ無い行を「期待どおり」と数えるのをやめる**（354行）。**期待値が読めないとき（None）は、一致とみなさない。**画面にも「まだ測れない（壊すプログラムがまだ無い）」と出す。**番人を1件 足す**（12件 → 13件）＝ファイルが無い行で、記録の一致が偽になる | 1回目の承認の直後に作業が止まった（§0 の下） |
+116a130
+> | `run_breaks.py --selftest` | 12件 | **13件**（やること N） | ★完成の条件には入れていません（下の補8） |
+134a149
+> | **補8** | やること N（承認のプログラムの穴）は、完成の条件で測るか | **測りません。**完成の条件は5行までで、札（AUDIT-1 から AUDIT-5）も5つで固定です。**N は、この工事を進めるために踏んだ穴の直しで、監査 cp31 の指摘ではありません。**確かめるのは番人1件だけです（`run_breaks.py --selftest` が 12件 → 13件）。**★＝N は「直った」と第三者が言った状態になりません。**正直に書きます |
+153,157c168,172
+< | 1 | AUDIT-1＝**5分足のパスが1か所**＝①パスを渡さずに走らせても、番人が正本の5分足を見る ②data に正本より後まで在る5分足が置かれると、番人 T-m が落ちる（取り足したのに指し先が古いままを見つける） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | data に正本より後の末を持つ5分足の控えを置くと、番人 T-m が落ちる | `b58_five_min_newer_ignored.sh` | 対象 | **✅済**＝壊すと rc=None（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）（実装の後に、承認のプログラムが機械で測る） |
+< | 2 | AUDIT-2＝**控えの見出し**＝①控えに入る見出しが「見出しの行1本＋区切りの行1本」になる ②いま生きている行が控えに複製されない（番人2件で別々に見る） | `python3 ../../.claude/tools/tidy_next_step.py --selftest` | 実経路 | 見出しの取り方を直す前（区切りを外して先頭2本）へ戻すと、番人が落ちる | `b59_tidy_head_dup_live.sh` | 対象 | **✅済**＝壊すと rc=None（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）（同上） |
+< | 3 | AUDIT-3＝**検査5 の名指し**＝①ほかの検査と一緒に名指ししても検査5 が走る（番人 T-k）②走らなかったときは、まとめに検査5 の行を出さない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 検査5 を走らせる条件を、ほかの検査が無いときだけに戻すと、番人 T-k が落ちる | `b60_only5_with_others.sh` | 対象 | **✅済**＝壊すと rc=None（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）（同上） |
+< | 4 | AUDIT-4＝**渡されたファイルの見分け**＝①1分足のファイルを渡すと番人 T-l が落ちる ②短い切れ端を渡しても、要る末が正本の末より手前に下がらない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 5分足かどうかの判定と、遅いほうを取る処理を消すと、番人 T-l が落ちる | `b61_insp5_bars_kind.sh` | 対象 | **✅済**＝壊すと rc=None（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）（同上） |
+< | 5 | AUDIT-5＝**指紋の照合を緩められない**＝①ハッシュ値を先頭8文字だけで比べる形に変えると番人が落ちる ②「印の対象一覧を狭めない」検査を外すと番人が落ちる | `python3 ../../.claude/hooks/enforce_h2_pass.py --selftest` | 実経路 | 指紋の照合を先頭8文字だけに変えると、足した番人が落ちる | `b62_fingerprint_loose.sh` | 対象 | **✅済**＝壊すと rc=None（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）（同上） |
+---
+> | 1 | AUDIT-1＝**5分足のパスが1か所**＝①パスを渡さずに走らせても、番人が正本の5分足を見る ②data に正本より後まで在る5分足が置かれると、番人 T-m が落ちる（取り足したのに指し先が古いままを見つける） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | data に正本より後の末を持つ5分足の控えを置くと、番人 T-m が落ちる | `b58_five_min_newer_ignored.sh` | 対象 | **まだ**（壊すプログラムを作ってから、次の承認で機械が測る） |
+> | 2 | AUDIT-2＝**控えの見出し**＝①控えに入る見出しが「見出しの行1本＋区切りの行1本」になる ②いま生きている行が控えに複製されない（番人2件で別々に見る） | `python3 ../../.claude/tools/tidy_next_step.py --selftest` | 実経路 | 見出しの取り方を直す前（区切りを外して先頭2本）へ戻すと、番人が落ちる | `b59_tidy_head_dup_live.sh` | 対象 | **まだ**（壊すプログラムを作ってから、次の承認で機械が測る） |
+> | 3 | AUDIT-3＝**検査5 の名指し**＝①ほかの検査と一緒に名指ししても検査5 が走る（番人 T-k）②走らなかったときは、まとめに検査5 の行を出さない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 検査5 を走らせる条件を、ほかの検査が無いときだけに戻すと、番人 T-k が落ちる | `b60_only5_with_others.sh` | 対象 | **まだ**（壊すプログラムを作ってから、次の承認で機械が測る） |
+> | 4 | AUDIT-4＝**渡されたファイルの見分け**＝①1分足のファイルを渡すと番人 T-l が落ちる ②短い切れ端を渡しても、要る末が正本の末より手前に下がらない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 5分足かどうかの判定と、遅いほうを取る処理を消すと、番人 T-l が落ちる | `b61_insp5_bars_kind.sh` | 対象 | **まだ**（壊すプログラムを作ってから、次の承認で機械が測る） |
+> | 5 | AUDIT-5＝**指紋の照合を緩められない**＝①ハッシュ値を先頭8文字だけで比べる形に変えると番人が落ちる ②「印の対象一覧を狭めない」検査を外すと番人が落ちる | `python3 ../../.claude/hooks/enforce_h2_pass.py --selftest` | 実経路 | 指紋の照合を先頭8文字だけに変えると、足した番人が落ちる | `b62_fingerprint_loose.sh` | 対象 | **まだ**（壊すプログラムを作ってから、次の承認で機械が測る） |

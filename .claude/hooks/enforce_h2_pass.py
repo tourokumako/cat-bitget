@@ -294,9 +294,21 @@ def selftest():
         f.write("# 1文字 変えた（指紋を照らす口の番人）\n")
     case_fp("★指紋を照らす口＝コードを1文字でも変えると 1 を返す", 1)
 
+    # ── ★2026-09-08 新設＝照合を緩める壊し方を捕まえる（監査 cp31 の別枠 A）──────
+    #   監査 cp31 は check_fingerprint を5通りに壊し、2通りが生き残った。
+    #   ①印のハッシュ値を先頭8文字だけで比べる ②中の「印の対象一覧を狭めない」検査を外す。
+    #   ＝足した2件が守っていたのは「一致で 0」「食い違いで 1」の2つだけだった。
+    write_pass()                                       # 印を いまの中身で書き直す（一致する状態）
+    _now_fp = fingerprint(MUST)
+    _bad_fp = _now_fp[:8] + ("1" if _now_fp[8:9] != "1" else "2") + _now_fp[9:]
+    write_pass(fp=_bad_fp)
+    case_fp("★指紋を照らす口＝先頭8文字だけが同じ印は通さない（照合を緩めない）", 1)
+    write_pass(files=[m for m in MUST if m != f"{_PR}/e38_logics.json"])
+    case_fp("★指紋を照らす口＝印の対象一覧から必須ファイルを外すと 1 を返す", 1)
+
     shutil.rmtree(tmp, ignore_errors=True)
     ROOT, PASS = keep
-    print(f"\n番人: {21 - ng}/21 pass")
+    print(f"\n番人: {23 - ng}/23 pass")
     sys.exit(1 if ng else 0)
 
 

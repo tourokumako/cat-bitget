@@ -16,6 +16,7 @@
   "_assert_search_window_only",
   "_atr",
   "_auc",
+  "_bars_step_minutes",
   "_category",
   "_cel",
   "_ck",
@@ -61,6 +62,7 @@
   "_insp_resample",
   "_insp_samples",
   "_insp_source",
+  "_insp_stage_plan",
   "_insp_v9_columns",
   "_insp_v9_freshness",
   "_insp_v9_periods",
@@ -71,6 +73,7 @@
   "_mat_series",
   "_mech_decompose",
   "_mmi",
+  "_newer_5m_files",
   "_nominal_wlen",
   "_one_side",
   "_oneway_ratio",
@@ -120,6 +123,7 @@
   "_summary",
   "_supertrend",
   "_synth_regime_bars",
+  "_tail_timestamps",
   "_tautology",
   "_tdseq",
   "_th",
@@ -192,5 +196,19 @@
   "sec0_lines",
   "selftest",
   "verify"
+ ],
+ ".claude/tools/run_breaks.py": [
+  "<モジュール直下>",
+  "break_scripts",
+  "check_frozen",
+  "expect_of",
+  "freeze_breaks",
+  "main",
+  "match_of",
+  "parse_table",
+  "run_one",
+  "selftest",
+  "sha",
+  "write_record"
  ]
 }
