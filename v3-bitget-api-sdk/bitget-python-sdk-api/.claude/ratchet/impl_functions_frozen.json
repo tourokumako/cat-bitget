@@ -196,19 +196,5 @@
   "sec0_lines",
   "selftest",
   "verify"
- ],
- ".claude/tools/run_breaks.py": [
-  "<モジュール直下>",
-  "break_scripts",
-  "check_frozen",
-  "expect_of",
-  "freeze_breaks",
-  "main",
-  "match_of",
-  "parse_table",
-  "run_one",
-  "selftest",
-  "sha",
-  "write_record"
  ]
 }

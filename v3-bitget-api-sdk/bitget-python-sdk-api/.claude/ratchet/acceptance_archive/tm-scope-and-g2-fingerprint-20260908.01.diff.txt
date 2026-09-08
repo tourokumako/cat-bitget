@@ -1,0 +1,13 @@
+5c5,8
+< TARGET: scripts/priority_rebuild/observe_diag.py, scripts/priority_rebuild/e34_range_zscore_taker.py, .claude/tools/tidy_next_step.py
+---
+> TARGET: scripts/priority_rebuild/observe_diag.py, .claude/tools/tidy_next_step.py, .claude/breaks/b63_tm_bitget_scope.sh, .claude/breaks/b64_tm_subdir.sh, .claude/breaks/b65_tm_badtail.sh, .claude/breaks/b66_g2_fingerprint_loose.sh, .claude/breaks/b67_marks_time_check.sh
+> 
+> NEW_FILE: .claude/breaks/b63_tm_bitget_scope.sh, .claude/breaks/b64_tm_subdir.sh, .claude/breaks/b65_tm_badtail.sh, .claude/breaks/b66_g2_fingerprint_loose.sh, .claude/breaks/b67_marks_time_check.sh
+> MODEL: .claude/breaks/b58_five_min_newer_ignored.sh, .claude/breaks/b62_fingerprint_loose.sh, .claude/breaks/lib.sh
+82c85
+< | **D** | `scripts/priority_rebuild/e34_range_zscore_taker.py` | **5分足のパスを `observe_diag.BARS_CSV` から読む**＝書き写しが2か所から1か所に減る。**★この戦略の売買のロジックには1行も触れません**（読むファイルの決め方だけ） | 別枠 C |
+---
+> | **D** | （この回では触りません） | **★別枠 C（`e34` のパス）は、この回では直しません。**理由は下の §7 の補6 に書きました（実装の途中で、実物を見て分かったことです）。**★試した形は元へ戻しました**（`git diff` が 0行） | 別枠 C |
+121a125
+> | **補6** | **★別枠 C（`e34` のパス）を、この回で直さない理由**（実装の途中で、実物を見て分かりました） | **理由は2つです。**<br>**①`e34` は5本のファイルから import されています**（実測＝`grep -rln "e34_range_zscore_taker" scripts/priority_rebuild/` ＝ `train_e34_meta.py`・`e34_levels.py`・`e37_range_scalp.py`・`e35_range_oscillation.py`・`e35_box.py`）。**そのうち `e35` と `e37` は候補・採用の戦略です。**＝`e34` に `observe_diag` を import させると、**その5本すべてが観察の道具を読み込みます。**設計書 §8 に「戦略の売買のロジックには触れない」と書きましたが、**起動の重さという形で波及します。**<br>**②`e34` は、元から走らせられません。**期間の日付を自前で持っているので、期間正本ゲートが止めます（実測＝`TRAIN_END = pd.Timestamp("2025-01-01")` ／ `periods.py` は `2025-03-01` で**値が違います**）。**＝置き換えると学習の期間が変わる＝この工事の範囲の外です。**<br>**★正しい直し方**＝5分足のパスの正本を、軽い1ファイルに切り出し、`observe_diag` と `e34` の両方がそこから読む形。**この回ではやりません**（新しいファイル＋2本の書き替え＝別の工事）。**★`next_step.md` の §6 に残します** |

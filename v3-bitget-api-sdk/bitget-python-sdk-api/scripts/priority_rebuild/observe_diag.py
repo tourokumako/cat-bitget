@@ -99,6 +99,7 @@ import hashlib
 import pathlib
 import re
 import sys
+import tempfile          # ★2026-09-08（監査 cp32）＝番人 T-n・T-o が一時のフォルダで試す
 import warnings
 
 import numpy as np
@@ -1599,27 +1600,45 @@ def _bars_step_minutes(path) -> float | None:
     return d[len(d) // 2] / 60.0
 
 
-def _newer_5m_files(base_end) -> list:
+def _newer_5m_files(base_end, data_dir=None) -> tuple:
     """data の中に、5分足の正本より後まで在る5分足が置かれていないかを見る。
 
     ★2026-09-08（監査 cp31 の Critical 1）＝取り足したのに BARS_CSV の指し先が古いままだと、
       番人は古いファイルの末を見て「覆っている」と言い、検査5 は新しいファイルで走って落ちる。
       その状態を番人 T-m が見つける。
-    戻り＝(ファイルの名前, その末) の一覧（無ければ空）。
-    ★限界＝名前で見分ける（data/BTCUSDT-5m-*.csv）。別の名前で置かれたら見つけられない。
+    ★2026-09-08（監査 cp32・設計書 tm-scope-and-g2-fingerprint-20260908 の A・B・C）
+      ＝見る範囲を3つ直した。
+      A＝**Binance Spot 系列だけを見る**（名前に bitget を含むものを外す）。
+        要件定義書 §8.2.1.1 の②の逐語＝「採点に使うのは Binance Spot 系列だけ」。
+        直す前は Bitget 先物の足まで当たり、「BARS_CSV の指し先を直す」と言っていた
+        ＝読んだ人を、禁じられている方へ導く形だった（監査 cp32 の Major）。
+      B＝**data の下の階層も見る**（rglob）。直す前は直下だけだったので、
+        下の階層に置かれた5分足を見つけられなかった（監査 cp32 の別枠 A）。
+      C＝**末の時刻が読めないファイルを、黙って飛ばさない**（名前を返す）。
+        直す前は、読めなければ何も言わずに飛ばしていた（同 別枠 B）。
+    戻り＝(後まで在るファイルの一覧, 末が読めなかったファイルの名前の一覧)。
+    ★data_dir＝見るフォルダ（既定は data）。番人が一時のフォルダで試すために受け取る。
+    ★限界＝名前で見分ける（BTCUSDT-5m-… で始まるもの）。data の外は見ない。
     """
     out: list = []
-    d = pathlib.Path(__file__).resolve().parent.parent.parent / "data"
+    bad: list = []
+    d = (pathlib.Path(data_dir) if data_dir
+         else pathlib.Path(__file__).resolve().parent.parent.parent / "data")
     if not d.exists():
-        return out
+        return out, bad
     keep = pathlib.Path(BARS_CSV).name
-    for p in sorted(d.glob("BTCUSDT-5m-*.csv")):
+    for p in sorted(d.rglob("BTCUSDT-5m-*.csv")):          # ★B＝下の階層も見る
         if p.name == keep:
             continue
+        if "bitget" in p.name.lower():                     # ★A＝Binance Spot 系列だけを見る
+            continue
         ts = _tail_timestamps(p, n=1)
-        if ts and ts[-1] > base_end:
-            out.append((p.name, ts[-1]))
-    return out
+        if not ts:                                         # ★C＝読めないものを黙って飛ばさない
+            bad.append(str(p.relative_to(d)))
+            continue
+        if ts[-1] > base_end:
+            out.append((str(p.relative_to(d)), ts[-1]))
+    return out, bad
 
 
 _ONE_MIN_CACHE: dict = {}
@@ -4921,7 +4940,10 @@ def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None
         _insp_samples(bars, cfg, cat)
         ran5 = True
         if not stages:                         # 検査5 だけを名指しされたとき
+            # ★2026-09-08（監査 cp32 の別枠 G）＝ここでも「検査のまとめ」の見出しを出す。
+            #   直す前は、この道だけ見出しが出なかった（早く戻るため）＝見た目がそろわなかった。
             print("\n" + "=" * 100)
+            print("検査のまとめ（❌＝直すまで下流を信じない ／ ⚠️＝データの事実の報告）")
             print("  検査5: 判定なし（欠損・助走・有効標本数の報告＝歩2 の適合制約の基礎データ）")
             print("=" * 100)
             return
@@ -6323,12 +6345,41 @@ def selftest_insp5(exit_: bool = True, bars_csv: str | None = None) -> list:
     #   ★2026-09-08（監査 cp31 の Critical 1）＝取り足したのに BARS_CSV の指し先が古いままなら、
     #     ここで必ず落ちる（＝書き替え忘れを機械が見つける）。
     if _base_ts:
-        _newer5 = _newer_5m_files(_base_ts[-1])
+        _newer5, _bad5 = _newer_5m_files(_base_ts[-1])
         if _newer5:
             ng.append("T-m: data に、5分足の正本より後まで在るファイルが在る"
                       f"（正本 {pathlib.Path(BARS_CSV).name} の末 {_base_ts[-1]} ／ "
                       f"{_newer5[0][0]} の末 {_newer5[0][1]}）"
-                      "＝5分足を取り足したなら BARS_CSV の指し先を直す")
+                      "＝5分足を取り足したなら BARS_CSV の指し先を直す"
+                      "（★Binance Spot 系列だけ＝要件定義書 §8.2.1.1 の②）")
+        if _bad5:                                       # ★2026-09-08（監査 cp32 の別枠 B）
+            ng.append(f"T-m: 末の時刻が読めない5分足が data に在る（{_bad5[:3]}）"
+                      "＝壊れているか、形が違う。黙って飛ばさずに報告する")
+
+    # ── T-n・T-o＝T-m が見る範囲（監査 cp32 の Major・別枠 A・B）───────────
+    #   ★一時のフォルダで試す＝本物の data には1文字も書かない。
+    #   T-n＝Bitget 先物の5分足を、正本の候補として指さない
+    #     （要件定義書 §8.2.1.1 の②＝採点に使うのは Binance Spot 系列だけ）。
+    #   T-o＝下の階層に置かれた5分足を見つける／末が読めないものを黙って飛ばさない。
+    with tempfile.TemporaryDirectory() as _td5:
+        _dd = pathlib.Path(_td5)
+        _later = "2026-12-31 23:55:00"
+        (_dd / "BTCUSDT-5m-bitget-selftest.csv").write_text(
+            f"timestamp,close\n{_later},1\n", encoding="utf-8")
+        (_dd / "sub").mkdir()
+        (_dd / "sub" / "BTCUSDT-5m-selftest.csv").write_text(
+            f"timestamp,close\n{_later},1\n", encoding="utf-8")
+        (_dd / "BTCUSDT-5m-selftest-badtail.csv").write_text(
+            "timestamp,close\nこれは時刻ではない,1\n", encoding="utf-8")
+        _n5, _b5 = _newer_5m_files(pd.Timestamp("2026-06-30 23:55:00"), data_dir=_dd)
+        _names5 = [x[0] for x in _n5]
+        if any("bitget" in x.lower() for x in _names5):
+            ng.append(f"T-n: Bitget 先物の5分足を、正本の候補として指した（{_names5}）"
+                      "＝要件定義書 §8.2.1.1 の② に反する方へ人を導く")
+        if not any("sub" in x for x in _names5):
+            ng.append(f"T-o: data の下の階層に置いた5分足を見つけられない（{_names5}）")
+        if not _b5:
+            ng.append("T-o: 末の時刻が読めない5分足を、黙って飛ばした（報告が無い）")
 
     # ── T-k＝検査5 とほかの検査を一緒に名指ししても、検査5 が走るか ────────
     #   ★2026-09-08（監査 cp31 の Major 2）＝直す前は「検査5 だけを名指ししたとき」と
@@ -6393,10 +6444,10 @@ def selftest_insp5(exit_: bool = True, bars_csv: str | None = None) -> list:
                 if len(v) != len(closed):
                     ng.append(f"T-j: {tf} で、返った列の長さ {len(v)} と、枠の長さ {len(closed)} が違う"
                               "（この食い違いが検査5 を例外で止めていた）")
-    # ★2026-09-08（監査 cp31 の直しで T-k・T-l・T-m を足した）＝表示の名前も7件にそろえる
-    #   （直す前は4件の名前のままで、足した3件が画面に出なかった＝別枠 D と同じ型）
-    print(f"  T-g/T-h/T-i/T-j/T-k/T-l/T-m 検査5 の枠・使い回しの鍵・渡すファイルの見分け"
-          f"（軽い口）: ❌ {len(ng)} 件")
+    # ★2026-09-08（監査 cp31 の直しで T-k・T-l・T-m を足し、cp32 の直しで T-n・T-o を足した）
+    #   ＝表示の名前も9件にそろえる（別枠 D と同じ型＝表示の数字が実物と食い違うのを避ける）
+    print(f"  T-g/T-h/T-i/T-j/T-k/T-l/T-m/T-n/T-o 検査5 の枠・使い回しの鍵・"
+          f"見るファイルの範囲（軽い口）: ❌ {len(ng)} 件")
     if exit_:
         for x in ng:
             print(f"  ❌ {x}")

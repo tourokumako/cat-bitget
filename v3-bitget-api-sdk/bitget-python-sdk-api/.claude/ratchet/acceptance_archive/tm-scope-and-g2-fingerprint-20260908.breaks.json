@@ -1,0 +1,52 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "tm-scope-and-g2-fingerprint-20260908",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b63_tm_bitget_scope.sh",
+   "code": 1,
+   "note": "",
+   "expect": 1,
+   "means": "その検査が落ちた（守りが働いた）",
+   "match": true
+  },
+  {
+   "no": "2",
+   "script": "b64_tm_subdir.sh",
+   "code": 1,
+   "note": "",
+   "expect": 1,
+   "means": "その検査が落ちた（守りが働いた）",
+   "match": true
+  },
+  {
+   "no": "3",
+   "script": "b65_tm_badtail.sh",
+   "code": 1,
+   "note": "",
+   "expect": 1,
+   "means": "その検査が落ちた（守りが働いた）",
+   "match": true
+  },
+  {
+   "no": "4",
+   "script": "b66_g2_fingerprint_loose.sh",
+   "code": 1,
+   "note": "",
+   "expect": 1,
+   "means": "その検査が落ちた（守りが働いた）",
+   "match": true
+  },
+  {
+   "no": "5",
+   "script": "b67_marks_time_check.sh",
+   "code": 1,
+   "note": "",
+   "expect": 1,
+   "means": "その検査が落ちた（守りが働いた）",
+   "match": true
+  }
+ ]
+}

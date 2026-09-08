@@ -283,6 +283,13 @@ def verify(next_text: str, h2: dict, g2: dict, worklog_date: str | None, limit: 
             ng.append(f"(c) (0-b-2) の H2 の印が json（{h2['fp']}…）と違う → `--write`")
         if g2["fp"] not in body:
             ng.append(f"(c) (0-b-2) の G2 の印が json（{g2['fp']}…）と違う → `--write`")
+        # ★2026-09-08（監査 cp32 の別枠 E・設計書 tm-scope-and-g2-fingerprint-20260908 の F）
+        #   ＝時刻も照らす。直す前は指紋の値だけを見ていたので、印を取り直した後に
+        #     `--write` を走らせ忘れると、時刻だけが古いまま残った（監査が実測した）。
+        if h2["when"] not in body:
+            ng.append(f"(c) (0-b-2) の H2 の時刻が json（{h2['when']}）と違う → `--write`")
+        if g2["when"] not in body:
+            ng.append(f"(c) (0-b-2) の G2 の時刻が json（{g2['when']}）と違う → `--write`")
     n0 = sec0_lines(lines)
     if n0 is None:
         ng.append(f"(d) 『{SEC0_START.strip()}』〜『{SEC0_END}』が見つからない")
@@ -410,6 +417,11 @@ def selftest() -> int:
     r4 = verify(clean.replace(h2["fp"], "deadbeefdeadbeef"), h2, g2, today, LIMIT)
     if not any(x.startswith("(c)") for x in r4):
         ng.append(f"T4: 印が違うのに (c) が出ない {r4}")
+    # ★T4b（2026-09-08・監査 cp32 の別枠 E）＝時刻だけを書き替えても (c) が出る。
+    #   直す前は指紋の値だけを見ていたので、時刻が古いまま残っても何も言わなかった。
+    r4b = verify(clean.replace(h2["when"], "2020-01-01 00:00:00"), h2, g2, today, LIMIT)
+    if not any(x.startswith("(c)") for x in r4b):
+        ng.append(f"T4b: 印の時刻が違うのに (c) が出ない {r4b}")
     n0 = sec0_lines(clean.splitlines())
     r5 = verify(clean, h2, g2, today, limit=n0 - 1)
     if not any(x.startswith("(d)") for x in r5):
@@ -494,10 +506,11 @@ def selftest() -> int:
     print("[selftest] T1 移せる／T2 数が合わなければ止まる／T3 日付／T4 印／T5 行数／T6 ★いまここ／T7 きれい／T8 hook／T1' 消す印"
           "／T9a ✅済 の行／T9b 取り消し線／T9c 説明の文は止めない"
           "／T10a 表の ✅済 を移す／T10b 表の取り消し線を移す／T10c 説明の文は移さない"
-          "／T10d 控えに区切りの行が入る／T10e 生きている行を複製しない／T10f 見出しが無い表でも落ちない")
+          "／T10d 控えに区切りの行が入る／T10e 生きている行を複製しない／T10f 見出しが無い表でも落ちない"
+          "／T4b 印の時刻も照らす")
     for x in ng:
         print(f"  ❌ {x}")
-    total = 18
+    total = 19
     print(f"  {'❌' if ng else '✅'} わざと壊して止まるか試すテスト {total - len(ng)}/{total} pass")
     return 1 if ng else 0
 

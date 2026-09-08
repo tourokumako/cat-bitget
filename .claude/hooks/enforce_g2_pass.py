@@ -134,6 +134,41 @@ def check(cmd_x: str):
     return None
 
 
+def check_fingerprint() -> int:
+    """印（g2_pass.json）が、いまのコードと一致しているかだけを見る（読むだけ・何も書かない）。
+
+    ★2026-09-08（監査 cp32 の別枠 D・設計書 tm-scope-and-g2-fingerprint-20260908 の E）
+      なぜ要るか＝H2 には この口が在る（`enforce_h2_pass.py --check-fingerprint`）が、
+      G2 には無かった。監査 cp32 は `fingerprint` を直に呼んで照らすしかなかった。
+      ＝「G2 の印を取り直したか」を確かめる口が、どこにも無い状態だった。
+      この口は、上の check() が使っているのと同じ照合（129-133行）だけを取り出したもの。
+    終了コード＝0（一致）／1（違う・印が無い・印が読めない）。
+    ★番人＝壊すプログラム b66（照合を先頭8文字だけに緩めると、足した番人が落ちる）。
+    """
+    if not os.path.exists(PASS):
+        print("❌ 検査済みの印が無い（g2_pass.json がまだ書かれていない）")
+        return 1
+    try:
+        with open(PASS, encoding="utf-8") as f:
+            rec = json.load(f)
+        files = rec.get("files") or []
+        fp = rec.get("fingerprint") or ""
+    except Exception as e:                             # noqa: BLE001
+        print(f"❌ 検査済みの印が読めない（g2_pass.json が壊れている）: {e}")
+        return 1
+    lack = [m for m in MUST if m not in files]
+    if lack:
+        print(f"❌ 印の対象一覧に必須のファイルが入っていない（一覧を狭めない）: {lack[:3]}")
+        return 1
+    now = fingerprint(files)
+    if now != fp:
+        print(f"❌ 印と、いまのコードが違う（印 {fp[:16]}… ／ いま {now[:16]}…）"
+              "＝gen_signal_families.py --verify を走らせて印を取り直してください")
+        return 1
+    print(f"✅ 印と、いまのコードが一致（{fp[:16]}… ／ 対象 {len(files)} 件）")
+    return 0
+
+
 def fail(reason: str):
     e = sys.stderr
     print("🔒 [G2 検査済みゲート・safety hook] G2（型の表に沿った案かの審査）の検査を"
@@ -243,13 +278,34 @@ def selftest():
     case("走らせずに名前を数えるだけなら通る（grep）", None,
          f"grep -c run_recipe {_real}/regime_r9_diag.py")
 
+    # ── ★2026-09-08 新設＝印を照らす口（--check-fingerprint）そのものを試す ──────
+    #   監査 cp32 の別枠 D＝H2 には この口が在るのに、G2 には無かった。
+    #   ＝「G2 の印を取り直したか」を確かめる口が、どこにも無かった。
+    def case_fp(name, want_rc):
+        nonlocal ng
+        got = check_fingerprint()
+        good = (got == want_rc)
+        print(f"  {'✅' if good else '❌'} {name}" + ("" if good else f"   ← 出た終了コード: {got}"))
+        ng += 0 if good else 1
+
+    write_pass()                                       # 印を いまの中身で書き直す
+    case_fp("★印を照らす口＝印と いまのコードが合っていれば 0 を返す", 0)
+    _now_fp = fingerprint(MUST)
+    _bad_fp = _now_fp[:8] + ("1" if _now_fp[8:9] != "1" else "2") + _now_fp[9:]
+    write_pass(fp=_bad_fp)
+    case_fp("★印を照らす口＝先頭8文字だけが同じ印は通さない（照合を緩めない）", 1)
+
     shutil.rmtree(tmp, ignore_errors=True)
     ROOT, PASS = keep
-    print(f"\n番人: {18 - ng}/18 pass")
+    print(f"\n番人: {20 - ng}/20 pass")
     sys.exit(1 if ng else 0)
 
 
 if __name__ == "__main__":
+    # ★2026-09-08（監査 cp32 の別枠 D）＝印を照らす口。hook 本体より前に置き、必ずここで終える
+    #   （後ろに置くと hook 本体が動いて標準入力を待つ＝H2 と同じ作り）。
+    if "--check-fingerprint" in sys.argv:
+        sys.exit(check_fingerprint())
     if "--selftest" in sys.argv:
         selftest()
     hook_main()

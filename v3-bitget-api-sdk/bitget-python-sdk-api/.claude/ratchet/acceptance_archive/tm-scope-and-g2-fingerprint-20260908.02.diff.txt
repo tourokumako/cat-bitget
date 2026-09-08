@@ -1,0 +1,162 @@
+7,8c7
+< NEW_FILE: .claude/breaks/b63_tm_bitget_scope.sh, .claude/breaks/b64_tm_subdir.sh, .claude/breaks/b65_tm_badtail.sh, .claude/breaks/b66_g2_fingerprint_loose.sh, .claude/breaks/b67_marks_time_check.sh
+< MODEL: .claude/breaks/b58_five_min_newer_ignored.sh, .claude/breaks/b62_fingerprint_loose.sh, .claude/breaks/lib.sh
+---
+> ★新しく作った5本（b63 から b67）は書き終えたので、新規のファイルを宣言する2行は消しました（必読ゲートは「新しく作ると書いたのに実在する」を止めるためです）。手本にしたのは `.claude/breaks/b58_five_min_newer_ignored.sh`・`b62_fingerprint_loose.sh`・`lib.sh` の3本です。
+14c13
+< **往復：1回目／上限2回。**1回目で書く権利をいただき、実装のあと2回目で機械が壊すプログラムを走らせて測ります。
+---
+> **往復：3回目（最後）。**1回目で書く権利をいただき、2回目は私の書き忘れ（TARGET に壊すプログラムが無かった）と、実物を見て分かった1件（e34 を触らない）で打ち直していただきました。**この3回目で、機械が壊すプログラム5本を実際に走らせて測ります。**
+18,20c17
+< **時間の見積もり**＝実装 1時間・番人と壊すプログラムの実測 45分。**★どれか1つでも見込みの2倍を超えたら、そこで止めて まこさんに報告します。**
+< 
+< **★前の工事の穴は直してあります**＝壊すプログラムがまだ無い行は「未着手」のまま残ります（`run_breaks.py` の `match_of`）。**＝1回目の承認で「済」が書かれることはありません。**
+---
+> **時間の見積もり**＝実装 1時間（済）・番人と壊すプログラムの実測 45分。**★どれか1つでも見込みの2倍を超えたら、そこで止めて まこさんに報告します。**
+31c28
+< | **別枠 C** | 同じ5分足のパスが `e34_range_zscore_taker.py`:36 にも書いてある | **直す**（やること D） |
+---
+> | **別枠 C** | 同じ5分足のパスが `e34_range_zscore_taker.py`:36 にも書いてある | **この回では触りません**（下の §7 の補6 に理由を書きます） |
+52,56c49
+< ### 2-3 別枠 C｜同じパスが、別の戦略のファイルにも書いてある
+< 
+< **実物**＝`e34_range_zscore_taker.py`:36 の `CSV = ROOT / "data" / "BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv"`。**取り足すと、この1本も古いままになります。**
+< 
+< ### 2-4 別枠 D｜G2 には印を照らす口が無い
+---
+> ### 2-3 別枠 D｜G2 には印を照らす口が無い
+60c53
+< ### 2-5 別枠 E｜(0-b-2) の時刻が、印の json と食い違う
+---
+> ### 2-4 別枠 E｜(0-b-2) の時刻が、印の json と食い違う
+64c57
+< ### 2-6 別枠 G｜`--only 5` だけのときは、まとめの見出しが出ない
+---
+> ### 2-5 別枠 G｜`--only 5` だけのときは、まとめの見出しが出ない
+72c65
+< **② 期待値分解**＝売買のロジックには触れません。勝率・平均利益・敗率・平均損失は動きません。動くのは、**T-m が見る範囲**（data の直下だけ → 下の階層も含む／Bitget 先物を外す）と、**黙って見逃す形の数**（1件 → 0件）と、**5分足のパスが書いてある場所の数**（2か所 → 1か所）と、**印を照らす口の数**（H2 だけ → H2 と G2）です。
+---
+> **② 期待値分解**＝売買のロジックには触れません。勝率・平均利益・敗率・平均損失は動きません。動くのは、**T-m が見る範囲**（data の直下だけ → 下の階層も含む／Bitget 先物を外す）と、**黙って見逃す形の数**（1件 → 0件）と、**印を照らす口の数**（H2 だけ → H2 と G2）と、**印の時刻を照らす検査**（0件 → 1件）です。
+76c69
+< **④ ベースアップ**＝外の検索は使いません。手本は同じリポジトリの実物で、この設計書を書く前に Read tool で開きました＝`scripts/priority_rebuild/observe_diag.py`（`_newer_5m_files` の 1602-1622行）／`scripts/priority_rebuild/e34_range_zscore_taker.py`（28-40行）／`.claude/hooks/enforce_h2_pass.py`（`check_fingerprint` の 130-164行＝G2 に足す口の手本）／`.claude/tools/tidy_next_step.py`（`_pass` と `marks_block` の 203-226行）／`.claude/audits/2026-09-08_insp5_path_cp32_audit_report.md`（監査レポート・§2-3・§3・§8）。
+---
+> **④ ベースアップ**＝外の検索は使いません。手本は同じリポジトリの実物で、この設計書を書く前に Read tool で開きました＝`scripts/priority_rebuild/observe_diag.py`（`_newer_5m_files` の 1602-1622行）／`scripts/priority_rebuild/e34_range_zscore_taker.py`（28-40行）／`.claude/hooks/enforce_h2_pass.py`（`check_fingerprint` の 130-164行＝G2 に足す口の手本）／`.claude/hooks/enforce_g2_pass.py`（`check` の 100-149行）／`.claude/tools/tidy_next_step.py`（`_pass` と `marks_block` の 203-226行・検査 (c) の 275-290行）／`.claude/breaks/b58_five_min_newer_ignored.sh`・`b62_fingerprint_loose.sh`・`lib.sh`（壊すプログラムの手本）／`.claude/audits/2026-09-08_insp5_path_cp32_audit_report.md`（監査レポート・§2-3・§3・§8）。
+89c82
+< | **H** | `.claude/breaks/` に5本 新設 ＋ 番人 | **b63**（Bitget 先物の名前で T-m が落ちないか）／**b64**（下の階層に置くと落ちるか）／**b65**（末が読めないファイルを報告するか）／**b66**（G2 の印を照らす口）／**b67**（印の時刻の照合）。**あわせて観察の番人を2件 足す**（7件 → 9件）＝**T-n**（Bitget 先物を指さない）・**T-o**（下の階層も見る／末が読めないものを報告する） | 完成の条件 |
+---
+> | **H** | `.claude/breaks/` に5本 新設 ＋ 番人 | **b63**（Bitget 先物の名前で T-n が落ちるか）／**b64**（下の階層を見る形を戻すと T-o が落ちるか）／**b65**（末が読めないものの報告を消すと T-o が落ちるか）／**b66**（G2 の印を照らす口を緩めると落ちるか）／**b67**（印の時刻の照合を消すと落ちるか）。**あわせて観察の番人を2件 足す**（7件 → 9件）＝**T-n**（Bitget 先物を指さない）・**T-o**（下の階層も見る／末が読めないものを報告する） | 完成の条件 |
+93c86
+< **この工事に、疑似シミュから取った値は1つもありません。**閾値・段数・AUC のたぐいは1つも決めていません。**採否は score.py ではなく、①観察の番人9件 ②控えの片づけの番人19件 ③G2 の印を照らす口 の3つが期待どおりに動くかだけで決まります。**
+---
+> **この工事に、疑似シミュから取った値は1つもありません。**閾値・段数・AUC のたぐいは1つも決めていません。**採否は score.py ではなく、①観察の番人9件 ②控えの片づけの番人19件 ③G2 の見張りの番人20件 が期待どおりに動くかだけで決まります。**
+103c96
+< | 口 | いま | この工事の後 | わざと壊して落ちるかの確認 |
+---
+> | 口 | 直す前 | この工事の後 | わざと壊して落ちるかの確認 |
+122c115
+< | **補3** | 別枠 C（`e34` のパス）を直すと、その戦略の成績は変わるか | **変わりません。**読むファイルの決め方を変えるだけで、**同じファイルを読みます**（`BARS_CSV` の値は、いま `e34` の 36行 に書いてある文字と同じです）。★確かめ方＝直した後に `e34` を import して、パスが同じ文字になることを見ます |
+---
+> | **補3** | 番人 T-n・T-o は、本物の data を触るか | **触りません。**一時のフォルダを作って、その中に見本を3つ置いて試します（`tempfile`）。**本物の data には1文字も書きません** |
+125c118
+< | **補6** | **★別枠 C（`e34` のパス）を、この回で直さない理由**（実装の途中で、実物を見て分かりました） | **理由は2つです。**<br>**①`e34` は5本のファイルから import されています**（実測＝`grep -rln "e34_range_zscore_taker" scripts/priority_rebuild/` ＝ `train_e34_meta.py`・`e34_levels.py`・`e37_range_scalp.py`・`e35_range_oscillation.py`・`e35_box.py`）。**そのうち `e35` と `e37` は候補・採用の戦略です。**＝`e34` に `observe_diag` を import させると、**その5本すべてが観察の道具を読み込みます。**設計書 §8 に「戦略の売買のロジックには触れない」と書きましたが、**起動の重さという形で波及します。**<br>**②`e34` は、元から走らせられません。**期間の日付を自前で持っているので、期間正本ゲートが止めます（実測＝`TRAIN_END = pd.Timestamp("2025-01-01")` ／ `periods.py` は `2025-03-01` で**値が違います**）。**＝置き換えると学習の期間が変わる＝この工事の範囲の外です。**<br>**★正しい直し方**＝5分足のパスの正本を、軽い1ファイルに切り出し、`observe_diag` と `e34` の両方がそこから読む形。**この回ではやりません**（新しいファイル＋2本の書き替え＝別の工事）。**★`next_step.md` の §6 に残します** |
+---
+> | **補6** | **★別枠 C（`e34` のパス）を、この回で直さない理由**（実装の途中で、実物を見て分かりました） | **理由は2つです。**<br>**①`e34` は5本のファイルから import されています**（実測のコマンド＝`grep -rln "e34_range_zscore_taker" scripts/priority_rebuild/` ＝ `train_e34_meta.py`・`e34_levels.py`・`e37_range_scalp.py`・`e35_range_oscillation.py`・`e35_box.py`）。**そのうち `e35` と `e37` は候補・採用の戦略です。**＝`e34` に `observe_diag` を import させると、**その5本すべてが観察の道具を読み込みます。**設計書 §8 に「戦略の売買のロジックには触れない」と書きましたが、**起動の重さという形で波及します。**<br>**②`e34` は、元から走らせられません。**期間の日付を自前で持っているので、期間正本ゲートが止めます（実測＝`TRAIN_END = pd.Timestamp("2025-01-01")` ／ `periods.py` は `2025-03-01` で**値が違います**）。**＝置き換えると学習の期間が変わる＝この工事の範囲の外です。**<br>**★正しい直し方**＝5分足のパスの正本を、軽い1ファイルに切り出し、`observe_diag` と `e34` の両方がそこから読む形。**この回ではやりません**（新しいファイル＋2本の書き替え＝別の工事）。**★`next_step.md` の §6 に残します** |
+129c122
+< **群2（売買のロジックか審判を触るときだけ1件ずつ照合するもの）は、まとめて非該当です。**理由＝この工事は、番人が見る範囲と、印を照らす口と、文書を整える道具だけを触ります。**戦略の売買のロジック・審判（score.py・eval_engine）・売買記録に1行も触れません。**★`e34_range_zscore_taker.py` は戦略のファイルですが、触るのは「どのファイルを読むか」の1行だけです（補3）。
+---
+> **群2（売買のロジックか審判を触るときだけ1件ずつ照合するもの）は、まとめて非該当です。**理由＝この工事は、番人が見る範囲と、印を照らす口と、文書を整える道具だけを触ります。**戦略・審判（score.py・eval_engine）・売買記録に1行も触れません。**
+143,147c136,140
+< | 1 | AUDIT-1＝**T-m は Binance Spot 系列だけを見る**＝Bitget 先物の名前で正本より後の末を持つファイルを置いても、番人 T-n は落ちない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | `bitget` を飛ばす判定を消すと、番人 T-n が落ちる | `b63_tm_bitget_scope.sh` | 対象 | **未着手** |
+< | 2 | AUDIT-2＝**T-m は data の下の階層も見る**＝下の階層に正本より後の5分足を置くと、番人 T-o が落ちる | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | data に下の階層を作って、5分足の控えを置く | `b64_tm_subdir.sh` | 対象 | **未着手** |
+< | 3 | AUDIT-3＝**末の時刻が読めない5分足を、黙って飛ばさない**＝読めないファイルの名前が ❌ に出る | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | data に、末の時刻が読めない5分足の控えを置く | `b65_tm_badtail.sh` | 対象 | **未着手** |
+< | 4 | AUDIT-4＝**G2 にも印を照らす口が在る**＝印と いまのコードが合っていれば 0、印の対象を1文字 変えると 1 を返す | `python3 ../../.claude/hooks/enforce_g2_pass.py --selftest` | 実経路 | 照合を先頭8文字だけに緩めると、足した番人が落ちる | `b66_g2_fingerprint_loose.sh` | 対象 | **未着手** |
+< | 5 | AUDIT-5＝**(0-b-2) の時刻が、印の json と合っているかを検査が見る**＝時刻だけを書き替えると ❌ が出る | `python3 ../../.claude/tools/tidy_next_step.py --selftest` | 実経路 | 時刻を照らす検査を消すと、足した番人が落ちる | `b67_marks_time_check.sh` | 対象 | **未着手** |
+---
+> | 1 | AUDIT-1＝**T-m は Binance Spot 系列だけを見る**＝Bitget 先物の名前で正本より後の末を持つファイルが在っても、番人 T-n は落ちない | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | Binance Spot 系列だけを見る判定を消すと、番人 T-n が落ちる | `b63_tm_bitget_scope.sh` | 対象 | **未着手** |
+> | 2 | AUDIT-2＝**T-m は data の下の階層も見る**＝下の階層に正本より後の5分足が在れば、番人 T-o が落ちる | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 下の階層まで見る形を、直下だけを見る形へ戻すと、番人 T-o が落ちる | `b64_tm_subdir.sh` | 対象 | **未着手** |
+> | 3 | AUDIT-3＝**末の時刻が読めない5分足を、黙って飛ばさない**＝読めないファイルの名前が ❌ に出る | `python3 scripts/priority_rebuild/observe_diag.py --selftest-insp5` | 実経路 | 読めなかった名前を集める処理を消すと、番人 T-o が落ちる | `b65_tm_badtail.sh` | 対象 | **未着手** |
+> | 4 | AUDIT-4＝**G2 にも印を照らす口が在る**＝印と いまのコードが合っていれば 0、先頭8文字だけが同じ印は 1 を返す | `python3 ../../.claude/hooks/enforce_g2_pass.py --selftest` | 実経路 | 照合を先頭8文字だけに緩めると、足した番人が落ちる | `b66_g2_fingerprint_loose.sh` | 対象 | **未着手** |
+> | 5 | AUDIT-5＝**(0-b-2) の時刻が、印の json と合っているかを検査が見る**＝時刻だけを書き替えると ❌ が出る | `python3 ../../.claude/tools/tidy_next_step.py --selftest` | 実経路 | 時刻を照らす検査を消すと、足した番人 T4b が落ちる | `b67_marks_time_check.sh` | 対象 | **未着手** |
+155,157c148,150
+< | `b63_tm_bitget_scope.sh` | **#1** | `bitget` を飛ばす判定を消し、Bitget 先物の名前の控えを置く | **1** |
+< | `b64_tm_subdir.sh` | **#2** | data の下の階層に、正本より後の5分足の控えを置く | **1** |
+< | `b65_tm_badtail.sh` | **#3** | data に、末の時刻が読めない5分足の控えを置く | **1** |
+---
+> | `b63_tm_bitget_scope.sh` | **#1** | Binance Spot 系列だけを見る判定を消す | **1** |
+> | `b64_tm_subdir.sh` | **#2** | 下の階層まで見る形を、直下だけを見る形へ戻す | **1** |
+> | `b65_tm_badtail.sh` | **#3** | 末が読めないものを報告する処理を消す | **1** |
+161c154
+< **★監査の外に置かれる行は2つあります。**やること **D**（`e34` のパス）と **G**（`--only 5` のまとめの見出し）は、札が5つで固定なので完成の条件に入れられません。**＝この2件は「直った」と第三者が言った状態になりません。**確かめ方＝D は import してパスの文字を照らす／G は目で見る。**正直に書きます。**
+---
+> **★監査の外に置かれる行は1つあります。**やること **G**（`--only 5` のまとめの見出し）は、札が5つで固定なので完成の条件に入れられません。**＝この1件は「直った」と第三者が言った状態になりません。**確かめ方＝目で見る。**正直に書きます。**
+163c156
+< **★触る関数の一覧は、実装の後に確定させます。**実装が終わってから `python3 .claude/tools/gen_impl_functions.py` が書き出したものを、そのまま §10 に入れます（CC は1文字も手で書きません）。
+---
+> **★触る関数の一覧は、実装の後に機械が書き出したものを、そのまま §10 に入れました。**CC は1文字も手で書いていません。**出どころ**＝`python3 .claude/tools/gen_impl_functions.py`（2本ぶん）。
+172,174c165,214
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "この設計書は実装の前に書いています。触る関数の一覧は、実装の後に gen_impl_functions.py が書き出したものを、そのまま入れます（CC は手で書きません）。",
+<   "must_use": {},
+---
+>   "impl_functions": {
+>     "scripts/priority_rebuild/observe_diag.py": [
+>       "<モジュール直下>", "_J", "_Tee.__enter__", "_Tee.__exit__", "_Tee.__init__", "_Tee.flush",
+>       "_Tee.write", "_ab", "_acb", "_adx_di", "_assert_search_window_only", "_atr", "_auc",
+>       "_bars_step_minutes", "_category", "_cel", "_ck", "_cond_mask", "_conf_search",
+>       "_corr_matrix", "_cyc", "_demand_rank_name", "_demand_tail_ok", "_direction_gap",
+>       "_dup_groups", "_dup_keep_of_group", "_dup_pairs", "_dup_used_in_repo",
+>       "_dup_used_in_strategies", "_ebsw", "_fractal_levels", "_free_bars", "_gap_runs",
+>       "_grid_touch", "_h", "_ha", "_hold_band", "_hw", "_independent_step", "_insp_axis",
+>       "_insp_close_leak", "_insp_demand", "_insp_direction_gap", "_insp_direction_known",
+>       "_insp_duplicates", "_insp_indicator_match", "_insp_indicator_stage", "_insp_industry",
+>       "_insp_lineage_range", "_insp_lookahead", "_insp_price_scale", "_insp_property",
+>       "_insp_range_geo", "_insp_ref_coverage", "_insp_regime_label_oneway", "_insp_regime_rank",
+>       "_insp_resample", "_insp_samples", "_insp_source", "_insp_stage_plan", "_insp_v9_columns",
+>       "_insp_v9_freshness", "_insp_v9_periods", "_insp_windows", "_kv", "_load_pta", "_mama",
+>       "_mat_series", "_mech_decompose", "_mmi", "_newer_5m_files", "_nominal_wlen", "_one_side",
+>       "_oneway_ratio", "_out_path", "_pct_exit_scan", "_price_scale_check", "_print_mode_info",
+>       "_ps", "_rank_record_unmeasured", "_rci", "_rci_slow", "_recipe_families",
+>       "_ref_coverage_counts", "_reg", "_regime_horizons", "_regime_labels", "_resample",
+>       "_resolve_period", "_rg_zone_consts", "_role_lineage_table", "_rsi", "_scene_ctx",
+>       "_scene_data", "_scene_exit_eval", "_scene_exit_grid", "_scene_exit_rows",
+>       "_scene_exit_scan", "_scene_floor", "_scene_header", "_scene_labels", "_scene_mask",
+>       "_search", "_sk_crash_rebound_long", "_sk_fade_long", "_sk_fade_short", "_sk_grid_long",
+>       "_sk_grid_short", "_sk_pullback_short", "_sk_resistance_touch_short",
+>       "_sk_support_touch_long", "_sk_zscore_long", "_sk_zscore_short", "_skip", "_sr_touch",
+>       "_sr_touch_atr", "_sub", "_summary", "_supertrend", "_synth_regime_bars",
+>       "_tail_timestamps", "_tautology", "_tdseq", "_th", "_touch_filter", "_v9_col_matches",
+>       "_v9_families", "_v9_part_grid", "_v9_part_matches", "_v9_part_variants", "_v9_periods",
+>       "_v9_preprocess_frame", "_v9_price_kinds", "_v9_rank", "_v9_z", "_vfi", "_vp_levels",
+>       "_w_flag", "add_demand_to_ranking", "build_catalog", "build_features", "build_parser",
+>       "build_range_geometry", "check_materials", "check_materials_meta", "find_material",
+>       "grow_search", "insp5_frame", "inspect_data", "load_1m", "load_config", "load_demand",
+>       "make_material", "mech_thresholds", "merge_demand_into_ranking", "neighbors",
+>       "next_actions", "observe", "observe_scene", "plan", "plan_scene", "post_exit",
+>       "rank_demand_for_regime", "rank_materials_for_regime", "rank_regime", "rank_separation",
+>       "rank_separation_independent", "round_trip_cost", "selftest", "selftest_insp5",
+>       "selftest_rank_demand", "trajectory", "verdict"
+>     ],
+>     ".claude/tools/tidy_next_step.py": [
+>       "<モジュール直下>", "_level", "_pass", "_section_end", "check_marks", "count_marks",
+>       "do_verify", "do_write", "find_disposable_sections", "latest_worklog_date", "main",
+>       "marks_block", "move_done_rows", "move_to_archive", "refresh_marks", "sec0_lines",
+>       "selftest", "verify"
+>     ]
+>   },
+>   "must_use": {
+>     "_newer_5m_files": ["_tail_timestamps", "BARS_CSV", "pathlib", "bitget", "rglob"],
+>     "selftest_insp5": ["_newer_5m_files", "tempfile", "BARS_CSV", "_insp_stage_plan"],
+>     "verify": ["_pass", "when"]
+>   },
+176c216
+<   "no_spec_lists_reason": "外から取る一覧はありません。5分足の正本のパスは observe_diag.py の定数 BARS_CSV そのもので、この工事では e34 がそこから読む形に変えるだけです。",
+---
+>   "no_spec_lists_reason": "外から取る一覧はありません。見分ける範囲は、要件定義書 §8.2.1.1 の②（採点に使うのは Binance Spot 系列だけ）という決めごとを、名前の見分け方に写したものです。",
+178,180c218,220
+<     "impl_functions": "実装の後に gen_impl_functions.py（実物のコードから機械で書き出す）",
+<     "must_use": "実装の後に、impl_functions と同時に確定させる",
+<     "spec_lists": "該当なし（外から取る一覧が無い）"
+---
+>     "impl_functions": "gen_impl_functions.py の出力を、2本ぶん そのまま入れた（CC は手で書いていない）。★出るのは『いまファイルに在る全関数』＝この工事で触っていない関数も入る＝承認の画面に ⚠️ が出るのが正しい状態（まこさん指定 2026-09-03）",
+>     "must_use": "この工事で直した3つの関数に、その中で必ず使う名前を書いた（見る範囲の判定・番人が一時のフォルダで試すこと・印の時刻を照らすこと）",
+>     "spec_lists": "空。外から取る一覧が無い"
