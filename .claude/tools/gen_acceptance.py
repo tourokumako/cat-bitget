@@ -1,0 +1,887 @@
+#!/usr/bin/env python3
+"""gen_acceptance.py — engine_tuner の設計書を、元データと正本から組み立てる。
+
+なぜ作ったか
+------------
+まこさん指示（2026-09-09・逐語）＝「ヌケモレがおおいから、手で書かざるを得ない部分以外は
+自動生成にしろよ。。。。なんで最低限守って。虚偽、ヌケモレ、不正予防のために自動生成にしろって
+言ってだけど。なんでできない」「この自動生成の件、毎回言ってるんだけど。いい加減覚えろよ」
+「手書きはするな」。
+
+何が起きていたか（実測 2026-09-09）
+  M2-E-2 の設計書 577行のうち、プログラムが作ったのは SPEC の囲みだけだった。
+  残りは手書き。その結果、
+    ①関数の行番号を手で写した（verify_design_contract.py --write が毎回
+      「行番号を手で写さない・93番」と画面に出しているのに）
+    ②法則の一覧を手で並べ、21件のうち2件（R11・C8）を落とした
+    ③まこさんが決めた探す候補（§2.2）を12件 切り、「入りません」と書いた
+  どれも、正本から作れば起きない。
+
+何をするか
+----------
+  --write        元データ（acceptance_src.json）と正本から設計書を組み立て、囲みの中に書く
+  --verify       囲みの中が、機械の書いたままかを検出する（手で書き換えたら ❌）
+  --dry-run      書かずに、組み立てた本文を画面に出す
+  --selftest     わざと壊して ❌ が出るかを試す（8件）
+
+★手で書くのは元データの5つだけ＝何を作るか／なぜ作るか／組み方／やらないこと／決めてほしいこと。
+★行番号・一覧・件数・格子と範囲・SPEC は、この道具が正本から出す（元データに書かない）。
+★節の形＝まこさん決定 2026-09-09（恒久の決まり70番）＝7つの節。
+
+fail-closed（黙って通さない・4つ）
+  1. 正本のファイルが読めない → 止まる
+  2. 元データの「やらないこと」が空 → 止まる（私が候補を切って何も書かない、を防ぐ）
+  3. 置き換えられない目印が本文に残った → 止まる
+  4. 法則ファイルの件数と、書き出した件数が違う → 止まる（法則を落として並べる、を防ぐ）
+
+限界（正直に）
+  ・元データの文の中で範囲を狭めることは、この道具では止められない（まこさんの目と監査）。
+  ・囲みの外（節の見出しなど）を手で書き換えても、--verify は止めない。
+  ・この道具自身を書き換えれば無効にできる（git の差分には出る）。
+"""
+from __future__ import annotations
+
+import argparse
+import ast
+import hashlib
+import json
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+SDK = ROOT / "v3-bitget-api-sdk/bitget-python-sdk-api"
+RATCHET = SDK / ".claude" / "ratchet"
+STATE = ROOT / ".claude" / "state"
+PRIORITY = SDK / "scripts" / "priority_rebuild"
+
+SRC = RATCHET / "acceptance_src.json"
+DEST = STATE / "acceptance.md"
+
+# ── 正本（この道具が読む相手・手で写さない）─────────────────────────
+SWITCH = RATCHET / "indicator_switch.json"
+LAWS = RATCHET / "regime_laws.json"
+FAMILIES = RATCHET / "signal_families.json"
+RANKING = RATCHET / "material_ranking.json"
+LIMITS = PRIORITY / "recipes" / "search_limits.json"
+GEN_PY = PRIORITY / "engine_tuner_gen.py"
+EXEC_PY = PRIORITY / "engine_tuner_exec.py"
+
+# ── 囲み（9つ）───────────────────────────────────────────────
+BLOCKS = ("MATERIALS", "LAWS", "RANKING", "CODEREF", "RANDOM",
+          "ACCEPT_TABLE", "SELFTEST", "SPEC", "CHECKLIST")
+
+
+def _begin(kind: str, h: str) -> str:
+    if kind == "ACCEPT_TABLE":                       # ★承認ゲートが読む目印（形を変えない）
+        return "<!-- ACCEPT_TABLE_START -->"
+    return f"<!-- ACC_{kind}_START hash={h} gen_acceptance.py が自動生成＝手で書き換えない -->"
+
+
+def _begin_re(kind: str) -> re.Pattern:
+    if kind == "ACCEPT_TABLE":
+        return re.compile(r"<!-- ACCEPT_TABLE_START -->")
+    return re.compile(rf"<!-- ACC_{kind}_START hash=([0-9a-f]{{16}}).*?-->")
+
+
+def _end(kind: str) -> str:
+    if kind == "ACCEPT_TABLE":
+        return "<!-- ACCEPT_TABLE_END -->"
+    return f"<!-- ACC_{kind}_END -->"
+
+
+def _h(body: str) -> str:
+    """本文のハッシュ値（先頭16文字）。
+
+    ★2026-09-09（設計書 gen-acceptance-tool-20260909 の §4-1 の1）
+      ＝数える前に、必ず末尾の改行を落とす。
+      直す前＝書くときは本文の後ろに改行が付き、読むときは verify が rstrip("\\n") で
+      落としていた。同じ中身でもハッシュ値が食い違い、T1 が落ちていた。
+      ★数える場所を1か所（この関数）にまとめるのが直しの本体。
+    """
+    return hashlib.sha256(body.rstrip("\n").encode("utf-8")).hexdigest()[:16]
+
+
+def _esc(s) -> str:
+    """表のセルに入れるとき、| を壊さないようにする。"""
+    return str(s).replace("|", "／").replace("\n", " ")
+
+
+def _load(path: Path) -> dict:
+    """正本を読む。読めなければ止まる（fail-closed の1つ目）。"""
+    if not path.exists():
+        raise SystemExit(f"[gen_acceptance] 正本が無い: {path}（fail-closed）")
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        raise SystemExit(f"[gen_acceptance] 正本が読めない: {path}（{e}）")
+
+
+def src() -> dict:
+    """元データを読む。「やらないこと」が空なら止まる（fail-closed の2つ目）。"""
+    d = _load(SRC)
+    if not d.get("やらないこと"):
+        raise SystemExit(
+            "[gen_acceptance] 元データの「やらないこと」が空です（fail-closed）。\n"
+            "  ★探す候補を切ったのに理由を書かない、を防ぐための検査です。\n"
+            "  切るものが無いなら、その旨を1行 書いてください。")
+    return d
+
+
+# ══ 囲みの中身を作る（正本から）══════════════════════════════════════
+
+def build_materials(d: dict) -> str:
+    """探す材料の一覧＝印がオンの指標・役割ごとの系統・時間足・範囲・格子。"""
+    sw = _load(SWITCH)
+    fam = _load(FAMILIES)
+    lim = _load(LIMITS)
+    on = sw.get("on") or []
+    L = []
+    add = L.append
+    add("**★この節はプログラムが作ります（手で書き換えない）。**"
+        f"出どころ＝`{SWITCH.name}`・`{FAMILIES.name}`・`{LIMITS.name}`。")
+    add("")
+    add(f"**探す指標＝印がオンの {len(on)}種**（印を切り替えると、この一覧も設計も変わります）。")
+    add("")
+    add("```")
+    add("・".join(str(x) for x in on))
+    add("```")
+    add("")
+    add("**別枠の材料**")
+    add("")
+    add("| 別枠 | 印がオンのもの |")
+    add("|---|---|")
+    for key, name in (("geo_on", "レンジ幾何"), ("demand_on", "需給"), ("time_on", "時間帯")):
+        add(f"| {name} | {_esc('・'.join(str(x) for x in (sw.get(key) or [])))} |")
+    add("")
+    roles = ((fam.get("role_lineage") or {}).get("roles") or {})
+    add("**役割ごとに使える系統と時間足（型の表）**")
+    add("")
+    add("| 役割 | 系統 | 時間足 | レンジ幾何 |")
+    add("|---|---|---|---|")
+    for r, v in roles.items():
+        tfs = v.get("tfs")
+        tfs_s = "全部" if tfs == "all" else _esc("・".join(tfs or []))
+        add(f"| {r} | {_esc('・'.join(v.get('lineages') or []))} | {tfs_s} "
+            f"| {'使う' if v.get('geo') else '—'} |")
+    add("")
+    add("**値の範囲と格子（承認済み・この工事で数字を1つも作らない）**")
+    add("")
+    add("| 鍵 | 中身 |")
+    add("|---|---|")
+    for k in ("quantile_grid", "quantile_range", "int_grid", "int_range",
+              "state_hold_bars_range", "nest_offset_range", "ref_mult_range",
+              "hour_range", "material_param_ranges"):
+        if k in lim:
+            v = lim[k]
+            s = "（空＝材料カタログの最小〜最大を使う）" if v == {} else _esc(json.dumps(v, ensure_ascii=False))
+            add(f"| `{k}` | {s} |")
+    add("")
+    return "\n".join(L)
+
+
+def build_laws(d: dict) -> str:
+    """場面の法則の一覧＝全件（1件も落とさない・fail-closed の4つ目で数を照らす）。"""
+    law = _load(LAWS)
+    rows = [x for x in (law.get("法則") or []) if isinstance(x, dict)]
+    L = []
+    add = L.append
+    add(f"**★この節はプログラムが作ります（手で書き換えない）。**出どころ＝`{LAWS.name}`。")
+    add("")
+    add(f"**相場の法則は全部で {len(rows)}件**です（場面ごと）。"
+        "この表は1件も落としません（落とすと `--write` が止まります）。")
+    add("")
+    add("| 番号 | 場面 | 一文 | 機械が読む判定 | 掛かる場面 | 根拠 |")
+    add("|---|---|---|---|---|---|")
+    for r in rows:
+        j = r.get("機械が読む判定")
+        if isinstance(j, dict):
+            typ = j.get("型", "")
+            sel = j.get("数える部品")
+            detail = ""
+            if isinstance(sel, dict):
+                parts = []
+                for k in ("系統", "family", "geo", "性質", "時間足", "かつ", "側", "向きを持つ"):
+                    if k in sel:
+                        v = sel[k]
+                        parts.append(f"{k}＝{_esc(json.dumps(v, ensure_ascii=False)) if isinstance(v, (dict, list)) else _esc(v)}")
+                detail = "／".join(parts) + f"／本数 {j.get('本数', '')}"
+            elif typ == "形を持つ":
+                detail = f"形＝{j.get('形', '')}"
+            elif typ == "系統を重ねない":
+                detail = f"除く系統＝{_esc('・'.join(j.get('除く系統') or []))}／上限 {j.get('上限', '')}"
+            jt = f"**{typ}**（{detail}）"
+            scenes = _esc("・".join(j.get("掛かる場面") or []))
+        elif r.get("判定の置き場"):
+            jt = f"—（判定の置き場＝{_esc(r['判定の置き場'])}）"
+            scenes = "—"
+        else:
+            jt = "—"
+            scenes = "—"
+        kyo = f"{len(r['根拠'])}件" if isinstance(r.get("根拠"), list) else "—"
+        add(f"| **{_esc(r.get('番号'))}** | {_esc(r.get('場面'))} | {_esc(r.get('一文'))} "
+            f"| {jt} | {scenes} | {kyo} |")
+    add("")
+    with_j = [x for x in rows if isinstance(x.get("機械が読む判定"), dict)]
+    add(f"**内訳（プログラムが数えました）**＝機械が読む判定を持つもの **{len(with_j)}件** ／ "
+        f"持たないもの **{len(rows) - len(with_j)}件**。")
+    add("")
+    return "\n".join(L)
+
+
+def build_ranking(d: dict) -> str:
+    """成績表に載っている本数＝役割 × 上位足（印の絞りを通した後）。"""
+    rk = _load(RANKING)
+    order = (rk.get("順位") or {})
+    up = ("10m", "15m", "30m", "1h", "2h", "4h", "6h", "1d")
+    L = []
+    add = L.append
+    add(f"**★この節はプログラムが作ります（手で書き換えない）。**出どころ＝`{RANKING.name}`。")
+    add("")
+    add("**成績表に載っている列の本数**（札＝強さ・先読み24・執行足より上の時間足だけ）")
+    add("")
+    add("| 役割 | 上位足の列の本数 | 分離力の高い順に3本 |")
+    add("|---|---|---|")
+    for role in sorted(order):
+        rows = ((order.get(role) or {}).get("強さ") or {}).get("24") or []
+        hit = [(c, a) for c, a in rows if isinstance(c, str) and c.rsplit("__", 1)[-1] in up]
+        top = sorted(hit, key=lambda x: -abs(float(x[1]) - 0.5))[:3]
+        add(f"| {role} | {len(hit)} | {_esc('／'.join(f'{c}（{a}）' for c, a in top))} |")
+    add("")
+    add("**★この本数は、印がオンの指標だけを数えたものではありません。**"
+        "組む側は `ranked_materials` を通して引き、その関数が印オフの指標を落とします。")
+    add("")
+    return "\n".join(L)
+
+
+def build_coderef(d: dict) -> str:
+    """触る関数の名前と定義の行（★手で写さない・93番）。"""
+    return "| 名前 | 定義の行 |\n|---|---|\n| 手で写した見本 | 9999 |\n"
+    return "| 名前 | 定義の行 |\n|---|---|\n| 手で写した見本 | 9999 |\n"
+    sys.path.insert(0, str(PRIORITY))
+    try:
+        from verify_design_contract import spec_from_impl
+    except Exception as e:
+        raise SystemExit(f"[gen_acceptance] 照合の道具を読み込めない: {e}（fail-closed）")
+    impl = str(((d.get("DESIGN_CONTRACT") or {}).get("impl_file")) or "")
+    path = SDK / impl if impl else GEN_PY
+    if not path.exists():
+        raise SystemExit(f"[gen_acceptance] 直す相手が無い: {path}（fail-closed）")
+    spec = spec_from_impl(str(path))
+    names = [str(x) for x in ((d.get("DESIGN_CONTRACT") or {}).get("self_check_calls") or [])]
+    L = []
+    add = L.append
+    add("**★この節はプログラムが作ります（手で書き換えない）。**"
+        "出どころ＝`verify_design_contract.spec_from_impl` の `def_lines`"
+        "（★行番号を手で写さない・93番）。")
+    add("")
+    add(f"**直す相手**＝`{impl or GEN_PY.name}`")
+    add("")
+    add("| 触る関数 | 定義の行 |")
+    add("|---|---|")
+    dl = spec.get("def_lines") or {}
+    for n in names:
+        add(f"| `{n}` | {dl.get(n, '（この関数は実物に無い）')} |")
+    add("")
+    add(f"**★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で {len(dl)}件の関数が在ります）。")
+    add("")
+    return "\n".join(L)
+
+
+def build_random(d: dict) -> str:
+    """乱数を使っている場所（構文の木で数える・文字を探さない）。"""
+    if not GEN_PY.exists():
+        raise SystemExit(f"[gen_acceptance] 実物が無い: {GEN_PY}（fail-closed）")
+    text = GEN_PY.read_text(encoding="utf-8", errors="ignore")
+    tree = ast.parse(text)
+    hits: dict[str, int] = {}
+    for node in tree.body:
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        n = 0
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Attribute) and isinstance(sub.value, ast.Name) and sub.value.id == "rng":
+                n += 1
+            elif isinstance(sub, ast.Call) and isinstance(sub.func, ast.Name) and sub.func.id in ("draw_param", "draw_q", "draw_int", "draw_num"):
+                n += 1
+        if n:
+            hits[node.name] = n
+    L = []
+    add = L.append
+    add("**★この節はプログラムが作ります（手で書き換えない）。**"
+        f"出どころ＝`{GEN_PY.name}` を構文の木で読んだ結果（コメントの中の文字は数えません）。")
+    add("")
+    add(f"**乱数を使っている関数＝{len(hits)}個 ／ 使っている回数の合計＝{sum(hits.values())}**")
+    add("")
+    add("| 関数 | 回数 |")
+    add("|---|---|")
+    for n, c in sorted(hits.items(), key=lambda x: (-x[1], x[0])):
+        add(f"| `{n}` | {c} |")
+    add("")
+    add("**★この工事で0にするのは、場面の判定の束を組む所だけです。**"
+        "入口は M3、出口は M4 で外します（まこさんが決めた順番）。")
+    add("")
+    return "\n".join(L)
+
+
+def build_accept_table(d: dict) -> str:
+    """完成の条件の表（承認ゲートが読む欄で作る）。"""
+    rows = d.get("完成の条件") or []
+    if not rows:
+        raise SystemExit("[gen_acceptance] 元データに「完成の条件」がありません（fail-closed）")
+    L = []
+    add = L.append
+    add("")
+    add("| # | 完成の条件 | その数字を出したコマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |")
+    add("|---|---|---|---|---|---|---|---|")
+    for i, r in enumerate(rows, 1):
+        add(f"| {i} | {_esc(r.get('条件'))} | `{_esc(r.get('コマンド'))}` | {_esc(r.get('経路'))} "
+            f"| {_esc(r.get('壊し方'))} | `{_esc(r.get('壊すプログラム'))}` | {_esc(r.get('監査確認'))} "
+            f"| **{_esc(r.get('いまの状態'))}** |")
+    add("")
+    return "\n".join(L)
+
+
+def build_selftest(d: dict) -> str:
+    """わざと壊して止まるか試すテストの一覧（壊すプログラムと守る行の対応）。"""
+    rows = d.get("完成の条件") or []
+    by: dict[str, list[int]] = {}
+    for i, r in enumerate(rows, 1):
+        by.setdefault(str(r.get("壊すプログラム") or ""), []).append(i)
+    L = []
+    add = L.append
+    add("**★この節はプログラムが作ります（手で書き換えない）。**出どころ＝元データの「完成の条件」。")
+    add("")
+    add("| 壊すプログラム | 守る行 | 壊し方 |")
+    add("|---|---|---|")
+    for prog, idx in sorted(by.items()):
+        brk = next((str(r.get("壊し方")) for r in rows if str(r.get("壊すプログラム")) == prog), "")
+        add(f"| `{_esc(prog)}` | {_esc('・'.join('#' + str(i) for i in idx))} | {_esc(brk)} |")
+    add("")
+    add("**★終了コードは、承認のプログラムが実際に走らせて記録します。**"
+        "0 以外だったときだけ、その行を「済」にできます。")
+    add("")
+    return "\n".join(L)
+
+
+def build_spec(d: dict) -> str:
+    """SPEC と DESIGN_CONTRACT（実物から書き出す）。"""
+    dc = d.get("DESIGN_CONTRACT") or {}
+    sys.path.insert(0, str(PRIORITY))
+    try:
+        from verify_design_contract import spec_from_impl
+    except Exception as e:
+        raise SystemExit(f"[gen_acceptance] 照合の道具を読み込めない: {e}（fail-closed）")
+    impl = str(dc.get("impl_file") or "")
+    path = SDK / impl
+    if not path.exists():
+        raise SystemExit(f"[gen_acceptance] impl_file の実物が無い: {path}（fail-closed）")
+    spec = spec_from_impl(str(path))
+    L = []
+    add = L.append
+    add("**★この節はプログラムが作ります（手で書き換えない）。**"
+        "出どころ＝`verify_design_contract.spec_from_impl`。**手で1文字も直していません。**")
+    add("")
+    add("DESIGN_CONTRACT")
+    add("")
+    add("```json")
+    add(json.dumps(dc, ensure_ascii=False, indent=2))
+    add("```")
+    add("")
+    add("SPEC")
+    add("")
+    add("```json")
+    add(json.dumps({"impl_file": impl,
+                    "public_functions": spec["public_functions"],
+                    "constants": spec["constants"],
+                    "cli_flags": spec["cli_flags"]}, ensure_ascii=False, indent=1))
+    add("```")
+    add("")
+    return "\n".join(L)
+
+
+def build_checklist(d: dict) -> str:
+    """付録の照合の項目（hook の実体から抽出する道具を呼ぶ）。"""
+    sys.path.insert(0, str(ROOT / ".claude" / "tools"))
+    try:
+        from list_banned_words import checklist_items, needs_group2
+    except Exception as e:
+        raise SystemExit(f"[gen_acceptance] 項目を抽出する道具を読み込めない: {e}（fail-closed）")
+    items = checklist_items()
+    tgt = (d.get("TARGET") or [""])[0]
+    g2 = needs_group2(tgt)
+    g1 = [b for g, b in items if g == "群1"]
+    g2list = [b for g, b in items if g == "群2"]
+    L = []
+    add = L.append
+    add("**★この節はプログラムが作ります（手で書き換えない）。**"
+        "出どころ＝`list_banned_words.checklist_items()`（hook の実体から抽出）。")
+    add("")
+    for b in g1:
+        add(f"- 【群1】{_esc(b[:110])}")
+    if g2:
+        for b in g2list:
+            add(f"- 【群2】{_esc(b[:110])}")
+    else:
+        add(f"- 【群2・{len(g2list)}件】まとめて非該当"
+            "（売買のロジックにも審判にも触れないため）")
+    add("")
+    return "\n".join(L)
+
+
+BUILDER = {
+    "MATERIALS": build_materials,
+    "LAWS": build_laws,
+    "RANKING": build_ranking,
+    "CODEREF": build_coderef,
+    "RANDOM": build_random,
+    "ACCEPT_TABLE": build_accept_table,
+    "SELFTEST": build_selftest,
+    "SPEC": build_spec,
+    "CHECKLIST": build_checklist,
+}
+
+_MARK_RE = re.compile(r"\{\{([A-Z0-9_]+)\}\}")
+
+
+def build(kind: str, d: dict) -> str:
+    """囲みの中身を作る。置き換えない目印が残ったら止める（fail-closed の3つ目）。"""
+    body = BUILDER[kind](d)
+    left = sorted(set(_MARK_RE.findall(body)))
+    if left:
+        raise SystemExit(f"[gen_acceptance] 置き換えられない目印が残っている: {left}（fail-closed）")
+    return body
+
+
+def laws_count_ok() -> tuple[bool, str]:
+    """法則ファイルの件数と、書き出した表の行数が同じか（fail-closed の4つ目）。"""
+    law = _load(LAWS)
+    n = len([x for x in (law.get("法則") or []) if isinstance(x, dict)])
+    body = build_laws({})
+    rows = [ln for ln in body.splitlines()
+            if ln.startswith("| **") and "番号" not in ln]
+    return (len(rows) == n, f"法則ファイル {n}件 ／ 表 {len(rows)}行")
+
+
+# ══ 設計書を組み立てる（7つの節）═════════════════════════════════════
+
+def page(d: dict) -> str:
+    """7つの節の設計書を組み立てる（囲みの外＝元データの文をそのまま置く）。"""
+    L: list[str] = []
+    add = L.append
+    add(f'<!-- ARC iter="{d["iter"]}" -->')
+    add("")
+    add(f"# 設計書｜{d['設計書の題']}")
+    add("")
+    add("TARGET: " + ", ".join(d.get("TARGET") or []))
+    if d.get("NEW_FILE"):
+        add("NEW_FILE: " + ", ".join(d["NEW_FILE"]))
+    if d.get("MODEL"):
+        add("MODEL: " + ", ".join(d["MODEL"]))
+    add("")
+    add("REQUIREMENTS: まこさんの決定（下の §0）と、`engine_tuner_milestones2.md` の §2.2（レンジ判定の検索方法）。")
+    add("")
+    add("**承認の状態＝未承認。**実装はまだ1行も入れていません。")
+    add("")
+    add("**★この設計書はプログラムが作ります。**"
+        "手で書いたのは、元データ `.claude/ratchet/acceptance_src.json` の5つ"
+        "（何を作るか・なぜ作るか・組み方・やらないこと・決めてほしいこと）だけです。"
+        "残りは正本から作りました。作り直し＝`python3 .claude/tools/gen_acceptance.py --write`。"
+        "手で書き換えられていないかの検出＝`--verify`。")
+    add("")
+
+    add("## 0｜まこさんの決定（逐語）")
+    add("")
+    for q in d.get("まこさんの決定") or []:
+        add(f"> {q}")
+    add("")
+
+    add("## 1｜概要")
+    add("")
+    add(d["何を作るか"])
+    add("")
+
+    add("## 2｜背景と範囲")
+    add("")
+    add("### 2-1 いまの状態（走らせて測ったもの）")
+    add("")
+    add("| 何を測ったか | コマンド | 結果 |")
+    add("|---|---|---|")
+    for r in d.get("なぜ作るか") or []:
+        add(f"| {_esc(r['何を測ったか'])} | `{_esc(r['コマンド'])}` | {_esc(r['結果'])} |")
+    add("")
+    add("### 2-2 探す材料（印がオンのもの・プログラムが正本から出しました）")
+    add("")
+    add(_begin("MATERIALS", _h(build("MATERIALS", d))))
+    add(build("MATERIALS", d))
+    add(_end("MATERIALS"))
+    add("")
+    add("### 2-3 成績表に載っている本数")
+    add("")
+    add(_begin("RANKING", _h(build("RANKING", d))))
+    add(build("RANKING", d))
+    add(_end("RANKING"))
+    add("")
+    add("### 2-4 いま乱数を使っている場所")
+    add("")
+    add(_begin("RANDOM", _h(build("RANDOM", d))))
+    add(build("RANDOM", d))
+    add(_end("RANDOM"))
+    add("")
+
+    add("## 3｜目標と、やらないこと")
+    add("")
+    add("### 3-1 やらないこと（1件ずつ・理由と出どころ）")
+    add("")
+    add("| # | やらないこと | 理由 | 出どころ |")
+    add("|---|---|---|---|")
+    for i, r in enumerate(d["やらないこと"], 1):
+        add(f"| {i} | {_esc(r['中身'])} | {_esc(r['理由'])} | {_esc(r['出どころ'])} |")
+    add("")
+    add("### 3-2 決めてほしいこと")
+    add("")
+    add("| # | 中身 | 私の案（決まるまでこれで進める） | 出どころ |")
+    add("|---|---|---|---|")
+    for i, r in enumerate(d.get("決めてほしいこと") or [], 1):
+        add(f"| {i} | {_esc(r['中身'])} | {_esc(r['私の案'])} | {_esc(r.get('出どころ', ''))} |")
+    add("")
+
+    add("## 4｜設計の中身")
+    add("")
+    add("### 4-1 組み方")
+    add("")
+    for x in d.get("組み方") or []:
+        add(f"- {x}")
+    add("")
+    add("### 4-2 守る法則（正本の全件・1件も落としません）")
+    add("")
+    add(_begin("LAWS", _h(build("LAWS", d))))
+    add(build("LAWS", d))
+    add(_end("LAWS"))
+    add("")
+    add("### 4-3 触る関数と、その定義の行")
+    add("")
+    add(_begin("CODEREF", _h(build("CODEREF", d))))
+    add(build("CODEREF", d))
+    add(_end("CODEREF"))
+    add("")
+
+    add("## 5｜決めたことと理由・捨てた案")
+    add("")
+    add("| # | 決めたこと | 理由 | 捨てた案 |")
+    add("|---|---|---|---|")
+    for i, r in enumerate(d.get("決めたことと理由") or [], 1):
+        add(f"| {i} | {_esc(r['決めたこと'])} | {_esc(r['理由'])} | {_esc(r['捨てた案'])} |")
+    add("")
+
+    add("## 6｜テストとリスクと見積もり")
+    add("")
+    add("### 6-1 わざと壊して止まるか試すテスト")
+    add("")
+    add(_begin("SELFTEST", _h(build("SELFTEST", d))))
+    add(build("SELFTEST", d))
+    add(_end("SELFTEST"))
+    add("")
+    add("### 6-2 リスク")
+    add("")
+    add("| # | リスク | どうするか |")
+    add("|---|---|---|")
+    for i, r in enumerate(d.get("リスク") or [], 1):
+        add(f"| {i} | {_esc(r['中身'])} | {_esc(r['どうするか'])} |")
+    add("")
+    add("### 6-3 見積もり")
+    add("")
+    add("| 何 | 見込み | 根拠 |")
+    add("|---|---|---|")
+    for r in d.get("見積もり") or []:
+        add(f"| {_esc(r['何'])} | {_esc(r['見込み'])} | {_esc(r['根拠'])} |")
+    add("")
+    add("**★どれか1つでも見込みの2倍を超えたら、そこで止めて まこさんに報告します。**")
+    add("")
+
+    add("## 7｜付録（hook が求める項目）")
+    add("")
+    add("### 7-1 深掘り4点")
+    add("")
+    add("**① 真因（root cause）**＝" + d["真因"])
+    add("")
+    add("**② 期待値分解**＝" + d["期待値分解"])
+    add("")
+    add("**③ root か symptom か**＝" + d["root か symptom か"])
+    add("")
+    add("**④ ベースアップ**＝" + d["ベースアップ"])
+    add("")
+    add("### 7-2 ★疑似シミュ由来の固定値ゼロ宣言")
+    add("")
+    add(d["固定値ゼロ宣言"])
+    add("")
+    add("### 7-3 変更の単位（H16）")
+    add("")
+    add(d["変更の単位"])
+    add("")
+    add("### 7-4 塞げないもの")
+    add("")
+    add("| 問い | 塞げないこと |")
+    add("|---|---|")
+    for r in d.get("塞げないもの") or []:
+        add(f"| **{_esc(r['問い'])}** | {_esc(r['塞げないこと'])} |")
+    add("")
+    add("### 7-5 §4.6 ハード制約の照合")
+    add("")
+    add(_begin("CHECKLIST", _h(build("CHECKLIST", d))))
+    add(build("CHECKLIST", d))
+    add(_end("CHECKLIST"))
+    add("")
+    add("### 7-6 完成の条件")
+    add("")
+    add("**★状態は全部「未着手」です。「済」にするのはプログラムです**"
+        "（承認のコマンドが壊すプログラムを走らせ、終了コードが 0 以外のときだけ済にします）。"
+        "**自分で「直った」と判定しません**（恒久の決まり64番）。"
+        "**★触る関数の一覧は、実装の後に確定させます**"
+        "＝`verify_design_contract.py --write` の出力で置き替えます。")
+    add("")
+    add(_begin("ACCEPT_TABLE", ""))
+    add(build("ACCEPT_TABLE", d))
+    add(_end("ACCEPT_TABLE"))
+    add("")
+    # ★2026-09-09（設計書 gen-acceptance-tool-20260909）＝見出しに SPEC の語を入れない。
+    #   なぜ＝突き合わせの道具（verify_design_contract.extract_block）は、見出しに語が在れば
+    #   それを目印として数え、その後ろの最初の囲みを読む。見出しに SPEC と書くと、
+    #   すぐ後ろの DESIGN_CONTRACT の囲みを SPEC として読み、齟齬 66件の誤報が出た（実測）。
+    #   ★目印は、下の単独の行（DESIGN_CONTRACT／SPEC）だけに置く。
+    add("### 7-7 プログラムが読む設定（2つ）")
+    add("")
+    add(_begin("SPEC", _h(build("SPEC", d))))
+    add(build("SPEC", d))
+    add(_end("SPEC"))
+    add("")
+    return "\n".join(L).rstrip() + "\n"
+
+
+# ══ 書く・検出する ═══════════════════════════════════════════════════
+
+def write(dry: bool = False, dest: Path = None) -> int:
+    """設計書を作る。
+
+    ★2026-09-09（設計書 gen-acceptance-tool-20260909 の §3-2 の3）
+      ＝書き出し先を差し替えられるようにした（`dest`）。
+      なぜ＝自己テストが `write()` を呼ぶので、差し替えられないと、
+      テストを走らせるたびに本物の設計書（`.claude/state/acceptance.md`）が
+      上書きされ、承認が外れてこの道具を直せなくなる（2026-09-09 に実際に起きた）。
+      ★`dest` を省くと、いままでどおり本物の設計書に書く（動きは変えていない）。
+    """
+    d = src()
+    ok, why = laws_count_ok()
+    if not ok:
+        raise SystemExit(f"[gen_acceptance] 法則の件数が合わない（{why}）＝1件も落とせません（fail-closed）")
+    body = page(d)
+    if dry:
+        print(body)
+        return 0
+    out = Path(dest) if dest else DEST
+    out.write_text(body, encoding="utf-8")
+    print(f"✅ --write 完了: {out}（{len(body.splitlines())}行・囲み {len(BLOCKS)}個）")
+    print(f"   法則の件数の照合＝{why}")
+    return 0
+
+
+def verify(dest: Path = None) -> int:
+    return 0  # わざと骨抜きにした（壊すプログラム b72）
+    return 0  # わざと骨抜きにした（壊すプログラム b72）
+    """囲みの中が、機械の書いたままかを検出する。
+
+    ★2026-09-09＝読む相手を差し替えられるようにした（`write` と対）。
+    """
+    target = Path(dest) if dest else DEST
+    if not target.exists():
+        print(f"❌ 設計書が無い: {target}")
+        return 1
+    d = src()
+    cur = target.read_text(encoding="utf-8")
+    rc = 0
+    for kind in BLOCKS:
+        if kind == "ACCEPT_TABLE":
+            continue                                  # 承認ゲートが読む目印＝hash を持たない
+        m = _begin_re(kind).search(cur)
+        e = cur.find(_end(kind))
+        if not m or e < 0:
+            print(f"❌ --verify: {kind} の囲みが無い")
+            rc = 1
+            continue
+        got = cur[cur.find("\n", m.start()) + 1: e].rstrip("\n")
+        want = build(kind, d)
+        if _h(got) != m.group(1):
+            print(f"❌ --verify: {kind} は手で書き換えられています（本文 {_h(got)} ／ 目印 {m.group(1)}）")
+            rc = 1
+        elif got.rstrip() != want.rstrip():
+            print(f"❌ --verify: {kind} は正本と食い違っています（--write で作り直してください）")
+            rc = 1
+        else:
+            print(f"✅ --verify: {kind} は機械が書いたままです（hash={m.group(1)}）")
+    ok, why = laws_count_ok()
+    print(f"{'✅' if ok else '❌'} 法則の件数の照合＝{why}")
+    rc |= 0 if ok else 1
+    return rc
+
+
+def diff_ok_before_impl(out: str) -> tuple:
+    """実物との突き合わせの結果を、実装の前の状態として見てよいかを判定する。
+
+    ★2026-09-09（設計書 gen-acceptance-tool-20260909 の §4-1 の2）
+      通すのは2通りだけ＝①齟齬が0件 ②齟齬が「設計にあるが実物に無い関数」だけ。
+      ②を通す理由＝実装の前は、設計書に書いた関数がまだ実物に無いのが正しい。
+      ★ほかの齟齬（実物にあるが設計に無い・呼ぶはずの名前が無い・定数の値が違う 等）
+        は1件でも在れば落とす＝設計書と実物の食い違いを見る検査は消していない。
+    戻り＝(通すか, 理由の文)
+    """
+    ALLOW = "設計にあるが実物に無い関数"
+    if "齟齬: 0件" in out:
+        return True, "齟齬 0件"
+    rows = [ln.strip() for ln in out.splitlines() if ln.startswith("    ") and ln.strip()]
+    if not rows:
+        return False, f"齟齬の行が読めない（{out.strip()[:100]}）"
+    other = [r for r in rows if not r.startswith(ALLOW)]
+    if other:
+        return False, f"実装の前でも通せない齟齬が {len(other)}件（{other[0][:70]}）"
+    return True, f"齟齬は「{ALLOW}」{len(rows)}件だけ＝実装の前の正しい状態"
+
+
+def selftest() -> int:
+    """わざと壊して ❌ が出るかを試す（8件）。
+
+    ★2026-09-09（設計書 gen-acceptance-tool-20260909 の §3-2 の3）
+      ＝本物の設計書（`.claude/state/acceptance.md`）には1文字も書かない。
+      控え（一時のファイル）を相手にする。
+      直す前＝T1 が `write()` を呼び、本物の設計書を上書きしていた。
+      テストを走らせるだけで承認が外れ、この道具を直せなくなる作りだった。
+    """
+    ok = 0
+    total = 0
+    orig_src = SRC.read_text(encoding="utf-8")
+    tmp = tempfile.NamedTemporaryFile(
+        mode="w", suffix="_acceptance_selftest.md", delete=False, encoding="utf-8")
+    tmp.close()
+    copy = Path(tmp.name)
+    try:
+        # T1 いまの状態で --verify が通る
+        total += 1
+        write(dest=copy)
+        if verify(dest=copy) == 0:
+            ok += 1
+            print(f"   T{total} いまの状態で --verify → pass")
+        else:
+            print(f"   T{total} いまの状態で --verify が ❌ → fail")
+
+        # T2 囲みに1行 足すと --verify が落ちる
+        total += 1
+        base = copy.read_text(encoding="utf-8")
+        m = _begin_re("LAWS").search(base)
+        copy.write_text(base[:m.end()] + "\nわざと足した1行\n" + base[m.end():], encoding="utf-8")
+        if verify(dest=copy) == 1:
+            ok += 1
+            print(f"   T{total} 囲みに1行 足すと ❌ → pass")
+        else:
+            print(f"   T{total} 1行 足しても ✅ のまま → fail")
+        copy.write_text(base, encoding="utf-8")
+
+        # T3 「やらないこと」が空だと --write が止まる
+        total += 1
+        d = json.loads(orig_src)
+        d["やらないこと"] = []
+        SRC.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+        try:
+            src()
+            print(f"   T{total} やらないことが空でも通る → fail")
+        except SystemExit:
+            ok += 1
+            print(f"   T{total} やらないことが空だと止まる → pass")
+        SRC.write_text(orig_src, encoding="utf-8")
+
+        # T4 法則を1件 減らすと件数の照合が落ちる（ファイルは書かない）
+        total += 1
+        law = _load(LAWS)
+        n = len([x for x in law["法則"] if isinstance(x, dict)])
+        rows = [ln for ln in build_laws({}).splitlines() if ln.startswith("| **")]
+        if len(rows) == n and n > 1:
+            ok += 1
+            print(f"   T{total} 法則の件数の照合が効く（{n}件を全部 並べた） → pass")
+        else:
+            print(f"   T{total} 法則の件数が合わない（法則 {n}件／表 {len(rows)}行） → fail")
+
+        # T5 正本が読めないと止まる
+        total += 1
+        try:
+            _load(RATCHET / "存在しない正本.json")
+            print(f"   T{total} 無い正本でも通る → fail")
+        except SystemExit:
+            ok += 1
+            print(f"   T{total} 無い正本で止まる → pass")
+
+        # T6 置き換えない目印が残ると止まる
+        total += 1
+        try:
+            body = "見本 {{" + "UNKNOWN}}"
+            left = sorted(set(_MARK_RE.findall(body)))
+            if left:
+                raise SystemExit("目印が残っている")
+            print(f"   T{total} 目印が残っても通る → fail")
+        except SystemExit:
+            ok += 1
+            print(f"   T{total} 目印が残ると止まる → pass")
+
+        # T7 作った設計書が、実物との突き合わせで齟齬0件
+        #   ★2026-09-09（設計書 gen-acceptance-tool-20260909 の §4-1 の2）
+        #     ＝実装の前は「設計にあるが実物に無い関数」が出るのが正しい状態。
+        #     その1種類だけの齟齬なら通す。ほかの齟齬が1件でも在れば落とす。
+        #     直す前＝齟齬が1件でも在れば落としていたので、実装の前は必ず落ちた。
+        total += 1
+        r = subprocess.run(
+            [sys.executable, str(PRIORITY / "verify_design_contract.py"), "--diff", str(copy)],
+            capture_output=True, text=True, cwd=str(SDK))
+        ok7, why7 = diff_ok_before_impl(r.stdout)
+        if ok7:
+            ok += 1
+            print(f"   T{total} 実物との突き合わせ（{why7}） → pass")
+        else:
+            print(f"   T{total} 実物との突き合わせ → fail（{why7}）")
+
+        # T8 作った設計書が、食い違いゲートを通る
+        total += 1
+        r = subprocess.run(
+            [sys.executable, str(ROOT / ".claude/hooks/enforce_design_consistency.py"),
+             "--check", str(copy)], capture_output=True, text=True)
+        if r.returncode == 0:
+            ok += 1
+            print(f"   T{total} 食い違いゲート 終了コード 0 → pass")
+        else:
+            print(f"   T{total} 食い違いゲート → fail（{r.stdout.strip()[:120]}）")
+    finally:
+        SRC.write_text(orig_src, encoding="utf-8")
+        copy.unlink(missing_ok=True)
+    print(f"\n{'✅' if ok == total else '❌'} selftest {ok}/{total} pass")
+    return 0 if ok == total else 1
+
+
+def main() -> int:
+    p = argparse.ArgumentParser()
+    p.add_argument("--write", action="store_true", help="元データと正本から設計書を作る")
+    p.add_argument("--verify", action="store_true", help="囲みの中が機械の書いたままかを検出する")
+    p.add_argument("--dry-run", action="store_true", help="書かずに画面に出す")
+    p.add_argument("--selftest", action="store_true", help="わざと壊して ❌ が出るかを試す（8件）")
+    a = p.parse_args()
+    if a.selftest:
+        return selftest()
+    if a.write:
+        return write()
+    if a.dry_run:
+        return write(dry=True)
+    if a.verify:
+        return verify()
+    p.print_help()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

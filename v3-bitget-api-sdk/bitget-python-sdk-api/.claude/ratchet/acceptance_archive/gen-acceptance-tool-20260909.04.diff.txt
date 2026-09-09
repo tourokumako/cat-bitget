@@ -1,0 +1,178 @@
+6d5
+< NEW_FILE: .claude/tools/gen_code_index.py, .claude/breaks/b75_code_index_stale.sh
+11c10,12
+< **承認の状態＝2回まで承認済み（`c0d30b8b…`・`2cc8155a…`）。この版は3回目の承認を待っています。**
+---
+> **承認の状態＝3回まで承認済み（`c0d30b8b…`・`2cc8155a…`・`386d14d8…`）。この版は4回目の承認を待っています。**
+> 
+> **★NEW_FILE の行を外しました。**3回目の承認で作る権利をいただき、`gen_code_index.py` と `b75_code_index_stale.sh` を実際に作ったためです。2本とも Read tool で開いています。
+34,39c35
+< ### 2-2 いま在るもの（走らせて数えた）
+< 
+< | ファイル | 行数 | 節の見出し（`# ══` の行）の数 |
+< |---|---|---|
+< | `engine_tuner_gen.py` | 6,310 | 22 |
+< | `engine_tuner_exec.py` | 4,968 | 14 |
+---
+> ### 2-2 作った後に走らせて出た数
+41c37,40
+< **節の見出しは既にコードに書いてあります。**例＝`# ══ 材料の候補プール ══`（190行）。
+---
+> | ファイル | 行数 | 節 | 関数とクラス |
+> |---|---|---|---|
+> | `engine_tuner_gen.py` | 6,310 | 23 | 131 |
+> | `engine_tuner_exec.py` | 4,968 | 15 | 104 |
+43c42
+< **★ただし、私が見落とした3か所には見出しがありません**（345行・640行・742行）。目次を作っても、この3か所は載りません。
+---
+> **★私が見落とした3か所は、見出しの無い区間ではありませんでした。**「材料のパラメータの範囲」という節（226行から942行）の中に在りました。**その1節に関数が33個 入っています。**節の平均は5.7個なので、この節だけが飛び抜けています。
+65c64
+< | 5 | 見出しの無い所に見出しを足すこと | まず一覧を出します。**そこに何と書くかは、まこさんに見ていただいてから決めます** |
+---
+> | 5 | 大きすぎる節（33関数）を分けること | コードのコメントを足す工事になります。**一覧を出したので、分けるかどうかは まこさんに決めていただきます** |
+71c70
+< | 1 | 目次をどこに出すか | `.claude/ratchet/code_index.md` に1本 出します。ファイルごとに表を1つ並べます |
+---
+> | 1 | 大きすぎる節を分けるか | **分けるべきだと思います。**「材料のパラメータの範囲」という名前の節に、4つの要素を検査する処理が入っています。名前から中身が読み取れません。ただしコードを触るので、別の工事にします |
+83c82
+< **関数の拾い方**＝構文の木で `def` を拾い、その行番号が節の範囲に入るかで振り分けます。**正規表現では拾いません。**
+---
+> **関数の拾い方**＝構文の木で `def` と `class` を拾い、その行番号が節の範囲に入るかで振り分けます。**正規表現では拾いません。**入れ子になった関数は数えません。
+99c98
+< **壊し方**＝目次の中の行番号を、実物と違う数字に書き換える。
+---
+> **壊し方**＝目次の中の行の範囲を、実物と違う数字に書き換える。
+108,109c107,108
+< | 2 | 節の見出しは、いまコードに在る `# ══` を使う | 既に22個と14個 在ります。新しい印を作りません | 新しい印の形を決める。捨てた理由＝既存の見出しが全部 載らなくなります |
+< | 3 | 見出しの無い所は、目次に出す | 私が見落とした3か所が、まさにここです。隠さずに出します | 見出しの無い所を飛ばす。捨てた理由＝見落とした所が目次にも出ません |
+---
+> | 2 | 節の見出しは、いまコードに在る `# ══` を使う | 既に23個と15個 在ります。新しい印を作りません | 新しい印の形を決める。捨てた理由＝既存の見出しが全部 載らなくなります |
+> | 3 | 見出しの無い所は、目次に出す | 隠さずに出します | 見出しの無い所を飛ばす。捨てた理由＝見落とした所が目次にも出ません |
+110a110
+> | 5 | 入れ子になった関数は数えない | 目次が細かくなりすぎます | 全部の `def` を拾う。捨てた理由＝表が読めなくなります |
+120c120
+< | S3 | `python3 .claude/tools/gen_code_index.py --selftest` | 全部 pass |
+---
+> | S3 | `python3 .claude/tools/gen_code_index.py --selftest` | 6件とも pass |
+128c128
+< | 2 | 見出しの無い区間が多くて、目次が役に立たない | 数を先に出します。多ければ見出しを足す工事を別に立てます |
+---
+> | 2 | 節が大きすぎて、名前から中身が読み取れない | **実際に起きています**（33関数の節）。分けるかは §3-3 で まこさんに決めていただきます |
+133,137c133,137
+< | 何 | 見込み |
+< |---|---|
+< | 目次を作るプログラム | 1時間 |
+< | 壊すプログラム1本 | 20分 |
+< | 走らせて数を出す | 20分 |
+---
+> | 何 | 見込み | 使った時間 |
+> |---|---|---|
+> | 目次を作るプログラム | 1時間 | 約40分 |
+> | 壊すプログラム1本 | 20分 | 約10分 |
+> | 走らせて数を出す | 20分 | 約10分 |
+149c149
+< **③ root か symptom か**＝root です。読み切れない量を「読んだ」と書ける状態そのものを変えます。
+---
+> **③ root か symptom か**＝root です。読み切れない量を「読んだ」と書ける状態そのものを変えます。**ただし、節が大きすぎる問題は残ります。**そこは別の工事です。
+151c151
+< **④ ベースアップ**＝外の検索は使いません。手本は同じリポジトリの実物です。この設計書を書く前に Read tool で開きました＝`.claude/tools/gen_acceptance.py`（手本）／`.claude/tools/gen_regime_kb.py`／`.claude/tools/list_banned_words.py`／`scripts/priority_rebuild/verify_design_contract.py`／`scripts/priority_rebuild/engine_tuner_gen.py` の 325〜800行・2215〜2334行・2488〜2499行／`scripts/priority_rebuild/engine_tuner_exec.py` の 1396〜1436行／`.claude/hooks/require_acceptance_before_impl.sh`・`enforce_design_consistency.py`・`require_source_read_before_acceptance.py`・`require_read_plan_before_design.py`／`.claude/breaks/lib.sh`・`b33_extra_switch_off.sh`・`b72_acceptance_handwritten.sh`・`b73_acceptance_stale_lines.sh`・`b74_skeleton_old_sections.sh`／`.claude/ratchet/acceptance_archive/tm-scope-and-g2-fingerprint-20260908.md`／`.claude/rules/acceptance_checklist.md`／`.claude/ratchet/engine_tuner_milestones.md` と `engine_tuner_milestones2.md`。読むもの宣言＝`design_read_plan.md`（まこさん OK 2026-09-09）。
+---
+> **④ ベースアップ**＝外の検索は使いません。手本は同じリポジトリの実物です。この設計書を書く前に Read tool で開きました＝`.claude/tools/gen_acceptance.py`（手本）／`.claude/tools/gen_code_index.py`（この工事で作ったもの）／`.claude/tools/gen_regime_kb.py`／`.claude/tools/list_banned_words.py`／`scripts/priority_rebuild/verify_design_contract.py`／`scripts/priority_rebuild/engine_tuner_gen.py` の 325〜800行・2215〜2334行・2488〜2499行／`scripts/priority_rebuild/engine_tuner_exec.py` の 1396〜1436行／`.claude/hooks/require_acceptance_before_impl.sh`・`enforce_design_consistency.py`・`require_source_read_before_acceptance.py`・`require_read_plan_before_design.py`／`.claude/breaks/lib.sh`・`b33_extra_switch_off.sh`・`b72_acceptance_handwritten.sh`・`b73_acceptance_stale_lines.sh`・`b74_skeleton_old_sections.sh`・`b75_code_index_stale.sh`／`.claude/ratchet/acceptance_archive/tm-scope-and-g2-fingerprint-20260908.md`／`.claude/rules/acceptance_checklist.md`／`.claude/ratchet/engine_tuner_milestones.md` と `engine_tuner_milestones2.md`。読むもの宣言＝`design_read_plan.md`（まこさん OK 2026-09-09）。
+161c161
+< **過去に取りやめた失敗の再演か**＝いいえ。**★近い型が1つあります**＝2026-09-09 に、この工事で壊すプログラムの設計を3回 間違えました。今回は壊すプログラムを1本だけにし、測る相手も1つ（`--verify` の終了コード）にします。
+---
+> **過去に取りやめた失敗の再演か**＝いいえ。**★近い型が1つあります**＝2026-09-09 に、この工事で壊すプログラムの設計を3回 間違えました。今回は壊すプログラムを1本だけにし、測る相手も1つ（`--verify` の終了コード）にしました。
+168,169c168,169
+< | **監査 Q5 の2** | 見出しの名前が中身と合っているか。**見ません。**見出しはコードに書いてある文字をそのまま写します |
+< | **監査 Q5 の3** | 見出しの無い区間に何を書くか。**私が決めません。**一覧を出して、まこさんに見ていただきます |
+---
+> | **監査 Q5 の2** | 見出しの名前が中身と合っているか。**見ません。**見出しはコードに書いてある文字をそのまま写します。**実際に合っていない節が1つ在ります**（33関数の節） |
+> | **監査 Q5 の3** | 大きすぎる節を分けるか。**私が決めません。**一覧を出したので、まこさんに決めていただきます |
+181c181
+< **★状態は全部「未着手」です。「済」にするのはプログラムです**（承認のコマンドが壊すプログラムを走らせ、終了コードが 0 以外のときだけ済にします）。**自分で「直った」と判定しません**（恒久の決まり64番）。**★触る関数の一覧は、実装の後に確定させます。**
+---
+> **★状態は全部「未着手」です。「済」にするのはプログラムです**（承認のコマンドが壊すプログラムを走らせ、終了コードが 0 以外のときだけ済にします）。**自分で「直った」と判定しません**（恒久の決まり64番）。
+203c203
+< | `b75_code_index_stale.sh` | **#4** | 目次の行番号を実物と違う数字にする | **1** |
+---
+> | `b75_code_index_stale.sh` | **#4** | 目次の行の範囲を実物と違う数字にする | **1** |
+211,215c211,223
+<   "impl_file": ".claude/tools/list_banned_words.py",
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "この工事の本体（gen_code_index.py）はこれから作る新しいファイルで、関数の名前がまだ決まっていません。実装の後に確定させます＝verify_design_contract.py --write の出力で置き替えます",
+<   "self_check_calls": ["skeleton", "checklist_items"],
+<   "must_use": {},
+---
+>   "impl_file": ".claude/tools/gen_code_index.py",
+>   "impl_functions": {
+>     ".claude/tools/gen_code_index.py": [
+>       "_h", "_esc", "read_src", "find_sections", "find_defs",
+>       "build_rows", "build_table", "build_body", "page",
+>       "write", "verify", "selftest", "main"
+>     ]
+>   },
+>   "self_check_calls": ["find_sections", "find_defs", "build_rows"],
+>   "must_use": {
+>     "build_body": ["build_table"],
+>     "page": ["build_body"]
+>   },
+219,220c227,228
+<     "impl_functions": "実装の前なので空（理由＝no_impl_functions_reason）。実装の後に確定させます",
+<     "must_use": "impl_functions が空なので空（承認ゲートの決まり）",
+---
+>     "impl_functions": "実装の後に確定させました。新しく作ったファイルなので、触った関数＝ファイルの中の全部です",
+>     "must_use": "表を作る処理と、それを束ねる処理が、実際に呼ばれているかを見ます",
+230c238
+<  "impl_file": ".claude/tools/list_banned_words.py",
+---
+>  "impl_file": ".claude/tools/gen_code_index.py",
+232,238c240,271
+<   "acceptance_target": [],
+<   "needs_group2": [],
+<   "checklist_items": [],
+<   "skeleton": [
+<    "acceptance_target",
+<    "checklist_items",
+<    "needs_group2"
+---
+>   "read_src": [],
+>   "find_sections": [],
+>   "find_defs": [],
+>   "build_rows": [
+>    "find_defs",
+>    "find_sections",
+>    "read_src"
+>   ],
+>   "build_table": [
+>    "build_rows",
+>    "read_src"
+>   ],
+>   "build_body": [
+>    "build_table"
+>   ],
+>   "page": [
+>    "build_body"
+>   ],
+>   "write": [
+>    "build_rows",
+>    "page"
+>   ],
+>   "verify": [
+>    "build_body"
+>   ],
+>   "selftest": [
+>    "build_rows",
+>    "find_defs",
+>    "find_sections",
+>    "read_src",
+>    "verify",
+>    "write"
+241,244c274,276
+<    "acceptance_target",
+<    "checklist_items",
+<    "needs_group2",
+<    "skeleton"
+---
+>    "selftest",
+>    "verify",
+>    "write"

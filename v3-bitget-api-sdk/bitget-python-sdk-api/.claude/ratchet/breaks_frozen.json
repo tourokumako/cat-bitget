@@ -64,6 +64,10 @@
  "b65_tm_badtail.sh": "1491b273556fd3b97540e95bc2ccd6c2baf1f34c4e59185703f3e7a2067cd567",
  "b66_g2_fingerprint_loose.sh": "7766b5b589aaade06be45e9c6ac5dfdf0a46e59e8ea0c956d25616817a9e9916",
  "b67_marks_time_check.sh": "d4114932fd2d52228d7706db39a090e9582aa7b97eeedee2999731e81aa60807",
+ "b72_acceptance_handwritten.sh": "7c921e7097e6fb4abe168bf1413203f7e0be9e3354abca4219fff4bb6c00762c",
+ "b73_acceptance_stale_lines.sh": "d8013bd6104af69ba1cd8045b364a0a15eed508e805d3fddaa67e06c1f13b350",
+ "b74_skeleton_old_sections.sh": "0cd7a0005f6c9f4825b0a1870c973e8b45714c62a8eb22a0449040732f096c26",
+ "b75_code_index_stale.sh": "eae485085b9dbf7134585c824173dc0b5edbff0f4fbad170d3065583b6d334e6",
  "lib.sh": "5a0a37aae9c45eee32954ed1d29d1fee6f17c1f3cd95f4fa17d1be6be20ceead",
  "_なにこれ": "承認の瞬間に凍結した、壊すプログラムのハッシュ値。run_breaks.py が走る前に照らす（監査 cp16 の E-12）"
 }

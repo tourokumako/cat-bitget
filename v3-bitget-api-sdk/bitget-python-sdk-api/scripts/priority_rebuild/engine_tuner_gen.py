@@ -2271,6 +2271,108 @@ def regime_draw_order(n: int) -> tuple[int, int, str]:
         s += 1
 
 
+def laws_for_scene(name: str) -> dict:
+    """その場面に掛かる相場の法則を読み、組む側が使う形にまとめる（M2-E-2・2026-09-10）。
+
+    ★まこさんの指示（逐語 2026-08-24）＝「指標、閾値、パラメータ、時間足の役割に基づき、
+      法則に則って４つを組み合わせ、Entry/Exit やレジーム判定などの条件を作る」。
+      （逐語 2026-09-09）＝「法則に則って組めって１００回くらい言ってるのに、
+      どうしてもそのとおりにやろうとしないよな」。
+    ★直す前＝この関数は無く、`sample_regime_build` は法則を1つも読まずに、
+      コードに直書きした3つの条件で組んでいた（2303行の逐語「読んだ法則から組むのは M2-E
+      ＝ここではまだ使わない」）。だから法則を書き替えても組まれる束が変わらず、
+      落とす側（G7）が後から落としていた（実測 2026-09-09＝20回 引き直して通った束は0本）。
+
+    戻り＝{"forms": {形の名前}, "counts": [(法則の番号, 数える部品, 本数)], "no_dup": [(除く系統, 上限)]}
+      forms  ＝「形を持つ」の法則が求める形（hysteresis・not・streak）
+      counts ＝「部品を数える」の法則（数える条件と、要る本数）
+      no_dup ＝「系統を重ねない」の法則（除く系統と、上限）
+
+    ★数字も名前もこの関数に書かない＝全部 `regime_laws.json` から読む。
+    """
+    out: dict = {"forms": set(), "counts": [], "no_dup": []}
+    for law in ex.load_regime_laws():
+        j = law["判定"]
+        if name not in j.get("掛かる場面", []):
+            continue
+        typ = j.get("型")
+        if typ == "形を持つ":
+            out["forms"].add(str(j["形"]))
+        elif typ == "系統を重ねない":
+            out["no_dup"].append((tuple(j.get("除く系統") or []), int(j["上限"])))
+        else:
+            out["counts"].append((str(law["番号"]), dict(j["数える部品"]), int(j["本数"])))
+    if not out["forms"] and not out["counts"]:
+        raise SampleError(f"場面 {name} に掛かる相場の法則が1件も無い（regime_laws.json・fail-closed）")
+    return out
+
+
+def _law_families(laws: dict, no: str) -> tuple:
+    """その法則が名指ししている family と、名前ごとの側を取り出す（M2-E-2）。
+
+    戻り＝(family の並び, {family: 側}）。名指ししていなければ (空, 空)。
+    ★一覧をこの関数に書かない＝法則ファイルの「数える部品」から取る。
+    """
+    for num, sel, _n in laws["counts"]:
+        if num != no:
+            continue
+        return tuple(sel.get("family") or []), dict(sel.get("側") or {})
+    return (), {}
+
+
+def _law_geo(laws: dict, no: str) -> tuple:
+    """その法則が名指ししている geo と、名前ごとの側を取り出す（M2-E-2）。戻り＝(geo の並び, {geo: 側})。"""
+    for num, sel, _n in laws["counts"]:
+        if num != no:
+            continue
+        g = sel.get("geo")
+        g = () if g in (None, "any") else tuple(g)
+        return g, dict(sel.get("側") or {})
+    return (), {}
+
+
+def _material_for_law(rng, role, fams, rank_pos: int, tfs, table, label=None, tf_ok=None,
+                      ranges: dict | None = None) -> tuple[dict, dict]:
+    """法則が名指しした family の中から、成績表の順位の上から rank_pos 番目を取る（M2-E-2）。
+
+    ★`_ranked_material_at` との違い＝あちらは役割の全部から順位を数える。こちらは
+      **法則が名指しした family だけ**を数える。だから法則を書き替えると、選ばれる材料が変わる。
+    ★私（CC）が名前を選ばない＝名前の一覧は法則ファイルから来る。順位は成績表から来る。
+    ★fams が空なら `_ranked_material_at` と同じ（役割の全部から取る）。
+    戻り＝(材料, 記録)。足りなければ SampleError。
+    """
+    rr = table["roles"][role]
+    ok_tfs = set(tf_ok if tf_ok is not None else _role_tfs(tfs, table, role))
+    ranges = ranges if ranges is not None else material_ranges()
+    want = set(fams or ())
+    n = 0
+    for fam, tf, lab, hor, med, ncol, col in ranked_groups(role, label):
+        if want and fam not in want:                     # ★法則が名指しした family だけを数える
+            continue
+        if tf not in ok_tfs or fam not in iref.FAMILY_LINEAGE or fam not in ranges:
+            continue
+        if iref.FAMILY_LINEAGE[fam]["k"] not in rr["lineages"]:
+            continue
+        if not _group_usable(fam, tf, ranges, table):
+            continue
+        n += 1
+        if n != int(rank_pos):
+            continue
+        m = None
+        for _try in range(10):
+            cand = _mat_drawn(rng, fam, tf, ranges, table=table)
+            if not _banned_pair(cand, table):
+                m = cand
+                break
+        if m is None:
+            raise SampleError(f"{role} の {rank_pos} 位（{fam}×{tf}）で、範囲から引いた数字が10回とも禁止3（標本不足）")
+        return m, {"rank": int(rank_pos), "col": col, "種類": fam, "時間足": tf, "label": lab,
+                   "horizon": hor, "分離力": med, "列の本数": int(ncol),
+                   "法則が名指しした family": sorted(want) if want else "（名指し無し＝役割の全部）"}
+    raise SampleError(f"{role}/{label or '全ラベル'} の順位に {rank_pos} 位が無い"
+                      f"（使える候補 {n} 本・法則が名指しした family＝{sorted(want) if want else '無し'}）")
+
+
 def _flip_loose(rng, limits, c: dict) -> dict:
     """水準の条件を「緩い側へずらして反転」した条件＝出る線（off）の部品（法則 C6 の②）。
     above q → below q'（q' < q）／ below q → above q'（q' > q）。"""
@@ -2299,35 +2401,75 @@ def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: in
     """
     if name != "range":
         raise SampleError(f"場面 {name} の束の組み方は未定義（レンジ以外は M2-6〜M2-8 で作る）")
-    ex.load_regime_laws()                               # 相場の法則の正本が読めることを確かめる（fail-closed・
-    #   M2-B0・2026-08-30。読んだ法則から組むのは M2-E＝ここではまだ使わない）
+    # ★M2-E-2（2026-09-10）＝相場の法則を **読んで** 組む。直す前は読めることを確かめるだけだった。
+    laws = laws_for_scene(name)
+    draw: dict = {"order_n": int(order_n),
+                  "法則から組んだ": {"形": sorted(laws["forms"]),
+                                     "数える法則": [n for n, _s, _c in laws["counts"]],
+                                     "重ねない法則": len(laws["no_dup"])}}
     tfs_all = list(table["tfs"])
-    upper = [t for t in tfs_all if tfs_all.index(t) > tfs_all.index("5m")]      # 執行足より上（K-2）
+    upper = [t for t in tfs_all if tfs_all.index(t) > tfs_all.index("5m")]      # 執行足より上（C4・R3）
     r_b, r_c, side_b = regime_draw_order(order_n)
-    draw: dict = {"order_n": int(order_n)}
-    # A 帯の幅（K-6・R7）＝geo W% が分位より上
-    cond_a = {"role": "location", "form": "level", "material": [{"geo": "W%"}],
-              "side": "above", "value": _thr_drawn(rng, limits)}
-    # B 構造・位置（K-4・R1）＝location の成績表（種類×時間足の中央値）の r_b 位・向きは order_n で決まる
-    #   ★数字は _ranked_material_at の中の _mat_drawn が範囲から引く（決定 (a')・78番の直し）
+    # ── A 帯の幅（R7）＝法則が名指しした geo を、法則が決めた側で ──
+    geo_names, geo_side = _law_geo(laws, "R7")
+    if not geo_names:
+        raise SampleError("R7 が geo を名指ししていない（regime_laws.json・fail-closed）")
+    g0 = geo_names[0]
+    cond_a = {"role": "location", "form": "level", "material": [{"geo": g0}],
+              "side": geo_side.get(g0, "above"), "value": _thr_drawn(rng, limits)}
+    draw["A"] = {"geo": g0, "側": cond_a["side"], "法則": "R7"}
+    # ── B 構造・位置（R1・R3）＝location の成績表の r_b 位・向きは order_n で決まる ──
     m_b, draw["B"] = _ranked_material_at(rng, "location", r_b, tfs, table)
     if pre_b is not None:                               # ★2026-09-05（M2-C-4）＝前処理の道（既定は通らない）
         m_b = {**m_b, "pre": dict(pre_b)}
         draw["B_pre"] = dict(pre_b)
     cond_b = {"role": "location", "form": "level", "material": [m_b],
               "side": side_b, "value": _thr_drawn(rng, limits)}
-    # C 非トレンド（K-5・R8・R5）＝env「強さ」の r_c 位・時間足は 5m より上（D・K-2）
-    m_c, draw["C"] = _ranked_material_at(rng, "env", r_c, tfs, table, label="強さ",
-                                         tf_ok=[t for t in _role_tfs(tfs, table, "env") if t in upper])
+    # ── C 非トレンド（R5・R8）＝法則 R5 が名指しした family の中から、成績表の r_c 位 ──
+    #    ★直す前＝env の全部から r_c 位を取っていた（法則が名指しした8種を見ていない）。
+    fams_r5, side_r5 = _law_families(laws, "R5")
+    m_c, draw["C"] = _material_for_law(rng, "env", fams_r5, r_c, tfs, table, label="強さ",
+                                       tf_ok=[t for t in _role_tfs(tfs, table, "env") if t in upper])
+    # ★側も法則から取る＝R5 は family ごとに above／below を持つ。not で包むので、
+    #   入る線は「法則が言う側の逆」を否定する形にする（法則が below と言うなら above を not）。
+    want_side = side_r5.get(draw["C"]["種類"], "below")
+    strong_side = "above" if want_side == "below" else "below"
     strong = {"role": "env", "form": "level", "material": [m_c],
-              "side": "above", "value": _thr_drawn(rng, limits)}
+              "side": strong_side, "value": _thr_drawn(rng, limits)}
     cond_c = {"not": strong}
-    # E 状態を保つ（K-3・C6・C7・R4）＝on＝A∩B∩C／off＝それぞれを緩い側へずらした any／n は範囲
+    draw["C"]["法則の側"] = want_side
+    draw["C"]["not で包む側"] = strong_side
+    # ── G 低ボラ（R6）＝★M2-E-2 で新しく足した。§2.2 の段2c に当たる ──
+    #    ★法則 R6 が名指しした family（BB幅・SQZ_ON・Donchian幅・ATR%・realized_vol・stdev%）から、
+    #      成績表の順位の上から1本 取る。側も法則が family ごとに持つ（below／above）。
+    #    ★役割は sufficiency（値動きの大きさ）＝型の表の系統「ボラ」がここに入る。
+    cond_g = None
+    fams_r6, side_r6 = _law_families(laws, "R6")
+    if fams_r6:
+        m_g, draw["G"] = _material_for_law(rng, "sufficiency", fams_r6, 1, tfs, table)
+        cond_g = {"role": "sufficiency", "form": "level", "material": [m_g],
+                  "side": side_r6.get(draw["G"]["種類"], "below"), "value": _thr_drawn(rng, limits)}
+        draw["G"]["法則"] = "R6"
+        draw["G"]["側"] = cond_g["side"]
+    # ── F 何本 続いたか（R4）＝★M2-E-2 で新しく足した。直す前は無く、20回とも R4 で落ちていた ──
+    cond_f = None
+    if "streak" in laws["forms"]:
+        cond_f = {"role": "location", "form": "streak",
+                  "value": _nv(rng, limits, "int_range", "n", as_int=True),
+                  "inner": json.loads(json.dumps(cond_b))}
+        draw["F"] = {"形": "streak", "法則": "R4", "本数": cond_f["value"].get("n")}
+    # ── E 状態を保つ（C6・C7）＝on＝A∩B∩C（∩F）／off＝それぞれを緩い側へずらした any ──
     off_c = json.loads(json.dumps(strong))
-    off_c["value"]["threshold_q"] = _loose_q(rng, limits, strong["value"]["threshold_q"], "below")
-    # ↑ 「強さが上の線を超えたら解除」＝入る線（on の not の閾値）より上の分位＝below の緩め方と同じ向き
+    off_c["value"]["threshold_q"] = _loose_q(rng, limits, strong["value"]["threshold_q"], strong_side)
+    on_all = ([cond_a, cond_b, cond_c]
+              + ([cond_g] if cond_g is not None else [])
+              + ([cond_f] if cond_f is not None else []))
+    if "hysteresis" not in laws["forms"]:
+        raise SampleError("C6（hysteresis の形）が法則に無い（regime_laws.json・fail-closed）")
+    if "not" not in laws["forms"]:
+        raise SampleError("R8（not の形）が法則に無い（regime_laws.json・fail-closed）")
     hyst = {"form": "hysteresis",
-            "on": {"all": [cond_a, cond_b, cond_c]},
+            "on": {"all": on_all},
             "off": {"any": [_flip_loose(rng, limits, cond_a), _flip_loose(rng, limits, cond_b), off_c]},
             "value": _nv(rng, limits, "state_hold_bars_range", "n", as_int=True)}
     build = {"entry": {"out_col": REGIME_OUT_COL[name], "tree": {"all": [hyst]}}, "block": None}

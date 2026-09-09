@@ -1,0 +1,20 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ ".claude/tools/gen_code_index.py": [
+  "_h",
+  "_esc",
+  "read_src",
+  "find_sections",
+  "find_defs",
+  "build_rows",
+  "build_table",
+  "build_body",
+  "page",
+  "write",
+  "verify",
+  "selftest",
+  "main"
+ ]
+}

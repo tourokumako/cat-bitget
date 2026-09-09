@@ -649,7 +649,19 @@
       "説明": "具体的には4つ。①ADX が 20 未満（トレンドなし）②CHOP が 61.8 超（CHOP＝値動きのゴチャゴチャ度。1本ずつの値動きの合計 ÷ n本ぜんぶで動いた幅（最高値−最安値）。高いほど行ったり来たり＝横ばい）③ER が低い（ER＝まっすぐ進んだ距離 ÷ 実際に歩いた距離。低いほど行ったり来たり）④MMI が高い（MMI＝値動きがランダムに近いかの割合。高いほどレンジ寄り）。",
       "出どころ": "この KB §3-A",
       "注意": [
-        "★数字は目安＝範囲で探す（C9）。"
+        "★数字は目安＝範囲で探す（C9）。",
+        "★2026-09-09（まこさん決定「それで書いてよいが、証拠として、引用も書いておいて」）＝数える指標を4つ（ADX・CHOP・ER・VHF）から8つに広げた。直す前の4つは CC が M2-B-2b（2026-08-30）で名指ししたもので、法則の一文は指標の名前を決めていなかった（まこさん指摘 2026-09-09「お前が法則を決めるな」）。8つの根拠＝下の「根拠」。",
+        "★DI差・MACDヒスト%・EMA傾き の3つは符号が向きを表す。この法則で数えるのは絶対値（§2.2 段2a のとおり）。★2026-09-09 時点で、材料の前処理に絶対値は無い（engine_tuner_exec.MATERIAL_PRE＝ts_max・ts_min・ts_rank・ts_std・since_min・since_max・at_entry）。絶対値の前処理を足すまで、この3つを below で数えると「負の側＝下げトレンド」まで数えてしまう＝案を組む側は、絶対値の前処理を付けた材料でだけ この3つを使うこと（M2-E-3 で前処理を足す）。"
+      ],
+      "根拠": [
+        {"指標": "ADX", "出どころ": "StockCharts ChartSchool「Average Directional Index (ADX)」https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx（2026-09-09 に本文を開いた）", "逐語": "Wilder suggests that a strong trend is present when ADX is above 25 and no trend is present when ADX is below 20."},
+        {"指標": "DI差（絶対値）", "出どころ": "同上（DX の式）と Fidelity「ADX」https://www.fidelity.com/learning-center/trading-investing/technical-analysis/technical-indicator-guide/adx", "逐語": "The Directional Movement Index (DX) equals the absolute value of +DI14 less -DI14 divided by the sum of +DI14 and -DI14.／ADX is derived from the smoothed averages of the difference between +DI and -DI／Whereas the ADX line determines the strength of the trend, the 2 DMI lines complement the ADX line by helping determine the trend's direction.", "読み": "|+DI − −DI| は ADX の平滑する前の中身＝強さ。符号は向き。"},
+        {"指標": "CHOP", "出どころ": "TradingView 公式ヘルプ「Choppiness Index (CHOP)」https://www.tradingview.com/support/solutions/43000501980-choppiness-index-chop/", "逐語": "An indicator designed to determine if the market is choppy (trading sideways) or not choppy (trading within a trend in either direction).", "読み": "0〜100。61.8 より上＝choppy・38.2 より下＝trending。"},
+        {"指標": "ER", "出どころ": "TradingView スクリプト「Kaufman Efficiency Ratio (KER)」https://www.tradingview.com/script/7imltc5K-Kaufman-Efficiency-Ratio-KER/", "逐語": "the closer the ER is to 1, the stronger and more efficient the trend is perceived to be.", "読み": "0 に近い＝choppy／range-bound。"},
+        {"指標": "VHF", "出どころ": "TradingView スクリプト「Vertical Horizontal Filter」（HPotter・出典 Adam White, Futures 1991-08）https://www.tradingview.com/script/vxDUyXoa-Vertical-Horizontal-Filter/", "逐語": "prices are trending in a particular direction or are they going through a transitional period.", "読み": "trending phase と congestion phase を分ける。低い＝congestion。"},
+        {"指標": "MACDヒスト%（絶対値）", "出どころ": "StockCharts ChartSchool「MACD-Histogram」https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/macd-histogram", "逐語": "The MACD-Histogram measures the distance between the Moving Average Convergence/Divergence (MACD) and its signal line (the 9-day EMA of MACD).", "読み": "ヒストグラムの拡大＝momentum が強い・縮小＝弱い（同ページ）。絶対値が小さい＝勢いが無い。"},
+        {"指標": "EMA傾き（絶対値）", "出どころ": "StockCharts ChartSchool「Slope」https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/slope／TradingView スクリプト「Simple Moving Average Slope」https://www.tradingview.com/script/CMitPGXF-Simple-Moving-Average-Slope-AstrideUnicorn/", "逐語": "can measure the direction and strength of a trend／When the normalized slope falls between the positive and negative threshold values, a neutral signal is generated, indicating that the market is moving sideways.", "読み": "絶対値が小さい＝横ばい。★出どころは教科書級ではない（ChartSchool の Slope は線形回帰の傾き・もう1つはスクリプトの説明）。"},
+        {"指標": "MMI", "出どころ": "The Financial Hacker「The Market Meanness Index」（作者の本文）https://financial-hacker.com/the-market-meanness-index/", "逐語": "If the MMI function is fed with perfectly random price changes from a perfectly efficient market, it will return a value of about 75%.／A rising MMI alone is no promise of profit by cycle trading systems.", "読み": "上がる＝平均回帰が強まる（トレンド系に不利）。★限界＝平均回帰と単なるランダムを区別しない（作者が明記）。"}
       ],
       "機械が読む判定": {
         "掛かる場面": [
@@ -659,15 +671,23 @@
         "数える部品": {
           "family": [
             "ADX",
+            "DI差",
             "CHOP",
             "ER",
-            "VHF"
+            "VHF",
+            "MACDヒスト%",
+            "EMA傾き",
+            "MMI"
           ],
           "側": {
             "ADX": "below",
+            "DI差": "below",
             "CHOP": "above",
             "ER": "below",
-            "VHF": "below"
+            "VHF": "below",
+            "MACDヒスト%": "below",
+            "EMA傾き": "below",
+            "MMI": "above"
           }
         },
         "本数": 1
@@ -685,7 +705,14 @@
       "注意": [
         "逐語＝\"A Bollinger Band Squeeze is a condition that occurs when the Bollinger Bands narrow due to decreased volatility.\"／\"Note that narrowing bands do not provide any directional clues.\"（2026-09-01 に本文を開いた）。",
         "★スクイーズは大きな動きの前触れでもある（逐語 \"can foreshadow a significant advance or decline\"）＝レンジの終わりの接近と同じ現象。",
-        "★役割＝レンジ検出の入力（低ボラ＝レンジ寄り）。R10（検出の後の下位分類）とは役割が違う（監査 CP11 Q3）。"
+        "★役割＝レンジ検出の入力（低ボラ＝レンジ寄り）。R10（検出の後の下位分類）とは役割が違う（監査 CP11 Q3）。",
+        "★2026-09-09（まこさん決定「それで書いてよいが、証拠として、引用も書いておいて」）＝数える指標を6つにした（BB幅・SQZ_ON・Donchian幅・ATR%・realized_vol・stdev%）。外した2つ（HWC幅%・SQZPRO_ON_NARROW）は、2026-09-09 の Web 検索で出どころを取れなかった（出どころが取れたら まこさんに出して決めてもらう）。★BB幅は stdev の別の書き方（BB幅＝4σ÷中心線）＝同じ系統を2本 数えない決まり（R2）に当たる。"
+      ],
+      "根拠": [
+        {"指標": "BB幅", "出どころ": "StockCharts ChartSchool「Bollinger BandWidth」https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/bollinger-bandwidth ／「Bollinger Band Squeeze」（上の出どころ）（2026-09-09 に本文を開いた）", "逐語": "( (Upper Band - Lower Band) / Middle Band) * 100／This occurs when volatility falls to a low level, as evidenced by the narrowing bands.／The bands narrow as price flattens or moves within a relatively narrow range.／Ideally, BandWidth should be near the low end of its six-month range.", "読み": "低い＝低ボラ。閾値の目安は「過去の範囲の下の方」＝分位で書く形と合う。"},
+        {"指標": "SQZ_ON", "出どころ": "StockCharts ChartSchool「TTM Squeeze」https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/ttm-squeeze", "逐語": "the Bollinger Bands are completely enclosed within the Keltner Channels, it indicates a low volatility period.", "読み": "既定＝BB 20・2σ／Keltner 20・1.5ATR。オン＝低ボラ。"},
+        {"指標": "Donchian幅", "出どころ": "TradingView スクリプト「Donchian Volatility Indicator - Adaptive Channel Width」（LeafAlgo）https://www.tradingview.com/script/UYVkIXD3-Donchian-Volatility-Indicator-Adaptive-Channel-Width/", "逐語": "a narrower channel suggests lower volatility", "読み": "低い＝低ボラ。★出どころはスクリプトの説明＝教科書級ではない。"},
+        {"指標": "ATR%・realized_vol・stdev%", "出どころ": "定義そのもの（ATR＝平均の値幅・realized_vol＝実現ボラ・stdev＝ばらつき）。TTM Squeeze の Keltner が ATR を使う（上の逐語）", "逐語": "（定義）", "読み": "低い＝低ボラ。★BB幅と stdev% は同じもの（R2 で1本まで）。"}
       ],
       "機械が読む判定": {
         "掛かる場面": [
@@ -695,17 +722,19 @@
         "数える部品": {
           "family": [
             "BB幅",
-            "Donchian幅",
-            "HWC幅%",
             "SQZ_ON",
-            "SQZPRO_ON_NARROW"
+            "Donchian幅",
+            "ATR%",
+            "realized_vol",
+            "stdev%"
           ],
           "側": {
             "BB幅": "below",
-            "Donchian幅": "below",
-            "HWC幅%": "below",
             "SQZ_ON": "above",
-            "SQZPRO_ON_NARROW": "above"
+            "Donchian幅": "below",
+            "ATR%": "below",
+            "realized_vol": "below",
+            "stdev%": "below"
           }
         },
         "本数": 1
@@ -725,6 +754,10 @@
         "★出どころの数字の訂正（2026-08-27・監査 第4要素 Q3-3 の指摘）＝手数料の床 `SCALP_FLOOR` は 0.08%（`e38_logic_parts.py:23`＝`e37.SCALP_FLOOR`）。一例の「幅≥0.4%」の実体は `V11_ZONE_MIN_W = 0.004`（`e37_scalp.py:124`・a-priori の値）で、0.08% の5倍。直す前は「SCALP_FLOOR が 0.4% の根拠」と読める書き方だったが、数字が合わない。",
         "★もう1つの穴＝「幅」の測り方が2つ在る（判定＝帯の内側の隙間が `V11_ZONE_MIN_W` 以上（`e37_scalp.py:479`）／engine_tuner の条件＝全幅 (res_hi−sup_lo)/close＝W%＝`wpct_arr`（`engine_tuner_exec.py:2568`））。この相場の法則はどちらを指すかを定めていない（11-7 の穴6）。★行参照の直し（監査 CP11 E2・2026-09-01）＝直す前は 2247行 を指していたが、行ドリフトで W% の式ではない行になっていた。★2回目の直し（2026-09-07・next_step §6 の155番）＝2464行 も行ドリフトで外れたので 2568行 にした（実測＝grep -n 'wpct_arr' scripts/priority_rebuild/engine_tuner_exec.py が 2568行と 2570行の2件）。同じずれが2回 起きている＝根っこは §6 の93番（行番号を人が手で写している）。"
       ],
+      "根拠": [
+        {"材料": "geo W%（レンジ幾何の全幅）", "出どころ": "算数＝net は幅から往復のコスト（maker 0.014%×2＝`eval_engine` の定数・H4）を引いたもの。スキャルのコストの注意＝TradingView News（ForexLive）「What Are Spreads and Why Low Spreads Matter」https://www.tradingview.com/news/forexlive:6c9d7f5a5094b:0-what-are-spreads-and-why-low-spreads-matter-beginner-guide/（2026-09-09 に本文を開いた）", "逐語": "Scalpers make many trades daily, often targeting just a few pips of profit. Low spreads are crucial; even a 1-pip difference can determine if their strategy is successful.", "読み": "★「帯の幅が往復の手数料を超える」を法則として書いた外部の文献は見つからなかった（Fidelity「What Is Range Trading?」も幅と手数料の関係は書いていない）。帯の幅そのものを測る材料は geo W% だけ。"},
+        {"外したもの": "BB幅・Donchian幅・HWC幅%", "理由": "2026-09-09（まこさん決定）＝これらは値動きの幅であって帯の幅ではない。R7 に入れたのは CC の判断で、根拠が弱かった。"}
+      ],
       "機械が読む判定": {
         "掛かる場面": [
           "range"
@@ -734,15 +767,7 @@
           "geo": [
             "W%"
           ],
-          "family": [
-            "BB幅",
-            "Donchian幅",
-            "HWC幅%"
-          ],
           "側": {
-            "BB幅": "above",
-            "Donchian幅": "above",
-            "HWC幅%": "above",
             "W%": "above"
           }
         },

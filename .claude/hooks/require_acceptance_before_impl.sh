@@ -98,8 +98,32 @@ _RUN_TOK_J = ('eval', 'xargs', 'source', '.', 'bash', 'sh', 'zsh', 'ksh', 'csh',
 #     （同 .py の 39-40行 NEXT・ARCHIVE）。読むのは h2_pass.json・g2_pass.json（読むだけ）。
 #     ＝承認の記録にも凍結の記録にも触らない（gen_regime_kb.py を足した理由と同じ）。
 #   hook の直しは承認不要（まこさん指示 2026-09-06「hookの修正ごときで承認いれるな」）。
+#   ★2026-09-09（まこさん指示「手で書かざるを得ない部分以外は自動生成にしろ」・恒久69番）
+#     ＝gen_acceptance.py を足した。engine_tuner の設計書を、元データと正本から組み立てる道具。
+#   通してよい理由＝この道具が書くのは .claude/state/acceptance.md（設計書＝文書）1本だけ。
+#     読むのは acceptance_src.json・indicator_switch.json・regime_laws.json・signal_families.json・
+#     material_ranking.json・search_limits.json・実物の .py（どれも読むだけ）。
+#     ＝承認の記録（acceptance.approved・design_approved.json）にも、凍結の記録
+#       （impl_functions_frozen.json・breaks_frozen.json・<iter>.frozen.json）にも触らない
+#       （gen_regime_kb.py・tidy_next_step.py を足した理由と同じ）。
+#   ★設計書そのものは、書いた後に承認が要る（approve_impl.sh）＝この道具を通しても、
+#     承認を飛ばせるようにはならない。
+# ★2026-09-09＝gen_code_index.py を足した（設計書 gen-acceptance-tool-20260909・承認 386d14d8…）。
+#   何をする道具か＝大きなプログラム（engine_tuner_gen.py 6,310行ほか）の目次を、
+#   コードの節の見出しと構文の木から作る。書き出す先は .claude/ratchet/code_index.md の1本だけ。
+#   なぜ通してよいか＝①承認の印にも凍結の記録にも1バイトも書かない
+#     ②書き出す相手は目次の文書だけで、hook・道具・戦略の .py を1行も書かない
+#     ③読む相手はコードのファイル（読み取りだけ）。
+#   ★まこさん指示 2026-09-09（逐語）＝「長くて読むのがだるいなら、メニューつけて、
+#     必要な箇所だけ読めるようにしたら？」。
 _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.py', 'gen_regime_kb.py',
-              'tidy_next_step.py')
+              'tidy_next_step.py', 'gen_acceptance.py', 'gen_code_index.py',
+              # ★2026-09-09＝§2.2 の候補と成績表を突き合わせる道具（まこさん指示「その突き合わせを作る。」）。
+              #   書き出す先は stage0_match.md の1本だけ。承認の印にも凍結の記録にも触らない。
+              'gen_stage0_match.py',
+              # ★2026-09-10＝§2.2 の段0 の②＝1列と1組の時間を実測する道具。
+              #   書き出す先は stage0_timing.md の1本だけ。売買は1件も回さない（net はゼロ）。
+              'gen_stage0_timing.py')
 _RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')
@@ -618,6 +642,58 @@ case "$FILE" in
   */.claude/audits/inputs/_*.md)
     # 依頼書の元になるファイル（先頭が _）＝この2つのゲートの相手にしない
     : ;;
+  */.claude/audits/inputs/*_design_*_audit_request.md)
+    # ★2026-09-09（まこさん決定・逐語「WEBClaudeに設計書が正しいかのチェックは無理なので、監査に出す。
+    #   （略）今後も設計書チェックは監査にする」→ 道の選択「判断はBにする」）
+    #   ＝「設計書のチェックの依頼書」（名前に _design_ を含む）は、承認の前に出すもの。
+    #   承認の印（acceptance.approved）とは必ず食い違うので、代わりに
+    #   「依頼書の中に書いた設計書のハッシュ値 ＝ いまの設計書」を照らす。
+    #   守りの狙い（監査 cp14 の P-5＝承認の後に設計書を書き換えて監査に出す型を止める）は、
+    #   「監査が読む設計書が、依頼した時の版と同じか」で担保する（設計書を1文字でも変えたら、
+    #   依頼書のハッシュ値を書き直さない限り依頼書を書けない／依頼書は書けても設計書とずれたままには
+    #   できない＝依頼書の行を見れば分かる）。
+    #   ★書き方＝依頼書に「設計書のハッシュ値: <sha256>」の行を1つ置く（Write の中身から読む。
+    #     Edit のときはディスクの実物から読む）。監査の前のチェック（下の pre_audit_check）はそのまま掛ける。
+    #   ★番人＝実走で確かめる（違うハッシュ値の依頼書を Write すると止まり、正しい値なら通る＝2026-09-09 の
+    #     worklog §66 に実測を書く）。壊すプログラムは承認が要るので、この直しでは作らない。
+    NOWSHA=$(shasum -a 256 "$LIST" 2>/dev/null | awk '{print $1}')
+    DECL=$(printf '%s' "$INPUT" | python3 -c "
+import sys, json, re, os
+d = json.load(sys.stdin)
+ti = d.get('tool_input', {}) or {}
+body = ti.get('content')
+if not isinstance(body, str):
+    # Edit＝new_string にハッシュ値の行が在ればそれを見る（依頼書の値を直す Edit を通すため）。無ければ実物
+    ns = ti.get('new_string')
+    if isinstance(ns, str) and re.search(r'設計書のハッシュ値[:：]', ns):
+        body = ns
+if not isinstance(body, str):
+    p = ti.get('file_path', '') or ''
+    try:
+        body = open(p, encoding='utf-8', errors='ignore').read()
+    except Exception:
+        body = ''
+m = re.search(r'設計書のハッシュ値[:：]\s*\`?([0-9a-f]{64})', body)
+print(m.group(1) if m else '')
+" 2>/dev/null)
+    if [ -z "$DECL" ] || [ "$DECL" != "$NOWSHA" ]; then
+      echo "🔒 [監査依頼書ゲート・設計書のチェック] 依頼書に書いた設計書のハッシュ値が、いまの設計書と合いません（2026-09-09・まこさん決定 B）。" >&2
+      echo "   依頼書の値: ${DECL:0:16}… ／ いまの設計書: ${NOWSHA:0:16}…" >&2
+      echo "   ＝監査が読む設計書は、依頼した時の版と同じでなければなりません（監査 cp14 の P-5 と同じ狙い）。" >&2
+      echo "   対処＝依頼書に「設計書のハッシュ値: $(shasum -a 256 "$LIST" 2>/dev/null | awk '{print $1}')」の行を書いてから、書き直してください。" >&2
+      exit 2
+    fi
+    PAC="$REPO/.claude/tools/pre_audit_check.py"
+    if [ -f "$PAC" ]; then
+      PAC_OUT=$(python3 "$PAC" --verify 2>&1)
+      if [ $? -ne 0 ]; then
+        echo "🔒 [監査に出す前のチェック] 通していないので、依頼書を作れません（2026-09-06・まこさん指示）。" >&2
+        printf '%s\n' "$PAC_OUT" | sed 's/^/   /' >&2
+        echo "   対処＝ python3 .claude/tools/pre_audit_check.py --run を打ち、全部 rc=0 にしてから依頼書を書く。" >&2
+        exit 2
+      fi
+    fi
+    ;;
   */.claude/audits/inputs/*.md)
     NOWSHA=$(shasum -a 256 "$LIST" 2>/dev/null | awk '{print $1}')
     WANTSHA=$(cat "$APPROVED" 2>/dev/null)
@@ -717,8 +793,24 @@ esac
 #     残るもの＝Bash で hook を書く道は土台ゲート（上の GATE_RE）で今までどおり止まる／
 #       サブエージェントは上の case で今までどおり書けない／差分は会話と git diff に出る。
 #     失うもの＝CC が hook を黙って弱める道を、プログラムでは止められない（まこさんの目と git diff）。
+#   ★2026-09-09（まこさん指示・逐語「今回のような小規模なインフラ整備では設計書も必要ないよね？」
+#     → 私の案「売買のロジックに触るもの（scripts/priority_rebuild/*.py）は、いままでどおり
+#       設計書と承認を求めます。読むための道具と文書を作る道具は、設計書を求めない形にします」
+#     → まこさん「それでOK」）
+#     ＝**文書を作るだけの道具（.claude/tools/gen_*.py）を、この承認ゲートの相手から外した。**
+#     なぜ＝規模を見ずに一律で設計書と承認を求めていたので、目次を作る道具1本に承認が4回 要った
+#       （2026-09-09 の実測）。目次は読むための表で、net に1円も関わらない。
+#     ★外すのは `gen_` で始まる .py だけ＝書き出す先が文書（.md／.json）に限られるもの。
+#       それ以外の .claude/tools/*.py（run_breaks.py・pre_audit_check.py・tidy_next_step.py・
+#       list_banned_words.py ほか＝承認や凍結の配管に触るもの）は、いままでどおり承認が要る。
+#     ★売買のロジック（scripts/priority_rebuild/*.py）と壊すプログラム（.claude/breaks/*.sh）は
+#       1文字も緩めていない。
+#     失うもの（正直に）＝CC が gen_*.py という名前で、文書以外を書く道具を作る道が開く。
+#       止められるのは名前だけで、中身が本当に文書だけを書くかは、この判定では見ない。
+#       残る守り＝土台ゲート（Bash からは書けない）／git diff に出る／恒久の決まり71番。
 case "$FILE" in
   *scripts/priority_rebuild/*.py) ;;
+  */.claude/tools/gen_*.py) exit 0 ;;
   */.claude/tools/*.py) ;;
   */.claude/breaks/*.sh) ;;
   *) exit 0 ;;

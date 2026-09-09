@@ -22,4 +22,14 @@ if [ "$RC" -ne 0 ]; then
   printf "⛔ [next_step の形・Stop hook] next_step.md の §0 が整っていないのでターンを終われません（まこさん 2026-08-28「毎回、next_stepが汚くなり、私が指示しないと整理されない状況なんだけど、改善できないのか？」）。\n%s\n直し方＝python3 .claude/tools/tidy_next_step.py --write ＋ 0-1 を今日の状態に書き直す。\n（解除の合言葉はありません＝2026-08-16 に全部 廃止）\n" "$OUT" >&2
   exit 2
 fi
+# ★2026-09-09（まこさん指示・逐語「session_worklogへの記録は日付で区切ってほしい」「今後、このようなこと
+#   （日付をまたいで記録し続ける）が無いようにしてほしい」）＝worklog を日付をまたいで書き続けていないかを見る。
+#   判定の本体＝check_worklog_date.py（番人4件・--selftest）。テスト用の第1引数のときは見ない（next_step の検査だけ）。
+if [ -z "$1" ]; then
+  WL=$(python3 "$ROOT/.claude/hooks/check_worklog_date.py" 2>&1); WRC=$?
+  if [ "$WRC" -ne 0 ]; then
+    printf "⛔ [worklog の日付・Stop hook] worklog を日付をまたいで書き続けています（まこさん 2026-09-09「session_worklogへの記録は日付で区切ってほしい」）。\n%s\n直し方＝今日の日付の session_worklog_YYYYMMDD.md を作り、今日の節はそこへ書く。古いファイルは触らない（触ったら、そのあとで今日の worklog を書き足す）。\n（解除の合言葉はありません）\n" "$WL" >&2
+    exit 2
+  fi
+fi
 exit 0

@@ -1,0 +1,43 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "gen-acceptance-tool-20260909",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b72_acceptance_handwritten.sh",
+   "code": null,
+   "note": "時間切れ（120秒）: b72_acceptance_handwritten.sh",
+   "expect": 1,
+   "means": "その検査が落ちた（守りが働いた）",
+   "match": false
+  },
+  {
+   "no": "2",
+   "script": "b73_acceptance_stale_lines.sh",
+   "code": null,
+   "note": "時間切れ（120秒）: b73_acceptance_stale_lines.sh",
+   "expect": 1,
+   "means": "その検査が落ちた（守りが働いた）",
+   "match": false
+  },
+  {
+   "no": "3",
+   "script": "b74_skeleton_old_sections.sh",
+   "code": 1,
+   "note": "",
+   "expect": 1,
+   "means": "その検査が落ちた（守りが働いた）",
+   "match": true
+  },
+  {
+   "no": "4",
+   "script": "b75_code_index_stale.sh",
+   "code": 1,
+   "note": "",
+   "expect": 1,
+   "means": "その検査が落ちた（守りが働いた）",
+   "match": true
+  }
+ ]
+}

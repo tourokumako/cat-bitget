@@ -123,6 +123,10 @@
           },
           {
             "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_read_plan_before_design.sh"
+          },
+          {
+            "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_design_consistency.sh"
           },
           {

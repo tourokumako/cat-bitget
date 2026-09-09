@@ -662,7 +662,7 @@ Time ExitやSLになる前に「このエントリーはもうレンジ逆張り
 
 ---
 
-<!-- KB_LAWS_START hash=6a8f17ac7fcb7793 gen_regime_kb.py が自動生成＝手で書き換えない -->
+<!-- KB_LAWS_START hash=17b80e345809beb8 gen_regime_kb.py が自動生成＝手で書き換えない -->
 # §11 場面ごとの相場の法則の一覧（★この節は機械が作ります・手で書き換えない）
 
 **何のための一覧か**＝M2 のフローの工程表に足す「相場の法則の欄」を作る元。まこさん GO（2026-08-20・逐語「まずは上記リスト作成をしてみて」）。
@@ -847,6 +847,8 @@ Time ExitやSLになる前に「このエントリーはもうレンジ逆張り
 
 - **中身**＝具体的には4つ。①ADX が 20 未満（トレンドなし）②CHOP が 61.8 超（CHOP＝値動きのゴチャゴチャ度。1本ずつの値動きの合計 ÷ n本ぜんぶで動いた幅（最高値−最安値）。高いほど行ったり来たり＝横ばい）③ER が低い（ER＝まっすぐ進んだ距離 ÷ 実際に歩いた距離。低いほど行ったり来たり）④MMI が高い（MMI＝値動きがランダムに近いかの割合。高いほどレンジ寄り）。
 - ★数字は目安＝範囲で探す（C9）。
+- ★2026-09-09（まこさん決定「それで書いてよいが、証拠として、引用も書いておいて」）＝数える指標を4つ（ADX・CHOP・ER・VHF）から8つに広げた。直す前の4つは CC が M2-B-2b（2026-08-30）で名指ししたもので、法則の一文は指標の名前を決めていなかった（まこさん指摘 2026-09-09「お前が法則を決めるな」）。8つの根拠＝下の「根拠」。
+- ★DI差・MACDヒスト%・EMA傾き の3つは符号が向きを表す。この法則で数えるのは絶対値（§2.2 段2a のとおり）。★2026-09-09 時点で、材料の前処理に絶対値は無い（engine_tuner_exec.MATERIAL_PRE＝ts_max・ts_min・ts_rank・ts_std・since_min・since_max・at_entry）。絶対値の前処理を足すまで、この3つを below で数えると「負の側＝下げトレンド」まで数えてしまう＝案を組む側は、絶対値の前処理を付けた材料でだけ この3つを使うこと（M2-E-3 で前処理を足す）。
 - **出どころ**＝【本文】この KB §3-A
 
 **R6｜BB 幅の縮小（スクイーズ）は、低ボラ＝レンジ寄り**
@@ -855,6 +857,7 @@ Time ExitやSLになる前に「このエントリーはもうレンジ逆張り
 - 逐語＝"A Bollinger Band Squeeze is a condition that occurs when the Bollinger Bands narrow due to decreased volatility."／"Note that narrowing bands do not provide any directional clues."（2026-09-01 に本文を開いた）。
 - ★スクイーズは大きな動きの前触れでもある（逐語 "can foreshadow a significant advance or decline"）＝レンジの終わりの接近と同じ現象。
 - ★役割＝レンジ検出の入力（低ボラ＝レンジ寄り）。R10（検出の後の下位分類）とは役割が違う（監査 CP11 Q3）。
+- ★2026-09-09（まこさん決定「それで書いてよいが、証拠として、引用も書いておいて」）＝数える指標を6つにした（BB幅・SQZ_ON・Donchian幅・ATR%・realized_vol・stdev%）。外した2つ（HWC幅%・SQZPRO_ON_NARROW）は、2026-09-09 の Web 検索で出どころを取れなかった（出どころが取れたら まこさんに出して決めてもらう）。★BB幅は stdev の別の書き方（BB幅＝4σ÷中心線）＝同じ系統を2本 数えない決まり（R2）に当たる。
 - **出どころ**＝【本文】StockCharts Squeeze（この KB A-7・https://chartschool.stockcharts.com/table-of-contents/trading-strategies-and-models/trading-strategies/bollinger-band-squeeze・2026-09-01 に本文を開いた＝【要約】から【本文】へ昇格・監査 CP11 改善4）
 
 **R7｜帯の幅が、往復の手数料を超えていること**

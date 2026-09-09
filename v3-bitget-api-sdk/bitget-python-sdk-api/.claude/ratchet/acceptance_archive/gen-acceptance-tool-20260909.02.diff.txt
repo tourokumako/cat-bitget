@@ -1,0 +1,216 @@
+3c3
+< # 設計書｜設計書を作るプログラム（gen_acceptance.py）の残る不具合2件を直す
+---
+> # 設計書｜設計書を作るプログラム（gen_acceptance.py）の不具合を直す
+5,6c5,6
+< TARGET: .claude/tools/gen_acceptance.py, .claude/tools/list_banned_words.py, .claude/breaks/b72_acceptance_handwritten.sh, .claude/breaks/b73_acceptance_stale_lines.sh
+< NEW_FILE: .claude/breaks/b72_acceptance_handwritten.sh, .claude/breaks/b73_acceptance_stale_lines.sh
+---
+> TARGET: .claude/tools/gen_acceptance.py, .claude/tools/list_banned_words.py, .claude/breaks/b72_acceptance_handwritten.sh, .claude/breaks/b73_acceptance_stale_lines.sh, .claude/breaks/b74_skeleton_old_sections.sh
+> NEW_FILE: .claude/breaks/b74_skeleton_old_sections.sh
+11c11
+< **承認の状態＝未承認。**
+---
+> **承認の状態＝1回目の承認は済み（`c0d30b8b…`）。この版は2回目の承認を待っています。**
+20a21
+> > 承認した
+24c25
+< 設計書を作るプログラム `gen_acceptance.py` の、残る不具合2件を直します。あわせて、この道具を守る壊すプログラム2本を作り、`list_banned_words.py` の骨組みを7つの節に合わせます。
+---
+> 設計書を作るプログラム `gen_acceptance.py` の不具合を直します。あわせて、この道具を守る壊すプログラム3本を作り、`list_banned_words.py` の骨組みを7つの節に合わせます。
+28c29
+< ### 2-1 いまの状態（走らせて測った）
+---
+> ### 2-1 1回目の承認のときの状態
+32c33
+< 自己テスト8件のうち、6件が通り、2件が落ちました。
+---
+> 自己テスト8件のうち、6件が通り、2件が落ちていました。
+34c35
+< | # | テスト | 結果 | 中身 |
+---
+> | # | テスト | 1回目の承認のとき | 中身 |
+36,37c37,38
+< | T1 | いまの状態で `--verify` | 落ちた | 書くときと読むときで、囲みの末尾の改行の扱いが違う。同じ中身でも指紋が食い違う |
+< | T7 | 実物との突き合わせ | 落ちた | テストが `--diff` を走らせるが、いまの設計書は実装前なので齟齬が出る。期待値の書き方が違う |
+---
+> | T1 | いまの状態で `--verify` | 落ちた | 書くときと読むときで、囲みの末尾の改行の扱いが違う。同じ中身でもハッシュ値が食い違う |
+> | T7 | 実物との突き合わせ | 落ちた | テストが突き合わせを走らせるが、いまの設計書は実装前なので齟齬が出る。期待値の書き方が違う |
+39c40
+< **★2件とも、設計書の中身には影響しません。**書き出した設計書は正しく出ています。
+---
+> **★2件とも、設計書の中身には影響しません。**書き出した設計書は正しく出ていました。
+41c42
+< ### 2-2 この設計書が直す範囲
+---
+> ### 2-2 承認の後に、実装しながら見つけた不具合2件
+43c44,53
+< `gen_acceptance.py` の2件と、壊すプログラム2本と、`list_banned_words.py` の骨組みだけです。設計書の中身（M2-E-2 で何を組むか）は、この設計書では決めません。
+---
+> **★1回目の承認のあと、実装に入って初めて分かりました。**設計書に書いた2件では足りませんでした。
+> 
+> | # | どこ | 何が起きていたか |
+> |---|---|---|
+> | 3 | `selftest` の書き出し先 | 自己テストが内部で `write()` を呼び、**本物の設計書を上書きしていました。**テストを走らせるだけで承認が外れ、この道具を直せなくなる作りでした |
+> | 4 | `page` が出す見出し | 見出しに「SPEC」の語を入れていたため、突き合わせの道具が見出しを目印として拾い、後ろの別の囲みを読んでいました。誤報が66件 出ました |
+> 
+> ### 2-3 この設計書が直す範囲
+> 
+> `gen_acceptance.py` の4件と、壊すプログラム3本と、`list_banned_words.py` の骨組みだけです。設計書の中身（M2-E-2 で何を組むか）は、この設計書では決めません。
+50c60
+< 2. 壊すプログラム2本が、直しを戻すと落ちる。
+---
+> 2. 壊すプログラム3本が、直しを戻すと落ちる。
+59,60c69,70
+< | 3 | 書き出し先を設計書そのもの（`acceptance.md`）から下書きに変えること | 承認の流れが変わります。いまの流れ（設計書は1本・上書き＝恒久 §0-2）を保ちます。**★ただし、この工事の途中で道具が設計書を上書きしないよう、`--write` は走らせません**（`--dry-run` と、控えを相手にした自己テストだけを使います） |
+< | 4 | hook 4本（承認・食い違い・必読・読むもの宣言）を変えること | 1文字も触りません |
+---
+> | 3 | 書き出し先を設計書そのもの（`acceptance.md`）から下書きに変えること | 承認の流れが変わります。いまの流れ（設計書は1本・上書き＝恒久 §0-2）を保ちます。**★代わりに、自己テストだけが控えを相手にする形にしました**（§4-1 の3） |
+> | 4 | hook 4本（承認・食い違い・必読・読むもの宣言）を変えること | 1文字も触っていません |
+66c76
+< | 1 | 道具を直している最中に、設計書が入れ替わる行き止まりをどう避けるか | この工事では `--write` を走らせません。自己テストは、控えを相手にします。**次の工事（元データの作り直し）で、書き出し先を下書きにするかを決めてもらいます** |
+---
+> | 1 | 承認が2回になること | **1回目の承認のあとに、設計書に書いていない不具合が2件 出ました**（§2-2）。そのうち1件は「壊すプログラム b74 が要る」という話で、b74 は TARGET に無いと作れません。だから2回目の承認をお願いしています。**これ以上は増やしません** |
+70c80
+< ### 4-1 直す2件
+---
+> ### 4-1 直す4件
+74,75c84,87
+< | 1 | `gen_acceptance.py` の `_h` と `verify` | 書くときは本文の後ろに改行を足し、読むときは末尾の改行を落とす。指紋を数える対象がずれる | 指紋を数える前に、必ず末尾の改行を落とす（`_h` の中で `rstrip`）。読むときと書くときで同じにする |
+< | 2 | 同 `selftest` の T7 | `--diff` を、いまの設計書に対して走らせる。実装前なので齟齬が出て落ちる | 齟齬の中身を見る。**「実物に無い関数」だけの齟齬なら通す**（実装前だから正しい）。ほかの齟齬（設計書と実物の食い違い）が在れば落とす |
+---
+> | 1 | `gen_acceptance.py` の `_h` | 書くときは本文の後ろに改行を足し、読むときは末尾の改行を落とす。数える対象がずれる | ハッシュ値を数える前に、必ず末尾の改行を落とす。数える場所を1か所にまとめる |
+> | 2 | 同じファイルの `selftest` の T7 | 突き合わせを、実装前の設計書に対して走らせる。齟齬が出て落ちる | 齟齬の中身を見る。**「設計にあるが実物に無い関数」だけの齟齬なら通す**（実装前だから正しい）。ほかの齟齬が在れば落とす |
+> | 3 | 同じファイルの `write` と `verify` と `selftest` | 書き出し先が本物の設計書に固定されている。自己テストを走らせると設計書が上書きされる | 書き出し先を差し替えられるようにする。自己テストは一時のファイル（控え）を相手にする |
+> | 4 | 同じファイルの `page` が出す見出し | 見出しに「SPEC」の語が入っている。突き合わせの道具が別の囲みを読む | 見出しから「SPEC」の語を外す。目印は単独の行だけに置く |
+77c89
+< ### 4-2 作る壊すプログラム2本
+---
+> ### 4-2 作る壊すプログラム3本
+79c91
+< | # | 名前 | 壊し方 | 落ちるテスト |
+---
+> | # | 名前 | 壊し方 | 何が落ちるか |
+81,82c93,95
+< | 1 | `b72_acceptance_handwritten.sh` | `verify` の指紋の照合を消す（囲みを手で書き換えても通るようにする） | T2 |
+< | 2 | `b73_acceptance_stale_lines.sh` | `build_coderef` の行番号を、`def_lines` でなく固定の数字にする | T1 |
+---
+> | 1 | `b72_acceptance_handwritten.sh` | `verify` のハッシュ値の照合を消す | 自己テストの T2 |
+> | 2 | `b73_acceptance_stale_lines.sh` | `build_coderef` の行番号を、実物からでなく固定の数字にする | 自己テストの T1 |
+> | 3 | `b74_skeleton_old_sections.sh` | 骨組みの7つ目の節の見出しを、古い名前に戻す | 7つの節の見出しが欠ける |
+86c99
+< `skeleton()` が出す節の並びを、いまの11節（hook の点検の一覧）から、7つの節（恒久70番）に変えます。hook から項目を抽出する処理（`checklist_items`・`_extract_banned`・`_extract_required`）は1文字も触りません。
+---
+> `skeleton()` が出す節の並びを、古い11の節から、7つの節（恒久70番）に変えます。hook から項目を抜き出す処理（`checklist_items`・`_extract_banned`・`_extract_required`）は1文字も触っていません。
+92,93c105,106
+< | 1 | この工事では `--write` を走らせない | 走らせると設計書が上書きされ、この設計書の承認が外れて、道具を直せなくなる（2026-09-09 に実際に起きた） | `--write` で確かめる。捨てた理由＝同じ行き止まりに入る |
+< | 2 | T7 は「実物に無い関数」だけの齟齬を通す | 実装前は、設計書に書いた関数が実物に無いのが正しい状態 | T7 を消す。捨てた理由＝設計書と実物の食い違いを見る検査が無くなる |
+---
+> | 1 | 自己テストは控えを相手にする | 本物の設計書を上書きすると承認が外れ、道具を直せなくなる（2026-09-09 に実際に起きた） | 自己テストのたびに設計書を戻す。捨てた理由＝途中で落ちると戻らない |
+> | 2 | T7 は「設計にあるが実物に無い関数」だけの齟齬を通す | 実装前は、設計書に書いた関数が実物に無いのが正しい状態 | T7 を消す。捨てた理由＝設計書と実物の食い違いを見る検査が無くなる |
+94a108
+> | 4 | 骨組みを守る壊すプログラム b74 を別に作る | **1回目の設計書では、完成の条件 #3（骨組み）を b72 が守ると書いていました。これは誤りです。**b72 が壊すのは `gen_acceptance.py` で、骨組みを出すのは `list_banned_words.py` です | b72 に骨組みの検査も足す。捨てた理由＝1本が2つの別のファイルを壊す形になり、何が落ちたか分からなくなる |
+100,101d113
+< **★下の表は、これから走らせるテストです。終了コードは直した後に測ります。**
+< 
+104,106c116,119
+< | T1〜T8 | `python3 .claude/tools/gen_acceptance.py --selftest` | 8件とも pass（いまは6件） |
+< | B1 | `bash .claude/breaks/b72_acceptance_handwritten.sh` | 終了コード 1（T2 が落ちる） |
+< | B2 | `bash .claude/breaks/b73_acceptance_stale_lines.sh` | 終了コード 1（T1 が落ちる） |
+---
+> | T1〜T8 | `python3 .claude/tools/gen_acceptance.py --selftest` | 8件とも pass |
+> | B1 | `bash .claude/breaks/b72_acceptance_handwritten.sh` | 終了コード 1 |
+> | B2 | `bash .claude/breaks/b73_acceptance_stale_lines.sh` | 終了コード 1 |
+> | B3 | `bash .claude/breaks/b74_skeleton_old_sections.sh` | 終了コード 1 |
+108a122,123
+> **★B1〜B3 を走らせるのは、まこさんが承認を打つときのプログラムです。**私の Bash からは土台ゲートが止めます（`.claude/breaks/*.sh` は書き込みの相手）。
+> 
+113,114c128,130
+< | 1 | 直している最中に設計書が上書きされ、承認が外れる | `--write` を走らせません（やらないこと3） |
+< | 2 | 骨組みを変えると、hook の点検の項目が落ちる | 抽出の処理は触りません。付録の節に、いままでどおり項目を並べます |
+---
+> | 1 | 直している最中に設計書が上書きされ、承認が外れる | 自己テストを控え相手にしました（§4-1 の3）。`--write` も走らせていません |
+> | 2 | 骨組みを変えると、hook の点検の項目が落ちる | 抜き出す処理は触っていません。付録の節に、いままでどおり項目を並べます |
+> | 3 | 承認が2回になる | §3-3 のとおり、1回目の承認のあとに分かった不具合のためです |
+118c134
+< | 何 | 見込み | 根拠 |
+---
+> | 何 | 見込み | 使った時間 |
+120,122c136,138
+< | 不具合2件の直し | 30分 | 1件は指紋の数え方の1行、1件は齟齬の見分け |
+< | 壊すプログラム2本 | 30分 | 手本 `b33_extra_switch_off.sh` |
+< | 骨組みを7節に | 30分 | 節の並びを書き替えるだけ |
+---
+> | 不具合4件の直し | 30分 | 約30分 |
+> | 壊すプログラム3本 | 30分 | 約20分（b74 は承認待ち） |
+> | 骨組みを7節に | 30分 | 約15分 |
+130c146
+< **① 真因（root cause）**＝道具を作ったときに、書くときと読むときで同じ処理を使いませんでした。指紋を数える所が2か所に分かれ、末尾の改行の扱いがずれました。T7 は、実装前の状態を期待値に入れていませんでした。
+---
+> **① 真因（root cause）**＝道具を作ったときに、書くときと読むときで同じ処理を使いませんでした。ハッシュ値を数える所が2か所に分かれ、末尾の改行の扱いがずれました。自己テストは、実装前の状態を期待値に入れていませんでした。書き出し先を差し替えられない作りにしたので、テストが本物の設計書を壊しました。見出しに目印の語を入れたので、突き合わせの道具が別の囲みを読みました。
+132c148
+< **② 期待値分解**＝売買のロジックには触れません。勝率・平均利益・敗率・平均損失は動きません。動くのは、自己テストの通る件数（いま6件 → 8件）と、この道具を守る壊すプログラムの本数（いま0本 → 2本）です。
+---
+> **② 期待値分解**＝売買のロジックには触れません。勝率・平均利益・敗率・平均損失は動きません。動くのは、自己テストの通る件数と、この道具を守る壊すプログラムの本数です。
+134c150
+< **③ root か symptom か**＝root です。指紋を数える処理を1か所にまとめます。2か所に分かれている限り、また同じずれが出ます。
+---
+> **③ root か symptom か**＝root です。ハッシュ値を数える処理を1か所にまとめました。2か所に分かれている限り、また同じずれが出ます。
+136c152
+< **④ ベースアップ**＝外の検索は使いません。手本は同じリポジトリの実物です。この設計書を書く前に Read tool で開きました＝`.claude/tools/gen_acceptance.py`（直す相手）／`.claude/tools/gen_regime_kb.py`（同じ作りの道具・1,180行）／`.claude/tools/list_banned_words.py`（骨組みを出す道具）／`scripts/priority_rebuild/verify_design_contract.py`（齟齬の出し方）／`.claude/hooks/require_acceptance_before_impl.sh`・`enforce_design_consistency.py`・`require_source_read_before_acceptance.py`・`require_read_plan_before_design.py`（4本の hook）／`.claude/ratchet/acceptance_archive/tm-scope-and-g2-fingerprint-20260908.md`（承認が通った設計書）／`.claude/rules/acceptance_checklist.md`／`.claude/ratchet/engine_tuner_milestones.md` と `engine_tuner_milestones2.md`。読むもの宣言＝`design_read_plan.md`（まこさん OK 2026-09-09）。
+---
+> **④ ベースアップ**＝外の検索は使いません。手本は同じリポジトリの実物です。この設計書を書く前に Read tool で開きました＝`.claude/tools/gen_acceptance.py`（直す相手）／`.claude/tools/gen_regime_kb.py`（同じ作りの道具・1,180行）／`.claude/tools/list_banned_words.py`（骨組みを出す道具）／`scripts/priority_rebuild/verify_design_contract.py`（齟齬の出し方）／`.claude/hooks/require_acceptance_before_impl.sh`・`enforce_design_consistency.py`・`require_source_read_before_acceptance.py`・`require_read_plan_before_design.py`（4本の hook）／`.claude/ratchet/acceptance_archive/tm-scope-and-g2-fingerprint-20260908.md`（承認が通った設計書）／`.claude/rules/acceptance_checklist.md`／`.claude/ratchet/engine_tuner_milestones.md` と `engine_tuner_milestones2.md`／`.claude/breaks/lib.sh` と `b33_extra_switch_off.sh`（壊すプログラムの手本）／`.claude/breaks/b72_acceptance_handwritten.sh` と `b73_acceptance_stale_lines.sh`（この工事で作ったもの）。読むもの宣言＝`design_read_plan.md`（まこさん OK 2026-09-09）。
+140c156
+< **この工事に、疑似シミュから取った値は1つもありません。**閾値・段数・AUC のたぐいを1つも決めません。採否は score.py ではなく、自己テスト8件と壊すプログラム2本の終了コードで決まります。
+---
+> **この工事に、疑似シミュから取った値は1つもありません。**閾値・段数・AUC のたぐいを1つも決めません。採否は score.py ではなく、自己テストの件数と壊すプログラム3本の終了コードで決まります。
+144c160
+< **変更は1つです**＝設計書を作るプログラムの不具合を直すこと。触るファイルは4本ですが、直す相手は1つです。
+---
+> **変更は1つです**＝設計書を作るプログラムの不具合を直すこと。触るファイルは5本ですが、直す相手は1つです。
+146c162
+< **過去に取りやめた失敗の再演か**＝いいえ。**★近い型が1つあります**＝2026-09-09 に、この道具で設計書を上書きして、道具を直せなくなりました。今回は `--write` を走らせません（やらないこと3）。
+---
+> **過去に取りやめた失敗の再演か**＝いいえ。**★近い型が1つあります**＝2026-09-09 に、この道具で設計書を上書きして、道具を直せなくなりました。今回は自己テストを控え相手にし、`--write` も走らせていません。
+155c171
+< | **監査 Q5 の4** | 壊すプログラムを手で書き換えられたら。**見抜けません**（印の偽造と同じ限界）。git の差分には出ます |
+---
+> | **監査 Q5 の4** | 壊すプログラムを手で書き換えられたら。**見抜けません**（印の偽造と同じ限界）。ただし承認の瞬間に凍結され、その後に変えると走らせる道具が止まります |
+166c182
+< **★状態は全部「未着手」です。「済」にするのはプログラムです**（承認のコマンドが壊すプログラムを走らせ、終了コードが 0 以外のときだけ済にします）。**自分で「直った」と判定しません**（恒久の決まり64番）。**★触る関数の一覧は、実装の後に確定させます**＝`verify_design_contract.py --write` の出力で置き替えます。
+---
+> **★状態は全部「未着手」です。「済」にするのはプログラムです**（承認のコマンドが壊すプログラムを走らせ、終了コードが 0 以外のときだけ済にします）。**自分で「直った」と判定しません**（恒久の決まり64番）。
+172,174c188,190
+< | 1 | AUDIT-1＝自己テストが8件とも pass | `python3 .claude/tools/gen_acceptance.py --selftest` | 実経路 | 指紋の照合を消すと T2 が落ちる | `b72_acceptance_handwritten.sh` | 対象 | **未着手** |
+< | 2 | AUDIT-2＝行番号が `def_lines` から出ている | `python3 .claude/tools/gen_acceptance.py --dry-run` | 実経路 | 行番号を固定の数字にすると T1 が落ちる | `b73_acceptance_stale_lines.sh` | 対象 | **未着手** |
+< | 3 | AUDIT-3＝骨組みが7つの節を出す | `python3 .claude/tools/list_banned_words.py --skeleton` | 実経路 | 節の並びを11節に戻すと、7つの節の見出しが出ない | `b72_acceptance_handwritten.sh` | 対象 | **未着手** |
+---
+> | 1 | AUDIT-1＝自己テストが8件とも pass | `python3 .claude/tools/gen_acceptance.py --selftest` | 実経路 | ハッシュ値の照合を消すと T2 が落ちる | `b72_acceptance_handwritten.sh` | 対象 | **未着手** |
+> | 2 | AUDIT-2＝関数の行番号が実物から出ている | `python3 .claude/tools/gen_acceptance.py --selftest` | 実経路 | 行番号を固定の数字にすると T1 が落ちる | `b73_acceptance_stale_lines.sh` | 対象 | **未着手** |
+> | 3 | AUDIT-3＝骨組みが7つの節を出す | `python3 .claude/tools/list_banned_words.py --skeleton` | 実経路 | 7つ目の節の見出しを古い名前に戻すと節が欠ける | `b74_skeleton_old_sections.sh` | 対象 | **未着手** |
+182c198
+< | `b72_acceptance_handwritten.sh` | **#1・#3** | `verify` の指紋の照合を消す | **1** |
+---
+> | `b72_acceptance_handwritten.sh` | **#1** | `verify` のハッシュ値の照合を消す | **1** |
+183a200
+> | `b74_skeleton_old_sections.sh` | **#3** | 7つ目の節の見出しを古い名前に戻す | **1** |
+192,193c209,212
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "この工事の本体（gen_acceptance.py）は今日 作ったばかりで、直す関数は _h・verify・selftest・build_coderef の4つ。ただし直した後に名前と行が変わりうるので、実装の後に確定させます＝verify_design_contract.py --write の出力で置き替えます",
+---
+>   "impl_functions": {
+>     ".claude/tools/gen_acceptance.py": ["_h", "write", "verify", "selftest", "diff_ok_before_impl", "page"],
+>     ".claude/tools/list_banned_words.py": ["skeleton"]
+>   },
+195c214,216
+<   "must_use": {},
+---
+>   "must_use": {
+>     "selftest": ["diff_ok_before_impl"]
+>   },
+199,200c220,221
+<     "impl_functions": "実装の前なので空（理由＝no_impl_functions_reason）。実装の後に verify_design_contract.py --write の出力で置き替えます",
+<     "must_use": "impl_functions が空なので空（承認ゲートの決まり）",
+---
+>     "impl_functions": "実装の後に、verify_design_contract.touched_functions の数え方（構文木の前後比較）に合わせて確定させました",
+>     "must_use": "selftest が新しく作った diff_ok_before_impl を実際に呼んでいるかを見ます",
