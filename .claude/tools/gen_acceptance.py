@@ -58,6 +58,11 @@ STATE = ROOT / ".claude" / "state"
 PRIORITY = SDK / "scripts" / "priority_rebuild"
 
 SRC = RATCHET / "acceptance_src.json"
+# ★2026-09-10＝§4（設計の中身）の項目の正本。
+#   3つの出どころ（うちの正本・外の標準・まこさんが過去に指摘したこと）118件を
+#   全部 引き受ける形に割り当てたもの（gen_design_sections.py --check で検算する）。
+#   ★項目をここ以外に書かない（2か所に書くと片方だけ直って食い違う）。
+MAP = RATCHET / "design_section_map.json"
 DEST = STATE / "acceptance.md"
 
 # ── 正本（この道具が読む相手・手で写さない）─────────────────────────
@@ -70,7 +75,7 @@ GEN_PY = PRIORITY / "engine_tuner_gen.py"
 EXEC_PY = PRIORITY / "engine_tuner_exec.py"
 
 # ── 囲み（9つ）───────────────────────────────────────────────
-BLOCKS = ("MATERIALS", "LAWS", "RANKING", "CODEREF", "RANDOM",
+BLOCKS = ("STAGES", "MATERIALS", "LAWS", "RANKING", "CODEREF", "RANDOM",
           "ACCEPT_TABLE", "SELFTEST", "SPEC", "CHECKLIST")
 
 
@@ -258,8 +263,6 @@ def build_ranking(d: dict) -> str:
 
 def build_coderef(d: dict) -> str:
     """触る関数の名前と定義の行（★手で写さない・93番）。"""
-    return "| 名前 | 定義の行 |\n|---|---|\n| 手で写した見本 | 9999 |\n"
-    return "| 名前 | 定義の行 |\n|---|---|\n| 手で写した見本 | 9999 |\n"
     sys.path.insert(0, str(PRIORITY))
     try:
         from verify_design_contract import spec_from_impl
@@ -431,7 +434,53 @@ def build_checklist(d: dict) -> str:
     return "\n".join(L)
 
 
+def build_stages(d: dict) -> str:
+    """段ごとの表を、§2.2 の逐語から作る（★手で書かない・恒久69番）。
+
+    ★なぜ在るか（2026-09-10）
+      まこさんの問い＝「2-2の段ごと指標、閾値、パラメータ、時間足の組み方、使う法則」が
+      設計書に1つも入っていなかった。§2.2 にはその全部が書いてあるのに、私は
+      「§2.2 の段を、束の枡としてそのまま持つ」の1行しか書かなかった。
+      だから、§2.2 の逐語を段ごとに割って、そのまま表にする。
+
+    ★出どころを2か所に書かない＝`gen_s22_map.py` の抽出関数を呼ぶ。
+    """
+    sys.path.insert(0, str(ROOT / ".claude" / "tools"))
+    try:
+        from gen_s22_map import read_section, extract
+    except Exception as e:
+        raise SystemExit(f"[gen_acceptance] §2.2 を抜く道具を読み込めない: {e}（fail-closed）")
+    items = [x for x in extract(read_section()) if x[1] == "段"]
+    if not items:
+        raise SystemExit("[gen_acceptance] §2.2 の段が0件（fail-closed）")
+
+    L: list[str] = []
+    add = L.append
+    add("**★この表はプログラムが作ります（手で書き換えない）。**"
+        "出どころ＝`engine_tuner_milestones2.md` の §2.2（レンジ判定の検索方法）を、"
+        "`gen_s22_map.py` の抽出関数で読んだもの。**私は1文字も足していません。**")
+    add("")
+    add("| 段 | 何を選ぶ枠か | 使う法則 | 材料（指標の系統）と時間足 | 値の範囲 |")
+    add("|---|---|---|---|---|")
+    for sid, _kind, text in items:
+        parts = [p.strip() for p in text.split("｜")]
+        head = parts[0] if parts else ""
+        mid = parts[1] if len(parts) > 1 else ""
+        val = parts[2].replace("値＝", "") if len(parts) > 2 else ""
+        m = re.match(r"^(\S+)\s*(.*?)（(.+?)）\s*$", head)
+        if m:
+            waku, laws = m.group(2).strip() or m.group(1), m.group(3)
+        else:
+            waku, laws = head, "—"
+        add(f"| **{sid}** | {_esc(waku)} | {_esc(laws)} | {_esc(mid)} | {_esc(val)} |")
+    add("")
+    add(f"**段の件数＝{len(items)}件**（§2.2 に在るものを1つも落としていません）。")
+    add("")
+    return "\n".join(L)
+
+
 BUILDER = {
+    "STAGES": build_stages,
     "MATERIALS": build_materials,
     "LAWS": build_laws,
     "RANKING": build_ranking,
@@ -466,6 +515,138 @@ def laws_count_ok() -> tuple[bool, str]:
 
 
 # ══ 設計書を組み立てる（7つの節）═════════════════════════════════════
+
+def section4(d: dict) -> str:
+    """§4（設計の中身）を、項目の正本（design_section_map.json）の順に組み立てる。
+
+    ★なぜ正本を別に持つか（2026-09-10）
+      まこさん指摘＝「まるごと設計のコアの部分が無い状態だよね」「思考が支離滅裂で
+      その場しのぎすぎるんだよ」。私が §4 の項目を思いつきで足し、4回とも まこさんの
+      問いで「出どころに在るのに項目に入っていないもの」が出た。
+      だから項目は map に固定し、この関数は**並べるだけ**にする。
+
+    fail-closed（黙って通さない）
+      6. 項目の正本が読めない → 止まる
+      7. 段が「必ず」の項目が、元データに無い（または空） → 止まる
+      8. 段が「条件」で「当たらない」と書いたのに、理由が無い → 止まる
+      9. 段が「省ける」で非該当なのに、理由と出どころが無い → 止まる
+    """
+    m = _load(MAP)
+    items = [x for x in (m.get("項目") or []) if x.get("節") == "§4"]
+    if not items:
+        raise SystemExit(f"[gen_acceptance] §4 の項目が正本に無い: {MAP}（fail-closed 6）")
+
+    # ★2026-09-10（まこさん決定・逐語「上記の項目順に修正でよい」）＝読む順に並べ替える。
+    #   まこさん指摘＝「設計書の項目の順番が支離滅裂。冒頭は、目的とか概要、要件などで固めて、
+    #   その後、全体の設計内容構造とかで、4-A この節に何を書いたか（一覧）などは後半でよいのでは？」。
+    #   ★並び順の正本は MAP の「_§4の並び順」＝項目を2か所に書かない。
+    #   fail-closed 10＝並び順に載っていない項目が在れば止める（項目を減らして出さないため）。
+    order = m.get("_§4の並び順") or []
+    if order:
+        known = {str(x.get("番号")) for x in items}
+        missing = [x for x in known if x not in order]
+        ghost = [x for x in order if x not in known]
+        if missing:
+            raise SystemExit(
+                "[gen_acceptance] 並び順に載っていない項目が在ります（fail-closed 10）＝"
+                + "・".join(sorted(missing))
+                + "\n  ★項目を減らして出さないための検査です。")
+        if ghost:
+            raise SystemExit(
+                "[gen_acceptance] 並び順に、実在しない項目が在ります（fail-closed 10）＝"
+                + "・".join(ghost))
+        items = sorted(items, key=lambda x: order.index(str(x.get("番号"))))
+    body = d.get("設計の中身") or {}
+
+    L: list[str] = []
+    add = L.append
+    add("**★この節の項目は、正本 `design_section_sources.json` の3つの出どころ"
+        "（うちの正本・外の標準・まこさんが過去に指摘したこと）118件を、"
+        "1件も余さず引き受ける形に決めたものです。**"
+        "割り当て＝`design_section_map.json`。検算＝`gen_design_sections.py --check`。")
+    add("")
+    # ★2026-09-10（まこさん指摘「4-A この節に何を書いたか（一覧）などは後半でよいのでは？」）
+    #   ＝一覧は管理のための表なので、節の最後に出す。ここでは中身だけ作って、後で足す。
+    tbl: list[str] = []
+    tadd = tbl.append
+    tadd("### 4-A この節に何を書いたか（一覧）")
+    tadd("")
+    tadd("**★この表は管理のためのものです。**設計の中身は上の 4-0 から順に読んでください。")
+    tadd("")
+    tadd("| 番号 | 段 | 項目 | 書いたか |")
+    tadd("|---|---|---|---|")
+    add = tadd  # ← 以降の行は一覧の表へ入れる（下で元に戻す）
+    miss_must: list[str] = []
+    miss_why: list[str] = []
+    for it in items:
+        no = str(it.get("番号"))
+        step = str(it.get("段", ""))
+        name = _esc(it.get("名前"))
+        got = body.get(no)
+        if isinstance(got, dict) and got.get("非該当"):
+            state = f"非該当（{_esc(got['非該当'])}）"
+            if step == "必ず":
+                miss_must.append(no)
+            if not str(got["非該当"]).strip():
+                miss_why.append(no)
+        elif got:
+            state = "書いた"
+        else:
+            state = "**未記入**"
+            if step == "必ず":
+                miss_must.append(no)
+            else:
+                miss_why.append(no)
+        add(f"| {no} | {step} | {name} | {state} |")
+    add("")
+    add = L.append  # ★ここから先は本文へ戻す（一覧の表は最後に足す）
+
+    if miss_must:
+        raise SystemExit(
+            "[gen_acceptance] 段が「必ず」の項目が埋まっていません（fail-closed 7）＝"
+            + "・".join(miss_must)
+            + "\n  ★「必ず」は非該当を認めません。どの工事でも書ける項目だからです。")
+    if miss_why:
+        raise SystemExit(
+            "[gen_acceptance] 書いていない項目に、理由が在りません（fail-closed 8・9）＝"
+            + "・".join(miss_why)
+            + '\n  ★形＝{"非該当": "理由（出どころ）"} を元データの「設計の中身」に書いてください。')
+
+    for it in items:
+        no = str(it.get("番号"))
+        add(f"### {no} {it.get('名前')}")
+        add("")
+        if it.get("中身"):
+            add(f"**この項目に書くこと**＝{it['中身']}")
+            add("")
+        got = body.get(no)
+        if isinstance(got, dict) and got.get("非該当"):
+            add(f"**非該当。**{got['非該当']}")
+            add("")
+            continue
+        if isinstance(got, dict):
+            for line in got.get("本文") or []:
+                add(line)
+            add("")
+            blk = got.get("囲み")
+            if blk:
+                add(_begin(blk, _h(build(blk, d))))
+                add(build(blk, d))
+                add(_end(blk))
+                add("")
+        elif isinstance(got, list):
+            # ★本文は行の一覧で持つ（1行ずつ出す。まとめて str() にすると
+            #   Python の一覧の形（角括弧と引用符）がそのまま設計書に出る）。
+            for line in got:
+                add(str(line))
+            add("")
+        else:
+            add(str(got))
+            add("")
+    # ★一覧は節の最後（まこさん指摘 2026-09-10「4-A この節に何を書いたか（一覧）などは後半でよいのでは？」）
+    L.extend(tbl)
+    return "\n".join(L)
+
 
 def page(d: dict) -> str:
     """7つの節の設計書を組み立てる（囲みの外＝元データの文をそのまま置く）。"""
@@ -550,22 +731,7 @@ def page(d: dict) -> str:
 
     add("## 4｜設計の中身")
     add("")
-    add("### 4-1 組み方")
-    add("")
-    for x in d.get("組み方") or []:
-        add(f"- {x}")
-    add("")
-    add("### 4-2 守る法則（正本の全件・1件も落としません）")
-    add("")
-    add(_begin("LAWS", _h(build("LAWS", d))))
-    add(build("LAWS", d))
-    add(_end("LAWS"))
-    add("")
-    add("### 4-3 触る関数と、その定義の行")
-    add("")
-    add(_begin("CODEREF", _h(build("CODEREF", d))))
-    add(build("CODEREF", d))
-    add(_end("CODEREF"))
+    add(section4(d))
     add("")
 
     add("## 5｜決めたことと理由・捨てた案")
@@ -651,7 +817,18 @@ def page(d: dict) -> str:
     #   それを目印として数え、その後ろの最初の囲みを読む。見出しに SPEC と書くと、
     #   すぐ後ろの DESIGN_CONTRACT の囲みを SPEC として読み、齟齬 66件の誤報が出た（実測）。
     #   ★目印は、下の単独の行（DESIGN_CONTRACT／SPEC）だけに置く。
-    add("### 7-7 プログラムが読む設定（2つ）")
+    # ★2026-09-10＝§4 から §7 へ移した（別の AI の点検・逐語「恒久の決まり69番は、
+    #   行番号を手で打つなと求めています。（略）手で書く §4 に置くと、69番と正面から
+    #   ぶつかります」）。実測＝同じ4件の関数が §4-3・§7-7 の DESIGN_CONTRACT・
+    #   §7-7 の SPEC の3か所に出ていた。
+    add("### 7-7 触る関数と、その定義の行")
+    add("")
+    add(_begin("CODEREF", _h(build("CODEREF", d))))
+    add(build("CODEREF", d))
+    add(_end("CODEREF"))
+    add("")
+
+    add("### 7-8 プログラムが読む設定（2つ）")
     add("")
     add(_begin("SPEC", _h(build("SPEC", d))))
     add(build("SPEC", d))
@@ -688,8 +865,6 @@ def write(dry: bool = False, dest: Path = None) -> int:
 
 
 def verify(dest: Path = None) -> int:
-    return 0  # わざと骨抜きにした（壊すプログラム b72）
-    return 0  # わざと骨抜きにした（壊すプログラム b72）
     """囲みの中が、機械の書いたままかを検出する。
 
     ★2026-09-09＝読む相手を差し替えられるようにした（`write` と対）。

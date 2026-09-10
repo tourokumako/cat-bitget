@@ -123,7 +123,33 @@ _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.
               'gen_stage0_match.py',
               # ★2026-09-10＝§2.2 の段0 の②＝1列と1組の時間を実測する道具。
               #   書き出す先は stage0_timing.md の1本だけ。売買は1件も回さない（net はゼロ）。
-              'gen_stage0_timing.py')
+              'gen_stage0_timing.py',
+              # ★2026-09-10＝§2.2 の項目（共通の決まり・段0〜段5）を機械で抜き出し、
+              #   M2-E-2 の設計書のどの節に落とすかを表にする道具。
+              #   書き出す先は s22_map.md の1本だけ。読むのは engine_tuner_milestones2.md と
+              #   s22_map_src.json（どちらも読むだけ）。承認の印にも凍結の記録にも触らない。
+              #   なぜ要ったか＝2026-09-10 に、私が §2.2 を3回 読んだうえで設計書に段を
+              #   1つも落とさなかった（まこさん「§2.2 の通りに設計してないのでは？」）。
+              'gen_s22_map.py',
+              # ★2026-09-10＝§2.2 の段1〜段3 を「まとめて」回すと何通りかを数える道具。
+              #   まこさんの説明「まとめて検索可能であれば、まとめたほうが良い」の判断の材料。
+              #   書き出す先は s22_combi.md の1本だけ。読むのは成績表・法則ファイル・
+              #   search_limits.json（どれも読むだけ）。承認の印にも凍結の記録にも触らない。
+              'gen_s22_combi.py',
+              # ★2026-09-10＝短い期間で測った順位が、全期間の順位と合うかを測る道具。
+              #   「束を大量に作り、短い期間で測って悪い半分を落とす」案の前提を確かめる。
+              #   書き出す先は s22_fidelity.md の1本だけ。売買は1件も回さない（run_recipe も score も呼ばない）。
+              'gen_s22_fidelity.py',
+              # ★2026-09-10＝設計書の §4（設計の中身）に何を書くべきかを、3つの出どころ
+              #   （うちの正本・外の標準・まこさんが過去に指摘した落ち）から抜いて並べる道具。
+              #   書き出す先は design_sections.md の1本だけ。読むのは permanent_rules.md・
+              #   acceptance_checklist.md・hook・worklog・design_section_sources.json（どれも読むだけ）。
+              #   承認の印にも凍結の記録にも触らない。
+              #   なぜ要ったか＝まこさん指摘 2026-09-10「物事を組み立てる順番や複合要因の
+              #   組み合わせ方など、思考が支離滅裂でその場しのぎすぎるんだよ」。私が §4 の項目を
+              #   思いつきで足し、4回とも まこさんの問いで落ちが出た（恒久39番＝正本の網羅一覧
+              #   との全数照合から始める、に反していた）。
+              'gen_design_sections.py')
 _RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')

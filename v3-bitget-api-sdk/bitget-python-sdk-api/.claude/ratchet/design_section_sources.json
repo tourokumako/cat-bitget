@@ -1,0 +1,80 @@
+{
+  "_これは何か": "設計書の §4（設計の中身）に何を書くべきかの、出どころの一覧。B（外の標準）は本文を開いて取った逐語をそのまま持つ。A（うちの正本）と C（まこさんが過去に指摘した落ち）は gen_design_sections.py が実物から抜く。",
+  "_なぜ在るか": "まこさん指摘 2026-09-10（逐語）「物事を組み立てる順番や複合要因の組み合わせ方など、思考が支離滅裂でその場しのぎすぎるんだよ」。私が思いつきで項目を足し、4回とも まこさんの問いで落ちが出た。恒久の決まり39番＝設計は正本の網羅一覧との全数照合から始める。この JSON が、その網羅一覧の B にあたる。",
+  "_取った日": "2026-09-10",
+  "_取り方": "WebFetch で本文を開いて逐語を取った。要約や記憶からは書いていない（恒久43番）。",
+
+  "B_外の標準": {
+    "IEEE_1016_2009": {
+      "出どころ": "https://en.wikipedia.org/wiki/Software_design_description ／ https://raw.githubusercontent.com/Xett/Software-Design-Documentation/master/IEEE-1016%20(SDD)/IEEE-1016-Template.md",
+      "一覧を導入する逐語": "IEEE 1016 defines the following design viewpoints for use:",
+      "選ぶものであることの逐語": "雛形の §2 の見出し＝Design Overview（Stakeholders, concerns, and chosen viewpoints）",
+      "視点": [
+        {"名前": "Context viewpoint", "逐語": "The purpose of the Context viewpoint is to identify a design subject's offered services, its actors (users and other interacting stakeholders), to establish the system boundary and to effectively delineate the design subject's scope of use and operation."},
+        {"名前": "Composition viewpoint", "逐語": "Software developers and maintainers use this viewpoint to identify the major design constituents of the design subject, to localise and allocate functionality, responsibilities, or other design roles to these constituents."},
+        {"名前": "Logical viewpoint", "逐語": "The purpose of the Logical viewpoint is to elaborate existing and designed types and their implementations as classes and interfaces with their structural static relationships."},
+        {"名前": "Dependency viewpoint", "逐語": "A Dependency view provides an overall picture of the design subject in order to assess the impact of requirements or design changes. It can help maintainers to isolate entities causing system failures or resource bottlenecks."},
+        {"名前": "Information viewpoint", "逐語": "Key concerns include persistent data structure, data content, data management strategies, data access schemes, and definition of metadata."},
+        {"名前": "Patterns use viewpoint", "逐語": "Key concerns include reuse at the level of design ideas (design patterns), architectural styles, and framework templates."},
+        {"名前": "Interface viewpoint", "逐語": "An Interface view description serves as a binding contract among designers, programmers, customers, and testers."},
+        {"名前": "Structure viewpoint", "逐語": "Compositional structure of coarse-grained components and reuse of fine-grained components"},
+        {"名前": "Interaction viewpoint", "逐語": "For designers. This includes evaluating allocation of responsibilities in collaborations, especially when adapting and applying design patterns."},
+        {"名前": "State dynamics viewpoint", "逐語": "System dynamics including modes, states, transitions, and reactions to events."},
+        {"名前": "Algorithm viewpoint", "逐語": "The Algorithm viewpoint provides details needed by programmers, analysts of algorithms in regard to time-space performance and processing logic prior to implementation."},
+        {"名前": "Resource viewpoint", "逐語": "Key concerns include resource utilisation, resource contention, availability, and performance."}
+      ],
+      "設計書に要る情報の種類（雛形 §4 の見出し）": [
+        "SDD Identification", "Design Stakeholders and their Concerns", "Design Views",
+        "Design Viewpoints", "Design Elements", "Design Overlays", "Design Rationale", "Design Languages"
+      ]
+    },
+
+    "Google_design_doc": {
+      "出どころ": "https://www.industrialempathy.com/posts/design-docs-at-google/",
+      "節": [
+        {"名前": "Context and scope", "逐語": "This section gives the reader a very rough overview of the landscape in which the new system is being built"},
+        {"名前": "Goals and non-goals", "逐語": "A short list of bullet points of what the goals of the system are"},
+        {"名前": "The actual design / System-context-diagram", "逐語": "Such a diagram shows the system as part of the larger technical landscape"},
+        {"名前": "The actual design / APIs", "逐語": "If the system under design exposes an API, then sketching out that API is usually a good idea"},
+        {"名前": "The actual design / Data storage", "逐語": "Systems that store data should likely discuss how and in what rough form this happens"},
+        {"名前": "The actual design / Code and pseudo-code", "逐語": "Design docs should rarely contain code, or pseudo-code except in situations where novel algorithms are described"},
+        {"名前": "The actual design / Degree of constraint", "逐語": "One of the primary factors that would influence the shape of a software design"},
+        {"名前": "Alternatives considered", "逐語": "This section lists alternative designs that would have reasonably achieved similar outcomes"},
+        {"名前": "Cross-cutting concerns", "逐語": "This is where your organization can ensure that certain cross-cutting concerns such as security, privacy, and observability are always taken into consideration"}
+      ]
+    },
+
+    "Range_Tech_Spec": {
+      "出どころ": "https://www.range.co/blog/better-tech-specs",
+      "節": ["Overview", "Background", "Goals, non-goals, and future goals", "Detailed design",
+             "Third-party considerations", "Work estimates", "Roll-out plan",
+             "Alternative approaches", "Related work", "Future work"],
+      "Detailed_design_が投げる問い_逐語": "What are the user requirements? What systems will be affected? What new data structures are needed, what data structures will be changed? What new APIs will be needed, what APIs will be changed? What are the efficiency considerations (time/space)? What are the expected access patterns (load/throughput)? How will data be validated and what are the potential error states? Are there any logging, monitoring, or observability needs? Are there any security considerations? Are there any privacy considerations? Are there any mobile considerations? Are there any web-specific considerations? How will the changes be tested? How does internationalization and localization — translations, time zones, unicode, etc. — affect your solution?",
+      "全部に答えなくてよいことの逐語": "(You probably don't need to answer all of them.)",
+      "Detailed_design_の目的_逐語": "Build alignment and communicate a definition of done"
+    }
+  },
+
+  "A_うちの正本_どこを見るか": {
+    "_注記": "中身は gen_design_sections.py が実物から抜く。ここには「どのファイルの、どの節を見るか」だけを書く。",
+    "見る先": [
+      {"ファイル": ".claude/rules/permanent_rules.md", "節": "恒久の決まり70番（設計書の形＝7つの節と §4 の中身）", "なぜ": "まこさん決定 2026-09-09。§4 に何を書くかが直接 書いてある"},
+      {"ファイル": ".claude/rules/permanent_rules.md", "節": "恒久の決まり69番（手で書いてよいのは5つ）", "なぜ": "手で書く部分と、プログラムが作る部分の線"},
+      {"ファイル": ".claude/rules/permanent_rules.md", "節": "恒久の決まり71番（BOT の中身に関わらない道具には過剰なテストを付けない）", "なぜ": "工事の大きさで書く量を変える線"},
+      {"ファイル": ".claude/rules/permanent_rules.md", "節": "§0-2（設計書の置き場所と控え）・§0-3（各段階で CC 以外が確認）", "なぜ": "設計書の運用の決まり"},
+      {"ファイル": ".claude/rules/permanent_rules.md", "節": "恒久の決まり39番（正本の網羅一覧との全数照合から始める）", "なぜ": "この作業そのものの決まり"},
+      {"ファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/rules/acceptance_checklist.md", "節": "群1（12件）と群2（18件）の全項目", "なぜ": "hook が実際に求める項目の正本"},
+      {"ファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/rules/cc_role.md", "節": "§1.4.6.1（設計提案の前に出す10〜12項目）・§3.6（専門用語に括弧で説明）", "なぜ": "設計提案そのものへの要求"},
+      {"ファイル": ".claude/hooks/", "節": "acceptance.md を相手にする hook（実測32本）が求める見出しと判定", "なぜ": "書かないと物理的に止まる項目"}
+    ]
+  },
+
+  "C_まこさんが過去に指摘した落ち_どこを見るか": {
+    "_注記": "中身は gen_design_sections.py が実物から抜く。抜き方＝worklog 全部（実測47本）から「設計書」を含み、かつ落ちの語（無い・落ち・入っていない・書いてない・足りない・抜け・ヌケ・漏れ）を含む行。実測104行。",
+    "見る先": [
+      {"ファイル": ".claude/state/session_worklog_*.md", "なぜ": "まこさんの逐語の指摘が残っている唯一の場所"},
+      {"ファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/rules/false_positive_incident_policy.md", "節": "§3 の違反の記録", "なぜ": "設計書まわりの違反（#12・#13・#23）の型が書いてある"},
+      {"ファイル": ".claude/state/next_step.md", "節": "§6 あとで直すことの一覧", "なぜ": "設計書の落ちとして記録した番号が在る"}
+    ]
+  }
+}
