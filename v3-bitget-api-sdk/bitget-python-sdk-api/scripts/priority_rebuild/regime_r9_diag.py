@@ -115,19 +115,35 @@ def measure(df: pd.DataFrame, recipes: list[dict], start, end, with_trades: bool
             r["注"] = note
         return r
 
+    # ★2026-09-11（M2-E-3 の手順3・設計書の完成の条件 条件10）＝解決表を1回だけ作る。
+    #   直す前＝束1本ごとに `_qtable(df, geo, [rec], …)` を呼んでいた（下のくり返しの中）。
+    #   解決表の鍵は材料1本ずつに付く名前で、同じ材料はどの束から来ても同じ鍵・同じ分布になる。
+    #   だから束を全部 渡すと、鍵が増えるだけ（使わない鍵が在っても、実行器は名前で引くので影響しない）。
+    #   実測＝束50本が使う鍵 382件 → 重なりを除くと 251件（34.3%減・`gen_s22_fidelity.py --keys 50`）。
+    #   ★止まり方が変わる＝直す前は、ある束の鍵が解けないとその束だけ「測れない」と出して次へ進んだ。
+    #     まとめて作ると、その分岐に入らない。代わりに `build_qtable` の中の
+    #     「有効標本がゼロで解決できない鍵は表から落とす」が効き、その鍵を使う束は実行器の G5 で拒否される。
+    #     どちらも嘘の閾値は作らないが、画面に出る文言が変わる（設計書 4-13 に書いた）。
+    qt_all = None
+    qt_err = None
+    if recipes:
+        try:
+            qt_all = _qtable(df, geo, recipes, start, end)
+        except SystemExit as e:            # 73番の型（1m/3m の元データ不足など）＝全部の束を「測れない」にする
+            qt_err = str(e)[:80]
+
     # RG-v5（比べる相手）＝いまの E38 の判定。玉は既定の宣言（entry_col=range_ok_rg5）のまま走らせる
     base_rec = recipes[0] if recipes else None
     if "range_ok_rg5" in df.columns:
         rows.append(_row("RG-v5（いまの E38）", df["range_ok_rg5"].to_numpy(bool), base_rec,
-                         "range_ok_rg5", None if base_rec is None else _qtable(df, geo, [base_rec], start, end)))
+                         "range_ok_rg5", None if base_rec is None else qt_all))
     for rec in recipes:
         bd = rec["meta"]["regime"]["build"]
         out_col = bd["entry"]["out_col"]
-        try:
-            qt = _qtable(df, geo, [rec], start, end)
-        except SystemExit as e:                # 73番の型（1m/3m の元データ不足など）＝測れないと出して先へ
-            rows.append({"判定": rec["meta"].get("logic_id"), "注": f"測れない: {str(e)[:80]}"})
+        if qt_err is not None:
+            rows.append({"判定": rec["meta"].get("logic_id"), "注": f"測れない: {qt_err}"})
             continue
+        qt = qt_all                        # ★作り直さない（上で1回 作った表を使い回す）
         d2 = df.copy()
         d2.attrs = {}
         ex.build_regime_columns(d2, rec, geo, qt)

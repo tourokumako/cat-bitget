@@ -1,0 +1,93 @@
+5,7c5,7
+< TARGET: .claude/tools/check_milestone_tidy.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/recipes/search_limits.json, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_bool_col_extra_key.sh, .claude/breaks/b84_qtable_per_bundle.sh, .claude/breaks/b85_band_ignores_laws.sh, .claude/breaks/b86_stage_count.sh, .claude/breaks/b87_stages_record.sh, scripts/priority_rebuild/regime_r9_diag.py, scripts/priority_rebuild/engine_tuner_exec.py
+< NEW_FILE: .claude/tools/check_milestone_tidy.py, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_bool_col_extra_key.sh, .claude/breaks/b84_qtable_per_bundle.sh, .claude/breaks/b85_band_ignores_laws.sh, .claude/breaks/b86_stage_count.sh, .claude/breaks/b87_stages_record.sh
+< MODEL: .claude/breaks/lib.sh, .claude/breaks/b33_extra_switch_off.sh
+---
+> TARGET: .claude/tools/check_milestone_tidy.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/recipes/search_limits.json, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_bool_col_extra_key.sh, .claude/breaks/b84_qtable_per_bundle.sh, .claude/breaks/b85_band_ignores_laws.sh, .claude/breaks/b86_stage_count.sh, .claude/breaks/b87_stages_record.sh, .claude/breaks/b88_stage_fam_unknown.sh, scripts/priority_rebuild/regime_r9_diag.py, scripts/priority_rebuild/engine_tuner_exec.py, .claude/tools/gen_regime_kb.py, .claude/tools/gen_stage0_match.py, .claude/ratchet/m2_stage_candidates.json
+> NEW_FILE: .claude/tools/check_milestone_tidy.py, .claude/ratchet/m2_stage_candidates.json, .claude/breaks/b88_stage_fam_unknown.sh, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_bool_col_extra_key.sh, .claude/breaks/b84_qtable_per_bundle.sh, .claude/breaks/b85_band_ignores_laws.sh, .claude/breaks/b86_stage_count.sh, .claude/breaks/b87_stages_record.sh
+> MODEL: .claude/breaks/lib.sh, .claude/breaks/b33_extra_switch_off.sh, .claude/ratchet/m2_todo.json
+226c226
+< | 5 | **段1〜段3 の候補の元を、その関数の中で分ける** | 同上（引数 `stage` で分岐） | 4-4 の手順2〜8（段ごとの元・並び・審査） | 4-4 の本数（354／104／1／229）と合う（★実装して出た本数を記録し、大きく外れたら理由を書く） |
+---
+> | 5 | **段1〜段3 の候補の元を、その関数の中で分ける** | 同上（引数 `stage` で分岐） | 4-4 の手順2〜8（段ごとの元・並び・審査） | 完成の条件 **条件12**（候補の出どころを4つ 測る。★本数は画面に出すだけで、合格の条件にしない） |
+232a233,236
+> | **12** | **★§2.2 の候補の一覧を、正本の指標の名前で持つ元データを作る**（新規 `m2_stage_candidates.json`）。`gen_regime_kb.py` に書く種類を1つ足し、§2.2 の中に機械が作る囲みを置く。`gen_stage0_match.py` の手書きの一覧を、その元データから読む形にする | `.claude/ratchet/m2_stage_candidates.json`（新規）／`.claude/tools/gen_regime_kb.py` の `SRC`・`TAG`・`DEST` に種類 `stage` を足す／`.claude/tools/gen_stage0_match.py` の `STAGES` | **4-21**（元データの鍵・正本との照合のしかた） | 完成の条件 **条件14**（正本に無い指標の名前を書くと `--write` が止まる） |
+> | **13** | **★候補の絞りを、部分一致から元データの完全一致に変える**。あわせて自己テストの本数の判定を外し、出どころを測る判定に置き換える | `engine_tuner_gen.py` の `build_stage_candidates`（絞りの行）と `stage_candidate_words` ／ 自己テスト T40 | **4-21**／4-4 の手順2〜8 | 完成の条件 **条件12**（出どころ4つ） |
+> 
+> **★監査に見てもらう条件を、5件から6件に増やしました**（AUDIT-1〜6）。**5件という線は私が引いたもので、まこさんの決定ではありません。**増やした理由＝AUDIT-6（§2.2 の候補の一覧を正本の指標の名前だけにする）は、まこさんの指示 2026-09-11 で足した守りで、**「私が手で書き換えられる状態」を終わらせる中核**だからです。
+624c628,630
+< | 順 | 段 | 出す候補の本数 | 何で決まるか |
+---
+> **★下の本数は「どのくらいの規模か」を示す見積もりです。合格の条件ではありません。**出どころ＝監査 cp35 が実物から数えた値（私も同じプログラムを走らせて同じ数が出ました）。**実装して走らせたら、出た本数をそのまま記録します。**★2026-09-11 に、私はこの本数を自己テストの合格の条件にし、数が合うまで絞り方を3回 書き換えました。**それは「数字を合わせる」ことで、やってはいけないことです**（まこさん指摘「不正はすべて重大インシデント級だ」）。**合格の条件にするのは候補の出どころです**（条件12・4-21）。
+> 
+> | 順 | 段 | 出す候補の本数（見積もり） | 何で決まるか |
+837c843
+< **★実装する人への注意**＝この 354本 も「実装したら必ずこの数が出る」という保証ではありません。**実装して出た本数を記録し、354 から大きく外れたら理由を書いてください。**
+---
+> **★実装する人への注意**＝この 354本 も「実装したら必ずこの数が出る」という保証ではありません。**実装して出た本数を、そのまま記録してください。本数を合格の条件にしてはいけません。**理由＝私（CC）は 2026-09-11 に本数を合格の条件にし、**監査の数に近づくまで絞り方を3回 書き換えました**（618本 → 444本 → 完全一致の形）。合格の条件にするのは**候補の出どころ**です（条件12 の4つ・4-21）。
+1134c1140
+< <!-- ACC_SELFTEST_START hash=b7774b3c56f44763 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SELFTEST_START hash=01e98cf0ab1cdb0a gen_acceptance.py が自動生成＝手で書き換えない -->
+1147c1153
+< | `b84_qtable_per_bundle.sh` | #13 | 束ごとに作り直す形（`_qtable(df, geo, [rec], …)` をくり返しの中へ戻す）にすると、呼び出し回数が 3 になる |
+---
+> | `b84_qtable_per_bundle.sh` | #14 | 束ごとに作り直す形（`_qtable(df, geo, [rec], …)` をくり返しの中へ戻す）にすると、呼び出し回数が 3 になる |
+1149,1151c1155,1158
+< | `b86_stage_count.sh` | #11 | 候補の元から法則の名指しを外すと、本数が桁で変わって T40 が落ちる |
+< | `b87_stages_record.sh` | #12 | 記録を書く行を消すと、T41 が『stages の鍵が無い』で落ちる |
+< | `（既存の恒等の仕組み）` | #14 | 既定の動きを変えると md5 が変わる |
+---
+> | `b86_stage_count.sh` | #11 | 候補の元から法則の名指しを外すと、法則の外の系統が混ざって T40③ の②が落ちる |
+> | `b87_stages_record.sh` | #13 | 記録を書く行を消すと、T41 が『stages の鍵が無い』で落ちる |
+> | `b88_stage_fam_unknown.sh` | #12 | 元データに正本に無い指標の名前（例＝`帯内位置`）を1件 書くと `--write stage` が止まる |
+> | `（既存の恒等の仕組み）` | #15 | 既定の動きを変えると md5 が変わる |
+1263,1266c1270,1274
+< | 11 | 条件12＝候補を作る関数が、段ごとに決まった本数の候補を返す（T40＝段1 が 354本・段2a が 104本・段2b が 1本・段2c が 229本。±10% まで許し、外れたら理由を画面に出す）。★監査 cp35 の Critical C-3＝作る順の手順4・5 に当たる条件が1つも無かった | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 候補の元から法則の名指しを外すと、本数が桁で変わって T40 が落ちる | `b86_stage_count.sh` | — | **未着手** |
+< | 12 | 条件13＝段ごとの記録（`stages`）が引いた記録に入り、鍵6つ（stage・n_candidates・n_passed・keep・sec・dropped）が全部 揃っている（T41）。★監査 cp35 の Critical C-3＝作る順の手順6 に当たる条件が無かった | `python3 scripts/priority_rebuild/regime_r9_diag.py --build 1 --no-trades --seed 7` | 実経路 | 記録を書く行を消すと、T41 が『stages の鍵が無い』で落ちる | `b87_stages_record.sh` | — | **未着手** |
+< | 13 | 条件10＝分位の解決表を、束の本数によらず1回だけ作る（T38＝束を3本 渡したとき `build_qtable` の呼び出し回数が 1） | `python3 scripts/priority_rebuild/regime_r9_diag.py --build 3 --no-trades --seed 7` | 実経路 | 束ごとに作り直す形（`_qtable(df, geo, [rec], …)` をくり返しの中へ戻す）にすると、呼び出し回数が 3 になる | `b84_qtable_per_bundle.sh` | — | **未着手** |
+< | 14 | 条件11＝直す前と後で結果が同じか確かめる3本の走行（S1・S2・L1）の md5 が変わらない | `python3 scripts/priority_rebuild/engine_tuner_exec.py --identity` | 実経路 | 既定の動きを変えると md5 が変わる | `（既存の恒等の仕組み）` | — | **未着手** |
+---
+> | 11 | 条件12＝候補を作る関数が返す候補の**出どころ**が4つとも正しい（T40③）。①指標の名前が、元データ `m2_stage_candidates.json` の `families`・`lineages` の中だけから来ている（外のものが1件でもあれば落ちる）②法則ファイルが名指しした系統・family の中だけ（外れが1件でもあれば落ちる）③時間足が執行足より上で、外す3本（1m・3m・10m）を1件も含まない ④元データの指標のうち、成績表に列が在るものが1件以上 候補に出ている（0件なら落ちる）。★**本数は画面に出すだけで、合格の条件にしない**＝2026-09-11 に私が、本数を監査の実測に合わせるために絞り方を3回 書き換えたため（まこさん指摘「不正はすべて重大インシデント級だ」）。★監査 cp35 の Critical C-3＝作る順の手順4・5 に当たる条件が1つも無かった | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 候補の元から法則の名指しを外すと、法則の外の系統が混ざって T40③ の②が落ちる | `b86_stage_count.sh` | — | **未着手** |
+> | 12 | AUDIT-6＝§2.2 の候補の一覧が、正本の指標の名前だけで書かれている（正本に無い名前・知らない系統・価格水準の列・知らない前処理のどれかを元データに書くと `gen_regime_kb.py --write stage` が止まる）。あわせて `gen_stage0_match.py` に手書きの候補の一覧が0件（元データから読む） | `python3 .claude/tools/gen_regime_kb.py --verify stage && grep -c 'STAGES = \[' .claude/tools/gen_stage0_match.py` | 実経路 | 元データに正本に無い指標の名前（例＝`帯内位置`）を1件 書くと `--write stage` が止まる | `b88_stage_fam_unknown.sh` | 対象 | **未着手** |
+> | 13 | 条件13＝段ごとの記録（`stages`）が引いた記録に入り、鍵6つ（stage・n_candidates・n_passed・keep・sec・dropped）が全部 揃っている（T41）。★監査 cp35 の Critical C-3＝作る順の手順6 に当たる条件が無かった | `python3 scripts/priority_rebuild/regime_r9_diag.py --build 1 --no-trades --seed 7` | 実経路 | 記録を書く行を消すと、T41 が『stages の鍵が無い』で落ちる | `b87_stages_record.sh` | — | **未着手** |
+> | 14 | 条件10＝分位の解決表を、束の本数によらず1回だけ作る（T38＝束を3本 渡したとき `build_qtable` の呼び出し回数が 1） | `python3 scripts/priority_rebuild/regime_r9_diag.py --build 3 --no-trades --seed 7` | 実経路 | 束ごとに作り直す形（`_qtable(df, geo, [rec], …)` をくり返しの中へ戻す）にすると、呼び出し回数が 3 になる | `b84_qtable_per_bundle.sh` | — | **未着手** |
+> | 15 | 条件11＝直す前と後で結果が同じか確かめる3本の走行（S1・S2・L1）の md5 が変わらない | `python3 scripts/priority_rebuild/engine_tuner_exec.py --identity` | 実経路 | 既定の動きを変えると md5 が変わる | `（既存の恒等の仕組み）` | — | **未着手** |
+1272c1280
+< <!-- ACC_CODEREF_START hash=671f2ed837274672 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=5561d829a01ddae1 gen_acceptance.py が自動生成＝手で書き換えない -->
+1279,1282c1287,1290
+< | `sample_regime_build` | 2385 |
+< | `_ranked_material_at` | 2215 |
+< | `regime_draw_order` | 2256 |
+< | `build_qtable` | 2876 |
+---
+> | `sample_regime_build` | 2624 |
+> | `_ranked_material_at` | 2221 |
+> | `regime_draw_order` | 2262 |
+> | `build_qtable` | 3128 |
+1284c1292
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 135件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 139件の関数が在ります）。
+1290c1298
+< <!-- ACC_SPEC_START hash=4a70b3ec75a143a5 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=fe551622ccf76cb2 gen_acceptance.py が自動生成＝手で書き換えない -->
+1402a1411,1421
+>   "stage_candidate_words": [
+>    "SampleError"
+>   ],
+>   "build_stage_candidates": [
+>    "SampleError",
+>    "int_range_of",
+>    "material_ranges",
+>    "q_range_of",
+>    "ranked_groups",
+>    "stage_candidate_words"
+>   ],
+1484a1504
+>    "build_stage_candidates",
+1486a1507
+>    "laws_for_scene",

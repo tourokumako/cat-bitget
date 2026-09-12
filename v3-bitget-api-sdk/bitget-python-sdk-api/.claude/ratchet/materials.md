@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=62fc2d26738de32d gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=6119a6806cff9dc0 gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -21,7 +21,7 @@
 | 印 | 何を足すか | 数 | 出どころ |
 |---|---|---|---|
 | A | 業界のライブラリに在って、うちの材料に無い指標 | **0 種類** | 検査10（observe_diag） |
-| B | ★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標 | **118 種類** | 段5 で新しく数えた（検査には無い） |
+| B | ★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標 | **119 種類** | 段5 で新しく数えた（検査には無い） |
 | C | ★参照表に在るのに、材料カタログにも別枠にも無い（需給） | **0 件** | 段5 で新しく数えた（検査7 は『あり』と出る＝別の道で見ている）／2026-09-06 に「型の表の別枠に在るものは除く」を足した |
 | D | 「終値と◯◯の距離%」に対する「◯◯ そのものの向き」 | **62 件** | 検査9（observe_diag） |
 | E | 軸カタログ（入口 E-c）の未実装 | **1 件** | 検査7（observe_diag） |
@@ -31,7 +31,7 @@
 **中身（名前の一覧）**
 
 - **A（0 種類）** … 下の『材料の一覧』で状態が「足す」の行
-- **B（118 種類）** … RCI・zscore・zscore_return・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・Supertrend・APO%・BIAS・BOP・AR・BR・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・LRSI・MOM%・PGO・PO・PSL・RSX・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SQZ%・SQZPRO_ON_WIDE・TD_SEQ_UP・TD_SEQ_DN・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・ALMA傾き%・DEMA傾き%・FWMA傾き%・HMA傾き%・LINREG傾き%・LRangle・LRb傾き%・LRslope%・MCGD傾き%・MIDPOINT傾き%・MIDPRICE傾き%・MMAR傾き%・PWMA傾き%・RAINBOW傾き%・RMA傾き%・SINWMA傾き%・SSF傾き%・SWMA傾き%・T3傾き%・TEMA傾き%・TRIMA傾き%・TSF傾き%・VIDYA傾き%・VWMA傾き%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・QSTICK%・TTM_TREND・ADOSC比・AOBV_LR・MARKETFI比・PVI傾き・PVOL比・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MEDIAN傾き%・VOSC・CVI・PDIST%・RVI・THERMO比・EBSW・HT_DCPERIOD・HT_INPHASE%・HT_QUAD%・HT_SINE・HT_LEADSINE・HT_TRENDMODE・MSW_SINE・MSW_LEAD・実体幅比・内側バー・open_Z・high_Z・low_Z・HA実体%・HA上ヒゲ比・HA下ヒゲ比
+- **B（119 種類）** … RCI・zscore・zscore_return・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・Supertrend・APO%・BIAS・BOP・AR・BR・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・LRSI・MOM%・PGO・PO・PSL・RSX・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SQZ%・SQZPRO_ON_WIDE・SQZPRO_ON_NARROW・TD_SEQ_UP・TD_SEQ_DN・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・ALMA傾き%・DEMA傾き%・FWMA傾き%・HMA傾き%・LINREG傾き%・LRangle・LRb傾き%・LRslope%・MCGD傾き%・MIDPOINT傾き%・MIDPRICE傾き%・MMAR傾き%・PWMA傾き%・RAINBOW傾き%・RMA傾き%・SINWMA傾き%・SSF傾き%・SWMA傾き%・T3傾き%・TEMA傾き%・TRIMA傾き%・TSF傾き%・VIDYA傾き%・VWMA傾き%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・QSTICK%・TTM_TREND・ADOSC比・AOBV_LR・MARKETFI比・PVI傾き・PVOL比・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MEDIAN傾き%・VOSC・CVI・PDIST%・RVI・THERMO比・EBSW・HT_DCPERIOD・HT_INPHASE%・HT_QUAD%・HT_SINE・HT_LEADSINE・HT_TRENDMODE・MSW_SINE・MSW_LEAD・実体幅比・内側バー・open_Z・high_Z・low_Z・HA実体%・HA上ヒゲ比・HA下ヒゲ比
 - **C（0 件）** … （無し＝3件とも型の表の別枠に在る）
 - **D（62 件）** … 転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S
 - **E（1 件）** … トレンド/モメンタム＝MTF傾き整合
@@ -50,9 +50,9 @@
 | 何 | 数 |
 |---|---|
 | 材料カタログの列（部品 × 時間足） | 6105 列 |
-| **engine_tuner が選べる列** | **3322 列（54.4%）** |
-| engine_tuner が選べる指標の種類 | **139 種類** |
-| **engine_tuner が選べない指標の種類** | **118 種類**（上の一覧 B） |
+| **engine_tuner が選べる列** | **3311 列（54.2%）** |
+| engine_tuner が選べる指標の種類 | **138 種類** |
+| **engine_tuner が選べない指標の種類** | **119 種類**（上の一覧 B） |
 | そのほかに選べるもの（レンジ幾何） | W%・帯内位置% |
 | そのほかに選べるもの（時間帯） | 時刻だけ（型の表は 時刻・曜日 を許す） |
 
@@ -426,17 +426,17 @@
 
 | 何 | 数 |
 |---|---|
-| 指標の種類 | **139** |
+| 指標の種類 | **138** |
 | うち **パラメータを2つ以上 持つ**（同じ指標のパラメータ違いで 2本 並べられる） | **79** |
 | うち パラメータが1つだけ | 29 |
-| うち パラメータが無い | 31 |
+| うち パラメータが無い | 30 |
 | 時間足 | 11 |
 
 ### 部品を「何が要るか」で分けると
 
 | 何が要るか | 部品 | 使える指標の数 |
 |---|---|---|
-| **材料 1本** | 値を持ってくる・n本 ずらす・n本の平均・絶対値・比べる・掛け算・値が在るか（＋足りない部品の n本の最大値・最小値・順位・ばらつき） | **139（全部）** |
+| **材料 1本** | 値を持ってくる・n本 ずらす・n本の平均・絶対値・比べる・掛け算・値が在るか（＋足りない部品の n本の最大値・最小値・順位・ばらつき） | **138（全部）** |
 | **材料 2本** | 引き算（差・クロス・タッチ）（＋足りない部品の 割り算・2本の相関） | **79**（同じ指標のパラメータ違いに限る） |
 | **条件を受ける** | かつ・でない・n本のうち 全部／どれか・条件を n本 ずらす（＋足りない部品の どれか満たす・何本前に成立したか） | 指標に依らない |
 
@@ -738,7 +738,7 @@ T16（架空の列を宣言の写しに足すと、欄が変わり「★列を�
 | SQZ% | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（squeeze）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
 | SQZ_ON | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（squeeze）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
 | SQZPRO_ON_WIDE | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（squeeze_pro）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
-| SQZPRO_ON_NARROW | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（squeeze_pro）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
+| SQZPRO_ON_NARROW | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（squeeze_pro）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
 | STC | トレンド | いま どちらへ動いているか | env | うちの自前の式／ライブラリに同じものが在る（stc）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
 | STCstoch | トレンド | いま どちらへ動いているか | env | うちの自前の式／ライブラリに同じものが在る（stc）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
 | StochRSI%K | オシレーター | 行き過ぎているか（買われすぎ・売られすぎ） | sufficiency・trigger | うちの自前の式／ライブラリに同じものが在る（stochrsi）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |

@@ -80,6 +80,9 @@ MAX_BLOCKS = 1          # 1回のやり取りで止める回数の上限（★20
 #     軽い＝形だけ（文の長さ・段落の長さ・名前の羅列・結論の位置）。1回目は止めず、記録して通す。
 #           次の返信でも同じ型が出たら止める（＝直していない）。
 KIND_HEAVY = "報告漏れ"
+# ★2026-09-10 新設（まこさん指示「入れて良い」）＝「やること」の節の書き方。
+#   1回目から止める＝まこさんの逐語「毎回毎回毎回毎回言ってるけど、今後もいちいち言い続けないと直らないのか？」。
+KIND_TODO = "やることの書き方"
 KIND_LIGHT = ("名前の羅列", "文が長い", "段落が長い", "結論の位置")
 HEAD_WORDS = ("決めてほしいこと", "決めることはありません")
 HEAD_LINES = 3          # 先頭から何行目までに上の言葉が在ればよいか
@@ -254,6 +257,74 @@ def check_reported_files(text, changed):
     return None
 
 
+# ---------------- 検査7＝「やること」の節が、読んで分かる形か（2026-09-10 新設） ----------------
+#
+# なぜ足したか（まこさんの指摘 2026-09-10・逐語）:
+#   「次にやること（順番）の文章がわからない。日本語の文法に則って、わかりやすい文章に書き直せる？
+#     これ、毎回毎回毎回毎回言ってるけど、今後もいちいち言い続けないと直らないのか？」
+#   そのとき私が書いた4行＝「C-38 を『拾い間違い』に割り当てる」「設計書に §2.2-2 の C を入れる」など。
+#   主語が無く、記号（④・⑥）だけで指し先を書き、なぜそうするかも書いていなかった。
+#
+# ★1〜6番の検査は、この4行を1つも捕まえなかった。
+#   理由＝短くて（120字未満）、中黒も矢印も並んでいないから。
+#   ＝短く書くほど検査を通り、短く書くほど主語と目的語が消える。
+#
+# 見るところ（3つ・「やること」の見出しを持つ節だけ）:
+#   1. 主語＝その節に「私は」「私が」が1回も無ければ止める（誰がやるのかが書かれていない）。
+#   2. 記号＝丸数字（①〜⑳）を使っていたら止める。何の①か分からないため、言葉で書く。
+#   3. 理由＝「なぜ」「理由」「ため」が1回も無ければ止める（そうする理由が書かれていない）。
+#
+# 限界（正直に）:
+#   「私は」という言葉が在るかどうかしか見ない。中身が本当に伝わるかは機械には分からない。
+#   最後の関所は まこさんの目である。
+
+TODO_HEADS = ("やること", "次の一手", "これからやる")
+CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳"
+SUBJECT_WORDS = ("私は", "私が")
+REASON_WORDS = ("なぜ", "理由", "ため")
+
+
+def todo_sections(text):
+    """「やること」の見出しを持つ節を返す。（見出しの行番号, 見出し, 中身の行の一覧）の組。"""
+    lines = visible_lines(text)
+    out, cur, head, head_no, level = [], [], None, 0, 0
+    for i, s in enumerate(lines, 1):
+        if s.startswith("#"):
+            lv = len(s) - len(s.lstrip("#"))
+            title = strip_markdown(re.sub(r"^#+\s*", "", s))
+            if head is not None and lv <= level:
+                out.append((head_no, head, cur))
+                cur, head = [], None
+            if any(w in title for w in TODO_HEADS):
+                head, head_no, level, cur = title, i, lv, []
+            continue
+        if head is not None and s:
+            cur.append(s)
+    if head is not None:
+        out.append((head_no, head, cur))
+    return out
+
+
+def check_todo_section(text):
+    """「やること」の節に、主語・言葉での指し先・理由が在るかを見る。"""
+    out = []
+    for no, head, body in todo_sections(text):
+        if not body:
+            continue
+        joined = strip_markdown("".join(body))
+        if not any(w in joined for w in SUBJECT_WORDS):
+            out.append(f"{no}行目の「{head[:20]}」の節に、主語（「私は」「私が」）が1つも無い。"
+                       f"1件ずつ「私は ◯◯ を ◯◯ します」の形で書く（誰が何をするのかを書く）。")
+        marks = [c for c in joined if c in CIRCLED]
+        if marks:
+            out.append(f"{no}行目の「{head[:20]}」の節で、丸数字（{''.join(sorted(set(marks)))}）を指し先に使っている。"
+                       f"何の番号か分からないので、言葉で書く（例＝「④設計の中身」→「設計書の『設計の中身』の節」）。")
+        if not any(w in joined for w in REASON_WORDS):
+            out.append(f"{no}行目の「{head[:20]}」の節に、なぜそうするかが1行も無い。"
+                       f"1件ずつ「なぜそうするか」を書く。")
+    return out
+
+
 # ---------------- 検査6＝言い換えの表に載っている語を使っていないか（2026-08-18 新設） ----------------
 #
 # なぜ足したか:
@@ -346,6 +417,8 @@ def check_detail(text, changed=None):
         kinds.add("文が長い")
     if check_paragraph(text):
         kinds.add("段落が長い")
+    if check_todo_section(text):                 # ★2026-09-10 新設
+        kinds.add(KIND_TODO)
     if check_conclusion_first(text):
         kinds.add("結論の位置")
     if check_reported_files(text, changed):
@@ -369,6 +442,8 @@ def gate_decision(kinds, last_kinds, blocked_n):
         return "pass", f"すでに {blocked_n} 回 止めた"
     if KIND_HEAVY in kinds:
         return "block", "報告の中身が減っている"
+    if KIND_TODO in kinds:                       # ★2026-09-10 新設＝1回目から止める
+        return "block", "「やること」の節に、主語・言葉での指し先・理由のどれかが無い"
     same = kinds & set(last_kinds or [])
     if same:
         return "block", "前の返信と同じ型を繰り返している: " + "・".join(sorted(same))
@@ -394,6 +469,7 @@ def check_text(text, changed=None):
     found += check_name_list(text)
     found += check_sentence(text)
     found += check_paragraph(text)
+    found += check_todo_section(text)            # ★2026-09-10 新設（検査7）
     bad = check_conclusion_first(text)
     if bad:
         found.append(bad)
@@ -666,6 +742,23 @@ def selftest():
          None),
         ("1つ目の見出しが結論の言葉なら、前置きが無くても通る",
          "## 結論\n\n- ログを数えました。19件でした。\n",
+         None),
+        # ★2026-09-10 新設＝検査7（「やること」の節の書き方・まこさん指示「入れて良い」）
+        ("★やることの節に主語が無いと止まる",
+         "直しました。\n\n## 次にやること\n\n1. C-38 を拾い間違いに割り当てる。理由は道具の説明文だからです。\n",
+         "主語"),
+        ("★やることの節で丸数字を指し先に使うと止まる",
+         "直しました。\n\n## 次にやること\n\n1. 私は設計書の ④設計の中身 に書き足します。なぜなら落ちているからです。\n",
+         "丸数字"),
+        ("★やることの節になぜそうするかが無いと止まる",
+         "直しました。\n\n## 次にやること\n\n1. 私は設計書の「設計の中身」の節に説明を書き足します。\n",
+         "なぜそうするか"),
+        ("★主語・言葉の指し先・理由が全部 在れば通る",
+         "直しました。\n\n## 次にやること\n\n"
+         "1. 私は設計書の「設計の中身」の節に説明を書き足します。なぜなら、いま書いていないからです。\n",
+         None),
+        ("★「やること」の見出しが無い返信には掛からない",
+         "直しました。\n\n## 調べたこと\n\n- ログを数えました。19件でした。\n",
          None),
     ]
 

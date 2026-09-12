@@ -1,0 +1,127 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2e2-s22-verified-build-20260910",
+ "rows": [
+  {
+   "no": "1",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "2",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "3",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "4",
+   "script": "b78_law_literal.sh",
+   "code": 1,
+   "note": "b78: 数え上げの結果 2 件（0 でない＝乱数が見つかった）",
+   "expect": 1,
+   "means": "組む関数に乱数を1行 書き込むと、数え上げの結果が 0 でなくなった（AUDIT-3 が効いている）",
+   "match": true
+  },
+  {
+   "no": "5",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "6",
+   "script": "b79_param_drawn.sh",
+   "code": 1,
+   "note": "  ❌ T24⑥: 材料の数字が成績表の列の数字と違う: ['S-Rタッチ数(144,0.006)__15m: 材料 (239, 0.002) ／ 列 (144, 0.006)', 'S-Rタッチ数(144,0.006)__30m: 材料 (199, 0.0019) ／ 列 (144, 0.006)', 'S-Rタッチ数(144,0.0015)__1h: 材料 (253, 0.0048) ／ 列 ",
+   "expect": 1,
+   "means": "材料の数字を乱数で引く形に戻すと、T24⑥ が「成績表の列の数字と違う」で落ちた",
+   "match": true
+  },
+  {
+   "no": "7",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "8",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "9",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "10",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "11",
+   "script": "b86_stage_count.sh",
+   "code": 1,
+   "note": "  ❌ T40③-1: stage2c に §2.2 の元データの外の指標が出た: ['SQZ_ON']",
+   "expect": 1,
+   "means": "元データで絞る行を消すと、T40③-1 が「元データの外の指標が出た」で落ちた",
+   "match": true
+  },
+  {
+   "no": "12",
+   "script": "b90_expect_msg_mismatch.sh",
+   "code": 1,
+   "note": "  ❌ 番人 13/14 pass",
+   "expect": 1,
+   "means": "出力に出ない文字を EXPECT_MSG に書くと、走らせる道具の番人 T13 が落ちた",
+   "match": true
+  },
+  {
+   "no": "13",
+   "script": "b89_audit_todo_row_removed.sh",
+   "code": 1,
+   "note": "✅ 法則の件数の照合＝法則ファイル 51件 ／ 表 51行",
+   "expect": 1,
+   "means": "設計書の監査の表から1行 消すと、検出が「手で書き換えられています」で止まった",
+   "match": true
+  },
+  {
+   "no": "14",
+   "script": "b88_stage_fam_unknown.sh",
+   "code": 1,
+   "note": "  stage1: 語「帯内位置」（完全）が正本に1件も当たらない（正本＝indicator_reference_diag.FAMILY_LINEAGE）",
+   "expect": 1,
+   "means": "§2.2 の囲みを作る道具が「語が正本に1件も当たらない」で止まった（守りが働いた）",
+   "match": true
+  },
+  {
+   "no": "15",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "16",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "17",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  }
+ ]
+}

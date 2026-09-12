@@ -238,6 +238,19 @@ def _readonly_seg(seg):
                 and not any(_t.startswith('--freeze') or _t.startswith('--out')
                             for _t in _toks)):
             return True
+        # ★2026-09-11（まこさん指示・逐語「ヌケモレ発生しそうなので、自動生成で対応できない？」）
+        #   ＝監査レポートから直す対象を抜き出す道具を、**読むときだけ**通す。
+        #   なぜ名前だけの一覧（_TOOL_OK_J）に入れないか＝この道具は `--write` で
+        #     設計書（acceptance.md）に書き込める。書ける道具を名前だけで通すと、
+        #     Bash から設計書を書き替える道ができる。
+        #   通す条件（2つとも要る）＝①先頭の .py が gen_audit_todo.py
+        #     ②`--show`・`--verify`・`--selftest` のどれかが在り、`--write` が無い。
+        #   なぜ要ったか（実測 2026-09-11）＝監査の指摘と、いまの状態を照らすとき、
+        #     私はこの道具を1回も走らせられず、**手で照らして報告した**（ヌケモレの元）。
+        if (_args and _args[0].rsplit('/', 1)[-1] == 'gen_audit_todo.py'
+                and any(_t in ('--show', '--verify', '--selftest') for _t in _toks)
+                and '--write' not in _toks):
+            return True
         return False
     if _head in _RUN_TOK_J:
         return False
@@ -996,10 +1009,18 @@ _i_route, _i_break, _i_state = _col('経路'), _col('壊し方'), _col('いま�
 #   ＝壊すプログラムの欄と、その終了コードの記録を見る。
 _i_prog = _col('壊すプログラム')
 # ★2026-09-03（まこさん指示・§3.2c）＝「監査確認」の欄。値は 対象 か —。
-#   対象 を書けるのは、下の合言葉が完成の条件に在る行だけ。合言葉は5つで固定。
-#   ★増やすには、この .sh を書き換えることになる＝設計書に書いて、まこさんの承認が要る。
+#   対象 を書けるのは、下の合言葉が完成の条件に在る行だけ。
+#   ★2026-09-11＝5つ → 6つ に足した（AUDIT-6）。まこさんの指示 2026-09-11「手書きで書き換えられない
+#     ようにプログラムが読める対応付けをすればいいのでは？」で足した守り（§2.2 の候補の一覧を正本の
+#     指標の名前だけにする）を、監査に見てもらうため。hook の修正に承認は要らない
+#     （まこさん指示 2026-09-06・逐語「hookの修正ごときで承認いれるな」）。
+#   ★守りは緩んでいない＝「対象 と書ける行には合言葉が要る」という構造は同じ。
 _i_audit = _col('監査確認')
-AUDIT_TOKENS = ('AUDIT-1', 'AUDIT-2', 'AUDIT-3', 'AUDIT-4', 'AUDIT-5')
+AUDIT_TOKENS = ('AUDIT-1', 'AUDIT-2', 'AUDIT-3', 'AUDIT-4', 'AUDIT-5', 'AUDIT-6',
+                # ★2026-09-11＝AUDIT-7（監査の指摘を設計書に機械で載せる）と
+                #   AUDIT-8（壊すプログラムに期待する結果を先に書かせる）を足した。
+                #   どちらも まこさんの指示で足した守り（ヌケモレの検出・不正の検出）。
+                'AUDIT-7', 'AUDIT-8')
 if _at_body:
     if _i_route < 0:
         ng.append('  ・完成の条件の表に「経路」の欄がありません（値＝実経路 か 部品・監査 cp14 の P-6）')
@@ -1055,7 +1076,7 @@ for cells in _rows[1:]:
         _hit = [t for t in AUDIT_TOKENS if t in _cond]
         if not _hit:
             ng.append('  ・監査確認に「対象」と書いた行に、合言葉がありません'
-                      '（AUDIT-1〜AUDIT-5 のどれか1つを完成の条件に書く'
+                      '（AUDIT-1〜AUDIT-6 のどれか1つを完成の条件に書く'
                       '・まこさん指示 2026-09-03＝監査に丸投げする道を作らない）')
         for _t in _hit:
             if _t in _seen_tokens:

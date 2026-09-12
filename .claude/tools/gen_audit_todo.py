@@ -59,6 +59,10 @@ MARK_END = "<!-- AUDIT_TODO_END -->"
 #   ★どちらの型でも節が切り出せなければ、今までどおり止まる（黙って0件にしない＝限界①）。
 VARIANT_CP13 = "cp13型（6-A／6-B に分かれている）"
 VARIANT_CP14 = "cp14型（§6 が1本）"
+# ★2026-09-11 追加（まこさん指示・逐語「ヌケモレ発生しそうなので、自動生成で対応できない？」）
+#   ＝cp35 のレポートは、直すことの一覧が「まこさんへ」の節に在り、件数の内訳が「結論」の節に在る。
+#   実測＝この型を足す前は「節を切り出せませんでした」で止まり、CC が手で照らしていた。
+VARIANT_CP35 = "cp35型（『まこさんへ』に直すことの一覧・『結論』に件数）"
 VARIANTS = {
     VARIANT_CP13: (
         ("方針（§6-A）", r"^###\s*6-A\s", r"^####\s|^###\s|^##\s"),
@@ -69,8 +73,15 @@ VARIANTS = {
         ("改善方向性（§6）", r"^##\s*6\.\s", r"^####\s|^###\s|^##\s"),
         ("プロセス欠陥対策（§7）", r"^##\s*7\.\s", r"^####\s|^###\s|^##\s"),
     ),
+    VARIANT_CP35: (
+        ("直すことの一覧（まこさんへ）", r"^#+\s*\d+\.\s*まこさんへ", r"^#+\s"),
+        # ★止める見出しを「番号付きの見出し」にする＝結論の節の中に番号の無い見出し
+        #   （`# **CONDITIONAL-GO**`）が在り、`^#+\s` で切ると件数の表より手前で終わる（実測）。
+        ("結論（件数の内訳）", r"^#+\s*0\.\s*結論", r"^#+\s*\d+\.\s"),
+    ),
 }
-VARIANT_MARK = r"^###\s*6-A\s"   # この見出しが在れば cp13型
+VARIANT_MARK = r"^###\s*6-A\s"           # この見出しが在れば cp13型
+VARIANT_MARK_CP35 = r"^#+\s*\d+\.\s*まこさんへ"   # この見出しが在れば cp35型
 
 
 def choose_variant(text: str) -> tuple[str, tuple]:
@@ -78,6 +89,9 @@ def choose_variant(text: str) -> tuple[str, tuple]:
     for ln in text.splitlines():
         if re.match(VARIANT_MARK, ln):
             return VARIANT_CP13, VARIANTS[VARIANT_CP13]
+    for ln in text.splitlines():
+        if re.match(VARIANT_MARK_CP35, ln):
+            return VARIANT_CP35, VARIANTS[VARIANT_CP35]
     return VARIANT_CP14, VARIANTS[VARIANT_CP14]
 
 

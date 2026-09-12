@@ -1,0 +1,259 @@
+5,6c5,6
+< TARGET: .claude/tools/check_milestone_tidy.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/recipes/search_limits.json, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_stage2b_want_false.sh, .claude/breaks/b84_qtable_per_bundle.sh, scripts/priority_rebuild/regime_r9_diag.py, scripts/priority_rebuild/engine_tuner_exec.py
+< NEW_FILE: .claude/tools/check_milestone_tidy.py, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_stage2b_want_false.sh, .claude/breaks/b84_qtable_per_bundle.sh
+---
+> TARGET: .claude/tools/check_milestone_tidy.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/recipes/search_limits.json, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_bool_col_extra_key.sh, .claude/breaks/b84_qtable_per_bundle.sh, .claude/breaks/b85_band_ignores_laws.sh, .claude/breaks/b86_stage_count.sh, .claude/breaks/b87_stages_record.sh, scripts/priority_rebuild/regime_r9_diag.py, scripts/priority_rebuild/engine_tuner_exec.py
+> NEW_FILE: .claude/tools/check_milestone_tidy.py, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_bool_col_extra_key.sh, .claude/breaks/b84_qtable_per_bundle.sh, .claude/breaks/b85_band_ignores_laws.sh, .claude/breaks/b86_stage_count.sh, .claude/breaks/b87_stages_record.sh
+189c189
+< **だから §2.2（レンジ判定の検索方法）は、段ごとに絞り込む形を取ります。**1つの段では、1つの枠だけを動かします。ほかの枠は、前の段で決めた上位に固定します。**こうすると、試す本数は 6.3×10¹⁶通り から 1,032通り になります。**
+---
+> **だから §2.2（レンジ判定の検索方法）は、段ごとに絞り込む形を取ります。**1つの段では、1つの枠だけを動かします。ほかの枠は、前の段で決めた上位に固定します。**こうすると、試す本数は 6.3×10¹⁶通り から 688通り になります。**
+194c194
+< | **段ごとに絞る（§2.2）** | **1,032**（段1 630＋段2a 112＋段2c 289＋段2b 1） | **約48分 → 約2.5分**（この工事で縮める） |
+---
+> | **段ごとに絞る（§2.2）** | **688**（段1 354＋段2a 104＋段2c 229＋段2b 1） | **約48分 → 約2.5分**（この工事で縮める） |
+206c206
+< **流れはこうです。**段1 で帯の候補 630本を全部 評価し、成績の順に並べます。上位を段2a へ渡し、段2a では強さの否定の候補 112本を、渡された帯と組んで評価します。段2b・段2c・段3 も同じです。**各段の候補は、§2.2 が挙げた候補と、法則ファイルが名指しした系統で決まります。乱数は1か所も使いません。**
+---
+> **流れはこうです。**段1 で帯の候補 354本を全部 評価し、成績の順に並べます。上位を段2a へ渡し、段2a では強さの否定の候補 104本を、渡された帯と組んで評価します。段2b・段2c・段3 も同じです。**各段の候補は、§2.2 が挙げた候補と、法則ファイルが名指しした系統で決まります。乱数は1か所も使いません。**
+210c210
+< **何ができるようになるか。**法則に沿った候補を、**55億年ぶんの総当りでなく、1,032本の一覧として**出せるようになります。**いまは1本ずつ乱数で引くので、同じ組み合わせを2回 試したり、法則で落ちる組を何度も作ったりしています。**
+---
+> **何ができるようになるか。**法則に沿った候補を、**55億年ぶんの総当りでなく、688本の一覧として**出せるようになります。**いまは1本ずつ乱数で引くので、同じ組み合わせを2回 試したり、法則で落ちる組を何度も作ったりしています。**
+226c226
+< | 5 | **段1〜段3 の候補の元を、その関数の中で分ける** | 同上（引数 `stage` で分岐） | 4-4 の手順2〜8（段ごとの元・並び・審査） | 4-4 の本数（630／112／1／289）と合う |
+---
+> | 5 | **段1〜段3 の候補の元を、その関数の中で分ける** | 同上（引数 `stage` で分岐） | 4-4 の手順2〜8（段ごとの元・並び・審査） | 4-4 の本数（354／104／1／229）と合う（★実装して出た本数を記録し、大きく外れたら理由を書く） |
+230a231,232
+> | **10** | **★帯の枠を、法則から引く形にする**（法則から「系統」を読む関数を新設し、帯の材料を法則 R1・R3 の系統から引く） | `engine_tuner_gen.py` に `_law_lineages` を新設し、2422行の `_ranked_material_at(rng, "location", …)` を置き換える | **4-3 の「★帯の枠だけが法則を読んでいない」** | 完成の条件 **AUDIT-1**（法則 R1・R3 を書き替えると帯の材料が変わる） |
+> | **11** | **★自己テストを新しく作る**（T24⑤・T34・T35・T36・T37b・T38 の6件） | `engine_tuner_gen.py` の自己テストの節 | 4-6 と 完成の条件の表 | 完成の条件の全行が、実際に在る自己テストを指している |
+289c291,302
+< **★直す呼び出し元は1か所だけです。**実物で数えました＝`engine_tuner_gen.py`:2615 の1行（`sample_structure` の中）。ほかに呼んでいる所は在りません。
+---
+> **★直す呼び出し元（監査 cp35 の Major M-2 で数え直した）**
+> 
+> | 直す関数 | 呼んでいる所 | 件数 |
+> |---|---|---|
+> | `sample_regime_build` | `sample_structure` の中（2615行） | **1か所** |
+> | `_ranked_material_at` | 束を組む所（2422行）と、**自己テストの中（4か所）** | **5か所** |
+> | `_material_for_law` | 強さの否定（2431行）と3枠目（2449行） | **2か所** |
+> | `_mat_drawn` | `_ranked_material_at` と `_material_for_law` の中 | **2か所** |
+> 
+> **★2026-09-11 に直しました。**直す前は「1か所だけ」と書いていました。**`sample_regime_build` については1か所で合っていましたが、`_ranked_material_at` の自己テストからの4か所を数えていませんでした**（監査が実測で見つけた）。
+> 
+> **★`lib_engine_entry_scan.py` は `sample_regime_build` を名前で持っています**（H2・G2 の見張りが使う「engine の入口6つ」の1つ）。**引数を変えても、その見張りは名前だけを見るので壊れません**（監査が確認）。
+326a340,357
+> ## ★候補の軸＝1件は何で決まるか（監査 cp35 の Major M-3）
+> 
+> **候補1件＝材料の組（種類 × 時間足）× 側（above／below）× 閾値の分位。**
+> 
+> **★直す前は、この1文が書いてありませんでした。**だから読む人は、候補が 354本なのか 708本（側を掛ける）なのか 3,186本（分位9段を掛ける）なのか決められませんでした。
+> 
+> | 軸 | いくつ試すか | 出どころ |
+> |---|---|---|
+> | 材料の組（種類 × 時間足） | 段ごとに 354／104／1／229 | 法則ファイルの名指しと材料の成績表（実測） |
+> | **側（above／below）** | **1つ**（法則が family ごとに持つ側を使う） | 法則 R5・R6・R7 の「側」の欄。**帯の枠だけは案の番号から決める**（`regime_draw_order`） |
+> | **閾値の分位** | **1点**（q50） | **★まこさん決定 2026-09-11（逐語「じゃあ、まず１点でつくる」）** |
+> 
+> **★だから候補の本数は、上の表の数そのものです**（側と分位を掛けません）。
+> 
+> **★分位を9段にするときは、設定ファイルの `stage_limits.<段>.quantiles` に9段を書くだけで足せます。**コードを変えません。**そのときの本数は9倍になります**（段1 なら 3,186本）。
+> 
+> **★1点にすると捨てるもの（正直に）**＝「下位20%で切れば効くが、真ん中で切ると効かない材料」は見つかりません。**材料の順位が、閾値の選び方で変わる可能性が残ります。**
+> 
+507a539,617
+> ## ★帯の枠だけが法則を読んでいない（監査 cp35 の Critical C-1）
+> 
+> **監査が法則ファイルの写しを実際に書き替えて組ませたところ、5つの枠のうち4つは法則を読み、帯の枠だけが読んでいませんでした。**
+> 
+> | 枠 | 法則を読んでいるか | コードの実物 |
+> |---|---|---|
+> | ① 帯の幅 | **読んでいる** | 2417行 `_law_geo(laws, "R7")` |
+> | **② 帯** | **読んでいない** | **2422行 `_ranked_material_at(rng, "location", r_b, tfs, table)`＝役割の名前をコードに直書き** |
+> | ③ 強さの否定 | **読んでいる** | 2430行 `_law_families(laws, "R5")` |
+> | ④ 3枠目 | **読んでいる** | 2447行 `_law_families(laws, "R6")` |
+> | ⑤ 持続 | **読んでいる** | 2455行 `if "streak" in laws["forms"]` |
+> 
+> **★帯はレンジ判定の中核です**（価格が何度も跳ね返された線が在るか）。**そこだけ法則を読まないのは、まこさんの指示「法則に則って組め」の中心を外しています。**
+> 
+> ### なぜ直せていなかったか（実物で確かめた）
+> 
+> **法則 R1・R3 が名指ししているのは「系統」です。**いまのコードは「役割」で引いています。**別のものです。**
+> 
+> | 法則 | 数える部品（`regime_laws.json` の実測） |
+> |---|---|
+> | R1 | 系統「構造・位置」・geo any・本数1 |
+> | R2 | 系統を重ねない・除く系統「構造・位置」・上限1 |
+> | R3 | かつ true・系統「構造・位置」・**時間足「執行足より上」**・geo any・本数1 |
+> 
+> **★ところが、法則から「系統」を読む関数が1つもありません。**在るのは `_law_families`（family を読む）と `_law_geo`（geo を読む）の2つだけです（コマンド＝`grep -n "def _law_" scripts/priority_rebuild/engine_tuner_gen.py`）。**＝監査が勧めた「`_material_for_law` に替える」だけでは足りません。**あの関数は family を見る作りで、系統を見ません。
+> 
+> ### 直し方（関数を1つ 新設する）
+> 
+> ```python
+> def _law_lineages(laws: dict, no: str) -> tuple:
+>     """その法則が名指ししている系統を取り出す（★2026-09-11・監査 cp35 の C-1）。
+> 
+>     戻り＝系統の名前の並び。名指ししていなければ空。
+>     ★一覧をこの関数に書かない＝法則ファイルの「数える部品」の『系統』から取る。
+>     ★手本＝`_law_families`（family を読む・同じ作り）。
+>     """
+> ```
+> 
+> **そのうえで、帯の枠をこう変えます。**
+> 
+> ```python
+> # 直す前（engine_tuner_gen.py:2422・そのまま引用）
+> m_b, draw["B"] = _ranked_material_at(rng, "location", r_b, tfs, table)
+> 
+> # 直した後＝法則 R1・R3 の系統で絞り、R3 の「執行足より上」も掛ける
+> lins_b = _law_lineages(laws, "R1") or _law_lineages(laws, "R3")
+> if not lins_b:
+>     raise SampleError("R1・R3 が系統を名指ししていない（regime_laws.json・fail-closed）")
+> m_b, draw["B"] = _ranked_material_for_lineage("location", lins_b, r_b, tfs, table,
+>                                               tf_ok=upper)      # ★R3 の「執行足より上」
+> ```
+> 
+> **★`_ranked_material_for_lineage` は、`_ranked_material_at` の中の1行を変えたものです。**
+> 
+> ```python
+> # _ranked_material_at:2233（そのまま引用）＝役割が持つ系統で絞っている
+> if iref.FAMILY_LINEAGE[fam]["k"] not in rr["lineages"]:
+>     continue
+> 
+> # 新しい関数では、法則が名指しした系統で絞る
+> if iref.FAMILY_LINEAGE[fam]["k"] not in want_lineages:
+>     continue
+> ```
+> 
+> **★あわせて塞ぐもの（監査の A1-d の2番）**＝いまは帯と3枠目に `tf_ok` を渡していません（渡しているのは強さの否定だけ＝2432行）。**＝帯と3枠目は1分足・3分足も引けます。**上の直しで、帯には `tf_ok=upper`（執行足より上）を渡します。**3枠目にも同じものを渡します**（法則 C4 の要求）。
+> 
+> **★3枠目の順位が 1 に固定されている件も直します**（2449行 `_material_for_law(rng, "sufficiency", fams_r6, 1, …)`）。案の番号を変えても3枠目が動かないためです。順位は `regime_draw_order` から引きます。
+> 
+> ### ★法則13件のうち、組む側が読むのは何件になるか
+> 
+> | | 直す前（監査の実測） | 直した後（見込み） |
+> |---|---|---|
+> | 組む側が読む法則 | **6件**（C6・R4・R5・R6・R7・R8） | **9件**（＋R1・R3・C4） |
+> | 組んだ後の審査だけで効く法則 | 7件 | 4件（C1・R2・R10・ほか） |
+> 
+> **★C1・R2・R10 は、組む側に読ませません。**理由＝C1（強さと向きは別の物差し）と R2（同じ系統は1本まで）と R10（検出後の下位分類）は、**1つの枠の材料を決める法則ではなく、束全体の形を見る法則**です。**審査（G7）で落とす形が正しい形です。**
+> 
+> **★だから完成の条件 AUDIT-1 の「R1〜R10 の10件」は、達成できません。**条件を「**組む側が読む9件**」に書き替えます。**残り4件は「審査で効く（組む側は読まない）」と、ここに明記しました。**
+> 
+516,517c626,627
+< | 1 | 段1 帯 | **630本** | §2.2 が挙げた候補12件 × 上位足7本 |
+< | 2 | 段2a 強さの否定 | **112本** | 法則 R5 が名指しした系統8つ × 上位足 × 札「強さ」 |
+---
+> | 1 | 段1 帯 | **354本** | §2.2 が挙げた候補12件 × 上位足7本 |
+> | 2 | 段2a 強さの否定 | **104本** | 法則 R5 が名指しした系統8つ × 上位足 × 札「強さ」 |
+519c629
+< | 4 | 段2c 3枠目 | **289本** | 法則 R6 が名指しした系統6つ ＋「なし」 |
+---
+> | 4 | 段2c 3枠目 | **229本** | 法則 R6 が名指しした系統6つ ＋「なし」 |
+649c759
+< {"stage": "stage1", "n_candidates": 630, "n_passed": 612, "keep": 1, "sec": 12.3,
+---
+> {"stage": "stage1", "n_candidates": 354, "n_passed": 338, "keep": 1, "sec": 12.3,
+694,695c804,805
+< | 段1 帯 | **§2.2 が挙げた候補12件**（レンジ幾何 W%・帯内位置%・S-Rタッチ数・pivot・n本高値・n本安値・close vs EMA・close vs SMA・Keltner・POC・VAH・VAL）× 上位足7本 | **630** |
+< | 段2a 強さの否定 | 法則 R5 が名指しした系統8つ × 上位足 × 札「強さ」 | **112** |
+---
+> | 段1 帯 | **§2.2 が挙げた候補12件**（レンジ幾何 W%・帯内位置%・S-Rタッチ数・pivot・n本高値・n本安値・close vs EMA・close vs SMA・Keltner・POC・VAH・VAL）× 上位足7本 | **354** |
+> | 段2a 強さの否定 | 法則 R5 が名指しした系統8つ × 上位足 × 札「強さ」 | **104** |
+697c807
+< | 段2c 3枠目 | 法則 R6 が名指しした系統6つ ＋「なし」 | **289** |
+---
+> | 段2c 3枠目 | 法則 R6 が名指しした系統6つ ＋「なし」 | **229** |
+717c827,837
+< **★2026-09-10 の直し（正直に書きます）**＝はじめ私は段1 を **2,982本** と書きました。**§2.2 が挙げた候補で絞らず、役割 location の全種類を数えていたためです。**法則 R1・R3 が指標の名前を名指ししないので「絞らない」と判断し、§2.2 の本文にある候補の一覧を、絞りとして読みませんでした。**直して 630本 になりました。**
+---
+> **★本数を2回 直しました（正直に書きます）**
+> 
+> | いつ | 書いた数 | 何が間違っていたか |
+> |---|---|---|
+> | 1回目（2026-09-10） | 段1 **2,982本** | §2.2 が挙げた候補で絞らず、役割 location の全種類を数えていた |
+> | 2回目（同日） | 段1 **630本** | 15種類 × 上位足7本 × 札3種 × 先読み2種 の**掛け算**で書いた。**実物はそのあと「型の表の役割×系統に合うか」「パラメータの範囲を持つか」「標本が足りるか」で さらに落とす** |
+> | **3回目（2026-09-11・いまの数）** | 段1 **354本** | **監査 cp35 が実物から数え直した数。**私も同じプログラムを走らせ直して、同じ数が出た |
+> 
+> **★2回目の誤りは、恒久の決まり69番（件数を手で打たない）に反していました。**囲み（STAGES）は §2.2 の逐語を表にするだけで、本数を出していません。**本数は私が手で書いた数字でした。**
+> 
+> **★実装する人への注意**＝この 354本 も「実装したら必ずこの数が出る」という保証ではありません。**実装して出た本数を記録し、354 から大きく外れたら理由を書いてください。**
+773c893
+< [段1 帯] 候補 630本 ／ 法則の審査を通った 612本 ／ 次へ渡す 1本 ／ 12.3秒
+---
+> [段1 帯] 候補 354本 ／ 法則の審査を通った 338本 ／ 次へ渡す 1本 ／ 12.3秒
+785c905
+< [段1 帯]   候補 630本 → 審査を通った 612本 → 次へ渡す 1本   12.3秒
+---
+> [段1 帯]   候補 354本 → 審査を通った 338本 → 次へ渡す 1本   12.3秒
+800c920
+< **★数字は全部、機械の出力から出します。**私が書きません（恒久69番）。上の 630本・612本・12.3秒 は形を見せるための置きで、実装した後に走らせて入れ替えます。**1位の行と、束の1行だけが、いまの実測です。**
+---
+> **★数字は全部、機械の出力から出します。**私が書きません（恒久69番）。上の 354本・338本・12.3秒 は形を見せるための置きで、実装した後に走らせて入れ替えます。**1位の行と、束の1行だけが、いまの実測です。**
+834c954
+<   {"stage": "stage1",  "n_candidates": 630, "n_passed": 612, "keep": 1, "sec": 12.3,
+---
+>   {"stage": "stage1",  "n_candidates": 354, "n_passed": 338, "keep": 1, "sec": 12.3,
+1014c1134
+< <!-- ACC_SELFTEST_START hash=53df1933912ee17b gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SELFTEST_START hash=b7774b3c56f44763 gen_acceptance.py が自動生成＝手で書き換えない -->
+1020,1028c1140,1151
+< | `b77_no_streak.sh` | #4・#6 | streak を掛ける行を消すと 0本に戻る |
+< | `b78_law_literal.sh` | #3 | 組む関数に法則番号か rng を1つ書き込むと、数が 0 でなくなる |
+< | `b79_param_drawn.sh` | #5 | 材料の数字を draw_param で引く行に戻すと、T24⑥ が落ちる |
+< | `b80_quantile_one_by_one.sh` | #7 | 1段ずつ81回 呼ぶ形に戻すと、T34 が『まとめて計算していない』で落ちる |
+< | `b81_drop_tf_ignored.sh` | #8 | 外す時間足の一覧を空にすると、T35 が『引いてはいけない時間足が出た』で落ちる |
+< | `b82_abs_missing.sh` | #2 | 符号を取り去る前処理を外すと、T36 が『マイナスの側まで弱いと数えた』で落ちる |
+< | `b83_stage2b_want_false.sh` | #9 | `want` を false に書き換える（意味は同じに見えるが not のノードが消えるので、集めた形に not が入らず R8 が落ちる） |
+< | `b84_qtable_per_bundle.sh` | #10 | 束ごとに作り直す形（`_qtable(df, geo, [rec], …)` をくり返しの中へ戻す）にすると、呼び出し回数が 3 になる |
+< | `（既存の恒等の仕組み）` | #11 | 既定の動きを変えると md5 が変わる |
+---
+> | `b77_no_streak.sh` | #5・#7 | streak を掛ける行を消すと 0本に戻る |
+> | `b78_law_literal.sh` | #4 | 組む関数に法則番号か rng を1つ書き込むと、数が 0 でなくなる |
+> | `b79_param_drawn.sh` | #6 | 材料の数字を draw_param で引く行に戻すと、T24⑥ が落ちる |
+> | `b80_quantile_one_by_one.sh` | #8 | 1段ずつ81回 呼ぶ形に戻すと、T34 が『まとめて計算していない』で落ちる |
+> | `b81_drop_tf_ignored.sh` | #9 | 外す時間足の一覧を空にすると、T35 が『引いてはいけない時間足が出た』で落ちる |
+> | `b82_abs_missing.sh` | #3 | 符号を取り去る前処理を外すと、T36 が『マイナスの側まで弱いと数えた』で落ちる |
+> | `b83_bool_col_extra_key.sh` | #10 | `bool_col` の検査から未知の鍵の判定（`engine_tuner_exec.py`:1051）を外すと、T37b が『知らない鍵を書いても通った』で落ちる |
+> | `b84_qtable_per_bundle.sh` | #13 | 束ごとに作り直す形（`_qtable(df, geo, [rec], …)` をくり返しの中へ戻す）にすると、呼び出し回数が 3 になる |
+> | `b85_band_ignores_laws.sh` | #2 | 帯の引き方を `_ranked_material_at(rng, "location", …)` に戻すと、T39 が『法則を書き替えても帯が変わらない』で落ちる |
+> | `b86_stage_count.sh` | #11 | 候補の元から法則の名指しを外すと、本数が桁で変わって T40 が落ちる |
+> | `b87_stages_record.sh` | #12 | 記録を書く行を消すと、T41 が『stages の鍵が無い』で落ちる |
+> | `（既存の恒等の仕組み）` | #14 | 既定の動きを変えると md5 が変わる |
+1040c1163
+< | 3 | 時間足を外したことで、探せる束が狭くなる | まこさん決定なので変えない。段ごとの候補の本数は 4-7 の表（段1 630本・段2a 112本・段2b 1本・段2c 289本）に出す＝外した後の数字。★2026-09-10 に、ここへ古い数字（3,408→2,982）を書いたまま残していたのを直した |
+---
+> | 3 | 時間足を外したことで、探せる束が狭くなる | まこさん決定なので変えない。段ごとの候補の本数は 4-7 の表（段1 354本・段2a 104本・段2b 1本・段2c 229本）に出す＝外した後の数字。★2026-09-10 に、ここへ古い数字（3,408→2,982）を書いたまま残していたのを直した |
+1061c1184
+< **② 期待値分解**＝売買のロジックには触れません。勝率・平均利益・敗率・平均損失は、この工事だけでは動きません。動くのは4つです。①G7 を通る束の本数（いま 0本 → 1本以上）②法則を書き替えたときに束が追随するか（いま追随しない → する）③同じ案の番号で同じ束が出るか（いま数字と分位が乱数で変わる → 変わらない）④段1（候補 630本）を回す時間（いま 2.3時間 → 約35分の見込み）。
+---
+> **② 期待値分解**＝売買のロジックには触れません。勝率・平均利益・敗率・平均損失は、この工事だけでは動きません。動くのは4つです。①G7 を通る束の本数（いま 0本 → 1本以上）②法則を書き替えたときに束が追随するか（いま追随しない → する）③同じ案の番号で同じ束が出るか（いま数字と分位が乱数で変わる → 変わらない）④段1（候補 354本）を回す時間（いま 2.3時間 → 約35分の見込み）。
+1130,1140c1253,1266
+< | 1 | AUDIT-1＝法則を1件 変えると、組まれる束が変わる（T24⑤ が R1〜R10 の10件で確かめる） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 法則ファイルを読まずに固定の一覧で組む形へ壊すと、T24⑤ が落ちる | `b76_laws_not_read.sh` | 対象 | **未着手** |
+< | 2 | AUDIT-2＝段2a で DI差・MACDヒスト%・EMA傾き を使うとき、符号を取り去った大きさで比べている（T36＝マイナスの値が正しく折り返る・符号を取り去らない材料と混ざらない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 符号を取り去る前処理を外すと、T36 が『マイナスの側まで弱いと数えた』で落ちる | `b82_abs_missing.sh` | 対象 | **未着手** |
+< | 3 | AUDIT-3＝組む関数に法則番号の直書きが0件、かつ乱数（rng・draw_param）が0件 | `awk '/^def _ranked_material_at/,/^def default_regime/' scripts/priority_rebuild/engine_tuner_gen.py ／ grep -cE 'rng／draw_param'` | 実経路 | 組む関数に法則番号か rng を1つ書き込むと、数が 0 でなくなる | `b78_law_literal.sh` | 対象 | **未着手** |
+< | 4 | AUDIT-4＝regime_r9_diag.py --build 3 が束を3本 組める（0本でない） | `python3 scripts/priority_rebuild/regime_r9_diag.py --build 3 --no-trades --seed 7` | 実経路 | streak を掛ける行を消すと 0本に戻る | `b77_no_streak.sh` | 対象 | **未着手** |
+< | 5 | AUDIT-5＝材料の数字と緩めた写しの段と保つ上限に乱数が無い（T24⑥＝材料が成績表の部品と一致・off が隣の段・同じ番号で2回 組んで一致） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 材料の数字を draw_param で引く行に戻すと、T24⑥ が落ちる | `b79_param_drawn.sh` | 対象 | **未着手** |
+< | 6 | 条件6＝T24②・T26・T30 が pass（100本 組んで G7 を通る束が1本以上）★2026-09-10 の実測＝この工事を始める前の時点で、既に3件とも pass していた（93回目の実装の効き）。だから、この条件だけでは この工事の完成を測れない。★だから監査確認を『—』にした（監査に出せるのは5件までで、測れない条件に枠を使わない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | streak を掛ける行を消すと、T24② が「通った0本」に戻る | `b77_no_streak.sh` | — | **未着手** |
+< | 7 | 条件7＝分位を1回でまとめて計算していて、1段ずつ計算した結果と一致する（差 1e-12 まで） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 1段ずつ81回 呼ぶ形に戻すと、T34 が『まとめて計算していない』で落ちる | `b80_quantile_one_by_one.sh` | — | **未着手** |
+< | 8 | 条件8＝絞り込みの段で 1分足・3分足・10分足の材料が1件も引かれない | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 外す時間足の一覧を空にすると、T35 が『引いてはいけない時間足が出た』で落ちる | `b81_drop_tf_ignored.sh` | — | **未着手** |
+< | 9 | 条件9＝段2b の向きの否定が `{"not": {"bool_col": "rg5_uptrend", "want": true}}` の形で束に入り、法則 R8 の審査（形を持つ＝not）が通る（T37） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | `want` を false に書き換える（意味は同じに見えるが not のノードが消えるので、集めた形に not が入らず R8 が落ちる） | `b83_stage2b_want_false.sh` | — | **未着手** |
+< | 10 | 条件10＝分位の解決表を、束の本数によらず1回だけ作る（T38＝束を3本 渡したとき `build_qtable` の呼び出し回数が 1） | `python3 scripts/priority_rebuild/regime_r9_diag.py --build 3 --no-trades --seed 7` | 実経路 | 束ごとに作り直す形（`_qtable(df, geo, [rec], …)` をくり返しの中へ戻す）にすると、呼び出し回数が 3 になる | `b84_qtable_per_bundle.sh` | — | **未着手** |
+< | 11 | 条件11＝直す前と後で結果が同じか確かめる3本の走行（S1・S2・L1）の md5 が変わらない | `python3 scripts/priority_rebuild/engine_tuner_exec.py --identity` | 実経路 | 既定の動きを変えると md5 が変わる | `（既存の恒等の仕組み）` | — | **未着手** |
+---
+> | 1 | AUDIT-1＝法則を1件 変えると、組まれる束が変わる（T24⑤ が**組む側が読む9件**＝C4・C6・R1・R3・R4・R5・R6・R7・R8 で確かめる）。★2026-09-11 に「R1〜R10 の10件」から書き替えた＝監査 cp35 の実測で R1・R2・R3・R10 は束を変えなかった。うち R1・R3・C4 は作る順の手順10 で読ませる。**残る C1・R2・R10 は組む側に読ませない**（束全体の形を見る法則なので、審査 G7 で落とす形が正しい＝4-3 に理由を書いた） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 法則ファイルを読まずに固定の一覧で組む形へ壊すと、T24⑤ が落ちる | `b76_laws_not_read.sh` | 対象 | **未着手** |
+> | 2 | AUDIT-4b＝帯の枠が法則 R1・R3 の系統から引かれている（T39＝R1 の系統を『構造・位置』から『ボラ』に書き替えると、帯の材料が変わる）。★監査 cp35 の Critical C-1＝直す前は書き替えても1文字も変わらなかった | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 帯の引き方を `_ranked_material_at(rng, "location", …)` に戻すと、T39 が『法則を書き替えても帯が変わらない』で落ちる | `b85_band_ignores_laws.sh` | — | **未着手** |
+> | 3 | AUDIT-2＝段2a で DI差・MACDヒスト%・EMA傾き を使うとき、符号を取り去った大きさで比べている（T36＝マイナスの値が正しく折り返る・符号を取り去らない材料と混ざらない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 符号を取り去る前処理を外すと、T36 が『マイナスの側まで弱いと数えた』で落ちる | `b82_abs_missing.sh` | 対象 | **未着手** |
+> | 4 | AUDIT-3＝組む関数に法則番号の直書きが0件、かつ乱数（rng・draw_param）が0件 | `awk '/^def _ranked_material_at/,/^def default_regime/' scripts/priority_rebuild/engine_tuner_gen.py ／ sed 's/#.*$//' ／ grep -cE 'rng／draw_param'` | 実経路 | 組む関数に法則番号か rng を1つ書き込むと、数が 0 でなくなる | `b78_law_literal.sh` | 対象 | **未着手** |
+> | 5 | AUDIT-4＝regime_r9_diag.py --build 3 が束を3本 組める（0本でない） | `python3 scripts/priority_rebuild/regime_r9_diag.py --build 3 --no-trades --seed 7` | 実経路 | streak を掛ける行を消すと 0本に戻る | `b77_no_streak.sh` | 対象 | **未着手** |
+> | 6 | AUDIT-5＝材料の数字と緩めた写しの段と保つ上限に乱数が無い（T24⑥＝材料が成績表の部品と一致・off が隣の段・同じ番号で2回 組んで一致） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 材料の数字を draw_param で引く行に戻すと、T24⑥ が落ちる | `b79_param_drawn.sh` | 対象 | **未着手** |
+> | 7 | 条件6＝T24②・T26・T30 が pass（100本 組んで G7 を通る束が1本以上）★2026-09-10 の実測＝この工事を始める前の時点で、既に3件とも pass していた（93回目の実装の効き）。だから、この条件だけでは この工事の完成を測れない。★だから監査確認を『—』にした（監査に出せるのは5件までで、測れない条件に枠を使わない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | streak を掛ける行を消すと、T24② が「通った0本」に戻る | `b77_no_streak.sh` | — | **未着手** |
+> | 8 | 条件7＝分位を1回でまとめて計算していて、1段ずつ計算した結果と一致する（差 1e-12 まで） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 1段ずつ81回 呼ぶ形に戻すと、T34 が『まとめて計算していない』で落ちる | `b80_quantile_one_by_one.sh` | — | **未着手** |
+> | 9 | 条件8＝絞り込みの段で 1分足・3分足・10分足の材料が1件も引かれない | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 外す時間足の一覧を空にすると、T35 が『引いてはいけない時間足が出た』で落ちる | `b81_drop_tf_ignored.sh` | — | **未着手** |
+> | 10 | 条件9＝段2b の向きの否定が `{"not": {"bool_col": "rg5_uptrend", "want": true}}` の形で束に入り、**`bool_col` に `bool_col`・`want` 以外の鍵を書くと G5 で止まる**（T37b）。★2026-09-11 に書き替えた＝監査 cp35 の Critical C-2。直す前の条件（`want` を false にすると R8 が落ちる）は**実測で落ちなかった**＝強さの否定の枠が既に `not` を持つため、段2b の `want` を false にしても集めた形に `not` が残る | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | `bool_col` の検査から未知の鍵の判定（`engine_tuner_exec.py`:1051）を外すと、T37b が『知らない鍵を書いても通った』で落ちる | `b83_bool_col_extra_key.sh` | — | **未着手** |
+> | 11 | 条件12＝候補を作る関数が、段ごとに決まった本数の候補を返す（T40＝段1 が 354本・段2a が 104本・段2b が 1本・段2c が 229本。±10% まで許し、外れたら理由を画面に出す）。★監査 cp35 の Critical C-3＝作る順の手順4・5 に当たる条件が1つも無かった | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 候補の元から法則の名指しを外すと、本数が桁で変わって T40 が落ちる | `b86_stage_count.sh` | — | **未着手** |
+> | 12 | 条件13＝段ごとの記録（`stages`）が引いた記録に入り、鍵6つ（stage・n_candidates・n_passed・keep・sec・dropped）が全部 揃っている（T41）。★監査 cp35 の Critical C-3＝作る順の手順6 に当たる条件が無かった | `python3 scripts/priority_rebuild/regime_r9_diag.py --build 1 --no-trades --seed 7` | 実経路 | 記録を書く行を消すと、T41 が『stages の鍵が無い』で落ちる | `b87_stages_record.sh` | — | **未着手** |
+> | 13 | 条件10＝分位の解決表を、束の本数によらず1回だけ作る（T38＝束を3本 渡したとき `build_qtable` の呼び出し回数が 1） | `python3 scripts/priority_rebuild/regime_r9_diag.py --build 3 --no-trades --seed 7` | 実経路 | 束ごとに作り直す形（`_qtable(df, geo, [rec], …)` をくり返しの中へ戻す）にすると、呼び出し回数が 3 になる | `b84_qtable_per_bundle.sh` | — | **未着手** |
+> | 14 | 条件11＝直す前と後で結果が同じか確かめる3本の走行（S1・S2・L1）の md5 が変わらない | `python3 scripts/priority_rebuild/engine_tuner_exec.py --identity` | 実経路 | 既定の動きを変えると md5 が変わる | `（既存の恒等の仕組み）` | — | **未着手** |

@@ -1059,7 +1059,7 @@
     "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（squeeze_pro）／照合の相手: 無し（手計算の既知答えで担保）",
     "グループ": "（段8 で埋める）",
     "状態": "在る",
-    "engine_tuner": "選べる"
+    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
    },
    {
     "名前": "STC",
@@ -3195,10 +3195,10 @@
    {
     "印": "B",
     "何を足すか": "★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標",
-    "数": 118,
+    "数": 119,
     "単位": "種類",
     "出どころ": "段5 で新しく数えた（検査には無い）",
-    "中身": "RCI・zscore・zscore_return・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・Supertrend・APO%・BIAS・BOP・AR・BR・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・LRSI・MOM%・PGO・PO・PSL・RSX・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SQZ%・SQZPRO_ON_WIDE・TD_SEQ_UP・TD_SEQ_DN・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・ALMA傾き%・DEMA傾き%・FWMA傾き%・HMA傾き%・LINREG傾き%・LRangle・LRb傾き%・LRslope%・MCGD傾き%・MIDPOINT傾き%・MIDPRICE傾き%・MMAR傾き%・PWMA傾き%・RAINBOW傾き%・RMA傾き%・SINWMA傾き%・SSF傾き%・SWMA傾き%・T3傾き%・TEMA傾き%・TRIMA傾き%・TSF傾き%・VIDYA傾き%・VWMA傾き%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・QSTICK%・TTM_TREND・ADOSC比・AOBV_LR・MARKETFI比・PVI傾き・PVOL比・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MEDIAN傾き%・VOSC・CVI・PDIST%・RVI・THERMO比・EBSW・HT_DCPERIOD・HT_INPHASE%・HT_QUAD%・HT_SINE・HT_LEADSINE・HT_TRENDMODE・MSW_SINE・MSW_LEAD・実体幅比・内側バー・open_Z・high_Z・low_Z・HA実体%・HA上ヒゲ比・HA下ヒゲ比"
+    "中身": "RCI・zscore・zscore_return・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・Supertrend・APO%・BIAS・BOP・AR・BR・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・LRSI・MOM%・PGO・PO・PSL・RSX・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SQZ%・SQZPRO_ON_WIDE・SQZPRO_ON_NARROW・TD_SEQ_UP・TD_SEQ_DN・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・ALMA傾き%・DEMA傾き%・FWMA傾き%・HMA傾き%・LINREG傾き%・LRangle・LRb傾き%・LRslope%・MCGD傾き%・MIDPOINT傾き%・MIDPRICE傾き%・MMAR傾き%・PWMA傾き%・RAINBOW傾き%・RMA傾き%・SINWMA傾き%・SSF傾き%・SWMA傾き%・T3傾き%・TEMA傾き%・TRIMA傾き%・TSF傾き%・VIDYA傾き%・VWMA傾き%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・QSTICK%・TTM_TREND・ADOSC比・AOBV_LR・MARKETFI比・PVI傾き・PVOL比・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MEDIAN傾き%・VOSC・CVI・PDIST%・RVI・THERMO比・EBSW・HT_DCPERIOD・HT_INPHASE%・HT_QUAD%・HT_SINE・HT_LEADSINE・HT_TRENDMODE・MSW_SINE・MSW_LEAD・実体幅比・内側バー・open_Z・high_Z・low_Z・HA実体%・HA上ヒゲ比・HA下ヒゲ比"
    },
    {
     "印": "C",
@@ -3469,11 +3469,11 @@
    }
   ],
   "engine": {
-   "選べる指標の種類": 139,
-   "選べない指標の種類": 118,
-   "選べる組": 302,
+   "選べる指標の種類": 138,
+   "選べない指標の種類": 119,
+   "選べる組": 301,
    "時間足": 11,
-   "選べる列": 3322,
+   "選べる列": 3311,
    "カタログ総列数": 6105,
    "レンジ幾何": [
     "W%",
@@ -4414,7 +4414,7 @@
        "中身": "rng.random() < 0.5"
       },
       {
-       "行": "2461",
+       "行": "2603",
        "中身": "rng.random() < 0.3"
       }
      ]
@@ -4606,5 +4606,5 @@
    ]
   }
  },
- "_本文の指紋": "62fc2d26738de32d"
+ "_本文の指紋": "6119a6806cff9dc0"
 }

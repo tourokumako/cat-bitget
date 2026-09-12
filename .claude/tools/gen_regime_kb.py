@@ -35,8 +35,10 @@ SRC = {
     "laws": RATCHET / "regime_laws.json",
     "findings": RATCHET / "regime_kb_findings.json",
     "premise": RATCHET / "regime_laws.json",
+    "stage": RATCHET / "m2_stage_candidates.json",
 }
-TAG = {"flow": "M2_FLOW", "todo": "M2_TODO", "laws": "KB_LAWS", "findings": "KB_FINDINGS", "premise": "M2_PREMISE"}
+TAG = {"flow": "M2_FLOW", "todo": "M2_TODO", "laws": "KB_LAWS", "findings": "KB_FINDINGS",
+       "premise": "M2_PREMISE", "stage": "M2_STAGE"}
 
 
 def _begin(kind: str, h: str) -> str:
@@ -952,8 +954,227 @@ def build_body(d: dict) -> str:
     return "\n".join(L).rstrip() + "\n"
 
 
-BUILDER = {"flow": build_flow, "todo": build_todo, "laws": build_laws, "findings": build_body, "premise": build_premise}
-SEC = {"flow": "§2（フロー）", "todo": "§3（やることリスト）", "laws": "§11", "findings": "§12", "premise": "§0（読む前に知っておくこと）"}
+def _load_indicator_refs() -> tuple:
+    """指標の名前の正本を読む（fail-closed）。
+
+    戻り＝(指標の名前 → 系統 の辞書, 8系統の集合, レンジ幾何の比率の列の集合, 前処理の名前の集合)
+
+    ★2026-09-11（まこさん指示「手書きで書き換えられないようにプログラムが読める対応付けを
+      すればいいのでは？」）＝§2.2 の候補の一覧に書いてよい名前を、正本だけから決めるため。
+    ★読めなければ止まる＝「正本が読めないから照合を飛ばす」道を作らない。
+    """
+    import sys as _sys
+    _pr = ROOT / "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild"
+    if str(_pr) not in _sys.path:
+        _sys.path.insert(0, str(_pr))
+    try:
+        import indicator_reference_diag as _iref
+        import engine_tuner_exec as _exe
+    except Exception as e:                                     # noqa: BLE001
+        raise SystemExit(f"[gen_regime_kb] 指標の正本を読めない: {e}（fail-closed）")
+    fam = dict(_iref.FAMILY_LINEAGE)
+    lins = {(v or {}).get("k") for v in fam.values()} - {None}
+    geo_ratio = {k for k, v in _iref.RANGE_GEO_REF.items() if (v or {}).get("kind") == "ratio"}
+    pres = set(_exe.MATERIAL_PRE)
+    return fam, lins, geo_ratio, pres
+
+
+def match_families(word: str, how: str, fam_lin: dict) -> list | None:
+    """語から、正本の指標の名前を引く（★私＝CC が名前を書かない・2026-09-11）。
+
+    word ＝ §2.2 の文から写した「探す文字」 ／ how ＝ 当て方（完全・前方・後方）
+    戻り ＝ 当たった指標の名前の一覧（並びは決まった順）。知らない当て方なら None。
+
+    ★なぜ当て方が3つ要るか（実測）
+      完全＝`ER` は `ERI強気%`・`ERI弱気%` を拾ってはいけない（別の指標）。
+      前方＝`pivot` → `pivotPP`・`pivotR1`・`pivotS1`（§2.2 の「pivot 3種」）。
+      後方＝`経過バー` → `高値からの経過バー`・`安値からの経過バー`（§2.2 の「経過バー」）。
+    ★当て方を選ぶのは私（CC）。根拠は §2.2 の文（「3種」「高安」のように複数を指す語かどうか）。
+      **当たった名前は必ず §2.2 の表に出る**＝まこさんが見て確かめられる。
+    """
+    if how == "完全":
+        return [word] if word in fam_lin else []
+    if how == "前方":
+        return sorted(f for f in fam_lin if f.startswith(word))
+    if how == "後方":
+        return sorted(f for f in fam_lin if f.endswith(word))
+    return None
+
+
+def expand_stage(stage_key: str | None = None) -> dict:
+    """§2.2 の候補を、正本の指標の名前に展開して返す（★3つの読み手がこの1本を呼ぶ）。
+
+    戻り＝{段の鍵: {"stage":…, "role":…, "law":…, "families": [...], "lineages": [...],
+                    "geo_cols": [...], "pre": {指標の名前: 前処理}, "bool_col":…,
+                    "語ごと": [(§2.2 の語, 探す文字, 当て方, [当たった名前…]), …]}}
+    stage_key を渡すと その段だけ返す。
+
+    ★呼ぶ側＝engine_tuner（`engine_tuner_gen.stage_candidates`）／突き合わせの道具
+      （`gen_stage0_match.load_stages`）／§2.2 の表（この道具の `build_stage`）。
+      **同じ判定を3か所に書き写さない**（恒久の決まり69番と同じ考え）。
+    ★正本に1件も当たらない語が在れば止まる（fail-closed）。
+    """
+    fam_lin, lins_all, geo_ratio, pres_all = _load_indicator_refs()
+    d = json.loads(SRC["stage"].read_text(encoding="utf-8"))
+    rows = d.get("段") or []
+    if not rows:
+        raise SystemExit("[gen_regime_kb] §2.2 の候補の元データに段が0件（fail-closed）")
+
+    ng: list[str] = []
+    out: dict = {}
+    for s in rows:
+        _k = s.get("key") or "(key なし)"
+        fams: list = []
+        pre: dict = {}
+        geo: list = []
+        per_word: list = []
+        for w in (s.get("語") or []):
+            _word, _how = w.get("探す"), w.get("当て方")
+            hit = match_families(_word, _how, fam_lin)
+            if hit is None:
+                ng.append(f"{_k}: 知らない当て方 → {_how}（完全・前方・後方 のどれか）")
+                continue
+            if not hit:
+                ng.append(f"{_k}: 語「{_word}」（{_how}）が正本に1件も当たらない"
+                          "（正本＝indicator_reference_diag.FAMILY_LINEAGE）")
+                continue
+            for f in hit:
+                if f not in fams:
+                    fams.append(f)
+                if w.get("pre"):
+                    pre[f] = w["pre"]
+            for c in (w.get("geo_cols") or []):
+                if c not in geo_ratio:
+                    ng.append(f"{_k}: レンジ幾何の比率の列に無い → {c}"
+                              f"（使えるのは {sorted(geo_ratio)}／価格水準の列は H6 で使えない）")
+                elif c not in geo:
+                    geo.append(c)
+            per_word.append((w.get("§2.2"), _word, _how, hit))
+        for ln in (s.get("lineages") or []):
+            if ln not in lins_all:
+                ng.append(f"{_k}: 系統が正本に無い → {ln}（正本の系統＝{sorted(lins_all)}）")
+        for _f, _op in pre.items():
+            if _op not in pres_all:
+                ng.append(f"{_k}: 知らない前処理 → {_f} に {_op}（前処理の一覧＝{sorted(pres_all)}）")
+        out[_k] = {"stage": s.get("stage"), "role": s.get("role"), "law": s.get("law"),
+                   "mako_note": s.get("mako_note"), "families": fams,
+                   "lineages": list(s.get("lineages") or []), "geo_cols": geo, "pre": pre,
+                   "bool_col": s.get("bool_col"), "語ごと": per_word,
+                   "入れなかったもの": list(s.get("入れなかったもの") or [])}
+    if ng:
+        raise SystemExit("[gen_regime_kb] §2.2 の候補の元データが正本と合いません（fail-closed）\n  "
+                         + "\n  ".join(ng))
+    if stage_key is not None:
+        if stage_key not in out:
+            raise SystemExit(f"[gen_regime_kb] §2.2 の候補の元データに {stage_key} が無い（fail-closed）")
+        return out[stage_key]
+    return out
+
+
+def build_stage(d: dict) -> str:
+    """§2.2 の候補を、正本の指標の名前に展開した表を作る（2026-09-11 新設）。
+
+    なぜ作るか（まこさん指示 2026-09-11・逐語）
+      「手書きで書き換えられないようにプログラムが読める対応付けをすればいいのでは？」
+      「この文書の指標の表記が正本通りじゃないのであれば、正本から自動生成する形で修正すべきなのでは？」
+
+    ★まこさんが書いた §2.2 の文は1文字も消さない。この囲みは、その文に出てくる候補を
+      正本の名前に展開したもの＝下に並ぶ。
+    ★守り（fail-closed）＝正本に無い指標の名前・知らない系統・価格水準の列・知らない前処理が
+      元データに1件でも在れば、ここで止まる。
+    """
+    fam_lin, _lins_all, geo_ratio, pres_all = _load_indicator_refs()
+    # ★展開と守りは `expand_stage` の1か所に置く（3つの読み手が同じ関数を呼ぶ）
+    ex = expand_stage()
+
+    L: list[str] = []
+    add = L.append
+    # ★本文を改行で始めない＝`verify_one` は読み取った本文の先頭の改行を落とす（`lstrip("\n")`）。
+    #   改行で始めると、書いたときの指紋と読んだときの指紋が合わず、--verify が毎回 ❌ を出す
+    #   （2026-09-11 に実測して直した）。
+    add("### §2.2-0 ★段ごとの候補を、正本の指標の名前に展開した表（この囲みは機械が作ります）")
+    add("")
+    add("**元データ**＝`.claude/ratchet/m2_stage_candidates.json` ／ "
+        "**作り方**＝`python3 .claude/tools/gen_regime_kb.py --write stage`（書く）／"
+        "`--verify stage`（手で書き換えられていないかの検出）")
+    add("")
+    add("**なぜ在るか**（まこさん指示 2026-09-11・逐語）＝"
+        "「手書きで書き換えられないようにプログラムが読める対応付けをすればいいのでは？」"
+        "「この文書の指標の表記が正本通りじゃないのであれば、正本から自動生成する形で"
+        "修正すべきなのでは？」")
+    add("")
+    add("**★上の §2.2 の文は1文字も消していません。**この表は、その文に出てくる候補を"
+        "正本の指標の名前に展開したものです。**プログラム（engine_tuner・突き合わせの道具）は、"
+        "この表の元データだけを読みます。**")
+    add("")
+    add("**★指標の名前は、元データに1件も書いていません。**元データに書いてあるのは"
+        "**§2.2 の文から写した語**と、**正本を探す文字**と、**当て方**（完全・前方・後方）の3つだけです。"
+        "**名前は、プログラムが正本から引きます。**下の表の「正本から引いた指標の名前」の欄が、"
+        "その結果です。")
+    add("")
+    add(f"**照らした正本**＝指標の名前と系統 **{len(fam_lin)}件**"
+        "（`indicator_reference_diag.FAMILY_LINEAGE`）／レンジ幾何の比率の列 "
+        f"**{len(geo_ratio)}件**（`RANGE_GEO_REF`）／前処理 **{len(pres_all)}件**"
+        "（`MATERIAL_PRE`）。**語が正本に1件も当たらなければ、この表は作られません**（止まります）。")
+    add("")
+
+    for _key, s in ex.items():
+        add(f"#### {s.get('stage')}")
+        add("")
+        add(f"**まこさんの文（§2.2 の逐語）**＝{s.get('mako_note')}")
+        add("")
+        _words = s.get("語ごと") or []
+        _lins = s.get("lineages") or []
+        _pre = s.get("pre") or {}
+        if _words:
+            add("| §2.2 の語 | 正本を探す文字 | 当て方 | 正本から引いた指標の名前 | 系統 | 前処理 |")
+            add("|---|---|---|---|---|---|")
+            for _mako, _word, _how, _hit in _words:
+                _names = "・".join(f"`{f}`" for f in _hit)
+                _ks = "・".join(sorted({fam_lin[f].get("k") for f in _hit}))
+                _ps = "・".join(sorted({_pre[f] for f in _hit if f in _pre})) or "—"
+                add(f"| {_mako} | `{_word}` | {_how} | {_names} | {_ks} | "
+                    f"{('`' + _ps + '`') if _ps != '—' else '—'} |")
+            add("")
+            add(f"**この段で正本から引けた指標＝{len(s.get('families') or [])}件。**")
+            add("")
+        if s.get("geo_cols"):
+            add("**レンジ幾何の中で使う列**＝"
+                + "・".join(f"`{c}`" for c in s["geo_cols"]))
+            add("")
+        if _lins:
+            add("**系統でまとめて足す分**＝"
+                + "・".join(f"**{x}** の系統ぜんぶ" for x in _lins)
+                + "（語も名前も書かない＝正本に足された指標が自動で入る）")
+            add("")
+        if s.get("bool_col"):
+            add(f"**真偽の列**＝`{s['bool_col']}`（`not` で包む）")
+            add("")
+        if not _words and not _lins and not s.get("bool_col"):
+            add("**指標の候補はありません**（この段の候補は数字です）")
+            add("")
+        add(f"**この段が引く役割**＝`{s.get('role')}` ／ **従う法則**＝`{s.get('law')}`")
+        add("")
+        _out = s.get("入れなかったもの") or []
+        if _out:
+            add("**入れなかったもの（理由つき・都合の悪いものも書きます）**")
+            add("")
+            for t in _out:
+                add(f"- {t}")
+            add("")
+
+    add("**★この表の限界（正直に）**＝①`lineages` で系統ごと足した分は、正本に指標が増えると"
+        "候補も増えます（減ることもあります）②`families` に書いた指標でも、成績表にその役割の列が"
+        "無ければ候補に出ません ③`mako_note` の逐語を写したのは私（CC）です＝§2.2 の本文が"
+        "変わったら、この元データも直す必要があります（機械では追随しません）。")
+    add("")
+    return "\n".join(L) + "\n"
+
+
+BUILDER = {"flow": build_flow, "todo": build_todo, "laws": build_laws, "findings": build_body,
+           "premise": build_premise, "stage": build_stage}
+SEC = {"flow": "§2（フロー）", "todo": "§3（やることリスト）", "laws": "§11", "findings": "§12",
+       "premise": "§0（読む前に知っておくこと）", "stage": "§2.2-0（段ごとの候補の展開）"}
 # 書き込み先のファイル（premise だけ やることリストの文書へ書く）
 DEST = {
     "laws": KB,
@@ -961,11 +1182,13 @@ DEST = {
     "premise": RATCHET / "engine_tuner_milestones2.md",
     "todo": RATCHET / "engine_tuner_milestones2.md",
     "flow": RATCHET / "engine_tuner_milestones2.md",
+    "stage": RATCHET / "engine_tuner_milestones2.md",
 }
 
 
 def _kinds(arg: str) -> list[str]:
-    return ["premise", "flow", "todo", "laws", "findings"] if arg in ("all", None) else [arg]
+    return (["premise", "flow", "todo", "stage", "laws", "findings"]
+            if arg in ("all", None) else [arg])
 
 
 def write_one(kind: str, dry: bool = False) -> int:
@@ -1153,9 +1376,9 @@ def selftest() -> int:
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--write", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "laws", "findings"])
-    p.add_argument("--verify", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "laws", "findings"])
-    p.add_argument("--dry-run", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "laws", "findings"])
+    p.add_argument("--write", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "stage", "laws", "findings"])
+    p.add_argument("--verify", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "stage", "laws", "findings"])
+    p.add_argument("--dry-run", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "stage", "laws", "findings"])
     p.add_argument("--selftest", action="store_true")
     # ★2026-09-07（144番）＝印の値の枝だけを走らせる口。全体の --selftest は、別の工事
     #   （M2-B の §11・§12）の未反映で今も rc=1 のため、この工事の完成の条件を測れない。

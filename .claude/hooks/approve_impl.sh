@@ -433,7 +433,14 @@ src = open(md_p, encoding='utf-8').read()
 #     時間のかかる行は打ち切りで未着手のまま残る。
 SDK = ("/Users/tachiharamasako/Documents/GitHub/cat-bitget/"
        "v3-bitget-api-sdk/bitget-python-sdk-api")
-TIMEOUT_SEC = 120
+# ★2026-09-12＝120 から 600 へ。
+#   何が起きていたか（実測）＝完成の条件の「その数字を出したコマンド」には
+#     `engine_tuner_gen.py --selftest` が多く、これは **7分4秒** かかる（2026-09-11 に実測）。
+#     120秒では必ず打ち切られ、rc が None になり、その行は永久に「済」にならなかった。
+#   ★走らせる道具（run_breaks.py）の打ち切りも、同じ理由で 600 に直した（同日）。
+#     そちらは壊すプログラムを走らせるので、打ち切りのとき束ごと やさしく止める形にした。
+#     こちらは条件のコマンドを走らせるだけ（何も壊さない）ので、秒数だけを直す。
+TIMEOUT_SEC = 600
 
 
 def _cmd_of(cell):

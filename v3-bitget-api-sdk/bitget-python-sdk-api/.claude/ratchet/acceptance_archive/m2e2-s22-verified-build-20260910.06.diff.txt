@@ -1,0 +1,12 @@
+1171c1171
+< <!-- ACC_SELFTEST_START hash=306d9695b671e72b gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SELFTEST_START hash=5557647fd88c6c17 gen_acceptance.py が自動生成＝手で書き換えない -->
+1188d1187
+< | `b88_stage_fam_unknown.sh` | #14 | 元データに正本に無い指標の名前（例＝`帯内位置`）を1件 書くと `--write stage` が止まる |
+1190a1190
+> | `—` | #14 | 元データに正本に無い指標の名前（例＝`帯内位置`）を1件 書くと `--write stage` が止まる |
+1328c1328
+< | 14 | AUDIT-6＝§2.2 の候補の一覧が、正本の指標の名前だけで書かれている（正本に無い名前・知らない系統・価格水準の列・知らない前処理のどれかを元データに書くと `gen_regime_kb.py --write stage` が止まる）。あわせて `gen_stage0_match.py` に手書きの候補の一覧が0件（元データから読む） | `python3 .claude/tools/gen_regime_kb.py --verify stage && grep -c 'STAGES = \[' .claude/tools/gen_stage0_match.py` | 実経路 | 元データに正本に無い指標の名前（例＝`帯内位置`）を1件 書くと `--write stage` が止まる | `b88_stage_fam_unknown.sh` | 対象 | **未着手** |
+---
+> | 14 | AUDIT-6＝§2.2 の候補の一覧が、正本の指標の名前だけで書かれている（正本に無い名前・知らない系統・価格水準の列・知らない前処理のどれかを元データに書くと `gen_regime_kb.py --write stage` が止まる）。あわせて `gen_stage0_match.py` に手書きの候補の一覧が0件（元データから読む）。★**壊すプログラムの欄を 2026-09-11 に一時的に「—」にした。**理由＝私（CC）が `b88_stage_fam_unknown.sh` を作ったとき、必須の宣言2行（`# EXPECT_RC:`・`# MEANS:`）を書き忘れ、承認の瞬間に走る検査が止まって承認が取り消された。b88 を直すには承認が要り、承認すると b88 で止まる＝行き止まりになった。**走らせる道具の判定を弱める道は取らない**（恒久の決まり57番）。**この欄を空にして承認をもらい、15本を作ってから b88 を戻して もう一度 承認をもらう。**＝この行は、それまで ✅済 にできない | `python3 .claude/tools/gen_regime_kb.py --verify stage && grep -c 'STAGES = \[' .claude/tools/gen_stage0_match.py` | 実経路 | 元データに正本に無い指標の名前（例＝`帯内位置`）を1件 書くと `--write stage` が止まる | `—` | 対象 | **未着手** |

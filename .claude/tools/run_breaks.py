@@ -48,6 +48,7 @@ import json
 import os
 import pathlib
 import re
+import signal
 import subprocess
 import sys
 
@@ -59,7 +60,15 @@ ARCHIVE = SDK / ".claude" / "ratchet" / "acceptance_archive"
 DESIGN = ROOT / ".claude" / "state" / "acceptance.md"
 
 DEPTH_ENV = "CAT_RUN_BREAKS_DEPTH"
-TIMEOUT_SEC = 120
+# ★2026-09-11（まこさん承認）＝120 から 600 へ。
+#   直す前の 120 には、理由のコメントが1行もありませんでした（git の前の版にも同じ値）。
+#   600 の根拠＝壊すプログラム11本が走らせる `engine_tuner_gen.py --selftest` の
+#   実測が **7分4秒（424秒）**（2026-09-11 20:40:37〜20:47:41）。120 では必ず打ち切られます。
+TIMEOUT_SEC = 600
+# ★やさしく止めたあと、壊すプログラムが控えから戻し終わるのを待つ時間。
+#   根拠＝`lib.sh` の戻す処理がやることは、控えのコピーとハッシュ値の照合だけ。
+#   ★この 30 という数字は測っていません（余裕を多めに取っています）。
+GRACE_SEC = 30
 
 AT_START = r"^<!--\s*ACCEPT_TABLE_START\s*-->\s*$(.*?)^<!--\s*ACCEPT_TABLE_END\s*-->\s*$"
 
@@ -194,8 +203,9 @@ def expect_of(name: str) -> tuple:
     """
     p = BREAKS_DIR / name
     if not p.exists():
-        return None, "", f"壊すプログラムがありません: {p}"
+        return None, "", f"壊すプログラムがありません: {p}", ""
     rc = means = None
+    msg = ""
     for ln in p.read_text(encoding="utf-8", errors="ignore").splitlines()[:40]:
         m = re.match(r"^#\s*EXPECT_RC:\s*(-?\d+)\s*$", ln)
         if m and rc is None:
@@ -203,15 +213,28 @@ def expect_of(name: str) -> tuple:
         m = re.match(r"^#\s*MEANS:\s*(.+?)\s*$", ln)
         if m and means is None:
             means = m.group(1)
+        # ★2026-09-11（まこさん決定・案A の残り半分）＝出力に在るべき文字。
+        #   なぜ要るか＝終了コードの数字だけを照らすと、**守りと関係ない所でエラーが起きて
+        #   落ちた場合も「期待どおり」になる**。その文字が出力に無ければ、期待どおりに数えない。
+        m = re.match(r"^#\s*EXPECT_MSG:\s*(.+?)\s*$", ln)
+        if m and not msg:
+            msg = m.group(1)
     if rc is None:
-        return None, "", f"宣言 # EXPECT_RC: がありません: {name}"
+        return None, "", f"宣言 # EXPECT_RC: がありません: {name}", ""
     if not means:
-        return None, "", f"宣言 # MEANS: がありません: {name}"
-    return rc, means, ""
+        return None, "", f"宣言 # MEANS: がありません: {name}", ""
+    if not msg:
+        return None, "", (f"宣言 # EXPECT_MSG: がありません: {name}"
+                          "（出力に在るべき文字・2026-09-11 に必須にした）"), ""
+    return rc, means, "", msg
 
 
-def match_of(code, exp) -> bool:
-    """実際の終了コードが、宣言した期待値と一致したか（本体も番人も、ここを呼ぶ）。
+def match_of(code, exp, out: str = "", msg: str = "") -> bool:
+    """実際の結果が、宣言した期待と一致したか（本体も番人も、ここを呼ぶ）。
+
+    照らすもの2つ（2026-09-11 に2つ目を足した）
+      ① 終了コードが宣言と同じか
+      ② **出力に `EXPECT_MSG` の文字が在るか**（守りと関係ない所で落ちたものを弾く）
 
     ★2026-09-08（設計書 insp5-path-and-tidy-head-20260908 の N）
       ＝期待値が読めないとき（None＝壊すプログラムがまだ無い・宣言が無い）は、一致とみなさない。
@@ -219,24 +242,79 @@ def match_of(code, exp) -> bool:
         実際の終了コードも期待値も None になるので、`None == None` が真になり
         「期待どおり」に数えた。＝承認のプログラムが完成の条件を「済」にする一方で、
         書き込みの門は同じ None を「止まっていない」と見て実装を止めた。
+    ★限界（正直に）＝「壊し方が弱い」ことは、この判定では分からない（まこさんと監査の目）。
     """
-    return (exp is not None) and (code == exp)
+    if exp is None or code != exp:
+        return False
+    if msg:                                     # 宣言が在れば、出力にその文字を求める
+        return msg in (out or "")
+    return True
 
 
 def run_one(name: str, depth: int) -> tuple:
-    """壊すプログラムを1本 走らせる。戻り＝(終了コード, 説明)。"""
+    """壊すプログラムを1本 走らせる。戻り＝(終了コード, 最後の行, 出力の全体)＝3つ。
+
+    ★2026-09-11（まこさん承認）＝打ち切りの直し。番人 T14 が守る。
+
+    何が起きていたか（実測 2026-09-11）
+      壊すプログラム b76 が走らせる `engine_tuner_gen.py --selftest` は 7分4秒 かかり、
+      打ち切り（当時 120秒）に掛かった。そのとき2つの問題が同時に出た。
+        ①戻り値の数が合わず、呼ぶ側が落ちた（承認が取り消された）
+        ②**壊した相手（法則ファイル）が元に戻らず**、engine_tuner の自己テストが6件 落ちた。
+
+    なぜ戻らなかったか（GNU Bash Reference Manual の Signals の節・逐語）
+      "If Bash is waiting for a command to complete and receives a signal for which a
+       trap has been set, it will not execute the trap until the command completes."
+      ＝bash は、待っているコマンドが完了するまで、戻す仕掛け（trap）を実行しない。
+      そして直す前は `subprocess.run(timeout=)` を使っていた。Python の公式ドキュメントの逐語
+      ＝"If the timeout expires, the child process will be killed and waited for."
+      ＝**強制終了**なので、bash は戻す仕掛けを走らせる間もなく消えた。
+
+    どう直したか
+      `start_new_session=True`（Python 公式＝"the setsid() system call will be made in the
+      child process"）で bash と その子を1つの束にし、打ち切りのときは**束ごと**
+      やさしく止める。子（走っている自己テスト）が止まれば bash の待ちが終わるので、
+      上の逐語のとおり bash は戻す仕掛けを実行する。
+      それでも残るときだけ、最後に強制で止める。
+    """
     p = BREAKS_DIR / name
     if not p.exists():
-        return None, f"壊すプログラムがありません: {p}"
+        return None, f"壊すプログラムがありません: {p}", ""
     env = dict(os.environ)
     env[DEPTH_ENV] = str(depth + 1)
+    proc = subprocess.Popen(["bash", str(p)], stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, text=True, env=env,
+                            cwd=str(ROOT), start_new_session=True)
     try:
-        r = subprocess.run(["bash", str(p)], capture_output=True, text=True,
-                           timeout=TIMEOUT_SEC, env=env, cwd=str(ROOT))
+        out, err = proc.communicate(timeout=TIMEOUT_SEC)
     except subprocess.TimeoutExpired:
-        return None, f"時間切れ（{TIMEOUT_SEC}秒）: {name}"
-    tail = (r.stdout + r.stderr).strip().splitlines()
-    return r.returncode, (tail[-1][:200] if tail else "")
+        _stop_group(proc)                       # ★束ごと やさしく止める → trap が走る
+        try:
+            out, err = proc.communicate(timeout=GRACE_SEC)
+        except subprocess.TimeoutExpired:       # 戻し終わらないときだけ強制
+            _stop_group(proc, hard=True)
+            out, err = proc.communicate()
+        return (None, f"時間切れ（{TIMEOUT_SEC}秒）: {name}",
+                (out or "") + (err or ""))
+    out_all = (out or "") + (err or "")
+    tail = out_all.strip().splitlines()
+    # ★2026-09-11＝出力の全体も返す（`EXPECT_MSG` を照らすため）
+    return proc.returncode, (tail[-1][:200] if tail else ""), out_all
+
+
+def _stop_group(proc, hard: bool = False) -> None:
+    """走っている束（bash と その子）を止める。hard なら強制。
+
+    ★束にできなかったとき（setsid が効かない環境）は、その1本だけを止める。
+    """
+    sig = signal.SIGKILL if hard else signal.SIGTERM
+    try:
+        os.killpg(os.getpgid(proc.pid), sig)
+    except (ProcessLookupError, PermissionError, OSError):
+        try:
+            proc.kill() if hard else proc.terminate()
+        except ProcessLookupError:
+            pass
 
 
 def main(argv: list) -> int:
@@ -355,13 +433,13 @@ def main(argv: list) -> int:
         #     これを止めると、新しい壊すプログラムを作る流れ
         #     （①承認で書く権利をもらう ②書く ③承認で測る）が塞がる。
         #     実測（2026-09-08）＝止める形にしたら、b52 を書く前の承認が取り消された。
-        exp, means, why = expect_of(r["script"])
+        exp, means, why, want_msg = expect_of(r["script"])
         if why and (BREAKS_DIR / r["script"]).exists():
             print(f"[STOP] 壊すプログラムの宣言を読めません（159番）: {why}", file=sys.stderr)
             print("  ★書き方＝.sh の先頭に # EXPECT_RC: <数字> と # MEANS: <その意味> の2行",
                   file=sys.stderr)
             return 2
-        code, note = run_one(r["script"], depth)
+        code, note, out_all = run_one(r["script"], depth)
         r["code"], r["note"] = code, note
         r["expect"], r["means"] = exp, means
         # ★2026-09-08（設計書 insp5-path-and-tidy-head-20260908 の N）
@@ -371,7 +449,7 @@ def main(argv: list) -> int:
         #     ＝承認のプログラムが完成の条件を「済」にする一方で、書き込みの門は同じ None を
         #       「止まっていない」と見て実装を止めた（判定の食い違いで作業が止まった）。
         #   ★この穴は 2026-09-08 の159番の直し（期待する終了コードの宣言）が新しく作ったもの。
-        r["match"] = match_of(code, exp)
+        r["match"] = match_of(code, exp, out_all, want_msg)
         n_run += 1
         if r["match"]:
             n_stop += 1
@@ -436,6 +514,16 @@ SELF_TESTS = (
     ("T10", "宣言が在れば、期待する終了コードと意味の文をそのまま読み取る"),
     ("T11", "期待と違う終了コードなら、記録の match が偽になる"),
     ("T12", "壊すプログラムがまだ無い行は、一致とみなさない（期待値が読めない＝未着手のまま）"),
+    # ★2026-09-11（まこさん決定・案A の残り半分）＝出力に在るべき文字を照らす
+    ("T13", "出力に `EXPECT_MSG` の文字が無ければ、期待どおりに数えない"
+            "（守りと関係ない所で落ちたものを弾く）／宣言が無い .sh は読み取りを止める"),
+    # ★2026-09-11（まこさん承認）＝打ち切りに掛かったときの検査。
+    #   なぜ要るか（実測）＝この日、私（CC）が壊すプログラムを1本 走らせたところ、
+    #     中で走る自己テストが7分かかり、打ち切り（120秒）に掛かった。
+    #     そのとき ①戻り値の数が合わずに落ちた ②壊した相手（法則ファイル）が
+    #     元に戻らず、engine_tuner の自己テストが6件 落ちる状態になった。
+    #   ★13件の中に、打ち切りを試すものが1件も無かった＝だから誰も気づかなかった。
+    ("T14", "打ち切りに掛かっても、戻り値が3つ返り、壊した相手が元に戻る"),
 )
 
 
@@ -468,8 +556,8 @@ def selftest() -> int:
     if len(r7) != 1 or r7[0]["script"] is not None:
         ng.append("T7")
 
-    global FROZEN, BREAKS_DIR
-    _kf, _kb = FROZEN, BREAKS_DIR
+    global FROZEN, BREAKS_DIR, TIMEOUT_SEC
+    _kf, _kb, _kt = FROZEN, BREAKS_DIR, TIMEOUT_SEC
     try:
         with tempfile.TemporaryDirectory() as d:
             BREAKS_DIR = pathlib.Path(d) / "breaks"
@@ -498,11 +586,22 @@ def selftest() -> int:
             if not expect_of("b90_no_decl.sh")[2]:
                 ng.append("T9")
             _t10 = BREAKS_DIR / "b91_decl.sh"
-            _t10.write_text("#!/bin/bash\n# EXPECT_RC: 2\n# MEANS: 見本の意味\nexit 2\n",
-                            encoding="utf-8")
-            _e10, _m10, _w10 = expect_of("b91_decl.sh")
-            if _w10 or _e10 != 2 or _m10 != "見本の意味":
+            _t10.write_text("#!/bin/bash\n# EXPECT_RC: 2\n# MEANS: 見本の意味\n"
+                            "# EXPECT_MSG: 見本の文字\nexit 2\n", encoding="utf-8")
+            _e10, _m10, _w10, _g10 = expect_of("b91_decl.sh")
+            if _w10 or _e10 != 2 or _m10 != "見本の意味" or _g10 != "見本の文字":
                 ng.append("T10")
+            # ★T13（2026-09-11・案A の残り半分）＝出力に `EXPECT_MSG` が無ければ「期待どおり」にしない
+            if not match_of(2, 2, "…見本の文字…", "見本の文字"):
+                ng.append("T13a: 出力に在るのに期待どおりにならない")
+            if match_of(2, 2, "別の理由で落ちた", "見本の文字"):
+                ng.append("T13b: 出力に無いのに期待どおりになった")
+            # ★宣言が無い見本は、読めない理由が返る（足す前は EXPECT_RC だけで通っていた）
+            _t13 = BREAKS_DIR / "b92_no_msg.sh"
+            _t13.write_text("#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 見本\nexit 1\n",
+                            encoding="utf-8")
+            if not expect_of("b92_no_msg.sh")[2]:
+                ng.append("T13c: EXPECT_MSG が無いのに読めてしまう")
             _o11 = pathlib.Path(d) / "rec" / "t11.breaks.json"
             write_record(_o11, "t11", [{"no": "1", "script": "b91_decl.sh", "code": 1,
                                         "expect": 2, "means": "見本の意味", "match": False}])
@@ -513,16 +612,45 @@ def selftest() -> int:
             #   ＝壊すプログラムがまだ無い行を「期待どおり」と数えない。
             #   直す前＝ファイルが無いと 実際の終了コードも期待値も None になり、
             #     `None == None` が真＝「一致」に数えていた（作業が止まる食い違いの元）。
-            _e12, _m12, _w12 = expect_of("b99_not_exist_yet.sh")
+            _e12, _m12, _w12, _g12 = expect_of("b99_not_exist_yet.sh")
             if match_of(None, _e12) or not _w12:
                 ng.append("T12")
             if not match_of(2, 2) or match_of(1, 2):     # ふつうの一致・不一致は今までどおり
                 ng.append("T12")
+            # ★T14（2026-09-11・まこさん承認）＝打ち切りに掛かったときの検査。
+            #   見本の壊すプログラムを作り、わざと打ち切りに掛ける。
+            #   見るもの2つ＝①戻り値が3つ返るか ②壊した相手が元に戻っているか。
+            #   ★本物のファイルは1つも触らない（一時の場所だけ）。
+            _t14 = pathlib.Path(d) / "t14_target.txt"
+            _t14.write_text("ORIGINAL\n", encoding="utf-8")
+            _t14sh = BREAKS_DIR / "b93_timeout_sample.sh"
+            _t14sh.write_text(
+                "#!/bin/bash\n"
+                "# EXPECT_RC: 1\n"
+                "# MEANS: 見本＝打ち切りの検査に使う\n"
+                "# EXPECT_MSG: 見本\n"
+                f'BK="$(mktemp)"\n'
+                f'cp "{_t14}" "$BK"\n'
+                f"trap 'cp \"$BK\" \"{_t14}\"; rm -f \"$BK\"' EXIT\n"
+                f'echo BROKEN > "{_t14}"\n'
+                "sleep 60\n", encoding="utf-8")
+            TIMEOUT_SEC = 3                       # ★見本なので短く（本物は上の定数）
+            _r14 = run_one("b93_timeout_sample.sh", 0)
+            if len(_r14) != 3:
+                ng.append(f"T14a: 打ち切りのとき、戻り値が {len(_r14)} 個（3個であること）")
+            if _t14.read_text(encoding="utf-8").strip() != "ORIGINAL":
+                ng.append("T14b: 打ち切りのあと、壊した相手が元に戻っていない"
+                          f"（いまの中身＝{_t14.read_text(encoding='utf-8').strip()[:20]}）")
     finally:
-        FROZEN, BREAKS_DIR = _kf, _kb
+        FROZEN, BREAKS_DIR, TIMEOUT_SEC = _kf, _kb, _kt
 
     for tag, what in SELF_TESTS:
-        print(f"  {'❌' if tag in ng else '✅'} {tag} {what}")
+        # ★2026-09-11＝落ちたときの説明は「T14a: …」のように枝番が付く。
+        #   直す前は完全一致で見ていたので、枝番つきの落ちが ✅ と表示された（実測）。
+        hit = [x for x in ng if str(x).startswith(tag)]
+        print(f"  {'❌' if hit else '✅'} {tag} {what}")
+        for x in hit:
+            print(f"      └ {x}")
     total = len(SELF_TESTS)
     print(f"  {'❌' if ng else '✅'} 番人 {total - len(ng)}/{total} pass")
     return 1 if ng else 0

@@ -424,11 +424,22 @@ MATERIAL_PRE = {
                   "same_unit": True, "needs_state": True},
     "at_entry": {"desc": "指定した状態に入ったバーの値（状態の外は値なし）",
                  "same_unit": True, "needs_state": True},
+    # ★2026-09-11（M2-E-3 の手順1・まこさん指示 2026-09-10「この件、毎回忘れて、設計に入れないし、
+    #   やろうとしないから、絶対入れろ」）＝符号を取り去って 0 からの距離だけにする。
+    #   なぜ要るか＝DI差・MACDヒスト%・EMA傾き は、プラスなら上げ・マイナスなら下げを表す。
+    #   トレンドが弱いのは 0 に近いときで、プラスでもマイナスでもない。そのまま「下位◯%より小さい」と
+    #   書くと、大きなマイナス（＝強い下げ）まで「弱い」と数える（例＝DI差 −30 は +2 より小さい）。
+    #   ★この部品だけ n も state も要らない（窓を持たない＝1バーごとの変換）。
+    "abs": {"desc": "符号を取り去った大きさ（0 からの距離・窓を持たない）",
+            "same_unit": True, "needs_n": False},
 }
 SINCE_OPS = tuple(k for k, v in MATERIAL_PRE.items() if v.get("needs_state"))
+# ★2026-09-11＝n も state も要らない部品（窓を持たない前処理）。いまは abs の1つだけ。
+NO_ARG_OPS = tuple(k for k, v in MATERIAL_PRE.items() if v.get("needs_n") is False)
 
 
-def pre_ops(same_unit: bool | None = None, needs_state: bool | None = None) -> list[str]:
+def pre_ops(same_unit: bool | None = None, needs_state: bool | None = None,
+            needs_n: bool | None = None) -> list[str]:
     """前処理の部品の名前を返す。same_unit・needs_state を指定すると、その種類だけに絞る。
 
     ★needs_state は 2026-08-21（48回目・M2-2-8）に足した。理由を書く。
@@ -444,7 +455,11 @@ def pre_ops(same_unit: bool | None = None, needs_state: bool | None = None) -> l
     """
     return sorted(k for k, v in MATERIAL_PRE.items()
                   if (same_unit is None or v["same_unit"] is same_unit)
-                  and (needs_state is None or bool(v.get("needs_state")) is needs_state))
+                  and (needs_state is None or bool(v.get("needs_state")) is needs_state)
+                  # ★2026-09-11（M2-E-3 の手順1）＝窓を持たない部品（abs）を分ける絞り。
+                  #   既定（None）では今までどおり全部 返す＝直す前の呼び出しは1つも変わらない。
+                  #   abs は needs_n=False、ほかの7つは欄を持たない（＝True とみなす）。
+                  and (needs_n is None or v.get("needs_n", True) is needs_n))
 
 
 def _since_stat(a: np.ndarray, state: np.ndarray, op: str) -> np.ndarray:
@@ -483,6 +498,11 @@ def _apply_pre(a: np.ndarray, pre: dict, df: pd.DataFrame | None = None) -> np.n
                 f"[実行器] 前処理 {op} の基準にする状態の列 {col} がデータにありません"
                 "（状態を保つ形［hysteresis］が作る列を、先に判定の中身［build］で作る・fail-closed）")
         return _since_stat(a, df[col].to_numpy(bool), op)
+    if op == "abs":                                # ★2026-09-11（M2-E-3 の手順1）＝符号を取り去る
+        # ★窓を持たない＝1バーごとの変換なので、未来も過去も見ない（H2 に当たらない）。
+        #   なぜ要るか＝DI差が −30（強い下げ）のとき、そのままでは +2 より小さいので「弱い」に数えてしまう。
+        #   絶対値にすると +30 も −30 も 30 になり、2 だけが「弱い」と数えられる。
+        return np.abs(a)
     n = int(pre["n"])
     s = pd.Series(a)
     if op == "ts_max":
@@ -587,6 +607,11 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
             if "n" in pre:
                 _fail("G5", f"材料の前処理 {pre['op']} に n は書けない"
                             "（区間は『状態が真である間』が決める＝本数では決めない）")
+        elif pre["op"] in NO_ARG_OPS:              # ★2026-09-11（M2-E-3 の手順1）＝窓を持たない前処理（abs）
+            for _k in ("n", "state"):
+                if _k in pre:
+                    _fail("G5", f"材料の前処理 {pre['op']} に {_k} は書けない"
+                                "（窓を持たない＝1バーごとの変換なので、本数も状態も要らない）")
         else:
             if "state" in pre:
                 _fail("G5", f"材料の前処理 {pre['op']} に state は書けない（本数 n で窓を決める形）")
@@ -4705,13 +4730,19 @@ def selftest() -> None:
         _b0_inj = json.loads(json.dumps(_b0_keep))
         for _x in _b0_inj:
             if _x["番号"] == "R7":
-                _x["判定"]["数える部品"]["family"] = [f for f in _x["判定"]["数える部品"]["family"]
-                                                      if f != "BB幅"]
-                _x["判定"]["数える部品"]["geo"] = []
+                # ★2026-09-10（まこさん指示「自己テストは修正してよい」）＝壊し方を、いまの R7 の形に合わせた。
+                #   直す前＝`family` の一覧から BB幅 を消し、`geo` を空にしていた。
+                #   2026-09-09 の まこさん決定（BB幅・Donchian幅・HWC幅% は帯の幅ではないので R7 から外す）で
+                #   `family` の欄そのものが法則ファイルから無くなり、この行が KeyError で落ちていた。
+                #   ＝法則ファイルは正しく直したのに、その法則を使うこの検査を直していなかった。
+                #   直した後＝R7 が数える geo を W% から別のもの（帯内位置%）へ差し替える。
+                #   W% を使う束は、R7 が「数える部品が1本も無い」で止めるはず＝検査の意味は変わらない。
+                _x["判定"]["数える部品"]["geo"] = ["帯内位置%"]
+                _x["判定"]["数える部品"]["側"] = {"帯内位置%": "above"}
         _REGIME_LAWS = _b0_inj
         _b0_msg = _g7_run("range", _g7_range_ok)
         if _b0_msg is None or "R7" not in _b0_msg:
-            _b0_ng.append(f"B0-5: R7 の幅の一覧から BB幅 を消したのに、BB幅 だけの束が R7 で"
+            _b0_ng.append(f"B0-5: R7 が数える幅を W% から別のものに差し替えたのに、W% を使う束が R7 で"
                           f"止まらない（{str(_b0_msg)[:80]}）＝審査が法則に追従していない")
         _REGIME_LAWS = [x for x in _b0_keep if x["番号"] != "C6"]
         _b0_msg = _g7_run("downtrend", {"all": [_g7_dir]})

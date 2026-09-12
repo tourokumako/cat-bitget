@@ -57,6 +57,43 @@ RATCHET = SDK / ".claude" / "ratchet"
 STATE = ROOT / ".claude" / "state"
 PRIORITY = SDK / "scripts" / "priority_rebuild"
 
+
+def forbidden_items():
+    """要件の正本から「作ってはいけないもの」の一覧を取り出す（★手で写さない＝恒久の決まり69番）。
+
+    戻り＝[(番号, 名前), ...]。出どころ＝`.claude/ratchet/engine_tuner_requirements.json`。
+    ★なぜ要るか（2026-09-10・96回目）＝恒久の決まり §1 が「着手の前に、作ろうとしているものが
+      その一覧に当たらないかを1件ずつ照合して、結果をチャットに出します」と求めている。
+      それまでの設計書には、この照合を書く場所が1つも無かった。
+    ★一覧が増えたら、この表も自動で増える（照合を書かないと --write が止まる＝fail-closed）。
+    """
+    p = RATCHET / "engine_tuner_requirements.json"
+    body = json.loads(p.read_text(encoding="utf-8"))
+    tbl = []
+
+    def walk(x):
+        if isinstance(x, str):
+            if "| # | 作ってはいけないもの |" in x:
+                tbl.append(x)
+        elif isinstance(x, dict):
+            for v in x.values():
+                walk(v)
+        elif isinstance(x, list):
+            for v in x:
+                walk(v)
+
+    walk(body)
+    if not tbl:
+        raise SystemExit("[gen_acceptance] 要件の正本に「作ってはいけないもの」の表が無い（fail-closed）")
+    out = []
+    for ln in tbl[0].split("\n"):
+        m = re.match(r"^\|\s*(\d+)\s*\|\s*\*\*(.+?)\*\*\s*\|", ln.strip())
+        if m:
+            out.append((m.group(1), m.group(2)))
+    if not out:
+        raise SystemExit("[gen_acceptance] 「作ってはいけないもの」を1件も取り出せなかった（fail-closed）")
+    return out
+
 SRC = RATCHET / "acceptance_src.json"
 # ★2026-09-10＝§4（設計の中身）の項目の正本。
 #   3つの出どころ（うちの正本・外の標準・まこさんが過去に指摘したこと）118件を
@@ -76,7 +113,7 @@ EXEC_PY = PRIORITY / "engine_tuner_exec.py"
 
 # ── 囲み（9つ）───────────────────────────────────────────────
 BLOCKS = ("STAGES", "MATERIALS", "LAWS", "RANKING", "CODEREF", "RANDOM",
-          "ACCEPT_TABLE", "SELFTEST", "SPEC", "CHECKLIST")
+          "ACCEPT_TABLE", "SELFTEST", "SPEC", "CHECKLIST", "AUDITTODO")
 
 
 def _begin(kind: str, h: str) -> str:
@@ -490,9 +527,61 @@ BUILDER = {
     "SELFTEST": build_selftest,
     "SPEC": build_spec,
     "CHECKLIST": build_checklist,
+    # ★2026-09-11＝監査の指摘の表（`build_audit` は下で定義するので、名前で後から入れる）
 }
 
 _MARK_RE = re.compile(r"\{\{([A-Z0-9_]+)\}\}")
+
+
+def build_audit(d: dict) -> str:
+    """この設計書に効いている監査レポートから、指摘を機械で抜き出す（2026-09-11 新設）。
+
+    なぜ在るか（まこさん指示 2026-09-11・逐語）＝「ヌケモレ発生しそうなので、自動生成で対応できない？」
+
+    ★何が起きていたか（実測 2026-09-11）＝私（CC）は監査の指摘を手で読んで報告し、
+      **別枠4件（S-1〜S-4）を1行も出さなかった**。Critical 3件と Major 4件だけを出した。
+    ★抜き出しは `gen_audit_todo.py` に任せる＝同じ判定を2か所に書き写さない。
+      その道具は「表の行をそのまま写す」作りで、件数を丸めない・言い換えない・要約しない。
+    ★元データの `audit_report` が空なら、この節は出さない（監査を受けていない設計書のため）。
+    ★読めない・抜き出せないときは止まる（fail-closed）＝黙って0件にしない。
+    """
+    rel = (d.get("audit_report") or "").strip()
+    if not rel:
+        return ""
+    path = ROOT / rel
+    if not path.exists():
+        raise SystemExit(f"[gen_acceptance] 監査レポートが無い: {path}（fail-closed）")
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    try:
+        import gen_audit_todo as _gat
+    except Exception as e:                         # noqa: BLE001
+        raise SystemExit(f"[gen_acceptance] 監査の抜き出しの道具を読めない: {e}（fail-closed）")
+    items, missing = _gat.collect(str(path))
+    if missing:
+        raise SystemExit(f"[gen_acceptance] 監査レポートから節を切り出せない: {missing}"
+                         "（見出しの書き方が変わった疑い・fail-closed）")
+    if not items:
+        raise SystemExit(f"[gen_acceptance] 監査レポートから指摘が0件（fail-closed）: {path}")
+    L = [f"**出どころ**＝`{rel}` ／ **抜き出し**＝`.claude/tools/gen_audit_todo.py`"
+         "（表の行をそのまま写す＝件数を丸めない・言い換えない・要約しない）",
+         "",
+         "**★この表は機械が作ります。**手で書き換えると `--verify` が止めます。"
+         "**私（CC）が監査の件数を数え直しません**（恒久の決まり63番）。",
+         "",
+         "| 監査の節 | 番号 | 監査に書いてあること（逐語） |",
+         "|---|---|---|"]
+    for sec, no, body in items:
+        L.append(f"| {_esc(sec)} | {_esc(no)} | {_esc(body)} |")
+    L.append("")
+    L.append(f"**合計 {len(items)} 行。**")
+    L.append("")
+    L.append("**★直したかどうかは、この表には出ません。**紐づけは監査レポートに書かれていないので、"
+             "機械では出せません（私の解釈になります）。**直した記録は `next_step.md` の §6 と "
+             "worklog に、1件ずつ書きます。**")
+    return "\n".join(L)
+
+
+BUILDER["AUDITTODO"] = build_audit      # ★定義の後に入れる（BUILDER は上で作っている）
 
 
 def build(kind: str, d: dict) -> str:
@@ -766,6 +855,14 @@ def page(d: dict) -> str:
     add("")
     add("**★どれか1つでも見込みの2倍を超えたら、そこで止めて まこさんに報告します。**")
     add("")
+    _audit = build_audit(d)
+    if _audit:
+        add("### 6-4 この設計書に効いている監査の指摘（★機械が抜き出します）")
+        add("")
+        add(_begin("AUDITTODO", _h(_audit)))
+        add(_audit)
+        add(_end("AUDITTODO"))
+        add("")
 
     add("## 7｜付録（hook が求める項目）")
     add("")
@@ -786,6 +883,22 @@ def page(d: dict) -> str:
     add("### 7-3 変更の単位（H16）")
     add("")
     add(d["変更の単位"])
+    add("")
+    add("### 7-3b 要件の「作ってはいけないもの」との照合（恒久の決まり §1）")
+    add("")
+    add("**★左の2列は、要件の正本からプログラムが取り出しています（手で写していません）。**"
+        "出どころ＝`.claude/ratchet/engine_tuner_requirements.json`。"
+        "**一覧が増えたら、この表も自動で増えます。**照合を書かないと設計書を作り直せません。")
+    add("")
+    add("| # | 作ってはいけないもの（要件の逐語） | この工事は当たるか | 理由 |")
+    add("|---|---|---|---|")
+    _hantei = d.get("作ってはいけないものとの照合") or {}
+    for _no, _name in forbidden_items():
+        _r = _hantei.get(_no)
+        if not _r:
+            raise SystemExit(f"[gen_acceptance] 「作ってはいけないもの」の {_no} 番との照合が"
+                             "元データに無い（fail-closed・恒久の決まり §1）")
+        add(f"| {_no} | {_esc(_name)} | **{_esc(_r['当たるか'])}** | {_esc(_r['理由'])} |")
     add("")
     add("### 7-4 塞げないもの")
     add("")

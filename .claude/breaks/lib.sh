@@ -72,18 +72,30 @@ guard () {
     done
 }
 
+# ★2026-09-12（まこさん承認）＝測ったコマンドの出力を、捨てずに残す。
+#   なぜ直したか（実測 2026-09-11）＝直す前は `>/dev/null 2>&1` で全部 捨てていた。
+#     ところが 2026-09-11 に まこさんが決めた案A で、走らせる道具が
+#     「出力に `EXPECT_MSG` の文字が在るか」を照らす形になった。
+#     ＝捨てていると照らす相手が無く、**16本とも「期待と違う」になった**（走らせて確認）。
+#   実測で確かめた3点（2026-09-12）
+#     ①`> /dev/null` は画面に出ない ②`$(... 2>&1)` は変数に取れる
+#     ③`$(...)` のあとも終了コードは失われない（`Y=$(exit 7)` で 7 が取れた）
+MEASURED_OUT=""
+
 measure () {
-    "$@" >/dev/null 2>&1
+    MEASURED_OUT="$("$@" 2>&1)"
     MEASURED=$?
 }
 
 # ★hook を「その入力で呼んだらどうなるか」で測るための部品
 measure_hook () {
     local hook="$1"; shift
-    printf '%s' "$1" | bash "$hook" >/dev/null 2>&1
+    MEASURED_OUT="$(printf '%s' "$1" | bash "$hook" 2>&1)"
     MEASURED=$?
 }
 
 finish () {
+    # ★測ったコマンドの出力を、走らせる道具へ渡す（`EXPECT_MSG` の照合に使う）
+    printf '%s\n' "$MEASURED_OUT"
     exit "$MEASURED"
 }

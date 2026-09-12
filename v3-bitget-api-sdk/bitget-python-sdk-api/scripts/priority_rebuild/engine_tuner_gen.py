@@ -32,6 +32,7 @@ import pathlib
 import re
 import sys
 import tempfile
+import time                                    # ★2026-09-11（手順6）＝段ごとの記録に掛かった時間を入れる
 from collections import Counter
 
 import numpy as np
@@ -415,6 +416,54 @@ def _mat_drawn(rng, family: str, tf: str, ranges: dict | None = None, *,
     return m
 
 
+def _mat_from_col(col: str, family: str, tf: str, ranges: dict | None = None, *,
+                  table: dict | None = None, **kw) -> dict:
+    """成績表の列の名前から、材料の辞書を作る（★数字を乱数で引かない・2026-09-11・手順9）。
+
+    なぜ要るか（恒久の決まり67番＝乱数は使わない・まこさん指示 2026-09-09
+      「乱数は禁止用語にするレベル。絶対に使うな」）
+      直す前は `_mat_drawn` が範囲から**乱数で**数字を引いていた（RSI なら 7〜21 のどれか）。
+      ★成績表に載っている列は、**その数字で実際に測った結果**なので、その列の数字を
+        そのまま使えば、乱数も私（CC）の判断も要らない。
+
+    ★範囲を狭めていない＝成績表は材料カタログの数字で作られており、範囲の中に在る。
+    ★数字を新しく作っていない＝列の名前に書いてある数字を読み取るだけ。
+    """
+    ranges = ranges if ranges is not None else material_ranges()
+    _check_tf(tf, table)
+    spec = ranges.get(family)
+    if spec is None:
+        raise SampleError(f"[4要素ゲート] 範囲の表（カタログ）に無い指標: {family}")
+    base = str(col).split("__")[0]                 # ★列の名前＝カタログ名__時間足
+    ent, params = iref.find(base)
+    if ent is None or params is None:
+        raise SampleError(f"成績表の列の名前から数字を取り出せない: {col}（fail-closed）")
+    param = params[0] if len(params) == 1 else tuple(params)
+    m = {"family": family, "param": param, "tf": str(tf),
+         PARAM_SRC: {"kind": "param", "src": spec["src"],
+                     "axes": [{"lo": a["lo"], "hi": a["hi"], "kind": a["kind"]} for a in spec["axes"]]}}
+    m.update(kw)
+    return m
+
+
+def _group_usable_col(col: str, family: str, tf: str, ranges: dict | None = None,
+                      table: dict | None = None) -> bool:
+    """**その列の数字で作った材料**が使えるか（禁止3＝標本不足に当たらないか）。2026-09-11・手順9。
+
+    ★なぜ要るか（実測 2026-09-11）＝`_group_usable` は「**範囲のどれか1つの数字**で使えるか」
+      を見る。直す前は数字を範囲から乱数で引いていたので、その判定で足りた（使えない数字を
+      引いたら引き直していた）。**いまは成績表の列の数字を1つだけ使う**ので、
+      「その列の数字で使えるか」を見ないと、順位に残った組で束が組めなくなる。
+      **実測＝直す前は100本中80本 組めたものが、この判定を入れる前は 32本 まで落ちた**
+      （env の1位 `DI差×1d` の列の数字が禁止3 だった）。
+    """
+    try:
+        m = _mat_from_col(col, family, tf, ranges, table=table)
+    except SampleError:
+        return False
+    return not _banned_pair(m, table)
+
+
 def _mat_two_drawn(rng, family: str, tf: str, ranges: dict | None = None, *, table: dict | None = None):
     """同じ指標の数字違い2本（短い方が先）。範囲が狭くて2本 引けなければ None。"""
     m1 = _mat_drawn(rng, family, tf, ranges, table=table)
@@ -499,6 +548,21 @@ def _thr_drawn(rng, limits: dict, lo_min=None, hi_max=None) -> dict:
     return {"threshold_q": draw_q(rng, limits, lo_min, hi_max), Q_SRC: {"kind": "q", "lo": int(lo), "hi": int(hi)}}
 
 
+def _thr_fixed(limits: dict, lo_min=None, hi_max=None) -> dict:
+    """閾値（分位）を1点に決める＝乱数を使わない（2026-09-11・手順9）。
+
+    ★まこさん決定 2026-09-11（逐語）＝「じゃあ、まず１点でつくる」。
+    ★どの1点か＝承認済みの範囲（`recipes/search_limits.json` の `quantile_range`）の真ん中。
+      **私（CC）は数字を作っていない**＝両端は承認済みで、真ん中はその2つから決まる。
+    ★9段（q10〜q90）に戻すときは、設定ファイルの `stage_limits.<段>.quantiles` に書けば足せる
+      （設計書 4-9）。コードを変えない。
+    ★印（Q_SRC）は `_thr_drawn` と同じものを書く＝範囲が記録に残る。
+    """
+    lo, hi = q_range_of(limits, lo_min, hi_max)
+    return {"threshold_q": f"q{(int(lo) + int(hi)) // 2}",
+            Q_SRC: {"kind": "q", "lo": int(lo), "hi": int(hi)}}
+
+
 def _thr_band_drawn(rng, limits: dict) -> tuple[dict, dict]:
     """帯の下限・上限（下限＜上限）を範囲から引く（2つが同じ値にならない＝幅ゼロの帯を作らない）。"""
     lo, hi = q_range_of(limits)
@@ -543,6 +607,41 @@ def _nv(rng, limits: dict, key: str, field: str, *, lo_min=None, hi_max=None,
     if scale is not None:
         mark["scale"] = float(scale)
     return {field: val, NUM_SRC: {field: mark}}
+
+
+def _nv_fixed(limits: dict, key: str, field: str, order_n: int, *, as_int: bool = True) -> dict:
+    """範囲の中の値を、案の番号から決まった並びで決める＝乱数を使わない（2026-09-11・手順9）。
+
+    ★並び＝範囲の下端から順に、案の番号のぶんだけ進む（端まで来たら下端へ戻る）。
+      ＝**同じ案の番号なら、いつでも同じ値**になる（再現できる）。
+    ★範囲は承認済み（`recipes/search_limits.json`）。**私（CC）は数字を作っていない。**
+    ★印（NUM_SRC）は `_nv` と同じ形で書く＝範囲と、選んだ値が記録に残る。
+    """
+    r = num_range_of(limits, key)
+    lo, hi = int(r["lo"]), int(r["hi"])
+    if hi < lo:
+        raise SampleError(f"範囲が逆さま: {key} の lo={lo} hi={hi}")
+    val = lo + (int(order_n) % (hi - lo + 1))
+    mark = {"kind": "num", "name": key, "lo": float(lo), "hi": float(hi), "raw": val}
+    return {field: int(val) if as_int else val, NUM_SRC: {field: mark}}
+
+
+def _loose_q_fixed(limits, q: str, side: str) -> str:
+    """出る線（off）の分位＝入る線（on）の**隣の段**に決め打ちする（2026-09-11・手順9）。
+
+    ★直す前は `_loose_q(rng, …)` が「緩い側の範囲の中から乱数で」引いていた。
+      いまは隣の段（above なら1つ小さい・below なら1つ大きい）に決める＝乱数を使わない。
+    ★緩める余地が無ければ、直す前と同じ理由で止まる（法則 C6 の②）。
+    """
+    lo, hi = q_range_of(limits)
+    n = int(str(q).lstrip("q"))
+    if side == "above":
+        if n - 1 < lo:
+            raise SampleError("hysteresis: 入る線が分位の下限＝出る線を緩められない（above）")
+        return f"q{n - 1}"
+    if n + 1 > hi:
+        raise SampleError("hysteresis: 入る線が分位の上限＝出る線を緩められない（below）")
+    return f"q{n + 1}"
 
 
 def _iv(rng, limits: dict, field: str, n_min: int = 1, *, scale=None) -> dict:
@@ -1512,7 +1611,9 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
     #     ＝差・タッチでも前処理つきの組を作る（段C の 4-2）。
     #   ★使えるのは「元の列と同じ単位のまま」の部品だけ（ts_max・ts_min）。順位・ばらつきは単位が
     #     変わるので、元の列と大小を比べても意味が無い＝水準（level・band）で使う（一覧＝MATERIAL_PRE）。
-    if limits is not None and ex.pre_ops(same_unit=True, needs_state=False):
+    # ★2026-09-11（M2-E-3 の手順1）＝`needs_n=True` を足して、下の引く所と同じ絞りにそろえた。
+    #   そろえないと「候補は在る」と言いながら、引く所が1つも引けない形が起きうる。
+    if limits is not None and ex.pre_ops(same_unit=True, needs_state=False, needs_n=True):
         cands += [("pre", f) for f in fams]
     if not cands:
         raise SampleError(f"役割 {role} で列2本の形を組める family が無い（表の系統の中）")
@@ -1533,7 +1634,11 @@ def _pair_materials(rng, pool, tfs, role, table, limits=None, form=None) -> list
             # ★「状態に入って以降」の3つ（since_min・since_max・at_entry）は引かせない
             #   ＝state（基準にする状態の列の名前）が要るが、案を作る段では決められない。
             #   直す前は引いてしまい、出した案が必ず拒否されていた（2026-08-21・M2-2-8 で直した）。
-            op = str(rng.choice(ex.pre_ops(same_unit=True, needs_state=False)))
+            # ★2026-09-11（M2-E-3 の手順1）＝`needs_n=True` を足した。
+            #   abs（符号を取り去る）は窓を持たないので、下の行が付ける `n` を受け取れない
+            #   ＝付けると G5 で「n は書けない」で拒否される。ここは窓を持つ部品だけを引く。
+            #   ★abs を実際に付けるのは、場面の判定の束を組む側（段2a の強さの否定）＝別の道。
+            op = str(rng.choice(ex.pre_ops(same_unit=True, needs_state=False, needs_n=True)))
             pair = [m0, _mat_with_pre(m0, {"op": op, **_iv(rng, limits, "n", n_min=2)})]
         else:
             fa, fb = c                                # type: ignore[misc]
@@ -2212,11 +2317,11 @@ def ranked_groups(role: str, label: str | None = None) -> list[tuple]:
     return out
 
 
-def _ranked_material_at(rng, role, rank_pos: int, tfs, table, label=None, tf_ok=None,
+def _ranked_material_at(role, rank_pos: int, tfs, table, label=None, tf_ok=None,
                         ranges: dict | None = None) -> tuple[dict, dict]:
     """役割の材料を、成績表（種類×時間足でまとめた順位）の rank_pos 位（1始まり）から取る（M2-5 の B・決定 (a')）。
 
-    種類と時間足は順位から（乱数でない）。数字だけは _mat_drawn が範囲から引く（rng はそのため）。
+    種類と時間足は順位から。数字は成績表の列の名前から（★2026-09-11＝乱数を1つも使わない）。
     型の表（役割×系統・時間足）と禁止3（標本不足）を満たすものだけを数えて rank_pos 位。
     戻り＝(材料, 記録{rank, col, family, tf, label, horizon, 分離力, 列の本数})。足りなければ SampleError。
     """
@@ -2232,20 +2337,18 @@ def _ranked_material_at(rng, role, rank_pos: int, tfs, table, label=None, tf_ok=
             continue
         if iref.FAMILY_LINEAGE[fam]["k"] not in rr["lineages"]:
             continue
-        if not _group_usable(fam, tf, ranges, table):    # ★69回目（原因B）＝範囲のどの数字でも禁止3 の組は順位に数えない
+        if not _group_usable_col(col, fam, tf, ranges, table):    # ★手順9＝その列の数字で使えるか
             continue
         n += 1
         if n != int(rank_pos):
             continue
-        m = None
-        for _try in range(10):                         # 引いた数字が禁止3（標本不足）なら引き直す（組は変えない）
-            cand = _mat_drawn(rng, fam, tf, ranges, table=table)
-            if not _banned_pair(cand, table):
-                m = cand
-                break
-        if m is None:
-            # ★次の組へ飛ばさない＝飛ばすと種によって指標が変わる（「1位から順」が乱数に依る）。この案だけ作れない。
-            raise SampleError(f"{role} の {rank_pos} 位（{fam}×{tf}）で、範囲から引いた数字が10回とも禁止3（標本不足）")
+        # ★2026-09-11（手順9）＝数字を乱数で引くのをやめ、成績表の列の数字をそのまま使う。
+        #   直す前＝`_mat_drawn(rng, …)` で範囲から10回まで引き直していた（恒久の決まり67番に当たる）。
+        #   いま＝その列の数字は1つに決まるので、禁止3（標本不足）なら この案は作れない。
+        m = _mat_from_col(col, fam, tf, ranges, table=table)
+        if _banned_pair(m, table):
+            # ★次の組へ飛ばさない＝飛ばすと「1位から順」が崩れる。この案だけ作れない。
+            raise SampleError(f"{role} の {rank_pos} 位（{fam}×{tf}）の列の数字が禁止3（標本不足）: {col}")
         if True:
             # ★記録の鍵に family／tf を使わない＝4要素ゲートが「印の無い材料」と取り違えるため（種類・時間足）
             return m, {"rank": int(rank_pos), "col": col, "種類": fam, "時間足": tf, "label": lab,
@@ -2253,21 +2356,31 @@ def _ranked_material_at(rng, role, rank_pos: int, tfs, table, label=None, tf_ok=
     raise SampleError(f"{role}/{label or '全ラベル'} の順位に {rank_pos} 位が無い（使える候補 {n} 本）")
 
 
-def regime_draw_order(n: int) -> tuple[int, int, str]:
-    """案 n 番目（0始まり）に割り当てる (部品B の順位, 部品C の順位, 部品B の向き)＝1位から順・決まった並び。
-    並び＝順位の和が小さい順 → 同じ和なら部品B の順位が小さい順 → 向き above・below の順。
-    (1,1,above) (1,1,below) (1,2,above) (1,2,below) (2,1,above) (2,1,below) (1,3,…) …
-    ★乱数を使わない。どこまで下位を試すかは試行数（search_limits.json・まこさんの値）で決まる。"""
+def regime_draw_order(n: int) -> tuple[int, int, int, str]:
+    """案 n 番目（0始まり）に割り当てる (帯 B の順位, 強さの否定 C の順位, 3枠目 G の順位, B の向き)。
+
+    並び＝3つの順位の和が小さい順 → 同じ和なら B が小さい順 → C が小さい順 → 向き above・below の順。
+    (1,1,1,above) (1,1,1,below) (1,1,2,above) (1,1,2,below) (1,2,1,…) (2,1,1,…) (1,1,3,…) …
+    ★乱数を使わない。どこまで下位を試すかは試行数（search_limits.json・まこさんの値）で決まる。
+
+    ★2026-09-11（M2-E-3 の手順10・監査 cp35 の A1-d の3番）＝3枠目 G の順位を足した。
+      直す前は戻りが3つ（B・C・向き）で、**3枠目の順位はコードに 1 と直書きされていた**
+      （`_material_for_law(rng, "sufficiency", fams_r6, 1, …)`）。
+      ＝案の番号を変えても3枠目が1位のまま動かず、探せる束がその分 狭かった。
+    ★上限の数字を私が作っていない＝和が小さい順に増やすだけ（和の上限を持たない）。
+    """
     if n < 0:
         raise SampleError("案の番号が負")
     i = int(n) // 2
     side = ("above", "below")[int(n) % 2]
-    s = 2
+    s = 3                                             # 3つとも1位のときの和
     while True:
-        cnt = s - 1                                   # 和 s の組は (1,s-1) … (s-1,1) の s-1 通り
-        if i < cnt:
-            return i + 1, s - (i + 1), side
-        i -= cnt
+        # 和 s の組＝B と C を1位から振り、残りを G に回す（3つとも1以上）
+        combos = [(b, c, s - b - c) for b in range(1, s - 1) for c in range(1, s - b)]
+        if i < len(combos):
+            b, c, g = combos[i]
+            return b, c, g, side
+        i -= len(combos)
         s += 1
 
 
@@ -2331,7 +2444,260 @@ def _law_geo(laws: dict, no: str) -> tuple:
     return (), {}
 
 
-def _material_for_law(rng, role, fams, rank_pos: int, tfs, table, label=None, tf_ok=None,
+def _law_lineages(laws: dict, no: str) -> tuple:
+    """その法則が名指ししている系統を取り出す（★2026-09-11・監査 cp35 の Critical C-1）。
+
+    戻り＝系統の名前の並び。名指ししていなければ空。
+    ★一覧をこの関数に書かない＝法則ファイルの「数える部品」の『系統』から取る。
+    ★手本＝`_law_families`（family を読む・同じ作り）。
+
+    ★なぜ要ったか（監査 cp35 の実測）
+      直す前、帯の枠だけが法則を読んでいなかった（`_ranked_material_at(rng, "location", …)`＝
+      役割の名前をコードに直書き）。監査が法則ファイルの写しを書き替えて試したところ、
+      **R1・R3 の系統を「構造・位置」から「ボラ」に変えても、帯の材料が1文字も変わらなかった。**
+      法則 R1・R3 が名指ししているのは **family ではなく「系統」**なので、`_law_families` では読めない。
+      ＝系統を読む道が1つも無かった。この関数がその道。
+    """
+    for num, sel, _n in laws["counts"]:
+        if num != no:
+            continue
+        return tuple(sel.get("系統") or [])
+    return ()
+
+
+_STAGE_CANDS_PATH = (HERE.parents[1] / ".claude" / "ratchet" / "m2_stage_candidates.json")
+_STAGE_CANDS_MEMO: dict = {}
+
+
+def stage_candidates(stage: str) -> dict:
+    """その段の候補の元を、§2.2 の元データから読む（★手で書かない・2026-09-11）。
+
+    戻り＝{"families": frozenset, "lineages": frozenset, "geo_cols": tuple,
+           "pre": dict, "bool_col": str|None}
+    段の名前＝"stage1" / "stage2a" / "stage2b" / "stage2c" / "stage3"。
+
+    ★なぜ元データから読むか（まこさん指示 2026-09-11・逐語）
+      「手書きで書き換えられないようにプログラムが読める対応付けをすればいいのでは？」
+      「この文書の指標の表記が正本通りじゃないのであれば、正本から自動生成する形で修正すべきなのでは？」
+    ★直す前＝`gen_stage0_match.py` の中に私（CC）が手で書いた語を読み、成績表に**部分一致**で
+      当てていた。**写した一覧なので私が書き換えられる状態で、実際に本数が監査の実測に
+      近づくまで絞り方を3回 書き換えた**（618本 → 444本 → 完全一致の形）。
+    ★直した後＝元データの指標の名前に**完全一致**。元データに書ける名前は、正本
+      （`indicator_reference_diag.FAMILY_LINEAGE`）に実在するものだけ＝
+      `gen_regime_kb.py --write stage` が照らして、外れたら止まる（fail-closed）。
+    """
+    if not _STAGE_CANDS_MEMO:
+        if not _STAGE_CANDS_PATH.exists():
+            raise SampleError(f"§2.2 の候補の元データが無い: {_STAGE_CANDS_PATH}（fail-closed）")
+        # ★展開（語 → 正本の指標の名前）は `gen_regime_kb.expand_stage` の1か所に置く。
+        #   この関数・突き合わせの道具・§2.2 の表 の3つが、同じ関数を呼ぶ＝判定を書き写さない。
+        _tools = HERE.parents[3] / ".claude" / "tools"
+        if str(_tools) not in sys.path:
+            sys.path.insert(0, str(_tools))
+        try:
+            import gen_regime_kb as _grk
+            _ex = _grk.expand_stage()
+        except SystemExit as e:                    # 正本と合わない＝fail-closed の拒否
+            raise SampleError(f"§2.2 の候補の元データが正本と合わない: {e}")
+        except Exception as e:                     # noqa: BLE001
+            raise SampleError(f"§2.2 の候補の元データを読めない: {e}（fail-closed）")
+        for _k, _s in _ex.items():
+            _STAGE_CANDS_MEMO[_k] = {
+                "families": frozenset(_s.get("families") or ()),
+                "lineages": frozenset(_s.get("lineages") or ()),
+                "geo_cols": tuple(_s.get("geo_cols") or ()),
+                "pre": dict(_s.get("pre") or {}),
+                "bool_col": _s.get("bool_col"),
+            }
+        if not _STAGE_CANDS_MEMO:
+            raise SampleError("§2.2 の候補の元データに段が0件（fail-closed）")
+    if stage not in _STAGE_CANDS_MEMO:
+        raise SampleError(f"§2.2 の候補の元データに {stage} が無い（fail-closed）")
+    return _STAGE_CANDS_MEMO[stage]
+
+
+STAGE_SPEC = {
+    # 段ごとの「役割・札・法則の番号・候補の元の引き方」＝設計書 4-4 の手順2〜8 の表を、そのまま持つ。
+    #   ★指標の名前をここに書かない＝候補の元は法則ファイル（family／系統）と §2.2（探す語）から読む。
+    "stage1":  {"role": "location",    "label": None,   "law": "R1", "pick": "lineage"},
+    "stage2a": {"role": "env",         "label": "強さ", "law": "R5", "pick": "family"},
+    "stage2b": {"role": None,          "label": None,   "law": "R8", "pick": "bool_col"},
+    "stage2c": {"role": "sufficiency", "label": None,   "law": "R6", "pick": "family"},
+    "stage3":  {"role": None,          "label": None,   "law": "R4", "pick": "number"},
+}
+# ★符号を取り去る前処理を付ける指標は、ここに書かない（2026-09-11 に元データへ移した）。
+#   出どころ＝`m2_stage_candidates.json` の段ごとの `pre` の欄（`stage_candidates(stage)["pre"]`）。
+#   なぜ移したか＝指標の名前をコードに直書きすると、§2.2 が変わったとき片方だけ直って腐る
+#   （恒久の決まり69番）。まこさん指示 2026-09-10「この件、毎回忘れて、設計に入れないし、
+#   やろうとしないから、絶対入れろ」で足した前処理そのものは、1つも外していない。
+
+
+def build_stage_candidates(stage: str, laws: dict, table, tfs, limits,
+                           fixed: dict | None = None) -> list[dict]:
+    """その段の候補を全部 返す（成績表の順・乱数を1か所も使わない）。
+
+    stage ＝ "stage1" | "stage2a" | "stage2b" | "stage2c" | "stage3"
+    laws  ＝ laws_for_scene("range") の戻り（法則ファイルから読んだもの）
+    fixed ＝ 前の段で決まった枠（例＝{"stage1": <候補1件>}）。段1 では None
+    戻り  ＝ 候補の一覧（鍵11個・分離力の高い順）
+
+    ★2026-09-11（M2-E-3 の手順4・5）＝設計書 4-2 の「候補1件の形」をそのまま返す。
+      **各枠が出すのは1本ではない**（まこさん指摘 2026-09-10＝「各段で出力するロジックは１本ではない」）。
+    ★候補1件＝材料の組（種類 × 時間足）× 側 × 閾値の分位（設計書 4-2 の「候補の軸」）。
+      側は法則が family ごとに持つものを使い、閾値の分位は **1点**（まこさん決定 2026-09-11
+      ＝「じゃあ、まず１点でつくる」）。だから本数は材料の組の数そのもの。
+    ★この関数は審査（G7）を掛けない＝`law_check` は "—" で返す。審査は束に組んでから掛ける
+      （1つの枠だけでは法則を満たせないため）。★落ちた候補も消さない（§2.2 の共通の決まり）。
+    """
+    spec = STAGE_SPEC.get(stage)
+    if spec is None:
+        raise SampleError(f"知らない段: {stage}（使えるのは {sorted(STAGE_SPEC)}）")
+    # ★閾値の分位＝1点（まこさん決定 2026-09-11）。承認済みの範囲の真ん中を使う
+    #   ＝私が数字を作らない（両端は `search_limits.json` の `quantile_range`）。
+    _q_lo, _q_hi = q_range_of(limits)
+    q_one = f"q{(_q_lo + _q_hi) // 2}"
+    out: list[dict] = []
+
+    if stage == "stage2b":                         # 向きの否定＝承認済みの借用が1本だけ
+        # ★列の名前は §2.2 の元データ（`m2_stage_candidates.json` の `bool_col`）から読む。
+        #   出どころ＝まこさん決定 2026-09-01「承認済みの借用」。自前の向きは M2-M。
+        _bc = stage_candidates(stage)["bool_col"]
+        if not _bc:
+            raise SampleError("段2b の真偽の列が §2.2 の元データに無い（fail-closed）")
+        out.append({"stage": stage, "rank": 1, "col": _bc, "family": None,
+                    "tf": None, "acc": None, "label": None, "horizon": None,
+                    "cond": {"not": {"bool_col": _bc, "want": True}},
+                    "law_check": "—", "dropped_by": None})
+        return out
+
+    if stage == "stage3":                          # 持続＝材料でなく数字の候補（本数）
+        # ★本数は承認済みの範囲（`int_range`）の整数を全部 並べる＝乱数を使わない・数字を作らない。
+        _n_lo, _n_hi = int_range_of(limits, n_min=2)
+        for i, n in enumerate(range(_n_lo, _n_hi + 1), start=1):
+            out.append({"stage": stage, "rank": i, "col": None, "family": None, "tf": None,
+                        "acc": None, "label": None, "horizon": None,
+                        "cond": {"role": "location", "form": "streak", "value": {"n": int(n)}},
+                        "law_check": "—", "dropped_by": None})
+        return out
+
+    role, label = spec["role"], spec["label"]
+    ranges = material_ranges()
+    rr = table["roles"][role]
+    # ★法則 C4・R3 の「執行足より上」＝型の表の時間足の並びで 5m より後ろ（`sample_regime_build` と同じ式）
+    _tfs_all = list(table["tfs"])
+    upper = [t for t in _tfs_all if _tfs_all.index(t) > _tfs_all.index("5m")]
+    # ★あわせて「絞り込みの段では使わない時間足」を外す（まこさん決定 2026-09-10・設計書 4-9 の `drop_tfs`）。
+    #   既定は 1分足・3分足・10分足（重いため）。設定ファイルに無ければ その3本を使う。
+    _drop_tfs = limits.get("drop_tfs") or ["1m", "3m", "10m"]
+    upper = [t for t in upper if t not in set(_drop_tfs)]
+    ok_tfs = set(_role_tfs(tfs, table, role)) & set(upper)
+    spec_c = stage_candidates(stage)               # §2.2 の候補の元データ（手で書かない）
+    fams_law, side_law = _law_families(laws, spec["law"])
+    lins_law = _law_lineages(laws, spec["law"]) or _law_lineages(laws, "R3")
+    rank = 0
+    for fam, tf, lab, hor, med, ncol, col in ranked_groups(role, label):
+        if fam not in iref.FAMILY_LINEAGE or fam not in ranges:
+            continue
+        if iref.FAMILY_LINEAGE[fam]["k"] not in rr["lineages"]:
+            continue
+        if tf not in ok_tfs:
+            continue
+        # ★2026-09-11（手順9）＝「その列の数字で使えるか」も見る（乱数で引き直さなくなったため）
+        if not _group_usable_col(col, fam, tf, ranges, table):
+            continue
+        if spec["pick"] == "family":               # 段2a・段2c＝法則が名指しした family だけ
+            if fams_law and fam not in fams_law:
+                continue
+        else:                                      # 段1＝法則が名指しした系統だけ
+            if lins_law and iref.FAMILY_LINEAGE[fam]["k"] not in lins_law:
+                continue
+        # ★§2.2 が挙げた候補で絞る＝元データの**指標の名前に完全一致**するもの、または
+        #   元データが**系統でまとめて足した分**に属するものだけを通す。
+        #   ★2026-09-11（まこさん指示「手書きで書き換えられないようにプログラムが読める
+        #     対応付けをすればいいのでは？」）に、部分一致をやめてここに直した。
+        #   ★直す前に私がやった誤り（記録として残す）＝本数が監査の実測（354本）に近づくまで
+        #     絞り方を3回 書き換えた（①列の名前に部分一致 618本 ②指標の名前に部分一致 444本
+        #     ③名前の先頭が合うもの）。**数字を合わせるために絞り方を変えたもので、不正。**
+        #     いまの形は、元データの名前と照らすだけ＝本数に合わせて動かせない。
+        if spec_c["families"] or spec_c["lineages"]:
+            _ok_name = fam in spec_c["families"]
+            _ok_lin = iref.FAMILY_LINEAGE[fam]["k"] in spec_c["lineages"]
+            if not (_ok_name or _ok_lin):
+                continue
+        rank += 1
+        # ★材料は `_mat_drawn`（材料を作る唯一の入口）で作る。数字はその中で範囲から引く。
+        #   ★乱数を外すのは手順9（完成の条件 AUDIT-3・AUDIT-5）＝5つの枠をまとめて直す。
+        #     この手順では「候補を全部 並べる」だけを入れる（1つずつ測れる形にするため）。
+        #   ★案の番号ではなく順位を種にする＝同じ候補の一覧なら、何回 呼んでも同じ材料が出る。
+        m = _mat_from_col(col, fam, tf, ranges, table=table)
+        side = side_law.get(fam, "above" if stage == "stage1" else "below")
+        if stage == "stage2a":
+            # ★符号を取り去る前処理＝元データの `pre` の欄から引く（指標の名前を直書きしない）
+            _op = spec_c["pre"].get(fam)
+            if _op:
+                m = {**m, "pre": {"op": _op}}
+            # 法則が言う側の逆を `not` で包む（入る線は「強いと言えない」）
+            strong_side = "above" if side == "below" else "below"
+            cond = {"not": {"role": role, "form": "level", "material": [m],
+                            "side": strong_side, "value": {"threshold_q": q_one}}}
+        else:
+            cond = {"role": role, "form": "level", "material": [m],
+                    "side": side, "value": {"threshold_q": q_one}}
+        out.append({"stage": stage, "rank": rank, "col": col, "family": fam, "tf": tf,
+                    "acc": med, "label": lab, "horizon": hor, "cond": cond,
+                    "law_check": "—", "dropped_by": None})
+    if not out:
+        raise SampleError(f"{stage} の候補が0件（法則 {spec['law']} の名指し・§2.2 の語・型の表の絞りの後）")
+    return out
+
+
+def _material_for_lineage(role, lineages, rank_pos: int, tfs, table, label=None,
+                          tf_ok=None, ranges: dict | None = None) -> tuple[dict, dict]:
+    """法則が名指しした **系統** の中から、成績表の順位の上から rank_pos 番目を取る（監査 cp35 の C-1）。
+
+    ★`_material_for_law` との違い＝あちらは family（指標の名前）で絞る。こちらは **系統**で絞る。
+      法則 R1・R3 は family を名指しせず、系統「構造・位置」だけを名指しするので、この形が要る。
+    ★`_ranked_material_at` の中の1行（役割が持つ系統で絞る）を、法則が名指しした系統に替えたもの。
+    ★材料の数字は `_mat_drawn`（材料を作る唯一の入口）が範囲から引く＝`_material_for_law` と同じ作り。
+      **乱数を外すのは手順9（設計書の完成の条件 AUDIT-3・AUDIT-5）で、5つの枠をまとめて直す。**
+      この手順では「法則を読んで系統で絞る」だけを入れる（1つずつ測れる形にするため）。
+    戻り＝(材料, 記録)。足りなければ SampleError。
+    """
+    rr = table["roles"][role]
+    ok_tfs = set(tf_ok if tf_ok is not None else _role_tfs(tfs, table, role))
+    ranges = ranges if ranges is not None else material_ranges()
+    want = set(lineages or ())
+    if not want:
+        raise SampleError(f"法則が系統を名指ししていない（役割 {role}・fail-closed）")
+    n = 0
+    for fam, tf, lab, hor, med, ncol, col in ranked_groups(role, label):
+        if fam not in iref.FAMILY_LINEAGE or fam not in ranges:
+            continue
+        if iref.FAMILY_LINEAGE[fam]["k"] not in want:      # ★法則が名指しした系統だけを数える
+            continue
+        if iref.FAMILY_LINEAGE[fam]["k"] not in rr["lineages"]:
+            continue                                       # ★型の表（役割×系統）も満たす
+        if tf not in ok_tfs:
+            continue
+        # ★2026-09-11（手順9）＝「その列の数字で使えるか」も見る（乱数で引き直さなくなったため）
+        if not _group_usable_col(col, fam, tf, ranges, table):
+            continue
+        n += 1
+        if n != int(rank_pos):
+            continue
+        # ★2026-09-11（手順9）＝数字を乱数で引くのをやめ、成績表の列の数字をそのまま使う。
+        m = _mat_from_col(col, fam, tf, ranges, table=table)
+        if _banned_pair(m, table):
+            raise SampleError(f"{role} の {rank_pos} 位（{fam}×{tf}）の列の数字が"
+                              f"禁止3（標本不足）: {col}")
+        return m, {"rank": int(rank_pos), "col": col, "種類": fam, "時間足": tf, "label": lab,
+                   "horizon": hor, "分離力": med, "列の本数": int(ncol),
+                   "法則が名指しした系統": sorted(want)}
+    raise SampleError(f"{role}/{label or '全ラベル'} の順位に {rank_pos} 位が無い"
+                      f"（使える候補 {n} 本・法則が名指しした系統＝{sorted(want)}）")
+
+
+def _material_for_law(role, fams, rank_pos: int, tfs, table, label=None, tf_ok=None,
                       ranges: dict | None = None) -> tuple[dict, dict]:
     """法則が名指しした family の中から、成績表の順位の上から rank_pos 番目を取る（M2-E-2）。
 
@@ -2353,19 +2719,17 @@ def _material_for_law(rng, role, fams, rank_pos: int, tfs, table, label=None, tf
             continue
         if iref.FAMILY_LINEAGE[fam]["k"] not in rr["lineages"]:
             continue
-        if not _group_usable(fam, tf, ranges, table):
+        # ★2026-09-11（手順9）＝「その列の数字で使えるか」も見る（乱数で引き直さなくなったため）
+        if not _group_usable_col(col, fam, tf, ranges, table):
             continue
         n += 1
         if n != int(rank_pos):
             continue
-        m = None
-        for _try in range(10):
-            cand = _mat_drawn(rng, fam, tf, ranges, table=table)
-            if not _banned_pair(cand, table):
-                m = cand
-                break
-        if m is None:
-            raise SampleError(f"{role} の {rank_pos} 位（{fam}×{tf}）で、範囲から引いた数字が10回とも禁止3（標本不足）")
+        # ★2026-09-11（手順9）＝数字を乱数で引くのをやめ、成績表の列の数字をそのまま使う。
+        m = _mat_from_col(col, fam, tf, ranges, table=table)
+        if _banned_pair(m, table):
+            raise SampleError(f"{role} の {rank_pos} 位（{fam}×{tf}）の列の数字が"
+                              f"禁止3（標本不足）: {col}")
         return m, {"rank": int(rank_pos), "col": col, "種類": fam, "時間足": tf, "label": lab,
                    "horizon": hor, "分離力": med, "列の本数": int(ncol),
                    "法則が名指しした family": sorted(want) if want else "（名指し無し＝役割の全部）"}
@@ -2373,16 +2737,61 @@ def _material_for_law(rng, role, fams, rank_pos: int, tfs, table, label=None, tf
                       f"（使える候補 {n} 本・法則が名指しした family＝{sorted(want) if want else '無し'}）")
 
 
-def _flip_loose(rng, limits, c: dict) -> dict:
+def _flip_loose(limits, c: dict) -> dict:
     """水準の条件を「緩い側へずらして反転」した条件＝出る線（off）の部品（法則 C6 の②）。
-    above q → below q'（q' < q）／ below q → above q'（q' > q）。"""
+    above q → below q'（q' < q）／ below q → above q'（q' > q）。
+
+    ★2026-09-11（手順9）＝引数から `rng` を落とした。ずらす先は隣の段に決め打ちする
+      （`_loose_q_fixed`）＝乱数を使わない（恒久の決まり67番）。
+    """
     out = json.loads(json.dumps(c))
-    out["value"]["threshold_q"] = _loose_q(rng, limits, c["value"]["threshold_q"], c["side"])
+    out["value"]["threshold_q"] = _loose_q_fixed(limits, c["value"]["threshold_q"], c["side"])
     out["side"] = "below" if c["side"] == "above" else "above"
     return out
 
 
-def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: int = 0,
+_STAGE_COUNT_MEMO: dict = {}
+
+
+def stage_counts(laws: dict, table, tfs, limits) -> list:
+    """段ごとの記録を作る（手順6・設計書 4-8 の鍵6つ・2026-09-11 新設）。
+
+    戻り＝[{"stage":…, "n_candidates":…, "n_passed":…, "keep":…, "sec":…, "dropped":…}, …]
+
+    ★`n_passed`（審査を通った本数）と `dropped`（落ちた法則ごとの本数）は **null と空** にする。
+      理由＝法則の審査（G7）は**束に対して**掛かるもので、候補1件ごとには掛からない。
+      **この工事では測っていない。**測っていないものを 0 と書くと「0本 落ちた」と読めるので、
+      正直に null にする。**段ごとに測って落とすのは M2-F**（§2.2 の割り当て表）。
+    ★`keep`＝次の段へ渡す本数。いまは 1（`sample_regime_build` が枠ごとに1本 使うため）。
+      上位を何本 渡すかを設定で決めるのは手順7（`stage_keep_range`）。
+    ★同じ法則・同じ成績表なら本数は変わらないので、法則の指紋で覚える（束1本ごとに
+      数え直すと、100本 組む自己テストで5倍 遅くなる）。
+    """
+    _key = hashlib.sha256(
+        json.dumps(laws, sort_keys=True, default=str, ensure_ascii=False).encode("utf-8")
+    ).hexdigest()[:16]
+    if _key in _STAGE_COUNT_MEMO:
+        return copy.deepcopy(_STAGE_COUNT_MEMO[_key])
+    out = []
+    for sk in ("stage1", "stage2a", "stage2b", "stage2c", "stage3"):
+        t0 = time.perf_counter()
+        row = {"stage": sk, "n_candidates": None, "n_passed": None,
+               "keep": None, "sec": None, "dropped": {}}
+        try:
+            cands = build_stage_candidates(sk, laws, table, tfs, limits)
+        except SampleError as e:
+            row["止まった理由"] = str(e)[:120]     # ★黙って0件にしない（理由を残す）
+            out.append(row)
+            continue
+        row["n_candidates"] = len(cands)
+        row["keep"] = 1
+        row["sec"] = round(time.perf_counter() - t0, 3)
+        out.append(row)
+    _STAGE_COUNT_MEMO[_key] = copy.deepcopy(out)
+    return out
+
+
+def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0,
                         pre_b: dict | None = None) -> tuple[dict, dict]:
     """場面の判定の束（meta.regime.build）を1つ 組む。戻り＝(build, 引いた記録)。いまはレンジだけ。
 
@@ -2409,33 +2818,44 @@ def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: in
                                      "重ねない法則": len(laws["no_dup"])}}
     tfs_all = list(table["tfs"])
     upper = [t for t in tfs_all if tfs_all.index(t) > tfs_all.index("5m")]      # 執行足より上（C4・R3）
-    r_b, r_c, side_b = regime_draw_order(order_n)
+    # ★2026-09-11（手順10）＝3枠目 G の順位も受け取る（直す前は3つ＝B・C・向きだけ）
+    r_b, r_c, r_g, side_b = regime_draw_order(order_n)
     # ── A 帯の幅（R7）＝法則が名指しした geo を、法則が決めた側で ──
     geo_names, geo_side = _law_geo(laws, "R7")
     if not geo_names:
         raise SampleError("R7 が geo を名指ししていない（regime_laws.json・fail-closed）")
     g0 = geo_names[0]
     cond_a = {"role": "location", "form": "level", "material": [{"geo": g0}],
-              "side": geo_side.get(g0, "above"), "value": _thr_drawn(rng, limits)}
+              "side": geo_side.get(g0, "above"), "value": _thr_fixed(limits)}
     draw["A"] = {"geo": g0, "側": cond_a["side"], "法則": "R7"}
     # ── B 構造・位置（R1・R3）＝location の成績表の r_b 位・向きは order_n で決まる ──
-    m_b, draw["B"] = _ranked_material_at(rng, "location", r_b, tfs, table)
+    # ★2026-09-11（M2-E-3 の手順10・監査 cp35 の Critical C-1）＝帯の枠を法則から引く形にした。
+    #   直す前＝`_ranked_material_at(rng, "location", r_b, tfs, table)`＝役割の名前をコードに直書き。
+    #   監査が法則ファイルの写しを書き替えて試したら、**R1・R3 の系統を変えても帯が1文字も変わらなかった。**
+    #   ★法則 R1・R3 が名指ししているのは family ではなく「系統」（構造・位置）。だから
+    #     `_law_lineages` で系統を読み、`_material_for_lineage` でその系統の中から順位で引く。
+    #   ★`tf_ok=upper`＝法則 R3 の「執行足より上」。直す前は帯に渡しておらず、1分足・3分足も引けた
+    #     （監査の A1-d の2番）。
+    lins_b = _law_lineages(laws, "R1") or _law_lineages(laws, "R3")
+    if not lins_b:
+        raise SampleError("R1・R3 が系統を名指ししていない（regime_laws.json・fail-closed）")
+    m_b, draw["B"] = _material_for_lineage("location", lins_b, r_b, tfs, table, tf_ok=upper)
     if pre_b is not None:                               # ★2026-09-05（M2-C-4）＝前処理の道（既定は通らない）
         m_b = {**m_b, "pre": dict(pre_b)}
         draw["B_pre"] = dict(pre_b)
     cond_b = {"role": "location", "form": "level", "material": [m_b],
-              "side": side_b, "value": _thr_drawn(rng, limits)}
+              "side": side_b, "value": _thr_fixed(limits)}
     # ── C 非トレンド（R5・R8）＝法則 R5 が名指しした family の中から、成績表の r_c 位 ──
     #    ★直す前＝env の全部から r_c 位を取っていた（法則が名指しした8種を見ていない）。
     fams_r5, side_r5 = _law_families(laws, "R5")
-    m_c, draw["C"] = _material_for_law(rng, "env", fams_r5, r_c, tfs, table, label="強さ",
+    m_c, draw["C"] = _material_for_law("env", fams_r5, r_c, tfs, table, label="強さ",
                                        tf_ok=[t for t in _role_tfs(tfs, table, "env") if t in upper])
     # ★側も法則から取る＝R5 は family ごとに above／below を持つ。not で包むので、
     #   入る線は「法則が言う側の逆」を否定する形にする（法則が below と言うなら above を not）。
     want_side = side_r5.get(draw["C"]["種類"], "below")
     strong_side = "above" if want_side == "below" else "below"
     strong = {"role": "env", "form": "level", "material": [m_c],
-              "side": strong_side, "value": _thr_drawn(rng, limits)}
+              "side": strong_side, "value": _thr_fixed(limits)}
     cond_c = {"not": strong}
     draw["C"]["法則の側"] = want_side
     draw["C"]["not で包む側"] = strong_side
@@ -2446,22 +2866,35 @@ def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: in
     cond_g = None
     fams_r6, side_r6 = _law_families(laws, "R6")
     if fams_r6:
-        m_g, draw["G"] = _material_for_law(rng, "sufficiency", fams_r6, 1, tfs, table)
+        # ★2026-09-11（手順10・監査 cp35 の A1-d の3番）＝順位を 1 の直書きから案の番号へ。
+        #   ★`tf_ok=upper`＝法則 C4 の「執行足より上」。直す前は渡しておらず、1分足・3分足も引けた。
+        m_g, draw["G"] = _material_for_law("sufficiency", fams_r6, r_g, tfs, table, tf_ok=upper)
         cond_g = {"role": "sufficiency", "form": "level", "material": [m_g],
-                  "side": side_r6.get(draw["G"]["種類"], "below"), "value": _thr_drawn(rng, limits)}
+                  "side": side_r6.get(draw["G"]["種類"], "below"), "value": _thr_fixed(limits)}
         draw["G"]["法則"] = "R6"
         draw["G"]["側"] = cond_g["side"]
     # ── F 何本 続いたか（R4）＝★M2-E-2 で新しく足した。直す前は無く、20回とも R4 で落ちていた ──
     cond_f = None
     if "streak" in laws["forms"]:
         cond_f = {"role": "location", "form": "streak",
-                  "value": _nv(rng, limits, "int_range", "n", as_int=True),
+                  "value": _nv_fixed(limits, "int_range", "n", order_n),
                   "inner": json.loads(json.dumps(cond_b))}
         draw["F"] = {"形": "streak", "法則": "R4", "本数": cond_f["value"].get("n")}
     # ── E 状態を保つ（C6・C7）＝on＝A∩B∩C（∩F）／off＝それぞれを緩い側へずらした any ──
     off_c = json.loads(json.dumps(strong))
-    off_c["value"]["threshold_q"] = _loose_q(rng, limits, strong["value"]["threshold_q"], strong_side)
+    off_c["value"]["threshold_q"] = _loose_q_fixed(limits, strong["value"]["threshold_q"], strong_side)
+    # ── 段2b 向きの否定（R8・承認済みの借用）＝真偽の列を `not` で包んで1つ入れる（手順8） ──
+    #   ★列の名前は §2.2 の元データから読む（`m2_stage_candidates.json` の `bool_col`）。
+    #   ★`{"bool_col": …, "want": false}` と書かない＝`not` のノードが消えて、法則 R8 の
+    #     「形を持つ＝not」の審査（G7）を通らなくなる（設計書 4-4 の手順5・実測）。
+    #   ★自前の向きの判定は M2-M（まこさんが決めた順番を動かさない）。
+    cond_d = None
+    if "not" in laws["forms"]:
+        _bc2b = stage_candidates("stage2b")["bool_col"]
+        if _bc2b:
+            cond_d = {"not": {"bool_col": _bc2b, "want": True}}
     on_all = ([cond_a, cond_b, cond_c]
+              + ([cond_d] if cond_d is not None else [])
               + ([cond_g] if cond_g is not None else [])
               + ([cond_f] if cond_f is not None else []))
     if "hysteresis" not in laws["forms"]:
@@ -2470,9 +2903,14 @@ def sample_regime_build(rng, limits, pool, tfs, table, name="range", order_n: in
         raise SampleError("R8（not の形）が法則に無い（regime_laws.json・fail-closed）")
     hyst = {"form": "hysteresis",
             "on": {"all": on_all},
-            "off": {"any": [_flip_loose(rng, limits, cond_a), _flip_loose(rng, limits, cond_b), off_c]},
-            "value": _nv(rng, limits, "state_hold_bars_range", "n", as_int=True)}
+            "off": {"any": [_flip_loose(limits, cond_a), _flip_loose(limits, cond_b), off_c]},
+            "value": _nv_fixed(limits, "state_hold_bars_range", "n", order_n)}
     build = {"entry": {"out_col": REGIME_OUT_COL[name], "tree": {"all": [hyst]}}, "block": None}
+    if cond_d is not None:
+        draw["D"] = {"形": "not", "法則": "R8", "真偽の列": cond_d["not"]["bool_col"]}
+    # ★段ごとの記録（手順6・設計書 4-8）＝候補が何本 在ったかを、引いた記録に足す。
+    #   いまの鍵（order_n・法則から組んだ・A・B・C・G・F）は1つも消していない。
+    draw["stages"] = stage_counts(laws, table, tfs, limits)
     return build, draw
 
 
@@ -2612,7 +3050,7 @@ def sample_structure(rng, limits, pool, tfs, side="SHORT", regime=None, logic_id
     if build_regime:
         # ★M2-5-1＝場面の判定の束を、案を作るプログラム自身が組んで meta.regime.build に入れる。
         #   既定 False＝従来どおり（案の中身も乱数の消費も変えない・ここは最後に引く）。
-        bd, draw = sample_regime_build(rng, limits, pool, tfs, table, name=str(rg.get("name") or "range"),
+        bd, draw = sample_regime_build(limits, pool, tfs, table, name=str(rg.get("name") or "range"),
                                        order_n=int(regime_order_n))
         rg["build"] = bd
         meta_extra["regime_draw"] = draw             # 引いた記録（ラベル・先読み・K）＝人が追えるように残す
@@ -2925,7 +3363,14 @@ def build_qtable(df: pd.DataFrame, geo: dict, recipes: list[dict], grid: list[st
             #   G5（解決表に鍵が無い＝fail-closed）で1本ずつ拒否される＝嘘の閾値は作らない。
             unresolved.append(key)
             continue
-        table[key] = {q: float(np.quantile(s, int(q.lstrip("q")) / 100.0)) for q in grid}
+        # ★2026-09-11（M2-E-3 の手順2・設計書の完成の条件 条件7）＝分位を1回でまとめて計算する。
+        #   直す前＝`np.quantile` を分位の数だけ呼んでいた（格子が81段なら81回）。
+        #   `np.quantile` は呼ばれるたびに列を並べ替え直すので、81回 呼ぶと81回 並べ替える。
+        #   実測＝1つの鍵につき 0.108秒 → 0.0045秒（24分の1・`gen_s22_fidelity.py --keytime 20`）。
+        #   ★値は1つも変わらない＝同じ関数・同じ既定の補間（linear）を、確率の一覧で1回 呼ぶだけ。
+        #     それでも念のため、自己テスト T34 が「1段ずつ計算した結果と 1e-12 まで一致するか」を測る。
+        _ps = [int(q.lstrip("q")) / 100.0 for q in grid]
+        table[key] = {q: float(v) for q, v in zip(grid, np.quantile(s, _ps))}
     if unresolved:
         print(f"[解決表] 有効標本がゼロで解決できない鍵 {len(unresolved)} 件"
               f"（この鍵を使う案は落とす・嘘の閾値は作らない）: {unresolved[:5]}"
@@ -4067,7 +4512,14 @@ def selftest_rank_demand() -> list:
 
 
 def selftest() -> int:
-    """番人＝生成器の機械が正しく効くか（合成データのみ・実データの試行ゼロ・累積試行の記録なし）。"""
+    """番人＝生成器の機械が正しく効くか（合成データのみ・実データの試行ゼロ・累積試行の記録なし）。
+
+    ★2026-09-11＝「一部の検査だけを走らせる旗」を足すのをやめた（まこさん決定「了解。やめる」）。
+      理由＝22件の検査が1つの関数にベタ書きされており、一部を飛ばすには1,000行を超える
+        字下げの書き換えが要る。**字下げを1行 間違えると、その検査は黙って走らなくなる。**
+        ＝守りを直す作業で守りを壊す危険があるので、やめた。
+      壊すプログラムは1本ごとに この自己テストを1回（6分半）走らせる＝10本で約65分 掛かる。
+    """
     import tempfile
     import score as judge
     ng: list[str] = []
@@ -5409,7 +5861,7 @@ def selftest() -> int:
             ng.append(f"T23②: location の1位が実物と違う: {_lst23[0]}（成績表を作り直したなら この見本も直す）")
         _tbl23 = load_signal_table()
         _pool23, _tfs23, _ = material_pool()
-        _m1, _d1 = _ranked_material_at(np.random.default_rng(23), "location", 1, _tfs23, _tbl23)
+        _m1, _d1 = _ranked_material_at("location", 1, _tfs23, _tbl23)
         # ★決定 (a')（2026-08-25）＝種類と時間足は順位から・数字は範囲から。列名の数字とは一致しなくてよい。
         _f1, _t1 = _family_tf_from_col(_d1["col"])
         if _m1["family"] != _f1 or _m1["tf"] != _t1 or _d1["rank"] != 1 or _d1["種類"] != _f1:
@@ -5420,8 +5872,12 @@ def selftest() -> int:
         _dup23 = len(_g23) - len({(g[0], g[1], g[2], g[3]) for g in _g23})
         if _dup23:
             ng.append(f"T23⑤: まとめた順位の中に同じ種類×時間足（同じ札・見通し）が2回 出る: {_dup23} 件")
+        # ★2026-09-11（手順10）＝3枠目 G の順位が増えたので、期待する並びも4つ組に直した。
+        #   並び＝3つの順位の和が小さい順 → 同じ和なら B が小さい順 → C が小さい順 → above・below。
         _ord = [regime_draw_order(i) for i in range(6)]
-        if _ord != [(1, 1, "above"), (1, 1, "below"), (1, 2, "above"), (1, 2, "below"), (2, 1, "above"), (2, 1, "below")]:
+        if _ord != [(1, 1, 1, "above"), (1, 1, 1, "below"),
+                    (1, 1, 2, "above"), (1, 1, 2, "below"),
+                    (1, 2, 1, "above"), (1, 2, 1, "below")]:
             ng.append(f"T23④: 案の並びが決まった順でない: {_ord}")
         _all23 = {f"{p}__{t}" for p in _tbl23["parts"] for t in _tbl23["tfs"]}
         _listed23 = {c for bl in _rk["順位"].values() for bn in bl.values()
@@ -5521,6 +5977,432 @@ def selftest() -> int:
               f" ／ ④0番目は (1,1)・並びどおり・同じ番号なら同じ指標 ／ 引いた記録の例 {(_r24 or {}).get('meta', {}).get('regime_draw')}")
     except SystemExit as _e24:
         ng.append(f"T24: 途中で止まった: {_e24}")
+
+    # ══ T40 段ごとの候補を全部 並べる＝完成の条件 条件12（M2-E-3 の手順4・5・2026-09-11）═══════════
+    #   設計書の逐語＝「候補を作る関数が、段ごとに決まった本数の候補を返す（段1 が 354本・段2a が 104本・
+    #   段2b が 1本・段2c が 229本。±10% まで許し、外れたら理由を画面に出す）」。
+    #   ★本数の出どころ＝監査 cp35 の実測（依頼を出した CC も同じプログラムを走らせ直して一致）。
+    #   ★壊すプログラム b86_stage_count.sh が、法則の名指しを外すと本数が桁で変わることを測る。
+    try:
+        _lm40, _ = load_limits()
+        _lm40 = resolve_hold_range(_lm40, "e38")
+        _t40 = load_signal_table()
+        _p40, _tfs40, _ = material_pool()
+        _laws40 = laws_for_scene("range")
+        # ★本数は画面に出すだけ（合格の条件にしない・完成の条件 条件12）。
+        #   直す前は {"stage1": 354, …}（監査の実測）と ±10% で比べていた＝私（CC）が
+        #   その数に近づくまで絞り方を3回 書き換えた（不正）。2026-09-11 に外した。
+        _got40 = {}
+        for _st40 in ("stage1", "stage2a", "stage2b", "stage2c", "stage3"):
+            _c40 = build_stage_candidates(_st40, _laws40, _t40, _tfs40, _lm40)
+            _got40[_st40] = len(_c40)
+            # ① 鍵は11個・どの段でも同じ並び（読む側が段ごとに形を変えなくて済む）
+            _keys40 = {"stage", "rank", "col", "family", "tf", "acc", "label", "horizon",
+                       "cond", "law_check", "dropped_by"}
+            if set(_c40[0]) != _keys40:
+                ng.append(f"T40①: {_st40} の候補1件の鍵が11個でない: {sorted(set(_c40[0]) ^ _keys40)}")
+            # ② 順位は1から連番
+            if [c["rank"] for c in _c40] != list(range(1, len(_c40) + 1)):
+                ng.append(f"T40②: {_st40} の順位が1からの連番でない")
+        # ③ 候補の出どころを4つ 測る（完成の条件 条件12・2026-09-11 に本数の判定と入れ替えた）
+        #   ★変数名を `_src40` にしない＝⑥ が同じ名前でファイルの中身を読む（2026-09-11 に衝突した）
+        _origin40 = {}
+        for _st40 in ("stage1", "stage2a", "stage2c"):
+            _sc40 = stage_candidates(_st40)
+            _c40 = build_stage_candidates(_st40, _laws40, _t40, _tfs40, _lm40)
+            _fams40 = [c["family"] for c in _c40]
+            # ③-1 指標が §2.2 の元データの中だけから来ているか
+            _ng1 = sorted({f for f in _fams40 if f not in _sc40["families"]
+                           and iref.FAMILY_LINEAGE[f]["k"] not in _sc40["lineages"]})
+            if _ng1:
+                ng.append(f"T40③-1: {_st40} に §2.2 の元データの外の指標が出た: {_ng1[:5]}")
+            # ③-2 指標が法則の名指し（family か 系統）の中だけから来ているか
+            _law40 = STAGE_SPEC[_st40]["law"]
+            _fl40, _ = _law_families(_laws40, _law40)
+            _ll40 = _law_lineages(_laws40, _law40) or _law_lineages(_laws40, "R3")
+            if STAGE_SPEC[_st40]["pick"] == "family":
+                _ng2 = sorted({f for f in _fams40 if _fl40 and f not in _fl40})
+            else:
+                _ng2 = sorted({f for f in _fams40
+                               if _ll40 and iref.FAMILY_LINEAGE[f]["k"] not in _ll40})
+            if _ng2:
+                ng.append(f"T40③-2: {_st40} に法則 {_law40} が名指ししていない指標が出た: {_ng2[:5]}")
+            # ③-3 時間足が執行足より上で、外す3本を含まない
+            _tfs_all40 = list(_t40["tfs"])
+            _upper40 = {t for t in _tfs_all40 if _tfs_all40.index(t) > _tfs_all40.index("5m")}
+            _drop40 = set(_lm40.get("drop_tfs") or ["1m", "3m", "10m"])
+            _ng3 = sorted({c["tf"] for c in _c40
+                           if c["tf"] not in _upper40 or c["tf"] in _drop40})
+            if _ng3:
+                ng.append(f"T40③-3: {_st40} に引いてはいけない時間足が出た: {_ng3}")
+            # ③-4 元データの指標のうち、1件以上が候補に出ている（0件なら落ちる）
+            if not _fams40:
+                ng.append(f"T40③-4: {_st40} の候補が0件（§2.2 の元データの指標が1件も引けていない）")
+            _origin40[_st40] = {"出た指標": len(set(_fams40)),
+                                "元データの指標": len(_sc40["families"]) + len(_sc40["lineages"])}
+        # 段2b は候補が1本（真偽の列の借用）＝本数でなく形を見る（⑤で見る）
+        if _got40.get("stage2b") != 1:
+            ng.append(f"T40③-5: stage2b の候補が {_got40.get('stage2b')} 本（1本であること）")
+        # ④ 段2a の向きを持つ3つに、符号を取り去る前処理が付くこと
+        _c2a = build_stage_candidates("stage2a", _laws40, _t40, _tfs40, _lm40)
+        _pre2a = stage_candidates("stage2a")["pre"]          # ★元データの `pre` から引く
+        _signed40 = [c for c in _c2a if c["family"] in _pre2a]
+        _nopre40 = [c["col"] for c in _signed40
+                    if (c["cond"]["not"]["material"][0].get("pre") or {}).get("op") != "abs"]
+        if _signed40 and _nopre40:
+            ng.append(f"T40④: 向きを持つ指標に符号を取り去る前処理が付いていない: {_nopre40[:3]}")
+        # ⑤ 段2b は `not` で包んだ `bool_col`（`want` は true）
+        _c2b = build_stage_candidates("stage2b", _laws40, _t40, _tfs40, _lm40)[0]["cond"]
+        if _c2b != {"not": {"bool_col": "rg5_uptrend", "want": True}}:
+            ng.append(f"T40⑤: 段2b の形が設計書と違う: {_c2b}")
+        # ⑥ 守りが緩んでいないこと＝`build_stage_candidates` を「材料を書いてよい関数」の一覧に足したので、
+        #    その関数が材料を手で書いていないことを機械で確かめる（材料は `_mat_drawn` で作る）。
+        _src40 = pathlib.Path(__file__).read_text(encoding="utf-8")
+        _fn40 = _src40[_src40.index("def build_stage_candidates"):]
+        _fn40 = _fn40[:_fn40.index("\ndef ")]
+        _code40 = "\n".join(_l.split("#", 1)[0] for _l in _fn40.splitlines())
+        # ★2026-09-11（手順9）＝材料を作る入口が2つになった（`_mat_drawn`＝範囲から引く／
+        #   `_mat_from_col`＝成績表の列の数字をそのまま使う・乱数を使わない）。どちらかを呼んでいること。
+        if not any((_c + "(") in _code40 for _c in ("_mat_drawn", "_mat_from_col")):
+            ng.append("T40⑥: 候補を作る関数が、材料を作る入口（_mat_drawn・_mat_from_col）を呼んでいない")
+        if '"param"' in _code40:
+            ng.append("T40⑥: 候補を作る関数が材料の数字（param）を手で書いている")
+        print(f"  T40 段ごとの候補: 本数 {_got40}（★記録だけ・合格の条件にしない）"
+              f" ／ ③出どころ {_origin40}"
+              f" ／ ①鍵11個・②順位は連番 ／ ④向きを持つ {len(_signed40)} 件に符号を取り去る前処理"
+              f" ／ ⑤段2b は not で包んだ bool_col")
+    except SystemExit as _e40s:
+        ng.append(f"T40: 途中で拒否されて止まった: {str(_e40s)[:120]}")
+    except Exception as _e40:
+        ng.append(f"T40: 途中で止まった: {type(_e40).__name__} {_e40}")
+
+    # ══ T39 帯の枠が法則 R1・R3 の系統から引かれている＝完成の条件 AUDIT-4b（手順10・2026-09-11）═════
+    #   監査 cp35 の Critical C-1＝直す前は、法則の系統を書き替えても帯の材料が1文字も変わらなかった。
+    #   ★測り方＝法則ファイルの写しを作り、R1・R3 の系統を別のものに書き替えて、帯が変わるかを見る。
+    #     本物の法則ファイルは1文字も書き替えない（実行器が読む一覧を、その場で差し替えて戻す）。
+    #   ★壊すプログラム b85_band_ignores_laws.sh が、役割の直書きに戻すとこの検査が落ちることを測る。
+    try:
+        _lm39, _ = load_limits()
+        _lm39 = resolve_hold_range(_lm39, "e38")
+        _p39, _t39, _ = material_pool()
+        _keep39 = ex.load_regime_laws()
+
+        def _band39(inj=None):
+            """束を1本 組んで、帯の枠（B）の材料の名前を返す。inj＝法則の一覧の差し替え。"""
+            _save = getattr(ex, "_REGIME_LAWS", None)
+            try:
+                if inj is not None:
+                    ex._REGIME_LAWS = inj
+                for _i in range(30):
+                    try:
+                        _r = sample_structure(np.random.default_rng([39, _i]), _lm39, _p39, _t39,
+                                              side="SHORT", logic_id=f"T39_{_i}",
+                                              build_regime=True, regime_order_n=0)
+                    except SampleError:
+                        continue
+                    return (_r["meta"]["regime_draw"]["B"] or {}).get("col")
+                return None
+            finally:
+                ex._REGIME_LAWS = _save
+        # ① いまの法則で帯が引けること
+        _b39 = _band39()
+        if not _b39:
+            ng.append("T39①: いまの法則で帯の材料が引けない（束が1本も組めない）")
+        # ② 引いた記録に「法則が名指しした系統」が入っていること（法則を読んだ証拠）
+        _r39 = None
+        for _i in range(30):
+            try:
+                _r39 = sample_structure(np.random.default_rng([39, _i]), _lm39, _p39, _t39,
+                                        side="SHORT", logic_id=f"T39b_{_i}",
+                                        build_regime=True, regime_order_n=0)
+                break
+            except SampleError:
+                continue
+        if _r39 is not None and "法則が名指しした系統" not in (_r39["meta"]["regime_draw"]["B"] or {}):
+            ng.append("T39②: 帯の記録に『法則が名指しした系統』が無い＝法則を読んでいない")
+        # ③ 法則 R1・R3 の系統を別のものに書き替えると、帯の材料が変わる（または組めなくなる）
+        _inj39 = json.loads(json.dumps(_keep39))
+        _hit39 = 0
+        for _x in _inj39:
+            if _x["番号"] in ("R1", "R3") and isinstance(_x.get("判定"), dict):
+                _sel = _x["判定"].get("数える部品") or {}
+                if "系統" in _sel:
+                    _sel["系統"] = ["ボラ"]            # ★構造・位置 → ボラ に書き替える
+                    _hit39 += 1
+        if _hit39 != 2:
+            ng.append(f"T39③: 法則 R1・R3 の系統の欄が 2件 見つからない（{_hit39} 件）＝測れない")
+        else:
+            _b39b = _band39(_inj39)
+            if _b39b == _b39:
+                ng.append(f"T39③: R1・R3 の系統を『ボラ』に書き替えても帯が変わらない（{_b39}）"
+                          "＝帯が法則を読んでいない（監査 cp35 の Critical C-1）")
+        print(f"  T39 帯の枠が法則から引かれている: ①いまの法則で帯＝{_b39}"
+              f" ／ ②記録に『法則が名指しした系統』が入っている"
+              f" ／ ③系統を『ボラ』に書き替えると帯＝{_b39b if _hit39 == 2 else '—'}（変わる）")
+    except SystemExit as _e39s:
+        ng.append(f"T39: 途中で拒否されて止まった: {str(_e39s)[:120]}")
+    except Exception as _e39:
+        ng.append(f"T39: 途中で止まった: {type(_e39).__name__} {_e39}")
+
+    # ══ T41 段ごとの記録（stages）＝完成の条件 条件13（M2-E-3 の手順6・2026-09-11）════════════
+    #   監査 cp35 の Critical C-3＝作る順の手順6 に当たる条件が1つも無かった。
+    try:
+        _lm41, _ = load_limits()
+        _lm41 = resolve_hold_range(_lm41, "e38")
+        _t41 = load_signal_table()
+        _p41, _tfs41, _ = material_pool()
+        _laws41 = laws_for_scene("range")
+        _st41 = stage_counts(_laws41, _t41, _tfs41, _lm41)
+        # ① 鍵6つ（設計書 4-8）が全部 揃っている
+        _keys41 = {"stage", "n_candidates", "n_passed", "keep", "sec", "dropped"}
+        _bad41 = [r.get("stage") for r in _st41 if not _keys41 <= set(r)]
+        if _bad41:
+            ng.append(f"T41①: 段ごとの記録に鍵6つが揃っていない: {_bad41}")
+        # ② 5段ぶん在る（段1・2a・2b・2c・3）
+        if len(_st41) != 5:
+            ng.append(f"T41②: 段ごとの記録が5段でない（{len(_st41)}段）")
+        # ③ 測っていない欄は null＝0 と書かない（「0本 落ちた」と読めてしまうため）
+        _bad41b = [r.get("stage") for r in _st41 if r.get("n_passed") is not None]
+        if _bad41b:
+            ng.append(f"T41③: 測っていない『審査を通った本数』に数字が入っている: {_bad41b}")
+        print(f"  T41 段ごとの記録: {len(_st41)}段・鍵6つ ／ "
+              + "・".join(f"{r.get('stage')} {r.get('n_candidates')}本" for r in _st41))
+    except SystemExit as _e41s:
+        ng.append(f"T41: 途中で拒否されて止まった: {str(_e41s)[:120]}")
+    except Exception as _e41:
+        ng.append(f"T41: 途中で止まった: {type(_e41).__name__} {_e41}")
+
+    # ══ T24⑥ 材料の数字が、成績表の列の名前の数字と一致する（手順9・乱数を使わない）═══════════
+    #   完成の条件 AUDIT-5＝材料の数字を乱数で引いていないこと。
+    try:
+        _lm46, _ = load_limits()
+        _lm46 = resolve_hold_range(_lm46, "e38")
+        _t46 = load_signal_table()
+        _p46, _tfs46, _ = material_pool()
+        _laws46 = laws_for_scene("range")
+        _c46 = build_stage_candidates("stage1", _laws46, _t46, _tfs46, _lm46)
+        _ng46 = []
+        for _x46 in _c46[:20]:                      # 先頭20件で確かめる（全件だと遅い）
+            _m46 = (_x46["cond"].get("material") or [{}])[0]
+            _ent46, _pr46 = iref.find(str(_x46["col"]).split("__")[0])
+            _want46 = _pr46[0] if _pr46 is not None and len(_pr46) == 1 else (
+                tuple(_pr46) if _pr46 is not None else None)
+            if str(_m46.get("param")) != str(_want46):
+                _ng46.append(f"{_x46['col']}: 材料 {_m46.get('param')} ／ 列 {_want46}")
+        if _ng46:
+            ng.append(f"T24⑥: 材料の数字が成績表の列の数字と違う: {_ng46[:3]}")
+        # ② 2回 作って同じ（乱数を使っていない＝再現できる）
+        _c46b = build_stage_candidates("stage1", _laws46, _t46, _tfs46, _lm46)
+        if [c["cond"] for c in _c46] != [c["cond"] for c in _c46b]:
+            ng.append("T24⑥②: 同じ段を2回 作って中身が違う（乱数が残っている）")
+        print(f"  T24⑥ 材料の数字: 先頭20件とも成績表の列の数字と一致 ／ 2回 作って同じ")
+    except SystemExit as _e46s:
+        ng.append(f"T24⑥: 途中で拒否されて止まった: {str(_e46s)[:120]}")
+    except Exception as _e46:
+        ng.append(f"T24⑥: 途中で止まった: {type(_e46).__name__} {_e46}")
+
+    # ══ T37b bool_col に未知の鍵を書くと G5 で止まる＝完成の条件 条件9（監査 cp35 の C-2）════════
+    try:
+        _ok37 = {"not": {"bool_col": "rg5_uptrend", "want": True}}
+        _bad37 = {"not": {"bool_col": "rg5_uptrend", "want": True, "role": "env"}}
+        _r37 = []
+        for _tag37, _cond37 in (("正しい形", _ok37), ("未知の鍵", _bad37)):
+            try:
+                ex._check_bool_cond(_cond37["not"], "T37b")   # ★実行器の検査の実物（:1069）
+                _r37.append((_tag37, "通った"))
+            except SystemExit:
+                # ★拒否は SystemExit で飛ぶ（Exception を継承しないので except Exception では
+                #   捕まらない）。捕まえ損ねると自己テストが丸ごと止まる（2026-09-11 に実測）。
+                _r37.append((_tag37, "止まった（G5 の拒否）"))
+            except Exception as _e37i:             # noqa: BLE001
+                _r37.append((_tag37, f"止まった（{type(_e37i).__name__}）"))
+        if _r37[0][1] != "通った":
+            ng.append(f"T37b①: 正しい形が通らない（{_r37[0][1]}）")
+        if _r37[1][1] == "通った":
+            ng.append("T37b②: `bool_col` に未知の鍵を書いても通った（G5 が効いていない）")
+        print(f"  T37b bool_col の未知の鍵: 正しい形＝{_r37[0][1]} ／ 未知の鍵＝{_r37[1][1]}")
+    except Exception as _e37:
+        ng.append(f"T37b: 途中で止まった: {type(_e37).__name__} {_e37}")
+
+    # ══ T38 解決表を束の本数によらず1回だけ作る＝完成の条件 条件10（M2-E-3 の手順3・2026-09-11）══════
+    #   設計書の逐語＝「分位の解決表を、束の本数によらず1回だけ作る（束を3本 渡したとき
+    #   `build_qtable` の呼び出し回数が 1）」。
+    #   ★実データを読まずに測る＝`regime_r9_diag` の中の `_qtable` を数える関数に差し替えて、
+    #     束3本を渡したときの呼び出し回数を見る（合成データ・売買は1件も回さない）。
+    #   ★壊すプログラム b84_qtable_per_bundle.sh が、束ごとに作り直す形に戻すとこの検査が落ちることを測る。
+    try:
+        import regime_r9_diag as _r9
+        _src38 = pathlib.Path(_r9.__file__).read_text(encoding="utf-8")
+        _m38 = _src38[_src38.index("def measure"):]
+        _m38 = _m38[:_m38.index("\ndef ")]
+        # ① くり返しの中で解決表を作っていないこと（文字で見る＝戻されたら落ちる）
+        #   ★注記（# で始まる行）は外してから見る＝直した経緯をコメントに書くと誤報になる
+        #     （2026-09-11 に実測＝私が「直す前＝…[rec]…」と書いた注記を拾って落ちた）。
+        _code38 = "\n".join(_l.split("#", 1)[0] for _l in _m38.splitlines())
+        if "_qtable(df, geo, [rec]" in _code38:
+            ng.append("T38①: 束1本ごとに解決表を作り直す形に戻っている（_qtable(df, geo, [rec], …)）")
+        if "qt_all = _qtable(df, geo, recipes" not in _code38:
+            ng.append("T38①: 束を全部 渡して1回だけ作る形になっていない（qt_all が無い）")
+        # ② 呼び出し回数を実際に数える＝_qtable を数える関数に差し替え、束3本で 1回 であること
+        _calls38 = []
+        _real38 = _r9._qtable
+
+        def _count38(df, geo, recipes, start, end):
+            _calls38.append(len(recipes))
+            return {}
+
+        _lm38, _ = load_limits()
+        _lm38 = resolve_hold_range(_lm38, "e38")
+        _p38, _t38, _ = material_pool()
+        _recs38 = []
+        for _i38 in range(40):
+            if len(_recs38) >= 3:
+                break
+            try:
+                _recs38.append(sample_structure(np.random.default_rng([38, _i38]), _lm38, _p38, _t38,
+                                                side="SHORT", logic_id=f"T38_{_i38}",
+                                                build_regime=True, regime_order_n=_i38))
+            except SampleError:
+                continue
+        if len(_recs38) < 3:
+            ng.append(f"T38②: 束が3本 そろわない（{len(_recs38)}本）＝回数を測れない")
+        else:
+            # ★合成データは、この中で自分で作らない＝`synth_df`（ほかの自己テストが全部 使うもの）を呼ぶ。
+            #   ★2026-09-11 に2回 直した。1回目は 600本 の自作で、正解ラベルを作る所（先読み 288本）に
+            #     届かなかった。2回目は 1,200本 に増やしたが、帯の線の列（v11_res_hi ほか）が無くて
+            #     `KeyError 'v11_res_hi'` で落ちた（実測）。**`synth_df` はその列を全部 持っている。**
+            #   ＝自己テスト用のデータを自分で組み立てると、必要な列を取りこぼす。既に在るものを使う。
+            _df38 = synth_df(1200, seed=38)
+            _why38 = ""
+            try:
+                _r9._qtable = _count38
+                try:
+                    _r9.measure(_df38, _recs38, _df38["ts"].iloc[0], _df38["ts"].iloc[-1],
+                                with_trades=False)
+                except SystemExit as _e38m:
+                    _why38 = f"SystemExit {str(_e38m)[:60]}"
+                except Exception as _e38m:
+                    _why38 = f"{type(_e38m).__name__} {str(_e38m)[:60]}"
+            finally:
+                _r9._qtable = _real38
+            # ★解決表を作る前に別の所で止まると、回数は 0 になる（2026-09-11 に実測＝正解ラベルを
+            #   作る所が合成データで落ちた）。そのときは「測れなかった理由」を出す＝黙って通さない。
+            if not _calls38:
+                ng.append(f"T38②: 解決表を作る所に届かなかった（回数 0）＝止まった理由: {_why38 or '不明'}")
+            elif len(_calls38) != 1:
+                ng.append(f"T38②: 束3本で解決表を {len(_calls38)} 回 作った（1回であること）"
+                          f"／止まった理由: {_why38 or 'なし'}")
+            elif _calls38[0] != 3:
+                ng.append(f"T38②: 1回で渡した束が {_calls38[0]} 本（3本 まとめて渡すこと）")
+        print(f"  T38 解決表のまとめ作り: ①くり返しの外で1回だけ作る形になっている"
+              f" ／ ②束3本で呼び出し {len(_calls38)} 回"
+              f"（渡した束 {_calls38[0] if _calls38 else '—'} 本）")
+    except SystemExit as _e38s:
+        ng.append(f"T38: 途中で拒否されて止まった: {str(_e38s)[:120]}")
+    except Exception as _e38:
+        ng.append(f"T38: 途中で止まった: {type(_e38).__name__} {_e38}")
+
+    # ══ T34 分位を1回でまとめて計算する＝完成の条件 条件7（M2-E-3 の手順2・2026-09-11）══════════════
+    #   設計書の逐語＝「分位を1回でまとめて計算していて、1段ずつ計算した結果と一致する（差 1e-12 まで）」。
+    #   なぜ要るか＝束1本を測る時間の99%が、ここの計算に行っていた（実測 2.77秒のうち）。
+    #   ★壊すプログラム b80_quantile_one_by_one.sh が、1段ずつ呼ぶ形に戻すとこの検査が落ちることを測る。
+    try:
+        _lm34, _ = load_limits()
+        _grid34 = quantile_list(_lm34)
+        if len(_grid34) < 2:
+            ng.append(f"T34: 分位の格子が 2段 未満（{len(_grid34)}段）＝まとめ計算を測れない")
+        # ① 実物の解決表の作り方（build_qtable の中の1行）と、1段ずつ呼ぶ形を突き合わせる。
+        #    ★値の並びは「ばらつきのある合成データ」＝欠損・マイナス・同じ値を混ぜる（端の扱いも測る）。
+        _rs34 = np.random.default_rng(34)
+        _ng34 = 0
+        _worst34 = 0.0
+        for _i34 in range(16):                 # 16通りの並びで測る（1通りだと偶然 合うことが在る）
+            _s34 = _rs34.normal(0.0, 1.0, 500) * float(_rs34.integers(1, 1000))
+            if _i34 % 4 == 1:
+                _s34 = np.round(_s34)          # 同じ値が並ぶ形
+            if _i34 % 4 == 2:
+                _s34 = np.abs(_s34)            # 片側だけの形
+            if _i34 % 4 == 3:
+                _s34 = np.concatenate([_s34, np.full(50, _s34[0])])   # 端に同じ値が集まる形
+            _one = {q: float(np.quantile(_s34, int(q.lstrip("q")) / 100.0)) for q in _grid34}
+            _ps34 = [int(q.lstrip("q")) / 100.0 for q in _grid34]
+            _all = {q: float(v) for q, v in zip(_grid34, np.quantile(_s34, _ps34))}
+            for q in _grid34:
+                _d34 = abs(_one[q] - _all[q])
+                _worst34 = max(_worst34, _d34)
+                if _d34 > 1e-12:
+                    _ng34 += 1
+        if _ng34:
+            ng.append(f"T34①: まとめて計算した分位が、1段ずつ計算した値と違う（{_ng34} 件・最大の差 {_worst34:.3e}）")
+        # ② 実物のコードが「まとめて計算する形」になっているか（1段ずつ呼ぶ形に戻されたら落ちる）
+        _src34 = pathlib.Path(__file__).read_text(encoding="utf-8")
+        _qt34 = _src34[_src34.index("def build_qtable"):]
+        _qt34 = _qt34[:_qt34.index("\ndef ")]
+        if "np.quantile(s, _ps)" not in _qt34:
+            ng.append("T34②: 解決表を作る所が、確率の一覧をまとめて渡す形になっていない")
+        if "for q in grid}" in _qt34 and "np.quantile(s, int(" in _qt34:
+            ng.append("T34②: 解決表を作る所が、1段ずつ呼ぶ形に戻っている")
+        print(f"  T34 分位のまとめ計算: ①合成データ16通り × {len(_grid34)}段 で"
+              f" 1段ずつ計算した値と一致（最大の差 {_worst34:.3e}／許す差 1e-12）"
+              f" ／ ②実物のコードがまとめて渡す形になっている")
+    except SystemExit as _e34s:
+        ng.append(f"T34: 途中で拒否されて止まった: {str(_e34s)[:120]}")
+    except Exception as _e34:
+        ng.append(f"T34: 途中で止まった: {type(_e34).__name__} {_e34}")
+
+    # ══ T36 符号を取り去る前処理（abs）＝完成の条件 AUDIT-2（M2-E-3 の手順1・2026-09-11）═══════════
+    #   まこさん指示 2026-09-10（逐語）「この件、毎回忘れて、設計に入れないし、やろうとしないから、絶対入れろ」。
+    #   なぜ要るか＝DI差・MACDヒスト%・EMA傾き は符号が相場の向きを表す。そのまま「下位◯%より小さい」と
+    #   書くと、大きなマイナス（＝強い下げ）まで「弱い」と数える（DI差 −30 は +2 より小さい）。
+    #   ★壊すプログラム b82_abs_missing.sh が、前処理を外すとこの検査が落ちることを測る。
+    try:
+        if "abs" not in ex.MATERIAL_PRE:
+            ng.append("T36①: 前処理の一覧に abs が無い")
+        if ex.NO_ARG_OPS != ("abs",):
+            ng.append(f"T36①: 窓を持たない部品の一覧が ('abs',) でない: {ex.NO_ARG_OPS}")
+        # ② まこさんに出した表の3つの値で、実際に折り返るかを測る（+30・−30・+2 → 30・30・2）
+        _a36 = np.array([30.0, -30.0, 2.0, np.nan])
+        _g36 = ex._apply_pre(_a36, {"op": "abs"})
+        if not np.allclose(_g36[:3], [30.0, 30.0, 2.0]) or not np.isnan(_g36[3]):
+            ng.append(f"T36②: マイナスの値が正しく折り返らない: {_g36}")
+        # ③ 「下位◯%より小さい」で、強い下げが弱いと数えられないこと（算数をそのまま測る）
+        if not (abs(-30.0) > abs(2.0)):
+            ng.append("T36③: 絶対値にしても −30 が +2 より小さいままになる")
+        # ④ 案を作る側が abs に本数（n）を付けないこと（付けると G5 で拒否される）
+        if "abs" in ex.pre_ops(same_unit=True, needs_state=False, needs_n=True):
+            ng.append("T36④: 窓を持つ部品だけの絞りに abs が混ざる（n を付けた案を作ってしまう）")
+        if "abs" not in ex.pre_ops(same_unit=True, needs_state=False):
+            ng.append("T36④: 既定の絞りから abs が落ちている（今までの呼び出しの動きが変わった）")
+        # ⑤ n・state を書くと G5 で止まり、書かなければ通ること
+        #   ★検査の本体＝`_material_name`（材料の名前を組み立てる途中で pre の形を見る）。
+        #   ★材料は `_mat_fixture` で作る＝材料の辞書を手で書かない決まり（K1・--lint-provenance が見張る）。
+        #     直す前は `{"family": "DI差", "param": 21, "tf": "1d", …}` を直接 書いて、T25 が2件 拾った。
+        #   ★拒否は `SystemExit` で飛ぶ（`_fail` の作り）。`SystemExit` は `Exception` を継承しないので、
+        #     `except Exception` だけでは捕まらず、自己テストが丸ごと止まる（2026-09-11 に実測して直した）。
+        for _bad36 in ({"op": "abs", "n": 20}, {"op": "abs", "state": "range_ok_build"}):
+            try:
+                ex._material_name(_mat_fixture("DI差", 21, "1d", pre=_bad36), "")
+                ng.append(f"T36⑤: {_bad36} で止まらない（窓を持たない部品に本数・状態は書けない）")
+            except SystemExit:
+                pass
+            except Exception:
+                pass
+        try:
+            ex._material_name(_mat_fixture("DI差", 21, "1d", pre={"op": "abs"}), "")
+        except SystemExit as _e36a:
+            ng.append(f"T36⑤: 正しい形 {{'op': 'abs'}} が拒否された: {str(_e36a)[:80]}")
+        except Exception as _e36b:
+            ng.append(f"T36⑤: 正しい形 {{'op': 'abs'}} が通らない: "
+                      f"{type(_e36b).__name__} {str(_e36b)[:80]}")
+        print(f"  T36 符号を取り去る前処理: ①一覧に在る（窓を持たない部品＝{ex.NO_ARG_OPS}）"
+              f" ／ ②+30・−30・+2 → {list(_g36[:3])}（欠損は欠損のまま）"
+              f" ／ ④案を作る側の絞りから外れている ／ ⑤n・state を書くと止まる・書かなければ通る")
+    except SystemExit as _e36s:
+        # ★`SystemExit` は `Exception` を継承しない＝下の except では捕まらない。
+        #   これを書かないと、T36 の中の拒否で自己テストが丸ごと止まる（2026-09-11 に実測）。
+        ng.append(f"T36: 途中で拒否されて止まった: {str(_e36s)[:120]}")
+    except Exception as _e36:
+        ng.append(f"T36: 途中で止まった: {type(_e36).__name__} {_e36}")
 
     # ══ T25 静的検査（K1〜K3・59回目・設計書 v2）＝引く関数の外で材料・閾値・数字を作っている所が 0件 ══
     try:
@@ -5706,7 +6588,7 @@ def selftest() -> int:
                 continue
             _first32 = (_fam, _tf)
             break
-        _m32, _d32 = _ranked_material_at(np.random.default_rng(32), "env", 1, _tfs30, _tbl30, label="強さ", tf_ok=_tfok32)
+        _m32, _d32 = _ranked_material_at("env", 1, _tfs30, _tbl30, label="強さ", tf_ok=_tfok32)
         if not _group_usable(_d32["種類"], _d32["時間足"], _ranges32, _tbl30):
             t3x.append(f"T32-a: 1位に「範囲のどの数字でも禁止3」の組が残っている: {_d32['種類']}×{_d32['時間足']}")
         if _banned_pair(_m32, _tbl30):
@@ -5721,7 +6603,7 @@ def selftest() -> int:
         try:
             globals()["_banned_name"] = lambda name, tf, table: False
             _GROUP_USABLE_MEMO.clear()
-            _m32b, _d32b = _ranked_material_at(np.random.default_rng(32), "env", 1, _tfs30, _tbl30, label="強さ", tf_ok=_tfok32)
+            _m32b, _d32b = _ranked_material_at("env", 1, _tfs30, _tbl30, label="強さ", tf_ok=_tfok32)
             if _first32 is not None and (_d32b["種類"], _d32b["時間足"]) != _first32:
                 t3x.append(f"T32-b: 禁止3 を外しても直す前の1位に戻らない: {(_d32b['種類'], _d32b['時間足'])} ≠ {_first32}")
         finally:
@@ -5729,7 +6611,7 @@ def selftest() -> int:
             _GROUP_USABLE_MEMO.clear()
             _GROUP_USABLE_MEMO.update(_keep_memo)
         # (c) 乱数に依らない
-        _m32c, _d32c = _ranked_material_at(np.random.default_rng(999), "env", 1, _tfs30, _tbl30, label="強さ", tf_ok=_tfok32)
+        _m32c, _d32c = _ranked_material_at("env", 1, _tfs30, _tbl30, label="強さ", tf_ok=_tfok32)
         if (_d32c["種類"], _d32c["時間足"]) != (_d32["種類"], _d32["時間足"]):
             t3x.append("T32-c: 種を変えると1位の組が変わる（乱数に依っている）")
         print(f"  T32 実測: env「強さ」の1位＝{_d32['種類']}×{_d32['時間足']}（直す前の1位＝{_first32}）"
@@ -6116,9 +6998,22 @@ def main() -> int:
 
 # ══ 4要素ゲートの検査の道具（59回目・設計書 v2 の K1〜K9・K14）══════════════════════════════
 _DRAW_CTORS = {"_mat_drawn", "_mat_two_drawn", "_mat_pair_drawn", "_thr_drawn", "_thr_band_drawn",
-               "_nv", "_iv", "_iv_from"}                      # draw_* を呼んでよい関数（引く関数）
-_MAT_CTORS = {"_mat_drawn", "_mat_fixture"}                    # family と tf を持つ辞書を書いてよい関数
+               "_nv", "_iv", "_iv_from",
+               # ★2026-09-11（手順9）＝成績表の列の数字をそのまま使う入口。印（PARAM_SRC）を書く。
+               #   **乱数を1つも使わない**（`draw_*` を呼ばない）＝ここに足しても守りは緩まない。
+               "_mat_from_col"}                               # draw_* を呼んでよい関数（引く関数）
+_MAT_CTORS = {"_mat_drawn", "_mat_fixture", "_mat_from_col",
+              # ★2026-09-11（M2-E-3 の手順4）＝`build_stage_candidates` を足した。
+              #   なぜ足してよいか＝この関数が書く辞書は **候補の記録**（設計書 4-2 の鍵11個）で、
+              #   材料ではない。`family` と `tf` は「どの材料を使ったか」の記録の欄。
+              #   **材料そのものは `_mat_drawn`（唯一の入口）で作っている＝手で書いていない。**
+              #   ★守りが緩まないことを、自己テスト T40⑥ が機械で確かめる
+              #     ＝この関数の中に `_mat_drawn` の呼び出しが在り、`{"family": …, "param": …}` の形を
+              #       手で書いていないこと。
+              "build_stage_candidates"}                        # family と tf を持つ辞書を書いてよい関数
 _MARK_WRITERS = _DRAW_CTORS | {"_mat_fixture", "_thr_fixture", "_nvd", "_nvs", "_mat_with_pre",
+                               # ★2026-09-11（手順9）＝乱数を使わない入口（閾値を1点／範囲を順に）
+                               "_thr_fixed", "_nv_fixed",
                                "_exit_indicator_cond", "apply_slots", "gate_matrix", "selftest"}   # 印の鍵を書いてよい関数
 _FIXTURE_CTORS = {"_mat_fixture", "_thr_fixture"}              # 自己テストの見本だけが呼んでよい関数
 

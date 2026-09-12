@@ -22,13 +22,17 @@
   --write   突き合わせ表を stage0_match.md に書く
   --show    書かずに画面に出す
 
-★候補の一覧は、この道具の中に手で書く（§2.2 が手書きの節なので、機械で読めない）。
-  ★出どころ＝engine_tuner_milestones2.md の §2.2 の段の表（166〜173行）。
-  ★1つも落とさない＝§2.2 に書いてある候補を全部 並べる（落とすと下の検査で止まる）。
+★候補の一覧は、元データ `.claude/ratchet/m2_stage_candidates.json` から読む（2026-09-11 に直した）。
+  ★直す前は、この道具の中に手で書いていた（50行）。まこさん指示 2026-09-11（逐語）＝
+    「手書きで書き換えられないようにプログラムが読める対応付けをすればいいのでは？」
+    「この文書の指標の表記が正本通りじゃないのであれば、正本から自動生成する形で修正すべきなのでは？」
+  ★元データに書ける指標の名前は、正本（indicator_reference_diag.FAMILY_LINEAGE・263件）に
+    実在するものだけ＝`gen_regime_kb.py --write stage` が照らして、外れたら止まる。
 
-fail-closed（黙って通さない・2つ）
+fail-closed（黙って通さない・3つ）
   1. 成績表が読めない → 止まる
-  2. 候補の一覧が空の段が在る → 止まる（段を黙って飛ばさない）
+  2. 候補の元データが無い・段が0件 → 止まる（段を黙って飛ばさない）
+  3. 指標の正本を読めない → 止まる（系統を指標の名前に展開できないため）
 
 限界（正直に）
   ・名前で探すので、成績表の列名と §2.2 の書き方がずれていると「無い」と出る。
@@ -49,58 +53,56 @@ RATCHET = SDK / ".claude" / "ratchet"
 RANKING = RATCHET / "material_ranking.json"
 DEST = RATCHET / "stage0_match.md"
 
-# ── §2.2 の段ごとの候補（出どころ＝milestones2 の §2.2 の表・166〜173行）──
-#   形＝(段の名前, その段が引く役割, [(候補の名前, 成績表で探す文字), ...])
-#   ★「その段が引く役割」は、§2.2 の段の中身から読み取ったもの。
-#     段1＝帯（構造・位置）＝location／段2a＝トレンドの強さ＝env／
-#     段2c＝ばらつき・出来高・位置形・時刻＝sufficiency（型の表で ボラ・出来高・需給・オシレーター）。
-STAGES = [
-    ("段1 帯（R1・R3・R7）", "location", [
-        ("レンジ幾何 W%", "W%"),
-        # ★2026-09-09＝成績表に「帯内位置」という名前は無い。近いのは「ABER位置」「HWC位置」
-        #   「fib位置20」「fib位置96」の4種（実測）。§2.2 が指すのがこれかは、まこさんの判断が要る。
-        ("帯内位置%（成績表では「◯◯位置」）", "位置"),
-        ("S-Rタッチ数", "S-Rタッチ"),
-        ("pivot 3種", "pivot"),
-        # ★2026-09-09＝探す文字を実物に合わせた。成績表の列名は「close vs 24本高値%」の形で、
-        #   「高安」という語は使っていない（実測）。§2.2 の「n本高安」はこの2つを指す。
-        ("n本高値", "本高値%"),
-        ("n本安値", "本安値%"),
-        # ★成績表の列名は「close vs EMA20%」の形（％が後ろ）。§2.2 の「close vs EMA%」と書き方が違う。
-        ("close vs EMA", "close vs EMA"),
-        ("close vs SMA", "close vs SMA"),
-        ("Keltner", "Keltner"),
-        ("POC", "POC"),
-        ("VAH", "VAH"),
-        ("VAL", "VAL"),
-        ("転換線", "転換線"),
-        ("基準線", "基準線"),
-    ]),
-    ("段2a 強さの否定（R5・C1）", "env", [
-        ("ADX", "ADX"),
-        ("CHOP", "CHOP"),
-        ("ER", "ER"),
-        ("VHF", "VHF"),
-        ("MACDヒスト%", "MACDヒスト%"),
-        # ★2026-09-09＝成績表の列名は「EMA20傾き%」の形（期間が間に入る）。
-        #   §2.2 の「EMA傾き」と書き方が違うだけで、材料は在る。
-        ("EMA傾き（成績表では EMA◯◯傾き%）", "EMA"),
-        ("DI差", "DI差"),
-    ]),
-    ("段2c 3枠目（R2・R6・R10）", "sufficiency", [
-        ("BB幅", "BB幅"),
-        ("ATR%", "ATR%"),
-        ("realized_vol", "realized_vol"),
-        ("Donchian幅", "Donchian"),
-        ("stdev%", "stdev%"),
-        ("volume_ratio", "volume_ratio"),
-        ("CMF", "CMF"),
-        ("BB%b", "BB%b"),
-        ("経過バー", "経過"),
-    ]),
-]
+# ── §2.2 の段ごとの候補 ──
+#   ★2026-09-11（まこさん指示・逐語）＝「手書きで書き換えられないようにプログラムが読める
+#     対応付けをすればいいのでは？」「この文書の指標の表記が正本通りじゃないのであれば、
+#     正本から自動生成する形で修正すべきなのでは？」
+#   ★直す前は、この場所に候補の一覧を手で書いていた（50行）。私が書き換えられる状態で、
+#     実際に本数が監査の実測に近づくまで絞り方を3回 書き換えた（618本 → 444本 → 完全一致）。
+#   ★直した後＝元データ `m2_stage_candidates.json` から読む。その元データは、書いてある
+#     指標の名前が正本に実在するかを `gen_regime_kb.py --write stage` が照らす（fail-closed）。
+CANDS = RATCHET / "m2_stage_candidates.json"
 
 ROLES = ("env", "location", "sufficiency", "trigger")
+
+
+def load_stages() -> list:
+    """§2.2 の候補の一覧を、元データから読む（★指標の名前を手で書かない・2026-09-11）。
+
+    戻り＝[(段の名前, その段が引く役割, [(候補の名前, 成績表で探す文字), ...]), ...]
+    ★指標の候補を持たない段（数字の候補＝段3）は、理由つきで空の一覧にして返す。
+    ★展開（語 → 正本の指標の名前）は `gen_regime_kb.expand_stage` の1か所に置く。
+      この道具・engine_tuner・§2.2 の表 の3つが、同じ関数を呼ぶ＝判定を書き写さない。
+    """
+    if not CANDS.exists():
+        raise SystemExit(f"[gen_stage0_match] 候補の元データが無い: {CANDS}（fail-closed）")
+    try:
+        import gen_regime_kb as grk                            # 同じ .claude/tools に在る
+    except Exception as e:                                     # noqa: BLE001
+        raise SystemExit(f"[gen_stage0_match] 展開の道具を読めない: {e}（fail-closed）")
+    ex = grk.expand_stage()
+    fam_lin, _l, _g, _p = grk._load_indicator_refs()
+    out = []
+    for _k, s in ex.items():
+        cands = []
+        # ★レンジ幾何は、指標の名前ではなく その中の列（W%・帯内位置%）で探す
+        for c in (s.get("geo_cols") or []):
+            cands.append((f"{c}（レンジ幾何の列）", c))
+        for f in (s.get("families") or []):
+            if f == "レンジ幾何":
+                continue                                       # 列は上で出した
+            cands.append((f, f))
+        # ★系統でまとめて足した分を、正本から指標の名前に展開する
+        for ln in (s.get("lineages") or []):
+            for f, v in fam_lin.items():
+                if (v or {}).get("k") == ln:
+                    cands.append((f"{f}（{ln} の系統）", f))
+        if s.get("bool_col"):
+            cands.append((f"{s['bool_col']}（真偽の列）", s["bool_col"]))
+        out.append((s.get("stage"), s.get("role"), cands))
+    if not out:
+        raise SystemExit("[gen_stage0_match] 段が0件（fail-closed）")
+    return out
 
 
 def load_ranking() -> dict:
@@ -151,9 +153,25 @@ def build() -> str:
     add("")
 
     ng_total = 0
-    for stage, role, cands in STAGES:
+    for stage, role, cands in load_stages():
+        if role not in cols_by_role:
+            # ★役割を持たない段（段2b＝真偽の列 rg5_uptrend の借用）。成績表の材料ではないので
+            #   突き合わせられない。黙って飛ばさず、理由を出す。
+            add(f"## {stage}")
+            add("")
+            add("**この段は、成績表の材料を引きません**（候補は真偽の列の借用＝"
+                + "・".join(f"`{n}`" for _nm, n in cands) + "）。"
+                "**だから突き合わせの対象外です。**")
+            add("")
+            continue
         if not cands:
-            raise SystemExit(f"[gen_stage0_match] 候補が空の段が在る: {stage}（fail-closed）")
+            # ★指標の候補を持たない段（段3＝続く本数と緩め幅の数字）。黙って飛ばさず、理由を出す。
+            add(f"## {stage}")
+            add("")
+            add("**この段は、指標の候補を持ちません**（候補は数字＝続く本数と緩め幅）。"
+                "**だから成績表との突き合わせの対象外です。**")
+            add("")
+            continue
         add(f"## {stage}")
         add("")
         add(f"**この段が引く役割＝`{role}`**")
@@ -177,21 +195,27 @@ def build() -> str:
                 verdict = "❌ 役割がずれている"
                 ng_total += 1
             else:
-                verdict = "❌ 成績表に無い"
+                # ★2026-09-11＝「成績表に無い」と断じない。この道具は「列名にその文字が含まれるか」で
+                #   数えるだけで、成績表の列名は 指標の名前＋期間＋札 の形（例＝`close vs 24本高値%`・
+                #   `EMA20傾き%`）。engine_tuner は列を指標の名前に解いてから引くので、ここで 0 でも
+                #   引けることが在る。本当に引けるかは engine_tuner 側の自己テスト（条件12 の④）で測る。
+                verdict = "⚠️ この探し方では当たらない（列名の形が違う・engine_tuner は引ける場合あり）"
                 ng_total += 1
             add(f"| {name} | **{n}** | {inner} | {other_s} | {verdict} |")
         add("")
 
     add("## まとめ")
     add("")
-    add(f"**引けない候補＝{ng_total}件。**この数だけ、§2.2 の段が"
-        "そのままでは回りません。")
+    add(f"**この探し方で当たらなかった候補＝{ng_total}件。**")
     add("")
-    add("**引けない理由は2通りです。**役割がずれているもの（成績表の別の役割に列が在る）と、"
-        "成績表にそもそも無いもの。前者は、その段が引く役割を変えるか、"
-        "型の表を見直すかの判断が要ります。後者は、材料を足すかどうかの判断が要ります。")
+    add("**当たらない理由は2通りです。**①役割がずれているもの（成績表の別の役割に列が在る）"
+        "②**この道具の探し方では当たらないもの**。②は「成績表に無い」とは限りません。"
+        "この道具は「列名にその文字が含まれるか」で数えるだけで、成績表の列名は"
+        "**指標の名前＋期間＋札**の形です（例＝`close vs 24本高値%`・`EMA20傾き%`）。"
+        "**engine_tuner は列を指標の名前に解いてから引くので、ここで 0 でも引けます。**"
+        "本当に引けるかは engine_tuner 側の自己テスト（完成の条件の条件12 の④）で測ります。")
     add("")
-    add("**★この表は「在るか無いか」を数えただけです。**どうするかは決めていません。")
+    add("**★この表は「この探し方で当たるか」を数えただけです。**どうするかは決めていません。")
     add("")
     return "\n".join(L)
 
