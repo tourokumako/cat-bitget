@@ -753,7 +753,11 @@ def page(d: dict) -> str:
     add("")
     add("REQUIREMENTS: まこさんの決定（下の §0）と、`engine_tuner_milestones2.md` の §2.2（レンジ判定の検索方法）。")
     add("")
-    add("**承認の状態＝未承認。**実装はまだ1行も入れていません。")
+    # ★2026-09-13（98回目・監査 cp36 の M-7＝next_step §6 の179番①）＝直す前は「未承認・実装はまだ1行も
+    #   入れていません」と固定で書いていた。承認②（実装の後の作り直し）でも同じ文が出るので嘘になっていた。
+    #   承認の状態は印（acceptance.approved・design_approved.json）が、実装の状態は 7-6 の表が正本＝そこを指す。
+    add("**承認の状態＝承認の印（`.claude/state/acceptance.approved`・`design_approved.json`）が正本。**"
+        "**実装の状態＝7-6 の完成の条件の表（承認のプログラムが「済」を書く）が正本。**この文は状態を持ちません。")
     add("")
     add("**★この設計書はプログラムが作ります。**"
         "手で書いたのは、元データ `.claude/ratchet/acceptance_src.json` の5つ"
@@ -992,6 +996,11 @@ def verify(dest: Path = None) -> int:
     for kind in BLOCKS:
         if kind == "ACCEPT_TABLE":
             continue                                  # 承認ゲートが読む目印＝hash を持たない
+        # ★2026-09-13（98回目）＝監査レポートの欄が空の設計書は、作る側（page）が AUDITTODO の囲みを出さない。
+        #   直す前は検出の側だけが囲みを求め、必ず「❌ 囲みが無い」になっていた（作る側と検出の側の食い違い）。
+        if kind == "AUDITTODO" and not (d.get("audit_report") or "").strip():
+            print("— --verify: AUDITTODO は監査レポートの欄が空なので出ない設計書（照らさない）")
+            continue
         m = _begin_re(kind).search(cur)
         e = cur.find(_end(kind))
         if not m or e < 0:

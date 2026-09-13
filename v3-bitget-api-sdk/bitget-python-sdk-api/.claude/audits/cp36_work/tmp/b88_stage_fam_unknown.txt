@@ -1,0 +1,2 @@
+[gen_regime_kb] §2.2 の候補の元データが正本と合いません（fail-closed）
+  stage1: 語「帯内位置」（完全）が正本に1件も当たらない（正本＝indicator_reference_diag.FAMILY_LINEAGE）

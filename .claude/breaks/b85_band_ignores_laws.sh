@@ -19,11 +19,14 @@ p = sys.argv[1]
 s = open(p, encoding='utf-8').read()
 # ★2026-09-13（完成の条件 #4・まこさん決定「一本化する」）＝組む側が役割を元データ（s1["role"]）から
 #   読む形になったので、壊す対象の行の文字を合わせた。壊し方（法則の系統を渡さない形に戻す）は同じ。
-old = '    m_b, draw["B"] = _material_for_lineage(s1["role"], lins_b, r_b, tfs, table, tf_ok=upper)'
+# ★2026-09-13（98回目・監査 cp36 の C-1・C-2）＝帯の材料を段1 の一覧から取る形（_stage_pick）になったので、
+#   壊す対象の行をその行に合わせた。壊し方（法則を読まない・記録に系統が無い形に戻す）は同じ。
+old = ('    cond_b, draw["B"] = _stage_pick(c1, keep1, r_b, "stage1", '
+       'extra={"法則が名指しした系統": sorted(lins_b)})')
 if old not in s:
     raise SystemExit("[b85] 壊す対象の行が見つからない: " + old)
-new = ('    m_b, draw["B"] = _ranked_material_at(s1["role"], r_b, tfs, table, tf_ok=upper)'
-       '  # b85 が壊した（法則を読まない）')
+new = ('    m_b0, draw["B"] = _ranked_material_at(s1["role"], r_b, tfs, table)  # b85 が壊した（法則を読まない）\n'
+       '    cond_b = {"role": s1["role"], "form": "level", "material": [m_b0], "side": side_b, "value": _thr_fixed(limits)}')
 open(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))
 PYEOF
 

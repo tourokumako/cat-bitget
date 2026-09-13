@@ -1,0 +1,589 @@
+{
+ "summary": {
+  "which": "mirror",
+  "N": 6,
+  "built": 6,
+  "failed": 0,
+  "same_twice_all": true,
+  "tf_B": {
+   "15m": 6
+  },
+  "tf_C": {
+   "30m": 4,
+   "1h": 2
+  },
+  "tf_G": {
+   "30m": 6
+  },
+  "C_pre_abs_count": 0,
+  "C_signed_fams_no_abs": [
+   "MACDヒスト%"
+  ],
+  "B_not_in_src": [],
+  "C_not_in_src": [],
+  "G_not_in_src": [],
+  "B_sides": {
+   "above": 3,
+   "below": 3
+  },
+  "F_n": {
+   "3": 1,
+   "4": 1,
+   "5": 1,
+   "6": 1,
+   "7": 1,
+   "8": 1
+  },
+  "hyst_n": {
+   "24": 1,
+   "25": 1,
+   "26": 1,
+   "27": 1,
+   "28": 1,
+   "29": 1
+  },
+  "fails": {}
+ },
+ "rows": {
+  "0": {
+   "same_twice": true,
+   "build_hash": "e0955ae23d89bec9",
+   "A": {
+    "geo": "W%",
+    "側": "above",
+    "法則": "R7"
+   },
+   "B": {
+    "col": "S-Rタッチ数(144,0.006)__15m",
+    "種類": "S-Rタッチ数",
+    "時間足": "15m",
+    "rank": 1
+   },
+   "B_side": "above",
+   "C": {
+    "col": "MACDヒスト%(12,26,9)__30m",
+    "種類": "MACDヒスト%",
+    "時間足": "30m",
+    "rank": 1,
+    "法則の側": "below",
+    "not で包む側": "above"
+   },
+   "C_pre": null,
+   "G": {
+    "col": "stdev%50__30m",
+    "種類": "stdev%",
+    "時間足": "30m",
+    "rank": 1,
+    "側": "below"
+   },
+   "F": {
+    "形": "streak",
+    "法則": "R4",
+    "本数": 3
+   },
+   "D": {
+    "形": "not",
+    "法則": "R8",
+    "真偽の列": "rg5_uptrend"
+   },
+   "hyst_n": 24,
+   "B_in_src": true,
+   "C_in_src": true,
+   "G_in_src": true,
+   "stages": [
+    [
+     "stage1",
+     336,
+     1
+    ],
+    [
+     "stage2a",
+     89,
+     1
+    ],
+    [
+     "stage2b",
+     1,
+     1
+    ],
+    [
+     "stage2c",
+     183,
+     1
+    ],
+    [
+     "stage3",
+     22,
+     1
+    ]
+   ],
+   "laws": {
+    "形": [
+     "hysteresis",
+     "not",
+     "streak"
+    ],
+    "数える法則": [
+     "C4",
+     "R1",
+     "R3",
+     "R5",
+     "R6",
+     "R7",
+     "R10"
+    ],
+    "重ねない法則": 1
+   }
+  },
+  "1": {
+   "same_twice": true,
+   "build_hash": "4b479af4e8337777",
+   "A": {
+    "geo": "W%",
+    "側": "above",
+    "法則": "R7"
+   },
+   "B": {
+    "col": "S-Rタッチ数(144,0.006)__15m",
+    "種類": "S-Rタッチ数",
+    "時間足": "15m",
+    "rank": 1
+   },
+   "B_side": "below",
+   "C": {
+    "col": "MACDヒスト%(12,26,9)__30m",
+    "種類": "MACDヒスト%",
+    "時間足": "30m",
+    "rank": 1,
+    "法則の側": "below",
+    "not で包む側": "above"
+   },
+   "C_pre": null,
+   "G": {
+    "col": "stdev%50__30m",
+    "種類": "stdev%",
+    "時間足": "30m",
+    "rank": 1,
+    "側": "below"
+   },
+   "F": {
+    "形": "streak",
+    "法則": "R4",
+    "本数": 4
+   },
+   "D": {
+    "形": "not",
+    "法則": "R8",
+    "真偽の列": "rg5_uptrend"
+   },
+   "hyst_n": 25,
+   "B_in_src": true,
+   "C_in_src": true,
+   "G_in_src": true,
+   "stages": [
+    [
+     "stage1",
+     336,
+     1
+    ],
+    [
+     "stage2a",
+     89,
+     1
+    ],
+    [
+     "stage2b",
+     1,
+     1
+    ],
+    [
+     "stage2c",
+     183,
+     1
+    ],
+    [
+     "stage3",
+     22,
+     1
+    ]
+   ],
+   "laws": {
+    "形": [
+     "hysteresis",
+     "not",
+     "streak"
+    ],
+    "数える法則": [
+     "C4",
+     "R1",
+     "R3",
+     "R5",
+     "R6",
+     "R7",
+     "R10"
+    ],
+    "重ねない法則": 1
+   }
+  },
+  "2": {
+   "same_twice": true,
+   "build_hash": "9005abedde865b22",
+   "A": {
+    "geo": "W%",
+    "側": "above",
+    "法則": "R7"
+   },
+   "B": {
+    "col": "S-Rタッチ数(144,0.006)__15m",
+    "種類": "S-Rタッチ数",
+    "時間足": "15m",
+    "rank": 1
+   },
+   "B_side": "above",
+   "C": {
+    "col": "MACDヒスト%(12,26,9)__30m",
+    "種類": "MACDヒスト%",
+    "時間足": "30m",
+    "rank": 1,
+    "法則の側": "below",
+    "not で包む側": "above"
+   },
+   "C_pre": null,
+   "G": {
+    "col": "BB幅(50,2.0)__30m",
+    "種類": "BB幅",
+    "時間足": "30m",
+    "rank": 2,
+    "側": "below"
+   },
+   "F": {
+    "形": "streak",
+    "法則": "R4",
+    "本数": 5
+   },
+   "D": {
+    "形": "not",
+    "法則": "R8",
+    "真偽の列": "rg5_uptrend"
+   },
+   "hyst_n": 26,
+   "B_in_src": true,
+   "C_in_src": true,
+   "G_in_src": true,
+   "stages": [
+    [
+     "stage1",
+     336,
+     1
+    ],
+    [
+     "stage2a",
+     89,
+     1
+    ],
+    [
+     "stage2b",
+     1,
+     1
+    ],
+    [
+     "stage2c",
+     183,
+     1
+    ],
+    [
+     "stage3",
+     22,
+     1
+    ]
+   ],
+   "laws": {
+    "形": [
+     "hysteresis",
+     "not",
+     "streak"
+    ],
+    "数える法則": [
+     "C4",
+     "R1",
+     "R3",
+     "R5",
+     "R6",
+     "R7",
+     "R10"
+    ],
+    "重ねない法則": 1
+   }
+  },
+  "3": {
+   "same_twice": true,
+   "build_hash": "9ba5d6732759eb99",
+   "A": {
+    "geo": "W%",
+    "側": "above",
+    "法則": "R7"
+   },
+   "B": {
+    "col": "S-Rタッチ数(144,0.006)__15m",
+    "種類": "S-Rタッチ数",
+    "時間足": "15m",
+    "rank": 1
+   },
+   "B_side": "below",
+   "C": {
+    "col": "MACDヒスト%(12,26,9)__30m",
+    "種類": "MACDヒスト%",
+    "時間足": "30m",
+    "rank": 1,
+    "法則の側": "below",
+    "not で包む側": "above"
+   },
+   "C_pre": null,
+   "G": {
+    "col": "BB幅(50,2.0)__30m",
+    "種類": "BB幅",
+    "時間足": "30m",
+    "rank": 2,
+    "側": "below"
+   },
+   "F": {
+    "形": "streak",
+    "法則": "R4",
+    "本数": 6
+   },
+   "D": {
+    "形": "not",
+    "法則": "R8",
+    "真偽の列": "rg5_uptrend"
+   },
+   "hyst_n": 27,
+   "B_in_src": true,
+   "C_in_src": true,
+   "G_in_src": true,
+   "stages": [
+    [
+     "stage1",
+     336,
+     1
+    ],
+    [
+     "stage2a",
+     89,
+     1
+    ],
+    [
+     "stage2b",
+     1,
+     1
+    ],
+    [
+     "stage2c",
+     183,
+     1
+    ],
+    [
+     "stage3",
+     22,
+     1
+    ]
+   ],
+   "laws": {
+    "形": [
+     "hysteresis",
+     "not",
+     "streak"
+    ],
+    "数える法則": [
+     "C4",
+     "R1",
+     "R3",
+     "R5",
+     "R6",
+     "R7",
+     "R10"
+    ],
+    "重ねない法則": 1
+   }
+  },
+  "4": {
+   "same_twice": true,
+   "build_hash": "6260afdfa4d7a018",
+   "A": {
+    "geo": "W%",
+    "側": "above",
+    "法則": "R7"
+   },
+   "B": {
+    "col": "S-Rタッチ数(144,0.006)__15m",
+    "種類": "S-Rタッチ数",
+    "時間足": "15m",
+    "rank": 1
+   },
+   "B_side": "above",
+   "C": {
+    "col": "ADX21__1h",
+    "種類": "ADX",
+    "時間足": "1h",
+    "rank": 2,
+    "法則の側": "below",
+    "not で包む側": "above"
+   },
+   "C_pre": null,
+   "G": {
+    "col": "stdev%50__30m",
+    "種類": "stdev%",
+    "時間足": "30m",
+    "rank": 1,
+    "側": "below"
+   },
+   "F": {
+    "形": "streak",
+    "法則": "R4",
+    "本数": 7
+   },
+   "D": {
+    "形": "not",
+    "法則": "R8",
+    "真偽の列": "rg5_uptrend"
+   },
+   "hyst_n": 28,
+   "B_in_src": true,
+   "C_in_src": true,
+   "G_in_src": true,
+   "stages": [
+    [
+     "stage1",
+     336,
+     1
+    ],
+    [
+     "stage2a",
+     89,
+     1
+    ],
+    [
+     "stage2b",
+     1,
+     1
+    ],
+    [
+     "stage2c",
+     183,
+     1
+    ],
+    [
+     "stage3",
+     22,
+     1
+    ]
+   ],
+   "laws": {
+    "形": [
+     "hysteresis",
+     "not",
+     "streak"
+    ],
+    "数える法則": [
+     "C4",
+     "R1",
+     "R3",
+     "R5",
+     "R6",
+     "R7",
+     "R10"
+    ],
+    "重ねない法則": 1
+   }
+  },
+  "5": {
+   "same_twice": true,
+   "build_hash": "80b00fff9e77d5e8",
+   "A": {
+    "geo": "W%",
+    "側": "above",
+    "法則": "R7"
+   },
+   "B": {
+    "col": "S-Rタッチ数(144,0.006)__15m",
+    "種類": "S-Rタッチ数",
+    "時間足": "15m",
+    "rank": 1
+   },
+   "B_side": "below",
+   "C": {
+    "col": "ADX21__1h",
+    "種類": "ADX",
+    "時間足": "1h",
+    "rank": 2,
+    "法則の側": "below",
+    "not で包む側": "above"
+   },
+   "C_pre": null,
+   "G": {
+    "col": "stdev%50__30m",
+    "種類": "stdev%",
+    "時間足": "30m",
+    "rank": 1,
+    "側": "below"
+   },
+   "F": {
+    "形": "streak",
+    "法則": "R4",
+    "本数": 8
+   },
+   "D": {
+    "形": "not",
+    "法則": "R8",
+    "真偽の列": "rg5_uptrend"
+   },
+   "hyst_n": 29,
+   "B_in_src": true,
+   "C_in_src": true,
+   "G_in_src": true,
+   "stages": [
+    [
+     "stage1",
+     336,
+     1
+    ],
+    [
+     "stage2a",
+     89,
+     1
+    ],
+    [
+     "stage2b",
+     1,
+     1
+    ],
+    [
+     "stage2c",
+     183,
+     1
+    ],
+    [
+     "stage3",
+     22,
+     1
+    ]
+   ],
+   "laws": {
+    "形": [
+     "hysteresis",
+     "not",
+     "streak"
+    ],
+    "数える法則": [
+     "C4",
+     "R1",
+     "R3",
+     "R5",
+     "R6",
+     "R7",
+     "R10"
+    ],
+    "重ねない法則": 1
+   }
+  }
+ }
+}

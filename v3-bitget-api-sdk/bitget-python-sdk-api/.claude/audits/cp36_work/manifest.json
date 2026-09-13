@@ -1,0 +1,203 @@
+{
+ "mirror": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp36_work/mirror",
+ "mirror_old": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp36_work/mirror_old",
+ "old_commit": "0e1f1be",
+ "files": [
+  {
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "real": "d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e",
+   "mirror": "d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e",
+   "same": true,
+   "old_0e1f1be": "f08878e295254c9e432d5f1045fdf208e41c9cdeb505b2f92a7a4f7a1deb6d46"
+  },
+  {
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py",
+   "real": "52d97f4284fb300334ee3425b8b619f3b583f3487efd82140a3bae4a6b9ed2c1",
+   "mirror": "52d97f4284fb300334ee3425b8b619f3b583f3487efd82140a3bae4a6b9ed2c1",
+   "same": true,
+   "old_0e1f1be": "52d97f4284fb300334ee3425b8b619f3b583f3487efd82140a3bae4a6b9ed2c1"
+  },
+  {
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py",
+   "real": "7038a10de1205a2bbcf51dd8136f2553d199ca64471808073905154654671c84",
+   "mirror": "7038a10de1205a2bbcf51dd8136f2553d199ca64471808073905154654671c84",
+   "same": true,
+   "old_0e1f1be": "7038a10de1205a2bbcf51dd8136f2553d199ca64471808073905154654671c84"
+  },
+  {
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regime_laws.json",
+   "real": "092f89f9cedb1de91a5379be77999b26ad725a36a72189af526ace4916a3ce2e",
+   "mirror": "092f89f9cedb1de91a5379be77999b26ad725a36a72189af526ace4916a3ce2e",
+   "same": true,
+   "old_0e1f1be": "6436065184dbe16523ac537d27ce56555603f045249f114bc32d1fe21b9b2ee3"
+  },
+  {
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/m2_stage_candidates.json",
+   "real": "d58b344cd5f9e1f1fe43dae3d5312308a3d1954d2914fc19898088f58fbfe72e",
+   "mirror": "d58b344cd5f9e1f1fe43dae3d5312308a3d1954d2914fc19898088f58fbfe72e",
+   "same": true,
+   "old_0e1f1be": "28d99daba0518d42a7309e4ce40670e123a829cad98b236f4b8d49b2165ee391"
+  },
+  {
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md",
+   "real": "eb9d5a98f4f10dc5a96ff1627a84e6b055b56b67eb76618ed07d4f08ec29a05d",
+   "mirror": "eb9d5a98f4f10dc5a96ff1627a84e6b055b56b67eb76618ed07d4f08ec29a05d",
+   "same": true,
+   "old_0e1f1be": "eb9d5a98f4f10dc5a96ff1627a84e6b055b56b67eb76618ed07d4f08ec29a05d"
+  },
+  {
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/signal_families.json",
+   "real": "8a217dfc8927ace5554d9f7c2b10cd0a8797b3ae95fba43690dbbe2ef1df7df8",
+   "mirror": "8a217dfc8927ace5554d9f7c2b10cd0a8797b3ae95fba43690dbbe2ef1df7df8",
+   "same": true,
+   "old_0e1f1be": "8a217dfc8927ace5554d9f7c2b10cd0a8797b3ae95fba43690dbbe2ef1df7df8"
+  },
+  {
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/material_ranking.json",
+   "real": "1fb16662d7ed656df2c406c6cf434f30af594f66601dc1a0871a0da6ff9b72eb",
+   "mirror": "1fb16662d7ed656df2c406c6cf434f30af594f66601dc1a0871a0da6ff9b72eb",
+   "same": true,
+   "old_0e1f1be": "1fb16662d7ed656df2c406c6cf434f30af594f66601dc1a0871a0da6ff9b72eb"
+  },
+  {
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/recipes/search_limits.json",
+   "real": "7075a09e1531e8a275cb28eb3ee5f8ead5ed7e3639c528e452b47f4e1199e314",
+   "mirror": "7075a09e1531e8a275cb28eb3ee5f8ead5ed7e3639c528e452b47f4e1199e314",
+   "same": true,
+   "old_0e1f1be": "7075a09e1531e8a275cb28eb3ee5f8ead5ed7e3639c528e452b47f4e1199e314"
+  },
+  {
+   "file": ".claude/state/acceptance.md",
+   "real": "fa5d69fe2a0f21b5b8fad355c53d470f75bf2d00c55cfdbe75b1b54f498eddc5",
+   "mirror": "fa5d69fe2a0f21b5b8fad355c53d470f75bf2d00c55cfdbe75b1b54f498eddc5",
+   "same": true,
+   "old_0e1f1be": "fa5d69fe2a0f21b5b8fad355c53d470f75bf2d00c55cfdbe75b1b54f498eddc5"
+  },
+  {
+   "file": ".claude/tools/count_builder_literals.py",
+   "real": "662e1dad382a9a562d8c8c80c9b9e17f14a36094c34b864d29bd230713a5786a",
+   "mirror": "662e1dad382a9a562d8c8c80c9b9e17f14a36094c34b864d29bd230713a5786a",
+   "same": true,
+   "old_0e1f1be": null
+  },
+  {
+   "file": ".claude/tools/gen_regime_kb.py",
+   "real": "50985a5623c26c1c1bbe9d658f408698574cc0e7e9b76b378541fbec30e1990d",
+   "mirror": "50985a5623c26c1c1bbe9d658f408698574cc0e7e9b76b378541fbec30e1990d",
+   "same": true,
+   "old_0e1f1be": "f26d407facd97d1a774bdb2f36aee09bb8c79d9e37932f00a5575ba562c688df"
+  },
+  {
+   "file": ".claude/tools/gen_acceptance.py",
+   "real": "fd97818d5930b83995abbdf144d4d69e2733a3b2d660b3413aa0ead2748955ef",
+   "mirror": "fd97818d5930b83995abbdf144d4d69e2733a3b2d660b3413aa0ead2748955ef",
+   "same": true,
+   "old_0e1f1be": "fd97818d5930b83995abbdf144d4d69e2733a3b2d660b3413aa0ead2748955ef"
+  },
+  {
+   "file": ".claude/tools/run_breaks.py",
+   "real": "d26bbe42790ad4044a4fc81a78acb9404774a21755a5e66b3b354aa0c59b83c3",
+   "mirror": "d26bbe42790ad4044a4fc81a78acb9404774a21755a5e66b3b354aa0c59b83c3",
+   "same": true,
+   "old_0e1f1be": "d26bbe42790ad4044a4fc81a78acb9404774a21755a5e66b3b354aa0c59b83c3"
+  }
+ ],
+ "breaks": [
+  {
+   "file": "b76_laws_not_read.sh",
+   "real": "91be35726f564872c5950ffe10af28efc4cf3b6e71a8b42238628b4340c405b7",
+   "mirror_copy": "91be35726f564872c5950ffe10af28efc4cf3b6e71a8b42238628b4340c405b7",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b77_no_streak.sh",
+   "real": "c9118ec4bb454d76b6498f42b2a0126c05d240ef0a55e9c6963ea08dc62bddb2",
+   "mirror_copy": "c9118ec4bb454d76b6498f42b2a0126c05d240ef0a55e9c6963ea08dc62bddb2",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b78_law_literal.sh",
+   "real": "755e12da8fdab110477c782981396329c14333322c52280fc60bde1bfb429740",
+   "mirror_copy": "755e12da8fdab110477c782981396329c14333322c52280fc60bde1bfb429740",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b79_param_drawn.sh",
+   "real": "b7f04ea95c7b51b326517c40777c8cd3416a45cea23212933c871a5d6cf4425e",
+   "mirror_copy": "b7f04ea95c7b51b326517c40777c8cd3416a45cea23212933c871a5d6cf4425e",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b80_quantile_one_by_one.sh",
+   "real": "00bc8943f94fa945d4608f075022cc24a93328510ea0fcf601dd80ff17db1650",
+   "mirror_copy": "00bc8943f94fa945d4608f075022cc24a93328510ea0fcf601dd80ff17db1650",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b81_drop_tf_ignored.sh",
+   "real": "c3c24dd58fa252d6b934bb9170e7e6e3713678c45bc53fb96427100ddea8b4c6",
+   "mirror_copy": "c3c24dd58fa252d6b934bb9170e7e6e3713678c45bc53fb96427100ddea8b4c6",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b82_abs_missing.sh",
+   "real": "d922e62d4d48267f5cf1a916f993aff255dadd93c74e399380181ac0c6bec8d0",
+   "mirror_copy": "d922e62d4d48267f5cf1a916f993aff255dadd93c74e399380181ac0c6bec8d0",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b83_bool_col_extra_key.sh",
+   "real": "61360144cf3ab5ab99259f709fb165f145b9d4850909206c52e703a1d4e0b24a",
+   "mirror_copy": "61360144cf3ab5ab99259f709fb165f145b9d4850909206c52e703a1d4e0b24a",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b84_qtable_per_bundle.sh",
+   "real": "1ea8940a397db299bd38058ceaf6de8e31edd3473230be92213f59ff4ab3f600",
+   "mirror_copy": "1ea8940a397db299bd38058ceaf6de8e31edd3473230be92213f59ff4ab3f600",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b85_band_ignores_laws.sh",
+   "real": "5c366fbd16639d16d6c81f9427d367589a8addbd247f9f2628918f11e8b73ea2",
+   "mirror_copy": "5c366fbd16639d16d6c81f9427d367589a8addbd247f9f2628918f11e8b73ea2",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b86_stage_count.sh",
+   "real": "f93b3d04f719b867913544c38b0eba8260b5a95e408cb9fe74d1c6657ee6471e",
+   "mirror_copy": "f93b3d04f719b867913544c38b0eba8260b5a95e408cb9fe74d1c6657ee6471e",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b87_stages_record.sh",
+   "real": "9f52745a6fbc3d3bfbaa253bef6720973528f90148ba8e10f91c0d684544fa0a",
+   "mirror_copy": "9f52745a6fbc3d3bfbaa253bef6720973528f90148ba8e10f91c0d684544fa0a",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b88_stage_fam_unknown.sh",
+   "real": "34e0d4b618bf74fe5e126218ef634e36eff04b16bae0f8dd85454d60ea85ad41",
+   "mirror_copy": "34e0d4b618bf74fe5e126218ef634e36eff04b16bae0f8dd85454d60ea85ad41",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b89_audit_todo_row_removed.sh",
+   "real": "a8ab5303e5612eb571cfeb3a5b4f6ffd316c6bfda3f2f940798f4e432e7949bc",
+   "mirror_copy": "a8ab5303e5612eb571cfeb3a5b4f6ffd316c6bfda3f2f940798f4e432e7949bc",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "b90_expect_msg_mismatch.sh",
+   "real": "a1d55aaf4b206e6094d452416597710a6e694465e0f4fe448b5e28a2f7e93f47",
+   "mirror_copy": "a1d55aaf4b206e6094d452416597710a6e694465e0f4fe448b5e28a2f7e93f47",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  },
+  {
+   "file": "lib.sh",
+   "real": "7a590f07202a7dd14c96c8475822b08158b778b5559121f336a998e8a5314757",
+   "mirror_copy": "024bcf17fbc02e4945c4f1006e3820a244e7e155cca06af8963b4c1bf30d27e9",
+   "note": "mirror の写しは ROOT の1行だけ書き替えてある"
+  }
+ ]
+}

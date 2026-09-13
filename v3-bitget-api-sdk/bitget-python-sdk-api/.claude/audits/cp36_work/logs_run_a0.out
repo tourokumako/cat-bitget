@@ -1,0 +1,82 @@
+19:05:54 == T0 土台 ==
+19:05:54 restore-all rc=0
+19:10:55 T0_gen_selftest rc=0 sec=301
+19:10:55 T0_count rc=0 sec=0
+19:10:58 T0_kb_verify rc=0 sec=3
+19:10:59 T0_acc_verify rc=1 sec=1
+19:11:02 T0_rb_selftest rc=0 sec=3
+19:11:02 == T1 壊すプログラム15本 ==
+19:17:53 T1_b76_laws_not_read rc=1 sec=411
+19:17:53   b76_laws_not_read EXPECT_MSG「T39①」＝出力に在る
+19:17:53   b76_laws_not_read 戻り: now      092f89f9cedb1de91a5379be77999b26ad725a36a72189af526ace4916a3ce2e pristine 092f89f9cedb1de91a5379be77999b26ad725a36a72189af526ace4916a3ce2e same 
+19:24:27 T1_b77_no_streak rc=1 sec=394
+19:24:27   b77_no_streak EXPECT_MSG「T24」＝出力に在る
+19:24:27   b77_no_streak 戻り: now      d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e pristine d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e same 
+19:24:29 T1_b78_law_literal rc=1 sec=2
+19:24:29   b78_law_literal EXPECT_MSG「b78: 2回とも見つけた」＝出力に在る
+19:24:29   b78_law_literal 戻り: now      d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e pristine d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e same 
+19:29:30 T1_b79_param_drawn rc=1 sec=301
+19:29:30   b79_param_drawn EXPECT_MSG「T24⑥」＝出力に在る
+19:29:30   b79_param_drawn 戻り: now      d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e pristine d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e same 
+19:34:32 T1_b80_quantile_one_by_one rc=1 sec=302
+19:34:32   b80_quantile_one_by_one EXPECT_MSG「T34」＝出力に在る
+19:34:33   b80_quantile_one_by_one 戻り: now      d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e pristine d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e same 
+19:39:34 T1_b81_drop_tf_ignored rc=1 sec=301
+19:39:34   b81_drop_tf_ignored EXPECT_MSG「T40③-3」＝出力に在る
+19:39:34   b81_drop_tf_ignored 戻り: now      d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e pristine d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e same 
+19:46:24 T1_b82_abs_missing rc=1 sec=410
+19:46:24   b82_abs_missing EXPECT_MSG「T36」＝出力に在る
+19:46:24   b82_abs_missing 戻り: now      52d97f4284fb300334ee3425b8b619f3b583f3487efd82140a3bae4a6b9ed2c1 pristine 52d97f4284fb300334ee3425b8b619f3b583f3487efd82140a3bae4a6b9ed2c1 same 
+19:51:29 T1_b83_bool_col_extra_key rc=1 sec=305
+19:51:29   b83_bool_col_extra_key EXPECT_MSG「T37b」＝出力に在る
+19:51:29   b83_bool_col_extra_key 戻り: now      52d97f4284fb300334ee3425b8b619f3b583f3487efd82140a3bae4a6b9ed2c1 pristine 52d97f4284fb300334ee3425b8b619f3b583f3487efd82140a3bae4a6b9ed2c1 same 
+19:56:29 T1_b84_qtable_per_bundle rc=1 sec=300
+19:56:29   b84_qtable_per_bundle EXPECT_MSG「T38」＝出力に在る
+19:56:29   b84_qtable_per_bundle 戻り: now      7038a10de1205a2bbcf51dd8136f2553d199ca64471808073905154654671c84 pristine 7038a10de1205a2bbcf51dd8136f2553d199ca64471808073905154654671c84 same 
+20:01:23 T1_b85_band_ignores_laws rc=1 sec=294
+20:01:23   b85_band_ignores_laws EXPECT_MSG「T39」＝出力に在る
+20:01:23   b85_band_ignores_laws 戻り: now      d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e pristine d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e same 
+20:06:23 T1_b86_stage_count rc=1 sec=300
+20:06:23   b86_stage_count EXPECT_MSG「T40③-1」＝出力に在る
+20:06:23   b86_stage_count 戻り: now      d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e pristine d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e same 
+20:11:26 T1_b87_stages_record rc=1 sec=303
+20:11:26   b87_stages_record EXPECT_MSG「T41」＝出力に在る
+20:11:26   b87_stages_record 戻り: now      d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e pristine d1a86bad7a6e9fa37ca7a565e1520ce6d11e79cd3dcf96483225b2076eaf870e same 
+20:11:30 T1_b88_stage_fam_unknown rc=1 sec=4
+20:11:30   b88_stage_fam_unknown EXPECT_MSG「正本と合いません」＝出力に在る
+20:11:30   b88_stage_fam_unknown 戻り: now      d58b344cd5f9e1f1fe43dae3d5312308a3d1954d2914fc19898088f58fbfe72e pristine d58b344cd5f9e1f1fe43dae3d5312308a3d1954d2914fc19898088f58fbfe72e same 
+20:11:30   b88_stage_fam_unknown 戻り(mile): now      eb9d5a98f4f10dc5a96ff1627a84e6b055b56b67eb76618ed07d4f08ec29a05d pristine eb9d5a98f4f10dc5a96ff1627a84e6b055b56b67eb76618ed07d4f08ec29a05d same 
+20:11:32 T1_b89_audit_todo_row_removed rc=1 sec=2
+20:11:32   b89_audit_todo_row_removed EXPECT_MSG「AUDITTODO」＝出力に在る
+20:11:32   b89_audit_todo_row_removed 戻り: now      fa5d69fe2a0f21b5b8fad355c53d470f75bf2d00c55cfdbe75b1b54f498eddc5 pristine fa5d69fe2a0f21b5b8fad355c53d470f75bf2d00c55cfdbe75b1b54f498eddc5 same 
+20:11:35 T1_b90_expect_msg_mismatch rc=1 sec=3
+20:11:35   b90_expect_msg_mismatch EXPECT_MSG「T13」＝出力に在る
+20:11:35   b90_expect_msg_mismatch 戻り: now      d26bbe42790ad4044a4fc81a78acb9404774a21755a5e66b3b354aa0c59b83c3 pristine d26bbe42790ad4044a4fc81a78acb9404774a21755a5e66b3b354aa0c59b83c3 same 
+20:11:35 == T2 追加の壊し方（2本目） ==
+20:16:30 T2_i_10m_only rc=0 sec=295
+20:22:58 T2_ii_no_family_filter rc=1 sec=388
+20:27:56 T2_iii_side_fixed rc=0 sec=298
+20:32:47 T2_iv_no_lineage_filter rc=1 sec=291
+20:32:47 == T3 束の直接の走査（新・旧）と法則の書き替え ==
+20:32:52 T3_scan_new rc=0 sec=5
+20:32:56 T3_scan_old rc=0 sec=4
+20:33:00 T3_law_C4_no_range rc=0 sec=4
+20:33:04 T3_law_C6_no_range rc=0 sec=4
+20:33:07 T3_law_R1_lineage_vola rc=0 sec=3
+20:33:11 T3_law_R3_lineage_vola rc=0 sec=4
+20:33:14 T3_law_R4_no_range rc=1 sec=2
+20:33:18 T3_law_R5_family_chop_only rc=0 sec=3
+20:33:23 T3_law_R6_family_atr_only rc=0 sec=4
+20:33:26 T3_law_R7_geo_pos rc=0 sec=3
+20:33:29 T3_law_R8_no_range rc=1 sec=2
+20:33:33 T3_law_R5_side_flip rc=0 sec=3
+20:33:34 == T4 種の比較・A5-a・D1（regime_r9_diag） ==
+20:33:47 T4_r9_seed7 rc=0 sec=13
+20:34:02 T4_r9_seed8 rc=0 sec=15
+20:34:17 T4_r9_default rc=0 sec=15
+20:34:17 == T5 0e1f1be の版 ==
+20:34:30 T5_old_r9_seed7 rc=0 sec=13
+20:39:41 T5_old_gen_selftest rc=0 sec=311
+20:39:41 == T6 恒等（完成の条件 #17）・写しで ==
+20:39:41 T6_exec_identity rc=127 sec=0
+20:39:41 == 終わり ==

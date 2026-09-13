@@ -1,0 +1,112 @@
+6d5
+< NEW_FILE: .claude/breaks/b91_keep_range_ignored.sh, .claude/breaks/b92_stage2_no_drop_tfs.sh, .claude/breaks/b93_law_filter_off.sh
+11c10
+< **承認の状態＝未承認。**実装はまだ1行も入れていません。
+---
+> **承認の状態＝承認の印（`.claude/state/acceptance.approved`・`design_approved.json`）が正本。****実装の状態＝7-6 の完成の条件の表（承認のプログラムが「済」を書く）が正本。**この文は状態を持ちません。
+726c725
+< | 4 | AUDIT-4＝帯の枠が法則 R1・R3 の系統から引かれている（T39＝系統を『ボラ』に書き替えると帯の材料が変わる、または組めなくなる）★前の工事の AUDIT-4b。狙う行が変わるので壊すプログラム b85 を直す | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 帯の材料を一覧から取る行を `_ranked_material_at(s1["role"], r_b, tfs, table)`（法則を読まない・記録に系統が無い）に戻すと、T39②・③ が『❌ T39』で落ちる | `b85_band_ignores_laws.sh` | 対象 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝帯の引き方を役割の直書きに戻すと、T39③ が「系統を書き替えても帯が変わらない」で落ちた |
+---
+> | 4 | AUDIT-4＝帯の枠が法則 R1・R3 の系統から引かれている（T39＝系統を『ボラ』に書き替えると帯の材料が変わる、または組めなくなる）★前の工事の AUDIT-4b。狙う行が変わるので壊すプログラム b85 を直す | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 帯の材料を一覧から取る行を `_ranked_material_at(s1["role"], r_b, tfs, table)`（法則を読まない・記録に系統が無い）に戻すと、T39②・③ が『❌ T39』で落ちる | `b85_band_ignores_laws.sh` | 対象 | **未着手** |
+730c729
+< | 8 | AUDIT-6＝組む関数に法則番号の直書きが0件、かつ乱数（rng・draw_param）が0件（新設する2つの関数と直した2本目にも法則番号・乱数を書かない） | `python3 ../../.claude/tools/count_builder_literals.py` | 実経路 | 組む関数に rng を1行 書くと、また法則番号の文字を1つ書くと、数える道具が0件でないと数えて終了コード 1 を返す | `b78_law_literal.sh` | 対象 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝組む関数に乱数を1行 書いても、法則番号の文字を1つ書いても、数える道具が 0件でないと数えた（AUDIT-3 が効いている） |
+---
+> | 8 | AUDIT-6＝組む関数に法則番号の直書きが0件、かつ乱数（rng・draw_param）が0件（新設する2つの関数と直した2本目にも法則番号・乱数を書かない） | `python3 ../../.claude/tools/count_builder_literals.py` | 実経路 | 組む関数に rng を1行 書くと、また法則番号の文字を1つ書くと、数える道具が0件でないと数えて終了コード 1 を返す | `b78_law_literal.sh` | 対象 | **未着手** |
+736c735
+< <!-- ACC_CODEREF_START hash=dab30a9e671dbc73 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=fe48450e3104a0af gen_acceptance.py が自動生成＝手で書き換えない -->
+743c742
+< | `sample_regime_build` | 2808 |
+---
+> | `sample_regime_build` | 2863 |
+745c744,746
+< | `stage_counts` | 2770 |
+---
+> | `stage_keep_of` | 2772 |
+> | `_stage_pick` | 2795 |
+> | `stage_counts` | 2824 |
+748c749
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 145件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 147件の関数が在ります）。
+754c755
+< <!-- ACC_SPEC_START hash=ff62e7aa315a7b8f gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=57495b0c70dc8b93 gen_acceptance.py が自動生成＝手で書き換えない -->
+762,763c763,773
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "実装の前だから。触る関数は sample_regime_build・build_stage_candidates・stage_counts と新設2つ（stage_keep_of・_stage_pick）と自己テストだが、名前と行は実装の後に確定させる＝verify_design_contract.py --write の出力で置き替える",
+---
+>   "impl_functions": {
+>     "scripts/priority_rebuild/engine_tuner_gen.py": [
+>       "build_stage_candidates",
+>       "stage_keep_of",
+>       "_stage_pick",
+>       "stage_counts",
+>       "sample_regime_build",
+>       "selftest"
+>     ]
+>   },
+>   "_impl_functions の意味": "この回で触った関数だけ（2026-09-05 の書き方の変更＝next_step §6 の132番）。実物の全関数（gen_impl_functions.py の出力）から触ったものを選び、新設2つ（stage_keep_of・_stage_pick）を足した。全関数の写しではない。",
+766a777,778
+>     "stage_keep_of",
+>     "_stage_pick",
+770c782,802
+<   "must_use": {},
+---
+>   "must_use": {
+>     "sample_regime_build": [
+>       "build_stage_candidates",
+>       "stage_keep_of",
+>       "_stage_pick",
+>       "regime_draw_order",
+>       "laws_for_scene",
+>       "stage_counts"
+>     ],
+>     "stage_counts": [
+>       "build_stage_candidates",
+>       "stage_keep_of"
+>     ],
+>     "_stage_pick": [
+>       "SampleError"
+>     ],
+>     "stage_keep_of": [
+>       "stage_keep_range",
+>       "SampleError"
+>     ]
+>   },
+772c804
+<   "no_spec_lists_reason": "実装の前だから。組む側が外から読む一覧（法則ファイル・成績表・範囲の鍵・外す時間足・上位の本数）は、実装の後に spec_lists へ書いて、1件 減らすと出力が変わることを測る",
+---
+>   "no_spec_lists_reason": "組む側が外から読む一覧（法則ファイル・成績表・範囲の鍵・外す時間足・上位の本数）は、この工事では増やしていない（stage_keep_range は既に在る欄を読むようにしただけ）。一覧を1件 減らすと出力が変わることは自己テスト T24⑤（法則）・T35（設定の欄）が振る舞いで測る",
+774,776c806,808
+<     "impl_functions": "実装の前なので空（理由＝no_impl_functions_reason）。実装の後に verify_design_contract.py --write の出力で置き替える",
+<     "must_use": "impl_functions が空なので空（承認ゲートの決まり）",
+<     "spec_lists": "実装の前なので空（理由＝no_spec_lists_reason）"
+---
+>     "impl_functions": "実物の全関数（gen_impl_functions.py＝verify_design_contract.functions_ast）から、この回で触った関数を選んだ＋新設2つ（手で選ぶ・132番の書き方）",
+>     "must_use": "触った関数が呼ぶ名前を、実装したコードから写した（承認ゲートの照合B が実物の本文に在るかを照らす）",
+>     "spec_lists": "空（理由＝no_spec_lists_reason・振る舞いは自己テストで測る）"
+874d905
+<    "q_range_of",
+877a909,911
+>   "stage_keep_of": [
+>    "SampleError"
+>   ],
+879c913,914
+<    "build_stage_candidates"
+---
+>    "build_stage_candidates",
+>    "stage_keep_of"
+882a918
+>    "build_stage_candidates",
+886c922,923
+<    "stage_counts"
+---
+>    "stage_counts",
+>    "stage_keep_of"
+994a1032
+>    "sample_regime_build",
+998a1037
+>    "stage_keep_of",

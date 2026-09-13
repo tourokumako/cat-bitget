@@ -1,0 +1,10 @@
+✅ --verify: STAGES は機械が書いたままです（hash=4cfc8a823ceb5582）
+✅ --verify: MATERIALS は機械が書いたままです（hash=c55cc4bff2fb96cb）
+✅ --verify: LAWS は機械が書いたままです（hash=0ee860b89a58d9c2）
+✅ --verify: RANKING は機械が書いたままです（hash=aa91c5a6fb1e7086）
+✅ --verify: CODEREF は機械が書いたままです（hash=8cd46846735bb576）
+✅ --verify: RANDOM は機械が書いたままです（hash=b77eb360eebdb373）
+✅ --verify: SELFTEST は機械が書いたままです（hash=d8573572d0bf54dd）
+✅ --verify: SPEC は機械が書いたままです（hash=9144c42a26d6a0e3）
+✅ --verify: CHECKLIST は機械が書いたままです（hash=cb5f35c3aee2bdd1）
+[gen_acceptance] 監査レポートが無い: /Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp36_work/mirror/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-10_m2e2_design_cp35_audit_report.md（fail-closed）

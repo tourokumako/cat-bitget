@@ -77,12 +77,15 @@
  "b82_abs_missing.sh": "d922e62d4d48267f5cf1a916f993aff255dadd93c74e399380181ac0c6bec8d0",
  "b83_bool_col_extra_key.sh": "61360144cf3ab5ab99259f709fb165f145b9d4850909206c52e703a1d4e0b24a",
  "b84_qtable_per_bundle.sh": "1ea8940a397db299bd38058ceaf6de8e31edd3473230be92213f59ff4ab3f600",
- "b85_band_ignores_laws.sh": "5c366fbd16639d16d6c81f9427d367589a8addbd247f9f2628918f11e8b73ea2",
+ "b85_band_ignores_laws.sh": "7e41a1b385aa5447d968de2d4c28ec3891b1fef0baa4a8d2186d35d2d610d2d5",
  "b86_stage_count.sh": "f93b3d04f719b867913544c38b0eba8260b5a95e408cb9fe74d1c6657ee6471e",
  "b87_stages_record.sh": "9f52745a6fbc3d3bfbaa253bef6720973528f90148ba8e10f91c0d684544fa0a",
  "b88_stage_fam_unknown.sh": "34e0d4b618bf74fe5e126218ef634e36eff04b16bae0f8dd85454d60ea85ad41",
  "b89_audit_todo_row_removed.sh": "a8ab5303e5612eb571cfeb3a5b4f6ffd316c6bfda3f2f940798f4e432e7949bc",
  "b90_expect_msg_mismatch.sh": "a1d55aaf4b206e6094d452416597710a6e694465e0f4fe448b5e28a2f7e93f47",
+ "b91_keep_range_ignored.sh": "4f3f9cb2acdb675284023b8b70a5ce7a47c2acdee66abfc03642f1a3dc374de3",
+ "b92_stage2_no_drop_tfs.sh": "0e129e880234dabb18b1ec0d88710006bbf1e71b2911e1d5bcc590e5ef5474c5",
+ "b93_law_filter_off.sh": "96256f24719f779ab66a24348c5ed421be4c756ea07e8fc3e293fa4ca6569300",
  "lib.sh": "7a590f07202a7dd14c96c8475822b08158b778b5559121f336a998e8a5314757",
  "_なにこれ": "承認の瞬間に凍結した、壊すプログラムのハッシュ値。run_breaks.py が走る前に照らす（監査 cp16 の E-12）"
 }
