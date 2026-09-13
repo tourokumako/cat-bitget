@@ -1019,11 +1019,24 @@ def expand_stage(stage_key: str | None = None) -> dict:
     rows = d.get("段") or []
     if not rows:
         raise SystemExit("[gen_regime_kb] §2.2 の候補の元データに段が0件（fail-closed）")
+    # ★2026-09-13（完成の条件 #4・まこさん決定「案1」「一本化する」）＝engine_tuner は段ごとの
+    #   法則の番号（law・law_or・law_width）をコードに書かず、この元データから読む。
+    #   元データは私（CC）が手で書くので、書いた番号が法則ファイルに実在するかをここで照らす（fail-closed）。
+    _law_nos = {str(x.get("番号")) for x in
+                (json.loads(SRC["laws"].read_text(encoding="utf-8")).get("法則") or [])
+                if isinstance(x, dict) and x.get("番号")}
+    if not _law_nos:
+        raise SystemExit("[gen_regime_kb] 法則ファイルから法則の番号を1件も読めない（fail-closed）")
 
     ng: list[str] = []
     out: dict = {}
     for s in rows:
         _k = s.get("key") or "(key なし)"
+        for _lk in ("law", "law_or", "law_width"):
+            _lv = s.get(_lk)
+            if _lv is not None and str(_lv) not in _law_nos:
+                ng.append(f"{_k}: {_lk} の法則の番号が法則ファイルに無い → {_lv}"
+                          f"（法則ファイル＝{SRC['laws'].name}）")
         fams: list = []
         pre: dict = {}
         geo: list = []
@@ -1057,6 +1070,7 @@ def expand_stage(stage_key: str | None = None) -> dict:
             if _op not in pres_all:
                 ng.append(f"{_k}: 知らない前処理 → {_f} に {_op}（前処理の一覧＝{sorted(pres_all)}）")
         out[_k] = {"stage": s.get("stage"), "role": s.get("role"), "law": s.get("law"),
+                   "law_or": s.get("law_or"), "law_width": s.get("law_width"),
                    "mako_note": s.get("mako_note"), "families": fams,
                    "lineages": list(s.get("lineages") or []), "geo_cols": geo, "pre": pre,
                    "bool_col": s.get("bool_col"), "語ごと": per_word,

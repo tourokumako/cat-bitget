@@ -2,9 +2,9 @@
 
 # 設計書｜M2-E-2 の残り＝場面の判定の束を、段ごとに候補を並べる形で組む（乱数を外す・符号を取り去る前処理を足す・探す時間を縮める）
 
-TARGET: .claude/tools/check_milestone_tidy.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/recipes/search_limits.json, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_bool_col_extra_key.sh, .claude/breaks/b84_qtable_per_bundle.sh, .claude/breaks/b85_band_ignores_laws.sh, .claude/breaks/b86_stage_count.sh, .claude/breaks/b87_stages_record.sh, .claude/breaks/b88_stage_fam_unknown.sh, .claude/breaks/b89_audit_todo_row_removed.sh, scripts/priority_rebuild/regime_r9_diag.py, scripts/priority_rebuild/engine_tuner_exec.py, .claude/tools/gen_regime_kb.py, .claude/tools/gen_stage0_match.py, .claude/ratchet/m2_stage_candidates.json, .claude/tools/gen_acceptance.py, .claude/tools/gen_audit_todo.py, .claude/tools/run_breaks.py, .claude/breaks/lib.sh, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_bool_col_extra_key.sh, .claude/breaks/b84_qtable_per_bundle.sh, .claude/breaks/b85_band_ignores_laws.sh, .claude/breaks/b86_stage_count.sh, .claude/breaks/b87_stages_record.sh, .claude/breaks/b90_expect_msg_mismatch.sh
+TARGET: .claude/tools/check_milestone_tidy.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/recipes/search_limits.json, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_bool_col_extra_key.sh, .claude/breaks/b84_qtable_per_bundle.sh, .claude/breaks/b85_band_ignores_laws.sh, .claude/breaks/b86_stage_count.sh, .claude/breaks/b87_stages_record.sh, .claude/breaks/b88_stage_fam_unknown.sh, .claude/breaks/b89_audit_todo_row_removed.sh, scripts/priority_rebuild/regime_r9_diag.py, scripts/priority_rebuild/engine_tuner_exec.py, .claude/tools/gen_regime_kb.py, .claude/tools/gen_stage0_match.py, .claude/ratchet/m2_stage_candidates.json, .claude/tools/gen_acceptance.py, .claude/tools/gen_audit_todo.py, .claude/tools/run_breaks.py, .claude/breaks/lib.sh, .claude/breaks/b76_laws_not_read.sh, .claude/breaks/b77_no_streak.sh, .claude/breaks/b78_law_literal.sh, .claude/breaks/b79_param_drawn.sh, .claude/breaks/b80_quantile_one_by_one.sh, .claude/breaks/b81_drop_tf_ignored.sh, .claude/breaks/b82_abs_missing.sh, .claude/breaks/b83_bool_col_extra_key.sh, .claude/breaks/b84_qtable_per_bundle.sh, .claude/breaks/b85_band_ignores_laws.sh, .claude/breaks/b86_stage_count.sh, .claude/breaks/b87_stages_record.sh, .claude/breaks/b90_expect_msg_mismatch.sh, .claude/tools/count_builder_literals.py
 NEW_FILE: .claude/tools/check_milestone_tidy.py
-MODEL: .claude/breaks/lib.sh, .claude/breaks/b33_extra_switch_off.sh, .claude/ratchet/m2_todo.json, .claude/tools/gen_impl_functions.py
+MODEL: .claude/breaks/lib.sh, .claude/breaks/b33_extra_switch_off.sh, .claude/ratchet/m2_todo.json, .claude/tools/gen_impl_functions.py, .claude/tools/gen_acceptance.py
 
 REQUIREMENTS: まこさんの決定（下の §0）と、`engine_tuner_milestones2.md` の §2.2（レンジ判定の検索方法）。
 
@@ -587,13 +587,16 @@ def _law_lineages(laws: dict, no: str) -> tuple:
 # 直す前（engine_tuner_gen.py:2422・そのまま引用）
 m_b, draw["B"] = _ranked_material_at(rng, "location", r_b, tfs, table)
 
-# 直した後＝法則 R1・R3 の系統で絞り、R3 の「執行足より上」も掛ける
-lins_b = _law_lineages(laws, "R1") or _law_lineages(laws, "R3")
+# 直した後＝段1 の元データが指す法則（law・law_or）の系統で絞り、「執行足より上」も掛ける
+# ★2026-09-13＝法則番号と役割をコードに書かない（完成の条件 #4・まこさん決定「案1」「一本化する」）
+s1 = stage_candidates("stage1")                      # 段の候補の元データ（m2_stage_candidates.json）
+lins_b = _law_lineages(laws, s1["law"]) or _law_lineages(laws, s1["law_or"])
 if not lins_b:
-    raise SampleError("R1・R3 が系統を名指ししていない（regime_laws.json・fail-closed）")
-m_b, draw["B"] = _ranked_material_for_lineage("location", lins_b, r_b, tfs, table,
-                                              tf_ok=upper)      # ★R3 の「執行足より上」
+    raise SampleError(f"{s1['law']}・{s1['law_or']} が系統を名指ししていない（regime_laws.json・fail-closed）")
+m_b, draw["B"] = _material_for_lineage(s1["role"], lins_b, r_b, tfs, table, tf_ok=upper)
 ```
+
+**★2026-09-13 に、上のコードの例を書き直しました。**直す前の例は `_law_lineages(laws, "R1") or _law_lineages(laws, "R3")` と、法則番号の文字をコードに書く形でした。**これは完成の条件 #4（組む関数に法則番号の直書き0件）と、この設計書の中で食い違っていました**（97回目に読むもの宣言の19件を読んで見つけた・worklog 20260913 §9）。
 
 **★`_ranked_material_for_lineage` は、`_ranked_material_at` の中の1行を変えたものです。**
 
@@ -621,6 +624,31 @@ if iref.FAMILY_LINEAGE[fam]["k"] not in want_lineages:
 **★C1・R2・R10 は、組む側に読ませません。**理由＝C1（強さと向きは別の物差し）と R2（同じ系統は1本まで）と R10（検出後の下位分類）は、**1つの枠の材料を決める法則ではなく、束全体の形を見る法則**です。**審査（G7）で落とす形が正しい形です。**
 
 **★だから完成の条件 AUDIT-1 の「R1〜R10 の10件」は、達成できません。**条件を「**組む側が読む9件**」に書き替えます。**残り4件は「審査で効く（組む側は読まない）」と、ここに明記しました。**
+
+## ★法則番号と段の役割を、コードに書かず元データから読む（2026-09-13・完成の条件 #4）
+
+**まこさんの決定（逐語 2026-09-13）**＝「本来修正すべきものなので、このセッションでは修正する」「了解。では修正してよい」（案1＝コードに法則番号の文字を書かない）「一本化する」（段の役割も元データから読む）。
+
+**なぜ要るか**＝組む関数の範囲（`_ranked_material_at` から `default_regime` の手前まで）に、法則番号の文字を書いたコードが14行 在ります（2026-09-13 に実物で数えた）。**完成の条件 #4 の文は「組む関数に法則番号の直書きが0件」です。**しかも、段ごとの表 `STAGE_SPEC` は、段の候補の元データ `m2_stage_candidates.json` と同じ「法則」と「役割」を二重に持ち、**段3 の役割が食い違っています**（コード＝`None`／元データ＝`location`）。
+
+**直し方**＝段ごとにどの法則を読むかと、段の役割を、元データ `m2_stage_candidates.json` の1か所に置き、コードはそこから読みます。
+
+| いまのコードの書き方 | 直した後に読む所 |
+|---|---|
+| `STAGE_SPEC` の `"role"`・`"law"`（段5つ分） | 元データの段ごとの `role`・`law`（`stage_candidates(段)` が渡す）。`STAGE_SPEC` には `label` と `pick` だけを残す |
+| 候補を作る関数の `_law_lineages(laws, "R3")`（系統を名指ししていないときの代わり） | 元データの段1 に足す `law_or`（R3） |
+| 束を組む関数の `_law_geo(laws, "R7")`（帯の幅） | 元データの段1 に足す `law_width`（R7） |
+| 束を組む関数の `_law_lineages(laws, "R1") or _law_lineages(laws, "R3")`（帯） | 段1 の `law`・`law_or` |
+| 束を組む関数の `_law_families(laws, "R5")`（強さの否定） | 段2a の `law` |
+| 束を組む関数の `_law_families(laws, "R6")`（3枠目） | 段2c の `law` |
+| 引いた記録の札 `"法則": "R7"`・`"R6"`・`"R4"`・`"R8"` | 段1 の `law_width`・段2c・段3・段2b の `law` |
+| 束を組む関数の `"location"`・`"env"`・`"sufficiency"`（材料を引く役割） | 段1・段2a・段2c の `role` |
+
+**★元データに書く法則番号が法則ファイルに無ければ、`gen_regime_kb.py` の `expand_stage` が止まります**（fail-closed）。元データは私が手で書くので、書き間違いを機械で止めるためです。
+
+**★数え方**＝完成の条件 #4 は、新しく作る道具 `.claude/tools/count_builder_literals.py` で数えます。組む関数の範囲を構文の木で読み、**説明の文（関数の頭の文字列）とコメントを数えず**、①乱数（`rng`・`random` の名前、`draw_param`・`draw_q`・`draw_int`・`draw_num` の呼び出し、`default_rng`・`shuffle`・`choice` の呼び出し）②法則番号だけの文字（`"R1"` のように、法則ファイルの番号の形の文字列そのもの）を数えます。**両方0件なら終了コード 0、1件でも在れば 1 を返します。**手本＝`gen_acceptance.py` の `build_random`（構文の木で `rng` を数える）。直し方の出どころ＝監査 cp35 の 3-3（「数える対象を『コメントと文字列を外したコード』にしてください」）。
+
+**★直す前の数え方の問題（2026-09-13 に実測）**＝①条件のコマンドが `awk` で始まり、承認のプログラム（`python3 `・`bash ` で始まるものだけを走らせる）が走らせない ②走らせても `grep -c` は0件のとき終了コード 1 を返し、合否が逆 ③説明の文も数えて5件 ④壊すプログラム b78 の数え方は、1行で閉じる説明の文で内と外の判定が逆になり、壊す前から2件＝壊さなくても「見つかった」を出す ⑤条件の前半「法則番号の直書き」を数えていない。
 
 ### 4-4 処理の流れ（うまくいったとき、何がどの順に起きるか）
 
@@ -983,6 +1011,7 @@ R9_0: A=W%(above) ∩ B=S-Rタッチ数(144,0.006)__15m ∩ not(C=|DI差21__1d|a
 | 分位の解決表の中身 | **作り方を変える（値は変わらない）** | 1つの鍵につき分位を81回 計算している（`engine_tuner_gen.py`:2928）。**確率の一覧をまとめて渡す形にする。**直すコードは 4-4 の手順9 |
 | **段ごとの候補の一覧** | **新しく作る** | `build_stage_candidates` が返す一覧。1件の形は 4-2 に書いた（stage・rank・col・family・tf・acc・label・horizon・cond・law_check・dropped_by の11個の鍵） |
 | **段ごとの記録** | **新しく作る** | 引いた記録（draw）に足す欄。鍵は6つ＝stage・n_candidates・n_passed・keep・sec・dropped（落ちた法則の番号ごとの本数） |
+| **段の候補の元データ（`m2_stage_candidates.json`）** | **欄を2つ足す（2026-09-13）** | 段1 に `law_or`（系統を名指ししていないときに読む法則＝R3）と `law_width`（帯の幅を引く法則＝R7）を足す。既に在る `role`・`law` は、エンジンが読む形にする（`stage_candidates(段)` が `families`・`lineages`・`geo_cols`・`pre`・`bool_col` に加えて `role`・`law`・`law_or`・`law_width` を渡す）。**元データに書いた法則番号が法則ファイルに無ければ `gen_regime_kb.py` の `expand_stage` が止まる** |
 
 **★段ごとの記録の実物の形**
 
@@ -1108,6 +1137,11 @@ R9_0: A=W%(above) ∩ B=S-Rタッチ数(144,0.006)__15m ∩ not(C=|DI差21__1d|a
 | 直す前と後で結果が同じか確かめる3本の走行 | 既定の動きが変わると md5 が変わる | 完成の条件 条件11 で測ります |
 | `regime_r9_diag.py`（診断） | **この工事で中を1か所 直します**（127行を123行のくり返しの前へ出す＝4-4 の手順10） | 束1本ずつの「測れない」の分岐（128〜130行）が使われなくなる。**代わりに `build_qtable` の中の『解決できない鍵は表から落とす』が効く**＝どちらも嘘の閾値は作らないが、**画面に出る文言が変わる** |
 | `sample_regime_build` の呼び出し元 | 引数から `rng` を落とすので、呼ぶ側の書き方が変わる | **直すのは1か所だけ**（実物で数えた＝`engine_tuner_gen.py`:2615 の1行）。戻り値は変えない |
+| **自己テスト T40③-2**（2026-09-13 に足した行） | `STAGE_SPEC[段]["law"]` と `"R3"` を読んでいる。`STAGE_SPEC` から `law` を外すと読めなくなる | **元データの `law`・`law_or` を読む形に合わせる**（組む関数の範囲の外なので #4 では数えないが、読む先を同じにする） |
+| **壊すプログラム `b78_law_literal.sh`**（2026-09-13 に足した行） | いまの数え方は、壊す前から「見つかった」を出す（worklog 20260913 §3） | **新しい道具で測る形にする。**①壊す前に道具が終了コード 0 を返すことを確かめる ②組む関数に `rng` を1行 書いて道具が 0 以外を返すか ③元に戻し、法則番号の文字を1つ書いて道具が 0 以外を返すか。②と③の両方で見つけたときだけ rc=1 |
+| **壊すプログラム b79・b86**（2026-09-13 に足した行） | 狙うコードの文字（b79＝`m = _mat_from_col(col, fam, tf, ranges, table=table)`・b86＝`if not (_ok_name or _ok_lin):`）が消えると止まる | **その2行は変えない**（法則番号の行とは別の行） |
+| **壊すプログラム b85**（2026-09-13 の実装のあとに足した行） | 狙うコードの文字 `_material_for_lineage("location", lins_b, …)` が、役割を元データから読む形（`s1["role"]`）に変わって消える。**設計書を作った時点で、この行を書き忘れていた**（実装して分かった） | **狙う文字を新しい行に合わせる**（壊し方＝法則の系統を渡さない形に戻す、は同じ）。b85 は完成の条件の表の壊すプログラムの欄に載っていない（#2 は「—」）ので、承認のときには走らない |
+| **`gen_regime_kb.py`**（2026-09-13 に足した行） | 元データに欄を足すと、読み方と照らし方が変わる | `expand_stage` が `law_or`・`law_width` を返し、法則番号が法則ファイルに無ければ止まる形にする。§2.2-0 の表の中身は変わらない見込み（`--verify stage` で確かめる） |
 
 **★数え方**＝`h2_pass.json` と `g2_pass.json` の対象の一覧に `engine_tuner_gen.py` が入っているかを実物で確かめました。呼び出し元の件数は `grep -rn "sample_regime_build" --include="*.py"` で数えました（2026-09-10 の実測＝定義1件・呼び出し1件・説明文1件・依頼書を作る道具の一覧に1件）。
 
@@ -1168,12 +1202,12 @@ R9_0: A=W%(above) ∩ B=S-Rタッチ数(144,0.006)__15m ∩ not(C=|DI差21__1d|a
 
 ### 6-1 わざと壊して止まるか試すテスト
 
-<!-- ACC_SELFTEST_START hash=97e8d2ccd162c8ab gen_acceptance.py が自動生成＝手で書き換えない -->
+<!-- ACC_SELFTEST_START hash=d8573572d0bf54dd gen_acceptance.py が自動生成＝手で書き換えない -->
 **★この節はプログラムが作ります（手で書き換えない）。**出どころ＝元データの「完成の条件」。
 
 | 壊すプログラム | 守る行 | 壊し方 |
 |---|---|---|
-| `b78_law_literal.sh` | #4 | 組む関数に法則番号か rng を1つ書き込むと、数が 0 でなくなる |
+| `b78_law_literal.sh` | #4 | 組む関数に rng を1行 書くと、また法則番号の文字を1つ書くと、数える道具が0件でないと数えて終了コード 1 を返す（壊すプログラムは、壊す前に道具が 0 を返すことを確かめてから2回 壊し、2回とも見つけたときだけ rc=1）。★2026-09-13 に書き替えた＝直す前のコマンド（awk と grep -c）は、承認のプログラムが走らせない形で、走らせても合否が逆で、説明の文も数え、法則番号を数えていなかった（worklog 20260913 §3・§6） |
 | `b79_param_drawn.sh` | #6 | 材料の数字を draw_param で引く行に戻すと、T24⑥ が落ちる |
 | `b86_stage_count.sh` | #11 | 候補の元から法則の名指しを外すと、法則の外の系統が混ざって T40③ の②が落ちる |
 | `b88_stage_fam_unknown.sh` | #14 | 元データに正本に無い指標の名前（例＝`帯内位置`）を1件 書くと `--write stage` が止まる |
@@ -1195,6 +1229,8 @@ R9_0: A=W%(above) ∩ B=S-Rタッチ数(144,0.006)__15m ∩ not(C=|DI差21__1d|a
 | 3 | 時間足を外したことで、探せる束が狭くなる | まこさん決定なので変えない。段ごとの候補の本数は 4-7 の表（段1 354本・段2a 104本・段2b 1本・段2c 229本）に出す＝外した後の数字。★2026-09-10 に、ここへ古い数字（3,408→2,982）を書いたまま残していたのを直した |
 | 4 | 案の番号の並びが粗く、探せる束が狭くなる | 段の数は まこさんが決める（決めてほしいこと1）。決まるまでは承認済みの格子のまま |
 | 5 | 実装のたびに、この設計書の行番号がずれる | 行番号は書かない。プログラムが --write の出力から引く |
+| 6 | 元データ（m2_stage_candidates.json）に法則番号を書き間違える（2026-09-13 に足した） | gen_regime_kb.py の expand_stage が、法則ファイルに無い番号なら止める（fail-closed） |
+| 7 | 段の役割を元データから読むと、組まれる束が変わる（2026-09-13 に足した） | 完成の条件17（直す前と後で結果が同じか確かめる3本の走行）で測る。段3 は役割を使う前に候補を返す作りなので、変わらない見込み |
 
 ### 6-3 見積もり
 
@@ -1204,6 +1240,8 @@ R9_0: A=W%(above) ∩ B=S-Rタッチ数(144,0.006)__15m ∩ not(C=|DI差21__1d|a
 | 自己テストの実測 | 30分 | gen --selftest 約6分半×3回（実測 2026-09-04 6分13秒／2026-09-05 6分40秒） |
 | 壊すプログラム9本（b76〜b84＝いま在る いちばん大きい番号 b75 の次から） | 1時間30分 | 手本 b33_extra_switch_off.sh。4本ぶんの見積もり40分から比例 |
 | 直した後の時間の実測 | 30分 | gen_s22_fidelity.py --breakdown を走らせ直す（実測 5本で24秒） |
+| 完成の条件 #4 の直し（2026-09-13 に足した）＝数える道具1本・エンジンのコード14行と役割・元データの欄2つ・expand_stage の照らし・自己テスト T40③-2・壊すプログラム b78 | 2時間 | 触る所の数（上の6つ）から見積もった。★過去の実測は無い＝見込みの2倍を超えたら、そこで止めて まこさんに報告する |
+| 承認2回（2026-09-13 に足した） | 1回 最大 約40分 | 承認のたびに壊すプログラム6本が走る。1本 最大 約6分半（session_worklog_20260911.md:849） |
 
 **★どれか1つでも見込みの2倍を超えたら、そこで止めて まこさんに報告します。**
 
@@ -1272,6 +1310,9 @@ R9_0: A=W%(above) ∩ B=S-Rタッチ数(144,0.006)__15m ∩ not(C=|DI差21__1d|a
 | **Q5 の3＝表が2つ以上 在るとき** | 機械が読む目印の中の表だけを見ます。ほかの表は見ません |
 | **Q5 の4＝この設計書を作る道具を書き換えられたら** | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
 | **Q5 の5＝過去の設計書の控え** | 直せません（承認済みで凍結されているため）。直すのは、これから書く設計書に効く仕組みだけです |
+| **#4 の数える道具が、別の書き方の乱数を見落とさないか（2026-09-13 に足した）** | 見落とします。数えるのは決めた名前（rng・random・draw_param ほか・default_rng・shuffle・choice）だけです。別の名前に置き換えた乱数や、ほかのファイルの関数を通した乱数は数えません。★乱数が残っていないかは、自己テスト T24⑥②（同じ段を2回 作って中身が同じか）も振る舞いで測ります |
+| **#4 の数える道具が、法則番号の直書きを全部 見つけるか（2026-09-13 に足した）** | 見つけるのは、法則番号だけの文字（"R1" のような文字列そのもの）です。文の中に混ぜた番号（例＝"R1 が系統を…"）や、数字を組み立てて作った番号は数えません |
+| **段の役割を元データから読んでいるか（2026-09-13 に足した）** | #4 の道具では数えません（役割の名前は、型の表を引く所など組む関数の外にも正しく在るため）。読む先を元データにしたことは、差分と監査で見てもらいます |
 | **§2.2 の段4・段5 を落としてよいか** | 私が判定していません。理由（確定した束と測った成績が先に要る）を書いて、監査に見てもらいます |
 
 ### 7-5 §4.6 ハード制約の照合
@@ -1307,7 +1348,7 @@ R9_0: A=W%(above) ∩ B=S-Rタッチ数(144,0.006)__15m ∩ not(C=|DI差21__1d|a
 | 1 | AUDIT-1＝法則を1件 変えると、組まれる束が変わる（T24⑤ が**組む側が読む9件**＝C4・C6・R1・R3・R4・R5・R6・R7・R8 で確かめる）。★2026-09-11 に「R1〜R10 の10件」から書き替えた＝監査 cp35 の実測で R1・R2・R3・R10 は束を変えなかった。うち R1・R3・C4 は作る順の手順10 で読ませる。**残る C1・R2・R10 は組む側に読ませない**（束全体の形を見る法則なので、審査 G7 で落とす形が正しい＝4-3 に理由を書いた） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 法則ファイルを読まずに固定の一覧で組む形へ壊すと、T24⑤ が落ちる | `—` | 対象 | **未着手** |
 | 2 | AUDIT-4b＝帯の枠が法則 R1・R3 の系統から引かれている（T39＝R1 の系統を『構造・位置』から『ボラ』に書き替えると、帯の材料が変わる）。★監査 cp35 の Critical C-1＝直す前は書き替えても1文字も変わらなかった | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 帯の引き方を `_ranked_material_at(rng, "location", …)` に戻すと、T39 が『法則を書き替えても帯が変わらない』で落ちる | `—` | — | **未着手** |
 | 3 | AUDIT-2＝段2a で DI差・MACDヒスト%・EMA傾き を使うとき、符号を取り去った大きさで比べている（T36＝マイナスの値が正しく折り返る・符号を取り去らない材料と混ざらない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 符号を取り去る前処理を外すと、T36 が『マイナスの側まで弱いと数えた』で落ちる | `—` | 対象 | **未着手** |
-| 4 | AUDIT-3＝組む関数に法則番号の直書きが0件、かつ乱数（rng・draw_param）が0件 | `awk '/^def _ranked_material_at/,/^def default_regime/' scripts/priority_rebuild/engine_tuner_gen.py ／ grep -cE 'rng／draw_param'` | 実経路 | 組む関数に法則番号か rng を1つ書き込むと、数が 0 でなくなる | `b78_law_literal.sh` | 対象 | **未着手** |
+| 4 | AUDIT-3＝組む関数に法則番号の直書きが0件、かつ乱数（rng・draw_param）が0件 | `python3 ../../.claude/tools/count_builder_literals.py` | 実経路 | 組む関数に rng を1行 書くと、また法則番号の文字を1つ書くと、数える道具が0件でないと数えて終了コード 1 を返す（壊すプログラムは、壊す前に道具が 0 を返すことを確かめてから2回 壊し、2回とも見つけたときだけ rc=1）。★2026-09-13 に書き替えた＝直す前のコマンド（awk と grep -c）は、承認のプログラムが走らせない形で、走らせても合否が逆で、説明の文も数え、法則番号を数えていなかった（worklog 20260913 §3・§6） | `b78_law_literal.sh` | 対象 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝組む関数に乱数を1行 書いても、法則番号の文字を1つ書いても、数える道具が 0件でないと数えた（AUDIT-3 が効いている） |
 | 5 | AUDIT-4＝regime_r9_diag.py --build 3 が束を3本 組める（0本でない） | `python3 scripts/priority_rebuild/regime_r9_diag.py --build 3 --no-trades --seed 7` | 実経路 | streak を掛ける行を消すと 0本に戻る | `—` | 対象 | **未着手** |
 | 6 | AUDIT-5＝材料の数字と緩めた写しの段と保つ上限に乱数が無い（T24⑥＝材料が成績表の部品と一致・off が隣の段・同じ番号で2回 組んで一致） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 材料の数字を draw_param で引く行に戻すと、T24⑥ が落ちる | `b79_param_drawn.sh` | 対象 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝材料の数字を乱数で引く形に戻すと、T24⑥ が「成績表の列の数字と違う」で落ちた |
 | 7 | 条件6＝T24②・T26・T30 が pass（100本 組んで G7 を通る束が1本以上）★2026-09-10 の実測＝この工事を始める前の時点で、既に3件とも pass していた（93回目の実装の効き）。だから、この条件だけでは この工事の完成を測れない。★だから監査確認を『—』にした（監査に出せるのは5件までで、測れない条件に枠を使わない） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | streak を掛ける行を消すと、T24② が「通った0本」に戻る | `—` | — | **未着手** |
@@ -1326,17 +1367,17 @@ R9_0: A=W%(above) ∩ B=S-Rタッチ数(144,0.006)__15m ∩ not(C=|DI差21__1d|a
 
 ### 7-7 触る関数と、その定義の行
 
-<!-- ACC_CODEREF_START hash=afbaec822d1006db gen_acceptance.py が自動生成＝手で書き換えない -->
+<!-- ACC_CODEREF_START hash=8cd46846735bb576 gen_acceptance.py が自動生成＝手で書き換えない -->
 **★この節はプログラムが作ります（手で書き換えない）。**出どころ＝`verify_design_contract.spec_from_impl` の `def_lines`（★行番号を手で写さない・93番）。
 
 **直す相手**＝`scripts/priority_rebuild/engine_tuner_gen.py`
 
 | 触る関数 | 定義の行 |
 |---|---|
-| `sample_regime_build` | 2794 |
+| `sample_regime_build` | 2808 |
 | `_ranked_material_at` | 2320 |
 | `regime_draw_order` | 2359 |
-| `build_qtable` | 3314 |
+| `build_qtable` | 3334 |
 
 **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 145件の関数が在ります）。
 

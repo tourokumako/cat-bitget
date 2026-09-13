@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""engine_tuner_gen.py — 歩4 生成器（2段サンプリング＝構造をランダムに撒く→有望構造の値を TPE で詰める）
-
-fix_map 歩4 の定義（まこさん承認済みの計画）:
-  ・第1段＝構造（役割構成・本数・つなぎ方・形・材料）をランダムに撒く＝DSR の分散推定の土台を兼ねる
-    （CP1 提案4(c)・監査 4-16／4-21 の実装＝分散・p値・PBO は第1段のサンプルだけから作る）。
-  ・第2段＝有望構造の値を TPE で詰める。第2段の結果は統計判定に使わない（値の微調整だけ・CP1 解A）。
-  ・段の最後に BH 法の偽発見率の検定（CP1 提案4(e)・監査 4-20）。
-  ・CP1 の層化の門（候補1本1本を ATR% 帯の非悪化で弾く選別の門・監査 4-22）もこの段構成に入れる。
-  ・落とした試行の機械出力は現行の形を踏襲（黙って消さない・L-330／L-356）。
-  ・途中で止まった探索を続きから再開できる仕組み（R12）＝journal に済んだ試行を記録し再利用する。
-  ・分位 threshold_q の解決表（値決め窓・探索開始時に1回固定・設計書 §5-4）の実装もここ。
+"""engine_tuner_gen.py — 売買ルールの案を作るプログラム（第1段＝条件の形を作る → 第2段＝有望な形の数字を TPE で詰める）
+★2026-09-13 に書き直した（まこさん指示）。元の文（2026-08-01・commit 863935a）は「第1段＝構造をランダムに作る」「まこさん承認済みの計画」だったが、その承認は後の決定で上書きされた＝乱数で案の形を作ることは 2026-08-08 に「論外」（違反の記録 #14）、乱数そのものは 2026-09-09 に禁止（恒久の決まり67番。乱数はこの commit で入った）。
+  ・第1段＝条件の形（役割・本数・つなぎ方・形・材料）を作る。★いまのコードは、入口と出口の条件をまだ乱数で作っている＝この古い計画のまま動いている。外すのは入口＝M3・出口＝M4（まこさんが決めた順番）。場面の判定の束だけは乱数を使わない（成績表の順位から組む・M2-E-2）。
+    ★「乱数で作る」を承認済みの根拠として読まない。新しく書き足さない。どの関数が何回 乱数を使うかは、設計書 acceptance.md §2-4 の自動生成の表を見る（数を手で書かない）。
+  ・DSR（試した回数が多いほど合格を厳しくする仕組み）の分散・p値・PBO は、第1段の試行だけから作る（CP1 提案4(c)・監査 4-16／4-21）。
+  ・第2段＝有望な形の数字を TPE で詰める。結果は統計判定に使わない（値の微調整だけ・CP1 解A）。★恒久の決まり67番は TPE を「試行の成績に基づく＝対象外」と書いているが、TPE の部品（optuna 4.3.0）は最初の10回を乱数で選び、その後も候補を乱数で引く（optuna の samplers/_tpe/sampler.py:281・317・478）。これを乱数の禁止に当てるかは まこさんが決める（2026-09-13 に分かった・まだ決まっていない）。
+  ・段の最後に BH 法の偽発見率の検定＝たまたま良く見える案が混ざる割合を抑える（CP1 提案4(e)・監査 4-20）。
+  ・値動きの大きさ（ATR%）の帯ごとに、いまの設定より悪くなった案を1本ずつ落とす選別（CP1 の層化・監査 4-22）。
+  ・落とした試行の出力は、理由と一緒に残す（黙って消さない・L-330／L-356）。途中で止まった探索は続きから再開できる（R12）＝journal に済んだ試行を記録し再利用する。
+  ・閾値の分位 threshold_q の解決表（値決め窓・探索開始時に1回固定・設計書 §5-4）の実装もここ。
+  ★BH 法・帯ごとの選別・解決表の関数は乱数を使わない（bh_select・strat_gate・build_qtable の中に乱数の語 0件・2026-09-13 に数えた）。
 
 守る制約:
   H2＝材料は当該バーまでの確定値のみ（材料の組み立ては observe_diag build_features を再利用＝コピー禁止）。
@@ -2508,6 +2508,13 @@ def stage_candidates(stage: str) -> dict:
                 "geo_cols": tuple(_s.get("geo_cols") or ()),
                 "pre": dict(_s.get("pre") or {}),
                 "bool_col": _s.get("bool_col"),
+                # ★2026-09-13（完成の条件 #4・まこさん決定「案1」「一本化する」）＝段の役割と法則の番号も
+                #   元データから渡す。コードに法則の番号と役割を書かない（STAGE_SPEC に在った二重持ちを消した）。
+                #   番号が法則ファイルに実在するかは `gen_regime_kb.expand_stage` が照らす（fail-closed）。
+                "role": _s.get("role"),
+                "law": _s.get("law"),
+                "law_or": _s.get("law_or"),
+                "law_width": _s.get("law_width"),
             }
         if not _STAGE_CANDS_MEMO:
             raise SampleError("§2.2 の候補の元データに段が0件（fail-closed）")
@@ -2517,13 +2524,16 @@ def stage_candidates(stage: str) -> dict:
 
 
 STAGE_SPEC = {
-    # 段ごとの「役割・札・法則の番号・候補の元の引き方」＝設計書 4-4 の手順2〜8 の表を、そのまま持つ。
+    # 段ごとの「札・候補の元の引き方」＝設計書 4-4 の手順2〜8 の表。
     #   ★指標の名前をここに書かない＝候補の元は法則ファイル（family／系統）と §2.2（探す語）から読む。
-    "stage1":  {"role": "location",    "label": None,   "law": "R1", "pick": "lineage"},
-    "stage2a": {"role": "env",         "label": "強さ", "law": "R5", "pick": "family"},
-    "stage2b": {"role": None,          "label": None,   "law": "R8", "pick": "bool_col"},
-    "stage2c": {"role": "sufficiency", "label": None,   "law": "R6", "pick": "family"},
-    "stage3":  {"role": None,          "label": None,   "law": "R4", "pick": "number"},
+    #   ★2026-09-13（完成の条件 #4・まこさん決定「案1」「一本化する」）＝「役割」と「法則の番号」を
+    #     ここから外し、§2.2 の候補の元データ（`stage_candidates(段)` の role・law）から読む形にした。
+    #     直す前は同じものを元データと二重に持ち、段3 の役割が食い違っていた（ここ＝None／元データ＝location）。
+    "stage1":  {"label": None,   "pick": "lineage"},
+    "stage2a": {"label": "強さ", "pick": "family"},
+    "stage2b": {"label": None,   "pick": "bool_col"},
+    "stage2c": {"label": None,   "pick": "family"},
+    "stage3":  {"label": None,   "pick": "number"},
 }
 # ★符号を取り去る前処理を付ける指標は、ここに書かない（2026-09-11 に元データへ移した）。
 #   出どころ＝`m2_stage_candidates.json` の段ごとの `pre` の欄（`stage_candidates(stage)["pre"]`）。
@@ -2552,6 +2562,9 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits,
     spec = STAGE_SPEC.get(stage)
     if spec is None:
         raise SampleError(f"知らない段: {stage}（使えるのは {sorted(STAGE_SPEC)}）")
+    # ★§2.2 の候補の元データ（手で書かない）。段の役割と法則の番号も、ここから読む
+    #   （2026-09-13・完成の条件 #4・まこさん決定「案1」「一本化する」）。
+    spec_c = stage_candidates(stage)
     # ★閾値の分位＝1点（まこさん決定 2026-09-11）。承認済みの範囲の真ん中を使う
     #   ＝私が数字を作らない（両端は `search_limits.json` の `quantile_range`）。
     _q_lo, _q_hi = q_range_of(limits)
@@ -2561,7 +2574,7 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits,
     if stage == "stage2b":                         # 向きの否定＝承認済みの借用が1本だけ
         # ★列の名前は §2.2 の元データ（`m2_stage_candidates.json` の `bool_col`）から読む。
         #   出どころ＝まこさん決定 2026-09-01「承認済みの借用」。自前の向きは M2-M。
-        _bc = stage_candidates(stage)["bool_col"]
+        _bc = spec_c["bool_col"]
         if not _bc:
             raise SampleError("段2b の真偽の列が §2.2 の元データに無い（fail-closed）")
         out.append({"stage": stage, "rank": 1, "col": _bc, "family": None,
@@ -2576,11 +2589,11 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits,
         for i, n in enumerate(range(_n_lo, _n_hi + 1), start=1):
             out.append({"stage": stage, "rank": i, "col": None, "family": None, "tf": None,
                         "acc": None, "label": None, "horizon": None,
-                        "cond": {"role": "location", "form": "streak", "value": {"n": int(n)}},
+                        "cond": {"role": spec_c["role"], "form": "streak", "value": {"n": int(n)}},
                         "law_check": "—", "dropped_by": None})
         return out
 
-    role, label = spec["role"], spec["label"]
+    role, label = spec_c["role"], spec["label"]
     ranges = material_ranges()
     rr = table["roles"][role]
     # ★法則 C4・R3 の「執行足より上」＝型の表の時間足の並びで 5m より後ろ（`sample_regime_build` と同じ式）
@@ -2591,9 +2604,10 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits,
     _drop_tfs = limits.get("drop_tfs") or ["1m", "3m", "10m"]
     upper = [t for t in upper if t not in set(_drop_tfs)]
     ok_tfs = set(_role_tfs(tfs, table, role)) & set(upper)
-    spec_c = stage_candidates(stage)               # §2.2 の候補の元データ（手で書かない）
-    fams_law, side_law = _law_families(laws, spec["law"])
-    lins_law = _law_lineages(laws, spec["law"]) or _law_lineages(laws, "R3")
+    _law = spec_c["law"]                           # ★法則の番号は元データから（コードに書かない・#4）
+    fams_law, side_law = _law_families(laws, _law)
+    _law_or = spec_c.get("law_or")                 # 系統を名指ししていないときに読む法則（段1＝元データの law_or）
+    lins_law = _law_lineages(laws, _law) or (_law_lineages(laws, _law_or) if _law_or else ())
     rank = 0
     for fam, tf, lab, hor, med, ncol, col in ranked_groups(role, label):
         if fam not in iref.FAMILY_LINEAGE or fam not in ranges:
@@ -2647,7 +2661,7 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits,
                     "acc": med, "label": lab, "horizon": hor, "cond": cond,
                     "law_check": "—", "dropped_by": None})
     if not out:
-        raise SampleError(f"{stage} の候補が0件（法則 {spec['law']} の名指し・§2.2 の語・型の表の絞りの後）")
+        raise SampleError(f"{stage} の候補が0件（法則 {_law} の名指し・§2.2 の語・型の表の絞りの後）")
     return out
 
 
@@ -2812,6 +2826,11 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
         raise SampleError(f"場面 {name} の束の組み方は未定義（レンジ以外は M2-6〜M2-8 で作る）")
     # ★M2-E-2（2026-09-10）＝相場の法則を **読んで** 組む。直す前は読めることを確かめるだけだった。
     laws = laws_for_scene(name)
+    # ★2026-09-13（完成の条件 #4・まこさん決定「案1」「一本化する」）＝枠ごとに使う法則の番号と役割を、
+    #   コードに書かず §2.2 の候補の元データから読む（段1＝帯と帯の幅・段2a＝強さの否定・
+    #   段2b＝向きの否定・段2c＝3枠目・段3＝持続）。直す前はここに "R7"・"R1"・"R3"・"R5"・"R6"・
+    #   "R4"・"R8" と役割の名前を直に書いていた（完成の条件 #4 の文＝組む関数に法則番号の直書きが0件）。
+    s1, s2a, s2b, s2c, s3 = (stage_candidates(k) for k in ("stage1", "stage2a", "stage2b", "stage2c", "stage3"))
     draw: dict = {"order_n": int(order_n),
                   "法則から組んだ": {"形": sorted(laws["forms"]),
                                      "数える法則": [n for n, _s, _c in laws["counts"]],
@@ -2821,13 +2840,13 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
     # ★2026-09-11（手順10）＝3枠目 G の順位も受け取る（直す前は3つ＝B・C・向きだけ）
     r_b, r_c, r_g, side_b = regime_draw_order(order_n)
     # ── A 帯の幅（R7）＝法則が名指しした geo を、法則が決めた側で ──
-    geo_names, geo_side = _law_geo(laws, "R7")
+    geo_names, geo_side = _law_geo(laws, s1["law_width"])
     if not geo_names:
-        raise SampleError("R7 が geo を名指ししていない（regime_laws.json・fail-closed）")
+        raise SampleError(f"{s1['law_width']} が geo を名指ししていない（regime_laws.json・fail-closed）")
     g0 = geo_names[0]
-    cond_a = {"role": "location", "form": "level", "material": [{"geo": g0}],
+    cond_a = {"role": s1["role"], "form": "level", "material": [{"geo": g0}],
               "side": geo_side.get(g0, "above"), "value": _thr_fixed(limits)}
-    draw["A"] = {"geo": g0, "側": cond_a["side"], "法則": "R7"}
+    draw["A"] = {"geo": g0, "側": cond_a["side"], "法則": s1["law_width"]}
     # ── B 構造・位置（R1・R3）＝location の成績表の r_b 位・向きは order_n で決まる ──
     # ★2026-09-11（M2-E-3 の手順10・監査 cp35 の Critical C-1）＝帯の枠を法則から引く形にした。
     #   直す前＝`_ranked_material_at(rng, "location", r_b, tfs, table)`＝役割の名前をコードに直書き。
@@ -2836,25 +2855,26 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
     #     `_law_lineages` で系統を読み、`_material_for_lineage` でその系統の中から順位で引く。
     #   ★`tf_ok=upper`＝法則 R3 の「執行足より上」。直す前は帯に渡しておらず、1分足・3分足も引けた
     #     （監査の A1-d の2番）。
-    lins_b = _law_lineages(laws, "R1") or _law_lineages(laws, "R3")
+    lins_b = _law_lineages(laws, s1["law"]) or _law_lineages(laws, s1["law_or"])
     if not lins_b:
-        raise SampleError("R1・R3 が系統を名指ししていない（regime_laws.json・fail-closed）")
-    m_b, draw["B"] = _material_for_lineage("location", lins_b, r_b, tfs, table, tf_ok=upper)
+        raise SampleError(f"{s1['law']}・{s1['law_or']} が系統を名指ししていない（regime_laws.json・fail-closed）")
+    m_b, draw["B"] = _material_for_lineage(s1["role"], lins_b, r_b, tfs, table, tf_ok=upper)
     if pre_b is not None:                               # ★2026-09-05（M2-C-4）＝前処理の道（既定は通らない）
         m_b = {**m_b, "pre": dict(pre_b)}
         draw["B_pre"] = dict(pre_b)
-    cond_b = {"role": "location", "form": "level", "material": [m_b],
+    cond_b = {"role": s1["role"], "form": "level", "material": [m_b],
               "side": side_b, "value": _thr_fixed(limits)}
     # ── C 非トレンド（R5・R8）＝法則 R5 が名指しした family の中から、成績表の r_c 位 ──
     #    ★直す前＝env の全部から r_c 位を取っていた（法則が名指しした8種を見ていない）。
-    fams_r5, side_r5 = _law_families(laws, "R5")
-    m_c, draw["C"] = _material_for_law("env", fams_r5, r_c, tfs, table, label="強さ",
-                                       tf_ok=[t for t in _role_tfs(tfs, table, "env") if t in upper])
+    fams_r5, side_r5 = _law_families(laws, s2a["law"])
+    m_c, draw["C"] = _material_for_law(s2a["role"], fams_r5, r_c, tfs, table,
+                                       label=STAGE_SPEC["stage2a"]["label"],
+                                       tf_ok=[t for t in _role_tfs(tfs, table, s2a["role"]) if t in upper])
     # ★側も法則から取る＝R5 は family ごとに above／below を持つ。not で包むので、
     #   入る線は「法則が言う側の逆」を否定する形にする（法則が below と言うなら above を not）。
     want_side = side_r5.get(draw["C"]["種類"], "below")
     strong_side = "above" if want_side == "below" else "below"
-    strong = {"role": "env", "form": "level", "material": [m_c],
+    strong = {"role": s2a["role"], "form": "level", "material": [m_c],
               "side": strong_side, "value": _thr_fixed(limits)}
     cond_c = {"not": strong}
     draw["C"]["法則の側"] = want_side
@@ -2864,22 +2884,22 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
     #      成績表の順位の上から1本 取る。側も法則が family ごとに持つ（below／above）。
     #    ★役割は sufficiency（値動きの大きさ）＝型の表の系統「ボラ」がここに入る。
     cond_g = None
-    fams_r6, side_r6 = _law_families(laws, "R6")
+    fams_r6, side_r6 = _law_families(laws, s2c["law"])
     if fams_r6:
         # ★2026-09-11（手順10・監査 cp35 の A1-d の3番）＝順位を 1 の直書きから案の番号へ。
         #   ★`tf_ok=upper`＝法則 C4 の「執行足より上」。直す前は渡しておらず、1分足・3分足も引けた。
-        m_g, draw["G"] = _material_for_law("sufficiency", fams_r6, r_g, tfs, table, tf_ok=upper)
-        cond_g = {"role": "sufficiency", "form": "level", "material": [m_g],
+        m_g, draw["G"] = _material_for_law(s2c["role"], fams_r6, r_g, tfs, table, tf_ok=upper)
+        cond_g = {"role": s2c["role"], "form": "level", "material": [m_g],
                   "side": side_r6.get(draw["G"]["種類"], "below"), "value": _thr_fixed(limits)}
-        draw["G"]["法則"] = "R6"
+        draw["G"]["法則"] = s2c["law"]
         draw["G"]["側"] = cond_g["side"]
     # ── F 何本 続いたか（R4）＝★M2-E-2 で新しく足した。直す前は無く、20回とも R4 で落ちていた ──
     cond_f = None
     if "streak" in laws["forms"]:
-        cond_f = {"role": "location", "form": "streak",
+        cond_f = {"role": s3["role"], "form": "streak",
                   "value": _nv_fixed(limits, "int_range", "n", order_n),
                   "inner": json.loads(json.dumps(cond_b))}
-        draw["F"] = {"形": "streak", "法則": "R4", "本数": cond_f["value"].get("n")}
+        draw["F"] = {"形": "streak", "法則": s3["law"], "本数": cond_f["value"].get("n")}
     # ── E 状態を保つ（C6・C7）＝on＝A∩B∩C（∩F）／off＝それぞれを緩い側へずらした any ──
     off_c = json.loads(json.dumps(strong))
     off_c["value"]["threshold_q"] = _loose_q_fixed(limits, strong["value"]["threshold_q"], strong_side)
@@ -2890,7 +2910,7 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
     #   ★自前の向きの判定は M2-M（まこさんが決めた順番を動かさない）。
     cond_d = None
     if "not" in laws["forms"]:
-        _bc2b = stage_candidates("stage2b")["bool_col"]
+        _bc2b = s2b["bool_col"]
         if _bc2b:
             cond_d = {"not": {"bool_col": _bc2b, "want": True}}
     on_all = ([cond_a, cond_b, cond_c]
@@ -2900,14 +2920,14 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
     if "hysteresis" not in laws["forms"]:
         raise SampleError("C6（hysteresis の形）が法則に無い（regime_laws.json・fail-closed）")
     if "not" not in laws["forms"]:
-        raise SampleError("R8（not の形）が法則に無い（regime_laws.json・fail-closed）")
+        raise SampleError(f"{s2b['law']}（not の形）が法則に無い（regime_laws.json・fail-closed）")
     hyst = {"form": "hysteresis",
             "on": {"all": on_all},
             "off": {"any": [_flip_loose(limits, cond_a), _flip_loose(limits, cond_b), off_c]},
             "value": _nv_fixed(limits, "state_hold_bars_range", "n", order_n)}
     build = {"entry": {"out_col": REGIME_OUT_COL[name], "tree": {"all": [hyst]}}, "block": None}
     if cond_d is not None:
-        draw["D"] = {"形": "not", "法則": "R8", "真偽の列": cond_d["not"]["bool_col"]}
+        draw["D"] = {"形": "not", "法則": s2b["law"], "真偽の列": cond_d["not"]["bool_col"]}
     # ★段ごとの記録（手順6・設計書 4-8）＝候補が何本 在ったかを、引いた記録に足す。
     #   いまの鍵（order_n・法則から組んだ・A・B・C・G・F）は1つも消していない。
     draw["stages"] = stage_counts(laws, table, tfs, limits)
@@ -6017,9 +6037,12 @@ def selftest() -> int:
             if _ng1:
                 ng.append(f"T40③-1: {_st40} に §2.2 の元データの外の指標が出た: {_ng1[:5]}")
             # ③-2 指標が法則の名指し（family か 系統）の中だけから来ているか
-            _law40 = STAGE_SPEC[_st40]["law"]
+            # ★2026-09-13（完成の条件 #4・まこさん決定「一本化する」）＝法則の番号は元データから読む
+            #   （直す前は STAGE_SPEC の law と "R3" の文字を読んでいた）。組む側と同じ所を読む。
+            _law40 = stage_candidates(_st40)["law"]
             _fl40, _ = _law_families(_laws40, _law40)
-            _ll40 = _law_lineages(_laws40, _law40) or _law_lineages(_laws40, "R3")
+            _lor40 = stage_candidates(_st40).get("law_or")
+            _ll40 = _law_lineages(_laws40, _law40) or (_law_lineages(_laws40, _lor40) if _lor40 else ())
             if STAGE_SPEC[_st40]["pick"] == "family":
                 _ng2 = sorted({f for f in _fams40 if _fl40 and f not in _fl40})
             else:

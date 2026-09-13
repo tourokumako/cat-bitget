@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=6119a6806cff9dc0 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=49b0424e1b444584 gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -87,12 +87,12 @@
 - 検収専用の値は数えません＝`engine_tuner_gen.py` の `selftest` と `KENSHU_LIMITS`（出どころ＝`recipes/search_limits.json` の `_note` の逐語「検収専用の値は engine_tuner_gen.py の selftest の中にだけ存在する」）。
 - **番人**＝この4か所のどれかに架空の数の並びを1つ 足すと、その場所の件数がちょうど 1 増えます（`--selftest` の T12・わざと壊して確かめています）。
 
-**★4か所 合わせて 数の並び 37 件（数字 86 個）。範囲で探せるのは 30 件だけです。**
+**★4か所 合わせて 数の並び 37 件（数字 86 個）。範囲で探せるのは 31 件だけです。**
 
 | # | 場所 | 何の数字か | 決まった数字だけ（数の並び） | その中の数字 | 範囲で探せる |
 |---|---|---|---|---|---|
 | 1 | scripts/priority_rebuild/observe_config.json | 指標を作るときのパラメータ（RSI14 の 14） | **36 件** | 82 個 | 0 件 |
-| 2 | scripts/priority_rebuild/recipes/search_limits.json | 使い方の中の本数（slope の n）・閾値の段・上限 | **1 件** | 4 個 | 16 件 |
+| 2 | scripts/priority_rebuild/recipes/search_limits.json | 使い方の中の本数（slope の n）・閾値の段・上限 | **1 件** | 4 個 | 17 件 |
 | 3 | scripts/priority_rebuild/engine_tuner_gen.py | 生成器が数字を選ぶときに、コードに直に書いた数字 | **0 件** | 0 個 | 0 件 |
 | 4 | scripts/priority_rebuild/e38_logics.json の search_space | E38 の探索が振る値 | **0 件** | 0 個 | 14 件 |
 
@@ -600,7 +600,7 @@ T16（架空の列を宣言の写しに足すと、欄が変わり「★列を�
 | 部品 | **555 種** | `signal_families.json` の `parts` | （一覧は ★2 と ★7） |
 | 時間足 | **11 本** | `signal_families.json` の `timeframes` | `1m`・`3m`・`5m`・`10m`・`15m`・`30m`・`1h`・`2h`・`4h`・`6h`・`1d` |
 | 材料の列（部品 × 時間足） | **6105 列** | 上の2つの掛け算 | — |
-| 材料の前処理 | **7 種** | `engine_tuner_exec.MATERIAL_PRE` | `ts_max`・`ts_min`・`ts_rank`・`ts_std`・`since_min`・`since_max`・`at_entry` |
+| 材料の前処理 | **8 種** | `engine_tuner_exec.MATERIAL_PRE` | `ts_max`・`ts_min`・`ts_rank`・`ts_std`・`since_min`・`since_max`・`at_entry`・`abs` |
 | 材料2本の組み方 | **3 種** | `engine_tuner_exec.PAIR_OPS` | `sub`・`div`・`corr` |
 
 **M2-2 で足すもの（やることリスト §4 の M2-2-4）**＝否定（not）／状態を保つ形（入る線と出る線・続く長さは探す値）／帯を作る形（山谷の確定遅延・束ね・連動する閾値）／切り上げの部品。**この節の数が、そのぶん増えます。**

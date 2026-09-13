@@ -17,10 +17,12 @@ python3 - "$GEN" <<'PYEOF'
 import sys
 p = sys.argv[1]
 s = open(p, encoding='utf-8').read()
-old = '    m_b, draw["B"] = _material_for_lineage("location", lins_b, r_b, tfs, table, tf_ok=upper)'
+# ★2026-09-13（完成の条件 #4・まこさん決定「一本化する」）＝組む側が役割を元データ（s1["role"]）から
+#   読む形になったので、壊す対象の行の文字を合わせた。壊し方（法則の系統を渡さない形に戻す）は同じ。
+old = '    m_b, draw["B"] = _material_for_lineage(s1["role"], lins_b, r_b, tfs, table, tf_ok=upper)'
 if old not in s:
     raise SystemExit("[b85] 壊す対象の行が見つからない: " + old)
-new = ('    m_b, draw["B"] = _ranked_material_at("location", r_b, tfs, table, tf_ok=upper)'
+new = ('    m_b, draw["B"] = _ranked_material_at(s1["role"], r_b, tfs, table, tf_ok=upper)'
        '  # b85 が壊した（法則を読まない）')
 open(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))
 PYEOF

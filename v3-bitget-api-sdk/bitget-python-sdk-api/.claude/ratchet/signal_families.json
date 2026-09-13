@@ -2505,6 +2505,11 @@
    "grids": {
     "count_range": "無制限",
     "depth_max": "無制限",
+    "drop_tfs": [
+     "1m",
+     "3m",
+     "10m"
+    ],
     "exit_mult_range": {
      "dec": 1,
      "hi": 150.0,
@@ -2604,6 +2609,12 @@
      "lo": 0.5
     },
     "role_max": "無制限",
+    "stage_keep_range": {
+     "hi": null,
+     "kind": "int",
+     "lo": 1
+    },
+    "stage_limits": {},
     "state_hold_bars_range": {
      "hi": 288,
      "kind": "int",
