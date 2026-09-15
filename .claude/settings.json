@@ -111,6 +111,14 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_purpose_gate.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_audit_request_gen.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_audit_report_form.sh"
           }
         ]
       },

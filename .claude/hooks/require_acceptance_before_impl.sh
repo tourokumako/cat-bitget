@@ -149,7 +149,19 @@ _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.
               #   組み合わせ方など、思考が支離滅裂でその場しのぎすぎるんだよ」。私が §4 の項目を
               #   思いつきで足し、4回とも まこさんの問いで落ちが出た（恒久39番＝正本の網羅一覧
               #   との全数照合から始める、に反していた）。
-              'gen_design_sections.py')
+              'gen_design_sections.py',
+              # ★2026-09-15＝監査の依頼書をテンプレから作り、依頼書から結果の骨組みを作り、2つを照らす道具
+              #   （まこさん指示「監査の依頼書と結果で項目をそろえて、テンプレ以外では書かないように強制すればいいじゃん。」
+              #    ・置き場所「案AでOK」）。
+              #   ★この道具は書き込む道具。名前だけで通すと Bash から好きなファイルを書ける道になるので、
+              #     書く先を道具の側（gen_audit_docs.py の out_ok）で次の2つに限った＝
+              #     ①SDK/.claude/audits/inputs/<名前>_audit_request.md（テンプレの _template.md は書かない・
+              #       既に在るファイルは、道具が作ったまま書き替えられておらず、その結果ファイルがまだ無いときだけ上書きする・
+              #       この下の監査依頼書ゲートと同じ照らしを道具の中で掛け、❌ なら書かない）
+              #     ②SDK/.claude/audits/<何か>_work/ の中の .md（結果の骨組みはここにだけ書く）。
+              #   承認の印・凍結の記録・hook・道具・戦略の .py には1バイトも書かない。
+              #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
+              'gen_audit_docs.py')
 _RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')
