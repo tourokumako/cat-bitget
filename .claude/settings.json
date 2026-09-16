@@ -119,6 +119,10 @@
           {
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_audit_report_form.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_audit_fix_gen.sh"
           }
         ]
       },

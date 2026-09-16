@@ -1,7 +1,7 @@
 #!/bin/bash
 # EXPECT_RC: 1
 # MEANS: 持続（streak）を掛ける行を消すと、法則の審査が束を落として T24② が落ちた
-# EXPECT_MSG: T24
+# EXPECT_MSG: ❌ T24②
 # b77 — 持続（streak）を掛ける行を消すと、束が法則の審査を通らなくなるか
 #   守っているもの＝完成の条件 条件6・AUDIT-4（100本 組んで審査を通る束が1本以上）
 #   壊し方＝`sample_regime_build` の「法則に streak が在れば持続を掛ける」行を、常に偽にする。

@@ -52,6 +52,10 @@ READONLY = ("cat", "grep", "rg", "ls", "wc", "head", "tail", "diff", "shasum", "
 GIT_OK = ("status", "log", "diff", "show", "add", "commit", "ls-files", "grep", "rev-parse", "cat-file")
 FIND_RUN = ("-exec", "-execdir", "-ok", "-okdir", "-delete", "-fprint", "-fprintf", "-fls")
 TOOL = "gen_audit_docs.py"
+# ★2026-09-16（設計書 audit-autofix-apply-20260916・まこさん承認）＝監査結果を読む道具を1本 足した。
+#   `apply_audit_fix.py` は監査結果を**読むだけ**で、結果ファイルには1バイトも書かない
+#   （書く先は監査結果の「対象のファイル」の欄。守りの仕組みには道具の側で書かない）。
+TOOLS = (TOOL, "apply_audit_fix.py")
 
 
 def abs_path(p: str, cwd: str) -> str:
@@ -80,7 +84,7 @@ def bash_bad_parts(cmd: str, word: str) -> list:
                 head = toks[0].rsplit("/", 1)[-1]
                 if re.match(r"^python[0-9.]*$", head):
                     args = [t for t in toks[1:] if not t.startswith("-")]
-                    if not (args and args[0].rsplit("/", 1)[-1] == TOOL):
+                    if not (args and args[0].rsplit("/", 1)[-1] in TOOLS):
                         bad.append(part.strip())
                 elif head not in READONLY:
                     bad.append(part.strip())

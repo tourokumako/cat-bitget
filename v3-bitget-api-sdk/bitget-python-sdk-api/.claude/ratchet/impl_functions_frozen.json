@@ -4,10 +4,21 @@
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
  "scripts/priority_rebuild/engine_tuner_gen.py": [
   "build_stage_candidates",
-  "stage_keep_of",
-  "_stage_pick",
+  "drop_tfs_of",
+  "stage_tfs_of",
+  "stage_lineages_of",
+  "stage_limits_of",
   "stage_counts",
   "sample_regime_build",
-  "selftest"
+  "selftest",
+  "stage_candidates",
+  "stage_candidates"
+ ],
+ "scripts/priority_rebuild/engine_tuner_exec.py": [
+  "_mat_key"
+ ],
+ "scripts/priority_rebuild/regime_r9_diag.py": [
+  "main",
+  "print_stage_candidates"
  ]
 }

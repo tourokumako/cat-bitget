@@ -124,6 +124,15 @@ def measure(df: pd.DataFrame, recipes: list[dict], start, end, with_trades: bool
     #     まとめて作ると、その分岐に入らない。代わりに `build_qtable` の中の
     #     「有効標本がゼロで解決できない鍵は表から落とす」が効き、その鍵を使う束は実行器の G5 で拒否される。
     #     どちらも嘘の閾値は作らないが、画面に出る文言が変わる（設計書 4-13 に書いた）。
+    # ★2026-09-16（監査 cp36 の M-4）＝解決表を作る前に、需給の列を足す。
+    #   なぜ要るか＝入口に需給の材料（taker_ls など）を持つレシピでは、需給の列が df に無いと
+    #   解決表を作る所で止まり、束が全部「測れない」になる（本走は足している＝`run_recipe` の中）。
+    #   ★足すのは、レシピが実際に使っている需給の名前だけ（`demand_cols_in` が読む）。
+    for _rec in recipes:
+        _dem = ex.demand_cols_in(_rec)
+        if _dem:
+            df = ex.attach_demand_columns(df, sorted(_dem))
+
     qt_all = None
     qt_err = None
     if recipes:
@@ -157,6 +166,30 @@ def _qtable(df, geo, recipes, start, end) -> dict:
     import engine_tuner_gen as g
     lm, _w = g.load_limits()
     return g.build_qtable(df, geo, recipes, g.quantile_list(lm), start, end)
+
+
+def print_stage_candidates(stage: str) -> int:
+    """段ごとの候補の一覧を画面に出す（M2-E-2 の M-5・2026-09-16 新設・読むだけ）。
+
+    なぜ要るか（監査 cp36 の M-5）＝段ごとに何が候補に出ているかを、まこさんが画面で見る口が
+    1つも無かった。**案も売買も作らない。**成績表の順に並べて出すだけ。
+
+    ★候補を作るのは `engine_tuner_gen.build_stage_candidates`（組む側と同じ関数）。
+      ここに絞りを書き写さない（恒久の決まり69番）。
+    """
+    import engine_tuner_gen as g
+    lm, _ = g.load_limits()
+    lm = g.resolve_hold_range(lm, "e38")
+    table = g.load_signal_table()
+    _pool, tfs, _ = g.material_pool()
+    laws = g.laws_for_scene("range")
+    cands = g.build_stage_candidates(stage, laws, table, tfs, lm)
+    print(f"[{stage} の候補] {len(cands)} 本（成績表の順・読むだけ・案も売買も作らない）")
+    print("順位\t指標\t時間足\t列\t分離力")
+    for c in cands:
+        _acc = "—" if c["acc"] is None else f"{c['acc']:.3f}"
+        print(f"{c['rank']}\t{c['family']}\t{c['tf']}\t{c['col']}\t{_acc}")
+    return 0
 
 
 def _print_rows(rows: list[dict]) -> None:
@@ -231,14 +264,38 @@ def main() -> int:
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--recipe", default=None, help="判定の束を持つレシピ（json）")
     ap.add_argument("--build", type=int, default=None, help="1位から順に束を N本 組んで測る")
-    ap.add_argument("--seed", type=int, default=53, help="閾値の分位・続く長さ（範囲で探す値）の種")
+    # ★2026-09-16（監査 cp36 の M-7 の #11・別枠 S-7）＝説明を実物に合わせた。
+    #   直す前の文「閾値の分位・続く長さ（範囲で探す値）の種」は、乱数で引いていた頃のもの。
+    #   いまは閾値の分位も続く長さも乱数で引かない（`_thr_fixed`・`_nv_fixed`）。
+    #   この種が効くのは `--build` で入口の束を組むとき（`sample_structure` の乱数）だけ。
+    ap.add_argument("--seed", type=int, default=53,
+                    help="--build で入口の束を組むときの種（判定の束の閾値・本数には効かない）")
     ap.add_argument("--no-trades", action="store_true", help="②（玉の成績）を測らない＝①③だけ（速い）")
     ap.add_argument("--strategy", default="e38")
+    # ★2026-09-16（監査 cp36 の M-5）＝段ごとの候補の一覧を画面に出す旗（読むだけ）。
+    ap.add_argument("--candidates", default=None,
+                    help="段ごとの候補の一覧を出す（stage1／stage2a／stage2b／stage2c／stage3）")
+    # ★2026-09-16（監査 cp36 の M-4）＝固定のレシピを作るための書き出しの口（読むだけ・画面に出す）。
+    #   なぜ要るか＝完成の条件 AUDIT-5 は「種と乱数に依らない固定のレシピ」で測る。
+    #   その元になる束を、私が手で書くのではなく、組む側（`sample_regime_build`）に出させる。
+    ap.add_argument("--dump-build", type=int, default=None, metavar="N",
+                    help="案 N の判定の束を JSON で画面に出す（固定のレシピを作るため・読むだけ）")
     a = ap.parse_args()
     if a.selftest:
         return selftest()
+    if a.candidates:
+        return print_stage_candidates(a.candidates)
+    if a.dump_build is not None:
+        import engine_tuner_gen as g
+        _lm, _ = g.load_limits()
+        _lm = g.resolve_hold_range(_lm, a.strategy)
+        _tb = g.load_signal_table()
+        _pl, _tf, _ = g.material_pool()
+        _bd, _ = g.sample_regime_build(_lm, _pl, _tf, _tb, order_n=int(a.dump_build))
+        print(json.dumps(g.strip_marks(_bd), ensure_ascii=False, indent=2))
+        return 0
     if not a.recipe and not a.build:
-        ap.error("--recipe か --build N を指定")
+        ap.error("--recipe か --build N か --candidates <段> を指定")
     import engine_tuner as et
     import engine_tuner_gen as g
     from periods import SEARCH_END, SEARCH_START
@@ -274,6 +331,15 @@ def main() -> int:
     _print_rows(rows)
     print("\n[機械が読む形]")
     print(json.dumps(rows, ensure_ascii=False, default=float))
+    # ★2026-09-16（監査 cp36 の M-4）＝測れない束が1本でも在れば、終了コードを 1 にする。
+    #   直す前＝画面に「測れない」と出しても 0 で終わっていた＝機械には成功に見えた。
+    #   ★行は全部 出したあとに返す＝画面は直す前と同じ（止まったことが機械に分かるだけ）。
+    _ng = [r for r in rows if "①時間の割合" not in r]
+    if _ng:
+        print(f"\n❌ 測れない束が {len(_ng)} 本 あります（監査 cp36 の M-4）", file=sys.stderr)
+        for r in _ng:
+            print(f"   {r.get('判定')}: {r.get('注')}", file=sys.stderr)
+        return 1
     return 0
 
 

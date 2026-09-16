@@ -1,0 +1,85 @@
+{
+  "_note": "R9 の診断の完成の条件 AUDIT-5 を測るための固定のレシピ（M2-E-2・2026-09-16・設計書 m2e2-cp36-major-20260914）。★種と乱数に依らない＝いつ走らせても同じ束・同じ入口。入口の条件に需給の材料（taker_ls）を1本 持つ＝需給の列を足さないと解決表の所で止まる。",
+  "_なぜ要るか": "直す前は `--build 3 --seed 7` のように、種の引きで需給の材料が入るかどうかが決まっていた（監査 cp36 の §8＝種8・既定の種53 では再現せず、種7 で再現した）。★完成の条件の合否が種の引きで決まる形は、測りとして成り立たない。だからこの固定のレシピで測る（設計書のリスク4）。",
+  "_判定の束の出どころ": "`python3 regime_r9_diag.py --dump-build 0` の出力をそのまま写した（2026-09-16）。私（CC）が条件を1つも書いていない＝組む側（sample_regime_build の order_n=0）が組んだもの。★束に符号を取り去る前処理（abs）が付いている（MACDヒスト%×30m）＝99回目の不具合（解決表の鍵で KeyError）を通る道でもある。",
+  "_入口の出どころ": "需給の材料の形＝`engine_tuner_exec` の `demand` の欄（`demand_cols_in` が読む）。閾値は分位ではなく固定の値にした＝解決表に鍵を増やさないため（測りたいのは「需給の列が df に在るか」の1点）。",
+
+  "meta": {
+    "strategy": "e38",
+    "logic_id": "R9_DEMAND_FIXTURE",
+    "side": "SHORT",
+    "regime": {
+      "name": "range",
+      "entry_col": "regime_range_built",
+      "build": {
+        "entry": {
+          "out_col": "regime_range_built",
+          "tree": {
+            "all": [
+              {
+                "form": "hysteresis",
+                "on": {
+                  "all": [
+                    { "role": "location", "form": "level", "side": "above",
+                      "material": [ { "geo": "W%" } ], "value": { "threshold_q": "q50" } },
+                    { "role": "location", "form": "level", "side": "above",
+                      "material": [ { "family": "S-Rタッチ数", "param": [144, 0.006], "tf": "15m" } ],
+                      "value": { "threshold_q": "q50" } },
+                    { "not": { "role": "env", "form": "level", "side": "above",
+                               "material": [ { "family": "MACDヒスト%", "param": [12, 26, 9], "tf": "30m",
+                                               "pre": { "op": "abs" } } ],
+                               "value": { "threshold_q": "q50" } } },
+                    { "not": { "bool_col": "rg5_uptrend", "want": true } },
+                    { "role": "sufficiency", "form": "level", "side": "below",
+                      "material": [ { "family": "stdev%", "param": 50, "tf": "30m" } ],
+                      "value": { "threshold_q": "q50" } },
+                    { "role": "location", "form": "streak", "value": { "n": 3 },
+                      "inner": { "role": "location", "form": "level", "side": "above",
+                                 "material": [ { "family": "S-Rタッチ数", "param": [144, 0.006], "tf": "15m" } ],
+                                 "value": { "threshold_q": "q50" } } }
+                  ]
+                },
+                "off": {
+                  "any": [
+                    { "role": "location", "form": "level", "side": "below",
+                      "material": [ { "geo": "W%" } ], "value": { "threshold_q": "q49" } },
+                    { "role": "location", "form": "level", "side": "below",
+                      "material": [ { "family": "S-Rタッチ数", "param": [144, 0.006], "tf": "15m" } ],
+                      "value": { "threshold_q": "q49" } },
+                    { "role": "env", "form": "level", "side": "above",
+                      "material": [ { "family": "MACDヒスト%", "param": [12, 26, 9], "tf": "30m",
+                                      "pre": { "op": "abs" } } ],
+                      "value": { "threshold_q": "q49" } }
+                  ]
+                },
+                "value": { "n": 24 }
+              }
+            ]
+          }
+        },
+        "block": null
+      }
+    }
+  },
+  "pre_filter": [],
+  "entry": {
+    "connective": { "all": [
+      { "role": "trigger", "form": "level", "side": "below",
+        "material": [ { "demand": "taker_ls" } ],
+        "value": { "threshold_q": "q50" } }
+    ] }
+  },
+  "entry_guards": {
+    "tp_inside": "TP2",
+    "fee_floor_vs": "TP1",
+    "fee_floor": { "const": "SCALP_FLOOR" },
+    "require_finite": [ "SL" ]
+  },
+  "exits": [
+    { "name": "TIME", "reason": "TIME_EXIT", "kind": "time", "value": { "bars": 12 } },
+    { "name": "TP1", "reason": "TP1", "kind": "tp", "value": { "mult": 1.0 } },
+    { "name": "TP2", "reason": "TP2", "kind": "tp", "value": { "mult": 1.5 } },
+    { "name": "SL", "reason": "SL", "kind": "sl", "value": { "mult": 2.0 } }
+  ],
+  "position": { "unit": 0.012, "max_adds": 1 }
+}

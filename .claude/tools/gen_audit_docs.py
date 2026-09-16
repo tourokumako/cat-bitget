@@ -682,9 +682,40 @@ FOURTH_RE = re.compile(r"^(?:案([A-Z]) )?(直した後の文字|足す文字|�
 EVIDENCE_RE = re.compile(r"\S+:\d+.*「.+」")
 
 
+def item_fields(num: str, block: str) -> dict:
+    """修正の指示1件から、6つの欄を読み取って返す（形は見ない・読むだけ）。
+
+    ★2026-09-16（設計書 audit-autofix-apply-20260916 の 4-3）＝当てる道具（apply_audit_fix.py）と
+      この道具の `item_errors` が、同じ読み取りを呼ぶ形にするために切り出した。
+      同じ正規表現を2か所に書くと、片方だけ直って食い違うため。
+
+    戻り＝{"番号", "対象のファイル", "直す箇所", "直す前の文字"（囲みの中・無ければ None）,
+           "4つ目"＝[(案の記号 or "", 見出し, 中身), …], "根拠の抜き書き", "状態"}
+    """
+    block = re.split(r"^### ", block, flags=re.M)[0]
+
+    def field(label: str):
+        m = re.search(rf"^{label}:[ \t]*(.*)$", block, re.M)
+        return m.group(1).strip() if m else None
+
+    before = re.search(r"^直す前の文字:[ \t]*\n~~~\n(.*?)\n?~~~", block, re.S | re.M)
+    fourth = []
+    for m in re.finditer(r"^(?:案([A-Z]) )?(直した後の文字|足す文字|消す文字|走らせるコマンド):"
+                         r"[ \t]*\n~~~\n(.*?)\n?~~~", block, re.S | re.M):
+        fourth.append((m.group(1) or "", m.group(2), m.group(3)))
+    return {"番号": num,
+            "対象のファイル": field("対象のファイル"),
+            "直す箇所": field("直す箇所"),
+            "直す前の文字": before.group(1) if before else None,
+            "4つ目": fourth,
+            "根拠の抜き書き": field("根拠の抜き書き"),
+            "状態": field("状態")}
+
+
 def item_errors(num: str, block: str) -> list:
-    """修正の指示1件の欄を見る。"""
+    """修正の指示1件の欄を見る。★読み取りは item_fields（2か所に書かない）。"""
     e = []
+    f = item_fields(num, block)
     block = re.split(r"^### ", block, flags=re.M)[0]
 
     def field(label: str):
@@ -699,10 +730,10 @@ def item_errors(num: str, block: str) -> list:
     loc = field("直す箇所")
     if not loc:
         e.append("直す箇所が無い")
-    before = re.search(r"^直す前の文字:[ \t]*\n~~~\n(.*?)\n?~~~", block, re.S | re.M)
-    if not before:
+    before = f["直す前の文字"]
+    if before is None:
         e.append("直す前の文字の囲み（~~~）が無い")
-    fourth = FOURTH_RE.findall(block)
+    fourth = [(a, k) for a, k, _ in f["4つ目"]]
     if not fourth:
         e.append(f"4つ目の欄（{'・'.join(FOURTH)} のどれか）が無い")
     ev = field("根拠の抜き書き")
@@ -717,7 +748,7 @@ def item_errors(num: str, block: str) -> list:
     if st != "案が複数" and n_plans:
         e.append("案A などが在るのに、状態が「案が複数」でない")
     if any(k == "走らせるコマンド" for _, k in fourth):
-        if not before or before.group(1).strip() != "なし":
+        if before is None or before.strip() != "なし":
             e.append("走らせるコマンドなのに、直す前の文字が「なし」でない")
         if loc != "なし":
             e.append("走らせるコマンドなのに、直す箇所が「なし」でない")

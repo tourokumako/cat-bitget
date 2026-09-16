@@ -1,0 +1,64 @@
+573c573
+< <!-- ACC_CODEREF_START hash=aa99516fffaf8c56 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=a853b14c4981b6d9 gen_acceptance.py が自動生成＝手で書き換えない -->
+580,581c580,581
+< | `item_errors` | 685 |
+< | `item_fields` | （この関数は実物に無い） |
+---
+> | `item_errors` | 715 |
+> | `item_fields` | 685 |
+583c583
+< | `form_errors` | 727 |
+---
+> | `form_errors` | 758 |
+585c585
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 22件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 23件の関数が在ります）。
+591c591
+< <!-- ACC_SPEC_START hash=0e3b1efae323f20e gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=37d6b1e644269ead gen_acceptance.py が自動生成＝手で書き換えない -->
+599,600c599,624
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "新設の道具（apply_audit_fix.py）と hook 12 はまだ実物が無く、切り出す関数の形も実装の段で決まるため、設計の段では書けない（実装の後に確定させる）。★実装のあと、実物の全関数から触ったものを選んで置き替える。",
+---
+>   "impl_functions": {
+>     ".claude/tools/gen_audit_docs.py": [
+>       "item_fields",
+>       "item_errors"
+>     ],
+>     ".claude/tools/apply_audit_fix.py": [
+>       "read_fixes",
+>       "check_one",
+>       "apply_one",
+>       "main"
+>     ]
+>   },
+>   "_impl_functions の意味": "この回で触る関数。`gen_audit_docs.py` の2つは切り出しと その呼び出し。`apply_audit_fix.py` の4つは新しく作る。★実装のあと、実物の全関数から触ったものを選び直して置き替える。",
+>   "must_use": {
+>     "item_errors": [
+>       "item_fields"
+>     ],
+>     "read_fixes": [
+>       "item_fields"
+>     ],
+>     "main": [
+>       "read_fixes",
+>       "check_one",
+>       "apply_one"
+>     ]
+>   },
+608,609c632
+<   "must_use": {},
+<   "_must_use の意味": "切り出す先の関数（当てる道具の側）がまだ実物に無いので、設計の段では書けない。実装のあと、実装したコードから写す。",
+---
+>   "_must_use の意味": "★切り出す先の関数（当てる道具の側）は、実物ができた後に足す。実装のあと、実装したコードから写す。",
+692c715,718
+<   "item_errors": [],
+---
+>   "item_fields": [],
+>   "item_errors": [
+>    "item_fields"
+>   ],

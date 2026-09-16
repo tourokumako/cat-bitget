@@ -2028,6 +2028,8 @@ def _mat_key(m: dict, lane: str) -> str:
         return name
     if pre["op"] in SINCE_OPS:                     # ★状態に入って以降（M2-2-5）＝基準の状態ごとに分布が違う
         return f"{pre['op']}:{pre['state']}:{name}"
+    if pre["op"] in NO_ARG_OPS:                    # ★2026-09-16（M2-E-2 の不具合）＝窓を持たない前処理（abs）は n を持たない
+        return f"{pre['op']}:{name}"
     return f"{pre['op']}{pre['n']}:{name}"
 
 

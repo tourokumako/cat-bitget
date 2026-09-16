@@ -15,6 +15,7 @@
       "law": "R1",
       "law_or": "R3",
       "law_width": "R7",
+      "law_tf": "R3",
       "mako_note": "帯タイプ7系統（レンジ幾何 W%・帯内位置%／S-Rタッチ数／pivot 3種／n本高安／close vs EMA%・SMA%・Keltner／POC・VAH・VAL／転換線・基準線）×時間足8本（10m〜1d）",
       "語": [
         {"§2.2": "レンジ幾何 W%・帯内位置%", "探す": "レンジ幾何", "当て方": "完全",
@@ -40,6 +41,7 @@
       "stage": "段2a 強さの否定（R5・C1）",
       "role": "env",
       "law": "R5",
+      "law_tf": "C4",
       "mako_note": "ADX・CHOP・ER・VHF・MACDヒスト%・EMA傾き・DI差の絶対値。時間足は上位足（15m〜4h）",
       "語": [
         {"§2.2": "ADX", "探す": "ADX", "当て方": "完全"},

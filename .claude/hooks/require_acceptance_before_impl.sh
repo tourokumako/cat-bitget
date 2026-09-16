@@ -161,7 +161,22 @@ _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.
               #     ②SDK/.claude/audits/<何か>_work/ の中の .md（結果の骨組みはここにだけ書く）。
               #   承認の印・凍結の記録・hook・道具・戦略の .py には1バイトも書かない。
               #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
-              'gen_audit_docs.py')
+              'gen_audit_docs.py',
+              # ★2026-09-16＝そのセッションの ToDo を元データから作る道具
+              #   （まこさん指示「やるべきことをすべて整理して自動生成でtodo作成しろ」）。
+              #   なぜ要ったか＝私が ToDo を手で書き、出どころと照らす仕組みが無く、ヌケモレを3件 出した。
+              #   ★この道具も書き込む道具。書く先は道具の側（out_path）で
+              #     .claude/state/sessions/<id>/session_todo.md の1本だけに限った。
+              #   承認の印・凍結の記録・hook・道具・戦略の .py には1バイトも書かない。
+              #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
+              'gen_session_todo.py',
+              # ★2026-09-16＝監査結果の「修正の指示」を実物に当てる道具
+              #   （まこさん承認 2026-09-16・設計書 iter audit-autofix-apply-20260916）。
+              #   ★この道具は書き込む道具。書く先は監査結果の「対象のファイル」の欄だが、
+              #     守りの仕組み（承認の印・凍結の記録・hook・道具・壊すプログラム）には
+              #     道具の側（NEVER_WRITE）で1バイトも書かない。
+              #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
+              'apply_audit_fix.py')
 _RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')
@@ -1152,15 +1167,26 @@ if [ -n "$DC_NG" ]; then
   exit 2
 fi
 
+# ★2026-09-16（まこさん承認「よい」）＝照らす一覧に `NEW_FILE:` の行も足す。
+#   なぜ要るか（実測）＝設計書には「直すファイル」の行（TARGET）と「新しく作るファイル」の行
+#     （NEW_FILE）の2つが在る。この門は TARGET しか見ていなかったので、**設計書で
+#     「これから作る」と宣言して承認をもらったファイルを、作れなかった**（M2-E-2 の壊すプログラム
+#     5本と固定のレシピ1本で実際に止まった）。
+#   ★必読ゲート（require_source_read_before_acceptance.py）は 2026-08-27 に同じ直しを入れてある。
+#     同じ設計書の同じ宣言を、片方の門だけが読む状態が残っていた。
+#   ★守りは弱まらない＝通すのは「設計書に名前が書いてあり、承認を通ったファイル」だけ。
+#     設計書に書いていないファイルは、いままでどおり止まる。
+NEWFILES=$(grep -E '^NEW_FILE:' "$LIST" | sed 's/^NEW_FILE:[[:space:]]*//' | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$')
 MATCH=0
 while IFS= read -r tgt; do
   [ -z "$tgt" ] && continue
   case "$FILE" in *"$tgt") MATCH=1; break ;; esac
 done <<EOF
 $TARGETS
+$NEWFILES
 EOF
 if [ "$MATCH" -ne 1 ]; then
-  echo "🔒 [受け入れ条件ゲート] 編集対象($FILE)がリストの TARGET($(echo "$TARGETS" | tr '\n' ' '))のいずれとも一致しません。" >&2
+  echo "🔒 [受け入れ条件ゲート] 編集対象($FILE)がリストの TARGET／NEW_FILE($(echo "$TARGETS $NEWFILES" | tr '\n' ' '))のいずれとも一致しません。" >&2
   echo "$GUIDE" >&2
   exit 2
 fi

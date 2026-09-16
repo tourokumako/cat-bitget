@@ -981,6 +981,26 @@ def write(dry: bool = False, dest: Path = None) -> int:
     return 0
 
 
+def _section4_blocks() -> set:
+    """§4 の節が名指ししたときだけ出る囲み。
+
+    ★2026-09-16＝この2つだけ。ほかの囲みは `page` が必ず出す＝いつも照らす。
+      実物で確かめた＝`page` が MATERIALS・RANKING・RANDOM・CODEREF・SELFTEST・SPEC・
+      CHECKLIST を直に書き、STAGES と LAWS は §4 の節の「囲み」の指定から出る。
+      ★最初は5つと書いて、MATERIALS・RANKING・RANDOM を照らさなくする間違いをした。
+    """
+    return {"STAGES", "LAWS"}
+
+
+def _blocks_in_src(d: dict) -> set:
+    """元データの §4 の節が、実際に名指ししている囲みの名前。"""
+    out = set()
+    for got in (d.get("設計の中身") or {}).values():
+        if isinstance(got, dict) and got.get("囲み"):
+            out.add(got["囲み"])
+    return out
+
+
 def verify(dest: Path = None) -> int:
     """囲みの中が、機械の書いたままかを検出する。
 
@@ -1000,6 +1020,14 @@ def verify(dest: Path = None) -> int:
         #   直す前は検出の側だけが囲みを求め、必ず「❌ 囲みが無い」になっていた（作る側と検出の側の食い違い）。
         if kind == "AUDITTODO" and not (d.get("audit_report") or "").strip():
             print("— --verify: AUDITTODO は監査レポートの欄が空なので出ない設計書（照らさない）")
+            continue
+        # ★2026-09-16（設計書 audit-autofix-apply-20260916 の完成の条件 AUDIT-7・まこさん承認）
+        #   ＝§4 の節に置く囲み（STAGES・LAWS など）は、作る側（page）が
+        #     「元データのその節に『囲み』の指定が在るときだけ」出す。
+        #   直す前＝検出の側だけが必ず求めたので、engine_tuner の設計書でない工事では
+        #     必ず ❌ が2件 出た（98回目に AUDITTODO で入れたのと同じ型の食い違い）。
+        if kind in _section4_blocks() and kind not in _blocks_in_src(d):
+            print(f"— --verify: {kind} は元データのどの節も求めていないので出ない設計書（照らさない）")
             continue
         m = _begin_re(kind).search(cur)
         e = cur.find(_end(kind))

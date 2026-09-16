@@ -1032,7 +1032,7 @@ def expand_stage(stage_key: str | None = None) -> dict:
     out: dict = {}
     for s in rows:
         _k = s.get("key") or "(key なし)"
-        for _lk in ("law", "law_or", "law_width"):
+        for _lk in ("law", "law_or", "law_width", "law_tf"):
             _lv = s.get(_lk)
             if _lv is not None and str(_lv) not in _law_nos:
                 ng.append(f"{_k}: {_lk} の法則の番号が法則ファイルに無い → {_lv}"
@@ -1071,6 +1071,10 @@ def expand_stage(stage_key: str | None = None) -> dict:
                 ng.append(f"{_k}: 知らない前処理 → {_f} に {_op}（前処理の一覧＝{sorted(pres_all)}）")
         out[_k] = {"stage": s.get("stage"), "role": s.get("role"), "law": s.get("law"),
                    "law_or": s.get("law_or"), "law_width": s.get("law_width"),
+                   # ★2026-09-16（監査 cp36 の M-3）＝時間足の条件を読む法則。
+                   #   段1＝R3（構造・位置の部品が上位足に在る）／段2a＝C4（上位足が許可を出す）。
+                   #   欄が無い段（段2b・段2c・段3）は None＝時間足の絞りを法則から掛けない。
+                   "law_tf": s.get("law_tf"),
                    "mako_note": s.get("mako_note"), "families": fams,
                    "lineages": list(s.get("lineages") or []), "geo_cols": geo, "pre": pre,
                    "bool_col": s.get("bool_col"), "語ごと": per_word,

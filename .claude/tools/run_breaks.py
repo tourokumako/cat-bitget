@@ -178,6 +178,46 @@ def parse_table(md_text: str) -> list:
     return out
 
 
+def selftest_breaks() -> list:
+    """自己テストを測る壊すプログラムの名前（監査 cp36 の M-2・2026-09-16 新設）。
+
+    ★判定＝その .sh の中で `measure` で始まる行に `--selftest` の語があるもの。
+      自己テスト以外を測るもの（数える道具・設計書の検査など）は対象にしない。
+      その相手は「❌ …」の形で落ちるとは限らないため。
+    """
+    out = []
+    for p in sorted(BREAKS_DIR.glob("b*.sh")):
+        for line in p.read_text(encoding="utf-8").splitlines():
+            if line.startswith("measure") and "--selftest" in line:
+                out.append(p.name)
+                break
+    return out
+
+
+def lint_expect() -> list:
+    """自己テストを測る壊すプログラムのうち、EXPECT_MSG が「❌」で始まらないものの名前。
+
+    ★2026-09-16（監査 cp36 の M-2・設計書 iter="m2e2-cp36-major-20260914"）
+      監査の指摘＝宣言の文字が、壊していない正常な出力にも出る（例＝「T24」は進み具合の行にも出る）。
+      だから別の理由で落ちても「期待どおり」に数えられた。
+      直した後＝自己テストが落ちた行だけに出る「❌」を、宣言の先頭に求める。
+    ★**宣言そのものが無いものは、ここでは名指ししない。**
+      理由（2026-09-16 に実測）＝EXPECT_MSG を必須にする前（2026-09-11）からある古い壊すプログラムが
+      **29本** あり（b28・b29・b34〜b44・b48・b52〜b60・b62〜b67・b72・b73）、全部ここで名指しすると、
+      この工事と関係のない 29本 が毎回 出て、本当に見たい件が埋もれる。
+      ★宣言が無いものは、**走らせた瞬間に `expect_of` が止める**（読めなかった理由を返し、
+      呼ぶ側が [STOP] にする）＝守りは既に在る。ここは「宣言は在るが弱い」件だけを見る。
+    """
+    bad = []
+    for name in selftest_breaks():
+        _rc, _means, _why, msg = expect_of(name)   # 4つ目が EXPECT_MSG（読めなければ空）
+        if not msg:
+            continue                               # 宣言が無い＝走らせた瞬間に止まる（上の注）
+        if not msg.startswith("❌"):
+            bad.append(name)
+    return bad
+
+
 def expect_of(name: str) -> tuple:
     """壊すプログラムの宣言（期待する終了コードと、その意味）を読む。
 
@@ -335,6 +375,15 @@ def main(argv: list) -> int:
     #   ★土台ゲートは、この旗が在るときだけ この道具を通す
     #     （require_acceptance_before_impl.sh の _readonly_seg の枝。--freeze・--out が在れば止める）。
     ap.add_argument("--measure-only", action="store_true")
+    # ★2026-09-16（監査 cp36 の M-2・設計書 iter="m2e2-cp36-major-20260914"）
+    #   ＝自己テストを測る壊すプログラムの EXPECT_MSG が「❌」で始まるかを数える口。
+    #   なぜ要るか（実測）＝直す前の宣言は「T24」のように、壊していない正常な出力にも出る文字だった。
+    #     だから別の理由で落ちても「期待どおり」に数えられた（監査 cp36 の §1-4）。
+    #   ★対象の判定＝その .sh の `measure` で始まる行に `--selftest` の語があるもの。
+    #     自己テストは落ちた行を「  ❌ T24②: …」の形で出すので、❌ 始まりの宣言なら
+    #     落ちた行にしか当たらない。
+    #   ★記録も凍結も1バイトも書かない（読むだけ）。
+    ap.add_argument("--lint-expect", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args(argv)
 
@@ -374,6 +423,18 @@ def main(argv: list) -> int:
             return 2
         return 0
 
+    if a.lint_expect:
+        bad = lint_expect()
+        for name in bad:
+            print(f"❌ {name}")
+        if bad:
+            print(f"[STOP] 自己テストを測る壊すプログラムの EXPECT_MSG が「❌」で始まっていません"
+                  f"（{len(bad)} 本・監査 cp36 の M-2）", file=sys.stderr)
+            return 1
+        print(f"✅ 自己テストを測る壊すプログラムの EXPECT_MSG は全部「❌」で始まる"
+              f"（{len(selftest_breaks())} 本）")
+        return 0
+
     if a.freeze:
         FROZEN.parent.mkdir(parents=True, exist_ok=True)
         d = freeze_breaks()
@@ -385,7 +446,15 @@ def main(argv: list) -> int:
         return 0
 
     # ★凍結の照合は、深さに関わらず必ず行う
-    ng = check_frozen()
+    # ★2026-09-16（まこさん指示「まずは上記のみ修正して良い」）＝`--measure-only` のときは照らさない。
+    #   なぜか（実測 2026-09-16）＝この口は 2026-09-07 に「承認より後にコードを直したとき、
+    #     壊すプログラムを走らせ直せるのが まこさんだけだった」を解くために作られた
+    #     （require_acceptance_before_impl.sh:253 の逐語）。ところが凍結の照合が先に走るので、
+    #     **壊すプログラムを1本でも直すと、この口が使えなかった＝作った狙いを解けていなかった。**
+    #   ★守りは減らない＝この口は記録も凍結も1バイトも書かない（下の 529行で return 0＝
+    #     記録を書く write_record に届かない）。「済」を決める承認の経路では、
+    #     いままでどおり この照合が効く。
+    ng = [] if a.measure_only else check_frozen()
     if ng:
         print("[STOP] 壊すプログラムが、承認のときの版と違います（監査 cp16 の E-12）",
               file=sys.stderr)
@@ -524,6 +593,8 @@ SELF_TESTS = (
     #     元に戻らず、engine_tuner の自己テストが6件 落ちる状態になった。
     #   ★13件の中に、打ち切りを試すものが1件も無かった＝だから誰も気づかなかった。
     ("T14", "打ち切りに掛かっても、戻り値が3つ返り、壊した相手が元に戻る"),
+    # ★2026-09-16（監査 cp36 の M-2・設計書 iter="m2e2-cp36-major-20260914"）
+    ("T15", "自己テストを測る壊すプログラムだけを拾い、EXPECT_MSG が「❌」で始まらないものを名指しする"),
 )
 
 
@@ -641,6 +712,28 @@ def selftest() -> int:
             if _t14.read_text(encoding="utf-8").strip() != "ORIGINAL":
                 ng.append("T14b: 打ち切りのあと、壊した相手が元に戻っていない"
                           f"（いまの中身＝{_t14.read_text(encoding='utf-8').strip()[:20]}）")
+
+            # ★T15（2026-09-16・監査 cp36 の M-2）＝宣言の文字が「❌」で始まるかを数える。
+            #   見本を3本 作る＝①自己テストを測る・宣言が ❌ 始まり（拾うが、名指ししない）
+            #   ②自己テストを測る・宣言が ❌ 始まりでない（名指しする）
+            #   ③自己テストを測らない（そもそも拾わない）。
+            _head15 = "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 見本\n"
+            (BREAKS_DIR / "b95a_ok.sh").write_text(
+                _head15 + "# EXPECT_MSG: ❌ T99①\nmeasure python3 x.py --selftest\n", encoding="utf-8")
+            (BREAKS_DIR / "b95b_weak.sh").write_text(
+                _head15 + "# EXPECT_MSG: T99①\nmeasure python3 x.py --selftest\n", encoding="utf-8")
+            (BREAKS_DIR / "b95c_other.sh").write_text(
+                _head15 + "# EXPECT_MSG: T99①\nmeasure python3 x.py --verify\n", encoding="utf-8")
+            _pick15 = selftest_breaks()
+            if "b95a_ok.sh" not in _pick15 or "b95b_weak.sh" not in _pick15:
+                ng.append(f"T15a: 自己テストを測る見本を拾えていない（拾ったもの＝{_pick15}）")
+            if "b95c_other.sh" in _pick15:
+                ng.append("T15b: 自己テストを measure していない見本まで拾った")
+            _bad15 = lint_expect()
+            if "b95b_weak.sh" not in _bad15:
+                ng.append(f"T15c: ❌ で始まらない宣言を名指ししていない（出たもの＝{_bad15}）")
+            if "b95a_ok.sh" in _bad15:
+                ng.append("T15d: ❌ で始まる宣言まで名指しした")
     finally:
         FROZEN, BREAKS_DIR, TIMEOUT_SEC = _kf, _kb, _kt
 

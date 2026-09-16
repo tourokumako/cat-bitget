@@ -279,10 +279,10 @@ engine_tuner が E38 の11本のロジックを回して、値決め窓で値を
 
 ## 「作ってはいけないもの」2件との照合（着手前・必須）
 
-<!-- FORBIDDEN_CHECK_START hash=9caa1cfa84427617 ここは gen_materials.py が自動生成＝手で書き換えない -->
+<!-- FORBIDDEN_CHECK_START hash=bf42abfa43459e69 ここは gen_materials.py が自動生成＝手で書き換えない -->
 | # | 作ってはいけないもの | 実物を数えた結果 | 答え |
 |---|---|---|---|
-| 1 | **ランダムに条件をつなぐだけのもの** | 乱数の呼び出し **98件**（selftest 25／_make_exits 17／sample_structure 7／synth_df 7／_exit_indicator_cond 4／_make_cond 4）・法則の表を読む所 **48件**（load_signal_table 18／material_ranges 17／ranked_groups 8／regime_draw_order 5） | **当たっている疑いあり** |
+| 1 | **ランダムに条件をつなぐだけのもの** | 乱数の呼び出し **98件**（selftest 25／_make_exits 17／sample_structure 7／synth_df 7／_exit_indicator_cond 4／_make_cond 4）・法則の表を読む所 **55件**（load_signal_table 23／material_ranges 18／ranked_groups 8／regime_draw_order 6） | **当たっている疑いあり** |
 | 2 | **探す値を、CC が先に「点の一覧」で限定するもの** | 決まった数字だけの一覧 **37件**（場所1 36／場所2 1／場所3 0／場所4 0）・範囲を通さずに作っている所 **0件（合格）** | **当たっています** |
 
 > **この表は `gen_materials.py` が実物を数えて作ります。手で書き換えると `--verify` が落ちます。**

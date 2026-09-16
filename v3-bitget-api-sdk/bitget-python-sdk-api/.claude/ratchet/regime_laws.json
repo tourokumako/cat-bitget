@@ -651,7 +651,7 @@
       "注意": [
         "★数字は目安＝範囲で探す（C9）。",
         "★2026-09-09（まこさん決定「それで書いてよいが、証拠として、引用も書いておいて」）＝数える指標を4つ（ADX・CHOP・ER・VHF）から8つに広げた。直す前の4つは CC が M2-B-2b（2026-08-30）で名指ししたもので、法則の一文は指標の名前を決めていなかった（まこさん指摘 2026-09-09「お前が法則を決めるな」）。8つの根拠＝下の「根拠」。",
-        "★DI差・MACDヒスト%・EMA傾き の3つは符号が向きを表す。この法則で数えるのは絶対値（§2.2 段2a のとおり）。★2026-09-09 時点で、材料の前処理に絶対値は無い（engine_tuner_exec.MATERIAL_PRE＝ts_max・ts_min・ts_rank・ts_std・since_min・since_max・at_entry）。絶対値の前処理を足すまで、この3つを below で数えると「負の側＝下げトレンド」まで数えてしまう＝案を組む側は、絶対値の前処理を付けた材料でだけ この3つを使うこと（M2-E-3 で前処理を足す）。"
+        "★DI差・MACDヒスト%・EMA傾き の3つは符号が向きを表す。この法則で数えるのは絶対値（§2.2 段2a のとおり）。★2026-09-11（M2-E-3 の手順1）に、材料の前処理へ絶対値（abs）を足した。★2026-09-16（監査 cp36 の M-6・M-7 の #19）＝**実際に組まれる束にも付くようになった**（直す前は候補の一覧にだけ付き、2本目の束には付いていなかった）。確かめ方＝自己テスト T40④（候補の一覧）と T42③（実際の束）。壊すプログラム b82 が、付ける行を消すと T40④ が落ちることを測る。"
       ],
       "根拠": [
         {"指標": "ADX", "出どころ": "StockCharts ChartSchool「Average Directional Index (ADX)」https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/average-directional-index-adx（2026-09-09 に本文を開いた）", "逐語": "Wilder suggests that a strong trend is present when ADX is above 25 and no trend is present when ADX is below 20."},
