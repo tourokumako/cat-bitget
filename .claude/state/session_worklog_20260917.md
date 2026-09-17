@@ -767,3 +767,11 @@ engine_tuner_milestones.md の M2 の条件（132〜135行）は、これに加�
 - `.claude/state/todo_src.json`（9回）→ `gen_session_todo.py --write` で `sessions/4fb0efbf…/session_todo.md`。
 - `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_src.json`（2か所足して戻した）→ `gen_acceptance.py --write` で `.claude/state/acceptance.md`。
 - この worklog（§39）・`next_step_src.json` → `next_step.md`・`lessons_active.md`（L-607）。
+
+## §40 106回目（4d97f292）｜M2 で作ろうとしている物を milestones2 の §0-0 に書いた（2026-09-17）
+
+- **まこさん（逐語・順に）**＝「理解をせずに発言するな」「マイルストーン２でなにを作ろうとしているのか書け」「→法則はナレッジにまとめてなかったか？ 私は決めない」「ここの文章はさっきの法則の部分以外は合ってるので、法則の原本→# regime_detection_kb.mdから法則を読むとして書き直して、どこかお前が忘れないように書いておけ」「お前は記憶できなから、さっきのマイルストーン２の概要をどこかに書いておいて、都度読み返せよ」「とにかくこれは最低限インプットしたうえでtodoを作れ」。
+- **書いた先**＝`engine_tuner_milestones2.md` の §0-0（M2 で作ろうとしている物・10節）。法則の節は「原本＝regime_detection_kb.md から読む」に直した。
+- **私の誤り**＝「法則の中身は、根拠を確かめて まこさんが決めます」と書いた。出どころは 09-09 に CC が書いた返信の文と worklog 20260909 §69-10 の見出しで、まこさんの言葉ではなかった（やり取りの記録 61d21ba4 で確かめた）。
+- **memory**＝`feedback_m2_overview_reread.md` を足し、MEMORY.md に1行 足した（M2 の作業の前に §0-0 を読み返す）。
+- **ToDo**＝このセッションの置き場に最小の2件を置いた。M2 の ToDo は、§0-0 を土台に元データ（todo_src.json）から作り直す（次）。
