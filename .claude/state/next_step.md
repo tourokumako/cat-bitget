@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=9c7f7a730cf84e43 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=3b3b2594f9716b9b tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 > 🔴 **恒久の決まりは `.claude/rules/permanent_rules.md`（毎回 自動で読み込まれる）。**この文書に書くのは「いまの状態」と「次にやること」だけ。過去のセッションの記録は `session_worklog_YYYYMMDD.md`、移した古い節は `next_step_archive_202608.md`。
@@ -28,7 +28,7 @@
 
 | 順 | やること | 触るもの | 出るもの・確かめ方 | 状態 |
 |---|---|---|---|---|
-| **1** | **★いまここ＝M2 を全部 読み込み直し、段の候補を印（M2-C）に連動させる。**手順と実物の事実は `session_worklog_20260917.md` の §36（36-1 の順番どおり）。途中の設計書の元データ `acceptance_src.json`（stage-candidates-switch-20260917）は、前提を確かめてから使うか書き直すかを決める | 読むもの宣言／`engine_tuner_gen.py`（`build_stage_candidates` ほか）／`gen_regime_kb.py`／`b86_stage_count.sh` | まこさんの構造と実装の食い違いを実物で出す → 設計書 → 承認 → 実装 | **次のセッション** |
+| **1** | **★いまここ＝§2.2 に関する記録を全部 検索して読み、まとめ、意図と何をしようとしているのかを理解する。理解するまで、ほかの作業を1つも進めない**（まこさん指示 2026-09-17・逐語「2.2に関するログをすべて検索して、まとめて、意図となにをしようとしてるのかを理解しない状態では、なにも進めるな！！！」「新セッションでやるんだよ」）。読む相手とまとめに書くこと＝`session_worklog_20260917.md` の §37。まとめを まこさんに見せて確かめたあと、段の候補を印（M2-C）に連動させる（§36） | 読むもの宣言／`engine_tuner_gen.py`（`build_stage_candidates` ほか）／`gen_regime_kb.py`／`b86_stage_count.sh` | まこさんの構造と実装の食い違いを実物で出す → 設計書 → 承認 → 実装 | **次のセッション** |
 | **2** | §2 のフロー表の状態の食い違いを直す（表では M2-B・C・D・E が「まだ」のまま。下の各節では M2-C・M2-D の番号は全部 終わり、M2-E-1〜E-3 も終わっている） | `m2_todo.json` → `gen_regime_kb.py --write flow` | `gen_regime_kb.py --verify` | まだ |
 | **3** | M2-E-4（R1〜R10 を1件ずつ変えて、束と審査の両方が変わるかを実測）→ M2-E-5b・E-5・E-4b・E-4c・E-6 → M2-F 以降 | `engine_tuner_milestones2.md` の M2-E・M2-F の節 | milestones2 の各番号の確かめ方 | まだ |
 | **4** | 道具の直しの残り＝①`gen_audit_request.py` を直す（案B・まこさん「５　案B」）②`apply_audit_fix.py` を承認済みの設計書に名前がある道具・hook にも当てる（まこさん「２　よい」）③M2-E の確かめを完成の条件の表の全部の行ぶん走らせる口 ④設計書の段の表の不具合（§2.2 の語の表が段の行に混ざる）⑤壊すプログラム 68 本に `# EXPECT_MSG:` を足し b72・b73 を測る（§6 の200番）⑥仕組み3（`approve_impl.sh` が機械の済の行も測り直す）の 🔁・⏪ の枝を、次の承認の画面で確かめる | 各道具（どれも読むもの宣言 → 設計書 → 承認。⑥は承認の画面を見るだけ） | 各道具の自己テスト・承認の出力 | まだ |
