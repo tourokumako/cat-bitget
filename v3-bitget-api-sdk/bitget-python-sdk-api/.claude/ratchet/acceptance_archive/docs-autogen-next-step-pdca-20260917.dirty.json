@@ -1,0 +1,12 @@
+{
+ "_これは何か": "承認の瞬間に、もう汚れていた .py の一覧。照合A(双方向) はここに在るものを数えない。",
+ "_なぜ": "並走している別のセッションが編集中の .py で、どの設計書でも落ちるのを止めるため（138番）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に git status から書き出す。手で書き換えない。",
+ "files": [
+  ".claude/hooks/forbid_edit_generated_docs.py",
+  ".claude/hooks/require_selftest_after_source_edit.py",
+  ".claude/hooks/show_breaks_on_code_edit.py",
+  ".claude/tools/gen_hook_list.py",
+  ".claude/tools/tidy_next_step.py"
+ ]
+}

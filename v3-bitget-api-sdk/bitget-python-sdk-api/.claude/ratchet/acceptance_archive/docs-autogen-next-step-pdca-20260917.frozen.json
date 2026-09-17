@@ -1,0 +1,49 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ ".claude/tools/tidy_next_step.py": [
+  "<モジュール直下>",
+  "_split_cells",
+  "_state_col",
+  "parse_doc",
+  "render",
+  "strip_gen_head",
+  "_hash16",
+  "gen_head",
+  "_worklog_secs",
+  "check_refs",
+  "move_done_rows_s6",
+  "_atomic_write",
+  "_first_diff",
+  "import_src",
+  "check_generated",
+  "do_write_src",
+  "do_verify",
+  "do_write",
+  "main"
+ ],
+ ".claude/tools/gen_hook_list.py": [
+  "<モジュール直下>",
+  "registered",
+  "_cells",
+  "find_region",
+  "parse_region",
+  "names_in",
+  "render_region",
+  "_hash16",
+  "_atomic_write",
+  "missing_roles",
+  "do_import",
+  "do_write",
+  "do_verify",
+  "main"
+ ],
+ ".claude/hooks/forbid_edit_generated_docs.py": [
+  "<モジュール直下>",
+  "_region",
+  "_block",
+  "check",
+  "main"
+ ]
+}

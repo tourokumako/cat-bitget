@@ -1,6 +1,7 @@
 #!/bin/bash
 # EXPECT_RC: 1
 # MEANS: その検査が落ちた（守りが働いた）
+# EXPECT_MSG: ❌ T9
 # b52 — 宣言を読む処理から「宣言が無ければ止める」枝を消すと、番人が落ちるか
 #
 #   守っているもの＝next_step §6 の159番（設計書 iter="break-expect-rc-20260908" の
@@ -37,15 +38,25 @@ import sys
 p = sys.argv[1]
 s = open(p, encoding='utf-8').read()
 before = s
+# ★2026-09-17（設計書 breaks-fix-found-20260917）＝探す文字を いまの expect_of に合わせた。
+#   直す前＝枝2つ・戻り値3つの形を探していた。expect_of は 2026-09-11 に EXPECT_MSG の枝が増え、
+#     戻り値が4つになったので、探す文字が0か所になり、何も壊せていなかった（数える口が名指し）。
+#   直した後＝枝3つ（EXPECT_RC・MEANS・EXPECT_MSG）を全部 消す。1つでも残ると、宣言をまったく
+#     書いていない見本 T9 がその枝で止まり、T9 が通ってしまう（2026-09-08 と同じ理由）。
 s = s.replace(
     '    if rc is None:\n'
-    '        return None, "", f"宣言 # EXPECT_RC: がありません: {name}"\n'
+    '        return None, "", f"宣言 # EXPECT_RC: がありません: {name}", ""\n'
     '    if not means:\n'
-    '        return None, "", f"宣言 # MEANS: がありません: {name}"\n',
+    '        return None, "", f"宣言 # MEANS: がありません: {name}", ""\n'
+    '    if not msg:\n'
+    '        return None, "", (f"宣言 # EXPECT_MSG: がありません: {name}"\n'
+    '                          "（出力に在るべき文字・2026-09-11 に必須にした）"), ""\n',
     '    if rc is None:\n'
     '        rc = 0\n'
     '    if not means:\n'
-    '        means = ""\n',
+    '        means = ""\n'
+    '    if not msg:\n'
+    '        msg = ""\n',
     1)
 if s == before:
     raise SystemExit("壊す対象の行が見つからない（b52 の前提が変わった）")

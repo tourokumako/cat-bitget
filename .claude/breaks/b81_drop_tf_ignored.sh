@@ -31,7 +31,11 @@ python3 - "$GEN" <<'PYEOF'
 import sys
 p = sys.argv[1]
 s = open(p, encoding='utf-8').read()
-old = "    upper = [t for t in upper if t not in set(_drop_tfs)]\n"
+# ★2026-09-17（設計書 breaks-fix-found-20260917）＝探す文字を いまの行に合わせた。
+#   直す前＝`upper = [t for t in upper if t not in set(_drop_tfs)]` を探していたが、その処理は
+#     関数 drop_tfs_of に移り、engine_tuner_gen.py の `ok -= set(drop_tfs_of(limits, table))` になっていた
+#     ＝探す文字が0か所で、何も壊せていなかった（数える口が名指し）。
+old = "    ok -= set(drop_tfs_of(limits, table))\n"
 if s.count(old) != 1:
     raise SystemExit(f"[b81] 壊す対象の行が1つに定まらない（{s.count(old)} 件）: {old.strip()}")
 new = "    # b81 が壊した（外す時間足を取り除かない）\n"

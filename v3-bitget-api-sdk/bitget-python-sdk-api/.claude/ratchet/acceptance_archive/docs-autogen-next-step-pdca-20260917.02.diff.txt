@@ -1,0 +1,14 @@
+574c574
+< <!-- ACC_SPEC_START hash=1e097d0a4eb5c409 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=0225ca3a4c665ba7 gen_acceptance.py が自動生成＝手で書き換えない -->
+583a584
+>       "<モジュール直下>",
+603a605
+>       "<モジュール直下>",
+618a621
+>       "<モジュール直下>",
+625c628
+<   "_impl_functions の意味": "この工事で触った関数だけ（実装の後に確定させた・2026-09-17）。tidy_next_step.py は足した15個と、呼び出しを足した do_verify・do_write・main。gen_hook_list.py と forbid_edit_generated_docs.py は新しいファイルなので全部の関数。★いま在る move_to_archive・move_done_rows・check_marks・refresh_marks・verify は触っていない（壊すプログラム b54・b59・b67 が探す行を変えないため）。",
+---
+>   "_impl_functions の意味": "この工事で触った関数だけ（実装の後に確定させた・2026-09-17）。tidy_next_step.py は足した15個と、呼び出しを足した do_verify・do_write・main。gen_hook_list.py と forbid_edit_generated_docs.py は新しいファイルなので全部の関数。3つとも、import と定数を足したので「<モジュール直下>」を入れた（verify_design_contract.py の照合A がモジュール直下を1つのまとまりとして数えるため）。★いま在る move_to_archive・move_done_rows・check_marks・refresh_marks・verify は触っていない（壊すプログラム b54・b59・b67 が探す行を変えないため）。",

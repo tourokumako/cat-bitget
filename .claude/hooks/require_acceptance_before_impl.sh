@@ -118,6 +118,10 @@ _RUN_TOK_J = ('eval', 'xargs', 'source', '.', 'bash', 'sh', 'zsh', 'ksh', 'csh',
 #     必要な箇所だけ読めるようにしたら？」。
 _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.py', 'gen_regime_kb.py',
               'tidy_next_step.py', 'gen_acceptance.py', 'gen_code_index.py',
+              # ★2026-09-17＝pdca_flow.md の §1 の hook の一覧を作る道具（設計書 docs-autogen-next-step-pdca-20260917・承認済み）。
+              #   書き出す先は pdca_flow.md の囲みの中と hook_roles.json の2本だけ。承認の印にも凍結の記録にも触らない。
+              #   なぜ要ったか（実測）＝承認のあと --import を打つと、この一覧に無いので土台ゲートが止めた。
+              'gen_hook_list.py',
               # ★2026-09-09＝§2.2 の候補と成績表を突き合わせる道具（まこさん指示「その突き合わせを作る。」）。
               #   書き出す先は stage0_match.md の1本だけ。承認の印にも凍結の記録にも触らない。
               'gen_stage0_match.py',
@@ -262,6 +266,14 @@ def _readonly_seg(seg):
         #     通さないと、この道具の番人を1回も走らせられない。
         if (_args and _args[0].rsplit('/', 1)[-1] == 'run_breaks.py'
                 and ('--measure-only' in _toks or '--selftest' in _toks)
+                and not any(_t.startswith('--freeze') or _t.startswith('--out')
+                            for _t in _toks)):
+            return True
+        # ★2026-09-17（仕組み1の後半・設計書 iter="breaks-target-count-20260917"）
+        #   ＝壊すプログラムが探す文字を数える口（--count-targets）を通す。記録も凍結も1バイトも書かない。
+        #   ★上の measure-only の枝の行は変えない（壊すプログラム b45 がその行を文字で探しているため）。
+        if (_args and _args[0].rsplit('/', 1)[-1] == 'run_breaks.py'
+                and '--count-targets' in _toks
                 and not any(_t.startswith('--freeze') or _t.startswith('--out')
                             for _t in _toks)):
             return True

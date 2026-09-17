@@ -1,0 +1,170 @@
+550c550
+< <!-- ACC_CODEREF_START hash=08a4ba752b7bb821 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=062b68da7dbf10ee gen_acceptance.py が自動生成＝手で書き換えない -->
+557,566c557,566
+< | `verify` | 261 |
+< | `do_verify` | 317 |
+< | `do_write` | 330 |
+< | `move_to_archive` | 104 |
+< | `move_done_rows` | 135 |
+< | `check_marks` | 199 |
+< | `refresh_marks` | 226 |
+< | `import_src` | （この関数は実物に無い） |
+< | `render` | （この関数は実物に無い） |
+< | `check_refs` | （この関数は実物に無い） |
+---
+> | `verify` | 277 |
+> | `do_verify` | 610 |
+> | `do_write` | 626 |
+> | `move_to_archive` | 120 |
+> | `move_done_rows` | 151 |
+> | `check_marks` | 215 |
+> | `refresh_marks` | 242 |
+> | `import_src` | 523 |
+> | `render` | 399 |
+> | `check_refs` | 451 |
+568c568
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 17件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 32件の関数が在ります）。
+574c574
+< <!-- ACC_SPEC_START hash=c281b99a9fa9f969 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=1e097d0a4eb5c409 gen_acceptance.py が自動生成＝手で書き換えない -->
+582,583c582,625
+<   "impl_functions": {},
+<   "no_impl_functions_reason": "足す関数（読み込み・生成・参照の照らし）はまだ実物に無く、実装の段で決まるため、設計の段では書けない（実装の後に確定させる・require_acceptance_before_impl.sh の C-4 の決まり）。",
+---
+>   "impl_functions": {
+>     ".claude/tools/tidy_next_step.py": [
+>       "_split_cells",
+>       "_state_col",
+>       "parse_doc",
+>       "render",
+>       "strip_gen_head",
+>       "_hash16",
+>       "gen_head",
+>       "_worklog_secs",
+>       "check_refs",
+>       "move_done_rows_s6",
+>       "_atomic_write",
+>       "_first_diff",
+>       "import_src",
+>       "check_generated",
+>       "do_write_src",
+>       "do_verify",
+>       "do_write",
+>       "main"
+>     ],
+>     ".claude/tools/gen_hook_list.py": [
+>       "registered",
+>       "_cells",
+>       "find_region",
+>       "parse_region",
+>       "names_in",
+>       "render_region",
+>       "_hash16",
+>       "_atomic_write",
+>       "missing_roles",
+>       "do_import",
+>       "do_write",
+>       "do_verify",
+>       "main"
+>     ],
+>     ".claude/hooks/forbid_edit_generated_docs.py": [
+>       "_region",
+>       "_block",
+>       "check",
+>       "main"
+>     ]
+>   },
+>   "_impl_functions の意味": "この工事で触った関数だけ（実装の後に確定させた・2026-09-17）。tidy_next_step.py は足した15個と、呼び出しを足した do_verify・do_write・main。gen_hook_list.py と forbid_edit_generated_docs.py は新しいファイルなので全部の関数。★いま在る move_to_archive・move_done_rows・check_marks・refresh_marks・verify は触っていない（壊すプログラム b54・b59・b67 が探す行を変えないため）。",
+596,597c638,670
+<   "_self_check_calls の意味": "7-7 の表に出す tidy_next_step.py の関数の名前。verify・do_verify・do_write・move_to_archive・move_done_rows・check_marks・refresh_marks はいま在る。import_src・render・check_refs はこの工事で足す予定の名前（いまは実物に無いと表に出る）。",
+<   "must_use": {},
+---
+>   "_self_check_calls の意味": "7-7 の表に出す tidy_next_step.py の関数の名前。verify・do_verify・do_write・move_to_archive・move_done_rows・check_marks・refresh_marks は前から在る。import_src・render・check_refs はこの工事で足した。",
+>   "must_use": {
+>     "do_verify": [
+>       "check_generated"
+>     ],
+>     "do_write": [
+>       "do_write_src"
+>     ],
+>     "main": [
+>       "import_src"
+>     ],
+>     "import_src": [
+>       "parse_doc",
+>       "render",
+>       "check_refs",
+>       "strip_gen_head"
+>     ],
+>     "check_generated": [
+>       "strip_gen_head",
+>       "render"
+>     ],
+>     "do_write_src": [
+>       "render",
+>       "move_to_archive",
+>       "move_done_rows",
+>       "move_done_rows_s6",
+>       "refresh_marks",
+>       "check_refs",
+>       "verify",
+>       "parse_doc",
+>       "gen_head"
+>     ]
+>   },
+601,602c674,675
+<     "impl_functions": "空（理由＝no_impl_functions_reason）",
+<     "must_use": "空（impl_functions が空のため・実装の後に同時に確定させる）",
+---
+>     "impl_functions": "実装の後に、足した関数・呼び出しを足した関数を書いた（新しいファイルは全部の関数）",
+>     "must_use": "実装の後に、足した関数が中で呼ぶ名前を書いた",
+636a710,741
+>   "parse_doc": [],
+>   "render": [],
+>   "strip_gen_head": [],
+>   "gen_head": [],
+>   "check_refs": [],
+>   "move_done_rows_s6": [
+>    "check_marks",
+>    "count_marks"
+>   ],
+>   "import_src": [
+>    "check_refs",
+>    "parse_doc",
+>    "render",
+>    "strip_gen_head"
+>   ],
+>   "check_generated": [
+>    "render",
+>    "strip_gen_head"
+>   ],
+>   "do_write_src": [
+>    "check_refs",
+>    "do_verify",
+>    "gen_head",
+>    "latest_worklog_date",
+>    "move_done_rows",
+>    "move_done_rows_s6",
+>    "move_to_archive",
+>    "parse_doc",
+>    "refresh_marks",
+>    "render",
+>    "verify"
+>   ],
+637a743
+>    "check_generated",
+644a751
+>    "do_write_src",
+661a769
+>    "import_src",
+675a784,788
+>   "SRC_NAME": "next_step_src.json",
+>   "GEN_HEAD": "<!-- NEXT_STEP_GENERATED hash=",
+>   "SEC6_HEAD": "# §6 ",
+>   "S6_FLAG": "§6の済の行を移す",
+>   "BASELINE_KEY": "読み込んだときに見つからなかった参照",

@@ -1,0 +1,35 @@
+509c509
+< <!-- ACC_CODEREF_START hash=959ff2740483c5f1 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=4ace8d388f02304f gen_acceptance.py が自動生成＝手で書き換えない -->
+516,520c516,520
+< | `extract_targets` | （この関数は実物に無い） |
+< | `count_targets` | （この関数は実物に無い） |
+< | `main` | 360 |
+< | `selftest` | 601 |
+< | `parse_table` | 123 |
+---
+> | `extract_targets` | 233 |
+> | `count_targets` | 330 |
+> | `main` | 512 |
+> | `selftest` | 794 |
+> | `parse_table` | 124 |
+522c522
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 14件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 16件の関数が在ります）。
+528c528
+< <!-- ACC_SPEC_START hash=5e4286ff63bd6ce4 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=b5ac5e5d53cf8d9c gen_acceptance.py が自動生成＝手で書き換えない -->
+593a594,599
+>   "extract_targets": [],
+>   "count_targets": [
+>    "break_scripts",
+>    "extract_targets",
+>    "parse_table"
+>   ],
+599a606
+>    "count_targets",
+613a621
+>    "count_targets",

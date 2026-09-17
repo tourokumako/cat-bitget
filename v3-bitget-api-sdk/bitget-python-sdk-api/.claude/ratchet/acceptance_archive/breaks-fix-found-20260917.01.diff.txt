@@ -1,0 +1,28 @@
+469c469
+< <!-- ACC_CODEREF_START hash=f5230fe3f49a7d23 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=e44bb0d969c807f7 gen_acceptance.py が自動生成＝手で書き換えない -->
+477,479c477,479
+< | `count_targets` | 330 |
+< | `main` | 512 |
+< | `selftest` | 794 |
+---
+> | `count_targets` | 349 |
+> | `main` | 534 |
+> | `selftest` | 816 |
+487c487
+< <!-- ACC_SPEC_START hash=3cfeb4cb7c6523d8 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=1870cf0c3060fff9 gen_acceptance.py が自動生成＝手で書き換えない -->
+496a497
+>       "<モジュール直下>",
+498c499,501
+<       "count_targets"
+---
+>       "count_targets",
+>       "main",
+>       "selftest"
+501c504
+<   "_impl_functions の意味": "この工事で触る関数。extract_targets（re.sub の count・s.index と s.find・相手がいまの設計書）と count_targets（1か所以上で壊せる扱い）の中だけを直す。新しい関数・呼び出し・モジュール直下の変更は無い＝実装のあとに SPEC を作り直す必要が無い形にする（承認は1回）。壊すプログラム（.sh）は照合A の対象外。",
+---
+>   "_impl_functions の意味": "照合A は「触った関数」を commit 済みの版（HEAD）との差で数える（verify_design_contract.py の touched_functions）。run_breaks.py には、5 の工事（breaks-target-count-20260917・未 commit）で足した <モジュール直下>・extract_targets・count_targets・main・selftest の差が残っているので、5つとも書く（`git diff HEAD -- .claude/tools/run_breaks.py | grep '^@@'` の6か所＝43行・lint_expect の後・main 2か所・SELF_TESTS・selftest で確かめた）。この工事で中身を直すのは extract_targets と count_targets だけ。★1回目の承認でこの5つを書かず、承認の後に照合で止まった（私の確認漏れ）。壊すプログラム（.sh）は照合A の対象外。",

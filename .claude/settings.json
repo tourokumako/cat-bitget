@@ -94,6 +94,15 @@
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_e37_scalp_frequency.sh"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_selftest_after_source_edit.sh post"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -148,6 +157,14 @@
           {
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_checked_edit.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/show_breaks_on_code_edit.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/forbid_edit_generated_docs.sh"
           }
         ]
       },
@@ -395,6 +412,11 @@
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_chat_writing.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_selftest_after_source_edit.sh stop",
+            "timeout": 15
           }
         ]
       }

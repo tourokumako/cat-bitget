@@ -27,7 +27,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -63,6 +65,20 @@ DONE_MARK = "✅済"
 STRIKE_RE = re.compile(r"~~[^~]+~~")
 DATE_RE = re.compile(r"(\d{4}-\d{2}-\d{2})")
 WORKLOG_RE = re.compile(r"session_worklog_(\d{4})(\d{2})(\d{2})\.md$")
+
+# ★2026-09-17（設計書 docs-autogen-next-step-pdca-20260917・まこさん指示「手書きせざるをえないもの以外は自動生成にしてほしい」）
+#   ＝next_step.md を元データ next_step_src.json から作る。元データは、いまの next_step.md を
+#     1文字も変えずに読み込んで作る（--import・最初の1回）。以後は元データを直して --write。
+SRC_NAME = "next_step_src.json"
+GEN_HEAD = "<!-- NEXT_STEP_GENERATED hash="
+GEN_RE = re.compile(r"^<!-- NEXT_STEP_GENERATED hash=([0-9a-f]{16}) [^\n]*-->\n")
+SEP_RE = re.compile(r"^\|(\s*:?-{3,}:?\s*\|)+\s*$")
+CELL_SPLIT_RE = re.compile(r"(?<!\\)\|")
+REF_RE = re.compile(r"(?:session_worklog_(\d{8})\.md`?|worklog\s*(\d{8}))")
+REF_TAIL_RE = re.compile(r"^[\s`]*(?:の\s*)?(§\d+(?:\.\d+)?(?:\s*[〜～・、,]\s*§?\d+(?:\.\d+)?)*)")
+SEC6_HEAD = "# §6 "
+S6_FLAG = "§6の済の行を移す"
+BASELINE_KEY = "読み込んだときに見つからなかった参照"
 
 
 # ── 材料 ─────────────────────────────────────────────────────────────────────
@@ -313,21 +329,304 @@ def verify(next_text: str, h2: dict, g2: dict, worklog_date: str | None, limit: 
     return ng
 
 
+# ── 元データ（next_step_src.json）から作る（2026-09-17・設計書 docs-autogen-next-step-pdca-20260917）──
+def _split_cells(line: str) -> list[str] | None:
+    """表の1行を欄に分ける（\\| は欄の区切りにしない）。形が崩れていれば None＝その行は生のまま持つ。"""
+    if not (line.startswith("|") and line.endswith("|")) or len(line) < 2:
+        return None
+    parts = CELL_SPLIT_RE.split(line)
+    return parts[1:-1]
+
+
+def _state_col(header: str) -> int | None:
+    cells = _split_cells(header) or []
+    for k, c in enumerate(cells):
+        if "状態" in c or "いつ直すか" in c:
+            return k
+    return None
+
+
+def parse_doc(text: str) -> dict:
+    """next_step.md の本文（目印の行を除く）を、節 → 塊（文／表）の元データにする。1文字も落とさない形。"""
+    trailing = text.endswith("\n")
+    lines = text.split("\n")
+    if trailing:
+        lines = lines[:-1]
+    secs: list[dict] = []
+    cur = {"見出し": "", "塊": []}
+    fence = False
+    i = 0
+
+    def add_text(ln: str) -> None:
+        if cur["塊"] and "文" in cur["塊"][-1]:
+            cur["塊"][-1]["文"].append(ln)
+        else:
+            cur["塊"].append({"文": [ln]})
+
+    while i < len(lines):
+        ln = lines[i]
+        if ln.startswith("```"):
+            fence = not fence
+        if not fence and not ln.startswith("```") and HEAD_RE.match(ln):
+            if cur["見出し"] or cur["塊"]:
+                secs.append(cur)
+            cur = {"見出し": ln, "塊": []}
+            if ln.startswith(H01):
+                m = DATE_RE.search(ln)
+                if m:
+                    cur["書いた日"] = m.group(1)
+            i += 1
+            continue
+        if (not fence and ln.startswith("|") and i + 1 < len(lines)
+                and SEP_RE.match(lines[i + 1]) and _split_cells(ln) is not None):
+            j = i + 2
+            rows = []
+            while j < len(lines) and lines[j].startswith("|"):
+                cells = _split_cells(lines[j])
+                rows.append({"欄": cells} if cells is not None else {"生": lines[j]})
+                j += 1
+            cur["塊"].append({"表": {"見出しの行": ln, "区切り": lines[i + 1],
+                                   "状態の欄": _state_col(ln), "行": rows}})
+            i = j
+            continue
+        add_text(ln)
+        i += 1
+    if cur["見出し"] or cur["塊"]:
+        secs.append(cur)
+    return {"節": secs, "末尾の改行": trailing}
+
+
+def render(src: dict) -> str:
+    """元データから next_step.md の本文を作る（目印の行は付けない）。"""
+    out: list[str] = []
+    for sec in src["節"]:
+        h = sec.get("見出し", "")
+        if h:
+            if sec.get("書いた日"):
+                h = DATE_RE.sub(sec["書いた日"], h, count=1)
+            out.append(h)
+        for blk in sec.get("塊", []):
+            if "文" in blk:
+                out.extend(blk["文"])
+            else:
+                t = blk["表"]
+                out.append(t["見出しの行"])
+                out.append(t["区切り"])
+                for r in t["行"]:
+                    out.append("|" + "|".join(r["欄"]) + "|" if "欄" in r else r["生"])
+    return "\n".join(out) + ("\n" if src.get("末尾の改行", True) else "")
+
+
+def strip_gen_head(text: str) -> tuple[str, str | None]:
+    """1行目の生成の目印を外す。戻り＝(本文, 目印に書かれたハッシュ値 or None)。"""
+    m = GEN_RE.match(text)
+    if not m:
+        return text, None
+    return text[m.end():], m.group(1)
+
+
+def _hash16(body: str) -> str:
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
+
+
+def gen_head(body: str) -> str:
+    return f"{GEN_HEAD}{_hash16(body)} tidy_next_step.py が {SRC_NAME} から作った＝手で書き換えない -->\n"
+
+
+def _worklog_secs(state_dir: pathlib.Path, ymd: str, cache: dict) -> set[str] | None:
+    if ymd in cache:
+        return cache[ymd]
+    p = state_dir / f"session_worklog_{ymd}.md"
+    if not p.exists():
+        cache[ymd] = None
+        return None
+    got: set[str] = set()
+    for ln in p.read_text(encoding="utf-8").splitlines():
+        if ln.startswith("#"):
+            got.update(re.findall(r"§(\d+)", ln))
+    cache[ymd] = got
+    return got
+
+
+def check_refs(text: str, state_dir: pathlib.Path) -> list[str]:
+    """文の中の worklog の節の参照（`session_worklog_YYYYMMDD.md` §N ／ worklog YYYYMMDD §N）が、
+    そのファイルに見出しとして在るか。戻り＝見つからない参照（「ファイル §N」の形）の一覧。"""
+    cache: dict = {}
+    miss: list[str] = []
+    for ln in text.splitlines():
+        for m in REF_RE.finditer(ln):
+            ymd = m.group(1) or m.group(2)
+            t = REF_TAIL_RE.match(ln[m.end():])
+            if not t:
+                continue
+            nums = [n.split(".")[0] for n in re.findall(r"\d+(?:\.\d+)?", t.group(1))]
+            secs = _worklog_secs(state_dir, ymd, cache)
+            for n in nums:
+                if secs is None or n not in secs:
+                    key = f"session_worklog_{ymd}.md §{n}"
+                    if key not in miss:
+                        miss.append(key)
+    return miss
+
+
+def move_done_rows_s6(next_text: str, arc_text: str, today: str) -> tuple[str, str, dict]:
+    """§6 の表から、「★いつ直すか」の欄が ✅済 の行を archive へ1文字も変えずに移す。
+    ★元データの「§6の済の行を移す」が true のときだけ呼ぶ（§6 の決まり5つ目「消すかは まこさんが決める」のため）。"""
+    lines = next_text.splitlines(keepends=True)
+    s6 = next((i for i, l in enumerate(lines) if l.startswith(SEC6_HEAD)), None)
+    zero = tuple(0 for _ in MARKS)
+    rep = {"moved_rows": 0, "moved": zero}
+    if s6 is None:
+        return next_text, arc_text, rep
+    end = _section_end(lines, s6)
+    keep, moved_rows, head_rows, col = [], [], "", None
+    for k, ln in enumerate(lines):
+        body = ln.rstrip("\n")
+        if s6 <= k < end and body.startswith("|") and k + 1 < len(lines) and SEP_RE.match(lines[k + 1].rstrip("\n")):
+            col = _state_col(body)
+            head_rows = ln + lines[k + 1]
+        cells = _split_cells(body) if s6 <= k < end else None
+        if (cells is not None and col is not None and col < len(cells)
+                and DONE_MARK in cells[col] and not SEP_RE.match(body)):
+            moved_rows.append(ln)
+        else:
+            keep.append(ln)
+    if not moved_rows:
+        return next_text, arc_text, rep
+    new_next, moved = "".join(keep), "".join(moved_rows)
+    head = (f"\n\n# {today} に tidy_next_step.py が next_step.md の §6 の表から移した行"
+            f"（✅済 の行 {len(moved_rows)} 行・1文字も変えていない）\n\n" + head_rows)
+    new_arc = arc_text + head + moved
+    before, after, mv = count_marks(next_text), count_marks(new_next), count_marks(moved)
+    check_marks(before, after, mv)
+    rep.update(moved_rows=len(moved_rows), moved=mv)
+    return new_next, new_arc, rep
+
+
+def _atomic_write(path: pathlib.Path, text: str) -> None:
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.")
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(text)
+    os.replace(tmp, path)
+
+
+def _first_diff(a: str, b: str) -> str:
+    al, bl = a.splitlines(), b.splitlines()
+    for k in range(max(len(al), len(bl))):
+        x = al[k] if k < len(al) else "（無い）"
+        y = bl[k] if k < len(bl) else "（無い）"
+        if x != y:
+            return f"{k + 1}行目\n     いま　　＝{x[:160]}\n     作り直し＝{y[:160]}"
+    return "改行の有無だけが違う"
+
+
+def import_src(next_path: pathlib.Path) -> int:
+    """いまの next_step.md から元データを作る（最初の1回）。作り直した文書が1文字でも違えば書かない。"""
+    src_path = next_path.parent / SRC_NAME
+    if src_path.exists():
+        print(f"❌ [tidy --import] {src_path} が既に在る＝上書きしない（元データを直して --write を使う）")
+        return 1
+    body, _h = strip_gen_head(next_path.read_text(encoding="utf-8"))
+    src = parse_doc(body)
+    again = render(src)
+    if again != body:
+        print(f"❌ [tidy --import] 作り直した文書が いまの {next_path.name} と違う＝元データを書かない\n   最初に違う所＝{_first_diff(body, again)}")
+        return 1
+    miss = check_refs(body, next_path.parent)
+    src[BASELINE_KEY] = miss
+    src[S6_FLAG] = False
+    _atomic_write(src_path, json.dumps(src, ensure_ascii=False, indent=1) + "\n")
+    n_tab = sum(1 for s in src["節"] for b in s["塊"] if "表" in b)
+    n_row = sum(len(b["表"]["行"]) for s in src["節"] for b in s["塊"] if "表" in b)
+    print(f"✅ [tidy --import] {src_path.name} を書いた＝節 {len(src['節'])}／表 {n_tab}／表の行 {n_row}"
+          f"／作り直した文書は いまのファイルと1文字も違わない")
+    print(f"   worklog の節の参照で見つからなかったもの＝{len(miss)} 件（元データに控えた＝以後に足した参照だけを止める）")
+    for x in miss:
+        print(f"     ・{x}")
+    return 0
+
+
+def check_generated(next_path: pathlib.Path) -> list[str]:
+    """(g) 元データが在るとき＝1行目の目印・全文のハッシュ値・元データから作ったままか。"""
+    src_path = next_path.parent / SRC_NAME
+    if not src_path.exists():
+        return []
+    text = next_path.read_text(encoding="utf-8")
+    body, h = strip_gen_head(text)
+    ng = []
+    if h is None:
+        ng.append(f"(g) 1行目に生成の目印が無い → `tidy_next_step.py --write`（元データ {SRC_NAME} から作る）")
+        return ng
+    if h != _hash16(body):
+        ng.append(f"(g) 目印のハッシュ値 {h} と本文 {_hash16(body)} が違う＝手で書き換えた → 元データ {SRC_NAME} を直して `--write`")
+    src = json.loads(src_path.read_text(encoding="utf-8"))
+    if render(src) != body:
+        ng.append(f"(g) 本文が元データ {SRC_NAME} から作ったものと違う → 元データを直して `--write`／最初に違う所＝{_first_diff(body, render(src))}")
+    return ng
+
+
+def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) -> int:
+    """元データから作って書く。照らす5つのどれかが通らなければ、1文字も書かない。"""
+    today = date.today().isoformat()
+    src_path = next_path.parent / SRC_NAME
+    src = json.loads(src_path.read_text(encoding="utf-8"))
+    text = render(src)
+    arc = arc_path.read_text(encoding="utf-8") if arc_path.exists() else ""
+    new_next, new_arc, rep = move_to_archive(text, arc, today)
+    new_next, new_arc, rep2 = move_done_rows(new_next, new_arc, today)
+    rep3 = {"moved_rows": 0}
+    if src.get(S6_FLAG):
+        new_next, new_arc, rep3 = move_done_rows_s6(new_next, new_arc, today)
+    h2, g2 = _pass(H2), _pass(G2)
+    new_next = refresh_marks(new_next, h2, g2, today)
+    base = set(src.get(BASELINE_KEY, []))
+    miss = [x for x in check_refs(new_next, next_path.parent) if x not in base]
+    ng = verify(new_next, h2, g2, latest_worklog_date(next_path.parent), limit)
+    if miss:
+        ng += [f"(参照) {x} が見出しに無い（元データの文を直す）" for x in miss]
+    if ng:
+        print(f"❌ [tidy --write] 元データから作った文書に {len(ng)} 件＝1文字も書かない:")
+        for x in ng:
+            print(f"   ・{x}")
+        return 2
+    new_src = parse_doc(new_next)
+    if render(new_src) != new_next:
+        print(f"❌ [tidy --write] 作った文書を元データに戻すと形が変わる＝書かない／{_first_diff(new_next, render(new_src))}")
+        return 2
+    new_src[BASELINE_KEY] = src.get(BASELINE_KEY, [])
+    new_src[S6_FLAG] = bool(src.get(S6_FLAG))
+    if new_arc != arc:
+        _atomic_write(arc_path, new_arc)
+    _atomic_write(src_path, json.dumps(new_src, ensure_ascii=False, indent=1) + "\n")
+    _atomic_write(next_path, gen_head(new_next) + new_next)
+    print(f"[tidy --write] 元データ {SRC_NAME} から作った／移した節 {rep['moved_sections']}"
+          f"／0-2 の表から移した行 {rep2['moved_rows']}／§6 の表から移した行 {rep3['moved_rows']}"
+          f"（§6 を移す設定＝{bool(src.get(S6_FLAG))}）／worklog の参照を照らした（控えの外で見つからない参照 0 件）"
+          f"／(0-b-2) を json から書いた")
+    return do_verify(next_path, limit)
+
+
 # ── 口 ───────────────────────────────────────────────────────────────────────
 def do_verify(next_path: pathlib.Path, limit: int) -> int:
     text = next_path.read_text(encoding="utf-8")
     ng = verify(text, _pass(H2), _pass(G2), latest_worklog_date(next_path.parent), limit)
+    # ★2026-09-17＝元データ next_step_src.json が在れば (g) も見る（目印・全文のハッシュ値・元データから作ったままか）
+    ng += check_generated(next_path)
     if ng:
         print(f"❌ [tidy --verify] {next_path.name} の形に {len(ng)} 件:")
         for x in ng:
             print(f"   ・{x}")
         return 2
     n0 = sec0_lines(text.splitlines())
-    print(f"✅ [tidy --verify] 6つとも通った（§0 {n0} 行／上限 {limit}）")
+    _n_chk = "7つ（6つ＋(g) 元データと全文のハッシュ値）" if (next_path.parent / SRC_NAME).exists() else "6つ"
+    print(f"✅ [tidy --verify] {_n_chk}とも通った（§0 {n0} 行／上限 {limit}）")
     return 0
 
 
 def do_write(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) -> int:
+    if (next_path.parent / SRC_NAME).exists():
+        # ★2026-09-17＝元データが在れば、文書ではなく元データから作る（設計書 docs-autogen-next-step-pdca-20260917）
+        return do_write_src(next_path, arc_path, limit)
     today = date.today().isoformat()
     text = next_path.read_text(encoding="utf-8")
     arc = arc_path.read_text(encoding="utf-8") if arc_path.exists() else ""
@@ -518,6 +817,8 @@ def selftest() -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description="next_step.md の §0 を機械で整えて検査する")
     ap.add_argument("--verify", action="store_true")
+    ap.add_argument("--import", dest="do_import", action="store_true",
+                    help="いまの next_step.md から next_step_src.json を作る（最初の1回・作り直しが1文字も違わないときだけ書く）")
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--file", type=pathlib.Path, default=NEXT, help="検査する next_step.md（テスト用）")
@@ -526,6 +827,8 @@ def main() -> int:
     a = ap.parse_args()
     if a.selftest:
         return selftest()
+    if a.do_import:
+        return import_src(a.file)
     if a.write:
         return do_write(a.file, a.archive, a.limit)
     if a.verify:

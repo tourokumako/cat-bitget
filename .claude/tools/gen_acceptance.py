@@ -783,8 +783,79 @@ def page(d: dict) -> str:
     add("")
     add("| 何を測ったか | コマンド | 結果 |")
     add("|---|---|---|")
+    # ★2026-09-17（設計書 acceptance-results-from-commands-20260917・まこさん「手書きはするな」）
+    #   ＝結果の欄は、道具がコマンドを走らせて入れる。直す前は元データの「結果」を私が手で写し、
+    #     そのまま載せていた（コマンドと結果が合わない行を書いた＝worklog 20260917 §25 の前）。
+    #   ★走らせるのは読むだけのコマンドだけ＝元データに書いたコマンドを道具が走らせると、
+    #     Bash の土台ゲートを通らずに書き込む道になるため。
+    #   ★区切りは「 | 」（前後に空白）＝grep の `a\|b` の縦棒は区切りにしない。
+    def _measure(cmd: str) -> str:
+        import shlex as _shlex
+        read_heads = {"grep", "wc", "sed", "awk", "find", "sort", "head", "tail", "cut", "uniq", "tr", "cat"}
+        git_subs = {"diff", "log", "show", "status", "ls-files", "grep"}
+        py_tools = {"run_breaks.py", "tidy_next_step.py", "gen_hook_list.py", "verify_design_contract.py"}
+        py_flags = {"--verify", "--count-targets", "--selftest", "--parse-only", "--lint-expect",
+                    "--check", "--diff", "--design"}
+        for bad in (">", "<", ";", "&", "`", "$(", "\n"):
+            if bad in cmd:
+                raise SystemExit(f"[gen_acceptance] 「なぜ作るか」のコマンドに「{bad}」が在ります"
+                                 f"（読むだけのコマンドに限る・fail-closed）: {cmd}")
+        for seg in cmd.split(" | "):
+            try:
+                toks = _shlex.split(seg)
+            except ValueError as e:
+                raise SystemExit(f"[gen_acceptance] コマンドを読めない（{e}・fail-closed）: {seg}")
+            if not toks:
+                raise SystemExit(f"[gen_acceptance] 空のコマンドの区切りが在る（fail-closed）: {cmd}")
+            head = toks[0]
+            why = ""
+            if head in read_heads:
+                if head == "sed" and any(t.startswith("-i") or t.startswith("--in-place") for t in toks[1:]):
+                    why = "sed の -i（書き込み）"
+                elif head == "find" and any(t in ("-exec", "-execdir", "-delete", "-ok", "-okdir",
+                                                  "-fprint", "-fprintf", "-fls") for t in toks[1:]):
+                    why = "find の書き込み・実行の旗"
+                elif head == "awk" and "system(" in seg:
+                    why = "awk の system("
+            elif head == "git":
+                if len(toks) < 2 or toks[1] not in git_subs:
+                    why = "git の読むだけでない使い方"
+            elif head == "python3":
+                args = toks[1:]
+                if not args or args[0].rsplit("/", 1)[-1] not in py_tools:
+                    why = "決まった道具でない python3"
+                elif any(t.startswith("-") and t not in py_flags for t in args[1:]):
+                    why = "決まった読むだけの旗でない"
+                elif not any(t in py_flags for t in args[1:]):
+                    why = "読むだけの旗が無い python3"
+            else:
+                why = f"読むだけのコマンドの一覧に無い先頭の語「{head}」"
+            if why:
+                raise SystemExit(f"[gen_acceptance] 「なぜ作るか」のコマンドを走らせません＝{why}"
+                                 f"（読むだけのコマンドに限る・fail-closed）: {cmd}")
+        try:
+            r = subprocess.run(["bash", "-c", cmd], cwd=str(ROOT), capture_output=True,
+                               text=True, timeout=120)
+        except subprocess.TimeoutExpired:
+            raise SystemExit(f"[gen_acceptance] 「なぜ作るか」のコマンドが120秒で終わらない（fail-closed）: {cmd}")
+        out = (r.stdout or "").strip() or (r.stderr or "").strip()
+        lines = out.splitlines()
+        text = " ⏎ ".join(lines)
+        if len(text) > 500:
+            text = text[:500] + f"…（出力 {len(lines)} 行のうち先頭 500 文字）"
+        return f"{text}（終了コード {r.returncode}）"
+
     for r in d.get("なぜ作るか") or []:
-        add(f"| {_esc(r['何を測ったか'])} | `{_esc(r['コマンド'])}` | {_esc(r['結果'])} |")
+        if "結果" in r:
+            raise SystemExit("[gen_acceptance] 元データの「なぜ作るか」に「結果」の欄が在ります（fail-closed）。"
+                             "結果は道具がコマンドを走らせて入れます（まこさん「手書きはするな」）。"
+                             f"「読み方」（数字なし）に書き替えてください: {r.get('何を測ったか')}")
+        yomi = str(r.get("読み方") or "")
+        if re.search(r"[0-9０-９]", yomi):
+            raise SystemExit("[gen_acceptance] 「なぜ作るか」の「読み方」に数字が在ります（fail-closed）。"
+                             f"数字はコマンドの出力にだけ出します: {yomi}")
+        cell = _esc(_measure(str(r["コマンド"]))) + (f"／読み方＝{_esc(yomi)}" if yomi else "")
+        add(f"| {_esc(r['何を測ったか'])} | `{_esc(r['コマンド'])}` | {cell} |")
     add("")
     add("### 2-2 探す材料（印がオンのもの・プログラムが正本から出しました）")
     add("")
@@ -1102,7 +1173,11 @@ def selftest() -> int:
         # T2 囲みに1行 足すと --verify が落ちる
         total += 1
         base = copy.read_text(encoding="utf-8")
-        m = _begin_re("LAWS").search(base)
+        # ★2026-09-17（設計書 acceptance-results-from-commands-20260917）＝LAWS から MATERIALS へ。
+        #   直す前＝LAWS の囲みは §4 の節が名指ししたときだけ出るので、engine_tuner の設計書でない工事では
+        #     m が None になり、T2 で落ちていた（b72・b73 は壊さなくても rc=1 になり、守りを測れていなかった）。
+        #   MATERIALS は page が必ず出す囲み（_section4_blocks の注記）。
+        m = _begin_re("MATERIALS").search(base)
         copy.write_text(base[:m.end()] + "\nわざと足した1行\n" + base[m.end():], encoding="utf-8")
         if verify(dest=copy) == 1:
             ok += 1
@@ -1182,6 +1257,38 @@ def selftest() -> int:
             print(f"   T{total} 食い違いゲート 終了コード 0 → pass")
         else:
             print(f"   T{total} 食い違いゲート → fail（{r.stdout.strip()[:120]}）")
+
+        # T9（2026-09-17・設計書 acceptance-results-from-commands-20260917）＝2-1 の表の結果は道具が入れる
+        #   ①書き込みのコマンドで止まる ②読むだけのコマンドの出力と終了コードが表に入る
+        #   ③元データに「結果」の欄が在ると止まる（本物のファイルには書かない＝page を直に呼ぶ）
+        total += 1
+        bad9 = ""
+        d9 = json.loads(orig_src)
+        d9["なぜ作るか"] = [{"何を測ったか": "見本", "コマンド": "rm -f /tmp/gen_acceptance_t9"}]
+        try:
+            page(d9)
+            bad9 = "書き込みのコマンドで止まらない"
+        except SystemExit:
+            pass
+        d9["なぜ作るか"] = [{"何を測ったか": "見本", "コマンド": "grep -c '^def page' .claude/tools/gen_acceptance.py",
+                            "読み方": "定義の数"}]
+        try:
+            if "| 1（終了コード 0）／読み方＝定義の数 |" not in page(d9):
+                bad9 = bad9 or "出力と終了コードが表に入らない"
+        except SystemExit as e:
+            bad9 = bad9 or f"読むだけのコマンドで止まった（{e}）"
+        d9["なぜ作るか"] = [{"何を測ったか": "見本", "コマンド": "grep -c x .claude/tools/gen_acceptance.py",
+                            "結果": "手で写した"}]
+        try:
+            page(d9)
+            bad9 = bad9 or "「結果」の欄で止まらない"
+        except SystemExit:
+            pass
+        if not bad9:
+            ok += 1
+            print(f"   T{total} 2-1 の結果を道具が入れる（書き込みで止まる・出力が入る・手の結果で止まる） → pass")
+        else:
+            print(f"   T{total} 2-1 の結果 → fail（{bad9}）")
     finally:
         SRC.write_text(orig_src, encoding="utf-8")
         copy.unlink(missing_ok=True)

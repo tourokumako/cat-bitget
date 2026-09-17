@@ -43,6 +43,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -218,6 +219,179 @@ def lint_expect() -> list:
     return bad
 
 
+# ★2026-09-17（仕組み1の後半・設計書 iter="breaks-target-count-20260917"・まこさん指示 2026-09-16
+#   「この３つのミスを繰り返さない仕組みを作れ」・L-605・まこさん決定 2026-09-17「載っているものだけにします」）
+#   ＝壊すプログラムが壊すために探している文字を取り出し、いまのコードで何か所あるかを数える。
+#   なぜ要るか（実測）＝コードの行を直したのに壊すプログラムの探す文字を直さないと、探す文字が0か所になり、
+#     壊すプログラムは何も壊せない（103回目の b95・2026-09-17 に見つけた b52）。手で grep するのを忘れると誰も気づかない。
+HEREDOC_RE = re.compile(
+    r'python3\s+-\s+("[^"\n]*"|\'[^\'\n]*\'|\S+)[^\n]*?<<\s*[\'"]?(\w+)[\'"]?[ \t]*\n(.*?)\n\2[ \t]*$',
+    re.S | re.M)
+BASH_VAR_RE = re.compile(r'^[ \t]*([A-Za-z_][A-Za-z_0-9]*)=("([^"\n]*)"|\'([^\'\n]*)\'|([^\s;]+))[ \t]*$', re.M)
+
+
+def extract_targets(path: pathlib.Path, lib_text: str) -> list:
+    """壊すプログラム1本から、python のヒアドキュメントごとに {相手のファイル, 探す文字の一覧, 数えない理由} を取り出す。
+
+    ★探す文字＝ファイルの中身を入れた変数（`s = open(…).read()` の s）に対する
+      `s.replace(A, …)`・`s.count(A)`・`A in s`／`A not in s` の A と、`re.sub(形, …, s, flags=…)` の形。
+      A が文字の定数か、文字の定数を入れた変数のときだけ取る（式は取らない＝数えない）。
+    ★python を構文の木で読むので、`'a\\n' 'b\\n'` の連結やエスケープは python が解いた後の文字になる
+      ＝`s.replace` が実際に探す文字と同じ。
+    """
+    def _expand(val, env):
+        return re.sub(r'\$\{?([A-Za-z_][A-Za-z_0-9]*)\}?', lambda mm: env.get(mm.group(1), mm.group(0)), val)
+
+    def _bash_vars(src, base):
+        """bash の `名前="値"` の行を上から読み、$変数 を展開した辞書を返す（`$(…)` は読まない）。"""
+        env = dict(base)
+        for mm in BASH_VAR_RE.finditer(src):
+            val = next(g for g in (mm.group(3), mm.group(4), mm.group(5)) if g is not None)
+            if "$(" in val or "`" in val:
+                continue
+            env[mm.group(1)] = _expand(val, env)
+        return env
+
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    env = _bash_vars(text, _bash_vars(lib_text or "", {}))
+    out = []
+    for m in HEREDOC_RE.finditer(text):
+        arg = m.group(1).strip("'\"")
+        target = _expand(arg, env)
+        item = {"target": None if "$" in target else target, "searches": [], "skip": ""}
+        if item["target"] is None:
+            item["skip"] = f"相手のファイルを決められない（{arg}）"
+        # ★2026-09-17（設計書 breaks-fix-found-20260917）＝相手がいまの設計書なら数えない。
+        #   なぜ＝設計書は工事ごとに中身が変わるので、どの文字に合わせても次の工事で0か所になる（b89）。
+        if item["target"] and os.path.normpath(item["target"]) == str(ROOT / ".claude" / "state" / "acceptance.md"):
+            item["skip"] = "相手がいまの設計書（工事ごとに中身が変わる＝数えない）"
+            out.append(item)
+            continue
+        try:
+            tree = ast.parse(m.group(3))
+        except SyntaxError as e:
+            item["skip"] = f"python が読めない（{e.msg}）"
+            out.append(item)
+            continue
+        consts, content = {}, set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+                name = node.targets[0].id
+                v = node.value
+                if isinstance(v, ast.Constant) and isinstance(v.value, str):
+                    consts[name] = v.value
+                elif (isinstance(v, ast.Call) and isinstance(v.func, ast.Attribute)
+                      and v.func.attr == "read"):
+                    content.add(name)
+
+        def _val(n):
+            if isinstance(n, ast.Constant) and isinstance(n.value, str):
+                return n.value
+            if isinstance(n, ast.Name):
+                return consts.get(n.id)
+            return None
+
+        def _is_content(n):
+            return isinstance(n, ast.Name) and n.id in content
+
+        def _flags(call):
+            f = 0
+            for kw in call.keywords:
+                if kw.arg != "flags":
+                    continue
+                for sub in ast.walk(kw.value):
+                    if (isinstance(sub, ast.Attribute) and isinstance(sub.value, ast.Name)
+                            and sub.value.id == "re" and hasattr(re, sub.attr)):
+                        f |= getattr(re, sub.attr)
+            return f
+
+        seen = set()
+        # ★2026-09-17（設計書 breaks-fix-found-20260917）＝1か所以上で壊せる形を2つ覚える。
+        #   ①re.sub に count を渡していない＝当たる所を全部 消す（b27）
+        #   ②s.index・s.find に渡した文字＝最初の1か所を使う（b79）
+        firsts, all_subs = set(), set()
+        for node in ast.walk(tree):
+            got = None
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+                attr, recv = node.func.attr, node.func.value
+                if attr in ("index", "find") and _is_content(recv) and node.args:
+                    v = _val(node.args[0])
+                    if v:
+                        firsts.add(v)
+                if attr in ("replace", "count") and _is_content(recv) and node.args:
+                    v = _val(node.args[0])
+                    if v:
+                        got = ("文字", v, 0)
+                elif (attr == "sub" and isinstance(recv, ast.Name) and recv.id == "re"
+                      and len(node.args) >= 3 and _is_content(node.args[2])):
+                    v = _val(node.args[0])
+                    if v:
+                        got = ("形", v, _flags(node))
+                        if len(node.args) < 4 and not any(k.arg == "count" for k in node.keywords):
+                            all_subs.add(v)
+            elif (isinstance(node, ast.Compare) and len(node.ops) == 1
+                  and isinstance(node.ops[0], (ast.In, ast.NotIn)) and _is_content(node.comparators[0])):
+                v = _val(node.left)
+                if v:
+                    got = ("文字", v, 0)
+            if got and (got[0], got[1]) not in seen:
+                seen.add((got[0], got[1]))
+                item["searches"].append({"kind": got[0], "text": got[1], "flags": got[2]})
+        for srch in item["searches"]:
+            srch["all"] = srch["kind"] == "形" and srch["text"] in all_subs
+            srch["first"] = srch["text"] in firsts
+        if not item["searches"] and not item["skip"]:
+            item["skip"] = "文字で探していない（定数の文字を replace・count・in・re.sub に渡していない）"
+        out.append(item)
+    return out
+
+
+def count_targets(design_text: str | None = None) -> tuple:
+    """全部の壊すプログラムの探す文字を、相手のファイルで数える。
+
+    戻り＝(行の一覧, 壊せないものの名前の一覧)。
+      行＝{"name", "group"（"ok"＝全部1か所／"ng"＝0か所か2か所以上が在る／"skip"＝数えない）, "items"}
+    ★design_text を渡すと、壊せないものの名前の一覧は「その設計書の完成の条件の表に載っているもの」だけにする
+      （まこさん決定 2026-09-17「載っているものだけにします」）。一覧の行は全部 返す（画面には全部 出す）。
+    """
+    lib = BREAKS_DIR / "lib.sh"
+    lib_text = lib.read_text(encoding="utf-8", errors="ignore") if lib.exists() else ""
+    want = None
+    if design_text is not None:
+        want = {r["script"] for r in parse_table(design_text) if r.get("script")}
+    rows = []
+    for p in break_scripts():
+        if p.name == "lib.sh":
+            continue
+        items = extract_targets(p, lib_text)
+        n_search = 0
+        bad = False
+        for it in items:
+            body = None
+            if it["target"] and pathlib.Path(it["target"]).is_file():
+                body = pathlib.Path(it["target"]).read_text(encoding="utf-8", errors="ignore")
+            for s in it["searches"]:
+                n_search += 1
+                if body is None:
+                    s["count"], s["note"] = 0, "相手のファイルが無い"
+                elif s["kind"] == "文字":
+                    s["count"], s["note"] = body.count(s["text"]), ""
+                else:
+                    try:
+                        s["count"], s["note"] = len(re.findall(s["text"], body, s["flags"])), ""
+                    except re.error as e:
+                        s["count"], s["note"] = 0, f"正規表現として読めない（{e}）"
+                # ★2026-09-17（設計書 breaks-fix-found-20260917）＝全部を消す形・最初の1か所を使う形は、1か所以上で壊せる
+                if s["count"] > 1 and (s.get("all") or s.get("first")):
+                    s["note"] = "全部を消す形＝1か所以上で壊せる" if s.get("all") else "最初の1か所を使う形＝1か所以上で壊せる"
+                elif s["count"] != 1:
+                    bad = True
+        group = "ng" if bad else ("ok" if n_search else "skip")
+        rows.append({"name": p.name, "group": group, "items": items})
+    ng = [r["name"] for r in rows if r["group"] == "ng" and (want is None or r["name"] in want)]
+    return rows, ng
+
+
 def expect_of(name: str) -> tuple:
     """壊すプログラムの宣言（期待する終了コードと、その意味）を読む。
 
@@ -384,6 +558,10 @@ def main(argv: list) -> int:
     #     落ちた行にしか当たらない。
     #   ★記録も凍結も1バイトも書かない（読むだけ）。
     ap.add_argument("--lint-expect", action="store_true")
+    # ★2026-09-17（仕組み1の後半・設計書 iter="breaks-target-count-20260917"）
+    #   ＝壊すプログラムが探す文字を、いまのコードで数える口。記録も凍結も1バイトも書かない（読むだけ）。
+    #   `--design <設計書>` を一緒に渡すと、rc を決めるのは その設計書の表に載っている壊すプログラムだけ。
+    ap.add_argument("--count-targets", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args(argv)
 
@@ -433,6 +611,41 @@ def main(argv: list) -> int:
             return 1
         print(f"✅ 自己テストを測る壊すプログラムの EXPECT_MSG は全部「❌」で始まる"
               f"（{len(selftest_breaks())} 本）")
+        return 0
+
+    if a.count_targets:
+        try:
+            design_text = None
+            if "--design" in argv:
+                _dp = pathlib.Path(a.design)
+                design_text = _dp.read_text(encoding="utf-8") if _dp.exists() else ""
+            rows, ng = count_targets(design_text)
+        except Exception as e:                               # noqa: BLE001
+            print(f"[STOP] 探す文字を数えられませんでした（{e}）", file=sys.stderr)
+            return 2
+        mark = {"ok": "✅ 1か所", "ng": "❌ 0か所か2か所以上", "skip": "— 数えない"}
+        for r in rows:
+            print(f"{mark[r['group']]}  {r['name']}")
+            for it in r["items"]:
+                tgt = it["target"] or "（決められない）"
+                if tgt.startswith(str(ROOT) + "/"):
+                    tgt = tgt[len(str(ROOT)) + 1:]
+                if it["skip"] and not it["searches"]:
+                    print(f"      相手={tgt}  数えない理由＝{it['skip']}")
+                for s in it["searches"]:
+                    head = s["text"].replace("\n", "⏎")[:40]
+                    note = f"（{s['note']}）" if s.get("note") else ""
+                    print(f"      相手={tgt}  {s['kind']} {s['count']} か所{note}「{head}」")
+        n = {g: sum(1 for r in rows if r["group"] == g) for g in mark}
+        print(f"   1か所 {n['ok']} 本 ／ 0か所か2か所以上 {n['ng']} 本 ／ 数えない {n['skip']} 本"
+              f"（合計 {len(rows)} 本）")
+        if design_text is not None:
+            print(f"   ★rc を決める相手＝設計書の完成の条件の表に載っている壊すプログラムだけ"
+                  f"（まこさん決定 2026-09-17）＝壊せないもの {len(ng)} 本: {' '.join(ng) or 'なし'}")
+        if ng:
+            print(f"[STOP] 壊す相手の文字を、ちょうど1か所 見つけられない壊すプログラムがあります"
+                  f"（{len(ng)} 本・L-605）: {' '.join(ng)}", file=sys.stderr)
+            return 1
         return 0
 
     if a.freeze:
@@ -595,6 +808,8 @@ SELF_TESTS = (
     ("T14", "打ち切りに掛かっても、戻り値が3つ返り、壊した相手が元に戻る"),
     # ★2026-09-16（監査 cp36 の M-2・設計書 iter="m2e2-cp36-major-20260914"）
     ("T15", "自己テストを測る壊すプログラムだけを拾い、EXPECT_MSG が「❌」で始まらないものを名指しする"),
+    # ★2026-09-17（仕組み1の後半・設計書 iter="breaks-target-count-20260917"・L-605）
+    ("T16", "壊すプログラムが探す文字を数え、1か所／0か所・2か所以上／数えない、に分ける（表に載っているものだけで止める）"),
 )
 
 
@@ -734,6 +949,44 @@ def selftest() -> int:
                 ng.append(f"T15c: ❌ で始まらない宣言を名指ししていない（出たもの＝{_bad15}）")
             if "b95a_ok.sh" in _bad15:
                 ng.append("T15d: ❌ で始まる宣言まで名指しした")
+
+            # ★T16（2026-09-17・仕組み1の後半）＝探す文字を数える。見本は一時の場所だけ（本物は触らない）。
+            #   見本4本＝①1か所（壊せる）②0か所 ③2か所 ④文字で探さない。①〜③の相手は同じファイル。
+            for _p in list(BREAKS_DIR.glob("*.sh")):
+                _p.unlink()
+            (BREAKS_DIR / "lib.sh").write_text(f'ROOT="{d}"\n', encoding="utf-8")
+            (pathlib.Path(d) / "t16_target.txt").write_text("AAA\nBBB\nBBB\n", encoding="utf-8")
+            _q = "'"
+
+            def _mk16(fname, search):
+                (BREAKS_DIR / fname).write_text(
+                    '#!/bin/bash\nT="$ROOT/t16_target.txt"\n'
+                    f"python3 - \"$T\" <<{_q}PYEOF{_q}\n"
+                    "import sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\n"
+                    f"new = {search!r}\n"
+                    "if new not in s:\n    raise SystemExit('壊す対象の行が見つからない')\n"
+                    "open(p, 'w', encoding='utf-8').write(s.replace(new, 'X', 1))\nPYEOF\n",
+                    encoding="utf-8")
+
+            _mk16("b16a_one.sh", "AAA\n")
+            _mk16("b16b_zero.sh", "CCC\n")
+            _mk16("b16c_two.sh", "BBB\n")
+            (BREAKS_DIR / "b16d_nosearch.sh").write_text(
+                "#!/bin/bash\necho 文字で探さない\nexit 1\n", encoding="utf-8")
+            _rows16, _ng16 = count_targets()
+            _g16 = {r["name"]: r["group"] for r in _rows16}
+            if _g16 != {"b16a_one.sh": "ok", "b16b_zero.sh": "ng", "b16c_two.sh": "ng",
+                        "b16d_nosearch.sh": "skip"}:
+                ng.append(f"T16a: 分け方が違う（{_g16}）")
+            if sorted(_ng16) != ["b16b_zero.sh", "b16c_two.sh"]:
+                ng.append(f"T16b: 壊せないものの名前が違う（{_ng16}）")
+            _design16 = ("<!-- ACCEPT_TABLE_START -->\n"
+                         "| # | 完成の条件 | 壊すプログラム | いまの状態 |\n|---|---|---|---|\n"
+                         "| 1 | あ | `b16a_one.sh` | 未着手 |\n| 2 | い | `b16c_two.sh` | 未着手 |\n"
+                         "<!-- ACCEPT_TABLE_END -->\n")
+            _r16c, _ng16c = count_targets(_design16)
+            if _ng16c != ["b16c_two.sh"] or len(_r16c) != 4:
+                ng.append(f"T16c: 表に載っているものだけで止めていない（{_ng16c}・行 {len(_r16c)}）")
     finally:
         FROZEN, BREAKS_DIR, TIMEOUT_SEC = _kf, _kb, _kt
 

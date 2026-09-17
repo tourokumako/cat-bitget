@@ -26,6 +26,15 @@ fi
 #   （日付をまたいで記録し続ける）が無いようにしてほしい」）＝worklog を日付をまたいで書き続けていないかを見る。
 #   判定の本体＝check_worklog_date.py（番人4件・--selftest）。テスト用の第1引数のときは見ない（next_step の検査だけ）。
 if [ -z "$1" ]; then
+  # ★2026-09-17（まこさん指示「手書きせざるをえないもの以外は自動生成にしてほしい」・設計書 docs-autogen-next-step-pdca-20260917）
+  #   ＝pdca_flow.md の §1 の hook の一覧が、settings.json の登録と元データ hook_roles.json から作ったままかを見る。
+  #   Bash で囲みの中を書き替えた・hook を登録したのに一覧を作り直していない、のどちらでもターンを終われない。
+  #   テスト用の第1引数のときは見ない（tidy_next_step.py --selftest の T8 は next_step の検査だけを試す）。
+  HL=$(python3 "$ROOT/.claude/tools/gen_hook_list.py" --verify 2>&1); HRC=$?
+  if [ "$HRC" -ne 0 ]; then
+    printf "⛔ [hook の一覧・Stop hook] pdca_flow.md の §1 の hook の一覧が、settings.json と元データから作ったままではありません（まこさん 2026-09-17「手書きせざるをえないもの以外は自動生成にしてほしい」）。\n%s\n直し方＝役割の文は .claude/state/hook_roles.json に書く → python3 .claude/tools/gen_hook_list.py --write\n（解除の合言葉はありません）\n" "$HL" >&2
+    exit 2
+  fi
   WL=$(python3 "$ROOT/.claude/hooks/check_worklog_date.py" 2>&1); WRC=$?
   if [ "$WRC" -ne 0 ]; then
     printf "⛔ [worklog の日付・Stop hook] worklog を日付をまたいで書き続けています（まこさん 2026-09-09「session_worklogへの記録は日付で区切ってほしい」）。\n%s\n直し方＝今日の日付の session_worklog_YYYYMMDD.md を作り、今日の節はそこへ書く。古いファイルは触らない（触ったら、そのあとで今日の worklog を書き足す）。\n（解除の合言葉はありません）\n" "$WL" >&2

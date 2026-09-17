@@ -377,6 +377,20 @@ echo "   ✅ $CHK"
 #     承認前は自由に書ける。承認後に1文字でも変わったら、run_breaks.py が rc=2 で止まる。」
 RUNB="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/run_breaks.py"
 if [ -f "$RUNB" ]; then
+  # ★2026-09-17（仕組み1の後半・設計書 iter="breaks-target-count-20260917"・L-605・まこさん決定「載っているものだけにします」）
+  #   ＝凍結の前に、壊すプログラムが探す文字を いまのコードで数える。
+  #   この設計書の完成の条件に載っている壊すプログラムが、探す文字を ちょうど1か所 見つけられなければ承認を取り消す
+  #   （0か所＝何も壊せない・2か所以上＝どこを壊すか定まらない）。載っていないものは画面に出すだけ。
+  #   なぜ＝コードの行を直したのに壊すプログラムの探す文字を直さないと、承認で何も壊せず rc=0 になった（103回目の b95）。
+  echo "── 壊すプログラムが探す文字を、いまのコードで数えます（L-605）──"
+  CNT=$(python3 "$RUNB" --count-targets --design "$LIST" 2>&1); CNT_RC=$?
+  printf '%s\n' "$CNT" | grep -v -e '^✅ 1か所' -e '^      相手=.*文字 1 か所' -e '^      相手=.*形 1 か所' -e '^— 数えない' -e '数えない理由＝'
+  if [ "$CNT_RC" -ne 0 ]; then
+    echo "❌ この設計書の壊すプログラムが、壊す相手の文字を ちょうど1か所 見つけられません。承認を取り消します（L-605）。" >&2
+    echo "   ＝壊すプログラムの探す文字を、いまのコードの行に合わせてから、もう一度 承認してください。" >&2
+    rm -f "$STATE/acceptance.approved"
+    exit 1
+  fi
   echo "── 壊し方を機械が走らせます（監査 cp16 の E-12）──"
   python3 "$RUNB" --freeze
   if [ $? -ne 0 ]; then
@@ -462,10 +476,22 @@ def _run(cmd):
         return None
 
 
+# ★2026-09-17（仕組み3・まこさん指示 2026-09-16「この３つのミスを繰り返さない仕組みを作れ」・L-603・まこさん OK「１　OK」）
+#   ＝機械が前に書いた「済」の行も、承認のたびに見直す。
+#   直す前＝「未着手」の行しか見なかった。壊すプログラムを直して走らせ直しても、済の行の説明
+#     （壊したときの rc と意味）は古いまま残った（103回目の #6＝古い壊すプログラムで付いた済と説明が残った）。
+#   直した後＝機械の書いた済の行（「承認のときに機械が2つとも測った」の文字が在る行）も、未着手の行と
+#     同じ2つの条件で測り直す。
+#     ・2つとも通った → 説明を、いま測った rc と いまの壊すプログラムの意味（# MEANS:）で書き直す
+#     ・どちらかが通らない → 「未着手」に戻し、理由を画面に出す
+#   ★CC が手で書いた済の行（機械の文字が無い行）は触らない（いままでどおり）。
+#   ★限界（正直に）＝済の行の条件のコマンドも走らせ直すので、承認の時間が延びる（1行あたり最大 TIMEOUT_SEC）。
+MACHINE_DONE_RE = re.compile(r'\*\*✅済\*\*＝壊すと rc=[^|]*?（承認のときに機械が2つとも測った）(?:／壊した意味＝[^|]*)?')
 n, out = 0, []
 for ln in src.splitlines(True):
     t = ln.strip()
-    if t.startswith('|') and '**未着手**' in t:
+    _done_m = MACHINE_DONE_RE.search(ln) if t.startswith('|') else None
+    if t.startswith('|') and ('**未着手**' in t or _done_m):
         cells = [c.strip() for c in t.strip('|').split('|')]
         no = cells[0] if cells else ''
         c = code.get(no)
@@ -473,33 +499,46 @@ for ln in src.splitlines(True):
         brk = cells[5] if len(cells) > 5 else ''
         cmd = _cmd_of(cells[2] if len(cells) > 2 else '')
         ok_brk = match[no] if no in match else (c not in (0, None))
+        _why = None
         if not ok_brk:
-            _w = ("期待した終了コードと違う" if no in match
-                  else "壊すプログラムが落ちていない")
-            print(f"   ⏸ #{no} は「未着手」のまま＝{_w}（rc={c}）")
+            _why = ("期待した終了コードと違う" if no in match
+                    else "壊すプログラムが落ちていない") + f"（rc={c}）"
         elif not brk or brk in ('—', '-', ''):
-            print(f"   ⏸ #{no} は「未着手」のまま＝壊すプログラムの欄が空")
+            _why = "壊すプログラムの欄が空"
         elif cmd is None:
-            print(f"   ⏸ #{no} は「未着手」のまま＝走らせるコマンドを読み取れない")
+            _why = "走らせるコマンドを読み取れない"
         else:
             rc2 = _run(cmd)
-            if rc2 == 0:
-                _mn = next((r.get('means') for r in rows if str(r.get('no')) == no), '')
-                _sfx = f'／壊した意味＝{_mn}' if _mn else ''
-                ln = ln.replace(
-                    '**未着手**',
-                    f'**✅済**＝壊すと rc={c}（宣言どおり）／条件のコマンドも rc=0'
+            if rc2 != 0:
+                _why = f"条件のコマンドが rc={rc2}（0 でない）"
+        if _why is None:
+            _mn = next((r.get('means') for r in rows if str(r.get('no')) == no), '')
+            _sfx = f'／壊した意味＝{_mn}' if _mn else ''
+            _new = (f'**✅済**＝壊すと rc={c}（宣言どおり）／条件のコマンドも rc=0'
                     f'（承認のときに機械が2つとも測った）{_sfx}')
+            if _done_m:
+                if _done_m.group(0) != _new:
+                    ln = ln.replace(_done_m.group(0), _new, 1)
+                    n += 1
+                    print(f"   🔁 #{no} 済のまま＝測り直して説明を書き直した（壊すと rc={c}／条件のコマンド rc=0）")
+                else:
+                    print(f"   ✅ #{no} 済のまま＝測り直した結果も説明も前と同じ")
+            else:
+                ln = ln.replace('**未着手**', _new)
                 n += 1
                 print(f"   ✅ #{no} 済＝壊すと rc={c}（宣言どおり）／条件のコマンド rc=0")
-                if _mn:
-                    print(f"        意味＝{_mn}")
-            else:
-                print(f"   ⏸ #{no} は「未着手」のまま＝条件のコマンドが rc={rc2}（0 でない）")
+            if _mn:
+                print(f"        意味＝{_mn}")
+        elif _done_m:
+            ln = ln.replace(_done_m.group(0), '**未着手**', 1)
+            n += 1
+            print(f"   ⏪ #{no} を「未着手」に戻した＝測り直すと {_why}")
+        else:
+            print(f"   ⏸ #{no} は「未着手」のまま＝{_why}")
     out.append(ln)
 if n:
     open(md_p, 'w', encoding='utf-8').write(''.join(out))
-    print(f"   ✍️ 完成の条件 {n} 行を「済」にしました（壊すプログラムと条件のコマンドの両方が通った行だけ）")
+    print(f"   ✍️ 完成の条件 {n} 行の状態を書き替えました（済にした行・済の説明を書き直した行・未着手に戻した行の合計＝上の ✅／🔁／⏪）")
 PYEOF
     NEW_H=$(shasum -a 256 "$LIST" | awk '{print $1}')
     OLD_H=$(cat "$STATE/acceptance.approved" 2>/dev/null)
