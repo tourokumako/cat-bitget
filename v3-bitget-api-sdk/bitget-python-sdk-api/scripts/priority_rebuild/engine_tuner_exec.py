@@ -1196,6 +1196,17 @@ def _validate_law(no: str, j: dict) -> None:
         lim = j.get("上限")
         if not isinstance(lim, int) or isinstance(lim, bool) or lim < 1:
             raise SystemExit(f"[相場の法則] {no}: 上限が不正: {lim}（1以上の整数・fail-closed）")
+        # ★2026-09-19（設計書 m2c-width-and-stage-candidates-20260918・まこさん決定「案BでOK」）＝
+        #   「除く部品」＝ここに書いた法則が数える部品を、系統の数から外す。
+        #   なぜ＝帯の幅（R7）の指標は3件とも系統が ボラで、ボラの1本は R6（低ボラ）が使っている。
+        #     外さないと、帯の幅に指標を入れた束が必ず R2 で落ちる（2026-09-19 に実物で確かめた）。
+        #   ★R2 の一文は「補助（トレンドの強さ・値動きの幅・出来高）は、違う系統から選ぶ」＝補助の話。
+        #     帯の幅は補助ではなく、レンジが成立する条件（往復の手数料を超える幅が在るか）。
+        ex_p = j.get("除く部品")
+        if ex_p is not None:
+            if not isinstance(ex_p, dict) or set(ex_p) != {"法則"} or not isinstance(ex_p.get("法則"), str):
+                raise SystemExit(f"[相場の法則] {no}: 除く部品が不正: {ex_p}"
+                                 "（形＝{\"法則\": \"<法則の番号>\"}・fail-closed）")
         return
     sel = j.get("数える部品")
     if not isinstance(sel, dict) or not sel or any(k not in _LAW_PICK_KEYS for k in sel):
@@ -1444,7 +1455,27 @@ def _check_scene_rules(rg: dict, lane: str) -> None:
         elif j["型"] == "系統を重ねない":            # ★R2（M2-B-2b）＝on 側の部品を系統ごとに数える
             from collections import Counter as _Cnt
             exk = set(j.get("除く系統") or [])
-            cnt = _Cnt(p["kind"] for p in seen["on_parts"] if p["kind"] and p["kind"] not in exk)
+            # ★2026-09-19（まこさん決定「案BでOK」）＝「除く部品」に書いた法則が数える部品を、数から外す。
+            #   いまの使い方＝R2 が R7（帯の幅）の部品を外す。外さないと、帯の幅に指標を入れた束は、
+            #   ボラが2本（帯の幅＋低ボラ R6）になって必ず落ちる。
+            #   ★外すのは「その法則が名指しした family／geo で、側も合う on 側の部品」だけ。
+            _exp = j.get("除く部品") or {}
+            _ex_names: set = set()
+            if _exp.get("法則"):
+                for _n2, _s2, _c2 in ((lw["番号"], lw["判定"].get("数える部品") or {}, None)
+                                      for lw in load_regime_laws()
+                                      if lw["判定"].get("型") == "部品を数える"):
+                    if _n2 != _exp["法則"]:
+                        continue
+                    _side2 = _s2.get("側") or {}
+                    for _nm in list(_s2.get("family") or []) + (
+                            [] if _s2.get("geo") in (None, "any") else list(_s2.get("geo") or [])):
+                        _ex_names.add((_nm, _side2.get(_nm)))
+            def _exempt(p) -> bool:
+                nm = p["fam"] if p["fam"] else p["geo"]
+                return nm is not None and (nm, p["side"]) in _ex_names
+            cnt = _Cnt(p["kind"] for p in seen["on_parts"]
+                       if p["kind"] and p["kind"] not in exk and not _exempt(p))
             over = [(k, c) for k, c in sorted(cnt.items()) if c > int(j["上限"])]
             if over:
                 ng.append(f"{law['番号']}: 同じ系統が重なっている＝" + "・".join(f"{k} {c}本" for k, c in over)

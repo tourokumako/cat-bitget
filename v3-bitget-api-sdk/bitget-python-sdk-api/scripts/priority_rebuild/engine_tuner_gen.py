@@ -2866,11 +2866,15 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits) -> list[d
         #     絞り方を3回 書き換えた（①列の名前に部分一致 618本 ②指標の名前に部分一致 444本
         #     ③名前の先頭が合うもの）。**数字を合わせるために絞り方を変えたもので、不正。**
         #     いまの形は、元データの名前と照らすだけ＝本数に合わせて動かせない。
-        if spec_c["families"] or spec_c["lineages"]:
-            _ok_name = fam in spec_c["families"]
-            _ok_lin = iref.FAMILY_LINEAGE[fam]["k"] in spec_c["lineages"]
-            if not (_ok_name or _ok_lin):
-                continue
+        # ★2026-09-19（設計書 m2c-width-and-stage-candidates-20260918・まこさん承認）＝
+        #   §2.2 の元データの名前の一覧で落とす絞りを **消した**。
+        #   なぜ＝どの指標を使うかは M2-C の印（indicator_switch.json）が決める。
+        #   その印より狭い2つ目の絞りを私（CC）が M2-E-3 で足したせいで、印がオンで法則も許す
+        #   指標（構造・位置の系統の多く・MMI・SQZ_ON）が候補に出ていなかった。
+        #   まこさんの条件（2026-09-18）＝「印でオンにした指標だけを、候補の母集団として読み込む」。
+        #   ★元データ（m2_stage_candidates.json）の語の欄は消さない＝§2.2 の文の写しとして表に残り、
+        #     前処理（pre）・役割（role）・法則の番号（law・law_width）・幾何の列・真偽の列は今までどおり読む。
+        #   ★候補を決めるのは 印・法則・役割（型の表）・時間足・標本不足・設定の欄 stage_limits だけ。
         # ★2026-09-16（監査 cp36 の M-1）＝設定の欄 `stage_limits.<段>.families` で さらに絞る。
         #   書いていなければ絞らない（いまは空＝既定で動く）。
         if _st_lim["families"] is not None and fam not in set(_st_lim["families"]):
@@ -2914,6 +2918,79 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits) -> list[d
                         "law_check": "—", "dropped_by": None})
     if not out:
         raise SampleError(f"{stage} の候補が0件（法則 {_law} の名指し・§2.2 の語・型の表の絞りの後）")
+    return out
+
+
+def _roles_for_lineage(table, lineage: str) -> list:
+    """その系統を使える役割を、承認済みの型の表から引く（★2026-09-19・新設）。
+
+    なぜ要るか＝型の表は「役割 → 系統」の向きしか持たない（`table["roles"][role]["lineages"]` が
+      8か所）。帯の幅の指標（BB幅・Donchian幅・HWC幅%）は系統が **ボラ** で、役割 location では
+      引けない（型の表の location の系統は「構造・位置」だけ・2026-09-19 に実測）。
+      ＝系統から役割を引く道が要る。**役割の名前をコードに書かない**（恒久の決まり69番）。
+    戻り＝役割の名前の並び（型の表が宣言した順）。
+    """
+    return [r for r, v in (table.get("roles") or {}).items()
+            if lineage in ((v or {}).get("lineages") or [])]
+
+
+def build_width_candidates(laws: dict, table, tfs, limits: dict, law_no: str | None = None) -> list:
+    """帯の幅の枠（A）の候補の一覧を作る（★2026-09-19・新設・設計書 m2c-width-and-stage-candidates-20260918）。
+
+    ★何をするか＝法則 R7（帯の幅）が名指しした **geo（レンジ幾何の列）と family（指標）の両方**から
+      候補を作り、成績表の順位で並べて返す。戻りの鍵は `build_stage_candidates` と同じ
+      （束が取る `_stage_pick` が読むため）。
+
+    ★なぜ要るか（まこさん指摘 2026-09-18・逐語）＝「帯の幅を見る指標はBB等、もっといっぱいある」。
+      直す前は `sample_regime_build` が `_law_geo` の先頭（W%）を固定で使い、法則に戻した指標3件を
+      1本も読まなかった。
+
+    ★並び＝レンジ幾何を先頭、その後ろに指標を成績表の順位（強い順）。乱数は1か所も使わない（恒久67番）。
+    ★絞りは既にある関数を呼ぶ＝`ranked_groups`（印がオフの指標は手前で落ちる）・`_group_usable_col`
+      （その列の数字で使えるか）・`stage_tfs_of`（法則と設定の欄から時間足）。判定を書き写さない。
+    ★役割は `_roles_for_lineage` が型の表から引く（コードに役割の名前を書かない）。
+    """
+    spec_c = stage_candidates("stage1")
+    no = law_no or spec_c["law_width"]
+    geo_names, geo_side = _law_geo(laws, no)
+    fams_law, side_law = _law_families(laws, no)
+    ranges = material_ranges()
+    ok_tfs = stage_tfs_of("stage1", spec_c, laws, table, tfs, limits)
+    out: list[dict] = []
+    rank = 0
+    for g in geo_names:                            # ① レンジ幾何の列（役割は段1 と同じ＝型の表が geo を許す役割）
+        rank += 1
+        out.append({"stage": "width", "rank": rank, "col": None, "family": None, "tf": None,
+                    "acc": None, "label": None, "horizon": None,
+                    "cond": {"role": spec_c["role"], "form": "level", "material": [{"geo": g}],
+                             "side": geo_side.get(g, "above"), "value": _thr_fixed(limits)},
+                    "law_check": "—", "dropped_by": None})
+    seen_role: dict = {}
+    for fam in fams_law:                           # ② 法則が名指しした指標（系統から役割を引く）
+        lin = (iref.FAMILY_LINEAGE.get(fam) or {}).get("k")
+        if not lin:
+            continue
+        for role in _roles_for_lineage(table, lin):
+            rr = table["roles"][role]
+            for f2, tf, lab, hor, med, _n, col in ranked_groups(role, None):
+                if f2 != fam or tf not in ok_tfs:
+                    continue
+                if iref.FAMILY_LINEAGE[f2]["k"] not in rr["lineages"] or f2 not in ranges:
+                    continue
+                if not _group_usable_col(col, f2, tf, ranges, table):
+                    continue
+                if (f2, tf) in seen_role:          # 同じ 指標×時間足 は1回だけ（役割が2つに掛かるため）
+                    continue
+                seen_role[(f2, tf)] = role
+                rank += 1
+                m = _mat_from_col(col, f2, tf, ranges, table=table)
+                out.append({"stage": "width", "rank": rank, "col": col, "family": f2, "tf": tf,
+                            "acc": med, "label": lab, "horizon": hor,
+                            "cond": {"role": role, "form": "level", "material": [m],
+                                     "side": side_law.get(f2, "above"), "value": _thr_fixed(limits)},
+                            "law_check": "—", "dropped_by": None})
+    if not out:
+        raise SampleError(f"帯の幅の候補が0件（法則 {no} が geo も family も名指ししていない・fail-closed）")
     return out
 
 
@@ -3155,14 +3232,16 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
     c2a = build_stage_candidates("stage2a", laws, table, tfs, limits)
     keep1 = stage_keep_of(limits, len(c1))
     keep2a = stage_keep_of(limits, len(c2a))
-    # ── A 帯の幅（R7）＝法則が名指しした geo を、法則が決めた側で ──
-    geo_names, geo_side = _law_geo(laws, s1["law_width"])
-    if not geo_names:
-        raise SampleError(f"{s1['law_width']} が geo を名指ししていない（regime_laws.json・fail-closed）")
-    g0 = geo_names[0]
-    cond_a = {"role": s1["role"], "form": "level", "material": [{"geo": g0}],
-              "side": geo_side.get(g0, "above"), "value": _thr_fixed(limits)}
-    draw["A"] = {"geo": g0, "側": cond_a["side"], "法則": s1["law_width"]}
+    # ── A 帯の幅（R7）＝法則が名指しした geo と family の一覧から、案の番号で決まる順位の1本 ──
+    # ★2026-09-19（設計書 m2c-width-and-stage-candidates-20260918・まこさん承認）＝
+    #   直す前は `_law_geo` の先頭（W%）を固定で使い、法則 R7 に戻した指標3件（BB幅・Donchian幅・
+    #   HWC幅%）を1本も読まなかった（まこさん指摘 2026-09-18「帯の幅を見る指標はBB等、もっといっぱいある」）。
+    #   直した後は `build_width_candidates` の一覧（レンジ幾何が先頭・指標は成績表の順位）から取る。
+    #   ★順位は案の番号から決まる（`regime_draw_order` の r_b と同じ考え＝乱数を使わない）。
+    cw = build_width_candidates(laws, table, tfs, limits)
+    cond_a, draw["A"] = _stage_pick(cw, stage_keep_of(limits, len(cw)), r_b, "width",
+                                    extra={"法則": s1["law_width"]})
+    draw["A"]["側"] = cond_a["side"]
     # ── B 構造・位置（R1・R3）＝location の成績表の r_b 位・向きは order_n で決まる ──
     # ★2026-09-11（M2-E-3 の手順10・監査 cp35 の Critical C-1）＝帯の枠を法則から引く形にした。
     #   直す前＝`_ranked_material_at(rng, "location", r_b, tfs, table)`＝役割の名前をコードに直書き。
@@ -6358,11 +6437,34 @@ def selftest() -> int:
             _sc40 = stage_candidates(_st40)
             _c40 = build_stage_candidates(_st40, _laws40, _t40, _tfs40, _lm40)
             _fams40 = [c["family"] for c in _c40]
-            # ③-1 指標が §2.2 の元データの中だけから来ているか
-            _ng1 = sorted({f for f in _fams40 if f not in _sc40["families"]
-                           and iref.FAMILY_LINEAGE[f]["k"] not in _sc40["lineages"]})
+            # ③-1 ★2026-09-19（設計書 m2c-width-and-stage-candidates-20260918・まこさん承認）＝
+            #   「§2.2 の元データの中だけから来ているか」を見るのをやめ、
+            #   **印と法則と役割と時間足と標本で許される指標が、全部 候補に出ているか**を見る。
+            #   なぜ＝直す前の形は、印より狭い名前の一覧を「正しいもの」として測っていた＝
+            #     印がオンで法則も許す指標（MMI・SQZ_ON ほか）が落ちても ✅ になっていた。
+            #   ★許される指標は、候補を作るのと同じ関数で作る（判定を2か所に書かない）。
+            _rr40 = _t40["roles"][_sc40["role"]]
+            _rng40 = material_ranges()
+            _tfok40 = stage_tfs_of(_st40, _sc40, _laws40, _t40, _tfs40, _lm40)
+            _lawf40, _ = _law_families(_laws40, _sc40["law"])
+            _lawl40 = stage_lineages_of(_st40, _sc40, _laws40)
+            _want40 = set()
+            for _f9, _tf9, _l9, _h9, _m9, _n9, _col9 in ranked_groups(_sc40["role"], None):
+                if _f9 not in iref.FAMILY_LINEAGE or _f9 not in _rng40:
+                    continue
+                if iref.FAMILY_LINEAGE[_f9]["k"] not in _rr40["lineages"] or _tf9 not in _tfok40:
+                    continue
+                if not _group_usable_col(_col9, _f9, _tf9, _rng40, _t40):
+                    continue
+                if STAGE_SPEC[_st40]["pick"] == "family":
+                    if _lawf40 and _f9 not in _lawf40:
+                        continue
+                elif _lawl40 and iref.FAMILY_LINEAGE[_f9]["k"] not in _lawl40:
+                    continue
+                _want40.add(_f9)
+            _ng1 = sorted(_want40 - set(_fams40))
             if _ng1:
-                ng.append(f"T40③-1: {_st40} に §2.2 の元データの外の指標が出た: {_ng1[:5]}")
+                ng.append(f"T40③-1: {_st40} で、印と法則と役割と時間足で許される指標が候補に出ていない: {_ng1[:5]}")
             # ③-2 指標が法則の名指し（family か 系統）の中だけから来ているか
             # ★2026-09-13（完成の条件 #4・まこさん決定「一本化する」）＝法則の番号は元データから読む
             #   （直す前は STAGE_SPEC の law と "R3" の文字を読んでいた）。組む側と同じ所を読む。
@@ -7395,6 +7497,45 @@ def selftest() -> int:
     ng += t44
     print("  T44 abs の鍵: 束に符号を取り去る前処理が付いても、分位の解決表の鍵が作れる（「abs:列の名前」）")
 
+    # ══ T45 帯の幅の枠が、法則が名指しした指標も読む（2026-09-19・設計書 m2c-width-…-20260918）═══
+    #   ①帯の幅の候補に、法則 R7 の指標が全部 出る（印がオンのもの）
+    #   ②帯の幅に指標を選んだ束が、審査 G7 を通る（法則 R2 でも R6 でも落ちない）
+    #   ★①が落ちる＝組む側が法則の family を読まなくなった（壊すプログラム b87 が測る相手）
+    #   ★②が落ちる＝法則 R2 の「除く部品」が効かなくなった（b88 が測る相手）
+    t45: list[str] = []
+    try:
+        import engine_tuner_exec as _ex45
+        _lm45, _ = load_limits()
+        _lm45 = resolve_hold_range(_lm45, "e38")
+        _t45 = load_signal_table()
+        _p45, _tfs45, _ = material_pool()
+        _laws45 = laws_for_scene("range")
+        _c45 = build_width_candidates(_laws45, _t45, _tfs45, _lm45)
+        _fam45 = {x["family"] for x in _c45 if x["family"]}
+        _want45, _ = _law_families(_laws45, stage_candidates("stage1")["law_width"])
+        _miss45 = sorted({f for f in (_want45 or ()) if _ex45.indicator_enabled(f)} - _fam45)
+        if _miss45:
+            t45.append(f"T45: 帯の幅の候補に、法則が名指しし印もオンの指標が出ない: {_miss45[:5]}")
+        # ② 指標を選んだ束が審査を通るか＝その順位を指す案の番号を探して1本 組む
+        _rk45 = next((x["rank"] for x in _c45 if x["family"]), None)
+        if _rk45 is None:
+            t45.append("T45: 帯の幅の候補に指標が1本も無い＝②を測れない（嘘の合格を出さない）")
+        else:
+            _ok45 = False
+            for _i45 in range(40):
+                if regime_draw_order(_i45)[0] != _rk45:
+                    continue
+                _b45, _d45 = sample_regime_build(_lm45, _p45, _tfs45, _t45, order_n=_i45)
+                _ex45._check_scene_rules({"name": "range", "build": _b45}, "entry")
+                _ok45 = True
+                break
+            if not _ok45:
+                t45.append(f"T45: 帯の幅に指標（順位 {_rk45}）を選ぶ案の番号が 40 本の中に無い＝②を測れない")
+    except Exception as _e45:                       # noqa: BLE001  G7 で落ちるのが、直す前の状態
+        t45.append(f"T45: 帯の幅の枠が動かない: {type(_e45).__name__} {str(_e45)[:120]}")
+    ng += t45
+    print("  T45 帯の幅の枠: ①法則が名指しし印もオンの指標が候補に出る ②その指標を選んだ束が審査 G7 を通る")
+
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
@@ -7676,7 +7817,13 @@ _MAT_CTORS = {"_mat_drawn", "_mat_fixture", "_mat_from_col",
               #   ★守りが緩まないことを、自己テスト T40⑥ が機械で確かめる
               #     ＝この関数の中に `_mat_drawn` の呼び出しが在り、`{"family": …, "param": …}` の形を
               #       手で書いていないこと。
-              "build_stage_candidates"}                        # family と tf を持つ辞書を書いてよい関数
+              "build_stage_candidates",
+              # ★2026-09-19（設計書 m2c-width-and-stage-candidates-20260918・まこさん承認）＝
+              #   `build_width_candidates` を足した。理由は `build_stage_candidates` と同じ＝
+              #   この関数が書く辞書も **候補の記録**（鍵11個）で、材料そのものではない。
+              #   材料は `_mat_from_col`（成績表の列から作る唯一の入口）で作っている。
+              #   ★レンジ幾何の候補は `{"geo": …}` で、family も tf も持たない＝この検査に当たらない。
+              "build_width_candidates"}                        # family と tf を持つ辞書を書いてよい関数
 _MARK_WRITERS = _DRAW_CTORS | {"_mat_fixture", "_thr_fixture", "_nvd", "_nvs", "_mat_with_pre",
                                # ★2026-09-11（手順9）＝乱数を使わない入口（閾値を1点／範囲を順に）
                                "_thr_fixed", "_nv_fixed",

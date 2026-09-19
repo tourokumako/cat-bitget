@@ -18,9 +18,10 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-<!-- HOOK_LIST_START hash=f3c6dddaffd46afc gen_hook_list.py が settings.json と hook_roles.json から作った＝手で書き換えない -->
-## 1. hook 一覧（**実測 73本**・登録は settings.json）
+<!-- HOOK_LIST_START hash=2f994e168889b3ba gen_hook_list.py が settings.json と hook_roles.json から作った＝手で書き換えない -->
+## 1. hook 一覧（**実測 75本**・登録は settings.json）
 
+> **★2026-09-19 に `show_design_check_after_write`（設計書を作り直した直後に承認の門の検査を出す）と `require_design_check_before_approval`（承認のお願いを出すターンは不足0件でなければ終われない）を足した＝75本**（まこさん指示 2026-09-19「これは何回も確認を走らせないように以下の方法で、回数を1回で直せるように強制してほしい」）。
 > **★2026-09-15 に `enforce_audit_request_gen`（hook 10）と `enforce_audit_report_form`（hook 11）を足した＝69本**（settings.json に登録された `.sh` の名前を重複を除いて数えた実測）。
 > **★2026-09-14 に `enforce_checked_edit` と `limit_repeat_verification` を足した＝67本**（settings.json に登録された `.sh` の名前を重複を除いて数えた。足す前は 65本で、見出しの64本は古かった）。
 > **★2026-08-28（69回目の末）に `enforce_next_step_tidy` を足した＝63本 → 64本（Stop 3本 → 4本）。**
@@ -109,6 +110,8 @@
 | **enforce_signal_table_gate**（G1） | PreToolUse | Write\|Edit | **【Critical・safety＝fast-mode でも有効】**（CP4 監査・まこさん GO 2026-08-06）＝承認の指紋つきの型の表（signal_families.json ＋ signal_families_approved.txt の md5 一致）が無いうちは、生成器のコード（engine_tuner_gen.py・engine_tuner_exec.py）を1行も書けなくする。★2026-09-17 に一覧へ足した |
 | **enforce_worklog_on_experiment** | Stop | — | **【fast-mode 専用】**（2026-07-16 まこさん指示・2026-07-17 まこさん承認で拡張）＝実験や分析の後に worklog が更新されていない／最新の採点 CSV に対応する report と analysis が無い／worklog にその実験の記録と型別の分析が無い、のどれかでターンを終われなくする（experiment_result_procedure.md の物理強制）。★2026-09-17 に一覧へ足した |
 | **enforce_chat_writing** | Stop | — | **【チャット文章の検査・safety＝fast-mode でも有効】**（2026-08-18 新設・まこさん指示「強制できないの？」）＝ターンを閉じる瞬間に CC の返信を読み、名前だけの行・長すぎる文・長い段落・結論が先頭に無い・書き換えたファイルの報告漏れ などを全部 一度に出して止める（chat_writing_rules.md の「報告の決まり」）。★2026-09-17 に一覧へ足した |
+| **show_design_check_after_write** | PostToolUse | Bash | **【設計書を作り直した直後に、承認の門の検査を出す】**（2026-09-19 まこさん指示「これは何回も確認を走らせないように以下の方法で、回数を1回で直せるように強制してほしい」）＝`gen_acceptance.py --write` を走らせた直後に `pre_audit_check.py --check-design` を走らせ、不足を全部 画面に出す（**止めない**＝書いた瞬間に全部 見えるので、CC が1回で直せる）。**なぜ**＝2026-09-19 に承認が3回 続けて止まり、まこさんに無駄に打たせた（止まった5件は、この検査で全部 先に出たもの）。**限界**＝設計書の中身の正しさは見ない（門の形だけ）／別の道で設計書を作れば当たらない |
+| **require_design_check_before_approval** | Stop | — | **【承認をお願いする前に、門の検査を通す・最後の砦】**（2026-09-19 同じ指示）＝CC の返信に承認のコマンドが在るターンを終える瞬間に、その場で `pre_audit_check.py --check-design` を走らせ、不足が在ればターンを終われない（**記録に頼らずその場で走らせる**＝走らせたフリができない）。**限界**＝承認のコマンドの文字を出さずにお願いすれば当たらない／中身の正しさは見ない |
 <!-- HOOK_LIST_END -->
 
 ## 1.5 ★合言葉（強制の解除）の廃止（2026-08-16 まこさん指示・逐語「じゃあ強制解除できない状態にしろ」）

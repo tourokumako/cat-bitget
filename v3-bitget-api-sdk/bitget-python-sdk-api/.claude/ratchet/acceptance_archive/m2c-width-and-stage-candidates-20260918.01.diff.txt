@@ -1,0 +1,73 @@
+44c44
+< | 印とは別の、名前の一覧で候補を落とす行 | `grep -n -A1 'if not (_ok_name or _ok_lin)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 2872:            if not (_ok_name or _ok_lin): ⏎ 2873-                continue（終了コード 0）／読み方＝この行が、名前の一覧に無い指標を候補から落としている |
+---
+> | 印とは別の、名前の一覧で候補を落とす行 | `grep -n -A1 'if not (_ok_name or _ok_lin)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | （終了コード 1）／読み方＝この行が、名前の一覧に無い指標を候補から落としている |
+49,50c49,50
+< | ★②束を組む側の帯の幅の枠が、法則 R7 から geo だけを読んでいる行 | `grep -n 'geo_names, geo_side = _law_geo' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 3159:    geo_names, geo_side = _law_geo(laws, s1["law_width"])（終了コード 0）／読み方＝この行が、帯の幅の枠でレンジ幾何だけを読み、その先頭を固定で使っている＝帯の幅の法則に戻した指標は、この道では読まれない |
+< | ★②法則 R7 に HWC幅% が在る行（R6 からは 2026-09-09 に外れている） | `grep -n 'HWC幅%' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regime_laws.json` | 709:        "★2026-09-09（まこさん決定「それで書いてよいが、証拠として、引用も書いておいて」）＝数える指標を6つにした（BB幅・SQZ_ON・Donchian幅・ATR%・realized_vol・stdev%）。外した2つ（HWC幅%・SQZPRO_ON_NARROW）は、2026-09-09 の Web 検索で出どころを取れなかった（出どころが取れたら まこさんに出して決めてもらう）。★BB幅は stdev の別の書き方（BB幅＝4σ÷中心線）＝同じ系統を2本 数えない決まり（R2）に当たる。" ⏎ 749:      "書けるか": "○ 幅の列は在る（レンジ幾何の全幅 W% と、帯の幅を割合で測る指標3件＝BB幅・Donchian幅・HWC幅%）", ⏎ 761:        {"指標": "HWC幅%", "出どころ": "同じ正本の HWC幅% の定義と、系統の欄（2026-09-18 に開いた）", "逐語": "ホルト・ウィンターズの水路の幅（上の帯 − 下の帯）を、終値で割って%化／水路の幅＝値動きの大きさの計測（BB幅 と同じ作り）", "…（出力 6 行のうち先頭 500 文字）（終了コード 0）／読み方＝帯の幅の法則の数える部品と側に在る＝法則の側では、候補として読める状態になっている |
+---
+> | ★②束を組む側の帯の幅の枠が、法則 R7 から geo だけを読んでいる行 | `grep -n 'geo_names, geo_side = _law_geo' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 2955:    geo_names, geo_side = _law_geo(laws, no)（終了コード 0）／読み方＝この行が、帯の幅の枠でレンジ幾何だけを読み、その先頭を固定で使っている＝帯の幅の法則に戻した指標は、この道では読まれない |
+> | ★②法則 R7 に HWC幅% が在る行（R6 からは 2026-09-09 に外れている） | `grep -n 'HWC幅%' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regime_laws.json` | 712:        "★2026-09-09（まこさん決定「それで書いてよいが、証拠として、引用も書いておいて」）＝数える指標を6つにした（BB幅・SQZ_ON・Donchian幅・ATR%・realized_vol・stdev%）。外した2つ（HWC幅%・SQZPRO_ON_NARROW）は、2026-09-09 の Web 検索で出どころを取れなかった（出どころが取れたら まこさんに出して決めてもらう）。★BB幅は stdev の別の書き方（BB幅＝4σ÷中心線）＝同じ系統を2本 数えない決まり（R2）に当たる。" ⏎ 752:      "書けるか": "○ 幅の列は在る（レンジ幾何の全幅 W% と、帯の幅を割合で測る指標3件＝BB幅・Donchian幅・HWC幅%）", ⏎ 764:        {"指標": "HWC幅%", "出どころ": "同じ正本の HWC幅% の定義と、系統の欄（2026-09-18 に開いた）", "逐語": "ホルト・ウィンターズの水路の幅（上の帯 − 下の帯）を、終値で割って%化／水路の幅＝値動きの大きさの計測（BB幅 と同じ作り）", "…（出力 6 行のうち先頭 500 文字）（終了コード 0）／読み方＝帯の幅の法則の数える部品と側に在る＝法則の側では、候補として読める状態になっている |
+53c53
+< | ★③法則 R2 の上限と、除く系統 | `sed -n '/"番号": "R2"/,/"上限"/p' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regime_laws.json ／ tail -5` | "型": "系統を重ねない", ⏎         "除く系統": [ ⏎           "構造・位置" ⏎         ], ⏎         "上限": 1（終了コード 0）／読み方＝構造・位置 を除く系統には上限が在り、ボラの枠は低ボラの法則が既に使っている。だから帯の幅を足すと上限を超えて、審査が束を落とす |
+---
+> | ★③法則 R2 の上限と、除く系統 | `sed -n '/"番号": "R2"/,/"上限"/p' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regime_laws.json ／ tail -5` | ], ⏎         "除く部品": { ⏎           "法則": "R7" ⏎         }, ⏎         "上限": 1（終了コード 0）／読み方＝構造・位置 を除く系統には上限が在り、ボラの枠は低ボラの法則が既に使っている。だから帯の幅を足すと上限を超えて、審査が束を落とす |
+56,58c56,58
+< | ★②型の表が役割から系統を引く形になっている所の数 | `grep -c 'table\["roles"\]\[role\]' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 8（終了コード 0）／読み方＝どれも「役割 → 系統」の向き＝逆（系統 → 役割）を引く処理は無い。この工事で新しく書く |
+< | 消す行を探している壊すプログラム（L-605） | `grep -rn '_ok_name\／_ok_lin' .claude/breaks` | .claude/breaks/b86_stage_count.sh:36:old = "            if not (_ok_name or _ok_lin):\n                continue\n"（終了コード 0）／読み方＝ここに出る壊すプログラムを、この工事で直す |
+< | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py .claude/tools/gen_regime_kb.py .claude/breaks/b86_stage_count.sh ／ grep -c '^@@'` | 0（終了コード 1）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+---
+> | ★②型の表が役割から系統を引く形になっている所の数 | `grep -c 'table\["roles"\]\[role\]' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 10（終了コード 0）／読み方＝どれも「役割 → 系統」の向き＝逆（系統 → 役割）を引く処理は無い。この工事で新しく書く |
+> | 消す行を探している壊すプログラム（L-605） | `grep -rn '_ok_name\／_ok_lin' .claude/breaks` | （終了コード 1）／読み方＝ここに出る壊すプログラムを、この工事で直す |
+> | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py .claude/tools/gen_regime_kb.py .claude/breaks/b86_stage_count.sh ／ grep -c '^@@'` | 10（終了コード 0）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+426c426
+< <!-- ACC_SELFTEST_START hash=5c624a65677fb2e0 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SELFTEST_START hash=2d7e93cfde62d79d gen_acceptance.py が自動生成＝手で書き換えない -->
+432c432,434
+< | `—` | #2・#3・#4・#5・#6・#7 | 壊すプログラムは付けない（1行目の b86 が同じ絞りを測る） |
+---
+> | `b87_width_family.sh` | #3 | 帯の幅の枠が法則 R7 の family を読む処理を壊すと、T45 が『❌ T45』で落ちる |
+> | `b88_r2_exempt.sh` | #4 | 法則 R2 の「除く部品」の欄を消すと、T45 が『❌ T45』で落ちる |
+> | `—` | #2・#5・#6・#7 | 壊すプログラムは付けない（1行目の b86 が同じ絞りを測る） |
+532c534
+< | 1 | 候補が印と法則と役割と時間足と標本だけで決まる。`engine_tuner_gen.py --selftest` の T40③-1 が pass（許される指標の集まりと候補の指標の集まりが一致） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 名前の一覧で候補を落とす行を戻すと、T40③-1 が『❌ T40③-1』で落ちる | `b86_stage_count.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝元データで絞る行を消すと、T40③-1 が「元データの外の指標が出た」で落ちた |
+---
+> | 1 | 候補が印と法則と役割と時間足と標本だけで決まる。`engine_tuner_gen.py --selftest` の T40③-1 が pass（許される指標の集まりと候補の指標の集まりが一致） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 名前の一覧で候補を落とす行を戻すと、T40③-1 が『❌ T40③-1』で落ちる | `b86_stage_count.sh` | — | **未着手** |
+534,535c536,537
+< | 3 | ★帯の幅の候補に、法則 R7 が名指しした指標3件（BB幅・Donchian幅・HWC幅%）が出る。`regime_r9_diag.py --candidates width` の出力に3件の行が在る | `python3 scripts/priority_rebuild/regime_r9_diag.py --candidates width` | 実経路 | ★承認①の時点では、この壊すプログラムはまだ在りません（この工事で新しく作ります）。実装のあと `b87_width_family.sh`（帯の幅の枠が法則 R7 の family を読む処理を壊すと T45 が落ちる）を作り、承認②で測ります | `—` | — | **未着手** |
+< | 4 | ★帯の幅に指標を選んだ束が、法則 R2 でも R6 でも審査 G7 を通る。`engine_tuner_gen.py --selftest` の T45 が pass | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | ★承認①の時点では、この壊すプログラムはまだ在りません（この工事で新しく作ります）。実装のあと `b88_r2_exempt.sh`（法則 R2 の「除く部品」の欄を消すと T45 が落ちる）を作り、承認②で測ります | `—` | — | **未着手** |
+---
+> | 3 | ★帯の幅の候補に、法則 R7 が名指しした指標3件（BB幅・Donchian幅・HWC幅%）が出る。`regime_r9_diag.py --candidates width` の出力に3件の行が在る | `python3 scripts/priority_rebuild/regime_r9_diag.py --candidates width` | 実経路 | 帯の幅の枠が法則 R7 の family を読む処理を壊すと、T45 が『❌ T45』で落ちる | `b87_width_family.sh` | — | **未着手** |
+> | 4 | ★帯の幅に指標を選んだ束が、法則 R2 でも R6 でも審査 G7 を通る。`engine_tuner_gen.py --selftest` の T45 が pass | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 法則 R2 の「除く部品」の欄を消すと、T45 が『❌ T45』で落ちる | `b88_r2_exempt.sh` | — | **未着手** |
+544c546
+< <!-- ACC_CODEREF_START hash=e0270fc112e48c61 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=8985a2a13788406b gen_acceptance.py が自動生成＝手で書き換えない -->
+552c554
+< | `build_width_candidates` | （この関数は実物に無い） |
+---
+> | `build_width_candidates` | 2937 |
+558c560
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 155件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 157件の関数が在ります）。
+564c566
+< <!-- ACC_SPEC_START hash=44493d1c115acb47 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=c5f075dcd08c6546 gen_acceptance.py が自動生成＝手で書き換えない -->
+752a755,761
+>   "build_width_candidates": [
+>    "SampleError",
+>    "material_ranges",
+>    "ranked_groups",
+>    "stage_candidates",
+>    "stage_tfs_of"
+>   ],
+762a772
+>    "build_width_candidates",
+846a857
+>    "build_width_candidates",
+882a894,895
+>    "stage_lineages_of",
+>    "stage_tfs_of",

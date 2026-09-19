@@ -1089,6 +1089,64 @@ def expand_stage(stage_key: str | None = None) -> dict:
     return out
 
 
+def _actual_candidates(stage_key: str) -> list:
+    """engine_tuner が実際に出す候補を、組む側と同じ関数を呼んで表の行にする（★2026-09-19・新設）。
+
+    戻り＝markdown の行の並び（呼べないときは、その理由を1行で返す＝表は作れる）。
+    ★絞りをここに書き写さない（恒久の決まり69番）＝`build_stage_candidates` を呼ぶだけ。
+    ★「出ない指標」＝法則が名指しし印がオンなのに候補に無いもの。理由は、成績表のその役割に
+      列が在るかで2つに分ける（在る＝時間足と標本で0本／無い＝成績表にその役割の列が無い）。
+    """
+    import sys as _sys
+    _pr = str(RATCHET.parents[1] / "scripts" / "priority_rebuild")
+    if _pr not in _sys.path:
+        _sys.path.insert(0, _pr)
+    try:
+        import engine_tuner_gen as _g
+        import indicator_reference_diag as _iref
+        _lm, _ = _g.load_limits()
+        _lm = _g.resolve_hold_range(_lm, "e38")
+        _t = _g.load_signal_table()
+        _pool, _tfs, _ = _g.material_pool()
+        _laws = _g.laws_for_scene("range")
+        _c = _g.build_stage_candidates(stage_key, _laws, _t, _tfs, _lm)
+    except Exception as e:                                      # noqa: BLE001
+        return [f"**実際の候補**＝いまは出せません（{type(e).__name__}: {e}）", ""]
+    _fams = [x["family"] for x in _c if x["family"]]
+    _uniq: list = []
+    for f in _fams:
+        if f not in _uniq:
+            _uniq.append(f)
+    L = [f"**engine_tuner が実際に出す候補＝{len(_c)} 本**"
+         f"（指標の種類 {len(_uniq)}）。★この数と名前は、組む側と同じ関数"
+         "（`engine_tuner_gen.build_stage_candidates`）を呼んで書いています。", ""]
+    if _uniq:
+        L += ["| 指標 | 候補の本数 |", "|---|---|"]
+        for f in _uniq:
+            L.append(f"| `{f}` | {sum(1 for x in _c if x['family'] == f)} |")
+        L.append("")
+    # 出ない指標＝法則が名指しし、印がオンなのに候補に無いもの
+    try:
+        _sc = expand_stage(stage_key)
+        _law = _sc.get("law")
+        _fl, _ = _g._law_families(_laws, _law) if _law else ((), {})
+        import engine_tuner_exec as _ex
+        _miss = [f for f in (_fl or ()) if f not in _uniq and _ex.indicator_enabled(f)]
+        if _miss:
+            _role = _sc.get("role")
+            _have = {f for f, _tf, _l, _h, _m, _n, _col in _g.ranked_groups(_role, None)} if _role else set()
+            L += ["**印がオンで法則も名指ししているのに、候補に出ない指標（理由つき）**", "",
+                  "| 指標 | 理由 |", "|---|---|"]
+            for f in _miss:
+                L.append(f"| `{f}` | "
+                         + ("時間足と標本で0本になった" if f in _have
+                            else f"成績表の役割 `{_role}` に列が無い") + " |")
+            L.append("")
+    except Exception:                                           # noqa: BLE001
+        pass
+    return L
+
+
 def build_stage(d: dict) -> str:
     """§2.2 の候補を、正本の指標の名前に展開した表を作る（2026-09-11 新設）。
 
@@ -1173,6 +1231,12 @@ def build_stage(d: dict) -> str:
             add("")
         add(f"**この段が引く役割**＝`{s.get('role')}` ／ **従う法則**＝`{s.get('law')}`")
         add("")
+        # ★2026-09-19（設計書 m2c-width-and-stage-candidates-20260918・まこさん承認）＝
+        #   engine_tuner が実際に出す候補を、組む側と同じ関数を呼んで書く（絞りを写さない・恒久69番）。
+        #   なぜ＝直す前は「§2.2 の文から私が写した語」しか表に出ず、印がオンで法則も許すのに
+        #     候補に出ていない指標が、誰にも見えなかった。
+        for _ln in _actual_candidates(_key):
+            add(_ln)
         _out = s.get("入れなかったもの") or []
         if _out:
             add("**入れなかったもの（理由つき・都合の悪いものも書きます）**")

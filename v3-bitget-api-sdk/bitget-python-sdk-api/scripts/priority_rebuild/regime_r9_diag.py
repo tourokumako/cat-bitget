@@ -183,7 +183,13 @@ def print_stage_candidates(stage: str) -> int:
     table = g.load_signal_table()
     _pool, tfs, _ = g.material_pool()
     laws = g.laws_for_scene("range")
-    cands = g.build_stage_candidates(stage, laws, table, tfs, lm)
+    # ★2026-09-19（設計書 m2c-width-and-stage-candidates-20260918・まこさん承認）＝
+    #   段の鍵 `width`（帯の幅の枠）を受ける。候補を作るのは組む側と同じ関数
+    #   （`build_width_candidates`）＝ここに絞りを書き写さない（恒久の決まり69番）。
+    if stage == "width":
+        cands = g.build_width_candidates(laws, table, tfs, lm)
+    else:
+        cands = g.build_stage_candidates(stage, laws, table, tfs, lm)
     print(f"[{stage} の候補] {len(cands)} 本（成績表の順・読むだけ・案も売買も作らない）")
     print("順位\t指標\t時間足\t列\t分離力")
     for c in cands:

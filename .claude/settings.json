@@ -44,6 +44,16 @@
     ],
     "PostToolUse": [
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/show_design_check_after_write.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
         "matcher": "WebSearch|WebFetch",
         "hooks": [
           {
@@ -417,10 +427,20 @@
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_selftest_after_source_edit.sh stop",
             "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_design_check_before_approval.sh",
+            "timeout": 30
           }
         ]
       }
     ],
     "UserPromptSubmit": []
+  },
+  "permissions": {
+    "allow": [
+      "Bash(shasum -a 256 \"/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/sessions/692c401d-1974-4818-9ae1-ee532b7887b5/session_todo.md\")"
+    ]
   }
 }
