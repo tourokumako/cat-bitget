@@ -213,3 +213,49 @@ milestones2 の §0-0・§2（フロー表と1段ずつの説明）・§2.1・§
 フローの順（M2-E 残り → M2-F（1）→ M2-F（2）→ M2-H）は、まこさん決定（2026-09-18 §6-2）のまま。**残りは やるべきだが、先に決めることが2つ在る**＝①0b（M2-E-1b をどの設計書に含めるか）②M2-E-4a の結果で要る streak の直しに番号を付けるか（付けるなら どこに置くか）。この2つが決まらないと、M2-E 残りは 4（法則を壊して測る）で止まる。
 
 新設＝`scripts/priority_rebuild/streak_scope_diag.py`（読み取り専用の診断・★恒久26番＝道具を新設したら記録する→ next_step 0-1 に書く）／`.claude/state/flow_declaration.md`／この記録。
+
+## §6 M2-E-4d の読むもの宣言を読み終えた・next_step に逐語で写した（2026-09-20・115回目の後半・コードは触っていない）
+
+### 6-1 読んだ一覧（`design_read_plan.md` の18件・全部 Read tool で開いた）
+
+まこさんの OK（逐語）＝「OKだけど、Sessionはこのままで問題ない？」「じゃあ続きは読むことリストを読むことからだね」。読み終えたあと、貼った印 `design_read_plan_posted` を作った（宣言の sha256＝`51cb29e37ff6f6eaf39840150fd2a4230f52b15044ddb2c62de64547fd4aab97`）。
+
+| # | 読んだもの | 開いた範囲 |
+|---|---|---|
+| 1 | `engine_tuner_milestones.md` | 見出しと M2 の節（read_log に2回） |
+| 2 | `engine_tuner_milestones2.md` | §0-0・§2・§2.2・M2-E の前置き・M2-E-4a〜4d・順番の意図（read_log に6回） |
+| 3 | `acceptance_src.json` | 全文（M2-C の版） |
+| 4 | `acceptance.md` | 全文（1〜560行・M2-C の版） |
+| 5 | `engine_tuner_exec.py` | 84〜133・942〜995・1085〜1120・1380〜1434・2094〜2133・2193〜2237・4676〜4725 |
+| 6 | `engine_tuner_gen.py` | 1000〜1024（`strip_marks`）・3205〜3344・3370〜3389・3610〜3724・6636〜6760・7500〜7545（T45） |
+| 7 | `regime_laws.json` | R2・R4・C6・C7 と機械が読む判定の一覧 |
+| 8 | `regime_detection_kb.md` | §11 の R4・C6・C7（715〜734・803〜818） |
+| 9 | `search_limits.json` | `int_range`・`state_hold_bars_range`・`stage_keep_range` |
+| 10 | `streak_scope_diag.py` | 全文 |
+| 11 | `r9_demand_fixture.json` | 全文 |
+| 12 | `regime_r9_diag.py` | 95〜169（`measure`）・268〜337（`--dump-build`・`--recipe`） |
+| 13 | `.claude/breaks/` で `streak`・`cond_f`・`_scene_scan`・`_check_cond` を探す | 当たったのは `b77_no_streak.sh` の1本だけ（全文を開いた） |
+| 14 | `gen_acceptance.py` | 1〜60・760〜819 |
+| 15 | `cat_requirements.md` | 529〜703（§4.6 の H1〜H16） |
+| 16 | `exchange_spec.md` | 116〜145（決済方法の節） |
+| 17 | `engine_tuner_requirements.md` | 28〜72（作ってはいけないもの） |
+| 18 | `session_worklog_20260920.md` | §2・§4・§5（62〜215） |
+
+### 6-2 読んで分かったこと（設計書に必ず書くこと・7つ）
+
+1. 実行器 `_check_cond`（`engine_tuner_exec.py` 942行〜）は、入れ子形（streak・within_n・barssince）の内側に「条件1つ」（`_is_cond`）を求め、内側が入れ子形なら止め、n==1 も止める。**内側が木（all／any／not／bool_col）のときの検査は無い**＝この工事で足す。
+2. `_eval_cond`（2094行〜）の streak は、内側を `_eval_cond` で評価してから `rolling(n).sum() >= n` を取る。**内側が木なら `_eval_tree` を呼ぶ形にする**（hysteresis が on／off を `_eval_tree` で評価しているのと同じ道）。`rolling` は過去 n本だけを見る＝未来参照は増えない（H2）。
+3. 組む側の `_cond_keys`（`engine_tuner_gen.py` 3651行〜）は、入れ子形の内側を `c["inner"]` のまま `_cond_keys` に渡す。**内側が木だと `c["form"]` で落ちる**＝`_tree_conds` で本物の条件を集めてから渡す（`_tree_conds` の説明の文には「入れ子形の内側は降りない＝`_cond_keys` が降りる」と書いてある＝ここも直す）。
+4. `_register`（3379行〜）は `c["inner"]["material"]` を読むが、これは入口の木（`sample_structure`）の中の話。判定の束（`sample_regime_build`）はここを通らない＝触らない。
+5. 壊すプログラム `b77_no_streak.sh` は `if "streak" in laws["forms"]:` の行を文字で探して `if False:` に替える（守るもの＝T24②）。**この行を残すか、残せないなら b77 を直す**（L-605・設計書の 4-13 に書く）。
+6. `regime_r9_diag.py` の `measure` は `ex.build_regime_columns(d2, rec, geo, qt)` を呼ぶだけ＝F の形が変わっても直さない。`--dump-build` も `sample_regime_build` の出力を出すだけ。
+7. 自己テスト T24⑤（6644行〜）は、法則の写しを書き替えたときの束のハッシュ値を「土台」と比べる相対の検査＝F の形が変わっても期待は変わらない見込み。T45（帯の幅に指標を選んだ束が G7 を通る）も、F が on の全体を包む形なら R2 の数え方は変わらない見込み。★どちらも実装の後に走らせて確かめる（私は「落ちない」と判定しない＝恒久64番）。
+
+### 6-3 next_step に書いたこと（まこさん指示 2026-09-20・逐語「nest_stepに読むものリストを逐語で書いて、引き継ぎ内容にはヌケモレの無いようにして」）
+
+- 0-1 を書き替えた（前の 0-1 は「次の書き替えで消す」を付けて `--write` で archive へ）。中身＝ミッション・各工程の型・09-20 に終わったもの・いまここ（読み終えた・印の値）・次の一手の順番（①〜⑦）・設計書に必ず書くこと7つ・新設した道具・候補の本数・commit していないもの。
+- **§0-5 を新しく足し、`design_read_plan.md` の全文（1〜36行）を1文字も変えずに写した**（§0 の行数の上限 100 に入れると超えるので、§0-4 の後ろに置いた）。設計書の承認が済んだら archive へ移す。
+
+### 6-4 触ったファイル
+
+`.claude/state/design_read_plan_posted`（新規・印）／`.claude/state/next_step_src.json` → `tidy_next_step.py --write` で `next_step.md` と `next_step_archive_202608.md`／この記録。コードは触っていない。
