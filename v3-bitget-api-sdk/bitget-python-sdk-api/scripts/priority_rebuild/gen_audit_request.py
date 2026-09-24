@@ -13,7 +13,8 @@
 
 何をするか
 --------------------------------------------------------------------------
-凍結ファイル（CC が書ける4節だけを置いたもの。既定＝`_frozen_question_regime.md`）を渡すと、
+凍結ファイル（CC が書ける節だけを置いたもの＝必須5節 `FROZEN_SECTIONS` ＋ 足された2節 `ADDED_SECTIONS`。
+既定＝`_frozen_question_regime.md`）を渡すと、
 `_template.md`（編集禁止・構造を維持する）の **節の並びどおり**に依頼書を組み立てる。
 
 ★2026-09-08（監査 cp28 の M-1）＝ここに「物差しの13要素のうち1件だけを指定すると」と
@@ -23,9 +24,23 @@
   節の出どころは3つだけ:
     template … テンプレからそのまま複写（auditor 宣言・大目的・監査観点(一般)・結果の形・守則・呼びかけ）
     frozen   … 凍結ファイル（経緯・スコープ・監査観点(本監査固有)・外部検索要請）
+                 ※「必読の精査」も凍結ファイルの節で、machine の「着手前必読」の中に入る。
+    frozen_added … 凍結ファイル（答えてほしいこと・自己申告）＝2026-09-15 にテンプレへ足された見出し2つ
     machine  … 実物から機械で作る（メタ情報・着手前必読・事実データ）
 
-  ★CC が文章を書けるのは frozen の中だけ。凍結ファイルはハッシュ値で見張る。
+  ★2026-09-21（設計書 iter="audit-request-template-heads-20260921"・まこさん決定 09-17「案B」）
+    ＝2026-09-15 にテンプレへ足された見出し2つ（この監査で答えてほしいこと／依頼を出した CC の
+      自己申告）を扱えるようにした。埋め方の名前は frozen_added。
+    ・どちらも依頼を出す側が書く文なので、出どころは凍結ファイル（frozen と同じ）。
+      節の名前は「答えてほしいこと」「自己申告」。
+    ・必須の5節と違い、凍結ファイルに無くても読み込みでは止まらない。依頼書を組み立てるときに
+      無ければ、節の名前を出して止まる（中身の無い依頼書を出さない）。
+    ・「答えてほしいこと」の小見出しの名前と、節の中の丸括弧で始まる決まりの行は、
+      テンプレから読む（この道具に書かない）。
+    ・★本物の凍結ファイルには、この2つの節はまだ無い（足すには まこさんの承認とハッシュ値の更新が要る）。
+      ＝いまの本物の凍結ファイルで依頼書を作ろうとすると、節が無いと出て止まる。
+
+  ★CC が文章を書けるのは凍結ファイルの中だけ。凍結ファイルはハッシュ値で見張る。
   ★節の並びと数はテンプレから読む＝CC が決めない。テンプレに知らない見出しが増えたら止まる。
 
 使い方
@@ -75,12 +90,19 @@ QUESTION_SHA = "50467a8c1d5bcb0b3cbc8f8ee315508c1d5498390dd7b338d6490fd138a1eefe
 
 FROZEN_SECTIONS = ("経緯", "必読の精査", "スコープ", "問い", "外部検索要請")
 
+# ★2026-09-21（設計書 iter="audit-request-template-heads-20260921"）＝足された節の名前。
+#   2026-09-15 にテンプレへ足された見出し2つを埋める文の置き場（凍結ファイルの中の節）。
+#   必須の5つ（FROZEN_SECTIONS）とは別に持つ＝凍結ファイルに無くても、読み込みでは止まらない。
+#   依頼書を組み立てるときに無ければ、build_request が節の名前を出して止まる。
+ADDED_SECTIONS = ("答えてほしいこと", "自己申告")
+
 # テンプレの見出し（先頭一致）→ その節をどう埋めるか。
 #   ★中身は書かない。「どこから取るか」だけを決める表。
 #   テンプレにこの表に無い `## ` 見出しが在れば止める（テンプレが変わったら気づく）。
 SECTION_KIND: dict = {
     "## ⚠️ auditor 宣言": ("template", None),
     "## 監査依頼メタ情報": ("machine", "meta"),
+    "## この監査で答えてほしいこと": ("frozen_added", "答えてほしいこと"),
     "## 監査依頼の経緯": ("frozen", "経緯"),
     "## 着手前必読": ("machine", "reading"),
     "## 大目的": ("template", None),
@@ -89,6 +111,7 @@ SECTION_KIND: dict = {
     "## 監査観点 (一般": ("template", None),
     "## 監査観点 (本監査固有": ("frozen", "問い"),
     "## 外部検索要請": ("frozen", "外部検索要請"),
+    "## 依頼を出した CC の自己申告": ("frozen_added", "自己申告"),
     "## 結果ファイルフォーマット": ("template", None),
     "## 必ず守ること": ("template", None),
     "## まこさん向け呼びかけ例文": ("template", None),
@@ -165,9 +188,14 @@ def load_frozen_question() -> dict:
         raise SystemExit("[依頼書] 凍結ファイルが書き換えられている（ハッシュ値の不一致）\n"
                          f"  記録: {QUESTION_SHA}\n  いま: {got}")
     out: dict = {}
-    for name in FROZEN_SECTIONS:
+    # ★2026-09-21＝必須の5つは今までどおり（無ければ止まる）。足された2つ（ADDED_SECTIONS）は、
+    #   在れば同じ切り出し方で読む。無くても ここでは止まらない（止めるのは build_request）。
+    #   在るのに中身が空のときは、必須の節と同じく止まる。
+    for name in FROZEN_SECTIONS + ADDED_SECTIONS:
         m = re.search(rf"^## \[SECTION:{re.escape(name)}\]\s*$", body, re.M)
         if not m:
+            if name in ADDED_SECTIONS:
+                continue
             raise SystemExit(f"[依頼書] 凍結ファイルに節が無い: {name}")
         rest = body[m.end():]
         e = re.search(r"^## |^---\s*$", rest, re.M)
@@ -198,6 +226,21 @@ def copy_template_section(head: str) -> str:
     if len(seg.splitlines()) < 2:
         raise SystemExit(f"[依頼書] テンプレの節が空: {head}")
     return seg
+
+
+def template_sub_lines(head: str) -> tuple[list[str], list[str]]:
+    """テンプレの1節から、（小見出しの行, 丸括弧で始まる決まりの行）を取り出す。
+
+    ★2026-09-21（設計書 iter="audit-request-template-heads-20260921"）に新設した。
+      足された節（frozen_added）は、中身を凍結ファイルから写す。ただし次の2つはテンプレの側が持つ。
+        ・小見出し（`### 結論を決める問い` など）＝凍結ファイルの節に全部 在るかを照らす相手
+        ・丸括弧で始まる決まりの行（例＝結果は、この番号ごとに1件ずつ答える）＝依頼書へ写す
+      どちらの名前も この道具に書かない＝テンプレが変わっても、道具の中の写しが古くならない。
+    """
+    lines = [ln.rstrip() for ln in copy_template_section(head).splitlines()]
+    subs = [ln for ln in lines if ln.startswith("### ")]
+    rules = [ln for ln in lines if ln.startswith("(")]
+    return subs, rules
 
 
 def _table_rows(text: str, start_pat: str, end_pat: str) -> list[str]:
@@ -524,7 +567,14 @@ def build_request(frozen_path: pathlib.Path) -> str:
     p.append(f"# 監査依頼 — {title}")
     p.append("")
     p.append("> 本依頼書は `gen_audit_request.py` が `_template.md` の節の並びどおりに機械で組み立てた。")
-    p.append("> 起案者 (CC) が書いた文章は、凍結ファイル由来の4節 (経緯 / スコープ / 監査観点(本監査固有) / 外部検索要請) だけ。")
+    # ★2026-09-24（監査 cp40 の A1-e）＝凍結ファイルから読めた節を、そのまま数える。
+    #   直す前は対応の表（SECTION_KIND）から出していた＝「必読の精査」を数え落としていた。
+    #   その節は「## 着手前必読」（machine）の中に `_reading` が入れるので表には出てこないが、
+    #   依頼書に入る CC の文であることは同じ＝「…だけ」の文が実物と合わなかった。
+    #   凍結ファイルの鍵をそのまま使えば、節が増えても減っても数と名前が自動で合う。
+    _from_frozen = list(frozen.keys())
+    p.append(f"> 起案者 (CC) が書いた文章は、凍結ファイル由来の{len(_from_frozen)}節"
+             f" ({' / '.join(_from_frozen)}) だけ。")
     p.append("")
     for head in heads:
         kind = None
@@ -544,6 +594,25 @@ def build_request(frozen_path: pathlib.Path) -> str:
             p.append(head)
             p.append("")
             p.append(frozen[key])
+        elif how == "frozen_added":
+            # ★2026-09-21＝足された節。中身は凍結ファイルから写す。無ければ依頼書を作らない
+            #   （テンプレの埋め草「<…>」のままの依頼書を出さないため）。
+            if key not in frozen:
+                raise SystemExit(f"[依頼書] 凍結ファイルに節が無い: {key}"
+                                 f"（テンプレの「{head}」を埋める文が要る。"
+                                 "凍結ファイルへ足すには まこさんの承認とハッシュ値の更新が要る）")
+            subs, rules = template_sub_lines(head)
+            have = {ln.strip() for ln in frozen[key].splitlines()}
+            lack = [s for s in subs if s not in have]
+            if lack:
+                raise SystemExit(f"[依頼書] 凍結ファイルの節「{key}」に小見出しが足りない: "
+                                 + " ／ ".join(lack))
+            p.append(head)
+            p.append("")
+            p.append(frozen[key])
+            for rule in rules:
+                p.append("")
+                p.append(rule)
         elif key == "meta":
             p.append(head)
             p.append("")
@@ -607,25 +676,112 @@ def selftest() -> int:
     TEMPLATE = keept
     stops("Q8b テンプレに無い節を求めたら止まる", lambda: copy_template_section("## 存在しない節"))
 
-    # Q10 テンプレに知らない見出しが在ったら止まる（対応の表から1件 抜く）
-    keeps = dict(SECTION_KIND)
-    SECTION_KIND = {k: v for k, v in SECTION_KIND.items() if k != "## 大目的"}
-    stops("Q10 テンプレに知らない見出しが在れば止まる", lambda: build_request(QUESTION))
-    SECTION_KIND = keeps
+    def stops_with(name, fn, word):
+        """止まること と、止まった理由の文に word が在ること の両方を見る（別の理由で止まったのを通さない）。"""
+        try:
+            fn()
+            ng.append(f"{name}: 止まらなかった")
+        except SystemExit as e:
+            if word not in str(e):
+                ng.append(f"{name}: 別の理由で止まった（{str(e)[:60]}）")
 
-    # ★Q6/Q9（2026-09-07・121番）＝凍結ファイルから依頼書を作れて、テンプレの節が全部 在る
-    heads = template_heads()
+    # ★2026-09-21（設計書 iter="audit-request-template-heads-20260921"）＝見本の凍結ファイル。
+    #   なぜ要るか＝本物の凍結ファイルには、足された2つの節（ADDED_SECTIONS）がまだ無い。
+    #     だから本物では依頼書を最後まで組み立てられず、「道具が新しい見出しを正しく扱えるか」を測れない。
+    #   作り方＝本物の凍結ファイルの文の後ろに、見本の節を2つ足す（一時の置き場・本物は触らない）。
+    #     「答えてほしいこと」の小見出しは、テンプレから読んだものをそのまま書く。
+    #   ★見る先の差し替えは Q1・Q2 と同じやり方（差し替えたら、すぐ後で戻す）。
+    _subs, _rules = template_sub_lines("## この監査で答えてほしいこと")
+
+    # ★見本を置く場所＝本物の凍結ファイルと同じフォルダの中の、一時のフォルダ（終わったら消す）。
+    #   なぜ `_tmp_md`（システムの一時置き場）を使わないか（実測 2026-09-21）＝事実データを作る関数
+    #     `_facts` が、凍結ファイルの場所をリポジトリからの相対で印字する。リポジトリの外に見本を置くと、
+    #     そこで ValueError になり依頼書を組み立てられなかった。`_facts` は この工事で触る関数ではない。
+    #   ★フォルダの名前は走らせるたびに別（mkdtemp）＝同時に2つ走らせても奪い合わない。
+    #   ★限界＝自己テストの途中でプロセスごと止められると、`_selftest_tmp_…` のフォルダが残る。
+    import shutil
+    import tempfile
+    _made: list = []
+
+    def _sample(sub_lines: list) -> pathlib.Path:
+        t = QUESTION.read_text(encoding="utf-8").rstrip("\n") + "\n\n"
+        t += "## [SECTION:答えてほしいこと]\n\n"
+        for s in sub_lines:
+            t += f"{s}\n\n- 見本の行\n\n"
+        t += "## [SECTION:自己申告]\n\n1. 見本の行\n"
+        d = pathlib.Path(tempfile.mkdtemp(dir=str(QUESTION.parent), prefix="_selftest_tmp_"))
+        _made.append(d)
+        p = d / "_sample_frozen.md"
+        p.write_text(t, encoding="utf-8")
+        return p
+
+    def _with_frozen(path: pathlib.Path, fn):
+        """道具の見る先を、その見本とそのハッシュ値に差し替えて fn を呼び、必ず戻す。"""
+        global QUESTION, QUESTION_SHA
+        kq, ks = QUESTION, QUESTION_SHA
+        QUESTION = path
+        QUESTION_SHA = hashlib.sha256(path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+        try:
+            return fn()
+        finally:
+            QUESTION, QUESTION_SHA = kq, ks
+
+    def _sample_tests():
+        """見本の凍結ファイルを使う枝（Q10・Q6②・Q9・Q12）。呼ぶ側が、終わったら見本のフォルダを必ず消す。"""
+        global SECTION_KIND
+        full = _sample(_subs)
+
+        # Q10 テンプレに知らない見出しが在ったら止まる（対応の表から1件 抜く）
+        #   ★2026-09-21＝見本の凍結ファイルで測る。本物だと、手前の「足された節が無い」で先に止まり、
+        #     この枝まで届かない（別の理由で止まったのに通って見える）。止まった理由の文も見る。
+        keeps = dict(SECTION_KIND)
+        SECTION_KIND = {k: v for k, v in SECTION_KIND.items() if k != "## 大目的"}
+        try:
+            stops_with("Q10 テンプレに知らない見出しが在れば止まる",
+                       lambda: _with_frozen(full, lambda: build_request(full)), "知らない見出し")
+        finally:
+            SECTION_KIND = keeps
+
+        # ★Q6②/Q9＝節を全部 持つ見本の凍結ファイルから依頼書を作れて、テンプレの節が全部 在る
+        heads = template_heads()
+        try:
+            body = _with_frozen(full, lambda: build_request(full))
+            miss = [h for h in heads if h.split("(")[0].rstrip() not in body]
+            if miss:
+                ng.append(f"Q9: 節が足りない {miss[:2]}")
+            if len(body) <= 5000:
+                ng.append(f"Q6: 依頼書が短すぎる（{len(body)} 文字）")
+            if frozen_title(full) not in body:
+                ng.append("Q6: 凍結ファイルの題が依頼書に入っていない")
+            lost = [r for r in _rules if r not in body]
+            if lost:
+                ng.append(f"Q6: テンプレの丸括弧の決まりの行が依頼書に入っていない {lost[:1]}")            # ★2026-09-24（監査 cp40 の A0-c）＝足された節の「中身」が入ったかも見る。
+            #   直す前は、見出しとテンプレの丸括弧の行しか見ていなかった＝`build_request` の
+            #   `p.append(frozen[key])` を消しても 12/12 のまま通った（新しく作った枝が無防備）。
+            for _k in ADDED_SECTIONS:
+                if _with_frozen(full, lambda: load_frozen_question())[_k] not in body:
+                    ng.append(f"Q6: 足された節「{_k}」の凍結ファイルの本文が依頼書に入っていない")
+        except SystemExit as e:
+            ng.append(f"Q6 見本の凍結ファイルから依頼書を作れない: {str(e)[:70]}")
+
+        # ★Q12（2026-09-21）＝足された節が無い凍結ファイル（＝いまの本物と同じ形）では、依頼書を作らずに止まる。
+        #   Q12b＝「答えてほしいこと」の節に、テンプレの小見出しが1つ足りない見本でも止まる。
+        stops_with("Q12 足された節が無ければ止まる", lambda: build_request(QUESTION),
+                   f"凍結ファイルに節が無い: {ADDED_SECTIONS[0]}")
+        if _subs:
+            short = _sample(_subs[:-1])
+            stops_with("Q12b 小見出しが足りなければ止まる",
+                       lambda: _with_frozen(short, lambda: build_request(short)), "小見出しが足りない")
+        else:
+            ng.append("Q12b: テンプレの「この監査で答えてほしいこと」に小見出しが無い＝測れない")
+
     try:
-        body = build_request(QUESTION)
-        miss = [h for h in heads if h.split("(")[0].rstrip() not in body]
-        if miss:
-            ng.append(f"Q9: 節が足りない {miss[:2]}")
-        if len(body) <= 5000:
-            ng.append(f"Q6: 依頼書が短すぎる（{len(body)} 文字）")
-        if frozen_title(QUESTION) not in body:
-            ng.append("Q6: 凍結ファイルの題が依頼書に入っていない")
-    except SystemExit as e:
-        ng.append(f"Q6 依頼書を作れない: {str(e)[:70]}")
+        _sample_tests()
+    except Exception as e:                                   # noqa: BLE001
+        ng.append(f"Q6 見本を使う枝が例外で止まった: {type(e).__name__}: {str(e)[:60]}")
+    finally:
+        for _d in _made:
+            shutil.rmtree(_d, ignore_errors=True)
 
     # Q7 この道具のソースに、依頼書へ入る日本語の自由記述が無い
     src = pathlib.Path(__file__).read_text(encoding="utf-8")
@@ -680,20 +836,36 @@ def selftest() -> int:
     if _q11_ok:
         ng.append(f"Q11: 実在する節なのに問題として返す: {_q11_ok[:2]}")
 
+    # ★Q6①（2026-09-21）＝本物の凍結ファイルが読める（必須の5節が全部 取れる）。
+    #   なぜ残すか＝壊すプログラム b41 が、本物の凍結ファイルから節の見出しを消して
+    #     この自己テストが落ちるかを測っている。見本だけで測ると、b41 が黙って効かなくなる。
+    #   ★最後に置く＝上の見本への差し替えが全部 戻っていることも、ここで兼ねて見る。
+    try:
+        if QUESTION != keepq or QUESTION_SHA != keep:
+            ng.append("Q6 見る先の差し替えが戻っていない（後ろのテストが見本で走った疑い）")
+        _real = load_frozen_question()
+        _lack = [n for n in FROZEN_SECTIONS if n not in _real]
+        if _lack:
+            ng.append(f"Q6 本物の凍結ファイルに必須の節が無い: {_lack}")
+    except SystemExit as e:
+        ng.append(f"Q6 本物の凍結ファイルを読めない: {str(e)[:70]}")
+
     # ★2026-09-08（141番）＝まとめの表示が、直す前の形のまま残っていた。
     #   Q3 は「番号の範囲外で止まる」、Q6 は「1〜13 のどれでも作れる」と出ていたが、
     #   要素の番号を指定する道は 2026-09-07 に外してある（口は --frozen と --selftest だけ）。
     #   ＝走らせた人が「まだ13要素に分ける道が在る」と読み違える。実物の文言に合わせた。
+    #   ★2026-09-21＝Q6 を2つに分け、Q12 を足したので、表示と件数を実物に合わせた。
     print(f"[selftest] Q1 凍結の改変で止まる ／ Q2 凍結が無ければ止まる ／"
           f" Q3 凍結ファイルが無ければ題を取れずに止まる ／"
           f" Q4 凍結ファイルに見出しが無ければ止まる ／ Q5 法則の件数が変われば止まる ／"
-          f" Q6 凍結ファイルから依頼書を作れる ／ Q7 自由記述0件 ／"
+          f" Q6 見本の凍結ファイルから依頼書を作れる・本物の凍結ファイルが読める ／ Q7 自由記述0件 ／"
           f" Q8 テンプレが無ければ止まる ／ Q9 テンプレの節が全部 在る ／ Q10 知らない見出しで止まる ／"
-          f" Q11 指した節が実在しなければ作らせない")
+          f" Q11 指した節が実在しなければ作らせない ／"
+          f" Q12 足された節が無ければ止まる・小見出しが足りなければ止まる")
     for x in ng:
         print(f"  ❌ {x}")
-    total = 11
-    print(f"  {'❌' if ng else '✅'} わざと壊して止まるか試すテスト {total - len(ng)}/{total} pass")
+    print(f"  {'❌' if ng else '✅'} わざと壊して止まるか試すテスト 落ちた枝 {len(ng)} 件"
+          f"（見る枝＝Q1・Q2・Q3・Q4・Q5・Q6①・Q6②・Q7・Q8・Q8b・Q9・Q10・Q11・Q12・Q12b）")
     return 1 if ng else 0
 
 
@@ -724,7 +896,7 @@ def approval_matches() -> tuple[bool, str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description="監査の依頼書をテンプレのとおりに機械で組み立てる")
     # ★2026-09-07（121番・92番・141番）＝要素の番号ではなく、凍結ファイルを指定する。
-    ap.add_argument("--frozen", help="凍結ファイル（CC が書ける4節・既定＝_frozen_question_regime.md）")
+    ap.add_argument("--frozen", help="凍結ファイル（CC が書ける節・既定＝_frozen_question_regime.md）")
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     if a.selftest:

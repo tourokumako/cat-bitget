@@ -2577,3 +2577,19 @@ H2（leak なし）・H6（価格非依存）について、最初は「担保�
 > - **段の候補の実物の本数（09-20）**＝段1 2,465本・段2a 94本・段2c 261本（SQZ_ON 在り）。M2-F-8・11・13 の注記の数字（336・89・213）は古い＝M2-F に入るときに数え直して直す（worklog 20260920 §3-2 の2・3）。
 > - **commit していない**＝09-19 に触ったもの全部（`session_worklog_20260919.md` §1-6）と、09-20 に触ったもの（`session_worklog_20260920.md` §1-6）。まこさんの OK の後に commit する。
 
+
+
+# 2026-09-21 に tidy_next_step.py が next_step.md から移した節（「次の書き替えで消す」の印つき 1 節・1文字も変えていない）
+
+### 0-1 いまの状態（2026-09-20・115回目の後半・記録＝`session_worklog_20260920.md` §6）（次の書き替えで消す）
+
+> **★ミッション（まこさん 2026-09-18・逐語）＝「膨大な法則に則った組み合わせ（指標、閾値、パラメータ、時間足）の中から、M2-Jで合格できるレジーム判定ロジックを見つけ出す」。やること＝マイルストーン2 のフロー（M2-C → M2-E 残り → M2-F（1）→ M2-F（2）→ M2-H。M2-G は保留）と、その下のやることリストを、順番に全部 終わらせる。**
+> - **各工程の型（まこさん 2026-09-20）**＝現状把握 → 設計書（`gen_acceptance.py --write`）→ 設計書の監査（依頼書は `gen_audit_docs.py request`・まこさんがチェックしてから別のセッションで起動）→ 承認 → 実装 → 実装の監査（依頼書も自動生成・修正は `apply_audit_fix.py`）。現状把握だけの件は、結果をチャットに出して まこさんの確認をもらうだけ。
+> - **09-20 に終わったもの**＝フローの1番 M2-C（13件 ✅済・完成の条件 #4 は承認で「済」・worklog 20260920 §1）／M2-E-4a（§2＝段3 の持続は、いまの形（streak を帯の条件1つに掛ける）と §2.2 の形（成立の全体に掛ける）で真偽が違う＝いま真のバーのうち 9.65〜18.55% が §2.2 では偽・逆は0本）／M2-E-4（§4＝現状把握の表で足りると まこさん確認・逐語「次に進めていいよ」）。**まこさん決定（逐語「どちらもCCの案で良い。」）**＝①streak の直しを **M2-E-4d** として M2-E-4 の直後に足した ②M2-E-1b（値の範囲と刻みの案）は **M2-E-4c の設計書に含める**。
+> - **★いまここ＝M2-E-4d の設計書を書く直前。**恒久68番の読むもの宣言（`design_read_plan.md`・設計書 `m2e4d-streak-scope-20260920`・18件）は、まこさんの OK（逐語「OKだけど、Sessionはこのままで問題ない？」「じゃあ続きは読むことリストを読むことからだね」）の後、**18件 全部を Read tool で開き終えた**（貼った印 `design_read_plan_posted`＝`51cb29e37ff6…`・worklog 20260920 §6-1）。**宣言の全文は、この文書の §0-5 に逐語で写した**（まこさん指示 2026-09-20・逐語「nest_stepに読むものリストを逐語で書いて、引き継ぎ内容にはヌケモレの無いようにして」）。
+> - **次の一手（この順）**＝①`acceptance_src.json` に M2-E-4d の設計を書く（iter＝`m2e4d-streak-scope-20260920`・TARGET＝`engine_tuner_exec.py`・`engine_tuner_gen.py`・壊すプログラム・手で書くのは5つだけ＝恒久69番）②`python3 .claude/tools/gen_acceptance.py --write` ③`python3 .claude/tools/pre_audit_check.py --check-design .claude/state/acceptance.md` が不足0件（PostToolUse の hook が --write の直後に同じ検査を出す）④設計書の監査の依頼書（`python3 .claude/tools/gen_audit_docs.py request <元データ> <依頼書>`）→ まこさんのチェック → 別セッションで監査 ⑤承認（`bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/approve_impl.sh`）⑥実装 ⑦実装の監査。**設計の向き＝worklog 20260920 §5-2**（F（streak）が「入る条件の全体」を1つで包む＝on＝{all:[F]}・F.inner＝{all:[A,B,C,D,G]}・実行器は streak の内側に木を受ける・数字は1つも変えない＝n の範囲 `int_range` 3〜24・保つ上限 `state_hold_bars_range` 24〜288・H16 1変更＝M2-E-4b と混ぜない）。
+> - **読んで分かった、設計書に必ず書くこと7つ（worklog 20260920 §6-2）**＝①実行器 `_check_cond`（942行〜）は streak の内側に条件1つ（`_is_cond`）を求め、二重の入れ子と n==1 を止める→内側が木のときの検査を足す ②`_eval_cond`（2094行〜）は内側を `_eval_cond` で評価する→内側が木なら `_eval_tree` を呼ぶ ③組む側 `_cond_keys`（3651行〜）は入れ子形の内側をそのまま `_cond_keys` に渡す→内側が木だと `c["form"]` で落ちる＝`_tree_conds` で降りる ④`_register`（3379行〜）は `c["inner"]["material"]` を読む＝入口の木の話で、判定の束（build）は通らない ⑤壊すプログラム `b77_no_streak.sh` は `if "streak" in laws["forms"]:` の行を文字で探す→この行を残すか、b77 を直す（L-605）⑥`regime_r9_diag.py` は `build_regime_columns` を呼ぶだけ＝触らない ⑦T24⑤ は土台の束と比べる相対の検査＝F の形が変わっても落ちない見込み（実装の後に走らせて確かめる）。
+> - **新設した道具**＝`scripts/priority_rebuild/streak_scope_diag.py`（読み取り専用の診断・段3 の持続の掛かり方を値決め窓で1バーずつ比べる・5.5秒）。★M2-E-4a の「触るファイル＝なし」から外れた新設＝worklog 20260920 §2-5 に逸脱として記録。
+> - **段の候補の実物の本数（09-20）**＝段1 2,465本・段2a 94本・段2c 261本（SQZ_ON 在り）。M2-F-8・11・13 の注記の数字（336・89・213）は古い＝M2-F に入るときに数え直して直す（worklog 20260920 §3-2 の2・3）。
+> - **commit**＝`30b71b8`（09-20・M2-C の終わりと M2-E-4a・4d の記録）まで済。**その後に触って commit していないもの**＝`.claude/state/design_read_plan.md`・`design_read_plan_posted`・`purpose_check.md`・`flow_declaration.md`・`next_step_src.json`／`next_step.md`／`next_step_archive_202608.md`・`session_worklog_20260920.md`（§6）・セッションの ToDo（`.claude/state/sessions/e3db6b3c-…/session_todo.md`）。まこさんの OK の後に commit する。
+

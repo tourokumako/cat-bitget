@@ -21,35 +21,16 @@
 #   ・設計書の中身が正しいかは見ない（門の形だけ）。中身は まこさんの目と監査。
 #   ・この hook 自身を書き換えれば無効にできる（差分は git に出る）。
 
+#
+# ★2026-09-21（まこさん指示・逐語「強制で承認ミスを防ぎ、何度も同じ承認をさせることをしないでほしい。
+#   …一回で改善できる状態にしろ。」「いいよ。修正しろ」）＝見る範囲を広げた。
+#   直す前＝承認のプログラムの止まり所のうち、1つ目（--check-design）しか見ていなかった。
+#     実測（同日）＝「不足0件」のまま承認をお願いし、最後の止まり所（壊すプログラムの宣言）で
+#     承認が取り消された（worklog 20260921 §4-7）。
+#   直した後＝本体を .py に移し、承認のプログラムの止まり所を上から全部 確かめる（A1〜A8・B1・B2）。
+#     中身と限界は .py の先頭に書いてある。この .sh は呼ぶだけ。
+#   ★返信の本文は やり取りの記録から読む（hook の入力の json には本文が入らないことがあるため）。
+
 set -u
 ROOT="/Users/tachiharamasako/Documents/GitHub/cat-bitget"
-ACC="$ROOT/.claude/state/acceptance.md"
-CHK="$ROOT/.claude/tools/pre_audit_check.py"
-
-RAW="$(cat)"                                   # Stop hook の入力（json）
-
-# 返信の中に承認のコマンドが在るか（無ければ何もしない）
-if ! printf '%s' "$RAW" | grep -q "approve_impl.sh"; then
-  exit 0
-fi
-# 承認のプログラムの説明そのもの（hook の一覧など）で誤発火しないよう、お願いの形だけを見る
-if [ ! -f "$ACC" ] || [ ! -f "$CHK" ]; then
-  exit 0
-fi
-
-OUT="$(python3 "$CHK" --check-design "$ACC" 2>&1)"
-if printf '%s' "$OUT" | grep -q "設計書の中身は通ります（不足0件）"; then
-  exit 0
-fi
-
-{
-  echo "🔒 [承認の前の門の検査] 設計書に不足が在るまま、承認をお願いしようとしています。"
-  echo "   まこさん指摘 2026-09-19「毎回承認のたびにランダムでやられると迷惑なんだけど。」"
-  echo ""
-  echo "   承認のプログラムが呼ぶ検査と同じものを、いま走らせた結果です:"
-  printf '%s\n' "$OUT" | sed 's/^/   /'
-  echo ""
-  echo "   対処＝上の不足を全部 直し、次が「不足0件」になってから、承認をお願いしてください:"
-  echo "     python3 .claude/tools/pre_audit_check.py --check-design .claude/state/acceptance.md"
-} >&2
-exit 2
+exec python3 "$ROOT/.claude/hooks/require_design_check_before_approval.py"

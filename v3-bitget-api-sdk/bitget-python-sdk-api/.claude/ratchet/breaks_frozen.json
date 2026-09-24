@@ -37,7 +37,7 @@
  "b38_rank_demand_reader_gone.sh": "9c86221c672cdfaad97b6235403fed9735e01d39b1ee5e495c7cac9284a6012e",
  "b39_rank_demand_merge_gone.sh": "5d6fc8b87f9b12225b792aa22cac3fee813812afeddc02a1fd694bc9513e3592",
  "b40_rank_demand_touch_indicator.sh": "458cba7c70f366bca9437daa4d8a2bd98b69806d06940167631ef635a95f8604",
- "b41_req_frozen_section_gone.sh": "b5c0acb4708dbf0b4c8f566d0e3a1c04f3620c2320e3a156187fa926bd44ef19",
+ "b41_req_frozen_section_gone.sh": "c0900faaf1ceed24e63f344182cc799ae307eca0d25a57f7755c0c441b7d202b",
  "b42_pre_audit_list_gone.sh": "1b2573bf41da71ec53a1558bfbd100736d2da3b8b020607c5eb505316192d3c5",
  "b43_approve_empty_freeze_gone.sh": "4cd48f19da105fe7f3fb6e4b961144213ebf782c0ecf85ac5f4731d43cd1553b",
  "b44_approve_record_write_gone.sh": "b5e0e226f610ed76d95742d22755c8bd303d98fa1f341d2d27b4b61a72d88814",

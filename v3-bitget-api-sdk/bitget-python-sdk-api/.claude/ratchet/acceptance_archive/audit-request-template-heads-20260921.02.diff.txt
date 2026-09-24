@@ -1,0 +1,76 @@
+36c36
+< | 監査に出す前のチェックの結果の1枚で、終了コードが 0 でない行 | `grep -n -B2 '"rc": 1' .claude/state/pre_audit_check.json` | 79-   "cmd": "gen_audit_request.py --selftest", ⏎ 80-   "kind": "check", ⏎ 81:   "rc": 1,（終了コード 0）／読み方＝落ちているのは、この道具の自己テストの行だけ。ほかの検査は全部 通っている |
+---
+> | 監査に出す前のチェックの結果の1枚で、終了コードが 0 でない行 | `grep -n -B2 '"rc": 1' .claude/state/pre_audit_check.json` | （終了コード 1）／読み方＝落ちているのは、この道具の自己テストの行だけ。ほかの検査は全部 通っている |
+38,39c38,39
+< | 道具が知っている見出しの一覧 | `grep -n '^    "## ' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_audit_request.py` | 82:    "## ⚠️ auditor 宣言": ("template", None), ⏎ 83:    "## 監査依頼メタ情報": ("machine", "meta"), ⏎ 84:    "## 監査依頼の経緯": ("frozen", "経緯"), ⏎ 85:    "## 着手前必読": ("machine", "reading"), ⏎ 86:    "## 大目的": ("template", None), ⏎ 87:    "## 監査対象の事実データ": ("machine", "facts"), ⏎ 88:    "## 監査スコープ": ("frozen", "スコープ"), ⏎ 89:    "## 監査観点 (一般": ("template", None), ⏎ 90:    "## 監査観点 (本監査固有": ("frozen", "問い"), ⏎ 91:    "## 外部検索要請": ("frozen", "外部検索要請"), ⏎ 92:    "## 結果ファイルフォーマット": ("template", None), ⏎ 93:    "##…（出力 13 行のうち先頭 500 文字）（終了コード 0）／読み方＝上の見出しのうち、足された見出しがここに無い。道具は一覧に無い見出しで止まる |
+< | 一覧に無い見出しで止まる行 | `grep -n 'テンプレに知らない見出しが在る' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_audit_request.py` | 536:            raise SystemExit(f"[依頼書] テンプレに知らない見出しが在る: {head}"（終了コード 0）／読み方＝自己テストが落ちた理由の文は、ここから出ている |
+---
+> | 道具が知っている見出しの一覧 | `grep -n '^    "## ' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_audit_request.py` | 103:    "## ⚠️ auditor 宣言": ("template", None), ⏎ 104:    "## 監査依頼メタ情報": ("machine", "meta"), ⏎ 105:    "## この監査で答えてほしいこと": ("frozen_added", "答えてほしいこと"), ⏎ 106:    "## 監査依頼の経緯": ("frozen", "経緯"), ⏎ 107:    "## 着手前必読": ("machine", "reading"), ⏎ 108:    "## 大目的": ("template", None), ⏎ 109:    "## 監査対象の事実データ": ("machine", "facts"), ⏎ 110:    "## 監査スコープ": ("frozen", "スコープ"), ⏎ 111:    "## 監査観点 (一般": ("template", None), ⏎ 112:    "## 監査観点 (本監査固有": ("frozen", "問い"), ⏎ 113:    "## 外部検索要請": ("frozen", "…（出力 15 行のうち先頭 500 文字）（終了コード 0）／読み方＝上の見出しのうち、足された見出しがここに無い。道具は一覧に無い見出しで止まる |
+> | 一覧に無い見出しで止まる行 | `grep -n 'テンプレに知らない見出しが在る' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_audit_request.py` | 586:            raise SystemExit(f"[依頼書] テンプレに知らない見出しが在る: {head}"（終了コード 0）／読み方＝自己テストが落ちた理由の文は、ここから出ている |
+43c43
+< | 壊すプログラム b41 に、必須の宣言の行が在る数 | `grep -c 'EXPECT_MSG' .claude/breaks/b41_req_frozen_section_gone.sh` | 0（終了コード 1）／読み方＝承認の前は無い。壊すプログラムを走らせる道具は、この行が無いと走らせる前に止まる |
+---
+> | 壊すプログラム b41 に、必須の宣言の行が在る数 | `grep -c 'EXPECT_MSG' .claude/breaks/b41_req_frozen_section_gone.sh` | 1（終了コード 0）／読み方＝承認の前は無い。壊すプログラムを走らせる道具は、この行が無いと走らせる前に止まる |
+46c46
+< | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_audit_request.py ／ grep -c '^@@'` | 0（終了コード 1）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+---
+> | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_audit_request.py ／ grep -c '^@@'` | 11（終了コード 0）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+248c248
+< 1. 自己テストが、本物の凍結ファイルの文の後ろに、見本の節を2つ足した文を、一時の置き場に作ります。「答えてほしいこと」の見本には、テンプレと同じ小見出しを3つ書きます。
+---
+> 1. 自己テストが、本物の凍結ファイルの文の後ろに、見本の節を2つ足した文を、本物の凍結ファイルと同じフォルダの中の一時のフォルダ（`_selftest_tmp_…`）に作ります。「答えてほしいこと」の見本には、テンプレから読んだ小見出しを全部 書きます（いまのテンプレでは3つ）。
+252c252
+< 5. 次に、足された節の無い見本（＝本物の凍結ファイルと同じ形）で組み立てます。「凍結ファイルに節が無い」で止まることを見ます（Q12）。
+---
+> 5. 次に、本物の凍結ファイル（足された2つの節が無い）で組み立てます。「凍結ファイルに節が無い: 答えてほしいこと」で止まることを見ます（Q12）。止まった理由の文は、足りない節の名前まで照らします（必須の節が無いときの同じ文言と区別するためです）。
+281a282
+> | 足された2つの節が、在るのに中身が空 | 読み込みの段で、必須の節と同じく「凍結ファイルの節が空」を出して止まる |
+295c296
+< **変えません。**自己テストの見本の凍結ファイルは、一時の置き場に作ります（今までの見本の作り方と同じ）。
+---
+> **変えます。**自己テストの見本の凍結ファイルは、本物の凍結ファイルと同じフォルダの中の一時のフォルダ（`_selftest_tmp_…`・走らせるたびに別の名前）に作り、終わったら必ず消します。今までの作り方（`_tmp_md`＝システムの一時置き場）にしない理由は、事実データを作る関数 `_facts` が凍結ファイルの場所をリポジトリからの相対で印字する所で ValueError になるためです（`_facts` はこの工事で触る関数に入れていません）。限界＝自己テストの途中でプロセスごと止められると、そのフォルダが残ります。
+502c503
+< <!-- ACC_CODEREF_START hash=0f3d9e1cb8cce120 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=e6885be1949df814 gen_acceptance.py が自動生成＝手で書き換えない -->
+509,512c510,513
+< | `load_frozen_question` | 158 |
+< | `template_sub_lines` | （この関数は実物に無い） |
+< | `build_request` | 517 |
+< | `selftest` | 570 |
+---
+> | `load_frozen_question` | 181 |
+> | `template_sub_lines` | 231 |
+> | `build_request` | 560 |
+> | `selftest` | 639 |
+514c515
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 21件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 22件の関数が在ります）。
+520c521
+< <!-- ACC_SPEC_START hash=26d99ccf7755672b gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=43e62f7b38f635ef gen_acceptance.py が自動生成＝手で書き換えない -->
+529a531
+>       "<モジュール直下>",
+536c538
+<   "_impl_functions の意味": "この工事で触る関数。`template_sub_lines` は新設。見出しの一覧 `SECTION_KIND` と節の名前の一覧はモジュールの定数なので、この一覧には入らない（4-3 に書いた）。",
+---
+>   "_impl_functions の意味": "この工事で触る関数と、モジュール直下のまとまり。`template_sub_lines` は新設。見出しの一覧 `SECTION_KIND`・節の名前の一覧 `ADDED_SECTIONS`・冒頭の説明はモジュール直下に在り、照合の道具はそれを `<モジュール直下>` という1つのまとまりとして数える（`verify_design_contract.py` の 884行・903行）。4-3 に書いたとおり、この工事で直す相手なのでこの一覧に入れる。",
+574a577,579
+>   "template_sub_lines": [
+>    "copy_template_section"
+>   ],
+586c591,592
+<    "template_heads"
+---
+>    "template_heads",
+>    "template_sub_lines"
+591a598
+>    "load_frozen_question",
+593c600,601
+<    "template_heads"
+---
+>    "template_heads",
+>    "template_sub_lines"
