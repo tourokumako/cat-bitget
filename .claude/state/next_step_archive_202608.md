@@ -2593,3 +2593,41 @@ H2（leak なし）・H6（価格非依存）について、最初は「担保�
 > - **段の候補の実物の本数（09-20）**＝段1 2,465本・段2a 94本・段2c 261本（SQZ_ON 在り）。M2-F-8・11・13 の注記の数字（336・89・213）は古い＝M2-F に入るときに数え直して直す（worklog 20260920 §3-2 の2・3）。
 > - **commit**＝`30b71b8`（09-20・M2-C の終わりと M2-E-4a・4d の記録）まで済。**その後に触って commit していないもの**＝`.claude/state/design_read_plan.md`・`design_read_plan_posted`・`purpose_check.md`・`flow_declaration.md`・`next_step_src.json`／`next_step.md`／`next_step_archive_202608.md`・`session_worklog_20260920.md`（§6）・セッションの ToDo（`.claude/state/sessions/e3db6b3c-…/session_todo.md`）。まこさんの OK の後に commit する。
 
+
+
+# 2026-09-24 に tidy_next_step.py が next_step.md から移した節（「次の書き替えで消す」の印つき 1 節・1文字も変えていない）
+
+### 0-1（次の書き替えで消す）いまの状態（2026-09-24・117回目・記録＝`session_worklog_20260924.md` §1）
+
+> **★ミッション（まこさん 2026-09-18・逐語）＝「膨大な法則に則った組み合わせ（指標、閾値、パラメータ、時間足）の中から、M2-Jで合格できるレジーム判定ロジックを見つけ出す」。やること＝マイルストーン2 のフロー（M2-E 残り → M2-F（1）→ M2-F（2）→ M2-H。M2-G は保留・M2-C は 09-20 に終わった）と、その下のやることリストを、順番に全部 終わらせる。**
+> - **★各工事の型（まこさん決定 2026-09-21・worklog 20260921 §7）＝6段。**①設計書を監査に出す（作った後に見つけた直す所は直さずに自己申告）②監査が指摘する ③監査結果からプログラムが設計書を直す（`apply_audit_fix.py`）④直した設計書からプログラムが実装を当てる（★道具はまだ無い＝ToDo の44番で作る）⑤実装を監査に出す ⑥監査結果からプログラムが実装を直す。自動生成の道具が無い段に来たら、先に道具を完成させてから進む。直しは極力まとめる（まこさん指示「2-Eと２−Fの進行が遅すぎるので、修正は極力まとめて効率的に進めること」）。
+> - **案B（古い方の依頼書の道具 `gen_audit_request.py` の直し）＝6段を全部 終えた（2026-09-24）。**案B の実装は済んだ（worklog 20260921 §6・自己テスト 12/12 pass・監査に出す前のチェックは全部 rc=0＝2026-09-15 から塞がっていた依頼書を作る道が開いた）。実装の監査 CP40 の依頼書を作り（`inputs/2026-09-21_audit_request_tool_impl_cp40_audit_request.md`）、結果が返った＝CONDITIONAL-GO・修正20件（Critical 3／Major 7／Minor 8／Process 2）。M2-E-4d の設計書は作ってある（目印 `m2e4d-streak-scope-20260920`・控え3つ＝`.claude/state/acceptance_src_m2e4d-…json`・`design_read_plan_m2e4d-….md`・`purpose_check_m2e4d-….md`）が、CP39 に出すのは 45番（実装の指示を入れてから）。
+> - **設計の中身（設計書の 4-2・4-3）**＝入る条件を {all:[F]}、持続 F の内側を {all:[A,B,C,(D),(G)]} にする。実行器は、判定の束の中の streak に限り、内側に条件の束を受ける（形の性質表 `FORM_SPEC` に欄を1つ足して読む・`_check_cond`・`_walk_build_tree`・`_eval_cond`・`_eval_tree` を直す）。組む側は `sample_regime_build`・`needed_qkeys` を直し、束の形の読み方を1か所にまとめる関数 `_regime_on_conds` を新設する。自己テスト T46（組む側）・T-STREAK-TREE（実行器）と、壊すプログラム b99・b100 を新設。b77 は探す行を残すので直さない。数字・法則・出る条件は変えない。
+> - **★2回目の読みで新しく見つけたこと（worklog 20260921 §1-2）**＝組む側の自己テスト T24③・T42 と `gate_matrix`、診断 `streak_scope_diag.py` が、束の入る条件を並びの位置で読んでいる。形を変えると壊れる＝設計書に入れた。前のセッションの「必ず書くこと7つ」には無かった。
+> - **案B の6段の⑥は済んだ（worklog 20260924 §1〜§3）**＝当てる道具が CP40 の抜き書き（バッククォートで囲んだ逐語）を受けなかったので、まこさん決定（全部 当てる／修正15 採用／案A）で当てる道具を直し（設計書 `audit-fix-evidence-backtick-20260924`・承認・`check_evidence` に2行）、CP40 の20件を全部 当て（当てた14件＋走らせるコマンド6件）、案B の設計書を作り直して3回目の承認が通った（3b8d0d1c…）。SPEC の齟齬は0件。★残る FAIL 1件（照合A の `main`＝監査の修正の指示の抜け）は まこさん決定「AでOK」＝直さず §6 の191番に積んだ。
+> - **43番（M2-E と M2-F のまとめ方の案）は済んだ（2026-09-24・worklog 20260924 §4）。まこさんの決定＝逐語「上記でOK。」**＝**3つの束にまとめる。**束1＝`engine_tuner_gen.py`・`engine_tuner_exec.py`（M2-E-4d・4b・5b）／束2＝`observe_diag.py`・`observe_config.json`（M2-E-1b・5・4c）／束3＝`regime_r9_diag.py`・`recipes/search_limits.json`（M2-F-2〜4・15・7）。**設計書 → 設計書の監査 → 承認 → 実装 → 実装の監査 の回数が 7回 → 3回になった。**
+> - **★この決定で捨てたもの（3つ・正直に）**＝①H16（1ターン1変更）を満たさない＝壊れたときに、どの直しが壊したかの切り分けが難しくなる ②作ってある M2-E-4d の設計書と控え3つを作り直す＝CP39 の依頼書の中の設計書のハッシュ値も変わる ③読むもの宣言の OK を取り直す（恒久68番）。
+> - **★いまここ＝ToDo の44番**（6段の④の道具＝設計書の「実装の指示」をプログラムが当てる）。**読むもの宣言16件（まこさん OK）→ 設計書 → 監査の依頼書、まで終わった。**設計書＝`.claude/state/acceptance.md`（625行・目印 `impl-instruction-apply-20260924`・ハッシュ値 `affa354c02c4a893…`）。元データ＝`acceptance_src.json`。**承認の前の検査は不足0件**（`require_design_check_before_approval.py --try`・6.9秒）。依頼書＝`SDK/.claude/audits/inputs/` の `2026-09-24_impl_instruction_design_cp41_audit_request` ＋ `.md`（426行・問い10件・自己申告5件）。元データ＝`SDK/.claude/audits/cp41_work/cp41_src.md`。**2026-09-24 に監査 CP41 へ出した。**
+> - **★次のセッションは、監査 CP41 の結果の確認から始める**（まこさん 2026-09-24・逐語「次回は監査結果の確認→修正からスタートになると思う」）。**直し方**＝結果を読む → `apply_audit_fix.py --report <結果> --severity <まこさんが決めた範囲> --dry` → 当てる → `gen_acceptance.py --write` で設計書を作り直す → 承認 → 実装（この1回だけ手）→ 実装の監査。★設計書か元データを1文字でも直したら、依頼書の中の設計書のハッシュ値と合わなくなる。
+> - **その後の一手**＝45番（束1 の設計書を作り直し、CP39 の依頼書を作る）→ 2番（束1 の実装）。
+> - **★hook を2件 直さないと決めた**（まこさんの問い 2026-09-24「このhookはすぐに修正すべきであればここで対応してほしい」への私の答え・教訓 L-612・L-613）。**どちらも作業は止まっておらず、緩めると守りが減る。**回り道＝①設計書の読むもの宣言に `engine_tuner_gen.py` を最初から入れる ②監査の依頼書の名前を Bash に書くときは、名前と拡張子を分ける。
+> - **直した小さな食い違い**＝フロー表の M2-C の状態が「まだ」のままだった（やること M2-C-1〜13 は全部 ✅済）＝`m2_todo.json` を直して `gen_regime_kb.py --write flow`・`--verify all` 全部 ✅・`--selftest` 15/15（worklog 20260921 §1-5）。
+> - **段の候補の実物の本数（09-20）**＝段1 2,465本・段2a 94本・段2c 261本（SQZ_ON 在り）。M2-F-8・11・13 の注記の数字（336・89・213）は古い＝M2-F に入るときに数え直して直す（worklog 20260920 §3-2 の2・3）。
+> - **commit**＝`95a2d18`（09-20）まで済。**その後に触って commit していないもの**＝`acceptance_src.json`・`acceptance.md`・`purpose_check.md`・`design_read_plan.md`・`design_read_plan_posted`・`goal_block.md`・`m2_todo.json`・`engine_tuner_milestones2.md`・`cp39_work/cp39_src.md`・`next_step_src.json`／`next_step.md`／`next_step_archive_202608.md`・`session_worklog_20260921.md`・`pre_audit_check.py --run` が作り直した文書。まこさんの OK の後に commit する。
+
+
+
+# 2026-09-24 に tidy_next_step.py が next_step.md から移した節（「次の書き替えで消す」の印つき 1 節・1文字も変えていない）
+
+### 0-1（次の書き替えで消す）いまの状態（2026-09-24・118回目・記録＝`session_worklog_20260924.md` §7）
+
+> **★ミッション（まこさん 2026-09-18・逐語）＝「膨大な法則に則った組み合わせ（指標、閾値、パラメータ、時間足）の中から、M2-Jで合格できるレジーム判定ロジックを見つけ出す」。やること＝マイルストーン2 のフロー（M2-E 残り → M2-F（1）→ M2-F（2）→ M2-H。M2-G は保留・M2-C は 09-20 に終わった）と、その下のやることリストを、順番に全部 終わらせる。**
+> - **★各工事の型（まこさん決定 2026-09-21・worklog 20260921 §7）＝6段。**①設計書を監査に出す（作った後に見つけた直す所は直さずに自己申告）②監査が指摘する ③監査結果からプログラムが設計書を直す（`apply_audit_fix.py`）④直した設計書からプログラムが実装を当てる（★道具はまだ無い＝ToDo の44番で作っている）⑤実装を監査に出す ⑥監査結果からプログラムが実装を直す。自動生成の道具が無い段に来たら、先に道具を完成させてから進む。直しは極力まとめる（まこさん指示「2-Eと２−Fの進行が遅すぎるので、修正は極力まとめて効率的に進めること」）。
+> - **★いまここ＝ToDo の44番（6段の④の道具の設計書）＝6段の③まで済み、承認待ち。**監査 CP41 の結果＝NO-GO（Critical 11／Major 4／Minor 2／Process 3）。まこさん決定＝範囲は Critical＋Major＋修正 16・19。当てる道具で 13件＋2件を元データ（`acceptance_src.json`・`design_section_map.json`）に当て、`gen_acceptance.py --write` で設計書を作り直した（655行・`--verify` 全部 ✅・自己テスト 9/9）。**新しい設計書＝目印 `impl-instruction-apply-20260924`・ハッシュ値 `ae5fb711065891b9…`**（CP41 の依頼書の値 `affa354c…` とは合わなくなった＝履歴）。★修正 18（`permanent_rules.md`）は当てていない＝まこさんが決める。**残り＝承認（往復1回目）→ 実装（手＝直す2本は `.claude/tools/` で当てる道具の `NEVER_WRITE`）→ 実装の監査。**
+> - **★根本から直した不具合2件（まこさん決定「よい」・worklog 20260924 §7-2・§7-4）**＝①設計↔実装ゲート（`require_design_contract_before_run.sh`）＝当てる道具そのものの設計書が `acceptance.md` に入っている間、道具が自分の未承認の設計書に止められた。新しい部品 `.claude/hooks/design_gate_fallback.py`（走らせる .py を指す「最後に承認された控え」を選ぶ・4条件・git で凍結済みのものだけ）と枝6か所（承認が外れているときだけ控えで照らす・engine_tuner は今までどおり fail-closed・記録＝`.claude/state/design_gate_fallback.log`）。②当て終わりの判定（`enforce_audit_fix.py`）＝足す形の修正が当たった後も「まだ」と数えて対象のファイルを永久に解放しなかった。判定を当てる道具の `apply_one` と同じ形にした。
+> - **★CC が書けない・走らせられないものが在る（Claude Code の権限の制限＝自動モードの分類器・許可を聞く画面は出ない）**＝`.claude/hooks/` への書き込み／`design_gate_fallback.py --try`／`pre_audit_check.py --check-design`／`gen_acceptance.py --write`／`apply_audit_fix.py` の Process 指定／worklog と next_step への書き足しの一部。**運用＝CC が一時置き場に「当てるプログラム」を作り、まこさんが絶対パスで打つ。**permanent_rules に足すかは まこさんが決める（§6 へ）。
+> - **手で直した所（worklog §7-5）**＝元データに 4-20 の非該当の行を足した／修正 19 の「読み方」の「1本ずつ」を「一本ずつ」にした（道具が算用数字を認めない）／`design_section_map.json` の「20件」に「4-20 を足して 21件」を足した。
+> - **その後の一手**＝45番（束1 の設計書を作り直し、CP39 の依頼書を作る）→ 2番（束1 の実装）。
+> - **段の候補の実物の本数（09-20）**＝段1 2,465本・段2a 94本・段2c 261本（SQZ_ON 在り）。M2-F-8・11・13 の注記の数字（336・89・213）は古い＝M2-F に入るときに数え直して直す（worklog 20260920 §3-2 の2・3）。
+> - **commit**＝`5545cad`（09-24）まで済。**その後に触って commit していないもの**＝`.claude/hooks/design_gate_fallback.py`（新規）・`require_design_contract_before_run.sh`・`enforce_audit_fix.py`・`acceptance_src.json`・`design_section_map.json`・`acceptance.md`・`design_gate_fallback.log`・`next_step_src.json`／`next_step.md`／`next_step_archive_202608.md`・`session_worklog_20260924.md`。まこさんの OK の後に commit する。
+

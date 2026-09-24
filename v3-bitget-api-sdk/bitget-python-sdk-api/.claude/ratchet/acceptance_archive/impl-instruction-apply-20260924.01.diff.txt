@@ -1,0 +1,64 @@
+39c39
+< | 当てる道具に、設計書を読む口が在るか | `grep -c design .claude/tools/apply_audit_fix.py` | 1（終了コード 0）／読み方＝この工事の前は、設計書から当てる道が無い |
+---
+> | 当てる道具に、設計書を読む口が在るか | `grep -c design .claude/tools/apply_audit_fix.py` | 48（終了コード 0）／読み方＝この工事の前は、設計書から当てる道が無い |
+41c41
+< | 設計書を作る道具に「実装の指示」の節が在るか | `grep -c 実装の指示 .claude/tools/gen_acceptance.py` | 0（終了コード 1）／読み方＝この工事の前は、節を作る処理が無い |
+---
+> | 設計書を作る道具に「実装の指示」の節が在るか | `grep -c 実装の指示 .claude/tools/gen_acceptance.py` | 14（終了コード 0）／読み方＝この工事の前は、節を作る処理が無い |
+45c45
+< | 当てる道具が、当てない相手として持っている一覧 | `grep -n -A4 'NEVER_WRITE = ' .claude/tools/apply_audit_fix.py` | 59:NEVER_WRITE = ( ⏎ 60-    ".claude/hooks/", ".claude/tools/", ".claude/breaks/", ⏎ 61-    "acceptance.approved", "verify_tool.approved", "design_approved.json", ⏎ 62-    "_frozen.json", ".breaks.json", ".dirty.json", "h2_pass.json", "g2_pass.json", ⏎ 63-)（終了コード 0）／読み方＝hook・道具・壊すプログラム・承認の印は当てない＝設計書から当てるときも、この一覧はそのまま残す |
+---
+> | 当てる道具が、当てない相手として持っている一覧 | `grep -n -A4 'NEVER_WRITE = ' .claude/tools/apply_audit_fix.py` | 67:NEVER_WRITE = ( ⏎ 68-    ".claude/hooks/", ".claude/tools/", ".claude/breaks/", ⏎ 69-    "acceptance.approved", "verify_tool.approved", "design_approved.json", ⏎ 70-    "_frozen.json", ".breaks.json", ".dirty.json", "h2_pass.json", "g2_pass.json", ⏎ 71-    # ★2026-09-24（監査 CP41 の修正 1・A1-a）＝hook の登録そのもの。1回の書き込みで hook を全部 外せる穴を塞ぐ。（終了コード 0）／読み方＝hook・道具・壊すプログラム・承認の印は当てない＝設計書から当てるときも、この一覧はそのまま残す |
+48c48
+< | この道具を名指しする壊すプログラム（L-605） | `grep -rln apply_audit_fix .claude/breaks` | （終了コード 1）／読み方＝当たったものが探している行を、この直しで消さないことを確かめるため |
+---
+> | この道具を名指しする壊すプログラム（L-605） | `grep -rln apply_audit_fix .claude/breaks` | .claude/breaks/b101_design_apply_no_approval.sh ⏎ .claude/breaks/b102_design_apply_no_precheck.sh（終了コード 0）／読み方＝当たったものが探している行を、この直しで消さないことを確かめるため |
+545c545
+< <!-- ACC_CODEREF_START hash=f87f45ca3be75bea gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=9863821dc914fb40 gen_acceptance.py が自動生成＝手で書き換えない -->
+552,556c552,556
+< | `read_design_fixes` | （この関数は実物に無い） |
+< | `approved_ok` | （この関数は実物に無い） |
+< | `check_one` | 106 |
+< | `apply_one` | 213 |
+< | `selftest` | （この関数は実物に無い） |
+---
+> | `read_design_fixes` | 135 |
+> | `approved_ok` | 146 |
+> | `check_one` | 211 |
+> | `apply_one` | 318 |
+> | `selftest` | 503 |
+558c558
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 8件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 15件の関数が在ります）。
+564c564
+< <!-- ACC_SPEC_START hash=9c5a14d36baac874 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=8bddbefe823c4087 gen_acceptance.py が自動生成＝手で書き換えない -->
+631a632,638
+>   "read_design_blocks": [],
+>   "read_design_fixes": [
+>    "read_design_blocks"
+>   ],
+>   "approved_ok": [],
+>   "design_targets": [],
+>   "impl_src_mismatch": [],
+642a650
+>    "approved_ok",
+643a652,655
+>    "design_targets",
+>    "impl_src_mismatch",
+>    "read_design_blocks",
+>    "read_design_fixes",
+645c657,662
+<    "repo_path"
+---
+>    "repo_path",
+>    "selftest"
+>   ],
+>   "selftest": [
+>    "main",
+>    "read_design_blocks"

@@ -113,7 +113,10 @@ EXEC_PY = PRIORITY / "engine_tuner_exec.py"
 
 # ── 囲み（9つ）───────────────────────────────────────────────
 BLOCKS = ("STAGES", "MATERIALS", "LAWS", "RANKING", "CODEREF", "RANDOM",
-          "ACCEPT_TABLE", "SELFTEST", "SPEC", "CHECKLIST", "AUDITTODO")
+          "ACCEPT_TABLE", "SELFTEST", "SPEC", "CHECKLIST", "AUDITTODO",
+          # ★2026-09-24（設計書 impl-instruction-apply-20260924）＝設計書の「4-20 実装の指示」の囲み
+          #   （元データの `実装の指示` が空なら出ない＝AUDITTODO と同じ形）
+          "IMPL")
 
 
 def _begin(kind: str, h: str) -> str:
@@ -584,6 +587,42 @@ def build_audit(d: dict) -> str:
 BUILDER["AUDITTODO"] = build_audit      # ★定義の後に入れる（BUILDER は上で作っている）
 
 
+def build_impl(d: dict) -> str:
+    """元データの「実装の指示」から、監査結果の修正の指示と同じ6つの欄の節を組み立てる（2026-09-24 新設）。
+
+    ★設計書 impl-instruction-apply-20260924（まこさん承認）。指示が無ければ空の文字列（節ごと出ない）。
+    ★欄の並びと見出しは監査結果のテンプレ（`_template.md`）と同じ＝当てる道具が `gen_audit_docs.item_fields` で
+      そのまま読める。読み取りは道具の側に1か所（ここには書かない）。
+    """
+    items = d.get("実装の指示") or []
+    if not items:
+        return ""
+    L = ["**★この節はプログラムが作ります（手で書き換えない）。**出どころ＝元データの `実装の指示`。"
+         "当て方＝`python3 .claude/tools/apply_audit_fix.py --design [--dry]`"
+         "（承認の印と設計書のハッシュ値が合うときだけ当たる）。",
+         ""]
+    for it in items:
+        L.append(f"#### 実装 {it.get('番号')}")
+        L.append(f"対象のファイル: {it.get('対象のファイル', '')}")
+        L.append(f"直す箇所: {it.get('直す箇所', 'なし')}")
+        L.append("直す前の文字:")
+        L.append("~~~")
+        L.append(str(it.get("直す前の文字") if it.get("直す前の文字") is not None else "なし"))
+        L.append("~~~")
+        head = (f"案{it['案']} " if it.get("案") else "") + str(it.get("種類", "直した後の文字"))
+        L.append(f"{head}:")
+        L.append("~~~")
+        L.append(str(it.get("中身", "")))
+        L.append("~~~")
+        L.append(f"根拠の抜き書き: {it.get('根拠の抜き書き', '')}")
+        L.append(f"状態: {it.get('状態', '確定')}")
+        L.append("")
+    return "\n".join(L)
+
+
+BUILDER["IMPL"] = build_impl            # ★定義の後に入れる（AUDITTODO と同じ）
+
+
 def build(kind: str, d: dict) -> str:
     """囲みの中身を作る。置き換えない目印が残ったら止める（fail-closed の3つ目）。"""
     body = BUILDER[kind](d)
@@ -672,7 +711,10 @@ def section4(d: dict) -> str:
         step = str(it.get("段", ""))
         name = _esc(it.get("名前"))
         got = body.get(no)
-        if isinstance(got, dict) and got.get("非該当"):
+        if no == "4-20" and (d.get("実装の指示") or []):
+            # ★2026-09-24（設計書 impl-instruction-apply-20260924）＝実装の指示は元データの一覧から機械で作る
+            state = f"書いた（実装の指示 {len(d['実装の指示'])} 件・プログラムが作る）"
+        elif isinstance(got, dict) and got.get("非該当"):
             state = f"非該当（{_esc(got['非該当'])}）"
             if step == "必ず":
                 miss_must.append(no)
@@ -709,6 +751,13 @@ def section4(d: dict) -> str:
             add(f"**この項目に書くこと**＝{it['中身']}")
             add("")
         got = body.get(no)
+        if no == "4-20" and (d.get("実装の指示") or []):
+            # ★2026-09-24（設計書 impl-instruction-apply-20260924）＝4-20 は囲み IMPL（プログラムが作る）
+            add(_begin("IMPL", _h(build("IMPL", d))))
+            add(build("IMPL", d))
+            add(_end("IMPL"))
+            add("")
+            continue
         if isinstance(got, dict) and got.get("非該当"):
             add(f"**非該当。**{got['非該当']}")
             add("")
@@ -741,6 +790,10 @@ def page(d: dict) -> str:
     """7つの節の設計書を組み立てる（囲みの外＝元データの文をそのまま置く）。"""
     L: list[str] = []
     add = L.append
+    # ★2026-09-24（設計書 impl-instruction-apply-20260924）＝「実装の指示」は一覧（[]）でしか受けない（fail-closed）。
+    #   散文で書いた指示をプログラムが解析する形にしない（設計書 3-1 の3）。
+    if "実装の指示" in d and not isinstance(d.get("実装の指示"), list):
+        raise SystemExit("[gen_acceptance] 元データの「実装の指示」が一覧（[]）の形ではありません（fail-closed）。")
     add(f'<!-- ARC iter="{d["iter"]}" -->')
     add("")
     add(f"# 設計書｜{d['設計書の題']}")
@@ -1091,6 +1144,11 @@ def verify(dest: Path = None) -> int:
         #   直す前は検出の側だけが囲みを求め、必ず「❌ 囲みが無い」になっていた（作る側と検出の側の食い違い）。
         if kind == "AUDITTODO" and not (d.get("audit_report") or "").strip():
             print("— --verify: AUDITTODO は監査レポートの欄が空なので出ない設計書（照らさない）")
+            continue
+        # ★2026-09-24（設計書 impl-instruction-apply-20260924・監査 CP41 の B1）＝作る側が出さない囲みは照らさない。
+        #   足さないと、指示が無い設計書で必ず ❌ になり、--selftest の T1 が落ちて b72・b73 が空になる。
+        if kind == "IMPL" and not (d.get("実装の指示") or []):
+            print("— --verify: IMPL は元データの「実装の指示」が空なので出ない設計書（照らさない）")
             continue
         # ★2026-09-16（設計書 audit-autofix-apply-20260916 の完成の条件 AUDIT-7・まこさん承認）
         #   ＝§4 の節に置く囲み（STAGES・LAWS など）は、作る側（page）が

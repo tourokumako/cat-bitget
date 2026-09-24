@@ -82,7 +82,7 @@ def main(raw: str) -> int:
     if not targets:
         return 0
     n = past_count(str(data.get("transcript_path") or ""), targets)
-    if n < MAX_PER_SESSION:
+    if n <= MAX_PER_SESSION:
         return 0
     e = sys.stderr
     print("🔒 [照合は1回まで] 同じ相手の照合を、このセッションで既に "

@@ -7,6 +7,8 @@
  "b07_no_approval.sh": "60d1bb12e7908995776a8901056de27d5815d998ddf6ab9605ee4a8b3590fda5",
  "b08_bash_write.sh": "3d4911172df5d6eb08c3699b64548281047859e8c794cec90f3e13dca9166d88",
  "b09_run_bypass.sh": "c8b2905758131c225a67bf5013036f35232003a717592a6a85484ad9d3aacce3",
+ "b101_design_apply_no_approval.sh": "a0ece8358388f014472af9b2ea5e5fc3eb8cbd3da6cedebe920775f8b15f937c",
+ "b102_design_apply_no_precheck.sh": "6bb242ac938eb96a3666eaa2bac5a6470c2ea745a4617103a3e143517d60fb99",
  "b11_subagent.sh": "ee00fe490588e02cec1a7c50bcd965683ff56129dda1aa0ea8d8f1e3174eadc5",
  "b12_no_record.sh": "8cbf00458314feb72dc01580a342d3a67bed10654cf3c25ae599b0cea912bb7f",
  "b13_approve_by_cc.sh": "b2b9e95c9a908432767bdd8b1b80b7aebfbd6aab330786aefd2670169b24101a",

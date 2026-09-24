@@ -322,11 +322,33 @@ fi
 IS_ET=0
 printf '%s' "$PYS" | grep -q '^engine_tuner' && IS_ET=1
 
+# ★2026-09-24（まこさん決定「よい」）＝承認済みの控えを選ぶ部品と、差し替えた記録の置き場。
+FALLBACK="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/design_gate_fallback.py"
+FB_LOG="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/design_gate_fallback.log"
+
 FAILED=0
 MSG=""
 while IFS= read -r MD; do
     [ -z "$MD" ] && continue
-    OUT=$(python3 "$VERIFY" "$MD" 2>&1)
+    # ★2026-09-24（まこさん決定「よい」・根本から直す）＝承認を先に見る。
+    #   いまの設計書の承認が外れていて、走らせる .py を指す「最後に承認された控え」が在れば、それで照らす。
+    #   なぜ要るか＝設計書の1枚に「当てる道具（apply_audit_fix.py）を直す工事」の未承認・未実装の設計書が
+    #     入っている間、監査の指摘をその道具で当てられなかった（行き止まり・2026-09-24 実測）。
+    #   守りは減らない＝部品（design_gate_fallback.py）は「<iter>.md の形・隣に .frozen.json・契約が読めて
+    #     相手が一致・git に登録済みで承認後に変わっていない」の全部を満たす控えだけを返す。
+    #     承認が合っていれば この枝は通らない（今までどおり）。控えが無ければ 今までどおり止まる。
+    #   ★engine_tuner はこの枝を通さない（IS_ET=1 は今までどおり fail-closed）。
+    AOUT=$(python3 "$VERIFY" --check-approval "$MD" 2>&1)
+    ARC=$?
+    USE_MD="$MD"
+    if [ "$ARC" -ne 0 ] && [ "$IS_ET" -eq 0 ]; then
+        FB=$(printf '%s\n' "$PYS" | python3 "$FALLBACK" 2>/dev/null)
+        if [ -n "$FB" ] && [ -f "$FB" ]; then
+            USE_MD="$FB"
+            printf '%s\t%s\t%s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$(printf '%s' "$PYS" | tr '\n' ' ')" "$FB" >> "$FB_LOG" 2>/dev/null
+        fi
+    fi
+    OUT=$(python3 "$VERIFY" "$USE_MD" 2>&1)
     if [ $? -ne 0 ]; then
         FAILED=1
         MSG="$MSG
@@ -335,7 +357,7 @@ $OUT"
 
     # 3) ★設計書に SPEC が在るときだけ、両方向に突き合わせる（2026-08-23・C-2 の③）
     #    SPEC がまだ無い設計書（e35/e37/e38）は、この段を飛ばす＝既存を壊さない。
-    DOUT=$(python3 "$VERIFY" --diff "$MD" 2>&1)
+    DOUT=$(python3 "$VERIFY" --diff "$USE_MD" 2>&1)
     DRC=$?
     NOSPEC=0
     printf '%s' "$DOUT" | grep -q "SPEC が設計書に無い" && NOSPEC=1
@@ -350,19 +372,19 @@ $DOUT"
     if [ "$IS_ET" -eq 1 ] && [ "$NOSPEC" -eq 1 ]; then
         FAILED=1
         MSG="$MSG
-[STOP] $MD に SPEC がありません（engine_tuner は SPEC が必須）。
+[STOP] $USE_MD に SPEC がありません（engine_tuner は SPEC が必須）。
     SPEC ＝ 作る関数と、その関数が呼ぶもの・定数・コマンドの旗の一覧。
     これが無いと『名前が文字として在るか』しか見ません＝中身が空でも通ります。
     出発点は次のコマンドで作れます:
-      python3 $VERIFY --write $MD
+      python3 $VERIFY --write $USE_MD
       → 書き出された <設計書>.actual.md の SPEC を設計書へ写し、今回 変える所だけ手で直す。"
     fi
 
     # 5) ★設計書が、承認どおりのままかを見る（2026-08-23・C-6・まこさん承認 67da88ef9ca8…）
     #    ＝CC が実装に合わせて設計書を書き換えて食い違いを0件にする道を消す。
-    AOUT=$(python3 "$VERIFY" --check-approval "$MD" 2>&1)
-    ARC=$?
-    if [ "$ARC" -ne 0 ]; then
+    # ★2026-09-24（まこさん決定「よい」）＝承認の照合は輪の先頭で取ってある（AOUT・ARC）。
+    #   控えに差し替えたとき（USE_MD ≠ MD）は、承認は控えの側（承認の瞬間に凍結・git に登録）で済んでいる。
+    if [ "$USE_MD" = "$MD" ] && [ "$ARC" -ne 0 ]; then
         FAILED=1
         MSG="$MSG
 [STOP] $MD

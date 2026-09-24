@@ -43,6 +43,25 @@ REPORTS = os.path.join(SDK, ".claude", "audits", "*_audit_report.md")
 sys.path.insert(0, os.path.join(ROOT, ".claude", "tools"))
 
 
+def _applied(f: dict, before: str, text: str) -> bool:
+    """当て終わっているか＝当てる道具（apply_audit_fix.apply_one）と同じ形で見る（2026-09-24 に直した）。
+
+    直す前＝「直す前の文字が実物に無い」だけで見ていた。「足す文字」の修正は当てた後も
+    直す前の文字が残るので、永久に「まだ」になり、対象のファイルを手で直せなくなった（CP41 で実測）。
+    """
+    plans = f.get("4つ目") or []
+    if not plans:
+        return before not in text
+    for _a, kind, body in plans:
+        if kind == "足す文字" and (before + body) in text:
+            return True
+        if kind == "直した後の文字" and (body in text or before not in text):
+            return True
+        if kind == "消す文字" and before not in text:
+            return True
+    return False
+
+
 def pending() -> dict:
     """まだ当たっていない修正の「対象のファイル」→ [(監査結果, 修正の番号), …]。"""
     try:
@@ -68,10 +87,11 @@ def pending() -> dict:
             if not os.path.isfile(path):
                 continue
             try:
-                if before not in open(path, encoding="utf-8").read():
-                    continue                                 # 当て終わっている＝もう止めない
+                text = open(path, encoding="utf-8").read()
             except Exception:                                # noqa: BLE001
                 continue
+            if _applied(f, before, text):
+                continue                                     # 当て終わっている＝もう止めない
             out.setdefault(os.path.realpath(path), []).append(
                 (os.path.basename(rep), f.get("番号")))
     return out
