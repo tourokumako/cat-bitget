@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=9ea2a69f7ababda7 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=ae5ccaaee62d3b50 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 > 🔴 **恒久の決まりは `.claude/rules/permanent_rules.md`（毎回 自動で読み込まれる）。**この文書に書くのは「いまの状態」と「次にやること」だけ。過去のセッションの記録は `session_worklog_YYYYMMDD.md`、移した古い節は `next_step_archive_202608.md`。
@@ -17,11 +17,11 @@
 
 > **★ミッション（まこさん 2026-09-18・逐語）＝「膨大な法則に則った組み合わせ（指標、閾値、パラメータ、時間足）の中から、M2-Jで合格できるレジーム判定ロジックを見つけ出す」。やること＝マイルストーン2 のフロー（M2-E 残り → M2-F（1）→ M2-F（2）→ M2-H。M2-G は保留・M2-C は 09-20 に終わった）と、その下のやることリストを、順番に全部 終わらせる。**
 > - **工事の型＝6段**（まこさん決定 2026-09-21）＝①設計書を監査に出す ②監査が指摘する ③指摘をプログラムで設計書に当てる（`apply_audit_fix.py --report`）④設計書から実装を当てる（`apply_audit_fix.py --design`）⑤実装を監査に出す ⑥指摘をプログラムで実装に当てる。
-> - **★いまここ＝ToDo の44番（6段の④の道具）が ①〜⑥を全部 通った。**実装の監査 CP42（NO-GO・修正40件）→ まこさん決定「全部修正する」「39・40 当てる」「承認1回」→ 一時置き場の `apply_cp42.py` で37件を当て（守りの相手22件を含む・コマンド3件は当てない）→ `verify_cp42.py`＝自己テスト 16/16・9/9・`--write` 693行・`--verify` 全部 ✅ → 承認1回＝b101・b102 期待どおり・#3・#4 済・印 `659c0c1f…`（worklog 20260925 §2）。
-> - **次の一手**＝①commit（まこさんの OK 待ち。★commit するまで当てる道具は CC の Bash から走らない＝照合B が git の差分の関数だけを見るため・worklog 20260925 §2-4）→ ②45番（束1 の設計書の作り直しと CP39 の依頼書）→ ③2番（束1 の実装）。
+> - **★いまここ＝ToDo の45番（束1 の設計書＝6段の①）が終わり、②（監査 CP39）の手前。**束1（M2-E-4d・M2-E-4b・M2-E-5b）の設計書＝目印 `m2e-bundle1-20260925`・1987行・実装の指示31件（当てる道具 `--design` で当てる形・読むだけの照らしで食い違い0件）・`pre_audit_check.py --check-design` 不足0件。依頼書＝`inputs/2026-09-25_m2e_bundle1_design_cp39_audit_request.md`（問い13件）。★ratchet の `acceptance_src.json` は hook 12 が CC の Write を止める（§6 の205番）＝控え `.claude/state/acceptance_src_m2e-bundle1-20260925.json` を まこさんが `cp` で写す（3回 要った・worklog 20260925 §3-7〜3-10）。M2-E-4b は「レンジの法則に直近N本の中での位置を求める文が無い＝付けない・受け口 `pre_b` を消す」＝まこさんの判断待ち（設計書の 3-2）。
+> - **次の一手**＝①まこさんが依頼書をチェック → 別のセッションで監査 CP39 → ②結果を `apply_audit_fix.py --report` で設計書の元データに当てる（6段の③・★元データを直すときは また控えを書いて まこさんが `cp`）→ ③承認 → ④2番（束1 の実装＝当てる道具 `--design` が28件を当て、壊すプログラム3本は CC が Write ツールで書く）。
 > - **★運用＝CC が書けない・走らせられないものが在る（Claude Code の権限の制限）。**その分は CC が一時置き場に「当てるプログラム」を作り、まこさんが絶対パスで打つ（§6 の201番）。
 > - **段の候補の実物の本数（09-20）**＝段1 2,465本・段2a 94本・段2c 261本。M2-F-8・11・13 の注記の数字は古い＝M2-F に入るときに数え直す。
-> - **commit**＝`d691721`（09-24・118回目）まで済。commit していないもの＝`session_worklog_20260924.md` の §7-12・`session_worklog_20260925.md`・この next_step の書き替え・`cp42_work/` の中。
+> - **commit**＝`ee5598b`・`9a93cf2`（09-25・119回目）まで済。commit していないもの＝`session_worklog_20260925.md` の §2-6・§3・この next_step の書き替え・束1 の控え（`acceptance_src_m2e-bundle1-20260925.json`・`chk_bundle1_impl.py`・`purpose_check.md`・`design_read_plan.md`）・`cp39_work/cp39_src.md`。
 
 ### 0-2 🔴 次にやること（★次に何をするかは、この節にだけ書きます）
 
@@ -31,8 +31,8 @@
 
 | 順 | やること | 触るもの | 出るもの・確かめ方 | 状態 |
 |---|---|---|---|---|
-| **45** | **束1 の設計書を作り直し、設計書の監査（CP39）の依頼書を作る**（6段の①・下の2番の入口）。**★まこさん OK 2026-09-24 で、この設計書は M2-E-4d だけでなく M2-E-4b と M2-E-5b も含む形になった**＝①読むもの宣言に M2-E-4b と M2-E-5b で読むものを足して まこさんの OK をもらい直す（恒久68番）②「実装の指示」を入れる ③作り直す。控え3つ＝`.claude/state/acceptance_src_m2e4d-streak-scope-20260920.json`・`design_read_plan_m2e4d-….md`・`purpose_check_m2e4d-….md`／依頼書の元データ＝`SDK/.claude/audits/cp39_work/cp39_src.md` | `acceptance_src.json`（控えから戻して、3件ぶんの中身と「実装の指示」を足す）・`design_read_plan.md` | `gen_audit_docs.py request` が inputs に CP39 の依頼書を書く → まこさんのチェック → 別のセッションで監査。 | ★いまここ |
-| **2** | **束1＝フローの2番 M2-E 残り（3件を1つの設計書にまとめる・まこさん OK 2026-09-24）**＝①M2-E-4d＝段3 の持続（streak）を、帯の条件1つではなく「成立の全体」に掛ける形に直す ②M2-E-4b＝転がし窓の順位（直近N本の中での位置）を、付けるかどうかと N を相場の法則から決める ③M2-E-5b＝148番＝オン・オフの二重の守りを、レンジ幾何と時間帯にも揃える | `engine_tuner_gen.py`（`sample_regime_build` の cond_f・`pre_b` を渡す所・候補を出す所と審査の所）／`engine_tuner_exec.py`（streak の評価と検査） | ①`streak_scope_diag.py --builds 3` で on_cur_true_want_false が 3本とも 0 ②`gen --selftest`・`exec --selftest` 全部 pass ③恒等3本（S1・S2・L1）の md5 が不変 ④G7 で束が落ちない（T45 が pass）⑤`pre_b` が `None` でない案が出ることを機械で数える ⑥印を1件ずつ外して、候補と審査の両方で止まることを機械で数える。 | まだ（設計書は M2-E-4d のぶんだけ作ってある＝45番で M2-E-4b と M2-E-5b を足して作り直す） |
+| **45** | **束1 の設計書を作り直し、設計書の監査（CP39）の依頼書を作る**（6段の①・下の2番の入口）。**★まこさん OK 2026-09-24 で、この設計書は M2-E-4d だけでなく M2-E-4b と M2-E-5b も含む形になった**＝①読むもの宣言に M2-E-4b と M2-E-5b で読むものを足して まこさんの OK をもらい直す（恒久68番）②「実装の指示」を入れる ③作り直す。控え3つ＝`.claude/state/acceptance_src_m2e4d-streak-scope-20260920.json`・`design_read_plan_m2e4d-….md`・`purpose_check_m2e4d-….md`／依頼書の元データ＝`SDK/.claude/audits/cp39_work/cp39_src.md` | `acceptance_src.json`（控えから戻して、3件ぶんの中身と「実装の指示」を足す）・`design_read_plan.md` | `gen_audit_docs.py request` が inputs に CP39 の依頼書を書く → まこさんのチェック → 別のセッションで監査。★2026-09-25＝元データは控え `.claude/state/acceptance_src_m2e-bundle1-20260925.json` に書いた（hook 12 が ratchet への Write を止める＝まこさんが `cp` → `gen_acceptance.py --write`・`--verify` → `pre_audit_check.py --check-design` を打つ・worklog 20260925 §3-5）。依頼書の元データ `cp39_src.md` は作り直し済。 | ★いまここ |
+| **2** | **束1＝フローの2番 M2-E 残り（3件を1つの設計書にまとめる・まこさん OK 2026-09-24）**＝①M2-E-4d＝段3 の持続（streak）を、帯の条件1つではなく「成立の全体」に掛ける形に直す ②M2-E-4b＝転がし窓の順位（直近N本の中での位置）を、付けるかどうかと N を相場の法則から決める ③M2-E-5b＝148番＝オン・オフの二重の守りを、レンジ幾何と時間帯にも揃える | `engine_tuner_gen.py`（`sample_regime_build` の cond_f・`pre_b` を渡す所・候補を出す所と審査の所）／`engine_tuner_exec.py`（streak の評価と検査） | ①`streak_scope_diag.py --builds 3` で on_cur_true_want_false が 3本とも 0 ②`gen --selftest`（T46）・`exec --selftest`（T-STREAK-TREE・T-g）全部 pass ③恒等3本（S1・S2・L1）の md5 が不変 ④G7 で束が落ちない（T45 が pass）⑤`pre_b` の文字が組む側から消えている（grep が 0＝法則に無いので付けない・受け口を消す） ⑥印から外したレンジ幾何・時間帯を実行器が G6 で拒否する（T-g）。壊すプログラム＝b99・b100・b103（新設）・b77（既存）。 | まだ（設計書の元データは束1 の3件ぶん＋実装の指示31件で作ってある＝45番で監査 CP39 → 承認の後に、当てる道具で当てる） |
 | **3** | **束2＝フローの2番 M2-E 残り（3件を1つの設計書にまとめる・まこさん OK 2026-09-24）**＝①M2-E-1b＝値の範囲と刻みの案を、出どころつきで作る ②M2-E-5＝136番＝帯の許容幅の張り付き割合を測る節を足し、1回 測る ③M2-E-4c＝ATR に連動する帯の許容幅を、正しい形で作り直す。★この順にした理由＝張り付き割合を測ってからでないと、許容幅の形を決められないため | `observe_diag.py`（張り付き割合の節・許容幅の計算）／`observe_config.json` | ①出どころの無い行が0件 ②張り付き割合が各足で出る ③作った部品が既存の部品と同じ列にならない（`--only 12` の「実質 同じもの」が0組）④足した部品が engine_tuner の案に出てくる（0件なら未達）。observe_diag は H2 の対象＝印を取り直す。 | まだ |
 | **8** | **フローの2番 M2-E 残り＝M2-E-6**＝印の取り直し・記録・監査に出す | なし（走らせて書くだけ） | 監査の Verdict。CC は「直った」と判定しない（恒久の決まり64番）。 | まだ |
 | **9** | **フローの3番・4番 M2-F＝M2-F-1**＝実物で確かめる＝3つの割合の式を、正解ラベルの印と道具の列に当てた対応表を作り、段1 の束を1本 走らせて時間を測る | なし（読む・測るだけ。②は `regime_r9_diag.py --recipe <束1本> --no-trades`＝読み取り専用） | 対応表の全行に行番号が在る。時間は実測の数字（見込みではない）。分からなかったことは「分からない」と書く。 | まだ |
