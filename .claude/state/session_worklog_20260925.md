@@ -163,3 +163,8 @@
 - `gen_acceptance.py --write`＝1987行・囲み12個・法則 51件／51行。`--verify`＝✅ 9件（出ない囲み3つは照らさない）。
 - `pre_audit_check.py --check-design`＝**不足0件**（TARGET 3本 × 群1 38本／群2 37本）。設計書を作り直した直後の hook（承認の前の検査）の残り＝B1・B2（b77 の測り・完成の条件 #4 のコマンドの実走＝実装の後の話）だけ。
 - `gen_audit_docs.py request`＝1回目は「着手前必読のファイルが無い: recipes/identity_*_legacy.json」で書かなかった（私が3本を1行に丸めて書いた）→ 3本の名前に直して2回目で書けた＝`inputs/2026-09-25_m2e_bundle1_design_cp39_audit_request.md`（問い13件・事実データ1件・外部検索2件・自己申告6件）。★依頼書のチェックは まこさん → 別のセッションで監査。
+
+### 3-11 まこさん「依頼書OKなので、監査に出す」「コミットもOK」（2026-09-25）
+
+- commit＝`40347fa`（6件＝`next_step.md`・`next_step_src.json`・この worklog・ratchet の `acceptance_src.json`・`cp39_work/cp39_src.md`・`inputs/2026-09-25_m2e_bundle1_design_cp39_audit_request.md`）。依頼書は名前をコマンドに書くと hook 10 が止めるので、`inputs/` の置き場ごと add した（未登録は その1本だけ・`git status` で数えた）。`.claude/state` の設計書・控え・目的の照合・読むだけの照らしのプログラムは git の外（tracked でない）。
+- 監査 CP39 は まこさんが別のセッションで起動する。結果が出たら 6段の③＝`apply_audit_fix.py --report` で設計書の元データに当てる（★元データは hook 12 が止めるので、控えを直して まこさんが `cp`）。
