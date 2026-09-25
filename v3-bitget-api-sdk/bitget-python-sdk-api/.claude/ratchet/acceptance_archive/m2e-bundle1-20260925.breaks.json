@@ -1,0 +1,79 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2e-bundle1-20260925",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b99_streak_inner_band_only.sh",
+   "code": 1,
+   "note": "  ❌ T46: 案39: 持続の内側が条件の束でない（dict）",
+   "expect": 1,
+   "means": "組む側の持続の内側を帯の条件1つに戻すと、T46（持続の内側が成立の全体）が落ちた",
+   "match": true
+  },
+  {
+   "no": "2",
+   "script": "b100_streak_tree_eval.sh",
+   "code": 1,
+   "note": "  ❌ T-STREAK-TREE の番人の番人: 内側の先頭の条件だけの連続本数と同じ＝この見本では壊しを見抜けない",
+   "expect": 1,
+   "means": "実行器の「内側が束のときの評価」を束の先頭の条件だけにすると、T-STREAK-TREE（別の式との突き合わせ）が落ちた",
+   "match": true
+  },
+  {
+   "no": "3",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "4",
+   "script": "b77_no_streak.sh",
+   "code": 1,
+   "note": "  ❌ T46: 案39: 入る条件が持続1つでない（5 件）",
+   "expect": 1,
+   "means": "持続（streak）を掛ける行を消すと、法則の審査が束を落として T24② が落ちた",
+   "match": true
+  },
+  {
+   "no": "5",
+   "script": "b103_geo_switch_unchecked.sh",
+   "code": 1,
+   "note": "  ❌ T-g-2: 印から外した geo の材料 W% が通ってしまう（印と照らしていない）",
+   "expect": 1,
+   "means": "実行器のレンジ幾何の印の照らしを消すと、T-g-2（印から外したレンジ幾何が通ってしまう）が落ちた",
+   "match": true
+  },
+  {
+   "no": "6",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "7",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "8",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "9",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "10",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  }
+ ]
+}

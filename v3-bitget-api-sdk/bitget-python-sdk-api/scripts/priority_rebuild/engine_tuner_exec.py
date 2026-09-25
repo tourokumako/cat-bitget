@@ -95,24 +95,26 @@ FORMS = ("level", "band", "band_exclude", "slope", "slope_avg", "cross",
 #     理由＝TRIGGER_FORMS の並びに、形ではない名前（cross_val＝生成器の中だけの呼び名）が
 #     混ざっていて、「全部が形の名前」で探す数え方に引っかからなかった。
 #     取りこぼしを見つけたあと、「形の名前が2件以上 混ざった並び」で数え直したら、この1件だけだった。
+#   ★2026-09-25（M2-E-4d・束1）＝欄 inner_tree_ok を足した＝判定の束（build）の中で、内側に条件の束を受けるか。
+#     真は streak だけ（§2.2 の段3＝成立の連続本数）。入口の条件では今までどおり内側は条件1つだけ（_check_cond が in_build で分ける）。
 FORM_SPEC = {
-    "level":        dict(nest=False, pair="1",      band=False, needs_side=True,  slope_n=False, pre_ok=True,  state_free=True,  exit_ok=True,  trigger_ok=True),
-    "band":         dict(nest=False, pair="1",      band=True,  needs_side=False, slope_n=False, pre_ok=True,  state_free=True,  exit_ok=False, trigger_ok=False),
-    "band_exclude": dict(nest=False, pair="1",      band=True,  needs_side=False, slope_n=False, pre_ok=True,  state_free=True,  exit_ok=False, trigger_ok=False),
-    "slope":        dict(nest=False, pair="1",      band=False, needs_side=True,  slope_n=True,  pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True),
-    "slope_avg":    dict(nest=False, pair="1",      band=False, needs_side=True,  slope_n=True,  pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=False),
-    "cross":        dict(nest=False, pair="2or1th", band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=False, exit_ok=True,  trigger_ok=True),
-    "streak":       dict(nest=True,  pair="inner",  band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=True),
-    "within_n":     dict(nest=True,  pair="inner",  band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=True),
-    "barssince":    dict(nest=True,  pair="inner",  band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=True),
-    "diff":         dict(nest=False, pair="2",      band=False, needs_side=True,  slope_n=False, pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True),
-    "touch":        dict(nest=False, pair="2",      band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=False),
-    "candle_dir":   dict(nest=False, pair="none",   band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True),
+    "level":        dict(nest=False, pair="1",      band=False, needs_side=True,  slope_n=False, pre_ok=True,  state_free=True,  exit_ok=True,  trigger_ok=True,  inner_tree_ok=False),
+    "band":         dict(nest=False, pair="1",      band=True,  needs_side=False, slope_n=False, pre_ok=True,  state_free=True,  exit_ok=False, trigger_ok=False, inner_tree_ok=False),
+    "band_exclude": dict(nest=False, pair="1",      band=True,  needs_side=False, slope_n=False, pre_ok=True,  state_free=True,  exit_ok=False, trigger_ok=False, inner_tree_ok=False),
+    "slope":        dict(nest=False, pair="1",      band=False, needs_side=True,  slope_n=True,  pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True,  inner_tree_ok=False),
+    "slope_avg":    dict(nest=False, pair="1",      band=False, needs_side=True,  slope_n=True,  pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=False, inner_tree_ok=False),
+    "cross":        dict(nest=False, pair="2or1th", band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=False, exit_ok=True,  trigger_ok=True,  inner_tree_ok=False),
+    "streak":       dict(nest=True,  pair="inner",  band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=True,  inner_tree_ok=True),
+    "within_n":     dict(nest=True,  pair="inner",  band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=True,  inner_tree_ok=False),
+    "barssince":    dict(nest=True,  pair="inner",  band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=True,  inner_tree_ok=False),
+    "diff":         dict(nest=False, pair="2",      band=False, needs_side=True,  slope_n=False, pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True,  inner_tree_ok=False),
+    "touch":        dict(nest=False, pair="2",      band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=False, inner_tree_ok=False),
+    "candle_dir":   dict(nest=False, pair="none",   band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=True,  trigger_ok=True,  inner_tree_ok=False),
     # ★hysteresis（M2-2-5）＝材料を直接は取らない（on と off の中の条件が取る）。
     #   trigger_ok=False の理由＝縁で発火する形ではない（状態を保つ形）。C5＝場面の判定はふるいであって
     #   「いま建てろ」の合図ではない。exit_ok=False の理由＝出口の確認条件は玉ごとの判定で、
     #   状態を保つ形の意味（相場の場面が続いているか）と噛み合わないため（要るなら別途 承認をもらう）。
-    "hysteresis":   dict(nest=False, pair="inner2", band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=False),
+    "hysteresis":   dict(nest=False, pair="inner2", band=False, needs_side=False, slope_n=False, pre_ok=False, state_free=True,  exit_ok=False, trigger_ok=False, inner_tree_ok=False),
 }
 
 
@@ -637,6 +639,12 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
         g = m["geo"]
         if g not in iref.RANGE_GEO_REF:
             _fail("G6", f"レンジ幾何に未登録の列: {g}（登録済み＝{list(iref.RANGE_GEO_REF)}）")
+        # ★2026-09-25（M2-E-5b・束1・next_step §6 の148番＝監査 cp26 の 6-6）＝印（indicator_switch.json の geo_on）とも照らす。
+        #   直す前は需給だけが印と照らしていて、レンジ幾何と時間帯は定義表に在るかしか見なかった（二重の守りが需給だけ）。
+        #   組む側（候補・審査）は3種とも照らしている＝実行器でも揃える。判定は geo_enabled の1つ（2か所に書かない）。
+        if not geo_enabled(g):
+            _fail("G6", f"レンジ幾何の列 {g} は、指標のオン・オフの印で「使わない」になっている"
+                        "（印＝indicator_switch.json の geo_on・作り直しは gen_indicator_switch.py --write）")
         return "geo", g
     if "state" in m:
         s = m["state"]
@@ -647,6 +655,10 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
         t = m["time"]
         if t not in iref.TIME_REF:
             _fail("G6", f"時間帯の材料に無い名前: {t}")
+        # ★2026-09-25（M2-E-5b・束1・148番）＝印（indicator_switch.json の time_on）とも照らす（レンジ幾何・需給と同じ形）。
+        if not time_enabled(t):
+            _fail("G6", f"時間帯の材料 {t} は、指標のオン・オフの印で「使わない」になっている"
+                        "（印＝indicator_switch.json の time_on・作り直しは gen_indicator_switch.py --write）")
         return "time", t
     # ★2026-09-05（M2-C-4・まこさん承認 iter="m2c4-add-parts-20260905"）＝需給の列（別枠）。
     #   元データが5分足の1本しか無いので時間足に展開しない＝レンジ幾何・時間帯と同じ扱い。
@@ -668,6 +680,11 @@ def _material_name(m: dict, lane: str) -> tuple[str, str]:
         _fail("G6", f"カタログに無い材料: {name}（indicator_reference_diag に未登録）")
     if ent["family"] != fam:
         _fail("G6", f"材料の family がカタログと食い違う: {fam} → {name} は {ent['family']}")
+    # ★監査 CP39（A7）＝本体の指標も、印（indicator_switch.json の on）と照らす（別枠3種と同じ二重の守り）。
+    #   直す前は、組む側（候補・審査）だけが indicator_enabled で照らし、実行器は照らしていなかった。
+    if not indicator_enabled(fam):
+        _fail("G6", f"指標 {fam} は、指標のオン・オフの印で「使わない」になっている"
+                    "（印＝indicator_switch.json の on・作り直しは gen_indicator_switch.py --write）")
     if lane != "legacy":
         _check_param_range(fam, m.get("param"))
     return "col", f"{name}__{tf}"
@@ -959,9 +976,19 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         if in_nest:
             _fail("G5", f"{where}: 入れ子は1段まで（{form} の中に入れ子形）")
         inner = c.get("inner")
-        if not _is_cond(inner):
+        # ★2026-09-25（M2-E-4d・束1）＝判定の束（build）の中の streak に限り、内側に条件の束（all・any・not・
+        #   if-then・bool_col）を受ける。受けるかは性質表 inner_tree_ok から読む（コードに形の名前を書かない）。
+        #   §2.2 の段3＝「成立の連続本数」＝成立の全体（段1 ∩ 段2a ∩ 段2b ∩ 段2c）が n本 続く。
+        #   直す前は内側に条件1つしか受けず、組む側は帯の条件1つを写していた（成立が途中で切れたバーも成立と数えた）。
+        #   入口の条件（in_build=False）では今までどおり条件1つだけ（法則 C5・やらないこと）。
+        inner_is_tree = (isinstance(inner, dict) and not _is_cond(inner)
+                         and any(k in inner for k in ("all", "any", "not", "if", "bool_col")))
+        if inner_is_tree and not (in_build and FORM_SPEC[form]["inner_tree_ok"]):
+            _fail("G5", f"{where}: {form} の内側に条件の束は書けない"
+                        "（内側に束を受けるのは、判定の束の中の、性質表 inner_tree_ok が真の形だけ）")
+        if not inner_is_tree and not _is_cond(inner):
             _fail("G5", f"{where}: {form} の内側の条件が無い")
-        if inner.get("form") in NEST_FORMS:
+        if not inner_is_tree and inner.get("form") in NEST_FORMS:
             _fail("G5", f"{where}: {form} の内側は単純形のみ（設計書 §2.2）")
         n = (c.get("value") or {}).get("n")
         if form == "barssince":
@@ -974,7 +1001,11 @@ def _check_cond(c: dict, lane: str, where: str, legacy_used: list, in_nest=False
         elif n == 1:
             _fail("G5", f"{where}: {form}(N=1) は素の条件と同値＝生成禁止（正規形・CP3 提案7）")
         _check_value(c.get("value", {}), lane, f"{where}/{form}", legacy_used)
-        _check_cond(inner, lane, f"{where}/{form}の内側", legacy_used, in_nest=True)
+        if inner_is_tree:
+            # ★内側の束＝判定の束の木と同じ検査（bool_col も可・入れ子の内側の旗つき＝束の中の入れ子形と hysteresis は止まる）
+            _walk_build_tree(inner, lane, f"{where}/{form}の内側", legacy_used, in_nest=True)
+        else:
+            _check_cond(inner, lane, f"{where}/{form}の内側", legacy_used, in_nest=True)
         return
     if form in forms_where("needs_side") and c.get("side") not in SIDES:
         _fail("G5", f"{where}: 形 {form} に side（{'/'.join(SIDES)}）が無い")
@@ -1083,34 +1114,36 @@ def _check_bool_cond(c: dict, where: str) -> None:
 
 
 def _walk_build_tree(node, lane: str, where: str, legacy_used: list, depth: int = 0,
-                     in_not: bool = False) -> None:
+                     in_not: bool = False, in_nest: bool = False) -> None:
     """build の木を検査する（M2-1-5・2026-08-20 まこさん承認）。
 
     入口の木（_walk）との違い＝bool_col を条件として受けること だけ。
     普通の条件は入口と同じ _check_cond に通す＝G5/G6・分位の範囲検査（_check_q_range）が
     そのまま掛かる＝束の中の閾値（threshold_q）は engine_tuner の探索の対象になる（決めごと2）。
     ★2026-08-21（M2-2-5）＝否定（not）を足した。入口の木と同じ形・同じ禁止（二重の否定は不可）。
+    ★2026-09-25（M2-E-4d・束1）＝in_nest（入れ子の内側である）を足した。streak の内側の束を歩くときに真で呼ばれ、
+      _check_cond へ渡す＝束の中の入れ子形（入れ子は1段まで）と hysteresis（入れ子の内側に置けない）が今までの文で止まる。
     """
     if isinstance(node, dict) and "bool_col" in node:
         _check_bool_cond(node, where)
         return
     if _is_cond(node):
-        _check_cond(node, lane, where, legacy_used, in_build=True)   # ★build の中＝内側に bool_col も可
+        _check_cond(node, lane, where, legacy_used, in_nest=in_nest, in_build=True)   # ★build の中＝内側に bool_col も可
         return
     if isinstance(node, dict) and "not" in node:
         _check_not_node(node, in_not, where)
-        _walk_build_tree(node["not"], lane, f"{where}/not", legacy_used, depth + 1, in_not=True)
+        _walk_build_tree(node["not"], lane, f"{where}/not", legacy_used, depth + 1, in_not=True, in_nest=in_nest)
         return
     if isinstance(node, dict) and ("all" in node or "any" in node):
         kids = node.get("all", node.get("any", []))
         if not isinstance(kids, list) or not kids:
             _fail("G5", f"{where}: build の all/any の中身が空")
         for ch in kids:
-            _walk_build_tree(ch, lane, where, legacy_used, depth + 1, in_not)
+            _walk_build_tree(ch, lane, where, legacy_used, depth + 1, in_not, in_nest)
         return
     if isinstance(node, dict) and "if" in node and "then" in node:
-        _walk_build_tree(node["if"], lane, where, legacy_used, depth + 1, in_not)
-        _walk_build_tree(node["then"], lane, where, legacy_used, depth + 1, in_not)
+        _walk_build_tree(node["if"], lane, where, legacy_used, depth + 1, in_not, in_nest)
+        _walk_build_tree(node["then"], lane, where, legacy_used, depth + 1, in_not, in_nest)
         return
     _fail("G5", f"{where}: build の木のノードが bool_col/条件/not/all/any/if-then のどれでもない: "
                 f"{sorted(node) if isinstance(node, dict) else node!r}")
@@ -2091,8 +2124,13 @@ def _hold_state(on: np.ndarray, off: np.ndarray, n: int) -> np.ndarray:
     return (last_on > last_off) & (held < int(n))               # off と同じバーなら偽＝⑤
 
 
-def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | None = None) -> np.ndarray:
-    """条件1つ → 各バーの真偽（状態評価）。na=fail が既定（欠損は不成立）。"""
+def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | None = None,
+               allow_bool_col: bool = False) -> np.ndarray:
+    """条件1つ → 各バーの真偽（状態評価）。na=fail が既定（欠損は不成立）。
+
+    ★2026-09-25（M2-E-4d・束1）＝allow_bool_col（真偽の列を許すか）を足した。既定は許さない＝入口の条件では
+      真偽の列を読めない（法則 C5）を、検査だけでなく評価の側でも守る。_eval_tree が自分の旗を渡す。
+    """
     form = c["form"]
     v = c.get("value", {})
     na_pass = (v.get("na") == "pass")
@@ -2101,7 +2139,12 @@ def _eval_cond(c: dict, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | N
         off = _eval_tree(c["off"], df, geo, lane, qtable, allow_bool_col=True)
         return _hold_state(on, off, int(v["n"]))
     if form in NEST_FORMS:
-        inner = _eval_cond(c["inner"], df, geo, lane, qtable)
+        # ★2026-09-25（M2-E-4d・束1）＝内側が条件1つなら今までどおり。条件の束（判定の束の中の streak＝成立の全体）なら
+        #   束を評価してから、下の同じ式（直近 n本 の和が n 以上）で連続本数を見る＝未来のバーは1つも使わない（H2）。
+        if _is_cond(c["inner"]):
+            inner = _eval_cond(c["inner"], df, geo, lane, qtable)
+        else:
+            inner = _eval_tree(c["inner"], df, geo, lane, qtable, allow_bool_col)
         n = int(v["n"])
         off = int(v.get("offset", 0))
         s = pd.Series(inner.astype(float))
@@ -2213,7 +2256,7 @@ def _eval_tree(node, df: pd.DataFrame, geo: dict, lane: str, qtable: dict | None
         arr = df[col].to_numpy(bool)
         return arr if node["want"] else ~arr
     if _is_cond(node):
-        return _eval_cond(node, df, geo or {}, lane, qtable)
+        return _eval_cond(node, df, geo or {}, lane, qtable, allow_bool_col)   # ★真偽の列を許すかの旗を渡す（M2-E-4d）
     if "not" in node:                                  # ★否定（M2-2-5・法則 R8）
         return ~_eval_tree(node["not"], df, geo, lane, qtable, allow_bool_col)
     if "all" in node:
@@ -4150,6 +4193,46 @@ def selftest() -> None:
                 pass
         finally:
             _sw_d["_demand_set"] = _keep_d
+    # T-g 印（geo_on・time_on）から外れているレンジ幾何・時間帯は G6 が拒否し、印に在るものは通る
+    #   ★2026-09-25（M2-E-5b・束1・next_step §6 の148番＝監査 cp26 の 6-6）＝需給の T-f-3 と同じ形。
+    #     直す前はレンジ幾何と時間帯が印と照らされず、二重の守りが需給だけだった。
+    #   ★壊すプログラム b103（レンジ幾何の印の照らしを消す）が、この枝を測る相手。
+    for _kind_g, _key_g, _names_g in (("geo", "_geo_set", sorted(iref.RANGE_GEO_REF)),
+                                      ("time", "_time_set", sorted(iref.TIME_REF))):
+        _keep_g = set(_sw_d[_key_g])
+        _on_g = [x for x in _names_g if x in _keep_g]
+        if not _on_g:
+            ng.append(f"T-g: 印の {_key_g} に {_kind_g} の材料が1件も無い（この枝が何も試せない）")
+            continue
+        _one_g = _on_g[0]
+        try:
+            _k_g, _n_g = _material_name({_kind_g: _one_g}, "search")
+            if (_k_g, _n_g) != (_kind_g, _one_g):
+                ng.append(f"T-g-1: {_kind_g} の材料 {_one_g} の種別か名前が違う（{_k_g}/{_n_g}）")
+        except SystemExit as e:
+            ng.append(f"T-g-1: 印に在る {_kind_g} の材料 {_one_g} が拒否された: {str(e)[:80]}")
+        try:
+            _sw_d[_key_g] = _keep_g - {_one_g}
+            try:
+                _material_name({_kind_g: _one_g}, "search")
+                ng.append(f"T-g-2: 印から外した {_kind_g} の材料 {_one_g} が通ってしまう（印と照らしていない）")
+            except SystemExit:
+                pass
+        finally:
+            _sw_d[_key_g] = _keep_g
+    print("[T-g 印の照らし（レンジ幾何・時間帯）] 印に在るものは通る・印から外すと G6 → "
+          + ("pass（全部）" if not [x for x in ng if x.startswith("T-g")] else "❌ 落ちた"))
+    # T-h 印（on）から外した本体の指標は G6 が拒否する（監査 CP39 の A7＝実行器の本体の指標の二重の守り）
+    _keep_h = set(_sw_d["_on_set"])
+    try:
+        _sw_d["_on_set"] = _keep_h - {"RSI"}
+        try:
+            _material_name({"family": "RSI", "param": 14, "tf": "5m"}, "search")
+            ng.append("T-h: 印から外した指標 RSI が通ってしまう（印と照らしていない）")
+        except SystemExit:
+            pass
+    finally:
+        _sw_d["_on_set"] = _keep_h
     # T-d 前処理を付けた材料も、名前が登録に無ければ G6 が拒否する
     try:
         _material_name({"family": "RSI", "tf": "5m", "param": 14, "pre": {"op": "ts_max", "n": 5}},
@@ -4636,6 +4719,72 @@ def selftest() -> None:
         ng.append("T-HYST の番人の番人: 保つ最大の本数を変えても結果が同じ＝上限が効いていない")
     print(f"[T-HYST 状態を保つ形] 乱数200通りでループ版と突き合わせ・上限・off の優先・番人の番人 → "
           + ("✅ 全部 pass" if not [x for x in ng if x.startswith('T-HYST')] else "❌ 落ちた"))
+    # ══ T-STREAK-TREE 持続の内側に条件の束（M2-E-4d・束1・2026-09-25）＝完成の条件 #2 ═══════════════
+    #   ①判定の束の中の streak は、内側の束を「束の評価 → 直近 n本 全部 真」で評価する（別の式と1バーも違わない）
+    #   ②番人の番人＝内側の先頭の条件だけの連続本数とは違う（壊しを見抜ける見本か）
+    #   ③内側が条件1つの今までの形は今までどおり ④真偽の列を許さない呼び方では内側の真偽の列が読めない
+    #   ⑤止めるべき形6通りが G5 で止まる ⑥判定の束の中の、内側が束の持続は検査を通る
+    #   ★乱数を使わない（恒久67番）＝決まった並びの合成のデータ。x・y・ローソクの向きの3つが、先頭の条件だけでは
+    #     真偽が同じにならない並び（壊すプログラム b100＝先頭の条件だけを評価する形＝で必ず落ちる）。
+    _st_i = np.arange(40)
+    _st_df = pd.DataFrame({
+        "ts": pd.date_range("2026-01-01", periods=40, freq="5min"),
+        "open": np.linspace(100.0, 101.0, 40),
+        "close": np.where(_st_i % 8 == 0, 99.0, 102.0),
+        "x": (_st_i % 4 != 1), "y": (_st_i % 5 != 2)})
+    _st_tree = {"all": [{"bool_col": "x", "want": True}, {"bool_col": "y", "want": True},
+                        {"form": "candle_dir", "value": {"dir": "bull"}}]}
+    _st_f = {"form": "streak", "value": {"n": 3}, "inner": _st_tree}
+    _st_bull = _st_df["close"].to_numpy(float) > _st_df["open"].to_numpy(float)
+    _st_base = _st_df["x"].to_numpy(bool) & _st_df["y"].to_numpy(bool) & _st_bull
+
+    def _st_streak(col_, n_):
+        return (pd.Series(np.asarray(col_, bool).astype(float)).rolling(n_).sum() >= n_).to_numpy()
+
+    _st_got = _eval_cond(_st_f, _st_df, {}, "", None, allow_bool_col=True)
+    if not np.array_equal(_st_got, _st_streak(_st_base, 3)):
+        ng.append("T-STREAK-TREE: 内側が束の持続の評価が、束の評価の連続本数（別の式）と食い違う")
+    if np.array_equal(_st_got, _st_streak(_st_df["x"].to_numpy(bool), 3)):
+        ng.append("T-STREAK-TREE の番人の番人: 内側の先頭の条件だけの連続本数と同じ＝この見本では壊しを見抜けない")
+    _st_one = {"form": "streak", "value": {"n": 3}, "inner": {"form": "candle_dir", "value": {"dir": "bull"}}}
+    if not np.array_equal(_eval_cond(_st_one, _st_df, {}, "", None), _st_streak(_st_bull, 3)):
+        ng.append("T-STREAK-TREE: 内側が条件1つの持続（今までの形）の評価が変わった")
+    try:
+        _eval_cond(_st_f, _st_df, {}, "", None)
+        ng.append("T-STREAK-TREE: 真偽の列を許さない呼び方で、内側の束の真偽の列が読めてしまう（評価の側の守りが無い）")
+    except RecipeError:
+        pass
+    _st_lvl = {"role": "env", "form": "level", "side": "above",
+               "material": [{"family": "RSI", "param": 14, "tf": "5m"}], "value": {"threshold_q": "q50"}}
+    _st_cases = [
+        ("入口の条件で内側が束", dict(in_build=False),
+         {"form": "streak", "value": {"n": 3}, "inner": {"all": [_st_lvl]}}),
+        ("内側の束の中に入れ子形", dict(in_build=True),
+         {"form": "streak", "value": {"n": 3}, "inner": {"all": [{"form": "streak", "value": {"n": 3}, "inner": _st_lvl}]}}),
+        ("内側の束の中に hysteresis", dict(in_build=True),
+         {"form": "streak", "value": {"n": 3},
+          "inner": {"all": [{"form": "hysteresis", "on": _st_lvl, "off": _st_lvl, "value": {"n": 24}}]}}),
+        ("within_n の内側が束", dict(in_build=True),
+         {"form": "within_n", "value": {"n": 3}, "inner": {"all": [_st_lvl]}}),
+        ("内側の束が空", dict(in_build=True),
+         {"form": "streak", "value": {"n": 3}, "inner": {"all": []}}),
+        ("n が 1", dict(in_build=True),
+         {"form": "streak", "value": {"n": 1}, "inner": {"all": [_st_lvl]}}),
+    ]
+    for _st_lbl, _st_kw, _st_c in _st_cases:
+        try:
+            _check_cond(_st_c, "", "T-STREAK-TREE", [], **_st_kw)
+            ng.append(f"T-STREAK-TREE: 止めるべき形「{_st_lbl}」が検査を通ってしまう")
+        except SystemExit as _st_e:
+            if "G5" not in str(_st_e):
+                ng.append(f"T-STREAK-TREE: 「{_st_lbl}」が G5 以外で止まった: {str(_st_e)[:80]}")
+    try:
+        _check_cond({"form": "streak", "value": {"n": 3}, "inner": {"all": [_st_lvl, {"bool_col": "x", "want": True}]}},
+                    "", "T-STREAK-TREE", [], in_build=True)
+    except SystemExit as _st_e:
+        ng.append(f"T-STREAK-TREE: 判定の束の中の、内側が束の持続が拒否された: {str(_st_e)[:80]}")
+    print("[T-STREAK-TREE 持続の内側に条件の束] 別の式との突き合わせ・番人の番人・今までの形・真偽の列の守り・止めるべき形6通り・通る形 → "
+          + ("pass（全部）" if not [x for x in ng if x.startswith('T-STREAK-TREE')] else "❌ 落ちた"))
     # ══ G7 場面ごとの相場の法則（M2-B0・2026-08-30 に法則番号へ付け替え・通る／捨てるは直す前と同じ）════
     #   通る束2種（range・uptrend）が通り、わざと法則を破った束7通り（C1・C4・C6・R1・R8・R7・S1 を
     #   1件ずつ）が、それぞれの法則番号で止まることを確かめる（直す前の K-1〜K-7 と同じ結果）。

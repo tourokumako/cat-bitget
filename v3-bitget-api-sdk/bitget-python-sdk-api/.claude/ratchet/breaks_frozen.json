@@ -7,8 +7,10 @@
  "b07_no_approval.sh": "60d1bb12e7908995776a8901056de27d5815d998ddf6ab9605ee4a8b3590fda5",
  "b08_bash_write.sh": "3d4911172df5d6eb08c3699b64548281047859e8c794cec90f3e13dca9166d88",
  "b09_run_bypass.sh": "c8b2905758131c225a67bf5013036f35232003a717592a6a85484ad9d3aacce3",
+ "b100_streak_tree_eval.sh": "4a19ab3eaecf0f8e79fb7a32bac01d7363265c83fa56156c2d266b875974dfbd",
  "b101_design_apply_no_approval.sh": "a0ece8358388f014472af9b2ea5e5fc3eb8cbd3da6cedebe920775f8b15f937c",
  "b102_design_apply_no_precheck.sh": "aa1834264eeb1e5d0c9964be5de3e205ef717eebffcd47914e9b633e81ef046e",
+ "b103_geo_switch_unchecked.sh": "2e09a0bfd2fa915ce36d06700c431d9609b72c655bc329352b41006d7bef45a5",
  "b11_subagent.sh": "ee00fe490588e02cec1a7c50bcd965683ff56129dda1aa0ea8d8f1e3174eadc5",
  "b12_no_record.sh": "8cbf00458314feb72dc01580a342d3a67bed10654cf3c25ae599b0cea912bb7f",
  "b13_approve_by_cc.sh": "b2b9e95c9a908432767bdd8b1b80b7aebfbd6aab330786aefd2670169b24101a",
@@ -95,6 +97,7 @@
  "b96_tf_hardcoded.sh": "3f6078c0bceace590efb2cc6d09de8f74b5dba17804ed4778a6ecb9441085cfe",
  "b97_demand_not_attached.sh": "52628b84b892356eecd3d8ab61b2994f16dcaacfcbcdffbb92c936938dd381ba",
  "b98_qkey_abs_missing.sh": "d3f809018d31f5ee73d225d47af8442da7539a89220c03603903159e5d41fc2b",
+ "b99_streak_inner_band_only.sh": "89cfe0bb8a7c7cd6de1a70d90aebbd9631459e15df01874e99d7d336e637a3e4",
  "lib.sh": "7a590f07202a7dd14c96c8475822b08158b778b5559121f336a998e8a5314757",
  "_なにこれ": "承認の瞬間に凍結した、壊すプログラムのハッシュ値。run_breaks.py が走る前に照らす（監査 cp16 の E-12）"
 }

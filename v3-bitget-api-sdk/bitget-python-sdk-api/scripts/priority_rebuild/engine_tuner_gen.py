@@ -3291,12 +3291,8 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
         draw["G"]["法則"] = s2c["law"]
         draw["G"]["側"] = cond_g["side"]
     # ── F 何本 続いたか（R4）＝★M2-E-2 で新しく足した。直す前は無く、20回とも R4 で落ちていた ──
+    #    ★M2-E-4d（束1・2026-09-25）＝内側を「成立の全体」にするため、D と G の後ろ（on_core を作った後）で組む。
     cond_f = None
-    if "streak" in laws["forms"]:
-        cond_f = {"role": s3["role"], "form": "streak",
-                  "value": _nv_fixed(limits, "int_range", "n", order_n),
-                  "inner": json.loads(json.dumps(cond_b))}
-        draw["F"] = {"形": "streak", "法則": s3["law"], "本数": cond_f["value"].get("n")}
     # ── E 状態を保つ（C6・C7）＝on＝A∩B∩C（∩F）／off＝それぞれを緩い側へずらした any ──
     off_c = json.loads(json.dumps(strong))
     off_c["value"]["threshold_q"] = _loose_q_fixed(limits, strong["value"]["threshold_q"], strong_side)
@@ -3310,10 +3306,21 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
         _bc2b = s2b["bool_col"]
         if _bc2b:
             cond_d = {"not": {"bool_col": _bc2b, "want": True}}
-    on_all = ([cond_a, cond_b, cond_c]
-              + ([cond_d] if cond_d is not None else [])
-              + ([cond_g] if cond_g is not None else [])
-              + ([cond_f] if cond_f is not None else []))
+    on_core = ([cond_a, cond_b, cond_c]
+               + ([cond_d] if cond_d is not None else [])
+               + ([cond_g] if cond_g is not None else []))
+    # ★M2-E-4d（束1・2026-09-25）＝持続 F の内側＝成立の全体（A ∩ B ∩ C ∩ (D) ∩ (G)）。入る条件は F の1つ。
+    #   直す前＝内側は帯 B の写し1つで、A・C・D・G と横並び（成立が途中で切れたバーも成立と数えた＝
+    #   2026-09-20 の実測で真のバーの 9.65%〜18.55%）。§2.2 の段3 の正本＝「成立の連続本数」。
+    #   ★「法則に streak が在れば持続を掛ける」の if の行は残す（壊すプログラム b77 がこの行を探す）。
+    #   ★n は今までどおり承認済みの範囲（int_range）から案の番号で決まる並び（乱数を使わない・恒久67番）。
+    if "streak" in laws["forms"]:
+        cond_f = {"role": s3["role"], "form": "streak",
+                  "value": _nv_fixed(limits, "int_range", "n", order_n),
+                  "inner": {"all": json.loads(json.dumps(on_core))}}
+        draw["F"] = {"形": "streak", "法則": s3["law"], "本数": cond_f["value"].get("n"),
+                     "内側": "成立の全体（A・B・C・(D)・(G)）", "内側の本数": len(on_core)}
+    on_all = [cond_f] if cond_f is not None else on_core
     if "hysteresis" not in laws["forms"]:
         raise SampleError("C6（hysteresis の形）が法則に無い（regime_laws.json・fail-closed）")
     if "not" not in laws["forms"]:
@@ -3619,6 +3626,7 @@ def _tree_conds(node, out=None) -> list[dict]:
       走らせた瞬間に「分位の解決表に無い」で止まった（2026-08-21 に実測）。
     ★`bool_col` は材料を取らないので集めない（分位も要らない）。
     ★入れ子形（streak 等）の内側は、ここでは降りない＝`_cond_keys` が降りる（役割を1か所に）。
+      内側が条件の束（判定の束の中の streak・M2-E-4d）のときも、`_cond_keys` がこの関数で束の中の条件を集めてから降りる。
     """
     out = [] if out is None else out
     if not isinstance(node, dict):
@@ -3640,6 +3648,26 @@ def _tree_conds(node, out=None) -> list[dict]:
     return out
 
 
+def _regime_on_conds(build: dict) -> list:
+    """判定の束から「成立の条件の並び」（A・B・C・(D)・(G)）を返す（M2-E-4d・束1・2026-09-25 新設）。
+
+    ★束の形の読み方を、この1か所にまとめる（恒久の決まり69番）。直す前は T24③・T42・gate_matrix・診断が
+      それぞれ入る条件を並びの位置で読んでいて、形を変えるたびに全部 直すことになった。
+    ・入る条件が持続1つで内側が束（新しい形）＝その内側の並びを返す。
+    ・それ以外（直す前の形＝枠が横並び・持続は内側が条件1つ）＝入る条件の並びから持続を除いたものを返す。
+    ★hysteresis が無い木（法則に C6 が無いとき）は、木の all の並びを同じ規則で読む。
+    ★返す条件は束の中の同じ辞書（写しではない）＝gate_matrix が壊す相手をそのまま書き替えられる。
+    """
+    tree = ((build.get("entry") or {}).get("tree") or {})
+    top = list(tree.get("all") or [])
+    hy = top[0] if top and isinstance(top[0], dict) and top[0].get("form") == "hysteresis" else None
+    on = list(((hy or {}).get("on") or {}).get("all") or []) if hy is not None else top
+    if (len(on) == 1 and isinstance(on[0], dict) and on[0].get("form") == "streak"
+            and isinstance(on[0].get("inner"), dict) and not ex._is_cond(on[0]["inner"])):
+        return list(on[0]["inner"].get("all") or [])
+    return [c for c in on if not (isinstance(c, dict) and c.get("form") == "streak")]
+
+
 def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
     """レシピ群が使う分位の鍵 → 材料の指定の組（単材料 or 差の2材料）。
 
@@ -3652,7 +3680,14 @@ def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
         v = c.get("value", {})
         mats = c.get("material") or []
         if c["form"] in ex.NEST_FORMS:            # 入れ子形（barssince を足した 2026-08-12・段C の C-6）
-            _cond_keys(c["inner"], lane)
+            # ★M2-E-4d（束1・2026-09-25）＝内側が条件の束（判定の束の中の streak＝成立の全体）なら、
+            #   束の中の条件を `_tree_conds` で集めてから降りる。直す前は内側を条件1つとして降りていた
+            #   （束だと form の鍵が無くて落ちる＝分位の解決表に鍵が入らない）。
+            if ex._is_cond(c["inner"]):
+                _cond_keys(c["inner"], lane)
+            else:
+                for cc in _tree_conds(c["inner"]):
+                    _cond_keys(cc, lane)
             return
         # ★状態を保つ形（hysteresis）＝内側の「入る条件（on）」と「出る条件（off）」を歩く
         #   （2026-08-21・48回目・M2-2-8 で直した）。
@@ -6376,11 +6411,19 @@ def selftest() -> int:
             ng.append(f"T24②: レンジの束が1本も検査を通らない: {dict(_rej24)}")
         else:
             _hy = _r24["meta"]["regime"]["build"]["entry"]["tree"]["all"][0]
-            _on, _off = _hy["on"]["all"], _hy["off"]["any"]
+            # ★M2-E-4d（束1・2026-09-25）＝成立の並びは `_regime_on_conds` で読む（形の読み方を1か所に）。
+            #   枠を外した束は、持続で包み直す（新しい形＝入る条件は持続1つ・内側が成立の全体）。
+            _on, _off = _regime_on_conds(_r24["meta"]["regime"]["build"]), _hy["off"]["any"]
+            _on_raw = _hy["on"]["all"]
+            _f24 = _on_raw[0] if (len(_on_raw) == 1 and _on_raw[0].get("form") == "streak") else None
+
+            def _wrap24(core):
+                return ({"all": [{**_f24, "inner": {"all": list(core)}}]} if _f24 is not None
+                        else {"all": list(core)})
             # ★外すときは on と off の両方から外す（off に同じ部品が残ると G7 はそちらで満たされる）
-            for _lbl, _mk in (("A（K-6 帯の幅）", lambda t: {"all": [{"form": "hysteresis", "on": {"all": _on[1:]}, "off": {"any": _off[1:]}, "value": _hy["value"]}]}),
-                              ("C（K-5 否定）", lambda t: {"all": [{"form": "hysteresis", "on": {"all": _on[:2]}, "off": {"any": _off[:2]}, "value": _hy["value"]}]}),
-                              ("hysteresis（K-3）", lambda t: {"all": _on})):
+            for _lbl, _mk in (("A（K-6 帯の幅）", lambda t: {"all": [{"form": "hysteresis", "on": _wrap24(_on[1:]), "off": {"any": _off[1:]}, "value": _hy["value"]}]}),
+                              ("C（K-5 否定）", lambda t: {"all": [{"form": "hysteresis", "on": _wrap24(_on[:2]), "off": {"any": _off[:2]}, "value": _hy["value"]}]}),
+                              ("hysteresis（K-3）", lambda t: _wrap24(_on))):
                 _bad = json.loads(json.dumps(_r24))
                 _bad["meta"]["regime"]["build"]["entry"]["tree"] = _mk(None)
                 try:
@@ -6773,7 +6816,7 @@ def selftest() -> int:
                 continue
             _n_built42 += 1
             _rb, _rc, _rg, _sb = regime_draw_order(_i)
-            _on42 = _b42["entry"]["tree"]["all"][0]["on"]["all"]       # 並び＝[A, B, C, (D), (G), (F)]
+            _on42 = _regime_on_conds(_b42)       # 並び＝[A, B, C, (D), (G)]＝持続の内側の成立の並び（M2-E-4d・束1）
             # ★比べる相手も json を通す＝2本目の条件は深い写し（json 経由・tuple が list になる）なので、
             #   一覧の生の条件（材料の数字が tuple）と直接 比べると、中身が同じでも違うと出る（2026-09-13 に実測）。
             _jj = lambda o: json.loads(json.dumps(o))                                   # noqa: E731
@@ -7531,10 +7574,58 @@ def selftest() -> int:
                 break
             if not _ok45:
                 t45.append(f"T45: 帯の幅に指標（順位 {_rk45}）を選ぶ案の番号が 40 本の中に無い＝②を測れない")
-    except Exception as _e45:                       # noqa: BLE001  G7 で落ちるのが、直す前の状態
+    except (SystemExit, Exception) as _e45:         # noqa: BLE001  G7 で落ちるのが、直す前の状態（★監査 CP39＝RecipeError は SystemExit の子。受けないと自己テストが ❌ の一覧を出す前に止まり、壊すプログラム b77・b99 の EXPECT_MSG が出ない）
         t45.append(f"T45: 帯の幅の枠が動かない: {type(_e45).__name__} {str(_e45)[:120]}")
     ng += t45
     print("  T45 帯の幅の枠: ①法則が名指しし印もオンの指標が候補に出る ②その指標を選んだ束が審査 G7 を通る")
+
+    # ══ T46 持続の内側が成立の全体（M2-E-4d・束1・2026-09-25）＝完成の条件 #1 ═══════════════════
+    #   ①入る条件が持続1つ ②その内側が条件の束 ③内側の本数が引いた記録と一致
+    #   ④内側の並びが A・B・C・(D)・(G)（形＝level・level・not・…）で、持続が内側に無い
+    #   ★壊すプログラム b99（内側を帯 B の1つに戻す）で落ちることを測る。
+    #   ★法則 R4（持続の形）が無いと①で落ちる＝R4 を外す判断は まこさん（そのとき期待を一緒に直す・設計書の塞げないもの）。
+    t46: list[str] = []
+    try:
+        _lm46, _ = load_limits()
+        _lm46 = resolve_hold_range(_lm46, "e38")
+        _t46 = load_signal_table()
+        _p46, _tfs46, _ = material_pool()
+        _n46 = 0
+        for _i46 in range(40):
+            try:
+                _b46, _d46 = sample_regime_build(_lm46, _p46, _tfs46, _t46, order_n=_i46)
+            except SampleError:
+                continue
+            _n46 += 1
+            _on46 = _b46["entry"]["tree"]["all"][0]["on"]["all"]
+            if len(_on46) != 1 or not isinstance(_on46[0], dict) or _on46[0].get("form") != "streak":
+                t46.append(f"案{_i46}: 入る条件が持続1つでない（{len(_on46)} 件）")
+                continue
+            _in46 = _on46[0].get("inner")
+            if not isinstance(_in46, dict) or "all" not in _in46:
+                t46.append(f"案{_i46}: 持続の内側が条件の束でない（{type(_in46).__name__}）")
+                continue
+            _core46 = _regime_on_conds(_b46)
+            # ★期待の本数は、組む側の引いた記録ではなく、法則と §2.2 の元データから作る（監査 CP39 の A0-a＝D を束と記録の両方から消すと、記録から作る期待では落ちない）
+            _laws46 = laws_for_scene("range")
+            _want46 = (3 + (1 if ("not" in _laws46["forms"] and stage_candidates("stage2b")["bool_col"]) else 0)
+                       + (1 if _law_families(_laws46, stage_candidates("stage2c")["law"])[0] else 0))
+            _rec46 = (_d46.get("F") or {}).get("内側の本数")
+            if len(_core46) != _want46 or _rec46 != _want46:
+                t46.append(f"案{_i46}: 内側の本数 {len(_core46)}・引いた記録の内側の本数 {_rec46} が、法則と元データから作った期待（{_want46}）と違う")
+            _forms46 = [("not" if "not" in c else c.get("form")) for c in _core46]
+            if _forms46[:3] != ["level", "level", "not"] or any(f == "streak" for f in _forms46):
+                t46.append(f"案{_i46}: 内側の並びが A・B・C・(D)・(G) でない: {_forms46}")
+            if _n46 >= 5:
+                break
+        if _n46 == 0:
+            t46.append("束が1本も組めない＝測れない")
+    except SystemExit as _e46s:
+        t46.append(f"途中で拒否されて止まった: {str(_e46s)[:120]}")
+    except Exception as _e46:                       # noqa: BLE001
+        t46.append(f"途中で止まった: {type(_e46).__name__} {str(_e46)[:120]}")
+    ng += [f"T46: {_x}" for _x in t46]
+    print("  T46 持続の内側が成立の全体: ①入る条件が持続1つ ②内側が条件の束 ③内側の本数が引いた記録と一致 ④並びが A・B・C・(D)・(G)")
 
     if ng:
         for x in ng:
@@ -7934,7 +8025,9 @@ def gate_matrix(verbose: bool = True) -> int:
         if not bd:
             return None
         hy = bd["entry"]["tree"]["all"][0]
-        for c in list(hy["on"]["all"]) + list(hy["off"]["any"]):
+        # ★M2-E-4d（束1・2026-09-25）＝入る条件の側は、持続の内側の成立の並びを `_regime_on_conds` で読む
+        #   （形の読み方を1か所に）。返るのは束の中の同じ辞書なので、わざと壊す相手をそのまま書き替えられる。
+        for c in list(_regime_on_conds(bd)) + list(hy["off"]["any"]):
             cc = c.get("not") or c
             if pred(cc):
                 return cc

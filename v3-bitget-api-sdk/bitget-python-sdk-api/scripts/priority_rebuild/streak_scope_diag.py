@@ -31,6 +31,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import engine_tuner_exec as ex          # noqa: E402  _eval_tree・_hold_state（改造しない）
+import engine_tuner_gen as g            # noqa: E402  _regime_on_conds＝束の形の読み方の正本（M2-E-4d・束1）
 
 
 def _streak(col: np.ndarray, n: int) -> np.ndarray:
@@ -39,16 +40,21 @@ def _streak(col: np.ndarray, n: int) -> np.ndarray:
     return (s.rolling(n).sum() >= n).to_numpy()
 
 
-def _split_on(hyst: dict) -> tuple[list, dict | None]:
-    """hysteresis の「入る条件」から、streak の条件（F）と、それ以外の条件の一覧を分ける。"""
+def _split_on(hyst: dict, bd: dict) -> tuple[list, dict | None]:
+    """hysteresis の「入る条件」から、streak の条件（F）と、成立の条件の並びを分ける。
+
+    ★M2-E-4d（束1・2026-09-25）＝成立の条件の並びは組む側の `_regime_on_conds`（束の形の読み方の正本）で読む。
+      新しい形（入る条件＝F 1つ・内側が束）なら F の内側の並び、直す前の形なら入る条件から F を除いた並び。
+    """
     on_all = list((hyst.get("on") or {}).get("all") or [])
     f = [c for c in on_all if isinstance(c, dict) and c.get("form") == "streak"]
-    rest = [c for c in on_all if not (isinstance(c, dict) and c.get("form") == "streak")]
-    return rest, (f[0] if f else None)
+    return g._regime_on_conds(bd), (f[0] if f else None)
 
 
 def _name(c: dict) -> str:
-    """条件1つを短い文字にする（画面に出すだけ）。"""
+    """条件1つを短い文字にする（画面に出すだけ）。★内側が束（all）のときも読める（M2-E-4d・束1）。"""
+    if "all" in c:
+        return "all(" + " ∧ ".join(_name(x) for x in c["all"]) + ")"
     if "not" in c:
         return "not(" + _name(c["not"]) + ")"
     if "bool_col" in c:
@@ -63,7 +69,7 @@ def compare(df: pd.DataFrame, bd: dict, geo: dict, qt: dict, win: np.ndarray, la
     hyst = tree["all"][0]
     if hyst.get("form") != "hysteresis":
         raise SystemExit("[streak_scope] 束の先頭が hysteresis ではない（組む側の形が変わった＝この診断の前提が崩れた）")
-    rest, f = _split_on(hyst)
+    rest, f = _split_on(hyst, bd)      # ★成立の並びは組む側の読み方（_regime_on_conds）から（M2-E-4d・束1）
     if f is None:
         raise SystemExit("[streak_scope] 入る条件に streak が無い（法則 R4 の形が束に入っていない）")
     n = int(f["value"]["n"])
@@ -132,7 +138,7 @@ def main() -> int:
     # ★解決表を作る関数（needed_qkeys）は入口の木（entry.connective）も歩く。この診断は入口を測らないので、
     #   束の最初の普通の条件を1つ置いただけの木にする（分位の鍵は束の分と同じ＝鍵が増えない）。
     def _first_plain(bd):
-        for c in bd["entry"]["tree"]["all"][0]["on"]["all"]:
+        for c in g._regime_on_conds(bd):      # ★成立の並び（持続の内側）から探す（M2-E-4d・束1）
             if isinstance(c, dict) and c.get("form") == "level" and "material" in c:
                 return json.loads(json.dumps(c))
         raise SystemExit("[streak_scope] 束に普通の条件（level）が1つも無い")

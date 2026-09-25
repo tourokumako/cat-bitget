@@ -2,22 +2,28 @@
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
- "../../.claude/tools/apply_audit_fix.py": [
+ "scripts/priority_rebuild/engine_tuner_gen.py": [
+  "sample_regime_build",
+  "needed_qkeys",
+  "_tree_conds",
+  "_regime_on_conds",
+  "selftest",
+  "gate_matrix"
+ ],
+ "scripts/priority_rebuild/engine_tuner_exec.py": [
   "<モジュール直下>",
-  "never_write",
-  "read_design_blocks",
-  "read_design_fixes",
-  "approved_ok",
-  "design_targets",
-  "impl_src_mismatch",
-  "main",
+  "_check_cond",
+  "_walk_build_tree",
+  "_eval_cond",
+  "_eval_tree",
+  "_material_name",
   "selftest"
  ],
- "../../.claude/tools/gen_acceptance.py": [
+ "scripts/priority_rebuild/streak_scope_diag.py": [
   "<モジュール直下>",
-  "build_impl",
-  "section4",
-  "page",
-  "verify"
+  "_split_on",
+  "_name",
+  "compare",
+  "main"
  ]
 }
