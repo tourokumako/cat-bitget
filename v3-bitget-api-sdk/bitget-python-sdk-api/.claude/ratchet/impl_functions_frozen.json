@@ -4,14 +4,19 @@
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
  "../../.claude/tools/apply_audit_fix.py": [
   "<モジュール直下>",
+  "never_write",
+  "read_design_blocks",
   "read_design_fixes",
   "approved_ok",
+  "design_targets",
+  "impl_src_mismatch",
   "main",
   "selftest"
  ],
  "../../.claude/tools/gen_acceptance.py": [
   "<モジュール直下>",
   "build_impl",
+  "section4",
   "page",
   "verify"
  ]

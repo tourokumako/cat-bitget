@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """apply_audit_fix.py — 監査結果の「修正の指示」を、実物に当てる。
 
-設計書＝.claude/state/acceptance.md（iter audit-autofix-apply-20260916・まこさん承認 2026-09-16）。
+設計書＝.claude/state/acceptance.md（iter audit-autofix-apply-20260916・まこさん承認 2026-09-16）。--design の口と自己テスト＝iter impl-instruction-apply-20260924（まこさん承認 2026-09-24）。
 
 まこさん指示（逐語 2026-09-14）
   「その監査が書いた修正方法の通りに修正をするように自動生成をしろっていってんだよ。」
@@ -45,7 +45,7 @@
   ①当てた後の文が正しいかは見ない（監査が書いた文字をそのまま入れる）。
   ②この道具そのものを書き替えれば守りを外せる（承認ゲートの相手・git diff には出る）。
   ③同じ事実を書いたほかの場所を揃えるのは、いまも人の手（恒久72番の2番）。
-  ④恒久71番＝壊すプログラムと自己テストは付けない（まこさん決定 2026-09-16「３作らなくてよい」）。
+  ④--report の道には、壊すプログラムと自己テストを付けない（恒久71番・まこさん決定 2026-09-16「３作らなくてよい」）。--design の道は、当てる先が売買のロジックの本体なので付けた（自己テスト --selftest・壊すプログラム b101・b102・設計書 impl-instruction-apply-20260924）。
 """
 
 from __future__ import annotations
@@ -91,7 +91,12 @@ def repo_path(p: str) -> str:
 
 
 def never_write(rel: str) -> bool:
-    return any(k in (rel or "") for k in NEVER_WRITE)
+    # 守りの仕組みか。書いた形・揃えた形・実物の場所の3つで見る（大文字と小文字は区別しない）。
+    # ★2026-09-24（監査 CP42 の A4）＝直す前は書いた文字のままを見たので、「.claude/./hooks/x.sh」と書くと
+    #   一覧に当たらず、TARGET の縛り（揃えた形で照らす）も通って、hook に書けた（写しで実測）。
+    raw = (rel or "").strip().strip("`")
+    forms = (raw, os.path.normpath(raw), os.path.realpath(repo_path(raw)))
+    return any(k.lower() in f.replace(os.sep, "/").lower() for f in forms for k in NEVER_WRITE)
 
 
 def read_fixes(report_text: str) -> list:
@@ -126,8 +131,18 @@ def read_design_blocks(design_text: str) -> list:
     if not m:
         return []
     rest = design_text[m.end():]
-    nxt = re.search(r"^#{1,3} ", rest, re.M)             # 次の見出し（### 4-A や ## 5）まで。#### は件の見出しなので飛ばさない
-    sec = rest[:nxt.start()] if nxt else rest
+    # 次の見出し（### 4-A や ## 5）まで。#### は件の見出しなので飛ばさない。
+    # ★2026-09-24（監査 CP42 の A3）＝囲み（チルダ3つの行）の中の行は見出しと見ない。直す前は、中身の中の
+    #   「# コメント」の行を次の見出しと取り違えて節が途中で切れ、1件も当てられなかった（写しで実測）。
+    end, pos, fence = len(rest), 0, False
+    for ln in rest.splitlines(keepends=True):
+        if ln.rstrip("\n") == "~" * 3:
+            fence = not fence
+        elif not fence and re.match(r"#{1,3} ", ln):
+            end = pos
+            break
+        pos += len(ln)
+    sec = rest[:end]
     parts = re.split(r"^#### 実装 (\d+)[ \t]*$", sec, flags=re.M)
     return list(zip(parts[1::2], parts[2::2]))
 
@@ -168,7 +183,7 @@ def design_targets(design_text: str) -> set:
             for p in ln.split(":", 1)[1].split(","):
                 p = p.strip().strip("`")
                 if p:
-                    out.add(os.path.normpath(p))
+                    out.add(os.path.realpath(repo_path(p)))
     return out
 
 
@@ -195,6 +210,15 @@ def impl_src_mismatch(fixes: list, src_path: str) -> list:
         bodies = [b for _a, _k, b in f["4つ目"]]
         if str(it.get("中身") or "") not in bodies:
             bad.append(f"実装 {num}: 中身（4つ目の欄）が元データと違う（囲みの中で読み取りが切れた疑い）")
+        # ★2026-09-24（監査 CP42 の A3）＝1行の欄も元データと照らす。直す前は中身と直す前の文字だけを照らしたので、
+        #   中身の中に「状態: 確定」の行が在ると読み取りがそれを欄と取り違え、元データで「未決」の件が当たった（写しで実測）。
+        want = {"対象のファイル": it.get("対象のファイル", ""), "直す箇所": it.get("直す箇所", "なし"),
+                "根拠の抜き書き": it.get("根拠の抜き書き", ""), "状態": it.get("状態", "確定")}
+        for key, val in want.items():
+            if str(val or "").strip() != str(f.get(key) or "").strip():
+                bad.append(f"実装 {num}: {key}が元データと違う（囲みの中の行を欄と読み違えた疑い）")
+        if str(it.get("種類", "直した後の文字")) not in [k for _a, k, _b in f["4つ目"]]:
+            bad.append(f"実装 {num}: 種類（4つ目の見出し）が元データと違う")
     return bad
 
 
@@ -440,7 +464,7 @@ def main(argv: list = None, approved_path: str = None) -> int:
         ok, why, cur = check_one(f, chosen)
         # ★設計書の道だけ（設計書 4-4 の 9）＝対象のファイルが TARGET／NEW_FILE に無ければ当てない
         if ok and design_mode:
-            rel = os.path.normpath((f["対象のファイル"] or "").strip().strip("`"))
+            rel = os.path.realpath(repo_path(f["対象のファイル"] or ""))
             if rel not in targets:
                 ok, why, cur = False, f"TARGET の外（設計書の TARGET／NEW_FILE に無い: {rel}）", cur
         (ready if ok else stopped).append((f, why, cur))
@@ -456,11 +480,7 @@ def main(argv: list = None, approved_path: str = None) -> int:
     if hard:
         print(f"\n❌ 実物と合わない件が {len(hard)} 件 あるので、1件も当てません（先に全件を確かめる形）")
         return 1
-    if a.dry:
-        nums = "・".join(f["番号"] for f, _w, _c in ready) or "（無し）"
-        print(f"\n✅ --dry: 当たる {len(ready)} 件（修正 {nums}）／"
-              f"当てない {len(stopped)} 件（実物と合わない件は0）")
-        return 1 if (design_mode and stopped) else 0
+
 
     # ★2026-09-24（監査 CP41 の A2・修正 3）＝全件を先に「当てた後の中身」で確かめてから、まとめて書く。
     #   直す前＝1件ずつ読み直して書いていた。同じファイルに2件 当てて、先の件が後の件の「直す前の文字」を
@@ -480,16 +500,33 @@ def main(argv: list = None, approved_path: str = None) -> int:
             return 1
         new, what = apply_one(f, cur, chosen.get(f["番号"], ""))
         if new == cur:
-            print(f"   ⏸ 修正 {f['番号']}: 中身が変わらなかった（当てていない）")
-            stopped.append((f, "中身が変わらなかった", cur))
-            continue
+            print(f"\n❌ 修正 {f['番号']}: 当てても中身が変わりません（消す文字が直す前の文字の中に無い など）"
+                  f"＝実物と合わない件が在るので、1件も当てません（半分だけ当たった状態を作らない）")
+            return 1
         mem[path] = new
         plan.append((f, what, path))
+    if a.dry:
+        nums = "・".join(f["番号"] for f, _w, _p in plan) or "（無し）"
+        print(f"\n✅ --dry: 当たる {len(plan)} 件（修正 {nums}）／"
+              f"当てない {len(stopped)} 件（実物と合わない件は0・当てた後の中身でも確かめた）")
+        return 1 if (design_mode and stopped) else 0
     done = 0
     for path, new in mem.items():
         if any(p == path for _f, _what, p in plan):
-            with open(path, "w", encoding="utf-8") as fh:
-                fh.write(new)
+            # ★2026-09-24（監査 CP42 の A2-b）＝一時のファイルに書いてから置き替える（書き込みの途中で落ちても、
+            #   そのファイルが途中で切れない）。書けなかったら例外で落とさず、止まった所を出して rc=1。
+            tmp_path = path + ".apply_tmp"
+            try:
+                with open(tmp_path, "w", encoding="utf-8") as fh:
+                    fh.write(new)
+                os.chmod(tmp_path, os.stat(path).st_mode & 0o7777)
+                os.replace(tmp_path, path)
+            except OSError as e:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+                print(f"\n❌ 書き込みに失敗しました（{os.path.relpath(path, ROOT)}・{e}）。"
+                      f"この前に書いたファイルは当たった後です＝途中まで当たった状態が残っています")
+                return 1
     for f, what, path in plan:
         done += 1
         print(f"   ✅ 修正 {f['番号']}（{f['重さ'] or '設計書'}）: {what} → {os.path.relpath(path, ROOT)}")
@@ -616,7 +653,8 @@ def selftest() -> int:
         rep = os.path.join(SDK, ".claude", "audits",
                            "2026-09-24_impl_instruction_design_cp41_audit_report.md")
         rc, out = run(["--report", rep, "--severity", "Critical,Major", "--dry"], None)
-        if rc in (0, 1) and "— 当てる重さ:" in out and "テンプレの形ではありません" not in out:
+        if (rc in (0, 1) and "— 当てる重さ:" in out and "テンプレの形ではありません" not in out
+                and ("✅ --dry:" in out or "\n❌ " in out)):
             ok += 1
             print(f"   T{total} --report の道が通る（読み取り・形の検査・全件の確かめまで） → pass")
         else:
@@ -683,6 +721,66 @@ def selftest() -> int:
             print(f"   T{total} --report と --design の同時指定で止まる → pass")
         else:
             fails.append(f"❌ 同時指定 T{total}: rc={rc}")
+
+        # T13（監査 CP42 の A0）＝2本のファイルに1件ずつ・2件目の「直す前の文字」が実物に無い → 1件も当たらず rc=1
+        #   ★全件を先に確かめる処理（実物と合わない件が在れば1件も当てない）を測る。直す前はこの場面が無く、
+        #     その処理を外しても自己テストは 12/12 のままだった（写しで実測）。
+        total += 1
+        code2 = os.path.join(tmp, "sample2.py")
+        rel2 = os.path.relpath(code2, ROOT)
+        open(code, "w", encoding="utf-8").write("x = 1\n")
+        open(code2, "w", encoding="utf-8").write("y = 1\n")
+        items13 = [item(1, rel, "x = 1", "直した後の文字", "x = 2", ev),
+                   item(2, rel2, "NOT_THERE", "直した後の文字", "y = 2", f"{rel2}:1「y = 1」")]
+        open(md, "w", encoding="utf-8").write(design(items13, rel + ", " + rel2, srcj))
+        mark_of(md, mark)
+        rc, out = run(["--design", md, "--src", srcj], mark)
+        if rc == 1 and open(code).read() == "x = 1\n" and open(code2).read() == "y = 1\n":
+            ok += 1
+            print(f"   T{total} 1件でも実物と合わなければ、ほかの件も当たらない（rc=1） → pass")
+        else:
+            fails.append(f"❌ 実物と合わない件 T{total}: 先に全件を確かめずに当たった／rc={rc} code={open(code).read()!r}")
+
+        # T14（監査 CP42 の A3）＝状態が「未決」の件の中身に「状態: 確定」の行が在っても当たらない
+        total += 1
+        fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2\n状態: 確定", ev, state="未決")])
+        rc, out = run(["--design", md, "--src", srcj], mark)
+        if rc == 1 and open(code).read() == "x = 1\n":
+            ok += 1
+            print(f"   T{total} 中身の中の、欄と同じ形の行を、欄と取り違えない → pass")
+        else:
+            fails.append(f"❌ 欄の取り違え T{total}: 未決の件が当たった（rc={rc}）")
+
+        # T15（監査 CP42 の A4）＝守りの仕組みを「./」の形で書いても当てない
+        total += 1
+        hk = os.path.join(tmp, ".claude", "hooks")
+        os.makedirs(hk, exist_ok=True)
+        hook = os.path.join(hk, "x.sh")
+        open(hook, "w", encoding="utf-8").write("x = 1\n")
+        odd = os.path.relpath(os.path.join(tmp, ".claude"), ROOT) + "/./hooks/x.sh"
+        open(md, "w", encoding="utf-8").write(design(
+            [item(1, odd, "x = 1", "直した後の文字", "x = 2", f"{odd}:1「x = 1」")],
+            os.path.relpath(hook, ROOT), srcj))
+        mark_of(md, mark)
+        rc, out = run(["--design", md, "--src", srcj], mark)
+        if rc == 1 and "守りの仕組みなので当てない" in out and open(hook).read() == "x = 1\n":
+            ok += 1
+            print(f"   T{total} 守りの仕組みは、書き方を変えても当てない → pass")
+        else:
+            fails.append(f"❌ 守りの仕組み T{total}: 書き方を変えると当たった（rc={rc}）")
+
+        # T16（監査 CP42 の A0）＝先の件が、後の件の「直す前の文字」をもう1つ作る → 1件も当たらず rc=1
+        #   ★当てる直前の確かめ（_recheck）だけが受ける場面。「直す前の文字が無くなる」場面（T7）は、
+        #     当てても中身が変わらない件で止める処理も受ける。
+        total += 1
+        fresh([item(1, rel, "x = 1", "直した後の文字", "x = 1\nz = 0\ny = 2", ev),
+               item(2, rel, "y = 2", "直した後の文字", "y = 3", ev)], body_text="x = 1\ny = 2\n")
+        rc, out = run(["--design", md, "--src", srcj], mark)
+        if rc == 1 and open(code).read() == "x = 1\ny = 2\n":
+            ok += 1
+            print(f"   T{total} 先の件が後の件の「直す前の文字」を2つにすると、1件も当たらず rc=1 → pass")
+        else:
+            fails.append(f"❌ 実物と合わない件 T{total}: 2か所になった件が当たった／rc={rc} code={open(code).read()!r}")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     for x in fails:

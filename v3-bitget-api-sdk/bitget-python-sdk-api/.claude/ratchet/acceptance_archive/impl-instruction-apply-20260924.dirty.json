@@ -3,9 +3,7 @@
  "_なぜ": "並走している別のセッションが編集中の .py で、どの設計書でも落ちるのを止めるため（138番）。",
  "_作り方": "approve_impl.sh が承認の瞬間に git status から書き出す。手で書き換えない。",
  "files": [
-  ".claude/hooks/design_gate_fallback.py",
-  ".claude/hooks/enforce_audit_fix.py",
-  ".claude/hooks/limit_repeat_verification.py",
+  ".claude/hooks/require_design_check_before_approval.py",
   ".claude/tools/apply_audit_fix.py",
   ".claude/tools/gen_acceptance.py"
  ]

@@ -25,6 +25,7 @@
 #     A6 run_breaks.py --count-targets --design（:386）
 #     A7 run_breaks.py --parse-only（:401 の入口＝表が読めるか・列がずれていないか）
 #     A8 表に載っている既存の壊すプログラムの宣言を expect_of で読む（:401＝159番の STOP）
+#     A10 完成の条件のコマンドが、SDK を作業場所にしても開けるか（:472 の _run＝cwd=SDK・L-614）
 #   B群＝時間がかかるので、その場では走らせない。やり取りの記録（harness が書く）に、
 #        設計書・壊すプログラム・TARGET より新しい実行の結果が在るかを見る。
 #     B1 表に載っている既存の壊すプログラムが、--measure-only で「✅ 期待どおり」だったか
@@ -183,6 +184,56 @@ def a8_expect(md):
     return bad, exist, rb
 
 
+def a9_contract_full(acc):
+    """A9 設計↔実装ゲートと同じ照合A〜D（verify_design_contract.py <設計書>）が通るか。
+
+    ★2026-09-24（監査 CP42 の B3）＝承認のプログラムとこの検査は、照合A〜D を1回も走らせていなかった。
+      設計書 impl-instruction-apply-20260924 は承認③まで通ったのに照合C（selftest の must_use）が落ち、
+      CC はその道具を直下からの --selftest 以外で走らせられない状態になった（ゲートが止める）。
+    ★実装の前の承認では照合が落ちるのが当たり前なので、TARGET に git の差分が在るとき（実装の途中・後）だけ見る。
+      呼ぶ関数がまだ無いときの落ち方（配線が無い・関数が無い）も、実装の前として見ない。
+    """
+    md = open(acc, encoding="utf-8").read()
+    targets = [x.strip() for t in re.findall(r"^TARGET:\s*(.+)$", md, re.M) for x in t.split(",") if x.strip()]
+    changed = False
+    for t in targets:
+        for base in (ROOT, SDK):
+            pth = os.path.join(base, t)
+            if os.path.exists(pth):
+                rc_g, _o = _run(["git", "diff", "--quiet", "HEAD", "--", pth])
+                changed = changed or rc_g == 1
+    if not changed:
+        return []
+    vdc = SDK + "/scripts/priority_rebuild/verify_design_contract.py"
+    try:
+        r = subprocess.run(["python3", vdc, acc], capture_output=True, text=True, timeout=90, cwd=SDK)
+    except Exception as e:                                   # noqa: BLE001
+        return [f"A9 照合の道具を走らせられません（{e}）"]
+    out = (r.stdout or "") + (r.stderr or "")
+    if r.returncode == 0 or "自己チェック配線が無い" in out or "実装にその関数が無い" in out:
+        return []
+    return [f"A9 照合A〜D（設計↔実装ゲートが .py を走らせる前に掛けるもの）が rc={r.returncode}"
+            f"＝承認しても、CC はその .py を走らせられない:\n{_tail(out, 20)}"]
+
+
+def a10_cmd_cwd(md):
+    """A10 完成の条件のコマンドが、承認のプログラムの作業場所（SDK）で開けるか（approve_impl.sh の _run＝cwd=SDK）。
+
+    ★2026-09-24（監査 CP42 の B3・L-614）＝設計書 impl-instruction-apply-20260924 は、完成の条件のコマンドを
+      直下からの相対で書いたので、承認②で条件のコマンドが rc=2 になり、行が済にならず、承認が1回 増えた。
+      直下に在って SDK に無いパスを書いた行だけを止める（新しく作るファイルは止めない）。
+    """
+    m = re.search(r"<!-- ACCEPT_TABLE_START -->(.*?)<!-- ACCEPT_TABLE_END -->", md, re.S)
+    bad = []
+    for cmd in re.findall(r"`(python3 [^`]+)`", m.group(1) if m else ""):
+        py = next((t for t in cmd.split()[1:] if t.endswith(".py")), "")
+        if py and not py.startswith("/") and os.path.isfile(os.path.join(ROOT, py)) \
+                and not os.path.isfile(os.path.join(SDK, py)):
+            bad.append(f"A10 完成の条件のコマンド `{cmd}` の {py} は直下からの相対＝承認のプログラムは"
+                       "SDK を作業場所にして走らせるので開けず rc=2 になり、行が済にならない（L-614）")
+    return bad
+
+
 # ── B群（やり取りの記録を見る）──────────────────────────────────────
 def _load_rows(path):
     try:
@@ -286,6 +337,8 @@ def check_all(acc=ACC, transcript=None, split=False):
     bad += a5_approval_key(acc)
     bad += a6_count_targets(acc)
     bad += a7_parse_only(acc)
+    bad += a9_contract_full(acc)
+    bad += a10_cmd_cwd(md)
     b8, exist, rb = a8_expect(md)
     bad += b8
     bad_b = b_runtime(md, exist, rb, transcript) if rb is not None else []

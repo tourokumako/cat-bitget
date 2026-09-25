@@ -1,0 +1,83 @@
+{
+ "mirror": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp42_work/mirror",
+ "repointed_tools": [
+  "apply_audit_fix.py",
+  "gen_audit_docs.py",
+  "gen_impl_functions.py",
+  "gen_session_todo.py"
+ ],
+ "files": [
+  {
+   "key": "aaf",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "real": "9367982a3aac392b8b3c0ccc8deb43f85a3a53c5f25803cee1c097af6bbe01b9",
+   "mirror": "46538b2cfcdee1799832b7db66b15e1f02f01b98db5bff548baf87370a13a554",
+   "same": false,
+   "note": "根のパスの1行だけ違う"
+  },
+  {
+   "key": "gen_acc",
+   "file": ".claude/tools/gen_acceptance.py",
+   "real": "81523b78fd0228f41bd226991d81009865b43510bfb89a534ef617965655af75",
+   "mirror": "81523b78fd0228f41bd226991d81009865b43510bfb89a534ef617965655af75",
+   "same": true,
+   "note": ""
+  },
+  {
+   "key": "gad",
+   "file": ".claude/tools/gen_audit_docs.py",
+   "real": "a06d3d19eeb92aa0ceb17e9e1c5ef9457b0218579a0d01ee85cdd965ae6a05cf",
+   "mirror": "bde411f511d0e3901926b24cbabc460c430745c60dd5dd3fe579e7432d8d58f5",
+   "same": false,
+   "note": "根のパスの1行だけ違う"
+  },
+  {
+   "key": "acc",
+   "file": ".claude/state/acceptance.md",
+   "real": "8fcd0a1305d1f0f2bf73ff85597ac30d338b8a539d74a69d2457db045c70f1a6",
+   "mirror": "8fcd0a1305d1f0f2bf73ff85597ac30d338b8a539d74a69d2457db045c70f1a6",
+   "same": true,
+   "note": ""
+  },
+  {
+   "key": "approved",
+   "file": ".claude/state/acceptance.approved",
+   "real": "a6b45d02bc4649c19373041e55fe8ab0a5e8a0accde2ef231cdc9f2203370103",
+   "mirror": "a6b45d02bc4649c19373041e55fe8ab0a5e8a0accde2ef231cdc9f2203370103",
+   "same": true,
+   "note": ""
+  },
+  {
+   "key": "src",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_src.json",
+   "real": "559bd0ec82d9b5d186fec9bd6a2c5796466ca6f896b4b226ba17e35ad745af21",
+   "mirror": "559bd0ec82d9b5d186fec9bd6a2c5796466ca6f896b4b226ba17e35ad745af21",
+   "same": true,
+   "note": ""
+  },
+  {
+   "key": "b101",
+   "file": ".claude/breaks/b101_design_apply_no_approval.sh",
+   "real": "a0ece8358388f014472af9b2ea5e5fc3eb8cbd3da6cedebe920775f8b15f937c",
+   "mirror": "a0ece8358388f014472af9b2ea5e5fc3eb8cbd3da6cedebe920775f8b15f937c",
+   "same": true,
+   "note": ""
+  },
+  {
+   "key": "b102",
+   "file": ".claude/breaks/b102_design_apply_no_precheck.sh",
+   "real": "6bb242ac938eb96a3666eaa2bac5a6470c2ea745a4617103a3e143517d60fb99",
+   "mirror": "6bb242ac938eb96a3666eaa2bac5a6470c2ea745a4617103a3e143517d60fb99",
+   "same": true,
+   "note": ""
+  },
+  {
+   "key": "lib",
+   "file": ".claude/breaks/lib.sh",
+   "real": "7a590f07202a7dd14c96c8475822b08158b778b5559121f336a998e8a5314757",
+   "mirror": "75e028d3385dd3ee65f2bb92cd20f4a25b0ce87078ab2ec9f7d64e8c29001b6e",
+   "same": false,
+   "note": "根のパスの1行だけ違う"
+  }
+ ]
+}

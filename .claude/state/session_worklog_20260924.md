@@ -333,6 +333,14 @@ affa354c02c4a89346829742da8c6682c9f9a1ecffa752ce391e9827ff5a0f10
 - **依頼書**＝`gen_audit_docs.py request` で作った＝`SDK/.claude/audits/inputs/2026-09-24_impl_instruction_apply_impl_cp42_audit_request.md`（問い 10件・事実データ 1件・外部検索 1件・自己申告 7件）。
 - **次**＝まこさんが依頼書をチェック → 別のセッションで監査を起動（恒久 §0-3・まこさん決定 2026-09-09）。
 
+### 7-12 記録の締めと commit（2026-09-24・118回目の終わり）
+
+- **next_step**＝0-1 を118回目の終わりに差し替え、0-2 の44番の行の「残り」を直し、§6 に 201〜207 を足した（まこさんが `update_next_step.py`・`update_next_step_s6.py` を打った・`--verify` 7つ ✅）。★1回目のプログラムは §6 の表の入れ物の鍵（`塊 → 表 → 行`）を読み違えて行を足せず、番号も 195〜201 と書いていた（§6 は 200 まで使用済み）＝2回目で 201〜207 に直した。
+- **教訓**＝`lessons_active.md` に L-614（完成の条件のコマンドは SDK で走る形で書く）・L-615（自己テストの見本に本物を使わない）・L-616（承認のお願いの前に当てた文を門の決まりに照らす）。
+- **commit**＝まこさんの OK（逐語「コミットはOK」）で `d691721`（32ファイル・5,193行 足し・144行 消し）。入れなかったもの＝`results/`・`.csv`・`.log`・`settings.json.bak_*`・`require_chat_draft_before_long_reply.sh`。★next_step の 0-1 の「commit＝5545cad まで済」は、この commit の前に書いたので1つ古い（次の書き替えで `d691721` に直す）。
+- **監査 CP42**＝依頼書のパスを まこさんに渡した。起動は まこさん（別のセッション）。
+- **まこさんの操作（今日）**＝承認3回・当てるプログラムと確かめのプログラム 10本。
+
 ### 7-7 §6 に積むもの（あとで直すこと）
 
 1. CC が走らせられない道具が在る（Claude Code の権限の制限）＝`design_gate_fallback.py --try`・`pre_audit_check.py --check-design`・`gen_acceptance.py --write`・hook の書き込み・worklog と next_step への書き足しの一部は まこさんが打つ運用になっている。permanent_rules に足すかは まこさんが決める。

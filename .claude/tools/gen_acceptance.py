@@ -794,6 +794,8 @@ def page(d: dict) -> str:
     #   散文で書いた指示をプログラムが解析する形にしない（設計書 3-1 の3）。
     if "実装の指示" in d and not isinstance(d.get("実装の指示"), list):
         raise SystemExit("[gen_acceptance] 元データの「実装の指示」が一覧（[]）の形ではありません（fail-closed）。")
+    if any(not isinstance(it, dict) for it in (d.get("実装の指示") or [])):
+        raise SystemExit("[gen_acceptance] 元データの「実装の指示」の中に、1件ずつの形（{…}）でないものが在ります（fail-closed）。")
     add(f'<!-- ARC iter="{d["iter"]}" -->')
     add("")
     add(f"# 設計書｜{d['設計書の題']}")
