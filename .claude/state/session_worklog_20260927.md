@@ -52,4 +52,41 @@
   - A2＝①必読ゲートの A（TARGET の indicator_reference_diag.py・observe_config.json・engine_tuner_gen.py を開いていない）と C（「読んだ」と書いた engine_tuner_gen.py・engine_tuner_milestones2.md・gen_s22_map.py を開いていない）②読むもの宣言ゲート（前の宣言35件を、このセッションで開いていない）③禁止語の一覧をこのセッションで走らせていない。
   - A9＝照合A「設計書に書いていない関数を触った → rank_regime」・照合B「設計書に書いたのに実装していない」10件（observe_diag.py）＝commit していない差が一部だけのため（1-4 の見込みどおり）。
   - B1・B2＝b104〜b107 とその行のコマンド（`--selftest-atr1h`）を、書き替えの後に測っていない。
+- ★Stop hook（next_step の形）が「0-1 の日付が worklog の日付と違う」で止めた＝`next_step_src.json` に 0-1（124回目）を足し、前の 0-1 に「次の書き替えで消す」を付けて `tidy_next_step.py --write`（移した節 1・--verify 7つ 通過・§0 65行）・`--selftest` 19/19。
 - 直し方＝③は `list_banned_words.py acceptance` を走らせた（「全項目で抽出成功」）。②は前回 CP43 の⑥と同じく、今日の⑥で相手にする14件で宣言を出し直した（前の宣言の控え＝`design_read_plan_m2e-bundle2-20260926.md`・sha256 3ba221c9…）。まこさんの OK の後に14件を Read tool で開く。A9 は commit で解く（まこさんの OK 待ち）。B群は commit の後に測る。
+
+### 2-4 OK・14件を開いた・commit（2026-09-27）
+
+- まこさん（逐語）「１，２どちらもOK」＝①読むもの宣言14件 ②commit 6ファイル。宣言の OK の欄に写し、貼った証拠のファイルを作った（31cb6a71…）。
+- 14件を宣言の範囲で Read tool で開いた。当てた修正の行（元データ 26〜29・60〜78・166〜176・360〜370・396〜406行／observe_config.json:197）は、監査の「直した後の文字」どおりだった。
+- commit＝`abbc10e`（6ファイル・コミットの文はスクラッチのファイルに書いて `git commit -F`）。next_step の3ファイルは、OK の6ファイルに入っていないので入れていない（締めの commit で出す）。
+- commit の後の `require_design_check_before_approval.py --try`＝A群 0件・B群 8件（b104〜b107 とその行のコマンド）・15.1秒。
+
+### 2-5 G2・H2 と、自己テストが承認の前には走らない件（2026-09-27）
+
+- G2＝`gen_signal_families.py --verify`＝「G2 の既知答え 11件 全部 期待どおり」「検査済みの印を書いた: g2_pass.json（対象 38 件 ／ 無いファイル 0 件 ／ 指紋 10c0180f…）」。
+- H2＝`leak_causality_diag.py`＝「検査2 の注記なし未来参照 0 件 / 打ち切り再現テスト（1-a・1-b・1-c）の食い違い 0 件」「検査済みの印を書いた: h2_pass.json（指紋 1a74aefcc3d8f0ab…）」。
+- `observe_diag.py --selftest-atr1h`＝設計↔実装ゲートが止めた。いまの設計書は承認前なので、ゲートは最後に承認された控え `acceptance_archive/m2e-bundle2-20260926.md` で照らし、「rank_regime が実物では add_demand_to_ranking を呼んでいるが設計に書いていない」（案B の前の版の SPEC）。
+- 作り直した設計書との照合＝`verify_design_contract.py --diff .claude/state/acceptance.md`＝齟齬 0件（設計書の1782行・1791行に add_demand_to_ranking が在る）。＝承認①の後は、ゲートが作り直した設計書で照らすので走る。
+- ★ToDo の順番を入れ替えた＝自己テストと b104〜b107 の測りを、承認①の後へ回した。理由＝承認の前は、ゲートが古い控えで照らして止める。控えを迂回する道（写しや bash の中で走らせる）は取らない（恒久57番・worklog 20260926 の 4-7 と同じ判断）。承認の回数は2回のまま（①b108 を載せる ②b108 と全部を測った後）。
+
+### 2-6 承認①・b108・測り（2026-09-27）
+
+- まこさん「コマンド打った」＝承認①。acceptance.approved と設計書の sha256 が同じ（409c5ff6…）。完成の条件 #1〜#4 は承認のプログラムが測って「✅済」、#5〜#20 は「未着手」。控え＝`acceptance_archive/m2e-bundle2-20260926.03.md` ほか（承認のプログラムが git に add した）。
+- `observe_diag.py --selftest-atr1h`＝「登録 18 件 ／ 値決め窓の5分足 158112 本 ／ T-A4 で切った時点 5 か所」「全部 pass（❌ 0件）」（承認の後はゲートが通した）。
+- b108 を Write ツールで書いた（監査 CP45 の修正5 の文字のまま）。権限は b107 と同じ（-rw-r--r--）・`bash -n` が通った。
+- `run_breaks.py --design .claude/state/acceptance.md --measure-only --only b108_atr1h_base_wrong_bars.sh`＝「✅ 期待どおり # 20 b108_atr1h_base_wrong_bars.sh rc=1（期待 1）」。壊した後の observe_diag.py は HEAD と差 0（lib.sh が戻した）。
+- b108 を書いた後に自己テストを走らせ直した＝全部 pass。承認の前の検査（`--try --transcript`）＝B1 が4件（b104〜b107 を b108 の後に測った記録が無い）→ 4本を `--only` で測った＝4本とも「✅ 期待どおり」rc=1 → 走らせ直し＝「A1〜A8・B1・B2 は全部 通ります（不足0件）」・13.8秒。
+
+### 2-7 承認②と記録（2026-09-27）
+
+- まこさん「承認した」＝承認②。acceptance.approved と設計書の sha256 が同じ（6c68df5b…）。完成の条件 #1〜#4・#20 が「✅済」、#5〜#19 は「未着手」（壊すプログラムの無い行＝設計書の「塞げないもの」のとおり、実装の監査の出力で閉じる行）。控え＝`acceptance_archive/m2e-bundle2-20260926.04.md` ほか・`breaks_frozen.json` が書き替わった（承認のプログラム）。
+- ＝**束2（next_step 0-2 の3番）は6段の⑥まで終わった。**
+- 記録＝①`m2_todo.json` の M2-E-1b・M2-E-5・M2-E-4c を ✅済 → `gen_regime_kb.py --write todo`（§3・1555行・hash=73f355d2…）・`--verify all`（ずれ 0件）・`--selftest` 15/15 ②`next_step_src.json`＝0-1 を「★いまここ＝47番（M2-E-4e）の読むもの宣言」に・0-2 の3番を ✅済（控えへ移った）・47番を ★いまここ・§6 の136番の古い文（「まだ実測していない」「監査 CP44 待ち」＝監査 CP45 の B3-a③）を検査16 の実測に直した → `tidy_next_step.py --write`（0-2 の表から移した行 1・--verify 7つ 通過・§0 65行）・`--selftest` 19/19 ③`lessons_active.md` に L-628（条件は照合の道具と hook を開いてから言う）・L-629（承認の前はゲートが最後に承認された控えで照らす）。
+- ★L-627 の文を誤って1文字（B3-d → B3-b）書き替えたのに気づき、元に戻した（git diff で消した行 0 を確かめた）。
+- ★監査 CP45 の B3-a②（法則ファイル2本に残る observe_diag.py の古い行番号）は、監査の前提6 により修正の指示が無い＝法則ファイルは まこさんの判断材料。手を入れていない。
+
+### 2-8 commit（まこさん OK「コミットOK」・2026-09-27）
+
+- 承認②の後の記録18ファイルを commit した＝b108／承認の控え m2e-bundle2-20260926 の一式（.03・.04 の .md・.diff.txt・.sha.txt、.breaks.json・.dirty.json・.md）／breaks_frozen.json／m2_todo.json・engine_tuner_milestones2.md／next_step の3ファイル／この worklog／lessons_active.md。コミットの文はスクラッチのファイルに書いて `git commit -F` で渡した。
+- ＝124回目はここで終わり。次のセッションは next_step の47番（M2-E-4e）の読むもの宣言から。

@@ -34,7 +34,7 @@
    "no": "4",
    "script": "b107_atr1h_base_not_passed.sh",
    "code": 1,
-   "note": "  ❌ T-A3: 4時間足で S-Rタッチ1時間ATR(144,0.5,7) の列が作れない（('計算できず', '1時間足より長い足には、1時間足の元になる5分足が要る（_H1_BASE が空か、期間を覆っていない）')）",
+   "note": "  ❌ T-A3: 4時間足の値を突き合わせる本数が足りない（0 本）",
    "expect": 1,
    "means": "build_features が1時間足の元の5分足を置き場に入れないと、4時間足の列が作れず番人 T-A3 が落ちた",
    "match": true
@@ -128,6 +128,15 @@
    "script": null,
    "code": null,
    "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "20",
+   "script": "b108_atr1h_base_wrong_bars.sh",
+   "code": 1,
+   "note": "  ❌ T-A3: 4時間足に当てた1時間足の ATR% が、5分足から作った値と違う＝4時間足のバーから ATR を作っている疑い",
+   "expect": 1,
+   "means": "build_features が置き場に5分足でなく4時間足のバーを入れると、4時間足の突き合わせの番人 T-A3 が落ちた",
+   "match": true
   }
  ]
 }

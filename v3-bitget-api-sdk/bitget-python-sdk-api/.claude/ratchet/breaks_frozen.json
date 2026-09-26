@@ -15,6 +15,7 @@
  "b105_atr1h_future_hour.sh": "7915ee5307f83d16229feb3774d1153bdb322038f1eeb38e83d13d81c31c4951",
  "b106_atr1h_no_clip.sh": "3d6c93124340a50e9bfcd078de104f84cde5e932231e6f0ce6bc78d7fda8c47d",
  "b107_atr1h_base_not_passed.sh": "3c1e027c0fc1204a402c37ec3092911d5671fc7415e52313ad8414ece9e27905",
+ "b108_atr1h_base_wrong_bars.sh": "12b6448ad5d701c9ea5a19a9211affece424dbba9ac5b704928d669b411af10c",
  "b11_subagent.sh": "ee00fe490588e02cec1a7c50bcd965683ff56129dda1aa0ea8d8f1e3174eadc5",
  "b12_no_record.sh": "8cbf00458314feb72dc01580a342d3a67bed10654cf3c25ae599b0cea912bb7f",
  "b13_approve_by_cc.sh": "b2b9e95c9a908432767bdd8b1b80b7aebfbd6aab330786aefd2670169b24101a",

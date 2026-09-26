@@ -1,0 +1,74 @@
+6c6
+< NEW_FILE: .claude/breaks/b104_atr1h_own_tf.sh, .claude/breaks/b105_atr1h_future_hour.sh, .claude/breaks/b106_atr1h_no_clip.sh, .claude/breaks/b107_atr1h_base_not_passed.sh
+---
+> NEW_FILE: .claude/breaks/b104_atr1h_own_tf.sh, .claude/breaks/b105_atr1h_future_hour.sh, .claude/breaks/b106_atr1h_no_clip.sh, .claude/breaks/b107_atr1h_base_not_passed.sh, .claude/breaks/b108_atr1h_base_wrong_bars.sh
+49c49
+< | いま登録されている S-R タッチの部品 | `grep -n '_reg("S-Rタッチ' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 900:_reg("S-Rタッチ数", "S-Rタッチ数({},{})", False, lambda d, n, t: _sr_touch(d.close, d.high, d.low, n, t)) ⏎ 908:_reg("S-Rタッチ1時間ATR", "S-Rタッチ1時間ATR({},{},{})", False,（終了コード 0）／読み方＝固定の許容幅の部品だけが登録されている。値動きの幅に連動する部品は外したまま |
+---
+> | いま登録されている S-R タッチの部品 | `grep -n '_reg("S-Rタッチ' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 900:_reg("S-Rタッチ数", "S-Rタッチ数({},{})", False, lambda d, n, t: _sr_touch(d.close, d.high, d.low, n, t)) ⏎ 908:_reg("S-Rタッチ1時間ATR", "S-Rタッチ1時間ATR({},{},{})", False,（終了コード 0）／読み方＝実装の前は、固定の許容幅の部品（S-Rタッチ数）だけが登録されていた。実装の後は、許容幅を一時間足の値動きの幅で決める新しい部品の登録の行も当たる（設計書を作り直すたびに、このコマンドは走り直す） |
+52c52
+< | 張り付きの割合を出す節が在るか | `grep -c '張り付' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 12（終了コード 0）／読み方＝零件＝足ごとの張り付きの割合を出す節は無い |
+---
+> | 張り付きの割合を出す節が在るか | `grep -c '張り付' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 12（終了コード 0）／読み方＝実装の前は零件＝足ごとの張り付きの割合を出す節は無かった。実装の後は、検査十六の節と番人の行が当たる（設計書を作り直すたびに、このコマンドは走り直す） |
+65c65
+< | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py ／ grep -c '^@@'` | 19（終了コード 0）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+---
+> | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py ／ grep -c '^@@'` | 5（終了コード 0）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる。実装の後で commit の前は、この工事の差の塊が数えられる（commit の後は零に戻る。設計書を作り直すたびに、このコマンドは走り直す） |
+301c301
+< 9. 監査に出す前のチェックの順番（`pre_audit_check.py` の ORDER）のとおりに、`gen_signal_families.py --write` で型の表を、`gen_exit_families.py --write` で出口の表を作り直し、まこさんに2つの `--approve` を打っていただきます（型の表＝まこさん決定 2026-09-26 の④。★出口の表は、型の表の部品の数と標本不足の組の数を中に書いているので、部品を足すと作り直しと承認が要ります＝決定④のときに私が挙げていなかったもの）。そのあと `gen_composition_rules.py --write` で読み込ませる法則の文書を作り直します（型の表・出口の表の sha256 を記録している。★この工事の前から3件ずれている＝前からある不具合も同時に直る）。
+---
+> 9. 監査に出す前のチェックの順番（`pre_audit_check.py` の ORDER）のとおりに、型の表（`gen_signal_families.py --write` と `--approve`）と出口の表（`gen_exit_families.py --write` と `--approve`）の4つを、まこさんの端末で打っていただき、出力を貼っていただきます（★CC の Bash からは、型の表の `--write` を H2 の検査済みゲートが止め、H2 を G2 の検査済みゲートが止める輪になる＝worklog 20260926 の 4-15）（型の表＝まこさん決定 2026-09-26 の④。★出口の表は、型の表の部品の数と標本不足の組の数を中に書いているので、部品を足すと作り直しと承認が要ります＝決定④のときに私が挙げていなかったもの）。そのあと `gen_composition_rules.py --write` で読み込ませる法則の文書を作り直します（型の表・出口の表の sha256 を記録している。★この工事の前から3件ずれている＝前からある不具合も同時に直る）。
+303,304c303,304
+< 11. `observe_diag.py --rank-regime <5分足CSV>` で成績表を全部 作り直します（約2時間20分〜2時間30分・裏で走らせ、時間足ごとの経過を見る）。そのあと `gen_materials.py --write`・`gen_observe_manual.py --write`・`gen_regime_kb.py --write stage` を打ちます。
+< 12. `engine_tuner_gen.py --selftest` を走らせます。T23②（location の1位の見本）が「実物と違う」で落ちたときだけ、見本の列の名前（6321行の文字と、6312行の説明の中の同じ名前）を、作り直した成績表の実物の1位に直します（見本の説明の逐語「成績表を作り直したなら この見本も直す」）。直す文字は成績表の実物から写します。
+---
+> 11. `observe_diag.py --rank-regime <5分足CSV>` で成績表を全部 作り直します（約2時間20分〜2時間30分・裏で走らせ、時間足ごとの経過を見る）。★全走の本体（`rank_regime`）は材料カタログの列だけで成績表を書き直し、需給3列を消すので、続けて `observe_diag.py --rank-regime <5分足CSV> --add-demand` で需給3列を足し直します（まこさん決定 2026-09-06「需給に関しては、2-Cでの判断がどうであれ、順位に入れるべき」）。そのあと `gen_materials.py --write`・`gen_observe_manual.py --write`・`gen_regime_kb.py --write stage` を打ちます。
+> 12. `engine_tuner_gen.py --selftest` を走らせます。T23②（location の1位の見本）が「実物と違う」で落ちたときだけ、見本の列の名前（`if _lst23[0][0] != ` の行の文字と、その上の説明の中の同じ名前）を、作り直した成績表の実物の1位に直し、説明の直後に履歴の1行（直した日・分離力・直す前の名前）を足します（★行番号は手で書かない＝恒久69番）。★成績表の分離力は小数3桁で持つので、同点のときは名前の順で1位が決まります（`ranked_materials` の並べ方）（見本の説明の逐語「成績表を作り直したなら この見本も直す」）。直す文字は成績表の実物から写します。
+308c308
+< 16. 完成の条件の表の全部のコマンドを走らせ、2回目の承認をお願いし、実装の監査に出します。
+---
+> 16. 完成の条件の表の全部のコマンドを走らせ、承認をお願いし（手順12 で見本を直したときは engine_tuner_gen.py が変わり SPEC を作り直すので、もう1回＝3回目）、実装の監査に出します。
+1459c1459
+< <!-- ACC_SELFTEST_START hash=1c4bec6a049cc625 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SELFTEST_START hash=ebedda5b90a8918a gen_acceptance.py が自動生成＝手で書き換えない -->
+1467a1468
+> | `b108_atr1h_base_wrong_bars.sh` | #20 | `build_features` の置き場に4時間足のバーを入れると、T-A3 が『❌ T-A3』で落ちる |
+1478c1479
+< | 1 | 新しい部品が成績表の location の1位になり、組む側の自己テスト T23② の見本が変わる | 作り直した後に自己テストで確かめ、変わっていたら見本を実物の1位に直す（4-4 の手順12） |
+---
+> | 1 | 新しい部品が成績表の location の1位になり、組む側の自己テスト T23② の見本が変わる | 作り直した後に自己テストで確かめ、変わっていたら見本を実物の1位に直す（4-4 の手順12）。★見本を直すと engine_tuner_gen.py が変わるので、SPEC の作り直しと承認がもう1回 要る（この工事では承認が3回）。成績表を作り直す工事では毎回 起きうるので、決めてほしいこと（承認の回数）と見積もりに先に数える |
+1486c1487
+< | 9 | 実装の指示の中身（当てた後のコード）を、承認の前に一度も走らせていない（CC の自己申告1。監査 CP44 も読み取りだけの役割で、写しを作って走らせられなかった） | 承認の後、本物に当てる前に、作業場の写しに実装の指示を当て、`py_compile`・`observe_diag.py --selftest-atr1h`・壊すプログラム4本を写しで走らせ、出力を worklog に残す。1件でも落ちたら本物に当てずに まこさんに報告する |
+---
+> | 9 | 実装の指示の中身（当てた後のコード）を、承認の前に一度も走らせていない（CC の自己申告1。監査 CP44 も読み取りだけの役割で、写しを作って走らせられなかった） | 承認の後、本物に当てる前に、作業場の写しに実装の指示を当て、`py_compile`・`observe_diag.py --selftest-atr1h`・壊すプログラム4本を写しで走らせ、出力を worklog に残す。1件でも落ちたら本物に当てずに まこさんに報告する。★CC の Bash からは写しの .py を走らせられない（設計↔実装ゲートが、走らせる .py を相対の名前で見て本物のファイルを設計書と照らす＝worklog 20260926 の 4-7）。写しの段は、足す前に1回 走らせられるかを試し（教訓 L-625）、走らせられなければ承認のお願いのときに先に言い、まこさんの端末で打っていただき、出力を貼っていただく |
+1527c1528
+< | 2 | 探す値を、CC が先に「点の一覧」で限定するもの | **当たりません** | 新しい部品の数字は、まこさんが決めた範囲（窓 144〜288・倍率 0.5〜1.5・ATR の期間 7〜21）の両端と既存の格子です。engine_tuner は材料カタログの最小〜最大を範囲として使うので、探す値は点の一覧に限定されません（`material_ranges`）。 |
+---
+> | 2 | 探す値を、CC が先に「点の一覧」で限定するもの | **当たりません** | 新しい部品の数字は、まこさんが決めた範囲（窓 144〜288・倍率 0.5〜1.5・ATR の期間 7〜21）の両端と既存の格子です。engine_tuner は材料カタログの最小〜最大を範囲として使います（`material_ranges`）。★ただし段1 の候補（`build_stage_candidates`）は成績表の列の数字をそのまま使うので、段1 で試すのは18点です（範囲を開くのは §2.2 の段5）。★`gen_materials.py` が作る照合の表（engine_tuner_milestones2.md の §8）は、設定の `sr_atr1h_k` を決まった数字だけの一覧に数え、場所1 が 36件から 37件（合計 37件から 38件）に増えました（その表の答えは、この工事の前から「当たっています」）。 |
+1577,1580c1578,1581
+< | 1 | 許容幅は1時間足の ATR% で決まる。参照表の既知答え3件（下端・上端・1時間足と5分足で割れる見本）が、18種の全部で一致する（番人 T-A1） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | `_sr_touch_atr` の許容幅の元を直す前の形（渡された足の ATR%）に戻すと、T-A1 が『❌ T-A1』で落ちる | `b104_atr1h_own_tf.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝許容幅の ATR% を直す前の形（渡された足の ATR%）に戻すと、既知答えの番人 T-A1 が落ちた |
+< | 2 | 1時間足の値は、その1時間足が閉じた時刻から使う＝途中で切って計算し直しても、切った時点の1時間足の ATR% が変わらない（番人 T-A4） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | 1時間足の値の時刻を「閉じた時刻」から「始まりの時刻」に変えると、T-A4 が『❌ T-A4』で落ちる | `b105_atr1h_future_hour.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝1時間足の値を始まりの時刻から使う（閉じる前の1時間足を使う）と、切り詰めの番人 T-A4 が落ちた |
+< | 3 | 許容幅を上下限 0.15%〜0.6% で挟む（番人 T-A1 の見本1・2） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | 上下限で挟む行を外すと、T-A1 が『❌ T-A1』で落ちる | `b106_atr1h_no_clip.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝許容幅を上下限 0.15%〜0.6% で挟まないと、既知答えの番人 T-A1 が落ちた |
+< | 4 | 1時間足より長い足（4時間足）でも、`build_features` が新しい部品の列を作れ、4時間足に当てた1時間足の ATR% が、同じ5分足から作った1時間足の値と1本も違わない（番人 T-A3。わざと外した形＝4時間足のバーの ATR% では違いが出ることも、毎回 確かめる） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | `build_features` が置き場に5分足を入れる行を消すと、T-A3 が『❌ T-A3』で落ちる | `b107_atr1h_base_not_passed.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝build_features が1時間足の元の5分足を置き場に入れないと、4時間足の列が作れず番人 T-A3 が落ちた |
+---
+> | 1 | 許容幅は1時間足の ATR% で決まる。参照表の既知答え3件（下端・上端・1時間足と5分足で割れる見本）が、18種の全部で一致する（番人 T-A1） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | `_sr_touch_atr` の許容幅の元を直す前の形（渡された足の ATR%）に戻すと、T-A1 が『❌ T-A1』で落ちる | `b104_atr1h_own_tf.sh` | — | **未着手** |
+> | 2 | 1時間足の値は、その1時間足が閉じた時刻から使う＝途中で切って計算し直しても、切った時点の1時間足の ATR% が変わらない（番人 T-A4） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | 1時間足の値の時刻を「閉じた時刻」から「始まりの時刻」に変えると、T-A4 が『❌ T-A4』で落ちる | `b105_atr1h_future_hour.sh` | — | **未着手** |
+> | 3 | 許容幅を上下限 0.15%〜0.6% で挟む（番人 T-A1 の見本1・2） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | 上下限で挟む行を外すと、T-A1 が『❌ T-A1』で落ちる | `b106_atr1h_no_clip.sh` | — | **未着手** |
+> | 4 | 1時間足より長い足（4時間足）でも、`build_features` が新しい部品の列を作れ、4時間足に当てた1時間足の ATR% が、同じ5分足から作った1時間足の値と1本も違わない（番人 T-A3。わざと外した形＝4時間足のバーの ATR% では違いが出ることも、毎回 確かめる） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | `build_features` が置き場に5分足を入れる行を消すと、T-A3 が『❌ T-A3』で落ちる | `b107_atr1h_base_not_passed.sh` | — | **未着手** |
+1595a1597
+> | 20 | `build_features` が置き場 `_H1_BASE` に入れる中身が5分足である＝番人 T-A3 は置き場を入れ直さず、build_features が入れたもので4時間足に当てた1時間足の ATR% を作り、5分足から作った値と1本も違わない（監査 CP45） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | `build_features` の置き場に4時間足のバーを入れると、T-A3 が『❌ T-A3』で落ちる | `b108_atr1h_base_wrong_bars.sh` | — | **未着手** |
+1601c1603
+< <!-- ACC_CODEREF_START hash=34f1d74136f20d60 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=c625722d118ad4b2 gen_acceptance.py が自動生成＝手で書き換えない -->
+1611c1613
+< | `selftest_atr1h` | 6577 |
+---
+> | `selftest_atr1h` | 6580 |
+1620c1622
+< <!-- ACC_SPEC_START hash=f4922bf43160bdd4 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=adeb3fa272fb156a gen_acceptance.py が自動生成＝手で書き換えない -->
+1779a1782
+>    "add_demand_to_ranking",
