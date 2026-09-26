@@ -6148,6 +6148,9 @@ def rank_regime(bars_csv: str, config_path: str | None = None, tfs: str | None =
     print("#" * 100)
     _insp_regime_rank(bars, cfg, catalog=cat,
                       tfs=[t.strip() for t in tfs.split(",")] if tfs else None)
+    # ★監査 CP45＝全走（列も時間足も絞らない）のときは、続けて需給3列を足し直す（まこさん決定 2026-09-06）。
+    if not cols and not tfs:
+        add_demand_to_ranking(bars_csv, config_path)
 
 
 # ══ 需給3列を成績表に足す（差分の口・M2-D-4／M2-D-5・設計書 iter="demand-in-ranking-20260907"・まこさん承認 2026-09-07）══
@@ -6587,6 +6590,7 @@ def selftest_atr1h(exit_: bool = True, bars_csv: str | None = None) -> list:
       T-A2＝値決め窓の5分足の末尾 3,000本で、教科書の式（参照表の独立実装）と1本も違わない
       T-A3＝1時間足より長い足（4時間足）でも、build_features が列を作れる（1時間足の元の5分足が渡る）
       T-A4＝途中で切ったデータで計算し直しても、切った時点の許容幅の元（1時間足の ATR%）が変わらない（未来を見ない）
+      T-A5＝検査16 の1マスの数え方（_tol_saturation_cells）が既知答えと一致する（値の出ている本数・下端の割合・上端の割合）
     """
     ng: list = []
     cfg = load_config()
@@ -6642,8 +6646,14 @@ def selftest_atr1h(exit_: bool = True, bars_csv: str | None = None) -> list:
         #   同じ物差しに掛け、違いが出ることを毎回 確かめる（見抜く力の確かめ・検査15 の N4 と同じ考え）。
         _an3 = cfg["atr_periods"][0]
         _d4 = _resample(big[["open", "high", "low", "close", "volume"]], "4h")
-        _H1_BASE["bars"] = big
-        _a4 = _atr_pct_1h_on(_d4, _an3)
+        # ★監査 CP45＝置き場はここで入れ直さない（build_features が入れた中身をそのまま使う）。
+        #   直す前＝ここで置き場に big を入れていたので、build_features が置き場に入れた中身（5分足か）を確かめていなかった
+        #   （build_features が4時間足のバーを置き場に入れても、この突き合わせは通った）。
+        try:
+            _a4 = _atr_pct_1h_on(_d4, _an3)
+        except ValueError as _e4:
+            ng.append(f"T-A3: build_features が置き場に入れたもので、4時間足に当てる1時間足の ATR% が作れない（{_e4}）")
+            _a4 = np.full(len(_d4), np.nan)
         _a5 = pd.Series(_atr_pct_1h_on(big, _an3), index=big.index)
         _at = _d4.index + pd.Timedelta("4h") - pd.Timedelta("5min")
         _in = _at.isin(big.index)
@@ -6670,10 +6680,11 @@ def selftest_atr1h(exit_: bool = True, bars_csv: str | None = None) -> list:
                 ng.append(f"T-A4: {s5.index[i]} で切ると1時間足の ATR% が変わる"
                           f"（ATR の期間 {an}・全部 {v_full} ／ 切った {v_cut}）＝未来を見ている")
     # ── T-A5＝検査16 の張り付き割合の数え方の既知答え（監査 CP44 の修正 6）──
-    #   倍率 1.0 × [0.001, 0.003, 0.007, 0.0015, 0.006, 空]＝値の出ている5本のうち、下端より小さいのは 0.001 の1本、
-    #   上端より大きいのは 0.007 の1本（ちょうど端の 0.0015・0.006 は数えない）→ ["5", "20.0%", "20.0%"]
-    _c5 = _tol_saturation_cells(1.0, [0.001, 0.003, 0.007, 0.0015, 0.006, float("nan")])
-    if _c5 != ["5", "20.0%", "20.0%"]:
+    #   倍率 1.0 × [0.001, 0.0012, 0.003, 0.007, 0.0015, 0.006, 空]＝値の出ている6本のうち、下端より小さいのは 0.001・0.0012 の2本、
+    #   上端より大きいのは 0.007 の1本（ちょうど端の 0.0015・0.006 は数えない）→ ["6", "33.3%", "16.7%"]
+    #   ★監査 CP45＝下端と上端の本数を変えた（前は 1本・1本＝20.0%・20.0% で、下端と上端の欄を取り違えても通った）。
+    _c5 = _tol_saturation_cells(1.0, [0.001, 0.0012, 0.003, 0.007, 0.0015, 0.006, float("nan")])
+    if _c5 != ["6", "33.3%", "16.7%"]:
         ng.append(f"T-A5: 検査16 の張り付き割合の数え方が既知答えと違う（{_c5}）")
     print("=" * 80)
     print("S-Rタッチ1時間ATR の番人（T-A1〜T-A5・設計書 m2e-bundle2-20260926）")
