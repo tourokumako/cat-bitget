@@ -155,3 +155,34 @@
 - `require_design_check_before_approval.py --try`＝不足10件のまま。A2＝宣言の OK が空・貼った証拠のファイルが無い。A9＝照合B「設計書に書いたのに実装していない」（exec の6つ・diag の3つ）と照合A「設計書の impl_functions に書いていないファイルを触った＝run_breaks.py」。
 - **原因**＝照合は git の HEAD との差分を相手にする。束1 の本体は d85942e で commit 済みで、いまの差分は CP43 の修正（exec の自己テスト・gen の説明の1行・diag の2か所）と、道具の直し（run_breaks.py・まだ commit していない）だけ。gen は「差分がゼロ（commit 済み）＝照合B だけをファイルの中の全関数と行いました」の道で通っている。
 - **直し方の見込み**＝道具の直しと CP43 の修正を commit すれば、exec と diag も gen と同じ道になり、run_breaks.py の差分も消える。commit は まこさんの OK が要る。
+
+### 2-13 OK と commit 2本・7番（自己テスト・G2・H2）（2026-09-26）
+
+- まこさん（逐語）「どちらもOK」＝⑥の読むもの宣言13件と commit 2本への OK。宣言の OK の欄に写し、貼った証拠のファイルを作り直した（00892195…）。`require_read_plan_before_design.py --check`＝「宣言の中身は通ります」。
+- commit ①`8b44be3`＝道具の直し（run_breaks.py・承認の控え breaks-measure-one-20260926 の一式 8ファイル）。②`cb31395`＝CP43 の修正（acceptance_src.json・m2_todo.json・regime_laws.json・engine_tuner_milestones2.md・regime_detection_kb.md・exec・gen・diag・decisions.md・CP43 の結果ファイル・この worklog＝11ファイル）。★コミットの文に改行が在ると土台ゲートが改行ごとに区切って止めるので、文をスクラッチのファイルに書いて `git commit -F` で渡した。★engine_tuner の名前を書かないよう `git add -u <フォルダ>` で登録した。
+- commit の後の `require_design_check_before_approval.py --try`＝A群 0件・B群 8件（壊すプログラム4本とその行のコマンド）。
+- G2＝`gen_signal_families.py --verify`＝「G2 の既知答え 11件 全部 期待どおり」・印 60b4a73e…（26.0秒）。
+- H2＝`leak_causality_diag.py`＝「検査2 の注記なし未来参照 0 件 / 打ち切り再現テスト（1-a・1-b・1-c）の食い違い 0 件」・印 3669256b…（5分8秒）。
+- `engine_tuner_exec.py --selftest`＝「✅ 全部 pass」・T-h の行「印に在るものは通る・印から外すと G6 → pass（全部）」（修正23 の行）・9.4秒。
+- `engine_tuner_gen.py --selftest`＝「✅ 全部 pass」（T42・T45・T46 の行を含む）・5分31秒。
+- 書き替えた元データを読む道具＝`gen_regime_kb.py --verify all`（§3・§11・§12 とも機械が書いたまま・引用のずれ 0件）・`gen_regime_kb.py --selftest` 15/15・`gen_acceptance.py --selftest` 9/9・`gen_composition_rules.py --selftest` 全部 pass・`gen_indicator_switch.py --selftest` 11/11。★`gen_regime_kb.py --selftest` は1回目 14/15（T5「m2_todo.json が変わったのに --write を走らせていません」）。やることリストの本文は G2・H2 の印の値を入れる作り（T14）で、私が印を取り直す前に `--write todo` を走らせたため。`--write todo` を走らせ直して（hash=204b9df0…）15/15。
+- `streak_scope_diag.py --builds 3`＝3本とも on_cur_true_want_false 0・on_cur_false_want_true 0・diag_matches_exec true・終了コード 0（修正26 の後）・5.6秒。
+
+### 2-14 8番＝壊すプログラムを1本ずつ測った（今日足した --only を初めて本物で使った・2026-09-26）
+
+- `run_breaks.py --design .claude/state/acceptance.md --measure-only --only b100_streak_tree_eval.sh --only b103_geo_switch_unchecked.sh`＝2本とも「✅ 期待どおり」rc=1（期待 1）・「止まった 2/2」・18.0秒。
+- 同じ形で `--only b77_no_streak.sh`＝「✅ 期待どおり # 4 … rc=1（期待 1）」・7分31秒。`--only b99_streak_inner_band_only.sh`＝「✅ 期待どおり # 1 … rc=1（期待 1）」・7分33秒。＝1本ずつなら、どれも前面の10分に収まった。
+- `require_design_check_before_approval.py --try`（記録を渡さない形）＝B群8件のまま。★`--try` はやり取りの記録を渡さないと B群を読めない（`--transcript` の旗）。記録（a2c51697…jsonl）を渡して走らせ直すと「A1〜A8・B1・B2 は全部 通ります（不足0件）」（10.9秒）。
+- 設計書の sha256＝d1dea6c1…（CP43 の修正を当てた版）。次＝まこさんに承認をお願いする（⑥の承認の1回目・承認のプログラムは表の全部を走らせるので、壊すプログラム4本 約16分＋行のコマンド 約12分の見込み）。
+- ★承認のお願いの前に、Stop hook（enforce_next_step_tidy）が「(0-b-2) の G2・H2 の印と時刻が json と違う」で止めた＝`tidy_next_step.py --write` で書き直した（--verify 7つ 通過）。
+
+### 2-15 ⑥の承認と記録（2026-09-26）
+
+- まこさんが承認のコマンドを打ち、出力を貼ってくださった。承認の指紋 d1dea6c1… → 「済」を書き込んだ後の指紋 8960c06c…。impl_functions 18件を凍結。壊すプログラムを探す文字＝「1か所 64 本 ／ 0か所か2か所以上 0 本 ／ 数えない 35 本」・壊せないもの 0本。壊すプログラム100本を凍結。4本とも「✅ 期待どおり」＝「壊して確かめた件数: 4/4」。#1・#2・#4・#5＝✅済（壊すと rc=1・条件のコマンド rc=0）。#3・#6〜#10＝「未着手」のまま（壊すプログラムが無い）。「この1回で『済』まで確定します（承認をもう一度 打つ必要はありません）」。控え＝m2e-bundle1-20260925.md（済を書き込んだ後の版）・前の版 m2e-bundle1-20260925.02.md。
+- 私の確かめ＝acceptance.approved と設計書の sha256 が同じ（8960c06c…）。表の状態＝#1・#2・#4・#5 が ✅済、残り6行が未着手。
+- ＝**2番（束1）は6段の⑥まで終わった。**⑥の承認は1回で済んだ（2-10 の見込みどおり）。
+- 記録＝①next_step の元データ（next_step_src.json）＝0-1 を121回目の状態に書き替え（前の 0-1 は「次の書き替えで消す」で控えへ）・0-2 の2番を ✅済（控えへ移った）・3番（束2）を ★いまここ・47番の状態を「m2_todo.json に足した」に直した・34番に §6 の208〜211 を書き足した・§6 に208〜211 を足した（控えの元データの検査の口／1つだけの土台のファイル／2回目の承認の予告／ToDo ゲートの貼り方）→ `tidy_next_step.py --write`（移した節 1・0-2 の表から移した行 1）・`--verify` 7つ 通過・`--selftest` 19/19。②教訓＝lessons_active に L-621（L-616・L-618 の3回目の再演）・L-622（設計を2つ交互に承認すると1つだけの土台のファイルが上書きされる）・L-623（新しい関数を足す設計書は承認が2回）。
+
+### 2-16 commit（まこさん OK「コミットOK」・2026-09-26）
+
+- 承認の後の記録11ファイルを commit した（★前の返信で「12ファイル」と書いたのは数え間違い＝表の中身は 控え5・作り直した文書3・記録3）＝承認の控え m2e-bundle1-20260925 の .md・.02.md・.02.diff.txt・.02.sha.txt・.dirty.json／engine_tuner_milestones2.md／next_step.md・next_step_archive_202608.md・next_step_src.json／この worklog／lessons_active.md。★コミットの文はスクラッチのファイルに書いて `git commit -F` で渡した（2-13 と同じ理由）。

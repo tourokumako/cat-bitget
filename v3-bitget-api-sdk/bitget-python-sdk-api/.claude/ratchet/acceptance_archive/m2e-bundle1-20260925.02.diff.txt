@@ -1,0 +1,155 @@
+20a21
+> > ②と③はどちらもCCのおすすめ案でOK（2026-09-25＝監査 CP39 の結果を当てる前の決定。②＝法則 R6 の固定の線は残し、6か月で動く線は別の番号 M2-E-4e で段2c の候補に足す＝束1 では付けず、受け口 pre_b は残す。③＝実行器が本体の指標も印と照らす実装の指示 33・34 を束1 に入れる）
+35c36
+< 束1 は3件を1つの設計書にまとめたものです（まこさん OK 2026-09-24「上記でOK。」）。1件目（M2-E-4d）は、engine_tuner が組む場面の判定の束（レンジ）で、段3 の持続が「成立の全体」に掛かる状態を作ります。§2.2 の段3 の正本の文は「成立の連続本数と解除の緩め幅」です。成立とは、段1（帯と帯の幅）・段2a（強さの否定）・段2b（向きの否定）・段2c（3枠目）が全部 同時に真であることです。いまの組む側は、持続の条件（streak＝直近 n本 が全部 真）の内側に、帯の条件1つだけを写しています。そのため「帯は n本 続いているが、ほかの枠が直近 n本 の中で一度 偽になったバー」も成立と数えます。2026-09-20 に値決め窓で1バーずつ比べた結果、いまの形で真のバーのうち、§2.2 の形では偽になるバーが 9.65%〜18.55% 在りました（逆は0本）。直すところは3つです。売買を回すプログラム（engine_tuner_exec.py）が、判定の束の中に限り、持続の内側に条件の束（all・not・真偽の列を含む入れ子の構造）を受けられるようにすること。案を作るプログラム（engine_tuner_gen.py）が、持続の内側を「成立の全体」にし、入る条件をその持続1つにすること。束の入る条件を並びの位置で読んでいる所（組む側の自己テスト・gate_matrix・読み取り専用の診断）を、束の読み方を1か所にまとめた関数で読む形にすること。2件目（M2-E-4b）は、転がし窓の順位（直近N本の中で、いまの値が何番目か）を場面の判定の束に付けるかどうかを、相場の法則から決めます。法則の正本（regime_laws.json）のレンジの法則には、言い方を変えた文が在ります（R6 の説明「幅が過去より狭い状態」と根拠の逐語「near the low end of its six-month range」、R10 の「ATR% の自分の平均との比較」＝監査 CP39 の問い2）。付けるかどうかは法則で決めるという まこさんの決定（2026-09-06）に従い、この読み（値決め窓の固定の分位で足りるか、直近の窓の中の位置か）を まこさんが決めるまで付けず、M2-C-4 で作った受け口（sample_regime_build の引数 pre_b・呼ぶ側が0件）も消しません。N も書きません（法則に無い数字を私が作らない）。付けると決まったら、付ける先（R6・R10 なら段2c）に窓の本数つきの前処理を付ける道を、別の1変更で作ります（元データの pre は段2a でしか読まれず、窓の本数の欄も無い）。3件目（M2-E-5b）は、next_step §6 の148番＝監査 cp26 の 6-6「オン・オフの二重の守りが需給だけ」を直します。案を作る側の候補と審査は、レンジ幾何・需給・時間帯の3種とも印（indicator_switch.json）と照らしていますが、実行器が材料の名前を組む関数（_material_name）は需給だけを印と照らし、レンジ幾何と時間帯は定義表に在るかしか見ません。実行器でもレンジ幾何（geo_on）と時間帯（time_on）を印と照らし、印から外した材料を G6 で拒否するようにし、実行器の自己テストに需給と同じ形のテストを足します。3件とも、続く本数 n の範囲・保つ上限の範囲・法則・各枠の指標の選び方・印の中身は、1つも変えません。
+---
+> 束1 は3件を1つの設計書にまとめたものです（まこさん OK 2026-09-24「上記でOK。」）。1件目（M2-E-4d）は、engine_tuner が組む場面の判定の束（レンジ）で、段3 の持続が「成立の全体」に掛かる状態を作ります。§2.2 の段3 の正本の文は「成立の連続本数と解除の緩め幅」です。成立とは、段1（帯と帯の幅）・段2a（強さの否定）・段2b（向きの否定）・段2c（3枠目）が全部 同時に真であることです。いまの組む側は、持続の条件（streak＝直近 n本 が全部 真）の内側に、帯の条件1つだけを写しています。そのため「帯は n本 続いているが、ほかの枠が直近 n本 の中で一度 偽になったバー」も成立と数えます。2026-09-20 に値決め窓で1バーずつ比べた結果、いまの形で真のバーのうち、§2.2 の形では偽になるバーが 9.65%〜18.55% 在りました（逆は0本）。直すところは3つです。売買を回すプログラム（engine_tuner_exec.py）が、判定の束の中に限り、持続の内側に条件の束（all・not・真偽の列を含む入れ子の構造）を受けられるようにすること。案を作るプログラム（engine_tuner_gen.py）が、持続の内側を「成立の全体」にし、入る条件をその持続1つにすること。束の入る条件を並びの位置で読んでいる所（組む側の自己テスト・gate_matrix・読み取り専用の診断）を、束の読み方を1か所にまとめた関数で読む形にすること。2件目（M2-E-4b）は、転がし窓の順位（直近N本の中で、いまの値が何番目か）を場面の判定の束に付けるかどうかを、相場の法則から決めます。法則の正本（regime_laws.json）のレンジの法則には、言い方を変えた文が在ります（R6 の説明「幅が過去より狭い状態」と根拠の逐語「near the low end of its six-month range」、R10 の「ATR% の自分の平均との比較」＝監査 CP39 の問い2）。付けるかどうかは法則で決めるという まこさんの決定（2026-09-06）に従い、まこさんの決定（2026-09-25・逐語「②と③はどちらもCCのおすすめ案でOK」＝固定の線は残し、6か月で動く線は別の番号 M2-E-4e で段2c の候補に足す）により、束1 では付けず、M2-C-4 で作った受け口（sample_regime_build の引数 pre_b・呼ぶ側が0件）も消しません。N も書きません（法則に無い数字を私が作らない）。段2c に窓の本数つきの前処理を付ける道は、M2-E-4e で作ります（元データの pre は段2a でしか読まれず、窓の本数の欄も無い）。3件目（M2-E-5b）は、next_step §6 の148番＝監査 cp26 の 6-6「オン・オフの二重の守りが需給だけ」を直します。案を作る側の候補と審査は、レンジ幾何・需給・時間帯の3種とも印（indicator_switch.json）と照らしていますが、実行器が材料の名前を組む関数（_material_name）は需給だけを印と照らし、レンジ幾何と時間帯は定義表に在るかしか見ません。実行器でもレンジ幾何（geo_on）と時間帯（time_on）を印と照らし、印から外した材料を G6 で拒否するようにし、実行器の自己テストに需給と同じ形のテストを足します。3件とも、続く本数 n の範囲・保つ上限の範囲・法則・各枠の指標の選び方・印の中身は、1つも変えません。
+44,45c45,46
+< | 組む側が、持続の内側に帯の条件1つを写している行 | `grep -n '"inner": json.loads(json.dumps(cond_b))' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 3298:                  "inner": json.loads(json.dumps(cond_b))}（終了コード 0）／読み方＝cond_b は帯の条件。持続は、この条件だけに掛かっている |
+< | 組む側が、持続を入る条件の並びの最後に足している行 | `grep -n 'if cond_f is not None else' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 3316:              + ([cond_f] if cond_f is not None else []))（終了コード 0）／読み方＝持続はほかの枠と横並び＝ほかの枠は「いまのバーで真」だけを求められている |
+---
+> | 組む側が、持続の内側に帯の条件1つを写している行 | `grep -n '"inner": json.loads(json.dumps(cond_b))' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | （終了コード 1）／読み方＝cond_b は帯の条件。持続は、この条件だけに掛かっている |
+> | 組む側が、持続を入る条件の並びの最後に足している行 | `grep -n 'if cond_f is not None else' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 3323:    on_all = [cond_f] if cond_f is not None else on_core（終了コード 0）／読み方＝持続はほかの枠と横並び＝ほかの枠は「いまのバーで真」だけを求められている |
+47,50c48,51
+< | 実行器の検査が、入れ子形の内側に条件1つを求めている行 | `grep -n 'の内側の条件が無い' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | 963:            _fail("G5", f"{where}: {form} の内側の条件が無い")（終了コード 0）／読み方＝内側が条件の束だと、ここで検査が止める＝いまは組む側だけを直しても検査を通らない |
+< | 実行器の評価が、入れ子形の内側を条件1つとして評価している行 | `grep -n 'inner = _eval_cond(c\["inner"\], df, geo, lane, qtable)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | 2104:        inner = _eval_cond(c["inner"], df, geo, lane, qtable)（終了コード 0）／読み方＝内側が条件の束だと form の鍵が無くて落ちる＝束を評価する関数を呼ぶ形に直す |
+< | 組む側の分位の鍵の集め方が、入れ子形の内側を条件1つとして降りている行 | `grep -n '_cond_keys(c\["inner"\], lane)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 3655:            _cond_keys(c["inner"], lane)（終了コード 0）／読み方＝内側が条件の束だと form の鍵が無くて落ちる＝束の中の条件を集めてから降りる形に直す |
+< | 束の入る条件を並びの位置で読んでいる所（組む側と診断） | `grep -n '\["on"\]\["all"\]' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/streak_scope_diag.py` | v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py:6379:            _on, _off = _hy["on"]["all"], _hy["off"]["any"] ⏎ v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py:6776:            _on42 = _b42["entry"]["tree"]["all"][0]["on"]["all"]       # 並び＝[A, B, C, (D), (G), (F)] ⏎ v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py:7937:        for c in list(hy["on"]["all"]) + list(hy["off"]["any"]): …（出力 5 行のうち先頭 500 文字）（終了コード 0）／読み方＝組む側の自己テスト・gate_matrix・診断の中。入る条件が持続だけになると、位置で読む形は壊れる＝読み方を一か所にまとめる |
+---
+> | 実行器の検査が、入れ子形の内側に条件1つを求めている行 | `grep -n 'の内側の条件が無い' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | 990:            _fail("G5", f"{where}: {form} の内側の条件が無い")（終了コード 0）／読み方＝内側が条件の束だと、ここで検査が止める＝いまは組む側だけを直しても検査を通らない |
+> | 実行器の評価が、入れ子形の内側を条件1つとして評価している行 | `grep -n 'inner = _eval_cond(c\["inner"\], df, geo, lane, qtable)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | 2145:            inner = _eval_cond(c["inner"], df, geo, lane, qtable)（終了コード 0）／読み方＝内側が条件の束だと form の鍵が無くて落ちる＝束を評価する関数を呼ぶ形に直す |
+> | 組む側の分位の鍵の集め方が、入れ子形の内側を条件1つとして降りている行 | `grep -n '_cond_keys(c\["inner"\], lane)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 3687:                _cond_keys(c["inner"], lane)（終了コード 0）／読み方＝内側が条件の束だと form の鍵が無くて落ちる＝束の中の条件を集めてから降りる形に直す |
+> | 束の入る条件を並びの位置で読んでいる所（組む側と診断） | `grep -n '\["on"\]\["all"\]' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/streak_scope_diag.py` | v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py:6417:            _on_raw = _hy["on"]["all"] ⏎ v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py:7600:            _on46 = _b46["entry"]["tree"]["all"][0]["on"]["all"] ⏎ v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py:8139:        r["meta"]["regime"]["build"]["entry"]["tree"] = {"all": list(hy["on"]["all"])}      # hysteresis を外す（K-3）（終了コード 0）／読み方＝組む側の自己テスト・gate_matrix・診断の中。入る条件が持続だけになると、位置で読む形は壊れる＝読み方を一か所にまとめる |
+54c55
+< | 実行器で、材料を印（indicator_switch.json）と照らしている行 | `grep -n 'demand_enabled(\／geo_enabled(\／time_enabled(' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | 198:def geo_enabled(name: str) -> bool: ⏎ 203:def demand_enabled(name: str) -> bool: ⏎ 215:def time_enabled(name: str) -> bool: ⏎ 658:        if not demand_enabled(d):（終了コード 0）／読み方＝定義の行のほかに呼んでいるのは需給の一件だけ＝材料の名前を組む関数はレンジ幾何と時間帯を印と照らしていない（オン・オフの二重の守りが需給だけ、の件） |
+---
+> | 実行器で、材料を印（indicator_switch.json）と照らしている行 | `grep -n 'demand_enabled(\／geo_enabled(\／time_enabled(' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | 200:def geo_enabled(name: str) -> bool: ⏎ 205:def demand_enabled(name: str) -> bool: ⏎ 217:def time_enabled(name: str) -> bool: ⏎ 645:        if not geo_enabled(g): ⏎ 659:        if not time_enabled(t): ⏎ 670:        if not demand_enabled(d):（終了コード 0）／読み方＝定義の行のほかに呼んでいるのは需給の一件だけ＝材料の名前を組む関数はレンジ幾何と時間帯を印と照らしていない（オン・オフの二重の守りが需給だけ、の件） |
+57c58
+< | 直す行の文字を探している壊すプログラム（L-605・語を広げた） | `grep -rln 'streak\／cond_f\／_scene_scan\／_check_cond\／on_all\／_eval_cond\／needed_qkeys\／_tree_conds\／FORM_SPEC\／geo_enabled\／_material_name\／demand_enabled' .claude/breaks` | .claude/breaks/b77_no_streak.sh ⏎ .claude/breaks/b35_gate_branch_gone.sh ⏎ .claude/breaks/b38_rank_demand_reader_gone.sh（終了コード 0）／読み方＝当たった壊すプログラムが探している行を、この工事で消さないことを確かめる。持続を消す壊すプログラムが探す「法則に streak が在れば持続を掛ける」の if の行は残す。審査の需給の枝を消す壊すプログラムが探す行は触らない |
+---
+> | 直す行の文字を探している壊すプログラム（L-605・語を広げた） | `grep -rln 'streak\／cond_f\／_scene_scan\／_check_cond\／on_all\／_eval_cond\／needed_qkeys\／_tree_conds\／FORM_SPEC\／geo_enabled\／_material_name\／demand_enabled' .claude/breaks` | .claude/breaks/b77_no_streak.sh ⏎ .claude/breaks/b99_streak_inner_band_only.sh ⏎ .claude/breaks/b100_streak_tree_eval.sh ⏎ .claude/breaks/b103_geo_switch_unchecked.sh ⏎ .claude/breaks/b35_gate_branch_gone.sh ⏎ .claude/breaks/b38_rank_demand_reader_gone.sh（終了コード 0）／読み方＝当たった壊すプログラムが探している行を、この工事で消さないことを確かめる。持続を消す壊すプログラムが探す「法則に streak が在れば持続を掛ける」の if の行は残す。審査の需給の枝を消す壊すプログラムが探す行は触らない |
+59,60c60,61
+< | 壊すプログラムを走らせる打ち切りの秒数 | `grep -n 'TIMEOUT_SEC = ' .claude/tools/run_breaks.py` | 68:TIMEOUT_SEC = 600 ⏎ 923:            TIMEOUT_SEC = 3                       # ★見本なので短く（本物は上の定数） ⏎ 991:        FROZEN, BREAKS_DIR, TIMEOUT_SEC = _kf, _kb, _kt（終了コード 0）／読み方＝組む側の自己テスト（約五分半）を走らせる壊すプログラム（持続を消すものと、内側を帯に戻すもの）が、打ち切りに掛からない |
+< | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/streak_scope_diag.py ／ grep -c '^@@'` | 0（終了コード 1）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+---
+> | 壊すプログラムを走らせる打ち切りの秒数 | `grep -n 'TIMEOUT_SEC = ' .claude/tools/run_breaks.py` | 70:TIMEOUT_SEC = 600 ⏎ 989:            TIMEOUT_SEC = 3                       # ★見本なので短く（本物は上の定数） ⏎ 1057:        FROZEN, BREAKS_DIR, TIMEOUT_SEC = _kf, _kb, _kt（終了コード 0）／読み方＝組む側の自己テスト（約五分半）を走らせる壊すプログラム（持続を消すものと、内側を帯に戻すもの）が、打ち切りに掛からない |
+> | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/streak_scope_diag.py ／ grep -c '^@@'` | 4（終了コード 0）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+170c171
+< | 6 | 転がし窓の順位を束に付けること・その N を私が決めること | 付けるかどうかと窓の長さは、まこさんが法則 R6 の読み（説明「幅が過去より狭い状態」・根拠の逐語「Ideally, BandWidth should be near the low end of its six-month range.」を、値決め窓の固定の分位で足りるとみるか、直近の窓の中の位置とみるか）と R10 の「ATR% の自分の平均との比較」を決めてから決める（まこさん決定 2026-09-06＝法則で決める・監査 CP39 の問い2）。決まるまで付けず、受け口も消さない。法則に無い数字を私が作らない | 恒久42番・要件「作ってはいけないもの」2番・まこさん 2026-09-09「お前が法則を決めるな」 |
+---
+> | 6 | 転がし窓の順位を束に付けること・その N を私が決めること | 付けるかどうかと窓の長さは、まこさんが法則 R6 の読み（説明「幅が過去より狭い状態」・根拠の逐語「Ideally, BandWidth should be near the low end of its six-month range.」を、値決め窓の固定の分位で足りるとみるか、直近の窓の中の位置とみるか）と R10 の「ATR% の自分の平均との比較」を決めてから決める（まこさん決定 2026-09-06＝法則で決める・監査 CP39 の問い2）。★決まった（まこさん 2026-09-25・逐語「②と③はどちらもCCのおすすめ案でOK」＝固定の線は残し、6か月で動く線は別の番号 M2-E-4e で段2c の候補に足す）。束1 では付けず、受け口も消さない。法則に無い数字を私が作らない | 恒久42番・要件「作ってはいけないもの」2番・まこさん 2026-09-09「お前が法則を決めるな」 |
+181c182
+< | 1 | 転がし窓の順位（直近N本の中での位置）を、レンジの判定に付けるか。★監査 CP39 の実測＝レンジの法則に、言い方を変えた文が在る。R6 の説明「幅が過去より狭い状態」（regime_laws.json:706）・R6 の根拠の BB幅 の逐語「Ideally, BandWidth should be near the low end of its six-month range.」（同:715・StockCharts の Bollinger Band Squeeze）・R10 の書けるか「ATR% の自分の平均との比較で数える」（同:827）。いまの閾値は値決め窓の分布から1回だけ固定した分位（engine_tuner_gen.py:3742「rolling しない」）で、直近の窓の中の位置ではない。決めること＝①R6 の「過去より狭い」を、固定の分位で足りるとみるか、直近の窓の中の位置とみるか ②位置とみるなら、窓の長さを R6 の逐語（six-month）から取るか。★付ける先は段2c（3枠目・R6・R10）で、受け口 pre_b が付く帯 B（段1）ではない。元データの pre は段2a でしか読まれず、窓の本数の欄も無い | まこさんが決めるまで、受け口 pre_b は消さない（実装の指示 12〜14 は状態を「未決」にして当てない）。M2-E-4b の確かめ方①も直さない。付けると決まったら、段2c の候補に窓の本数つきの前処理（ts_rank）を付ける道を、別の1変更で作る（窓の本数は R6 の逐語から取る・私が数字を作らない） | まこさん決定 2026-09-06「2-Eへ送るので、2-Eで忘れないように書いておいて」・監査 cp24 の 6-9・監査 CP39 の問い2（A6） |
+---
+> | 1 | 転がし窓の順位（直近N本の中での位置）を、レンジの判定に付けるか。★監査 CP39 の実測＝レンジの法則に、言い方を変えた文が在る。R6 の説明「幅が過去より狭い状態」（regime_laws.json:706）・R6 の根拠の BB幅 の逐語「Ideally, BandWidth should be near the low end of its six-month range.」（同:715・StockCharts の Bollinger Band Squeeze）・R10 の書けるか「ATR% の自分の平均との比較で数える」（同:827）。いまの閾値は値決め窓の分布から1回だけ固定した分位（engine_tuner_gen.py:3742「rolling しない」）で、直近の窓の中の位置ではない。決めること＝①R6 の「過去より狭い」を、固定の分位で足りるとみるか、直近の窓の中の位置とみるか ②位置とみるなら、窓の長さを R6 の逐語（six-month）から取るか。★付ける先は段2c（3枠目・R6・R10）で、受け口 pre_b が付く帯 B（段1）ではない。元データの pre は段2a でしか読まれず、窓の本数の欄も無い | ★決まった（まこさん 2026-09-25・逐語「②と③はどちらもCCのおすすめ案でOK」）＝固定の線（値決め窓で1回だけ決めた分位）は残し、6か月で動く線（窓の本数は R6 の逐語 six-month から取る・私が数字を作らない）は、別の番号 M2-E-4e で段2c の候補に足し、どちらが良いかは成績で engine_tuner に選ばせる。束1 では付けず、受け口 pre_b は残す（実装の指示 12〜14 は未決のまま当てない）。M2-E-4b の確かめ方①は、この決定に合う形に直す | まこさん決定 2026-09-06「2-Eへ送るので、2-Eで忘れないように書いておいて」・監査 cp24 の 6-9・監査 CP39 の問い2（A6） |
+201c202
+< **②転がし窓の順位。**M2-C-4 で受け口（`sample_regime_build` の引数 `pre_b`）を作りましたが、呼ぶ側が0件で、engine_tuner は一度もこの形を作っていません（監査 cp24 の実測）。付けるかどうかは相場の法則で決める、という まこさんの決定（2026-09-06）に従って法則の正本（`regime_laws.json`）を読むと、レンジの法則 R6 の説明「幅が過去より狭い状態」と根拠の逐語「near the low end of its six-month range」、R10 の「ATR% の自分の平均との比較」が、直近の窓に触れています（2-1 の表・監査 CP39 の問い2）。いまの閾値は値決め窓の分布から1回だけ固定した分位です（`build_qtable`＝rolling しない）。この読みを まこさんが決めるまで付けず、受け口の引数も消しません。N も書きません。元データの `pre` は段2a にしか読まれず（`build_stage_candidates` の中で段2a にだけ読む）、窓の本数の欄も無いので、付けると決まったら、付ける先（R6・R10 なら段2c）に窓の本数つきの前処理を付ける道を、別の1変更で作ります（窓の本数は法則の逐語から取る）。
+---
+> **②転がし窓の順位。**M2-C-4 で受け口（`sample_regime_build` の引数 `pre_b`）を作りましたが、呼ぶ側が0件で、engine_tuner は一度もこの形を作っていません（監査 cp24 の実測）。付けるかどうかは相場の法則で決める、という まこさんの決定（2026-09-06）に従って法則の正本（`regime_laws.json`）を読むと、レンジの法則 R6 の説明「幅が過去より狭い状態」と根拠の逐語「near the low end of its six-month range」、R10 の「ATR% の自分の平均との比較」が、直近の窓に触れています（2-1 の表・監査 CP39 の問い2）。いまの閾値は値決め窓の分布から1回だけ固定した分位です（`build_qtable`＝rolling しない）。まこさんは 2026-09-25 に「②と③はどちらもCCのおすすめ案でOK」と決めました＝固定の線は残し、6か月で動く線は別の番号 M2-E-4e で段2c の候補に足す。だから束1 では付けず、受け口の引数も消しません。N も書きません。元データの `pre` は段2a にしか読まれず（`build_stage_candidates` の中で段2a にだけ読む）、窓の本数の欄も無いので、段2c に窓の本数つきの前処理を付ける道は M2-E-4e で作ります（窓の本数は法則の逐語 six-month から取る）。
+238c239
+< | 法則の中身は まこさんが決める | まこさん 2026-09-09「お前が法則を決めるな」 | 法則ファイルは1文字も触らない。転がし窓の順位は、束1 では付けない。法則 R6 の6か月で動く線は、固定の線を残したうえで、別の番号で候補に足す（まこさん決定 2026-09-25） |
+---
+> | 法則の中身は まこさんが決める | まこさん 2026-09-09「お前が法則を決めるな」 | 法則の判定の中身は1文字も触らない（★実装の後に、法則 R7 の注意の中の行番号 1か所だけを直した＝まこさん OK 2026-09-26「直してよい」・判定は不変）。転がし窓の順位は、束1 では付けない。法則 R6 の6か月で動く線は、固定の線を残したうえで、別の番号で候補に足す（まこさん決定 2026-09-25） |
+260c261
+< | `engine_tuner_exec._material_name` | レンジ幾何と時間帯の枝で、印（`geo_on`・`time_on`）とも照らす（148番） | 直す（実装の指示 8・9） |
+---
+> | `engine_tuner_exec._material_name` | レンジ幾何と時間帯の枝で、印（`geo_on`・`time_on`）とも照らす（148番）。本体の指標の枝でも、印（`on`）と照らす（監査 CP39 の A7・まこさん決定 2026-09-25 の③）。本体の指標の照らしは、恒等検収の道（lane＝legacy）にも掛かる＝恒等レシピの材料は、印の作り手 `gen_indicator_switch.py` の源3 が必ず「使う」にする（同じ道具の自己テスト T1） | 直す（実装の指示 8・9・33） |
+261a263
+> | `engine_tuner_exec.selftest` の T-h | 印（`on`）から外した本体の指標（RSI）を G6 が拒否する（監査 CP39 の A7・まこさん決定 2026-09-25 の③） | **新設**（実装の指示 34） |
+298c300
+< 2. **直した後（束）。**入る条件＝「A ∩ B ∩ C ∩ D ∩ G が直近3本 全部 真」。上のバーは、G が1本前に偽なので、入る条件は偽になります。B の材料に転がし窓の順位は付きません（付けるかは、まこさんが法則 R6・R10 の読みを決めるまで保留＝監査 CP39 の問い2）。
+---
+> 2. **直した後（束）。**入る条件＝「A ∩ B ∩ C ∩ D ∩ G が直近3本 全部 真」。上のバーは、G が1本前に偽なので、入る条件は偽になります。B の材料に転がし窓の順位は付きません（束1 では付けない＝まこさん決定 2026-09-25。6か月で動く線は別の番号 M2-E-4e で段2c の候補に足す）。
+341c343
+< | まこさんが「直近N本の中での位置」の法則を足した | この工事の後の別の1変更＝元データの段1 に前処理を書き、`build_stage_candidates` が段1 でも `pre` を読む形にする。いまの `pre` の形は本数 n を持たない（abs 用）ので、そのとき n の欄を足す |
+---
+> | 固定の線に加えて、6か月で動く線を段2c の候補に足す（まこさん決定 2026-09-25＝法則 R6 の根拠の逐語 six-month range） | この工事の後の別の番号 M2-E-4e＝元データ（`m2_stage_candidates.json`）の段2c に窓の本数つきの前処理を書き、`build_stage_candidates` が段2c でも `pre` を読む形にする。いまの `pre` の形は本数 n を持たない（abs 用）ので、そのとき n の欄を足す（窓の本数は R6 の逐語から取る） |
+411c413
+< 10. **やることリストの正本（`m2_todo.json` → `engine_tuner_milestones2.md`）。**M2-E-4b の確かめ方①「`pre_b` が `None` でない案が出ることを機械で数える」は、まこさんが法則 R6・R10 の読みを決めるまで直さない。「レンジの法則にその文が0件であること（grep）」には直さない＝grep の語だけでは言い方の違う文（R6 の six-month range・R10 の自分の平均との比較）を拾えず、確かめ方にならない（監査 CP39 の A6-c）。決まった後に、その決定に合う確かめ方を `gen_regime_kb.py --write todo` で書く。
+---
+> 10. **やることリストの正本（`m2_todo.json` → `engine_tuner_milestones2.md`）。**M2-E-4b の確かめ方①「`pre_b` が `None` でない案が出ることを機械で数える」は、まこさんの決定（2026-09-25・逐語「②と③はどちらもCCのおすすめ案でOK」＝束1 では付けない・6か月で動く線は M2-E-4e）に合う形に直し、`gen_regime_kb.py --write todo` で作り直す。「レンジの法則にその文が0件であること（grep）」には直さない＝grep の語だけでは言い方の違う文（R6 の six-month range・R10 の自分の平均との比較）を拾えず、確かめ方にならない（監査 CP39 の A6-c）。★2026-09-26 に M2-E-4e を足したときには、この直しをしていない（監査 CP43）。
+434c436
+< <!-- ACC_IMPL_START hash=2909648af4dbaa47 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_IMPL_START hash=9c858dfefbae8e46 gen_acceptance.py が自動生成＝手で書き換えない -->
+895,896c897,898
+<       付けるかどうかは相場の法則で決める（まこさん決定 2026-09-06）。法則 R6 の説明「幅が過去より狭い状態」（根拠の逐語＝near the low end
+<       of its six-month range）と R10 の「ATR% の自分の平均との比較」を、この束では値決め窓の固定の分位で書く、と まこさんが決めた＝付けない（監査 CP39 の問い2）。
+---
+>       付けるかどうかは相場の法則で決める（まこさん決定 2026-09-06）。法則 R6 の固定の線（値決め窓で1回だけ決めた分位）は残し、6か月で動く線（根拠の逐語＝near the low end
+>       of its six-month range）は別の番号 M2-E-4e で段2c の候補に足す、と まこさんが決めた（2026-09-25・逐語「②と③はどちらもCCのおすすめ案でOK」）＝束1 では付けない。
+898,899c900,901
+<       受け口は消した＝前処理を付ける道は §2.2 の元データ（m2_stage_candidates.json の段ごとの `pre`）の1本だけ
+<       （段2a の abs がその実例＝`build_stage_candidates` が読む）。法則が足されたら元データの段1 に書き、段1 も読む形にする。
+---
+>       ★この段落は、まこさんが受け口を消すと決めたとき（実装の指示 12〜14 を確定にしたとき）だけ当てる。2026-09-25 の決定は「受け口は残す」。
+>       消した後に前処理を付ける道＝§2.2 の元データ（m2_stage_candidates.json の段ごとの `pre`）＝段2a の abs と、M2-E-4e で段2c に足す窓の本数つきの前処理。
+1516c1518
+< | 7 | 転がし窓の順位は、まこさんが法則 R6・R10 の読みを決めるまで付けない。受け口の引数 `pre_b` もそれまで消さない | レンジの法則 R6（説明＝幅が過去より狭い状態・根拠の逐語 six-month range）と R10（ATR% の自分の平均との比較）に、直近の窓に触れる文が在る（監査 CP39 の問い2）。元データの `pre` は段2a でしか読まれず、窓の本数の欄も無いので、窓の本数つきの前処理を付ける道は、いまは `pre_b` しか無い | ①「レンジの法則にその文が無い」として受け口を消す。捨てた理由＝前提が実物（R6・R10）と合わない ②N を私が決めて付ける。捨てた理由＝恒久42番・67番（法則に無い数字を作る） |
+---
+> | 7 | 転がし窓の順位は、束1 では付けない。受け口の引数 `pre_b` も消さない（まこさん決定 2026-09-25・逐語「②と③はどちらもCCのおすすめ案でOK」＝固定の線は残し、6か月で動く線は別の番号 M2-E-4e で段2c の候補に足す） | レンジの法則 R6（説明＝幅が過去より狭い状態・根拠の逐語 six-month range）と R10（ATR% の自分の平均との比較）に、直近の窓に触れる文が在る（監査 CP39 の問い2）。元データの `pre` は段2a でしか読まれず、窓の本数の欄も無いので、窓の本数つきの前処理を付ける道は、いまは `pre_b` しか無い | ①「レンジの法則にその文が無い」として受け口を消す。捨てた理由＝前提が実物（R6・R10）と合わない ②N を私が決めて付ける。捨てた理由＝恒久42番・67番（法則に無い数字を作る） |
+1549c1551
+< | 6 | 実行器の印の照らしを足したことで、印がオフの別枠を使う既存の何か（恒等レシピ・固定のレシピ・自己テストの見本）が G6 で拒否される | いまの印は別枠3種とも全部オン（2-1 の表）なので、印がオフで拒否される材料は0件。恒等3本と実行器の自己テストを走らせて確かめる |
+---
+> | 6 | 実行器の印の照らしを足したことで、印がオフの別枠を使う既存の何か（恒等レシピ・固定のレシピ・自己テストの見本）が G6 で拒否される | いまの印は別枠3種とも全部オン（2-1 の表）なので、印がオフで拒否される別枠の材料は0件。★本体の指標（実装の指示 33）は、印が「使わない」の種類が在る（使う 140種・使わない 117種＝組む側の自己テスト T33 の出力）。恒等レシピは lane＝legacy でも照らされるが、恒等レシピの材料は印の作り手（gen_indicator_switch.py の源3）が必ず「使う」にする（同じ道具の自己テスト T1）。恒等3本と実行器の自己テストを走らせて確かめる |
+1551a1554
+> | 9 | まこさんの決定が設計の途中で出たとき、元データの一部の文だけを揃え、決定の前の前提の文（まこさんが決めるまで・保留・段1 に足す）が残ったまま承認に出る（束1＝10行を揃えたが、概要・4-0 の②・4-5 の最後の行・4-13 の10・4-19 の2・やらないこと 6・決めてほしいこと・決めたこと 7・root か symptom の②・実装の指示 13 が残った。決めてほしいこと と やらないこと は、worklog 20260925 §6-5 に古いと書きながら直さず、自己申告にも書かなかった） | 決定が出たら、決定の前の前提を表す語（決めるまで・決まるまで・保留・付けると決まったら・段1）で元データの全部の行を grep し、当たった行を1行ずつ全文で読んで揃える。揃えない行は、理由と一緒に自己申告に書く |
+1570c1573
+< **③ root か symptom か**＝root です。①持続を各枠に1つずつ掛ける・内側を別の枠の条件1つに替える、はどれも「成立の全体が続く」にならない（向きの否定を包めない）。この設計は、実行器が内側に条件の束を受けられるようにして、持続が成立の全体を数える形そのものにします。②転がし窓の順位は、まこさんが法則 R6・R10 の読みを決めるまで付けず、受け口も消しません（監査 CP39 の問い2）。③印の照らしは、検査と評価の両方が通る `_material_name` の1か所に足します。
+---
+> **③ root か symptom か**＝root です。①持続を各枠に1つずつ掛ける・内側を別の枠の条件1つに替える、はどれも「成立の全体が続く」にならない（向きの否定を包めない）。この設計は、実行器が内側に条件の束を受けられるようにして、持続が成立の全体を数える形そのものにします。②転がし窓の順位は、束1 では付けず、受け口も消しません（まこさん決定 2026-09-25＝固定の線は残し、6か月で動く線は別の番号 M2-E-4e で段2c の候補に足す・監査 CP39 の問い2）。③印の照らしは、検査と評価の両方が通る `_material_name` の1か所に足します。
+1608a1612
+> | **完成の条件のうち、壊すプログラムを持たない6行（#3・#6・#7・#8・#9・#10）は、いつ閉じたと言えるか** | 承認のプログラムは、壊すプログラムの欄が空の行を「済」にしない（approve_impl.sh の _run の前で飛ばす）。この6行は、実装の監査（CP43）が同じコマンドを本物で走らせ直した出力（監査の結果の 3 節・10 節）で閉じたとする。表の状態の欄は「未着手」のまま残る |
+1640,1641c1644,1645
+< | 1 | 組んだ束の持続の内側が、成立の全体（A・B・C・（D）・（G））になっている。`engine_tuner_gen.py --selftest` の T46 が pass | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 組む側の持続の内側を帯の条件1つに戻すと、T46 が『❌ T46』で落ちる | `b99_streak_inner_band_only.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝組む側の持続の内側を帯の条件1つに戻すと、T46（持続の内側が成立の全体）が落ちた |
+< | 2 | 実行器が、内側が条件の束の持続を「束の評価の連続本数」として評価し、止めるべき形6通りを G5 で止める。`engine_tuner_exec.py --selftest` の T-STREAK-TREE が pass | `python3 scripts/priority_rebuild/engine_tuner_exec.py --selftest` | 実経路 | 実行器の「内側が束のときの評価」を、束の先頭の条件だけを評価する形に壊すと、T-STREAK-TREE が『❌ T-STREAK-TREE』で落ちる | `b100_streak_tree_eval.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝実行器の「内側が束のときの評価」を束の先頭の条件だけにすると、T-STREAK-TREE（別の式との突き合わせ）が落ちた |
+---
+> | 1 | 組んだ束の持続の内側が、成立の全体（A・B・C・（D）・（G））になっている。`engine_tuner_gen.py --selftest` の T46 が pass | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 組む側の持続の内側を帯の条件1つに戻すと、T46 が『❌ T46』で落ちる | `b99_streak_inner_band_only.sh` | — | **未着手** |
+> | 2 | 実行器が、内側が条件の束の持続を「束の評価の連続本数」として評価し、止めるべき形6通りを G5 で止める。`engine_tuner_exec.py --selftest` の T-STREAK-TREE が pass | `python3 scripts/priority_rebuild/engine_tuner_exec.py --selftest` | 実経路 | 実行器の「内側が束のときの評価」を、束の先頭の条件だけを評価する形に壊すと、T-STREAK-TREE が『❌ T-STREAK-TREE』で落ちる | `b100_streak_tree_eval.sh` | — | **未着手** |
+1643,1644c1647,1648
+< | 4 | 持続を掛ける行を消すと、今までどおり束が審査を通らなくなる（T24② を守る既存の測りが、新しい形でも効く） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 「法則に streak が在れば持続を掛ける」の if の行を常に偽にすると、T24② が『❌ T24②』で落ちる | `b77_no_streak.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝持続（streak）を掛ける行を消すと、法則の審査が束を落として T24② が落ちた |
+< | 5 | 実行器が、印（`geo_on`・`time_on`）から外れたレンジ幾何・時間帯の材料を G6 で拒否し、印に在るものは通す（148番）。`engine_tuner_exec.py --selftest` の T-g が pass | `python3 scripts/priority_rebuild/engine_tuner_exec.py --selftest` | 実経路 | 実行器のレンジ幾何の印の照らし（`if not geo_enabled(g):`）を常に偽にすると、T-g が『❌ T-g-2』で落ちる | `b103_geo_switch_unchecked.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝実行器のレンジ幾何の印の照らしを消すと、T-g-2（印から外したレンジ幾何が通ってしまう）が落ちた |
+---
+> | 4 | 持続を掛ける行を消すと、今までどおり束が審査を通らなくなる（T24② を守る既存の測りが、新しい形でも効く） | `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest` | 実経路 | 「法則に streak が在れば持続を掛ける」の if の行を常に偽にすると、T24② が『❌ T24②』で落ちる | `b77_no_streak.sh` | — | **未着手** |
+> | 5 | 実行器が、印（`geo_on`・`time_on`）から外れたレンジ幾何・時間帯の材料を G6 で拒否し、印に在るものは通す（148番）。`engine_tuner_exec.py --selftest` の T-g が pass | `python3 scripts/priority_rebuild/engine_tuner_exec.py --selftest` | 実経路 | 実行器のレンジ幾何の印の照らし（`if not geo_enabled(g):`）を常に偽にすると、T-g が『❌ T-g-2』で落ちる | `b103_geo_switch_unchecked.sh` | — | **未着手** |
+1647c1651
+< | 8 | 転がし窓の順位の受け口（`pre_b`）は組む側に残り、受け口を渡している呼ぶ側は0件のまま（まこさん決定 2026-09-25＝束1 では付けず、受け口も消さない・実装の指示 12〜14 は未決で当てない） | `grep -rn 'pre_b=' scripts/priority_rebuild` | 実経路 | 壊すプログラムは付けない（読むだけの数え上げ。1行でも出れば未達） | `—` | — | **未着手** |
+---
+> | 8 | 転がし窓の順位の受け口（`pre_b`）は組む側に残り（`sample_regime_build` の引数の定義 `pre_b: dict` が在る）、受け口を渡している呼ぶ側（`pre_b=`・`pre_b =`）は0件のまま（まこさん決定 2026-09-25＝束1 では付けず、受け口も消さない・実装の指示 12〜14 は未決で当てない）。★位置で7つ目の引数に渡す呼び方は、この数え上げでは見つけられない | `bash -c "grep -q 'pre_b: dict' scripts/priority_rebuild/engine_tuner_gen.py && ! grep -rnE --include=*.py 'pre_b *=' scripts/priority_rebuild"` | 実経路 | 壊すプログラムは付けない（読むだけの数え上げ。1行でも出れば未達） | `—` | — | **未着手** |
+1655c1659
+< <!-- ACC_CODEREF_START hash=c779c717e89e11ed gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=71ac5256bedf7462 gen_acceptance.py が自動生成＝手で書き換えない -->
+1663,1665c1667,1669
+< | `needed_qkeys` | 3643 |
+< | `_tree_conds` | 3610 |
+< | `_regime_on_conds` | （この関数は実物に無い） |
+---
+> | `needed_qkeys` | 3671 |
+> | `_tree_conds` | 3617 |
+> | `_regime_on_conds` | 3651 |
+1667c1671
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 157件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 158件の関数が在ります）。
+1673c1677
+< <!-- ACC_SPEC_START hash=b36f85eb6790aba2 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=1c26f92aa79085a2 gen_acceptance.py が自動生成＝手で書き換えない -->
+1730a1735,1750
+>     ],
+>     "_eval_cond": [
+>       "_eval_tree"
+>     ],
+>     "_check_cond": [
+>       "_walk_build_tree",
+>       "_material_name"
+>     ],
+>     "_material_name": [
+>       "geo_enabled",
+>       "time_enabled",
+>       "demand_enabled",
+>       "indicator_enabled"
+>     ],
+>     "_split_on": [
+>       "_regime_on_conds"
