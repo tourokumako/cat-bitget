@@ -1,0 +1,36 @@
+34,35c34,35
+< | run_breaks.py の旗の一覧 | `grep -n 'ap.add_argument' .claude/tools/run_breaks.py` | 536:    ap.add_argument("--design", default=str(DESIGN)) ⏎ 537:    ap.add_argument("--iter", dest="iter_name") ⏎ 538:    ap.add_argument("--out") ⏎ 539:    ap.add_argument("--freeze", action="store_true") ⏎ 540:    ap.add_argument("--check-frozen", action="store_true") ⏎ 541:    ap.add_argument("--parse-only", action="store_true") ⏎ 551:    ap.add_argument("--measure-only", action="store_true") ⏎ 560:    ap.add_argument("--lint-expect", action="store_true") ⏎ 564:    ap.add_argument("--count-tar…（出力 10 行のうち先頭 500 文字）（終了コード 0）／読み方＝壊すプログラムを一本だけ選ぶ旗が無い。測るだけの口は、表に載った壊すプログラムを全部 順に走らせる |
+< | 壊すプログラム一本の打ち切り | `grep -n '^TIMEOUT_SEC' .claude/tools/run_breaks.py` | 68:TIMEOUT_SEC = 600（終了コード 0）／読み方＝一本ごとの上限。私が前面で一回に走らせられる上限と同じ長さ |
+---
+> | run_breaks.py の旗の一覧 | `grep -n 'ap.add_argument' .claude/tools/run_breaks.py` | 558:    ap.add_argument("--design", default=str(DESIGN)) ⏎ 559:    ap.add_argument("--iter", dest="iter_name") ⏎ 560:    ap.add_argument("--out") ⏎ 561:    ap.add_argument("--freeze", action="store_true") ⏎ 562:    ap.add_argument("--check-frozen", action="store_true") ⏎ 563:    ap.add_argument("--parse-only", action="store_true") ⏎ 573:    ap.add_argument("--measure-only", action="store_true") ⏎ 582:    ap.add_argument("--lint-expect", action="store_true") ⏎ 586:    ap.add_argument("--count-tar…（出力 11 行のうち先頭 500 文字）（終了コード 0）／読み方＝壊すプログラムを一本だけ選ぶ旗が無い。測るだけの口は、表に載った壊すプログラムを全部 順に走らせる |
+> | 壊すプログラム一本の打ち切り | `grep -n '^TIMEOUT_SEC' .claude/tools/run_breaks.py` | 70:TIMEOUT_SEC = 600（終了コード 0）／読み方＝一本ごとの上限。私が前面で一回に走らせられる上限と同じ長さ |
+506c506
+< <!-- ACC_CODEREF_START hash=aa3d721cf34a9671 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=9e7fed65561ea05f gen_acceptance.py が自動生成＝手で書き換えない -->
+513,516c513,516
+< | `pick_rows` | （この関数は実物に無い） |
+< | `main` | 534 |
+< | `selftest` | 816 |
+< | `parse_table` | 124 |
+---
+> | `pick_rows` | 536 |
+> | `main` | 556 |
+> | `selftest` | 861 |
+> | `parse_table` | 126 |
+518c518
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 16件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 17件の関数が在ります）。
+524c524
+< <!-- ACC_SPEC_START hash=9f7e51394bd528ae gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=e96beb109b123259 gen_acceptance.py が自動生成＝手で書き換えない -->
+596a597
+>   "pick_rows": [],
+605a607
+>    "pick_rows",
+618a621
+>    "main",
+620a624
+>    "pick_rows",

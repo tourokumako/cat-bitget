@@ -32,6 +32,8 @@
   python3 .claude/tools/run_breaks.py --design <設計書> --iter <iter名> [--out <保存先>]
   python3 .claude/tools/run_breaks.py --freeze          # 壊すプログラムの凍結を作り直す
   python3 .claude/tools/run_breaks.py --selftest
+  python3 .claude/tools/run_breaks.py --design <設計書> --measure-only --only <壊すプログラムの名前>
+                                                        # 表に載った1本だけを測る（記録を書かない・2026-09-26）
 
 限界（正直に書く）
   ①この道具自身を CC が書き換えれば無効にできる（承認ゲートの対象なので、承認が要る）
@@ -531,6 +533,26 @@ def _stop_group(proc, hard: bool = False) -> None:
             pass
 
 
+def pick_rows(rows: list, only) -> tuple:
+    """`--only` で名指しした壊すプログラムの行だけを返す。戻り＝(走らせる行, 表に無い名前の一覧)。
+
+    ★2026-09-26（監査 CP43 の B3-c・設計書 iter="breaks-measure-one-20260926"・まこさん指示
+      「範囲外の話もこのSessionで修正してほしい」）
+      なぜ要るか＝測るだけの口は、表に載った壊すプログラムを全部 1回で走らせる形しか無かった。
+        束1 は4本で約16分かかり、私が前面で1回に走らせられる10分を超えるので、承認の前の検査 B1
+        （require_design_check_before_approval.py）を満たせなかった。1本ずつなら10分に収まる。
+    ★only が空なら、行を全部 そのまま返す（承認の経路は必ずここを通る＝今までと同じ動き）。
+    ★表に無い名前は、呼ぶ側が止める（何も走らせない）。打ち間違いで0本を測って「止まった 0/0」と
+      出すのを防ぐため。
+    """
+    if not only:
+        return rows, []
+    want = set(only)
+    names = {r.get("script") for r in rows if r.get("script")}
+    missing = sorted(want - names)
+    return [r for r in rows if r.get("script") in want], missing
+
+
 def main(argv: list) -> int:
     ap = argparse.ArgumentParser(description="完成の条件の壊すプログラムを機械で走らせる")
     ap.add_argument("--design", default=str(DESIGN))
@@ -562,11 +584,22 @@ def main(argv: list) -> int:
     #   ＝壊すプログラムが探す文字を、いまのコードで数える口。記録も凍結も1バイトも書かない（読むだけ）。
     #   `--design <設計書>` を一緒に渡すと、rc を決めるのは その設計書の表に載っている壊すプログラムだけ。
     ap.add_argument("--count-targets", action="store_true")
+    # ★2026-09-26（監査 CP43 の B3-c・設計書 iter="breaks-measure-one-20260926"）
+    #   ＝表に載った壊すプログラムを、名前で選んで走らせる。`--measure-only` と一緒のときだけ使える。
+    #   重ねてよい（`--only a.sh --only b.sh`）。★承認の経路（記録と「済」を書く）は表の全部を走らせる。
+    ap.add_argument("--only", action="append", default=[])
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args(argv)
 
     if a.selftest:
         return selftest()
+
+    # ★2026-09-26（設計書 breaks-measure-one-20260926）＝`--only` は測るだけの口でしか使わせない。
+    #   なぜ＝承認のプログラムの経路で1本だけを走らせると、記録と「済」が表の一部だけで書かれてしまう。
+    if a.only and not a.measure_only:
+        print("[STOP] --only は --measure-only と一緒のときだけ使えます"
+              "（承認の経路は、表の全部を走らせて記録を書くため）", file=sys.stderr)
+        return 2
 
     # ★2026-09-03（まこさん指示・設計書 §3.8 の2番）＝読むだけの口。
     #   表を読んで、拾った名前と「実物が在るか」を並べるだけ。
@@ -703,6 +736,14 @@ def main(argv: list) -> int:
             print(f"  ❌ 行 {r['no']}: {r['note']}", file=sys.stderr)
         return 2
 
+    # ★2026-09-26（設計書 breaks-measure-one-20260926）＝`--only` で名指しした行だけに絞る。
+    #   表に無い名前が1つでも在れば、何も走らせずに止める。`--only` が無ければ全部の行のまま。
+    rows, _missing = pick_rows(rows, a.only)
+    if _missing:
+        print(f"[STOP] --only の名前が、設計書の完成の条件の表に載っていません: {' '.join(_missing)}",
+              file=sys.stderr)
+        return 2
+
     before = {p.name: sha(p) for p in break_scripts()}
     n_run = n_stop = 0
     for r in rows:
@@ -749,6 +790,8 @@ def main(argv: list) -> int:
     # ★2026-09-07（150番）＝測るだけの口は、ここで終わる（記録も凍結も書かない）。
     if a.measure_only:
         print(f"   🧪 測るだけ（記録は書きません）: 止まった {n_stop}/{n_run}")
+        if a.only:
+            print(f"   （--only で選んだ {len(set(a.only))} 本だけを測りました）")
         return 0
 
     iter_name = a.iter_name or "unknown"
@@ -810,6 +853,8 @@ SELF_TESTS = (
     ("T15", "自己テストを測る壊すプログラムだけを拾い、EXPECT_MSG が「❌」で始まらないものを名指しする"),
     # ★2026-09-17（仕組み1の後半・設計書 iter="breaks-target-count-20260917"・L-605）
     ("T16", "壊すプログラムが探す文字を数え、1か所／0か所・2か所以上／数えない、に分ける（表に載っているものだけで止める）"),
+    # ★2026-09-26（監査 CP43 の B3-c・設計書 iter="breaks-measure-one-20260926"）
+    ("T17", "--only は表に載った名前の行だけを選び（空なら全部）、表に無い名前と --measure-only の無い使い方は止める"),
 )
 
 
@@ -841,6 +886,27 @@ def selftest() -> int:
     r7 = parse_table(body7)
     if len(r7) != 1 or r7[0]["script"] is not None:
         ng.append("T7")
+
+    # ★T17（2026-09-26・監査 CP43 の B3-c）＝`--only` の選び方と止め方。本物のファイルは触らない。
+    #   a＝名指しした行だけを選ぶ ／ b＝空なら全部の行のまま（承認の経路）／ c＝表に無い名前を返す
+    #   d＝`--measure-only` の無い `--only` は、何も読まずに rc=2（承認の経路で使わせない）
+    _r17 = [{"no": "1", "script": "b01_x.sh"}, {"no": "2", "script": "b02_y.sh"},
+            {"no": "3", "script": None}]
+    _p17, _m17 = pick_rows(_r17, ["b02_y.sh"])
+    if [r["no"] for r in _p17] != ["2"] or _m17:
+        ng.append(f"T17a: 名指しした行だけを選んでいない（{[r['no'] for r in _p17]}・{_m17}）")
+    _p17b, _m17b = pick_rows(_r17, [])
+    if len(_p17b) != 3 or _m17b:
+        ng.append(f"T17b: --only が空なのに行が減った（{len(_p17b)} 行）")
+    _p17c, _m17c = pick_rows(_r17, ["b01_x.sh", "b09_none.sh"])
+    if _m17c != ["b09_none.sh"]:
+        ng.append(f"T17c: 表に無い名前を返していない（{_m17c}）")
+    import contextlib
+    import io
+    with contextlib.redirect_stderr(io.StringIO()):
+        _rc17 = main(["--only", "b01_x.sh", "--design", "/no/such/design.md"])
+    if _rc17 != 2:
+        ng.append(f"T17d: --measure-only の無い --only が止まらない（rc={_rc17}）")
 
     global FROZEN, BREAKS_DIR, TIMEOUT_SEC
     _kf, _kb, _kt = FROZEN, BREAKS_DIR, TIMEOUT_SEC
