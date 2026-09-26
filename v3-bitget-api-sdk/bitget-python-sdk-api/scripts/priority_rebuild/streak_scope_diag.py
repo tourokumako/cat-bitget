@@ -9,6 +9,9 @@
   いまの形  on_cur  ＝ A ∩ B ∩ C ∩ D ∩ G ∩ streak_n(B)          （束の hysteresis の「入る条件」そのまま）
   §2.2 の形 on_want ＝ streak_n(A ∩ B ∩ C ∩ D ∩ G)               （streak の式は実行器と同じ rolling(n).sum() >= n）
   そのあと、同じ「出る条件」と保つ上限で状態（_hold_state）にしたものも比べる。
+  ★M2-E-4d（束1・2026-09-25）の後＝組む側の入る条件は streak_n(A ∩ B ∩ C ∩ D ∩ G) の1つになった＝on_cur と on_want は
+    同じ形。この診断が測るのは、実行器の持続の枝（束の評価の渡し方と連続本数の式）が、診断の式と1バーも違わないかだけ
+    （組む側が内側に何を入れたかは組む側の自己テスト T46 が見る・監査 CP43）。上の「いまの形」の2行は M2-E-4a の時の形。
 
 決まり＝売買記録CSVを書かない・審判（score.py）を呼ばない・コードを直さない（違えば直し方を出すだけ・直すのは別の番号）。
        値決め窓だけ（採点窓は1バーも使わない・H8）。未来は見ない（rolling は過去 n本だけ・H2）。
@@ -154,11 +157,17 @@ def main() -> int:
     qt = g.build_qtable(df, geo, recipes, g.quantile_list(lm), SEARCH_START, SEARCH_END)
 
     print(f"[streak_scope] 値決め窓 {SEARCH_START}〜{SEARCH_END}・束 {len(builds)}本")
+    bad = 0
     for i, bd, _d in builds:
         r = compare(df, bd, geo, qt, win)
         print(f"\n── 案 {i} ──")
         print(json.dumps(r, ensure_ascii=False, indent=1))
-    return 0
+        # ★監査 CP43（B1）＝完成の条件 #3 を終了コードで測れるようにする（直す前は食い違いが在っても 0 で終わった）
+        if r["on_cur_true_want_false"] or r["on_cur_false_want_true"] or not r["diag_matches_exec"]:
+            bad += 1
+    if bad:
+        print(f"\n[streak_scope] 食い違いの在る束 {bad} 本")
+    return 1 if bad else 0
 
 
 if __name__ == "__main__":

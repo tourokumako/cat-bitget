@@ -3293,7 +3293,7 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
     # ── F 何本 続いたか（R4）＝★M2-E-2 で新しく足した。直す前は無く、20回とも R4 で落ちていた ──
     #    ★M2-E-4d（束1・2026-09-25）＝内側を「成立の全体」にするため、D と G の後ろ（on_core を作った後）で組む。
     cond_f = None
-    # ── E 状態を保つ（C6・C7）＝on＝A∩B∩C（∩F）／off＝それぞれを緩い側へずらした any ──
+    # ── E 状態を保つ（C6・C7）＝on＝持続 F の1つ（内側＝A∩B∩C∩(D)∩(G)・M2-E-4d）か、法則に R4 が無ければ A∩B∩C∩(D)∩(G)／off＝A・B・C をそれぞれ緩い側へずらした any ──
     off_c = json.loads(json.dumps(strong))
     off_c["value"]["threshold_q"] = _loose_q_fixed(limits, strong["value"]["threshold_q"], strong_side)
     # ── 段2b 向きの否定（R8・承認済みの借用）＝真偽の列を `not` で包んで1つ入れる（手順8） ──

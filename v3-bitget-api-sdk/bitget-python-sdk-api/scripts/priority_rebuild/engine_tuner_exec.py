@@ -4222,17 +4222,28 @@ def selftest() -> None:
             _sw_d[_key_g] = _keep_g
     print("[T-g 印の照らし（レンジ幾何・時間帯）] 印に在るものは通る・印から外すと G6 → "
           + ("pass（全部）" if not [x for x in ng if x.startswith("T-g")] else "❌ 落ちた"))
-    # T-h 印（on）から外した本体の指標は G6 が拒否する（監査 CP39 の A7＝実行器の本体の指標の二重の守り）
+    # T-h 印（on）から外した本体の指標は G6 が拒否し、印に在るものは通る（監査 CP39 の A7＝実行器の本体の指標の二重の守り）
+    #   ★監査 CP43＝T-g と同じく、先に「印に在れば通る」を確かめる（T-h-1）。これが無いと、印とは別の理由で
+    #     止まっても T-h-2 が通ってしまう（止まった理由の文字に「印」が在るかも見る）。
     _keep_h = set(_sw_d["_on_set"])
+    try:
+        _k_h, _n_h = _material_name({"family": "RSI", "param": 14, "tf": "5m"}, "search")
+        if _k_h != "col":
+            ng.append(f"T-h-1: 印に在る指標 RSI の種別が違う（{_k_h}/{_n_h}）")
+    except SystemExit as _e_h1:
+        ng.append(f"T-h-1: 印に在る指標 RSI が拒否された: {str(_e_h1)[:80]}")
     try:
         _sw_d["_on_set"] = _keep_h - {"RSI"}
         try:
             _material_name({"family": "RSI", "param": 14, "tf": "5m"}, "search")
-            ng.append("T-h: 印から外した指標 RSI が通ってしまう（印と照らしていない）")
-        except SystemExit:
-            pass
+            ng.append("T-h-2: 印から外した指標 RSI が通ってしまう（印と照らしていない）")
+        except SystemExit as _e_h2:
+            if "印" not in str(_e_h2):
+                ng.append(f"T-h-2: 印から外した指標 RSI が、印とは別の理由で止まった: {str(_e_h2)[:80]}")
     finally:
         _sw_d["_on_set"] = _keep_h
+    print("[T-h 印の照らし（本体の指標）] 印に在るものは通る・印から外すと G6 → "
+          + ("pass（全部）" if not [x for x in ng if x.startswith("T-h")] else "❌ 落ちた"))
     # T-d 前処理を付けた材料も、名前が登録に無ければ G6 が拒否する
     try:
         _material_name({"family": "RSI", "tf": "5m", "param": 14, "pre": {"op": "ts_max", "n": 5}},
