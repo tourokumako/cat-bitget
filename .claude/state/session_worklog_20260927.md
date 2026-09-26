@@ -140,3 +140,138 @@
 
 - `m2_todo.json` の M2-E-4d・4b・5b（束1）の状態が「まだ」のまま。束1 は 2026-09-26 に6段が終わっている（commit 8ea1b9a）。★✅済 にするかは、確かめてから まこさんに出す。
 - 教訓 L-630 を足した。
+
+### 4-6 commit（まこさん OK「１，２どちらもOK」）
+
+- 置き場の対策の8ファイルを commit した＝`2cb1bef`。decisions.md はセッションの始めから変更ありで、私は触っていない＝入れていない。
+- ★commit のコマンドは、`cut` とパイプを付けたら土台ゲートに止められた（hook の .sh の名前がコマンドに在り、読むだけの語の一覧に `cut` が無い）。git add と git commit を別々に打って通した。
+
+## §5 47番 M2-E-4e の読むもの宣言13件を開いた（2026-09-27）
+
+### 5-1 宣言と OK
+
+- 宣言＝`design_read_plan.md`（設計書 m2e4e-r6-moving-line-20260927・13件）。まこさんの OK（逐語）＝「１，２どちらもOK」。宣言に写した。
+- ★貼った印（design_read_plan_posted）は、設計書を書く直前に宣言の全文を貼ってから作る。
+
+### 5-2 読んだもの（全部 Read tool）
+
+- engine_tuner_milestones.md の M2〜M4（124〜205行）。engine_tuner_milestones2.md の §0-0（468〜565行）・§2 のフロー表（568〜597行）・§2.1〜§2.2 の段の表（713〜772行）・§2.2-0 の段2c（938〜975行）・§2.2-2（1073〜1090行）。
+- m2_todo.json の M2-E-4e・M2-E-6（968〜1000行）・M2-F-13（1206〜1223行）・依存の表の M2-E-4e（1912〜1923行）。
+- m2_stage_candidates.json の全文（108行）。
+- regime_laws.json の R6（699〜730行）。regime_detection_kb.md の R6 の表の行（810〜813行）と本文（854〜889行）。
+- engine_tuner_gen.py の冒頭（1〜40行）・`stage_candidates` と `STAGE_SPEC`（2466〜2560行）・`build_stage_candidates`（2775〜2959行）・`sample_regime_build` の前半（3170〜3299行）・`build_qtable`（3740〜3814行）。
+- engine_tuner_exec.py の前処理の部品（398〜562行）。
+- 監査 CP39 の結果の A6-a〜c（100〜103行）と問い1〜3（213〜216行）。
+- session_worklog_20260925.md の §6（240〜279行）。
+- cat_requirements.md の §4.6（529〜717行）・exchange_spec.md の決済方法（116〜137行）・engine_tuner_requirements.md の目的と作ってはいけないもの（28〜103行）。
+
+### 5-3 分かったこと（実物の行つき）
+
+1. **段2c のいまの候補**＝261本・6種（stdev%・BB幅・Donchian幅・realized_vol が42本ずつ・ATR% 45本・SQZ_ON 48本）。出どころ＝milestones2 の §2.2-0（機械が `build_stage_candidates` を呼んで書いた表）。★m2_todo.json の M2-F-13 の注意「いまの候補は213本・5種（SQZ_ON が出ていない）」は古い＝食い違い。
+2. **元データの `pre` の形**＝語ごとの文字の部品名だけ（例＝段2a の `"pre": "abs"`）。窓の本数の欄が無い。読むのは `build_stage_candidates` の `if stage == "stage2a":` の分岐だけ（`spec_c["pre"].get(fam)` → `{"op": _op}`）。
+3. **窓つきの前処理の部品**は実行器に在る＝`ts_rank`（いまのバーを含めた直近 n本の中の順位 0〜1）・`ts_min`・`ts_max`（いまのバーを含めない直前 n本）・`ts_std`。どれも過去だけを見る。★「直近の範囲の中のどこか（最小と最大の間の位置）」を出す部品は無い。
+4. **閾値の決め方**＝`build_qtable` は、材料に前処理があれば実行器と同じ式（`ex._apply_pre`）を掛けてから、値決め窓の分布で分位を1回だけ固定する。＝前処理つきの材料は、いまの道でも分位の閾値を持てる。
+5. **six-month の逐語が付いているのは BB幅 の根拠の行だけ**（regime_laws.json の R6 の根拠の1行目）。R6 が数える6種のうち、SQZ_ON は「オン＝低ボラ」の真偽、ATR%・realized_vol・stdev% は「定義そのもの」、Donchian幅 は TradingView のスクリプトの説明が出どころで、窓の長さの逐語は無い。
+6. **まこさんの決定の範囲**（worklog 20260925 §6-2 の②）＝法則 R6 の「小さい」について、固定の線を残したうえで、6か月で動く線も候補に足し、成績で engine_tuner に選ばせる。R10 は入っていない。
+7. **§2.2-2 の3件（A voting・B 同じ系統は1本まで・C 絶対値）**は、設計書に書く先を決めないと `gen_s22_map.py` の表が作れない（fail-closed）。B は段2c に効く（R2 の上限1 で3枠目の候補が決まる）。
+8. **窓の本数**は時間足ごとに違う（段2c は 1m・3m・10m を除く全時間足）。6か月を足の本数に直す計算が要る。★5分足なら数万本の窓で rolling の順位を取る＝走らせる前に時間を小さく測る（恒久60〜62番）。
+
+### 5-4 まこさんの決定（2026-09-27・逐語）
+
+- 「１，案A」＝動く線は **BB幅 だけ**に付ける（six-month の逐語が付いているのは BB幅 の根拠の行だけ）。
+- 「２，案①、新しい部品を1つ足す案」＝「6か月の範囲の下の方」は、**直近6か月の最小と最大の間のどこにいるか**を出す新しい部品で測る（`ts_rank` の順位ではない）。部品は実行器（`engine_tuner_exec.py` の `MATERIAL_PRE`）に足す。
+- ★固定の線は残す。どちらが良いかは成績で engine_tuner が選ぶ（2026-09-25 の決定のまま）。
+
+### 5-5 部品の一覧を読む道具を grep で出した（L-624）
+
+- `MATERIAL_PRE`・`pre_ops(`・`NO_ARG_OPS`・`SINCE_OPS` を読むもの＝`engine_tuner_exec.py`・`engine_tuner_gen.py`・`gen_materials.py`・`.claude/tools/gen_regime_kb.py`・`.claude/breaks/b98_qkey_abs_missing.sh`（生成物＝materials.json・s22_map_src.json）。
+- `condition_parts` を読むもの＝`engine_tuner_exec.py`（説明と拒否の文）・`gen_materials.py`（★6 の節と番人⑤）・`condition_parts_diag.py`。
+- `ts_rank` を直接書くもの＝上に加えて、恒等の見本 `golden/exit_forms_20260825/` の2本。`leak_causality_diag.py` と型の表を作る道具は部品の名前を持たない。
+- ★論点＝`engine_tuner_gen.py` の `_pre_opts = [None] + ex.pre_ops(same_unit=False)`（1805行付近）と `_lv_ops = ex.pre_ops(same_unit=False)`（5211行付近）は、単位の違う部品の一覧をそのまま使う。新しい部品（0〜1）を単位の違う部品として足すと、ここの一覧が変わる＝入口の案の作り方にも効く。設計書で扱う。
+- 作り直しの順番（`pre_audit_check.py` の ORDER）＝型の表 → 出口の表 → 印 → 材料の文書 → G2 → H2。型の表を作る道具は部品の一覧を読まない＝型の表の `--approve` が要るかは、設計の前に確かめる。
+- 読むもの宣言に足す案＝11件（宣言の14〜24番）。
+
+### 5-6 足した11件を開いた（まこさん OK「OK」・全部 Read tool）
+
+- condition_parts.json の冒頭と "have"（1〜70行・190〜259行）／gen_materials.py の condition_parts と parts_matrix（842〜1041行）・基準値の表（1150〜1225行）・T17（2612〜2633行）／condition_parts_diag.py の p_ts_rank（136〜161行）・部品の表と水準の組み立て（288〜317行）・見本（400〜421行）／engine_tuner_exec.py の前処理の検査（560〜629行）と `_mat_key`（2087〜2098行）／engine_tuner_gen.py の 1600〜1649行・1795〜1816行・5200〜5241行・7088〜7135行／gen_regime_kb.py の 955〜1004行・1185〜1200行／b98 の全文／pre_audit_check.py の ORDER と CHECKS（40〜110行）／gen_acceptance.py の冒頭（1〜120行）／束2 の元データの欄の形（jq）／恒等の見本 recipe_level_both.json（18〜33行）。
+
+### 5-7 分かったこと
+
+1. **部品の正本**＝condition_parts.json の "have" は id が実行器の鍵と同じで、業界の同じもの（src）を持つ。前処理の部品は分解の表（form_decomposition）に入らない＝番人⑤に当たらない。
+2. **gen_materials.py** は `MATERIAL_PRE` の数を実物から数える（T17）＝部品を足すと材料の文書の作り直しが要る。型の表は部品の一覧を読まない＝型の表の `--approve` は要らない見込み（ORDER の先頭2つを飛ばせるかは設計書で確かめ方を書く）。
+3. **乱数の道**＝`engine_tuner_gen.py` の 1805行付近（`_pre_opts = [None] + ex.pre_ops(same_unit=False)` → `rng.integers`）は入口の案の作り方で、単位の変わる部品を乱数で1つ引く。新しい部品（0〜1）をそのまま足すと、この乱数の道が新しい部品も引く＝乱数の道を広げる形になる（恒久67番）。自己テスト T1-C6e（5211行付近）も同じ一覧を使う。
+4. **分位の鍵**＝`_mat_key` は窓を持つ部品を `op{n}:名前` にする＝新しい部品は既存の枝で鍵が作れる。b98 が狙う行（NO_ARG_OPS の枝）は触らない。
+5. **検査**＝`_material_name` は窓を持つ部品に `n`（2以上の整数）を求める＝新しい部品もこの枝で通る。
+6. **恒等の見本**は `ts_rank`（本数6）を使う＝新しい部品を足しても変わらない。
+7. **元データの形**＝束2 の元データは30の欄（完成の条件 19行・実装の指示 25件ほか）。hook 12 が ratchet の acceptance_src.json への Write を止める＝控えを .claude/state に書き、まこさんに cp していただく。
+
+### 5-8 設計の骨組み（私の案・元データを書く前にチャットに出す）
+
+- **新しい部品** `ts_pos`＝直近 n本の最小と最大の間の、いまの値の位置（0〜1・いまのバーを含める・最大＝最小なら値なし）。出どころ＝R6 の逐語 "near the low end of its six-month range"。業界の同じもの（Stochastic の式＝いまの値 − n本の最小 を 幅で割る）は、元データを書く前に Web で本文を開いて確かめる。
+- **乱数の道に入れない**＝部品の性質に「案を作る乱数の道で引かない」の印を足し、1805行付近と T1-C6e の一覧から外す＝入口の案の作り方は1本も変わらない（恒等3本で確かめる）。
+- **元データ**＝m2_stage_candidates.json の段2c の BB幅 の語に、窓つきの前処理（部品＝ts_pos・窓＝6か月）を書く欄を足す。6か月を足の本数に直す計算（6か月＝365.25÷12×6 日・日 × 1日の足の本数）はコードが行う。
+- **組む側**＝`build_stage_candidates` が段2c でも `pre` を読み、BB幅 は「前処理なし（固定の線）」と「ts_pos つき（動く線）」の両方を候補に出す＝BB幅 の候補が 42本 → 84本の見込み（数は作り直した §2.2-0 の表で出す）。
+- **作り直し**＝condition_parts.json・condition_parts_diag.py（部品と見本を1つずつ）・材料の文書・§2.2-0 の表・G2・H2。
+- まこさん（逐語）＝「OK」（骨組みへの OK・2026-09-27）。
+
+### 5-9 Web で出どころを開いた（2026-09-27・WebSearch 3本・WebFetch 3本）
+
+- **部品の式**＝StockCharts ChartSchool「Stochastic Oscillator (Fast, Slow, and Full)」https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stochastic-oscillator-fast-slow-and-full の逐語＝"%K = (Current Close - Lowest Low)/(Highest High - Lowest Low) * 100"／"Lowest Low = lowest low for the look-back period"／"The Stochastic Oscillator measures the level of the close relative to the high-low range over a given period."。★新しい部品は、この式の「値」を BB幅 に置き換え、×100 をしない（0〜1）形。
+- **業界の同じもの**＝TradingView Pine の `ta.stoch(source, high, low, length)`（検索の結果の説明＝source・high・low・length を渡す）。★本文の式はリファレンスの本文を開けていない＝condition_parts.json の src には StockCharts の %K を主にし、pine は名前だけ添える。
+- **窓の長さ**＝StockCharts ChartSchool「Bollinger Band Squeeze」https://chartschool.stockcharts.com/table-of-contents/trading-strategies-and-models/trading-strategies/bollinger-band-squeeze の逐語＝"Ideally, BandWidth should be near the low end of its six-month range. Second, wait for a band break to signal the start of a new move."（前の文＝"First, look for securities with narrowing Bollinger Bands and low BandWidth levels."）。
+- ★「Bollinger BandWidth」のページ（法則ファイルが並べて挙げている方）には six-month の文が無い。在るのは "For example, an eight- to 12-month chart will show BandWidth highs and lows over a significant timeframe."＝別の長さ。まこさんの決定は six-month（2026-09-25）なので、窓は six-month。8〜12か月は設計書の「やらないこと」に書く（広げない）。
+
+### 5-10 設計書の元データを書いた（2026-09-27）
+
+- 元データ＝`.claude/state/acceptance_src_m2e4e-r6-moving-line-20260927.json`（iter m2e4e-r6-moving-line-20260927）。手本＝束2 の元データ（欄の形を Read tool で全部 開いた）。
+- 中身＝TARGET 5本（engine_tuner_exec.py・engine_tuner_gen.py・condition_parts_diag.py・m2_stage_candidates.json・condition_parts.json）／`.claude/tools/gen_regime_kb.py` は当てる道具の NEVER_WRITE なので私が Edit で書く（実装の指示 18〜22）／NEW_FILE 3本（b109〜b111）／実装の指示 26件／完成の条件 13行／決めてほしいこと 1件（動く線の閾値の分位＝束2 の決めてほしいこと2 と同じ件）。
+- 決めた形＝部品 `ts_pos`（性質 `gen_draw: False`）・`pre_ops` に絞り `gen_draw`・入口の案の道（`_make_cond`）と T1-C6e は `gen_draw=True` だけを引く・元データの新しい欄 `pre_win`（`pre` と分ける）・窓＝`pre_win_bars`（6か月 × 365.25÷12 日 × 288本＝52,596本）・動く線は固定の線の後ろに並べる・番人 T47（組む側の自己テスト）。
+- 照らしたもの＝jq で読める／e37 0件／✅ 0件（T47 の出力の行の ✅ を言葉に替えた＝承認ゲートの B-6 が実装の指示の中も数えるため）／「実測＝」0件／「なぜ作るか」の読み方の数字 0件／「別途」0件／直す前の文字 21件が各ファイルで1か所（grep -c -F）／「なぜ作るか」の10本を走らせて全部 実物に当たった／直す行を探す壊すプログラム5本（b78・b79・b82・b92・b93）の探す行は消さない／直すファイルの commit されていない差 0。
+- ratchet の元データ（束2・CP45 の修正を当てた後・sha256 1060db70…）の控えを `.claude/state/acceptance_src_m2e-bundle2-20260926_cp45.json` に取った（L-622）。
+- 次＝まこさんに cp をお願いする（hook 12 が ratchet の acceptance_src.json への Write を止めるため）→ `gen_acceptance.py --write` → `pre_audit_check.py --check-design` → 設計書の監査 CP46 の依頼書。
+
+### 5-11 cp の1回目・設計書・承認の前の検査（2026-09-27）
+
+- まこさん（逐語）「コマンド打った」。ratchet の acceptance_src.json の sha256＝e9fb2695…（控えと同じ）。
+- `gen_acceptance.py --write`＝設計書 1,724行・囲み 12個・法則 51件／51行。
+- 書いた直後の検査（hook `show_design_check_after_write`）が「不足 1件」＝A2（設計書の門の検査）が rc=1。中身は4つ＝①目的の照合（purpose_check.md）が束2 のまま ②「塞げないもの」に監査 Q5 の1〜5 が無い（受け入れ条件ゲート・監査 cp14 の B-5）③本文に出てくる `gen_s22_map.py` と `design_read_plan.md` を Read tool で開いていない（必読ゲートの C）④読むもの宣言の貼った印が無い。
+- 直した＝①purpose_check.md をこの工事の中身に書き直した ②元データの「塞げないもの」に Q5 の1〜5（束2 の元データと同じ文）を足した（sha256 0d090f9a…）③design_read_plan.md を Read tool で開いた。`gen_s22_map.py` は宣言に無いので、25番として足す案を書き、まこさんの OK 待ち ④印は宣言を貼ってから作る。
+- ★私の見落とし＝束2 の元データの「塞げないもの」の Q5 の5件は、受け入れ条件ゲートが毎回 求めるものだった。手本を読んだのに、この工事の中身に合わせて書き替えるときに落とした。
+
+### 5-12 cp の2回目・設計書の作り直し・承認の前の検査が通った（2026-09-27）
+
+- まこさん（逐語）「コマンド打った」。ratchet の acceptance_src.json の sha256＝0d090f9a…（控えと同じ）。`gen_acceptance.py --write`＝設計書 1,729行・囲み 12個・法則 51件／51行。
+- ★私の誤り＝目的の照合の日付に、事実と違う「12:00」を書いていた（いまは 01:56）。正しい時刻に直した。
+- まこさん（逐語）「OK」＝読むもの宣言の25番（gen_s22_map.py）への OK。宣言に写し、冒頭（1〜60行）を Read tool で開き、宣言の全文をチャットに貼って印を作った。
+- 目的ゲートが、条件3 の根拠の文「時間足の絞りは変えない」の中の語を「変えない」の印として読んで止めた＝「今のまま」に言い換えた。
+- `require_design_check_before_approval.py --try`＝止まり所 A1〜A8・B1・B2 の不足0件（15.0秒）。
+- 次＝設計書の監査 CP46 の依頼書（6段の①）。依頼書の元データを CP44 の元データを手本に書き、`gen_audit_docs.py request` で作る。
+
+### 5-13 ★設計の穴を1つ見つけた＝データの前の余白が60日で、6か月の窓に足りない（2026-09-27）
+
+- `pre_audit_check.py --verify`＝「チェックの後にコードが変わっている」＝`--run` を裏で走らせた（リダイレクトを付けた1回目は土台ゲートに止められた・2回目はリダイレクトなし）。
+- 依頼書の問いを考える途中で確かめた＝engine_tuner が値決め窓の前に読む余白は `engine_tuner.py`:99「WARM = pd.Timedelta(days=60)                 # 助走（RG 168h＋rolling を満たす a-priori）」。動く線は直近6か月（約183日＝5分足 52,596本）の過去が要る。★このままでは、値決め窓（2024-03-01〜）の最初の約4か月と、確認窓（2025-09-01〜）の最初の約4か月で、動く線が値なし＝条件が不成立になる。設計書はこの点を1行も書いていない（私の見落とし）。
+- `WARM` を使う所（grep）＝engine_tuner.py の本走・engine_tuner_gen.py の本走（7730行）・恒等の走行（engine_tuner_exec.py の 3071・3352・3627行）・H2（leak_causality_diag.py の 315行）・M2-F で段を測る道具（regime_r9_diag.py の 309行）・streak_scope_diag・engine_tuner_fire_diag・tuner_window_diag・tuner_backcalc・build_regime_from_tuner・説明書（gen_engine_tuner_manual）。
+- 直し方の案（まこさんに出す）＝A `WARM` を6か月以上にする（全部の走行で余白が延びる＝上位足の長い期間の指標の値が変わり、恒等の走行の結果が変わりうる）／B 直さない（動く線は値決め窓の約4分の3でしか測れない＝固定の線と公平に比べられない）／C 動く線を使う走行だけ、余白を「60日」と「6か月」の長い方にする（恒等の走行と H2 は変わらない。M2-F で段を測る道具は M2-F-2 の工事で同じ形にする）。私の案＝C。
+- ★設計書の監査の依頼書は、この決定の後に書く（依頼書の元データはまだ書いていない）。
+- `pre_audit_check.py --run`（裏）＝全部 rc=0（H2 304.4秒・G2 30.6秒・観察の道具の自己テスト 120.2秒 ほか）・記録の指紋 979218796f8896d4…。「まこさんの承認を待つもの 2件」＝型の表と出口の表の `--write`・`--approve`（この工事では型の表は変わらない見込み）。途中で G2・H2 の記録が書き直されたので、Stop hook の指示で `tidy_next_step.py --write` を2回 打った。
+- まこさん（逐語）「余白について、よくわからないので、わかり易く説明しなおして」「よくわからない。子どもでもわかるように説明できる？」→ 気温の記録のノートのたとえで説明し直した。
+- まこさん決定（逐語）「余白の直し方→C」＝動く線を使う走行だけ、余白を長くする。
+- 読むもの宣言に26番（engine_tuner_gen.py の本走の口 7675〜7760行）と27番（engine_tuner.py の WARM と load_windows_cached）を足す案を書いた。まこさんの OK 待ち。
+- まこさん（逐語）「OK」＝26番・27番への OK。宣言に写し、engine_tuner.py の 90〜105行・132〜176行と engine_tuner_gen.py の 7675〜7760行を Read tool で開いた。本走（`run_main`）は 7730〜7731行で `et.WARM` を渡してデータを読む。
+- 元データを直した（sha256 0053a412…）＝関数 `stage_warm`（元データに pre_win が在れば余白＝いまの余白＋いちばん長い窓）を実装の指示 8 に足し、`run_main` の読み込みを `stage_warm(et.WARM)` にする実装の指示 27、T47 の⑤（60日＋52596本×5分）、壊すプログラム b112（実装の指示 28）、完成の条件 #4 を足した。やらないこと2件（案A・regime_r9_diag は M2-F-2）・決めたこと・リスク2件・4-0 の⑤・4-3・4-5・4-11・4-13・4-19・見積もり・なぜ作るか（余白の grep）も揃えた。同じ事実を揃えるゲートに2回 止められ（「3本」が WebSearch 3本の文に残る＝別の事実）、同じ直しをもう一度 書いて通した。「なぜ作るかの9行目・10行目」の指し先を10・11 に直した。
+- まこさん（逐語）「コマンド打った」（cp の3回目）。ratchet の acceptance_src.json の sha256＝0053a412…（控えと同じ）。`gen_acceptance.py --write`＝設計書 1,843行・囲み 12個・法則 51件／51行。止まり所は読むもの宣言の貼った印だけ＝26番・27番を足した所を貼り、印を作り直した。`require_design_check_before_approval.py --try`＝不足0件（15.7秒）。`pre_audit_check.py --verify`＝「監査に出せます」。設計書の sha256＝22287788…。
+- 依頼書の元データ `SDK/.claude/audits/cp46_work/cp46_src.md` を書いた（手本＝CP44 の元データ）。問い3つ（部品の式と窓と余白／段2c の並びといまの束と入口の案／実装の指示28件と完成の条件14行）・観点 A0〜A5・B1・B2・C1・外部検索1件（直近の範囲の中の位置を条件にする形）・自己申告5件・事実データ13行・着手前必読18件。
+- `gen_audit_docs.py request`＝依頼書 `SDK/.claude/audits/inputs/2026-09-27_m2e4e_r6_moving_line_design_cp46_audit_request.md`（459行・問い 9件・事実データ 1件・外部検索 1件・自己申告 5件）。依頼書の「設計書のハッシュ値」＝22287788…＝いまの設計書と同じ。
+- 次＝まこさんに依頼書をチェックしていただく（まこさん決定 2026-09-09）→ 別のセッションで監査を起動していただく。
+- ★長さの考え＝最初の窓の1本目の BB幅 にも、指標の助走（いまの 60日）が要る。だから余白＝60日（WARM）＋ 6か月（365.25÷12×6＝182.625日）。どちらも既に在る数字と逐語から決まる（私は数字を作らない）。
+
+## §6 125回目の終わり＝引き継ぎと commit（2026-09-27）
+
+- まこさん（逐語）「依頼書OKなので、引き継ぎ作成、コミットしてセッション終了する」＝依頼書 CP46 のチェックは通った。監査は別のセッションで まこさんが起動する。
+- `m2_todo.json` の M2-F-2 の注意に1行 足した＝段を測る道具 `regime_r9_diag.py` はデータを読む余白を `stage_warm(et.WARM)` にする（まこさん決定「余白の直し方→C」・next_step §6 の215番）。
+- 同じく M2-F-13 の注意の「いまの候補は213本・5種」を、数字を書かない文に直した（候補の本数と種類は §2.2-0 の表を見る）。古くなる数字を手で書いていたため（next_step §6 の216番）。
+- `gen_regime_kb.py --write todo`・`--write flow`＝やることリスト 1,556行・フロー 143行。`--selftest` 15/15 pass・`--verify all` ずれ 0件。
+- next_step の元データ `next_step_src.json`＝0-1 を125回目に書き替え（★いまここ＝47番の6段の②＝監査 CP46）、124回目の 0-1 に「次の書き替えで消す」を付けた。47番の状態・§6 の215〜217番を足した。
+- 教訓 L-631 を足した（長い窓の前処理は、データの前の余白と一緒に考える／手本の元データを書き替えるとき、hook が求める欄を落とした）。
+- commit は まこさんの OK（上の逐語）で行う。
