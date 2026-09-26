@@ -90,3 +90,53 @@
 
 - 承認②の後の記録18ファイルを commit した＝b108／承認の控え m2e-bundle2-20260926 の一式（.03・.04 の .md・.diff.txt・.sha.txt、.breaks.json・.dirty.json・.md）／breaks_frozen.json／m2_todo.json・engine_tuner_milestones2.md／next_step の3ファイル／この worklog／lessons_active.md。コミットの文はスクラッチのファイルに書いて `git commit -F` で渡した。
 - ＝124回目はここで終わり。次のセッションは next_step の47番（M2-E-4e）の読むもの宣言から。
+
+## §3 125回目の開始＝47番 M2-E-4e の読むもの宣言（2026-09-27）
+
+### 3-1 やったこと
+
+- 必読3本（next_step.md・adopted_strategies.md・permanent_rules.md）を Read tool で開いた。
+- ToDo（8件）を書き、`enforce_todo_declaration.py --check` が rc=0。チャットに全文を貼って印を作った。
+- 目標逆算ブロック（goal_block.md）を書いた。選定＝next_step §0-2 の47番（M2-E-4e）。
+- 前の読むもの宣言（束2 の⑥・14件）の控えを `design_read_plan_m2e-bundle2-20260927-step6.md` に取った（sha256 31cb6a71…・L-622）。
+
+### 3-2 宣言に載せる相手を grep で探した（中身は OK の後に読む）
+
+- 段2c の候補の元データ＝`.claude/ratchet/m2_stage_candidates.json`（108行）。`"key": "stage2c"` は72行。`pre` の欄は段2a の51〜53行だけ。★next_step の47番は置き場を書いていない。`scripts/priority_rebuild/` には無く、`.claude/ratchet/` に在った。
+- 前処理を読む場所＝`engine_tuner_gen.py` の `stage_candidates`（2472行）・`build_stage_candidates`（2775行）・段2a だけで読む分岐（2895行付近）・受け口 `pre_b`（3192〜3261行）。
+- 前処理の部品＝`engine_tuner_exec.py` の `pre_ops`（443行）・`_apply_pre`（493行）・`ts_rank` の説明と計算（420行・516行）。
+- 法則 R6 の出どころ＝`regime_laws.json` の R6（700行）と逐語の行（715行＝「Ideally, BandWidth should be near the low end of its six-month range.」）。原本＝`regime_detection_kb.md` の R6（812行・854行）。
+- 監査 CP39（束1 の設計書の監査）の A6-b＝結果ファイルの102行。
+- やることの行＝`m2_todo.json` の M2-E-4e（969行・1916行）。
+- ★Bash の heredoc で worklog に書こうとしたら、hook 11（監査の結果ファイルの名前が文字に在ると止める）に止められた。書く道具を Edit に替えた。
+- 読むもの宣言（13件）を `design_read_plan.md` に書き、チャットに貼った。★まこさんの OK 待ち。
+
+## §4 触るものの置き場の書き漏れの対策（2026-09-27・まこさん指示「→今後間違えないように対策して」）
+
+### 4-1 何が起きたか
+
+- next_step の47番と `m2_todo.json` の M2-E-4e は、`m2_stage_candidates.json` をファイル名だけで書いていた。私は推測で `scripts/priority_rebuild/` を ls して外した。本当は sdk 直下の `.claude/ratchet/` に在った。
+
+### 4-2 数えた（jq と grep）
+
+- next_step の 0-2 の表の「触るもの」で、置き場の無い名前が在った行＝47・9・10・12・15（`recipes/search_limits.json`＝sdk 直下から辿れない）・29・30・32・33 の9行。
+- `m2_todo.json` の ✅済・保留 でない行で、同じ行＝M2-E-4d・4b・5b・4e・F-1・F-2・F-4・F-7・H-4・H-5・K-2・L-2 の12行（M2-J-1 は元からパスつき）。
+- 名前は全部、find で1か所だけに見つかった（2つの .claude の両方に在るものは無い。`.claude/state/acceptance.md` はシンボリックリンクで同じ実体）。
+
+### 4-3 直した
+
+- `next_step_src.json` の上の9行と、`m2_todo.json` の上の12行を、直下か sdk 直下から辿れるパスに直した（Edit）。同じ文字の行は replace_all で揃えた（保留の M2-G-11 と、上の方の要約の M2-K の行も同じ文字だったので一緒に直った）。
+- `tidy_next_step.py --write`（✅・§0 65行）→ `gen_regime_kb.py --write todo`（§3）→ `--write flow`（§2）。★最初は todo だけを書き、自己テストの T3 が「m2_todo.json が変わったのに --write を走らせていない」で落ちた（14/15）。flow も書いて 15/15 pass・`--verify all` ✅。`tidy_next_step.py --selftest` 19/19 pass。
+
+### 4-4 物理化
+
+- `.claude/hooks/check_todo_file_paths.py` を新設した（hook の部品・承認の要らない相手）。見るもの＝next_step の 0-2 の3列目と、`m2_todo.json` の ✅済・保留 でない行の「触るファイル」。止める条件＝「/」の無いファイル名、または直下か sdk 直下から辿って実在するファイルが1つに決まらないパス。欄に「新しく作る」「新設」が在れば実在だけ見ない。止まったときは find で見つけた置き場を一緒に出す。
+- `enforce_next_step_tidy.sh`（Stop）から呼ぶ行を足した（`bash -n` で文法 OK）。
+- 試し（1回ずつ・恒久71番＝壊すプログラムと自己テストは付けない）＝本物で rc=0。47番の置き場を消した写し（スクラッチ）で rc=2・「find で見つかった置き場＝…/.claude/ratchet/m2_stage_candidates.json」を出した。
+- ★Stop hook の .sh を Bash で直に走らせる形は、土台ゲートが止めた。本物の Stop で走る。
+- 限界＝「触るもの」以外の欄（やること・確かめ方）と、拡張子の無い名前・フォルダは見ない。パスが正しくても、本当に触る相手かは見ない。
+
+### 4-5 途中で見つけたこと（直していない）
+
+- `m2_todo.json` の M2-E-4d・4b・5b（束1）の状態が「まだ」のまま。束1 は 2026-09-26 に6段が終わっている（commit 8ea1b9a）。★✅済 にするかは、確かめてから まこさんに出す。
+- 教訓 L-630 を足した。

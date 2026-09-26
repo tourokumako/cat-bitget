@@ -71,7 +71,7 @@
         "欄": [
          " **47** ",
          " **R6 の6か月で動く線を、段2c の候補に足す**（まこさん決定 2026-09-25「②と③はどちらもCCのおすすめ案でOK」＝固定の線を残したうえで、法則 R6 の根拠の逐語「Ideally, BandWidth should be near the low end of its six-month range.」＝`regime_laws.json`:715 の「直近6か月の範囲の中で下の方」を候補に足し、成績で engine_tuner に選ばせる）。★窓の長さは逐語の six-month から取る（CC は数字を作らない）。★いま段2c に窓の本数つきの前処理を付ける道は無い（元データの `pre` は段2a でしか読まれない＝監査 CP39 の A6-b）＝別の1変更。★M2-E の番号として `m2_todo.json` に足すのは まこさんの OK の後（位置の案＝束2 の後・M2-E-6 の前・M2-F-13〔段2c を測る〕より前） ",
-         " `engine_tuner_gen.py`（段2c の候補に前処理を付ける道）／`m2_stage_candidates.json`（段2c の `pre`）／`m2_todo.json` ",
+         " `scripts/priority_rebuild/engine_tuner_gen.py`（段2c の候補に前処理を付ける道）／`.claude/ratchet/m2_stage_candidates.json`（段2c の `pre`）／`.claude/ratchet/m2_todo.json` ",
          " 読むもの宣言 → 設計書 → 監査 → 承認 → 実装 → 監査（6段）。確かめ方の案＝①段2c の候補に、固定の線と動く線の両方が出る ②動く線の窓の長さが逐語から来ている ③乱数0件・恒等3本が不変 ",
          " ★いまここ（束2 が 2026-09-27 に終わった＝次はこの行。m2_todo.json に M2-E-4e として足した＝まこさん決定 2026-09-26「この案でOK」・位置は束2 の後・M2-E-6 の前。最初の一手＝読むもの宣言） "
         ]
@@ -89,7 +89,7 @@
         "欄": [
          " **9** ",
          " **フローの3番・4番 M2-F＝M2-F-1**＝実物で確かめる＝3つの割合の式を、正解ラベルの印と道具の列に当てた対応表を作り、段1 の束を1本 走らせて時間を測る ",
-         " なし（読む・測るだけ。②は `regime_r9_diag.py --recipe <束1本> --no-trades`＝読み取り専用） ",
+         " なし（読む・測るだけ。②は `scripts/priority_rebuild/regime_r9_diag.py --recipe <束1本> --no-trades`＝読み取り専用） ",
          " 対応表の全行に行番号が在る。時間は実測の数字（見込みではない）。分からなかったことは「分からない」と書く。 ",
          " まだ "
         ]
@@ -98,7 +98,7 @@
         "欄": [
          " **10** ",
          " **束3＝フローの3番・4番 M2-F＝M2-F-2**＝設計書＝測る道具に「捉えた割合」を足し、順位表をファイルに出し、段ごとに測る口を作り、落ちた候補の理由を全部 残す。**★まこさん OK 2026-09-24**＝この設計書に **M2-F-15（段4 の差し戻しの口）**も含め、**M2-F-7（渡す本数10本）**の書き込みを M2-F-4 の実装と同じ回に行う ",
-         " 設計書（`acceptance.md`）。1変更＝`regime_r9_diag.py` だけ。実行器・生成器・法則・成績表・審判・正解の印は触らない。 ",
+         " 設計書（`.claude/state/acceptance.md`）。1変更＝`scripts/priority_rebuild/regime_r9_diag.py` だけ。実行器・生成器・法則・成績表・審判・正解の印は触らない。 ",
          " `gen_acceptance.py --verify` が rc=0。`verify_design_contract.py --write` の SPEC を貼り、`--diff` の齟齬が新設の分だけ。 ",
          " まだ "
         ]
@@ -116,7 +116,7 @@
         "欄": [
          " **12** ",
          " **フローの3番・4番 M2-F＝M2-F-4**＝実装＝`regime_r9_diag.py` を設計書の形に直し、番人を走らせる ",
-         " `regime_r9_diag.py` ",
+         " `scripts/priority_rebuild/regime_r9_diag.py` ",
          " 番人の出力をそのまま貼る。私は「直った」と書かない（恒久の決まり64番）。 ",
          " まだ "
         ]
@@ -143,7 +143,7 @@
         "欄": [
          " **15** ",
          " **フローの3番・4番 M2-F＝M2-F-7**＝渡す本数10本を設定に書き、H2 の印を取り直す。**★まこさん OK 2026-09-24 で、書き込みと印の取り直しは M2-F-4 の実装と同じ回に行う**（H2 の印の取り直しが1回で済む） ",
-         " `recipes/search_limits.json` ",
+         " `scripts/priority_rebuild/recipes/search_limits.json` ",
          " jq で hi が 10。`leak_causality_diag.py` が全部 pass（約5分・H2 の対象ファイルのため）。 ",
          " まだ "
         ]
@@ -269,7 +269,7 @@
         "欄": [
          " **29** ",
          " **フローの7番 M2-H＝M2-H-4**＝設計書（1変更）＝診断に RG-v5 との1バーずつ突き合わせを足し、束ねた判定を recipes/ にレシピとして書き出す口を足す ",
-         " 設計書（acceptance.md）。1変更＝`regime_r9_diag.py` だけ。実行器・生成器・法則・審判は触らない。 ",
+         " 設計書（`.claude/state/acceptance.md`）。1変更＝`scripts/priority_rebuild/regime_r9_diag.py` だけ。実行器・生成器・法則・審判は触らない。 ",
          " `verify_design_contract.py --write` の SPEC・`--diff` の齟齬が新設の分だけ・B-6 が 0件。Web Claude → まこさんの承認（1回）。 ",
          " まだ "
         ]
@@ -278,7 +278,7 @@
         "欄": [
          " **30** ",
          " **フローの7番 M2-H＝M2-H-5**＝実装＋実走＝案 N本のうち G7 を通った本数・3つの成績・RG-v5 との突き合わせを1つの表で出す ",
-         " `regime_r9_diag.py` ",
+         " `scripts/priority_rebuild/regime_r9_diag.py` ",
          " 行数＝N ＋ RG-v5。通らなかった案は「[組めない]」の行で残る。数字は診断の出力をそのまま（手で足さない）。 ",
          " まだ "
         ]
@@ -296,7 +296,7 @@
         "欄": [
          " **32** ",
          " **§0-0 の「7. 作る流れ」を、まこさんが決めた7行のフロー（worklog 20260918 §6-2）に合わせる**（§2 のフロー表には7行が入っている＝済）。★**作り方（まこさん 2026-09-18・逐語）**＝「**2.2を元にフローを再構築し、現状のM2-F/G/Hで必要な部分は取り入れるという言い方をしている**」。★**M2-H の行は残す**（同日・逐語「これは残しだね」）。★**フローは7行**＝M2-C 1行・M2-E 残り 1行・M2-F 2行・M2-G 2行・M2-H 1行 ",
-         " `m2_todo.json` → `gen_regime_kb.py --write flow`／milestones2 の §0-0 ",
+         " `.claude/ratchet/m2_todo.json` → `.claude/tools/gen_regime_kb.py --write flow`／`.claude/ratchet/engine_tuner_milestones2.md` の §0-0 ",
          " `gen_regime_kb.py --verify all` ",
          " まだ "
         ]
@@ -305,7 +305,7 @@
         "欄": [
          " **33** ",
          " §2.1（2）の表が空で、中身が §1 の表の下に紛れている（★「§2 のフロー表の状態が古い（M2-B・M2-C・M2-D）」は 2026-09-20 に直した＝worklog 20260920 §3-5） ",
-         " `m2_todo.json`／`engine_tuner_milestones2.md` ",
+         " `.claude/ratchet/m2_todo.json`／`.claude/ratchet/engine_tuner_milestones2.md` ",
          " `gen_regime_kb.py --verify` ",
          " まだ "
         ]

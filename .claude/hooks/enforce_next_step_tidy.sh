@@ -35,6 +35,15 @@ if [ -z "$1" ]; then
     printf "⛔ [hook の一覧・Stop hook] pdca_flow.md の §1 の hook の一覧が、settings.json と元データから作ったままではありません（まこさん 2026-09-17「手書きせざるをえないもの以外は自動生成にしてほしい」）。\n%s\n直し方＝役割の文は .claude/state/hook_roles.json に書く → python3 .claude/tools/gen_hook_list.py --write\n（解除の合言葉はありません）\n" "$HL" >&2
     exit 2
   fi
+  # ★2026-09-27（まこさん指示・逐語「→今後間違えないように対策して」）＝やることの「触るもの」に、
+  #   置き場の無いファイル名（例＝`m2_stage_candidates.json`）を書いたままではターンを終われない。
+  #   125回目の CC が置き場を推測して scripts/priority_rebuild/ を探した（本当は .claude/ratchet/）。
+  #   判定の本体＝check_todo_file_paths.py（next_step の 0-2 の3列目と、m2_todo.json のまだの行）。
+  FP=$(python3 "$ROOT/.claude/hooks/check_todo_file_paths.py" 2>&1); FRC=$?
+  if [ "$FRC" -ne 0 ]; then
+    printf "⛔ [触るものの置き場・Stop hook] やることの「触るもの」に、置き場の書かれていないファイル名があります（まこさん 2026-09-27「今後間違えないように対策して」）。\n%s\n直し方＝next_step_src.json か m2_todo.json の欄を、直下か sdk 直下から辿れるパス（例＝.claude/ratchet/m2_stage_candidates.json）に直し、tidy_next_step.py --write ／ gen_regime_kb.py --write todo・flow で作り直す。\n（解除の合言葉はありません）\n" "$FP" >&2
+    exit 2
+  fi
   WL=$(python3 "$ROOT/.claude/hooks/check_worklog_date.py" 2>&1); WRC=$?
   if [ "$WRC" -ne 0 ]; then
     printf "⛔ [worklog の日付・Stop hook] worklog を日付をまたいで書き続けています（まこさん 2026-09-09「session_worklogへの記録は日付で区切ってほしい」）。\n%s\n直し方＝今日の日付の session_worklog_YYYYMMDD.md を作り、今日の節はそこへ書く。古いファイルは触らない（触ったら、そのあとで今日の worklog を書き足す）。\n（解除の合言葉はありません）\n" "$WL" >&2
