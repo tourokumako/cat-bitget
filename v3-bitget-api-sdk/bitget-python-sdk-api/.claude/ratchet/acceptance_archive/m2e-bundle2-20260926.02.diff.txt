@@ -1,0 +1,52 @@
+57c57
+< | §2.2 の段の表の値（M2-E-1b の写し元） | `grep -n 'S-R 窓144〜288' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md` | 761:／ 1 帯（R1・R3・R7） ／ 帯タイプ7系統（レンジ幾何 W%・帯内位置%／S-Rタッチ数／pivot 3種／n本高安／close vs EMA%・SMA%・Keltner／POC・VAH・VAL／転換線・基準線）×時間足8本（10m〜1d） ／ S-R 窓144〜288・許容幅0.0015〜0.006／高安20〜96本／タッチ2〜4／幅の床0.08%×2〜6倍／余白0〜20%刻み5 ／ ⏎ 3170:／ 値の範囲 ／ S-R 窓144〜288・許容幅0.0015〜0.006／高安20〜96本／タッチ2〜4／幅の床0.08%×2〜6倍／余白0〜20%刻み5（§2.2 の段の表） ／（終了コード 0）／読み方＝段の表と、段ごとの検索の中身の節に在る。範囲と刻みの表はこの行から写す |
+---
+> | §2.2 の段の表の値（M2-E-1b の写し元） | `grep -n 'S-R 窓144〜288' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md` | 761:／ 1 帯（R1・R3・R7） ／ 帯タイプ7系統（レンジ幾何 W%・帯内位置%／S-Rタッチ数／pivot 3種／n本高安／close vs EMA%・SMA%・Keltner／POC・VAH・VAL／転換線・基準線）×時間足8本（10m〜1d） ／ S-R 窓144〜288・許容幅0.0015〜0.006／高安20〜96本／タッチ2〜4／幅の床0.08%×2〜6倍／余白0〜20%刻み5 ／ ⏎ 3171:／ 値の範囲 ／ S-R 窓144〜288・許容幅0.0015〜0.006／高安20〜96本／タッチ2〜4／幅の床0.08%×2〜6倍／余白0〜20%刻み5（§2.2 の段の表） ／（終了コード 0）／読み方＝段の表と、段ごとの検索の中身の節に在る。範囲と刻みの表はこの行から写す |
+62c62
+< | 成績表の一位を決め打ちしている組む側の自己テスト | `grep -n '成績表を作り直したなら この見本も直す' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 6322:            ng.append(f"T23②: location の1位が実物と違う: {_lst23[0]}（成績表を作り直したなら この見本も直す）")（終了コード 0）／読み方＝成績表を作り直すと、この見本を直すことがある（作り直した後の一位に合わせる） |
+---
+> | 成績表の一位を決め打ちしている組む側の自己テスト | `grep -n '成績表を作り直したなら この見本も直す' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 6323:            ng.append(f"T23②: location の1位が実物と違う: {_lst23[0]}（成績表を作り直したなら この見本も直す）")（終了コード 0）／読み方＝成績表を作り直すと、この見本を直すことがある（作り直した後の一位に合わせる） |
+65c65
+< | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py ／ grep -c '^@@'` | 17（終了コード 0）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+---
+> | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py ／ grep -c '^@@'` | 19（終了コード 0）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+69c69
+< <!-- ACC_MATERIALS_START hash=c55cc4bff2fb96cb gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_MATERIALS_START hash=ba987a5abd7ee17e gen_acceptance.py が自動生成＝手で書き換えない -->
+72c72
+< **探す指標＝印がオンの 140種**（印を切り替えると、この一覧も設計も変わります）。
+---
+> **探す指標＝印がオンの 141種**（印を切り替えると、この一覧も設計も変わります）。
+75c75
+< ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Stoch%K・Stoch%D・MFI・CMF・OBV傾き・転換線・基準線・EMA傾き・ATR%・BB%b・BB幅・realized_vol・Donchian幅・volume_ratio・swing高値距離・swing安値距離・高値からの経過バー・安値からの経過バー・形スコア・W字・fractal高値距離%・fractal安値距離%・高値切り上げ幅%・安値切り上げ幅%・構造破断距離%・close vs EMA・close vs SMA・close vs VWAP・Keltner上・Keltner下・n本高値・n本安値・pivotPP・pivotR1・pivotS1・fib位置・POC・VAH・VAL・MMI・S-Rタッチ数・AO%・CCI・ER・KST・KSTシグナル・PPO・PPOシグナル・PPOヒスト・PVO・PVOシグナル・PVOヒスト・SMC_SWEEP・SQZ_ON・STC・STCstoch・StochRSI%K・StochRSI%D・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UO・close vs ALMA%・close vs DEMA%・close vs FWMA%・close vs HILO%・close vs HMA%・close vs HT_TRENDLINE%・close vs HWMA%・close vs JMA%・close vs KAMA%・KAMA傾き%・close vs LINREG%・close vs LRb%・close vs MAMA%・close vs FAMA%・close vs MCGD%・close vs MIDPOINT%・close vs MIDPRICE%・close vs MMAR%・close vs PWMA%・close vs RAINBOW%・close vs RMA%・close vs SINWMA%・close vs SSF%・close vs SWMA%・close vs T3%・close vs TEMA%・close vs TRIMA%・close vs TSF%・close vs VIDYA%・close vs VWMA%・close vs WMA%・WMA傾き%・close vs ZLMA%・AROONU・AROOND・AROONOSC・CHOP・close vs CKSPl%・close vs CKSPs%・DPO%・close vs PMAX%・close vs PSAR%・PSAR加速・PSAR反転・close vs SAREXT%・VHF・VTXP・VTXM・EFI比・EOM比・NVI傾き・PVT傾き・MAD比・stdev%・close vs MEDIAN%・close vs ABER_ZG%・ABER位置・close vs ACCBL%・close vs ACCBU%・close vs CE_L%・close vs CE_S%・HWC位置・HWC幅%・MASSI・THERMO%・TR%・UI・HT_DCPHASE
+---
+> ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Stoch%K・Stoch%D・MFI・CMF・OBV傾き・転換線・基準線・EMA傾き・ATR%・BB%b・BB幅・realized_vol・Donchian幅・volume_ratio・swing高値距離・swing安値距離・高値からの経過バー・安値からの経過バー・形スコア・W字・fractal高値距離%・fractal安値距離%・高値切り上げ幅%・安値切り上げ幅%・構造破断距離%・close vs EMA・close vs SMA・close vs VWAP・Keltner上・Keltner下・n本高値・n本安値・pivotPP・pivotR1・pivotS1・fib位置・POC・VAH・VAL・MMI・S-Rタッチ1時間ATR・S-Rタッチ数・AO%・CCI・ER・KST・KSTシグナル・PPO・PPOシグナル・PPOヒスト・PVO・PVOシグナル・PVOヒスト・SMC_SWEEP・SQZ_ON・STC・STCstoch・StochRSI%K・StochRSI%D・TRIX・TRIXシグナル・TRIXヒスト・TSI・TSIシグナル・TSIヒスト・UO・close vs ALMA%・close vs DEMA%・close vs FWMA%・close vs HILO%・close vs HMA%・close vs HT_TRENDLINE%・close vs HWMA%・close vs JMA%・close vs KAMA%・KAMA傾き%・close vs LINREG%・close vs LRb%・close vs MAMA%・close vs FAMA%・close vs MCGD%・close vs MIDPOINT%・close vs MIDPRICE%・close vs MMAR%・close vs PWMA%・close vs RAINBOW%・close vs RMA%・close vs SINWMA%・close vs SSF%・close vs SWMA%・close vs T3%・close vs TEMA%・close vs TRIMA%・close vs TSF%・close vs VIDYA%・close vs VWMA%・close vs WMA%・WMA傾き%・close vs ZLMA%・AROONU・AROOND・AROONOSC・CHOP・close vs CKSPl%・close vs CKSPs%・DPO%・close vs PMAX%・close vs PSAR%・PSAR加速・PSAR反転・close vs SAREXT%・VHF・VTXP・VTXM・EFI比・EOM比・NVI傾き・PVT傾き・MAD比・stdev%・close vs MEDIAN%・close vs ABER_ZG%・ABER位置・close vs ACCBL%・close vs ACCBU%・close vs CE_L%・close vs CE_S%・HWC位置・HWC幅%・MASSI・THERMO%・TR%・UI・HT_DCPHASE
+113c113
+< <!-- ACC_RANKING_START hash=aa91c5a6fb1e7086 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_RANKING_START hash=31b989fc34f0fa0c gen_acceptance.py が自動生成＝手で書き換えない -->
+121c121
+< | location | 1270 | close vs TSF%20__1d（0.429）／close vs TEMA%20__1d（0.434）／close vs LINREG%20__1d（0.435） |
+---
+> | location | 1414 | close vs TSF%20__1d（0.429）／close vs TEMA%20__1d（0.434）／close vs LINREG%20__1d（0.435） |
+360c360
+< <!-- ACC_STAGES_START hash=ebf8aaeb71435261 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_STAGES_START hash=059ce7a3c2b6c72f gen_acceptance.py が自動生成＝手で書き換えない -->
+385a386
+> | **段`S-Rタッチ1時間ATR`** | `S-Rタッチ1時間ATR` | — | 22 |  |
+490c491
+< **段の件数＝124件**（§2.2 に在るものを1つも落としていません）。
+---
+> **段の件数＝125件**（§2.2 に在るものを1つも落としていません）。
+1576,1579c1577,1580
+< | 1 | 許容幅は1時間足の ATR% で決まる。参照表の既知答え3件（下端・上端・1時間足と5分足で割れる見本）が、18種の全部で一致する（番人 T-A1） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | `_sr_touch_atr` の許容幅の元を直す前の形（渡された足の ATR%）に戻すと、T-A1 が『❌ T-A1』で落ちる | `b104_atr1h_own_tf.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝許容幅の ATR% を直す前の形（渡された足の ATR%）に戻すと、既知答えの番人 T-A1 が落ちた |
+< | 2 | 1時間足の値は、その1時間足が閉じた時刻から使う＝途中で切って計算し直しても、切った時点の1時間足の ATR% が変わらない（番人 T-A4） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | 1時間足の値の時刻を「閉じた時刻」から「始まりの時刻」に変えると、T-A4 が『❌ T-A4』で落ちる | `b105_atr1h_future_hour.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝1時間足の値を始まりの時刻から使う（閉じる前の1時間足を使う）と、切り詰めの番人 T-A4 が落ちた |
+< | 3 | 許容幅を上下限 0.15%〜0.6% で挟む（番人 T-A1 の見本1・2） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | 上下限で挟む行を外すと、T-A1 が『❌ T-A1』で落ちる | `b106_atr1h_no_clip.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝許容幅を上下限 0.15%〜0.6% で挟まないと、既知答えの番人 T-A1 が落ちた |
+< | 4 | 1時間足より長い足（4時間足）でも、`build_features` が新しい部品の列を作れ、4時間足に当てた1時間足の ATR% が、同じ5分足から作った1時間足の値と1本も違わない（番人 T-A3。わざと外した形＝4時間足のバーの ATR% では違いが出ることも、毎回 確かめる） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | `build_features` が置き場に5分足を入れる行を消すと、T-A3 が『❌ T-A3』で落ちる | `b107_atr1h_base_not_passed.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝build_features が1時間足の元の5分足を置き場に入れないと、4時間足の列が作れず番人 T-A3 が落ちた |
+---
+> | 1 | 許容幅は1時間足の ATR% で決まる。参照表の既知答え3件（下端・上端・1時間足と5分足で割れる見本）が、18種の全部で一致する（番人 T-A1） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | `_sr_touch_atr` の許容幅の元を直す前の形（渡された足の ATR%）に戻すと、T-A1 が『❌ T-A1』で落ちる | `b104_atr1h_own_tf.sh` | — | **未着手** |
+> | 2 | 1時間足の値は、その1時間足が閉じた時刻から使う＝途中で切って計算し直しても、切った時点の1時間足の ATR% が変わらない（番人 T-A4） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | 1時間足の値の時刻を「閉じた時刻」から「始まりの時刻」に変えると、T-A4 が『❌ T-A4』で落ちる | `b105_atr1h_future_hour.sh` | — | **未着手** |
+> | 3 | 許容幅を上下限 0.15%〜0.6% で挟む（番人 T-A1 の見本1・2） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | 上下限で挟む行を外すと、T-A1 が『❌ T-A1』で落ちる | `b106_atr1h_no_clip.sh` | — | **未着手** |
+> | 4 | 1時間足より長い足（4時間足）でも、`build_features` が新しい部品の列を作れ、4時間足に当てた1時間足の ATR% が、同じ5分足から作った1時間足の値と1本も違わない（番人 T-A3。わざと外した形＝4時間足のバーの ATR% では違いが出ることも、毎回 確かめる） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-atr1h` | 実経路 | `build_features` が置き場に5分足を入れる行を消すと、T-A3 が『❌ T-A3』で落ちる | `b107_atr1h_base_not_passed.sh` | — | **未着手** |

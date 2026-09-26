@@ -659,6 +659,79 @@ def _tb_vs_vp(d, p, which):
     return _S((c / lv - 1) * 100, d)
 
 
+def _tb_sr_touch_atr1h(d, p):
+    """S-Rタッチ1時間ATR の教科書の式（2026-09-26・M2-E-4c・観察の実装を使わずに書いた独立の実装）。
+
+    ①5分足を「時刻を1時間で切り捨てた値」で束ねて1時間足を作る（高値＝最大・安値＝最小・終値＝最後）
+    ②1時間足の TR＝max(高値−安値, |高値−前の終値|, |安値−前の終値|)。最初の1本は 高値−安値
+    ③ATR＝Wilder の平滑（最初は TR・以後（前の ATR ×(期間−1) ＋ TR）÷ 期間）。ATR%＝ATR ÷ その1時間足の終値
+    ④各バーに、そのバーが閉じた時刻（始まり＋5分）までに閉じた1時間足（始まり＋1時間 ≦ それ）のうち、
+      いちばん新しいものの ATR% を当てる
+    ⑤許容幅＝倍率 × ATR% を 0.15%〜0.6% に収める。タッチの数え方は _tb_sr_touch と同じ
+    ★5分足の並びにだけ使う（検査3 と番人 T-A2 が5分足で呼ぶ）。
+    """
+    n, k, an = int(p[0]), float(p[1]), int(p[2])
+    o, h, l, c, v = _arr(d)
+    starts, groups = [], []
+    for i, t in enumerate(d.index.floor("h")):
+        if not starts or starts[-1] != t:
+            starts.append(t)
+            groups.append([i])
+        else:
+            groups[-1].append(i)
+    hh = np.array([h[g].max() for g in groups])
+    hl = np.array([l[g].min() for g in groups])
+    hc = np.array([c[g[-1]] for g in groups])
+    atr = np.full(len(groups), np.nan)
+    for j in range(len(groups)):
+        if j == 0:
+            atr[j] = hh[j] - hl[j]
+        else:
+            tr = max(hh[j] - hl[j], abs(hh[j] - hc[j - 1]), abs(hl[j] - hc[j - 1]))
+            atr[j] = (atr[j - 1] * (an - 1) + tr) / an
+    pct = atr / hc
+    closes = (pd.DatetimeIndex(starts) + pd.Timedelta("1h")).values
+    pos = np.searchsorted(closes, (d.index + pd.Timedelta("5min")).values, side="right") - 1
+    out = np.full(len(c), np.nan)
+    for i in range(n, len(c)):
+        if pos[i] < 0:
+            continue
+        t = min(max(k * pct[pos[i]], 0.0015), 0.006)
+        band = c[i] * t
+        out[i] = float(np.sum((h[i - n:i] >= c[i] - band) & (l[i - n:i] <= c[i] + band)))
+    return _S(out, d)
+
+
+def _known_sr_touch_atr1h(p):
+    """S-Rタッチ1時間ATR の手計算の既知答え3件（2026-09-26・M2-E-4c）。
+
+    ①下端に張り付く＝n＋12本を 100.1 で平ら（始値＝高値＝安値＝終値）・最後の1本だけ 100.0。
+      1時間足の値動きの幅は0＝許容幅は下端 0.15%＝帯は 100±0.15。窓の n 本は全部 100.1＝全部 触れる → n
+    ②上端に張り付く＝n＋12本を 終値 101.8・高値 104.8・安値 100.8、最後の1本だけ 100.0。
+      1時間足の値動きの幅は 4.0（高値−安値）＝ATR% は 4÷101.8（約3.9%）。倍率 0.5 でも上端 0.6% に張り付く。
+      帯は 100±0.6＝窓の安値 100.8 は 100.6 より上＝1本も触れない → 0
+    ③1時間足と5分足で答えが割れる＝60時間ぶん、1時間ごとに 100.0 と 100.5 を交互に（1時間の中は平ら）、
+      最後の1本だけ 100.0。1時間足の TR は2本目から 0.5＝ATR＝0.5×(1−(1−1/期間)^59)。
+      最後に閉じた1時間足（60本目）は 100.5 で閉じる。許容幅＝倍率 × ATR ÷ 100.5 を上下限で挟む。
+      窓の n 本の半分は 100.0（必ず触れる）・半分は 100.5（許容幅が 0.5% 以上のときだけ触れる）。
+      ★5分足の ATR% で数えると、1時間の中は平らなので値動きの幅が小さく、許容幅は下端に張り付く
+        ＝倍率 1.5 でも 100.5 に届かない＝この見本が「どの足の ATR で測ったか」を見分ける。
+    """
+    n, k, an = int(p[0]), float(p[1]), int(p[2])
+    c1 = np.r_[np.full(n + 12, 100.1), 100.0]
+    c2 = np.r_[np.full(n + 12, 101.8), 100.0]
+    h2 = np.r_[np.full(n + 12, 104.8), 100.0]
+    l2 = np.r_[np.full(n + 12, 100.8), 100.0]
+    m = 60
+    c3 = np.r_[np.repeat([100.0 + 0.5 * (j % 2) for j in range(m)], 12), 100.0]
+    a3 = 0.5 * (1.0 - (1.0 - 1.0 / an) ** (m - 1))
+    t3 = min(max(k * a3 / 100.5, 0.0015), 0.006)
+    e3 = n / 2 + (n / 2 if 100.0 * t3 >= 0.5 else 0.0)
+    return [(_mk(c1, o=c1, h=c1, l=c1), [(-1, float(n), 1e-9)]),
+            (_mk(c2, o=c2, h=h2, l=l2), [(-1, 0.0, 1e-9)]),
+            (_mk(c3, o=c3, h=c3, l=c3), [(-1, float(e3), 1e-9)])]
+
+
 def _tb_sr_touch(d, p):
     n, tol = int(p[0]), float(p[1])
     o, h, l, c, v = _arr(d)
@@ -1235,6 +1308,17 @@ _r(r"MMI(\d+)", "MMI",
         [(-1, 100.0 / (int(p[0]) - 1), 1e-9)]),
    ],
    mako="2026-09-05 まこさん決定（案A・M2-C-4）＝材料の一覧の3つ目の源「まこさんが個別に決めたもの」")
+# ★2026-09-26（M2-E-4c・束2）＝S-Rタッチ1時間ATR を足した。2026-09-06 に外した S-RタッチATR（上の控え
+#   _SR_TOUCH_ATR_REMOVED）を、出どころの逐語どおり「1時間足の ATR%」で作り直したもの。名前は別にした。
+_r(r"S-Rタッチ1時間ATR\((\d+),([\d.]+),(\d+)\)", "S-Rタッチ1時間ATR",
+   "いまの価格の許容幅つき帯に、過去 n 本の高安が何回触れたか。許容幅＝倍率 × 1時間足の ATR%"
+   "（ATR ÷ その1時間足の終値）を 0.15%〜0.6% に収めたもの",
+   "出どころの逐語『tol=clamp(K×ATR%_1h,0.15%,0.6%)』（設定 observe_config.json の sr_tol の説明に写してある）。"
+   "1時間足の値は、その1時間足が閉じた時刻から使う。タッチは、その足の高値・安値で数える",
+   "状態量＝多いほど節が固い", "none", tb=_tb_sr_touch_atr1h, known=_known_sr_touch_atr1h,
+   mako="2026-09-05 まこさん決定「1・2・4・5・6 を足す」の⑤（ATR に連動する帯の許容幅）"
+        "＋2026-09-06「2-Eへ送るので、2-Eで忘れないように書いておいて」"
+        "＋2026-09-26「CCの案の通りで進める」「BでOK」（M2-E-4c・束2）")
 _r(r"S-Rタッチ数\((\d+),([\d.]+)\)", "S-Rタッチ数",
    "いまの価格の許容幅つき帯に、過去 n 本の高安が何回触れたか", "サポート・レジスタンスの強度の近似",
    "状態量＝多いほど節が固い", "none", tb=_tb_sr_touch,
@@ -4463,6 +4547,8 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "pivotPP": dict(k="構造・位置"), "pivotR1": dict(k="構造・位置"), "pivotS1": dict(k="構造・位置"),
     "fib位置": dict(k="構造・位置"), "POC": dict(k="構造・位置"), "VAH": dict(k="構造・位置"),
     "VAL": dict(k="構造・位置"), "S-Rタッチ数": dict(k="構造・位置"),
+    # ★2026-09-26（M2-E-4c・束2）＝S-Rタッチ数 と同じ数え方。許容幅だけが1時間足の値動きの幅に連動する。
+    "S-Rタッチ1時間ATR": dict(k="構造・位置", note="S-Rタッチ数と同じ数え方で、許容幅を1時間足の ATR% に連動させたもの"),
     # ★2026-09-05（M2-C-4）に足した。S-RタッチATR は 2026-09-06（再監査 cp22 の N-1）に外した。
     "レンジ幾何": dict(k="構造・位置", note="RG ゾーンビルダーの帯＝構造そのもの"),
     # 山と谷（2026-08-21・M2-2-6）＝高値と安値の並びそのもの＝構造・位置
@@ -4767,6 +4853,7 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "VAH": (("vp",), "同上"),
     "VAL": (("vp",), "同上"),
     "S-Rタッチ数": ((), "同じ値段に何回 触れたか。ライブラリに相当する関数が無い"),
+    "S-Rタッチ1時間ATR": ((), "S-Rタッチ数の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い"),
     # ★2026-09-05（M2-C-4）に足した。ライブラリに相当する関数が無い＝空のタプルと理由。
     #   S-RタッチATR は 2026-09-06（再監査 cp22 の N-1）に外した。
     "MMI": ((), "Market Meanness Index。ta にも pandas-ta にも無い"

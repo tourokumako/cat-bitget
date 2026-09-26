@@ -1,0 +1,54 @@
+49,52c49,52
+< | いま登録されている S-R タッチの部品 | `grep -n '_reg("S-Rタッチ' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 862:_reg("S-Rタッチ数", "S-Rタッチ数({},{})", False, lambda d, n, t: _sr_touch(d.close, d.high, d.low, n, t))（終了コード 0）／読み方＝固定の許容幅の部品だけが登録されている。値動きの幅に連動する部品は外したまま |
+< | 外した部品の関数に残っている、許容幅の元を渡された足で測る行 | `grep -n 'atr_pct = _atr(d.high, d.low, d.close, atr_n) / d.close' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 429:    atr_pct = _atr(d.high, d.low, d.close, atr_n) / d.close（終了コード 0）／読み方＝渡された足の値動きの幅を使っている＝出どころの一時間足と違う。直すのはこの行 |
+< | 部品の関数に渡すもの | `grep -n 's = fn(src)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 1724:                s = fn(src)（終了コード 0）／読み方＝部品の関数はその足のバーしか受け取らない。一時間足より長い足のバーからは一時間足を作れないので、五分足を渡す道が要る |
+< | 張り付きの割合を出す節が在るか | `grep -c '張り付' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 0（終了コード 1）／読み方＝零件＝足ごとの張り付きの割合を出す節は無い |
+---
+> | いま登録されている S-R タッチの部品 | `grep -n '_reg("S-Rタッチ' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 900:_reg("S-Rタッチ数", "S-Rタッチ数({},{})", False, lambda d, n, t: _sr_touch(d.close, d.high, d.low, n, t)) ⏎ 908:_reg("S-Rタッチ1時間ATR", "S-Rタッチ1時間ATR({},{},{})", False,（終了コード 0）／読み方＝固定の許容幅の部品だけが登録されている。値動きの幅に連動する部品は外したまま |
+> | 外した部品の関数に残っている、許容幅の元を渡された足で測る行 | `grep -n 'atr_pct = _atr(d.high, d.low, d.close, atr_n) / d.close' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | （終了コード 1）／読み方＝渡された足の値動きの幅を使っている＝出どころの一時間足と違う。直すのはこの行 |
+> | 部品の関数に渡すもの | `grep -n 's = fn(src)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 1777:                s = fn(src)（終了コード 0）／読み方＝部品の関数はその足のバーしか受け取らない。一時間足より長い足のバーからは一時間足を作れないので、五分足を渡す道が要る |
+> | 張り付きの割合を出す節が在るか | `grep -c '張り付' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 12（終了コード 0）／読み方＝零件＝足ごとの張り付きの割合を出す節は無い |
+61c61
+< | 成績表を書き出す所 | `grep -n 'out.write_text(json.dumps(body, ensure_ascii=False, indent=1)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 6016:    out.write_text(json.dumps(body, ensure_ascii=False, indent=1), encoding="utf-8")（終了コード 0）／読み方＝列を絞って走らせても同じファイルに書く＝絞った走行で作り直すと、ほかの列が消える。だから全走で作り直す |
+---
+> | 成績表を書き出す所 | `grep -n 'out.write_text(json.dumps(body, ensure_ascii=False, indent=1)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 6122:    out.write_text(json.dumps(body, ensure_ascii=False, indent=1), encoding="utf-8")（終了コード 0）／読み方＝列を絞って走らせても同じファイルに書く＝絞った走行で作り直すと、ほかの列が消える。だから全走で作り直す |
+63c63
+< | 直す行の文字を探している壊すプログラム（L-605） | `grep -rln '_sr_touch\／_H1_BASE\／build_features\／insp5_frame\／INSPECT_SECTIONS\／S-Rタッチ\／sr_tol\／mmi_periods\／FAMILY_LINEAGE\／INDUSTRY_MAP\／selftest_insp5\／_atr(' .claude/breaks` | .claude/breaks/b81_drop_tf_ignored.sh ⏎ .claude/breaks/b53_insp5_frame_and_key_gone.sh ⏎ .claude/breaks/b86_stage_count.sh ⏎ .claude/breaks/b93_law_filter_off.sh（終了コード 0）／読み方＝当たった壊すプログラムが探している行を、この工事で消さないことを確かめる。検査五の枠を作る関数の枝分かれを探すものは、枝分かれの後に一行を足すだけなので残る。ほかは組む側の段の候補の行を探していて、この工事では触らない |
+---
+> | 直す行の文字を探している壊すプログラム（L-605） | `grep -rln '_sr_touch\／_H1_BASE\／build_features\／insp5_frame\／INSPECT_SECTIONS\／S-Rタッチ\／sr_tol\／mmi_periods\／FAMILY_LINEAGE\／INDUSTRY_MAP\／selftest_insp5\／_atr(' .claude/breaks` | .claude/breaks/b81_drop_tf_ignored.sh ⏎ .claude/breaks/b106_atr1h_no_clip.sh ⏎ .claude/breaks/b53_insp5_frame_and_key_gone.sh ⏎ .claude/breaks/b104_atr1h_own_tf.sh ⏎ .claude/breaks/b86_stage_count.sh ⏎ .claude/breaks/b93_law_filter_off.sh ⏎ .claude/breaks/b107_atr1h_base_not_passed.sh（終了コード 0）／読み方＝当たった壊すプログラムが探している行を、この工事で消さないことを確かめる。検査五の枠を作る関数の枝分かれを探すものは、枝分かれの後に一行を足すだけなので残る。ほかは組む側の段の候補の行を探していて、この工事では触らない |
+65c65
+< | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py ／ grep -c '^@@'` | 0（終了コード 1）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+---
+> | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py ／ grep -c '^@@'` | 17（終了コード 0）／読み方＝承認の前は差が無い＝照合が数える触った関数は、この工事で直すものだけになる |
+1600c1600
+< <!-- ACC_CODEREF_START hash=e938aa88d11087b7 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=34f1d74136f20d60 gen_acceptance.py が自動生成＝手で書き換えない -->
+1607,1610c1607,1610
+< | `_atr_pct_1h_on` | （この関数は実物に無い） |
+< | `_sr_touch_atr` | 422 |
+< | `_insp_tol_saturation` | （この関数は実物に無い） |
+< | `selftest_atr1h` | （この関数は実物に無い） |
+---
+> | `_atr_pct_1h_on` | 441 |
+> | `_sr_touch_atr` | 460 |
+> | `_insp_tol_saturation` | 4941 |
+> | `selftest_atr1h` | 6577 |
+1613c1613
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 168件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 172件の関数が在ります）。
+1619c1619
+< <!-- ACC_SPEC_START hash=68c531791cb39cb9 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=f4922bf43160bdd4 gen_acceptance.py が自動生成＝手で書き換えない -->
+1803a1804,1808
+>   "selftest_atr1h": [
+>    "build_catalog",
+>    "build_features",
+>    "load_config"
+>   ],
+1815a1821
+>    "selftest_atr1h",
+1838a1845
+>   "--selftest-atr1h",

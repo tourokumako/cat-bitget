@@ -6309,7 +6309,8 @@ def selftest() -> int:
           f"（直す前は『基準にする状態の列がデータにありません』で止まった）")
 
     # ══ T23 材料の順位（M2-3-4・2026-08-22 → ★2026-08-23 K を無くした版・まこさん承認 327e7f80008f…）══════════
-    #   ①`ranked_materials` の並びが |分離力−0.5| の降順 ②location の1位＝実物で確かめた S-Rタッチ数(144,0.006)__15m
+    #   ①`ranked_materials` の並びが |分離力−0.5| の降順 ②location の1位＝実物で確かめた S-Rタッチ1時間ATR(144,1.5,21)__15m
+    #     （★2026-09-26 束2＝成績表を作り直した後の1位・分離力 0.745。直す前＝S-Rタッチ数(144,0.006)__15m・0.743）
     #   ③型の表の外（役割に使えない系統・禁止3）は `_ranked_material_at` が飛ばす ④`regime_draw_order` が決まった並び
     global _MATERIAL_RANKING, _RANK_PATH
     try:
@@ -6318,7 +6319,7 @@ def selftest() -> int:
         _dist23 = [abs(a - 0.5) for _c, a, _l, _h in _lst23]
         if _dist23 != sorted(_dist23, reverse=True):
             ng.append("T23①: 並びが分離力の強い順（|分離力−0.5| の降順）になっていない")
-        if _lst23[0][0] != "S-Rタッチ数(144,0.006)__15m":
+        if _lst23[0][0] != "S-Rタッチ1時間ATR(144,1.5,21)__15m":
             ng.append(f"T23②: location の1位が実物と違う: {_lst23[0]}（成績表を作り直したなら この見本も直す）")
         _tbl23 = load_signal_table()
         _pool23, _tfs23, _ = material_pool()

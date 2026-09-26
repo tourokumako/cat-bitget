@@ -419,14 +419,52 @@ def _sr_touch(c, h, l, win=288, tol=0.003):
 _SR_ATR_TOL_LO, _SR_ATR_TOL_HI = 0.0015, 0.006
 
 
-def _sr_touch_atr(d, win, k, atr_n):
-    """帯の許容幅を値動きの幅に連動させた S-R タッチ数。★2026-09-06 に部品の一覧から外した＝呼ばれない。
+# ★2026-09-26（M2-E-4c・束2・設計書 m2e-bundle2-20260926）＝上の【正しい形】で作り直した。
+#   まこさん決定（2026-09-26・逐語「CCの案の通りで進める」「BでOK」）＝新しい部品は全部の時間足で作る。
+#   許容幅は1時間足の値動きの幅（ATR%）で決め、タッチはその足の高値・安値で数える（next_step §6 の136番）。
+#   ★上の「★下の `_sr_touch_atr` も関数としては残す（どこからも呼ばれない）」と「部品の一覧には登録しない」は
+#     2026-09-26 までの話。いまは新しい名前 S-Rタッチ1時間ATR で `_reg` と `build_catalog` に登録している
+#     （外した名前 S-RタッチATR とは別の名前にした＝外した記録と混ざらないため）。
+#   ★1時間足の作り方（2つ）
+#     ①渡された足が1時間足以下（1m〜1h）＝その足のバーを1時間足にまとめ直す
+#     ②渡された足が1時間足より長い（2h〜1d）＝その足のバーからは1時間足を作れない。
+#       だから、列を作る道（build_features・insp5_frame）が下の置き場に入れた5分足から作る。
+#       入っていない・期間を覆っていないときは止める（黙って別の値を使わない）。
+#   ★未来を見ない＝1時間足の値は、その1時間足が閉じた時刻（始まり＋1時間）から使う。
+#     バー s には、s が閉じた時刻（s＋その足の長さ）までに閉じた1時間足のうち、いちばん新しいものを当てる
+#     （build_features が上位足を「足が閉じた時刻」から使うのと同じ考え）。
+#   ★置き場を関数の外に置いた理由＝部品の関数は「その足のバー」だけを受け取る形で呼ばれ、引数を足せない。
+#     pandas の attrs に5分足を持たせる形は、派生の計算のたびに中身が複製されて全部の部品が遅くなるので取らない。
+_H1_BASE: dict = {"bars": None}
 
-    ★このまま使ってはいけない＝`_atr(d…)` は「渡された足」の値動きの幅で、
+
+def _atr_pct_1h_on(d, atr_n):
+    """d の各バーに、そのバーが閉じた時刻までに閉じた1時間足の ATR%（ATR ÷ その1時間足の終値）を当てた並びを返す。"""
+    step = pd.Series(d.index).diff().median()
+    if pd.isna(step):
+        step = pd.Timedelta(0)
+    if step <= pd.Timedelta("1h"):
+        src = d
+    else:
+        src = _H1_BASE.get("bars")
+        if (src is None or len(src) == 0 or src.index[0] >= d.index[0] + step
+                or src.index[-1] < d.index[-1]):
+            raise ValueError("1時間足より長い足には、1時間足の元になる5分足が要る"
+                             "（_H1_BASE が空か、期間を覆っていない）")
+    h1 = _resample(src[["open", "high", "low", "close", "volume"]], "1h")
+    a = _atr(h1.high, h1.low, h1.close, atr_n) / h1.close
+    a.index = h1.index + pd.Timedelta("1h")                # 1時間足が閉じた時刻
+    return a.reindex(d.index + step, method="ffill").to_numpy(float)
+
+
+def _sr_touch_atr(d, win, k, atr_n):
+    """S-Rタッチ1時間ATR＝帯の許容幅を「1時間足の ATR% × 倍率」で決め、0.15%〜0.6% に収めた S-R タッチ数。
+
+    ★2026-09-26（M2-E-4c・束2）に直した。直す前（2026-09-06 に部品の一覧から外した形）の `_atr(d…)` は「渡された足」の値動きの幅で、
       出どころの逐語 `tol=clamp(K×ATR%_1h,0.15%,0.6%)` の「1時間足」ではない。
-      M2-E で正しい形（1時間足の ATR% を引いてくる）に直してから登録し直す。
+      いまは `_atr_pct_1h_on` が1時間足の ATR% を引いてくる（正しい形）。タッチは、渡された足の高値・安値で数える（`_sr_touch` をそのまま使う）。
     """
-    atr_pct = _atr(d.high, d.low, d.close, atr_n) / d.close
+    atr_pct = pd.Series(_atr_pct_1h_on(d, atr_n), index=d.index)
     tol = (k * atr_pct).clip(lower=_SR_ATR_TOL_LO, upper=_SR_ATR_TOL_HI)
     return _sr_touch(d.close, d.high, d.low, win, tol.to_numpy(float))
 
@@ -864,6 +902,11 @@ _reg("S-Rタッチ数", "S-Rタッチ数({},{})", False, lambda d, n, t: _sr_tou
 #   ★向きを持たない（False）＝状態量。MMI は原典が「向きは測らない」と書いている。
 #   ★S-RタッチATR は 2026-09-06（再監査 cp22 の N-1）に外した（理由は _sr_touch の下のコメント）。
 _reg("MMI", "MMI{}", False, lambda d, n: _mmi(d.close, n))
+# ── 2026-09-26（M2-E-4c・束2・まこさん決定「CCの案の通りで進める」「BでOK」）に足した ──
+#   ★S-Rタッチ1時間ATR＝帯の許容幅を「1時間足の ATR% × 倍率」で決め、0.15%〜0.6% に収める。
+#     タッチは、その足の高値・安値で数える。向きを持たない（False）＝状態量（S-Rタッチ数と同じ）。
+_reg("S-Rタッチ1時間ATR", "S-Rタッチ1時間ATR({},{},{})", False,
+     lambda d, n, k, a: _sr_touch_atr(d, n, k, a))
 # ── 業界の指標（pandas-ta 由来・フロー 段6-2・1回目＝アルファベット順 ao〜lrsi の19関数）──
 # ★ローソク足の本数は、ここで新しい数字を作らない。既にある一覧をそのまま使う
 #   （rsi_periods / stoch_periods / macd_params）。本数を3つ以上 使う指標（KST）は
@@ -1328,6 +1371,12 @@ def build_catalog(cfg: dict) -> list[tuple]:
     # ★2026-09-05（M2-C-4）＝MMI（値動きがランダムに近いかの割合）。
     for n in cfg["mmi_periods"]:
         addf("MMI", n)
+    # ★2026-09-26（M2-E-4c・束2）＝S-Rタッチ1時間ATR（許容幅＝倍率 × 1時間足の ATR% を 0.15%〜0.6% に収める）。
+    #   窓＝sr_windows・倍率＝sr_atr1h_k・ATR の期間＝atr_periods（まこさん決定 2026-09-26 の②）。
+    for n in cfg["sr_windows"]:
+        for k in cfg["sr_atr1h_k"]:
+            for a in cfg["atr_periods"]:
+                addf("S-Rタッチ1時間ATR", n, k, a)
 
     # ── 業界の指標（pandas-ta 由来・フロー 段6-2・1回目＝アルファベット順 ao〜lrsi の19関数）──
     # ★ローソク足の本数は、ここで新しい数字を作らない。既にある一覧をそのまま使う
@@ -1695,6 +1744,7 @@ def insp5_frame(span: pd.DataFrame, tf: str, one: pd.DataFrame | None = None):
         src = one if tf == "1m" else _resample(one, TF_RULE[tf])
     else:
         src = _resample(span, TF_RULE[tf])
+    _H1_BASE["bars"] = span                          # ★2026-09-26（M2-E-4c）＝build_features と同じ（1時間足の元の5分足）
     closed = src.index if tf == "5m" else src.index + pd.Timedelta(TF_RULE[tf])
     return src, closed
 
@@ -1705,6 +1755,9 @@ def build_features(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -
     out, meta = {}, {}
     catalog = catalog or build_catalog(cfg)
     # ★1m・3m を使うときだけ、1分足の元データを読む（使わないなら読まない＝重いので）。
+    # ★2026-09-26（M2-E-4c・束2）＝1時間足の値動きの幅の元になる5分足を、部品へ渡す置き場に入れる。
+    #   部品の関数はその足のバーしか受け取らないので、2時間足より上では1時間足を作れない（_atr_pct_1h_on）。
+    _H1_BASE["bars"] = bars
     one = (load_1m(bars.index[0], bars.index[-1])
            if any(t in cfg["timeframes"] for t in SUB_5M_TF) else None)
     for tf in cfg["timeframes"]:
@@ -3645,6 +3698,7 @@ INSPECT_SECTIONS = [
     "検査13 4本値を定数倍しても材料の値が変わらないかを実測する（H6 価格非依存・段6 の 6-9①）",
     "検査14 V9 の実物の列と、うちの材料の列の対応を実測で決める（名前で決めない・2026-08-11 新設）",
     "検査15 いまの正解の印が「レンジだった」とした区間を、片道の度合いで測り直す（判定なし・報告だけ・2026-08-29 新設・M2-A-2）",
+    "検査16 帯の許容幅（倍率 × ATR%）が上下限 0.15%〜0.6% の端に張り付いた割合を、足ごとに出す（その足の ATR% と1時間足の ATR% を並べる・判定なし・報告だけ・2026-09-26 新設・M2-E-5）",
 ]
 # 検査の線（全部この場で印字する＝黙って変えられない）。指標照合の許容差は
 # indicator_reference_diag（参照表の tol）が正本。
@@ -4869,6 +4923,53 @@ def _insp_stage_plan(only, stage_keys: list) -> tuple[list, bool]:
     return [k for k in stage_keys if k in want], ("検査5" in want)
 
 
+def _tol_saturation_cells(k, x) -> list:
+    """検査16 の1マス＝倍率 k × ATR% の並び x の「値の出ている本数・下端に張り付いた割合・上端に張り付いた割合」（文字）。
+
+    ★2026-09-26（監査 CP44 の修正 4）＝数え方を1か所に置き、番人 T-A5 が既知答えで確かめる。
+    ★張り付き＝下端より小さい（下端に置き換わる）／上端より大きい（上端に置き換わる）。ちょうど端の値は数えない。
+    """
+    v = float(k) * np.asarray(x, dtype=float)
+    ok = ~np.isnan(v)
+    nn = int(ok.sum())
+    if nn == 0:
+        return ["0", "—", "—"]
+    return [str(nn), f"{float((v[ok] < _SR_ATR_TOL_LO).mean()) * 100:.1f}%",
+            f"{float((v[ok] > _SR_ATR_TOL_HI).mean()) * 100:.1f}%"]
+
+
+def _insp_tol_saturation(bars: pd.DataFrame, cfg: dict) -> list[str]:
+    """検査16＝帯の許容幅（倍率 × ATR%）が、上下限（0.15%〜0.6%）の端に張り付いた割合を、足ごとに出す。
+
+    ★2026-09-26（M2-E-5・束2・設計書 m2e-bundle2-20260926）。next_step §6 の136番の「先にやること」。
+    ★判定しない（報告だけ）＝どこまで張り付いてよいかの線は まこさんが決める（まこさん決定 2026-09-26 の①）。
+    ★2つの形を並べる＝①その足の ATR%（2026-09-06 に外した形・5分足では下端に張り付いた）
+                      ②1時間足の ATR%（S-Rタッチ1時間ATR の形・_atr_pct_1h_on）
+    ★張り付き＝倍率 × ATR% が下端より小さい（下端に置き換わる）／上端より大きい（上端に置き換わる）バーの割合。
+      値が出ていないバー（助走・最初の1時間足が閉じる前）は数えない。
+    ★値決め窓だけを使う（採点窓が1本でも混ざれば止まる）。
+    """
+    _nm, a0, b0 = _insp_windows()[0]
+    win = bars.loc[(bars.index >= a0) & (bars.index < b0)]
+    _assert_search_window_only(win.index, "検査16")
+    one = (load_1m(win.index[0], win.index[-1])
+           if any(t in cfg["timeframes"] for t in SUB_5M_TF) else None)
+    print(f"  値決め窓 {win.index.min()} 〜 {win.index.max()} の {len(win)} 本（5分足）"
+          f" ／ 上下限 {_SR_ATR_TOL_LO * 100:.2f}%〜{_SR_ATR_TOL_HI * 100:.2f}%（出どころ＝設定の sr_tol の説明に写した逐語）")
+    print("  ①＝その足の ATR%（2026-09-06 に外した形） ／ ②＝1時間足の ATR%（S-Rタッチ1時間ATR の形）")
+    print("  | 足 | ATRの期間 | 倍率 | ①の本数 | ①下端 | ①上端 | ②の本数 | ②下端 | ②上端 |")
+    print("  |---|---|---|---|---|---|---|---|---|")
+    for tf in cfg["timeframes"]:
+        src, _closed = insp5_frame(win, tf, one)
+        for an in cfg["atr_periods"]:
+            own = (_atr(src.high, src.low, src.close, an) / src.close).to_numpy(float)
+            h1 = _atr_pct_1h_on(src, an)
+            for k in cfg["sr_atr1h_k"]:
+                cells = _tol_saturation_cells(k, own) + _tol_saturation_cells(k, h1)
+                print(f"  | {tf} | {an} | {k} | " + " | ".join(cells) + " |")
+    return []
+
+
 def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None = None,
                  cols: str | None = None) -> None:
     """データと指標の検査（歩0）＝5段を順に走らせ、まとめを機械出力する。❌ が1つでもあれば終了コード1。
@@ -4920,6 +5021,8 @@ def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None
                ("検査14", INSPECT_SECTIONS[13], lambda: _insp_v9_columns(bars, cfg, cat))]
     # ★2026-08-29（M2-A-2・まこさん承認 9449761de0135c8f）＝検査15 を足す（判定なし・報告だけ）。
     stages += [("検査15", INSPECT_SECTIONS[14], lambda: _insp_regime_label_oneway(bars))]
+    # ★2026-09-26（M2-E-5・束2・設計書 m2e-bundle2-20260926）＝検査16 を足す（判定なし・報告だけ）。
+    stages += [("検査16", INSPECT_SECTIONS[15], lambda: _insp_tol_saturation(bars, cfg))]
     # ★2026-09-08（監査 cp30 の別枠1）＝検査5 を名指しできるようにした。
     #   直す前＝検査5 は上の一覧に入っておらず、検査6 の直前に必ず走る作りだった。
     #   だから `--only 5` と打つと「そんな検査は無い」で止まり、
@@ -4968,6 +5071,9 @@ def inspect_data(bars_csv: str, config_path: str | None = None, only: str | None
             # ★2026-08-29＝検査15 は判定しない（報告だけ）。「異常なし」と出すと、
             #   何かを判定して問題が無かったと読めてしまうので、そう書かない。
             print(f"  📄 {key}: 判定なし（報告だけ＝レンジの本当の正解は誰も持っていないため）")
+        elif key == "検査16":
+            # ★2026-09-26＝検査16 も判定しない（報告だけ）。どこまで張り付いてよいかの線は まこさんが決める。
+            print(f"  📄 {key}: 判定なし（報告だけ＝張り付きの割合をどこまで許すかは まこさんが決める）")
         else:
             print(f"  ✅ {key}: 異常なし")
     # ★2026-09-08（監査 cp31 の別枠 I）＝検査5 が実際に走ったときだけ、この行を出す。
@@ -6468,6 +6574,120 @@ def _J(a: str, b: str) -> str:
     return a + b
 
 
+def selftest_atr1h(exit_: bool = True, bars_csv: str | None = None) -> list:
+    """T-A1〜T-A5＝S-Rタッチ1時間ATR（許容幅を1時間足の値動きの幅で決める部品）と検査16 の数え方を確かめる。
+
+    設計書 m2e-bundle2-20260926（M2-E-4c・束2）。口＝`--selftest-atr1h`（壊すプログラム b104〜b107 が使う）。
+    ★全部の番人（selftest）からも、この関数を呼ぶ＝同じ判定を2か所に書き写さない。
+    ★既知答えと教科書の式は、参照表（indicator_reference_diag の S-Rタッチ1時間ATR の登録）を呼ぶ
+      ＝検査3 と同じものを使う（ここに答えを書き写さない）。
+
+      T-A1＝参照表の手計算の既知答え3件（下端に張り付く・上端に張り付く・1時間足と5分足で答えが割れる）が、
+            全部の登録（窓 × 倍率 × ATR の期間）で一致する
+      T-A2＝値決め窓の5分足の末尾 3,000本で、教科書の式（参照表の独立実装）と1本も違わない
+      T-A3＝1時間足より長い足（4時間足）でも、build_features が列を作れる（1時間足の元の5分足が渡る）
+      T-A4＝途中で切ったデータで計算し直しても、切った時点の許容幅の元（1時間足の ATR%）が変わらない（未来を見ない）
+    """
+    ng: list = []
+    cfg = load_config()
+    cat = [c for c in build_catalog(cfg) if c[0].startswith("S-Rタッチ1時間ATR(")]
+    if not cat:
+        ng.append("T-A1: 材料カタログに S-Rタッチ1時間ATR が1件も無い")
+    # ── T-A1＝手計算の既知答え（参照表の known を呼ぶ）──
+    for name, fn, _d in cat:
+        ref, prm = iref.find(name)
+        if ref is None or ref["known"] is None:
+            ng.append(f"T-A1: {name} の既知答えが参照表に無い")
+            continue
+        for i, (cb, checks) in enumerate(ref["known"](prm) or [], 1):
+            out = pd.to_numeric(fn(cb), errors="coerce")
+            for pos, exp, atol in checks:
+                got = out.iloc[pos]
+                if not (pd.notna(got) and abs(float(got) - float(exp)) <= atol):
+                    ng.append(f"T-A1: {name} の見本{i}＝期待 {exp} ／ 実際 {got}")
+    # ── 値決め窓の5分足（T-A2〜T-A4 が使う・採点窓は使わない）──
+    _root = pathlib.Path(__file__).resolve().parent.parent.parent
+    bars = (pd.read_csv(bars_csv or (_root / BARS_CSV), parse_dates=["timestamp"])
+            .set_index("timestamp").sort_index())
+    win = bars.loc[(bars.index >= SEARCH_START) & (bars.index < SEARCH_END)]
+    _assert_search_window_only(win.index, "S-Rタッチ1時間ATR の番人")
+    s5 = win.iloc[-3000:]
+    # ── T-A2＝教科書の式（参照表の tb）と突き合わせる ──
+    for name, fn, _d in cat:
+        ref, prm = iref.find(name)
+        if ref is None or ref["tb"] is None:
+            ng.append(f"T-A2: {name} の教科書の式が参照表に無い")
+            continue
+        a = pd.to_numeric(fn(s5), errors="coerce").iloc[-500:]
+        b = pd.to_numeric(ref["tb"](s5, prm), errors="coerce").iloc[-500:]
+        m = a.notna() & b.notna()
+        if int(m.sum()) < 100:
+            ng.append(f"T-A2: {name} の突き合わせる本数が足りない（{int(m.sum())} 本）")
+            continue
+        dmax = float((a[m] - b[m]).abs().max())
+        if dmax > ref["tol"]:
+            ng.append(f"T-A2: {name} が教科書の式と違う（最大差 {dmax}）")
+    # ── T-A3＝1時間足より長い足（4時間足）でも列が作れる ──
+    if cat:
+        _H1_BASE["bars"] = None                          # ★前の計算の置き場を空にしてから試す（置き場に入れ忘れた道を見抜くため）
+        big = win.iloc[-30000:]
+        cfg4 = dict(cfg)
+        cfg4["timeframes"] = ["4h"]
+        feats, meta = build_features(big, cfg4, catalog=cat[:1])
+        col = f"{cat[0][0]}__4h"
+        if col not in feats.columns or int(feats[col].notna().sum()) == 0:
+            ng.append(f"T-A3: 4時間足で {cat[0][0]} の列が作れない（{meta.get(col)}）")
+        # ★T-A3 の2つ目（監査 CP44 の修正 1）＝4時間足に当てた1時間足の ATR% が、同じ5分足から作った1時間足の値と1本も違わない。
+        #   4時間足のバーから ATR を作る形（2026-09-06 に外した誤りと同じ型）を見抜く。わざと外した形（4時間足のバーの ATR%）も
+        #   同じ物差しに掛け、違いが出ることを毎回 確かめる（見抜く力の確かめ・検査15 の N4 と同じ考え）。
+        _an3 = cfg["atr_periods"][0]
+        _d4 = _resample(big[["open", "high", "low", "close", "volume"]], "4h")
+        _H1_BASE["bars"] = big
+        _a4 = _atr_pct_1h_on(_d4, _an3)
+        _a5 = pd.Series(_atr_pct_1h_on(big, _an3), index=big.index)
+        _at = _d4.index + pd.Timedelta("4h") - pd.Timedelta("5min")
+        _in = _at.isin(big.index)
+        _b5 = _a5.reindex(_at[_in]).to_numpy(float)
+        _b4 = _a4[_in]
+        _bw = (_atr(_d4.high, _d4.low, _d4.close, _an3) / _d4.close).to_numpy(float)[_in]
+        _ok = ~np.isnan(_b4) & ~np.isnan(_b5)
+        if int(_ok.sum()) < 100:
+            ng.append(f"T-A3: 4時間足の値を突き合わせる本数が足りない（{int(_ok.sum())} 本）")
+        elif float(np.abs(_b4[_ok] - _b5[_ok]).max()) > 1e-12:
+            ng.append("T-A3: 4時間足に当てた1時間足の ATR% が、5分足から作った値と違う＝4時間足のバーから ATR を作っている疑い")
+        elif float(np.abs(_bw[_ok] - _b5[_ok]).max()) <= 1e-12:
+            ng.append("T-A3: わざと外した形（4時間足のバーの ATR%）でも同じ値になる＝この突き合わせは何も見抜けない")
+    # ── T-A4＝途中で切って計算し直しても、切った時点の1時間足の ATR% が変わらない ──
+    cuts = [i for i in range(len(s5) - 400, len(s5)) if s5.index[i].minute == 30][:5]
+    if not cuts:
+        ng.append("T-A4: 切る場所（毎時30分のバー）が見つからない")
+    for an in cfg["atr_periods"]:
+        full = _atr_pct_1h_on(s5, an)
+        for i in cuts:
+            v_cut = _atr_pct_1h_on(s5.iloc[: i + 1], an)[-1]
+            v_full = full[i]
+            if not ((np.isnan(v_cut) and np.isnan(v_full)) or abs(v_cut - v_full) <= 1e-12):
+                ng.append(f"T-A4: {s5.index[i]} で切ると1時間足の ATR% が変わる"
+                          f"（ATR の期間 {an}・全部 {v_full} ／ 切った {v_cut}）＝未来を見ている")
+    # ── T-A5＝検査16 の張り付き割合の数え方の既知答え（監査 CP44 の修正 6）──
+    #   倍率 1.0 × [0.001, 0.003, 0.007, 0.0015, 0.006, 空]＝値の出ている5本のうち、下端より小さいのは 0.001 の1本、
+    #   上端より大きいのは 0.007 の1本（ちょうど端の 0.0015・0.006 は数えない）→ ["5", "20.0%", "20.0%"]
+    _c5 = _tol_saturation_cells(1.0, [0.001, 0.003, 0.007, 0.0015, 0.006, float("nan")])
+    if _c5 != ["5", "20.0%", "20.0%"]:
+        ng.append(f"T-A5: 検査16 の張り付き割合の数え方が既知答えと違う（{_c5}）")
+    print("=" * 80)
+    print("S-Rタッチ1時間ATR の番人（T-A1〜T-A5・設計書 m2e-bundle2-20260926）")
+    print(f"  登録 {len(cat)} 件 ／ 値決め窓の5分足 {len(win)} 本 ／ T-A4 で切った時点 {len(cuts)} か所")
+    if exit_:
+        if ng:
+            for x in ng:
+                print(f"  ❌ {x}")
+            raise SystemExit(1)
+        print("  全部 pass（❌ 0件）")
+        raise SystemExit(0)
+    return ng
+
+
 def selftest() -> None:
     """この道具が守ると言っていることを機械で確かめる。まこさんはこれを叩けばよい。"""
     ng = []
@@ -7453,6 +7673,7 @@ def selftest() -> None:
     print(f"  設定ファイル {cfg['_source']}")
     print(f"  結果の保存先 {OBSERVE_DIR}（本走のみ・既存は observe/archive へ退避＝上書きしない）")
     ng += selftest_rank_demand(exit_=False)          # T-f（需給を成績表に足す差分の口・設計書 demand-in-ranking-20260907）
+    ng += selftest_atr1h(exit_=False)                # T-A1〜T-A5（S-Rタッチ1時間ATR・設計書 m2e-bundle2-20260926）
     ng += selftest_insp5(exit_=False)                # T-g・T-h・T-i・T-j（検査5 の枠と使い回しの鍵・設計書 insp5-frame-and-table-tidy-20260908）
     if ng:
         for x in ng:
@@ -7512,6 +7733,8 @@ if __name__ == "__main__":
         _bc5 = (sys.argv[_i5 + 1] if len(sys.argv) > _i5 + 1
                 and not sys.argv[_i5 + 1].startswith("-") else None)
         selftest_insp5(bars_csv=_bc5)                 # （承認の打ち切り 120秒 に収めるための軽い口）
+    if "--selftest-atr1h" in sys.argv:                # ★T-A1〜T-A5 だけを（設計書 m2e-bundle2-20260926・壊すプログラム b104〜b107 が使う）
+        selftest_atr1h()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest" in sys.argv:
         selftest()
     else:

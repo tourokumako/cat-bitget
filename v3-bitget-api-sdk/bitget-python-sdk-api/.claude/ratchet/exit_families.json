@@ -1398,6 +1398,7 @@
    "RVGIシグナル",
    "RVGIヒスト",
    "RVI",
+   "S-Rタッチ1時間ATR",
    "S-Rタッチ数",
    "SINWMA傾き%",
    "SMC_SWEEP",
@@ -1583,8 +1584,8 @@
   ]
  },
  "confirm_conditions": {
-  "banned_pairs": 452,
-  "parts_count": 555,
+  "banned_pairs": 515,
+  "parts_count": 573,
   "quantile_grid": [
    "q10",
    "q20",

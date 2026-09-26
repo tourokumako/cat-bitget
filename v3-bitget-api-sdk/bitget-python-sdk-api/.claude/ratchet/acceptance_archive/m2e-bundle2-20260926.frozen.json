@@ -1,0 +1,26 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "scripts/priority_rebuild/observe_diag.py": [
+  "<モジュール直下>",
+  "_atr_pct_1h_on",
+  "_sr_touch_atr",
+  "build_catalog",
+  "build_features",
+  "insp5_frame",
+  "_tol_saturation_cells",
+  "_insp_tol_saturation",
+  "inspect_data",
+  "selftest_atr1h",
+  "selftest"
+ ],
+ "scripts/priority_rebuild/indicator_reference_diag.py": [
+  "<モジュール直下>",
+  "_tb_sr_touch_atr1h",
+  "_known_sr_touch_atr1h"
+ ],
+ "scripts/priority_rebuild/engine_tuner_gen.py": [
+  "selftest"
+ ]
+}

@@ -2,28 +2,25 @@
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
- "scripts/priority_rebuild/engine_tuner_gen.py": [
-  "sample_regime_build",
-  "needed_qkeys",
-  "_tree_conds",
-  "_regime_on_conds",
-  "selftest",
-  "gate_matrix"
- ],
- "scripts/priority_rebuild/engine_tuner_exec.py": [
+ "scripts/priority_rebuild/observe_diag.py": [
   "<モジュール直下>",
-  "_check_cond",
-  "_walk_build_tree",
-  "_eval_cond",
-  "_eval_tree",
-  "_material_name",
+  "_atr_pct_1h_on",
+  "_sr_touch_atr",
+  "build_catalog",
+  "build_features",
+  "insp5_frame",
+  "_tol_saturation_cells",
+  "_insp_tol_saturation",
+  "inspect_data",
+  "selftest_atr1h",
   "selftest"
  ],
- "scripts/priority_rebuild/streak_scope_diag.py": [
+ "scripts/priority_rebuild/indicator_reference_diag.py": [
   "<モジュール直下>",
-  "_split_on",
-  "_name",
-  "compare",
-  "main"
+  "_tb_sr_touch_atr1h",
+  "_known_sr_touch_atr1h"
+ ],
+ "scripts/priority_rebuild/engine_tuner_gen.py": [
+  "selftest"
  ]
 }
