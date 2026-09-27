@@ -469,7 +469,7 @@ def pre_ops(same_unit: bool | None = None, needs_state: bool | None = None,
                   and (needs_state is None or bool(v.get("needs_state")) is needs_state)
                   # ★2026-09-11（M2-E-3 の手順1）＝窓を持たない部品（abs）を分ける絞り。
                   #   既定（None）では今までどおり全部 返す＝直す前の呼び出しは1つも変わらない。
-                  #   abs は needs_n=False、ほかの7つは欄を持たない（＝True とみなす）。
+                  #   abs は needs_n=False、ほかの8つは欄を持たない（＝True とみなす）。
                   and (needs_n is None or v.get("needs_n", True) is needs_n)
                   # ★2026-09-27（M2-E-4e）＝入口の案を乱数で作る道で引いてよい部品だけに絞る。
                   #   既定（None）では今までどおり全部 返す。gen_draw の欄を持たない部品は True とみなす。

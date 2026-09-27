@@ -2810,7 +2810,7 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits) -> list[d
 
     stage ＝ "stage1" | "stage2a" | "stage2b" | "stage2c" | "stage3"
     laws  ＝ laws_for_scene("range") の戻り（法則ファイルから読んだもの）
-    戻り  ＝ 候補の一覧（鍵11個・分離力の高い順）
+    戻り  ＝ 候補の一覧（鍵11個・分離力の高い順。★動く線〔鍵 pre_win を足した12個〕は、固定の線を全部 並べた後ろに同じ順で続く・M2-E-4e）
 
     ★2026-09-13（98回目・監査 cp36 の C-1・C-2）＝実際に束を組む2本目（`sample_regime_build`）は、
       この一覧の順位から候補を取る（`_stage_pick`）。3つの絞り（外す時間足・§2.2 の元データ・
@@ -7210,6 +7210,8 @@ def selftest() -> int:
         _w47 = np.array([np.nan] * 4 + [1.0, 1.0 / 3.0, 0.0, 0.0, 0.0, np.nan])
         if not np.allclose(_g47, _w47, equal_nan=True):
             _ng47.append(f"②既知答えと違う: {list(np.round(_g47, 4))}（期待 {list(np.round(_w47, 4))}）")
+        if not np.allclose(ex._apply_pre(_a47[:-1], {"op": "ts_pos", "n": 5}), _g47[:-1], equal_nan=True):
+            _ng47.append("②最後の1本を落とすと、その前の値が変わる（未来のバーを見ている）")
         if pre_win_bars({"op": "ts_pos", "months": 6}) != 52596:
             _ng47.append(f"③6か月が5分足 52596本にならない: {pre_win_bars({'op': 'ts_pos', 'months': 6})}")
         _lm47, _ = load_limits()
@@ -7228,7 +7230,7 @@ def selftest() -> int:
             if c.get("family") != "BB幅" or _in47["material"][0].get("pre") != {"op": "ts_pos", "n": 52596}:
                 _ng47.append(f"③動く線の材料が違う: {c.get('col')} {_in47['material'][0].get('pre')}")
                 break
-        if _mv47 and _fx47 and min(c["rank"] for c in _mv47) <= max(c["rank"] for c in _fx47):
+        if _mv47 and _fx47 and min(i for i, c in enumerate(_c47) if c.get("pre_win")) <= max(i for i, c in enumerate(_c47) if not c.get("pre_win")):
             _ng47.append("③動く線が固定の線の後ろに並んでいない（固定の線の順位が変わる）")
         _wm47 = stage_warm(pd.Timedelta(days=60))
         if _wm47 != pd.Timedelta(days=60) + pd.Timedelta(minutes=52596 * 5):
@@ -7236,8 +7238,8 @@ def selftest() -> int:
         _src47 = pathlib.Path(__file__).read_text(encoding="utf-8")
         _rm47 = _src47[_src47.index("\ndef run_main") + 1:]
         _rm47 = _rm47[:_rm47.index("\ndef ")]
-        if "_warm, use_cache=not a.no_cache)" not in _rm47:
-            _ng47.append("⑤本走（run_main）が stage_warm の余白でデータを読んでいない")
+        if ("_warm, use_cache=not a.no_cache)" not in _rm47 or "_warm = stage_warm(et.WARM) if a.build_regime else et.WARM" not in _rm47):
+            _ng47.append("⑤本走（run_main）が --build-regime のときだけ stage_warm の余白でデータを読む形になっていない")
         ng += [f"T47: {x}" for x in _ng47]
         print(f"  T47 動く線: ①ts_pos は乱数の道の外 ／ ②既知答え ／ ③段2c の動く線 {len(_mv47)} 本"
               f"（BB幅 の固定の線 {len(_bb47)} 本・窓 5分足 52596本・固定の線の後ろ）／ ⑤余白 {_wm47}"

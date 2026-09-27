@@ -355,3 +355,27 @@
 - まこさん（逐語）「依頼書はOKなので、監査に出す。このセッションは終了して、新セッションで監査結果確認→修正する」「引き継ぎnext_stepと、セッションログ更新して、コミットする」＝CP47 の依頼書のチェックは通った。監査は別のセッションで まこさんが起動する。commit の OK。
 - next_step の元データ `next_step_src.json`＝0-1 を126回目に書き替え（★いまここ＝47番の6段の⑥＝実装の監査 CP47 の結果を確かめて当てる）、125回目の 0-1 に「次の書き替えで消す」を付けた。47番の状態を書き替えた。§6 に218番（承認の前の検査の B群が裏の実行と別の書き方の実行を数えない）と219番（法則ファイルの R7 の行番号が実行器に行を足すたびにずれる）を足した。
 - 教訓 L-632（承認の前に、設計書のリスクの表の「実装の後に〜する」の約束を照らす）・L-633（承認の前の検査に数えさせる実行は、表のとおりの文字で手前で走らせる）を足した。
+
+## §10 127回目＝監査 CP47 の結果を確かめた（6段の⑥・2026-09-27）
+
+- 結果ファイル＝`SDK/.claude/audits/2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_report.md`（1,045行・Read tool で全部 開いた）。結論＝GO・Critical 0／Major 3／Minor 8／Process 3・修正の指示 53件。
+- 状態＝確定47件・未決6件（修正 12・43・49・51・52・53）。★監査のセッションの報告は「未決5件」と書いたが、番号は6つ並んでいた＝結果ファイルでは6件。
+- `apply_audit_fix.py --report <CP47> --severity Critical,Major,Minor,Process --dry`＝「当たる 22 件（修正 1・2・4・5・7・14・15・17・19・21・23・25・27・29・31・33・35・37・39・40・41・42）／当てない 31 件（実物と合わない件は0）」。当てない31件＝走らせるコマンド24件・未決6件・守りの仕組み（`gen_s22_map.py`）1件。
+- ★1回目は先頭に `time` を付けて hook 11 に止められた（124回目と同じ）。grep の正規表現の中の「|」も hook 11 に止められた＝`-e` で分けて打ち直した。
+- 直す行を文字で探している壊すプログラム（L-605）＝b109〜b112 の `# EXPECT_MSG:` は4本とも「❌ T47」だけ。直す行の文字（`_warm, use_cache`・`c["rank"] for c in _mv47`・「ほかの7つは欄を持たない」・「鍵11個・分離力の高い順」・T47⑤ の文）で `.claude/breaks/*.sh` を grep＝0本。
+- 設計書の TARGET に `.claude/tools/` の道具（`gen_regime_kb.py`・`gen_s22_map.py`・`pre_audit_check.py`）は入っていない。126回目は TARGET に無い `gen_regime_kb.py` を、承認の印が設計書と合っている間に Edit で書けた（§8）。
+- 次＝まこさんに「どこまで直すか」と未決6件を決めていただく。
+- まこさん決定（逐語）「修正は全部」「未決６件はCCの案でOK」＝53件を全部。未決は私の案＝修正12・49（承認のコマンド）は打つ（1回にまとめる）／43（gen_regime_kb の照らし）は当てず §6 に積む／51（pre_audit_check に --diff）は当てる／52（acceptance_checklist の2行）は当てる／53（承認の前の検査の B2）は当てず §6 の218番に足す。
+- 修正44＝`.claude/tools/gen_s22_map.py` の `SEC_END` を監査の文字どおりに Edit で書いた（通った）。`gen_s22_map.py --verify`（修正45）＝「✅ --verify 一致」。
+- 修正51＝`.claude/tools/pre_audit_check.py` の Edit を受け入れ条件ゲートが止めた（TARGET に無い）。hook の本体を開いて確かめた＝承認ゲートから外れているのは `.claude/tools/gen_*.py` だけで、`pre_audit_check.py` は承認の配管に触るので TARGET と承認が要る。★私は前のチャットで「126回目の gen_regime_kb.py と同じ道で書ける」と書いたが、確かめずに書いた誤りだった（gen_regime_kb は gen_ で始まるので通っていた）。
+- `apply_audit_fix.py --report <CP47> --severity Critical,Major,Minor,Process --choose 52=確定`＝「当てた 23 件／当てなかった 30 件」。相手＝acceptance_src.json（2・5・7・15・17・19・21・23・25・27・29・31・33・35・37）・engine_tuner_gen.py（1・4・14・42）・engine_tuner_exec.py（41）・engine_tuner_milestones2.md（39・40）・acceptance_checklist.md（52）。
+- 確かめ＝py_compile（組む側・実行器）が通った。元データは jq で読めた。元データの sha256＝bcdeabf2… → 98c90711…。控え `.claude/state/acceptance_src_m2e4e-r6-moving-line-20260927_cp47.json`（同じ 98c90711…）。
+- まこさん決定（逐語）「決めていただくこと＝修正51 の道 →案１」＝元データの TARGET に `.claude/tools/pre_audit_check.py` を足し、承認の後に Edit で書く。
+- 確かめたこと＝受け入れ条件ゲートは編集するパスの末尾で TARGET を照らす（`case "$FILE" in *"$tgt"`）。必読ゲートは TARGET をリポジトリ直下と SDK 直下の2か所で探す（`_exists_anywhere`）。＝`.claude/tools/pre_audit_check.py` の書き方で両方に当たる。
+- 控えの TARGET に1行と、`_TARGET の扱い` の注記に1文を足した（Edit）。jq で読めた。本物との `diff` は TARGET の行と注記の2か所だけ。控えの sha256＝971e2a20…。次＝まこさんに cp を打っていただく。
+- 1回目の cp は まこさんが SDK の置き場で打ったので「No such file or directory」で止まった（私が相対パスで出した）。絶対パスで出し直した。まこさん「コマンド打った」＝ratchet の元データの sha256＝971e2a20…（控えと同じ）。
+- `gen_acceptance.py --write`（修正3・6・16・18・20・22・24・26・28・30・32・34・36・38・46）＝設計書 1,768行・囲み 12個・法則 51件／51行。
+- `verify_design_contract.py --diff <設計書>`（修正9・SDK の置き場）＝「齟齬: 0件」（監査のときは6件）。
+- 書いた直後の検査＝不足10件。A2（必読ゲート＝このセッションで開いていない／読むもの宣言ゲート＝宣言27件を開いていない／禁止語の事前チェック）・A9（照合B＝engine_tuner_gen.py の6件「設計書に書いたのに実装していない」と、gen_s22_map.py が impl_functions に無い）・B1・B2（b109〜b112 とその行のコマンドを、書き替えの後に測っていない）。
+- A2 の直し＝宣言の27件と必読ゲートが挙げたファイルを、宣言の範囲で Read tool で開き直した（宣言の中身は変えていない）。`list_banned_words.py acceptance`＝「全項目で抽出成功」。`--try` の2回目で A2 の残りは恒等の見本1本だけ → 開いた。
+- A9 は 124回目の §1-4・§2-3 と同じ＝commit していない差が一部だけのとき照合B が止める。commit で差をゼロにして解く（まこさんの OK 待ち）。B群は commit の後に表のとおりの形で測る。
