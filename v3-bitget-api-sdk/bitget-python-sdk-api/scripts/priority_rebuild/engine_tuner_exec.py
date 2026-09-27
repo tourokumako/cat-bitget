@@ -420,6 +420,15 @@ MATERIAL_PRE = {
     "ts_rank": {"desc": "いまの値が 直近 n本の中で何番目か（0〜1・いまのバーを含める）",
                 "same_unit": False},
     "ts_std": {"desc": "直近 n本のばらつき（標準偏差・いまのバーを含める）", "same_unit": False},
+    # ★2026-09-27（M2-E-4e・設計書 m2e4e-r6-moving-line-20260927）＝直近 n本の最小〜最大の間の、いまの値の位置。
+    #   まこさん決定（2026-09-27・逐語「２，案①、新しい部品を1つ足す案」）＝場面の判定の段2c の「動く線」
+    #   （BB幅 が直近6か月の範囲の下の方に在るか）を測る部品。式は Stochastic の %K と同じ形
+    #   （StockCharts の逐語 "%K = (Current Close - Lowest Low)/(Highest High - Lowest Low) * 100"）で、×100 はしない（0〜1）。
+    #   ★いまのバーを含める（ts_rank と同じ理由＝いまの値の位置を出すため）。最大＝最小なら値なし。
+    #   ★`gen_draw: False`＝入口の案を乱数で作る道（engine_tuner_gen の `pre_ops(same_unit=False, gen_draw=True)`）では引かない
+    #     （恒久67番＝乱数の道を広げない）。使うのは段2c の動く線だけ。
+    "ts_pos": {"desc": "いまの値が 直近 n本の最小〜最大の間のどこか（0〜1・いまのバーを含める）",
+               "same_unit": False, "gen_draw": False},
     "since_min": {"desc": "指定した状態に入って以降の最小値（状態の外は値なし）",
                   "same_unit": True, "needs_state": True},
     "since_max": {"desc": "指定した状態に入って以降の最大値（状態の外は値なし）",
@@ -441,7 +450,7 @@ NO_ARG_OPS = tuple(k for k, v in MATERIAL_PRE.items() if v.get("needs_n") is Fal
 
 
 def pre_ops(same_unit: bool | None = None, needs_state: bool | None = None,
-            needs_n: bool | None = None) -> list[str]:
+            needs_n: bool | None = None, gen_draw: bool | None = None) -> list[str]:
     """前処理の部品の名前を返す。same_unit・needs_state を指定すると、その種類だけに絞る。
 
     ★needs_state は 2026-08-21（48回目・M2-2-8）に足した。理由を書く。
@@ -461,7 +470,10 @@ def pre_ops(same_unit: bool | None = None, needs_state: bool | None = None,
                   # ★2026-09-11（M2-E-3 の手順1）＝窓を持たない部品（abs）を分ける絞り。
                   #   既定（None）では今までどおり全部 返す＝直す前の呼び出しは1つも変わらない。
                   #   abs は needs_n=False、ほかの7つは欄を持たない（＝True とみなす）。
-                  and (needs_n is None or v.get("needs_n", True) is needs_n))
+                  and (needs_n is None or v.get("needs_n", True) is needs_n)
+                  # ★2026-09-27（M2-E-4e）＝入口の案を乱数で作る道で引いてよい部品だけに絞る。
+                  #   既定（None）では今までどおり全部 返す。gen_draw の欄を持たない部品は True とみなす。
+                  and (gen_draw is None or v.get("gen_draw", True) is gen_draw))
 
 
 def _since_stat(a: np.ndarray, state: np.ndarray, op: str) -> np.ndarray:
@@ -522,6 +534,12 @@ def _apply_pre(a: np.ndarray, pre: dict, df: pd.DataFrame | None = None) -> np.n
         # ★いまのバーを含める。「直近 n本のばらつき」＝いまを含めた n本の散らばりを見るため。
         #   rolling は過去 n本だけ＝未来は見ない。
         return s.rolling(n).std().to_numpy(float)
+    if op == "ts_pos":
+        # ★2026-09-27（M2-E-4e）＝いまの値が 直近 n本の最小〜最大の間のどこか（0〜1）。
+        #   いまのバーを含める。rolling は過去 n本だけ＝未来は見ない。最大＝最小（幅が0）なら値なし。
+        lo = s.rolling(n).min()
+        width = s.rolling(n).max() - lo
+        return ((s - lo) / width.where(width > 0)).to_numpy(float)
     raise RecipeError(f"[実行器] 材料の前処理 {op} の実行が未実装")
 
 

@@ -1,0 +1,103 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2e4e-r6-moving-line-20260927",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b109_moving_line_not_built.sh",
+   "code": 1,
+   "note": "  ❌ T47: ③動く線 0 本が、BB幅 の固定の線 42 本と合わない",
+   "expect": 1,
+   "means": "段2c の候補に動く線を作る分岐を止めると、T47 が「段2c の候補に動く線が1本も無い」で落ちた",
+   "match": true
+  },
+  {
+   "no": "2",
+   "script": "b110_ts_pos_in_random_draw.sh",
+   "code": 1,
+   "note": "  ❌ T47: ①入口の案を乱数で作る道の一覧に ts_pos が入っている",
+   "expect": 1,
+   "means": "部品 ts_pos の「乱数の道で引かない」印を外すと、T47 が「入口の案を乱数で作る道の一覧に ts_pos が入っている」で落ちた",
+   "match": true
+  },
+  {
+   "no": "3",
+   "script": "b111_ts_pos_excludes_current.sh",
+   "code": 1,
+   "note": "  ❌ T47: ②既知答えと違う: [np.float64(nan), np.float64(nan), np.float64(nan), np.float64(nan), np.float64(nan), np.float64(0.5), np.float64(0.3333), np.float64(0.0), np.float64(0.0), np.float64(nan)]（期待 [np.",
+   "expect": 1,
+   "means": "部品 ts_pos の最小からいまのバーを外すと、T47 が「既知答えと違う」で落ちた",
+   "match": true
+  },
+  {
+   "no": "4",
+   "script": "b112_stage_warm_not_extended.sh",
+   "code": 1,
+   "note": "  ❌ T47: ⑤動く線を使う走行の余白が 60日＋6か月にならない: 60 days 00:00:00",
+   "expect": 1,
+   "means": "動く線を使う走行の余白を延ばさない形にすると、T47 が「余白が 60日＋6か月にならない」で落ちた",
+   "match": true
+  },
+  {
+   "no": "5",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "6",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "7",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "8",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "9",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "10",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "11",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "12",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "13",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "14",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  }
+ ]
+}

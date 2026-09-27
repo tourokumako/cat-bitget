@@ -1,0 +1,29 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "scripts/priority_rebuild/engine_tuner_gen.py": [
+  "<モジュール直下>",
+  "_make_cond",
+  "stage_candidates",
+  "pre_win_bars",
+  "stage_warm",
+  "build_stage_candidates",
+  "selftest",
+  "run_main"
+ ],
+ "scripts/priority_rebuild/engine_tuner_exec.py": [
+  "<モジュール直下>",
+  "pre_ops",
+  "_apply_pre"
+ ],
+ "scripts/priority_rebuild/condition_parts_diag.py": [
+  "<モジュール直下>",
+  "p_ts_pos",
+  "_cases"
+ ],
+ "../../.claude/tools/gen_regime_kb.py": [
+  "expand_stage",
+  "build_stage"
+ ]
+}

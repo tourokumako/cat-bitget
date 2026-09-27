@@ -223,6 +223,16 @@
    ]
   },
   {
+   "id": "ts_pos",
+   "name": "n本の範囲の中の位置",
+   "where": "材料の前処理（材料に pre:{op:ts_pos, n} を付ける）。★場面の判定の段2c の「動く線」だけで使う（入口の案を乱数で作る道では引かない＝gen_draw False）",
+   "impl": "engine_tuner_exec._apply_pre＝(いまの値 − 直近n本の最小) ÷ (直近n本の最大 − 直近n本の最小)。いまのバーを含める（ts_rank と同じ理由）。幅0は値なし。値は 0〜1。★2026-09-27 の M2-E-4e で足した（BB幅 が直近6か月の範囲の下の方に在るか）。式は StockCharts の Stochastic の %K（%K = (Current Close - Lowest Low)/(Highest High - Lowest Low) * 100）と同じ形で ×100 をしない。番人＝engine_tuner_gen --selftest の T47 ／ condition_parts_diag の『直近20本の範囲の中の位置』",
+   "src": [
+    "alphagen:Max",
+    "alphagen:Min"
+   ]
+  },
+  {
    "id": "or",
    "name": "どれか満たす（OR）",
    "where": "★形ではない。条件の木＝発火経路（entry.connective の any）",

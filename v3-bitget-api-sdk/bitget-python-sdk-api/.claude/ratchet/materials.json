@@ -4521,7 +4521,7 @@
        "中身": "rng.random() < 0.5"
       },
       {
-       "行": "3474",
+       "行": "3525",
        "中身": "rng.random() < 0.3"
       }
      ]
@@ -4685,10 +4685,10 @@
     },
     {
      "何": "材料の前処理",
-     "数": 8,
+     "数": 9,
      "単位": "種",
      "実物": "`engine_tuner_exec.MATERIAL_PRE`",
-     "中身": "`ts_max`・`ts_min`・`ts_rank`・`ts_std`・`since_min`・`since_max`・`at_entry`・`abs`"
+     "中身": "`ts_max`・`ts_min`・`ts_rank`・`ts_std`・`ts_pos`・`since_min`・`since_max`・`at_entry`・`abs`"
     },
     {
      "何": "材料2本の組み方",
@@ -4713,5 +4713,5 @@
    ]
   }
  },
- "_本文の指紋": "4b60db738f0ff9c9"
+ "_本文の指紋": "8f373886c1996870"
 }

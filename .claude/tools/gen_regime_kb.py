@@ -1039,6 +1039,7 @@ def expand_stage(stage_key: str | None = None) -> dict:
                           f"（法則ファイル＝{SRC['laws'].name}）")
         fams: list = []
         pre: dict = {}
+        pre_win: dict = {}                       # ★2026-09-27（M2-E-4e）＝窓つきの前処理（指標の名前 → {"op", "months"}）
         geo: list = []
         per_word: list = []
         for w in (s.get("語") or []):
@@ -1056,6 +1057,8 @@ def expand_stage(stage_key: str | None = None) -> dict:
                     fams.append(f)
                 if w.get("pre"):
                     pre[f] = w["pre"]
+                if w.get("pre_win"):
+                    pre_win[f] = w["pre_win"]
             for c in (w.get("geo_cols") or []):
                 if c not in geo_ratio:
                     ng.append(f"{_k}: レンジ幾何の比率の列に無い → {c}"
@@ -1069,6 +1072,13 @@ def expand_stage(stage_key: str | None = None) -> dict:
         for _f, _op in pre.items():
             if _op not in pres_all:
                 ng.append(f"{_k}: 知らない前処理 → {_f} に {_op}（前処理の一覧＝{sorted(pres_all)}）")
+        for _f, _pw in pre_win.items():               # ★2026-09-27（M2-E-4e）＝窓つきの前処理の形を照らす（fail-closed）
+            if not isinstance(_pw, dict) or set(_pw) != {"op", "months"}:
+                ng.append(f"{_k}: 窓つきの前処理の形が違う → {_f} に {_pw}（op と months の2つだけ）")
+            elif _pw["op"] not in pres_all:
+                ng.append(f"{_k}: 知らない前処理 → {_f} に {_pw['op']}（前処理の一覧＝{sorted(pres_all)}）")
+            elif not isinstance(_pw["months"], int) or isinstance(_pw["months"], bool) or _pw["months"] < 1:
+                ng.append(f"{_k}: 窓つきの前処理の月の数が不正 → {_f} に {_pw['months']!r}（1 以上の整数）")
         out[_k] = {"stage": s.get("stage"), "role": s.get("role"), "law": s.get("law"),
                    "law_or": s.get("law_or"), "law_width": s.get("law_width"),
                    # ★2026-09-16（監査 cp36 の M-3）＝時間足の条件を読む法則。
@@ -1076,7 +1086,7 @@ def expand_stage(stage_key: str | None = None) -> dict:
                    #   欄が無い段（段2b・段2c・段3）は None＝時間足の絞りを法則から掛けない。
                    "law_tf": s.get("law_tf"),
                    "mako_note": s.get("mako_note"), "families": fams,
-                   "lineages": list(s.get("lineages") or []), "geo_cols": geo, "pre": pre,
+                   "lineages": list(s.get("lineages") or []), "geo_cols": geo, "pre": pre, "pre_win": pre_win,
                    "bool_col": s.get("bool_col"), "語ごと": per_word,
                    "入れなかったもの": list(s.get("入れなかったもの") or [])}
     if ng:
@@ -1208,7 +1218,10 @@ def build_stage(d: dict) -> str:
             for _mako, _word, _how, _hit in _words:
                 _names = "・".join(f"`{f}`" for f in _hit)
                 _ks = "・".join(sorted({fam_lin[f].get("k") for f in _hit}))
-                _ps = "・".join(sorted({_pre[f] for f in _hit if f in _pre})) or "—"
+                _pre_w = s.get("pre_win") or {}          # ★2026-09-27（M2-E-4e）＝窓つきの前処理も欄に出す
+                _ps = "・".join(sorted({_pre[f] for f in _hit if f in _pre}
+                                       | {f"{_pre_w[f]['op']}（{_pre_w[f]['months']}か月・動く線）"
+                                          for f in _hit if f in _pre_w})) or "—"
                 add(f"| {_mako} | `{_word}` | {_how} | {_names} | {_ks} | "
                     f"{('`' + _ps + '`') if _ps != '—' else '—'} |")
             add("")

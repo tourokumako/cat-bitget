@@ -151,6 +151,20 @@ def p_ts_std(a: np.ndarray, n: int) -> np.ndarray:
     return pd.Series(a).rolling(int(n)).std().to_numpy(float)
 
 
+def p_ts_pos(a: np.ndarray, n: int) -> np.ndarray:
+    """⑳直近 n本の最小〜最大の間の、いまの値の位置（0〜1・★2026-09-27 の M2-E-4e で足した部品）。
+
+    いまのバーを含める（ts_rank と同じ）。幅0は値なし。
+    ★実行器の式を使わずに書いた独立の実装＝突き合わせの相手（式は Stochastic の %K と同じ形・×100 はしない）。
+    """
+    s = pd.Series(a)
+    lo = s.rolling(int(n)).min().to_numpy(float)
+    hi = s.rolling(int(n)).max().to_numpy(float)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        out = (np.asarray(a, float) - lo) / (hi - lo)
+    return np.where(hi - lo > 0, out, np.nan)
+
+
 def p_div(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     """⑲割り算（★2026-08-12 の段C の C-6 で足した部品）。
 
@@ -293,7 +307,7 @@ def _c_barssince(df, cols, v):
 
 
 _PRE_PARTS = {"ts_max": p_ts_max, "ts_min": p_ts_min,
-              "ts_rank": p_ts_rank, "ts_std": p_ts_std}
+              "ts_rank": p_ts_rank, "ts_std": p_ts_std, "ts_pos": p_ts_pos}
 
 
 def _c_level_pre(df, cols, v):
@@ -418,6 +432,11 @@ def _cases(m1: dict, m2: dict) -> list[dict]:
              real={"form": "level", "side": "above", "value": {"n": 10.0},
                    "material": [{**m1, "pre": {"op": "ts_std", "n": 20}}]},
              cols=1, v={"th": 10.0, "side": "above", "n": 20, "op": "ts_std"}),
+        # ★2026-09-27（M2-E-4e）＝『いまの値が 直近20本の範囲の下から2割以内』（部品 ts_pos）。
+        dict(form="level", compose="level_pre", label="直近20本の範囲の中の位置 ≤0.2",
+             real={"form": "level", "side": "below", "value": {"n": 0.2},
+                   "material": [{**m1, "pre": {"op": "ts_pos", "n": 20}}]},
+             cols=1, v={"th": 0.2, "side": "below", "n": 20, "op": "ts_pos"}),
         dict(form="diff", real={"form": "diff", "side": "above", "value": {"n": 0.5},
                                 "material": [m1, m2]},
              cols=2, v={"th": 0.5, "side": "above"}),

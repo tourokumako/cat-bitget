@@ -275,3 +275,83 @@
 - next_step の元データ `next_step_src.json`＝0-1 を125回目に書き替え（★いまここ＝47番の6段の②＝監査 CP46）、124回目の 0-1 に「次の書き替えで消す」を付けた。47番の状態・§6 の215〜217番を足した。
 - 教訓 L-631 を足した（長い窓の前処理は、データの前の余白と一緒に考える／手本の元データを書き替えるとき、hook が求める欄を落とした）。
 - commit は まこさんの OK（上の逐語）で行う。
+
+## §7 126回目＝監査 CP46 の結果を確かめ、元データに当てた（2026-09-27）
+
+- 監査 CP46（設計書 m2e4e-r6-moving-line-20260927 の監査）の結果＝GO・Critical 0／Major 2／Minor 8／Process 2（結果ファイル `SDK/.claude/audits/2026-09-27_m2e4e_r6_moving_line_design_cp46_audit_report.md`・614行を全部 開いた）。
+- `apply_audit_fix.py --report <CP46> --severity Critical,Major,Minor,Process --dry`＝rc=0・当たる11件（修正 3・5・7・9・11・13・15・17・19・21・23）／当てない13件（修正1＝未決・残り12件＝`gen_acceptance.py --write` の走らせるコマンド）。修正1 の直す前の文字 `_warm = stage_warm(et.WARM)` は元データの418行の1か所だけ（grep -c で1）。
+- まこさん決定（逐語）「1. どこまで直すか→全部」「2. 修正1（Major・状態は「未決」）＝本走で余白をいつ延ばすか →案A」＝案A は監査の案（`_warm = stage_warm(et.WARM) if a.build_regime else et.WARM`＝`--build-regime` を付けた走行だけ余白を延ばす）。
+- `apply_audit_fix.py --report <CP46> --severity Critical,Major,Minor,Process --choose 1=確定`＝「当てた 12 件／当てなかった 12 件」。ratchet の `acceptance_src.json` の sha256＝0053a412… → c9a875ee…・jq で読めた・`git diff --stat`＝17行 足し・11行 消し。
+- ★変数を使ったコマンドと、つないだコマンドは、土台ゲート（`require_acceptance_before_impl.sh` の Bash の枝）に止められた＝道具を単独で打ち直して通った。
+- `gen_acceptance.py --write`＝設計書 1,868行・囲み12個・法則 51件／51行。`--verify` は IMPL が機械の書いたまま。設計書の sha256＝260238303ce9d9cc…。修正1 の文字が設計書に1か所。
+- 承認の前の検査（`show_design_check_after_write`）＝不足1件＝A2（門の検査が rc=1）。中身は3つ＝①必読ゲート（直す対象5本と「読んだ」と書いた5本を、このセッションで Read tool で開いていない）②読むもの宣言ゲート（宣言27件を このセッションで開いていない）③禁止語の事前チェック（`list_banned_words.py` をこのセッションで打っていない）。★どれも このセッションの読んだ記録の不足で、設計書の中身の不足ではない。承認をお願いする前に開き直す。
+- まこさんの問い（逐語）「監査の指示に入っていないもの（1件）→よくわからないので、わかりやすく説明してほしい」＝元データの311行（見積もりの表の行）の手書きの「当てる道具で当てる19件」が、修正9 で実装の指示が1件 増えたのに古いまま残る件。チャットで説明した（答えだけ・直していない）。
+- まこさん指示（逐語）「設計書の「時間の見積もり」の表に、数え直していない数字が1つ残ります →これも直す」。
+- 当てた後の元データの控え `.claude/state/acceptance_src_m2e4e-r6-moving-line-20260927_cp46.json` を作り（cp・sha256 c9a875ee…＝本物と同じ）、315行の「当てる道具で当てる19件」を「20件」に Edit で直した。本物との `diff` は315行の1行だけ・jq で読めた・控えの sha256＝bcdeabf2…。
+- 数え直し（jq で実装の指示の「対象のファイル」を分けた）＝当てる道具 20件・gen_regime_kb 5件・壊すプログラム 4件・合計29件＝行の文と合う。
+- ★途中で ToDo ゲートに1回 止められた＝状態の欄に「✅済（2026-09-27・…）」のように言葉を足していた（使えるのは ✅済・★いまここ・まだ の3つだけ）。`--check` を打たずに書いたため（恒久 §0-4 の1番）。
+- 次＝まこさんに cp を打っていただき、`gen_acceptance.py --write` で設計書を作り直す。
+- まこさん（逐語）「コマンド打った」＝ratchet の `acceptance_src.json` の sha256＝bcdeabf2…（控えと同じ）。
+- 宣言した読むもの27件（`design_read_plan.md`）と、必読ゲートが挙げたファイル（`condition_parts_diag.py`・`condition_parts.json`・`gen_acceptance.py`・`gen_s22_map.py`・`design_read_plan.md` ほか）を、宣言の範囲どおりに Read tool で開き直した。`list_banned_words.py acceptance`＝全項目で抽出成功。
+- `gen_acceptance.py --write`＝設計書 1,868行・囲み12個・法則 51件／51行。設計書の sha256＝f18554aa47342fbc…。「当てる道具で当てる20件」が1か所。
+- `require_design_check_before_approval.py --try`＝「承認のプログラムの止まり所 A1〜A8・B1・B2 は全部 通ります（不足0件）」（14.8秒）。
+- 次＝まこさんに承認（`bash .claude/hooks/approve_impl.sh`）をお願いする（6段の④の前）。
+
+## §8 126回目＝6段の④（設計書の実装の指示を当てる）（2026-09-27）
+
+- まこさん（逐語）「承認した」。`.claude/state/acceptance.approved`＝f18554aa…＝設計書の sha256 と同じ。控え `SDK/.claude/ratchet/acceptance_archive/m2e4e-r6-moving-line-20260927.md` ほか3本が在る。
+- `apply_audit_fix.py --design --dry`＝「承認の印と一致: はい」・当たる20件（実装 1〜17・23・27・29）／当てない9件（gen_regime_kb の18〜22・壊すプログラムの24〜26・28＝守りの仕組み）・実物と合わない0件。
+- `apply_audit_fix.py --design`＝「当てた 20 件／当てなかった 9 件」。当てた先＝engine_tuner_exec.py（1〜4）・engine_tuner_gen.py（5〜12・27）・condition_parts_diag.py（13〜15）・m2_stage_candidates.json（16・17・29）・condition_parts.json（23）。
+- 実装 18〜22＝`.claude/tools/gen_regime_kb.py` の該当行（1035〜1084・1204〜1217）を開いてから、設計書 4-20 と同じ文字を Edit ツールで5回 書いた。
+- 実装 24〜26・28＝壊すプログラム b109〜b112 を設計書 4-20 の全文どおりに Write ツールで書いた。書く前に、壊す対象の4行が当てた後のコードにちょうど1か所ずつ在ることを `grep -c -x` で数えた（4つとも1）。`bash -n` は4本とも通った。
+- `py_compile`（engine_tuner_exec.py・engine_tuner_gen.py・condition_parts_diag.py）＝通った。gen_regime_kb.py の py_compile は土台ゲートに止められた（道具の .py への書き込みを伴うため）＝走らせて確かめた。JSON 2本は jq で読めた。
+- `gen_regime_kb.py --write stage`＝§2.2-0 の表 221行（5.5秒）。BB幅 の行の前処理の欄に「ts_pos（6か月・動く線）」が出た（milestones2 の944行）。
+- `gen_regime_kb.py --selftest`＝**14/15 pass**。落ちたのは T11（引用の実在検査「いまの引用に ❌ が在る」）。`--verify all`＝「❌ R7: `engine_tuner_exec.py:2669` の前後5行に `wpct_arr` が無い」「ずれ 1件」。
+  - 原因（実物で確かめた）＝直す前の実行器（`git show HEAD`）では `wpct_arr` が2669行、当てた後は2687行（実装 1〜4 で18行 下がった）。引用しているのは `regime_laws.json`:758 の R7 の注意の文（同じ文が `regime_detection_kb.md`:868 にも在る）。★設計書の影響範囲（4-13）に無かったずれ。同じずれは4回目（§6 の93番の根っこ）。
+- `engine_tuner_exec.py --selftest`＝「✅ 全部 pass」（8.5秒）。
+- `engine_tuner_gen.py --selftest` を裏で走らせた（見込み 約5分40秒・2026-09-20 の実測 5分33秒）。
+- `condition_parts_diag.py` の時間の実測を worklog と decisions で探した＝見つからない。設計書のリスク1 のとおり、走らせる前に まこさんに報告する。
+- `engine_tuner_gen.py --selftest`（裏）＝rc=0・「✅ 全部 pass」・6分09秒（見込み 5分40秒）。T47 の行＝「①ts_pos は乱数の道の外 ／ ②既知答え ／ ③段2c の動く線 42 本（BB幅 の固定の線 42 本・窓 5分足 52596本・固定の線の後ろ）／ ⑤余白 242 days 15:00:00＝通った」。出力の全文＝scratchpad の gen_selftest.txt。
+- まこさんに決めていただくこと2つを出した＝①R7 の行番号（2669 → 2687）を直すか ②condition_parts_diag.py を時間の実測なしで走らせてよいか（私の案＝打ち切り10分で1回）。
+- Stop hook（承認の前の検査）＝完成の条件 #1〜#4（b109〜b112）を まだ測っていない＝承認は もう1回 要る（予定どおりの2回目）。
+- まこさん決定（逐語）「R7 の行番号を直すか→直す」「condition_parts_diag.py を走らせてよいか→よい」。
+- R7 の直し＝`2669` を書いている所を grep（md・json・archive と監査の作業場を除く）＝`regime_laws.json` と `regime_detection_kb.md` の2か所（KB の §11 は法則ファイルから道具が作る）。`regime_laws.json`:758 の `engine_tuner_exec.py:2669` を `:2687` に直し、同じ文に4回目の直しの記録を1文 足した（2593行 → 2669行 の直しの記録がこの文に無いことも書いた）。jq で読めた。
+- `gen_regime_kb.py --write laws`＝§11（477行）を作り直した。`--verify all`＝「file:line 引用の実在検査＝9件のうち ずれ 0件」。`--selftest`＝15/15 pass。
+- 法則ファイルを直したので hook（require_selftest_after_source_edit）が自己テスト7本を求めた＝gen_acceptance 9/9・gen_regime_kb 15/15・engine_tuner_exec 全部 pass・gen_composition_rules 全部 pass・gen_indicator_switch 11/11・leak_causality_diag --selftest 全部 pass（32.8秒）・engine_tuner_gen は裏で2回目。
+- `condition_parts_diag.py`＝rc=0・3.8秒（初めての実測）。「✅ 13個の形（29通り）すべて、部品の組み立てと 1バーも違いません（食い違い 0）」。新しい部品の行＝「level 直近20本の範囲の中の位置 ≤0.2 4,565 4,565 0」。
+- `gen_materials.py --write`＝材料の文書の「材料の前処理」が 9 種（ts_pos を含む）。`--verify`＝一致。`--selftest`＝全部 pass（該当なし 1件: S5・1分13秒）。
+- `gen_signal_families.py --verify`（G2）＝「表は入力の正本と一致（手の改変なし）／G2 も期待どおり」・g2_pass.json の指紋 6b971151…（対象38件）・28.7秒。型の表は変わらなかった（手順7）。
+- H2（`leak_causality_diag.py`）を裏で走らせた（見込み 約5分・2026-09-26 の実測 303.9秒）。
+- 直す前と後で結果が同じか確かめる3本の走行＝`--identity`（S2）「✅ 全部一致」6.8秒／`--identity-l1`「✅ 全部一致」4.0秒／`--identity-s1`「✅ 全部一致」17.4秒。
+- 壊すプログラム b109〜b112 は、組む側・実行器のファイルに手を入れる作りなので、裏の2本（H2・組む側の自己テスト）が終わってから測る。
+- `tidy_next_step.py --write`（Stop hook の指摘＝(0-b-2) の G2 の印と時刻が json と違う）＝7つとも通った。
+- `engine_tuner_gen.py --selftest`（2回目・法則ファイルを直した後）＝rc=0・「✅ 全部 pass」・❌ 0件・6分23秒。
+- H2（`leak_causality_diag.py`）＝rc=0・5分06秒・番人「全部 pass ✅」・h2_pass.json の指紋 bf993752…。`tidy_next_step.py --write` をもう1回（H2 の印の欄）＝7つとも通った。
+- `run_breaks.py --design .claude/state/acceptance.md --measure-only` を裏で走らせた（見込み 約25分＝組む側の自己テスト 6分09秒・6分23秒 × 4本）。リダイレクト付きの1回目は土台ゲートに止められた。
+- 裏の `--measure-only`（4本）＝rc=0・4本とも「✅ 期待どおり」rc=1。壊した行は元に戻っていた（`grep -c -x` で当てた後の行が1件ずつ・「が壊した」は前からあるコメントの1件だけ）。
+- 完成の条件 #7＝`grep -c 'ts_pos（6か月・動く線）' .claude/ratchet/engine_tuner_milestones2.md`＝1。#8＝SDK の置き場から `python3 ../../.claude/tools/gen_regime_kb.py --verify all`＝ずれ 0件。
+- `require_design_check_before_approval.py --try` が B1・B2 の不足8件を出した。原因（hook の本体 230〜324行を開いて確かめた）＝B群は やり取りの記録の Bash の結果の文字を読む＝裏で走らせた実行は結果の文字が「裏で走らせた」の案内だけなので数えない／B2 は表のコマンドの文字（SDK の置き場からの `python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest`）で探す＝私の `cd …/priority_rebuild; python3 engine_tuner_gen.py --selftest` は当たらない。★`--try` は `--transcript` を渡さないと B群を必ず不足と出す。
+- 直し＝表のとおりの形で組む側の自己テストを手前で走らせた（「✅ 全部 pass」・T47 の行は同じ）。`run_breaks.py … --measure-only --only <1本>` で b109・b110・b111・b112 を1本ずつ手前で測った（4本とも「✅ 期待どおり」rc=1）。
+- `--try --transcript <このセッションの記録>`＝「承認のプログラムの止まり所 A1〜A8・B1・B2 は全部 通ります（不足0件）」（17.4秒）。
+- 次＝2回目の承認をお願いする（設計書 4-4 の手順10）。
+- まこさん（2回目の承認の出力を貼った）＝指紋 f18554aa…（前の控えと差分なし）。壊すプログラム4本とも「✅ 期待どおり」rc=1・「#1〜#4 済＝壊すと rc=1（宣言どおり）／条件のコマンド rc=0」。#5〜#14 は「未着手」のまま（壊すプログラムを付けない行＝「—」）。承認の指紋を取り直した 2999e9a8…・控えを取り直した（「済」を書き込んだ後の版）。
+  - ★前の工事の控え（`acceptance_archive/m2e-bundle2-20260926.md`）でも、壊すプログラム「—」の行は15行とも「未着手」＝同じ扱い。これらの行のコマンドは承認の前に私が全部 走らせた（この節の上）。
+  - 出力の「❓ impl_functions の出どころを判定できません（読めなかったファイル: ../../.claude/tools/gen_regime_kb.py）」＝TARGET の外の道具（NEVER_WRITE）を承認のプログラムが読めなかった旨。
+- `pre_audit_check.py --run` を裏で走らせた（見込み 約8分＝2026-09-27 の実測 H2 304.4秒・G2 30.6秒・観察の道具の自己テスト 120.2秒 ほか）。
+- まこさんの問い（逐語）「以下は修正済みなんだよね？」（直す範囲＝全部・修正1＝案A）→ 実物で確かめて答えた＝案A の1行が acceptance_src.json:423・acceptance.md:1215・engine_tuner_gen.py:7840 の3か所に在る。まこさん「了解。」
+- ★設計書 6-2 のリスク8（監査 CP46 の修正7 で足した行＝実装の後、本走の余白で読んだ値決め窓・確認窓で、BB幅 の動く線の材料の値なしの本数を数えて記録する）を、まだやっていない。数える道具が無く、一時置き場の自作の確かめは hook（enforce_observe_diag_only）が止める。2回目の承認をお願いする前に私が見落としていた。まこさんに案1（M2-F-2 の設計書に入れる・今回は依頼書の自己申告に書く）と案2（今回の工事で数える口を作る＝設計書と承認がもう1回）を出した。
+- `pre_audit_check.py --run`＝全部 rc=0（gen_indicator_switch --write 3.9秒・gen_materials --write 6.8秒・G2 32.4秒・H2 300.4秒・gen_materials --verify 7.6秒・--selftest 78.1秒・gen_indicator_switch --verify 3.2秒・gen_exit_families --verify 3.1秒・exec --selftest 8.8秒・observe_diag --selftest 118.8秒・gen_audit_request --selftest 2.4秒・gen --selftest-extra-gate 3.7秒）・記録の指紋 f8b070aa…。「⏸ まこさんの承認を待つもの 2 件」＝型の表と出口の表の --write・--approve（設計書 4-4 の手順11 のとおり、部品の一覧を読まないので要らない＝G2 の --verify が「表は入力の正本と一致」）。
+- `pre_audit_check.py --verify`＝「監査に出せます（チェックの1枚が新しく、全部 rc=0）」。
+- `tidy_next_step.py --write` を3回（G2・H2 の記録が取り直されるたびに Stop hook が止めた）＝どれも7つとも通った。
+- まこさんの問い（逐語）「この件を子どもでもわかるように説明してほしい」→ 気温のノートのたとえで説明した。問い（逐語）「私がその場で数える小さなプログラムを作ることは、決まりで止められています。→これはなぜ？」→ pdca_flow.md の enforce_observe_diag_only の行（2026-07-24 まこさん指示・自作の確かめのプログラムを量産した事案）で答えた。
+- まこさん決定（逐語）「案1（私のおすすめ）：次の工事（M2-F-2）で数えます。→これにする」＝リスク8 の数え上げは M2-F-2 の設計書に入れる。`m2_todo.json` の M2-F-2 の注意に1行 足した（jq で読めた）→ `gen_regime_kb.py --write todo`（やることリスト 1,557行）・`--selftest` 15/15・`--verify all` ずれ 0件。
+- 実装の監査 CP47 の依頼書の元データ `SDK/.claude/audits/cp47_work/cp47_src.md` を書いた（手本＝CP45 の元データ）。問い10件（A0〜A5・B1〜B3・C1）・自己申告5件（R7 の行番号・リスク8 を M2-F-2 へ・承認の前の検査が裏の実行を数えない・gen_regime_kb の py_compile・型の表と出口の表を打っていない）・事実データ16行・着手前必読16件。書いた行の範囲を grep で照らし、外れていた3つ（`_apply_pre` 505〜545・`build_stage_candidates` 2808〜2974・`expand_stage` 1004〜1095）を直した。
+- `gen_audit_docs.py request`＝依頼書 `SDK/.claude/audits/inputs/2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_request.md`（432行・問い 10 件・事実データ 1 件・外部検索 1 件・自己申告 5 件）。
+- 次＝まこさんに依頼書をチェックしていただく（まこさん決定 2026-09-09）→ 別のセッションで監査を起動していただく。
+- まこさん（逐語）「依頼書のリンクを出して」→ 依頼書と元データのリンクを出した。
+
+## §9 126回目の終わり＝引き継ぎと commit（2026-09-27）
+
+- まこさん（逐語）「依頼書はOKなので、監査に出す。このセッションは終了して、新セッションで監査結果確認→修正する」「引き継ぎnext_stepと、セッションログ更新して、コミットする」＝CP47 の依頼書のチェックは通った。監査は別のセッションで まこさんが起動する。commit の OK。
+- next_step の元データ `next_step_src.json`＝0-1 を126回目に書き替え（★いまここ＝47番の6段の⑥＝実装の監査 CP47 の結果を確かめて当てる）、125回目の 0-1 に「次の書き替えで消す」を付けた。47番の状態を書き替えた。§6 に218番（承認の前の検査の B群が裏の実行と別の書き方の実行を数えない）と219番（法則ファイルの R7 の行番号が実行器に行を足すたびにずれる）を足した。
+- 教訓 L-632（承認の前に、設計書のリスクの表の「実装の後に〜する」の約束を照らす）・L-633（承認の前の検査に数えさせる実行は、表のとおりの文字で手前で走らせる）を足した。

@@ -1802,7 +1802,7 @@ def _make_cond(rng, role, limits, pool, tfs, seen_rolekind, kind_count, table, s
     #   ・閾値は下の既に在る決まり（DC1・DC2・分位の格子）がそのまま決める＝新しい決まりを作らない。
     #   ・本数は int_grid から引く＝CC が数字を書かない。
     if form in ex.forms_where("pre_ok"):       # ★手書き → 性質表から（M2-2-3b）
-        _pre_opts = [None] + ex.pre_ops(same_unit=False)
+        _pre_opts = [None] + ex.pre_ops(same_unit=False, gen_draw=True)   # ★2026-09-27（M2-E-4e）＝乱数の道で引かない部品（ts_pos）を外す
         _op = _pre_opts[int(rng.integers(len(_pre_opts)))]
         if _op is not None:
             m = _mat_with_pre(m, {"op": _op, **_iv(rng, limits, "n", n_min=2)})
@@ -2507,6 +2507,9 @@ def stage_candidates(stage: str) -> dict:
                 "lineages": frozenset(_s.get("lineages") or ()),
                 "geo_cols": tuple(_s.get("geo_cols") or ()),
                 "pre": dict(_s.get("pre") or {}),
+                # ★2026-09-27（M2-E-4e）＝窓つきの前処理（指標の名前 → {"op", "months"}）。
+                #   固定の線と別に「動く線」の候補を作る（build_stage_candidates）。
+                "pre_win": dict(_s.get("pre_win") or {}),
                 "bool_col": _s.get("bool_col"),
                 # ★2026-09-13（完成の条件 #4・まこさん決定「案1」「一本化する」）＝段の役割と法則の番号も
                 #   元データから渡す。コードに法則の番号と役割を書かない（STAGE_SPEC に在った二重持ちを消した）。
@@ -2543,6 +2546,36 @@ STAGE_SPEC = {
 #   なぜ移したか＝指標の名前をコードに直書きすると、§2.2 が変わったとき片方だけ直って腐る
 #   （恒久の決まり69番）。まこさん指示 2026-09-10「この件、毎回忘れて、設計に入れないし、
 #   やろうとしないから、絶対入れろ」で足した前処理そのものは、1つも外していない。
+
+
+# ★2026-09-27（M2-E-4e・設計書 m2e4e-r6-moving-line-20260927）＝窓つきの前処理の窓（月）を、実行データの足の本数に直す。
+#   なぜ要るか＝前処理は実行データ（5分足）の並びに載った列に掛かる（engine_tuner_exec._col_array）。
+#   だから窓の本数は、材料の時間足によらず5分足の本数で数える。
+#   ★5 の出どころ＝要件 cat_requirements §4.6 の H7「5m が現行標準」と、実行データ（5分足の正本）。
+#   ★1か月＝365.25 ÷ 12 日（暦の平均）。月の数は §2.2 の元データ（m2_stage_candidates.json の pre_win の months）が持ち、
+#     その出どころは相場の法則の逐語 six-month。私は月の数を作らない。
+_EXEC_BAR_MIN = 5
+
+
+def pre_win_bars(pw: dict) -> int:
+    """窓つきの前処理 {"op", "months"} の窓を、実行データ（5分足）の本数に直す（fail-closed）。"""
+    months = pw.get("months")
+    if not isinstance(months, int) or isinstance(months, bool) or months < 1:
+        raise SampleError(f"窓つきの前処理の月の数が不正: {months!r}（1 以上の整数・fail-closed）")
+    return int(round(months * 365.25 / 12 * 1440 / _EXEC_BAR_MIN))
+
+
+def stage_warm(base_warm):
+    """§2.2 の元データに窓つきの前処理（pre_win）が在れば、データの前の余白を「いまの余白＋いちばん長い窓」にする。
+
+    ★2026-09-27（M2-E-4e・まこさん決定「余白の直し方→C」）＝動く線を使う走行（この道具の本走 run_main）だけ余白を延ばす。
+      窓の最初の1本の材料にも、いまの余白（指標の助走）が要るので、足し算にする。
+      恒等の走行・H2 など、この関数を呼ばない走行の余白は今のまま（engine_tuner.WARM）。
+    """
+    months = [int(pw["months"]) for k in STAGE_SPEC for pw in stage_candidates(k)["pre_win"].values()]
+    if not months:
+        return base_warm
+    return base_warm + pd.Timedelta(minutes=pre_win_bars({"months": max(months)}) * _EXEC_BAR_MIN)
 
 
 def _col_in_param_range(col: str, family: str, want: dict | None) -> bool:
@@ -2841,6 +2874,9 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits) -> list[d
     _law = spec_c["law"]                           # ★法則の番号は元データから（コードに書かない・#4）
     fams_law, side_law = _law_families(laws, _law)
     lins_law = stage_lineages_of(stage, spec_c, laws)
+    # ★2026-09-27（M2-E-4e）＝「動く線」の候補（窓つきの前処理を付けたもの）。固定の線の候補を全部 並べた後ろに足す
+    #   ＝固定の線の順位を1つも変えない（束を組む側は順位で3枠目を取るので、いまの束は変わらない）。
+    _moving: list[dict] = []
     rank = 0
     for fam, tf, lab, hor, med, ncol, col in ranked_groups(role, label):
         if fam not in iref.FAMILY_LINEAGE or fam not in ranges:
@@ -2916,6 +2952,21 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits) -> list[d
             out.append({"stage": stage, "rank": rank_q, "col": col, "family": fam, "tf": tf,
                         "acc": med, "label": lab, "horizon": hor, "cond": _c,
                         "law_check": "—", "dropped_by": None})
+            # ★2026-09-27（M2-E-4e）＝この指標に窓つきの前処理（pre_win）が在れば、同じ閾値の「動く線」の候補も作る。
+            #   材料に前処理を付けるだけ＝側と閾値の分位は固定の線と同じ（法則が決める側・まこさん決定の1点）。
+            _pw = spec_c["pre_win"].get(fam)
+            if _pw:
+                _cm = json.loads(json.dumps(_c))
+                _inm = _cm["not"] if "not" in _cm else _cm
+                _inm["material"] = [{**_inm["material"][0],
+                                     "pre": {"op": _pw["op"], "n": pre_win_bars(_pw)}}]
+                _moving.append({"stage": stage, "rank": None, "col": col, "family": fam, "tf": tf,
+                                "acc": med, "label": lab, "horizon": hor, "cond": _cm,
+                                "law_check": "—", "dropped_by": None, "pre_win": dict(_pw)})
+    for _mv in _moving:                            # ★動く線は、固定の線の後ろに順位を続けて並べる（M2-E-4e）
+        rank += 1
+        _mv["rank"] = rank
+        out.append(_mv)
     if not out:
         raise SampleError(f"{stage} の候補が0件（法則 {_law} の名指し・§2.2 の語・型の表の絞りの後）")
     return out
@@ -5208,7 +5259,7 @@ def selftest() -> int:
     #   ①案の中に「水準 ＋ 単位の変わる前処理」の条件が実際に出る（＝使える部品になっている）
     #   ②その条件を検証器が受け付ける（分位の閾値つき）
     #   ③メタ確認＝列2本の形に渡すと拒否される（単位が違うものを大小で比べさせない）
-    _lv_ops = ex.pre_ops(same_unit=False)
+    _lv_ops = ex.pre_ops(same_unit=False, gen_draw=True)   # ★2026-09-27（M2-E-4e）＝案を作る道が引く部品だけを見る（ts_pos は段2c の動く線だけで使う）
     if not _lv_ops:
         ng.append("T1-C6e: 単位の変わる前処理の部品が1つも登録されていない（ts_rank・ts_std）")
     else:
@@ -7139,6 +7190,63 @@ def selftest() -> int:
     except Exception as _e36:
         ng.append(f"T36: 途中で止まった: {type(_e36).__name__} {_e36}")
 
+    # ══ T47 動く線（M2-E-4e・2026-09-27）＝BB幅 が直近6か月の範囲の下の方に在るかを、段2c の候補に足す ══════
+    #   ①部品 ts_pos が一覧に在り、入口の案を乱数で作る道の一覧（gen_draw=True）には入らない（恒久67番）
+    #   ②既知答え＝直近5本の最小〜最大の中の位置（いまのバーを含める・幅0は値なし）
+    #   ③6か月が5分足 52596本。段2c の候補に、BB幅 の固定の線と同じ本数の動く線が在り、
+    #     材料は ts_pos・窓 52596本で、固定の線の後ろに並ぶ（固定の線の順位を変えない）
+    #   ⑤動く線を使う走行（本走）の余白が「いまの余白＋6か月」（まこさん決定「余白の直し方→C」）
+    #   ★壊すプログラム b109（動く線を作らない）・b110（乱数の道に入れる）・b111（いまのバーを外す）・b112（余白を延ばさない）がこの検査を測る。
+    try:
+        _ng47: list[str] = []
+        if "ts_pos" not in ex.MATERIAL_PRE:
+            _ng47.append("①前処理の一覧に ts_pos が無い")
+        if "ts_pos" in ex.pre_ops(same_unit=False, gen_draw=True):
+            _ng47.append("①入口の案を乱数で作る道の一覧に ts_pos が入っている")
+        if "ts_pos" not in ex.pre_ops(same_unit=False):
+            _ng47.append("①既定の一覧から ts_pos が落ちた")
+        _a47 = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 3.0, 3.0, 3.0, 3.0, 3.0])
+        _g47 = ex._apply_pre(_a47, {"op": "ts_pos", "n": 5})
+        _w47 = np.array([np.nan] * 4 + [1.0, 1.0 / 3.0, 0.0, 0.0, 0.0, np.nan])
+        if not np.allclose(_g47, _w47, equal_nan=True):
+            _ng47.append(f"②既知答えと違う: {list(np.round(_g47, 4))}（期待 {list(np.round(_w47, 4))}）")
+        if pre_win_bars({"op": "ts_pos", "months": 6}) != 52596:
+            _ng47.append(f"③6か月が5分足 52596本にならない: {pre_win_bars({'op': 'ts_pos', 'months': 6})}")
+        _lm47, _ = load_limits()
+        _lm47 = resolve_hold_range(_lm47, "e38")
+        _c47 = build_stage_candidates("stage2c", laws_for_scene("range"), load_signal_table(),
+                                      material_pool()[1], _lm47)
+        _mv47 = [c for c in _c47 if c.get("pre_win")]
+        _fx47 = [c for c in _c47 if not c.get("pre_win")]
+        _bb47 = [c for c in _fx47 if c.get("family") == "BB幅"]
+        if not _mv47:
+            _ng47.append("③段2c の候補に動く線が1本も無い")
+        if len(_mv47) != len(_bb47):
+            _ng47.append(f"③動く線 {len(_mv47)} 本が、BB幅 の固定の線 {len(_bb47)} 本と合わない")
+        for c in _mv47:
+            _in47 = c["cond"]["not"] if "not" in c["cond"] else c["cond"]
+            if c.get("family") != "BB幅" or _in47["material"][0].get("pre") != {"op": "ts_pos", "n": 52596}:
+                _ng47.append(f"③動く線の材料が違う: {c.get('col')} {_in47['material'][0].get('pre')}")
+                break
+        if _mv47 and _fx47 and min(c["rank"] for c in _mv47) <= max(c["rank"] for c in _fx47):
+            _ng47.append("③動く線が固定の線の後ろに並んでいない（固定の線の順位が変わる）")
+        _wm47 = stage_warm(pd.Timedelta(days=60))
+        if _wm47 != pd.Timedelta(days=60) + pd.Timedelta(minutes=52596 * 5):
+            _ng47.append(f"⑤動く線を使う走行の余白が 60日＋6か月にならない: {_wm47}")
+        _src47 = pathlib.Path(__file__).read_text(encoding="utf-8")
+        _rm47 = _src47[_src47.index("\ndef run_main") + 1:]
+        _rm47 = _rm47[:_rm47.index("\ndef ")]
+        if "_warm, use_cache=not a.no_cache)" not in _rm47:
+            _ng47.append("⑤本走（run_main）が stage_warm の余白でデータを読んでいない")
+        ng += [f"T47: {x}" for x in _ng47]
+        print(f"  T47 動く線: ①ts_pos は乱数の道の外 ／ ②既知答え ／ ③段2c の動く線 {len(_mv47)} 本"
+              f"（BB幅 の固定の線 {len(_bb47)} 本・窓 5分足 52596本・固定の線の後ろ）／ ⑤余白 {_wm47}"
+              + ("＝通った" if not _ng47 else "＝落ちた"))
+    except SystemExit as _e47s:
+        ng.append(f"T47: 途中で拒否されて止まった: {str(_e47s)[:120]}")
+    except Exception as _e47:
+        ng.append(f"T47: 途中で止まった: {type(_e47).__name__} {_e47}")
+
     # ══ T25 静的検査（K1〜K3・59回目・設計書 v2）＝引く関数の外で材料・閾値・数字を作っている所が 0件 ══
     try:
         if lint_provenance(verbose=True) != 0:
@@ -7727,9 +7835,12 @@ def run_main(a) -> int:
               "＝合格の線を後出しで薄める形。上限を変えるなら設定ファイルを直してから回すこと。")
 
     t0 = time.time()
+    # ★2026-09-27（M2-E-4e・まこさん決定「余白の直し方→C」）＝この本走は段2c の動く線（6か月の窓）を使いうるので、
+    #   データの前の余白を「いまの余白＋いちばん長い窓」にする（stage_warm）。ほかの走行は engine_tuner.WARM のまま。
+    _warm = stage_warm(et.WARM) if a.build_regime else et.WARM
     df, df_c = et.load_windows_cached(ad, [(SEARCH_START, SEARCH_END), (CONFIRM_START, CONFIRM_END)],
-                                      et.WARM, use_cache=not a.no_cache)
-    print(f"[データ] 値決め窓 {len(df):,} バー ／ 確認窓 {len(df_c):,} バー（助走込み・{time.time() - t0:.0f}秒）")
+                                      _warm, use_cache=not a.no_cache)
+    print(f"[データ] 値決め窓 {len(df):,} バー ／ 確認窓 {len(df_c):,} バー（助走込み・余白 {_warm}・{time.time() - t0:.0f}秒）")
 
     # ★土台＝いまの採用値を両窓で1回ずつ走らせた結果（B1・B2・B4 の比較相手）。
     #   無ければ判定表は「判定不能」と出るだけ（偽装の✅を出さない）。
