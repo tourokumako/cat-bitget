@@ -2,7 +2,7 @@
 
 # 設計書｜M2-E-4e＝法則 R6 の「BB幅 は直近6か月の範囲の下の方」を、固定の線を残したまま「動く線」として段2c の候補に足す（新しい前処理の部品 ts_pos・窓つきの前処理の欄 pre_win）
 
-TARGET: scripts/priority_rebuild/engine_tuner_exec.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/condition_parts_diag.py, .claude/ratchet/m2_stage_candidates.json, .claude/ratchet/condition_parts.json
+TARGET: scripts/priority_rebuild/engine_tuner_exec.py, scripts/priority_rebuild/engine_tuner_gen.py, scripts/priority_rebuild/condition_parts_diag.py, .claude/ratchet/m2_stage_candidates.json, .claude/ratchet/condition_parts.json, .claude/tools/pre_audit_check.py
 NEW_FILE: .claude/breaks/b109_moving_line_not_built.sh, .claude/breaks/b110_ts_pos_in_random_draw.sh, .claude/breaks/b111_ts_pos_excludes_current.sh, .claude/breaks/b112_stage_warm_not_extended.sh
 MODEL: .claude/breaks/b104_atr1h_own_tf.sh
 
@@ -37,7 +37,7 @@ REQUIREMENTS: まこさんの決定（下の §0）と、`engine_tuner_milestone
 
 ## 1｜概要
 
-法則 R6（BB 幅の縮小は低ボラ＝レンジ寄り）の根拠の逐語「Ideally, BandWidth should be near the low end of its six-month range.」（StockCharts「Bollinger Band Squeeze」・regime_laws.json の R6）を、engine_tuner の段2c（3枠目）の候補に「動く線」として足します。いまの段2c の閾値は、値決め窓の分布から分位を1回だけ決めて固定する「固定の線」だけです（`build_qtable`＝rolling しない）。固定の線は残し、動く線を足して、どちらが良いかは成績で engine_tuner に選ばせます（まこさん決定 2026-09-25）。動く線は BB幅 だけに付けます（まこさん決定 2026-09-27「１，案A」）。そのために3つを作ります。1つ目は、前処理の部品 `ts_pos` です。直近 n本の最小と最大の間で、いまの値がどこにいるかを 0〜1 で出します（まこさん決定 2026-09-27「２，案①」）。式は Stochastic の %K と同じ形で、いまのバーを含め、未来は見ません。この部品には「入口の案を乱数で作る道では引かない」印（`gen_draw: False`）を付け、入口の案の作り方を1本も変えません（恒久67番）。2つ目は、§2.2 の元データ（m2_stage_candidates.json）の窓つきの前処理の欄 `pre_win` です。段2c の BB幅 の語に `{"op": "ts_pos", "months": 6}` を書きます。窓の月の数は逐語の six-month から取り、私は数字を作りません。3つ目は、組む側（`build_stage_candidates`）がこの欄を読み、BB幅 について固定の線の候補と同じ本数の動く線の候補を、固定の線の候補の後ろに並べる形です。前処理は実行データ（5分足）の並びに載った列に掛かるので、6か月は5分足の本数（52,596本）に直します。後ろに並べるので、固定の線の順位は1つも変わらず、束を組む側（順位で3枠目を取る）が作るいまの束も変わりません。動く線は6か月ぶんの過去が要りますが、engine_tuner が値決め窓の前に読む余白は60日（`engine_tuner.py` の `WARM`）です。このままでは値決め窓と確認窓の最初の約4か月、動く線が値なしになります。だから動く線を使う走行（組む側の本走 `run_main`）だけ、余白を「いまの余白＋いちばん長い窓（6か月）」にします（まこさん決定 2026-09-27「余白の直し方→C」）。恒等の走行・H2 など、ほかの走行の余白は今のまま変えません。あわせて、部品の正本（condition_parts.json）と突き合わせの道具（condition_parts_diag.py）に部品を1件ずつ足し、§2.2-0 の表に「動く線」を出し、材料の文書・G2・H2 を作り直します。売買は1件も回さないので、net は動きません。
+法則 R6（BB 幅の縮小は低ボラ＝レンジ寄り）の根拠の逐語「Ideally, BandWidth should be near the low end of its six-month range.」（StockCharts「Bollinger Band Squeeze」・regime_laws.json の R6）を、engine_tuner の段2c（3枠目）の候補に「動く線」として足します。いまの段2c の閾値は、値決め窓の分布から分位を1回だけ決めて固定する「固定の線」だけです（`build_qtable`＝rolling しない）。固定の線は残し、動く線を足して、どちらが良いかは成績で engine_tuner に選ばせます（まこさん決定 2026-09-25）。動く線は BB幅 だけに付けます（まこさん決定 2026-09-27「１，案A」）。そのために3つを作ります。1つ目は、前処理の部品 `ts_pos` です。直近 n本の最小と最大の間で、いまの値がどこにいるかを 0〜1 で出します（まこさん決定 2026-09-27「２，案①」）。式は Stochastic の %K と同じ形で、いまのバーを含め、未来は見ません。この部品には「入口の案を乱数で作る道では引かない」印（`gen_draw: False`）を付け、入口の案の作り方を1本も変えません（恒久67番）。2つ目は、§2.2 の元データ（m2_stage_candidates.json）の窓つきの前処理の欄 `pre_win` です。段2c の BB幅 の語に `{"op": "ts_pos", "months": 6}` を書きます。窓の月の数は逐語の six-month から取り、私は数字を作りません。3つ目は、組む側（`build_stage_candidates`）がこの欄を読み、BB幅 について固定の線の候補と同じ本数の動く線の候補を、固定の線の候補の後ろに並べる形です。前処理は実行データ（5分足）の並びに載った列に掛かるので、6か月は5分足の本数（52,596本）に直します。後ろに並べるので、固定の線の順位は1つも変わらず、束を組む側（順位で3枠目を取る）が作るいまの束も変わりません。動く線は6か月ぶんの過去が要りますが、engine_tuner が値決め窓の前に読む余白は60日（`engine_tuner.py` の `WARM`）です。このままでは値決め窓と確認窓の最初の約4か月、動く線が値なしになります。だから動く線を使う走行（`--build-regime` を付けた組む側の本走 `run_main`）だけ、余白を「いまの余白＋いちばん長い窓（6か月）」にします（まこさん決定 2026-09-27「余白の直し方→C」）。恒等の走行・H2 など、ほかの走行の余白は今のまま変えません。あわせて、部品の正本（condition_parts.json）と突き合わせの道具（condition_parts_diag.py）に部品を1件ずつ足し、§2.2-0 の表に「動く線」を出し、材料の文書・G2・H2 を作り直します。売買は1件も回さないので、net は動きません。
 
 ## 2｜背景と範囲
 
@@ -46,16 +46,16 @@ REQUIREMENTS: まこさんの決定（下の §0）と、`engine_tuner_milestone
 | 何を測ったか | コマンド | 結果 |
 |---|---|---|
 | 法則 R6 の根拠の逐語（窓の長さ） | `grep -c 'near the low end of its six-month range' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/regime_laws.json` | 1（終了コード 0）／読み方＝逐語が在る。窓は六か月で、範囲の下の方を求める |
-| いまの閾値の決め方 | `grep -n 'rolling しない' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 3777:    """解決表＝値決め窓の分布から分位→実値を1回だけ固定（rolling しない・§2.4-①）。""" ⏎ 4475:          f"（rolling しない・保存 {run_dir / 'qtable.json'}）")（終了コード 0）／読み方＝閾値は値決め窓の分布から一回だけ決めて固定する。直近の窓の中の位置ではない |
-| 元データの前処理を読む所 | `grep -n 'if stage == "stage2a":' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 2893:        if stage == "stage2a":（終了コード 0）／読み方＝元データの前処理を読むのは段二aの分岐だけ。段二cには付ける道が無い |
-| 元データに窓つきの前処理の欄が在るか | `grep -c 'pre_win' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/m2_stage_candidates.json` | 0（終了コード 1）／読み方＝零件。前処理の欄は部品の名前の文字だけで、窓の本数を書けない |
-| 範囲の中の位置を出す部品が在るか | `grep -c '"ts_pos"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | 0（終了コード 1）／読み方＝零件。在るのは順位とばらつきと最大・最小で、範囲の中の位置は無い |
-| 入口の案を乱数で作る道が引く部品の一覧 | `grep -n -F '_pre_opts = [None] + ex.pre_ops(same_unit=False)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 1805:        _pre_opts = [None] + ex.pre_ops(same_unit=False)（終了コード 0）／読み方＝単位の変わる部品を全部 乱数で引く。新しい部品をそのまま足すと、乱数が引く相手が増える |
-| 前処理が掛かる列の並び | `grep -n 'return _apply_pre(_col_array(df' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | 2058:        return _apply_pre(_col_array(df, {k: v for k, v in m.items() if k != "pre"}, geo, lane), pre, df)（終了コード 0）／読み方＝前処理は実行データの並びに載った列に掛かる。だから窓の本数は五分足の本数で数える |
+| いまの閾値の決め方 | `grep -n 'rolling しない' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 3828:    """解決表＝値決め窓の分布から分位→実値を1回だけ固定（rolling しない・§2.4-①）。""" ⏎ 4526:          f"（rolling しない・保存 {run_dir / 'qtable.json'}）")（終了コード 0）／読み方＝閾値は値決め窓の分布から一回だけ決めて固定する。直近の窓の中の位置ではない |
+| 元データの前処理を読む所 | `grep -n 'if stage == "stage2a":' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 2929:        if stage == "stage2a":（終了コード 0）／読み方＝元データの前処理を読むのは段二aの分岐だけ。段二cには付ける道が無い |
+| 元データに窓つきの前処理の欄が在るか | `grep -c 'pre_win' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/m2_stage_candidates.json` | 2（終了コード 0）／読み方＝零件。前処理の欄は部品の名前の文字だけで、窓の本数を書けない |
+| 範囲の中の位置を出す部品が在るか | `grep -c '"ts_pos"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | 2（終了コード 0）／読み方＝零件。在るのは順位とばらつきと最大・最小で、範囲の中の位置は無い |
+| 入口の案を乱数で作る道が引く部品の一覧 | `grep -n -F '_pre_opts = [None] + ex.pre_ops(same_unit=False)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | （終了コード 1）／読み方＝単位の変わる部品を全部 乱数で引く。新しい部品をそのまま足すと、乱数が引く相手が増える |
+| 前処理が掛かる列の並び | `grep -n 'return _apply_pre(_col_array(df' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py` | 2076:        return _apply_pre(_col_array(df, {k: v for k, v in m.items() if k != "pre"}, geo, lane), pre, df)（終了コード 0）／読み方＝前処理は実行データの並びに載った列に掛かる。だから窓の本数は五分足の本数で数える |
 | データの前の余白の長さ | `grep -n 'WARM = pd.Timedelta' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner.py` | 99:WARM = pd.Timedelta(days=60)                 # 助走（RG 168h＋rolling を満たす a-priori）（終了コード 0）／読み方＝余白は六十日。六か月の窓には足りないので、窓の最初の約四か月は動く線が値なしになる |
 | 三枠目を取る決まり | `grep -n 'def regime_draw_order' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 2359:def regime_draw_order(n: int) -> tuple[int, int, int, str]:（終了コード 0）／読み方＝三枠目は案の番号から決まる順位で取る。一覧の後ろに足せば、いまの順位の束は変わらない |
-| 直す行を探している壊すプログラム（L-605） | `grep -rln -e 'pre_ops(' -e 'ts_std' -e '_PRE_PARTS' -e 'build_stage_candidates' -e 'stage_candidates(' -e 'expand_stage' -e '_pre_opts' -e '_lv_ops' -e 'lins_law' -e 'alphagen:Std' -e 'NO_ARG_OPS' -e 'et.WARM' -e 'load_windows_cached' -e '実行が未実装' -e 'T36: 途中' -e 'rolling(int(n)).std' .claude/breaks` | .claude/breaks/b78_law_literal.sh ⏎ .claude/breaks/b92_stage2_no_drop_tfs.sh ⏎ .claude/breaks/b93_law_filter_off.sh ⏎ .claude/breaks/b98_qkey_abs_missing.sh ⏎ .claude/breaks/b79_param_drawn.sh ⏎ .claude/breaks/b82_abs_missing.sh（終了コード 0）／読み方＝当たる壊すプログラムが探す行は、どれもこの工事で消さない（足すのは別の行の後ろ） |
-| 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/condition_parts_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/m2_stage_candidates.json v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/condition_parts.json .claude/tools/gen_regime_kb.py ／ grep -c '^@@'` | 0（終了コード 1）／読み方＝承認の前は差が無い。照合が数える触った関数は、この工事で直すものだけになる |
+| 直す行を探している壊すプログラム（L-605） | `grep -rln -e 'pre_ops(' -e 'ts_std' -e '_PRE_PARTS' -e 'build_stage_candidates' -e 'stage_candidates(' -e 'expand_stage' -e '_pre_opts' -e '_lv_ops' -e 'lins_law' -e 'alphagen:Std' -e 'NO_ARG_OPS' -e 'et.WARM' -e 'load_windows_cached' -e '実行が未実装' -e 'T36: 途中' -e 'rolling(int(n)).std' .claude/breaks` | .claude/breaks/b78_law_literal.sh ⏎ .claude/breaks/b92_stage2_no_drop_tfs.sh ⏎ .claude/breaks/b93_law_filter_off.sh ⏎ .claude/breaks/b109_moving_line_not_built.sh ⏎ .claude/breaks/b98_qkey_abs_missing.sh ⏎ .claude/breaks/b79_param_drawn.sh ⏎ .claude/breaks/b82_abs_missing.sh（終了コード 0）／読み方＝当たる壊すプログラムが探す行は、どれもこの工事で消さない（足すのは別の行の後ろ） |
+| 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/condition_parts_diag.py v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/m2_stage_candidates.json v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/condition_parts.json .claude/tools/gen_regime_kb.py ／ grep -c '^@@'` | 5（終了コード 0）／読み方＝承認の前は差が無い。照合が数える触った関数は、この工事で直すものだけになる |
 
 ### 2-2 探す材料（印がオンのもの・プログラムが正本から出しました）
 
@@ -197,7 +197,7 @@ ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Sto
 
 **④乱数の道を広げない。**入口の案を作る関数 `_make_cond` は、単位の変わる部品を乱数で1つ引きます（`_pre_opts = [None] + ex.pre_ops(same_unit=False)`）。新しい部品をそのまま足すと、乱数が引く相手が増えます（恒久67番）。だから部品の性質に `gen_draw: False` を付け、`pre_ops` に絞り `gen_draw` を足し、入口の案の道は `gen_draw=True` の部品だけを引きます。入口の案の作り方は1本も変わりません。
 
-**⑤データの前の余白。**engine_tuner は値決め窓の前に余白 60日（`engine_tuner.py` の `WARM`「助走（RG 168h＋rolling を満たす a-priori）」）を読みます。動く線は6か月の過去が要るので、このままでは値決め窓と確認窓の最初の約4か月が値なしになり、固定の線と同じ条件で比べられません。まこさん決定 2026-09-27「余白の直し方→C」で、動く線を使う走行（組む側の本走 `run_main`）だけ、余白を「いまの余白＋いちばん長い窓」（60日＋182.625日）にします（`stage_warm`）。いまの余白を足すのは、窓の最初の1本の材料にも指標の助走が要るためです。恒等の走行・H2・ほかの道具は `WARM` のまま変わりません。M2-F で段を測る道具（`regime_r9_diag.py`）は M2-F-2 の工事で同じ形にします。
+**⑤データの前の余白。**engine_tuner は値決め窓の前に余白 60日（`engine_tuner.py` の `WARM`「助走（RG 168h＋rolling を満たす a-priori）」）を読みます。動く線は6か月の過去が要るので、このままでは値決め窓と確認窓の最初の約4か月が値なしになり、固定の線と同じ条件で比べられません。まこさん決定 2026-09-27「余白の直し方→C」で、動く線を使う走行（`--build-regime` を付けた組む側の本走 `run_main`・監査 CP46 の修正1「案A」）だけ、余白を「いまの余白＋いちばん長い窓」（60日＋182.625日）にします（`stage_warm`）。いまの余白を足すのは、窓の最初の1本の材料にも指標の助走が要るためです。恒等の走行・H2・ほかの道具は `WARM` のまま変わりません。M2-F で段を測る道具（`regime_r9_diag.py`）は M2-F-2 の工事で同じ形にします。
 
 **完成したときに出るもの。**`engine_tuner_gen.py --selftest` の T47 の行（①部品は乱数の道の外 ②既知答え ③段2c の動く線の本数・窓・並び ⑤動く線を使う走行の余白）。§2.2-0 の表の段2c の BB幅 の行の前処理の欄に `ts_pos（6か月・動く線）`。段2c の候補の本数が BB幅 の固定の線の本数だけ増えます。売買は1件も回さないので、net は動きません。
 
@@ -236,10 +236,10 @@ ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Sto
 | 範囲の下の方は、最小〜最大の間の位置で測る | まこさん決定 2026-09-27「２，案①」 | 新しい部品 `ts_pos`（Stochastic の %K と同じ形・0〜1） |
 | 窓の長さは逐語から取る | 法則 R6 の根拠の逐語 six-month・恒久42番 | 元データに `months: 6`。5分足の本数へは式で直す（1か月＝365.25÷12日・5分足＝要件 H7） |
 | 乱数を使わない・乱数の道を広げない | 恒久67番 | 部品に `gen_draw: False`。入口の案の道は `pre_ops(same_unit=False, gen_draw=True)` だけを引く。番人 T47 の①と壊すプログラム b110 |
-| 未来のデータを使わない | cat_requirements §4.6 の H2 | rolling の最小・最大は過去 n本だけ。T47 の既知答えと H2（`leak_causality_diag.py`）で測る |
+| 未来のデータを使わない | cat_requirements §4.6 の H2 | rolling の最小・最大は過去 n本だけ。T47 の②（既知答えと、最後の1本を落としても前の値が変わらないこと）で測る。★H2（`leak_causality_diag.py`）が走らせる案（恒等3本と、入口の案を乱数の道で作った案）には ts_pos が入らないので、H2 はこの部品を通らない（監査 CP47） |
 | 値段に依存しない | cat_requirements §4.6 の H6 | 位置は 0〜1 の比。BB幅 自体も割合 |
 | 同じ判定を2か所に書かない | 恒久69番 | 窓の本数の計算は `pre_win_bars` の1か所。部品の式は実行器の `_apply_pre` の1か所（突き合わせの道具の独立の実装は照らす相手） |
-| 法則を決めない | まこさん 2026-09-09「お前が法則を決めるな」 | 法則ファイルは1文字も変えない。R6 の読みは まこさんの決定のとおり |
+| 法則を決めない | まこさん 2026-09-09「お前が法則を決めるな」 | 法則の中身（判定・逐語・出どころ）は1文字も変えない。R6 の読みは まこさんの決定のとおり。★R7 の注意の文の行番号（`engine_tuner_exec.py:2669` → `:2687`）は、実装で実行器の行が18行 下がったので直した（まこさん「直す」・2026-09-27） |
 | 1変更 | cat_requirements §4.6 の H16 | 「段2c の BB幅 に動く線を足す」の1つ。部品・欄・候補の作り方はその1つを作る部品 |
 | コードを直したら、その行を探す壊すプログラムを grep | L-605 | 当たった b78・b79・b82・b92・b93 が探す行は消さない（なぜ作るかの10行目） |
 
@@ -256,7 +256,7 @@ ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Sto
 | `engine_tuner_gen.stage_candidates` | 元データの `pre_win` を渡す | 直す（実装の指示 7） |
 | `engine_tuner_gen.pre_win_bars` | 窓の月の数を5分足の本数に直す | **新設**（実装の指示 8） |
 | `engine_tuner_gen.stage_warm` | 元データに窓つきの前処理が在れば、データの前の余白を「いまの余白＋いちばん長い窓」にする | **新設**（実装の指示 8） |
-| `engine_tuner_gen.run_main` | 本走のデータを `stage_warm(et.WARM)` の余白で読む | 直す（実装の指示 27） |
+| `engine_tuner_gen.run_main` | `--build-regime` を付けた本走だけ、データを `stage_warm(et.WARM)` の余白で読む（付けないときは `et.WARM`） | 直す（実装の指示 27） |
 | `b112_stage_warm_not_extended.sh` | 余白を延ばさないと T47 が落ちることを測る | **新設**（実装の指示 28） |
 | `engine_tuner_gen.build_stage_candidates` | `pre_win` を持つ指標に動く線の候補を作り、固定の線の後ろに並べる | 直す（実装の指示 9・10・11） |
 | `engine_tuner_gen.selftest` の T1-C6e と T47 | 案を作る道の部品の一覧を見る（T1-C6e）／動く線の番人（T47） | 直す（実装の指示 6）・**新設**（実装の指示 12） |
@@ -297,7 +297,7 @@ ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Sto
 5. **10本目（値 3）。**直近5本が全部 3＝幅 0 なので値なし。
 6. **いまのバーを外すと（壊すプログラム b111）。**5本目の最小が「直前5本（まだ4本しか無い）」になり値なし＝期待の 1.0 と違うので T47 の②が落ちます。
 7. **本物の窓。**6か月＝6 × 365.25 ÷ 12 ＝ 182.625日。5分足は1日 288本なので 52,596本。段2c の BB幅 の動く線の材料は `{"op": "ts_pos", "n": 52596}` です。
-8. **余白。**組む側の本走は、値決め窓の開始 2024-03-01 の「60日＋182.625日」前（2023-07-02 09:00）からデータを読みます。2024-03-01 のバーの直近6か月の窓の最初のバー（2023-09-01 ごろ）にも、60日の助走が在ります。
+8. **余白。**`--build-regime` を付けた組む側の本走は、値決め窓の開始 2024-03-01 の「60日＋182.625日」前（2023-07-02 09:00）からデータを読みます。2024-03-01 のバーの直近6か月の窓の最初のバー（2023-09-01 ごろ）にも、60日の助走が在ります。
 
 ### 4-7 探索の範囲（決める値と、その探し方＝範囲・並び・本数）
 
@@ -315,7 +315,7 @@ ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Sto
 
 **下の囲みは、§2.2 の段の表をプログラムがそのまま写したものです。**
 
-<!-- ACC_STAGES_START hash=059ce7a3c2b6c72f gen_acceptance.py が自動生成＝手で書き換えない -->
+<!-- ACC_STAGES_START hash=959fb92a2f79c965 gen_acceptance.py が自動生成＝手で書き換えない -->
 **★この表はプログラムが作ります（手で書き換えない）。**出どころ＝`engine_tuner_milestones2.md` の §2.2（レンジ判定の検索方法）を、`gen_s22_map.py` の抽出関数で読んだもの。**私は1文字も足していません。**
 
 | 段 | 何を選ぶ枠か | 使う法則 | 材料（指標の系統）と時間足 | 値の範囲 |
@@ -328,125 +328,8 @@ ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Sto
 | **段3** | 持続 | R4・C6・C7 | 成立の連続本数と解除の緩め幅。5分足で数える | n＝`state_hold_bars_range` の範囲／緩め幅＝`_loose_q` の分位差 |
 | **段4** | 4 差し戻し | — | 確定した束に全候補を1枠ずつ入れ直して1周（列はキャッシュ再利用） | — |
 | **段5** | 5 詰め | — | 勝った値の前後を細かく。勝った指標だけ期間を範囲から開く（カタログ外の期間も列を作る）。判定は最良値でなく形（前後で崩れる束は落とす） | 閾値は刻み1・分位は刻み半分／線＝`neighbor_drop_max`（まこさんの判断待ち） |
-| **段§2.2** | §2.2 の語 | — | 正本を探す文字 | 当て方 |
-| **段レンジ幾何** | レンジ幾何 W%・帯内位置% | — | `レンジ幾何` | 完全 |
-| **段S-Rタッチ数** | S-Rタッチ数 | — | `S-Rタッチ数` | 完全 |
-| **段pivot** | pivot 3種 | — | `pivot` | 前方 |
-| **段n本高安（高値の側）** | n本高安 | 高値の側 | `n本高` | 前方 |
-| **段n本高安（安値の側）** | n本高安 | 安値の側 | `n本安` | 前方 |
-| **段close** | close vs EMA% | — | `close vs EMA` | 完全 |
-| **段SMA%** | SMA% | — | `close vs SMA` | 完全 |
-| **段Keltner** | Keltner | — | `Keltner` | 前方 |
-| **段POC** | POC | — | `POC` | 完全 |
-| **段VAH** | VAH | — | `VAH` | 完全 |
-| **段VAL** | VAL | — | `VAL` | 完全 |
-| **段指標** | 指標 | — | 候補の本数 |  |
-| **段`S-Rタッチ1時間ATR`** | `S-Rタッチ1時間ATR` | — | 22 |  |
-| **段`S-Rタッチ数`** | `S-Rタッチ数` | — | 22 |  |
-| **段`pivotR1`** | `pivotR1` | — | 18 |  |
-| **段`n本高値`** | `n本高値` | — | 34 |  |
-| **段`n本安値`** | `n本安値` | — | 34 |  |
-| **段`close** | `close vs ACCBU%` | — | 42 |  |
-| **段`pivotS1`** | `pivotS1` | — | 18 |  |
-| **段`ABER位置`** | `ABER位置` | — | 42 |  |
-| **段`Keltner上`** | `Keltner上` | — | 36 |  |
-| **段`安値からの経過バー`** | `安値からの経過バー` | — | 33 |  |
-| **段`close** | `close vs SAREXT%` | — | 42 |  |
-| **段`close** | `close vs HWMA%` | — | 42 |  |
-| **段`HWC位置`** | `HWC位置` | — | 42 |  |
-| **段`close** | `close vs MMAR%` | — | 40 |  |
-| **段`close** | `close vs PSAR%` | — | 42 |  |
-| **段`VAH`** | `VAH` | — | 18 |  |
-| **段`close** | `close vs HILO%` | — | 42 |  |
-| **段`close** | `close vs ABER_ZG%` | — | 42 |  |
-| **段`close** | `close vs ACCBL%` | — | 42 |  |
-| **段`close** | `close vs CKSPl%` | — | 42 |  |
-| **段`close** | `close vs PMAX%` | — | 42 |  |
-| **段`close** | `close vs EMA` | — | 34 |  |
-| **段`fractal高値距離%`** | `fractal高値距離%` | — | 42 |  |
-| **段`close** | `close vs CE_L%` | — | 42 |  |
-| **段`close** | `close vs RAINBOW%` | — | 42 |  |
-| **段`close** | `close vs FAMA%` | — | 42 |  |
-| **段`HT_DCPHASE`** | `HT_DCPHASE` | — | 42 |  |
-| **段`close** | `close vs FWMA%` | — | 36 |  |
-| **段`close** | `close vs HT_TRENDLINE%` | — | 42 |  |
-| **段`close** | `close vs MAMA%` | — | 42 |  |
-| **段`fractal安値距離%`** | `fractal安値距離%` | — | 42 |  |
-| **段`close** | `close vs CE_S%` | — | 42 |  |
-| **段`close** | `close vs CKSPs%` | — | 42 |  |
-| **段`close** | `close vs KAMA%` | — | 30 |  |
-| **段`構造破断距離%`** | `構造破断距離%` | — | 42 |  |
-| **段`高値からの経過バー`** | `高値からの経過バー` | — | 34 |  |
-| **段`close** | `close vs MEDIAN%` | — | 32 |  |
-| **段`close** | `close vs VIDYA%` | — | 30 |  |
-| **段`高値切り上げ幅%`** | `高値切り上げ幅%` | — | 42 |  |
-| **段`close** | `close vs RMA%` | — | 32 |  |
-| **段`close** | `close vs TRIMA%` | — | 36 |  |
-| **段`close** | `close vs MCGD%` | — | 31 |  |
-| **段`close** | `close vs SINWMA%` | — | 32 |  |
-| **段`close** | `close vs SSF%` | — | 31 |  |
-| **段`close** | `close vs SWMA%` | — | 32 |  |
-| **段`close** | `close vs WMA%` | — | 32 |  |
-| **段`Keltner下`** | `Keltner下` | — | 36 |  |
-| **段`close** | `close vs VWMA%` | — | 32 |  |
-| **段`close** | `close vs SMA` | — | 32 |  |
-| **段`close** | `close vs VWAP` | — | 18 |  |
-| **段`fib位置`** | `fib位置` | — | 33 |  |
-| **段`close** | `close vs PWMA%` | — | 30 |  |
-| **段`close** | `close vs T3%` | — | 30 |  |
-| **段`close** | `close vs ALMA%` | — | 32 |  |
-| **段`close** | `close vs LRb%` | — | 32 |  |
-| **段`close** | `close vs MIDPRICE%` | — | 32 |  |
-| **段`安値切り上げ幅%`** | `安値切り上げ幅%` | — | 42 |  |
-| **段`close** | `close vs DEMA%` | — | 33 |  |
-| **段`close** | `close vs JMA%` | — | 34 |  |
-| **段`close** | `close vs LINREG%` | — | 34 |  |
-| **段`close** | `close vs HMA%` | — | 32 |  |
-| **段`close** | `close vs MIDPOINT%` | — | 32 |  |
-| **段`close** | `close vs ZLMA%` | — | 34 |  |
-| **段`close** | `close vs TSF%` | — | 33 |  |
-| **段`pivotPP`** | `pivotPP` | — | 18 |  |
-| **段`POC`** | `POC` | — | 18 |  |
-| **段`close** | `close vs TEMA%` | — | 34 |  |
-| **段`PSAR反転`** | `PSAR反転` | — | 42 |  |
-| **段`VAL`** | `VAL` | — | 18 |  |
-| **段`形スコア`** | `形スコア` | — | 36 |  |
-| **段`SMC_SWEEP`** | `SMC_SWEEP` | — | 42 |  |
-| **段`W字`** | `W字` | — | 35 |  |
-| **段§2.2** | §2.2 の語 | — | 正本を探す文字 | 当て方 |
-| **段ADX** | ADX | — | `ADX` | 完全 |
-| **段CHOP** | CHOP | — | `CHOP` | 完全 |
-| **段ER** | ER | — | `ER` | 完全 |
-| **段VHF** | VHF | — | `VHF` | 完全 |
-| **段MACDヒスト%** | MACDヒスト% | — | `MACDヒスト%` | 完全 |
-| **段EMA傾き** | EMA傾き | — | `EMA傾き` | 完全 |
-| **段DI差の絶対値** | DI差の絶対値 | — | `DI差` | 完全 |
-| **段指標** | 指標 | — | 候補の本数 |  |
-| **段`MACDヒスト%`** | `MACDヒスト%` | — | 12 |  |
-| **段`ADX`** | `ADX` | — | 14 |  |
-| **段`EMA傾き`** | `EMA傾き` | — | 10 |  |
-| **段`ER`** | `ER` | — | 14 |  |
-| **段`CHOP`** | `CHOP` | — | 13 |  |
-| **段`DI差`** | `DI差` | — | 12 |  |
-| **段`VHF`** | `VHF` | — | 14 |  |
-| **段`MMI`** | `MMI` | — | 5 |  |
-| **段§2.2** | §2.2 の語 | — | 正本を探す文字 | 当て方 |
-| **段BB幅** | BB幅 | — | `BB幅` | 完全 |
-| **段ATR%** | ATR% | — | `ATR%` | 完全 |
-| **段realized_vol** | realized_vol | — | `realized_vol` | 完全 |
-| **段Donchian幅** | Donchian幅 | — | `Donchian幅` | 完全 |
-| **段stdev%** | stdev% | — | `stdev%` | 完全 |
-| **段BB%b** | BB%b と0.5の差 | — | `BB%b` | 完全 |
-| **段経過バー** | 経過バー | — | `経過バー` | 後方 |
-| **段指標** | 指標 | — | 候補の本数 |  |
-| **段`stdev%`** | `stdev%` | — | 42 |  |
-| **段`BB幅`** | `BB幅` | — | 42 |  |
-| **段`Donchian幅`** | `Donchian幅` | — | 42 |  |
-| **段`realized_vol`** | `realized_vol` | — | 42 |  |
-| **段`ATR%`** | `ATR%` | — | 45 |  |
-| **段`SQZ_ON`** | `SQZ_ON` | — | 48 |  |
 
-**段の件数＝125件**（§2.2 に在るものを1つも落としていません）。
+**段の件数＝8件**（§2.2 に在るものを1つも落としていません）。
 
 <!-- ACC_STAGES_END -->
 
@@ -503,7 +386,7 @@ ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Sto
 
 **窓の数え方。**前処理は実行データ（5分足）の並びに載った列に掛かります。材料の時間足が1時間足でも、窓は5分足の本数で数えます（時間の長さは足によらず6か月）。上位足の材料は、足が閉じた時刻から5分足の並びへ前の値を引き継いで載っています（`build_features` の既存の作り）。
 
-**データの前の余白。**動く線を使う走行（組む側の本走 `run_main`）は、値決め窓・確認窓の開始より「60日＋182.625日」前からデータを読みます（`stage_warm`）。値決め窓の最初のバー（2024-03-01）でも、直近6か月の窓がそろい、その窓の最初のバーの材料にも60日の助走が在ります。ほかの走行は60日のままです。
+**データの前の余白。**動く線を使う走行（`--build-regime` を付けた組む側の本走 `run_main`）は、値決め窓・確認窓の開始より「60日＋182.625日」前からデータを読みます（`stage_warm`）。値決め窓の最初のバー（2024-03-01）でも、直近6か月の窓がそろい、その窓の最初のバーの材料にも60日の助走が在ります。ほかの走行は60日のままです。
 
 ### 4-14 性能（どれくらい時間が掛かり、どれくらい容量を使うか）
 
@@ -519,7 +402,7 @@ ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Sto
 | G2・H2 の取り直し | 約6分半 | G2 約30秒・H2 約5〜6分（2026-09-26 の実測 H2 303.9秒） |
 | 直す前と後で結果が同じか確かめる3本の走行 | 約30秒 | 2026-09-20 の実測（7秒・4秒・18秒） |
 | 壊すプログラム b109〜b112 の1本 | 約5分40秒 | 上の1行目と同じ（組む側の自己テストを測る）。打ち切りは600秒 |
-| 本走（run_main）が読むデータの行 | 値決め窓 約1.30倍・確認窓 約1.76倍 | 余白 60日 → 242.625日。値決め窓 549日・確認窓 181日（periods.py）に余白を足した日数の比。走らせて測っていない |
+| `--build-regime` を付けた本走（run_main）が読むデータの行 | 値決め窓 約1.30倍・確認窓 約1.76倍 | 余白 60日 → 242.625日。値決め窓 549日・確認窓 181日（periods.py）に余白を足した日数の比。走らせて測っていない |
 
 ### 4-15 競合（同時に2つ走らせたときに、同じファイルを奪い合わないか）
 
@@ -551,7 +434,7 @@ ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Sto
 6. **直す前と後で結果が同じか確かめる3本の走行（S1・S2・L1）。**固定のレシピは新しい部品を使わないので、変わらない見込みです。
 7. **壊すプログラム b78・b79・b82・b92・b93。**探す行は消しません。
 8. **売買のロジック・審判・法則・成績表・型の表・印・範囲の置き場。**触りません。
-9. **組む側の本走のデータの余白。**60日 → 60日＋182.625日になります。長い記憶を持つ指標（上位足の長い期間の平均など）の値が、窓の始まりで少し変わりえます＝本走の土台の数字（`_run_baseline`）も変わりえます。データの置き場の指紋（`data_fingerprint`）に余白が入るので、前のキャッシュは使われず作り直されます。
+9. **組む側の本走のデータの余白。**`--build-regime` を付けた本走だけ、60日 → 60日＋182.625日になります（付けない本走は60日のまま・監査 CP46 の修正1「案A」）。長い記憶を持つ指標（上位足の長い期間の平均など）の値が、窓の始まりで少し変わりえます＝本走の土台の数字（`_run_baseline`）も変わりえます。データの置き場の指紋（`data_fingerprint`）に余白が入るので、前のキャッシュは使われず作り直されます。
 10. **恒等の走行・H2・ほかの道具の余白。**`engine_tuner.WARM`（60日）のまま変わりません（`stage_warm` を呼ばない）。M2-F で段を測る道具（`regime_r9_diag.py`）は M2-F-2 の工事で `stage_warm` を使う形にします。
 11. **束の案の記録と指紋。**場面の判定の束を付けた案（`--build-regime`）は、束の中身（条件）は変わりませんが、案に残す引いた記録（`meta.regime_draw` の G の「上位」と `stages` の段2c の候補の本数＝261 → 261＋BB幅 の固定の線の本数）が変わるので、案の指紋（`recipe_hash`）が全部 変わります。直す前の走行の記録からの再開（R12・鍵 `s1/番号/指紋`）では、同じ案でも走らせ直しになります。
 
@@ -573,7 +456,7 @@ ADX・DI差・MACD線%・MACDヒスト%・MACDシグナル線%・RSI・ROC・Sto
 
 **この項目に書くこと**＝この工事で実物に当てる直しを、監査結果の修正の指示と同じ6つの欄（対象のファイル・直す箇所・直す前の文字・4つ目・根拠の抜き書き・状態）で1件ずつ書く。★元データの「実装の指示」が空なら非該当（理由を書く）。
 
-<!-- ACC_IMPL_START hash=ed2417913ac7c6e7 gen_acceptance.py が自動生成＝手で書き換えない -->
+<!-- ACC_IMPL_START hash=783185670e682dfd gen_acceptance.py が自動生成＝手で書き換えない -->
 **★この節はプログラムが作ります（手で書き換えない）。**出どころ＝元データの `実装の指示`。当て方＝`python3 .claude/tools/apply_audit_fix.py --design [--dry]`（承認の印と設計書のハッシュ値が合うときだけ当たる）。
 
 #### 実装 1
@@ -835,6 +718,8 @@ def stage_warm(base_warm):
         _w47 = np.array([np.nan] * 4 + [1.0, 1.0 / 3.0, 0.0, 0.0, 0.0, np.nan])
         if not np.allclose(_g47, _w47, equal_nan=True):
             _ng47.append(f"②既知答えと違う: {list(np.round(_g47, 4))}（期待 {list(np.round(_w47, 4))}）")
+        if not np.allclose(ex._apply_pre(_a47[:-1], {"op": "ts_pos", "n": 5}), _g47[:-1], equal_nan=True):
+            _ng47.append("②最後の1本を落とすと、その前の値が変わる（未来のバーを見ている）")
         if pre_win_bars({"op": "ts_pos", "months": 6}) != 52596:
             _ng47.append(f"③6か月が5分足 52596本にならない: {pre_win_bars({'op': 'ts_pos', 'months': 6})}")
         _lm47, _ = load_limits()
@@ -853,7 +738,7 @@ def stage_warm(base_warm):
             if c.get("family") != "BB幅" or _in47["material"][0].get("pre") != {"op": "ts_pos", "n": 52596}:
                 _ng47.append(f"③動く線の材料が違う: {c.get('col')} {_in47['material'][0].get('pre')}")
                 break
-        if _mv47 and _fx47 and min(c["rank"] for c in _mv47) <= max(c["rank"] for c in _fx47):
+        if _mv47 and _fx47 and min(i for i, c in enumerate(_c47) if c.get("pre_win")) <= max(i for i, c in enumerate(_c47) if not c.get("pre_win")):
             _ng47.append("③動く線が固定の線の後ろに並んでいない（固定の線の順位が変わる）")
         _wm47 = stage_warm(pd.Timedelta(days=60))
         if _wm47 != pd.Timedelta(days=60) + pd.Timedelta(minutes=52596 * 5):
@@ -861,8 +746,8 @@ def stage_warm(base_warm):
         _src47 = pathlib.Path(__file__).read_text(encoding="utf-8")
         _rm47 = _src47[_src47.index("\ndef run_main") + 1:]
         _rm47 = _rm47[:_rm47.index("\ndef ")]
-        if "_warm, use_cache=not a.no_cache)" not in _rm47:
-            _ng47.append("⑤本走（run_main）が stage_warm の余白でデータを読んでいない")
+        if ("_warm, use_cache=not a.no_cache)" not in _rm47 or "_warm = stage_warm(et.WARM) if a.build_regime else et.WARM" not in _rm47):
+            _ng47.append("⑤本走（run_main）が --build-regime のときだけ stage_warm の余白でデータを読む形になっていない")
         ng += [f"T47: {x}" for x in _ng47]
         print(f"  T47 動く線: ①ts_pos は乱数の道の外 ／ ②既知答え ／ ③段2c の動く線 {len(_mv47)} 本"
               f"（BB幅 の固定の線 {len(_bb47)} 本・窓 5分足 52596本・固定の線の後ろ）／ ⑤余白 {_wm47}"
@@ -1346,9 +1231,9 @@ finish
 | 3 | 値決め窓の先頭の6か月ぶんは動く線が値なしになる | 実行データは2021年から在り、値決め窓は2024-03 から＝先頭の前に6か月以上の足が在る（periods.py の値決め窓）。値なしのバーは条件が不成立になるだけ |
 | 4 | 動く線の閾値 q50 が「範囲の下の方」より上になる | 決めてほしいこと1。M2-F-13 の前に決める |
 | 5 | `gen_regime_kb.py` を当てる道具で当てられない | 承認の後に私が Edit ツールで実装の指示 18〜22 と同じ文字を書く。書いた後に `--selftest` と `--verify` を走らせる |
-| 6 | 組む側の本走の余白が延びて、本走の土台の数字（`_run_baseline`）が前の走行と少し違う | 動く線を使う走行の前提として受け入れる（まこさん決定 C）。恒等の走行は `WARM` のままなので、直す前と後の確かめには使える |
+| 6 | `--build-regime` を付けた組む側の本走の余白が延びて、本走の土台の数字（`_run_baseline`）が前の走行と少し違う | 動く線を使う走行の前提として受け入れる（まこさん決定 C）。恒等の走行は `WARM` のままなので、直す前と後の確かめには使える |
 | 7 | M2-F-2 で段を測る道具の余白を直し忘れる | 記録の段で、m2_todo.json の M2-F-2 の注意に「stage_warm を使う」を1行 足す |
-| 8 | 窓 52,596本の rolling の最小・最大は、窓の中に値なし（NaN）が1本でも在ると値なしを返す（pandas の既定 min_periods＝窓の長さ）。材料の列の途中に値なしが在ると、その後の6か月が黙って値なしになる | 実装の後、本走の余白で読んだ値決め窓・確認窓で、BB幅 の動く線の材料の値なしの本数を数えて記録する。窓の始まりの後に値なしが在れば止まって まこさんに出す |
+| 8 | 窓 52,596本の rolling の最小・最大は、窓の中に値なし（NaN）が1本でも在ると値なしを返す（pandas の既定 min_periods＝窓の長さ）。材料の列の途中に値なしが在ると、その後の6か月が黙って値なしになる | M2-F-2（段を測る道具の設計書）で、stage_warm の余白で読んだ値決め窓・確認窓の、BB幅 の動く線の材料の値なしの本数を数えて出す口を作る（まこさん決定「案1」・2026-09-27・m2_todo.json の M2-F-2）。この工事では数えていない。窓の始まりの後に値なしが在れば止まって まこさんに出す |
 
 ### 6-3 見積もり
 
@@ -1393,7 +1278,8 @@ finish
 
 | 問い | 塞げないこと |
 |---|---|
-| **本走（run_main）の束が動く線を実際に使うか** | 使いません。3枠目の順位は案の番号から決まり（regime_draw_order）、動く線は段2c の 262位より後ろに並ぶので、届くのは案の番号 5,994,822番（C(263,3)×2）より後ろです。動く線を測るのは M2-F-13 の道具で、その余白は M2-F-2 で直します |
+| **本走（run_main）の束が動く線を実際に使うか** | 使いません。3枠目の順位は案の番号から決まり（regime_draw_order）、動く線は段2c の 262位から後ろに並ぶので、届くのは案の番号 5,994,822番（0から数える・C(263,3)×2）から後ろです。動く線を測るのは M2-F-13 の道具で、その余白は M2-F-2 で直します |
+| **BB幅 の動く線の材料に、窓の途中の値なしが在るか** | この工事では数えていません（まこさん決定「案1」＝M2-F-2 の設計書で数える口を作る）。窓 52,596本の rolling の最小・最大は、窓の中に値なしが1本でも在ると値なしを返すので、在ればその後の6か月が黙って不成立になります |
 | **動く線と固定の線のどちらが良い判定か** | この工事では分かりません。判定の成績は M2-F-13 で、net は M2-L で測ります |
 | **動く線の閾値 q50 が「範囲の下の方」を表しているか** | いまは固定の線と同じ分位の1点です。範囲の中の点にするかは まこさんが決めます（決めてほしいこと1） |
 | **実行データが5分足でなくなったとき** | 窓の本数の計算（`pre_win_bars`）は5分足を前提にします。実行データの足を変えるときは、この計算も直します |
@@ -1408,7 +1294,7 @@ finish
 
 ### 7-5 §4.6 ハード制約の照合
 
-<!-- ACC_CHECKLIST_START hash=cb5f35c3aee2bdd1 gen_acceptance.py が自動生成＝手で書き換えない -->
+<!-- ACC_CHECKLIST_START hash=af2cabfa7fdb8da8 gen_acceptance.py が自動生成＝手で書き換えない -->
 **★この節はプログラムが作ります（手で書き換えない）。**出どころ＝`list_banned_words.checklist_items()`（hook の実体から抽出）。
 
 - 【群1】`TARGET: scripts/priority_rebuild/<1ファイル>.py`（編集する実体1ファイル。複数ファイルに跨るなら分割 or 主ファイル＋やることに明記）
@@ -1420,6 +1306,8 @@ finish
 - 【群1】④ ベースアップ（参照した KB / WebSearch の証跡・記憶ベース禁止）
 - 【群1】変更は 1レバーか（複数混ぜない）
 - 【群1】過去に破棄した失敗（lessons / 破棄した E / 6軸）を再演していないか（する場合は差分を1行）
+- 【群1】新しい部品・前処理を足すときは、H2（`leak_causality_diag.py`）が走らせる案（`tuner_recipes`）にその部品が入るかを開いて示す。入らないなら「H2 で測る」と書かず、番人に打ち切り（
+- 【群1】直すファイルの行番号を指している文書を `git grep -n -E 'engine_tuner_(exec／gen)\.py:[0-9]+'` で出し、影響範囲（4-13）に並べる（監査 CP47＝法則ファイルの R
 - 【群1】★疑似シミュ由来の固定値ゼロ宣言（必須・require_acceptance hook が物理強制・まこさん承認 2026-06-26）: probe（疑似シミュ・静的後処理）は あたりを付ける専用＝決定的根拠でない。設
 - 【群1】★ARC マーカー（改善アーク自動生成の源・まこさん指示 2026-06-27）: acceptance に機械可読 ARC マーカーを1ブロック入れる＝承認時に approve_impl が `.claude/ratc
 - 【群1】H16 1変更・過去失敗の不再演
@@ -1455,27 +1343,27 @@ finish
 
 ### 7-7 触る関数と、その定義の行
 
-<!-- ACC_CODEREF_START hash=68818c40decd12b6 gen_acceptance.py が自動生成＝手で書き換えない -->
+<!-- ACC_CODEREF_START hash=8fcd7ae954a1a2af gen_acceptance.py が自動生成＝手で書き換えない -->
 **★この節はプログラムが作ります（手で書き換えない）。**出どころ＝`verify_design_contract.spec_from_impl` の `def_lines`（★行番号を手で写さない・93番）。
 
 **直す相手**＝`scripts/priority_rebuild/engine_tuner_gen.py`
 
 | 触る関数 | 定義の行 |
 |---|---|
-| `pre_win_bars` | （この関数は実物に無い） |
-| `stage_warm` | （この関数は実物に無い） |
-| `build_stage_candidates` | 2775 |
+| `pre_win_bars` | 2560 |
+| `stage_warm` | 2568 |
+| `build_stage_candidates` | 2808 |
 | `stage_candidates` | 2472 |
 | `_EXEC_BAR_MIN` | （この関数は実物に無い） |
 | `pre_win` | （この関数は実物に無い） |
 
-**★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 158件の関数が在ります）。
+**★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 160件の関数が在ります）。
 
 <!-- ACC_CODEREF_END -->
 
 ### 7-8 プログラムが読む設定（2つ）
 
-<!-- ACC_SPEC_START hash=c86afdf3879cc4cb gen_acceptance.py が自動生成＝手で書き換えない -->
+<!-- ACC_SPEC_START hash=ef162eb048b8abd4 gen_acceptance.py が自動生成＝手で書き換えない -->
 **★この節はプログラムが作ります（手で書き換えない）。**出どころ＝`verify_design_contract.spec_from_impl`。**手で1文字も直していません。**
 
 DESIGN_CONTRACT
@@ -1636,6 +1524,13 @@ SPEC
   "stage_candidates": [
    "SampleError"
   ],
+  "pre_win_bars": [
+   "SampleError"
+  ],
+  "stage_warm": [
+   "pre_win_bars",
+   "stage_candidates"
+  ],
   "drop_tfs_of": [
    "SampleError"
   ],
@@ -1656,6 +1551,7 @@ SPEC
    "SampleError",
    "int_range_of",
    "material_ranges",
+   "pre_win_bars",
    "ranked_groups",
    "stage_candidates",
    "stage_limits_of",
@@ -1783,6 +1679,7 @@ SPEC
    "param_in_range",
    "per_day_gate",
    "pre_run_gate",
+   "pre_win_bars",
    "pvalue_daily",
    "q_in_range",
    "q_range_of",
@@ -1803,6 +1700,7 @@ SPEC
    "stage_keep_of",
    "stage_lineages_of",
    "stage_tfs_of",
+   "stage_warm",
    "strat_gate",
    "strip_marks",
    "structure_breakdown",
@@ -1820,7 +1718,8 @@ SPEC
    "material_pool",
    "pre_run_gate",
    "resolve_hold_range",
-   "run_generation"
+   "run_generation",
+   "stage_warm"
   ],
   "main": [
    "gate_matrix",
@@ -1859,6 +1758,7 @@ SPEC
   "Q_SRC": "_q_src",
   "NUM_SRC": "_num_src",
   "LIN_SRC": "_lineage_src",
+  "_EXEC_BAR_MIN": 5,
   "ATTACH_CALLS": 0
  },
  "cli_flags": []

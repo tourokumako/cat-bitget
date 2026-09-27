@@ -69,6 +69,8 @@ CHECKS = [
     #     （全体の --selftest は約6分半かかるので、その枝だけを数秒で走らせる口を使う）
     "gen_audit_request.py --selftest",
     "engine_tuner_gen.py --selftest-extra-gate",
+    # ★2026-09-27（監査 CP47 の Process）＝設計書の SPEC と実物の突き合わせ。実装の後に設計書の SPEC を作り直していないと、本走が設計↔実装ゲートで止まる（M2-E-4e で齟齬 6件のまま監査に出た）。
+    "verify_design_contract.py --diff /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
 ]
 # ★この2行が消されたら番人 P8 が落ちる（一覧から黙って外せなくする・145番・141番）
 _MUST_IN_CHECKS = ("gen_audit_request.py --selftest",

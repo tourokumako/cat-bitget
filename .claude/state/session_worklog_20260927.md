@@ -379,3 +379,21 @@
 - 書いた直後の検査＝不足10件。A2（必読ゲート＝このセッションで開いていない／読むもの宣言ゲート＝宣言27件を開いていない／禁止語の事前チェック）・A9（照合B＝engine_tuner_gen.py の6件「設計書に書いたのに実装していない」と、gen_s22_map.py が impl_functions に無い）・B1・B2（b109〜b112 とその行のコマンドを、書き替えの後に測っていない）。
 - A2 の直し＝宣言の27件と必読ゲートが挙げたファイルを、宣言の範囲で Read tool で開き直した（宣言の中身は変えていない）。`list_banned_words.py acceptance`＝「全項目で抽出成功」。`--try` の2回目で A2 の残りは恒等の見本1本だけ → 開いた。
 - A9 は 124回目の §1-4・§2-3 と同じ＝commit していない差が一部だけのとき照合B が止める。commit で差をゼロにして解く（まこさんの OK 待ち）。B群は commit の後に表のとおりの形で測る。
+- まこさんの問い（逐語）「すべて自動生成で作ってるよね？」→ 答え＝全部ではない。手で書いたのは①元データの TARGET の1行と注記の1文（修正51 の道・監査の指示に無い）②gen_s22_map.py の1行（監査の文字をそのまま写した）③worklog。decisions.md は gen_decisions.py の生成物（1行目「自動生成＝手書き禁止」・更新 13:25）。まこさん「了解。進めてよい」＝commit の OK。
+- commit＝`ad2779a`（9ファイル・コミットの文はスクラッチのファイルに書いて `git commit -F`）。
+- 組む側の自己テスト（SDK の置き場から表のとおりの形）＝「✅ 全部 pass」。T47 の行＝「①ts_pos は乱数の道の外 ／ ②既知答え ／ ③段2c の動く線 42 本（BB幅 の固定の線 42 本・窓 5分足 52596本・固定の線の後ろ）／ ⑤余白 242 days 15:00:00＝通った」。
+- 壊すプログラム4本を `run_breaks.py --design .claude/state/acceptance.md --measure-only --only <1本>` で1本ずつ測った＝4本とも「✅ 期待どおり」rc=1。測った後、scripts の下に M の行は0（壊した行は戻っている）。
+- `require_design_check_before_approval.py --try --transcript <このセッションの記録>`＝「A1〜A8・B1・B2 は全部 通ります（不足0件）」（18.5秒）。
+- 次＝承認（修正12・49）をお願いする。承認の後に pre_audit_check.py を Edit（修正51）→ `pre_audit_check.py --run`（修正13・50）→ `--verify`。
+- ★Stop hook（チャットの文章）に1回 止められた＝commit の文を書いた一時ファイル（scratchpad の commit_msg.txt）を報告に書いていなかった。短く足した。
+- まこさん「承認した」＝`.claude/state/acceptance.approved`＝ae5b69c8…＝設計書の sha256 と同じ。完成の条件 #1〜#4 は承認のプログラムが測って「✅済」、#5〜#14 は「未着手」（壊すプログラムを付けない行＝設計書のとおり実装の監査で閉じる）。控え `acceptance_archive/m2e4e-r6-moving-line-20260927.02.md` ほか（承認のプログラムが git に add した）。
+- 修正51＝`.claude/tools/pre_audit_check.py` の CHECKS の最後に、監査の文字どおり `verify_design_contract.py --diff <設計書>` の1行とコメントを Edit で足した（承認の後なので受け入れ条件ゲートは通した）。
+- `pre_audit_check.py --run`（修正13・50）＝全部 rc=0（gen_indicator_switch --write 2.8秒・gen_materials --write 6.2秒・G2 28.6秒・H2 298.6秒・gen_materials --verify 6.4秒・--selftest 71.5秒・gen_indicator_switch --verify 2.8秒・gen_exit_families --verify 3.0秒・exec --selftest 8.4秒・observe_diag --selftest 120.6秒・gen_audit_request --selftest 2.3秒・gen --selftest-extra-gate 3.2秒・足した verify_design_contract --diff 0.4秒）・記録の指紋 2bf63118…。「⏸ まこさんの承認を待つもの 2 件」＝型の表と出口の表の --write・--approve（設計書 4-4 の手順11 のとおり、部品の一覧を読まないので要らない＝G2 の --verify が rc=0）。`--verify`＝「監査に出せます（チェックの1枚が新しく、全部 rc=0）」。
+- ＝**47番（M2-E-4e）の6段の⑥は終わった。**当てなかったのは修正43（gen_regime_kb の照らし）と修正53（承認の前の検査の B2）の2件＝まこさん決定（CC の案）で next_step §6 に積む。
+
+## §11 127回目の記録（2026-09-27）
+
+- `m2_todo.json` の M2-E-4e を ✅済 に（ToDo ゲートに1回 止められた＝ToDo の変わった行を貼る前に Edit した。hook が全文を画面に出したので、同じ版で打ち直して通った）→ `gen_regime_kb.py --write todo`（§3・1,557行・hash=d85c16bb…）・`--verify all`（引用のずれ 0件）・`--selftest` 15/15。★jq と道具を `&&` でつないだコマンドは土台ゲートに止められた＝1本ずつ打ち直した。
+- `next_step_src.json`＝0-1 を127回目に書き替え（★いまここ＝8番 M2-E-6）、126回目の 0-1 に「次の書き替えで消す」を付けた。0-2 の47番を ✅済・8番を ★いまここ。§6 の218番に監査 CP47 の修正53（B2 の数えすぎの穴）を足し、220番（修正43＝gen_regime_kb の `pre_win` の照らし）を新しく足した。★47番の状態を直す Edit で、同じ事実を揃えるゲートが「2回」「§7〜§9」の残りを出した＝「2回」の5か所は別の事実の回数・「§7〜§9」は消す前の 0-1 の見出し＝同じ直しをもう一度 書いて通した。
+- `tidy_next_step.py --write`＝移した節 1・0-2 の表から移した行 1（47番）・--verify 7つ 通過・§0 63行。`--selftest` 19/19。
+- 教訓 L-634（道具を直せるかは受け入れ条件ゲートの本体を開いてから言う・gen_ で始まるものだけ承認ゲートの外・まこさんへのコマンドは絶対パス）を足した。

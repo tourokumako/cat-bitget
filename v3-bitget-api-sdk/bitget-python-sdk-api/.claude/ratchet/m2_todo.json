@@ -969,7 +969,7 @@
       "番号": "M2-E-4e",
       "段": "M2-E",
       "一文": "★監査 CP39 の問い2 から＝法則 R6 の「帯の幅が小さい」を、固定の線に加えて、6か月で動く線でも候補に出す（段2c）",
-      "状態": "まだ",
+      "状態": "✅済（2026-09-27・新しい前処理の部品 ts_pos・元データの欄 pre_win・段2c の BB幅 の動く線 42本・--build-regime の本走だけ余白を 60日＋6か月に〔worklog 20260927 §7〜§9〕。実装の監査 CP47〔GO〕の修正を当て、承認 ae5b69c8… で完成の条件 #1〜#4 が済・#5〜#14 は実装の監査の出力で閉じる行・worklog 20260927 §10）",
       "中身": "いまの閾値は、値決め窓の分布から分位を1回だけ決めて固定する（`build_qtable`＝rolling しない）。法則 R6 の根拠の逐語は「Ideally, BandWidth should be near the low end of its six-month range.」（`regime_laws.json`:715・StockCharts）＝直近6か月の範囲の中で下の方に在ること。固定の線は残したうえで、6か月で動く線（直近の窓の中での位置）も段2c の候補に足し、どちらが良いかは成績で engine_tuner に選ばせる。★窓の長さは逐語の six-month から取る（CC は数字を作らない・恒久42番）。★いま段2c に窓の本数つきの前処理を付ける道は無い（§2.2 の元データ `m2_stage_candidates.json` の `pre` は段2a でしか読まれず、窓の本数の欄も無い＝監査 CP39 の A6-b）＝その道を作るのがこの番号。",
       "触るファイル": "`scripts/priority_rebuild/engine_tuner_gen.py`（段2c の候補に前処理を付ける道）／`.claude/ratchet/m2_stage_candidates.json`（段2c の `pre`）",
       "出るもの": "設計書・直したコード・自己テストの出力。",
