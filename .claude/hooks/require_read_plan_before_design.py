@@ -212,9 +212,182 @@ def selftest():
     return 1 if ng else 0
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# 宣言を作る口（2026-09-28・132回目・まこさん指示「自動生成」「ヌケモレ出るから、手打ちしない」）
+#
+# 元データ .claude/state/read_plan_src.json に人が書くのは、文（何の設計書か・なぜ読むか・入れないもの）と、
+# 読むものごとの「パス・探す語・なぜ」だけ。行番号・行数・パスの実在は、この口が実物から出す。
+#   --write        元データから宣言を作る（パスが無い・探す語が無い・名前が2つ以上 当たる → 書かずに止まる）
+#   --verify       いまの宣言が、元データと実物から作った物と同じか（手の書き換え・行のずれを見る）
+#   --ok "逐語"    まこさんの OK の逐語を元データに書き、宣言を作り直す
+# ★全体のマイルストーン2本は、元データに無くても必ず先頭に足す（入れ忘れを防ぐ）。
+# ★「壊すプログラムを探す相手」に書いたファイル名を、.claude/breaks/*.sh から grep して、当たった物を全部 足す。
+# ★印（design_read_plan_posted）は作らない＝チャットに貼った後に作る物だから。
+# ════════════════════════════════════════════════════════════════════════════
+
+PLAN_SRC = os.path.join(STATE, "read_plan_src.json")
+BREAKS = os.path.join(ROOT, ".claude", "breaks")
+MILESTONE_PATHS = [
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones.md",
+     ["## M2｜"], "全体のマイルストーン（恒久68番で必ず読む）"),
+    ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md",
+     ["## 🔴 ★M2 で作っている物"], "M2 の全体（恒久68番で必ず読む・M2 の作業の前に毎回 開く節）"),
+]
+SKIP_DIRS = {".git", "__pycache__", "node_modules", "audits", "archive"}
+
+
+def _resolve(p):
+    """パス（リポジトリからの相対・または名前だけ）を実物に当てる。戻り＝(相対パス, 問題)。"""
+    full = os.path.join(ROOT, p)
+    if "/" in p:
+        return (p, None) if os.path.isfile(full) else (p, f"ファイルが無い: {p}")
+    hits = []
+    for dp, dns, fns in os.walk(ROOT):
+        dns[:] = [d for d in dns if d not in SKIP_DIRS]
+        if p in fns:
+            hits.append(os.path.relpath(os.path.join(dp, p), ROOT))
+    if len(hits) == 1:
+        return hits[0], None
+    if not hits:
+        return p, f"名前だけのファイルが見つからない: {p}"
+    return p, f"名前だけのファイルが {len(hits)} か所に在る（パスで書く）: {p} → {', '.join(hits[:3])}"
+
+
+def _lines_of(rel):
+    return _read(os.path.join(ROOT, rel)).splitlines()
+
+
+def _where(rel, words):
+    """探す語ごとの最初の行番号。戻り＝(「語」＝N行目 の並び, 問題の並び)。"""
+    lines = _lines_of(rel)
+    got, ng = [], []
+    for w in words:
+        n = next((i for i, ln in enumerate(lines, 1) if w in ln), None)
+        if n is None:
+            ng.append(f"探す語が {rel} に無い: {w}")
+        else:
+            got.append(f"「{w}」＝{n}行目")
+    return got, ng
+
+
+def _breaks_for(names):
+    """壊すプログラムのうち、names のどれかの名前を本文に持つ物（相対パス）。"""
+    out = []
+    for p in sorted(glob.glob(os.path.join(BREAKS, "*.sh"))):
+        body = _read(p)
+        if any(n in body for n in names):
+            out.append(os.path.relpath(p, ROOT))
+    return out
+
+
+def build_plan(src):
+    """元データから宣言の本文を作る。戻り＝(本文, 問題の並び)。"""
+    ng = []
+    items = list(src.get("読むもの") or [])
+    have = {it.get("パス") for it in items}
+    for mp, words, why in reversed(MILESTONE_PATHS):
+        if mp not in have:
+            items.insert(0, {"パス": mp, "探す語": words, "なぜ": why})
+    targets = src.get("壊すプログラムを探す相手") or []
+    for b in _breaks_for(targets):
+        if b not in {it.get("パス") for it in items}:
+            hit = [n for n in targets if n in _read(os.path.join(ROOT, b))]
+            items.append({"パス": b, "探す語": [], "なぜ": f"直す相手（{'・'.join(hit)}）の名前を持つ壊すプログラム＝直した後も通るか"})
+    rows = []
+    for i, it in enumerate(items, 1):
+        rel, prob = _resolve(str(it.get("パス") or ""))
+        if prob:
+            ng.append(prob)
+            continue
+        n_all = len(_lines_of(rel))
+        words = it.get("探す語") or []
+        got, bad = _where(rel, words)
+        ng += bad
+        rng = "・".join(got) if words else f"全文（{n_all}行）"
+        if words:
+            rng += f"（全{n_all}行）"
+        rows.append(f"| {i} | {rel} | {rng} | {str(it.get('なぜ') or '').replace('|', '／')} |")
+    if not src.get("設計書"):
+        ng.append("元データに「設計書」（ARC iter の名前）が無い")
+    head = [
+        "【読むもの宣言】",
+        f"設計書: {src.get('設計書', '')}",
+        f"まこさんの OK: {src.get('まこさんの OK', '')}",
+        "",
+        "★この宣言は require_read_plan_before_design.py --write が、元データ .claude/state/read_plan_src.json と実物から作った（手で書き換えない・--verify で見る）。",
+        f"★**何の設計書か**：{src.get('何の設計書か', '')}",
+        f"★**なぜ読むか（全体）**：{src.get('なぜ読むか', '')}",
+        f"★**入れないもの**：{src.get('入れないもの', '')}",
+    ]
+    if src.get("前の宣言"):
+        head.append(f"★**前の宣言**：{src['前の宣言']}")
+    body = "\n".join(head + ["", "| # | 読むもの（パス） | 範囲 | なぜ読むか |", "|---|---|---|---|"] + rows) + "\n"
+    return body, ng
+
+
+def _load_src():
+    try:
+        return json.loads(_read(PLAN_SRC))
+    except Exception as e:
+        print(f"❌ 元データが読めない: {PLAN_SRC}（{e}）")
+        return None
+
+
+def cli_write():
+    src = _load_src()
+    if src is None:
+        return 1
+    body, ng = build_plan(src)
+    if ng:
+        print(f"❌ 書きません。問題 {len(ng)} 件:")
+        for x in ng:
+            print(f"   ・{x}")
+        return 1
+    with open(PLAN, "w", encoding="utf-8") as f:
+        f.write(body)
+    n = sum(1 for ln in body.splitlines() if re.match(r"^\| \d+ \|", ln))
+    print(f"✅ --write: {PLAN}（読むもの {n} 件）。チャットに貼ったら印を作る:")
+    print(f"   shasum -a 256 \"{PLAN}\" | awk '{{print $1}}' > \"{MARK}\"")
+    return 0
+
+
+def cli_verify():
+    src = _load_src()
+    if src is None:
+        return 1
+    body, ng = build_plan(src)
+    if ng:
+        print(f"❌ 元データか実物に問題 {len(ng)} 件:")
+        for x in ng:
+            print(f"   ・{x}")
+        return 1
+    if _read(PLAN) != body:
+        print("❌ --verify: いまの宣言は、元データと実物から作った物と違う（手で書き換えた・行がずれた）。--write で作り直す")
+        return 1
+    print("✅ --verify: 宣言は元データと実物から作ったまま")
+    return 0
+
+
+def cli_ok(words):
+    src = _load_src()
+    if src is None:
+        return 1
+    src["まこさんの OK"] = words
+    with open(PLAN_SRC, "w", encoding="utf-8") as f:
+        json.dump(src, f, ensure_ascii=False, indent=1)
+        f.write("\n")
+    return cli_write()
+
+
 if __name__ == "__main__":
     if "--selftest" in sys.argv:
         sys.exit(selftest())
     if "--check" in sys.argv:
         sys.exit(cli_check())
+    if "--write" in sys.argv:
+        sys.exit(cli_write())
+    if "--verify" in sys.argv:
+        sys.exit(cli_verify())
+    if "--ok" in sys.argv:
+        sys.exit(cli_ok(sys.argv[sys.argv.index("--ok") + 1]))
     hook_main()

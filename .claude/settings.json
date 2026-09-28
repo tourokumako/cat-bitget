@@ -425,6 +425,11 @@
           },
           {
             "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_no_false_claim.sh",
+            "timeout": 60
+          },
+          {
+            "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_selftest_after_source_edit.sh stop",
             "timeout": 15
           },
