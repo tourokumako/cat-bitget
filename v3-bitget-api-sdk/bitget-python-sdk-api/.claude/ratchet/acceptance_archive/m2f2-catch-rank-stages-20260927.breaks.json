@@ -1,0 +1,64 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2f2-catch-rank-stages-20260927",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b113_catch_share_broken.sh",
+   "code": 1,
+   "note": "  ❌ ⑥: 使えない印のバーを分母から外していない",
+   "expect": 1,
+   "means": "捉えた割合の正解の向きを逆にすると、番人⑥が「正解レンジが0本なのに nan でない」で落ちた",
+   "match": true
+  },
+  {
+   "no": "2",
+   "script": "b114_default_rng_back.sh",
+   "code": 1,
+   "note": "  ❌ ⑦: 乱数の道が残っている: random 行 858",
+   "expect": 1,
+   "means": "乱数を使う行を道具に戻すと、番人⑦が「乱数の道が残っている: default_rng」で落ちた",
+   "match": true
+  },
+  {
+   "no": "3",
+   "script": "b115_record_run_renamed.sh",
+   "code": 1,
+   "note": "  ❌ ⑧: 試行を数える口（record_run）が1回も呼ばれていない",
+   "expect": 1,
+   "means": "試行を数える口の呼び出しを別の名前に替えると、番人⑧が「record_run が1回も呼ばれていない」で落ちた",
+   "match": true
+  },
+  {
+   "no": "4",
+   "script": "b116_dropped_file_not_written.sh",
+   "code": 1,
+   "note": "  ❌ ⑨: 落ちた候補の5つの場面が全部 ファイルに出ない",
+   "expect": 1,
+   "means": "落ちた候補のファイルを書かない形にすると、番人⑨が「5つの場面が全部 ファイルに出ない」で落ちた",
+   "match": true
+  },
+  {
+   "no": "5",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "6",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "7",
+   "script": "b117_stage_recipe_no_entry.sh",
+   "code": 1,
+   "note": "  ❌ ⑪: 段の口の束を測る所で止まった: KeyError 'entry'",
+   "expect": 1,
+   "means": "段の口の束から入口の木を外すと、番人⑪が「段の口の束を測る所で止まった」で落ちた",
+   "match": true
+  }
+ ]
+}

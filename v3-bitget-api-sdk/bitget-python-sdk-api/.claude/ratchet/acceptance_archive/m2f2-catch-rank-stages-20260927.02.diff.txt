@@ -1,0 +1,114 @@
+19a20
+> > M2-F-7 の進め方はCCの案でOK（2026-09-28＝上端に10を書くと組む側がレンジの判定の束を組めなくなるので、組む側の直しを M2-F-13b にまとめ、M2-F-6 の後・M2-F-7 の前へ動かす。M2-F-7 はこの工事では書かない）
+48,52c49,53
+< | 捉えた割合が道具に無い | `grep -c '捉えた' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 15（終了コード 0）／読み方＝零件。検索方法の第二キー（捉えた割合）が測れない |
+< | 順位をつける処理が無い | `grep -c 'rank_key' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 4（終了コード 0）／読み方＝零件。並べて上位を渡す段の選抜ができない |
+< | 結果をファイルに書く処理が無い | `grep -c 'write_text' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 2（終了コード 0）／読み方＝零件。画面に印字するだけで、次の段が前の段の上位を機械で読めない |
+< | 乱数が残っている | `grep -n 'default_rng' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 696:        if _nm7 in ("default_rng", "sample_structure", "random", "RandomState"):（終了コード 0）／読み方＝在る。乱数は使わない、の決まり（禁止用語のレベル）に反したまま |
+< | 試行を累積に数える口を呼んでいない | `grep -c 'record_run' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 7（終了コード 0）／読み方＝零件。試行は累積して数える、の共通の決まりを満たさない |
+---
+> | 捉えた割合が道具に無い | `grep -c '捉えた' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 20（終了コード 0）／読み方＝実装の前は零件（承認の一回目の控えの表）。検索方法の第二キー（捉えた割合）が測れなかった。★実装の後に作り直すと在る＝この工事で足したもの |
+> | 順位をつける処理が無い | `grep -c 'rank_key' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 4（終了コード 0）／読み方＝実装の前は零件（同じ控え）。並べて上位を渡す段の選抜ができなかった。★実装の後は在る＝この工事で足したもの |
+> | 結果をファイルに書く処理が無い | `grep -c 'write_text' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 2（終了コード 0）／読み方＝実装の前は零件（同じ控え）。画面に印字するだけで、次の段が前の段の上位を機械で読めなかった。★実装の後は在る＝この工事で足したもの |
+> | 乱数が残っている | `grep -n 'default_rng' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 705:        if _nm7 in ("default_rng", "sample_structure", "random", "RandomState"):（終了コード 0）／読み方＝実装の前は在った（同じ控え＝乱数の呼び出しの行）。★実装の後に当たるのは、番人が探す名前の並びの行だけ＝乱数の呼び出しではない |
+> | 試行を累積に数える口を呼んでいない | `grep -c 'record_run' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 7（終了コード 0）／読み方＝実装の前は零件（同じ控え）。試行は累積して数える、の共通の決まりを満たさなかった。★実装の後は在る＝この工事で足したもの |
+54c55
+< | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py ／ grep -c '^@@'` | 11（終了コード 0）／読み方＝承認の前は差が無い。照合が数える触った関数は、この工事で直すものだけになる |
+---
+> | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py ／ grep -c '^@@'` | 11（終了コード 0）／読み方＝承認の一回目の前は差が無かった（同じ控え）。★実装の後は差が在る＝この工事の差。照合が数える触った関数は、この工事で直すものだけになる |
+160c161
+< | 2 | M2-F-7（渡す本数10本）をこの設計書で書くこと | 設定ファイルの1行で承認の相手ではなく、M2-F-4 の実装と同じ回に書くと H2 の印の取り直しが1回で済む | まこさん OK 2026-09-24（束3） |
+---
+> | 2 | M2-F-7（渡す本数10本）をこの設計書で書くこと | 設定ファイルの1行で承認の相手ではない。★M2-F-4 の実装の回に書いたら組む側がレンジの判定の束を組めなくなり、空に戻した。組む側の直し（M2-F-13b）の実装と同じ回に書く（H2 の印の取り直しが1回で済む） | まこさん OK 2026-09-24（束3）・まこさん決定 2026-09-28「M2-F-7 の進め方はCCの案でOK」 |
+175a177,178
+> | 3 | 段4 の差し戻しで段2c の「なし」を入れ直すか。§2.2 の段2c は「なし」を必ず併走と書き、差し戻しは「全候補を1枠ずつ入れ直して」と書く。この道具の --sweep は、段2c の枠を build_stage_candidates の候補だけで入れ直し、「なし」（3枠目を外す）を試さない。「なし」で勝った束は段2c の枠を持たないので、差し戻しで段2c の候補を足し直すこともない | ★まこさん決定 2026-09-28（逐語「決めることはCCのおすすめでOK」）＝入れ直す。「なし」も段2c の枠の候補の1つにし、「なし」で勝った束には段2c の候補を足して試す（§2.2 の段2c「「なし」を必ず併走」と段4「全候補を1枠ずつ入れ直して1周」を合わせて読む）。★この工事では直さない＝M2-F-13b（同じ道具を直す回・差し戻しの本走 M2-F-15 より前）で直す（m2_todo.json） | engine_tuner_milestones2.md の §2.2 の段2c・段4・regime_r9_diag.py の run_sweep（551〜554行・565〜576行）（監査 CP49） |
+> | 4 | 段1 の帯の候補の向き。生成器の sample_regime_build は、帯 B の向きを案の番号で above・below 交互に決める（engine_tuner_gen.py の regime_draw_order・3313〜3315行の注記「一覧の側に揃えると、下側の帯を試せなくなる」）。この道具の --stage stage1 は build_stage_candidates の一覧の側（法則が側を決めない帯は above）のまま測る＝下側の帯は段1 で1本も測られず、上位10本にも入らない。下側も測るか（束の本数は倍） | ★まこさん決定 2026-09-28（逐語「決めることはCCのおすすめでOK」）＝下側も測る（段1 の束は336本 → 672本・時間の目安は約49分 → 約98分＝掛け算の目安で実測ではない）。★この工事では直さない＝M2-F-13b（同じ道具を直す回・段1 の本走 M2-F-8 より前）で直す（m2_todo.json） | engine_tuner_gen.py の build_stage_candidates（2928行）と sample_regime_build（3313〜3315行）・regime_r9_diag.py の run_stage（458行）（監査 CP49） |
+193c196
+< **完成したときに出るもの。**regime_r9_diag.py --selftest の⑥〜⑩の行（捉えた割合の既知答え・乱数0件・record_run・落ちた候補の5つの場面・並べる鍵）。固定のレシピの走行で、順位表と落ちた候補のファイルが results/priority_rebuild/regime_r9/ に書かれます。売買は0件・net はゼロのままです。
+---
+> **完成したときに出るもの。**regime_r9_diag.py --selftest の⑥〜⑪の行（捉えた割合の既知答え・乱数0件・record_run・落ちた候補の5つの場面・並べる鍵・段の口の束）。固定のレシピの走行で、順位表と落ちた候補のファイルが results/priority_rebuild/regime_r9/ に書かれます。売買は0件・net はゼロのままです。
+230c233
+< | 順位の数字は2つの先読みの平均 | まこさん決定 2026-09-27「１は平均でOK」 | rank_key＝③と捉えた割合の nan を除いた平均。番人⑩と壊すプログラム b113 |
+---
+> | 順位の数字は2つの先読みの平均 | まこさん決定 2026-09-27「１は平均でOK」 | rank_key＝③は2つの先読みの平均（片方でも nan なら最後）・捉えた割合は nan を除いた平均。番人⑩（壊すプログラムは無い＝b113 が壊すのは⑥） |
+270c273
+< 4. M2-F-7＝search_limits.json の stage_keep_range の hi に 10 を書き、G2 → H2 の順で印を取り直します（設定は H2 の対象のため・約6分半）。
+---
+> 4. ★M2-F-7（search_limits.json の stage_keep_range の hi に 10 を書く）は、この工事ではしません。M2-F-4 の実装の回に書いた直後、組む側 engine_tuner_gen.py の stage_counts が段2b（候補1本）で stage_keep_of を止め、レンジの判定の束を1本も組めなくなると分かり、同じ1行を空に戻しました（git の版と差0行）。まこさん決定 2026-09-28「M2-F-7 の進め方はCCの案でOK」＝組む側の直し（M2-F-13b）の実装と同じ回に書き、G2 → H2 の印もその回に取り直します。
+283c286
+< **通しの例3（段の口）。**--stage stage1 は、帯（W% が q50 より上）∩ 段1 の候補（いま336本）の束を336本 作って測り、rank_stage1_<日時>.json に順位つきで書きます。次に --stage stage2a --top rank_stage1_<日時>.json は、上位10本（stage_keep_of＝M2-F-7 で 10）× 段2a の候補（いま89本）＝890本を測ります。
+---
+> **通しの例3（段の口）。**--stage stage1 は、帯（W% が q50 より上）∩ 段1 の候補（いま336本）の束を336本 作って測り、rank_stage1_<日時>.json に順位つきで書きます。次に --stage stage2a --top rank_stage1_<日時>.json は、上位10本（stage_keep_of＝M2-F-7 で 10。★M2-F-7 は M2-F-13b の後＝それまでは上端が空で、この口は止まる）× 段2a の候補（いま89本）＝890本を測ります。
+295c298
+< | 上位を渡す本数 | stage_keep_of（設定の stage_keep_range・M2-F-7 で hi＝10） | まこさん決定 2026-09-18「とりあえず１０本にする」 |
+---
+> | 上位を渡す本数 | stage_keep_of（設定の stage_keep_range・M2-F-7 で hi＝10。★M2-F-7 は M2-F-13b の後＝それまで上端は空） | まこさん決定 2026-09-18「とりあえず１０本にする」・2026-09-28「M2-F-7 の進め方はCCの案でOK」 |
+323c326
+< **設定ファイルはこの設計書では変えません。**M2-F-7（stage_keep_range の hi＝10）は M2-F-4 の実装と同じ回に書きます（まこさん OK 2026-09-24・承認の相手ではない）。
+---
+> **設定ファイルはこの設計書では変えません。**M2-F-7（stage_keep_range の hi＝10）は、組む側の直し（M2-F-13b）の実装と同じ回に書きます（まこさん決定 2026-09-28「M2-F-7 の進め方はCCの案でOK」・承認の相手ではない）。★それまで上端は空＝--stage width と stage1 は全部の束を並べて成績下位を付けず、stage2a から先は止まる（fail-closed）。
+331c334
+< **完成したときに画面に出るもの。**①--selftest の⑥〜⑩の行。②測る走行で「[書いた] 順位表 …／落ちた候補 …（場面の内訳: …）」と「[試行] cumulative か check へ N 本」。③順位表の行が「N位 <束の名前>: ①… ③… 当たった… 捉えた… 正解レンジ…」の形。★数は走らせた出力から書きます。
+---
+> **完成したときに画面に出るもの。**①--selftest の⑥〜⑪の行。②測る走行で「[書いた] 順位表 …／落ちた候補 …（場面の内訳: …）」と「[試行] cumulative か check へ N 本」。③順位表の行が「N位 <束の名前>: ①… ③… 当たった… 捉えた… 正解レンジ…」の形。★数は走らせた出力から書きます。
+348c351
+< | hysteresis の出る線を1つも作れない | 止まる（fail-closed） |
+---
+> | hysteresis の出る線を1つも作れない | --stage stage3 と --sweep では、その束を「組めない」の場面で dropped に残して次の束へ進む（走行ごとは止めない＝落ちた候補を全部 残す） |
+354c357
+< **ほかのファイルは直しません。作り直しも要りません。**regime_r9_diag.py は H2・G2 の印の対象に入っていない（milestones2:2008 の前置き7）ので、この実装では印は失効しません。★M2-F-7（設定の1行）を書く回だけ、設定が H2 の対象なので G2 → H2 の順で印を取り直します（4-4 の5）。
+---
+> **ほかのファイルは直しません。作り直しも要りません。**regime_r9_diag.py は H2・G2 の印の対象に入っていない（milestones2:2008 の前置き7）ので、この実装では印は失効しません。★M2-F-7（設定の1行）を書く回（組む側の直し M2-F-13b の実装と同じ回＝この工事の外）だけ、設定が H2 の対象なので G2 → H2 の順で印を取り直します（4-4 の4）。
+398c401
+< **画面に出すもの。**selftest の⑥〜⑩の行（最後が「＝通った」か ❌）。測る走行の「[書いた]」「[試行]」の行。順位つきの表。
+---
+> **画面に出すもの。**selftest の⑥〜⑪の行（最後が「全部 pass」か ❌）。測る走行の「[書いた]」「[試行]」の行。順位つきの表。
+409c412
+< 6. **G2・H2 の印。**この実装では失効しません（前置き7）。M2-F-7 の設定の1行を書く回だけ取り直します。
+---
+> 6. **G2・H2 の印。**この実装では失効しません（前置き7）。M2-F-7 の設定の1行を書く回（M2-F-13b の実装と同じ回＝この工事の外）だけ取り直します。
+412c415
+< 9. **ほかの道具の文（この工事では直さない・1変更）。**.claude/tools/gen_stage0_timing.py の59行目は、読み方を regime_r9_diag.py:230 と同じ（WARM）と書くが、この工事の後の道具は stage_warm で読む＝段0 の時間の実測と余白が違う。.claude/tools/gen_s22_fidelity.py の15行目は、regime_r9_diag の --build と同じやり方と書くが、この工事の後の --build は sample_regime_build だけで組み、あちらは sample_structure と乱数のまま。2つとも next_step §6 に積む。
+---
+> 9. **ほかの道具の文（この工事では直さない・1変更）。**.claude/tools/gen_stage0_timing.py の59行目は、読み方を regime_r9_diag.py:230 と同じ（WARM）と書くが、この工事の後の道具は stage_warm で読む＝段0 の時間の実測と余白が違う。.claude/tools/gen_s22_fidelity.py の15行目は、regime_r9_diag の --build と同じやり方と書くが、この工事の後の --build は sample_regime_build だけで組み、あちらは sample_structure と乱数のまま。2つとも next_step §6 に積む。★scripts/dashboard/build_regime_from_tuner.py の8行目も「R9 の診断 regime_r9_diag.py と同じ1行」（WARM で読む）と書くが、この工事の後の道具は stage_warm で読む（監査 CP49）。これも next_step §6 の223番に足す。
+1594c1597
+< | 1 | 並べる鍵の nan は最後に置く（両方の先読みが nan の束を上位に出さない） | 測れない束が上位10本に混ざると、次の段が空の束を掛け合わせる | nan を0として扱う。捨てた理由＝嘘の数字になる（③=0 は最好成績の意味になってしまう） |
+---
+> | 1 | 並べる鍵の nan は最後に置く（③の先読みの片方でも nan の束を上位に出さない＝監査 CP48 で直した・塞げないものの4つ目） | 測れない束が上位10本に混ざると、次の段が空の束を掛け合わせる | nan を0として扱う。捨てた理由＝嘘の数字になる（③=0 は最好成績の意味になってしまう） |
+1599c1602
+< | 6 | 壊すプログラムを4本 作る（b113〜b116） | この道具は選抜の採点係＝どの束が次の段へ進むかを決める＝BOT の中身に触る（恒久71番の線引きの内） | 付けない。捨てた理由＝並べる鍵・乱数・試行の数え・落ちた候補は、壊れると選抜が黙って狂う |
+---
+> | 6 | 壊すプログラムを5本 作る（b113〜b117＝b117 は監査 CP48 の直しで足した） | この道具は選抜の採点係＝どの束が次の段へ進むかを決める＝BOT の中身に触る（恒久71番の線引きの内） | 付けない。捨てた理由＝並べる鍵・乱数・試行の数え・落ちた候補は、壊れると選抜が黙って狂う |
+1625c1628
+< | 1 | regime_r9_diag.py --selftest の時間が分からない（⑥〜⑩と段2c の候補作りが増える） | 走らせる前に worklog から過去の実測を探す。無ければ まこさんに報告してから走らせる（恒久61・62番） |
+---
+> | 1 | regime_r9_diag.py --selftest の時間が分からない（⑥〜⑪と段2c の候補作りが増える） | 走らせる前に worklog から過去の実測を探す。無ければ まこさんに報告してから走らせる（恒久61・62番） |
+1638c1641
+< | M2-F-7 と印の取り直し（実装と同じ回） | 約6分半 | G2 約30秒・H2 約5〜6分（2026-09-26 の実測 H2 303.9秒） |
+---
+> | M2-F-7 と印の取り直し（★この工事ではしなかった＝M2-F-13b の実装と同じ回へ回した） | 約6分半（この工事では0） | G2 約30秒・H2 約5〜6分（2026-09-26 の実測 H2 303.9秒）。★上端を書いて空に戻しただけで、設定を読む道具11本の自己テスト（約12分）を hook に求められた（worklog 20260928 §5-3・§6） |
+1687a1691,1692
+> | **段の口・差し戻しの口・値なしの口・--build は、完成の条件で1度でも走るか** | 走りません。完成の条件7行のうち6行は --selftest（合成データ）、1行は固定のレシピ（--recipe）です。run_stage・_load_top・run_sweep・run_nan_check と、--build の sample_regime_build の道は、実データでも合成データでも1度も走っていません（⑪が通すのは measure と、段の口と同じ形の束だけ）。最初に走るのは M2-F-5（--stage stage1 --limit と --nan-check）で、差し戻しは M2-F-15 です（監査 CP49） |
+> | **M2-F-5（--stage stage1 --limit）で、落ちた候補の5つの場面が全部 ファイルに出るか** | 出ません。束が無い（fail-closed で止まる）に加えて、成績下位も出ません。keep は絞る前の束の本数から決まるので、上端が空の間は測る束の全部が keep の内に入り、上端が入っても --limit で絞った本数は keep より少ないためです。5つの場面が全部 そろうのは番人⑨（合成）だけです（監査 CP49） |
+1691c1696
+< <!-- ACC_CHECKLIST_START hash=c768565bd4893beb gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CHECKLIST_START hash=d83e18a40957c312 gen_acceptance.py が自動生成＝手で書き換えない -->
+1705a1711
+> - 【群1】壊すプログラムが測るコマンドが、本物の結果の置き場（results/ ほか）や帳簿に書くなら、guard で控えに写すか、測った後に壊した道具が書いたファイルを消す形にする（監査 CP49＝b97 は --purpose
+1707a1714
+> - 【群1】実装の後に設計書を作り直して2回目の承認に出すときは、実装の中で変わった手順（やらなかった手順・後に回した手順）を、元データの 4-4・やらないこと・4-7〜4-9・4-13・4-19・見積もり・まこさんの決定に書き直し
+1724,1727c1731,1734
+< | 1 | 捉えた割合と並べる鍵の番人が通る（⑥＝全部真→1.0／全部偽→0.0／正解0本→nan／判定の反転で 1−x、⑩＝2つの先読みの平均で並ぶ・成績下位が付く） | `python3 scripts/priority_rebuild/regime_r9_diag.py --selftest` | 実経路 | 捉えた割合の式の正解の向きを逆にすると、⑥が『❌』で落ちる | `b113_catch_share_broken.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝捉えた割合の正解の向きを逆にすると、番人⑥が「正解レンジが0本なのに nan でない」で落ちた |
+< | 2 | 乱数がこの道具に残っていない（⑦＝default_rng・sample_structure を構文木で見る・恒久67番） | `python3 scripts/priority_rebuild/regime_r9_diag.py --selftest` | 実経路 | default_rng を使う行を戻すと、⑦が『❌』で落ちる | `b114_default_rng_back.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝乱数を使う行を道具に戻すと、番人⑦が「乱数の道が残っている: default_rng」で落ちた |
+< | 3 | 試行を累積に数える口が呼ばれている（⑧＝record_run の呼び出しを構文木で見る・§2.2・恒久24番） | `python3 scripts/priority_rebuild/regime_r9_diag.py --selftest` | 実経路 | record_run の呼び出しを別の名前に替えると、⑧が『❌』で落ちる | `b115_record_run_renamed.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝試行を数える口の呼び出しを別の名前に替えると、番人⑧が「record_run が1回も呼ばれていない」で落ちた |
+< | 4 | 落ちた候補の5つの場面（組めない・測れない・束が無い・関所で拒否・成績下位）が全部 ファイルに出る（⑨） | `python3 scripts/priority_rebuild/regime_r9_diag.py --selftest` | 実経路 | 落ちた候補のファイルを書かない形にすると、⑨が『❌』で落ちる | `b116_dropped_file_not_written.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝落ちた候補のファイルを書かない形にすると、番人⑨が「5つの場面が全部 ファイルに出ない」で落ちた |
+---
+> | 1 | 捉えた割合と並べる鍵の番人が通る（⑥＝全部真→1.0／全部偽→0.0／正解0本→nan／判定の反転で 1−x、⑩＝2つの先読みの平均で並ぶ・成績下位が付く） | `python3 scripts/priority_rebuild/regime_r9_diag.py --selftest` | 実経路 | 捉えた割合の式の正解の向きを逆にすると、⑥が『❌』で落ちる | `b113_catch_share_broken.sh` | — | **未着手** |
+> | 2 | 乱数がこの道具に残っていない（⑦＝default_rng・sample_structure を構文木で見る・恒久67番） | `python3 scripts/priority_rebuild/regime_r9_diag.py --selftest` | 実経路 | default_rng を使う行を戻すと、⑦が『❌』で落ちる | `b114_default_rng_back.sh` | — | **未着手** |
+> | 3 | 試行を累積に数える口が呼ばれている（⑧＝record_run の呼び出しを構文木で見る・§2.2・恒久24番） | `python3 scripts/priority_rebuild/regime_r9_diag.py --selftest` | 実経路 | record_run の呼び出しを別の名前に替えると、⑧が『❌』で落ちる | `b115_record_run_renamed.sh` | — | **未着手** |
+> | 4 | 落ちた候補の5つの場面（組めない・測れない・束が無い・関所で拒否・成績下位）が全部 ファイルに出る（⑨） | `python3 scripts/priority_rebuild/regime_r9_diag.py --selftest` | 実経路 | 落ちた候補のファイルを書かない形にすると、⑨が『❌』で落ちる | `b116_dropped_file_not_written.sh` | — | **未着手** |
+1730c1737
+< | 7 | 段の口が組む束（判定の束だけ・入口の木は空）を、合成データで最後まで測れる（⑪＝束を組む→解決表→列→3つの割合・関所で拒否の行） | `python3 scripts/priority_rebuild/regime_r9_diag.py --selftest` | 実経路 | 段の口の束から入口の木を外すと、⑪が『❌』で落ちる | `b117_stage_recipe_no_entry.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝段の口の束から入口の木を外すと、番人⑪が「段の口の束を測る所で止まった」で落ちた |
+---
+> | 7 | 段の口が組む束（判定の束だけ・入口の木は空）を、合成データで最後まで測れる（⑪＝束を組む→解決表→列→3つの割合・関所で拒否の行） | `python3 scripts/priority_rebuild/regime_r9_diag.py --selftest` | 実経路 | 段の口の束から入口の木を外すと、⑪が『❌』で落ちる | `b117_stage_recipe_no_entry.sh` | — | **未着手** |

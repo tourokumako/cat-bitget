@@ -15,7 +15,7 @@
 source "$(dirname "$0")/lib.sh"
 
 DIAG="$PR/regime_r9_diag.py"
-guard "$DIAG"
+guard "$DIAG" "$SDK/.claude/ratchet/engine_tuner_check_runs.json"
 
 python3 - "$DIAG" <<'PYEOF'
 import sys
@@ -28,5 +28,11 @@ new = '            pass  # b97 が壊した（需給の列を足さない）\n'
 open(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))
 PYEOF
 
-measure python3 "$PR/regime_r9_diag.py" --recipe "$PR/recipes/r9_demand_fixture.json" --no-trades
+R9OUT="$SDK/results/priority_rebuild/regime_r9"
+R9BEFORE="$(ls "$R9OUT" 2>/dev/null)"
+measure python3 "$PR/regime_r9_diag.py" --recipe "$PR/recipes/r9_demand_fixture.json" --purpose check
+# ★壊した道具が書いた順位表と落ちた候補のファイルを消す（本物の走行と同じ名前で残さない・監査 CP49）
+for _f in $(ls "$R9OUT" 2>/dev/null); do
+    printf '%s\n' "$R9BEFORE" | grep -qxF "$_f" || rm -f "$R9OUT/$_f"
+done
 finish

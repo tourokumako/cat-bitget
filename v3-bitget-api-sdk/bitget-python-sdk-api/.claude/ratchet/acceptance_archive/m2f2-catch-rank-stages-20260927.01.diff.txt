@@ -1,0 +1,75 @@
+48,52c48,52
+< | 捉えた割合が道具に無い | `grep -c '捉えた' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 0（終了コード 1）／読み方＝零件。検索方法の第二キー（捉えた割合）が測れない |
+< | 順位をつける処理が無い | `grep -c 'rank_key' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 0（終了コード 1）／読み方＝零件。並べて上位を渡す段の選抜ができない |
+< | 結果をファイルに書く処理が無い | `grep -c 'write_text' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 0（終了コード 1）／読み方＝零件。画面に印字するだけで、次の段が前の段の上位を機械で読めない |
+< | 乱数が残っている | `grep -n 'default_rng' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 324:            rng = np.random.default_rng([a.seed, 1, tries])（終了コード 0）／読み方＝在る。乱数は使わない、の決まり（禁止用語のレベル）に反したまま |
+< | 試行を累積に数える口を呼んでいない | `grep -c 'record_run' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 0（終了コード 1）／読み方＝零件。試行は累積して数える、の共通の決まりを満たさない |
+---
+> | 捉えた割合が道具に無い | `grep -c '捉えた' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 15（終了コード 0）／読み方＝零件。検索方法の第二キー（捉えた割合）が測れない |
+> | 順位をつける処理が無い | `grep -c 'rank_key' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 4（終了コード 0）／読み方＝零件。並べて上位を渡す段の選抜ができない |
+> | 結果をファイルに書く処理が無い | `grep -c 'write_text' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 2（終了コード 0）／読み方＝零件。画面に印字するだけで、次の段が前の段の上位を機械で読めない |
+> | 乱数が残っている | `grep -n 'default_rng' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 696:        if _nm7 in ("default_rng", "sample_structure", "random", "RandomState"):（終了コード 0）／読み方＝在る。乱数は使わない、の決まり（禁止用語のレベル）に反したまま |
+> | 試行を累積に数える口を呼んでいない | `grep -c 'record_run' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 7（終了コード 0）／読み方＝零件。試行は累積して数える、の共通の決まりを満たさない |
+54c54
+< | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py ／ grep -c '^@@'` | 0（終了コード 1）／読み方＝承認の前は差が無い。照合が数える触った関数は、この工事で直すものだけになる |
+---
+> | 直すファイルに commit されていない差の塊の数 | `git diff HEAD -- v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py ／ grep -c '^@@'` | 11（終了コード 0）／読み方＝承認の前は差が無い。照合が数える触った関数は、この工事で直すものだけになる |
+1736c1736
+< <!-- ACC_CODEREF_START hash=117eb3cb6797086c gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=3f8867f9cdc786eb gen_acceptance.py が自動生成＝手で書き換えない -->
+1743,1745c1743,1745
+< | `r9_catch_share` | （この関数は実物に無い） |
+< | `rank_rows` | （この関数は実物に無い） |
+< | `write_outputs` | （この関数は実物に無い） |
+---
+> | `r9_catch_share` | 68 |
+> | `rank_rows` | 107 |
+> | `write_outputs` | 136 |
+1752c1752
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 10件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 25件の関数が在ります）。
+1758c1758
+< <!-- ACC_SPEC_START hash=cfbf04225ee4f597 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=11ac95dccc729786 gen_acceptance.py が自動生成＝手で書き換えない -->
+1855a1856,1860
+>   "r9_catch_share": [],
+>   "r9_range_share": [],
+>   "rank_key": [],
+>   "rank_rows": [],
+>   "write_outputs": [],
+1857a1863,1864
+>    "r9_catch_share",
+>    "r9_range_share",
+1862a1870,1881
+>   "run_stage": [
+>    "measure",
+>    "rank_rows",
+>    "write_outputs"
+>   ],
+>   "run_sweep": [
+>    "measure",
+>    "rank_key",
+>    "rank_rows",
+>    "write_outputs"
+>   ],
+>   "run_nan_check": [],
+1864a1884
+>    "r9_catch_share",
+1866c1886,1888
+<    "r9_trend_share"
+---
+>    "r9_trend_share",
+>    "rank_rows",
+>    "write_outputs"
+1871c1893,1898
+<    "selftest"
+---
+>    "rank_rows",
+>    "run_nan_check",
+>    "run_stage",
+>    "run_sweep",
+>    "selftest",
+>    "write_outputs"
