@@ -18,7 +18,7 @@
 - 旗 = `.claude/state/pdca_need_*` ファイル。`pdca_mark`（PostToolUse）が立て、`pdca_gate`（Stop）が残存を検出して終了を止める。
 - 「ブロック」= ツールが実行されない。CC は条件を満たすまで先に進めない。
 
-<!-- HOOK_LIST_START hash=d43381c87efa898c gen_hook_list.py が settings.json と hook_roles.json から作った＝手で書き換えない -->
+<!-- HOOK_LIST_START hash=552cb131110d5fdf gen_hook_list.py が settings.json と hook_roles.json から作った＝手で書き換えない -->
 ## 1. hook 一覧（**実測 76本**・登録は settings.json）
 
 > **★2026-09-19 に `show_design_check_after_write`（設計書を作り直した直後に承認の門の検査を出す）と `require_design_check_before_approval`（承認のお願いを出すターンは不足0件でなければ終われない）を足した＝75本**（まこさん指示 2026-09-19「これは何回も確認を走らせないように以下の方法で、回数を1回で直せるように強制してほしい」）。
@@ -99,7 +99,7 @@
 | **enforce_audit_fix_gen**（hook 12） | PreToolUse | Write\|Edit\|MultiEdit\|Bash | **【監査結果の修正は当てる道具でしか書けない】**（2026-09-16 まこさん承認・新設）＝監査結果の修正を、`.claude/tools/apply_audit_fix.py` 以外では書けないようにする（まこさん逐語 2026-09-14「今後はそのテンプレ以外では監査結果を書けないように強制してほしい」）。★2026-09-17 に一覧へ足した |
 | **check_chat_draft** | PreToolUse | Write\|Edit\|MultiEdit | 長い返信の下書き（`.claude/state/chat_draft.md`）を、書き込みの瞬間にチャットの文章の検査に掛ける（2026-08-26 新設・まこさんの問い「１文の長さは書く前にどうにかできないのか？」）。背景＝Stop hook の検査は、文章が まこさんの画面に出た後にしか走らない。★2026-09-17 に一覧へ足した |
 | **show_breaks_on_code_edit** | PreToolUse | Write\|Edit\|MultiEdit | **【仕組み1の前半・壊すプログラムを見せる】**（2026-09-16 まこさん指示「この３つのミスを繰り返さない仕組みを作れ」・L-605）＝コードの行を直す直前に、直して消える行を文字で探している壊すプログラム（`.claude/breaks/*.sh`）を見せて1回止める。**限界**＝見るのは消える行だけ＝ファイル名で壊すプログラムを grep する代わりにはならない（2026-09-17 に実例）。セッションの id が無い呼び方では止めない。★2026-09-17 に一覧へ足した |
-| **forbid_edit_generated_docs** | PreToolUse | Write\|Edit\|MultiEdit | **【生成された文書を手で直せなくする】**（2026-09-17 まこさん指示「CCは確認せずミスを繰り返すので、手書きせざるをえないもの以外は自動生成にしてほしい」・設計書 docs-autogen-next-step-pdca-20260917）＝next_step.md（1行目に生成の目印が在るとき）と、pdca_flow.md の §1 の囲みの中への Write・Edit を止める。直す道＝元データ（next_step_src.json・hook_roles.json）を直して `tidy_next_step.py --write`・`gen_hook_list.py --write`。**限界**＝Bash の書き替えは見ない（Stop hook の --verify が止める）／セッションの id が無い呼び方では止めない |
+| **forbid_edit_generated_docs** | PreToolUse | Write\|Edit\|MultiEdit | **【生成された文書を手で直せなくする】**（2026-09-17 まこさん指示「CCは確認せずミスを繰り返すので、手書きせざるをえないもの以外は自動生成にしてほしい」・設計書 docs-autogen-next-step-pdca-20260917）＝next_step.md（1行目に生成の目印が在るとき）と、pdca_flow.md の §1 の囲みの中への Write・Edit を止める。直す道＝元データ（next_step_src.json・hook_roles.json）を直して `tidy_next_step.py --write`・`gen_hook_list.py --write`。**★2026-09-29（まこさん指示「防止策で効果があるものは対応してよい」・worklog 20260929 §76）＝設計書 acceptance.md も止める相手に足した**＝中に生成の目印（`<!-- ACC_…_START hash=`）が1つでも在れば Write・Edit・MultiEdit を全部 止める。直す道＝元データ acceptance_src.json（CC は書けない＝写し `.claude/state/acceptance_src_<iter>.json` を直して まこさんに cp をお願いする）→ `gen_acceptance.py --write`。なぜ＝機械が書いた節の外への手直しは --verify に捕まらず、虚偽・改ざんの置き場になる。**限界**＝Bash の書き替えは見ない（Stop hook の --verify が止める）／セッションの id が無い呼び方では止めない／目印の無い設計書（道具を使わずに手で書いた物）は止めない |
 | **require_data_read_before_improve** | PreToolUse | Write\|Edit | **【fast-mode 専用】**（2026-07-16 まこさん指示）＝戦略実装 e37_range_scalp.py を編集する瞬間、CSV データ（trades_*.csv）と実装を読んだかを見て、読んでいなければ止める（推測で実装するのを防ぐ）。★2026-09-17 に一覧へ足した |
 | **require_arc_crosscheck_before_improve** | PreToolUse | Write\|Edit | **【fast-mode 専用】**（2026-07-16 まこさん承認）＝e37_range_scalp.py を編集する瞬間、「この改善は過去の ARC○○ でやったか＝Yes/No＋やったなら何が違うか」を worklog に宣言済みでなければ止める。★2026-09-17 に一覧へ足した |
 | **warn_usd_absolute_in_e37** | PreToolUse | Write\|Edit | **【H6 価格非依存の警告・止めない】**（2026-07-16 まこさん指示）＝e37_range_scalp.py に新しい数値閾値を書く瞬間、USD 絶対値っぽい値（価格への絶対 $ オフセット・_USD 定数など）を警告する。**限界**＝警告だけ／対象は e37 だけ（cat_requirements §4.6 の H6）。★2026-09-17 に一覧へ足した |

@@ -320,6 +320,23 @@ if [ -n "$ITER" ]; then
   cp "$FROZEN_OUT" "$ARC_DIR/${SAFE}.frozen.json" 2>/dev/null \
     && echo "   🧊 控えの凍結も残しました: ${SAFE}.frozen.json（この控えを照合するときは これと比べます）"
   echo "   📦 archive: acceptance_archive/${SAFE}.md（承認版を git 管理へ凍結＝改善アーク自動生成の源）"
+  # ★2026-09-29（まこさん指示「以下で修正すること」＝承認の後は、設計書の控えと一緒に archive へ移す）
+  #   ＝設計の元となる逐語のファイル（.claude/state/verbatim/<iter>/）を acceptance_archive/verbatim/<iter>/ へ移して git に登録する。
+  #   逐語の道具（gen_verbatim.py）は、名前の解決で この archive も探すので、移した後も設計書の照らしは通る。
+  VB_SRC="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/verbatim/${ITER}"
+  if [ -d "$VB_SRC" ]; then
+    mkdir -p "$ARC_DIR/verbatim"
+    VB_DST="$ARC_DIR/verbatim/${SAFE}"
+    if [ -d "$VB_DST" ]; then
+      SEQ=1
+      while [ -d "$ARC_DIR/verbatim/${SAFE}.$(printf '%02d' $SEQ)" ]; do SEQ=$((SEQ+1)); done
+      VB_DST="$ARC_DIR/verbatim/${SAFE}.$(printf '%02d' $SEQ)"
+    fi
+    mv "$VB_SRC" "$VB_DST" \
+      && ( cd "/Users/tachiharamasako/Documents/GitHub/cat-bitget" && git add "$VB_DST" ) \
+      || { echo "❌ 設計の元となる逐語のファイルを archive へ移せませんでした。承認を取り消します。" >&2; rm -f "$STATE/acceptance.approved"; exit 1; }
+    echo "   📚 設計の元となる逐語のファイルも移しました: acceptance_archive/verbatim/$(basename "$VB_DST")/（git に登録）"
+  fi
 else
   cp "$LIST" "$ARC_DIR/${SHA:0:12}.md"
   echo "   ⚠️ acceptance に ARC マーカー(<!-- ARC iter=\"...\" ... -->)が無いため指紋名で保存: ${SHA:0:12}.md"

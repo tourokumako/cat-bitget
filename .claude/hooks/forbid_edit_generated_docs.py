@@ -11,6 +11,11 @@
      Edit・MultiEdit＝消す文字（old_string）が囲みと重なれば止める。Write＝囲みの中身が変われば止める。
      囲みの外（§0・§1.5・§2〜§6・改訂ルール）は止めない（まこさん決定＝§1 の表だけ）。
      直す道＝元データ .claude/state/hook_roles.json を直して `python3 .claude/tools/gen_hook_list.py --write`。
+  ③ .claude/state/acceptance.md（設計書）＝中に生成の目印（<!-- ACC_…_START hash=…）が1つでも在れば、Write・Edit・MultiEdit を全部 止める
+     （2026-09-29 まこさん指示「防止策で効果があるものは対応してよい」・worklog 20260929 §76）。
+     直す道＝元データ .claude/ratchet/acceptance_src.json（CC は書けない＝写し .claude/state/acceptance_src_<iter>.json を直して
+     まこさんに cp をお願いする）→ `python3 .claude/tools/gen_acceptance.py --write`。
+     なぜ＝設計書の手直しは、機械が書いた節の外（元データから写した節）に入れると --verify に捕まらない＝虚偽・改ざんの置き場になる。
 
 止めないもの
   ・セッションの id が無い呼び方（承認のプログラムが設計書の不足を探すために hook を試しに呼ぶとき。本物の Write・Edit には必ず付く）。
@@ -25,12 +30,15 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import sys
 
 ROOT = pathlib.Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget")
 NEXT = ROOT / ".claude/state/next_step.md"
 PDCA = ROOT / ".claude/rules/pdca_flow.md"
+ACC = ROOT / ".claude/state/acceptance.md"
 NEXT_MARK = "<!-- NEXT_STEP_GENERATED hash="
+ACC_MARK_RE = r"<!-- ACC_[A-Za-z0-9_]+_START hash="
 LIST_START = "<!-- HOOK_LIST_START hash="
 LIST_END = "<!-- HOOK_LIST_END -->"
 
@@ -75,6 +83,19 @@ def check(data: dict) -> int:
                 "🔒 [生成された文書・hook forbid_edit_generated_docs] next_step.md はプログラムが元データから作っています＝手で直せません"
                 "（まこさん指示 2026-09-17「手書きせざるをえないもの以外は自動生成にしてほしい」）。\n"
                 "   直す道＝元データ .claude/state/next_step_src.json を直す → python3 .claude/tools/tidy_next_step.py --write\n"
+                "   （解除の合言葉はありません）")
+        return 0
+    if path == ACC.resolve():
+        try:
+            cur = ACC.read_text(encoding="utf-8")
+        except Exception:
+            return 0
+        if re.search(ACC_MARK_RE, cur):
+            return _block(
+                "🔒 [生成された文書・hook forbid_edit_generated_docs] acceptance.md（設計書）はプログラムが元データから作っています＝手で直せません"
+                "（まこさん指示 2026-09-29「防止策で効果があるものは対応してよい」・2026-09-17「手書きせざるをえないもの以外は自動生成にしてほしい」）。\n"
+                "   直す道＝元データ .claude/ratchet/acceptance_src.json を直す（CC は書けない＝写し .claude/state/acceptance_src_<iter>.json を直して"
+                " まこさんに cp をお願いする）→ python3 .claude/tools/gen_acceptance.py --write\n"
                 "   （解除の合言葉はありません）")
         return 0
     if path == PDCA.resolve():

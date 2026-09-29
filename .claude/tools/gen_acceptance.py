@@ -180,6 +180,21 @@ def _esc(s) -> str:
     return str(s).replace("|", "／").replace("\n", " ")
 
 
+# ★2026-09-29（まこさんの案「文章にはすべて、手書きか、自動生成かを明記する」・worklog 20260929 §75・§82）
+#   ＝見出しの直下に1行、誰が書いたかの印を道具が付ける。見出しの文字は変えない（見出しを読む hook が14本 在る）。
+_STAMP_RE = re.compile(r"\*\*★この(?:節|表)はプログラムが作ります（手で書き換えない）。\*\*")
+
+
+def _tag(who: str, what: str) -> str:
+    """誰が書いたかの印＝［手書き］［自動］［手書き＋自動］と、その中身の出どころ。"""
+    return f"［{who}］{what}"
+
+
+def _wtag(legacy_who: str, legacy_what: str, work_who: str, work_what: str) -> str:
+    """★2026-09-29＝--work（工事のフォルダから組む）ときは、やることの表の割り当てどおりの印と出どころを出す。"""
+    return _tag(work_who, work_what) if WORK else _tag(legacy_who, legacy_what)
+
+
 def _load(path: Path) -> dict:
     """正本を読む。読めなければ止まる（fail-closed の1つ目）。"""
     if not path.exists():
@@ -190,9 +205,212 @@ def _load(path: Path) -> dict:
         raise SystemExit(f"[gen_acceptance] 正本が読めない: {path}（{e}）")
 
 
+# ══ 設計の元（工事のフォルダ）から組み立てる（2026-09-29・工事 point1-design-autogen-20260929）══════════
+#   まこさん要件（逐語）「設計の元となる文書から、CC が文を書かずに、テンプレ項目に沿って設計書を作れるようにする」
+#   「手書きにせざるを得ない項目以外はすべて自動詞生成化すること」。割り当て＝やることの表.md の「手書きと自動の割り当て」。
+#   ★--work <工事名> のときは、元データの JSON（CC が全部の欄を手で書く）を読まない。読むのは工事のフォルダだけ＝
+#     ①やることの表.md（CC の手書き・まこさんが OK）の節「手書きの項目」＝手書きの5項目
+#     ②逐語のファイル（gen_verbatim.py が記録から写した）のうち、まこさんが OK した CC の案＝【項目の番号】の見出しで切った中身
+#     ＝自動の項目。★対応の表も、どの【】の下の行かで道具が作る（CC は書かない）。
+#   ★足りない欄は全部 集めて一度に出して止まる（fail-closed・1件ずつ止めない）。
+WORK = ""                                             # --work で入る工事名（空なら従来の元データ JSON）
+TODO_MD = "やることの表.md"
+HAND_KEYS = ("§1 概要", "2-1 何を測るか", "3-1 やらないこと", "3-2 決めてほしいこと", "4-19 通しの例")
+AUTO_TEXT = {"7-2": "固定値ゼロ宣言", "7-3": "変更の単位"}
+AUTO_TABLE = {"5": ("決めたことと理由", ("決めたこと", "理由", "捨てた案")),
+              "6-2": ("リスク", ("中身", "どうするか")),
+              "6-3": ("見積もり", ("何", "見込み", "根拠")),
+              "7-4": ("塞げないもの", ("問い", "塞げないこと")),
+              "7-6": ("完成の条件", ("条件", "コマンド", "経路", "壊し方", "壊すプログラム", "監査確認", "いまの状態"))}
+DIG_KEYS = ("真因", "期待値分解", "root か symptom か", "ベースアップ")
+KEY_RE = re.compile(r"^\s*【([^】]+)】")
+
+
+def _md_table(lines: list, want: tuple, where: str, bad: list) -> list:
+    """Markdown の表を行の一覧（欄の名前 → 中身）にする。見出しの欄が want と違えば bad に足す。"""
+    rows = [ln.strip() for ln in lines if ln.strip().startswith("|")]
+    if not rows:
+        bad.append(f"{where}＝表が無い（見出しの欄＝{'｜'.join(want)}）")
+        return []
+    head = [c.strip() for c in rows[0].strip("|").split("|")]
+    if tuple(head) != tuple(want):
+        bad.append(f"{where}＝表の見出しの欄が違う（いま {'｜'.join(head)} ／ 要る {'｜'.join(want)}）")
+        return []
+    out = []
+    for r in rows[1:]:
+        cells = [c.strip() for c in r.strip("|").split("|")]
+        if all(re.fullmatch(r":?-{3,}:?", c) for c in cells):
+            continue
+        if len(cells) != len(want):
+            bad.append(f"{where}＝欄の数が違う行: {r[:60]}")
+            continue
+        out.append(dict(zip(want, cells)))
+    return out
+
+
+def _sections(lines: list, head_re: re.Pattern) -> dict:
+    """見出しの行（head_re が当たる行）で切り、見出しの名前 → 中身の行の一覧にする。"""
+    out: dict = {}
+    cur = None
+    for ln in lines:
+        m = head_re.match(ln)
+        if m:
+            cur = m.group(1).strip()
+            out[cur] = []
+            continue
+        if cur is not None:
+            out[cur].append(ln)
+    return out
+
+
+def _text(lines: list) -> str:
+    return "\n".join(ln for ln in lines if ln.strip()).strip()
+
+
+def _json_block(lines: list, where: str, bad: list):
+    """中身の ```json 〜 ``` を読む。無い・読めなければ bad に足す。"""
+    s = "\n".join(lines)
+    m = re.search(r"```json\s*\n(.*?)\n```", s, re.S)
+    if not m:
+        bad.append(f"{where}＝```json の囲みが無い")
+        return None
+    try:
+        return json.loads(m.group(1))
+    except Exception as e:                                  # noqa: BLE001
+        bad.append(f"{where}＝json が読めない（{e}）")
+        return None
+
+
+def src_from_work(work: str) -> dict:
+    """工事のフォルダ（やることの表.md と逐語のファイル）から、設計書を組む中身（page が読む形）を作る。"""
+    d_dir = gv.work_dir(work)
+    bad: list = []
+    tpath = d_dir / TODO_MD
+    if not tpath.exists():
+        raise SystemExit(f"[gen_acceptance] {TODO_MD} が工事のフォルダに無い: {tpath}（fail-closed）")
+    tlines = tpath.read_text(encoding="utf-8").splitlines()
+    title = tlines[0].lstrip("# ").strip() if tlines else work
+    m = re.search(r"（(.+)）\s*$", title)
+    d: dict = {"iter": work, "設計書の題": m.group(1) if m else title, "audit_report": "",
+               "設計の中身": {}}
+    # ①手書きの5項目＝やることの表の「## 手書きの項目」の下の「### <名前>」
+    top = _sections(tlines, re.compile(r"^##\s+(?!#)(.+)$"))
+    hand = _sections(top.get("手書きの項目") or [], re.compile(r"^###\s+(.+)$"))
+    for k in HAND_KEYS:
+        if k not in hand:
+            bad.append(f"{TODO_MD} の「## 手書きの項目」に「### {k}」が無い")
+    d["何を作るか"] = _text(hand.get("§1 概要") or [])
+    d["なぜ作るか"] = _md_table(hand.get("2-1 何を測るか") or [], ("何を測ったか", "コマンド", "読み方"), "2-1", bad) if "2-1 何を測るか" in hand else []
+    d["やらないこと"] = _md_table(hand.get("3-1 やらないこと") or [], ("中身", "理由", "出どころ"), "3-1", bad) if "3-1 やらないこと" in hand else []
+    _kk = hand.get("3-2 決めてほしいこと") or []
+    d["決めてほしいこと"] = [] if _text(_kk) in ("", "無し") else _md_table(_kk, ("中身", "私の案", "出どころ"), "3-2", bad)
+    d["設計の中身"]["4-19"] = [ln for ln in (hand.get("4-19 通しの例") or []) if ln.strip()]
+    # ②自動の項目＝まこさんが OK した CC の案（逐語のファイル・話し手が CC だけ）の【番号】で切った中身
+    names = sorted(p.name[: -len(".meta.json")] for p in d_dir.glob("*.meta.json"))
+    d["設計のもと"] = {"逐語のファイル": [f"{work}/{n}" for n in names], "やることの番号": []}
+    # ★案を直すときは、直す番号の【】だけを書いた次の案を出して OK をもらう。同じ番号は、後の（時刻が新しい）案が前の案を置き換える。
+    metas = {}
+    for n in names:
+        ok, why = gv.verify(n, d_dir)
+        if not ok:
+            raise SystemExit(f"[gen_acceptance] 逐語のファイルが照らしを通らない（{why}・fail-closed）")
+        metas[n] = json.loads((d_dir / f"{n}.meta.json").read_text(encoding="utf-8"))
+    order = sorted(names, key=lambda n: ((metas[n].get("time") or [""])[0], n))
+    parsed = []                                        # (名前, CC の案か, [(行, 見出しの番号 or None)])
+    owner: dict = {}                                   # 番号 → その番号を最後に書いた案
+    for n in order:
+        is_cc = set(metas[n].get("who") or []) == {"CC"}
+        cur = None
+        rows = []
+        for ln in (d_dir / f"{n}.txt").read_text(encoding="utf-8").splitlines():
+            km = KEY_RE.match(ln) if is_cc else None
+            if km:
+                cur = km.group(1).split()[0]
+                owner[cur] = n
+            rows.append((ln, cur if is_cc else None))
+        parsed.append((n, is_cc, rows))
+    auto: dict = {}
+    match: list = []
+    for n, is_cc, rows in parsed:
+        vi = 0
+        for ln, cur in rows:
+            if cur is not None and owner.get(cur) == n and not KEY_RE.match(ln):
+                auto.setdefault(cur, []).append(ln)
+            elif cur is not None and owner.get(cur) == n:
+                auto.setdefault(cur, [])
+            if not ln.strip():
+                continue
+            vi += 1
+            rid = f"{n}:V{vi:02d}"
+            if cur == "外部検索":
+                # ★2026-09-29＝【外部検索】は監査の依頼書に写す（設計書の節ではない）
+                match.append({"出どころ": rid, "設計書の節": NO_MATCH,
+                              "理由": "OK された案の【外部検索】の行＝監査の依頼書の外部検索に写す（設計書には写さない・道具が決めた）"})
+            elif cur is not None and owner.get(cur) == n:
+                match.append({"出どころ": rid, "設計書の節": cur, "理由": "OK された案の【" + cur + "】の見出しの下の行（道具が決めた）"})
+            elif cur is not None:
+                match.append({"出どころ": rid, "設計書の節": cur,
+                              "理由": f"後の案（{owner[cur]}）で置き換えた【{cur}】の行＝設計書には写していない（道具が決めた）"})
+            else:
+                match.append({"出どころ": rid, "設計書の節": NO_MATCH,
+                              "理由": "【】の見出しの外の行（要件の発言・前置き）＝やることの表の出どころの番号で結ぶ（道具が決めた）"})
+    d["対応の表"] = match
+    for k, body in auto.items():
+        if re.fullmatch(r"4-(?:[0-9]|1[0-8])", k):
+            first = _text(body)
+            d["設計の中身"][k] = ({"非該当": first.split("＝", 1)[-1].strip()} if first.startswith("非該当")
+                                  else [ln for ln in body if ln.strip()])
+        elif k == "4-20":
+            first = _text(body)
+            if first.startswith("非該当"):
+                d["実装の指示"] = []
+                d["設計の中身"]["4-20"] = {"非該当": first.split("＝", 1)[-1].strip()}   # section4 が理由を求める
+            else:
+                d["実装の指示"] = _json_block(body, "【4-20】", bad) or []
+        elif k in AUTO_TEXT:
+            d[AUTO_TEXT[k]] = _text(body)
+        elif k in AUTO_TABLE:
+            key, cols = AUTO_TABLE[k]
+            d[key] = _md_table(body, cols, f"【{k}】", bad)
+        elif k == "7-1":
+            for r in _md_table(body, ("欄", "中身"), "【7-1】", bad):
+                if r["欄"] in DIG_KEYS:
+                    d[r["欄"]] = r["中身"]
+        elif k == "7-3b":
+            d["作ってはいけないものとの照合"] = {r["番号"]: {"当たるか": r["当たるか"], "理由": r["理由"]}
+                                    for r in _md_table(body, ("番号", "当たるか", "理由"), "【7-3b】", bad)}
+        elif k == "外部検索":
+            # ★2026-09-29＝依頼書の道具（gen_audit_docs.py request-design --work）が読む。設計書には写さない
+            d["外部検索"] = _md_table(body, ("名前", "中身"), "【外部検索】", bad)
+        elif k == "7-5":
+            d["ハード制約の照合"] = [re.sub(r"^\s*(?:[-*]|\d+\.)\s*", "", ln) for ln in body if ln.strip()]
+        elif k == "7-8":
+            j = _json_block(body, "【7-8】", bad) or {}
+            for kk in ("TARGET", "NEW_FILE", "MODEL", "DESIGN_CONTRACT"):
+                if kk in j:
+                    d[kk] = j[kk]
+        else:
+            bad.append(f"OK された案に、知らない見出し【{k}】が在る（写す先の項目が無い）")
+    # 足りない欄（page が読む所）を全部 集める
+    need = ["何を作るか", "真因", "期待値分解", "root か symptom か", "ベースアップ", "固定値ゼロ宣言", "変更の単位",
+            "完成の条件", "TARGET", "DESIGN_CONTRACT", "ハード制約の照合"]
+    for k in need:
+        if not d.get(k):
+            bad.append(f"「{k}」が無い（{'やることの表の §1 概要' if k == '何を作るか' else 'OK された案の【】の見出し'}）")
+    for k in ("決めたことと理由", "リスク", "見積もり", "塞げないもの", "実装の指示"):
+        d.setdefault(k, [])
+    if touches_trading(d) and not d.get("作ってはいけないものとの照合"):
+        bad.append("売買に触る工事なのに【7-3b】が無い")
+    if bad:
+        raise SystemExit(f"[gen_acceptance] 工事のフォルダ {work} から設計書を組めません（fail-closed・全部で {len(bad)} 件）:\n  "
+                         + "\n  ".join(bad))
+    return d
+
+
 def src() -> dict:
-    """元データを読む。「やらないこと」が空なら止まる（fail-closed の2つ目）。"""
-    d = _load(SRC)
+    """元データを読む。「やらないこと」が空なら止まる（fail-closed の2つ目）。
+    ★2026-09-29＝--work のときは工事のフォルダから組み立てる（src_from_work）。"""
+    d = src_from_work(WORK) if WORK else _load(SRC)
     if not d.get("やらないこと"):
         raise SystemExit(
             "[gen_acceptance] 元データの「やらないこと」が空です（fail-closed）。\n"
@@ -431,7 +649,8 @@ def build_selftest(d: dict) -> str:
         by.setdefault((str(r.get("壊すプログラム") or ""), str(r.get("壊し方") or "")), []).append(i)
     L = []
     add = L.append
-    add("**★この節はプログラムが作ります（手で書き換えない）。**出どころ＝元データの「完成の条件」。")
+    add("**★この節はプログラムが作ります（手で書き換えない）。**出どころ＝"
+        + ("まこさんが OK した案の【7-6】。" if WORK else "元データの「完成の条件」。"))
     add("")
     add("| 壊すプログラム | 守る行 | 壊し方 |")
     add("|---|---|---|")
@@ -503,7 +722,7 @@ def build_checklist(d: dict) -> str:
     if not isinstance(ans, list) or len(ans) != len(g1):
         raise SystemExit(f"[gen_acceptance] 元データの「ハード制約の照合」が、群1 の項目 {len(g1)} 件と同じ数の答えの一覧になっていない"
                          f"（いま {len(ans) if isinstance(ans, list) else '無し'}・fail-closed）。1件ずつ、この工事でどう守るかを書く")
-    add("| # | 項目（hook の実体から抽出） | この工事での答え（元データ） |")
+    add("| # | 項目（hook の実体から抽出） | この工事での答え（" + ("OK された案の【7-5】" if WORK else "元データ") + "） |")
     add("|---|---|---|")
     for i, (b, a) in enumerate(zip(g1, ans), 1):
         add(f"| {i} | 【群1】{_esc(b[:110])} | {_esc(a)} |")
@@ -675,9 +894,20 @@ BUILDER["IMPL"] = build_impl            # ★定義の後に入れる（AUDITTOD
 #     抜けと誤りは全部 集めて一度に出す（1件ずつ止めない）。
 
 TODO_FIELDS = ("一文", "中身", "触るファイル", "出るもの", "確かめ方", "注意")   # やることの行のうち、写して対応を求める欄
+# ★2026-09-29（まこさん指摘「設計書がでたらめ」・worklog 20260929 §84）＝完成の条件を 7-6 から 6-4 へ移したのに、
+#   ここに 7-6 が残っていて、対応の表が無い節を指しても止まらなかった。7-6 を外し、6-4（完成の条件）・6-5（監査の指摘）を足した。
+#   ★同日 まこさん指示「もともとの構成テンプレに合わせて」で、完成の条件を 7-6 に戻した＝一覧も元に戻した。
 FIXED_SECTIONS = {"1", "2-1", "3-1", "3-2", "5", "6-1", "6-2", "6-3", "7-1", "7-2", "7-3", "7-3b",
                   "7-4", "7-5", "7-6", "7-7", "7-8"}                            # page が必ず出す節の番号
 NO_MATCH = "対応なし"                                                           # 理由を必ず書く
+# ★2026-09-29＝完成の条件を 7-6 から 6-4 へ移した。元データ（ratchet・CC は書けない）の対応の表に残る「7-6」は
+#   6-4 として読み、設計書には「6-4」と出す（古い番号を無い節として止めると、元データを直せるまで作り直せない）。
+SECTION_ALIAS: dict = {}   # ★同日 7-6 に戻したので空（読み替えは無し）
+
+
+def _sec(s) -> str:
+    """対応の表の節の番号を、いまの番号に揃える（旧 7-6 → 6-4）。"""
+    return SECTION_ALIAS.get(str(s), str(s))
 
 
 def todo_item(no: str) -> dict:
@@ -740,7 +970,7 @@ def match_problems(d: dict, rows: list) -> list:
         rid = str(r.get("出どころ", ""))
         by.setdefault(rid, []).append(r)
         ss = r.get("設計書の節")
-        ss = [str(s) for s in (ss if isinstance(ss, list) else [ss]) if s not in (None, "")]
+        ss = [_sec(s) for s in (ss if isinstance(ss, list) else [ss]) if s not in (None, "")]
         if ss == [NO_MATCH]:
             if not str(r.get("理由", "")).strip():
                 bad.append(f"対応の表の {i} 行目（{rid}）＝「{NO_MATCH}」なのに理由が無い")
@@ -783,47 +1013,55 @@ def build_source(d: dict) -> str:
         except Exception:                                    # noqa: BLE001
             w = set()
         return "まこさんの発言" if w == {"まこさん"} else ("まこさんが OK した CC の文" if w == {"CC"} else "まこさんの発言と CC の文")
-    files = "・".join(f"`.claude/state/verbatim/{n}.txt`（{_who(n)}）" for n in (src.get("逐語のファイル") or [])) or "（無し）"
-    origin = ("やることリスト `m2_todo.json` の行（欄ごと）と、" if src.get("やることの番号") else "")
-    L = [f"**★この節はプログラムが作ります（手で書き換えない）。**出どころ＝{origin}"
-         "`gen_verbatim.py` がやり取りの記録から抜き出した逐語のファイル。**CC は1文字も写していません。**",
+    def _rel(n):
+        # ★2026-09-29＝置き場は工事ごとのフォルダ（逐語の道具が名前を解決する・文字で組まない）
+        return str(gv.paths(str(n))[0].relative_to(ROOT))
+    files = "・".join(f"`{_rel(n)}`（{_who(n)}）" for n in (src.get("逐語のファイル") or [])) or "（無し）"
+    # ★2026-09-29（まこさん OK・worklog 20260929 §82）＝出どころの表（記録・uuid・時刻・sha256）は「要件のまとめ.md」
+    #   （gen_verbatim.py --summary が工事のフォルダに作る）に在るので、ここには参照1行と対応の表だけを出す。
+    #   直す前は同じ表を設計書にも出していた（2か所に同じ物）。
+    _iter = str(d.get("iter") or "")
+    _sm = ""
+    try:
+        _sm = str((gv.work_dir(_iter) / gv.SUMMARY_MD).relative_to(ROOT)) if _iter else ""
+    except gv.VerbatimError:
+        _sm = ""
+    L = [f"**要件のまとめ**＝`{_sm or '（工事のフォルダが無い＝gen_verbatim.py --write --work ' + _iter + ' で作る）'}`"
+         "（プログラムが逐語のファイルから作った・要件の文・話し手・出どころの表はそこに在る）。",
+         f"**この設計書が写す逐語のファイル**＝{files}"
+         + (f" ／ **やることの番号**＝{'・'.join(str(x) for x in src.get('やることの番号'))}" if src.get("やることの番号") else "")
+         + "。照らし方＝`python3 .claude/tools/gen_verbatim.py --verify <名前>`。",
          "",
-         f"**やることの番号**＝{'・'.join(str(x) for x in (src.get('やることの番号') or [])) or '（無し）'} ／ "
-         f"**逐語のファイル**＝{files}",
-         ""]
-    # ★2026-09-29（まこさん指示「設計の元となるデータは明確にして」・worklog 20260929 §60）
-    #   ＝逐語のファイルごとに、どの記録の、どの発言から抜き出したかを、控え（.meta.json）から表にする。
-    #   直す前はファイル名と話し手だけで、元の発言を記録の中で探せなかった。
-    L += ["**設計の元となるデータ（どこから抜き出したか）**",
-          "",
-          "| 逐語のファイル | 話し手 | 記録のファイル（やり取りの記録） | 発言の uuid | 時刻（UTC） | 本文の sha256 の先頭 | 行数 |",
-          "|---|---|---|---|---|---|---|"]
-    for n in src.get("逐語のファイル") or []:
-        _t, m = gv.paths(str(n))
-        meta = json.load(open(m, encoding="utf-8"))
-        nrow = sum(1 for rid, _x in rows if rid.startswith(f"{n}:"))
-        L.append(f"| `.claude/state/verbatim/{n}.txt` | {_who(n)} | `{Path(str(meta.get('session', ''))).name}` "
-                 f"| {'・'.join(meta.get('uuids') or []) or '—'} | {'・'.join(meta.get('time') or []) or '—'} "
-                 f"| {str(meta.get('sha256', ''))[:16] or '—'} | {nrow} |")
-    for no in src.get("やることの番号") or []:
-        nrow = sum(1 for rid, _x in rows if rid.startswith(f"todo:{no}:"))
-        L.append(f"| `m2_todo.json` の {no} | やることリスト | — | — | — | — | {nrow} |")
-    L += ["",
-          "**照らし方**＝`python3 .claude/tools/gen_verbatim.py --verify <名前>`（記録の発言と逐語のファイルが1文字も違わないか）。"
-          "記録のファイルの置き場＝`~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/`。",
-          "",
           f"**写した行＝{len(rows)} 行。**全部の行に、設計書のどこで満たすかの対応が在ります（1行でも無ければ `--write` が止まります）。",
-          "",
-          "| 出どころ | 文（逐語） | 設計書の節 | 実装の指示 | 理由 |",
-          "|---|---|---|---|---|"]
+          ""]
+    if not WORK:
+        L += ["| 出どころ | 文（逐語） | 設計書の節 | 実装の指示 | 理由 |",
+              "|---|---|---|---|---|"]
+    # ★2026-09-29（--work・読みやすさ）＝--work のときは1行ずつ並べず、「どの逐語のファイルのどの行が、どの節へ行ったか」の
+    #   まとめ1行にする。OK された案の【】の下の行は中身が §4 などにそのまま写り、見出しの外の行（要件の発言・前置き）の
+    #   文は要件のまとめ.md に在る＝同じ文を2回 出さない。
+    grouped: dict = {}
     for rid, text in rows:
         for r in by[rid]:
             ss = r.get("設計書の節")
-            ss = ss if isinstance(ss, list) else [ss]
+            ss = [_sec(s) for s in (ss if isinstance(ss, list) else [ss])]
             ii = "・".join(str(x) for x in (r.get("実装の指示") or [])) or "—"
+            why = str(r.get("理由", ""))
+            if WORK:
+                key = (rid.split(":")[0], "・".join(ss), why)
+                grouped.setdefault(key, []).append(rid.split(":")[-1])
+                continue
             # ★「（逐語）」の印＝写した文の行と分かるようにする（承認ゲートの B-6 は「逐語」を含む行を結果の報告と見ない）
             L.append(f"| `{rid}`（逐語） | {_esc(text)} | {_esc('・'.join(str(s) for s in ss))} | {ii} "
-                     f"| {_esc(r.get('理由', ''))} |")
+                     f"| {_esc(why)} |")
+    if grouped:
+        L.append("")
+        L.append("**逐語の行と、行った先の節（行の範囲だけ。文は、【】の下の行は下の各節に、見出しの外の行は要件のまとめに在る）**")
+        L.append("")
+        L.append("| 逐語のファイル | 行 | 設計書の節 | 理由 |")
+        L.append("|---|---|---|---|")
+        for (f, sec, why), vs in grouped.items():
+            L.append(f"| `{f}` | {vs[0]}〜{vs[-1]}（{len(vs)} 行） | {_esc(sec)} | {_esc(why)} |")
     L.append("")
     return "\n".join(L)
 
@@ -883,7 +1121,10 @@ def build(kind: str, d: dict) -> str:
     left = sorted(set(_MARK_RE.findall(body)))
     if left:
         raise SystemExit(f"[gen_acceptance] 置き換えられない目印が残っている: {left}（fail-closed）")
-    return body
+    # ★2026-09-29（worklog 20260929 §82）＝「★この節はプログラムが作ります」の断り（設計書に6回）は、見出しの直下の
+    #   印（_tag）に置き換えた。囲みの中からは外す（作る側と照らす側の両方がここを通るので、--verify も同じ形で照らす）。
+    # ★空の行は詰めない＝IMPL の囲みの中のコード（直す前の文字）は1文字も変えてはいけない（当てる道具が実物と照らす）。
+    return _STAMP_RE.sub("", body)
 
 
 def laws_count_ok() -> tuple[bool, str]:
@@ -942,34 +1183,32 @@ def section4(d: dict) -> str:
 
     L: list[str] = []
     add = L.append
-    add("**★この節の項目は、正本 `design_section_sources.json` の3つの出どころ"
-        "（うちの正本・外の標準・まこさんが過去に指摘したこと）118件を、"
-        "1件も余さず引き受ける形に決めたものです。**"
-        "割り当て＝`design_section_map.json`。検算＝`gen_design_sections.py --check`。")
+    add("項目の正本＝`design_section_map.json`（3つの出どころ118件を引き受ける形・検算＝`gen_design_sections.py --check`）。"
+        "各項目の「何を書くか」の説明は正本に在り、設計書には出しません。")
     add("")
     # ★2026-09-10（まこさん指摘「4-A この節に何を書いたか（一覧）などは後半でよいのでは？」）
     #   ＝一覧は管理のための表なので、節の最後に出す。ここでは中身だけ作って、後で足す。
+    #   ★2026-09-29 に一度 消したが、同日 まこさん指示「もともとの構成テンプレに合わせて」で戻した。
     tbl: list[str] = []
     tadd = tbl.append
     tadd("### 4-A この節に何を書いたか（一覧）")
     tadd("")
-    tadd("**★この表は管理のためのものです。**設計の中身は上の 4-0 から順に読んでください。")
-    tadd("")
+    tadd(_wtag("自動", "項目の正本と元データの欄の有無", "自動", "項目の正本と、OK された案・やることの表の有無"))
     tadd("| 番号 | 段 | 項目 | 書いたか |")
     tadd("|---|---|---|---|")
-    add = tadd  # ← 以降の行は一覧の表へ入れる（下で元に戻す）
     miss_must: list[str] = []
     miss_why: list[str] = []
+    na: list[str] = []
     for it in items:
         no = str(it.get("番号"))
         step = str(it.get("段", ""))
         name = _esc(it.get("名前"))
         got = body.get(no)
         if no == "4-20" and (d.get("実装の指示") or []):
-            # ★2026-09-24（設計書 impl-instruction-apply-20260924）＝実装の指示は元データの一覧から機械で作る
             state = f"書いた（実装の指示 {len(d['実装の指示'])} 件・プログラムが作る）"
         elif isinstance(got, dict) and got.get("非該当"):
             state = f"非該当（{_esc(got['非該当'])}）"
+            na.append(f"{no} {it.get('名前')}＝{got['非該当']}")
             if step == "必ず":
                 miss_must.append(no)
             if not str(got["非該当"]).strip():
@@ -982,9 +1221,8 @@ def section4(d: dict) -> str:
                 miss_must.append(no)
             else:
                 miss_why.append(no)
-        add(f"| {no} | {step} | {name} | {state} |")
-    add("")
-    add = L.append  # ★ここから先は本文へ戻す（一覧の表は最後に足す）
+        tadd(f"| {no} | {step} | {name} | {state} |")
+    tadd("")
 
     if miss_must:
         raise SystemExit(
@@ -999,23 +1237,23 @@ def section4(d: dict) -> str:
 
     for it in items:
         no = str(it.get("番号"))
+        got = body.get(no)
+        if isinstance(got, dict) and got.get("非該当"):
+            continue                                       # ★2026-09-29＝非該当は見出しを立てず、下の1行に畳む
         add(f"### {no} {it.get('名前')}")
         add("")
-        if it.get("中身"):
-            add(f"**この項目に書くこと**＝{it['中身']}")
-            add("")
-        got = body.get(no)
+        # ★2026-09-29＝「この項目に書くこと」の説明文（21回）は出さない（正本 design_section_map.json に在る）
         if no == "4-20" and (d.get("実装の指示") or []):
-            # ★2026-09-24（設計書 impl-instruction-apply-20260924）＝4-20 は囲み IMPL（プログラムが作る）
+            # ★2026-09-24（設計書 impl-instruction-apply-20260924）＝4-20 は囲み IMPL（プログラムが作る）。置き場は §4 の中（テンプレどおり）
+            add(_tag("自動", "元データの「実装の指示」＝コードの文字は CC の手書き"))
             add(_begin("IMPL", _h(build("IMPL", d))))
             add(build("IMPL", d))
             add(_end("IMPL"))
             add("")
             continue
-        if isinstance(got, dict) and got.get("非該当"):
-            add(f"**非該当。**{got['非該当']}")
-            add("")
-            continue
+        add(_wtag("手書き", f"元データの「設計の中身」の {no}" + ("（囲みは自動）" if isinstance(got, dict) and got.get("囲み") else ""),
+                  "手書き" if no == "4-19" else "自動",
+                  "やることの表の「4-19 通しの例」" if no == "4-19" else f"まこさんが OK した案の【{no}】"))
         if isinstance(got, dict):
             for line in got.get("本文") or []:
                 add(line)
@@ -1035,6 +1273,9 @@ def section4(d: dict) -> str:
         else:
             add(str(got))
             add("")
+    if na:
+        add("**非該当の項目（理由と出どころ）**＝" + "／".join(_esc(x) for x in na))
+        add("")
     # ★一覧は節の最後（まこさん指摘 2026-09-10「4-A この節に何を書いたか（一覧）などは後半でよいのでは？」）
     L.extend(tbl)
     return "\n".join(L)
@@ -1082,11 +1323,17 @@ def page(d: dict) -> str:
     add("")
     # ★2026-09-29＝直す前は「手で書いたのは5つだけです」の固定の文で、嘘だった（4-0〜4-19・完成の条件ほかも手書き・§49 の1）。
     #   元データに在る欄の名前を、そのまま並べる（道具が作る囲みは <!-- ACC_… --> の中だけ）。
-    _hand = [k for k in d if not str(k).startswith("_") and k not in ("iter", "audit_report")]
-    add("**★この設計書は、元データ `.claude/ratchet/acceptance_src.json` からプログラムが組み立てます。**"
-        f"CC が手で書いたのは、元データの次の {len(_hand)} 欄です＝{'・'.join(_hand)}。"
-        "囲み（`<!-- ACC_… -->` の中）は、プログラムが正本から作りました。"
-        "作り直し＝`python3 .claude/tools/gen_acceptance.py --write`。手で書き換えられていないかの検出＝`--verify`。")
+    if WORK:
+        add(f"**★この設計書は、工事のフォルダ `.claude/state/verbatim/{WORK}/` からプログラムが組み立てます。**"
+            f"CC が手で書いたのは、{TODO_MD} の「手書きの項目」の5つだけです＝{'・'.join(HAND_KEYS)}。"
+            "それ以外は、まこさんが OK した案の逐語（【項目の番号】の見出しで切った中身）と実物から作りました。"
+            f"作り直し＝`python3 .claude/tools/gen_acceptance.py --work {WORK} --write`。検出＝`--work {WORK} --verify`。")
+    else:
+        _hand = [k for k in d if not str(k).startswith("_") and k not in ("iter", "audit_report")]
+        add("**★この設計書は、元データ `.claude/ratchet/acceptance_src.json` からプログラムが組み立てます。**"
+            f"CC が手で書いたのは、元データの次の {len(_hand)} 欄です＝{'・'.join(_hand)}。"
+            "囲み（`<!-- ACC_… -->` の中）は、プログラムが正本から作りました。"
+            "作り直し＝`python3 .claude/tools/gen_acceptance.py --write`。手で書き換えられていないかの検出＝`--verify`。")
     add("")
 
     add("## 0｜設計のもと（まこさんの発言と、まこさんが OK した文）")
@@ -1096,13 +1343,18 @@ def page(d: dict) -> str:
     if d.get("まこさんの決定"):
         raise SystemExit("[gen_acceptance] 元データに「まこさんの決定」の欄が在ります（fail-closed）＝CC が手で書く口は閉じました。"
                          "まこさんの文は gen_verbatim.py で逐語のファイルにし、元データの「設計のもと」の「逐語のファイル」に名前を書く。")
-    add("**下の 0-1 は、やり取りの記録から抜き出した逐語のファイルを、道具が写したものです（CC は写していません）。**"
-        "誰の文か（まこさんの発言か、まこさんが OK した CC の文か）は、ファイルごとに書いてあります。")
+    if WORK:
+        add(f"**見出しの直下の印＝［手書き］＝CC が {TODO_MD} の「手書きの項目」に書いた文／"
+            "［自動］＝プログラムが、まこさんが OK した案の逐語と実物から作った。**")
+    else:
+        add("**見出しの直下の印＝［手書き］＝CC が元データに書いた文／［自動］＝プログラムが正本から作った（囲み `<!-- ACC_… -->` の中）。**")
     add("")
     # ★2026-09-29（worklog §58）＝見出しは元データの「設計のもと」から決める（やることの番号が無いのに「やることの行」と書かない）
     _todo = bool((d.get("設計のもと") or {}).get("やることの番号"))
     add("### 0-1 設計のもと（" + ("やることの行と、" if _todo else "") + "まこさんの発言と、まこさんが OK した文・プログラムが写しました）")
     add("")
+    add(_wtag("自動", "逐語のファイル（記録から抜き出した・CC は写していない）と、元データの「対応の表」",
+              "自動", "逐語のファイル（記録から抜き出した・CC は写していない）と、対応の表（どの【】の下の行かで道具が作った）"))
     add(_begin("SOURCE", _h(build("SOURCE", d))))
     add(build("SOURCE", d))
     add(_end("SOURCE"))
@@ -1110,6 +1362,7 @@ def page(d: dict) -> str:
 
     add("## 1｜概要")
     add("")
+    add(_wtag("手書き", "元データの「何を作るか」", "手書き", "やることの表の「§1 概要」"))
     add(d["何を作るか"])
     add("")
 
@@ -1117,6 +1370,11 @@ def page(d: dict) -> str:
     add("")
     add("### 2-1 いまの状態（走らせて測ったもの）")
     add("")
+    if WORK:
+        add(_tag("手書き", "何を測ったか・コマンド・読み方＝やることの表の「2-1 何を測るか」"))
+        add(_tag("自動", "結果＝道具がコマンドを走らせて入れた"))
+    else:
+        add(_tag("手書き＋自動", "測る物とコマンドは元データの「なぜ作るか」・結果は道具がコマンドを走らせて入れた"))
     add("| 何を測ったか | コマンド | 結果 |")
     add("|---|---|---|")
     # ★2026-09-17（設計書 acceptance-results-from-commands-20260917・まこさん「手書きはするな」）
@@ -1193,29 +1451,46 @@ def page(d: dict) -> str:
         cell = _esc(_measure(str(r["コマンド"]))) + (f"／読み方＝{_esc(yomi)}" if yomi else "")
         add(f"| {_esc(r['何を測ったか'])} | `{_esc(r['コマンド'])}` | {cell} |")
     add("")
-    add("### 2-2 探す材料（印がオンのもの・プログラムが正本から出しました）")
-    add("")
-    add(_begin("MATERIALS", _h(build("MATERIALS", d))))
-    add(build("MATERIALS", d))
-    add(_end("MATERIALS"))
-    add("")
-    add("### 2-3 成績表に載っている本数")
-    add("")
-    add(_begin("RANKING", _h(build("RANKING", d))))
-    add(build("RANKING", d))
-    add(_end("RANKING"))
-    add("")
-    add("### 2-4 いま乱数を使っている場所")
-    add("")
-    add(_begin("RANDOM", _h(build("RANDOM", d))))
-    add(build("RANDOM", d))
-    add(_end("RANDOM"))
-    add("")
+    # ★2026-09-29（まこさん OK「それで一旦作ってみて」・worklog 20260929 §82 の骨組み）
+    #   ＝売買のロジックに触らない工事では、2-2〜2-4 は3つとも非該当なので、見出しを3つ立てずに1つに畳む。
+    #     囲み（MATERIALS・RANKING・RANDOM）は --verify が照らすので、中身は今までどおり出す。
+    if touches_trading(d):
+        add("### 2-2 探す材料（印がオンのもの・プログラムが正本から出しました）")
+        add("")
+        add(_tag("自動", "印のファイル・型の表・格子と範囲"))
+        add(_begin("MATERIALS", _h(build("MATERIALS", d))))
+        add(build("MATERIALS", d))
+        add(_end("MATERIALS"))
+        add("")
+        add("### 2-3 成績表に載っている本数")
+        add("")
+        add(_tag("自動", "成績表"))
+        add(_begin("RANKING", _h(build("RANKING", d))))
+        add(build("RANKING", d))
+        add(_end("RANKING"))
+        add("")
+        add("### 2-4 いま乱数を使っている場所")
+        add("")
+        add(_tag("自動", "実物のコード"))
+        add(_begin("RANDOM", _h(build("RANDOM", d))))
+        add(build("RANDOM", d))
+        add(_end("RANDOM"))
+        add("")
+    else:
+        add("### 2-2 探す材料・成績表・乱数（2-2〜2-4＝この工事では非該当）")
+        add("")
+        add(_tag("自動", "TARGET と NEW_FILE から非該当を決めた"))
+        for _k in ("MATERIALS", "RANKING", "RANDOM"):
+            add(_begin(_k, _h(build(_k, d))))
+            add(build(_k, d))
+            add(_end(_k))
+        add("")
 
     add("## 3｜目標と、やらないこと")
     add("")
     add("### 3-1 やらないこと（1件ずつ・理由と出どころ）")
     add("")
+    add(_wtag("手書き", "元データの「やらないこと」", "手書き", "やることの表の「3-1 やらないこと」"))
     add("| # | やらないこと | 理由 | 出どころ |")
     add("|---|---|---|---|")
     for i, r in enumerate(d["やらないこと"], 1):
@@ -1223,12 +1498,14 @@ def page(d: dict) -> str:
     add("")
     add("### 3-2 決めてほしいこと")
     add("")
+    if WORK:
+        add(_tag("手書き", "やることの表の「3-2 決めてほしいこと」"))
     add("| # | 中身 | 私の案（決まるまでこれで進める） | 出どころ |")
     add("|---|---|---|---|")
     for i, r in enumerate(d.get("決めてほしいこと") or [], 1):
         add(f"| {i} | {_esc(r['中身'])} | {_esc(r['私の案'])} | {_esc(r.get('出どころ', ''))} |")
     if not d.get("決めてほしいこと"):
-        add("| — | 無し（元データの「決めてほしいこと」が空） | — | — |")
+        add("| — | 無し（" + ("やることの表" if WORK else "元データ") + "の「決めてほしいこと」が空） | — | — |")
     add("")
 
     add("## 4｜設計の中身")
@@ -1238,6 +1515,7 @@ def page(d: dict) -> str:
 
     add("## 5｜決めたことと理由・捨てた案")
     add("")
+    add(_wtag("手書き", "元データの「決めたことと理由」", "自動", "まこさんが OK した案の【5】"))
     add("| # | 決めたこと | 理由 | 捨てた案 |")
     add("|---|---|---|---|")
     for i, r in enumerate(d.get("決めたことと理由") or [], 1):
@@ -1248,12 +1526,15 @@ def page(d: dict) -> str:
     add("")
     add("### 6-1 わざと壊して止まるか試すテスト")
     add("")
+    add(_wtag("自動", "元データの「完成の条件」の壊し方の欄", "自動", "まこさんが OK した案の【7-6】の壊し方の欄"))
     add(_begin("SELFTEST", _h(build("SELFTEST", d))))
     add(build("SELFTEST", d))
     add(_end("SELFTEST"))
     add("")
     add("### 6-2 リスク")
     add("")
+    if WORK:
+        add(_tag("自動", "まこさんが OK した案の【6-2】"))
     add("| # | リスク | どうするか |")
     add("|---|---|---|")
     for i, r in enumerate(d.get("リスク") or [], 1):
@@ -1261,6 +1542,8 @@ def page(d: dict) -> str:
     add("")
     add("### 6-3 見積もり")
     add("")
+    if WORK:
+        add(_tag("自動", "まこさんが OK した案の【6-3】"))
     add("| 何 | 見込み | 根拠 |")
     add("|---|---|---|")
     for r in d.get("見積もり") or []:
@@ -1272,6 +1555,7 @@ def page(d: dict) -> str:
     if _audit:
         add("### 6-4 この設計書に効いている監査の指摘（★機械が抜き出します）")
         add("")
+        add(_tag("自動", "監査レポートの修正の指示"))
         add(_begin("AUDITTODO", _h(_audit)))
         add(_audit)
         add(_end("AUDITTODO"))
@@ -1281,6 +1565,8 @@ def page(d: dict) -> str:
     add("")
     add("### 7-1 深掘り4点")
     add("")
+    add(_wtag("手書き", "元データの「真因」「期待値分解」「root か symptom か」「ベースアップ」（7-2〜7-4 も同じ＝手書き）",
+              "自動", "まこさんが OK した案の【7-1】（7-2・7-3・7-3b の答え・7-4 も同じ＝OK した案の同じ番号の【】）"))
     add("**① 真因（root cause）**＝" + d["真因"])
     add("")
     add("**② 期待値分解**＝" + d["期待値分解"])
@@ -1326,12 +1612,16 @@ def page(d: dict) -> str:
     add("")
     add("### 7-5 §4.6 ハード制約の照合")
     add("")
+    add(_wtag("自動", "項目は hook の実体から抽出・答えは元データの「ハード制約の照合」",
+              "自動", "項目は hook の実体から抽出・答えは まこさんが OK した案の【7-5】"))
     add(_begin("CHECKLIST", _h(build("CHECKLIST", d))))
     add(build("CHECKLIST", d))
     add(_end("CHECKLIST"))
     add("")
     add("### 7-6 完成の条件")
     add("")
+    add(_wtag("手書き＋自動", "条件とコマンドは元データの「完成の条件」・状態の欄は承認のプログラムが書く",
+              "自動", "条件とコマンドは まこさんが OK した案の【7-6】・状態の欄は承認のプログラムが書く"))
     add("**★状態は全部「未着手」です。「済」にするのはプログラムです**"
         "（承認のコマンドが壊すプログラムを走らせ、終了コードが 0 以外のときだけ済にします）。"
         "**自分で「直った」と判定しません**（恒久の決まり64番）。"
@@ -1353,6 +1643,7 @@ def page(d: dict) -> str:
     #   §7-7 の SPEC の3か所に出ていた。
     add("### 7-7 触る関数と、その定義の行")
     add("")
+    add(_tag("自動", "実物のコードから読んだ定義の行"))
     add(_begin("CODEREF", _h(build("CODEREF", d))))
     add(build("CODEREF", d))
     add(_end("CODEREF"))
@@ -1360,6 +1651,8 @@ def page(d: dict) -> str:
 
     add("### 7-8 プログラムが読む設定（2つ）")
     add("")
+    add(_wtag("自動", "実物のコードから読んだ関数と定数",
+              "自動", "DESIGN_CONTRACT は まこさんが OK した案の【7-8】・SPEC は実物のコードから読んだ関数と定数"))
     add(_begin("SPEC", _h(build("SPEC", d))))
     add(build("SPEC", d))
     add(_end("SPEC"))
@@ -1384,10 +1677,24 @@ def write(dry: bool = False, dest: Path = None) -> int:
     if not ok:
         raise SystemExit(f"[gen_acceptance] 法則の件数が合わない（{why}）＝1件も落とせません（fail-closed）")
     body = page(d)
+    if WORK:
+        # ★2026-09-29（やることの表 P1-3）＝［手書き］の印は、割り当ての5つ（HAND_KEYS）とちょうど同じ数でなければ書かない
+        n_hand = sum(1 for ln in body.splitlines() if ln.startswith("［手書き］"))
+        if n_hand != len(HAND_KEYS):
+            raise SystemExit(f"[gen_acceptance] ［手書き］の印が {n_hand} 個（割り当ては {len(HAND_KEYS)} 個・fail-closed）")
     if dry:
         print(body)
         return 0
     out = Path(dest) if dest else DEST
+    # ★2026-09-29（まこさん指示「要件のまとめ1本を機械で作る」・worklog 20260929 §81・§82）
+    #   ＝本物の設計書を書くときは、工事のフォルダ（verbatim/<iter>/）の「要件のまとめ.md」も作り直す。
+    #     逐語のファイルが1つでも記録と食い違えば止まる（fail-closed）。自己テスト（dest 指定）では作らない。
+    if not dest and (d.get("設計のもと") or {}).get("逐語のファイル"):
+        try:
+            _sm = gv.summary(str(d["iter"]))
+            print(f"   要件のまとめ＝{_sm.relative_to(ROOT)}")
+        except gv.VerbatimError as e:
+            raise SystemExit(f"[gen_acceptance] 要件のまとめを作れない（{e}・fail-closed）")
     out.write_text(body, encoding="utf-8")
     print(f"✅ --write 完了: {out}（{len(body.splitlines())}行・囲み {len(BLOCKS)}個）")
     print(f"   法則の件数の照合＝{why}")
@@ -1669,24 +1976,25 @@ def selftest() -> int:
             else:
                 print(f"   T{total} 別の理由で止まった → fail（{str(e)[:120]}）")
 
-        # T12（2026-09-29・まこさん指示「設計の元となるデータは明確にして」）＝0-1 に、逐語のファイルごとの
-        #   記録のファイル・発言の uuid・時刻・行数の表が出て、行数の合計が写した行の数と合う
+        # T12（2026-09-29・まこさん指示「設計の元となるデータは明確にして」）＝0-1 に、要件のまとめ.md への参照と、
+        #   逐語のファイルの名前が全部 出て、対応の表の行（`名前:Vnn`（逐語））の数が写した行の数と合う。
+        #   ★2026-09-29（まこさん OK・worklog 20260929 §82）＝出どころの表（記録・uuid・時刻）は要件のまとめ.md に移したので、
+        #     0-1 には出ない。ここで見るのは参照と対応の表。
         total += 1
         d12 = json.loads(orig_src)
         try:
             s12 = build_source(d12)
             names12 = [str(n) for n in ((d12.get("設計のもと") or {}).get("逐語のファイル") or [])]
-            rows12 = [ln for ln in s12.splitlines() if ln.startswith("| `.claude/state/verbatim/")]
-            sum12 = sum(int(ln.rstrip(" |").rsplit("|", 1)[-1]) for ln in rows12)
-            uu12 = all(len(ln.split("|")[4].strip()) >= 36 for ln in rows12)
-            if (names12 and len(rows12) == len(names12) and sum12 == len(source_rows(d12))
-                    and uu12 and "設計の元となるデータ" in s12):
+            rows12 = [ln for ln in s12.splitlines() if ln.startswith("| `") and "（逐語） |" in ln]
+            names_ok = all(f"/{n}.txt`" in s12 for n in names12)
+            if (names12 and names_ok and "要件のまとめ" in s12
+                    and len(rows12) == len(source_rows(d12))):
                 ok += 1
-                print(f"   T{total} 0-1 に設計の元となるデータの表が出る（{len(rows12)} 本・{sum12} 行＝写した行と一致） → pass")
+                print(f"   T{total} 0-1 に要件のまとめへの参照と逐語のファイル {len(names12)} 本・対応の表 {len(rows12)} 行（写した行と一致） → pass")
             else:
-                print(f"   T{total} 設計の元となるデータの表 → fail（本={len(rows12)}/{len(names12)} 行={sum12} uuid={uu12}）")
+                print(f"   T{total} 0-1 の参照と対応の表 → fail（名前={names_ok} 行={len(rows12)}/{len(source_rows(d12))}）")
         except SystemExit as e:
-            print(f"   T{total} 設計の元となるデータの表 → fail（{str(e)[:120]}）")
+            print(f"   T{total} 0-1 の参照と対応の表 → fail（{str(e)[:120]}）")
     finally:
         SRC.write_text(orig_src, encoding="utf-8")
         copy.unlink(missing_ok=True)
@@ -1708,7 +2016,21 @@ def main() -> int:
     # ★2026-09-29＝--src で作った設計書を、本物の設計書（acceptance.md）ではない置き場に書く口
     #   （承認の前の検査 pre_audit_check.py --check-design <置き場> に掛けるため）。
     p.add_argument("--out", default="", help="--dry-run --src の結果を書く置き場（本物の設計書には書かない）")
+    # ★2026-09-29（工事 point1-design-autogen-20260929）＝工事のフォルダ（やることの表.md と逐語のファイル）から組む口
+    p.add_argument("--work", default="", help="工事名＝.claude/state/verbatim/<工事名>/ から設計書を組む（元データの JSON は読まない）")
     a = p.parse_args()
+    if a.work:
+        if a.src:
+            print("❌ --work と --src は一緒に使えません（読む相手は1つ）")
+            return 2
+        global WORK
+        WORK = a.work
+        if a.out:
+            out = Path(a.out).resolve()
+            if out == DEST.resolve() or out.suffix != ".md":
+                print("❌ --out は本物の設計書以外の .md にだけ書けます")
+                return 2
+            return write(dest=out)
     if a.src:
         # ★2026-09-29＝--selftest も控えの元データで走らせられるようにした（ratchet の元データを cp する前に確かめる）
         if not (a.dry_run or a.selftest):

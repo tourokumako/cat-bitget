@@ -1,0 +1,50 @@
+触った関数を git の差分で数え、直す案を出し直します。前の直す案は、gen_acceptance.py の関数 selftest が抜けていました（worklog 20260929 §94）。この案は、出す前に次のとおり照らしました（私の導出）。
+- impl_functions＝git の差分で数えた（gen_acceptance.py 20個・gen_verbatim.py 9個）。build_text は差分を開いて、中身が変わっていないことを確かめた。
+- 【7-6】の3行目と4行目＝承認と同じ置き場から走らせて、どちらも rc=0。1行目と2行目は、設計↔実装ゲートが止めるので、いまは走らせられない（わからない）。
+- 【7-5】は20行（群1 の数と同じ）。json の括弧は閉じている。名指しした関数は2つの道具の中に在る。
+
+あわせて、要件のまとめが153行に増える不具合を、逐語の道具 gen_verbatim.py で直しました。設計の案の行は、【】の見出しごとの表にまとめます。いまの要件のまとめ＝要件27行と、見出しごとの表30行です（--summary の出力）。見ていただく文書＝[要件のまとめ.md](.claude/state/verbatim/point1-design-autogen-20260929/%E8%A6%81%E4%BB%B6%E3%81%AE%E3%81%BE%E3%81%A8%E3%82%81.md)
+
+書き換えたファイル＝gen_verbatim.py（Edit 2回）・要件のまとめ.md（作り直し）・session_worklog_20260929.md（§94 に5行）。
+
+以下が直す案です。OK をいただいたら、前の案の同じ番号を置き換えます。
+
+【7-5 §4.6 の照合】
+- TARGET＝gen_acceptance.py と gen_verbatim.py の2本（道具だけ・売買のロジックに触らない）。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝gen_acceptance.py）。
+- 新しいファイルを作らない（NEW_FILE・MODEL の行は無い）。やることの表.md と逐語のファイルは工事のフォルダの記録で、道具ではない。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（設計書を工事のフォルダから組む）。
+- 過去の失敗の再演＝元データを CC が全部 手で書く形（133回目・134回目）を、読む相手を替えて止める。
+- 非該当（売買のロジックの部品・前処理を足さない）。
+- 非該当（engine_tuner_exec.py・engine_tuner_gen.py を直さない）。
+- 直すファイルの名前で壊すプログラムを grep して3本（b72・b73・b89）見つけた。どれも --work を付けずに道具を呼ぶ（4-13）。
+- 非該当（壊すプログラムを足さない。道具の自己テストは一時の置き場だけに書く）。
+- 触った関数は、2つの道具とも DESIGN_CONTRACT の impl_functions に全部 在る（git の差分で数えた）。
+- 新しく足した口は --work と --drop。--work は完成の条件の1行目で通る。--drop は、4行目の --summary が控えに残った drop を読む形で通る（旗そのものは完成の条件では打たない）。
+- 非該当（2回目の承認の前に書き直す＝その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=point1-design-autogen-20260929）。
+- 1変更・過去失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝gen_acceptance.py --selftest（12件）と、--work の --dry-run（足りない欄を全部 出して止まる）と、gen_verbatim.py --verify。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| 工事のフォルダから設計書を組める | python3 ../../.claude/tools/gen_acceptance.py --work point1-design-autogen-20260929 --dry-run | 道具 | — | — | 要 | 未着手 |
+| 従来の道が壊れていない | python3 ../../.claude/tools/gen_acceptance.py --selftest | 道具 | — | — | 要 | 未着手 |
+| 逐語のファイルが記録と合う | python3 ../../.claude/tools/gen_verbatim.py --verify req_point1_20260929 | 道具 | — | — | 要 | 未着手 |
+| 外した行が要件のまとめの別の表に出る | python3 ../../.claude/tools/gen_verbatim.py --summary point1-design-autogen-20260929 | 道具 | — | — | 要 | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{"TARGET": [".claude/tools/gen_acceptance.py", ".claude/tools/gen_verbatim.py"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/gen_acceptance.py",
+  "self_check_calls": ["src_from_work", "_wtag", "_md_table", "_json_block"],
+  "impl_functions": {"../../.claude/tools/gen_acceptance.py": ["<モジュール直下>", "_tag", "_wtag", "_md_table", "_sections", "_text", "_json_block", "src_from_work", "src", "build_selftest", "build_checklist", "_sec", "match_problems", "build_source", "build", "section4", "page", "write", "selftest", "main"],
+   "../../.claude/tools/gen_verbatim.py": ["<モジュール直下>", "drop_reason", "split_name", "paths", "write", "lines", "work_dir", "summary", "main"]},
+  "must_use": {"src": ["src_from_work"], "page": ["_wtag"]}}}
+```

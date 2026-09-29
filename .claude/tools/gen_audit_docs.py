@@ -379,7 +379,9 @@ def build_request(src_path: str, out_path: str) -> int:
             errs.append(f"着手前必読のファイルが無い: {tok}")
     for gen, raw in GENERATED.items():
         # 作業場に写した前の版の設計書でも同じ（名前で見る）
-        if os.path.basename(target) == os.path.basename(gen) and raw not in reading:
+        # ★2026-09-29（135回目）＝工事のフォルダ（--work）から作った設計書は、元が やることの表.md（acceptance_src.json は使わない）
+        if os.path.basename(target) == os.path.basename(gen) and raw not in reading \
+                and not (os.path.basename(gen) == "acceptance.md" and "/verbatim/" in reading and "やることの表.md" in reading):
             errs.append(f"監査の相手 {gen} はプログラムが作る文書。着手前必読に元データ {raw} が無い")
 
     if not os.path.isfile(TEMPLATE):
@@ -630,7 +632,7 @@ def _changed_targets(d: dict) -> list:
     return out
 
 
-def build_design_src(kind: str, cp: int, src_path: str = None, design_path: str = None) -> tuple:
+def build_design_src(kind: str, cp: int, src_path: str = None, design_path: str = None, work: str = None) -> tuple:
     """設計書と元データから、依頼書の元データ（本文）を作る。戻り＝(本文, 依頼書の名前の頭)。
 
     ★2026-09-29（まこさん指摘「監査の依頼内容が変じゃないか？」・worklog 20260929 §40〜§42）で直したこと
@@ -642,7 +644,17 @@ def build_design_src(kind: str, cp: int, src_path: str = None, design_path: str 
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import gen_acceptance as ga                      # ★設計のもとの読み方は1か所（抜けが在れば SystemExit）
-    d = json.load(open(src_path or SRC_JSON, encoding="utf-8"))
+    # ★2026-09-29（135回目）＝--work のときは、設計書の道具と同じ読み方で工事のフォルダから読む（元データ JSON は読まない）
+    if work:
+        ga.WORK = work
+        d = ga.src_from_work(work)
+        wdir = ga.gv.work_dir(work)
+        src_file = str(wdir / ga.TODO_MD)
+        src_label = f"工事のフォルダ `{os.path.relpath(str(wdir), ROOT)}`（やることの表.md と、まこさんが OK した案の逐語）"
+    else:
+        d = json.load(open(src_path or SRC_JSON, encoding="utf-8"))
+        src_file = src_path or SRC_JSON
+        src_label = "元データ `acceptance_src.json`"
     md = open(design_path or DESIGN, encoding="utf-8").read()
     engine = ga.touches_trading(d)
     label, suffix = KINDS[kind]
@@ -691,15 +703,48 @@ def build_design_src(kind: str, cp: int, src_path: str = None, design_path: str 
     add("")
     add(f"**★本物のファイルを書き替えないでください。**写しは作業場 `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp{cp}_work/` に作ってください。")
     add("")
-    add("**★この依頼書は `gen_audit_docs.py request-design` が、設計書と元データから作りました（CC は元データを書いていません）。**"
-        "問いは、設計のもとの1行ごと（S）・先に直した道具の変更ごと（G）・完成の条件の1行ごと（C）・実装の指示の1件ごと（I）・"
-        "やらないことの1件ごと（N）・CC が決めたことの1件ごと（D）に1つずつ在ります。"
-        "S の番号は依頼書の問いの番号で、設計のもとの行の番号（<ファイル>:Vnn）とは別です。")
+    # ★2026-09-29（135回目・まこさん「CCはこの監査依頼書を見て正確に監査できるのか？」「構造がぐちゃぐちゃで汚いまま」）
+    #   ＝工事のフォルダから作った設計書の監査は、割り当ての表の確かめだけにする（問い S・G・C・I・N・D は出さない）
+    only_table = kind == "design" and bool(work)
+    if only_table:
+        add("**★この依頼書は `gen_audit_docs.py request-design --work` が、設計書と工事のフォルダから作りました（CC は依頼書の文を書いていません）。**"
+            "問いは、やることの表の「手書きと自動の割り当て」の表の1行ごと（W）に1つずつ在ります。")
+    else:
+        add("**★この依頼書は `gen_audit_docs.py request-design` が、設計書と元データから作りました（CC は元データを書いていません）。**"
+            "問いは、設計のもとの1行ごと（S）・先に直した道具の変更ごと（G）・完成の条件の1行ごと（C）・実装の指示の1件ごと（I）・"
+            "やらないことの1件ごと（N）・CC が決めたことの1件ごと（D）に1つずつ在ります。"
+            "S の番号は依頼書の問いの番号で、設計のもとの行の番号（<ファイル>:Vnn）とは別です。")
     add("")
     add("<!-- 項目: 結論を決める問い -->")
     nv, ni, nc, ng_ = len(rows), len(impl), len(conds), len(changed)
     rng = lambda p, n: f"{p}01〜{p}{n:02d}" if n else "（無い）"     # noqa: E731
-    if kind == "design":
+    # ★2026-09-29（135回目・まこさん指示「設計書の項目ごとに手書きと自動生成に仕分けた表があったよね？ その通りになってるかを見てもらえよ」）
+    #   ＝工事のフォルダから作った設計書は、やることの表の「手書きと自動の割り当て」の表の1行ごとに問い（W）を作り、問い1 にする
+    assign = []
+    if work:
+        tl = (ga.gv.work_dir(work) / ga.TODO_MD).read_text(encoding="utf-8").splitlines()
+        sec = ga._sections(tl, re.compile(r"^##\s+(?!#)(.+)$"))
+        body = next((v for k, v in sec.items() if k.startswith("手書きと自動の割り当て")), None)
+        if body is None:
+            raise SystemExit(f"{ga.TODO_MD} に「## 手書きと自動の割り当て」の節が無い（fail-closed）")
+        _bad: list = []
+        assign = ga._md_table(body, ("項目", "手書き／自動"), "手書きと自動の割り当て", _bad)
+        if _bad or not assign:
+            raise SystemExit("手書きと自動の割り当ての表を読めない（fail-closed）: " + "／".join(_bad))
+    if kind == "design" and work:
+        add(f"- **問い1**＝設計書が、やることの表の「手書きと自動の割り当て」の表（問い {rng('W', len(assign))}）の"
+            "とおりに作られているか。手書きの項目は やることの表の「手書きの項目」の文と1文字も違わず、"
+            "自動の項目は実物か、まこさんが OK した案の逐語から写した文だけで、CC が書いた文が無いか。"
+            "1行でも割り当てと違えば NO。")
+        add("")
+        add("**結論を決めるのは、この問い1つです。**")
+        add("")
+        add("<!-- 項目: 結論の決め方 -->")
+        add("- **GO**＝問い1 が YES で、Critical が0件。")
+        add("- **CONDITIONAL-GO**＝問い1 が YES で、Critical が在る（直せば先に進める）。")
+        add("- **NO-GO**＝問い1 が NO。割り当てと違う項目を、設計書の行と やることの表・逐語の行で示してください。")
+        add("")
+    elif kind == "design":
         add(f"- **問い1**＝設計のもとの全部の行（問い {rng('S', nv)}）が、設計書の挙げた節と実装の指示、"
             f"先に直した道具の変更（問い {rng('G', ng_)}）で満たされるか。"
             "1行でも「満たさない・食い違う・対応なしの理由が成り立たない」が在れば NO。")
@@ -709,24 +754,25 @@ def build_design_src(kind: str, cp: int, src_path: str = None, design_path: str 
         add(f"- **問い1**＝実装が、設計書の実装の指示（問い {rng('I', ni)}）と1文字も違わないか。")
         add(f"- **問い2**＝完成の条件（問い {rng('C', nc)}）が全部 測れて通り、設計のもとの全部の行（問い {rng('S', nv)}）が"
             "実装で満たされたか。")
-    add("")
-    add("**結論を決めるのは、この2つです。**問い1 が NO なら、問い2 は「正しいとしたら」の条件つきで答えてください。")
-    add("")
-    add("<!-- 項目: 結論の決め方 -->")
-    add("- **GO**＝問い1・問い2 が YES で、Critical が0件。")
-    add("- **CONDITIONAL-GO**＝問い1 が YES で、Critical が在る（直せば先に進める）。")
-    add("- **NO-GO**＝問い1 が NO（直し方の向きが違う）。何が違うかを、まこさんの逐語と実物の行で示してください。")
-    add("")
+    if not only_table:
+        add("")
+        add("**結論を決めるのは、この2つです。**問い1 が NO なら、問い2 は「正しいとしたら」の条件つきで答えてください。")
+        add("")
+        add("<!-- 項目: 結論の決め方 -->")
+        add("- **GO**＝問い1・問い2 が YES で、Critical が0件。")
+        add("- **CONDITIONAL-GO**＝問い1 が YES で、Critical が在る（直せば先に進める）。")
+        add("- **NO-GO**＝問い1 が NO（直し方の向きが違う）。何が違うかを、まこさんの逐語と実物の行で示してください。")
+        add("")
     add("<!-- 項目: この監査の前提 -->")
     add("1. **乱数は禁止です**（恒久67番）。乱数を残す・足す形なら Critical にしてください。")
     add("2. **CC は自分で「合っている」「動く」と判定していません**（恒久64番）。")
-    add("3. **修正の指示は、設計書の元データ（`acceptance_src.json`）に対して書いてください**（設計書はプログラムが作るので直接は書けない）。")
+    add(f"3. **修正の指示は、設計書の元（{src_label}）に対して書いてください**（設計書はプログラムが作るので直接は書けない）。")
     add("4. **監査は1つの工事につき1回です**（恒久65番）。どこまで直すかは、まこさんが結果ファイルを見て決めます。")
     if engine:
         add("5. **net は M2-L まで使いません**（まこさん決定 2026-09-01）。")
     add("")
     add("<!-- 項目: 経緯 -->")
-    add(f"1. 設計書 `{iter_}`（{_one_line(title)}）は、元データ `acceptance_src.json` から `gen_acceptance.py` が作りました。")
+    add(f"1. 設計書 `{iter_}`（{_one_line(title)}）は、{src_label} から `gen_acceptance.py` が作りました。")
     add(f"2. 設計のもと（やることの番号 {'・'.join(todos) or '無し'}・逐語のファイル {'・'.join(names) or '無し'}）は、"
         "設計書の §0-1 に道具が写しました（CC は写していません）。逐語のファイルは `gen_verbatim.py` がやり取りの記録から抜き出したものです。")
     add("3. この依頼書は `gen_audit_docs.py request-design` が、設計書と元データから作りました（CC は依頼書の元データを書いていません）。")
@@ -738,9 +784,14 @@ def build_design_src(kind: str, cp: int, src_path: str = None, design_path: str 
     add("")
     add("| # | ファイル | なぜ要るか |")
     add("|---|---|---|")
-    reads = [(".claude/state/acceptance.md", "監査の相手（設計書・プログラムが作った）"),
-             ("SDK/.claude/ratchet/acceptance_src.json", "設計書の元データ（acceptance_src.json）")]
-    reads += [(f".claude/state/verbatim/{n}.txt", f"{speakers[n]}（逐語・gen_verbatim.py が記録から抜き出した）") for n in names]
+    reads = [(".claude/state/acceptance.md", "監査の相手（設計書・プログラムが作った）")]
+    if work:
+        reads += [(os.path.relpath(src_file, ROOT), "設計書の元（やることの表＝手書きの5項目と割り当ての表）"),
+                  (os.path.relpath(str(ga.gv.work_dir(work) / "要件のまとめ.md"), ROOT), "要件のまとめ（まこさんの逐語と OK された案）")]
+    else:
+        reads += [("SDK/.claude/ratchet/acceptance_src.json", "設計書の元データ（acceptance_src.json）")]
+    # ★2026-09-29＝置き場は工事ごとのフォルダ（逐語の道具が名前を解決する・文字で組まない）
+    reads += [(str(ga.gv.paths(n)[0].relative_to(ROOT)), f"{speakers[n]}（逐語・gen_verbatim.py が記録から抜き出した）") for n in names]
     if todos:
         reads.append(("SDK/.claude/ratchet/m2_todo.json", f"やることリスト（番号 {'・'.join(todos)} の行）"))
     # ★必読＝設計書・元データ・逐語のファイル・やることの行・直す相手（TARGET・NEW_FILE）の全部（OK をもらった提案の26行目）
@@ -767,9 +818,16 @@ def build_design_src(kind: str, cp: int, src_path: str = None, design_path: str 
         add(f"この監査の相手は、売買のロジックに触らない道具の直しです（直す相手 TARGET に scripts/priority_rebuild も engine_tuner も無い）。"
             f"この監査の範囲は、設計書 `{iter_}` の中身が、設計のもと（まこさんの依頼の逐語）を満たすかです。")
     add("")
-    add("<!-- 項目: 事実データ 名前=設計書 2-1 いまの状態（道具が走らせたコマンドと結果） -->")
-    t21 = design_table(md, "### 2-1")
-    B.extend(t21 if t21 else ["（設計書に 2-1 の表が無い）"])
+    if only_table:
+        add(f"<!-- 項目: 事実データ 名前=手書きと自動の割り当ての表（{ga.TODO_MD}・まこさんが OK した表） -->")
+        add("| 項目 | 手書き／自動 |")
+        add("|---|---|")
+        for r in assign:
+            add(f"| {_one_line(r['項目'])} | {_one_line(r['手書き／自動'])} |")
+    else:
+        add("<!-- 項目: 事実データ 名前=設計書 2-1 いまの状態（道具が走らせたコマンドと結果） -->")
+        t21 = design_table(md, "### 2-1")
+        B.extend(t21 if t21 else ["（設計書に 2-1 の表が無い）"])
     add("")
     add("<!-- 項目: 事実データ 名前=監査に出す前のチェック（pre_audit_check.json） -->")
     dmt = os.path.getmtime(design_path or DESIGN)
@@ -789,19 +847,43 @@ def build_design_src(kind: str, cp: int, src_path: str = None, design_path: str 
             add(f"| `{_one_line(r.get('cmd'))}` | {_one_line(r.get('kind'))} | {r.get('rc')} |")
     add("")
     add("<!-- 項目: 監査対象 -->")
-    # ★設計書で非該当と書いた節は、監査の相手に入れない（直す前は 2-2〜2-4・4-7・4-11 が入った＝worklog §40 の1）
-    for head, body in _section_bodies(md):
-        # 囲みの目印（<!-- ACC_… -->）を外してから見る＝囲みの中が非該当の節（2-2〜2-4 ほか）も外す
-        if re.sub(r"<!--.*?-->", "", body, flags=re.S).strip().startswith("**非該当。**"):
-            continue
-        add(f"- {_one_line(head.lstrip('#').strip())}")
+    if only_table:
+        for r in assign:
+            add(f"- {_one_line(r['項目'])}（{_one_line(r['手書き／自動'])}）")
+    else:
+        # ★設計書で非該当と書いた節は、監査の相手に入れない（直す前は 2-2〜2-4・4-7・4-11 が入った＝worklog §40 の1）
+        for head, body in _section_bodies(md):
+            # 囲みの目印（<!-- ACC_… -->）を外してから見る＝囲みの中が非該当の節（2-2〜2-4 ほか）も外す
+            if re.sub(r"<!--.*?-->", "", body, flags=re.S).strip().startswith("**非該当。**"):
+                continue
+            add(f"- {_one_line(head.lstrip('#').strip())}")
     add("")
     add("<!-- 項目: 監査対象外 -->")
+    if only_table:
+        add("- 設計書の中身そのものが正しいか（この監査は、手書き／自動の表のとおりに作られているかだけを見る）")
     for r in nots:
         add(f"- {_one_line(r.get('中身'))}（{_one_line(r.get('理由'))}）")
-    if not nots:
+    if not nots and not only_table:
         add("- （設計書の「やらないこと」は無い）")
     add("")
+    for n, r in enumerate(assign, 1):
+        hand = r["手書き／自動"].strip() == "手書き"
+        add(f"<!-- 項目: 問い 番号=W{n:02d} 優先度=A 理由=割り当てと違えば、CC の手書きが自動の項目に混ざる（自動生成の目的が崩れる） "
+            f"名前=割り当て「{_attr(r['項目'])}＝{_attr(r['手書き／自動'])}」のとおりか -->")
+        add(f"**割り当て**＝項目「{_one_line(r['項目'])}」は **{_one_line(r['手書き／自動'])}**"
+            f"（{ga.TODO_MD} の「手書きと自動の割り当て」の表）")
+        add("")
+        if hand:
+            add(f"**見てほしいこと**＝設計書のこの項目の見出しの下の印が［手書き］か。中身が {ga.TODO_MD} の「## 手書きの項目」の"
+                "同じ見出しの文と1文字も違わないか（写しの作業場で `--work` から作り直して比べてください）。")
+        else:
+            add("**見てほしいこと**＝設計書のこの項目の見出しの下の印が［自動］か。中身の1行ずつが、実物（コード・設定・走らせた結果）か、"
+                "まこさんが OK した案の逐語（工事のフォルダの okd_*.txt の【番号】の見出しの下）から写した文か。"
+                "どちらにも無い文（CC が書いた文）が1行でも在れば所見に書いてください。")
+        add("")
+    if only_table:
+        # ★表の確かめだけの監査＝問い S・G・C・I・N・D は出さない（問いは上の W だけ）
+        rows, changed, conds, impl, nots, decided = [], [], [], [], [], []
     for n, (rid, text) in enumerate(rows, 1):
         rs = by.get(rid, [])
         secs = " ／ ".join("・".join(str(s) for s in (r.get("設計書の節") if isinstance(r.get("設計書の節"), list)
@@ -897,21 +979,29 @@ def build_design_src(kind: str, cp: int, src_path: str = None, design_path: str 
             add("")
             add("<!-- 項目: 自己申告 -->")
             add(f"**測っていない見積もり**＝{_one_line(r.get('何'))}（{_one_line(r.get('見込み'))}・{_one_line(r.get('根拠'))}）")
+    # ★2026-09-29＝工事のフォルダに在るのに設計書に名前が出ていない逐語のファイル（設計書を作った後に写した物）を、道具が数えて申告する
+    if work:
+        late = [n for n in names if n.split("/")[-1] not in md]
+        if late:
+            add("")
+            add("<!-- 項目: 自己申告 -->")
+            add(f"**設計書を作った後に写した逐語**＝{'・'.join(n.split('/')[-1] for n in late)}（工事のフォルダには在るが、"
+                "設計書の §0-1 に名前が無い。設計書を作り直すまで、設計書の §0-1 はこの分だけ元と違う）")
     body = "\n".join(B) + "\n"
     head = (f"{GEN_MARK} kind={kind} design_sha256={sha256_file(design_path or DESIGN)} "
-            f"src_sha256={sha256_file(src_path or SRC_JSON)} "
+            f"src_sha256={sha256_file(src_file)} "
             f"body_sha256={sha256_text(body)} -->")
     return head + "\n" + body, base
 
 
-def request_design(kind: str) -> int:
-    """設計書と元データから、依頼書の元データを作業場に書き、依頼書を inputs に作る。"""
+def request_design(kind: str, work: str = None) -> int:
+    """設計書と元データ（--work のときは工事のフォルダ）から、依頼書の元データを作業場に書き、依頼書を inputs に作る。"""
     if kind not in KINDS:
         print(f"❌ 種類は design か impl（{kind}）")
         return 2
     # ★同じ工事（同じ task）の依頼書が在り、その結果ファイルがまだ無ければ、その番号を使う（作り直すたびに番号を進めない）
-    d0 = json.load(open(SRC_JSON, encoding="utf-8"))
-    task0 = d0.get("iter", "").replace("-", "_") + KINDS[kind][1]
+    iter0 = work or json.load(open(SRC_JSON, encoding="utf-8")).get("iter", "")
+    task0 = iter0.replace("-", "_") + KINDS[kind][1]
     cp = 0
     for n in sorted(os.listdir(os.path.join(AUDITS, "inputs"))):
         m = re.search(rf"_{re.escape(task0)}_cp(\d+)_audit_request\.md$", n)
@@ -919,7 +1009,7 @@ def request_design(kind: str) -> int:
             cp = int(m.group(1))
     cp = cp or next_cp()
     try:
-        text, base = build_design_src(kind, cp)
+        text, base = build_design_src(kind, cp, work=work)
     except SystemExit as e:
         print(f"❌ 依頼書の元データを作れない: {e}")
         return 1
@@ -1327,6 +1417,9 @@ def main(argv: list) -> int:
         return selftest(*(argv[1:3] if len(argv) >= 3 else []))
     if len(argv) == 2 and argv[0] == "request-design":
         return request_design(argv[1])
+    # ★2026-09-29（135回目）＝request-design <design|impl> --work <工事名>＝工事のフォルダから作った設計書の依頼書
+    if len(argv) == 4 and argv[0] == "request-design" and argv[2] == "--work":
+        return request_design(argv[1], argv[3])
     ok_shape = (len(argv) == 3 and argv[0] in ("request", "result", "check")) or (len(argv) == 2 and argv[0] == "form")
     if not ok_shape:
         print(__doc__)
