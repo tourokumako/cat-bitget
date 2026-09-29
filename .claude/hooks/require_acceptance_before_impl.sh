@@ -180,7 +180,13 @@ _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.
               #     守りの仕組み（承認の印・凍結の記録・hook・道具・壊すプログラム）には
               #     道具の側（NEVER_WRITE）で1バイトも書かない。
               #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
-              'apply_audit_fix.py')
+              'apply_audit_fix.py',
+              # ★2026-09-29（まこさん指示「５点は自動生成にしろ」「すべて完璧に上記チャットの１から５の各要件の通りに修正をすること」）
+              #   ＝まこさんの発言と、まこさんが OK した CC の文を、やり取りの記録から逐語のファイルにする道具。
+              #   ★書く先は道具の側で .claude/state/verbatim/<名前>.txt と .meta.json の2本だけ（名前は英数字・_・.・- だけ）。
+              #   承認の印・凍結の記録・hook・道具・戦略の .py には1バイトも書かない。
+              #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
+              'gen_verbatim.py')
 _RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')
@@ -1151,7 +1157,9 @@ for _i, ln in enumerate(lines):
         inblock = True
     elif s.startswith('<!-- AUDIT_TODO_END'):
         inblock = False
-    if s.startswith(chr(96) * 3):
+    # ★2026-09-29＝実装の指示の囲み（チルダ3つの行・gen_acceptance.build_impl）も囲みとして飛ばす。
+    #   直す前は ``` だけを見たので、実装の指示のコードの中の ✅ を「結果の報告」と読んで止めた。
+    if s.startswith(chr(96) * 3) or s == chr(126) * 3:
         infence = not infence
     if s.startswith('#'):
         ins9 = '塞げないもの' in s
