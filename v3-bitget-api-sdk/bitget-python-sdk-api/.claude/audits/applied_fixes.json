@@ -623,6 +623,118 @@
    "file": ".claude/tools/apply_audit_fix.py",
    "at": "2026-09-30T20:25:18",
    "how": "当てた"
+  },
+  {
+   "report": "design:point4-record-applied-20260930-2",
+   "num": "1",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T21:51:27",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point4-record-applied-20260930-2",
+   "num": "2",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T21:51:27",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point4-record-applied-20260930-2",
+   "num": "3",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T21:51:27",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point4-record-applied-20260930-2",
+   "num": "4",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T21:51:27",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point4-record-applied-20260930-2",
+   "num": "5",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T21:51:27",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "1",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "2",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "3",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "4",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "5",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "6",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "7",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "8",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "9",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "10",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-report-direct-20260930",
+   "num": "11",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T22:41:58",
+   "how": "当てた"
   }
  ]
 }

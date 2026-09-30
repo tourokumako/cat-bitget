@@ -1,0 +1,303 @@
+受け取り方＝指示。範囲＝当てる道具 apply_audit_fix.py の --report の道（監査結果から直接 実装を直す道）。下の案は、試しの設計書で承認の前の検査を全部 通してあります（A群0件・worklog 20260930 §74）。
+
+書き換えたファイル＝やることの表.md と req_point5b_20260930.txt（工事のフォルダ）・read_plan_src.json と design_read_plan.md（読むもの宣言）・_draft_point5b.txt（案の下書き）・_point5b_draft_tmpl.txt と _point5b_draft_probe.py と _point5b_items_probe.py（下書きを組む一時の道具）・fix_plan.md（直す計画）です（worklog 20260930 §74）。
+
+案です（実装の指示11件は、写しに当てて自己テスト 39/39 を確かめました・worklog 20260930 §74）。この返信に OK を1回いただければ、設計書を作って承認をお願いします。
+
+【4-0 この仕組みは何か】
+当てる道具 apply_audit_fix.py の --report の道で、監査結果から直接 実装を直すときの穴3つを塞ぐ。
+①使わなくなった元データ（acceptance_src.json）の件で全件を止めず、［手書き］で分けてほかの件は当てる。
+②確かめのコマンド（scripts/priority_rebuild の一覧に載せた道具・パスを値に取るもの）も、一覧の形なら走らせる。承認のプログラムは入れない。
+③印（G2・H2）の対象のファイルを直したら、G2 → H2 の順で印を取り直す。
+
+【4-1 システムの境界】
+動かすのは まこさん（承認と、当てる道具を1回）と CC（自己テスト）。
+書くのは当てる道具だけ（TARGET の1本）。
+
+【4-2 入力と出力】
+入力＝承認された設計書の 4-20 の実装の指示11件と、承認の印。
+出力＝当てる道具の定数3つ（RETIRED_SOURCES・SCRIPTS_DIR と RUN_SCRIPTS・PASS_MARKS）。
+あわせて check_one・hand_label・command_argv・main・selftest を直す。
+当てた記録には11行を書く（名前 design:point5-report-direct-20260930）。
+
+【4-3 部品と責任の割り当て】
+- apply_audit_fix の <モジュール直下>＝定数 RETIRED_SOURCES・SCRIPTS_DIR・RUN_SCRIPTS・PASS_MARKS を足す。RUN_TOOLS に2本を足す。
+- apply_audit_fix.check_one＝使わなくなった元データの件を「使わなくなった元データなので当てない」で返す。
+- apply_audit_fix.hand_label＝この理由に「［手書き］CC が写す」の印を付ける。
+- apply_audit_fix.command_argv＝RUN_SCRIPTS の道具も通す。値にリポジトリの中のパスを許す（「..」は不可）。
+- apply_audit_fix.main＝使わなくなった元データの件で全件を止めない。当てたファイルが印の対象なら、G2 → H2 を走らせるコマンドに足す。
+- apply_audit_fix.selftest＝T37・T38・T39 を足す。
+
+【4-4 処理の流れ】
+- ①まこさんが承認する。
+- ②まこさんが端末で当てる道具を1回 打つ。
+- ③道具が実装の指示11件を当て、当てた記録に書く。
+- ④CC が設計書を作り直し、自己テストと壊すプログラムを走らせる。
+- ⑤2回目の承認。壊すプログラムが「—」の行は、承認のプログラムが測らないので未着手のまま残る（run_breaks.py:176）＝中身は自己テストで見る。
+
+【4-5 異常系】
+- 直す前の文字がちょうど1か所でない＝当てる道具が1件も当てない。
+- 走らせる前の照合が通らない＝コマンドを1つも走らせない。
+- ほかの在らないファイル・一覧に無いコマンド＝いままでどおり止める。
+
+【4-6 制約】
+非該当＝相場の法則・型の表・承認を受けた設定を使わない道具の直し
+
+【4-7 探索の範囲】
+非該当＝値の範囲を探す工事ではない
+
+【4-8 データ構造】
+非該当＝表や JSON の形は変えない
+
+【4-9 設定】
+非該当＝旗を足さない
+
+【4-10 保存先】
+当てた記録＝SDK/.claude/audits/applied_fixes.json に書き足す。ほかに新しいファイルは作らない。
+
+【4-11 時刻の扱い】
+非該当＝時刻の列・足の区切りに触らない
+
+【4-12 出る結果の姿】
+- 使わなくなった元データの件は「［手書き］CC が写す」で出て、全件が止まらない。
+- 確かめのコマンドは、道具が走らせて終了コードを出す。
+- 印の対象を直したときは「G2 → H2 の印を取り直す」と出る。
+- 自己テストが 39/39 になる。
+
+【4-13 影響範囲】
+- 直すファイルの名前で壊すプログラムを grep すると、b101・b102・b118・b119・b121。どれも、この工事で直す行を探していない（b118 は説明の行に語が在るだけ）。
+- 自己テストの T20（一覧の形のコマンドだけ通す）は、直した後も通る（写しで 39/39）。
+- hook 12 は、この工事では変えない。
+
+【4-14 性能】
+非該当＝印の取り直しは H2 が約5分かかるが、印の対象を直したときだけ走る
+
+【4-15 競合】
+非該当＝同時に2つ走らせない
+
+【4-16 セキュリティ】
+非該当＝鍵・本番の発注に触らない。承認のプログラムは走らせない。値のパスはリポジトリの中だけ
+
+【4-17 ログと進捗表示】
+4-12 の出力が増える。
+
+【4-18 再利用】
+手本＝RUN_TOOLS と command_argv の形・前の工事の逐語のファイルの分かれ道と自己テストの T35。
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "当てた監査結果の名前の定数の後ろに、使わなくなった元データの定数を足す",
+  "直す前の文字": "#   already_applied が当てた記録と照らす（当てた後の工事で同じ所が書き替わっても、当て終わりと分かる）。\nCURRENT_REPORT = \"\"",
+  "種類": "足す文字",
+  "中身": "\n# ★2026-09-30（工事 point5-report-direct-20260930）＝使わなくなった元データ（ratchet に無い）。監査結果の修正がこれを相手にしていたら、\n#   全件を止める理由にせず、当てずに［手書き］で分ける（直す前は「対象のファイルが実在しない」で全件が止まった＝cp47・cp49）。\nRETIRED_SOURCES = (\"acceptance_src.json\",)",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:103「#   already_applied が当てた記録と照らす（当てた後の工事で同じ所が書き替わっても、当て終わりと分かる）。」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "check_one の守りの仕組みの分かれ道の後ろで、使わなくなった元データを見分ける",
+  "直す前の文字": "        return False, f\"守りの仕組みなので当てない（{rel}）＝私が Write ツールで直す\", \"\"",
+  "種類": "足す文字",
+  "中身": "\n    # ★2026-09-30（工事 point5-report-direct-20260930）＝使わなくなった元データを相手にした件は当てない（全件を止める理由にしない）\n    if os.path.basename((rel or \"\").strip().strip(\"`\")) in RETIRED_SOURCES and not os.path.isfile(repo_path(rel)):\n        return False, f\"使わなくなった元データなので当てない（{rel}）＝直す中身を、工事のフォルダの元へ写す\", \"\"",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:463「return False, f\"守りの仕組みなので当てない（{rel}）＝私が Write ツールで直す\", \"\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "hand_label に、使わなくなった元データの印を足す",
+  "直す前の文字": "        return \"［手書き］次の案に まこさんの OK が要る\"",
+  "種類": "足す文字",
+  "中身": "\n    if why.startswith(\"使わなくなった元データ\"):\n        return \"［手書き］CC が写す（手書きの項目は やることの表.md へ・自動の項目は次の案に まこさんの OK が要る）\"",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:626「return \"［手書き］次の案に まこさんの OK が要る\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "main の全件を止めない理由に、使わなくなった元データを足す",
+  "直す前の文字": "\"TARGET の外\", \"逐語のファイル\"))]",
+  "種類": "直した後の文字",
+  "中身": "\"TARGET の外\", \"逐語のファイル\", \"使わなくなった元データ\"))]",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:775「\"もう当て終わっている\", \"--choose で\", \"TARGET の外\", \"逐語のファイル\"))]」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "selftest の T36 の後ろに T37 を足す",
+  "直す前の文字": "                fails.append(f\"❌ 当てた記録 T{total}: 記録あり={why36} 記録を見ない={why36b}\")",
+  "種類": "足す文字",
+  "中身": "\n\n            # T37（2026-09-30・工事 point5-report-direct-20260930）＝使わなくなった元データを相手にした件は全件を止めず［手書き］で分け、ほかの件は当てる\n            total += 1\n            fresh([item(1, rel, \"x = 1\", \"直した後の文字\", \"x = 2\", ev),\n                   item(2, \"v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_src.json\", \"zz_old\", \"直した後の文字\", \"zz_new\", ev)])\n            rc37, out37 = run([\"--design\", md], mark)\n            if (open(code).read() == \"x = 2\\n\" and \"使わなくなった元データなので当てない\" in out37\n                    and \"［手書き］CC が写す\" in out37 and \"実物と合わない件が\" not in out37):\n                ok += 1\n                print(f\"   T{total} 使わなくなった元データの件は［手書き］で分け、ほかの件は当てる → pass\")\n            else:\n                fails.append(f\"❌ 使わなくなった元データ T{total}: rc={rc37} {out37[-200:]}\")\n\n            # T38（2026-09-30・工事 point5-report-direct-20260930）＝確かめのコマンド（scripts の道具・パスの値）も決まった形なら通し、外は止める\n            total += 1\n            sdk38, td38 = os.path.relpath(SDK, ROOT), os.path.relpath(tdir, ROOT)\n            good38 = [f\"python3 {td38}/gen_s22_map.py --verify\",\n                      f\"python3 {td38}/run_breaks.py --design .claude/state/acceptance.md --measure-only\",\n                      f\"cd {sdk38} && python3 scripts/priority_rebuild/verify_design_contract.py --diff {ROOT}/.claude/state/acceptance.md\",\n                      f\"cd {sdk38} && python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest\",\n                      f\"cd {sdk38} && python3 scripts/priority_rebuild/leak_causality_diag.py\"]\n            bad38 = [f\"python3 {td38}/run_breaks.py --design ../../x --measure-only\",\n                     f\"cd {sdk38} && python3 scripts/priority_rebuild/verify_design_contract.py --diff /etc/passwd\",\n                     f\"cd {sdk38} && python3 scripts/priority_rebuild/score.py --selftest\",\n                     f\"python3 {td38}/gen_acceptance.py\"]\n            miss38 = [c for c in good38 if command_argv(c) is None] + [c for c in bad38 if command_argv(c) is not None]\n            if not miss38:\n                ok += 1\n                print(f\"   T{total} 確かめのコマンドも決まった形なら通し、外は止める（通す {len(good38)}・止める {len(bad38)}） → pass\")\n            else:\n                fails.append(f\"❌ 確かめのコマンド T{total}: 見分けを誤った {miss38}\")\n\n            # T39（2026-09-30・工事 point5-report-direct-20260930）＝印の対象のファイルを直したら G2 → H2 を走らせるコマンドに足す（対象でなければ足さない）\n            total += 1\n            g39 = os.path.join(tmp, \"g2_zz.json\")\n            json.dump({\"files\": [rel]}, open(g39, \"w\", encoding=\"utf-8\"))\n            got39 = []\n            saved39 = (globals()[\"PASS_MARKS\"], globals()[\"run_commands\"])\n            globals()[\"run_commands\"] = lambda cmds, *a, **k: (got39.append(\" \".join(\" \".join(x[1][1][1:]) for x in cmds)) or 0)\n            try:\n                globals()[\"PASS_MARKS\"] = (g39,)\n                fresh([item(1, rel, \"x = 1\", \"直した後の文字\", \"x = 2\", ev)])\n                rc39, out39 = run([\"--design\", md], mark)\n                globals()[\"PASS_MARKS\"] = ()\n                fresh([item(1, rel, \"x = 1\", \"直した後の文字\", \"x = 2\", ev)])\n                rc39b, out39b = run([\"--design\", md], mark)\n            finally:\n                globals()[\"PASS_MARKS\"], globals()[\"run_commands\"] = saved39\n            if (len(got39) == 2 and \"gen_signal_families.py --verify\" in got39[0] and \"leak_causality_diag.py\" in got39[0]\n                    and got39[1] == \"\" and \"G2 → H2 の印を取り直す\" in out39):\n                ok += 1\n                print(f\"   T{total} 印の対象のファイルを直したら G2 → H2 を走らせる（対象でなければ走らせない） → pass\")\n            else:\n                fails.append(f\"❌ 印の取り直し T{total}: {got39} rc={rc39}/{rc39b}\")",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:1406「fails.append(f\"❌ 当てた記録 T{total}: 記録あり={why36} 記録を見ない={why36b}\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "走らせる道具の一覧に、確かめのコマンドを足し、scripts の一覧と印の置き場の定数を足す",
+  "直す前の文字": "    \"gen_verbatim.py\": {\"--verify\": 1, \"--summary\": 1},\n}",
+  "種類": "直した後の文字",
+  "中身": "    \"gen_verbatim.py\": {\"--verify\": 1, \"--summary\": 1},\n    \"gen_s22_map.py\": {\"--verify\": 0},\n    \"run_breaks.py\": {\"--design\": 1, \"--measure-only\": 0},\n}\n# ★2026-09-30（工事 point5-report-direct-20260930）＝監査結果の「走らせるコマンド」のうち、確かめのコマンドは scripts/priority_rebuild の道具も走らせる\n#   （直す前は .claude/tools の2本だけで、verify_design_contract・engine_tuner_gen・印の取り直しは まこさんが打った）。承認のプログラムは入れない。\nSCRIPTS_DIR = os.path.join(SDK, \"scripts\", \"priority_rebuild\")\nRUN_SCRIPTS = {\n    \"verify_design_contract.py\": {\"--diff\": 1},\n    \"engine_tuner_gen.py\": {\"--selftest\": 0},\n    \"gen_signal_families.py\": {\"--verify\": 0},\n    \"leak_causality_diag.py\": {},\n}\n# ★同＝印（G2・H2）の対象のファイルの一覧の置き場。ここに在るファイルを直したら、G2 → H2 の順で印を取り直す\nPASS_MARKS = (os.path.join(ROOT, \".claude\", \"state\", \"g2_pass.json\"), os.path.join(ROOT, \".claude\", \"state\", \"h2_pass.json\"))",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:92「\"gen_verbatim.py\": {\"--verify\": 1, \"--summary\": 1},」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "command_argv の説明の文を、広げた形に合わせる",
+  "直す前の文字": "    その道具の旗（旗ごとに決まった数の値＝英数字・_・.・- だけ）。区切り・置き換え・リダイレクトの記号が在れば None。",
+  "種類": "直した後の文字",
+  "中身": "    その道具の旗（旗ごとに決まった数の値＝英数字・_・.・-・/ だけ。「..」は不可・/ で始まる値はリポジトリの中だけ）。\n    scripts/priority_rebuild の道具は RUN_SCRIPTS の分だけ（旗の無い道具も一覧に在れば通す）。区切り・置き換え・リダイレクトの記号が在れば None。",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:249「その道具の旗（旗ごとに決まった数の値＝英数字・_・.・- だけ）。区切り・置き換え・リダイレクトの記号が在れば None。」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "command_argv で、旗の無い道具も数に入れる",
+  "直す前の文字": "    if len(toks) < 3 or toks[0] != \"python3\":",
+  "種類": "直した後の文字",
+  "中身": "    if len(toks) < 2 or toks[0] != \"python3\":",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:268「if len(toks) < 3 or toks[0] != \"python3\":」",
+  "状態": "確定"
+ },
+ {
+  "番号": 9,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "command_argv で、scripts/priority_rebuild の一覧も見る",
+  "直す前の文字": "    rule = RUN_TOOLS.get(os.path.basename(tool))\n    if rule is None or os.path.dirname(tool) != os.path.realpath(TOOLS_DIR):\n        return None\n    rest, i = toks[2:], 0",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-09-30（工事 point5-report-direct-20260930）＝.claude/tools は RUN_TOOLS、scripts/priority_rebuild は RUN_SCRIPTS\n    table = {os.path.realpath(TOOLS_DIR): RUN_TOOLS, os.path.realpath(SCRIPTS_DIR): RUN_SCRIPTS}.get(os.path.dirname(tool)) or {}\n    rule = table.get(os.path.basename(tool))\n    if rule is None:\n        return None\n    rest, i = toks[2:], 0\n    if not rest and rule:\n        return None                                        # 旗を持つ道具を旗なしで走らせない",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:271「rule = RUN_TOOLS.get(os.path.basename(tool))」",
+  "状態": "確定"
+ },
+ {
+  "番号": 10,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "command_argv で、値にリポジトリの中のパスを許す",
+  "直す前の文字": "        if n and (i + 1 >= len(rest) or not re.fullmatch(r\"[A-Za-z0-9_.-]+\", rest[i + 1])):",
+  "種類": "直した後の文字",
+  "中身": "        v = rest[i + 1] if i + 1 < len(rest) else \"\"\n        if n and (not re.fullmatch(r\"[A-Za-z0-9_./-]+\", v) or \"..\" in v.split(\"/\")\n                  or (v.startswith(\"/\") and not os.path.realpath(v).startswith(ROOT + os.sep))):",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:279「if n and (i + 1 >= len(rest) or not re.fullmatch(r\"[A-Za-z0-9_.-]+\", rest[i + 1])):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 11,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "main で、印の対象のファイルを直したら G2 → H2 の取り直しを走らせるコマンドに足す",
+  "直す前の文字": "    rc_cmd = run_commands(cmds)",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-09-30（工事 point5-report-direct-20260930）＝印（G2・H2）の対象のファイルを直したら、G2 → H2 の順で印を取り直す（next_step の決まり）\n    touched = {os.path.relpath(p, ROOT) for _f, _w, p in plan}\n    hit = False\n    for mk in PASS_MARKS:\n        try:\n            hit = hit or bool(touched & set(json.load(open(mk, encoding=\"utf-8\")).get(\"files\") or []))\n        except (OSError, ValueError):\n            pass\n    if hit:\n        print(\"— 印の対象のファイルを直したので、G2 → H2 の印を取り直す\")\n        for s in (\"gen_signal_families.py --verify\", \"leak_causality_diag.py\"):\n            cmds.append(({\"番号\": \"印\"}, command_argv(\n                f\"cd v3-bitget-api-sdk/bitget-python-sdk-api && python3 scripts/priority_rebuild/{s}\")))\n    rc_cmd = run_commands(cmds)",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:859「rc_cmd = run_commands(cmds)」",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 使わなくなった元データは、名前の一覧で見分ける | 在らないファイルを全部 見逃すと、打ち間違いの件まで黙って飛ばす | 在らないファイルの件を全部［手書き］にする |
+| 走らせるコマンドは、道具と旗の一覧で決める | 一覧の外のコマンドを走らせない守りを保つ | どのコマンドも走らせる |
+| 承認のプログラムは入れない | 承認は まこさんだけが打つ | 承認も道具が打つ |
+| 新しい壊すプログラムは作らない | 恒久71番 | 壊すプログラムを足す |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 新しい定数と関数の直しで、承認がもう1回 要る | 2回目の承認で完成の条件の行を済にする |
+| 壊すプログラムが「—」の行は承認で済にならない | 承認の後に自己テストを直接 走らせる |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる（まこさんの端末で1回） | 1分以内 | 11件の直し（写しで当てた） |
+| 自己テストと壊すプログラム5本 | 数分 | 前の工事で同じ自己テストと壊すプログラムを測った（秒は測っていない） |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 当てる道具が、使わなくなった元データの件で全件を止め、確かめのコマンドと印の取り直しを走らせなかった |
+| 期待値分解 | 売買に触れないので、勝率・平均利益・敗率・平均損失は動かない |
+| root か symptom か | root。止める理由・走らせる一覧・印の取り直しを道具に入れる |
+| ベースアップ | 手本は RUN_TOOLS と command_argv の形（4-18） |
+
+【7-2 固定値ゼロ宣言】
+疑似シミュから取った値は1つもない。数字を決める工事ではない。
+
+【7-3 変更の単位】
+変更は1つ＝当てる道具が、監査結果から直接 実装を直すときの穴を塞ぐ。
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 承認のプログラム | 道具は走らせない。まこさんが打つ |
+| 当てた後の文の正しさ | 道具は見ない（監査が書いた文字をそのまま入れる） |
+| 同じ事実を書いたほかの場所 | 道具は揃えない |
+| 一覧に無い名前の使わなくなった元データ | いままでどおり全件を止める |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝道具1本（apply_audit_fix.py）。売買のロジックに触らない。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝apply_audit_fix.py）。
+- 新しいファイルは作らない。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（監査結果から直接 実装を直すときの穴を塞ぐ）。
+- 過去の失敗の再演＝直す前の文字11件が実物にちょうど1か所ずつ在ること、壊すプログラムが直す行を探していないことを確かめた（worklog 20260930 §74）。定数を関数の外に足すので impl_functions に「<モジュール直下>」を書いた。
+- 非該当（売買のロジックの部品・前処理を足さない）。
+- 非該当（売買の実行器と生成器を直さない）。
+- 直すファイルの名前で壊すプログラムを grep した。探す行は変えない（4-13）。
+- 非該当（壊すプログラムを新しく作らない）。
+- 触る所＝モジュール直下・check_one・hand_label・command_argv・main・selftest。DESIGN_CONTRACT の impl_functions に全部 在る。
+- 新しく足す旗は無い。完成の条件の行が --selftest で通る。
+- 非該当（2回目の承認の前に書き直す＝その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=point5-report-direct-20260930）。
+- 1変更・過去失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝当てる道具の --selftest と、承認の前の検査の --try。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| 使わなくなった元データを相手にした件は、全件を止めず［手書き］で分け、ほかの件は当てる | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | — | — | 要 | 未着手 |
+| 確かめのコマンドも一覧の形なら走らせ、一覧の外とリポジトリの外のパスは止める | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | — | — | 要 | 未着手 |
+| 印の対象のファイルを直したら G2 → H2 を走らせる | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | — | — | 要 | 未着手 |
+| 承認と TARGET／NEW_FILE がそろった道具・hook・壊すプログラムにだけ当てる | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | tool_target_ok をいつも真にする | b118_audit_fix_tools_target.sh | 要 | 未着手 |
+| 実物と合わない件が1件でも在れば1件も当てない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | 全件を先に確かめる処理と当てる直前の確かめを外す | b102_design_apply_no_precheck.sh | 要 | 未着手 |
+| 承認の印が合わなければ1件も当てない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | 承認の印の照らしをいつも真にする | b101_design_apply_no_approval.sh | 要 | 未着手 |
+| 一覧に無い形のコマンドは走らせない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | command_argv がどのコマンドにも置き場と引数を返す | b119_audit_fix_command_allow.sh | 要 | 未着手 |
+| hook 12 が、承認中の設計書の TARGET を CC の手の直しから守る | python3 ../../.claude/tools/apply_audit_fix.py --selftest | hook | pending の「承認中の設計書の TARGET を守る」を外す | b121_hook12_design_guard.sh | 要 | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{"TARGET": [".claude/tools/apply_audit_fix.py"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/apply_audit_fix.py",
+  "self_check_calls": ["RETIRED_SOURCES", "RUN_SCRIPTS", "PASS_MARKS"],
+  "impl_functions": {"../../.claude/tools/apply_audit_fix.py": ["<モジュール直下>", "check_one", "hand_label", "command_argv", "main", "selftest"]},
+  "must_use": {"check_one": ["RETIRED_SOURCES"], "command_argv": ["RUN_SCRIPTS"], "main": ["PASS_MARKS"]},
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事の道具が外から読む一覧（承認の印・設計書の TARGET・当てた記録の形）の形は変えない",
+  "generated_from": {
+   "impl_functions": "4-3 に書いた、この工事で触る所（git の差分が無い状態から数えた）",
+   "must_use": "直した後に呼ぶ名前（4-3）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```
+
+【外部検索】
+
+| 名前 | 中身 |
+|---|---|
+| 自動の直しで、走らせてよいコマンドを一覧で決めるやり方 | 自動で直す道具が、決まった一覧のコマンドだけを走らせ、もう無い相手への直しを止めずに飛ばすやり方を調べる（私の導出） |

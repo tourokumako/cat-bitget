@@ -90,7 +90,20 @@ BREAKS_DIR = os.path.join(ROOT, ".claude", "breaks")                        # �
 RUN_TOOLS = {
     "gen_acceptance.py": {"--write": 0, "--verify": 0, "--dry-run": 0, "--selftest": 0, "--work": 1},
     "gen_verbatim.py": {"--verify": 1, "--summary": 1},
+    "gen_s22_map.py": {"--verify": 0},
+    "run_breaks.py": {"--design": 1, "--measure-only": 0},
 }
+# ★2026-09-30（工事 point5-report-direct-20260930）＝監査結果の「走らせるコマンド」のうち、確かめのコマンドは scripts/priority_rebuild の道具も走らせる
+#   （直す前は .claude/tools の2本だけで、verify_design_contract・engine_tuner_gen・印の取り直しは まこさんが打った）。承認のプログラムは入れない。
+SCRIPTS_DIR = os.path.join(SDK, "scripts", "priority_rebuild")
+RUN_SCRIPTS = {
+    "verify_design_contract.py": {"--diff": 1},
+    "engine_tuner_gen.py": {"--selftest": 0},
+    "gen_signal_families.py": {"--verify": 0},
+    "leak_causality_diag.py": {},
+}
+# ★同＝印（G2・H2）の対象のファイルの一覧の置き場。ここに在るファイルを直したら、G2 → H2 の順で印を取り直す
+PASS_MARKS = (os.path.join(ROOT, ".claude", "state", "g2_pass.json"), os.path.join(ROOT, ".claude", "state", "h2_pass.json"))
 # ★2026-09-30（設計書 audit-fix-evidence-20260930・まこさん承認）＝監査が見た版の設計書の控え。
 #   main が監査結果の「監査が照らしたハッシュ値」と sha256 が同じ承認の控えを見つけて入れる。
 #   根拠が acceptance.md の行なら、いまの acceptance.md ではなく、この控えと照らす（監査の後に設計書が書き替わるため）。
@@ -102,6 +115,9 @@ APPLIED_RECORD = os.path.join(SDK, ".claude", "audits", "applied_fixes.json")
 # ★2026-09-30（工事 point4-record-applied-20260930）＝いま当てている監査結果の名前（main が入れる・設計書の道では空）。
 #   already_applied が当てた記録と照らす（当てた後の工事で同じ所が書き替わっても、当て終わりと分かる）。
 CURRENT_REPORT = ""
+# ★2026-09-30（工事 point5-report-direct-20260930）＝使わなくなった元データ（ratchet に無い）。監査結果の修正がこれを相手にしていたら、
+#   全件を止める理由にせず、当てずに［手書き］で分ける（直す前は「対象のファイルが実在しない」で全件が止まった＝cp47・cp49）。
+RETIRED_SOURCES = ("acceptance_src.json",)
 
 
 def repo_path(p: str) -> str:
@@ -246,7 +262,8 @@ def command_argv(cmd: str):
     """走らせるコマンドが決まった形なら (置き場, 引数の並び) を、違えば None を返す（シェルを通さない）。
 
     決まった形＝前に「cd <リポジトリの中の置き場> &&」が付いてもよい、python3 と RUN_TOOLS の道具と、
-    その道具の旗（旗ごとに決まった数の値＝英数字・_・.・- だけ）。区切り・置き換え・リダイレクトの記号が在れば None。
+    その道具の旗（旗ごとに決まった数の値＝英数字・_・.・-・/ だけ。「..」は不可・/ で始まる値はリポジトリの中だけ）。
+    scripts/priority_rebuild の道具は RUN_SCRIPTS の分だけ（旗の無い道具も一覧に在れば通す）。区切り・置き換え・リダイレクトの記号が在れば None。
     """
     import shlex
     s = (cmd or "").strip()
@@ -265,18 +282,24 @@ def command_argv(cmd: str):
         toks = shlex.split(s)
     except ValueError:
         return None
-    if len(toks) < 3 or toks[0] != "python3":
+    if len(toks) < 2 or toks[0] != "python3":
         return None
     tool = os.path.realpath(os.path.join(cwd, toks[1]))
-    rule = RUN_TOOLS.get(os.path.basename(tool))
-    if rule is None or os.path.dirname(tool) != os.path.realpath(TOOLS_DIR):
+    # ★2026-09-30（工事 point5-report-direct-20260930）＝.claude/tools は RUN_TOOLS、scripts/priority_rebuild は RUN_SCRIPTS
+    table = {os.path.realpath(TOOLS_DIR): RUN_TOOLS, os.path.realpath(SCRIPTS_DIR): RUN_SCRIPTS}.get(os.path.dirname(tool)) or {}
+    rule = table.get(os.path.basename(tool))
+    if rule is None:
         return None
     rest, i = toks[2:], 0
+    if not rest and rule:
+        return None                                        # 旗を持つ道具を旗なしで走らせない
     while i < len(rest):
         if rest[i] not in rule:
             return None
         n = rule[rest[i]]
-        if n and (i + 1 >= len(rest) or not re.fullmatch(r"[A-Za-z0-9_.-]+", rest[i + 1])):
+        v = rest[i + 1] if i + 1 < len(rest) else ""
+        if n and (not re.fullmatch(r"[A-Za-z0-9_./-]+", v) or ".." in v.split("/")
+                  or (v.startswith("/") and not os.path.realpath(v).startswith(ROOT + os.sep))):
             return None
         i += 1 + n
     return cwd, [sys.executable, tool] + rest
@@ -461,6 +484,9 @@ def check_one(f: dict, chosen: dict = None, run_ok: bool = False, new_ok: bool =
         return False, "もう当て終わっている（直した後の文字が実物に在る）", ""
     if never_write(rel) and not tool_target_ok(rel):
         return False, f"守りの仕組みなので当てない（{rel}）＝私が Write ツールで直す", ""
+    # ★2026-09-30（工事 point5-report-direct-20260930）＝使わなくなった元データを相手にした件は当てない（全件を止める理由にしない）
+    if os.path.basename((rel or "").strip().strip("`")) in RETIRED_SOURCES and not os.path.isfile(repo_path(rel)):
+        return False, f"使わなくなった元データなので当てない（{rel}）＝直す中身を、工事のフォルダの元へ写す", ""
     path = repo_path(rel)
     # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝新しいファイル（直す前の文字が「なし」）は、設計書の道でだけ作る
     if new_ok and (f["直す前の文字"] or "").strip() == "なし":
@@ -624,6 +650,8 @@ def hand_label(why: str) -> str:
         return "［手書き］CC が書く"
     if why.startswith("逐語のファイル"):
         return "［手書き］次の案に まこさんの OK が要る"
+    if why.startswith("使わなくなった元データ"):
+        return "［手書き］CC が写す（手書きの項目は やることの表.md へ・自動の項目は次の案に まこさんの OK が要る）"
     return ""
 
 
@@ -772,7 +800,7 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
     #   状態が未決・案が複数／走らせるコマンド／守りの仕組みは、当てないだけで、ほかの件は当てる。
     hard = [x for x in stopped
             if not x[1].startswith(("状態が", "走らせるコマンド", "守りの仕組みなので",
-                                    "もう当て終わっている", "--choose で", "TARGET の外", "逐語のファイル"))]
+                                    "もう当て終わっている", "--choose で", "TARGET の外", "逐語のファイル", "使わなくなった元データ"))]
     if hard:
         print(f"\n❌ 実物と合わない件が {len(hard)} 件 あるので、1件も当てません（先に全件を確かめる形）")
         return 1
@@ -856,6 +884,19 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
             for f, why, _c in stopped if why.startswith("もう当て終わっている")]
     n_rec = _record_applied(rec)
     print(f"— 当てた記録に {n_rec} 件を足した（{os.path.relpath(APPLIED_RECORD, ROOT)}）")
+    # ★2026-09-30（工事 point5-report-direct-20260930）＝印（G2・H2）の対象のファイルを直したら、G2 → H2 の順で印を取り直す（next_step の決まり）
+    touched = {os.path.relpath(p, ROOT) for _f, _w, p in plan}
+    hit = False
+    for mk in PASS_MARKS:
+        try:
+            hit = hit or bool(touched & set(json.load(open(mk, encoding="utf-8")).get("files") or []))
+        except (OSError, ValueError):
+            pass
+    if hit:
+        print("— 印の対象のファイルを直したので、G2 → H2 の印を取り直す")
+        for s in ("gen_signal_families.py --verify", "leak_causality_diag.py"):
+            cmds.append(({"番号": "印"}, command_argv(
+                f"cd v3-bitget-api-sdk/bitget-python-sdk-api && python3 scripts/priority_rebuild/{s}")))
     rc_cmd = run_commands(cmds)
     # ★設計書の道（設計書 4-4 の 10）＝当てなかった件が1件でも在れば rc=1（当て忘れを機械で見つける）
     #   ★2026-09-30＝もう当て終わっていた件は数えない（2回目の承認の後に、足した件だけを当てられる）
@@ -1404,6 +1445,60 @@ def selftest() -> int:
                 print(f"   T{total} 当てた記録に在る件は、実物に文字が無くても「もう当て終わっている」 → pass")
             else:
                 fails.append(f"❌ 当てた記録 T{total}: 記録あり={why36} 記録を見ない={why36b}")
+
+            # T37（2026-09-30・工事 point5-report-direct-20260930）＝使わなくなった元データを相手にした件は全件を止めず［手書き］で分け、ほかの件は当てる
+            total += 1
+            fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2", ev),
+                   item(2, "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_src.json", "zz_old", "直した後の文字", "zz_new", ev)])
+            rc37, out37 = run(["--design", md], mark)
+            if (open(code).read() == "x = 2\n" and "使わなくなった元データなので当てない" in out37
+                    and "［手書き］CC が写す" in out37 and "実物と合わない件が" not in out37):
+                ok += 1
+                print(f"   T{total} 使わなくなった元データの件は［手書き］で分け、ほかの件は当てる → pass")
+            else:
+                fails.append(f"❌ 使わなくなった元データ T{total}: rc={rc37} {out37[-200:]}")
+
+            # T38（2026-09-30・工事 point5-report-direct-20260930）＝確かめのコマンド（scripts の道具・パスの値）も決まった形なら通し、外は止める
+            total += 1
+            sdk38, td38 = os.path.relpath(SDK, ROOT), os.path.relpath(tdir, ROOT)
+            good38 = [f"python3 {td38}/gen_s22_map.py --verify",
+                      f"python3 {td38}/run_breaks.py --design .claude/state/acceptance.md --measure-only",
+                      f"cd {sdk38} && python3 scripts/priority_rebuild/verify_design_contract.py --diff {ROOT}/.claude/state/acceptance.md",
+                      f"cd {sdk38} && python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest",
+                      f"cd {sdk38} && python3 scripts/priority_rebuild/leak_causality_diag.py"]
+            bad38 = [f"python3 {td38}/run_breaks.py --design ../../x --measure-only",
+                     f"cd {sdk38} && python3 scripts/priority_rebuild/verify_design_contract.py --diff /etc/passwd",
+                     f"cd {sdk38} && python3 scripts/priority_rebuild/score.py --selftest",
+                     f"python3 {td38}/gen_acceptance.py"]
+            miss38 = [c for c in good38 if command_argv(c) is None] + [c for c in bad38 if command_argv(c) is not None]
+            if not miss38:
+                ok += 1
+                print(f"   T{total} 確かめのコマンドも決まった形なら通し、外は止める（通す {len(good38)}・止める {len(bad38)}） → pass")
+            else:
+                fails.append(f"❌ 確かめのコマンド T{total}: 見分けを誤った {miss38}")
+
+            # T39（2026-09-30・工事 point5-report-direct-20260930）＝印の対象のファイルを直したら G2 → H2 を走らせるコマンドに足す（対象でなければ足さない）
+            total += 1
+            g39 = os.path.join(tmp, "g2_zz.json")
+            json.dump({"files": [rel]}, open(g39, "w", encoding="utf-8"))
+            got39 = []
+            saved39 = (globals()["PASS_MARKS"], globals()["run_commands"])
+            globals()["run_commands"] = lambda cmds, *a, **k: (got39.append(" ".join(" ".join(x[1][1][1:]) for x in cmds)) or 0)
+            try:
+                globals()["PASS_MARKS"] = (g39,)
+                fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2", ev)])
+                rc39, out39 = run(["--design", md], mark)
+                globals()["PASS_MARKS"] = ()
+                fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2", ev)])
+                rc39b, out39b = run(["--design", md], mark)
+            finally:
+                globals()["PASS_MARKS"], globals()["run_commands"] = saved39
+            if (len(got39) == 2 and "gen_signal_families.py --verify" in got39[0] and "leak_causality_diag.py" in got39[0]
+                    and got39[1] == "" and "G2 → H2 の印を取り直す" in out39):
+                ok += 1
+                print(f"   T{total} 印の対象のファイルを直したら G2 → H2 を走らせる（対象でなければ走らせない） → pass")
+            else:
+                fails.append(f"❌ 印の取り直し T{total}: {got39} rc={rc39}/{rc39b}")
         finally:
             (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
              globals()["HOOKS_DIR"], globals()["BREAKS_DIR"]) = g_saved

@@ -187,6 +187,33 @@ def check_opened(pairs, transcript: str) -> list:
     return ng
 
 
+def check_target_opened(tool: str, pairs, path: Path, transcript: str) -> list:
+    """0. 直す行そのものを、直す前に開いて確かめたか（Edit・MultiEdit）。
+
+    ★2026-09-30（139回目・まこさん指示「当てずっぽうで確認せずにミスを何度も繰り返さないように強制しろ」）
+      ＝直す前は、行番号を書くときだけ止め、コードや文書の行そのものは開かずに直せた。
+      直す行（old_string の最初の行）の前後を、この会話で Read か sed -n か grep -n で開いた記録が無ければ止める。
+    ★自分の記録と下書きの置き場（.claude/state・memory・一時の置き場）は見ない（書き足すだけの記録で止めない）。
+    """
+    if tool not in ("Edit", "MultiEdit") or not path.is_file():
+        return []
+    sp = str(path)
+    if any(k in sp for k in ("/.claude/state/", "/.claude/projects/", "/private/tmp/", "/tmp/")):
+        return []
+    cur = path.read_text(encoding="utf-8")
+    uses, results = load_transcript(transcript)
+    ng = []
+    for old, _new, _r in pairs:
+        i = cur.find(old) if old else -1
+        if i < 0:
+            continue
+        line = cur.count("\n", 0, i) + 1
+        if not opened(path.name, line, uses, results):
+            ng.append(f"{path.name} の {line} 行目（直す行）を、この会話で開いた記録が無い＝"
+                      f"{max(1, line - WINDOW)}〜{line + WINDOW} 行を開いて確かめてから直す")
+    return ng
+
+
 def _toks(s: str) -> set:
     return set(COUNT_RE.findall(s)) | set(SECT_RE.findall(s)) | {c[2] for c in citations(s)}
 
@@ -248,6 +275,13 @@ def main(raw: str) -> int:
     pairs = pairs_of(tool, ti, path)
     e = sys.stderr
     tp = str(data.get("transcript_path") or "")
+    ng0 = check_target_opened(tool, pairs, path, tp) if tp else []
+    if ng0:
+        print("🔒 [確かめてから直すゲート] 直す行を、開いて確かめずに直そうとしています"
+              "（まこさん指示 2026-09-30「当てずっぽうで確認せずにミスを何度も繰り返さないように強制しろ」）。", file=e)
+        for x in ng0:
+            print(f"   ❌ {x}", file=e)
+        return 2
     ng1 = check_opened(pairs, tp)
     if ng1 and not tp:
         print("🔒 [確かめてから直すゲート] session_id も transcript_path も無い＝開いた記録を数えられない", file=e)

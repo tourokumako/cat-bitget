@@ -664,7 +664,13 @@ def pretool_main():
         sys.exit(0)
     ti = data.get("tool_input") or {}
     fp = ti.get("file_path") or ""
-    if os.path.basename(fp) != os.path.basename(DRAFT):
+    # ★2026-09-30（139回目・まこさん指示「当てずっぽうの直しを何度もしないように、確認をする強制を入れろ」
+    #   「確認をしないから同じミスしてるって言ったよね」）＝案の下書き（.claude/state/_draft_*.txt）も書く瞬間に検査する。
+    #   直す前は返信の下書きだけを見たので、案の中の長すぎる文と出どころの抜けが、後の検査で1つずつ見つかり、案を何度も出し直した。
+    base = os.path.basename(fp)
+    is_plan = (base.startswith("_draft_") and base.endswith(".txt")
+               and os.path.dirname(os.path.realpath(fp)) == os.path.realpath(STATE))
+    if base != os.path.basename(DRAFT) and not is_plan:
         sys.exit(0)
 
     name = data.get("tool_name") or ""
@@ -677,13 +683,27 @@ def pretool_main():
     if not text.strip():
         sys.exit(0)
     bad = check_text(text)
-    if not bad:
+    # ★2026-09-30（同じ指示）＝嘘の型の検査（enforce_no_false_claim の R1〜R8）も、書く瞬間に全部 一度に掛ける。
+    #   直す前は、出す直前の --try で初めて見つかり、全文を何度も送り直した。R9（--try に通したか）は、ここでは見ない。
+    lies = []
+    tp = data.get("transcript_path") or ""
+    if tp and os.path.isfile(tp):
+        try:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import enforce_no_false_claim as nf
+            lies = [x for x in (nf.judge(text, nf.read_rows(tp), tp) or []) if not x.startswith("R9")]
+        except Exception:                                    # noqa: BLE001
+            lies = []
+    if not bad and not lies:
         sys.exit(0)
     e = sys.stderr
-    print("🔒 [下書きの検査・PreToolUse] この下書きは、まこさんに伝わる形になっていません。", file=e)
-    print("   ★まこさんの画面にはまだ何も出ていません。ここで直せば、同じ文章が並びません。", file=e)
+    print("🔒 [下書きの検査・PreToolUse] この下書きは、まこさんに伝わる形になっていません（書く前に全部 一度に出します）。", file=e)
+    print("   ★まこさんの画面にはまだ何も出ていません。ここで全部 直せば、1回で出せます。", file=e)
     print("", file=e)
-    print(f"直すところ: {bad}", file=e)
+    if bad:
+        print(f"直すところ（文章）: {bad}", file=e)
+    for x in lies:
+        print(f"直すところ（嘘の型）: {x}", file=e)
     sys.exit(2)
 
 

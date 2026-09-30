@@ -58,7 +58,51 @@ def fail_lines(out):
             if not s.startswith("✅") and not s.endswith("→ pass") and FAIL_RE.search(s) and "止める所なし" not in s]
 
 
-def record(sid, cmd, out):
+def scan_transcript(sid, tpath):
+    """やり取りの記録から、終了コードが 0 以外で終わった検査を拾って記録する。
+
+    ★2026-09-30（139回目・まこさん指示「これ以上当たるまで何度も適当に修正し続けないよう無い確認をする強制をしろ」）
+      ＝PostToolUse（post）は、終了コードが 0 以外で終わったコマンドでは走らない。だから落ちた検査（trial_design・
+      --check ほか）ほど記録に入らず、計画なしで直せた（139回目に2回＝試しの設計書と文章の --check）。
+      書く瞬間（pre）に、記録（jsonl）の中の「落ちた（is_error）検査」を拾う。
+    ★この直しを入れる前の落ちは数えない（初めて走ったときに、在る分を全部「見た」にする）。
+    """
+    if not sid or not tpath or not os.path.isfile(tpath):
+        return
+    from datetime import datetime
+    fp, _plan = _paths(sid)
+    seen_fp = os.path.join(os.path.dirname(fp), "check_fail_seen.json")
+    first = not os.path.isfile(seen_fp)
+    seen = set() if first else set(json.load(open(seen_fp, encoding="utf-8")))
+    cmds, errs = {}, []
+    for ln in open(tpath, encoding="utf-8"):
+        try:
+            row = json.loads(ln)
+        except Exception:                                    # noqa: BLE001
+            continue
+        for b in ((row.get("message") or {}).get("content") or []):
+            if not isinstance(b, dict):
+                continue
+            if b.get("type") == "tool_use" and b.get("name") == "Bash":
+                cmds[b.get("id")] = str((b.get("input") or {}).get("command") or "")
+            elif b.get("type") == "tool_result" and b.get("is_error") and b.get("tool_use_id") in cmds:
+                c = b.get("content")
+                text = c if isinstance(c, str) else "\n".join(str(x.get("text") or "") for x in (c or []) if isinstance(x, dict))
+                errs.append((b.get("tool_use_id"), cmds[b.get("tool_use_id")], text, row.get("timestamp") or ""))
+    new = [e for e in errs if e[0] not in seen]
+    if not first:
+        for _id, cmd, text, ts in new:
+            try:
+                t = datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+            except ValueError:
+                t = time.time()
+            record(sid, cmd, text, t)
+    seen |= {e[0] for e in new}
+    os.makedirs(os.path.dirname(seen_fp), exist_ok=True)
+    json.dump(sorted(seen), open(seen_fp, "w", encoding="utf-8"))
+
+
+def record(sid, cmd, out, t=None):
     """検査の出力から、落ちた行を記録する（通れば消す）。戻り＝落ちた行の数。"""
     # ★python3 か bash で走らせた断片に検査の語が在るときだけ検査と見る（2026-09-30＝grep と cat で記録を読んだだけの
     #   コマンドを、探す語の「--verify」で検査と見て、読んだ中身の ❌ を落ちた行に書いた）
@@ -81,7 +125,7 @@ def record(sid, cmd, out):
     planned = bool(prev) and os.path.isfile(plan) and os.path.getmtime(plan) > prev.get("time", 0)
     count = prev.get("count", 0) + 1 if planned or not prev else prev.get("count", 1)
     plan_lines = len(set(FILELINE_RE.findall(open(plan, encoding="utf-8").read()))) if planned else prev.get("plan_lines", 0)
-    rec[key] = {"time": time.time(), "cmd": cmd[:300], "fails": fails[:60], "count": count, "plan_lines": plan_lines}
+    rec[key] = {"time": t if t is not None else time.time(), "cmd": cmd[:300], "fails": fails[:60], "count": count, "plan_lines": plan_lines}
     json.dump(rec, open(fp, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     return len(fails)
 
@@ -138,6 +182,7 @@ def main(mode):
         record(sid, str(inp.get("command") or ""), out)
         return 0
     if mode == "pre":
+        scan_transcript(sid, data.get("transcript_path") or "")   # ★落ちた検査（post が走らない）を先に拾う
         bad = judge(sid, str((data.get("tool_input") or {}).get("file_path") or ""))
         if not bad:
             return 0

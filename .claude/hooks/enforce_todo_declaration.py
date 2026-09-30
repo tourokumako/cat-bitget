@@ -483,6 +483,26 @@ def hook_main():
 
     # 自分のセッションの ToDo ファイルと印の操作は通す（止めると ToDo が書けない＝デッドロック）
     # ★2026-09-06＝例外は「自分の置き場」だけ。別のセッションの置き場への書き込みは例外に入らない。
+    # ★2026-09-30（139回目・まこさん指示「先に --check を打つ…を守っていれば、ほとんど1回で通っていました。→これを強制しろ！！！」）
+    #   ＝自分の ToDo を Write・Edit で書く瞬間に、--check と同じ中身の検査（body_problems）を掛ける。
+    #   直す前は中身を見ずに通し、次の書き込みで初めて不足が見つかって、ToDo の全文を貼り直していた。
+    if sid and fpath == P["todo"] and data.get("tool_name", "") in ("Write", "Edit"):
+        if data.get("tool_name") == "Write":
+            new_text = ti.get("content", "") or ""
+        else:
+            try:
+                cur = open(fpath, encoding="utf-8").read()
+            except OSError:
+                cur = ""
+            old_s, new_s = ti.get("old_string", "") or "", ti.get("new_string", "") or ""
+            new_text = cur.replace(old_s, new_s) if ti.get("replace_all") else cur.replace(old_s, new_s, 1)
+        probs = body_problems(new_text)
+        if probs:
+            print("🔒 [ToDo ゲート・書く瞬間の検査] この ToDo は中身が通りません（--check と同じ検査・全部 直してから書く）:",
+                  file=sys.stderr)
+            for i, p in enumerate(probs, 1):
+                print(f"   {i}. {p}", file=sys.stderr)
+            sys.exit(2)
     if fpath in own or "session_todo" in cmd:
         sys.exit(0)
 
