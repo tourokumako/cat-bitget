@@ -109,7 +109,12 @@ def repo_path(p: str) -> str:
     cand = os.path.join(ROOT, p)
     if os.path.exists(cand):
         return cand
-    return os.path.join(SDK, p)
+    # ★2026-09-30（工事 cp53-fix-20260930）＝まだ無いファイル（新しく作るファイル）は、置き場のフォルダが直下にだけ在れば直下にする
+    #   （直す前は SDK 側に回り、.claude/breaks の新しい壊すプログラムを守りの仕組みと見て飛ばした）
+    sdk = os.path.join(SDK, p)
+    if os.path.isdir(os.path.dirname(cand)) and not os.path.isdir(os.path.dirname(sdk)):
+        return cand
+    return sdk
 
 
 def never_write(rel: str) -> bool:
@@ -210,10 +215,10 @@ def design_targets(design_text: str) -> set:
 
 
 def tool_target_ok(rel: str, design_path: str = None, mark_path: str = None) -> bool:
-    """道具のファイル（TOOLS_DIR の .py）に当ててよいか。
+    """道具のファイル（TOOLS_DIR の .py）・hook（HOOKS_DIR の .py・.sh）・壊すプログラム（BREAKS_DIR の .sh）に当ててよいか。
 
     ①承認の印と設計書のハッシュ値が合う ②そのファイルが設計書の TARGET か NEW_FILE に在る、の両方のときだけ真。
-    hook・壊すプログラム・承認の印・凍結の記録・settings に当たる名前なら、いつも偽（設計書 3-1 の1）。
+    承認の印・凍結の記録・settings に当たる名前なら、いつも偽（設計書 3-1 の1。hook と壊すプログラムは point2-design-to-impl-20260930 で当てる相手に入れた）。
     """
     raw = (rel or "").strip().strip("`")
     real = os.path.realpath(repo_path(raw))
@@ -1279,6 +1284,16 @@ def selftest() -> int:
                 print(f"   T{total} 承認済みの設計書の TARGET は hook 12 が守る（承認が外れたら守らない） → pass")
             else:
                 fails.append(f"❌ hook 12 T{total}: 承認中={in31} 承認が外れた後={out31}")
+
+            # T32（2026-09-30・工事 cp53-fix-20260930）＝まだ無いファイルは、置き場のフォルダが直下にだけ在れば直下にする
+            #   （T27 は置き場を一時フォルダにしたので、本物の置き場 .claude/breaks の新しいファイルを試していなかった）
+            total += 1
+            p32 = repo_path(".claude/breaks/zz_not_yet_made.sh")
+            if p32 == os.path.join(ROOT, ".claude/breaks/zz_not_yet_made.sh"):
+                ok += 1
+                print(f"   T{total} まだ無い壊すプログラムの置き場は直下の .claude/breaks → pass")
+            else:
+                fails.append(f"❌ 置き場 T{total}: まだ無いファイルが直下にならない（{p32}）")
         finally:
             (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
              globals()["HOOKS_DIR"], globals()["BREAKS_DIR"]) = g_saved

@@ -1,0 +1,26 @@
+108c108
+< | 当てる道具の repo_path が、まだ無いファイルの置き場のフォルダを見ているか | `grep -c 'isdir(os.path.dirname(sdk))' .claude/tools/apply_audit_fix.py` | 実装の前は無い（まだ無いファイルは SDK 側に回る）。実装の後は在る | 0（終了コード 1） |
+---
+> | 当てる道具の repo_path が、まだ無いファイルの置き場のフォルダを見ているか | `grep -c 'isdir(os.path.dirname(sdk))' .claude/tools/apply_audit_fix.py` | 実装の前は無い（まだ無いファイルは SDK 側に回る）。実装の後は在る | 1（終了コード 0） |
+566,568c566,568
+< | 1 | 承認と TARGET／NEW_FILE がそろった道具・hook・壊すプログラムにだけ当てる | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | tool_target_ok をいつも真にする | `b118_audit_fix_tools_target.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝道具のファイルに当ててよいかの照らし（承認の印と TARGET）を常に真にすると、当てる道具の自己テスト T18・T19（印が違う・TARGET の外なら当てない）が落ちた |
+< | 2 | 実物と合わない件が1件でも在れば1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 全件を先に確かめる処理と当てる直前の確かめを外す | `b102_design_apply_no_precheck.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝全件を先に確かめる処理と当てる直前の確かめを外して、確かめながら当てる形にすると、当てる道具の自己テスト T13・T16（半分だけ当てない）が落ちた |
+< | 3 | 承認の印が合わなければ1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 承認の印の照らしをいつも真にする | `b101_design_apply_no_approval.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝承認の印を照らす処理を常に真にすると、当てる道具の自己テスト T4（印が違えば当てない）が落ちた |
+---
+> | 1 | 承認と TARGET／NEW_FILE がそろった道具・hook・壊すプログラムにだけ当てる | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | tool_target_ok をいつも真にする | `b118_audit_fix_tools_target.sh` | 要 | **未着手** |
+> | 2 | 実物と合わない件が1件でも在れば1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 全件を先に確かめる処理と当てる直前の確かめを外す | `b102_design_apply_no_precheck.sh` | 要 | **未着手** |
+> | 3 | 承認の印が合わなければ1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 承認の印の照らしをいつも真にする | `b101_design_apply_no_approval.sh` | 要 | **未着手** |
+577c577
+< <!-- ACC_CODEREF_START hash=21f2bb94c8459a46 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=9bd47b98ea98e59b gen_acceptance.py が自動生成＝手で書き換えない -->
+584c584
+< | `tool_target_ok` | 212 |
+---
+> | `tool_target_ok` | 217 |
+593c593
+< <!-- ACC_SPEC_START hash=c430fecc6785210f gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=73bc28fd1011ca27 gen_acceptance.py が自動生成＝手で書き換えない -->
+691a692
+>    "repo_path",

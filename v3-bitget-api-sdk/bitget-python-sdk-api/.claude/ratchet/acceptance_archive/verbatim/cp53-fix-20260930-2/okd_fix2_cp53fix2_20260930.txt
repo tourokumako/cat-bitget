@@ -1,0 +1,138 @@
+ご報告と、差し替えの案です。承認1回目と当てる道具は効きましたが、新しい壊すプログラム2本（b120・b121）が作られていません（worklog 20260930 §46）。
+
+**起きたこと**
+
+- 当てた記録は件1・件2 だけです（applied_fixes.json:473〜485）。当てる道具と設計書の道具は直りました（コマンドの出力＝2-1 の grep がどちらも 1）。
+- 件3・件4 は「守りの仕組みなので当てない」で飛ばされました（コマンドの出力＝--design --dry）。
+
+**原因（私の2点目の穴です）**
+
+- 当てる道具の repo_path は、まだ無いファイルを SDK 側の置き場に回します（apply_audit_fix.py:112）。
+- そのため tool_target_ok が「置き場が .claude/breaks ではない」と見て偽を返しました（コマンドの出力＝一時の道具 _cp53_apply_probe.py）。
+- 2点目の自己テスト T27 は置き場を一時フォルダにしたので、本物の置き場を試していませんでした（apply_audit_fix.py:1221）。監査 cp53 もここは見ていません。
+
+**直し方（写しで確かめました・worklog §46）**
+
+- 実装5＝repo_path を直し、まだ無いファイルは、置き場のフォルダが直下にだけ在れば直下にします。
+- 実装6＝自己テスト T32 を足し、本物の置き場 .claude/breaks の新しいファイルを試します。
+- 写しの結果＝直す前の文字は2件ともちょうど1か所、自己テストは 32/32 pass でした（コマンドの出力＝_cp53_fix5_probe.py）。既に在るファイルと SDK/ で始まる書き方の置き場は、直す前と同じでした（同じ出力）。
+
+**流れの変わる所**＝当てる道具は、起動した時に読んだ古い関数で動きます（私の導出）。だから1回目で実装5・6 が当たり、2回目で b120・b121 が作られます。まこさんに当てる道具を2回 打っていただきます。
+
+**反対の材料**＝T32 を守る壊すプログラムは足しません。実装5 が効いていなければ b120・b121 が作られず、完成の条件 #4・#5 が済にならないので、実物で分かります（私の導出）。
+
+**差し替える節（OK をいただければ、逐語を写して設計書を作り直します）**
+
+【4-3 部品と責任の割り当て】
+- apply_audit_fix.tool_target_ok＝説明の文だけを直す（動きは変えない）。
+- apply_audit_fix.repo_path＝まだ無いファイルは、置き場のフォルダが直下にだけ在れば直下にする（新しい壊すプログラムを .claude/breaks に作れるようにする）。
+- apply_audit_fix.selftest＝T32 を足し、本物の置き場 .claude/breaks のまだ無いファイルが直下になるかを試す。
+- gen_acceptance.selftest＝T12 の見本に「4-20＝非該当（理由つき）」を足す。
+- b120_acceptance_impl_zero.sh（新しく作る）＝gen_acceptance.page の「4-20 が0件なら止める」を外し、設計書の道具の自己テストが落ちるかを測る。
+- b121_hook12_design_guard.sh（新しく作る）＝enforce_audit_fix.pending の「承認中の設計書の TARGET を守る」を外し、当てる道具の自己テストが落ちるかを測る。
+
+【4-4 処理の流れ】
+- ①まこさんが承認する（b120・b121 はまだ無いので、その行は未着手のまま）。
+- ②まこさんが端末で当てる道具を1回 打つ。実装5・6 が当たる（実装1・2 はもう当て終わっている。実装3・4 は、道具が起動した時の古い repo_path のままなので飛ばされる）。
+- ③まこさんが端末で当てる道具をもう1回 打つ。直った repo_path で、b120・b121 が新しいファイルとして作られる。
+- ④当てた件を当てた記録に書く。
+- ⑤CC が自己テストと壊すプログラムを走らせる。
+- ⑥2回目の承認で、完成の条件の行が済になる。
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる（まこさんの端末で2回） | 1回につき1分以内 | 2本の直しと2本の新しいファイル |
+| 壊すプログラム5本と自己テスト | 数分 | 写しで試したとき、自己テストは待ち時間なく終わった（秒は測っていない） |
+
+【7-8 プログラムが読む設定】
+```json
+{"TARGET": [".claude/tools/apply_audit_fix.py", ".claude/tools/gen_acceptance.py"],
+ "NEW_FILE": [".claude/breaks/b120_acceptance_impl_zero.sh", ".claude/breaks/b121_hook12_design_guard.sh"],
+ "MODEL": [".claude/breaks/b72_acceptance_handwritten.sh"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/apply_audit_fix.py",
+  "self_check_calls": ["tool_target_ok"],
+  "impl_functions": {"../../.claude/tools/apply_audit_fix.py": ["tool_target_ok", "repo_path", "selftest"],
+   "../../.claude/tools/gen_acceptance.py": ["selftest"]},
+  "must_use": {"tool_target_ok": ["BREAKS_DIR"]},
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事の道具が外から読む一覧（承認の印・設計書の TARGET と NEW_FILE・当てた記録の形）の形は変えない",
+  "generated_from": {
+   "impl_functions": "4-3 に書いた、この工事で触る関数",
+   "must_use": "直した後も呼ぶ名前（4-3）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "tool_target_ok の説明の文",
+  "直す前の文字": "    \"\"\"道具のファイル（TOOLS_DIR の .py）に当ててよいか。\n\n    ①承認の印と設計書のハッシュ値が合う ②そのファイルが設計書の TARGET か NEW_FILE に在る、の両方のときだけ真。\n    hook・壊すプログラム・承認の印・凍結の記録・settings に当たる名前なら、いつも偽（設計書 3-1 の1）。",
+  "種類": "直した後の文字",
+  "中身": "    \"\"\"道具のファイル（TOOLS_DIR の .py）・hook（HOOKS_DIR の .py・.sh）・壊すプログラム（BREAKS_DIR の .sh）に当ててよいか。\n\n    ①承認の印と設計書のハッシュ値が合う ②そのファイルが設計書の TARGET か NEW_FILE に在る、の両方のときだけ真。\n    承認の印・凍結の記録・settings に当たる名前なら、いつも偽（設計書 3-1 の1。hook と壊すプログラムは point2-design-to-impl-20260930 で当てる相手に入れた）。",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:216「hook・壊すプログラム・承認の印・凍結の記録・settings に当たる名前なら、いつも偽（設計書 3-1 の1）。」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": ".claude/tools/gen_acceptance.py",
+  "直す箇所": "selftest の T12（4-20 が0件なら止まる）の見本",
+  "直す前の文字": "        d17[\"実装の指示\"] = []",
+  "種類": "直した後の文字",
+  "中身": "        d17[\"実装の指示\"] = []\n        # ★2026-09-30（監査 cp53 の修正2）＝4-20 を「非該当（理由つき）」にした設計書＝足した検査だけが止める場面にする\n        #   （直す前は理由の無い 4-20 を試したので、前から在る「理由が無い」の検査が先に止め、足した検査を外しても通った）\n        d17.setdefault(\"設計の中身\", {})[\"4-20\"] = {\"非該当\": \"見本（CC が手で当てる）\"}",
+  "根拠の抜き書き": ".claude/tools/gen_acceptance.py:2134「d17[\"実装の指示\"] = []」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": ".claude/breaks/b120_acceptance_impl_zero.sh",
+  "直す箇所": "新しいファイル",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 直すファイルが在るのに 4-20 が0件の設計書を止める検査を外すと、設計書の道具の自己テストが落ちた\n# EXPECT_MSG: 4-20 が0件でも書ける\n# b120 — gen_acceptance.py の page の「4-20 が0件なら止める」を外すと、自己テストが落ちるか\n#   守っているもの＝設計書 point2-design-to-impl-20260930 の W-5（実装 17）\n#   なぜ要るか＝完成の条件4行目の b72 は verify を壊すだけで、この検査を壊していなかった（監査 cp53 の Q6）\n#   期待＝壊すと「直すファイルが在るのに 4-20 が0件だと止まる」の場面が fail になり、終了コードが 1 になる\nsource \"$(dirname \"$0\")/lib.sh\"\n\nGEN=\"$ROOT/.claude/tools/gen_acceptance.py\"\nguard \"$GEN\"\n\npython3 - \"$GEN\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nbefore = '    if (d.get(\"TARGET\") or d.get(\"NEW_FILE\")) and not (d.get(\"実装の指示\") or []):'\nif s.count(before) != 1:\n    sys.exit(\"壊す相手の行がちょうど1か所ではない: \" + before)\nafter = '    if False:  # わざと外した（壊すプログラム b120）'\nopen(p, 'w', encoding='utf-8').write(s.replace(before, after, 1))\nPYEOF\n\nmeasure python3 \"$GEN\" --selftest\nfinish",
+  "根拠の抜き書き": ".claude/breaks/b72_acceptance_handwritten.sh:11「#   壊し方＝gen_acceptance.py の verify を、中身を1つも見ずに 0 を返す形にする」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": ".claude/breaks/b121_hook12_design_guard.sh",
+  "直す箇所": "新しいファイル",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: hook 12 が承認済みの設計書の TARGET を守る処理を外すと、当てる道具の自己テスト T31 が落ちた\n# EXPECT_MSG: hook 12 T31\n# b121 — enforce_audit_fix.py の pending の「承認済みの設計書に実装の指示が在れば TARGET を守る」を外すと、自己テストが落ちるか\n#   守っているもの＝設計書 point2-design-to-impl-20260930 の W-4（実装 15）\n#   なぜ要るか＝W-4 には完成の条件の行も壊すプログラムも無かった（監査 cp53 の Q6）\nsource \"$(dirname \"$0\")/lib.sh\"\n\nHOOK=\"$ROOT/.claude/hooks/enforce_audit_fix.py\"\nguard \"$HOOK\"\n\npython3 - \"$HOOK\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nbefore = '        if a.approved_ok(a.DESIGN)[0] and a.read_design_fixes(dtext):'\nif s.count(before) != 1:\n    sys.exit(\"壊す相手の行がちょうど1か所ではない: \" + before)\nafter = '        if False:  # わざと外した（壊すプログラム b121）'\nopen(p, 'w', encoding='utf-8').write(s.replace(before, after, 1))\nPYEOF\n\nmeasure python3 \"$ROOT/.claude/tools/apply_audit_fix.py\" --selftest\nfinish",
+  "根拠の抜き書き": ".claude/hooks/enforce_audit_fix.py:82「if a.approved_ok(a.DESIGN)[0] and a.read_design_fixes(dtext):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "repo_path（まだ無いファイルの置き場）",
+  "直す前の文字": "    cand = os.path.join(ROOT, p)\n    if os.path.exists(cand):\n        return cand\n    return os.path.join(SDK, p)",
+  "種類": "直した後の文字",
+  "中身": "    cand = os.path.join(ROOT, p)\n    if os.path.exists(cand):\n        return cand\n    # ★2026-09-30（工事 cp53-fix-20260930）＝まだ無いファイル（新しく作るファイル）は、置き場のフォルダが直下にだけ在れば直下にする\n    #   （直す前は SDK 側に回り、.claude/breaks の新しい壊すプログラムを守りの仕組みと見て飛ばした）\n    sdk = os.path.join(SDK, p)\n    if os.path.isdir(os.path.dirname(cand)) and not os.path.isdir(os.path.dirname(sdk)):\n        return cand\n    return sdk",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:112「return os.path.join(SDK, p)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "selftest の T31 の後（T32＝まだ無い壊すプログラムの置き場）",
+  "直す前の文字": "            if in31 and not out31:\n                ok += 1\n                print(f\"   T{total} 承認済みの設計書の TARGET は hook 12 が守る（承認が外れたら守らない） → pass\")\n            else:\n                fails.append(f\"❌ hook 12 T{total}: 承認中={in31} 承認が外れた後={out31}\")",
+  "種類": "直した後の文字",
+  "中身": "            if in31 and not out31:\n                ok += 1\n                print(f\"   T{total} 承認済みの設計書の TARGET は hook 12 が守る（承認が外れたら守らない） → pass\")\n            else:\n                fails.append(f\"❌ hook 12 T{total}: 承認中={in31} 承認が外れた後={out31}\")\n\n            # T32（2026-09-30・工事 cp53-fix-20260930）＝まだ無いファイルは、置き場のフォルダが直下にだけ在れば直下にする\n            #   （T27 は置き場を一時フォルダにしたので、本物の置き場 .claude/breaks の新しいファイルを試していなかった）\n            total += 1\n            p32 = repo_path(\".claude/breaks/zz_not_yet_made.sh\")\n            if p32 == os.path.join(ROOT, \".claude/breaks/zz_not_yet_made.sh\"):\n                ok += 1\n                print(f\"   T{total} まだ無い壊すプログラムの置き場は直下の .claude/breaks → pass\")\n            else:\n                fails.append(f\"❌ 置き場 T{total}: まだ無いファイルが直下にならない（{p32}）\")",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:1277「if in31 and not out31:」",
+  "状態": "確定"
+ }
+]
+```
+
+**設計書の手書きの所**＝§1 概要・3-2・4-19 は、私が やることの表.md で「2回」に直し、3-1 に上の反対の材料を1行 足します。工事のフォルダは承認で ratchet の下に移っています（コマンドの出力）。私の書き込みが止められたら、まこさんに写しの cp を1回 お願いします。
+
+**このターンで書いたファイル**
+
+- session_worklog_20260930.md＝§46 に、起きたこと・原因・写しの結果を書いた。
+- session_todo.md＝【止まっているもの】と【次】を、この案の OK 待ちに直した（session_todo_posted も作り直した）。
+- 一時の道具＝.claude/state/_cp53_apply_probe.py・_cp53_fix5_probe.py・_cp53_fix5_items.json・_cp53_items6_probe.py・_cp53_items6.json（本物のファイルは書かない）。写しの _cp53_apply_copy_probe.py も作った。

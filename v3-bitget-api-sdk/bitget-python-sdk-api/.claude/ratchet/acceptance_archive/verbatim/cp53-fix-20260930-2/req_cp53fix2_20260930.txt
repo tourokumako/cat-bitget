@@ -1,0 +1,197 @@
+
+
+<pasted_content id="af59">
+受け取り方は「指示」、範囲は依頼書 cp53 の Q1〜Q6 と外部検索1回です。監査は Plan agent に行わせました。以下はその結果で、私が数字を測り直してはいません。
+
+1. 結論：CONDITIONAL-GO
+2a3aef8 の3本に 4-20 の19件を書いてある順に当てると、e7fda20 の3本と1文字も違いませんでした（3本とも diff が空）。4-20 のどの件にも当たらない行は0行です。
+ただし、当てた記録で「当てた」になっているのは19件中2件（件15・16）だけです。残りの17件は「もう当て終わっていた」なので、17件を道具が当てたことを記録からは言えません。
+完成の条件の4行目にある壊すプログラム b72 は、今回足した「4-20 が0件なら止める」検査を壊していません。
+依頼書の誤り：設計書の2つの版の名前が逆に書かれていました。実測の sha256 は次のとおりです。
+
+.01.md＝24dbce…（1回目の承認の版）
+.md＝c9cb…（2回目の承認の版。いまの acceptance.md と同じ）
+「c9cb＝2回目＝いまの acceptance.md と同じ」という中身は正しく、ファイル名だけが逆です。
+
+手順を変えたところ：python3 -・awk・printf などは土台ゲート（require_acceptance_before_impl.sh）に止められました。そのため /tmp にはファイルを置いていません。代わりに sed・git show・diff をつないで組み立て、照らしました。
+
+2. Q1〜Q6 の答え
+Q1　当てた結果は1文字も同じか：同じ（実測）
+
+件数は19件です。grep -c "^#### 実装 " の結果は、2つの版とも19でした。
+当て方は、当てる道具の apply_one（e7fda20 の 558〜563行）の置き替えの意味に合わせました。
+各件の「直す前の文字」が 2a3aef8 の実物にちょうど1か所だけ在ることを、19件とも確かめました。
+組み立てた結果と e7fda20 の比較は、3本とも「1文字も違わない」でした。
+4-20 の節（229〜727行）は、2つの版で sha256 が同じでした（40163a81…）。
+apply_one の中身は、古い道具と新しい道具で1字も同じです。そのため、2回に分けて当てても結果は同じになります。
+Q2　4-20 に当たらない行：無い（実測）
+
+git diff --stat の結果は「196 insertions, 19 deletions」で、全部が19件で説明できます。
+2a3aef8..e7fda20 の間の commit は e7fda20 の1本だけです。
+範囲の外で1つ見つけました。作業場の gen_audit_docs.py が、commit の後に変わっています（_impl_evidence を足したもの）。当てる道具が読む部分には触れていないので、今回の照合には影響しません。
+Q3　記録に19件が「当てた」で入っているか：いいえ（実測）
+
+記録の行は19件で、番号と対象のファイルは 4-20 と全部合っています。
+ただし「当てた」は件15・16だけで、残り17件は「もう当て終わっていた」です。
+19行とも時刻は 15:28:31 で、2回目に打った分しか記録に入っていません。
+原因は、1回目に打った古い道具が、設計書の道では記録を書かない作りだったことです（2a3aef8:742「if not design_mode:」）。
+中身が 4-20 と同じことは Q1 で確かめたので、中身の正しさには影響しません。ただし worklog の377行目「19件」という書き方は誤解を招きます（修正4）。
+Q4　2つの版の 4-20 は同じか：同じ（実測）
+
+4-20 の外で違うのは、2-1 の測った結果、7-7 の関数の一覧（new_file_check・design_key の行番号、20件→22件）、SPEC だけです。どれも実装には影響しません。
+「実装の前の関数の一覧」を実装の後の実物に合わせたことは、名前の意味としては不自然です。ただ、実装の前の姿は .01.md と .01.diff.txt に残っており、チェックリストの決まりにも沿っています。そのため許せる範囲と見ます（推測）。
+Q5　要件 W-1〜W-5 を満たすか：満たす（実測）
+
+要件	満たす件
+W-1 新しいファイルを作る	3・4・5・6・8・14
+W-2 hook と壊すプログラムにも当てる	1・2・12・13・14
+W-3 当てた記録と当て済みの扱い	3・7・9・10・11・14
+W-4 hook 12 が手の直しを止める	15・16・14
+W-5 4-20 が0件なら止める	17・18・19
+要件に在って 4-20 に無いもの、4-20 に在って要件に無いものは、どちらも0件です。
+やることの表.md の58行目「hook 12（enforce_audit_fix.py）は直さない」が、後から足した W-4 と食い違ったまま残っています。承認済みの控えなので、直す指示にはしていません（Minor）。
+Q6　完成の条件の ✅済 は成り立つか：自己テストは成り立つ。4行目の壊すプログラムに穴がある
+
+apply_audit_fix.py --selftest の結果は「✅ selftest 31/31 pass」でした（T26〜T31 を含む）。
+gen_acceptance.py --selftest の結果は「✅ selftest 17/17 pass」でした（T12「4-20 が0件だと止まる」を含む）。
+自己テストの後、applied_fixes.json の sha256 は e7fda20 と同じままでした。本物の記録には書いていません。
+壊すプログラム b118・b102・b101・b72 は、ファイルを書き替えるので走らせていません。.breaks.json の記録では4本とも match=true です。
+b72 は「verify を、中身を1つも見ずに 0 を返す形にする」ものです。つまり件17（4-20 が0件なら止める）を壊していません。
+W-4（hook 12）にも、完成の条件の行と壊すプログラムがありません。
+hook 12 には --selftest が無く、--try だけです。
+外部検索（1回）：git apply は、当てる前に --check で全部確かめ、当てるときは「全部当てるか、1つも当てないか」のどちらかにします。また、差分の index 行（blob のハッシュ）で当てる前の版を名指しします。今回の工事への示唆は次のとおりです。道具が自分自身を直す工事では、当てる直前と直後の3本の blob ハッシュを控えに書き、「前は 2a3aef8 の blob、後は 4-20 から組み立てた blob」と照らすとよいです。そうすれば、どの手順で当てたかを機械で言えます。
+
+3. 直すもの
+修正1〜3は、いま承認されている設計書の TARGET か、守りの置き場が相手です。hook 12 が手の直しを止めるので、次の設計書の【4-20】に入れて、当てる道具で当てる形になります。
+
+修正 1
+対象のファイル: .claude/tools/apply_audit_fix.py
+直す箇所: tool_target_ok の docstring
+直す前の文字:
+
+
+    """道具のファイル（TOOLS_DIR の .py）に当ててよいか。
+
+    ①承認の印と設計書のハッシュ値が合う ②そのファイルが設計書の TARGET か NEW_FILE に在る、の両方のときだけ真。
+    hook・壊すプログラム・承認の印・凍結の記録・settings に当たる名前なら、いつも偽（設計書 3-1 の1）。
+直した後の文字:
+
+
+    """道具のファイル（TOOLS_DIR の .py）・hook（HOOKS_DIR の .py・.sh）・壊すプログラム（BREAKS_DIR の .sh）に当ててよいか。
+
+    ①承認の印と設計書のハッシュ値が合う ②そのファイルが設計書の TARGET か NEW_FILE に在る、の両方のときだけ真。
+    承認の印・凍結の記録・settings に当たる名前なら、いつも偽（設計書 3-1 の1。hook と壊すプログラムは point2-design-to-impl-20260930 で当てる相手に入れた）。
+根拠の抜き書き: .claude/tools/apply_audit_fix.py:216「    hook・壊すプログラム・承認の印・凍結の記録・settings に当たる名前なら、いつも偽（設計書 3-1 の1）。」
+状態: 確定
+重さ: Minor（件2 で広げた実際の動きと、説明が逆になっている）
+
+修正 2
+対象のファイル: .claude/breaks/b120_acceptance_impl_zero.sh
+直す箇所: 新しいファイル（完成の条件の4行目の壊すプログラムを、件17 を壊すものにする）
+直す前の文字:
+
+
+なし
+直した後の文字:
+
+
+#!/bin/bash
+# EXPECT_RC: 1
+# MEANS: 直すファイルが在るのに 4-20 が0件の設計書を止める検査を外すと、設計書の道具の自己テストが落ちた
+# EXPECT_MSG: 4-20 が0件でも書ける
+# b120 — gen_acceptance.py の page の「4-20 が0件なら止める」を外すと、自己テストが落ちるか
+#   守っているもの＝設計書 point2-design-to-impl-20260930 の W-5（実装 17）
+#   なぜ要るか＝完成の条件4行目の b72 は verify を壊すだけで、この検査を壊していなかった（監査 cp53 の Q6）
+#   期待＝壊すと「直すファイルが在るのに 4-20 が0件だと止まる」の場面が fail になり、終了コードが 1 になる
+source "$(dirname "$0")/lib.sh"
+
+GEN="$ROOT/.claude/tools/gen_acceptance.py"
+guard "$GEN"
+
+python3 - "$GEN" <<'PYEOF'
+import sys
+p = sys.argv[1]
+s = open(p, encoding='utf-8').read()
+before = '    if (d.get("TARGET") or d.get("NEW_FILE")) and not (d.get("実装の指示") or []):'
+if s.count(before) != 1:
+    sys.exit("壊す相手の行がちょうど1か所ではない: " + before)
+after = '    if False:  # わざと外した（壊すプログラム b120）'
+open(p, 'w', encoding='utf-8').write(s.replace(before, after, 1))
+PYEOF
+
+measure python3 "$GEN" --selftest
+finish
+根拠の抜き書き: .claude/breaks/b72_acceptance_handwritten.sh:11「#   壊し方＝gen_acceptance.py の verify を、中身を1つも見ずに 0 を返す形にする」
+状態: 確定
+重さ: Major（新しい設計書では、7-6 の4行目の壊すプログラムを b120 にする）
+
+修正 3
+対象のファイル: .claude/breaks/b121_hook12_design_guard.sh
+直す箇所: 新しいファイル（W-4 の守りを壊すと自己テストが落ちるかを確かめる）
+直す前の文字:
+
+
+なし
+直した後の文字:
+
+
+#!/bin/bash
+# EXPECT_RC: 1
+# MEANS: hook 12 が承認済みの設計書の TARGET を守る処理を外すと、当てる道具の自己テスト T31 が落ちた
+# EXPECT_MSG: hook 12 T31
+# b121 — enforce_audit_fix.py の pending の「承認済みの設計書に実装の指示が在れば TARGET を守る」を外すと、自己テストが落ちるか
+#   守っているもの＝設計書 point2-design-to-impl-20260930 の W-4（実装 15）
+#   なぜ要るか＝W-4 には完成の条件の行も壊すプログラムも無かった（監査 cp53 の Q6）
+source "$(dirname "$0")/lib.sh"
+
+HOOK="$ROOT/.claude/hooks/enforce_audit_fix.py"
+guard "$HOOK"
+
+python3 - "$HOOK" <<'PYEOF'
+import sys
+p = sys.argv[1]
+s = open(p, encoding='utf-8').read()
+before = '        if a.approved_ok(a.DESIGN)[0] and a.read_design_fixes(dtext):'
+if s.count(before) != 1:
+    sys.exit("壊す相手の行がちょうど1か所ではない: " + before)
+after = '        if False:  # わざと外した（壊すプログラム b121）'
+open(p, 'w', encoding='utf-8').write(s.replace(before, after, 1))
+PYEOF
+
+measure python3 "$ROOT/.claude/tools/apply_audit_fix.py" --selftest
+finish
+根拠の抜き書き: .claude/hooks/enforce_audit_fix.py:81「        if a.approved_ok(a.DESIGN)[0] and a.read_design_fixes(dtext):」
+状態: 確定
+重さ: Minor（壊すと T31 が落ちるという点は推測で、まだ走らせていない）
+
+修正 4
+対象のファイル: .claude/state/session_worklog_20260930.md
+直す箇所: §38 の「当てた結果」の行
+直す前の文字:
+
+
+当てた記録に「design:point2-design-to-impl-20260930」が19件。
+足す文字:
+
+
+（★内訳＝「当てた」は 15・16 の2件だけ。1〜14・17〜19 の17件は、1回目を打った古い道具が設計書の道では記録を書かない〔2a3aef8 の 742 行目 if not design_mode:〕ので1回目の記録が無く、2回目に「もう当て終わっていた」として入った。記録だけでは、17件を道具が当てたか手で書いたかを区別できない。中身が 4-20 と1文字も同じことは監査 cp53 の Q1 で確かめた）
+根拠の抜き書き: .claude/state/session_worklog_20260930.md:377「当てた記録に「design:point2-design-to-impl-20260930」が19件。私は3本に Edit で1行も書いていない。」
+状態: 確定
+重さ: Process
+
+修正2と修正3の注意：b120 と b121 は監査役が書いた案で、まだ1回も走らせていません。中で使う guard・measure・finish は、b72 と同じ lib.sh の関数を前提にしています。当てた後に一度走らせて、期待どおり落ちるかを確かめる必要があります。
+
+4. 重さごとの件数
+Critical＝0件
+Major＝1件（修正2）
+Minor＝2件（修正1・3）
+Process＝1件（修正4）
+指示の形にしていない所見が2つあります。
+
+依頼書の中で、2つの版の名前が逆に書かれていました。
+やることの表の58行目「hook 12 は直さない」が古いまま残っています。
+監査の決まりに従い、リポジトリのファイルは私も監査役も1つも書き替えていません。
+</pasted_content id="af59">
+
+
+OK

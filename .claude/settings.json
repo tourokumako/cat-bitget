@@ -50,6 +50,11 @@
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/show_design_check_after_write.sh",
             "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/forbid_guess_retry.sh post",
+            "timeout": 15
           }
         ]
       },
@@ -148,6 +153,11 @@
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/forbid_guess_retry.sh pre",
+            "timeout": 15
+          },
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_source_read_before_acceptance.sh"
@@ -427,7 +437,17 @@
           {
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_design_check_before_approval.sh",
-            "timeout": 120
+            "timeout": 600
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_trial_before_proposal.sh",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_full_check_before_handoff.sh",
+            "timeout": 60
           }
         ]
       }

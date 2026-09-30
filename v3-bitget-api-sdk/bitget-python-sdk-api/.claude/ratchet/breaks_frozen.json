@@ -28,6 +28,8 @@
  "b118_audit_fix_tools_target.sh": "4ce05148dd6d13c7ff4d0e01f0a86483126b26cc0c0e501df54c6f849b965776",
  "b119_audit_fix_command_allow.sh": "70ed1cce9d613bbbb8c6fd018ffb264be712c620ff69f1e528c2f55819fa711e",
  "b11_subagent.sh": "ee00fe490588e02cec1a7c50bcd965683ff56129dda1aa0ea8d8f1e3174eadc5",
+ "b120_acceptance_impl_zero.sh": "bd8c981f2d9e0de1fbec7b25ad5770d4791462ab85177f5e83fbe2a450a89fc6",
+ "b121_hook12_design_guard.sh": "2876a05dbe390282e563940b5831b71dd9784ea1a60b8c256e27897a6c4251b5",
  "b12_no_record.sh": "8cbf00458314feb72dc01580a342d3a67bed10654cf3c25ae599b0cea912bb7f",
  "b13_approve_by_cc.sh": "b2b9e95c9a908432767bdd8b1b80b7aebfbd6aab330786aefd2670169b24101a",
  "b14_breaks_tampered.sh": "14d55c2392fa07447dcd79f323289b5fc58a8bd19aca0505874e2d1da24e2681",

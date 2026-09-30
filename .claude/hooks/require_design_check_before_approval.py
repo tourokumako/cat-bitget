@@ -26,6 +26,12 @@
 #     A7 run_breaks.py --parse-only（:401 の入口＝表が読めるか・列がずれていないか）
 #     A8 表に載っている既存の壊すプログラムの宣言を expect_of で読む（:401＝159番の STOP）
 #     A10 完成の条件のコマンドが、SDK を作業場所にしても開けるか（:472 の _run＝cwd=SDK・L-614）
+#     A11 承認の後に打つ当てる道具（apply_audit_fix.py --design）が、実装の指示を全部 当てられるか
+#         （一時の承認の印で check_one を全件に掛ける・道具そのものを直す件が在れば、当てた写しで2回目も見る）
+#     A12 承認の後に起きること全部（当てる・完成の条件のコマンド・壊すプログラムの測り）を、本物のファイルに仮に当てて通し、
+#         控えから元に戻す（.claude/state/_a12_backup・ハッシュ値で照らす）。A1〜A11 が全部 通ったときだけ走らせる
+#     A13 設計書の中の事実（実装の指示の件数・工事名・触る関数・当てる道具を打つ回数）を道具が実物から数え、
+#         全部の節の文と照らす（古いまま残った節を、CC に語を選ばせずに見つける）
 #   B群＝時間がかかるので、その場では走らせない。やり取りの記録（harness が書く）に、
 #        設計書・壊すプログラム・TARGET より新しい実行の結果が在るかを見る。
 #     B1 表に載っている既存の壊すプログラムが、--measure-only で「✅ 期待どおり」だったか
@@ -227,6 +233,12 @@ def a9_contract_full(acc):
     finally:
         os.chdir(here)
     msgs = [m for m in msgs if "実装にその関数が無い" not in m]   # 実装の前として見ない（今までどおり）
+    # ★2026-09-30（worklog 20260930 §47・§48・まこさん指示「これ以上繰り返して時間を浪費しないでほしい」「改善しろ」）
+    #   ＝設計書から当てる道（4-20 に実装の指示が在る）では、承認の前に「設計書に書いたのに実装していない」も見ない。
+    #   直す前＝前の承認で一部だけ当たった差分が在ると、照合B が差分の関数と照らし、これから当てる関数
+    #   （repo_path・selftest）で止まった。当たるかどうかは A11 が当てる道具で確かめ、当てた後は設計↔実装ゲートが照らす。
+    if "<!-- ACC_IMPL_START" in md and "#### 実装 1" in md:
+        msgs = [m for m in msgs if "設計書に書いたのに実装していない" not in m]
     # ★2026-09-30（設計書 point1-one-way-20260930-3 の W-4）＝承認の瞬間に approve_impl.sh が作る
     #   「もう汚れていた .py」の一覧（<iter>.dirty.json）を、承認の前はこの場で同じ作り方で作り、
     #   照合A(双方向) からその一覧のファイルを外す（承認の後のゲートも外すので、承認で消える不足）。
@@ -260,6 +272,291 @@ def a10_cmd_cwd(md):
             bad.append(f"A10 完成の条件のコマンド `{cmd}` の {py} は直下からの相対＝承認のプログラムは"
                        "SDK を作業場所にして走らせるので開けず rc=2 になり、行が済にならない（L-614）")
     return bad
+
+
+def a11_apply_dry(acc):
+    """A11 承認の後に当てる道具（apply_audit_fix.py --design）が、設計書の実装の指示を全部 当てられるか。
+
+    ★2026-09-30（worklog 20260930 §46〜§48・まこさん指示「これ以上繰り返して時間を浪費しないでほしい」「改善しろ」
+      「なんで、強制で承認前のミスをさせないようにしてるのに、強制が効いてない？」）
+      ＝直す前は、この検査が承認のプログラムの止まり所しか見ず、承認の後に打つ当てる道具を1回も試していなかった。
+      工事 cp53-fix-20260930 は承認が通った後、当てる道具が新しい壊すプログラム2本を「守りの仕組み」で飛ばし、
+      作り直しと承認がもう1回 要った（原因＝repo_path がまだ無いファイルを SDK 側に回す）。
+    何をするか＝一時の承認の印（いまの設計書の sha256）を作り、当てる道具の check_one を全件に掛ける（何も書かない）。
+      当てる道具そのものを直す件が在れば、その件を当てた写しで2回目を見る（まこさんが道具を2回 打つ流れと同じ）。
+      2回目までに「当てられる」か「もう当て終わっている」にならない件を、不足として出す。
+    """
+    md = open(acc, encoding="utf-8").read()
+    if "<!-- ACC_IMPL_START" not in md or "#### 実装 1" not in md:
+        return []
+    import hashlib
+    import importlib.util
+    tool = ROOT + "/.claude/tools/apply_audit_fix.py"
+    tmp = tempfile.mkdtemp()
+
+    def load(path, name):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    try:
+        mark = os.path.join(tmp, "mark")
+        with open(mark, "w", encoding="utf-8") as fh:
+            fh.write(hashlib.sha256(open(acc, "rb").read()).hexdigest())
+        sys.path.insert(0, ROOT + "/.claude/tools")
+        a = load(tool, "_a11_apply_1")
+        fixes = a.read_design_fixes(md)
+        if not fixes:
+            return []
+
+        def sim(mod):
+            mod.DESIGN, mod.APPROVED = acc, mark
+            return [(f,) + tuple(mod.check_one(f, new_ok=True)[:2]) for f in fixes]
+
+        r1 = sim(a)
+        final = r1
+        self_fix = [f for f, ok, _w in r1
+                    if ok and os.path.realpath(a.repo_path(f["対象のファイル"])) == os.path.realpath(tool)]
+        if self_fix:
+            s = open(tool, encoding="utf-8").read()
+            for f in self_fix:
+                s, _how = a.apply_one(f, s)
+            copy = os.path.join(tmp, "apply_audit_fix.py")
+            with open(copy, "w", encoding="utf-8") as fh:
+                fh.write(s)
+            final = sim(load(copy, "_a11_apply_2"))
+        bad = []
+        for (f, ok1, w1), (_f, ok2, w2) in zip(r1, final):
+            if ok1 or ok2 or "もう当て終わっている" in w1 or "もう当て終わっている" in w2:
+                continue
+            bad.append(f"件{f['番号']}（{f['対象のファイル']}）: {w2}")
+    except Exception as e:                                   # noqa: BLE001
+        return [f"A11 当てる道具を承認済みの形で試せません（{e}）＝承認の後に当たらない件を先に見られない"]
+    finally:
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+    if not bad:
+        return []
+    return ["A11 承認の後に当てる道具を打っても、当たらない件が在る＝承認しても実装が終わらず、作り直しと承認が もう1回 要る:\n"
+            + _tail("\n".join(bad), 20)]
+
+
+def a13_facts(acc):
+    """A13 設計書の中の事実が、節ごとに食い違っていないか（古いまま残った節を、CC に語を選ばせずに見つける）。
+
+    ★2026-09-30（まこさん指示・逐語「一回の確認ですべて完全に修正できるように強制しろ」「矮小化するな」）
+      ＝工事 cp53-fix-20260930-2 で、差し替えた節の外に、古い件数（実装の指示4件）・古い工事名（design:cp53-fix-20260930）・
+      当てる道具を打つ回数（1回）・新しく触る関数の名前の抜け（repo_path）が9つの節に残り、CC が全行を読んで初めて見つけた。
+    何を照らすか（事実は道具が実物から数える）
+      ①実装の指示の件数＝4-20 の「#### 実装 N」の数。本文の「実装の指示 N件」「指示N件」がこれと違えば出す
+      ②工事名＝1行目の ARC の iter。本文の「design:<名前>」「iter=<名前>」「工事 <名前>」が、iter の頭と同じで iter と違えば出す
+      ③触る関数＝DESIGN_CONTRACT の impl_functions の名前。4-3（部品）と 7-5（照合）にその名前が無ければ出す
+      ④当てる道具を打つ回数＝実装の指示に当てる道具そのもの（apply_audit_fix.py）を直す件と新しいファイルの件が両方 在れば2回、
+        ほかは1回。本文の「当てる道具を N回」「端末で N回」がこれと違えば出す（「1回目」「1回 打つ」の順番の書き方は見ない）
+    限界＝この4つの事実しか見ない（ほかの事実の食い違いは全行を読む CC と まこさんの目）。
+    """
+    md = open(acc, encoding="utf-8").read()
+    if "<!-- ACC_IMPL_START" not in md:
+        return []
+    body = md.split("<!-- ACC_SOURCE_END -->", 1)[-1]
+    body_nospec = body.split("<!-- ACC_SPEC_START", 1)[0]
+    bad = []
+    n = len(re.findall(r"^#### 実装 \d+", md, re.M))
+    for m in re.finditer(r"(?:実装の)?指示\s?(\d+)\s?件", body_nospec):
+        if int(m.group(1)) != n:
+            ln = body_nospec[:m.start()].count("\n")
+            bad.append(f"実装の指示の件数が {m.group(1)} 件と書いてある（実物は {n} 件）: …{body_nospec[max(0, m.start()-30):m.end()+10].strip()}…")
+    mi = re.search(r'<!-- ARC iter="([^"]+)" -->', md)
+    it = mi.group(1) if mi else ""
+    head = re.sub(r"-\d+$", "", it)
+    # ★実装の指示の囲みの中（コードのコメントの経緯）は見ない
+    names_txt = body_nospec.split("<!-- ACC_IMPL_START", 1)[0] + body_nospec.split("<!-- ACC_IMPL_END -->", 1)[-1]
+    for m in re.finditer(r"(?:design:|iter=|工事\s?)([A-Za-z0-9][A-Za-z0-9._-]+)", names_txt):
+        nm = m.group(1).rstrip(".")
+        if it and nm != it and head and (nm == head or re.sub(r"-\d+$", "", nm) == head):
+            bad.append(f"工事名が古い（{nm}・いまは {it}）: …{names_txt[max(0, m.start()-30):m.end()+5].strip()}…")
+    try:
+        sys.path.insert(0, SDK + "/scripts/priority_rebuild")
+        import verify_design_contract as vdc                  # noqa: E402
+        c = vdc.extract_contract(md) or {}
+    except Exception:                                        # noqa: BLE001
+        c = {}
+    funcs = sorted({f for v in (c.get("impl_functions") or {}).values() for f in v})
+    sec = {}
+    for m in re.finditer(r"^### (\d-\d+[a-z]?|\d+) [^\n]*\n(.*?)(?=^### |^## |\Z)", body_nospec, re.M | re.S):
+        sec[m.group(1)] = m.group(2)
+    chk = body_nospec.split("<!-- ACC_CHECKLIST_START", 1)[-1].split("<!-- ACC_CHECKLIST_END", 1)[0] if "ACC_CHECKLIST_START" in body_nospec else ""
+    for f in funcs:
+        if f not in (sec.get("4-3") or ""):
+            bad.append(f"触る関数 {f}（DESIGN_CONTRACT の impl_functions）が 4-3 の部品の割り当てに無い")
+        if chk and f not in chk:
+            bad.append(f"触る関数 {f}（DESIGN_CONTRACT の impl_functions）が 7-5 の照合の答えに無い")
+    impl = md.split("<!-- ACC_IMPL_START", 1)[-1].split("<!-- ACC_IMPL_END", 1)[0]
+    self_fix = re.search(r"対象のファイル: \S*apply_audit_fix\.py", impl) is not None
+    new_file = re.search(r"直す前の文字:\n~~~\nなし\n~~~", impl) is not None
+    runs = 2 if (self_fix and new_file) else 1
+    for m in re.finditer(r"(?:当てる道具を|端末で)\s?(\d)\s?回(?!目)(?!\s?打つ)", body_nospec):
+        if int(m.group(1)) != runs:
+            bad.append(f"当てる道具を打つ回数が {m.group(1)} 回と書いてある（この設計書は {runs} 回）: …{body_nospec[max(0, m.start()-30):m.end()+10].strip()}…")
+    if not bad:
+        return []
+    return ["A13 設計書の中の事実が節ごとに食い違う（古いまま残った節）:\n" + _tail("\n".join(bad), 30)]
+
+
+BK_DIR = ROOT + "/.claude/state/_a12_backup"
+
+
+def _a12_restore():
+    """控えから元に戻す（途中で止まった前回の分も、始める前にここで戻す）。戻らなかったファイルを返す。"""
+    import hashlib
+    man = os.path.join(BK_DIR, "manifest.json")
+    if not os.path.isfile(man):
+        return []
+    bad = []
+    for e in json.load(open(man, encoding="utf-8")):
+        p = e["path"]
+        if e["existed"]:
+            data = open(os.path.join(BK_DIR, e["bak"]), "rb").read()
+            with open(p, "wb") as fh:
+                fh.write(data)
+            os.chmod(p, e["mode"])
+            if e.get("mtime"):
+                os.utime(p, (e["mtime"], e["mtime"]))      # ★書き替えた時刻も戻す（戻しただけで「検査の後に書き替えた」と見られないように）
+            if hashlib.sha256(open(p, "rb").read()).hexdigest() != e["sha"]:
+                bad.append(p)
+        elif os.path.exists(p):
+            os.remove(p)
+    import shutil
+    shutil.rmtree(BK_DIR, ignore_errors=True)
+    return bad
+
+
+def a12_post_approval_trial(acc):
+    """A12 承認の後に起きること全部を、承認の前に本物のファイルで仮に通し、元に戻す。
+
+    ★2026-09-30（まこさん指示・逐語「一回の確認ですべて完全に修正できるように強制しろ」
+      「承認後に修正が発生しないように、事前にミスが無いよう確認をしろ」「矮小化するな」）
+      ＝直す前は、承認の後に当てる道具を打ち、自己テストと壊すプログラムを走らせて、初めて穴が見つかった
+      （工事 cp53-fix-20260930＝承認の後に新しい壊すプログラム2本が作られず、作り直しと承認がもう1回 要った）。
+    何をするか＝①TARGET・NEW_FILE の中身を控え（.claude/state/_a12_backup）に写す
+      ②当てる道具の check_one と apply_one で、実装の指示を全部 本物のファイルに当てる
+        （当てる道具そのものを直す件が在れば、直った道具を読み直して2回目も当てる＝まこさんが2回 打つ流れと同じ）
+      ③完成の条件の全部の行のコマンドを、承認のプログラムと同じ作業場所（SDK）で走らせる
+      ④run_breaks.py --design <設計書> --measure-only で、表の壊すプログラムを全部 測る
+      ⑤控えから戻し、ハッシュ値で元どおりかを照らす（戻らなければ大きく出す）
+      当たらない件・落ちたコマンド・期待と違う壊すプログラムを、全部 一度に出す。
+    限界＝完成の条件と壊すプログラムが見る所しか見ない（中身の正しさは全行を読む CC とまこさんの目）。
+    """
+    md = open(acc, encoding="utf-8").read()
+    if "<!-- ACC_IMPL_START" not in md or "#### 実装 1" not in md:
+        return []
+    import hashlib
+    import importlib.util
+    import stat
+    left = _a12_restore()                                    # 前回が途中で止まっていたら先に戻す
+    if left:
+        return [f"A12 前回の仮当ての控えから戻せないファイルが在る（手で確かめる）: {left}"]
+    tool = ROOT + "/.claude/tools/apply_audit_fix.py"
+    bad = []
+    tmp = tempfile.mkdtemp()
+
+    def load(path, name):
+        spec = importlib.util.spec_from_file_location(name, path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    try:
+        sys.path.insert(0, ROOT + "/.claude/tools")
+        mark = os.path.join(tmp, "mark")
+        with open(mark, "w", encoding="utf-8") as fh:
+            fh.write(hashlib.sha256(open(acc, "rb").read()).hexdigest())
+        a = load(tool, "_a12_apply_1")
+        fixes = a.read_design_fixes(md)
+        os.makedirs(BK_DIR, exist_ok=True)
+        man = []
+
+        def keep(p):
+            """★書く直前に、その置き場を控えに足す（2026-09-30＝最初に置き場を決めて控えたら、直った道具が別の置き場に
+            書き、新しいファイル2本が戻らずに残った。書く道具が決めた置き場そのものを控える）。"""
+            p = os.path.realpath(p)
+            if any(e["path"] == p for e in man):
+                return
+            e = {"path": p, "existed": os.path.isfile(p), "bak": f"{len(man)}.bak", "mode": 0o644, "sha": ""}
+            if e["existed"]:
+                data = open(p, "rb").read()
+                open(os.path.join(BK_DIR, e["bak"]), "wb").write(data)
+                e["mode"] = stat.S_IMODE(os.stat(p).st_mode)
+                e["mtime"] = os.stat(p).st_mtime
+                e["sha"] = hashlib.sha256(data).hexdigest()
+            man.append(e)
+            with open(os.path.join(BK_DIR, "manifest.json"), "w", encoding="utf-8") as fh:
+                json.dump(man, fh, ensure_ascii=False)
+        done = set()
+        for rnd in (1, 2):
+            mod = a if rnd == 1 else load(tool, "_a12_apply_2")
+            mod.DESIGN, mod.APPROVED = acc, mark
+            changed_tool = False
+            for f in fixes:
+                if f["番号"] in done:
+                    continue
+                ok, why, cur = mod.check_one(f, new_ok=True)
+                if "もう当て終わっている" in why:
+                    done.add(f["番号"])
+                    continue
+                if not ok:
+                    continue
+                path = mod.repo_path(f["対象のファイル"])
+                keep(path)
+                if (f["直す前の文字"] or "").strip() == "なし":
+                    body = next(b for _a, k, b in f["4つ目"] if k == "直した後の文字")
+                    with open(path, "w", encoding="utf-8") as fh:
+                        fh.write(body.rstrip("\n") + "\n")
+                    if path.endswith(".sh"):
+                        os.chmod(path, 0o755)
+                else:
+                    new, _how = mod.apply_one(f, cur)
+                    with open(path, "w", encoding="utf-8") as fh:
+                        fh.write(new)
+                done.add(f["番号"])
+                changed_tool = changed_tool or os.path.realpath(path) == os.path.realpath(tool)
+            if rnd == 1 and not changed_tool:
+                break
+        for f in fixes:
+            if f["番号"] not in done:
+                bad.append(f"当てる道具を2回 打っても当たらない件＝件{f['番号']}（{f['対象のファイル']}）")
+        m = re.search(r"<!-- ACCEPT_TABLE_START -->(.*?)<!-- ACCEPT_TABLE_END -->", md, re.S)
+        for ln in (m.group(1).splitlines() if m else []):
+            cells = [c.strip() for c in ln.strip().strip("|").split("|")]
+            if len(cells) < 3 or not cells[0].isdigit():
+                continue
+            mc = re.search(r"`([^`]+)`", cells[2])
+            if not mc:
+                continue
+            try:
+                r = subprocess.run(mc.group(1), shell=True, capture_output=True, text=True, timeout=300, cwd=SDK)
+                if r.returncode != 0:
+                    bad.append(f"完成の条件 #{cells[0]} のコマンドが当てた後に落ちる（rc={r.returncode}）: {mc.group(1)}\n"
+                               + _tail((r.stdout or "") + (r.stderr or ""), 8))
+            except Exception as e:                           # noqa: BLE001
+                bad.append(f"完成の条件 #{cells[0]} のコマンドを走らせられない（{e}）")
+        rc, out = _run(["python3", RUNB, "--design", acc, "--measure-only"], timeout=900)
+        wrong = [l for l in (out or "").splitlines() if "期待と違う" in l or "まだ測れない" in l]
+        if rc not in (0,) or wrong:
+            bad.append(f"壊すプログラムが当てた後に期待どおりでない（rc={rc}）:\n" + _tail("\n".join(wrong) or out, 12))
+    except Exception as e:                                   # noqa: BLE001
+        bad.append(f"仮に当てて通す試しが途中で落ちた（{e}）")
+    finally:
+        left = _a12_restore()
+        import shutil
+        shutil.rmtree(tmp, ignore_errors=True)
+        if left:
+            bad.append(f"❗仮に当てたファイルを元に戻せない（手で確かめる）: {left}")
+    if not bad:
+        return []
+    return ["A12 承認の後に起きること（当てる・完成の条件のコマンド・壊すプログラム）を仮に通すと落ちる"
+            "＝このまま承認すると、承認の後に直しが要る:\n" + _tail("\n".join(bad), 40)]
 
 
 # ── B群（やり取りの記録を見る）──────────────────────────────────────
@@ -367,7 +664,11 @@ def check_all(acc=ACC, transcript=None, split=False):
     bad += a7_parse_only(acc)
     bad += a9_contract_full(acc)
     bad += a10_cmd_cwd(md)
+    bad += a11_apply_dry(acc)
+    bad += a13_facts(acc)
     b8, exist, rb = a8_expect(md)
+    if not bad and not b8:
+        bad += a12_post_approval_trial(acc)                  # 重いので、ほかが全部 通ったときだけ（出す不足は全部 一度に）
     bad += b8
     bad_b = b_runtime(md, exist, rb, transcript) if rb is not None else []
     return bad + bad_b if not split else (bad, bad_b)
