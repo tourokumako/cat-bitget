@@ -1,0 +1,421 @@
+# 【監査依頼】CP53 — 2点目＝設計書から実装を作る（実装の監査）
+
+## ⚠️ auditor 宣言 (本依頼書を開いた CC への指示・最優先・auto-load 上書き)
+
+**あなた = 本セッションで auditor として呼ばれた CC です** (= 起案 CC = メインセッション の CC とは別 process)。SessionStart hook で auto-load される CLAUDE.md / cc_role.md / lessons_active.md / MEMORY.md / phase_compliance_checklist.md 等は **本監査では参考のみ**。着手前必読は本依頼書の §着手前必読 15 件のみ。
+
+メインセッション CC (= 依頼書起案者) の判断バイアスを共有しないこと (同型バイアス回避・cc_role §1.4.5 改善 9)。
+
+### 即実行 (本依頼書を読了したら確認質問なしで以下を実施)
+
+1. 本依頼書全文を Read tool で view (機械的証跡: wc -l + 該当行引用)
+2. `Agent` tool で **Plan サブエージェント** (`subagent_type=Plan`) を **cold start 起動**:
+   - 本会話の context は渡さず、依頼書パス + 着手前必読ファイル名 + Q1-QN + 外部検索要請 のみ prompt として渡す
+   - Plan agent が依頼書を独立に Read して監査実施・所見を返却
+3. Plan agent 返却の所見を受けて、結果ファイルを次の順で書く（手で1から書かない）:
+   - 結果の骨組みを道具で作業場に作る: `python3 .claude/tools/gen_audit_docs.py result v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-30_point2_design_to_impl_20260930_impl_cp53_audit_request.md v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp53_work/cp53_result.md`
+   - 骨組みの「<監査が書く>」などの印を全部 埋める（見出しと並びは変えない）
+   - 食い違い0件を確かめる: `python3 .claude/tools/gen_audit_docs.py check v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-30_point2_design_to_impl_20260930_impl_cp53_audit_request.md <埋めた結果>` と `python3 .claude/tools/gen_audit_docs.py form <埋めた結果>`
+   - 埋めた結果の全文を、結果ファイル `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-30_point2_design_to_impl_20260930_impl_cp53_audit_report.md` に Write で1回だけ書く（hook 11 が同じ照らしを掛ける。書いた後は書き替えられない）
+4. メインセッションへの戻り報告:
+   - 結果ファイルパス
+   - Verdict 一行 (GO / CONDITIONAL-GO / NO-GO)
+   - 重さごとの件数 (Critical / Major / Minor / Process)
+
+### 禁止
+
+- 依頼書起案者 (メインセッション CC) への確認質問 (= 同型バイアス共有経路・本依頼書だけで完結する設計になっている)
+- auto-load された正本だけで監査着手 (= 着手前必読の独立 Read 省略)
+- 自分が main session か auditor session か再確認する質問 (本宣言が答え)
+- Plan agent を起動せず CC 自身で監査実施 (= 同型バイアス回避失敗)
+- 本物のファイルを書き替えること (写しは作業場 `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp53_work/` に作る。最後に `git status --short` で書き替えていないことを示す)
+
+### この監査の作業場
+
+**★この監査は「実装の監査」です。**あなたは必要なファイルを自分で開き、写しで走らせて確かめられます。開いて、走らせてください。
+
+**★本物のファイルを書き替えないでください。**写しは作業場 `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp53_work/` に作ってください。
+
+**★この依頼書は `gen_audit_docs.py request-design --work` が、設計書と工事のフォルダから作りました（CC は依頼書の文を書いていません）。**問いは、設計書のとおりに当てる道具が実装を作れているかを照らす、決まった6問（Q1〜Q6）です。
+
+### 例外 (Plan agent 起動を省略可能なケース)
+
+軽い意見聞き (Critical/Major 判断を伴わない確認程度) はメインセッション内で CC が直接回答可。本テンプレは CP 監査 (CP3.5 / CP4 / CP5 / CP6 等の大型監査) 用。
+
+---
+
+## 監査依頼メタ情報
+
+- 依頼日: 2026-09-30
+- 依頼者: CC（起案者）
+- 監査区分: 実装の監査
+- 監査対象タスク: （やることの番号なし）／設計書 point2-design-to-impl-20260930
+- 監査の相手と版: `.claude/state/acceptance.md` ／ ハッシュ値 c9cb68a499ff11a4803dad5cd4093bbcc05bd79b3bb893bda0afe5a6e470b8ac
+- 結果ファイル保存先: `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-30_point2_design_to_impl_20260930_impl_cp53_audit_report.md`
+- 入力ファイル保存先 (本依頼書): `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-30_point2_design_to_impl_20260930_impl_cp53_audit_request.md`
+- 設計書のハッシュ値: c9cb68a499ff11a4803dad5cd4093bbcc05bd79b3bb893bda0afe5a6e470b8ac
+
+---
+
+## この監査で答えてほしいこと
+
+### 結論を決める問い
+
+- **問い1**＝設計書の実装の指示（19 件）から、当てる道具が設計書のとおりに実装を作れているか（Q1〜Q6 で照らす）。実装が実装の指示と1文字でも違う・手で書いた行が在る・実装の指示が1件でも抜けていれば NO。
+
+(結論を決めるのは、この問いだけ。結果の「7. 総合判定」で、問いごとに YES / NO と根拠を書く)
+
+### 結論の決め方
+
+- **GO**＝問い1 が YES で、Critical が0件。
+- **CONDITIONAL-GO**＝問い1 が YES で、Critical が在る（直せば先に進める）。
+- **NO-GO**＝問い1 が NO。違う所を、設計書の実装の指示の番号と実物の行で示してください。
+
+### この監査の前提
+
+1. **乱数は禁止です**（恒久67番）。乱数を残す・足す形なら Critical にしてください。
+2. **CC は自分で「合っている」「動く」と判定していません**（恒久64番）。
+3. **修正の指示は、設計書の元（工事のフォルダ `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930`（やることの表.md と、まこさんが OK した案の逐語））に対して書いてください**（設計書はプログラムが作るので直接は書けない）。
+4. **監査は1つの工事につき1回です**（恒久65番）。どこまで直すかは、まこさんが結果ファイルを見て決めます。
+
+---
+
+## 監査依頼の経緯
+
+1. 設計書 `point2-design-to-impl-20260930`（2点目＝設計書から実装を作る）は、工事のフォルダ `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930`（やることの表.md と、まこさんが OK した案の逐語） から `gen_acceptance.py` が作りました。
+2. 設計のもと（やることの番号 無し・逐語のファイル point2-design-to-impl-20260930/ok_fix_point2_20260930・point2-design-to-impl-20260930/ok_point2_20260930・point2-design-to-impl-20260930/okd_fix_point2_20260930・point2-design-to-impl-20260930/okd_point2_20260930・point2-design-to-impl-20260930/req_point2_20260930・point2-design-to-impl-20260930/req_point2b_20260930）は、設計書の §0-1 に道具が写しました（CC は写していません）。逐語のファイルは `gen_verbatim.py` がやり取りの記録から抜き出したものです。
+3. この依頼書は `gen_audit_docs.py request-design --work` が、設計書と工事のフォルダから作りました（CC は依頼書の元データを書いていません）。
+4. 承認の印（`acceptance.approved`）は、いまの設計書の sha256 と同じです（同じでなければ、この依頼書は作れません）。
+5. 承認した版の設計書の控えは 2 本（`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/point2-design-to-impl-20260930.01.md`・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/point2-design-to-impl-20260930.md`）。当てる道具が当てた記録（`SDK/.claude/audits/applied_fixes.json` の名前 `design:point2-design-to-impl-20260930`）は 19 件。
+6. 実装の前＝commit 2a3aef8 ／ 実装の後＝commit e7fda20（承認の控えを入れた commit と、その親を git から読んだ）。
+
+---
+
+## 着手前必読 (省略禁止・auditor 用・15 件)
+
+**パスはリポジトリの根（`cat-bitget/`）からの相対です。**`SDK` ＝ `v3-bitget-api-sdk/bitget-python-sdk-api`。
+
+1. `.claude/state/acceptance.md` — 監査の相手（設計書・プログラムが作った）
+2. `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930/やることの表.md` — 設計書の元（やることの表＝手書きの5項目と割り当ての表）
+3. `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930/要件のまとめ.md` — 要件のまとめ（まこさんの逐語と OK された案）
+4. `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930/ok_fix_point2_20260930.txt` — まこさんの発言（逐語・gen_verbatim.py が記録から抜き出した）
+5. `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930/ok_point2_20260930.txt` — まこさんの発言（逐語・gen_verbatim.py が記録から抜き出した）
+6. `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930/okd_fix_point2_20260930.txt` — まこさんが OK した CC の文（逐語・gen_verbatim.py が記録から抜き出した）
+7. `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930/okd_point2_20260930.txt` — まこさんが OK した CC の文（逐語・gen_verbatim.py が記録から抜き出した）
+8. `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930/req_point2_20260930.txt` — まこさんの発言（逐語・gen_verbatim.py が記録から抜き出した）
+9. `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930/req_point2b_20260930.txt` — まこさんの発言（逐語・gen_verbatim.py が記録から抜き出した）
+10. `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/point2-design-to-impl-20260930.01.md` — 承認した版の設計書の控え（どの版の 4-20 で当てたかは Q4 で照らす）
+11. `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/point2-design-to-impl-20260930.md` — 承認した版の設計書の控え（どの版の 4-20 で当てたかは Q4 で照らす）
+12. `SDK/.claude/audits/applied_fixes.json` — 当てた記録（名前 design:point2-design-to-impl-20260930 の行）
+13. `.claude/tools/apply_audit_fix.py` — 直す相手
+14. `.claude/hooks/enforce_audit_fix.py` — 直す相手
+15. `.claude/tools/gen_acceptance.py` — 直す相手
+
+★直す相手になりうるファイルを必ず入れる (結果の「修正の指示」の「直す前の文字」を、監査が実物から写すため)。プログラムが作る文書 (設計書など) を監査するときは、その元データ (設計書なら `acceptance_src.json`) も入れる。
+
+---
+
+## 大目的 (不変・基準の味方として絶対遵守)
+
+**月次 NET ≥ $1,900 全 12 ヶ月クリア達成** (cc_role §1.0)
+
+⚠️ 本監査スコープ = 設計書 `point2-design-to-impl-20260930` の実装の指示のとおりに、当てる道具が実装を作れているか（設計書と実装の照合）。守りの穴探し（すり抜けの道を新しく探すこと）は対象外（探すたびに新しい穴が出て終わらないため・恒久の決まり65番。穴は作業が実際に止まったときに直す）。
+
+この監査の相手は、売買のロジックに触らない道具の直しです（直す相手 TARGET に scripts/priority_rebuild も engine_tuner も無い）。
+
+---
+
+## 監査対象の事実データ
+
+### 設計書の実装の指示の一覧（4-20・当てる道具が当てる相手）
+
+| 番号 | 対象のファイル | 直す箇所 | 種類 |
+|---|---|---|---|
+| 1 | `.claude/tools/apply_audit_fix.py` | TOOLS_DIR の定義 | 足す文字 |
+| 2 | `.claude/tools/apply_audit_fix.py` | tool_target_ok | 直した後の文字 |
+| 3 | `.claude/tools/apply_audit_fix.py` | check_one の前 | 直した後の文字 |
+| 4 | `.claude/tools/apply_audit_fix.py` | check_one の中（実在の確かめの前） | 直した後の文字 |
+| 5 | `.claude/tools/apply_audit_fix.py` | main の全件の確かめ | 直した後の文字 |
+| 6 | `.claude/tools/apply_audit_fix.py` | main の当てる前の組み立て | 直した後の文字 |
+| 7 | `.claude/tools/apply_audit_fix.py` | main の --dry の終わり | 直した後の文字 |
+| 8 | `.claude/tools/apply_audit_fix.py` | main の書き込み（権限） | 直した後の文字 |
+| 9 | `.claude/tools/apply_audit_fix.py` | main の当てた記録と終了コード | 直した後の文字 |
+| 10 | `.claude/tools/apply_audit_fix.py` | selftest の一時の置き場 | 直した後の文字 |
+| 11 | `.claude/tools/apply_audit_fix.py` | selftest の終わりの片付け | 直した後の文字 |
+| 12 | `.claude/tools/apply_audit_fix.py` | selftest の置き場の差し替え | 直した後の文字 |
+| 13 | `.claude/tools/apply_audit_fix.py` | selftest の置き場を戻す | 直した後の文字 |
+| 14 | `.claude/tools/apply_audit_fix.py` | selftest の T25 の後 | 足す文字 |
+| 15 | `.claude/hooks/enforce_audit_fix.py` | pending の頭 | 足す文字 |
+| 16 | `.claude/hooks/enforce_audit_fix.py` | main の案内の文 | 直した後の文字 |
+| 17 | `.claude/tools/gen_acceptance.py` | page の検査 | 直した後の文字 |
+| 18 | `.claude/tools/gen_acceptance.py` | _sample_work の非該当の一覧 | 直した後の文字 |
+| 19 | `.claude/tools/gen_acceptance.py` | selftest の T12 の前 | 直した後の文字 |
+
+### 当てた記録（applied_fixes.json の名前 design:point2-design-to-impl-20260930）
+
+| 番号 | 対象のファイル | 当て方 | 時刻 |
+|---|---|---|---|
+| 15 | `.claude/hooks/enforce_audit_fix.py` | 当てた | 2026-09-30T15:28:31 |
+| 16 | `.claude/hooks/enforce_audit_fix.py` | 当てた | 2026-09-30T15:28:31 |
+| 1 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 2 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 3 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 4 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 5 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 6 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 7 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 8 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 9 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 10 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 11 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 12 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 13 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 14 | `.claude/tools/apply_audit_fix.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 17 | `.claude/tools/gen_acceptance.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 18 | `.claude/tools/gen_acceptance.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+| 19 | `.claude/tools/gen_acceptance.py` | もう当て終わっていた | 2026-09-30T15:28:31 |
+
+---
+
+## 監査スコープ
+
+### 監査対象 (本監査内)
+
+- Q1：実装の指示を当てた結果が、実装の後と1文字も同じか
+- Q2：実装の指示のどれにも当たらない行（手で書いた疑い）が無いか
+- Q3：当てた記録が、実装の指示の全部と1件ずつ合うか
+- Q4：承認した版の設計書どうしで、実装の指示が同じか
+- Q5：実装の指示が、やることの表の要件を全部 満たすか
+- Q6：完成の条件が、実装の後に本当に成り立つか
+
+### 監査対象外 (現時点で判定不可能 or 別監査スコープ)
+
+- 守りの穴探し（すり抜けの道を新しく探すこと）＝探すたびに新しい穴が出て終わらない（恒久の決まり65番）。穴は作業が実際に止まったときに直す
+- hook 12 の、監査結果の道の直しはしない（監査結果から実装を直すのは5点目の相手。この工事で足すのは設計書の道の分だけ）
+- コードの中身を道具が作る形にはしない（道具がするのは、設計書に書いたコードを実物に書き写すことだけ。中身は案の【4-20】に CC が書き、まこさんの OK・写しで走らせた自己テスト・監査で確かめる）
+- 設計↔実装ゲートを直さない（当てる道具そのものを直す工事でだけ止まる。承認の後に まこさんの端末で当てる道具を2回 打っていただいて進める）
+- 監査結果の道（--report）で新しいファイルを作らない（監査結果から直すのは4点目・5点目の相手）
+
+---
+
+## 監査観点 (一般・auditor_template ①〜⑦)
+
+- ①統計学的妥当性
+- ②リスク管理
+- ③認知バイアス
+- ④ソフトウェア工学
+- ⑤再現性
+- ⑥実行プロセス
+- ⑦主エージェントバイアス
+
+---
+
+## 監査観点 (本監査固有・Q1-QN)
+
+★問いごとに優先度を付ける＝A（結論を変える）／B（実装の前に直す）／C（完成の測り方以外の書き漏れ）／D（結論に効かせない）。結果の所見は、この問いの番号をそのまま見出しにし、優先度の順に書く。時間が足りずに省いた問いは、結果にその番号を書く。
+
+### Q1 — 実装の指示を当てた結果が、実装の後と1文字も同じか（優先度 A）
+
+**優先度の理由**＝違えば、実装は設計書のとおりに作られていない（自動生成の目的が崩れる）
+
+実装の前（commit 2a3aef8）の対象のファイル（`.claude/hooks/enforce_audit_fix.py`・`.claude/tools/apply_audit_fix.py`・`.claude/tools/gen_acceptance.py`）に、設計書 4-20 の実装の指示（19 件）を番号の順に当てた結果が、実装の後（commit e7fda20）と1文字も同じか。確かめ方の例＝作業場に git show で実装の前のファイルを出し、直す前の文字を直した後の文字（足す文字なら直す前の文字＋足す文字）に置き替えて、実装の後と diff を取る。
+
+### Q2 — 実装の指示のどれにも当たらない行（手で書いた疑い）が無いか（優先度 A）
+
+**優先度の理由**＝在れば、道具でなく人が書いた実装が混ざっている
+
+実装の前（commit 2a3aef8）と実装の後（commit e7fda20）の差分（`.claude/hooks/enforce_audit_fix.py`・`.claude/tools/apply_audit_fix.py`・`.claude/tools/gen_acceptance.py`）のうち、実装の指示のどれにも当たらない行は在るか。在れば全部 挙げる。
+
+### Q3 — 当てた記録が、実装の指示の全部と1件ずつ合うか（優先度 A）
+
+**優先度の理由**＝合わなければ、どの件を道具が当てたかを後から確かめられない
+
+当てた記録（`SDK/.claude/audits/applied_fixes.json` の名前 `design:point2-design-to-impl-20260930`）が、実装の指示の 19 件と1件ずつ（番号・対象のファイル）合うか。「当てた」か「もう当て終わっていた」のどちらでも入っていない件は在るか。「もう当て終わっていた」の件は、どの実行で当たったか（当てる道具の出力・git の差分）で確かめる。
+
+### Q4 — 承認した版の設計書どうしで、実装の指示が同じか（優先度 B）
+
+**優先度の理由**＝当てた版と、いまの版の実装の指示が違えば、どちらの版のとおりかが決まらない
+
+承認した版の設計書の控え（`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/point2-design-to-impl-20260930.01.md`・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/point2-design-to-impl-20260930.md`）と、いまの設計書の 4-20 の実装の指示は同じか。違えば、違いが実装に影響するか。
+
+### Q5 — 実装の指示が、やることの表の要件を全部 満たすか（優先度 B）
+
+**優先度の理由**＝要件に在るのに実装の指示に無ければ、設計書のとおりに作れても依頼が満たされない
+
+実装の指示は、やることの表（`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point2-design-to-impl-20260930/やることの表.md`）の一覧の要件を全部 満たすか。要件に在るのに実装の指示に無いもの・実装の指示に在るのに要件に無いものは在るか。
+
+### Q6 — 完成の条件が、実装の後に本当に成り立つか（優先度 B）
+
+**優先度の理由**＝成り立たなければ、承認のときの「済」が根拠にならない
+
+設計書の完成の条件（4 行）が、実装の後に本当に成り立つか。各行のコマンドを作業場か読むだけの形で走らせる: `python3 ../../.claude/tools/apply_audit_fix.py --selftest`・`python3 ../../.claude/tools/gen_acceptance.py --selftest`
+
+---
+
+## 外部検索要請 (必須・WebSearch / WebFetch ツール使用)
+
+`.claude/memory/technical_analysis_knowledge_base.md` 等の内部知識に閉じない。auditor は以下の **外部検索を必ず実施** すること。ChatGPT 等の外部 AI 使用不可 (まこさん課金外)。
+
+件数: 2 件 (結果の外部検索は、この件数の検索対象に1つずつ答える)
+
+### 検索対象
+
+1. **変更の一括適用で、全件を先に確かめてから書くやり方**:
+   - クエリ案: パッチを当てる道具（git apply など）が、全部の差分が当たるかを先に確かめ、1件でも合わなければ1バイトも書かないやり方を調べる（私の導出）
+   - 期待発見: URL と、使った逐語（無ければ「見つからなかった」と書く）
+2. **新しいファイルを作る差分の扱い**:
+   - クエリ案: パッチの形式で、新しいファイルを作る差分（元が空）と、既に在るファイルとぶつかったときの扱いを調べる（私の導出）
+   - 期待発見: URL と、使った逐語（無ければ「見つからなかった」と書く）
+
+---
+
+## 依頼を出した CC の自己申告
+
+1. **塞げないもの**＝当てた後のコードが正しいか：見ない。道具は設計書に書いた文字をそのまま入れる。正しさは自己テスト・監査・まこさんの目が見る
+2. **塞げないもの**＝コードの中身を誰が書くか：案の【4-20】に CC が書く。道具で作ることはできない
+3. **塞げないもの**＝承認済みの設計書が無いときの手の直し：hook 12 は、承認済みの設計書に実装の指示が在る間だけ止める。承認の要らない hook と道具（gen_ の名前）は、設計書が無ければ止めない
+4. **塞げないもの**＝Q5 の1＝完成の条件の数が合っていれば、中身も正しいか：見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります
+5. **塞げないもの**＝Q5 の2＝見出しの列の数が正しいか：見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います
+6. **塞げないもの**＝Q5 の3＝表が2つ以上 在るとき：プログラムが読む目印の中の表だけを見ます。ほかの表は見ません
+7. **塞げないもの**＝Q5 の4＝この設計書を作る道具を書き換えられたら：その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります）
+8. **塞げないもの**＝Q5 の5＝過去の設計書の控え：直せません（承認の後は凍結されているため）
+9. **測っていない見積もり**＝自己テスト（1分以内・当てた後の写しで走らせて、待ち時間なく終わった（秒は測っていない））
+
+(結果は、この番号ごとに1件ずつ答える)
+
+---
+
+## 結果ファイルフォーマット (auditor 用)
+
+`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/2026-09-30_point2_design_to_impl_20260930_impl_cp53_audit_report.md` に、次の 11 節をこの順で出力する。★節の名前と並びは変えない。どの種類の監査でも同じ。
+
+| # | 結果の節 | 依頼書の対応する項目 |
+|---|---|---|
+| 1 | **監査の相手と版**（依頼書のパス・監査の相手・ハッシュ値を照らした結果・実施日） | 監査依頼メタ情報 |
+| 2 | **監査対象の型宣言**（数値型・コード型・文書型のうち該当するもの全部） | —（結果だけ） |
+| 3 | **監査対象の事実データの確認**（依頼書の事実データを、自分で確かめた結果） | 監査対象の事実データ |
+| 4 | **所見**（依頼書の問いの番号をそのまま見出しにし、依頼書の優先度の順に書く。一般の観点 ①〜⑦ は PASS / FAIL。各所見の末尾に、対応する修正の番号を書く。直し方の文は書かない。省いた問いは番号を書く） | 監査観点（一般・本監査固有）と優先度 |
+| 5 | **外部検索**（依頼書の件数の検索対象に1つずつ・URL と逐語） | 外部検索要請 |
+| 6 | **依頼を出した CC の自己申告への答え**（依頼書の番号ごとに1件ずつ） | 依頼を出した CC の自己申告 |
+| 7 | **総合判定**（結論を決める問いへの答え〔問いごとに YES / NO と根拠〕・下の「結論の決め方」の3つのどれか・重さごとの件数） | この監査で答えてほしいこと・auditor 宣言の戻り報告 |
+| 8 | **修正の指示**（下の「修正の指示の書き方」の形だけで書く。重さは Critical・Major・Minor） | 着手前必読（直す相手のファイル） |
+| 9 | **CC プロセス欠陥対策**（下の「修正の指示の書き方」の形だけで書く。重さは Process） | —（結果だけ） |
+| 10 | **開いたファイルと行・走らせたコマンドと結果と秒数・走らせられなかったものと理由** | 着手前必読 |
+| 11 | **本物のファイルを書き替えていないこと**（`git status --short` の出力） | auditor 宣言の禁止（本物を書き替えない） |
+
+依頼書だけの項目＝監査依頼の経緯・この監査の前提・この監査の作業場・大目的・監査スコープ・必ず守ること。
+
+### 結論の決め方
+
+依頼書の「この監査で答えてほしいこと」に結論の決め方が在れば、それを使う。無ければ次の3つ。
+
+- **GO**＝Critical が0件。
+- **CONDITIONAL-GO**＝Critical が在る。直せば先に進める。
+- **NO-GO**＝直し方の向きが違う。何が違うかを、4 の所見で、指摘の文と実物の行で示す。
+
+### 重さの決め方
+
+- **Critical**＝結論を変える。
+- **Major**＝直すべきだが、結論は変えない。
+- **Minor**＝結論に効かせない（前の「別枠」もここに入れる）。
+- **Process**＝CC の進め方の欠陥。9 に書く。
+
+### 修正の指示の書き方（★この形以外では書けない）
+
+- **目的**：監査が書いた修正方法のとおりに、CC の改ざん・虚偽・矮小化・不正を通さずに直すため。
+- **監査の種類**：設計書の内容確認、設計書どおりに実装できているかの確認など、どの種類の監査でも同じ欄で書く。
+- **直す相手**：設計書・コード・実装データ（設定・json・法則ファイルなど）・文書・走らせるコマンドなど。どの相手の直しも同じ欄で書く。
+- **直し方**：どの修正指示も、プログラムがそのまま実行できる形で書く。プログラムが欄のとおりに直しを当てる。CC は文も数も打たない。
+- **直す範囲**：まこさんが結果ファイルを見て決める（Critical だけか、Major もか、Minor もか）。そのため修正は、重さの見出し（「### Critical」「### Major」「### Minor」「### Process」）の下に並べる。Process は 9 に書く。
+- **所見との結び付き**：修正の番号は、4 の所見の末尾に書いた番号と同じにする。所見の無い修正は書かない。所見に書いた修正の番号は、必ず 8 か 9 に在るようにする。
+
+1件は次の形で書く。
+
+```text
+### Critical
+
+#### 修正 <番号>
+対象のファイル: <リポジトリの中のパス>
+直す箇所: <監査が読んだ時点の行番号の範囲>
+直す前の文字:
+~~~
+<実物から1文字も変えずに写す>
+~~~
+直した後の文字:
+~~~
+<そのまま当てられる全文>
+~~~
+根拠の抜き書き: <ファイル名>:<行番号>「<その行の逐語>」
+状態: <確定 / 未決 / 案が複数 のどれか>
+```
+
+**欄の決まり（6つ）**
+
+1. **対象のファイル**：直すファイルを1つだけ書く。プログラムが作る文書（設計書など）は書けない。その文書の元データの直し1件と、作り直すコマンド1件の2件に分けて書く。作り直すコマンドの件は、元データを直す件と同じ重さの見出しの中で、その件のすぐ後ろに書く。
+2. **直す箇所**：監査が読んだ時点の行番号の範囲。走らせるコマンドのときは「なし」。
+3. **直す前の文字**：対象のファイルの中で1か所だけに当たる文字を、実物から写す。新しいファイルを作るときと、走らせるコマンドのときは「なし」。
+4. **直した後の文字**：見出しを次の4つから1つ選ぶ。
+   - **直した後の文字**：直す前の文字を、この全文に置き換える。
+   - **足す文字**：直す前の文字のすぐ後ろに足す。新しいファイルを作るときは、ここに全文を書く。
+   - **消す文字**：直す前の文字の中から、この文字を消す。
+   - **走らせるコマンド**：1行のコマンドをそのまま書く。承認のスクリプトなど、まこさんが打つコマンドもここに書く。監査が走らせたときにかかった時間を、根拠の抜き書きに書く（恒久61番）。
+5. **根拠の抜き書き**：「ファイル名:行番号」と、その行の逐語。
+6. **状態**：「確定」「未決」「案が複数」の3つだけ。
+   - **未決**：まこさんが決めるもの。
+   - **案が複数**：4の欄を「案A」「案B」のように、案の数だけ並べる。
+
+**プログラムが止めて、まこさんに報告するとき（2つだけ）**
+
+1. 直す前の文字か、根拠の抜き書きが、実物と合わないとき。
+2. 状態が「未決」か「案が複数」のとき。
+
+止めた後どうするかは、まこさんが決める。
+
+**書けないもの**
+
+- 行番号と向きだけの指示（例＝「78-114行を〜の形にする」）。
+- 散文の「修正の方向性」「直し方（案）」「対策＝〜にする」。
+- 取り下げ。一度出した結果ファイルに、あとから指示の取り下げを書き足さない。
+- 1件に2つ以上のファイル。ファイルごとに件を分ける。
+- 行ごとに残す・直す・消す・足すを並べた表。1行を1件にする。
+
+**当てる順番**＝修正の番号の順。
+
+---
+
+## 必ず守ること (auditor 守則)
+
+- **目標 ($1,900/月) 達成可能性判定は対象外**の場合は明示
+- 月次 NET ≥ $1,900 を下げる方向の提案禁止 (cc_role §1.0 / auditor_template L15)
+- 「可能性がある」「かもしれない」「検討の余地」は禁止 (auditor_template L20)
+- 数値根拠の断言 or 「データ不足 (理由: 〇〇)」で答える
+- 同型バイアス警告: 同一訓練ベース AI として CC の論理に共感しすぎないこと (auditor_template L24-30)
+- ChatGPT 等の外部 AI 使用不可
+- **外部検索は WebSearch / WebFetch ツールで必ず実施**
+- この監査の相手は売買のロジックに触らない道具の直しなので、トレードの外部認知は問わない
+
+---
+
+依頼書終わり。
+
+---
+
+## まこさん向け呼びかけ例文 (新規セッション起動時)
+
+別 Claude Code セッションを開き、本依頼書のフルパスを明示して以下のように依頼:
+
+```
+監査してほしい
+v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-30_point2_design_to_impl_20260930_impl_cp53_audit_request.md
+```
+
+または
+
+```
+本依頼書を読んで監査して
+v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-09-30_point2_design_to_impl_20260930_impl_cp53_audit_request.md
+```
+
+→ auditor session の CC が冒頭 auditor 宣言を読んで即 Plan agent 起動・結果ファイル書き出しまで自走。
+
+<!-- gen_audit_docs: request src=v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp53_work/cp53_src.gen.md src_sha256=86bc80f7e582f6821e53a2bb852769c6df8cd9f5128c3f1fcce5215cb18e7830 body_sha256=6f57a66cbaf98320df42d380209f2a4d545a740e17f88e17e7ba683cb6b43243 -->
