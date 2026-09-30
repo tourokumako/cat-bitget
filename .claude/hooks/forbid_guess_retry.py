@@ -18,7 +18,7 @@
 #        ③計画に「前の計画で見落とした理由:」の行を書き ④直す所の開いた行を、前の計画より増やす、まで直させない。
 #   try ＝手で試す口。
 #   直してよいもの（計画と記録のため）＝fix_plan.md・session_worklog_*.md・sessions の下・chat_draft.md。
-# 限界（正直に）＝落ちたかは出力の形（❌・fail・Traceback・不足 N 件・R 数字 の行 ほか）で見る（✅ で始まる行は見ない）。
+# 限界（正直に）＝落ちたかは出力の形（❌・fail・Traceback・不足 N 件・R 数字 の行 ほか）で見る（✅ で始まる行・「→ pass」で終わる行は見ない。最後の結論の行が ✅ で、その後ろに ❌ が無ければ通ったと見る）。
 #   計画の中身の正しさは見ない（写したか・開いた行を書いたかだけ）。検査を走らせずに直すことは止めない（後の検査で捕まる）。
 import json
 import os
@@ -47,8 +47,15 @@ def _key(cmd):
 
 def fail_lines(out):
     # ★✅ で始まる行は拾わない（通った行の中に、引用として ❌ の文字が在るため・2026-09-30 に試しの出力で誤って拾った）
-    return [ln.strip()[:200] for ln in (out or "").splitlines()
-            if ln.strip() and not ln.strip().startswith("✅") and FAIL_RE.search(ln.strip()) and "止める所なし" not in ln]
+    # ★「→ pass」で終わる行も拾わない（自己テストの、わざと壊して ❌ が出るかを試す場面の結果の行）
+    # ★出力の最後の結論の行が ✅ で始まり、その後ろに ❌ の行が無ければ、通ったと見る
+    #   （2026-09-30＝通った自己テスト「✅ selftest 17/17 pass」の中の見本の ❌ を落ちた行として拾った）
+    lines = [ln.strip() for ln in (out or "").splitlines() if ln.strip()]
+    last_ok = max((i for i, s in enumerate(lines) if s.startswith("✅")), default=-1)
+    if last_ok >= 0 and not any(s.startswith("❌") for s in lines[last_ok + 1:]):
+        return []
+    return [s[:200] for s in lines
+            if not s.startswith("✅") and not s.endswith("→ pass") and FAIL_RE.search(s) and "止める所なし" not in s]
 
 
 def record(sid, cmd, out):
