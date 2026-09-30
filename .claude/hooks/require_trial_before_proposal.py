@@ -34,7 +34,10 @@ def proposal_lines(text: str) -> list:
             inside = True
             out.append(s)
             continue
-        if inside and not fence and (s.startswith("**") or s.startswith("---") or s.startswith("#")):
+        # ★2026-10-01＝案の最後の見出し【外部検索】で、案の行を数えるのを止める（直す前は、案を出した後に同じターンで
+        #   書いた返信の文まで案の行と数え、試した下書きに無いとして返信を止め続けた）
+        if inside and not fence and (s.startswith("**") or s.startswith("---") or s.startswith("#")
+                                     or s.startswith("【外部検索】")):
             inside = False
             continue
         if inside and s:
