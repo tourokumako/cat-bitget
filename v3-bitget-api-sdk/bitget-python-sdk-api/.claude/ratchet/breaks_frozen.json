@@ -25,6 +25,8 @@
  "b115_record_run_renamed.sh": "922baf4d8f475f92b1ff2195ffd5f482f7a052b09658c278dff03007beed035b",
  "b116_dropped_file_not_written.sh": "6ad5bedde304f4756d977a5b3a7a7e6950be048991c0bced813f92d8d5b6dde4",
  "b117_stage_recipe_no_entry.sh": "eb53113e19eeb62041b7b7f46dfaa0edeacc3edff297176598d10aff2632e8d2",
+ "b118_audit_fix_tools_target.sh": "4ce05148dd6d13c7ff4d0e01f0a86483126b26cc0c0e501df54c6f849b965776",
+ "b119_audit_fix_command_allow.sh": "70ed1cce9d613bbbb8c6fd018ffb264be712c620ff69f1e528c2f55819fa711e",
  "b11_subagent.sh": "ee00fe490588e02cec1a7c50bcd965683ff56129dda1aa0ea8d8f1e3174eadc5",
  "b12_no_record.sh": "8cbf00458314feb72dc01580a342d3a67bed10654cf3c25ae599b0cea912bb7f",
  "b13_approve_by_cc.sh": "b2b9e95c9a908432767bdd8b1b80b7aebfbd6aab330786aefd2670169b24101a",

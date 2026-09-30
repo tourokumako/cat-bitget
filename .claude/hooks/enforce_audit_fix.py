@@ -81,7 +81,9 @@ def pending() -> dict:
             rel, before = f.get("対象のファイル"), f.get("直す前の文字")
             if not rel or not before or before.strip() == "なし":
                 continue
-            if a.never_write(rel):
+            # ★2026-09-30（設計書 audit-fix-tools-target-20260930）＝承認と TARGET がそろった道具のファイルは、
+            #   当てる道具が書ける＝当てる前は CC の手の直しを止める（まこさん指示 2026-09-30「手書きをせざるを得ないもの以外は、すべて自動生成」）。
+            if a.never_write(rel) and not a.tool_target_ok(rel):
                 continue                                     # 守りの仕組み＝当てる道具が書かない＝CC が直す
             path = a.repo_path(rel)
             if not os.path.isfile(path):

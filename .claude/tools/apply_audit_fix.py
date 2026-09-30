@@ -77,6 +77,21 @@ APPROVED = os.path.join(ROOT, ".claude", "state", "acceptance.approved")     # �
 DESIGN = os.path.join(ROOT, ".claude", "state", "acceptance.md")            # 既定の設計書
 SRC_JSON = os.path.join(SDK, ".claude", "ratchet", "acceptance_src.json")   # 設計書の元データ（実装の指示の中身の正本）
 IMPL_HEAD_RE = re.compile(r"^### 4-20 .*$", re.M)                            # 設計書の「実装の指示」の節の見出し
+# ★2026-09-30（設計書 audit-fix-tools-target-20260930・まこさん承認）
+#   ＝道具のファイル（.claude/tools の .py）にも、承認と TARGET がそろったときだけ当てる。
+#   ＝監査結果の「走らせるコマンド」のうち、決まった形のものだけを走らせる（道具の名前と、旗ごとに受ける値の数）。
+#   なぜ＝監査 cp52 の20件のうち19件を、この道具が飛ばし、CC が手で写していた
+#     （まこさん指示 2026-09-30「手書きだと虚偽、改ざん、不正を働くので、手書きをせざるを得ないもの以外は、すべて自動生成」）。
+TOOLS_DIR = os.path.join(ROOT, ".claude", "tools")                          # 自己テストが一時の置き場に替える
+RUN_TOOLS = {
+    "gen_acceptance.py": {"--write": 0, "--verify": 0, "--dry-run": 0, "--selftest": 0, "--work": 1},
+    "gen_verbatim.py": {"--verify": 1, "--summary": 1},
+}
+# ★2026-09-30（設計書 audit-fix-evidence-20260930・まこさん承認）＝監査が見た版の設計書の控え。
+#   main が監査結果の「監査が照らしたハッシュ値」と sha256 が同じ承認の控えを見つけて入れる。
+#   根拠が acceptance.md の行なら、いまの acceptance.md ではなく、この控えと照らす（監査の後に設計書が書き替わるため）。
+AUDITED_DESIGN = ""
+ARCHIVE_DIR = os.path.join(SDK, ".claude", "ratchet", "acceptance_archive")
 
 
 def repo_path(p: str) -> str:
@@ -187,6 +202,102 @@ def design_targets(design_text: str) -> set:
     return out
 
 
+def tool_target_ok(rel: str, design_path: str = None, mark_path: str = None) -> bool:
+    """道具のファイル（TOOLS_DIR の .py）に当ててよいか。
+
+    ①承認の印と設計書のハッシュ値が合う ②そのファイルが設計書の TARGET か NEW_FILE に在る、の両方のときだけ真。
+    hook・壊すプログラム・承認の印・凍結の記録・settings に当たる名前なら、いつも偽（設計書 3-1 の1）。
+    """
+    raw = (rel or "").strip().strip("`")
+    real = os.path.realpath(repo_path(raw))
+    if not real.endswith(".py") or os.path.dirname(real) != os.path.realpath(TOOLS_DIR):
+        return False
+    others = [k for k in NEVER_WRITE if k != ".claude/tools/"]
+    forms = (raw, os.path.normpath(raw), real)
+    if any(k.lower() in f.replace(os.sep, "/").lower() for f in forms for k in others):
+        return False
+    design_path = design_path or DESIGN
+    ok, _why = approved_ok(design_path, mark_path)
+    if not ok:
+        return False
+    return real in design_targets(open(design_path, encoding="utf-8").read())
+
+
+def command_argv(cmd: str):
+    """走らせるコマンドが決まった形なら (置き場, 引数の並び) を、違えば None を返す（シェルを通さない）。
+
+    決まった形＝前に「cd <リポジトリの中の置き場> &&」が付いてもよい、python3 と RUN_TOOLS の道具と、
+    その道具の旗（旗ごとに決まった数の値＝英数字・_・.・- だけ）。区切り・置き換え・リダイレクトの記号が在れば None。
+    """
+    import shlex
+    s = (cmd or "").strip()
+    if not s or "\n" in s:
+        return None
+    cwd = ROOT
+    m = re.match(r"^cd\s+(\S+)\s+&&\s+(.*)$", s)
+    if m:
+        cwd = os.path.realpath(os.path.join(ROOT, m.group(1)))
+        if not (cwd == ROOT or cwd.startswith(ROOT + os.sep)) or not os.path.isdir(cwd):
+            return None
+        s = m.group(2)
+    if re.search(r"[;&|<>`$()\\]", s):
+        return None
+    try:
+        toks = shlex.split(s)
+    except ValueError:
+        return None
+    if len(toks) < 3 or toks[0] != "python3":
+        return None
+    tool = os.path.realpath(os.path.join(cwd, toks[1]))
+    rule = RUN_TOOLS.get(os.path.basename(tool))
+    if rule is None or os.path.dirname(tool) != os.path.realpath(TOOLS_DIR):
+        return None
+    rest, i = toks[2:], 0
+    while i < len(rest):
+        if rest[i] not in rule:
+            return None
+        n = rule[rest[i]]
+        if n and (i + 1 >= len(rest) or not re.fullmatch(r"[A-Za-z0-9_.-]+", rest[i + 1])):
+            return None
+        i += 1 + n
+    return cwd, [sys.executable, tool] + rest
+
+
+def run_commands(cmds: list, design_path: str = None, check=None) -> int:
+    """照合を1回 掛け、通れば番号の順にコマンドを走らせる。戻り＝0（全部 終了コード 0）／1。
+
+    ★照合＝設計↔実装ゲート（require_design_contract_before_run.sh）と同じ verify_design_contract の check。
+      道具の中から走らせると Bash の hook は掛からないので、同じ照合をここで掛ける（設計書 6-2 の1）。
+    ★check は自己テストが渡す（本物の呼び出しでは None＝verify_design_contract.check）。
+    """
+    import subprocess
+    if not cmds:
+        return 0
+    design_path = design_path or DESIGN
+    print("\n— 走らせる前の照合（verify_design_contract の check・設計↔実装ゲートと同じ）")
+    if check is None:
+        sys.path.insert(0, os.path.join(SDK, "scripts", "priority_rebuild"))
+        import verify_design_contract as vdc                # noqa: E402
+        passed = bool(vdc.check(design_path))
+    else:
+        passed = bool(check(design_path))
+    if not passed:
+        print("❌ 照合が通らないので、コマンドを1つも走らせません")
+        return 1
+    for f, (cwd, argv) in cmds:
+        shown = " ".join(argv[1:])
+        print(f"\n▶ 修正 {f['番号']}: {shown}（置き場 {os.path.relpath(cwd, ROOT)}）")
+        r = subprocess.run(argv, cwd=cwd, capture_output=True, text=True)
+        out = ((r.stdout or "") + (r.stderr or "")).rstrip()
+        if out:
+            print(out[-4000:])
+        print(f"▶ 修正 {f['番号']}: → 終了コード {r.returncode}")
+        if r.returncode != 0:
+            print("❌ コマンドが落ちたので、その後のコマンドは走らせません")
+            return 1
+    return 0
+
+
 def impl_src_mismatch(fixes: list, src_path: str) -> list:
     """設計書から読んだ実装の指示が、元データの `実装の指示` と1文字も違わないか。違いを文で返す。
 
@@ -232,11 +343,13 @@ def _recheck(f: dict, cur: str) -> bool:
     return bool(before) and cur.count(before) == 1
 
 
-def check_one(f: dict, chosen: dict = None) -> tuple:
+def check_one(f: dict, chosen: dict = None, run_ok: bool = False) -> tuple:
     """1件が当てられるかを確かめる。戻り＝(当てられるか, 理由, 実物の中身)。
 
     ★chosen＝`--choose` で まこさんが決めた件（{番号: 案の記号 or "確定"}）。
       設計書 audit-autofix-apply-20260916 の 4-9・4-5・完成の条件 AUDIT-3。
+    ★run_ok＝走らせるコマンドの件を、決まった形なら走らせる側へ回す（--report の道だけ真・設計書 audit-fix-tools-target-20260930）。
+      走らせる側へ回した件は、理由に「走らせる」を入れて返す（main がファイルの直しと分ける）。
     """
     chosen = chosen or {}
     num, rel = f["番号"], (f["対象のファイル"] or "")
@@ -249,8 +362,11 @@ def check_one(f: dict, chosen: dict = None) -> tuple:
             have = "・".join(sorted({a for a, _k, _b in fourth if a})) or "（案の記号が無い）"
             return False, f"--choose で {pick} を選んだが、この件に その案が無い（在るのは {have}）", ""
     if any(k == "走らせるコマンド" for _, k, _ in fourth):
+        body = next(b for _a, k, b in fourth if k == "走らせるコマンド")
+        if run_ok and command_argv(body) is not None:
+            return True, "走らせる", ""
         return False, "走らせるコマンド（当てずに、打つべきコマンドとして出す）", ""
-    if never_write(rel):
+    if never_write(rel) and not tool_target_ok(rel):
         return False, f"守りの仕組みなので当てない（{rel}）＝私が Write ツールで直す", ""
     path = repo_path(rel)
     if not os.path.isfile(path):
@@ -299,6 +415,9 @@ def check_evidence(f: dict) -> tuple:
     #   ★外すのは先頭と末尾が両方 バッククォートのときだけ（行の中のバッククォートは残す）。
     if len(quote) >= 2 and quote[0] == "`" and quote[-1] == "`":
         quote = quote[1:-1]
+    # ★2026-09-30（設計書 audit-fix-evidence-20260930）＝根拠が設計書（acceptance.md）の行なら、監査が見た版の控えと照らす。
+    if os.path.basename(name) == "acceptance.md" and AUDITED_DESIGN:
+        return _cmp_line(AUDITED_DESIGN, name, line, quote)
     # ★2026-09-16＝根拠のファイル名が、対象のファイルと同じ名前なら、対象のパスを使う。
     #   なぜ＝監査は作業場の写しを見て行番号を書く。同じ名前の本物を見ると、別の行が入っている。
     #   実測＝修正7 の根拠 acceptance_src.json:61 が、いまの ratchet の元データと合わなかった。
@@ -326,11 +445,17 @@ def _cmp_line(path: str, name: str, line: int, quote: str) -> tuple:
     lines = open(path, encoding="utf-8").read().splitlines()
     if not (1 <= line <= len(lines)):
         return False, f"根拠の行が無い（{name} は全{len(lines)}行・書いてあるのは {line} 行）"
-    if quote.strip() and quote.strip() not in lines[line - 1]:
+    # ★2026-09-30（設計書 audit-fix-evidence-20260930）＝監査が途中を「…」で省いた逐語は、
+    #   「…」で区切った空でない文が、その行の中に順に全部 在れば合うとする（1つでも無ければ合わない）。
+    #   「…」の無い逐語は今までどおり（逐語がそのまま行に含まれるか）。
+    q = quote.strip()
+    parts = [p.strip() for p in q.split("…") if p.strip()] if "…" in q else [q]
+    pat = re.compile(".*?".join(re.escape(p) for p in parts))
+    if q and not pat.search(lines[line - 1]):
         # ★2026-09-16＝同じ文が別の行に在れば、行番号がずれただけ（中身は合っている）。
         #   なぜ要るか＝監査が読んだ後に、そのファイルへ行を足すと行番号が動く。
         #   実測＝修正31 の根拠の行が、私が今日15行 足したことで動いていた。
-        hits = [i + 1 for i, s in enumerate(lines) if quote.strip() in s]
+        hits = [i + 1 for i, s in enumerate(lines) if pat.search(s)]
         if hits:
             return True, f"（行番号のずれ＝{name} の {line} 行 → {hits[0]} 行。中身は合っている）"
         return False, (f"根拠の行が実物と合わない（{name}:{line}）\n"
@@ -360,6 +485,7 @@ def apply_one(f: dict, cur: str, pick: str = "") -> tuple:
 
 def main(argv: list = None, approved_path: str = None) -> int:
     """★argv と approved_path は自己テストが渡す（本物の呼び出しでは None＝コマンドの引数と本物の印）。"""
+    global AUDITED_DESIGN
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument("--report", default="")
     ap.add_argument("--severity", default="")
@@ -430,6 +556,17 @@ def main(argv: list = None, approved_path: str = None) -> int:
             return 1
 
         all_fixes = read_fixes(text)
+        # ★2026-09-30（設計書 audit-fix-evidence-20260930）＝監査が見た版の設計書の控えを探す（無ければ今までどおり）。
+        AUDITED_DESIGN = ""
+        mh = re.search(r"監査が照らしたハッシュ値:\s*([0-9a-f]{64})", text)
+        if mh:
+            import glob
+            import hashlib
+            for cand in sorted(glob.glob(os.path.join(ARCHIVE_DIR, "*.md"))):
+                if hashlib.sha256(open(cand, "rb").read()).hexdigest() == mh.group(1):
+                    AUDITED_DESIGN = cand
+                    print(f"— 設計書の根拠は、監査が見た版の控え {os.path.basename(cand)} と照らす")
+                    break
     # ★--choose＝まこさんが決めた件（{番号: 案の記号 or "確定"}）。書いていない番号は当てない。
     chosen = {}
     for pair in [x.strip() for x in a.choose.split(",") if x.strip()]:
@@ -461,7 +598,7 @@ def main(argv: list = None, approved_path: str = None) -> int:
 
     ready, stopped = [], []
     for f in fixes:
-        ok, why, cur = check_one(f, chosen)
+        ok, why, cur = check_one(f, chosen, run_ok=not design_mode)
         # ★設計書の道だけ（設計書 4-4 の 9）＝対象のファイルが TARGET／NEW_FILE に無ければ当てない
         if ok and design_mode:
             rel = os.path.realpath(repo_path(f["対象のファイル"] or ""))
@@ -480,6 +617,16 @@ def main(argv: list = None, approved_path: str = None) -> int:
     if hard:
         print(f"\n❌ 実物と合わない件が {len(hard)} 件 あるので、1件も当てません（先に全件を確かめる形）")
         return 1
+
+    # ★2026-09-30（設計書 audit-fix-tools-target-20260930）＝走らせるコマンドの件を、ファイルの直しと分ける。
+    #   ファイルの直しを全部 当てた後に、番号の順に走らせる（設計書 4-4 の⑤⑥）。
+    cmds = [(f, command_argv(next(b for _a, k, b in f["4つ目"] if k == "走らせるコマンド")))
+            for f, why, _c in ready if why == "走らせる"]
+    ready = [x for x in ready if x[1] != "走らせる"]
+    if a.dry:
+        # ★--dry のときは走らせる予定だけを出す（CP42 の修正13 で足した --dry の節は、ひと続きのまま残す）
+        for f, (cwd, argv) in cmds:
+            print(f"   ▶ 走らせる予定 修正 {f['番号']}: {' '.join(argv[1:])}（置き場 {os.path.relpath(cwd, ROOT)}）")
 
 
     # ★2026-09-24（監査 CP41 の A2・修正 3）＝全件を先に「当てた後の中身」で確かめてから、まとめて書く。
@@ -531,8 +678,9 @@ def main(argv: list = None, approved_path: str = None) -> int:
         done += 1
         print(f"   ✅ 修正 {f['番号']}（{f['重さ'] or '設計書'}）: {what} → {os.path.relpath(path, ROOT)}")
     print(f"\n✅ 当てた {done} 件／当てなかった {len(stopped)} 件")
+    rc_cmd = run_commands(cmds)
     # ★設計書の道（設計書 4-4 の 10）＝当てなかった件が1件でも在れば rc=1（当て忘れを機械で見つける）
-    return 1 if (design_mode and stopped) else 0
+    return 1 if ((design_mode and stopped) or rc_cmd) else 0
 
 
 # ══ 自己テスト（設計書 4-19 の場面・本物には1バイトも書かない）═══════════════════════════════
@@ -781,6 +929,122 @@ def selftest() -> int:
             print(f"   T{total} 先の件が後の件の「直す前の文字」を2つにすると、1件も当たらず rc=1 → pass")
         else:
             fails.append(f"❌ 実物と合わない件 T{total}: 2か所になった件が当たった／rc={rc} code={open(code).read()!r}")
+
+        # ★T17〜T21（2026-09-30・設計書 audit-fix-tools-target-20260930）＝道具のファイルと、走らせるコマンド
+        #   道具の置き場・設計書・承認の印を、一時の置き場に替えて測る（本物の道具には1バイトも書かない）。
+        g_saved = (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"])
+        tdir = os.path.join(tmp, ".claude", "tools")
+        os.makedirs(tdir, exist_ok=True)
+        globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"] = tdir, md, mark
+        try:
+            tpy = os.path.join(tdir, "t.py")
+            trel = os.path.relpath(tpy, ROOT)
+            tfix = {"番号": "1", "対象のファイル": trel, "直す箇所": "1-1", "直す前の文字": "x = 1",
+                    "4つ目": [("", "直した後の文字", "x = 2")], "根拠の抜き書き": f"{trel}:1「x = 1」", "状態": "確定"}
+
+            def tool_case(target_line, good_mark):
+                open(tpy, "w", encoding="utf-8").write("x = 1\n")
+                open(md, "w", encoding="utf-8").write(f"# 見本\n\nTARGET: {target_line}\n")
+                mark_of(md, mark) if good_mark else open(mark, "w", encoding="utf-8").write("0" * 64)
+                return check_one(tfix)
+
+            # T17 承認の印が合い、TARGET に在る道具のファイルには当てる
+            total += 1
+            ok17, why17, _c = tool_case(trel, True)
+            if ok17:
+                ok += 1
+                print(f"   T{total} 承認と TARGET がそろった道具のファイルには当てる → pass")
+            else:
+                fails.append(f"❌ 道具のファイル T{total}: そろっているのに当てない（{why17}）")
+
+            # T18 承認の印が違えば、道具のファイルには当てない
+            total += 1
+            ok18, why18, _c = tool_case(trel, False)
+            if not ok18 and "守りの仕組みなので当てない" in why18:
+                ok += 1
+                print(f"   T{total} 承認の印が違えば、道具のファイルには当てない → pass")
+            else:
+                fails.append(f"❌ 道具のファイル T{total}: 承認の印が違うのに当たる")
+
+            # T19 TARGET の外の道具のファイルには当てない
+            total += 1
+            ok19, why19, _c = tool_case("scripts/priority_rebuild/other.py", True)
+            if not ok19 and "守りの仕組みなので当てない" in why19:
+                ok += 1
+                print(f"   T{total} TARGET の外の道具のファイルには当てない → pass")
+            else:
+                fails.append(f"❌ 道具のファイル T{total}: TARGET の外なのに当たる")
+
+            # T20 走らせるコマンドは、決まった形だけ通す
+            total += 1
+            good = [f"python3 {os.path.relpath(tdir, ROOT)}/gen_acceptance.py --work w-1 --write",
+                    f"cd {os.path.relpath(tmp, ROOT)} && python3 .claude/tools/gen_acceptance.py --selftest",
+                    f"python3 {os.path.relpath(tdir, ROOT)}/gen_verbatim.py --summary w-1"]
+            bad = ["rm -rf x",
+                   f"python3 {os.path.relpath(tdir, ROOT)}/gen_acceptance.py --write; rm x",
+                   f"python3 {os.path.relpath(tdir, ROOT)}/apply_audit_fix.py --selftest",
+                   f"python3 {os.path.relpath(tdir, ROOT)}/gen_acceptance.py --write --rm",
+                   f"python3 {os.path.relpath(tdir, ROOT)}/gen_acceptance.py --work",
+                   f"python3 {os.path.relpath(tdir, ROOT)}/gen_acceptance.py --work $(whoami)",
+                   "cd /tmp && python3 x/gen_acceptance.py --write"]
+            miss = [c for c in good if command_argv(c) is None] + [c for c in bad if command_argv(c) is not None]
+            if not miss:
+                ok += 1
+                print(f"   T{total} 走らせるコマンドは決まった形だけ通す（通す {len(good)}・止める {len(bad)}） → pass")
+            else:
+                fails.append(f"❌ コマンドの形 T{total}: 見分けを誤った {miss}")
+
+            # T21 照合が通らなければ、コマンドを1つも走らせない
+            total += 1
+            flag = os.path.join(tmp, "ran")
+            buf = io.StringIO()
+            with redirect_stdout(buf):
+                rc21 = run_commands([({"番号": "1"}, (tmp, ["touch", flag]))], md, check=lambda _p: False)
+            if rc21 == 1 and "照合が通らない" in buf.getvalue() and not os.path.exists(flag):
+                ok += 1
+                print(f"   T{total} 照合が通らなければ、コマンドを1つも走らせない → pass")
+            else:
+                fails.append(f"❌ 照合 T{total}: 照合が通らないのに走った（rc={rc21}）")
+
+            # ★T22〜T24（2026-09-30・設計書 audit-fix-evidence-20260930）＝根拠の照らし方
+            lf = os.path.join(tmp, "ev.md")
+            open(lf, "w", encoding="utf-8").write("| 甲 | 乙 | 丙 | 丁 |\n")
+            # T22 「…」で区切った文が、その行に順に全部 在れば合う
+            total += 1
+            g22, _w22 = _cmp_line(lf, "ev.md", 1, "| 甲 | …| 丙 |")
+            if g22:
+                ok += 1
+                print(f"   T{total} 「…」で区切った文が順に全部 在れば合う → pass")
+            else:
+                fails.append(f"❌ 根拠の照らし T{total}: 「…」で区切った文が在るのに合わない")
+            # T23 1つでも無い・順が違えば合わない
+            total += 1
+            g23a, _w = _cmp_line(lf, "ev.md", 1, "| 甲 | …| 戊 |")
+            g23b, _w = _cmp_line(lf, "ev.md", 1, "| 丙 | …| 甲 |")
+            if not g23a and not g23b:
+                ok += 1
+                print(f"   T{total} 「…」で区切った文が欠ける・順が違えば合わない → pass")
+            else:
+                fails.append(f"❌ 根拠の照らし T{total}: 欠けた・順が違うのに合う")
+            # T24 根拠が acceptance.md の行なら、監査が見た版の控えと照らす
+            total += 1
+            arc = os.path.join(tmp, "audited.md")
+            open(arc, "w", encoding="utf-8").write("監査が見た行\n")
+            globals()["AUDITED_DESIGN"] = arc
+            open(code, "w", encoding="utf-8").write("x = 1\n")
+            fix24 = {"番号": "1", "対象のファイル": rel, "直す箇所": "1-1", "直す前の文字": "x = 1",
+                     "4つ目": [("", "直した後の文字", "x = 2")],
+                     "根拠の抜き書き": ".claude/state/acceptance.md:1「監査が見た行」", "状態": "確定"}
+            g24, _w24, _c = check_one(fix24)
+            globals()["AUDITED_DESIGN"] = ""
+            if g24:
+                ok += 1
+                print(f"   T{total} 設計書の行は、監査が見た版の控えと照らす → pass")
+            else:
+                fails.append(f"❌ 根拠の照らし T{total}: 控えと照らしていない（{_w24}）")
+        finally:
+            globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"] = g_saved
+            globals()["AUDITED_DESIGN"] = ""
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     for x in fails:

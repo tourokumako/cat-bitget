@@ -244,6 +244,8 @@ def write(name: str, uuids: list[str], session: str | None = None, base: Path | 
     if not base:
         if not work or not NAME_RE.match(work):
             raise VerbatimError("--work（工事名＝設計書の ARC の iter・英数字・_・.・-）が要る。逐語のファイルは工事ごとのフォルダに置く")
+        if (ARCHIVE_DIR / work).is_dir():
+            raise VerbatimError(f"工事 {work} は承認の後（archive に在る）。承認の後の工事のフォルダには書かない（新しい工事名で書く）")
         base = VERBATIM_DIR / work
     txt, meta = paths(short, base)
     txt.parent.mkdir(parents=True, exist_ok=True)

@@ -2,37 +2,26 @@
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
- "../../.claude/tools/gen_acceptance.py": [
+ "../../.claude/tools/apply_audit_fix.py": [
   "<モジュール直下>",
-  "_tag",
-  "_wtag",
-  "_md_table",
-  "_sections",
-  "_text",
-  "_json_block",
+  "tool_target_ok",
+  "command_argv",
+  "run_commands",
+  "check_one",
+  "check_evidence",
+  "_cmp_line",
+  "main",
+  "selftest"
+ ],
+ "../../.claude/tools/gen_acceptance.py": [
   "src_from_work",
-  "src",
-  "build_selftest",
-  "build_checklist",
-  "_sec",
-  "match_problems",
-  "build_source",
-  "build",
   "section4",
-  "page",
-  "write",
-  "selftest",
-  "main"
+  "page"
  ],
  "../../.claude/tools/gen_verbatim.py": [
-  "<モジュール直下>",
-  "drop_reason",
-  "split_name",
-  "paths",
-  "write",
-  "lines",
-  "work_dir",
-  "summary",
-  "main"
+  "write"
+ ],
+ "../../.claude/hooks/enforce_audit_fix.py": [
+  "pending"
  ]
 }

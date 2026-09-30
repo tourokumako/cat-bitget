@@ -1,0 +1,66 @@
+22,24c22,24
+< <!-- ACC_SOURCE_START hash=a799088233c00eaa gen_acceptance.py が自動生成＝手で書き換えない -->
+< **要件のまとめ**＝`.claude/state/verbatim/audit-fix-tools-target-20260930/要件のまとめ.md`（プログラムが逐語のファイルから作った・要件の文・話し手・出どころの表はそこに在る）。
+< **この設計書が写す逐語のファイル**＝`.claude/state/verbatim/audit-fix-tools-target-20260930/ok_choice_20260930.txt`（まこさんの発言）・`.claude/state/verbatim/audit-fix-tools-target-20260930/ok_design_20260930.txt`（まこさんの発言）・`.claude/state/verbatim/audit-fix-tools-target-20260930/ok_fix2_20260930.txt`（まこさんの発言）・`.claude/state/verbatim/audit-fix-tools-target-20260930/okd_choice_20260930.txt`（まこさんが OK した CC の文）・`.claude/state/verbatim/audit-fix-tools-target-20260930/okd_design_20260930.txt`（まこさんが OK した CC の文）・`.claude/state/verbatim/audit-fix-tools-target-20260930/okd_fix2_20260930.txt`（まこさんが OK した CC の文）・`.claude/state/verbatim/audit-fix-tools-target-20260930/req_toolfix_20260930.txt`（まこさんの発言）。照らし方＝`python3 .claude/tools/gen_verbatim.py --verify <名前>`。
+---
+> <!-- ACC_SOURCE_START hash=b99e31f51b1dba83 gen_acceptance.py が自動生成＝手で書き換えない -->
+> **要件のまとめ**＝`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/audit-fix-tools-target-20260930/要件のまとめ.md`（プログラムが逐語のファイルから作った・要件の文・話し手・出どころの表はそこに在る）。
+> **この設計書が写す逐語のファイル**＝`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/audit-fix-tools-target-20260930/ok_choice_20260930.txt`（まこさんの発言）・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/audit-fix-tools-target-20260930/ok_design_20260930.txt`（まこさんの発言）・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/audit-fix-tools-target-20260930/ok_fix2_20260930.txt`（まこさんの発言）・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/audit-fix-tools-target-20260930/okd_choice_20260930.txt`（まこさんが OK した CC の文）・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/audit-fix-tools-target-20260930/okd_design_20260930.txt`（まこさんが OK した CC の文）・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/audit-fix-tools-target-20260930/okd_fix2_20260930.txt`（まこさんが OK した CC の文）・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/audit-fix-tools-target-20260930/req_toolfix_20260930.txt`（まこさんの発言）。照らし方＝`python3 .claude/tools/gen_verbatim.py --verify <名前>`。
+379c379
+< <!-- ACC_CODEREF_START hash=7bbea2d3243faf83 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=f7198d5f647ab109 gen_acceptance.py が自動生成＝手で書き換えない -->
+386,388c386,388
+< | `tool_target_ok` | （この関数は実物に無い） |
+< | `command_argv` | （この関数は実物に無い） |
+< | `run_commands` | （この関数は実物に無い） |
+---
+> | `tool_target_ok` | 200 |
+> | `command_argv` | 221 |
+> | `run_commands` | 261 |
+390c390
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 15件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 18件の関数が在ります）。
+397c397
+< <!-- ACC_SPEC_START hash=55dae52e0ea99ad7 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=6c7aaa0c57581d64 gen_acceptance.py が自動生成＝手で書き換えない -->
+468a469,475
+>   "tool_target_ok": [
+>    "approved_ok",
+>    "design_targets",
+>    "repo_path"
+>   ],
+>   "command_argv": [],
+>   "run_commands": [],
+471a479
+>    "command_argv",
+473c481,482
+<    "repo_path"
+---
+>    "repo_path",
+>    "tool_target_ok"
+482a492
+>    "command_argv",
+488a499
+>    "run_commands",
+491a503,504
+>    "check_one",
+>    "command_argv",
+493c506,507
+<    "read_design_blocks"
+---
+>    "read_design_blocks",
+>    "run_commands"
+499c513,520
+<  "cli_flags": []
+---
+>  "cli_flags": [
+>   "--dry-run",
+>   "--selftest",
+>   "--summary",
+>   "--verify",
+>   "--work",
+>   "--write"
+>  ]
