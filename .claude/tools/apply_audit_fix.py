@@ -84,6 +84,9 @@ IMPL_HEAD_RE = re.compile(r"^### 4-20 .*$", re.M)                            # �
 #   なぜ＝監査 cp52 の20件のうち19件を、この道具が飛ばし、CC が手で写していた
 #     （まこさん指示 2026-09-30「手書きだと虚偽、改ざん、不正を働くので、手書きをせざるを得ないもの以外は、すべて自動生成」）。
 TOOLS_DIR = os.path.join(ROOT, ".claude", "tools")                          # 自己テストが一時の置き場に替える
+# ★2026-09-30（設計書 point2-design-to-impl-20260930）＝hook と壊すプログラムにも、承認と TARGET／NEW_FILE がそろったときだけ当てる
+HOOKS_DIR = os.path.join(ROOT, ".claude", "hooks")                          # 自己テストが一時の置き場に替える
+BREAKS_DIR = os.path.join(ROOT, ".claude", "breaks")                        # 自己テストが一時の置き場に替える
 RUN_TOOLS = {
     "gen_acceptance.py": {"--write": 0, "--verify": 0, "--dry-run": 0, "--selftest": 0, "--work": 1},
     "gen_verbatim.py": {"--verify": 1, "--summary": 1},
@@ -214,9 +217,13 @@ def tool_target_ok(rel: str, design_path: str = None, mark_path: str = None) -> 
     """
     raw = (rel or "").strip().strip("`")
     real = os.path.realpath(repo_path(raw))
-    if not real.endswith(".py") or os.path.dirname(real) != os.path.realpath(TOOLS_DIR):
+    # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝道具の .py に加えて、hook（.py・.sh）と壊すプログラム（.sh）にも当てる
+    kinds = {os.path.realpath(TOOLS_DIR): (".py",), os.path.realpath(HOOKS_DIR): (".py", ".sh"),
+             os.path.realpath(BREAKS_DIR): (".sh",)}
+    ends = kinds.get(os.path.dirname(real))
+    if not ends or not real.endswith(ends):
         return False
-    others = [k for k in NEVER_WRITE if k != ".claude/tools/"]
+    others = [k for k in NEVER_WRITE if k not in (".claude/tools/", ".claude/hooks/", ".claude/breaks/")]
     forms = (raw, os.path.normpath(raw), real)
     if any(k.lower() in f.replace(os.sep, "/").lower() for f in forms for k in others):
         return False
@@ -389,7 +396,32 @@ def _recheck(f: dict, cur: str) -> bool:
     return bool(before) and cur.count(before) == 1
 
 
-def check_one(f: dict, chosen: dict = None, run_ok: bool = False) -> tuple:
+def design_key(design_text: str, design_path: str) -> str:
+    """設計書の道の、当てた記録の名前＝「design:<ARC の iter>」（目印が無ければ設計書のファイル名）。"""
+    m = re.search(r'<!-- ARC iter="([^"]+)" -->', design_text)
+    return "design:" + (m.group(1) if m else os.path.basename(design_path))
+
+
+def new_file_check(f: dict, path: str) -> tuple:
+    """新しいファイル（直す前の文字が「なし」）の件が作れるか。戻り＝(作れるか, 理由, "")。★設計書の道だけ。
+
+    作れる＝4つ目が「直した後の文字」1つだけ・中身が空でない・ファイルがまだ無い・置き場のフォルダが在る。
+    同じ中身でもう在れば当て済み。別の中身で在れば止める（上書きしない）。
+    """
+    plans = [(k, b) for _a, k, b in f["4つ目"]]
+    if len(plans) != 1 or plans[0][0] != "直した後の文字" or not plans[0][1]:
+        return False, "新しいファイルの件は、4つ目が「直した後の文字」1つ（ファイルの全文）であること", ""
+    body = plans[0][1]
+    if os.path.exists(path):
+        if open(path, encoding="utf-8").read().rstrip("\n") == body.rstrip("\n"):
+            return False, "もう当て終わっている（新しいファイルが同じ中身で在る）", ""
+        return False, f"新しいファイルのはずが、別の中身でもう在る（{path}）＝上書きしない", ""
+    if not os.path.isdir(os.path.dirname(path)):
+        return False, f"新しいファイルの置き場のフォルダが無い（{os.path.dirname(path)}）", ""
+    return True, "新しいファイル", ""
+
+
+def check_one(f: dict, chosen: dict = None, run_ok: bool = False, new_ok: bool = False) -> tuple:
     """1件が当てられるかを確かめる。戻り＝(当てられるか, 理由, 実物の中身)。
 
     ★chosen＝`--choose` で まこさんが決めた件（{番号: 案の記号 or "確定"}）。
@@ -415,6 +447,9 @@ def check_one(f: dict, chosen: dict = None, run_ok: bool = False) -> tuple:
     if never_write(rel) and not tool_target_ok(rel):
         return False, f"守りの仕組みなので当てない（{rel}）＝私が Write ツールで直す", ""
     path = repo_path(rel)
+    # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝新しいファイル（直す前の文字が「なし」）は、設計書の道でだけ作る
+    if new_ok and (f["直す前の文字"] or "").strip() == "なし":
+        return new_file_check(f, path)
     if not os.path.isfile(path):
         return False, f"対象のファイルが実在しない（{rel}）", ""
     cur = open(path, encoding="utf-8").read()
@@ -657,7 +692,7 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
 
     ready, stopped = [], []
     for f in fixes:
-        ok, why, cur = check_one(f, chosen, run_ok=not design_mode)
+        ok, why, cur = check_one(f, chosen, run_ok=not design_mode, new_ok=design_mode)
         # ★設計書の道だけ（設計書 4-4 の 9）＝対象のファイルが TARGET／NEW_FILE に無ければ当てない
         if ok and design_mode:
             rel = os.path.realpath(repo_path(f["対象のファイル"] or ""))
@@ -697,6 +732,14 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
     plan: list = []
     for f, _w, _c in ready:
         path = repo_path(f["対象のファイル"])
+        if _w == "新しいファイル":
+            # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝新しいファイルは中身の全文を書く（同じファイルに2件は止める）
+            if path in mem:
+                print(f"\n❌ 修正 {f['番号']}: 新しいファイル {os.path.relpath(path, ROOT)} に2件 当てようとしています＝1件も当てません")
+                return 1
+            mem[path] = next(b for _a, k, b in f["4つ目"] if k == "直した後の文字").rstrip("\n") + "\n"
+            plan.append((f, "新しいファイルを作った", path))
+            continue
         if path not in mem:
             mem[path] = open(path, encoding="utf-8").read()
         cur = mem[path]
@@ -715,7 +758,7 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
         nums = "・".join(f["番号"] for f, _w, _p in plan) or "（無し）"
         print(f"\n✅ --dry: 当たる {len(plan)} 件（修正 {nums}）／"
               f"当てない {len(stopped)} 件（実物と合わない件は0・当てた後の中身でも確かめた）")
-        return 1 if (design_mode and stopped) else 0
+        return 1 if (design_mode and [x for x in stopped if not x[1].startswith("もう当て終わっている")]) else 0
     done = 0
     for path, new in mem.items():
         if any(p == path for _f, _what, p in plan):
@@ -725,7 +768,8 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
             try:
                 with open(tmp_path, "w", encoding="utf-8") as fh:
                     fh.write(new)
-                os.chmod(tmp_path, os.stat(path).st_mode & 0o7777)
+                os.chmod(tmp_path, (os.stat(path).st_mode & 0o7777) if os.path.exists(path)
+                         else (0o755 if path.endswith(".sh") else 0o644))
                 os.replace(tmp_path, path)
             except OSError as e:
                 if os.path.exists(tmp_path):
@@ -739,17 +783,19 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
     print(f"\n✅ 当てた {done} 件／当てなかった {len(stopped)} 件")
     # ★2026-09-30（設計書 point1-one-way-20260930-2・まこさん決定「案A」）＝監査結果の道だけ、当てた修正と
     #   もう当て終わっていた修正を記録に書き足す（hook 12 が読む）。--dry と設計書の道では書かない。
-    if not design_mode:
-        rep = os.path.basename(a.report)
-        rec = [{"report": rep, "num": f["番号"], "file": f["対象のファイル"] or "", "how": "当てた"}
-               for f, _what, _path in plan]
-        rec += [{"report": rep, "num": f["番号"], "file": f["対象のファイル"] or "", "how": "もう当て終わっていた"}
-                for f, why, _c in stopped if why.startswith("もう当て終わっている")]
-        n_rec = _record_applied(rec)
-        print(f"— 当てた記録に {n_rec} 件を足した（{os.path.relpath(APPLIED_RECORD, ROOT)}）")
+    # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝設計書の道でも記録に書く（名前は「design:<iter>」）
+    rep = design_key(text, a.design) if design_mode else os.path.basename(a.report)
+    rec = [{"report": rep, "num": f["番号"], "file": f["対象のファイル"] or "", "how": "当てた"}
+           for f, _what, _path in plan]
+    rec += [{"report": rep, "num": f["番号"], "file": f["対象のファイル"] or "", "how": "もう当て終わっていた"}
+            for f, why, _c in stopped if why.startswith("もう当て終わっている")]
+    n_rec = _record_applied(rec)
+    print(f"— 当てた記録に {n_rec} 件を足した（{os.path.relpath(APPLIED_RECORD, ROOT)}）")
     rc_cmd = run_commands(cmds)
     # ★設計書の道（設計書 4-4 の 10）＝当てなかった件が1件でも在れば rc=1（当て忘れを機械で見つける）
-    return 1 if ((design_mode and stopped) or rc_cmd) else 0
+    #   ★2026-09-30＝もう当て終わっていた件は数えない（2回目の承認の後に、足した件だけを当てられる）
+    left = [x for x in stopped if not x[1].startswith("もう当て終わっている")]
+    return 1 if ((design_mode and left) or rc_cmd) else 0
 
 
 # ══ 自己テスト（設計書 4-19 の場面・本物には1バイトも書かない）═══════════════════════════════
@@ -795,6 +841,8 @@ def selftest() -> int:
     ok = total = 0
     fails: list = []
     tmp = tempfile.mkdtemp(prefix="_selftest_impl_apply_", dir=os.path.join(ROOT, ".claude", "state"))
+    rec_saved = globals()["APPLIED_RECORD"]
+    globals()["APPLIED_RECORD"] = os.path.join(tmp, "applied_selftest.json")   # ★本物の記録には書かない
     try:
         rel = os.path.relpath(os.path.join(tmp, "sample.py"), ROOT)
         code = os.path.join(tmp, "sample.py")
@@ -1003,10 +1051,15 @@ def selftest() -> int:
 
         # ★T17〜T21（2026-09-30・設計書 audit-fix-tools-target-20260930）＝道具のファイルと、走らせるコマンド
         #   道具の置き場・設計書・承認の印を、一時の置き場に替えて測る（本物の道具には1バイトも書かない）。
-        g_saved = (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"])
+        g_saved = (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
+                   globals()["HOOKS_DIR"], globals()["BREAKS_DIR"])
         tdir = os.path.join(tmp, ".claude", "tools")
         os.makedirs(tdir, exist_ok=True)
         globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"] = tdir, md, mark
+        globals()["HOOKS_DIR"] = os.path.join(tmp, ".claude", "hooks")
+        globals()["BREAKS_DIR"] = os.path.join(tmp, ".claude", "breaks")
+        os.makedirs(globals()["HOOKS_DIR"], exist_ok=True)
+        os.makedirs(globals()["BREAKS_DIR"], exist_ok=True)
         try:
             tpy = os.path.join(tdir, "t.py")
             trel = os.path.relpath(tpy, ROOT)
@@ -1141,10 +1194,97 @@ def selftest() -> int:
                 print(f"   T{total} 当てた修正が記録に入り、記録に在る修正を hook 12 が止めない → pass")
             else:
                 fails.append(f"❌ 当てた記録 T{total}: 前={before25} 足した={n25} 後={after25}")
+
+            # ★T26〜T30（2026-09-30・設計書 point2-design-to-impl-20260930）＝hook と、新しいファイル
+            hpy = os.path.join(globals()["HOOKS_DIR"], "h.sh")
+            hrel = os.path.relpath(hpy, ROOT)
+            hfix = {**tfix, "対象のファイル": hrel, "根拠の抜き書き": f"{hrel}:1「x = 1」"}
+
+            def hook_case(good_mark):
+                open(hpy, "w", encoding="utf-8").write("x = 1\n")
+                open(md, "w", encoding="utf-8").write(f"# 見本\n\nTARGET: {hrel}\n")
+                mark_of(md, mark) if good_mark else open(mark, "w", encoding="utf-8").write("0" * 64)
+                return check_one(hfix)
+
+            # T26 承認と TARGET がそろった hook には当てる／印が違えば当てない
+            total += 1
+            ok26a, _w, _c = hook_case(True)
+            ok26b, why26b, _c = hook_case(False)
+            if ok26a and not ok26b and "守りの仕組みなので当てない" in why26b:
+                ok += 1
+                print(f"   T{total} hook は承認と TARGET がそろったときだけ当てる → pass")
+            else:
+                fails.append(f"❌ 道具のファイル T{total}: hook の照らしが違う（そろった={ok26a}・印が違う={ok26b}）")
+
+            # T27 新しいファイル（直す前の文字「なし」）を、承認と NEW_FILE がそろえば作る
+            total += 1
+            npath = os.path.join(globals()["BREAKS_DIR"], "b_new.sh")
+            nrel = os.path.relpath(npath, ROOT)
+            nitems = [item(1, nrel, "なし", "直した後の文字", "#!/bin/bash\necho new", ev)]
+            open(code, "w", encoding="utf-8").write("x = 1\n")
+            open(md, "w", encoding="utf-8").write(design(nitems, rel).replace(
+                f"TARGET: {rel}\n", f"TARGET: {rel}\nNEW_FILE: {nrel}\n"))
+            mark_of(md, mark)
+            rc, out = run(["--design", md], mark)
+            if rc == 0 and os.path.isfile(npath) and open(npath).read() == "#!/bin/bash\necho new\n":
+                ok += 1
+                print(f"   T{total} 新しいファイルを作る（承認と NEW_FILE がそろったとき） → pass")
+            else:
+                fails.append(f"❌ 新しいファイル T{total}: 作れない（rc={rc}）{out[-200:]}")
+
+            # T28 同じ設計書をもう1回 当てると、当て済みとして rc=0（2回目の承認の後に、足した件だけを当てられる）
+            total += 1
+            rc, out = run(["--design", md], mark)
+            if rc == 0 and "もう当て終わっている" in out:
+                ok += 1
+                print(f"   T{total} もう当て終わった件は失敗に数えない（rc=0） → pass")
+            else:
+                fails.append(f"❌ 新しいファイル T{total}: 2回目で rc={rc}")
+
+            # T29 新しいファイルが別の中身でもう在れば、上書きせず1件も当てない
+            total += 1
+            open(npath, "w", encoding="utf-8").write("other\n")
+            rc, out = run(["--design", md], mark)
+            if rc == 1 and open(npath).read() == "other\n":
+                ok += 1
+                print(f"   T{total} 別の中身の既存ファイルは上書きしない → pass")
+            else:
+                fails.append(f"❌ 新しいファイル T{total}: 上書きした／rc={rc}")
+
+            # T30 NEW_FILE に無い新しいファイルは作らない
+            total += 1
+            os.remove(npath)
+            open(md, "w", encoding="utf-8").write(design(nitems, rel))
+            mark_of(md, mark)
+            rc, out = run(["--design", md], mark)
+            if rc == 1 and not os.path.exists(npath):
+                ok += 1
+                print(f"   T{total} NEW_FILE に無い新しいファイルは作らない → pass")
+            else:
+                fails.append(f"❌ 新しいファイル T{total}: NEW_FILE の外なのに作った（rc={rc}）")
+
+            # T31 承認済みの設計書に実装の指示が在る間は、hook 12 がその TARGET を CC の手の直しから守る
+            total += 1
+            fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2", ev)])
+            saved31 = (e12.REPORTS, a12.DESIGN, a12.APPROVED)
+            e12.REPORTS, a12.DESIGN, a12.APPROVED = os.path.join(tmp, "none_*_audit_report.md"), md, mark
+            try:
+                in31 = os.path.realpath(code) in e12.pending()
+                open(mark, "w", encoding="utf-8").write("0" * 64)
+                out31 = os.path.realpath(code) in e12.pending()
+            finally:
+                e12.REPORTS, a12.DESIGN, a12.APPROVED = saved31
+            if in31 and not out31:
+                ok += 1
+                print(f"   T{total} 承認済みの設計書の TARGET は hook 12 が守る（承認が外れたら守らない） → pass")
+            else:
+                fails.append(f"❌ hook 12 T{total}: 承認中={in31} 承認が外れた後={out31}")
         finally:
-            globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"] = g_saved
+            (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
+             globals()["HOOKS_DIR"], globals()["BREAKS_DIR"]) = g_saved
             globals()["AUDITED_DESIGN"] = ""
     finally:
+        globals()["APPLIED_RECORD"] = rec_saved
         shutil.rmtree(tmp, ignore_errors=True)
     for x in fails:
         print(x)

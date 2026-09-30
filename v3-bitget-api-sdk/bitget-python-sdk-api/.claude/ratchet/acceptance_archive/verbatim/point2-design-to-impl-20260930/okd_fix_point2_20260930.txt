@@ -1,0 +1,333 @@
+直す案です。前の案から変わる節だけを出します（道具は、後の案の同じ節で置き換えます）。【4-20】は19件の全文です。OK をいただいたら、写した【4-20】が一時の道具で確かめた json と1文字も違わないかを、機械で照らしてから設計書を作ります。
+
+写しで確かめたこと：19件とも直す前の文字が実物にちょうど1か所・当てた後の3本とも文法が通る・自己テスト（当てる道具 31/31・設計書の道具 17/17・依頼書の道具 12/12）・本物の3本は git の差分なし。
+
+【4-0 この仕組みは何か】
+当てる道具 apply_audit_fix.py の --design（設計書の実装の指示を実物に当てる口）を直し、設計書に書いた実装を、CC が Edit で書かずに道具が当てる形にする。あわせて、CC が手でコードを書く道を2つとも機械で塞ぐ。
+1つ目＝新しいファイル（直す前の文字が「なし」）を作れるようにする。
+2つ目＝hook と壊すプログラムにも、承認と TARGET／NEW_FILE がそろったときだけ当てられるようにする。
+3つ目＝設計書の道で当てた件を当てた記録に書き、もう当て終わった件を失敗に数えないようにする。
+4つ目＝承認済みの設計書に実装の指示が在る間、hook 12 がその TARGET と NEW_FILE を CC の手の直しから止める。
+5つ目＝設計書の道具が、直すファイルが在るのに 4-20 が0件の設計書を作らない。
+
+【4-1 システムの境界】
+動かすのは まこさん（承認の後に端末で当てる道具を2回）と CC（自己テスト・--dry）。
+読むのは、承認の印・設計書・工事のフォルダの実装の指示。書くのは、設計書の TARGET／NEW_FILE に在るファイルと、当てた記録 applied_fixes.json。
+hook 12 は、CC の Write・Edit・MultiEdit のたびに設計書と承認の印を読む。
+
+【4-3 部品と責任の割り当て】
+- apply_audit_fix の置き場の定数（HOOKS_DIR・BREAKS_DIR を足す）＝hook と壊すプログラムの置き場。
+- apply_audit_fix.tool_target_ok＝道具の .py に加えて、hook（.py・.sh）と壊すプログラム（.sh）も、承認と TARGET／NEW_FILE がそろったときだけ真にする。
+- apply_audit_fix.new_file_check（新しく作る）＝新しいファイルの件が作れるかを見る。
+- apply_audit_fix.design_key（新しく作る）＝設計書の道の当てた記録の名前「design:<ARC の iter>」を作る。
+- apply_audit_fix.check_one＝設計書の道だけ、直す前の文字が「なし」の件を new_file_check に回す。
+- apply_audit_fix.main＝新しいファイルは全文を書く・権限は .sh なら 755・設計書の道でも記録に書く・もう当て終わった件は失敗に数えない。
+- apply_audit_fix.selftest＝本物の記録に書かない形にし、場面 T26〜T31 を足す。
+- enforce_audit_fix.pending（hook 12）＝承認済みの設計書に実装の指示が在れば、その TARGET と NEW_FILE を止める一覧に入れる。
+- enforce_audit_fix.main（hook 12）＝止めたときの案内に、設計書の道の当て方を足す。
+- gen_acceptance.page＝直すファイルが在るのに実装の指示が0件なら止まる。
+- gen_acceptance._sample_work＝自己テストの見本にも実装の指示を1件 持たせる。
+- gen_acceptance.selftest＝4-20 が0件なら止まる場面を足す。
+
+【4-4 処理の流れ】
+- ①承認の印と設計書のハッシュ値を照らす（今までどおり）。
+- ②実装の指示を全部 先に確かめる。新しいファイルの件は、まだ無いか・同じ中身で在るか・別の中身で在るかを見る。
+- ③実物と合わない件が1件でも在れば、1件も当てない（今までどおり）。
+- ④当てる。新しいファイルは全文を書く。
+- ⑤当てた件と、もう当て終わっていた件を、当てた記録に「design:<工事名>」で書く。
+- ⑥もう当て終わっていた件だけが残ったときは rc=0。
+- ⑦この後、承認済みの設計書に実装の指示が在る間は、CC が TARGET と NEW_FILE を Write・Edit しようとすると hook 12 が止める。
+
+【4-12 出る結果の姿】
+- 新しいファイルの件は「修正 N（設計書）: 新しいファイルを作った」とパスつきで出る。
+- もう当て終わった件は「もう当て終わっている」と出て、終了コードの失敗に数えない。
+- 最後に「当てた記録に N 件を足した」が、設計書の道でも出る。
+- hook 12 が止めたときは、止めた理由に「設計書の実装の指示」と当て方のコマンドが出る。
+- 設計書の道具は、4-20 が0件の設計書を作らずに理由を出して止まる。
+
+【4-13 影響範囲】
+- 直すファイルの名前で壊すプログラムを grep すると、当てる道具は b101・b102・b118・b119、設計書の道具は b72・b73・b89。探す行（approved_ok の行・_recheck の行・if hard の行・tool_target_ok の定義の行・command_argv の定義の行・verify の定義の行・build_coderef の定義の行）は変えない。
+- b89 は、いまの設計書の表の行を壊す壊すプログラムで、この工事の完成の条件には載せない。
+- hook 12 は tool_target_ok を呼ぶ。広げた後は、承認済みの設計書の TARGET に在る hook と壊すプログラムにも、監査の修正が当たるまで CC の手の直しを止める。
+- 承認済みの過去の設計書（4-20 が非該当）は、この後 --verify で作り直すと止まる。控えは直さない。
+- 依頼書の道具（gen_audit_docs.py）は、設計書の道具の見本の工事のフォルダを使う。写しで自己テスト 12/12 を確かめた。
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "TOOLS_DIR の定義",
+  "直す前の文字": "TOOLS_DIR = os.path.join(ROOT, \".claude\", \"tools\")                          # 自己テストが一時の置き場に替える",
+  "種類": "足す文字",
+  "中身": "\n# ★2026-09-30（設計書 point2-design-to-impl-20260930）＝hook と壊すプログラムにも、承認と TARGET／NEW_FILE がそろったときだけ当てる\nHOOKS_DIR = os.path.join(ROOT, \".claude\", \"hooks\")                          # 自己テストが一時の置き場に替える\nBREAKS_DIR = os.path.join(ROOT, \".claude\", \"breaks\")                        # 自己テストが一時の置き場に替える",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:86「TOOLS_DIR = os.path.join(ROOT, \".claude\", \"tools\")                          # 自己テストが一時の置き場に替える」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "tool_target_ok",
+  "直す前の文字": "    real = os.path.realpath(repo_path(raw))\n    if not real.endswith(\".py\") or os.path.dirname(real) != os.path.realpath(TOOLS_DIR):\n        return False\n    others = [k for k in NEVER_WRITE if k != \".claude/tools/\"]",
+  "種類": "直した後の文字",
+  "中身": "    real = os.path.realpath(repo_path(raw))\n    # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝道具の .py に加えて、hook（.py・.sh）と壊すプログラム（.sh）にも当てる\n    kinds = {os.path.realpath(TOOLS_DIR): (\".py\",), os.path.realpath(HOOKS_DIR): (\".py\", \".sh\"),\n             os.path.realpath(BREAKS_DIR): (\".sh\",)}\n    ends = kinds.get(os.path.dirname(real))\n    if not ends or not real.endswith(ends):\n        return False\n    others = [k for k in NEVER_WRITE if k not in (\".claude/tools/\", \".claude/hooks/\", \".claude/breaks/\")]",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:216「real = os.path.realpath(repo_path(raw))」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "check_one の前",
+  "直す前の文字": "def check_one(f: dict, chosen: dict = None, run_ok: bool = False) -> tuple:",
+  "種類": "直した後の文字",
+  "中身": "def design_key(design_text: str, design_path: str) -> str:\n    \"\"\"設計書の道の、当てた記録の名前＝「design:<ARC の iter>」（目印が無ければ設計書のファイル名）。\"\"\"\n    m = re.search(r'<!-- ARC iter=\"([^\"]+)\" -->', design_text)\n    return \"design:\" + (m.group(1) if m else os.path.basename(design_path))\n\n\ndef new_file_check(f: dict, path: str) -> tuple:\n    \"\"\"新しいファイル（直す前の文字が「なし」）の件が作れるか。戻り＝(作れるか, 理由, \"\")。★設計書の道だけ。\n\n    作れる＝4つ目が「直した後の文字」1つだけ・中身が空でない・ファイルがまだ無い・置き場のフォルダが在る。\n    同じ中身でもう在れば当て済み。別の中身で在れば止める（上書きしない）。\n    \"\"\"\n    plans = [(k, b) for _a, k, b in f[\"4つ目\"]]\n    if len(plans) != 1 or plans[0][0] != \"直した後の文字\" or not plans[0][1]:\n        return False, \"新しいファイルの件は、4つ目が「直した後の文字」1つ（ファイルの全文）であること\", \"\"\n    body = plans[0][1]\n    if os.path.exists(path):\n        if open(path, encoding=\"utf-8\").read().rstrip(\"\\n\") == body.rstrip(\"\\n\"):\n            return False, \"もう当て終わっている（新しいファイルが同じ中身で在る）\", \"\"\n        return False, f\"新しいファイルのはずが、別の中身でもう在る（{path}）＝上書きしない\", \"\"\n    if not os.path.isdir(os.path.dirname(path)):\n        return False, f\"新しいファイルの置き場のフォルダが無い（{os.path.dirname(path)}）\", \"\"\n    return True, \"新しいファイル\", \"\"\n\n\ndef check_one(f: dict, chosen: dict = None, run_ok: bool = False, new_ok: bool = False) -> tuple:",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:392「def check_one(f: dict, chosen: dict = None, run_ok: bool = False) -> tuple:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "check_one の中（実在の確かめの前）",
+  "直す前の文字": "    path = repo_path(rel)\n    if not os.path.isfile(path):",
+  "種類": "直した後の文字",
+  "中身": "    path = repo_path(rel)\n    # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝新しいファイル（直す前の文字が「なし」）は、設計書の道でだけ作る\n    if new_ok and (f[\"直す前の文字\"] or \"\").strip() == \"なし\":\n        return new_file_check(f, path)\n    if not os.path.isfile(path):",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:417「path = repo_path(rel)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "main の全件の確かめ",
+  "直す前の文字": "        ok, why, cur = check_one(f, chosen, run_ok=not design_mode)",
+  "種類": "直した後の文字",
+  "中身": "        ok, why, cur = check_one(f, chosen, run_ok=not design_mode, new_ok=design_mode)",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:660「ok, why, cur = check_one(f, chosen, run_ok=not design_mode)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "main の当てる前の組み立て",
+  "直す前の文字": "    for f, _w, _c in ready:\n        path = repo_path(f[\"対象のファイル\"])\n        if path not in mem:",
+  "種類": "直した後の文字",
+  "中身": "    for f, _w, _c in ready:\n        path = repo_path(f[\"対象のファイル\"])\n        if _w == \"新しいファイル\":\n            # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝新しいファイルは中身の全文を書く（同じファイルに2件は止める）\n            if path in mem:\n                print(f\"\\n❌ 修正 {f['番号']}: 新しいファイル {os.path.relpath(path, ROOT)} に2件 当てようとしています＝1件も当てません\")\n                return 1\n            mem[path] = next(b for _a, k, b in f[\"4つ目\"] if k == \"直した後の文字\").rstrip(\"\\n\") + \"\\n\"\n            plan.append((f, \"新しいファイルを作った\", path))\n            continue\n        if path not in mem:",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:698「for f, _w, _c in ready:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "main の --dry の終わり",
+  "直す前の文字": "        return 1 if (design_mode and stopped) else 0",
+  "種類": "直した後の文字",
+  "中身": "        return 1 if (design_mode and [x for x in stopped if not x[1].startswith(\"もう当て終わっている\")]) else 0",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:718「return 1 if (design_mode and stopped) else 0」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "main の書き込み（権限）",
+  "直す前の文字": "                os.chmod(tmp_path, os.stat(path).st_mode & 0o7777)",
+  "種類": "直した後の文字",
+  "中身": "                os.chmod(tmp_path, (os.stat(path).st_mode & 0o7777) if os.path.exists(path)\n                         else (0o755 if path.endswith(\".sh\") else 0o644))",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:728「os.chmod(tmp_path, os.stat(path).st_mode & 0o7777)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 9,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "main の当てた記録と終了コード",
+  "直す前の文字": "    if not design_mode:\n        rep = os.path.basename(a.report)\n        rec = [{\"report\": rep, \"num\": f[\"番号\"], \"file\": f[\"対象のファイル\"] or \"\", \"how\": \"当てた\"}\n               for f, _what, _path in plan]\n        rec += [{\"report\": rep, \"num\": f[\"番号\"], \"file\": f[\"対象のファイル\"] or \"\", \"how\": \"もう当て終わっていた\"}\n                for f, why, _c in stopped if why.startswith(\"もう当て終わっている\")]\n        n_rec = _record_applied(rec)\n        print(f\"— 当てた記録に {n_rec} 件を足した（{os.path.relpath(APPLIED_RECORD, ROOT)}）\")\n    rc_cmd = run_commands(cmds)\n    # ★設計書の道（設計書 4-4 の 10）＝当てなかった件が1件でも在れば rc=1（当て忘れを機械で見つける）\n    return 1 if ((design_mode and stopped) or rc_cmd) else 0",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝設計書の道でも記録に書く（名前は「design:<iter>」）\n    rep = design_key(text, a.design) if design_mode else os.path.basename(a.report)\n    rec = [{\"report\": rep, \"num\": f[\"番号\"], \"file\": f[\"対象のファイル\"] or \"\", \"how\": \"当てた\"}\n           for f, _what, _path in plan]\n    rec += [{\"report\": rep, \"num\": f[\"番号\"], \"file\": f[\"対象のファイル\"] or \"\", \"how\": \"もう当て終わっていた\"}\n            for f, why, _c in stopped if why.startswith(\"もう当て終わっている\")]\n    n_rec = _record_applied(rec)\n    print(f\"— 当てた記録に {n_rec} 件を足した（{os.path.relpath(APPLIED_RECORD, ROOT)}）\")\n    rc_cmd = run_commands(cmds)\n    # ★設計書の道（設計書 4-4 の 10）＝当てなかった件が1件でも在れば rc=1（当て忘れを機械で見つける）\n    #   ★2026-09-30＝もう当て終わっていた件は数えない（2回目の承認の後に、足した件だけを当てられる）\n    left = [x for x in stopped if not x[1].startswith(\"もう当て終わっている\")]\n    return 1 if ((design_mode and left) or rc_cmd) else 0",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:742「if not design_mode:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 10,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "selftest の一時の置き場",
+  "直す前の文字": "    tmp = tempfile.mkdtemp(prefix=\"_selftest_impl_apply_\", dir=os.path.join(ROOT, \".claude\", \"state\"))\n    try:",
+  "種類": "直した後の文字",
+  "中身": "    tmp = tempfile.mkdtemp(prefix=\"_selftest_impl_apply_\", dir=os.path.join(ROOT, \".claude\", \"state\"))\n    rec_saved = globals()[\"APPLIED_RECORD\"]\n    globals()[\"APPLIED_RECORD\"] = os.path.join(tmp, \"applied_selftest.json\")   # ★本物の記録には書かない\n    try:",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:797「tmp = tempfile.mkdtemp(prefix=\"_selftest_impl_apply_\", dir=os.path.join(ROOT, \".claude\", \"state\"))」",
+  "状態": "確定"
+ },
+ {
+  "番号": 11,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "selftest の終わりの片付け",
+  "直す前の文字": "    finally:\n        shutil.rmtree(tmp, ignore_errors=True)",
+  "種類": "直した後の文字",
+  "中身": "    finally:\n        globals()[\"APPLIED_RECORD\"] = rec_saved\n        shutil.rmtree(tmp, ignore_errors=True)",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:1147「finally:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 12,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "selftest の置き場の差し替え",
+  "直す前の文字": "        g_saved = (globals()[\"TOOLS_DIR\"], globals()[\"DESIGN\"], globals()[\"APPROVED\"])\n        tdir = os.path.join(tmp, \".claude\", \"tools\")\n        os.makedirs(tdir, exist_ok=True)\n        globals()[\"TOOLS_DIR\"], globals()[\"DESIGN\"], globals()[\"APPROVED\"] = tdir, md, mark",
+  "種類": "直した後の文字",
+  "中身": "        g_saved = (globals()[\"TOOLS_DIR\"], globals()[\"DESIGN\"], globals()[\"APPROVED\"],\n                   globals()[\"HOOKS_DIR\"], globals()[\"BREAKS_DIR\"])\n        tdir = os.path.join(tmp, \".claude\", \"tools\")\n        os.makedirs(tdir, exist_ok=True)\n        globals()[\"TOOLS_DIR\"], globals()[\"DESIGN\"], globals()[\"APPROVED\"] = tdir, md, mark\n        globals()[\"HOOKS_DIR\"] = os.path.join(tmp, \".claude\", \"hooks\")\n        globals()[\"BREAKS_DIR\"] = os.path.join(tmp, \".claude\", \"breaks\")\n        os.makedirs(globals()[\"HOOKS_DIR\"], exist_ok=True)\n        os.makedirs(globals()[\"BREAKS_DIR\"], exist_ok=True)",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:1006「g_saved = (globals()[\"TOOLS_DIR\"], globals()[\"DESIGN\"], globals()[\"APPROVED\"])」",
+  "状態": "確定"
+ },
+ {
+  "番号": 13,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "selftest の置き場を戻す",
+  "直す前の文字": "            globals()[\"TOOLS_DIR\"], globals()[\"DESIGN\"], globals()[\"APPROVED\"] = g_saved",
+  "種類": "直した後の文字",
+  "中身": "            (globals()[\"TOOLS_DIR\"], globals()[\"DESIGN\"], globals()[\"APPROVED\"],\n             globals()[\"HOOKS_DIR\"], globals()[\"BREAKS_DIR\"]) = g_saved",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:1145「globals()[\"TOOLS_DIR\"], globals()[\"DESIGN\"], globals()[\"APPROVED\"] = g_saved」",
+  "状態": "確定"
+ },
+ {
+  "番号": 14,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "selftest の T25 の後",
+  "直す前の文字": "                fails.append(f\"❌ 当てた記録 T{total}: 前={before25} 足した={n25} 後={after25}\")",
+  "種類": "足す文字",
+  "中身": "\n\n            # ★T26〜T30（2026-09-30・設計書 point2-design-to-impl-20260930）＝hook と、新しいファイル\n            hpy = os.path.join(globals()[\"HOOKS_DIR\"], \"h.sh\")\n            hrel = os.path.relpath(hpy, ROOT)\n            hfix = {**tfix, \"対象のファイル\": hrel, \"根拠の抜き書き\": f\"{hrel}:1「x = 1」\"}\n\n            def hook_case(good_mark):\n                open(hpy, \"w\", encoding=\"utf-8\").write(\"x = 1\\n\")\n                open(md, \"w\", encoding=\"utf-8\").write(f\"# 見本\\n\\nTARGET: {hrel}\\n\")\n                mark_of(md, mark) if good_mark else open(mark, \"w\", encoding=\"utf-8\").write(\"0\" * 64)\n                return check_one(hfix)\n\n            # T26 承認と TARGET がそろった hook には当てる／印が違えば当てない\n            total += 1\n            ok26a, _w, _c = hook_case(True)\n            ok26b, why26b, _c = hook_case(False)\n            if ok26a and not ok26b and \"守りの仕組みなので当てない\" in why26b:\n                ok += 1\n                print(f\"   T{total} hook は承認と TARGET がそろったときだけ当てる → pass\")\n            else:\n                fails.append(f\"❌ 道具のファイル T{total}: hook の照らしが違う（そろった={ok26a}・印が違う={ok26b}）\")\n\n            # T27 新しいファイル（直す前の文字「なし」）を、承認と NEW_FILE がそろえば作る\n            total += 1\n            npath = os.path.join(globals()[\"BREAKS_DIR\"], \"b_new.sh\")\n            nrel = os.path.relpath(npath, ROOT)\n            nitems = [item(1, nrel, \"なし\", \"直した後の文字\", \"#!/bin/bash\\necho new\", ev)]\n            open(code, \"w\", encoding=\"utf-8\").write(\"x = 1\\n\")\n            open(md, \"w\", encoding=\"utf-8\").write(design(nitems, rel).replace(\n                f\"TARGET: {rel}\\n\", f\"TARGET: {rel}\\nNEW_FILE: {nrel}\\n\"))\n            mark_of(md, mark)\n            rc, out = run([\"--design\", md], mark)\n            if rc == 0 and os.path.isfile(npath) and open(npath).read() == \"#!/bin/bash\\necho new\\n\":\n                ok += 1\n                print(f\"   T{total} 新しいファイルを作る（承認と NEW_FILE がそろったとき） → pass\")\n            else:\n                fails.append(f\"❌ 新しいファイル T{total}: 作れない（rc={rc}）{out[-200:]}\")\n\n            # T28 同じ設計書をもう1回 当てると、当て済みとして rc=0（2回目の承認の後に、足した件だけを当てられる）\n            total += 1\n            rc, out = run([\"--design\", md], mark)\n            if rc == 0 and \"もう当て終わっている\" in out:\n                ok += 1\n                print(f\"   T{total} もう当て終わった件は失敗に数えない（rc=0） → pass\")\n            else:\n                fails.append(f\"❌ 新しいファイル T{total}: 2回目で rc={rc}\")\n\n            # T29 新しいファイルが別の中身でもう在れば、上書きせず1件も当てない\n            total += 1\n            open(npath, \"w\", encoding=\"utf-8\").write(\"other\\n\")\n            rc, out = run([\"--design\", md], mark)\n            if rc == 1 and open(npath).read() == \"other\\n\":\n                ok += 1\n                print(f\"   T{total} 別の中身の既存ファイルは上書きしない → pass\")\n            else:\n                fails.append(f\"❌ 新しいファイル T{total}: 上書きした／rc={rc}\")\n\n            # T30 NEW_FILE に無い新しいファイルは作らない\n            total += 1\n            os.remove(npath)\n            open(md, \"w\", encoding=\"utf-8\").write(design(nitems, rel))\n            mark_of(md, mark)\n            rc, out = run([\"--design\", md], mark)\n            if rc == 1 and not os.path.exists(npath):\n                ok += 1\n                print(f\"   T{total} NEW_FILE に無い新しいファイルは作らない → pass\")\n            else:\n                fails.append(f\"❌ 新しいファイル T{total}: NEW_FILE の外なのに作った（rc={rc}）\")\n\n            # T31 承認済みの設計書に実装の指示が在る間は、hook 12 がその TARGET を CC の手の直しから守る\n            total += 1\n            fresh([item(1, rel, \"x = 1\", \"直した後の文字\", \"x = 2\", ev)])\n            saved31 = (e12.REPORTS, a12.DESIGN, a12.APPROVED)\n            e12.REPORTS, a12.DESIGN, a12.APPROVED = os.path.join(tmp, \"none_*_audit_report.md\"), md, mark\n            try:\n                in31 = os.path.realpath(code) in e12.pending()\n                open(mark, \"w\", encoding=\"utf-8\").write(\"0\" * 64)\n                out31 = os.path.realpath(code) in e12.pending()\n            finally:\n                e12.REPORTS, a12.DESIGN, a12.APPROVED = saved31\n            if in31 and not out31:\n                ok += 1\n                print(f\"   T{total} 承認済みの設計書の TARGET は hook 12 が守る（承認が外れたら守らない） → pass\")\n            else:\n                fails.append(f\"❌ hook 12 T{total}: 承認中={in31} 承認が外れた後={out31}\")",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:1143「fails.append(f\"❌ 当てた記録 T{total}: 前={before25} 足した={n25} 後={after25}\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 15,
+  "対象のファイル": ".claude/hooks/enforce_audit_fix.py",
+  "直す箇所": "pending の頭",
+  "直す前の文字": "    out = {}\n    done = a.applied_keys()                                  # ★当てた記録（案A）",
+  "種類": "足す文字",
+  "中身": "\n    # ★2026-09-30（設計書 point2-design-to-impl-20260930・2点目）＝承認済みの設計書に実装の指示（4-20）が在る間は、\n    #   その設計書の TARGET と NEW_FILE を CC の手で直させない（実装は当てる道具だけが書く）。\n    #   直しが要るときは、案の【4-20】に足して設計書を作り直し、承認を通して当てる。\n    try:\n        dtext = open(a.DESIGN, encoding=\"utf-8\").read()\n        if a.approved_ok(a.DESIGN)[0] and a.read_design_fixes(dtext):\n            key = a.design_key(dtext, a.DESIGN)\n            for p in a.design_targets(dtext):\n                out.setdefault(p, []).append((key, \"（設計書の実装の指示）\"))\n    except Exception:                                        # noqa: BLE001\n        pass                                                 # 設計書が読めないときは止めない（fail-open・上と同じ）",
+  "根拠の抜き書き": ".claude/hooks/enforce_audit_fix.py:75「out = {}」",
+  "状態": "確定"
+ },
+ {
+  "番号": 16,
+  "対象のファイル": ".claude/hooks/enforce_audit_fix.py",
+  "直す箇所": "main の案内の文",
+  "直す前の文字": "    print(\"   ＝先に当ててください:\", file=e)",
+  "種類": "直した後の文字",
+  "中身": "    print(\"   ＝先に当ててください（設計書の実装の指示なら python3 .claude/tools/apply_audit_fix.py --design）:\", file=e)",
+  "根拠の抜き書き": ".claude/hooks/enforce_audit_fix.py:128「print(\"   ＝先に当ててください:\", file=e)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 17,
+  "対象のファイル": ".claude/tools/gen_acceptance.py",
+  "直す箇所": "page の検査",
+  "直す前の文字": "    _ib = impl_before_problems(d)",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-09-30（設計書 point2-design-to-impl-20260930・2点目）＝直すファイル（TARGET・NEW_FILE）が在るのに、\n    #   実装の指示（4-20）を「非該当」にした設計書は作らない（実装を CC が手で書く道を残さない）。\n    if (d.get(\"TARGET\") or d.get(\"NEW_FILE\")) and not (d.get(\"実装の指示\") or []):\n        raise SystemExit(\"[gen_acceptance] 直すファイル（TARGET・NEW_FILE）が在るのに、実装の指示（4-20）が0件です\"\n                         \"（fail-closed・2点目）。案の【4-20】に、当てる道具が当てる形で実装を書いてください。\")\n    _ib = impl_before_problems(d)",
+  "根拠の抜き書き": ".claude/tools/gen_acceptance.py:1303「_ib = impl_before_problems(d)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 18,
+  "対象のファイル": ".claude/tools/gen_acceptance.py",
+  "直す箇所": "_sample_work の非該当の一覧",
+  "直す前の文字": "    for k in (\"4-6\", \"4-7\", \"4-8\", \"4-9\", \"4-10\", \"4-11\", \"4-14\", \"4-15\", \"4-16\", \"4-17\", \"4-18\", \"4-20\"):\n        prop += [f\"【{k}】\", na]",
+  "種類": "直した後の文字",
+  "中身": "    for k in (\"4-6\", \"4-7\", \"4-8\", \"4-9\", \"4-10\", \"4-11\", \"4-14\", \"4-15\", \"4-16\", \"4-17\", \"4-18\"):\n        prop += [f\"【{k}】\", na]\n    # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝TARGET が在る設計書は 4-20 を非該当にできないので、見本も1件持つ\n    #   （見本の置き場の中の、まだ無い新しいファイル＝本物のファイルに頼らない）\n    prop += [\"【4-20】\", \"```json\",\n             json.dumps([{\"番号\": 1, \"対象のファイル\": str(Path(base) / \"sample_new.txt\"), \"直す箇所\": \"新しいファイル\",\n                          \"直す前の文字\": \"なし\", \"種類\": \"直した後の文字\", \"中身\": \"見本\",\n                          \"根拠の抜き書き\": \"見本:1「見本」\", \"状態\": \"確定\"}], ensure_ascii=False),\n             \"```\"]",
+  "根拠の抜き書き": ".claude/tools/gen_acceptance.py:1871「for k in (\"4-6\", \"4-7\", \"4-8\", \"4-9\", \"4-10\", \"4-11\", \"4-14\", \"4-15\", \"4-16\", \"4-17\", \"4-18\", \"4-20\"):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 19,
+  "対象のファイル": ".claude/tools/gen_acceptance.py",
+  "直す箇所": "selftest の T12 の前",
+  "直す前の文字": "        # T12（2026-09-29・まこさん指示「設計の元となるデータは明確にして」）＝0-1 に、要件のまとめ.md への参照と、",
+  "種類": "直した後の文字",
+  "中身": "        # T17（2026-09-30・設計書 point2-design-to-impl-20260930）＝直すファイルが在るのに 4-20 が0件なら止まる\n        total += 1\n        d17 = _copy.deepcopy(base_d)\n        d17[\"実装の指示\"] = []\n        try:\n            page(d17)\n            print(f\"   T{total} 4-20 が0件でも書ける → fail\")\n        except SystemExit as e:\n            if \"実装の指示（4-20）が0件\" in str(e):\n                ok += 1\n                print(f\"   T{total} 直すファイルが在るのに 4-20 が0件だと止まる → pass\")\n            else:\n                print(f\"   T{total} 別の理由で止まった → fail（{str(e)[:120]}）\")\n\n        # T12（2026-09-29・まこさん指示「設計の元となるデータは明確にして」）＝0-1 に、要件のまとめ.md への参照と、",
+  "根拠の抜き書き": ".claude/tools/gen_acceptance.py:2119「# T12（2026-09-29・まこさん指示「設計の元となるデータは明確にして」）＝0-1 に、要件のまとめ.md への参照と、」",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 新しいファイルは、直す前の文字「なし」の件として書く | 設計書の道具（impl_before_problems）が既に「なし」を新しいファイルとして扱っている。欄の形（gen_audit_docs）を変えずに済む | 4つ目の欄に新しい見出しを足す（欄の読み取りの道具を直すことになる） |
+| hook と壊すプログラムは、道具の .py と同じ照らし（承認と TARGET／NEW_FILE）に入れる | 照らしを1か所にまとめる。承認の無い書き込みは今までどおり止まる | 別の照らしを作る（同じ判定が2か所になる） |
+| hook 12 は、承認済みの設計書に実装の指示が在る間、TARGET を丸ごと止める | 当て終わった後も、私が手で書き足す道を残さない。直しは案の【4-20】に足して承認を通す | 当て終わった件だけ止めを外す（当てた後に手で直せてしまう） |
+| 当てる道具は、まこさんの端末で2回 打っていただく | 1回目は古い道具なので hook 12 に当てられない。2回目は直った道具が当て、1回目の件は当て済みとして飛ばす | 設計↔実装ゲートに例外を足す（守りを緩める） |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| hook と壊すプログラムにも道具が書けるので、守りが1本の書き込みで外れる | 承認の印と TARGET／NEW_FILE がそろったときだけ。settings・承認の印・凍結の記録は今までどおり当てない（T8・T15・T26） |
+| hook 12 が、承認中の設計書の TARGET を私の手から止めるので、直しのたびに承認が1回 要る | 案を出す前に写しで自己テストを走らせ、承認の後に直す回数を減らす（この工事でも写しで確かめた） |
+| 直す前の文字の写し間違い | 案を出す前に一時の道具で19件とも実物にちょうど1か所を確かめた。設計書を作るときにも道具が照らす |
+| 当てた後のコードの誤り | 案を出す前に、当てた後の写しで自己テスト（31/31・17/17・12/12）を確かめた |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる（まこさんの端末で2回） | 1分以内 | 当てる19件は3本のファイル。当てる道具は全件を読んでから1回だけ書く |
+| 自己テスト | 1分以内 | 当てた後の写しで走らせて、待ち時間なく終わった（秒は測っていない） |
+
+【7-3 変更の単位】
+変更は1つ＝設計書の実装を、当てる道具だけが書く形にする（道具が当てられる相手を広げ、手で書く道を2つ塞ぐ）。記録と当て済みの扱いは、そのための部品。
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 当てた後のコードが正しいか | 見ない。道具は設計書に書いた文字をそのまま入れる。正しさは自己テスト・監査・まこさんの目が見る |
+| コードの中身を誰が書くか | 案の【4-20】に CC が書く。道具で作ることはできない |
+| 承認済みの設計書が無いときの手の直し | hook 12 は、承認済みの設計書に実装の指示が在る間だけ止める。承認の要らない hook と道具（gen_ の名前）は、設計書が無ければ止めない |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝道具2本と hook 1本（apply_audit_fix.py・gen_acceptance.py・enforce_audit_fix.py）。売買のロジックに触らない。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝apply_audit_fix.py）。
+- 新しいファイルを作らない（NEW_FILE・MODEL の行は無い）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（設計書の実装を、当てる道具だけが書く形にする）。
+- 過去の失敗の再演＝案を出す前に写しで試した（1点目で、承認の後に自己テストが落ちて承認を繰り返した型を避ける）。
+- 非該当（売買のロジックの部品・前処理を足さない）。
+- 非該当（売買の実行器と生成器を直さない）。
+- 直すファイルの名前で壊すプログラムを grep した。探す行は変えない（4-13）。
+- 非該当（壊すプログラムを足さない。自己テストは一時の置き場だけに書く）。
+- 触る関数は DESIGN_CONTRACT の impl_functions に全部 在る（3本とも git の差分が無い状態から数えた）。
+- 新しく足す旗は無い。完成の条件の4行が --selftest で通る。
+- 非該当（2回目の承認の前に書き直す＝その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=point2-design-to-impl-20260930）。
+- 1変更・過去失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝当てる道具と設計書の道具の --selftest と、承認の前の検査の --try。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| 承認と TARGET／NEW_FILE がそろった道具・hook・壊すプログラムにだけ当てる | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | tool_target_ok をいつも真にする | b118_audit_fix_tools_target.sh | 要 | 未着手 |
+| 実物と合わない件が1件でも在れば1件も当てない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | 全件を先に確かめる処理と当てる直前の確かめを外す | b102_design_apply_no_precheck.sh | 要 | 未着手 |
+| 承認の印が合わなければ1件も当てない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | 承認の印の照らしをいつも真にする | b101_design_apply_no_approval.sh | 要 | 未着手 |
+| 設計書の道具の自己テストが、4-20 が0件の設計書を止め、今までの場面も通る | python3 ../../.claude/tools/gen_acceptance.py --selftest | 道具 | verify を中身を見ずに通す形にする | b72_acceptance_handwritten.sh | 要 | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{"TARGET": [".claude/tools/apply_audit_fix.py", ".claude/hooks/enforce_audit_fix.py", ".claude/tools/gen_acceptance.py"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/apply_audit_fix.py",
+  "self_check_calls": ["new_file_check", "design_key"],
+  "impl_functions": {"../../.claude/tools/apply_audit_fix.py": ["<モジュール直下>", "tool_target_ok", "design_key", "new_file_check", "check_one", "main", "selftest"],
+   "../../.claude/hooks/enforce_audit_fix.py": ["pending", "main"],
+   "../../.claude/tools/gen_acceptance.py": ["page", "_sample_work", "selftest"]},
+  "must_use": {"check_one": ["new_file_check"], "main": ["design_key"]},
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事の道具が外から読む一覧（承認の印・設計書の TARGET と NEW_FILE・当てた記録の形）の形は変えない",
+  "generated_from": {
+   "impl_functions": "4-3 に書いた、この工事で触る関数（3本とも git の差分が無い状態から数えた）",
+   "must_use": "直した後に呼ぶ名前（4-3）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```

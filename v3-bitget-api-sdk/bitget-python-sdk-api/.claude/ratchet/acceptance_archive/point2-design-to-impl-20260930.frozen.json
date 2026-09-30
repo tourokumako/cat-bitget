@@ -1,0 +1,23 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "../../.claude/tools/apply_audit_fix.py": [
+  "<モジュール直下>",
+  "tool_target_ok",
+  "design_key",
+  "new_file_check",
+  "check_one",
+  "main",
+  "selftest"
+ ],
+ "../../.claude/hooks/enforce_audit_fix.py": [
+  "pending",
+  "main"
+ ],
+ "../../.claude/tools/gen_acceptance.py": [
+  "page",
+  "_sample_work",
+  "selftest"
+ ]
+}

@@ -336,6 +336,139 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
    "at": "2026-09-30T12:47:17",
    "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "15",
+   "file": ".claude/hooks/enforce_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "16",
+   "file": ".claude/hooks/enforce_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "1",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "2",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "3",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "4",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "5",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "6",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "7",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "8",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "9",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "10",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "11",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "12",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "13",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "14",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "17",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "18",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point2-design-to-impl-20260930",
+   "num": "19",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T15:28:31",
+   "how": "もう当て終わっていた"
   }
  ]
 }

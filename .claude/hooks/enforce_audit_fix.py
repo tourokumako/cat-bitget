@@ -74,6 +74,17 @@ def pending() -> dict:
         return {}                                            # 道具が読めないときは止めない（fail-open）
     out = {}
     done = a.applied_keys()                                  # ★当てた記録（案A）
+    # ★2026-09-30（設計書 point2-design-to-impl-20260930・2点目）＝承認済みの設計書に実装の指示（4-20）が在る間は、
+    #   その設計書の TARGET と NEW_FILE を CC の手で直させない（実装は当てる道具だけが書く）。
+    #   直しが要るときは、案の【4-20】に足して設計書を作り直し、承認を通して当てる。
+    try:
+        dtext = open(a.DESIGN, encoding="utf-8").read()
+        if a.approved_ok(a.DESIGN)[0] and a.read_design_fixes(dtext):
+            key = a.design_key(dtext, a.DESIGN)
+            for p in a.design_targets(dtext):
+                out.setdefault(p, []).append((key, "（設計書の実装の指示）"))
+    except Exception:                                        # noqa: BLE001
+        pass                                                 # 設計書が読めないときは止めない（fail-open・上と同じ）
     for rep in glob.glob(REPORTS):
         try:
             text = open(rep, encoding="utf-8").read()
@@ -125,7 +136,7 @@ def main(raw: str) -> int:
           "（まこさん指示 2026-09-14「テンプレ以外では書けないように強制」）。", file=e)
     for rep, num in hit[:8]:
         print(f"   ❌ {rep} の 修正 {num}", file=e)
-    print("   ＝先に当ててください:", file=e)
+    print("   ＝先に当ててください（設計書の実装の指示なら python3 .claude/tools/apply_audit_fix.py --design）:", file=e)
     print("     python3 .claude/tools/apply_audit_fix.py --report <上の監査結果> "
           "--severity <まこさんが決めた重さ>", file=e)
     print("   ★当て終わると、このファイルは普通に直せます（まこさん決定 2026-09-16 の線引き）。", file=e)

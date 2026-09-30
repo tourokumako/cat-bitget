@@ -1300,6 +1300,11 @@ def page(d: dict) -> str:
         raise SystemExit("[gen_acceptance] 元データの「実装の指示」が一覧（[]）の形ではありません（fail-closed）。")
     if any(not isinstance(it, dict) for it in (d.get("実装の指示") or [])):
         raise SystemExit("[gen_acceptance] 元データの「実装の指示」の中に、1件ずつの形（{…}）でないものが在ります（fail-closed）。")
+    # ★2026-09-30（設計書 point2-design-to-impl-20260930・2点目）＝直すファイル（TARGET・NEW_FILE）が在るのに、
+    #   実装の指示（4-20）を「非該当」にした設計書は作らない（実装を CC が手で書く道を残さない）。
+    if (d.get("TARGET") or d.get("NEW_FILE")) and not (d.get("実装の指示") or []):
+        raise SystemExit("[gen_acceptance] 直すファイル（TARGET・NEW_FILE）が在るのに、実装の指示（4-20）が0件です"
+                         "（fail-closed・2点目）。案の【4-20】に、当てる道具が当てる形で実装を書いてください。")
     _ib = impl_before_problems(d)
     if _ib:
         raise SystemExit("[gen_acceptance] 実装の指示の直す前の文字が、実物と合いません（fail-closed・全部で "
@@ -1868,8 +1873,15 @@ def _sample_work(base: Path) -> str:
             "【4-5 異常系】", "- 見本の異常系。",
             "【4-12 出る結果の姿】", "見本の結果。",
             "【4-13 影響範囲】", "- 見本の影響。"]
-    for k in ("4-6", "4-7", "4-8", "4-9", "4-10", "4-11", "4-14", "4-15", "4-16", "4-17", "4-18", "4-20"):
+    for k in ("4-6", "4-7", "4-8", "4-9", "4-10", "4-11", "4-14", "4-15", "4-16", "4-17", "4-18"):
         prop += [f"【{k}】", na]
+    # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝TARGET が在る設計書は 4-20 を非該当にできないので、見本も1件持つ
+    #   （見本の置き場の中の、まだ無い新しいファイル＝本物のファイルに頼らない）
+    prop += ["【4-20】", "```json",
+             json.dumps([{"番号": 1, "対象のファイル": str(Path(base) / "sample_new.txt"), "直す箇所": "新しいファイル",
+                          "直す前の文字": "なし", "種類": "直した後の文字", "中身": "見本",
+                          "根拠の抜き書き": "見本:1「見本」", "状態": "確定"}], ensure_ascii=False),
+             "```"]
     prop += ["【5 決めたことと理由】", "| 決めたこと | 理由 | 捨てた案 |", "|---|---|---|", "| 見本 | 見本 | 見本 |",
              "【6-2 リスク】", "| 中身 | どうするか |", "|---|---|", "| 見本 | 見本 |",
              "【6-3 見積もり】", "| 何 | 見込み | 根拠 |", "|---|---|---|", "| 見本 | 1分以内 | 見本 |",
@@ -2113,6 +2125,20 @@ def selftest() -> int:
             if "手で書く口は閉じました" in str(e):
                 ok += 1
                 print(f"   T{total} まこさんの決定の欄を足すと止まる → pass")
+            else:
+                print(f"   T{total} 別の理由で止まった → fail（{str(e)[:120]}）")
+
+        # T17（2026-09-30・設計書 point2-design-to-impl-20260930）＝直すファイルが在るのに 4-20 が0件なら止まる
+        total += 1
+        d17 = _copy.deepcopy(base_d)
+        d17["実装の指示"] = []
+        try:
+            page(d17)
+            print(f"   T{total} 4-20 が0件でも書ける → fail")
+        except SystemExit as e:
+            if "実装の指示（4-20）が0件" in str(e):
+                ok += 1
+                print(f"   T{total} 直すファイルが在るのに 4-20 が0件だと止まる → pass")
             else:
                 print(f"   T{total} 別の理由で止まった → fail（{str(e)[:120]}）")
 

@@ -1,0 +1,41 @@
+99,100c99,100
+< | 新しいファイルを作る道があるか | `grep -c 'def new_file_check' .claude/tools/apply_audit_fix.py` | 実装の前は無い（新しいファイルを作る道が無い）。実装の後は在る | 0（終了コード 1） |
+< | hook と壊すプログラムの置き場を照らしているか | `grep -c 'BREAKS_DIR' .claude/tools/apply_audit_fix.py` | 実装の前は無い（道具の .py だけに当てる）。実装の後は在る | 0（終了コード 1） |
+---
+> | 新しいファイルを作る道があるか | `grep -c 'def new_file_check' .claude/tools/apply_audit_fix.py` | 実装の前は無い（新しいファイルを作る道が無い）。実装の後は在る | 1（終了コード 0） |
+> | hook と壊すプログラムの置き場を照らしているか | `grep -c 'BREAKS_DIR' .claude/tools/apply_audit_fix.py` | 実装の前は無い（道具の .py だけに当てる）。実装の後は在る | 7（終了コード 0） |
+891,894c891,894
+< | 1 | 承認と TARGET／NEW_FILE がそろった道具・hook・壊すプログラムにだけ当てる | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | tool_target_ok をいつも真にする | `b118_audit_fix_tools_target.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝道具のファイルに当ててよいかの照らし（承認の印と TARGET）を常に真にすると、当てる道具の自己テスト T18・T19（印が違う・TARGET の外なら当てない）が落ちた |
+< | 2 | 実物と合わない件が1件でも在れば1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 全件を先に確かめる処理と当てる直前の確かめを外す | `b102_design_apply_no_precheck.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝全件を先に確かめる処理と当てる直前の確かめを外して、確かめながら当てる形にすると、当てる道具の自己テスト T13・T16（半分だけ当てない）が落ちた |
+< | 3 | 承認の印が合わなければ1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 承認の印の照らしをいつも真にする | `b101_design_apply_no_approval.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝承認の印を照らす処理を常に真にすると、当てる道具の自己テスト T4（印が違えば当てない）が落ちた |
+< | 4 | 設計書の道具の自己テストが、4-20 が0件の設計書を止め、今までの場面も通る | `python3 ../../.claude/tools/gen_acceptance.py --selftest` | 道具 | verify を中身を見ずに通す形にする | `b72_acceptance_handwritten.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝その検査が落ちた（守りが働いた） |
+---
+> | 1 | 承認と TARGET／NEW_FILE がそろった道具・hook・壊すプログラムにだけ当てる | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | tool_target_ok をいつも真にする | `b118_audit_fix_tools_target.sh` | 要 | **未着手** |
+> | 2 | 実物と合わない件が1件でも在れば1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 全件を先に確かめる処理と当てる直前の確かめを外す | `b102_design_apply_no_precheck.sh` | 要 | **未着手** |
+> | 3 | 承認の印が合わなければ1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 承認の印の照らしをいつも真にする | `b101_design_apply_no_approval.sh` | 要 | **未着手** |
+> | 4 | 設計書の道具の自己テストが、4-20 が0件の設計書を止め、今までの場面も通る | `python3 ../../.claude/tools/gen_acceptance.py --selftest` | 道具 | verify を中身を見ずに通す形にする | `b72_acceptance_handwritten.sh` | 要 | **未着手** |
+901c901
+< <!-- ACC_CODEREF_START hash=bc22772525246b3c gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=307a1e74b7667ce6 gen_acceptance.py が自動生成＝手で書き換えない -->
+908,909c908,909
+< | `new_file_check` | （この関数は実物に無い） |
+< | `design_key` | （この関数は実物に無い） |
+---
+> | `new_file_check` | 405 |
+> | `design_key` | 399 |
+911c911
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 20件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 22件の関数が在ります）。
+918c918
+< <!-- ACC_SPEC_START hash=31a5182cbb7c9d34 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=5e897083dd85d59c gen_acceptance.py が自動生成＝手で書き換えない -->
+995a996,997
+>   "design_key": [],
+>   "new_file_check": [],
+999a1002
+>    "new_file_check",
+1011a1015
+>    "design_key",
