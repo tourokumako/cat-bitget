@@ -1,0 +1,232 @@
+案です（読むもの宣言の13件は全部 開いてあります・直す前の文字5つは実物にちょうど1か所ずつ在ることを数えました）。この返信に OK を1回いただければ、設計書を作って承認をお願いします。
+
+【4-0 この仕組みは何か】
+当てる道具 apply_audit_fix.py の、前の工事の後に見つけた問題2つを直す。
+1つ目＝もう当て終わった件は、相手が守りの仕組み（道具のファイルなど）でも「もう当て終わっている」と出す。直す前は「［手書き］CC が書く」と出た。
+2つ目＝監査が逐語のファイル（まこさんの発言と OK した案の写し）を直す相手に書いた件は当てず、「［手書き］次の案に まこさんの OK が要る」と出す。直す前は OK の逐語をそのまま書き替えた。
+自己テスト T34・T35 で2つを確かめる。
+
+【4-1 システムの境界】
+動かすのは まこさん（承認と、当てる道具を1回）と CC（自己テスト）。
+書くのは当てる道具だけ（TARGET の1本）。
+
+【4-2 入力と出力】
+入力＝承認された設計書の 4-20 の実装の指示5件と、承認の印。
+出力＝当てる道具の新しい関数2つ（already_applied・is_verbatim）・check_one の2つの分かれ道・hand_label の分かれ道1つ・main の hard の1語・自己テスト T34・T35 と、当てた記録の5行（名前 design:point4-fix-label-20260930）。
+
+【4-3 部品と責任の割り当て】
+- apply_audit_fix.already_applied（新しく作る）＝直した後の文字（足す文字なら直す前の文字＋足す文字）が相手のファイルに在るかを見る。
+- apply_audit_fix.is_verbatim（新しく作る）＝相手の置き場に「/verbatim/」が在り、.txt か .meta.json で終わるかを見る。
+- apply_audit_fix.check_one＝守りの仕組みの理由を返す前に、逐語のファイルか・もう当て終わっているかを見る。
+- apply_audit_fix.hand_label＝「逐語のファイル」の理由に「［手書き］次の案に まこさんの OK が要る」を付ける。
+- apply_audit_fix.main＝hard（全件を止める理由）から「逐語のファイル」を外す。
+- apply_audit_fix.selftest＝T34・T35 を足す。
+
+【4-4 処理の流れ】
+- ①まこさんが承認する。
+- ②まこさんが端末で当てる道具を1回 打つ。
+- ③道具が実装の指示5件を当てる。
+- ④当てた5件を当てた記録に書く。
+- ⑤CC が設計書を作り直し、自己テストと壊すプログラムを走らせる。
+- ⑥2回目の承認。完成の条件のうち壊すプログラムの在る5行が済になる。壊すプログラムが「—」の1行目は、承認のプログラムが測らないので未着手のまま残る（run_breaks.py:176）＝中身は自己テスト T34・T35 で見る。
+
+【4-5 異常系】
+- 直す前の文字がちょうど1か所でない＝当てる道具が1件も当てない。
+- 相手のファイルが無い・直す前の文字が無い＝already_applied は偽を返し、いままでどおりの理由で止まる。
+
+【4-6 制約】
+非該当＝相場の法則・型の表・承認済みの設定を使わない道具の直し
+
+【4-7 探索の範囲】
+非該当＝値の範囲を探す工事ではない
+
+【4-8 データ構造】
+非該当＝表や JSON の形は変えない
+
+【4-9 設定】
+非該当＝旗を足さない
+
+【4-10 保存先】
+当てた記録＝SDK/.claude/audits/applied_fixes.json に書き足す。ほかに新しいファイルは作らない。
+
+【4-11 時刻の扱い】
+非該当＝時刻の列・足の区切りに触らない
+
+【4-12 出る結果の姿】
+- 監査 cp52 に --report --dry を打つと、修正1〜7（当て終わった件）は「もう当て終わっている」と出て、印は付かない。
+- 逐語のファイルを相手にした件は「逐語のファイルなので当てない」と出て、印は「［手書き］次の案に まこさんの OK が要る」になる。
+- 自己テストが 35/35 になる。
+
+【4-13 影響範囲】
+- 直すファイルの名前で壊すプログラムを grep すると、b101・b102・b118・b119・b121。118本の壊すプログラムのどれも、この工事で直す行を探していない（grep で0件）。
+- 自己テストで「守りの仕組みなので当てない」を期待する5か所は、相手に「x = 1」だけが在る場面なので、もう当て終わっているかは偽になり、期待は変わらない。
+- hook 12（enforce_audit_fix.py）は never_write と tool_target_ok を読むが、この工事ではその2つを変えない。逐語のファイルは守りの一覧に入れないので、hook 12 はいままでどおり CC の手の直しから守る。
+- やることの表.md と要件のまとめ.md は .md なので、いままでどおり当てる相手。
+
+【4-14 性能】
+非該当＝関数2つと自己テストの2場面だけ
+
+【4-15 競合】
+非該当＝同時に2つ走らせない
+
+【4-16 セキュリティ】
+非該当＝鍵・本番の発注に触らない。承認の印・凍結の記録・settings には当てない
+
+【4-17 ログと進捗表示】
+4-12 の出力の理由と印が変わる。
+
+【4-18 再利用】
+手本＝check_one の中の「もう当て終わっている」の見分け方（直した後の文字か、直す前の文字＋足す文字が実物に在るか）と、自己テストの T33。
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "hand_label の前に already_applied と is_verbatim を足す",
+  "直す前の文字": "def hand_label(why: str) -> str:",
+  "種類": "直した後の文字",
+  "中身": "def already_applied(f: dict) -> bool:\n    \"\"\"もう当て終わっているか（直した後の文字か、直す前の文字＋足す文字が実物に在るか）。check_one の見分け方と同じ。\n\n    ★2026-09-30（工事 point4-fix-label-20260930）＝守りの仕組みの相手でも、当て終わった件を先に見分けるため。\n    \"\"\"\n    path = repo_path(f[\"対象のファイル\"] or \"\")\n    before = f[\"直す前の文字\"]\n    if before is None or not os.path.isfile(path):\n        return False\n    cur = open(path, encoding=\"utf-8\").read()\n    for _a, kind, body in f[\"4つ目\"]:\n        if not body:\n            continue\n        done = (before + body) if kind == \"足す文字\" else body\n        if kind in (\"直した後の文字\", \"足す文字\") and done.strip() and done in cur:\n            return True\n    return False\n\n\ndef is_verbatim(rel: str) -> bool:\n    \"\"\"逐語のファイル（まこさんの発言と OK した案の写し＝verbatim/ の下の .txt と .meta.json）か。\n\n    ★2026-09-30（工事 point4-fix-label-20260930）＝やることの表.md と要件のまとめ.md は .md なので当たらない。\n    \"\"\"\n    p = os.path.realpath(repo_path(rel)).replace(os.sep, \"/\")\n    return \"/verbatim/\" in p and p.endswith((\".txt\", \".meta.json\"))\n\n\ndef hand_label(why: str) -> str:",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:572「def hand_label(why: str) -> str:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "check_one の守りの仕組みの分かれ道の前",
+  "直す前の文字": "    if never_write(rel) and not tool_target_ok(rel):",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-09-30（工事 point4-fix-label-20260930）＝逐語のファイル（まこさんの発言と OK した案の写し）には当てない。\n    #   直す相手は、直す【番号】だけの次の案（まこさんの OK が要る）。直す前は OK の逐語をそのまま書き替えた。\n    if is_verbatim(rel):\n        return False, \"逐語のファイルなので当てない（まこさんの発言・OK した案の写し）＝直す【番号】だけの次の案を出し、まこさんの OK をもらう\", \"\"\n    # ★同＝守りの仕組みの相手でも、もう当て終わっている件は先に見分ける（直す前は「［手書き］CC が書く」と出た）\n    if never_write(rel) and not tool_target_ok(rel) and already_applied(f):\n        return False, \"もう当て終わっている（直した後の文字が実物に在る）\", \"\"\n    if never_write(rel) and not tool_target_ok(rel):",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:452「if never_write(rel) and not tool_target_ok(rel):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "hand_label に逐語のファイルの印を足す",
+  "直す前の文字": "        return \"［手書き］CC が書く\"",
+  "種類": "足す文字",
+  "中身": "\n    if why.startswith(\"逐語のファイル\"):\n        return \"［手書き］次の案に まこさんの OK が要る\"",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:583「return \"［手書き］CC が書く\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "main の hard から逐語のファイルの理由を外す",
+  "直す前の文字": "\"もう当て終わっている\", \"--choose で\", \"TARGET の外\"))]",
+  "種類": "直した後の文字",
+  "中身": "\"もう当て終わっている\", \"--choose で\", \"TARGET の外\", \"逐語のファイル\"))]",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:730「\"もう当て終わっている\", \"--choose で\", \"TARGET の外\"))]」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "selftest の T33 の後ろに T34・T35 を足す",
+  "直す前の文字": "                fails.append(f\"❌ 手書きの印 T{total}: {got33}\")",
+  "種類": "足す文字",
+  "中身": "\n\n            # T34（2026-09-30・工事 point4-fix-label-20260930）＝守りの仕組みの相手でも、もう当て終わっている件は「もう当て終わっている」\n            total += 1\n            f34 = {\"番号\": \"1\", \"重さ\": \"Major\", \"対象のファイル\": \".claude/hooks/enforce_audit_fix.py\", \"状態\": \"確定\",\n                   \"直す前の文字\": \"zz_not_in_the_file\", \"根拠の抜き書き\": \"\",\n                   \"4つ目\": [(\"\", \"直した後の文字\", \"def pending() -> dict:\")]}\n            ok34, why34, _c = check_one(f34)\n            if not ok34 and why34.startswith(\"もう当て終わっている\") and hand_label(why34) == \"\":\n                ok += 1\n                print(f\"   T{total} 守りの仕組みの相手でも、当て終わった件は「もう当て終わっている」 → pass\")\n            else:\n                fails.append(f\"❌ 当て終わりの印 T{total}: {why34}\")\n\n            # T35（同）＝逐語のファイルを相手にした件は当てず、「［手書き］次の案に まこさんの OK が要る」\n            total += 1\n            f35 = dict(f34, **{\"対象のファイル\": \".claude/state/verbatim/zz_work/okd_zz.txt\"})\n            ok35, why35, _c = check_one(f35)\n            if not ok35 and why35.startswith(\"逐語のファイル\") and hand_label(why35) == \"［手書き］次の案に まこさんの OK が要る\":\n                ok += 1\n                print(f\"   T{total} 逐語のファイルは当てず、次の案に まこさんの OK が要ると出る → pass\")\n            else:\n                fails.append(f\"❌ 逐語のファイル T{total}: {why35}\")",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:1323「fails.append(f\"❌ 手書きの印 T{total}: {got33}\")」",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 逐語のファイルは守りの一覧（NEVER_WRITE）に入れず、check_one の別の分かれ道にする | 守りの一覧に入れると、理由が「守りの仕組み」になり、印が「CC が書く」になる。逐語は CC も書いてはいけない | NEVER_WRITE に「/verbatim/」を足す（やることの表.md まで当てられなくなる） |
+| 当て終わりの見分けは、check_one の中の見分け方と同じ形の関数にする | 同じ見分けを別の形で書くと、2か所で答えが食い違う | 守りの仕組みの分かれ道を後ろへ動かす（道具のファイルを読む順が変わり、守りの前に中身を読むことになる） |
+| 新しい壊すプログラムは作らない | 恒久71番＝BOT の中身に関わらない道具に過剰なテストを付けない | 壊すプログラムを1本 足す |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 新しい関数を足すので、実装の後に設計書を作り直すと承認がもう1回 要る | 2回目の承認で完成の条件の行を済にする（next_step §6 の210番） |
+| 1行目（壊すプログラムが「—」）は承認で済にならない | 承認の後に自己テストを直接 走らせ、T34・T35 の pass を見る |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる（まこさんの端末で1回） | 1分以内 | 5件の直し（関数2つ・check_one の分かれ道・hand_label の分かれ道・1語・自己テスト2場面） |
+| 自己テストと壊すプログラム5本 | 数分 | 前の工事 point4-hand-label-20260930 で同じ自己テストと壊すプログラムを測った（秒は測っていない） |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | check_one が「もう当て終わっているか」より先に「守りの仕組みか」を見ていた。逐語のファイルを相手にした件を見分ける分かれ道が無かった |
+| 期待値分解 | 売買に触れないので、勝率・平均利益・敗率・平均損失は動かない |
+| root か symptom か | root。印ではなく、印の元になる理由の文を正しくする |
+| ベースアップ | 手本は check_one の中の当て終わりの見分け方と、自己テストの T33（4-18） |
+
+【7-2 固定値ゼロ宣言】
+疑似シミュから取った値は1つもない。数字を決める工事ではない。
+
+【7-3 変更の単位】
+変更は1つ＝当てる道具の、当てなかった理由を正しくする（当て終わりと逐語のファイル）。
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 逐語のファイルが別の置き場や名前にあったら | 置き場に「/verbatim/」が無いか、.txt・.meta.json でなければ見分けない |
+| 当て終わりの見分けが正しいか | 直した後の文字が実物に在るかだけを見る。別の理由で同じ文字が在っても当て終わりと見る（check_one の見分け方と同じ限界） |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝道具1本（apply_audit_fix.py）。売買のロジックに触らない。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝apply_audit_fix.py）。
+- 新しいファイルは作らない。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（当てなかった理由を正しくする）。
+- 過去の失敗の再演＝案を出す前に、直す前の文字5つが実物にちょうど1か所ずつ在ること、118本の壊すプログラムが直す行を探していないことを grep で数えた。
+- 非該当（売買のロジックの部品・前処理を足さない）。
+- 非該当（売買の実行器と生成器を直さない）。
+- 直すファイルの名前で壊すプログラムを grep した。探す行は変えない（4-13）。
+- 非該当（壊すプログラムを新しく作らない）。
+- 触る関数＝already_applied（新しく作る）・is_verbatim（新しく作る）・check_one・hand_label・main・selftest。DESIGN_CONTRACT の impl_functions に全部 在る（git の差分が無い状態から数えた）。
+- 新しく足す旗は無い。完成の条件の行が --selftest で通る。
+- 非該当（2回目の承認の前に書き直す＝その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=point4-fix-label-20260930）。
+- 1変更・過去失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝当てる道具の --selftest と、承認の前の検査の --try。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| 当て終わった件は守りの仕組みでも「もう当て終わっている」と出し、逐語のファイルは当てずに「［手書き］次の案に まこさんの OK が要る」と出す | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | — | — | 要 | 未着手 |
+| 承認と TARGET／NEW_FILE がそろった道具・hook・壊すプログラムにだけ当てる | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | tool_target_ok をいつも真にする | b118_audit_fix_tools_target.sh | 要 | 未着手 |
+| 実物と合わない件が1件でも在れば1件も当てない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | 全件を先に確かめる処理と当てる直前の確かめを外す | b102_design_apply_no_precheck.sh | 要 | 未着手 |
+| 承認の印が合わなければ1件も当てない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | 承認の印の照らしをいつも真にする | b101_design_apply_no_approval.sh | 要 | 未着手 |
+| 一覧に無い形のコマンドは走らせない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | command_argv がどのコマンドにも置き場と引数を返す | b119_audit_fix_command_allow.sh | 要 | 未着手 |
+| hook 12 が、承認中の設計書の TARGET を CC の手の直しから守る | python3 ../../.claude/tools/apply_audit_fix.py --selftest | hook | pending の「承認中の設計書の TARGET を守る」を外す | b121_hook12_design_guard.sh | 要 | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{"TARGET": [".claude/tools/apply_audit_fix.py"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/apply_audit_fix.py",
+  "self_check_calls": ["already_applied", "is_verbatim"],
+  "impl_functions": {"../../.claude/tools/apply_audit_fix.py": ["already_applied", "is_verbatim", "check_one", "hand_label", "main", "selftest"]},
+  "must_use": {"check_one": ["already_applied", "is_verbatim"]},
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事の道具が外から読む一覧（承認の印・設計書の TARGET・当てた記録の形）の形は変えない",
+  "generated_from": {
+   "impl_functions": "4-3 に書いた、この工事で触る関数（git の差分が無い状態から数えた）",
+   "must_use": "直した後に呼ぶ名前（4-3）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```
+
+【外部検索】
+
+| 名前 | 中身 |
+|---|---|
+| 自動の直しで、当て終わった件と当てられない件の出し分け | 自動で直す道具が、既に当たっている件・当ててはいけない相手の件を、出力でどう分けて示すかを調べる（私の導出） |

@@ -1,0 +1,47 @@
+81,82c81,82
+< | 当てる道具に、もう当て終わったかを先に見る関数が在るか | `grep -c 'def already_applied' .claude/tools/apply_audit_fix.py` | 実装の前は無い。実装の後は在る | 0（終了コード 1） |
+< | 当てる道具に、逐語のファイルを見分ける関数が在るか | `grep -c 'def is_verbatim' .claude/tools/apply_audit_fix.py` | 実装の前は無い。実装の後は在る | 0（終了コード 1） |
+---
+> | 当てる道具に、もう当て終わったかを先に見る関数が在るか | `grep -c 'def already_applied' .claude/tools/apply_audit_fix.py` | 実装の前は無い。実装の後は在る | 1（終了コード 0） |
+> | 当てる道具に、逐語のファイルを見分ける関数が在るか | `grep -c 'def is_verbatim' .claude/tools/apply_audit_fix.py` | 実装の前は無い。実装の後は在る | 1（終了コード 0） |
+502,506c502,506
+< | 2 | 承認と TARGET／NEW_FILE がそろった道具・hook・壊すプログラムにだけ当てる | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | tool_target_ok をいつも真にする | `b118_audit_fix_tools_target.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝道具のファイルに当ててよいかの照らし（承認の印と TARGET）を常に真にすると、当てる道具の自己テスト T18・T19（印が違う・TARGET の外なら当てない）が落ちた |
+< | 3 | 実物と合わない件が1件でも在れば1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 全件を先に確かめる処理と当てる直前の確かめを外す | `b102_design_apply_no_precheck.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝全件を先に確かめる処理と当てる直前の確かめを外して、確かめながら当てる形にすると、当てる道具の自己テスト T13・T16（半分だけ当てない）が落ちた |
+< | 4 | 承認の印が合わなければ1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 承認の印の照らしをいつも真にする | `b101_design_apply_no_approval.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝承認の印を照らす処理を常に真にすると、当てる道具の自己テスト T4（印が違えば当てない）が落ちた |
+< | 5 | 一覧に無い形のコマンドは走らせない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | command_argv がどのコマンドにも置き場と引数を返す | `b119_audit_fix_command_allow.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝走らせるコマンドの形の照らしを常に通すと、当てる道具の自己テスト T20（決まった形だけ通す）が落ちた |
+< | 6 | hook 12 が、承認中の設計書の TARGET を CC の手の直しから守る | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | hook | pending の「承認中の設計書の TARGET を守る」を外す | `b121_hook12_design_guard.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝hook 12 が承認済みの設計書の TARGET を守る処理を外すと、当てる道具の自己テスト T31 が落ちた |
+---
+> | 2 | 承認と TARGET／NEW_FILE がそろった道具・hook・壊すプログラムにだけ当てる | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | tool_target_ok をいつも真にする | `b118_audit_fix_tools_target.sh` | 要 | **未着手** |
+> | 3 | 実物と合わない件が1件でも在れば1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 全件を先に確かめる処理と当てる直前の確かめを外す | `b102_design_apply_no_precheck.sh` | 要 | **未着手** |
+> | 4 | 承認の印が合わなければ1件も当てない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | 承認の印の照らしをいつも真にする | `b101_design_apply_no_approval.sh` | 要 | **未着手** |
+> | 5 | 一覧に無い形のコマンドは走らせない | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | 道具 | command_argv がどのコマンドにも置き場と引数を返す | `b119_audit_fix_command_allow.sh` | 要 | **未着手** |
+> | 6 | hook 12 が、承認中の設計書の TARGET を CC の手の直しから守る | `python3 ../../.claude/tools/apply_audit_fix.py --selftest` | hook | pending の「承認中の設計書の TARGET を守る」を外す | `b121_hook12_design_guard.sh` | 要 | **未着手** |
+513c513
+< <!-- ACC_CODEREF_START hash=4667d3916d7267e5 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=510ca377f2c107a7 gen_acceptance.py が自動生成＝手で書き換えない -->
+520,521c520,521
+< | `already_applied` | （この関数は実物に無い） |
+< | `is_verbatim` | （この関数は実物に無い） |
+---
+> | `already_applied` | 579 |
+> | `is_verbatim` | 598 |
+523c523
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 23件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 25件の関数が在ります）。
+530c530
+< <!-- ACC_SPEC_START hash=622e99a0f10fe846 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=568e36414260f9b0 gen_acceptance.py が自動生成＝手で書き換えない -->
+598a599
+>    "already_applied",
+600a602
+>    "is_verbatim",
+609a612,617
+>   "already_applied": [
+>    "repo_path"
+>   ],
+>   "is_verbatim": [
+>    "repo_path"
+>   ],

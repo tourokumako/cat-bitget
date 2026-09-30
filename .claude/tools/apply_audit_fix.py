@@ -449,6 +449,13 @@ def check_one(f: dict, chosen: dict = None, run_ok: bool = False, new_ok: bool =
         if run_ok and command_argv(body) is not None:
             return True, "走らせる", ""
         return False, "走らせるコマンド（当てずに、打つべきコマンドとして出す）", ""
+    # ★2026-09-30（工事 point4-fix-label-20260930）＝逐語のファイル（まこさんの発言と OK した案の写し）には当てない。
+    #   直す相手は、直す【番号】だけの次の案（まこさんの OK が要る）。直す前は OK の逐語をそのまま書き替えた。
+    if is_verbatim(rel):
+        return False, "逐語のファイルなので当てない（まこさんの発言・OK した案の写し）＝直す【番号】だけの次の案を出し、まこさんの OK をもらう", ""
+    # ★同＝守りの仕組みの相手でも、もう当て終わっている件は先に見分ける（直す前は「［手書き］CC が書く」と出た）
+    if never_write(rel) and not tool_target_ok(rel) and already_applied(f):
+        return False, "もう当て終わっている（直した後の文字が実物に在る）", ""
     if never_write(rel) and not tool_target_ok(rel):
         return False, f"守りの仕組みなので当てない（{rel}）＝私が Write ツールで直す", ""
     path = repo_path(rel)
@@ -569,6 +576,34 @@ def apply_one(f: dict, cur: str, pick: str = "") -> tuple:
     return cur, "何もしなかった"
 
 
+def already_applied(f: dict) -> bool:
+    """もう当て終わっているか（直した後の文字か、直す前の文字＋足す文字が実物に在るか）。check_one の見分け方と同じ。
+
+    ★2026-09-30（工事 point4-fix-label-20260930）＝守りの仕組みの相手でも、当て終わった件を先に見分けるため。
+    """
+    path = repo_path(f["対象のファイル"] or "")
+    before = f["直す前の文字"]
+    if before is None or not os.path.isfile(path):
+        return False
+    cur = open(path, encoding="utf-8").read()
+    for _a, kind, body in f["4つ目"]:
+        if not body:
+            continue
+        done = (before + body) if kind == "足す文字" else body
+        if kind in ("直した後の文字", "足す文字") and done.strip() and done in cur:
+            return True
+    return False
+
+
+def is_verbatim(rel: str) -> bool:
+    """逐語のファイル（まこさんの発言と OK した案の写し＝verbatim/ の下の .txt と .meta.json）か。
+
+    ★2026-09-30（工事 point4-fix-label-20260930）＝やることの表.md と要件のまとめ.md は .md なので当たらない。
+    """
+    p = os.path.realpath(repo_path(rel)).replace(os.sep, "/")
+    return "/verbatim/" in p and p.endswith((".txt", ".meta.json"))
+
+
 def hand_label(why: str) -> str:
     """当てなかった件に付ける手書きの印（まこさん指示 2026-09-30「手書きせざるを得ない項目は、手書きと明記する」）。
 
@@ -581,6 +616,8 @@ def hand_label(why: str) -> str:
         return "［手書き］まこさんが打つ"
     if why.startswith("守りの仕組みなので"):
         return "［手書き］CC が書く"
+    if why.startswith("逐語のファイル"):
+        return "［手書き］次の案に まこさんの OK が要る"
     return ""
 
 
@@ -727,7 +764,7 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
     #   状態が未決・案が複数／走らせるコマンド／守りの仕組みは、当てないだけで、ほかの件は当てる。
     hard = [x for x in stopped
             if not x[1].startswith(("状態が", "走らせるコマンド", "守りの仕組みなので",
-                                    "もう当て終わっている", "--choose で", "TARGET の外"))]
+                                    "もう当て終わっている", "--choose で", "TARGET の外", "逐語のファイル"))]
     if hard:
         print(f"\n❌ 実物と合わない件が {len(hard)} 件 あるので、1件も当てません（先に全件を確かめる形）")
         return 1
@@ -1321,6 +1358,28 @@ def selftest() -> int:
                 print(f"   T{total} 当てなかった件に［手書き］の印が付く（当て終わった件には付かない） → pass")
             else:
                 fails.append(f"❌ 手書きの印 T{total}: {got33}")
+
+            # T34（2026-09-30・工事 point4-fix-label-20260930）＝守りの仕組みの相手でも、もう当て終わっている件は「もう当て終わっている」
+            total += 1
+            f34 = {"番号": "1", "重さ": "Major", "対象のファイル": ".claude/hooks/enforce_audit_fix.py", "状態": "確定",
+                   "直す前の文字": "zz_not_in_the_file", "根拠の抜き書き": "",
+                   "4つ目": [("", "直した後の文字", "def pending() -> dict:")]}
+            ok34, why34, _c = check_one(f34)
+            if not ok34 and why34.startswith("もう当て終わっている") and hand_label(why34) == "":
+                ok += 1
+                print(f"   T{total} 守りの仕組みの相手でも、当て終わった件は「もう当て終わっている」 → pass")
+            else:
+                fails.append(f"❌ 当て終わりの印 T{total}: {why34}")
+
+            # T35（同）＝逐語のファイルを相手にした件は当てず、「［手書き］次の案に まこさんの OK が要る」
+            total += 1
+            f35 = dict(f34, **{"対象のファイル": ".claude/state/verbatim/zz_work/okd_zz.txt"})
+            ok35, why35, _c = check_one(f35)
+            if not ok35 and why35.startswith("逐語のファイル") and hand_label(why35) == "［手書き］次の案に まこさんの OK が要る":
+                ok += 1
+                print(f"   T{total} 逐語のファイルは当てず、次の案に まこさんの OK が要ると出る → pass")
+            else:
+                fails.append(f"❌ 逐語のファイル T{total}: {why35}")
         finally:
             (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
              globals()["HOOKS_DIR"], globals()["BREAKS_DIR"]) = g_saved
