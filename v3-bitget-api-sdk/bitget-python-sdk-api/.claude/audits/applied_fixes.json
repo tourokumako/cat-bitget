@@ -525,6 +525,34 @@
    "file": ".claude/breaks/b121_hook12_design_guard.sh",
    "at": "2026-09-30T18:20:52",
    "how": "当てた"
+  },
+  {
+   "report": "design:point4-hand-label-20260930",
+   "num": "1",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T19:52:19",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point4-hand-label-20260930",
+   "num": "2",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T19:52:19",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point4-hand-label-20260930",
+   "num": "3",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T19:52:19",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point4-hand-label-20260930",
+   "num": "4",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T19:52:19",
+   "how": "当てた"
   }
  ]
 }

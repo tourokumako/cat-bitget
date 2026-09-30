@@ -569,6 +569,21 @@ def apply_one(f: dict, cur: str, pick: str = "") -> tuple:
     return cur, "何もしなかった"
 
 
+def hand_label(why: str) -> str:
+    """当てなかった件に付ける手書きの印（まこさん指示 2026-09-30「手書きせざるを得ない項目は、手書きと明記する」）。
+
+    ★理由の文そのものは変えない（main の hard の判定と自己テストが、理由の文の頭を照らすため）。
+    もう当て終わっている件・TARGET の外・実物と合わない件には印を付けない（空の文字を返す）。
+    """
+    if why.startswith(("状態が", "--choose で")):
+        return "［手書き］まこさんが選ぶ"
+    if why.startswith("走らせるコマンド"):
+        return "［手書き］まこさんが打つ"
+    if why.startswith("守りの仕組みなので"):
+        return "［手書き］CC が書く"
+    return ""
+
+
 def main(argv: list = None, approved_path: str = None, src_items: list = None) -> int:
     """★argv と approved_path は自己テストが渡す（本物の呼び出しでは None＝コマンドの引数と本物の印）。
     ★src_items＝自己テストが渡す見本の実装の指示（本物の呼び出しでは None＝設計書の iter の工事のフォルダから読む）。"""
@@ -706,7 +721,7 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
         (ready if ok else stopped).append((f, why, cur))
 
     for f, why, _c in stopped:
-        print(f"   ⏸ 修正 {f['番号']}（{f['重さ']}）: {why}")
+        print(f"   ⏸ 修正 {f['番号']}（{f['重さ']}）{hand_label(why)}: {why}")
 
     # ★「実物と合わない」だけが、全件を止める理由（設計書 4-5）。
     #   状態が未決・案が複数／走らせるコマンド／守りの仕組みは、当てないだけで、ほかの件は当てる。
@@ -784,7 +799,7 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
                 return 1
     for f, what, path in plan:
         done += 1
-        print(f"   ✅ 修正 {f['番号']}（{f['重さ'] or '設計書'}）: {what} → {os.path.relpath(path, ROOT)}")
+        print(f"   ✅ 修正 {f['番号']}（{f['重さ'] or '設計書'}）［自動］: {what} → {os.path.relpath(path, ROOT)}")
     print(f"\n✅ 当てた {done} 件／当てなかった {len(stopped)} 件")
     # ★2026-09-30（設計書 point1-one-way-20260930-2・まこさん決定「案A」）＝監査結果の道だけ、当てた修正と
     #   もう当て終わっていた修正を記録に書き足す（hook 12 が読む）。--dry と設計書の道では書かない。
@@ -1294,6 +1309,18 @@ def selftest() -> int:
                 print(f"   T{total} まだ無い壊すプログラムの置き場は直下の .claude/breaks → pass")
             else:
                 fails.append(f"❌ 置き場 T{total}: まだ無いファイルが直下にならない（{p32}）")
+
+            # T33（2026-09-30・工事 point4-hand-label-20260930）＝当てなかった件に手書きの印が付く（当て終わった件には付かない）
+            total += 1
+            got33 = [hand_label(w) for w in ("状態が「未決」＝まこさんが決めるまで当てない",
+                                             "走らせるコマンド（当てずに、打つべきコマンドとして出す）",
+                                             "守りの仕組みなので当てない（x）＝私が Write ツールで直す",
+                                             "もう当て終わっている（直した後の文字が実物に在る）")]
+            if got33 == ["［手書き］まこさんが選ぶ", "［手書き］まこさんが打つ", "［手書き］CC が書く", ""]:
+                ok += 1
+                print(f"   T{total} 当てなかった件に［手書き］の印が付く（当て終わった件には付かない） → pass")
+            else:
+                fails.append(f"❌ 手書きの印 T{total}: {got33}")
         finally:
             (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
              globals()["HOOKS_DIR"], globals()["BREAKS_DIR"]) = g_saved
