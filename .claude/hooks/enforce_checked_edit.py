@@ -247,8 +247,13 @@ def main(raw: str) -> int:
     path = Path(fp)
     pairs = pairs_of(tool, ti, path)
     e = sys.stderr
-    ng1 = check_opened(pairs, str(data.get("transcript_path") or ""))
+    tp = str(data.get("transcript_path") or "")
+    ng1 = check_opened(pairs, tp)
+    if ng1 and not tp:
+        print("🔒 [確かめてから直すゲート] session_id も transcript_path も無い＝開いた記録を数えられない", file=e)
+        return 2
     if ng1:
+
         print("🔒 [確かめてから直すゲート] 実物を開いて確かめていない行番号を、書こうとしています"
               "（まこさん指示 2026-09-14「実物を開いて確かめていない直しは、書きません」）。", file=e)
         for x in ng1:

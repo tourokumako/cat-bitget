@@ -81,8 +81,13 @@ def pending() -> dict:
         dtext = open(a.DESIGN, encoding="utf-8").read()
         if a.approved_ok(a.DESIGN)[0] and a.read_design_fixes(dtext):
             key = a.design_key(dtext, a.DESIGN)
-            for p in a.design_targets(dtext):
-                out.setdefault(p, []).append((key, "（設計書の実装の指示）"))
+            # ★2026-09-30（138回目・まこさん指示「早く直して」）＝実装の指示を全件 当て終わった（当てた記録に在る）
+            #   設計書は守らない＝まこさんが決めた線引き 3「当て終わったら、そのファイルは普通に直せる」に合わせた。
+            #   直す前は当て終わった後も守り続け、次の工事の試しの検査（A2）が必ず落ちた（next_step の知っている弱い所6）。
+            nums = {str(f.get("番号")) for f in a.read_design_fixes(dtext)}
+            if not all((key, n) in done for n in nums):
+                for p in a.design_targets(dtext):
+                    out.setdefault(p, []).append((key, "（設計書の実装の指示）"))
     except Exception:                                        # noqa: BLE001
         pass                                                 # 設計書が読めないときは止めない（fail-open・上と同じ）
     for rep in glob.glob(REPORTS):
