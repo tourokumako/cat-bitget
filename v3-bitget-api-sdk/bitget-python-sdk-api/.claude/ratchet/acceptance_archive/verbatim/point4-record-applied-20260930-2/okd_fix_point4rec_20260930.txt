@@ -1,0 +1,44 @@
+直す案です。前の案の3節（4-3・7-5・7-8）を、次の3節で置き替えます。変えたのは、触る所に「モジュール直下」（定数 CURRENT_REPORT を関数の外に足すため）を足したことだけです。OK をいただければ、写して設計書を作り直し、2回目の承認をお願いします。
+
+【4-3 部品と責任の割り当て】
+- apply_audit_fix の <モジュール直下>＝定数 CURRENT_REPORT（いま当てている監査結果の名前）を足す。当てた記録の名前と同じ形（ファイル名だけ）。
+- apply_audit_fix.already_applied＝頭で、CURRENT_REPORT と修正の番号の組が当てた記録（applied_keys）に在れば真を返す。
+- apply_audit_fix.main＝頭で CURRENT_REPORT を空にし、監査結果の道で監査結果の名前を入れる。設計書の道では空のまま。
+- apply_audit_fix.selftest＝T36 を足す。
+
+【7-5 §4.6 の照合】
+- TARGET＝道具1本（apply_audit_fix.py）。売買のロジックに触らない。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝apply_audit_fix.py）。
+- 新しいファイルは作らない。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（当てた記録も見て当て終わりを見分ける）。
+- 過去の失敗の再演＝案を出す前に、直す前の文字5つが実物にちょうど1か所ずつ在ること、118本の壊すプログラムが直す行を探していないことを grep で数えた。前の工事の差分は commit した（c8b11ca）。定数を関数の外に足すときは impl_functions に「<モジュール直下>」を書く（worklog 20260930 §33 と同じ型を、1回目の承認の後に A9 で見つけた）。
+- 非該当（売買のロジックの部品・前処理を足さない）。
+- 非該当（売買の実行器と生成器を直さない）。
+- 直すファイルの名前で壊すプログラムを grep した。探す行は変えない（4-13）。
+- 非該当（壊すプログラムを新しく作らない）。
+- 触る所＝モジュール直下（定数 CURRENT_REPORT）・already_applied・main・selftest。DESIGN_CONTRACT の impl_functions に全部 在る。
+- 新しく足す旗は無い。完成の条件の行が --selftest で通る。
+- 非該当（2回目の承認の前に書き直す＝その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=point4-record-applied-20260930）。
+- 1変更・過去失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝当てる道具の --selftest と、承認の前の検査の --try。
+
+【7-8 プログラムが読む設定】
+```json
+{"TARGET": [".claude/tools/apply_audit_fix.py"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/apply_audit_fix.py",
+  "self_check_calls": ["CURRENT_REPORT"],
+  "impl_functions": {"../../.claude/tools/apply_audit_fix.py": ["<モジュール直下>", "already_applied", "main", "selftest"]},
+  "must_use": {"already_applied": ["applied_keys"]},
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事の道具が外から読む一覧（承認の印・設計書の TARGET・当てた記録の形）の形は変えない",
+  "generated_from": {
+   "impl_functions": "4-3 に書いた、この工事で触る関数と、定数 CURRENT_REPORT を足すモジュール直下",
+   "must_use": "直した後に呼ぶ名前（4-3）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```

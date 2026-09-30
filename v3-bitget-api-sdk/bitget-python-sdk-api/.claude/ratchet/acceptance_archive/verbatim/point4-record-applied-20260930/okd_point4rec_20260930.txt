@@ -1,0 +1,229 @@
+案です（読むもの宣言の13件は全部 開いてあります・直す前の文字5つは実物にちょうど1か所ずつ在ることを数えました）。この返信に OK を1回いただければ、設計書を作って承認をお願いします。
+
+【4-0 この仕組みは何か】
+当てる道具 apply_audit_fix.py が、当てた記録（applied_fixes.json）も見て、当て終わりを見分けるようにする。
+直す前は、実物に直した後の文字が在るかだけで見分けていた。当てた後の工事で同じ所が書き替わると、当て終わった件が「［手書き］CC が書く」と出た（cp52 の修正1・3〜7・11・12）。
+直した後は、いま当てている監査結果の名前と修正の番号の組が当てた記録に在れば、「もう当て終わっている」と出す。
+自己テスト T36 で確かめる。
+
+【4-1 システムの境界】
+動かすのは まこさん（承認と、当てる道具を1回）と CC（自己テスト）。
+書くのは当てる道具だけ（TARGET の1本）。
+
+【4-2 入力と出力】
+入力＝承認された設計書の 4-20 の実装の指示5件と、承認の印。
+出力＝当てる道具の定数 CURRENT_REPORT・already_applied の頭の分かれ道1つ・main で定数を空にする行と入れる行・自己テスト T36 と、当てた記録の5行（名前 design:point4-record-applied-20260930）。
+
+【4-3 部品と責任の割り当て】
+- apply_audit_fix.CURRENT_REPORT（新しく作る定数）＝いま当てている監査結果の名前。当てた記録の名前と同じ形（ファイル名だけ）。
+- apply_audit_fix.already_applied＝頭で、CURRENT_REPORT と修正の番号の組が当てた記録（applied_keys）に在れば真を返す。
+- apply_audit_fix.main＝頭で CURRENT_REPORT を空にし、監査結果の道で監査結果の名前を入れる。設計書の道では空のまま。
+- apply_audit_fix.selftest＝T36 を足す。
+
+【4-4 処理の流れ】
+- ①まこさんが承認する。
+- ②まこさんが端末で当てる道具を1回 打つ。
+- ③道具が実装の指示5件を当てる。
+- ④当てた5件を当てた記録に書く。
+- ⑤CC が設計書を作り直し、自己テストと壊すプログラムを走らせる。
+- ⑥2回目の承認。完成の条件のうち壊すプログラムの在る5行が済になる。壊すプログラムが「—」の1行目は、承認のプログラムが測らないので未着手のまま残る（run_breaks.py:176）＝中身は自己テスト T36 で見る。
+
+【4-5 異常系】
+- 直す前の文字がちょうど1か所でない＝当てる道具が1件も当てない。
+- 当てた記録が無い・読めない＝applied_keys は空を返し、いままでどおり実物の文字で見分ける。
+
+【4-6 制約】
+非該当＝相場の法則・型の表・承認済みの設定を使わない道具の直し
+
+【4-7 探索の範囲】
+非該当＝値の範囲を探す工事ではない
+
+【4-8 データ構造】
+非該当＝表や JSON の形は変えない
+
+【4-9 設定】
+非該当＝旗を足さない
+
+【4-10 保存先】
+当てた記録＝SDK/.claude/audits/applied_fixes.json に書き足す。ほかに新しいファイルは作らない。
+
+【4-11 時刻の扱い】
+非該当＝時刻の列・足の区切りに触らない
+
+【4-12 出る結果の姿】
+- 監査 cp52 に --report --dry を打つと、修正1〜7・11・12（当てた記録に在る件）は「もう当て終わっている」と出て、印は付かない。
+- 修正8〜10・13〜16・18（未決）は、いままでどおり「［手書き］まこさんが選ぶ」と出る。
+- 自己テストが 36/36 になる。
+
+【4-13 影響範囲】
+- 直すファイルの名前で壊すプログラムを grep すると、b101・b102・b118・b119・b121。118本の壊すプログラムのどれも、この工事で直す行を探していない（grep で0件）。
+- 自己テストは当てた記録を一時の置き場に替えて走る（901〜902行・1388行で戻す）＝本物の記録には書かない。
+- hook 12（enforce_audit_fix.py）は applied_keys を読むが、この工事では applied_keys を変えない。
+
+【4-14 性能】
+非該当＝当てた記録を1件ずつ読むだけ（記録は数十件）
+
+【4-15 競合】
+非該当＝同時に2つ走らせない
+
+【4-16 セキュリティ】
+非該当＝鍵・本番の発注に触らない。承認の印・凍結の記録・settings には当てない
+
+【4-17 ログと進捗表示】
+4-12 の出力の理由と印が変わる。
+
+【4-18 再利用】
+手本＝hook 12 の pending（当てた記録 applied_keys で当て済みを飛ばす形）と、自己テストの T34。
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "当てた記録の置き場の定数の後ろに CURRENT_REPORT を足す",
+  "直す前の文字": "APPLIED_RECORD = os.path.join(SDK, \".claude\", \"audits\", \"applied_fixes.json\")",
+  "種類": "足す文字",
+  "中身": "\n# ★2026-09-30（工事 point4-record-applied-20260930）＝いま当てている監査結果の名前（main が入れる・設計書の道では空）。\n#   already_applied が当てた記録と照らす（当てた後の工事で同じ所が書き替わっても、当て終わりと分かる）。\nCURRENT_REPORT = \"\"",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:101「APPLIED_RECORD = os.path.join(SDK, \".claude\", \"audits\", \"applied_fixes.json\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "already_applied の頭で当てた記録を見る",
+  "直す前の文字": "    path = repo_path(f[\"対象のファイル\"] or \"\")",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-09-30（工事 point4-record-applied-20260930）＝当てた記録に在る件は当て終わり（直した後の文字が実物に残っていなくても）\n    if CURRENT_REPORT and (CURRENT_REPORT, str(f.get(\"番号\", \"\"))) in applied_keys():\n        return True\n    path = repo_path(f[\"対象のファイル\"] or \"\")",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:584「path = repo_path(f[\"対象のファイル\"] or \"\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "main の頭で CURRENT_REPORT を空にする",
+  "直す前の文字": "    global AUDITED_DESIGN",
+  "種類": "直した後の文字",
+  "中身": "    global AUDITED_DESIGN, CURRENT_REPORT\n    CURRENT_REPORT = \"\"                                     # ★2026-09-30（工事 point4-record-applied-20260930）＝監査結果の道でだけ入れる",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:627「global AUDITED_DESIGN」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "監査結果の道で CURRENT_REPORT に監査結果の名前を入れる",
+  "直す前の文字": "        all_fixes = read_fixes(text)",
+  "種類": "足す文字",
+  "中身": "\n        CURRENT_REPORT = os.path.basename(a.report)   # ★2026-09-30（工事 point4-record-applied-20260930）＝当てた記録の名前と同じ形",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:709「all_fixes = read_fixes(text)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": ".claude/tools/apply_audit_fix.py",
+  "直す箇所": "selftest の T35 の後ろに T36 を足す",
+  "直す前の文字": "                fails.append(f\"❌ 逐語のファイル T{total}: {why35}\")",
+  "種類": "足す文字",
+  "中身": "\n\n            # T36（2026-09-30・工事 point4-record-applied-20260930）＝当てた記録に在る件は、実物に直した後の文字が無くても「もう当て終わっている」\n            total += 1\n            _record_applied([{\"report\": \"zz_t36_audit_report.md\", \"num\": \"9\", \"file\": \".claude/hooks/enforce_audit_fix.py\", \"how\": \"当てた\"}])\n            f36 = dict(f34, **{\"番号\": \"9\", \"4つ目\": [(\"\", \"直した後の文字\", \"zz_absent_in_the_file\")]})\n            globals()[\"CURRENT_REPORT\"] = \"zz_t36_audit_report.md\"\n            try:\n                ok36, why36, _c = check_one(f36)\n            finally:\n                globals()[\"CURRENT_REPORT\"] = \"\"\n            ok36b, why36b, _c = check_one(f36)\n            if not ok36 and why36.startswith(\"もう当て終わっている\") and why36b.startswith(\"守りの仕組みなので\"):\n                ok += 1\n                print(f\"   T{total} 当てた記録に在る件は、実物に文字が無くても「もう当て終わっている」 → pass\")\n            else:\n                fails.append(f\"❌ 当てた記録 T{total}: 記録あり={why36} 記録を見ない={why36b}\")",
+  "根拠の抜き書き": ".claude/tools/apply_audit_fix.py:1382「fails.append(f\"❌ 逐語のファイル T{total}: {why35}\")」",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| いま当てている監査結果の名前は、モジュールの定数で渡す | check_one は修正1件だけを受け取り、監査結果の名前を持たない。同じ形の前例（AUDITED_DESIGN）が在る | check_one の引数を足す（呼ぶ所が自己テストにも多く、直す所が増える） |
+| 当てた記録は already_applied の頭で見る | 守りの仕組みの分かれ道の前で使う見分けは、この関数1つにまとまっている | check_one の分かれ道に直接書く（見分けが2か所に割れる） |
+| 新しい壊すプログラムは作らない | 恒久71番＝BOT の中身に関わらない道具に過剰なテストを付けない | 壊すプログラムを1本 足す |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 新しい定数を足すので、実装の後に設計書を作り直すと承認がもう1回 要る | 2回目の承認で完成の条件の行を済にする（next_step §6 の210番） |
+| 1行目（壊すプログラムが「—」）は承認で済にならない | 承認の後に自己テストを直接 走らせ、T36 の pass を見る |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる（まこさんの端末で1回） | 1分以内 | 5件の直し（定数1つ・already_applied の分かれ道・main の2行・自己テスト1場面） |
+| 自己テストと壊すプログラム5本 | 数分 | 前の工事 point4-fix-label-20260930 で同じ自己テストと壊すプログラムを測った（秒は測っていない） |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | already_applied が実物の文字だけで当て終わりを見分け、当てた記録を見ていなかった |
+| 期待値分解 | 売買に触れないので、勝率・平均利益・敗率・平均損失は動かない |
+| root か symptom か | root。当て終わりの正本である当てた記録を見分けに使う |
+| ベースアップ | 手本は hook 12 の pending と、自己テストの T34（4-18） |
+
+【7-2 固定値ゼロ宣言】
+疑似シミュから取った値は1つもない。数字を決める工事ではない。
+
+【7-3 変更の単位】
+変更は1つ＝当てる道具が当てた記録も見て、当て終わりを見分ける。
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 当てた記録が正しいか | 記録は当てる道具だけが書く（書き替えれば git の差分に出る）。記録の中身の正しさは見ない |
+| 同じ名前の監査結果が2つあったら | 当てた記録はファイル名だけで照らす。置き場の違う同じ名前は区別しない |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝道具1本（apply_audit_fix.py）。売買のロジックに触らない。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝apply_audit_fix.py）。
+- 新しいファイルは作らない。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（当てた記録も見て当て終わりを見分ける）。
+- 過去の失敗の再演＝案を出す前に、直す前の文字5つが実物にちょうど1か所ずつ在ること、118本の壊すプログラムが直す行を探していないことを grep で数えた。前の工事の差分は commit した（c8b11ca）。
+- 非該当（売買のロジックの部品・前処理を足さない）。
+- 非該当（売買の実行器と生成器を直さない）。
+- 直すファイルの名前で壊すプログラムを grep した。探す行は変えない（4-13）。
+- 非該当（壊すプログラムを新しく作らない）。
+- 触る関数＝already_applied・main・selftest。DESIGN_CONTRACT の impl_functions に全部 在る（git の差分が無い状態から数えた）。
+- 新しく足す旗は無い。完成の条件の行が --selftest で通る。
+- 非該当（2回目の承認の前に書き直す＝その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=point4-record-applied-20260930）。
+- 1変更・過去失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝当てる道具の --selftest と、承認の前の検査の --try。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| 当てた記録に在る件は、実物に直した後の文字が無くても「もう当て終わっている」と出す | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | — | — | 要 | 未着手 |
+| 承認と TARGET／NEW_FILE がそろった道具・hook・壊すプログラムにだけ当てる | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | tool_target_ok をいつも真にする | b118_audit_fix_tools_target.sh | 要 | 未着手 |
+| 実物と合わない件が1件でも在れば1件も当てない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | 全件を先に確かめる処理と当てる直前の確かめを外す | b102_design_apply_no_precheck.sh | 要 | 未着手 |
+| 承認の印が合わなければ1件も当てない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | 承認の印の照らしをいつも真にする | b101_design_apply_no_approval.sh | 要 | 未着手 |
+| 一覧に無い形のコマンドは走らせない | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | command_argv がどのコマンドにも置き場と引数を返す | b119_audit_fix_command_allow.sh | 要 | 未着手 |
+| hook 12 が、承認中の設計書の TARGET を CC の手の直しから守る | python3 ../../.claude/tools/apply_audit_fix.py --selftest | hook | pending の「承認中の設計書の TARGET を守る」を外す | b121_hook12_design_guard.sh | 要 | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{"TARGET": [".claude/tools/apply_audit_fix.py"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/apply_audit_fix.py",
+  "self_check_calls": ["CURRENT_REPORT"],
+  "impl_functions": {"../../.claude/tools/apply_audit_fix.py": ["already_applied", "main", "selftest"]},
+  "must_use": {"already_applied": ["applied_keys"]},
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事の道具が外から読む一覧（承認の印・設計書の TARGET・当てた記録の形）の形は変えない",
+  "generated_from": {
+   "impl_functions": "4-3 に書いた、この工事で触る関数（git の差分が無い状態から数えた）",
+   "must_use": "直した後に呼ぶ名前（4-3）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```
+
+【外部検索】
+
+| 名前 | 中身 |
+|---|---|
+| 自動の直しで、当て済みを記録で見分けるやり方 | 自動で直す道具（データベースの移行の道具など）が、当て済みの直しを実物の中身ではなく当てた記録で見分けるやり方を調べる（私の導出） |

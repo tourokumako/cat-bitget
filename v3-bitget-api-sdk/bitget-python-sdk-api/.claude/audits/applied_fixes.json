@@ -588,6 +588,41 @@
    "file": ".claude/tools/apply_audit_fix.py",
    "at": "2026-09-30T20:13:33",
    "how": "当てた"
+  },
+  {
+   "report": "design:point4-record-applied-20260930",
+   "num": "1",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T20:25:18",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point4-record-applied-20260930",
+   "num": "2",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T20:25:18",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point4-record-applied-20260930",
+   "num": "3",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T20:25:18",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point4-record-applied-20260930",
+   "num": "4",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T20:25:18",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point4-record-applied-20260930",
+   "num": "5",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T20:25:18",
+   "how": "当てた"
   }
  ]
 }

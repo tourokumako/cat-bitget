@@ -99,6 +99,9 @@ ARCHIVE_DIR = os.path.join(SDK, ".claude", "ratchet", "acceptance_archive")
 # ★2026-09-30（設計書 point1-one-way-20260930-2・まこさん決定「案A」）＝当てた監査の修正の記録。hook 12（enforce_audit_fix.py）が読む。
 #   git に残る置き場＝書き替えれば差分に出る。書くのはこの道具の _record_applied だけ。
 APPLIED_RECORD = os.path.join(SDK, ".claude", "audits", "applied_fixes.json")
+# ★2026-09-30（工事 point4-record-applied-20260930）＝いま当てている監査結果の名前（main が入れる・設計書の道では空）。
+#   already_applied が当てた記録と照らす（当てた後の工事で同じ所が書き替わっても、当て終わりと分かる）。
+CURRENT_REPORT = ""
 
 
 def repo_path(p: str) -> str:
@@ -581,6 +584,9 @@ def already_applied(f: dict) -> bool:
 
     ★2026-09-30（工事 point4-fix-label-20260930）＝守りの仕組みの相手でも、当て終わった件を先に見分けるため。
     """
+    # ★2026-09-30（工事 point4-record-applied-20260930）＝当てた記録に在る件は当て終わり（直した後の文字が実物に残っていなくても）
+    if CURRENT_REPORT and (CURRENT_REPORT, str(f.get("番号", ""))) in applied_keys():
+        return True
     path = repo_path(f["対象のファイル"] or "")
     before = f["直す前の文字"]
     if before is None or not os.path.isfile(path):
@@ -624,7 +630,8 @@ def hand_label(why: str) -> str:
 def main(argv: list = None, approved_path: str = None, src_items: list = None) -> int:
     """★argv と approved_path は自己テストが渡す（本物の呼び出しでは None＝コマンドの引数と本物の印）。
     ★src_items＝自己テストが渡す見本の実装の指示（本物の呼び出しでは None＝設計書の iter の工事のフォルダから読む）。"""
-    global AUDITED_DESIGN
+    global AUDITED_DESIGN, CURRENT_REPORT
+    CURRENT_REPORT = ""                                     # ★2026-09-30（工事 point4-record-applied-20260930）＝監査結果の道でだけ入れる
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument("--report", default="")
     ap.add_argument("--severity", default="")
@@ -707,6 +714,7 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
             return 1
 
         all_fixes = read_fixes(text)
+        CURRENT_REPORT = os.path.basename(a.report)   # ★2026-09-30（工事 point4-record-applied-20260930）＝当てた記録の名前と同じ形
         # ★2026-09-30（設計書 audit-fix-evidence-20260930）＝監査が見た版の設計書の控えを探す（無ければ今までどおり）。
         AUDITED_DESIGN = ""
         mh = re.search(r"監査が照らしたハッシュ値:\s*([0-9a-f]{64})", text)
@@ -1380,6 +1388,22 @@ def selftest() -> int:
                 print(f"   T{total} 逐語のファイルは当てず、次の案に まこさんの OK が要ると出る → pass")
             else:
                 fails.append(f"❌ 逐語のファイル T{total}: {why35}")
+
+            # T36（2026-09-30・工事 point4-record-applied-20260930）＝当てた記録に在る件は、実物に直した後の文字が無くても「もう当て終わっている」
+            total += 1
+            _record_applied([{"report": "zz_t36_audit_report.md", "num": "9", "file": ".claude/hooks/enforce_audit_fix.py", "how": "当てた"}])
+            f36 = dict(f34, **{"番号": "9", "4つ目": [("", "直した後の文字", "zz_absent_in_the_file")]})
+            globals()["CURRENT_REPORT"] = "zz_t36_audit_report.md"
+            try:
+                ok36, why36, _c = check_one(f36)
+            finally:
+                globals()["CURRENT_REPORT"] = ""
+            ok36b, why36b, _c = check_one(f36)
+            if not ok36 and why36.startswith("もう当て終わっている") and why36b.startswith("守りの仕組みなので"):
+                ok += 1
+                print(f"   T{total} 当てた記録に在る件は、実物に文字が無くても「もう当て終わっている」 → pass")
+            else:
+                fails.append(f"❌ 当てた記録 T{total}: 記録あり={why36} 記録を見ない={why36b}")
         finally:
             (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
              globals()["HOOKS_DIR"], globals()["BREAKS_DIR"]) = g_saved
