@@ -2,24 +2,42 @@
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "../../.claude/tools/gen_acceptance.py": [
+  "<モジュール直下>",
+  "_wtag",
+  "src",
+  "build_selftest",
+  "build_checklist",
+  "build_source",
+  "section4",
+  "page",
+  "write",
+  "verify",
+  "_sample_work",
+  "selftest",
+  "main"
+ ],
+ "../../.claude/tools/gen_audit_docs.py": [
+  "<モジュール直下>",
+  "build_design_src",
+  "request_design",
+  "selftest",
+  "main"
+ ],
  "../../.claude/tools/apply_audit_fix.py": [
   "<モジュール直下>",
-  "tool_target_ok",
-  "command_argv",
-  "run_commands",
-  "check_one",
-  "check_evidence",
-  "_cmp_line",
+  "impl_src_mismatch",
+  "_record_applied",
+  "applied_keys",
   "main",
   "selftest"
  ],
- "../../.claude/tools/gen_acceptance.py": [
-  "src_from_work",
-  "section4",
-  "page"
+ "../../.claude/hooks/forbid_edit_generated_docs.py": [
+  "<モジュール直下>",
+  "check"
  ],
- "../../.claude/tools/gen_verbatim.py": [
-  "write"
+ "../../.claude/hooks/require_design_check_before_approval.py": [
+  "a9_contract_full"
  ],
  "../../.claude/hooks/enforce_audit_fix.py": [
   "pending"

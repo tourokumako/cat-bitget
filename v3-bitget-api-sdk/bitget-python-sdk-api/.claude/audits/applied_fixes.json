@@ -1,0 +1,341 @@
+{
+ "_これは何か": "当てる道具（apply_audit_fix.py）が当てた監査の修正の記録。hook 12 が読み、ここに在る修正を当て済みとして扱う。書くのは当てる道具だけ（手で書き替えない・差分は git に出る）",
+ "applied": [
+  {
+   "report": "2026-09-29_point1_design_autogen_20260929_design_cp52_audit_report.md",
+   "num": "1",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-29_point1_design_autogen_20260929_design_cp52_audit_report.md",
+   "num": "2",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-29_point1_design_autogen_20260929_design_cp52_audit_report.md",
+   "num": "3",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-29_point1_design_autogen_20260929_design_cp52_audit_report.md",
+   "num": "4",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-29_point1_design_autogen_20260929_design_cp52_audit_report.md",
+   "num": "5",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-29_point1_design_autogen_20260929_design_cp52_audit_report.md",
+   "num": "6",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-29_point1_design_autogen_20260929_design_cp52_audit_report.md",
+   "num": "7",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-29_point1_design_autogen_20260929_design_cp52_audit_report.md",
+   "num": "11",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-29_point1_design_autogen_20260929_design_cp52_audit_report.md",
+   "num": "12",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "1",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "2",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "3",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "13",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "14",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "15",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "26",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "27",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "28",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "29",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "30",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "31",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md",
+   "num": "32",
+   "file": ".claude/tools/gen_acceptance.py",
+   "at": "2026-09-30T12:47:14",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "3",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "5",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "7",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "9",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "11",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "13",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "15",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "17",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "19",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "21",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "23",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "25",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "33",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "41",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "43",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "45",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "47",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "49",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-15_m2e2_major_design_cp37r_audit_report.md",
+   "num": "51",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp37r_work/design/acceptance_src.json",
+   "at": "2026-09-30T12:47:16",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-09-30T12:47:17",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_report.md",
+   "num": "4",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-09-30T12:47:17",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_report.md",
+   "num": "14",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-09-30T12:47:17",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_report.md",
+   "num": "39",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md",
+   "at": "2026-09-30T12:47:17",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_report.md",
+   "num": "40",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md",
+   "at": "2026-09-30T12:47:17",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_report.md",
+   "num": "41",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_exec.py",
+   "at": "2026-09-30T12:47:17",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_report.md",
+   "num": "42",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-09-30T12:47:17",
+   "how": "もう当て終わっていた"
+  }
+ ]
+}

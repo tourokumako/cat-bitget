@@ -1,0 +1,34 @@
+読めなかった案の逐語2本（okd_fix4・ok_fix4）を工事のフォルダから消しました。worklog の §25 には、今回止まった理由と、同じ誤りを繰り返したことを書き足しました。直した案を、見出しより前に【で始まる行を置かない形で出し直します。
+
+- 中身は1つ前の返信と同じで、2か所だけを直します。
+- 1つ目は【7-8】です。hook 12 の enforce_audit_fix.py の関数の一覧から「モジュール直下」を消し、pending だけにします。
+- 2つ目は【6-3】です。見積もりの1行目を「hook 2本」から、TARGET どおりの「hook 4本」にします。
+- 読むもの宣言（24件）は変わりません。前回いただいた OK のままです。
+
+この返信に OK をいただけますか。OK をいただいたら、この返信を逐語として写します。そのあと、設計書を作る1行を、もう一度だけ打っていただくようお願いします。
+
+【7-8 プログラムが読む設定】
+```json
+{"TARGET": [".claude/tools/gen_acceptance.py", ".claude/tools/gen_audit_docs.py", ".claude/tools/apply_audit_fix.py", ".claude/hooks/forbid_edit_generated_docs.py", ".claude/hooks/require_design_check_before_approval.py", ".claude/hooks/require_acceptance_before_impl.sh", ".claude/hooks/enforce_audit_fix.py", ".claude/breaks/b72_acceptance_handwritten.sh", ".claude/breaks/b73_acceptance_stale_lines.sh"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/gen_acceptance.py",
+  "self_check_calls": ["src_from_work", "_sample_work", "_record_applied", "applied_keys"],
+  "impl_functions": {"../../.claude/tools/gen_acceptance.py": ["<モジュール直下>", "_wtag", "src", "build_selftest", "build_checklist", "build_source", "section4", "page", "write", "verify", "_sample_work", "selftest", "main"],
+   "../../.claude/tools/gen_audit_docs.py": ["<モジュール直下>", "build_design_src", "request_design", "selftest", "main"],
+   "../../.claude/tools/apply_audit_fix.py": ["<モジュール直下>", "impl_src_mismatch", "_record_applied", "applied_keys", "main", "selftest"],
+   "../../.claude/hooks/forbid_edit_generated_docs.py": ["<モジュール直下>", "check"],
+   "../../.claude/hooks/require_design_check_before_approval.py": ["a9_contract_full"],
+   "../../.claude/hooks/enforce_audit_fix.py": ["pending"]},
+  "must_use": {"src": ["src_from_work"], "selftest": ["_sample_work"], "a9_contract_full": ["check_impl_functions"], "main": ["_record_applied"], "pending": ["applied_keys"]},
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事の道具が外から読む一覧（工事のフォルダの形・監査結果の欄・承認の印・設計書の TARGET）の形は変えない。当てた記録は当てる道具だけが書き、hook 12 が読む",
+  "generated_from": {
+   "impl_functions": "4-3 に書いた、この工事で触る関数（commit で差分をゼロにした後）。壊すプログラム b72・b73 は .sh なので関数の一覧に入らない。hook 12 の enforce_audit_fix.py は先頭のコメントと pending だけを直す（コメントは関数の照合に数えないので、モジュール直下は入れない）",
+   "must_use": "直した後に呼ぶ名前（4-3）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 道具3本と hook 4本の直し | 2時間 | 前の工事（apply_audit_fix.py に関数3つ）の実装が約1時間（worklog 20260930 §8）。今回は触る関数が約3倍 |
+| 自己テスト3本 | 2分以内 | 設計書の道具の自己テストが 28秒（2026-09-29） |

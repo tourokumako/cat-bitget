@@ -1,0 +1,66 @@
+直す案です。【4-3】【4-13】【7-5】【7-8】だけを出します。OK をいただいたら、前の案の同じ番号をこの案で置き換えます（道具は後の案を使う）。ほかの番号は前の案のままです。
+
+【4-3 部品と責任の割り当て】
+- gen_acceptance.src＝工事のフォルダからだけ組む。工事名が無ければ止まる。
+- gen_acceptance.verify・main＝工事名が無ければ、設計書の ARC の iter から読む。--src を消す。--out は --work と一緒のときだけ。
+- gen_acceptance.page・section4・build_selftest・build_checklist・build_source・_wtag＝古いやり方の文の分かれ道を消す。
+- gen_acceptance._sample_work（新しく作る）＝一時の置き場に、見本のやり取りの記録と、逐語の道具で写した逐語と、見本の やることの表を作る。
+- gen_acceptance.selftest＝_sample_work の見本だけで試す。前と後で本物の設計書と ratchet の sha256 が同じかも見る。落ちたときの文（「いまの状態で --verify が ❌」「1行 足しても ✅ のまま」）は今までどおり出す。
+- gen_audit_docs.build_design_src・request_design・main・selftest＝--work だけを受ける。自己テストは gen_acceptance._sample_work を使う。
+- apply_audit_fix.impl_src_mismatch・main＝--design の実装の指示を、設計書の iter の工事のフォルダ（src_from_work）と照らす。--src を消す。selftest は見本の実装の指示を関数の引数で渡す。
+- require_design_check_before_approval.a9_contract_full＝照合A〜D を、凍結＝設計書の impl_functions として走らせる。
+- forbid_edit_generated_docs.check＝設計書の直し方の案内を、工事のフォルダのやり方にする。
+- 壊すプログラム b72・b73＝宣言「# EXPECT_MSG:」を1行ずつ足す（b72＝「1行 足しても ✅ のまま」・b73＝「いまの状態で --verify が ❌」）。壊し方と探す行は変えない。
+
+【4-13 影響範囲】
+- 直すファイルの名前で壊すプログラムを grep して7本（b72・b73・b89・b101・b102・b118・b119）。b72・b73 の探す行（def verify・def build_coderef）と b101・b102・b118・b119 の探す行は変えない。
+- b72・b73 は、宣言「# EXPECT_MSG:」が無く、承認のプログラムが承認を取り消す（2026-09-11 に必須にした宣言・承認の前の検査の A8）。宣言を1行ずつ足す。
+- b89 は、壊す行がいまの設計書に無い（grep で0件）ので、完成の条件に載せない（3-2 の2）。
+- 承認のプログラムと承認の前の検査は、設計書の見出しと目印を読む。見出しは変えない。
+
+【7-5 §4.6 の照合】
+- TARGET＝道具3本（gen_acceptance.py・gen_audit_docs.py・apply_audit_fix.py）と hook 3本（forbid_edit_generated_docs.py・require_design_check_before_approval.py・require_acceptance_before_impl.sh）と壊すプログラム2本（b72・b73）。売買のロジックに触らない。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝gen_acceptance.py）。
+- 新しいファイルを作らない（NEW_FILE・MODEL の行は無い）。古い元データは移すだけ。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（設計書の作り方を1本にする）。
+- 過去の失敗の再演＝古いやり方を残して自己テストが本物のデータに頼る形（前の工事の 3-1 の1）を、この工事で取り消す。
+- 非該当（売買のロジックの部品・前処理を足さない）。
+- 非該当（売買の実行器と生成器を直さない）。
+- 直すファイルの名前で壊すプログラムを grep して7本。探す行は変えない。b72・b73 には宣言を足す。b89 は載せない（4-13）。
+- 非該当（壊すプログラムを足さない。自己テストは一時の置き場だけに書く）。
+- 触る関数は DESIGN_CONTRACT の impl_functions に全部 在る（commit で差分をゼロにしてから数える＝3-2 の1）。
+- 新しく足す旗は無い（--src を消すだけ）。完成の条件の1行目が --selftest で通る。
+- 非該当（2回目の承認の前に書き直す＝その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=point1-one-way-20260930）。
+- 1変更・過去失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝3本の道具の --selftest と、承認の前の検査の --try。
+
+【7-8 プログラムが読む設定】
+```json
+{"TARGET": [".claude/tools/gen_acceptance.py", ".claude/tools/gen_audit_docs.py", ".claude/tools/apply_audit_fix.py", ".claude/hooks/forbid_edit_generated_docs.py", ".claude/hooks/require_design_check_before_approval.py", ".claude/hooks/require_acceptance_before_impl.sh", ".claude/breaks/b72_acceptance_handwritten.sh", ".claude/breaks/b73_acceptance_stale_lines.sh"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/gen_acceptance.py",
+  "self_check_calls": ["src_from_work", "_sample_work"],
+  "impl_functions": {"../../.claude/tools/gen_acceptance.py": ["<モジュール直下>", "_wtag", "src", "build_selftest", "build_checklist", "build_source", "section4", "page", "write", "verify", "_sample_work", "selftest", "main"],
+   "../../.claude/tools/gen_audit_docs.py": ["<モジュール直下>", "build_design_src", "request_design", "selftest", "main"],
+   "../../.claude/tools/apply_audit_fix.py": ["<モジュール直下>", "impl_src_mismatch", "main", "selftest"],
+   "../../.claude/hooks/forbid_edit_generated_docs.py": ["<モジュール直下>", "check"],
+   "../../.claude/hooks/require_design_check_before_approval.py": ["a9_contract_full"]},
+  "must_use": {"src": ["src_from_work"], "selftest": ["_sample_work"], "a9_contract_full": ["check_impl_functions"]},
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事の道具が外から読む一覧（工事のフォルダの形・監査結果の欄・承認の印・設計書の TARGET）の形は変えない",
+  "generated_from": {
+   "impl_functions": "4-3 に書いた、この工事で触る関数（commit で差分をゼロにした後）。壊すプログラム b72・b73 は .sh なので関数の一覧に入らない",
+   "must_use": "直した後に呼ぶ名前（4-3）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```
+
+あわせて報告です。OK をいただいた後に、私が手で書いた やることの表の 2-1 の読み方を1か所 直しました。「b89」の数字が入っていて、道具が止めたためです（読み方に数字を書かない決まり）。「監査の表の行を壊す壊すプログラム」と書き替えました（worklog 20260930 §19）。
+
+この直す案で OK か、見ていただけますか。
+
+このターンで書き換えたのは、[やることの表.md](.claude/state/verbatim/point1-one-way-20260930/やることの表.md)（2-1 の読み方）・[acceptance.md](.claude/state/acceptance.md)（道具が作った563行）・[session_worklog_20260930.md](.claude/state/session_worklog_20260930.md)（§19）・工事のフォルダの逐語のファイル（req_oneway・okd_design2・ok_design2）と要件のまとめ.md です。commit 9a24dff もこのターンで作りました。

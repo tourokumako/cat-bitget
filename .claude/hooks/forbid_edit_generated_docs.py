@@ -13,8 +13,9 @@
      直す道＝元データ .claude/state/hook_roles.json を直して `python3 .claude/tools/gen_hook_list.py --write`。
   ③ .claude/state/acceptance.md（設計書）＝中に生成の目印（<!-- ACC_…_START hash=…）が1つでも在れば、Write・Edit・MultiEdit を全部 止める
      （2026-09-29 まこさん指示「防止策で効果があるものは対応してよい」・worklog 20260929 §76）。
-     直す道＝元データ .claude/ratchet/acceptance_src.json（CC は書けない＝写し .claude/state/acceptance_src_<iter>.json を直して
-     まこさんに cp をお願いする）→ `python3 .claude/tools/gen_acceptance.py --write`。
+     直す道＝工事のフォルダ（.claude/state/verbatim/<工事名>/）に、まこさんが OK した案を gen_verbatim.py で写す
+     → `python3 .claude/tools/gen_acceptance.py --work <工事名> --write`。
+     ★2026-09-30（設計書 point1-one-way-20260930-2 の W-1・W-5）＝古い元データ acceptance_src.json の道は無くした（作り方は1本）。
      なぜ＝設計書の手直しは、機械が書いた節の外（元データから写した節）に入れると --verify に捕まらない＝虚偽・改ざんの置き場になる。
 
 止めないもの
@@ -94,8 +95,8 @@ def check(data: dict) -> int:
             return _block(
                 "🔒 [生成された文書・hook forbid_edit_generated_docs] acceptance.md（設計書）はプログラムが元データから作っています＝手で直せません"
                 "（まこさん指示 2026-09-29「防止策で効果があるものは対応してよい」・2026-09-17「手書きせざるをえないもの以外は自動生成にしてほしい」）。\n"
-                "   直す道＝元データ .claude/ratchet/acceptance_src.json を直す（CC は書けない＝写し .claude/state/acceptance_src_<iter>.json を直して"
-                " まこさんに cp をお願いする）→ python3 .claude/tools/gen_acceptance.py --write\n"
+                "   直す道＝工事のフォルダ（.claude/state/verbatim/<工事名>/）に、まこさんが OK した案を gen_verbatim.py で写す"
+                " → python3 .claude/tools/gen_acceptance.py --work <工事名> --write\n"
                 "   （解除の合言葉はありません）")
         return 0
     if path == PDCA.resolve():

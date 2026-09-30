@@ -75,7 +75,8 @@ EVID_RE = re.compile(r"(\S+):(\d+)[^「]*「(.*)」\s*$")
 # ★2026-09-24（設計書 impl-instruction-apply-20260924）＝設計書を当てる口が読むもの
 APPROVED = os.path.join(ROOT, ".claude", "state", "acceptance.approved")     # 承認の印（設計書の sha256）
 DESIGN = os.path.join(ROOT, ".claude", "state", "acceptance.md")            # 既定の設計書
-SRC_JSON = os.path.join(SDK, ".claude", "ratchet", "acceptance_src.json")   # 設計書の元データ（実装の指示の中身の正本）
+# ★2026-09-30（設計書 point1-one-way-20260930-2）＝元データの JSON（SRC_JSON）は消した。
+#   設計書の実装の指示は、設計書の ARC の iter の工事のフォルダ（gen_acceptance.src_from_work）と照らす。
 IMPL_HEAD_RE = re.compile(r"^### 4-20 .*$", re.M)                            # 設計書の「実装の指示」の節の見出し
 # ★2026-09-30（設計書 audit-fix-tools-target-20260930・まこさん承認）
 #   ＝道具のファイル（.claude/tools の .py）にも、承認と TARGET がそろったときだけ当てる。
@@ -92,6 +93,9 @@ RUN_TOOLS = {
 #   根拠が acceptance.md の行なら、いまの acceptance.md ではなく、この控えと照らす（監査の後に設計書が書き替わるため）。
 AUDITED_DESIGN = ""
 ARCHIVE_DIR = os.path.join(SDK, ".claude", "ratchet", "acceptance_archive")
+# ★2026-09-30（設計書 point1-one-way-20260930-2・まこさん決定「案A」）＝当てた監査の修正の記録。hook 12（enforce_audit_fix.py）が読む。
+#   git に残る置き場＝書き替えれば差分に出る。書くのはこの道具の _record_applied だけ。
+APPLIED_RECORD = os.path.join(SDK, ".claude", "audits", "applied_fixes.json")
 
 
 def repo_path(p: str) -> str:
@@ -298,17 +302,15 @@ def run_commands(cmds: list, design_path: str = None, check=None) -> int:
     return 0
 
 
-def impl_src_mismatch(fixes: list, src_path: str) -> list:
-    """設計書から読んだ実装の指示が、元データの `実装の指示` と1文字も違わないか。違いを文で返す。
+def impl_src_mismatch(fixes: list, items: list) -> list:
+    """設計書から読んだ実装の指示が、工事のフォルダの `実装の指示`（items）と1文字も違わないか。違いを文で返す。
 
     ★なぜ要るか（監査 CP41 の A3-d）＝囲みの中に囲みの記号（チルダ3つ）が入ると、読み取りが内側で
-      黙って切れ、切れた文字が実物に書かれた。元データと突き合わせれば、切れた読み取りは必ず違いになる。
+      黙って切れ、切れた文字が実物に書かれた。元と突き合わせれば、切れた読み取りは必ず違いになる。
+    ★2026-09-30（設計書 point1-one-way-20260930-2）＝元データの JSON のパスを受けるのをやめ、実装の指示の一覧を受ける
+      （main が設計書の iter の工事のフォルダから読む・自己テストは見本の一覧を渡す）。
     """
-    try:
-        d = json.load(open(src_path, encoding="utf-8"))
-    except Exception as e:                                # noqa: BLE001
-        return [f"元データが読めない（{src_path}・{e}）"]
-    items = d.get("実装の指示") or []
+    items = items or []
     if len(items) != len(fixes):
         return [f"元データの実装の指示は {len(items)} 件、設計書から読めたのは {len(fixes)} 件"]
     bad = []
@@ -331,6 +333,50 @@ def impl_src_mismatch(fixes: list, src_path: str) -> list:
         if str(it.get("種類", "直した後の文字")) not in [k for _a, k, _b in f["4つ目"]]:
             bad.append(f"実装 {num}: 種類（4つ目の見出し）が元データと違う")
     return bad
+
+
+def applied_keys(path: str = None) -> set:
+    """当てた記録を読み、(監査結果の名前, 修正の番号) の組の集まりを返す。記録が無い・読めなければ空。"""
+    path = path or APPLIED_RECORD
+    try:
+        d = json.load(open(path, encoding="utf-8"))
+    except Exception:                                     # noqa: BLE001
+        return set()
+    return {(str(x.get("report", "")), str(x.get("num", ""))) for x in (d.get("applied") or []) if isinstance(x, dict)}
+
+
+def _record_applied(entries: list, path: str = None) -> int:
+    """当てた修正（と、もう当て終わっていると分かった修正）を記録に書き足す。戻り＝新しく足した件数。
+
+    entries＝[{"report": 監査結果の名前, "num": 修正の番号, "file": 対象のファイル, "how": "当てた"／"もう当て終わっていた"}]。
+    ★消さない（書き足すだけ）。同じ組が在れば足さない。一時のファイルに書いてから置き替える。
+    """
+    import time
+    path = path or APPLIED_RECORD
+    try:
+        d = json.load(open(path, encoding="utf-8"))
+    except Exception:                                     # noqa: BLE001
+        d = {}
+    d.setdefault("_これは何か", "当てる道具（apply_audit_fix.py）が当てた監査の修正の記録。hook 12 が読み、"
+                               "ここに在る修正を当て済みとして扱う。書くのは当てる道具だけ（手で書き替えない・差分は git に出る）")
+    rows = [x for x in (d.get("applied") or []) if isinstance(x, dict)]
+    have = {(str(x.get("report", "")), str(x.get("num", ""))) for x in rows}
+    added = 0
+    for e in entries:
+        key = (str(e.get("report", "")), str(e.get("num", "")))
+        if not key[0] or not key[1] or key in have:
+            continue
+        rows.append({"report": key[0], "num": key[1], "file": str(e.get("file", "")),
+                     "at": time.strftime("%Y-%m-%dT%H:%M:%S"), "how": str(e.get("how", ""))})
+        have.add(key)
+        added += 1
+    d["applied"] = rows
+    tmp_path = path + ".tmp"
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(tmp_path, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(d, ensure_ascii=False, indent=1) + "\n")
+    os.replace(tmp_path, path)
+    return added
 
 
 def _recheck(f: dict, cur: str) -> bool:
@@ -483,14 +529,14 @@ def apply_one(f: dict, cur: str, pick: str = "") -> tuple:
     return cur, "何もしなかった"
 
 
-def main(argv: list = None, approved_path: str = None) -> int:
-    """★argv と approved_path は自己テストが渡す（本物の呼び出しでは None＝コマンドの引数と本物の印）。"""
+def main(argv: list = None, approved_path: str = None, src_items: list = None) -> int:
+    """★argv と approved_path は自己テストが渡す（本物の呼び出しでは None＝コマンドの引数と本物の印）。
+    ★src_items＝自己テストが渡す見本の実装の指示（本物の呼び出しでは None＝設計書の iter の工事のフォルダから読む）。"""
     global AUDITED_DESIGN
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument("--report", default="")
     ap.add_argument("--severity", default="")
     ap.add_argument("--design", nargs="?", const=DESIGN, default="")
-    ap.add_argument("--src", default=SRC_JSON)
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--choose", default="")
     ap.add_argument("--only", default="")
@@ -530,7 +576,20 @@ def main(argv: list = None, approved_path: str = None) -> int:
         if not all_fixes:
             print("— 設計書に実装の指示が0件（4-20 の節が無いか、空）＝当てるものがありません")
             return 0
-        bad = impl_src_mismatch(all_fixes, a.src)
+        # ★2026-09-30（設計書 point1-one-way-20260930-2）＝照らす相手は、設計書の iter の工事のフォルダの実装の指示
+        if src_items is None:
+            mi = re.search(r'<!-- ARC iter="([^"]+)" -->', text)
+            if not mi:
+                print("❌ 設計書に ARC の目印（iter）が無いので、工事のフォルダを決められません＝1件も当てません")
+                return 1
+            import gen_acceptance as ga
+            try:
+                ga.WORK = mi.group(1)
+                src_items = ga.src_from_work(mi.group(1)).get("実装の指示") or []
+            except SystemExit as e:
+                print(f"❌ 工事のフォルダ {mi.group(1)} を読めません（{e}）＝1件も当てません")
+                return 1
+        bad = impl_src_mismatch(all_fixes, src_items)
         if bad:
             print(f"❌ 設計書から読んだ実装の指示が、元データと合いません（{len(bad)} 件）＝1件も当てません")
             for e in bad[:10]:
@@ -678,6 +737,16 @@ def main(argv: list = None, approved_path: str = None) -> int:
         done += 1
         print(f"   ✅ 修正 {f['番号']}（{f['重さ'] or '設計書'}）: {what} → {os.path.relpath(path, ROOT)}")
     print(f"\n✅ 当てた {done} 件／当てなかった {len(stopped)} 件")
+    # ★2026-09-30（設計書 point1-one-way-20260930-2・まこさん決定「案A」）＝監査結果の道だけ、当てた修正と
+    #   もう当て終わっていた修正を記録に書き足す（hook 12 が読む）。--dry と設計書の道では書かない。
+    if not design_mode:
+        rep = os.path.basename(a.report)
+        rec = [{"report": rep, "num": f["番号"], "file": f["対象のファイル"] or "", "how": "当てた"}
+               for f, _what, _path in plan]
+        rec += [{"report": rep, "num": f["番号"], "file": f["対象のファイル"] or "", "how": "もう当て終わっていた"}
+                for f, why, _c in stopped if why.startswith("もう当て終わっている")]
+        n_rec = _record_applied(rec)
+        print(f"— 当てた記録に {n_rec} 件を足した（{os.path.relpath(APPLIED_RECORD, ROOT)}）")
     rc_cmd = run_commands(cmds)
     # ★設計書の道（設計書 4-4 の 10）＝当てなかった件が1件でも在れば rc=1（当て忘れを機械で見つける）
     return 1 if ((design_mode and stopped) or rc_cmd) else 0
@@ -698,19 +767,22 @@ def selftest() -> int:
     from contextlib import redirect_stdout
     import io
 
+    # ★2026-09-30（設計書 point1-one-way-20260930-2）＝見本の実装の指示は、ファイル（--src）でなく main の引数で渡す
+    state = {"items": []}
+
     def run(argv, mark):
         buf = io.StringIO()
         with redirect_stdout(buf):
-            rc = main(argv, approved_path=mark)
+            rc = main(argv, approved_path=mark, src_items=state["items"])
         return rc, buf.getvalue()
 
     def item(num, rel, before, kind, body, ev, state="確定"):
         return {"番号": num, "対象のファイル": rel, "直す箇所": "1-1", "直す前の文字": before,
                 "種類": kind, "中身": body, "根拠の抜き書き": ev, "状態": state}
 
-    def design(items, target_rel, src_path):
+    def design(items, target_rel):
         d = {"実装の指示": items}
-        open(src_path, "w", encoding="utf-8").write(json.dumps(d, ensure_ascii=False))
+        state["items"] = items
         sec = ga.build_impl(d)
         return ("<!-- ARC iter=\"selftest\" -->\n# 設計書｜見本\n\n"
                 f"TARGET: {target_rel}\n\n## 4｜設計の中身\n\n### 4-20 実装の指示（見本）\n\n"
@@ -728,12 +800,11 @@ def selftest() -> int:
         code = os.path.join(tmp, "sample.py")
         md = os.path.join(tmp, "design.md")
         mark = os.path.join(tmp, "approved")
-        srcj = os.path.join(tmp, "src.json")
         ev = f"{rel}:1「x = 1」"
 
         def fresh(items, target_rel=None, body_text="x = 1\n"):
             open(code, "w", encoding="utf-8").write(body_text)
-            txt = design(items, target_rel or rel, srcj)
+            txt = design(items, target_rel or rel)
             open(md, "w", encoding="utf-8").write(txt)
             mark_of(md, mark)
 
@@ -753,7 +824,7 @@ def selftest() -> int:
         # T2 --dry で当たる1件が出る
         total += 1
         fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2", ev)])
-        rc, out = run(["--design", md, "--src", srcj, "--dry"], mark)
+        rc, out = run(["--design", md, "--dry"], mark)
         if rc == 0 and "当たる 1 件" in out and open(code).read() == "x = 1\n":
             ok += 1
             print(f"   T{total} --design --dry で当たる1件が出る → pass")
@@ -762,7 +833,7 @@ def selftest() -> int:
 
         # T3 --dry なしで見本のコードが変わる
         total += 1
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 0 and open(code).read() == "x = 2\n":
             ok += 1
             print(f"   T{total} 当てると見本のコードが x = 2 になる → pass")
@@ -773,7 +844,7 @@ def selftest() -> int:
         total += 1
         fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2", ev)])
         open(mark, "w", encoding="utf-8").write("0" * 64)
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and "承認の印と一致: いいえ" in out and open(code).read() == "x = 1\n":
             ok += 1
             print(f"   T{total} 承認の印が違うと1件も当たらない → pass")
@@ -786,7 +857,7 @@ def selftest() -> int:
         txt = open(md, encoding="utf-8").read().replace("状態: 確定\n", "")
         open(md, "w", encoding="utf-8").write(txt)
         mark_of(md, mark)
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and "6つの形になっていません" in out and open(code).read() == "x = 1\n":
             ok += 1
             print(f"   T{total} 欄の形が違うと1件も当たらない → pass")
@@ -812,7 +883,7 @@ def selftest() -> int:
         total += 1
         fresh([item(1, rel, "x = 1\ny = 2", "直した後の文字", "x = 9", ev),
                item(2, rel, "y = 2", "直した後の文字", "y = 3", ev)], body_text="x = 1\ny = 2\n")
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and open(code).read() == "x = 1\ny = 2\n":
             ok += 1
             print(f"   T{total} 先の件が後の件を消すと、1件も当たらず rc=1 → pass")
@@ -823,7 +894,7 @@ def selftest() -> int:
         total += 1
         guard_rel = ".claude/settings.json"
         fresh([item(1, guard_rel, "x = 1", "直した後の文字", "x = 2", ev)], target_rel=guard_rel)
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and "守りの仕組みなので当てない" in out:
             ok += 1
             print(f"   T{total} 守りの仕組みは当てず一覧に出る（rc=1） → pass")
@@ -833,7 +904,7 @@ def selftest() -> int:
         # T9 対象が TARGET／NEW_FILE に無いなら当てず、一覧に出て rc=1
         total += 1
         fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2", ev)], target_rel="scripts/priority_rebuild/other.py")
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and "TARGET の外" in out and open(code).read() == "x = 1\n":
             ok += 1
             print(f"   T{total} TARGET の外は当てず一覧に出る（rc=1） → pass")
@@ -843,7 +914,7 @@ def selftest() -> int:
         # T10 中身に囲みの記号（チルダ3つ）が入ると、元データと合わず1件も当たらない
         total += 1
         fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2\n~~~\nz = 0", ev)])
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and "元データと合いません" in out and open(code).read() == "x = 1\n":
             ok += 1
             print(f"   T{total} 囲みの記号が中身に在ると止まる → pass")
@@ -854,7 +925,7 @@ def selftest() -> int:
         total += 1
         fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2", ev)])
         open(mark, "w", encoding="utf-8").write("")
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and "承認の印が空" in out and open(code).read() == "x = 1\n":
             ok += 1
             print(f"   T{total} 承認の印が空なら止まる → pass")
@@ -880,9 +951,9 @@ def selftest() -> int:
         open(code2, "w", encoding="utf-8").write("y = 1\n")
         items13 = [item(1, rel, "x = 1", "直した後の文字", "x = 2", ev),
                    item(2, rel2, "NOT_THERE", "直した後の文字", "y = 2", f"{rel2}:1「y = 1」")]
-        open(md, "w", encoding="utf-8").write(design(items13, rel + ", " + rel2, srcj))
+        open(md, "w", encoding="utf-8").write(design(items13, rel + ", " + rel2))
         mark_of(md, mark)
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and open(code).read() == "x = 1\n" and open(code2).read() == "y = 1\n":
             ok += 1
             print(f"   T{total} 1件でも実物と合わなければ、ほかの件も当たらない（rc=1） → pass")
@@ -892,7 +963,7 @@ def selftest() -> int:
         # T14（監査 CP42 の A3）＝状態が「未決」の件の中身に「状態: 確定」の行が在っても当たらない
         total += 1
         fresh([item(1, rel, "x = 1", "直した後の文字", "x = 2\n状態: 確定", ev, state="未決")])
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and open(code).read() == "x = 1\n":
             ok += 1
             print(f"   T{total} 中身の中の、欄と同じ形の行を、欄と取り違えない → pass")
@@ -908,9 +979,9 @@ def selftest() -> int:
         odd = os.path.relpath(os.path.join(tmp, ".claude"), ROOT) + "/./hooks/x.sh"
         open(md, "w", encoding="utf-8").write(design(
             [item(1, odd, "x = 1", "直した後の文字", "x = 2", f"{odd}:1「x = 1」")],
-            os.path.relpath(hook, ROOT), srcj))
+            os.path.relpath(hook, ROOT)))
         mark_of(md, mark)
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and "守りの仕組みなので当てない" in out and open(hook).read() == "x = 1\n":
             ok += 1
             print(f"   T{total} 守りの仕組みは、書き方を変えても当てない → pass")
@@ -923,7 +994,7 @@ def selftest() -> int:
         total += 1
         fresh([item(1, rel, "x = 1", "直した後の文字", "x = 1\nz = 0\ny = 2", ev),
                item(2, rel, "y = 2", "直した後の文字", "y = 3", ev)], body_text="x = 1\ny = 2\n")
-        rc, out = run(["--design", md, "--src", srcj], mark)
+        rc, out = run(["--design", md], mark)
         if rc == 1 and open(code).read() == "x = 1\ny = 2\n":
             ok += 1
             print(f"   T{total} 先の件が後の件の「直す前の文字」を2つにすると、1件も当たらず rc=1 → pass")
@@ -1042,6 +1113,34 @@ def selftest() -> int:
                 print(f"   T{total} 設計書の行は、監査が見た版の控えと照らす → pass")
             else:
                 fails.append(f"❌ 根拠の照らし T{total}: 控えと照らしていない（{_w24}）")
+
+            # ★T25（2026-09-30・設計書 point1-one-way-20260930-2・案A）＝当てた修正が記録に入り、
+            #   記録に在る修正を hook 12 が止めない（記録に無い修正は今までどおり止める）。本物の記録には書かない。
+            total += 1
+            rec25 = os.path.join(tmp, "applied.json")
+            rep25 = os.path.join(tmp, "zz_selftest_audit_report.md")
+            open(code, "w", encoding="utf-8").write("x = 1\n")
+            open(rep25, "w", encoding="utf-8").write(
+                "# 見本\n\n## 8. 修正の指示\n\n### Major\n\n#### 修正 1\n"
+                f"対象のファイル: {rel}\n直す箇所: 1\n直す前の文字:\n~~~\nx = 1\n~~~\n"
+                f"直した後の文字:\n~~~\nx = 2\n~~~\n根拠の抜き書き: {rel}:1「x = 1」\n状態: 確定\n")
+            sys.path.insert(0, os.path.join(ROOT, ".claude", "hooks"))
+            import enforce_audit_fix as e12
+            import apply_audit_fix as a12                  # hook 12 が読む同じ道具（__main__ とは別に読み込まれる）
+            saved12 = (e12.REPORTS, a12.APPLIED_RECORD)
+            e12.REPORTS, a12.APPLIED_RECORD = os.path.join(tmp, "*_audit_report.md"), rec25
+            try:
+                before25 = os.path.realpath(code) in e12.pending()
+                n25 = _record_applied([{"report": os.path.basename(rep25), "num": "1", "file": rel, "how": "当てた"}], rec25)
+                keys25 = applied_keys(rec25)
+                after25 = os.path.realpath(code) in e12.pending()
+            finally:
+                e12.REPORTS, a12.APPLIED_RECORD = saved12
+            if before25 and n25 == 1 and (os.path.basename(rep25), "1") in keys25 and not after25:
+                ok += 1
+                print(f"   T{total} 当てた修正が記録に入り、記録に在る修正を hook 12 が止めない → pass")
+            else:
+                fails.append(f"❌ 当てた記録 T{total}: 前={before25} 足した={n25} 後={after25}")
         finally:
             globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"] = g_saved
             globals()["AUDITED_DESIGN"] = ""

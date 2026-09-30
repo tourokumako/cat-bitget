@@ -19,13 +19,15 @@
 
 何をするか
 ----------
-  --write        元データ（acceptance_src.json）と正本から設計書を組み立て、囲みの中に書く
-  --verify       囲みの中が、機械の書いたままかを検出する（手で書き換えたら ❌）
-  --dry-run      書かずに、組み立てた本文を画面に出す
-  --selftest     わざと壊して ❌ が出るかを試す（8件）
+  --work <工事名> --write    工事のフォルダ（やることの表.md と逐語のファイル）と正本から設計書を組み立て、囲みの中に書く
+  --verify [--work <工事名>] 囲みの中が、機械の書いたままかを検出する（工事名を省くと設計書の ARC の iter を使う）
+  --work <工事名> --dry-run  書かずに、組み立てた本文を画面に出す
+  --selftest                 一時の置き場に作る固定の見本だけで、わざと壊して ❌ が出るかを試す
+  ★2026-09-30（設計書 point1-one-way-20260930・まこさん承認）＝設計書の作り方は工事のフォルダの1本だけ。
+    元データの JSON（acceptance_src.json）から組む古い口は消した（古い元データは acceptance_archive へ移した）。
 
-★手で書くのは元データの5つだけ＝何を作るか／なぜ作るか／組み方／やらないこと／決めてほしいこと。
-★行番号・一覧・件数・格子と範囲・SPEC は、この道具が正本から出す（元データに書かない）。
+★手で書くのは、工事のフォルダの やることの表.md の「手書きの項目」の5つだけ（HAND_KEYS）。
+★行番号・一覧・件数・格子と範囲・SPEC は、この道具が正本から出す（やることの表にも案にも書かない）。
 ★2026-09-29（まこさん指示「やることリストなどの設計のもとになるものから設計書作成を自動生成」）
   ＝設計のもと（元データの「設計のもと」＝やることの番号と逐語のファイル）を、この道具が設計書 §0-1 に写す。
     やることの行は m2_todo.json から、まこさんの文は gen_verbatim.py の逐語のファイルから読む（CC は写さない）。
@@ -118,7 +120,7 @@ def forbidden_items():
         raise SystemExit("[gen_acceptance] 「作ってはいけないもの」を1件も取り出せなかった（fail-closed）")
     return out
 
-SRC = RATCHET / "acceptance_src.json"
+# ★2026-09-30（設計書 point1-one-way-20260930）＝元データの JSON の置き場（SRC）は消した。読むのは工事のフォルダだけ。
 # ★2026-09-10＝§4（設計の中身）の項目の正本。
 #   3つの出どころ（うちの正本・外の標準・まこさんが過去に指摘したこと）118件を
 #   全部 引き受ける形に割り当てたもの（gen_design_sections.py --check で検算する）。
@@ -190,9 +192,10 @@ def _tag(who: str, what: str) -> str:
     return f"［{who}］{what}"
 
 
-def _wtag(legacy_who: str, legacy_what: str, work_who: str, work_what: str) -> str:
-    """★2026-09-29＝--work（工事のフォルダから組む）ときは、やることの表の割り当てどおりの印と出どころを出す。"""
-    return _tag(work_who, work_what) if WORK else _tag(legacy_who, legacy_what)
+def _wtag(who: str, what: str) -> str:
+    """やることの表の「手書きと自動の割り当て」どおりの印と出どころを出す。
+    ★2026-09-30（設計書 point1-one-way-20260930-2）＝古いやり方（元データの JSON）の印の分かれ道を消し、引数を2つに揃えた。"""
+    return _tag(who, what)
 
 
 def _load(path: Path) -> dict:
@@ -213,7 +216,7 @@ def _load(path: Path) -> dict:
 #     ②逐語のファイル（gen_verbatim.py が記録から写した）のうち、まこさんが OK した CC の案＝【項目の番号】の見出しで切った中身
 #     ＝自動の項目。★対応の表も、どの【】の下の行かで道具が作る（CC は書かない）。
 #   ★足りない欄は全部 集めて一度に出して止まる（fail-closed・1件ずつ止めない）。
-WORK = ""                                             # --work で入る工事名（空なら従来の元データ JSON）
+WORK = ""                                             # --work で入る工事名（空なら設計書は組めない＝src が止まる）
 TODO_MD = "やることの表.md"
 HAND_KEYS = ("§1 概要", "2-1 何を測るか", "3-1 やらないこと", "3-2 決めてほしいこと", "4-19 通しの例")
 AUTO_TEXT = {"7-2": "固定値ゼロ宣言", "7-3": "変更の単位"}
@@ -408,9 +411,13 @@ def src_from_work(work: str) -> dict:
 
 
 def src() -> dict:
-    """元データを読む。「やらないこと」が空なら止まる（fail-closed の2つ目）。
-    ★2026-09-29＝--work のときは工事のフォルダから組み立てる（src_from_work）。"""
-    d = src_from_work(WORK) if WORK else _load(SRC)
+    """工事のフォルダから設計書を組む中身を作る。「やらないこと」が空なら止まる（fail-closed の2つ目）。
+    ★2026-09-30（設計書 point1-one-way-20260930）＝工事のフォルダ（src_from_work）の1本だけ。
+      工事名が無ければ止まる（元データの JSON へは戻らない）。"""
+    if not WORK:
+        raise SystemExit("[gen_acceptance] 工事名がありません（fail-closed）。--work <工事名> を付けてください"
+                         "（設計書の作り方は工事のフォルダの1本だけ・元データの JSON は使わない）。")
+    d = src_from_work(WORK)
     if not d.get("やらないこと"):
         raise SystemExit(
             "[gen_acceptance] 元データの「やらないこと」が空です（fail-closed）。\n"
@@ -649,8 +656,7 @@ def build_selftest(d: dict) -> str:
         by.setdefault((str(r.get("壊すプログラム") or ""), str(r.get("壊し方") or "")), []).append(i)
     L = []
     add = L.append
-    add("**★この節はプログラムが作ります（手で書き換えない）。**出どころ＝"
-        + ("まこさんが OK した案の【7-6】。" if WORK else "元データの「完成の条件」。"))
+    add("**★この節はプログラムが作ります（手で書き換えない）。**出どころ＝まこさんが OK した案の【7-6】。")
     add("")
     add("| 壊すプログラム | 守る行 | 壊し方 |")
     add("|---|---|---|")
@@ -717,12 +723,12 @@ def build_checklist(d: dict) -> str:
         "出どころ＝`list_banned_words.checklist_items()`（hook の実体から抽出）。")
     add("")
     # ★2026-09-29＝項目を並べるだけで、照らした結果が1つも無かった（worklog 20260929 §49 の6）。
-    #   元データの「ハード制約の照合」（群1 の項目と同じ数・同じ順の答え）を、項目の横に並べる。無い・数が違えば止める。
+    #   OK された案の【7-5】（群1 の項目と同じ数・同じ順の答え）を、項目の横に並べる。無い・数が違えば止める。
     ans = d.get("ハード制約の照合")
     if not isinstance(ans, list) or len(ans) != len(g1):
-        raise SystemExit(f"[gen_acceptance] 元データの「ハード制約の照合」が、群1 の項目 {len(g1)} 件と同じ数の答えの一覧になっていない"
+        raise SystemExit(f"[gen_acceptance] OK された案の【7-5】が、群1 の項目 {len(g1)} 件と同じ数の答えの一覧になっていない"
                          f"（いま {len(ans) if isinstance(ans, list) else '無し'}・fail-closed）。1件ずつ、この工事でどう守るかを書く")
-    add("| # | 項目（hook の実体から抽出） | この工事での答え（" + ("OK された案の【7-5】" if WORK else "元データ") + "） |")
+    add("| # | 項目（hook の実体から抽出） | この工事での答え（OK された案の【7-5】） |")
     add("|---|---|---|")
     for i, (b, a) in enumerate(zip(g1, ans), 1):
         add(f"| {i} | 【群1】{_esc(b[:110])} | {_esc(a)} |")
@@ -1034,26 +1040,18 @@ def build_source(d: dict) -> str:
          "",
           f"**写した行＝{len(rows)} 行。**全部の行に、設計書のどこで満たすかの対応が在ります（1行でも無ければ `--write` が止まります）。",
           ""]
-    if not WORK:
-        L += ["| 出どころ | 文（逐語） | 設計書の節 | 実装の指示 | 理由 |",
-              "|---|---|---|---|---|"]
-    # ★2026-09-29（--work・読みやすさ）＝--work のときは1行ずつ並べず、「どの逐語のファイルのどの行が、どの節へ行ったか」の
+    # ★2026-09-29（読みやすさ）＝1行ずつ並べず、「どの逐語のファイルのどの行が、どの節へ行ったか」の
     #   まとめ1行にする。OK された案の【】の下の行は中身が §4 などにそのまま写り、見出しの外の行（要件の発言・前置き）の
     #   文は要件のまとめ.md に在る＝同じ文を2回 出さない。
+    # ★2026-09-30（設計書 point1-one-way-20260930）＝古いやり方の1行ずつの表の分かれ道を消した。
     grouped: dict = {}
-    for rid, text in rows:
+    for rid, _text in rows:
         for r in by[rid]:
             ss = r.get("設計書の節")
             ss = [_sec(s) for s in (ss if isinstance(ss, list) else [ss])]
-            ii = "・".join(str(x) for x in (r.get("実装の指示") or [])) or "—"
             why = str(r.get("理由", ""))
-            if WORK:
-                key = (rid.split(":")[0], "・".join(ss), why)
-                grouped.setdefault(key, []).append(rid.split(":")[-1])
-                continue
-            # ★「（逐語）」の印＝写した文の行と分かるようにする（承認ゲートの B-6 は「逐語」を含む行を結果の報告と見ない）
-            L.append(f"| `{rid}`（逐語） | {_esc(text)} | {_esc('・'.join(str(s) for s in ss))} | {ii} "
-                     f"| {_esc(why)} |")
+            key = (rid.split(":")[0], "・".join(ss), why)
+            grouped.setdefault(key, []).append(rid.split(":")[-1])
     if grouped:
         L.append("")
         L.append("**逐語の行と、行った先の節（行の範囲だけ。文は、【】の下の行は下の各節に、見出しの外の行は要件のまとめに在る）**")
@@ -1193,7 +1191,7 @@ def section4(d: dict) -> str:
     tadd = tbl.append
     tadd("### 4-A この節に何を書いたか（一覧）")
     tadd("")
-    tadd(_wtag("自動", "項目の正本と元データの欄の有無", "自動", "項目の正本と、OK された案・やることの表の有無"))
+    tadd(_wtag("自動", "項目の正本と、OK された案・やることの表の有無"))
     tadd("| 番号 | 段 | 項目 | 書いたか |")
     tadd("|---|---|---|---|")
     miss_must: list[str] = []
@@ -1245,14 +1243,13 @@ def section4(d: dict) -> str:
         # ★2026-09-29＝「この項目に書くこと」の説明文（21回）は出さない（正本 design_section_map.json に在る）
         if no == "4-20" and (d.get("実装の指示") or []):
             # ★2026-09-24（設計書 impl-instruction-apply-20260924）＝4-20 は囲み IMPL（プログラムが作る）。置き場は §4 の中（テンプレどおり）
-            add(_tag("自動", "元データの「実装の指示」＝コードの文字は CC の手書き"))
+            add(_tag("自動", "まこさんが OK した案の【4-20】＝コードの文字は CC の手書き"))
             add(_begin("IMPL", _h(build("IMPL", d))))
             add(build("IMPL", d))
             add(_end("IMPL"))
             add("")
             continue
-        add(_wtag("手書き", f"元データの「設計の中身」の {no}" + ("（囲みは自動）" if isinstance(got, dict) and got.get("囲み") else ""),
-                  "手書き" if no == "4-19" else "自動",
+        add(_wtag("手書き" if no == "4-19" else "自動",
                   "やることの表の「4-19 通しの例」" if no == "4-19" else f"まこさんが OK した案の【{no}】"))
         if isinstance(got, dict):
             for line in got.get("本文") or []:
@@ -1274,8 +1271,7 @@ def section4(d: dict) -> str:
             add(str(got))
             add("")
     if na:
-        if WORK:
-            add(_tag("自動", "まこさんが OK した案の【番号】の「非該当＝」の後ろの文と、項目の正本の名前"))
+        add(_tag("自動", "まこさんが OK した案の【番号】の「非該当＝」の後ろの文と、項目の正本の名前"))
         add("**非該当の項目（理由と出どころ）**＝" + "／".join(_esc(x) for x in na))
         add("")
     # ★一覧は節の最後（まこさん指摘 2026-09-10「4-A この節に何を書いたか（一覧）などは後半でよいのでは？」）
@@ -1324,18 +1320,11 @@ def page(d: dict) -> str:
         "**実装の状態＝7-6 の完成の条件の表（承認のプログラムが「済」を書く）が正本。**この文は状態を持ちません。")
     add("")
     # ★2026-09-29＝直す前は「手で書いたのは5つだけです」の固定の文で、嘘だった（4-0〜4-19・完成の条件ほかも手書き・§49 の1）。
-    #   元データに在る欄の名前を、そのまま並べる（道具が作る囲みは <!-- ACC_… --> の中だけ）。
-    if WORK:
-        add(f"**★この設計書は、工事のフォルダ `{gv.work_dir(WORK).relative_to(ROOT)}/` からプログラムが組み立てます。**"
-            f"CC が手で書いたのは、{TODO_MD} の「手書きの項目」の5つだけです＝{'・'.join(HAND_KEYS)}。"
-            "それ以外は、まこさんが OK した案の逐語（【項目の番号】の見出しで切った中身）と実物から作りました。"
-            f"作り直し＝`python3 .claude/tools/gen_acceptance.py --work {WORK} --write`。検出＝`--work {WORK} --verify`。")
-    else:
-        _hand = [k for k in d if not str(k).startswith("_") and k not in ("iter", "audit_report")]
-        add("**★この設計書は、元データ `.claude/ratchet/acceptance_src.json` からプログラムが組み立てます。**"
-            f"CC が手で書いたのは、元データの次の {len(_hand)} 欄です＝{'・'.join(_hand)}。"
-            "囲み（`<!-- ACC_… -->` の中）は、プログラムが正本から作りました。"
-            "作り直し＝`python3 .claude/tools/gen_acceptance.py --write`。手で書き換えられていないかの検出＝`--verify`。")
+    # ★2026-09-30（設計書 point1-one-way-20260930-2）＝工事のフォルダの1本だけ（元データの JSON の文の分かれ道を消した）。
+    add(f"**★この設計書は、工事のフォルダ `{gv.work_dir(WORK).relative_to(ROOT)}/` からプログラムが組み立てます。**"
+        f"CC が手で書いたのは、{TODO_MD} の「手書きの項目」の5つだけです＝{'・'.join(HAND_KEYS)}。"
+        "それ以外は、まこさんが OK した案の逐語（【項目の番号】の見出しで切った中身）と実物から作りました。"
+        f"作り直し＝`python3 .claude/tools/gen_acceptance.py --work {WORK} --write`。検出＝`--work {WORK} --verify`。")
     add("")
 
     add("## 0｜設計のもと（まこさんの発言と、まこさんが OK した文）")
@@ -1345,18 +1334,14 @@ def page(d: dict) -> str:
     if d.get("まこさんの決定"):
         raise SystemExit("[gen_acceptance] 元データに「まこさんの決定」の欄が在ります（fail-closed）＝CC が手で書く口は閉じました。"
                          "まこさんの文は gen_verbatim.py で逐語のファイルにし、元データの「設計のもと」の「逐語のファイル」に名前を書く。")
-    if WORK:
-        add(f"**見出しの直下の印＝［手書き］＝CC が {TODO_MD} の「手書きの項目」に書いた文／"
-            "［自動］＝プログラムが、まこさんが OK した案の逐語と実物から作った。**")
-    else:
-        add("**見出しの直下の印＝［手書き］＝CC が元データに書いた文／［自動］＝プログラムが正本から作った（囲み `<!-- ACC_… -->` の中）。**")
+    add(f"**見出しの直下の印＝［手書き］＝CC が {TODO_MD} の「手書きの項目」に書いた文／"
+        "［自動］＝プログラムが、まこさんが OK した案の逐語と実物から作った。**")
     add("")
     # ★2026-09-29（worklog §58）＝見出しは元データの「設計のもと」から決める（やることの番号が無いのに「やることの行」と書かない）
     _todo = bool((d.get("設計のもと") or {}).get("やることの番号"))
     add("### 0-1 設計のもと（" + ("やることの行と、" if _todo else "") + "まこさんの発言と、まこさんが OK した文・プログラムが写しました）")
     add("")
-    add(_wtag("自動", "逐語のファイル（記録から抜き出した・CC は写していない）と、元データの「対応の表」",
-              "自動", "逐語のファイル（記録から抜き出した・CC は写していない）と、対応の表（どの【】の下の行かで道具が作った）"))
+    add(_wtag("自動", "逐語のファイル（記録から抜き出した・CC は写していない）と、対応の表（どの【】の下の行かで道具が作った）"))
     add(_begin("SOURCE", _h(build("SOURCE", d))))
     add(build("SOURCE", d))
     add(_end("SOURCE"))
@@ -1364,7 +1349,7 @@ def page(d: dict) -> str:
 
     add("## 1｜概要")
     add("")
-    add(_wtag("手書き", "元データの「何を作るか」", "手書き", "やることの表の「§1 概要」"))
+    add(_wtag("手書き", "やることの表の「§1 概要」"))
     add(d["何を作るか"])
     add("")
 
@@ -1372,13 +1357,10 @@ def page(d: dict) -> str:
     add("")
     add("### 2-1 いまの状態（走らせて測ったもの）")
     add("")
-    if WORK:
-        add(_tag("手書き", "何を測ったか・コマンド・読み方＝やることの表の「2-1 何を測るか」"))
-        add(_tag("自動", "結果＝道具がコマンドを走らせて入れた"))
-    else:
-        add(_tag("手書き＋自動", "測る物とコマンドは元データの「なぜ作るか」・結果は道具がコマンドを走らせて入れた"))
-    add("| 何を測ったか | コマンド | 読み方 | 結果 |" if WORK else "| 何を測ったか | コマンド | 結果 |")
-    add("|---|---|---|---|" if WORK else "|---|---|---|")
+    add(_tag("手書き", "何を測ったか・コマンド・読み方＝やることの表の「2-1 何を測るか」"))
+    add(_tag("自動", "結果＝道具がコマンドを走らせて入れた"))
+    add("| 何を測ったか | コマンド | 読み方 | 結果 |")
+    add("|---|---|---|---|")
     # ★2026-09-17（設計書 acceptance-results-from-commands-20260917・まこさん「手書きはするな」）
     #   ＝結果の欄は、道具がコマンドを走らせて入れる。直す前は元データの「結果」を私が手で写し、
     #     そのまま載せていた（コマンドと結果が合わない行を書いた＝worklog 20260917 §25 の前）。
@@ -1450,11 +1432,7 @@ def page(d: dict) -> str:
         if re.search(r"[0-9０-９]", yomi):
             raise SystemExit("[gen_acceptance] 「なぜ作るか」の「読み方」に数字が在ります（fail-closed）。"
                              f"数字はコマンドの出力にだけ出します: {yomi}")
-        if WORK:
-            add(f"| {_esc(r['何を測ったか'])} | `{_esc(r['コマンド'])}` | {_esc(yomi)} | {_esc(_measure(str(r['コマンド'])))} |")
-            continue
-        cell = _esc(_measure(str(r["コマンド"]))) + (f"／読み方＝{_esc(yomi)}" if yomi else "")
-        add(f"| {_esc(r['何を測ったか'])} | `{_esc(r['コマンド'])}` | {cell} |")
+        add(f"| {_esc(r['何を測ったか'])} | `{_esc(r['コマンド'])}` | {_esc(yomi)} | {_esc(_measure(str(r['コマンド'])))} |")
     add("")
     # ★2026-09-29（まこさん OK「それで一旦作ってみて」・worklog 20260929 §82 の骨組み）
     #   ＝売買のロジックに触らない工事では、2-2〜2-4 は3つとも非該当なので、見出しを3つ立てずに1つに畳む。
@@ -1495,7 +1473,7 @@ def page(d: dict) -> str:
     add("")
     add("### 3-1 やらないこと（1件ずつ・理由と出どころ）")
     add("")
-    add(_wtag("手書き", "元データの「やらないこと」", "手書き", "やることの表の「3-1 やらないこと」"))
+    add(_wtag("手書き", "やることの表の「3-1 やらないこと」"))
     add("| # | やらないこと | 理由 | 出どころ |")
     add("|---|---|---|---|")
     for i, r in enumerate(d["やらないこと"], 1):
@@ -1503,14 +1481,13 @@ def page(d: dict) -> str:
     add("")
     add("### 3-2 決めてほしいこと")
     add("")
-    if WORK:
-        add(_tag("手書き", "やることの表の「3-2 決めてほしいこと」"))
+    add(_tag("手書き", "やることの表の「3-2 決めてほしいこと」"))
     add("| # | 中身 | 私の案（決まるまでこれで進める） | 出どころ |")
     add("|---|---|---|---|")
     for i, r in enumerate(d.get("決めてほしいこと") or [], 1):
         add(f"| {i} | {_esc(r['中身'])} | {_esc(r['私の案'])} | {_esc(r.get('出どころ', ''))} |")
     if not d.get("決めてほしいこと"):
-        add("| — | 無し（" + ("やることの表" if WORK else "元データ") + "の「決めてほしいこと」が「無し」か空） | — | — |")
+        add("| — | 無し（やることの表の「決めてほしいこと」が「無し」か空） | — | — |")
     add("")
 
     add("## 4｜設計の中身")
@@ -1520,7 +1497,7 @@ def page(d: dict) -> str:
 
     add("## 5｜決めたことと理由・捨てた案")
     add("")
-    add(_wtag("手書き", "元データの「決めたことと理由」", "自動", "まこさんが OK した案の【5】"))
+    add(_wtag("自動", "まこさんが OK した案の【5】"))
     add("| # | 決めたこと | 理由 | 捨てた案 |")
     add("|---|---|---|---|")
     for i, r in enumerate(d.get("決めたことと理由") or [], 1):
@@ -1531,15 +1508,14 @@ def page(d: dict) -> str:
     add("")
     add("### 6-1 わざと壊して止まるか試すテスト")
     add("")
-    add(_wtag("自動", "元データの「完成の条件」の壊し方の欄", "自動", "まこさんが OK した案の【7-6】の壊し方の欄"))
+    add(_wtag("自動", "まこさんが OK した案の【7-6】の壊し方の欄"))
     add(_begin("SELFTEST", _h(build("SELFTEST", d))))
     add(build("SELFTEST", d))
     add(_end("SELFTEST"))
     add("")
     add("### 6-2 リスク")
     add("")
-    if WORK:
-        add(_tag("自動", "まこさんが OK した案の【6-2】"))
+    add(_tag("自動", "まこさんが OK した案の【6-2】"))
     add("| # | リスク | どうするか |")
     add("|---|---|---|")
     for i, r in enumerate(d.get("リスク") or [], 1):
@@ -1547,8 +1523,7 @@ def page(d: dict) -> str:
     add("")
     add("### 6-3 見積もり")
     add("")
-    if WORK:
-        add(_tag("自動", "まこさんが OK した案の【6-3】"))
+    add(_tag("自動", "まこさんが OK した案の【6-3】"))
     add("| 何 | 見込み | 根拠 |")
     add("|---|---|---|")
     for r in d.get("見積もり") or []:
@@ -1557,7 +1532,7 @@ def page(d: dict) -> str:
     add("**★どれか1つでも見込みの2倍を超えたら、そこで止めて まこさんに報告します。**")
     add("")
     _audit = build_audit(d)
-    if WORK and not _audit:
+    if not _audit:
         add("**6-4 この設計書に効いている監査の指摘＝非該当**（監査レポートの欄が空＝この設計書は監査の指摘を受けていない・道具が決めた）")
         add("")
     if _audit:
@@ -1573,8 +1548,7 @@ def page(d: dict) -> str:
     add("")
     add("### 7-1 深掘り4点")
     add("")
-    add(_wtag("手書き", "元データの「真因」「期待値分解」「root か symptom か」「ベースアップ」（7-2〜7-4 も同じ＝手書き）",
-              "自動", "まこさんが OK した案の【7-1】"))
+    add(_wtag("自動", "まこさんが OK した案の【7-1】"))
     add("**① 真因（root cause）**＝" + d["真因"])
     add("")
     add("**② 期待値分解**＝" + d["期待値分解"])
@@ -1585,22 +1559,19 @@ def page(d: dict) -> str:
     add("")
     add("### 7-2 ★疑似シミュ由来の固定値ゼロ宣言")
     add("")
-    if WORK:
-        add(_tag("自動", "まこさんが OK した案の【7-2】"))
+    add(_tag("自動", "まこさんが OK した案の【7-2】"))
     add(d["固定値ゼロ宣言"])
     add("")
     add("### 7-3 変更の単位（H16）")
     add("")
-    if WORK:
-        add(_tag("自動", "まこさんが OK した案の【7-3】"))
+    add(_tag("自動", "まこさんが OK した案の【7-3】"))
     add(d["変更の単位"])
     add("")
     add("### 7-3b 要件の「作ってはいけないもの」との照合（恒久の決まり §1）")
     add("")
     # ★2026-09-29＝恒久の決まり §1 は engine_tuner の要件の照合。売買のロジックに触らない工事では非該当（worklog §42）
     if not touches_trading(d):
-        if WORK:
-            add(_tag("自動", "TARGET と NEW_FILE から非該当を決めた"))
+        add(_tag("自動", "TARGET と NEW_FILE から非該当を決めた"))
         add(NONTRADE)
     else:
         add("**★左の2列は、要件の正本からプログラムが取り出しています（手で写していません）。**"
@@ -1619,8 +1590,7 @@ def page(d: dict) -> str:
     add("")
     add("### 7-4 塞げないもの")
     add("")
-    if WORK:
-        add(_tag("自動", "まこさんが OK した案の【7-4】"))
+    add(_tag("自動", "まこさんが OK した案の【7-4】"))
     add("| 問い | 塞げないこと |")
     add("|---|---|")
     for r in d.get("塞げないもの") or []:
@@ -1628,21 +1598,17 @@ def page(d: dict) -> str:
     add("")
     add("### 7-5 §4.6 ハード制約の照合")
     add("")
-    add(_wtag("自動", "項目は hook の実体から抽出・答えは元データの「ハード制約の照合」",
-              "自動", "項目は hook の実体から抽出・答えは まこさんが OK した案の【7-5】"))
+    add(_wtag("自動", "項目は hook の実体から抽出・答えは まこさんが OK した案の【7-5】"))
     add(_begin("CHECKLIST", _h(build("CHECKLIST", d))))
     add(build("CHECKLIST", d))
     add(_end("CHECKLIST"))
     add("")
     add("### 7-6 完成の条件")
     add("")
-    add(_wtag("手書き＋自動", "条件とコマンドは元データの「完成の条件」・状態の欄は承認のプログラムが書く",
-              "自動", "条件とコマンドは まこさんが OK した案の【7-6】・状態の欄は承認のプログラムが書く"))
+    add(_wtag("自動", "条件とコマンドは まこさんが OK した案の【7-6】・状態の欄は承認のプログラムが書く"))
     add("**★状態は全部「未着手」です。「済」にするのはプログラムです**"
         "（承認のコマンドが壊すプログラムを走らせ、終了コードが 0 以外のときだけ済にします）。"
-        "**自分で「直った」と判定しません**（恒久の決まり64番）。"
-        + ("" if WORK else "**★触る関数の一覧は、実装の後に確定させます**"
-           "＝`verify_design_contract.py --write` の出力で置き替えます。"))
+        "**自分で「直った」と判定しません**（恒久の決まり64番）。")
     add("")
     add(_begin("ACCEPT_TABLE", ""))
     add(build("ACCEPT_TABLE", d))
@@ -1667,8 +1633,7 @@ def page(d: dict) -> str:
 
     add("### 7-8 プログラムが読む設定（2つ）")
     add("")
-    add(_wtag("自動", "実物のコードから読んだ関数と定数",
-              "自動", "DESIGN_CONTRACT は まこさんが OK した案の【7-8】・SPEC は実物のコードから読んだ関数と定数"))
+    add(_wtag("自動", "DESIGN_CONTRACT は まこさんが OK した案の【7-8】・SPEC は実物のコードから読んだ関数と定数"))
     add(_begin("SPEC", _h(build("SPEC", d))))
     add(build("SPEC", d))
     add(_end("SPEC"))
@@ -1693,11 +1658,11 @@ def write(dry: bool = False, dest: Path = None) -> int:
     if not ok:
         raise SystemExit(f"[gen_acceptance] 法則の件数が合わない（{why}）＝1件も落とせません（fail-closed）")
     body = page(d)
-    if WORK:
-        # ★2026-09-29（やることの表 P1-3）＝［手書き］の印は、割り当ての5つ（HAND_KEYS）とちょうど同じ数でなければ書かない
-        n_hand = sum(1 for ln in body.splitlines() if ln.startswith("［手書き］"))
-        if n_hand != len(HAND_KEYS):
-            raise SystemExit(f"[gen_acceptance] ［手書き］の印が {n_hand} 個（割り当ては {len(HAND_KEYS)} 個・fail-closed）")
+    # ★2026-09-29（やることの表 P1-3）＝［手書き］の印は、割り当ての5つ（HAND_KEYS）とちょうど同じ数でなければ書かない
+    # ★2026-09-30（設計書 point1-one-way-20260930-2）＝工事のフォルダの1本だけなので、いつも数える
+    n_hand = sum(1 for ln in body.splitlines() if ln.startswith("［手書き］"))
+    if n_hand != len(HAND_KEYS):
+        raise SystemExit(f"[gen_acceptance] ［手書き］の印が {n_hand} 個（割り当ては {len(HAND_KEYS)} 個・fail-closed）")
     if dry:
         print(body)
         return 0
@@ -1746,6 +1711,14 @@ def verify(dest: Path = None) -> int:
     if not target.exists():
         print(f"❌ 設計書が無い: {target}")
         return 1
+    # ★2026-09-30（設計書 point1-one-way-20260930-2）＝工事名が無ければ、設計書の ARC の iter を工事名にする
+    global WORK
+    if not WORK:
+        mi = re.search(r'<!-- ARC iter="([^"]+)" -->', target.read_text(encoding="utf-8"))
+        if not mi:
+            print(f"❌ 設計書に ARC の目印（iter）が無いので、工事のフォルダを決められない: {target}")
+            return 1
+        WORK = mi.group(1)
     d = src()
     cur = target.read_text(encoding="utf-8")
     rc = 0
@@ -1814,31 +1787,121 @@ def diff_ok_before_impl(out: str) -> tuple:
     return True, f"齟齬は「{ALLOW}」{len(rows)}件だけ＝実装の前の正しい状態"
 
 
+SAMPLE_WORK = "selftest-sample"                       # 自己テストの見本の工事名（一時の置き場の中だけ）
+
+
+def _sample_work(base: Path) -> str:
+    """一時の置き場 base に、見本の工事のフォルダを作る。戻り＝工事名。
+
+    ★2026-09-30（設計書 point1-one-way-20260930-2）＝自己テストは本物の元データ・本物の設計書に頼らない
+      （修正20 の根＝途中でやめた5点まとめの元データを本物として読んでいた）。
+    作り方＝①見本のやり取りの記録（jsonl）を書く ②逐語の道具（gen_verbatim.write）でそこから逐語を写す
+      ③見本の やることの表.md を書く。★呼ぶ側が gv.VERBATIM_DIR・gv.ARCHIVE_DIR を base の下に替えておくこと。
+    ★見本はこの関数の中に持つ（別のファイルに置かない＝見本も本物のデータとして腐らせない）。
+    """
+    sys.path.insert(0, str(ROOT / ".claude" / "tools"))
+    from list_banned_words import checklist_items
+    n_g1 = len([b for g, b in checklist_items() if g == "群1"])
+    work = SAMPLE_WORK
+    na = "非該当＝見本（自己テストの工事）"
+    prop = ["見本の案です。",
+            "【4-0 この仕組みは何か】", "見本の仕組み。",
+            "【4-1 システムの境界】", "見本の境界。",
+            "【4-2 入力と出力】", "見本の入力と出力。",
+            "【4-3 部品と責任の割り当て】", "- 見本の部品。",
+            "【4-4 処理の流れ】", "- 見本の流れ。",
+            "【4-5 異常系】", "- 見本の異常系。",
+            "【4-12 出る結果の姿】", "見本の結果。",
+            "【4-13 影響範囲】", "- 見本の影響。"]
+    for k in ("4-6", "4-7", "4-8", "4-9", "4-10", "4-11", "4-14", "4-15", "4-16", "4-17", "4-18", "4-20"):
+        prop += [f"【{k}】", na]
+    prop += ["【5 決めたことと理由】", "| 決めたこと | 理由 | 捨てた案 |", "|---|---|---|", "| 見本 | 見本 | 見本 |",
+             "【6-2 リスク】", "| 中身 | どうするか |", "|---|---|", "| 見本 | 見本 |",
+             "【6-3 見積もり】", "| 何 | 見込み | 根拠 |", "|---|---|---|", "| 見本 | 1分以内 | 見本 |",
+             "【7-1 深掘り4点】", "| 欄 | 中身 |", "|---|---|", "| 真因 | 見本 |", "| 期待値分解 | 見本 |",
+             "| root か symptom か | 見本 |", "| ベースアップ | 見本 |",
+             "【7-2 固定値ゼロ宣言】", "見本。", "【7-3 変更の単位】", "見本。",
+             "【7-4 塞げないもの】", "| 問い | 塞げないこと |", "|---|---|", "| 見本 | 見本 |",
+             "【7-5 §4.6 の照合】"] + [f"- 見本の答え {i}" for i in range(1, n_g1 + 1)]
+    prop += ["【7-6 完成の条件】", "| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |",
+             "|---|---|---|---|---|---|---|",
+             "| 見本 | python3 ../../.claude/tools/gen_verbatim.py --verify x | 道具 | — | — | 要 | 未着手 |",
+             "【7-8 プログラムが読む設定】", "```json",
+             json.dumps({"TARGET": [".claude/tools/gen_verbatim.py"],
+                         "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/gen_verbatim.py",
+                                             "self_check_calls": ["work_dir", "summary"],
+                                             "impl_functions": {"../../.claude/tools/gen_verbatim.py": ["work_dir", "summary"]}}},
+                        ensure_ascii=False),
+             "```",
+             "【外部検索】", "| 名前 | 中身 |", "|---|---|", "| 見本の検索 | 見本の中身 |"]
+    rows = [{"type": "user", "uuid": "s-u1", "timestamp": "2026-01-01T00:00:00Z",
+             "message": {"role": "user", "content": "見本の要件の文"}},
+            {"type": "assistant", "uuid": "s-a1", "timestamp": "2026-01-01T00:00:01Z",
+             "message": {"role": "assistant", "content": [{"type": "text", "text": "\n".join(prop)}]}},
+            {"type": "user", "uuid": "s-u2", "timestamp": "2026-01-01T00:00:02Z",
+             "message": {"role": "user", "content": "OK"}}]
+    log = Path(base) / "sample_session.jsonl"
+    log.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
+    gv.write("req_s", ["s-u1"], session=str(log), work=work)
+    gv.write("okd_s", ["s-a1"], session=str(log), work=work)
+    gv.write("ok_s", ["s-u2"], session=str(log), work=work)
+    todo = ["# やることの表｜工事 selftest-sample（見本）", "",
+            "## 手書きと自動の割り当て", "", "| 項目 | 手書き／自動 |", "|---|---|",
+            "| §1 概要 | 手書き |", "| 4-0〜4-18 設計の中身 | 自動 |", "",
+            "## 手書きの項目", "",
+            "### §1 概要", "", "見本の概要。", "",
+            "### 2-1 何を測るか", "", "| 何を測ったか | コマンド | 読み方 |", "|---|---|---|",
+            "| 見本 | grep -c 'def page' .claude/tools/gen_acceptance.py | 在れば一以上 |", "",
+            "### 3-1 やらないこと", "", "| 中身 | 理由 | 出どころ |", "|---|---|---|", "| 見本のやらないこと | 見本 | 見本 |", "",
+            "### 3-2 決めてほしいこと", "", "無し", "",
+            "### 4-19 通しの例", "", "見本の通しの例。", ""]
+    (gv.work_dir(work) / TODO_MD).write_text("\n".join(todo), encoding="utf-8")
+    gv.summary(work)                                   # 要件のまとめ.md（依頼書の必読に入る）
+    return work
+
+
 def selftest() -> int:
-    """わざと壊して ❌ が出るかを試す（8件）。
+    """一時の置き場に作る固定の見本の工事のフォルダ（_sample_work）だけで、わざと壊して ❌ が出るかを試す。
 
     ★2026-09-09（設計書 gen-acceptance-tool-20260909 の §3-2 の3）
-      ＝本物の設計書（`.claude/state/acceptance.md`）には1文字も書かない。
-      控え（一時のファイル）を相手にする。
-      直す前＝T1 が `write()` を呼び、本物の設計書を上書きしていた。
-      テストを走らせるだけで承認が外れ、この道具を直せなくなる作りだった。
+      ＝本物の設計書（`.claude/state/acceptance.md`）には1文字も書かない。控え（一時のファイル）を相手にする。
+    ★2026-09-30（設計書 point1-one-way-20260930-2）＝本物の元データ（acceptance_src.json）を読むのも書くのもやめた。
+      直す前＝T1 が本物の元データ（途中でやめた5点まとめ）から設計書を組み、ほかの道具を正しく直しただけで落ちた
+      （監査 cp52 の修正20）。T3 は本物の元データに一時に書いて戻していた。
+      いま＝見本の工事のフォルダだけを使い、本物の設計書と ratchet の直下のファイルの sha256 を前と後で照らす（T14）。
     """
+    import copy as _copy
+    import shutil
+    global WORK
     ok = 0
     total = 0
-    orig_src = SRC.read_text(encoding="utf-8")
-    tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix="_acceptance_selftest.md", delete=False, encoding="utf-8")
-    tmp.close()
-    copy = Path(tmp.name)
+
+    def _snap() -> dict:
+        return {str(p): hashlib.sha256(p.read_bytes()).hexdigest()
+                for p in [DEST, *sorted(RATCHET.glob("*"))] if p.is_file()}
+
+    snap0 = _snap()
+    saved = (WORK, gv.VERBATIM_DIR, gv.ARCHIVE_DIR)
+    # 見本の工事のフォルダはリポジトリの中の一時の置き場（設計書にリポジトリからの相対のパスを書くため）
+    tmpd = Path(tempfile.mkdtemp(prefix="_selftest_gen_acceptance_", dir=str(STATE)))
+    gv.VERBATIM_DIR, gv.ARCHIVE_DIR = tmpd / "verbatim", tmpd / "archive"
+    copy = tmpd / "acceptance_selftest.md"
     try:
-        # T1 いまの状態で --verify が通る
+        WORK = _sample_work(tmpd)
+        base_d = src()
+
+        # T1 いまの状態で --verify が通り、7-7 の定義の行が実物の def_lines と同じ（行番号を手で写さない）
         total += 1
         write(dest=copy)
-        if verify(dest=copy) == 0:
+        sys.path.insert(0, str(PRIORITY))
+        from verify_design_contract import spec_from_impl
+        dl = spec_from_impl(str(ROOT / ".claude" / "tools" / "gen_verbatim.py")).get("def_lines") or {}
+        coderef_ok = f"| `work_dir` | {dl.get('work_dir')} |" in copy.read_text(encoding="utf-8")
+        if verify(dest=copy) == 0 and coderef_ok:
             ok += 1
-            print(f"   T{total} いまの状態で --verify → pass")
+            print(f"   T{total} いまの状態で --verify → pass（7-7 の定義の行も実物と同じ）")
         else:
-            print(f"   T{total} いまの状態で --verify が ❌ → fail")
+            print(f"   T{total} いまの状態で --verify が ❌ → fail（7-7 の定義の行が実物と同じ＝{coderef_ok}）")
 
         # T2 囲みに1行 足すと --verify が落ちる
         total += 1
@@ -1856,18 +1919,18 @@ def selftest() -> int:
             print(f"   T{total} 1行 足しても ✅ のまま → fail")
         copy.write_text(base, encoding="utf-8")
 
-        # T3 「やらないこと」が空だと --write が止まる
+        # T3 「やらないこと」が空だと止まる（見本の やることの表の 3-1 の行を消す＝本物には書かない）
         total += 1
-        d = json.loads(orig_src)
-        d["やらないこと"] = []
-        SRC.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")
+        tpath = gv.work_dir(WORK) / TODO_MD
+        orig_todo = tpath.read_text(encoding="utf-8")
+        tpath.write_text(orig_todo.replace("| 見本のやらないこと | 見本 | 見本 |\n", ""), encoding="utf-8")
         try:
             src()
             print(f"   T{total} やらないことが空でも通る → fail")
         except SystemExit:
             ok += 1
             print(f"   T{total} やらないことが空だと止まる → pass")
-        SRC.write_text(orig_src, encoding="utf-8")
+        tpath.write_text(orig_todo, encoding="utf-8")
 
         # T4 法則を1件 減らすと件数の照合が落ちる（ファイルは書かない）
         total += 1
@@ -1918,22 +1981,28 @@ def selftest() -> int:
             print(f"   T{total} 実物との突き合わせ → fail（{why7}）")
 
         # T8 作った設計書が、食い違いゲートを通る
+        #   ★2026-09-30（worklog 20260930 §28・まこさん OK）＝直す前は「--check <写し>」で呼んでいた。
+        #     その hook に --check の口は無く、標準入力を待つ＝入力が空なら何も見ずに 0（見かけだけの pass）、
+        #     端末から承認を打つと入力待ちで止まった（b72・b73 が 600秒で打ち切り）。
+        #     hook が本当に呼ばれるときと同じ形（Write の入力の json）を標準入力で渡す。
         total += 1
+        _t8in = json.dumps({"tool_name": "Write", "tool_input": {
+            "file_path": str(STATE / "acceptance.md"), "content": copy.read_text(encoding="utf-8")}})
         r = subprocess.run(
-            [sys.executable, str(ROOT / ".claude/hooks/enforce_design_consistency.py"),
-             "--check", str(copy)], capture_output=True, text=True)
+            [sys.executable, str(ROOT / ".claude/hooks/enforce_design_consistency.py")],
+            input=_t8in, capture_output=True, text=True)
         if r.returncode == 0:
             ok += 1
             print(f"   T{total} 食い違いゲート 終了コード 0 → pass")
         else:
-            print(f"   T{total} 食い違いゲート → fail（{r.stdout.strip()[:120]}）")
+            print(f"   T{total} 食い違いゲート → fail（{(r.stderr or r.stdout).strip()[:200]}）")
 
         # T9（2026-09-17・設計書 acceptance-results-from-commands-20260917）＝2-1 の表の結果は道具が入れる
         #   ①書き込みのコマンドで止まる ②読むだけのコマンドの出力と終了コードが表に入る
         #   ③元データに「結果」の欄が在ると止まる（本物のファイルには書かない＝page を直に呼ぶ）
         total += 1
         bad9 = ""
-        d9 = json.loads(orig_src)
+        d9 = _copy.deepcopy(base_d)
         d9["なぜ作るか"] = [{"何を測ったか": "見本", "コマンド": "rm -f /tmp/gen_acceptance_t9"}]
         try:
             page(d9)
@@ -1943,7 +2012,7 @@ def selftest() -> int:
         d9["なぜ作るか"] = [{"何を測ったか": "見本", "コマンド": "grep -c '^def page' .claude/tools/gen_acceptance.py",
                             "読み方": "定義の数"}]
         try:
-            if "| 1（終了コード 0）／読み方＝定義の数 |" not in page(d9):
+            if "| 定義の数 | 1（終了コード 0） |" not in page(d9):
                 bad9 = bad9 or "出力と終了コードが表に入らない"
         except SystemExit as e:
             bad9 = bad9 or f"読むだけのコマンドで止まった（{e}）"
@@ -1962,10 +2031,10 @@ def selftest() -> int:
 
         # T10（2026-09-29）＝対応の表から1行 消すと、設計書を書かない（設計のもとの抜けを通さない）
         total += 1
-        d10 = json.loads(orig_src)
+        d10 = _copy.deepcopy(base_d)
         tab = list(d10.get("対応の表") or [])
         if not tab:
-            print(f"   T{total} 元データに対応の表が無い → fail")
+            print(f"   T{total} 見本に対応の表が無い → fail")
         else:
             d10["対応の表"] = tab[1:]
             try:
@@ -1978,9 +2047,9 @@ def selftest() -> int:
                 else:
                     print(f"   T{total} 別の理由で止まった → fail（{str(e)[:120]}）")
 
-        # T11（2026-09-29）＝元データに「まこさんの決定」の欄（CC が手で書く口）を足すと止まる
+        # T11（2026-09-29）＝「まこさんの決定」の欄（CC が手で書く口）を足すと止まる
         total += 1
-        d11 = json.loads(orig_src)
+        d11 = _copy.deepcopy(base_d)
         d11["まこさんの決定"] = ["CC が手で書いた行（T11）"]
         try:
             page(d11)
@@ -1993,27 +2062,48 @@ def selftest() -> int:
                 print(f"   T{total} 別の理由で止まった → fail（{str(e)[:120]}）")
 
         # T12（2026-09-29・まこさん指示「設計の元となるデータは明確にして」）＝0-1 に、要件のまとめ.md への参照と、
-        #   逐語のファイルの名前が全部 出て、対応の表の行（`名前:Vnn`（逐語））の数が写した行の数と合う。
-        #   ★2026-09-29（まこさん OK・worklog 20260929 §82）＝出どころの表（記録・uuid・時刻）は要件のまとめ.md に移したので、
-        #     0-1 には出ない。ここで見るのは参照と対応の表。
+        #   逐語のファイルの名前が全部 出て、行った先のまとめの行数の合計が写した行の数と合う。
         total += 1
-        d12 = json.loads(orig_src)
         try:
-            s12 = build_source(d12)
-            names12 = [str(n) for n in ((d12.get("設計のもと") or {}).get("逐語のファイル") or [])]
-            rows12 = [ln for ln in s12.splitlines() if ln.startswith("| `") and "（逐語） |" in ln]
-            names_ok = all(f"/{n}.txt`" in s12 for n in names12)
-            if (names12 and names_ok and "要件のまとめ" in s12
-                    and len(rows12) == len(source_rows(d12))):
+            s12 = build_source(base_d)
+            names12 = [str(n) for n in ((base_d.get("設計のもと") or {}).get("逐語のファイル") or [])]
+            names_ok = all(f"/{n.split('/')[-1]}.txt`" in s12 for n in names12)
+            n12 = sum(int(x) for x in re.findall(r"（(\d+) 行）", s12))
+            want12 = len(source_rows(base_d))
+            if names12 and names_ok and "要件のまとめ" in s12 and n12 == want12:
                 ok += 1
-                print(f"   T{total} 0-1 に要件のまとめへの参照と逐語のファイル {len(names12)} 本・対応の表 {len(rows12)} 行（写した行と一致） → pass")
+                print(f"   T{total} 0-1 に要件のまとめへの参照と逐語のファイル {len(names12)} 本・行った先の行 {n12} 行（写した行と一致） → pass")
             else:
-                print(f"   T{total} 0-1 の参照と対応の表 → fail（名前={names_ok} 行={len(rows12)}/{len(source_rows(d12))}）")
+                print(f"   T{total} 0-1 の参照と対応の表 → fail（名前={names_ok} 行={n12}/{want12}）")
         except SystemExit as e:
             print(f"   T{total} 0-1 の参照と対応の表 → fail（{str(e)[:120]}）")
+
+        # T13（2026-09-30・設計書 point1-one-way-20260930-2）＝工事名が無ければ止まる（元データの JSON へは戻らない）
+        total += 1
+        keep = WORK
+        WORK = ""
+        try:
+            src()
+            print(f"   T{total} 工事名が無くても組める → fail")
+        except SystemExit as e:
+            if "工事名がありません" in str(e):
+                ok += 1
+                print(f"   T{total} 工事名が無いと止まる（設計書の作り方は工事のフォルダの1本だけ） → pass")
+            else:
+                print(f"   T{total} 別の理由で止まった → fail（{str(e)[:120]}）")
+        WORK = keep
+
+        # T14（2026-09-30・同じ設計書）＝本物の設計書と ratchet の直下のファイルに1バイトも書いていない
+        total += 1
+        changed = [p for p, h in _snap().items() if snap0.get(p) != h] + [p for p in snap0 if p not in _snap()]
+        if not changed:
+            ok += 1
+            print(f"   T{total} 本物の設計書と ratchet に書いていない（前と後の sha256 が同じ） → pass")
+        else:
+            print(f"   T{total} 本物のファイルが変わった → fail（{changed[:3]}）")
     finally:
-        SRC.write_text(orig_src, encoding="utf-8")
-        copy.unlink(missing_ok=True)
+        WORK, gv.VERBATIM_DIR, gv.ARCHIVE_DIR = saved
+        shutil.rmtree(tmpd, ignore_errors=True)
     print(f"\n{'✅' if ok == total else '❌'} selftest {ok}/{total} pass")
     return 0 if ok == total else 1
 
@@ -2023,45 +2113,24 @@ def main() -> int:
     p.add_argument("--write", action="store_true", help="元データと正本から設計書を作る")
     p.add_argument("--verify", action="store_true", help="囲みの中が機械の書いたままかを検出する")
     p.add_argument("--dry-run", action="store_true", help="書かずに画面に出す")
-    p.add_argument("--selftest", action="store_true", help="わざと壊して ❌ が出るかを試す（8件）")
-    # ★2026-09-29＝控えの元データ（.claude/state の acceptance_src_*.json）で、書かずに作ってみる口。
-    #   なぜ＝ratchet の元データへの書き込みは hook 12 が止めることがあり、まこさんに cp をお願いしてから
-    #   止まり所に当たると、cp を何度もお願いすることになった（132回目に5回）。cp の前に控えで全部 確かめる。
-    #   ★--dry-run と一緒のときだけ受ける（--write は ratchet の元データからだけ）。
-    p.add_argument("--src", default="", help="--dry-run で読む元データ（控え）")
-    # ★2026-09-29＝--src で作った設計書を、本物の設計書（acceptance.md）ではない置き場に書く口
-    #   （承認の前の検査 pre_audit_check.py --check-design <置き場> に掛けるため）。
-    p.add_argument("--out", default="", help="--dry-run --src の結果を書く置き場（本物の設計書には書かない）")
+    p.add_argument("--selftest", action="store_true", help="一時の置き場に作る固定の見本だけで、わざと壊して ❌ が出るかを試す")
+    # ★2026-09-29＝本物の設計書（acceptance.md）ではない置き場に書く口（承認の前の検査に掛けるため）。--work と一緒のときだけ。
+    p.add_argument("--out", default="", help="--work の結果を書く置き場（本物の設計書には書かない）")
     # ★2026-09-29（工事 point1-design-autogen-20260929）＝工事のフォルダ（やることの表.md と逐語のファイル）から組む口
-    p.add_argument("--work", default="", help="工事名＝.claude/state/verbatim/<工事名>/ から設計書を組む（元データの JSON は読まない）")
+    # ★2026-09-30（設計書 point1-one-way-20260930-2）＝設計書の作り方はこの口の1本だけ（元データの JSON の --src は消した）
+    p.add_argument("--work", default="", help="工事名＝.claude/state/verbatim/<工事名>/ から設計書を組む")
     a = p.parse_args()
-    if a.work:
-        if a.src:
-            print("❌ --work と --src は一緒に使えません（読む相手は1つ）")
-            return 2
-        global WORK
-        WORK = a.work
-        if a.out:
-            out = Path(a.out).resolve()
-            if out == DEST.resolve() or out.suffix != ".md":
-                print("❌ --out は本物の設計書以外の .md にだけ書けます")
-                return 2
-            return write(dest=out)
-    if a.src:
-        # ★2026-09-29＝--selftest も控えの元データで走らせられるようにした（ratchet の元データを cp する前に確かめる）
-        if not (a.dry_run or a.selftest):
-            print("❌ --src は --dry-run か --selftest と一緒のときだけ使えます（--write は ratchet の元データからだけ）")
-            return 2
-        global SRC
-        SRC = Path(a.src).resolve()
-    if a.out:
-        out = Path(a.out).resolve()
-        if not a.src or out == DEST.resolve() or out.suffix != ".md":
-            print("❌ --out は --dry-run --src と一緒のときだけ・本物の設計書以外の .md にだけ書けます")
-            return 2
-        return write(dest=out)
+    global WORK
     if a.selftest:
         return selftest()
+    if a.work:
+        WORK = a.work
+    if a.out:
+        out = Path(a.out).resolve()
+        if not a.work or out == DEST.resolve() or out.suffix != ".md":
+            print("❌ --out は --work と一緒のときだけ・本物の設計書以外の .md にだけ書けます")
+            return 2
+        return write(dest=out)
     if a.write:
         return write()
     if a.dry_run:

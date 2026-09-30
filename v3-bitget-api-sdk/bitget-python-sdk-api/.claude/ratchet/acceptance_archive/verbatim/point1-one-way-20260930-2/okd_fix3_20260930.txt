@@ -1,0 +1,135 @@
+読むもの宣言と、案A の分を足した案をまとめて出します。**この返信への OK を1回いただければ、宣言の OK と案の OK の両方として扱います。**OK の後に、宣言の24件を開き、逐語を写して設計書を組みます。
+
+**読むもの宣言**（工事 point1-one-way-20260930-2・24件・道具が作った [design_read_plan.md](.claude/state/design_read_plan.md)）＝前の工事の22件に、hook 12 の本体 enforce_audit_fix.py と、監査 cp52 の結果ファイル（修正3〜14）の2件を足しました。hook 12 の名前を持つ壊すプログラムは0本でした（grep）。
+
+**やることの表**（[やることの表.md](.claude/state/verbatim/point1-one-way-20260930-2/やることの表.md)）＝前の表に W-6（当てた記録と hook 12）を足し、§1 概要に1文を足しました。4-19 の「hook 2本」は数え違いだったので「hook 4本」に直しました。
+
+下の案は、前の案から変わる番号だけです（ほかの番号は前の案と同じで、逐語の道具で写し直します）。
+
+【4-0 この仕組みは何か】
+設計書の作り方を、工事のフォルダから組むやり方の1本にする。
+いまは、元データの JSON から組む古い口が、設計書の道具・依頼書の道具・当てる道具の3本に残っている（worklog 20260930 §18）。古い元データには、途中でやめた5点まとめの中身が残っていて、設計書の道具の自己テストがそれを本物として読む。そのため、ほかの道具を正しく直しただけで自己テストが落ちた（監査 cp52 の修正20）。
+直した後は、3本とも工事のフォルダだけを読む。古い元データは archive へ移す。自己テストは、一時の置き場に作る固定の見本だけで試す。
+あわせて、承認の前の検査の A9 を、承認した後の凍結（設計書の impl_functions）と比べる形にする。
+さらに、当てる道具が当てた監査の修正を記録し、hook 12 はその記録を見て当て済みと判断する形にする。いまの hook 12 は、監査が書いた直した後の文字が実物に在るかだけで見るので、監査の直しを当てた後に別の工事でその文字を変えると、そのファイルがずっと止まる（worklog 20260930 §20）。
+
+【4-2 入力と出力】
+入力＝工事のフォルダ（やることの表.md と逐語のファイル）。古い元データは読まない。
+出力＝今までと同じ（設計書 acceptance.md・依頼書・当てた結果）。自己テストの出力は一時の置き場だけに書く。
+当てる道具は、当てた監査の修正の記録（SDK/.claude/audits/applied_fixes.json）に書き足す。hook 12 はその記録を読む。
+
+【4-3 部品と責任の割り当て】
+- gen_acceptance.src＝工事のフォルダからだけ組む。工事名が無ければ止まる。
+- gen_acceptance.verify・main＝工事名が無ければ、設計書の ARC の iter から読む。--src を消す。--out は --work と一緒のときだけ。
+- gen_acceptance.page・section4・build_selftest・build_checklist・build_source・_wtag＝古いやり方の文の分かれ道を消す。_wtag は引数2つ（印と出どころ）にする。
+- gen_acceptance._sample_work（新しく作る）＝一時の置き場に、見本のやり取りの記録と、逐語の道具で写した逐語と、見本の やることの表を作る。
+- gen_acceptance.selftest＝_sample_work の見本だけで試す。前と後で本物の設計書と ratchet の sha256 が同じかも見る。落ちたときの文は今までどおり出す（b72・b73 の宣言が探す文字のため）。
+- gen_audit_docs.build_design_src・request_design・main・selftest＝--work だけを受ける。自己テストは gen_acceptance._sample_work を使う。
+- apply_audit_fix.impl_src_mismatch・main＝--design の実装の指示を、設計書の iter の工事のフォルダ（src_from_work）と照らす。--src を消す。selftest は見本の実装の指示を関数の引数で渡す。
+- apply_audit_fix._record_applied（新しく作る）＝当てた修正と、もう当て終わっていると分かった修正の、監査結果の名前と修正の番号を記録に書き足す。main が --report の道で当てた後に呼ぶ（--dry のときは書かない）。
+- apply_audit_fix.applied_keys（新しく作る）＝記録を読み、監査結果の名前と修正の番号の組の集まりを返す。
+- enforce_audit_fix.pending＝記録に在る修正は当て済みとして飛ばす。記録に無い修正は今までどおり文字で見る。
+- require_design_check_before_approval.a9_contract_full＝照合A〜D を、凍結＝設計書の impl_functions として走らせる。
+- forbid_edit_generated_docs.check＝設計書の直し方の案内を、工事のフォルダのやり方にする。
+- 壊すプログラム b72・b73＝宣言「# EXPECT_MSG:」を1行ずつ足す（前の工事の承認の前に まこさんの端末で足した・済み）。壊し方と探す行は変えない。
+
+【4-4 処理の流れ】
+- ①CC が当てる道具（記録）と hook 12 を直す。②当てる道具で監査 cp52 を1回走らせ、当て終わっている修正を記録に入れる。
+- ③CC が残りの道具と hook を直す（設計書の道具の page の分かれ道もここで消す）。④古い元データを git mv で archive へ移す。
+- ⑤自己テストが一時の置き場に見本の工事のフォルダを作り、そこから設計書と依頼書を組んで照らす。
+- ⑥修正20 のコマンドと、完成の条件のコマンドを走らせる。
+
+【4-8 データ構造】
+新しく作るのは、当てた記録の1つ（SDK/.claude/audits/applied_fixes.json）。
+- 形＝説明の欄と「applied」の一覧。一覧の1件＝監査結果の名前・修正の番号・対象のファイル・時刻・どう当たったか（当てた／もう当て終わっていた）。
+- 工事のフォルダの形（やることの表.md と逐語のファイル）は変えない。
+
+【4-10 保存先】
+- 古い元データは acceptance_archive/five-point-autogen-20260929.src.json へ移す（中身は変えない）。
+- 当てた記録は SDK/.claude/audits/applied_fixes.json に書き足す（消さない・git に残る置き場）。
+
+【4-13 影響範囲】
+- 直すファイルの名前で壊すプログラムを grep して7本（b72・b73・b89・b101・b102・b118・b119）。b72・b73 の探す行（def verify・def build_coderef）と b101・b102・b118・b119 の探す行は変えない。hook 12 の名前を持つ壊すプログラムは0本。
+- b72・b73 は、宣言「# EXPECT_MSG:」が無く、承認のプログラムが承認を取り消す（2026-09-11 に必須にした宣言・承認の前の検査の A8）。宣言は前の工事の承認の前に足した。
+- b89 は、壊す行がいまの設計書に無い（grep で0件）ので、完成の条件に載せない（3-2 の2）。
+- hook 12 は、記録に在る修正を止めなくなる。記録に無い修正（これから出る監査結果）は今までどおり止める。
+- 承認のプログラムと承認の前の検査は、設計書の見出しと目印を読む。見出しは変えない。
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 古い口は消す（残さない） | 2本あると、今日の修正20 と同じ食い違いがまた起きる | 古い口を残して自己テストだけ直す（その場しのぎ） |
+| 見本は自己テストのコードの中に持つ | 見本のファイルが別に在ると、それも本物のデータとして腐る | 見本の工事のフォルダをリポジトリに置く |
+| A9 は照合の道具を直さず、凍結を渡す引数で走らせる | 照合の道具は承認の印で守られている。引数は既に在る | 照合の道具に「承認の前」の口を足す |
+| hook 12 は当てた記録を見る | 文字が残っているかだけで見ると、後の工事でそのファイルがずっと止まる | 監査が足した分かれ道を残す（使われない古い文が残る） |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 古い口を消すと、それを使う物がほかに在れば壊れる | grep で探した8か所（worklog 20260930 §18）を全部 この工事で直す。承認の前に、もう一度 grep する |
+| hook の直しが、Claude Code の自動判定に止められる | 止められたら、まこさんに直し方を出して打っていただく |
+| 見本の記録の形が、本物の記録の形からずれる | 逐語の道具の読み方（load_messages）が読める形で書き、自己テストで逐語の照らしが通ることを見る |
+| 当てた記録を手で書き足すと、hook 12 を外せる | 記録は git に残る置き場に置く（書き替えれば差分に出る）。塞げないものに書く（7-4） |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 見本が本物の使い方を全部 覆っているか | 覆わない。見本で通っても、本物の工事のフォルダで落ちる所は、本物の設計書を作るときに出る |
+| A9 を凍結＝設計書で走らせると、承認の後の変更を見逃さないか | 見逃さない。承認の後は、設計↔実装ゲートが本物の凍結と比べる（今までどおり） |
+| 当てた記録を Bash で書き足されたら | 止められない。記録は git に残るので、差分で見つける |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝道具3本（gen_acceptance.py・gen_audit_docs.py・apply_audit_fix.py）と hook 4本（forbid_edit_generated_docs.py・require_design_check_before_approval.py・require_acceptance_before_impl.sh・enforce_audit_fix.py）と壊すプログラム2本（b72・b73）。売買のロジックに触らない。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝gen_acceptance.py）。
+- 新しいファイルは当てた記録の1つ（applied_fixes.json・当てる道具が作る）。道具や hook は新しく作らない。古い元データは移すだけ。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（設計書の作り方を1本にする）。当てた記録は、その1本にするときに hook 12 が止めないための部品。
+- 過去の失敗の再演＝古いやり方を残して自己テストが本物のデータに頼る形（前の工事の 3-1 の1）を、この工事で取り消す。
+- 非該当（売買のロジックの部品・前処理を足さない）。
+- 非該当（売買の実行器と生成器を直さない）。
+- 直すファイルの名前で壊すプログラムを grep して7本。探す行は変えない。b72・b73 の宣言は足した。b89 は載せない（4-13）。
+- 非該当（壊すプログラムを足さない。自己テストは一時の置き場だけに書く）。
+- 触る関数は DESIGN_CONTRACT の impl_functions に全部 在る（commit で差分をゼロにしてから数える＝3-2 の1）。
+- 新しく足す旗は無い（--src を消すだけ）。完成の条件の1行目が --selftest で通る。
+- 非該当（2回目の承認の前に書き直す＝その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=point1-one-way-20260930-2）。
+- 1変更・過去失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝3本の道具の --selftest と、承認の前の検査の --try。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| 設計書の道具の自己テストが、固定の見本だけで通り、手で書き換えた囲みを見つける | python3 ../../.claude/tools/gen_acceptance.py --selftest | 道具 | verify を中身を見ずに通す形にする | b72_acceptance_handwritten.sh | 要 | 未着手 |
+| 設計書の道具の自己テストが、行番号を実物から出していることを見る | python3 ../../.claude/tools/gen_acceptance.py --selftest | 道具 | build_coderef を固定の数字にする | b73_acceptance_stale_lines.sh | 要 | 未着手 |
+| 依頼書の道具の自己テストが、固定の見本だけで通る | python3 ../../.claude/tools/gen_audit_docs.py --selftest | 道具 | — | — | 要 | 未着手 |
+| 当てる道具の自己テストが通る（--design の実装の指示を工事のフォルダと照らす・当てた修正が記録に入り、記録に在る修正を hook 12 が止めない） | python3 ../../.claude/tools/apply_audit_fix.py --selftest | 道具 | — | — | 要 | 未着手 |
+| 承認の前の検査が、承認で消える不足で止めない | python3 ../../.claude/hooks/require_design_check_before_approval.py --try | hook | — | — | 要 | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{"TARGET": [".claude/tools/gen_acceptance.py", ".claude/tools/gen_audit_docs.py", ".claude/tools/apply_audit_fix.py", ".claude/hooks/forbid_edit_generated_docs.py", ".claude/hooks/require_design_check_before_approval.py", ".claude/hooks/require_acceptance_before_impl.sh", ".claude/hooks/enforce_audit_fix.py", ".claude/breaks/b72_acceptance_handwritten.sh", ".claude/breaks/b73_acceptance_stale_lines.sh"],
+ "DESIGN_CONTRACT": {"impl_file": "../../.claude/tools/gen_acceptance.py",
+  "self_check_calls": ["src_from_work", "_sample_work", "_record_applied", "applied_keys"],
+  "impl_functions": {"../../.claude/tools/gen_acceptance.py": ["<モジュール直下>", "_wtag", "src", "build_selftest", "build_checklist", "build_source", "section4", "page", "write", "verify", "_sample_work", "selftest", "main"],
+   "../../.claude/tools/gen_audit_docs.py": ["<モジュール直下>", "build_design_src", "request_design", "selftest", "main"],
+   "../../.claude/tools/apply_audit_fix.py": ["<モジュール直下>", "impl_src_mismatch", "_record_applied", "applied_keys", "main", "selftest"],
+   "../../.claude/hooks/forbid_edit_generated_docs.py": ["<モジュール直下>", "check"],
+   "../../.claude/hooks/require_design_check_before_approval.py": ["a9_contract_full"],
+   "../../.claude/hooks/enforce_audit_fix.py": ["<モジュール直下>", "pending"]},
+  "must_use": {"src": ["src_from_work"], "selftest": ["_sample_work"], "a9_contract_full": ["check_impl_functions"], "main": ["_record_applied"], "pending": ["applied_keys"]},
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事の道具が外から読む一覧（工事のフォルダの形・監査結果の欄・承認の印・設計書の TARGET）の形は変えない。当てた記録は当てる道具だけが書き、hook 12 が読む",
+  "generated_from": {
+   "impl_functions": "4-3 に書いた、この工事で触る関数（commit で差分をゼロにした後）。壊すプログラム b72・b73 は .sh なので関数の一覧に入らない",
+   "must_use": "直した後に呼ぶ名前（4-3）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"}}}
+```

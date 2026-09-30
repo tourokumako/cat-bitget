@@ -204,16 +204,44 @@ def a9_contract_full(acc):
                 changed = changed or rc_g == 1
     if not changed:
         return []
-    vdc = SDK + "/scripts/priority_rebuild/verify_design_contract.py"
+    # ★2026-09-30（設計書 point1-one-way-20260930-2 の W-4・5 の決めたこと3）＝照合の道具は直さず、
+    #   凍結として「この設計書の impl_functions」を引数で渡して、照合A〜D をこの場で走らせる。
+    #   直す前＝道具をそのまま走らせたので、前の承認の凍結と比べ、次の承認で直す予定の関数まで
+    #   「凍結に無い関数を直した」と落ち、承認の前に止まった（worklog 20260930 §18）。
+    #   承認の後は、設計↔実装ゲートが本物の凍結と比べる（今までどおり）。
+    sys.path.insert(0, SDK + "/scripts/priority_rebuild")
+    here = os.getcwd()
     try:
-        r = subprocess.run(["python3", vdc, acc], capture_output=True, text=True, timeout=90, cwd=SDK)
+        import verify_design_contract as vdc                  # noqa: E402
+        os.chdir(SDK)                                         # 道具を CLI で走らせるときと同じ作業場所
+        contract = vdc.extract_contract(open(acc, encoding="utf-8").read())
+        if not contract:
+            return ["A9 設計書に DESIGN_CONTRACT が無い＝設計↔実装ゲートが .py を走らせられない"]
+        src = open(vdc._resolve_impl(acc, contract["impl_file"]), encoding="utf-8").read()
+        design = {k: v for k, v in (contract.get("impl_functions") or {}).items()}
+        msgs = (vdc.check_impl_functions(contract, acc, frozen=design)
+                + vdc.check_must_use(contract, src, acc)
+                + vdc.check_spec_lists(contract, src))
     except Exception as e:                                   # noqa: BLE001
         return [f"A9 照合の道具を走らせられません（{e}）"]
-    out = (r.stdout or "") + (r.stderr or "")
-    if r.returncode == 0 or "自己チェック配線が無い" in out or "実装にその関数が無い" in out:
+    finally:
+        os.chdir(here)
+    msgs = [m for m in msgs if "実装にその関数が無い" not in m]   # 実装の前として見ない（今までどおり）
+    # ★2026-09-30（設計書 point1-one-way-20260930-3 の W-4）＝承認の瞬間に approve_impl.sh が作る
+    #   「もう汚れていた .py」の一覧（<iter>.dirty.json）を、承認の前はこの場で同じ作り方で作り、
+    #   照合A(双方向) からその一覧のファイルを外す（承認の後のゲートも外すので、承認で消える不足）。
+    #   直す前＝一覧がまだ無い承認の前に、別の工事の直しかけ（enforce_no_false_claim.py）で止まった（worklog 20260930 §26）。
+    if not vdc.dirty_baseline(acc):
+        _rc, _st = _run(["git", "-C", ROOT, "status", "--porcelain"])
+        _watch = ("scripts/priority_rebuild/", ".claude/hooks/", ".claude/tools/")   # approve_impl.sh の _watch と同じ
+        _dirty = {_l[3:].strip().split(" -> ")[-1] for _l in (_st or "").splitlines()
+                  if _l[3:].strip().endswith(".py") and any(_w in _l for _w in _watch)}
+        msgs = [m for m in msgs
+                if not (m.startswith("A(双方向) ") and m[len("A(双方向) "):].split(":")[0] in _dirty)]
+    if not msgs:
         return []
-    return [f"A9 照合A〜D（設計↔実装ゲートが .py を走らせる前に掛けるもの）が rc={r.returncode}"
-            f"＝承認しても、CC はその .py を走らせられない:\n{_tail(out, 20)}"]
+    return ["A9 照合A〜D（設計↔実装ゲートが .py を走らせる前に掛けるもの）が落ちる"
+            "＝承認しても、CC はその .py を走らせられない:\n" + _tail("\n".join(msgs), 20)]
 
 
 def a10_cmd_cwd(md):

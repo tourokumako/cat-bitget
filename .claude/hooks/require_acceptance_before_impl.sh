@@ -101,7 +101,8 @@ _RUN_TOK_J = ('eval', 'xargs', 'source', '.', 'bash', 'sh', 'zsh', 'ksh', 'csh',
 #   ★2026-09-09（まこさん指示「手で書かざるを得ない部分以外は自動生成にしろ」・恒久69番）
 #     ＝gen_acceptance.py を足した。engine_tuner の設計書を、元データと正本から組み立てる道具。
 #   通してよい理由＝この道具が書くのは .claude/state/acceptance.md（設計書＝文書）1本だけ。
-#     読むのは acceptance_src.json・indicator_switch.json・regime_laws.json・signal_families.json・
+#     読むのは工事のフォルダ（.claude/state/verbatim/<工事名>/）・indicator_switch.json・regime_laws.json・signal_families.json・
+#     （★2026-09-30 設計書 point1-one-way-20260930-2 の W-1＝古い元データ acceptance_src.json は読まない・archive へ移した）
 #     material_ranking.json・search_limits.json・実物の .py（どれも読むだけ）。
 #     ＝承認の記録（acceptance.approved・design_approved.json）にも、凍結の記録
 #       （impl_functions_frozen.json・breaks_frozen.json・<iter>.frozen.json）にも触らない

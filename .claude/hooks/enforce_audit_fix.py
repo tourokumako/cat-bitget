@@ -16,6 +16,10 @@
 #     「対象のファイル」を集める。
 #   ③Write・Edit・MultiEdit の相手がその一覧に在れば止める。
 #   ④当て終わった（直す前の文字が実物に無い）ファイルは、一覧に入らない＝普通に直せる。
+#   ⑤★2026-09-30（設計書 point1-one-way-20260930-2・まこさん決定「案A」）＝当てる道具が当てた記録
+#     （SDK/.claude/audits/applied_fixes.json・apply_audit_fix.applied_keys）に在る修正は、当て済みとして飛ばす。
+#     なぜ＝文字が残っているかだけで見ると、監査の直しを当てた後に別の工事でその文字を変えると、
+#     そのファイルがずっと止まった（worklog 20260930 §20・§22）。記録に無い修正は今までどおり文字で見る。
 #
 # 通すもの
 #   ・当てる道具（apply_audit_fix.py）からの書き込み＝この hook は Bash を見ないので、そもそも通る。
@@ -69,6 +73,7 @@ def pending() -> dict:
     except Exception:                                        # noqa: BLE001
         return {}                                            # 道具が読めないときは止めない（fail-open）
     out = {}
+    done = a.applied_keys()                                  # ★当てた記録（案A）
     for rep in glob.glob(REPORTS):
         try:
             text = open(rep, encoding="utf-8").read()
@@ -78,6 +83,8 @@ def pending() -> dict:
         for f in fixes:
             if f.get("状態") != "確定":
                 continue
+            if (os.path.basename(rep), str(f.get("番号"))) in done:
+                continue                                     # 当てる道具が当てた記録に在る＝当て済み
             rel, before = f.get("対象のファイル"), f.get("直す前の文字")
             if not rel or not before or before.strip() == "なし":
                 continue
