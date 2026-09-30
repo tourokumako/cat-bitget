@@ -999,6 +999,16 @@ def match_problems(d: dict, rows: list) -> list:
     return bad
 
 
+def _wlabel(p) -> str:
+    """工事のフォルダの中のパスを「verbatim/<工事名>/…」の文にする（2026-09-30・設計書 point1-proof-20260930 の P-1）。
+
+    ★なぜ＝直す前は作業中の置き場（.claude/state/verbatim/…）をそのまま書いたので、承認でフォルダが
+      archive へ移ると、--verify が作り直す 0-1 と食い違い、承認した設計書が必ず ❌ になった（worklog 20260930 §31）。
+    """
+    parts = Path(p).parts
+    return "/".join(parts[len(parts) - 1 - parts[::-1].index("verbatim"):]) if "verbatim" in parts else str(p)
+
+
 def build_source(d: dict) -> str:
     """設計書 §0-1＝設計のもと（やることの行・逐語の行）と対応の表。対応が1行でも欠ければ止まる。"""
     rows = source_rows(d)
@@ -1021,7 +1031,7 @@ def build_source(d: dict) -> str:
         return "まこさんの発言" if w == {"まこさん"} else ("まこさんが OK した CC の文" if w == {"CC"} else "まこさんの発言と CC の文")
     def _rel(n):
         # ★2026-09-29＝置き場は工事ごとのフォルダ（逐語の道具が名前を解決する・文字で組まない）
-        return str(gv.paths(str(n))[0].relative_to(ROOT))
+        return _wlabel(gv.paths(str(n))[0])
     files = "・".join(f"`{_rel(n)}`（{_who(n)}）" for n in (src.get("逐語のファイル") or [])) or "（無し）"
     # ★2026-09-29（まこさん OK・worklog 20260929 §82）＝出どころの表（記録・uuid・時刻・sha256）は「要件のまとめ.md」
     #   （gen_verbatim.py --summary が工事のフォルダに作る）に在るので、ここには参照1行と対応の表だけを出す。
@@ -1029,11 +1039,12 @@ def build_source(d: dict) -> str:
     _iter = str(d.get("iter") or "")
     _sm = ""
     try:
-        _sm = str((gv.work_dir(_iter) / gv.SUMMARY_MD).relative_to(ROOT)) if _iter else ""
+        _sm = _wlabel(gv.work_dir(_iter) / gv.SUMMARY_MD) if _iter else ""
     except gv.VerbatimError:
         _sm = ""
     L = [f"**要件のまとめ**＝`{_sm or '（工事のフォルダが無い＝gen_verbatim.py --write --work ' + _iter + ' で作る）'}`"
-         "（プログラムが逐語のファイルから作った・要件の文・話し手・出どころの表はそこに在る）。",
+         "（プログラムが逐語のファイルから作った・要件の文・話し手・出どころの表はそこに在る）"
+         "（verbatim/ は、作業中は `.claude/state/` の下、承認の後は `SDK/.claude/ratchet/acceptance_archive/` の下に在る）。",
          f"**この設計書が写す逐語のファイル**＝{files}"
          + (f" ／ **やることの番号**＝{'・'.join(str(x) for x in src.get('やることの番号'))}" if src.get("やることの番号") else "")
          + "。照らし方＝`python3 .claude/tools/gen_verbatim.py --verify <名前>`。",
@@ -1321,7 +1332,8 @@ def page(d: dict) -> str:
     add("")
     # ★2026-09-29＝直す前は「手で書いたのは5つだけです」の固定の文で、嘘だった（4-0〜4-19・完成の条件ほかも手書き・§49 の1）。
     # ★2026-09-30（設計書 point1-one-way-20260930-2）＝工事のフォルダの1本だけ（元データの JSON の文の分かれ道を消した）。
-    add(f"**★この設計書は、工事のフォルダ `{gv.work_dir(WORK).relative_to(ROOT)}/` からプログラムが組み立てます。**"
+    add(f"**★この設計書は、工事のフォルダ `{_wlabel(gv.work_dir(WORK))}/` からプログラムが組み立てます。**"
+        "（verbatim/ は、作業中は `.claude/state/` の下、承認の後は `SDK/.claude/ratchet/acceptance_archive/` の下に在る）"
         f"CC が手で書いたのは、{TODO_MD} の「手書きの項目」の5つだけです＝{'・'.join(HAND_KEYS)}。"
         "それ以外は、まこさんが OK した案の逐語（【項目の番号】の見出しで切った中身）と実物から作りました。"
         f"作り直し＝`python3 .claude/tools/gen_acceptance.py --work {WORK} --write`。検出＝`--work {WORK} --verify`。")
@@ -1682,6 +1694,39 @@ def write(dry: bool = False, dest: Path = None) -> int:
     return 0
 
 
+def _outside_mismatch(cur: str, want: str) -> list:
+    """いまの設計書と作り直した設計書を、囲みの外だけ1行ずつ比べる（2026-09-30・設計書 point1-proof-20260930 の P-2）。
+
+    ★照らさない所（作り直しと食い違って当たり前）＝①囲みの中（目印の行ごと・中身はハッシュ値で別に照らす）
+      ②完成の条件の表（承認のプログラムが状態を書く）③2-1 の表の最後の列（走らせた時点の数）。
+    戻り＝食い違った行の説明の一覧（空なら同じ）。
+    """
+    def _norm(text: str) -> list:
+        out, skip, in21 = [], False, False
+        for ln in text.splitlines():
+            if re.match(r"<!-- (ACC_\w+|ACCEPT_TABLE)_START", ln):
+                skip = True
+                continue
+            if skip:
+                if re.match(r"<!-- (ACC_\w+|ACCEPT_TABLE)_END", ln):
+                    skip = False
+                continue
+            if ln.startswith("### "):
+                in21 = ln.startswith("### 2-1")
+            if in21 and ln.startswith("|") and ln.count("|") >= 3:
+                ln = ln.rstrip().rstrip("|").rsplit("|", 1)[0] + "|"
+            out.append(ln.rstrip())
+        return out
+    a, b = _norm(cur), _norm(want)
+    bad = []
+    for i in range(max(len(a), len(b))):
+        x = a[i] if i < len(a) else "（行が無い）"
+        y = b[i] if i < len(b) else "（行が無い）"
+        if x != y:
+            bad.append(f"囲みの外の {i + 1} 行目: 設計書「{x[:80]}」／作り直し「{y[:80]}」")
+    return bad
+
+
 def _section4_blocks() -> set:
     """§4 の節が名指ししたときだけ出る囲み。
 
@@ -1762,6 +1807,16 @@ def verify(dest: Path = None) -> int:
     ok, why = laws_count_ok()
     print(f"{'✅' if ok else '❌'} 法則の件数の照合＝{why}")
     rc |= 0 if ok else 1
+    # ★2026-09-30（設計書 point1-proof-20260930 の P-2）＝囲みの外の行も、工事のフォルダから作り直した設計書と照らす。
+    #   直す前は囲みの中しか見ず、囲みの外に書き足した行（出どころの無い文）を見つけられなかった（worklog 20260930 §31）。
+    bad = _outside_mismatch(cur, page(d))
+    if bad:
+        print(f"❌ --verify: 囲みの外で、作り直しと違う行が {len(bad)} 行 在ります（出どころの無い文の疑い）:")
+        for x in bad[:10]:
+            print(f"   {x}")
+        rc = 1
+    else:
+        print("✅ --verify: 囲みの外の行は、工事のフォルダから作り直した設計書と同じです")
     return rc
 
 
@@ -1884,7 +1939,7 @@ def selftest() -> int:
     saved = (WORK, gv.VERBATIM_DIR, gv.ARCHIVE_DIR)
     # 見本の工事のフォルダはリポジトリの中の一時の置き場（設計書にリポジトリからの相対のパスを書くため）
     tmpd = Path(tempfile.mkdtemp(prefix="_selftest_gen_acceptance_", dir=str(STATE)))
-    gv.VERBATIM_DIR, gv.ARCHIVE_DIR = tmpd / "verbatim", tmpd / "archive"
+    gv.VERBATIM_DIR, gv.ARCHIVE_DIR = tmpd / "verbatim", tmpd / "archive" / "verbatim"   # 本物と同じ形（…/acceptance_archive/verbatim）
     copy = tmpd / "acceptance_selftest.md"
     try:
         WORK = _sample_work(tmpd)
@@ -2092,6 +2147,40 @@ def selftest() -> int:
             else:
                 print(f"   T{total} 別の理由で止まった → fail（{str(e)[:120]}）")
         WORK = keep
+
+        # T15（2026-09-30・設計書 point1-proof-20260930 の P-1）＝見本の工事のフォルダを archive の側へ移しても --verify が通る
+        total += 1
+        write(dest=copy)
+        _wd = gv.VERBATIM_DIR / SAMPLE_WORK
+        _ad = gv.ARCHIVE_DIR / SAMPLE_WORK
+        _ad.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(_wd), str(_ad))
+        try:
+            rc15 = verify(dest=copy)
+        finally:
+            shutil.move(str(_ad), str(_wd))
+        if rc15 == 0:
+            ok += 1
+            print(f"   T{total} 工事のフォルダを archive へ移しても --verify が通る → pass")
+        else:
+            print(f"   T{total} archive へ移すと --verify が落ちる → fail")
+
+        # T16（2026-09-30・同じ設計書の P-2）＝囲みの外（§1 概要の下）に1行 足すと --verify が ❌
+        total += 1
+        _t16 = copy.read_text(encoding="utf-8")
+        _i = _t16.find("## 1｜概要")
+        _j = _t16.find("\n", _i) + 1 if _i >= 0 else -1
+        if _j > 0:
+            copy.write_text(_t16[:_j] + "CC が手で書き足した1行（見本）。\n" + _t16[_j:], encoding="utf-8")
+            rc16 = verify(dest=copy)
+            copy.write_text(_t16, encoding="utf-8")
+        else:
+            rc16 = None
+        if rc16 == 1:
+            ok += 1
+            print(f"   T{total} 囲みの外に1行 足すと --verify が ❌ → pass")
+        else:
+            print(f"   T{total} 囲みの外の1行を見つけない → fail（rc={rc16}）")
 
         # T14（2026-09-30・同じ設計書）＝本物の設計書と ratchet の直下のファイルに1バイトも書いていない
         total += 1

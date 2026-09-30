@@ -1,0 +1,42 @@
+11c11
+< **★この設計書は、工事のフォルダ `.claude/state/verbatim/point1-proof-20260930/` からプログラムが組み立てます。**CC が手で書いたのは、やることの表.md の「手書きの項目」の5つだけです＝§1 概要・2-1 何を測るか・3-1 やらないこと・3-2 決めてほしいこと・4-19 通しの例。それ以外は、まこさんが OK した案の逐語（【項目の番号】の見出しで切った中身）と実物から作りました。作り直し＝`python3 .claude/tools/gen_acceptance.py --work point1-proof-20260930 --write`。検出＝`--work point1-proof-20260930 --verify`。
+---
+> **★この設計書は、工事のフォルダ `verbatim/point1-proof-20260930/` からプログラムが組み立てます。**（verbatim/ は、作業中は `.claude/state/` の下、承認の後は `SDK/.claude/ratchet/acceptance_archive/` の下に在る）CC が手で書いたのは、やることの表.md の「手書きの項目」の5つだけです＝§1 概要・2-1 何を測るか・3-1 やらないこと・3-2 決めてほしいこと・4-19 通しの例。それ以外は、まこさんが OK した案の逐語（【項目の番号】の見出しで切った中身）と実物から作りました。作り直し＝`python3 .claude/tools/gen_acceptance.py --work point1-proof-20260930 --write`。検出＝`--work point1-proof-20260930 --verify`。
+20,22c20,22
+< <!-- ACC_SOURCE_START hash=75bcc003386414b4 gen_acceptance.py が自動生成＝手で書き換えない -->
+< **要件のまとめ**＝`.claude/state/verbatim/point1-proof-20260930/要件のまとめ.md`（プログラムが逐語のファイルから作った・要件の文・話し手・出どころの表はそこに在る）。
+< **この設計書が写す逐語のファイル**＝`.claude/state/verbatim/point1-proof-20260930/ok_proof_20260930.txt`（まこさんの発言）・`.claude/state/verbatim/point1-proof-20260930/okd_proof_20260930.txt`（まこさんが OK した CC の文）・`.claude/state/verbatim/point1-proof-20260930/req_proof_20260930.txt`（まこさんの発言）。照らし方＝`python3 .claude/tools/gen_verbatim.py --verify <名前>`。
+---
+> <!-- ACC_SOURCE_START hash=c24dcf1033779d79 gen_acceptance.py が自動生成＝手で書き換えない -->
+> **要件のまとめ**＝`verbatim/point1-proof-20260930/要件のまとめ.md`（プログラムが逐語のファイルから作った・要件の文・話し手・出どころの表はそこに在る）（verbatim/ は、作業中は `.claude/state/` の下、承認の後は `SDK/.claude/ratchet/acceptance_archive/` の下に在る）。
+> **この設計書が写す逐語のファイル**＝`verbatim/point1-proof-20260930/ok_proof_20260930.txt`（まこさんの発言）・`verbatim/point1-proof-20260930/okd_proof_20260930.txt`（まこさんが OK した CC の文）・`verbatim/point1-proof-20260930/req_proof_20260930.txt`（まこさんの発言）。照らし方＝`python3 .claude/tools/gen_verbatim.py --verify <名前>`。
+81,82c81,82
+< | 承認済みの設計書に書いてある、作業中の置き場（承認で archive へ移る） | `grep -c 'state/verbatim/point1-one-way-20260930-3' .claude/state/acceptance.md` | ゼロでなければ、承認の後の --verify で、設計のもとの節が食い違う | 3（終了コード 0） |
+< | --verify が照らす範囲 | `grep -n 'for kind in BLOCKS' .claude/tools/gen_acceptance.py` | verify の中にこの行しか照らしの繰り返しが無ければ、囲みの外は見ていない | 1725:    for kind in BLOCKS:（終了コード 0） |
+---
+> | 承認済みの設計書に書いてある、作業中の置き場（承認で archive へ移る） | `grep -c 'state/verbatim/point1-one-way-20260930-3' .claude/state/acceptance.md` | ゼロでなければ、承認の後の --verify で、設計のもとの節が食い違う | 1（終了コード 0） |
+> | --verify が照らす範囲 | `grep -n 'for kind in BLOCKS' .claude/tools/gen_acceptance.py` | verify の中にこの行しか照らしの繰り返しが無ければ、囲みの外は見ていない | 1770:    for kind in BLOCKS:（終了コード 0） |
+345c345
+< | 1 | 設計書の道具の自己テストが、archive へ移した見本で --verify が通り、囲みの外に足した1行を見つける | `python3 ../../.claude/tools/gen_acceptance.py --selftest` | 道具 | verify を中身を見ずに通す形にする | `b72_acceptance_handwritten.sh` | 要 | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝その検査が落ちた（守りが働いた） |
+---
+> | 1 | 設計書の道具の自己テストが、archive へ移した見本で --verify が通り、囲みの外に足した1行を見つける | `python3 ../../.claude/tools/gen_acceptance.py --selftest` | 道具 | verify を中身を見ずに通す形にする | `b72_acceptance_handwritten.sh` | 要 | **未着手** |
+353c353
+< <!-- ACC_CODEREF_START hash=caf899620bf9be91 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=fa5f7a78db5248b4 gen_acceptance.py が自動生成＝手で書き換えない -->
+360,361c360,361
+< | `_wlabel` | （この関数は実物に無い） |
+< | `_outside_mismatch` | （この関数は実物に無い） |
+---
+> | `_wlabel` | 1002 |
+> | `_outside_mismatch` | 1697 |
+363c363
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 48件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 50件の関数が在ります）。
+370c370
+< <!-- ACC_SPEC_START hash=59c922dec9eb6a54 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=6c596187c4205091 gen_acceptance.py が自動生成＝手で書き換えない -->
+480a481
+>    "page",
