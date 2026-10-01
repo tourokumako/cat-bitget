@@ -3,13 +3,9 @@
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
  "../../.claude/tools/apply_audit_fix.py": [
-  "<モジュール直下>",
-  "command_argv",
-  "report_new_file_ok",
+  "_done_in",
   "check_one",
-  "new_file_check",
-  "hand_label",
-  "main",
+  "already_applied",
   "selftest"
  ]
 }

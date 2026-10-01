@@ -1,0 +1,22 @@
+81c81
+< | 当てる道具に、当て終わりの見分けの関数 _done_in が在るか | `grep -c 'def _done_in' .claude/tools/apply_audit_fix.py` | 実装の前は無い。実装の後は在る | 0（終了コード 1） |
+---
+> | 当てる道具に、当て終わりの見分けの関数 _done_in が在るか | `grep -c 'def _done_in' .claude/tools/apply_audit_fix.py` | 実装の前は無い。実装の後は在る | 1（終了コード 0） |
+472c472
+< <!-- ACC_CODEREF_START hash=dd7f64c45a861da2 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=def6215bdc66c05c gen_acceptance.py が自動生成＝手で書き換えない -->
+479c479
+< | `_done_in` | （この関数は実物に無い） |
+---
+> | `_done_in` | 493 |
+481c481
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 26件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 27件の関数が在ります）。
+488c488
+< <!-- ACC_SPEC_START hash=63312312a67c6900 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=f60d797fd6bb0662 gen_acceptance.py が自動生成＝手で書き換えない -->
+598a599
+>    "already_applied",

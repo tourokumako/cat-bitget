@@ -490,6 +490,23 @@ def new_file_check(f: dict, path: str) -> tuple:
     return True, "新しいファイル", ""
 
 
+def _done_in(before: str, kind: str, body: str, cur: str) -> bool:
+    """直した後の文字（足す文字なら直す前の文字＋足す文字）が実物に在る＝当て終わりか（2026-10-01・監査 cp55 の R-5）。
+
+    ★行を消す直し（直した後の文字が直す前の文字の中に含まれる）は、直した後の文字が消す前から実物に在るので、
+      直す前の文字がまだ実物に在れば当て終わりと見ない（cp54 の修正2 が、当てる前に「当て終わり」と誤判定された）。
+    ★check_one と already_applied の両方がこれを呼ぶ（同じ判定を2か所に書き写さない）。
+    """
+    if kind not in ("直した後の文字", "足す文字") or not body:
+        return False
+    done = (before + body) if kind == "足す文字" else body
+    if not done.strip() or done not in cur:
+        return False
+    if kind == "直した後の文字" and body in before and before in cur:
+        return False
+    return True
+
+
 def check_one(f: dict, chosen: dict = None, run_ok: bool = False, new_ok: bool = False) -> tuple:
     """1件が当てられるかを確かめる。戻り＝(当てられるか, 理由, 実物の中身)。
 
@@ -545,8 +562,7 @@ def check_one(f: dict, chosen: dict = None, run_ok: bool = False, new_ok: bool =
     for _a, kind, body in fourth:
         if not body:
             continue
-        done = (before + body) if kind == "足す文字" else body
-        if kind in ("直した後の文字", "足す文字") and done.strip() and done in cur:
+        if _done_in(before, kind, body, cur):          # ★2026-10-01（監査 cp55 の R-5）＝行を消す直しは、直す前の文字が残っていれば当て終わりと見ない
             return False, "もう当て終わっている（直した後の文字が実物に在る）", cur
     n = cur.count(before)
     if n == 0:
@@ -662,8 +678,7 @@ def already_applied(f: dict) -> bool:
     for _a, kind, body in f["4つ目"]:
         if not body:
             continue
-        done = (before + body) if kind == "足す文字" else body
-        if kind in ("直した後の文字", "足す文字") and done.strip() and done in cur:
+        if _done_in(before, kind, body, cur):          # ★2026-10-01（監査 cp55 の R-5）＝check_one と同じ関数で見分ける
             return True
     return False
 
@@ -1608,6 +1623,22 @@ def selftest() -> int:
                 print(f"   T{total} 足す文字の全文でも作れ、作れない件は［手書き］で分ける（本物には作らない） → pass")
             else:
                 fails.append(f"❌ 足す文字の新しいファイル T{total}: {ok43a} {ok43b} {ok43c} {why43c}")
+
+            # T44（2026-10-01・監査 cp55 の R-5）＝行を消す直しは、直す前の文字が残っていれば当て終わりと見ず、当てた後は当て終わりと見る
+            total += 1
+            open(code, "w", encoding="utf-8").write("a = 1\nb = 2\nc = 3\n")
+            f44 = {"番号": "1", "重さ": "Critical", "対象のファイル": rel, "状態": "確定", "直す前の文字": "b = 2\nc = 3\n",
+                   "根拠の抜き書き": "", "4つ目": [("", "直した後の文字", "c = 3\n")]}
+            ok44a, why44a, _c = check_one(f44)
+            pre44 = already_applied(f44)
+            open(code, "w", encoding="utf-8").write("a = 1\nc = 3\n")
+            ok44b, why44b, _c = check_one(f44)
+            post44 = already_applied(f44)
+            if ok44a and not pre44 and not ok44b and why44b.startswith("もう当て終わっている") and post44:
+                ok += 1
+                print(f"   T{total} 行を消す直しは、直す前の文字が残っていれば当て終わりと見ず、当てた後は当て終わりと見る → pass")
+            else:
+                fails.append(f"❌ 行を消す直し T{total}: 前={ok44a}/{pre44} 後={ok44b}/{post44} {why44a} {why44b}")
         finally:
             (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
              globals()["HOOKS_DIR"], globals()["BREAKS_DIR"]) = g_saved
