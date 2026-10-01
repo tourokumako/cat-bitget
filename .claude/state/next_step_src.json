@@ -353,7 +353,7 @@
         "欄": [
          " **5点目** ",
          " **実装の監査結果から実装を直す**（工事 point5-report-direct-20260930＝実装済み・commit 827bcbd。いまは実装の監査 cp54 の段） ",
-         " 依頼書＝`SDK/.claude/audits/inputs/2026-10-01_point5_report_direct_20260930_impl_cp54_audit_request.md`（★2026-10-01 の日付のものだけ。2026-09-30 の日付のものは却下した古い版）・当てる道具 `.claude/tools/apply_audit_fix.py` --report ",
+         " 依頼書＝`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-10-01_point5_report_direct_20260930_impl_cp54_audit_request.md`（★2026-10-01 の日付のものだけ。2026-09-30 の日付のものは却下した古い版）・当てる道具 `.claude/tools/apply_audit_fix.py` --report ",
          " **次のセッションでやること＝2つだけ**＝①監査結果を確認する（結果ファイル `SDK/.claude/audits/2026-10-01_point5_report_direct_20260930_impl_cp54_audit_report.md` を全部 読み、結論と重さごとの件数を まこさんに出す）②5点目を終了する（まこさん指示 2026-10-01「次は監査結果の確認→終了だよ」） ",
          " ★いまここ。次の一手＝監査結果の確認。既知の3つ（Q6 の起点・設計書 7-6 の状態の文・7-7 の定数）は監査の所見に出る見込み＝0-1 "
         ]
