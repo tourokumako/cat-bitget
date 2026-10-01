@@ -1204,6 +1204,34 @@
    "file": ".claude/rules/permanent_rules.md",
    "at": "2026-10-01T23:43:17",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-structure-20261001",
+   "num": "1",
+   "file": "scripts/priority_rebuild/leak_causality_diag.py",
+   "at": "2026-10-02T02:13:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-structure-20261001",
+   "num": "2",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T02:13:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-structure-20261001",
+   "num": "3",
+   "file": "scripts/priority_rebuild/recipes/regime_label.json",
+   "at": "2026-10-02T02:13:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-structure-20261001",
+   "num": "4",
+   "file": ".claude/breaks/b118_band_continue_off.sh",
+   "at": "2026-10-02T02:13:04",
+   "how": "当てた"
   }
  ]
 }

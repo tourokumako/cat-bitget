@@ -52,4 +52,38 @@
 - 私が ~/.claude/settings.json を書き替えるのは、Claude Code の自動モードの判定（Self-Modification）が2回 止めた。控え ~/.claude/settings.json.bak_20261002 は取った。まこさんが端末で `jq 'del(.hooks)' …` を打ち、`.hooks` が null と出た＝SessionStart と Stop の hook 2本が消えた。
 - .claude/settings.local.json の claudeMdExcludes に、要件定義書の古い控え rules/archive/cat_requirements_20260808.md（52,949バイト）を足した（まこさんが端末で打ち、9件と出た）。
 - 効いたかは、次の会話の始めの表示で見る（「Step 0 必読」が出ないこと）。
-- このセッションの私の失敗＝①設計↔実装ゲートに同じ理由で2回 止められた（python3 -c と heredoc の python）②依頼（hook を消す）の前に、計画・ToDo・頼まれていない直し（CLAUDE.md の節を移す案）を積んだ ③私の手で設定を書き替えられないこと（next_step §6 の201番）を照らさずに計画した。
+- このセッションの私の失敗（§2 まで）＝①設計↔実装ゲートに同じ理由で2回 止められた（python3 -c と heredoc の python）②依頼（hook を消す）の前に、計画・ToDo・頼まれていない直し（CLAUDE.md の節を移す案）を積んだ ③私の手で設定を書き替えられないこと（next_step §6 の201番）を照らさずに計画した。
+
+## §3 14a（M2-F-6d）を3つの工事に分け、工事 A（m2f-label-structure-20261001）の設計書を作った
+
+### 3-1 14a の現在地（記録と実物で確かめた）
+
+- 6a・6b は済（worklog 20260928 §20・§21）。6c は まこさんが貼った定義の文を 6d の設計の正本にした（同 §46・逐語＝label_structure_definition_verbatim_20260929.txt）。m2_todo.json の M2-F-6a〜6d の状態は「まだ」のまま（next_step の14a の行の「6a・6b・6c は済」と食い違う＝直していない）。
+- 9/29 に 6d の設計書（label-versioned-structure-20260929・控え 0174e179…）と依頼書 CP50 を作ったが、まこさん決定「5点を自動生成にしてから…やり直す」（worklog 20260929 §23）。142回目に 14a と14b を1つにした案が約10万6千文字になり、まこさん「じゃあ修正せずに、分けてすすめれば」で 14a を別の工事に分けた（142回目のやり取りの記録 8fdecaac・2026-10-01T08:40）。14a のやることは まこさんが OK した表 L-1〜L-8（同 08:02「それでいいので進めて」）。
+- ★私は最初「読むもの宣言から始まります」と確かめずに答え、まこさんに「14aは途中まで終わってないか？」「next_stepに書いてなかったのか？」と指摘された（next_step.md:115 に書いてあった）。
+
+### 3-2 分け方（まこさん「よい」2回）
+
+- 工事 A＝札の部品 regime_label.py・設定 regime_label.json・H2 の見張りの一覧（leak_causality_diag.py）・壊すプログラム b118（L-2・L-3・L-4・L-8・9/29 の土台の実装の指示 28・29・22・30）。工事 B＝観察の道具と測る道具の切り替え・T6・b119〜b121。工事 C＝⑪タブの道具。
+- 自己検査 T6 は呼ぶ側の切り替えを見るので工事 A では必ず落ちる＝工事 B へ移した（まこさん「よい」）。
+
+### 3-3 工事 A の案と設計書
+
+- 読むもの宣言（19件）を作り、まこさんの OK（逐語「よくわからん。Okでいいよ。」）を写した。前の宣言は design_read_plan_m2f-label-builder-stages-20261001.md に控えた。まこさんの問い「この読むもの宣言って機能してるの？」への答え＝宣言の hook は形と OK の有無しか見ず、読んだかは見ない（require_read_plan_before_design.py:13〜21・require_read_used.py:191）。
+- 工事のフォルダ（.claude/state/verbatim/m2f-label-structure-20261001/）＝やることの表.md（手書きの5項目）・逐語 req_6d・req_split・ok_todo・ok_split・ok_t6・okd_labelA・ok_labelA（gen_verbatim.py で記録から写した）。
+- 案は _labelA_draft_build.py が 9/29 の控えから実装の指示を取り出し、3か所（T6 の塊を外す・説明の文・22番の説明の行）だけを、元の文字がちょうど1か所在ることを確かめて置き換えた（compile と ast で関数の名前・must_use を照らす）。手で書いた節は _labelA_template.txt。
+- 試しの設計書（trial_design.py）は5回目で A群 0件・古い語 0件。止まった4回＝①2-1 の読み方に数字（gen_acceptance.py:1450・next_step §6 の202番に在ったのに照らさなかった）②7-5 が19行（群1 は20項目）③impl_file が実在しない regime_label.py（同 :680〜683）④7-5 の14項目めに関数の一覧が無い・self_check_calls にファイル名を書いて必読ゲートの C に数えられた・TARGET に regime_label.py を入れたので must_use と監査 Q5 の5件が要った。見立ては sessions/37d4db1d…/diagnosis.md。
+- まこさん「OK」（2026-10-02 02:05 頃）→ 逐語に写した（下書きとの違いは前置きの1行だけ＝diff）→ gen_acceptance.py --work m2f-label-structure-20261001 --write＝acceptance.md 1221行 → 承認の前の検査 --try（記録を渡す）＝A1〜A8・B1・B2 不足0件（13.7秒）→ 設計書を全行 読んだ。
+- 次＝まこさんの承認（まこさんの端末で approve_impl.sh）→ 当てる道具で実装 → 自己検査・b118 → G2・H2 の取り直し → 監査。
+- 承認の前に、Stop hook require_read_used が「見直し表が無い」で止めた＝gen_review.py --skeleton で53項目の表を作り、根拠の実物の行を開き直して全部 埋めた（.claude/state/reviews/acceptance.review.md・--check＝止める理由0件・根拠77件）。
+
+## §4 工事 A を承認・実装した（2026-10-02）
+
+- まこさん「打った」＝承認の印 acceptance.approved・design_approved.json（02:11）。
+- apply_audit_fix.py --design --dry＝当たる4件。本番＝02:13 に4件を当てた（leak_causality_diag.py の WATCHED に2本・regime_label.py・recipes/regime_label.json・.claude/breaks/b118_band_continue_off.sh）。当てた記録 applied_fixes.json に design:m2f-label-structure-20261001 の4件。道具が続けて G2（g2_pass.json 02:13:34・対象38件）→ H2（leak_causality_diag.py＝検査2 の注記なし未来参照0件・打ち切り再現テスト 1-a・1-b・1-c の食い違い0件・h2_pass.json 02:18:35・指紋 312cce2d…・対象24件＝regime_label の2本を含む）を走らせた。
+- 完成の条件1＝cd SDK && python3 scripts/priority_rebuild/regime_label.py --selftest＝✅ 全部 pass（T1〜T5・T7〜T11・参考 T1 1.000／T3 版2 0.793・版1 0.203・3.764秒）。
+- 完成の条件2＝python3 scripts/priority_rebuild/regime_label.py＝{"採点に使う版": "er_median", "版の名前": "label-er24-288"}。
+- 完成の条件3＝grep -c -F 'regime_label' scripts/priority_rebuild/leak_causality_diag.py＝1。
+- 壊すプログラム＝run_breaks.py --design acceptance.md --measure-only --only b118_band_continue_off.sh＝✅ 期待どおり rc=1。後で部品が元どおり（壊した印の行0件）。
+- verify_design_contract.py --diff <acceptance.md>＝齟齬0件（1回目は設計書のパスを付け忘れて IndexError＝私の打ち方の誤り）。
+- 次＝commit（まこさんの OK）→ 実装の監査の依頼書（gen_audit_docs.py・依頼書は実装の commit の後に作る＝142回目は先に作って作り直した）→ まこさんのチェック → 別のセッションで監査。そのあと工事 B → 工事 C。

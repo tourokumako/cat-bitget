@@ -2,22 +2,31 @@
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
- "scripts/priority_rebuild/engine_tuner_gen.py": [
+ "scripts/priority_rebuild/regime_label.py": [
   "<モジュール直下>",
-  "stage_keep_of",
-  "build_stage_candidates",
-  "sample_regime_build",
-  "selftest_stages",
+  "load_config",
+  "fee_floor",
+  "horizons",
+  "roles",
+  "role_bars",
+  "er_median",
+  "band_range",
+  "band_hold",
+  "keys",
+  "key_bars",
+  "key_label",
+  "groups",
+  "labels_for_key",
+  "labels_at_bars",
+  "bars_keys",
+  "version_tag",
+  "spec",
+  "variants",
+  "_synth",
   "selftest",
-  "main"
+  "_line"
  ],
- "scripts/priority_rebuild/regime_r9_diag.py": [
-  "_loosened_off",
-  "_both_sides",
-  "_sweep_slots",
-  "_slot_variants",
-  "run_stage",
-  "run_sweep",
-  "selftest"
+ "scripts/priority_rebuild/leak_causality_diag.py": [
+  "<モジュール直下>"
  ]
 }
