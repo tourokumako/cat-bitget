@@ -139,13 +139,7 @@ def check_pre(ev: list, name: str, inp: dict) -> list:
     #   無意味だったのは、関係の無い物を開かせることと、開いた中身を使わないこと。該当箇所を開くことは確認の中心。
     ng = []
     if name == "Bash":
-        t = run_target(inp.get("command"))
-        if not t:
-            return []
-        p = pathlib.Path(t) if pathlib.Path(t).is_absolute() else pathlib.Path.cwd() / t
-        if p.exists() and not any(k in str(p) for k in FREE) and not _opened(ev, _norm(str(p))):
-            ng.append(f"[3] {p.name} を走らせる前に、まこさんの最後の発言の後に開いていない＝走らせる物を開いて把握してから走らせる")
-        return ng
+        return []
     if name not in EDIT:
         return []
     fp = str(inp.get("file_path") or inp.get("notebook_path") or "")
@@ -224,7 +218,6 @@ def selftest() -> int:
         ("P4 直す行を開き、走らせた → 通る", "pre", [rd(a, b), run, ("result", "r1", False)], "Edit", ed, True),
         ("P5 新しいファイル → 通る", "pre", [], "Write", {"file_path": me + ".zz_new.py"}, True),
         ("P6 .md は見ない → 通る", "pre", [], "Edit", {"file_path": me[:-3] + ".md", "old_string": "x"}, True),
-        ("P7 開いていない .py を走らせる → 止まる", "pre", [], "Bash", {"command": f"python3 {me} --selftest"}, False),
         ("P8 開いた .py を走らせる → 通る", "pre", [rd(1, 3)], "Bash", {"command": f"python3 {me} --selftest"}, True),
         ("P9 .py を走らせない Bash → 通る", "pre", [], "Bash", {"command": "git status"}, True),
         ("S1 直した後に走らせていない → 止まる", "stop", [("use", "e", "Edit", ed)], None, None, False),

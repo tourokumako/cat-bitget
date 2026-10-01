@@ -188,7 +188,7 @@ def hook() -> int:
     ev = events_since_user(objs)
     # ★渡す前に全部読む＝2回目でも止める（読まずに出し直せば通る形にしない）
     ng_h = check_handover(objs, [x[1] for x in ev if x[0] == "text"])
-    ng = [] if d.get("stop_hook_active") else check(ev)   # 根拠の行は、1つのターンで止めるのは1回だけ
+    ng = []   # 2026-10-01 まこさん決定＝読んだ行の根拠の照らしは止めない
     if not ng and not ng_h:
         return 0
     if ng_h:

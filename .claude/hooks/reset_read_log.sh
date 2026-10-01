@@ -78,8 +78,4 @@ echo "★ cat_requirements.md / exchange_spec.md（決済方法）は『設計�
 echo "   理由: セッション開始時に読んでもインプットされない実証（まこさん 2026-06-13・add/決済を毎回誤解）。"
 echo "（補助＝必要時のみ: 設計=strat_v9ml_design / 分析手順=analysis_playbook / 教訓=lessons_active を grep 参照）"
 echo ""
-echo "=== [目標逆算ゲート 有効・WORKFLOW Step 0 ④] ==="
-echo "必読後、目標逆算ブロック（5行+3行ゲート）を .claude/state/goal_block.md に Write し、"
-echo "同内容をチャットに出してまこさんの GO を得るまで、Bash/Edit/Write は block されます。"
-echo "（届かない候補を単体ミッションにしない・導出の向き＝届く構成から逆算・2026-06-12）"
 exit 0

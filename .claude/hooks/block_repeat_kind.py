@@ -30,9 +30,13 @@ from require_check_after_failure import ACT_TOOLS, is_read  # 読むだけの判
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SESS = ROOT / ".claude/state/sessions"
 FREE = ("/.claude/state/sessions/", "session_worklog_", "/.claude/plans/", "/memory/", "chat_draft.md")
-SELF = ("block_repeat_kind.py", "block_repeat_failure.py")
-HOOK = re.compile(r"hook (?:error|feedback)[^\[]*\[(?:bash |python3 )?([^\]\s]+)\]:\s*([^\n]*)")
+# ★2026-10-01（143回目）＝止めの文に出る名前は .sh（登録は block_repeat_kind.sh）。.py だけだと自分の止めを数えて止め続けた。
+SELF = ("block_repeat_kind.py", "block_repeat_failure.py", "block_repeat_kind.sh", "block_repeat_failure.sh")
+# ★2026-10-01（143回目・まこさん「直せ」）＝名前の後ろの引数（例「require_confirm_before_act.sh pre」）を読み飛ばす。
+#   直す前は名前の直後に「]」が来る形しか拾わず、確認の強制の止めを種類として数えていなかった。
+HOOK = re.compile(r"hook (?:error|feedback)[^\[]*\[(?:bash |python3 )?([^\]\s]+)(?: [^\]]*)?\]:\s*([^\n]*)")
 TAG = re.compile(r"[【\[]([^】\]]{1,30})[】\]]")
+STOP_SEG = re.compile(r"\[(?:bash |python3 )?[^\]\s]+(?: [^\]]*)?\]:[^\n]*")   # Stop hook の差し戻しの1件（[hook の名前]: 止めの文）
 
 
 def kind_of(text: str):
@@ -56,13 +60,21 @@ def kind_of(text: str):
 
 def load(path: pathlib.Path):
     """戻り＝[(道具, 入力, 失敗の文 or None, 結果の時刻)]。"""
-    calls, res = [], {}
+    calls, res, stops = [], {}, []
     for line in path.open(encoding="utf-8", errors="replace"):
         try:
             o = json.loads(line)
         except Exception:
             continue
         c = (o.get("message") or {}).get("content")
+        # ★2026-10-01（143回目・まこさん「ちゃんと改善しろ」）＝Stop hook の差し戻しも hook ごとに失敗として数える。
+        #   差し戻しは記録に「まこさんの発言」の形（本文が「Stop hook feedback:」で始まる文字列）で残るので、
+        #   直す前は道具の失敗の結果だけを読み、同じ差し戻しを何回 受けても止めなかった。
+        if o.get("type") == "user":
+            txt = c if isinstance(c, str) else " ".join(x for x in (c or []) if isinstance(x, str))
+            if "Stop hook feedback" in txt:
+                for seg in STOP_SEG.findall(txt):
+                    stops.append(("Stop", {}, "Stop hook feedback: " + seg, o.get("timestamp")))
         if not isinstance(c, list):
             continue
         for b in c:
@@ -75,14 +87,14 @@ def load(path: pathlib.Path):
                 if isinstance(t, list):
                     t = " ".join(x.get("text", "") for x in t if isinstance(x, dict))
                 res[b.get("tool_use_id")] = (str(t or ""), o.get("timestamp"))
-    return [(n, x, res.get(i, (None, None))[0], res.get(i, (None, None))[1]) for i, n, x in calls]
+    return [(n, x, res.get(i, (None, None))[0], res.get(i, (None, None))[1]) for i, n, x in calls] + stops
 
 
 def open_repeats(rows):
     """2回 起きた種類と、その2回目の時刻。戻り＝{種類: 時刻}。"""
     n, when = collections.Counter(), {}
     for nm, inp, err, ts in rows:
-        if err is None or nm not in ACT_TOOLS or is_read(nm, inp):
+        if err is None or (nm != "Stop" and (nm not in ACT_TOOLS or is_read(nm, inp))):
             continue
         k = kind_of(err)
         if not k:
@@ -149,7 +161,7 @@ def replay(days: int) -> int:
         rows = load(p)
         cnt = collections.Counter()
         for nm, inp, err, _ts in rows:
-            if err is None or nm not in ACT_TOOLS or is_read(nm, inp):
+            if err is None or (nm != "Stop" and (nm not in ACT_TOOLS or is_read(nm, inp))):
                 continue
             n_fail += 1
             k = kind_of(err)
