@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=2957a95ed76fcec3 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=7d486abecc363113 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 ## 🎯 大目標（まこさん指示 2026-09-28「next_stepの上部に書く」）
@@ -94,7 +94,7 @@
 **145回目にしたこと**
 
 - 監査 cp58（14a の工事 A の実装の監査）＝GO・Critical 0・Major 0・Minor 4。まこさん決定「全部（修正1〜4）」で、`apply_audit_fix.py --report` が regime_label.py に4件を当てた（load_config が式の無い版の名前を止める・version_tag と band_hold が「使う値」の空を止める・説明の文の定義の出どころを まこさんの原文と法則 R1 に直す）。自己検査 ✅ 全部 pass・b118 rc=1。修正1〜3 の止まり方は自己検査では試していない。
-- 当てた後の照合は cp57 と同じ型で止まった（実装が HEAD に入っているので、差分の関数だけと照らす）。commit の後に verify_design_contract.py --diff・G2・H2 を取り直す。
+- 当てた後の照合は cp57 と同じ型で止まった（実装が HEAD に入っているので、差分の関数だけと照らす）。commit c44ac3a の後に verify_design_contract.py --diff＝齟齬0件・G2（指紋 4f618a5f…・38件）・H2（未来参照0件・食い違い0件・指紋 2504867e…・24件・5分0秒）を取り直した。
 - 14a の行の「正解ラベルの定義の正本」を、まこさんの原文（m2_todo.json の M2-F-6d の注意）にそろえた（修正4 と同じ事実）。
 
 ### 0-2 🔴 次にやること（★次に何をするかは、この節にだけ書きます）
@@ -134,7 +134,7 @@
 
 ### （0-b-2）🔴 印の状態（2026-10-02・★この節は tidy_next_step.py が json から書く＝手で書かない）
 
-- **H2 の印＝`312cce2d175f9ac1…`**（`.claude/state/h2_pass.json`・2026-10-02 02:39:03・対象24ファイル）／**G2 の印＝`4f618a5f0c3eb373…`**（`g2_pass.json`・2026-10-02 02:34:02・対象38ファイル）。
+- **H2 の印＝`2504867e7fdfab0f…`**（`.claude/state/h2_pass.json`・2026-10-02 07:36:48・対象24ファイル）／**G2 の印＝`4f618a5f0c3eb373…`**（`g2_pass.json`・2026-10-02 07:31:44・対象38ファイル）。
 - **コードを触ったら取り直す**＝G2 → H2 の順（`gen_signal_families.py --verify` 約30秒 → `leak_causality_diag.py` 約5分・L-565）。
 
 ### （0-d）★まだ埋まっていないこと（2件・2026-09-17 に実物で確かめた）

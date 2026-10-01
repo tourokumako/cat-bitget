@@ -159,5 +159,10 @@
 ### 7-5 そのほか
 
 - この会話の始めの表示に「Step 0 必読」は出ていない（表示は、引き継ぎのパスの確認・ToDo と必読の案内・まこさんが決めたこと・hook の健全性の4つ）。/context の Memory files は まこさんに見ていただく。
-- 残り＝commit（まこさんの OK）→ verify_design_contract.py --diff → 引数なしの出力 → G2 → H2 の取り直し（約5分）→ 検査済みの記録の一致を確かめる。
+- まこさん「2回とも OK」→ commit c44ac3a（7本＝regime_label.py・applied_fixes.json・監査 cp58 の結果・この worklog・next_step_src.json・next_step.md・next_step_archive_202608.md）。decisions.md（会話の始めの hook が作り直した生成物）は入れていない。
+- commit の後＝verify_design_contract.py --diff＝「齟齬: 0件」。引数なしの出力＝`{"採点に使う版": "er_median", "版の名前": "label-er24-288"}`（直す前と同じ）。
+- G2＝gen_signal_families.py --verify＝見本11件 期待どおり・表は入力の正本と一致・g2_pass.json（対象38件・指紋 4f618a5f…＝前と同じ）・29.0秒。
+- H2＝leak_causality_diag.py（07:31:48 開始）＝検査2 の注記なし未来参照0件・打ち切り再現テスト（1-a・1-b・1-c）の食い違い0件・h2_pass.json（指紋 2504867e…・対象24件）・5分0秒。
+- enforce_g2_pass.py --check-fingerprint＝一致（4f618a5f…・38件）／enforce_h2_pass.py --check-fingerprint＝一致（2504867e…・24件）。
+- next_step の検査済みの記録の欄を tidy_next_step.py --write で作り直し、2回目の commit。
 - hook に止められた回数＝設計↔実装ゲート1回（`python3 -` の heredoc で抜き出そうとした＝memory の早見表に在った形）。計画の承認の画面で、まこさんが「どのモードがよいの？」と聞いた（答え＝編集を自動で許可）。
