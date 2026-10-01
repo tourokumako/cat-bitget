@@ -1,0 +1,70 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "point5-report-direct-20260930",
+ "rows": [
+  {
+   "no": "1",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "2",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "3",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  },
+  {
+   "no": "4",
+   "script": "b118_audit_fix_tools_target.sh",
+   "code": 1,
+   "note": "❌ selftest 33/39 pass",
+   "expect": 1,
+   "means": "道具のファイルに当ててよいかの照らし（承認の印と TARGET）を常に真にすると、当てる道具の自己テスト T18・T19（印が違う・TARGET の外なら当てない）が落ちた",
+   "match": true
+  },
+  {
+   "no": "5",
+   "script": "b102_design_apply_no_precheck.sh",
+   "code": 1,
+   "note": "❌ selftest 37/39 pass",
+   "expect": 1,
+   "means": "全件を先に確かめる処理と当てる直前の確かめを外して、確かめながら当てる形にすると、当てる道具の自己テスト T13・T16（半分だけ当てない）が落ちた",
+   "match": true
+  },
+  {
+   "no": "6",
+   "script": "b101_design_apply_no_approval.sh",
+   "code": 1,
+   "note": "❌ selftest 37/39 pass",
+   "expect": 1,
+   "means": "承認の印を照らす処理を常に真にすると、当てる道具の自己テスト T4（印が違えば当てない）が落ちた",
+   "match": true
+  },
+  {
+   "no": "7",
+   "script": "b119_audit_fix_command_allow.sh",
+   "code": 1,
+   "note": "❌ selftest 36/39 pass",
+   "expect": 1,
+   "means": "走らせるコマンドの形の照らしを常に通すと、当てる道具の自己テスト T20（決まった形だけ通す）が落ちた",
+   "match": true
+  },
+  {
+   "no": "8",
+   "script": "b121_hook12_design_guard.sh",
+   "code": 1,
+   "note": "❌ selftest 38/39 pass",
+   "expect": 1,
+   "means": "hook 12 が承認済みの設計書の TARGET を守る処理を外すと、当てる道具の自己テスト T31 が落ちた",
+   "match": true
+  }
+ ]
+}

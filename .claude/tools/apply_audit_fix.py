@@ -92,10 +92,17 @@ RUN_TOOLS = {
     "gen_verbatim.py": {"--verify": 1, "--summary": 1},
     "gen_s22_map.py": {"--verify": 0},
     "run_breaks.py": {"--design": 1, "--measure-only": 0},
+    # ★2026-10-01（監査 cp54 の C-1・C-2）＝法則と ToDo の文書を書く道具と、監査に出す前のチェックも、一覧の形なら走らせる
+    #   （cp43・cp48・cp49 で gen_regime_kb.py --write が4回、cp47 で pre_audit_check.py --run が2回＝全部［手書き］に回っていた）。
+    #   pre_audit_check.py --run が書くのは自分の結果（.claude/state/pre_audit_check.json）だけ。走らせる道具は決まった順番（ORDER・CHECKS）。
+    "gen_regime_kb.py": {"--write": 1, "--verify": 1},
+    "pre_audit_check.py": {"--run": 0, "--verify": 0},
 }
 # ★2026-09-30（工事 point5-report-direct-20260930）＝監査結果の「走らせるコマンド」のうち、確かめのコマンドは scripts/priority_rebuild の道具も走らせる
 #   （直す前は .claude/tools の2本だけで、verify_design_contract・engine_tuner_gen・印の取り直しは まこさんが打った）。承認のプログラムは入れない。
 SCRIPTS_DIR = os.path.join(SDK, "scripts", "priority_rebuild")
+# ★2026-10-01（監査 cp54 の C-3）＝監査が名指しした結果ファイルの削除（rm）を行ってよい置き場。この下に実在するファイル1つだけ
+RESULTS_DIR = os.path.join(SDK, "results", "priority_rebuild")
 RUN_SCRIPTS = {
     "verify_design_contract.py": {"--diff": 1},
     "engine_tuner_gen.py": {"--selftest": 0},
@@ -258,6 +265,27 @@ def tool_target_ok(rel: str, design_path: str = None, mark_path: str = None) -> 
     return real in design_targets(open(design_path, encoding="utf-8").read())
 
 
+def report_new_file_ok(rel: str, design_path: str = None, mark_path: str = None) -> bool:
+    """監査結果の道で、新しいファイル（直す前の文字が「なし」）を作ってよいか（2026-10-01・監査 cp54 の C-4）。
+
+    承認の印と設計書のハッシュ値が合い、そのファイルが承認済みの設計書の NEW_FILE に在るときだけ真。
+    直す前は --report の道で新しいファイルを1件も作れず、1件でも在ると「対象のファイルが実在しない」で全件が止まった（cp45 の修正5）。
+    """
+    design_path = design_path or DESIGN
+    ok, _why = approved_ok(design_path, mark_path)
+    if not ok:
+        return False
+    real = os.path.realpath(repo_path((rel or "").strip().strip("`")))
+    new_files = set()
+    for ln in open(design_path, encoding="utf-8").read().splitlines():
+        if ln.startswith("NEW_FILE:"):
+            for p in ln.split(":", 1)[1].split(","):
+                p = p.strip().strip("`")
+                if p:
+                    new_files.add(os.path.realpath(repo_path(p)))
+    return real in new_files
+
+
 def command_argv(cmd: str):
     """走らせるコマンドが決まった形なら (置き場, 引数の並び) を、違えば None を返す（シェルを通さない）。
 
@@ -282,6 +310,15 @@ def command_argv(cmd: str):
         toks = shlex.split(s)
     except ValueError:
         return None
+    # ★2026-10-01（監査 cp54 の C-3）＝results の下の結果ファイル1つの削除（rm <パス>）も、一覧の形なら行う（cp49 で2回）。
+    #   形＝語が2つ・先頭が rm・パスは英数字と _ . / - だけで「..」を含まない・RESULTS_DIR の下に実在するファイル。それ以外は None
+    if toks[0] == "rm":
+        if len(toks) != 2 or not re.fullmatch(r"[A-Za-z0-9_./-]+", toks[1]) or ".." in toks[1].split("/"):
+            return None
+        rp = os.path.realpath(os.path.join(cwd, toks[1]))
+        if not (rp.startswith(os.path.realpath(RESULTS_DIR) + os.sep) and os.path.isfile(rp)):
+            return None
+        return cwd, ["/bin/rm", rp]
     if len(toks) < 2 or toks[0] != "python3":
         return None
     tool = os.path.realpath(os.path.join(cwd, toks[1]))
@@ -440,8 +477,9 @@ def new_file_check(f: dict, path: str) -> tuple:
     同じ中身でもう在れば当て済み。別の中身で在れば止める（上書きしない）。
     """
     plans = [(k, b) for _a, k, b in f["4つ目"]]
-    if len(plans) != 1 or plans[0][0] != "直した後の文字" or not plans[0][1]:
-        return False, "新しいファイルの件は、4つ目が「直した後の文字」1つ（ファイルの全文）であること", ""
+    # ★2026-10-01（監査 cp54 の C-4）＝依頼書のテンプレの書き方どおり、見出し「足す文字」の全文も受ける（cp45 の修正5）
+    if len(plans) != 1 or plans[0][0] not in ("直した後の文字", "足す文字") or not plans[0][1]:
+        return False, "新しいファイルの件は、4つ目が「直した後の文字」か「足す文字」1つ（ファイルの全文）であること", ""
     body = plans[0][1]
     if os.path.exists(path):
         if open(path, encoding="utf-8").read().rstrip("\n") == body.rstrip("\n"):
@@ -489,8 +527,11 @@ def check_one(f: dict, chosen: dict = None, run_ok: bool = False, new_ok: bool =
         return False, f"使わなくなった元データなので当てない（{rel}）＝直す中身を、工事のフォルダの元へ写す", ""
     path = repo_path(rel)
     # ★2026-09-30（設計書 point2-design-to-impl-20260930）＝新しいファイル（直す前の文字が「なし」）は、設計書の道でだけ作る
-    if new_ok and (f["直す前の文字"] or "").strip() == "なし":
-        return new_file_check(f, path)
+    if (f["直す前の文字"] or "").strip() == "なし":
+        if new_ok:
+            return new_file_check(f, path)
+        # ★2026-10-01（監査 cp54 の C-4）＝作れない新しいファイルの件は、全件を止める理由にせず［手書き］で分ける
+        return False, f"新しいファイルは、承認済みの設計書の NEW_FILE に在るときだけ作る（{rel}）＝設計書に NEW_FILE を書いて承認をもらう", ""
     if not os.path.isfile(path):
         return False, f"対象のファイルが実在しない（{rel}）", ""
     cur = open(path, encoding="utf-8").read()
@@ -652,6 +693,8 @@ def hand_label(why: str) -> str:
         return "［手書き］次の案に まこさんの OK が要る"
     if why.startswith("使わなくなった元データ"):
         return "［手書き］CC が写す（手書きの項目は やることの表.md へ・自動の項目は次の案に まこさんの OK が要る）"
+    if why.startswith("新しいファイルは"):
+        return "［手書き］設計書に NEW_FILE を書いて承認をもらう"
     return ""
 
 
@@ -785,7 +828,9 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
 
     ready, stopped = [], []
     for f in fixes:
-        ok, why, cur = check_one(f, chosen, run_ok=not design_mode, new_ok=design_mode)
+        # ★2026-10-01（監査 cp54 の C-4）＝監査結果の道でも、承認済みの設計書の NEW_FILE に在る新しいファイルは作る
+        ok, why, cur = check_one(f, chosen, run_ok=not design_mode,
+                                 new_ok=design_mode or report_new_file_ok(f["対象のファイル"] or "", None, approved_path))
         # ★設計書の道だけ（設計書 4-4 の 9）＝対象のファイルが TARGET／NEW_FILE に無ければ当てない
         if ok and design_mode:
             rel = os.path.realpath(repo_path(f["対象のファイル"] or ""))
@@ -800,7 +845,7 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
     #   状態が未決・案が複数／走らせるコマンド／守りの仕組みは、当てないだけで、ほかの件は当てる。
     hard = [x for x in stopped
             if not x[1].startswith(("状態が", "走らせるコマンド", "守りの仕組みなので",
-                                    "もう当て終わっている", "--choose で", "TARGET の外", "逐語のファイル", "使わなくなった元データ"))]
+                                    "もう当て終わっている", "--choose で", "TARGET の外", "逐語のファイル", "使わなくなった元データ", "新しいファイルは"))]
     if hard:
         print(f"\n❌ 実物と合わない件が {len(hard)} 件 あるので、1件も当てません（先に全件を確かめる形）")
         return 1
@@ -830,7 +875,7 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
             if path in mem:
                 print(f"\n❌ 修正 {f['番号']}: 新しいファイル {os.path.relpath(path, ROOT)} に2件 当てようとしています＝1件も当てません")
                 return 1
-            mem[path] = next(b for _a, k, b in f["4つ目"] if k == "直した後の文字").rstrip("\n") + "\n"
+            mem[path] = next(b for _a, k, b in f["4つ目"] if k in ("直した後の文字", "足す文字")).rstrip("\n") + "\n"   # ★2026-10-01（cp54 の C-4）＝足す文字も全文
             plan.append((f, "新しいファイルを作った", path))
             continue
         if path not in mem:
@@ -1499,6 +1544,70 @@ def selftest() -> int:
                 print(f"   T{total} 印の対象のファイルを直したら G2 → H2 を走らせる（対象でなければ走らせない） → pass")
             else:
                 fails.append(f"❌ 印の取り直し T{total}: {got39} rc={rc39}/{rc39b}")
+
+            # T40（2026-10-01・監査 cp54 の C-1・C-2）＝gen_regime_kb.py --write と pre_audit_check.py --run を一覧の形なら通し、外は止める
+            total += 1
+            good40 = [f"python3 {td38}/gen_regime_kb.py --write todo", f"python3 {td38}/gen_regime_kb.py --write laws",
+                      f"python3 {td38}/pre_audit_check.py --run"]
+            bad40 = [f"python3 {td38}/gen_regime_kb.py --write ../x", f"python3 {td38}/gen_regime_kb.py",
+                     f"python3 {td38}/pre_audit_check.py --write"]
+            miss40 = [c for c in good40 if command_argv(c) is None] + [c for c in bad40 if command_argv(c) is not None]
+            if not miss40:
+                ok += 1
+                print(f"   T{total} gen_regime_kb.py --write と pre_audit_check.py --run を一覧の形なら通す（通す {len(good40)}・止める {len(bad40)}） → pass")
+            else:
+                fails.append(f"❌ 走らせる道具 T{total}: 見分けを誤った {miss40}")
+
+            # T41（2026-10-01・監査 cp54 の C-3）＝results の下の実在する結果ファイル1つの rm だけ通し、外・不在・語が3つ以上・「..」は止める
+            total += 1
+            r41 = os.path.join(tmp, "results_zz")
+            os.makedirs(r41, exist_ok=True)
+            f41 = os.path.join(r41, "rank_zz.json")
+            open(f41, "w", encoding="utf-8").write("{}")
+            saved41 = globals()["RESULTS_DIR"]
+            globals()["RESULTS_DIR"] = r41
+            try:
+                got41 = command_argv(f"rm {os.path.relpath(f41, ROOT)}")
+                bad41 = [f"rm -rf {os.path.relpath(r41, ROOT)}", f"rm {os.path.relpath(r41, ROOT)}/../rank_zz.json",
+                         f"rm {os.path.relpath(r41, ROOT)}/none_zz.json", "rm /etc/passwd", f"rm {rel}"]
+                miss41 = [c for c in bad41 if command_argv(c) is not None]
+            finally:
+                globals()["RESULTS_DIR"] = saved41
+            if got41 is not None and got41[1] == ["/bin/rm", os.path.realpath(f41)] and not miss41 and os.path.isfile(f41):
+                ok += 1
+                print(f"   T{total} results の下の結果ファイル1つの rm だけ通す（止める {len(bad41)}・まだ消していない） → pass")
+            else:
+                fails.append(f"❌ rm T{total}: {got41} {miss41}")
+
+            # T42（2026-10-01・監査 cp54 の C-4）＝--report の道の新しいファイルは、承認の印が合い NEW_FILE に在るときだけ作ってよい
+            total += 1
+            new42 = os.path.relpath(os.path.join(tmp, "made_zz.py"), ROOT)
+            md42, mark42 = os.path.join(tmp, "design42.md"), os.path.join(tmp, "approved42")
+            open(md42, "w", encoding="utf-8").write(f"<!-- ARC iter=\"zz42\" -->\nTARGET: {rel}\nNEW_FILE: {new42}\n")
+            mark_of(md42, mark42)
+            in42 = report_new_file_ok(new42, md42, mark42)
+            out42 = report_new_file_ok(rel, md42, mark42)
+            open(mark42, "w", encoding="utf-8").write("0" * 64)
+            bad42 = report_new_file_ok(new42, md42, mark42)
+            if in42 and not out42 and not bad42:
+                ok += 1
+                print(f"   T{total} 新しいファイルは、承認の印が合い NEW_FILE に在るときだけ作ってよい → pass")
+            else:
+                fails.append(f"❌ 新しいファイルの許し T{total}: NEW_FILE に在る={in42} 無い={out42} 印が違う={bad42}")
+
+            # T43（2026-10-01・監査 cp54 の C-4）＝見出し「足す文字」の全文でも作れる。作れない件は全件を止めずに［手書き］で分ける
+            total += 1
+            f43 = {"番号": "1", "重さ": "Critical", "対象のファイル": new42, "状態": "確定", "直す前の文字": "なし",
+                   "根拠の抜き書き": "", "4つ目": [("", "足す文字", "print(1)\n")]}
+            ok43a, _w, _c = new_file_check(f43, os.path.join(ROOT, new42))
+            ok43b, _w, _c = new_file_check(dict(f43, **{"4つ目": [("", "消す文字", "x")]}), os.path.join(ROOT, new42))
+            ok43c, why43c, _c = check_one(f43, run_ok=True, new_ok=False)
+            if (ok43a and not ok43b and not ok43c and why43c.startswith("新しいファイルは")
+                    and hand_label(why43c) == "［手書き］設計書に NEW_FILE を書いて承認をもらう" and not os.path.exists(os.path.join(ROOT, new42))):
+                ok += 1
+                print(f"   T{total} 足す文字の全文でも作れ、作れない件は［手書き］で分ける（本物には作らない） → pass")
+            else:
+                fails.append(f"❌ 足す文字の新しいファイル T{total}: {ok43a} {ok43b} {ok43c} {why43c}")
         finally:
             (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
              globals()["HOOKS_DIR"], globals()["BREAKS_DIR"]) = g_saved

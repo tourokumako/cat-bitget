@@ -875,6 +875,97 @@
    "file": ".claude/tools/gen_audit_docs.py",
    "at": "2026-10-01T00:44:21",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-01_point5_report_direct_20260930_impl_cp54_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point5-report-direct-20260930/やることの表.md",
+   "at": "2026-10-01T10:31:45",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-01_point5_report_direct_20260930_impl_cp54_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/point5-report-direct-20260930/やることの表.md",
+   "at": "2026-10-01T10:31:45",
+   "how": "もう当て終わっていた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "1",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "2",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "3",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "4",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "5",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "6",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "7",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "8",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "9",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "10",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
+  },
+  {
+   "report": "design:point5-c1c4-20261001",
+   "num": "11",
+   "file": ".claude/tools/apply_audit_fix.py",
+   "at": "2026-10-01T11:05:57",
+   "how": "当てた"
   }
  ]
 }

@@ -50,11 +50,6 @@
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/show_design_check_after_write.sh",
             "timeout": 120
-          },
-          {
-            "type": "command",
-            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/forbid_guess_retry.sh post",
-            "timeout": 15
           }
         ]
       },
@@ -153,11 +148,6 @@
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
-          {
-            "type": "command",
-            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/forbid_guess_retry.sh pre",
-            "timeout": 15
-          },
           {
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_source_read_before_acceptance.sh"

@@ -4,9 +4,11 @@
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
  "../../.claude/tools/apply_audit_fix.py": [
   "<モジュール直下>",
-  "check_one",
-  "hand_label",
   "command_argv",
+  "report_new_file_ok",
+  "check_one",
+  "new_file_check",
+  "hand_label",
   "main",
   "selftest"
  ]

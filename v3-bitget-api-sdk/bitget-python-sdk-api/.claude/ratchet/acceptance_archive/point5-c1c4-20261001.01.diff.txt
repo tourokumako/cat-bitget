@@ -1,0 +1,33 @@
+82c82
+< | 当てる道具に、rm を行ってよい置き場の定数が在るか | `grep -c 'RESULTS_DIR' .claude/tools/apply_audit_fix.py` | 実装の前は無い。実装の後は在る | 0（終了コード 1） |
+---
+> | 当てる道具に、rm を行ってよい置き場の定数が在るか | `grep -c 'RESULTS_DIR' .claude/tools/apply_audit_fix.py` | 実装の前は無い。実装の後は在る | 6（終了コード 0） |
+667c667
+< <!-- ACC_CODEREF_START hash=83d5d8d6e2e39db0 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=15f3b8ec7ae8c5d4 gen_acceptance.py が自動生成＝手で書き換えない -->
+675c675
+< | `report_new_file_ok` | （この関数は実物に無い） |
+---
+> | `report_new_file_ok` | 268 |
+677c677
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 25件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 26件の関数が在ります）。
+684c684
+< <!-- ACC_SPEC_START hash=beb44495079f1e90 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=a0d5a041f9402afe gen_acceptance.py が自動生成＝手で書き換えない -->
+752a753,756
+>   "report_new_file_ok": [
+>    "approved_ok",
+>    "repo_path"
+>   ],
+793a798
+>    "report_new_file_ok",
+802a808
+>    "new_file_check",
+804a811
+>    "report_new_file_ok",
+817a825
+>   "--run",
