@@ -609,6 +609,7 @@ def build_request(src_path: str, out_path: str) -> int:
     text += (f"\n{MARK} request src={rel_of(src_path)} src_sha256={sha256_file(src_path)} "
              f"body_sha256={sha256_text(text)} -->\n")
     errs += consistency_errors(src)                   # ★2026-10-01（工事 point5-q5label-20261001）＝節どうしの食い違いが在れば書かない
+    errs += request_content_errors(text)              # ★2026-10-02（144回目）＝中身（必読・経緯・問い2）が監査に要る形でなければ書かない
     errs += inputs_gate(out_path)
     for e in errs:
         print(f"❌ {e}")
@@ -745,15 +746,314 @@ def _sdk(p) -> str:
     return s if (not s or s.startswith(("SDK/", "v3-bitget-api-sdk/", ".claude/", "/"))) else "SDK/" + s
 
 
-def want_list(groups: list) -> str:
-    """問い2・Q7 に並べる要望（発言ごとの見出しと、1行ずつ番号つき）。groups＝[(逐語のファイルの名前, [(番号, 行), …]), …]。
-    ★外した行（drop）と、まこさんが貼った CC の文の引用は、gen_verbatim.requirement_lines が除いた後のもの。"""
-    out = []
-    for name, rows in groups:
-        out.append(f"  - 発言 `{name}`（まこさんの発言・外した行と CC の文の引用を除いた {len(rows)} 行）")
-        for vid, ln in rows:
-            out.append(f"    - `{vid}` {_one_line(ln)}")
-    return "\n".join(out)
+# ★2026-10-02（144回目・まこさん「以前の監査依頼書のほうが精度が高かった。自動生成にして精度がだいぶ下がった」「私の提案の通りに修正する」）
+#   ＝判断が要る4つ（この工事は何のためか・必読・工事ごとの問い・要望のまとめ）は、CC が工事のフォルダの1本のファイルに手で書き、
+#     まこさんの OK をもらう。経緯は1＝この工事は何のためか（手書き）・2＝この工事は何か＋目標からのつながり（道具）だけ
+#     （まこさん「１は必要な情報だと思うが他はよくわからない」「前回の経緯にあった１の内容はかなり重要な要件なんだが」）。
+#     道具はそれをそのまま写し、事実（パス・commit・承認の印・当てた記録）だけを実物から写す。
+#   直す前（2026-09-29〜10-02）は4つとも道具が自動で作り、経緯は道具の出どころの説明、必読は逐語のファイルの列、
+#   問いはどの工事でも同じ6問になった（cp58）。手書きの元データから作った cp49 は、必読16件に範囲となぜ要るかが在り、問いも工事ごとに10問あった。
+HAND_MD = "監査依頼の手書き（{label}）.md"
+HAND_FORM = """# 監査依頼の手書き（実装の監査）｜工事 <工事名>
+
+## この工事は何のためか
+| 何のためか | 出どころ |
+|---|---|
+| <この工事の目的（まこさんの決定・要望から。手段ではなく、なぜ作るのか）> | req_x_20260101:V03 |
+
+## 必読
+| ファイルと範囲 | なぜ要るか |
+|---|---|
+| `SDK/scripts/priority_rebuild/x.py`（:10-20・:35） | <何を照らすために読むか> |
+
+## 必読に入れないもの
+| ファイル | 理由 |
+|---|---|
+| y.json | <実装が名前を出すが、この監査では読まない理由> |
+
+## 工事ごとの問い
+### Q8 — <名前>（優先度 A）
+理由：<この問いが外れると何が起きるか>
+<監査に見てほしいこと>
+
+## 要望のまとめ
+| 要望 | 出どころ |
+|---|---|
+| 目的：<1件目は、この工事の目的を要望の形で書く> | req_x_20260101:V03 |
+| <まこさんの要望を CC がまとめた文（まこさんが OK）> | req_x_20260101:V04 |
+"""
+# まこさんとのやり取りの逐語のファイルの名前（req_・ok_・okd_）。監査は逐語を読まない（設計書の監査の okd_ だけは問い W で照らす）
+VERBATIM_NAME_RE = re.compile(r"(?<![A-Za-z0-9_])(?:req|okd?)_[A-Za-z0-9]+(?:_\d{8})?")
+NEED_NAME = "必読に要るファイル（道具が設計書と実装から拾った）"
+READ_NAME_RE = re.compile(r"[A-Za-z0-9_./\-]+\.(?:json|jsonl|csv|parquet|py)\b")
+IMPORT_RE = re.compile(r"^\s*(?:from|import)\s+([A-Za-z_]\w*)", re.M)
+RANGE_RE = re.compile(r":(\d+)(?:[-〜](\d+))?")
+FIND_DIRS = (os.path.join(SDK, "scripts"), os.path.join(SDK, ".claude", "ratchet"), os.path.join(SDK, ".claude", "memory"),
+             os.path.join(SDK, ".claude", "rules"), os.path.join(ROOT, ".claude", "state"))
+
+
+def _req_style(full: str) -> str:
+    """実物のパスを、依頼書の書き方（SDK/… か根からの相対）にする。"""
+    rel = os.path.relpath(os.path.realpath(full), os.path.realpath(ROOT))
+    sdk = os.path.relpath(SDK, ROOT)
+    return "SDK/" + rel[len(sdk) + 1:] if rel.startswith(sdk + os.sep) else rel
+
+
+def _find_file(name: str, base: str) -> str:
+    """実装の中の名前（パスつきか名前だけ）から、実在するファイルを探す。無ければ空。控え（archive・監査の作業場）は見ない。"""
+    import glob
+    for d in (base, ROOT, SDK, os.path.join(SDK, "scripts", "priority_rebuild")):
+        p = os.path.join(d, name)
+        if os.path.isfile(p):
+            return _req_style(p)
+    b = os.path.basename(name)
+    for d in FIND_DIRS:
+        hit = [h for h in glob.glob(os.path.join(d, "**", b), recursive=True)
+               if "/archive" not in h and "/audits/cp" not in h and "_selftest" not in h]
+        if hit:
+            return _req_style(sorted(hit)[0])
+    return ""
+
+
+def need_reads(d: dict, ev: dict, kind: str, todos: list = ()) -> list:
+    """必読に要るファイル＝目標と目的を書いた文書・直す相手（TARGET）・新しく作るファイル（NEW_FILE）と、
+    実装の監査では実装が名前を出す json・py。
+    ★2026-10-02（144回目・まこさん「実装データや必要なjsonデータなども確認すべきでは？」）
+      ＝新しく作った .py は全文、直した .py は実装の前後の差分の足した行から、ファイルの名前と読み込むモジュールを拾う。
+    ★2026-10-02（144回目・まこさん「全月 net ≥ $1,900（単月判定・通算でない）を達成するために、要件定義を踏まえたうえで、
+      マイルストーン＞フロー＞やることリストへと落とし込んでおり…なぜ、大前提となる文書を読まずに判定を依頼するという判断になるのか不明」）
+      ＝売買のロジックに触る工事は、要件定義書・engine_tuner の要件・マイルストーンが要る。milestones2 は、やることの番号が M2 の工事だけ
+      （まこさん「milestone２の内容の監査なら必要だが、それ以外の監査では不要」）。
+    戻り＝[(パス, どこから拾ったか, 必読に入れないことを手書きで決めてよいか)]。"""
+    import subprocess
+    import gen_acceptance as ga
+    tg, nf = list(d.get("TARGET") or []), list(d.get("NEW_FILE") or [])
+    out, seen = [], set()
+    docs = []
+    if ga.touches_trading(d):
+        docs += [("SDK/.claude/rules/cat_requirements.md", "要件定義書（売買のロジックに触る工事）"),
+                 ("SDK/.claude/ratchet/engine_tuner_requirements.md", "engine_tuner の要件（売買のロジックに触る工事）"),
+                 ("SDK/.claude/ratchet/engine_tuner_milestones.md", "engine_tuner のマイルストーン（売買のロジックに触る工事）")]
+    if any(str(t).startswith("M2-") for t in todos):
+        docs.append(("SDK/.claude/ratchet/engine_tuner_milestones2.md", f"M2 のマイルストーン（やることの番号 {'・'.join(todos)}）"))
+    for p, why in docs:
+        out.append((p, why, False))
+        seen.add(os.path.basename(p))
+    for p, why in [(p, "直す相手（TARGET）") for p in tg] + [(p, "新しく作るファイル（NEW_FILE）") for p in nf]:
+        r = repo_ref(p)
+        if r and os.path.basename(r) not in seen:
+            out.append((r, why, False))
+            seen.add(os.path.basename(r))
+    if kind != "impl":
+        return out
+    for p in dict.fromkeys(tg + nf):
+        r = repo_ref(p)
+        if not r or not r.endswith(".py"):
+            continue
+        full = repo_path(r)
+        if p in nf:
+            text = open(full, encoding="utf-8").read()
+        else:
+            rng_ = [ev["pre"], ev["post"]] if ev.get("post") else ["HEAD"]
+            diff = subprocess.run(["git", "diff", *rng_, "--", full], cwd=ROOT, capture_output=True, text=True).stdout
+            text = "\n".join(ln[1:] for ln in diff.splitlines() if ln.startswith("+") and not ln.startswith("+++"))
+        names = set(READ_NAME_RE.findall(text)) | {m + ".py" for m in IMPORT_RE.findall(text)}
+        for n in sorted(names):
+            b = os.path.basename(n)
+            if b in seen:
+                continue
+            loc = _find_file(n, os.path.dirname(full))
+            if loc:
+                out.append((loc, f"`{r}` が名前を出す（{'全文' if p in nf else '実装の前後の差分'}）", True))
+                seen.add(b)
+    return out
+
+
+def _position_chain(todos: list) -> str:
+    """この工事の位置＝目標から やることの番号までのつながり。マイルストーン2本の見出しと、やることリストの一文を道具が写す。
+    ★2026-10-02（144回目・まこさん「経緯の定義がよくわからないんだが。１は必要な情報だと思うが他はよくわからない」）
+      ＝経緯は「この工事は何か」の1つにし、目標からのつながりを添える。"""
+    rat = os.path.join(SDK, ".claude", "ratchet")
+
+    def head(name: str, pat: str) -> str:
+        try:
+            for ln in open(os.path.join(rat, name), encoding="utf-8"):
+                if re.match(pat, ln):
+                    # 見出しの後ろの日付つきの注記（「（2026-09-06 まこさん OK…）｜21件」ほか）は写さない＝何の段かだけを写す
+                    return _one_line(ln.lstrip("#").strip().split("（20", 1)[0].rstrip("｜ "))
+        except OSError:
+            pass
+        return ""
+    try:
+        stack = [json.load(open(os.path.join(rat, "m2_todo.json"), encoding="utf-8"))]
+    except Exception:                                        # noqa: BLE001
+        stack = []
+    ones = {}
+    while stack:
+        x = stack.pop()
+        if isinstance(x, dict):
+            if x.get("番号") and x.get("一文"):
+                ones.setdefault(str(x["番号"]), str(x["一文"]))
+            stack += list(x.values())
+        elif isinstance(x, list):
+            stack += x
+    parts = ["全月 net ≥ $1,900（単月判定・通算でない・要件定義書 §1.2）"]
+    for t in todos:
+        m = re.match(r"(M\d)-([A-Z]+)", str(t))
+        if not m:
+            continue
+        for x in (head("engine_tuner_milestones.md", rf"^## {m.group(1)}｜"),
+                  head("engine_tuner_milestones2.md", rf"^## {m.group(1)}-{m.group(2)}｜") if m.group(1) == "M2" else "",
+                  f"{t}｜{_one_line(ones[t])}" if ones.get(t) else ""):
+            if x and x not in parts:
+                parts.append(x)
+    return " → ".join(parts + ["この工事"])
+
+
+def read_hand(wdir, label: str, kind: str, names: list, gv) -> dict:
+    """工事のフォルダの「監査依頼の手書き（…）.md」を読む（CC が書き、まこさんが OK した4つ＝この工事は何のためか・必読・工事ごとの問い・要望のまとめ）。
+    ★「この工事は何のためか」は経緯の1に、要望のまとめの1件目（「目的：」で始める）は問い2 の1件目に写す
+      （2026-10-02・まこさん「前回の経緯にあった１の内容はかなり重要な要件なんだが」「本質を理解できてないのか？」）。
+    ★経緯のほかの行は手で書かない。「## 経緯」が在れば止める（書いても写されないため）。
+    止める所（fail-closed）＝ファイルが無い／経緯の節が在る／何のためかが無い・出どころが無い／必読の表が読めない・パスが無い・範囲がファイルの外／
+      実装の監査で工事ごとの問いが無い・形が違う／要望のまとめ（req_ の逐語が在るとき）が無い・1件目が「目的：」でない・出どころが逐語の行に無い。"""
+    import gen_acceptance as ga
+    p = wdir / HAND_MD.format(label=label)
+    if not p.is_file():
+        raise SystemExit(f"工事のフォルダに {p.name} が無い（fail-closed）。判断が要る4つは CC が書き、まこさんの OK をもらう。形＝\n{HAND_FORM}")
+    sec = ga._sections(p.read_text(encoding="utf-8").splitlines(), re.compile(r"^##\s+(?!#)(.+)$"))
+    bad: list = []
+    if "経緯" in sec:
+        bad.append("「## 経緯」は手で書かない（目的は「## この工事は何のためか」に書く。ほかは道具が作る・まこさん 2026-10-02）")
+    reqs = [n for n in names if n.split("/")[-1].startswith("req_")]
+    valid = {vid for n in reqs for vid, _l in gv.lines(n)}
+
+    def check_src(src: str, where: str) -> None:
+        """出どころ＝要望の逐語の行の番号（req_ の逐語が無い工事では、空でなければよい）。"""
+        if not src.strip():
+            bad.append(f"{where}に出どころが無い")
+            return
+        if not reqs:
+            return
+        for tok in re.split(r"[・,、\s]+", src.strip()):
+            m = re.fullmatch(r"(\S+):V(\d+)(?:〜V?(\d+))?", tok)
+            if not m:
+                bad.append(f"{where}の出どころが番号の形でない（例 req_x_20260101:V03）: {tok}")
+                continue
+            for k in range(int(m.group(2)), int(m.group(3) or m.group(2)) + 1):
+                if f"{m.group(1)}:V{k:02d}" not in valid:
+                    bad.append(f"{where}の出どころ {m.group(1)}:V{k:02d} が、要望の逐語（req_ のファイル）の行に無い")
+    purposes = []
+    for r in ga._md_table(sec.get("この工事は何のためか") or [], ("何のためか", "出どころ"), "この工事は何のためか", bad):
+        check_src(r["出どころ"], "この工事は何のためか")
+        purposes.append(r["何のためか"])
+    if not purposes:
+        bad.append("「## この工事は何のためか」に行が無い（目的を先頭に書く）")
+    reads = []
+    for r in ga._md_table(sec.get("必読") or [], ("ファイルと範囲", "なぜ要るか"), "必読", bad):
+        m = re.match(r"`([^`]+)`(.*)$", r["ファイルと範囲"])
+        if not m or not r["なぜ要るか"]:
+            bad.append(f"必読の行に「`パス`」か、なぜ要るかが無い: {r['ファイルと範囲'][:50]}")
+            continue
+        full = repo_path(m.group(1))
+        if not os.path.isfile(full):
+            bad.append(f"必読のファイルが無い: {m.group(1)}")
+            continue
+        n = sum(1 for _ in open(full, encoding="utf-8", errors="replace"))
+        for a, b in RANGE_RE.findall(m.group(2)):
+            if not (1 <= int(a) <= int(b or a) <= n):
+                bad.append(f"必読の範囲がファイルの外: {m.group(1)}:{a}{'-' + b if b else ''}（{n} 行）")
+        reads.append((m.group(1), m.group(2).strip(), r["なぜ要るか"]))
+    skips = ga._md_table(sec["必読に入れないもの"], ("ファイル", "理由"), "必読に入れないもの", bad) if "必読に入れないもの" in sec else []
+    qs, cur = [], None
+    for ln in sec.get("工事ごとの問い") or []:
+        m = re.match(r"^###\s+(Q\d+)\s+—\s+(.+?)（優先度 ([A-D])）\s*$", ln)
+        if m:
+            cur = {"番号": m.group(1), "名前": m.group(2), "優先度": m.group(3), "理由": "", "body": []}
+            qs.append(cur)
+        elif cur is not None and ln.startswith("理由："):
+            cur["理由"] = ln[len("理由："):].strip()
+        elif cur is not None:
+            cur["body"].append(ln)
+    for i, q in enumerate(qs):
+        q["body"] = "\n".join(q["body"]).strip()
+        if q["番号"] != f"Q{8 + i}":
+            bad.append(f"工事ごとの問いの番号は Q8 から順に（いま {q['番号']}・{i + 1} 件目）")
+        if not q["理由"] or not q["body"]:
+            bad.append(f"工事ごとの問い {q['番号']} に「理由：」の行か、見てほしいことが無い")
+    if kind == "impl" and not qs:
+        bad.append("「## 工事ごとの問い」に「### Q8 — 名前（優先度 A）」の問いが1つも無い")
+    wants = []
+    if kind == "impl" and reqs:
+        for r in ga._md_table(sec.get("要望のまとめ") or [], ("要望", "出どころ"), "要望のまとめ", bad):
+            check_src(r["出どころ"], "要望のまとめ")
+            if not r["要望"].startswith("対象外："):
+                wants.append(r["要望"])
+        if not wants:
+            bad.append("要望のまとめに、この工事の要望が1件も無い（全部「対象外：」か、表が無い）")
+        elif not wants[0].startswith("目的："):
+            bad.append("要望のまとめの1件目が「目的：」で始まらない（この工事の目的を一番上の要望にする）")
+    if bad:
+        raise SystemExit(f"{p.name} を読めない（fail-closed）:\n  " + "\n  ".join(bad))
+    return {"目的": purposes, "必読": reads, "入れない": skips, "問い": qs, "要望": wants, "path": p}
+
+
+def want_list(wants: list) -> str:
+    """問い2・Q7 に並べる要望（1件ずつ番号つき）。"""
+    return "\n".join(f"  {i}. {_one_line(w)}" for i, w in enumerate(wants, 1))
+
+
+def request_content_errors(text: str) -> list:
+    """できた依頼書の中身のチェック。build_request（書く前）と gen_review.check（見直し表の照らし・Stop hook）の両方が呼ぶ。
+    ★2026-10-02（144回目・まこさん「監査依頼書のなにをチェックしてるわけ？」「監査依頼書が出来たあとにチェックする強制もなおせ」）
+      ＝直す前のチェックは形だけ（節が在るか・番号・ファイルが実在するか・見直し表の欄が埋まっているか）で、
+        必読に要る文書が無くても、まこさんの発言の逐語が並んでいても通った（cp58）。
+      見るもの＝必読に設計書・直す相手・実装が名前を出す json と py が在るか（「必読に要るファイル」の事実データと照らす）／
+        必読の範囲がファイルの中か／逐語のファイルと要件のまとめが無いか／経緯に「この工事は何か」が在るか／問い2 と Q7。"""
+    errs = []
+
+    def sec(head: str) -> str:
+        return text.split(f"\n## {head}", 1)[1].split("\n## ", 1)[0] if f"\n## {head}" in text else ""
+    reads = sec("着手前必読")
+    if "`.claude/state/acceptance.md`" not in reads:
+        errs.append("着手前必読に、監査の相手の設計書（.claude/state/acceptance.md）が無い")
+    read_names = {os.path.basename(t) for t in re.findall(r"`([^`]+)`", reads)}
+    need = text.split(f"\n### {NEED_NAME}", 1)[1].split("\n## ", 1)[0].split("\n### ", 1)[0] if f"\n### {NEED_NAME}" in text else ""
+    if not need:
+        errs.append(f"事実データに「{NEED_NAME}」が無い＝必読に要るファイルを照らせない")
+    for row in re.findall(r"^\| `([^`]+)` \| [^|]* \| ([^|]+) \|$", need, re.M):
+        if row[1].strip().startswith("入れる") and os.path.basename(row[0]) not in read_names:
+            errs.append(f"着手前必読に、要るファイル {row[0]} が無い（{NEED_NAME}）")
+    for tok, rest in re.findall(r"`([^`\s]+)`((?:（[^）]*）)?)", reads):
+        full = repo_path(tok)
+        if rest and os.path.isfile(full):
+            n = sum(1 for _ in open(full, encoding="utf-8", errors="replace"))
+            for a, b in RANGE_RE.findall(rest):
+                if not (1 <= int(a) <= int(b or a) <= n):
+                    errs.append(f"着手前必読の範囲がファイルの外: {tok}:{a}{'-' + b if b else ''}（{n} 行）")
+    if "要件のまとめ.md" in reads:
+        errs.append("着手前必読に 要件のまとめ.md（逐語のまとめ）が在る＝監査は逐語を読まない")
+    impl = "（実装の監査）" in text.split("\n", 1)[0]
+    for name, part in (("着手前必読", reads), ("監査依頼の経緯", sec("監査依頼の経緯"))):
+        for m in VERBATIM_NAME_RE.findall(part):
+            if impl or not m.startswith("okd_"):
+                errs.append(f"{name}に、まこさんとのやり取りの逐語のファイル（{m}）が在る＝監査は逐語を読まない（要望は問い2 にまとめて書く）")
+    if not re.search(r"^1\. \*\*この工事は何のためか\*\*＝\S", sec("監査依頼の経緯"), re.M):
+        errs.append("監査依頼の経緯の1が「この工事は何のためか」でない（目的が先頭に無い）")
+    if "**この工事は何か**＝" not in sec("監査依頼の経緯"):
+        errs.append("監査依頼の経緯に「この工事は何か」が無い")
+    concl = text.split("### 結論を決める問い", 1)[-1].split("### 結論の決め方", 1)[0] if "### 結論を決める問い" in text else ""
+    has2 = "- **問い2**＝" in concl
+    if has2 != bool(re.search(r"^### Q7 — ", text, re.M)):
+        errs.append("問い2 と Q7 の片方だけが在る")
+    if has2:
+        if not re.search(r"^  \d+\. \S", concl, re.M):
+            errs.append("問い2 の下に要望が1件も無い")
+        if not re.search(r"^  1\. 目的：\S", concl, re.M):
+            errs.append("問い2 の要望の1件目が「目的：」でない（この工事の目的が先頭に無い）")
+        if re.search(r"発言 `|`[^`]+:V\d+`", concl):
+            errs.append("問い2 に逐語の行（発言の名前・V番号）がそのまま在る＝まこさんが OK した要望のまとめを書く")
+    return errs
 
 
 def _speaker(gv, name: str) -> str:
@@ -827,7 +1127,8 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
     d = ga.src_from_work(work)
     wdir = ga.gv.work_dir(work)
     src_file = str(wdir / ga.TODO_MD)
-    src_label = f"工事のフォルダ `{os.path.relpath(str(wdir), ROOT)}`（やることの表.md と、まこさんが OK した案の逐語）"
+    # ★2026-10-02（144回目）＝監査は逐語を読まないので、修正の指示を書く先は やることの表.md だけを指す
+    src_label = f"`{os.path.relpath(src_file, ROOT)}`"
     md = open(design_path or DESIGN, encoding="utf-8").read()
     engine = ga.touches_trading(d)
     label, suffix = KINDS[kind]
@@ -863,6 +1164,16 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
     add("")
     speakers = {n: _speaker(ga.gv, n) for n in names}
     ev = _impl_evidence(iter_) if kind == "impl" else {}
+    # ★2026-10-02（144回目）＝判断が要る4つは、CC が手で書き まこさんが OK したファイルから読む（無ければ止まる）
+    hand = read_hand(wdir, label, kind, names, ga.gv)
+    need = need_reads(d, ev, kind, todos)
+    hand_names = {os.path.basename(p) for p, _r, _w in hand["必読"]}
+    skip_why = {os.path.basename(r["ファイル"].strip("`")): r["理由"] for r in hand["入れない"]}
+    lack = [f"{p}（{w}）" for p, w, can in need
+            if os.path.basename(p) not in hand_names and not (can and skip_why.get(os.path.basename(p)))]
+    if lack:
+        raise SystemExit(f"{hand['path'].name} の必読に、要るファイルが無い（fail-closed）。必読に足すか、"
+                         "実装が名前を出すだけのファイルなら「必読に入れないもの」に理由を書く:\n  " + "\n  ".join(lack))
     # ★2026-10-01（142回目・まこさん「今回の争点に対して不要な論点は削除でOK」）＝実装の監査は外部検索を出さない（依頼書に「該当なし」）。
     #   設計書の【外部検索】は設計の理由を調べるもので、設計書の監査で使う。
     searches = [] if kind == "impl" else (d.get("外部検索") or [])
@@ -878,14 +1189,18 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
     #   ＝工事のフォルダから作った設計書の監査は、割り当ての表の確かめだけにする（問い S・G・C・I・N・D は出さない）
     # ★2026-09-30（設計書 point1-one-way-20260930-2）＝工事のフォルダの1本だけ＝設計書の監査はいつも割り当ての表の確かめ
     only_table = kind == "design"
+    # ★2026-10-02（144回目）＝判断が要る4つは CC が書いて まこさんが OK した文。直す前の「CC は依頼書の文を書いていません」は事実と違うので書かない
+    made_by = (f"**★この依頼書は `gen_audit_docs.py request-design --work` が、設計書と工事のフォルダから作りました。**"
+               f"判断が要る4つ（この工事は何のためか・必読・工事ごとの問い・要望のまとめ）は、CC が工事のフォルダの {hand['path'].name} に書き、"
+               "まこさんが OK した文を写しました。ほかは道具が実物から作りました。")
     if only_table:
-        add("**★この依頼書は `gen_audit_docs.py request-design --work` が、設計書と工事のフォルダから作りました（CC は依頼書の文を書いていません）。**"
-            "問いは、やることの表の「手書きと自動の割り当て」の表の1行ごと（W）に1つずつ在ります。")
+        add(made_by + "問いは、やることの表の「手書きと自動の割り当て」の表の1行ごと（W）に1つずつ在ります。")
     else:
         # ★2026-09-30（3点目-a・まこさん OK）＝実装の監査の問いは、設計書と実装の照合の決まった6問（Q1〜Q6）だけ。
         #   直す前は設計のもとの1行ずつ（S）ほかを問いにし、cp53 で問いが686件（うち S が640件）になった。
-        add("**★この依頼書は `gen_audit_docs.py request-design --work` が、設計書と工事のフォルダから作りました（CC は依頼書の文を書いていません）。**"
-            "問いは、設計書のとおりに当てる道具が実装を作れているかを照らす、決まった6問（Q1〜Q6）と、まこさんの要望（逐語）を この工事の後の実装が満たしているかを問う Q7（結論を決める問い2 に当たる・要望の逐語が在る工事だけ）です。")
+        add(made_by + "問いは、設計書のとおりに当てる道具が実装を作れているかを照らす、決まった6問（Q1〜Q6）と、まこさんの要望を この工事の後の実装が"
+            "満たしているかを問う Q7（結論を決める問い2 に当たる・まこさんの要望が在る工事だけ）と、この工事で確かめてほしいことを問う"
+            f"工事ごとの問い（Q8〜Q{7 + len(hand['問い'])}）です。")
     add("")
     add("<!-- 項目: 結論を決める問い -->")
     ni, nc = len(impl), len(conds)
@@ -916,8 +1231,11 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
         add("- **NO-GO**＝問い1 が NO。割り当てと違う項目を、設計書の行と やることの表・逐語の行で示してください。")
         add("")
     else:
+        hq = hand["問い"]
         add(f"- **問い1**＝設計書の実装の指示（{ni} 件）から、当てる道具が設計書のとおりに実装を作れているか（Q1〜Q6 で照らす）。"
-            "実装が実装の指示と1文字でも違う・設計書に無い変更が在る・実装の指示が1件でも抜けていれば NO。")
+            f"あわせて、この工事で確かめてほしいこと（Q8〜Q{7 + len(hq)} で照らす）。"
+            "実装が実装の指示と1文字でも違う・設計書に無い変更が在る・実装の指示が1件でも抜けている・"
+            "工事ごとの問いで設計書と違う所が見つかれば NO。")
         add("")
         # ★2026-09-30（工事 point5-audit-q2-20260930・まこさん指示「確認せずに私に提出するな」「早く修正しろ」）
         #   ＝問い1 は設計書のとおりかだけを問い、まこさんの要望そのものを問うていなかった（cp54）。
@@ -928,20 +1246,15 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
         #   ＝直す前は、要望のファイルの空でない行を全部「／」で1行につないでいた。外した行（drop＝問い・念押し）も、
         #     まこさんが貼った CC の文の引用も混ざり、何を満たせばよいか読めなかった（cp57）。
         #   いま＝要件のまとめと同じ判定（gen_verbatim.requirement_lines）で要望の行だけを選び、発言ごとに1行ずつ番号つきで並べる。
-        want_rows = []
-        for n in names:
-            if n.split("/")[-1].startswith("req_"):
-                rows = ga.gv.requirement_lines(n)
-                if rows:
-                    want_rows.append((n.split("/")[-1], rows))
-        want = want_list(want_rows)
+        # ★2026-10-02（144回目・cp58）＝逐語の行を並べるのをやめ、手書きのファイルの「要望のまとめ」（CC がまとめ、まこさんが OK した文）を並べる
+        wants = hand["要望"]
+        want = want_list(wants)
         if want:
-            nw = sum(len(r) for _n, r in want_rows)
             # ★2026-10-01（142回目・まこさん「ここでは設計書通りに実装できているかが、争点であり、自動生成できてるかどうかはどうでもよいのでは？」
             #   「依頼内容に対し、全く無意味な問いは不要だよね」「即刻修正しろ」）＝直す前は「手書きせざるを得ない所以外は100%満たすか・
             #   道具に入れられる所が残っていれば NO」と問うていた。これは 2026-09-30 の自動生成の道具を直す工事（point5-audit-q2）の物差しで、
             #   決まった文にしたため、どの工事の依頼書にも「自動生成できているか」が出た。いま＝要望を実装が満たしているかだけを問う。
-            add(f"- **問い2**＝下に並べた まこさんの要望（逐語・{len(want_rows)} 回の発言・{nw} 行）を、この工事の後の実装が満たしているか。"
+            add(f"- **問い2**＝この工事の後の実装が、下に並べた まこさんの要望（{len(wants)} 件）を満たしているか。"
                 "満たしていない要望を全部 挙げ、要望の番号と、足りない実装の行を示す。1つでも満たしていなければ NO（Q7 で照らす）。")
             add(want)
             add("")
@@ -949,7 +1262,7 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
         both = "問い1 と 問い2" if want else "問い1"
         add(f"- **GO**＝{both} が YES で、Critical が0件。")
         add(f"- **CONDITIONAL-GO**＝{both} が YES で、Critical が在る（直せば先に進める）。")
-        add(f"- **NO-GO**＝{both} のどれかが NO。違う所を、設計書の実装の指示の番号・要望の逐語と実物の行で示してください。")
+        add(f"- **NO-GO**＝{both} のどれかが NO。違う所を、設計書の実装の指示の番号・要望の番号と実物の行で示してください。")
         add("")
     add("<!-- 項目: この監査の前提 -->")
     add("1. **乱数は禁止です**（恒久67番）。乱数を残す・足す形なら Critical にしてください。")
@@ -960,49 +1273,45 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
         add("5. **net は M2-L まで使いません**（まこさん決定 2026-09-01）。")
     add("")
     add("<!-- 項目: 経緯 -->")
-    add(f"1. 設計書 `{iter_}`（{_one_line(title)}）は、{src_label} から `gen_acceptance.py` が作りました。")
-    add(f"2. 設計のもと（やることの番号 {'・'.join(todos) or '無し'}・逐語のファイル {'・'.join(names) or '無し'}）は、"
-        "設計書の §0-1 に道具が写しました（CC は写していません）。逐語のファイルは `gen_verbatim.py` がやり取りの記録から抜き出したものです。")
-    add("3. この依頼書は `gen_audit_docs.py request-design --work` が、設計書と工事のフォルダから作りました（CC は依頼書の元データを書いていません）。")
-    if kind == "impl":
-        add("4. 承認の印（`acceptance.approved`）は、いまの設計書の sha256 と同じです（同じでなければ、この依頼書は作れません）。")
-        arcs = ev.get("archives") or []
-        add(f"5. 承認した版の設計書の控えは {len(arcs)} 本（{'・'.join('`' + a + '`' for a in arcs) or '無し'}）。"
-            f"当てる道具が当てた記録（`SDK/.claude/audits/applied_fixes.json` の名前 `design:{iter_}`）は {len(ev.get('applied') or [])} 件。")
-        add(f"6. 実装の前＝{ev.get('pre_desc')} ／ 実装の後＝{ev.get('post_desc')}"
-            "（承認の控えを入れた commit と、その親を git から読んだ。控えが commit されていなければ HEAD と作業中の変更）。")
+    # ★2026-10-02（144回目・まこさん「## 監査依頼の経緯 の文章も意味不明だよね。これで監査は理解できるの？」）
+    #   ＝直す前は、どの道具が何を作ったか・逐語のファイルの名前の列・「CC は書いていない」だけで、この工事が何のためかが1行も無かった（cp58）。
+    #   いま＝①この工事は何か（やることの表の §1 概要＝まこさんが OK した手書きの文）と、目標からのつながり（道具が文書の見出しから写す）。
+    # ★2026-10-02（144回目・まこさん「経緯の定義がよくわからないんだが。１は必要な情報だと思うが他はよくわからない」）
+    #   ＝何があったか（日付・決定）と、承認・実装・比べる commit の行を外した。承認と commit は Q1〜Q4 の本文に同じ事実が在る。
+    # ★2026-10-02（144回目・まこさん「前回の経緯にあった１の内容はかなり重要な要件なんだが」「本質を理解できてないのか？」）
+    #   ＝1は「この工事は何のためか」（CC が手で書き、出どころの逐語の行つきで まこさんが OK）。直す前は、この工事の目的
+    #     （例＝札が正しいかは M2-L の net まで分からない→外れたら直して並べ直す→だから直しやすい構造にする）が依頼書のどこにも無く、
+    #     監査は手段（定義・設定・版）が設計書どおりかだけを照らす形になっていた。
+    add(f"1. **この工事は何のためか**＝{_one_line(hand['目的'][0])}")
+    for x in hand["目的"][1:]:
+        add(f"   {_one_line(x)}")
+    add(f"2. **この工事は何か**＝{_one_line(d.get('何を作るか'))}（やることの番号 {'・'.join(todos) or '無し'}）")
+    add(f"   **この工事の位置**＝{_position_chain(todos)}")
     add("")
     add("<!-- 項目: 着手前必読 -->")
     add("**パスはリポジトリの根（`cat-bitget/`）からの相対です。**`SDK` ＝ `v3-bitget-api-sdk/bitget-python-sdk-api`。")
     add("")
-    reads = [(".claude/state/acceptance.md", "監査の相手（設計書・プログラムが作った）")]
-    reads += [(os.path.relpath(src_file, ROOT), "設計書の元（やることの表＝手書きの5項目と割り当ての表）"),
-              (os.path.relpath(str(ga.gv.work_dir(work) / "要件のまとめ.md"), ROOT), "要件のまとめ（まこさんの逐語と OK された案）")]
-    # ★2026-09-29＝置き場は工事ごとのフォルダ（逐語の道具が名前を解決する・文字で組まない）
-    reads += [(str(ga.gv.paths(n)[0].relative_to(ROOT)), f"{speakers[n]}（逐語・gen_verbatim.py が記録から抜き出した）") for n in names]
-    if todos:
-        reads.append(("SDK/.claude/ratchet/m2_todo.json", f"やることリスト（番号 {'・'.join(todos)} の行）"))
+    # ★2026-10-02（144回目・まこさん「本来監査に必要な文書を書けよ」「私の提案の通りに修正する」）
+    #   ＝必読は手書き（ファイル・範囲・なぜ要るか）。道具が足すのは、照合に要る事実の3つ（設計書・承認の控え・当てた記録）だけ。
+    #   直す前は道具が全部を作り、逐語のファイル7本と要件のまとめが並び、照らす相手のコードと決まりが無かった（cp58）。
+    reads = [(".claude/state/acceptance.md", "", "監査の相手（設計書・プログラムが作った）")]
     if kind == "impl":
         # ★2026-09-30（3点目-a）＝実装の監査の照合に要るもの（承認した版の控え・当てた記録）
         # ★どの版で当てたかは道具には分からない（2回目の承認の版は実装の後に作る）＝Q4 で照らしてもらう
-        reads += [(a, "承認した版の設計書の控え（どの版の 4-20 で当てたかは Q4 で照らす）") for a in (ev.get("archives") or [])]
-        reads.append(("SDK/.claude/audits/applied_fixes.json", f"当てた記録（名前 design:{iter_} の行）"))
-    # ★必読＝設計書・元データ・逐語のファイル・やることの行・直す相手（TARGET・NEW_FILE）の全部（OK をもらった提案の26行目）
-    for p in d.get("TARGET") or []:
-        r = repo_ref(p)
-        reads.append((r, "直す相手") if r else (None, f"直す相手（{p}＝いまは無い）"))
-    for p in d.get("NEW_FILE") or []:
-        r = repo_ref(p)
-        reads.append((r, "新しく作るファイル（もう在る）") if r else (None, f"新しく作るファイル（{p}＝まだ無い）"))
+        reads += [(a, "", "承認した版の設計書の控え（どの版の 4-20 で当てたかは Q4 で照らす）") for a in (ev.get("archives") or [])]
+        reads.append(("SDK/.claude/audits/applied_fixes.json", "", f"当てた記録（名前 design:{iter_} の行）"))
+    # 前提の3（修正の指示は設計書の元に書く）の書く先＝いつも要る
+    reads.append((os.path.relpath(src_file, ROOT), "", "設計書の元（やることの表）＝修正の指示を書く先"))
+    reads += hand["必読"]
     seen = set()
     i = 0
-    for p, why in reads:
-        if p and p in seen:
+    for p, rng_txt, why in reads:
+        if (p, rng_txt) in seen:                      # 同じファイルの別の範囲は別の行にする
             continue
-        seen.add(p)
+        seen.add((p, rng_txt))
         i += 1
         # ★2026-09-30（3点目-a）＝テンプレの形（番号つきの「パス — 1行要約」）。直す前は表だった（worklog 20260929 §67 の②）
-        add(f"{i}. {'`' + p + '`' if p else '—'} — {why}")
+        add(f"{i}. `{p}`{rng_txt} — {_one_line(why)}")
     add("")
     add("<!-- 項目: 大目的の注記 -->")
     # ★2026-09-30（3点目-a）＝テンプレの形（⚠️ 本監査スコープ = …）。守りの穴探しは対象外（まこさん 2026-09-30
@@ -1011,7 +1320,7 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
              else f"設計書 `{iter_}` の実装の指示のとおりに、当てる道具が実装を作れているか（設計書と実装の照合）")
     # ★2026-10-01（工事 point5-q7-20261001）＝問い2 が在るときは、スコープにも入れる（直す前はスコープの外になり、結論の問いと食い違った）
     if want:
-        scope += "。あわせて、まこさんの要望（逐語）を、この工事の後の実装が満たしているか（問い2・Q7）"
+        scope += "。あわせて、まこさんの要望を、この工事の後の実装が満たしているか（問い2・Q7）"
     add(f"⚠️ 本監査スコープ = {scope}。守りの穴探し（すり抜けの道を新しく探すこと）は対象外"
         "（探すたびに新しい穴が出て終わらないため・恒久の決まり65番。穴は作業が実際に止まったときに直す）。")
     add("")
@@ -1065,6 +1374,17 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
             for r in pj.get("rows") or []:
                 add(f"| `{_one_line(r.get('cmd'))}` | {_one_line(r.get('kind'))} | {r.get('rc')} |")
         add("")
+    # ★2026-10-02（144回目・まこさん「実装データや必要なjsonデータなども確認すべきでは？」）＝必読に要るファイルを道具が拾って載せる。
+    #   依頼書を作った後のチェック（request_content_errors）は、この表の「入れる」の行が必読に在るかを見る。
+    add(f"<!-- 項目: 事実データ 名前={_attr(NEED_NAME)} -->")
+    add("| ファイル | どこから拾ったか | 必読か |")
+    add("|---|---|---|")
+    for p, w, _can in need:
+        b = os.path.basename(p)
+        add(f"| `{p}` | {w} | {'入れる' if b in hand_names else '入れない（' + _one_line(skip_why.get(b, '')).replace('|', '／') + '）'} |")
+    if not need:
+        add("| — | （直す相手が無い） | — |")
+    add("")
     add("<!-- 項目: 監査対象 -->")
     if only_table:
         for r in assign:
@@ -1075,7 +1395,9 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
             add(f"- {q[0]}：{q[2]}")
         # ★2026-10-01（工事 point5-q7-20261001）＝問い2 が在るときは、照らす問い Q7 を監査対象にも並べる
         if want:
-            add("- Q7：まこさんの要望（逐語）を、この工事の後の実装が満たしているか（問い2）")
+            add("- Q7：まこさんの要望を、この工事の後の実装が満たしているか（問い2）")
+        for q in hand["問い"]:
+            add(f"- {q['番号']}：{_one_line(q['名前'])}")
     add("")
     add("<!-- 項目: 監査対象外 -->")
     if only_table:
@@ -1118,12 +1440,17 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
             add("")
         # ★2026-10-01（工事 point5-q7-20261001）＝問い2 を照らす問い Q7（直す前は問い2 に当たる問いが無く、所見の見出しが決まらなかった）
         if want:
-            add("<!-- 項目: 問い 番号=Q7 優先度=A 理由=満たしていない要望が在れば、まこさんの要望が届いていない（この答えが問い2 の答えになる） 名前=まこさんの要望（逐語）を、この工事の後の実装が満たしているか（問い2） -->")
-            add("下に並べた まこさんの要望（逐語）を、この工事の後の実装が満たしているか。"
+            add("<!-- 項目: 問い 番号=Q7 優先度=A 理由=満たしていない要望が在れば、まこさんの要望が届いていない（この答えが問い2 の答えになる） 名前=まこさんの要望を、この工事の後の実装が満たしているか（問い2） -->")
+            add("下に並べた まこさんの要望を、この工事の後の実装が満たしているか。"
                 "満たしていない要望を全部 挙げ、要望の番号と、足りない実装の行を示す。"
                 "この問いの答えが、結論を決める問い2 の答えになる。")
             add("")
             add(want)
+            add("")
+        # ★2026-10-02（144回目）＝工事ごとの問い（手書き・まこさんが OK）。cp49 の A0〜C1 の形。問い1 が Q8〜 で照らす
+        for q in hand["問い"]:
+            add(f"<!-- 項目: 問い 番号={q['番号']} 優先度={q['優先度']} 理由={_attr(q['理由'])} 名前={_attr(q['名前'])} -->")
+            add(q["body"])
             add("")
     # ★何を調べるかは手で決める（worklog §42）＝元データの「外部検索」から作る（直す前は題の40文字で切れた＝§40 の9）
     for s in searches:
@@ -1169,7 +1496,8 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
             add(f"**この工事の外の作業中の変更**＝{'・'.join('`' + p + '`' for p in outside)}（この工事の実装の指示が当てたものではない。"
                 "Q1・Q2 の差分は、この工事の対象のファイルだけで取る）")
     # ★2026-09-29＝工事のフォルダに在るのに設計書に名前が出ていない逐語のファイル（設計書を作った後に写した物）を、道具が数えて申告する
-    late = [n for n in names if n.split("/")[-1] not in md]
+    # ★2026-10-02（144回目）＝設計書の §0-1 の話なので、設計書の監査だけに出す（実装の監査には逐語のファイルの名前を出さない）
+    late = [n for n in names if n.split("/")[-1] not in md] if kind == "design" else []
     if late:
         add("")
         add("<!-- 項目: 自己申告 -->")
@@ -1567,6 +1895,19 @@ def selftest() -> int:
         design_path = str(vtmp / "acceptance_sample.md")
         ga.write(dest=Path(design_path))
         d = ga.src_from_work(work)
+        # ★2026-10-02（144回目）＝判断が要る4つは手書きのファイルから読む。見本の必読は、道具が拾う要るファイルを全部 入れる
+        _need = need_reads(d, _impl_evidence(d.get("iter", "")), "impl")
+        _rl = [v for v, _l in ga.gv.lines(f"{work}/req_s")]
+        hand_body = ("# 見本\n\n## この工事は何のためか\n| 何のためか | 出どころ |\n|---|---|\n| 見本の目的の文。 | "
+                     + "・".join(_rl) + " |\n"
+                     + "\n## 必読\n| ファイルと範囲 | なぜ要るか |\n|---|---|\n"
+                     + "".join(f"| `{p}` | 見本の理由 |\n" for p, _w, _c in _need)
+                     + "| `.claude/tools/gen_acceptance.py`（:1-5） | 見本の範囲 |\n"
+                     + "\n## 工事ごとの問い\n### Q8 — 見本の問い（優先度 A）\n理由：見本の理由\n見本の見てほしいこと\n"
+                     + "\n## 要望のまとめ\n| 要望 | 出どころ |\n|---|---|\n| 目的：見本の目的を満たす | " + "・".join(_rl) + " |\n")
+        hand_i = ga.gv.work_dir(work) / HAND_MD.format(label="実装の監査")
+        for lb in ("実装の監査", "設計書の監査"):
+            (ga.gv.work_dir(work) / HAND_MD.format(label=lb)).write_text(hand_body, encoding="utf-8")
         engine = ga.touches_trading(d)
         text, base = build_design_src("design", 999, work, design_path)
         sp = os.path.join(tmpd, "src.gen.md")
@@ -1611,14 +1952,64 @@ def selftest() -> int:
         rc_i = build_request(sp_i, op_i)
         req_i = open(op_i, encoding="utf-8").read() if os.path.isfile(op_i) else ""
         qs_i = re.findall(r"^### (\S+) — ", req_i, re.M)
-        case("実装の監査の依頼書が作れて、問いは Q1〜Q6（問い2 が在れば Q7 も）だけ（S・G・C・I・N・D・W は出さない）",
-             rc_i == 0 and qs_i == [q[0] for q in IMPL_QUESTIONS] + (["Q7"] if "- **問い2**＝" in req_i else []))
+        case("実装の監査の依頼書が作れて、問いは Q1〜Q6（問い2 が在れば Q7）と工事ごとの問い Q8〜 だけ（S・G・C・I・N・D・W は出さない）",
+             rc_i == 0 and qs_i == [q[0] for q in IMPL_QUESTIONS] + (["Q7"] if "- **問い2**＝" in req_i else []) + ["Q8"])
         case("実装の監査の依頼書に、実装の指示の一覧と当てた記録の事実データが在る",
              "### 設計書の実装の指示の一覧" in req_i and "### 当てた記録" in req_i)
         # ★2026-09-30（工事 point5-audit-q2-20260930）＝まこさんの要望（req_ の逐語）を問う問い2 が在り、結論の決め方も2つの問いを見る
         # ★2026-10-01（142回目・cp57）＝要望は「」で1行につながず、発言ごとに1行ずつ番号つきで並べる形に変えた
-        case("実装の監査の依頼書に、まこさんの要望の逐語を問う問い2 が在る",
-             "- **問い2**＝下に並べた まこさんの要望（逐語・" in req_i and "問い1 と 問い2 が YES" in req_i)
+        case("実装の監査の依頼書に、まこさんの要望を問う問い2 が在る",
+             "- **問い2**＝この工事の後の実装が、下に並べた まこさんの要望（" in req_i and "問い1 と 問い2 が YES" in req_i)
+        # ★2026-10-02（144回目・cp58 の直し）＝必読・経緯・問い2 の中身と、作った後の中身のチェック
+        rd_i = req_i.split("## 着手前必読", 1)[-1].split("\n## ", 1)[0]
+        kei_i = req_i.split("## 監査依頼の経緯", 1)[-1].split("\n## ", 1)[0]
+        case("実装の監査の必読は手書きの行と照合の事実（設計書・控え・当てた記録・やることの表）で、逐語と要件のまとめが無い・中身のチェックが0件",
+             "`.claude/state/acceptance.md`" in rd_i and "applied_fixes.json" in rd_i and "（:1-5） — 見本の範囲" in rd_i
+             and not VERBATIM_NAME_RE.search(rd_i) and "要件のまとめ" not in rd_i and request_content_errors(req_i) == [])
+        # ★2026-10-02（144回目・まこさん「前回の経緯にあった１の内容はかなり重要な要件なんだが」「本質を理解できてないのか？」）
+        #   ＝経緯の1は「この工事は何のためか」（手書き・出どころつき）、2は「この工事は何か」と目標からのつながり
+        case("経緯の1は「この工事は何のためか」、2は「この工事は何か」と目標からのつながりで、逐語のファイルの名前を出さない",
+             "1. **この工事は何のためか**＝見本の目的の文。" in kei_i and "2. **この工事は何か**＝見本の概要。" in kei_i
+             and "**この工事の位置**＝全月 net ≥ $1,900" in kei_i and not re.search(r"^3\. ", kei_i, re.M)
+             and not VERBATIM_NAME_RE.search(kei_i))
+        _nd = [p for p, _w, _c in need_reads({"TARGET": ["scripts/priority_rebuild/regime_label.py"]}, {}, "design", ["M2-F-6d"])]
+        _pc = _position_chain(["M2-F-6d"])
+        case("売買のロジックに触る M2 の工事は、要件定義書・engine_tuner の要件・マイルストーン2本が必読に要り、位置は M2 → M2-F → M2-F-6d",
+             all(f"SDK/.claude/{x}" in _nd for x in ("rules/cat_requirements.md", "ratchet/engine_tuner_requirements.md",
+                                                       "ratchet/engine_tuner_milestones.md", "ratchet/engine_tuner_milestones2.md"))
+             and "→ M2｜" in _pc and "→ M2-F｜" in _pc and "→ M2-F-6d｜" in _pc)
+        case("問い2 は手書きの要望のまとめを番号つきで並べ（1件目は目的）、逐語の行（V番号）を出さない",
+             "  1. 目的：見本の目的を満たす" in req_i and ":V01" not in req_i)
+        case("工事ごとの問い Q8 が、問い1・監査対象・問いの3か所に在り、必読に要るファイルの事実データが在る",
+             "Q8〜Q8 で照らす" in req_i and "- Q8：見本の問い" in req_i and "### Q8 — 見本の問い" in req_i
+             and f"### {NEED_NAME}" in req_i)
+        # 作った後のチェック＝逐語のファイル・要るファイルの抜け・範囲の外を見つける
+        bad_req = re.sub(r"(## 着手前必読[^\n]*\n)", r"\1\n1. `x/req_s.txt` — 逐語\n", req_i, count=1).replace(
+            "`.claude/tools/gen_verbatim.py` — 見本の理由", "`x.py` — 見本の理由").replace("（:1-5）", "（:1-999999）")
+        _ce = request_content_errors(bad_req)
+        case("作った後のチェックが、必読の逐語のファイル・要るファイル（直す相手）の抜け・範囲の外を見つける",
+             any("req_s" in e for e in _ce) and any("gen_verbatim.py" in e and "要るファイル" in e for e in _ce)
+             and any("範囲がファイルの外" in e for e in _ce))
+        _keep = hand_i.read_text(encoding="utf-8")
+        stops = []
+        for body_w in (None, _keep.replace("目的：見本の目的を満たす | " + "・".join(_rl), "目的：見本の目的を満たす | req_s:V99"),
+                       _keep.replace("| `.claude/tools/gen_verbatim.py` | 見本の理由 |\n", ""),
+                       _keep.replace("### Q8 — 見本の問い（優先度 A）", "### Q9 — 見本の問い（優先度 A）"),
+                       _keep.replace("## この工事は何のためか", "## 何か"),
+                       _keep.replace("| 目的：見本の目的を満たす |", "| 見本の目的を満たす |")):
+            if body_w is None:
+                hand_i.unlink()
+            else:
+                hand_i.write_text(body_w, encoding="utf-8")
+            try:
+                build_design_src("impl", 998, work, design_path)
+                stops.append(False)
+            except SystemExit as e:
+                stops.append("監査依頼の手書き" in str(e))
+        hand_i.write_text(_keep, encoding="utf-8")
+        case("手書きのファイルが無い・要望の出どころが逐語の行に無い・直す相手が必読に無い・問いの番号が Q8 からでない・"
+             "何のためかが無い・要望の1件目が目的でないなら止まる",
+             stops == [True, True, True, True, True, True])
         # ★2026-09-30（工事 point5-q2-place-20260930）＝問い2 は結論を決める問いの節に在り（骨組みが拾う）、注記も2つの問いに合う
         info_i, _e_i = parse_request(op_i)
         case("実装の監査の問い2 が結論を決める問いの節に在り、結果の骨組みの答えの欄になる",

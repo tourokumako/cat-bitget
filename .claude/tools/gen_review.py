@@ -182,6 +182,13 @@ def check(doc: str, text: str | None = None, review: str | None = None) -> tuple
                 ng.append(f"根拠の行番号がファイルの行数の外: {name}:{line}（{n} 行・{it}）")
                 continue
             refs.append((os.path.realpath(p), int(line)))
+    # ★2026-10-02（144回目・まこさん「監査依頼書のなにをチェックしてるわけ？」「監査依頼書が出来たあとにチェックする強制もなおせ」）
+    #   ＝直す前は、表の欄が埋まっているかと行番号しか見ず、「OK」と書けば中身が悪い依頼書も通った（cp58）。
+    #   道具が作った依頼書は、道具と同じ中身のチェック（必読・経緯・問い2）を通らなければ止める。
+    if os.path.basename(doc).endswith("_audit_request.md") and "<!-- gen_audit_docs:" in text:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import gen_audit_docs
+        ng += [f"依頼書の中身: {e}" for e in gen_audit_docs.request_content_errors(text)]
     return ng, refs
 
 
@@ -205,6 +212,8 @@ def selftest() -> int:
         ("T6 根拠が無い（該当なしでない）→ 止まる", not check(doc, body, fill(sk, ev="見た"))[0], False),
         ("T7 該当なし（理由）なら根拠が無くても通る", not check(doc, body, fill(sk, ev="—", vd="該当なし（争点に関係しない）"))[0], True),
         ("T8 判定が決めた言葉でない → 止まる", not check(doc, body, fill(sk, vd="たぶん大丈夫"))[0], False),
+        ("T10 道具が作った依頼書は、中身のチェック（必読に要件の文書が無い）で止まる",
+         not check(doc, body + "\n<!-- gen_audit_docs: request -->\n", fill(skeleton(doc, body + "\n<!-- gen_audit_docs: request -->\n")))[0], False),
         ("T9 作り直しで前の行の中身を残し、増えた項目だけ <書く> になる",
          ("| 通じる |" in skeleton(doc, body + "\n## 節C\n", fill(sk)) and PLACE in skeleton(doc, body + "\n## 節C\n", fill(sk))), True),
     ]

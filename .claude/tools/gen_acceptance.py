@@ -1923,7 +1923,7 @@ def _sample_work(base: Path) -> str:
             "### 3-2 決めてほしいこと", "", "無し", "",
             "### 4-19 通しの例", "", "見本の通しの例。", ""]
     (gv.work_dir(work) / TODO_MD).write_text("\n".join(todo), encoding="utf-8")
-    gv.summary(work)                                   # 要件のまとめ.md（依頼書の必読に入る）
+    gv.summary(work)                                   # 要件のまとめ.md（設計書の 0-1 が指す。依頼書の必読には 2026-10-02 から入れない）
     return work
 
 
