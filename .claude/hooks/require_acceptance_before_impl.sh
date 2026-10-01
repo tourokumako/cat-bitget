@@ -613,14 +613,6 @@ INTERP = re.compile(r'(?:^|[\s;|&(])(?:python[0-9.]*|perl|ruby|node|sh|bash|zsh)
 feeds = bool(INTERP.search(bare))
 # ★名前は『ヒアドキュメントを外した後』で探す。外す前の生も見るのは、
 #   ヒアドキュメントを何かに食わせているときだけ（隠した名前を拾うため・監査の実測③）
-hit_base = [n for n in BASE_NAMES if (n in bare or (feeds and n in raw_cmd))]
-if not hit_base:
-    _look = bare + ' ' + (raw_cmd if feeds else '')
-    for _t in re.findall(r'[^\s;|&()<>]+', _look):
-        if _t.strip(chr(39) + chr(34)).endswith(BASE_SUFFIX):
-            hit_base = [_t]
-            break
-hit_gate = bool(GATE_RE.search(bare)) or (feeds and bool(GATE_RE.search(raw_cmd)))
 # ★2026-09-04（監査 cp18 の J-2・Critical・まこさん指名・承認 3f22cb79abff786f）
 #   ＝パスらしい語を1つの絶対パスに直してから、守る場所の一覧と照らす。
 #   監査の実測＝cd してから相対名で書く3通り・スラッシュ2つ・空の引用符 の5通りとも rc=0。
@@ -628,30 +620,56 @@ hit_gate = bool(GATE_RE.search(bare)) or (feeds and bool(GATE_RE.search(raw_cmd)
 #     書き込み先が同じファイルでも、書き方を変えると当たりません。」
 _GATE_ABS = re.compile(r'^' + re.escape('$REPO')
                        + r'/\.claude/(hooks/[^/]+\.sh|tools/[^/]+\.py|breaks/[^/]+\.sh)$')
-_cwd = '$REPO'
-_abs_hit = False
-for _seg in re.split(r'[;|&\n]+', raw_cmd):
-    _tk = _seg.split()
-    if _tk and _tk[0] == 'cd' and len(_tk) > 1:
-        _d = _tk[1].strip(chr(39)).strip(chr(34))
-        _cwd = os.path.normpath(_d if os.path.isabs(_d) else os.path.join(_cwd, _d))
-        continue
+# ★2026-10-01（まこさん指示「じゃあその案で修正しろ」＝「書き込みの先が土台のファイルになるときだけ止める」）
+#   直す前＝コマンドのどこかに土台の名前が1つでも在れば、コマンドの断片を全部 読み取りだけの判定に掛け、
+#     1つでも読み取りだけでなければ止めた。＝土台に触れない断片（「| cut」・「> session_todo_posted」・
+#     「python3 -c」で JSON を読むだけ）が同じ行に在るだけで止まった（2026-10-01 に4回・140回目）。
+#   直した後＝断片ごとに「その断片が土台のファイルに触れているか」を見て、触れている断片だけを
+#     読み取りだけの判定に掛ける。触れていない断片は、書いていても止めない（書く先が土台ではない）。
+#   守りが減らないか＝①土台を書く断片（cp・mv・sed -i・tee・リダイレクト・python -c の中・ln・rsync・
+#     git checkout）は、その断片に土台の名前が在るので今までどおり止まる ②変数を経由する形
+#     （F に土台のパスを入れて、後の断片でドル F として使う形）は、土台を指した変数の名前を覚えて、後の断片で使えば触れた扱い
+#     ★この注釈にドル記号を書かない＝UTF-8 の locale の bash 3.2 は、ドル記号の直後の全角の括弧を壊して読む（2026-10-01 に実測）
+#     ③cd してからの相対名は、cd を追って絶対パスに直してから照らす（J-2 のまま）
+#     ④ヒアドキュメントの中身は、何かに食わせているとき（feeds）だけ、行ごとに断片として見る。
+def _seg_touches(_seg, _cwd):
+    for _n in BASE_NAMES:
+        if _n in _seg:
+            return True
+    if GATE_RE.search(_seg):
+        return True
     for _t in re.findall(r'[^\s;|&()<>]+', _seg):
         _t = _t.strip(chr(39)).strip(chr(34))
         _t = _t.replace(chr(39) + chr(39), '').replace(chr(34) + chr(34), '')
         if not _t or _t.startswith('-'):
             continue
+        if _t.endswith(BASE_SUFFIX):
+            return True
         if not (_t.endswith(('.sh', '.py', '.json', '.approved')) or '/' in _t):
             continue
         _a = os.path.normpath(_t if os.path.isabs(_t) else os.path.join(_cwd, _t))
         if _GATE_ABS.match(_a):
-            _abs_hit = True
-            break
-    if _abs_hit:
-        break
-if hit_base or hit_gate or _abs_hit:
-    # ★生のコマンド（ヒアドキュメントの中身も含む）を見る＝隠す道を残さない
-    if _first_bad_seg(raw_cmd):
+            return True
+    return False
+
+
+_cwd = '$REPO'
+_base_vars = set()
+for _seg in _split_segs_j(raw_cmd if feeds else bare):
+    _s = _seg.strip()
+    if not _s:
+        continue
+    _tk = _s.split()
+    if _tk[0] == 'cd' and len(_tk) > 1:
+        _d = _tk[1].strip(chr(39)).strip(chr(34))
+        _cwd = os.path.normpath(_d if os.path.isabs(_d) else os.path.join(_cwd, _d))
+        continue
+    _touch = _seg_touches(_s, _cwd) or any(
+        (chr(36) + _v) in _s or (chr(36) + chr(123) + _v) in _s for _v in _base_vars)
+    _mv = re.match(r'^([A-Za-z_][A-Za-z_0-9]*)=', _s)
+    if _mv and _touch:
+        _base_vars.add(_mv.group(1))
+    if _touch and not _readonly_seg(_s):
         print('?BASE?')
         sys.exit(0)
 # ★リダイレクトの先が .py のときだけ「書き込み」とみなす（> out.txt は関係ない）

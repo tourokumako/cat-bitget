@@ -688,6 +688,17 @@ def _turn_text(data):
         return parts[0]
     rows = _load_rows(path)
     start = next((i for i, r in enumerate(rows) if uid and r.get("uuid") == uid), -1)
+    # ★2026-10-01（まこさん指示「以下強制を早急に修正しろ」「強制の不具合で進行が妨げられている」）
+    #   直す前＝「まこさんの最後の発言」より後の返信を全部つないでいた。同じターンで hook に止められて
+    #   書き直しても、止められた前の返信の文（お願いの言い方）が範囲に残り、何を書いても止まり続けた
+    #   （監査のセッション 7b5dce33 の記録で実測＝「Stop hook feedback:」の行が11回 続いた）。
+    #   直した後＝差し戻し（type=user・文字列「◯◯ hook feedback:」）の行が後ろに在れば、その最後の行より
+    #   後だけを読む＝いま出そうとしている返信だけを見る。
+    for i, r in enumerate(rows):
+        if i > start and r.get("type") == "user":
+            c = (r.get("message") or {}).get("content")
+            if isinstance(c, str) and re.match(r"^\S+ hook feedback:", c.strip()):
+                start = i
     for r in rows[start + 1:]:
         if r.get("type") != "assistant":
             continue

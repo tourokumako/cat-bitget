@@ -58,6 +58,20 @@ def changed_files():
     return sorted(set(files))
 
 
+def open_drafts(acc: str) -> list:
+    """OK 待ちの案の下書き＝.claude/state/_draft_*.txt のうち、設計書（acc）より新しいものだけ。
+    ★2026-10-01（まこさん指示「以下強制を早急に修正しろ」「強制の不具合で進行が妨げられている」）
+      直す前＝_draft_*.txt が1本でも在れば「案の OK 待ち」と見た。OK をもらって設計書を作り、承認まで終わった
+      工事の下書き（8本・2026-09-30〜10-01）が残っていたので、新しいセッションは全部「試しの設計書が検査を
+      通っていない」で止まった（試しの記録はセッションごと＝新しいセッションには無い）。監査のセッション 7b5dce33 と
+      このセッション 10472f77 で実測。
+      直した後＝設計書より古い下書きは、もう設計書になった案なので数えない。"""
+    st = ROOT + "/.claude/state"
+    t_acc = os.path.getmtime(acc) if os.path.isfile(acc) else 0.0
+    return [f for f in os.listdir(st) if f.startswith("_draft_") and f.endswith(".txt")
+            and os.path.getmtime(os.path.join(st, f)) > t_acc]
+
+
 def check(session: str) -> dict:
     fails, done = [], []
     files = changed_files()
@@ -103,7 +117,7 @@ def check(session: str) -> dict:
             trial = ROOT + "/.claude/state/_trial_acceptance.md"
             rp0 = os.path.join(ROOT, ".claude/state/sessions", session or "_nosession", "trial_last.json")
             use = acc
-            if any(f.startswith("_draft_") and f.endswith(".txt") for f in os.listdir(ROOT + "/.claude/state")) \
+            if open_drafts(acc) \
                     and os.path.isfile(trial) and os.path.isfile(rp0) and json.load(open(rp0, encoding="utf-8")).get("ok") \
                     and os.path.getmtime(trial) >= os.path.getmtime(acc):
                 use = trial
@@ -116,7 +130,7 @@ def check(session: str) -> dict:
             a_bad, _b = rd.check_all(acc=use, transcript=None, split=True)
             done.append("承認の前の検査 A1〜A13")
             fails += [f"承認の前の検査: {x}" for x in a_bad]
-    drafts = [f for f in os.listdir(ROOT + "/.claude/state") if f.startswith("_draft_") and f.endswith(".txt")]
+    drafts = open_drafts(acc)                               # ★2026-10-01＝設計書より新しい下書きだけ（上の open_drafts）
     if drafts:
         rp = os.path.join(ROOT, ".claude/state/sessions", session or "_nosession", "trial_last.json")
         done.append("案の試しの記録")
