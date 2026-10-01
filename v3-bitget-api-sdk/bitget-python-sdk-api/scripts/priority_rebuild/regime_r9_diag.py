@@ -858,7 +858,7 @@ def selftest() -> int:
     if not hasattr(od, "_regime_labels") or not hasattr(od, "_regime_horizons"):
         ng.append("⑤: observe_diag の印の関数が見つからない")
     print(f"[selftest] ①100%/0% ／ ②反転で 1−x（x={x:.2f}）・真0本は nan ／ ③束なしは止まる ／ ④未来参照 0件 ／ ⑤印は observe_diag の関数"
-          f" ／ ⑥捉えた割合（既知答え・反転・正解0本は nan）／ ⑦乱数 0件 ／ ⑧record_run ／ ⑨落ちた候補の5つの場面 ／ ⑩並べる鍵は平均 ／ ⑪段の口の束（合成データ・関所で拒否の行）")
+          f" ／ ⑥捉えた割合（既知答え・反転・正解0本は nan）／ ⑦乱数 0件 ／ ⑧record_run ／ ⑨落ちた候補の5つの場面 ／ ⑩並べる鍵は平均 ／ ⑪段の口の束（合成データ・関所で拒否の行）／ ⑭段2a の出る線は緩い側 ／ ⑮段1 は上側と下側 ／ ⑯差し戻しの段2c の「なし」と足す側")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")

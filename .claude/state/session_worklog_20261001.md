@@ -273,3 +273,20 @@
 - commit した（まこさん「コミットはOK」）＝bf238d5。
 - ★私のミス＝依頼書を作った後にコミットしたので、依頼書の「実装の後＝まだ commit していない作業中の変更」が事実と違った（監査の CC が見つけた）。依頼書を作り直した＝実装の前 commit e31d6e8・後 commit bf238d5（依頼書の109・245・251行）。見直し表も作り直して --check 0件。監査が止まったのは別の理由＝Plan agent の起動が許可の確認で拒否された（監査のセッションの記録 41a29e1c の文「The user doesn't want to proceed with this tool use」）。
 
+## §35 143回目＝実装の監査 cp57 の結果を当てた（2026-10-01・まこさん決定「全部（修正1〜5）」）
+
+- 監査 cp57（結果＝SDK/.claude/audits/2026-10-01_m2f_label_builder_stages_20261001_impl_cp57_audit_report.md）＝NO-GO。Critical 1（既存の自己テスト T35③ が B-1 と逆の「上端が候補の本数を超えたら止まる」を求めたまま＝組む側の自己テストの全体が rc=1・361秒）・Minor 4・Process 1。
+- まこさん決定（計画モードの問い）＝修正の範囲は「全部（修正1〜5）」。監査が修正の文を出さなかった1件（search_limits.json:51 の説明の行・next_step §6 の239番）は、まこさんの答え「よくわからないので判断できない」を受けて、私が同じ回に直すと決め、計画の承認をいただいた（理由＝239番の「いつ直すか」が cp57 を当てるとき・文の「いまの実装では 1 として動く」は 2026-09-13 から事実と違う・印の取り直しが1回で済む）。
+- 計画の前の確かめ＝apply_audit_fix.py --report … --severity Critical,Major,Minor,Process --dry＝「当たる 4 件（修正 1・2・3・4）／当てない 0 件」。
+- 説明の行を Edit で直した（search_limits.json:51）＝上端 10 の出どころ（まこさん決定 2026-09-18「とりあえず１０本にする」「結果を見て変更すると思う」・m2_todo.json:1207）・B-1（上端が候補の本数を超える段は候補の本数を使う）・組む側と測る道具がどちらも stage_keep_of で読む、の3つに直した。jq で読めた（stage_keep_range は {"lo":1,"hi":10,"kind":"int"} のまま）。★監査の外の手の直し。
+- ★直した後に hook require_selftest_after_source_edit が「search_limits.json を読む道具12本の自己テスト」を求めた。私は直す前にこの hook を確かめていなかった（先に1行で言うべきだった）。
+- 当てる道具＝apply_audit_fix.py --report … --severity Critical,Major,Minor（Process は外した＝修正5 は私が Bash で直接 走らせるため。道具の中で走らせると記録に残らず、hook が求める12本の1本と同じ6分を2回 使う）＝「✅ 当てた 4 件／当てなかった 0 件」・当てた記録に4件（applied_fixes.json）。差分は監査が書いた文字と同じ（git diff で確かめた）。
+- ★当てた後、道具が G2 → H2 の印を取り直す前に掛ける照合（verify_design_contract.check）が FAIL＝「B …: 設計書に書いたのに実装していない」12件。原因（verify_design_contract.py:1052〜1058 を開いて確かめた）＝照合B は HEAD の版と いまの版を関数ごとに比べる。設計書の実装は bf238d5 で HEAD に入ったので、いまの差分は selftest だけ＝残りの関数が全部「実装していない」になる。差分がゼロ（commit 済み）なら、ファイルの中の全関数と照らす道に入る（同:1035〜1047）。2026-09-27 にも同じ型で止まり commit で解いた（worklog 20260927 §10）。印の取り直しは1つも走っていない。
+- 照合の hook（require_design_contract_before_run.sh:58）と H2・G2 の hook（enforce_h2_pass.py:44・enforce_g2_pass.py:55）は --selftest と --verify を通す＝止まるのは H2 の印を作る leak_causality_diag.py（旗なし）だけ。
+- 修正5＝cd SDK && python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest ＝終了コード 0・「✅ 全部 pass」・❌ の行 0件・22:32:18 に終了（約6分）。T35 の行＝「①上端 null → keep 572（候補の本数）／②上端 1 → 案0 の記録の keep は 1・案2 は『上位 1 本の外』で組めない／③範囲の外 2通りは止まり、上端が候補の本数を超えるときは候補の本数」。T48 も pass。
+- 測る道具＝regime_r9_diag.py --selftest＝rc=0・「✅ 全部 pass」・まとめの行に「⑭段2a の出る線は緩い側 ／ ⑮段1 は上側と下側 ／ ⑯差し戻しの段2c の「なし」と足す側」が出た（修正4・§6 の236番）。
+- G2 の印＝gen_signal_families.py --verify＝「表は入力の正本と一致」・見本11件 期待どおり・g2_pass.json（対象 38 件・指紋 4f618a5f…）・29.2秒。
+- hook が求めた残りの11本の自己テスト＝全部 pass（e38_logic_parts・engine_tuner_exec・engine_tuner_fire_diag・gen_composition_rules・gen_exit_families・gen_materials〔該当なし1件 S5〕・leak_causality_diag〔番人のみ・印は書かない＝leak_causality_diag.py:678〜679〕・tuner_backcalc・observe_diag・gen_acceptance 17/17・enforce_h2_pass 23/23）。
+- 残り＝H2 の印の取り直し（leak_causality_diag.py・約5分）と verify_design_contract.py --diff は、commit で差分をゼロにしてから（まこさんの OK 待ち）。そのあと m2_todo.json の M2-F-13b・M2-F-7 と next_step を書き替える。
+- 壊すプログラム b91 は走らせていない（約6分）。b91 が壊す行（stage_keep_of の return hi）は今回 直していない。壊さない側の出力から「❌ T35」が消えたことは、上の全体の自己テストで確かめた。
+

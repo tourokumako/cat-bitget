@@ -6988,7 +6988,7 @@ def selftest() -> int:
 
     # ══ T35 設定の欄 stage_keep_range が読まれている＝完成の条件 AUDIT-3（監査 cp36 の C-2・2026-09-13）═════════
     #   ①上端 null → keep＝候補の本数 ②上端 1 → 案0 は組めて記録の keep が 1・案2（G が2位）は「上位 1 本の外」で組めない
-    #   ③範囲の外（lo 0／lo > hi／hi > 本数）は止まる（fail-closed）
+    #   ③範囲の外（lo 0／lo > hi）は止まる（fail-closed）・上端が候補の本数を超えるときは候補の本数を使う（2026-10-01・B-1）
     #   ★壊すプログラム b91（stage_keep_of が設定を読まずに候補の本数を返す）で落ちることを測る。
     try:
         _lm35, _ = load_limits()
@@ -7014,15 +7014,17 @@ def selftest() -> int:
         except SampleError as _e35b:
             if "上位 1 本の外" not in str(_e35b):
                 ng.append(f"T35②: 案2 の止まり方が違う: {str(_e35b)[:80]}")
-        for _bad35, _why35 in (({"lo": 0, "hi": None}, "lo 0"), ({"lo": 3, "hi": 2}, "lo > hi"),
-                               ({"lo": 1, "hi": _n35 + 1}, "hi > 本数")):
+        for _bad35, _why35 in (({"lo": 0, "hi": None}, "lo 0"), ({"lo": 3, "hi": 2}, "lo > hi")):
             try:
                 stage_keep_of({**_lm35, "stage_keep_range": _bad35}, _n35)
                 ng.append(f"T35③: 範囲の外（{_why35}）で止まらない")
             except SampleError:
                 pass
+        # ★2026-10-01（工事 m2f-label-builder-stages-20261001 の B-1・監査 cp57）＝上端が候補の本数を超えるときは、止めずに候補の本数を使う
+        if stage_keep_of({**_lm35, "stage_keep_range": {"lo": 1, "hi": _n35 + 1}}, _n35) != _n35:
+            ng.append(f"T35③: 上端が候補の本数（{_n35}）を超えるのに keep が候補の本数でない（B-1）")
         print(f"  T35 stage_keep_range: ①上端 null → keep {_n35}（候補の本数）／②上端 1 → 案0 の記録の keep は 1・案2 は"
-              "『上位 1 本の外』で組めない／③範囲の外 3通りは止まる")
+              "『上位 1 本の外』で組めない／③範囲の外 2通りは止まり、上端が候補の本数を超えるときは候補の本数")
     except SystemExit as _e35s:
         ng.append(f"T35: 途中で拒否されて止まった: {str(_e35s)[:120]}")
     except Exception as _e35:

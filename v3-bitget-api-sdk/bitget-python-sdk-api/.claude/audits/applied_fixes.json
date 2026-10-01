@@ -1169,6 +1169,34 @@
    "file": "scripts/priority_rebuild/recipes/search_limits.json",
    "at": "2026-10-01T17:54:40",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-01_m2f_label_builder_stages_20261001_impl_cp57_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T22:24:49",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-01_m2f_label_builder_stages_20261001_impl_cp57_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T22:24:49",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-01_m2f_label_builder_stages_20261001_impl_cp57_audit_report.md",
+   "num": "3",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T22:24:49",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-01_m2f_label_builder_stages_20261001_impl_cp57_audit_report.md",
+   "num": "4",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T22:24:49",
+   "how": "当てた"
   }
  ]
 }
