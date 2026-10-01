@@ -43,6 +43,7 @@
 - hook require_selftest_after_source_edit が求めた自己テスト3本＝gen_regime_kb 15/15・gen_acceptance 17/17・gen_audit_docs 33/33（全部 pass）。
 - next_step_src.json の 0-1 と 0-2 の13番・14番を書き替え、tidy_next_step.py --write・--verify。
 - まこさん決定（2026-10-02）「A」＝M2-F-5 の出力は、まこさんがこの節の 1-2 の表を見て確かめる。✅済 にするのは、まこさんが確かめた後。
+- まこさん「問題なし」（2026-10-02・1-2 の表を見た後）＝M2-F-5 を ✅済 にした（m2_todo.json の状態・next_step の13番）。★いまここ は 0-2 の14a へ移した。commit 7c455fc は「問題なし」の前。
 
 ## §2 まこさん指示で、利用者の設定の hook 2本を消し、古い控えを読み込みから外した
 
