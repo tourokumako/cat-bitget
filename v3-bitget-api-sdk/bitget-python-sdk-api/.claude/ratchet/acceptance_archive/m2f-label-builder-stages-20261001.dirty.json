@@ -1,0 +1,14 @@
+{
+ "_これは何か": "承認の瞬間に、もう汚れていた .py の一覧。照合A(双方向) はここに在るものを数えない。",
+ "_なぜ": "並走している別のセッションが編集中の .py で、どの設計書でも落ちるのを止めるため（138番）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に git status から書き出す。手で書き換えない。",
+ "files": [
+  ".claude/hooks/enforce_g2_pass.py",
+  ".claude/hooks/enforce_h2_pass.py",
+  ".claude/hooks/require_confirm_before_act.py",
+  ".claude/hooks/require_read_plan_before_design.py",
+  ".claude/hooks/require_read_used.py",
+  "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+  "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py"
+ ]
+}

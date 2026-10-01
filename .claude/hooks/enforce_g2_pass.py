@@ -17,7 +17,11 @@
 # 対象: engine_tuner / engine_tuner_gen / engine_tuner_exec / e38_priority_stack の python 実行。
 # 対象外（通す）: --selftest・py_compile・--help・--verify・--identity（恒等検収）・
 #   gen_signal_families 自身（これが走れないと印を作れない＝デッドロック回避）・
+#   leak_causality_diag（H2 の印を作る道具・2026-10-01 に足した）・
 #   引用符/ヒアドキュメントの中の言及・サブエージェント。
+#   ★2026-10-01（142回目・まこさん「これ毎回不具合が起きてるから、今なおして」）＝H2 の印を作る道具も通す。
+#     直す前は、両方の印の対象を直すと、H2 の検査をこのゲートが止め、G2 の道具の --write を H2 のゲートが止めて、
+#     どちらの印も取り直せなかった（互いに止め合う）。どちらの道具も売買を回さず印を作る検査そのもの。
 # 解除: 無し（2026-08-16 まこさん指示「じゃあ強制解除できない状態にしろ」で廃止）。
 #
 # 限界（正直に）:
@@ -48,7 +52,7 @@ MUST = [   # 印の対象一覧に必ず入っていなければならないも�
     f"{_RT}/signal_families_approved.txt",  # 表の承認
 ]
 TARGET = re.compile(r"(engine_tuner|engine_tuner_gen|engine_tuner_exec|e38_priority_stack)\.py")
-EXEMPT = re.compile(r"--selftest|py_compile|--help|--verify|--identity|gen_signal_families")
+EXEMPT = re.compile(r"--selftest|py_compile|--help|--verify|--identity|gen_signal_families|leak_causality_diag")
 _ANY_PY = re.compile(r"[A-Za-z0-9_./\-]+\.py")
 
 # ★2026-08-27（68回目・まこさん承認「了解、修正を進めていいよ」・設計書 iter=h2g2-entry-scan-20260827）
@@ -273,6 +277,8 @@ def selftest():
          f"python3 {_real}/gen_exit_families.py --write")
     case("印を作る道具は通る（gen_signal_families）", None,
          f"python3 {_real}/gen_signal_families.py --approve")
+    case("相手の印を作る道具も通る（leak_causality_diag）＝H2 のゲートと互いに止め合わない", None,
+         f"python3 {_real}/leak_causality_diag.py")
     case("除外の言葉が在れば通る（--selftest）", None,
          f"python3 {_real}/regime_r9_diag.py --selftest")
     case("走らせずに名前を数えるだけなら通る（grep）", None,

@@ -1,0 +1,38 @@
+87,89c87,89
+< | 組む側の段の上端が、候補の本数を超えると止まるか | `grep -c -F 'の上端が候補の本数を超える:' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 実装の前は止める文が在る。実装の後は無い | 1（終了コード 0） |
+< | 段1・段2c を並べる正解 | `grep -n -F -e '"stage1":' -e '"stage2c":' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 実装の前は label が None。実装の後は強さ | 2538:    "stage1":  {"label": None,   "pick": "lineage"}, ⏎ 2541:    "stage2c": {"label": None,   "pick": "family"}, ⏎ 6514:        #   直す前は {"stage1": 354, …}（監査の実測）と ±10% で比べていた＝私（CC）が ⏎ 7594:        _c43 = _cands43({"stage_limits": {"stage1": {"tfs": [_one43]}}}) ⏎ 7599:        for _bad43, _why43 in (({"stage1": {"bogus": 1}}, "知らない鍵"), ⏎ 7600:                               ({"stage1": {"tfs": ["9m"]}}, "時間足の表に無い名前"), ⏎ 7601:                               ({"stage1": {"quantiles": ["q99"]}}, …（出力 9 行のうち先頭 500 文字）（終了コード 0） |
+< | 渡す本数の上端 | `grep -n -F '"stage_keep_range"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/recipes/search_limits.json` | 実装の前は上端が null の行。実装の後は まこさんが決めた本数の行 | 50:  "stage_keep_range": { "lo": 1, "hi": null, "kind": "int" },（終了コード 0） |
+---
+> | 組む側の段の上端が、候補の本数を超えると止まるか | `grep -c -F 'の上端が候補の本数を超える:' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 実装の前は止める文が在る。実装の後は無い | 0（終了コード 1） |
+> | 段1・段2c を並べる正解 | `grep -n -F -e '"stage1":' -e '"stage2c":' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 実装の前は label が None。実装の後は強さ | 2540:    "stage1":  {"label": "強さ", "pick": "lineage"}, ⏎ 2543:    "stage2c": {"label": "強さ", "pick": "family"}, ⏎ 6584:        #   直す前は {"stage1": 354, …}（監査の実測）と ±10% で比べていた＝私（CC）が ⏎ 7664:        _c43 = _cands43({"stage_limits": {"stage1": {"tfs": [_one43]}}}) ⏎ 7669:        for _bad43, _why43 in (({"stage1": {"bogus": 1}}, "知らない鍵"), ⏎ 7670:                               ({"stage1": {"tfs": ["9m"]}}, "時間足の表に無い名前"), ⏎ 7671:                               ({"stage1": {"quantiles": ["q99"]}}, "範囲の…（出力 9 行のうち先頭 500 文字）（終了コード 0） |
+> | 渡す本数の上端 | `grep -n -F '"stage_keep_range"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/recipes/search_limits.json` | 実装の前は上端が null の行。実装の後は まこさんが決めた本数の行 | 50:  "stage_keep_range": { "lo": 1, "hi": 10, "kind": "int" },（終了コード 0） |
+1043c1043
+< <!-- ACC_CODEREF_START hash=195e7d83f79a74f0 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=57503b9a4df57026 gen_acceptance.py が自動生成＝手で書き換えない -->
+1050c1050
+< | `selftest_stages` | （この関数は実物に無い） |
+---
+> | `selftest_stages` | 5043 |
+1053c1053
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 160件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 161件の関数が在ります）。
+1060c1060
+< <!-- ACC_SPEC_START hash=fb9c48a5d83e5c64 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=8c72c6a11d92927f gen_acceptance.py が自動生成＝手で書き換えない -->
+1327a1328,1336
+>   "selftest_stages": [
+>    "build_stage_candidates",
+>    "laws_for_scene",
+>    "load_limits",
+>    "load_signal_table",
+>    "material_pool",
+>    "sample_regime_build",
+>    "stage_keep_of"
+>   ],
+1370a1380
+>    "selftest_stages",
+1406a1417
+>    "selftest_stages",

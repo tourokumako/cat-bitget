@@ -55,7 +55,9 @@ TOOL = "gen_audit_docs.py"
 # ★2026-09-16（設計書 audit-autofix-apply-20260916・まこさん承認）＝監査結果を読む道具を1本 足した。
 #   `apply_audit_fix.py` は監査結果を**読むだけ**で、結果ファイルには1バイトも書かない
 #   （書く先は監査結果の「対象のファイル」の欄。守りの仕組みには道具の側で書かない）。
-TOOLS = (TOOL, "apply_audit_fix.py")
+# ★2026-10-01（142回目・まこさん「チェック項目を見直しすべきでは？」→ 案に「それならばOK」）＝出す前の見直し表の道具を足した。
+#   `gen_review.py` は依頼書・結果を**読むだけ**で、書く先は見直し表の置き場（.claude/state/reviews/・cp<N>_work/）だけ。
+TOOLS = (TOOL, "apply_audit_fix.py", "gen_review.py")
 
 
 def abs_path(p: str, cwd: str) -> str:
@@ -153,10 +155,21 @@ def gate_report(tool: str, ti: dict, cwd: str) -> int:
                     errs.append(f"目印の依頼書が inputs の依頼書ではない: {req_rel}")
                 errs += [ln[2:] for ln in g.check_lines(req, content) if ln.startswith("❌ ")]
         errs += g.form_errors(content)
+        # ★2026-10-01（142回目・まこさん「監査結果を出す前に見直しチェックをさせる強制の内容も怪しいので、再度確認→修正すべきなのでは？」
+        #   → 案に「それならばOK」）＝形だけでなく、出す前の見直し表（gen_review.py）が、この中身の全項目（見出し）を
+        #   ①意味が通じるか ②実物と合うか（根拠＝ファイル名:行番号・実在する行）③争点に合うか で埋めているかを照らす。
+        #   表の置き場＝SDK/.claude/audits/cp<N>_work/cp<N>_result.review.md（作業場の結果と同じ表）。
+        try:
+            import gen_review                                     # noqa: E402
+            ng_r, _refs = gen_review.check(p, text=content)
+        except Exception as e:                                    # noqa: BLE001
+            ng_r = [f"見直し表を照らせない（{type(e).__name__}: {e}）"]
+        errs += [f"見直し表: {x}" for x in ng_r]
         if errs:
-            return say(head + ["   結果の中身が、テンプレの形と依頼書との対応を満たしていません。"]
+            return say(head + ["   結果の中身が、テンプレの形と依頼書との対応・出す前の見直し表を満たしていません。"]
                        + [f"   ❌ {e}" for e in errs]
-                       + ["   書く前の確かめ方＝作業場に書いてから python3 .claude/tools/gen_audit_docs.py check <依頼書> <結果> と form <結果>"])
+                       + ["   書く前の確かめ方＝作業場に書いてから python3 .claude/tools/gen_audit_docs.py check <依頼書> <結果> と form <結果>",
+                          "   見直し表＝python3 .claude/tools/gen_review.py --skeleton <作業場の結果> → 全部の行を埋める → --check <作業場の結果>"])
         return 0
     if tool == "Bash":
         bad = bash_bad_parts(ti.get("command") or "", "_audit_report.md")

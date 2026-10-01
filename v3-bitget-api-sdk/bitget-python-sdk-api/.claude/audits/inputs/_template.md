@@ -21,6 +21,7 @@
    - 結果の骨組みを道具で作業場に作る: `python3 .claude/tools/gen_audit_docs.py result <本依頼書のパス> v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/<cpN>_work/<cpN>_result.md`
    - 骨組みの「<監査が書く>」などの印を全部 埋める（見出しと並びは変えない）
    - 食い違い0件を確かめる: `python3 .claude/tools/gen_audit_docs.py check <本依頼書のパス> <埋めた結果>` と `python3 .claude/tools/gen_audit_docs.py form <埋めた結果>`
+   - 出す前に見直す: `python3 .claude/tools/gen_review.py --skeleton <埋めた結果>` で見直し表を作り、全部の行（結果の見出しごと）に ①意味が通じるか ②実物と合うか（根拠＝ファイル名:行番号・実際に開いた行）③争点（この依頼書の結論を決める問い）に合うか と判定（OK／直した／該当なし（理由））を書き、`python3 .claude/tools/gen_review.py --check <埋めた結果>` を通す（結果を直したら表を作り直す・hook 11 が同じ照らしを掛ける）
    - 埋めた結果の全文を、結果ファイル `.claude/audits/2026-XX-XX_<task>_cpN_audit_report.md` に Write で1回だけ書く（hook 11 が同じ照らしを掛ける。書いた後は書き替えられない）
 4. メインセッションへの戻り報告:
    - 結果ファイルパス

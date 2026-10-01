@@ -14,7 +14,8 @@
 #   2. 宣言の「設計書:」の名前が、書こうとしている設計書の目印（ARC iter="…"）と同じ
 #   3. 宣言に「まこさんの OK:」の行が在り、空でない（★逐語を写す。真偽は機械には分からない＝限界）
 #   4. 宣言をチャットに貼った印（design_read_plan_posted＝宣言の sha256）が一致する
-#   5. 宣言の表に書いた「読むもの」を、全部 Read tool で開いている（read_log.txt）
+#   5. （2026-10-01 に外した）宣言の表に書いた「読むもの」を、全部 Read tool で開いている（read_log.txt）
+#      ＝開いた記録しか見ず、開くだけの読みでトークンを使わせていた。中身を使ったかは Stop の require_read_used が見る
 #   6. 設計書の中身に engine_tuner の文字が在れば、宣言に engine_tuner_milestones.md と
 #      engine_tuner_milestones2.md（全体のマイルストーン）が入っている
 #
@@ -119,9 +120,9 @@ def check(plan_text, mark_text, log_lines, design_text, need_milestones):
     rows = plan_rows(plan_text)
     if not rows:
         ng.append("宣言の表に読むものが1つも無い")
-    for p in rows:
-        if not _opened(p, log_lines):
-            ng.append(f"宣言に書いた読むものを開いていない（Read tool の記録に無い）: {p}")
+    # ★2026-10-01（142回目・まこさん「開くだけは確認ではない」「修正しろ」）＝「宣言の全部を Read で開いたか」の検査を外した。
+    #   開いた記録だけを数えるので、中身を使わない開き直しでトークンを使わせていた（54本を開いた事案）。
+    #   読んだ中身を判断に使ったかは、Stop の require_read_used が返信の「ファイル名:行番号」で見る。
     if need_milestones:
         for d in MILESTONE_DOCS:
             if not any(r.endswith(d) for r in rows):
@@ -192,7 +193,7 @@ def selftest():
         ("T2 宣言が無い → 止まる", "", h, log, design, True, "宣言（design_read_plan.md）が無い"),
         ("T3 OK が空 → 止まる", good.replace("まこさんの OK: 「OK」", "まこさんの OK:"), None, log, design, True, "OK が出るまで"),
         ("T4 印が古い → 止まる", good, "deadbeef", log, design, True, "印（design_read_plan_posted）"),
-        ("T5 開いていないものが在る → 止まる", good, h, log[:1], design, True, "開いていない"),
+        ("T5 開いていないものが在っても止めない（2026-10-01 に開いたかの検査を外した）→ 通る", good, h, log[:1], design, True, None),
         ("T6 設計書の名前が違う → 止まる", good, h, log, design.replace("x-20260909", "y-1"), True, "目印"),
         ("T7 engine_tuner の設計書なのに全体のマイルストーンが無い → 止まる",
          good.replace("| 1 | .claude/ratchet/engine_tuner_milestones.md | 全文 | 全体 |\n", ""), None, log, design, True, "全体のマイルストーン"),
@@ -221,7 +222,7 @@ def selftest():
 #   --verify       いまの宣言が、元データと実物から作った物と同じか（手の書き換え・行のずれを見る）
 #   --ok "逐語"    まこさんの OK の逐語を元データに書き、宣言を作り直す
 # ★全体のマイルストーン2本は、元データに無くても必ず先頭に足す（入れ忘れを防ぐ）。
-# ★「壊すプログラムを探す相手」に書いたファイル名を、.claude/breaks/*.sh から grep して、当たった物を全部 足す。
+# ★（2026-10-01 にやめた）「壊すプログラムを探す相手」に書いたファイル名で、壊すプログラムを全部 足す形は外した。
 # ★印（design_read_plan_posted）は作らない＝チャットに貼った後に作る物だから。
 # ════════════════════════════════════════════════════════════════════════════
 
@@ -288,11 +289,8 @@ def build_plan(src):
     for mp, words, why in reversed(MILESTONE_PATHS):
         if mp not in have:
             items.insert(0, {"パス": mp, "探す語": words, "なぜ": why})
-    targets = src.get("壊すプログラムを探す相手") or []
-    for b in _breaks_for(targets):
-        if b not in {it.get("パス") for it in items}:
-            hit = [n for n in targets if n in _read(os.path.join(ROOT, b))]
-            items.append({"パス": b, "探す語": [], "なぜ": f"直す相手（{'・'.join(hit)}）の名前を持つ壊すプログラム＝直した後も通るか"})
+    # ★2026-10-01（142回目）＝壊すプログラムを名前の一致で全部 宣言に足すのをやめた。直す相手と関係の無い物まで入り
+    #   （54本のうち直す行を探すのは約10本）、全部を開かせていた。壊すプログラムは承認のときに承認のプログラムが走らせる。
     rows = []
     for i, it in enumerate(items, 1):
         rel, prob = _resolve(str(it.get("パス") or ""))

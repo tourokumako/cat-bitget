@@ -351,7 +351,10 @@ def _loosened_off(conds: list[dict], limits, frames: list | None = None) -> dict
         cc = json.loads(json.dumps(base))
         side = cc.get("side", "above")
         try:
-            cc["value"]["threshold_q"] = g._loose_q_fixed(limits, q, side)
+            # ★2026-10-01（B-2）＝not の中身（段2a の強さ）は、緩める向きを入る線と反対にする（強さ above qX の否定で入るなら、
+            #   出るのは above q(X+1)）。帯の幅と段1 は今までどおり（側を返したうえで隣の段へ）
+            _ls = ("below" if side == "above" else "above") if is_not else side
+            cc["value"]["threshold_q"] = g._loose_q_fixed(limits, q, _ls)
         except g.SampleError:
             continue
         if not is_not:
@@ -406,6 +409,52 @@ def _record(a, tag: str, n: int) -> None:
     print(f"[試行] {dest} へ {n} 本（この鍵の合計 {tot}）")
 
 
+def _both_sides(cands: list) -> list:
+    """段1 の候補に、側を返した帯を後ろに足す（2026-10-01・工事 m2f-label-builder-stages-20261001 の B-3・監査 CP49 の修正5）。
+
+    ★組む側は帯の向きを案の番号で上下交互に決める（engine_tuner_gen.py の sample_regime_build）が、一覧の側は
+      法則が側を決めない帯で above だけ＝下側の帯が段1 で1本も測られなかった。
+    """
+    out = list(cands)
+    for c in cands:
+        cc = json.loads(json.dumps(c))
+        cc["cond"]["side"] = "below" if cc["cond"].get("side", "above") == "above" else "above"
+        cc["側を返した"] = True
+        out.append(cc)
+    return out
+
+
+def _sweep_slots(cf: list, wrap) -> list:
+    """差し戻しで入れ直す枠の並び＝条件の枠＋（包みが在れば）持続の枠＋（段2c の枠が無ければ）段2c を足す枠（2026-10-01・B-4）。"""
+    return list(cf) + (["stage3"] if wrap else []) + ([] if "stage2c" in cf else ["stage2c+"])
+
+
+def _slot_variants(tag: str, inner: list, cf: list, wrap, st: str, k: int, cands_of: dict) -> list:
+    """差し戻しの1つの枠を入れ直した束の一覧＝[(名前, 内側, 包み, 枠)]（2026-10-01・B-4・監査 CP49 の修正7）。
+
+    ★段2c の枠は「なし」（段2c の条件を外した束）も試す（§2.2 の段2c「「なし」を必ず併走」）。
+    ★段2c の枠が無い束（「なし」で勝った束）は、段2c の候補を足した束を試す（段4「全候補を1枠ずつ入れ直して1周」）。
+    """
+    v = []
+    if st == "stage2c+":
+        for j, c in enumerate(cands_of["stage2c"]):
+            v.append((f"{tag}_c{j}", list(inner) + [json.loads(json.dumps(c["cond"]))], wrap, list(cf) + ["stage2c"]))
+        return v
+    if st == "stage2c" and k < len(cf):
+        v.append((f"{tag}_none", list(inner[:k]) + list(inner[k + 1:]), wrap, list(cf[:k]) + list(cf[k + 1:])))
+    for j, c in enumerate(cands_of[st]):
+        nm = f"{tag}_c{j}"
+        if k < len(cf):
+            iv = json.loads(json.dumps(inner))
+            iv[k] = json.loads(json.dumps(c["cond"]))
+            v.append((nm, iv, wrap, list(cf)))
+        else:
+            wv = dict(wrap)
+            wv["持続n"] = int(c["cond"]["value"]["n"])
+            v.append((nm, inner, wv, list(cf)))
+    return v
+
+
 def run_stage(df, a) -> int:
     """--stage＝その段の候補を全部 束にして測り、並べて、順位表と落ちた候補をファイルに書く（M2-F-8〜14）。"""
     import engine_tuner_gen as g
@@ -417,6 +466,8 @@ def run_stage(df, a) -> int:
     _pool, tfs, _ = g.material_pool()
     cands = (g.build_width_candidates(laws, table, tfs, lm) if a.stage == "width"
              else g.build_stage_candidates(a.stage, laws, table, tfs, lm))
+    if a.stage == "stage1":
+        cands = _both_sides(cands)               # ★2026-10-01（B-3）＝帯の下側も測る
     dropped: list[dict] = []
     if a.stage == "width":
         base = [{"判定": "（単独）", "内側": [], "枠": []}]   # 帯の候補1本だけの束（重ねる相手なし）
@@ -532,7 +583,7 @@ def run_sweep(df, a) -> int:
                     dropped.append({"場面": "関所で拒否", "判定": nm, "理由": f"G7: {str(e)[:120]}"})
                     continue
             recipes.append(_stage_recipe(a.strategy, nm, bd))
-            marks[nm] = (iv, wv)
+            marks[nm] = (iv, wv, fv)               # ★2026-10-01（B-4）＝「なし」と足す側で枠が変わるので、枠も持つ
         rows = measure(df, recipes, SEARCH_START, SEARCH_END, with_trades=False)
         rows, _ = rank_rows(rows)
         dropped.extend({"場面": ("関所で拒否" if str(r.get("注", "")).startswith("関所で拒否") else "測れない"),
@@ -547,11 +598,13 @@ def run_sweep(df, a) -> int:
         if not inner or len(cf) != len(inner):
             raise SystemExit("[R9] --sweep の行に 内側 と 枠 が揃っていない（段の口が書いた順位表の行を渡す・fail-closed）")
         # ★入れ直す枠＝条件の枠（内側と同じ並び）＋段3 の包みが在れば持続（streak の本数）の枠
-        slots = list(cf) + (["stage3"] if wrap else [])
-        for st in slots:
-            if st not in cands_of:
-                cands_of[st] = (g.build_width_candidates(laws, table, tfs, lm) if st == "width"
-                                else g.build_stage_candidates(st, laws, table, tfs, lm))
+        # ★2026-10-01（工事 m2f-label-builder-stages-20261001 の B-4・監査 CP49 の修正7）＝段2c の枠には「なし」も試し、
+        #   段2c の枠が無い束（「なし」で勝った束）には「段2c を足す」枠を足す。枠の並びは周ごとに作り直す。
+        for st in _sweep_slots(cf, wrap) + ["stage2c"]:
+            st0 = "stage2c" if st == "stage2c+" else st
+            if st0 not in cands_of:
+                cands_of[st0] = (g.build_width_candidates(laws, table, tfs, lm) if st0 == "width"
+                                 else g.build_stage_candidates(st0, laws, table, tfs, lm))
         base_nm = f"sweep_b{b_i}_r0_base"
         rows0, _m0, n0 = _measure_one(f"sweep_b{b_i}_r0", [(base_nm, inner, wrap, cf)])
         best = next((r for r in rows0 if r.get("判定") == base_nm), {"判定": base_nm})
@@ -562,31 +615,24 @@ def run_sweep(df, a) -> int:
         while improved:
             improved = False
             rnd += 1
-            for k, st in enumerate(slots):
-                variants = []
-                for j, c in enumerate(cands_of[st]):
-                    nm = f"sweep_b{b_i}_r{rnd}_f{k}_c{j}"
-                    if k < len(cf):
-                        iv = json.loads(json.dumps(inner))
-                        iv[k] = json.loads(json.dumps(c["cond"]))
-                        variants.append((nm, iv, wrap, cf))
-                    else:
-                        wv = dict(wrap)
-                        wv["持続n"] = int(c["cond"]["value"]["n"])
-                        variants.append((nm, inner, wv, cf))
+            for k, st in enumerate(_sweep_slots(cf, wrap)):
+                variants = _slot_variants(f"sweep_b{b_i}_r{rnd}_f{k}", inner, cf, wrap, st, k, cands_of)
                 rows, marks, n = _measure_one(f"sweep_b{b_i}_r{rnd}_f{k}", variants)
                 n_all += n
                 _record(a, "sweep", n)    # ★周・枠ごとに数える（途中で止まっても数え落とさない・監査 CP49）
                 cand_best = next((r for r in rows if r.get("判定") in marks and "①時間の割合" in r), None)
+                _len0 = len(cf)
                 if cand_best is not None and rank_key(cand_best) < rank_key(best):
                     best = cand_best
-                    inner, wrap = marks[cand_best["判定"]]
+                    inner, wrap, cf = marks[cand_best["判定"]]
                     improved = True
                 write_outputs(f"sweep_b{b_i}_r{rnd}_f{k}", rows, [])
                 print(f"[差し戻し] 束 {b_i}・周 {rnd}・枠 {k}（{st}）＝いまの最良 {best.get('判定')}")
+                if len(cf) != _len0:
+                    break                 # ★枠の数が変わった（「なし」か足す側が勝った）＝枠の並びを作り直して周の頭から
         best_row = dict(best)
         best_row["内側"] = inner
-        best_row["枠"] = frames
+        best_row["枠"] = cf
         best_row["包み"] = wrap
         best_row["差し戻しの元"] = row.get("判定")
         finals.append(best_row)
@@ -784,6 +830,29 @@ def selftest() -> int:
             ng.append(f"⑪: 段の口の束を測れない（測れた {len(_ok11)}・関所で拒否 {len(_ng11)}・包みの束 {len(_hy11)}）")
     except BaseException as _e11:
         ng.append(f"⑪: 段の口の束を測る所で止まった: {type(_e11).__name__} {str(_e11)[:80]}")
+    # ⑭ 段2a の強さの否定の出る線は、入る線より緩い側（above なら1つ大きい分位）（2026-10-01・B-2）
+    try:
+        import engine_tuner_gen as _g14
+        _lm14, _w14 = _g14.load_limits()
+        _c14 = [{"not": {"role": "env", "form": "level", "material": [{"family": "ADX", "param": 14, "tf": "1h"}],
+                         "side": "above", "value": {"threshold_q": "q50"}}}]
+        _o14 = _loosened_off(_c14, _lm14, frames=["stage2a"])["any"][0]
+        if _o14["value"]["threshold_q"] != "q51" or _o14["side"] != "above":
+            ng.append(f"⑭: 強さの否定の出る線が緩い側でない（{_o14['side']} {_o14['value']['threshold_q']}）")
+    except BaseException as _e14:
+        ng.append(f"⑭: 出る線を作る所で止まった: {type(_e14).__name__} {str(_e14)[:80]}")
+    # ⑮ 段1 は帯の上側と下側の両方を測る（2026-10-01・B-3）
+    _b15 = _both_sides([{"rank": 1, "cond": {"side": "above", "value": {"threshold_q": "q50"}}}])
+    if sorted(c["cond"]["side"] for c in _b15) != ["above", "below"]:
+        ng.append("⑮: 段1 の候補に上側と下側の両方が無い")
+    # ⑯ 差し戻しの段2c の枠に「なし」を入れ、段2c の枠が無い束には段2c を足す（2026-10-01・B-4）
+    _co16 = {"stage2c": [{"cond": {"x": 1}}], "stage1": [{"cond": {"y": 1}}]}
+    _v16a = _slot_variants("t", [{"a": 1}, {"b": 1}], ["stage1", "stage2c"], None, "stage2c", 1, _co16)
+    _v16b = _slot_variants("t", [{"a": 1}], ["stage1"], None, "stage2c+", 1, _co16)
+    if (not any(_nm.endswith("_none") and _fv == ["stage1"] for _nm, _iv, _wv, _fv in _v16a)
+            or not any(_fv == ["stage1", "stage2c"] for _nm, _iv, _wv, _fv in _v16b)
+            or _sweep_slots(["stage1"], None) != ["stage1", "stage2c+"]):
+        ng.append("⑯: 差し戻しで段2c の「なし」か、段2c を足す束が試されない")
     # ⑤ 印の作り方が観察の道具の実物と同じ関数であること（写しを作っていない）
     import observe_diag as od
     if not hasattr(od, "_regime_labels") or not hasattr(od, "_regime_horizons"):

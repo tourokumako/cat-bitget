@@ -2943,7 +2943,7 @@
     },
     "role_max": "無制限",
     "stage_keep_range": {
-     "hi": null,
+     "hi": 10,
      "kind": "int",
      "lo": 1
     },

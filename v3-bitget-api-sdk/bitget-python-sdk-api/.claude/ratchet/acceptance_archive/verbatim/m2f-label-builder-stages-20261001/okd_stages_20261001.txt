@@ -1,0 +1,477 @@
+試しの設計書が、もう一度 承認の前の検査を全部 通りました（A群 0件・古い語 0件）。
+
+**ここまでにしたこと**
+
+- 6d の要望の逐語を、工事2 用のフォルダ（m2f-label-structure-20261001）へ移しました。分けて進める指示（req_split_20261001）を逐語のファイルにしました。
+- やることの表を、14b と15番（B-1〜B-6・K-1）だけに書き直しました。中身は OK をいただいた表のままです。
+- 下書きの道具に、土台と差し替えを引数で渡す口を足し、【7-2】の重複を直しました（根拠＝_m2f_draft_build.py:16・164・189、draft_m2f.txt:353）。
+- 書き替えたファイル＝`.claude/state/verbatim/m2f-label-builder-stages-20261001/やることの表.md`・`req_split_20261001`（新）・`.claude/state/_m2f_stages_base.json`（新）・`.claude/state/_m2f_stages_overlay.json`（新）・`.claude/state/_m2f_draft_build.py`。
+
+以下が案の全文です（29,481文字・実装の指示23件）。
+
+案です（工事 m2f-label-builder-stages-20261001＝14b の段の不具合6つ・15番の渡す本数10本）。実装の指示は 23 件です。直す前の文字は、全部 実物にちょうど1か所ずつ在ることを道具で数えました。この返信に OK を1回いただければ、逐語に写して設計書を作り、承認をお願いします。
+
+【4-0 この仕組みは何か】
+**この工事は、段の候補を作る側と測る道具の不具合6つを直し、渡す本数を10本にするものです。**§2.2 の段（帯 → 強さの否定 → 向きの否定 → 3枠目 → 持続 → 差し戻し）ごとに測って並べ、上位を次の段へ渡す探し方が、止まらずに最後まで回り、正しい向きの線で、上側と下側の帯・3枠目の「なし」・同じ物を重ねない候補を測れるようにします。これで段1〜段4 の走行（M2-F-8〜15）に進めます。
+
+【4-1 システムの境界】
+**誰が動かすか。**私（CC）が、測る道具 regime_r9_diag.py の段の口（--stage・--sweep）をコマンドから動かします。組む側 engine_tuner_gen.py の段の候補の一覧（build_stage_candidates）と束を組む関数（sample_regime_build）は、測る道具と engine_tuner から呼ばれます。
+**誰が結果を使うか。**段の順位表と落ちた候補（M2-F の段の選抜）と、engine_tuner が組む場面の判定の束。
+
+【4-2 入力と出力】
+**入力。**設定 search_limits.json（stage_keep_range ほか）・法則 regime_laws.json・型の表・成績表 material_ranking.json。
+**出力。**段の候補の一覧（同じ条件は1本・段1・段2c は強さの順）・組んだ判定の束（出る線の向きを直した物）・段の順位表と落ちた候補（段1 は上側と下側・差し戻しは「なし」と足す側を含む）。
+
+【4-3 部品と責任の割り当て】
+- engine_tuner_gen.stage_keep_of＝上端が候補の本数を超える段は、候補の本数を使う（B-1）。
+- engine_tuner_gen.sample_regime_build＝段2a の強さの否定の出る線（off_c）を、入る線と反対の向きに緩める（B-2）。
+- engine_tuner_gen.build_stage_candidates＝条件の中身が同じ候補は最初の1本だけ残す（B-5）。
+- engine_tuner_gen.STAGE_SPEC＝段1・段2c の label を「強さ」にする（B-6・まこさん決定）。
+- engine_tuner_gen.selftest_stages（新）＝T48 の本体。selftest と口 --selftest-stages が呼ぶ。
+- regime_r9_diag._loosened_off＝not の中身だけ、緩める向きを入る線と反対にする（B-2）。
+- regime_r9_diag._both_sides（新）＝段1 の候補に、側を返した帯を足す（B-3）。run_stage が呼ぶ。
+- regime_r9_diag._sweep_slots・_slot_variants（新）＝差し戻しの枠に、段2c の「なし」と、段2c を足す枠を入れる（B-4）。run_sweep が呼ぶ。
+- regime_r9_diag.selftest に ⑭⑮⑯ を足す。
+- recipes/search_limits.json の stage_keep_range の hi＝10（K-1）。
+- 触る所（engine_tuner_gen.py）＝<モジュール直下>・stage_keep_of・build_stage_candidates・sample_regime_build・selftest_stages・selftest・main
+- 触る所（regime_r9_diag.py）＝_loosened_off・_both_sides・_sweep_slots・_slot_variants・run_stage・run_sweep・selftest
+
+【4-4 処理の流れ】
+1. 当てる道具（apply_audit_fix.py --design）で実装の指示を当てます。
+2. 組む側の --selftest-stages（T48）と測る道具の --selftest（⑭⑮⑯）を走らせます。
+3. engine_tuner_gen.py と search_limits.json は G2・H2 の印の対象なので、G2（gen_signal_families.py --verify・約30秒）→ H2（leak_causality_diag.py・約5分）の順で印を取り直します。
+4. 実装を監査に出します。
+
+【4-5 異常系】
+- 上端が候補の本数を超える＝止めずに候補の本数を使う（B-1）。下端が1未満・下端が上端より大きいは、いままでどおり止める。
+- 差し戻しで「なし」か段2c を足す側が勝って枠の数が変わった＝その周の残りの枠を飛ばし、枠の並びを作り直して次の周へ進む（B-4）。
+
+【4-6 制約】
+- 乱数を使わない（恒久67番）。段の候補は法則が名指しした物を、成績表の順位で並べる。
+- 渡す本数の上端10は まこさんの決定（2026-09-18「とりあえず１０本にする」）。CC は本数を選ばない。
+
+【4-7 探索の範囲】
+非該当＝探す値の範囲は変えない（渡す本数の上端だけを書く）
+
+【4-8 データ構造】
+- 段の候補の一覧は、同じ条件の行が無くなる（行の数が減る）。段1 の測る束は、側を返した帯の分だけ増える（2倍）。
+- 差し戻しの印は（内側・包み・枠）の3つになる（直す前は内側と包みの2つ）。
+
+【4-9 設定】
+- 新しい旗は組む側の --selftest-stages だけ（T48 を短く走らせる口）。測る道具の旗は変えない。
+
+【4-10 保存先】
+非該当＝書き先を変えない（順位表と落ちた候補は results/priority_rebuild/regime_r9/ の日時つきの新しいファイル）
+
+【4-11 時刻の扱い】
+非該当＝時刻の列・足の区切りに触らない
+
+【4-12 出る結果の姿】
+- 上端 10 の設定で、組む側がレンジの判定の束を組める。段2a の出る線は「強さ above q(X+1)」（側が above のとき）。
+- --stage stage1 の測る束は、上側と下側の帯の両方（本数は2倍）。--sweep は段2c の「なし」と足す側を試す。
+- 段の候補に、中身が同じ条件は1本だけ。段1・段2c の候補は強さの分離力の順。
+
+【4-13 影響範囲】
+- engine_tuner_gen.py と search_limits.json は H2・G2 の印の対象＝直した後は印を取り直すまで engine_tuner が走らない（4-4 の手順3）。
+- 14b で直す行を探す壊すプログラム（b77・b79・b82・b84・b85・b86・b87_stages_record・b91・b92・b93・b97・b99・b109・b113・b116）の探す文字は、この工事の直す前の文字と重ならない（直す前の文字はそれぞれ実物にちょうど1か所）。
+- 段1 の束が2倍になるので、段1 の走行（M2-F-8）の時間は約49分 → 約98分の目安（milestones2 の M2-F-13b の③・掛け算の目安で未測定）。
+
+【4-14 性能】
+- B-5 で重なりを除くと、段1 の候補は 2,487行 → 中身の違う 812本 の見込み（worklog 20260928 §15 の 15-8 の実測）。B-3 で2倍。
+
+【4-15 競合】
+非該当＝同時に2つ走らせない
+
+【4-16 セキュリティ】
+非該当＝鍵・本番の発注に触らない
+
+【4-17 ログと進捗表示】
+変えない（差し戻しの印字は同じ形・「なし」の束は名前の末尾が _none）。
+
+【4-18 再利用】
+- B-2 の向きは、帯の幅と段1 の出る線がすでに使う _flip_loose の向き（engine_tuner_gen.py:3135〜3145）に揃える。B-1 は stage_keep_of の下端の検査の形をそのまま残す。T48 の口は --selftest-rank-demand の作りに揃える。
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "stage_keep_of の上端の検査（B-1）",
+  "直す前の文字": "        raise SampleError(f\"stage_keep_range の上端が候補の本数を超える: hi={hi} > {int(n_cands)}（fail-closed）\")\n",
+  "種類": "直した後の文字",
+  "中身": "        # ★2026-10-01（工事 m2f-label-builder-stages-20261001 の B-1）＝上端が候補の本数を超える段は、候補の本数の分だけ使う（止めない）。\n        #   段2b の候補は1本なので、上端に10を書くと組む側がレンジの判定の束を1本も組めなかった（next_step §6 の224番）\n        hi = int(n_cands)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:3164「if hi > int(n_cands):」",
+  "状態": "確定",
+  "番号": 1
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "stage_keep_of の説明の文（B-1）",
+  "直す前の文字": "    ★数字を作らない＝範囲の外（lo < 1／hi > 候補の本数／lo > hi）は SampleError で止める（fail-closed）。\n",
+  "種類": "直した後の文字",
+  "中身": "    ★数字を作らない＝範囲の外（lo < 1／lo > hi）は SampleError で止める（fail-closed）。\n    ★上端が候補の本数を超える段は、候補の本数を使う（2026-10-01・B-1＝直す前は止めていた）。\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:3154「範囲の外（lo < 1／hi > 候補の本数／lo > hi）は SampleError で止める」",
+  "状態": "確定",
+  "番号": 2
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "sample_regime_build の off_c（B-2）",
+  "直す前の文字": "    off_c[\"value\"][\"threshold_q\"] = _loose_q_fixed(limits, strong[\"value\"][\"threshold_q\"], strong_side)\n",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-10-01（B-2）＝not の中身の出る線は、強さが はっきり上がった所（above なら1つ大きい分位）。側は返さない（強さが戻ったら出る）。\n    #   直す前は強さの側のまま緩めたので、出る線が入る側の内側（above q(X−1)）で真になった（監査 CP48 の別に見つけたこと）\n    off_c[\"value\"][\"threshold_q\"] = _loose_q_fixed(limits, strong[\"value\"][\"threshold_q\"],\n                                                \"below\" if strong_side == \"above\" else \"above\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:3349「off_c[\"value\"][\"threshold_q\"] = _loose_q_fixed(limits, strong[\"value\"][\"threshold_q\"], strong_side)」",
+  "状態": "確定",
+  "番号": 3
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "build_stage_candidates の見た条件の入れ物（B-5）",
+  "直す前の文字": "    _moving: list[dict] = []\n",
+  "種類": "足す文字",
+  "中身": "    _seen_c: set = set()                           # ★2026-10-01（B-5）＝同じ条件の候補を2回 並べない\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:2879「_moving: list[dict] = []」",
+  "状態": "確定",
+  "番号": 4
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "build_stage_candidates の条件を作った後（B-5）",
+  "直す前の文字": "                    \"side\": side, \"value\": _thr_fixed(limits)}\n",
+  "種類": "足す文字",
+  "中身": "        # ★2026-10-01（工事 m2f-label-builder-stages-20261001 の B-5）＝条件の中身が同じ候補は、最初の1本（順位の高い方）だけを残す。\n        #   ranked_groups は（正解・先読み・種類・時間足）の組ごとに出すので、同じ種類×時間足の同じ列が最大6回 並んでいた\n        #   （段1 は 2,487行のうち中身の違う列 812・worklog 20260928 §15 の 15-8）\n        _ck = json.dumps(cond, sort_keys=True, ensure_ascii=False)\n        if _ck in _seen_c:\n            rank -= 1\n            continue\n        _seen_c.add(_ck)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:2940「\"side\": side, \"value\": _thr_fixed(limits)}」",
+  "状態": "確定",
+  "番号": 5
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "STAGE_SPEC の段1（B-6）",
+  "直す前の文字": "    \"stage1\":  {\"label\": None,   \"pick\": \"lineage\"},\n",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-10-01（B-6・まこさん決定「それでいいので進めて」）＝段1・段2c は強さ（場面の正解＝実際にレンジだったか）の順に並べる。\n    #   直す前は None＝3つの正解を混ぜた順で、段1 の1位は「大きさ・先288本」で上がった\n    \"stage1\":  {\"label\": \"強さ\", \"pick\": \"lineage\"},\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:2538「\"stage1\":  {\"label\": None,   \"pick\": \"lineage\"},」",
+  "状態": "確定",
+  "番号": 6
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "STAGE_SPEC の段2c（B-6）",
+  "直す前の文字": "    \"stage2c\": {\"label\": None,   \"pick\": \"family\"},\n",
+  "種類": "直した後の文字",
+  "中身": "    \"stage2c\": {\"label\": \"強さ\", \"pick\": \"family\"},\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:2541「\"stage2c\": {\"label\": None,   \"pick\": \"family\"},」",
+  "状態": "確定",
+  "番号": 7
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "selftest の前に、T48 の本体 selftest_stages を足す（B-1・B-2・B-5・B-6）",
+  "直す前の文字": "def selftest() -> int:\n",
+  "種類": "直した後の文字",
+  "中身": "def selftest_stages() -> list:\n    \"\"\"T48（2026-10-01・工事 m2f-label-builder-stages-20261001）＝B-1 上端・B-2 出る線の向き・B-5 重なり・B-6 並べる正解。\n\n    ★selftest の T48 と、口 --selftest-stages の両方がこの1本を呼ぶ（判定を2か所に書き写さない）。\n      --selftest の全体は約6分半で、承認の前の仮当ての打ち切り（300秒）を超えるため、この口で短く走らせる。\n    戻り＝ダメだった件の一覧（空なら全部 通った）。\n    \"\"\"\n    t48 = []\n\n    def _find_not48(t):\n        if isinstance(t, dict):\n            if isinstance(t.get(\"not\"), dict) and t[\"not\"].get(\"form\") == \"level\":\n                return t[\"not\"]\n            for _v in t.values():\n                _r = _find_not48(_v)\n                if _r:\n                    return _r\n        if isinstance(t, list):\n            for _v in t:\n                _r = _find_not48(_v)\n                if _r:\n                    return _r\n        return None\n    try:\n        _lm48, _w48 = load_limits()\n        _lm48h = {**_lm48, \"stage_keep_range\": {\"lo\": 1, \"hi\": 10, \"kind\": \"int\"}}\n        if stage_keep_of(_lm48h, 1) != 1:\n            t48.append(\"B-1: 上端10・候補1本で 1 にならない\")\n        if STAGE_SPEC[\"stage1\"][\"label\"] != \"強さ\" or STAGE_SPEC[\"stage2c\"][\"label\"] != \"強さ\":\n            t48.append(\"B-6: 段1・段2c の label が強さでない\")\n        _laws48 = laws_for_scene(\"range\")\n        _tb48 = load_signal_table()\n        _pool48, _tfs48, _ = material_pool()\n        for _st48 in (\"stage1\", \"stage2a\", \"stage2c\"):\n            _cs48 = build_stage_candidates(_st48, _laws48, _tb48, _tfs48, _lm48)\n            _ks48 = [json.dumps(_c[\"cond\"], sort_keys=True, ensure_ascii=False) for _c in _cs48]\n            if len(_ks48) != len(set(_ks48)):\n                t48.append(f\"B-5: {_st48} に同じ条件が {len(_ks48) - len(set(_ks48))} 本 重なる\")\n            if _st48 != \"stage2a\" and any(_c.get(\"label\") not in (\"強さ\", None) for _c in _cs48):\n                t48.append(f\"B-6: {_st48} の候補に強さ以外の正解で並んだ物が在る\")\n        _bd48, _dr48 = sample_regime_build(_lm48h, _pool48, _tfs48, _tb48)\n        _hy48 = _bd48[\"entry\"][\"tree\"][\"all\"][0]\n        _n48 = _find_not48(_hy48[\"on\"])\n        _o48 = _hy48[\"off\"][\"any\"][2]\n        _qi48 = int(str(_n48[\"value\"][\"threshold_q\"]).lstrip(\"q\"))\n        _qo48 = int(str(_o48[\"value\"][\"threshold_q\"]).lstrip(\"q\"))\n        if _o48[\"side\"] != _n48[\"side\"] or not ((_qo48 > _qi48) if _n48[\"side\"] == \"above\" else (_qo48 < _qi48)):\n            t48.append(f\"B-2: 段2a の出る線が緩い側でない（入る {_n48['side']} q{_qi48}・出る {_o48['side']} q{_qo48}）\")\n    except BaseException as _e48:                   # noqa: BLE001\n        t48.append(f\"途中で止まった: {type(_e48).__name__} {str(_e48)[:120]}\")\n    return t48\n\n\ndef selftest() -> int:\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:5026「def selftest() -> int:」",
+  "状態": "確定",
+  "番号": 8
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "selftest の T46 の後ろで T48 を呼ぶ（B-1・B-2・B-5・B-6）",
+  "直す前の文字": "    print(\"  T46 持続の内側が成立の全体: ①入る条件が持続1つ ②内側が条件の束 ③内側の本数が引いた記録と一致 ④並びが A・B・C・(D)・(G)\")\n",
+  "種類": "足す文字",
+  "中身": "    # ══ T48（2026-10-01・工事 m2f-label-builder-stages-20261001）＝本体は selftest_stages（口 --selftest-stages と同じ1本）══\n    t48 = selftest_stages()\n    ng += [f\"T48: {_x}\" for _x in t48]\n    print(\"  T48 段の不具合の直し: B-1 上端が候補の本数を超えても組める ／ B-2 強さの否定の出る線は緩い側 ／ B-5 同じ条件を2回 並べない ／ B-6 段1・段2c は強さで並べる\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:7739「print(\"  T46 持続の内側が成立の全体」",
+  "状態": "確定",
+  "番号": 9
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "旗 --selftest-stages を足す",
+  "直す前の文字": "                         \"壊すプログラム b38 が使う（設計書 demand-in-ranking-20260907）\")\n",
+  "種類": "足す文字",
+  "中身": "    ap.add_argument(\"--selftest-stages\", action=\"store_true\",\n                    help=\"段の不具合の直し（B-1・B-2・B-5・B-6）だけを試す＝T48 と同じ本体（selftest_stages）を呼ぶ\"\n                         \"（全体の --selftest は約6分半で、承認の前の仮当ての打ち切り300秒を超えるため）\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:7928「壊すプログラム b38 が使う（設計書 demand-in-ranking-20260907）」",
+  "状態": "確定",
+  "番号": 10
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "旗 --selftest-stages の口",
+  "直す前の文字": "    a = ap.parse_args()\n",
+  "種類": "足す文字",
+  "中身": "    if a.selftest_stages:\n        # ★2026-10-01（工事 m2f-label-builder-stages-20261001）＝T48 だけを短く走らせる口（--selftest-rank-demand と同じ作り）\n        _ng48 = selftest_stages()\n        for _x in _ng48:\n            print(f\"  ❌ T48: {_x}\")\n        print(f\"  {'❌' if _ng48 else '✅'} T48 段の不具合の直し／ダメだった件 {len(_ng48)}\")\n        return 1 if _ng48 else 0\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:7929「a = ap.parse_args()」",
+  "状態": "確定",
+  "番号": 11
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "_loosened_off の not の中身の緩める向き（B-2）",
+  "直す前の文字": "            cc[\"value\"][\"threshold_q\"] = g._loose_q_fixed(limits, q, side)\n",
+  "種類": "直した後の文字",
+  "中身": "            # ★2026-10-01（B-2）＝not の中身（段2a の強さ）は、緩める向きを入る線と反対にする（強さ above qX の否定で入るなら、\n            #   出るのは above q(X+1)）。帯の幅と段1 は今までどおり（側を返したうえで隣の段へ）\n            _ls = (\"below\" if side == \"above\" else \"above\") if is_not else side\n            cc[\"value\"][\"threshold_q\"] = g._loose_q_fixed(limits, q, _ls)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:354「cc[\"value\"][\"threshold_q\"] = g._loose_q_fixed(limits, q, side)」",
+  "状態": "確定",
+  "番号": 12
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "run_stage の前に、段1 の両側と差し戻しの枠の関数を足す（B-3・B-4）",
+  "直す前の文字": "def run_stage(df, a) -> int:\n",
+  "種類": "直した後の文字",
+  "中身": "def _both_sides(cands: list) -> list:\n    \"\"\"段1 の候補に、側を返した帯を後ろに足す（2026-10-01・工事 m2f-label-builder-stages-20261001 の B-3・監査 CP49 の修正5）。\n\n    ★組む側は帯の向きを案の番号で上下交互に決める（engine_tuner_gen.py の sample_regime_build）が、一覧の側は\n      法則が側を決めない帯で above だけ＝下側の帯が段1 で1本も測られなかった。\n    \"\"\"\n    out = list(cands)\n    for c in cands:\n        cc = json.loads(json.dumps(c))\n        cc[\"cond\"][\"side\"] = \"below\" if cc[\"cond\"].get(\"side\", \"above\") == \"above\" else \"above\"\n        cc[\"側を返した\"] = True\n        out.append(cc)\n    return out\n\n\ndef _sweep_slots(cf: list, wrap) -> list:\n    \"\"\"差し戻しで入れ直す枠の並び＝条件の枠＋（包みが在れば）持続の枠＋（段2c の枠が無ければ）段2c を足す枠（2026-10-01・B-4）。\"\"\"\n    return list(cf) + ([\"stage3\"] if wrap else []) + ([] if \"stage2c\" in cf else [\"stage2c+\"])\n\n\ndef _slot_variants(tag: str, inner: list, cf: list, wrap, st: str, k: int, cands_of: dict) -> list:\n    \"\"\"差し戻しの1つの枠を入れ直した束の一覧＝[(名前, 内側, 包み, 枠)]（2026-10-01・B-4・監査 CP49 の修正7）。\n\n    ★段2c の枠は「なし」（段2c の条件を外した束）も試す（§2.2 の段2c「「なし」を必ず併走」）。\n    ★段2c の枠が無い束（「なし」で勝った束）は、段2c の候補を足した束を試す（段4「全候補を1枠ずつ入れ直して1周」）。\n    \"\"\"\n    v = []\n    if st == \"stage2c+\":\n        for j, c in enumerate(cands_of[\"stage2c\"]):\n            v.append((f\"{tag}_c{j}\", list(inner) + [json.loads(json.dumps(c[\"cond\"]))], wrap, list(cf) + [\"stage2c\"]))\n        return v\n    if st == \"stage2c\" and k < len(cf):\n        v.append((f\"{tag}_none\", list(inner[:k]) + list(inner[k + 1:]), wrap, list(cf[:k]) + list(cf[k + 1:])))\n    for j, c in enumerate(cands_of[st]):\n        nm = f\"{tag}_c{j}\"\n        if k < len(cf):\n            iv = json.loads(json.dumps(inner))\n            iv[k] = json.loads(json.dumps(c[\"cond\"]))\n            v.append((nm, iv, wrap, list(cf)))\n        else:\n            wv = dict(wrap)\n            wv[\"持続n\"] = int(c[\"cond\"][\"value\"][\"n\"])\n            v.append((nm, inner, wv, list(cf)))\n    return v\n\n\ndef run_stage(df, a) -> int:\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:409「def run_stage(df, a) -> int:」",
+  "状態": "確定",
+  "番号": 13
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "run_stage の段1 で両側の帯を測る（B-3）",
+  "直す前の文字": "             else g.build_stage_candidates(a.stage, laws, table, tfs, lm))\n",
+  "種類": "足す文字",
+  "中身": "    if a.stage == \"stage1\":\n        cands = _both_sides(cands)               # ★2026-10-01（B-3）＝帯の下側も測る\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:419「else g.build_stage_candidates(a.stage, laws, table, tfs, lm))」",
+  "状態": "確定",
+  "番号": 14
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "run_sweep の _measure_one の印に枠も持たせる（B-4）",
+  "直す前の文字": "            marks[nm] = (iv, wv)\n",
+  "種類": "直した後の文字",
+  "中身": "            marks[nm] = (iv, wv, fv)               # ★2026-10-01（B-4）＝「なし」と足す側で枠が変わるので、枠も持つ\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:535「marks[nm] = (iv, wv)」",
+  "状態": "確定",
+  "番号": 15
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "run_sweep の枠の入れ直し（B-4）（1/6）",
+  "種類": "直した後の文字",
+  "中身": "        # ★2026-10-01（工事 m2f-label-builder-stages-20261001 の B-4・監査 CP49 の修正7）＝段2c の枠には「なし」も試し、\n        #   段2c の枠が無い束（「なし」で勝った束）には「段2c を足す」枠を足す。枠の並びは周ごとに作り直す。\n        for st in _sweep_slots(cf, wrap) + [\"stage2c\"]:\n            st0 = \"stage2c\" if st == \"stage2c+\" else st\n            if st0 not in cands_of:\n                cands_of[st0] = (g.build_width_candidates(laws, table, tfs, lm) if st0 == \"width\"\n                                 else g.build_stage_candidates(st0, laws, table, tfs, lm))\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:549「# ★入れ直す枠＝条件の枠（内側と同じ並び）＋段3 の包みが在れば持続（streak の本数）の枠」",
+  "直す前の文字": "        slots = list(cf) + ([\"stage3\"] if wrap else [])\n        for st in slots:\n            if st not in cands_of:\n                cands_of[st] = (g.build_width_candidates(laws, table, tfs, lm) if st == \"width\"\n                                else g.build_stage_candidates(st, laws, table, tfs, lm))\n",
+  "状態": "確定",
+  "番号": 16
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "run_sweep の枠の入れ直し（B-4）（2/6）",
+  "種類": "直した後の文字",
+  "中身": "            for k, st in enumerate(_sweep_slots(cf, wrap)):\n                variants = _slot_variants(f\"sweep_b{b_i}_r{rnd}_f{k}\", inner, cf, wrap, st, k, cands_of)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:549「# ★入れ直す枠＝条件の枠（内側と同じ並び）＋段3 の包みが在れば持続（streak の本数）の枠」",
+  "直す前の文字": "            for k, st in enumerate(slots):\n                variants = []\n                for j, c in enumerate(cands_of[st]):\n                    nm = f\"sweep_b{b_i}_r{rnd}_f{k}_c{j}\"\n                    if k < len(cf):\n                        iv = json.loads(json.dumps(inner))\n                        iv[k] = json.loads(json.dumps(c[\"cond\"]))\n                        variants.append((nm, iv, wrap, cf))\n                    else:\n                        wv = dict(wrap)\n                        wv[\"持続n\"] = int(c[\"cond\"][\"value\"][\"n\"])\n                        variants.append((nm, inner, wv, cf))\n",
+  "状態": "確定",
+  "番号": 17
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "run_sweep の枠の入れ直し（B-4）（3/6）",
+  "種類": "直した後の文字",
+  "中身": "                cand_best = next((r for r in rows if r.get(\"判定\") in marks and \"①時間の割合\" in r), None)\n                _len0 = len(cf)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:549「# ★入れ直す枠＝条件の枠（内側と同じ並び）＋段3 の包みが在れば持続（streak の本数）の枠」",
+  "直す前の文字": "                cand_best = next((r for r in rows if r.get(\"判定\") in marks and \"①時間の割合\" in r), None)\n",
+  "状態": "確定",
+  "番号": 18
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "run_sweep の枠の入れ直し（B-4）（4/6）",
+  "種類": "直した後の文字",
+  "中身": "                    inner, wrap, cf = marks[cand_best[\"判定\"]]\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:549「# ★入れ直す枠＝条件の枠（内側と同じ並び）＋段3 の包みが在れば持続（streak の本数）の枠」",
+  "直す前の文字": "                    inner, wrap = marks[cand_best[\"判定\"]]\n",
+  "状態": "確定",
+  "番号": 19
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "run_sweep の枠の入れ直し（B-4）（5/6）",
+  "種類": "直した後の文字",
+  "中身": "                print(f\"[差し戻し] 束 {b_i}・周 {rnd}・枠 {k}（{st}）＝いまの最良 {best.get('判定')}\")\n                if len(cf) != _len0:\n                    break                 # ★枠の数が変わった（「なし」か足す側が勝った）＝枠の並びを作り直して周の頭から\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:549「# ★入れ直す枠＝条件の枠（内側と同じ並び）＋段3 の包みが在れば持続（streak の本数）の枠」",
+  "直す前の文字": "                print(f\"[差し戻し] 束 {b_i}・周 {rnd}・枠 {k}（{st}）＝いまの最良 {best.get('判定')}\")\n",
+  "状態": "確定",
+  "番号": 20
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "run_sweep の枠の入れ直し（B-4）（6/6）",
+  "種類": "直した後の文字",
+  "中身": "        best_row[\"枠\"] = cf\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:549「# ★入れ直す枠＝条件の枠（内側と同じ並び）＋段3 の包みが在れば持続（streak の本数）の枠」",
+  "直す前の文字": "        best_row[\"枠\"] = frames\n",
+  "状態": "確定",
+  "番号": 21
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "selftest の⑤の前に ⑭⑮⑯ を足す（B-2・B-3・B-4）",
+  "直す前の文字": "    # ⑤ 印の作り方が観察の道具の実物と同じ関数であること（写しを作っていない）\n",
+  "種類": "直した後の文字",
+  "中身": "    # ⑭ 段2a の強さの否定の出る線は、入る線より緩い側（above なら1つ大きい分位）（2026-10-01・B-2）\n    try:\n        import engine_tuner_gen as _g14\n        _lm14, _w14 = _g14.load_limits()\n        _c14 = [{\"not\": {\"role\": \"env\", \"form\": \"level\", \"material\": [{\"family\": \"ADX\", \"param\": 14, \"tf\": \"1h\"}],\n                         \"side\": \"above\", \"value\": {\"threshold_q\": \"q50\"}}}]\n        _o14 = _loosened_off(_c14, _lm14, frames=[\"stage2a\"])[\"any\"][0]\n        if _o14[\"value\"][\"threshold_q\"] != \"q51\" or _o14[\"side\"] != \"above\":\n            ng.append(f\"⑭: 強さの否定の出る線が緩い側でない（{_o14['side']} {_o14['value']['threshold_q']}）\")\n    except BaseException as _e14:\n        ng.append(f\"⑭: 出る線を作る所で止まった: {type(_e14).__name__} {str(_e14)[:80]}\")\n    # ⑮ 段1 は帯の上側と下側の両方を測る（2026-10-01・B-3）\n    _b15 = _both_sides([{\"rank\": 1, \"cond\": {\"side\": \"above\", \"value\": {\"threshold_q\": \"q50\"}}}])\n    if sorted(c[\"cond\"][\"side\"] for c in _b15) != [\"above\", \"below\"]:\n        ng.append(\"⑮: 段1 の候補に上側と下側の両方が無い\")\n    # ⑯ 差し戻しの段2c の枠に「なし」を入れ、段2c の枠が無い束には段2c を足す（2026-10-01・B-4）\n    _co16 = {\"stage2c\": [{\"cond\": {\"x\": 1}}], \"stage1\": [{\"cond\": {\"y\": 1}}]}\n    _v16a = _slot_variants(\"t\", [{\"a\": 1}, {\"b\": 1}], [\"stage1\", \"stage2c\"], None, \"stage2c\", 1, _co16)\n    _v16b = _slot_variants(\"t\", [{\"a\": 1}], [\"stage1\"], None, \"stage2c+\", 1, _co16)\n    if (not any(_nm.endswith(\"_none\") and _fv == [\"stage1\"] for _nm, _iv, _wv, _fv in _v16a)\n            or not any(_fv == [\"stage1\", \"stage2c\"] for _nm, _iv, _wv, _fv in _v16b)\n            or _sweep_slots([\"stage1\"], None) != [\"stage1\", \"stage2c+\"]):\n        ng.append(\"⑯: 差し戻しで段2c の「なし」か、段2c を足す束が試されない\")\n    # ⑤ 印の作り方が観察の道具の実物と同じ関数であること（写しを作っていない）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:787「# ⑤ 印の作り方が観察の道具の実物と同じ関数であること（写しを作っていない）」",
+  "状態": "確定",
+  "番号": 22
+ },
+ {
+  "対象のファイル": "scripts/priority_rebuild/recipes/search_limits.json",
+  "直す箇所": "stage_keep_range の hi（K-1）",
+  "直す前の文字": "  \"stage_keep_range\": { \"lo\": 1, \"hi\": null, \"kind\": \"int\" },\n",
+  "種類": "直した後の文字",
+  "中身": "  \"stage_keep_range\": { \"lo\": 1, \"hi\": 10, \"kind\": \"int\" },\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/recipes/search_limits.json:50「\"stage_keep_range\": { \"lo\": 1, \"hi\": null, \"kind\": \"int\" },」",
+  "状態": "確定",
+  "番号": 23
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 14a（札の構造）と分け、14b と15番だけの工事にする | まこさんの指示（req_split_20261001）。6d とまとめた案は約10万文字で1回の返信に収まらない | 設計書の道具を直して【4-20】をファイルから読む（まこさん「修正せずに」） |
+| B-1 は上端を候補の本数に切り詰める（止めない） | 段2b の候補は1本で、上端10 を書くと束が1本も組めない。下端の検査は残す | 段ごとに別の上端を設定に持たせる |
+| B-2 は not の中身だけ、緩める向きを反対にする | 帯の幅と段1 は _flip_loose で側を返していて正しい向き。not の中身だけが強さの側のまま緩めていた | not の中身も側を返す（強さが戻ったら出る形でなくなる） |
+| B-3・B-4 の作りは測る道具に小さな関数（_both_sides・_sweep_slots・_slot_variants）として足し、自己テストで直に試す | 合成データで段の走行を丸ごと回さなくても、両側と「なし」と足す側を確かめられる | run_stage・run_sweep の中に直に書く |
+| B-5 は条件の中身（JSON）が同じ候補を飛ばし、順位を詰める | 同じ列の行はまったく同じ束（段1 に動く線は無い）。順位を詰めないと、組む側の順位で取る束がずれる | 測る道具の側で重なりを除く（組む側の重なりが残る） |
+| B-6 は強さで並べる | まこさん決定（ok_todo_20261001）。M2-A で決めた場面の正解は強さだけ | 3つの正解を混ぜた順のまま |
+| T48 を短く走らせる口 --selftest-stages を足す | 組む側の --selftest の全体は約6分半で、承認の前の仮当ての打ち切り300秒を超える（2026-10-01 の試しで打ち切られた） | 完成の条件を全体の --selftest にする |
+| 固定のレシピ r9_demand_fixture.json の出る線は直さない | 需給の列が足されるかを測るためのレシピで、出る線の向きは測る中身に関係しない。直すと直す前と同じ結果を確かめる条件が崩れる | 同じ回に直す |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 段1 の束が2倍になり、段1 の走行が約49分 → 約98分（目安・未測定） | 走らせる前に、束1本の時間を小さく測ってフロー宣言に見込みを書く（恒久60〜62番） |
+| 組む側の --selftest は全体で約6分23秒（b35 の注記の実測）。承認の打ち切り120秒より長い | 完成の条件の壊すプログラムは「—」にし、承認の後に --selftest を直接 走らせて貼る |
+| B-5 で順位を詰めるので、組む側が順位で取る束（sample_regime_build の B・C・G）の中身が直す前と変わる | T48 と既存の T24・T39〜T47 を走らせて、束が組めて法則の審査を通ることを確かめる |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 組む側の自己テスト（T48 を含む全体） | 約6分半 | python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest の全体（b35_gate_branch_gone.sh の注記の実測＝6分23秒） |
+| 測る道具の自己テスト（⑭⑮⑯ を含む） | 1分以内の見込み | ⑪ の合成データの走行を含む既存の自己テスト（時間の実測の記録は未確認） |
+| G2 → H2 の印の取り直し | 約30秒 ＋ 約5分 | next_step の印の節 |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 段の候補を作る側と測る道具が、§2.2 の段の探し方の一部（上端の扱い・出る線の向き・段1 の下側・3枠目の「なし」・重なり・並べる正解）を実装していなかったこと（milestones2 の M2-F-13b）。 |
+| 期待値分解 | 売買のロジックには触れません。勝率・平均利益・敗率・平均損失は、この工事では動きません。 |
+| root か symptom か | root です。止まる所・向き・測り漏れ・重なり・並べる正解を、それぞれの関数で直します（結果を後から手で直す運用にしません）。 |
+| ベースアップ | 手本＝_flip_loose（出る線の向き・engine_tuner_gen.py:3135〜3145）・stage_keep_of の下端の検査・run_stage の段2c の「なし」の併走・--selftest-rank-demand の口の作り（engine_tuner_gen.py:7926〜7937）。 |
+
+【7-2 固定値ゼロ宣言】
+この工事に、疑似シミュから取った値は1つもありません。渡す本数の上端10は まこさんの決定（2026-09-18）です。
+
+【7-3 変更の単位】
+変更は1つ＝段の候補を作る側と測る道具を、M2-F の段の走行（M2-F-8〜15）に使える形にする（段の不具合6つと、渡す本数10本）。札の構造（14a）は別の工事に分けた（req_split_20261001）。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 当たるか | 理由 |
+|---|---|---|
+| 1 | 当たりません | ランダムに条件をつなぐだけのもの、ではありません。段の候補は法則が名指しした物を成績表の順位で並べ、乱数を使いません（測る道具の⑦と組む側の T24 が乱数の道を見る）。 |
+| 2 | 当たりません | 探す値を CC が先に点の一覧で限定するもの、ではありません。探す値の範囲は変えず、渡す本数の上端10は まこさんの決定です。 |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| B-3 で側を返した帯が、法則として意味のある帯か | 道具は側を返すだけで、帯の向きの意味は見ない（法則が側を決めない帯だけに当たる） |
+| B-4 の差し戻しが、良くならなくなるまでに何周 回るか | 周の数の上限は持たない（直す前と同じ） |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝3本（組む側 engine_tuner_gen.py・測る道具 regime_r9_diag.py・設定 search_limits.json）を【7-8】に書いた。1ファイルに収まらないのは、段の候補を作る側と測る側の両方に同じ不具合が在るため（7-3）。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝engine_tuner_gen.py）。
+- 非該当（新しいファイルを作らない）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝直す前の文字が実物にちょうど1か所ずつ在ることを道具で数えた。142回目に、読むもの宣言のために直す相手と関係の無い壊すプログラムまで全部 読み込んだ誤りは再演しない（直す行を探す物だけに絞る）。
+- 非該当（売買のロジックの部品・前処理を足さない）。
+- 直すファイルの行番号を指す文書は、実装の後に git grep で数え、ずれを直す（gen_regime_kb.py --verify の引用の実在検査で見る）。
+- 直すファイルの名前で壊すプログラムを grep した。14b で直す行を探す物の探す文字は、この工事の直す前の文字と重ならない（4-13）。
+- 非該当（壊すプログラムを新しく作らない）。b97 は、壊した道具が results/ に書いた順位表と落ちた候補を消す形のまま。
+- 新しく足す関数（selftest_stages・_both_sides・_sweep_slots・_slot_variants）は、全部 DESIGN_CONTRACT の impl_functions に書いた（【7-8】）。＝engine_tuner_gen.py: <モジュール直下>・stage_keep_of・build_stage_candidates・sample_regime_build・selftest_stages・selftest・main ／ regime_r9_diag.py: _loosened_off・_both_sides・_sweep_slots・_slot_variants・run_stage・run_sweep・selftest
+- 新しく足す旗 --selftest-stages は、完成の条件の行が走らせる。
+- 2回目の承認の前に、実装の中で変わった手順を設計書に書き直す（その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2f-label-builder-stages-20261001）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝組む側の --selftest-stages（T48）・測る道具の --selftest（⑭⑮⑯）・承認の前の検査。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| 上端が候補の本数を超えても組む側がレンジの判定の束を組め、段2a の出る線が緩い側に在り、段の候補に同じ条件が2回 並ばず、段1・段2c は強さで並ぶ（T48＝B-1・B-2・B-5・B-6） | python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest-stages | 実経路 | — | — | 要 | 未着手 |
+| 測る道具の出る線が緩い側（⑭）・段1 が上側と下側の両方の帯を測る（⑮）・差し戻しが段2c の「なし」と足す側を試す（⑯） | python3 scripts/priority_rebuild/regime_r9_diag.py --selftest | 実経路 | — | — | 要 | 未着手 |
+| 渡す本数の上端が10（K-1） | jq '.stage_keep_range.hi' scripts/priority_rebuild/recipes/search_limits.json | 実経路 | — | — | 要 | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  "scripts/priority_rebuild/engine_tuner_gen.py",
+  "scripts/priority_rebuild/regime_r9_diag.py",
+  "scripts/priority_rebuild/recipes/search_limits.json"
+ ],
+ "NEW_FILE": [],
+ "MODEL": [],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "self_check_calls": [
+   "selftest_stages",
+   "_seen_c"
+  ],
+  "impl_functions": {
+   "scripts/priority_rebuild/engine_tuner_gen.py": [
+    "<モジュール直下>",
+    "stage_keep_of",
+    "build_stage_candidates",
+    "sample_regime_build",
+    "selftest_stages",
+    "selftest",
+    "main"
+   ],
+   "scripts/priority_rebuild/regime_r9_diag.py": [
+    "_loosened_off",
+    "_both_sides",
+    "_sweep_slots",
+    "_slot_variants",
+    "run_stage",
+    "run_sweep",
+    "selftest"
+   ]
+  },
+  "must_use": {
+   "run_stage": [
+    "_both_sides"
+   ],
+   "run_sweep": [
+    "_sweep_slots",
+    "_slot_variants"
+   ]
+  },
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事の道具が外から読む一覧の形は変えない",
+  "generated_from": {
+   "impl_functions": "4-3 に書いた、この工事で触る所",
+   "must_use": "直した後に呼ぶ名前（4-3）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```
+
+【外部検索】
+
+| 名前 | 中身 |
+|---|---|
+| 状態を保つ判定の出る線の向き | hysteresis（入る線と出る線を別にする形）で、出る線を入る線より緩い側に置くやり方を調べる（法則 C6 の②・私の導出） |
+| 段ごとに候補を絞る探し方での、同じ候補の重なり | 段ごとに上位を渡す探し方（beam search）で、同じ候補を重ねて数えないやり方を調べる（私の導出） |

@@ -2535,10 +2535,12 @@ STAGE_SPEC = {
     #   ★2026-09-13（完成の条件 #4・まこさん決定「案1」「一本化する」）＝「役割」と「法則の番号」を
     #     ここから外し、§2.2 の候補の元データ（`stage_candidates(段)` の role・law）から読む形にした。
     #     直す前は同じものを元データと二重に持ち、段3 の役割が食い違っていた（ここ＝None／元データ＝location）。
-    "stage1":  {"label": None,   "pick": "lineage"},
+    # ★2026-10-01（B-6・まこさん決定「それでいいので進めて」）＝段1・段2c は強さ（場面の正解＝実際にレンジだったか）の順に並べる。
+    #   直す前は None＝3つの正解を混ぜた順で、段1 の1位は「大きさ・先288本」で上がった
+    "stage1":  {"label": "強さ", "pick": "lineage"},
     "stage2a": {"label": "強さ", "pick": "family"},
     "stage2b": {"label": None,   "pick": "bool_col"},
-    "stage2c": {"label": None,   "pick": "family"},
+    "stage2c": {"label": "強さ", "pick": "family"},
     "stage3":  {"label": None,   "pick": "number"},
 }
 # ★符号を取り去る前処理を付ける指標は、ここに書かない（2026-09-11 に元データへ移した）。
@@ -2877,6 +2879,7 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits) -> list[d
     # ★2026-09-27（M2-E-4e）＝「動く線」の候補（窓つきの前処理を付けたもの）。固定の線の候補を全部 並べた後ろに足す
     #   ＝固定の線の順位を1つも変えない（束を組む側は順位で3枠目を取るので、いまの束は変わらない）。
     _moving: list[dict] = []
+    _seen_c: set = set()                           # ★2026-10-01（B-5）＝同じ条件の候補を2回 並べない
     rank = 0
     for fam, tf, lab, hor, med, ncol, col in ranked_groups(role, label):
         if fam not in iref.FAMILY_LINEAGE or fam not in ranges:
@@ -2938,6 +2941,14 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits) -> list[d
         else:
             cond = {"role": role, "form": "level", "material": [m],
                     "side": side, "value": _thr_fixed(limits)}
+        # ★2026-10-01（工事 m2f-label-builder-stages-20261001 の B-5）＝条件の中身が同じ候補は、最初の1本（順位の高い方）だけを残す。
+        #   ranked_groups は（正解・先読み・種類・時間足）の組ごとに出すので、同じ種類×時間足の同じ列が最大6回 並んでいた
+        #   （段1 は 2,487行のうち中身の違う列 812・worklog 20260928 §15 の 15-8）
+        _ck = json.dumps(cond, sort_keys=True, ensure_ascii=False)
+        if _ck in _seen_c:
+            rank -= 1
+            continue
+        _seen_c.add(_ck)
         # ★2026-09-16（監査 cp36 の M-1）＝設定の欄 `stage_limits.<段>.quantiles` が在れば、
         #   材料1つにつき、その分位の数だけ候補を作る（分位の順）。
         #   書いていなければ、いままでどおり真ん中の1点だけ（まこさん決定 2026-09-11）。
@@ -3151,7 +3162,8 @@ def stage_keep_of(limits: dict, n_cands: int) -> int:
     ★2026-09-13（98回目・監査 cp36 の C-2）＝直す前は、この欄を読むコードが0か所で、`keep` は 1 の直書きだった。
     ★読むのは上端＝「その段では、成績表の順位が上端以内の候補だけを使ってよい」。上端が null なら候補の本数
       （絞らない）。下端は「1位だけ」になる値。範囲の中を動かす（何本 渡すかを探す）のは M2-F。
-    ★数字を作らない＝範囲の外（lo < 1／hi > 候補の本数／lo > hi）は SampleError で止める（fail-closed）。
+    ★数字を作らない＝範囲の外（lo < 1／lo > hi）は SampleError で止める（fail-closed）。
+    ★上端が候補の本数を超える段は、候補の本数を使う（2026-10-01・B-1＝直す前は止めていた）。
     ★欄そのものが無ければ既定＝lo 1・hi null（設定ファイル `recipes/search_limits.json` の値と同じ）。
     """
     r = (limits or {}).get("stage_keep_range") or {}
@@ -3162,7 +3174,9 @@ def stage_keep_of(limits: dict, n_cands: int) -> int:
     if lo < 1:
         raise SampleError(f"stage_keep_range の下端が 1 未満: lo={lo}（fail-closed）")
     if hi > int(n_cands):
-        raise SampleError(f"stage_keep_range の上端が候補の本数を超える: hi={hi} > {int(n_cands)}（fail-closed）")
+        # ★2026-10-01（工事 m2f-label-builder-stages-20261001 の B-1）＝上端が候補の本数を超える段は、候補の本数の分だけ使う（止めない）。
+        #   段2b の候補は1本なので、上端に10を書くと組む側がレンジの判定の束を1本も組めなかった（next_step §6 の224番）
+        hi = int(n_cands)
     if lo > hi:
         raise SampleError(f"stage_keep_range が逆さま: lo={lo} > hi={hi}（fail-closed）")
     return hi
@@ -3346,7 +3360,10 @@ def sample_regime_build(limits, pool, tfs, table, name="range", order_n: int = 0
     cond_f = None
     # ── E 状態を保つ（C6・C7）＝on＝持続 F の1つ（内側＝A∩B∩C∩(D)∩(G)・M2-E-4d）か、法則に R4 が無ければ A∩B∩C∩(D)∩(G)／off＝A・B・C をそれぞれ緩い側へずらした any ──
     off_c = json.loads(json.dumps(strong))
-    off_c["value"]["threshold_q"] = _loose_q_fixed(limits, strong["value"]["threshold_q"], strong_side)
+    # ★2026-10-01（B-2）＝not の中身の出る線は、強さが はっきり上がった所（above なら1つ大きい分位）。側は返さない（強さが戻ったら出る）。
+    #   直す前は強さの側のまま緩めたので、出る線が入る側の内側（above q(X−1)）で真になった（監査 CP48 の別に見つけたこと）
+    off_c["value"]["threshold_q"] = _loose_q_fixed(limits, strong["value"]["threshold_q"],
+                                                "below" if strong_side == "above" else "above")
     # ── 段2b 向きの否定（R8・承認済みの借用）＝真偽の列を `not` で包んで1つ入れる（手順8） ──
     #   ★列の名前は §2.2 の元データから読む（`m2_stage_candidates.json` の `bool_col`）。
     #   ★`{"bool_col": …, "want": false}` と書かない＝`not` のノードが消えて、法則 R8 の
@@ -5021,6 +5038,59 @@ def selftest_rank_demand() -> list:
     print(f"  T23-demand 需給の列を順位から読む: ①sufficiency に3列 ②印から外すと消える ③戻すと出る "
           f"④列名→(名前, 5m) ⑤location・env の組に混ざらない ／ ダメだった件 {len(out)}")
     return out
+
+
+def selftest_stages() -> list:
+    """T48（2026-10-01・工事 m2f-label-builder-stages-20261001）＝B-1 上端・B-2 出る線の向き・B-5 重なり・B-6 並べる正解。
+
+    ★selftest の T48 と、口 --selftest-stages の両方がこの1本を呼ぶ（判定を2か所に書き写さない）。
+      --selftest の全体は約6分半で、承認の前の仮当ての打ち切り（300秒）を超えるため、この口で短く走らせる。
+    戻り＝ダメだった件の一覧（空なら全部 通った）。
+    """
+    t48 = []
+
+    def _find_not48(t):
+        if isinstance(t, dict):
+            if isinstance(t.get("not"), dict) and t["not"].get("form") == "level":
+                return t["not"]
+            for _v in t.values():
+                _r = _find_not48(_v)
+                if _r:
+                    return _r
+        if isinstance(t, list):
+            for _v in t:
+                _r = _find_not48(_v)
+                if _r:
+                    return _r
+        return None
+    try:
+        _lm48, _w48 = load_limits()
+        _lm48h = {**_lm48, "stage_keep_range": {"lo": 1, "hi": 10, "kind": "int"}}
+        if stage_keep_of(_lm48h, 1) != 1:
+            t48.append("B-1: 上端10・候補1本で 1 にならない")
+        if STAGE_SPEC["stage1"]["label"] != "強さ" or STAGE_SPEC["stage2c"]["label"] != "強さ":
+            t48.append("B-6: 段1・段2c の label が強さでない")
+        _laws48 = laws_for_scene("range")
+        _tb48 = load_signal_table()
+        _pool48, _tfs48, _ = material_pool()
+        for _st48 in ("stage1", "stage2a", "stage2c"):
+            _cs48 = build_stage_candidates(_st48, _laws48, _tb48, _tfs48, _lm48)
+            _ks48 = [json.dumps(_c["cond"], sort_keys=True, ensure_ascii=False) for _c in _cs48]
+            if len(_ks48) != len(set(_ks48)):
+                t48.append(f"B-5: {_st48} に同じ条件が {len(_ks48) - len(set(_ks48))} 本 重なる")
+            if _st48 != "stage2a" and any(_c.get("label") not in ("強さ", None) for _c in _cs48):
+                t48.append(f"B-6: {_st48} の候補に強さ以外の正解で並んだ物が在る")
+        _bd48, _dr48 = sample_regime_build(_lm48h, _pool48, _tfs48, _tb48)
+        _hy48 = _bd48["entry"]["tree"]["all"][0]
+        _n48 = _find_not48(_hy48["on"])
+        _o48 = _hy48["off"]["any"][2]
+        _qi48 = int(str(_n48["value"]["threshold_q"]).lstrip("q"))
+        _qo48 = int(str(_o48["value"]["threshold_q"]).lstrip("q"))
+        if _o48["side"] != _n48["side"] or not ((_qo48 > _qi48) if _n48["side"] == "above" else (_qo48 < _qi48)):
+            t48.append(f"B-2: 段2a の出る線が緩い側でない（入る {_n48['side']} q{_qi48}・出る {_o48['side']} q{_qo48}）")
+    except BaseException as _e48:                   # noqa: BLE001
+        t48.append(f"途中で止まった: {type(_e48).__name__} {str(_e48)[:120]}")
+    return t48
 
 
 def selftest() -> int:
@@ -7737,6 +7807,10 @@ def selftest() -> int:
         t46.append(f"途中で止まった: {type(_e46).__name__} {str(_e46)[:120]}")
     ng += [f"T46: {_x}" for _x in t46]
     print("  T46 持続の内側が成立の全体: ①入る条件が持続1つ ②内側が条件の束 ③内側の本数が引いた記録と一致 ④並びが A・B・C・(D)・(G)")
+    # ══ T48（2026-10-01・工事 m2f-label-builder-stages-20261001）＝本体は selftest_stages（口 --selftest-stages と同じ1本）══
+    t48 = selftest_stages()
+    ng += [f"T48: {_x}" for _x in t48]
+    print("  T48 段の不具合の直し: B-1 上端が候補の本数を超えても組める ／ B-2 強さの否定の出る線は緩い側 ／ B-5 同じ条件を2回 並べない ／ B-6 段1・段2c は強さで並べる")
 
     if ng:
         for x in ng:
@@ -7926,7 +8000,17 @@ def main() -> int:
     ap.add_argument("--selftest-rank-demand", action="store_true",
                     help="需給の列を順位から読む枝だけを試す（数秒）＝T23-demand と同じ本体（selftest_rank_demand）を呼ぶ。"
                          "壊すプログラム b38 が使う（設計書 demand-in-ranking-20260907）")
+    ap.add_argument("--selftest-stages", action="store_true",
+                    help="段の不具合の直し（B-1・B-2・B-5・B-6）だけを試す＝T48 と同じ本体（selftest_stages）を呼ぶ"
+                         "（全体の --selftest は約6分半で、承認の前の仮当ての打ち切り300秒を超えるため）")
     a = ap.parse_args()
+    if a.selftest_stages:
+        # ★2026-10-01（工事 m2f-label-builder-stages-20261001）＝T48 だけを短く走らせる口（--selftest-rank-demand と同じ作り）
+        _ng48 = selftest_stages()
+        for _x in _ng48:
+            print(f"  ❌ T48: {_x}")
+        print(f"  {'❌' if _ng48 else '✅'} T48 段の不具合の直し／ダメだった件 {len(_ng48)}")
+        return 1 if _ng48 else 0
     if a.selftest_rank_demand:
         # ★2026-09-07（設計書 demand-in-ranking-20260907 の F）＝T23-demand だけを短く走らせる口。
         #   `--selftest` の全体は約6分半で、承認のときの打ち切り（120秒）を超えるため（--selftest-extra-gate と同じ理由）。

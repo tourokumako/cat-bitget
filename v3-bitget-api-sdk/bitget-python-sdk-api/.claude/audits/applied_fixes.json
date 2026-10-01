@@ -1008,6 +1008,167 @@
    "file": ".claude/tools/apply_audit_fix.py",
    "at": "2026-10-01T12:36:31",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "1",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "2",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "3",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "4",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "5",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "6",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "7",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "8",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "9",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "10",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "11",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "12",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "13",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "14",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "15",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "16",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "17",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "18",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "19",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "20",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "21",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "22",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-builder-stages-20261001",
+   "num": "23",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-01T17:54:40",
+   "how": "当てた"
   }
  ]
 }

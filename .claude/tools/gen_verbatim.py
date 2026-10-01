@@ -160,15 +160,62 @@ SEP_RE = re.compile(r"^\s*\|(?:\s*:?-{3,}:?\s*\|)+\s*$")
 REPORT_LINE_RE = re.compile(r"^\s*(?:#+\s*)?\**\s*(?:(?:このターン|このやり取り)で)?(?:書き換え|書き替え)たファイル")
 
 
-def drop_reason(ln: str, vid_short: str, drop: list) -> str:
-    """要件のまとめで外す理由（外さないなら空）。vid_short＝V01 の形。"""
+def drop_reason(ln: str, vid_short: str, drop: list, quoted=()) -> str:
+    """要件のまとめで外す理由（外さないなら空）。vid_short＝V01 の形。quoted＝CC の文の引用の行の番号（quoted_cc）。"""
     if vid_short in drop:
         return "CC が番号で外した（--drop）"
+    if vid_short in quoted:
+        return "まこさんが貼った CC の文の引用（道具の決まり・その発言より前の CC の文に同じ行が在る）"
     if SEP_RE.match(ln):
         return "表の区切りの行（道具の決まり）"
     if REPORT_LINE_RE.match(ln):
         return "返信の終わりの「書き換えたファイル」の行（道具の決まり）"
     return ""
+
+
+# ★2026-10-01（142回目・まこさん「意味が伝わらない依頼内容を書いちゃ駄目だろ」「依頼書を作る道具の不具合を完全に修正して」）
+#   ＝まこさんは、CC の文を貼って「→」で答えることが多い。貼った CC の文も逐語のファイルに入るので、
+#     依頼書の問い2 に「決めていただくこと：…」などの CC の文が、まこさんの要望として並んだ（cp57）。
+#   見分け方＝その発言より前の CC の文に、同じ行（前後の空白を除く・QUOTE_MIN 文字以上）が在れば引用。
+#     短い行（「OK」など）は偶然に一致するので見ない。CC の文のファイル（話し手が CC だけ）は見ない。
+#   ★照らす前に、両方から書き方の記号（行頭の箇条書きの印・引用の印・番号、太字の *、バッククォート、空白）を除く。
+#     画面からコピーすると これらが落ちる（実測＝CC「- **起きること**：… `engine_tuner_gen.py` …」→ 貼った文「起きること：… engine_tuner_gen.py …」）。
+QUOTE_MIN = 10
+_MARK_RE = re.compile(r"^\s*(?:[-*+>]|\d+\.)\s+")
+
+
+def _plain(s: str) -> str:
+    """書き方の記号を除いた形（引用の照らしだけに使う）。"""
+    return re.sub(r"\s+", "", _MARK_RE.sub("", s).replace("*", "").replace("`", ""))
+
+
+def quoted_cc(m: dict, rows: list) -> set:
+    """まこさんの発言の行のうち、CC の文の引用の行の番号（V01 の形）。m＝控え（meta）・rows＝lines() の戻り。"""
+    if "まこさん" not in set(m.get("who") or []):
+        return set()
+    t0 = min([t for t in (m.get("time") or []) if t] or [""])
+    try:
+        cc = ["\n".join(_plain(x) for x in t["text"].splitlines())
+              for t in load_messages(Path(m["session"])) if t["who"] == "CC" and (not t0 or t["time"] < t0)]
+    except (OSError, KeyError):
+        return set()
+    out = set()
+    for vid, ln in rows:
+        s = _plain(ln)
+        if len(s) >= QUOTE_MIN and any(s in t for t in cc):
+            out.add(vid.rsplit(":", 1)[-1])
+    return out
+
+
+def requirement_lines(name: str, base: Path | None = None) -> list[tuple[str, str]]:
+    """要件の行だけ（要件のまとめと同じ外し方＝drop・CC の文の引用・表の区切り・報告の行を除く）＝[(<名前>:V01, 行), …]。
+    ★依頼書の問い2 はこれを使う（同じ判定を2か所に書かない）。"""
+    rows = lines(name, base)
+    _txt, mp = paths(name, base)
+    m = json.loads(mp.read_text(encoding="utf-8"))
+    drop = list(m.get("drop") or [])
+    quoted = quoted_cc(m, rows)
+    return [(vid, ln) for vid, ln in rows if not drop_reason(ln, vid.rsplit(":", 1)[-1], drop, quoted)]
 
 
 def _cut_report(text: str) -> str:
@@ -332,7 +379,9 @@ def summary(work: str) -> Path:
         drop = list(m.get("drop") or [])
         is_cc = set(m.get("who") or []) == {"CC"}
         cur = None
-        for vid, ln in lines(name, d):
+        _rows = lines(name, d)
+        quoted = quoted_cc(m, _rows)
+        for vid, ln in _rows:
             km = key_re.match(ln) if is_cc else None
             if km:
                 cur = km.group(1).split()[0]
@@ -342,7 +391,7 @@ def summary(work: str) -> Path:
                 design[-1][3] = vid.rsplit(":", 1)[-1]
                 design[-1][4] += 1
                 continue
-            why = drop_reason(ln, vid.rsplit(":", 1)[-1], drop)
+            why = drop_reason(ln, vid.rsplit(":", 1)[-1], drop, quoted)
             if why:
                 n_gone += 1
                 gone.append(f"| `{vid}` | {speaker} | {ln.replace('|', '／')} | {why} |")
@@ -379,7 +428,7 @@ def summary(work: str) -> Path:
         "",
         "## 外した行（要件でない行・消していない・逐語のまま）",
         "",
-        "外し方は2つ＝道具の決まり（表の区切りの行・返信の終わりの「書き換えたファイル」の行）と、"
+        "外し方は2つ＝道具の決まり（表の区切りの行・返信の終わりの「書き換えたファイル」の行・まこさんが貼った CC の文の引用）と、"
         "CC が逐語を書くときに行の番号で指定したもの（--drop・CC は文を書かず番号を選ぶだけ）。",
         "",
         *gone,
@@ -406,6 +455,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--uuid", default="")
     ap.add_argument("--verify", default="")
     ap.add_argument("--lines", default="")
+    ap.add_argument("--req-lines", default="", help="要件の行だけ（外した行・CC の文の引用を除く＝依頼書の問い2 と同じ判定）を出す")
     ap.add_argument("--work", default="", help="工事名（設計書の ARC の iter）＝--write の置き場 verbatim/<工事名>/")
     ap.add_argument("--summary", default="", help="工事名＝その工事の逐語のファイル全部から「要件のまとめ」1本を作る")
     ap.add_argument("--drop", default="", help="--write と一緒に＝要件のまとめで外す行の番号（V05,V08 の形）")
@@ -440,6 +490,11 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if ok else 1
         if a.lines:
             for vid, ln in lines(a.lines):
+                print(f"{vid}\t{ln}")
+            return 0
+        if a.req_lines:
+            # ★2026-10-01（142回目）＝要件の行だけ（依頼書の問い2 と同じ判定）を出す。読むだけ
+            for vid, ln in requirement_lines(a.req_lines):
                 print(f"{vid}\t{ln}")
             return 0
     except VerbatimError as e:
