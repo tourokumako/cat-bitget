@@ -289,4 +289,11 @@
 - hook が求めた残りの11本の自己テスト＝全部 pass（e38_logic_parts・engine_tuner_exec・engine_tuner_fire_diag・gen_composition_rules・gen_exit_families・gen_materials〔該当なし1件 S5〕・leak_causality_diag〔番人のみ・印は書かない＝leak_causality_diag.py:678〜679〕・tuner_backcalc・observe_diag・gen_acceptance 17/17・enforce_h2_pass 23/23）。
 - 残り＝H2 の印の取り直し（leak_causality_diag.py・約5分）と verify_design_contract.py --diff は、commit で差分をゼロにしてから（まこさんの OK 待ち）。そのあと m2_todo.json の M2-F-13b・M2-F-7 と next_step を書き替える。
 - 壊すプログラム b91 は走らせていない（約6分）。b91 が壊す行（stage_keep_of の return hi）は今回 直していない。壊さない側の出力から「❌ T35」が消えたことは、上の全体の自己テストで確かめた。
+- G2 の印が変わったので、Stop hook（enforce_next_step_tidy）に従い tidy_next_step.py --write で next_step の印の欄を作り直した（--verify 7つ 通過・元データ next_step_src.json の印の行も道具が書いた）。
+- まこさん「OK」→ commit 67405b1（8ファイル＝engine_tuner_gen.py・regime_r9_diag.py・search_limits.json・applied_fixes.json・監査 cp57 の結果・この worklog・next_step.md・next_step_src.json）。decisions.md（このセッションの前の 21:05 に変わった生成物）は入れていない。
+- commit の後＝verify_design_contract.py --diff＝「齟齬: 0件」（差分ゼロの道）。H2＝leak_causality_diag.py＝未来参照0件・打ち切り再現テストの食い違い0件・h2_pass.json（指紋 55cdbb35…）・4分57秒。enforce_g2_pass.py --check-fingerprint＝一致（4f618a5f…・対象38件）／enforce_h2_pass.py --check-fingerprint＝一致（55cdbb35…・対象22件）。
+- m2_todo.json の M2-F-13b・M2-F-7 を ✅済 にし、実測の欄を書いた → gen_regime_kb.py --write todo（§3・hash=36be93f2…）。hook が求めた自己テスト3本＝gen_regime_kb 15/15・gen_acceptance 17/17・gen_audit_docs 33/33。
+- ★--verify all が「m2_stage_candidates.json が変わったのに --write を走らせていません」の ❌ を1件 出した。私はこの元データに触っていない。原因＝milestones2 の §2.2-0 の表の「engine_tuner が実際に出す候補」の本数は、組む側の build_stage_candidates を呼んで書く（gen_regime_kb.py の verify_one は作り直した本文の指紋と照らす）。142回目の B-5（同じ束を2回 並べない）で本数が変わった（段1 2487→572・段2a 94→77・段2c 303→66）のに、実装の後にこの節を作り直していなかった。--dry-run stage で違いを確かめてから --write stage で作り直した（hash=112ebff3…）→ --verify all は6節とも ✅・引用のずれ0件。
+- 同じ事実（段1 の候補の本数）を書いた場所を grep した＝m2_todo.json の M2-F-8 の注意に「実物は 2,487本（2026-09-28 の … --stage stage1 --limit 2 の印字）」が日付つきで残る。測る道具が段1 で何本を測るか（B-3 で上側と下側の両方）は まだ測っていない＝推測で書き替えず、13番（M2-F-5 の走行）の印字で書き替える（next_step 0-1 に書いた）。M2-F-13b と 14b の行の「2,487行のうち中身の違う列 812」は直す前の不具合の説明なので そのまま。
+- next_step_src.json＝0-1 を143回目の末にし（142回目の 0-1 は「次の書き替えで消す」）、0-2 の冒頭の文を13番からに、13番を ★いまここ、14b と15番を ✅済、§6 の236番と239番を ✅済、§0-4 の 0e に決着の文を足した（0e の行は消すかを まこさんが決める）。
 
