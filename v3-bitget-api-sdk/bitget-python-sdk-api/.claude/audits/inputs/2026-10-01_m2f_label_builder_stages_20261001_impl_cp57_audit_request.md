@@ -106,7 +106,7 @@
 3. この依頼書は `gen_audit_docs.py request-design --work` が、設計書と工事のフォルダから作りました（CC は依頼書の元データを書いていません）。
 4. 承認の印（`acceptance.approved`）は、いまの設計書の sha256 と同じです（同じでなければ、この依頼書は作れません）。
 5. 承認した版の設計書の控えは 2 本（`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2f-label-builder-stages-20261001.01.md`・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2f-label-builder-stages-20261001.md`）。当てる道具が当てた記録（`SDK/.claude/audits/applied_fixes.json` の名前 `design:m2f-label-builder-stages-20261001`）は 23 件。
-6. 実装の前＝HEAD の commit e31d6e8（承認の控えをまだ commit していないので、実装の前は HEAD の版。`git show HEAD:<パス>` で出せる） ／ 実装の後＝作業中の変更（まだ commit していない。`git diff HEAD -- <パス>` で見られる）（承認の控えを入れた commit と、その親を git から読んだ。控えが commit されていなければ HEAD と作業中の変更）。
+6. 実装の前＝commit e31d6e8 ／ 実装の後＝commit bf238d5（承認の控えを入れた commit と、その親を git から読んだ。控えが commit されていなければ HEAD と作業中の変更）。
 
 ---
 
@@ -242,13 +242,13 @@ engine_tuner の目的は「net 利益を最大にする条件（指標・閾値
 
 **優先度の理由**＝違えば、実装は設計書のとおりに作られていない
 
-実装の前（HEAD の commit e31d6e8（承認の控えをまだ commit していないので、実装の前は HEAD の版。`git show HEAD:<パス>` で出せる））の対象のファイル（`SDK/scripts/priority_rebuild/engine_tuner_gen.py`・`SDK/scripts/priority_rebuild/recipes/search_limits.json`・`SDK/scripts/priority_rebuild/regime_r9_diag.py`）に、設計書 4-20 の実装の指示（23 件）を番号の順に当てた結果が、実装の後（作業中の変更（まだ commit していない。`git diff HEAD -- <パス>` で見られる））と1文字も同じか。確かめ方の例＝作業場に git show で実装の前のファイルを出し、直す前の文字を直した後の文字（足す文字なら直す前の文字＋足す文字）に置き替えて、実装の後と diff を取る。
+実装の前（commit e31d6e8）の対象のファイル（`SDK/scripts/priority_rebuild/engine_tuner_gen.py`・`SDK/scripts/priority_rebuild/recipes/search_limits.json`・`SDK/scripts/priority_rebuild/regime_r9_diag.py`）に、設計書 4-20 の実装の指示（23 件）を番号の順に当てた結果が、実装の後（commit bf238d5）と1文字も同じか。確かめ方の例＝作業場に git show で実装の前のファイルを出し、直す前の文字を直した後の文字（足す文字なら直す前の文字＋足す文字）に置き替えて、実装の後と diff を取る。
 
 ### Q2 — 実装の指示のどれにも当たらない行（設計書に無い変更）が無いか（優先度 A）
 
 **優先度の理由**＝在れば、設計書に無い変更が実装に混ざっている
 
-実装の前（HEAD の commit e31d6e8（承認の控えをまだ commit していないので、実装の前は HEAD の版。`git show HEAD:<パス>` で出せる））と実装の後（作業中の変更（まだ commit していない。`git diff HEAD -- <パス>` で見られる））の差分（`SDK/scripts/priority_rebuild/engine_tuner_gen.py`・`SDK/scripts/priority_rebuild/recipes/search_limits.json`・`SDK/scripts/priority_rebuild/regime_r9_diag.py`）のうち、実装の指示のどれにも当たらない行は在るか。在れば全部 挙げる。
+実装の前（commit e31d6e8）と実装の後（commit bf238d5）の差分（`SDK/scripts/priority_rebuild/engine_tuner_gen.py`・`SDK/scripts/priority_rebuild/recipes/search_limits.json`・`SDK/scripts/priority_rebuild/regime_r9_diag.py`）のうち、実装の指示のどれにも当たらない行は在るか。在れば全部 挙げる。
 
 ### Q3 — 当てた記録が、実装の指示の全部と1件ずつ合うか（優先度 A）
 
@@ -310,7 +310,7 @@ engine_tuner の目的は「net 利益を最大にする条件（指標・閾値
 ## 依頼を出した CC の自己申告
 
 1. **承認の後に設計書を作り直した**＝前の版 `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2f-label-builder-stages-20261001.01.md` と いまの版 `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/m2f-label-builder-stages-20261001.md` の違い＝ACC_CODEREF の囲みの中で 6 行・ACC_SPEC の囲みの中で 13 行・囲みの外で 6 行（実装の指示の囲み ACC_IMPL は同じ）
-2. **この工事の外の作業中の変更**＝`.claude/hooks/enforce_audit_docs.py`・`.claude/hooks/enforce_g2_pass.py`・`.claude/hooks/enforce_h2_pass.py`・`.claude/hooks/require_acceptance_before_impl.sh`・`.claude/hooks/require_chat_draft_before_long_reply.sh`・`.claude/hooks/require_confirm_before_act.py`・`.claude/hooks/require_read_plan_before_design.py`・`.claude/hooks/require_read_used.py`・`.claude/hooks/require_read_used.sh`・`.claude/hooks/require_request_understood.sh`・`.claude/tools/gen_audit_docs.py`・`.claude/tools/gen_review.py`・`.claude/tools/gen_verbatim.py`・`v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/e38_logics.backup_20260802_005140.json`（この工事の実装の指示が当てたものではない。Q1・Q2 の差分は、この工事の対象のファイルだけで取る）
+2. **この工事の外の作業中の変更**＝`.claude/hooks/require_chat_draft_before_long_reply.sh`・`.claude/hooks/require_request_understood.sh`・`v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/e38_logics.backup_20260802_005140.json`（この工事の実装の指示が当てたものではない。Q1・Q2 の差分は、この工事の対象のファイルだけで取る）
 
 (結果は、この番号ごとに1件ずつ答える)
 
@@ -449,4 +449,4 @@ v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/2026-10-01_m2f_lab
 
 → auditor session の CC が冒頭 auditor 宣言を読んで即 Plan agent 起動・結果ファイル書き出しまで自走。
 
-<!-- gen_audit_docs: request src=v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp57_work/cp57_src.gen.md src_sha256=6ef4f8dc1b1a318b8ef81e97846d419fa648758208b7f8bc92058ea5fca25f51 body_sha256=9f8a44ea3f27d9d1c24812448e759d8d0690731e7d9753488410f774b348a26e -->
+<!-- gen_audit_docs: request src=v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/cp57_work/cp57_src.gen.md src_sha256=60b74260de9c3bb32f5ccbe50b4fcee121eddd354435949163930e1fe1546a92 body_sha256=0b17fd5ab3cd1f6cb7fb2964cccec5766d4d385e3fd95081c3785e5e7c1d9971 -->
