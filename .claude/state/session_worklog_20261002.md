@@ -124,3 +124,40 @@
 ### 6-4 hook に止められた回数（§6 の作業の中）
 
 - require_confirm_before_act 4回（直す行を発言の後に開かずに Edit・前の Edit で行がずれた・--selftest を走らせずに Edit）。続けて block_repeat_failure と block_repeat_kind が診断と決まりの書き足しを求めた（計6回）。enforce_audit_request_gen 1回（grep の「\|」を読むだけでないコマンドと見た）・土台ゲート2回（「;」と「-->」の「>」）。決まりは sessions の lessons.md に書いた。
+
+## §7 監査 cp58 の Minor 4件を当てた（2026-10-02・145回目・まこさん決定「全部（修正1〜4）」）
+
+### 7-1 監査の結論と、まこさんの決定
+
+- 監査 cp58（結果＝SDK/.claude/audits/2026-10-02_m2f_label_structure_20261001_impl_cp58_audit_report.md）＝GO。Critical 0・Major 0・Minor 4（修正1〜4・4件とも regime_label.py）・Process 0。
+- 計画モードの問いで、まこさんが直す範囲を「全部（修正1〜4）」に決めた。
+- 4件とも、いまの札には効かない（採点に使う版は er_median・`import regime_label` は0件＝監査 Q8 の①）。工事 B・C で札の部品を呼ぶ形にしたとき、黙って違う札や版の名前を作るのを防ぐ直し。
+
+### 7-2 4件の中身
+
+1. 修正1＝load_config が、式の在る版（er_median・band_hold）以外の名前を止める。直す前は、式の無い名前（例 "v3"）でも止まらずに帯の版の式で札を作った。
+2. 修正2＝version_tag が、帯の版の「使う値」が空なら止める。直す前は「x None・m None…」の名前を返した。
+3. 修正3＝band_hold が、使う値が空なら「役割◯の使う値が空」と言って止める。直す前は、何が空かを言わずに TypeError で止まった。
+4. 修正4＝_line の説明の文の、帯の定義の出どころを直した。直す前＝CC の要約 label_structure_definition_verbatim_20260929.txt（R1 が0回）。直した後＝まこさんの原文（m2_todo.json の M2-F-6d の注意）と法則 R1（regime_detection_kb.md:823「その線が close の上下に揃っていたらレンジ。」）。
+
+### 7-3 当てたことと確かめたこと（「直った」の判定は私がしない＝恒久64番）
+
+- 当てる前＝apply_audit_fix.py --report … --severity Critical,Major,Minor,Process --dry＝「当たる 4 件（修正 1・2・3・4）／当てない 0 件」。修正の文を実物の行（regime_label.py:61・:118-119・:187・:250）と照らした。
+- 当てる道具（07:27:34）＝「✅ 当てた 4 件／当てなかった 0 件」・当てた記録 applied_fixes.json に4件（+28行）。
+- 道具が続けて掛けた照合（verify_design_contract.check）は FAIL＝「B scripts/priority_rebuild/regime_label.py: 設計書に書いたのに実装していない」18件（<モジュール直下>・_synth・band_range ほか）。だから G2 と H2 は走らなかった。原因は cp57 と同じ型（実装が HEAD に入っているので、差分の関数だけと照らす・worklog 20261001 §35）。
+- git diff＝監査の4つの文と同じ（+10行・-2行）。監査の「足す文字」の先頭の空の行は、道具が入れていない。
+- 自己検査＝`python3 -B scripts/priority_rebuild/regime_label.py --selftest`＝✅ 全部 pass（参考＝T1 1.000 ／ T3 版2 0.793・版1 0.203・4.468秒）。
+- 壊すプログラム＝`run_breaks.py --design .claude/state/acceptance.md --measure-only --only b118_band_continue_off.sh`＝✅ 期待どおり rc=1。走らせた後、部品は当てた後の中身に戻った（「b118 が壊した」の行0件・差分は修正の10行だけ）。b118 は行番号でなく文字で壊す相手を探すので、修正で行がずれても効く。
+- ★修正1〜3 で足した3つの止まり方は、いまの自己検査では試していない（自己検査に足す指示は監査に無い）。
+- 引数なしの出力（完成の条件2）は、照合が通らない間は設計↔実装ゲートが止めるので、commit の後に走らせる。
+
+### 7-4 同じ事実をそろえた（恒久72番の2）
+
+- next_step_src.json の14a の行の「正解ラベルの定義の正本＝label_structure_definition_verbatim_20260929.txt」を、「定義の原文＝m2_todo.json の M2-F-6d の注意（txt は CC の要約）」に直した（修正4 と同じ事実）。
+- 直さないもの＝承認の控え・やることの表.md・okd_labelA（承認済みの工事の記録）／worklog（過去の記録）／regime_label.json:6（別の事実＝役割ごとに測る話の出どころ）。
+
+### 7-5 そのほか
+
+- この会話の始めの表示に「Step 0 必読」は出ていない（表示は、引き継ぎのパスの確認・ToDo と必読の案内・まこさんが決めたこと・hook の健全性の4つ）。/context の Memory files は まこさんに見ていただく。
+- 残り＝commit（まこさんの OK）→ verify_design_contract.py --diff → 引数なしの出力 → G2 → H2 の取り直し（約5分）→ 検査済みの記録の一致を確かめる。
+- hook に止められた回数＝設計↔実装ゲート1回（`python3 -` の heredoc で抜き出そうとした＝memory の早見表に在った形）。計画の承認の画面で、まこさんが「どのモードがよいの？」と聞いた（答え＝編集を自動で許可）。

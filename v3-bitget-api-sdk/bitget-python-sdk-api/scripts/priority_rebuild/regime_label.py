@@ -59,6 +59,8 @@ def load_config(path=None) -> dict:
     use = d.get("採点に使う版")
     if use not in vers:
         raise LabelError(f"[札] 採点に使う版 {use} が設定の「版」に無い（在る版＝{sorted(vers)}・fail-closed）")
+    if use not in ("er_median", "band_hold"):
+        raise LabelError(f"[札] 採点に使う版 {use} の式が regime_label.py に無い（式が在る版＝er_median・band_hold・fail-closed）")
     if use == "band_hold":
         for role, rc in (vers["band_hold"].get("役割") or {}).items():
             if not rc.get("使う値"):
@@ -115,8 +117,10 @@ def er_median(win: pd.DataFrame, n: int) -> dict:
 def _line(vals, merge_w: float, c_min: int, x: float, above: bool):
     """近い山（谷）を1つにまとめ、c 個以上の群を線にする。終値 x に いちばん近い上（下）の線を返す。無ければ None。
 
-    定義の文（.claude/state/label_structure_definition_verbatim_20260929.txt）＝「帯は、近い山を1つにまとめ、
-    c 個以上なら上の線、谷で下の線を作ります」。
+    定義の文＝まこさんの原文（m2_todo.json の M2-F-6d の注意の「帯の上と下」の文）＝「上の線は、高さの差が手数料の床…
+    以内にある山を1つにまとめた所です。下の線は谷で同じことをします。まとめた山が2つ以上あれば上の線が在るとし、谷も同じです。
+    …これが法則 R1 の跳ね返しの帯です。」。終値 x の上と下に線を取るのは、法則 R1（regime_detection_kb.md の R1）の
+    「その線が close の上下に揃っていたらレンジ」に従う。label_structure_definition_verbatim_20260929.txt は CC の要約（原文ではない）。
     ★文に無いので CC が決めたこと（2026-09-29・依頼書の自己申告）＝①まとめ方＝高い山から順に並べ、
       群の先頭の山から「まとめる幅」以内の山を同じ群に入れる（谷は低い方から）②線の値＝群の先頭の山（谷）
       ③線が2本以上あるとき＝終値に いちばん近い上の線と下の線を使う。
@@ -184,6 +188,8 @@ def band_hold(win: pd.DataFrame, cfg: dict, role: str, values: dict | None = Non
     """版2 の札（3つの見方の形で返す＝呼ぶ側を変えない）。"""
     rc = cfg["版"]["band_hold"]["役割"][role]
     v = values or rc["使う値"]
+    if not v:
+        raise LabelError(f"[札] 役割 {role} の「使う値」が空なので、版2 の札を作れない（⑪タブで まこさんが選ぶ・fail-closed）")
     rng, ok = band_range(win, int(rc["保有の上限"]), v, fee_floor())
     er = er_median(win, role_bars(cfg, role, v))
     return {"強さ": (ok & ~rng, ok), "向き": er["向き"], "大きさ": er["大きさ"]}
@@ -248,6 +254,8 @@ def version_tag(cfg=None, version=None, role=None, values=None) -> str:
     parts = []
     for r in rs:
         v = values or cfg["版"]["band_hold"]["役割"][r].get("使う値") or {}
+        if not v:
+            raise LabelError(f"[札] 役割 {r} の「使う値」が空なので、版2 の版の名前を作れない（⑪タブで まこさんが選ぶ・fail-closed）")
         parts.append(f"{r}-" + "-".join(f"{TAG_KEYS[k]}{v.get(k)}" for k in BAND_KEYS))
     return "label-band-" + "_".join(parts)
 
