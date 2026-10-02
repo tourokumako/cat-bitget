@@ -12,6 +12,7 @@
   2. 札を付ける ＝ regime_label.py を呼ぶだけ（★式はここに写さない）
        版1 er_median＝先を見る本数ごと（設定の「先を見る本数」）
        版2 band_hold＝役割ごと × 設定の範囲の両端と真ん中の値の組（regime_label.variants）＝まこさんが目で見て「使う値」を選ぶ
+       版3 hindsight_box＝役割ごと（後から全部 見て作る札・M2-F-6c で まこさんが⑪タブで見て決めた2本）
        ⑪タブに色を付けるのは「レンジだった」＝強さが偽 かつ 使えるバー
        版ごとに検査15（片道の度合いの中央値・レンジの札とトレンドの札）を数えて仕様に出す
        ＝値を選ぶのは、⑪タブの まこさんの目と検査15（定義の原文＝m2_todo.json の M2-F-6d の注意）
@@ -32,6 +33,7 @@
   python3 scripts/dashboard/build_regime_label_dashboard.py --csv data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv
   python3 scripts/dashboard/build_regime_label_dashboard.py --version er_median   （版1 だけ）
   python3 scripts/dashboard/build_regime_label_dashboard.py --version band_hold   （版2 だけ＝役割ごとに、設定の範囲の両端と真ん中の値の組を全部）
+  python3 scripts/dashboard/build_regime_label_dashboard.py --version hindsight_box   （版3 だけ＝役割ごと）
 """
 from __future__ import annotations
 
@@ -90,11 +92,13 @@ def check15(win: pd.DataFrame, n: int, mask: pd.Series, usable: pd.Series) -> di
 def label_frame(win: pd.DataFrame, version: str, key, values: dict | None = None) -> tuple[pd.DataFrame, str, dict]:
     """札を付けた表を返す。列＝ts・close・<列名>（レンジだった＝True）。★札の式は regime_label.py（呼ぶだけ）。
 
-    version＝"er_median"（key＝先を見る本数）か "band_hold"（key＝役割・values＝⑪タブに出す値の組）。
+    version＝"er_median"（key＝先を見る本数）か "band_hold"（key＝役割・values＝⑪タブに出す値の組）か "hindsight_box"（key＝役割）。
     """
     cfg = rl.load_config()
     if version == "er_median":
         mask, usable = rl.er_median(win, int(key))["強さ"]        # 強さ＝真ならトレンドだった
+    elif version == rl.HINDSIGHT:
+        mask, usable = rl.hindsight(win, cfg, str(key))["強さ"]
     else:
         mask, usable = rl.band_hold(win, cfg, str(key), values)["強さ"]
     col = "label_range"
@@ -104,7 +108,12 @@ def label_frame(win: pd.DataFrame, version: str, key, values: dict | None = None
               "トレンドだった": int((usable.fillna(False) & mask.fillna(False)).sum()),
               "使えない（先か前が足りない）": int((~usable.fillna(False)).sum()),
               "全部": int(len(df))}
-    n15 = int(key) if version == "er_median" else rl.role_bars(cfg, str(key), values)
+    if version == "er_median":
+        n15 = int(key)
+    elif version == rl.HINDSIGHT:
+        n15 = rl.hindsight_bars(cfg, str(key))
+    else:
+        n15 = rl.role_bars(cfg, str(key), values)
     counts["検査15（片道の度合い）"] = check15(win, n15, mask, usable)
     return df, col, counts
 
@@ -135,6 +144,10 @@ def spec_of(csv_path: pathlib.Path, win: pd.DataFrame, version: str, key, values
     if version == "er_median":
         out["先を見る本数"] = f"{int(key)} 本（5分足なので {int(key) * 5} 分）"
         out["設定ファイルの中身（この版・そのまま）"] = ver
+    elif version == rl.HINDSIGHT:
+        out["役割"] = str(key)
+        out["手数料の床（e38_logic_parts.SCALP_FLOOR）"] = rl.fee_floor()
+        out["設定ファイルの中身（この版・そのまま）"] = ver
     else:
         out["役割"] = str(key)
         out["使った値"] = values
@@ -146,7 +159,7 @@ def spec_of(csv_path: pathlib.Path, win: pd.DataFrame, version: str, key, values
 def main() -> int:
     ap = argparse.ArgumentParser(description="札の版を ⑪タブの版として出す")
     ap.add_argument("--csv", default=str(DEFAULT_CSV), help="5分足 CSV（既定＝Binance spot の正本）")
-    ap.add_argument("--version", choices=("all", "er_median", "band_hold"), default="all",
+    ap.add_argument("--version", choices=("all", "er_median", "band_hold", "hindsight_box"), default="all",
                     help="出す版（既定＝全部。band_hold は役割ごとに設定の範囲の両端と真ん中の値の組を全部）")
     a = ap.parse_args()
     csv_path = pathlib.Path(a.csv)
@@ -163,6 +176,8 @@ def main() -> int:
         jobs += [("er_median", n, None) for n in rl.horizons(cfg)]
     if a.version in ("all", "band_hold"):
         jobs += [("band_hold", role, v) for role in rl.roles(cfg) for v in rl.variants(cfg, role)]
+    if a.version in ("all", rl.HINDSIGHT):
+        jobs += [(rl.HINDSIGHT, role, None) for role in rl.hindsight_roles(cfg)]
 
     t0 = time.time()
     print(f"[1/3] 5分足を読み、値決め窓を切り出す ... {csv_path.name}")

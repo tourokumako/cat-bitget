@@ -17,7 +17,12 @@
       そのバーの終値が帯の中 ∧ 幅 ∧ 続く ＝「レンジだった」。「強さ」の真偽＝レンジだった の否定（使える行だけ）。
       「向き」「大きさ」は版1 と同じ式（先の本数＝続く本数）＝上げ・下げ・スパイクの札は M2-M-1 で決める。
       まとめる幅と幅の線は「手数料の床（e38_logic_parts.SCALP_FLOOR）の何倍か」で書く（構造の文＝手数料の床は既存の定数を読む）。
-  ・採点に使う版は設定ファイルの「採点に使う版」の1行（既定＝er_median＝いままでと同じ）。
+  ・版3「hindsight_box」＝後から全部 見て作る札（M2-F-6c・まこさん「OK」2026-10-02＝⑪タブの label-c24b-scalp・label-c24b-daytrade）。
+      役割ごと（スキャル＝5分足・箱24本／デイトレ＝15分足・箱40本）。①水平な箱に入ったバーをレンジ ②大きくて速い脚を外す
+      ③段と段の間の移る所を外す ④箱の中で上下に2回ずつ行き来している所は、②の脚の中でもレンジに戻す。
+      式は CC の調べの道具（.claude/state/_labelC5・C14・C20・C24・C25・_labelD_rule・_labelD_c24b_probe.py）から、式を変えずに移した。
+      「強さ」の真偽＝レンジだった の否定（全部の行が使える）。「向き」「大きさ」は版1 と同じ式（先の本数＝その役割の保有の上限）。
+  ・採点に使う版は設定ファイルの「採点に使う版」の1行（2026-10-02 から hindsight_box＝版3）。
 
 呼ぶ側
   observe_diag._regime_labels・_regime_horizons（中身はここを呼ぶだけ）／regime_r9_diag._labels_for／
@@ -43,6 +48,9 @@ LABEL_NAMES = ("強さ", "向き", "大きさ")
 BAND_KEYS = ("倍率", "m", "c", "まとめる幅", "幅の線", "続く本数")
 # 版の名前に入れる略（版の名前は⑪タブのファイル名になるので英字だけにする・日本語の名前と値は⑪タブの仕様に出す）
 TAG_KEYS = {"倍率": "x", "m": "m", "c": "c", "まとめる幅": "mw", "幅の線": "wl", "続く本数": "h"}
+HINDSIGHT = "hindsight_box"                       # 版3＝後から全部 見て作る札（役割ごと）
+FORMULA_VERSIONS = ("er_median", "band_hold", HINDSIGHT)   # 式が在る版
+BASE_TF = "5min"                                  # 読む足（5分足）＝版3 の数える足がこれと違えば、まとめて数える
 
 
 class LabelError(SystemExit):
@@ -60,8 +68,12 @@ def load_config(path=None) -> dict:
     use = d.get("採点に使う版")
     if use not in vers:
         raise LabelError(f"[札] 採点に使う版 {use} が設定の「版」に無い（在る版＝{sorted(vers)}・fail-closed）")
-    if use not in ("er_median", "band_hold"):
-        raise LabelError(f"[札] 採点に使う版 {use} の式が regime_label.py に無い（式が在る版＝er_median・band_hold・fail-closed）")
+    if use not in FORMULA_VERSIONS:
+        raise LabelError(f"[札] 採点に使う版 {use} の式が regime_label.py に無い（式が在る版＝{'・'.join(FORMULA_VERSIONS)}・fail-closed）")
+    if use == HINDSIGHT:
+        for k in ("値動きの大きさ", "箱", "脚", "移る所", "行き来", "役割"):
+            if not (vers[HINDSIGHT] or {}).get(k):
+                raise LabelError(f"[札] 版 {HINDSIGHT} に「{k}」が無い（fail-closed）")
     if use == "band_hold":
         for role, rc in (vers["band_hold"].get("役割") or {}).items():
             if not rc.get("使う値"):
@@ -196,17 +208,201 @@ def band_hold(win: pd.DataFrame, cfg: dict, role: str, values: dict | None = Non
     return {"強さ": (ok & ~rng, ok), "向き": er["向き"], "大きさ": er["大きさ"]}
 
 
+# ══ 版3＝後から全部 見て作る札（M2-F-6c で まこさんが決めた label-c24b-scalp・label-c24b-daytrade）══════════════
+#   まこさん決定（2026-10-02）＝⑪タブの2本を見て「OK」。前の版 label-trial-c24（「確認したけど、視覚的にはほぼOKに見えるので、
+#   これでいいよ」）を土台に、9/28 の構造の文「役割ごとに、保有時間の下限と上限、倍率、m、c を持たせます」に合わせて役割ごとにした。
+#   式は CC の調べの道具から、式を変えずに移した（工事 D の案を作る道具が、⑪タブの2本と1本ずつ同じかを数えた）。
+#   数字は全部 設定ファイルの版 hindsight_box に置く（構造の文＝「数字は全部、設定ファイルに置きます。コードには1つも書きません。」）。
+#   ★先を見るのが仕事（答え合わせにだけ使う・判定の条件や入口には入れない）＝先を見る行には H2OK を付ける。乱数は使わない。
+def local_scale(win: pd.DataFrame, sc: dict) -> np.ndarray:
+    """その時期の値動きの大きさ s＝（n本の最高値 − 最安値）÷ 終値 の、前後 m本の中央値（窓の端は近い値で埋める）。"""
+    n = int(sc["幅を測る本数"])
+    w = (win["high"].rolling(n).max() - win["low"].rolling(n).min()) / win["close"]
+    s = w.rolling(int(sc["中央値を取る本数"]), center=True, min_periods=int(sc["最小の本数"])).median()  # H2OK: 札を作る側＝前後を見て s を決める（評価にだけ使う・判断に入らない）
+    return s.bfill().ffill().to_numpy(float)  # H2OK: 同上（窓の頭の欠けを後ろの値で埋める）
+
+
+def zigzag_adaptive(h: np.ndarray, lo: np.ndarray, theta: np.ndarray) -> list:
+    """戻りがその時の theta[i]（割合）以上で向きが変わるジグザグ。戻り＝[(位置, 値, +1 山 / -1 谷)]。"""
+    piv = []
+    trend = 0
+    hi_i, hi_v, lo_i, lo_v = 0, h[0], 0, lo[0]
+    for i in range(1, len(h)):
+        if h[i] > hi_v:
+            hi_i, hi_v = i, h[i]
+        if lo[i] < lo_v:
+            lo_i, lo_v = i, lo[i]
+        th = theta[i]
+        if trend >= 0 and lo[i] <= hi_v * (1 - th) and (trend == 1 or hi_i < i):
+            if trend == 0 and lo_i < hi_i:
+                piv.append((lo_i, lo_v, -1))
+            piv.append((hi_i, hi_v, 1))
+            trend = -1
+            lo_i, lo_v = i, lo[i]
+        elif trend <= 0 and h[i] >= lo_v * (1 + th) and (trend == -1 or lo_i < i):
+            if trend == 0 and hi_i < lo_i:
+                piv.append((hi_i, hi_v, 1))
+            piv.append((lo_i, lo_v, -1))
+            trend = 1
+            hi_i, hi_v = i, h[i]
+    piv.append((hi_i, hi_v, 1) if trend == 1 else (lo_i, lo_v, -1))
+    return piv
+
+
+def legs_of(win: pd.DataFrame, s: np.ndarray, a: float, per: int) -> list:
+    """ジグザグ（戻り a×s）の脚。戻り＝[(始まり, 終わり, 始値, 終値, 大きさ÷s, 速さ＝大きさ÷（本数÷per）)]。"""
+    h = win["high"].to_numpy(float)
+    lo = win["low"].to_numpy(float)
+    piv = zigzag_adaptive(h, lo, a * s)
+    out = []
+    for (i0, v0, _), (i1, v1, _) in zip(piv[:-1], piv[1:]):
+        if i1 <= i0:
+            continue
+        amp = abs(v1 - v0) / v0 / s[i0]
+        out.append((i0, i1, v0, v1, amp, amp / ((i1 - i0) / float(per))))
+    return out
+
+
+def trend_mask(c: np.ndarray, legs: list, a0: float, v0_: float, f: float) -> np.ndarray:
+    """大きさ ≥ a0 かつ 速さ ≥ v0_ の脚を、終値が脚の f〜(1−f) 進んだ所だけ真にする（脚の両端の止まった所は除く）。"""
+    m = np.zeros(len(c), bool)
+    for i0, i1, v0, v1, amp, spd in legs:
+        if amp < a0 or spd < v0_:
+            continue
+        d = 1.0 if v1 > v0 else -1.0
+        p = (c[i0: i1 + 1] - v0) * d / abs(v1 - v0)
+        st = np.flatnonzero(p >= f)
+        en = np.flatnonzero(p >= 1 - f)
+        if len(st) == 0 or len(en) == 0:
+            continue
+        a_, b_ = i0 + st[0], i0 + en[0]
+        if b_ >= a_:
+            m[a_: b_ + 1] = True
+    return m
+
+
+def box_stats(win: pd.DataFrame, s: np.ndarray, n_box: int):
+    """バー i から n_box 本の箱の高さ（÷終値÷s）と、前半と後半の終値の平均の差（÷箱の幅）。"""
+    c = win["close"]
+    hh = win["high"][::-1].rolling(n_box).max()[::-1]  # H2OK: 札を作る側＝バーから先 n_box 本の最高値（後ろから数える）
+    ll = win["low"][::-1].rolling(n_box).min()[::-1]   # H2OK: 同上（最安値）
+    width = (hh - ll)
+    h = (width / c).to_numpy() / s
+    a = n_box // 2
+    m1 = c[::-1].rolling(a).mean()[::-1]               # H2OK: 同上（前半の終値の平均）
+    m2 = c[::-1].rolling(n_box - a).mean()[::-1].shift(-a)  # H2OK: 同上（後半の終値の平均）
+    d = ((m1 - m2).abs() / width).where(width > 0).to_numpy()
+    return np.nan_to_num(h, nan=np.inf), np.nan_to_num(d, nan=np.inf)
+
+
+def step_mask(win: pd.DataFrame, s: np.ndarray, k: int, x: float) -> np.ndarray:
+    """前の k本と後の k本の終値の平均の差 ≥ x×s のバーと、その前後 k÷2 本（段と段の間の移る所）。"""
+    c = win["close"]
+    before = c.rolling(k).mean()
+    after = c[::-1].rolling(k).mean()[::-1]            # H2OK: 札を作る側＝後の k本の平均（後ろから数える）
+    mv = ((after - before).abs() / c).to_numpy() / s
+    hit = np.nan_to_num(mv, nan=0) >= x
+    half = max(k // 2, 1)
+    return pd.Series(hit.astype(float)).rolling(2 * half + 1, center=True, min_periods=1).max().to_numpy() > 0  # H2OK: 同上（前後へ広げる）
+
+
+def oscillates(c: np.ndarray, n_box: int, v: dict) -> np.ndarray:
+    """長さ n_box の区間（始まり a）ごとに、終値の帯（区間の最高と最安）の上と下の近く（端の近く×高さ）へ、行ったり来たりの順で
+    それぞれ回数の下限以上 入り、前半と後半の終値の平均の差 ≤ 高さ×前後の差の上限、高さ÷平均 ≥ 手数料の床 か。"""
+    from numpy.lib.stride_tricks import sliding_window_view
+    near, need, shift, floor = float(v["端の近く"]), int(v["回数の下限"]), float(v["前後の差の上限"]), fee_floor()
+    w = sliding_window_view(c, n_box)                  # 札を作る側＝区間の中（先を見る＝答え合わせにだけ使う）
+    mx, mn = w.max(1), w.min(1)
+    hgt = mx - mn
+    rows = len(mx)
+    prev = np.zeros(rows, np.int8)
+    n_top = np.zeros(rows, np.int16)
+    n_bot = np.zeros(rows, np.int16)
+    hi_th, lo_th = mx - near * hgt, mn + near * hgt
+    for j in range(n_box):
+        cj = c[j:j + rows]
+        code = np.where(cj >= hi_th, 1, np.where(cj <= lo_th, -1, 0)).astype(np.int8)
+        new = (code != 0) & (code != prev)
+        n_top += new & (code == 1)
+        n_bot += new & (code == -1)
+        prev = np.where(code != 0, code, prev)
+    cs = np.concatenate([[0.0], np.cumsum(c)])
+    a = np.arange(rows)
+    half = n_box // 2
+    m1 = (cs[a + half] - cs[a]) / half
+    m2 = (cs[a + n_box] - cs[a + half]) / (n_box - half)
+    mean = (cs[a + n_box] - cs[a]) / n_box
+    return (n_top >= need) & (n_bot >= need) & (np.abs(m1 - m2) <= shift * hgt) & (hgt / mean >= floor) & (hgt > 0)
+
+
+def _spread(flag, n_box: int) -> np.ndarray:
+    """始まりの印を、その区間の n_box 本 全部へ広げる（バー i は、始まりが i−n_box+1〜i のどれかなら真）。"""
+    return pd.Series(np.asarray(flag, float)).rolling(n_box, min_periods=1).max().to_numpy() > 0
+
+
+def _range_on(win: pd.DataFrame, v: dict, n_box: int) -> np.ndarray:
+    """1つの足の上で「レンジだった」を作る。①箱 ②脚を外す ③移る所を外す ④行き来している箱は、脚の中でもレンジに戻す。"""
+    c = win["close"].to_numpy(float)
+    s = local_scale(win, v["値動きの大きさ"])
+    lg, bx, st = v["脚"], v["箱"], v["移る所"]
+    tm = trend_mask(c, legs_of(win, s, float(lg["戻り"]), int(lg["速さを測る本数"])),
+                    float(lg["大きさの下限"]), float(lg["速さの下限"]), float(lg["端を除く割合"]))
+    h, d = box_stats(win, s, n_box)
+    ok = (h <= float(bx["高さの上限"])) & (d <= float(bx["前後の差の上限"]))
+    stp = step_mask(win, s, int(st["前後の本数"]), float(st["差の下限"]))
+    lab = _spread(ok, n_box) & ~tm & ~stp
+    q = np.zeros(len(c), bool)
+    qq = oscillates(c, n_box, v["行き来"])
+    q[:len(qq)] = qq
+    return lab | (_spread(ok & q, n_box) & ~stp)
+
+
+def hindsight_range(win: pd.DataFrame, cfg: dict, role: str) -> pd.Series:
+    """版3 の「レンジだった」の真偽（役割ごと）。数える足が5分足でなければ、その足にまとめて数え、5分足の各バーへ写す。"""
+    v = cfg["版"][HINDSIGHT]
+    rc = v["役割"][role]
+    tf, n_box = str(rc["数える足"]), int(rc["箱の本数"])
+    if pd.to_timedelta(tf) == pd.to_timedelta(BASE_TF):
+        return pd.Series(_range_on(win, v, n_box), index=win.index)
+    w2 = pd.DataFrame({"high": win["high"].resample(tf, label="left", closed="left").max(),
+                       "low": win["low"].resample(tf, label="left", closed="left").min(),
+                       "close": win["close"].resample(tf, label="left", closed="left").last()}).dropna()
+    m2 = pd.Series(_range_on(w2, v, n_box), index=w2.index)
+    return pd.Series(m2.reindex(win.index.floor(tf)).fillna(False).to_numpy(bool), index=win.index)
+
+
+def hindsight_roles(cfg=None) -> list:
+    cfg = cfg or load_config()
+    return list(cfg["版"][HINDSIGHT]["役割"])
+
+
+def hindsight_bars(cfg, role: str) -> int:
+    """版3 の役割の先を見る本数＝保有の上限（向き・大きさの札と、成績表の鍵に使う）。"""
+    return int(cfg["版"][HINDSIGHT]["役割"][role]["保有の上限"])
+
+
+def hindsight(win: pd.DataFrame, cfg: dict, role: str) -> dict:
+    """版3 の札（3つの見方の形で返す＝呼ぶ側を変えない）。強さ＝レンジだった の否定（全部の行が使える）。"""
+    rng = hindsight_range(win, cfg, role)
+    er = er_median(win, hindsight_bars(cfg, role))
+    return {"強さ": (~rng, pd.Series(True, index=win.index)), "向き": er["向き"], "大きさ": er["大きさ"]}
+
+
 # ══ 呼ぶ側の口 ═══════════════════════════════════════════════════════════════════════
 def keys(cfg=None) -> list:
-    """採点に使う版の札の鍵＝版1 は先を見る本数（24・288）／版2 は役割（scalp・daytrade）。"""
+    """採点に使う版の札の鍵＝版1 は先を見る本数（24・288）／版2・版3 は役割（scalp・daytrade）。"""
     cfg = cfg or load_config()
-    return list(horizons(cfg)) if cfg["採点に使う版"] == "er_median" else roles(cfg)
+    if cfg["採点に使う版"] == "er_median":
+        return list(horizons(cfg))
+    return hindsight_roles(cfg) if cfg["採点に使う版"] == HINDSIGHT else roles(cfg)
 
 
 def key_bars(key, cfg=None) -> int:
     """鍵を、先を見る本数に直す（成績表の鍵・間引きの間隔に使う）。"""
     cfg = cfg or load_config()
-    return int(key) if cfg["採点に使う版"] == "er_median" else role_bars(cfg, str(key))
+    if cfg["採点に使う版"] == "er_median":
+        return int(key)
+    return hindsight_bars(cfg, str(key)) if cfg["採点に使う版"] == HINDSIGHT else role_bars(cfg, str(key))
 
 
 def key_label(key, cfg=None) -> str:
@@ -225,6 +421,8 @@ def labels_for_key(win: pd.DataFrame, key, cfg=None) -> dict:
     cfg = cfg or load_config()
     if cfg["採点に使う版"] == "er_median":
         return er_median(win, int(key))
+    if cfg["採点に使う版"] == HINDSIGHT:
+        return hindsight(win, cfg, str(key))
     return band_hold(win, cfg, str(key))
 
 
@@ -232,6 +430,10 @@ def labels_at_bars(win: pd.DataFrame, n: int, cfg=None) -> dict:
     """先を見る本数 n の札（observe_diag._regime_labels が呼ぶ）。n が版2 の役割の本数に当たればその役割の札、
     当たらなければ版1 の式（自己検査が小さな n で呼ぶ所を壊さない）。"""
     cfg = cfg or load_config()
+    if cfg["採点に使う版"] == HINDSIGHT:
+        for role in hindsight_roles(cfg):
+            if hindsight_bars(cfg, role) == int(n):
+                return hindsight(win, cfg, role)
     if cfg["採点に使う版"] == "band_hold":
         for role in roles(cfg):
             if role_bars(cfg, role) == int(n):
@@ -251,6 +453,13 @@ def version_tag(cfg=None, version=None, role=None, values=None) -> str:
     ver = version or cfg["採点に使う版"]
     if ver == "er_median":
         return "label-er" + "-".join(str(x) for x in horizons(cfg)) if role is None else f"label-er{int(role)}"
+    if ver == HINDSIGHT:
+        v = cfg["版"][HINDSIGHT]
+        rs = [role] if role else hindsight_roles(cfg)
+        common = (f"w{v['値動きの大きさ']['幅を測る本数']}-m{v['値動きの大きさ']['中央値を取る本数']}-h{v['箱']['高さの上限']}"
+                  f"-g{v['箱']['前後の差の上限']}-r{v['脚']['戻り']}-a{v['脚']['大きさの下限']}-v{v['脚']['速さの下限']}"
+                  f"-k{v['移る所']['前後の本数']}-x{v['移る所']['差の下限']}-q{v['行き来']['端の近く']}")
+        return "label-hind-" + "_".join(f"{r}-{v['役割'][r]['数える足']}-b{v['役割'][r]['箱の本数']}" for r in rs) + "-" + common
     rs = [role] if role else roles(cfg)
     parts = []
     for r in rs:
@@ -389,8 +598,57 @@ def selftest() -> int:
         ng.append("T11: いちばん低い谷の群が c 個に足りないとき、上の群（c 個以上）が下の線にならない")
     if _line(np.array([101.0, 101.01]), 0.0008, 3, 100.5, True) is not None:
         ng.append("T11: c 個に足りない群だけなのに、線ができた")
+    # ══ 版3（hindsight_box・M2-F-6d の工事 D）＝答えの分かる作り物のチャート ══
+    if HINDSIGHT not in (cfg.get("版") or {}):
+        ng.append(f"T12: 設定ファイルに版 {HINDSIGHT} が無い")
+    else:
+        hr = hindsight_roles(cfg)
+        # T12 全部レンジ＝役割ごとに、ほぼ全部「レンジだった」
+        for role in hr:
+            s12 = float(hindsight_range(_synth("range"), cfg, role).mean())
+            if not s12 >= 0.95:
+                ng.append(f"T12: 全部レンジのデータで、{role} の レンジだった の割合が {s12:.3f}（0.95 以上のはず）")
+        # T13 全部トレンド＝1本も「レンジだった」にならない
+        for role in hr:
+            n13 = int(hindsight_range(_synth("trend"), cfg, role).sum())
+            if n13:
+                ng.append(f"T13: 全部トレンドのデータで、{role} の レンジだった が {n13} 本 出た（0本のはず）")
+        # T14 レンジ8割＝前8割はほぼレンジ・後ろ2割（上げ）はほぼレンジでない
+        for role in hr:
+            r14 = hindsight_range(d3, cfg, role).to_numpy()
+            a14, b14 = float(r14[:k3].mean()), float(r14[k3:].mean())
+            if not (a14 >= 0.9 and b14 <= 0.05):
+                ng.append(f"T14: レンジ8割のデータで、{role} の前8割 {a14:.3f}（0.9 以上のはず）・後ろ2割 {b14:.3f}（0.05 以下のはず）")
+        # T15 階段（observe_diag の答えの分かるニセのデータ＝上げの区間と横ばいの区間を交互）
+        #   箱の長さが区間より短い役割＝横ばいはレンジ・上げはレンジでない。長い役割＝その長さの帯が無いので全部 レンジでない。
+        #   ★前の版 label-trial-c24 は、スキャルの尺で横ばいのうち 0.208 しかレンジと言えなかった（脚が階段の全体を1本と見た）
+        sdf15, st15 = od._synth_regime_bars()
+        up = st15.to_numpy()
+        inner = ((st15.shift(-12) == st15) & (st15.shift(12) == st15)).fillna(False).to_numpy()  # H2OK: ニセのデータの中だけで完結する検査
+        blk_min = int(np.argmax(up != up[0])) * 5            # 区間1つの長さ（分）＝本数 × 5分
+        for role in hr:
+            rc = cfg["版"][HINDSIGHT]["役割"][role]
+            box_min = int(rc["箱の本数"]) * pd.to_timedelta(str(rc["数える足"])).total_seconds() / 60
+            r15 = hindsight_range(sdf15, cfg, role).to_numpy()
+            f15, u15 = float(r15[inner & ~up].mean()), float(r15[inner & up].mean())
+            want = (f15 >= 0.9) if box_min <= blk_min else (f15 <= 0.05)
+            if not (want and u15 <= 0.05):
+                ng.append(f"T15: 階段のデータで、{role}（箱 {box_min:.0f}分・区間 {blk_min}分）の横ばいのうちレンジ {f15:.3f}・上げのうちレンジ {u15:.3f}"
+                          f"（{'横ばい 0.9 以上' if box_min <= blk_min else '横ばい 0.05 以下'}・上げ 0.05 以下のはず）")
+        # T16 数字は設定ファイルから読む＝箱の高さの上限を 0 にすると、1本も「レンジだった」にならない
+        bad16 = json.loads(json.dumps(cfg))
+        bad16["版"][HINDSIGHT]["箱"]["高さの上限"] = 0
+        for role in hr:
+            if bool(hindsight_range(_synth("range"), bad16, role).any()):
+                ng.append(f"T16: 箱の高さの上限を 0 にしても、{role} で レンジだった が出た（設定の数字を読んでいない）")
+        # T17 役割の保有の範囲が、組む側の設定（search_limits.json の hold_range_by_role）と同じ
+        for role in hr:
+            rc = cfg["版"][HINDSIGHT]["役割"][role]
+            if role not in sl or (int(rc["保有の下限"]), int(rc["保有の上限"])) != (int(sl[role]["lo_bars"]), int(sl[role]["hi_bars"])):
+                ng.append(f"T17: 版3 の役割 {role} の保有の範囲が search_limits.json の hold_range_by_role と違う")
     print("[regime_label selftest] T1 全部レンジ ／ T2 全部トレンド ／ T3 レンジ8割（版1 の弱点）／ T4 幅の線 ／ "
-          "T5 版1 は前の式と同じ ／ T6 呼ぶ側がここを呼ぶ ／ T7 使う値が空なら止まる ／ T8 版の名前・保有の範囲 ／ T9 値の組 ／ T10 続くの確かめ ／ T11 近い山のまとめ方")
+          "T5 版1 は前の式と同じ ／ T6 呼ぶ側がここを呼ぶ ／ T7 使う値が空なら止まる ／ T8 版の名前・保有の範囲 ／ T9 値の組 ／ T10 続くの確かめ ／ T11 近い山のまとめ方"
+          " ／ T12〜T16 版3 の作り物のチャート（全部レンジ・全部トレンド・レンジ8割・階段・設定の数字）／ T17 版3 の保有の範囲")
     print(f"  参考＝T1 {share:.3f} ／ T3 版2 {s3:.3f}・版1 {e3:.3f}")
     if ng:
         for x in ng:

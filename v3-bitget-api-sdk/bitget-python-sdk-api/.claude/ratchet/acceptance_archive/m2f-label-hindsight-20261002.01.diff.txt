@@ -1,0 +1,94 @@
+85,88c85,88
+< | 設定ファイルに版3 が在るか | `grep -c -F 'hindsight_box' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/recipes/regime_label.json` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+< | 採点に使う版が版3 か | `grep -c -F '"採点に使う版": "hindsight_box"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/recipes/regime_label.json` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+< | 札の部品に版3 の式が在るか | `grep -c -F 'def hindsight_range' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_label.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+< | 測る道具が札に時刻を渡すか | `grep -c -F 'w.index = pd.DatetimeIndex' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+---
+> | 設定ファイルに版3 が在るか | `grep -c -F 'hindsight_box' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/recipes/regime_label.json` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 3（終了コード 0） |
+> | 採点に使う版が版3 か | `grep -c -F '"採点に使う版": "hindsight_box"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/recipes/regime_label.json` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 1（終了コード 0） |
+> | 札の部品に版3 の式が在るか | `grep -c -F 'def hindsight_range' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_label.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 1（終了コード 0） |
+> | 測る道具が札に時刻を渡すか | `grep -c -F 'w.index = pd.DatetimeIndex' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 1（終了コード 0） |
+1256c1256
+< <!-- ACC_CODEREF_START hash=1faa19ed43d8ad8c gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=a5363f9b8c0d82c0 gen_acceptance.py が自動生成＝手で書き換えない -->
+1263,1275c1263,1275
+< | `hindsight_range` | （この関数は実物に無い） |
+< | `hindsight` | （この関数は実物に無い） |
+< | `oscillates` | （この関数は実物に無い） |
+< | `local_scale` | （この関数は実物に無い） |
+< | `box_stats` | （この関数は実物に無い） |
+< | `step_mask` | （この関数は実物に無い） |
+< | `trend_mask` | （この関数は実物に無い） |
+< | `legs_of` | （この関数は実物に無い） |
+< | `zigzag_adaptive` | （この関数は実物に無い） |
+< | `hindsight_roles` | （この関数は実物に無い） |
+< | `hindsight_bars` | （この関数は実物に無い） |
+< | `_range_on` | （この関数は実物に無い） |
+< | `_spread` | （この関数は実物に無い） |
+---
+> | `hindsight_range` | 360 |
+> | `hindsight` | 384 |
+> | `oscillates` | 309 |
+> | `local_scale` | 217 |
+> | `box_stats` | 284 |
+> | `step_mask` | 298 |
+> | `trend_mask` | 266 |
+> | `legs_of` | 252 |
+> | `zigzag_adaptive` | 225 |
+> | `hindsight_roles` | 374 |
+> | `hindsight_bars` | 379 |
+> | `_range_on` | 343 |
+> | `_spread` | 338 |
+1277c1277
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 22件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 35件の関数が在ります）。
+1284c1284
+< <!-- ACC_SPEC_START hash=43c42a4843abdbd0 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=b82d4ff2359fe6f5 gen_acceptance.py が自動生成＝手で書き換えない -->
+1403a1404,1424
+>   "local_scale": [],
+>   "zigzag_adaptive": [],
+>   "legs_of": [
+>    "zigzag_adaptive"
+>   ],
+>   "trend_mask": [],
+>   "box_stats": [],
+>   "step_mask": [],
+>   "oscillates": [
+>    "fee_floor"
+>   ],
+>   "hindsight_range": [],
+>   "hindsight_roles": [
+>    "load_config"
+>   ],
+>   "hindsight_bars": [],
+>   "hindsight": [
+>    "er_median",
+>    "hindsight_bars",
+>    "hindsight_range"
+>   ],
+1404a1426
+>    "hindsight_roles",
+1409a1432
+>    "hindsight_bars",
+1423a1447
+>    "hindsight",
+1428a1453,1455
+>    "hindsight",
+>    "hindsight_bars",
+>    "hindsight_roles",
+1439a1467
+>    "hindsight_roles",
+1451a1480,1481
+>    "hindsight_range",
+>    "hindsight_roles",
+1458c1488,1491
+<  "constants": {},
+---
+>  "constants": {
+>   "HINDSIGHT": "hindsight_box",
+>   "BASE_TF": "5min"
+>  },

@@ -206,6 +206,8 @@ def _labels_for(df_win: pd.DataFrame) -> dict:
       採点に使う版が er_median なら鍵は「先24本」「先288本」（いままでと同じ）、band_hold なら役割の名前。
     """
     w = df_win[[c for c in ("high", "low", "close") if c in df_win.columns]].astype(float)
+    if "ts" in df_win.columns:   # ★版3 は役割ごとに足をまとめて数える＝時刻が要る（M2-F-6d の工事 D・5分足だけの版の数は変わらない）
+        w.index = pd.DatetimeIndex(pd.to_datetime(df_win["ts"]).to_numpy())
     out = {}
     for key in rl.keys():
         s, u = rl.labels_for_key(w, key)["強さ"]

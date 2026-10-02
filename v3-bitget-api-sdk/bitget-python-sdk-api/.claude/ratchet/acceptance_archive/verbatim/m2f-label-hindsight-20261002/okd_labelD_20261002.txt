@@ -1,0 +1,567 @@
+工事 D の案です。中身を短く言うと、次の4つです。
+
+- 札の部品に、⑪タブで決めた2本の札の作り方を、新しい版（版3）として入れます。数字は全部 設定ファイルに置きます。
+- 採点に使う札を、版3 に切り替えます。
+- ⑪タブの道具と測る道具も、版3 で動くようにします。測る道具は、札に時刻を渡す2行を足すだけです。
+- 新しい壊すプログラムを1本 足します。
+
+本物のファイルには書かずに全部を当てて走らせ、札が⑪タブで見た2本と1本ずつ同じことを確かめました。下が案の全文です。
+
+案です（工事 m2f-label-hindsight-20261002＝14a の工事 D）。⑪タブで まこさんが決めた役割ごとの札2本を、札の部品 regime_label.py の新しい版（版3）に入れ、採点に使う版を版3 にします。実装の指示は 24 件です。
+
+- 実装の指示は、道具が「直す前の文字」と「直した後の文字」の組で持ちます。直す前の文字が、いまの実物にちょうど1か所ずつ在ることを、道具で数えました。
+- 全件を、本物のファイルに書かずに当てて走らせました。結果は次のとおりです。
+  - 札の部品の自己テスト＝全部 通った（2.9秒・版3 の T12〜T17 を含む）。
+  - 版3 の札＝スキャル 97,594本・デイトレ 77,535本がレンジ（値決め窓 158,112本）。⑪タブで まこさんが見た2本と1本ずつ同じ。
+  - 呼ぶ側＝測る道具の鍵は daytrade・scalp、観察の道具の先を見る本数は 12・120本。どちらも版3 と同じ札を返した。⑪タブの道具も同じ本数を出した。
+  - 未来参照の検査＝注記の無い先読み0件（札の部品・測る道具）。壊すプログラム b125 と同じ壊し方で、自己テストが T15 で落ちた。
+  - 壊すプログラムが探す行の文字は、この工事で変わらない（照らした組＝b113_catch_share_broken.sh→regime_r9_diag.py・b114_default_rng_back.sh→regime_r9_diag.py・b115_record_run_renamed.sh→regime_r9_diag.py・b116_dropped_file_not_written.sh→regime_r9_diag.py・b117_stage_recipe_no_entry.sh→regime_r9_diag.py・b118_band_continue_off.sh→regime_label.py・b122_obs_formula_copied.sh→regime_label.py・b123_label_tag_dropped.sh→regime_r9_diag.py・b124_role_keep_off.sh→regime_r9_diag.py・b84_qtable_per_bundle.sh→regime_r9_diag.py・b97_demand_not_attached.sh→regime_r9_diag.py）。
+
+この返信に OK を1回いただければ、逐語に写して設計書を作り、承認をお願いします。
+
+【4-0 この仕組みは何か】
+**この工事は、⑪タブで まこさんが決めた役割ごとの札2本を、札の部品 regime_label.py の新しい版（版3）にして、採点に使う札にするものです。**14a の4つ目の工事です。
+
+**①いま何が起きているか。**採点に使う札は、いまも古い札（版1＝先の値動きを窓の中央値で切る札）です。まこさんが⑪タブで決めた2本は、CC の手元の調べの道具でしか作れません。だから M2 の段1 から先は、古い札で点数が付きます。
+
+**②この工事で何が変わるか。**札の部品に版3 を足し、2本の作り方を移します。数字は全部 設定ファイルに置きます。採点に使う版を版3 にします。測る道具と成績表は、役割ごとの札（スキャル・デイトレ）で両方 測ります。⑪タブの道具は版3 を出せるようになります。
+
+**③数字はどう変わるか。**版3 の札は、⑪タブで見た2本と1本ずつ同じです（スキャル 97,594本・デイトレ 77,535本がレンジ）。測る道具の列の名前の括弧の中は、先を見る本数から役割の名前に変わります。成績表は作り直すまで古い札のままで、測る道具は作り直すまで止まります（regime_r9_diag.py の510行の照らし）。
+
+【4-1 システムの境界】
+**誰が動かすか。**札の部品は、測る道具（regime_r9_diag.py）・観察の道具の成績表（observe_diag.py --rank-regime）・⑪タブの道具が呼びます。私（CC）は、実装の後に自己テストと⑪タブの道具を1回ずつ走らせます。
+
+**誰が結果を使うか。**M2 の段1〜段4 の点数付け（M2-F-8 から）と、まこさんの⑪タブの目です。
+
+【4-2 入力と出力】
+**読むもの。**5分足（値決め窓）と、設定ファイル recipes/regime_label.json の版3。手数料の床は e38_logic_parts.SCALP_FLOOR を読みます。
+
+**書くもの。**札の部品は何も書きません（札を返すだけ）。⑪タブの道具は版のファイルと版の一覧を書きます（build_regime_from_tuner.py の write_version_files と update_index・直さずに呼ぶ）。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| regime_label.py | 版3 の札の式（箱・脚・移る所・行き来）と、版を選ぶ口・自己テスト T12〜T17 | 直す |
+| recipes/regime_label.json | 版3 の数字・採点に使う版 | 直す |
+| build_regime_label_dashboard.py | 版3 を⑪タブに出す | 直す |
+| regime_r9_diag.py | 札に時刻を渡す（_labels_for） | 直す |
+| .claude/breaks/b125_hindsight_osc_off.sh | 版3 の「行き来している箱を戻す」を外すと、自己テストが落ちるかを見る | 新設 |
+- 触る所＝regime_label.py＝<モジュール直下>・_range_on・_spread・box_stats・hindsight・hindsight_bars・hindsight_range・hindsight_roles・key_bars・keys・labels_at_bars・labels_for_key・legs_of・load_config・local_scale・oscillates・selftest・step_mask・trend_mask・version_tag・zigzag_adaptive／build_regime_label_dashboard.py＝<モジュール直下>・label_frame・main・spec_of／regime_r9_diag.py＝_labels_for。
+
+【4-4 処理の流れ】
+1. 当てる道具（apply_audit_fix.py --design）で実装の指示を当てます。
+2. 当てた直後に、照合（verify_design_contract.py --diff）をかけます。★設計書の SPEC（7-8）は、設計書を作った時点の実物（実装の前のコード）から作られます。この工事は札の部品に関数を足すので、SPEC と実物が食い違う見込みです。食い違ったら、gen_acceptance.py --write で設計書を作り直し、承認の打ち直しを1回 お願いします（教訓 L-655＝工事 B・C と同じ型）。
+3. 札の部品の自己テストと、⑪タブの道具（--version hindsight_box）を1回ずつ走らせます。
+4. G2 → H2 の順で印を取り直します（札の部品は G2 と H2 の対象・設定ファイルと測る道具は H2 の対象）。
+5. ⑪タブの試しの版（label-trial-c24・label-rule-scalp・label-rule-daytrade・label-c24b-scalp・label-c24b-daytrade）を版の一覧から外します（git の対象外の出力）。
+6. 成績表を作り直します（前の実測 2時間14分・走らせる前にフロー宣言に時間の見込みを書く）。そのあと M2-F-5 の走行（--stage stage1 --limit 2）で数字が出ることを確かめます。
+
+【4-5 異常系】
+| 起きたこと | どうなるか |
+|---|---|
+| 設定ファイルに版3 の欄（値動きの大きさ・箱・脚・移る所・行き来・役割）が足りない | 札の部品が読む時点で止まる（LabelError） |
+| 測る道具が時刻の無い表で札を呼ぶ | 時刻の列 ts が在れば時刻を付けて渡す。無ければ今までどおり（5分足だけの版の数は変わらない） |
+| 成績表の札の版が、いまの設定の札の版と違う | 測る道具が止まる（regime_r9_diag.py の510行・直さない）＝成績表の作り直しが要る |
+| 窓の外のバーが混ざる | ⑪タブの道具の load_window が止める（直さない） |
+
+【4-6 制約】
+| 決まり | 出どころ | この設計でどう守るか |
+|---|---|---|
+| 数字は全部 設定ファイルに置く。コードには1つも書かない | まこさん決定 2026-09-28（構造の文） | 版3 の関数に 0・1・2 のほかの数字が無いことを、案を作る道具が ast で照らした |
+| 手数料の床は既存の定数を読む | まこさん決定 2026-09-28（構造の文） | 行き来の幅の下限は fee_floor()（e38_logic_parts.SCALP_FLOOR） |
+| 札の定義を版として持つ | まこさん決定 2026-09-28（構造の文） | 版3 を足す。版1・版2 は消さない |
+| 札を作る場所は1つ | まこさん決定 2026-09-28（構造の文） | 呼ぶ側は札の部品の口を呼ぶだけ（自己テスト T6 が見る） |
+| 役割ごとに札を持つ | まこさん決定 2026-09-28（構造の文） | 版3 は役割ごと（scalp・daytrade） |
+| 札は先を見てよいが、評価にだけ使う | 要件定義書 §4.6.H2 | 先を見る行に全部 H2OK の注記（案を作る道具の h2_scan で、注記の無い先読み0件） |
+| 乱数を使わない | 恒久67番 | 乱数は1つも無い |
+
+【4-7 探索の範囲】
+**探す値はありません。**版3 の値は、まこさんが⑪タブで決めた2本の値のままです。
+
+【4-8 データ構造】
+**形が変わるもの。**①札の鍵が、先を見る本数（24・288）から役割の名前（scalp・daytrade）になります。測る道具の列の名前の括弧の中と、成績表の「先を見るバー数」が変わります（成績表は 12・120）。②段ごとに残す上位10本は、役割ごとに10本ずつになります（groups＝worklog 20260928 §51）。
+
+【4-9 設定】
+**設定ファイルに版3 の欄を足します。**値動きの大きさ・箱・脚・移る所・行き来・役割（保有の下限と上限・数える足・箱の本数）。採点に使う版を hindsight_box にします。古くなっていた注記2つ（採点に使う版の意味・search_limits に置かない理由）を、いまの事実に直します。
+
+**コマンドの旗を1つ増やします。**⑪タブの道具の --version に hindsight_box を足します。
+
+【4-10 保存先】
+**変えません。**札の部品は何も書きません。⑪タブの版は dashboard/regime_prototype/（git の対象外）です。
+
+【4-11 時刻の扱い】
+**窓は変えません。**デイトレの札は15分足にまとめて数え、5分足の各バーへ写します。15分足のまとめ方は「左の端の時刻で、左の端を含む」です（案を作る道具が、⑪タブで見た2本と同じになることを確かめた）。
+
+【4-12 出る結果の姿】
+**完成したときに出るもの。**①札の部品の自己テストが全部 通る（T12〜T17 を含む）②⑪タブの道具が版3 の2本を出し、レンジだった の本数が⑪タブで見た2本と同じ ③壊すプログラム b125 で T15 が落ちる。
+
+【4-13 影響範囲】
+1. **札の部品・設定ファイル・測る道具は H2 の対象、札の部品は G2 の対象です。**実装の後に G2 → H2 を取り直します。
+2. **成績表（material_ranking.json）は、作り直すまで古い札のままです。**測る道具は、成績表の札の版が違うと止まります（regime_r9_diag.py の510行）。作り直しは実装の後の走行です。
+3. **観察の道具 observe_diag.py は直しません。**札の部品の口を呼ぶだけで、版3 が通ります（案を作る道具が確かめた）。
+4. **画面（index.html・app.js）は直しません。**
+5. **直すファイルの行の文字を探している壊すプログラムが在ります**（札の部品＝b118・b122、測る道具＝b84・b97・b113〜b117・b123・b124）。この工事は、どれが探す文字も変えません（案を作る道具が、それぞれが探す文字の数を当てる前と後で数えた）。
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 札の部品の自己テスト | 2.9秒 | 案を作る道具が、当てた後の札の部品を本物に書かずに走らせた実測 |
+| 版3 の札（スキャル・値決め窓の全部） | 0.5秒 | 同上 |
+| 版3 の札（デイトレ・値決め窓の全部） | 0.2秒 | 同上 |
+| ⑪タブの道具の1版（scalp・札を付け・検査15 を数え・仕様を作る） | 0.6秒 | 同上（版のファイルを書く時間は入らない） |
+| ⑪タブの道具の1版（daytrade・札を付け・検査15 を数え・仕様を作る） | 0.3秒 | 同上（版のファイルを書く時間は入らない） |
+| 版のファイルを書く | 1版 約2.5秒以下 | 2026-09-28 の走行（worklog 20260928 §34） |
+
+【4-15 競合】
+**奪い合いに気をつけるもの。**版の一覧 index.json は、⑪タブのほかの版を作る道具も書きます。2つを同時に走らせません。
+
+【4-16 セキュリティ】
+**触らないもの。**人に見せてはいけない値（取引所の鍵・本番の発注の切り替え）には触りません。書き換えられては困る記録（H2・G2 の検査済みの記録・承認の記録）は、取り直しの道具だけが書きます。
+
+【4-17 ログと進捗表示】
+**画面に出すもの。**札の部品の自己テストは、T12〜T17 の名前を足した1行を出します。⑪タブの道具は今までどおり、版ごとに数えた結果を出します。
+
+【4-18 再利用】
+| 手本 | 何を写すか |
+|---|---|
+| CC の調べの道具（_labelC5・C14・C20・C24・C25_probe.py） | 前の版 label-trial-c24 の式（式を変えずに移した） |
+| CC の調べの道具（_labelD_rule_probe.py の qualify・_labelD_c24b_probe.py） | 行き来の数え方と、役割ごとの組み立て |
+| 版2 band_hold の口 | 役割ごとの鍵・groups・labels_at_bars の作り |
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": "scripts/priority_rebuild/regime_label.py",
+  "直す箇所": "20行（<モジュール直下>）",
+  "直す前の文字": "  ・採点に使う版は設定ファイルの「採点に使う版」の1行（既定＝er_median＝いままでと同じ）。\n",
+  "種類": "直した後の文字",
+  "中身": "  ・版3「hindsight_box」＝後から全部 見て作る札（M2-F-6c・まこさん「OK」2026-10-02＝⑪タブの label-c24b-scalp・label-c24b-daytrade）。\n      役割ごと（スキャル＝5分足・箱24本／デイトレ＝15分足・箱40本）。①水平な箱に入ったバーをレンジ ②大きくて速い脚を外す\n      ③段と段の間の移る所を外す ④箱の中で上下に2回ずつ行き来している所は、②の脚の中でもレンジに戻す。\n      式は CC の調べの道具（.claude/state/_labelC5・C14・C20・C24・C25・_labelD_rule・_labelD_c24b_probe.py）から、式を変えずに移した。\n      「強さ」の真偽＝レンジだった の否定（全部の行が使える）。「向き」「大きさ」は版1 と同じ式（先の本数＝その役割の保有の上限）。\n  ・採点に使う版は設定ファイルの「採点に使う版」の1行（2026-10-02 から hindsight_box＝版3）。\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_label.py:20「・採点に使う版は設定ファイルの「採点に使う版」の1行（既定＝er_median＝いままでと同じ）。」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": "scripts/priority_rebuild/regime_label.py",
+  "直す箇所": "45行（<モジュール直下>）",
+  "直す前の文字": "TAG_KEYS = {\"倍率\": \"x\", \"m\": \"m\", \"c\": \"c\", \"まとめる幅\": \"mw\", \"幅の線\": \"wl\", \"続く本数\": \"h\"}\n",
+  "種類": "足す文字",
+  "中身": "HINDSIGHT = \"hindsight_box\"                       # 版3＝後から全部 見て作る札（役割ごと）\nFORMULA_VERSIONS = (\"er_median\", \"band_hold\", HINDSIGHT)   # 式が在る版\nBASE_TF = \"5min\"                                  # 読む足（5分足）＝版3 の数える足がこれと違えば、まとめて数える\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_label.py:45「TAG_KEYS = {\"倍率\": \"x\", \"m\": \"m\", \"c\": \"c\", \"まとめる幅\": \"mw\", \"幅の線\": \"wl\", \"続く本数\": \"h\"}」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": "scripts/priority_rebuild/regime_label.py",
+  "直す箇所": "63〜64行（load_config）",
+  "直す前の文字": "    if use not in (\"er_median\", \"band_hold\"):\n        raise LabelError(f\"[札] 採点に使う版 {use} の式が regime_label.py に無い（式が在る版＝er_median・band_hold・fail-closed）\")\n",
+  "種類": "直した後の文字",
+  "中身": "    if use not in FORMULA_VERSIONS:\n        raise LabelError(f\"[札] 採点に使う版 {use} の式が regime_label.py に無い（式が在る版＝{'・'.join(FORMULA_VERSIONS)}・fail-closed）\")\n    if use == HINDSIGHT:\n        for k in (\"値動きの大きさ\", \"箱\", \"脚\", \"移る所\", \"行き来\", \"役割\"):\n            if not (vers[HINDSIGHT] or {}).get(k):\n                raise LabelError(f\"[札] 版 {HINDSIGHT} に「{k}」が無い（fail-closed）\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_label.py:63「if use not in (\"er_median\", \"band_hold\"):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": "scripts/priority_rebuild/regime_label.py",
+  "直す箇所": "196行（band_hold）",
+  "直す前の文字": "    return {\"強さ\": (ok & ~rng, ok), \"向き\": er[\"向き\"], \"大きさ\": er[\"大きさ\"]}\n",
+  "種類": "足す文字",
+  "中身": "\n\n# ══ 版3＝後から全部 見て作る札（M2-F-6c で まこさんが決めた label-c24b-scalp・label-c24b-daytrade）══════════════\n#   まこさん決定（2026-10-02）＝⑪タブの2本を見て「OK」。前の版 label-trial-c24（「確認したけど、視覚的にはほぼOKに見えるので、\n#   これでいいよ」）を土台に、9/28 の構造の文「役割ごとに、保有時間の下限と上限、倍率、m、c を持たせます」に合わせて役割ごとにした。\n#   式は CC の調べの道具から、式を変えずに移した（工事 D の案を作る道具が、⑪タブの2本と1本ずつ同じかを数えた）。\n#   数字は全部 設定ファイルの版 hindsight_box に置く（構造の文＝「数字は全部、設定ファイルに置きます。コードには1つも書きません。」）。\n#   ★先を見るのが仕事（答え合わせにだけ使う・判定の条件や入口には入れない）＝先を見る行には H2OK を付ける。乱数は使わない。\ndef local_scale(win: pd.DataFrame, sc: dict) -> np.ndarray:\n    \"\"\"その時期の値動きの大きさ s＝（n本の最高値 − 最安値）÷ 終値 の、前後 m本の中央値（窓の端は近い値で埋める）。\"\"\"\n    n = int(sc[\"幅を測る本数\"])\n    w = (win[\"high\"].rolling(n).max() - win[\"low\"].rolling(n).min()) / win[\"close\"]\n    s = w.rolling(int(sc[\"中央値を取る本数\"]), center=True, min_periods=int(sc[\"最小の本数\"])).median()  # H2OK: 札を作る側＝前後を見て s を決める（評価にだけ使う・判断に入らない）\n    return s.bfill().ffill().to_numpy(float)  # H2OK: 同上（窓の頭の欠けを後ろの値で埋める）\n\n\ndef zigzag_adaptive(h: np.ndarray, lo: np.ndarray, theta: np.ndarray) -> list:\n    \"\"\"戻りがその時の theta[i]（割合）以上で向きが変わるジグザグ。戻り＝[(位置, 値, +1 山 / -1 谷)]。\"\"\"\n    piv = []\n    trend = 0\n    hi_i, hi_v, lo_i, lo_v = 0, h[0], 0, lo[0]\n    for i in range(1, len(h)):\n        if h[i] > hi_v:\n            hi_i, hi_v = i, h[i]\n        if lo[i] < lo_v:\n            lo_i, lo_v = i, lo[i]\n        th = theta[i]\n        if trend >= 0 and lo[i] <= hi_v * (1 - th) and (trend == 1 or hi_i < i):\n            if trend == 0 and lo_i < hi_i:\n                piv.append((lo_i, lo_v, -1))\n            piv.append((hi_i, hi_v, 1))\n            trend = -1\n            lo_i, lo_v = i, lo[i]\n        elif trend <= 0 and h[i] >= lo_v * (1 + th) and (trend == -1 or lo_i < i):\n            if trend == 0 and hi_i < lo_i:\n                piv.append((hi_i, hi_v, 1))\n            piv.append((lo_i, lo_v, -1))\n            trend = 1\n            hi_i, hi_v = i, h[i]\n    piv.append((hi_i, hi_v, 1) if trend == 1 else (lo_i, lo_v, -1))\n    return piv\n\n\ndef legs_of(win: pd.DataFrame, s: np.ndarray, a: float, per: int) -> list:\n    \"\"\"ジグザグ（戻り a×s）の脚。戻り＝[(始まり, 終わり, 始値, 終値, 大きさ÷s, 速さ＝大きさ÷（本数÷per）)]。\"\"\"\n    h = win[\"high\"].to_numpy(float)\n    lo = win[\"low\"].to_numpy(float)\n    piv = zigzag_adaptive(h, lo, a * s)\n    out = []\n    for (i0, v0, _), (i1, v1, _) in zip(piv[:-1], piv[1:]):\n        if i1 <= i0:\n            continue\n        amp = abs(v1 - v0) / v0 / s[i0]\n        out.append((i0, i1, v0, v1, amp, amp / ((i1 - i0) / float(per))))\n    return out\n\n\ndef trend_mask(c: np.ndarray, legs: list, a0: float, v0_: float, f: float) -> np.ndarray:\n    \"\"\"大きさ ≥ a0 かつ 速さ ≥ v0_ の脚を、終値が脚の f〜(1−f) 進んだ所だけ真にする（脚の両端の止まった所は除く）。\"\"\"\n    m = np.zeros(len(c), bool)\n    for i0, i1, v0, v1, amp, spd in legs:\n        if amp < a0 or spd < v0_:\n            continue\n        d = 1.0 if v1 > v0 else -1.0\n        p = (c[i0: i1 + 1] - v0) * d / abs(v1 - v0)\n        st = np.flatnonzero(p >= f)\n        en = np.flatnonzero(p >= 1 - f)\n        if len(st) == 0 or len(en) == 0:\n            continue\n        a_, b_ = i0 + st[0], i0 + en[0]\n        if b_ >= a_:\n            m[a_: b_ + 1] = True\n    return m\n\n\ndef box_stats(win: pd.DataFrame, s: np.ndarray, n_box: int):\n    \"\"\"バー i から n_box 本の箱の高さ（÷終値÷s）と、前半と後半の終値の平均の差（÷箱の幅）。\"\"\"\n    c = win[\"close\"]\n    hh = win[\"high\"][::-1].rolling(n_box).max()[::-1]  # H2OK: 札を作る側＝バーから先 n_box 本の最高値（後ろから数える）\n    ll = win[\"low\"][::-1].rolling(n_box).min()[::-1]   # H2OK: 同上（最安値）\n    width = (hh - ll)\n    h = (width / c).to_numpy() / s\n    a = n_box // 2\n    m1 = c[::-1].rolling(a).mean()[::-1]               # H2OK: 同上（前半の終値の平均）\n    m2 = c[::-1].rolling(n_box - a).mean()[::-1].shift(-a)  # H2OK: 同上（後半の終値の平均）\n    d = ((m1 - m2).abs() / width).where(width > 0).to_numpy()\n    return np.nan_to_num(h, nan=np.inf), np.nan_to_num(d, nan=np.inf)\n\n\ndef step_mask(win: pd.DataFrame, s: np.ndarray, k: int, x: float) -> np.ndarray:\n    \"\"\"前の k本と後の k本の終値の平均の差 ≥ x×s のバーと、その前後 k÷2 本（段と段の間の移る所）。\"\"\"\n    c = win[\"close\"]\n    before = c.rolling(k).mean()\n    after = c[::-1].rolling(k).mean()[::-1]            # H2OK: 札を作る側＝後の k本の平均（後ろから数える）\n    mv = ((after - before).abs() / c).to_numpy() / s\n    hit = np.nan_to_num(mv, nan=0) >= x\n    half = max(k // 2, 1)\n    return pd.Series(hit.astype(float)).rolling(2 * half + 1, center=True, min_periods=1).max().to_numpy() > 0  # H2OK: 同上（前後へ広げる）\n\n\ndef oscillates(c: np.ndarray, n_box: int, v: dict) -> np.ndarray:\n    \"\"\"長さ n_box の区間（始まり a）ごとに、終値の帯（区間の最高と最安）の上と下の近く（端の近く×高さ）へ、行ったり来たりの順で\n    それぞれ回数の下限以上 入り、前半と後半の終値の平均の差 ≤ 高さ×前後の差の上限、高さ÷平均 ≥ 手数料の床 か。\"\"\"\n    from numpy.lib.stride_tricks import sliding_window_view\n    near, need, shift, floor = float(v[\"端の近く\"]), int(v[\"回数の下限\"]), float(v[\"前後の差の上限\"]), fee_floor()\n    w = sliding_window_view(c, n_box)                  # 札を作る側＝区間の中（先を見る＝答え合わせにだけ使う）\n    mx, mn = w.max(1), w.min(1)\n    hgt = mx - mn\n    rows = len(mx)\n    prev = np.zeros(rows, np.int8)\n    n_top = np.zeros(rows, np.int16)\n    n_bot = np.zeros(rows, np.int16)\n    hi_th, lo_th = mx - near * hgt, mn + near * hgt\n    for j in range(n_box):\n        cj = c[j:j + rows]\n        code = np.where(cj >= hi_th, 1, np.where(cj <= lo_th, -1, 0)).astype(np.int8)\n        new = (code != 0) & (code != prev)\n        n_top += new & (code == 1)\n        n_bot += new & (code == -1)\n        prev = np.where(code != 0, code, prev)\n    cs = np.concatenate([[0.0], np.cumsum(c)])\n    a = np.arange(rows)\n    half = n_box // 2\n    m1 = (cs[a + half] - cs[a]) / half\n    m2 = (cs[a + n_box] - cs[a + half]) / (n_box - half)\n    mean = (cs[a + n_box] - cs[a]) / n_box\n    return (n_top >= need) & (n_bot >= need) & (np.abs(m1 - m2) <= shift * hgt) & (hgt / mean >= floor) & (hgt > 0)\n\n\ndef _spread(flag, n_box: int) -> np.ndarray:\n    \"\"\"始まりの印を、その区間の n_box 本 全部へ広げる（バー i は、始まりが i−n_box+1〜i のどれかなら真）。\"\"\"\n    return pd.Series(np.asarray(flag, float)).rolling(n_box, min_periods=1).max().to_numpy() > 0\n\n\ndef _range_on(win: pd.DataFrame, v: dict, n_box: int) -> np.ndarray:\n    \"\"\"1つの足の上で「レンジだった」を作る。①箱 ②脚を外す ③移る所を外す ④行き来している箱は、脚の中でもレンジに戻す。\"\"\"\n    c = win[\"close\"].to_numpy(float)\n    s = local_scale(win, v[\"値動きの大きさ\"])\n    lg, bx, st = v[\"脚\"], v[\"箱\"], v[\"移る所\"]\n    tm = trend_mask(c, legs_of(win, s, float(lg[\"戻り\"]), int(lg[\"速さを測る本数\"])),\n                    float(lg[\"大きさの下限\"]), float(lg[\"速さの下限\"]), float(lg[\"端を除く割合\"]))\n    h, d = box_stats(win, s, n_box)\n    ok = (h <= float(bx[\"高さの上限\"])) & (d <= float(bx[\"前後の差の上限\"]))\n    stp = step_mask(win, s, int(st[\"前後の本数\"]), float(st[\"差の下限\"]))\n    lab = _spread(ok, n_box) & ~tm & ~stp\n    q = np.zeros(len(c), bool)\n    qq = oscillates(c, n_box, v[\"行き来\"])\n    q[:len(qq)] = qq\n    return lab | (_spread(ok & q, n_box) & ~stp)\n\n\ndef hindsight_range(win: pd.DataFrame, cfg: dict, role: str) -> pd.Series:\n    \"\"\"版3 の「レンジだった」の真偽（役割ごと）。数える足が5分足でなければ、その足にまとめて数え、5分足の各バーへ写す。\"\"\"\n    v = cfg[\"版\"][HINDSIGHT]\n    rc = v[\"役割\"][role]\n    tf, n_box = str(rc[\"数える足\"]), int(rc[\"箱の本数\"])\n    if pd.to_timedelta(tf) == pd.to_timedelta(BASE_TF):\n        return pd.Series(_range_on(win, v, n_box), index=win.index)\n    w2 = pd.DataFrame({\"high\": win[\"high\"].resample(tf, label=\"left\", closed=\"left\").max(),\n                       \"low\": win[\"low\"].resample(tf, label=\"left\", closed=\"left\").min(),\n                       \"close\": win[\"close\"].resample(tf, label=\"left\", closed=\"left\").last()}).dropna()\n    m2 = pd.Series(_range_on(w2, v, n_box), index=w2.index)\n    return pd.Series(m2.reindex(win.index.floor(tf)).fillna(False).to_numpy(bool), index=win.index)\n\n\ndef hindsight_roles(cfg=None) -> list:\n    cfg = cfg or load_config()\n    return list(cfg[\"版\"][HINDSIGHT][\"役割\"])\n\n\ndef hindsight_bars(cfg, role: str) -> int:\n    \"\"\"版3 の役割の先を見る本数＝保有の上限（向き・大きさの札と、成績表の鍵に使う）。\"\"\"\n    return int(cfg[\"版\"][HINDSIGHT][\"役割\"][role][\"保有の上限\"])\n\n\ndef hindsight(win: pd.DataFrame, cfg: dict, role: str) -> dict:\n    \"\"\"版3 の札（3つの見方の形で返す＝呼ぶ側を変えない）。強さ＝レンジだった の否定（全部の行が使える）。\"\"\"\n    rng = hindsight_range(win, cfg, role)\n    er = er_median(win, hindsight_bars(cfg, role))\n    return {\"強さ\": (~rng, pd.Series(True, index=win.index)), \"向き\": er[\"向き\"], \"大きさ\": er[\"大きさ\"]}\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_label.py:196「return {\"強さ\": (ok & ~rng, ok), \"向き\": er[\"向き\"], \"大きさ\": er[\"大きさ\"]}」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": "scripts/priority_rebuild/regime_label.py",
+  "直す箇所": "201〜203行（keys）",
+  "直す前の文字": "    \"\"\"採点に使う版の札の鍵＝版1 は先を見る本数（24・288）／版2 は役割（scalp・daytrade）。\"\"\"\n    cfg = cfg or load_config()\n    return list(horizons(cfg)) if cfg[\"採点に使う版\"] == \"er_median\" else roles(cfg)\n",
+  "種類": "直した後の文字",
+  "中身": "    \"\"\"採点に使う版の札の鍵＝版1 は先を見る本数（24・288）／版2・版3 は役割（scalp・daytrade）。\"\"\"\n    cfg = cfg or load_config()\n    if cfg[\"採点に使う版\"] == \"er_median\":\n        return list(horizons(cfg))\n    return hindsight_roles(cfg) if cfg[\"採点に使う版\"] == HINDSIGHT else roles(cfg)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_label.py:201「\"\"\"採点に使う版の札の鍵＝版1 は先を見る本数（24・288）／版2 は役割（scalp・daytrade）。\"\"\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": "scripts/priority_rebuild/regime_label.py",
+  "直す箇所": "209行（key_bars）",
+  "直す前の文字": "    return int(key) if cfg[\"採点に使う版\"] == \"er_median\" else role_bars(cfg, str(key))\n",
+  "種類": "直した後の文字",
+  "中身": "    if cfg[\"採点に使う版\"] == \"er_median\":\n        return int(key)\n    return hindsight_bars(cfg, str(key)) if cfg[\"採点に使う版\"] == HINDSIGHT else role_bars(cfg, str(key))\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_label.py:209「return int(key) if cfg[\"採点に使う版\"] == \"er_median\" else role_bars(cfg, str(key))」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": "scripts/priority_rebuild/regime_label.py",
+  "直す箇所": "227〜228行（labels_for_key）",
+  "直す前の文字": "        return er_median(win, int(key))\n    return band_hold(win, cfg, str(key))\n",
+  "種類": "直した後の文字",
+  "中身": "        return er_median(win, int(key))\n    if cfg[\"採点に使う版\"] == HINDSIGHT:\n        return hindsight(win, cfg, str(key))\n    return band_hold(win, cfg, str(key))\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_label.py:227「return er_median(win, int(key))」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": "scripts/priority_rebuild/regime_label.py",
+  "直す箇所": "234〜235行（labels_at_bars）",
+  "直す前の文字": "    cfg = cfg or load_config()\n    if cfg[\"採点に使う版\"] == \"band_hold\":\n",
+  "種類": "直した後の文字",
+  "中身": "    cfg = cfg or load_config()\n    if cfg[\"採点に使う版\"] == HINDSIGHT:\n        for role in hindsight_roles(cfg):\n            if hindsight_bars(cfg, role) == int(n):\n                return hindsight(win, cfg, role)\n    if cfg[\"採点に使う版\"] == \"band_hold\":\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_label.py:234「cfg = cfg or load_config()」",
+  "状態": "確定"
+ },
+ {
+  "番号": 9,
+  "対象のファイル": "scripts/priority_rebuild/regime_label.py",
+  "直す箇所": "253行（version_tag）",
+  "直す前の文字": "        return \"label-er\" + \"-\".join(str(x) for x in horizons(cfg)) if role is None else f\"label-er{int(role)}\"\n",
+  "種類": "足す文字",
+  "中身": "    if ver == HINDSIGHT:\n        v = cfg[\"版\"][HINDSIGHT]\n        rs = [role] if role else hindsight_roles(cfg)\n        common = (f\"w{v['値動きの大きさ']['幅を測る本数']}-m{v['値動きの大きさ']['中央値を取る本数']}-h{v['箱']['高さの上限']}\"\n                  f\"-g{v['箱']['前後の差の上限']}-r{v['脚']['戻り']}-a{v['脚']['大きさの下限']}-v{v['脚']['速さの下限']}\"\n                  f\"-k{v['移る所']['前後の本数']}-x{v['移る所']['差の下限']}-q{v['行き来']['端の近く']}\")\n        return \"label-hind-\" + \"_\".join(f\"{r}-{v['役割'][r]['数える足']}-b{v['役割'][r]['箱の本数']}\" for r in rs) + \"-\" + common\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_label.py:253「return \"label-er\" + \"-\".join(str(x) for x in horizons(cfg)) if role is None else f\"label-er{int(role)}\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 10,
+  "対象のファイル": "scripts/priority_rebuild/regime_label.py",
+  "直す箇所": "392〜393行（selftest）",
+  "直す前の文字": "    print(\"[regime_label selftest] T1 全部レンジ ／ T2 全部トレンド ／ T3 レンジ8割（版1 の弱点）／ T4 幅の線 ／ \"\n          \"T5 版1 は前の式と同じ ／ T6 呼ぶ側がここを呼ぶ ／ T7 使う値が空なら止まる ／ T8 版の名前・保有の範囲 ／ T9 値の組 ／ T10 続くの確かめ ／ T11 近い山のまとめ方\")\n",
+  "種類": "直した後の文字",
+  "中身": "    # ══ 版3（hindsight_box・M2-F-6d の工事 D）＝答えの分かる作り物のチャート ══\n    if HINDSIGHT not in (cfg.get(\"版\") or {}):\n        ng.append(f\"T12: 設定ファイルに版 {HINDSIGHT} が無い\")\n    else:\n        hr = hindsight_roles(cfg)\n        # T12 全部レンジ＝役割ごとに、ほぼ全部「レンジだった」\n        for role in hr:\n            s12 = float(hindsight_range(_synth(\"range\"), cfg, role).mean())\n            if not s12 >= 0.95:\n                ng.append(f\"T12: 全部レンジのデータで、{role} の レンジだった の割合が {s12:.3f}（0.95 以上のはず）\")\n        # T13 全部トレンド＝1本も「レンジだった」にならない\n        for role in hr:\n            n13 = int(hindsight_range(_synth(\"trend\"), cfg, role).sum())\n            if n13:\n                ng.append(f\"T13: 全部トレンドのデータで、{role} の レンジだった が {n13} 本 出た（0本のはず）\")\n        # T14 レンジ8割＝前8割はほぼレンジ・後ろ2割（上げ）はほぼレンジでない\n        for role in hr:\n            r14 = hindsight_range(d3, cfg, role).to_numpy()\n            a14, b14 = float(r14[:k3].mean()), float(r14[k3:].mean())\n            if not (a14 >= 0.9 and b14 <= 0.05):\n                ng.append(f\"T14: レンジ8割のデータで、{role} の前8割 {a14:.3f}（0.9 以上のはず）・後ろ2割 {b14:.3f}（0.05 以下のはず）\")\n        # T15 階段（observe_diag の答えの分かるニセのデータ＝上げの区間と横ばいの区間を交互）\n        #   箱の長さが区間より短い役割＝横ばいはレンジ・上げはレンジでない。長い役割＝その長さの帯が無いので全部 レンジでない。\n        #   ★前の版 label-trial-c24 は、スキャルの尺で横ばいのうち 0.208 しかレンジと言えなかった（脚が階段の全体を1本と見た）\n        sdf15, st15 = od._synth_regime_bars()\n        up = st15.to_numpy()\n        inner = ((st15.shift(-12) == st15) & (st15.shift(12) == st15)).fillna(False).to_numpy()  # H2OK: ニセのデータの中だけで完結する検査\n        blk_min = int(np.argmax(up != up[0])) * 5            # 区間1つの長さ（分）＝本数 × 5分\n        for role in hr:\n            rc = cfg[\"版\"][HINDSIGHT][\"役割\"][role]\n            box_min = int(rc[\"箱の本数\"]) * pd.to_timedelta(str(rc[\"数える足\"])).total_seconds() / 60\n            r15 = hindsight_range(sdf15, cfg, role).to_numpy()\n            f15, u15 = float(r15[inner & ~up].mean()), float(r15[inner & up].mean())\n            want = (f15 >= 0.9) if box_min <= blk_min else (f15 <= 0.05)\n            if not (want and u15 <= 0.05):\n                ng.append(f\"T15: 階段のデータで、{role}（箱 {box_min:.0f}分・区間 {blk_min}分）の横ばいのうちレンジ {f15:.3f}・上げのうちレンジ {u15:.3f}\"\n                          f\"（{'横ばい 0.9 以上' if box_min <= blk_min else '横ばい 0.05 以下'}・上げ 0.05 以下のはず）\")\n        # T16 数字は設定ファイルから読む＝箱の高さの上限を 0 にすると、1本も「レンジだった」にならない\n        bad16 = json.loads(json.dumps(cfg))\n        bad16[\"版\"][HINDSIGHT][\"箱\"][\"高さの上限\"] = 0\n        for role in hr:\n            if bool(hindsight_range(_synth(\"range\"), bad16, role).any()):\n                ng.append(f\"T16: 箱の高さの上限を 0 にしても、{role} で レンジだった が出た（設定の数字を読んでいない）\")\n        # T17 役割の保有の範囲が、組む側の設定（search_limits.json の hold_range_by_role）と同じ\n        for role in hr:\n            rc = cfg[\"版\"][HINDSIGHT][\"役割\"][role]\n            if role not in sl or (int(rc[\"保有の下限\"]), int(rc[\"保有の上限\"])) != (int(sl[role][\"lo_bars\"]), int(sl[role][\"hi_bars\"])):\n                ng.append(f\"T17: 版3 の役割 {role} の保有の範囲が search_limits.json の hold_range_by_role と違う\")\n    print(\"[regime_label selftest] T1 全部レンジ ／ T2 全部トレンド ／ T3 レンジ8割（版1 の弱点）／ T4 幅の線 ／ \"\n          \"T5 版1 は前の式と同じ ／ T6 呼ぶ側がここを呼ぶ ／ T7 使う値が空なら止まる ／ T8 版の名前・保有の範囲 ／ T9 値の組 ／ T10 続くの確かめ ／ T11 近い山のまとめ方\"\n          \" ／ T12〜T16 版3 の作り物のチャート（全部レンジ・全部トレンド・レンジ8割・階段・設定の数字）／ T17 版3 の保有の範囲\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_label.py:392「print(\"[regime_label selftest] T1 全部レンジ ／ T2 全部トレンド ／ T3 レンジ8割（版1 の弱点）／ T4 幅の線 ／ \"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 11,
+  "対象のファイル": "scripts/priority_rebuild/recipes/regime_label.json",
+  "直す箇所": "4行",
+  "直す前の文字": " \"_search_limits に置かない理由\": \"search_limits.json は H2 と G2 の印の対象（h2_pass.json・g2_pass.json）＝札の値を変えるたびに H2（約13分）を取り直すことになる。版1 の先を見る本数は、組む側の state_hold_bars_range（保つ上限）と共用だったのを切り離した（値は同じ 24・288）。\",\n",
+  "種類": "直した後の文字",
+  "中身": " \"_search_limits に置かない理由\": \"search_limits.json は H2 と G2 の印の対象（h2_pass.json・g2_pass.json）。★2026-10-02 に確かめた＝この設定ファイル自身も H2 の印の対象（h2_pass.json）に入っている（G2 には入っていない）＝値を変えたら H2 を取り直す。版1 の先を見る本数は、組む側の state_hold_bars_range（保つ上限）と共用だったのを切り離した（値は同じ 24・288）。\",\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/recipes/regime_label.json:4「\"_search_limits に置かない理由\": \"search_limits.json は H2 と G2 の印の対象（h2_pass.json・g2_pass.json）＝札の値を変えるたびに H2（約13分）を取り直すことになる。版1 の先を見る本数は、組む側の state_hold_bars_range（保つ上限）と共用だったのを切り離した（値は同じ 24・288）。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 12,
+  "対象のファイル": "scripts/priority_rebuild/recipes/regime_label.json",
+  "直す箇所": "5行",
+  "直す前の文字": " \"採点に使う版\": \"er_median\",\n",
+  "種類": "直した後の文字",
+  "中身": " \"採点に使う版\": \"hindsight_box\",\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/recipes/regime_label.json:5「\"採点に使う版\": \"er_median\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 13,
+  "対象のファイル": "scripts/priority_rebuild/recipes/regime_label.json",
+  "直す箇所": "6行",
+  "直す前の文字": " \"_採点に使う版の意味\": \"R9 の3つの割合・順位表・成績表・⑪タブの既定に使う版。er_median＝いままでと同じ。band_hold にするのは、まこさんが⑪タブの目と検査15 で役割ごとの「使う値」を選んでから（空のまま band_hold にすると止まる）。選んだら band_hold にする＝測る道具と成績表が役割ごとの札で両方 測り、段ごとに役割ごとに10本ずつ残す（.claude/state/label_structure_definition_verbatim_20260929.txt の「1. どの役割の札で測るか」）。版1 には役割の札が無いので、版1 のあいだは役割で分けられない。\",\n",
+  "種類": "直した後の文字",
+  "中身": " \"_採点に使う版の意味\": \"R9 の3つの割合・順位表・成績表・⑪タブの既定に使う版。★2026-10-02 から hindsight_box（版3＝M2-F-6c で まこさんが⑪タブで見て「OK」と決めた役割ごとの札 label-c24b-scalp・label-c24b-daytrade）。役割ごとの札で両方 測り、段ごとに役割ごとに10本ずつ残す（worklog 20260928 §51）。er_median に戻すと、いままでの札（先 n本の ER）で測る。band_hold は「使う値」が空のあいだ採点に使えない（2026-10-02 に全体の 0〜9.2% しかレンジと言わず、使えないと分かった）。\",\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/recipes/regime_label.json:6「\"_採点に使う版の意味\": \"R9 の3つの割合・順位表・成績表・⑪タブの既定に使う版。er_median＝いままでと同じ。band_hold にするのは、まこさんが⑪タブの目と検査15 で役割ごとの「使う値」を選んでから（空のまま band_hold にすると止まる）。選んだら band_hold にする＝測る道具と成績表が役割ごとの札で両方 測り、段ごとに役割ごとに10本ずつ残す（.claude/state/label_structure_definition_verbatim_20260929.txt の「1. どの役割の札で測るか」）。版1 には役割の札が無いので、版1 のあいだは役割で分けられない。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 14,
+  "対象のファイル": "scripts/priority_rebuild/recipes/regime_label.json",
+  "直す箇所": "47〜49行",
+  "直す前の文字": "  }\n }\n}\n",
+  "種類": "直した後の文字",
+  "中身": "  },\n  \"hindsight_box\": {\n   \"説明\": \"後から全部 見て作る札（M2-F-6c・まこさん「OK」2026-10-02＝⑪タブの label-c24b-scalp・label-c24b-daytrade）。役割ごとに1つ。①水平な箱（箱の本数のあいだの高さ ≤ 高さの上限×s・前半と後半の終値の平均の差 ≤ 高さ×前後の差の上限）に入ったバーをレンジ ②ジグザグ（戻り×s）の脚のうち、大きさ ≥ 大きさの下限×s かつ 速さ ≥ 速さの下限 の所を外す ③前と後の終値の平均の差 ≥ 差の下限×s のバーとその前後を外す ④箱の中で、帯の上と下の近く（端の近く×高さ）へ行ったり来たりの順でそれぞれ回数の下限以上 入る所は、②の脚の中でもレンジに戻す。s＝その時期の値動きの大きさ（幅を測る本数の幅 ÷ 終値の、前後の中央値）。先も前も見る（答え合わせにだけ使う）。\",\n   \"_出どころ\": \"前の版 label-trial-c24（まこさん「確認したけど、視覚的にはほぼOKに見えるので、これでいいよ」）の値をそのまま使い、④を足した（階段の横ばいを②が消していたため）。役割ごとにしたのは 9/28 の構造の文。デイトレの数える足（15分足）と箱の本数（40本＝10時間）と④の値は CC が決めた（worklog 20261002 §20〜§23）。④の幅の下限は手数料の床（e38_logic_parts.SCALP_FLOOR）を読む。\",\n   \"_本数の単位\": \"どれも、その役割の数える足の本数（スキャル＝5分足・デイトレ＝15分足）。デイトレでは同じ数が3倍の時間になる（例＝速さを測る本数 12＝スキャル1時間・デイトレ3時間）。\",\n   \"値動きの大きさ\": {\"幅を測る本数\": 12, \"中央値を取る本数\": 288, \"最小の本数\": 48},\n   \"箱\": {\"高さの上限\": 1.5, \"前後の差の上限\": 0.25},\n   \"脚\": {\"戻り\": 1.0, \"大きさの下限\": 3.0, \"速さの下限\": 0.5, \"端を除く割合\": 0.1, \"速さを測る本数\": 12},\n   \"移る所\": {\"前後の本数\": 18, \"差の下限\": 1.0},\n   \"行き来\": {\"端の近く\": 0.25, \"回数の下限\": 2, \"前後の差の上限\": 0.5},\n   \"役割\": {\n    \"scalp\": {\"保有の下限\": 1, \"保有の上限\": 12, \"数える足\": \"5min\", \"箱の本数\": 24},\n    \"daytrade\": {\"保有の下限\": 12, \"保有の上限\": 120, \"数える足\": \"15min\", \"箱の本数\": 40}\n   }\n  }\n }\n}\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/recipes/regime_label.json:47「}」",
+  "状態": "確定"
+ },
+ {
+  "番号": 15,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "14行（<モジュール直下>）",
+  "直す前の文字": "       版2 band_hold＝役割ごと × 設定の範囲の両端と真ん中の値の組（regime_label.variants）＝まこさんが目で見て「使う値」を選ぶ\n",
+  "種類": "足す文字",
+  "中身": "       版3 hindsight_box＝役割ごと（後から全部 見て作る札・M2-F-6c で まこさんが⑪タブで見て決めた2本）\n",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:14「版2 band_hold＝役割ごと × 設定の範囲の両端と真ん中の値の組（regime_label.variants）＝まこさんが目で見て「使う値」を選ぶ」",
+  "状態": "確定"
+ },
+ {
+  "番号": 16,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "34行（<モジュール直下>）",
+  "直す前の文字": "  python3 scripts/dashboard/build_regime_label_dashboard.py --version band_hold   （版2 だけ＝役割ごとに、設定の範囲の両端と真ん中の値の組を全部）\n",
+  "種類": "足す文字",
+  "中身": "  python3 scripts/dashboard/build_regime_label_dashboard.py --version hindsight_box   （版3 だけ＝役割ごと）\n",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:34「python3 scripts/dashboard/build_regime_label_dashboard.py --version band_hold   （版2 だけ＝役割ごとに、設定の範囲の両端と真ん中の値の組を全部）」",
+  "状態": "確定"
+ },
+ {
+  "番号": 17,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "93行（label_frame）",
+  "直す前の文字": "    version＝\"er_median\"（key＝先を見る本数）か \"band_hold\"（key＝役割・values＝⑪タブに出す値の組）。\n",
+  "種類": "直した後の文字",
+  "中身": "    version＝\"er_median\"（key＝先を見る本数）か \"band_hold\"（key＝役割・values＝⑪タブに出す値の組）か \"hindsight_box\"（key＝役割）。\n",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:93「version＝\"er_median\"（key＝先を見る本数）か \"band_hold\"（key＝役割・values＝⑪タブに出す値の組）。」",
+  "状態": "確定"
+ },
+ {
+  "番号": 18,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "98〜99行（label_frame）",
+  "直す前の文字": "    else:\n        mask, usable = rl.band_hold(win, cfg, str(key), values)[\"強さ\"]\n",
+  "種類": "直した後の文字",
+  "中身": "    elif version == rl.HINDSIGHT:\n        mask, usable = rl.hindsight(win, cfg, str(key))[\"強さ\"]\n    else:\n        mask, usable = rl.band_hold(win, cfg, str(key), values)[\"強さ\"]\n",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:98「else:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 19,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "107行（label_frame）",
+  "直す前の文字": "    n15 = int(key) if version == \"er_median\" else rl.role_bars(cfg, str(key), values)\n",
+  "種類": "直した後の文字",
+  "中身": "    if version == \"er_median\":\n        n15 = int(key)\n    elif version == rl.HINDSIGHT:\n        n15 = rl.hindsight_bars(cfg, str(key))\n    else:\n        n15 = rl.role_bars(cfg, str(key), values)\n",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:107「n15 = int(key) if version == \"er_median\" else rl.role_bars(cfg, str(key), values)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 20,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "138〜140行（spec_of）",
+  "直す前の文字": "    else:\n        out[\"役割\"] = str(key)\n        out[\"使った値\"] = values\n",
+  "種類": "直した後の文字",
+  "中身": "    elif version == rl.HINDSIGHT:\n        out[\"役割\"] = str(key)\n        out[\"手数料の床（e38_logic_parts.SCALP_FLOOR）\"] = rl.fee_floor()\n        out[\"設定ファイルの中身（この版・そのまま）\"] = ver\n    else:\n        out[\"役割\"] = str(key)\n        out[\"使った値\"] = values\n",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:138「else:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 21,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "149行（main）",
+  "直す前の文字": "    ap.add_argument(\"--version\", choices=(\"all\", \"er_median\", \"band_hold\"), default=\"all\",\n",
+  "種類": "直した後の文字",
+  "中身": "    ap.add_argument(\"--version\", choices=(\"all\", \"er_median\", \"band_hold\", \"hindsight_box\"), default=\"all\",\n",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:149「ap.add_argument(\"--version\", choices=(\"all\", \"er_median\", \"band_hold\"), default=\"all\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 22,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "165行（main）",
+  "直す前の文字": "        jobs += [(\"band_hold\", role, v) for role in rl.roles(cfg) for v in rl.variants(cfg, role)]\n",
+  "種類": "足す文字",
+  "中身": "    if a.version in (\"all\", rl.HINDSIGHT):\n        jobs += [(rl.HINDSIGHT, role, None) for role in rl.hindsight_roles(cfg)]\n",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:165「jobs += [(\"band_hold\", role, v) for role in rl.roles(cfg) for v in rl.variants(cfg, role)]」",
+  "状態": "確定"
+ },
+ {
+  "番号": 23,
+  "対象のファイル": "scripts/priority_rebuild/regime_r9_diag.py",
+  "直す箇所": "208行（_labels_for）",
+  "直す前の文字": "    w = df_win[[c for c in (\"high\", \"low\", \"close\") if c in df_win.columns]].astype(float)\n",
+  "種類": "足す文字",
+  "中身": "    if \"ts\" in df_win.columns:   # ★版3 は役割ごとに足をまとめて数える＝時刻が要る（M2-F-6d の工事 D・5分足だけの版の数は変わらない）\n        w.index = pd.DatetimeIndex(pd.to_datetime(df_win[\"ts\"]).to_numpy())\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/regime_r9_diag.py:208「w = df_win[[c for c in (\"high\", \"low\", \"close\") if c in df_win.columns]].astype(float)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 24,
+  "対象のファイル": ".claude/breaks/b125_hindsight_osc_off.sh",
+  "直す箇所": "新しいファイル",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 版3（hindsight_box）の「箱の中で上下に2回ずつ行き来している所は、脚の中でもレンジに戻す」を外すと、自己検査 T15 が「階段の横ばい」で落ちた\n# EXPECT_MSG: ❌ T15\n# b125 — regime_label._range_on の、行き来している箱を戻す所を外すと、T15 が落ちるか（M2-F-6d の工事 D・2026-10-02）\n#   守っているもの＝完成の条件 #1（札の部品の自己検査が、版3 が階段の横ばいをレンジと言えるかを見ている）\n#   壊し方＝`    return lab | (_spread(ok & q, n_box) & ~stp)` を `    return lab` にする（戻さない＝前の版 label-trial-c24 と同じ）。\n#   期待＝regime_label.py --selftest の T15 が落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nRL=\"$PR/regime_label.py\"\nguard \"$RL\"\n\npython3 - \"$RL\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    return lab | (_spread(ok & q, n_box) & ~stp)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b125] 壊す対象の行が1か所でない: \" + old.strip())\nnew = '    return lab  # b125 が壊した（行き来している箱を戻さない）\\n'\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$RL\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b125_hindsight_osc_off.sh＝まだ無い（新しく作る）",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 版3 を足し、版1・版2 は消さない | 札の定義を版として持つ（構造の文）。版1 は前の数字と比べるために要る | 版2 を版3 に置き換える。捨てた理由＝版2 を消すかは まこさんが決める |
+| 札の鍵を役割の名前にする | 役割ごとの札で両方 測り、段ごとに役割ごとに10本ずつ残す（worklog 20260928 §51）。版2 と同じ口の作り | 先を見る本数（24・288）のままにする。捨てた理由＝役割が鍵に出ず、役割ごとに残せない |
+| 先を見る本数（向き・大きさの札と成績表の鍵）を、役割の保有の上限（12・120）にする | 版2 と同じ考え（その役割が持つ時間の先を見る） | 版1 の 24・288 を使う。捨てた理由＝役割と結び付かない |
+| 測る道具に、札へ時刻を渡す2行を足す | デイトレの札は15分足にまとめて数えるので、時刻が要る | 札の部品の中で時刻を作る。捨てた理由＝測る道具の表に時刻が無いと作れない |
+| 式は調べの道具から変えずに移す | ⑪タブで まこさんが見た2本と1本ずつ同じにするため | 書き直す。捨てた理由＝見た札と違う札になるおそれ |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 成績表を作り直すまで、測る道具が止まる | 実装・G2・H2 の後すぐに作り直す（時間の見込みをフロー宣言に書く） |
+| 段1 の候補の本数が、役割の数だけ増える | 段ごとに役割ごとに10本ずつ残す作りは工事 B で入っている。時間は M2-F-8 のフロー宣言で見積もる |
+| 版3 の弱い所（2時間で1回 上下する作り物の行き来で、スキャル用が 61% しかレンジと言えない） | 前の版から持ち込んだ性質。まこさんが⑪タブで見て決めた札なので、この工事では変えない |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる | 30秒未満 | 当てる道具は1秒未満で終わった（2026-10-02 の工事 C） |
+| 自己テストと⑪タブの道具 | それぞれ1分未満 | 4-14 |
+| G2 → H2 | 約30秒 → 約5分 | 2026-10-02 の取り直し（next_step の 0-b-2） |
+| まこさんの承認 | 2回（当てる前に1回・当てた後に SPEC を実物から作り直した設計書に1回） | 4-4 の2（教訓 L-655） |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 採点に使う札が、いまも古い札（版1）だからです。まこさんが⑪タブで決めた2本は、手元の調べの道具でしか作れません。 |
+| 期待値分解 | 売買のロジックには触れません。勝率・平均利益・敗率・平均損失は動きません。動くのは、判定の束に付く点数（3つの割合）と、段ごとに残る10本です。 |
+| root か symptom か | root です。点数を付ける答えそのものを、まこさんが決めた札にします。 |
+| ベースアップ | 札の式は、まこさんが⑪タブで見た2本の作り方をそのまま移しました。口の作りは、版2（役割ごと）と同じにしました。 |
+
+【7-2 固定値ゼロ宣言】
+この工事に、疑似シミュから取った値は1つもありません。数字は全部 設定ファイルの版3 に置き、値は まこさんが⑪タブで決めた2本の値です。
+
+【7-3 変更の単位】
+変更は1つ＝役割ごとの札2本を、札の部品の新しい版（版3）にして、採点に使う札にする（14a の工事 D）。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 当たるか | 理由 |
+|---|---|---|
+| 1 | 当たりません | 乱数を使いません。札は答え合わせの答えで、条件をつなぐものではありません |
+| 2 | 当たりません | 値を選びません。値は まこさんが⑪タブで決めた2本の値です |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 版3 の札が正しいか | この工事では分かりません。まこさんの⑪タブの目で決め、最後は M2-L の net で分かります |
+| 札の部品そのものを書き換えられたら | 書き換えれば無効にできます。承認で凍結され、差分は git に出ます |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝5本（札の部品・設定ファイル・⑪タブの道具・測る道具・壊すプログラム b125）を【7-8】に書いた。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝regime_label.py）。
+- 新しく作るファイルは壊すプログラム b125 の1本（NEW_FILE）。手本は同じ札の部品の壊すプログラム b118（MODEL）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝前の版 label-trial-c24 は1種類だけで、9/28 に決めた役割ごとの構造に合っていなかった。この工事は役割ごとの2本を入れる。
+- 新しい部品は版3 の関数（local_scale ほか）。式は調べの道具から変えずに移した。
+- 直すファイルの行番号を指す文書は、この工事の実装の指示だけで、いまの実物から道具が作った。
+- 直すファイルの名前を本文に持つ壊すプログラムを全部 探し、それぞれが探す行の文字の数が、この工事の前と後で同じことを案を作る道具が数えた（4-13 の5・照らした組は案の冒頭）。
+- 壊すプログラムは b125 を1本 作る（版3 の行き来で戻す所を外すと T15 が落ちる＝案を作る道具が同じ壊し方で確かめた）。
+- 触る関数は、全部 DESIGN_CONTRACT の impl_functions に書いた（【7-8】・案を作る道具が当てる前と後の差の行から数えた）。regime_label.py＝<モジュール直下>・_range_on・_spread・box_stats・hindsight・hindsight_bars・hindsight_range・hindsight_roles・key_bars・keys・labels_at_bars・labels_for_key・legs_of・load_config・local_scale・oscillates・selftest・step_mask・trend_mask・version_tag・zigzag_adaptive／build_regime_label_dashboard.py＝<モジュール直下>・label_frame・main・spec_of／regime_r9_diag.py＝_labels_for。must_use に、版3 の組み立ての関数が呼ぶ名前を書いた。
+- 新しく足す旗は⑪タブの道具の --version hindsight_box（4-9）。
+- 2回目の承認の前に、実装の中で変わった手順を設計書に書き直す（その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2f-label-hindsight-20261002）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己テスト＝札の部品に T12〜T17 を足した。案を作る道具が当てた後の札の部品を本物に書かずに走らせ、全部 通った。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| 札の部品の自己テストが全部 通る（版3 の T12〜T17 を含む） | python3 scripts/priority_rebuild/regime_label.py --selftest | 実経路 | 版3 の「行き来している箱を戻す」所を外す（前の版と同じにする）と、T15（階段の横ばい）が落ちる | b125_hindsight_osc_off.sh | — | 未着手 |
+| ⑪タブの道具が版3 の2本を出し、レンジだった の本数が⑪タブで見た2本と同じ | python3 scripts/dashboard/build_regime_label_dashboard.py --version hindsight_box | 実経路 | 壊すプログラムは付けない（読むための道具＝恒久71番。数は案を作る道具が出した 97,594本・77,535本と照らす） | — | — | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  "scripts/priority_rebuild/regime_label.py",
+  "scripts/priority_rebuild/recipes/regime_label.json",
+  "scripts/dashboard/build_regime_label_dashboard.py",
+  "scripts/priority_rebuild/regime_r9_diag.py",
+  ".claude/breaks/b125_hindsight_osc_off.sh"
+ ],
+ "NEW_FILE": [
+  ".claude/breaks/b125_hindsight_osc_off.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b118_band_continue_off.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/regime_label.py",
+  "_impl_file の意味": "照らす相手は実在するファイル（gen_acceptance.py:680〜683）。札の式が在る札の部品を主に照らす。",
+  "impl_functions": {
+   "scripts/priority_rebuild/regime_label.py": [
+    "<モジュール直下>",
+    "_range_on",
+    "_spread",
+    "box_stats",
+    "hindsight",
+    "hindsight_bars",
+    "hindsight_range",
+    "hindsight_roles",
+    "key_bars",
+    "keys",
+    "labels_at_bars",
+    "labels_for_key",
+    "legs_of",
+    "load_config",
+    "local_scale",
+    "oscillates",
+    "selftest",
+    "step_mask",
+    "trend_mask",
+    "version_tag",
+    "zigzag_adaptive"
+   ],
+   "scripts/dashboard/build_regime_label_dashboard.py": [
+    "<モジュール直下>",
+    "label_frame",
+    "main",
+    "spec_of"
+   ],
+   "scripts/priority_rebuild/regime_r9_diag.py": [
+    "_labels_for"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数。当てる前と後の差の行を、当てた後のコードの関数に当てはめて、案を作る道具（_labelD_draft_build.py）が数えた。",
+  "self_check_calls": [
+   "hindsight_range",
+   "hindsight",
+   "oscillates",
+   "local_scale",
+   "box_stats",
+   "step_mask",
+   "trend_mask",
+   "legs_of",
+   "zigzag_adaptive",
+   "hindsight_roles",
+   "hindsight_bars",
+   "_range_on",
+   "_spread"
+  ],
+  "_self_check_calls の意味": "実装の後の札の部品に在るはずの、版3 の関数の名前。★ファイル名を書かない＝7-7 の表が「読んだ」の行の下に並べ、必読ゲートが数えるため。",
+  "must_use": {
+   "_range_on": [
+    "local_scale",
+    "trend_mask",
+    "legs_of",
+    "box_stats",
+    "step_mask",
+    "oscillates",
+    "_spread"
+   ],
+   "hindsight_range": [
+    "_range_on"
+   ],
+   "hindsight": [
+    "hindsight_range",
+    "er_median",
+    "hindsight_bars"
+   ],
+   "oscillates": [
+    "fee_floor"
+   ]
+  },
+  "_must_use の意味": "版3 の組み立ての関数が呼ぶはずの名前（案を作る道具が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は札の式と版を選ぶ口を足すだけ。外から読む一覧（候補・法則・成績表の順位・範囲の鍵）は読まない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の差の行（_labelD_draft_build.py が数えた）",
+   "must_use": "版3 の組み立ての関数が呼ぶ名前（ast で照らした）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```
+
+【外部検索】
+| 名前 | 中身 |
+|---|---|
+| 評価に使うラベルを、役割（保有時間）ごとに版で持つやり方 | 評価に使うラベルを保有時間ごとに分けて持ち、版の名前に値を入れるやり方を調べる（私の導出） |

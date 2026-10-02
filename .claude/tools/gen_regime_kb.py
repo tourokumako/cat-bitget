@@ -36,9 +36,10 @@ SRC = {
     "findings": RATCHET / "regime_kb_findings.json",
     "premise": RATCHET / "regime_laws.json",
     "stage": RATCHET / "m2_stage_candidates.json",
+    "now": RATCHET / "m2_todo.json",
 }
 TAG = {"flow": "M2_FLOW", "todo": "M2_TODO", "laws": "KB_LAWS", "findings": "KB_FINDINGS",
-       "premise": "M2_PREMISE", "stage": "M2_STAGE"}
+       "premise": "M2_PREMISE", "stage": "M2_STAGE", "now": "M2_NOW"}
 
 
 def _begin(kind: str, h: str) -> str:
@@ -143,6 +144,28 @@ def keep_foreign(new_body: str, cur_text: str) -> str:
 def _esc(s: str) -> str:
     """表のセルに入れるとき、| を壊さないようにする。"""
     return str(s).replace("|", "／").replace("\n", " ")
+
+
+_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def _short_state(s: str) -> str:
+    """表の「状態」の欄に出す短い語（✅済（日付）・★いまここ・まだ・保留・着手しない）。
+
+    まこさん指摘（2026-10-02・逐語）＝「データが汚すぎてわからないんだよ」。
+    直す前＝表の状態の欄に、元データの状態の文（経緯を含む・長い物は数百字）をそのまま入れていた。
+    直した後＝表には頭の語だけを出す。★全文は消さない＝表の下の「1件ずつの説明」の「状態」に今までどおり出す。
+    """
+    t = str(s).strip().lstrip("*").strip()
+    if "★いまここ" in t:
+        return "★いまここ"
+    if t.startswith("✅済"):
+        m = _DATE_RE.search(t)
+        return f"✅済（{m.group(0)}）" if m else "✅済"
+    for head in ("保留", "着手しない", "まだ"):
+        if t.startswith(head):
+            return head
+    return _esc(t[:20])
 
 
 # ══ 印（H2・G2）の値を、正本の json から書く ═══════════════════════════════════════════════
@@ -293,7 +316,7 @@ def build_flow(d: dict) -> str:
     add("| 段 | やること | 状態 |")
     add("|---|---|---|")
     for r in flow:
-        add(f"| **{r['段']}** | {_esc(r['一文'])} | {_esc(r['状態'])} |")
+        add(f"| **{r['段']}** | {_esc(r['一文'])} | {_short_state(r['状態'])} |")
     add("")
     add("## 1段ずつの説明（触るファイルと、終わったと言える条件）")
     add("")
@@ -368,7 +391,7 @@ def build_todo(d: dict) -> str:
         add("| # | やること | 状態 |")
         add("|---|---|---|")
         for t in rows:
-            add(f"| **{t['番号']}** | {_esc(t['一文'])} | {_esc(t['状態'])} |")
+            add(f"| **{t['番号']}** | {_esc(t['一文'])} | {_short_state(t['状態'])} |")
         add("")
 
         add(f"### {st['鍵']} の1件ずつの説明")
@@ -412,6 +435,85 @@ def build_todo(d: dict) -> str:
         add(f"- {t}")
     add("")
 
+    return "\n".join(L).rstrip() + "\n"
+
+
+def _doc_headings(text: str) -> list[str]:
+    """文書の大見出し（「# 」）を、上から順に返す。
+
+    「```」の囲みの中と、この節（M2_NOW）の囲みの中は数えない。
+    """
+    out, fence, in_now = [], False, False
+    for ln in text.splitlines():
+        if ln.startswith("<!-- M2_NOW_START"):
+            in_now = True
+        if ln.startswith("<!-- M2_NOW_END"):
+            in_now = False
+            continue
+        if ln.startswith("```"):
+            fence = not fence
+            continue
+        if fence or in_now:
+            continue
+        if ln.startswith("# "):
+            out.append(ln[2:].strip())
+    return out
+
+
+def build_now(d: dict) -> str:
+    """文書の先頭の「いまどこか」と目次を、元データ（m2_todo.json）と文書の見出しから作る。
+
+    まこさん指摘（2026-10-02・逐語）＝「データが汚すぎてわからないんだよ」。
+    直す前＝3,345行のどこに「いまのやること」が在るかが決まっておらず、M2-F-6d は文書の4か所に出ていた。
+    ★「いまのやること」は、元データの状態に「★いまここ」が在るやること（手で書かない）。
+    ★目次は、この文書の見出しを上から読んで作る（見出しを足したら --write で作り直す）。
+    """
+    L: list[str] = []
+    add = L.append
+    todos = d["やること"]
+    flow = d["フロー"]
+    now = [t for t in todos if "★いまここ" in str(t["状態"])]
+
+    add("## ▶ いまどこか（★この節は機械が作ります・手で書き換えない）")
+    add("")
+    add("**元データ**＝`.claude/ratchet/m2_todo.json`（いまのやること・進み具合・§3 の段）と、この文書の見出し（目次） "
+        "／ **作り方**＝`python3 .claude/tools/gen_regime_kb.py --write now`（見出しを足したら走らせ直す）")
+    add("")
+    if not now:
+        add("- **いまのやること**＝無し（元データの状態に「★いまここ」が1件も無い）")
+    for t in now:
+        steps = [r["段"] for r in flow if str(r["段"]).startswith(t["段"])]
+        add(f"- **いまのやること**＝**{t['番号']}**｜{t['一文']}")
+        add(f"- **フローの段**＝{'・'.join(steps) if steps else t['段']}（下の §2 の表）")
+        add(f"- **状態の全文**＝{t['状態']}")
+    if now:
+        i0 = todos.index(now[-1])
+        nxt = [t for t in todos[i0 + 1:] if _short_state(t["状態"]) == "まだ"][:3]
+        if nxt:
+            add("- **このあとのやること（やることリストの順・保留と済を除く・3件）**")
+            for t in nxt:
+                add(f"  - **{t['番号']}**｜{t['一文']}")
+    add("")
+
+    def _count(rows):
+        c: dict[str, int] = {}
+        for r in rows:
+            k = re.sub(r"（.*", "", _short_state(r["状態"]))
+            c[k] = c.get(k, 0) + 1
+        return "・".join(f"{k} {v}件" for k, v in c.items())
+
+    add(f"**進み具合**＝フロー {len(flow)}段のうち {_count(flow)} ／ やることリスト {len(todos)}件のうち {_count(todos)}")
+    add("")
+    add("## 目次（この文書の見出しを上から順に並べた物）")
+    add("")
+    for h in _doc_headings(DEST["now"].read_text(encoding="utf-8")):
+        add(f"- {h}")
+        if h.startswith("§3 "):                         # §3 の段は、元データの段の名前と件数だけ（注記は §3 の本文に在る）
+            for st in d["段"]:
+                n = sum(1 for t in todos if t["段"] == st["鍵"])
+                if n:
+                    add(f"  - {st['鍵']}｜{st['見出し']}｜{n}件")
+    add("")
     return "\n".join(L).rstrip() + "\n"
 
 
@@ -1267,9 +1369,10 @@ def build_stage(d: dict) -> str:
 
 
 BUILDER = {"flow": build_flow, "todo": build_todo, "laws": build_laws, "findings": build_body,
-           "premise": build_premise, "stage": build_stage}
+           "premise": build_premise, "stage": build_stage, "now": build_now}
 SEC = {"flow": "§2（フロー）", "todo": "§3（やることリスト）", "laws": "§11", "findings": "§12",
-       "premise": "§0（読む前に知っておくこと）", "stage": "§2.2-0（段ごとの候補の展開）"}
+       "premise": "§0（読む前に知っておくこと）", "stage": "§2.2-0（段ごとの候補の展開）",
+       "now": "いまどこか・目次"}
 # 書き込み先のファイル（premise だけ やることリストの文書へ書く）
 DEST = {
     "laws": KB,
@@ -1278,11 +1381,13 @@ DEST = {
     "todo": RATCHET / "engine_tuner_milestones2.md",
     "flow": RATCHET / "engine_tuner_milestones2.md",
     "stage": RATCHET / "engine_tuner_milestones2.md",
+    "now": RATCHET / "engine_tuner_milestones2.md",
 }
 
 
 def _kinds(arg: str) -> list[str]:
-    return (["premise", "flow", "todo", "stage", "laws", "findings"]
+    # ★now（いまどこか・目次）は最後＝目次は、ほかの節を書いた後の文書の見出しから作る
+    return (["premise", "flow", "todo", "stage", "laws", "findings", "now"]
             if arg in ("all", None) else [arg])
 
 
@@ -1406,7 +1511,17 @@ def selftest() -> int:
     total = 0
     orig = {p: p.read_text(encoding="utf-8") for p in set(DEST.values())}
     try:
-        for kind in ("premise", "flow", "todo", "laws", "findings"):
+        # ★2026-10-02＝表の状態の欄に出す短い語（まこさん「データが汚すぎてわからないんだよ」）
+        total += 1
+        _cases = {"**✅済（2026-10-02・worklog §1）": "✅済（2026-10-02）", "まだ（★いまここ・2026-10-02）": "★いまここ",
+                  "保留（まこさん決定 2026-09-18）": "保留", "まだ": "まだ", "着手しない": "着手しない"}
+        _bad = [k for k, v in _cases.items() if _short_state(k) != v]
+        if not _bad:
+            ok += 1
+            print(f"   T{total} 表の状態の欄の短い語 {len(_cases)}通り → pass")
+        else:
+            print(f"   T{total} 表の状態の欄の短い語が違う: {_bad} → fail")
+        for kind in ("premise", "flow", "todo", "laws", "findings", "now"):
             dest = DEST[kind]
             total += 1
             if verify_one(kind) == 0:
@@ -1471,9 +1586,9 @@ def selftest() -> int:
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--write", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "stage", "laws", "findings"])
-    p.add_argument("--verify", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "stage", "laws", "findings"])
-    p.add_argument("--dry-run", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "stage", "laws", "findings"])
+    p.add_argument("--write", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "stage", "laws", "findings", "now"])
+    p.add_argument("--verify", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "stage", "laws", "findings", "now"])
+    p.add_argument("--dry-run", nargs="?", const="all", choices=["all", "premise", "flow", "todo", "stage", "laws", "findings", "now"])
     p.add_argument("--selftest", action="store_true")
     # ★2026-09-07（144番）＝印の値の枝だけを走らせる口。全体の --selftest は、別の工事
     #   （M2-B の §11・§12）の未反映で今も rc=1 のため、この工事の完成の条件を測れない。

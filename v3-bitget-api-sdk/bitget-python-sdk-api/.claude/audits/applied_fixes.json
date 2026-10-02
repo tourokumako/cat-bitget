@@ -1554,6 +1554,174 @@
    "file": "scripts/dashboard/build_regime_label_dashboard.py",
    "at": "2026-10-02T12:54:31",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "1",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "2",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "3",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "4",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "5",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "6",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "7",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "8",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "9",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "10",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "11",
+   "file": "scripts/priority_rebuild/recipes/regime_label.json",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "12",
+   "file": "scripts/priority_rebuild/recipes/regime_label.json",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "13",
+   "file": "scripts/priority_rebuild/recipes/regime_label.json",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "14",
+   "file": "scripts/priority_rebuild/recipes/regime_label.json",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "15",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "16",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "17",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "18",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "19",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "20",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "21",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "22",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "23",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-hindsight-20261002",
+   "num": "24",
+   "file": ".claude/breaks/b125_hindsight_osc_off.sh",
+   "at": "2026-10-02T19:03:12",
+   "how": "当てた"
   }
  ]
 }

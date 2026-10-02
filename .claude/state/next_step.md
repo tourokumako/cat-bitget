@@ -1,12 +1,12 @@
-<!-- NEXT_STEP_GENERATED hash=0015d3c705eaa768 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=1af1540f1ca14514 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 ## ▶ 次にやること（最初にここを読む）
 
-- **最初の一手**＝札 label-trial-c24 を、札の部品 `regime_label.py` の新しい版に入れる工事（M2-F-6d）の、読むもの宣言を作って まこさんに出す。
-- **その前に まこさんに確かめること**＝工事 C（commit 0c83fe4）の実装の監査を、この工事の前に出すか、この工事の後にまとめて出すか（この工事も⑪タブの道具の版の選び方を直す見込み）。
-- **なぜ**＝まこさんが⑪タブで label-trial-c24 を見て「確認したけど、視覚的にはほぼOKに見えるので、これでいいよ」（M2-F-6c）。採点に使う札を、この札にするため。
-- **材料**＝札の作り方の正本は memory の project_hindsight_label_method.md。調べの道具は `.claude/state/_labelC25_probe.py`（git の外・手元だけ）。`regime_label.py` は H2・G2 の対象＝実装の後に両方 取り直す。
+- **最初の一手**＝指標の成績表 `material_ranking.json` を作り直す（`observe_diag.py --rank-regime`・前の実測 2時間14分＝走らせる前にフロー宣言へ時間の見込みと過去の実測を書く）。そのあと M2-F-5 の走行（`regime_r9_diag.py --stage stage1 --limit 2 --purpose check`）で数字が出るかを確かめる。工事 D の commit が まだなら、先に まこさんの OK をもらう。
+- **まこさんに確かめること**＝工事 C と工事 D の実装の監査を出すか（工事 D の設計書 3-2 の私の案＝出さない。札が⑪タブの2本と1本ずつ同じことは数え、壊すプログラム b125 は承認のプログラムが走らせた）。
+- **なぜ**＝147回目に、採点に使う札を版3 hindsight_box（まこさんが⑪タブで「OK」と決めた役割ごとの札2本）にした。成績表は古い札（版1）で作ったままで、測る道具は成績表の札の版が違うと止まる（regime_r9_diag.py の510行）。
+- **材料**＝札の作り方の正本は memory の project_hindsight_label_method.md。札の部品は `regime_label.py` の版3（設定＝`recipes/regime_label.json` の hindsight_box）。成績表の先を見る本数は、役割の保有の上限（スキャル 12本・デイトレ 120本）になる。
 - **進み具合の正本**＝`engine_tuner_milestones2.md` のやることリスト（元データ＝m2_todo.json）。この文書のやることの一覧は §0 の 0-2 の表。
 
 **この文書の目次**
@@ -53,7 +53,7 @@
 
 | 順 | やること | 触るもの | 出るもの・確かめ方 | 状態 |
 |---|---|---|---|---|
-| **14a** | **M2-F-6d（札を直す）**＝M2-F-6c で決まった札 label-trial-c24 を、札の部品 `regime_label.py` の新しい版に入れ、採点に使う版にする。そのあと指標の成績表を作り直す | 設計書・`scripts/priority_rebuild/regime_label.py`・`scripts/priority_rebuild/recipes/regime_label.json`・`scripts/dashboard/build_regime_label_dashboard.py`（版の選び方）・`.claude/ratchet/material_ranking.json`（作り直し） | 新しい版の札が試しの版 label-trial-c24 と同じ（値決め窓のレンジ 58.95%）・自己テスト・H2 と G2 の取り直し・⑪タブに出る・成績表を作り直して M2-F-5 の走行で数字が出る | ★いまここ。まだ（工事 A・B・C は済＝commit c61ea74・19d1bd7・0c83fe4／工事 C の監査はまだ。経緯＝worklog 20261002 §3〜§13） |
+| **14a** | **M2-F-6d（札を直す）**＝M2-F-6c で決まった役割ごとの札2本（label-c24b-scalp・label-c24b-daytrade）を、札の部品 `regime_label.py` の版3 hindsight_box に入れ、採点に使う版にする。そのあと指標の成績表を作り直す | `.claude/ratchet/material_ranking.json`（作り直し＝`scripts/priority_rebuild/observe_diag.py --rank-regime`）・M2-F-5 の走行（`scripts/priority_rebuild/regime_r9_diag.py --stage stage1 --limit 2`） | 成績表を作り直して、M2-F-5 の走行で数字が出る（測る道具は、成績表の札の版が違うと止まる＝regime_r9_diag.py の510行） | ★いまここ。成績表の作り直しが残り（工事 A・B・C は済＝commit c61ea74・19d1bd7・0c83fe4／工事 D は承認2回・実装・G2・H2・⑪タブまで済＝147回目・commit は まこさんの OK 待ち／工事 C と D の監査を出すかは まこさんが決める。経緯＝worklog 20261002 §14〜§29） |
 | **16** | **フローの3番・4番 M2-F＝M2-F-8**＝段1 帯＝候補を全部 束にして測り並べ、上位10本を出す | なし（走らせるだけ） | 乱数0件。試行が累積に増える。落ちた候補が全部 出る。走らせる前にフロー宣言へ時間の見込み（M2-F-1 で測った束1本の時間 × 候補の本数）を書く。数字は道具の出力をそのまま貼る。 | まだ |
 | **17** | **フローの3番・4番 M2-F＝M2-F-9**＝段1 の結果を数える＝散らばり・約50% からの離れ方・言った割合が極端な束の本数 | なし（数えるだけ） | 数字は道具の出力から出す。私は評価語を書かない（恒久の決まり8番）。 | まだ |
 | **18** | **フローの3番・4番 M2-F＝M2-F-10**＝まこさんが決める3つ＝言った割合が小さすぎる束の扱い／10本のままか／段2a から先も1点か | なし（決めるだけ）。10本を変えるなら M2-F-7 と同じ場所を直す | worklog に逐語が写っている。 | まだ |
@@ -80,7 +80,7 @@
 | **B（.claude を1つに）** | **2つの .claude（直下と sdk）を1つにまとめる**（まこさん 2026-10-02「Bはあとでやるので書いておいて」）。sdk の方を名指ししている hook 16個・道具・文書のパスを全部 直す。地図は A で道具が作る形にした | `.claude/hooks/`・`.claude/tools/`・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/` | 名指しを全部 直した後、hook の検査と地図の検査（`gen_folder_map.py --verify`）が通る | まだ（いつやるかは まこさんが決める） |
 | — | **★強制へ手を入れたくなったら、先に `lessons_active.md` の L-586 を読む。** | | | 着手しない |
 
-### 0-1 いまの状態（2026-10-02・146回目・記録＝`session_worklog_20261002.md` §10〜§13）
+### 0-1 いまの状態（2026-10-02・147回目・記録＝`session_worklog_20261002.md` §14〜§29）
 
 **次のセッションでやること**
 
@@ -94,7 +94,7 @@
 
 ### （0-b-2）🔴 印の状態（2026-10-02・★この節は tidy_next_step.py が json から書く＝手で書かない）
 
-- **H2 の印＝`e4fc4dc24e6eef91…`**（`.claude/state/h2_pass.json`・2026-10-02 10:17:47・対象24ファイル）／**G2 の印＝`09f97a773a763551…`**（`g2_pass.json`・2026-10-02 10:12:40・対象39ファイル）。
+- **H2 の印＝`20584a69e7694bcc…`**（`.claude/state/h2_pass.json`・2026-10-02 19:10:55・対象24ファイル）／**G2 の印＝`fee0146308558d9b…`**（`g2_pass.json`・2026-10-02 19:05:32・対象39ファイル）。
 - **コードを触ったら取り直す**＝G2 → H2 の順（`gen_signal_families.py --verify` 約30秒 → `leak_causality_diag.py` 約5分・L-565）。
 
 ### （0-d）★まだ埋まっていないこと（2件・2026-09-17 に実物で確かめた）
