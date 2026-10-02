@@ -123,6 +123,10 @@ _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.
               #   書き出す先は pdca_flow.md の囲みの中と hook_roles.json の2本だけ。承認の印にも凍結の記録にも触らない。
               #   なぜ要ったか（実測）＝承認のあと --import を打つと、この一覧に無いので土台ゲートが止めた。
               'gen_hook_list.py',
+              # ★2026-10-02（146回目・まこさん「Aをやる」）＝2つの .claude の地図を実物から作る道具。
+              #   書く先は .claude/rules/README_folder_map.md の1本と、古い設定の控え（settings*.json.bak*）を消すことだけ。
+              #   承認の印・凍結の記録・hook・道具・戦略の .py には触らない。
+              'gen_folder_map.py',
               # ★2026-09-09＝§2.2 の候補と成績表を突き合わせる道具（まこさん指示「その突き合わせを作る。」）。
               #   書き出す先は stage0_match.md の1本だけ。承認の印にも凍結の記録にも触らない。
               'gen_stage0_match.py',

@@ -49,5 +49,13 @@ if [ -z "$1" ]; then
     printf "⛔ [worklog の日付・Stop hook] worklog を日付をまたいで書き続けています（まこさん 2026-09-09「session_worklogへの記録は日付で区切ってほしい」）。\n%s\n直し方＝今日の日付の session_worklog_YYYYMMDD.md を作り、今日の節はそこへ書く。古いファイルは触らない（触ったら、そのあとで今日の worklog を書き足す）。\n（解除の合言葉はありません）\n" "$WL" >&2
     exit 2
   fi
+  # ★2026-10-02（146回目・まこさん「.claud配下と bitget-python-sdk-api>.claude配下の違いもよくわからない。
+  #   ディレクトリマップもぐちゃぐちゃだよね」→「Aをやる」）＝2つの .claude の地図が実物と同じ並びか・
+  #   役割の書いていないフォルダが無いか・古い設定の控えが無いかを見る（数は見ない）。外れたままターンを終われない。
+  FM=$(python3 "$ROOT/.claude/tools/gen_folder_map.py" --verify 2>&1); FMRC=$?
+  if [ "$FMRC" -ne 0 ]; then
+    printf "⛔ [.claude の地図・Stop hook] 2つの .claude の地図（.claude/rules/README_folder_map.md）が実物と合っていません（まこさん 2026-10-02「ディレクトリマップもぐちゃぐちゃだよね」）。\n%s\n直し方＝新しいフォルダなら gen_folder_map.py の ROLES に役割を1行 足す → python3 .claude/tools/gen_folder_map.py --write\n（解除の合言葉はありません）\n" "$FM" >&2
+    exit 2
+  fi
 fi
 exit 0

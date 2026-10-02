@@ -338,6 +338,15 @@
        },
        {
         "欄": [
+         " **B（.claude を1つに）** ",
+         " **2つの .claude（直下と sdk）を1つにまとめる**（まこさん 2026-10-02「Bはあとでやるので書いておいて」）。sdk の方を名指ししている hook 16個・道具・文書のパスを全部 直す。地図は A で道具が作る形にした ",
+         " `.claude/hooks/`・`.claude/tools/`・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/` ",
+         " 名指しを全部 直した後、hook の検査と地図の検査（`gen_folder_map.py --verify`）が通る ",
+         " まだ（いつやるかは まこさんが決める） "
+        ]
+       },
+       {
+        "欄": [
          " — ",
          " **★強制へ手を入れたくなったら、先に `lessons_active.md` の L-586 を読む。** ",
          " ",
