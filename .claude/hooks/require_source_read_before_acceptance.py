@@ -36,6 +36,10 @@
     ④ NEW_FILE に書いた ＋ MODEL の行が無い     → ❌
     ⑤ NEW_FILE に書いた ＋ MODEL を開いていない → ❌
     ★②のとき、そのパスは C の検査からも外す（新しいファイルは開けないため）。
+    ★2026-10-02（147回目・まこさん「OK」）＝③の例外を1つ足した。実在しても、この設計書の
+      実装の指示で書き込む道具が作った記録（applied_fixes.json）が在れば、宣言は承認の時点で
+      本当だった。そのときは①と同じく「開いたか」を見る（緩めない）。承認の後に設計書を
+      作り直して承認を打ち直す流れ（教訓 L-655）で、工事 D の b125 がここで止まったため。
 
   取らなかった直し方
     「ファイルが無ければ A を飛ばす」は取らない。
@@ -66,6 +70,7 @@ import tempfile
 _REPO = pathlib.Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget")
 _SDK = _REPO / "v3-bitget-api-sdk" / "bitget-python-sdk-api"
 _READ_LOG = _REPO / ".claude" / "state" / "read_log.txt"
+_APPLIED = _SDK / ".claude" / "audits" / "applied_fixes.json"   # 書き込む道具が書いた記録（2026-10-02）
 _ACCEPTANCE_NAMES = ("acceptance.md",)
 
 # 本文で「読んだ」と名乗っている行を拾う語
@@ -185,6 +190,29 @@ def _exists_anywhere(rel: str) -> bool:
     return (_REPO / r).exists() or (_SDK / r).exists()
 
 
+def created_by_this_design(rel: str, text: str, applied: list | None = None) -> bool:
+    """そのファイルを、この設計書（目印 iter）の実装の指示で、書き込む道具が作った記録が在るか。
+
+    ★2026-10-02（147回目・まこさん「OK」）＝承認の後に設計書を作り直すとき（教訓 L-655）、
+      1回目の承認で書き込む道具（apply_audit_fix.py --design）が作ったファイルは実在する。
+      その宣言は承認の時点では本当だったので、③（宣言が嘘）に数えない。
+      見る記録＝applied_fixes.json の applied（report が "design:<iter>"・how が「当てた」・file が同じ）。
+      ★記録は書き込む道具だけが書く。CC が手で作ったファイルには記録が無い＝今までどおり③で止まる。
+    """
+    m = re.search(r'iter="([^"]+)"', text)
+    if not m:
+        return False
+    if applied is None:
+        try:
+            applied = json.loads(_APPLIED.read_text(encoding="utf-8")).get("applied") or []
+        except Exception:
+            return False
+    r = rel.strip(_STRIP)
+    return any(isinstance(x, dict) and x.get("report") == f"design:{m.group(1)}"
+               and x.get("how") == "当てた" and str(x.get("file", "")).strip(_STRIP) == r
+               for x in applied)
+
+
 def claimed_files(text: str) -> list[str]:
     """本文で『読んだ』と名乗っている所に出てくるファイル名を集める。
 
@@ -216,8 +244,8 @@ def claimed_files(text: str) -> list[str]:
     return list(dict.fromkeys(out))
 
 
-def check(text: str, log: list[str]) -> list[str]:
-    """足りないものの一覧を返す（空なら通す）。"""
+def check(text: str, log: list[str], applied: list | None = None) -> list[str]:
+    """足りないものの一覧を返す（空なら通す）。applied＝書き込んだ記録（None なら applied_fixes.json を読む）。"""
     ng: list[str] = []
     news = {n.strip(_STRIP) for n in new_files_in(text)}
     models = models_in(text)
@@ -225,7 +253,9 @@ def check(text: str, log: list[str]) -> list[str]:
     for tgt in targets_in(text):
         cand = _SDK / tgt
         t = tgt.strip(_STRIP)
-        if t in news:
+        # ★2026-10-02＝この工事の書き込む道具が作ったファイルは、新規の宣言が嘘ではない。
+        #   新規の分かれ道に入れず、在るファイルと同じく「開いたか」を見る（緩めない）。
+        if t in news and not (_exists_anywhere(t) and created_by_this_design(t, text, applied)):
             # ③ 新規と書いたのに実在する＝宣言が嘘
             if _exists_anywhere(t):
                 ng.append(f"A 新規（NEW_FILE:）と書いたのに実在する: {tgt}"
@@ -455,10 +485,28 @@ def selftest() -> int:
     if not any("手本（MODEL:）を開いていない" in x for x in check(n1, [f"/x/{_m1}"])):
         ng.append("N6: 手本を1本しか開いていないのに通った")
 
+    # ── N7〜N9 承認の後に、書き込む道具がこの工事の指示で作ったファイル（2026-10-02・147回目・まこさん「OK」）──
+    _iter = "selftest-created-by-design"
+    _rec = [{"report": f"design:{_iter}", "num": "1", "file": _exist, "how": "当てた"}]
+    _rec_other = [{"report": "design:another-iter", "num": "1", "file": _exist, "how": "当てた"}]
+    n7 = f'<!-- ARC iter="{_iter}" -->\nTARGET: {_exist}\nNEW_FILE: {_exist}\nMODEL: {_m1}\n'
+    # 開いた記録＝手本・そのファイル・そのファイルが作る文書（B の検査も今までどおり掛かるため）
+    _log7 = _log_models + [f"/x/{_exist}"] + [f"/x/{g}" for g in generates_of(_SDK / _exist)]
+    # N7 実在する＋この工事の書き込む道具が作った記録が在る＋開いた → 通る
+    if check(n7, _log7, _rec):
+        ng.append(f"N7: この工事が作った記録が在り、開いているのに止まった（{check(n7, _log7, _rec)}）")
+    # N8 記録が別の工事のもの → 今までどおり「宣言が嘘」で止まる
+    if not any("実在する" in x for x in check(n7, _log7, _rec_other)):
+        ng.append("N8: 別の工事が作った記録で、新規の宣言が通った")
+    # N9 この工事の記録は在るが、ファイルを開いていない → 「開いていない」で止まる（緩めない）
+    if not any("直す対象を開いていない" in x for x in check(n7, _log_models, _rec)):
+        ng.append("N9: この工事が作ったファイルを開かずに通った")
+
     for x in ng:
         print(f"❌ {x}")
     # ★2026-09-07（113番）＝F1〜F3（囲みの中の見本を宣言として読まない）を足して 19 → 22。
-    _n_tests = 22
+    # ★2026-10-02（147回目）＝N7〜N9（この工事の書き込む道具が作ったファイル）を足して 22 → 25。
+    _n_tests = 25
     print(f"{'❌' if ng else '✅'} わざと壊して止まるか試すテスト {_n_tests - len(ng)}/{_n_tests} pass")
     return 1 if ng else 0
 

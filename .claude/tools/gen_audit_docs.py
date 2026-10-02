@@ -1811,7 +1811,12 @@ def item_errors(num: str, block: str) -> list:
     if not fourth:
         e.append(f"4つ目の欄（{'・'.join(FOURTH)} のどれか）が無い")
     ev = field("根拠の抜き書き")
-    if not ev or not EVIDENCE_RE.search(ev):
+    # 新しいファイルを作る指示（直す前の文字が「なし」で、直した後の文字か足す文字を書く）には、
+    # 開ける行がまだ無い。だから「ファイル名:行番号「逐語」」の形を求めない。根拠の欄が在ることだけを見る。
+    # 決定＝まこさん 2026-10-02「じゃあAでいいよ」（147回目・工事 D の修正 24 がこの形で当たらなかった）。
+    new_file = (before is not None and before.strip() == "なし"
+                and any(k in ("直した後の文字", "足す文字") for _, k in fourth))
+    if not ev or (not new_file and not EVIDENCE_RE.search(ev)):
         e.append("根拠の抜き書きが「ファイル名:行番号「その行の逐語」」の形でない")
     st = field("状態")
     if st not in STATES:
