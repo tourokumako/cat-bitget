@@ -249,3 +249,50 @@
 - 次のセッション＝監査 cp59 の結果（SDK/.claude/audits/2026-10-02_m2f_label_callers_20261002_impl_cp59_audit_report.md）を確かめ、まこさんが直す範囲を決め、apply_audit_fix.py --report で当てる。そのあと工事 C（⑪タブの道具・9/29 の控えの実装の指示 23〜27・案の道具の手本＝.claude/state/_labelB_draft_build.py）。
 - 教訓＝lessons_active.md に L-654（呼び出しの並べ方と裏の走行の後始末）・L-655（承認の後の SPEC の食い違い・案の文は報告の前・要望の出どころは req_ だけ）を足した。memory の feedback_speed_up_from_new_session の早見表に5行を足した。
 - このセッションで hook と判定に止められた回数（記録から数えた）＝設計↔実装ゲート2回（python3 - の heredoc・SPEC の食い違い）・enforce_observe_diag_only 1回・require_confirm_before_act 2回（Pre）と1回（Stop・一時の置き場のスクリプト）・block_repeat_kind 5回・block_repeat_failure 1回・土台ゲート3回・require_selftest_after_source_edit の Stop 2回・require_trial_before_proposal の Stop 1回・enforce_next_step_tidy の Stop 4回。道具そのものの失敗＝試しの設計書2回（2-1 の「>」・A2 と A13）・依頼書の道具2回（出どころ ok_・必読の1行に3本）・逐語の切れ1回・ls のパス1回。英語の文を1つ書いた（日本語で書く決まりに反した）。
+
+## §10 監査 cp59（14a の工事 B の実装の監査）の結果を確かめ、修正1〜6 を当てた（2026-10-02・146回目・まこさん決定「1〜6（推薦）」）
+
+### 10-1 監査の結論と、まこさんの決定
+
+- 監査 cp59（結果＝SDK/.claude/audits/2026-10-02_m2f_label_callers_20261002_impl_cp59_audit_report.md）＝NO-GO。Critical 1（修正1）・Major 0・Minor 7（修正2〜8）・Process 0。
+- 問い1＝NO（Q11 と Q5＝次の段へ渡す所の実装の指示が無い）。問い2＝YES（Q7＝要望1〜4 を満たす）。
+- 修正の状態＝修正1・2・3・7 は確定。修正4・5・6・8 は未決。
+- 計画モードの問いで、まこさんが範囲を「1〜6（推薦）」に決めた。修正1〜6 を当てる（4・5・6 は確定として当てる）。修正7・8 は当てない。
+
+### 10-2 6件の中身（6件とも regime_r9_diag.py）
+
+1. 修正1（Critical・Q11）＝run_stage の、次の段へ渡す所を直した。直す前の `base = base[:keep]` は、札の版が役割を持つとき（band_hold）も、全体の順位で keep 本に切っていた。監査は作業場の走行で、役割 daytrade の1位が次の段へ渡らないことを確かめた。直した後は、band_hold のとき、前の段で役割ごとに keep 本の内に入った行を全部 渡す。版1（er_median）は いままでどおり keep 本。要件＝worklog 20260928:1434「段ごとに残す10本は、役割ごとに10本ずつ選ぶ」。
+2. 修正2（Minor）＝自己検査⑪の見本のデータに high と low の列を足した。版2 の札の式が high を読む（regime_label.py:155）ため、band_hold では KeyError で落ちていた。
+3. 修正3（Minor）＝自己検査⑪が求める列を直した。直す前は「捉えた(先24本)」の決め打ちだった。直した後は札の鍵ごとの列を求める（版1＝先24本と先288本／版2＝役割の名前）。
+4. 修正4（Minor・Q8 の (a)）＝_load_top が、前の段の順位表の行を、いまの札の版で測った行かで照らす。違えば止まる。札の版の欄が無い行は、③の列の名前が いまの札の鍵と同じときだけ通す。
+5. 修正5（Minor・Q8 の (b)）＝run_sweep の差し戻す順位表にも、4 と同じ照らしを足した。
+6. 修正6（Minor・Q8 の (c)）＝run_stage が、候補の並びに使う成績表 material_ranking.json の札の版と先を見るバー数を、いまの札と照らす。違えば止まる。札の版の欄が無い成績表は版1 で作った物として読む。
+
+### 10-3 当てる前に実物で確かめたこと（恒久72番の1）
+
+- 修正1 が呼ぶ rl.groups() は regime_label.py:218 に在る。版1 では None を返す＝いまの働きは変わらない。
+- 版1 の札の式（regime_label.py:106〜114）は close しか読まない。だから修正2 で high と low を足しても、版1 の札は変わらない。
+- いまの最新の順位表 rank_stage1_20261002-084303.json の③の列は、「③実はトレンド(先24本)」と「③実はトレンド(先288本)」の2つだけ（各3行）。札の版は label-er24-288。だから修正4・5 の照らしを通る。
+- material_ranking.json に札の版の欄は無い。先を見るバー数は [24, 288]。版1 の名前は label-er24-288、bars_keys は (24, 288)。だから修正6 の照らしを通る。
+- 修正1〜6 が足す呼び出しは、rl. と g. の付いた物だけ。設計書の SPEC（acceptance.md:1355〜）は、同じファイルの中の関数の呼び出しだけを並べている。
+
+### 10-4 当てたことと確かめたこと（「直った」の判定は私がしない＝恒久64番）
+
+- 当てる前＝`apply_audit_fix.py --report <cp59> --severity Critical,Minor --choose 4=確定,5=確定,6=確定 --only 1,2,3,4,5,6 --dry`＝「当たる 6 件（修正 1・2・3・4・5・6）／当てない 0 件」。
+- 当てる道具（11:48:01）＝「✅ 当てた 6 件／当てなかった 0 件」。当てた記録 applied_fixes.json に6件を足した。
+- git diff＝監査の6つの文と同じ（+27行・-3行）。「足す文字」の先頭の空の行は、道具が入れていない（cp58 と同じ）。
+- 自己検査＝`python3 -B scripts/priority_rebuild/regime_r9_diag.py --selftest`＝✅ 全部 pass（⑪・⑫・⑬を含む・4.7秒）。
+- 照合＝`verify_design_contract.py --diff .claude/state/acceptance.md`＝「齟齬: 0件」。設計書のパスを省いて打つと IndexError で止まった（1回 打ち直した）。
+- enforce_h2_pass.py --check-fingerprint＝一致（e4fc4dc2…・24件）。enforce_g2_pass.py --check-fingerprint＝一致（09f97a77…・39件）。regime_r9_diag.py は H2 と G2 の対象に入っていない（監査 Q13）ので、取り直しは要らない。
+- ★試していないもの＝修正1・4・5・6 は、自己検査が通らない口（run_stage・run_sweep・_load_top）に在る。修正1 の渡し方と、修正4〜6 の止まり方は、版2 の走行か、札を変えた後の走行でしか通らない。いまは版1 なので、実データでは試していない。
+
+### 10-5 当てなかった件と理由（修正7・8）
+
+- 修正7＝工事のフォルダの やることの表.md:75 の「8か所」を「10行」に直す件。当てる道具は当てる（.md は逐語のファイルに当たらない）。しかし設計書 acceptance.md（:203・:353）は やることの表から作った物なので、7 だけ当てると元の表と設計書が食い違い、`gen_acceptance.py --verify` が止める。
+- 修正8＝設計書の作り直し。設計書のハッシュ値が変わり、承認の打ち直しが要る。しかも :353 の「8か所」は まこさんが OK した案の逐語（okd_labelB_20261002.txt）から来るので、作り直しても直らない（監査の注記と同じ）。
+- 正しい数（監査が実装の前 fefb00e で数えた）＝観察の道具の中で _regime_labels と _regime_horizons を呼ぶ行は10行（_regime_labels 6行・_regime_horizons 4行＝5913・5915・5992・6011・6184・6194・6351・7562・7569・7651 行。def の2行を除く）。10行とも名前と戻りの形が変わらず部品を通るので、働きには効かない（監査 Q8）。
+
+### 10-6 そのほか
+
+- 監査が「申告に無い」と書いた decisions.md の変更（会話の始めの hook が作り直した生成物）は、今回も commit に入れない。
+- 監査の参考（Q6）＝07:59〜08:41 に同じ中身の順位表が12本書かれ、確認の帳簿 engine_tuner_check_runs.json に12行が足された（承認の前の検査が、完成の条件のコマンドを走らせたため）。§8 の 8-8 は1回だけと書いている＝私の記録の誤り。確認の帳簿は累積の試行に入らない（purpose check の行き先）。

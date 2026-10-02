@@ -416,6 +416,13 @@ def _load_top(path: str, keep: int) -> list[dict]:
     """前の段の順位表（rank_*.json）から、内側を持つ上位 keep 本を読む（fail-closed）。"""
     rows = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))
     tops = [r for r in rows if r.get("順位") and not r.get("dropped_by") and r.get("内側")]
+    # ★監査 cp59（Q8）＝前の段の順位表が、いまの設定の札で測った行かを見る（違う札で選んだ上位を黙って次の段へ渡さない・fail-closed）。
+    #   札の版の欄が無い行（工事 B の前に作った順位表）は、③の列の名前が いまの札の鍵と同じときだけ通す。
+    _now = rl.version_tag()
+    _cols = {f"③実はトレンド({rl.key_label(k)})" for k in rl.keys()}
+    _odd = [r.get("判定") for r in tops if (r.get("札の版") or _now) != _now or {k for k in r if k.startswith("③")} != _cols]
+    if _odd:
+        raise SystemExit(f"[R9] 順位表 {path} の行 {_odd[:3]} は、いまの設定の札（札の版 {_now}）で測った行でない（fail-closed）")
     tops = sorted(tops, key=lambda r: r["順位"])[:keep]
     if not tops:
         raise SystemExit(f"[R9] 順位表 {path} に、束（内側）を持つ行が1本も無い（fail-closed）")
@@ -496,6 +503,14 @@ def run_stage(df, a) -> int:
     _pool, tfs, _ = g.material_pool()
     cands = (g.build_width_candidates(laws, table, tfs, lm) if a.stage == "width"
              else g.build_stage_candidates(a.stage, laws, table, tfs, lm))
+    # ★監査 cp59（Q8）＝候補の並びに使った成績表（material_ranking.json）が、いまの設定の札で作った物かを見る（違う札の成績表で並べた
+    #   候補を、いまの札の順位表に黙って混ぜない・fail-closed）。札の版の欄が無い成績表は版1（er_median）で作った物として読み、
+    #   先を見るバー数が いまの本数と同じときだけ通す（add_demand_to_ranking・merge_demand_into_ranking と同じ読み方）。
+    _mr = g.load_material_ranking()
+    if ((_mr.get("札の版") or rl.version_tag(version="er_median")) != rl.version_tag()
+            or [int(x) for x in (_mr.get("先を見るバー数") or [])] != list(rl.bars_keys())):
+        raise SystemExit(f"[R9] 成績表 material_ranking.json（札の版 {_mr.get('札の版')}・先を見るバー数 {_mr.get('先を見るバー数')}）が、"
+                         f"いまの設定の札（{rl.version_tag()}・{list(rl.bars_keys())}）と違う（先に observe_diag.py --rank-regime で作り直す・fail-closed）")
     if a.stage == "stage1":
         cands = _both_sides(cands)               # ★2026-10-01（B-3）＝帯の下側も測る
     dropped: list[dict] = []
@@ -517,7 +532,9 @@ def run_stage(df, a) -> int:
     _n_meas = len(base) * (len(cands) + (1 if a.stage == "stage2c" else 0))
     _hi = (lm.get("stage_keep_range") or {}).get("hi")
     keep = g.stage_keep_of(lm, max(_n_meas, int(_hi)) if _hi is not None else _n_meas)
-    base = base[:keep]
+    # ★監査 cp59（Q11）＝札の版が役割を持つとき（band_hold）は、前の段で役割ごとに keep 本の内に入った行（成績下位でない行＝_load_top が読んだ行）を
+    #   全部 次の段へ渡す（worklog 20260928 §51 の1「段ごとに残す10本は、役割ごとに10本ずつ選ぶ」）。版1（groups が None）は いままでどおり keep 本
+    base = base if rl.groups() is not None else base[:keep]
     recipes = []
     marks = {}
     for t in base:
@@ -581,6 +598,12 @@ def run_sweep(df, a) -> int:
                   key=lambda r: (r.get("順位") is None, r.get("順位") or 0))
     if not tops:
         raise SystemExit("[R9] --sweep の順位表に、束（内側）を持つ行が1本も無い（fail-closed）")
+    # ★監査 cp59（Q8）＝差し戻す順位表が、いまの設定の札で測った行かを見る（_load_top と同じ照らし・fail-closed）
+    _now = rl.version_tag()
+    _cols = {f"③実はトレンド({rl.key_label(k)})" for k in rl.keys()}
+    _odd = [r.get("判定") for r in tops if (r.get("札の版") or _now) != _now or {k for k in r if k.startswith("③")} != _cols]
+    if _odd:
+        raise SystemExit(f"[R9] 順位表 {a.sweep} の行 {_odd[:3]} は、いまの設定の札（札の版 {_now}）で測った行でない（fail-closed）")
     lm, _w = g.load_limits()
     lm = g.resolve_hold_range(lm, a.strategy)
     # ★M2-F-6d（工事 B）＝札の版が役割を持つとき（band_hold）、下の「良くなったか」の比べ（rank_key）が役割の列を混ぜた平均になる。
@@ -860,7 +883,7 @@ def selftest() -> int:
     # ⑪ 段の口が組む束（判定の束だけ・入口の木は空）を、合成データで最後まで測れる（束を組む→解決表→列→3つの割合・関所で拒否の行・監査 CP48）
     _n11 = 2000
     _c11 = 100.0 + (np.arange(_n11) % 7)
-    _df11 = pd.DataFrame({"ts": pd.date_range("2024-03-01", periods=_n11, freq="5min"), "close": _c11,
+    _df11 = pd.DataFrame({"ts": pd.date_range("2024-03-01", periods=_n11, freq="5min"), "close": _c11, "high": _c11, "low": _c11,
                           "v11_res_hi": _c11 * (1.0 + (np.arange(_n11) % 5) / 1000.0), "v11_res_lo": _c11,
                           "v11_sup_hi": _c11, "v11_sup_lo": _c11 * 0.99, "v11_mid": _c11})
     _w11 = {"role": "location", "form": "level", "material": [{"geo": "W%"}], "side": "above",
@@ -877,7 +900,8 @@ def selftest() -> int:
                  "保つ上限": int(_g11._nv_fixed(_lm11, "state_hold_bars_range", "n", 0)["n"]), "role": "location"}
         _rec11.append(_stage_recipe("e38", "t11_hy", _wrap_bundle([_w11], _wr11, _lm11, "regime_t11_hy", frames=["width"])))
         _rows11 = measure(_df11, _rec11, _df11["ts"].iloc[0], _df11["ts"].iloc[-1], with_trades=False)
-        _ok11 = [r for r in _rows11 if r.get("判定") == "t11_ok" and "①時間の割合" in r and "捉えた(先24本)" in r]
+        _ok11 = [r for r in _rows11 if r.get("判定") == "t11_ok" and "①時間の割合" in r
+                 and all(f"捉えた({rl.key_label(k)})" in r for k in rl.keys())]   # ★監査 cp59（Q11）＝列の名前は札の鍵（版1＝先24本・先288本／版2＝役割の名前）
         _ng11 = [r for r in _rows11 if r.get("判定") == "t11_ng" and str(r.get("注", "")).startswith("関所で拒否")]
         _hy11 = [r for r in _rows11 if r.get("判定") == "t11_hy" and "①時間の割合" in r]
         if not _ok11 or not _ng11 or not _hy11:
