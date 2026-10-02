@@ -1,0 +1,18 @@
+88,90c88,90
+< | 観察の道具の中に、札の式がまだ在る | `grep -c -F 'er.median()' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は当たる行が在る。実装の後は当たる行が無い（式は部品の中だけ） | 1（終了コード 0） |
+< | 測る道具が、札を部品から受け取っていない | `grep -c -F 'import regime_label as rl' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+< | 順位表に札の版を書く所が無い | `grep -c -F '札の版=tag_l' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 実装の前は当たる行が無い。実装の後は、順位表と落ちた候補に書く行に当たる | 0（終了コード 1） |
+---
+> | 観察の道具の中に、札の式がまだ在る | `grep -c -F 'er.median()' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は当たる行が在る。実装の後は当たる行が無い（式は部品の中だけ） | 0（終了コード 1） |
+> | 測る道具が、札を部品から受け取っていない | `grep -c -F 'import regime_label as rl' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 1（終了コード 0） |
+> | 順位表に札の版を書く所が無い | `grep -c -F '札の版=tag_l' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py` | 実装の前は当たる行が無い。実装の後は、順位表と落ちた候補に書く行に当たる | 2（終了コード 0） |
+1290c1290
+< <!-- ACC_SPEC_START hash=5af380427fb90648 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=6e3dfc66a93c40bc gen_acceptance.py が自動生成＝手で書き換えない -->
+1363c1363,1365
+<   "rank_rows": [],
+---
+>   "rank_rows": [
+>    "rank_key"
+>   ],

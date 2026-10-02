@@ -1260,6 +1260,216 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_label.py",
    "at": "2026-10-02T07:27:34",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "1",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "2",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "3",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "4",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "5",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "6",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "7",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "8",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "9",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "10",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "11",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "12",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "13",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "14",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "15",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "16",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "17",
+   "file": "scripts/priority_rebuild/regime_r9_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "18",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "19",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "20",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "21",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "22",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "23",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "24",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "25",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "26",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "27",
+   "file": "scripts/priority_rebuild/regime_label.py",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "28",
+   "file": ".claude/breaks/b122_obs_formula_copied.sh",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "29",
+   "file": ".claude/breaks/b123_label_tag_dropped.sh",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-callers-20261002",
+   "num": "30",
+   "file": ".claude/breaks/b124_role_keep_off.sh",
+   "at": "2026-10-02T08:29:46",
+   "how": "当てた"
   }
  ]
 }

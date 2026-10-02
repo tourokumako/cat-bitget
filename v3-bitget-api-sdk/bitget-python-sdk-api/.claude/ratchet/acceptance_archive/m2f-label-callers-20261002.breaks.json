@@ -1,0 +1,40 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2f-label-callers-20261002",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b122_obs_formula_copied.sh",
+   "code": 1,
+   "note": "  ❌ T6: observe_diag.py の _regime_labels に、札の式（median）が書き写されている",
+   "expect": 1,
+   "means": "観察の道具の _regime_labels に札の式を書き写すと、自己検査 T6 が「札を作る場所を呼んでいない・式が書き写されている」で落ちた",
+   "match": true
+  },
+  {
+   "no": "2",
+   "script": "b124_role_keep_off.sh",
+   "code": 1,
+   "note": "  ❌ ⑫: 役割ごとに keep 本ずつ残っていない（落ちた候補＝['S', 'T', 'U']）",
+   "expect": 1,
+   "means": "役割ごとに上位を残す判定を外すと、自己検査⑫が「役割ごとに keep 本ずつ残っていない」で落ちた",
+   "match": true
+  },
+  {
+   "no": "3",
+   "script": "b123_label_tag_dropped.sh",
+   "code": 1,
+   "note": "  ❌ ⑬: 順位表か落ちた候補に、札の版（regime_label.version_tag）が書かれていない",
+   "expect": 1,
+   "means": "順位表の各行に札の版を書かなくすると、自己検査⑬が「順位表か落ちた候補に、札の版が書かれていない」で落ちた",
+   "match": true
+  },
+  {
+   "no": "4",
+   "script": null,
+   "code": null,
+   "note": "壊すプログラムが無い＝この行は済にできない"
+  }
+ ]
+}

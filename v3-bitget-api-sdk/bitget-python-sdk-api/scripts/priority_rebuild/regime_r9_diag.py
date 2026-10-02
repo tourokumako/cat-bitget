@@ -8,10 +8,12 @@
   ② その中の玉の成績             ＝ 判定の列を entry_col に向けて run_recipe → 値決め窓の玉だけを score.score に通す
                                    → 件数・net 合計・件数/日（★net は審判の数字をそのまま出す＝この診断は計算しない。勝率は審判が返さないので出さない）
                                    ★既定では測らない（--trades を付けたときだけ＝§2.2「net は M2-L まで使わない」・M2-F-2 の (c)）
-  ③ 実はトレンドだった割合       ＝ 判定が真のバーのうち、observe_diag._regime_labels の「強さ」（先 n本の ER が窓の
-                                   中央値以上）が真の割合。先読み n は成績表と同じ2つ（_regime_horizons）
-  ＋当たった割合（1−③）・捉えた割合（正解がレンジのうち判定が真・正解0本なら nan）・正解レンジの割合（≈50%）を出し、
-    第一キー＝③の2つの先読みの平均の低さ・第二キー＝捉えた割合の平均の高さで並べる（まこさん決定 2026-09-27「１は平均でOK」）。
+  ③ 実はトレンドだった割合       ＝ 判定が真のバーのうち、答え合わせに使う正解ラベル（札）の「強さ」が真の割合。
+                                   札を作る場所は regime_label.py の1か所（M2-F-6d）。版と鍵は recipes/regime_label.json の
+                                   「採点に使う版」（版1 er_median＝先 n本の ER が窓の中央値以上・n は 24 と 288／版2 band_hold＝役割ごと）
+  ＋当たった割合（1−③）・捉えた割合（正解がレンジのうち判定が真・正解0本なら nan）・正解レンジの割合を出し、
+    第一キー＝③の平均の低さ・第二キー＝捉えた割合の平均の高さで並べる（まこさん決定 2026-09-27「１は平均でOK」）。
+    版2 のときは役割ごとに並べ、役割ごとに上位を残す（M2-F-6d・worklog 20260928 §51 の1）。
                                    ★未来を見る印（H2OK 注記済み）＝評価にだけ使う。判定の列や入口には入れない。
 
 比較の行＝RG-v5（range_ok_rg5＝いまの E38 の判定）の①②③を同じ式で出す。
@@ -47,6 +49,7 @@ sys.path.insert(0, str(HERE))
 
 import engine_tuner_exec as ex          # noqa: E402  build_regime_columns・run_recipe（改造しない）
 import score                            # noqa: E402  審判（改造しない・import して呼ぶだけ）
+import regime_label as rl               # noqa: E402  答え合わせに使う正解ラベル（札）を作る、ただ1つの場所（M2-F-6d）
 
 
 # ══ 測るもの3つ（列と印から出す・データの読み方には依存しない）══════════════════════════════
@@ -91,37 +94,56 @@ def _nanmean(vals: list) -> float:
     return float(np.mean(xs)) if xs else float("nan")
 
 
-def rank_key(r: dict) -> tuple:
-    """並べる鍵＝第一キー：③（実はトレンド）の2つの先読みの平均の低さ／第二キー：捉えた割合の平均の高さ。
+def rank_key(r: dict, group: str | None = None) -> tuple:
+    """並べる鍵＝第一キー：③（実はトレンド）の平均の低さ／第二キー：捉えた割合の平均の高さ。
 
-    ★まこさん決定 2026-09-27（逐語「１は平均でOK」）＝先24本と先288本の平均で順位をつける。
+    ★まこさん決定 2026-09-27（逐語「１は平均でOK」）＝先24本と先288本の平均で順位をつける（札の版が er_median のとき）。
+    ★group（札の役割の名前・M2-F-6d）を渡したら、その役割の札の列だけで鍵を作る（列の名前の末尾が「(役割)」）。
     ★nan は最後（測れない束を上位に出さない）。
     """
-    _t3s = [v for k, v in r.items() if k.startswith("③")]
+    _t3s = [v for k, v in r.items() if k.startswith("③") and (group is None or k.endswith(f"({group})"))]
     # ★先読みの片方でも nan なら平均を取らない（1つだけの数字で並べない＝測れない束と同じく最後・監査 CP48）
     t3 = _nanmean(_t3s) if _t3s and all(v == v for v in _t3s) else float("nan")
-    ct = _nanmean([v for k, v in r.items() if k.startswith("捉えた")])
+    ct = _nanmean([v for k, v in r.items() if k.startswith("捉えた") and (group is None or k.endswith(f"({group})"))])
     return (t3 if t3 == t3 else float("inf"), -(ct if ct == ct else float("-inf")))
 
 
-def rank_rows(rows: list[dict], keep: int | None = None) -> tuple[list[dict], list[dict]]:
+def rank_rows(rows: list[dict], keep: int | None = None,
+              groups: list | None = None) -> tuple[list[dict], list[dict]]:
     """行を並べて順位を書き込む。keep より下は場面「成績下位」を付ける（行は消さない＝§2.2）。
 
+    groups（札の役割の名前の並び＝regime_label.groups()・M2-F-6d）を渡したら、役割ごとに並べて「順位(役割)」を書き、
+    役割ごとに keep 本ずつ残す（まこさん OK 2026-09-28「上記でOKなので、再度todo作成して、修正を進めて」＝
+    worklog 20260928 §51 の1）。どれかの役割で keep の内に入った行は残る。全体の「順位」＝役割ごとの順位のうち最も良いもの。
+    groups が None なら、いままでと同じ（1つの並び）。
     戻り＝(並べた行, 成績下位の落ちた候補)。測れない行（①が無い行）は最後に置く。
     """
     ok = [r for r in rows if "①時間の割合" in r]
     ng = [r for r in rows if "①時間の割合" not in r]
-    ok.sort(key=rank_key)
+    gs = list(groups) if groups else [None]
+    inside = set()
+    for g in gs:
+        k = 0
+        for i, r in enumerate(sorted(ok, key=lambda x: rank_key(x, g)), start=1):
+            if g is not None:
+                r[f"順位({g})"] = i
+            # ★比べる相手（RG-v5）は順位だけ付け、上位の枠（keep）を使わない・落ちた候補に数えない（束ではないため・監査 CP48）
+            if str(r.get("判定", "")).startswith("RG-v5"):
+                continue
+            k += 1
+            if keep is None or k <= keep:
+                inside.add(id(r))
+    if groups:
+        ok.sort(key=lambda x: (min(x[f"順位({g})"] for g in gs), rank_key(x, gs[0])))
+    else:
+        ok.sort(key=rank_key)
     dropped = []
-    k = 0
     for i, r in enumerate(ok, start=1):
         r["順位"] = i
-        # ★比べる相手（RG-v5）は順位だけ付け、上位の枠（keep）を使わない・落ちた候補に数えない（束ではないため・監査 CP48）
         if str(r.get("判定", "")).startswith("RG-v5"):
             r["比べる相手"] = True
             continue
-        k += 1
-        if keep is not None and k > keep:
+        if id(r) not in inside:
             r["dropped_by"] = "成績下位"
             dropped.append({"場面": "成績下位", "判定": r.get("判定"), "順位": i})
     return ok + ng, dropped
@@ -137,6 +159,10 @@ def write_outputs(tag: str, rows: list[dict], dropped: list[dict]):
     """順位表と落ちた候補をファイルに書く（画面だけに出さない＝M2-F-2 の (i)(l)）。戻り＝2つのパス。"""
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
+    # ★札の版（M2-F-6d・まこさん決定 2026-09-28 の構造の文の3つ目）＝どの版の札で作った順位表かを、順位表と落ちた候補の各行に書く
+    tag_l = rl.version_tag()
+    rows = [dict(r, 札の版=tag_l) for r in rows]
+    dropped = [dict(d, 札の版=tag_l) for d in dropped]
     rp = OUT_DIR / f"rank_{tag}_{stamp}.json"
     dp = OUT_DIR / f"dropped_{tag}_{stamp}.json"
     if rp.exists() or dp.exists():
@@ -174,13 +200,16 @@ def r9_trades(df: pd.DataFrame, recipe: dict, entry_col: str, qtable: dict | Non
 
 
 def _labels_for(df_win: pd.DataFrame) -> dict:
-    """観察の道具の正解の印（強さ）を、値決め窓の close から作る。戻り＝{n: (強さ, 使える)}。"""
-    import observe_diag as od
+    """答え合わせに使う正解ラベル（札）の強さを、値決め窓のバーから作る。戻り＝{行の名前に入れる文字: (強さ, 使える)}。
+
+    ★札を作る場所は regime_label.py の1か所（M2-F-6d・まこさん決定 2026-09-28「札を作る場所を1つにすること」）。
+      採点に使う版が er_median なら鍵は「先24本」「先288本」（いままでと同じ）、band_hold なら役割の名前。
+    """
+    w = df_win[[c for c in ("high", "low", "close") if c in df_win.columns]].astype(float)
     out = {}
-    for n in od._regime_horizons():
-        lab = od._regime_labels(df_win[["close"]].astype(float), int(n))
-        s, u = lab["強さ"]
-        out[int(n)] = (s.to_numpy(bool), u.to_numpy(bool))
+    for key in rl.keys():
+        s, u = rl.labels_for_key(w, key)["強さ"]
+        out[rl.key_label(key)] = (s.to_numpy(bool), u.to_numpy(bool))
     return out
 
 
@@ -200,12 +229,13 @@ def measure(df: pd.DataFrame, recipes: list[dict], start, end, with_trades: bool
     def _row(name, col_full, rec, entry_col, qt, note="", df_run=None):
         col = np.asarray(col_full, bool)[win]
         r = {"判定": name, "①時間の割合": r9_share(col)}
-        for n, (s, u) in labels.items():
-            r[f"③実はトレンド(先{n}本)"] = r9_trend_share(col, s, u)
+        for nm, (s, u) in labels.items():
+            r[f"③実はトレンド({nm})"] = r9_trend_share(col, s, u)
             # ★M2-F-2 の (a)(b)(f)＝当たった（1−③・nan は nan のまま）・捉えた・正解レンジの割合を足す
-            r[f"当たった(先{n}本)"] = 1.0 - r[f"③実はトレンド(先{n}本)"]
-            r[f"捉えた(先{n}本)"] = r9_catch_share(col, s, u)
-            r[f"正解レンジ(先{n}本)"] = r9_range_share(s, u)
+            # ★M2-F-6d＝列の名前の括弧の中は札の鍵（版1＝「先24本」「先288本」＝いままでと同じ／版2＝役割の名前）
+            r[f"当たった({nm})"] = 1.0 - r[f"③実はトレンド({nm})"]
+            r[f"捉えた({nm})"] = r9_catch_share(col, s, u)
+            r[f"正解レンジ({nm})"] = r9_range_share(s, u)
         if with_trades and rec is not None:
             r["②玉"] = r9_trades(df if df_run is None else df_run, rec, entry_col, qt, start, end)
         if note:
@@ -531,7 +561,7 @@ def run_stage(df, a) -> int:
     for r in rows:
         if r.get("判定") in marks:
             r.update(marks[r["判定"]])
-    rows, drop_rank = rank_rows(rows, keep=keep)
+    rows, drop_rank = rank_rows(rows, keep=keep, groups=rl.groups())
     dropped += drop_rank
     dropped += [{"場面": ("関所で拒否" if str(r.get("注", "")).startswith("関所で拒否") else "測れない"),
                  "判定": r.get("判定"), "理由": r.get("注")} for r in rows if "①時間の割合" not in r]
@@ -553,6 +583,12 @@ def run_sweep(df, a) -> int:
         raise SystemExit("[R9] --sweep の順位表に、束（内側）を持つ行が1本も無い（fail-closed）")
     lm, _w = g.load_limits()
     lm = g.resolve_hold_range(lm, a.strategy)
+    # ★M2-F-6d（工事 B）＝札の版が役割を持つとき（band_hold）、下の「良くなったか」の比べ（rank_key）が役割の列を混ぜた平均になる。
+    #   役割ごとの差し戻しの比べ方は、まだどの文書にも決まっていない（worklog 20260928 §51 の1 は段ごとに残す本数だけ）
+    #   ＝黙って混ぜずに止まる（fail-closed）。採点に使う版を切り替えるときに作る。
+    if rl.groups() is not None:
+        raise SystemExit("[R9] 札の版が役割ごと（band_hold）のときの差し戻しは、まだ作っていない"
+                         "（役割の列を混ぜて比べない・fail-closed）")
     # ★M2-F-15＝上位（stage_keep_of の本数）の束ごとに差し戻し、最終の束を最大 keep 本 出す（監査 CP48・直す前は1位の1本だけ）
     _hi = (lm.get("stage_keep_range") or {}).get("hi")
     if _hi is None:
@@ -585,7 +621,7 @@ def run_sweep(df, a) -> int:
             recipes.append(_stage_recipe(a.strategy, nm, bd))
             marks[nm] = (iv, wv, fv)               # ★2026-10-01（B-4）＝「なし」と足す側で枠が変わるので、枠も持つ
         rows = measure(df, recipes, SEARCH_START, SEARCH_END, with_trades=False)
-        rows, _ = rank_rows(rows)
+        rows, _ = rank_rows(rows, groups=rl.groups())
         dropped.extend({"場面": ("関所で拒否" if str(r.get("注", "")).startswith("関所で拒否") else "測れない"),
                         "判定": r.get("判定"), "理由": r.get("注")} for r in rows if "①時間の割合" not in r)
         return rows, marks, len(recipes)
@@ -636,7 +672,7 @@ def run_sweep(df, a) -> int:
         best_row["包み"] = wrap
         best_row["差し戻しの元"] = row.get("判定")
         finals.append(best_row)
-    finals, _ = rank_rows(finals)
+    finals, _ = rank_rows(finals, groups=rl.groups())
     write_outputs("sweep_final", finals, dropped)
     # ★試行は測った所（上の2か所）で数え済み＝ここで足すと二重になる（監査 CP49）
     print(f"[試行] 差し戻しの全体で {n_all} 本（周・枠ごとに数え済み）")
@@ -778,6 +814,13 @@ def selftest() -> int:
             ng.append("⑨: 落ちた候補の5つの場面が全部 ファイルに出ない")
         if not rp9.exists():
             ng.append("⑨: 順位表のファイルが書かれない")
+        # ⑬ 札の版（M2-F-6d・まこさん決定 2026-09-28 の構造の文の3つ目）＝順位表と落ちた候補の各行に、いまの設定の札の版の名前が書かれる
+        try:
+            _rows13 = json.loads(rp9.read_text(encoding="utf-8"))
+        except Exception:
+            _rows13 = []
+        if not _rows13 or not _back or any(x.get("札の版") != rl.version_tag() for x in _rows13 + _back):
+            ng.append("⑬: 順位表か落ちた候補に、札の版（regime_label.version_tag）が書かれていない")
     finally:
         OUT_DIR = _old_out
     # ⑩ 並べる鍵＝2つの先読みの平均（まこさん決定 2026-09-27「１は平均でOK」）・keep の下は成績下位
@@ -803,6 +846,17 @@ def selftest() -> int:
     if (_rk10[0].get("dropped_by") or not _rk10[0].get("比べる相手") or _rk10[1].get("dropped_by")
             or [d["判定"] for d in _drop10] != ["C", "E"]):
         ng.append("⑩: keep の内の行に成績下位が付いた・比べる相手が keep を使った・落ちた候補の並びが違う")
+    # ⑫ 役割ごとに keep 本ずつ残す（M2-F-6d・まこさん OK 2026-09-28＝worklog 20260928 §51 の1）＝片方の役割で1位の行は、もう片方で最下位でも残る
+    _rS = {"判定": "S", "①時間の割合": 0.5, "③実はトレンド(scalp)": 0.40, "③実はトレンド(daytrade)": 0.60,
+           "捉えた(scalp)": 0.6, "捉えた(daytrade)": 0.6}
+    _rT = {"判定": "T", "①時間の割合": 0.5, "③実はトレンド(scalp)": 0.60, "③実はトレンド(daytrade)": 0.40,
+           "捉えた(scalp)": 0.6, "捉えた(daytrade)": 0.6}
+    _rU = {"判定": "U", "①時間の割合": 0.5, "③実はトレンド(scalp)": 0.50, "③実はトレンド(daytrade)": 0.50,
+           "捉えた(scalp)": 0.6, "捉えた(daytrade)": 0.6}
+    _rk12, _drop12 = rank_rows([_rU, _rS, _rT], keep=1, groups=["scalp", "daytrade"])
+    if ([d["判定"] for d in _drop12] != ["U"] or _rS.get("順位(scalp)") != 1 or _rT.get("順位(daytrade)") != 1
+            or _rS.get("dropped_by") or _rT.get("dropped_by")):
+        ng.append(f"⑫: 役割ごとに keep 本ずつ残っていない（落ちた候補＝{[d['判定'] for d in _drop12]}）")
     # ⑪ 段の口が組む束（判定の束だけ・入口の木は空）を、合成データで最後まで測れる（束を組む→解決表→列→3つの割合・関所で拒否の行・監査 CP48）
     _n11 = 2000
     _c11 = 100.0 + (np.arange(_n11) % 7)
@@ -853,12 +907,12 @@ def selftest() -> int:
             or not any(_fv == ["stage1", "stage2c"] for _nm, _iv, _wv, _fv in _v16b)
             or _sweep_slots(["stage1"], None) != ["stage1", "stage2c+"]):
         ng.append("⑯: 差し戻しで段2c の「なし」か、段2c を足す束が試されない")
-    # ⑤ 印の作り方が観察の道具の実物と同じ関数であること（写しを作っていない）
-    import observe_diag as od
-    if not hasattr(od, "_regime_labels") or not hasattr(od, "_regime_horizons"):
-        ng.append("⑤: observe_diag の印の関数が見つからない")
-    print(f"[selftest] ①100%/0% ／ ②反転で 1−x（x={x:.2f}）・真0本は nan ／ ③束なしは止まる ／ ④未来参照 0件 ／ ⑤印は observe_diag の関数"
-          f" ／ ⑥捉えた割合（既知答え・反転・正解0本は nan）／ ⑦乱数 0件 ／ ⑧record_run ／ ⑨落ちた候補の5つの場面 ／ ⑩並べる鍵は平均 ／ ⑪段の口の束（合成データ・関所で拒否の行）／ ⑭段2a の出る線は緩い側 ／ ⑮段1 は上側と下側 ／ ⑯差し戻しの段2c の「なし」と足す側")
+    # ⑤ 札は、札を作る場所（regime_label）の口で作る（写しを作っていない・M2-F-6d）。
+    #   観察の道具と測る道具が部品を呼び、式を書き写していないかは regime_label.py の自己検査 T6 が見る
+    if not all(hasattr(rl, f) for f in ("keys", "labels_for_key", "key_label", "groups", "version_tag")):
+        ng.append("⑤: regime_label の札の口が見つからない")
+    print(f"[selftest] ①100%/0% ／ ②反転で 1−x（x={x:.2f}）・真0本は nan ／ ③束なしは止まる ／ ④未来参照 0件 ／ ⑤札は regime_label の口"
+          f" ／ ⑥捉えた割合（既知答え・反転・正解0本は nan）／ ⑦乱数 0件 ／ ⑧record_run ／ ⑨落ちた候補の5つの場面 ／ ⑩並べる鍵は平均 ／ ⑪段の口の束（合成データ・関所で拒否の行）／ ⑭段2a の出る線は緩い側 ／ ⑮段1 は上側と下側 ／ ⑯差し戻しの段2c の「なし」と足す側 ／ ⑫役割ごとに keep 本ずつ残す ／ ⑬札の版をファイルに書く")
     if ng:
         for x in ng:
             print(f"  ❌ {x}")
@@ -966,7 +1020,7 @@ def main() -> int:
             recipes.append(rec)
     print(f"[R9] 値決め窓 {SEARCH_START}〜{SEARCH_END} ／ 束 {len(recipes)} 本 ／ 玉の成績を{'測る（run_recipe＋score.score）' if a.trades else '測らない（既定）'}")
     rows = measure(df, recipes, SEARCH_START, SEARCH_END, with_trades=a.trades)
-    rows, _dr = rank_rows(rows)            # keep=None＝この口では成績下位を作らない（並べて順位を付けるだけ）
+    rows, _dr = rank_rows(rows, groups=rl.groups())            # keep=None＝この口では成績下位を作らない（並べて順位を付けるだけ）
     dropped += [{"場面": ("関所で拒否" if str(r.get("注", "")).startswith("関所で拒否") else "測れない"),
                  "判定": r.get("判定"), "理由": r.get("注")} for r in rows if "①時間の割合" not in r]
     _print_rows(rows)

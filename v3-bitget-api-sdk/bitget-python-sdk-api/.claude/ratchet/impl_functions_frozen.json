@@ -2,31 +2,27 @@
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "scripts/priority_rebuild/regime_r9_diag.py": [
+  "<モジュール直下>",
+  "_labels_for",
+  "main",
+  "measure",
+  "rank_key",
+  "rank_rows",
+  "run_stage",
+  "run_sweep",
+  "selftest",
+  "write_outputs"
+ ],
+ "scripts/priority_rebuild/observe_diag.py": [
+  "<モジュール直下>",
+  "_insp_regime_rank",
+  "_regime_horizons",
+  "_regime_labels",
+  "add_demand_to_ranking"
+ ],
  "scripts/priority_rebuild/regime_label.py": [
   "<モジュール直下>",
-  "load_config",
-  "fee_floor",
-  "horizons",
-  "roles",
-  "role_bars",
-  "er_median",
-  "band_range",
-  "band_hold",
-  "keys",
-  "key_bars",
-  "key_label",
-  "groups",
-  "labels_for_key",
-  "labels_at_bars",
-  "bars_keys",
-  "version_tag",
-  "spec",
-  "variants",
-  "_synth",
-  "selftest",
-  "_line"
- ],
- "scripts/priority_rebuild/leak_causality_diag.py": [
-  "<モジュール直下>"
+  "selftest"
  ]
 }

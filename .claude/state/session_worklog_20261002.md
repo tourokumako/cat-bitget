@@ -166,3 +166,64 @@
 - enforce_g2_pass.py --check-fingerprint＝一致（4f618a5f…・38件）／enforce_h2_pass.py --check-fingerprint＝一致（2504867e…・24件）。
 - next_step の検査済みの記録の欄を tidy_next_step.py --write で作り直し、2回目の commit。
 - hook に止められた回数＝設計↔実装ゲート1回（`python3 -` の heredoc で抜き出そうとした＝memory の早見表に在った形）。計画の承認の画面で、まこさんが「どのモードがよいの？」と聞いた（答え＝編集を自動で許可）。
+
+## §8 14a の工事 B（m2f-label-callers-20261002）の読むもの宣言と案（2026-10-02・145回目・まこさん「了解。次へ進めて」）
+
+### 8-1 読むもの宣言
+
+- 工事 A の宣言を design_read_plan_m2f-label-structure-20261001.md・read_plan_src_m2f-label-structure-20261001.json に控え、工事 B の宣言（14件）を read_plan_src.json から require_read_plan_before_design.py --write で作った（宣言の hook の自己テスト 8/8）。まこさん「OK」を写した。
+- 工事 B が受け持つやること＝142回目に まこさんが OK した表（ok_todo_20261001）の L-1（⑪タブを除く）・L-5・L-6。表の文は、やり取りの記録 8fdecaac から抜き出した（ファイルには残っていなかった）。
+
+### 8-2 宣言の14件を開いて分かったこと
+
+- 土台＝9/29 の控え（acceptance_src_label-versioned-structure-20260929.json）の実装の指示 1〜21・31〜33（24件）。
+- regime_r9_diag.py の14件は、直す前の文字がほとんど いまも在る。行は 14b で動いた（8〜11番＝534・588・639・969行）。14番（自己検査の印字の行）だけ、14b で ⑭⑮⑯ が足されて直す前の文字が無くなっていた。
+- 差し戻し（run_sweep:625 の rank_key の比べ）は、9/29 の控えのどの指示にも入っていない＝band_hold のとき役割の列を混ぜた平均で比べる。比べ方はどの文書にも無い（worklog 20260928 §51 の1 は残す本数だけ）＝band_hold のときは止める形を案に入れた。
+- observe_diag.py の7件は 9/29 の行のまま在る。_regime_labels・_regime_horizons を呼ぶ所は observe_diag.py の中に8か所・⑪タブの道具に2か所（git grep）。
+- 自己検査 T6 は regime_label.py の selftest に置く形（9/29 の28番の中身に在る11行の塊）。工事 A で外した物を足し直す。
+- ★壊すプログラムの番号 b119〜b121 は、9/30 の道具の工事が使っていた（b119_audit_fix_command_allow.sh・b120_acceptance_impl_zero.sh・b121_hook12_design_guard.sh）。工事 A の b118_band_continue_off.sh も、9/30 の b118_audit_fix_tools_target.sh と番号が重なっている。工事 B は b122〜b124 にする。
+- 工事 B で直す行の文字を探している既存の壊すプログラムは0本（直す行の文字で grep・相手のファイルの名前で探して壊す行を見た＝2つの探し方）。
+
+### 8-3 工事のフォルダと案
+
+- .claude/state/verbatim/m2f-label-callers-20261002/＝逐語5本（req_6d・req_split・ok_todo・ok_split・ok_t6）を gen_verbatim.py で記録から写した（req_6d と ok_t6 は工事 A の控えと diff で同じ）。やることの表.md（L-1・L-5・L-6 と手書きの5項目）を書いた。3-2 決めてほしいこと＝成績表を この工事で作り直すか（私の案＝作り直さない）。
+- 案の道具 .claude/state/_labelB_draft_build.py と手書きの節のひな型 .claude/state/_labelB_template.txt を書いた。道具は、9/29 の控えから取り出し、直す前の文字を いまの実物で数え、行と根拠の抜き書きを作り直し、番号の順に当てた後の中身で文法・T6 の形・壊すプログラムが探す文字を照らし、触る関数を差の行から数える。
+- 下書き .claude/state/_labelB_draft.txt＝実装の指示30件・40,120文字・595行。触る関数＝regime_r9_diag.py 10・observe_diag.py 5・regime_label.py 2。
+- 試しの設計書（trial_design.py）＝1回目は 2-1 のコマンドに「>」（er >= er.median()）で止まった→ 'er.median()' に直した（observe_diag.py の中で1か所＝5846行）。2回目は A2（設計書に書いた gen_acceptance.py の行を Read で開いていない）と A13（4-3 に触る関数の一部が無い）→ gen_acceptance.py:680〜683 を開いて確かめ、4-3 に触る関数を道具で並べる形にした。3回目から A群0件・古い語0件。チャットの文章の検査で1文が332字の所を、ファイルごとの文に分けた。
+
+### 8-4 hook に止められた回数（§8 の作業の中）
+
+- enforce_observe_diag_only 1回（一時の置き場の自作スクリプト）・require_confirm_before_act 3回（OK の後に直す行を開かずに Edit・Read と Edit を同じ呼び出しに並べた・自分で書いた道具の直す行を開かずに Edit）・block_repeat_kind 1回と block_repeat_failure 1回（決まりと見立てを sessions の lessons.md・diagnosis.md に書いた）・土台ゲート2回（grep の語に「>」・「;」と echo のつなぎ）。Stop の require_confirm_before_act 1回（一時の置き場のスクリプトを走らせた記録が無い＝走らせることは別の hook が禁じる＝食い違いを まこさんに報告した）。
+
+### 8-5 案を出した・OK・逐語が切れた（2026-10-02・145回目）
+
+- 案（下書き _labelB_draft.txt の全文）を、決めてほしいこと・書き替えたファイル・読んだ所の後に貼った（発言 d3b355b0）。Stop の require_trial_before_proposal が止めた＝試しの設計書を --session なしで走らせたので、記録が sessions/_nosession に書かれていた。--session を付けて走らせ直した（A群0件・古い語0件・trial_last.json）。
+- まこさん「ok」（発言 356d16ad）。
+- gen_verbatim.py --write で案を写したら14行で切れた。原因＝_cut_report（gen_verbatim.py:221〜226）は、CC の文を「このターンで書き替えたファイル」の行（REPORT_RE・:151）の手前で切る。私は報告を案の前に置いた。記録には全文（41,806文字・636行）が在る。
+- 切れた2本（okd_labelB・ok_labelB）を消し、要件のまとめを作り直した（13行）。案を、報告を後ろに置く形で貼り直し、OK をもう1回お願いする（中身は同じ・試しの記録の下書きと同じ）。
+
+### 8-6 2回目の OK・設計書・承認の前の検査・見直し表（2026-10-02・145回目）
+
+- 貼り直した案（発言 0f67e92f）に、まこさん「ok」（発言 4cced793）。gen_verbatim.py --write で okd_labelB_20261002（555行）・ok_labelB_20261002 を写した。案の部分は下書き _labelB_draft.txt と同じ（diff の違いはファイルの終わりの改行1つだけ）。要件のまとめを作り直した（23行）。
+- まこさんの「ok」は、案と、決めてほしいこと（成績表は この工事で作り直さない＝私の案）の両方への OK と読んだ。
+- gen_acceptance.py --work m2f-label-callers-20261002 --write＝acceptance.md 1410行・囲み13個。
+- 承認の前の検査（require_design_check_before_approval.py --try・記録を渡す）＝A1〜A8・B1・B2 不足0件（33.5秒）。
+- 設計書を全行 Read で開いた（1〜1410行）。gen_review.py --skeleton → 工事 A の表が残っていたので79項目を全部 書き直し → --check＝止める理由0件・根拠79件。
+- 次＝まこさんの承認（まこさんの端末で bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/approve_impl.sh）→ 当てる道具 apply_audit_fix.py --design → 自己検査・b122〜b124 → commit → 照合・G2・H2 → M2-F-5 の走行。
+- hook に止められた回数（8-5・8-6 の作業の中）＝土台ゲート1回（grep の語にバッククォート3つ）。前のターンで英語の文を1つ書いた（日本語で書く決まりに反した）。
+
+### 8-7 承認・実装・SPEC の食い違いで設計書を作り直した（2026-10-02・145回目）
+
+- まこさん「承認した」。apply_audit_fix.py --design --dry＝当たる30件 → 本番（08:29:44〜08:35:15）＝当てた記録30件（applied_fixes.json の design:m2f-label-callers-20261002）・新しい壊すプログラム b122〜b124。道具が続けて照合 → G2（g2_pass.json・対象39件・指紋 09f97a77…）→ H2（未来参照0件・打ち切り再現テストの食い違い0件・指紋 e4fc4dc2…）を走らせた。
+- 自己検査＝regime_label.py --selftest ✅ 全部 pass（T6 を含む・4.7秒）／regime_r9_diag.py --selftest ✅ 全部 pass（⑫⑬を含む・3.0秒）。壊すプログラム b122・b123・b124＝3本とも期待どおり rc=1・本物は元どおり（壊した行0件）。
+- M2-F-5 の走行（--stage stage1 --limit 2 --purpose check）は、設計↔実装ゲートが止めた＝齟齬1件「rank_rows が実物では rank_key を呼んでいるが設計に書いていない」。原因＝SPEC は設計書を作った時点（実装の前）のコードから書き出す（142回目 §25 の205行と同じ型）。決まりを sessions の lessons.md に書いた（block_repeat_kind が求めた）。
+- 承認した版を一時の置き場に控え、gen_acceptance.py --work … --write で作り直した（1412行）。差分＝2-1 の結果（実装の後の値 0・1・2）と SPEC の rank_rows に rank_key の2か所だけ。壊すプログラム3本と自己検査2本を走らせ直し、承認の前の検査＝不足0件（34.7秒）。見直し表の2行（2-1・7-8）を直して --check＝止める理由0件。
+- 次＝まこさんに承認を打ち直していただく → M2-F-5 の走行 → commit → 照合・G2・H2。
+
+### 8-8 承認の打ち直し・M2-F-5 の走行（2026-10-02・145回目）
+
+- まこさん「うった」（承認の印 08:42）。承認の控え＝acceptance_archive/m2f-label-callers-20261002.01.md（打ち直しの版）。
+- M2-F-5 の走行＝`cd SDK/scripts/priority_rebuild && python3 regime_r9_diag.py --stage stage1 --limit 2 --purpose check`（08:42:59・4.4秒・前に作った物を再利用＝指紋に入る6本は直していない＝engine_tuner.py:90〜91）。印字は144回目（この worklog の15〜17行）と同じ＝1位 stage1_0 ①18.53%・③(先24本)=49.6%・③(先288本)=47.2%／2位 stage1_1 ①18.72%／3位 RG-v5 ①57.22%。順位表 rank_stage1_20261002-084303.json の3行とも「札の版」＝label-er24-288。落ちた候補は0行（⑬は合成データで見ている）。
+- 照合 verify_design_contract.py --diff＝齟齬0件。enforce_g2_pass.py --check-fingerprint＝一致（09f97a77…・39件）／enforce_h2_pass.py --check-fingerprint＝一致（e4fc4dc2…・24件）。
+- next_step_src.json＝0-1 の3番を工事 B の次（実装の監査の依頼書 → 工事 C）に、145回目にしたことに工事 B を足し、14a の行の状態を書き替え、§6 に241番（b118 の番号の重なり）と242番（一時の置き場で2つの hook が食い違う）を足した。
+- 次＝commit（まこさんの OK）→ 実装の監査の手書き（ToDo の7番）。

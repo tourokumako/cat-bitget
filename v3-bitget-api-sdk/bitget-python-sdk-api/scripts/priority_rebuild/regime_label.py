@@ -22,7 +22,8 @@
 呼ぶ側
   observe_diag._regime_labels・_regime_horizons（中身はここを呼ぶだけ）／regime_r9_diag._labels_for／
   scripts/dashboard/build_regime_label_dashboard.py（⑪タブの版）。
-  ★呼ぶ側を切り替えるのは工事 B（観察の道具・測る道具）と工事 C（⑪タブ）。呼ぶ側の確かめ（自己検査 T6）は工事 B で足す。
+  ★呼ぶ側の切り替え＝観察の道具と測る道具は、工事 B（2026-10-02）で部品を呼ぶ形にした
+    （自己検査 T6 が、呼ぶ側が部品を呼び、札の式を書き写していないかを見る）。⑪タブの道具は工事 C。
 
 ★札は先を見るのが仕事（評価にだけ使う・判定の条件や入口には入れない）＝未来参照の行には H2OK を付ける。
 ★乱数は使わない（恒久67番）。
@@ -337,6 +338,18 @@ def selftest() -> int:
     use = eu & same.fillna(False)
     if int(use.sum()) < 10 or float((em[use] == strend[use]).mean()) < 1.0:
         ng.append("T5: 版1 の強さが、答えの分かるニセのデータの区間と一致しない")
+    # T6 呼ぶ側が、ここを呼んでいる（作る場所が1つ＝式を書き写していない）
+    import ast
+    for fn, path in (("_regime_labels", HERE / "observe_diag.py"), ("_regime_horizons", HERE / "observe_diag.py"),
+                     ("_labels_for", HERE / "regime_r9_diag.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        f = [x for x in ast.walk(tree) if isinstance(x, ast.FunctionDef) and x.name == fn]
+        calls = [x for x in ast.walk(f[0]) if isinstance(x, ast.Attribute)
+                 and isinstance(x.value, ast.Name) and x.value.id == "rl"] if f else []
+        if not calls:
+            ng.append(f"T6: {path.name} の {fn} が、札を作る場所（regime_label）を呼んでいない")
+        if f and any(isinstance(x, ast.Attribute) and x.attr == "median" for x in ast.walk(f[0])):
+            ng.append(f"T6: {path.name} の {fn} に、札の式（median）が書き写されている")
     # T7 採点に使う版が band_hold なのに使う値が空なら止まる
     import tempfile
     bad = json.loads(json.dumps(cfg))
@@ -377,7 +390,7 @@ def selftest() -> int:
     if _line(np.array([101.0, 101.01]), 0.0008, 3, 100.5, True) is not None:
         ng.append("T11: c 個に足りない群だけなのに、線ができた")
     print("[regime_label selftest] T1 全部レンジ ／ T2 全部トレンド ／ T3 レンジ8割（版1 の弱点）／ T4 幅の線 ／ "
-          "T5 版1 は前の式と同じ ／ T7 使う値が空なら止まる ／ T8 版の名前・保有の範囲 ／ T9 値の組 ／ T10 続くの確かめ ／ T11 近い山のまとめ方")
+          "T5 版1 は前の式と同じ ／ T6 呼ぶ側がここを呼ぶ ／ T7 使う値が空なら止まる ／ T8 版の名前・保有の範囲 ／ T9 値の組 ／ T10 続くの確かめ ／ T11 近い山のまとめ方")
     print(f"  参考＝T1 {share:.3f} ／ T3 版2 {s3:.3f}・版1 {e3:.3f}")
     if ng:
         for x in ng:

@@ -113,6 +113,7 @@ from periods import (SCORE_START, SCORE_END, SEARCH_START, SEARCH_END,   # noqa:
 import ratchet_io   # noqa: E402
 # 指標カタログの正しさの証明に使う参照表（定義表・外部ライブラリ照合・独立実装・既知答え・歩0）
 import indicator_reference_diag as iref   # noqa: E402
+import regime_label as rl   # noqa: E402  答え合わせに使う正解ラベル（札）を作る、ただ1つの場所（M2-F-6d）
 
 warnings.filterwarnings("ignore")
 
@@ -5788,8 +5789,8 @@ def check_materials_meta(bars_csv: str, config_path: str | None = None) -> None:
 #   1本にすると、向きの材料（DI差 など）は上でも下でもトレンドなので分離力が 0.5 に寄り、順位の
 #   下に沈む＝場面を4つに分ける材料が、順位づけの段階で消える。
 # ★数字を1つも作っていない。
-#   N（先を見る本数）＝実物（recipes/search_limits.json の state_hold_bars_range）の両端をその場で読む
-#     ＝コードに写さない（2か所に持つと片方だけ直って黙って腐る・教訓 L-519）。
+#   N（先を見る本数）＝札を作る場所（regime_label.py・設定＝recipes/regime_label.json）の、採点に使う版の本数をその場で読む
+#     ＝コードに写さない（2か所に持つと片方だけ直って黙って腐る・教訓 L-519）。M2-F-6d で search_limits.json から移した。
 #   群の分け方＝中央値で半分（＝選ぶ数字が無い）。
 #   大きさの物差し＝「先 N本で動いた幅 ÷ 直前 N本で動いた幅」＝同じ N しか使わない（新しい数字が要らない）。
 #   重複の線＝_DUP_NEAR・_DUP_SAME（実物）。計算に使う本数＝検査12 と同じ定数を共有する。
@@ -5804,14 +5805,13 @@ REGIME_LABELS = ("強さ", "向き", "大きさ")
 
 
 def _regime_horizons() -> tuple[int, ...]:
-    """先を見るバー数（N）。実物の範囲の両端をその場で読む＝コードに数字を写さない。
+    """先を見るバー数（N）。札を作る場所（regime_label.py）の、採点に使う版の本数を返す＝コードに数字を写さない。
 
-    出どころ＝recipes/search_limits.json の state_hold_bars_range（M2-2-5・まこさん承認 24a453d6…）。
+    出どころ＝recipes/regime_label.json（M2-F-6d・まこさん決定 2026-09-28）。
+      版1 er_median＝「先を見る本数」（24・288＝もとは search_limits.json の state_hold_bars_range の両端・まこさん承認 24a453d6…）
+      版2 band_hold＝役割ごとに 保有の上限 × 続く本数
     """
-    import json
-    p = pathlib.Path(__file__).resolve().parent / "recipes" / "search_limits.json"
-    d = json.loads(p.read_text(encoding="utf-8"))["state_hold_bars_range"]
-    return (int(d["lo"]), int(d["hi"]))
+    return rl.bars_keys()
 
 
 def _assert_search_window_only(idx, where: str) -> None:
@@ -5829,23 +5829,14 @@ def _assert_search_window_only(idx, where: str) -> None:
 
 
 def _regime_labels(win: pd.DataFrame, n: int) -> dict:
-    """そのバーから先 n本の値動きの性質を、3つの見方で真偽に直す（＝正解の印）。
+    """そのバーから先 n本の値動きの性質を、3つの見方で真偽に直す（＝答え合わせに使う正解ラベル・札）。
 
-    ①強さ   … 先 n本の ER（まっすぐ進んだ距離 ÷ 実際に歩いた距離）が、この窓の中央値以上か
-    ②向き   … 先 n本の終値が、いまの終値より上か
-    ③大きさ … 先 n本で動いた幅 ÷ 直前 n本で動いた幅 が、この窓の中央値以上か
+    ★札を作る場所は regime_label.py の1か所（M2-F-6d・まこさん決定 2026-09-28「札を作る場所を1つにすること」）。
+      ここは呼ぶだけ＝式を写さない（regime_label.py の自己検査 T6 が見る）。
+    ①強さ・②向き・③大きさ の作り方＝regime_label.py の er_median（版1＝いままでの式）と band_hold（版2）の説明。
     戻り＝{名前: (真偽の並び, その行が使えるか)}。先が足りない末尾は「使えない」になる。
-    ★どれも比か上下だけ＝ドルの絶対値を1つも使わない（H6）。
     """
-    c = win["close"].astype(float)
-    fwd = c.shift(-n) - c  # H2OK: 正解の印（ラベル）を作る側＝本番の判断には入らない。build_labels_pct の Triple Barrier と同じ作り。値決め窓に閉じ、窓の外へはみ出す分は欠損になって落ちる
-    walk = c.diff().abs().rolling(n).sum().shift(-n)  # H2OK: 同上（ラベル側の未来参照）。材料の列は build_features が当該バーまでの確定値だけで作る＝判断に未来は入らない
-    er = (fwd.abs() / walk).where(walk > 0)
-    past = (c - c.shift(n)).abs()                             # 直前 n本で動いた幅（未来を見ない）
-    size = (fwd.abs() / past).where(past > 0)
-    return {"強さ": (er >= er.median(), er.notna()),
-            "向き": (fwd > 0, fwd.notna()),
-            "大きさ": (size >= size.median(), size.notna())}
+    return rl.labels_at_bars(win, n)
 
 
 def _oneway_ratio(win: pd.DataFrame, n: int) -> pd.Series:
@@ -6087,7 +6078,7 @@ def _insp_regime_rank(bars: pd.DataFrame, cfg: dict, catalog: list | None = None
     r = rank_materials_for_regime(bars, cfg, catalog, tfs=tfs)
     print(f"  値決め窓 {r['窓'][0]} 〜 {r['窓'][1]} の {r['行数']} 本 ／ 時間足 {r['時間足']}")
     print(f"  先を見るバー数 N＝{r['先を見るバー数']}"
-          "（出どころ＝search_limits.json の state_hold_bars_range の両端）")
+          f"（出どころ＝recipes/regime_label.json の採点に使う版・札の版 {rl.version_tag()}）")
     print(f"  ラベル3本＝{list(REGIME_LABELS)}（法則 C1＝強さと向きは別の指標なので1本にまとめない）")
     miss = r.get("どの役割にも入らなかった列") or []
     print(f"  分離力を測れた列 {r['測れた列']} 本 ／ そのうち どれかの役割の順位に載った列 "
@@ -6117,6 +6108,7 @@ def _insp_regime_rank(bars: pd.DataFrame, cfg: dict, catalog: list | None = None
                 print(f"  [{role} / {lab} / N={n}] {len(got)} 列 ／ 上位5＝{head}")
     out = pathlib.Path(__file__).resolve().parents[2] / ".claude" / "ratchet" / "material_ranking.json"
     body = dict(r)
+    body["札の版"] = rl.version_tag()   # ★M2-F-6d＝どの版の札で作った成績表か（まこさん決定 2026-09-28 の構造の文の3つ目・§51 の2）
     body["順位"] = {ro: {la: {str(n): v for n, v in bn.items()} for la, bn in bl.items()}
                     for ro, bl in r["順位"].items()}
     out.write_text(json.dumps(body, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -6305,6 +6297,13 @@ def add_demand_to_ranking(bars_csv: str, config_path: str | None = None) -> None
         pos = [x[0] for x in rank2["順位"][role][lab][str(n) if str(n) in rank2["順位"][role][lab] else n]].index(c) + 1
         print(f"  [{role} / {lab} / N={n}] {c}={a:.3f}（{pos} 位）")
     body = dict(rank2)
+    # ★M2-F-6d＝足す前の成績表と、いまの設定の札の版が同じでなければ書かない（違う札の順位を1つの表に混ぜない・fail-closed）。
+    #   札の版が無い成績表＝版を持つ前に版1（er_median）の式で作った物（先を見るバー数の食い違いは merge_demand_into_ranking が先に止める）。
+    _tag0 = rank.get("札の版") or rl.version_tag(version="er_median")
+    if _tag0 != rl.version_tag():
+        raise SystemExit(f"[需給の順位づけ] 成績表の札の版 {_tag0} と、いまの設定の札の版 {rl.version_tag()} が違う"
+                         "（先に --rank-regime で作り直す・fail-closed）")
+    body["札の版"] = rl.version_tag()
     out.write_text(_json.dumps(body, ensure_ascii=False, indent=1), encoding="utf-8")
     t4 = _time.time()
     print(f"  ★足した後＝測れた列 {rank2['測れた列']} ／ 載った列 {rank2['順位に載った列']}"
