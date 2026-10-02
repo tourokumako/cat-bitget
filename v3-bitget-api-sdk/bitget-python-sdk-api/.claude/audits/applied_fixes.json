@@ -1512,6 +1512,48 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/regime_r9_diag.py",
    "at": "2026-10-02T11:48:01",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-dashboard-20261002",
+   "num": "1",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T12:54:31",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-dashboard-20261002",
+   "num": "2",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T12:54:31",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-dashboard-20261002",
+   "num": "3",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T12:54:31",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-dashboard-20261002",
+   "num": "4",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T12:54:31",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-dashboard-20261002",
+   "num": "5",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T12:54:31",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-label-dashboard-20261002",
+   "num": "6",
+   "file": "scripts/dashboard/build_regime_label_dashboard.py",
+   "at": "2026-10-02T12:54:31",
+   "how": "当てた"
   }
  ]
 }

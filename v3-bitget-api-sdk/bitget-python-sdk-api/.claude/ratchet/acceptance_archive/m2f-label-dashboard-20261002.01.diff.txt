@@ -1,0 +1,33 @@
+85,87c85,87
+< | ⑪タブの道具が、まだ観察の道具の口で札を作っている | `grep -c -F 'od._regime_' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/dashboard/build_regime_label_dashboard.py` | 実装の前は当たる行が在る。実装の後は当たる行が無い（札は部品の口で作る） | 2（終了コード 0） |
+< | ⑪タブの版の名前を、固定の頭でつないで作っている | `grep -c -F 'VERSION_PREFIX' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/dashboard/build_regime_label_dashboard.py` | 実装の前は当たる行が在る。実装の後は当たる行が無い（版の名前は regime_label.version_tag） | 3（終了コード 0） |
+< | 版2 の値の組を⑪タブに出す所が無い | `grep -c -F 'rl.variants' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/dashboard/build_regime_label_dashboard.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+---
+> | ⑪タブの道具が、まだ観察の道具の口で札を作っている | `grep -c -F 'od._regime_' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/dashboard/build_regime_label_dashboard.py` | 実装の前は当たる行が在る。実装の後は当たる行が無い（札は部品の口で作る） | 0（終了コード 1） |
+> | ⑪タブの版の名前を、固定の頭でつないで作っている | `grep -c -F 'VERSION_PREFIX' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/dashboard/build_regime_label_dashboard.py` | 実装の前は当たる行が在る。実装の後は当たる行が無い（版の名前は regime_label.version_tag） | 0（終了コード 1） |
+> | 版2 の値の組を⑪タブに出す所が無い | `grep -c -F 'rl.variants' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/dashboard/build_regime_label_dashboard.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 1（終了コード 0） |
+770c770
+< <!-- ACC_CODEREF_START hash=a5cc844199ba4938 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=33fcf91860e71c11 gen_acceptance.py が自動生成＝手で書き換えない -->
+782c782
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 4件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 5件の関数が在ります）。
+789c789
+< <!-- ACC_SPEC_START hash=d1153aadd74b4860 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=867adf1112b108d4 gen_acceptance.py が自動生成＝手で書き換えない -->
+843c843,846
+<   "label_frame": [],
+---
+>   "check15": [],
+>   "label_frame": [
+>    "check15"
+>   ],
+851,853c854
+<  "constants": {
+<   "VERSION_PREFIX": "label-er"
+<  },
+---
+>  "constants": {},

@@ -1,0 +1,361 @@
+貼り直す前の確かめが全部 終わりました。この返信の全文を、試しの設計書にかけたものと同じ形で出します。
+
+受け取り方＝指示（「OK」）。範囲＝OK をいただいた案を、設計書の道具が読める形で貼り直すまで。
+
+## 結論
+
+前の返信の案は、設計書の道具が読めませんでした。**案の中身は変えずに貼り直すので、OK をもう1回 お願いします。**
+
+## なぜ貼り直すか
+
+- 前の返信の先頭に、現在地の4行（いまの工程・ToDo・止まっているもの・次）を、すみ付きかっこの見出しの形で書きました。
+- 設計書の道具 gen_acceptance.py は、すみ付きかっこで始まる行を、案の節の見出しと読みます。写す先の節が無いので、4件で止まりました（fail-closed）。設計書は工事 B のままで、書き替わっていません。
+- 試しの設計書は案の下書きだけを相手にしたので、返信の先頭の4行は試していませんでした。
+- 今回は、この返信の全文（前置きと案）を試しの設計書にかけ、A群0件・古い語0件を確かめてから貼りました。
+- 1回目の写し2本（okd_labelC_20261002・ok_labelC_20261002）と要件のまとめは消しました。
+
+## 前の返信から引き継ぐこと（中身は同じ）
+
+- 決めてほしいこと＝⑪タブに版2 の12版を全部 出すか。私の案は「全部 出す」です。
+- 承認は2回 要る見込みです（案の 4-4 の2）。
+- ⑪タブには、試しの検査が書いた案の14版が、もう出ています（next_step の §6 の244番）。
+
+## 案
+
+案です（工事 m2f-label-dashboard-20261002＝14a の工事 C）。⑪タブの道具 build_regime_label_dashboard.py を、札の部品 regime_label.py を呼ぶ形に切り替え、⑪タブの版を設定ファイルから作ります。実装の指示は 6 件です。
+
+- 9/29 の控え（acceptance_src_label-versioned-structure-20260929.json・指紋 0174e179…）の実装の指示 23〜27 を、道具で取り出しました。
+- 9/29 の後に事実が変わった所（23番の説明の文の2か所＝日付と、値を選ぶ材料の出どころ）と、工事 C で足す所（使い方の行）だけを、道具で置き換えました。
+- 直す前の文字が、全部 いまの実物にちょうど1か所ずつ在ることを、道具で数えました。
+- 当てた後のコードの文法と、札の式を写していないこと（label_frame が札の部品を呼び、median を持たない）を、道具で照らしました。
+- 当てた後の道具を、本物のファイルに書かずに実データで走らせました。版1 の2版の数は、2026-09-28 の走行と同じでした。
+- label-er24＝レンジだった 79,044本・トレンドだった 79,044本・使えない 24本（2026-09-28 と同じ）。検査15 の中央値＝レンジの札 0.218（3,269本）・トレンドの札 0.612（3,318本）。
+- label-er288＝レンジだった 78,912本・トレンドだった 78,912本・使えない 288本（2026-09-28 と同じ）。検査15 の中央値＝レンジの札 0.218（274本）・トレンドの札 0.625（274本）。
+- 版2 の版の名前（役割ごとの値の組の全部・12版）は次のとおりです。
+- label-band-scalp-x5-m6-c2-mw1.0-wl1.0-h1.0＝レンジだった 10,925本・トレンドだった 147,115本・使えない 72本。検査15 の中央値＝レンジの札 0.362（890本）・トレンドの札 0.43（12,280本）。
+- label-band-scalp-x4-m6-c2-mw1.0-wl1.0-h1.0＝レンジだった 7,076本・トレンドだった 150,976本・使えない 60本。検査15 の中央値＝レンジの札 0.324（582本）・トレンドの札 0.429（12,589本）。
+- label-band-scalp-x6-m6-c2-mw1.0-wl1.0-h1.0＝レンジだった 14,493本・トレンドだった 143,535本・使えない 84本。検査15 の中央値＝レンジの札 0.364（1,184本）・トレンドの札 0.432（11,985本）。
+- label-band-scalp-x5-m1-c2-mw1.0-wl1.0-h1.0＝レンジだった 12,800本・トレンドだった 145,240本・使えない 72本。検査15 の中央値＝レンジの札 0.313（1,051本）・トレンドの札 0.435（12,119本）。
+- label-band-scalp-x5-m12-c2-mw1.0-wl1.0-h1.0＝レンジだった 3,054本・トレンドだった 154,986本・使えない 72本。検査15 の中央値＝レンジの札 0.389（253本）・トレンドの札 0.425（12,917本）。
+- label-band-scalp-x5-m6-c3-mw1.0-wl1.0-h1.0＝レンジだった 1,112本・トレンドだった 156,928本・使えない 72本。検査15 の中央値＝レンジの札 0.334（100本）・トレンドの札 0.425（13,070本）。
+- label-band-daytrade-x5-m66-c2-mw1.0-wl1.0-h1.0＝レンジだった 1,986本・トレンドだった 155,406本・使えない 720本。検査15 の中央値＝レンジの札 0.411（21本）・トレンドの札 0.433（1,291本）。
+- label-band-daytrade-x4-m66-c2-mw1.0-wl1.0-h1.0＝レンジだった 1,322本・トレンドだった 156,190本・使えない 600本。検査15 の中央値＝レンジの札 0.491（14本）・トレンドの札 0.431（1,299本）。
+- label-band-daytrade-x6-m66-c2-mw1.0-wl1.0-h1.0＝レンジだった 2,782本・トレンドだった 154,490本・使えない 840本。検査15 の中央値＝レンジの札 0.364（28本）・トレンドの札 0.434（1,283本）。
+- label-band-daytrade-x5-m12-c2-mw1.0-wl1.0-h1.0＝レンジだった 9,529本・トレンドだった 147,863本・使えない 720本。検査15 の中央値＝レンジの札 0.367（89本）・トレンドの札 0.438（1,223本）。
+- label-band-daytrade-x5-m120-c2-mw1.0-wl1.0-h1.0＝レンジだった 167本・トレンドだった 157,225本・使えない 720本。検査15 の中央値＝レンジの札 0.348（3本）・トレンドの札 0.432（1,309本）。
+- label-band-daytrade-x5-m66-c3-mw1.0-wl1.0-h1.0＝レンジだった 0本・トレンドだった 157,392本・使えない 720本。検査15＝レンジの札 0本・トレンドの札 1,312本（片方が0本なので中央値なし）。
+
+この返信に OK を1回いただければ、逐語に写して設計書を作り、承認をお願いします。
+
+【4-0 この仕組みは何か】
+**この工事は、⑪タブの道具が、答え合わせに使う札（正解ラベル）を札の部品 regime_label.py から受け取る形にするものです。**14a を3つに分けた3つ目の工事です（まこさん「よい」2026-10-02）。
+
+**①いま何が起きているか。**⑪タブの道具は、観察の道具の口（_regime_labels と _regime_horizons）を呼んで札を作ります。版の名前は「label-er」と先を見る本数をつないで作ります。仕様の文（札の作り方・先を見る本数の出どころ）は、道具の中に手で書いてあります。版2（band_hold＝帯・幅・続く）の札は、⑪タブに1本も出ません。だから まこさんは、版2 の「使う値」を⑪タブで見比べて選べません。
+
+**②この工事で何が変わるか。**⑪タブの道具は、札の部品の口（er_median と band_hold）を呼んで札を作ります。版の名前は札の部品の version_tag が作り、使った値が名前に入ります。仕様には、設定ファイル recipes/regime_label.json の中身をそのまま出します。版2 は、役割ごとに、設定の範囲の両端と真ん中の値の組を全部 版にします。版ごとに検査15 の数（片道の度合いの中央値）を数えて、仕様に出します。
+
+**③数字は変わりません。**版1 の2版（label-er24・label-er288）の札は、直す前と同じです。採点に使う版は er_median のままなので、測る道具と成績表の数字も変わりません。
+
+【4-1 システムの境界】
+**誰が動かすか。**私（CC）が、実装の後に1回 走らせます。そのあとは、まこさんが設定の値を書き替えたときに走らせ直します。
+
+**誰が結果を使うか。**まこさんが、⑪タブ（dashboard_server.py の画面）で版を切り替えて見比べ、版2 の「使う値」を選びます。選んだ値は設定ファイルの「使う値」に書きます（この工事では書きません）。
+
+【4-2 入力と出力】
+**読むもの。**5分足 CSV（値決め窓だけ）と、設定ファイル recipes/regime_label.json。
+
+**書くもの。**版ごとに4種類のファイル（5分の月ごと・1時間・1日・札の CSV）と、版の一覧 index.json の1行。書くのは build_regime_from_tuner.py の write_version_files と update_index です（直さずに呼びます）。置き場は dashboard/regime_prototype/（git の対象外）です。
+
+**画面に出るもの。**版の名前と仕様（札の版・設定の中身・使った値・数えた結果・検査15）。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| build_regime_label_dashboard.py | 札を部品から受け取る（label_frame）・検査15 を数える（check15）・仕様を設定から作る（spec_of）・版1 と版2 の全部の版を作る（main） | 直す |
+| regime_label.py | 札の式・版の名前・値の組・設定の中身（工事 A で作った口を、呼ばれるだけ） | 直さない |
+| build_regime_from_tuner.py | 版のファイルと版の一覧を書く | 直さない |
+- 触る所（build_regime_label_dashboard.py）＝<モジュール直下>・check15・label_frame・main・spec_of。
+
+【4-4 処理の流れ】
+1. 当てる道具（apply_audit_fix.py --design）で実装の指示を当てます（⑪タブの道具の1本だけ）。
+2. 当てた直後に、照合（verify_design_contract.py --diff）をかけます。★設計書の SPEC（7-8）は、設計書を作った時点の実物（実装の前のコード）から作られます。この工事は関数 check15 を足し、label_frame が check15 を呼び、定数 VERSION_PREFIX を消すので、SPEC と実物が食い違う見込みです。食い違ったら、gen_acceptance.py --write で設計書を作り直し、承認の打ち直しを1回 お願いします（教訓 L-655＝工事 B と同じ型）。打ち直すまで、設計↔実装ゲートが⑪タブの道具の走行を止めます。
+3. ⑪タブの道具を1回 走らせます（引数なし＝版1 と版2 の全部）。★走らせる前に、時間の見込みをフロー宣言に書きます（恒久60〜62番・見込みは 4-14）。
+4. 版1 の2版の数が 2026-09-28 の走行と同じかと、版2 の版が役割ごとに全部 出たかを、印字と版の一覧で見ます。⑪タブの道具は H2 と G2 の対象に入っていないので、取り直しは要りません（4-13 の1）。
+5. 実装を監査に出します。
+
+【4-5 異常系】
+| 起きたこと | どうなるか |
+|---|---|
+| 設定ファイルが無い・採点に使う版が式の無い名前 | 札の部品が読む時点で止まる（LabelError） |
+| 版2 のある値の組で、帯が1本もできない | その版は「レンジだった」が0本の版として出る（止まらない）。仕様の数えた結果に0が出る |
+| 検査15 で、レンジの札かトレンドの札が0本 | 中央値を出さず、本数だけを出す |
+| 窓の外のバーが混ざる | load_window の _assert_search_window_only が止める（直さない） |
+| 同じ名前の版が版の一覧に在る | update_index が消してから足す（直さない） |
+
+【4-6 制約】
+| 決まり | 出どころ | この設計でどう守るか |
+|---|---|---|
+| 札を作る場所を1つにする | まこさん決定 2026-09-28（構造の文の2つ目） | ⑪タブの道具は部品の口を呼ぶだけ。札の式（median）を持たない（下書きの道具が ast で照らした） |
+| 値を書き替えて走らせ直すと、札と⑪タブの版が作り直される | まこさん決定 2026-09-28（構造の文） | 版の作り方と値は、走らせるたびに設定ファイルから読む |
+| ⑪タブの版の名前に、使った値を入れる | まこさん決定 2026-09-28（構造の文） | 版の名前は regime_label.version_tag（役割と6つの値が入る） |
+| 設定ファイルの中身を、画面の「仕様」にそのまま出す。手で書き写さない | まこさん決定 2026-09-28（構造の文） | spec_of が regime_label.spec の中身をそのまま入れる |
+| 値を選ぶのは、⑪タブの まこさんの目と検査15。CC は選ばない | req_6d_20260928 | 使う値は空のまま。版ごとに検査15 の数を出すだけ |
+| 絵にするのは値決め窓だけ | 恒久の決まり（やってはいけないこと13番） | load_window はそのまま（直さない） |
+| 乱数を使わない | 恒久67番 | 値の組は regime_label.variants（範囲の両端と真ん中の決まった並び） |
+
+【4-7 探索の範囲】
+**探す値はありません。**版2 の値の組は、設定の「範囲」の両端と真ん中です（regime_label.variants）。⑪タブに出すだけで、選びません。
+
+【4-8 データ構造】
+**形が変わるもの。**①仕様の欄が変わります。「札の版」「札の作り方（設定の説明）」「採点に使う版（いまの設定）」「設定の在る所」「設定ファイルの中身」が足され、「正解ラベルの作り方」「先を見る本数の出どころ」が無くなります。②数えた結果に「検査15（片道の度合い）」が足されます。③道具の中の札の列の名前が label_range_<n> から label_range になります。版のファイルには range_built の名前で書かれるので、画面とファイルの形は変わりません。
+
+【4-9 設定】
+**新しい設定はありません。**読むのは工事 A の設定 recipes/regime_label.json だけです。
+
+**コマンドの旗を1つ足します。**--version（all・er_median・band_hold。既定は all）。
+
+【4-10 保存先】
+**変えません。**dashboard/regime_prototype/（git の対象外）と、その中の index.json です。版2 の 12 版が足されます。1版の大きさは約10MB です（label-er24 の実測＝5分の月ごと 5.3MB・札の CSV 4.6MB・1時間 452KB・1日 20KB）。
+
+【4-11 時刻の扱い】
+**窓は変えません。**値決め窓だけを読みます（load_window は直しません）。
+
+【4-12 出る結果の姿】
+**完成したときに画面に出るもの。**①走らせた印字に、版1 の2版と版2 の 12 版の名前が並び、版1 の数えた結果が 2026-09-28 と同じ。②⑪タブの版の一覧に、版2 の版が足される。③各版の仕様に、札の版・設定の中身・検査15 が出る。
+
+【4-13 影響範囲】
+1. **⑪タブの道具は、H2 と G2 の対象に入っていません。**h2_pass.json と g2_pass.json に、道具の名前も関数の名前（label_frame）も0件でした。
+2. **画面（index.html・app.js）は直しません。**仕様の欄は、中身をそのまま並べる作りです（app.js:2932）。版の名前は版の一覧から読みます。
+3. **版1 の2版は、同じ名前（label-er24・label-er288）で上書きされます。**札の数は同じで、仕様の欄だけが変わります。
+4. **⑪タブの道具の行の文字を探している壊すプログラムは0本でした**（.claude/breaks/*.sh を、道具の名前と関数の名前の2つで grep した）。
+5. **版の道具 build_regime_from_tuner.py の build_bundles（187行）に乱数が在ります。**この工事は write_version_files と update_index だけを呼ぶので、乱数は通りません。next_step の「あとで直すこと」に積みます（恒久67番・59番）。
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 窓を読む | 2.9秒 | 下書きの道具が、当てた後の道具を本物に書かずに走らせた実測（値決め窓 158,112本） |
+| 版1 label-er24（札を付け・検査15 を数え・仕様を作る） | 0.2秒 | 同上（版のファイルを書く時間は入らない） |
+| 版1 label-er288（札を付け・検査15 を数え・仕様を作る） | 0.1秒 | 同上（版のファイルを書く時間は入らない） |
+| 版2 scalp（6版・窓の全部） | 合計 22.8秒（1版 2.4〜6.5秒） | 同上 |
+| 版2 daytrade（6版・窓の全部） | 合計 22.2秒（1版 2.3〜7.2秒） | 同上 |
+| 版2 の全部（12版） | 45.0秒 | 同上（版のファイルを書く時間は入らない） |
+| 版のファイルを書く | 1版 約2.5秒以下 | 2026-09-28 の走行（1版 2.5秒＝札を付けるのと書くのを合わせた時間・worklog 20260928 §34） |
+
+【4-15 競合】
+**奪い合いに気をつけるもの。**版の一覧 index.json は、⑪タブのほかの版を作る道具（build_regime_from_tuner.py）も書きます。2つを同時に走らせません。
+
+【4-16 セキュリティ】
+**触らないもの。**人に見せてはいけない値（取引所の鍵・本番の発注の切り替え）には触りません。書き換えられては困る記録（H2・G2 の検査済みの記録・承認の記録）にも触りません。
+
+【4-17 ログと進捗表示】
+**画面に出すもの。**版ごとに「[2/3] 何番目/全部 版の名前: 札を付ける ...」と、数えた結果・月のファイルの数・レンジの割合・秒を出します。最後に版の名前の一覧を出します。
+
+【4-18 再利用】
+| 手本 | 何を写すか |
+|---|---|
+| 9/29 の控えの実装の指示 23〜27 | 実装の指示の中身（道具で取り出した） |
+| observe_diag の検査15（_insp_regime_label_oneway） | 検査15 の数え方（check15 は _oneway_ratio と _independent_step を呼ぶ・式は写さない） |
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "2〜22行（<モジュール直下>）",
+  "直す前の文字": "\"\"\"build_regime_label_dashboard.py — 答え合わせに使う正解ラベル（いまの作り方）を、⑪タブの版として出す\n\n2026-09-28（132回目）・まこさん「OK」（逐語＝「まず、現状に正解ラベルの精度を視覚で判断したいので、\nダッシュボードに表示させるとかできない？」→ 作り方を出して「OK」）。\n\n何をするか（4つ）\n  1. 5分足 CSV を読み、値決め窓（periods.SEARCH_START〜SEARCH_END）だけを切り出す\n       ＝observe_diag の検査15（_insp_regime_label_oneway）と同じ切り出し方\n  2. いまの正解ラベルを付ける ＝ observe_diag._regime_labels(win, n)[\"強さ\"]\n       （先 n本の ER が窓の中央値以上なら「トレンドだった」。★式はここに写さない＝observe_diag を呼ぶだけ）\n       n＝observe_diag._regime_horizons()（= recipes/search_limits.json の state_hold_bars_range の両端＝24・288）\n       ⑪タブに色を付けるのは「レンジだった」＝強さが偽 かつ 使える（先が足りる）バー\n  3. 版のファイル4種類を書き出す ＝ build_regime_from_tuner.write_version_files（同じ形・同じ決まり）\n       predictions_<版>_1h.json ／ _1d.json ／ predictions_<版>_5m/<年月>.json ／ labels_<版>.csv\n  4. 版の一覧（index.json）に足す ＝ build_regime_from_tuner.update_index（同じ名前が在れば消してから足す）\n\n版の名前＝label-er<n>（例＝label-er24・label-er288）\n\n★絵にするのは値決め窓だけ（採点窓・封印窓は1本も出さない＝やってはいけないこと13番）。\n★これは読むための道具（恒久の決まり71番）＝壊すプログラムは付けない。動くことを1回 確かめる。\n★正解ラベルの式は observe_diag.py の1か所だけ（ここに書き写さない＝式を2か所に持たない）。",
+  "種類": "直した後の文字",
+  "中身": "\"\"\"build_regime_label_dashboard.py — 答え合わせに使う正解ラベル（札）の版を、⑪タブの版として出す\n\n2026-09-28（132回目）・まこさん「OK」（逐語＝「まず、現状に正解ラベルの精度を視覚で判断したいので、\nダッシュボードに表示させるとかできない？」→ 作り方を出して「OK」）。\n2026-10-02（M2-F-6d の工事 A〜C）・札を作る場所を regime_label.py の1か所にし、数字を recipes/regime_label.json に置いた\n（まこさん決定 2026-09-28＝m2_todo.json の M2-F-6d の注意に逐語）。\n\n何をするか（4つ）\n  1. 5分足 CSV を読み、値決め窓（periods.SEARCH_START〜SEARCH_END）だけを切り出す\n       ＝observe_diag の検査15（_insp_regime_label_oneway）と同じ切り出し方\n  2. 札を付ける ＝ regime_label.py を呼ぶだけ（★式はここに写さない）\n       版1 er_median＝先を見る本数ごと（設定の「先を見る本数」）\n       版2 band_hold＝役割ごと × 設定の範囲の両端と真ん中の値の組（regime_label.variants）＝まこさんが目で見て「使う値」を選ぶ\n       ⑪タブに色を付けるのは「レンジだった」＝強さが偽 かつ 使えるバー\n       版ごとに検査15（片道の度合いの中央値・レンジの札とトレンドの札）を数えて仕様に出す\n       ＝値を選ぶのは、⑪タブの まこさんの目と検査15（定義の原文＝m2_todo.json の M2-F-6d の注意）\n  3. 版のファイル4種類を書き出す ＝ build_regime_from_tuner.write_version_files（同じ形・同じ決まり）\n       predictions_<版>_1h.json ／ _1d.json ／ predictions_<版>_5m/<年月>.json ／ labels_<版>.csv\n  4. 版の一覧（index.json）に足す ＝ build_regime_from_tuner.update_index（同じ名前が在れば消してから足す）\n\n版の名前＝regime_label.version_tag（版1＝label-er24・label-er288／版2＝label-band-<役割>-<値の組>＝使った値が名前に入る）\n画面の「仕様」＝設定ファイルの中身を、そのまま出す（手で書き写さない）\n\n★絵にするのは値決め窓だけ（採点窓・封印窓は1本も出さない＝やってはいけないこと13番）。\n★これは読むための道具（恒久の決まり71番）＝壊すプログラムは付けない。動くことを1回 確かめる。\n★札の式は regime_label.py の1か所だけ（ここに書き写さない＝式を2か所に持たない）。",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:2「\"\"\"build_regime_label_dashboard.py — 答え合わせに使う正解ラベル（いまの作り方）を、⑪タブの版として出す」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "27行（<モジュール直下>）",
+  "直す前の文字": "  python3 scripts/dashboard/build_regime_label_dashboard.py --csv data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv",
+  "種類": "直した後の文字",
+  "中身": "  python3 scripts/dashboard/build_regime_label_dashboard.py --csv data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv\n  python3 scripts/dashboard/build_regime_label_dashboard.py --version er_median   （版1 だけ）\n  python3 scripts/dashboard/build_regime_label_dashboard.py --version band_hold   （版2 だけ＝役割ごとに、設定の範囲の両端と真ん中の値の組を全部）",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:27「  python3 scripts/dashboard/build_regime_label_dashboard.py --csv data/BTCUSDT-5m-2021-04-01_2026-06-30_V9FULL_safe.csv」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "45行（<モジュール直下>）",
+  "直す前の文字": "VERSION_PREFIX = \"label-er\"",
+  "種類": "直した後の文字",
+  "中身": "import regime_label as rl   # noqa: E402  札を作る、ただ1つの場所（M2-F-6d）",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:45「VERSION_PREFIX = \"label-er\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "60〜72行（label_frame）",
+  "直す前の文字": "def label_frame(win: pd.DataFrame, n: int) -> tuple[pd.DataFrame, str, dict]:\n    \"\"\"いまの正解ラベルを付けた表を返す。列＝ts・close・<列名>（レンジだった＝True）。\"\"\"\n    import observe_diag as od\n\n    mask, usable = od._regime_labels(win, n)[\"強さ\"]        # 強さ＝真ならトレンドだった\n    col = f\"label_range_{n}\"\n    is_range = (usable.fillna(False) & ~mask.fillna(False)).astype(bool)\n    df = pd.DataFrame({\"ts\": win.index, \"close\": win[\"close\"].to_numpy(), col: is_range.to_numpy()})\n    counts = {\"レンジだった\": int(is_range.sum()),\n              \"トレンドだった\": int((usable.fillna(False) & mask.fillna(False)).sum()),\n              \"使えない（先が足りない）\": int((~usable.fillna(False)).sum()),\n              \"全部\": int(len(df))}\n    return df, col, counts",
+  "種類": "直した後の文字",
+  "中身": "def check15(win: pd.DataFrame, n: int, mask: pd.Series, usable: pd.Series) -> dict:\n    \"\"\"検査15 と同じ数え方を、この版の札に掛ける（値を選ぶ材料＝まこさんの目と検査15）。\n\n    片道の度合い＝observe_diag._oneway_ratio、重なった区間を数えない間隔＝observe_diag._independent_step（式は写さない）。\n    ★判定はしない（数を出すだけ）。レンジの札の中央値がトレンドの札より低いほど、札がレンジらしさを捉えている。\n    \"\"\"\n    import observe_diag as od\n    ratio = od._oneway_ratio(win, n)\n    step = od._independent_step(\"5m\", n)\n    idx = win.index[::step]\n    r = ratio.reindex(idx)\n    m = mask.reindex(idx)\n    u = usable.reindex(idx).fillna(False) & r.notna()\n    rng = r[u & ~m.fillna(True)]\n    trd = r[u & m.fillna(False)]\n    out = {\"先の本数\": int(n), \"数える間隔（本）\": int(step),\n           \"レンジの札の本数\": int(len(rng)), \"トレンドの札の本数\": int(len(trd))}\n    if len(rng) and len(trd):\n        out[\"片道の度合いの中央値（レンジの札）\"] = round(float(rng.median()), 3)\n        out[\"片道の度合いの中央値（トレンドの札）\"] = round(float(trd.median()), 3)\n    return out\n\n\ndef label_frame(win: pd.DataFrame, version: str, key, values: dict | None = None) -> tuple[pd.DataFrame, str, dict]:\n    \"\"\"札を付けた表を返す。列＝ts・close・<列名>（レンジだった＝True）。★札の式は regime_label.py（呼ぶだけ）。\n\n    version＝\"er_median\"（key＝先を見る本数）か \"band_hold\"（key＝役割・values＝⑪タブに出す値の組）。\n    \"\"\"\n    cfg = rl.load_config()\n    if version == \"er_median\":\n        mask, usable = rl.er_median(win, int(key))[\"強さ\"]        # 強さ＝真ならトレンドだった\n    else:\n        mask, usable = rl.band_hold(win, cfg, str(key), values)[\"強さ\"]\n    col = \"label_range\"\n    is_range = (usable.fillna(False) & ~mask.fillna(False)).astype(bool)\n    df = pd.DataFrame({\"ts\": win.index, \"close\": win[\"close\"].to_numpy(), col: is_range.to_numpy()})\n    counts = {\"レンジだった\": int(is_range.sum()),\n              \"トレンドだった\": int((usable.fillna(False) & mask.fillna(False)).sum()),\n              \"使えない（先か前が足りない）\": int((~usable.fillna(False)).sum()),\n              \"全部\": int(len(df))}\n    n15 = int(key) if version == \"er_median\" else rl.role_bars(cfg, str(key), values)\n    counts[\"検査15（片道の度合い）\"] = check15(win, n15, mask, usable)\n    return df, col, counts",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:60「def label_frame(win: pd.DataFrame, n: int) -> tuple[pd.DataFrame, str, dict]:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "75〜94行（spec_of）",
+  "直す前の文字": "def spec_of(csv_path: pathlib.Path, win: pd.DataFrame, n: int, counts: dict, start, end) -> dict:\n    \"\"\"画面に出す仕様＝実物から作る（手で書かない）。\"\"\"\n    md5 = hashlib.md5(csv_path.read_bytes()).hexdigest()[:12]\n    return {\n        \"これは何か\": (\"engine_tuner の判定ではなく、判定の答え合わせに使う「正解ラベル」そのもの。\"\n                    \"M2-A-3（2026-08-29）で決まった いまの作り方を、そのまま絵にした\"),\n        \"入力データ\": f\"{csv_path.name}（5分足・値決め窓 {len(win):,}本・md5 {md5}）\",\n        \"期間（絵にした所）\": (f\"値決め窓 {pd.Timestamp(start).date()}〜{(pd.Timestamp(end) - pd.Timedelta(days=1)).date()}\"\n                      \"（periods.py が正本。採点窓・封印窓は1本も出していない）\"),\n        \"正解ラベルの作り方\": (f\"そのバーから先 {n} 本（5分足なので {n * 5} 分）の ER（まっすぐ進んだ距離 ÷ 実際に歩いた距離）が、\"\n                      \"この窓の中央値以上なら「トレンドだった」、未満なら「レンジだった」。★中央値で切るので、使えるバーの半分がレンジになる\"),\n        \"色が付くバー\": \"「レンジだった」＝強さが偽 かつ 先が足りて使えるバー。末尾の先が足りないバーは色なし\",\n        \"先を見る本数の出どころ\": (\"recipes/search_limits.json の state_hold_bars_range の両端（observe_diag._regime_horizons）\"\n                          \"＝RG-v5 の停滞 2h と継続の窓 24h から取った値\"),\n        \"式の在る所\": \"scripts/priority_rebuild/observe_diag.py の _regime_labels（この道具は呼ぶだけ・式を写していない）\",\n        \"数えた結果\": counts,\n        \"教師\": \"なし＝過去チャートの先の値動きから付けた札（手動のラベルは1件も読まない）\",\n        \"出力粒度\": \"5m（月別）/ 1h（5分の多数決）/ 1d（日内のレンジ率 0.5 以上）\",\n        \"生成方式\": \"scripts/dashboard/build_regime_label_dashboard.py が実行時の実物から本仕様を作る（手で書かない）\",\n    }",
+  "種類": "直した後の文字",
+  "中身": "def spec_of(csv_path: pathlib.Path, win: pd.DataFrame, version: str, key, values, counts: dict, start, end) -> dict:\n    \"\"\"画面に出す仕様＝設定ファイルと実物から作る（手で書かない）。\"\"\"\n    md5 = hashlib.md5(csv_path.read_bytes()).hexdigest()[:12]\n    cfg = rl.load_config()\n    ver = rl.spec(cfg)[\"版\"][version]\n    out = {\n        \"これは何か\": (\"engine_tuner の判定ではなく、判定の答え合わせに使う「正解ラベル（札）」そのもの。\"\n                    \"札を作る場所は regime_label.py の1か所（M2-F-6d）\"),\n        \"札の版\": rl.version_tag(cfg, version, key, values),\n        \"入力データ\": f\"{csv_path.name}（5分足・値決め窓 {len(win):,}本・md5 {md5}）\",\n        \"期間（絵にした所）\": (f\"値決め窓 {pd.Timestamp(start).date()}〜{(pd.Timestamp(end) - pd.Timedelta(days=1)).date()}\"\n                      \"（periods.py が正本。採点窓・封印窓は1本も出していない）\"),\n        \"札の作り方（設定の説明）\": ver.get(\"説明\"),\n        \"採点に使う版（いまの設定）\": cfg[\"採点に使う版\"],\n        \"色が付くバー\": \"「レンジだった」＝強さが偽 かつ 使えるバー。先か前のバーが足りないバーは色なし\",\n        \"式の在る所\": \"scripts/priority_rebuild/regime_label.py（この道具は呼ぶだけ・式を写していない）\",\n        \"設定の在る所\": (\"scripts/priority_rebuild/recipes/regime_label.json（値を書き替えて走らせ直すと、\"\n                     \"札と⑪タブの版が作り直される）\"),\n        \"数えた結果\": counts,\n        \"教師\": \"なし＝過去チャートの先の値動きから付けた札（手動のラベルは1件も読まない）\",\n        \"出力粒度\": \"5m（月別）/ 1h（5分の多数決）/ 1d（日内のレンジ率 0.5 以上）\",\n        \"生成方式\": \"scripts/dashboard/build_regime_label_dashboard.py が実行時の設定ファイルと実物から本仕様を作る（手で書かない）\",\n    }\n    if version == \"er_median\":\n        out[\"先を見る本数\"] = f\"{int(key)} 本（5分足なので {int(key) * 5} 分）\"\n        out[\"設定ファイルの中身（この版・そのまま）\"] = ver\n    else:\n        out[\"役割\"] = str(key)\n        out[\"使った値\"] = values\n        out[\"手数料の床（e38_logic_parts.SCALP_FLOOR）\"] = rl.fee_floor()\n        out[\"設定ファイルの中身（この役割・そのまま）\"] = ver[\"役割\"][str(key)]\n    return out",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:75「def spec_of(csv_path: pathlib.Path, win: pd.DataFrame, n: int, counts: dict, start, end) -> dict:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": "scripts/dashboard/build_regime_label_dashboard.py",
+  "直す箇所": "97〜134行（main）",
+  "直す前の文字": "def main() -> int:\n    ap = argparse.ArgumentParser(description=\"いまの正解ラベルを ⑪タブの版として出す\")\n    ap.add_argument(\"--csv\", default=str(DEFAULT_CSV), help=\"5分足 CSV（既定＝Binance spot の正本）\")\n    a = ap.parse_args()\n    csv_path = pathlib.Path(a.csv)\n    if not csv_path.exists():\n        print(f\"❌ CSV が無い: {csv_path}\")\n        return 2\n\n    import observe_diag as od\n    from build_regime_from_tuner import INDEX_JSON, PROTO_DIR, update_index, write_version_files\n    from periods import SEARCH_END, SEARCH_START\n\n    t0 = time.time()\n    print(f\"[1/3] 5分足を読み、値決め窓を切り出す ... {csv_path.name}\")\n    win = load_window(csv_path)\n    print(f\"    値決め窓 {len(win):,}本（{win.index.min()} 〜 {win.index.max()}）・{time.time() - t0:.1f}秒\")\n\n    n_ver = None\n    for n in od._regime_horizons():\n        version = f\"{VERSION_PREFIX}{n}\"\n        t1 = time.time()\n        print(f\"[2/3] {version}: 正解ラベルを付ける（先 {n} 本）...\")\n        df, col, counts = label_frame(win, n)\n        st = write_version_files(PROTO_DIR, version, df, col, SEARCH_START, SEARCH_END)\n        dist = {\"range\": {\"count\": st[\"range_count\"], \"pct\": st[\"range_pct\"]},\n                \"non_range\": {\"count\": len(df) - st[\"range_count\"],\n                              \"pct\": round((len(df) - st[\"range_count\"]) / max(len(df), 1) * 100, 2)}}\n        n_ver = update_index(INDEX_JSON, version, spec_of(csv_path, win, n, counts, SEARCH_START, SEARCH_END),\n                             dist, st[\"months\"])\n        print(f\"    数えた結果＝{counts}\")\n        print(f\"    月のファイル {st['n_month_files']} 本／5分 {st['n_5m_rows']:,}行／1時間 {st['n_1h_rows']:,}行／\"\n              f\"レンジ {st['range_pct']}%／版の合計 {n_ver}／{time.time() - t1:.1f}秒\")\n\n    print(f\"\\n[3/3] 完了（{time.time() - t0:.1f}秒）。⑪タブ → 版 {VERSION_PREFIX}24・{VERSION_PREFIX}288 → 粒度5分 → 月を選ぶ\")\n    print(\"      比べる相手＝同じ⑪タブの rg-v5（いま E38 が使っている判定）\")\n    print(\"      画面の出し方＝python3 scripts/dashboard/dashboard_server.py\")\n    return 0",
+  "種類": "直した後の文字",
+  "中身": "def main() -> int:\n    ap = argparse.ArgumentParser(description=\"札の版を ⑪タブの版として出す\")\n    ap.add_argument(\"--csv\", default=str(DEFAULT_CSV), help=\"5分足 CSV（既定＝Binance spot の正本）\")\n    ap.add_argument(\"--version\", choices=(\"all\", \"er_median\", \"band_hold\"), default=\"all\",\n                    help=\"出す版（既定＝全部。band_hold は役割ごとに設定の範囲の両端と真ん中の値の組を全部）\")\n    a = ap.parse_args()\n    csv_path = pathlib.Path(a.csv)\n    if not csv_path.exists():\n        print(f\"❌ CSV が無い: {csv_path}\")\n        return 2\n\n    from build_regime_from_tuner import INDEX_JSON, PROTO_DIR, update_index, write_version_files\n    from periods import SEARCH_END, SEARCH_START\n\n    cfg = rl.load_config()\n    jobs = []\n    if a.version in (\"all\", \"er_median\"):\n        jobs += [(\"er_median\", n, None) for n in rl.horizons(cfg)]\n    if a.version in (\"all\", \"band_hold\"):\n        jobs += [(\"band_hold\", role, v) for role in rl.roles(cfg) for v in rl.variants(cfg, role)]\n\n    t0 = time.time()\n    print(f\"[1/3] 5分足を読み、値決め窓を切り出す ... {csv_path.name}\")\n    win = load_window(csv_path)\n    print(f\"    値決め窓 {len(win):,}本（{win.index.min()} 〜 {win.index.max()}）・{time.time() - t0:.1f}秒\")\n\n    names = []\n    n_ver = None\n    for i, (version, key, values) in enumerate(jobs, start=1):\n        name = rl.version_tag(cfg, version, key, values)\n        t1 = time.time()\n        print(f\"[2/3] {i}/{len(jobs)} {name}: 札を付ける ...\")\n        df, col, counts = label_frame(win, version, key, values)\n        st = write_version_files(PROTO_DIR, name, df, col, SEARCH_START, SEARCH_END)\n        dist = {\"range\": {\"count\": st[\"range_count\"], \"pct\": st[\"range_pct\"]},\n                \"non_range\": {\"count\": len(df) - st[\"range_count\"],\n                              \"pct\": round((len(df) - st[\"range_count\"]) / max(len(df), 1) * 100, 2)}}\n        n_ver = update_index(INDEX_JSON, name, spec_of(csv_path, win, version, key, values, counts,\n                                                       SEARCH_START, SEARCH_END), dist, st[\"months\"])\n        names.append(name)\n        print(f\"    数えた結果＝{counts}\")\n        print(f\"    月のファイル {st['n_month_files']} 本／5分 {st['n_5m_rows']:,}行／1時間 {st['n_1h_rows']:,}行／\"\n              f\"レンジ {st['range_pct']}%／版の合計 {n_ver}／{time.time() - t1:.1f}秒\")\n\n    print(f\"\\n[3/3] 完了（{time.time() - t0:.1f}秒）。⑪タブ → 版（{len(names)} 本）→ 粒度5分 → 月を選ぶ\")\n    for nm in names:\n        print(f\"      {nm}\")\n    print(\"      比べる相手＝同じ⑪タブの rg-v5（いま E38 が使っている判定）\")\n    print(\"      画面の出し方＝python3 scripts/dashboard/dashboard_server.py\")\n    return 0",
+  "根拠の抜き書き": "scripts/dashboard/build_regime_label_dashboard.py:97「def main() -> int:」",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 9/29 の控えの 23〜27 を土台にし、直すのは事実が変わった所と足す所だけにする | 9/29 の控えは まこさんの構造の文と定義の文を満たす形で書いた。手で書き直すと写し間違いが入る | 一から書き直す。捨てた理由＝写し間違いが入る |
+| 23番の説明の文の日付を 2026-10-02 にする | 札の部品を作ったのは工事 A（2026-10-02・commit c61ea74）。9/29 は設計書の土台を書いた日 | 9/29 のまま。捨てた理由＝説明が事実と食い違う |
+| 23番の、値を選ぶ材料の出どころを まこさんの原文（m2_todo.json の M2-F-6d の注意）にする | label_structure_definition_verbatim_20260929.txt は CC の要約（監査 cp58 の修正4 と同じ事実） | 要約のファイルのまま。捨てた理由＝原文でないものを出どころにする |
+| 使い方の行に --version の例を足す | 旗を足すので、使い方の説明と実物が食い違わないようにする | 足さない。捨てた理由＝説明が実物と食い違う |
+| 札の部品の自己検査 T6 に⑪タブの道具を足さない | 恒久71番＝読むための道具に過剰なテストを付けない。T6 を直すと札の部品（H2 の対象）が変わり、H2 の取り直しが要る | T6 に足す。捨てた理由＝読むための道具のために、売買の経路の部品を直すことになる |
+| 版2 の値の組を全部 版にする | 値を選ぶのは まこさんの目（req_6d）。見比べる相手が⑪タブに無いと選べない | 真ん中の組だけ出す。捨てた理由＝見比べられない |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 版2 の全部の版を作るのに時間がかかる | 4-14 の見込みをフロー宣言に書いてから走らせる。見込みの2倍を超えたら止めて まこさんに出す |
+| 版2 のある値の組で、帯が1本もできない | そのまま出す（その値の組の結果として、まこさんが見る） |
+| 置き場の大きさが増える | 1版 約10MB。git の対象外の置き場なので commit には入らない |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる | 30秒未満 | 当てる道具は1秒未満で終わった（2026-10-02 の監査 cp59 の直し・worklog 20261002 §10） |
+| ⑪タブの道具を1回 走らせる | 版2 の札だけで約 0.8 分。これに版1 と版のファイルを書く時間が足される | 4-14 |
+| まこさんの承認 | 2回（当てる前に1回・当てた後に SPEC を実物から作り直した設計書に1回） | 4-4 の2（教訓 L-655） |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | ⑪タブの道具が、札を観察の道具の口から受け取り、版の名前と仕様を道具の中で手で作っていることです。だから版2 の札が⑪タブに出ず、まこさんが値を選べません。 |
+| 期待値分解 | 売買のロジックには触れません。勝率・平均利益・敗率・平均損失は動きません。採点に使う版は er_median のままなので、判定の成績（3つの割合）も動きません。 |
+| root か symptom か | root です。まこさんが決めた構造（設定から作る・名前に値を入れる・仕様に設定の中身を出す）そのものを、⑪タブの道具に作ります。 |
+| ベースアップ | 版の名前と仕様の作り方は、まこさんの構造の文に従いました。検査15 の数え方は、observe_diag の検査15 と同じ口を呼びます。 |
+
+【7-2 固定値ゼロ宣言】
+この工事に、疑似シミュから取った値は1つもありません。新しい数字も作りません。値の組は設定ファイルの範囲から、先を見る本数は設定ファイルから読みます。
+
+【7-3 変更の単位】
+変更は1つ＝⑪タブの道具を、札の部品を呼ぶ形に切り替え、版を設定ファイルから作る（14a の工事 C＝L-1 の⑪タブの分・L-7）。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 当たるか | 理由 |
+|---|---|---|
+| 1 | 当たりません | 乱数を使いません。値の組は範囲の両端と真ん中の決まった並びです。札は答え合わせの答えで、条件をつなぐものではありません |
+| 2 | 当たりません | 値を選びません。版2 の「使う値」は まこさんが選びます |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 版2 のどの値の組が正しいか | この工事では分かりません。まこさんが⑪タブの目と検査15 で選び、最後は M2-L の net で分かります |
+| ⑪タブの道具に札の式が書き写されたら | 自己検査は付けません（恒久71番）。実装の監査と、下書きの道具の ast の照らしで1回 確かめます |
+| ⑪タブの道具そのものを書き換えられたら | 書き換えれば無効にできます。承認で凍結され、差分は git に出ます |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝1本（⑪タブの道具 build_regime_label_dashboard.py）を【7-8】に書いた。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝build_regime_label_dashboard.py）。
+- 新しく作るファイルは無い（NEW_FILE は空）。手本のファイルも無い（MODEL は空）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝9/29 の控えの説明の文が、工事 A と監査 cp58 の後の事実とずれた所（日付と出どころ）を、道具で置き換えた。
+- 新しい部品は無い。札の部品は工事 A で作った物を呼ぶだけ。
+- 直すファイルの行番号を指す文書は、9/29 の控え（承認していない古い控え）だけで、この工事の実装の指示の行は いまの実物から作り直した。
+- 直すファイルの名前と関数の名前で壊すプログラムを grep し、直す行の文字を探している物は0本だった（4-13 の4）。
+- 壊すプログラムは作らない（読むための道具＝恒久71番）。完成の条件のコマンドは⑪タブの道具そのもので、書くのは git の対象外の版の置き場だけ。
+- 触る関数は、全部 DESIGN_CONTRACT の impl_functions に書いた（【7-8】・下書きの道具が当てる前と後の差の行から数えた）。<モジュール直下>・check15・label_frame・main・spec_of。must_use に、main と label_frame が呼ぶ名前を書いた（下書きの道具が ast で照らした）。
+- 新しく足す旗は --version（4-9）。完成の条件の1行目は旗なし（既定＝all）で走らせる。
+- 2回目の承認の前に、実装の中で変わった手順を設計書に書き直す（その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2f-label-dashboard-20261002）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝付けない（恒久71番）。下書きの道具が当てた後の道具を本物に書かずに走らせ、承認の前の検査をかけた。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| ⑪タブの道具が、版1 の2版と版2 の全部の版（12版）を出し、版1 の数が 2026-09-28 の走行と同じ | python3 scripts/dashboard/build_regime_label_dashboard.py | 実経路 | 壊すプログラムは付けない（読むための道具＝恒久71番。直す前と後で版1 の数が同じかを、2026-09-28 の印字と照らす） | — | — | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  "scripts/dashboard/build_regime_label_dashboard.py"
+ ],
+ "NEW_FILE": [],
+ "MODEL": [],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/dashboard/build_regime_label_dashboard.py",
+  "_impl_file の意味": "照らす相手は実在するファイル（gen_acceptance.py:680〜683）。この工事で直すのは⑪タブの道具の1本だけ。",
+  "impl_functions": {
+   "scripts/dashboard/build_regime_label_dashboard.py": [
+    "<モジュール直下>",
+    "check15",
+    "label_frame",
+    "main",
+    "spec_of"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数。当てる前と後の差の行を、当てた後のコードの関数に当てはめて、下書きの道具（_labelC_draft_build.py）が数えた。",
+  "self_check_calls": [
+   "version_tag",
+   "variants",
+   "band_hold",
+   "er_median"
+  ],
+  "_self_check_calls の意味": "実装の後の⑪タブの道具に在るはずの、札の部品の口の名前（版の名前・値の組・版2 の札・版1 の札）。★ファイル名を書かない＝7-7 の表が「読んだ」の行の下に並べ、必読ゲートが数えるため。",
+  "must_use": {
+   "main": [
+    "load_window",
+    "label_frame",
+    "spec_of"
+   ],
+   "label_frame": [
+    "check15"
+   ]
+  },
+  "_must_use の意味": "main が窓を読み・札を付け・仕様を作るを呼び、label_frame が検査15 の数え方を呼ぶはず（下書きの道具が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は⑪タブの道具が札を作る口と、版の名前と仕様の作り方だけを変える。外から読む一覧（候補・法則・成績表の順位・範囲の鍵）は読まない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の差の行（_labelC_draft_build.py が数えた）",
+   "must_use": "main と label_frame が呼ぶ名前（ast で照らした）",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```
+
+【外部検索】
+| 名前 | 中身 |
+|---|---|
+| 評価に使うラベルを版で持ち、設定の値を版の名前に入れて見比べるやり方 | 評価に使うラベルの版と値を、表示の側の名前と仕様に残して見比べるやり方を調べる（私の導出） |
