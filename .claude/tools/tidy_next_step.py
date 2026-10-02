@@ -18,6 +18,11 @@
   (d) `# §0` から `## §0-4` の前までの行数が上限（LIMIT・まこさんが決める）以下
   (e) 0-2 の節の「★いまここ」がちょうど1件
   (f) 0-2 の表に「✅済」か取り消し線の行が0件（★2026-08-28 追加・終わった行を残せなくする）
+  ★2026-10-02 追加（まこさん「自発的にやれるようにできないの？」→「じゃあ、その修正しろ」・本物の next_step だけに掛ける）
+  (h) 最初の「## 」の見出しが「## ▶ 次にやること」 (i) §0 に「N回目にしたこと」（経緯）が無い
+  (j) 0-2 の表の欄が250字以内 (k) §0 に同じ行が2回 無い
+  (l) 教訓の現役が40件＋名指しされた物だけ（--write が古い物を lessons_archive.md へ移す）
+  (m) 結果が出た監査の写し（cp<N>_work の mirror・pristine・tmp・git の外・作って1時間 過ぎ）が無い（--write が消す）
 
 決まり:
   ・移すときは1文字も変えない。🔴／★消さない／毎回消さない の数を前後で照らし、合わなければ書かない（fail-closed）。
@@ -79,6 +84,26 @@ REF_TAIL_RE = re.compile(r"^[\s`]*(?:の\s*)?(§\d+(?:\.\d+)?(?:\s*[〜～・、
 SEC6_HEAD = "# §6 "
 S6_FLAG = "§6の済の行を移す"
 BASELINE_KEY = "読み込んだときに見つからなかった参照"
+
+# ★2026-10-02（146回目・まこさん指示・逐語「毎回私から、整理整頓しろとｋ、私が読みやすい状態にしろとか言うのだるいんだが。
+#   自発的にやれるようにできないの？」「なにも私が言わないと、書き足し続けるって、すべてのデータがそうなってるよね」
+#   「私のPCのストレージは有限なんだよ」→ 私の案「新しい決まりは作らず、いまの道具に自動の片づけを足す」→「じゃあ、その修正しろ」）
+#   ＝片づけを CC の自発に任せず、この道具が自動でする（--write）・残っていればターンを終われない（--verify＝Stop hook）。
+#   ①next_step の読みやすさ（読む人＝まこさん）②教訓の現役を40件に（CLAUDE.md「約40件超えたら最古を archive に移送」）
+#   ③結果が出た監査の写しを消す。★見るのは形だけ＝文が分かりやすいかは見ない（CC が守る・まこさんの目）。
+SDK_DIR = ROOT / "v3-bitget-api-sdk" / "bitget-python-sdk-api"
+LESSONS_ACTIVE = SDK_DIR / ".claude" / "memory" / "lessons_active.md"
+LESSONS_ARCHIVE = SDK_DIR / ".claude" / "memory" / "lessons_archive.md"
+LESSONS_KEEP = 40                             # CLAUDE.md の決まり（約40件）
+LESSON_HEAD_RE = re.compile(r"^## L-(\d+)")
+# 名指しされた教訓は現役に残す（控えへ移すと、名指しした文書の参照が切れるため）
+PIN_FILES = (ROOT / ".claude" / "rules" / "permanent_rules.md", ROOT / "v3-bitget-api-sdk" / "CLAUDE.md")
+AUDITS_DIR = SDK_DIR / ".claude" / "audits"
+COPY_PREFIX = ("mirror", "pristine", "tmp")   # 監査の作業のフォルダ cp<N>_work の中の写し
+COPY_MIN_AGE = 3600                           # 作って1時間 以内の写しは消さない（走っている監査を壊さない）
+TOP_NEXT = "## ▶ 次にやること"
+HISTORY_RE = re.compile(r"\d+回目にしたこと")
+CELL_MAX = 250                                # 0-2 の表の1つの欄の字数の上限
 
 
 # ── 材料 ─────────────────────────────────────────────────────────────────────
@@ -582,6 +607,7 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
     base = set(src.get(BASELINE_KEY, []))
     miss = [x for x in check_refs(new_next, next_path.parent) if x not in base]
     ng = verify(new_next, h2, g2, latest_worklog_date(next_path.parent), limit)
+    ng += reading_checks(new_next)                 # ★2026-10-02＝まこさんが読む形か（(h)〜(k)）
     if miss:
         ng += [f"(参照) {x} が見出しに無い（元データの文を直す）" for x in miss]
     if ng:
@@ -599,11 +625,146 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
         _atomic_write(arc_path, new_arc)
     _atomic_write(src_path, json.dumps(new_src, ensure_ascii=False, indent=1) + "\n")
     _atomic_write(next_path, gen_head(new_next) + new_next)
+    n_les = trim_lessons(today)                    # ★2026-10-02＝教訓の現役を40件＋名指しされた物に
+    n_cp = clean_audit_copies()                    # ★2026-10-02＝結果が出た監査の写しを消す
     print(f"[tidy --write] 元データ {SRC_NAME} から作った／移した節 {rep['moved_sections']}"
           f"／0-2 の表から移した行 {rep2['moved_rows']}／§6 の表から移した行 {rep3['moved_rows']}"
           f"（§6 を移す設定＝{bool(src.get(S6_FLAG))}）／worklog の参照を照らした（控えの外で見つからない参照 0 件）"
-          f"／(0-b-2) を json から書いた")
+          f"／(0-b-2) を json から書いた／教訓を控えへ移した {n_les} 件／監査の写しを消した {n_cp} 個")
     return do_verify(next_path, limit)
+
+
+# ── 自動の片づけ（2026-10-02・146回目）───────────────────────────────────────
+def reading_checks(text: str) -> list[str]:
+    """next_step を まこさんが読む形かを見る（形だけ）。戻り＝❌ の一覧。"""
+    ng: list[str] = []
+    lines = text.splitlines()
+    h2s = [l for l in lines if l.startswith("## ")]
+    if not h2s or not h2s[0].startswith(TOP_NEXT):
+        ng.append(f"(h) 最初の「## 」の見出しが『{TOP_NEXT}』でない＝次にやることを文書の先頭に置く")
+    s0 = next((i for i, l in enumerate(lines) if l.startswith(SEC0_START)), None)
+    e0 = next((i for i, l in enumerate(lines) if l.startswith(SEC0_END)), None)
+    if s0 is not None and e0 is not None:
+        sec0 = lines[s0:e0]
+        hist = [l for l in sec0 if HISTORY_RE.search(l)]
+        if hist:
+            ng.append(f"(i) §0 に経緯（「N回目にしたこと」）が {len(hist)} 行 在る＝経緯は worklog に書く"
+                      f"（その節の見出しに「{DISPOSE}」を付けて `--write` で控えへ）／1行目＝{hist[0].strip()[:40]}")
+        seen: dict[str, int] = {}
+        for l in sec0:
+            t = l.strip()
+            if not t or t.startswith("|") or t in ("---", ">") or SEP_RE.match(t):
+                continue
+            seen[t] = seen.get(t, 0) + 1
+        dup = [t for t, n in seen.items() if n > 1]
+        if dup:
+            ng.append(f"(k) §0 に同じ行が {len(dup)} 種類 2回以上 在る＝1か所にまとめる／1つ目＝{dup[0][:40]}")
+    s2 = next((i for i, l in enumerate(lines) if l.startswith(H02)), None)
+    if s2 is not None:
+        long_cells = []
+        for l in lines[s2:_section_end(lines, s2)]:
+            cells = _split_cells(l) if l.lstrip().startswith("|") else None
+            for c in cells or []:
+                if len(c.strip()) > CELL_MAX:
+                    long_cells.append(c.strip())
+        if long_cells:
+            ng.append(f"(j) 0-2 の表に {CELL_MAX} 字を超える欄が {len(long_cells)} 個 在る＝短くし、経緯は worklog へ"
+                      f"／1つ目＝{long_cells[0][:40]}（{len(long_cells[0])}字）")
+    return ng
+
+
+def _pinned_lessons() -> set[int]:
+    """ほかの文書が「lessons_active … L-NNN」と名指ししている番号。"""
+    pins: set[int] = set()
+    for p in PIN_FILES:
+        if not p.exists():
+            continue
+        t = p.read_text(encoding="utf-8")
+        for m in re.finditer(r"lessons_active", t):
+            pins.update(int(x) for x in re.findall(r"L-(\d+)", t[m.end(): m.end() + 60]))
+    return pins
+
+
+def lessons_plan() -> tuple[list[str], list[tuple[int, str]], list[tuple[int, str]]]:
+    """現役の教訓を (頭の行, 残す塊, 移す塊) に分ける。塊＝(番号, 本文)。並びは元のまま。"""
+    if not LESSONS_ACTIVE.exists():
+        return [], [], []
+    lines = LESSONS_ACTIVE.read_text(encoding="utf-8").splitlines(keepends=True)
+    head: list[str] = []
+    blocks: list[tuple[int, list[str]]] = []
+    for l in lines:
+        m = LESSON_HEAD_RE.match(l)
+        if m:
+            blocks.append((int(m.group(1)), [l]))
+        elif blocks:
+            blocks[-1][1].append(l)
+        else:
+            head.append(l)
+    nums = sorted({n for n, _ in blocks}, reverse=True)
+    keep = set(nums[:LESSONS_KEEP]) | _pinned_lessons()
+    kept = [(n, "".join(b)) for n, b in blocks if n in keep]
+    moved = [(n, "".join(b)) for n, b in blocks if n not in keep]
+    return head, kept, moved
+
+
+def trim_lessons(today: str) -> int:
+    """番号の新しい40件と名指しされた教訓だけを現役に残し、残りを控えの末尾へ移す。戻り＝移した件数。"""
+    head, kept, moved = lessons_plan()
+    if not moved:
+        return 0
+    old = LESSONS_ACTIVE.read_text(encoding="utf-8")
+    new_active = "".join(head) + "".join(b for _, b in kept)
+    if len(new_active) + sum(len(b) for _, b in moved) != len(old):
+        raise SystemExit("❌ [tidy --write] 教訓を分けると文字数が合わない＝書かない")
+    arc = LESSONS_ARCHIVE.read_text(encoding="utf-8") if LESSONS_ARCHIVE.exists() else ""
+    ns = [n for n, _ in moved]
+    add = (("" if arc.endswith("\n") or not arc else "\n")
+           + f"\n## {today} 移送分（tidy_next_step.py が自動で移した・{len(moved)}件・L-{min(ns)}〜L-{max(ns)}）\n\n"
+           + "".join(b if b.endswith("\n") else b + "\n" for _, b in moved))
+    _atomic_write(LESSONS_ARCHIVE, arc + add)
+    _atomic_write(LESSONS_ACTIVE, new_active)
+    return len(moved)
+
+
+def finished_audit_copies() -> list[pathlib.Path]:
+    """結果のファイルが出た監査の写しのうち、git に入っている物が無く、作って1時間を過ぎた物。"""
+    import time
+    out: list[pathlib.Path] = []
+    if not AUDITS_DIR.exists():
+        return out
+    for work in sorted(AUDITS_DIR.glob("cp*_work")):
+        m = re.match(r"cp(\d+)_work$", work.name)
+        if not m or not list(AUDITS_DIR.glob(f"*_cp{m.group(1)}_audit_report.md")):
+            continue
+        for d in sorted(work.iterdir()):
+            if not d.is_dir() or not d.name.startswith(COPY_PREFIX):
+                continue
+            if time.time() - d.stat().st_mtime < COPY_MIN_AGE:
+                continue
+            r = subprocess.run(["git", "-C", str(ROOT), "ls-files", "--", str(d)], capture_output=True, text=True)
+            if r.returncode == 0 and not r.stdout.strip():
+                out.append(d)
+    return out
+
+
+def tidy_checks() -> list[str]:
+    """教訓の件数と監査の写し（--write で片づく物が残っていれば ❌）。"""
+    ng: list[str] = []
+    _, kept, moved = lessons_plan()
+    if moved:
+        ng.append(f"(l) 教訓の現役が {len(kept) + len(moved)} 件（上限 {LESSONS_KEEP} 件＋名指しされた物）→ `--write` で {len(moved)} 件を控えへ移す")
+    cps = finished_audit_copies()
+    if cps:
+        ng.append(f"(m) 結果が出た監査の写しが {len(cps)} 個 残っている → `--write` で消す／1つ目＝{cps[0].relative_to(ROOT)}")
+    return ng
+
+
+def clean_audit_copies() -> int:
+    import shutil
+    cps = finished_audit_copies()
+    for d in cps:
+        shutil.rmtree(d)
+    return len(cps)
 
 
 # ── 口 ───────────────────────────────────────────────────────────────────────
@@ -612,13 +773,18 @@ def do_verify(next_path: pathlib.Path, limit: int) -> int:
     ng = verify(text, _pass(H2), _pass(G2), latest_worklog_date(next_path.parent), limit)
     # ★2026-09-17＝元データ next_step_src.json が在れば (g) も見る（目印・全文のハッシュ値・元データから作ったままか）
     ng += check_generated(next_path)
+    # ★2026-10-02＝本物の next_step（元データが隣に在る）だけ、読む形 (h)〜(k) と片づけ (l)(m) も見る
+    #   （自己テストの見本の文書は元データを持たないので、ここは見ない＝19本のテストはそのまま）
+    if (next_path.parent / SRC_NAME).exists():
+        ng += reading_checks(text) + tidy_checks()
     if ng:
         print(f"❌ [tidy --verify] {next_path.name} の形に {len(ng)} 件:")
         for x in ng:
             print(f"   ・{x}")
         return 2
     n0 = sec0_lines(text.splitlines())
-    _n_chk = "7つ（6つ＋(g) 元データと全文のハッシュ値）" if (next_path.parent / SRC_NAME).exists() else "6つ"
+    _n_chk = ("13個（6つ＋(g) 元データと全文のハッシュ値＋(h)〜(k) 読む形＋(l) 教訓の件数・(m) 監査の写し）"
+              if (next_path.parent / SRC_NAME).exists() else "6つ")
     print(f"✅ [tidy --verify] {_n_chk}とも通った（§0 {n0} 行／上限 {limit}）")
     return 0
 

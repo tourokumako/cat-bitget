@@ -911,10 +911,15 @@ esac
 #     失うもの（正直に）＝CC が gen_*.py という名前で、文書以外を書く道具を作る道が開く。
 #       止められるのは名前だけで、中身が本当に文書だけを書くかは、この判定では見ない。
 #       残る守り＝土台ゲート（Bash からは書けない）／git diff に出る／恒久の決まり71番。
+#   ★2026-10-02（146回目・まこさん指示・逐語「インフラ整備でこのフローはいらない」「早く修正しろ」）
+#     ＝.claude/tools/*.py を全部、この承認ゲートの相手から外した（gen_ だけでなく tidy_next_step.py・apply_audit_fix.py ほかも）。
+#     残るもの＝売買のロジック（scripts/priority_rebuild/*.py）と壊すプログラム（.claude/breaks/*.sh）は今までどおり承認が要る／
+#       Bash で道具を書く道は土台ゲート（上の GATE_RE）で今までどおり止まる／サブエージェントは上の case で今までどおり書けない。
+#     失うもの（正直に）＝CC が承認や凍結の配管の道具（approve まわり・run_breaks.py ほか）を、承認なしで書き替えられる。
+#       止めるのは git diff と まこさんの目。
 case "$FILE" in
   *scripts/priority_rebuild/*.py) ;;
-  */.claude/tools/gen_*.py) exit 0 ;;
-  */.claude/tools/*.py) ;;
+  */.claude/tools/*.py) exit 0 ;;
   */.claude/breaks/*.sh) ;;
   *) exit 0 ;;
 esac
