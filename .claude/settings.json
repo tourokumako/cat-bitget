@@ -172,6 +172,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/block_long_background.py"
+          },
+          {
+            "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_design_contract_before_run.sh"
           },
           {
