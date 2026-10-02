@@ -94,7 +94,13 @@ CHECK = set(['--selftest', '--self-test', '--verify', '--identity', '--help',
              #   （成績表 material_ranking.json を書く＝印（H2・G2）の対象外・売買記録を出さない）。
              #   足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、
              #   '--selftest-rank-demand' は '--selftest' に一致しない。壊すプログラム b38〜b40 が使う。
-             '--selftest-rank-demand', '--add-demand'])
+             '--selftest-rank-demand', '--add-demand',
+             # ★2026-10-03（設計書 iter="m2f-rank-resume-20261002"・まこさん「足してよい」）＝成績表の全走を
+             #   途中で落ちても続きから計算する工事の「確認のための走行」。'--selftest-rank-resume'＝T-r だけを
+             #   数秒で試す口（一時のフォルダ・作り物の4本値・成績表も売買記録も書かない・累積の試行数に足さない）。
+             #   足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、'--selftest' に一致しない。
+             #   壊すプログラム b126 が使う。
+             '--selftest-rank-resume'])
 Q = chr(39) + chr(34)
 try:
     d = json.load(sys.stdin)

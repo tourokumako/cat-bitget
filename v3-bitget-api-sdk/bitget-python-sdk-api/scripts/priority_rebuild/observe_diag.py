@@ -5970,6 +5970,62 @@ def _rank_record_unmeasured(expected: set, measured: set, dropped: dict) -> dict
     return dropped
 
 
+# ══ 成績表の全走を、途中で落ちても続きから計算する（2026-10-03・工事 E・まこさん「データが途中落ちても残るようにできてるのか証明しろ」）══
+#   なぜ＝2026-10-02 に全走（約2時間15分）が2回 途中で止まり、時間足11本の結果をメモリにだけ持つ作りだったので何も残らなかった。
+#   直した後＝時間足を1本 計算し終えるごとに、その結果を OBSERVE_DIR/rank_resume/<指紋>/<時間足>.json に書く。
+#     走らせ直すと、同じ指紋の置き場に在る時間足は読んで飛ばす。
+#   ★指紋＝設定・材料の名前・先を見る本数・値決め窓・札の中身・5分足と1分足の元データ・この道具と札の部品と参照表のコードで決める
+#     ＝どれか1つでも違えば別の置き場になり、前の結果を混ぜない。
+#   ★書くときは一時の名前で書いてから名前を替える＝書きかけのファイルは読まない。
+def _rank_resume_dir(win, cfg, cat_use, horizons, labels) -> pathlib.Path:
+    """続きの結果の置き場（中身の指紋で決める）。"""
+    import json as _json
+    h = hashlib.sha256()
+
+    def _add(x):
+        h.update(_json.dumps(x, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8"))
+    _add({"設定": {k: v for k, v in cfg.items() if k != "_source"}})
+    _add({"材料": [c[0] for c in cat_use]})
+    _add({"先を見る本数": [int(n) for n in horizons]})
+    _add({"値決め窓": [str(win.index.min()), str(win.index.max()), int(len(win))]})
+    h.update(pd.util.hash_pandas_object(win, index=True).to_numpy().tobytes())
+    for n in horizons:
+        for lab in REGIME_LABELS:
+            _m, _u = labels[n][lab]
+            h.update(_m.to_numpy(dtype=bool).tobytes())
+            h.update(_u.to_numpy(dtype=bool).tobytes())
+    _root = pathlib.Path(__file__).resolve().parent.parent.parent
+    _one = _root / ONE_MIN_CSV
+    _add({"1分足": [_one.stat().st_size, _one.stat().st_mtime_ns] if _one.exists() else None})
+    for _p in (pathlib.Path(__file__), pathlib.Path(rl.__file__), pathlib.Path(iref.__file__)):
+        h.update(_p.read_bytes())
+    d = OBSERVE_DIR / "rank_resume" / h.hexdigest()[:16]
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _rank_resume_save(path: pathlib.Path, tf: str, auc: dict, nsample: dict) -> None:
+    """その時間足の結果（分離力と独立な標本の数）を書く。一時の名前で書いてから名前を替える。"""
+    import json as _json
+    body = {"時間足": tf,
+            "分離力": {c: {lab: {str(n): v for n, v in bn.items()} for lab, bn in by.items()}
+                    for c, by in auc.items() if c.endswith(f"__{tf}")},
+            "独立な標本の数": [[lab, int(n), t, int(v)] for (lab, n, t), v in nsample.items() if t == tf]}
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(_json.dumps(body, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(path)
+
+
+def _rank_resume_load(path: pathlib.Path, auc: dict, nsample: dict) -> None:
+    """書き終わった時間足の結果を読んで、分離力と独立な標本の数に足す。"""
+    import json as _json
+    d = _json.loads(path.read_text(encoding="utf-8"))
+    for c, by in d["分離力"].items():
+        auc[c] = {lab: {int(n): float(v) for n, v in bn.items()} for lab, bn in by.items()}
+    for lab, n, t, v in d["独立な標本の数"]:
+        nsample[(lab, int(n), t)] = int(v)
+
+
 def rank_materials_for_regime(bars: pd.DataFrame, cfg: dict, catalog: list | None = None,
                               horizons: tuple | None = None, tfs: list | None = None,
                               calc_rows: int | None = None) -> dict:
@@ -6000,6 +6056,7 @@ def rank_materials_for_regime(bars: pd.DataFrame, cfg: dict, catalog: list | Non
     roles = _role_lineage_table()
     use_tfs = list(tfs or cfg["timeframes"])
     labels = {n: _regime_labels(win, n) for n in horizons}
+    _ck_dir = _rank_resume_dir(win, cfg, cat_use, horizons, labels)   # ★工事 E＝続きの結果の置き場
     auc: dict = {}                                            # 列名 → {ラベル: {N: 分離力}}
     nsample: dict = {}                                        # (ラベル, N, 時間足) → 独立な標本の数
     # ★進み具合を出す（2026-08-22 に足した）。1回目の本走が 2時間14分 のあいだ1行も出さず、
@@ -6007,6 +6064,11 @@ def rank_materials_for_regime(bars: pd.DataFrame, cfg: dict, catalog: list | Non
     _t_begin = datetime.datetime.now()
     print(f"  … 始めます（時間足 {len(use_tfs)} 本 × 材料 {len(cat_use)} 種）", flush=True)
     for _i_tf, tf in enumerate(use_tfs, 1):
+        _ck = _ck_dir / f"{tf}.json"
+        if _ck.exists():                                      # ★工事 E＝書き終わった時間足は読んで飛ばす
+            _rank_resume_load(_ck, auc, nsample)
+            print(f"  … 時間足 {tf} は前に書き終わった結果を読んだ（{_i_tf}/{len(use_tfs)} 本・続きから）", flush=True)
+            continue
         cfg_tf = dict(cfg)
         cfg_tf["timeframes"] = [tf]
         df, _meta = build_features(win, cfg_tf, cat_use)
@@ -6027,6 +6089,7 @@ def rank_materials_for_regime(bars: pd.DataFrame, cfg: dict, catalog: list | Non
                     auc.setdefault(row["特徴"], {}).setdefault(lab, {})[n] = float(row["分離力"])
             del grid
         del df
+        _rank_resume_save(_ck, tf, auc, nsample)              # ★工事 E＝この時間足の結果を書く
         _el = (datetime.datetime.now() - _t_begin).total_seconds()
         _rest = _el / _i_tf * (len(use_tfs) - _i_tf)
         print(f"  … 時間足 {tf} 終わり（{_i_tf}/{len(use_tfs)} 本）"
@@ -6392,6 +6455,79 @@ def selftest_rank_demand(exit_: bool = True) -> list:
             pass
     print(f"  T-f 需給を成績表に足す（差分の口）: ①直に呼んだ値と一致 ②需給の系統を持つ役割 {sorted(want_roles)} にだけ3列 "
           f"③指標の列は不変 ④先読み違いは止まる ／ 採点できた列 {len(r['auc'])} 本 ／ ❌ {len(ng)} 件")
+    if exit_:
+        for x in ng:
+            print(f"  ❌ {x}")
+        raise SystemExit(1 if ng else 0)
+    return ng
+
+
+def selftest_rank_resume(exit_: bool = True) -> list:
+    """T-r＝成績表の全走が、途中で落ちても続きから計算できるか（工事 E・口 --selftest-rank-resume・壊すプログラム b126 が使う）。
+
+    ①止めずに走らせた結果と、2本目の時間足で落としてから走らせ直した結果が、並びまで同じ
+    ②落ちた後に、書き終わった1本目の時間足のファイルだけが残る
+    ③走らせ直すと、1本目を読んで飛ばす（読んだのは1本）
+    ④材料が違えば、同じ置き場でも前の結果を読まない
+    ★乱数を使わない（決まった式の4本値）。★本物の成績表と続きの置き場は触らない（一時のフォルダ）。
+    """
+    global OBSERVE_DIR
+    import json as _json
+    import tempfile as _tf
+    ng: list = []
+    n_bars = 6000
+    idx = pd.date_range(SEARCH_START, periods=n_bars, freq="5min")
+    _i = np.arange(n_bars, dtype=float)
+    _c = 100.0 + 3.0 * np.sin(_i / 40.0) + 0.002 * _i
+    bars = pd.DataFrame({"open": _c, "high": _c + 0.05, "low": _c - 0.05, "close": _c,
+                         "volume": 1.0 + (_i % 7)}, index=idx)
+    cfg = load_config(None)
+    cat = build_catalog(cfg)[:6]
+    tfs = ["5m", "1h"]
+    g = globals()
+    keep_dir, keep_bf, keep_load = OBSERVE_DIR, g["build_features"], g["_rank_resume_load"]
+    loads: list = []
+
+    def _bf_fail(win, cfg_tf, catalog=None):
+        if cfg_tf["timeframes"] == [tfs[1]]:
+            raise RuntimeError(f"T-r: 試しに {tfs[1]} で落とす")
+        return keep_bf(win, cfg_tf, catalog)
+
+    def _load_count(path, auc, nsample):
+        loads.append(path.name)
+        return keep_load(path, auc, nsample)
+    full = again = None
+    with _tf.TemporaryDirectory() as d:
+        try:
+            OBSERVE_DIR = pathlib.Path(d) / "full"
+            full = rank_materials_for_regime(bars, cfg, cat, tfs=tfs)
+            OBSERVE_DIR = pathlib.Path(d) / "resume"
+            g["build_features"] = _bf_fail
+            try:
+                rank_materials_for_regime(bars, cfg, cat, tfs=tfs)
+                ng.append("T-r: 2本目で落とせなかった（試しの仕掛けが効いていない）")
+            except RuntimeError:
+                pass
+            g["build_features"] = keep_bf
+            left = sorted(p.name for p in (OBSERVE_DIR / "rank_resume").glob("*/*.json"))
+            if left != [f"{tfs[0]}.json"]:
+                ng.append(f"T-r②: 落ちた後に残ったファイルが {left}（期待 ['{tfs[0]}.json']）")
+            g["_rank_resume_load"] = _load_count
+            again = rank_materials_for_regime(bars, cfg, cat, tfs=tfs)
+            if loads != [f"{tfs[0]}.json"]:
+                ng.append(f"T-r③: 走らせ直したときに読んだのが {loads}（期待 ['{tfs[0]}.json']）")
+            if _json.dumps(full, ensure_ascii=False, default=str) != _json.dumps(again, ensure_ascii=False, default=str):
+                ng.append("T-r①: 止めずに走らせた結果と、落としてから走らせ直した結果が違う")
+            if not full.get("測れた列"):
+                ng.append("T-r①: 作り物の4本値で、分離力を測れた列が0本（試しになっていない）")
+            loads.clear()
+            rank_materials_for_regime(bars, cfg, cat[:5], tfs=tfs)
+            if loads:
+                ng.append(f"T-r④: 材料が違うのに、前の結果を読んだ: {loads}")
+        finally:
+            OBSERVE_DIR, g["build_features"], g["_rank_resume_load"] = keep_dir, keep_bf, keep_load
+    print(f"  T-r 途中で落ちても続きから計算する（工事 E）: ①結果が同じ ②1本目だけ残る ③1本目を読んで飛ばす ④材料が違えば読まない"
+          f" ／ 測れた列 {(full or {}).get('測れた列')} 本 ／ ❌ {len(ng)} 件")
     if exit_:
         for x in ng:
             print(f"  ❌ {x}")
@@ -7683,6 +7819,7 @@ def selftest() -> None:
     print(f"  設定ファイル {cfg['_source']}")
     print(f"  結果の保存先 {OBSERVE_DIR}（本走のみ・既存は observe/archive へ退避＝上書きしない）")
     ng += selftest_rank_demand(exit_=False)          # T-f（需給を成績表に足す差分の口・設計書 demand-in-ranking-20260907）
+    ng += selftest_rank_resume(exit_=False)          # T-r（途中で落ちても続きから計算する・工事 E）
     ng += selftest_atr1h(exit_=False)                # T-A1〜T-A5（S-Rタッチ1時間ATR・設計書 m2e-bundle2-20260926）
     ng += selftest_insp5(exit_=False)                # T-g・T-h・T-i・T-j（検査5 の枠と使い回しの鍵・設計書 insp5-frame-and-table-tidy-20260908）
     if ng:
@@ -7735,6 +7872,8 @@ def build_parser():
 if __name__ == "__main__":
     if "--selftest-rank-demand" in sys.argv:          # T-f だけを数秒で（設計書 demand-in-ranking-20260907・壊すプログラム b39・b40 が使う）
         selftest_rank_demand()                        # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
+    if "--selftest-rank-resume" in sys.argv:          # T-r だけを数秒で（工事 E・壊すプログラム b126 が使う）
+        selftest_rank_resume()                        # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest-insp5" in sys.argv:                # ★T-g・T-h・T-i・T-j だけを短い切れ端で
         # ★2026-09-08（監査 cp30 の Critical 1）＝すぐ後ろに5分足のパスを書けるようにした。
         #   渡すと T-i が「その5分足の最後のバーまで1分足が覆っているか」を見る

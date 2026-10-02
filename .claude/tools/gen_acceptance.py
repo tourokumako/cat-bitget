@@ -540,12 +540,16 @@ def build_ranking(d: dict) -> str:
     add = L.append
     add(f"**★この節はプログラムが作ります（手で書き換えない）。**出どころ＝`{RANKING.name}`。")
     add("")
-    add("**成績表に載っている列の本数**（札＝強さ・先読み24・執行足より上の時間足だけ）")
+    # ★2026-10-03＝先読みの鍵を「24」に決め打ちしない。成績表の「先を見るバー数」のうち短い方を読む
+    #   （直す前＝札を版3 にして鍵が 12・120 になった成績表で、本数が全部 0 と出た）。
+    hz_all = [str(x) for x in (rk.get("先を見るバー数") or [])]
+    hz = hz_all[0] if hz_all else "24"
+    add(f"**成績表に載っている列の本数**（札＝強さ・先読み{hz}・執行足より上の時間足だけ）")
     add("")
     add("| 役割 | 上位足の列の本数 | 分離力の高い順に3本 |")
     add("|---|---|---|")
     for role in sorted(order):
-        rows = ((order.get(role) or {}).get("強さ") or {}).get("24") or []
+        rows = ((order.get(role) or {}).get("強さ") or {}).get(hz) or []
         hit = [(c, a) for c, a in rows if isinstance(c, str) and c.rsplit("__", 1)[-1] in up]
         top = sorted(hit, key=lambda x: -abs(float(x[1]) - 0.5))[:3]
         add(f"| {role} | {len(hit)} | {_esc('／'.join(f'{c}（{a}）' for c, a in top))} |")

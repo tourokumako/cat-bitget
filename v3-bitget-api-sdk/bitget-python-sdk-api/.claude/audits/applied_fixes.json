@@ -1722,6 +1722,62 @@
    "file": ".claude/breaks/b125_hindsight_osc_off.sh",
    "at": "2026-10-02T19:03:12",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2f-rank-resume-20261002",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T07:23:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-rank-resume-20261002",
+   "num": "2",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T07:23:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-rank-resume-20261002",
+   "num": "3",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T07:23:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-rank-resume-20261002",
+   "num": "4",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T07:23:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-rank-resume-20261002",
+   "num": "5",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T07:23:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-rank-resume-20261002",
+   "num": "6",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T07:23:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-rank-resume-20261002",
+   "num": "7",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T07:23:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-rank-resume-20261002",
+   "num": "8",
+   "file": ".claude/breaks/b126_rank_resume_save_off.sh",
+   "at": "2026-10-03T07:23:24",
+   "how": "当てた"
   }
  ]
 }

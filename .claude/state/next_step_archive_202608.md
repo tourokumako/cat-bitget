@@ -3088,3 +3088,10 @@ H2（leak なし）・H6（価格非依存）について、最初は「担保�
 行 **5点目の後** の前の「やること」の欄：
  **自動生成の道具37本の、固定の言い切りの文と起点の無いパスを直し、出力全部を実物と照らす共通の検査を入れる**（まこさん指示 2026-10-01「今後二度と同じミスを繰り返さない状態にして」）。hook require_check_before_action の MADE_RE（45行）の読み違いもここで直す。★依頼書の問い2 の要望の逐語が その工事の req の文になる件（§6 の235番の②）も、この工事に入れる（まこさん決定 2026-10-01「一旦完了」）。cp56 の M-1（Q6 のフォルダ）は 142回目に直した 
 
+
+
+# 2026-10-03 に tidy_next_step.py が next_step.md の 0-2 の表から移した行（終わった行 1 行・1文字も変えていない）
+
+| 順 | やること | 触るもの | 出るもの・確かめ方 | 状態 |
+|---|---|---|---|---|
+| **14a** | **M2-F-6d（札を直す）**＝M2-F-6c で決まった役割ごとの札2本（label-c24b-scalp・label-c24b-daytrade）を、札の部品 `regime_label.py` の版3 hindsight_box に入れ、採点に使う版にする。そのあと指標の成績表を作り直す | `.claude/ratchet/material_ranking.json`（作り直し＝`scripts/priority_rebuild/observe_diag.py --rank-regime`）・M2-F-5 の走行（`scripts/priority_rebuild/regime_r9_diag.py --stage stage1 --limit 2`） | 成績表を作り直して、M2-F-5 の走行で数字が出る（測る道具は、成績表の札の版が違うと止まる＝regime_r9_diag.py の510行） | ✅済（2026-10-03）。成績表の作り直しと M2-F-5 の確かめ（worklog 20261003 §2）・工事 E＝成績表の道具が途中で落ちても続きから計算する（承認2回・worklog 20261003 §3〜§4）。工事 A〜E は commit 済（c61ea74・19d1bd7・0c83fe4・628ae41・工事 E は 10/03 の commit）／工事 C・D・E の監査は出さない（まこさん「どちらもOK」） |

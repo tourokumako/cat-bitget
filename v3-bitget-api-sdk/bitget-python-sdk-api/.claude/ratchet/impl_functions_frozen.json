@@ -2,36 +2,13 @@
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
- "scripts/priority_rebuild/regime_label.py": [
+ "scripts/priority_rebuild/observe_diag.py": [
   "<モジュール直下>",
-  "_range_on",
-  "_spread",
-  "box_stats",
-  "hindsight",
-  "hindsight_bars",
-  "hindsight_range",
-  "hindsight_roles",
-  "key_bars",
-  "keys",
-  "labels_at_bars",
-  "labels_for_key",
-  "legs_of",
-  "load_config",
-  "local_scale",
-  "oscillates",
+  "_rank_resume_dir",
+  "_rank_resume_load",
+  "_rank_resume_save",
+  "rank_materials_for_regime",
   "selftest",
-  "step_mask",
-  "trend_mask",
-  "version_tag",
-  "zigzag_adaptive"
- ],
- "scripts/dashboard/build_regime_label_dashboard.py": [
-  "<モジュール直下>",
-  "label_frame",
-  "main",
-  "spec_of"
- ],
- "scripts/priority_rebuild/regime_r9_diag.py": [
-  "_labels_for"
+  "selftest_rank_resume"
  ]
 }

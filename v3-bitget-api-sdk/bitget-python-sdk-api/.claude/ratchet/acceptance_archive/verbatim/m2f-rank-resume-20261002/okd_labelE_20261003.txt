@@ -1,0 +1,364 @@
+受け取り方は指示（「１、２はOK」）と読みました。範囲は、2の工事 E を承認の流れで進めることです。その最初の一手として、工事 E の案を下に全文で出します。
+
+- いまの工程：M2-F-6d の工事 E（成績表の全走を、途中で落ちても続きから計算できる形にする）。案の OK 待ちです。
+- ToDo：工事 D と成績表の作り直しは済みました（commit 628ae41・1bb2deb）。工事 E は、いま案を出しています。
+- 止まっているもの：2つあります。
+  - 下の案への OK。
+  - 監査を出すかどうかのご判断（工事 C・D・E の実装の監査）。私の案は「出さない」です。理由は、直しの文字を6つの試しで証明済みで、成績表の中身が当てる前と後で同じことを道具で確かめたからです。
+- 次：OK をいただいたら、逐語を写して設計書を作り、承認をお願いします。
+
+設計書を作る道具 gen_acceptance.py の不具合を1件 直しました。まだ commit していません。
+- 何が起きていたか：試しの設計書の 2-3（成績表に載っている列の本数）が全部 0本と出ていました。原因は、道具が成績表の鍵を「24」と決め打ちで読んでいたことです。新しい成績表の鍵は「12」です。
+- 直した後：成績表に書いてある先読みの本数を読むようにしました。2-3 は先読み12 で、実際の本数（env 1918 本など）を出します。この道具の自己テストは 17/17 通りました。
+- 試しの設計書（trial_design.py）の結果：A群（承認を止める不備）0件、古い語 0件。2-1 の3行は、実装の前なので全部 0 と出ます。これは正しい出方です。
+
+---
+
+案です（工事 m2f-rank-resume-20261002＝14a の工事 E）。成績表の道具 observe_diag.py の全走（--rank-regime）を、途中で落ちても続きから計算できる形にします。実装の指示は 8 件です。
+
+- 実装の指示は、道具が「直す前の文字」と「直した後の文字」の組で持ちます。直す前の文字が、いまの実物にちょうど1か所ずつ在ることを、道具で数えました。
+- 直しの文字は、10/03 の夜に6つの試しで証明した試作（.claude/state/_labelE_resume_probe.py）と同じです。全件を、本物のファイルに書かずに当てて走らせました。結果は次のとおりです。
+  - 自己テスト T-r（途中で落ちても続きから計算する）＝通った（1.7秒）。需給の自己テスト T-f も通った（0.4秒）。
+  - 壊すプログラム b126 と同じ壊し方（時間足の結果を書く行を外す）で、T-r が T-r② で落ちた。
+  - 当てる前の道具と当てた後の道具で、同じ材料（25種おき・5m 1h）の成績表の中身が1文字も違わない（16.5秒）。
+  - 未来参照の検査＝注記の無い先読みは、当てる前 0 件 → 後 0 件。
+  - 壊すプログラムが探す行の文字は、この工事で変わらない（照らした壊すプログラム＝b104_atr1h_own_tf.sh・b105_atr1h_future_hour.sh・b106_atr1h_no_clip.sh・b107_atr1h_base_not_passed.sh・b108_atr1h_base_wrong_bars.sh・b122_obs_formula_copied.sh・b55_cyc_key_time_gone.sh・b56_one_min_csv_old.sh・b61_insp5_bars_kind.sh・b63_tm_bitget_scope.sh・b64_tm_subdir.sh・b65_tm_badtail.sh）。
+
+この返信に OK を1回いただければ、逐語に写して設計書を作り、承認をお願いします。
+
+【4-0 この仕組みは何か】
+**この工事は、成績表の道具の全走を、途中で落ちても続きから計算できる形にするものです。**14a の5つ目の工事です。
+
+**①いま何が起きているか。**成績表の全走は約2時間15分かかります。道具は時間足11本の結果をメモリにだけ持ち、11本が全部 終わってから成績表を書きます。だから途中で落ちると、それまでの計算が全部 消えます。10/02 には2回 途中で止まり、約3時間半を失いました。
+
+**②この工事で何が変わるか。**時間足を1本 計算し終えるごとに、その時間足の結果をファイルに書きます。走らせ直すと、書き終わった時間足は読んで飛ばし、続きから計算します。続きから計算するのは、設定・材料・先を見る本数・期間・札・元データ・コードが前と全く同じときだけです。1つでも違えば、前の結果は使いません。
+
+**③数字はどう変わるか。**成績表の中身は変わりません。直す前と直した後で、同じ材料の成績表の中身が1文字も違わないことを確かめました。変わるのは、途中で落ちたときに失う時間だけです（失うのは計算中の時間足1本ぶん。いちばん長い1分足で約75分）。
+
+【4-1 システムの境界】
+**誰が動かすか。**成績表の全走は、私（CC）が まこさんの OK をもらってから走らせます（observe_diag.py --rank-regime）。札を変えたときや、材料の印を切り替えたときに走らせます。
+
+**誰が結果を使うか。**成績表 material_ranking.json は、engine_tuner の組む側（ranked_materials・ranked_groups）と、測る道具（regime_r9_diag.py の段の候補づくり）が読みます。この工事は、成績表の中身を変えないので、読む側は直しません。
+
+【4-2 入力と出力】
+**読むもの。**今までどおり（5分足・1分足・設定・材料の一覧・札）。走らせ直したときは、続きの置き場の時間足ごとのファイルも読みます。
+
+**書くもの。**今までどおりの成績表に加えて、時間足ごとの結果のファイルを書きます。置き場＝results/priority_rebuild/ratchet/observe/rank_resume/<指紋16桁>/<時間足>.json（results の下＝git の対象外）。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| observe_diag.py の _rank_resume_dir | 中身の指紋を作り、続きの置き場を決める | 新設（関数） |
+| observe_diag.py の _rank_resume_save | 時間足1本の結果を、一時の名前で書いてから名前を替えて書く | 新設（関数） |
+| observe_diag.py の _rank_resume_load | 書き終わった時間足の結果を読んで足す | 新設（関数） |
+| observe_diag.py の rank_materials_for_regime | 上の3つを呼ぶ（3か所に足す） | 直す |
+| observe_diag.py の selftest_rank_resume と口 --selftest-rank-resume | 途中で落ちても続きから計算できるかを、作り物の4本値で毎回 確かめる（T-r） | 新設 |
+| .claude/breaks/b126_rank_resume_save_off.sh | 結果を書く行を外すと、T-r が落ちるかを見る | 新設 |
+- 触る所＝observe_diag.py＝<モジュール直下>・_rank_resume_dir・_rank_resume_load・_rank_resume_save・rank_materials_for_regime・selftest・selftest_rank_resume（<モジュール直下>＝口 --selftest-rank-resume の2行・selftest＝T-r を呼ぶ1行）。
+
+【4-4 処理の流れ】
+1. 当てる道具（apply_audit_fix.py --design）で実装の指示を当てます。
+2. 当てた直後に、照合（verify_design_contract.py --diff）をかけます。★この工事は関数を足すので、設計書の SPEC（実装の前のコードから作る）と実物が食い違う見込みです。食い違ったら、gen_acceptance.py --write で設計書を作り直し、承認の打ち直しを1回 お願いします（教訓 L-655）。
+3. 自己テスト T-r（--selftest-rank-resume）と T-f（--selftest-rank-demand）を走らせ、壊すプログラム b126 を走らせます。
+4. G2 → H2 の順で印を取り直します（observe_diag.py は G2 と H2 の両方の対象）。
+5. 成績表の全走は、この工事では走らせません（10/03 に作り直し済み・中身は変わらない）。
+
+【4-5 異常系】
+| 起きたこと | どうなるか |
+|---|---|
+| 時間足の計算の途中で落ちる（例外・強制終了・PC の再起動） | 書き終わった時間足のファイルは残る。同じコマンドで走らせ直すと、続きから計算する |
+| 時間足の結果を書いている途中で落ちる | 一時の名前（<時間足>.json.tmp）のまま残り、本物の名前のファイルは作られない＝読まれない。走らせ直すと、その時間足は計算し直す |
+| 設定・材料・先を見る本数・期間・札・元データ・コードのどれかが変わった | 指紋が変わり、別の置き場になる＝前の結果は使わない |
+| 書き終わった時間足のファイルが壊れていて読めない | 読む所で止まる（黙って計算し直さない）。置き場を消してから走らせ直す |
+
+【4-6 制約】
+| 決まり | 出どころ | この設計でどう守るか |
+|---|---|---|
+| 成績表の中身を変えない | この工事の目的（途中で落ちても残る） | 当てる前と後で、同じ材料の成績表の中身が1文字も違わないことを道具で確かめた |
+| 違う札の結果を混ぜない | 恒久の決まり（札の版を成績表に残す・M2-F-6d の構造の文の3つ目） | 札の中身そのものを指紋に入れる。札の版の名前だけでは決めない |
+| 乱数を使わない | 恒久67番 | 自己テスト T-r の作り物の4本値は決まった式（正弦と一次式）で作る |
+| 未来の値を使わない | 要件定義書 §4.6.H2 | 足す所は書き方と読み方だけ。未来参照の検査で、注記の無い先読みは当てる前も後も0件 |
+
+【4-7 探索の範囲】
+**探す値はありません。**
+
+【4-8 データ構造】
+**新しく作るもの。**時間足ごとの結果のファイル＝{"時間足": …, "分離力": {列名: {札: {先を見る本数: 分離力}}}, "独立な標本の数": [[札, 先を見る本数, 時間足, 数], …]}。成績表 material_ranking.json の形は変えません。
+
+【4-9 設定】
+**コマンドの旗を1つ増やします。**--selftest-rank-resume（自己テスト T-r だけを数秒で走らせる口）。設定ファイルは変えません。
+
+【4-10 保存先】
+**足すもの。**results/priority_rebuild/ratchet/observe/rank_resume/<指紋16桁>/（git の対象外）。成績表の置き場は変えません。
+
+【4-11 時刻の扱い】
+**変えません。**
+
+【4-12 出る結果の姿】
+**完成したときに出るもの。**①自己テスト T-r が通る（①結果が同じ ②落ちた後に1本目だけ残る ③走らせ直すと1本目を読んで飛ばす ④材料が違えば読まない）②壊すプログラム b126 で T-r が T-r② で落ちる ③全走の途中で落ちても、同じコマンドで走らせ直すと「時間足 … は前に書き終わった結果を読んだ（続きから）」と出る。
+
+【4-13 影響範囲】
+1. **observe_diag.py は G2 と H2 の対象です。**実装の後に G2 → H2 を取り直します。
+2. **成績表の中身は変わりません。**読む側（engine_tuner の組む側・測る道具）は直しません。
+3. **直すファイルの行の文字を探している壊すプログラムが12本 在ります。**この工事は、どれが探す文字も変えません（案を作る道具が、当てる前と後で数えた）。
+4. **結果の置き場に、時間足ごとのファイルが増えます**（1回の全走で11本・合わせて約1MB）。
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 時間足ごとの結果を書く | 1本 1秒未満 | 10/03 の全走で書いた 1m.json は 81,766 バイト |
+| 自己テスト T-r | 約4秒 | 案を作る道具が、当てた後の道具を本物に書かずに走らせた実測 |
+| 全走の時間 | 変わらない（約2時間15分） | 10/03 の全走（外から同じ直しを掛けた）は 132.1分＝前の3回と同じ |
+
+【4-15 競合】
+**同時に2つ走らせると、同じ置き場の同じ時間足を書き合うおそれがあります。**全走を同時に2つ走らせません（今までどおり、成績表も1つの置き場です）。
+
+【4-16 セキュリティ】
+**触らないもの。**人に見せてはいけない値（取引所の鍵・本番の発注の切り替え）には触りません。書き換えられては困る記録（H2・G2 の検査済みの記録・承認の記録）は、取り直しの道具だけが書きます。
+
+【4-17 ログと進捗表示】
+**画面に出すもの。**走らせ直して書き終わった時間足を読んだときに、「時間足 … は前に書き終わった結果を読んだ（i/11 本・続きから）」と1行 出します。今までの時間足ごとの終わりの行は変えません。
+
+【4-18 再利用】
+| 手本 | 何を写すか |
+|---|---|
+| 試作 .claude/state/_labelE_resume_probe.py の HELPERS・PATCHES | 直しの文字（6つの証明に使った物と同じ） |
+| 試作 .claude/state/_labelE_selftest_probe.py の SELFTEST_FN | 自己テスト T-r の文字（直しが在れば通り、直しを壊すと落ちると確かめた物と同じ） |
+| observe_diag.py の selftest_rank_demand（T-f） | 自己テストの形・口の形 |
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "5969〜5970行（_rank_record_unmeasured）",
+  "直す前の文字": "                      \"または 良い/悪いの片側の標本が10未満）＝黙って消さず記録（M2-3-4）\")\n    return dropped\n",
+  "種類": "足す文字",
+  "中身": "\n\n# ══ 成績表の全走を、途中で落ちても続きから計算する（2026-10-03・工事 E・まこさん「データが途中落ちても残るようにできてるのか証明しろ」）══\n#   なぜ＝2026-10-02 に全走（約2時間15分）が2回 途中で止まり、時間足11本の結果をメモリにだけ持つ作りだったので何も残らなかった。\n#   直した後＝時間足を1本 計算し終えるごとに、その結果を OBSERVE_DIR/rank_resume/<指紋>/<時間足>.json に書く。\n#     走らせ直すと、同じ指紋の置き場に在る時間足は読んで飛ばす。\n#   ★指紋＝設定・材料の名前・先を見る本数・値決め窓・札の中身・5分足と1分足の元データ・この道具と札の部品と参照表のコードで決める\n#     ＝どれか1つでも違えば別の置き場になり、前の結果を混ぜない。\n#   ★書くときは一時の名前で書いてから名前を替える＝書きかけのファイルは読まない。\ndef _rank_resume_dir(win, cfg, cat_use, horizons, labels) -> pathlib.Path:\n    \"\"\"続きの結果の置き場（中身の指紋で決める）。\"\"\"\n    import json as _json\n    h = hashlib.sha256()\n\n    def _add(x):\n        h.update(_json.dumps(x, ensure_ascii=False, sort_keys=True, default=str).encode(\"utf-8\"))\n    _add({\"設定\": {k: v for k, v in cfg.items() if k != \"_source\"}})\n    _add({\"材料\": [c[0] for c in cat_use]})\n    _add({\"先を見る本数\": [int(n) for n in horizons]})\n    _add({\"値決め窓\": [str(win.index.min()), str(win.index.max()), int(len(win))]})\n    h.update(pd.util.hash_pandas_object(win, index=True).to_numpy().tobytes())\n    for n in horizons:\n        for lab in REGIME_LABELS:\n            _m, _u = labels[n][lab]\n            h.update(_m.to_numpy(dtype=bool).tobytes())\n            h.update(_u.to_numpy(dtype=bool).tobytes())\n    _root = pathlib.Path(__file__).resolve().parent.parent.parent\n    _one = _root / ONE_MIN_CSV\n    _add({\"1分足\": [_one.stat().st_size, _one.stat().st_mtime_ns] if _one.exists() else None})\n    for _p in (pathlib.Path(__file__), pathlib.Path(rl.__file__), pathlib.Path(iref.__file__)):\n        h.update(_p.read_bytes())\n    d = OBSERVE_DIR / \"rank_resume\" / h.hexdigest()[:16]\n    d.mkdir(parents=True, exist_ok=True)\n    return d\n\n\ndef _rank_resume_save(path: pathlib.Path, tf: str, auc: dict, nsample: dict) -> None:\n    \"\"\"その時間足の結果（分離力と独立な標本の数）を書く。一時の名前で書いてから名前を替える。\"\"\"\n    import json as _json\n    body = {\"時間足\": tf,\n            \"分離力\": {c: {lab: {str(n): v for n, v in bn.items()} for lab, bn in by.items()}\n                    for c, by in auc.items() if c.endswith(f\"__{tf}\")},\n            \"独立な標本の数\": [[lab, int(n), t, int(v)] for (lab, n, t), v in nsample.items() if t == tf]}\n    tmp = path.with_name(path.name + \".tmp\")\n    tmp.write_text(_json.dumps(body, ensure_ascii=False), encoding=\"utf-8\")\n    tmp.replace(path)\n\n\ndef _rank_resume_load(path: pathlib.Path, auc: dict, nsample: dict) -> None:\n    \"\"\"書き終わった時間足の結果を読んで、分離力と独立な標本の数に足す。\"\"\"\n    import json as _json\n    d = _json.loads(path.read_text(encoding=\"utf-8\"))\n    for c, by in d[\"分離力\"].items():\n        auc[c] = {lab: {int(n): float(v) for n, v in bn.items()} for lab, bn in by.items()}\n    for lab, n, t, v in d[\"独立な標本の数\"]:\n        nsample[(lab, int(n), t)] = int(v)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:5969「\"または 良い/悪いの片側の標本が10未満）＝黙って消さず記録（M2-3-4）\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "6002〜6003行（rank_materials_for_regime）",
+  "直す前の文字": "    labels = {n: _regime_labels(win, n) for n in horizons}\n    auc: dict = {}                                            # 列名 → {ラベル: {N: 分離力}}\n",
+  "種類": "直した後の文字",
+  "中身": "    labels = {n: _regime_labels(win, n) for n in horizons}\n    _ck_dir = _rank_resume_dir(win, cfg, cat_use, horizons, labels)   # ★工事 E＝続きの結果の置き場\n    auc: dict = {}                                            # 列名 → {ラベル: {N: 分離力}}\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:6002「labels = {n: _regime_labels(win, n) for n in horizons}」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "6009〜6010行（rank_materials_for_regime）",
+  "直す前の文字": "    for _i_tf, tf in enumerate(use_tfs, 1):\n        cfg_tf = dict(cfg)\n",
+  "種類": "直した後の文字",
+  "中身": "    for _i_tf, tf in enumerate(use_tfs, 1):\n        _ck = _ck_dir / f\"{tf}.json\"\n        if _ck.exists():                                      # ★工事 E＝書き終わった時間足は読んで飛ばす\n            _rank_resume_load(_ck, auc, nsample)\n            print(f\"  … 時間足 {tf} は前に書き終わった結果を読んだ（{_i_tf}/{len(use_tfs)} 本・続きから）\", flush=True)\n            continue\n        cfg_tf = dict(cfg)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:6009「for _i_tf, tf in enumerate(use_tfs, 1):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "6028〜6029行（rank_materials_for_regime）",
+  "直す前の文字": "            del grid\n        del df\n",
+  "種類": "直した後の文字",
+  "中身": "            del grid\n        del df\n        _rank_resume_save(_ck, tf, auc, nsample)              # ★工事 E＝この時間足の結果を書く\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:6028「del grid」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "6399〜6402行（selftest_rank_demand）",
+  "直す前の文字": "    return ng\n\n\ndef selftest_insp5(",
+  "種類": "直した後の文字",
+  "中身": "    return ng\n\n\ndef selftest_rank_resume(exit_: bool = True) -> list:\n    \"\"\"T-r＝成績表の全走が、途中で落ちても続きから計算できるか（工事 E・口 --selftest-rank-resume・壊すプログラム b126 が使う）。\n\n    ①止めずに走らせた結果と、2本目の時間足で落としてから走らせ直した結果が、並びまで同じ\n    ②落ちた後に、書き終わった1本目の時間足のファイルだけが残る\n    ③走らせ直すと、1本目を読んで飛ばす（読んだのは1本）\n    ④材料が違えば、同じ置き場でも前の結果を読まない\n    ★乱数を使わない（決まった式の4本値）。★本物の成績表と続きの置き場は触らない（一時のフォルダ）。\n    \"\"\"\n    global OBSERVE_DIR\n    import json as _json\n    import tempfile as _tf\n    ng: list = []\n    n_bars = 6000\n    idx = pd.date_range(SEARCH_START, periods=n_bars, freq=\"5min\")\n    _i = np.arange(n_bars, dtype=float)\n    _c = 100.0 + 3.0 * np.sin(_i / 40.0) + 0.002 * _i\n    bars = pd.DataFrame({\"open\": _c, \"high\": _c + 0.05, \"low\": _c - 0.05, \"close\": _c,\n                         \"volume\": 1.0 + (_i % 7)}, index=idx)\n    cfg = load_config(None)\n    cat = build_catalog(cfg)[:6]\n    tfs = [\"5m\", \"1h\"]\n    g = globals()\n    keep_dir, keep_bf, keep_load = OBSERVE_DIR, g[\"build_features\"], g[\"_rank_resume_load\"]\n    loads: list = []\n\n    def _bf_fail(win, cfg_tf, catalog=None):\n        if cfg_tf[\"timeframes\"] == [tfs[1]]:\n            raise RuntimeError(f\"T-r: 試しに {tfs[1]} で落とす\")\n        return keep_bf(win, cfg_tf, catalog)\n\n    def _load_count(path, auc, nsample):\n        loads.append(path.name)\n        return keep_load(path, auc, nsample)\n    full = again = None\n    with _tf.TemporaryDirectory() as d:\n        try:\n            OBSERVE_DIR = pathlib.Path(d) / \"full\"\n            full = rank_materials_for_regime(bars, cfg, cat, tfs=tfs)\n            OBSERVE_DIR = pathlib.Path(d) / \"resume\"\n            g[\"build_features\"] = _bf_fail\n            try:\n                rank_materials_for_regime(bars, cfg, cat, tfs=tfs)\n                ng.append(\"T-r: 2本目で落とせなかった（試しの仕掛けが効いていない）\")\n            except RuntimeError:\n                pass\n            g[\"build_features\"] = keep_bf\n            left = sorted(p.name for p in (OBSERVE_DIR / \"rank_resume\").glob(\"*/*.json\"))\n            if left != [f\"{tfs[0]}.json\"]:\n                ng.append(f\"T-r②: 落ちた後に残ったファイルが {left}（期待 ['{tfs[0]}.json']）\")\n            g[\"_rank_resume_load\"] = _load_count\n            again = rank_materials_for_regime(bars, cfg, cat, tfs=tfs)\n            if loads != [f\"{tfs[0]}.json\"]:\n                ng.append(f\"T-r③: 走らせ直したときに読んだのが {loads}（期待 ['{tfs[0]}.json']）\")\n            if _json.dumps(full, ensure_ascii=False, default=str) != _json.dumps(again, ensure_ascii=False, default=str):\n                ng.append(\"T-r①: 止めずに走らせた結果と、落としてから走らせ直した結果が違う\")\n            if not full.get(\"測れた列\"):\n                ng.append(\"T-r①: 作り物の4本値で、分離力を測れた列が0本（試しになっていない）\")\n            loads.clear()\n            rank_materials_for_regime(bars, cfg, cat[:5], tfs=tfs)\n            if loads:\n                ng.append(f\"T-r④: 材料が違うのに、前の結果を読んだ: {loads}\")\n        finally:\n            OBSERVE_DIR, g[\"build_features\"], g[\"_rank_resume_load\"] = keep_dir, keep_bf, keep_load\n    print(f\"  T-r 途中で落ちても続きから計算する（工事 E）: ①結果が同じ ②1本目だけ残る ③1本目を読んで飛ばす ④材料が違えば読まない\"\n          f\" ／ 測れた列 {(full or {}).get('測れた列')} 本 ／ ❌ {len(ng)} 件\")\n    if exit_:\n        for x in ng:\n            print(f\"  ❌ {x}\")\n        raise SystemExit(1 if ng else 0)\n    return ng\n\n\ndef selftest_insp5(",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:6399「return ng」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "7685行（selftest）",
+  "直す前の文字": "    ng += selftest_rank_demand(exit_=False)          # T-f（需給を成績表に足す差分の口・設計書 demand-in-ranking-20260907）\n",
+  "種類": "足す文字",
+  "中身": "    ng += selftest_rank_resume(exit_=False)          # T-r（途中で落ちても続きから計算する・工事 E）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:7685「ng += selftest_rank_demand(exit_=False)          # T-f（需給を成績表に足す差分の口・設計書 demand-in-ranking-20260907）」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "7737行（<モジュール直下>）",
+  "直す前の文字": "        selftest_rank_demand()                        # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n",
+  "種類": "足す文字",
+  "中身": "    if \"--selftest-rank-resume\" in sys.argv:          # T-r だけを数秒で（工事 E・壊すプログラム b126 が使う）\n        selftest_rank_resume()                        # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:7737「selftest_rank_demand()                        # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": ".claude/breaks/b126_rank_resume_save_off.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 成績表の全走で、時間足を1本 計算し終えたら結果を書く所（_rank_resume_save）を外すと、自己テスト T-r が「落ちた後に書き終わった時間足のファイルが残らない」で落ちた\n# EXPECT_MSG: ❌ T-r②\n# b126 — observe_diag.rank_materials_for_regime の、時間足の結果を書く行を外すと、T-r が落ちるか（工事 E・2026-10-03）\n#   守っているもの＝完成の条件 #1（観察の道具の自己テスト T-r が、途中で落ちても続きから計算できるかを見ている）\n#   壊し方＝時間足の結果を書く行（_rank_resume_save の呼び出し）を消す（直す前と同じ＝最後にまとめて書くだけになる）。\n#   期待＝observe_diag.py --selftest-rank-resume の T-r② が落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nOD=\"$PR/observe_diag.py\"\nguard \"$OD\"\n\npython3 - \"$OD\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '        _rank_resume_save(_ck, tf, auc, nsample)              # ★工事 E＝この時間足の結果を書く\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b126] 壊す対象の行が1か所でない: \" + old.strip())\nnew = '        pass  # b126 が壊した（時間足の結果を書かない）\\n'\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$OD\" --selftest-rank-resume\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b125_hindsight_osc_off.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 時間足1本ごとに結果を書く | 全走は時間足ごとのループで、1本の結果がまとまる所が自然な区切り | 材料1種ごとに書く。捨てた理由＝書く回数が6,000回を超え、遅くなる |
+| 続きの置き場を中身の指紋で決める | 違う札・違う材料の結果を混ぜないため。名前や版の名前だけでは、中身の違いを見落とす | 札の版の名前で決める。捨てた理由＝式や元データが変わっても名前が同じだと混ざる |
+| 一時の名前で書いてから名前を替える | 書いている途中で落ちても、書きかけのファイルを読まないため | そのまま書く。捨てた理由＝書きかけを次に読むおそれ |
+| 書き終わった後も置き場を消さない | 走らせ直したときにすぐ終わる・中身を後で見られる | 終わったら消す。捨てた理由＝成績表を書く所で落ちたときに、また全部 計算することになる |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 指紋に入れ忘れた入力が変わると、古い結果を混ぜる | 指紋には、設定・材料の名前・先を見る本数・期間・5分足の中身・札の中身・1分足の元データ（大きさと時刻）・3つのコード（観察の道具・札の部品・参照表）を入れた。ほかに結果を変える入力を見つけたら、指紋に足す |
+| 置き場のファイルが増え続ける | 1回の全走で11本・約1MB。増えすぎたら、まこさんに確かめてから消す |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる | 30秒未満 | 当てる道具は1秒未満で終わった（工事 C・D） |
+| 自己テストと壊すプログラム | それぞれ1分未満 | 4-14 |
+| G2 → H2 | 約30秒 → 約5分 | 10/02 の取り直し |
+| まこさんの承認 | 2回（当てる前に1回・当てた後に SPEC を実物から作り直した設計書に1回） | 4-4 の2（教訓 L-655） |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 成績表の道具が、2時間を超える計算の結果をメモリにだけ持ち、最後にまとめて書く作りだからです（私が 8/22 に設計し、2時間14分かかると分かった後も直さなかった）。 |
+| 期待値分解 | 売買のロジックには触れません。勝率・平均利益・敗率・平均損失は動きません。動くのは、全走が途中で落ちたときに失う時間だけです。 |
+| root か symptom か | root です。落ちる理由（走らせ方・PC・私の誤り）を1つずつ塞ぐのではなく、どの理由で落ちても計算が残る形にします。 |
+| ベースアップ | 長い計算を区切りごとに書いて続きから再開する形（チェックポイント）は、長い学習や計算で一般的なやり方です。区切りは、この道具の時間足のループにしました。 |
+
+【7-2 固定値ゼロ宣言】
+この工事に、疑似シミュから取った値は1つもありません。数字を足しません（自己テストの作り物の4本値の式の数字だけで、成績表には入りません）。
+
+【7-3 変更の単位】
+変更は1つ＝成績表の全走を、途中で落ちても続きから計算できる形にする（14a の工事 E）。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 当たるか | 理由 |
+|---|---|---|
+| 1 | 当たりません | 乱数を使いません。条件をつなぐものではなく、成績表の書き方と読み方の直しです |
+| 2 | 当たりません | 値を選びません。成績表の中身は変わりません |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 指紋に入れていない入力が変わったら | 古い結果を混ぜます。入れていない入力（例＝指標を計算する外の部品の版）が変わったときは、置き場を消してから走らせ直します |
+| 置き場のファイルを手で書き換えられたら | 読んでしまいます。置き場は results の下（git の対象外）で、書くのはこの道具だけです |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝2本（観察の道具・壊すプログラム b126）を【7-8】に書いた。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝observe_diag.py）。
+- 新しく作るファイルは壊すプログラム b126 の1本（NEW_FILE）。手本は工事 D の壊すプログラム b125（MODEL）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝10/02 に全走が2回 途中で止まり、何も残らなかった。この工事は、どの理由で落ちても計算が残る形にする。
+- 新しい部品は続きの部品3つ（_rank_resume_dir・_rank_resume_save・_rank_resume_load）。H2 が走らせる案には入らない（成績表の書き方と読み方だけで、案の判定には使わない）。未来参照の検査で注記の無い先読みは0件。
+- 直すファイルの行番号を指す文書は、この工事の実装の指示だけで、いまの実物から道具が作った。
+- 直すファイルの名前を本文に持つ壊すプログラムを全部 探し、それぞれが探す行の文字の数が、この工事の前と後で同じことを案を作る道具が数えた（4-13 の3・照らした組は案の冒頭）。
+- 壊すプログラムは b126 を1本 作る（結果を書く行を外すと T-r が T-r② で落ちる＝案を作る道具が同じ壊し方で確かめた）。結果の置き場は、壊すプログラムが走らせる自己テストの中で一時のフォルダにしてある。
+- 触る関数は、全部 DESIGN_CONTRACT の impl_functions に書いた（【7-8】・案を作る道具が照合の道具と同じ数え方で数えた）。<モジュール直下>・_rank_resume_dir・_rank_resume_load・_rank_resume_save・rank_materials_for_regime・selftest・selftest_rank_resume。must_use に、本体が呼ぶ続きの部品3つと、T-r が呼ぶ本体を書いた。
+- 新しく足す旗は --selftest-rank-resume（4-9）。完成の条件 #1 のコマンドで通る。
+- 2回目の承認の前に、実装の中で変わった手順を設計書に書き直す（その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2f-rank-resume-20261002）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己テスト＝観察の道具に T-r を足し、全部の自己テスト（selftest）からも呼ぶ。案を作る道具が当てた後の道具を本物に書かずに走らせ、通った。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| 自己テスト T-r が通る（途中で落ちても続きから計算でき、結果が同じ） | python3 scripts/priority_rebuild/observe_diag.py --selftest-rank-resume | 実経路 | 時間足の結果を書く行（_rank_resume_save の呼び出し）を外すと、T-r が T-r②（落ちた後に1本目のファイルが残らない）で落ちる | b126_rank_resume_save_off.sh | — | 未着手 |
+| 需給の自己テスト T-f が今までどおり通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-rank-demand | 実経路 | 壊すプログラムは付けない（この工事は T-f の関数を変えない・前からの壊すプログラム b39・b40 が見ている） | — | — | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  "scripts/priority_rebuild/observe_diag.py",
+  ".claude/breaks/b126_rank_resume_save_off.sh"
+ ],
+ "NEW_FILE": [
+  ".claude/breaks/b126_rank_resume_save_off.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b125_hindsight_osc_off.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/observe_diag.py",
+  "_impl_file の意味": "照らす相手は実在するファイル。成績表を作る本体が在る観察の道具を照らす。",
+  "impl_functions": {
+   "scripts/priority_rebuild/observe_diag.py": [
+    "<モジュール直下>",
+    "_rank_resume_dir",
+    "_rank_resume_load",
+    "_rank_resume_save",
+    "rank_materials_for_regime",
+    "selftest",
+    "selftest_rank_resume"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数。当てる前と後の差の行を、当てた後のコードの関数に当てはめて、案を作る道具（_labelE_draft_build.py）が数えた。",
+  "self_check_calls": [
+   "_rank_resume_dir",
+   "_rank_resume_save",
+   "_rank_resume_load",
+   "selftest_rank_resume"
+  ],
+  "_self_check_calls の意味": "実装の後の観察の道具に在るはずの、工事 E の関数の名前。",
+  "must_use": {
+   "rank_materials_for_regime": [
+    "_rank_resume_dir",
+    "_rank_resume_save",
+    "_rank_resume_load"
+   ],
+   "selftest_rank_resume": [
+    "rank_materials_for_regime"
+   ]
+  },
+  "_must_use の意味": "成績表の本体が続きの部品3つを呼び、自己テスト T-r が本体を呼ぶ（案を作る道具が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は成績表の書き方と読み方を足すだけ。外から読む一覧（候補・法則・成績表の順位・範囲の鍵）は読まない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の差の行（_labelE_draft_build.py が数えた）",
+   "must_use": "ast で照らした",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```
+
+【外部検索】
+| 名前 | 中身 |
+|---|---|
+| 長い計算を区切りごとに書いて、続きから再開する形（チェックポイント） | 長い計算で途中の結果を書いて再開するやり方と、書きかけを読まない書き方（一時の名前で書いて名前を替える）を調べる（私の導出） |
+
+---
+
+お返事をいただきたいのは2つです。
+1. この案でよいか。OK をいただけたら、設計書を作り、承認をお願いします。
+2. 監査を出すかどうか。私の案は「工事 C・D・E とも出さない」です。
+
+ほかに、gen_acceptance.py の直し（上に書いた2-3 の件）の commit もお願いします。

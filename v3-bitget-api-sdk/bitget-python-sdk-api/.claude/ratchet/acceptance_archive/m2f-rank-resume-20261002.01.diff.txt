@@ -1,0 +1,43 @@
+84,86c84,86
+< | 続きの部品が在るか | `grep -c -F 'def _rank_resume_save' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+< | 成績表の本体が結果を書く行が在るか | `grep -c -F '_rank_resume_save(_ck, tf, auc, nsample)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+< | 自己テスト T-r の口が在るか | `grep -c -F -e '--selftest-rank-resume' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+---
+> | 続きの部品が在るか | `grep -c -F 'def _rank_resume_save' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 1（終了コード 0） |
+> | 成績表の本体が結果を書く行が在るか | `grep -c -F '_rank_resume_save(_ck, tf, auc, nsample)' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 1（終了コード 0） |
+> | 自己テスト T-r の口が在るか | `grep -c -F -e '--selftest-rank-resume' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 2（終了コード 0） |
+829c829
+< <!-- ACC_CODEREF_START hash=b1ea7a31854c2586 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=0c720203bfa6b962 gen_acceptance.py が自動生成＝手で書き換えない -->
+836,839c836,839
+< | `_rank_resume_dir` | （この関数は実物に無い） |
+< | `_rank_resume_save` | （この関数は実物に無い） |
+< | `_rank_resume_load` | （この関数は実物に無い） |
+< | `selftest_rank_resume` | （この関数は実物に無い） |
+---
+> | `_rank_resume_dir` | 5980 |
+> | `_rank_resume_save` | 6007 |
+> | `_rank_resume_load` | 6019 |
+> | `selftest_rank_resume` | 6465 |
+841c841
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 172件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 176件の関数が在ります）。
+848c848
+< <!-- ACC_SPEC_START hash=59a4a6759436710d gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=61ee443e3a44d448 gen_acceptance.py が自動生成＝手で書き換えない -->
+996a997,1001
+>   "selftest_rank_resume": [
+>    "build_catalog",
+>    "load_config",
+>    "rank_materials_for_regime"
+>   ],
+1022a1028
+>    "selftest_rank_resume",
+1046c1052,1053
+<   "--selftest-rank-demand"
+---
+>   "--selftest-rank-demand",
+>   "--selftest-rank-resume"
