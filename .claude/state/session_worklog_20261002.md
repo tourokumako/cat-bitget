@@ -222,8 +222,30 @@
 
 ### 8-8 承認の打ち直し・M2-F-5 の走行（2026-10-02・145回目）
 
-- まこさん「うった」（承認の印 08:42）。承認の控え＝acceptance_archive/m2f-label-callers-20261002.01.md（打ち直しの版）。
+- まこさん「うった」（承認の印 08:42）。承認の控え＝acceptance_archive/m2f-label-callers-20261002.md（打ち直しの版・4067f16f…＝いまの設計書と同じ）。1回目の承認の版は .01.md（713943e3…）に移された（承認のプログラムが前の版に .01 を付ける・ハッシュ値と時刻で確かめた）。
 - M2-F-5 の走行＝`cd SDK/scripts/priority_rebuild && python3 regime_r9_diag.py --stage stage1 --limit 2 --purpose check`（08:42:59・4.4秒・前に作った物を再利用＝指紋に入る6本は直していない＝engine_tuner.py:90〜91）。印字は144回目（この worklog の15〜17行）と同じ＝1位 stage1_0 ①18.53%・③(先24本)=49.6%・③(先288本)=47.2%／2位 stage1_1 ①18.72%／3位 RG-v5 ①57.22%。順位表 rank_stage1_20261002-084303.json の3行とも「札の版」＝label-er24-288。落ちた候補は0行（⑬は合成データで見ている）。
 - 照合 verify_design_contract.py --diff＝齟齬0件。enforce_g2_pass.py --check-fingerprint＝一致（09f97a77…・39件）／enforce_h2_pass.py --check-fingerprint＝一致（e4fc4dc2…・24件）。
 - next_step_src.json＝0-1 の3番を工事 B の次（実装の監査の依頼書 → 工事 C）に、145回目にしたことに工事 B を足し、14a の行の状態を書き替え、§6 に241番（b118 の番号の重なり）と242番（一時の置き場で2つの hook が食い違う）を足した。
 - 次＝commit（まこさんの OK）→ 実装の監査の手書き（ToDo の7番）。
+
+### 8-9 commit・実装の監査の手書き（2026-10-02・145回目）
+
+- まこさん「OK」→ commit 19d1bd7（コード3本・壊すプログラム3本・承認の控え・凍結の記録・当てた記録・確認の帳簿・worklog・next_step）。decisions.md は入れていない。commit の後の verify_design_contract.py --diff＝齟齬0件。
+- 監査依頼の手書き（実装の監査）.md を工事のフォルダ（SDK/.claude/ratchet/acceptance_archive/verbatim/m2f-label-callers-20261002/）に書いた。手本＝工事 A の同じ名前のファイル。「この工事は何のためか」＝札を直しやすい構造（req_6d:V20・V21）のうち、工事 B は札を作る場所を1つにする（V24）とどの版の札で選んだかを残す（V25）＋役割ごとに残す（ok_todo:V01）。必読12行（要件定義書・engine_tuner の要件・マイルストーン2本・m2_todo の M2-F-6d・worklog 20260928 §50〜§51・直した3本・設定・成績表を読む側・壊すプログラム3本）。問い Q8〜Q13（Q8＝札を直すと両方の道具が同じ札で動くか）。要望のまとめ7行（1件目＝目的）。
+- pre_audit_check.py --run を裏で走らせた（144回目の実測＝H2 301.4秒・観察の道具の自己テスト 117.0秒ほか）。
+
+### 8-10 手書きへの OK・依頼書 cp59（2026-10-02・145回目）
+
+- まこさん「OK」（手書き）。pre_audit_check.py --run＝全部 rc=0（10:12:00〜10:21:31・H2 307.3秒・観察の道具の自己テスト 117.9秒・gen_materials --selftest 75.6秒ほか・まこさんの承認を待つもの2件＝gen_signal_families・gen_exit_families の --write と --approve は道具が打たない）。--verify＝「監査に出せます」。
+- 裏のチェックが G2（10:12:40）と H2（10:17:47）を書き直したので、Stop の enforce_next_step_tidy に2回 止められた（2回目と3回目は block_repeat_kind が決まりの書き足しを求めた＝sessions の lessons.md）。
+- gen_audit_docs.py request-design impl＝1回目は止まった＝要望の出どころ ok_todo_20261001:V01 は req_ のファイルでない（道具は要望の逐語の行だけを出どころにする）。L-6 の元の まこさんの発言（2026-09-28・発言 5b0356d4「→どちらも出せばいいのでは？」）は、承認の後の工事のフォルダに書き足せない（gen_verbatim.py:294〜295）。→ 手書きの2か所を直した＝「この工事は何のためか」の2行目の出どころから ok_todo を外し本文に「worklog 20260928 §51 の1」と書いた／要望のまとめから L-6 の行を外した（L-6 は Q11 で問う）。2回目は必読の1行に壊すプログラム3本をまとめて書いたので2本が拾われずに止まった → 1本ずつの行に分けた。3回目で依頼書 cp59（503行・問い13・事実データ3・自己申告3）ができた。
+- 依頼書の全行を読んだ。自己申告2番の「前の版 .01.md・いまの版 .md」を疑ったが、ハッシュ値と時刻で確かめると正しかった（承認のプログラムは打ち直しのとき前の版を .01.md に移す）。逆に、この worklog の 8-8 の「.01.md＝打ち直しの版」が誤りだったので直した。
+- 見直し表（44項目）＝gen_review.py --check で止める理由0件・根拠44件。
+- 次＝まこさんのチェック → 別のセッションで監査 → 結果。そのあと工事 C。
+
+## §9 145回目の終わり＝引き継ぎ（2026-10-02・まこさん「監査依頼書はOK。別セッションで監査に出す。このセッションは終了する。次は監査結果の確認→修正から。引き継ぎを更新して」）
+
+- 145回目にしたこと＝①監査 cp58（工事 A）の Minor 4件を当てた（c44ac3a・fefb00e・§7）②14a の工事 B を、読むもの宣言 → 案 → 設計書 → 承認（打ち直し1回）→ 実装 → M2-F-5 の走行 → commit 19d1bd7 → 実装の監査の依頼書 cp59 まで進めた（§8）。
+- 次のセッション＝監査 cp59 の結果（SDK/.claude/audits/2026-10-02_m2f_label_callers_20261002_impl_cp59_audit_report.md）を確かめ、まこさんが直す範囲を決め、apply_audit_fix.py --report で当てる。そのあと工事 C（⑪タブの道具・9/29 の控えの実装の指示 23〜27・案の道具の手本＝.claude/state/_labelB_draft_build.py）。
+- 教訓＝lessons_active.md に L-654（呼び出しの並べ方と裏の走行の後始末）・L-655（承認の後の SPEC の食い違い・案の文は報告の前・要望の出どころは req_ だけ）を足した。memory の feedback_speed_up_from_new_session の早見表に5行を足した。
+- このセッションで hook と判定に止められた回数（記録から数えた）＝設計↔実装ゲート2回（python3 - の heredoc・SPEC の食い違い）・enforce_observe_diag_only 1回・require_confirm_before_act 2回（Pre）と1回（Stop・一時の置き場のスクリプト）・block_repeat_kind 5回・block_repeat_failure 1回・土台ゲート3回・require_selftest_after_source_edit の Stop 2回・require_trial_before_proposal の Stop 1回・enforce_next_step_tidy の Stop 4回。道具そのものの失敗＝試しの設計書2回（2-1 の「>」・A2 と A13）・依頼書の道具2回（出どころ ok_・必読の1行に3本）・逐語の切れ1回・ls のパス1回。英語の文を1つ書いた（日本語で書く決まりに反した）。
