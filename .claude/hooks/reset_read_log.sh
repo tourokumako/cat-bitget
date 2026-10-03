@@ -71,6 +71,17 @@ echo "必読を Read tool で実際に開くまで、Bash/Edit/Write は block �
 echo "  1. next_step.md（★唯一の起点＝§0 次にやること・§6 あとで直すこと。2026-08-25 まこさん指示で WORKFLOW.md を必読から外した）"
 echo "  2. adopted_strategies.md（採用ポートフォリオ台帳）"
 echo "  3. permanent_rules.md（恒久の決まり・リポジトリ直下 .claude/rules/・自動で読み込まれるが Read も要る）"
+# ★2026-10-04 まこさん指示（「新セッションでお前が大量のトークンつかって作った資料をCCが面倒だから確認しないんだけど」）
+#   ＝「いま必ず読むもの」の一覧（.claude/state/must_read_now.txt）も出す。require_read_before_work.sh が同じ一覧で止める。
+_MR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/must_read_now.txt"
+if [ -f "$_MR" ]; then
+  _i=4
+  while IFS= read -r _l; do
+    case "$_l" in ""|\#*) continue ;; esac
+    echo "  ${_i}. ${_l}（★いま必ず読むもの＝must_read_now.txt・中身を使って進める）"
+    _i=$((_i + 1))
+  done < "$_MR"
+fi
 echo "（WORKFLOW.md＝現在地は「next_step.md §0 を見る」の1行だけ。改訂の履歴は archive/workflow/ に移した）"
 echo "→ grep や表示だけでは解除されません。Read tool で開いてください。"
 echo "（ledger.md 本体＝特定の過去実験を深掘りする時に読む参照資料。毎回の必読からは外した）"

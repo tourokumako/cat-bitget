@@ -1,5 +1,8 @@
 #!/bin/bash
-[ -f "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化（touch/rm pdca_fast_mode で切替・safety hook には入れない・2026-07-16）
+# ★2026-10-04 まこさん指示（「新セッションでお前が大量のトークンつかって作った資料をCCが面倒だから確認しないんだけど」）
+#   ＝fast-mode の印（.claude/state/pdca_fast_mode）で丸ごと通す行を外した。直す前は、その印が 2026-07-15 から置かれたままで、
+#     この必読の止めが一度も効いていなかった（SessionStart の表示は「止まる」と言っていた）。必読は fast-mode でも止める。
+#   直す前の行＝[ -f ".../pdca_fast_mode" ] && exit 0  # [fast-mode] process hook を一時無効化
 # require_read_before_work.sh — PreToolUse on Bash|Edit|Write|MultiEdit
 # ゲート1（読了強制）: 必読を Read tool で実際に開く（record_read.sh が read_log に記録）まで、
 #   作業ツール(Bash/Edit/Write/MultiEdit)を exit 2 で物理 block する。
@@ -48,6 +51,15 @@ input=$(cat)
 #   いま WORKFLOW.md の現在地は「next_step.md §0 を見る」の1行だけ。
 REQUIRED=("next_step" "adopted_strategies" "permanent_rules")
 LABEL=("next_step.md(唯一の起点＝§0 次にやること・§6 あとで直すこと)" "adopted_strategies.md(採用ポートフォリオ台帳)" "permanent_rules.md(恒久の決まり・リポジトリ直下 .claude/rules/)")
+# ★2026-10-04 まこさん指示（「新セッションでお前が大量のトークンつかって作った資料をCCが面倒だから確認しないんだけど」）
+#   ＝「いま必ず読むもの」の一覧 .claude/state/must_read_now.txt の各ファイルも必読に足す（日付つきの名前を hook に焼かない）。
+MUSTREAD="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/must_read_now.txt"
+if [ -f "$MUSTREAD" ]; then
+  while IFS= read -r _l; do
+    case "$_l" in ""|\#*) continue ;; esac
+    _b=$(basename "$_l"); REQUIRED+=("${_b%.*}"); LABEL+=("$_l（must_read_now.txt）")
+  done < "$MUSTREAD"
+fi
 
 missing=()
 for idx in "${!REQUIRED[@]}"; do
