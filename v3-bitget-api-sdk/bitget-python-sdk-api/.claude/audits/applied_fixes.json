@@ -1778,6 +1778,97 @@
    "file": ".claude/breaks/b126_rank_resume_save_off.sh",
    "at": "2026-10-03T07:23:24",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "1",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "2",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "3",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "4",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "5",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "6",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "7",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "8",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "9",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "10",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "11",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "12",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2f-stage-quantile-rank-20261003",
+   "num": "13",
+   "file": ".claude/breaks/b127_stage_q_rank_off.sh",
+   "at": "2026-10-03T11:18:01",
+   "how": "当てた"
   }
  ]
 }

@@ -1,0 +1,40 @@
+84,86c84,86
+< | 分位ごとに同じ順位を付ける行が在るか | `grep -c -F 'rank_q = rank if _q is None else rank' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 実装の前は当たる行が在る。実装の後は当たる行が無い | 1（終了コード 0） |
+< | 部分の自己テストが在るか | `grep -c -F 'def selftest_stage_q' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+< | 部分の自己テストの口が在るか | `grep -c -F -e '--selftest-stage-q' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 0（終了コード 1） |
+---
+> | 分位ごとに同じ順位を付ける行が在るか | `grep -c -E '^ +rank_q = rank if _q is None else rank' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 実装の前は当たる行が在る。実装の後は当たる行が無い（行の頭が空白だけの行＝コードの行だけを数える。実装の後に足した説明のコメント「直す前は `rank_q = …`」は、行の頭が # なので数えない＝最初の承認の後に、コメントにも当たると分かって直した） | 0（終了コード 1） |
+> | 部分の自己テストが在るか | `grep -c -F 'def selftest_stage_q' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 1（終了コード 0） |
+> | 部分の自己テストの口が在るか | `grep -c -F -e '--selftest-stage-q' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py` | 実装の前は当たる行が無い。実装の後は当たる行が在る | 3（終了コード 0） |
+886c886
+< <!-- ACC_CODEREF_START hash=cd9258290afaa853 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=77c92247544885a3 gen_acceptance.py が自動生成＝手で書き換えない -->
+893c893
+< | `selftest_stage_q` | （この関数は実物に無い） |
+---
+> | `selftest_stage_q` | 5100 |
+895c895
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 161件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 162件の関数が在ります）。
+902c902
+< <!-- ACC_SPEC_START hash=dbc4d3213d967ff2 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=ec556fa2a294aafc gen_acceptance.py が自動生成＝手で書き換えない -->
+1171a1172,1182
+>   "selftest_stage_q": [
+>    "build_stage_candidates",
+>    "laws_for_scene",
+>    "load_limits",
+>    "load_signal_table",
+>    "material_pool",
+>    "needed_qkeys",
+>    "resolve_hold_range",
+>    "sample_regime_build",
+>    "stage_candidates"
+>   ],
+1214a1226
+>    "selftest_stage_q",
+1251a1264
+>    "selftest_stage_q",

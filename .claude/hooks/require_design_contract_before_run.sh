@@ -100,7 +100,12 @@ CHECK = set(['--selftest', '--self-test', '--verify', '--identity', '--help',
              #   数秒で試す口（一時のフォルダ・作り物の4本値・成績表も売買記録も書かない・累積の試行数に足さない）。
              #   足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、'--selftest' に一致しない。
              #   壊すプログラム b126 が使う。
-             '--selftest-rank-resume'])
+             '--selftest-rank-resume',
+             # ★2026-10-03（設計書 iter="m2f-stage-quantile-rank-20261003"・まこさん「OK」）＝段2a の分位ごとの候補の順位と、
+             #   向きを持つ C の abs・abs の鍵だけを試す口（engine_tuner_gen.py の selftest_stage_q＝T44・T49）。設定の写しを使い、
+             #   成績表も売買記録も書かない・累積の試行数に足さない。足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、
+             #   '--selftest' に一致しない。壊すプログラム b127 が使う。
+             '--selftest-stage-q'])
 Q = chr(39) + chr(34)
 try:
     d = json.load(sys.stdin)

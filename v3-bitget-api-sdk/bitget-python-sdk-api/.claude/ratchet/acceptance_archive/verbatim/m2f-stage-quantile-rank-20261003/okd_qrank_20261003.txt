@@ -1,0 +1,401 @@
+受け取り方＝指示（読むもの宣言の OK）。範囲＝宣言の12件を開き、工事の案を作ってお見せするところまでです。宣言を読む中で、私の前の説明の誤り（「順位が重なると組む側が正しく引けない」）を見つけて、3か所で直しました。組む側は一覧の位置で候補を取るので、組む側が取る候補は変わりません。下が案です。
+
+案です（工事 m2f-stage-quantile-rank-20261003＝M2-F-10 の3つ目「案B」の前に要る、engine_tuner_gen.py の直し）。段2a の分位ごとの候補の順位（T40②）と、成績表の並びに頼る自己テスト（T23②・T42・T44）を直します。実装の指示は 13 件です。
+
+- 実装の指示は、道具が「直す前の文字」と「直した後の文字」の組で持ちます。直す前の文字が、いまの実物にちょうど1か所ずつ在ることを、道具で数えました。
+- 全件を、本物のファイルに書かずに当てて走らせました。結果は次のとおりです。
+  - 部分の自己テスト（T44・T49）＝❌ 0件（1.1秒）。段の不具合の自己テスト T48 も ❌ 0件（0.2秒）。
+  - 9点を書いた設定の段2a＝候補 639 本（1点の 71 本 × 9）・順位は1からの通し番号。先頭10本＝[(1, 'ADX', '15m', 'q10'), (2, 'ADX', '15m', 'q20'), (3, 'ADX', '15m', 'q30'), (4, 'ADX', '15m', 'q40'), (5, 'ADX', '15m', 'q50'), (6, 'ADX', '15m', 'q60'), (7, 'ADX', '15m', 'q70'), (8, 'ADX', '15m', 'q80'), (9, 'ADX', '15m', 'q90'), (10, 'CHOP', '30m', 'q10')]。
+  - location の1位（当てた後の道具で成績表を読む）＝S-Rタッチ1時間ATR(144,1.0,21)__3m（分離力 0.238）＝新しい見本と同じ。
+  - 壊すプログラム b127 と同じ壊し方（通し番号の2行を外す）で、T49① が落ちた。
+  - 壊すプログラム b98 と同じ壊し方（実行器の abs の鍵の枝を外す）で、当てた後の T44 が「鍵を作れない」で落ちた（直す前は、abs の部品が出ないという別の理由で落ちていた）。
+  - 未来参照の検査＝注記の無い先読みは、当てる前 0 件 → 後 0 件。
+  - 壊すプログラムが探す行の文字は、この工事で変わらない（照らした壊すプログラム＝b109_moving_line_not_built.sh・b110_ts_pos_in_random_draw.sh・b111_ts_pos_excludes_current.sh・b112_stage_warm_not_extended.sh・b77_no_streak.sh・b78_law_literal.sh・b79_param_drawn.sh・b80_quantile_one_by_one.sh・b82_abs_missing.sh・b83_bool_col_extra_key.sh・b84_qtable_per_bundle.sh・b85_band_ignores_laws.sh・b87_stages_record.sh・b91_keep_range_ignored.sh・b92_stage2_no_drop_tfs.sh・b94_stage_limits_ignored.sh・b96_tf_hardcoded.sh・b98_qkey_abs_missing.sh・b99_streak_inner_band_only.sh）。
+
+この返信に OK を1回いただければ、逐語に写して設計書を作り、承認をお願いします。
+
+【4-0 この仕組みは何か】
+**この工事は、段2a を閾値の9点で測る前に要る、engine_tuner_gen.py の直しです。**M2-F-10 の3つ目で まこさんが選んだ「案B」の前提になります。
+
+**①いま何が起きているか。**設定 search_limits.json の stage_limits.stage2a.quantiles に9点（q10〜q90）を書くと、候補を作る関数 build_stage_candidates が、同じ材料の9本の候補に同じ順位を付けます。そのため自己テスト T40② が落ちます。あわせて、9点と関係なく3件が落ちています。T23② は自己テストの見本が、成績表を作り直す前の1位のままです。T42・T44 は、段2a の上位10本に向きを持つ指標（EMA傾き・DI差・MACDヒスト%）が来ることを前提にしていましたが、作り直した成績表では23位から下にしか無く、「測れない」で落ちます。
+
+**②この工事で何が変わるか。**分位ごとの候補に、材料の順 → 分位の順の通し番号を付けます。T23② の見本を今の成績表の1位に直します。T42・T44 の「測れない」は、段2a の系統を向きを持つ指標だけに絞った設定の写しで組む部分の自己テスト（T49②・T44）に移し、成績表の並びに頼らずに必ず測ります。
+
+**③数字はどう変わるか。**測る道具の測った成績と、組む側が取る候補は変わりません（組む側は一覧の位置で取る＝_stage_pick）。変わるのは、候補に付く順位の数字（分位を2点以上 書いたときだけ）と、自己テストの測り方です。
+
+【4-1 システムの境界】
+**誰が動かすか。**私（CC）が、自己テスト（--selftest と --selftest-stage-q）と、測る道具 regime_r9_diag.py の段の測定で動かします。
+
+**誰が結果を使うか。**段の候補の一覧は、測る道具 regime_r9_diag.py（全部の候補を測る）と、engine_tuner の組む側 sample_regime_build（一覧の位置で上位を取る）が使います。どちらも直しません。
+
+【4-2 入力と出力】
+**読むもの。**今までどおり（設定 search_limits.json・成績表・法則・型の表）。部分の自己テストは、設定を読んだ後に、写しの stage_limits だけを替えて使います（本物の設定ファイルは書き換えません）。
+
+**書くもの。**ありません（自己テストの結果を画面に出すだけ）。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| engine_tuner_gen.py の build_stage_candidates | 分位ごとの候補に通し番号の順位を付ける | 直す |
+| engine_tuner_gen.py の selftest_stage_q と口 --selftest-stage-q | T49①（分位ごとの順位）・T49②（向きを持つ C の abs）・T44（abs の鍵）を、成績表の並びに頼らずに試す | 新設 |
+| engine_tuner_gen.py の selftest | T23② の見本を直す・T42 の「測れない」を T49② へ移す・T44 を selftest_stage_q へ移し、T48 の後で呼ぶ | 直す |
+| .claude/breaks/b127_stage_q_rank_off.sh | 通し番号の2行を外すと、T49① が落ちるかを見る | 新設 |
+- 触る所＝engine_tuner_gen.py＝build_stage_candidates・main・selftest・selftest_stage_q（main＝口 --selftest-stage-q）。
+
+【4-4 処理の流れ】
+1. 当てる道具（apply_audit_fix.py --design）で実装の指示を当てます。
+2. 当てた直後に、照合（verify_design_contract.py --diff）をかけます。★この工事は関数を足すので、設計書の SPEC（実装の前のコードから作る）と実物が食い違う見込みです。食い違ったら、gen_acceptance.py --write で設計書を作り直し、承認の打ち直しを1回 お願いします（教訓 L-655）。
+3. 部分の自己テスト（--selftest-stage-q）と壊すプログラム b127 を走らせ、全体の自己テスト（--selftest・約6分半）を走らせます。★全体の自己テストは、完成の条件の表に入れません。承認の前の仮当て（A12）と承認のプログラムは、コマンドを1本 300秒で打ち切るので、約6分半の全体の自己テストは走り切りません。全体の自己テストの結果（T23②・T40②・T42 を含む ❌ 0件）は、当てた後に私が走らせ、出力をそのまま貼ります。
+4. G2 → H2 の順で印を取り直します（engine_tuner_gen.py は G2 と H2 の両方の対象）。
+5. 承認の後に、設定 search_limits.json の stage_limits.stage2a.quantiles に9点を書き直し、G2 → H2 を取り直します（設定の書き込みは承認の相手ではない＝M2-F-7 と同じ）。
+
+【4-5 異常系】
+| 起きたこと | どうなるか |
+|---|---|
+| 設定の quantile_grid が2点未満 | T49① が「分位ごとの順位を測れない」で落ちる（黙って通さない） |
+| 系統を絞った設定で束が1本も組めない・向きを持つ C が出ない | T49② が「測れない」で落ちる |
+| abs の付いた束から鍵が作れない（99回目の不具合の再演） | T44 が「鍵を作れない」で落ちる |
+| 部分の自己テストの途中で例外 | 「T49: 途中で止まった」で落ちる |
+
+【4-6 制約】
+| 決まり | 出どころ | この設計でどう守るか |
+|---|---|---|
+| 測った成績と、組む側が取る候補を変えない | この工事の目的（自己テストと順位の番号の直し） | 順位の数字を付け直すだけ。組む側は一覧の位置で取る（_stage_pick） |
+| 9点は承認済みの格子だけ | まこさん「案B」・search_limits.json の quantile_grid と quantile_range | 自己テストは設定の quantile_grid をそのまま使う。私は数字を作らない |
+| 乱数を使わない | 恒久67番 | 足すのは決まった並びの番号と自己テストだけ |
+| 未来の値を使わない | 要件定義書 §4.6.H2 | 順位の番号と自己テストの直しだけ。未来参照の検査で、注記の無い先読みは当てる前も後も0件 |
+
+【4-7 探索の範囲】
+**探す値はありません。**9点は設定の quantile_grid（承認済み）をそのまま使います。
+
+【4-8 データ構造】
+**変えません。**候補1件の形（鍵11個）はそのままです。分位を2点以上 書いたときに、順位の欄の数字が通し番号になるだけです。
+
+【4-9 設定】
+**コマンドの旗を1つ増やします。**--selftest-stage-q（T44・T49 だけを数秒で走らせる口）。設定ファイルは、この工事では変えません（9点の書き込みは承認の後）。
+
+【4-10 保存先】
+**変えません。**
+
+【4-11 時刻の扱い】
+**変えません。**
+
+【4-12 出る結果の姿】
+**完成したときに出るもの。**①部分の自己テスト（--selftest-stage-q）が ❌ 0件 ②壊すプログラム b127 で T49① が落ちる ③全体の自己テスト（--selftest）が ❌ 0件 ④9点を書いた後の段2a の候補の一覧で、順位が1からの通し番号になる。
+
+【4-13 影響範囲】
+1. **engine_tuner_gen.py は G2 と H2 の対象です。**実装の後に G2 → H2 を取り直します。
+2. **測った成績と、組む側が取る候補は変わりません。**測る道具・組む側は直しません。
+3. **直すファイルの行の文字を探している壊すプログラムが19本 在ります。**この工事は、どれが探す文字も変えません（案を作る道具が、当てる前と後で数えた）。
+4. **壊すプログラム b98 は、これから正しい理由で落ちます。**b98 は実行器の abs の鍵の枝を外して T44 が落ちるかを見ます。直す前の T44 は「abs の部品が出ない」という別の理由で落ちていたので、b98 が働いているかが分かりませんでした。直した後は「鍵を作れない（KeyError 'n'）」で落ちることを、案を作る道具が確かめました。
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 部分の自己テスト（--selftest-stage-q） | 数秒 | 案を作る道具が、当てた後の道具を本物に書かずに走らせた実測 |
+| 全体の自己テスト（--selftest） | 約6分半 | 10/03 の実測（09:57:12〜10:02:54） |
+| 段2a の本走（9点） | 約25分の見込み | 1点の小さな測定＝束1本 0.148秒（worklog 20261003 §9）× 10,224本。走らせる前に小さく測り直す |
+
+【4-15 競合】
+**ありません。**部分の自己テストは設定の写しを使い、本物の設定ファイルを書き換えません。
+
+【4-16 セキュリティ】
+**触らないもの。**人に見せてはいけない値（取引所の鍵・本番の発注の切り替え）には触りません。書き換えられては困る記録（H2・G2 の検査済みの記録・承認の記録）は、取り直しの道具だけが書きます。
+
+【4-17 ログと進捗表示】
+**画面に出すもの。**全体の自己テストに「T44・T49 段2a: …」の1行が出ます（前の「T44 abs の鍵: …」の1行は、この行にまとめます）。口 --selftest-stage-q は、ダメだった件を1行ずつと、まとめの1行を出します。
+
+【4-18 再利用】
+| 手本 | 何を写すか |
+|---|---|
+| engine_tuner_gen.py の selftest_stages（T48）と口 --selftest-stages | 部分の自己テストの形・口の形・selftest からの呼び方 |
+| engine_tuner_gen.py の T42・T44 | 向きを持つ C の abs の確かめ方と、鍵の確かめ方（中身はそのまま、組む設定だけを写しに替える） |
+| 壊すプログラム b126 | 壊すプログラムの形 |
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "2956行（build_stage_candidates）",
+  "直す前の文字": "        for _q in (_qs if _qs else [None]):\n",
+  "種類": "直した後の文字",
+  "中身": "        for _iq, _q in enumerate(_qs if _qs else [None]):\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:2956「for _q in (_qs if _qs else [None]):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "2962行（build_stage_candidates）",
+  "直す前の文字": "            rank_q = rank if _q is None else rank\n",
+  "種類": "直した後の文字",
+  "中身": "            # ★2026-10-03（工事 m2f-stage-quantile-rank-20261003・T40②）＝分位ごとの候補に別々の順位を付ける＝材料の順 → 分位の順の通し番号。\n            #   直す前は `rank_q = rank if _q is None else rank` で、同じ材料の分位の候補に同じ順位が付いた（9点を書くと T40② が落ちた）。\n            if _iq > 0:\n                rank += 1\n            rank_q = rank\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:2962「rank_q = rank if _q is None else rank」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "5093〜5096行（selftest_stages）",
+  "直す前の文字": "    return t48\n\n\ndef selftest() -> int:",
+  "種類": "直した後の文字",
+  "中身": "    return t48\n\n\ndef selftest_stage_q() -> list:\n    \"\"\"T49・T44（2026-10-03・工事 m2f-stage-quantile-rank-20261003）＝段2a の候補の分位ごとの順位と、向きを持つ指標の abs を、成績表の並びに頼らずに試す。\n\n    ★selftest（T48 の後）と、口 --selftest-stage-q の両方がこの1本を呼ぶ（判定を2か所に書き写さない・selftest_stages と同じ作り）。\n    T49① 段2a に quantile_grid の分位を全部 書いた設定で、候補の順位が1からの通し番号になり、並びが「材料の順 → 分位の順」になる\n    T49② 段2a の系統を、向きを持つ指標（§2.2 の元データの pre の欄）だけに絞った設定で組むと、C に abs が付く\n    T44  同じ絞った設定で組んだ束から、分位の解決表の鍵（「abs:列の名前」）が作れる（99回目の不具合・完成の条件 AUDIT-1・前は selftest の中に在った）\n    ★なぜ絞った設定で組むか＝いまの設定のまま組むと、段2a の上位10本に向きを持つ指標が来るかは成績表の並び次第（版3 の札で作り直した後は23位から下）で、\n      T42・T44 が「測れない」で落ちていた。設定の欄 stage_limits.stage2a.families で絞れば、並びに頼らずに必ず測れる（本物の設定ファイルは書き換えない）。\n    戻り＝ダメだった件の一覧（頭に T49①・T49②・T44 を付ける・空なら全部 通った）。\n    \"\"\"\n    out: list = []\n    try:\n        _lm, _ = load_limits()\n        _lm = resolve_hold_range(_lm, \"e38\")\n        _laws = laws_for_scene(\"range\")\n        _tb = load_signal_table()\n        _pool, _tfs, _ = material_pool()\n        # ── T49① 分位ごとの候補の順位（設定の quantile_grid を全部 書いた写しで作る）──\n        _grid = [str(q) for q in (_lm.get(\"quantile_grid\") or [])]\n        if len(_grid) < 2:\n            out.append(f\"T49①: 設定の quantile_grid が2点未満（{_grid}）＝分位ごとの順位を測れない\")\n        else:\n            _c1 = build_stage_candidates(\"stage2a\", _laws, _tb, _tfs, {**_lm, \"stage_limits\": {}})\n            _cq = build_stage_candidates(\"stage2a\", _laws, _tb, _tfs,\n                                         {**_lm, \"stage_limits\": {\"stage2a\": {\"quantiles\": _grid}}})\n            if [c[\"rank\"] for c in _cq] != list(range(1, len(_cq) + 1)):\n                out.append(f\"T49①: 分位を {len(_grid)} 点 書いた段2a の順位が1からの通し番号でない\")\n            if len(_cq) != len(_c1) * len(_grid):\n                out.append(f\"T49①: 候補の本数が「1点の本数 × 分位の数」でない（{len(_cq)} ≠ {len(_c1)} × {len(_grid)}）\")\n            else:\n                _bad = None\n                for _i, _c in enumerate(_c1):\n                    for _k, _g in enumerate(_grid):\n                        _x = _cq[_i * len(_grid) + _k]\n                        _in = _x[\"cond\"][\"not\"] if \"not\" in _x[\"cond\"] else _x[\"cond\"]\n                        if _x[\"col\"] != _c[\"col\"] or str(_in[\"value\"].get(\"threshold_q\")) != _g:\n                            _bad = (_i * len(_grid) + _k + 1, _x[\"col\"], _in[\"value\"].get(\"threshold_q\"))\n                            break\n                    if _bad:\n                        break\n                if _bad:\n                    out.append(f\"T49①: {_bad[0]} 番目が「材料の順 → 分位の順」でない（{_bad[1]} {_bad[2]}）\")\n        # ── T49② と T44（段2a の系統を、向きを持つ指標だけに絞った写しで組む）──\n        _pre = stage_candidates(\"stage2a\")[\"pre\"]\n        _ls = {**_lm, \"stage_limits\": {\"stage2a\": {\"families\": sorted(_pre)}}}\n        _n_b, _n_s, _hit = 0, 0, False\n        for _i in range(6):\n            try:\n                _b, _d = sample_regime_build(_ls, _pool, _tfs, _tb, order_n=_i)\n            except SampleError:\n                continue\n            _n_b += 1\n            if _d[\"C\"].get(\"種類\") in _pre:\n                _n_s += 1\n                _on = _regime_on_conds(_b)\n                if (_on[2][\"not\"][\"material\"][0].get(\"pre\") or {}).get(\"op\") != \"abs\":\n                    out.append(f\"T49②: 案{_i} 向きを持つ C（{_d['C'].get('種類')}）に abs が付いていない\")\n            try:\n                _keys = needed_qkeys([{\"meta\": {\"regime\": {\"build\": _b}}, \"entry\": {\"connective\": {\"all\": []}}}])\n            except Exception as _e44:                   # noqa: BLE001  KeyError も落ちる（それが99回目の不具合）\n                out.append(f\"T44: 鍵を作れない: {type(_e44).__name__} {str(_e44)[:80]}\")\n                break\n            if any(str(k).startswith(\"abs:\") for k in _keys):\n                _hit = True\n        if _n_b == 0:\n            out.append(\"T49②: 系統を絞った設定で、束が1本も組めない＝測れない\")\n        elif _n_s == 0:\n            out.append(f\"T49②: 系統を絞った設定で {_n_b} 本 組んでも、向きを持つ C が出ない＝abs を測れない（黙って通さない）\")\n        if _n_b and not _hit and not any(x.startswith(\"T44\") for x in out):\n            out.append(\"T44: 束を組んでも abs の付いた部品が出なかった＝測れない（嘘の合格を出さない）\")\n    except BaseException as _e49:                       # noqa: BLE001\n        out.append(f\"T49: 途中で止まった: {type(_e49).__name__} {str(_e49)[:120]}\")\n    return out\n\n\ndef selftest() -> int:",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:5093「return t48」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "6433行（selftest）",
+  "直す前の文字": "    #   ①`ranked_materials` の並びが |分離力−0.5| の降順 ②location の1位＝実物で確かめた S-Rタッチ1時間ATR(144,1.5,21)__15m\n",
+  "種類": "直した後の文字",
+  "中身": "    #   ①`ranked_materials` の並びが |分離力−0.5| の降順 ②location の1位＝実物で確かめた S-Rタッチ1時間ATR(144,1.0,21)__3m\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:6433「#   ①`ranked_materials` の並びが |分離力−0.5| の降順 ②location の1位＝実物で確かめた S-Rタッチ1時間ATR(144,1.5,21)__15m」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "6434行（selftest）",
+  "直す前の文字": "    #     （★2026-09-26 束2＝成績表を作り直した後の1位・分離力 0.745。直す前＝S-Rタッチ数(144,0.006)__15m・0.743）\n",
+  "種類": "足す文字",
+  "中身": "    #     （★2026-10-03 工事 m2f-stage-quantile-rank-20261003＝版3 の札で作り直した後の1位・分離力 0.238。直す前＝S-Rタッチ1時間ATR(144,1.5,21)__15m）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:6434「#     （★2026-09-26 束2＝成績表を作り直した後の1位・分離力 0.745。直す前＝S-Rタッチ数(144,0.006)__15m・0.743）」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "6443行（selftest）",
+  "直す前の文字": "        if _lst23[0][0] != \"S-Rタッチ1時間ATR(144,1.5,21)__15m\":\n",
+  "種類": "直した後の文字",
+  "中身": "        if _lst23[0][0] != \"S-Rタッチ1時間ATR(144,1.0,21)__3m\":\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:6443「if _lst23[0][0] != \"S-Rタッチ1時間ATR(144,1.5,21)__15m\":」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "6920行（selftest）",
+  "直す前の文字": "    #   ③向きを持つ指標（元データの pre の欄）が C に出たとき、材料に abs が付いている。1件も出なければ「測れない」で落ちる\n",
+  "種類": "直した後の文字",
+  "中身": "    #   ③向きを持つ指標（元データの pre の欄）が C に出たとき、材料に abs が付いている\n    #     （★2026-10-03＝1件も出ないときの「測れない」は T49② へ移した＝段2a の系統を絞った設定で、成績表の並びに頼らずに必ず測る）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:6920「#   ③向きを持つ指標（元データの pre の欄）が C に出たとき、材料に abs が付いている。1件も出なければ「測れない」で落ちる」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "6978〜6979行（selftest）",
+  "直す前の文字": "        elif _n_signed42 == 0:\n            ng.append(f\"T42: 向きを持つ C が {_n_built42} 本に1件も出ない＝abs を測れない（黙って通さない）\")\n",
+  "種類": "直した後の文字",
+  "中身": "        # ★2026-10-03（工事 m2f-stage-quantile-rank-20261003）＝「向きを持つ C が1件も出ない＝測れない」は T49② へ移した。\n        #   いまの設定のまま組むと、段2a の上位10本に向きを持つ指標が来るかは成績表の並び次第（版3 の札で作り直した後は23位から下）。\n        #   T49② は段2a の系統を向きを持つ指標だけに絞った設定で組むので、並びに頼らずに abs を必ず測る。\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:6978「elif _n_signed42 == 0:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 9,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "7701〜7724行（selftest）",
+  "直す前の文字": "    # ══ T44 abs が付いた束でも、分位の解決表の鍵が作れる（99回目の不具合・完成の条件 AUDIT-1）═══\n    #   測り方＝束を組み、要る鍵を全部 作って「abs:」で始まる鍵が在ることを見る。\n    #   ★向きを持つ C が1件も出なければ「測れない」で落とす（嘘の合格を出さない）。\n    t44: list[str] = []\n    try:\n        _lm44, _ = load_limits()\n        _lm44 = resolve_hold_range(_lm44, \"e38\")\n        _t44 = load_signal_table()\n        _p44, _tfs44, _ = material_pool()\n        _hit44 = False\n        for _i44 in range(6):\n            _b44, _ = sample_regime_build(_lm44, _p44, _tfs44, _t44, order_n=_i44)\n            # ★レシピの形＝`meta.regime.build` に束・`entry` に入口（T22 の見本と同じ並び）\n            _keys44 = needed_qkeys([{\"meta\": {\"regime\": {\"build\": _b44}},\n                                     \"entry\": {\"connective\": {\"all\": []}}}])\n            if any(str(k).startswith(\"abs:\") for k in _keys44):\n                _hit44 = True\n                break\n        if not _hit44:\n            t44.append(\"T44: 束6本とも abs の付いた部品が出なかった＝測れない（嘘の合格を出さない）\")\n    except Exception as _e44:                       # noqa: BLE001  KeyError も落ちる（それが直す前の不具合）\n        t44.append(f\"T44: 鍵を作れない: {type(_e44).__name__} {str(_e44)[:80]}\")\n    ng += t44\n    print(\"  T44 abs の鍵: 束に符号を取り去る前処理が付いても、分位の解決表の鍵が作れる（「abs:列の名前」）\")\n",
+  "種類": "直した後の文字",
+  "中身": "    # ══ T44 は selftest_stage_q へ移した（2026-10-03・工事 m2f-stage-quantile-rank-20261003）＝下の T48 の後で T49 と一緒に呼ぶ ═══\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:7701「# ══ T44 abs が付いた束でも、分位の解決表の鍵が作れる（99回目の不具合・完成の条件 AUDIT-1）═══」",
+  "状態": "確定"
+ },
+ {
+  "番号": 10,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "7815行（selftest）",
+  "直す前の文字": "    print(\"  T48 段の不具合の直し: B-1 上端が候補の本数を超えても組める ／ B-2 強さの否定の出る線は緩い側 ／ B-5 同じ条件を2回 並べない ／ B-6 段1・段2c は強さで並べる\")\n",
+  "種類": "足す文字",
+  "中身": "    # ══ T44・T49（2026-10-03・工事 m2f-stage-quantile-rank-20261003）＝本体は selftest_stage_q（口 --selftest-stage-q と同じ1本）══\n    t49 = selftest_stage_q()\n    ng += t49\n    print(\"  T44・T49 段2a: ①分位を書いた設定で順位が通し番号（材料の順 → 分位の順） ②系統を絞った設定で組むと C に abs ／ abs の鍵が作れる\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:7815「print(\"  T48 段の不具合の直し: B-1 上端が候補の本数を超えても組める ／ B-2 強さの否定の出る線は緩い側 ／ B-5 同じ条件を2回 並べない ／ B-6 段1・段2c は強さで並べる\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 11,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "8005〜8007行（main）",
+  "直す前の文字": "    ap.add_argument(\"--selftest-stages\", action=\"store_true\",\n                    help=\"段の不具合の直し（B-1・B-2・B-5・B-6）だけを試す＝T48 と同じ本体（selftest_stages）を呼ぶ\"\n                         \"（全体の --selftest は約6分半で、承認の前の仮当ての打ち切り300秒を超えるため）\")\n",
+  "種類": "足す文字",
+  "中身": "    ap.add_argument(\"--selftest-stage-q\", action=\"store_true\",\n                    help=\"段2a の分位ごとの順位と、向きを持つ C の abs・abs の鍵だけを試す＝T44・T49 と同じ本体（selftest_stage_q）を呼ぶ\"\n                         \"（全体の --selftest は約6分半で、承認の前の仮当ての打ち切り300秒を超えるため・壊すプログラム b127 が使う）\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:8005「ap.add_argument(\"--selftest-stages\", action=\"store_true\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 12,
+  "対象のファイル": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "直す箇所": "8008〜8009行（main）",
+  "直す前の文字": "    a = ap.parse_args()\n    if a.selftest_stages:\n",
+  "種類": "直した後の文字",
+  "中身": "    a = ap.parse_args()\n    if a.selftest_stage_q:\n        # ★2026-10-03（工事 m2f-stage-quantile-rank-20261003）＝T44・T49 だけを短く走らせる口（--selftest-stages と同じ作り）\n        _ng49 = selftest_stage_q()\n        for _x in _ng49:\n            print(f\"  ❌ {_x}\")\n        print(f\"  {'❌' if _ng49 else '✅'} T44・T49 段2a の分位ごとの順位・向きを持つ C の abs と鍵／ダメだった件 {len(_ng49)}\")\n        return 1 if _ng49 else 0\n    if a.selftest_stages:\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/engine_tuner_gen.py:8008「a = ap.parse_args()」",
+  "状態": "確定"
+ },
+ {
+  "番号": 13,
+  "対象のファイル": ".claude/breaks/b127_stage_q_rank_off.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 段2a の分位ごとの候補に通し番号を付ける2行を外すと、部分の自己テストが T49①「順位が1からの通し番号でない」で落ちた\n# EXPECT_MSG: ❌ T49①\n# b127 — engine_tuner_gen.build_stage_candidates の、分位ごとに順位を1つ進める2行を外すと、T49① が落ちるか（工事 m2f-stage-quantile-rank-20261003・2026-10-03）\n#   守っているもの＝完成の条件 #1（部分の自己テスト T49① が、分位を複数 書いた段2a の候補の順位が通し番号かを見ている）\n#   壊し方＝順位を進める2行（if _iq > 0: rank += 1）を消す（直す前と同じ＝同じ材料の分位の候補に同じ順位が付く）。\n#   期待＝engine_tuner_gen.py --selftest-stage-q の T49① が落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nG=\"$PR/engine_tuner_gen.py\"\nguard \"$G\"\n\npython3 - \"$G\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '            if _iq > 0:\\n                rank += 1\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b127] 壊す対象の行が1か所でない: \" + old.strip())\nopen(p, 'w', encoding='utf-8').write(s.replace(old, '', 1))\nPYEOF\n\nmeasure python3 \"$G\" --selftest-stage-q\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b126_rank_resume_save_off.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 分位ごとの候補の順位は、材料の順 → 分位の順の通し番号にする | いまのコードの注記「材料1つにつき、その分位の数だけ候補を作る（分位の順）」の並びのまま、番号だけを通しにする。並びを変えないので、組む側が取る候補は今の注記どおり | 分位の順 → 材料の順に並べ替える。捨てた理由＝組む側の並び方が変わる。並べ方を変えるかは、組む側を使う段で決める |
+| T42・T44 は、段2a の系統を向きを持つ指標だけに絞った設定の写しで組む | 設定の欄 stage_limits.<段>.families は前から在る絞りの口。これで成績表の並びに頼らずに、向きを持つ C の abs と鍵を必ず測れる | 組む本数を増やす（200本 → もっと）。捨てた理由＝並び次第では何本 組んでも出ない |
+| T44 と T49 を部分の自己テストにまとめ、口を足す | 全体の自己テストは約6分半で、承認の前の仮当ての打ち切り（300秒）を超える。壊すプログラム b127 が数秒で測れる | 全体の自己テストだけで測る。捨てた理由＝承認のときに b127 を測れない |
+| T23② の見本は、実物で確かめた1位を書く | 同じ成績表から見本を作ると、何と比べても通る。6434行の注記の決まりどおり、作り直したら見本も直す | 成績表から見本を自動で取る。捨てた理由＝確かめにならない |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 成績表を次に作り直すと、T23② の見本がまた古くなる | 6434行の注記どおり、成績表を作り直したら見本も直す。作り直しの後に全体の自己テストを走らせる（10/02〜03 は走らせていなかった＝この工事のきっかけ） |
+| 9点を書いた後、組む側が使う段2a の上位10本が1位の材料の9点に偏る | 3-1 に書いた（この工事では変えない）。組む側を使う段で決める |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる | 30秒未満 | 当てる道具は1秒未満で終わった（工事 C・D・E） |
+| 部分の自己テストと壊すプログラム | それぞれ1分未満 | 4-14 |
+| 全体の自己テスト | 約6分半 | 4-14 |
+| G2 → H2 | 約30秒 → 約5分 | 10/03 の取り直し |
+| まこさんの承認 | 2回（当てる前に1回・当てた後に SPEC を実物から作り直した設計書に1回） | 4-4 の2（教訓 L-655） |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | ①分位ごとの候補を作る道（2026-09-16 に足した）に、順位を進める行が無かった（`rank_q = rank if _q is None else rank` で、どちらでも同じ値）。設定が空のあいだは一度も通らなかったので、気づかなかった。②T23②・T42・T44 は、成績表の並びに頼る測り方だった。147回目に成績表を作り直した後、全体の自己テストを走らせなかったので、落ちていることに気づかなかった。 |
+| 期待値分解 | 売買のロジックには触れません。勝率・平均利益・敗率・平均損失は動きません。M2-F の段2a を9点で測れるようになり、閾値を1点で始めて別の閾値なら効く束を落とす穴（穴4）が塞がります。 |
+| root か symptom か | root です。順位を進める行を足し、自己テストを成績表の並びに頼らない形にします。見本の1件（T23②）だけは、成績表を作り直すたびに直す決まりのままです（7-4）。 |
+| ベースアップ | 自己テストの前提（向きを持つ指標が上位に来る）をデータの並びに頼らず、設定の写しで作るのは、テストの入力を固定する一般的なやり方です。 |
+
+【7-2 固定値ゼロ宣言】
+この工事に、疑似シミュから取った値は1つもありません。数字を足しません（9点は設定の quantile_grid・見本は成績表の実物の1位）。
+
+【7-3 変更の単位】
+変更は1つ＝段2a を9点で測れるように、engine_tuner_gen.py の段の候補の順位と自己テストを直す（M2-F-10 の3つ目「案B」の前）。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 当たるか | 理由 |
+|---|---|---|
+| 1 | 当たりません | 乱数を使いません。条件をつなぐものではなく、候補の順位の番号と自己テストの直しです |
+| 2 | 当たりません | 値を選びません。9点は承認済みの格子をそのまま使います |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 成績表を作り直したら | T23② の見本は古くなります。作り直したら見本も直す決まり（6434行の注記）で守ります |
+| 向きを持つ指標の系統が、法則や型の表から消えたら | T49② が「測れない」で落ちます（黙って通さない）。そのときは法則か型の表の直しが要ります |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝2本（engine_tuner_gen.py・壊すプログラム b127）を【7-8】に書いた。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝engine_tuner_gen.py）。
+- 新しく作るファイルは壊すプログラム b127 の1本（NEW_FILE）。手本は工事 E の壊すプログラム b126（MODEL）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝147回目に成績表を作り直した後、全体の自己テストを走らせず、3件が落ちたまま進んだ。この工事は、自己テストを成績表の並びに頼らない形にする。
+- 新しい部品は部分の自己テスト selftest_stage_q。H2 が走らせる案には入らない（自己テストで、案の判定には使わない）。未来参照の検査で注記の無い先読みは0件。
+- 直すファイルの行番号を指す文書は、この工事の実装の指示だけで、いまの実物から道具が作った。
+- 直すファイルの名前を本文に持つ壊すプログラムを全部 探し、それぞれが探す行の文字の数が、この工事の前と後で同じことを案を作る道具が数えた（4-13 の3・照らした組は案の冒頭）。
+- 壊すプログラムは b127 を1本 作る（通し番号の2行を外すと T49① が落ちる＝案を作る道具が同じ壊し方で確かめた）。前からの b98 は、直した後に正しい理由（鍵を作れない）で落ちることを確かめた。
+- 触る関数は、全部 DESIGN_CONTRACT の impl_functions に書いた（【7-8】・案を作る道具が照合の道具と同じ数え方で数えた）。build_stage_candidates・main・selftest・selftest_stage_q。must_use に、部分の自己テストが呼ぶ関数と、全体の自己テストが部分の自己テストを呼ぶことを書いた。
+- 新しく足す旗は --selftest-stage-q（4-9）。完成の条件 #1 のコマンドで通る。
+- 2回目の承認の前に、実装の中で変わった手順を設計書に書き直す（その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2f-stage-quantile-rank-20261003）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己テスト＝engine_tuner_gen.py に selftest_stage_q を足し、全体の自己テスト（selftest）からも呼ぶ。案を作る道具が当てた後の道具を本物に書かずに走らせ、通った。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| 部分の自己テスト（T44・T49）が通る（9点の段2a の順位が通し番号・向きを持つ C に abs・abs の鍵が作れる） | python3 scripts/priority_rebuild/engine_tuner_gen.py --selftest-stage-q | 実経路 | 分位ごとに順位を進める2行（if _iq > 0: rank += 1）を外すと、T49① が「順位が1からの通し番号でない」で落ちる | b127_stage_q_rank_off.sh | — | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  "scripts/priority_rebuild/engine_tuner_gen.py",
+  ".claude/breaks/b127_stage_q_rank_off.sh"
+ ],
+ "NEW_FILE": [
+  ".claude/breaks/b127_stage_q_rank_off.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b126_rank_resume_save_off.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/engine_tuner_gen.py",
+  "_impl_file の意味": "照らす相手は実在するファイル。段の候補を作る関数と自己テストが在る、案を作るプログラムを照らす。",
+  "impl_functions": {
+   "scripts/priority_rebuild/engine_tuner_gen.py": [
+    "build_stage_candidates",
+    "main",
+    "selftest",
+    "selftest_stage_q"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数。当てる前と後の構文木を関数ごとに比べて、案を作る道具（_qrank_draft_build.py）が数えた。",
+  "self_check_calls": [
+   "selftest_stage_q"
+  ],
+  "_self_check_calls の意味": "実装の後の engine_tuner_gen.py に在るはずの、この工事の関数の名前。",
+  "must_use": {
+   "selftest_stage_q": [
+    "build_stage_candidates",
+    "sample_regime_build",
+    "needed_qkeys",
+    "_regime_on_conds"
+   ],
+   "selftest": [
+    "selftest_stage_q"
+   ]
+  },
+  "_must_use の意味": "部分の自己テストが、候補の一覧・組む側・鍵を作る関数・成立の並びを呼び、全体の自己テストが部分の自己テストを呼ぶ（案を作る道具が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は候補の順位の番号と自己テストを直すだけ。外から読む一覧（候補・法則・成績表の順位・範囲の鍵）の形は変えない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の関数ごとの構文木の差（_qrank_draft_build.py が数えた）",
+   "must_use": "ast で照らした",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```
+
+【外部検索】
+| 名前 | 中身 |
+|---|---|
+| テストの入力を固定する（データの並びに頼らないテスト） | 自己テストの前提をデータの並びに頼らず、入力の写しで作るやり方を調べる（私の導出） |
+
+---
+
+**この案で決めていただきたいこと（設計書の 3-2）**＝この工事の実装の監査を出すか。私の案は「出さない」です。直すのは候補の順位の番号と自己テストで、測り方と組み方は変えません。
+
+**書き換えたファイル**
+- 工事のフォルダ .claude/state/verbatim/m2f-stage-quantile-rank-20261003/: req_qrank_20261003.txt（まこさんの2行の逐語）と、やることの表.md（Q-1〜Q-4 と手書きの5項目）を作りました。
+- [_qrank_draft_build.py](.claude/state/_qrank_draft_build.py) と [_qrank_template.txt](.claude/state/_qrank_template.txt): 案を作る道具とひな形です（本物のファイルには書きません）。
+- [purpose_check.md](.claude/state/purpose_check.md): この工事の目的の照合に書き直しました。
+- [read_plan_src.json](.claude/state/read_plan_src.json) → [design_read_plan.md](.claude/state/design_read_plan.md): 読むもの宣言です。OK を写し、誤った説明を直しました。
+- [next_step_src.json](.claude/state/next_step_src.json) → [next_step.md](.claude/state/next_step.md): 誤った説明を直しました。
+- [session_worklog_20261003.md](.claude/state/session_worklog_20261003.md): §13・§14 を書き、§10 の誤った文に取り消し線を引いて、正しい文を足しました。
+- このセッションの lessons.md・session_todo.md・session_todo_posted: lessons.md には、土台ゲートに3回目に止められた件の決まりを書きました。
+- _trial_acceptance.md: 道具が作った試しの設計書です（本物の設計書 acceptance.md は、まだ工事 E のままです）。

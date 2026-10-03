@@ -2953,13 +2953,17 @@ def build_stage_candidates(stage: str, laws: dict, table, tfs, limits) -> list[d
         #   材料1つにつき、その分位の数だけ候補を作る（分位の順）。
         #   書いていなければ、いままでどおり真ん中の1点だけ（まこさん決定 2026-09-11）。
         _qs = _st_lim["quantiles"]
-        for _q in (_qs if _qs else [None]):
+        for _iq, _q in enumerate(_qs if _qs else [None]):
             _c = cond
             if _q is not None:
                 _c = json.loads(json.dumps(cond))          # 1件ずつ別の辞書にする
                 _inner = _c["not"] if "not" in _c else _c
                 _inner["value"] = {**_inner["value"], "threshold_q": str(_q)}
-            rank_q = rank if _q is None else rank
+            # ★2026-10-03（工事 m2f-stage-quantile-rank-20261003・T40②）＝分位ごとの候補に別々の順位を付ける＝材料の順 → 分位の順の通し番号。
+            #   直す前は `rank_q = rank if _q is None else rank` で、同じ材料の分位の候補に同じ順位が付いた（9点を書くと T40② が落ちた）。
+            if _iq > 0:
+                rank += 1
+            rank_q = rank
             out.append({"stage": stage, "rank": rank_q, "col": col, "family": fam, "tf": tf,
                         "acc": med, "label": lab, "horizon": hor, "cond": _c,
                         "law_check": "—", "dropped_by": None})
@@ -5093,6 +5097,82 @@ def selftest_stages() -> list:
     return t48
 
 
+def selftest_stage_q() -> list:
+    """T49・T44（2026-10-03・工事 m2f-stage-quantile-rank-20261003）＝段2a の候補の分位ごとの順位と、向きを持つ指標の abs を、成績表の並びに頼らずに試す。
+
+    ★selftest（T48 の後）と、口 --selftest-stage-q の両方がこの1本を呼ぶ（判定を2か所に書き写さない・selftest_stages と同じ作り）。
+    T49① 段2a に quantile_grid の分位を全部 書いた設定で、候補の順位が1からの通し番号になり、並びが「材料の順 → 分位の順」になる
+    T49② 段2a の系統を、向きを持つ指標（§2.2 の元データの pre の欄）だけに絞った設定で組むと、C に abs が付く
+    T44  同じ絞った設定で組んだ束から、分位の解決表の鍵（「abs:列の名前」）が作れる（99回目の不具合・完成の条件 AUDIT-1・前は selftest の中に在った）
+    ★なぜ絞った設定で組むか＝いまの設定のまま組むと、段2a の上位10本に向きを持つ指標が来るかは成績表の並び次第（版3 の札で作り直した後は23位から下）で、
+      T42・T44 が「測れない」で落ちていた。設定の欄 stage_limits.stage2a.families で絞れば、並びに頼らずに必ず測れる（本物の設定ファイルは書き換えない）。
+    戻り＝ダメだった件の一覧（頭に T49①・T49②・T44 を付ける・空なら全部 通った）。
+    """
+    out: list = []
+    try:
+        _lm, _ = load_limits()
+        _lm = resolve_hold_range(_lm, "e38")
+        _laws = laws_for_scene("range")
+        _tb = load_signal_table()
+        _pool, _tfs, _ = material_pool()
+        # ── T49① 分位ごとの候補の順位（設定の quantile_grid を全部 書いた写しで作る）──
+        _grid = [str(q) for q in (_lm.get("quantile_grid") or [])]
+        if len(_grid) < 2:
+            out.append(f"T49①: 設定の quantile_grid が2点未満（{_grid}）＝分位ごとの順位を測れない")
+        else:
+            _c1 = build_stage_candidates("stage2a", _laws, _tb, _tfs, {**_lm, "stage_limits": {}})
+            _cq = build_stage_candidates("stage2a", _laws, _tb, _tfs,
+                                         {**_lm, "stage_limits": {"stage2a": {"quantiles": _grid}}})
+            if [c["rank"] for c in _cq] != list(range(1, len(_cq) + 1)):
+                out.append(f"T49①: 分位を {len(_grid)} 点 書いた段2a の順位が1からの通し番号でない")
+            if len(_cq) != len(_c1) * len(_grid):
+                out.append(f"T49①: 候補の本数が「1点の本数 × 分位の数」でない（{len(_cq)} ≠ {len(_c1)} × {len(_grid)}）")
+            else:
+                _bad = None
+                for _i, _c in enumerate(_c1):
+                    for _k, _g in enumerate(_grid):
+                        _x = _cq[_i * len(_grid) + _k]
+                        _in = _x["cond"]["not"] if "not" in _x["cond"] else _x["cond"]
+                        if _x["col"] != _c["col"] or str(_in["value"].get("threshold_q")) != _g:
+                            _bad = (_i * len(_grid) + _k + 1, _x["col"], _in["value"].get("threshold_q"))
+                            break
+                    if _bad:
+                        break
+                if _bad:
+                    out.append(f"T49①: {_bad[0]} 番目が「材料の順 → 分位の順」でない（{_bad[1]} {_bad[2]}）")
+        # ── T49② と T44（段2a の系統を、向きを持つ指標だけに絞った写しで組む）──
+        _pre = stage_candidates("stage2a")["pre"]
+        _ls = {**_lm, "stage_limits": {"stage2a": {"families": sorted(_pre)}}}
+        _n_b, _n_s, _hit = 0, 0, False
+        for _i in range(6):
+            try:
+                _b, _d = sample_regime_build(_ls, _pool, _tfs, _tb, order_n=_i)
+            except SampleError:
+                continue
+            _n_b += 1
+            if _d["C"].get("種類") in _pre:
+                _n_s += 1
+                _on = _regime_on_conds(_b)
+                if (_on[2]["not"]["material"][0].get("pre") or {}).get("op") != "abs":
+                    out.append(f"T49②: 案{_i} 向きを持つ C（{_d['C'].get('種類')}）に abs が付いていない")
+            try:
+                _keys = needed_qkeys([{"meta": {"regime": {"build": _b}}, "entry": {"connective": {"all": []}}}])
+            except Exception as _e44:                   # noqa: BLE001  KeyError も落ちる（それが99回目の不具合）
+                out.append(f"T44: 鍵を作れない: {type(_e44).__name__} {str(_e44)[:80]}")
+                break
+            if any(str(k).startswith("abs:") for k in _keys):
+                _hit = True
+        if _n_b == 0:
+            out.append("T49②: 系統を絞った設定で、束が1本も組めない＝測れない")
+        elif _n_s == 0:
+            out.append(f"T49②: 系統を絞った設定で {_n_b} 本 組んでも、向きを持つ C が出ない＝abs を測れない（黙って通さない）")
+        if _n_b and not _hit and not any(x.startswith("T44") for x in out):
+            out.append("T44: 束を組んでも abs の付いた部品が出なかった＝測れない（嘘の合格を出さない）")
+    except BaseException as _e49:                       # noqa: BLE001
+        out.append(f"T49: 途中で止まった: {type(_e49).__name__} {str(_e49)[:120]}")
+    return out
+
+
 def selftest() -> int:
     """番人＝生成器の機械が正しく効くか（合成データのみ・実データの試行ゼロ・累積試行の記録なし）。
 
@@ -6430,8 +6510,9 @@ def selftest() -> int:
           f"（直す前は『基準にする状態の列がデータにありません』で止まった）")
 
     # ══ T23 材料の順位（M2-3-4・2026-08-22 → ★2026-08-23 K を無くした版・まこさん承認 327e7f80008f…）══════════
-    #   ①`ranked_materials` の並びが |分離力−0.5| の降順 ②location の1位＝実物で確かめた S-Rタッチ1時間ATR(144,1.5,21)__15m
+    #   ①`ranked_materials` の並びが |分離力−0.5| の降順 ②location の1位＝実物で確かめた S-Rタッチ1時間ATR(144,1.0,21)__3m
     #     （★2026-09-26 束2＝成績表を作り直した後の1位・分離力 0.745。直す前＝S-Rタッチ数(144,0.006)__15m・0.743）
+    #     （★2026-10-03 工事 m2f-stage-quantile-rank-20261003＝版3 の札で作り直した後の1位・分離力 0.238。直す前＝S-Rタッチ1時間ATR(144,1.5,21)__15m）
     #   ③型の表の外（役割に使えない系統・禁止3）は `_ranked_material_at` が飛ばす ④`regime_draw_order` が決まった並び
     global _MATERIAL_RANKING, _RANK_PATH
     try:
@@ -6440,7 +6521,7 @@ def selftest() -> int:
         _dist23 = [abs(a - 0.5) for _c, a, _l, _h in _lst23]
         if _dist23 != sorted(_dist23, reverse=True):
             ng.append("T23①: 並びが分離力の強い順（|分離力−0.5| の降順）になっていない")
-        if _lst23[0][0] != "S-Rタッチ1時間ATR(144,1.5,21)__15m":
+        if _lst23[0][0] != "S-Rタッチ1時間ATR(144,1.0,21)__3m":
             ng.append(f"T23②: location の1位が実物と違う: {_lst23[0]}（成績表を作り直したなら この見本も直す）")
         _tbl23 = load_signal_table()
         _pool23, _tfs23, _ = material_pool()
@@ -6917,7 +6998,8 @@ def selftest() -> int:
     # ══ T42 実際の束（2本目）が段ごとの候補の一覧の上位から来ている＝完成の条件 AUDIT-2（監査 cp36 の C-1・C-2・2026-09-13）═
     #   ①B・C・G が、その段の一覧の順位の候補と一致（cond が深い写しで等しい・C は not で包んだまま・材料の pre を含む）
     #   ②B・C・G の時間足に、外す3本（drop_tfs）が1本も無い
-    #   ③向きを持つ指標（元データの pre の欄）が C に出たとき、材料に abs が付いている。1件も出なければ「測れない」で落ちる
+    #   ③向きを持つ指標（元データの pre の欄）が C に出たとき、材料に abs が付いている
+    #     （★2026-10-03＝1件も出ないときの「測れない」は T49② へ移した＝段2a の系統を絞った設定で、成績表の並びに頼らずに必ず測る）
     #   ④記録の keep（上位）が stage_keep_of と一致
     #   ★壊すプログラム b92（2本目に渡す設定の drop_tfs を空にする）で落ちることを測る。
     try:
@@ -6975,8 +7057,9 @@ def selftest() -> int:
                 break
         if _n_built42 == 0:
             ng.append("T42: 束が1本も組めない＝測れない")
-        elif _n_signed42 == 0:
-            ng.append(f"T42: 向きを持つ C が {_n_built42} 本に1件も出ない＝abs を測れない（黙って通さない）")
+        # ★2026-10-03（工事 m2f-stage-quantile-rank-20261003）＝「向きを持つ C が1件も出ない＝測れない」は T49② へ移した。
+        #   いまの設定のまま組むと、段2a の上位10本に向きを持つ指標が来るかは成績表の並び次第（版3 の札で作り直した後は23位から下）。
+        #   T49② は段2a の系統を向きを持つ指標だけに絞った設定で組むので、並びに頼らずに abs を必ず測る。
         if _ng42:
             ng.append(f"T42: 2本目が一覧の上位から来ていない（{len(_ng42)}件）: {_ng42[:4]}")
         print(f"  T42 2本目は一覧の上位から: 案 {_n_built42} 本／一覧と合わない・外す時間足・abs 無し・keep の食い違い＝"
@@ -7698,30 +7781,7 @@ def selftest() -> int:
     print("  T43 設定の欄 stage_limits: ①時間足1本で候補もその1本 ②知らない鍵・範囲の外・書けない段は止まる"
           " ③分位2つで候補2倍 ④drop_tfs の空の配列は「外さない」 ⑤束の B もその時間足")
 
-    # ══ T44 abs が付いた束でも、分位の解決表の鍵が作れる（99回目の不具合・完成の条件 AUDIT-1）═══
-    #   測り方＝束を組み、要る鍵を全部 作って「abs:」で始まる鍵が在ることを見る。
-    #   ★向きを持つ C が1件も出なければ「測れない」で落とす（嘘の合格を出さない）。
-    t44: list[str] = []
-    try:
-        _lm44, _ = load_limits()
-        _lm44 = resolve_hold_range(_lm44, "e38")
-        _t44 = load_signal_table()
-        _p44, _tfs44, _ = material_pool()
-        _hit44 = False
-        for _i44 in range(6):
-            _b44, _ = sample_regime_build(_lm44, _p44, _tfs44, _t44, order_n=_i44)
-            # ★レシピの形＝`meta.regime.build` に束・`entry` に入口（T22 の見本と同じ並び）
-            _keys44 = needed_qkeys([{"meta": {"regime": {"build": _b44}},
-                                     "entry": {"connective": {"all": []}}}])
-            if any(str(k).startswith("abs:") for k in _keys44):
-                _hit44 = True
-                break
-        if not _hit44:
-            t44.append("T44: 束6本とも abs の付いた部品が出なかった＝測れない（嘘の合格を出さない）")
-    except Exception as _e44:                       # noqa: BLE001  KeyError も落ちる（それが直す前の不具合）
-        t44.append(f"T44: 鍵を作れない: {type(_e44).__name__} {str(_e44)[:80]}")
-    ng += t44
-    print("  T44 abs の鍵: 束に符号を取り去る前処理が付いても、分位の解決表の鍵が作れる（「abs:列の名前」）")
+    # ══ T44 は selftest_stage_q へ移した（2026-10-03・工事 m2f-stage-quantile-rank-20261003）＝下の T48 の後で T49 と一緒に呼ぶ ═══
 
     # ══ T45 帯の幅の枠が、法則が名指しした指標も読む（2026-09-19・設計書 m2c-width-…-20260918）═══
     #   ①帯の幅の候補に、法則 R7 の指標が全部 出る（印がオンのもの）
@@ -7813,6 +7873,10 @@ def selftest() -> int:
     t48 = selftest_stages()
     ng += [f"T48: {_x}" for _x in t48]
     print("  T48 段の不具合の直し: B-1 上端が候補の本数を超えても組める ／ B-2 強さの否定の出る線は緩い側 ／ B-5 同じ条件を2回 並べない ／ B-6 段1・段2c は強さで並べる")
+    # ══ T44・T49（2026-10-03・工事 m2f-stage-quantile-rank-20261003）＝本体は selftest_stage_q（口 --selftest-stage-q と同じ1本）══
+    t49 = selftest_stage_q()
+    ng += t49
+    print("  T44・T49 段2a: ①分位を書いた設定で順位が通し番号（材料の順 → 分位の順） ②系統を絞った設定で組むと C に abs ／ abs の鍵が作れる")
 
     if ng:
         for x in ng:
@@ -8005,7 +8069,17 @@ def main() -> int:
     ap.add_argument("--selftest-stages", action="store_true",
                     help="段の不具合の直し（B-1・B-2・B-5・B-6）だけを試す＝T48 と同じ本体（selftest_stages）を呼ぶ"
                          "（全体の --selftest は約6分半で、承認の前の仮当ての打ち切り300秒を超えるため）")
+    ap.add_argument("--selftest-stage-q", action="store_true",
+                    help="段2a の分位ごとの順位と、向きを持つ C の abs・abs の鍵だけを試す＝T44・T49 と同じ本体（selftest_stage_q）を呼ぶ"
+                         "（全体の --selftest は約6分半で、承認の前の仮当ての打ち切り300秒を超えるため・壊すプログラム b127 が使う）")
     a = ap.parse_args()
+    if a.selftest_stage_q:
+        # ★2026-10-03（工事 m2f-stage-quantile-rank-20261003）＝T44・T49 だけを短く走らせる口（--selftest-stages と同じ作り）
+        _ng49 = selftest_stage_q()
+        for _x in _ng49:
+            print(f"  ❌ {_x}")
+        print(f"  {'❌' if _ng49 else '✅'} T44・T49 段2a の分位ごとの順位・向きを持つ C の abs と鍵／ダメだった件 {len(_ng49)}")
+        return 1 if _ng49 else 0
     if a.selftest_stages:
         # ★2026-10-01（工事 m2f-label-builder-stages-20261001）＝T48 だけを短く走らせる口（--selftest-rank-demand と同じ作り）
         _ng48 = selftest_stages()

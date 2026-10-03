@@ -2947,7 +2947,21 @@
      "kind": "int",
      "lo": 1
     },
-    "stage_limits": {},
+    "stage_limits": {
+     "stage2a": {
+      "quantiles": [
+       "q10",
+       "q20",
+       "q30",
+       "q40",
+       "q50",
+       "q60",
+       "q70",
+       "q80",
+       "q90"
+      ]
+     }
+    },
     "state_hold_bars_range": {
      "hi": 288,
      "kind": "int",
