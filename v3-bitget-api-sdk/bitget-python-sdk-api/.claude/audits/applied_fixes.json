@@ -1869,6 +1869,174 @@
    "file": ".claude/breaks/b127_stage_q_rank_off.sh",
    "at": "2026-10-03T11:18:01",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "3",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "4",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "5",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "6",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "13",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "14",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "15",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "16",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "17",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "18",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "19",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "20",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "21",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "22",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "23",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "24",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "25",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "26",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "27",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "28",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "29",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-03_indicator_textbook_check_cp60_audit_report.md",
+   "num": "62",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-03T23:25:41",
+   "how": "当てた"
   }
  ]
 }

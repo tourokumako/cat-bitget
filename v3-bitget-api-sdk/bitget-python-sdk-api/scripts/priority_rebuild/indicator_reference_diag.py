@@ -315,9 +315,10 @@ def _tb_rci(d, p):
 
 
 def _tb_ema_slope(d, p):
+    k = int(p[1])
     e = _ema_rec(d.close.to_numpy(float), p[0])
     out = np.full(len(e), np.nan)
-    out[5:] = (e[5:] - e[:-5]) / e[:-5] * 100
+    out[k:] = (e[k:] - e[:-k]) / e[:-k] * 100
     return _S(out, d)
 
 
@@ -643,12 +644,22 @@ def _vp_ref(d, n):
         for b, w in zip(which, vw):
             agg[b] += w
         centers = (bins[:-1] + bins[1:]) / 2
-        order = np.argsort(agg)[::-1]        # 同量の帯は価格の高い側を採る（カタログの決めに合わせる）
-        cum = np.cumsum(agg[order]) / max(agg.sum(), 1e-9)
-        keep = centers[order[:max(1, int(np.searchsorted(cum, 0.7)) + 1)]]
-        poc[i] = centers[order[0]]
-        vah[i] = keep.max()
-        val[i] = keep.min()
+        p = int(np.argsort(agg)[::-1][0])     # 同量の帯は価格の高い側を採る（カタログの決めに合わせる）
+        tot = max(agg.sum(), 1e-9)
+        lo, hi, acc = p, p, agg[p]
+        # POC から隣の区画のうち多い方を1つずつ足す（CQG・TradingView の作り・監査 CP60）
+        while acc / tot < 0.7 and (lo > 0 or hi < 23):
+            up = agg[hi + 1] if hi < 23 else -1.0
+            dn = agg[lo - 1] if lo > 0 else -1.0
+            if up > dn or (up == dn and (hi + 1 - p) <= (p - lo + 1)):
+                hi += 1
+                acc += agg[hi]
+            else:
+                lo -= 1
+                acc += agg[lo]
+        poc[i] = centers[p]
+        vah[i] = centers[hi]
+        val[i] = centers[lo]
     return poc, vah, val
 
 
@@ -822,7 +833,7 @@ def _ext_donch(d, p):
 
 def _ext_ema_slope(d, p):
     e = _ta.trend.EMAIndicator(d.close, p[0]).ema_indicator()
-    return e.pct_change(5) * 100
+    return e.pct_change(int(p[1])) * 100
 
 
 def _ext_vs_ema(d, p):
@@ -912,8 +923,8 @@ EXT2: dict[str, tuple] = {
     "volume_ratio": (_x2_vr, "pandas-ta"),
     "swing高値距離": (lambda d, p: _x2_donch(d, p, +1), "pandas-ta"),
     "swing安値距離": (lambda d, p: _x2_donch(d, p, -1), "pandas-ta"),
-    "n本高値": (lambda d, p: _x2_donch(d, p, +1), "pandas-ta"),
-    "n本安値": (lambda d, p: _x2_donch(d, p, -1), "pandas-ta"),
+    "n本高値": (lambda d, p: (d.close / _pta.donchian(d.high, d.low, lower_length=int(p[0]), upper_length=int(p[0])).iloc[:, 2].shift(1) - 1) * 100, "pandas-ta"),
+    "n本安値": (lambda d, p: (d.close / _pta.donchian(d.high, d.low, lower_length=int(p[0]), upper_length=int(p[0])).iloc[:, 0].shift(1) - 1) * 100, "pandas-ta"),
     "fib位置": (_x2_fib, "pandas-ta"),
     "RCI": (_x2_rci, "scipy"),
 }
@@ -1051,10 +1062,11 @@ _r(r"RCI(\d+)", "RCI",
    "うちが間違いなのではない（2026-08-09 に出典2本を開いて確認）。だから2つ目の照合は同値の無い窓だけで行う",
    "順張り値＝+100 で一貫した上昇", "trend", tb=_tb_rci,
    known=lambda p: [(_up(p[0] + 5), [(-1, 100.0, 1e-9)]), (_dn(p[0] + 5), [(-1, -100.0, 1e-9)])])
-_r(r"EMA(\d+)傾き%", "EMA傾き",
-   "EMA の5本前からの変化率%", "EMA は標準・傾きの5本は本プロジェクトの流儀",
+_r(r"EMA(\d+)傾き%\((\d+)\)", "EMA傾き",
+   "EMA の k 本前からの変化率%（k は設定ファイル ema_slope_lookbacks・engine_tuner が探すパラメータ）",
+   "EMA は標準の漸化式。比べる本数は教科書でも利用者が決めるパラメータ（ChartSchool Slope「The number of days controls the period」）＝決め打ちしない（監査 CP60）",
    "順張り値", "trend", tb=_tb_ema_slope, ext=_ext_ema_slope,
-   known=lambda p: [(_flat(max(60, p[0] * 4)), [(-1, 0.0, 1e-9)])])
+   known=lambda p: [(_flat(max(60, p[0] * 4, p[1] + 10)), [(-1, 0.0, 1e-9)])])
 # ── ボラ ──
 _r(r"ATR%(\d+)", "ATR%",
    "真の値幅（ギャップ込みの高安幅）の Wilder 平滑を終値で割って%化", "Wilder 1978。%化は H6 のための流儀",
@@ -1226,11 +1238,24 @@ _r(r"close vs Supertrend%\((\d+),([\d.]+)\)", "Supertrend",
    "順張り値＝符号がそのままトレンドの向き", "trend", tb=_tb_supertrend_pct,
    known=lambda p: [(_mk(np.r_[np.linspace(300, 105, 20), np.linspace(105, 300, 25)[1:]]),
                      [(15, "-", 0), (-1, "+", 0)])])
+def _tb_dist_high_prev(d, p):
+    o, h, l, c, v = _arr(d)
+    return _S((c / _S(_roll(h, p[0], "max"), d).shift(1).to_numpy(float) - 1) * 100, d)
+
+
+def _tb_dist_low_prev(d, p):
+    o, h, l, c, v = _arr(d)
+    return _S((c / _S(_roll(l, p[0], "min"), d).shift(1).to_numpy(float) - 1) * 100, d)
+
+
 _r(r"close vs (\d+)本高値%", "n本高値",
-   "n 本最高値からの乖離%", "標準。swing高値距離% と同一の式＝重複列", "順張り値", "trend", tb=_tb_dist_high,
+   "前の n 本（今の足を含まない）の最高値からの乖離%",
+   "StockCharts Price Channels の逐語「Price Channels are based on prices prior to the current period.」＝今の足を含まない（監査 CP60）",
+   "順張り値", "trend", tb=_tb_dist_high_prev,
    known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, (105.0 / 110.0 - 1) * 100, 1e-9)])])
 _r(r"close vs (\d+)本安値%", "n本安値",
-   "n 本最安値からの乖離%", "標準。swing安値距離% と同一の式＝重複列", "順張り値", "trend", tb=_tb_dist_low,
+   "前の n 本（今の足を含まない）の最安値からの乖離%",
+   "同上（監査 CP60）", "順張り値", "trend", tb=_tb_dist_low_prev,
    known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-9)])])
 # ── 構造 ──
 _r(r"close vs pivotPP%(\d+)", "pivotPP",
@@ -1250,6 +1275,29 @@ _r(r"close vs pivotS1%(\d+)", "pivotS1",
    "順張り値", "trend", tb=lambda d, p: _tb_vs_pivot_rs(d, p, -1),
    known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),
                     (_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-6)])])
+
+
+def _pivot_day_case():
+    """前期間ピボットの手計算用（監査 CP60）。1日目（288本）＝終値105・高値110 が1本・安値100 が1本、2日目＝終値105 が3本。
+    PP=(110+100+105)/3=105・R1=2×105−100=110・S1=2×105−110=100。"""
+    c = np.full(291, 105.0)
+    h = c.copy()
+    l = c.copy()
+    h[100] = 110.0
+    l[200] = 100.0
+    return _mk(c, o=c, h=h, l=l)
+
+
+_r(r"close vs 前期間pivotPP%", "前期間pivotPP",
+   "教科書のピボット PP＝前の期間（日中の足は前の UTC の日・日足は前の月・それより長い足は前の年）の（高値＋安値＋終値）÷3 からの乖離%。期間のあいだ線は動かない",
+   "StockCharts「Pivot Points」の逐語「the prior day's high, low, and close」「do not change and remain in play throughout the day」。%化は H6",
+   "順張り値", "trend", known=lambda p: [(_pivot_day_case(), [(-1, 0.0, 1e-9)])])
+_r(r"close vs 前期間pivotR1%", "前期間pivotR1",
+   "教科書の R1＝2×PP − 前の期間の安値 からの乖離%", "StockCharts の逐語「Resistance 1 (R1) = (P x 2) - Low」",
+   "順張り値", "trend", known=lambda p: [(_pivot_day_case(), [(-1, (105.0 / 110.0 - 1) * 100, 1e-9)])])
+_r(r"close vs 前期間pivotS1%", "前期間pivotS1",
+   "教科書の S1＝2×PP − 前の期間の高値 からの乖離%", "StockCharts の逐語「Support 1 (S1) = (P x 2) - High」",
+   "順張り値", "trend", known=lambda p: [(_pivot_day_case(), [(-1, 5.0, 1e-9)])])
 _r(r"fib位置(\d+)", "fib位置",
    "n 本の高安レンジの中の位置 0〜1", "フィボナッチ・リトレースメントの位置測定", "順張り値", "trend", tb=_tb_fib,
    known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.5, 1e-9)])])
@@ -1843,8 +1891,9 @@ def _alma(c: np.ndarray, n: int, sigma: float = 6.0, off: float = 0.85) -> np.nd
     m = off * (n - 1)
     s = n / sigma
     i = np.arange(n, dtype=float)
-    # ★重みは逆順にしてから当てる（ライブラリの実物の逐語＝w_norm[::-1]）
-    return _wma_w(c, np.exp(-((i - m) ** 2) / (2 * s * s))[::-1])
+    # ★重み i は窓の古い側から数える（Legoux／TradingView＝山が新しい側）。
+    #   監査 CP60 で、ライブラリの逆順（w_norm[::-1]）の写しをやめた。
+    return _wma_w(c, np.exp(-((i - m) ** 2) / (2 * s * s)))
 
 
 def _fib_w(n: int) -> np.ndarray:
@@ -2343,26 +2392,26 @@ def _tb_inertia(d, p):
 
 
 def _stc_parts(d, tcl=10, f_=12, s_=26, fac=0.5):
-    """Schaff のトレンド周期。★実物の流儀＝1段目は「MACD の最小値が 0 より大きいとき」だけ計算し、
-    そうでなければ前の値を持ち越す。ならしは pf ← pf ＋ 係数×(stoch − pf) で、8桁に丸める。"""
+    """Schaff のトレンド周期（教科書＝TA-Lib stc の式）。★2段とも「範囲（最大−最小）が 0 か欠損のときだけ
+    前の値を持ち越す」。ならしは pf ← pf ＋ 係数×(stoch − pf)。
+    ★監査 CP60＝直す前は pandas_ta_classic の誤り（1段目を「MACD の最小値が 0 より大きいとき」だけ計算する）を
+    そのまま写していた＝照合が通っても教科書と同じとは言えなかった。"""
     c = d.close.to_numpy(float)
     xm = _ema_seed(c, f_) - _ema_seed(c, s_)
     m = len(xm)
 
-    def stage(x, use_range):
+    def stage(x):
         lo, hi = _roll(x, tcl, "min"), _roll(x, tcl, "max")
         rng = hi - lo
-        rng = np.where(rng == 0, np.finfo(float).eps, rng)
         st = np.zeros(m)
         sm = np.zeros(m)
         for i in range(1, m):
-            gate = rng[i] > 0 if use_range else (not np.isnan(lo[i]) and lo[i] > 0)
-            st[i] = 100.0 * (x[i] - lo[i]) / rng[i] if gate else st[i - 1]
-            sm[i] = round(sm[i - 1] + fac * (st[i] - sm[i - 1]), 8)
+            st[i] = 100.0 * (x[i] - lo[i]) / rng[i] if rng[i] > 0 else st[i - 1]
+            sm[i] = sm[i - 1] + fac * (st[i] - sm[i - 1])
         return sm
 
-    pf = stage(xm, False)
-    return stage(pf, True), pf
+    pf = stage(xm)
+    return stage(pf), pf
 
 
 def _tb_stc(d, p):
@@ -2600,8 +2649,10 @@ _r(r"PPO\((\d+),(\d+),(\d+)\)", "PPO",
 _r(r"PPOシグナル\((\d+),(\d+),(\d+)\)", "PPOシグナル",
    "上の PPO を g 本の EMA でならしたもの", "同上", "順張り値", "trend", tb=_tb_ppo_s)
 _r(r"PPOヒスト\((\d+),(\d+),(\d+)\)", "PPOヒスト",
-   "PPO とシグナルの差", "同上。★これは『勢いが加速しているか』を測るもので、上げ下げの向きを表さない",
-   "状態量＝加速（向きを持たない）", "none", tb=_tb_ppo_h)
+   "PPO とシグナルの差", "同上。StockCharts の逐語「The histogram is positive when PPO is above its 9-day EMA and "
+   "negative when PPO is below its 9-day EMA.」。加速の柱の実測（MACDヒスト% の流儀の欄に記録）＝"
+   "加速上げ +0.0001571／加速下げ −0.007139 で符号が分かれる＝順張り値の側（監査 CP60 で直した）",
+   "順張り値＝プラスで勢いが加速", "trend", tb=_tb_ppo_h)
 _r(r"PVO\((\d+),(\d+),(\d+)\)", "PVO",
    "割合の出来高振動子。出来高の短期 EMA と長期 EMA の差を、長期で割って100倍",
    "標準（PVO）。値段でなく出来高に当てる", "状態量＝出来高の増減（方向は持たない）", "none", tb=_tb_pvo)
@@ -4545,6 +4596,7 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "close vs VWAP": dict(k="構造・位置"), "Keltner上": dict(k="構造・位置"), "Keltner下": dict(k="構造・位置"),
     "n本高値": dict(k="構造・位置"), "n本安値": dict(k="構造・位置"),
     "pivotPP": dict(k="構造・位置"), "pivotR1": dict(k="構造・位置"), "pivotS1": dict(k="構造・位置"),
+    "前期間pivotPP": dict(k="構造・位置"), "前期間pivotR1": dict(k="構造・位置"), "前期間pivotS1": dict(k="構造・位置"),
     "fib位置": dict(k="構造・位置"), "POC": dict(k="構造・位置"), "VAH": dict(k="構造・位置"),
     "VAL": dict(k="構造・位置"), "S-Rタッチ数": dict(k="構造・位置"),
     # ★2026-09-26（M2-E-4c・束2）＝S-Rタッチ数 と同じ数え方。許容幅だけが1時間足の値動きの幅に連動する。

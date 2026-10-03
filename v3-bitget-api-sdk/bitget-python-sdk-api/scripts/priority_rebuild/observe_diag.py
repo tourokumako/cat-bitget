@@ -359,7 +359,11 @@ def _supertrend(h, l, c, n=10, k=3.0):
 
 
 def _vp_levels(c, v, win=288):
-    """出来高プロファイル。窓内で出来高が最も厚い価格＝POC、上下 70% 帯＝VAH/VAL の近似。"""
+    """出来高プロファイル。窓内で出来高が最も厚い区画＝POC。VAH/VAL＝POC から始めて、上と下の隣の区画のうち
+    出来高の多い方を1つずつ足し、窓の出来高の70%に届いた所の上端・下端（監査 CP60）。
+    出どころ＝CQG の逐語「The value area begins calculating at the POC. The system expands the value area one price
+    at a time in either direction until the value area represents 70% ...」。同量なら POC に近い側・距離も同じなら上
+    （TradingView の逐語「choose the row closer to the POC」）。区画は24（端が25個）。"""
     poc, vah, val = [], [], []
     ca, va = c.to_numpy(), v.to_numpy()
     for i in range(len(ca)):
@@ -370,10 +374,20 @@ def _vp_levels(c, v, win=288):
         idx = np.clip(np.digitize(cw, bins) - 1, 0, len(bins) - 2)
         agg = np.bincount(idx, weights=vw, minlength=len(bins) - 1)
         centers = (bins[:-1] + bins[1:]) / 2
-        order = np.argsort(agg)[::-1]
-        cum = np.cumsum(agg[order]) / max(agg.sum(), 1e-9)
-        keep = centers[order[:max(1, int(np.searchsorted(cum, 0.7)) + 1)]]
-        poc.append(centers[order[0]]); vah.append(keep.max()); val.append(keep.min())
+        p = int(np.argsort(agg)[::-1][0])
+        last = len(agg) - 1
+        tot = max(agg.sum(), 1e-9)
+        lo, hi, acc = p, p, agg[p]
+        while acc / tot < 0.7 and (lo > 0 or hi < last):
+            up = agg[hi + 1] if hi < last else -1.0
+            dn = agg[lo - 1] if lo > 0 else -1.0
+            if up > dn or (up == dn and (hi + 1 - p) <= (p - lo + 1)):
+                hi += 1
+                acc += agg[hi]
+            else:
+                lo -= 1
+                acc += agg[lo]
+        poc.append(centers[p]); vah.append(centers[hi]); val.append(centers[lo])
     return (pd.Series(poc, index=c.index), pd.Series(vah, index=c.index), pd.Series(val, index=c.index))
 
 
@@ -794,7 +808,7 @@ _reg("close vs 転換線%", "close vs 転換線%({})", True, lambda d, t_:
 _reg("close vs 基準線%", "close vs 基準線%({})", True, lambda d, k_:
      (d.close / ((d.high.rolling(k_).max() + d.low.rolling(k_).min()) / 2) - 1) * 100)
 _reg("RCI", "RCI{}", True, lambda d, n: _rci(d.close, n))
-_reg("EMA傾き", "EMA{}傾き%", True, lambda d, n: d.close.ewm(span=n, adjust=False).mean().pct_change(5) * 100)
+_reg("EMA傾き", "EMA{}傾き%({})", True, lambda d, n, k: d.close.ewm(span=n, adjust=False).mean().pct_change(k) * 100)
 # ── ボラ ──
 _reg("ATR%", "ATR%{}", False, lambda d, n: _atr(d.high, d.low, d.close, n) / d.close * 100)
 # 標準偏差は母集団（ddof=0）＝TradingView・ta と同じ世界標準（2026-07-30 に標本 ddof=1 から統一）
@@ -880,8 +894,10 @@ _reg("close vs Keltner下%", "close vs Keltner下%({},{})", True, lambda d, n, k
      (d.close / (d.close.ewm(span=n, adjust=False).mean() - k * _atr(d.high, d.low, d.close)) - 1) * 100)
 _reg("close vs Supertrend%", "close vs Supertrend%({},{})", True, lambda d, n, k:
      (d.close / _supertrend(d.high, d.low, d.close, n, k) - 1) * 100)
-_reg("close vs 本高値%", "close vs {}本高値%", True, lambda d, n: (d.close / d.high.rolling(n).max() - 1) * 100)
-_reg("close vs 本安値%", "close vs {}本安値%", True, lambda d, n: (d.close / d.low.rolling(n).min() - 1) * 100)
+# 教科書（StockCharts Price Channels）の逐語「Price Channels are based on prices prior to the current period.」＝今の足を含まない。
+# 今の足を含むと close ≤ 高値 なので値は 0 で頭打ちになり、前 n 本の高値の上抜けとその幅が書けない（監査 CP60）。
+_reg("close vs 本高値%", "close vs {}本高値%", True, lambda d, n: (d.close / d.high.rolling(n).max().shift(1) - 1) * 100)
+_reg("close vs 本安値%", "close vs {}本安値%", True, lambda d, n: (d.close / d.low.rolling(n).min().shift(1) - 1) * 100)
 # ── 構造 ──
 _reg("close vs pivotPP%", "close vs pivotPP%{}", True, lambda d, n: (d.close / ((d.high.rolling(n).max()
      + d.low.rolling(n).min() + d.close.shift(1)) / 3) - 1) * 100)
@@ -890,6 +906,30 @@ _reg("close vs pivotR1%", "close vs pivotR1%{}", True, lambda d, n: (d.close / (
      + d.low.rolling(n).min() + d.close.shift(1)) / 3) - d.low.rolling(n).min()) - 1) * 100)
 _reg("close vs pivotS1%", "close vs pivotS1%{}", True, lambda d, n: (d.close / (2 * ((d.high.rolling(n).max()
      + d.low.rolling(n).min() + d.close.shift(1)) / 3) - d.high.rolling(n).max()) - 1) * 100)
+
+
+def _pivot_prev_period(d):
+    """教科書のピボット（StockCharts「Pivot Points」）＝前の期間の高値・安値・終値から作り、その期間のあいだ動かない線。
+    逐語「the prior day's high, low, and close」「do not change and remain in play throughout the day」。
+    日中の足＝前の UTC の日・日足＝前の月・それより長い足＝前の年（監査 CP60）。
+    ★未来を見ない＝前の期間が閉じてから使う（shift(1) で1つ前の期間の値だけを当てる）。"""
+    step = pd.Series(d.index).diff().median()
+    if pd.isna(step) or step < pd.Timedelta("1D"):
+        key = d.index.floor("D")
+    elif step < pd.Timedelta("7D"):
+        key = d.index.to_period("M").to_timestamp()
+    else:
+        key = d.index.to_period("Y").to_timestamp()
+    per = d.groupby(key).agg(high=("high", "max"), low=("low", "min"), close=("close", "last")).shift(1)
+    m = per.reindex(key)
+    m.index = d.index
+    pp = (m["high"] + m["low"] + m["close"]) / 3
+    return pp, 2 * pp - m["low"], 2 * pp - m["high"]
+
+
+_reg("close vs 前期間pivotPP%", "close vs 前期間pivotPP%", True, lambda d: (d.close / _pivot_prev_period(d)[0] - 1) * 100)
+_reg("close vs 前期間pivotR1%", "close vs 前期間pivotR1%", True, lambda d: (d.close / _pivot_prev_period(d)[1] - 1) * 100)
+_reg("close vs 前期間pivotS1%", "close vs 前期間pivotS1%", True, lambda d: (d.close / _pivot_prev_period(d)[2] - 1) * 100)
 _reg("fib位置", "fib位置{}", True, lambda d, n: (d.close - d.low.rolling(n).min())
      / (d.high.rolling(n).max() - d.low.rolling(n).min()).replace(0, np.nan))
 _reg("close vs POC%", "close vs POC%{}", True, lambda d, n:
@@ -997,8 +1037,33 @@ _reg("SQZPRO_ON_WIDE", "SQZPRO_ON_WIDE", False, lambda d, k="WIDE":
 _reg("SQZPRO_ON_NARROW", "SQZPRO_ON_NARROW", False, lambda d, k="NARROW":
      (lambda t: t[[c for c in t.columns if c.endswith(k)][0]])(
          _pta6.squeeze_pro(high=d.high, low=d.low, close=d.close)))
-_reg("STC", "STC", True, lambda d: _pta6.stc(close=d.close).iloc[:, 0])
-_reg("STCstoch", "STCstoch", True, lambda d: _pta6.stc(close=d.close).iloc[:, 2])
+def _stc_textbook(close, tcl=10, f_=12, s_=26, fac=0.5):
+    """Schaff Trend Cycle（教科書＝TA-Lib stc の式・Schaff 2008）。戻り＝(STC, 1段目をならした値)。
+    ★範囲（窓の最大−最小）が 0 か欠損のときだけ、前の値を持ち越す（TA-Lib の逐語
+      「When a range is zero, the fraction keeps its previous value (0 before any).」）。
+    ★pandas_ta_classic の stc は1段目を「MACD の窓の最小値 > 0」のときだけ計算する（momentum/stc.py:180）＝
+      MACD が窓の中で1回でも 0 以下なら値が凍る（監査 CP60 の実測＝直近10万本の63.87%で凍る・STC の中央値 0.0）。
+      だからライブラリの stc を呼ばない。期間 12/26 は直す前と同じ（23/50 にするかは修正 49 で比べる）。"""
+    xm = (_pta6.ema(close, length=f_) - _pta6.ema(close, length=s_)).to_numpy(float)
+    m = len(xm)
+
+    def stage(x):
+        s = pd.Series(x)
+        lo = s.rolling(tcl).min().to_numpy(float)
+        rng = s.rolling(tcl).max().to_numpy(float) - lo
+        st = np.zeros(m)
+        sm = np.zeros(m)
+        for i in range(1, m):
+            st[i] = 100.0 * (x[i] - lo[i]) / rng[i] if rng[i] > 0 else st[i - 1]
+            sm[i] = sm[i - 1] + fac * (st[i] - sm[i - 1])
+        return sm
+
+    pf = stage(xm)
+    return pd.Series(stage(pf), index=close.index), pd.Series(pf, index=close.index)
+
+
+_reg("STC", "STC", True, lambda d: _stc_textbook(d.close)[0])
+_reg("STCstoch", "STCstoch", True, lambda d: _stc_textbook(d.close)[1])
 # ── 業界の指標（3回目＝アルファベット順 stochf〜willr）──
 # ★入れなかったもの＝stochf（うちの Stoch そのもの）／willr（うちの Stoch%K − 100・まこさん決定）／
 #   trixh の本体とシグナル（trix と同じ）。
@@ -1037,7 +1102,10 @@ _reg("VWMACDシグナル%", "VWMACDシグナル%({},{},{})", True, lambda d, f_,
 # ★本数は既にある sma_periods（20・50・200）をそのまま使う。新しい数字を作らない。
 #   本数を持たない指標（HILO・HT_TRENDLINE・HWMA）はライブラリの既定をそのまま使う。
 _MA_FUNCS = [
-    ("ALMA", lambda d, n: _pta6.alma(close=d.close, length=n)),
+    # ★ALMA（監査 CP60）＝ライブラリは重みを w_norm[::-1] で逆向きに当てる（overlap/alma.py:37）。
+    #   ずらし 0.85 を渡すと山が古い側に来る＝Legoux の定義と逆。0.15 を渡すと、教科書の offset 0.85
+    #   （山が新しい側）と同じ重みになる（ガウスの重みは左右対称なので、0.15 の逆向き＝0.85 の正向き）。
+    ("ALMA", lambda d, n: _pta6.alma(close=d.close, length=n, distribution_offset=0.15)),
     ("DEMA", lambda d, n: _pta6.dema(close=d.close, length=n)),
     ("HMA", lambda d, n: _pta6.hma(close=d.close, length=n)),
     ("JMA", lambda d, n: _pta6.jma(close=d.close, length=n)),
@@ -1144,8 +1212,10 @@ _reg("close vs PSAR%", "close vs PSAR%", True,
      lambda d: (d.close / (lambda t: t.iloc[:, 0].fillna(t.iloc[:, 1]))(_ps(d)) - 1) * 100)
 _reg("PSAR加速", "PSAR加速", False, lambda d: _ps(d).iloc[:, 2])
 _reg("PSAR反転", "PSAR反転", False, lambda d: _ps(d).iloc[:, 3])
+# ★ライブラリは売り側の SAR を負の数で返す（pandas_ta_classic 0.6.52 trend/sarext.py:137・TA-Lib の逐語
+#   「TA_SAREXT returns negative values when the position is short」）＝絶対値に直してから割る（監査 CP60）。
 _reg("close vs SAREXT%", "close vs SAREXT%", True,
-     lambda d: (d.close / _pta6.sarext(high=d.high, low=d.low, close=d.close) - 1) * 100)
+     lambda d: (d.close / _pta6.sarext(high=d.high, low=d.low).abs() - 1) * 100)
 # ── 業界の指標（volume 16関数）──
 # ★出来高系は、ライブラリの値をそのままでは材料にできない（積み上げは増え続ける・
 #   出来高と値段の大きさに引きずられる＝H6 違反）。既に在る OBV傾き と同じ形にそろえる。
@@ -1295,7 +1365,8 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for n in cfg["rci_periods"]:
         addf("RCI", n)
     for n in cfg["ema_periods"]:
-        addf("EMA傾き", n)
+        for k in cfg["ema_slope_lookbacks"]:
+            addf("EMA傾き", n, k)
     # ── ボラ ──
     for n in cfg["atr_periods"]:
         addf("ATR%", n)
@@ -1357,6 +1428,10 @@ def build_catalog(cfg: dict) -> list[tuple]:
         addf("close vs pivotPP%", n)
         addf("close vs pivotR1%", n)
         addf("close vs pivotS1%", n)
+    # 教科書のピボット（前の期間で固定の線・監査 CP60）
+    addf("close vs 前期間pivotPP%")
+    addf("close vs 前期間pivotR1%")
+    addf("close vs 前期間pivotS1%")
     for n in cfg["fib_windows"]:
         addf("fib位置", n)
     for n in cfg["vp_windows"]:
@@ -1397,6 +1472,10 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for (f_, s_, g_) in cfg["macd_params"]:
         addf("AO%", f_, s_)
         addf("APO%", f_, s_)
+    # ★AO の教科書の期間（Bill Williams・TradingView の逐語 lengthAO1=5・lengthAO2=34・監査 CP60）。
+    #   macd_params の 12/26 だけだと AO% は PPO と相関 0.9974 の重複になる。
+    for (f_, s_) in cfg.get("ao_params", []):
+        addf("AO%", f_, s_)
         addf("COPC", g_, f_, s_)
         addf("FISHER", f_, g_)
         addf("FISHERシグナル", f_, g_)
@@ -1857,19 +1936,21 @@ def _insp_range_geo(bars: pd.DataFrame, cfg: dict) -> list[str]:
     print(f"  既知答え（合成バー＝電卓式）: {'一致' if not ng else '不一致あり'}")
     # 切り詰め再計算（検査4 と同じ機構・レンジ幾何7列）
     span = bars.loc[bars.index.max() - pd.Timedelta(days=int(cfg["warmup_days"]) + 3):]
-    geo_full = build_range_geometry(span)
+    import e37_scalp as _e37g                   # engine_tuner は RG-v6（adaptive_k=V25_K）の帯を使う＝そちらも切り詰めで確かめる（監査 CP60）
     picks = [span.index[-1], span.index[-100], span.index[-400]]
     suspects: dict = {}
-    for t in picks:
-        geo_tr = build_range_geometry(span.loc[:t])
-        a, b = geo_full.loc[t], geo_tr.loc[t]
-        for col in geo_full.columns:
-            x, y = a.get(col), b.get(col)
-            if pd.isna(x) and pd.isna(y):
-                continue
-            if pd.isna(x) != pd.isna(y) or abs(float(x) - float(y)) > 1e-9 * max(1.0, abs(float(x))):
-                suspects.setdefault(col, []).append(str(t))
-    print(f"  切り詰め再計算: サンプル時点 {len(picks)}点 × {geo_full.shape[1]} 列 → 不一致 {len(suspects)} 列")
+    for _ak in (None, _e37g.V25_K):
+        geo_full = build_range_geometry(span, _ak)
+        for t in picks:
+            geo_tr = build_range_geometry(span.loc[:t], _ak)
+            a, b = geo_full.loc[t], geo_tr.loc[t]
+            for col in geo_full.columns:
+                x, y = a.get(col), b.get(col)
+                if pd.isna(x) and pd.isna(y):
+                    continue
+                if pd.isna(x) != pd.isna(y) or abs(float(x) - float(y)) > 1e-9 * max(1.0, abs(float(x))):
+                    suspects.setdefault(f"{col}(adaptive_k={_ak})", []).append(str(t))
+    print(f"  切り詰め再計算: サンプル時点 {len(picks)}点 × {geo_full.shape[1]} 列 × 帯2種（RG-v5・RG-v6） → 不一致 {len(suspects)} 列")
     for col, ts in suspects.items():
         ng.append(f"切り詰めで値が変わるレンジ幾何列（未来参照の疑い）: {col}（時点 {ts}）")
     # 被覆（値決め窓・採点窓＝G2 の基礎データ・判定はしない）
