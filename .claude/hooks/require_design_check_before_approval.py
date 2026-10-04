@@ -32,6 +32,8 @@
 #         控えから元に戻す（.claude/state/_a12_backup・ハッシュ値で照らす）。A1〜A11 が全部 通ったときだけ走らせる
 #     A13 設計書の中の事実（実装の指示の件数・工事名・触る関数・当てる道具を打つ回数）を道具が実物から数え、
 #         全部の節の文と照らす（古いまま残った節を、CC に語を選ばせずに見つける）
+#     A14 CC が設計書のいまの版を全部の項目について見直し終えているか（見直し表＝gen_review.py --check・
+#         判定が「抜け」の項目が残っていれば止める）。承認のプログラムも同じ道具を呼んで承認を中止する（2026-10-04）
 #   B群＝時間がかかるので、その場では走らせない。やり取りの記録（harness が書く）に、
 #        設計書・壊すプログラム・TARGET より新しい実行の結果が在るかを見る。
 #     B1 表に載っている既存の壊すプログラムが、--measure-only で「✅ 期待どおり」だったか
@@ -404,6 +406,33 @@ def a13_facts(acc):
     return ["A13 設計書の中の事実が節ごとに食い違う（古いまま残った節）:\n" + _tail("\n".join(bad), 30)]
 
 
+def a14_review(acc):
+    """A14 CC が、設計書のいまの版を全部の項目について見直し終えているか（見直し表＝.claude/tools/gen_review.py --check）。
+
+    ★2026-10-04（154回目・まこさん指示・逐語）＝「承認するまえに確認するフローに修正して」
+      「私が承認する前にCCが設計書の内容を確認して修正箇所を見つけられるように、フローを修正すべき」。
+    なぜ要るか（実測）＝154回目に CC は、道具が作った設計書を全部 読む前に承認のコマンドを まこさんに出した。
+      ターンの終わりの検査（require_read_used）は返信が画面に出た後に走るので、まこさんは先に承認を打たれた。
+      承認の後に読んで、完成の条件に RCI の行が無い抜けを見つけた＝承認の打ち直しが要る形になった。
+    止める条件＝見直し表が無い／設計書のいまの版について書いたものではない／埋まっていない項目が在る／
+      判定が「抜け」の項目が残っている（抜けを見つけたまま承認をお願いしない）。
+    ★同じ道具を、承認のプログラム（approve_impl.sh）も呼ぶ＝CC が見直しを飛ばしても、承認の瞬間に止まる。
+    限界＝見直しの判断が正しいかは見ない（項目を飛ばさないこと・根拠の行が実在すること・抜けを残さないことまで）。"""
+    try:
+        sys.path.insert(0, ROOT + "/.claude/tools")
+        import gen_review
+        ng, _refs = gen_review.check(acc)
+    except Exception as e:                                   # noqa: BLE001
+        return [f"A14 見直し表の道具を走らせられません（{e}）＝CC が設計書を見直したかを確かめられない"]
+    if not ng:
+        return []
+    return ["A14 CC が設計書の見直しを終えていません（承認のプログラムも ここで承認を中止します）:\n"
+            + _tail("\n".join(ng), 30)
+            + "\n        やること: 設計書を1行目から最後まで Read で読み、"
+              "python3 .claude/tools/gen_review.py --skeleton .claude/state/acceptance.md で表を作り、全部の項目を埋める。"
+              "抜けを見つけたら設計書を直す（直すまで判定は「抜け」）"]
+
+
 BK_DIR = ROOT + "/.claude/state/_a12_backup"
 
 
@@ -670,6 +699,7 @@ def check_all(acc=ACC, transcript=None, split=False):
     if not bad and not b8:
         bad += a12_post_approval_trial(acc)                  # 重いので、ほかが全部 通ったときだけ（出す不足は全部 一度に）
     bad += b8
+    bad += a14_review(acc)                                   # ★2026-10-04＝CC が設計書を見直し終えているか（承認のプログラムも同じ道具で止める）
     bad_b = b_runtime(md, exist, rb, transcript) if rb is not None else []
     return bad + bad_b if not split else (bad, bad_b)
 

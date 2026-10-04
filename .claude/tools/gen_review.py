@@ -17,7 +17,8 @@
   1行目＝目印 <!-- gen_review doc=<パス> doc_sha256=<文書のハッシュ値> items=<数> -->
   「争点: …」の行＝この文書が答える争点（依頼書なら結論を決める問い・設計書なら やることの表の一文）
   表＝| # | 項目 | ①意味が通じるか | ②実物と合うか（根拠＝ファイル名:行番号） | ③争点に合うか | 判定 |
-  判定＝「OK」「直した」「該当なし（理由）」のどれかで始める。
+  判定＝「OK」「直した」「該当なし（理由）」のどれかで始める。抜け・食い違いを見つけた項目は「抜け（中身）」で始める。
+  ★「抜け」が1件でも残っている表は --check が止まる＝抜けを見つけたまま渡さない（2026-10-04・承認の前に確かめるフロー）。
 
 照らすこと（--check・1件でも在れば rc=1）
   ①目印の doc_sha256 が、いまの文書と同じ（表は文書のいまの版について書いたもの）
@@ -49,6 +50,7 @@ REVIEWS = os.path.join(ROOT, ".claude", "state", "reviews")
 MARK = "<!-- gen_review"
 PLACE = "<書く>"
 VERDICTS = ("OK", "直した", "該当なし")
+GAP = "抜け"                                        # 見直しで抜け・食い違いを見つけた項目の判定（残っていれば --check が止める）
 HEAD = "| # | 項目 | ①意味が通じるか | ②実物と合うか（根拠＝ファイル名:行番号） | ③争点に合うか | 判定 |"
 REF_RE = re.compile(r"([A-Za-z0-9_.\-/一-龥ぁ-んァ-ヶー]+\.(?:py|md|json|sh|txt|jsonl|csv)):(\d+)")
 ITEM_RE = re.compile(r"^(#{2,4} .+|- \*\*問い\d+\*\*.*)$")
@@ -167,8 +169,15 @@ def check(doc: str, text: str | None = None, review: str | None = None) -> tuple
         if any(PLACE in x or not x for x in c):
             ng.append(f"埋まっていない欄が在る: {it}")
             continue
-        if not c[3].startswith(VERDICTS):
-            ng.append(f"判定が「OK」「直した」「該当なし（理由）」で始まらない: {it}（{c[3][:20]}）")
+        if not c[3].startswith(VERDICTS + (GAP,)):
+            ng.append(f"判定が「OK」「直した」「該当なし（理由）」「抜け（中身）」で始まらない: {it}（{c[3][:20]}）")
+        # ★2026-10-04（154回目・まこさん指示「承認するまえに確認するフローに修正して」
+        #   「私が承認する前にCCが設計書の内容を確認して修正箇所を見つけられるように、フローを修正すべき」）
+        #   ＝見直しで抜け・食い違いを見つけた項目は、判定を「抜け（中身）」で書く。1件でも残っていれば止める
+        #   ＝抜けを「OK（ただし…）」と書いて渡す道を塞ぐ（154回目に、RCI の完成の条件が無いまま承認をお願いした）。
+        #   文書を直した後に、判定を「直した」に書き替える。
+        if c[3].startswith(GAP):
+            ng.append(f"見直しで抜け・食い違いを見つけたままの項目: {it}（{c[3][:40]}）＝文書を直してから渡す")
         found = REF_RE.findall(c[1])
         if not found and not c[3].startswith("該当なし"):
             ng.append(f"②の欄に根拠の「ファイル名:行番号」が無い: {it}")
@@ -212,6 +221,8 @@ def selftest() -> int:
         ("T6 根拠が無い（該当なしでない）→ 止まる", not check(doc, body, fill(sk, ev="見た"))[0], False),
         ("T7 該当なし（理由）なら根拠が無くても通る", not check(doc, body, fill(sk, ev="—", vd="該当なし（争点に関係しない）"))[0], True),
         ("T8 判定が決めた言葉でない → 止まる", not check(doc, body, fill(sk, vd="たぶん大丈夫"))[0], False),
+        ("T11 判定が「抜け」の項目が残っている → 止まる（抜けを見つけたまま渡さない）",
+         not check(doc, body, fill(sk, vd="抜け（完成の条件に行が無い）"))[0], False),
         ("T10 道具が作った依頼書は、中身のチェック（必読に要件の文書が無い）で止まる",
          not check(doc, body + "\n<!-- gen_audit_docs: request -->\n", fill(skeleton(doc, body + "\n<!-- gen_audit_docs: request -->\n")))[0], False),
         ("T9 作り直しで前の行の中身を残し、増えた項目だけ <書く> になる",
