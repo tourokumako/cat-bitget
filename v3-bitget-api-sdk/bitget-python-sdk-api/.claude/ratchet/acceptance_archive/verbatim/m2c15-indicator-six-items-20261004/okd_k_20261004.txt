@@ -1,0 +1,27 @@
+2つ目のサイトで、本数の値を確かめられました。探すのはここで止めます（使ったのは、ページを開くこと5回と検索2回です）。
+
+**確かめた結果**
+| 出どころ | 逐語（ページで確かめた） | 何が言えるか |
+|---|---|---|
+| [LuxAlgo「Moving Average Slope」](https://www.luxalgo.com/library/indicator/tSPnFR8g-moving-average-slope/) | 「…minus its value n bars back, with n commonly between 1 and 10.」「k: slope lookback in bars (default 1)」 | 範囲が書いてある：1〜10・既定 1 |
+| [TradingView「Dual Timeframe Slope Confluence」（TheScalpingAnt）](https://www.tradingview.com/script/Fs9jpcoy-Dual-Timeframe-Slope-Confluence/) | 「The Slope Lookback parameter (default: 10 bars)…」「Aggressive scalping: Slope lookback: 5」「Intraday: 8」「Swing trading: 10」「Position trading: 15」 | 値が書いてある：5・8・10・15 |
+| 検索の要約だけにあった「Intraday 3 to 5／Daily 5 to 10」 | 出どころのページを3つ開いたが見つからない | **使わない**（確かめられない） |
+
+**OK いただいた選び方に当てると**
+- 範囲：「範囲が書いてあればそれを使う」（OK の2）に当たるのは LuxAlgo の 1〜10 です。もう1つのサイトの値 5・8・10 は、この中に入っています。15（ポジショントレード用）は外です。
+- 最初の値：スキャルの 5 とデイトレ（Intraday）の 8 は、どちらも1つのサイトにしか書いてありません。「違うサイト2つ以上で同じ値」（出どころの決まり）に当たらないので使えず、今の 5 のままです。
+
+**正直に書いておくこと**
+- どちらのサイトも、教科書（開発者の原典や StockCharts）ではありません。道具の会社のページと、利用者が作ったスクリプトの説明です。
+- 教科書側の StockCharts（ChartSchool）は「本数は利用者が決める」とだけ書いていて、数字はありません（監査 CP60:93）。
+
+**決めていただきたいこと**
+- 傾きの比べる本数 k の範囲を 1〜10 にしてよいですか。対象は、EMA傾き と22系統の傾き、それに RAINBOW傾き です。
+- よければ、上の2つの逐語と URL を、調べた結果の元に新しいファイルとして足して封をします。選び方のプログラムがそこから読む形にします。値は手で書きません。
+
+Sources:
+- [LuxAlgo – Moving Average Slope](https://www.luxalgo.com/library/indicator/tSPnFR8g-moving-average-slope/)
+- [TradingView – Dual Timeframe Slope Confluence](https://www.tradingview.com/script/Fs9jpcoy-Dual-Timeframe-Slope-Confluence/)
+- [TradingView – Slope scripts](https://in.tradingview.com/scripts/slope/)
+- [TradingView – Moving Averages page 29](https://www.tradingview.com/scripts/movingaverage/page-29/)
+- [TradingView – MA Slope: New Method](https://kr.tradingview.com/script/vViqsU3y)

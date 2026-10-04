@@ -1,0 +1,50 @@
+87c87
+< 指標の修正の1回目です。壊れている所を戻す直しだけを行います。中身は3つです。①前回当てた修正13 で AO の for の中に入った7種（COPC・FISHER ほか）を、修正13 の前のパラメータに戻す（K-1）。②上位足の値が5分足1本ぶん遅れて届く所を、今の形と直した形を切り替えられるようにする（K-8・修正68）。③前回足した前期間pivot の3種を、業界のライブラリとの対応表に足す（今は足し忘れで、観察の道具の自己テストが落ちる）。指標の名前に値を入れる直しと、値違いの材料を足す直しは、1件も入れません（まこさん 2026-10-04「指標名に閾値やパラメータの値を固定で入れて、指標数を増やすという解決策はやめてほしい」）。材料の一覧の本数は変わりません。最後に表を作り直し、自己テスト・G2・H2 を取り直します。
+---
+> 指標の修正の1回目です。壊れている所を戻す直しと、V9 が使う指標を入れる直しを行います。中身は4つです（4つ目は下の④）。①前回当てた修正13 で AO の for の中に入った7種（COPC・FISHER ほか）を、修正13 の前のパラメータに戻す（K-1）。②上位足の値が5分足1本ぶん遅れて届く所を、今の形と直した形を切り替えられるようにする（K-8・修正68）。③前回足した前期間pivot の3種を、業界のライブラリとの対応表に足す（今は足し忘れで、観察の道具の自己テストが落ちる）。④V9 が使う RCI を、engine_tuner が使う指標に入れる（参照表の RCI の行の mako の欄に、まこさんの指示の逐語を書く。名前と本数は変えない。印が「使う」に変わるのは、最後に表を作り直したとき）。指標の名前に値を入れる直しと、値違いの材料を足す直しは、1件も入れません（まこさん 2026-10-04「指標名に閾値やパラメータの値を固定で入れて、指標数を増やすという解決策はやめてほしい」）。材料の一覧の本数は変わりません。最後に表を作り直し、自己テスト・G2・H2 を取り直します。
+97,99c97,100
+< | 修正13 で AO の for の中に入った7種（K-1） | `grep -n -A2 'in cfg.get("ao_params"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、AO の for の下に COPC の行が続く。実装の後は、AO% の行だけ（COPC ほかは macd の for に戻る） | 1477:    for (f_, s_) in cfg.get("ao_params", []): ⏎ 1478-        addf("AO%", f_, s_) ⏎ 1479-        addf("COPC", g_, f_, s_)（終了コード 0） |
+< | 上位足のずらしの切り替え（K-8） | `grep -n htf_shift_mode v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json` | 実装の前は、無い。実装の後は、設定と注記が在り、値は now（今と同じ） | （終了コード 1） |
+< | 業界のライブラリとの対応表の前期間pivot（G-2） | `grep -n '"前期間pivot' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py` | 実装の前は、系統の一覧の行だけ（業界の対応表に無いので、観察の道具の自己テストが、業界のライブラリとの突き合わせの検査で落ちる）。実装の後は、業界の対応表の行が増える | 1291:_r(r"close vs 前期間pivotPP%", "前期間pivotPP", ⏎ 1295:_r(r"close vs 前期間pivotR1%", "前期間pivotR1", ⏎ 1298:_r(r"close vs 前期間pivotS1%", "前期間pivotS1", ⏎ 4599:    "前期間pivotPP": dict(k="構造・位置"), "前期間pivotR1": dict(k="構造・位置"), "前期間pivotS1": dict(k="構造・位置"),（終了コード 0） |
+---
+> | 修正13 で AO の for の中に入った7種（K-1） | `grep -n -A2 'in cfg.get("ao_params"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、AO の for の下に COPC の行が続く。実装の後は、AO% の行だけ（COPC ほかは macd の for に戻る） | 1487:    for (f_, s_) in cfg.get("ao_params", []): ⏎ 1488-        addf("AO%", f_, s_) ⏎ 1489-（終了コード 0） |
+> | 上位足のずらしの切り替え（K-8） | `grep -n htf_shift_mode v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json` | 実装の前は、無い。実装の後は、設定と注記が在り、値は now（今と同じ） | 159: "htf_shift_mode": "now", ⏎ 160: "_htf_shift_mode": "上位足の値をいつから使うか（監査 CP60 の修正68・まこさん決定 2026-10-04＝切り替えて比べる）。now＝今（足の始まり＋足の長さ＝5分足1本遅れて届く）／bar_close＝5分足1本ぶん早める。どちらも未来は使わない。初めは now＝今と同じ値",（終了コード 0） |
+> | 業界のライブラリとの対応表の前期間pivot（G-2） | `grep -n '"前期間pivot' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py` | 実装の前は、系統の一覧の行だけ（業界の対応表に無いので、観察の道具の自己テストが、業界のライブラリとの突き合わせの検査で落ちる）。実装の後は、業界の対応表の行が増える | 1292:_r(r"close vs 前期間pivotPP%", "前期間pivotPP", ⏎ 1296:_r(r"close vs 前期間pivotR1%", "前期間pivotR1", ⏎ 1299:_r(r"close vs 前期間pivotS1%", "前期間pivotS1", ⏎ 4600:    "前期間pivotPP": dict(k="構造・位置"), "前期間pivotR1": dict(k="構造・位置"), "前期間pivotS1": dict(k="構造・位置"), ⏎ 4905:    "前期間pivotPP": ((), "前の UTC の日で固定する教科書の PP。ライブラリの cpr と同じ作りかは照らしていない（定義表の既知答えで確かめる）"), ⏎ 4906:    "前期間pivotR1": ((), "同上（教科書の R1＝2×PP − 前の期間の安値）"), ⏎ 4907:    "前期間pivotS1": ((), "同上（教科書の S1＝2×PP − 前の期間の高値）"),（終了コード 0） |
+> | V9 が使う RCI の印（G-1 の RCI） | `grep -n -A1 '"off": \[' v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/indicator_switch.json` | 表を作り直す前は、「使わない」の一覧の先頭が RCI。表を作り直した後は、先頭が RCI でない（RCI が「使う」の側に入る） | 165: "off": [ ⏎ 166-  "RCI",（終了コード 0） |
+218a220,221
+> | 12 | 当てる前の監査（4-4 の手順1） | 出さなかった。先に当てて、実装の監査に出す（設計の問いも、その監査に入れる）。当てる前の監査の依頼書は、監査に出す前のチェックが今の本物の自己テストが通ることを求めるので、当てる前には作れなかった（今の本物は、この工事が直す足し忘れ＝G-2 で落ちていた） | まこさん「案１でいいよ」（2026-10-04・154回目）・worklog 20261004 §41 |
+> | 13 | RCI を「使う」にする直し（実装 8）を守る完成の条件と壊すプログラムを、この工事に足すこと | 次の工事（パラメータを受け取る形にする直し）で足す。この工事の完成の条件（7-6）は K-1・K-8・G-2 の3行のまま。4-3・4-12・7-1 にも RCI は書かれていない。CC が、承認の後の見直しで見つけた抜け。この工事では、表を作り直した後に、2-1 の4行目のコマンドで RCI の印を1回 確かめて出力を貼る | まこさん「C」（2026-10-04・154回目）・worklog 20261004 §38・§39 |
+1052c1055
+< <!-- ACC_CODEREF_START hash=6e8521d6ad13e16e gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=4bad42b60a8998a2 gen_acceptance.py が自動生成＝手で書き換えない -->
+1059,1061c1062,1064
+< | `selftest_catalog` | （この関数は実物に無い） |
+< | `_insp_close_leak` | 3860 |
+< | `build_features` | 1832 |
+---
+> | `selftest_catalog` | 6930 |
+> | `_insp_close_leak` | 3866 |
+> | `build_features` | 1834 |
+1063c1066
+< | `selftest` | 6918 |
+---
+> | `selftest` | 6989 |
+1065c1068
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 178件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 179件の関数が在ります）。
+1072c1075
+< <!-- ACC_SPEC_START hash=e10bc3d204ba4808 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_SPEC_START hash=0f6bd05554a8b572 gen_acceptance.py が自動生成＝手で書き換えない -->
+1244a1248,1252
+>   "selftest_catalog": [
+>    "build_catalog",
+>    "build_features",
+>    "load_config"
+>   ],
+1257a1266
+>    "selftest_catalog",
+1282a1292
+>   "--selftest-catalog",

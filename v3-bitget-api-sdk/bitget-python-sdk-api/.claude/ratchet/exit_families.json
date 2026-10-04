@@ -1520,6 +1520,9 @@
    "下ヒゲ比",
    "内側バー",
    "出来高変化率%",
+   "前期間pivotPP",
+   "前期間pivotR1",
+   "前期間pivotS1",
    "包み足",
    "基準線",
    "孕み足",
@@ -1584,8 +1587,8 @@
   ]
  },
  "confirm_conditions": {
-  "banned_pairs": 515,
-  "parts_count": 573,
+  "banned_pairs": 516,
+  "parts_count": 577,
   "quantile_grid": [
    "q10",
    "q20",

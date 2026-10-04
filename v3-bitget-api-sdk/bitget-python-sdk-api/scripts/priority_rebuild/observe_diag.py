@@ -1472,10 +1472,8 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for (f_, s_, g_) in cfg["macd_params"]:
         addf("AO%", f_, s_)
         addf("APO%", f_, s_)
-    # ★AO の教科書の期間（Bill Williams・TradingView の逐語 lengthAO1=5・lengthAO2=34・監査 CP60）。
-    #   macd_params の 12/26 だけだと AO% は PPO と相関 0.9974 の重複になる。
-    for (f_, s_) in cfg.get("ao_params", []):
-        addf("AO%", f_, s_)
+        # ★K-1（2026-10-04・工事 m2c15-indicator-six-items-20261004）＝監査 CP60 の修正13 を当てたとき、下の7種が AO の for の中に入り、
+        #   AO の 5・34 と、上の for から漏れた g_ で作られていた（COPC(9,5,34) ほか）。修正13 の前（commit 4656de3）と同じ場所に戻す。
         addf("COPC", g_, f_, s_)
         addf("FISHER", f_, g_)
         addf("FISHERシグナル", f_, g_)
@@ -1484,6 +1482,10 @@ def build_catalog(cfg: dict) -> list[tuple]:
             addf("KDJ%K", n, g_)
             addf("KDJ%D", n, g_)
             addf("KDJ%J", n, g_)
+    # ★AO の教科書の期間（Bill Williams・TradingView の逐語 lengthAO1=5・lengthAO2=34・監査 CP60）。
+    #   macd_params の 12/26 だけだと AO% は PPO と相関 0.9974 の重複になる。
+    for (f_, s_) in cfg.get("ao_params", []):
+        addf("AO%", f_, s_)
 
     # ── 業界の指標（2回目＝アルファベット順 macdext〜stc）──
     for n in cfg["rsi_periods"]:
@@ -1861,6 +1863,10 @@ def build_features(bars: pd.DataFrame, cfg: dict, catalog: list | None = None) -
                 if tf != "5m":
                     s = s.copy()
                     s.index = src.index + pd.Timedelta(TF_RULE[tf])
+                    # ★K-8（監査 CP60 の修正68・まこさん決定 2026-10-04）＝設定 htf_shift_mode が "bar_close" のときだけ、5分足1本ぶん早める
+                    #   （今の作りは1本遅れて届く）。どちらも未来は使わない（5分足の行 R は R+5分に閉じるので、閉じた時刻 ≤ R+5分 の上位足だけが当たる）。
+                    if cfg.get("htf_shift_mode", "now") == "bar_close":
+                        s.index = s.index - (bars.index[1] - bars.index[0])
                     s = s.reindex(bars.index, method="ffill")
                 out[col] = pd.to_numeric(s, errors="coerce")
             except Exception as e:                       # 黙って消さない
@@ -3857,11 +3863,14 @@ def _insp_source(bars: pd.DataFrame) -> list[str]:
     return ng
 
 
-def _insp_close_leak(shift: bool = True) -> list[str]:
+def _insp_close_leak(shift: bool = True, mode: str = "now") -> list[str]:
     """検査2 の一部＝閉じる前の上位足バーへの漏れ（未来参照）を人工データで確かめる。
-    shift=False は番人用＝『足が閉じた時刻へずらす』処理を外した壊れた状態を再現する。"""
+    shift=False は番人用＝『足が閉じた時刻へずらす』処理を外した壊れた状態を再現する。
+    ★K-8（監査 CP60 の修正68・2026-10-04）＝mode="bar_close" は5分足1本ぶん早める形（build_features の htf_shift_mode と同じ式）。
+      どちらの形でも、5分足の行 t で当たるのは「行 t が閉じた時刻までに閉じた上位足」だけであることを、2つの時刻（02:25・02:30）で確かめる。"""
     ng = []
     idx = pd.date_range("2026-03-01", periods=288, freq="5min")
+    step = idx[1] - idx[0]
     syn = pd.DataFrame({"open": 1.0, "high": 1.0, "low": 1.0,
                         "close": np.arange(288, dtype=float) + 1.0, "volume": 1.0}, index=idx)
     for tf in ("15m", "2h"):
@@ -3869,12 +3878,15 @@ def _insp_close_leak(shift: bool = True) -> list[str]:
         s = src["close"].copy()
         if shift:
             s.index = src.index + pd.Timedelta(TF_RULE[tf])
+            if mode == "bar_close":
+                s.index = s.index - step
         s = s.reindex(syn.index, method="ffill")
-        t = idx[30]                                  # 02:30＝どの足でも形成中の時刻
-        exp = float(syn["close"].loc[t.floor(TF_RULE[tf]) - pd.Timedelta("5min")])
-        got = s.loc[t]
-        if pd.isna(got) or float(got) != exp:
-            ng.append(f"{tf}: 形成中の足の値が漏れている（t={t} の値 {got} ≠ 閉じた足の close {exp}）")
+        for t in (idx[29], idx[30]):                 # 02:25＝早める形で差が出る時刻／02:30＝どの足でも形成中の時刻
+            base = t + step if mode == "bar_close" else t
+            exp = float(syn["close"].loc[base.floor(TF_RULE[tf]) - step])
+            got = s.loc[t]
+            if pd.isna(got) or float(got) != exp:
+                ng.append(f"{tf}（{mode}）: 形成中の足の値が漏れている（t={t} の値 {got} ≠ 閉じた足の close {exp}）")
     return ng
 
 
@@ -3901,8 +3913,8 @@ def _insp_resample(bars: pd.DataFrame, cfg: dict) -> list[str]:
         print(f"  {tf}: バー {len(r)} 本 / 独立集計との最大差 {worst:.2e} / 区切り時刻ずれ {misaligned} 本")
         if misaligned:
             ng.append(f"{tf} の区切り時刻がずれたバー {misaligned} 本")
-    leak = _insp_close_leak(shift=True)
-    print(f"  閉じる前のバーへの漏れ（人工データ・15m と 2h）: {'なし' if not leak else '検出'}")
+    leak = _insp_close_leak(shift=True) + _insp_close_leak(shift=True, mode="bar_close")   # ★K-8＝ずらし2種
+    print(f"  閉じる前のバーへの漏れ（人工データ・15m と 2h・ずらし2種）: {'なし' if not leak else '検出'}")
     ng += leak
     print(f"  足の内訳（observe_config.json の timeframes・全 {len(cfg['timeframes'])} 種＝指標はこの全部で組む）:")
     one = (load_1m(sample.index[0], sample.index[-1])
@@ -6915,6 +6927,65 @@ def selftest_atr1h(exit_: bool = True, bars_csv: str | None = None) -> list:
     return ng
 
 
+def selftest_catalog(exit_: bool = True) -> list:
+    """K-1・K-8・G-2 の番人だけを走らせる軽い口（工事 m2c15-indicator-six-items-20261004・2026-10-04）。
+    口＝`--selftest-catalog`（完成の条件と壊すプログラム b128・b129・b131 が使う）。全体の自己テスト（selftest）からも呼ぶ。
+    手本＝selftest_atr1h（口の形・selftest からの呼び方）。★全体の自己テストは約2分かかり、承認の前の仮当て（A12）で
+    完成の条件と壊すプログラムが毎回それを走らせると20分を超えるため、番人だけを切り出した。"""
+    cfg = load_config()
+    ng = []
+    _t3 = np.arange(6000, dtype=float)
+    _c3 = pd.Series(100 + np.sin(_t3 / 9.0) * 2 + _t3 * 0.001,
+                    index=pd.date_range("2026-03-01", periods=6000, freq="5min"))
+    _sb3 = pd.DataFrame({"open": _c3.shift().fillna(_c3.iloc[0]), "high": _c3 + 0.1,
+                         "low": _c3 - 0.1, "close": _c3, "volume": 1.0}, index=_c3.index)
+    #  ①K-1＝COPC・FISHER・FISHERシグナル は macd_params の組で作る（修正13 の前と同じ）。AO の for に入ると AO の組の名前になる
+    _nm_k1 = {nm for nm, _f, _d in build_catalog(cfg)}
+    for (_f1, _s1, _g1) in cfg["macd_params"]:
+        for _want1 in (f"COPC({_g1},{_f1},{_s1})", f"FISHER({_f1},{_g1})", f"FISHERシグナル({_f1},{_g1})"):
+            if _want1 not in _nm_k1:
+                ng.append(f"K-1: {_want1} がカタログに無い（macd_params の組で作られていない）")
+    #  ②K-8 修正68＝上位足のずらし bar_close でも、本物の build_features を切り詰めて計算し直して値が変わらない（検査4 と同じ機構）。
+    #    ★漏れは、上位足の中の決まった位置の5分足でだけ起きる＝最後の「上位足1本ぶん」の5分足を全部 切り詰めて確かめる（15m＝3本・2h＝24本）。
+    #    あわせて now と値が違う（切り替えが効いている）
+    _cat68 = [("close そのまま", lambda d: d.close, True)]
+    for _tf68, _n68 in (("15m", 3), ("2h", 24)):
+        _c68 = {**cfg, "timeframes": [_tf68], "warmup_days": 3, "htf_shift_mode": "bar_close"}
+        _full68, _m68 = build_features(_sb3, _c68, catalog=_cat68)
+        _cols68 = [c for c in _full68.columns if "close そのまま" in str(c)]
+        if not _cols68:
+            ng.append(f"K-8: 上位足のずらしの番人が列を作れない（{_tf68}）＝測れない")
+            continue
+        for _t68 in _sb3.index[-_n68:]:
+            _tr68, _m68 = build_features(_sb3.loc[:_t68], _c68, catalog=_cat68)
+            _x68, _y68 = _full68[_cols68[0]].loc[_t68], _tr68[_cols68[0]].loc[_t68]
+            if pd.isna(_x68) != pd.isna(_y68) or (not pd.isna(_x68) and abs(float(_x68) - float(_y68)) > 1e-9 * max(1.0, abs(float(_x68)))):
+                ng.append(f"K-8: 上位足のずらし bar_close で、切り詰めると値が変わる（{_tf68}・時点 {_t68}・未来参照の疑い）")
+                break
+        _now68, _m68 = build_features(_sb3, {**_c68, "htf_shift_mode": "now"}, catalog=_cat68)
+        if _now68[_cols68[0]].equals(_full68[_cols68[0]]):
+            ng.append(f"K-8: 上位足のずらし bar_close と now の値が同じ（{_tf68}・切り替えが効いていない）")
+    #  ④材料の一覧の全部の名前が、参照表で引ける（全体の自己テストの「参照表の網羅」と同じ iref.coverage を呼ぶ）
+    _miss = iref.coverage([nm for nm, _f, _d in build_catalog(cfg)])
+    if _miss:
+        ng.append(f"参照表に無いカタログ列 {len(_miss)} 件: {_miss[:5]}")
+    #  ⑤G-2＝業界のライブラリとの対応表に足し忘れが無い（全体の自己テストの検査10 の番人と同じ iref.industry_gap を呼ぶ）
+    try:
+        import pandas_ta_classic as _pt10
+        _ng10 = iref.industry_gap({k: list(v) for k, v in _pt10.Category.items()},
+                                  [e["family"] for e in iref.REFS])["ng"]
+        if _ng10:
+            ng.append(f"検査10 が現状の対応表で不一致を出す（表の直し忘れ）: {_ng10[:3]}")
+    except ImportError:
+        ng.append("検査10 が使う pandas-ta-classic が入っていない（requirements.txt の版で入れる）")
+    if exit_:
+        for x in ng:
+            print(f"  ❌ {x}")
+        print(f"  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ {len(ng)} 件")
+        raise SystemExit(1 if ng else 0)
+    return ng
+
+
 def selftest() -> None:
     """この道具が守ると言っていることを機械で確かめる。まこさんはこれを叩けばよい。"""
     ng = []
@@ -7321,7 +7392,7 @@ def selftest() -> None:
     # 検査2: 「足が閉じた時刻へずらす」処理を外した壊れた組み立てで ❌ が出ること
     if not _insp_close_leak(shift=False):
         ng.append("検査2 が閉じる前のバーへの漏れを検出しない（ずらしを外しても素通り）")
-    if _insp_close_leak(shift=True):
+    if _insp_close_leak(shift=True) or _insp_close_leak(shift=True, mode="bar_close"):   # ★K-8＝ずらし2種とも誤検出しない
         ng.append("検査2 が正しい組み立てで誤検出")
     # 検査3: RSI をわざと定数の式に差し替えたカタログで不一致が出ること・正しいカタログで一致すること
     _t3 = np.arange(6000, dtype=float)
@@ -7437,6 +7508,7 @@ def selftest() -> None:
         _ng4 = _insp_lookahead(_sb3, {**cfg, "timeframes": ["5m"], "warmup_days": 3}, catalog=_leaky)
     if not any("未来を見る列" in x for x in _ng4):
         ng.append("検査4 がわざと入れた未来参照列（1本先の close）を見逃す")
+    ng += selftest_catalog(exit_=False)              # ★K-1・K-8・G-2 の番人（工事 m2c15-indicator-six-items-20261004）
     # ★検査4 の静的検査の番人（2026-08-23・77番）＝本物のコード行は拾い、説明の文章（docstring）の同じ語は拾わない
     import h2_scan as _h2s
     _probe = "x = c" + ".shift(" + "-1)"                     # ここに直接 書くと hook が止まる（穴⑤）ので組み立てる
@@ -7963,6 +8035,8 @@ if __name__ == "__main__":
         _bc5 = (sys.argv[_i5 + 1] if len(sys.argv) > _i5 + 1
                 and not sys.argv[_i5 + 1].startswith("-") else None)
         selftest_insp5(bars_csv=_bc5)                 # （承認の打ち切り 120秒 に収めるための軽い口）
+    if "--selftest-catalog" in sys.argv:              # ★K-1・K-8・G-2 の番人だけを（工事 m2c15-indicator-six-items-20261004・壊すプログラム b128・b129・b131 が使う）
+        selftest_catalog()                            # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest-atr1h" in sys.argv:                # ★T-A1〜T-A5 だけを（設計書 m2e-bundle2-20260926・壊すプログラム b104〜b107 が使う）
         selftest_atr1h()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest" in sys.argv:

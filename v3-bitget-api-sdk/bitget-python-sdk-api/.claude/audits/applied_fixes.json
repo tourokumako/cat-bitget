@@ -2037,6 +2037,111 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
    "at": "2026-10-03T23:25:41",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "2",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "3",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "4",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "5",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "6",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "7",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "8",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "9",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "10",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "11",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "12",
+   "file": ".claude/breaks/b128_k1_copc_back_in_ao_loop.sh",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "13",
+   "file": ".claude/breaks/b129_htf_bar_close_two_bars.sh",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-indicator-six-items-20261004",
+   "num": "14",
+   "file": ".claude/breaks/b131_industry_map_prev_pivot_gone.sh",
+   "at": "2026-10-04T17:36:50",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-04_m2c15_indicator_six_items_20261004_impl_cp61_audit_report.md",
+   "num": "1",
+   "file": ".claude/state/session_worklog_20261004.md",
+   "at": "2026-10-04T19:45:50",
+   "how": "当てた"
   }
  ]
 }

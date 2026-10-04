@@ -149,7 +149,7 @@
     "計算の出どころ": "うちの自前の式／ライブラリに相当なし／照合の相手: scipy",
     "グループ": "（段8 で埋める）",
     "状態": "在る",
-    "engine_tuner": "選べない（名前の組み立てが未登録＝G6 で拒否）"
+    "engine_tuner": "選べる"
    },
    {
     "名前": "EMA傾き",
@@ -527,6 +527,36 @@
     "答える問い": "いま どの価格水準にいるか",
     "使える役割": "location",
     "計算の出どころ": "うちの自前の式／ライブラリに同じものが在る（cpr）／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べる"
+   },
+   {
+    "名前": "前期間pivotPP",
+    "系統": "構造・位置",
+    "答える問い": "いま どの価格水準にいるか",
+    "使える役割": "location",
+    "計算の出どころ": "うちの自前の式／ライブラリに相当なし／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べる"
+   },
+   {
+    "名前": "前期間pivotR1",
+    "系統": "構造・位置",
+    "答える問い": "いま どの価格水準にいるか",
+    "使える役割": "location",
+    "計算の出どころ": "うちの自前の式／ライブラリに相当なし／照合の相手: 無し（手計算の既知答えで担保）",
+    "グループ": "（段8 で埋める）",
+    "状態": "在る",
+    "engine_tuner": "選べる"
+   },
+   {
+    "名前": "前期間pivotS1",
+    "系統": "構造・位置",
+    "答える問い": "いま どの価格水準にいるか",
+    "使える役割": "location",
+    "計算の出どころ": "うちの自前の式／ライブラリに相当なし／照合の相手: 無し（手計算の既知答えで担保）",
     "グループ": "（段8 で埋める）",
     "状態": "在る",
     "engine_tuner": "選べる"
@@ -3153,7 +3183,7 @@
    }
   ],
   "counts": {
-   "在る": 263,
+   "在る": 266,
    "足す": 0,
    "入れない": 45
   },
@@ -3205,10 +3235,10 @@
    {
     "印": "B",
     "何を足すか": "★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標",
-    "数": 119,
+    "数": 118,
     "単位": "種類",
     "出どころ": "段5 で新しく数えた（検査には無い）",
-    "中身": "RCI・zscore・zscore_return・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・Supertrend・APO%・BIAS・BOP・AR・BR・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・LRSI・MOM%・PGO・PO・PSL・RSX・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SQZ%・SQZPRO_ON_WIDE・SQZPRO_ON_NARROW・TD_SEQ_UP・TD_SEQ_DN・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・ALMA傾き%・DEMA傾き%・FWMA傾き%・HMA傾き%・LINREG傾き%・LRangle・LRb傾き%・LRslope%・MCGD傾き%・MIDPOINT傾き%・MIDPRICE傾き%・MMAR傾き%・PWMA傾き%・RAINBOW傾き%・RMA傾き%・SINWMA傾き%・SSF傾き%・SWMA傾き%・T3傾き%・TEMA傾き%・TRIMA傾き%・TSF傾き%・VIDYA傾き%・VWMA傾き%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・QSTICK%・TTM_TREND・ADOSC比・AOBV_LR・MARKETFI比・PVI傾き・PVOL比・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MEDIAN傾き%・VOSC・CVI・PDIST%・RVI・THERMO比・EBSW・HT_DCPERIOD・HT_INPHASE%・HT_QUAD%・HT_SINE・HT_LEADSINE・HT_TRENDMODE・MSW_SINE・MSW_LEAD・実体幅比・内側バー・open_Z・high_Z・low_Z・HA実体%・HA上ヒゲ比・HA下ヒゲ比"
+    "中身": "zscore・zscore_return・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・Supertrend・APO%・BIAS・BOP・AR・BR・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・LRSI・MOM%・PGO・PO・PSL・RSX・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SQZ%・SQZPRO_ON_WIDE・SQZPRO_ON_NARROW・TD_SEQ_UP・TD_SEQ_DN・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・ALMA傾き%・DEMA傾き%・FWMA傾き%・HMA傾き%・LINREG傾き%・LRangle・LRb傾き%・LRslope%・MCGD傾き%・MIDPOINT傾き%・MIDPRICE傾き%・MMAR傾き%・PWMA傾き%・RAINBOW傾き%・RMA傾き%・SINWMA傾き%・SSF傾き%・SWMA傾き%・T3傾き%・TEMA傾き%・TRIMA傾き%・TSF傾き%・VIDYA傾き%・VWMA傾き%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・QSTICK%・TTM_TREND・ADOSC比・AOBV_LR・MARKETFI比・PVI傾き・PVOL比・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MEDIAN傾き%・VOSC・CVI・PDIST%・RVI・THERMO比・EBSW・HT_DCPERIOD・HT_INPHASE%・HT_QUAD%・HT_SINE・HT_LEADSINE・HT_TRENDMODE・MSW_SINE・MSW_LEAD・実体幅比・内側バー・open_Z・high_Z・low_Z・HA実体%・HA上ヒゲ比・HA下ヒゲ比"
    },
    {
     "印": "C",
@@ -3221,10 +3251,10 @@
    {
     "印": "D",
     "何を足すか": "「終値と◯◯の距離%」に対する「◯◯ そのものの向き」",
-    "数": 62,
+    "数": 65,
     "単位": "件",
     "出どころ": "検査9（observe_diag）",
-    "中身": "転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S"
+    "中身": "転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・前期間pivotPP・前期間pivotR1・前期間pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S"
    },
    {
     "印": "E",
@@ -3479,12 +3509,12 @@
    }
   ],
   "engine": {
-   "選べる指標の種類": 139,
-   "選べない指標の種類": 119,
-   "選べる組": 319,
+   "選べる指標の種類": 143,
+   "選べない指標の種類": 118,
+   "選べる組": 327,
    "時間足": 11,
-   "選べる列": 3509,
-   "カタログ総列数": 6303,
+   "選べる列": 3597,
+   "カタログ総列数": 6347,
    "レンジ幾何": [
     "W%",
     "帯内位置%"
@@ -3500,6 +3530,10 @@
      21
     ],
     "AO%": [
+     [
+      5,
+      34
+     ],
      [
       12,
       26
@@ -3577,10 +3611,22 @@
      20
     ],
     "EMA傾き": [
-     9,
-     20,
-     50,
-     200
+     [
+      9,
+      5
+     ],
+     [
+      20,
+      5
+     ],
+     [
+      50,
+      5
+     ],
+     [
+      200,
+      5
+     ]
     ],
     "EOM比": [
      10,
@@ -3701,6 +3747,12 @@
     "PVT傾き": [
      10,
      20
+    ],
+    "RCI": [
+     7,
+     9,
+     26,
+     52
     ],
     "ROC": [
      3,
@@ -4242,8 +4294,8 @@
      "番号": "1",
      "場所": "scripts/priority_rebuild/observe_config.json",
      "何の数字か": "指標を作るときのパラメータ（RSI14 の 14）",
-     "並び": 37,
-     "数字": 85,
+     "並び": 39,
+     "数字": 88,
      "範囲": 0,
      "観察だけの格子": [
       "adverse_marks",
@@ -4257,6 +4309,10 @@
       "wait_grid"
      ],
      "明細": [
+      {
+       "鍵": "ao_params",
+       "中身": "5・34"
+      },
       {
        "鍵": "atr_periods",
        "中身": "7・14・21"
@@ -4288,6 +4344,10 @@
       {
        "鍵": "ema_periods",
        "中身": "9・20・50・200"
+      },
+      {
+       "鍵": "ema_slope_lookbacks",
+       "中身": "5"
       },
       {
        "鍵": "fib_windows",
@@ -4543,8 +4603,8 @@
      "明細": []
     }
    ],
-   "合計並び": 38,
-   "合計数字": 89,
+   "合計並び": 40,
+   "合計数字": 92,
    "合計範囲": 31
   },
   "regime_decl": {
@@ -4664,7 +4724,7 @@
     },
     {
      "何": "部品",
-     "数": 573,
+     "数": 577,
      "単位": "種",
      "実物": "`signal_families.json` の `parts`",
      "中身": "（一覧は ★2 と ★7）"
@@ -4678,7 +4738,7 @@
     },
     {
      "何": "材料の列（部品 × 時間足）",
-     "数": 6303,
+     "数": 6347,
      "単位": "列",
      "実物": "上の2つの掛け算",
      "中身": "—"
@@ -4700,7 +4760,7 @@
    ],
    "ng": [],
    "形の数": 13,
-   "部品の数": 573,
+   "部品の数": 577,
    "時間足の数": 11,
    "束ね方": [
     "not",
@@ -4713,5 +4773,5 @@
    ]
   }
  },
- "_本文の指紋": "ad65fa858189e111"
+ "_本文の指紋": "909c8fb83a03d93b"
 }

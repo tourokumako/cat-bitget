@@ -1,11 +1,11 @@
-<!-- MATERIALS hash=ad65fa858189e111 gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=909c8fb83a03d93b gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
 理由＝要件の「作ってはいけないもの」2番（探す値を先に点の一覧で限定するもの）に当たるためです。
 期間は範囲の軸として engine_tuner が探します。
 
-**いまの数＝在る 263 件 ／ 足す 0 件 ／ 入れない 45 件（合計 315 行）。**
+**いまの数＝在る 266 件 ／ 足す 0 件 ／ 入れない 45 件（合計 318 行）。**
 
 > ★「入れない」の承認は**1件ずつ ★4 の表に出しています**（全部が承認済みではありません）。
 > 既定は「入れる」です（まこさん決定＝「利益最大化するために完全に不要な指標以外はすべて入れてほしい」）。
@@ -21,9 +21,9 @@
 | 印 | 何を足すか | 数 | 出どころ |
 |---|---|---|---|
 | A | 業界のライブラリに在って、うちの材料に無い指標 | **0 種類** | 検査10（observe_diag） |
-| B | ★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標 | **119 種類** | 段5 で新しく数えた（検査には無い） |
+| B | ★うちの材料カタログに在るのに、engine_tuner が条件に選べない指標 | **118 種類** | 段5 で新しく数えた（検査には無い） |
 | C | ★参照表に在るのに、材料カタログにも別枠にも無い（需給） | **0 件** | 段5 で新しく数えた（検査7 は『あり』と出る＝別の道で見ている）／2026-09-06 に「型の表の別枠に在るものは除く」を足した |
-| D | 「終値と◯◯の距離%」に対する「◯◯ そのものの向き」 | **62 件** | 検査9（observe_diag） |
+| D | 「終値と◯◯の距離%」に対する「◯◯ そのものの向き」 | **65 件** | 検査9（observe_diag） |
 | E | 軸カタログ（入口 E-c）の未実装 | **1 件** | 検査7（observe_diag） |
 | F | 時間足（1分足・3分足） | **2 本** | 要件 R15（フロー 段7 で足す） |
 | G | ★型の表は許すが、閾値の格子が無くて選べない部品 | **1 件** | 段5 で新しく数えた（engine_tuner_gen.py:256 の逐語） |
@@ -31,9 +31,9 @@
 **中身（名前の一覧）**
 
 - **A（0 種類）** … 下の『材料の一覧』で状態が「足す」の行
-- **B（119 種類）** … RCI・zscore・zscore_return・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・Supertrend・APO%・BIAS・BOP・AR・BR・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・LRSI・MOM%・PGO・PO・PSL・RSX・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SQZ%・SQZPRO_ON_WIDE・SQZPRO_ON_NARROW・TD_SEQ_UP・TD_SEQ_DN・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・ALMA傾き%・DEMA傾き%・FWMA傾き%・HMA傾き%・LINREG傾き%・LRangle・LRb傾き%・LRslope%・MCGD傾き%・MIDPOINT傾き%・MIDPRICE傾き%・MMAR傾き%・PWMA傾き%・RAINBOW傾き%・RMA傾き%・SINWMA傾き%・SSF傾き%・SWMA傾き%・T3傾き%・TEMA傾き%・TRIMA傾き%・TSF傾き%・VIDYA傾き%・VWMA傾き%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・QSTICK%・TTM_TREND・ADOSC比・AOBV_LR・MARKETFI比・PVI傾き・PVOL比・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MEDIAN傾き%・VOSC・CVI・PDIST%・RVI・THERMO比・EBSW・HT_DCPERIOD・HT_INPHASE%・HT_QUAD%・HT_SINE・HT_LEADSINE・HT_TRENDMODE・MSW_SINE・MSW_LEAD・実体幅比・内側バー・open_Z・high_Z・low_Z・HA実体%・HA上ヒゲ比・HA下ヒゲ比
+- **B（118 種類）** … zscore・zscore_return・包み足・孕み足・pinbar・連続本数・body比・上ヒゲ比・下ヒゲ比・swing高値距離・swing安値距離・Supertrend・APO%・BIAS・BOP・AR・BR・CFO・CG・CMO・COPC・CTI・DM+%・DM-%・ERI強気%・ERI弱気%・FISHER・FISHERシグナル・INERTIA・KDJ%K・KDJ%D・KDJ%J・LRSI・MOM%・PGO・PO・PSL・RSX・RVGI・RVGIシグナル・RVGIヒスト・QQE・QQE_RSIMA・SQZ%・SQZPRO_ON_WIDE・SQZPRO_ON_NARROW・TD_SEQ_UP・TD_SEQ_DN・VWMACD線%・VWMACDシグナル%・VWMACDヒスト%・ALMA傾き%・DEMA傾き%・FWMA傾き%・HMA傾き%・LINREG傾き%・LRangle・LRb傾き%・LRslope%・MCGD傾き%・MIDPOINT傾き%・MIDPRICE傾き%・MMAR傾き%・PWMA傾き%・RAINBOW傾き%・RMA傾き%・SINWMA傾き%・SSF傾き%・SWMA傾き%・T3傾き%・TEMA傾き%・TRIMA傾き%・TSF傾き%・VIDYA傾き%・VWMA傾き%・ZLMA傾き%・ADXR・DI+・DI-・DX・AMAT_LR・QSTICK%・TTM_TREND・ADOSC比・AOBV_LR・MARKETFI比・PVI傾き・PVOL比・WAD傾き・KVO比・KVOシグナル比・VFI・出来高変化率%・skew・kurtosis・MEDIAN傾き%・VOSC・CVI・PDIST%・RVI・THERMO比・EBSW・HT_DCPERIOD・HT_INPHASE%・HT_QUAD%・HT_SINE・HT_LEADSINE・HT_TRENDMODE・MSW_SINE・MSW_LEAD・実体幅比・内側バー・open_Z・high_Z・low_Z・HA実体%・HA上ヒゲ比・HA下ヒゲ比
 - **C（0 件）** … （無し＝3件とも型の表の別枠に在る）
-- **D（62 件）** … 転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S
+- **D（65 件）** … 転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・前期間pivotPP・前期間pivotR1・前期間pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S
 - **E（1 件）** … トレンド/モメンタム＝MTF傾き整合
 - **F（2 本）** … いま 11 本＝1m・3m・5m・10m・15m・30m・1h・2h・4h・6h・1d
 - **G（1 件）** … 曜日
@@ -49,10 +49,10 @@
 
 | 何 | 数 |
 |---|---|
-| 材料カタログの列（部品 × 時間足） | 6303 列 |
-| **engine_tuner が選べる列** | **3509 列（55.7%）** |
-| engine_tuner が選べる指標の種類 | **139 種類** |
-| **engine_tuner が選べない指標の種類** | **119 種類**（上の一覧 B） |
+| 材料カタログの列（部品 × 時間足） | 6347 列 |
+| **engine_tuner が選べる列** | **3597 列（56.7%）** |
+| engine_tuner が選べる指標の種類 | **143 種類** |
+| **engine_tuner が選べない指標の種類** | **118 種類**（上の一覧 B） |
 | そのほかに選べるもの（レンジ幾何） | W%・帯内位置% |
 | そのほかに選べるもの（時間帯） | 時刻だけ（型の表は 時刻・曜日 を許す） |
 
@@ -87,11 +87,11 @@
 - 検収専用の値は数えません＝`engine_tuner_gen.py` の `selftest` と `KENSHU_LIMITS`（出どころ＝`recipes/search_limits.json` の `_note` の逐語「検収専用の値は engine_tuner_gen.py の selftest の中にだけ存在する」）。
 - **番人**＝この4か所のどれかに架空の数の並びを1つ 足すと、その場所の件数がちょうど 1 増えます（`--selftest` の T12・わざと壊して確かめています）。
 
-**★4か所 合わせて 数の並び 38 件（数字 89 個）。範囲で探せるのは 31 件だけです。**
+**★4か所 合わせて 数の並び 40 件（数字 92 個）。範囲で探せるのは 31 件だけです。**
 
 | # | 場所 | 何の数字か | 決まった数字だけ（数の並び） | その中の数字 | 範囲で探せる |
 |---|---|---|---|---|---|
-| 1 | scripts/priority_rebuild/observe_config.json | 指標を作るときのパラメータ（RSI14 の 14） | **37 件** | 85 個 | 0 件 |
+| 1 | scripts/priority_rebuild/observe_config.json | 指標を作るときのパラメータ（RSI14 の 14） | **39 件** | 88 個 | 0 件 |
 | 2 | scripts/priority_rebuild/recipes/search_limits.json | 使い方の中の本数（slope の n）・閾値の段・上限 | **1 件** | 4 個 | 17 件 |
 | 3 | scripts/priority_rebuild/engine_tuner_gen.py | 生成器が数字を選ぶときに、コードに直に書いた数字 | **0 件** | 0 個 | 0 件 |
 | 4 | scripts/priority_rebuild/e38_logics.json の search_space | E38 の探索が振る値 | **0 件** | 0 個 | 14 件 |
@@ -101,15 +101,16 @@
 
 **場所ごとの中身（全部 実物から）**
 
-- **場所1**＝指標のパラメータ。この 37 件の並びが、下の表の 109 種類・289 通りに広がります。★数える鍵は「名前が `_periods` で終わるもの」ではなく、**材料カタログを作る関数（`observe_diag.build_catalog`）が実際に読む鍵**です（名前で数えると `bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・`*_windows`・`sr_tol`・`w_tol` を丸ごと取りこぼします）。観察の道具だけが使う格子 9 件（`adverse_marks`・`early_windows`・`favorable_marks`・`quantiles`・`scene_exit_sl_pcts`・`scene_exit_tmax_bars`・`scene_exit_tp_pcts`・`sl_grid`・`wait_grid`）は、engine_tuner が振る値ではないので ここでは数えていません。
+- **場所1**＝指標のパラメータ。この 39 件の並びが、下の表の 110 種類・294 通りに広がります。★数える鍵は「名前が `_periods` で終わるもの」ではなく、**材料カタログを作る関数（`observe_diag.build_catalog`）が実際に読む鍵**です（名前で数えると `bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・`*_windows`・`sr_tol`・`w_tol` を丸ごと取りこぼします）。観察の道具だけが使う格子 9 件（`adverse_marks`・`early_windows`・`favorable_marks`・`quantiles`・`scene_exit_sl_pcts`・`scene_exit_tmax_bars`・`scene_exit_tp_pcts`・`sl_grid`・`wait_grid`）は、engine_tuner が振る値ではないので ここでは数えていません。
 - **場所2**＝ほかに 分位（閾値の段）＝**範囲 q10〜q90（81 通り）**（`quantile_range`・★2026-08-15 の段A の A-5-3 で 9段のメニューから範囲にした。`quantile_grid` の9段は ほかの道具がまだ読む分として残してある）／単独の数字 3 件（`fdr_q`・`n_min`・`r_min`）／上限を置かないもの 5 件（`count_range`・`depth_max`・`k_max`・`p_max`・`role_max`＝まこさん決定 2026-08-12）。
 - **場所3**＝ほかに、案を作るときの**確率の数字**が 15 か所（`rng.random() < 0.3` の形）。これは探す値ではありませんが、CC がコードに直に書いた数字なので一緒に数えています。
 - **場所4**＝`search_space` は全部で 45 件です。内訳＝分位 21 ／メニュー 10（うち数の並び 0・本当に選択肢 10）／範囲 14。★このうち 2 件は値が空です（`logics.L5.grid_n`・`logics.S5.grid_n`＝まこさんの判断待ち・値が入るまで engine_tuner は走りません）。
 
-**場所1 の明細（37 件）**
+**場所1 の明細（39 件）**
 
 | 鍵 | 決まった数字 |
 |---|---|
+| `ao_params` | 5・34 |
 | `atr_periods` | 7・14・21 |
 | `bb_periods` | 20・50 |
 | `bb_sigma` | 2.0・3.0 |
@@ -118,6 +119,7 @@
 | `cmf_periods` | 20 |
 | `donchian_periods` | 20・48 |
 | `ema_periods` | 9・20・50・200 |
+| `ema_slope_lookbacks` | 5 |
 | `fib_windows` | 20・96 |
 | `fractal_k` | 2・5 |
 | `ichimoku` | 9・26 |
@@ -169,7 +171,7 @@
 | 機械で分かること | 件数 | 中身 |
 |---|---|---|
 | 小数が入っている鍵 | 4 件 | `lrsi_gamma`・`sr_atr1h_k`・`sr_tol`・`w_tol` |
-| 整数だけの鍵 | 33 件 | ★この中に `bb_sigma`（標準偏差の倍数 2.0・3.0）のような「本数でない きりのよい数」が混ざります |
+| 整数だけの鍵 | 35 件 | ★この中に `bb_sigma`（標準偏差の倍数 2.0・3.0）のような「本数でない きりのよい数」が混ざります |
 
 **A-3 で範囲に直すときは、鍵ごとに「整数の範囲か・小数の範囲か」を1件ずつ決めます。**
 下の指標ごとの表でも、小数が混ざるものには「本数ではない」と付けています（3 種類）。
@@ -178,12 +180,12 @@
 パラメータ＝指標を作るときの設定（RSI14 の 14＝本数）。
 閾値＝できあがった値の区切り（「RSI が 70 を超えたら」の 70）。**下の表に閾値は出てきません。**
 
-**下の表は、上の 場所1 が広がった姿です（109 種類）。**
+**下の表は、上の 場所1 が広がった姿です（110 種類）。**
 
 | 指標の種類 | いま試せるパラメータ |
 |---|---|
 | ADX | 7 本・14 本・21 本（3 通り） |
-| AO% | (12,26)（1 通り・数字が2つ以上の指標は組で1通り） |
+| AO% | (5,34)・(12,26)（2 通り・数字が2つ以上の指標は組で1通り） |
 | AROOND | 7 本・14 本・21 本（3 通り） |
 | AROONOSC | 7 本・14 本・21 本（3 通り） |
 | AROONU | 7 本・14 本・21 本（3 通り） |
@@ -197,7 +199,7 @@
 | DPO% | 20 本・48 本（2 通り） |
 | Donchian幅 | 20 本・48 本（2 通り） |
 | EFI比 | 10 本・20 本（2 通り） |
-| EMA傾き | 9 本・20 本・50 本・200 本（4 通り） |
+| EMA傾き | (9,5)・(20,5)・(50,5)・(200,5)（4 通り・数字が2つ以上の指標は組で1通り） |
 | EOM比 | 10 本・20 本（2 通り） |
 | ER | 7 本・9 本・14 本・21 本（4 通り） |
 | KAMA傾き% | 20 本・50 本・200 本（3 通り） |
@@ -220,6 +222,7 @@
 | PVOシグナル | (12,26,9)（1 通り・数字が2つ以上の指標は組で1通り） |
 | PVOヒスト | (12,26,9)（1 通り・数字が2つ以上の指標は組で1通り） |
 | PVT傾き | 10 本・20 本（2 通り） |
+| RCI | 7 本・9 本・26 本・52 本（4 通り） |
 | ROC | 3 本・6 本・12 本・24 本（4 通り） |
 | RSI | 7 本・9 本・14 本・21 本（4 通り） |
 | S-Rタッチ1時間ATR | (144,0.5,7)・(144,0.5,14)・(144,0.5,21)・(144,1.0,7)・(144,1.0,14)・(144,1.0,21)・(144,1.5,7)・(144,1.5,14)・(144,1.5,21)・(288,0.5,7)・(288,0.5,14)・(288,0.5,21)・(288,1.0,7)・(288,1.0,14)・(288,1.0,21)・(288,1.5,7)・(288,1.5,14)・(288,1.5,21)（18 通り・数字が2つ以上の指標は組で1通り） |
@@ -429,18 +432,18 @@
 
 | 何 | 数 |
 |---|---|
-| 指標の種類 | **139** |
-| うち **パラメータを2つ以上 持つ**（同じ指標のパラメータ違いで 2本 並べられる） | **80** |
-| うち パラメータが1つだけ | 29 |
-| うち パラメータが無い | 30 |
+| 指標の種類 | **143** |
+| うち **パラメータを2つ以上 持つ**（同じ指標のパラメータ違いで 2本 並べられる） | **82** |
+| うち パラメータが1つだけ | 28 |
+| うち パラメータが無い | 33 |
 | 時間足 | 11 |
 
 ### 部品を「何が要るか」で分けると
 
 | 何が要るか | 部品 | 使える指標の数 |
 |---|---|---|
-| **材料 1本** | 値を持ってくる・n本 ずらす・n本の平均・絶対値・比べる・掛け算・値が在るか（＋足りない部品の n本の最大値・最小値・順位・ばらつき） | **139（全部）** |
-| **材料 2本** | 引き算（差・クロス・タッチ）（＋足りない部品の 割り算・2本の相関） | **80**（同じ指標のパラメータ違いに限る） |
+| **材料 1本** | 値を持ってくる・n本 ずらす・n本の平均・絶対値・比べる・掛け算・値が在るか（＋足りない部品の n本の最大値・最小値・順位・ばらつき） | **143（全部）** |
+| **材料 2本** | 引き算（差・クロス・タッチ）（＋足りない部品の 割り算・2本の相関） | **82**（同じ指標のパラメータ違いに限る） |
 | **条件を受ける** | かつ・でない・n本のうち 全部／どれか・条件を n本 ずらす（＋足りない部品の どれか満たす・何本前に成立したか） | 指標に依らない |
 
 ### ★業界の定番のクロスが、いま作れるか（1件ずつ 機械が判定）
@@ -459,7 +462,7 @@
 | FISHER × シグナル | —（材料に無い） | — |  |
 | 移動平均のゴールデンクロス（EMA） | ✅ 受け付ける | ✅ 作る | 同じ指標のパラメータ違い＝作れる側の例 |
 | 移動平均のゴールデンクロス（SMA） | ✅ 受け付ける | ✅ 作る | 同上 |
-| RCI の短期 × 長期 | —（材料に無い） | — | V9 P22 が使っている。2026-08-11 の 6-8 で RCI7 を足して作れるようになった |
+| RCI の短期 × 長期 | ✅ 受け付ける | ✅ 作る | V9 P22 が使っている。2026-08-11 の 6-8 で RCI7 を足して作れるようになった |
 
 **✅ 定番のクロスは全部 作れます。**
 
@@ -600,9 +603,9 @@ T16（架空の列を宣言の写しに足すと、欄が変わり「★列を�
 | うち 外側になる形（中に条件を1つ包む） | **3 種** | `engine_tuner_exec.NEST_FORMS` | `streak`・`within_n`・`barssince` |
 | 判定の中身（build）の中だけで使える形 | **1 種** | `engine_tuner_exec._walk_build_tree` | `bool_col` |
 | 束ね方 | **4 通り** | `engine_tuner_exec._walk` | `not`・`all`・`any`・`if-then` |
-| 部品 | **573 種** | `signal_families.json` の `parts` | （一覧は ★2 と ★7） |
+| 部品 | **577 種** | `signal_families.json` の `parts` | （一覧は ★2 と ★7） |
 | 時間足 | **11 本** | `signal_families.json` の `timeframes` | `1m`・`3m`・`5m`・`10m`・`15m`・`30m`・`1h`・`2h`・`4h`・`6h`・`1d` |
-| 材料の列（部品 × 時間足） | **6303 列** | 上の2つの掛け算 | — |
+| 材料の列（部品 × 時間足） | **6347 列** | 上の2つの掛け算 | — |
 | 材料の前処理 | **9 種** | `engine_tuner_exec.MATERIAL_PRE` | `ts_max`・`ts_min`・`ts_rank`・`ts_std`・`ts_pos`・`since_min`・`since_max`・`at_entry`・`abs` |
 | 材料2本の組み方 | **3 種** | `engine_tuner_exec.PAIR_OPS` | `sub`・`div`・`corr` |
 
@@ -650,7 +653,7 @@ T16（架空の列を宣言の写しに足すと、欄が変わり「★列を�
 | OBV傾き | 出来高 | 買いと売りの どちらの圧力が強いか | sufficiency | うちの自前の式／ライブラリに同じものが在る（obv）／照合の相手: pandas-ta | （段8 で埋める） | 在る | 選べる |
 | 転換線 | トレンド | いま どちらへ動いているか | env | うちの自前の式／ライブラリに同じものが在る（ichimoku）／照合の相手: ta | （段8 で埋める） | 在る | 選べる |
 | 基準線 | トレンド | いま どちらへ動いているか | env | うちの自前の式／ライブラリに同じものが在る（ichimoku）／照合の相手: ta | （段8 で埋める） | 在る | 選べる |
-| RCI | オシレーター | 行き過ぎているか（買われすぎ・売られすぎ） | sufficiency・trigger | うちの自前の式／ライブラリに相当なし／照合の相手: scipy | （段8 で埋める） | 在る | 選べない（名前の組み立てが未登録＝G6 で拒否） |
+| RCI | オシレーター | 行き過ぎているか（買われすぎ・売られすぎ） | sufficiency・trigger | うちの自前の式／ライブラリに相当なし／照合の相手: scipy | （段8 で埋める） | 在る | 選べる |
 | EMA傾き | トレンド | いま どちらへ動いているか | env | うちの自前の式／ライブラリに同じものが在る（ema）／照合の相手: ta | （段8 で埋める） | 在る | 選べる |
 | ATR% | ボラ | どれくらい大きく動いているか | env・sufficiency | うちの自前の式／ライブラリに同じものが在る（atr・natr）／照合の相手: ta | （段8 で埋める） | 在る | 選べる |
 | BB%b | オシレーター | 行き過ぎているか（買われすぎ・売られすぎ） | sufficiency・trigger | うちの自前の式／ライブラリに同じものが在る（bbands）／照合の相手: ta | （段8 で埋める） | 在る | 選べる |
@@ -689,6 +692,9 @@ T16（架空の列を宣言の写しに足すと、欄が変わり「★列を�
 | pivotPP | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（cpr）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
 | pivotR1 | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（cpr）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
 | pivotS1 | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（cpr）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
+| 前期間pivotPP | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに相当なし／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
+| 前期間pivotR1 | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに相当なし／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
+| 前期間pivotS1 | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに相当なし／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
 | fib位置 | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに相当なし／照合の相手: pandas-ta | （段8 で埋める） | 在る | 選べる |
 | POC | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（vp）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |
 | VAH | 構造・位置 | いま どの価格水準にいるか | location | うちの自前の式／ライブラリに同じものが在る（vp）／照合の相手: 無し（手計算の既知答えで担保） | （段8 で埋める） | 在る | 選べる |

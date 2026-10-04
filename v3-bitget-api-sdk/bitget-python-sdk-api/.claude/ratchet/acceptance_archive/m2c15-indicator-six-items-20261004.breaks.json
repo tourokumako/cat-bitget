@@ -1,0 +1,34 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-indicator-six-items-20261004",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b128_k1_copc_back_in_ao_loop.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 3 件",
+   "expect": 1,
+   "means": "K-1 で戻した7種を、AO の for の中へ入れ直すと（修正13 を当てた直後と同じ）、自己テストの K-1 の番人が落ちる",
+   "match": true
+  },
+  {
+   "no": "2",
+   "script": "b129_htf_bar_close_two_bars.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 2 件",
+   "expect": 1,
+   "means": "上位足のずらし bar_close を5分足2本ぶん早める（形成中の上位足を使う）と、切り詰め再計算の番人が落ちる",
+   "match": true
+  },
+  {
+   "no": "3",
+   "script": "b131_industry_map_prev_pivot_gone.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 1 件",
+   "expect": 1,
+   "means": "業界のライブラリとの対応表から前期間pivot の3行を外す（151回目の直し忘れと同じ）と、検査10 の番人が落ちる",
+   "match": true
+  }
+ ]
+}

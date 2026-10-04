@@ -10,13 +10,13 @@
  "_できること": "減らすことだけ。型の表に無い指標は、印をオンにしても使えない。",
  "built_by": "gen_indicator_switch.py（全自動生成・CC の手書きの行ゼロ）",
  "counts": {
-  "定義表の種類": 258,
-  "使う": 141,
-  "使わない": 117,
+  "定義表の種類": 261,
+  "使う": 145,
+  "使わない": 116,
   "源1_ta": 64,
-  "源2_法則": 93,
+  "源2_法則": 96,
   "源3_恒等レシピ": 2,
-  "源4_まこさんが個別に決めたもの": 5,
+  "源4_まこさんが個別に決めたもの": 6,
   "対応が決まらない_taのクラス": 5
  },
  "on": [
@@ -34,6 +34,7 @@
   "OBV傾き",
   "転換線",
   "基準線",
+  "RCI",
   "EMA傾き",
   "ATR%",
   "BB%b",
@@ -62,6 +63,9 @@
   "pivotPP",
   "pivotR1",
   "pivotS1",
+  "前期間pivotPP",
+  "前期間pivotR1",
+  "前期間pivotS1",
   "fib位置",
   "POC",
   "VAH",
@@ -163,7 +167,6 @@
   "HT_DCPHASE"
  ],
  "off": [
-  "RCI",
   "zscore",
   "zscore_return",
   "包み足",
@@ -449,6 +452,9 @@
    "stdev%",
    "swing安値距離",
    "swing高値距離",
+   "前期間pivotPP",
+   "前期間pivotR1",
+   "前期間pivotS1",
    "安値からの経過バー",
    "安値切り上げ幅%",
    "形スコア",
@@ -464,6 +470,7 @@
    "CVD",
    "L-S比",
    "MMI",
+   "RCI",
    "S-Rタッチ1時間ATR",
    "taker_ls"
   ]
@@ -475,5 +482,5 @@
   "DailyReturnIndicator",
   "WilliamsRIndicator"
  ],
- "fingerprint": "55479bd394d13a2a"
+ "fingerprint": "1bb1aff1fb5d55e5"
 }
