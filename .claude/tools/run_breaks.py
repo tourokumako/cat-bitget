@@ -79,6 +79,72 @@ AT_START = r"^<!--\s*ACCEPT_TABLE_START\s*-->\s*$(.*?)^<!--\s*ACCEPT_TABLE_END\s
 #   ここを1か所に置いて、parse_table と main が同じ文字で照らす（2か所に書き写さない）。
 COL_NG = "列の数が見出しと違う"
 
+# ★2026-10-06（156回目・まこさん「OK」・next_step §6 の249番）＝本物のファイルを仮に書き替える道具の錠。
+#   なぜ要るか（実測）＝2026-10-06 16:33〜16:34 に、承認のプログラムが走らせた壊すプログラムと、CC のターンの終わりの
+#     検査（require_design_check_before_approval.py の A12＝仮当てと壊すプログラム）が重なった。片方が壊した状態を、
+#     もう片方が「元の中身」として控えて戻したので、observe_diag.py に壊すプログラム b128 の壊し方が残った。
+#   錠を持つのは2つ＝壊すプログラムを走らせる間のこの道具と、A12 の仮当ての全体（A12 はこの部品を読み込んで使う）。
+#   中から呼ばれた道具は、持ち主の印（環境の変数 REAL_WRITE_LOCK_HELD）を受け継いで取り直さない（自分の錠を待って止まらない）。
+#   取れないときは最大 LOCK_WAIT_SEC 秒 待ち、取れなければ書き替えずに止める。持ち主が死んで錠だけ残ったら取り直す。
+#   ★限界（正直に）＝承認のプログラムが完成の条件のコマンドを走らせる所は、この錠を見ない（CC には直せない）＝
+#     A12 と重なると、本物は壊れないが、行が「未着手」のまま残ることがある。
+import shutil  # noqa: E402
+import time  # noqa: E402
+
+LOCK_DIR = ROOT / ".claude" / "state" / "real_write.lock"
+LOCK_ENV = "REAL_WRITE_LOCK_HELD"
+LOCK_WAIT_SEC = 600
+LOCK_ORPHAN_SEC = 60     # 持ち主の印が書かれないまま、この秒数を過ぎた錠は残りかすと見る（印は取った直後に書く）
+
+
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def rw_take(wait: int = LOCK_WAIT_SEC, lock_dir: pathlib.Path = None):
+    """錠を取る。戻り＝True（取った）／None（親が持っている＝取らない）／False（待っても取れない）。"""
+    lock_dir = lock_dir or LOCK_DIR
+    if os.environ.get(LOCK_ENV):
+        return None
+    t0, said = time.time(), False
+    while True:
+        try:
+            lock_dir.mkdir()
+        except FileExistsError:
+            try:
+                owner = int((lock_dir / "pid").read_text(encoding="utf-8").strip() or "0")
+            except Exception:                                # noqa: BLE001
+                owner = 0
+            stale = (owner and not _alive(owner)) or (
+                not owner and time.time() - lock_dir.stat().st_mtime > LOCK_ORPHAN_SEC)
+            if stale:
+                shutil.rmtree(lock_dir, ignore_errors=True)
+                continue
+            if not said:
+                print(f"⏳ ほかの道具が本物のファイルを仮に書き替え中なので待っています"
+                      f"（{lock_dir}・持ち主 {owner or '?'}）", file=sys.stderr)
+                said = True
+            if time.time() - t0 > wait:
+                return False
+            time.sleep(1)
+            continue
+        (lock_dir / "pid").write_text(str(os.getpid()), encoding="utf-8")
+        os.environ[LOCK_ENV] = str(os.getpid())
+        return True
+
+
+def rw_drop(took, lock_dir: pathlib.Path = None) -> None:
+    """自分が取った錠だけを外す（親から受け継いだ錠は外さない）。"""
+    if took:
+        shutil.rmtree(lock_dir or LOCK_DIR, ignore_errors=True)
+        os.environ.pop(LOCK_ENV, None)
+
 
 def sha(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -744,6 +810,15 @@ def main(argv: list) -> int:
               file=sys.stderr)
         return 2
 
+    # ★2026-10-06（156回目・249番）＝壊すプログラムを走らせる前に錠を取る（終わりに外す＝atexit）。
+    _took = rw_take()
+    if _took is False:
+        print(f"[STOP] ほかの道具が本物のファイルを仮に書き替え中で、{LOCK_WAIT_SEC} 秒 待っても錠が取れません"
+              f"（{LOCK_DIR}）＝壊すプログラムを1本も走らせません", file=sys.stderr)
+        return 2
+    import atexit
+    atexit.register(rw_drop, _took)
+
     before = {p.name: sha(p) for p in break_scripts()}
     n_run = n_stop = 0
     for r in rows:
@@ -855,6 +930,8 @@ SELF_TESTS = (
     ("T16", "壊すプログラムが探す文字を数え、1か所／0か所・2か所以上／数えない、に分ける（表に載っているものだけで止める）"),
     # ★2026-09-26（監査 CP43 の B3-c・設計書 iter="breaks-measure-one-20260926"）
     ("T17", "--only は表に載った名前の行だけを選び（空なら全部）、表に無い名前と --measure-only の無い使い方は止める"),
+    # ★2026-10-06（156回目・next_step §6 の249番）
+    ("T18", "錠＝取れる・親が持てば取らない・ほかが持てば待って取れない・持ち主が死んだ錠と印の無い古い錠は取り直す・自分の錠だけ外す"),
 )
 
 
@@ -1053,6 +1130,48 @@ def selftest() -> int:
             _r16c, _ng16c = count_targets(_design16)
             if _ng16c != ["b16c_two.sh"] or len(_r16c) != 4:
                 ng.append(f"T16c: 表に載っているものだけで止めていない（{_ng16c}・行 {len(_r16c)}）")
+
+        # T18（2026-10-06・156回目・249番）＝錠。一時の置き場の錠で試す（本物の錠には触らない）。
+        #   親から受け継いだ印（A12 の中で走るとき）は、試しの間だけ外して、最後に戻す。
+        _env18 = os.environ.pop(LOCK_ENV, None)
+        _ld18 = pathlib.Path(tempfile.mkdtemp()) / "real_write.lock"
+        try:
+            t1 = rw_take(wait=1, lock_dir=_ld18)
+            t2 = rw_take(wait=1, lock_dir=_ld18)                        # 自分が持っている（印が在る）＝取らない
+            if t1 is not True or t2 is not None or not _ld18.is_dir():
+                ng.append(f"T18a: 取れない／親が持つのに取り直した（{t1}・{t2}）")
+            rw_drop(t2, lock_dir=_ld18)                                  # 受け継いだ錠は外さない
+            if not _ld18.is_dir():
+                ng.append("T18b: 受け継いだ錠を外した")
+            rw_drop(t1, lock_dir=_ld18)
+            if _ld18.exists() or os.environ.get(LOCK_ENV):
+                ng.append("T18c: 自分の錠を外せていない")
+            _ld18.mkdir()
+            (_ld18 / "pid").write_text(str(os.getppid()), encoding="utf-8")   # 生きているほかの持ち主
+            t3 = rw_take(wait=1, lock_dir=_ld18)
+            if t3 is not False:
+                ng.append(f"T18d: ほかが持つ錠を待たずに取った（{t3}）")
+                rw_drop(t3, lock_dir=_ld18)
+            _dead = 2 ** 22 + 12345
+            while _alive(_dead):
+                _dead += 1
+            (_ld18 / "pid").write_text(str(_dead), encoding="utf-8")     # 死んだ持ち主
+            t4 = rw_take(wait=1, lock_dir=_ld18)
+            if t4 is not True:
+                ng.append(f"T18e: 持ち主が死んだ錠を取り直せない（{t4}）")
+            rw_drop(t4, lock_dir=_ld18)
+            _ld18.mkdir()
+            _old = time.time() - LOCK_ORPHAN_SEC - 5
+            os.utime(_ld18, (_old, _old))                                # 印の無い古い錠
+            t5 = rw_take(wait=1, lock_dir=_ld18)
+            if t5 is not True:
+                ng.append(f"T18f: 印の無い古い錠を取り直せない（{t5}）")
+            rw_drop(t5, lock_dir=_ld18)
+        finally:
+            shutil.rmtree(_ld18.parent, ignore_errors=True)
+            os.environ.pop(LOCK_ENV, None)
+            if _env18 is not None:
+                os.environ[LOCK_ENV] = _env18
     finally:
         FROZEN, BREAKS_DIR, TIMEOUT_SEC = _kf, _kb, _kt
 

@@ -434,6 +434,18 @@ def a14_review(acc):
 
 
 BK_DIR = ROOT + "/.claude/state/_a12_backup"
+# ★2026-10-06（156回目・まこさん「監査出したあとに上記修正をする」「OK」・next_step の手順6）
+#   ＝仮当てのまま走らせる自己テスト6本（監査に出す前のチェック pre_audit_check.py の CHECKS のうち、表を作り直さずに
+#   走らせられるもの）。表の一致の検査（--verify）と H2 は入れない＝仮当てでは表を作り直さないので、名前が変わる工事では
+#   必ず落ちる。増える時間＝1回 約3分半（2026-10-06 の実測の合計＝8.4・120.4・72.6・2.3・3.1・0.5秒）。
+A12_SELFTESTS = (
+    ("engine_tuner_exec.py", "--selftest"),
+    ("observe_diag.py", "--selftest"),
+    ("gen_materials.py", "--selftest"),
+    ("gen_audit_request.py", "--selftest"),
+    ("engine_tuner_gen.py", "--selftest-extra-gate"),
+    ("verify_design_contract.py", "--diff"),       # 設計書のパスを後ろに足して走らせる
+)
 
 
 def _a12_restore():
@@ -462,7 +474,31 @@ def _a12_restore():
 
 
 def a12_post_approval_trial(acc):
-    """A12 承認の後に起きること全部を、承認の前に本物のファイルで仮に通し、元に戻す。
+    """A12 の入口＝本物のファイルを仮に書き替える道具の錠（run_breaks.py の rw_take）を取ってから、仮当てをする。
+
+    ★2026-10-06（156回目・まこさん「OK」・next_step §6 の249番）＝承認のプログラムが走らせた壊すプログラムと、この仮当てが
+      重なり、片方が壊した状態を もう片方が元の中身として控えて戻した＝observe_diag.py に壊すプログラム b128 の壊し方が
+      残った（2026-10-06 16:33）。錠を取れば、重なった方が待つ。中で走らせる run_breaks.py は、持ち主の印（環境の変数）を
+      受け継ぐので錠を取り直さない。
+    限界＝承認のプログラムが完成の条件のコマンドを走らせる所は錠を見ない（CC には直せない）＝重なると、本物は壊れないが、
+      行が「未着手」のまま残ることがある。
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_a12_runb", RUNB)
+    rb = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rb)
+    took = rb.rw_take()
+    if took is False:
+        return [f"A12 ほかの道具が本物のファイルを仮に書き替え中で、{rb.LOCK_WAIT_SEC} 秒 待っても錠が取れない"
+                f"（{rb.LOCK_DIR}）＝仮当てをしていない（もう一度 確かめる）"]
+    try:
+        return _a12_trial_locked(acc)
+    finally:
+        rb.rw_drop(took)
+
+
+def _a12_trial_locked(acc):
+    """A12 承認の後に起きること全部を、承認の前に本物のファイルで仮に通し、元に戻す（錠を持って呼ばれる）。
 
     ★2026-09-30（まこさん指示・逐語「一回の確認ですべて完全に修正できるように強制しろ」
       「承認後に修正が発生しないように、事前にミスが無いよう確認をしろ」「矮小化するな」）
@@ -574,6 +610,18 @@ def a12_post_approval_trial(acc):
         wrong = [l for l in (out or "").splitlines() if "期待と違う" in l or "まだ測れない" in l]
         if rc not in (0,) or wrong:
             bad.append(f"壊すプログラムが当てた後に期待どおりでない（rc={rc}）:\n" + _tail("\n".join(wrong) or out, 12))
+        # ★2026-10-06（156回目・next_step の手順6）＝仮当てのまま、自己テスト6本も走らせる（A12_SELFTESTS の説明）。
+        for st in A12_SELFTESTS:
+            cmd6 = ["python3", SDK + "/scripts/priority_rebuild/" + st[0]] + list(st[1:])
+            if st[0] == "verify_design_contract.py":
+                cmd6.append(acc)
+            try:
+                r6 = subprocess.run(cmd6, capture_output=True, text=True, timeout=600, cwd=SDK)
+                if r6.returncode != 0:
+                    bad.append(f"自己テストが当てた後に落ちる（rc={r6.returncode}）: {' '.join(st)}\n"
+                               + _tail((r6.stdout or "") + (r6.stderr or ""), 8))
+            except Exception as e:                           # noqa: BLE001
+                bad.append(f"自己テストを走らせられない（{' '.join(st)}・{e}）")
     except Exception as e:                                   # noqa: BLE001
         bad.append(f"仮に当てて通す試しが途中で落ちた（{e}）")
     finally:
@@ -584,7 +632,7 @@ def a12_post_approval_trial(acc):
             bad.append(f"❗仮に当てたファイルを元に戻せない（手で確かめる）: {left}")
     if not bad:
         return []
-    return ["A12 承認の後に起きること（当てる・完成の条件のコマンド・壊すプログラム）を仮に通すと落ちる"
+    return ["A12 承認の後に起きること（当てる・完成の条件のコマンド・壊すプログラム・自己テスト6本）を仮に通すと落ちる"
             "＝このまま承認すると、承認の後に直しが要る:\n" + _tail("\n".join(bad), 40)]
 
 
