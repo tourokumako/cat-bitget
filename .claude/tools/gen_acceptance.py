@@ -685,7 +685,26 @@ def build_spec(d: dict) -> str:
     path = SDK / impl
     if not path.exists():
         raise SystemExit(f"[gen_acceptance] impl_file の実物が無い: {path}（fail-closed）")
-    spec = spec_from_impl(str(path))
+    # ★2026-10-06（157回目・まこさん「なおしてよい」）＝SPEC は、4-20 の実装の指示のうち impl_file を直すものを
+    #   全部 当てた後の中身から作る。直す前は、直す前の実物から作ったので、関数の呼び出しが増える工事では、
+    #   当てた後の照合（verify_design_contract.py --diff・承認の前の検査 A12）が必ず食い違い、承認の後に
+    #   設計書を作り直して承認を打ち直していた（承認2回）。★直す前の文字がちょうど1か所ずつ無ければ止める（fail-closed）。
+    src_text = path.read_text(encoding="utf-8")
+    for it in d.get("実装の指示") or []:
+        if it.get("対象のファイル") != impl or it.get("種類") != "直した後の文字":
+            continue
+        old = it.get("直す前の文字") or ""
+        if it.get("中身") and src_text.count(it["中身"]) == 1:
+            continue                                   # もう当たっている（当てた後に --verify で作り直すとき）
+        if not old or src_text.count(old) != 1:
+            raise SystemExit(f"[gen_acceptance] SPEC を作るために実装の指示 {it.get('番号')} を当てると、"
+                             f"直す前の文字が {src_text.count(old) if old else 0} か所（1か所のはず・fail-closed）")
+        src_text = src_text.replace(old, it.get("中身") or "", 1)
+    import tempfile as _tf
+    with _tf.TemporaryDirectory() as _td:
+        _p = Path(_td) / path.name
+        _p.write_text(src_text, encoding="utf-8")
+        spec = spec_from_impl(str(_p))
     L = []
     add = L.append
     add("**★この節はプログラムが作ります（手で書き換えない）。**"

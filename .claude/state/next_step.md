@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=5279a4c5a1e23d17 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=1391d783ba8e3254 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 ## ▶ 次にやること（最初にここを読む）
@@ -394,7 +394,7 @@ Entry/Exit に使うとき＝net。
 
 ### （0-b-2）🔴 印の状態（2026-10-06・★この節は tidy_next_step.py が json から書く＝手で書かない）
 
-- **H2 の印＝`cd48e98ccff9d7de…`**（`.claude/state/h2_pass.json`・2026-10-06 17:02:58・対象24ファイル）／**G2 の印＝`3b3c3a12e0238a18…`**（`g2_pass.json`・2026-10-06 16:58:15・対象39ファイル）。
+- **H2 の印＝`e57e81a5ed7bd691…`**（`.claude/state/h2_pass.json`・2026-10-06 23:07:26・対象24ファイル）／**G2 の印＝`32ab8171aeabe816…`**（`g2_pass.json`・2026-10-06 23:02:32・対象39ファイル）。
 - **コードを触ったら取り直す**＝G2 → H2 の順（`gen_signal_families.py --verify` 約30秒 → `leak_causality_diag.py` 約5分・L-565）。
 
 ### （0-d）★まだ埋まっていないこと（2件・2026-09-17 に実物で確かめた）

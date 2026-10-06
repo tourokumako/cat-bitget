@@ -1,4 +1,4 @@
-<!-- MANUAL_HASH=4520ae028ed53ad1 -->
+<!-- MANUAL_HASH=8e79a581974ffbfa -->
 # observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は observe_diag.py と observe_config.json から
@@ -115,106 +115,90 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 
 何を検証の対象にしているかの一覧です。すべてコードと設定ファイルから取っています。
 
-### 1. 指標（576種）
+### 1. 指標（476種）
 
-この576種に、時間足11種を掛けて 6336列になります。閾値は分位7段で刻みます。
+この476種に、時間足11種を掛けて 5236列になります。閾値は分位7段で刻みます。
 
-- ABER位置 ／ ADOSC比 ／ ADX14 ／ ADX21 ／ ADX7 ／ ADXR14
+- ABER位置 ／ ADOSC比 ／ ADX10 ／ ADX14 ／ ADX7 ／ ADXR14
 - ADXR21 ／ ADXR7 ／ ALMA200傾き% ／ ALMA20傾き% ／ ALMA50傾き% ／ AMAT_LR
 - AO% ／ AOBV_LR ／ AR14 ／ AR21 ／ AR7 ／ AR9
-- AROOND14 ／ AROOND21 ／ AROOND7 ／ AROONOSC14 ／ AROONOSC21 ／ AROONOSC7
-- AROONU14 ／ AROONU21 ／ AROONU7 ／ ATR%14 ／ ATR%21 ／ ATR%7
-- BB%b(20,2.0) ／ BB%b(50,2.0) ／ BB幅(20,2.0) ／ BB幅(50,2.0) ／ BIAS14 ／ BIAS21
-- BIAS7 ／ BIAS9 ／ BOP ／ CCI14 ／ CCI21 ／ CCI7
-- CCI9 ／ CFO14 ／ CFO21 ／ CFO7 ／ CFO9 ／ CG14
-- CG21 ／ CG7 ／ CG9 ／ CHOP14 ／ CHOP21 ／ CHOP7
-- CMF20 ／ CMO14 ／ CMO21 ／ CMO7 ／ CMO9 ／ COPC(9,12,26)
-- CTI14 ／ CTI21 ／ CTI7 ／ CTI9 ／ CVI14 ／ CVI21
-- CVI7 ／ DEMA200傾き% ／ DEMA20傾き% ／ DEMA50傾き% ／ DI+14 ／ DI+21
-- DI+7 ／ DI-14 ／ DI-21 ／ DI-7 ／ DI差14 ／ DI差21
-- DI差7 ／ DM+%14 ／ DM+%21 ／ DM+%7 ／ DM+%9 ／ DM-%14
-- DM-%21 ／ DM-%7 ／ DM-%9 ／ DPO%20 ／ DPO%48 ／ DX14
-- DX21 ／ DX7 ／ Donchian幅%20 ／ Donchian幅%48 ／ EBSW ／ EFI比10
-- EFI比20 ／ EMA200傾き% ／ EMA20傾き% ／ EMA50傾き% ／ EMA9傾き% ／ EOM比10
-- EOM比20 ／ ER14 ／ ER21 ／ ER7 ／ ER9 ／ ERI弱気%14
+- AROOND14 ／ AROOND25 ／ AROONOSC25 ／ AROONU14 ／ AROONU25 ／ ATR%14
+- BB%b(20,2.0) ／ BB幅(20,2.0) ／ BIAS14 ／ BIAS21 ／ BIAS7 ／ BIAS9
+- BOP ／ CCI20 ／ CFO14 ／ CFO21 ／ CFO7 ／ CFO9
+- CG14 ／ CG21 ／ CG7 ／ CG9 ／ CHOP14 ／ CMF20
+- CMO14 ／ CMO21 ／ CMO7 ／ CMO9 ／ COPC(9,12,26) ／ CTI14
+- CTI21 ／ CTI7 ／ CTI9 ／ CVI14 ／ CVI21 ／ CVI7
+- DEMA200傾き% ／ DEMA20傾き% ／ DEMA50傾き% ／ DI+14 ／ DI+21 ／ DI+7
+- DI-14 ／ DI-21 ／ DI-7 ／ DI差14 ／ DI差7 ／ DM+%14
+- DM+%21 ／ DM+%7 ／ DM+%9 ／ DM-%14 ／ DM-%21 ／ DM-%7
+- DM-%9 ／ DPO%20 ／ DX14 ／ DX21 ／ DX7 ／ Donchian幅%20
+- EBSW ／ EFI比13 ／ EMA200傾き% ／ EMA20傾き% ／ EMA50傾き% ／ EMA9傾き%
+- EOM比14 ／ ER14 ／ ER21 ／ ER7 ／ ER9 ／ ERI弱気%14
 - ERI弱気%21 ／ ERI弱気%7 ／ ERI弱気%9 ／ ERI強気%14 ／ ERI強気%21 ／ ERI強気%7
 - ERI強気%9 ／ FISHER(12,9) ／ FISHERシグナル(12,9) ／ FWMA20傾き% ／ HA上ヒゲ比 ／ HA下ヒゲ比
 - HA実体% ／ HMA200傾き% ／ HMA20傾き% ／ HMA50傾き% ／ HT_DCPERIOD ／ HT_DCPHASE
 - HT_INPHASE% ／ HT_LEADSINE ／ HT_QUAD% ／ HT_SINE ／ HT_TRENDMODE ／ HWC位置
-- HWC幅% ／ INERTIA14 ／ INERTIA21 ／ INERTIA7 ／ INERTIA9 ／ KAMA200傾き%
-- KAMA20傾き% ／ KAMA50傾き% ／ KDJ%D(14,9) ／ KDJ%D(5,9) ／ KDJ%D(9,9) ／ KDJ%J(14,9)
-- KDJ%J(5,9) ／ KDJ%J(9,9) ／ KDJ%K(14,9) ／ KDJ%K(5,9) ／ KDJ%K(9,9) ／ KST
-- KSTシグナル9 ／ KVOシグナル比 ／ KVO比 ／ LINREG200傾き% ／ LINREG20傾き% ／ LINREG50傾き%
-- LRSI(0.5) ／ LRb200傾き% ／ LRb20傾き% ／ LRb50傾き% ／ LRslope%20 ／ LRslope%200
-- LRslope%50 ／ MACDシグナル線%(12,26,9) ／ MACDヒスト%(12,26,9) ／ MACD線%(12,26) ／ MAD比20 ／ MAD比50
-- MARKETFI比10 ／ MARKETFI比20 ／ MASSI ／ MCGD200傾き% ／ MCGD20傾き% ／ MCGD50傾き%
-- MEDIAN傾き%20 ／ MEDIAN傾き%200 ／ MEDIAN傾き%50 ／ MFI14 ／ MIDPOINT200傾き% ／ MIDPOINT20傾き%
-- MIDPOINT50傾き% ／ MIDPRICE200傾き% ／ MIDPRICE20傾き% ／ MIDPRICE50傾き% ／ MMAR10傾き% ／ MMAR15傾き%
-- MMAR25傾き% ／ MMAR30傾き% ／ MMAR35傾き% ／ MMI200 ／ MMI300 ／ MMI400
-- MMI500 ／ MOM%14 ／ MOM%21 ／ MOM%7 ／ MOM%9 ／ MSW_LEAD
-- MSW_SINE ／ NVI傾き10 ／ NVI傾き20 ／ OBV傾き10 ／ OBV傾き20 ／ PDIST%
-- PGO14 ／ PGO21 ／ PGO7 ／ PGO9 ／ PO14 ／ PO21
-- PO7 ／ PO9 ／ PPO(12,26,9) ／ PPOシグナル(12,26,9) ／ PPOヒスト(12,26,9) ／ PSAR加速
-- PSAR反転 ／ PSL14 ／ PSL21 ／ PSL7 ／ PSL9 ／ PVI傾き10
-- PVI傾き20 ／ PVO(12,26,9) ／ PVOL比10 ／ PVOシグナル(12,26,9) ／ PVOヒスト(12,26,9) ／ PVT傾き10
-- PVT傾き20 ／ PWMA200傾き% ／ PWMA20傾き% ／ PWMA50傾き% ／ QQE ／ QQE_RSIMA
-- RAINBOW(2,1)傾き% ／ RAINBOW(2,10)傾き% ／ RAINBOW(2,2)傾き% ／ RAINBOW(2,3)傾き% ／ RAINBOW(2,4)傾き% ／ RAINBOW(2,5)傾き%
-- RAINBOW(2,6)傾き% ／ RAINBOW(2,7)傾き% ／ RAINBOW(2,8)傾き% ／ RAINBOW(2,9)傾き% ／ RCI26 ／ RCI52
-- RCI7 ／ RCI9 ／ RMA200傾き% ／ RMA20傾き% ／ RMA50傾き% ／ ROC12
-- ROC24 ／ ROC3 ／ ROC6 ／ RSI14 ／ RSI21 ／ RSI7
-- RSI9 ／ RSX14 ／ RSX21 ／ RSX7 ／ RSX9 ／ RVGI(14,4)
-- RVGI(21,4) ／ RVGI(7,4) ／ RVGI(9,4) ／ RVGIシグナル(14,4) ／ RVGIシグナル(21,4) ／ RVGIシグナル(7,4)
-- RVGIシグナル(9,4) ／ RVGIヒスト(14,4) ／ RVGIヒスト(21,4) ／ RVGIヒスト(7,4) ／ RVGIヒスト(9,4) ／ RVI14
-- RVI21 ／ RVI7 ／ S-Rタッチ1時間ATR(144,0.5,14) ／ S-Rタッチ1時間ATR(144,0.5,21) ／ S-Rタッチ1時間ATR(144,0.5,7) ／ S-Rタッチ1時間ATR(144,1.0,14)
-- S-Rタッチ1時間ATR(144,1.0,21) ／ S-Rタッチ1時間ATR(144,1.0,7) ／ S-Rタッチ1時間ATR(144,1.5,14) ／ S-Rタッチ1時間ATR(144,1.5,21) ／ S-Rタッチ1時間ATR(144,1.5,7) ／ S-Rタッチ1時間ATR(288,0.5,14)
-- S-Rタッチ1時間ATR(288,0.5,21) ／ S-Rタッチ1時間ATR(288,0.5,7) ／ S-Rタッチ1時間ATR(288,1.0,14) ／ S-Rタッチ1時間ATR(288,1.0,21) ／ S-Rタッチ1時間ATR(288,1.0,7) ／ S-Rタッチ1時間ATR(288,1.5,14)
-- S-Rタッチ1時間ATR(288,1.5,21) ／ S-Rタッチ1時間ATR(288,1.5,7) ／ S-Rタッチ数(144,0.0015) ／ S-Rタッチ数(144,0.003) ／ S-Rタッチ数(144,0.006) ／ S-Rタッチ数(288,0.0015)
-- S-Rタッチ数(288,0.003) ／ S-Rタッチ数(288,0.006) ／ SINWMA200傾き% ／ SINWMA20傾き% ／ SINWMA50傾き% ／ SMC_SWEEP
-- SQZ% ／ SQZPRO_ON_NARROW ／ SQZPRO_ON_WIDE ／ SQZ_ON ／ SSF200傾き% ／ SSF20傾き%
-- SSF50傾き% ／ STC ／ STCstoch ／ SWMA200傾き% ／ SWMA20傾き% ／ SWMA50傾き%
-- Stoch%D14 ／ Stoch%D5 ／ Stoch%D9 ／ Stoch%K14 ／ Stoch%K5 ／ Stoch%K9
-- StochRSI%D14 ／ StochRSI%D21 ／ StochRSI%D7 ／ StochRSI%D9 ／ StochRSI%K14 ／ StochRSI%K21
-- StochRSI%K7 ／ StochRSI%K9 ／ T3200傾き% ／ T320傾き% ／ T350傾き% ／ TD_SEQ_DN
-- TD_SEQ_UP ／ TEMA200傾き% ／ TEMA20傾き% ／ TEMA50傾き% ／ THERMO% ／ THERMO比
-- TR% ／ TRIMA200傾き% ／ TRIMA20傾き% ／ TRIMA50傾き% ／ TRIX(14,9) ／ TRIX(21,9)
-- TRIX(7,9) ／ TRIX(9,9) ／ TRIXシグナル(14,9) ／ TRIXシグナル(21,9) ／ TRIXシグナル(7,9) ／ TRIXシグナル(9,9)
-- TRIXヒスト(14,9) ／ TRIXヒスト(21,9) ／ TRIXヒスト(7,9) ／ TRIXヒスト(9,9) ／ TSF20傾き% ／ TSF50傾き%
-- TSI(12,26,9) ／ TSIシグナル(12,26,9) ／ TSIヒスト(12,26,9) ／ TTM_TREND20 ／ TTM_TREND48 ／ UI14
-- UI21 ／ UI7 ／ UO ／ VFI10 ／ VFI20 ／ VHF14
-- VHF21 ／ VHF7 ／ VIDYA200傾き% ／ VIDYA20傾き% ／ VIDYA50傾き% ／ VOSC
-- VTXM14 ／ VTXM21 ／ VTXM7 ／ VTXP14 ／ VTXP21 ／ VTXP7
-- VWMA200傾き% ／ VWMA20傾き% ／ VWMA50傾き% ／ VWMACDシグナル%(12,26,9) ／ VWMACDヒスト%(12,26,9) ／ VWMACD線%(12,26,9)
-- WAD傾き10 ／ WAD傾き20 ／ WMA200傾き% ／ WMA20傾き% ／ WMA50傾き% ／ W字(24,0.003)
-- W字(48,0.003) ／ W字(96,0.003) ／ ZLMA200傾き% ／ ZLMA20傾き% ／ ZLMA50傾き% ／ body比
-- close vs 24本安値% ／ close vs 24本高値% ／ close vs 48本安値% ／ close vs 48本高値% ／ close vs 96本安値% ／ close vs 96本高値%
-- close vs ABER_ZG% ／ close vs ACCBL% ／ close vs ACCBU% ／ close vs ALMA%20 ／ close vs ALMA%200 ／ close vs ALMA%50
-- close vs CE_L% ／ close vs CE_S% ／ close vs CKSPl% ／ close vs CKSPs% ／ close vs DEMA%20 ／ close vs DEMA%200
-- close vs DEMA%50 ／ close vs EMA20% ／ close vs EMA200% ／ close vs EMA50% ／ close vs EMA9% ／ close vs FAMA%
-- close vs FWMA%20 ／ close vs HILO% ／ close vs HMA%20 ／ close vs HMA%200 ／ close vs HMA%50 ／ close vs HT_TRENDLINE%
-- close vs HWMA% ／ close vs JMA%20 ／ close vs JMA%200 ／ close vs JMA%50 ／ close vs KAMA%20 ／ close vs KAMA%200
-- close vs KAMA%50 ／ close vs Keltner上%(20,2.0) ／ close vs Keltner下%(20,2.0) ／ close vs LINREG%20 ／ close vs LINREG%200 ／ close vs LINREG%50
-- close vs LRb%20 ／ close vs LRb%200 ／ close vs LRb%50 ／ close vs MAMA% ／ close vs MCGD%20 ／ close vs MCGD%200
-- close vs MCGD%50 ／ close vs MEDIAN%20 ／ close vs MEDIAN%200 ／ close vs MEDIAN%50 ／ close vs MIDPOINT%20 ／ close vs MIDPOINT%200
-- close vs MIDPOINT%50 ／ close vs MIDPRICE%20 ／ close vs MIDPRICE%200 ／ close vs MIDPRICE%50 ／ close vs MMAR%10 ／ close vs MMAR%15
-- close vs MMAR%25 ／ close vs MMAR%30 ／ close vs MMAR%35 ／ close vs PMAX% ／ close vs POC%288 ／ close vs PSAR%
-- close vs PWMA%20 ／ close vs PWMA%200 ／ close vs PWMA%50 ／ close vs RAINBOW%(2,1) ／ close vs RAINBOW%(2,10) ／ close vs RAINBOW%(2,2)
-- close vs RAINBOW%(2,3) ／ close vs RAINBOW%(2,4) ／ close vs RAINBOW%(2,5) ／ close vs RAINBOW%(2,6) ／ close vs RAINBOW%(2,7) ／ close vs RAINBOW%(2,8)
-- close vs RAINBOW%(2,9) ／ close vs RMA%20 ／ close vs RMA%200 ／ close vs RMA%50 ／ close vs SAREXT% ／ close vs SINWMA%20
-- close vs SINWMA%200 ／ close vs SINWMA%50 ／ close vs SMA20% ／ close vs SMA200% ／ close vs SMA50% ／ close vs SSF%20
-- close vs SSF%200 ／ close vs SSF%50 ／ close vs SWMA%20 ／ close vs SWMA%200 ／ close vs SWMA%50 ／ close vs Supertrend%(10,3.0)
-- close vs T3%20 ／ close vs T3%200 ／ close vs T3%50 ／ close vs TEMA%20 ／ close vs TEMA%200 ／ close vs TEMA%50
-- close vs TRIMA%20 ／ close vs TRIMA%50 ／ close vs TSF%20 ／ close vs TSF%200 ／ close vs TSF%50 ／ close vs VAH%288
-- close vs VAL%288 ／ close vs VIDYA%20 ／ close vs VIDYA%200 ／ close vs VIDYA%50 ／ close vs VWAP%288 ／ close vs VWMA%20
-- close vs VWMA%200 ／ close vs VWMA%50 ／ close vs WMA%20 ／ close vs WMA%200 ／ close vs WMA%50 ／ close vs ZLMA%20
-- close vs ZLMA%200 ／ close vs ZLMA%50 ／ close vs pivotPP%288 ／ close vs pivotR1%288 ／ close vs pivotS1%288 ／ close vs 前期間pivotPP%
-- close vs 前期間pivotR1% ／ close vs 前期間pivotS1% ／ close vs 基準線%(26) ／ close vs 転換線%(9) ／ fib位置20 ／ fib位置96
-- fractal安値距離%(2) ／ fractal安値距離%(5) ／ fractal高値距離%(2) ／ fractal高値距離%(5) ／ high_Z30 ／ kurtosis20
-- kurtosis50 ／ low_Z30 ／ open_Z30 ／ pinbar ／ realized_vol20 ／ realized_vol50
-- skew20 ／ skew50 ／ stdev%50 ／ volume_ratio20 ／ volume_ratio50 ／ zscore_return20
-- zscore_return50 ／ 上ヒゲ比 ／ 下ヒゲ比 ／ 内側バー ／ 出来高変化率%1 ／ 包み足
-- 孕み足 ／ 安値からの経過バー24 ／ 安値からの経過バー48 ／ 安値からの経過バー96 ／ 安値切り上げ幅%(2) ／ 安値切り上げ幅%(5)
-- 実体幅比10 ／ 形スコア24(V=+/M=−) ／ 形スコア48(V=+/M=−) ／ 形スコア96(V=+/M=−) ／ 構造破断距離%(2) ／ 構造破断距離%(5)
-- 連続本数 ／ 高値からの経過バー24 ／ 高値からの経過バー48 ／ 高値からの経過バー96 ／ 高値切り上げ幅%(2) ／ 高値切り上げ幅%(5)
+- HWC幅% ／ INERTIA14 ／ INERTIA21 ／ INERTIA7 ／ INERTIA9 ／ KAMA10傾き%
+- KDJ%D(14,9) ／ KDJ%D(5,9) ／ KDJ%D(9,9) ／ KDJ%J(14,9) ／ KDJ%J(5,9) ／ KDJ%J(9,9)
+- KDJ%K(14,9) ／ KDJ%K(5,9) ／ KDJ%K(9,9) ／ KST ／ KSTシグナル9 ／ KVOシグナル比
+- KVO比 ／ LINREG200傾き% ／ LINREG20傾き% ／ LINREG50傾き% ／ LRSI(0.5) ／ LRb200傾き%
+- LRb20傾き% ／ LRb50傾き% ／ LRslope%20 ／ LRslope%200 ／ LRslope%50 ／ MACDシグナル線%(12,26,9)
+- MACDヒスト%(12,26,9) ／ MACD線%(12,26) ／ MAD比20 ／ MAD比50 ／ MARKETFI比10 ／ MARKETFI比20
+- MASSI ／ MCGD200傾き% ／ MCGD20傾き% ／ MCGD50傾き% ／ MEDIAN傾き%20 ／ MEDIAN傾き%200
+- MEDIAN傾き%50 ／ MFI14 ／ MIDPOINT200傾き% ／ MIDPOINT20傾き% ／ MIDPOINT50傾き% ／ MIDPRICE200傾き%
+- MIDPRICE20傾き% ／ MIDPRICE50傾き% ／ MMAR10傾き% ／ MMAR15傾き% ／ MMAR25傾き% ／ MMAR30傾き%
+- MMAR35傾き% ／ MMI200 ／ MMI300 ／ MMI400 ／ MMI500 ／ MOM%14
+- MOM%21 ／ MOM%7 ／ MOM%9 ／ MSW_LEAD ／ MSW_SINE ／ NVI傾き10
+- NVI傾き20 ／ OBV傾き10 ／ OBV傾き20 ／ PDIST% ／ PGO14 ／ PGO21
+- PGO7 ／ PGO9 ／ PO14 ／ PO21 ／ PO7 ／ PO9
+- PPO(12,26,9) ／ PPOシグナル(12,26,9) ／ PPOヒスト(12,26,9) ／ PSAR加速 ／ PSAR反転 ／ PSL14
+- PSL21 ／ PSL7 ／ PSL9 ／ PVI傾き10 ／ PVI傾き20 ／ PVO(12,26,9)
+- PVOL比10 ／ PVOシグナル(12,26,9) ／ PVOヒスト(12,26,9) ／ PVT傾き10 ／ PVT傾き20 ／ PWMA200傾き%
+- PWMA20傾き% ／ PWMA50傾き% ／ QQE ／ QQE_RSIMA ／ RAINBOW(2,1)傾き% ／ RAINBOW(2,10)傾き%
+- RAINBOW(2,2)傾き% ／ RAINBOW(2,3)傾き% ／ RAINBOW(2,4)傾き% ／ RAINBOW(2,5)傾き% ／ RAINBOW(2,6)傾き% ／ RAINBOW(2,7)傾き%
+- RAINBOW(2,8)傾き% ／ RAINBOW(2,9)傾き% ／ RCI26 ／ RCI52 ／ RCI7 ／ RCI9
+- RMA200傾き% ／ RMA20傾き% ／ RMA50傾き% ／ ROC12 ／ ROC24 ／ ROC9
+- RSI14 ／ RSI21 ／ RSI5 ／ RSI7 ／ RSI9 ／ RSX14
+- RSX21 ／ RSX7 ／ RSX9 ／ RVGI(14,4) ／ RVGI(21,4) ／ RVGI(7,4)
+- RVGI(9,4) ／ RVGIシグナル(14,4) ／ RVGIシグナル(21,4) ／ RVGIシグナル(7,4) ／ RVGIシグナル(9,4) ／ RVGIヒスト(14,4)
+- RVGIヒスト(21,4) ／ RVGIヒスト(7,4) ／ RVGIヒスト(9,4) ／ RVI14 ／ RVI21 ／ RVI7
+- S-Rタッチ1時間ATR(144,0.5,14) ／ S-Rタッチ1時間ATR(144,0.5,21) ／ S-Rタッチ1時間ATR(144,0.5,7) ／ S-Rタッチ1時間ATR(144,1.0,14) ／ S-Rタッチ1時間ATR(144,1.0,21) ／ S-Rタッチ1時間ATR(144,1.0,7)
+- S-Rタッチ1時間ATR(144,1.5,14) ／ S-Rタッチ1時間ATR(144,1.5,21) ／ S-Rタッチ1時間ATR(144,1.5,7) ／ S-Rタッチ1時間ATR(288,0.5,14) ／ S-Rタッチ1時間ATR(288,0.5,21) ／ S-Rタッチ1時間ATR(288,0.5,7)
+- S-Rタッチ1時間ATR(288,1.0,14) ／ S-Rタッチ1時間ATR(288,1.0,21) ／ S-Rタッチ1時間ATR(288,1.0,7) ／ S-Rタッチ1時間ATR(288,1.5,14) ／ S-Rタッチ1時間ATR(288,1.5,21) ／ S-Rタッチ1時間ATR(288,1.5,7)
+- S-Rタッチ数(144,0.0015) ／ S-Rタッチ数(144,0.003) ／ S-Rタッチ数(144,0.006) ／ S-Rタッチ数(288,0.0015) ／ S-Rタッチ数(288,0.003) ／ S-Rタッチ数(288,0.006)
+- SINWMA200傾き% ／ SINWMA20傾き% ／ SINWMA50傾き% ／ SMC_SWEEP ／ SQZ% ／ SQZPRO_ON_NARROW
+- SQZPRO_ON_WIDE ／ SQZ_ON ／ SSF200傾き% ／ SSF20傾き% ／ SSF50傾き% ／ STC
+- STCstoch ／ SWMA200傾き% ／ SWMA20傾き% ／ SWMA50傾き% ／ Stoch%D14 ／ Stoch%D5
+- Stoch%D9 ／ Stoch%K14 ／ Stoch%K5 ／ Stoch%K9 ／ StochRSI%D14 ／ StochRSI%K14
+- T3200傾き% ／ T320傾き% ／ T350傾き% ／ TD_SEQ_DN ／ TD_SEQ_UP ／ TEMA200傾き%
+- TEMA20傾き% ／ TEMA50傾き% ／ THERMO% ／ THERMO比 ／ TR% ／ TRIMA200傾き%
+- TRIMA20傾き% ／ TRIMA50傾き% ／ TRIX(15,9) ／ TRIXシグナル(15,9) ／ TRIXヒスト(15,9) ／ TSF20傾き%
+- TSF50傾き% ／ TSI(12,26,9) ／ TSIシグナル(12,26,9) ／ TSIヒスト(12,26,9) ／ TTM_TREND20 ／ TTM_TREND48
+- UI14 ／ UO ／ VFI10 ／ VFI20 ／ VHF14 ／ VHF21
+- VHF7 ／ VIDYA200傾き% ／ VIDYA20傾き% ／ VIDYA50傾き% ／ VOSC ／ VTXM14
+- VTXP14 ／ VWMA200傾き% ／ VWMA20傾き% ／ VWMA50傾き% ／ VWMACDシグナル%(12,26,9) ／ VWMACDヒスト%(12,26,9)
+- VWMACD線%(12,26,9) ／ WAD傾き10 ／ WAD傾き20 ／ WMA30傾き% ／ W字(24,0.003) ／ W字(48,0.003)
+- W字(96,0.003) ／ ZLMA200傾き% ／ ZLMA20傾き% ／ ZLMA50傾き% ／ body比 ／ close vs 20本安値%
+- close vs 20本高値% ／ close vs ABER_ZG% ／ close vs ACCBL% ／ close vs ACCBU% ／ close vs ALMA%10 ／ close vs ALMA%9
+- close vs CE_L% ／ close vs CE_S% ／ close vs CKSPl% ／ close vs CKSPs% ／ close vs DEMA%10 ／ close vs DEMA%20
+- close vs DEMA%30 ／ close vs EMA20% ／ close vs EMA5% ／ close vs EMA9% ／ close vs FAMA% ／ close vs FWMA%10
+- close vs HILO% ／ close vs HMA%10 ／ close vs HMA%20 ／ close vs HT_TRENDLINE% ／ close vs HWMA% ／ close vs JMA%7
+- close vs KAMA%10 ／ close vs KAMA%30 ／ close vs Keltner上%(20,2.0) ／ close vs Keltner下%(20,2.0) ／ close vs LINREG%14 ／ close vs LINREG%25
+- close vs LRb%14 ／ close vs MAMA% ／ close vs MCGD%10 ／ close vs MEDIAN%30 ／ close vs MIDPOINT%14 ／ close vs MIDPOINT%2
+- close vs MIDPRICE%14 ／ close vs MIDPRICE%2 ／ close vs MMAR%10 ／ close vs PMAX% ／ close vs POC%288 ／ close vs PSAR%
+- close vs PWMA%10 ／ close vs RAINBOW%(2,10) ／ close vs RMA%10 ／ close vs RMA%14 ／ close vs RMA%30 ／ close vs SAREXT%
+- close vs SINWMA%14 ／ close vs SMA9% ／ close vs SSF%10 ／ close vs SWMA%10 ／ close vs Supertrend%(10,3.0) ／ close vs T3%20
+- close vs T3%200 ／ close vs T3%50 ／ close vs TEMA%10 ／ close vs TEMA%20 ／ close vs TRIMA%10 ／ close vs TSF%14
+- close vs VAH%288 ／ close vs VAL%288 ／ close vs VIDYA%20 ／ close vs VIDYA%200 ／ close vs VIDYA%50 ／ close vs VWAP%288
+- close vs VWMA%10 ／ close vs WMA%10 ／ close vs WMA%9 ／ close vs ZLMA%20 ／ close vs ZLMA%200 ／ close vs ZLMA%50
+- close vs pivotPP%288 ／ close vs pivotR1%288 ／ close vs pivotS1%288 ／ close vs 前期間pivotPP% ／ close vs 前期間pivotR1% ／ close vs 前期間pivotS1%
+- close vs 基準線%(26) ／ close vs 転換線%(9) ／ fib位置14 ／ fib位置20 ／ fractal安値距離%(2) ／ fractal高値距離%(2)
+- high_Z30 ／ kurtosis20 ／ kurtosis50 ／ low_Z30 ／ open_Z30 ／ pinbar
+- realized_vol20 ／ realized_vol50 ／ skew20 ／ skew50 ／ stdev%10 ／ stdev%50
+- volume_ratio20 ／ volume_ratio50 ／ zscore_return20 ／ zscore_return50 ／ 上ヒゲ比 ／ 下ヒゲ比
+- 内側バー ／ 出来高変化率%1 ／ 包み足 ／ 孕み足 ／ 安値からの経過バー25 ／ 安値切り上げ幅%(2)
+- 実体幅比10 ／ 形スコア24(V=+/M=−) ／ 形スコア48(V=+/M=−) ／ 形スコア96(V=+/M=−) ／ 構造破断距離%(2) ／ 連続本数
+- 高値からの経過バー25 ／ 高値切り上げ幅%(2)
 
 ### 2. 探索の系統
 
@@ -318,6 +302,9 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 | mfi_periods | [14] |
 | cmf_periods | [20] |
 | obv_slope_periods | [10, 20] |
+| material_params | {"ADX": [[7], [10], [14]], "DI差": [[7], [14]], "MACD線%": [[12, 26]], "MACDヒスト%": [[12, 26, 9]], "MACDシグナル線%": [[12, 2… |
+| material_keep | {"V9": ["ADX14", "ATR%14", "BB%b(20,2.0)", "BB幅(20,2.0)", "EMA20傾き%", "MACDシグナル線%(12,26,9)", "MACDヒスト%(12,26,9)", "MA… |
+| material_first_hidden | {"転換線": {"スキャル": [[9, 26, 52]], "デイトレ": [[9, 26, 52]]}, "基準線": {"スキャル": [[9, 26, 52]], "デイトレ": [[9, 26, 52]]}, "AO%":… |
 | drop_columns | [["BB%b(20,3.0)", "BB%b(20,2.0)"], ["BB%b(50,3.0)", "BB%b(50,2.0)"], ["BB幅(20,3.0)", "BB幅(20,2.0)"], ["BB幅(50,3.0)", … |
 | rci_periods | [7, 9, 26, 52] |
 | zscore_periods | [20, 50] |

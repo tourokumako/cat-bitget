@@ -2562,6 +2562,125 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-hidden-params-20261004/やることの表.md",
    "at": "2026-10-06T15:36:30",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "2",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "3",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "4",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "5",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "6",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "7",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "8",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "9",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "10",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "11",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "12",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "13",
+   "file": "scripts/priority_rebuild/engine_tuner_exec.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "14",
+   "file": "scripts/priority_rebuild/gen_materials.py",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "15",
+   "file": ".claude/breaks/b137_material_params_ignored.sh",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "16",
+   "file": ".claude/breaks/b138_keep_name_dropped.sh",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-20261006",
+   "num": "17",
+   "file": ".claude/breaks/b139_range_excludes_keep.sh",
+   "at": "2026-10-06T21:49:17",
+   "how": "当てた"
   }
  ]
 }

@@ -164,3 +164,75 @@
 - まこさん「hook と承認のプログラムの不具合が完了したなら、あとは確認しつつ、ミスの無いよう、正確、迅速に進めて」→ 2回目の工事 m2c15-param-values-20261006 の読むもの宣言（35件・元データ read_plan_src.json → require_read_plan_before_design.py --write）を作って貼った。前の宣言は design_read_plan_m2c15-hidden-params-20261004.md と read_plan_src_m2c15-hidden-params-20261004.json に控えた（cmp で同じ）。
 - まこさん「読むものはOK」→ 元データに写して作り直し、貼った印も作り直した。まこさん「このままこのセッションで続けて大丈夫なの？」→ 私の答え＝切り替えるほうがよい（会話が長く、読む量の多い工事で要約による取り違えを避ける）→ まこさん「切り替える」。
 - 引き継ぎ＝next_step の先頭に「156回目の終わり」と次のセッションの手順7つを足した（155回目の中身は消していない）。教訓 L-668 を lessons_active.md に足した。
+
+## §18 157回目＝読むもの宣言の35件を読み、案の前の照らし（next_step の手順2・3）をプログラムで数えた（まこさん「続きから」）
+
+- 読んだ＝必読9件（next_step の先頭161行・台帳・恒久の決まり・逐語3件・値の表3件）と、読むもの宣言の35件（宣言の範囲の行から）。修正対応表の json は頭の形だけ（まこさん決定「B」）。
+- 照らしの道具＝`.claude/state/indicator_review/p1p5_survey.py` を新設（読むだけ・どのファイルも書かない）。scratchpad の自作は safety hook（enforce_observe_diag_only）が止めるので、前のセッションと同じ置き場に置いた。
+- A（手順2・P-1）＝最初の値（スキャル・デイトレ）だけを指標ごとの一覧にすると、名前で表せる新しい組 45・最初の値に無い今の名前 134（V9 の名前は数えない）・名前の軸の数と最初の値の数字の個数が違う種類 38（転換線・基準線・KAMA・StochRSI・Keltner・ALMA・JMA・SSF・MCGD ほか＝名前に出ない軸がある）。
+- C（消える名前の参照）＝134 のうち23本が、ほかのファイルに文字のまま在る。E38 の実行時の別名（engine_tuner_exec.py の RUNTIME_ALIAS＝DI差7・ROC24・volume_ratio20）・e37_scalp.py（DI差7）・重複を外す一覧の右側（observe_config.json の drop_columns）・自己テスト（observe_diag.py・engine_tuner_gen.py）。レシピの family と数字の形では、直す前と後で同じかを確かめるレシピ（identity_*）が ROC24・volume_ratio20・stdev%50 を指す。
+- B（手順3・P-5）＝29種のうち26種は、前の工事の名前に出さない引数を持つ。無い3種＝THERMO%（ライブラリの length は平らにする線＝THERMO比 の分母にだけ効き、THERMO% の列には効かない＝observe_diag.py:676 の _th・thermo.py:14〜24）・swing高値距離・swing安値距離（材料の表の鍵は swing高値距離%・名前の数字は「n本の高値」の本数。列は全部 close vs n本高値% と同じとして省いている＝observe_config.json の drop_columns。教科書のパラメータは前後 N 本＝別の意味）。
+- 案3つ（A＝名前の一覧を最初の値に入れ替え・V9 と採用中の戦略が使う名前は残す／B＝今の名前を全部 残して45本 足す／C＝名前は変えず最初の値は別の欄）を出し、A を勧めた。scratchpad の下書き peek_json.py は hook が走らせることも消すことも止めたので、まこさんに端末で消していただいた（2回目で消えた＝フォルダが空を ls で確かめた）。
+- **まこさん決定「A」（2026-10-06）**＝P-1 は名前の一覧を、教科書の最初の値（スキャル∪デイトレ）＋V9 の名前＋採用中の戦略と確認のレシピが使う名前にする。それ以外の範囲は P-2 の範囲で探す。名前に出ない軸がある38種は、名前に出る軸だけを一覧に書き、名前に出ない軸の最初の値は列の計算を変えずに別の欄へ書く（値を渡すのは工事2）。
+
+## §19 157回目＝決定「A」の案を道具で組み、写しで確かめ、試しの設計書の検査（A群）をかけた
+
+- 道具を3つ新設した（どれも本物には書かない）＝`.claude/state/indicator_review/r3_draft_build.py`（直しを集めて写しで確かめる・--plan／--check／--refs）・`r3_todo_build.py`（工事のやることの表を作る・一覧の行は全体の表から1文字も変えずに写す）・`r3_proposal_build.py` と `_r3_template.txt`（案を組む）。手本＝前の工事の r2_*。
+- 写しの結果（r3_check.json・r3_names.json）＝指示14件（observe_diag.py 5・observe_config.json 1・search_limits.json 1・engine_tuner_gen.py 5・engine_tuner_exec.py 1・gen_materials.py 1）＋壊すプログラム3本（b137〜b139）。材料 576 → 476列（消える153・増える53・両方に在る423列の値は同じ）。指標ごとの一覧80種・範囲104種・名前に出ない軸の最初の値38種・P-4 33種（資料に行が無い4＝RCI と前期間pivot 3・1点のまま23・決まらない6）。残す名前＝V9 19本（fib位置20 を含む）・採用中の戦略と確認のレシピ 9本。範囲を広げた軸＝ROC 9〜14 → 9〜24（E38 の ROC24）。MACD の3種は短い方と長い方の範囲が重なる。P-3＝ライブラリが黙って既定に戻す端は0件・列に使われない軸4（S-Rタッチ1時間ATR の倍率と ATR の本数・PVO と TSI の線のシグナルの本数）。写しで自己テスト5本が通った（gen_materials は T6 だけ＝表を作り直すまで鳴る）。壊し方3本は決めた文で落ちた。
+- 見つけた食い違い＝①決めていただいた案の「45本 増えて130本 減る」は、名前に出ない軸がある種類の名前の軸を数えていなかった（数え直すと53本・153本）②「A のときの扱い」の「プログラムがパラメータの名前で照らす」は、名前の書き方が資料とコードで違い0種しか一致しない＝私が18種の対応表（AXIS_MAP）を決めた。どちらも案の §1 と 3-2 に書いた。
+- 工事のフォルダ＝verbatim/m2c15-param-values-20261006（okd_p1a_20261006＝3案の返信 5c91a2ac・ok_p1a_20261006＝まこさん「A」11c13427・やることの表.md）。長い返信 c717283a の写しは、末尾の ToDo の【】見出しを設計書の道具が案の節として読んで止まったので、フォルダから外した（出どころは「記録の返信 c717283a」と書いた）。
+- 試しの設計書（trial_design.py）＝A2 は通した（purpose_check.md をこの工事の中身に書き直した・門が求めた materials.json・b131・確認のレシピ2本を開いた・条件1 の文の「変えない」の語を言い換えた）。残り2件＝A12（①gen_materials.py --selftest の T6 ②verify_design_contract.py --diff が、当てた後に build_catalog と selftest_catalog が find_material を呼ぶのを「設計に書いていない」とする）と A14（見直し表）。
+- A12 の2件は、名前が変わる工事・関数の呼び出しが増える工事では必ず起きる＝承認の仕組みの穴（156回目に A12 へ自己テスト6本を足したときに入った）。まこさんに直し方を出す。
+
+## §20 157回目＝承認の前の検査 A12 の穴2つを直した（まこさん「わからない」→ 前提から書き直した説明 →「なおしてよい」）
+
+- ①`.claude/hooks/require_design_check_before_approval.py` の A12（自己テストを仮当てのまま走らせる所）＝gen_materials.py --selftest で、落ちた番人が T6（素の状態で --verify が鳴っている）だけのときは止めない。材料の名前が変わる工事では、表を作り直す G-1（承認の後）まで必ず鳴るため。表を作り直した後は、監査に出す前のチェックが --selftest と --verify をかける。
+- ②`.claude/tools/gen_acceptance.py` の build_spec＝設計書の関数の一覧（SPEC）を、4-20 の実装の指示のうち impl_file を直すものを全部 当てた後の中身から作る（一時のファイルに書いて spec_from_impl で読む）。直した後の文字がもう1か所在る指示は、当たっているとみなして当てない（当てた後に --verify で作り直すとき）。直す前の文字がちょうど1か所ずつ無ければ止める。これまでは承認の後に設計書を作り直して承認を2回いただいていた＝1回で済む見込み。
+- 確かめ＝直す前に --try（266.7秒・A12 の2本と A14）と gen_acceptance --selftest 17/17 を走らせた。直した後＝gen_acceptance --selftest 17/17・試しの設計書（1559行）で A群は A14 の1件だけ・--try 単独で A14 の1件だけ（266.4秒）。仮当ての後、本物は元どおり（git status で、直した2つと記録だけ）。
+- 限界＝②の後は、設計書を作ってから当てるまでの間、設計書の関数の一覧と実物が合わない（設計↔実装ゲートが、その間に観察の道具を走らせると止める見込み）。承認の後すぐに当てるので、その間に観察の道具は走らせない。
+
+## §21 157回目＝案に まこさん「OK 進めていいよ」→ 逐語・設計書・見直し表 → 仮当てが打ち切られ、本物のファイルが書き替わったまま残っていたのを見つけて戻した
+
+- 案の説明（まこさん「詳細に説明して」）＝名前の一覧の作り方を、資料 indicator_params_by_strategy.json の ADX・RSI・CCI の行で説明した。そのあと まこさん「OK 進めていいよ」。
+- 逐語＝gen_verbatim.py で okd_r3_20261006（案の返信 563b4750・570行）と ok_r3_20261006（ecb3b55e・2行）を書いた。逐語の【4-0】から後ろと、道具が作った案の本文（r3_proposal.md）を diff した＝違いは【7-8】の空白1つと最後の改行だけ（4-20 は1文字も違わない）。
+- 設計書＝gen_acceptance.py --work m2c15-param-values-20261006 --write（1558行）。1行目から最後まで Read で読んだ。抜け・食い違いは見つからなかった。
+- 見直し表＝試しの設計書との違いは 0-1 の表だけ（diff＝9・22・24・26 行・34 行の追加・35〜67 行）なので、試しの表を写す道具（.claude/state/indicator_review/r3_review_port.py）で写した。ファイル名を付けずに書いた行番号10行と、1番の「3本」を、本物の設計書で開いた行に直した。gen_review --check＝止める理由 0件・根拠 98件。
+- ★見つけたこと＝承認の前の検査 --try が「NEW_FILE と書いたのに実在する（b137〜b139）」で止まった。調べると、gen_acceptance --write の直後に PostToolUse の hook（show_design_check_after_write.sh・時間の上限 120秒＝settings.json:42）が承認の前の検査を走らせ、その中の仮当て A12（約4分半）が本物のファイル6本を書き替え、新しい壊すプログラム3本を置いた後（21:16:08〜09）に打ち切られていた。戻す処理（finally の _a12_restore）が走らず、控え（.claude/state/_a12_backup）と錠（real_write.lock・持ち主 pid 83790 は居ない）が残っていた。＝承認の前なのに、本物の observe_diag.py ほか5本が工事の中身のままだった（_per_done が4か所・material_params が在る）。
+- 戻した＝控え6本のハッシュ値が、コミット（HEAD）の中身と6本とも同じことを確かめてから、hook 自身の _a12_restore を呼ぶ道具（.claude/state/indicator_review/a12_restore_now.py）で戻した。戻した後＝6本とも git の差分なし・b137〜b139 は消えた・控えのフォルダも消えた。錠は、持ち主が居ないので次に錠を取る処理が自分で片づける（run_breaks.py の rw_take）。
+- 穴＝156回目に A12 へ自己テスト6本を足して約4分半になったので、上限 120秒の PostToolUse から呼ぶと必ず打ち切られる。gen_acceptance --write を打つたびに同じことが起きる。hook の直しなので、まこさんに報告して直し方を出す（恒久57番）。
+- 戻した後の承認の前の検査 --try＝不足0件（267.2秒）。終わった後、本物は元どおり・控えと錠も無い。見直し表の根拠の実物の行（observe_diag.py:1328〜1332・1669・1676〜1678・7074 ほか）を、Stop hook（require_read_used）に言われて Read で開き直した＝表のとおり。
+
+## §22 157回目＝まこさん「承認した」（21:42）→ 当てた → 軽い口・壊すプログラム・自己テスト → G-1 の表の作り直し
+
+- 当てる＝apply_audit_fix.py --design --dry（17件 当たる）→ --design（17件 当てた・照合 PASS）。そのあと当てる道具が G2 を走らせ「中身が入力と一致しない」で止まった＝型の表を作り直す前なので見込みどおり（案の 4-4 の3番）。
+- 軽い口 observe_diag.py --selftest-catalog＝❌ 0件。壊すプログラム run_breaks.py --design --measure-only＝3本とも期待どおり（rc=1）。★--measure-only を付けないと、土台ゲート（require_acceptance_before_impl.sh）が「強制の土台のファイルを Bash で書く」として止める（試しの道具で先に分かった）。全体の自己テスト observe_diag.py --selftest＝全部 pass（材料 476種 × 足11 = 5236列）。
+- 完成の条件 #1〜#3 は「未着手」のまま＝承認の時点で壊すプログラムが無かった（A12 は仮当ての後に戻す）＝2回目の承認が要る（前の工事と同じ）。
+- G-1 の表＝gen_indicator_switch.py --write（使う145・使わない116・前と同じ）→ gen_materials.py --write → gen_signal_families.py --write（部品 576→476・禁止1 141→128・禁止3 514→366・中身の指紋 c456761d…＝承認 445ba1cf… と違う＝再承認が要る）→ gen_exit_families.py --write（組める31・md5 a5241a04…・承認の指紋が無い＝再承認が要る）。★材料の文書を型の表より先に作ったので「部品 576 種」が写った → 型の表の後に gen_materials.py --write をもう一度（576 が消えた・regime_detection_kb.md の件数も差し込み直された）→ 型の表をもう一度 作って中身の指紋が c456761d… のままを確かめた。★次からの順＝オン・オフ → 型の表 → 出口の型の表 → 材料の文書。
+- 観察の説明書 gen_observe_manual.py --write（612行・「指標（476種）」）。組み立ての表 gen_composition_rules.py --verify が「正本のずれ 3件（exit_families・search_limits・signal_families）」→ --write（手で書いた行 0件）。
+- 名前の照らし（.claude/state/indicator_review/r3_name_refs.py）＝段の候補 m2_stage_candidates.json は種類の名前で19種を指し、全部 カタログに1本以上 在る（CHOP は CHOP14 の1本）。出口の元データ exit_families_rules.json は種類の名前で材料を指していない。消えた値つきの名前を指す所は2つとも0件。
+- 見つけたこと（この工事の前から）＝exit_families_rules.json の説明の文に、型の表の古い数が残る（641・649・657・666・679・688・693・698 行＝「ADX7/14/21」「BB%b 4種」「合計105」など）。承認済みの表の元なので、この工事では直さない。§6 に積む候補。
+- G-2 の1つ目＝gen_materials.py --selftest＝全部 pass（範囲の中の値が全部 計算できるかの検査を含む）。
+- まこさん待ち＝型の表と出口の型の表の再承認 → G2 → H2 → 2回目の承認 → 監査の依頼書。
+
+## §23 157回目＝まこさんが2つの表を再承認（22:01）→ G2・H2 → 2回目の承認の前の検査
+
+- 承認の記録＝signal_families_approved.txt（22:01:30）・exit_families_approved.txt（22:01:42）。
+- G2＝gen_signal_families.py --verify＝既知答え 11件 全部 期待どおり・g2_pass.json（対象39件・指紋 32ab8171…）。
+- H2＝leak_causality_diag.py＝検査2 の注記なし未来参照 0件・打ち切り再現テストの食い違い 0件・h2_pass.json（指紋 e57e81a5…）。
+- 新しい壊すプログラム3本（b137〜b139）を全文 Read で開いた＝4-20 のとおり。
+- 2回目の承認の前の検査 --try --transcript＝不足0件（277.0秒）。★終わった後に空の .claude/state/_a12_backup が残った＝17件とも当て終わっていたので仮当ては何も控えず、_a12_restore は控えの一覧が無いと何もせず戻る（フォルダを消さない）。中身は空・害なし → rmdir で消した。§6 の候補（戻す処理が、一覧が無くても空のフォルダを消す形にする）。
+
+## §24 157回目＝まこさん「承認した」（2回目・23:00）→ 完成の条件3行 ✅済 → 監査に出す前のチェック → 依頼書の手書き（まこさん「OK」）→ 依頼書を作る道具が4回 止めた
+
+- 完成の条件 #1〜#3＝✅済（壊すと rc=1・条件のコマンド rc=0・承認のときに機械が測った）。
+- 監査に出す前のチェック pre_audit_check.py --run（裏）＝全部 rc=0（H2 294.1秒・observe_diag --selftest 125.1秒ほか）・pre_audit_check.json を書いた。G2・H2 の記録が書き直されたので tidy_next_step.py --write を2回（Stop hook に1回 止められた＝lessons.md に1件）。
+- 依頼書の手書き＝SDK/.claude/ratchet/acceptance_archive/verbatim/m2c15-param-values-20261006/監査依頼の手書き（実装の監査）.md（目的2行・必読・入れないもの・問い Q8〜Q12）。まこさん「OK」。
+- gen_audit_docs.py request-design impl が止めた（どれも fail-closed の照らし）＝①必読に TARGET の engine_tuner_exec.py・gen_materials.py が無い → 必読に2行 足した（gen_materials.py:1581 の例の文「RSI は 7〜21…7・9・14・21 の4つだけ」が事実と違うまま＝同じ事実の揃え漏れを自己申告に書いた）②やることの表に「## 手書きと自動の割り当て」の節が無い（r3_todo_build.py の書き漏らし）→ 前の工事の節（まこさん OK 2026-09-29）をそのまま写した。gen_acceptance --verify で囲みの外の文は変わらないことを確かめた（囲み MATERIALS・CODEREF は当てた後の実物と食い違う＝当然の食い違い・Q12 に自己申告）③手書きの「何のためか」の出どころに逐語のファイルの名前 → 設計書の節の名前に書き直した ④経緯の「この工事は何か」（道具が設計書の §1 概要から写す・gen_audit_docs.py:1288）に、§1 の「★数の訂正」の文の「okd_p1a_20261006」が入る → 実装の監査では逐語の名前を全部 止める（:1037〜1040）。
+- ④は手書きでは直せない。§1 を直すと設計書が変わり、承認の打ち直し（3回目）と設計書の作り直し（例の hook の穴も起きる）が要る。道具を直すなら、経緯の2の行に設計書から写した文の中の逐語の名前を、照らしの対象から外すか、写すときに外す。まこさんに決めていただく（diagnosis.md に見立て）。
+
+## §25 157回目＝まこさん「よくわからない」→ 前提から説明し直した →「Aでよい」→ 依頼書を作る道具を直して、依頼書 CP63 を作った
+
+- 直した＝.claude/tools/gen_audit_docs.py の 1288行（経緯の2「この工事は何か」）＝設計書の §1 を写すときに、逐語のファイルの名前を VERBATIM_NAME_RE で「逐語のファイル」に置き換える（照らしと同じ正規表現）。直す前と後に --selftest を単独で走らせた＝40/40 → 40/40。
+- 依頼書の監査対象タスクが M2-D-8 になった（前の工事 §7 と同じ型）→ やることの表の「## 一覧」の下に「この工事のやることの番号＝M2-C-15」の1行を足し、Y-5 を「やることリストの M2-D の8番」に変えた。gen_acceptance --verify＝囲みの外の文は同じ。
+- 依頼書＝SDK/.claude/audits/inputs/2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_request.md（466行・問い11件・必読26件・自己申告2件）。全文を Read で読んだ。見直し表＝.claude/state/reviews/2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_request.review.md（41行・gen_review --check 止める理由0件）。
+- 次＝まこさんが依頼書を確認 → 別のセッションで監査 CP63。未コミット＝この工事の実装・表・控え・道具の直し3本（require_design_check_before_approval.py・gen_acceptance.py・gen_audit_docs.py）・記録。まこさんの OK でコミットする。

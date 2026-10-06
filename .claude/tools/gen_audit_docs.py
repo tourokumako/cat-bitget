@@ -1285,7 +1285,11 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
     add(f"1. **この工事は何のためか**＝{_one_line(hand['目的'][0])}")
     for x in hand["目的"][1:]:
         add(f"   {_one_line(x)}")
-    add(f"2. **この工事は何か**＝{_one_line(d.get('何を作るか'))}（やることの番号 {'・'.join(todos) or '無し'}）")
+    # ★2026-10-06（157回目・まこさん「Aでよい」）＝2は設計書の §1 概要をそのまま写すので、§1 に逐語のファイルの名前
+    #   （例＝「決めていただいたときの案（okd_p1a_20261006）」）が在ると、下の照らし（request_content_errors）が止める。
+    #   設計書は承認済みで直せないので、写すときに名前を「逐語のファイル」に置き換える（照らしと同じ VERBATIM_NAME_RE）。
+    add(f"2. **この工事は何か**＝{VERBATIM_NAME_RE.sub('逐語のファイル', _one_line(d.get('何を作るか')))}"
+        f"（やることの番号 {'・'.join(todos) or '無し'}）")
     add(f"   **この工事の位置**＝{_position_chain(todos)}")
     add("")
     add("<!-- 項目: 着手前必読 -->")

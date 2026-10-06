@@ -617,6 +617,14 @@ def _a12_trial_locked(acc):
                 cmd6.append(acc)
             try:
                 r6 = subprocess.run(cmd6, capture_output=True, text=True, timeout=600, cwd=SDK)
+                # ★2026-10-06（157回目・まこさん「なおしてよい」）＝材料の名前が変わる工事は、材料の文書（materials.md）を
+                #   作り直す（G-1・承認の後）まで、gen_materials.py の T6（素の状態で --verify が鳴っている）が必ず落ちる。
+                #   仮当てでは表を作り直さないので、落ちた番人が T6 だけのときは止めない（表を作り直した後は、
+                #   監査に出す前のチェック pre_audit_check.py が gen_materials.py --selftest と --verify を必ずかける）。
+                _t6 = [l.strip() for l in ((r6.stdout or "") + (r6.stderr or "")).splitlines() if l.strip().startswith("❌ T")]
+                if (r6.returncode != 0 and st[0] == "gen_materials.py" and _t6
+                        and all(l.startswith("❌ T6: 素の状態で --verify が鳴っている") for l in _t6)):
+                    continue
                 if r6.returncode != 0:
                     bad.append(f"自己テストが当てた後に落ちる（rc={r6.returncode}）: {' '.join(st)}\n"
                                + _tail((r6.stdout or "") + (r6.stderr or ""), 8))

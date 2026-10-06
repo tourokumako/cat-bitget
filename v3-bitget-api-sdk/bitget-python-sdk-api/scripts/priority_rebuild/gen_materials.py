@@ -1580,7 +1580,7 @@ def render_md(body: dict) -> str:
               "＝いちばん小さい数字と いちばん大きい数字の間なら、どの数字でも試せます"
               "（例＝RSI は 7〜21 の整数 全部。設定ファイルに並んでいるのは 7・9・14・21 の4つだけ）。"
               "範囲の正本＝`engine_tuner_gen.material_ranges`。"
-              "**まこさんが範囲を決めたときの置き場所＝`recipes/search_limits.json` の `material_param_ranges`（いまは空）。**",
+              "**設定の範囲の置き場所＝`recipes/search_limits.json` の `material_param_ranges`（2026-10-06 から、修正対応表の範囲をプログラムが写したもの）。**",
               "", "**場所ごとの中身（全部 実物から）**", "",
               f"- **場所1**＝指標のパラメータ。この {a1['places'][0]['並び']} 件の並びが、"
               f"下の表の {len(e['期間'])} 種類・{sum(len(v) for v in e['期間'].values())} 通りに広がります。"

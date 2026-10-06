@@ -3251,10 +3251,10 @@
    {
     "印": "D",
     "何を足すか": "「終値と◯◯の距離%」に対する「◯◯ そのものの向き」",
-    "数": 65,
+    "数": 60,
     "単位": "件",
     "出どころ": "検査9（observe_diag）",
-    "中身": "転換線・基準線・SMA20・SMA50・SMA200・VWAP・Keltner上・Keltner下・Supertrend・24本高値・24本安値・48本高値・48本安値・96本高値・96本安値・pivotPP・pivotR1・pivotS1・前期間pivotPP・前期間pivotR1・前期間pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S"
+    "中身": "転換線・基準線・EMA5・SMA9・VWAP・Keltner上・Keltner下・Supertrend・20本高値・20本安値・pivotPP・pivotR1・pivotS1・前期間pivotPP・前期間pivotR1・前期間pivotS1・POC・VAH・VAL・ALMA・DEMA・HMA・JMA・KAMA・LINREG・FWMA・HILO・HT_TRENDLINE・HWMA・LRb・MCGD・MIDPOINT・MIDPRICE・PWMA・RMA・MAMA・FAMA・MMAR・RAINBOW・SINWMA・SSF・SWMA・T3・TEMA・TRIMA・TSF・VIDYA・VWMA・WMA・ZLMA・CKSPl・CKSPs・PMAX・PSAR・SAREXT・ABER_ZG・ACCBL・ACCBU・CE_L・CE_S"
    },
    {
     "印": "E",
@@ -3511,10 +3511,10 @@
   "engine": {
    "選べる指標の種類": 143,
    "選べない指標の種類": 118,
-   "選べる組": 326,
+   "選べる組": 226,
    "時間足": 11,
-   "選べる列": 3586,
-   "カタログ総列数": 6336,
+   "選べる列": 2486,
+   "カタログ総列数": 5236,
    "レンジ幾何": [
     "W%",
     "帯内位置%"
@@ -3526,36 +3526,26 @@
    "期間": {
     "ADX": [
      7,
-     14,
-     21
+     10,
+     14
     ],
     "AROOND": [
-     7,
      14,
-     21
+     25
     ],
     "AROONOSC": [
-     7,
-     14,
-     21
+     25
     ],
     "AROONU": [
-     7,
      14,
-     21
+     25
     ],
     "ATR%": [
-     7,
-     14,
-     21
+     14
     ],
     "BB%b": [
      [
       20,
-      2.0
-     ],
-     [
-      50,
       2.0
      ]
     ],
@@ -3563,42 +3553,29 @@
      [
       20,
       2.0
-     ],
-     [
-      50,
-      2.0
      ]
     ],
     "CCI": [
-     7,
-     9,
-     14,
-     21
+     20
     ],
     "CHOP": [
-     7,
-     14,
-     21
+     14
     ],
     "CMF": [
      20
     ],
     "DI差": [
      7,
-     14,
-     21
+     14
     ],
     "DPO%": [
-     20,
-     48
+     20
     ],
     "Donchian幅": [
-     20,
-     48
+     20
     ],
     "EFI比": [
-     10,
-     20
+     13
     ],
     "EMA傾き": [
      9,
@@ -3607,8 +3584,7 @@
      200
     ],
     "EOM比": [
-     10,
-     20
+     14
     ],
     "ER": [
      7,
@@ -3617,9 +3593,7 @@
      21
     ],
     "KAMA傾き%": [
-     20,
-     50,
-     200
+     10
     ],
     "KSTシグナル": [
      9
@@ -3733,12 +3707,12 @@
      52
     ],
     "ROC": [
-     3,
-     6,
+     9,
      12,
      24
     ],
     "RSI": [
+     5,
      7,
      9,
      14,
@@ -3873,68 +3847,26 @@
      14
     ],
     "StochRSI%D": [
-     7,
-     9,
-     14,
-     21
+     14
     ],
     "StochRSI%K": [
-     7,
-     9,
-     14,
-     21
+     14
     ],
     "TRIX": [
      [
-      7,
-      9
-     ],
-     [
-      9,
-      9
-     ],
-     [
-      14,
-      9
-     ],
-     [
-      21,
+      15,
       9
      ]
     ],
     "TRIXシグナル": [
      [
-      7,
-      9
-     ],
-     [
-      9,
-      9
-     ],
-     [
-      14,
-      9
-     ],
-     [
-      21,
+      15,
       9
      ]
     ],
     "TRIXヒスト": [
      [
-      7,
-      9
-     ],
-     [
-      9,
-      9
-     ],
-     [
-      14,
-      9
-     ],
-     [
-      21,
+      15,
       9
      ]
     ],
@@ -3960,9 +3892,7 @@
      ]
     ],
     "UI": [
-     7,
-     14,
-     21
+     14
     ],
     "VAH": [
      288
@@ -3976,19 +3906,13 @@
      21
     ],
     "VTXM": [
-     7,
-     14,
-     21
+     14
     ],
     "VTXP": [
-     7,
-     14,
-     21
+     14
     ],
     "WMA傾き%": [
-     20,
-     50,
-     200
+     30
     ],
     "W字": [
      [
@@ -4005,147 +3929,82 @@
      ]
     ],
     "close vs ALMA%": [
-     20,
-     50,
-     200
+     9,
+     10
     ],
     "close vs DEMA%": [
+     10,
      20,
-     50,
-     200
+     30
     ],
     "close vs EMA": [
+     5,
      9,
-     20,
-     50,
-     200
-    ],
-    "close vs FWMA%": [
      20
     ],
+    "close vs FWMA%": [
+     10
+    ],
     "close vs HMA%": [
-     20,
-     50,
-     200
+     10,
+     20
     ],
     "close vs JMA%": [
-     20,
-     50,
-     200
+     7
     ],
     "close vs KAMA%": [
-     20,
-     50,
-     200
+     10,
+     30
     ],
     "close vs LINREG%": [
-     20,
-     50,
-     200
+     14,
+     25
     ],
     "close vs LRb%": [
-     20,
-     50,
-     200
+     14
     ],
     "close vs MCGD%": [
-     20,
-     50,
-     200
+     10
     ],
     "close vs MEDIAN%": [
-     20,
-     50,
-     200
+     30
     ],
     "close vs MIDPOINT%": [
-     20,
-     50,
-     200
+     2,
+     14
     ],
     "close vs MIDPRICE%": [
-     20,
-     50,
-     200
+     2,
+     14
     ],
     "close vs MMAR%": [
-     10,
-     15,
-     25,
-     30,
-     35
+     10
     ],
     "close vs PWMA%": [
-     20,
-     50,
-     200
+     10
     ],
     "close vs RAINBOW%": [
-     [
-      2,
-      1
-     ],
-     [
-      2,
-      2
-     ],
-     [
-      2,
-      3
-     ],
-     [
-      2,
-      4
-     ],
-     [
-      2,
-      5
-     ],
-     [
-      2,
-      6
-     ],
-     [
-      2,
-      7
-     ],
-     [
-      2,
-      8
-     ],
-     [
-      2,
-      9
-     ],
      [
       2,
       10
      ]
     ],
     "close vs RMA%": [
-     20,
-     50,
-     200
+     10,
+     14,
+     30
     ],
     "close vs SINWMA%": [
-     20,
-     50,
-     200
+     14
     ],
     "close vs SMA": [
-     20,
-     50,
-     200
+     9
     ],
     "close vs SSF%": [
-     20,
-     50,
-     200
+     10
     ],
     "close vs SWMA%": [
-     20,
-     50,
-     200
+     10
     ],
     "close vs T3%": [
      20,
@@ -4153,18 +4012,14 @@
      200
     ],
     "close vs TEMA%": [
-     20,
-     50,
-     200
+     10,
+     20
     ],
     "close vs TRIMA%": [
-     20,
-     50
+     10
     ],
     "close vs TSF%": [
-     20,
-     50,
-     200
+     14
     ],
     "close vs VIDYA%": [
      20,
@@ -4175,14 +4030,11 @@
      288
     ],
     "close vs VWMA%": [
-     20,
-     50,
-     200
+     10
     ],
     "close vs WMA%": [
-     20,
-     50,
-     200
+     9,
+     10
     ],
     "close vs ZLMA%": [
      20,
@@ -4190,26 +4042,20 @@
      200
     ],
     "fib位置": [
-     20,
-     96
+     14,
+     20
     ],
     "fractal安値距離%": [
-     2,
-     5
+     2
     ],
     "fractal高値距離%": [
-     2,
-     5
+     2
     ],
     "n本安値": [
-     24,
-     48,
-     96
+     20
     ],
     "n本高値": [
-     24,
-     48,
-     96
+     20
     ],
     "pivotPP": [
      288
@@ -4225,6 +4071,7 @@
      50
     ],
     "stdev%": [
+     10,
      50
     ],
     "volume_ratio": [
@@ -4235,13 +4082,10 @@
      26
     ],
     "安値からの経過バー": [
-     24,
-     48,
-     96
+     25
     ],
     "安値切り上げ幅%": [
-     2,
-     5
+     2
     ],
     "形スコア": [
      24,
@@ -4249,20 +4093,16 @@
      96
     ],
     "構造破断距離%": [
-     2,
-     5
+     2
     ],
     "転換線": [
      9
     ],
     "高値からの経過バー": [
-     24,
-     48,
-     96
+     25
     ],
     "高値切り上げ幅%": [
-     2,
-     5
+     2
     ]
    }
   },
@@ -4276,15 +4116,97 @@
      "数字": 85,
      "範囲": 0,
      "観察だけの格子": [
+      "ADX",
+      "AROOND",
+      "AROONOSC",
+      "AROONU",
+      "ATR%",
+      "BB%b",
+      "BB幅",
+      "CCI",
+      "CHOP",
+      "CMF",
+      "DI差",
+      "DPO%",
+      "Donchian幅%",
+      "EFI比",
+      "EOM比",
+      "KAMA傾き",
+      "KSTシグナル",
+      "MACDシグナル線%",
+      "MACDヒスト%",
+      "MACD線%",
+      "MFI",
+      "PPO",
+      "PPOシグナル",
+      "PPOヒスト",
+      "PVO",
+      "PVOシグナル",
+      "PVOヒスト",
+      "ROC",
+      "RSI",
+      "StochRSI%D",
+      "StochRSI%K",
+      "TRIX",
+      "TRIXシグナル",
+      "TRIXヒスト",
+      "UI",
+      "VTXM",
+      "VTXP",
+      "WMA傾き",
       "adverse_marks",
+      "close vs ALMA%",
+      "close vs DEMA%",
+      "close vs EMA",
+      "close vs FWMA%",
+      "close vs HMA%",
+      "close vs JMA%",
+      "close vs KAMA%",
+      "close vs Keltner上%",
+      "close vs Keltner下%",
+      "close vs LINREG%",
+      "close vs LRb%",
+      "close vs MCGD%",
+      "close vs MEDIAN%",
+      "close vs MIDPOINT%",
+      "close vs MIDPRICE%",
+      "close vs MMAR%",
+      "close vs PWMA%",
+      "close vs RAINBOW%",
+      "close vs RMA%",
+      "close vs SINWMA%",
+      "close vs SMA",
+      "close vs SSF%",
+      "close vs SWMA%",
+      "close vs TEMA%",
+      "close vs TRIMA%",
+      "close vs TSF%",
+      "close vs VWMA%",
+      "close vs WMA%",
+      "close vs 基準線%",
+      "close vs 本安値%",
+      "close vs 本高値%",
+      "close vs 転換線%",
       "early_windows",
       "favorable_marks",
+      "fib位置",
+      "fractal安値距離%",
+      "fractal高値距離%",
       "quantiles",
       "scene_exit_sl_pcts",
       "scene_exit_tmax_bars",
       "scene_exit_tp_pcts",
       "sl_grid",
-      "wait_grid"
+      "stdev%",
+      "volume_ratio",
+      "wait_grid",
+      "スキャル",
+      "デイトレ",
+      "安値からの経過バー",
+      "安値切り上げ幅%",
+      "構造破断距離%",
+      "高値からの経過バー",
+      "高値切り上げ幅%"
      ],
      "明細": [
       {
@@ -4495,63 +4417,63 @@
      "明細": [],
      "確率の明細": [
       {
-       "行": "1651",
+       "行": "1652",
        "中身": "rng.random() < 0.5"
       },
       {
-       "行": "2062",
+       "行": "2063",
        "中身": "rng.random() < 0.15"
       },
       {
-       "行": "2081",
+       "行": "2082",
        "中身": "rng.random() < 0.3"
       },
       {
-       "行": "2089",
+       "行": "2090",
        "中身": "rng.random() < 0.3"
       },
       {
-       "行": "2096",
+       "行": "2097",
        "中身": "rng.random() < 0.4"
       },
       {
-       "行": "2100",
+       "行": "2101",
        "中身": "rng.random() < 0.4"
       },
       {
-       "行": "2109",
+       "行": "2110",
        "中身": "rng.random() < 0.3"
       },
       {
-       "行": "2116",
+       "行": "2117",
        "中身": "rng.random() < 0.3"
       },
       {
-       "行": "2124",
+       "行": "2125",
        "中身": "rng.random() < 0.3"
       },
       {
-       "行": "2134",
+       "行": "2135",
        "中身": "rng.random() < 0.3"
       },
       {
-       "行": "2147",
+       "行": "2148",
        "中身": "rng.random() < 0.3"
       },
       {
-       "行": "2154",
+       "行": "2155",
        "中身": "rng.random() < 0.3"
       },
       {
-       "行": "2163",
+       "行": "2164",
        "中身": "rng.random() < 0.3"
       },
       {
-       "行": "2178",
+       "行": "2179",
        "中身": "rng.random() < 0.5"
       },
       {
-       "行": "3546",
+       "行": "3547",
        "中身": "rng.random() < 0.3"
       }
      ]
@@ -4694,7 +4616,7 @@
     },
     {
      "何": "部品",
-     "数": 576,
+     "数": 476,
      "単位": "種",
      "実物": "`signal_families.json` の `parts`",
      "中身": "（一覧は ★2 と ★7）"
@@ -4708,7 +4630,7 @@
     },
     {
      "何": "材料の列（部品 × 時間足）",
-     "数": 6336,
+     "数": 5236,
      "単位": "列",
      "実物": "上の2つの掛け算",
      "中身": "—"
@@ -4730,7 +4652,7 @@
    ],
    "ng": [],
    "形の数": 13,
-   "部品の数": 576,
+   "部品の数": 476,
    "時間足の数": 11,
    "束ね方": [
     "not",
@@ -4743,5 +4665,5 @@
    ]
   }
  },
- "_本文の指紋": "34102f54728351d3"
+ "_本文の指紋": "36ad819b35b9b9ee"
 }

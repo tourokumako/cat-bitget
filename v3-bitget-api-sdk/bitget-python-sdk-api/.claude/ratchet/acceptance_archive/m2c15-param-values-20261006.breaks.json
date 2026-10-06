@@ -1,0 +1,34 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-param-values-20261006",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b137_material_params_ignored.sh",
+   "code": 1,
+   "note": "[材料カタログ] 指標ごとの一覧 material_params の種類が、カタログを作る所で1度も出てこない: ['ADX', 'AROOND', 'AROONOSC', 'AROONU', 'ATR%', 'BB%b', 'BB幅', 'CCI', 'CHOP', 'CMF', 'DI差', 'DPO%', 'Donchian幅%', 'EFI比', 'EOM比', 'KAMA傾き', 'KS",
+   "expect": 1,
+   "means": "build_catalog が指標ごとの一覧を読まず、ほかの指標の期間の一覧で作ると、カタログを作る所が止まる（軽い口が落ちる）",
+   "match": true
+  },
+  {
+   "no": "2",
+   "script": "b138_keep_name_dropped.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 1 件",
+   "expect": 1,
+   "means": "指標ごとの一覧から、採用中の戦略が使う ROC24 を外すと、残す名前の番人（⑫）が落ちる",
+   "match": true
+  },
+  {
+   "no": "3",
+   "script": "b139_range_excludes_keep.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 1 件",
+   "expect": 1,
+   "means": "設定の範囲を、残す名前 ROC24 を含まない形（上限 14）に戻すと、範囲の番人（⑬）が落ちる",
+   "match": true
+  }
+ ]
+}

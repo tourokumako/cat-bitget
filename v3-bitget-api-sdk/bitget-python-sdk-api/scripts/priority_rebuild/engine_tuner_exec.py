@@ -733,7 +733,7 @@ def _check_int_range(n, where: str) -> None:
 def _check_param_range(fam: str, param) -> None:
     """★2026-08-13（段A の A-4）＝パラメータが「その指標の範囲」の中かを見る（fail-closed）。
 
-    範囲の正本＝`engine_tuner_gen.material_ranges`（材料カタログ由来の範囲＋まこさんが決めた範囲）。
+    範囲の正本＝`engine_tuner_gen.material_ranges`（材料カタログ由来の範囲＋設定 material_param_ranges の範囲）。
     ★これが無いと、生成器の側だけを直しても、手で書いたレシピが範囲の外の数字で走ってしまう。
     ★恒等検収のレーン（lane="legacy"）は対象外＝過去の実装の書き写しを壊さない。
     ★循環 import を避けるため、呼ばれた時に読む（生成器は実行器を import している）。

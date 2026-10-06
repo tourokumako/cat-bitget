@@ -3,24 +3,16 @@
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
  "scripts/priority_rebuild/observe_diag.py": [
-  "<モジュール直下>",
-  "_ab",
-  "_acb",
-  "_cel",
-  "_ck",
-  "_hw",
-  "_insp_hidden_params",
-  "_mama",
-  "_ps",
-  "_vp_levels",
   "build_catalog",
   "selftest_catalog"
  ],
- "scripts/priority_rebuild/indicator_reference_diag.py": [
-  "<モジュール直下>",
-  "_ext_ao",
-  "_ext_ema_slope",
-  "_tb_ao",
-  "_tb_ema_slope"
+ "scripts/priority_rebuild/engine_tuner_gen.py": [
+  "material_ranges"
+ ],
+ "scripts/priority_rebuild/engine_tuner_exec.py": [
+  "_check_param_range"
+ ],
+ "scripts/priority_rebuild/gen_materials.py": [
+  "render_md"
  ]
 }

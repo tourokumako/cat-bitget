@@ -239,20 +239,21 @@ def material_ranges(cfg: dict | None = None, limits: dict | None = None) -> dict
       下限＝いま材料カタログに在る数字の最小。上限＝同じく最大。**新しい数字を1つも足していない。**
       ＝RSI なら 7〜21 の整数が全部 試せる（12 も 13 も 20 も出る）。カタログの4つは全部この中に入る。
       **上限を広げる（例＝RSI を 200 まで）かどうかは、まこさんが決めることです。**
-      決まったら、下の「まこさんが決めた範囲」に書けば、そちらが優先されます（CC は書きません）。
+      ★2026-10-06（工事 m2c15-param-values-20261006）から、下の設定の範囲に、修正対応表の範囲（まこさんが OK した選び方で
+      出たもの）をプログラムが写して書いています。設定の範囲が在る種類は、そちらが優先されます（CC は数字を書いていない）。
 
-    ★まこさんが決めた範囲の置き場所＝recipes/search_limits.json の material_param_ranges。
+    ★設定の範囲の置き場所＝recipes/search_limits.json の material_param_ranges。
       形＝{"RSI": [{"kind": "int", "lo": 30, "hi": 50}]}（軸＝名前の {} の数だけ並べる）。
       出どころ＝まこさんの逐語（2026-08-07・engine_tuner_defects.md の D14 ⑥）
       「疑似シミュで出た値の前後あたりで範囲を事前に指定して（例えば３０〜５０の間とか）探す」。
-      **いまは空です。**空のあいだは、上のカタログ由来の範囲を使います。
+      設定に無い種類は、上のカタログ由来の範囲を使います。名前に出さない引数の範囲は、ここには書けません（工事2）。
 
     戻り＝{指標の種類: {"axes": [{"kind": "int"|"float", "lo": x, "hi": y, "dec": 小数の桁数}, ...],
                         "src": "catalog"|"makosan"}}
 
     ★正直に書く限界＝軸どうしの関係（MACD の 短い方 < 長い方 のような決まり）は、この表に持っていません。
-      いまはカタログ由来＝どの軸も1点なので問題は出ません。まこさんが範囲を広げるときに、
-      その決まりが要るかを1件ずつ決めます。
+      ★2026-10-06 から設定の範囲を書いたので、軸どうしの範囲が重なる種類が在る（工事 m2c15-param-values-20261006 の
+      設計書に一覧）。その決まりが要るかを1件ずつ決めます。
     """
     global _RANGES
     default_call = cfg is None and limits is None      # 引数なしの呼び出しだけ 覚えておく（使い回す）
@@ -290,7 +291,7 @@ def material_ranges(cfg: dict | None = None, limits: dict | None = None) -> dict
             spec.append({"kind": "int" if is_int else "float",
                          "lo": min(vals), "hi": max(vals), "dec": int(dec)})
         out[fam] = {"axes": spec, "src": "catalog"}
-    # ── まこさんが決めた範囲が在れば、そちらを使う（CC は数字を書かない）──
+    # ── 設定の範囲（material_param_ranges）が在れば、そちらを使う（CC は数字を書かない）──
     if limits is None:
         limits, _w = load_limits()
     for fam, axes in (limits.get("material_param_ranges") or {}).items():

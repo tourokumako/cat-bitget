@@ -1327,8 +1327,20 @@ def build_catalog(cfg: dict) -> list[tuple]:
     def add(name, fn, directional):
         C.append((name, fn, directional))
 
+    # ★P-1（2026-10-06・工事 m2c15-param-values-20261006・まこさん決定「A」）＝指標ごとの一覧 material_params に在る種類は、
+    #   ほかの指標の期間の一覧（rsi_periods・atr_periods・sma_periods など）を使わず、その一覧の組だけを、最初に出てきた場所で作る。
+    #   一覧＝修正対応表の最初の値（スキャル∪デイトレ）＋残す名前（V9・採用中の戦略・確認のレシピ）。プログラムが書いた（CC は値を書いていない）。
+    _per = cfg.get("material_params") or {}
+    _per_done = set()
+
     def addf(family, *params):
-        """材料の表から1組 作って足す（パラメータは引数で渡す）。"""
+        """材料の表から1組 作って足す（パラメータは引数で渡す）。指標ごとの一覧に在る種類は、その一覧の組を作る。"""
+        if family in _per:
+            if family not in _per_done:
+                _per_done.add(family)
+                for _p in _per[family]:
+                    C.append(make_material(family, *_p))
+            return
         C.append(make_material(family, *params))
 
     # ── トレンド/モメンタム ──
@@ -1667,13 +1679,18 @@ def build_catalog(cfg: dict) -> list[tuple]:
     addf("HA実体%")
     addf("HA上ヒゲ比")
     addf("HA下ヒゲ比")
+    _unused = sorted(set(_per) - _per_done)
+    if _unused:
+        raise SystemExit(f"[材料カタログ] 指標ごとの一覧 material_params の種類が、カタログを作る所で1度も出てこない: {_unused}")
     # ★同じ挙動の列を省く（まこさん OK 2026-08-11・逐語「同じ挙動ならどちらかは使わないように
     #   していいよ」）。どれを省くかは observe_config.json の drop_columns（左＝省く・右＝残す）。
     #   ★ここで消す前に、残す側が本当にカタログに在るかを確かめる（書き間違いで両方 消えないため）。
     drop = {d: k for d, k in (cfg.get("drop_columns") or [])}
     if drop:
         have = {n for n, _f, _d in C}
-        bad = [f"{d}→{k}" for d, k in drop.items() if k not in have]
+        # ★P-1（2026-10-06）＝残す側が、指標ごとの一覧で外した名前のときは止めない（省く側も同じ値の列なので、一緒に外れたままにする）。
+        _gone = {k for k in drop.values() if k not in have and find_material(k)[0] in _per}
+        bad = [f"{d}→{k}" for d, k in drop.items() if k not in have and k not in _gone]
         if bad:
             raise SystemExit(f"[材料カタログ] 省く設定の『残す側』がカタログに無い: {bad}")
         C = [(n, f, d) for n, f, d in C if n not in drop]
@@ -7072,6 +7089,38 @@ def selftest_catalog(exit_: bool = True) -> list:
                            for _k10 in _c10.keywords)
                    for _c10 in _ast10.walk(_ast10.parse(_in10.getsource(_fn10)))):
             ng.append(f"検査2: {_fn10.__name__} が、上位足のずらし bar_close の形を確かめていない")
+    # ── 工事 m2c15-param-values-20261006 の番人（2026-10-06）──
+    #  ⑪P-1＝指標ごとの一覧の種類は、カタログの名前がその一覧の組とちょうど同じ（ほかの指標の期間の一覧を使っていない）
+    _per11 = cfg.get("material_params") or {}
+    if not _per11:
+        ng.append("P-1: 指標ごとの一覧 material_params が空")
+    for _f11, _l11 in _per11.items():
+        _want11 = {MATERIAL_FAMILIES[_f11][0].format(*_p11) for _p11 in _l11}
+        _have11 = {_x11 for _x11 in sorted(_nm_k1) if find_material(_x11)[0] == _f11}
+        if _want11 != _have11:
+            ng.append(f"P-1: {_f11} のカタログの名前が、指標ごとの一覧と違う（多い {sorted(_have11 - _want11)[:4]}・無い {sorted(_want11 - _have11)[:4]}）")
+    #  ⑫P-1＝残す名前（V9・採用中の戦略・確認のレシピ）がカタログに在る（まこさん決定「A」）
+    if not cfg.get("material_keep"):
+        ng.append("P-1: 残す名前 material_keep が空")
+    for _g12, _l12 in (cfg.get("material_keep") or {}).items():
+        _miss12 = [_x12 for _x12 in _l12 if _x12 not in _nm_k1]
+        if _miss12:
+            ng.append(f"P-1: 残す名前（{_g12}）がカタログに無い: {_miss12}")
+    #  ⑬P-2＝設定の範囲は、指標ごとの一覧の組と残す名前の数字を、全部 含む（engine_tuner が V9 と採用中の戦略の値に届く）
+    import json as _js13
+    _rg13 = _js13.loads((pathlib.Path(__file__).resolve().parent / "recipes" / "search_limits.json").read_text(encoding="utf-8")).get("material_param_ranges") or {}
+    if not _rg13:
+        ng.append("P-2: 設定の範囲 material_param_ranges が空")
+    _chk13 = {MATERIAL_FAMILIES[_f13][0].format(*_p13) for _f13, _l13 in _per11.items() for _p13 in _l13}
+    _chk13 |= {_x13 for _l13 in (cfg.get("material_keep") or {}).values() for _x13 in _l13}
+    for _x13 in sorted(_chk13):
+        _e13, _p13 = iref.find(_x13)
+        _ax13 = _rg13.get(_e13["family"]) if _e13 else None
+        if not _ax13:
+            continue
+        for _i13, (_v13, _a13) in enumerate(zip(_p13, _ax13)):
+            if not float(_a13["lo"]) <= float(_v13) <= float(_a13["hi"]):
+                ng.append(f"P-2: {_x13} の {_i13 + 1} 番目の数字 {_v13} が、設定の範囲 {_a13['lo']}〜{_a13['hi']} の外")
     if exit_:
         for x in ng:
             print(f"  ❌ {x}")
