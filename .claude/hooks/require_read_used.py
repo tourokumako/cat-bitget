@@ -25,6 +25,17 @@
   ★同日 追記（まこさん「チェック項目を見直しすべきでは？」→ 案に「それならばOK」）＝見直し表（.claude/tools/gen_review.py）も照らす。
     表が文書のいまの版の全項目（見出しと問い）を埋めているか、②の欄に実在する根拠の行が在るか、
     その根拠の行を、文書を書き換えた後に Read で開いたか。どれかが欠ければ止める（2回目でも止める）。
+★2026-10-06（156回目・修正依頼 .claude/state/fix_request_require_read_used_20261006.md・まこさん「先にこちらを修正して」）
+  なぜ＝監査人のセッション（CP62）が約15回、156回目のメインのセッションが約12回、同じ止めを繰り返し、
+    まこさんが発言するまで抜けられなかった。どちらも、所見や答えの根拠として設計書の行へのリンク（#L1225・#L1200）を
+    付けただけで「渡した」と数えられた。前の返信のリンクは消せないので、出し直しても止まり続けた。
+  直したこと3つ
+    ①行の印「#L行番号」（か「#L始め-L終わり」）だけのリンクは、根拠の行を示したものと見る＝その行を、文書を最後に
+      書き換えた後に Read で開いたかだけを見る（全部 読むことと見直し表は求めない）。行の印の無いリンクが1つでも在れば、今までどおり渡したと見る。
+    ②監査人のセッション（まこさんの最初の発言に監査依頼書のパス＝依頼書の末尾の呼びかけ例文の形）では、見直し表の条件を求めない
+      （監査人は本物のファイルを書けない＝依頼書の auditor 宣言の「禁止」）。全部 読む条件は残す。
+    ③止める文に、止まり続ける理由と抜け方を出す。
+  残したこと＝メインのセッションで、行の印の無いリンクで読まずに渡せば、2回目でも止める（出し直せば通る形にしない）。
 使い方: （hook）標準入力に Stop の JSON ／ --selftest ／ --try <記録>（いまの記録で何が止まるかを出す・何も止めない）
 """
 import datetime
@@ -40,7 +51,9 @@ from require_confirm_before_act import user_text  # まこさんの発言の見�
 READ_MAX = 2000  # Read の道具が limit 無しで返す行数の上限
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 # 渡す文書＝設計書と監査依頼書（まこさん 2026-10-01「設計書・監査依頼書」）。リンクの形「](パス)」だけを見る
-HANDOVER_RE = re.compile(r"\]\(([^)\s]*(?:acceptance\.md|_audit_request\.md))(?:#[^)]*)?\)")
+HANDOVER_RE = re.compile(r"\]\(([^)\s]*(?:acceptance\.md|_audit_request\.md))(#[^)]*)?\)")
+# ★2026-10-06＝行の印（#L1200 か #L1200-L1231）。これだけのリンクは「根拠の行を示した」と見る
+LINE_ANCHOR_RE = re.compile(r"^#L(\d+)(?:-L?(\d+))?$")
 
 
 def _range(inp: dict) -> tuple:
@@ -129,6 +142,14 @@ def _missing(ranges: list, n: int) -> list:
     return [g for g in gaps if g[0] <= g[1]]
 
 
+def _auditor_session(objs) -> bool:
+    """監査人のセッションか＝まこさんの最初の発言に監査依頼書のパス（…_audit_request.md）が在る。
+    ★2026-10-06（修正依頼の R2）＝依頼書の末尾の「まこさん向け呼びかけ例文」が「監査してほしい」と依頼書のパスの形
+      （CP62 の監査人の記録 58d612d0 の最初の発言も同じ形）。メインのセッションは依頼書を読むが、最初の発言には書かない。"""
+    first = next((user_text(o) for o in objs if o.get("type") == "user" and user_text(o)), "")
+    return "_audit_request.md" in first
+
+
 def check_handover(objs, texts: list, review_for=None) -> list:
     """返信でリンクを渡した設計書・監査依頼書を、最後に書き換えた後に全部 読んだか・見直し表が通るか。止める理由の一覧（空なら通す）。
 
@@ -139,7 +160,11 @@ def check_handover(objs, texts: list, review_for=None) -> list:
     reads = _reads_all(objs)
     sys.path.insert(0, str(ROOT / ".claude" / "tools"))
     import gen_review
-    for link in sorted(set(HANDOVER_RE.findall("\n".join(texts)))):
+    auditor = _auditor_session(objs)
+    links = {}
+    for link, anc in HANDOVER_RE.findall("\n".join(texts)):
+        links.setdefault(link, []).append(anc)
+    for link in sorted(links):
         p = pathlib.Path(link) if link.startswith("/") else ROOT / link
         if not p.is_file():
             continue
@@ -147,10 +172,24 @@ def check_handover(objs, texts: list, review_for=None) -> list:
         mt = p.stat().st_mtime
         when = datetime.datetime.fromtimestamp(mt).strftime("%H:%M:%S")
         n = len(p.read_text(encoding="utf-8", errors="replace").splitlines())
-        gaps = _missing([(lo, hi) for f, lo, hi, t in reads if f == rp and t >= mt], n)
+        mine = [(lo, hi) for f, lo, hi, t in reads if f == rp and t >= mt]
+        anchors = [LINE_ANCHOR_RE.match(a or "") for a in links[link]]
+        if all(anchors):
+            # ★2026-10-06＝行の印だけのリンク＝根拠の行を示した。その行を、書き換えた後に開いたかだけを見る
+            for m in anchors:
+                lo, hi = int(m.group(1)), int(m.group(2) or m.group(1))
+                miss = [(max(a, lo), min(b, hi)) for a, b in _missing(mine, n) if a <= hi and b >= lo]
+                if miss:
+                    ng.append(f"{p.name} の {lo}〜{hi}行を根拠としてリンクで示したが、最後に書き換えた後（{when}）に開いていない行がある"
+                              f"＝{'・'.join(f'{a}〜{b}' for a, b in miss)}。その行を Read で開いてから示す")
+            continue
+        gaps = _missing(mine, n)
         if gaps:
             ng.append(f"{p.name}（{n} 行）を、最後に書き換えた後（{when}）に全部 読んでいない"
                       f"＝読んでいない行 {'・'.join(f'{a}〜{b}' for a, b in gaps)}。Read で全部 読み、項目ごとに確かめてから渡す")
+        if auditor:
+            # ★2026-10-06（修正依頼の R2）＝監査人は本物の見直し表を作り直せない＝見直し表の条件は求めない
+            continue
         try:
             ng_r, refs = gen_review.check(str(p), review=(review_for(str(p)) if review_for else None))
         except Exception as e:                                        # noqa: BLE001
@@ -196,6 +235,13 @@ def hook() -> int:
         for x in ng_h:
             print("   ・" + x, file=sys.stderr)
         print("   まこさんの指示（2026-10-01）「監査依頼出すまえに、全部の項目をチェックしてよ」「強制を入れて」", file=sys.stderr)
+        # ★2026-10-06（修正依頼の R4）＝止まり続ける理由と抜け方を出す
+        print("   ★この hook は、まこさんの最後の発言の後の返信を全部 見る。前の返信に書いたリンクは消せないので、"
+              "リンクを外して出し直しても止まり続ける。抜け方は3つ:", file=sys.stderr)
+        print("     ①確認をお願いして渡したなら＝上の理由のとおり、文書を全部 読み、見直し表を埋める", file=sys.stderr)
+        print("     ②根拠の行を示しただけなら＝行の印「#L行番号」つきのリンクは、その行だけを見る＝その行を Read で開く"
+              "（次からは、根拠の行はリンクにせず「ファイル名 の 行番号」と名前で書く）", file=sys.stderr)
+        print("     ③どちらもできないときは、出し直しを繰り返さず、止まった理由を まこさんに1回 報告して、まこさんの次の発言を待つ", file=sys.stderr)
     if ng:
         print("🔒 [読んだ中身を判断に使う] このターンで読んだファイルの、どの行を判断の根拠にしたかを返信に示してから終える", file=sys.stderr)
         for x in ng:
@@ -264,9 +310,31 @@ def selftest() -> int:
         ok = (not check_handover([rd(1, 2000, mt + 5)], [link], review_for=rv)) == want
         bad += not ok
         print(f"  {'✅' if ok else '❌'} {name}")
+    # ★2026-10-06（修正依頼 fix_request_require_read_used_20261006.md）＝行の印・監査人のセッション。見直し表は無い（None）で見る
+    cite = f"根拠＝[x]({doc}#L3-L5)"
+    cite1 = f"根拠＝[x]({doc}#L4)"
+    def usr(t):
+        return {"type": "user", "message": {"content": t}}
+    aud = usr(f"監査してほしい\n{doc}")
+    main = usr("前回セッションの続きからスタート")
+    acases = [
+        ("T17 行の印つきリンクで、その行（3〜5行）を書き換えた後に開いた → 通る（全部と見直し表は求めない）",
+         [rd(3, 3, mt + 5)], cite, True),
+        ("T18 行の印つきリンクで、その行を開いていない → 止まる", [rd(1, 2, mt + 5)], cite, False),
+        ("T19 行の印1行（#L4）を書き換える前に開いただけ → 止まる", [rd(4, 1, mt - 60)], cite1, False),
+        ("T20 同じ文書に行の印なしのリンクも在る → 渡したと見る（見直し表が無いので止まる）",
+         [rd(1, 2000, mt + 5)], cite + "\n" + link, False),
+        ("T21 監査人のセッションで全部 読んで渡した・見直し表なし → 通る（R2）", [aud, rd(1, 2000, mt + 5)], link, True),
+        ("T22 監査人のセッションでも、読まずに渡せば止まる", [aud], link, False),
+        ("T23 メインのセッションで全部 読んで渡した・見直し表なし → 止まる（R3）", [main, rd(1, 2000, mt + 5)], link, False),
+    ]
+    for name, objs, text, want in acases:
+        ok = (not check_handover(objs, [text], review_for=None)) == want
+        bad += not ok
+        print(f"  {'✅' if ok else '❌'} {name}")
     os.remove(doc)
     os.rmdir(tdir)
-    n = len(cases) + len(hcases) + len(rcases)
+    n = len(cases) + len(hcases) + len(rcases) + len(acases)
     print(f"自己テスト {n - bad}/{n}")
     return 1 if bad else 0
 
