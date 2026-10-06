@@ -504,6 +504,11 @@ def _done_in(before: str, kind: str, body: str, cur: str) -> bool:
         return False
     if kind == "直した後の文字" and body in before and before in cur:
         return False
+    # ★2026-10-06（工事 m2c15-hidden-params-20261004 の修正45）＝直す前の文字がまだ実物に在り、直した後の文字が
+    #   直す前の文字を含まない（＝当てても直す前の文字は残らない）なら、当て終わっていない。直す前は、直した後の文字と
+    #   同じ文字が別の行に偶然 在ると（known=… の行が2つの登録で同じ）「当て終わり」と誤判定して、その件を飛ばした。
+    if kind == "直した後の文字" and before in cur and before not in body:
+        return False
     return True
 
 
