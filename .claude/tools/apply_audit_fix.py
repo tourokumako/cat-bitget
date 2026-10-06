@@ -539,6 +539,16 @@ def check_one(f: dict, chosen: dict = None, run_ok: bool = False, new_ok: bool =
     #   直す相手は、直す【番号】だけの次の案（まこさんの OK が要る）。直す前は OK の逐語をそのまま書き替えた。
     if is_verbatim(rel):
         return False, "逐語のファイルなので当てない（まこさんの発言・OK した案の写し）＝直す【番号】だけの次の案を出し、まこさんの OK をもらう", ""
+    # ★2026-10-06（工事 m2c15-hidden-params-20261004 の件49・50）＝当てた記録（applied_fixes.json）に在る件は、相手を問わず
+    #   当て終わり。行を消す直し（直した後の文字が空）は、当てた後に「直した後の文字が実物に在る」で見分けられず、
+    #   「直す前の文字が実物に 0か所」＝実物と合わない件に数えられて、2回目の承認の前の検査（A11）が止まった。
+    #   ★見る相手は、行を消す直し（直した後の文字が全部 空）だけ＝ほかの件は今までどおり実物の文字で見分ける。
+    _del = all(not (b or "").strip() for _a, _k, b in f["4つ目"]) and (f["直す前の文字"] or "").strip() not in ("", "なし")
+    _key = CURRENT_REPORT
+    if _del and not _key and os.path.isfile(DESIGN):        # 設計書の道（承認の前の検査 A11・A12 は check_one を直接 呼ぶ）
+        _key = design_key(open(DESIGN, encoding="utf-8").read(), DESIGN)
+    if _del and _key and (_key, str(f.get("番号", ""))) in applied_keys():
+        return False, "もう当て終わっている（当てた記録に在る）", ""
     # ★同＝守りの仕組みの相手でも、もう当て終わっている件は先に見分ける（直す前は「［手書き］CC が書く」と出た）
     if never_write(rel) and not tool_target_ok(rel) and already_applied(f):
         return False, "もう当て終わっている（直した後の文字が実物に在る）", ""
