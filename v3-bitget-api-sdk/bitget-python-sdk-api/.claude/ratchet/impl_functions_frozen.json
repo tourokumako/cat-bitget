@@ -4,14 +4,23 @@
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
  "scripts/priority_rebuild/observe_diag.py": [
   "<モジュール直下>",
-  "_insp_close_leak",
-  "_insp_resample",
+  "_ab",
+  "_acb",
+  "_cel",
+  "_ck",
+  "_hw",
+  "_insp_hidden_params",
+  "_mama",
+  "_ps",
+  "_vp_levels",
   "build_catalog",
-  "build_features",
-  "selftest",
   "selftest_catalog"
  ],
  "scripts/priority_rebuild/indicator_reference_diag.py": [
-  "<モジュール直下>"
+  "<モジュール直下>",
+  "_ext_ao",
+  "_ext_ema_slope",
+  "_tb_ao",
+  "_tb_ema_slope"
  ]
 }

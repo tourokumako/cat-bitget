@@ -1587,8 +1587,8 @@
   ]
  },
  "confirm_conditions": {
-  "banned_pairs": 516,
-  "parts_count": 577,
+  "banned_pairs": 514,
+  "parts_count": 576,
   "quantile_grid": [
    "q10",
    "q20",

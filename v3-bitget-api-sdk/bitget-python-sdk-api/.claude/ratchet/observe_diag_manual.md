@@ -1,4 +1,4 @@
-<!-- MANUAL_HASH=05f9dadaadfeeefa -->
+<!-- MANUAL_HASH=4520ae028ed53ad1 -->
 # observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は observe_diag.py と observe_config.json から
@@ -115,13 +115,13 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 
 何を検証の対象にしているかの一覧です。すべてコードと設定ファイルから取っています。
 
-### 1. 指標（573種）
+### 1. 指標（576種）
 
-この573種に、時間足11種を掛けて 6303列になります。閾値は分位7段で刻みます。
+この576種に、時間足11種を掛けて 6336列になります。閾値は分位7段で刻みます。
 
 - ABER位置 ／ ADOSC比 ／ ADX14 ／ ADX21 ／ ADX7 ／ ADXR14
 - ADXR21 ／ ADXR7 ／ ALMA200傾き% ／ ALMA20傾き% ／ ALMA50傾き% ／ AMAT_LR
-- AO%(12,26) ／ AOBV_LR ／ AR14 ／ AR21 ／ AR7 ／ AR9
+- AO% ／ AOBV_LR ／ AR14 ／ AR21 ／ AR7 ／ AR9
 - AROOND14 ／ AROOND21 ／ AROOND7 ／ AROONOSC14 ／ AROONOSC21 ／ AROONOSC7
 - AROONU14 ／ AROONU21 ／ AROONU7 ／ ATR%14 ／ ATR%21 ／ ATR%7
 - BB%b(20,2.0) ／ BB%b(50,2.0) ／ BB幅(20,2.0) ／ BB幅(50,2.0) ／ BIAS14 ／ BIAS21
@@ -206,15 +206,15 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - close vs TRIMA%20 ／ close vs TRIMA%50 ／ close vs TSF%20 ／ close vs TSF%200 ／ close vs TSF%50 ／ close vs VAH%288
 - close vs VAL%288 ／ close vs VIDYA%20 ／ close vs VIDYA%200 ／ close vs VIDYA%50 ／ close vs VWAP%288 ／ close vs VWMA%20
 - close vs VWMA%200 ／ close vs VWMA%50 ／ close vs WMA%20 ／ close vs WMA%200 ／ close vs WMA%50 ／ close vs ZLMA%20
-- close vs ZLMA%200 ／ close vs ZLMA%50 ／ close vs pivotPP%288 ／ close vs pivotR1%288 ／ close vs pivotS1%288 ／ close vs 基準線%(26)
-- close vs 転換線%(9) ／ fib位置20 ／ fib位置96 ／ fractal安値距離%(2) ／ fractal安値距離%(5) ／ fractal高値距離%(2)
-- fractal高値距離%(5) ／ high_Z30 ／ kurtosis20 ／ kurtosis50 ／ low_Z30 ／ open_Z30
-- pinbar ／ realized_vol20 ／ realized_vol50 ／ skew20 ／ skew50 ／ stdev%50
-- volume_ratio20 ／ volume_ratio50 ／ zscore_return20 ／ zscore_return50 ／ 上ヒゲ比 ／ 下ヒゲ比
-- 内側バー ／ 出来高変化率%1 ／ 包み足 ／ 孕み足 ／ 安値からの経過バー24 ／ 安値からの経過バー48
-- 安値からの経過バー96 ／ 安値切り上げ幅%(2) ／ 安値切り上げ幅%(5) ／ 実体幅比10 ／ 形スコア24(V=+/M=−) ／ 形スコア48(V=+/M=−)
-- 形スコア96(V=+/M=−) ／ 構造破断距離%(2) ／ 構造破断距離%(5) ／ 連続本数 ／ 高値からの経過バー24 ／ 高値からの経過バー48
-- 高値からの経過バー96 ／ 高値切り上げ幅%(2) ／ 高値切り上げ幅%(5)
+- close vs ZLMA%200 ／ close vs ZLMA%50 ／ close vs pivotPP%288 ／ close vs pivotR1%288 ／ close vs pivotS1%288 ／ close vs 前期間pivotPP%
+- close vs 前期間pivotR1% ／ close vs 前期間pivotS1% ／ close vs 基準線%(26) ／ close vs 転換線%(9) ／ fib位置20 ／ fib位置96
+- fractal安値距離%(2) ／ fractal安値距離%(5) ／ fractal高値距離%(2) ／ fractal高値距離%(5) ／ high_Z30 ／ kurtosis20
+- kurtosis50 ／ low_Z30 ／ open_Z30 ／ pinbar ／ realized_vol20 ／ realized_vol50
+- skew20 ／ skew50 ／ stdev%50 ／ volume_ratio20 ／ volume_ratio50 ／ zscore_return20
+- zscore_return50 ／ 上ヒゲ比 ／ 下ヒゲ比 ／ 内側バー ／ 出来高変化率%1 ／ 包み足
+- 孕み足 ／ 安値からの経過バー24 ／ 安値からの経過バー48 ／ 安値からの経過バー96 ／ 安値切り上げ幅%(2) ／ 安値切り上げ幅%(5)
+- 実体幅比10 ／ 形スコア24(V=+/M=−) ／ 形スコア48(V=+/M=−) ／ 形スコア96(V=+/M=−) ／ 構造破断距離%(2) ／ 構造破断距離%(5)
+- 連続本数 ／ 高値からの経過バー24 ／ 高値からの経過バー48 ／ 高値からの経過バー96 ／ 高値切り上げ幅%(2) ／ 高値切り上げ幅%(5)
 
 ### 2. 探索の系統
 
@@ -314,6 +314,7 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 | sma_periods | [20, 50, 200] |
 | roc_periods | [3, 6, 12, 24] |
 | macd_params | [[12, 26, 9]] |
+| htf_shift_mode | "now" |
 | mfi_periods | [14] |
 | cmf_periods | [20] |
 | obv_slope_periods | [10, 20] |

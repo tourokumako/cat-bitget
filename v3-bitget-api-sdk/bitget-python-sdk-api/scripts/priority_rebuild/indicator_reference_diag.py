@@ -315,7 +315,7 @@ def _tb_rci(d, p):
 
 
 def _tb_ema_slope(d, p):
-    k = int(p[1])
+    k = int(p[1]) if len(p) > 1 else 5      # 名前に本数が無い＝何も渡さないときの 5 本
     e = _ema_rec(d.close.to_numpy(float), p[0])
     out = np.full(len(e), np.nan)
     out[k:] = (e[k:] - e[:-k]) / e[:-k] * 100
@@ -833,7 +833,7 @@ def _ext_donch(d, p):
 
 def _ext_ema_slope(d, p):
     e = _ta.trend.EMAIndicator(d.close, p[0]).ema_indicator()
-    return e.pct_change(int(p[1])) * 100
+    return e.pct_change(int(p[1]) if len(p) > 1 else 5) * 100
 
 
 def _ext_vs_ema(d, p):
@@ -1063,11 +1063,11 @@ _r(r"RCI(\d+)", "RCI",
    "順張り値＝+100 で一貫した上昇", "trend", tb=_tb_rci,
    known=lambda p: [(_up(p[0] + 5), [(-1, 100.0, 1e-9)]), (_dn(p[0] + 5), [(-1, -100.0, 1e-9)])],
    mako="2026-10-04 まこさん指示「V9で使ってる指標は入れるようにしてほしい」（V9 の P22 が RCI7 と RCI9 のクロスを使う）")
-_r(r"EMA(\d+)傾き%\((\d+)\)", "EMA傾き",
-   "EMA の k 本前からの変化率%（k は設定ファイル ema_slope_lookbacks・engine_tuner が探すパラメータ）",
-   "EMA は標準の漸化式。比べる本数は教科書でも利用者が決めるパラメータ（ChartSchool Slope「The number of days controls the period」）＝決め打ちしない（監査 CP60）",
+_r(r"EMA(\d+)傾き%", "EMA傾き",
+   "EMA の何本か前からの変化率%。比べる本数は名前に出さない引数（何も渡さないときは 5 本＝直す前の値）",
+   "EMA は標準の漸化式。比べる本数は教科書でも利用者が決めるパラメータ（ChartSchool Slope「The number of days controls the period」）＝名前には出さず、引数で受け取る（まこさん 2026-10-04）",
    "順張り値", "trend", tb=_tb_ema_slope, ext=_ext_ema_slope,
-   known=lambda p: [(_flat(max(60, p[0] * 4, p[1] + 10)), [(-1, 0.0, 1e-9)])])
+   known=lambda p: [(_flat(max(60, p[0] * 4)), [(-1, 0.0, 1e-9)])])
 # ── ボラ ──
 _r(r"ATR%(\d+)", "ATR%",
    "真の値幅（ギャップ込みの高安幅）の Wilder 平滑を終値で割って%化", "Wilder 1978。%化は H6 のための流儀",
@@ -1433,6 +1433,7 @@ def _wma(x: np.ndarray, n: int) -> np.ndarray:
 
 
 def _tb_ao(d, p):
+    p = p or (5, 34)                          # 名前に本数が無い＝教科書の 5・34
     m = ((d.high + d.low) / 2).to_numpy(float)
     return _S(_roll(m, int(p[0]), "mean") - _roll(m, int(p[1]), "mean"), d) / d.close * 100
 
@@ -2522,6 +2523,7 @@ def _tb_vtxm(d, p):
 
 
 def _ext_ao(d, p):
+    p = p or (5, 34)                          # 名前に本数が無い＝教科書の 5・34
     return _ta.momentum.AwesomeOscillatorIndicator(
         d.high, d.low, int(p[0]), int(p[1])).awesome_oscillator() / d.close * 100
 
@@ -2531,9 +2533,9 @@ def _ext_cci(d, p):
 
 
 # ── 登録（1回目・アルファベット順 ao〜lrsi の19関数／fosc は cfo と同じ式なので入れない）──
-_r(r"AO%\((\d+),(\d+)\)", "AO%",
-   "オーサム振動子。中値（高値と安値の平均）の短期平均 − 長期平均を、終値で割って%化",
-   "TradingView（Awesome Oscillator）。単純移動平均。%化は価格非依存 H6 のための本プロジェクトの流儀",
+_r(r"AO%", "AO%",
+   "オーサム振動子。中値（高値と安値の平均）の短期平均 − 長期平均を、終値で割って%化。2つの本数は名前に出さない引数（何も渡さないときは 5・34）",
+   "TradingView（Awesome Oscillator・lengthAO1=5・lengthAO2=34）。単純移動平均。%化は価格非依存 H6 のための本プロジェクトの流儀",
    "順張り値＝プラスで上昇の勢い", "trend", tb=_tb_ao, ext=_ext_ao)
 _r(r"APO%\((\d+),(\d+)\)", "APO%",
    "絶対価格振動子。終値の短期平均 − 長期平均を、終値で割って%化",

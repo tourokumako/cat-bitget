@@ -133,10 +133,6 @@
   50,
   200
  ],
- "ema_slope_lookbacks": [
-  5
- ],
- "_ema_slope_lookbacks": "傾き（EMA・ほかの移動平均）を何本前と比べるか（監査 CP60）。5 は直す前の決め打ちと同じ値＝列の値は変わらない。広げるのは まこさんが recipes/search_limits.json の material_param_ranges に書く（CC は数字を作らない）。",
  "sma_periods": [
   20,
   50,
@@ -158,13 +154,6 @@
  ],
  "htf_shift_mode": "now",
  "_htf_shift_mode": "上位足の値をいつから使うか（監査 CP60 の修正68・まこさん決定 2026-10-04＝切り替えて比べる）。now＝今（足の始まり＋足の長さ＝5分足1本遅れて届く）／bar_close＝5分足1本ぶん早める。どちらも未来は使わない。初めは now＝今と同じ値",
- "ao_params": [
-  [
-   5,
-   34
-  ]
- ],
- "_ao_params": "AO% の教科書の期間（TradingView の逐語 lengthAO1=input(5…)・lengthAO2=input(34…)・監査 CP60）。",
  "mfi_periods": [
   14
  ],

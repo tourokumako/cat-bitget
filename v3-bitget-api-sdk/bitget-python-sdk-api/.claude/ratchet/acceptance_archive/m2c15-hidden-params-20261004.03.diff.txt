@@ -1,0 +1,54 @@
+75c75
+< 指標の修正の2つ目の工事です。指標が、パラメータを受け取れる状態にします。中身は4つです。①資料のパラメータを受け取っていない指標を、パラメータを「名前に出さない引数」で受け取る形にする（何も渡さなければ今と同じ計算。名前も種類の数も変えない）。傾きの比べる本数も同じ形にする（H-1）。②CKSP の値の組を、TradingView の形にそろえる（まこさん「２はC」・H-2）。③151回目に名前に値が入った EMA の傾きと、値違いの列を足した AO を、名前に値を入れない形へ戻す（AO は、まこさん「A」・H-3）。④RCI を「使う」に保つ番人と、検査2 の上位足のずらしの確かめを守る番人を足す（H-4）。列の値が変わるのは、CKSP の2列だけです。名前が変わるのは、EMA の傾きと AO だけです。探す側（engine_tuner）へつなぐ直しは、この工事に入れません（工事2）。最後に表を作り直し、型の表を再承認していただき、自己テスト・G2・H2 を取り直します。
+---
+> 指標の修正の2つ目の工事です。指標が、パラメータを受け取れる状態にします。中身は4つです。①資料のパラメータを受け取っていない指標を、パラメータを「名前に出さない引数」で受け取る形にする（何も渡さなければ今と同じ計算。名前も種類の数も変えない）。傾きの比べる本数も同じ形にする（H-1）。（受け取る形にした登録は47種類＝印がオンの43種類と、移動平均の for で close vs ◯% と同じ計算式を使う印がオフの4種類（ALMA傾き・MCGD傾き・SSF傾き・T3傾き）。4-0 の「使う指標のうち 47種類」の内訳・監査 CP62 の Q8）②CKSP の値の組を、TradingView の形にそろえる（まこさん「２はC」・H-2）。③151回目に名前に値が入った EMA の傾きと、値違いの列を足した AO を、名前に値を入れない形へ戻す（AO は、まこさん「A」・H-3）。④RCI を「使う」に保つ番人と、検査2 の上位足のずらしの確かめを守る番人を足す（H-4）。列の値が変わるのは、CKSP の2列だけです。名前が変わるのは、EMA の傾きと AO だけです。探す側（engine_tuner）へつなぐ直しは、この工事に入れません（工事2）。最後に表を作り直し、型の表を再承認していただき、自己テスト・G2・H2 を取り直します。★承認の後に、まこさんが番人⑧の1行（observe_diag.py:7057）を、材料の名前の set を sorted(_nm_k1) で回す形に手で直した（恒久74番・engine_tuner_exec.py の unordered_iteration_scan＝並びの決まらない入れ物の番人に止められたため）。実装の指示41 の直した後の文字とは「sorted(」と「)」だけ違い、番人⑧の判定は変わらない（監査 CP62 の Q1・Q10）。実装の指示41 そのものを直すには【4-20】を書いた次の案に まこさんの OK が要り、承認の後の工事のフォルダには書けない（gen_verbatim.py:293〜295）ので、新しい工事名で行う。★監査 CP62 の修正7 で、番人⑩（observe_diag.py の selftest_catalog の、検査2 の確かめ）を、関数のソースから文字 mode="bar_close" を探す形から、構文の木で _insp_close_leak(…, mode="bar_close") の呼び出しを探す形に替えた。そのため、実装の指示41 の直した後の文字とは、上の番人⑧の sorted に加えて、番人⑩の行も違う。替えた後も、呼び出しの結果を捨てる形は番人⑩で落ちない（監査 CP62 の Q10 の V2）。
+85,90c85,90
+< | 名前に出さない引数を受け取る登録（HWMA の例・H-1） | `grep -n -F '_pta6.hwma(close=d.close' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、係数を渡さずに呼んでいる。実装の後は、受け取った係数を渡している | 1152:_reg("close vs HWMA%", "close vs HWMA%", True, lambda d: (d.close / _pta6.hwma(close=d.close) - 1) * 100)（終了コード 0） |
+< | CKSP の呼び方（H-2） | `grep -n -F '_pta6.cksp(' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、高値・安値・終値だけを渡して呼ぶ。実装の後は、tvmode=True と、受け取った引数を渡す | 647:    return _pta6.cksp(high=d.high, low=d.low, close=d.close)（終了コード 0） |
+< | EMA の傾きの登録（H-3） | `grep -n -F '_reg("EMA傾き"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、名前の型の後ろに、比べる本数を入れるかっこが在る。実装の後は、無い | 811:_reg("EMA傾き", "EMA{}傾き%({})", True, lambda d, n, k: d.close.ewm(span=n, adjust=False).mean().pct_change(k) * 100)（終了コード 0） |
+< | AO の登録（H-3） | `grep -n -F '_reg("AO%"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、名前の型に、本数を入れるかっこが在る。実装の後は、無い | 983:_reg("AO%", "AO%({},{})", True, lambda d, f_, s_: _pta6.ao(high=d.high, low=d.low, fast=f_, slow=s_) / d.close * 100)（終了コード 0） |
+< | 名前に値を出すための設定（H-3） | `grep -n -e ema_slope_lookbacks -e ao_params v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json` | 実装の前は、在る。実装の後は、無い | 136: "ema_slope_lookbacks": [ ⏎ 139: "_ema_slope_lookbacks": "傾き（EMA・ほかの移動平均）を何本前と比べるか（監査 CP60）。5 は直す前の決め打ちと同じ値＝列の値は変わらない。広げるのは まこさんが recipes/search_limits.json の material_param_ranges に書く（CC は数字を作らない）。", ⏎ 161: "ao_params": [ ⏎ 167: "_ao_params": "AO% の教科書の期間（TradingView の逐語 lengthAO1=input(5…)・lengthAO2=input(34…)・監査 CP60）。",（終了コード 0） |
+< | この工事の番人（H-4） | `grep -n -F '_insp_hidden_params' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、無い。実装の後は、番人の関数と、軽い口からの呼び出しが在る | （終了コード 1） |
+---
+> | 名前に出さない引数を受け取る登録（HWMA の例・H-1） | `grep -n -F '_pta6.hwma(close=d.close' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、係数を渡さずに呼んでいる。実装の後は、受け取った係数を渡している | 1154:_reg("close vs HWMA%", "close vs HWMA%", True, lambda d, na=None, nb=None, nc=None: (d.close / _pta6.hwma(close=d.close, na=na, nb=nb, nc=nc) - 1) * 100)（終了コード 0） |
+> | CKSP の呼び方（H-2） | `grep -n -F '_pta6.cksp(' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、高値・安値・終値だけを渡して呼ぶ。実装の後は、tvmode=True と、受け取った引数を渡す | 649:    return _pta6.cksp(high=d.high, low=d.low, close=d.close, tvmode=True, **kw) ⏎ 7050:    _ck7 = _pta6.cksp(high=_sb3.high, low=_sb3.low, close=_sb3.close, p=10, x=1, q=9, tvmode=True)（終了コード 0） |
+> | EMA の傾きの登録（H-3） | `grep -n -F '_reg("EMA傾き"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、名前の型の後ろに、比べる本数を入れるかっこが在る。実装の後は、無い | 813:_reg("EMA傾き", "EMA{}傾き%", True, lambda d, n, slope_n=5: d.close.ewm(span=n, adjust=False).mean().pct_change(slope_n) * 100)（終了コード 0） |
+> | AO の登録（H-3） | `grep -n -F '_reg("AO%"' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、名前の型に、本数を入れるかっこが在る。実装の後は、無い | 985:_reg("AO%", "AO%", True, lambda d, fast=None, slow=None: _pta6.ao(high=d.high, low=d.low, fast=fast, slow=slow) / d.close * 100)（終了コード 0） |
+> | 名前に値を出すための設定（H-3） | `grep -n -e ema_slope_lookbacks -e ao_params v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_config.json` | 実装の前は、在る。実装の後は、無い | （終了コード 1） |
+> | この工事の番人（H-4） | `grep -n -F '_insp_hidden_params' v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py` | 実装の前は、無い。実装の後は、番人の関数と、軽い口からの呼び出しが在る | 6929:def _insp_hidden_params() -> list: ⏎ 7047:    ng += _insp_hidden_params()（終了コード 0） |
+208a209
+> | 11 | 型の表の禁止3（標本不足）が、名前に出さない引数の窓を数えること（AO% の 1日足は、名前に数字が無いので n_eff を 549.0 と見る。本当の窓 34本なら 16.1 で n_min 30 を下回る・gen_signal_families.py:93〜101） | 名前に出さない引数を探す側が渡す仕組み（工事2）と一緒に、禁止3 も引数の既定から窓を計算する形にする。名前に数字が無い部品（UO・KST ほか）は前から同じ扱い | next_step §6 の248番・監査 CP62 の Q11 |
+1855,1860c1856,1861
+< | 1 | H-1＝名前に出さない引数が、その列の計算に届いている | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | HWMA の登録が、受け取った引数をライブラリへ渡さない形にする | `b132_hidden_param_not_passed.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝HWMA の登録が、受け取った引数 na をライブラリへ渡さないと、名前に出さない引数の番人が落ちる |
+< | 2 | H-2＝CKSP の何も渡さない列が、TradingView の形と同じ | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | CKSP を、引数なしの呼び方（混ざった組）に戻す | `b133_cksp_mixed_set.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝CKSP を引数なしの呼び方（値は本の形・ならし方は TradingView の形の、混ざった組）に戻すと、CKSP の番人が落ちる |
+< | 3 | H-3＝EMA の傾きと AO の名前に、値が無い | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | AO の名前に値を入れる | `b134_ao_name_with_value.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝AO の名前に値を入れると（AO%(5,34)）、名前の番人が落ちる |
+< | 4 | H-4＝参照表の RCI の行に mako の欄が在る | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | 参照表の RCI の行から mako の欄を外す | `b135_rci_mako_gone.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝参照表の RCI の行から mako の欄を外すと（表を作り直すと「使わない」へ戻る）、RCI の番人が落ちる |
+< | 5 | H-4＝検査2 が、上位足のずらし bar_close の形も確かめている | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | 検査2 から、bar_close の形の確かめを外す | `b136_insp2_bar_close_dropped.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝検査2 から、上位足のずらし bar_close の形の確かめを外すと、検査2 の番人が落ちる |
+< | 6 | 前の工事の K-1＝COPC ほかが macd の組で在る（b128 を書き直した後も守られている） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | COPC の組の並びを入れ替える | `b128_k1_copc_back_in_ao_loop.sh` | — | **✅済**＝壊すと rc=1（宣言どおり）／条件のコマンドも rc=0（承認のときに機械が2つとも測った）／壊した意味＝K-1 で戻した COPC の組（macd の組）の並びを入れ替えると、自己テストの K-1 の番人が落ちる|
+---
+> | 1 | H-1＝名前に出さない引数が、その列の計算に届いている | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | HWMA の登録が、受け取った引数をライブラリへ渡さない形にする | `b132_hidden_param_not_passed.sh` | — | **未着手** |
+> | 2 | H-2＝CKSP の何も渡さない列が、TradingView の形と同じ | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | CKSP を、引数なしの呼び方（混ざった組）に戻す | `b133_cksp_mixed_set.sh` | — | **未着手** |
+> | 3 | H-3＝EMA の傾きと AO の名前に、値が無い | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | AO の名前に値を入れる | `b134_ao_name_with_value.sh` | — | **未着手** |
+> | 4 | H-4＝参照表の RCI の行に mako の欄が在る | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | 参照表の RCI の行から mako の欄を外す | `b135_rci_mako_gone.sh` | — | **未着手** |
+> | 5 | H-4＝検査2 が、上位足のずらし bar_close の形も確かめている | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | 検査2 から、bar_close の形の確かめを外す | `b136_insp2_bar_close_dropped.sh` | — | **未着手** |
+> | 6 | 前の工事の K-1＝COPC ほかが macd の組で在る（b128 を書き直した後も守られている） | `python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog` | 実経路 | COPC の組の並びを入れ替える | `b128_k1_copc_back_in_ao_loop.sh` | — | **未着手** |
+1867c1868
+< <!-- ACC_CODEREF_START hash=fb7b235b9ae21391 gen_acceptance.py が自動生成＝手で書き換えない -->
+---
+> <!-- ACC_CODEREF_START hash=4ffdb7405157d13c gen_acceptance.py が自動生成＝手で書き換えない -->
+1874,1878c1875,1879
+< | `selftest_catalog` | 6930 |
+< | `_insp_hidden_params` | （この関数は実物に無い） |
+< | `_insp_close_leak` | 3866 |
+< | `build_catalog` | 1317 |
+< | `_ck` | 646 |
+---
+> | `selftest_catalog` | 6994 |
+> | `_insp_hidden_params` | 6929 |
+> | `_insp_close_leak` | 3865 |
+> | `build_catalog` | 1319 |
+> | `_ck` | 648 |
+1881c1882
+< **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 179件の関数が在ります）。
+---
+> **★この行番号は `--write` を走らせた時点のものです。**実装すると動きます（全部で 180件の関数が在ります）。
