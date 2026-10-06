@@ -1,0 +1,61 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-hidden-params-20261004",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b132_hidden_param_not_passed.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 1 件",
+   "expect": 1,
+   "means": "HWMA の登録が、受け取った引数 na をライブラリへ渡さないと、名前に出さない引数の番人が落ちる",
+   "match": true
+  },
+  {
+   "no": "2",
+   "script": "b133_cksp_mixed_set.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 1 件",
+   "expect": 1,
+   "means": "CKSP を引数なしの呼び方（値は本の形・ならし方は TradingView の形の、混ざった組）に戻すと、CKSP の番人が落ちる",
+   "match": true
+  },
+  {
+   "no": "3",
+   "script": "b134_ao_name_with_value.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 2 件",
+   "expect": 1,
+   "means": "AO の名前に値を入れると（AO%(5,34)）、名前の番人が落ちる",
+   "match": true
+  },
+  {
+   "no": "4",
+   "script": "b135_rci_mako_gone.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 1 件",
+   "expect": 1,
+   "means": "参照表の RCI の行から mako の欄を外すと（表を作り直すと「使わない」へ戻る）、RCI の番人が落ちる",
+   "match": true
+  },
+  {
+   "no": "5",
+   "script": "b136_insp2_bar_close_dropped.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 1 件",
+   "expect": 1,
+   "means": "検査2 から、上位足のずらし bar_close の形の確かめを外すと、検査2 の番人が落ちる",
+   "match": true
+  },
+  {
+   "no": "6",
+   "script": "b128_k1_copc_back_in_ao_loop.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 1 件",
+   "expect": 1,
+   "means": "K-1 で戻した COPC の組（macd の組）の並びを入れ替えると、自己テストの K-1 の番人が落ちる",
+   "match": true
+  }
+ ]
+}
