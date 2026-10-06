@@ -108,9 +108,15 @@ def skeleton(doc: str, text: str | None = None, old: str | None = None) -> str:
     """表の骨組み。old（前の表）が在れば、同じ項目の行の中身と争点の行を残す。"""
     text = open(doc, encoding="utf-8").read() if text is None else text
     its = items(text)
+    # ★監査 CP62（2026-10-06）＝前の表は、同じ工事（設計書の ARC の iter）のときだけ引き継ぐ。直す前は、表の置き場が
+    #   全部の工事で同じ（acceptance.review.md）なので、前の工事の行の中身と争点の行が残った（CP62＝105行のうち63行）。
+    _m = re.search(r'<!-- ARC iter="([^"]+)" -->', text)
+    _iter = _m.group(1) if _m else ""
+    if old is not None and f" iter={_iter} " not in (old.splitlines() or [""])[0] + " ":
+        old = None
     prev = _rows(old or "")
     issue = next((ln for ln in (old or "").splitlines() if ln.startswith("争点: ")), f"争点: {PLACE}")
-    L = [f"{MARK} doc={os.path.relpath(os.path.realpath(doc), ROOT)} doc_sha256={sha(text)} items={len(its)} -->",
+    L = [f"{MARK} doc={os.path.relpath(os.path.realpath(doc), ROOT)} doc_sha256={sha(text)} items={len(its)} iter={_iter} -->",
          f"# 見直し表｜{os.path.basename(doc)}",
          "",
          "★この表の項目は gen_review.py が文書から全部 書き出した（書く人は項目を選ばない）。"

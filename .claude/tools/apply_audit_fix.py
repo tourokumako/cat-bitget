@@ -545,9 +545,17 @@ def check_one(f: dict, chosen: dict = None, run_ok: bool = False, new_ok: bool =
     #   ★見る相手は、行を消す直し（直した後の文字が全部 空）だけ＝ほかの件は今までどおり実物の文字で見分ける。
     _del = all(not (b or "").strip() for _a, _k, b in f["4つ目"]) and (f["直す前の文字"] or "").strip() not in ("", "なし")
     _key = CURRENT_REPORT
-    if _del and not _key and os.path.isfile(DESIGN):        # 設計書の道（承認の前の検査 A11・A12 は check_one を直接 呼ぶ）
+    # ★2026-10-06（156回目・穴 B・まこさん「よい」）＝設計書の道では、同じ工事名（design:<iter>）の当てた記録に在る件は、
+    #   行を消す直しに限らず当て終わり。直す前は、当てた後に まこさんが実物を手で直すと（恒久74番・observe_diag.py:7057 の
+    #   sorted）、直した後の文字が実物から消えて直す前の文字だけが残り、実装41 を「当たる」と出した＝--design か
+    #   承認の前の検査 A12 が、番人の囲みを二重に差し込んだ。★監査結果の道（--report）は今までどおり行を消す直しだけ。
+    #   限界＝当てた後に誰かが実物を元へ戻しても、当てずに飛ばす（監査 CP62 の Q12 の S4 と同じ向き）。
+    #   ★新しいファイルの件（直す前の文字が「なし」）は外す＝new_file_check が中身で見分ける（同じなら当て終わり・違えば止める）。
+    _new = (f["直す前の文字"] or "").strip() == "なし"
+    _design = not _key and not _new and os.path.isfile(DESIGN)   # 設計書の道（承認の前の検査 A11・A12 は check_one を直接 呼ぶ）
+    if _design:
         _key = design_key(open(DESIGN, encoding="utf-8").read(), DESIGN)
-    if _del and _key and (_key, str(f.get("番号", ""))) in applied_keys():
+    if (_del or _design) and _key and (_key, str(f.get("番号", ""))) in applied_keys():
         return False, "もう当て終わっている（当てた記録に在る）", ""
     # ★同＝守りの仕組みの相手でも、もう当て終わっている件は先に見分ける（直す前は「［手書き］CC が書く」と出た）
     if never_write(rel) and not tool_target_ok(rel) and already_applied(f):
@@ -1031,7 +1039,15 @@ def selftest() -> int:
         mark = os.path.join(tmp, "approved")
         ev = f"{rel}:1「x = 1」"
 
+        def clear_rec():
+            # ★2026-10-06（穴 B）＝試しの当てた記録を空にする。設計書の道は「同じ工事名の当てた記録に在る件は当て終わり」と
+            #   見るので、前の場面の記録（工事名 selftest・番号 1）が残ると、別の中身の件まで当て終わりと見る（本物では
+            #   1つの工事の番号と件は1対1）。新しい試しの設計書を作るたびに空にする。
+            if os.path.exists(globals()["APPLIED_RECORD"]):
+                os.remove(globals()["APPLIED_RECORD"])
+
         def fresh(items, target_rel=None, body_text="x = 1\n"):
+            clear_rec()
             open(code, "w", encoding="utf-8").write(body_text)
             txt = design(items, target_rel or rel)
             open(md, "w", encoding="utf-8").write(txt)
@@ -1641,6 +1657,7 @@ def selftest() -> int:
 
             # T44（2026-10-01・監査 cp55 の R-5）＝行を消す直しは、直す前の文字が残っていれば当て終わりと見ず、当てた後は当て終わりと見る
             total += 1
+            clear_rec()                                       # ★2026-10-06（穴 B）＝前の場面の試しの記録を残さない
             open(code, "w", encoding="utf-8").write("a = 1\nb = 2\nc = 3\n")
             f44 = {"番号": "1", "重さ": "Critical", "対象のファイル": rel, "状態": "確定", "直す前の文字": "b = 2\nc = 3\n",
                    "根拠の抜き書き": "", "4つ目": [("", "直した後の文字", "c = 3\n")]}
@@ -1654,6 +1671,65 @@ def selftest() -> int:
                 print(f"   T{total} 行を消す直しは、直す前の文字が残っていれば当て終わりと見ず、当てた後は当て終わりと見る → pass")
             else:
                 fails.append(f"❌ 行を消す直し T{total}: 前={ok44a}/{pre44} 後={ok44b}/{post44} {why44a} {why44b}")
+
+            # T45（監査 CP62 の Q12・3f0ac4c）＝直した後の文字と同じ文字が別の行に在っても、直す前の文字が残っていれば当て終わりと見ない
+            total += 1
+            clear_rec()                                       # ★2026-10-06（穴 B）＝前の場面の試しの記録を残さない
+            open(code, "w", encoding="utf-8").write("k = p[0]\nq = p[1] + 10\n")
+            f45 = {"番号": "1", "重さ": "Critical", "対象のファイル": rel, "状態": "確定", "直す前の文字": "q = p[1] + 10\n",
+                   "根拠の抜き書き": "", "4つ目": [("", "直した後の文字", "k = p[0]\n")]}
+            ok45, why45, _c = check_one(f45)
+            if ok45 and not already_applied(f45):
+                ok += 1
+                print(f"   T{total} 直した後の文字が別の行に在っても、直す前の文字が残っていれば当てる → pass")
+            else:
+                fails.append(f"❌ 別の行の同じ文字 T{total}: {ok45} {why45}")
+
+            # T46（監査 CP62 の Q12・e353f27）＝行を消す直し（直した後の文字が空）は、当てた記録に在れば当て終わり・無ければ実物と合わない件
+            total += 1
+            open(code, "w", encoding="utf-8").write("a = 1\n")
+            f46 = {"番号": "46", "重さ": "Critical", "対象のファイル": rel, "状態": "確定", "直す前の文字": "b = 2\n",
+                   "根拠の抜き書き": "", "4つ目": [("", "直した後の文字", "")]}
+            globals()["CURRENT_REPORT"] = "design:zz46"
+            try:
+                ok46a, why46a, _c = check_one(f46)
+                _record_applied([{"report": "design:zz46", "num": "46", "file": rel, "how": "当てた"}])
+                ok46b, why46b, _c = check_one(f46)
+            finally:
+                globals()["CURRENT_REPORT"] = ""
+            if (not ok46a and why46a.startswith("直す前の文字が実物に 0 か所") and not ok46b
+                    and why46b == "もう当て終わっている（当てた記録に在る）"):
+                ok += 1
+                print(f"   T{total} 行を消す直しは、当てた記録に在れば当て終わり・無ければ実物と合わない件 → pass")
+            else:
+                fails.append(f"❌ 行を消す直しと当てた記録 T{total}: 記録なし={why46a} 記録あり={why46b}")
+
+            # T47（2026-10-06・156回目・穴 B・まこさん「よい」）＝設計書の道で、当てた後に実物が手で直され、直した後の文字が
+            #   実物から消えて直す前の文字だけが残った件は、同じ工事名の当てた記録に在れば当て終わり（二重に差し込まない）。
+            #   記録が無ければ今までどおり当たる。監査結果の道（--report）は今までどおり（行を消す直しだけ記録を見る）。
+            total += 1
+            clear_rec()
+            md47 = os.path.join(tmp, "design47.md")
+            open(md47, "w", encoding="utf-8").write("<!-- ARC iter=\"zz47\" -->\n# 見本\n")
+            open(code, "w", encoding="utf-8").write("x = 1\n")                # 直した後の文字（x = 1\ny = 2\n）は手直しで消えた
+            f47 = {"番号": "41", "重さ": "Critical", "対象のファイル": rel, "状態": "確定", "直す前の文字": "x = 1\n",
+                   "根拠の抜き書き": "", "4つ目": [("", "直した後の文字", "x = 1\ny = 2\n")]}
+            d47 = globals()["DESIGN"]
+            globals()["DESIGN"] = md47
+            try:
+                ok47a, why47a, _c = check_one(f47)                                    # 記録なし → 当たる
+                _record_applied([{"report": "design:zz47", "num": "41", "file": rel, "how": "当てた"}])
+                ok47b, why47b, _c = check_one(f47)                                    # 記録あり → 当て終わり
+                globals()["CURRENT_REPORT"] = "zz47_audit_report.md"
+                ok47c, why47c, _c = check_one(f47)                                    # 監査結果の道 → 今までどおり当たる
+            finally:
+                globals()["CURRENT_REPORT"] = ""
+                globals()["DESIGN"] = d47
+            if (ok47a and not ok47b and why47b == "もう当て終わっている（当てた記録に在る）" and ok47c):
+                ok += 1
+                print(f"   T{total} 設計書の道は、当てた記録に在る件を、直した後の文字が消えていても当て終わりと見る（監査結果の道は今までどおり） → pass")
+            else:
+                fails.append(f"❌ 設計書の道と当てた記録 T{total}: 記録なし={ok47a}/{why47a} 記録あり={ok47b}/{why47b} 監査結果={ok47c}/{why47c}")
         finally:
             (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
              globals()["HOOKS_DIR"], globals()["BREAKS_DIR"]) = g_saved
