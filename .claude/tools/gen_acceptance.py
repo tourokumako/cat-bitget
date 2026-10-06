@@ -1124,8 +1124,24 @@ def impl_before_problems(d: dict) -> list:
         done = (str(before) + body) if it.get("種類") == "足す文字" else body
         if n == 1 or (n == 0 and body and done in cur):
             continue
+        # ★2026-10-06（工事 m2c15-hidden-params-20261004 の件49・50）＝行を消す直し（直した後の文字が空）は、当てた後に
+        #   「直した後の文字が実物に在る」で見分けられない。当てる道具の記録（applied_fixes.json・名前 design:<iter>）に在れば当て終わり。
+        if n == 0 and not body.strip() and _applied_in_record(d.get("iter"), no):
+            continue
         bad.append(f"実装 {no}: 直す前の文字が {path.name} に {n} か所（ちょうど1か所であること）")
     return bad
+
+
+def _applied_in_record(iter_name, no) -> bool:
+    """当てる道具の記録（SDK/.claude/audits/applied_fixes.json）に、この工事（design:<iter>）のその番号が在るか。"""
+    p = SDK / ".claude" / "audits" / "applied_fixes.json"
+    try:
+        d = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:                                        # noqa: BLE001
+        return False
+    key = f"design:{iter_name}"
+    return any(str(x.get("report", "")) == key and str(x.get("num", "")) == str(no)
+               for x in (d.get("applied") or []) if isinstance(x, dict))
 
 
 def build(kind: str, d: dict) -> str:
