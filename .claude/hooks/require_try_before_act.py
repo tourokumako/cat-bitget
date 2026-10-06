@@ -56,6 +56,11 @@ def main() -> int:
     miss = [t for t in miss if now - (rec.get(t) or {}).get("t", 0) > WINDOW]
     if not miss:
         return 0
+    if not data.get("session_id"):
+        # ★2026-10-06（156回目）＝承認のプログラムの中の門（pre_audit_check.py --check-design）は session_id を渡さない
+        #   （本物の書き込みではない）。この文で止めると、門は見送りに数える（_input_shape_miss）。本物の書き込みには必ず在る。
+        sys.stderr.write("🔒 [先に試す] セッションの id が hook の入力に無い（承認の前の門の試し＝本物の書き込みではない）\n")
+        return 2
     sid = data.get("session_id", "<SESSION>")
     how = (f'python3 .claude/tools/try_hooks.py --session {sid} --bash "<同じコマンド>"' if tool == "Bash" else
            f"python3 .claude/tools/try_hooks.py --session {sid} --edit <パス> --old <直す前の文字> --new <直した後の文字>"
