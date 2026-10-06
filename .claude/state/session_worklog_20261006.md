@@ -236,3 +236,10 @@
 - 依頼書の監査対象タスクが M2-D-8 になった（前の工事 §7 と同じ型）→ やることの表の「## 一覧」の下に「この工事のやることの番号＝M2-C-15」の1行を足し、Y-5 を「やることリストの M2-D の8番」に変えた。gen_acceptance --verify＝囲みの外の文は同じ。
 - 依頼書＝SDK/.claude/audits/inputs/2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_request.md（466行・問い11件・必読26件・自己申告2件）。全文を Read で読んだ。見直し表＝.claude/state/reviews/2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_request.review.md（41行・gen_review --check 止める理由0件）。
 - 次＝まこさんが依頼書を確認 → 別のセッションで監査 CP63。未コミット＝この工事の実装・表・控え・道具の直し3本（require_design_check_before_approval.py・gen_acceptance.py・gen_audit_docs.py）・記録。まこさんの OK でコミットする。
+- まこさん「OK」→ コミット 65e3f0c（51本・取引所の鍵 0本）。ほかの工事の控え（09-29〜10-01）・ほかの監査の作業場・見覚えの無い hook 2本（require_chat_draft_before_long_reply.sh・require_request_understood.sh＝セッションの始めから在った）は入れていない。
+
+## §26 157回目＝設計書を書いた直後の hook の穴を直した（まこさん「案１」）
+
+- 直した＝.claude/hooks/require_design_check_before_approval.py の5か所。①check_all に trial を足し、--after-write（設計書を書いた直後・PostToolUse の上限 120秒）では A12（仮当て・約4分半）を走らせない ②仮当てが本物を書くたびに、控えの一覧に書いた後のハッシュ値 sha_after を残す（wrote）③検査の最初に _a12_leftover＝控えのフォルダが無ければ何もしない／一覧の無いフォルダは消す／ほかの仮当てが錠を持っていれば何もしない／一覧の全部が元どおりか sha_after のままなら戻す／仮当ての後に書き替わったファイルが在れば戻さずに止める（後からした本物の直しを消さないため・sha_after の無い古い一覧も同じ）④main＝--after-write では「A12 は走らせていない・承認の前に --try でかける」と出す ⑤先頭の使い方の説明。
+- 確かめ＝①< /dev/null で rc=0 ②--after-write＝22.6秒・A12 を走らせず・控えは残らない（不足8件は承認済みの設計書と記録を渡していないため）③.claude/state/indicator_review/a12_leftover_probe.py（一時のファイルだけ）＝場面1 戻す・場面2 戻さずに止める・場面3 空のフォルダを消す＝3/3 ④--try --transcript＝23.1秒で A2・A14・B群で止まった（2回目の承認で設計書が書き替わった後なので）＝A12 まで届かない。★wrote（sha_after を残す所）は本物の流れで一度も通っていない＝次の工事の最初の --try で初めて通る（限界）。
+- 設定（settings.json の上限 120秒）は変えていない。

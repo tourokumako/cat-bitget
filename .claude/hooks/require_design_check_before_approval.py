@@ -45,7 +45,7 @@
 #
 # 使い方:
 #   Stop hook        : bash require_design_check_before_approval.sh（標準入力＝hook の json）
-#   書いた直後に出す : python3 <この .py> --after-write   （止めない・出すだけ）
+#   書いた直後に出す : python3 <この .py> --after-write   （止めない・出すだけ・A12 は走らせない＝上限 120秒の hook から呼ぶため・2026-10-06）
 #   手で試す         : python3 <この .py> --try [--design <設計書>] [--transcript <記録>]
 #
 # 限界（正直に）:
@@ -473,6 +473,55 @@ def _a12_restore():
     return bad
 
 
+def _a12_leftover():
+    """★2026-10-06（157回目・まこさん「案１」）＝検査の最初に、前の仮当て（A12）が残した控えを見る。
+    なぜ要るか＝設計書を書いた直後の hook（show_design_check_after_write.sh・上限 120秒）から呼ばれた仮当て（約4分半）が、
+      本物のファイルを書き替えた後に打ち切られ、戻す処理（finally）が走らず、承認の前なのに本物が工事の中身のまま残った
+      （2026-10-06 21:16・worklog 20261006 §21）。
+    何をするか＝①控えのフォルダが無ければ何もしない ②一覧（manifest.json）の無い控えのフォルダは消す（何も控えなかった回）
+      ③ほかの仮当てが錠を持っていれば何もしない（その仮当てが自分で戻す）④一覧の全部のファイルが、元どおりか、仮当てが書いた
+      直後のハッシュ値（sha_after）のままなら、控えから戻す ⑤仮当ての後に書き替わったファイルが1本でも在れば、戻さずに止める
+      （黙って戻すと、後からした本物の直しを消すため）。sha_after の無い古い一覧も、⑤と同じに扱う。
+    戻り＝止める理由の一覧（無ければ空）。"""
+    import hashlib
+    import importlib.util
+    import shutil
+    if not os.path.isdir(BK_DIR):
+        return []
+    man = os.path.join(BK_DIR, "manifest.json")
+    if not os.path.isfile(man):
+        shutil.rmtree(BK_DIR, ignore_errors=True)
+        return []
+    spec = importlib.util.spec_from_file_location("_a12_runb_left", RUNB)
+    rb = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rb)
+    took = rb.rw_take(wait=0)
+    if took is False:
+        return []
+    try:
+        if not os.path.isfile(man):
+            return []
+        ents = json.load(open(man, encoding="utf-8"))
+        moved = []
+        for e in ents:
+            p = e["path"]
+            cur = hashlib.sha256(open(p, "rb").read()).hexdigest() if os.path.isfile(p) else None
+            if cur == (e["sha"] if e["existed"] else None):
+                continue                                     # もう元どおり
+            if not e.get("sha_after") or cur != e["sha_after"]:
+                moved.append(p)
+        if moved:
+            return [f"A12 前の仮当ての控え（{BK_DIR}）が残っていて、仮当てが書いた後に書き替わったファイルが在る"
+                    f"＝自動では戻さない（後からした本物の直しを消さないため）。まこさんに報告する: {moved}"]
+        left = _a12_restore()
+        print(f"🔁 [承認の前の検査] 前の仮当てが途中で打ち切られて残した書き替え（{len(ents)} 本）を、控えから戻した", file=sys.stderr)
+        if left:
+            return [f"A12 前の仮当ての控えから戻せないファイルが在る（手で確かめる）: {left}"]
+        return []
+    finally:
+        rb.rw_drop(took)
+
+
 def a12_post_approval_trial(acc):
     """A12 の入口＝本物のファイルを仮に書き替える道具の錠（run_breaks.py の rw_take）を取ってから、仮当てをする。
 
@@ -558,6 +607,16 @@ def _a12_trial_locked(acc):
             man.append(e)
             with open(os.path.join(BK_DIR, "manifest.json"), "w", encoding="utf-8") as fh:
                 json.dump(man, fh, ensure_ascii=False)
+
+        def wrote(p):
+            """★2026-10-06（157回目・まこさん「案１」）＝書いた直後のハッシュ値を控えの一覧に残す。途中で打ち切られて控えが残ったとき、
+            次の検査（_a12_leftover）は、ファイルがこの値のまま（仮当ての後に誰も書き替えていない）のときだけ戻す。"""
+            p = os.path.realpath(p)
+            for e in man:
+                if e["path"] == p:
+                    e["sha_after"] = hashlib.sha256(open(p, "rb").read()).hexdigest()
+            with open(os.path.join(BK_DIR, "manifest.json"), "w", encoding="utf-8") as fh:
+                json.dump(man, fh, ensure_ascii=False)
         done = set()
         for rnd in (1, 2):
             mod = a if rnd == 1 else load(tool, "_a12_apply_2")
@@ -584,6 +643,7 @@ def _a12_trial_locked(acc):
                     new, _how = mod.apply_one(f, cur)
                     with open(path, "w", encoding="utf-8") as fh:
                         fh.write(new)
+                wrote(path)
                 done.add(f["番号"])
                 changed_tool = changed_tool or os.path.realpath(path) == os.path.realpath(tool)
             if rnd == 1 and not changed_tool:
@@ -734,13 +794,17 @@ def b_runtime(md, exist, rb, transcript):
     return bad
 
 
-def check_all(acc=ACC, transcript=None, split=False):
-    """不足の一覧を返す。split=True なら（A群＝承認が止まる, B群＝もう1回 承認が要る）に分けて返す。"""
+def check_all(acc=ACC, transcript=None, split=False, trial=True):
+    """不足の一覧を返す。split=True なら（A群＝承認が止まる, B群＝もう1回 承認が要る）に分けて返す。
+    ★2026-10-06（157回目・まこさん「案１」）＝trial=False（設計書を書いた直後の --after-write）は A12（仮当て・約4分半）を走らせない
+      （上限 120秒の hook から呼ぶと打ち切られ、本物が書き替わったまま残るため）。A12 は --try と、ターンの終わりの検査（上限 600秒）でかける。
+      どの呼び方でも、最初に前の仮当ての残りを見る（_a12_leftover）。"""
+    left = _a12_leftover()
     if not os.path.isfile(acc):
-        a1 = [f"A1 設計書がありません: {acc}（approve_impl.sh:16）"]
+        a1 = left + [f"A1 設計書がありません: {acc}（approve_impl.sh:16）"]
         return (a1, []) if split else a1
     md = open(acc, encoding="utf-8").read()
-    bad = []
+    bad = list(left)
     bad += a2_check_design(acc)
     bad += a3_freeze_block(acc)
     bad += a4_archive(md)
@@ -752,7 +816,7 @@ def check_all(acc=ACC, transcript=None, split=False):
     bad += a11_apply_dry(acc)
     bad += a13_facts(acc)
     b8, exist, rb = a8_expect(md)
-    if not bad and not b8:
+    if not bad and not b8 and trial:
         bad += a12_post_approval_trial(acc)                  # 重いので、ほかが全部 通ったときだけ（出す不足は全部 一度に）
     bad += b8
     bad += a14_review(acc)                                   # ★2026-10-04＝CC が設計書を見直し終えているか（承認のプログラムも同じ道具で止める）
@@ -808,11 +872,18 @@ def main(argv):
         acc = argv[argv.index("--design") + 1] if "--design" in argv else ACC
         tr = argv[argv.index("--transcript") + 1] if "--transcript" in argv else None
         t0 = time.time()
-        bad = check_all(acc, tr)
+        after = "--after-write" in argv
+        bad = check_all(acc, tr, trial=not after)
         if bad:
             _print(bad, "📋 [承認の前の検査] 承認のプログラムの止まり所を、上から全部 確かめました。")
+        elif after:
+            print("✅ [承認の前の検査] A12（仮当て）のほかの止まり所は全部 通ります（不足0件）。")
         else:
             print("✅ [承認の前の検査] 承認のプログラムの止まり所 A1〜A8・B1・B2 は全部 通ります（不足0件）。")
+        if after:
+            # ★2026-10-06（157回目・まこさん「案１」）＝書いた直後は A12 を走らせない（check_all の説明）
+            print("   ★A12（承認の後に起きることを本物に仮に当てて通す・約4分半）は、設計書を書いた直後には走らせていません。"
+                  "承認をお願いする前に `python3 .claude/hooks/require_design_check_before_approval.py --try` でかけてください。")
         print(f"   （かかった時間 {time.time() - t0:.1f} 秒）")
         # --after-write（PostToolUse）は、不足が在るとき 2 で終わる＝書いたものは取り消されない
         #   （道具はもう走り終わっている）。2 にするのは、不足の一覧を CC の画面に出すため。
