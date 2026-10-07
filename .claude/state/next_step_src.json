@@ -16,7 +16,38 @@
     {
      "文": [
       "",
-      "**★158回目の終わり（2026-10-07）＝いまの位置**",
+      "**★159回目の終わり（2026-10-08 01:50）＝いまの位置**",
+      "",
+      "- 済んだこと＝監査 CP64〜CP66 の修正を当ててコミット（3aaee5a）。指標の修正の3回目を K-7 → K-3a → K-3b → K-3c → K-4 → B-1＋S-1 に分けた（まこさん「A」2回＝逐語 ok_k3_split_20261007 ほか）。K-7 の仕分けを済ませてコミット（29b0559）。記録＝worklog 20261007 §19〜§26 と worklog 20261008 §1〜§2。",
+      "- いまの工事＝K-3a（工事名 m2c15-period-textbook-20261007）＝教科書の期間の区切りの版11種（close vs VWAP典型%288・close vs 当日VWAP%・close vs 前日POC%/VAH%/VAL%・close vs 当日POC%/VAH%/VAL%・close vs 前週pivotPP%/R1%/S1%）を今の版を残して材料に足し、K-7 の範囲の直し（BB%b・BB幅 の本数 10〜50・倍率 1.9〜2.1、W字 の tol 0〜0.06）を search_limits.json に写す。KB の件数の囲み（regime_detection_kb.md:1290〜1295）も道具が数えた文に置き換える。指示24件・壊すプログラム b145〜b148。",
+      "- ★案は出した・まこさんの OK はまだ。案の発言＝前のセッションの記録 `/Users/tachiharamasako/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget/dece7b97-3543-45dc-85a9-0af96568264c.jsonl` の uuid `40b98a09-5124-4ee1-8ec3-d212b15ec8fc`（1行目は前置き「案の本文をそのまま出します…」、2行目から案）。中身は道具の案 `.claude/state/indicator_review/k3a_proposal.md` と同じ（最後の改行だけ違う＝gen_verbatim で抜いて diff で確かめた）。試しの検査は A群0件（A12 の仮当てを含む）・試しの見直し表 `.claude/state/reviews/_trial_acceptance.review.md` は止める理由0件。",
+      "- 案の 3-2 で決めていただくこと（私の案で進める・違えば止めていただく）＝①週の始まり＝月曜0時 UTC（★出どころの逐語は無い）②当日の出来高プロファイルに今の足を入れない ③当日VWAP は今の足まで ④工事を2つに分ける ⑤2つの工事をまとめて監査 CP67。",
+      "- ★工事を2つに分けた（私の判断）＝11種は G-1 でオン・オフの表を作り直すまで「使う」に入らず、資料の行も無い。だから11種の設定（observe_config.json の _material_params_pending に8種（VWAP典型・当日VWAP・前日POC/VAH/VAL・当日POC/VAH/VAL）・search_limits.json に VWAP典型 の範囲）は G-1 の後の2つ目の工事で写す（写す行は案の 4-0 の⑦＝道具が数えた）。2つ目の工事では b143 の探す行の末尾に「,」が付くので b143 も直す（k3a_oldbreak_check.py が直し方を作って写しで測れる）。",
+      "- いまの本物の状態＝資料の道具の直しと範囲の直しは資料まで写した（indicator_params_by_strategy.json の BB%b・BB幅・W字 の5軸）。★だから照らしの道具の②は search_limits.json の3行で食い違ったまま＝K-3a を当てるまで pre_audit_check.py --run は落ちる（走らせない）。11種の対応表 `.claude/state/indicator_review/research/alias_map.json` は封つき。コード・設定・KB には1文字も書いていない。",
+      "",
+      "**★次のセッションの手順（159回目の終わりに書いた）**",
+      "",
+      "1. 案の文 `.claude/state/indicator_review/k3a_proposal.md` をリンクで出し、まこさんに OK と 3-2 の5つを確かめる。★3-2 を1つでも変えるなら、k3a_draft_build.py・_k3a_template.txt を直して下の「作り直し」をやり直す（道具の流れ＝`k3a_draft_build.py --check --instr <indicator_review>/k3a_instr.json`（裏で約13分）→ `k3a_oldbreak_check.py` → `k3a_proposal_build.py <indicator_review>/k3a_proposal.md` → `trial_design.py --work m2c15-period-textbook-20261007 --draft <案> --session <いまのセッション>`（裏で約12分・A12 を含む）→ 案をチャットに出して OK）。",
+      "2. OK をいただいたら逐語を保存する＝案は前のセッションの発言から `python3 .claude/tools/gen_verbatim.py --session <上の前のセッションの記録> --write okd_k3a_20261008 --uuid 40b98a09-5124-4ee1-8ec3-d212b15ec8fc --work m2c15-period-textbook-20261007`、OK はいまのセッションの記録の まこさんの発言の uuid で `--write ok_k3a_20261008`。両方 `--verify`。",
+      "3. 目的の照合 `.claude/state/purpose_check.md` は 159回目に中身を直した（対象＝この工事の4ファイルと壊すプログラム4本）。★日付が24時間を過ぎていたら、日付を今に直し、同じ中身をチャットに貼る。",
+      "4. `python3 .claude/tools/gen_acceptance.py --work m2c15-period-textbook-20261007 --write` → `.claude/state/acceptance.md`（約1660行）を1行目から最後まで Read → `python3 .claude/tools/gen_review.py --skeleton .claude/state/acceptance.md`（試しの見直し表と項目が同じなので、中身を写して根拠の行を開き直す）→ `--check` → `python3 .claude/hooks/require_design_check_before_approval.py --try`（A12 を含む・裏で約12分）→ 承認のお願い（時刻に余裕を見て「◯時◯分以降」）。",
+      "5. 承認の後＝`apply_audit_fix.py --design --dry` → 本番（G2 → H2 を自分で走らせる）→ `verify_design_contract.py --diff` → 照らしの道具（pre_audit_check.py --check-indicator-sources・①②とも0件のはず）→ `run_breaks.py --design .claude/state/acceptance.md --measure-only` → `observe_diag.py --selftest`。",
+      "6. G-1＝gen_indicator_switch.py --write（使う 145→156）→ gen_signal_families → gen_exit_families → gen_materials --write → gen_observe_manual → gen_composition_rules（型の表が変われば まこさんの再承認）→ 資料の道具4本（`.claude/state/indicator_review` で `list_on_families.py --add <alias_map.json の対応の11種をカンマで>` → `make_param_table.py` → `extract_threshold_role_add.py --alias <同じ11種>` → `build_role_threshold_table.py`）→ make_fix_plan.py → 照らしの道具＝①0件・②は2つ目の工事の設定の5行だけ食い違う。",
+      "7. 2つ目の工事（設定を写す・r5_draft_build.py が手本・b143 の直しを入れる）＝読むもの宣言 → 案 → OK → 設計書 → 承認 → 当てる → 照らし①②0件。",
+      "8. G-2＝`pre_audit_check.py --run`（裏で約10分）→ 監査の依頼書（2つの工事をまとめて CP67）→ 見直し表 → まこさんの OK → コミット（ファイル単位・まこさんの OK）→ `tidy_next_step.py --write`。",
+      "9. その後＝K-3b（形と構造の5種）→ K-3c（計算式の16種）→ K-4 → B-1＋S-1。",
+      "",
+      "**★159回目のミスを繰り返さない（約6時間かかった原因・教訓 L-671）**",
+      "",
+      "- ★写しで確かめる道具を作る前に、承認の前の検査 A12 が何をするか（require_design_check_before_approval.py:549〜706＝承認の後に当てる指示だけを本物に仮に当て、完成の条件・壊すプログラム・自己テスト6本を測る。gen_materials.py の自己テストは T6 だけ許す＝同:687〜689）を Read で読む。写しの確かめも同じ状態（印・資料・型の表は当てる前のまま）で測る。G-1 で初めて変わるもの（印・資料の表・型の表）に頼る指示を同じ工事に入れない。159回目は読まずに作り、写しの確かめ（約13分）を5回・試しの検査（約12分）を4回 走らせ直した。",
+      "- 材料の種類を増やす工事は、KB の件数の囲み（gen_materials.py:2127〜2169 の COUNTS・自己テストの B3・B4）も指示に入れる。",
+      "- 長い確かめ（写し約13分・試し約12分）は、見つけた直しを全部 まとめてから1回だけ走らせる。1つ直すごとに走らせない。",
+      "- 工事の逐語のフォルダに、ToDo の4行（【いまの工程】ほか）を含む私の返信を入れない（gen_acceptance.py:396 が知らない見出しで止める）。決定の返信は決定用のフォルダ（例＝verbatim/m2c15-k3a-decisions-20261007）に置く。",
+      "- 日付をまたいだら、worklog は新しい日付のファイルに書く（恒久66番）。python3 -c・python3 - は打たない（json は jq）。自分で書いた道具も、直す前に開いて走らせる。",
+      "",
+      "**★ここから下は、158回目の終わりまでに書いた中身（消さない）。手順は159回目に済んだ＝上の「159回目の終わり」が今の位置**",
+      "",
+      "**★158回目の終わり（2026-10-07）**",
       "",
       "- M2-C-15（指標の修正）の全体の表の2回目の続きとして、同じ日に3つの工事を本物に当て、実装の監査 CP64・CP65・CP66 に出した。**監査は まこさんが別のセッションで実施中（3本を順に）。**記録＝worklog 20261007 §1〜§18。",
       "- 工事1＝m2c15-param-values-fix-20261007（監査 CP63 の修正1・4・6 を案 A で直す＝段の候補が範囲の外の列を使わない・TSI の3種の範囲を名前の軸に当てる・VIDYA と T3 の範囲がカタログの数字を含む・範囲を作る道具 apply_param_rule.py を元から直したので StochRSI%K・%D・ALMA・MCGD・SSF の範囲も変わる・まこさん「全部直す」「全部OK」）。実装の指示16件・壊すプログラム b140・b141。",
@@ -931,12 +962,14 @@
    ]
   },
   {
-   "見出し": "### 0-1 いまの状態（2026-10-07・158回目の終わり・記録＝`session_worklog_20261007.md` §1〜§18）",
+   "見出し": "### 0-1 いまの状態（2026-10-08・159回目の途中・記録＝`session_worklog_20261007.md` §19〜§26・`session_worklog_20261008.md` §1）",
    "塊": [
     {
      "文": [
       "",
-      "**いまの状態（158回目の終わり・2026-10-07）**＝同じ日の3つの工事（m2c15-param-values-fix-20261007・m2c15-rci-pivot-sources-20261007・g2-sentinel-material-pick-20261007）を本物に当て、監査に出す前のチェック 全部 rc=0 で、実装の監査 CP64・CP65・CP66 の依頼書を道具で作った（まこさん「OK」・見直し表は止める理由0件）。**監査は まこさんが別のセッションで実施中。**次の一手＝「▶ 次にやること」の「158回目の終わり」と「次のセッションの手順」（結果ファイルを読む → まこさんが範囲を決める → 当てる道具で CP64 → CP65 → CP66 の順に当てる）。コミット済み（まこさん「コミットOK」・ファイル単位）。",
+      "**いまの状態（159回目の途中・2026-10-08）**＝監査 CP64〜CP66 の修正を当ててコミットした（3aaee5a）。指標の修正の3回目を K-7 → K-3（K-3a → K-3b → K-3c）→ K-4 → B-1＋S-1 に分けた（まこさん「A」）。K-7 の仕分けを済ませた（29b0559）。K-3a（工事 m2c15-period-textbook-20261007＝教科書の期間の区切りの版11種を足し、BB・W字 の範囲の直しを設定に写す）の案を出し、まこさんの OK 待ち。資料の道具の直しと範囲の直しは資料まで写した（照らしの②が search_limits.json の3行で食い違う＝この工事で写す）。11種の設定は G-1 の後の2つ目の工事（私の判断・案に書いた）。",
+      "",
+      "**158回目の終わりの状態（消さない・2026-10-07）**＝同じ日の3つの工事（m2c15-param-values-fix-20261007・m2c15-rci-pivot-sources-20261007・g2-sentinel-material-pick-20261007）を本物に当て、監査に出す前のチェック 全部 rc=0 で、実装の監査 CP64・CP65・CP66 の依頼書を道具で作った（まこさん「OK」・見直し表は止める理由0件）。**監査は まこさんが別のセッションで実施中。**次の一手＝「▶ 次にやること」の「158回目の終わり」と「次のセッションの手順」（結果ファイルを読む → まこさんが範囲を決める → 当てる道具で CP64 → CP65 → CP66 の順に当てる）。コミット済み（まこさん「コミットOK」・ファイル単位）。",
       "",
       "**158回目の途中の状態（消さない）**＝監査 CP63（NO-GO・Critical 1・Major 3・Minor 6）の修正を、まこさん「全部直す」で当て始めた。当てる道具で7件（修正1・4・6・8・9・10・12）、手で2件（修正3・13）を直した。設計書の作り直し（修正2・5・7）と材料の文書（修正11）はまだ。修正4（TSI）・6（VIDYA・T3）は、監査の案 A をそのまま当てても直り切らない（元は apply_param_rule.py が今の値と資料の値の軸の順をそろえずに混ぜ、軸の数が違う今の値を捨てていること）と分かり、直し方と、案 A を入れる手順（範囲を作る道具を直す → 追加の案 → OK → 設計書の作り直し → 承認）を まこさんに聞いている（worklog 20261007 §2）。コミットはまだ。",
       "",
@@ -964,7 +997,7 @@
      ]
     }
    ],
-   "書いた日": "2026-10-07"
+   "書いた日": "2026-10-08"
   },
   {
    "見出し": "### 0-3 置き場の案内＝判断待ち＝§0-4（下）と §5／あとで直すこと＝§6／M2 のフローと順番の正本＝`engine_tuner_milestones2.md` の §2・§2.1・§2.2／過去の節＝`next_step_archive_202608.md`。",
@@ -977,7 +1010,7 @@
    ]
   },
   {
-   "見出し": "### （0-b-2）🔴 印の状態（2026-10-07・★この節は tidy_next_step.py が json から書く＝手で書かない）",
+   "見出し": "### （0-b-2）🔴 印の状態（2026-10-08・★この節は tidy_next_step.py が json から書く＝手で書かない）",
    "塊": [
     {
      "文": [
