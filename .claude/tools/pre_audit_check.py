@@ -87,6 +87,13 @@ FINGERPRINT_FILES = [
     "observe_diag.py", "indicator_reference_diag.py", "observe_config.json",
     "gen_signal_families.py", "gen_indicator_switch.py", "gen_materials.py",
     "gen_exit_families.py", "engine_tuner_gen.py", "engine_tuner_exec.py",
+    # ★照らしの道具（check_indicator_sources.py）が読む相手も指紋に入れる＝--run の後に設定・資料・写し方が変われば --verify が止める
+    "recipes/search_limits.json",
+    "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_params_review.json",
+    "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_params_by_strategy.json",
+    "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_roles_thresholds.json",
+    "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/indicator_switch.json",
+    "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/indicator_review/r3_draft_build.py",
 ]
 
 

@@ -986,7 +986,22 @@ def _g2_selftest_body() -> None:
         raise SystemExit("[番人エラー] 禁止3 が空＝既知答えが作れない")
     if not geo_ok or not time_ok:
         raise SystemExit("[番人エラー] 追加の部品（geo/time）が表に無い＝0d の表で再生成してから番人を走らせる")
-    bp, btf = next(iter(sorted(banned)))
+    # ★（監査 CP66 の修正1）＝禁止3 の見本の部品は、印が「使う」で、数字が1つで、範囲の中のものから、並べた順の最初を使う。
+    #   直す前は sorted(banned) の1つ目（ADXR21__1d）を使った。ADXR は印で「使わない」なので、見本は実行器の印の検査で
+    #   「材料が読めない」になり、_judge_structure の禁止3 の分岐に1度も届いていなかった（乱数は使わない）。
+    import engine_tuner_exec as _ex_ban                      # 印の判定は実行器の1つの関数だけ（書き写さない）
+    import engine_tuner_gen as _gen_ban
+    _ban_ok = []
+    for _bp, _btf in sorted(banned):
+        _rb, _pb = iref.find(_bp)
+        if _rb is None or len(_pb) != 1 or not _ex_ban.indicator_enabled(_rb["family"]):
+            continue
+        if not _gen_ban.param_in_range(_rb["family"], _pb[0])[0]:
+            continue
+        _ban_ok.append((_bp, _btf))
+    if not _ban_ok:
+        raise SystemExit("[番人エラー] 印が「使う」で数字が1つで範囲の中の、禁止3 の組が無い＝禁止3 の既知答えが作れない")
+    bp, btf = _ban_ok[0]
 
     sts = _real_structures(30, seed=20260807)
     clean = [st for st in sts if not _judge_structure(st, parts, tfs, banned, geo_ok, time_ok)[0]]
@@ -1116,6 +1131,13 @@ def _g2_selftest_body() -> None:
          f"時間帯の材料（{_time_one}）を、許可を空にした写しで判定",
          f"時間帯の列 {_time_one} は表に無い"),
         (dict(st=_empty_st), "材料を1つも持たない構造", "材料が1つも見つからない"),
+        # ★（監査 CP66 の修正2）＝前の6件の禁止3 とレンジ幾何（H6）は弾かれるかだけを見ていて、実際は印の検査
+        #   （「材料が読めない」）で弾かれ、_judge_structure の2つの分岐に届いていなかった。出た違反の文まで照らす。
+        (dict(st=copy.deepcopy(ban_st)), f"禁止3 の組（{bp}__{btf}）を、禁止3 の文で弾く",
+         "は標本不足の禁止（禁止3）"),
+        (dict(st=copy.deepcopy(geo_st), geo_ok=set()),
+         "レンジ幾何の 帯内位置% を、許可を空にした写しで判定（H6 の分岐）",
+         "レンジ幾何 帯内位置% は条件の材料に使えない"),
     ]
     for _spec, _label, _want_msg in extra:
         if _spec.get("clear_cache"):

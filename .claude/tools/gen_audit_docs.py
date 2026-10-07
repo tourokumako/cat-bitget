@@ -1104,9 +1104,11 @@ def _impl_evidence(iter_: str) -> dict:
         pre_desc, post_desc = f"commit {pre}", f"commit {post}"
     else:
         head = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-        pre_desc = (f"HEAD の commit {head or '（読めない）'}（承認の控えをまだ commit していないので、実装の前は HEAD の版。"
-                    f"`git show HEAD:<パス>` で出せる）")
-        post_desc = "作業中の変更（まだ commit していない。`git diff HEAD -- <パス>` で見られる）"
+        pre_desc = (f"commit {head or '（読めない）'}（依頼書を作った時点の HEAD。承認の控えをまだ commit していないので、実装の前はこの commit の版。"
+                    f"`git show {head or 'HEAD'}:<パス>` で出せる。★この後に commit しても、この番号で出せる）")
+        post_desc = (f"依頼書を作った時点の作業中の変更（まだ commit していない。`git diff {head or 'HEAD'} -- <パス>` で見られる。"
+                     "★この後に commit したときは `git log --oneline -- <パス>` でその commit を探し、"
+                     f"`git diff {head or 'HEAD'} <その commit> -- <パス>` で見る）")
     return {"archives": archives, "pre": pre, "post": post, "applied": applied,
             "pre_desc": pre_desc, "post_desc": post_desc}
 

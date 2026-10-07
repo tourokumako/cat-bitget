@@ -2891,6 +2891,34 @@
    "file": ".claude/breaks/b144_g2_sentinel_first_clean.sh",
    "at": "2026-10-07T16:09:37",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-07_m2c15_param_values_fix_20261007_impl_cp64_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-param-values-fix-20261007/やることの表.md",
+   "at": "2026-10-07T19:42:18",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-07_m2c15_param_values_fix_20261007_impl_cp64_audit_report.md",
+   "num": "3",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-param-values-fix-20261007/やることの表.md",
+   "at": "2026-10-07T19:42:18",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-07_g2_sentinel_material_pick_20261007_impl_cp66_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_signal_families.py",
+   "at": "2026-10-07T19:45:10",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-07_g2_sentinel_material_pick_20261007_impl_cp66_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_signal_families.py",
+   "at": "2026-10-07T19:45:10",
+   "how": "当てた"
   }
  ]
 }
