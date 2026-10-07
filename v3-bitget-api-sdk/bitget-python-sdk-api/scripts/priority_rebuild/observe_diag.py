@@ -7113,6 +7113,8 @@ def selftest_catalog(exit_: bool = True) -> list:
         ng.append("P-2: 設定の範囲 material_param_ranges が空")
     _chk13 = {MATERIAL_FAMILIES[_f13][0].format(*_p13) for _f13, _l13 in _per11.items() for _p13 in _l13}
     _chk13 |= {_x13 for _l13 in (cfg.get("material_keep") or {}).values() for _x13 in _l13}
+    # ★2026-10-07（監査 CP63 の修正6）＝一覧に入らない種類のカタログの名前も見る（VIDYA・T3 の列が範囲の外だった）
+    _chk13 |= set(_nm_k1)
     for _x13 in sorted(_chk13):
         _e13, _p13 = iref.find(_x13)
         _ax13 = _rg13.get(_e13["family"]) if _e13 else None
@@ -7123,6 +7125,15 @@ def selftest_catalog(exit_: bool = True) -> list:
         for _i13, (_v13, _a13) in enumerate(zip(_p13, _ax13)):
             if not float(_a13["lo"]) <= float(_v13) <= float(_a13["hi"]):
                 ng.append(f"P-2: {_x13} の {_i13 + 1} 番目の数字 {_v13} が、設定の範囲 {_a13['lo']}〜{_a13['hi']} の外")
+    # ── 工事 m2c15-param-values-fix-20261007 の番人（2026-10-07・監査 CP63 の修正1）──
+    #  ⑭段の候補（engine_tuner_gen._group_usable_col）は、列の数字が範囲の外なら使わない・範囲の中なら使う
+    #    範囲は渡さない（None＝関数の中で本物と同じ範囲を読む）。ROC の範囲は設定の 9〜24（ROC3 は外・ROC12 は中）。
+    import engine_tuner_gen as _g14
+    _tb14 = _g14.load_signal_table()
+    if _g14._group_usable_col("ROC3__5m", "ROC", "5m", None, _tb14):
+        ng.append("修正1: 範囲の外の数字の列（ROC3）を、段の候補に使えると判定した")
+    if not _g14._group_usable_col("ROC12__5m", "ROC", "5m", None, _tb14):
+        ng.append("修正1: 範囲の中の数字の列（ROC12）を、段の候補に使えないと判定した")
     if exit_:
         for x in ng:
             print(f"  ❌ {x}")

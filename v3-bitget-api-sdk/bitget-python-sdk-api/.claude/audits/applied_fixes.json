@@ -2730,6 +2730,167 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
    "at": "2026-10-07T09:15:24",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "2",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "3",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "4",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "5",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "6",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "7",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "8",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "9",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "10",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "11",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "12",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "13",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "14",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "15",
+   "file": ".claude/breaks/b140_group_range_ignored.sh",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-param-values-fix-20261007",
+   "num": "16",
+   "file": ".claude/breaks/b141_catalog_out_of_range.sh",
+   "at": "2026-10-07T11:43:47",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-rci-pivot-sources-20261007",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-07T14:19:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-rci-pivot-sources-20261007",
+   "num": "2",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-07T14:19:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-rci-pivot-sources-20261007",
+   "num": "3",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-07T14:19:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-rci-pivot-sources-20261007",
+   "num": "4",
+   "file": ".claude/breaks/b142_rci_list_stale.sh",
+   "at": "2026-10-07T14:19:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-rci-pivot-sources-20261007",
+   "num": "5",
+   "file": ".claude/breaks/b143_rci_range_short.sh",
+   "at": "2026-10-07T14:19:24",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-sentinel-material-pick-20261007",
+   "num": "1",
+   "file": "scripts/priority_rebuild/gen_signal_families.py",
+   "at": "2026-10-07T16:09:37",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-sentinel-material-pick-20261007",
+   "num": "2",
+   "file": ".claude/breaks/b144_g2_sentinel_first_clean.sh",
+   "at": "2026-10-07T16:09:37",
+   "how": "当てた"
   }
  ]
 }

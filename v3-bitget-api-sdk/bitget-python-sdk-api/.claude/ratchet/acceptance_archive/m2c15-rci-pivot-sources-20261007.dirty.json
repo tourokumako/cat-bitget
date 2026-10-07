@@ -1,0 +1,12 @@
+{
+ "_これは何か": "承認の瞬間に、もう汚れていた .py の一覧。照合A(双方向) はここに在るものを数えない。",
+ "_なぜ": "並走している別のセッションが編集中の .py で、どの設計書でも落ちるのを止めるため（138番）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に git status から書き出す。手で書き換えない。",
+ "files": [
+  ".claude/tools/check_indicator_sources.py",
+  ".claude/tools/gen_acceptance.py",
+  ".claude/tools/pre_audit_check.py",
+  "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+  "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py"
+ ]
+}

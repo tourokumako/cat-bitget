@@ -427,7 +427,8 @@ def _mat_from_col(col: str, family: str, tf: str, ranges: dict | None = None, *,
       ★成績表に載っている列は、**その数字で実際に測った結果**なので、その列の数字を
         そのまま使えば、乱数も私（CC）の判断も要らない。
 
-    ★範囲を狭めていない＝成績表は材料カタログの数字で作られており、範囲の中に在る。
+    ★成績表は前のカタログの数字で作られているので、列の数字が範囲の外のことがある（ROC3・ROC6 ほか）。
+      この関数は範囲を照らさない。段の候補では _group_usable_col が範囲の外の列を外す（監査 CP63 の修正1・2026-10-07）。
     ★数字を新しく作っていない＝列の名前に書いてある数字を読み取るだけ。
     """
     ranges = ranges if ranges is not None else material_ranges()
@@ -461,6 +462,11 @@ def _group_usable_col(col: str, family: str, tf: str, ranges: dict | None = None
     try:
         m = _mat_from_col(col, family, tf, ranges, table=table)
     except SampleError:
+        return False
+    # ★2026-10-07（監査 CP63 の修正1・まこさん「全部直す」＝案 A）＝その列の数字が範囲の外なら、段の候補に使わない。
+    #   直す前は禁止3（標本不足）だけを見ていた。成績表（material_ranking.json）は前のカタログの数字で作られているので、
+    #   範囲の外の列（ROC3・ROC6 ほか）が順位に残り、案を作った後の出どころの検査（assert_provenance の param_in_range）で止まった。
+    if not param_in_range(family, m["param"], ranges)[0]:
         return False
     return not _banned_pair(m, table)
 

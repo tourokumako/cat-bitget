@@ -992,8 +992,6 @@ def _g2_selftest_body() -> None:
     clean = [st for st in sts if not _judge_structure(st, parts, tfs, banned, geo_ok, time_ok)[0]]
     if not clean:
         raise SystemExit("[番人エラー] 表に沿った本物の構造が1本も作れない＝既知答えが作れない")
-    base_st = copy.deepcopy(clean[0])
-
     def _first_col_cond(st):
         conds: list = []
         _walk_conds(st.get("entry", {}).get("connective", {}), conds)
@@ -1002,6 +1000,14 @@ def _g2_selftest_body() -> None:
                 if "family" in m:
                     return m
         return None
+
+    # ★2026-10-07（工事 g2-sentinel-material-pick-20261007・まこさん「A」）＝表に沿っていて、指標の材料を持つ最初の構造を使う。
+    #   直す前は表に沿った1本目（clean[0]）をそのまま使い、材料の一覧が1本 増えただけで（同じ日の RCI5）、
+    #   1本目に指標の材料が無くなり「差し替えられる材料が構造に無い」で止まった（乱数の引き方に頼っていた）。
+    with_col = [st for st in clean if _first_col_cond(st) is not None]
+    if not with_col:
+        raise SystemExit("[番人エラー] 表に沿っていて指標の材料を持つ構造が1本も作れない＝既知答えが作れない")
+    base_st = copy.deepcopy(with_col[0])
 
     ban_st = copy.deepcopy(base_st)
     m = _first_col_cond(ban_st)

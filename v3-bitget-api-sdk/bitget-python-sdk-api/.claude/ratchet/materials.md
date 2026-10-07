@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=36ad819b35b9b9ee gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=fc5b621a9fedf4cd gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -49,8 +49,8 @@
 
 | 何 | 数 |
 |---|---|
-| 材料カタログの列（部品 × 時間足） | 5236 列 |
-| **engine_tuner が選べる列** | **2486 列（47.5%）** |
+| 材料カタログの列（部品 × 時間足） | 5247 列 |
+| **engine_tuner が選べる列** | **2497 列（47.6%）** |
 | engine_tuner が選べる指標の種類 | **143 種類** |
 | **engine_tuner が選べない指標の種類** | **118 種類**（上の一覧 B） |
 | そのほかに選べるもの（レンジ幾何） | W%・帯内位置% |
@@ -97,11 +97,11 @@
 | 4 | scripts/priority_rebuild/e38_logics.json の search_space | E38 の探索が振る値 | **0 件** | 0 個 | 14 件 |
 
 **★この欄の「範囲で探せる」は、設定ファイルそのものに 下限と上限の形で書いてある項目の数です。**
-2026-08-13（段A の A-4・A-5）から、**engine_tuner は 場所1 の数字を「範囲の両端」として使います**＝いちばん小さい数字と いちばん大きい数字の間なら、どの数字でも試せます（例＝RSI は 7〜21 の整数 全部。設定ファイルに並んでいるのは 7・9・14・21 の4つだけ）。範囲の正本＝`engine_tuner_gen.material_ranges`。**設定の範囲の置き場所＝`recipes/search_limits.json` の `material_param_ranges`（2026-10-06 から、修正対応表の範囲をプログラムが写したもの）。**
+2026-08-13（段A の A-4・A-5）から、**engine_tuner は 場所1 の数字を「範囲の両端」として使います**＝いちばん小さい数字と いちばん大きい数字の間なら、どの数字でも試せます（例＝RSI は、設定の範囲 material_param_ranges が在るので 2〜21 の整数 全部。材料の一覧に並んでいるのは 5・7・9・14・21 の5つだけ）。範囲の正本＝`engine_tuner_gen.material_ranges`。**設定の範囲の置き場所＝`recipes/search_limits.json` の `material_param_ranges`（2026-10-06 から、修正対応表の範囲をプログラムが写したもの）。**
 
 **場所ごとの中身（全部 実物から）**
 
-- **場所1**＝指標のパラメータ。この 37 件の並びが、下の表の 109 種類・192 通りに広がります。★数える鍵は「名前が `_periods` で終わるもの」ではなく、**材料カタログを作る関数（`observe_diag.build_catalog`）が実際に読む鍵**です（名前で数えると `bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・`*_windows`・`sr_tol`・`w_tol` を丸ごと取りこぼします）。観察の道具だけが使う格子 91 件（`ADX`・`AROOND`・`AROONOSC`・`AROONU`・`ATR%`・`BB%b`・`BB幅`・`CCI`・`CHOP`・`CMF`・`DI差`・`DPO%`・`Donchian幅%`・`EFI比`・`EOM比`・`KAMA傾き`・`KSTシグナル`・`MACDシグナル線%`・`MACDヒスト%`・`MACD線%`・`MFI`・`PPO`・`PPOシグナル`・`PPOヒスト`・`PVO`・`PVOシグナル`・`PVOヒスト`・`ROC`・`RSI`・`StochRSI%D`・`StochRSI%K`・`TRIX`・`TRIXシグナル`・`TRIXヒスト`・`UI`・`VTXM`・`VTXP`・`WMA傾き`・`adverse_marks`・`close vs ALMA%`・`close vs DEMA%`・`close vs EMA`・`close vs FWMA%`・`close vs HMA%`・`close vs JMA%`・`close vs KAMA%`・`close vs Keltner上%`・`close vs Keltner下%`・`close vs LINREG%`・`close vs LRb%`・`close vs MCGD%`・`close vs MEDIAN%`・`close vs MIDPOINT%`・`close vs MIDPRICE%`・`close vs MMAR%`・`close vs PWMA%`・`close vs RAINBOW%`・`close vs RMA%`・`close vs SINWMA%`・`close vs SMA`・`close vs SSF%`・`close vs SWMA%`・`close vs TEMA%`・`close vs TRIMA%`・`close vs TSF%`・`close vs VWMA%`・`close vs WMA%`・`close vs 基準線%`・`close vs 本安値%`・`close vs 本高値%`・`close vs 転換線%`・`early_windows`・`favorable_marks`・`fib位置`・`fractal安値距離%`・`fractal高値距離%`・`quantiles`・`scene_exit_sl_pcts`・`scene_exit_tmax_bars`・`scene_exit_tp_pcts`・`sl_grid`・`stdev%`・`volume_ratio`・`wait_grid`・`スキャル`・`デイトレ`・`安値からの経過バー`・`安値切り上げ幅%`・`構造破断距離%`・`高値からの経過バー`・`高値切り上げ幅%`）は、engine_tuner が振る値ではないので ここでは数えていません。
+- **場所1**＝指標のパラメータ。この 37 件の並びが、下の表の 109 種類・193 通りに広がります。★数える鍵は「名前が `_periods` で終わるもの」ではなく、**材料カタログを作る関数（`observe_diag.build_catalog`）が実際に読む鍵**です（名前で数えると `bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・`*_windows`・`sr_tol`・`w_tol` を丸ごと取りこぼします）。観察の道具だけが使う格子 92 件（`ADX`・`AROOND`・`AROONOSC`・`AROONU`・`ATR%`・`BB%b`・`BB幅`・`CCI`・`CHOP`・`CMF`・`DI差`・`DPO%`・`Donchian幅%`・`EFI比`・`EOM比`・`KAMA傾き`・`KSTシグナル`・`MACDシグナル線%`・`MACDヒスト%`・`MACD線%`・`MFI`・`PPO`・`PPOシグナル`・`PPOヒスト`・`PVO`・`PVOシグナル`・`PVOヒスト`・`RCI`・`ROC`・`RSI`・`StochRSI%D`・`StochRSI%K`・`TRIX`・`TRIXシグナル`・`TRIXヒスト`・`UI`・`VTXM`・`VTXP`・`WMA傾き`・`adverse_marks`・`close vs ALMA%`・`close vs DEMA%`・`close vs EMA`・`close vs FWMA%`・`close vs HMA%`・`close vs JMA%`・`close vs KAMA%`・`close vs Keltner上%`・`close vs Keltner下%`・`close vs LINREG%`・`close vs LRb%`・`close vs MCGD%`・`close vs MEDIAN%`・`close vs MIDPOINT%`・`close vs MIDPRICE%`・`close vs MMAR%`・`close vs PWMA%`・`close vs RAINBOW%`・`close vs RMA%`・`close vs SINWMA%`・`close vs SMA`・`close vs SSF%`・`close vs SWMA%`・`close vs TEMA%`・`close vs TRIMA%`・`close vs TSF%`・`close vs VWMA%`・`close vs WMA%`・`close vs 基準線%`・`close vs 本安値%`・`close vs 本高値%`・`close vs 転換線%`・`early_windows`・`favorable_marks`・`fib位置`・`fractal安値距離%`・`fractal高値距離%`・`quantiles`・`scene_exit_sl_pcts`・`scene_exit_tmax_bars`・`scene_exit_tp_pcts`・`sl_grid`・`stdev%`・`volume_ratio`・`wait_grid`・`スキャル`・`デイトレ`・`安値からの経過バー`・`安値切り上げ幅%`・`構造破断距離%`・`高値からの経過バー`・`高値切り上げ幅%`）は、engine_tuner が振る値ではないので ここでは数えていません。
 - **場所2**＝ほかに 分位（閾値の段）＝**範囲 q10〜q90（81 通り）**（`quantile_range`・★2026-08-15 の段A の A-5-3 で 9段のメニューから範囲にした。`quantile_grid` の9段は ほかの道具がまだ読む分として残してある）／単独の数字 3 件（`fdr_q`・`n_min`・`r_min`）／上限を置かないもの 5 件（`count_range`・`depth_max`・`k_max`・`p_max`・`role_max`＝まこさん決定 2026-08-12）。
 - **場所3**＝ほかに、案を作るときの**確率の数字**が 15 か所（`rng.random() < 0.3` の形）。これは探す値ではありませんが、CC がコードに直に書いた数字なので一緒に数えています。
 - **場所4**＝`search_space` は全部で 45 件です。内訳＝分位 21 ／メニュー 10（うち数の並び 0・本当に選択肢 10）／範囲 14。★このうち 2 件は値が空です（`logics.L5.grid_n`・`logics.S5.grid_n`＝まこさんの判断待ち・値が入るまで engine_tuner は走りません）。
@@ -219,7 +219,7 @@
 | PVOシグナル | (12,26,9)（1 通り・数字が2つ以上の指標は組で1通り） |
 | PVOヒスト | (12,26,9)（1 通り・数字が2つ以上の指標は組で1通り） |
 | PVT傾き | 10 本・20 本（2 通り） |
-| RCI | 7 本・9 本・26 本・52 本（4 通り） |
+| RCI | 5 本・7 本・9 本・26 本・52 本（5 通り） |
 | ROC | 9 本・12 本・24 本（3 通り） |
 | RSI | 5 本・7 本・9 本・14 本・21 本（5 通り） |
 | S-Rタッチ1時間ATR | (144,0.5,7)・(144,0.5,14)・(144,0.5,21)・(144,1.0,7)・(144,1.0,14)・(144,1.0,21)・(144,1.5,7)・(144,1.5,14)・(144,1.5,21)・(288,0.5,7)・(288,0.5,14)・(288,0.5,21)・(288,1.0,7)・(288,1.0,14)・(288,1.0,21)・(288,1.5,7)・(288,1.5,14)・(288,1.5,21)（18 通り・数字が2つ以上の指標は組で1通り） |
@@ -610,9 +610,9 @@ T16（架空の列を宣言の写しに足すと、欄が変わり「★列を�
 | うち 外側になる形（中に条件を1つ包む） | **3 種** | `engine_tuner_exec.NEST_FORMS` | `streak`・`within_n`・`barssince` |
 | 判定の中身（build）の中だけで使える形 | **1 種** | `engine_tuner_exec._walk_build_tree` | `bool_col` |
 | 束ね方 | **4 通り** | `engine_tuner_exec._walk` | `not`・`all`・`any`・`if-then` |
-| 部品 | **476 種** | `signal_families.json` の `parts` | （一覧は ★2 と ★7） |
+| 部品 | **477 種** | `signal_families.json` の `parts` | （一覧は ★2 と ★7） |
 | 時間足 | **11 本** | `signal_families.json` の `timeframes` | `1m`・`3m`・`5m`・`10m`・`15m`・`30m`・`1h`・`2h`・`4h`・`6h`・`1d` |
-| 材料の列（部品 × 時間足） | **5236 列** | 上の2つの掛け算 | — |
+| 材料の列（部品 × 時間足） | **5247 列** | 上の2つの掛け算 | — |
 | 材料の前処理 | **9 種** | `engine_tuner_exec.MATERIAL_PRE` | `ts_max`・`ts_min`・`ts_rank`・`ts_std`・`ts_pos`・`since_min`・`since_max`・`at_entry`・`abs` |
 | 材料2本の組み方 | **3 種** | `engine_tuner_exec.PAIR_OPS` | `sub`・`div`・`corr` |
 
