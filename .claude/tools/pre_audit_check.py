@@ -54,6 +54,7 @@ ORDER = [
 ]
 
 # ── 最後に走らせる検査（全部 rc=0 でなければ監査に出せない）────────────────────
+INDICATOR_SOURCES_CHECK = "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/check_indicator_sources.py"
 CHECKS = [
     "gen_materials.py --verify",
     "gen_materials.py --selftest",
@@ -71,10 +72,15 @@ CHECKS = [
     "engine_tuner_gen.py --selftest-extra-gate",
     # ★2026-09-27（監査 CP47 の Process）＝設計書の SPEC と実物の突き合わせ。実装の後に設計書の SPEC を作り直していないと、本走が設計↔実装ゲートで止まる（M2-E-4e で齟齬 6件のまま監査に出た）。
     "verify_design_contract.py --diff /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+    # ★2026-10-07（158回目・まこさん「とにかくすべて完璧に修正して。毎回チェックでミスがあり、やりなおしで膨大な時間がかかるのを改善してほしい」）
+    #   ＝①「使う」の指標が資料の表3つに全部 在るか ②設定ファイルの資料から写した部分が、いまの資料から写し直したものと同じか。
+    #   直す前は、どちらを見る検査も無く、RCI と前期間pivot の3種が資料に無いまま3日 気づかなかった。
+    INDICATOR_SOURCES_CHECK,
 ]
-# ★この2行が消されたら番人 P8 が落ちる（一覧から黙って外せなくする・145番・141番）
+# ★この3行が消されたら番人 P8 が落ちる（一覧から黙って外せなくする・145番・141番・2026-10-07 の照らし）
 _MUST_IN_CHECKS = ("gen_audit_request.py --selftest",
-                   "engine_tuner_gen.py --selftest-extra-gate")
+                   "engine_tuner_gen.py --selftest-extra-gate",
+                   INDICATOR_SOURCES_CHECK)
 
 # ── 指紋の対象（このどれかが変わったら、チェックはやり直し）────────────────────
 FINGERPRINT_FILES = [
@@ -95,9 +101,10 @@ def code_fingerprint() -> str:
 
 
 def _run(cmd: str) -> int:
-    """scripts/priority_rebuild の .py を1本 走らせて終了コードを返す。"""
+    """scripts/priority_rebuild の .py を1本 走らせて終了コードを返す。
+    ★2026-10-07＝名前が / で始まるものは、その絶対パスの道具を走らせる（.claude/tools の照らしの道具を CHECKS に置くため）。"""
     parts = cmd.split()
-    r = subprocess.run([sys.executable, str(PR / parts[0])] + parts[1:],
+    r = subprocess.run([sys.executable, parts[0] if parts[0].startswith("/") else str(PR / parts[0])] + parts[1:],
                        cwd=str(SDK), capture_output=True, text=True)
     return int(r.returncode)
 
@@ -469,6 +476,11 @@ def main() -> int:
         return run()
     if "--verify" in a:
         return verify()
+    if "--check-indicator-sources" in a:
+        # ★2026-10-07＝照らしの道具だけを走らせる口（工事の始め・資料を足した直後に、9分の全部を待たずに確かめる）。
+        #   この道具は土台ゲートの「走らせてよい道具」の一覧に在るので、ここから呼べば Bash から打てる。
+        #   --only-1（①だけ）と --selftest（照らしの道具の自己テスト）は、そのまま渡す＝この道具の --selftest より先に見る。
+        return subprocess.run([sys.executable, INDICATOR_SOURCES_CHECK] + [x for x in a if x in ("--only-1", "--selftest")]).returncode
     if "--selftest" in a:
         return selftest()
     print(__doc__)

@@ -1114,6 +1114,23 @@ def _repo(p) -> Path:
     return (ROOT / p) if (ROOT / p).parent.is_dir() else (SDK / p)
 
 
+# ★2026-10-07（158回目・まこさん「とにかくすべて完璧に修正して。毎回チェックでミスがあり、やりなおしで膨大な時間がかかるのを改善してほしい」）
+#   ＝指標の資料（調べた値の表3つ）を写した先の設定ファイルを直す工事では、設計書を作る前に、「使う」の指標が資料に全部 在るかを照らす。
+#   なぜここか＝案を出す前の試し（trial_design.py）も本物の設計書づくりも、この write を通る＝工事の始めに気づける。
+#   ★資料と設定ファイルの食い違い（②）はここでは見ない＝ずれを直す工事では、案の時点では必ず食い違うため。②は当てた後の
+#     監査に出す前のチェック（pre_audit_check.py の CHECKS）が見る。どの工事でも①②は CHECKS で必ず走る。
+_SOURCES_TARGETS = ("scripts/priority_rebuild/observe_config.json", "scripts/priority_rebuild/recipes/search_limits.json")
+
+
+def indicator_sources_problems(d: dict) -> list:
+    """資料を写した先を直す工事なら、check_indicator_sources.py の①を走らせ、食い違いの行を返す（空なら通す）。"""
+    if not any(t in _SOURCES_TARGETS for t in (d.get("TARGET") or [])):
+        return []
+    sys.path.insert(0, str(ROOT / ".claude/tools"))
+    import check_indicator_sources as cis
+    return cis.check1()
+
+
 def impl_before_problems(d: dict) -> list:
     """実装の指示の「直す前の文字」が、実物にちょうど1か所在るか（2026-09-29）。
 
@@ -1350,6 +1367,10 @@ def page(d: dict) -> str:
     if _ib:
         raise SystemExit("[gen_acceptance] 実装の指示の直す前の文字が、実物と合いません（fail-closed・全部で "
                          f"{len(_ib)} 件）:\n  " + "\n  ".join(_ib))
+    _src_ng = indicator_sources_problems(d)
+    if _src_ng:
+        raise SystemExit("[gen_acceptance] 指標の資料を写した先を直す工事なのに、「使う」の指標が資料に全部は在りません（fail-closed・"
+                         f"全部で {len(_src_ng)} 件）＝先に資料に行を足してください:\n  " + "\n  ".join(_src_ng))
     add(f'<!-- ARC iter="{d["iter"]}" -->')
     add("")
     add(f"# 設計書｜{d['設計書の題']}")

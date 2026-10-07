@@ -14,7 +14,8 @@
   ★節の名前はテンプレから読む。この道具に節の名前の一覧を焼かない（下の SECTION_KIND は「どう埋めるか」だけ）。
 
 使い方
-  python3 .claude/tools/gen_audit_docs.py request-design <design|impl> --work <工事名>
+  python3 .claude/tools/gen_audit_docs.py request-design <design|impl> --work <工事名> [--design <承認の控えの設計書>]
+    → ★2026-10-07（まこさん「A」）＝--design を付けると、いまの設計書の代わりに その設計書（acceptance_archive/<工事名>.md）を読む。
     → ★2026-09-29（まこさん指示「監査依頼書を自動生成」）＝設計書（.claude/state/acceptance.md）と
       その工事のフォルダ（やることの表.md と逐語のファイル）から、依頼書の元データと依頼書を道具が作る。CC は元データを書かない。
       ★2026-09-30（設計書 point1-one-way-20260930-2）＝--work だけを受ける（元データの JSON から作る古い口は消した）。
@@ -163,7 +164,7 @@ IMPL_QUESTIONS = (
      "「もう当て終わっていた」の件は、どの実行で当たったか（当てる道具の出力・git の差分）で確かめる。"),
     ("Q4", "B", "承認した版の設計書どうしで、実装の指示が同じか",
      "当てた版と、いまの版の実装の指示が違えば、どちらの版のとおりかが決まらない",
-     "承認した版の設計書の控え（{archives}）と、いまの設計書の 4-20 の実装の指示は同じか。違えば、違いが実装に影響するか。"),
+     "承認した版の設計書の控え（{archives}）と、{now}の 4-20 の実装の指示は同じか。違えば、違いが実装に影響するか。"),
     ("Q5", "B", "実装の指示が、やることの表の要件を全部 満たすか",
      "要件に在るのに実装の指示に無ければ、設計書のとおりに作れても依頼が満たされない",
      "実装の指示は、やることの表（`{todo}`）の一覧の要件を全部 満たすか。要件に在るのに実装の指示に無いもの・"
@@ -1015,8 +1016,11 @@ def request_content_errors(text: str) -> list:
     def sec(head: str) -> str:
         return text.split(f"\n## {head}", 1)[1].split("\n## ", 1)[0] if f"\n## {head}" in text else ""
     reads = sec("着手前必読")
-    if "`.claude/state/acceptance.md`" not in reads:
-        errs.append("着手前必読に、監査の相手の設計書（.claude/state/acceptance.md）が無い")
+    # ★2026-10-07（まこさん「A」）＝監査の相手は、依頼書の「監査の相手と版」に書いた設計書（--design で控えを渡すと、その控え）
+    _tm = re.search(r"- 監査の相手と版: `([^`]+)`", text)
+    _tgt = _tm.group(1) if _tm else ".claude/state/acceptance.md"
+    if f"`{_tgt}`" not in reads:
+        errs.append(f"着手前必読に、監査の相手の設計書（{_tgt}）が無い")
     read_names = {os.path.basename(t) for t in re.findall(r"`([^`]+)`", reads)}
     need = text.split(f"\n### {NEED_NAME}", 1)[1].split("\n## ", 1)[0].split("\n### ", 1)[0] if f"\n### {NEED_NAME}" in text else ""
     if not need:
@@ -1107,7 +1111,50 @@ def _impl_evidence(iter_: str) -> dict:
             "pre_desc": pre_desc, "post_desc": post_desc}
 
 
-def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> tuple:
+def _stack_note(ev: dict, iter_: str, targets: list) -> None:
+    """同じファイルに、まだ commit していない別の工事の直しが重なっていれば、Q1・Q2 の「実装の前・後」の文に書き足す。
+    ★2026-10-07（まこさん「A」＝同じ日の3つの工事を工事ごとに監査する）＝直す前は、実装の前＝HEAD・実装の後＝作業中の変更と
+      だけ書いたので、同じ設定ファイルを続けて直した2つ目の工事の行が、1つ目の工事の依頼書で「設計書に無い変更」に見えた。
+    重なりの判定＝当てた記録（applied_fixes.json）の design:<別の工事> の行のうち、時刻が HEAD の commit より後で、
+      ファイルがこの工事の TARGET と同じもの。前と後は、当てた時刻で分ける。"""
+    if ev.get("post"):                                       # 承認の控えが commit 済み＝commit どうしで比べられる
+        return
+    import subprocess
+    head_at = subprocess.run(["git", "log", "-1", "--format=%cd", "--date=format:%Y-%m-%dT%H:%M:%S", "HEAD"],
+                             cwd=ROOT, capture_output=True, text=True).stdout.strip()
+    try:
+        rows = json.load(open(os.path.join(AUDITS, "applied_fixes.json"), encoding="utf-8")).get("applied") or []
+    except Exception:                                        # noqa: BLE001
+        return
+    mine = [r for r in (ev.get("applied") or []) if r.get("at")]
+    if not head_at or not mine:
+        return
+    tset = {_sdk(t) for t in targets}
+    my_first, my_last = min(r["at"] for r in mine), max(r["at"] for r in mine)
+    before, after = {}, {}
+    for r in rows:
+        rep = str(r.get("report") or "")
+        if not (isinstance(r, dict) and rep.startswith("design:") and rep != f"design:{iter_}"):
+            continue
+        if str(r.get("at") or "") <= head_at or _sdk(r.get("file")) not in tset:
+            continue
+        box = before if r["at"] < my_first else after if r["at"] > my_last else None
+        if box is not None:
+            box.setdefault(rep[len("design:"):], set()).add(_sdk(r.get("file")))
+
+    def _names(box: dict) -> str:
+        return "・".join(f"{w}（`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/{w}.md` の 4-20・"
+                        f"{'・'.join(f'`{f}`' for f in sorted(fs))}）" for w, fs in sorted(box.items()))
+    if before:
+        ev["pre_desc"] += (f"。★同じファイルに、この工事より前に当てた別の工事の直しが重なっている＝{_names(before)}。"
+                           "実装の前は、HEAD の版に、その工事の実装の指示を当てた時刻の順に当てた版")
+    if after:
+        ev["post_desc"] += (f"。★同じファイルに、この工事より後に当てた別の工事の直しも入っている＝{_names(after)}。"
+                            "実装の後は、実装の前にこの工事の実装の指示を当てた版。作業中の変更と比べるときは、"
+                            "後の工事の実装の指示を同じ順に当ててから比べる（後の工事の行は、その工事の依頼書で照らす）")
+
+
+def build_design_src(kind: str, cp: int, work: str, design_path: str = None, show_path: str = None) -> tuple:
     """設計書と元データから、依頼書の元データ（本文）を作る。戻り＝(本文, 依頼書の名前の頭)。
 
     ★2026-09-29（まこさん指摘「監査の依頼内容が変じゃないか？」・worklog 20260929 §40〜§42）で直したこと
@@ -1159,11 +1206,16 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
     add("依頼者: CC（起案者）")
     add(f"監査区分: {label}")
     add(f"監査対象タスク: {'・'.join(todos) or '（やることの番号なし）'}／設計書 {iter_}")
-    add("監査の相手: .claude/state/acceptance.md")
+    # ★2026-10-07（まこさん「A」）＝--design で控えの設計書を渡したときは、その設計書が監査の相手
+    #   （show_path＝コマンドの --design だけが渡す。自己テストの design_path は「いまの設計書の代わり」なので、相手の名前は変えない）
+    target_rel = os.path.relpath(os.path.abspath(show_path), ROOT) if show_path else ".claude/state/acceptance.md"
+    add(f"監査の相手: {target_rel}")
     add(f"売買に触るか: {'はい' if engine else 'いいえ'}")
     add("")
     speakers = {n: _speaker(ga.gv, n) for n in names}
     ev = _impl_evidence(iter_) if kind == "impl" else {}
+    if ev:
+        _stack_note(ev, iter_, d.get("TARGET") or [])
     # ★2026-10-02（144回目）＝判断が要る4つは、CC が手で書き まこさんが OK したファイルから読む（無ければ止まる）
     hand = read_hand(wdir, label, kind, names, ga.gv)
     need = need_reads(d, ev, kind, todos)
@@ -1298,7 +1350,7 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
     # ★2026-10-02（144回目・まこさん「本来監査に必要な文書を書けよ」「私の提案の通りに修正する」）
     #   ＝必読は手書き（ファイル・範囲・なぜ要るか）。道具が足すのは、照合に要る事実の3つ（設計書・承認の控え・当てた記録）だけ。
     #   直す前は道具が全部を作り、逐語のファイル7本と要件のまとめが並び、照らす相手のコードと決まりが無かった（cp58）。
-    reads = [(".claude/state/acceptance.md", "", "監査の相手（設計書・プログラムが作った）")]
+    reads = [(target_rel, "", "監査の相手（設計書・プログラムが作った）")]
     if kind == "impl":
         # ★2026-09-30（3点目-a）＝実装の監査の照合に要るもの（承認した版の控え・当てた記録）
         # ★どの版で当てたかは道具には分からない（2回目の承認の版は実装の後に作る）＝Q4 で照らしてもらう
@@ -1436,6 +1488,9 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
                 "ni": ni, "nc": nc, "iter": iter_,
                 "archives": "・".join(f"`{a}`" for a in (ev.get("archives") or [])) or "（無い）",
                 "todo": os.path.relpath(src_file, ROOT),
+                # ★2026-10-07（まこさん「A」）＝--design で控えを渡したときは、いまの acceptance.md は後の工事の版なので比べない
+                "now": (f"監査の相手の設計書（`{target_rel}`。★`.claude/state/acceptance.md` は、この工事の後に別の工事の設計書で"
+                        "上書きされたので比べない）" if show_path else "いまの設計書"),
                 # 同じコマンドは1回だけ並べる（完成の条件の行ごとに同じコマンドが在ると、同じものが何回も並んだ）
                 "cmds": "・".join(dict.fromkeys(f"`{_one_line(r.get('コマンド'))}`" for r in conds)) or "（無い）"}
         for num, pr, name, why, body in IMPL_QUESTIONS:
@@ -1514,9 +1569,14 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None) -> 
     return head + "\n" + body, base
 
 
-def request_design(kind: str, work: str) -> int:
+def request_design(kind: str, work: str, design_path: str = None) -> int:
     """設計書と工事のフォルダから、依頼書の元データを作業場に書き、依頼書を inputs に作る。
-    ★2026-09-30（設計書 point1-one-way-20260930-2）＝工事名は必須（元データの JSON から工事名を読む古い口は消した）。"""
+    ★2026-09-30（設計書 point1-one-way-20260930-2）＝工事名は必須（元データの JSON から工事名を読む古い口は消した）。
+    ★2026-10-07（まこさん「A」）＝design_path＝読む設計書（承認の控え acceptance_archive/<工事名>.md）。
+      無ければ いまの設計書（acceptance.md）。同じ日に続けて承認した前の工事の依頼書を、工事ごとに作るため。"""
+    if design_path and not os.path.isfile(design_path):
+        print(f"❌ --design の設計書が無い: {design_path}")
+        return 2
     if kind not in KINDS:
         print(f"❌ 種類は design か impl（{kind}）")
         return 2
@@ -1533,7 +1593,7 @@ def request_design(kind: str, work: str) -> int:
             cp = int(m.group(1))
     cp = cp or next_cp()
     try:
-        text, base = build_design_src(kind, cp, work=work)
+        text, base = build_design_src(kind, cp, work=work, design_path=design_path, show_path=design_path)
     except SystemExit as e:
         print(f"❌ 依頼書の元データを作れない: {e}")
         return 1
@@ -2130,6 +2190,9 @@ def main(argv: list) -> int:
     # ★2026-09-29（135回目）＝request-design <design|impl> --work <工事名>＝工事のフォルダから作った設計書の依頼書
     if len(argv) == 4 and argv[0] == "request-design" and argv[2] == "--work":
         return request_design(argv[1], argv[3])
+    # ★2026-10-07（まこさん「A」）＝… --work <工事名> --design <承認の控えの設計書>＝前の工事の依頼書を、控えの設計書から作る
+    if len(argv) == 6 and argv[0] == "request-design" and argv[2] == "--work" and argv[4] == "--design":
+        return request_design(argv[1], argv[3], argv[5])
     ok_shape = (len(argv) == 3 and argv[0] in ("request", "result", "check")) or (len(argv) == 2 and argv[0] == "form")
     if not ok_shape:
         print(__doc__)
