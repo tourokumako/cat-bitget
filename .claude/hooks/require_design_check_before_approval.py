@@ -681,7 +681,9 @@ def _a12_trial_locked(acc):
                 #   作り直す（G-1・承認の後）まで、gen_materials.py の T6（素の状態で --verify が鳴っている）が必ず落ちる。
                 #   仮当てでは表を作り直さないので、落ちた番人が T6 だけのときは止めない（表を作り直した後は、
                 #   監査に出す前のチェック pre_audit_check.py が gen_materials.py --selftest と --verify を必ずかける）。
-                _t6 = [l.strip() for l in ((r6.stdout or "") + (r6.stderr or "")).splitlines() if l.strip().startswith("❌ T")]
+                # ★2026-10-07（監査 CP63 の修正3・Major-1）＝「❌ T」で始まる行だけを集めると、T で始まらない落ち
+                #   （F4・R1・S1 ほか）と T6 が一緒に出たときに見逃す。件数の行（「❌ N 件」）を除く ❌ の行を全部 集める。
+                _t6 = [l.strip() for l in ((r6.stdout or "") + (r6.stderr or "")).splitlines() if l.strip().startswith("❌ ") and not re.match(r"❌ \d+ 件", l.strip())]
                 if (r6.returncode != 0 and st[0] == "gen_materials.py" and _t6
                         and all(l.startswith("❌ T6: 素の状態で --verify が鳴っている") for l in _t6)):
                     continue

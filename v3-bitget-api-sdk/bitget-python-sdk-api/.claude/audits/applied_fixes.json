@@ -2681,6 +2681,55 @@
    "file": ".claude/breaks/b139_range_excludes_keep.sh",
    "at": "2026-10-06T21:49:17",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-param-values-20261006/やることの表.md",
+   "at": "2026-10-07T09:15:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_report.md",
+   "num": "4",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-param-values-20261006/やることの表.md",
+   "at": "2026-10-07T09:15:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_report.md",
+   "num": "6",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-param-values-20261006/やることの表.md",
+   "at": "2026-10-07T09:15:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_report.md",
+   "num": "8",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-07T09:15:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_report.md",
+   "num": "9",
+   "file": ".claude/state/indicator_review/r3_draft_build.py",
+   "at": "2026-10-07T09:15:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_report.md",
+   "num": "10",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_materials.py",
+   "at": "2026-10-07T09:15:24",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_report.md",
+   "num": "12",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-07T09:15:24",
+   "how": "当てた"
   }
  ]
 }

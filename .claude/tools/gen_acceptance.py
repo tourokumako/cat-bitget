@@ -694,7 +694,9 @@ def build_spec(d: dict) -> str:
         if it.get("対象のファイル") != impl or it.get("種類") != "直した後の文字":
             continue
         old = it.get("直す前の文字") or ""
-        if it.get("中身") and src_text.count(it["中身"]) == 1:
+        # ★2026-10-07（監査 CP63 の修正13・Minor-4）＝直した後の文字が直す前の文字の中に含まれる指示（消すだけの指示）は、
+        #   当てる前から直した後の文字が在る。直す前の文字が残り、それが直した後の文字の一部でもなければ、まだ当たっていない。
+        if it.get("中身") and src_text.count(it["中身"]) == 1 and (not old or old not in src_text or old in it["中身"]):
             continue                                   # もう当たっている（当てた後に --verify で作り直すとき）
         if not old or src_text.count(old) != 1:
             raise SystemExit(f"[gen_acceptance] SPEC を作るために実装の指示 {it.get('番号')} を当てると、"

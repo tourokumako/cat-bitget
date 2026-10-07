@@ -7117,6 +7117,8 @@ def selftest_catalog(exit_: bool = True) -> list:
         _e13, _p13 = iref.find(_x13)
         _ax13 = _rg13.get(_e13["family"]) if _e13 else None
         if not _ax13:
+            if _e13 and find_material(_x13)[0] in _per11:
+                ng.append(f"P-2: {_x13} の種類 {_e13['family']} に、設定の範囲 material_param_ranges が無い（指標ごとの一覧の種類）")
             continue
         for _i13, (_v13, _a13) in enumerate(zip(_p13, _ax13)):
             if not float(_a13["lo"]) <= float(_v13) <= float(_a13["hi"]):
