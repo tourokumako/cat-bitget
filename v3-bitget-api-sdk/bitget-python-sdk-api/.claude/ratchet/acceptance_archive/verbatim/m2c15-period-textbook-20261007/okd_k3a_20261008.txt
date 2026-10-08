@@ -1,0 +1,606 @@
+案の本文をそのまま出します（この塊は、OK をいただいた後に逐語として保存し、設計書の元になります）。
+
+案です（工事 m2c15-period-textbook-20261007＝K-3a 期間の区切り。教科書の期間の版を別の材料として11種 足し、範囲の直しを設定に写す。まこさん「A」「B」「OK」）。本物のコードと設定には、まだ1文字も書いていません。当て方は1回です。
+
+- 指示は全部で 24件です。内訳は、コードの直し 16件・設定と知識の文書の件数の直し 4件・新しい壊すプログラム 4本です。全部を設計書の 4-20 にして、当てる道具 apply_audit_fix.py の --design で1回で当てます。
+- ★この工事と、表の作り直し（G-1）の後の2つ目の工事に分けます（これは私の判断です）。11種は、G-1 でオン・オフの表を作り直すまで「使う」に入りません。だから11種の資料の行と、それを写す設定（VWAP典型 の範囲と、値を埋めない種類の並び）は、G-1 の後の2つ目の工事で写します（158回目の「資料に足した4種を設定に写す」工事と同じ形）。1つにまとめると、道具が作るはずのオン・オフの表と資料の表（json と md）まで指示に入れることになります（写しで数えた違い 約2,200行）。
+- 値は1つも私が書いていません。範囲は、まこさんが OK した直し（k7_range_fix.json）を資料に写し、道具（r3_draft_build.py の写し方）が設定に写しました。11種の資料の行は、同じ指標の今の行の調べた結果から道具が作ります（research/alias_map.json・まこさん「B」）。既知答えの数字は、手で計算できる合成の足から出しました（計算の式を設計書の 4-0 に書きました）。
+- 全部の指示を、本物のファイルに書かずに、写しに当てて走らせました。当てた直後の写しで、照らしの①②はどちらも食い違い0件でした。観察の道具の全部の自己テストが通り（足した11種の既知答えと、ta・pandas-ta との照合を含む）、壊し方 4本は全部 決めた文で落ちました。材料は 477 列 → 488 列 で、増えるのは足す11種だけです。前から在る列の値の違いは 0本でした。
+- G-1 の試しも写しで走らせました。オン・オフの表を作り直すと、「使う」に増えるのは足す11種だけでした（使う 145 種 → 156 種。増えた 11 種＝close vs VWAP典型・前日POC・前日VAH・前日VAL・前週pivotPP・前週pivotR1・前週pivotS1・当日POC・当日VAH・当日VAL・当日VWAP。減った 0 種。）。資料の道具4本で11種の行ができ、照らしの①は0件でした。2つ目の工事で写す設定の違いは 4-0 の⑦です。
+- 決めていただくことが在ります（設計書では 3-2 の節に入ります）。週の始まりは、出どころの逐語がありません。
+
+【4-0 この仕組みは何か】
+**この工事は、教科書の期間の区切りで作る版を、今の版を残して別の材料として足す工事です。**監査 CP60 は、VWAP・出来高プロファイル（POC・VAH・VAL）・前期間pivot の今の作りが、教科書と違うと指摘しました。まこさんは、今の版を残して教科書の版を足し、後で比べる形を決めました（K-3 の「A」・K-7 の「OK」）。どちらが良いかを比べるのは M2-F-10f で、この工事は材料を足すだけです。
+
+**①足す11種（名前・作り）。**
+| 材料の名前 | 作り | 出どころ |
+|---|---|---|
+| close vs VWAP典型%288 | 典型価格（(高値＋安値＋終値)÷3）の288本の移動窓の VWAP からの乖離%。窓の一覧は今の close vs VWAP% と同じ（vwap_windows） | 監査 CP60 の修正41 の (b)＝ta の VolumeWeightedAveragePrice の作り |
+| close vs 当日VWAP% | UTC の日の0時から積み上げる典型価格の VWAP からの乖離%（今の足までを含む） | 修正41 の (c)＝StockCharts「VWAP calculations start fresh at the open」・pandas-ta の vwap |
+| close vs 前日POC%・前日VAH%・前日VAL% | 前の UTC の日の足ぜんぶで作り、その日のあいだ線が動かない | 修正42「前の UTC の日で固定（教科書の『前のセッションの値を後のセッションの参照にする』）」 |
+| close vs 当日POC%・当日VAH%・当日VAL% | その日の0時から1本前までの足で作り、足が進むごとに育つ（今の足は窓に入れない＝今の版と同じ） | 修正42「その日の0時から育つ版」 |
+| close vs 前週pivotPP%・前週pivotR1%・前週pivotS1% | 前の週（月曜0時 UTC に始まる7日）の高値・安値・終値で作り、その週のあいだ線が動かない | K-7 の決定・StockCharts「Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.」 |
+
+**②既知答え（手で計算できる合成の足・データの始まり 2026-03-01 は日曜）。**
+| 材料 | 合成の足 | 答え |
+|---|---|---|
+| VWAP典型 | 全部の足が 高値112・安値100・終値103・出来高1 | 典型価格105 → (103÷105−1)×100。終値で作ると 0 になる＝値段の取り違えが分かる |
+| 当日VWAP | 1日目288本＝終値150。2日目＝典型価格105 の足2本（出来高1）と、99 の足1本（出来高2） | 2本目＝(103÷105−1)×100。3本目＝VWAP (105＋105＋99×2)÷4＝102 → (99÷102−1)×100。日で区切らないと1日目の150 が混ざる |
+| 前日POC・VAH・VAL | 1日目＝終値100 の足144本と200 の足144本（出来高の比 10:1 と 6:4）。2日目＝終値100 | 今の POC・VAH・VAL の手計算と同じ答え（POC と VAL は下の区画・VAH は 10:1 で下・6:4 で上）。同じ日の足で作ると乖離0 になる |
+| 当日POC・VAH・VAL | 1日目288本＝終値150。2日目＝終値100 と200 の足20本、最後に終値100 | 同上。日で区切らないと1日目の150 が線になる |
+| 前週pivot | 1日目（日曜）＝終値105・高値110 が1本・安値100 が1本。2日目（月曜）＝全部104。3日目＝終値105 | 3日目の線は日曜の週から＝PP 105・R1 110・S1 100 → 乖離 0・(105÷110−1)×100・5。前の日の版なら 104 で作るので答えが変わる |
+
+**③オン・オフの表（使う）の違い（G-1 の試し＝写しで作り直した・道具が数えた）。**
+使う 145 種 → 156 種。増えた 11 種＝close vs VWAP典型・前日POC・前日VAH・前日VAL・前週pivotPP・前週pivotR1・前週pivotS1・当日POC・当日VAH・当日VAL・当日VWAP。減った 0 種。
+
+**④範囲の違い（今の設定 → 当てた後・道具が数えた）。**
+| 種類 | 今の範囲 | 当てた後の範囲 |
+|---|---|---|
+| BB%b | 20〜50・2.0〜2.0 | 10〜50・1.9〜2.1 |
+| BB幅 | 20〜50・2.0〜2.0 | 10〜50・1.9〜2.1 |
+| W字 | 24〜96・0.003〜0.003 | 24〜96・0.0〜0.06 |
+
+**⑤値を埋めずに並べる種類（P-4）の違い（この工事・道具が数えた）。**
+なし
+
+**⑥範囲で見つかったこと。**
+- 範囲を広げた軸＝ROC の軸1: 範囲 9〜14 の外に、一覧の値 [9.0, 12.0, 24.0] が在る → 9〜24 に広げる
+- 範囲を広げた軸＝close vs T3% の軸1: 範囲 8〜34 の外に、カタログの値 [20.0, 50.0, 200.0] が在る → 8〜200 に広げる
+- 軸の順が入れ替わる組（前の工事から在る・工事2）＝MACD線%: 軸1 3〜12 と 軸2 10〜26 が重なる
+- 軸の順が入れ替わる組（前の工事から在る・工事2）＝MACDヒスト%: 軸1 3〜12 と 軸2 10〜26 が重なる
+- 軸の順が入れ替わる組（前の工事から在る・工事2）＝MACDシグナル線%: 軸1 3〜12 と 軸2 10〜26 が重なる
+- 軸の順が入れ替わる組（前の工事から在る・工事2）＝TSI: 軸1 4〜13 と 軸2 7〜26 が重なる
+- 軸の順が入れ替わる組（前の工事から在る・工事2）＝TSIシグナル: 軸1 4〜13 と 軸2 7〜26 が重なる
+- 軸の順が入れ替わる組（前の工事から在る・工事2）＝TSIヒスト: 軸1 4〜13 と 軸2 7〜26 が重なる
+- P-3＝この直しで増えた、端の値が効いていない軸 0件（範囲の端とまん中の値で列を作り、2種類の値動きで比べた）。
+
+**⑦2つ目の工事で写す設定（G-1 の試しの後に、資料から写し直すと変わる行・道具が数えた）。**
+- observe_config.json（2 行）
+```
+- "_material_params_pending": ["KST＝範囲が1点のまま（全部の軸）：10・15・20・30・10・10・10・15・9", "KSTシグナル＝範囲が1点のまま（全部の軸）：10・15・20・30・10・10・10・15・9", "PPO＝範囲が1点のまま（全部の軸）：12・26・9", "PPOシグナル＝範囲が1点のまま（全部の軸）：12・26・9", "PPOヒスト＝範囲が1点のまま（全部の軸）：12・26・9", "STCstoch＝範囲が1点のまま（全部の軸）：23・50・10", "HWC幅%＝範囲が1点のまま（全部の軸）：0.2・0.1・0.1・0.1・1", "MASSI＝範囲が1点のまま（全部の軸）：9・25", "close vs VWAP＝範囲が1点のまま（全部の軸）：288", "pivotPP＝範囲が1点のまま（全部の軸）：288", "pivotR1＝範囲が1点のまま（全部の軸）：288", "pivotS1＝範囲が1点のまま（全部の軸）：288", "POC＝最初の値も範囲も決まらない", "VAH＝最初の値も範囲も決まらない", "VAL＝最初の値も範囲も決まらない", "SMC_SWEEP＝範囲が1点のまま（全部の軸）：15・1.5", "close vs MAMA%＝範囲が1点のまま（全部の軸）：0.5・0.05", "close vs FAMA%＝範囲が1点のまま（全部の軸）：0.5・0.05", "close vs ZLMA%＝最初の値も範囲も決まらない", "close vs PMAX%＝最初の値も範囲も決まらない", "close vs SAREXT%＝最初の値も範囲も決まらない", "close vs ABER_ZG%＝範囲が1点のまま（全部の軸）：5・15", "ABER位置＝範囲が1点のまま（全部の軸）：5・15", "HWC位置＝範囲が1点のまま（全部の軸）：0.2・0.1・0.1・0.1・1.0"],
++ "_material_params_pending": ["KST＝範囲が1点のまま（全部の軸）：10・15・20・30・10・10・10・15・9", "KSTシグナル＝範囲が1点のまま（全部の軸）：10・15・20・30・10・10・10・15・9", "PPO＝範囲が1点のまま（全部の軸）：12・26・9", "PPOシグナル＝範囲が1点のまま（全部の軸）：12・26・9", "PPOヒスト＝範囲が1点のまま（全部の軸）：12・26・9", "STCstoch＝範囲が1点のまま（全部の軸）：23・50・10", "HWC幅%＝範囲が1点のまま（全部の軸）：0.2・0.1・0.1・0.1・1", "MASSI＝範囲が1点のまま（全部の軸）：9・25", "close vs VWAP＝範囲が1点のまま（全部の軸）：288", "pivotPP＝範囲が1点のまま（全部の軸）：288", "pivotR1＝範囲が1点のまま（全部の軸）：288", "pivotS1＝範囲が1点のまま（全部の軸）：288", "POC＝最初の値も範囲も決まらない", "VAH＝最初の値も範囲も決まらない", "VAL＝最初の値も範囲も決まらない", "SMC_SWEEP＝範囲が1点のまま（全部の軸）：15・1.5", "close vs MAMA%＝範囲が1点のまま（全部の軸）：0.5・0.05", "close vs FAMA%＝範囲が1点のまま（全部の軸）：0.5・0.05", "close vs ZLMA%＝最初の値も範囲も決まらない", "close vs PMAX%＝最初の値も範囲も決まらない", "close vs SAREXT%＝最初の値も範囲も決まらない", "close vs ABER_ZG%＝範囲が1点のまま（全部の軸）：5・15", "ABER位置＝範囲が1点のまま（全部の軸）：5・15", "HWC位置＝範囲が1点のまま（全部の軸）：0.2・0.1・0.1・0.1・1.0", "close vs VWAP典型＝範囲が1点のまま（全部の軸）：288", "当日VWAP＝最初の値も範囲も決まらない", "前日POC＝最初の値も範囲も決まらない", "前日VAH＝最初の値も範囲も決まらない", "前日VAL＝最初の値も範囲も決まらない", "当日POC＝最初の値も範囲も決まらない", "当日VAH＝最初の値も範囲も決まらない", "当日VAL＝最初の値も範囲も決まらない"],
+```
+- search_limits.json（3 行）
+```
+-    "RCI": [{"kind": "int", "lo": 5, "hi": 52}]
++    "RCI": [{"kind": "int", "lo": 5, "hi": 52}],
++    "close vs VWAP典型": [{"kind": "int", "lo": 288, "hi": 288}]
+```
+
+【4-1 システムの境界】
+**誰が動かすか。**私（CC）が、当てる道具 apply_audit_fix.py・観察の道具の自己テスト・照らしの道具・表を作る道具（G-1）・資料の道具4本・監査に出す前のチェックを動かします。
+
+**誰が結果を使うか。**
+- 足した11種の列は、観察の道具の build_catalog が材料のカタログに入れ、engine_tuner と M2-F の段の道具が読みます。
+- 参照表の登録（定義・既知答え・照合・系統・「使う」の決定）は、観察の道具の自己テストと、オン・オフの表を作る道具（gen_indicator_switch.py）が読みます。
+- 探す範囲の設定は、engine_tuner_gen.py の material_ranges が読みます。
+
+【4-2 入力と出力】
+**読むもの。**今の実物（observe_diag.py・indicator_reference_diag.py・search_limits.json）・資料（indicator_params_by_strategy.json ほか2つ・research/alias_map.json）・設計書の 4-20。
+
+**書くもの。**
+- 当てる（--design）：observe_diag.py・indicator_reference_diag.py・search_limits.json・知識の文書 regime_detection_kb.md の件数の囲みと、新しい壊すプログラム 4本。
+- G-1：オン・オフの表・型の表・出口の型の表・材料の文書・観察の説明書・組み立ての表・資料の表3つ（資料の道具4本）・修正対応表。
+- 2つ目の工事（G-1 の後）：observe_config.json・search_limits.json の、資料から写す塊（4-0 の⑦）。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| observe_diag.py の _vp_one | 出来高プロファイルの1つの窓の計算（今の _vp_levels の中から切り出す・計算は変えない） | 新設 |
+| observe_diag.py の _vp_by_day | 日で区切る出来高プロファイル（前日・当日） | 新設 |
+| observe_diag.py の _vwap_day | UTC の日の0時から積み上げる典型価格の VWAP | 新設 |
+| observe_diag.py の _pivot_prev_period | 前の期間の pivot に「前の週」を選べる引数を足す（渡さなければ今までと同じ） | 直す |
+| observe_diag.py の build_catalog と登録（_reg） | 11種をカタログに入れる | 直す |
+| indicator_reference_diag.py の登録（_r）・系統・業界の対応表・2つ目の照合 | 11種の定義・既知答え・照合・「使う」の決定の逐語 | 直す |
+| search_limits.json の資料から写す塊 | 範囲の直し（道具が資料から写し直す） | 直す |
+| regime_detection_kb.md の件数の囲み（COUNTS_START〜COUNTS_END） | gen_materials.py が書き出す「指標の種類・材料の一覧の行・部品の件数」（写しで gen_materials.bans_count_block が数えた文に置き換える） | 直す |
+| .claude/breaks の壊すプログラム | 日の区切り・週の区切り・当日の区切り・範囲の写しを壊すと、決めた文で落ちるかを見る | 新設 |
+- 触る関数（当てる前と後の構文木を関数ごとに比べて道具が数えた）＝observe_diag.py：<モジュール直下>・_pivot_prev_period・_vp_by_day・_vp_levels・_vp_one・_vwap_day・build_catalog／indicator_reference_diag.py：<モジュール直下>・_pivot_week_case・_tb_vs_vwap_tp・_tp_case・_vp_day_case・_vwap_day_case
+
+【4-4 処理の流れ】
+1. まこさんの承認の後、全部を当てます（apply_audit_fix.py --design --dry → --design）。当てる道具は、全件を当てる前の実物で照らしてから、番号の順に当てます。1件でも合わなければ1件も当てません。
+2. 当てた直後に、当てる道具が G2 と H2 を自分で走らせます（observe_diag.py・search_limits.json は H2 の対象です）。
+3. 照合（verify_design_contract.py --diff）をかけます。照らしの道具（①②）・壊すプログラムを走らせ、全体の自己テスト（--selftest）を1回 走らせて、出力をそのまま貼ります（当てた直後の写しで、全部 通ることを確かめた）。
+4. G-1：オン・オフの表を作り直し（11種が「使う」に入る）、型の表・出口の型の表（変わればまこさんに再承認していただく）・材料の文書・観察の説明書・組み立ての表を作り直します。そのあと資料の道具4本（list_on_families.py --add・make_param_table.py・extract_threshold_role_add.py --alias・build_role_threshold_table.py）を走らせ、修正対応表を作り直します。ここで照らしの①は0件、②は 4-0 の⑦の設定を写すまで食い違います（G-1 の試しで実測）。
+5. 2つ目の工事：4-0 の⑦の設定を、資料から道具が写す案を出し、承認をいただいて当てます（照らしの②が0件になる）。
+6. G-2：G2 → H2 を取り直し、監査に出す前のチェック（pre_audit_check.py --run）を走らせます。そのあと、2つの工事をまとめて実装の監査に出します。
+
+【4-5 異常系】
+| 起きたこと | どうなるか |
+|---|---|
+| --design の --dry で、当たらない件が出る | 1件も当てずに止まります。まこさんに報告します |
+| 11種のどれかの作りが日・週の区切りを取り違える | 観察の道具の自己テストが「手計算の既知答えと不一致」を出して落ちます |
+| 当日VWAP・VWAP典型 がライブラリの値と合わない | 観察の道具の自己テストが「2つ目の照合」「外部ライブラリ ta と不一致」を出して落ちます |
+| 設定ファイルが、資料から写したものと違う | 照らしの道具が「②」で始まる行を出して落ちます |
+| 11種が「使う」になったのに、資料に行が無い | 照らしの道具が「①」で始まる行を出して落ちます（資料の道具4本を G-1 の中で走らせる） |
+| G-1 の後、2つ目の工事を当てる前に監査に出す前のチェックを走らせる | 照らしの道具が「②」で落ちます（2つ目の工事を当ててから走らせる＝4-4 の順） |
+| 資料の行を作る前に、元にする種類の行が無い | 資料の道具が止まります（make_param_table.py・extract_threshold_role_add.py が「元にする種類の行が無い」で止まる） |
+
+【4-6 制約】
+| 決まり | 出どころ | この設計でどう守るか |
+|---|---|---|
+| 今の版を残して、教科書の版を別の材料として足す | まこさん「A」（K-3）・K-7 の「OK」 | 今の close vs VWAP%・POC%・VAH%・VAL%・前期間pivot は1文字も変えません。前から在る列の値は直す前と同じです（写しで 0本の違い） |
+| 指標の名前に値を入れて、指標の数を増やさない | まこさん 2026-10-04「指標名に閾値やパラメータの値を固定で入れて、指標数を増やすという解決策はやめてほしい」 | 新しい名前は、作りの違い（典型価格・当日・前日・前週）を表すだけで、値は入れません。VWAP典型 の窓は今の VWAP と同じ一覧から作ります |
+| 数字を CC が作らない | 思考の順の7（req_thinking_20261004） | 範囲は資料から道具が写しました。既知答えの数字は合成の足から手で計算できる形で、式を 4-0 に書きました |
+| 探す値を、点の一覧で先に限定しない | 要件の作ってはいけないもの2番 | BB と W字 の範囲を、教科書の値に届くように広げます |
+| 未来のデータを使わない | 要件定義書 §4.6.H2 | 前日・前週は閉じた期間だけ、当日の出来高プロファイルは1本前まで、当日VWAP は今の足までを使います。当てた後に H2 を取り直します |
+| 値段の高さで値が変わらない | 要件定義書 §4.6.H6 | 11種とも終値との乖離%（比）で作ります |
+| 乱数を使わない | 恒久67番 | 乱数は使いません |
+
+【4-7 探索の範囲】
+**この工事で探す範囲が変わるのは 3種類です（4-0 の④）。**足す11種は、名前に出る軸が無いか（10種）、今の VWAP と同じ1点の範囲（VWAP典型）で、その設定は2つ目の工事で写します（4-0 の⑦）。
+
+【4-8 データ構造】
+**変えません。**カタログの1件の形・参照表の欄・設定の欄の形は前の工事のままです。
+
+【4-9 設定】
+**observe_config.json は、この工事では変えません**（今の資料から写し直しても同じ。足した種類の値を埋めない並びは、2つ目の工事で写す）。
+
+**search_limits.json で変えるもの。**material_param_ranges を資料から写し直す（BB%b・BB幅・W字 の範囲）。
+
+コマンドの旗は増やしません。
+
+【4-10 保存先】
+**変えません。**
+
+【4-11 時刻の扱い】
+**日と週の区切りは、データの時刻（UTC）で決めます。**日＝UTC の0時。週＝月曜0時 UTC に始まる7日（pandas の週の区切り W-SUN の始まり）。前日・前週は「データに在る1つ前の期間」です（今の前期間pivot と同じ）。
+
+【4-12 出る結果の姿】
+**完成したときに出るもの。**
+1. 観察の道具の全体の自己テストが通る（足した11種の既知答えと照合を含む）。コマンド＝python3 scripts/priority_rebuild/observe_diag.py --selftest。
+2. 照らしの道具が、①②とも食い違い0件。コマンド＝python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/pre_audit_check.py --check-indicator-sources。
+3. 壊すプログラムが、全部 決めた文で落ちる。コマンド＝python3 .claude/tools/run_breaks.py --design。
+4. G2 と H2 が取り直される。
+
+【4-13 影響範囲】
+1. **observe_diag.py・search_limits.json は H2 の対象です。**当てた後に G2 → H2 を取り直します。
+2. **材料のカタログに 11 列が増えます（close vs VWAP典型%288・close vs 前日POC%・close vs 前日VAH%・close vs 前日VAL%・close vs 前週pivotPP%・close vs 前週pivotR1%・close vs 前週pivotS1%・close vs 当日POC%・close vs 当日VAH%・close vs 当日VAL%・close vs 当日VWAP%）。**型の表（signal_families）の部品も増える見込みで、まこさんの再承認が要ります（G-1）。
+3. **成績表（material_ranking.json）には、増える列の行がありません。**作り直す（M2-D-8）まで、段の候補の順位に出ません。
+4. **マイルストーンへの差し込み（作ってはいけないものとの照合）は変わりません**（写しで 0行の違い）。
+5. **前からの壊すプログラムが探す文字の数は、当てる前と後で同じです。**道具が数えた相手は、下の囲みです。★2つ目の工事では、探す範囲の RCI の行の後ろに close vs VWAP典型 の行が来て、b143 が探す行の末尾に「,」が付きます（その工事で b143 も直す・k3a_oldbreak_check.py で写しの測り方を確かめた）。
+```
+b104_atr1h_own_tf.sh・b105_atr1h_future_hour.sh・b106_atr1h_no_clip.sh・b107_atr1h_base_not_passed.sh・b108_atr1h_base_wrong_bars.sh・b122_obs_formula_copied.sh・b126_rank_resume_save_off.sh・b128_k1_copc_back_in_ao_loop.sh・b129_htf_bar_close_two_bars.sh・b131_industry_map_prev_pivot_gone.sh・b132_hidden_param_not_passed.sh・b133_cksp_mixed_set.sh・b134_ao_name_with_value.sh・b135_rci_mako_gone.sh・b136_insp2_bar_close_dropped.sh・b137_material_params_ignored.sh・b138_keep_name_dropped.sh・b139_range_excludes_keep.sh・b140_group_range_ignored.sh・b141_catalog_out_of_range.sh・b143_rci_range_short.sh・b55_cyc_key_time_gone.sh・b56_one_min_csv_old.sh・b60_only5_with_others.sh・b61_insp5_bars_kind.sh・b63_tm_bitget_scope.sh・b64_tm_subdir.sh・b65_tm_badtail.sh
+```
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 観察の道具の自己テスト（全体） | 130秒 | 写しで当てた後に走らせた実測（k3a_draft_build.py の [7]） |
+| 軽い口（--selftest-catalog） | 9秒 | 写しで当てた後に走らせた実測（k3a_draft_build.py の [7]） |
+| 材料の一覧 | 488 列 | 写しで数えた（k3a_draft_build.py の [3]） |
+
+【4-15 競合】
+**この工事の中ではありません。**全部を --design の1回で当てます。★この工事と2つ目の工事の間（G-1 の後）は、照らしの②が食い違う途中の状態です。その間に監査に出す前のチェックを走らせません（4-4 の順）。
+
+【4-16 セキュリティ】
+**触らないもの。**人に見せてはいけない値（取引所の鍵・本番の発注の切り替え）には触りません。書き換えられては困る記録（H2・G2 の検査済みの記録・承認の記録）は、取り直しの道具だけが書きます。
+
+【4-17 ログと進捗表示】
+**画面に出すもの。**観察の道具の自己テストは、落ちたときだけ「手計算の既知答えと不一致」「2つ目の照合」で始まる行を出します。照らしの道具は、食い違いがあるときだけ「①」「②」で始まる行を出します。
+
+【4-18 再利用】
+| 手本 | 何を写すか |
+|---|---|
+| r5_draft_build.py・r3_draft_build.py（同じ日と前の日の工事の道具） | 指示を作る形・写しで確かめる形・壊し方を並べて走らせる形・資料から設定を作る写し方 |
+| observe_diag.py の _vp_levels と _pivot_prev_period | 出来高プロファイルの決まり（区画24・70%・同量なら高い側）と、前の期間の区切り方（shift(1)） |
+| indicator_reference_diag.py の _vp_case と _pivot_day_case | 既知答えの合成の足の形 |
+| 壊すプログラム b142・b143 | 壊すプログラムの形 |
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "367〜391行（_vp_levels・監査 CP60 の修正42＝出来高プロファイルの1つの窓の計算を _vp_one に切り出し（計算は変えない）、日で区切る版 _vp_by_day を足す）",
+  "直す前の文字": "    poc, vah, val = [], [], []\n    ca, va = c.to_numpy(), v.to_numpy()\n    for i in range(len(ca)):\n        if i < win:\n            poc.append(np.nan); vah.append(np.nan); val.append(np.nan); continue\n        cw, vw = ca[i - win:i], va[i - win:i]\n        bins = np.linspace(cw.min(), cw.max(), rows + 1)\n        idx = np.clip(np.digitize(cw, bins) - 1, 0, len(bins) - 2)\n        agg = np.bincount(idx, weights=vw, minlength=len(bins) - 1)\n        centers = (bins[:-1] + bins[1:]) / 2\n        p = int(np.argsort(agg)[::-1][0])\n        last = len(agg) - 1\n        tot = max(agg.sum(), 1e-9)\n        lo, hi, acc = p, p, agg[p]\n        while acc / tot < va_pct and (lo > 0 or hi < last):\n            up = agg[hi + 1] if hi < last else -1.0\n            dn = agg[lo - 1] if lo > 0 else -1.0\n            if up > dn or (up == dn and (hi + 1 - p) <= (p - lo + 1)):\n                hi += 1\n                acc += agg[hi]\n            else:\n                lo -= 1\n                acc += agg[lo]\n        poc.append(centers[p]); vah.append(centers[hi]); val.append(centers[lo])\n    return (pd.Series(poc, index=c.index), pd.Series(vah, index=c.index), pd.Series(val, index=c.index))\n",
+  "種類": "直した後の文字",
+  "中身": "    poc, vah, val = [], [], []\n    ca, va = c.to_numpy(), v.to_numpy()\n    for i in range(len(ca)):\n        if i < win:\n            poc.append(np.nan); vah.append(np.nan); val.append(np.nan); continue\n        p_, h_, l_ = _vp_one(ca[i - win:i], va[i - win:i], va_pct, rows)\n        poc.append(p_); vah.append(h_); val.append(l_)\n    return (pd.Series(poc, index=c.index), pd.Series(vah, index=c.index), pd.Series(val, index=c.index))\n\n\ndef _vp_one(cw, vw, va_pct=0.7, rows=24):\n    \"\"\"1つの窓の出来高プロファイル＝(POC・VAH・VAL の価格)。決まりは _vp_levels の説明のとおり。\n    ★2026-10-07（工事 m2c15-period-textbook-20261007）に _vp_levels の中から切り出した（計算は1文字も変えていない）。\n      n 本の移動窓（_vp_levels）と、日で区切る版（_vp_by_day・監査 CP60 の修正42）が同じ決まりを使うため。\"\"\"\n    bins = np.linspace(cw.min(), cw.max(), rows + 1)\n    idx = np.clip(np.digitize(cw, bins) - 1, 0, len(bins) - 2)\n    agg = np.bincount(idx, weights=vw, minlength=len(bins) - 1)\n    centers = (bins[:-1] + bins[1:]) / 2\n    p = int(np.argsort(agg)[::-1][0])\n    last = len(agg) - 1\n    tot = max(agg.sum(), 1e-9)\n    lo, hi, acc = p, p, agg[p]\n    while acc / tot < va_pct and (lo > 0 or hi < last):\n        up = agg[hi + 1] if hi < last else -1.0\n        dn = agg[lo - 1] if lo > 0 else -1.0\n        if up > dn or (up == dn and (hi + 1 - p) <= (p - lo + 1)):\n            hi += 1\n            acc += agg[hi]\n        else:\n            lo -= 1\n            acc += agg[lo]\n    return centers[p], centers[hi], centers[lo]\n\n\ndef _vp_by_day(c, v, mode, va_pct=0.7, rows=24):\n    \"\"\"日で区切る出来高プロファイル（監査 CP60 の修正42 の比べる版・2026-10-07・工事 m2c15-period-textbook-20261007）。\n    区切り＝UTC の日（データの時刻は UTC）。戻り＝(POC・VAH・VAL の価格の列)。決まり（区画・70%）は _vp_one。\n    mode=\"前日\"＝1つ前の日の足ぜんぶで作り、その日のあいだ動かない（監査 CP60 の修正42「前の UTC の日で固定（教科書の\n      『前のセッションの値を後のセッションの参照にする』）」）。1つ前の日＝データに在る1つ前の日（_pivot_prev_period の\n      shift(1) と同じ）。データの最初の日は NaN。\n    mode=\"当日\"＝その日の0時から、今の足の1本前までの足で作る（同「その日の0時から育つ版」）。今の足は窓に入れない\n      （_vp_levels と同じ＝未来を見ない）。その日の最初の足は NaN。\"\"\"\n    if mode not in (\"前日\", \"当日\"):\n        raise ValueError(f\"_vp_by_day の mode は 前日 か 当日（{mode}）\")\n    ca, va = c.to_numpy(float), v.to_numpy(float)\n    dv = c.index.floor(\"D\").to_numpy()\n    out = np.full((3, len(ca)), np.nan)\n    bounds, s = [], 0\n    for i in range(1, len(ca) + 1):\n        if i == len(ca) or dv[i] != dv[s]:\n            bounds.append((s, i))\n            s = i\n    for k, (s, e) in enumerate(bounds):\n        if mode == \"前日\":\n            if k == 0:\n                continue\n            ps, pe = bounds[k - 1]\n            out[:, s:e] = np.array(_vp_one(ca[ps:pe], va[ps:pe], va_pct, rows))[:, None]\n        else:\n            for i in range(s + 1, e):\n                out[:, i] = _vp_one(ca[s:i], va[s:i], va_pct, rows)\n    return tuple(pd.Series(out[j], index=c.index) for j in range(3))\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:367「poc, vah, val = [], [], []」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "891〜892行（<モジュール直下>・監査 CP60 の修正41 の (b)(c)＝典型価格の移動窓の VWAP と、UTC 0時から積み上げる VWAP を、今の版を残して足す）",
+  "直す前の文字": "_reg(\"close vs VWAP%\", \"close vs VWAP%{}\", True, lambda d, n: (d.close / ((d.close * d.volume).rolling(n).sum()\n     / d.volume.rolling(n).sum().replace(0, np.nan)) - 1) * 100)\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"close vs VWAP%\", \"close vs VWAP%{}\", True, lambda d, n: (d.close / ((d.close * d.volume).rolling(n).sum()\n     / d.volume.rolling(n).sum().replace(0, np.nan)) - 1) * 100)\n# ★2026-10-07（工事 m2c15-period-textbook-20261007・監査 CP60 の修正41 の (b)(c)）＝教科書の VWAP（値段は典型価格）の2つの版を、\n#   今の版（終値・n 本の移動窓）を残して別の材料として足す。どちらが良いかは M2-F-10f で比べる（この工事は材料を足すだけ）。\n#   (b) 典型価格＝(高値＋安値＋終値)÷3 の n 本の移動窓＝ta の VolumeWeightedAveragePrice の作り\n#   (c) UTC の日の0時から積み上げる典型価格＝StockCharts の逐語「VWAP calculations start fresh at the open」「(H+L+C)/3」\n#       ＝pandas-ta の vwap（anchor の既定 D）の作り。今の足までを含む（今の版の移動窓も今の足を含む）。\ndef _vwap_day(d):\n    \"\"\"UTC の日の0時から積み上げる VWAP（値段は典型価格・今の足までを含む）。\"\"\"\n    key = d.index.floor(\"D\")\n    tp = (d.high + d.low + d.close) / 3\n    return (tp * d.volume).groupby(key).cumsum() / d.volume.groupby(key).cumsum().replace(0, np.nan)\n\n\n_reg(\"close vs VWAP典型%\", \"close vs VWAP典型%{}\", True, lambda d, n: (d.close / ((((d.high + d.low + d.close) / 3) * d.volume)\n     .rolling(n).sum() / d.volume.rolling(n).sum().replace(0, np.nan)) - 1) * 100)\n_reg(\"close vs 当日VWAP%\", \"close vs 当日VWAP%\", True, lambda d: (d.close / _vwap_day(d) - 1) * 100)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:891「_reg(\"close vs VWAP%\", \"close vs VWAP%{}\", True, lambda d, n: (d.close / ((d.close * d.volume).rolling(n).sum()」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "913行（_pivot_prev_period・K-7 の決定＝前期間pivot の作りに「前の週」を選べる引数を足す（渡さなければ今までと同じ））",
+  "直す前の文字": "def _pivot_prev_period(d):\n",
+  "種類": "直した後の文字",
+  "中身": "def _pivot_prev_period(d, unit=None):\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:913「def _pivot_prev_period(d):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "918〜920行（_pivot_prev_period・K-7 の決定＝unit=\"W\" のときは前の週（月曜0時 UTC 始まり）で区切る）",
+  "直す前の文字": "    step = pd.Series(d.index).diff().median()\n    if pd.isna(step) or step < pd.Timedelta(\"1D\"):\n        key = d.index.floor(\"D\")\n",
+  "種類": "直した後の文字",
+  "中身": "    step = pd.Series(d.index).diff().median()\n    # ★unit=\"W\"（2026-10-07・工事 m2c15-period-textbook-20261007・K-7 の決定「前期間pivot の3種に前の週の版を別の材料として足す」）＝\n    #   足の長さによらず、前の週（月曜0時 UTC に始まる7日）の高値・安値・終値で作る。StockCharts の逐語「Pivot Points for 30-, 60-,\n    #   and 120-minute charts use the prior week's high, low, and close.」。週の始まりを月曜にしたのは ISO 8601 の週の決まり\n    #   （出どころの逐語は無い＝設計書の「決めたこと」に書いた）。unit を渡さなければ今までと同じ（日中の足は前の日）。\n    if unit == \"W\":\n        key = d.index.to_period(\"W-SUN\").to_timestamp()\n    elif pd.isna(step) or step < pd.Timedelta(\"1D\"):\n        key = d.index.floor(\"D\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:918「step = pd.Series(d.index).diff().median()」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "934行（<モジュール直下>・K-7 の決定＝前の週で固定する pivot の3種を、今の前の日の版を残して足す）",
+  "直す前の文字": "_reg(\"close vs 前期間pivotS1%\", \"close vs 前期間pivotS1%\", True, lambda d: (d.close / _pivot_prev_period(d)[2] - 1) * 100)\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"close vs 前期間pivotS1%\", \"close vs 前期間pivotS1%\", True, lambda d: (d.close / _pivot_prev_period(d)[2] - 1) * 100)\n# ★2026-10-07（工事 m2c15-period-textbook-20261007・K-7 の決定）＝前の週で固定する版（今の前の日の版は残す）\n_reg(\"close vs 前週pivotPP%\", \"close vs 前週pivotPP%\", True, lambda d: (d.close / _pivot_prev_period(d, \"W\")[0] - 1) * 100)\n_reg(\"close vs 前週pivotR1%\", \"close vs 前週pivotR1%\", True, lambda d: (d.close / _pivot_prev_period(d, \"W\")[1] - 1) * 100)\n_reg(\"close vs 前週pivotS1%\", \"close vs 前週pivotS1%\", True, lambda d: (d.close / _pivot_prev_period(d, \"W\")[2] - 1) * 100)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:934「_reg(\"close vs 前期間pivotS1%\", \"close vs 前期間pivotS1%\", True, lambda d: (d.close / _pivot_prev_period(d)[2] - 1) * 100)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "941〜942行（<モジュール直下>・監査 CP60 の修正42＝前の日で固定・その日の0時から育つ POC・VAH・VAL の6種を、今の版を残して足す）",
+  "直す前の文字": "_reg(\"close vs VAL%\", \"close vs VAL%{}\", True, lambda d, n, va_pct=0.7, rows=24:\n     (d.close / _vp_levels(d.close, d.volume, n, va_pct=va_pct, rows=rows)[2] - 1) * 100)\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"close vs VAL%\", \"close vs VAL%{}\", True, lambda d, n, va_pct=0.7, rows=24:\n     (d.close / _vp_levels(d.close, d.volume, n, va_pct=va_pct, rows=rows)[2] - 1) * 100)\n# ★2026-10-07（工事 m2c15-period-textbook-20261007・監査 CP60 の修正42）＝出来高プロファイルを日で区切る2つの版を、\n#   今の版（n 本の移動窓）を残して別の材料として足す。前日＝前の UTC の日で固定／当日＝その日の0時から育つ（_vp_by_day）。\n#   区画の数・70% は今の版と同じ既定（名前に出さない引数）。POC は 70% を使わないので、今の POC と同じく区画の数だけを持つ。\n_reg(\"close vs 前日POC%\", \"close vs 前日POC%\", True, lambda d, rows=24:\n     (d.close / _vp_by_day(d.close, d.volume, \"前日\", rows=rows)[0] - 1) * 100)\n_reg(\"close vs 前日VAH%\", \"close vs 前日VAH%\", True, lambda d, va_pct=0.7, rows=24:\n     (d.close / _vp_by_day(d.close, d.volume, \"前日\", va_pct, rows)[1] - 1) * 100)\n_reg(\"close vs 前日VAL%\", \"close vs 前日VAL%\", True, lambda d, va_pct=0.7, rows=24:\n     (d.close / _vp_by_day(d.close, d.volume, \"前日\", va_pct, rows)[2] - 1) * 100)\n_reg(\"close vs 当日POC%\", \"close vs 当日POC%\", True, lambda d, rows=24:\n     (d.close / _vp_by_day(d.close, d.volume, \"当日\", rows=rows)[0] - 1) * 100)\n_reg(\"close vs 当日VAH%\", \"close vs 当日VAH%\", True, lambda d, va_pct=0.7, rows=24:\n     (d.close / _vp_by_day(d.close, d.volume, \"当日\", va_pct, rows)[1] - 1) * 100)\n_reg(\"close vs 当日VAL%\", \"close vs 当日VAL%\", True, lambda d, va_pct=0.7, rows=24:\n     (d.close / _vp_by_day(d.close, d.volume, \"当日\", va_pct, rows)[2] - 1) * 100)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:941「_reg(\"close vs VAL%\", \"close vs VAL%{}\", True, lambda d, n, va_pct=0.7, rows=24:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1429〜1430行（build_catalog・足した VWAP の2種をカタログに入れる（典型価格の移動窓は今の VWAP と同じ窓の一覧で作る））",
+  "直す前の文字": "    for n in cfg[\"vwap_windows\"]:\n        addf(\"close vs VWAP%\", n)\n",
+  "種類": "直した後の文字",
+  "中身": "    for n in cfg[\"vwap_windows\"]:\n        addf(\"close vs VWAP%\", n)\n        addf(\"close vs VWAP典型%\", n)         # 監査 CP60 の修正41 の (b)（2026-10-07）\n    addf(\"close vs 当日VWAP%\")                # 同 (c)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1429「for n in cfg[\"vwap_windows\"]:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1447行（build_catalog・足した前週pivot の3種をカタログに入れる）",
+  "直す前の文字": "    addf(\"close vs 前期間pivotS1%\")\n",
+  "種類": "直した後の文字",
+  "中身": "    addf(\"close vs 前期間pivotS1%\")\n    addf(\"close vs 前週pivotPP%\")             # K-7 の決定＝前の週の版（2026-10-07）\n    addf(\"close vs 前週pivotR1%\")\n    addf(\"close vs 前週pivotS1%\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1447「addf(\"close vs 前期間pivotS1%\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 9,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1450〜1453行（build_catalog・足した日で区切る出来高プロファイルの6種をカタログに入れる）",
+  "直す前の文字": "    for n in cfg[\"vp_windows\"]:\n        addf(\"close vs POC%\", n)\n        addf(\"close vs VAH%\", n)\n        addf(\"close vs VAL%\", n)\n",
+  "種類": "直した後の文字",
+  "中身": "    for n in cfg[\"vp_windows\"]:\n        addf(\"close vs POC%\", n)\n        addf(\"close vs VAH%\", n)\n        addf(\"close vs VAL%\", n)\n    # 監査 CP60 の修正42＝日で区切る2つの版（2026-10-07）\n    addf(\"close vs 前日POC%\")\n    addf(\"close vs 前日VAH%\")\n    addf(\"close vs 前日VAL%\")\n    addf(\"close vs 当日POC%\")\n    addf(\"close vs 当日VAH%\")\n    addf(\"close vs 当日VAL%\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1450「for n in cfg[\"vp_windows\"]:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 10,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "942行（_r・足す11種の「使う」の決定（まこさんの逐語のファイル）を、登録の mako の欄から1か所で引けるようにする）",
+  "直す前の文字": "def _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None):\n",
+  "種類": "直した後の文字",
+  "中身": "# ★まこさんの決定の逐語（2026-10-07・工事 m2c15-period-textbook-20261007）＝下の登録の mako の欄に書く（同じ文を11か所に書かないため）。\nMAKO_K3 = '2026-10-07 まこさん決定「A」（K-3 を3つの工事に分け、K-3a で監査 CP60 の修正41 の (b)(c) と修正42 の比べる版を、今の版を残して別の材料として足す）＝逐語のファイル ok_k3_split_20261007（工事 m2c15-period-textbook-20261007）'\nMAKO_K7 = '2026-10-07 まこさん決定「OK」（K-7 の1番＝前期間pivot の3種に前の週の版を別の材料として足す）＝逐語のファイル ok_k7_pivot_thermo_20261007（m2c15-memo-sort-20261007）'\n\n\ndef _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None):\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:942「def _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 11,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1226〜1227行（<モジュール直下>・監査 CP60 の修正41 の (b)(c)＝参照表に登録し、手計算の既知答え・教科書の独立実装・ta との照合を付ける）",
+  "直す前の文字": "   \"順張り値\", \"trend\", tb=_tb_vs_vwap,\n   known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "   \"順張り値\", \"trend\", tb=_tb_vs_vwap,\n   known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)])])\n# ★2026-10-07（工事 m2c15-period-textbook-20261007・監査 CP60 の修正41 の (b)(c)）＝教科書の VWAP（典型価格）の2つの版。\ndef _tb_vs_vwap_tp(d, p):\n    n = p[0]\n    o, h, l, c, v = _arr(d)\n    tp = (h + l + c) / 3\n    return _S((c / _div(_roll(tp * v, n, \"sum\"), _roll(v, n, \"sum\")) - 1) * 100, d)\n\n\ndef _tp_case(n):\n    \"\"\"VWAP典型 の手計算用。全部の足が 高値112・安値100・終値103・出来高1＝典型価格105 → VWAP 105 → 乖離%＝(103÷105−1)×100。\n    終値で作る今の版なら VWAP 103 → 0（＝値段の違いを見分ける）。\"\"\"\n    c = np.full(n, 103.0)\n    return _mk(c, o=c, h=np.full(n, 112.0), l=np.full(n, 100.0))\n\n\ndef _vwap_day_case():\n    \"\"\"当日VWAP の手計算用。1日目（3/1・288本）＝終値150・出来高1（積み上げが日で区切れていなければ、ここが混ざる）。\n    2日目＝1本目と2本目は 高値112・安値100・終値103（典型価格105）・出来高1、3本目は 高値＝安値＝終値＝99・出来高2。\n    2本目の VWAP＝105 → (103÷105−1)×100。3本目の VWAP＝(105＋105＋99×2)÷4＝102 → (99÷102−1)×100。\"\"\"\n    c = np.r_[np.full(288, 150.0), [103.0, 103.0, 99.0]]\n    h = np.r_[np.full(288, 150.0), [112.0, 112.0, 99.0]]\n    l = np.r_[np.full(288, 150.0), [100.0, 100.0, 99.0]]\n    v = np.r_[np.full(288, 1.0), [1.0, 1.0, 2.0]]\n    return _mk(c, o=c, h=h, l=l, v=v)\n\n\n_r(r\"close vs VWAP典型%(\\d+)\", \"close vs VWAP典型\",\n   \"典型価格（(高値＋安値＋終値)÷3）で作る n 本の移動 VWAP からの乖離%\",\n   \"監査 CP60 の修正41 の (b)＝ta の VolumeWeightedAveragePrice の作り（n 本の移動窓＋典型価格）。今の close vs VWAP（終値）とは値段だけが違う\",\n   \"順張り値\", \"trend\", tb=_tb_vs_vwap_tp,\n   ext=lambda d, p: (d.close / _ta.volume.VolumeWeightedAveragePrice(d.high, d.low, d.close, d.volume, window=int(p[0]))\n                     .volume_weighted_average_price() - 1) * 100,\n   known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)]), (_tp_case(p[0] + 10), [(-1, (103.0 / 105.0 - 1) * 100, 1e-9)])],\n   mako=MAKO_K3)\n_r(r\"close vs 当日VWAP%\", \"当日VWAP\",\n   \"UTC の日の0時から積み上げる VWAP（典型価格・今の足までを含む）からの乖離%\",\n   \"監査 CP60 の修正41 の (c)＝StockCharts の逐語「VWAP calculations start fresh at the open」「(H+L+C)/3」。pandas-ta の vwap（anchor の既定 D）と同じ作り\",\n   \"順張り値\", \"trend\",\n   known=lambda p: [(_vwap_day_case(), [(-2, (103.0 / 105.0 - 1) * 100, 1e-9), (-1, (99.0 / 102.0 - 1) * 100, 1e-9)])],\n   mako=MAKO_K3)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1226「\"順張り値\", \"trend\", tb=_tb_vs_vwap,」",
+  "状態": "確定"
+ },
+ {
+  "番号": 12,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1299〜1301行（<モジュール直下>・K-7 の決定＝前週pivot の3種を参照表に登録し、週と日を見分ける手計算の既知答えを付ける）",
+  "直す前の文字": "_r(r\"close vs 前期間pivotS1%\", \"前期間pivotS1\",\n   \"教科書の S1＝2×PP − 前の期間の高値 からの乖離%\", \"StockCharts の逐語「Support 1 (S1) = (P x 2) - High」\",\n   \"順張り値\", \"trend\", known=lambda p: [(_pivot_day_case(), [(-1, 5.0, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"close vs 前期間pivotS1%\", \"前期間pivotS1\",\n   \"教科書の S1＝2×PP − 前の期間の高値 からの乖離%\", \"StockCharts の逐語「Support 1 (S1) = (P x 2) - High」\",\n   \"順張り値\", \"trend\", known=lambda p: [(_pivot_day_case(), [(-1, 5.0, 1e-9)])])\n\n\ndef _pivot_week_case():\n    \"\"\"前週ピボットの手計算用（2026-10-07）。データの始まり 2026-03-01 は日曜＝月曜0時 UTC に始まる週の最後の日。\n    1日目（3/1・288本）＝終値105・高値110 が1本・安値100 が1本（_pivot_day_case と同じ）、2日目（3/2 月曜・288本）＝高値＝安値＝終値＝104、\n    3日目（3/3）＝終値105 が3本。3日目の前週ピボット＝3/1 の週＝PP 105・R1 110・S1 100 → 乖離% 0・(105÷110−1)×100・5。\n    前の日の版なら 3/2 の 104 で作る＝PP=R1=S1=104（＝週と日の取り違えを見分ける）。\"\"\"\n    c = np.r_[np.full(288, 105.0), np.full(288, 104.0), np.full(3, 105.0)]\n    h = c.copy()\n    l = c.copy()\n    h[100] = 110.0\n    l[200] = 100.0\n    return _mk(c, o=c, h=h, l=l)\n\n\n_r(r\"close vs 前週pivotPP%\", \"前週pivotPP\",\n   \"教科書のピボット PP を前の週（月曜0時 UTC に始まる7日）の（高値＋安値＋終値）÷3 で作り、その週のあいだ動かない線からの乖離%\",\n   \"StockCharts の逐語「Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.」。週の始まりは ISO 8601 の月曜\",\n   \"順張り値\", \"trend\", known=lambda p: [(_pivot_week_case(), [(-1, 0.0, 1e-9)])], mako=MAKO_K7)\n_r(r\"close vs 前週pivotR1%\", \"前週pivotR1\",\n   \"前の週の R1＝2×PP − 前の週の安値 からの乖離%\", \"StockCharts の逐語「Resistance 1 (R1) = (P x 2) - Low」\",\n   \"順張り値\", \"trend\", known=lambda p: [(_pivot_week_case(), [(-1, (105.0 / 110.0 - 1) * 100, 1e-9)])], mako=MAKO_K7)\n_r(r\"close vs 前週pivotS1%\", \"前週pivotS1\",\n   \"前の週の S1＝2×PP − 前の週の高値 からの乖離%\", \"StockCharts の逐語「Support 1 (S1) = (P x 2) - High」\",\n   \"順張り値\", \"trend\", known=lambda p: [(_pivot_week_case(), [(-1, 5.0, 1e-9)])], mako=MAKO_K7)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1299「_r(r\"close vs 前期間pivotS1%\", \"前期間pivotS1\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 13,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1320〜1325行（<モジュール直下>・監査 CP60 の修正42＝日で区切る POC・VAH・VAL の6種を参照表に登録し、日の区切りを見分ける手計算の既知答えを付ける）",
+  "直す前の文字": "_r(r\"close vs VAL%(\\d+)\", \"VAL\",\n   \"バリューエリア下端からの乖離%\", \"Market Profile。25分割の近似\",\n   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_vp(d, p, 2),\n   # 下端は どちらの場合も下の区画。\n   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"close vs VAL%(\\d+)\", \"VAL\",\n   \"バリューエリア下端からの乖離%\", \"Market Profile。25分割の近似\",\n   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_vp(d, p, 2),\n   # 下端は どちらの場合も下の区画。\n   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])])\n\n\n# ★2026-10-07（工事 m2c15-period-textbook-20261007・監査 CP60 の修正42）＝日で区切る出来高プロファイルの2つの版。\ndef _vp_day_case(prev: bool, va, vb, n=20):\n    \"\"\"日で区切る出来高プロファイルの手計算用。_vp_case（終値 100 と 200 の2つだけ）を日の区切りに置く＝答えは _vp_case と同じ。\n    prev=True（前日の版）＝1日目（3/1・288本）の前半144本＝終値100・出来高 va／後半144本＝終値200・出来高 vb、2日目＝終値100 が3本。\n      2日目の線は1日目の足ぜんぶで作る（同じ日の足だけで作ると終値100 だけ＝乖離0 になり見分けられる）。\n    prev=False（当日の版）＝1日目（288本）＝終値150・出来高1（日で区切れていなければ、出来高の多いこの値段が線になる）、\n      2日目＝_vp_case(n, va, vb) と同じ n＋1本。2日目の最後の足の線は、2日目の0時から1本前までの n 本で作る。\"\"\"\n    if prev:\n        c = np.r_[np.full(144, 100.0), np.full(144, 200.0), np.full(3, 100.0)]\n        v = np.r_[np.full(144, float(va)), np.full(144, float(vb)), np.full(3, 1.0)]\n        return _mk(c, o=c, h=c, l=c, v=v)\n    m = n // 2\n    c = np.r_[np.full(288, 150.0), np.full(m, 100.0), np.full(n - m, 200.0), [100.0]]\n    v = np.r_[np.full(288, 1.0), np.full(m, float(va)), np.full(n - m, float(vb)), [1.0]]\n    return _mk(c, o=c, h=c, l=c, v=v)\n\n\nfor _vpk, _vpw in ((\"前日\", True), (\"当日\", False)):\n    _r(rf\"close vs {_vpk}POC%\", f\"{_vpk}POC\",\n       f\"出来高プロファイルの最厚価格帯 POC（{'前の UTC の日の足ぜんぶ・その日のあいだ固定' if _vpw else 'その日の0時から1本前までの足'}）からの乖離%\",\n       \"監査 CP60 の修正42 の比べる版。区画24・同量なら価格の高い側（今の POC と同じ決まり＝_vp_one）\",\n       \"順張り値\", \"trend\",\n       known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_LO, 1e-9)])],\n       mako=MAKO_K3)\n    _r(rf\"close vs {_vpk}VAH%\", f\"{_vpk}VAH\",\n       f\"バリューエリア上端（出来高上位70%帯の上端・{'前の UTC の日' if _vpw else 'その日の0時から1本前まで'}）からの乖離%\",\n       \"監査 CP60 の修正42 の比べる版。今の VAH と同じ決まり（_vp_one）\",\n       \"順張り値\", \"trend\",\n       known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_HI, 1e-9)])],\n       mako=MAKO_K3)\n    _r(rf\"close vs {_vpk}VAL%\", f\"{_vpk}VAL\",\n       f\"バリューエリア下端（{'前の UTC の日' if _vpw else 'その日の0時から1本前まで'}）からの乖離%\",\n       \"監査 CP60 の修正42 の比べる版。今の VAL と同じ決まり（_vp_one）\",\n       \"順張り値\", \"trend\",\n       known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_LO, 1e-9)])],\n       mako=MAKO_K3)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1320「_r(r\"close vs VAL%(\\d+)\", \"VAL\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 14,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "4604行（<モジュール直下>・足す11種の系統（構造・位置）を書く）",
+  "直す前の文字": "    \"VAL\": dict(k=\"構造・位置\"), \"S-Rタッチ数\": dict(k=\"構造・位置\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"VAL\": dict(k=\"構造・位置\"), \"S-Rタッチ数\": dict(k=\"構造・位置\"),\n    # ★2026-10-07（工事 m2c15-period-textbook-20261007）＝教科書の期間の区切りの版（監査 CP60 の修正41・42・K-7 の決定）\n    \"close vs VWAP典型\": dict(k=\"構造・位置\"), \"当日VWAP\": dict(k=\"構造・位置\"),\n    \"前週pivotPP\": dict(k=\"構造・位置\"), \"前週pivotR1\": dict(k=\"構造・位置\"), \"前週pivotS1\": dict(k=\"構造・位置\"),\n    \"前日POC\": dict(k=\"構造・位置\"), \"前日VAH\": dict(k=\"構造・位置\"), \"前日VAL\": dict(k=\"構造・位置\"),\n    \"当日POC\": dict(k=\"構造・位置\"), \"当日VAH\": dict(k=\"構造・位置\"), \"当日VAL\": dict(k=\"構造・位置\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:4604「\"VAL\": dict(k=\"構造・位置\"), \"S-Rタッチ数\": dict(k=\"構造・位置\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 15,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "4914行（<モジュール直下>・足す11種の業界のライブラリとの対応を書く（観察の道具の検査10 が全部の種類に求める））",
+  "直す前の文字": "    \"VAL\": ((\"vp\",), \"同上\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"VAL\": ((\"vp\",), \"同上\"),\n    # ★2026-10-07（工事 m2c15-period-textbook-20261007）＝教科書の期間の区切りの版\n    \"close vs VWAP典型\": ((), \"ta の VolumeWeightedAveragePrice（n 本の移動窓＋典型価格）と同じ作り（定義表の外部照合で確かめる）。pandas-ta の vwap は日の始まりから積み上げる版＝当日VWAP\"),\n    \"当日VWAP\": ((\"vwap\",), \"pandas-ta の vwap（anchor の既定 D＝日の始まりから積み上げる典型価格・overlap/vwap.py）。定義表の2つ目の照合で値を確かめる\"),\n    \"前週pivotPP\": ((), \"前の週で固定する教科書の PP。ライブラリの cpr と同じ作りかは照らしていない（定義表の既知答えで確かめる）\"),\n    \"前週pivotR1\": ((), \"同上（教科書の R1＝2×PP − 前の週の安値）\"),\n    \"前週pivotS1\": ((), \"同上（教科書の S1＝2×PP − 前の週の高値）\"),\n    \"前日POC\": ((\"vp\",), \"vp の作りを前の UTC の日で区切ったもの。日で区切る形はライブラリと照らしていない（定義表の既知答えで確かめる）\"),\n    \"前日VAH\": ((\"vp\",), \"同上\"),\n    \"前日VAL\": ((\"vp\",), \"同上\"),\n    \"当日POC\": ((\"vp\",), \"vp の作りを、その日の0時から1本前までで区切ったもの。日で区切る形はライブラリと照らしていない（定義表の既知答えで確かめる）\"),\n    \"当日VAH\": ((\"vp\",), \"同上\"),\n    \"当日VAL\": ((\"vp\",), \"同上\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:4914「\"VAL\": ((\"vp\",), \"同上\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 16,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "929〜930行（<モジュール直下>・当日VWAP を pandas-ta の vwap と値で照らす（2つ目の照合））",
+  "直す前の文字": "    \"RCI\": (_x2_rci, \"scipy\"),\n}\n",
+  "種類": "直した後の文字",
+  "中身": "    \"RCI\": (_x2_rci, \"scipy\"),\n    # ★2026-10-07（工事 m2c15-period-textbook-20261007）＝当日VWAP は pandas-ta の vwap（anchor=\"D\"）と同じ作り\n    \"当日VWAP\": (lambda d, p: (d.close / _pta.vwap(d.high, d.low, d.close, d.volume, anchor=\"D\") - 1) * 100, \"pandas-ta\"),\n}\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:929「\"RCI\": (_x2_rci, \"scipy\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 17,
+  "対象のファイル": ".claude/memory/regime_detection_kb.md",
+  "直す箇所": "1290〜1295行（文書・足す11種で材料の種類と一覧の行の数が変わる＝KB の件数の囲み（gen_materials.py --write が書き出す所）を、写しで数えた文に置き換える（材料の文書の自己テストの B3・B4 と承認の前の検査 A12 が見る））",
+  "直す前の文字": "<!-- COUNTS_START gen_materials.py --write が実物から書き出す＝手で書き換えない -->\n| 5 | 指標の種類 | **261種類**（engine_tuner が選べる **143**／選べない **118**） | materials.md の「engine_tuner が選べる指標の種類」の行 |\n| 6 | 材料の一覧の行 | **266件**（在る。ほかに「入れない」45件） | materials.md の一覧 |\n| 7 | パラメータまで展開した部品 | **477件**（＋別枠 7件＝**484**） | signal_families.json の parts と extra_parts |\n| 8 | ★484 に膨らむ理由 | ADX7・ADX14・ADX21 のように、同じ指標のパラメータ違いを別々に数えているため | 部品の名前の実測 |\n<!-- COUNTS_END -->",
+  "種類": "直した後の文字",
+  "中身": "<!-- COUNTS_START gen_materials.py --write が実物から書き出す＝手で書き換えない -->\n| 5 | 指標の種類 | **272種類**（engine_tuner が選べる **143**／選べない **129**） | materials.md の「engine_tuner が選べる指標の種類」の行 |\n| 6 | 材料の一覧の行 | **277件**（在る。ほかに「入れない」45件） | materials.md の一覧 |\n| 7 | パラメータまで展開した部品 | **477件**（＋別枠 7件＝**484**） | signal_families.json の parts と extra_parts |\n| 8 | ★484 に膨らむ理由 | ADX7・ADX14・ADX21 のように、同じ指標のパラメータ違いを別々に数えているため | 部品の名前の実測 |\n<!-- COUNTS_END -->",
+  "根拠の抜き書き": ".claude/memory/regime_detection_kb.md:1290「<!-- COUNTS_START gen_materials.py --write が実物から書き出す＝手で書き換えない -->」",
+  "状態": "確定"
+ },
+ {
+  "番号": 18,
+  "対象のファイル": "scripts/priority_rebuild/recipes/search_limits.json",
+  "直す箇所": "77行（設定・資料の範囲の直し（BB%b・BB幅・W字＝まこさん「OK」）を、探す範囲に道具が写し直す（照らしの道具の②が見る中身））",
+  "直す前の文字": "    \"BB%b\": [{\"kind\": \"int\", \"lo\": 20, \"hi\": 50}, {\"kind\": \"float\", \"lo\": 2.0, \"hi\": 2.0, \"dec\": 1}],\n",
+  "種類": "直した後の文字",
+  "中身": "    \"BB%b\": [{\"kind\": \"int\", \"lo\": 10, \"hi\": 50}, {\"kind\": \"float\", \"lo\": 1.9, \"hi\": 2.1, \"dec\": 1}],\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/recipes/search_limits.json:77「\"BB%b\": [{\"kind\": \"int\", \"lo\": 20, \"hi\": 50}, {\"kind\": \"float\", \"lo\": 2.0, \"hi\": 2.0, \"dec\": 1}],」",
+  "状態": "確定"
+ },
+ {
+  "番号": 19,
+  "対象のファイル": "scripts/priority_rebuild/recipes/search_limits.json",
+  "直す箇所": "91行（設定・資料の範囲の直し（BB%b・BB幅・W字＝まこさん「OK」）を、探す範囲に道具が写し直す（照らしの道具の②が見る中身））",
+  "直す前の文字": "    \"BB幅\": [{\"kind\": \"int\", \"lo\": 20, \"hi\": 50}, {\"kind\": \"float\", \"lo\": 2.0, \"hi\": 2.0, \"dec\": 1}],\n",
+  "種類": "直した後の文字",
+  "中身": "    \"BB幅\": [{\"kind\": \"int\", \"lo\": 10, \"hi\": 50}, {\"kind\": \"float\", \"lo\": 1.9, \"hi\": 2.1, \"dec\": 1}],\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/recipes/search_limits.json:91「\"BB幅\": [{\"kind\": \"int\", \"lo\": 20, \"hi\": 50}, {\"kind\": \"float\", \"lo\": 2.0, \"hi\": 2.0, \"dec\": 1}],」",
+  "状態": "確定"
+ },
+ {
+  "番号": 20,
+  "対象のファイル": "scripts/priority_rebuild/recipes/search_limits.json",
+  "直す箇所": "104行（設定・資料の範囲の直し（BB%b・BB幅・W字＝まこさん「OK」）を、探す範囲に道具が写し直す（照らしの道具の②が見る中身））",
+  "直す前の文字": "    \"W字\": [{\"kind\": \"int\", \"lo\": 24, \"hi\": 96}, {\"kind\": \"float\", \"lo\": 0.003, \"hi\": 0.003, \"dec\": 3}],\n",
+  "種類": "直した後の文字",
+  "中身": "    \"W字\": [{\"kind\": \"int\", \"lo\": 24, \"hi\": 96}, {\"kind\": \"float\", \"lo\": 0.0, \"hi\": 0.06, \"dec\": 3}],\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/recipes/search_limits.json:104「\"W字\": [{\"kind\": \"int\", \"lo\": 24, \"hi\": 96}, {\"kind\": \"float\", \"lo\": 0.003, \"hi\": 0.003, \"dec\": 3}],」",
+  "状態": "確定"
+ },
+ {
+  "番号": 21,
+  "対象のファイル": ".claude/breaks/b145_vwap_day_no_reset.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 当日VWAP の積み上げを日で区切らない形に戻すと、観察の道具の自己テスト（参照表の手計算の既知答え）が落ちる\n# EXPECT_MSG: close vs 当日VWAP%: 手計算の既知答えと不一致\n# b145_vwap_day_no_reset — 当日VWAP の積み上げを日で区切らない形に戻すと、観察の道具の自己テスト（参照表の手計算の既知答え）が落ちる（工事 m2c15-period-textbook-20261007・2026-10-07）\n#   守っているもの＝完成の条件の全体の自己テスト（observe_diag.py --selftest）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3a_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest が「close vs 当日VWAP%: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    return (tp * d.volume).groupby(key).cumsum() / d.volume.groupby(key).cumsum().replace(0, np.nan)\\n'\nnew = '    return (tp * d.volume).cumsum() / d.volume.cumsum().replace(0, np.nan)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b145_vwap_day_no_reset] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 22,
+  "対象のファイル": ".claude/breaks/b146_pivot_week_as_day.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 前週pivot を前の日で作る形に戻すと、観察の道具の自己テスト（参照表の手計算の既知答え）が落ちる\n# EXPECT_MSG: close vs 前週pivotR1%: 手計算の既知答えと不一致\n# b146_pivot_week_as_day — 前週pivot を前の日で作る形に戻すと、観察の道具の自己テスト（参照表の手計算の既知答え）が落ちる（工事 m2c15-period-textbook-20261007・2026-10-07）\n#   守っているもの＝完成の条件の全体の自己テスト（observe_diag.py --selftest）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3a_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest が「close vs 前週pivotR1%: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    if unit == \"W\":\\n'\nnew = '    if unit == \"W\" and False:\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b146_pivot_week_as_day] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 23,
+  "対象のファイル": ".claude/breaks/b147_vp_today_from_start.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 当日の出来高プロファイルを、その日の0時でなくデータの始まりから作る形に戻すと、観察の道具の自己テスト（手計算の既知答え）が落ちる\n# EXPECT_MSG: close vs 当日POC%: 手計算の既知答えと不一致\n# b147_vp_today_from_start — 当日の出来高プロファイルを、その日の0時でなくデータの始まりから作る形に戻すと、観察の道具の自己テスト（手計算の既知答え）が落ちる（工事 m2c15-period-textbook-20261007・2026-10-07）\n#   守っているもの＝完成の条件の全体の自己テスト（observe_diag.py --selftest）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3a_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest が「close vs 当日POC%: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '                out[:, i] = _vp_one(ca[s:i], va[s:i], va_pct, rows)\\n'\nnew = '                out[:, i] = _vp_one(ca[:i], va[:i], va_pct, rows)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b147_vp_today_from_start] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 24,
+  "対象のファイル": ".claude/breaks/b148_bb_range_not_widened.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: BB%b の範囲を直す前（本数 20〜50・倍率 2.0〜2.0）に戻すと、資料と設定ファイルの照らし（②）が落ちる\n# EXPECT_MSG: ❌ ②search_limits.json\n# b148_bb_range_not_widened — BB%b の範囲を直す前（本数 20〜50・倍率 2.0〜2.0）に戻すと、資料と設定ファイルの照らし（②）が落ちる（工事 m2c15-period-textbook-20261007・2026-10-07）\n#   守っているもの＝完成の条件の照らしの道具（python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/pre_audit_check.py --check-indicator-sources）\n#   壊し方＝scripts/priority_rebuild/recipes/search_limits.json の中の、下の old を new に置き換える（k3a_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/pre_audit_check.py --check-indicator-sources が「❌ ②search_limits.json」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/recipes/search_limits.json\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    \"BB%b\": [{\"kind\": \"int\", \"lo\": 10, \"hi\": 50}, {\"kind\": \"float\", \"lo\": 1.9, \"hi\": 2.1, \"dec\": 1}],\\n'\nnew = '    \"BB%b\": [{\"kind\": \"int\", \"lo\": 20, \"hi\": 50}, {\"kind\": \"float\", \"lo\": 2.0, \"hi\": 2.0, \"dec\": 1}],\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b148_bb_range_not_widened] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/pre_audit_check.py\" --check-indicator-sources\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 出来高プロファイルの1つの窓の計算を _vp_one に切り出し、今の版と日で区切る版の両方が使う | 同じ決まりを2か所に書かない。今の列の値が変わらないことは写しで確かめた（0本の違い） | 日で区切る版に同じ計算をもう1つ書く |
+| 11種の資料の行は、対応表（research/alias_map.json・封つき）から道具が作る | まこさん「B」。新しく調べない。同じ指標の調べた結果と照らした印を、そのまま使う | 調べる係を走らせる（まこさん「A」の案） |
+| 資料の行を作るのは、11種が「使う」に入った後（G-1 の中） | 「使う」に入る前に行を作ると、照らしの道具の①が「行が在るのに使うでない」で止め、設計書も作れない | 設計書の前に資料の行を足す |
+| 範囲の直しは、資料の道具（apply_param_rule.py）が k7_range_fix.json を教科書の範囲として読む | 設定ファイルに直接 書くと照らしの②が落ちる。軸の番号の取り違えは、直す前の範囲（「今」の欄）と照らして止める | 設定ファイルに手で書く |
+| 11種の「使う」は、参照表の mako の欄（まこさんの決定の逐語）で付ける | オン・オフの表の道具が機械で読む4つ目の源。ta のクラスの対応を変えると、ほかの種類の印も作り直しになる | ta のクラスの対応（TA_CLASS_MAP）を変える |
+| 知識の文書の件数の囲みを、この工事の指示に入れる | 材料の種類が増えると、材料の文書の自己テストの B3・B4 が「素の状態で verify が鳴っている」で落ちる（写しで実測）。承認の前の検査 A12 が許すのは T6 だけ。囲みは gen_materials.py --write が書き出す所で、数えた文をそのまま写すので CC は数字を書かない。G-1 で gen_materials.py --write がもう一度 書き出す | A12 の許しに B3・B4 を足す（承認の前の検査＝守りの hook の直しになる） |
+| 壊すプログラムの3本は、観察の道具の全体の自己テストで測る | 既知答えの照らしは全体の自己テストの中に在る（軽い口には無い） | 軽い口で測る |
+| この工事（コードと範囲の直し）と、G-1 の後の2つ目の工事（11種の設定を写す）に分ける | 承認の前の検査 A12 は、指示だけを当てた状態で完成の条件と壊すプログラムを測る。11種はオン・オフの表を作り直す（G-1）まで「使う」でなく資料の行も無いので、11種の設定を同じ工事に入れると、当てた直後に照らしの①②と壊し方が狙いまで届かない（写しで実測）。分ければ、どちらの工事も当てた直後に全部 通る | 道具が作るはずのオン・オフの表と資料の表（json と md）まで指示に入れて1回で当てる（写しで数えた違い 約2,200行。G-1 で道具が作り直す中身を、手順の外で先に書くことになる） |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 型の表が変わる | G-1 で作り直し、まこさんに再承認していただく（4-4 の4） |
+| 週の始まり（月曜）に出どころの逐語が無い | 3-2 で決めていただく。日曜始まりにするなら、_pivot_prev_period の W-SUN を W-SAT に変える1か所と、既知答えの合成の足を直す |
+| 当日の出来高プロファイルは、その日の最初の足に値が無い | 今の版の最初の288本と同じ扱い（NaN）。engine_tuner は値の無い足を条件の外にする |
+| 全体の自己テストが重くなる | 写しの実測 130秒（4-14） |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる（--design） | 1分未満 | 同じ日の前の工事で、当てる道具は1秒未満で終わった |
+| 全体の自己テスト | 130秒 | 4-14 |
+| 壊すプログラム | 1本あたり約 130秒（全体の自己テスト）×3本と、照らしの道具の1本 | 写しで壊し方を並べて走らせた（k3a_draft_build.py の [8]） |
+| G-1 の表の作り直しと資料の道具4本 | 約2分 | 写しの実測（オン・オフの表 約20秒・資料の道具4本 約10秒）と前の工事の実測 |
+| 監査に出す前のチェック | 約10分 | 前の工事の実測（pre_audit_check.py --run） |
+| まこさんの承認 | この工事の設計書1回・型の表の再承認1回（変われば）・2つ目の工事の設計書1回 | 4-4 |
+| 2つ目の工事 | 時間は測っていない。流れは158回目の同じ形の工事（資料に足した4種を設定に写す・r5_draft_build.py）と同じ（案 → OK → 設計書 → 承認 → 当てる） | worklog 20261007 §11〜§13 |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 今の VWAP・出来高プロファイル・前期間pivot は、24時間市場向けに移動窓や前の日で作った（参照表の流儀の欄に「本プロジェクトの流儀」と書いてある）。教科書の版が無いので、どちらが良いかを比べられなかった。この工事で教科書の版を足し、M2-F-10f で比べられるようにする。範囲は、資料の選び方が教科書の範囲の文（BB の (10,1.9)〜(50,2.1)・W字 の 0%〜6%）を読めず、1点のままだった。 |
+| 期待値分解 | 売買のロジックには触れません。勝率・平均利益・敗率・平均損失は、この工事では動きません。M2-F で使える材料が11種 増え、BB と W字 の探す範囲が教科書の値に届きます。 |
+| root か symptom か | root です。比べる相手（教科書の版）が無いことが原因で、それを足します。範囲は、資料の道具が教科書の範囲として読む形にしたので、資料を作り直しても戻りません。 |
+| ベースアップ | 11種の作りは、資料の逐語（StockCharts・TradingView）と監査 CP60 の修正41・42 の本文から取った。当日VWAP は pandas-ta の vwap のソース（overlap/vwap.py:32・38・46）を開いて、同じ作りであることを確かめ、値で照らす。 |
+
+【7-2 固定値ゼロ宣言】
+この工事に、疑似シミュから取った値は1つもありません。範囲は資料から道具が写しました。既知答えは合成の足から手で計算できる値です。壊し方の値も、今の設定の行から道具が取りました。
+
+【7-3 変更の単位】
+変更は1つ＝教科書の期間の区切りの版を別の材料として足し、範囲の直しを写す（K-3a の1つ目の工事。11種の設定を写すのは G-1 の後の2つ目の工事）。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 当たるか | 理由 |
+|---|---|---|
+| 1 | 当たりません | 乱数を使いません。条件をつなぐものではなく、教科書の作りの材料を足すだけです |
+| 2 | 当たりません | BB と W字 の範囲を広げ、点の一覧で限定する所を減らします。範囲の数字は資料から道具が写しました |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 既知答えが、本物の値動きでの正しさまで見るか | 見ません。合成の足で、日・週の区切りと決まりを見るだけです。当日VWAP と VWAP典型 は、ライブラリと実際の値動きで照らします |
+| 週の始まりが正しいか | 見ません。出どころの逐語が無いので、3-2 でまこさんに決めていただきます |
+| 資料の値そのものが正しいかを、照らしの道具が見るか | 見ません。照らしの道具は、資料と設定ファイルが同じかだけを見ます |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝observe_diag.py・indicator_reference_diag.py・search_limits.json・regime_detection_kb.md（件数の囲み）と、新しい壊すプログラムを【7-8】に書いた。主なファイルは observe_diag.py（材料の計算）。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝observe_diag.py・触る関数は道具が構文木の差から数えた）。
+- 新しく作るファイルは壊すプログラム（NEW_FILE）。手本は b142（MODEL）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝資料を作った後に指標を「使う」にして、資料に行が無いまま気づかなかった（158回目）。この工事は、資料の行を「使う」に入った後に道具で作る順を 4-4 に書き、照らしの道具の①で見る。
+- 新しい部品は、未来を見ない形にした（前日・前週は閉じた期間・当日の出来高プロファイルは1本前まで・当日VWAP は今の足まで）。当てた後に H2 を取り直す。
+- 行番号を指す文書は、当てた後に動く（observe_diag.py・indicator_reference_diag.py に行が増える）。設計書の行番号は当てる前の実物のもの。
+- 直すファイルの名前を本文に持つ壊すプログラムを全部 探し、探す文字の数が当てる前と後で同じことを道具が数えた（4-13 の5）。走らせるコマンドの旗は変えない。
+- 壊すプログラムが測るのは、観察の道具の全体の自己テストと照らしの道具の口で、どちらも本物の結果の置き場には書かない。
+- 触る関数（DESIGN_CONTRACT の impl_functions・道具が書いた）＝observe_diag.py：<モジュール直下>・_pivot_prev_period・_vp_by_day・_vp_levels・_vp_one・_vwap_day・build_catalog／indicator_reference_diag.py：<モジュール直下>・_pivot_week_case・_tb_vs_vwap_tp・_tp_case・_vp_day_case・_vwap_day_case。self_check_calls と must_use の名前は、当てた後の構文木に在ることを道具が ast で照らした。
+- 新しく足すコマンドの旗は無い。資料の道具の旗（--alias）は .claude/state の道具の側で、設計書の前に足した。
+- 2回目の承認の前に、実装の中で変わった手順を設計書に書き直す（その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2c15-period-textbook-20261007）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝観察の道具の既知答え・ライブラリとの照合・照らしの道具の①②と、壊すプログラム（わざと壊して落ちるか）。写しで走らせ、全部 通った。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| F-1・F-2＝当日VWAP が UTC の日で区切って積み上がる（既知答えが通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest | 実経路 | 積み上げを日で区切らない形に戻す | b145_vwap_day_no_reset.sh | — | 未着手 |
+| F-1・F-2＝前週pivot が前の週で作られる（既知答えが通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest | 実経路 | 前の週の区切りを外し、前の日で作る形に戻す | b146_pivot_week_as_day.sh | — | 未着手 |
+| F-1・F-2＝当日の出来高プロファイルが、その日の0時から作られる（既知答えが通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest | 実経路 | 窓の始まりを、その日の0時でなくデータの始まりにする | b147_vp_today_from_start.sh | — | 未着手 |
+| F-3＝範囲の直しが設定に写り、設定ファイルが資料から写したものと同じ（照らしの①②が食い違い0件） | python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/pre_audit_check.py --check-indicator-sources | 実経路 | BB%b の範囲を直す前（本数 20〜50・倍率 2.0〜2.0）に戻す | b148_bb_range_not_widened.sh | — | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  ".claude/memory/regime_detection_kb.md",
+  "scripts/priority_rebuild/indicator_reference_diag.py",
+  "scripts/priority_rebuild/observe_diag.py",
+  "scripts/priority_rebuild/recipes/search_limits.json",
+  ".claude/breaks/b145_vwap_day_no_reset.sh",
+  ".claude/breaks/b146_pivot_week_as_day.sh",
+  ".claude/breaks/b147_vp_today_from_start.sh",
+  ".claude/breaks/b148_bb_range_not_widened.sh"
+ ],
+ "NEW_FILE": [
+  ".claude/breaks/b145_vwap_day_no_reset.sh",
+  ".claude/breaks/b146_pivot_week_as_day.sh",
+  ".claude/breaks/b147_vp_today_from_start.sh",
+  ".claude/breaks/b148_bb_range_not_widened.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b142_rci_list_stale.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/observe_diag.py",
+  "_impl_file の意味": "照らす相手は実在するファイル。足す11種の計算（_vp_one・_vp_by_day・_vwap_day・_pivot_prev_period）とカタログ（build_catalog）が在る、観察の道具を照らす。",
+  "impl_functions": {
+   "scripts/priority_rebuild/observe_diag.py": [
+    "<モジュール直下>",
+    "_pivot_prev_period",
+    "_vp_by_day",
+    "_vp_levels",
+    "_vp_one",
+    "_vwap_day",
+    "build_catalog"
+   ],
+   "scripts/priority_rebuild/indicator_reference_diag.py": [
+    "<モジュール直下>",
+    "_pivot_week_case",
+    "_tb_vs_vwap_tp",
+    "_tp_case",
+    "_vp_day_case",
+    "_vwap_day_case"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数（実装の指示を全部 当てる前と後の構文木を関数ごとに比べて、k3a_proposal_build.py が数えた）。",
+  "self_check_calls": [
+   "_vp_one",
+   "_vp_by_day",
+   "_vwap_day",
+   "_pivot_prev_period",
+   "build_catalog"
+  ],
+  "_self_check_calls の意味": "実装の後の observe_diag.py に在るはずの、この工事が足す・直す関数の名前。",
+  "must_use": {
+   "_vp_levels": [
+    "_vp_one"
+   ],
+   "_vp_by_day": [
+    "_vp_one"
+   ]
+  },
+  "_must_use の意味": "出来高プロファイルの今の版（_vp_levels）と日で区切る版（_vp_by_day）が、同じ1つの窓の計算（_vp_one）を呼ぶ（k3a_proposal_build.py が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は、材料を足し、設定の値を資料から写し直すだけ。外から読む一覧の形（カタログの1件の形・参照表の欄・設定の欄）は変えない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の関数ごとの構文木の差（k3a_proposal_build.py が数えた）",
+   "must_use": "ast で照らした",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```
+
+【外部検索】
+| 名前 | 中身 |
+|---|---|
+| 資料の出どころ | 11種の資料の行は、同じ指標の今の行（2026-10-04・10-07 に調べる係が原文のページから写し、プログラムがページを開き直して照らした値）を使う。新しく調べていない |
+| pandas-ta の vwap | ライブラリのソース overlap/vwap.py（anchor の既定 D・典型価格・日の区切りごとの積み上げ）を開いて確かめた |

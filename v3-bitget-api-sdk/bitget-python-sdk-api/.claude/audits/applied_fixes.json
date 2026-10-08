@@ -2919,6 +2919,209 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_signal_families.py",
    "at": "2026-10-07T19:45:10",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "2",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "3",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "4",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "5",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "6",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "7",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "8",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "9",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "10",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "11",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "12",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "13",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "14",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "15",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "16",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "17",
+   "file": ".claude/memory/regime_detection_kb.md",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "18",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "19",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "20",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "21",
+   "file": ".claude/breaks/b145_vwap_day_no_reset.sh",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "22",
+   "file": ".claude/breaks/b146_pivot_week_as_day.sh",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "23",
+   "file": ".claude/breaks/b147_vp_today_from_start.sh",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-textbook-20261007",
+   "num": "24",
+   "file": ".claude/breaks/b148_bb_range_not_widened.sh",
+   "at": "2026-10-08T09:29:04",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-settings-20261008",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-08T19:21:49",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-settings-20261008",
+   "num": "2",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-08T19:21:49",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-settings-20261008",
+   "num": "3",
+   "file": ".claude/breaks/b143_rci_range_short.sh",
+   "at": "2026-10-08T19:21:49",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-settings-20261008",
+   "num": "4",
+   "file": ".claude/breaks/b149_pending_not_copied.sh",
+   "at": "2026-10-08T19:21:49",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-period-settings-20261008",
+   "num": "5",
+   "file": ".claude/breaks/b150_vwaptp_range_missing.sh",
+   "at": "2026-10-08T19:21:49",
+   "how": "当てた"
   }
  ]
 }

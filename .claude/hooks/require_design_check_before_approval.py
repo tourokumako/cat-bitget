@@ -434,6 +434,33 @@ def a14_review(acc):
 
 
 BK_DIR = ROOT + "/.claude/state/_a12_backup"
+# ★2026-10-08（160回目）＝--try で A12 まで全部 通した設計書のハッシュ値の記録（終える前の検査が読む・main の説明）。
+A12_OK = ROOT + "/.claude/state/a12_try_ok.json"
+
+
+def _sha_of(path):
+    import hashlib
+    try:
+        return hashlib.sha256(open(path, "rb").read()).hexdigest()
+    except OSError:
+        return ""
+
+
+def _a12_ok_sha():
+    try:
+        return json.load(open(A12_OK, encoding="utf-8")).get("acc_sha", "")
+    except Exception:                                        # noqa: BLE001
+        return ""
+
+
+def _a12_ok_write(acc):
+    """acc＝全部 通った設計書（None なら記録を消す＝通らなかった）。"""
+    if acc is None:
+        if os.path.isfile(A12_OK):
+            os.remove(A12_OK)
+        return
+    with open(A12_OK, "w", encoding="utf-8") as fh:
+        json.dump({"acc_sha": _sha_of(acc), "acc": acc, "time": time.strftime("%Y-%m-%d %H:%M:%S")}, fh, ensure_ascii=False)
 # ★2026-10-06（156回目・まこさん「監査出したあとに上記修正をする」「OK」・next_step の手順6）
 #   ＝仮当てのまま走らせる自己テスト6本（監査に出す前のチェック pre_audit_check.py の CHECKS のうち、表を作り直さずに
 #   走らせられるもの）。表の一致の検査（--verify）と H2 は入れない＝仮当てでは表を作り直さないので、名前が変わる工事では
@@ -446,6 +473,17 @@ A12_SELFTESTS = (
     ("engine_tuner_gen.py", "--selftest-extra-gate"),
     ("verify_design_contract.py", "--diff"),       # 設計書のパスを後ろに足して走らせる
 )
+
+
+def a12_fail_allowed(name, rc, out):
+    """A12 が自己テストの落ちを許すか（True＝止めない）。
+    ★2026-10-08（160回目・まこさん OK の案 1b）＝写しで確かめる道具（.claude/state/indicator_review の *_draft_build.py）も
+      この関数と A12_SELFTESTS を import して同じ判定を使う。159回目は写しの道具が許しを手で書き写し、B3・B4 まで許す形に
+      直してから走らせ、A12（T6 だけ許す）と食い違って長い確かめを走らせ直した（教訓 L-671）。
+    許すのは、gen_materials.py の落ちが T6（素の状態で --verify が鳴っている）だけのとき（下の _a12_trial_locked の説明）。"""
+    fails = [l.strip() for l in (out or "").splitlines() if l.strip().startswith("❌ ") and not re.match(r"❌ \d+ 件", l.strip())]
+    return bool(rc != 0 and name == "gen_materials.py" and fails
+                and all(l.startswith("❌ T6: 素の状態で --verify が鳴っている") for l in fails))
 
 
 def _a12_restore():
@@ -683,9 +721,7 @@ def _a12_trial_locked(acc):
                 #   監査に出す前のチェック pre_audit_check.py が gen_materials.py --selftest と --verify を必ずかける）。
                 # ★2026-10-07（監査 CP63 の修正3・Major-1）＝「❌ T」で始まる行だけを集めると、T で始まらない落ち
                 #   （F4・R1・S1 ほか）と T6 が一緒に出たときに見逃す。件数の行（「❌ N 件」）を除く ❌ の行を全部 集める。
-                _t6 = [l.strip() for l in ((r6.stdout or "") + (r6.stderr or "")).splitlines() if l.strip().startswith("❌ ") and not re.match(r"❌ \d+ 件", l.strip())]
-                if (r6.returncode != 0 and st[0] == "gen_materials.py" and _t6
-                        and all(l.startswith("❌ T6: 素の状態で --verify が鳴っている") for l in _t6)):
+                if a12_fail_allowed(st[0], r6.returncode, (r6.stdout or "") + (r6.stderr or "")):
                     continue
                 if r6.returncode != 0:
                     bad.append(f"自己テストが当てた後に落ちる（rc={r6.returncode}）: {' '.join(st)}\n"
@@ -876,6 +912,9 @@ def main(argv):
         t0 = time.time()
         after = "--after-write" in argv
         bad = check_all(acc, tr, trial=not after)
+        if not after:
+            # ★2026-10-08（160回目）＝A12 まで通したかの記録（終える前の検査は A12 を走らせず、この記録を見る＝main の下の説明）
+            _a12_ok_write(acc if not bad else None)
         if bad:
             _print(bad, "📋 [承認の前の検査] 承認のプログラムの止まり所を、上から全部 確かめました。")
         elif after:
@@ -901,7 +940,16 @@ def main(argv):
         return 0
     # --try-stop は、止める側の道を別の設計書で試すための口（本物の Stop hook は旗なしで呼ばれる＝ACC だけを見る）
     acc = argv[argv.index("--design") + 1] if ("--try-stop" in argv and "--design" in argv) else ACC
-    bad_a, bad_b = check_all(acc, data.get("transcript_path"), split=True)
+    # ★2026-10-08（160回目・まこさん「原因究明後、対策をして」）＝終える前の検査では A12（仮当て）を走らせない。
+    #   A12 は約17分（実測 992.8秒・1041.6秒）かかり、この hook の上限 600秒（settings.json）で打ち切られる。
+    #   打ち切られると戻す処理（finally）が走らず、本物のファイルに仮当ての中身と新しい壊すプログラムが残り、
+    #   まこさんの承認が「新規と書いたのに実在する」で2回 止まった（07:25 と 08:51 に走った仮当ての残り）。
+    #   代わりに、--try で A12 まで通した記録（A12_OK）が、この設計書の今の版（ハッシュ値）のものかだけを見る。
+    bad_a, bad_b = check_all(acc, data.get("transcript_path"), split=True, trial=False)
+    if not bad_a and _a12_ok_sha() != _sha_of(acc):
+        bad_a.append("A12 --try で承認の後に起きること（仮当て）まで通した記録が、この設計書の今の版に無い"
+                     "＝`python3 .claude/hooks/require_design_check_before_approval.py --try` を先に走らせて通してから、"
+                     "承認をお願いする（終える前の検査では A12 を走らせない＝上限 600秒で打ち切られ、本物に仮当てが残るため）")
     # ★B群だけが残るのは、実装の前の承認（書く権利をもらう承認）では当たり前に起きる
     #   ＝まだ実装していないので、条件のコマンドが通らない。これを止めると、
     #   「承認の前は実装できない／実装の前は承認をお願いできない」の行き止まりになる。

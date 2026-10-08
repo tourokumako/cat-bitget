@@ -16,8 +16,8 @@ python3 - "$F" <<'PYEOF'
 import sys
 p = sys.argv[1]
 s = open(p, encoding='utf-8').read()
-old = '    "RCI": [{"kind": "int", "lo": 5, "hi": 52}]\n'
-new = '    "RCI": [{"kind": "int", "lo": 5, "hi": 26}]\n'
+old = '    "RCI": [{"kind": "int", "lo": 5, "hi": 52}],\n'
+new = '    "RCI": [{"kind": "int", "lo": 5, "hi": 26}],\n'
 if s.count(old) != 1:
     raise SystemExit("[b143_rci_range_short] 壊す対象の文字が1か所でない")
 open(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))

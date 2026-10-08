@@ -109,6 +109,11 @@ def main(argv: list) -> int:
         return argv[argv.index(k) + 1] if k in argv and argv.index(k) + 1 < len(argv) else None
     if "--selftest" in argv:
         return selftest()
+    # ★2026-10-08（160回目・まこさん OK の案 3b）＝止められる打ち方の早見表（gen_hook_cheatsheet.py・開始時の hook_health_check.sh が呼ぶ）。
+    #   gen_hook_cheatsheet.py は土台ゲートの道具の一覧に無く単独で走らせられないので、この口から呼ぶ。
+    if "--cheatsheet" in argv:
+        import gen_hook_cheatsheet
+        return gen_hook_cheatsheet.main(argv)
     session = opt("--session")
     if not session:
         print("❌ --session（やり取りの記録の名前）が要る")

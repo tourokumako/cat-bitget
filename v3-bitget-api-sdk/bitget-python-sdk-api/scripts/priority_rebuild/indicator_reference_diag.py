@@ -927,6 +927,8 @@ EXT2: dict[str, tuple] = {
     "n本安値": (lambda d, p: (d.close / _pta.donchian(d.high, d.low, lower_length=int(p[0]), upper_length=int(p[0])).iloc[:, 0].shift(1) - 1) * 100, "pandas-ta"),
     "fib位置": (_x2_fib, "pandas-ta"),
     "RCI": (_x2_rci, "scipy"),
+    # ★2026-10-07（工事 m2c15-period-textbook-20261007）＝当日VWAP は pandas-ta の vwap（anchor="D"）と同じ作り
+    "当日VWAP": (lambda d, p: (d.close / _pta.vwap(d.high, d.low, d.close, d.volume, anchor="D") - 1) * 100, "pandas-ta"),
 }
 
 
@@ -937,6 +939,11 @@ def ext2_ready() -> bool:
 
 # ══ 参照表（①〜④を1種ずつ）＝ observe_diag の検査3 が読む正本 ═══════════
 REFS: list[dict] = []
+
+
+# ★まこさんの決定の逐語（2026-10-07・工事 m2c15-period-textbook-20261007）＝下の登録の mako の欄に書く（同じ文を11か所に書かないため）。
+MAKO_K3 = '2026-10-07 まこさん決定「A」（K-3 を3つの工事に分け、K-3a で監査 CP60 の修正41 の (b)(c) と修正42 の比べる版を、今の版を残して別の材料として足す）＝逐語のファイル ok_k3_split_20261007（工事 m2c15-period-textbook-20261007）'
+MAKO_K7 = '2026-10-07 まこさん決定「OK」（K-7 の1番＝前期間pivot の3種に前の週の版を別の材料として足す）＝逐語のファイル ok_k7_pivot_thermo_20261007（m2c15-memo-sort-20261007）'
 
 
 def _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None):
@@ -1225,6 +1232,46 @@ _r(r"close vs VWAP%(\d+)", "close vs VWAP",
    "★流儀に注意＝世界標準の VWAP はセッション起点＋典型価格。本カタログは n 本の移動窓＋終値で、24時間市場向けの本プロジェクトの流儀。外部照合は定義が違うため対象外",
    "順張り値", "trend", tb=_tb_vs_vwap,
    known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)])])
+# ★2026-10-07（工事 m2c15-period-textbook-20261007・監査 CP60 の修正41 の (b)(c)）＝教科書の VWAP（典型価格）の2つの版。
+def _tb_vs_vwap_tp(d, p):
+    n = p[0]
+    o, h, l, c, v = _arr(d)
+    tp = (h + l + c) / 3
+    return _S((c / _div(_roll(tp * v, n, "sum"), _roll(v, n, "sum")) - 1) * 100, d)
+
+
+def _tp_case(n):
+    """VWAP典型 の手計算用。全部の足が 高値112・安値100・終値103・出来高1＝典型価格105 → VWAP 105 → 乖離%＝(103÷105−1)×100。
+    終値で作る今の版なら VWAP 103 → 0（＝値段の違いを見分ける）。"""
+    c = np.full(n, 103.0)
+    return _mk(c, o=c, h=np.full(n, 112.0), l=np.full(n, 100.0))
+
+
+def _vwap_day_case():
+    """当日VWAP の手計算用。1日目（3/1・288本）＝終値150・出来高1（積み上げが日で区切れていなければ、ここが混ざる）。
+    2日目＝1本目と2本目は 高値112・安値100・終値103（典型価格105）・出来高1、3本目は 高値＝安値＝終値＝99・出来高2。
+    2本目の VWAP＝105 → (103÷105−1)×100。3本目の VWAP＝(105＋105＋99×2)÷4＝102 → (99÷102−1)×100。"""
+    c = np.r_[np.full(288, 150.0), [103.0, 103.0, 99.0]]
+    h = np.r_[np.full(288, 150.0), [112.0, 112.0, 99.0]]
+    l = np.r_[np.full(288, 150.0), [100.0, 100.0, 99.0]]
+    v = np.r_[np.full(288, 1.0), [1.0, 1.0, 2.0]]
+    return _mk(c, o=c, h=h, l=l, v=v)
+
+
+_r(r"close vs VWAP典型%(\d+)", "close vs VWAP典型",
+   "典型価格（(高値＋安値＋終値)÷3）で作る n 本の移動 VWAP からの乖離%",
+   "監査 CP60 の修正41 の (b)＝ta の VolumeWeightedAveragePrice の作り（n 本の移動窓＋典型価格）。今の close vs VWAP（終値）とは値段だけが違う",
+   "順張り値", "trend", tb=_tb_vs_vwap_tp,
+   ext=lambda d, p: (d.close / _ta.volume.VolumeWeightedAveragePrice(d.high, d.low, d.close, d.volume, window=int(p[0]))
+                     .volume_weighted_average_price() - 1) * 100,
+   known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)]), (_tp_case(p[0] + 10), [(-1, (103.0 / 105.0 - 1) * 100, 1e-9)])],
+   mako=MAKO_K3)
+_r(r"close vs 当日VWAP%", "当日VWAP",
+   "UTC の日の0時から積み上げる VWAP（典型価格・今の足までを含む）からの乖離%",
+   "監査 CP60 の修正41 の (c)＝StockCharts の逐語「VWAP calculations start fresh at the open」「(H+L+C)/3」。pandas-ta の vwap（anchor の既定 D）と同じ作り",
+   "順張り値", "trend",
+   known=lambda p: [(_vwap_day_case(), [(-2, (103.0 / 105.0 - 1) * 100, 1e-9), (-1, (99.0 / 102.0 - 1) * 100, 1e-9)])],
+   mako=MAKO_K3)
 _r(r"close vs Keltner上%\((\d+),([\d.]+)\)", "Keltner上",
    "ケルトナーチャネル上バンド（EMA + k×ATR14）からの乖離%", "Keltner（ATR は Wilder 14）",
    "順張り値", "trend", tb=lambda d, p: _tb_keltner(d, p, +1), ext=lambda d, p: _ext_keltner(d, p, +1),
@@ -1299,6 +1346,31 @@ _r(r"close vs 前期間pivotR1%", "前期間pivotR1",
 _r(r"close vs 前期間pivotS1%", "前期間pivotS1",
    "教科書の S1＝2×PP − 前の期間の高値 からの乖離%", "StockCharts の逐語「Support 1 (S1) = (P x 2) - High」",
    "順張り値", "trend", known=lambda p: [(_pivot_day_case(), [(-1, 5.0, 1e-9)])])
+
+
+def _pivot_week_case():
+    """前週ピボットの手計算用（2026-10-07）。データの始まり 2026-03-01 は日曜＝月曜0時 UTC に始まる週の最後の日。
+    1日目（3/1・288本）＝終値105・高値110 が1本・安値100 が1本（_pivot_day_case と同じ）、2日目（3/2 月曜・288本）＝高値＝安値＝終値＝104、
+    3日目（3/3）＝終値105 が3本。3日目の前週ピボット＝3/1 の週＝PP 105・R1 110・S1 100 → 乖離% 0・(105÷110−1)×100・5。
+    前の日の版なら 3/2 の 104 で作る＝PP=R1=S1=104（＝週と日の取り違えを見分ける）。"""
+    c = np.r_[np.full(288, 105.0), np.full(288, 104.0), np.full(3, 105.0)]
+    h = c.copy()
+    l = c.copy()
+    h[100] = 110.0
+    l[200] = 100.0
+    return _mk(c, o=c, h=h, l=l)
+
+
+_r(r"close vs 前週pivotPP%", "前週pivotPP",
+   "教科書のピボット PP を前の週（月曜0時 UTC に始まる7日）の（高値＋安値＋終値）÷3 で作り、その週のあいだ動かない線からの乖離%",
+   "StockCharts の逐語「Pivot Points for 30-, 60-, and 120-minute charts use the prior week's high, low, and close.」。週の始まりは ISO 8601 の月曜",
+   "順張り値", "trend", known=lambda p: [(_pivot_week_case(), [(-1, 0.0, 1e-9)])], mako=MAKO_K7)
+_r(r"close vs 前週pivotR1%", "前週pivotR1",
+   "前の週の R1＝2×PP − 前の週の安値 からの乖離%", "StockCharts の逐語「Resistance 1 (R1) = (P x 2) - Low」",
+   "順張り値", "trend", known=lambda p: [(_pivot_week_case(), [(-1, (105.0 / 110.0 - 1) * 100, 1e-9)])], mako=MAKO_K7)
+_r(r"close vs 前週pivotS1%", "前週pivotS1",
+   "前の週の S1＝2×PP − 前の週の高値 からの乖離%", "StockCharts の逐語「Support 1 (S1) = (P x 2) - High」",
+   "順張り値", "trend", known=lambda p: [(_pivot_week_case(), [(-1, 5.0, 1e-9)])], mako=MAKO_K7)
 _r(r"fib位置(\d+)", "fib位置",
    "n 本の高安レンジの中の位置 0〜1", "フィボナッチ・リトレースメントの位置測定", "順張り値", "trend", tb=_tb_fib,
    known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.5, 1e-9)])])
@@ -1323,6 +1395,44 @@ _r(r"close vs VAL%(\d+)", "VAL",
    # 下端は どちらの場合も下の区画。
    known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),
                     (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])])
+
+
+# ★2026-10-07（工事 m2c15-period-textbook-20261007・監査 CP60 の修正42）＝日で区切る出来高プロファイルの2つの版。
+def _vp_day_case(prev: bool, va, vb, n=20):
+    """日で区切る出来高プロファイルの手計算用。_vp_case（終値 100 と 200 の2つだけ）を日の区切りに置く＝答えは _vp_case と同じ。
+    prev=True（前日の版）＝1日目（3/1・288本）の前半144本＝終値100・出来高 va／後半144本＝終値200・出来高 vb、2日目＝終値100 が3本。
+      2日目の線は1日目の足ぜんぶで作る（同じ日の足だけで作ると終値100 だけ＝乖離0 になり見分けられる）。
+    prev=False（当日の版）＝1日目（288本）＝終値150・出来高1（日で区切れていなければ、出来高の多いこの値段が線になる）、
+      2日目＝_vp_case(n, va, vb) と同じ n＋1本。2日目の最後の足の線は、2日目の0時から1本前までの n 本で作る。"""
+    if prev:
+        c = np.r_[np.full(144, 100.0), np.full(144, 200.0), np.full(3, 100.0)]
+        v = np.r_[np.full(144, float(va)), np.full(144, float(vb)), np.full(3, 1.0)]
+        return _mk(c, o=c, h=c, l=c, v=v)
+    m = n // 2
+    c = np.r_[np.full(288, 150.0), np.full(m, 100.0), np.full(n - m, 200.0), [100.0]]
+    v = np.r_[np.full(288, 1.0), np.full(m, float(va)), np.full(n - m, float(vb)), [1.0]]
+    return _mk(c, o=c, h=c, l=c, v=v)
+
+
+for _vpk, _vpw in (("前日", True), ("当日", False)):
+    _r(rf"close vs {_vpk}POC%", f"{_vpk}POC",
+       f"出来高プロファイルの最厚価格帯 POC（{'前の UTC の日の足ぜんぶ・その日のあいだ固定' if _vpw else 'その日の0時から1本前までの足'}）からの乖離%",
+       "監査 CP60 の修正42 の比べる版。区画24・同量なら価格の高い側（今の POC と同じ決まり＝_vp_one）",
+       "順張り値", "trend",
+       known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_LO, 1e-9)])],
+       mako=MAKO_K3)
+    _r(rf"close vs {_vpk}VAH%", f"{_vpk}VAH",
+       f"バリューエリア上端（出来高上位70%帯の上端・{'前の UTC の日' if _vpw else 'その日の0時から1本前まで'}）からの乖離%",
+       "監査 CP60 の修正42 の比べる版。今の VAH と同じ決まり（_vp_one）",
+       "順張り値", "trend",
+       known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_HI, 1e-9)])],
+       mako=MAKO_K3)
+    _r(rf"close vs {_vpk}VAL%", f"{_vpk}VAL",
+       f"バリューエリア下端（{'前の UTC の日' if _vpw else 'その日の0時から1本前まで'}）からの乖離%",
+       "監査 CP60 の修正42 の比べる版。今の VAL と同じ決まり（_vp_one）",
+       "順張り値", "trend",
+       known=lambda p, w=_vpw: [(_vp_day_case(w, 10, 1), [(-1, _VP_D_LO, 1e-9)]), (_vp_day_case(w, 6, 4), [(-1, _VP_D_LO, 1e-9)])],
+       mako=MAKO_K3)
 # ★2026-09-06（再監査 cp22 の N-1）＝S-RタッチATR の登録を外した。
 #   理由＝実装が出どころの逐語（`tol=clamp(K×ATR%_1h,…)`＝1時間足）と違い、渡された足の ATR% を
 #   使っていた。5分足では許容幅が下端 0.15% に張り付き、既存の S-Rタッチ数(288,0.0015) と
@@ -4602,6 +4712,11 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "前期間pivotPP": dict(k="構造・位置"), "前期間pivotR1": dict(k="構造・位置"), "前期間pivotS1": dict(k="構造・位置"),
     "fib位置": dict(k="構造・位置"), "POC": dict(k="構造・位置"), "VAH": dict(k="構造・位置"),
     "VAL": dict(k="構造・位置"), "S-Rタッチ数": dict(k="構造・位置"),
+    # ★2026-10-07（工事 m2c15-period-textbook-20261007）＝教科書の期間の区切りの版（監査 CP60 の修正41・42・K-7 の決定）
+    "close vs VWAP典型": dict(k="構造・位置"), "当日VWAP": dict(k="構造・位置"),
+    "前週pivotPP": dict(k="構造・位置"), "前週pivotR1": dict(k="構造・位置"), "前週pivotS1": dict(k="構造・位置"),
+    "前日POC": dict(k="構造・位置"), "前日VAH": dict(k="構造・位置"), "前日VAL": dict(k="構造・位置"),
+    "当日POC": dict(k="構造・位置"), "当日VAH": dict(k="構造・位置"), "当日VAL": dict(k="構造・位置"),
     # ★2026-09-26（M2-E-4c・束2）＝S-Rタッチ数 と同じ数え方。許容幅だけが1時間足の値動きの幅に連動する。
     "S-Rタッチ1時間ATR": dict(k="構造・位置", note="S-Rタッチ数と同じ数え方で、許容幅を1時間足の ATR% に連動させたもの"),
     # ★2026-09-05（M2-C-4）に足した。S-RタッチATR は 2026-09-06（再監査 cp22 の N-1）に外した。
@@ -4912,6 +5027,18 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "POC": (("vp",), "vp＝出来高プロファイル。POC・VAH・VAL をまとめて出す"),
     "VAH": (("vp",), "同上"),
     "VAL": (("vp",), "同上"),
+    # ★2026-10-07（工事 m2c15-period-textbook-20261007）＝教科書の期間の区切りの版
+    "close vs VWAP典型": ((), "ta の VolumeWeightedAveragePrice（n 本の移動窓＋典型価格）と同じ作り（定義表の外部照合で確かめる）。pandas-ta の vwap は日の始まりから積み上げる版＝当日VWAP"),
+    "当日VWAP": (("vwap",), "pandas-ta の vwap（anchor の既定 D＝日の始まりから積み上げる典型価格・overlap/vwap.py）。定義表の2つ目の照合で値を確かめる"),
+    "前週pivotPP": ((), "前の週で固定する教科書の PP。ライブラリの cpr と同じ作りかは照らしていない（定義表の既知答えで確かめる）"),
+    "前週pivotR1": ((), "同上（教科書の R1＝2×PP − 前の週の安値）"),
+    "前週pivotS1": ((), "同上（教科書の S1＝2×PP − 前の週の高値）"),
+    "前日POC": (("vp",), "vp の作りを前の UTC の日で区切ったもの。日で区切る形はライブラリと照らしていない（定義表の既知答えで確かめる）"),
+    "前日VAH": (("vp",), "同上"),
+    "前日VAL": (("vp",), "同上"),
+    "当日POC": (("vp",), "vp の作りを、その日の0時から1本前までで区切ったもの。日で区切る形はライブラリと照らしていない（定義表の既知答えで確かめる）"),
+    "当日VAH": (("vp",), "同上"),
+    "当日VAL": (("vp",), "同上"),
     "S-Rタッチ数": ((), "同じ値段に何回 触れたか。ライブラリに相当する関数が無い"),
     "S-Rタッチ1時間ATR": ((), "S-Rタッチ数の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い"),
     # ★2026-09-05（M2-C-4）に足した。ライブラリに相当する関数が無い＝空のタプルと理由。

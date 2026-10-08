@@ -1,4 +1,4 @@
-<!-- MANUAL_HASH=a4f44072f361d7f2 -->
+<!-- MANUAL_HASH=e80b6efa92de813e -->
 # observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は observe_diag.py と observe_config.json から
@@ -115,9 +115,9 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 
 何を検証の対象にしているかの一覧です。すべてコードと設定ファイルから取っています。
 
-### 1. 指標（477種）
+### 1. 指標（488種）
 
-この477種に、時間足11種を掛けて 5247列になります。閾値は分位7段で刻みます。
+この488種に、時間足11種を掛けて 5368列になります。閾値は分位7段で刻みます。
 
 - ABER位置 ／ ADOSC比 ／ ADX10 ／ ADX14 ／ ADX7 ／ ADXR14
 - ADXR21 ／ ADXR7 ／ ALMA200傾き% ／ ALMA20傾き% ／ ALMA50傾き% ／ AMAT_LR
@@ -190,15 +190,17 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - close vs SAREXT% ／ close vs SINWMA%14 ／ close vs SMA9% ／ close vs SSF%10 ／ close vs SWMA%10 ／ close vs Supertrend%(10,3.0)
 - close vs T3%20 ／ close vs T3%200 ／ close vs T3%50 ／ close vs TEMA%10 ／ close vs TEMA%20 ／ close vs TRIMA%10
 - close vs TSF%14 ／ close vs VAH%288 ／ close vs VAL%288 ／ close vs VIDYA%20 ／ close vs VIDYA%200 ／ close vs VIDYA%50
-- close vs VWAP%288 ／ close vs VWMA%10 ／ close vs WMA%10 ／ close vs WMA%9 ／ close vs ZLMA%20 ／ close vs ZLMA%200
-- close vs ZLMA%50 ／ close vs pivotPP%288 ／ close vs pivotR1%288 ／ close vs pivotS1%288 ／ close vs 前期間pivotPP% ／ close vs 前期間pivotR1%
-- close vs 前期間pivotS1% ／ close vs 基準線%(26) ／ close vs 転換線%(9) ／ fib位置14 ／ fib位置20 ／ fractal安値距離%(2)
-- fractal高値距離%(2) ／ high_Z30 ／ kurtosis20 ／ kurtosis50 ／ low_Z30 ／ open_Z30
-- pinbar ／ realized_vol20 ／ realized_vol50 ／ skew20 ／ skew50 ／ stdev%10
-- stdev%50 ／ volume_ratio20 ／ volume_ratio50 ／ zscore_return20 ／ zscore_return50 ／ 上ヒゲ比
-- 下ヒゲ比 ／ 内側バー ／ 出来高変化率%1 ／ 包み足 ／ 孕み足 ／ 安値からの経過バー25
-- 安値切り上げ幅%(2) ／ 実体幅比10 ／ 形スコア24(V=+/M=−) ／ 形スコア48(V=+/M=−) ／ 形スコア96(V=+/M=−) ／ 構造破断距離%(2)
-- 連続本数 ／ 高値からの経過バー25 ／ 高値切り上げ幅%(2)
+- close vs VWAP%288 ／ close vs VWAP典型%288 ／ close vs VWMA%10 ／ close vs WMA%10 ／ close vs WMA%9 ／ close vs ZLMA%20
+- close vs ZLMA%200 ／ close vs ZLMA%50 ／ close vs pivotPP%288 ／ close vs pivotR1%288 ／ close vs pivotS1%288 ／ close vs 前日POC%
+- close vs 前日VAH% ／ close vs 前日VAL% ／ close vs 前期間pivotPP% ／ close vs 前期間pivotR1% ／ close vs 前期間pivotS1% ／ close vs 前週pivotPP%
+- close vs 前週pivotR1% ／ close vs 前週pivotS1% ／ close vs 基準線%(26) ／ close vs 当日POC% ／ close vs 当日VAH% ／ close vs 当日VAL%
+- close vs 当日VWAP% ／ close vs 転換線%(9) ／ fib位置14 ／ fib位置20 ／ fractal安値距離%(2) ／ fractal高値距離%(2)
+- high_Z30 ／ kurtosis20 ／ kurtosis50 ／ low_Z30 ／ open_Z30 ／ pinbar
+- realized_vol20 ／ realized_vol50 ／ skew20 ／ skew50 ／ stdev%10 ／ stdev%50
+- volume_ratio20 ／ volume_ratio50 ／ zscore_return20 ／ zscore_return50 ／ 上ヒゲ比 ／ 下ヒゲ比
+- 内側バー ／ 出来高変化率%1 ／ 包み足 ／ 孕み足 ／ 安値からの経過バー25 ／ 安値切り上げ幅%(2)
+- 実体幅比10 ／ 形スコア24(V=+/M=−) ／ 形スコア48(V=+/M=−) ／ 形スコア96(V=+/M=−) ／ 構造破断距離%(2) ／ 連続本数
+- 高値からの経過バー25 ／ 高値切り上げ幅%(2)
 
 ### 2. 探索の系統
 

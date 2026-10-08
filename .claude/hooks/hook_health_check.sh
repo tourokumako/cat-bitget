@@ -43,7 +43,8 @@ if [ -n "$ESC" ]; then
   printf '%s\n' "$ESC" | sed 's/^/     /'
   NG=$((NG+1))
 fi
-
+# ★2026-10-08（160回目・まこさん OK の案 3b）＝止められる打ち方の早見表
+python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/try_hooks.py --cheatsheet --session "$(jq -r '.session_id // empty' 2>/dev/null)" 2>&1 || true
 if [ "$NG" -eq 0 ]; then
   echo "✅ hook 健全性: 登録 .sh 実在/実行権限・hooks/*.py 構文・エラーログ・合言葉0件 ぜんぶ異常なし"
 else

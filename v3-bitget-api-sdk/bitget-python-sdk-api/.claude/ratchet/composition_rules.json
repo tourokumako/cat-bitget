@@ -4,12 +4,12 @@
     "検査6 「機械が強制する」と書いてある読み込ませる法則は、全部 engine の本体が読む枠に在る（読む枠 0 種＝ ／ 読まない枠 3 種＝direction_conflict／grids／exit_branch_count）"
   ],
   "_作った道具": "gen_composition_rules.py",
-  "_本文の指紋": "b48523c065a3158d",
+  "_本文の指紋": "aeb282abf1142c99",
   "_正本の指紋": {
     "composition_rules_src.json": "aac785d5d5a2c57b891e11263e1daa31f3563044d7be6d0cc1bf9f41de1d7d7e",
-    "exit_families.json": "dcc24a56163c70adf2499fd7cd09878240951922de5ba7eabbc2d02ca08fda99",
-    "search_limits.json": "07e3b0470be5c08ae050d9733bd3ff6d75d9495095e151ecc5967b5988baec7e",
-    "signal_families.json": "f614b39e677a8b3f6d3524c834fa3156a261a09eb448ec33231d1430d66ce4fe"
+    "exit_families.json": "0583da1480f58192db6ce4a25fd9b51c1f9cc533466c61a01142b5d94d78646c",
+    "search_limits.json": "d44a3d264f66a815c4bf39b9a352b08e5257692a881c659a14f4fad5cd087d8e",
+    "signal_families.json": "6f95d11469768a423a6f19cc5139f467ba56dbc828b5c2ebe11c5365c839544e"
   },
   "body": {
     "direction_conflict": {
@@ -168,26 +168,26 @@
           {
             "hi": 50,
             "kind": "int",
-            "lo": 20
+            "lo": 10
           },
           {
             "dec": 1,
-            "hi": 2.0,
+            "hi": 2.1,
             "kind": "float",
-            "lo": 2.0
+            "lo": 1.9
           }
         ],
         "BB幅": [
           {
             "hi": 50,
             "kind": "int",
-            "lo": 20
+            "lo": 10
           },
           {
             "dec": 1,
-            "hi": 2.0,
+            "hi": 2.1,
             "kind": "float",
-            "lo": 2.0
+            "lo": 1.9
           }
         ],
         "CCI": [
@@ -700,9 +700,9 @@
           },
           {
             "dec": 3,
-            "hi": 0.003,
+            "hi": 0.06,
             "kind": "float",
-            "lo": 0.003
+            "lo": 0.0
           }
         ],
         "close vs ALMA%": [

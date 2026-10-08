@@ -41,6 +41,11 @@ def main() -> int:
     p.add_argument("--draft", required=True)
     p.add_argument("--stale", default="")
     p.add_argument("--session", default=os.environ.get("CLAUDE_SESSION_ID", ""))
+    # ★2026-10-08（160回目・まこさん OK の案 2a）＝--fast は A12（仮当て・12〜17分）を飛ばし、ほかの段（約25秒）を全部 出す。
+    #   159回目は、A12 以外の段（A2・A14 ほか）で落ちる直しを、A12 込みの長い検査で1つずつ見つけた（7回中 長い回3回）。
+    #   使い方＝--fast が0件になってから、--fast を付けずに1回だけ走らせる。記録は trial_fast_last.json に書く
+    #   （案を出す前の検査 require_trial_before_proposal・check_all_before_handoff が読む trial_last.json は書かない＝A12 抜きで通さない）。
+    p.add_argument("--fast", action="store_true")
     a = p.parse_args()
     draft = Path(a.draft).read_text(encoding="utf-8")
     sys.path.insert(0, str(ROOT / ".claude/tools"))
@@ -69,7 +74,7 @@ def main() -> int:
         a_bad = []
         stale_hits = []
         if rc == 0:
-            a_bad, _b = rd.check_all(acc=str(OUT), transcript=None, split=True)
+            a_bad, _b = rd.check_all(acc=str(OUT), transcript=None, split=True, trial=not a.fast)
             text = OUT.read_text(encoding="utf-8")
             body = text.split("<!-- ACC_SOURCE_END -->", 1)[-1]
             for w in [x for x in a.stale.split(",") if x.strip()]:
@@ -84,10 +89,16 @@ def main() -> int:
     for x in stale_hits:
         print("   ❌ 古い事実の語が残る " + x)
     rp = record_path(a.session)
+    if a.fast:
+        rp = rp.with_name("trial_fast_last.json")
     rp.parent.mkdir(parents=True, exist_ok=True)
     rp.write_text(json.dumps({"time": datetime.datetime.now().isoformat(), "work": a.work, "ok": ok,
                               "draft": draft, "a_bad": a_bad, "stale": stale_hits}, ensure_ascii=False, indent=1),
                   encoding="utf-8")
+    if a.fast:
+        print(f"{'✅' if ok else '❌'} 速い段だけ（A12 の仮当ては走らせていない）＝A群 {len(a_bad)} 件・古い語 {len(stale_hits)} 件。"
+              f"記録＝{rp}。0件になったら --fast を付けずに1回だけ走らせる")
+        return 0 if ok else 1
     print(f"{'✅' if ok else '❌'} 試しの設計書＝{OUT}（A群 {len(a_bad)} 件・古い語 {len(stale_hits)} 件）。全行を Read で開いてから案を出す")
     return 0 if ok else 1
 

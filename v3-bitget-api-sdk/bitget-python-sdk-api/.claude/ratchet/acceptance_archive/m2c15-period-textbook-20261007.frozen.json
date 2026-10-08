@@ -1,0 +1,22 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "scripts/priority_rebuild/observe_diag.py": [
+  "<モジュール直下>",
+  "_pivot_prev_period",
+  "_vp_by_day",
+  "_vp_levels",
+  "_vp_one",
+  "_vwap_day",
+  "build_catalog"
+ ],
+ "scripts/priority_rebuild/indicator_reference_diag.py": [
+  "<モジュール直下>",
+  "_pivot_week_case",
+  "_tb_vs_vwap_tp",
+  "_tp_case",
+  "_vp_day_case",
+  "_vwap_day_case"
+ ]
+}

@@ -345,6 +345,26 @@
      "tf": "1d"
     },
     {
+     "n_eff": 22.9,
+     "part": "close vs VWAP典型%288",
+     "tf": "2h"
+    },
+    {
+     "n_eff": 11.4,
+     "part": "close vs VWAP典型%288",
+     "tf": "4h"
+    },
+    {
+     "n_eff": 7.6,
+     "part": "close vs VWAP典型%288",
+     "tf": "6h"
+    },
+    {
+     "n_eff": 1.9,
+     "part": "close vs VWAP典型%288",
+     "tf": "1d"
+    },
+    {
      "n_eff": 27.4,
      "part": "close vs Keltner上%(20,2.0)",
      "tf": "1d"
@@ -2182,26 +2202,26 @@
       {
        "hi": 50,
        "kind": "int",
-       "lo": 20
+       "lo": 10
       },
       {
        "dec": 1,
-       "hi": 2.0,
+       "hi": 2.1,
        "kind": "float",
-       "lo": 2.0
+       "lo": 1.9
       }
      ],
      "BB幅": [
       {
        "hi": 50,
        "kind": "int",
-       "lo": 20
+       "lo": 10
       },
       {
        "dec": 1,
-       "hi": 2.0,
+       "hi": 2.1,
        "kind": "float",
-       "lo": 2.0
+       "lo": 1.9
       }
      ],
      "CCI": [
@@ -2714,9 +2734,9 @@
       },
       {
        "dec": 3,
-       "hi": 0.003,
+       "hi": 0.06,
        "kind": "float",
-       "lo": 0.003
+       "lo": 0.0
       }
      ],
      "close vs ALMA%": [
@@ -2907,6 +2927,13 @@
       }
      ],
      "close vs VWAP": [
+      {
+       "hi": 288,
+       "kind": "int",
+       "lo": 288
+      }
+     ],
+     "close vs VWAP典型": [
       {
        "hi": 288,
        "kind": "int",
@@ -3578,6 +3605,7 @@
    "close vs VIDYA%200": "構造・位置",
    "close vs VIDYA%50": "構造・位置",
    "close vs VWAP%288": "構造・位置",
+   "close vs VWAP典型%288": "構造・位置",
    "close vs VWMA%10": "構造・位置",
    "close vs WMA%10": "構造・位置",
    "close vs WMA%9": "構造・位置",
@@ -3587,10 +3615,20 @@
    "close vs pivotPP%288": "構造・位置",
    "close vs pivotR1%288": "構造・位置",
    "close vs pivotS1%288": "構造・位置",
+   "close vs 前日POC%": "構造・位置",
+   "close vs 前日VAH%": "構造・位置",
+   "close vs 前日VAL%": "構造・位置",
    "close vs 前期間pivotPP%": "構造・位置",
    "close vs 前期間pivotR1%": "構造・位置",
    "close vs 前期間pivotS1%": "構造・位置",
+   "close vs 前週pivotPP%": "構造・位置",
+   "close vs 前週pivotR1%": "構造・位置",
+   "close vs 前週pivotS1%": "構造・位置",
    "close vs 基準線%(26)": "トレンド",
+   "close vs 当日POC%": "構造・位置",
+   "close vs 当日VAH%": "構造・位置",
+   "close vs 当日VAL%": "構造・位置",
+   "close vs 当日VWAP%": "構造・位置",
    "close vs 転換線%(9)": "トレンド",
    "fib位置14": "構造・位置",
    "fib位置20": "構造・位置",
@@ -4058,6 +4096,7 @@
   "close vs VIDYA%200": "反転サイン",
   "close vs VIDYA%50": "反転サイン",
   "close vs VWAP%288": "順張り値",
+  "close vs VWAP典型%288": "順張り値",
   "close vs VWMA%10": "反転サイン",
   "close vs WMA%10": "反転サイン",
   "close vs WMA%9": "反転サイン",
@@ -4067,10 +4106,20 @@
   "close vs pivotPP%288": "順張り値",
   "close vs pivotR1%288": "順張り値",
   "close vs pivotS1%288": "順張り値",
+  "close vs 前日POC%": "順張り値",
+  "close vs 前日VAH%": "順張り値",
+  "close vs 前日VAL%": "順張り値",
   "close vs 前期間pivotPP%": "順張り値",
   "close vs 前期間pivotR1%": "順張り値",
   "close vs 前期間pivotS1%": "順張り値",
+  "close vs 前週pivotPP%": "順張り値",
+  "close vs 前週pivotR1%": "順張り値",
+  "close vs 前週pivotS1%": "順張り値",
   "close vs 基準線%(26)": "順張り値",
+  "close vs 当日POC%": "順張り値",
+  "close vs 当日VAH%": "順張り値",
+  "close vs 当日VAL%": "順張り値",
+  "close vs 当日VWAP%": "順張り値",
   "close vs 転換線%(9)": "順張り値",
   "fib位置14": "順張り値",
   "fib位置20": "順張り値",
@@ -4182,6 +4231,8 @@
   "close vs EMA20%",
   "close vs SMA9%",
   "close vs VWAP%288",
+  "close vs VWAP典型%288",
+  "close vs 当日VWAP%",
   "close vs Keltner上%(20,2.0)",
   "close vs Keltner下%(20,2.0)",
   "close vs Supertrend%(10,3.0)",
@@ -4193,11 +4244,20 @@
   "close vs 前期間pivotPP%",
   "close vs 前期間pivotR1%",
   "close vs 前期間pivotS1%",
+  "close vs 前週pivotPP%",
+  "close vs 前週pivotR1%",
+  "close vs 前週pivotS1%",
   "fib位置14",
   "fib位置20",
   "close vs POC%288",
   "close vs VAH%288",
   "close vs VAL%288",
+  "close vs 前日POC%",
+  "close vs 前日VAH%",
+  "close vs 前日VAL%",
+  "close vs 当日POC%",
+  "close vs 当日VAH%",
+  "close vs 当日VAL%",
   "S-Rタッチ数(144,0.0015)",
   "S-Rタッチ数(144,0.003)",
   "S-Rタッチ数(144,0.006)",

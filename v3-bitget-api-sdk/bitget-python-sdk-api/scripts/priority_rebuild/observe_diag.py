@@ -369,26 +369,63 @@ def _vp_levels(c, v, win=288, va_pct=0.7, rows=24):
     for i in range(len(ca)):
         if i < win:
             poc.append(np.nan); vah.append(np.nan); val.append(np.nan); continue
-        cw, vw = ca[i - win:i], va[i - win:i]
-        bins = np.linspace(cw.min(), cw.max(), rows + 1)
-        idx = np.clip(np.digitize(cw, bins) - 1, 0, len(bins) - 2)
-        agg = np.bincount(idx, weights=vw, minlength=len(bins) - 1)
-        centers = (bins[:-1] + bins[1:]) / 2
-        p = int(np.argsort(agg)[::-1][0])
-        last = len(agg) - 1
-        tot = max(agg.sum(), 1e-9)
-        lo, hi, acc = p, p, agg[p]
-        while acc / tot < va_pct and (lo > 0 or hi < last):
-            up = agg[hi + 1] if hi < last else -1.0
-            dn = agg[lo - 1] if lo > 0 else -1.0
-            if up > dn or (up == dn and (hi + 1 - p) <= (p - lo + 1)):
-                hi += 1
-                acc += agg[hi]
-            else:
-                lo -= 1
-                acc += agg[lo]
-        poc.append(centers[p]); vah.append(centers[hi]); val.append(centers[lo])
+        p_, h_, l_ = _vp_one(ca[i - win:i], va[i - win:i], va_pct, rows)
+        poc.append(p_); vah.append(h_); val.append(l_)
     return (pd.Series(poc, index=c.index), pd.Series(vah, index=c.index), pd.Series(val, index=c.index))
+
+
+def _vp_one(cw, vw, va_pct=0.7, rows=24):
+    """1つの窓の出来高プロファイル＝(POC・VAH・VAL の価格)。決まりは _vp_levels の説明のとおり。
+    ★2026-10-07（工事 m2c15-period-textbook-20261007）に _vp_levels の中から切り出した（計算は1文字も変えていない）。
+      n 本の移動窓（_vp_levels）と、日で区切る版（_vp_by_day・監査 CP60 の修正42）が同じ決まりを使うため。"""
+    bins = np.linspace(cw.min(), cw.max(), rows + 1)
+    idx = np.clip(np.digitize(cw, bins) - 1, 0, len(bins) - 2)
+    agg = np.bincount(idx, weights=vw, minlength=len(bins) - 1)
+    centers = (bins[:-1] + bins[1:]) / 2
+    p = int(np.argsort(agg)[::-1][0])
+    last = len(agg) - 1
+    tot = max(agg.sum(), 1e-9)
+    lo, hi, acc = p, p, agg[p]
+    while acc / tot < va_pct and (lo > 0 or hi < last):
+        up = agg[hi + 1] if hi < last else -1.0
+        dn = agg[lo - 1] if lo > 0 else -1.0
+        if up > dn or (up == dn and (hi + 1 - p) <= (p - lo + 1)):
+            hi += 1
+            acc += agg[hi]
+        else:
+            lo -= 1
+            acc += agg[lo]
+    return centers[p], centers[hi], centers[lo]
+
+
+def _vp_by_day(c, v, mode, va_pct=0.7, rows=24):
+    """日で区切る出来高プロファイル（監査 CP60 の修正42 の比べる版・2026-10-07・工事 m2c15-period-textbook-20261007）。
+    区切り＝UTC の日（データの時刻は UTC）。戻り＝(POC・VAH・VAL の価格の列)。決まり（区画・70%）は _vp_one。
+    mode="前日"＝1つ前の日の足ぜんぶで作り、その日のあいだ動かない（監査 CP60 の修正42「前の UTC の日で固定（教科書の
+      『前のセッションの値を後のセッションの参照にする』）」）。1つ前の日＝データに在る1つ前の日（_pivot_prev_period の
+      shift(1) と同じ）。データの最初の日は NaN。
+    mode="当日"＝その日の0時から、今の足の1本前までの足で作る（同「その日の0時から育つ版」）。今の足は窓に入れない
+      （_vp_levels と同じ＝未来を見ない）。その日の最初の足は NaN。"""
+    if mode not in ("前日", "当日"):
+        raise ValueError(f"_vp_by_day の mode は 前日 か 当日（{mode}）")
+    ca, va = c.to_numpy(float), v.to_numpy(float)
+    dv = c.index.floor("D").to_numpy()
+    out = np.full((3, len(ca)), np.nan)
+    bounds, s = [], 0
+    for i in range(1, len(ca) + 1):
+        if i == len(ca) or dv[i] != dv[s]:
+            bounds.append((s, i))
+            s = i
+    for k, (s, e) in enumerate(bounds):
+        if mode == "前日":
+            if k == 0:
+                continue
+            ps, pe = bounds[k - 1]
+            out[:, s:e] = np.array(_vp_one(ca[ps:pe], va[ps:pe], va_pct, rows))[:, None]
+        else:
+            for i in range(s + 1, e):
+                out[:, i] = _vp_one(ca[s:i], va[s:i], va_pct, rows)
+    return tuple(pd.Series(out[j], index=c.index) for j in range(3))
 
 
 def _sr_touch(c, h, l, win=288, tol=0.003):
@@ -890,6 +927,21 @@ _reg("close vs EMA", "close vs EMA{}%", True, lambda d, n:
 _reg("close vs SMA", "close vs SMA{}%", True, lambda d, n: (d.close / d.close.rolling(n).mean() - 1) * 100)
 _reg("close vs VWAP%", "close vs VWAP%{}", True, lambda d, n: (d.close / ((d.close * d.volume).rolling(n).sum()
      / d.volume.rolling(n).sum().replace(0, np.nan)) - 1) * 100)
+# ★2026-10-07（工事 m2c15-period-textbook-20261007・監査 CP60 の修正41 の (b)(c)）＝教科書の VWAP（値段は典型価格）の2つの版を、
+#   今の版（終値・n 本の移動窓）を残して別の材料として足す。どちらが良いかは M2-F-10f で比べる（この工事は材料を足すだけ）。
+#   (b) 典型価格＝(高値＋安値＋終値)÷3 の n 本の移動窓＝ta の VolumeWeightedAveragePrice の作り
+#   (c) UTC の日の0時から積み上げる典型価格＝StockCharts の逐語「VWAP calculations start fresh at the open」「(H+L+C)/3」
+#       ＝pandas-ta の vwap（anchor の既定 D）の作り。今の足までを含む（今の版の移動窓も今の足を含む）。
+def _vwap_day(d):
+    """UTC の日の0時から積み上げる VWAP（値段は典型価格・今の足までを含む）。"""
+    key = d.index.floor("D")
+    tp = (d.high + d.low + d.close) / 3
+    return (tp * d.volume).groupby(key).cumsum() / d.volume.groupby(key).cumsum().replace(0, np.nan)
+
+
+_reg("close vs VWAP典型%", "close vs VWAP典型%{}", True, lambda d, n: (d.close / ((((d.high + d.low + d.close) / 3) * d.volume)
+     .rolling(n).sum() / d.volume.rolling(n).sum().replace(0, np.nan)) - 1) * 100)
+_reg("close vs 当日VWAP%", "close vs 当日VWAP%", True, lambda d: (d.close / _vwap_day(d) - 1) * 100)
 _reg("close vs Keltner上%", "close vs Keltner上%({},{})", True, lambda d, n, k, atr_n=14:
      (d.close / (d.close.ewm(span=n, adjust=False).mean() + k * _atr(d.high, d.low, d.close, atr_n)) - 1) * 100)
 _reg("close vs Keltner下%", "close vs Keltner下%({},{})", True, lambda d, n, k, atr_n=14:
@@ -910,13 +962,19 @@ _reg("close vs pivotS1%", "close vs pivotS1%{}", True, lambda d, n: (d.close / (
      + d.low.rolling(n).min() + d.close.shift(1)) / 3) - d.high.rolling(n).max()) - 1) * 100)
 
 
-def _pivot_prev_period(d):
+def _pivot_prev_period(d, unit=None):
     """教科書のピボット（StockCharts「Pivot Points」）＝前の期間の高値・安値・終値から作り、その期間のあいだ動かない線。
     逐語「the prior day's high, low, and close」「do not change and remain in play throughout the day」。
     日中の足＝前の UTC の日・日足＝前の月・それより長い足＝前の年（監査 CP60）。
     ★未来を見ない＝前の期間が閉じてから使う（shift(1) で1つ前の期間の値だけを当てる）。"""
     step = pd.Series(d.index).diff().median()
-    if pd.isna(step) or step < pd.Timedelta("1D"):
+    # ★unit="W"（2026-10-07・工事 m2c15-period-textbook-20261007・K-7 の決定「前期間pivot の3種に前の週の版を別の材料として足す」）＝
+    #   足の長さによらず、前の週（月曜0時 UTC に始まる7日）の高値・安値・終値で作る。StockCharts の逐語「Pivot Points for 30-, 60-,
+    #   and 120-minute charts use the prior week's high, low, and close.」。週の始まりを月曜にしたのは ISO 8601 の週の決まり
+    #   （出どころの逐語は無い＝設計書の「決めたこと」に書いた）。unit を渡さなければ今までと同じ（日中の足は前の日）。
+    if unit == "W":
+        key = d.index.to_period("W-SUN").to_timestamp()
+    elif pd.isna(step) or step < pd.Timedelta("1D"):
         key = d.index.floor("D")
     elif step < pd.Timedelta("7D"):
         key = d.index.to_period("M").to_timestamp()
@@ -932,6 +990,10 @@ def _pivot_prev_period(d):
 _reg("close vs 前期間pivotPP%", "close vs 前期間pivotPP%", True, lambda d: (d.close / _pivot_prev_period(d)[0] - 1) * 100)
 _reg("close vs 前期間pivotR1%", "close vs 前期間pivotR1%", True, lambda d: (d.close / _pivot_prev_period(d)[1] - 1) * 100)
 _reg("close vs 前期間pivotS1%", "close vs 前期間pivotS1%", True, lambda d: (d.close / _pivot_prev_period(d)[2] - 1) * 100)
+# ★2026-10-07（工事 m2c15-period-textbook-20261007・K-7 の決定）＝前の週で固定する版（今の前の日の版は残す）
+_reg("close vs 前週pivotPP%", "close vs 前週pivotPP%", True, lambda d: (d.close / _pivot_prev_period(d, "W")[0] - 1) * 100)
+_reg("close vs 前週pivotR1%", "close vs 前週pivotR1%", True, lambda d: (d.close / _pivot_prev_period(d, "W")[1] - 1) * 100)
+_reg("close vs 前週pivotS1%", "close vs 前週pivotS1%", True, lambda d: (d.close / _pivot_prev_period(d, "W")[2] - 1) * 100)
 _reg("fib位置", "fib位置{}", True, lambda d, n: (d.close - d.low.rolling(n).min())
      / (d.high.rolling(n).max() - d.low.rolling(n).min()).replace(0, np.nan))
 _reg("close vs POC%", "close vs POC%{}", True, lambda d, n, rows=24:
@@ -940,6 +1002,21 @@ _reg("close vs VAH%", "close vs VAH%{}", True, lambda d, n, va_pct=0.7, rows=24:
      (d.close / _vp_levels(d.close, d.volume, n, va_pct=va_pct, rows=rows)[1] - 1) * 100)
 _reg("close vs VAL%", "close vs VAL%{}", True, lambda d, n, va_pct=0.7, rows=24:
      (d.close / _vp_levels(d.close, d.volume, n, va_pct=va_pct, rows=rows)[2] - 1) * 100)
+# ★2026-10-07（工事 m2c15-period-textbook-20261007・監査 CP60 の修正42）＝出来高プロファイルを日で区切る2つの版を、
+#   今の版（n 本の移動窓）を残して別の材料として足す。前日＝前の UTC の日で固定／当日＝その日の0時から育つ（_vp_by_day）。
+#   区画の数・70% は今の版と同じ既定（名前に出さない引数）。POC は 70% を使わないので、今の POC と同じく区画の数だけを持つ。
+_reg("close vs 前日POC%", "close vs 前日POC%", True, lambda d, rows=24:
+     (d.close / _vp_by_day(d.close, d.volume, "前日", rows=rows)[0] - 1) * 100)
+_reg("close vs 前日VAH%", "close vs 前日VAH%", True, lambda d, va_pct=0.7, rows=24:
+     (d.close / _vp_by_day(d.close, d.volume, "前日", va_pct, rows)[1] - 1) * 100)
+_reg("close vs 前日VAL%", "close vs 前日VAL%", True, lambda d, va_pct=0.7, rows=24:
+     (d.close / _vp_by_day(d.close, d.volume, "前日", va_pct, rows)[2] - 1) * 100)
+_reg("close vs 当日POC%", "close vs 当日POC%", True, lambda d, rows=24:
+     (d.close / _vp_by_day(d.close, d.volume, "当日", rows=rows)[0] - 1) * 100)
+_reg("close vs 当日VAH%", "close vs 当日VAH%", True, lambda d, va_pct=0.7, rows=24:
+     (d.close / _vp_by_day(d.close, d.volume, "当日", va_pct, rows)[1] - 1) * 100)
+_reg("close vs 当日VAL%", "close vs 当日VAL%", True, lambda d, va_pct=0.7, rows=24:
+     (d.close / _vp_by_day(d.close, d.volume, "当日", va_pct, rows)[2] - 1) * 100)
 _reg("S-Rタッチ数", "S-Rタッチ数({},{})", False, lambda d, n, t: _sr_touch(d.close, d.high, d.low, n, t))
 # ── 2026-09-05（M2-C-4・まこさん承認 iter="m2c4-add-parts-20260905"）に足した ──
 #   ★向きを持たない（False）＝状態量。MMI は原典が「向きは測らない」と書いている。
@@ -1428,6 +1505,8 @@ def build_catalog(cfg: dict) -> list[tuple]:
         addf("close vs SMA", n)
     for n in cfg["vwap_windows"]:
         addf("close vs VWAP%", n)
+        addf("close vs VWAP典型%", n)         # 監査 CP60 の修正41 の (b)（2026-10-07）
+    addf("close vs 当日VWAP%")                # 同 (c)
     for (n, k) in cfg["keltner"]:
         addf("close vs Keltner上%", n, k)
         addf("close vs Keltner下%", n, k)
@@ -1445,12 +1524,22 @@ def build_catalog(cfg: dict) -> list[tuple]:
     addf("close vs 前期間pivotPP%")
     addf("close vs 前期間pivotR1%")
     addf("close vs 前期間pivotS1%")
+    addf("close vs 前週pivotPP%")             # K-7 の決定＝前の週の版（2026-10-07）
+    addf("close vs 前週pivotR1%")
+    addf("close vs 前週pivotS1%")
     for n in cfg["fib_windows"]:
         addf("fib位置", n)
     for n in cfg["vp_windows"]:
         addf("close vs POC%", n)
         addf("close vs VAH%", n)
         addf("close vs VAL%", n)
+    # 監査 CP60 の修正42＝日で区切る2つの版（2026-10-07）
+    addf("close vs 前日POC%")
+    addf("close vs 前日VAH%")
+    addf("close vs 前日VAL%")
+    addf("close vs 当日POC%")
+    addf("close vs 当日VAH%")
+    addf("close vs 当日VAL%")
     for n in cfg["sr_windows"]:
         for t in cfg["sr_tol"]:
             addf("S-Rタッチ数", n, t)

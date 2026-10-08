@@ -1,0 +1,34 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-period-settings-20261008",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b149_pending_not_copied.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b149_pending_not_copied.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "2",
+   "script": "b150_vwaptp_range_missing.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b150_vwaptp_range_missing.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "3",
+   "script": "b143_rci_range_short.sh",
+   "code": 1,
+   "note": "  K-1・K-8・G-2 の番人（--selftest-catalog）: ❌ 1 件",
+   "expect": 1,
+   "means": "RCI の範囲の上限を 26 に縮め、残す名前 RCI52 を含まない形にすると、範囲の番人（⑬）が落ちる",
+   "match": true
+  }
+ ]
+}
