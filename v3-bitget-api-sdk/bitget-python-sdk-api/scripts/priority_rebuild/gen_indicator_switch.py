@@ -285,12 +285,23 @@ def source_time() -> set[str]:
 
 
 # ══ 印を組み立てる ═════════════════════════════════════════════════════
+def source_mako_geo() -> set[str]:
+    """源4 のレンジ幾何＝`indicator_reference_diag.RANGE_GEO_REF` のうち、mako の欄（まこさんの決定の逐語）が書かれた列。
+
+    ★2026-10-09（工事 m2c15-shape-structure-20261009・まこさん「よい」の3＝ok_k3b_design_20261009）に足した。
+      直す前の geo_on は法則（law_geo）と恒等レシピ（source_identity）の2つだけから作り、まこさんが個別に決めた列を入れる道が無かった
+      （mako の欄は材料の定義表 REFS にしか効かない＝source_mako）。下半分位置（監査 CP60 の修正65）を「使う」にするため。
+    ★手書きの一覧は作らない＝定義表の欄を機械で読む。"""
+    return {g for g, r in iref.RANGE_GEO_REF.items() if r.get("mako")}
+
+
 def build() -> dict:
     """3つの源から印を組み立てる。CC の手書きの一覧はゼロ。"""
     ta_f, unresolved = source_ta()
     law_f, law_g = source_law()
     id_f, id_g = source_identity()
     mako_f, mako_demand = source_mako()          # 源4（2026-09-05・案A）
+    mako_g = source_mako_geo()                   # 源4 のレンジ幾何（2026-10-09・K-3b）
     time_on = source_time()                      # 別枠の時間帯（2026-09-06・監査 cp24 の §6-1）
     all_f = families()
     want = ta_f | law_f | id_f | mako_f
@@ -307,6 +318,7 @@ def build() -> dict:
                 "①需給3種＝indicator_reference_diag.DEMAND_REF の鍵"
                 "（まこさんの逐語 2026-09-05「需給は「使う」にする」）"
                 "②材料の定義表 REFS の mako の欄が書かれているもの（いまは MMI）。"
+                "③レンジ幾何の定義表 RANGE_GEO_REF の mako の欄が書かれている列（2026-10-09・K-3b）。"
                 "★どちらも機械で引く＝CC の手書きの一覧はゼロ（まこさんの指示「手書きの一覧は作らないこと」）",
         },
         "_できること": "減らすことだけ。型の表に無い指標は、印をオンにしても使えない。",
@@ -326,13 +338,14 @@ def build() -> dict:
         },
         "on": on,
         "off": off,
-        "geo_on": sorted(law_g | id_g),
+        # ★2026-10-09（工事 m2c15-shape-structure-20261009・まこさん「よい」の3）＝まこさんが個別に決めたレンジ幾何の列（RANGE_GEO_REF の mako の欄）も使う
+        "geo_on": sorted(law_g | id_g | mako_g),
         "demand_on": sorted(mako_demand),        # 需給の列（別枠・2026-09-05・案A）
         # ★2026-09-06（監査 cp24 の §6-1・Critical）＝時間帯の列（別枠）。
         #   これが無いと「一律で切り替えられる」を満たさない（時間帯だけ印の外に在った）。
         "time_on": sorted(time_on),
         "sources": {"ta": sorted(ta_f), "law": sorted(law_f), "identity": sorted(id_f),
-                    "mako": sorted(mako_f | mako_demand)},
+                    "mako": sorted(mako_f | mako_demand | mako_g)},
         "ta_unresolved": sorted(unresolved),
     }
     d["fingerprint"] = _fp(d)
@@ -476,13 +489,21 @@ def cmd_selftest() -> int:
         ng.append("T11")
         print(f"      T11 の中身＝対象なのに判定関数が無い種類: {_missing}")
 
+    # T12 まこさんが個別に決めたレンジ幾何の列（RANGE_GEO_REF の mako の欄）は、必ず geo_on に入る
+    #   （2026-10-09・工事 m2c15-shape-structure-20261009・まこさん「よい」の3）
+    bad12 = sorted(g for g in source_mako_geo() if g not in d["geo_on"])
+    if bad12:
+        ng.append("T12")
+        print(f"      T12 の中身＝mako の欄が在るのに geo_on に無い列: {bad12}")
+
     names = {"T1": "恒等レシピの材料は必ず使う", "T2": "法則の名指しは必ず使う",
              "T3": "取りこぼしゼロ", "T4": "重なりゼロ", "T5": "指紋は中身から決まる",
              "T6": "2回 作って同じ", "T7": "定義表に無い種類は増やせない",
              "T8": "承認済みの対応の材料名が実在する", "T9": "承認済みの対応の ta クラス名が実在する",
              "T10": "源3 が拾った材料名が定義表に実在する",
              "T11": "オン・オフの対象4つ（family・geo・demand・time）＋対象外2つ"
-                    "（legacy_col・state）が、実装の分岐6つと一致する"}
+                    "（legacy_col・state）が、実装の分岐6つと一致する",
+             "T12": "まこさんが個別に決めたレンジ幾何の列は必ず使う"}
     for t, nm in names.items():
         print(f"   {t} {nm} → {'ng' if t in ng else 'pass'}")
     if ng:

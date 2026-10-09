@@ -3129,6 +3129,237 @@
    "file": ".claude/state/indicator_review/k3s_draft_build.py",
    "at": "2026-10-09T18:57:50",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "2",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "3",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "4",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "5",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "6",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "7",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "8",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "9",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "10",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "11",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "12",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "13",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "14",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "15",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "16",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "17",
+   "file": "scripts/priority_rebuild/gen_indicator_switch.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "18",
+   "file": "scripts/priority_rebuild/gen_indicator_switch.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "19",
+   "file": "scripts/priority_rebuild/gen_indicator_switch.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "20",
+   "file": "scripts/priority_rebuild/gen_indicator_switch.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "21",
+   "file": "scripts/priority_rebuild/gen_indicator_switch.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "22",
+   "file": "scripts/priority_rebuild/gen_indicator_switch.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "23",
+   "file": "scripts/priority_rebuild/gen_indicator_switch.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "24",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "25",
+   "file": "scripts/priority_rebuild/engine_tuner_exec.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "26",
+   "file": "scripts/priority_rebuild/engine_tuner_fire_diag.py",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "27",
+   "file": ".claude/memory/regime_detection_kb.md",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "28",
+   "file": ".claude/breaks/b151_w_fractal_not_first.sh",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "29",
+   "file": ".claude/breaks/b152_sr_fractal_counts_bars.sh",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "30",
+   "file": ".claude/breaks/b156_sr_fractal_unconfirmed.sh",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "31",
+   "file": ".claude/breaks/b153_smc_fractal_no_close_back.sh",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "32",
+   "file": ".claude/breaks/b154_lower_half_upper_span.sh",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-structure-20261009",
+   "num": "33",
+   "file": ".claude/breaks/b155_geo_mako_not_read.sh",
+   "at": "2026-10-09T22:39:45",
+   "how": "当てた"
   }
  ]
 }

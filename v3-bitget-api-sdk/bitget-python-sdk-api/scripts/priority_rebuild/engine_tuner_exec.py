@@ -2685,8 +2685,11 @@ def run_recipe(df: pd.DataFrame, recipe: dict, limits: dict | None = None,
     with np.errstate(invalid="ignore", divide="ignore"):
         pos_arr = np.where(np.isfinite(span) & (span > 0), (c - mid) / span, np.nan)
         wpct_arr = np.where(np.isfinite(res_hi) & np.isfinite(sup_lo), (res_hi - sup_lo) / c * 100.0, np.nan)
+        # ★2026-10-09（工事 m2c15-shape-structure-20261009・監査 CP60 の修正65）＝下半分の位置（観察の道具 build_range_geometry と同じ式）
+        dn_arr = mid - sup_lo
+        low_arr = np.where(np.isfinite(dn_arr) & (dn_arr > 0), (c - mid) / dn_arr, np.nan)
     geo = {"res_hi": res_hi, "res_lo": res_lo, "sup_hi": sup_hi, "sup_lo": sup_lo,
-           "mid": mid, "W%": wpct_arr, "帯内位置%": pos_arr}
+           "mid": mid, "W%": wpct_arr, "帯内位置%": pos_arr, "下半分位置": low_arr}
     # ★M2-1-6（2026-08-20 まこさん承認）＝build が在れば、幾何（geo）を組んだ直後・宣言の列を読む前に
     #   判定の列を作る（build の中の普通の条件が W% などの幾何を使えるように、この位置に置いた）。
     build_regime_columns(df, recipe, geo, qtable)

@@ -1,5 +1,43 @@
 {
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
- "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md"
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "scripts/priority_rebuild/observe_diag.py": [
+  "<モジュール直下>",
+  "_fractal_levels",
+  "_fractal_marks",
+  "_insp_hidden_params",
+  "_smc_sweep_fractal",
+  "_sr_touch_fractal",
+  "_sr_touch_fractal_atr",
+  "_w_fractal",
+  "build_catalog",
+  "build_range_geometry"
+ ],
+ "scripts/priority_rebuild/indicator_reference_diag.py": [
+  "<モジュール直下>",
+  "_smc_fr_case",
+  "_sr_fr_case",
+  "_tb_fractal_marks",
+  "_tb_smc_fr",
+  "_tb_sr_fr",
+  "_tb_sr_fr_atr1h",
+  "_tb_w_fr",
+  "_w_case2",
+  "range_geo_known_check"
+ ],
+ "scripts/priority_rebuild/gen_indicator_switch.py": [
+  "build",
+  "cmd_selftest",
+  "source_mako_geo"
+ ],
+ "scripts/priority_rebuild/engine_tuner_gen.py": [
+  "_geo_of"
+ ],
+ "scripts/priority_rebuild/engine_tuner_exec.py": [
+  "run_recipe"
+ ],
+ "scripts/priority_rebuild/engine_tuner_fire_diag.py": [
+  "build_geo"
+ ]
 }

@@ -3848,6 +3848,9 @@ def _geo_of(df: pd.DataFrame) -> dict:
         geo["帯内位置%"] = np.where(np.isfinite(span) & (span > 0), (c - geo["mid"]) / span, np.nan)
         geo["W%"] = np.where(np.isfinite(geo["res_hi"]) & np.isfinite(geo["sup_lo"]),
                              (geo["res_hi"] - geo["sup_lo"]) / c * 100.0, np.nan)
+        # ★2026-10-09（工事 m2c15-shape-structure-20261009・監査 CP60 の修正65）＝下半分の位置（観察の道具 build_range_geometry と同じ式）
+        dn = geo["mid"] - geo["sup_lo"]
+        geo["下半分位置"] = np.where(np.isfinite(dn) & (dn > 0), (c - geo["mid"]) / dn, np.nan)
     return geo
 
 

@@ -944,6 +944,8 @@ REFS: list[dict] = []
 # ★まこさんの決定の逐語（2026-10-07・工事 m2c15-period-textbook-20261007）＝下の登録の mako の欄に書く（同じ文を11か所に書かないため）。
 MAKO_K3 = '2026-10-07 まこさん決定「A」（K-3 を3つの工事に分け、K-3a で監査 CP60 の修正41 の (b)(c) と修正42 の比べる版を、今の版を残して別の材料として足す）＝逐語のファイル ok_k3_split_20261007（工事 m2c15-period-textbook-20261007）'
 MAKO_K7 = '2026-10-07 まこさん決定「OK」（K-7 の1番＝前期間pivot の3種に前の週の版を別の材料として足す）＝逐語のファイル ok_k7_pivot_thermo_20261007（m2c15-memo-sort-20261007）'
+# ★2026-10-09（工事 m2c15-shape-structure-20261009）＝K-3b の4種と下半分位置の「使う」の決定の逐語（mako の欄に書く）。
+MAKO_K3B = '2026-10-09 まこさん「よい」（K-3b の作りの3点＝確定した山・谷の本数 k は名前に出さない引数・SMC_SWEEP の教科書の版はライブラリの 15・1.5 を使わない・下半分位置を使う）＝逐語のファイル ok_k3b_design_20261009（m2c15-k3b-decisions-20261009）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007'
 
 
 def _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None):
@@ -1489,6 +1491,194 @@ _r(r"S-Rタッチ数\((\d+),([\d.]+)\)", "S-Rタッチ数",
                          h=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],
                          l=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0]),
                      [(-1, 3.0, 1e-9)])])
+
+
+# ★2026-10-09（工事 m2c15-shape-structure-20261009・K-3b・監査 CP60 の修正43・44・46）＝確定した山・谷で作る教科書の版。
+#   独立の実装は、確定した山・谷を素直な繰り返し（_tb_fractal と同じ決まり）で作る＝観察の道具のまとめ計算とは別の書き方。
+def _tb_fractal_marks(d, k, is_high):
+    """確定した山（谷）の値段を、確定した足（中央の足 j の k 本 後）にだけ置いた並び。"""
+    k = int(k)
+    s = (d.high if is_high else d.low).to_numpy(float)
+    out = np.full(len(s), np.nan)
+    for t in range(len(s)):
+        j = t - k
+        if j - k >= 0:
+            mid, lft, rgt = s[j], s[j - k:j], s[j + 1:j + k + 1]
+            if (mid > lft.max() and mid > rgt.max()) if is_high else (mid < lft.min() and mid < rgt.min()):
+                out[t] = mid
+    return out
+
+
+def _tb_w_fr(d, p, k=2):
+    n, tol = int(p[0]), float(p[1])
+    o, h, l, c, v = _arr(d)
+    lv = _tb_fractal_marks(d, k, False)
+    out = np.full(len(c), np.nan)
+    tl = []
+    for i in range(len(c)):
+        if lv[i] == lv[i]:
+            tl.append(i)
+        if i < n - 1:
+            continue
+        out[i] = 0.0
+        if len(tl) < 2:
+            continue
+        t1, t2 = tl[-2], tl[-1]
+        j1, j2 = t1 - k, t2 - k
+        if j1 < i - n + 1 or j2 - j1 < 2 or abs(lv[t1] - lv[t2]) > tol * c[i]:
+            continue
+        neck = max(h[j1 + 1:j2])
+        if c[i] > neck and all(c[x] <= neck for x in range(j2 + 1, i)):
+            out[i] = 1.0
+    return _S(out, d)
+
+
+def _w_case2(n):
+    """W字確定谷 の「最初に上抜けた足だけ 1」の既知答え用。_w_case(n, 100.2) と同じ並びで、最後の2本の終値を 109 にする
+    ＝1本前が最初の上抜け（1）・最後の足は2回目（0）。今の W字 なら最後の足も 1（条件が続く間ずっと1）。"""
+    half, q = n // 2, (n // 2) // 2
+    m = n + 6
+    c = np.full(m, 106.0)
+    h = np.full(m, 106.0)
+    l = np.full(m, 105.0)
+    base = m - n
+    l[base + 2] = 100.0
+    h[base + half] = 108.0
+    l[base + half + q + 1] = 100.2
+    c[-2:] = 109.0
+    return _mk(c=c, o=c.copy(), h=np.maximum(h, c), l=np.minimum(l, c))
+
+
+def _tb_sr_fr(d, p, k=2):
+    n, tol = int(p[0]), float(p[1])
+    o, h, l, c, v = _arr(d)
+    hv, lv = _tb_fractal_marks(d, k, True), _tb_fractal_marks(d, k, False)
+    out = np.full(len(c), np.nan)
+    for i in range(n, len(c)):
+        band = c[i] * tol
+        out[i] = float(np.sum(np.abs(hv[i - n:i] - c[i]) <= band) + np.sum(np.abs(lv[i - n:i] - c[i]) <= band))
+    return _S(out, d)
+
+
+def _tb_sr_fr_atr1h(d, p, k=2):
+    """S-Rタッチ確定1時間ATR の独立の実装。許容幅（1時間足の ATR%・0.15%〜0.6%）は _tb_sr_touch_atr1h の①〜⑤と同じ書き方、
+    数え方は _tb_sr_fr（確定した山・谷）。"""
+    n, km, an = int(p[0]), float(p[1]), int(p[2])
+    o, h, l, c, v = _arr(d)
+    starts, groups = [], []
+    for i, t in enumerate(d.index.floor("h")):
+        if not starts or starts[-1] != t:
+            starts.append(t)
+            groups.append([i])
+        else:
+            groups[-1].append(i)
+    hh = np.array([h[g].max() for g in groups])
+    hl = np.array([l[g].min() for g in groups])
+    hc = np.array([c[g[-1]] for g in groups])
+    atr = np.full(len(groups), np.nan)
+    for j in range(len(groups)):
+        if j == 0:
+            atr[j] = hh[j] - hl[j]
+        else:
+            tr = max(hh[j] - hl[j], abs(hh[j] - hc[j - 1]), abs(hl[j] - hc[j - 1]))
+            atr[j] = (atr[j - 1] * (an - 1) + tr) / an
+    pct = atr / hc
+    closes = (pd.DatetimeIndex(starts) + pd.Timedelta("1h")).values
+    pos = np.searchsorted(closes, (d.index + pd.Timedelta("5min")).values, side="right") - 1
+    hv, lv = _tb_fractal_marks(d, k, True), _tb_fractal_marks(d, k, False)
+    out = np.full(len(c), np.nan)
+    for i in range(n, len(c)):
+        if pos[i] < 0:
+            continue
+        band = c[i] * min(max(km * pct[pos[i]], 0.0015), 0.006)
+        out[i] = float(np.sum(np.abs(hv[i - n:i] - c[i]) <= band) + np.sum(np.abs(lv[i - n:i] - c[i]) <= band))
+    return _S(out, d)
+
+
+def _sr_fr_case(n):
+    """S-Rタッチ確定数・S-Rタッチ確定1時間ATR の既知答え用（2026-10-09・K-3b）。n＋12 本の平らな足（始値＝高値＝安値＝終値＝100）に、
+    確定する山を3つ（100.1・101・100.1）と谷を1つ（99.9）置く。最後の足の終値 100 の帯（許容幅 0.15%〜0.6%＝±0.15〜±0.6）に入るのは
+    100.1 の山2つと 99.9 の谷1つ＝3。101 の山は帯の外。最後の足の2本前にも 100.1 の山を置くが、確定は最後の足（窓 [i−n, i) の外）なので数えない。
+    今の S-Rタッチ数 なら、窓の n 本が全部 100 に触れる＝n（数え方の違いを見分ける）。"""
+    m = n + 12
+    c = np.full(m, 100.0)
+    h = c.copy()
+    l = c.copy()
+    i = m - 1
+    h[i - 20] = 100.1
+    h[i - 15] = 101.0
+    h[i - 10] = 100.1
+    l[i - 5] = 99.9
+    h[i - 2] = 100.1
+    return _mk(c=c, o=c.copy(), h=h, l=l)
+
+
+def _tb_smc_fr(d, p, k=2):
+    o, h, l, c, v = _arr(d)
+    hl_, _p1 = _tb_fractal(d, k, True)
+    ll_, _p2 = _tb_fractal(d, k, False)
+    out = np.full(len(c), np.nan)
+    for i in range(1, len(c)):
+        hi, lo = hl_[i - 1], ll_[i - 1]
+        if hi != hi and lo != lo:
+            continue
+        bull = lo == lo and l[i] < lo and c[i] > lo
+        bear = hi == hi and h[i] > hi and c[i] < hi
+        out[i] = float(bull) - float(bear)
+    return _S(out, d)
+
+
+def _smc_fr_case(kind):
+    """SMC_SWEEP確定 の既知答え用（2026-10-09・K-3b）。40本の平らな足（始値＝終値＝100・高値 100.2・安値 99.8）の20本目に、
+    谷（安値 99.0）か山（高値 101.0）を置く（前後2本より低い（高い）＝22本目で確定）。最後の足で、
+    kind="bull"＝安値 98.5・終値 99.6（谷を割って戻した＝+1）／kind="bear"＝高値 101.5・終値 100.5（山を抜いて戻した＝−1）／
+    kind="stay"＝安値 98.5・終値 98.8（割ったが戻していない＝0）。陽線・陰線とヒゲの長さは条件に入れない（ライブラリの版との違い）。"""
+    m = 40
+    c = np.full(m, 100.0)
+    o = c.copy()
+    h = np.full(m, 100.2)
+    l = np.full(m, 99.8)
+    if kind == "bear":
+        h[20] = 101.0
+        h[-1] = 101.5
+        c[-1] = 100.5
+    else:
+        l[20] = 99.0
+        l[-1] = 98.5
+        c[-1] = 99.6 if kind == "bull" else 98.8
+    return _mk(c=c, o=o, h=h, l=l)
+
+
+_r(r"W字確定谷\((\d+),([\d.]+)\)", "W字確定谷",
+   "ダブルボトムの教科書の版。窓 n 本の中で確定した直近の2つの谷（前後 k 本）の値段の差が tol×終値 以内で、"
+   "2つ目の谷の後に終値がネック（2つの谷の間の最高値）を最初に上抜けた足だけ 1・それ以外 0",
+   "監査 CP60 の修正43＝StockCharts の逐語「Breaking resistance from the highest point between the troughs completes the Double Bottom Reversal.」。"
+   "確定の本数 k は名前に出さない引数（最初の値 2＝資料の fractal の既定）。今の W字（中央区間の最高値の近似・条件が続く間ずっと1）は残す",
+   "反転サイン＝1 は買い転換（ダブルボトム完成）の示唆", "reversal", tb=_tb_w_fr,
+   known=lambda p: [(_w_case(int(p[0]), 100.2), [(-1, 1.0, 1e-9)]), (_w_case(int(p[0]), 92.0), [(-1, 0.0, 1e-9)]),
+                    (_w_case2(int(p[0])), [(-2, 1.0, 1e-9), (-1, 0.0, 1e-9)])],
+   mako=MAKO_K3B)
+_r(r"S-Rタッチ確定数\((\d+),([\d.]+)\)", "S-Rタッチ確定数",
+   "今の足の前の n 本の中で確定した山（高値）と谷（安値）のうち、今の終値 ± 許容幅（tol×終値）に入るものの数",
+   "監査 CP60 の修正44＝教科書の数え方（chartinglens「You need to see price react at approximately the same price point at least twice」）。"
+   "山・谷は前後 k 本で確定してから数える（k は名前に出さない引数・最初の値 2）。今の S-Rタッチ数（帯に掛かった足の本数＝滞在時間）は残す",
+   "状態量＝多いほど節が固い", "none", tb=_tb_sr_fr,
+   known=lambda p: [(_sr_fr_case(int(p[0])), [(-1, 3.0, 1e-9)])], mako=MAKO_K3B)
+_r(r"S-Rタッチ確定1時間ATR\((\d+),([\d.]+),(\d+)\)", "S-Rタッチ確定1時間ATR",
+   "S-Rタッチ確定数 の許容幅を「倍率 × 1時間足の ATR%（ATR ÷ その1時間足の終値）」で決め、0.15%〜0.6% に収めたもの",
+   "監査 CP60 の修正44 の数え方（確定した山・谷）＋ S-Rタッチ1時間ATR と同じ許容幅（出どころの逐語『tol=clamp(K×ATR%_1h,0.15%,0.6%)』）。"
+   "1時間足の値は、その1時間足が閉じた時刻から使う",
+   "状態量＝多いほど節が固い", "none", tb=_tb_sr_fr_atr1h,
+   known=lambda p: [(_sr_fr_case(int(p[0])), [(-1, 3.0, 1e-9)])], mako=MAKO_K3B)
+_r(r"SMC_SWEEP確定", "SMC_SWEEP確定",
+   "流動性の刈り取りの教科書の版。1本前までに確定した直近の谷を安値で割り、終値でその上に戻した足を +1・"
+   "山を高値で抜き、終値でその下に戻した足を −1",
+   "監査 CP60 の修正46＝LuxAlgo の逐語「The classic anatomy is a wick through a prior swing high or low…followed by a close back inside the old range.」。"
+   "山・谷は前後 k 本で確定（k は名前に出さない引数・最初の値 2）。ライブラリの版（直前15本の高安・陽線陰線・ヒゲが実体の1.5倍）の条件は使わない",
+   "反転サイン", "none", tb=_tb_smc_fr,
+   known=lambda p: [(_smc_fr_case("bull"), [(-1, 1.0, 1e-9)]), (_smc_fr_case("bear"), [(-1, -1.0, 1e-9)]),
+                    (_smc_fr_case("stay"), [(-1, 0.0, 1e-9)])],
+   mako=MAKO_K3B)
 
 
 # ══ 業界の指標（pandas-ta 由来）の独立実装＝照合の相手（2026-08-09・フロー 段6-1・1回目）══
@@ -4429,6 +4619,10 @@ RANGE_GEO_REF: dict[str, dict] = {
     "帯内位置%": dict(kind="ratio", teigi="上半分の帯内位置＝(close − mid) / (res_hi − mid)。mid=0・res_hi=1",
                   ryugi="S2 入口の pos と同式（e38_logic_parts._pullback_short L95-99）。分母≤0 は欠損",
                   houkou="順張り値＝1 に近いほど上端（戻り売りの場所）"),
+    # ★2026-10-09（工事 m2c15-shape-structure-20261009・監査 CP60 の修正65 の直した後の文字＋まこさんの決定の欄）
+    "下半分位置": dict(kind="ratio", teigi="下半分の帯内位置＝(close − mid) / (mid − sup_lo)。mid=0・sup_lo=−1",
+                   ryugi="帯内位置% の下半分の対（%b と同じく、その半分の幅で割る・監査 CP60）。分母≤0 は欠損",
+                   houkou="順張り値＝−1 に近いほど下端（押し目買いの場所）", mako=MAKO_K3B),
 }
 
 
@@ -4465,6 +4659,7 @@ def range_geo_known_check(geo_fn, zone_tol: float, zone_touch: int, zone_lookbac
     exp["mid"] = (exp["res_lo"] + exp["sup_hi"]) / 2
     exp["W%"] = (exp["res_hi"] - exp["sup_lo"]) / 100.0 * 100.0
     exp["帯内位置%"] = (100.0 - exp["mid"]) / (exp["res_hi"] - exp["mid"])
+    exp["下半分位置"] = (100.0 - exp["mid"]) / (exp["mid"] - exp["sup_lo"])     # 2026-10-09（K-3b・監査 CP60 の修正65）
     last = geo.iloc[-1]
     for col, want in exp.items():
         got = float(last.get(col, np.nan))
@@ -4719,6 +4914,10 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "当日POC": dict(k="構造・位置"), "当日VAH": dict(k="構造・位置"), "当日VAL": dict(k="構造・位置"),
     # ★2026-09-26（M2-E-4c・束2）＝S-Rタッチ数 と同じ数え方。許容幅だけが1時間足の値動きの幅に連動する。
     "S-Rタッチ1時間ATR": dict(k="構造・位置", note="S-Rタッチ数と同じ数え方で、許容幅を1時間足の ATR% に連動させたもの"),
+    # ★2026-10-09（工事 m2c15-shape-structure-20261009）＝確定した山・谷で作る教科書の版（監査 CP60 の修正43・44・46）
+    "W字確定谷": dict(k="構造・位置", note="W字と同じ（ダブルボトム＝構造パターン）"),
+    "S-Rタッチ確定数": dict(k="構造・位置"), "S-Rタッチ確定1時間ATR": dict(k="構造・位置"),
+    "SMC_SWEEP確定": dict(k="構造・位置", note="SMC_SWEEP と同じ（確定した山・谷を抜いて戻した足＝水準に関わる判定）"),
     # ★2026-09-05（M2-C-4）に足した。S-RタッチATR は 2026-09-06（再監査 cp22 の N-1）に外した。
     "レンジ幾何": dict(k="構造・位置", note="RG ゾーンビルダーの帯＝構造そのもの"),
     # 山と谷（2026-08-21・M2-2-6）＝高値と安値の並びそのもの＝構造・位置
@@ -5041,6 +5240,12 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "当日VAL": (("vp",), "同上"),
     "S-Rタッチ数": ((), "同じ値段に何回 触れたか。ライブラリに相当する関数が無い"),
     "S-Rタッチ1時間ATR": ((), "S-Rタッチ数の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い"),
+    # ★2026-10-09（工事 m2c15-shape-structure-20261009）＝確定した山・谷で作る教科書の版
+    "W字確定谷": ((), "ダブルボトムの教科書の版（確定した谷・ネック・最初の上抜け）。ライブラリに相当する関数が無い"),
+    "S-Rタッチ確定数": ((), "確定した山・谷のうち今の値段の帯に入る数。ライブラリに相当する関数が無い"),
+    "S-Rタッチ確定1時間ATR": ((), "S-Rタッチ確定数の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い"),
+    "SMC_SWEEP確定": ((), "pandas-ta の smc_sweep は直前 n 本の高安とヒゲの倍率で作る別の版。確定した山・谷で作る教科書の版の関数は"
+                          "ライブラリに無い（定義表の既知答えで確かめる）"),
     # ★2026-09-05（M2-C-4）に足した。ライブラリに相当する関数が無い＝空のタプルと理由。
     #   S-RタッチATR は 2026-09-06（再監査 cp22 の N-1）に外した。
     "MMI": ((), "Market Meanness Index。ta にも pandas-ta にも無い"

@@ -5,18 +5,18 @@
   "1_ta": "定義表の ta 照合式（ext）と ta_class の欄から引いた種類",
   "2_法則": "regime_laws.json の「機械が読む判定」の family と geo",
   "3_恒等レシピ": "recipes/identity_*.json 3本が実際に使う材料",
-  "4_まこさんが個別に決めたもの": "①需給3種＝indicator_reference_diag.DEMAND_REF の鍵（まこさんの逐語 2026-09-05「需給は「使う」にする」）②材料の定義表 REFS の mako の欄が書かれているもの（いまは MMI）。★どちらも機械で引く＝CC の手書きの一覧はゼロ（まこさんの指示「手書きの一覧は作らないこと」）"
+  "4_まこさんが個別に決めたもの": "①需給3種＝indicator_reference_diag.DEMAND_REF の鍵（まこさんの逐語 2026-09-05「需給は「使う」にする」）②材料の定義表 REFS の mako の欄が書かれているもの（いまは MMI）。③レンジ幾何の定義表 RANGE_GEO_REF の mako の欄が書かれている列（2026-10-09・K-3b）。★どちらも機械で引く＝CC の手書きの一覧はゼロ（まこさんの指示「手書きの一覧は作らないこと」）"
  },
  "_できること": "減らすことだけ。型の表に無い指標は、印をオンにしても使えない。",
  "built_by": "gen_indicator_switch.py（全自動生成・CC の手書きの行ゼロ）",
  "counts": {
-  "定義表の種類": 272,
-  "使う": 156,
+  "定義表の種類": 276,
+  "使う": 160,
   "使わない": 116,
   "源1_ta": 65,
-  "源2_法則": 107,
+  "源2_法則": 111,
   "源3_恒等レシピ": 2,
-  "源4_まこさんが個別に決めたもの": 17,
+  "源4_まこさんが個別に決めたもの": 21,
   "対応が決まらない_taのクラス": 5
  },
  "on": [
@@ -84,6 +84,10 @@
   "MMI",
   "S-Rタッチ1時間ATR",
   "S-Rタッチ数",
+  "W字確定谷",
+  "S-Rタッチ確定数",
+  "S-Rタッチ確定1時間ATR",
+  "SMC_SWEEP確定",
   "AO%",
   "CCI",
   "ER",
@@ -297,6 +301,7 @@
  ],
  "geo_on": [
   "W%",
+  "下半分位置",
   "帯内位置%"
  ],
  "demand_on": [
@@ -398,7 +403,10 @@
    "PSAR反転",
    "S-Rタッチ1時間ATR",
    "S-Rタッチ数",
+   "S-Rタッチ確定1時間ATR",
+   "S-Rタッチ確定数",
    "SMC_SWEEP",
+   "SMC_SWEEP確定",
    "SQZ_ON",
    "THERMO%",
    "TR%",
@@ -407,6 +415,7 @@
    "VAL",
    "VHF",
    "W字",
+   "W字確定谷",
    "close vs ABER_ZG%",
    "close vs ACCBL%",
    "close vs ACCBU%",
@@ -495,8 +504,13 @@
    "MMI",
    "RCI",
    "S-Rタッチ1時間ATR",
+   "S-Rタッチ確定1時間ATR",
+   "S-Rタッチ確定数",
+   "SMC_SWEEP確定",
+   "W字確定谷",
    "close vs VWAP典型",
    "taker_ls",
+   "下半分位置",
    "前日POC",
    "前日VAH",
    "前日VAL",
@@ -516,5 +530,5 @@
   "DailyReturnIndicator",
   "WilliamsRIndicator"
  ],
- "fingerprint": "3be6004da7ecb36a"
+ "fingerprint": "63b32e765e260d3c"
 }

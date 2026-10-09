@@ -597,6 +597,17 @@ def _fractal_levels(s, k: int, is_high: bool):
       直近の水準と1つ前の水準の2本があると、「終値が直近2本の確定安値を割った」（法則 U9・構造破断）が
       条件の束として書けます。
     """
+    lvl, hit = _fractal_marks(s, k, is_high)       # 確定したバーにだけ、その山（谷）の値段が入る
+    last = lvl.ffill()                             # 直近で確定した水準
+    prev = last.shift(1).where(hit).ffill()        # その1つ前に確定した水準
+    return last, prev
+
+
+def _fractal_marks(s, k: int, is_high: bool):
+    """確定した山（谷）の値段を、確定したバー（中央のバー j の k本 後）にだけ置いた列と、その印（真偽）を返す。
+    ★2026-10-09（工事 m2c15-shape-structure-20261009・K-3b）に _fractal_levels の中から切り出した（計算は1文字も変えていない）。
+      窓の中で確定した山・谷を全部 使う教科書の版（W字確定谷・S-Rタッチ確定数・SMC_SWEEP確定）と、今の _fractal_levels が
+      同じ確定の決まりを使うため。"""
     k = int(k)
     if k < 1:
         raise SystemExit(f"[材料カタログ] 山と谷の確定の本数は 1 以上（渡された＝{k}）")
@@ -608,10 +619,82 @@ def _fractal_levels(s, k: int, is_high: bool):
         left = s.rolling(k).min().shift(1)
         right = s.rolling(k).min()
         hit = (s.shift(k) < left.shift(k)) & (s.shift(k) < right)
-    lvl = s.shift(k).where(hit)                    # 確定したバーにだけ、その山（谷）の値段が入る
-    last = lvl.ffill()                             # 直近で確定した水準
-    prev = last.shift(1).where(hit).ffill()        # その1つ前に確定した水準
-    return last, prev
+    return s.shift(k).where(hit), hit
+
+
+def _w_fractal(c, h, l, n, tol, k=2):
+    """W字確定谷＝ダブルボトムの教科書の版（監査 CP60 の修正43・2026-10-09・工事 m2c15-shape-structure-20261009）。
+    ①2つの底＝窓 n 本（今の足まで）の中で確定した谷（_fractal_marks・前後 k 本）のうち、直近の2つ
+    ②2つの底の値段の差が tol×終値 以内（今の W字 と同じ許容幅の決まり）
+    ③ネック＝2つの谷の間の足の最高値
+    ④完成＝2つ目の谷の後で、終値がネックを最初に上抜けた足だけ 1。それ以外は 0（今の W字 は条件が続く間ずっと1）。
+    出どころ＝StockCharts の逐語「Breaking resistance from the highest point between the troughs completes the Double Bottom Reversal.」
+    （監査 CP60 の表 27）。★未来を見ない＝谷はその k 本 後の足で確定してから使う。
+    ★k は名前に出さない引数（最初の値 2＝資料の fractal の既定・まこさん「よい」2026-10-09 の1）。"""
+    lv, hit = _fractal_marks(l, k, False)
+    ca, ha = c.to_numpy(float), h.to_numpy(float)
+    tv = np.flatnonzero(hit.to_numpy(bool))        # 谷が確定した足の番号
+    pv = lv.to_numpy(float)[tv]                    # その谷の値段
+    jv = tv - int(k)                               # 谷そのものの足の番号
+    n = int(n)
+    out = np.full(len(ca), np.nan)
+    m = 0
+    for i in range(n - 1, len(ca)):
+        while m < len(tv) and tv[m] <= i:
+            m += 1
+        out[i] = 0.0
+        if m < 2:
+            continue
+        j1, j2 = jv[m - 2], jv[m - 1]
+        if j1 < i - n + 1 or j2 - j1 < 2 or abs(pv[m - 2] - pv[m - 1]) > tol * ca[i]:
+            continue
+        neck = ha[j1 + 1:j2].max()
+        if ca[i] > neck and not (ca[j2 + 1:i] > neck).any():
+            out[i] = 1.0
+    return pd.Series(out, index=c.index)
+
+
+def _sr_touch_fractal(d, n, tol, k=2):
+    """S-Rタッチ確定数＝S-Rタッチの教科書の数え方（監査 CP60 の修正44・2026-10-09・工事 m2c15-shape-structure-20261009）。
+    今の足の前の n 本（確定した足が [i−n, i)）の中で確定した山（高値）と谷（安値）のうち、今の終値 ± 許容幅（tol×終値）に入るものの数。
+    今の S-Rタッチ数（_sr_touch）は、帯に掛かった足の本数（滞在時間）を数える＝監査 CP60 の表 48・49。
+    ★今の足は窓に入れない（_sr_touch と同じ）。山・谷は前後 k 本で確定してから使う（未来を見ない）。
+    ★tol は数でも並び（足ごとの割合）でもよい（_sr_touch と同じ）。k は名前に出さない引数（最初の値 2）。"""
+    hv = _fractal_marks(d.high, k, True)[0].to_numpy(float)
+    lv = _fractal_marks(d.low, k, False)[0].to_numpy(float)
+    ca = d.close.to_numpy(float)
+    ta = np.asarray(tol, dtype=float) if np.ndim(tol) else None   # 並びなら配列・数なら None
+    n = int(n)
+    out = np.full(len(ca), np.nan)
+    for i in range(n, len(ca)):
+        t = tol if ta is None else ta[i]
+        if t != t:                                   # NaN（ATR がまだ出ていない区間）は空のまま
+            continue
+        band = ca[i] * t
+        out[i] = float(np.sum(np.abs(hv[i - n:i] - ca[i]) <= band) + np.sum(np.abs(lv[i - n:i] - ca[i]) <= band))
+    return pd.Series(out, index=d.index)
+
+
+def _sr_touch_fractal_atr(d, n, m, a, k=2):
+    """S-Rタッチ確定1時間ATR＝S-Rタッチ確定数 の許容幅を「1時間足の ATR% × 倍率」で決め、0.15%〜0.6% に収めた版（K-3b）。
+    許容幅の作りは _sr_touch_atr と同じ（_atr_pct_1h_on・_SR_ATR_TOL_LO〜_SR_ATR_TOL_HI）。"""
+    atr_pct = pd.Series(_atr_pct_1h_on(d, a), index=d.index)
+    tol = (m * atr_pct).clip(lower=_SR_ATR_TOL_LO, upper=_SR_ATR_TOL_HI)
+    return _sr_touch_fractal(d, n, tol.to_numpy(float), k)
+
+
+def _smc_sweep_fractal(d, k=2):
+    """SMC_SWEEP確定＝流動性の刈り取りの教科書の版（監査 CP60 の修正46・2026-10-09・工事 m2c15-shape-structure-20261009）。
+    1本前までに確定した直近の谷（前後 k 本）を安値で割り、終値でその上に戻した足＝+1。
+    1本前までに確定した直近の山を高値で抜き、終値でその下に戻した足＝−1。どちらでもない足＝0。
+    出どころ＝LuxAlgo の逐語「The classic anatomy is a wick through a prior swing high or low…followed by a close back inside
+    the old range.」（監査 CP60 の表 61）。ライブラリの版（直前15本の高安・陽線陰線・ヒゲが実体の1.5倍）の条件は使わない
+    （まこさん「よい」2026-10-09 の2）。★値の向き（+1＝下側の刈り取り）はライブラリの版と同じ。山・谷が1つも確定していない足は欠損。"""
+    hi = _fractal_levels(d.high, k, True)[0].shift(1)
+    lo = _fractal_levels(d.low, k, False)[0].shift(1)
+    bull = ((d.low < lo) & (d.close > lo)).astype(float)
+    bear = ((d.high > hi) & (d.close < hi)).astype(float)
+    return (bull - bear).where(hi.notna() | lo.notna())
 
 
 # ══ cycles（サイクル系）の重い計算を使い回す入れもの ══════════════════════
@@ -1027,6 +1110,14 @@ _reg("MMI", "MMI{}", False, lambda d, n: _mmi(d.close, n))
 #     タッチは、その足の高値・安値で数える。向きを持たない（False）＝状態量（S-Rタッチ数と同じ）。
 _reg("S-Rタッチ1時間ATR", "S-Rタッチ1時間ATR({},{},{})", False,
      lambda d, n, k, a: _sr_touch_atr(d, n, k, a))
+# ── 2026-10-09（工事 m2c15-shape-structure-20261009・K-3b・監査 CP60 の修正43・44・46）＝確定した山・谷で作る教科書の版を、
+#   今の版を残して別の材料として足す。どちらが良いかは M2-F-10f で比べる（この工事は材料を足すだけ）。
+#   ★確定の本数 k は名前に出さない引数（最初の値 2＝資料の fractal の既定・まこさん「よい」2026-10-09 の1）。向きの印は今の版と同じ。
+_reg("W字確定谷", "W字確定谷({},{})", True, lambda d, n, t, k=2: _w_fractal(d.close, d.high, d.low, n, t, k))
+_reg("S-Rタッチ確定数", "S-Rタッチ確定数({},{})", False, lambda d, n, t, k=2: _sr_touch_fractal(d, n, t, k))
+_reg("S-Rタッチ確定1時間ATR", "S-Rタッチ確定1時間ATR({},{},{})", False,
+     lambda d, n, m, a, k=2: _sr_touch_fractal_atr(d, n, m, a, k))
+_reg("SMC_SWEEP確定", "SMC_SWEEP確定", False, lambda d, k=2: _smc_sweep_fractal(d, k))
 # ── 業界の指標（pandas-ta 由来・フロー 段6-2・1回目＝アルファベット順 ao〜lrsi の19関数）──
 # ★ローソク足の本数は、ここで新しい数字を作らない。既にある一覧をそのまま使う
 #   （rsi_periods / stoch_periods / macd_params）。本数を3つ以上 使う指標（KST）は
@@ -1491,6 +1582,7 @@ def build_catalog(cfg: dict) -> list[tuple]:
         addf("形スコア", n)
         for t in cfg["w_tol"]:
             addf("W字", n, t)
+            addf("W字確定谷", n, t)           # 監査 CP60 の修正43（K-3b・2026-10-09）
     # ── 山と谷（2026-08-21・M2-2-6）──
     for k in cfg["fractal_k"]:
         addf("fractal高値距離%", k)
@@ -1543,6 +1635,7 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for n in cfg["sr_windows"]:
         for t in cfg["sr_tol"]:
             addf("S-Rタッチ数", n, t)
+            addf("S-Rタッチ確定数", n, t)     # 監査 CP60 の修正44（K-3b・2026-10-09）
     # ★2026-09-06（再監査 cp22 の N-1）＝S-RタッチATR の展開をここから外した。
     #   理由＝実装が出どころの逐語（ATR%_1h）と違い、5分足で既存の部品の複製になっていた
     #   （相関 +0.9999978）。正しい形は M2-E で作る。詳しくは _sr_touch の下のコメント。
@@ -1555,6 +1648,7 @@ def build_catalog(cfg: dict) -> list[tuple]:
         for k in cfg["sr_atr1h_k"]:
             for a in cfg["atr_periods"]:
                 addf("S-Rタッチ1時間ATR", n, k, a)
+                addf("S-Rタッチ確定1時間ATR", n, k, a)   # 監査 CP60 の修正44（K-3b・2026-10-09）
 
     # ── 業界の指標（pandas-ta 由来・フロー 段6-2・1回目＝アルファベット順 ao〜lrsi の19関数）──
     # ★ローソク足の本数は、ここで新しい数字を作らない。既にある一覧をそのまま使う
@@ -1597,6 +1691,7 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for _fam in ("QQE", "QQE_RSIMA", "SMC_SWEEP", "SQZ%", "SQZ_ON",
                  "SQZPRO_ON_WIDE", "SQZPRO_ON_NARROW", "STC", "STCstoch"):
         addf(_fam)
+    addf("SMC_SWEEP確定")                     # 監査 CP60 の修正46（K-3b・2026-10-09）
 
     # ── 業界の指標（3回目＝アルファベット順 stochf〜willr）──
     for n in cfg["rsi_periods"]:
@@ -2029,8 +2124,12 @@ def build_range_geometry(bars: pd.DataFrame, adaptive_k=None) -> pd.DataFrame:
     with np.errstate(invalid="ignore", divide="ignore"):
         pos = np.where(np.isfinite(span) & (span > 0), (c - mid) / span, np.nan)
         wpct = np.where(np.isfinite(res_hi) & np.isfinite(sup_lo), (res_hi - sup_lo) / c * 100.0, np.nan)
+        # ★2026-10-09（工事 m2c15-shape-structure-20261009・監査 CP60 の修正65）＝下半分の位置（下半分の幅＝mid − sup_lo で割る）。
+        #   帯内位置% は下半分も上半分の幅で割る（今の版は残す）。定義表＝indicator_reference_diag.RANGE_GEO_REF の 下半分位置
+        dn = mid - sup_lo
+        low = np.where(np.isfinite(dn) & (dn > 0), (c - mid) / dn, np.nan)
     return pd.DataFrame({"res_hi": res_hi, "res_lo": res_lo, "sup_hi": sup_hi, "sup_lo": sup_lo,
-                         "mid": mid, "W%": wpct, "帯内位置%": pos}, index=bars.index)
+                         "mid": mid, "W%": wpct, "帯内位置%": pos, "下半分位置": low}, index=bars.index)
 
 
 def _insp_range_geo(bars: pd.DataFrame, cfg: dict) -> list[str]:
@@ -7058,6 +7157,9 @@ def _insp_hidden_params() -> list:
         fam, prm = find_material(nm)
         if fam is not None and fam not in pos:
             pos[fam] = tuple(prm)
+    # ★2026-10-09（工事 m2c15-shape-structure-20261009）＝形の材料（W字確定谷）は、上の決まった式の値動きでは形が1回も出ず、
+    #   確定の本数 k を変えても列が変わらない（写しで実測）。その種類だけ、形が出る既知答えの合成の足（参照表の _w_case）で確かめる。
+    _cases = {"W字確定谷": lambda: iref._w_case(24, 100.2)}
     ng, seen = [], 0
     for fam, (tpl, _dr, fn) in MATERIAL_FAMILIES.items():
         P = pos.get(fam)
@@ -7074,7 +7176,8 @@ def _insp_hidden_params() -> list:
         if not kw:
             continue
         seen += 1
-        base = _h(fn(d, *P))
+        dd = _cases[fam]() if fam in _cases else d
+        base = _h(fn(dd, *P))
         for k, v in kw.items():
             if v is not None:
                 alts = [v + 2, v + 6] if isinstance(v, int) else [v + 0.1, v * 2 + 0.3]
@@ -7084,7 +7187,7 @@ def _insp_hidden_params() -> list:
             moved, raised = False, 0
             for alt in alts:
                 try:
-                    if _h(fn(d, *P, **{k: alt})) != base:
+                    if _h(fn(dd, *P, **{k: alt})) != base:
                         moved = True
                         break
                 except Exception:                            # noqa: BLE001

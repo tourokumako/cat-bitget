@@ -1400,8 +1400,11 @@
    "RVI",
    "S-Rタッチ1時間ATR",
    "S-Rタッチ数",
+   "S-Rタッチ確定1時間ATR",
+   "S-Rタッチ確定数",
    "SINWMA傾き%",
    "SMC_SWEEP",
+   "SMC_SWEEP確定",
    "SQZ%",
    "SQZPRO_ON_NARROW",
    "SQZPRO_ON_WIDE",
@@ -1448,6 +1451,7 @@
    "WAD傾き",
    "WMA傾き%",
    "W字",
+   "W字確定谷",
    "ZLMA傾き%",
    "body比",
    "close vs ABER_ZG%",
@@ -1598,8 +1602,8 @@
   ]
  },
  "confirm_conditions": {
-  "banned_pairs": 370,
-  "parts_count": 488,
+  "banned_pairs": 458,
+  "parts_count": 516,
   "quantile_grid": [
    "q10",
    "q20",
