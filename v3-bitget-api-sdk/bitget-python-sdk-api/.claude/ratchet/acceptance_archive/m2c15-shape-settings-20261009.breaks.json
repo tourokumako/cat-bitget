@@ -1,0 +1,34 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-shape-settings-20261009",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b158_shape_ranges_missing.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b158_shape_ranges_missing.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "2",
+   "script": "b157_wfractal_tol_point.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b157_wfractal_tol_point.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "3",
+   "script": "b150_vwaptp_range_missing.sh",
+   "code": 1,
+   "note": "❌ 指標の資料と設定ファイルの照らし: 食い違い 1 件（①は資料に行を足す・②は r3_draft_build.py の写し方で設定ファイルを写し直す＝設計書と承認が要る）",
+   "expect": 1,
+   "means": "探す範囲から close vs VWAP典型 の行を外すと、資料と設定ファイルの照らし（②）が落ちる",
+   "match": true
+  }
+ ]
+}

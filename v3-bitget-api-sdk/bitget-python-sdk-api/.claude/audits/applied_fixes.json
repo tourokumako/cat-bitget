@@ -3360,6 +3360,34 @@
    "file": ".claude/breaks/b155_geo_mako_not_read.sh",
    "at": "2026-10-09T22:39:45",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-settings-20261009",
+   "num": "1",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-10T07:41:34",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-settings-20261009",
+   "num": "2",
+   "file": ".claude/breaks/b150_vwaptp_range_missing.sh",
+   "at": "2026-10-10T07:41:34",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-settings-20261009",
+   "num": "3",
+   "file": ".claude/breaks/b157_wfractal_tol_point.sh",
+   "at": "2026-10-10T07:41:34",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-shape-settings-20261009",
+   "num": "4",
+   "file": ".claude/breaks/b158_shape_ranges_missing.sh",
+   "at": "2026-10-10T07:41:34",
+   "how": "当てた"
   }
  ]
 }
