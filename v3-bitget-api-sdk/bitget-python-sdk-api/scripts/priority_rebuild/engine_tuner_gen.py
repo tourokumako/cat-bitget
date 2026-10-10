@@ -3838,7 +3838,7 @@ def needed_qkeys(recipes: list[dict]) -> dict[str, tuple]:
 
 
 def _geo_of(df: pd.DataFrame) -> dict:
-    """レンジ幾何＝帯の4隅・中央と、そこから作る2列（帯内位置%・W%）。本走と番人で同じ作り方を使う。"""
+    """レンジ幾何＝帯の4隅・中央と、そこから作る3列（帯内位置%・W%・下半分位置）。本走と番人で同じ作り方を使う。"""
     geo = {"res_hi": df["v11_res_hi"].to_numpy(float), "res_lo": df["v11_res_lo"].to_numpy(float),
            "sup_hi": df["v11_sup_hi"].to_numpy(float), "sup_lo": df["v11_sup_lo"].to_numpy(float),
            "mid": df["v11_mid"].to_numpy(float)}
@@ -5586,8 +5586,7 @@ def selftest() -> int:
 
     # T4 解決表＝同じ入力から2回作って完全一致（探索開始時に1回固定の決定論）
     df = synth_df()
-    geo = {"帯内位置%": ((df["close"] - df["v11_mid"]) / (df["v11_res_hi"] - df["v11_mid"])).to_numpy(float),
-           "W%": ((df["v11_res_hi"] - df["v11_sup_lo"]) / df["close"] * 100.0).to_numpy(float)}
+    geo = _geo_of(df)                # 本走と同じ作り方（帯の4隅・中央・帯内位置%・W%・下半分位置）＝手で組むと、印がオンの列が欠ける
     df_m = df                        # ★A-2b＝列は その場で作る（先に全部 作らない）
     s4 = pd.Timestamp(df["ts"].iloc[0]).normalize()
     e4 = s4 + pd.Timedelta(days=10)               # 丸1日×10日＝日次分割（daily_net）の定義と整合させる
@@ -6075,7 +6074,7 @@ def selftest() -> int:
     # ★材料の列を組み立ててから走らせる（本走と同じ経路＝attach_materials）。
     #   これを抜くと「列が実行データに無い」で走行が落ちる＝番人が枝の発火を見られない。
     # ★A-2b＝列は その場で作る（先に全部 作らない）
-    geo14 = _geo_of(df14)          # 本走と同じ作り方（帯の4隅・中央・帯内位置%・W%）
+    geo14 = _geo_of(df14)          # 本走と同じ作り方（帯の4隅・中央・帯内位置%・W%・下半分位置）
     fired14: set = set()
     # ★玉の動きで切り替わる枝の名前は、承認済みの表から機械で引く（手で一覧を書かない・2026-08-12）。
     #   直す前は手書きの8件で、そのうち3件（TIMEDOWN／REVIND／MAECUTADDS）が表に存在しない名前だった。

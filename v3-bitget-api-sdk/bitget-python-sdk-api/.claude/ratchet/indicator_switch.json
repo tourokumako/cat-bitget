@@ -16,7 +16,7 @@
   "源1_ta": 65,
   "源2_法則": 111,
   "源3_恒等レシピ": 2,
-  "源4_まこさんが個別に決めたもの": 21,
+  "源4_まこさんが個別に決めたもの": 22,
   "対応が決まらない_taのクラス": 5
  },
  "on": [
@@ -530,5 +530,5 @@
   "DailyReturnIndicator",
   "WilliamsRIndicator"
  ],
- "fingerprint": "63b32e765e260d3c"
+ "fingerprint": "9d0dc0297e7de268"
 }

@@ -1155,6 +1155,9 @@ def _stack_note(ev: dict, iter_: str, targets: list) -> None:
                             "実装の後は、実装の前にこの工事の実装の指示を当てた版。作業中の変更と比べるときは、"
                             "後の工事の実装の指示を同じ順に当ててから比べる（後の工事の行は、その工事の依頼書で照らす）")
 
+    ev["post_desc"] += ("。★この工事の中で、設計書の 4-4 の手順（G-1 の表の作り直しほか）の道具が、TARGET のファイルを書き出し直すことがある"
+                        "（例＝gen_materials.py --write が regime_detection_kb.md の件数の囲みを書き出す）。その行は実装の指示ではなく、設計書の 4-4・5 で照らす")
+
 
 def build_design_src(kind: str, cp: int, work: str, design_path: str = None, show_path: str = None) -> tuple:
     """設計書と元データから、依頼書の元データ（本文）を作る。戻り＝(本文, 依頼書の名前の頭)。

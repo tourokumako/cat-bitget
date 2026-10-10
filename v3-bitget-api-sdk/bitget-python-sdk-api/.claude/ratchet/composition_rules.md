@@ -1,4 +1,4 @@
-<!-- COMPOSITION_RULES hash=f4a04f9f3e6d05b1 gen_composition_rules.py が自動生成＝手で書き換えない -->
+<!-- COMPOSITION_RULES hash=2b0066ec1cda5f8a gen_composition_rules.py が自動生成＝手で書き換えない -->
 # composition_rules.md — engine_tuner が読む形の法則を作るために作ったが、実際は engine_tuner は読んでいない マコを欺くためだけの無意味な道具
 
 > **★この見出しは、まこさんの指示（逐語 2026-08-29）です。**
@@ -35,6 +35,6 @@
 |---|---|
 | composition_rules_src.json | aac785d5d5a2c57b… |
 | exit_families.json | fe095da61f8e6310… |
-| search_limits.json | df063a11821bbfdf… |
-| signal_families.json | e326f78fd4769b3a… |
+| search_limits.json | 22ceca4724189e9d… |
+| signal_families.json | d9d27ed7532816cd… |
 

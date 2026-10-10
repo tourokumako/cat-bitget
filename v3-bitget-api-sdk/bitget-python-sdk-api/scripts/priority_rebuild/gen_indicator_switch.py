@@ -333,7 +333,7 @@ def build() -> dict:
             #   「定義表に実在して、実際にオンに入った数」を出す。
             #   直す前＝len(id_f) だったので、定義表に無い名前（BB・レンジ幾何）も1件として数えていた。
             "源3_恒等レシピ": len(id_f & set(all_f)),
-            "源4_まこさんが個別に決めたもの": len(mako_f) + len(mako_demand),
+            "源4_まこさんが個別に決めたもの": len(mako_f) + len(mako_demand) + len(mako_g),
             "対応が決まらない_taのクラス": len(unresolved),
         },
         "on": on,

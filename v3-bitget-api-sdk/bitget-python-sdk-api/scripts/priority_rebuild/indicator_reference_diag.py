@@ -4646,9 +4646,9 @@ def _range_geo_case(zone_touch: int, zone_lookback: int) -> pd.DataFrame:
 
 
 def range_geo_known_check(geo_fn, zone_tol: float, zone_touch: int, zone_lookback: int) -> list[str]:
-    """既知答え＝合成バーの最終行で、帯の4隅・mid・W%・帯内位置% が電卓式と一致するか。
+    """既知答え＝合成バーの最終行で、帯の4隅・mid・W%・帯内位置%・下半分位置 が電卓式と一致するか。
     電卓式: res 帯＝110×(1∓tol/2)・sup 帯＝90×(1∓tol/2)・mid=(res_lo+sup_hi)/2・
-    W%=(res_hi−sup_lo)/100×100・帯内位置%=(100−mid)/(res_hi−mid)。geo_fn は観察側の実装
+    W%=(res_hi−sup_lo)/100×100・帯内位置%=(100−mid)/(res_hi−mid)・下半分位置=(100−mid)/(mid−sup_lo)。geo_fn は観察側の実装
     （observe_diag.build_range_geometry・adaptive_k=None＝固定 tol）を注入する＝実装と定義の照合。"""
     ng = []
     bars = _range_geo_case(zone_touch, zone_lookback)

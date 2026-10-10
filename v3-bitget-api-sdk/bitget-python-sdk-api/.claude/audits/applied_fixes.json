@@ -3388,6 +3388,41 @@
    "file": ".claude/breaks/b158_shape_ranges_missing.sh",
    "at": "2026-10-10T07:41:34",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-10_m2c15_shape_structure_20261009_impl_cp69_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T11:00:35",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-10_m2c15_shape_structure_20261009_impl_cp69_audit_report.md",
+   "num": "3",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_indicator_switch.py",
+   "at": "2026-10-10T11:00:35",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-10_m2c15_shape_structure_20261009_impl_cp69_audit_report.md",
+   "num": "5",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T11:00:35",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-10_m2c15_shape_structure_20261009_impl_cp69_audit_report.md",
+   "num": "6",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T11:00:35",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-10_m2c15_shape_structure_20261009_impl_cp69_audit_report.md",
+   "num": "7",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-10T11:00:35",
+   "how": "当てた"
   }
  ]
 }
