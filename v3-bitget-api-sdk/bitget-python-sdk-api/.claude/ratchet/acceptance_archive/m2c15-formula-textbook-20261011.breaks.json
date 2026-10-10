@@ -1,0 +1,70 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-formula-textbook-20261011",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b160_dpo_tb_lib_shift.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b160_dpo_tb_lib_shift.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "2",
+   "script": "b161_thermo_orig_abs.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b161_thermo_orig_abs.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "3",
+   "script": "b162_stochrsi_raw_smoothed.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b162_stochrsi_raw_smoothed.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "4",
+   "script": "b163_trix_ema_signal_sma.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b163_trix_ema_signal_sma.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "5",
+   "script": "b164_rvol_rv_mean_subtracted.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b164_rvol_rv_mean_subtracted.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "6",
+   "script": "b165_ssf_avg_single_input.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b165_ssf_avg_single_input.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "7",
+   "script": "b166_sqz_carter_scalar_fixed.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b166_sqz_carter_scalar_fixed.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  }
+ ]
+}

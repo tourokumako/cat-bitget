@@ -3556,6 +3556,237 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/engine_tuner_gen.py",
    "at": "2026-10-10T23:15:33",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "2",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "3",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "4",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "5",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "6",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "7",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "8",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "9",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "10",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "11",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "12",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "13",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "14",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "15",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "16",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "17",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "18",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "19",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "20",
+   "file": "scripts/priority_rebuild/observe_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "21",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "22",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "23",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "24",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "25",
+   "file": "scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "26",
+   "file": ".claude/memory/regime_detection_kb.md",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "27",
+   "file": ".claude/breaks/b160_dpo_tb_lib_shift.sh",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "28",
+   "file": ".claude/breaks/b161_thermo_orig_abs.sh",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "29",
+   "file": ".claude/breaks/b162_stochrsi_raw_smoothed.sh",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "30",
+   "file": ".claude/breaks/b163_trix_ema_signal_sma.sh",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "31",
+   "file": ".claude/breaks/b164_rvol_rv_mean_subtracted.sh",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "32",
+   "file": ".claude/breaks/b165_ssf_avg_single_input.sh",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-textbook-20261011",
+   "num": "33",
+   "file": ".claude/breaks/b166_sqz_carter_scalar_fixed.sh",
+   "at": "2026-10-11T08:19:33",
+   "how": "当てた"
   }
  ]
 }

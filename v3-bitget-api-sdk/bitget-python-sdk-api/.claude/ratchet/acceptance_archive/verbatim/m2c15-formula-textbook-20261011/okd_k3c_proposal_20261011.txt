@@ -1,0 +1,728 @@
+案です（工事 m2c15-formula-textbook-20261011＝K-3c 計算式の違い。計算式が教科書と違う15種に、教科書の版を今の版を残して足す。まこさん「A」「進めて良い」）。本物のコードと設定には、まだ1文字も書いていません。当て方は1回です。
+
+- 指示は全部で 33件です。内訳は、コードの直し 25件・知識の文書の件数の直し 1件・新しい壊すプログラム 7本です。全部を設計書の 4-20 にして、当てる道具 apply_audit_fix.py の --design で1回で当てます。
+- 作りの5点は、まこさんの「進めて良い」（2026-10-11）のとおりです。①新しい名前は作りの違いだけ・新しいパラメータ（THERMO の EMA の本数・VIDYA の CMO の本数・Aberration 原作の本数と倍率・Carter の4つの数）は名前に出さない引数 ②THERMO の EMA の本数の最初の値は、資料の2つ（20・22）がどちらも「ブログ等」で最初の値にならないので、既定の値（ライブラリの既定 20）③式が逐語の種類は監査の本文から・作りの文だけの種類は監査が引いた原典の逐語から ④Aberration 原作は別の材料（BB%b の範囲は触らない）⑤対応表・既知答え・2つに分ける＝K-3b と同じ形。
+- PMAX 原作は入れません（16種 → 15種）。原典のコードの全文が資料に無く、新しく Web を調べない決まりだからです（案の3）。
+- 工事は2つに分けます（K-3a・K-3b と同じ理由）。15種は、G-1 でオン・オフの表を作り直すまで「使う」に入りません。だから15種の資料の行と、それを写す設定（指標ごとの一覧・探す範囲）は、G-1 の後の2つ目の工事で写します。
+- 値は1つも私が書いていません。15種の資料の行は、同じ指標の今の行の調べた結果から道具が作ります（research/alias_map_k3c.json）。式は監査 CP60 の修正の本文の文字（修正45・50）と、監査が引いた原典の逐語（linnsoft・ta-lib.org・StockCharts・MAMA.pdf・georgepruitt.com・TradingView）から写しました。既知答えの数字は、手で計算できる合成の足から出しました（式を 4-0 に書きました）。
+- 全部の指示を、本物のファイルに書かずに、写しに当てて走らせました。当てた直後の写しで、照らしの①②はどちらも食い違い0件でした。観察の道具の全部の自己テストが通り（足した15種の既知答えと独立の実装を含む）、壊し方 7本は全部 決めた文で落ちました。材料は 516 列 → 548 列 で、増えるのは足す15種の 32列だけです。前から在る列の値の違いは 0本でした。
+- G-1 の試しも写しで走らせました。オン・オフの表を作り直すと、増えるのは足す15種だけでした（使う 160 種 → 175 種。増えた 15 種＝ABER原作位置・DPO教科書%・SQZ_ON_Carter・StochRSI素%K・THERMO_EMA%・THERMO原作%・TRIX_EMAシグナル・TRIX_EMAヒスト・close vs FAMA_HL%・close vs HT_TRENDLINE_HL%・close vs MAMA_HL%・close vs SSF平均%・close vs TRIMA_TA%・close vs VIDYA_CMO%・realized_vol_rv。減った 0 種。）。資料の道具4本で15種の行ができ、照らしの①は0件でした。2つ目の工事で写す設定の違いは 4-0 の⑦です。
+- 決めていただくことが在ります（設計書では 3-2 の節に入ります）。SQZ_ON_Carter の ATR の作り（Wilder）と、THERMO_EMA% の元（原作の温度計）の2つです。
+
+【4-0 この仕組みは何か】
+**この工事は、計算式が教科書と違う15種に、教科書の版を今の版を残して別の材料として足す工事です。**監査 CP60 は、DPO・Aberration・THERMO・SQZ_ON・StochRSI・TRIX のシグナル・realized_vol・SSF・TRIMA・VIDYA・HT_TRENDLINE・MAMA・FAMA の今の作りが教科書と違うと指摘しました（修正37・45・47〜53）。まこさんは、今の版を残して教科書の版を足し、後で比べる形を決めました（K-3 の「A」）。K-7 の決定で、THERMO% に EMA でならした版も足します。どちらが良いかを比べるのは M2-F-10f で、この工事は材料を足すだけです。
+
+**①足す15種（名前・作り・出どころ）。**
+| 材料の名前 | 作り | 出どころ |
+|---|---|---|
+| DPO教科書%(n) | k本前の終値 − いまの n本平均（k=n/2+1）を終値で割って%化。今の DPO% は「いまの終値 − k本前の n本平均」 | 修正37・45 の補足の式・StockCharts「Price - X-period SMA from {X/2 + 1} periods in the future」 |
+| ABER原作位置 | 終値の80本 SMA ± 2σ（ddof 0）の帯の中の位置（%b と同じ作り）。本数と倍率は名前に出さない引数（80・2.0） | 修正45・71・georgepruitt.com「a breakout system based on Bollinger bands with a period length of 80 days and two standard deviations」 |
+| THERMO原作% | max(max(High − PrevHigh, 0), max(PrevLow − Low, 0)) を終値で割って%化（内はらみ足は 0）。今の THERMO% は絶対値 | 修正45 の直した後の文字・修正58 |
+| THERMO_EMA% | THERMO原作% の温度計を EMA でならして%化。EMA の本数は名前に出さない引数（最初の値 20） | K-7 の決定（ok_k7_pivot_thermo_20261007）・資料の既定 20（motivewave）と 22（tradingview） |
+| SQZ_ON_Carter | ボリンジャー（終値の SMA ± 2σ）がケルトナー（代表値段 (H+L+C)/3 の SMA ± 1.5×ATR（Wilder））の内側なら 1。4つの数は名前に出さない引数（20・2.0・20・1.5） | 修正47・StockCharts「Carter uses 20 periods for the moving average and ATR, and 1.5 for the ATR multiplier」 |
+| StochRSI素%K(n) | 原式の値（ならさない）＝ライブラリの stochrsi の k を 1 にしたもの | 修正48・StockCharts「StochRSI = (RSI - Lowest Low RSI) / (Highest High RSI - Lowest Low RSI)」 |
+| TRIX_EMAシグナル(n,g)・TRIX_EMAヒスト(n,g) | TRIX を g 本の EMA（種＝最初の g 本の単純平均）でならしたシグナルと、その差 | 修正49・StockCharts「The signal line is a 9-day EMA of the TRIX.」 |
+| realized_vol_rv(n) | √(Σr²/n)×100（平均を引かない） | 修正50 の直した後の文字・Wikipedia「RV(n) = Σ r²」 |
+| close vs SSF平均%(n) | Ehlers の2極のスーパースムーザーで、入力を (c + c[1])/2 にしたもの | 修正51・linnsoft「Filt = c1*(Close + Close[1]) / 2 + c2*Filt[1] + c3*Filt[2];」 |
+| close vs TRIMA_TA%(n) | TA-Lib の TRIMA（偶数の n＝SMA(SMA(x, n/2), n/2+1)・奇数は今の版と同じ） | 修正52・ta-lib.org「even: SMA(SMA(x,period/2),period/2+1)」 |
+| close vs VIDYA_CMO%(n) | CMO の本数 m を n と別に持つ VIDYA。m は名前に出さない引数（最初の値 9） | 修正52・ta-lib.org「n = optInTimePeriod, m = optInCMOPeriod」 |
+| close vs HT_TRENDLINE_HL%・close vs MAMA_HL%・close vs FAMA_HL% | 入力を (高値＋安値)/2 にしたもの（ライブラリの関数に渡す入力だけを変える） | 修正53・MAMA.pdf「Inputs: Price((H+L)/2), FastLimit(.5), SlowLimit(.05);」 |
+
+- 今の版は1文字も変えません（前から在る列の値の違い0本）。新しい名前は作りの違いだけを表し、名前に数字は増やしません（名前に出る軸は元の種類と同じ）。
+- 名前に出さない引数の最初の値は、資料の既定（Carter の4つ・原作の 80・2.0・CMO の 9）か、ライブラリの既定（EMA の本数 20）です。範囲で探すのは工事2（M2-F-10b）です。
+
+**②既知答え（手で計算できる合成の足）と独立の実装。**
+| 材料 | 合成の足 | 答え |
+|---|---|---|
+| DPO教科書% | 平らな足／1本ごとに 1 ずつ上げ続ける足（_up） | 0／((n−1)/2 − k) ÷ 最後の終値 × 100（k=n/2+1） |
+| realized_vol_rv | 平らな足／終値が毎本 0.1% ずつ増える足 | 0／100×ln(1.001)（今の版は 0＝平均を引くと消える） |
+| THERMO原作% | 平らな足／最後の足だけ内はらみ（高値 100.5・安値 99.5） | 0／0（今の版は 0.5） |
+| THERMO_EMA%・HT_TRENDLINE_HL%・MAMA_HL%・FAMA_HL% | 平らな足 | 0 |
+| 上の全部と SQZ_ON_Carter・StochRSI素%K・TRIX_EMA 2種・SSF平均・TRIMA_TA・VIDYA_CMO・ABER原作位置 | 観察の道具の自己テストの値動き | 参照表の独立の実装（素直な繰り返し）と最大差 1e-6 以内 |
+
+**③オン・オフの表（使う）の違い（G-1 の試し＝写しで作り直した・道具が数えた）。**
+使う 160 種 → 175 種。増えた 15 種＝ABER原作位置・DPO教科書%・SQZ_ON_Carter・StochRSI素%K・THERMO_EMA%・THERMO原作%・TRIX_EMAシグナル・TRIX_EMAヒスト・close vs FAMA_HL%・close vs HT_TRENDLINE_HL%・close vs MAMA_HL%・close vs SSF平均%・close vs TRIMA_TA%・close vs VIDYA_CMO%・realized_vol_rv。減った 0 種。
+
+**④この工事で増える材料の名前（道具が数えた）。**
+ABER原作位置・DPO教科書%20・DPO教科書%48・SQZ_ON_Carter・StochRSI素%K14・StochRSI素%K21・StochRSI素%K7・StochRSI素%K9・THERMO_EMA%・THERMO原作%・TRIX_EMAシグナル(14,9)・TRIX_EMAシグナル(21,9)・TRIX_EMAシグナル(7,9)・TRIX_EMAシグナル(9,9)・TRIX_EMAヒスト(14,9)・TRIX_EMAヒスト(21,9)・TRIX_EMAヒスト(7,9)・TRIX_EMAヒスト(9,9)・close vs FAMA_HL%・close vs HT_TRENDLINE_HL%・close vs MAMA_HL%・close vs SSF平均%20・close vs SSF平均%200・close vs SSF平均%50・close vs TRIMA_TA%20・close vs TRIMA_TA%200・close vs TRIMA_TA%50・close vs VIDYA_CMO%20・close vs VIDYA_CMO%200・close vs VIDYA_CMO%50・realized_vol_rv20・realized_vol_rv50
+
+**⑤この工事の設定（今の資料から写し直しても変わらない＝設定の指示は無い）。**
+観察の道具の設定 observe_config.json と探す範囲 search_limits.json は、この工事では変えません。
+
+**⑥ta の対応表（TA_CLASS_MAP）。**
+全体の表 G-1 のとおり、ta の DPOIndicator（k本前の終値 − SMA）を DPO教科書% に対応させます。今の DPO% も比べるために残すので、対応は（DPO教科書%・DPO%）の2つにします。
+
+**⑦2つ目の工事で写す設定（G-1 の試しの後に、資料から写し直すと変わる行・道具が数えた）。**
+- observe_config.json（13 行）
+```
+-  "RCI": [[5], [7], [9], [26], [52]]
++  "RCI": [[5], [7], [9], [26], [52]],
++  "DPO教科書%": [[20]],
++  "TRIX_EMAシグナル": [[15, 9]],
++  "TRIX_EMAヒスト": [[15, 9]],
++  "close vs TRIMA_TA%": [[10]]
+-  "HWC位置": {"スキャル": [[0.2, 0.1, 0.1, 0.1, 1.0]], "デイトレ": [[0.2, 0.1, 0.1, 0.1, 1.0]]}
++  "HWC位置": {"スキャル": [[0.2, 0.1, 0.1, 0.1, 1.0]], "デイトレ": [[0.2, 0.1, 0.1, 0.1, 1.0]]},
++  "SQZ_ON_Carter": {"スキャル": [[20, 2, 20, 1.5]], "デイトレ": [[20, 2, 20, 1.5]]},
++  "close vs MAMA_HL%": {"スキャル": [[0.5, 0.05]], "デイトレ": [[0.5, 0.05]]},
++  "close vs FAMA_HL%": {"スキャル": [[0.5, 0.05]], "デイトレ": [[0.5, 0.05]]}
+- "_material_params_pending": ["KST＝範囲が1点のまま（全部の軸）：10・15・20・30・10・10・10・15・9", "KSTシグナル＝範囲が1点のまま（全部の軸）：10・15・20・30・10・10・10・15・9", "PPO＝範囲が1点のまま（全部の軸）：12・26・9", "PPOシグナル＝範囲が1点のまま（全部の軸）：12・26・9", "PPOヒスト＝範囲が1点のまま（全部の軸）：12・26・9", "STCstoch＝範囲が1点のまま（全部の軸）：23・50・10", "HWC幅%＝範囲が1点のまま（全部の軸）：0.2・0.1・0.1・0.1・1", "MASSI＝範囲が1点のまま（全部の軸）：9・25", "close vs VWAP＝範囲が1点のまま（全部の軸）：288", "pivotPP＝範囲が1点のまま（全部の軸）：288", "pivotR1＝範囲が1点のまま（全部の軸）：288", "pivotS1＝範囲が1点のまま（全部の軸）：288", "POC＝最初の値も範囲も決まらない", "VAH＝最初の値も範囲も決まらない", "VAL＝最初の値も範囲も決まらない", "SMC_SWEEP＝範囲が1点のまま（全部の軸）：15・1.5", "close vs MAMA%＝範囲が1点のまま（全部の軸）：0.5・0.05", "close vs FAMA%＝範囲が1点のまま（全部の軸）：0.5・0.05", "close vs ZLMA%＝最初の値も範囲も決まらない", "close vs PMAX%＝最初の値も範囲も決まらない", "close vs SAREXT%＝最初の値も範囲も決まらない", "close vs ABER_ZG%＝範囲が1点のまま（全部の軸）：5・15", "ABER位置＝範囲が1点のまま（全部の軸）：5・15", "HWC位置＝範囲が1点のまま（全部の軸）：0.2・0.1・0.1・0.1・1.0", "close vs VWAP典型＝範囲が1点のまま（全部の軸）：288", "当日VWAP＝最初の値も範囲も決まらない", "前日POC＝最初の値も範囲も決まらない", "前日VAH＝最初の値も範囲も決まらない", "前日VAL＝最初の値も範囲も決まらない", "当日POC＝最初の値も範囲も決まらない", "当日VAH＝最初の値も範囲も決まらない", "当日VAL＝最初の値も範囲も決まらない"],
++ "_material_params_pending": ["KST＝範囲が1点のまま（全部の軸）：10・15・20・30・10・10・10・15・9", "KSTシグナル＝範囲が1点のまま（全部の軸）：10・15・20・30・10・10・10・15・9", "PPO＝範囲が1点のまま（全部の軸）：12・26・9", "PPOシグナル＝範囲が1点のまま（全部の軸）：12・26・9", "PPOヒスト＝範囲が1点のまま（全部の軸）：12・26・9", "STCstoch＝範囲が1点のまま（全部の軸）：23・50・10", "HWC幅%＝範囲が1点のまま（全部の軸）：0.2・0.1・0.1・0.1・1", "MASSI＝範囲が1点のまま（全部の軸）：9・25", "close vs VWAP＝範囲が1点のまま（全部の軸）：288", "pivotPP＝範囲が1点のまま（全部の軸）：288", "pivotR1＝範囲が1点のまま（全部の軸）：288", "pivotS1＝範囲が1点のまま（全部の軸）：288", "POC＝最初の値も範囲も決まらない", "VAH＝最初の値も範囲も決まらない", "VAL＝最初の値も範囲も決まらない", "SMC_SWEEP＝範囲が1点のまま（全部の軸）：15・1.5", "close vs MAMA%＝範囲が1点のまま（全部の軸）：0.5・0.05", "close vs FAMA%＝範囲が1点のまま（全部の軸）：0.5・0.05", "close vs ZLMA%＝最初の値も範囲も決まらない", "close vs PMAX%＝最初の値も範囲も決まらない", "close vs SAREXT%＝最初の値も範囲も決まらない", "close vs ABER_ZG%＝範囲が1点のまま（全部の軸）：5・15", "ABER位置＝範囲が1点のまま（全部の軸）：5・15", "HWC位置＝範囲が1点のまま（全部の軸）：0.2・0.1・0.1・0.1・1.0", "close vs VWAP典型＝範囲が1点のまま（全部の軸）：288", "当日VWAP＝最初の値も範囲も決まらない", "前日POC＝最初の値も範囲も決まらない", "前日VAH＝最初の値も範囲も決まらない", "前日VAL＝最初の値も範囲も決まらない", "当日POC＝最初の値も範囲も決まらない", "当日VAH＝最初の値も範囲も決まらない", "当日VAL＝最初の値も範囲も決まらない", "StochRSI素%K＝範囲が1点のまま（全部の軸）：14・3・3", "close vs SSF平均%＝範囲が1点のまま（全部の軸）：10・2", "close vs MAMA_HL%＝範囲が1点のまま（全部の軸）：0.5・0.05", "close vs FAMA_HL%＝範囲が1点のまま（全部の軸）：0.5・0.05"],
+```
+- search_limits.json（8 行）
+```
+-    "S-Rタッチ確定1時間ATR": [{"kind": "int", "lo": 144, "hi": 288}, {"kind": "float", "lo": 0.5, "hi": 1.5, "dec": 1}, {"kind": "int", "lo": 7, "hi": 21}]
++    "S-Rタッチ確定1時間ATR": [{"kind": "int", "lo": 144, "hi": 288}, {"kind": "float", "lo": 0.5, "hi": 1.5, "dec": 1}, {"kind": "int", "lo": 7, "hi": 21}],
++    "DPO教科書%": [{"kind": "int", "lo": 14, "hi": 40}],
++    "TRIX_EMAシグナル": [{"kind": "int", "lo": 7, "hi": 21}, {"kind": "int", "lo": 9, "hi": 9}],
++    "TRIX_EMAヒスト": [{"kind": "int", "lo": 7, "hi": 21}, {"kind": "int", "lo": 9, "hi": 9}],
++    "realized_vol_rv": [{"kind": "int", "lo": 10, "hi": 50}],
++    "close vs TRIMA_TA%": [{"kind": "int", "lo": 1, "hi": 200}],
++    "close vs VIDYA_CMO%": [{"kind": "int", "lo": 20, "hi": 200}]
+```
+
+【4-1 システムの境界】
+**誰が動かすか。**私（CC）が、当てる道具 apply_audit_fix.py・観察の道具の自己テスト・照らしの道具・表を作る道具（G-1）・資料の道具4本・監査に出す前のチェックを動かします。
+
+**誰が結果を使うか。**
+- 足した15種の列は、観察の道具の build_catalog が材料のカタログに入れ、engine_tuner と M2-F の段の道具が読みます。
+- 参照表の登録（定義・独立の実装・既知答え・系統・「使う」の決定）は、観察の道具の自己テストと、オン・オフの表を作る道具（gen_indicator_switch.py）が読みます。
+
+【4-2 入力と出力】
+**読むもの。**今の実物（observe_diag.py・indicator_reference_diag.py）・資料（research/alias_map_k3c.json）・設計書の 4-20。
+
+**書くもの。**
+- 当てる（--design）：上の2つのコードと、知識の文書 regime_detection_kb.md の件数の囲みと、新しい壊すプログラム 7本。
+- G-1：オン・オフの表・型の表・出口の型の表・材料の文書・観察の説明書・組み立ての表・資料の表3つ（資料の道具4本）・修正対応表。
+- 2つ目の工事（G-1 の後）：observe_config.json と search_limits.json の、資料から写す塊（4-0 の⑦）。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| observe_diag.py の _atr_wilder・_sqz_carter | Wilder の ATR と Carter の作りのスクイーズ | 新設 |
+| observe_diag.py の _trix_ema・_ssf_avg・_trima_ta・_vidya_cmo・_mama_hl・_thermo_orig | 教科書の版の計算 | 新設 |
+| observe_diag.py の登録（_reg）・build_catalog | 15種をカタログに入れる | 直す |
+| indicator_reference_diag.py の登録（_r）・系統・業界の対応表・TA_CLASS_MAP | 15種の定義・独立の実装・既知答え・「使う」の決定の逐語・ta の DPOIndicator の対応 | 直す |
+| regime_detection_kb.md の件数の囲み（COUNTS_START〜COUNTS_END） | gen_materials.py が書き出す「指標の種類・材料の一覧の行・部品の件数」（写しで gen_materials.bans_count_block が数えた文に置き換える） | 直す |
+| .claude/breaks の壊すプログラム | DPO の向き・内はらみ足・ならし・EMA のシグナル・平均を引かないこと・2本の平均の入力を壊すと、決めた文で落ちるかを見る | 新設 |
+- 触る関数（当てる前と後の構文木を関数ごとに比べて道具が数えた）＝observe_diag.py：<モジュール直下>・_atr_wilder・_mama_hl・_sqz_carter・_ssf_avg・_thermo_orig・_trima_ta・_trix_ema・_vidya_cmo・build_catalog／indicator_reference_diag.py：<モジュール直下>・_geo_case・_ssf2_avg・_tb_aber_orig・_tb_dpo_tb・_tb_pos_ssf_avg・_tb_pos_trima_ta・_tb_pos_vidya_cmo・_tb_rvol_rv・_tb_sqz_carter・_tb_stochrsi_raw・_tb_thermo_ema・_tb_thermo_orig・_tb_trix_ema_h・_tb_trix_ema_s・_thermo_in_case・_thermo_orig_arr・_trima_ta・_vidya_cmo
+
+【4-4 処理の流れ】
+1. まこさんの承認の後、全部を当てます（apply_audit_fix.py --design --dry → --design）。当てる道具は、全件を当てる前の実物で照らしてから、番号の順に当てます。1件でも合わなければ1件も当てません。
+2. 当てた直後に、当てる道具が G2 と H2 を自分で走らせます（observe_diag.py は H2 の対象です）。
+3. 照合（verify_design_contract.py --diff）をかけます。照らしの道具（①②）・壊すプログラムを走らせ、全体の自己テスト（--selftest）を1回 走らせて、出力をそのまま貼ります（当てた直後の写しで、全部 通ることを確かめた）。
+4. G-1：オン・オフの表を作り直し（15種が「使う」に入る）、型の表・出口の型の表（変わればまこさんに再承認していただく）・材料の文書・観察の説明書・組み立ての表を作り直します。そのあと資料の道具4本（list_on_families.py --add・make_param_table.py・extract_threshold_role_add.py --alias・build_role_threshold_table.py）を走らせ、修正対応表を作り直します。ここで照らしの①は0件、②は 4-0 の⑦の設定を写すまで食い違います（G-1 の試しで実測）。
+5. 2つ目の工事：4-0 の⑦の設定を、資料から道具が写す案を出し、承認をいただいて当てます（照らしの②が0件になる）。
+6. G-2：G2 → H2 を取り直し、監査に出す前のチェック（pre_audit_check.py --run）を走らせます。そのあと、工事ごとに1通ずつ実装の監査に出します。
+
+【4-5 異常系】
+| 起きたこと | どうなるか |
+|---|---|
+| --design の --dry で、当たらない件が出る | 1件も当てずに止まります。まこさんに報告します |
+| DPO教科書%・realized_vol_rv・THERMO原作% の作りが戻る | 観察の道具の自己テストが「手計算の既知答えと不一致」を出して落ちます |
+| 15種の計算と独立の実装が合わない | 観察の道具の自己テストが「教科書の独立実装と不一致」を出して落ちます |
+| 名前に出さない引数が計算に届いていない | 観察の道具の自己テスト（名前に出さない引数の番人）が落ちます |
+| 15種が「使う」になったのに、資料に行が無い | 照らしの道具が「①」で始まる行を出して落ちます（資料の道具4本を G-1 の中で走らせる） |
+| G-1 の後、2つ目の工事を当てる前に監査に出す前のチェックを走らせる | 照らしの道具が「②」で落ちます（2つ目の工事を当ててから走らせる＝4-4 の順） |
+
+【4-6 制約】
+| 決まり | 出どころ | この設計でどう守るか |
+|---|---|---|
+| 今の版を残して、教科書の版を別の材料として足す | まこさん「A」（K-3） | 今の15種は1文字も変えません。前から在る列の値は直す前と同じです（写しで 0本の違い） |
+| 指標の名前に値を入れて、指標の数を増やさない | 探し方の決定（2026-10-10） | 新しいパラメータは名前に出さない引数にしました（まこさん「進めて良い」2026-10-11 の1） |
+| 数字を CC が作らない | 思考の順の7（req_thinking_20261004） | 最初の値は資料の既定かライブラリの既定です。式は監査の本文と原典の逐語から写しました。既知答えの数字は合成の足から手で計算できる形で、式を 4-0 に書きました |
+| 探す値を、点の一覧で先に限定しない | 要件の作ってはいけないもの2番 | 15種の名前に出る軸は今の版と同じ一覧から作り、探す範囲は2つ目の工事で資料から写します |
+| 未来のデータを使わない | 要件定義書 §4.6.H2 | DPO教科書% は k本前の終値といまの平均だけを使います（未来の足を見ない形）。当てた後に H2 を取り直します |
+| 値段の高さで値が変わらない | 要件定義書 §4.6.H6 | 値段の単位の物は終値で割って%にし、位置は比、スクイーズは 0/1 です |
+| 乱数を使わない | 恒久67番 | 乱数は使いません |
+
+【4-7 探索の範囲】
+**この工事で探す範囲は変わりません。**15種の探す範囲は、2つ目の工事で資料から写します（4-0 の⑦）。
+
+【4-8 データ構造】
+**変えません。**カタログの1件の形・参照表の欄・設定の欄の形は前の工事のままです。
+
+【4-9 設定】
+**observe_config.json と search_limits.json は、この工事では変えません**（今の資料から写し直しても同じ。15種の分は2つ目の工事で写す）。
+
+コマンドの旗は増やしません。
+
+【4-10 保存先】
+**変えません。**
+
+【4-11 時刻の扱い】
+**DPO教科書% は k本前の終値といまの n本平均を使います**（未来の足は見ません）。ほかの14種は、今の足までの値だけで計算します。
+
+【4-12 出る結果の姿】
+**完成したときに出るもの。**
+1. 観察の道具の全体の自己テストが通る（足した15種の既知答えと独立の実装、名前に出さない引数の番人を含む）。コマンド＝python3 scripts/priority_rebuild/observe_diag.py --selftest。
+2. 照らしの道具が、①②とも食い違い0件。コマンド＝python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/tools/pre_audit_check.py --check-indicator-sources。
+3. 壊すプログラムが、全部 決めた文で落ちる。コマンド＝python3 .claude/tools/run_breaks.py --design。
+4. G2 と H2 が取り直される。
+
+【4-13 影響範囲】
+1. **observe_diag.py は H2 の対象です。**当てた後に G2 → H2 を取り直します。
+2. **材料のカタログに 32 列が増えます。**型の表（signal_families）の部品も増え、まこさんの再承認が要ります（G-1）。
+3. **成績表（material_ranking.json）には、増える列の行がありません。**作り直す（M2-D-8）まで、段の候補の順位に出ません。
+4. **マイルストーンへの差し込み（作ってはいけないものとの照合）は変わりません**（写しで 0行の違い）。
+5. **前からの壊すプログラムが探す文字の数は、当てる前と後で同じです。**道具が数えた相手は、下の囲みです。
+```
+b104_atr1h_own_tf.sh・b105_atr1h_future_hour.sh・b106_atr1h_no_clip.sh・b107_atr1h_base_not_passed.sh・b108_atr1h_base_wrong_bars.sh・b122_obs_formula_copied.sh・b126_rank_resume_save_off.sh・b128_k1_copc_back_in_ao_loop.sh・b129_htf_bar_close_two_bars.sh・b131_industry_map_prev_pivot_gone.sh・b132_hidden_param_not_passed.sh・b133_cksp_mixed_set.sh・b134_ao_name_with_value.sh・b135_rci_mako_gone.sh・b136_insp2_bar_close_dropped.sh・b137_material_params_ignored.sh・b138_keep_name_dropped.sh・b139_range_excludes_keep.sh・b140_group_range_ignored.sh・b141_catalog_out_of_range.sh・b143_rci_range_short.sh・b145_vwap_day_no_reset.sh・b146_pivot_week_as_day.sh・b147_vp_today_from_start.sh・b151_w_fractal_not_first.sh・b152_sr_fractal_counts_bars.sh・b153_smc_fractal_no_close_back.sh・b154_lower_half_upper_span.sh・b156_sr_fractal_unconfirmed.sh・b55_cyc_key_time_gone.sh・b56_one_min_csv_old.sh・b60_only5_with_others.sh・b61_insp5_bars_kind.sh・b63_tm_bitget_scope.sh・b64_tm_subdir.sh・b65_tm_badtail.sh
+```
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 観察の道具の自己テスト（全体） | 139秒 | 写しで当てた後に走らせた実測（k3c_draft_build.py の [7]） |
+| 軽い口（--selftest-catalog） | 9秒 | 写しで当てた後に走らせた実測（k3c_draft_build.py の [7]） |
+| 材料の一覧 | 548 列 | 写しで数えた（k3c_draft_build.py の [3]） |
+
+【4-15 競合】
+**この工事の中ではありません。**全部を --design の1回で当てます。★この工事と2つ目の工事の間（G-1 の後）は、照らしの②が食い違う途中の状態です。その間に監査に出す前のチェックを走らせません（4-4 の順）。
+
+【4-16 セキュリティ】
+**触らないもの。**人に見せてはいけない値（取引所の鍵・本番の発注の切り替え）には触りません。書き換えられては困る記録（H2・G2 の検査済みの記録・承認の記録）は、取り直しの道具だけが書きます。
+
+【4-17 ログと進捗表示】
+**画面に出すもの。**観察の道具の自己テストは、落ちたときだけ「手計算の既知答えと不一致」「教科書の独立実装と不一致」「名前に出さない引数」で始まる行を出します。
+
+【4-18 再利用】
+| 手本 | 何を写すか |
+|---|---|
+| k3a_draft_build.py・k3b_draft_build.py（前の工事の道具） | 写しの作り・資料の写し・照らし・設定の写し・A12 の自己テストの一覧と許しの判定（import して使う） |
+| indicator_reference_diag.py の _trix_parts・_stochrsi_parts・_ssf2・_trima・_vidya・_wilder・_ema_seed | 独立の実装の部品（教科書の版は、同じ部品で入力と作りだけを変える） |
+| 壊すプログラム b142 | 壊すプログラムの形 |
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "941〜942行（<モジュール直下>・監査 CP60 の修正50＝平均を引かない実現ボラを、今の版を残して足す）",
+  "直す前の文字": "_reg(\"realized_vol\", \"realized_vol{}\", False, lambda d, n:\n     np.log(d.close / d.close.shift()).rolling(n).std() * 100)\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"realized_vol\", \"realized_vol{}\", False, lambda d, n:\n     np.log(d.close / d.close.shift()).rolling(n).std() * 100)\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正50 の直した後の文字）＝平均を引かない実現ボラ √(Σr²/n)。\n#   今の版（平均を引いた標本の標準偏差）は残す。どちらが良いかは M2-F-10f で比べる。\n_reg(\"realized_vol_rv\", \"realized_vol_rv{}\", False, lambda d, n:\n     np.sqrt((np.log(d.close / d.close.shift()) ** 2).rolling(n).sum() / n) * 100)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:941「_reg(\"realized_vol\", \"realized_vol{}\", False, lambda d, n:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1201行（<モジュール直下>・監査 CP60 の修正47＝Carter の作りのスクイーズを、今の版を残して足す（4つの数は名前に出さない引数））",
+  "直す前の文字": "_reg(\"SQZ_ON\", \"SQZ_ON\", False, lambda d, bb_length=None, bb_std=None, kc_length=None, kc_scalar=None: _pta6.squeeze(high=d.high, low=d.low, close=d.close, bb_length=bb_length, bb_std=bb_std, kc_length=kc_length, kc_scalar=kc_scalar).iloc[:, 1])\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"SQZ_ON\", \"SQZ_ON\", False, lambda d, bb_length=None, bb_std=None, kc_length=None, kc_scalar=None: _pta6.squeeze(high=d.high, low=d.low, close=d.close, bb_length=bb_length, bb_std=bb_std, kc_length=kc_length, kc_scalar=kc_scalar).iloc[:, 1])\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正47）＝Carter の作り（StockCharts の逐語「Carter uses 20 periods\n#   for the moving average and ATR, and 1.5 for the ATR multiplier」）＝ボリンジャー（終値の SMA ± 倍率×σ・ddof 0）が、ケルトナー\n#   （代表値段 (H+L+C)/3 の SMA ± 倍率×ATR（Wilder））の内側なら 1。ライブラリの版（中心を終値の SMA・幅を真の値幅の SMA）は残す。\n#   ★4つの数は名前に出さない引数（最初の値＝資料の既定 20・2.0・20・1.5）。\ndef _atr_wilder(d, n):\n    \"\"\"Wilder の ATR（最初の n 本の真の値幅の単純平均を種に (前×(n−1)＋今)/n）。真の値幅の1本目は欠損。\"\"\"\n    tr = pd.concat([d.high - d.low, (d.high - d.close.shift()).abs(), (d.low - d.close.shift()).abs()], axis=1).max(axis=1).to_numpy(float)\n    tr[0] = np.nan\n    out = np.full(len(tr), np.nan)\n    if len(tr) > n:\n        out[n] = np.nanmean(tr[1:n + 1])\n        for i in range(n + 1, len(tr)):\n            out[i] = (out[i - 1] * (n - 1) + tr[i]) / n\n    return pd.Series(out, index=d.index)\n\n\ndef _sqz_carter(d, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5):\n    tp = (d.high + d.low + d.close) / 3.0\n    mid, sd = d.close.rolling(bb_length).mean(), d.close.rolling(bb_length).std(ddof=0)\n    km, atr = tp.rolling(kc_length).mean(), _atr_wilder(d, kc_length)\n    on = ((mid - bb_std * sd) > (km - kc_scalar * atr)) & ((mid + bb_std * sd) < (km + kc_scalar * atr))\n    return on.astype(float).where(atr.notna() & sd.notna())\n\n\n_reg(\"SQZ_ON_Carter\", \"SQZ_ON_Carter\", False,\n     lambda d, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5: _sqz_carter(d, bb_length, bb_std, kc_length, kc_scalar))\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1201「_reg(\"SQZ_ON\", \"SQZ_ON\", False, lambda d, bb_length=None, bb_std=None, kc_length=None, kc_scalar=None: _pta6.squeeze(hig」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1240〜1243行（<モジュール直下>・監査 CP60 の修正48＝ならさない StochRSI を、今の版を残して足す）",
+  "直す前の文字": "_reg(\"StochRSI%K\", \"StochRSI%K{}\", True, lambda d, n, k=None:\n     _pta6.stochrsi(close=d.close, length=n, rsi_length=n, k=k).iloc[:, 0])\n_reg(\"StochRSI%D\", \"StochRSI%D{}\", True, lambda d, n, k=None, d_=None:\n     _pta6.stochrsi(close=d.close, length=n, rsi_length=n, k=k, d=d_).iloc[:, 1])\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"StochRSI%K\", \"StochRSI%K{}\", True, lambda d, n, k=None:\n     _pta6.stochrsi(close=d.close, length=n, rsi_length=n, k=k).iloc[:, 0])\n_reg(\"StochRSI%D\", \"StochRSI%D{}\", True, lambda d, n, k=None, d_=None:\n     _pta6.stochrsi(close=d.close, length=n, rsi_length=n, k=k, d=d_).iloc[:, 1])\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正48）＝原式のならさない値（StockCharts「StochRSI =\n#   (RSI - Lowest Low RSI) / (Highest High RSI - Lowest Low RSI)」・0〜100）＝ならしの本数 k を 1 にしたもの。今の %K（SMA3）は残す。\n_reg(\"StochRSI素%K\", \"StochRSI素%K{}\", True, lambda d, n:\n     _pta6.stochrsi(close=d.close, length=n, rsi_length=n, k=1).iloc[:, 0])\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1240「_reg(\"StochRSI%K\", \"StochRSI%K{}\", True, lambda d, n, k=None:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1248〜1249行（<モジュール直下>・監査 CP60 の修正49＝シグナルを EMA にした TRIX のシグナルとヒストを、今の版を残して足す）",
+  "直す前の文字": "_reg(\"TRIXヒスト\", \"TRIXヒスト({},{})\", False, lambda d, n, g_:\n     _pta6.trixh(close=d.close, length=n, signal=g_).iloc[:, 2])\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"TRIXヒスト\", \"TRIXヒスト({},{})\", False, lambda d, n, g_:\n     _pta6.trixh(close=d.close, length=n, signal=g_).iloc[:, 2])\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正49）＝シグナルを EMA にした版（StockCharts「The signal line\n#   is a 9-day EMA of the TRIX.」）。ライブラリの版（シグナルは単純移動平均）は残す。EMA はライブラリの ema（種＝最初の g 本の単純平均）。\ndef _trix_ema(d, n, g_):\n    tx = _pta6.trix(close=d.close, length=n, signal=g_).iloc[:, 0]\n    return tx, _pta6.ema(close=tx, length=g_)\n\n\n_reg(\"TRIX_EMAシグナル\", \"TRIX_EMAシグナル({},{})\", True, lambda d, n, g_: _trix_ema(d, n, g_)[1])\n_reg(\"TRIX_EMAヒスト\", \"TRIX_EMAヒスト({},{})\", False, lambda d, n, g_: (lambda t: t[0] - t[1])(_trix_ema(d, n, g_)))\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1248「_reg(\"TRIXヒスト\", \"TRIXヒスト({},{})\", False, lambda d, n, g_:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1309〜1311行（<モジュール直下>・監査 CP60 の修正51・52＝SSF（入力を2本の平均）・TRIMA（TA-Lib の偶数の形）・VIDYA（CMO の本数を別に持つ）を、今の版を残して足す）",
+  "直す前の文字": "    if _nm not in (\"JMA\",):        # JMA は独立実装を書いていない＝傾きも作らない\n        _reg(f\"{_nm}傾き\", f\"{_nm}{{}}傾き%\", True,\n             lambda d, n, f=_mafn, slope_n=5, **kw: f(d, n, **kw).pct_change(slope_n) * 100)\n",
+  "種類": "直した後の文字",
+  "中身": "    if _nm not in (\"JMA\",):        # JMA は独立実装を書いていない＝傾きも作らない\n        _reg(f\"{_nm}傾き\", f\"{_nm}{{}}傾き%\", True,\n             lambda d, n, f=_mafn, slope_n=5, **kw: f(d, n, **kw).pct_change(slope_n) * 100)\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正51・52）＝教科書の式の版（今の版は残す・傾きの形は作らない）。\ndef _ssf_avg(c, n):\n    \"\"\"Ehlers のスーパースムーザー（2極）で、入力を2本の平均にしたもの（linnsoft の逐語「Filt = c1*(Close + Close[1]) / 2 + c2*Filt[1] + c3*Filt[2]」）。\"\"\"\n    x = np.pi * np.sqrt(2.0) / n\n    a0 = np.exp(-x)\n    b0 = 2.0 * a0 * np.cos(x)\n    c2, c3 = b0, -a0 * a0\n    c1 = 1.0 - c2 - c3\n    v = c.to_numpy(float)\n    out = v.copy()\n    for i in range(2, len(v)):\n        out[i] = c1 * (v[i] + v[i - 1]) / 2.0 + c2 * out[i - 1] + c3 * out[i - 2]\n    return pd.Series(out, index=c.index)\n\n\ndef _trima_ta(c, n):\n    \"\"\"TA-Lib の TRIMA（偶数の n＝SMA(SMA(x, n/2), n/2+1)・ta-lib.org の逐語「even: SMA(SMA(x,period/2),period/2+1)」）。奇数の n は今の版と同じ。\"\"\"\n    if n % 2 == 0:\n        return c.rolling(n // 2).mean().rolling(n // 2 + 1).mean()\n    h = n // 2 + 1\n    return c.rolling(h).mean().rolling(h).mean()\n\n\ndef _vidya_cmo(c, n, m=9):\n    \"\"\"VIDYA で CMO の本数 m を n と別に持つ版（ta-lib.org の逐語「n = optInTimePeriod, m = optInCMOPeriod」）。m は名前に出さない引数（最初の値 9＝資料の既定）。\"\"\"\n    dif = c.diff()\n    up, dn = dif.clip(lower=0).rolling(m).sum(), (-dif).clip(lower=0).rolling(m).sum()\n    k = ((up - dn) / (up + dn)).abs().to_numpy(float)\n    v = c.to_numpy(float)\n    a = 2.0 / (n + 1)\n    out = np.full(len(v), np.nan)\n    if len(v) >= n:\n        out[n - 1] = float(np.nanmean(v[:n]))\n        for i in range(n, len(v)):\n            kk = 0.0 if np.isnan(k[i]) else k[i]\n            out[i] = a * kk * v[i] + (1 - a * kk) * out[i - 1]\n    return pd.Series(out, index=c.index)\n\n\n_reg(\"close vs SSF平均%\", \"close vs SSF平均%{}\", True, lambda d, n: (d.close / _ssf_avg(d.close, n) - 1) * 100)\n_reg(\"close vs TRIMA_TA%\", \"close vs TRIMA_TA%{}\", True, lambda d, n: (d.close / _trima_ta(d.close, n) - 1) * 100)\n_reg(\"close vs VIDYA_CMO%\", \"close vs VIDYA_CMO%{}\", True, lambda d, n, m=9: (d.close / _vidya_cmo(d.close, n, m) - 1) * 100)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1309「if _nm not in (\"JMA\",):        # JMA は独立実装を書いていない＝傾きも作らない」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1320〜1321行（<モジュール直下>・監査 CP60 の修正53＝入力を (高値＋安値)/2 にした HT_TRENDLINE を、今の版を残して足す）",
+  "直す前の文字": "_reg(\"close vs HT_TRENDLINE%\", \"close vs HT_TRENDLINE%\", True,\n     lambda d: (d.close / _pta6.ht_trendline(close=d.close) - 1) * 100)\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"close vs HT_TRENDLINE%\", \"close vs HT_TRENDLINE%\", True,\n     lambda d: (d.close / _pta6.ht_trendline(close=d.close) - 1) * 100)\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正53）＝Ehlers の入力 (高値＋安値)/2 の版（今の版は残す）。\n_reg(\"close vs HT_TRENDLINE_HL%\", \"close vs HT_TRENDLINE_HL%\", True,\n     lambda d: (d.close / _pta6.ht_trendline(close=(d.high + d.low) / 2.0) - 1) * 100)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1320「_reg(\"close vs HT_TRENDLINE%\", \"close vs HT_TRENDLINE%\", True,」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1323〜1324行（<モジュール直下>・監査 CP60 の修正53＝入力を (高値＋安値)/2 にした MAMA・FAMA を、今の版を残して足す）",
+  "直す前の文字": "_reg(\"close vs MAMA%\", \"close vs MAMA%\", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama(d, fastlimit=fastlimit, slowlimit=slowlimit).iloc[:, 0] - 1) * 100)\n_reg(\"close vs FAMA%\", \"close vs FAMA%\", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama(d, fastlimit=fastlimit, slowlimit=slowlimit).iloc[:, 1] - 1) * 100)\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"close vs MAMA%\", \"close vs MAMA%\", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama(d, fastlimit=fastlimit, slowlimit=slowlimit).iloc[:, 0] - 1) * 100)\n_reg(\"close vs FAMA%\", \"close vs FAMA%\", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama(d, fastlimit=fastlimit, slowlimit=slowlimit).iloc[:, 1] - 1) * 100)\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正53）＝Ehlers の入力 (高値＋安値)/2 の版\n#   （MAMA.pdf のコードの逐語「Inputs: Price((H+L)/2), FastLimit(.5), SlowLimit(.05);」）。今の版（入力が終値）は残す。\ndef _mama_hl(d, **kw):\n    return _pta6.mama(close=(d.high + d.low) / 2.0, **kw)\n\n\n_reg(\"close vs MAMA_HL%\", \"close vs MAMA_HL%\", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama_hl(d, fastlimit=fastlimit, slowlimit=slowlimit).iloc[:, 0] - 1) * 100)\n_reg(\"close vs FAMA_HL%\", \"close vs FAMA_HL%\", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama_hl(d, fastlimit=fastlimit, slowlimit=slowlimit).iloc[:, 1] - 1) * 100)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1323「_reg(\"close vs MAMA%\", \"close vs MAMA%\", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama(d, fastlimit=f」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1371〜1372行（<モジュール直下>・監査 CP60 の修正37・45＝教科書の DPO（k本前の終値 − いまの n本平均）を、今の版を残して足す）",
+  "直す前の文字": "_reg(\"DPO%\", \"DPO%{}\", False, lambda d, n:\n     _pta6.dpo(close=d.close, length=n, centered=False) / d.close * 100)\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"DPO%\", \"DPO%{}\", False, lambda d, n:\n     _pta6.dpo(close=d.close, length=n, centered=False) / d.close * 100)\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正37・45 の補足の式）＝教科書の DPO を時点 t で計算できる形\n#   「k本前の終値 − いまの n本平均」（k=n/2+1・StockCharts「Price - X-period SMA from {X/2 + 1} periods in the future」）。今の版（いまの終値 −\n#   k本前の n本平均＝TradingView の中心化しない版）は残す。未来は見ない。\n_reg(\"DPO教科書%\", \"DPO教科書%{}\", False, lambda d, n:\n     (d.close.shift(int(0.5 * n) + 1) - _pta6.sma(close=d.close, length=n)) / d.close * 100)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1371「_reg(\"DPO%\", \"DPO%{}\", False, lambda d, n:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 9,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1432〜1433行（<モジュール直下>・監査 CP60 の修正45・71＝Fitschen の原作の Aberration の帯の中の位置を、今の版を残して足す（本数と倍率は名前に出さない引数））",
+  "直す前の文字": "_reg(\"ABER位置\", \"ABER位置\", True,\n     lambda d, length=None, atr_length=None: (lambda a: (d.close - a.iloc[:, 2]) / (a.iloc[:, 1] - a.iloc[:, 2]))(_ab(d, length=length, atr_length=atr_length)))\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"ABER位置\", \"ABER位置\", True,\n     lambda d, length=None, atr_length=None: (lambda a: (d.close - a.iloc[:, 2]) / (a.iloc[:, 1] - a.iloc[:, 2]))(_ab(d, length=length, atr_length=atr_length)))\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正45・71）＝Fitschen の原作の Aberration＝80本・標準偏差2倍の\n#   ボリンジャーバンドの中の位置（%b と同じ作り・ddof 0）。ライブラリの版（HLC3 の5本 SMA ± ATR15）は残す。\n#   ★本数と倍率は名前に出さない引数（最初の値＝原作の既定 80・2.0＝監査の逐語「80本・標準偏差2倍」）。BB%b の範囲は触らない（案の4）。\n_reg(\"ABER原作位置\", \"ABER原作位置\", True, lambda d, length=80, std=2.0:\n     (lambda m, s: (d.close - (m - std * s)) / (2.0 * std * s))(d.close.rolling(length).mean(), d.close.rolling(length).std(ddof=0)))\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1432「_reg(\"ABER位置\", \"ABER位置\", True,」",
+  "状態": "確定"
+ },
+ {
+  "番号": 10,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1444〜1445行（<モジュール直下>・監査 CP60 の修正45・58＝Elder の原作の温度計と、K-7 の決定＝EMA でならした版を、今の版を残して足す）",
+  "直す前の文字": "_reg(\"THERMO%\", \"THERMO%\", False, lambda d: _th(d).iloc[:, 0] / d.close * 100)\n_reg(\"THERMO比\", \"THERMO比\", False, lambda d: (lambda t: t.iloc[:, 0] / t.iloc[:, 1])(_th(d)))\n",
+  "種類": "直した後の文字",
+  "中身": "_reg(\"THERMO%\", \"THERMO%\", False, lambda d: _th(d).iloc[:, 0] / d.close * 100)\n_reg(\"THERMO比\", \"THERMO比\", False, lambda d: (lambda t: t.iloc[:, 0] / t.iloc[:, 1])(_th(d)))\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正45 の直した後の文字）＝Elder の原作＝外へはみ出した幅だけ\n#   （max(max(High − PrevHigh, 0), max(PrevLow − Low, 0))・内はらみ足は 0）。ライブラリの版（絶対値）は残す。\ndef _thermo_orig(d):\n    return np.maximum((d.high - d.high.shift(1)).clip(lower=0), (d.low.shift(1) - d.low).clip(lower=0))\n\n\n_reg(\"THERMO原作%\", \"THERMO原作%\", False, lambda d: _thermo_orig(d) / d.close * 100)\n# ★K-7 の決定（ok_k7_pivot_thermo_20261007）＝EMA でならした版。EMA の本数は名前に出さない引数（最初の値＝ライブラリの既定 20・資料の既定は 20 と 22）。\n_reg(\"THERMO_EMA%\", \"THERMO_EMA%\", False, lambda d, ema_n=20: _pta6.ema(close=_thermo_orig(d), length=ema_n) / d.close * 100)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1444「_reg(\"THERMO%\", \"THERMO%\", False, lambda d: _th(d).iloc[:, 0] / d.close * 100)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 11,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1558〜1559行（build_catalog・realized_vol_rv をカタログに入れる（今の realized_vol と同じ本数の一覧で作る））",
+  "直す前の文字": "    for n in cfg[\"realized_vol_periods\"]:\n        addf(\"realized_vol\", n)\n",
+  "種類": "直した後の文字",
+  "中身": "    for n in cfg[\"realized_vol_periods\"]:\n        addf(\"realized_vol\", n)\n        addf(\"realized_vol_rv\", n)        # 監査 CP60 の修正50（K-3c・2026-10-11）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1558「for n in cfg[\"realized_vol_periods\"]:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 12,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1698〜1699行（build_catalog・StochRSI素%K をカタログに入れる（今の StochRSI と同じ本数の一覧で作る））",
+  "直す前の文字": "        addf(\"StochRSI%K\", n)\n        addf(\"StochRSI%D\", n)\n",
+  "種類": "直した後の文字",
+  "中身": "        addf(\"StochRSI%K\", n)\n        addf(\"StochRSI%D\", n)\n        addf(\"StochRSI素%K\", n)           # 監査 CP60 の修正48（K-3c・2026-10-11）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1698「addf(\"StochRSI%K\", n)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 13,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1703行（build_catalog・TRIX_EMAシグナル・TRIX_EMAヒスト をカタログに入れる（今の TRIX と同じ一覧で作る））",
+  "直す前の文字": "            addf(\"TRIXヒスト\", n, g_)\n",
+  "種類": "直した後の文字",
+  "中身": "            addf(\"TRIXヒスト\", n, g_)\n            addf(\"TRIX_EMAシグナル\", n, g_)   # 監査 CP60 の修正49（K-3c・2026-10-11）\n            addf(\"TRIX_EMAヒスト\", n, g_)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1703「addf(\"TRIXヒスト\", n, g_)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 14,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1731行（build_catalog・close vs HT_TRENDLINE_HL% をカタログに入れる）",
+  "直す前の文字": "    addf(\"close vs HT_TRENDLINE%\")\n",
+  "種類": "直した後の文字",
+  "中身": "    addf(\"close vs HT_TRENDLINE%\")\n    addf(\"close vs HT_TRENDLINE_HL%\")      # 監査 CP60 の修正53（K-3c・2026-10-11）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1731「addf(\"close vs HT_TRENDLINE%\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 15,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1740〜1741行（build_catalog・close vs MAMA_HL%・close vs FAMA_HL% をカタログに入れる）",
+  "直す前の文字": "    addf(\"close vs MAMA%\")\n    addf(\"close vs FAMA%\")\n",
+  "種類": "直した後の文字",
+  "中身": "    addf(\"close vs MAMA%\")\n    addf(\"close vs FAMA%\")\n    addf(\"close vs MAMA_HL%\")               # 監査 CP60 の修正53（K-3c・2026-10-11）\n    addf(\"close vs FAMA_HL%\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1740「addf(\"close vs MAMA%\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 16,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1758〜1762行（build_catalog・close vs SSF平均%・TRIMA_TA%・VIDYA_CMO% をカタログに入れる（今の移動平均と同じ本数の一覧で作る））",
+  "直す前の文字": "    for n in cfg[\"sma_periods\"]:\n        for _nm in (\"SINWMA\", \"SSF\", \"SWMA\", \"T3\", \"TEMA\", \"TRIMA\",\n                    \"TSF\", \"VIDYA\", \"VWMA\", \"WMA\", \"ZLMA\"):\n            addf(f\"close vs {_nm}%\", n)\n            addf(f\"{_nm}傾き\", n)\n",
+  "種類": "直した後の文字",
+  "中身": "    for n in cfg[\"sma_periods\"]:\n        for _nm in (\"SINWMA\", \"SSF\", \"SWMA\", \"T3\", \"TEMA\", \"TRIMA\",\n                    \"TSF\", \"VIDYA\", \"VWMA\", \"WMA\", \"ZLMA\"):\n            addf(f\"close vs {_nm}%\", n)\n            addf(f\"{_nm}傾き\", n)\n        addf(\"close vs SSF平均%\", n)       # 監査 CP60 の修正51（K-3c・2026-10-11）\n        addf(\"close vs TRIMA_TA%\", n)      # 監査 CP60 の修正52（K-3c・2026-10-11）\n        addf(\"close vs VIDYA_CMO%\", n)     # 監査 CP60 の修正52（K-3c・2026-10-11）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1758「for n in cfg[\"sma_periods\"]:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 17,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1772〜1773行（build_catalog・DPO教科書% をカタログに入れる（今の DPO% と同じ本数の一覧で作る））",
+  "直す前の文字": "        addf(\"DPO%\", n)\n        addf(\"TTM_TREND\", n)\n",
+  "種類": "直した後の文字",
+  "中身": "        addf(\"DPO%\", n)\n        addf(\"DPO教科書%\", n)              # 監査 CP60 の修正37・45（K-3c・2026-10-11）\n        addf(\"TTM_TREND\", n)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1772「addf(\"DPO%\", n)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 18,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1694行（build_catalog・SQZ_ON_Carter をカタログに入れる（名前に出る軸は無い））",
+  "直す前の文字": "    addf(\"SMC_SWEEP確定\")                     # 監査 CP60 の修正46（K-3b・2026-10-09）\n",
+  "種類": "直した後の文字",
+  "中身": "    addf(\"SMC_SWEEP確定\")                     # 監査 CP60 の修正46（K-3b・2026-10-09）\n    addf(\"SQZ_ON_Carter\")                     # 監査 CP60 の修正47（K-3c・2026-10-11）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1694「addf(\"SMC_SWEEP確定\")                     # 監査 CP60 の修正46（K-3b・2026-10-09）」",
+  "状態": "確定"
+ },
+ {
+  "番号": 19,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1821〜1823行（build_catalog・ABER原作位置 をカタログに入れる（名前に出る軸は無い））",
+  "直す前の文字": "    for _fam in (\"close vs ABER_ZG%\", \"ABER位置\", \"close vs ACCBL%\", \"close vs ACCBU%\",\n                 \"close vs CE_L%\", \"close vs CE_S%\"):\n        addf(_fam)\n",
+  "種類": "直した後の文字",
+  "中身": "    for _fam in (\"close vs ABER_ZG%\", \"ABER位置\", \"close vs ACCBL%\", \"close vs ACCBU%\",\n                 \"close vs CE_L%\", \"close vs CE_S%\"):\n        addf(_fam)\n    addf(\"ABER原作位置\")                     # 監査 CP60 の修正45・71（K-3c・2026-10-11）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1821「for _fam in (\"close vs ABER_ZG%\", \"ABER位置\", \"close vs ACCBL%\", \"close vs ACCBU%\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 20,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "1828〜1829行（build_catalog・THERMO原作%・THERMO_EMA% をカタログに入れる（名前に出る軸は無い））",
+  "直す前の文字": "    for _fam in (\"HWC位置\", \"HWC幅%\", \"MASSI\", \"PDIST%\", \"TR%\", \"THERMO%\", \"THERMO比\"):\n        addf(_fam)\n",
+  "種類": "直した後の文字",
+  "中身": "    for _fam in (\"HWC位置\", \"HWC幅%\", \"MASSI\", \"PDIST%\", \"TR%\", \"THERMO%\", \"THERMO比\"):\n        addf(_fam)\n    addf(\"THERMO原作%\")                       # 監査 CP60 の修正45・58（K-3c・2026-10-11）\n    addf(\"THERMO_EMA%\")                      # K-7 の決定（ok_k7_pivot_thermo_20261007・K-3c・2026-10-11）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:1828「for _fam in (\"HWC位置\", \"HWC幅%\", \"MASSI\", \"PDIST%\", \"TR%\", \"THERMO%\", \"THERMO比\"):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 21,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "948行（<モジュール直下>・15種の「使う」の決定（まこさんの逐語のファイル）を、mako の欄から1か所で引けるようにする）",
+  "直す前の文字": "MAKO_K3B = '2026-10-09 まこさん「よい」（K-3b の作りの3点＝確定した山・谷の本数 k は名前に出さない引数・SMC_SWEEP の教科書の版はライブラリの 15・1.5 を使わない・下半分位置を使う）＝逐語のファイル ok_k3b_design_20261009（m2c15-k3b-decisions-20261009）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007'\n",
+  "種類": "直した後の文字",
+  "中身": "MAKO_K3B = '2026-10-09 まこさん「よい」（K-3b の作りの3点＝確定した山・谷の本数 k は名前に出さない引数・SMC_SWEEP の教科書の版はライブラリの 15・1.5 を使わない・下半分位置を使う）＝逐語のファイル ok_k3b_design_20261009（m2c15-k3b-decisions-20261009）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007'\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011）＝K-3c の15種の「使う」の決定の逐語（mako の欄に書く）。\nMAKO_K3C = '2026-10-11 まこさん「把握してるならよい／指標の修正のゴールに対し、このフェーズでの修正案は正しく、齟齬が無いのであれば進めて良い」（K-3c の作りの5点＝新しい名前は作りの違いだけ・新しいパラメータは名前に出さない引数・式は監査の本文と原典の逐語から・Aberration 原作は別の材料・対応表と既知答えは K-3b と同じ形）＝逐語のファイル ok_k3c_design_20261011（m2c15-formula-textbook-20261011）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007。THERMO の EMA の版＝ok_k7_pivot_thermo_20261007'\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:948「MAKO_K3B = '2026-10-09 まこさん「よい」（K-3b の作りの3点＝確定した山・谷の本数 k は名前に出さない引数・SMC_SWEEP の教科書の版はライブラリの 15・1.5 を使わない・下半分位置を使う）＝逐語のファ」",
+  "状態": "確定"
+ },
+ {
+  "番号": 22,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1673〜1681行（<モジュール直下>・監査 CP60 の修正37・45・47〜53 と K-7 の決定＝15種を参照表に登録し、独立の実装と手計算の既知答えを付ける）",
+  "直す前の文字": "_r(r\"SMC_SWEEP確定\", \"SMC_SWEEP確定\",\n   \"流動性の刈り取りの教科書の版。1本前までに確定した直近の谷を安値で割り、終値でその上に戻した足を +1・\"\n   \"山を高値で抜き、終値でその下に戻した足を −1\",\n   \"監査 CP60 の修正46＝LuxAlgo の逐語「The classic anatomy is a wick through a prior swing high or low…followed by a close back inside the old range.」。\"\n   \"山・谷は前後 k 本で確定（k は名前に出さない引数・最初の値 2）。ライブラリの版（直前15本の高安・陽線陰線・ヒゲが実体の1.5倍）の条件は使わない\",\n   \"反転サイン\", \"none\", tb=_tb_smc_fr,\n   known=lambda p: [(_smc_fr_case(\"bull\"), [(-1, 1.0, 1e-9)]), (_smc_fr_case(\"bear\"), [(-1, -1.0, 1e-9)]),\n                    (_smc_fr_case(\"stay\"), [(-1, 0.0, 1e-9)])],\n   mako=MAKO_K3B)\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"SMC_SWEEP確定\", \"SMC_SWEEP確定\",\n   \"流動性の刈り取りの教科書の版。1本前までに確定した直近の谷を安値で割り、終値でその上に戻した足を +1・\"\n   \"山を高値で抜き、終値でその下に戻した足を −1\",\n   \"監査 CP60 の修正46＝LuxAlgo の逐語「The classic anatomy is a wick through a prior swing high or low…followed by a close back inside the old range.」。\"\n   \"山・谷は前後 k 本で確定（k は名前に出さない引数・最初の値 2）。ライブラリの版（直前15本の高安・陽線陰線・ヒゲが実体の1.5倍）の条件は使わない\",\n   \"反転サイン\", \"none\", tb=_tb_smc_fr,\n   known=lambda p: [(_smc_fr_case(\"bull\"), [(-1, 1.0, 1e-9)]), (_smc_fr_case(\"bear\"), [(-1, -1.0, 1e-9)]),\n                    (_smc_fr_case(\"stay\"), [(-1, 0.0, 1e-9)])],\n   mako=MAKO_K3B)\n\n\n# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正37・45・47〜53 と K-7 の決定）＝計算式の教科書の版。\n#   独立の実装は、素直な繰り返しと部品（_roll・_ema_seed・_wilder）で書く＝観察の道具（ライブラリ）とは別の書き方。\ndef _tb_rvol_rv(d, p):\n    c = d.close.to_numpy(float)\n    with np.errstate(divide=\"ignore\", invalid=\"ignore\"):\n        r = np.log(c / np.where(np.roll(c, 1) == 0, np.nan, np.roll(c, 1)))\n    r[0] = np.nan\n    n = int(p[0])\n    return _S(np.sqrt(_roll(r * r, n, \"sum\") / n) * 100, d)\n\n\ndef _geo_case(n=60, r=0.001):\n    \"\"\"realized_vol_rv の既知答え用＝終値が毎本 同じ割合 r で増える足（対数リターンが一定）。平均を引く今の版は 0・引かない版は 100×ln(1+r)。\"\"\"\n    c = 100.0 * (1.0 + r) ** np.arange(n)\n    return _mk(c=c)\n\n\ndef _tb_sqz_carter(d, p, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5):\n    o, h, l, c, v = _arr(d)\n    mid, sd = _roll(c, bb_length, \"mean\"), _roll(c, bb_length, \"std\", ddof=0)\n    km = _roll((h + l + c) / 3.0, kc_length, \"mean\")\n    atr = _wilder(_tr(h, l, c), kc_length)\n    on = ((mid - bb_std * sd) > (km - kc_scalar * atr)) & ((mid + bb_std * sd) < (km + kc_scalar * atr))\n    out = np.where(np.isnan(atr) | np.isnan(sd), np.nan, on.astype(float))\n    return _S(out, d)\n\n\ndef _tb_stochrsi_raw(d, p):\n    return _S(_stochrsi_parts(d, int(p[0]), int(p[0]), 1, 1)[0], d)\n\n\ndef _tb_trix_ema_s(d, p):\n    tx = _trix_parts(d, int(p[0]), int(p[1]))[0]\n    return _S(_ema_seed(tx, int(p[1])), d)\n\n\ndef _tb_trix_ema_h(d, p):\n    tx = _trix_parts(d, int(p[0]), int(p[1]))[0]\n    return _S(tx - _ema_seed(tx, int(p[1])), d)\n\n\ndef _ssf2_avg(c: np.ndarray, n: int) -> np.ndarray:\n    \"\"\"Ehlers のスーパースムーザー（2極）＝入力を (c + c[1])/2 にしたもの。\"\"\"\n    x = np.pi * np.sqrt(2.0) / n\n    a0 = np.exp(-x)\n    b0 = 2.0 * a0 * np.cos(x)\n    c2, c3 = b0, -a0 * a0\n    c1 = 1.0 - c2 - c3\n    out = c.astype(float).copy()\n    for i in range(2, len(c)):\n        out[i] = c1 * (c[i] + c[i - 1]) / 2.0 + c2 * out[i - 1] + c3 * out[i - 2]\n    return out\n\n\ndef _tb_pos_ssf_avg(d, p):\n    return _pos(_ssf2_avg(d.close.to_numpy(float), int(p[0])), d)\n\n\ndef _trima_ta(c, n):\n    \"\"\"TA-Lib の TRIMA。偶数の n＝SMA(SMA(x, n/2), n/2+1)。奇数の n は今の _trima と同じ。\"\"\"\n    if n % 2 == 0:\n        return _roll(_roll(c, n // 2, \"mean\"), n // 2 + 1, \"mean\")\n    return _trima(c, n)\n\n\ndef _tb_pos_trima_ta(d, p):\n    return _pos(_trima_ta(d.close.to_numpy(float), int(p[0])), d)\n\n\ndef _vidya_cmo(c: np.ndarray, n: int, m: int = 9) -> np.ndarray:\n    a = 2.0 / (n + 1)\n    up = _roll(np.r_[np.nan, np.diff(c)].clip(min=0), m, \"sum\")\n    dn = _roll((-np.r_[np.nan, np.diff(c)]).clip(min=0), m, \"sum\")\n    k = np.abs(_div(up - dn, up + dn))\n    out = np.full(len(c), np.nan)\n    if len(c) < n:\n        return out\n    out[n - 1] = float(np.nanmean(c[:n]))\n    for i in range(n, len(c)):\n        kk = 0.0 if np.isnan(k[i]) else k[i]\n        out[i] = a * kk * c[i] + (1 - a * kk) * out[i - 1]\n    return out\n\n\ndef _tb_pos_vidya_cmo(d, p, m=9):\n    return _pos(_vidya_cmo(d.close.to_numpy(float), int(p[0]), int(m)), d)\n\n\ndef _tb_dpo_tb(d, p):\n    \"\"\"教科書の DPO を時点 t で作れる形＝k本前の終値 − いまの n本平均（k=n/2+1）。終値で割って%化（H6）。\"\"\"\n    n = int(p[0])\n    c = d.close.to_numpy(float)\n    return (_S(c, d).shift(int(0.5 * n) + 1) - _S(_roll(c, n, \"mean\"), d)) / d.close * 100\n\n\ndef _tb_aber_orig(d, p, length=80, std=2.0):\n    c = d.close.to_numpy(float)\n    mid, sd = _roll(c, int(length), \"mean\"), _roll(c, int(length), \"std\", ddof=0)\n    return _S(_div(c - (mid - std * sd), 2.0 * std * sd), d)\n\n\ndef _thermo_orig_arr(d):\n    o, h, l, c, v = _arr(d)\n    ph, pl = np.r_[np.nan, h[:-1]], np.r_[np.nan, l[:-1]]\n    return c, np.maximum(np.maximum(h - ph, 0.0), np.maximum(pl - l, 0.0))\n\n\ndef _tb_thermo_orig(d, p):\n    c, t = _thermo_orig_arr(d)\n    return _S(_div(t, c) * 100.0, d)\n\n\ndef _tb_thermo_ema(d, p, ema_n=20):\n    c, t = _thermo_orig_arr(d)\n    return _S(_div(_ema_seed(t, int(ema_n)), c) * 100.0, d)\n\n\ndef _thermo_in_case(n=30):\n    \"\"\"THERMO原作% の既知答え用＝平らな足（高値 101・安値 99）の最後の足だけ内はらみ（高値 100.5・安値 99.5）。原作は 0・ライブラリの版は 0.5/100×100。\"\"\"\n    c = np.full(n, 100.0)\n    h = np.full(n, 101.0)\n    l = np.full(n, 99.0)\n    h[-1], l[-1] = 100.5, 99.5\n    return _mk(c=c, o=c.copy(), h=h, l=l)\n\n\n_r(r\"realized_vol_rv(\\d+)\", \"realized_vol_rv\",\n   \"平均を引かない実現ボラ＝対数リターンの二乗の n 本平均の平方根×100\",\n   \"監査 CP60 の修正50＝Wikipedia「RV(n) = Σ r²」「the square root of the realized variance」。今の realized_vol（平均を引いた標本の標準偏差）は残す\",\n   \"ボラ量\", \"vol\", tb=_tb_rvol_rv,\n   known=lambda p: [(_flat(p[0] * 3), [(-1, 0.0, 1e-9)]), (_geo_case(p[0] * 3), [(-1, 100.0 * np.log(1.001), 1e-9)])],\n   mako=MAKO_K3C)\n_r(r\"SQZ_ON_Carter\", \"SQZ_ON_Carter\",\n   \"スクイーズ（Carter の作り）＝ボリンジャー（終値の SMA ± 2σ）がケルトナー（代表値段の SMA ± 1.5×ATR（Wilder））の内側なら 1\",\n   \"監査 CP60 の修正47＝StockCharts「Carter uses 20 periods for the moving average and ATR, and 1.5 for the ATR multiplier」。\"\n   \"4つの数は名前に出さない引数（最初の値 20・2.0・20・1.5）。今の SQZ_ON（中心を終値の SMA・幅を真の値幅の SMA）は残す\",\n   \"状態量\", \"none\", tb=_tb_sqz_carter, mako=MAKO_K3C)\n_r(r\"StochRSI素%K(\\d+)\", \"StochRSI素%K\",\n   \"RSI にストキャスを掛けた原式の値（ならさない・0〜100）\",\n   \"監査 CP60 の修正48＝StockCharts「StochRSI = (RSI - Lowest Low RSI) / (Highest High RSI - Lowest Low RSI)」。今の %K（SMA3 でならす）は残す\",\n   \"順張り値\", \"trend\", tb=_tb_stochrsi_raw, mako=MAKO_K3C)\n_r(r\"TRIX_EMAシグナル\\((\\d+),(\\d+)\\)\", \"TRIX_EMAシグナル\",\n   \"TRIX を g 本の EMA でならしたシグナル\", \"監査 CP60 の修正49＝StockCharts「The signal line is a 9-day EMA of the TRIX.」。今の TRIXシグナル（単純移動平均）は残す\",\n   \"順張り値\", \"trend\", tb=_tb_trix_ema_s, mako=MAKO_K3C)\n_r(r\"TRIX_EMAヒスト\\((\\d+),(\\d+)\\)\", \"TRIX_EMAヒスト\",\n   \"TRIX と EMA のシグナルの差\", \"同上。今の TRIXヒスト（単純移動平均のシグナルとの差）は残す\",\n   \"状態量＝加速（向きを持たない）\", \"none\", tb=_tb_trix_ema_h, mako=MAKO_K3C)\n_r(r\"close vs SSF平均%(\\d+)\", \"close vs SSF平均%\",\n   \"終値が、入力を2本の平均にした Ehlers のスーパースムーザー（2極）から何%離れているか\",\n   \"監査 CP60 の修正51＝linnsoft の逐語「Filt = c1*(Close + Close[1]) / 2 + c2*Filt[1] + c3*Filt[2];」。今の close vs SSF%（入力が終値）は残す\",\n   \"反転サイン\", \"trend\", tb=_tb_pos_ssf_avg, mako=MAKO_K3C)\n_r(r\"close vs TRIMA_TA%(\\d+)\", \"close vs TRIMA_TA%\",\n   \"終値が TA-Lib の TRIMA（偶数の n＝SMA(SMA(x, n/2), n/2+1)）から何%離れているか\",\n   \"監査 CP60 の修正52＝ta-lib.org「even: SMA(SMA(x,period/2),period/2+1)」。奇数の n は今の版と同じ。今の close vs TRIMA%（偶数でも n/2+1 を2回）は残す\",\n   \"反転サイン\", \"trend\", tb=_tb_pos_trima_ta, mako=MAKO_K3C)\n_r(r\"close vs VIDYA_CMO%(\\d+)\", \"close vs VIDYA_CMO%\",\n   \"終値が、CMO の本数 m を n と別に持つ VIDYA から何%離れているか\",\n   \"監査 CP60 の修正52＝ta-lib.org「n = optInTimePeriod, m = optInCMOPeriod」。m は名前に出さない引数（最初の値 9＝資料の既定）。今の版（m=n）は残す\",\n   \"反転サイン\", \"trend\", tb=_tb_pos_vidya_cmo, mako=MAKO_K3C)\n_r(r\"close vs HT_TRENDLINE_HL%\", \"close vs HT_TRENDLINE_HL%\",\n   \"終値が、入力を (高値＋安値)/2 にしたヒルベルト変換のトレンド線から何%離れているか\",\n   \"監査 CP60 の修正53＝Ehlers の入力は (H+L)/2（ta-lib.org の表 79）。★変換が多段で独立実装を書けない。既知答え＝値段が一定なら ぴったり 0。今の版（入力が終値）は残す\",\n   \"反転サイン\", \"none\", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)\n_r(r\"close vs MAMA_HL%\", \"close vs MAMA_HL%\",\n   \"終値が、入力を (高値＋安値)/2 にした MAMA から何%離れているか\",\n   \"監査 CP60 の修正53＝MAMA.pdf のコードの逐語「Inputs: Price((H+L)/2), FastLimit(.5), SlowLimit(.05);」。★独立実装を書けない＝既知答えで検証。今の版は残す\",\n   \"反転サイン\", \"none\", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)\n_r(r\"close vs FAMA_HL%\", \"close vs FAMA_HL%\",\n   \"終値が、入力を (高値＋安値)/2 にした FAMA（MAMA の追従線）から何%離れているか\",\n   \"同上\", \"反転サイン\", \"none\", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)\n_r(r\"DPO教科書%(\\d+)\", \"DPO教科書%\",\n   \"教科書の DPO を時点 t で作れる形＝k本前の終値 − いまの n本平均（k=n/2+1）を、終値で割って%化\",\n   \"監査 CP60 の修正37・45＝StockCharts「Price - X-period SMA from {X/2 + 1} periods in the future」を未来を見ずに書いた形（ta の DPOIndicator と同じ）。\"\n   \"今の DPO%（いまの終値 − k本前の n本平均＝TradingView の中心化しない版）は残す\",\n   \"反転サイン\", \"none\", tb=_tb_dpo_tb,\n   known=lambda p: [(_flat(p[0] * 3), [(-1, 0.0, 1e-9)]),\n                    (_up(p[0] * 3), [(-1, (((p[0] - 1) / 2.0) - (int(0.5 * p[0]) + 1)) / (100.0 + p[0] * 3 - 1) * 100.0, 1e-9)])],\n   mako=MAKO_K3C)\n_r(r\"ABER原作位置\", \"ABER原作位置\",\n   \"終値が、Fitschen の原作の Aberration の帯（80本・標準偏差2倍のボリンジャーバンド）の中のどこにあるか。0 で下の帯・1 で上の帯\",\n   \"監査 CP60 の修正45・71＝georgepruitt.com「a breakout system based on Bollinger bands with a period length of 80 days and two standard deviations」。\"\n   \"本数と倍率は名前に出さない引数（最初の値 80・2.0）。今の ABER位置（ライブラリの HLC3 の5本 SMA ± ATR15）は残す\",\n   \"順張り値＝大きいほど帯の上側\", \"trend\", tb=_tb_aber_orig, mako=MAKO_K3C)\n_r(r\"THERMO原作%\", \"THERMO原作%\",\n   \"Elder の原作の温度計＝前の足から外へはみ出した幅（高値の上げ幅か安値の下げ幅の大きい方・内はらみ足は 0）を、終値で割って%化\",\n   \"監査 CP60 の修正45・58＝Elder（Come Into My Trading Room 2002 p.162）・TradingView の逐語「Inside bars: Both protrusions clamp to zero」。\"\n   \"今の THERMO%（絶対値を取るライブラリの版）は残す\",\n   \"ボラ量\", \"vol\", tb=_tb_thermo_orig,\n   known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)]), (_thermo_in_case(), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)\n_r(r\"THERMO_EMA%\", \"THERMO_EMA%\",\n   \"Elder の原作の温度計を EMA でならしたもの（終値で割って%化）\",\n   \"K-7 の決定（ok_k7_pivot_thermo_20261007）＝教科書の既定 20（motivewave）・22（tradingview）は EMA の本数。EMA の本数は名前に出さない引数\"\n   \"（最初の値＝ライブラリの既定 20）。EMA の種＝最初の n 本の単純平均（ライブラリの既定）\",\n   \"ボラ量\", \"vol\", tb=_tb_thermo_ema, known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1673「_r(r\"SMC_SWEEP確定\", \"SMC_SWEEP確定\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 23,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "4920行（<モジュール直下>・15種の系統（元の種類と同じ）を書く）",
+  "直す前の文字": "    \"SMC_SWEEP確定\": dict(k=\"構造・位置\", note=\"SMC_SWEEP と同じ（確定した山・谷を抜いて戻した足＝水準に関わる判定）\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"SMC_SWEEP確定\": dict(k=\"構造・位置\", note=\"SMC_SWEEP と同じ（確定した山・谷を抜いて戻した足＝水準に関わる判定）\"),\n    # ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c）＝計算式の教科書の版（系統は元の種類と同じ）\n    \"realized_vol_rv\": dict(k=\"ボラ\"), \"SQZ_ON_Carter\": dict(k=\"ボラ\"), \"THERMO原作%\": dict(k=\"ボラ\"), \"THERMO_EMA%\": dict(k=\"ボラ\"),\n    \"StochRSI素%K\": dict(k=\"オシレーター\"), \"DPO教科書%\": dict(k=\"オシレーター\"),\n    \"TRIX_EMAシグナル\": dict(k=\"トレンド\"), \"TRIX_EMAヒスト\": dict(k=\"トレンド\"),\n    \"close vs SSF平均%\": dict(k=\"構造・位置\"), \"close vs TRIMA_TA%\": dict(k=\"構造・位置\"), \"close vs VIDYA_CMO%\": dict(k=\"構造・位置\"),\n    \"close vs HT_TRENDLINE_HL%\": dict(k=\"構造・位置\"), \"close vs MAMA_HL%\": dict(k=\"構造・位置\"), \"close vs FAMA_HL%\": dict(k=\"構造・位置\"),\n    \"ABER原作位置\": dict(k=\"構造・位置\", note=\"ABER位置 と同じ（帯の中の位置）\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:4920「\"SMC_SWEEP確定\": dict(k=\"構造・位置\", note=\"SMC_SWEEP と同じ（確定した山・谷を抜いて戻した足＝水準に関わる判定）\"),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 24,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "5247〜5248行（<モジュール直下>・15種の業界のライブラリとの対応を書く（観察の道具の検査10 が全部の種類に求める））",
+  "直す前の文字": "    \"SMC_SWEEP確定\": ((), \"pandas-ta の smc_sweep は直前 n 本の高安とヒゲの倍率で作る別の版。確定した山・谷で作る教科書の版の関数は\"\n                          \"ライブラリに無い（定義表の既知答えで確かめる）\"),\n",
+  "種類": "直した後の文字",
+  "中身": "    \"SMC_SWEEP確定\": ((), \"pandas-ta の smc_sweep は直前 n 本の高安とヒゲの倍率で作る別の版。確定した山・谷で作る教科書の版の関数は\"\n                          \"ライブラリに無い（定義表の既知答えで確かめる）\"),\n    # ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c）＝計算式の教科書の版（ライブラリの相当する関数と、作りの違い）\n    \"realized_vol_rv\": ((\"hvol\",), \"hvol は平均を引いた標準偏差。平均を引かない版の関数はライブラリに無い\"),\n    \"SQZ_ON_Carter\": ((\"squeeze\",), \"squeeze はケルトナーの中心を終値の SMA・幅を真の値幅の SMA で作る。Carter の作りの関数はライブラリに無い\"),\n    \"StochRSI素%K\": ((\"stochrsi\",), \"stochrsi の k を 1 にしたもの（ならさない）\"),\n    \"TRIX_EMAシグナル\": ((\"trix\", \"ema\"), \"trix の本体を ema でならしたもの（trix のシグナルは単純移動平均）\"),\n    \"TRIX_EMAヒスト\": ((\"trix\", \"ema\"), \"同上（本体との差）\"),\n    \"close vs SSF平均%\": ((\"ssf\",), \"ssf は入力を2本の平均にしていない。Ehlers の式の関数はライブラリに無い\"),\n    \"close vs TRIMA_TA%\": ((\"trima\",), \"trima は偶数の n でも n/2+1 を2回。TA-Lib の偶数の形の関数はライブラリに無い\"),\n    \"close vs VIDYA_CMO%\": ((\"vidya\",), \"vidya は CMO の本数を n と同じにする。別に持つ形の関数はライブラリに無い\"),\n    \"close vs HT_TRENDLINE_HL%\": ((\"ht_trendline\",), \"入力を (高値＋安値)/2 にして呼ぶ\"),\n    \"close vs MAMA_HL%\": ((\"mama\",), \"入力を (高値＋安値)/2 にして呼ぶ\"), \"close vs FAMA_HL%\": ((\"mama\",), \"同上\"),\n    \"DPO教科書%\": ((\"dpo\", \"sma\"), \"dpo の centered=False（いまの終値 − k本前の SMA）と値が違う。k本前の終値 − いまの SMA を sma で作る\"),\n    \"ABER原作位置\": ((), \"aberration は HLC3 の SMA ± ATR の別の作り。原作（80本・2σ のボリンジャー）の関数は aberration の名ではライブラリに無い\"),\n    \"THERMO原作%\": ((\"thermo\",), \"thermo は絶対値を取る（内はらみ足も 0 にならない）。原作の関数はライブラリに無い\"),\n    \"THERMO_EMA%\": ((\"thermo\", \"ema\"), \"原作の温度計を ema でならす\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:5247「\"SMC_SWEEP確定\": ((), \"pandas-ta の smc_sweep は直前 n 本の高安とヒゲの倍率で作る別の版。確定した山・谷で作る教科書の版の関数は\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 25,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "4699行（<モジュール直下>・全体の表 G-1＝ta の DPOIndicator を教科書の版の DPO に対応させる（今の DPO% は比べるために残す））",
+  "直す前の文字": "    \"DPOIndicator\": (\"DPO%\",),\n",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-10-11（工事 m2c15-formula-textbook-20261011・全体の表 G-1・監査 CP60 の修正37 の補足）＝ta の DPOIndicator（k本前の終値 − SMA）を\n    #   教科書の版に対応させる。今の DPO% は比べるために残す（M2-F-10f）。\n    \"DPOIndicator\": (\"DPO教科書%\", \"DPO%\"),\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:4699「\"DPOIndicator\": (\"DPO%\",),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 26,
+  "対象のファイル": ".claude/memory/regime_detection_kb.md",
+  "直す箇所": "1290〜1295行（文書・足す15種で、材料の種類・一覧の行・部品の数が変わる＝KB の件数の囲み（gen_materials.py --write が書き出す所）を、写しで数えた文に置き換える（材料の文書の自己テストの B3・B4 と承認の前の検査 A12 が見る））",
+  "直す前の文字": "<!-- COUNTS_START gen_materials.py --write が実物から書き出す＝手で書き換えない -->\n| 5 | 指標の種類 | **276種類**（engine_tuner が選べる **158**／選べない **118**） | materials.md の「engine_tuner が選べる指標の種類」の行 |\n| 6 | 材料の一覧の行 | **282件**（在る。ほかに「入れない」45件） | materials.md の一覧 |\n| 7 | パラメータまで展開した部品 | **516件**（＋別枠 8件＝**524**） | signal_families.json の parts と extra_parts |\n| 8 | ★524 に膨らむ理由 | ADX7・ADX14・ADX21 のように、同じ指標のパラメータ違いを別々に数えているため | 部品の名前の実測 |\n<!-- COUNTS_END -->",
+  "種類": "直した後の文字",
+  "中身": "<!-- COUNTS_START gen_materials.py --write が実物から書き出す＝手で書き換えない -->\n| 5 | 指標の種類 | **291種類**（engine_tuner が選べる **158**／選べない **133**） | materials.md の「engine_tuner が選べる指標の種類」の行 |\n| 6 | 材料の一覧の行 | **297件**（在る。ほかに「入れない」45件） | materials.md の一覧 |\n| 7 | パラメータまで展開した部品 | **516件**（＋別枠 8件＝**524**） | signal_families.json の parts と extra_parts |\n| 8 | ★524 に膨らむ理由 | ADX7・ADX14・ADX21 のように、同じ指標のパラメータ違いを別々に数えているため | 部品の名前の実測 |\n<!-- COUNTS_END -->",
+  "根拠の抜き書き": ".claude/memory/regime_detection_kb.md:1290「<!-- COUNTS_START gen_materials.py --write が実物から書き出す＝手で書き換えない -->」",
+  "状態": "確定"
+ },
+ {
+  "番号": 27,
+  "対象のファイル": ".claude/breaks/b160_dpo_tb_lib_shift.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: DPO教科書% を今の版（いまの終値 − k本前の SMA）に戻すと、観察の道具の自己テスト（上げ続ける足の既知答え）が落ちる\n# EXPECT_MSG: DPO教科書%20: 手計算の既知答えと不一致\n# b160_dpo_tb_lib_shift — DPO教科書% を今の版（いまの終値 − k本前の SMA）に戻すと、観察の道具の自己テスト（上げ続ける足の既知答え）が落ちる（工事 m2c15-formula-textbook-20261011・2026-10-11）\n#   守っているもの＝完成の条件の全体の自己テスト（observe_diag.py --selftest）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3b_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest が「DPO教科書%20: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '     (d.close.shift(int(0.5 * n) + 1) - _pta6.sma(close=d.close, length=n)) / d.close * 100)\\n'\nnew = '     _pta6.dpo(close=d.close, length=n, centered=False) / d.close * 100)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b160_dpo_tb_lib_shift] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 28,
+  "対象のファイル": ".claude/breaks/b161_thermo_orig_abs.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: THERMO原作% を絶対値（ライブラリの版）に戻すと、観察の道具の自己テスト（内はらみ足の既知答え）が落ちる\n# EXPECT_MSG: THERMO原作%: 手計算の既知答えと不一致\n# b161_thermo_orig_abs — THERMO原作% を絶対値（ライブラリの版）に戻すと、観察の道具の自己テスト（内はらみ足の既知答え）が落ちる（工事 m2c15-formula-textbook-20261011・2026-10-11）\n#   守っているもの＝完成の条件の全体の自己テスト（observe_diag.py --selftest）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3b_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest が「THERMO原作%: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    return np.maximum((d.high - d.high.shift(1)).clip(lower=0), (d.low.shift(1) - d.low).clip(lower=0))\\n'\nnew = '    return np.maximum((d.high - d.high.shift(1)).abs(), (d.low.shift(1) - d.low).abs())\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b161_thermo_orig_abs] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 29,
+  "対象のファイル": ".claude/breaks/b162_stochrsi_raw_smoothed.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: StochRSI素%K をならす形（k=3）に戻すと、観察の道具の自己テスト（教科書の独立実装）が落ちる\n# EXPECT_MSG: StochRSI素%K7: 教科書の独立実装と不一致\n# b162_stochrsi_raw_smoothed — StochRSI素%K をならす形（k=3）に戻すと、観察の道具の自己テスト（教科書の独立実装）が落ちる（工事 m2c15-formula-textbook-20261011・2026-10-11）\n#   守っているもの＝完成の条件の全体の自己テスト（observe_diag.py --selftest）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3b_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest が「StochRSI素%K7: 教科書の独立実装と不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '     _pta6.stochrsi(close=d.close, length=n, rsi_length=n, k=1).iloc[:, 0])\\n'\nnew = '     _pta6.stochrsi(close=d.close, length=n, rsi_length=n, k=3).iloc[:, 0])\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b162_stochrsi_raw_smoothed] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 30,
+  "対象のファイル": ".claude/breaks/b163_trix_ema_signal_sma.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: TRIX_EMAシグナル のシグナルを単純移動平均（今の版）に戻すと、観察の道具の自己テスト（教科書の独立実装）が落ちる\n# EXPECT_MSG: TRIX_EMAシグナル(7,9): 教科書の独立実装と不一致\n# b163_trix_ema_signal_sma — TRIX_EMAシグナル のシグナルを単純移動平均（今の版）に戻すと、観察の道具の自己テスト（教科書の独立実装）が落ちる（工事 m2c15-formula-textbook-20261011・2026-10-11）\n#   守っているもの＝完成の条件の全体の自己テスト（observe_diag.py --selftest）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3b_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest が「TRIX_EMAシグナル(7,9): 教科書の独立実装と不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    return tx, _pta6.ema(close=tx, length=g_)\\n'\nnew = '    return tx, _pta6.sma(close=tx, length=g_)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b163_trix_ema_signal_sma] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 31,
+  "対象のファイル": ".claude/breaks/b164_rvol_rv_mean_subtracted.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: realized_vol_rv を平均を引く形に戻すと、観察の道具の自己テスト（一定の割合で増える足の既知答え）が落ちる\n# EXPECT_MSG: realized_vol_rv20: 手計算の既知答えと不一致\n# b164_rvol_rv_mean_subtracted — realized_vol_rv を平均を引く形に戻すと、観察の道具の自己テスト（一定の割合で増える足の既知答え）が落ちる（工事 m2c15-formula-textbook-20261011・2026-10-11）\n#   守っているもの＝完成の条件の全体の自己テスト（observe_diag.py --selftest）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3b_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest が「realized_vol_rv20: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '     np.sqrt((np.log(d.close / d.close.shift()) ** 2).rolling(n).sum() / n) * 100)\\n'\nnew = '     np.log(d.close / d.close.shift()).rolling(n).std(ddof=0) * 100)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b164_rvol_rv_mean_subtracted] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 32,
+  "対象のファイル": ".claude/breaks/b165_ssf_avg_single_input.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: close vs SSF平均% の入力を1本（今の版）に戻すと、観察の道具の自己テスト（教科書の独立実装）が落ちる\n# EXPECT_MSG: close vs SSF平均%20: 教科書の独立実装と不一致\n# b165_ssf_avg_single_input — close vs SSF平均% の入力を1本（今の版）に戻すと、観察の道具の自己テスト（教科書の独立実装）が落ちる（工事 m2c15-formula-textbook-20261011・2026-10-11）\n#   守っているもの＝完成の条件の全体の自己テスト（observe_diag.py --selftest）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3b_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest が「close vs SSF平均%20: 教科書の独立実装と不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '        out[i] = c1 * (v[i] + v[i - 1]) / 2.0 + c2 * out[i - 1] + c3 * out[i - 2]\\n'\nnew = '        out[i] = c1 * v[i] + c2 * out[i - 1] + c3 * out[i - 2]\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b165_ssf_avg_single_input] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 33,
+  "対象のファイル": ".claude/breaks/b166_sqz_carter_scalar_fixed.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: SQZ_ON_Carter の kc_scalar を使わず 1.5 を固定で書くと、観察の道具の自己テストの軽い口（名前に出さない引数の番人⑥＝selftest_catalog）が落ちる\n# EXPECT_MSG: 名前に出さない引数: SQZ_ON_Carter の kc_scalar を変えても列が変わらない\n# b166_sqz_carter_scalar_fixed — SQZ_ON_Carter の kc_scalar を使わず 1.5 を固定で書くと、観察の道具の自己テストの軽い口（名前に出さない引数の番人⑥＝selftest_catalog）が落ちる（工事 m2c15-formula-textbook-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_catalog の番人⑥）（observe_diag.py --selftest-catalog）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3b_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-catalog が「名前に出さない引数: SQZ_ON_Carter の kc_scalar を変えても列が変わらない」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    on = ((mid - bb_std * sd) > (km - kc_scalar * atr)) & ((mid + bb_std * sd) < (km + kc_scalar * atr))\\n'\nnew = '    on = ((mid - bb_std * sd) > (km - 1.5 * atr)) & ((mid + bb_std * sd) < (km + 1.5 * atr))\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b166_sqz_carter_scalar_fixed] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-catalog\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 新しいパラメータ（EMA の本数・CMO の本数・原作の本数と倍率・Carter の4つ）を名前に出さない引数にする | 名前に入れると資料の行と軸の数が合わず、探し方の決定「名前に値を入れて指標を増やさない」に反する（まこさん「進めて良い」の1） | 名前に出す |
+| THERMO の EMA の本数の最初の値をライブラリの既定 20 にする | 資料の2つ（20・22）はどちらも「ブログ等」で最初の値にならない＝選び方の規則の「無ければ既定の値」（まこさん「進めて良い」の2） | 22 を選ぶ（CC が選ぶことになる） |
+| PMAX 原作を入れない | 原典のコードの全文が資料に無い。新しく Web を調べない決まり（まこさん「進めて良い」の3） | 1行の逐語から作りを推測する |
+| Aberration 原作を別の材料にし、BB%b の範囲は触らない | 原作の 80本は BB%b の範囲（10〜50）の外。範囲を広げるのは資料の規則の外（まこさん「進めて良い」の4） | BB%b の範囲を 80 まで広げる |
+| SQZ_ON_Carter の ATR を Wilder にする | 監査の文「幅を ATR」（ライブラリは真の値幅の SMA）。ATR の標準は Wilder（参照表の _wilder と同じ） | 真の値幅の SMA（ライブラリの版と同じになる） |
+| THERMO_EMA% の元を原作の温度計にする | 教科書の版を足す工事なので、EMA の元も教科書（原作）の形にする | ライブラリの版（絶対値）を EMA でならす |
+| ta の DPOIndicator を（DPO教科書%・DPO%）の2つに対応させる | 全体の表 G-1＝教科書の版に対応させ、今の DPO% は比べるために残す（まこさん「すべて案どおりでよい」） | DPO% を対応から外す（「使う」から落ちる） |
+| K-3a・K-3b の対応表は封のまま触らず、K-3c の15種は alias_map_k3c.json に書く | 封をし直さずに済む。読む道具3本は alias_maps.py で全部のファイルを合わせて読む | 前の対応表に書き足す |
+| この工事（コード）と、G-1 の後の2つ目の工事（15種の設定を写す）に分ける | 15種は G-1 まで「使う」でなく資料の行も無い。K-3a・K-3b と同じ | 道具が作るはずの表まで指示に入れて1回で当てる |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 型の表が変わる | G-1 で作り直し、まこさんに再承認していただく（4-4 の4） |
+| 名前に出さない引数の最初の値（Carter の4つ・原作の 80・2.0・CMO の 9・EMA の 20）が、この市場に合っているか | 範囲で探すのは工事2（M2-F-10b）。この工事は材料を足すだけ |
+| VIDYA_CMO・SSF平均 の計算は Python の繰り返しで、全体の自己テストが重くなる | 写しの実測 139秒（4-14） |
+| 2つ目の工事で写す設定に、最初の値も範囲も出ない種類が在る（資料の規則で「無い」） | P-6・P-7・H-1 の工事で扱う（next_step の 5） |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる（--design） | 1分未満 | 前の工事で、当てる道具は1秒未満で終わった |
+| 全体の自己テスト | 139秒 | 4-14 |
+| 壊すプログラム | 1本あたり約 139秒（全体の自己テスト）×7本 | 写しで壊し方を並べて走らせた（k3c_draft_build.py の [8]） |
+| G-1 の表の作り直しと資料の道具4本 | 約2分 | 写しの実測（オン・オフの表 約3秒・資料の道具4本 約6秒）と前の工事の実測 |
+| 監査に出す前のチェック | 約10分 | 前の工事の実測（pre_audit_check.py --run） |
+| まこさんの承認 | この工事の設計書1回・型の表の再承認1回（変われば）・2つ目の工事の設計書1回 | 4-4 |
+| 2つ目の工事 | K-3b の2つ目の工事（m2c15-shape-settings-20261009）と同じ流れ（案 → OK → 設計書 → 承認 → 当てる） | worklog 20261010 §3 |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 今の15種はライブラリの作り（平均を引く・絶対値・入力が終値・ならす・SMA のシグナル・CMO の本数を n と同じにする ほか）で、教科書の式と値が違う（監査 CP60 の表 19・62・65〜69・79・86・87・96・100・102・113・129・130・138）。教科書の版が無いので、engine_tuner はその情報を材料から取り出せず、どちらが良いかも比べられなかった。この工事で教科書の版を足し、M2-F-10f で比べられるようにする。 |
+| 期待値分解 | 売買のロジックには触れません。勝率・平均利益・敗率・平均損失は、この工事では動きません。M2-F で使える材料が15種 増えます。 |
+| root か symptom か | root です。比べる相手（教科書の版）が無いことが原因で、それを足します。 |
+| ベースアップ | 15種の作りは、監査 CP60 の修正37・45・47〜53 の本文と、監査が引いた原典の逐語（StockCharts・linnsoft・ta-lib.org・MAMA.pdf・georgepruitt.com・TradingView・Wikipedia）から取った。ライブラリの作りは監査 CP60 の4節の表（ファイルと行）で確かめた。 |
+
+【7-2 固定値ゼロ宣言】
+この工事に、疑似シミュから取った値は1つもありません。名前に出さない引数の最初の値は資料の既定かライブラリの既定です。既知答えは合成の足から手で計算できる値です。壊し方の値も、当てた後の中身の行から道具が取りました。
+
+【7-3 変更の単位】
+変更は1つ＝計算式が教科書と違う15種に、教科書の版を今の版を残して足す（K-3c の1つ目の工事。15種の設定を写すのは G-1 の後の2つ目の工事）。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 当たるか | 理由 |
+|---|---|---|
+| 1 | 当たりません | 乱数を使いません。条件をつなぐものではなく、教科書の作りの材料を足すだけです |
+| 2 | 当たりません | 15種の名前に出る軸は今の版と同じ一覧から作り、探す範囲は資料から道具が写します |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 既知答えが、本物の値動きでの正しさまで見るか | 見ません。合成の足で、式の向き・内はらみ足・平均を引かないことを見るだけです |
+| 名前に出さない引数の最初の値が、この市場に合っているか | 見ません。範囲で探すのは工事2 です |
+| 資料の値そのものが正しいかを、照らしの道具が見るか | 見ません。照らしの道具は、資料と設定ファイルが同じかだけを見ます |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝observe_diag.py・indicator_reference_diag.py・regime_detection_kb.md（件数の囲み）と、新しい壊すプログラムを【7-8】に書いた。主なファイルは observe_diag.py（材料の計算）。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝observe_diag.py・触る関数は道具が構文木の差から数えた）。
+- 新しく作るファイルは壊すプログラム（NEW_FILE）。手本は b142（MODEL）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝経緯・目的を工事の内側だけで答え、上位（機能要件・探し方）に結び付けなかった（166回目）。この工事は、材料に要る4つ（教科書の作り・役割に沿う値・範囲から探せる形・代表の値）の①に当たるものとして組んだ。
+- 新しい部品は、未来を見ない形にした（DPO教科書% は k本前の終値といまの平均）。当てた後に H2 を取り直す。
+- 行番号を指す文書は、当てた後に動く（observe_diag.py・indicator_reference_diag.py に行が増える）。設計書の行番号は当てる前の実物のもの。
+- 直すファイルの名前を本文に持つ壊すプログラムを全部 探し、探す文字の数が当てる前と後で同じことを道具が数えた（4-13 の5）。走らせるコマンドの旗は変えない。
+- 壊すプログラムが測るのは、観察の道具の全体の自己テストで、本物の結果の置き場には書かない。
+- 触る関数（DESIGN_CONTRACT の impl_functions・道具が書いた）＝observe_diag.py：<モジュール直下>・_atr_wilder・_mama_hl・_sqz_carter・_ssf_avg・_thermo_orig・_trima_ta・_trix_ema・_vidya_cmo・build_catalog／indicator_reference_diag.py：<モジュール直下>・_geo_case・_ssf2_avg・_tb_aber_orig・_tb_dpo_tb・_tb_pos_ssf_avg・_tb_pos_trima_ta・_tb_pos_vidya_cmo・_tb_rvol_rv・_tb_sqz_carter・_tb_stochrsi_raw・_tb_thermo_ema・_tb_thermo_orig・_tb_trix_ema_h・_tb_trix_ema_s・_thermo_in_case・_thermo_orig_arr・_trima_ta・_vidya_cmo。self_check_calls と must_use の名前は、当てた後の構文木に在ることを道具が ast で照らした。
+- 新しく足すコマンドの旗は無い。資料の対応表（alias_map_k3c.json）は .claude/state の道具の側で、設計書の前に済ませた。
+- 2回目の承認の前に、実装の中で変わった手順を設計書に書き直す（その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=m2c15-formula-textbook-20261011）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝観察の道具の既知答え・独立の実装・名前に出さない引数の番人・照らしの道具の①②と、壊すプログラム（わざと壊して落ちるか）。写しで走らせ、全部 通った。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| F-1・F-3＝DPO教科書% が、k本前の終値 − いまの n本平均 になる（既知答えが通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest | 実経路 | 今の版（いまの終値 − k本前の SMA）に戻す | b160_dpo_tb_lib_shift.sh | — | 未着手 |
+| F-1・F-3＝THERMO原作% が、内はらみ足で 0 になる（既知答えが通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest | 実経路 | 絶対値（ライブラリの版）に戻す | b161_thermo_orig_abs.sh | — | 未着手 |
+| F-1・F-3＝StochRSI素%K が、ならさない値になる（独立の実装と合う） | python3 scripts/priority_rebuild/observe_diag.py --selftest | 実経路 | ならす形（k=3）に戻す | b162_stochrsi_raw_smoothed.sh | — | 未着手 |
+| F-1・F-3＝TRIX_EMAシグナル が EMA になる（独立の実装と合う） | python3 scripts/priority_rebuild/observe_diag.py --selftest | 実経路 | シグナルを単純移動平均に戻す | b163_trix_ema_signal_sma.sh | — | 未着手 |
+| F-1・F-3＝realized_vol_rv が平均を引かない（既知答えが通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest | 実経路 | 平均を引く形に戻す | b164_rvol_rv_mean_subtracted.sh | — | 未着手 |
+| F-1・F-3＝close vs SSF平均% の入力が2本の平均になる（独立の実装と合う） | python3 scripts/priority_rebuild/observe_diag.py --selftest | 実経路 | 入力を1本に戻す | b165_ssf_avg_single_input.sh | — | 未着手 |
+| F-2＝SQZ_ON_Carter の名前に出さない引数（kc_scalar）が計算に届く（自己テストの⑥の番人が通る） | python3 scripts/priority_rebuild/observe_diag.py --selftest-catalog | 実経路 | kc_scalar を使わず 1.5 を固定で書く | b166_sqz_carter_scalar_fixed.sh | — | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  ".claude/memory/regime_detection_kb.md",
+  "scripts/priority_rebuild/indicator_reference_diag.py",
+  "scripts/priority_rebuild/observe_diag.py",
+  ".claude/breaks/b160_dpo_tb_lib_shift.sh",
+  ".claude/breaks/b161_thermo_orig_abs.sh",
+  ".claude/breaks/b162_stochrsi_raw_smoothed.sh",
+  ".claude/breaks/b163_trix_ema_signal_sma.sh",
+  ".claude/breaks/b164_rvol_rv_mean_subtracted.sh",
+  ".claude/breaks/b165_ssf_avg_single_input.sh",
+  ".claude/breaks/b166_sqz_carter_scalar_fixed.sh"
+ ],
+ "NEW_FILE": [
+  ".claude/breaks/b160_dpo_tb_lib_shift.sh",
+  ".claude/breaks/b161_thermo_orig_abs.sh",
+  ".claude/breaks/b162_stochrsi_raw_smoothed.sh",
+  ".claude/breaks/b163_trix_ema_signal_sma.sh",
+  ".claude/breaks/b164_rvol_rv_mean_subtracted.sh",
+  ".claude/breaks/b165_ssf_avg_single_input.sh",
+  ".claude/breaks/b166_sqz_carter_scalar_fixed.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b142_rci_list_stale.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/observe_diag.py",
+  "_impl_file の意味": "照らす相手は実在するファイル。足す15種の計算（_atr_wilder・_sqz_carter・_trix_ema・_ssf_avg・_trima_ta・_vidya_cmo・_mama_hl・_thermo_orig）とカタログ（build_catalog）が在る、観察の道具を照らす。",
+  "impl_functions": {
+   "scripts/priority_rebuild/observe_diag.py": [
+    "<モジュール直下>",
+    "_atr_wilder",
+    "_mama_hl",
+    "_sqz_carter",
+    "_ssf_avg",
+    "_thermo_orig",
+    "_trima_ta",
+    "_trix_ema",
+    "_vidya_cmo",
+    "build_catalog"
+   ],
+   "scripts/priority_rebuild/indicator_reference_diag.py": [
+    "<モジュール直下>",
+    "_geo_case",
+    "_ssf2_avg",
+    "_tb_aber_orig",
+    "_tb_dpo_tb",
+    "_tb_pos_ssf_avg",
+    "_tb_pos_trima_ta",
+    "_tb_pos_vidya_cmo",
+    "_tb_rvol_rv",
+    "_tb_sqz_carter",
+    "_tb_stochrsi_raw",
+    "_tb_thermo_ema",
+    "_tb_thermo_orig",
+    "_tb_trix_ema_h",
+    "_tb_trix_ema_s",
+    "_thermo_in_case",
+    "_thermo_orig_arr",
+    "_trima_ta",
+    "_vidya_cmo"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数（実装の指示を全部 当てる前と後の構文木を関数ごとに比べて、k3c_proposal_build.py が数えた）。",
+  "self_check_calls": [
+   "_atr_wilder",
+   "_sqz_carter",
+   "_trix_ema",
+   "_ssf_avg",
+   "_trima_ta",
+   "_vidya_cmo",
+   "_mama_hl",
+   "_thermo_orig",
+   "build_catalog"
+  ],
+  "_self_check_calls の意味": "実装の後の observe_diag.py に在るはずの、この工事が足す・直す関数の名前。",
+  "must_use": {
+   "_sqz_carter": [
+    "_atr_wilder"
+   ]
+  },
+  "_must_use の意味": "Carter の作りのスクイーズが、Wilder の ATR（_atr_wilder）を使う（k3c_proposal_build.py が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は、材料を足すだけ。外から読む一覧の形（カタログの1件の形・参照表の欄・設定の欄）は変えない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の関数ごとの構文木の差（k3c_proposal_build.py が数えた）",
+   "must_use": "ast で照らした",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```
+
+【外部検索】
+| 名前 | 中身 |
+|---|---|
+| 資料の出どころ | 15種の資料の行は、同じ指標の今の行（2026-10-04 に調べる係が原文のページから写し、プログラムがページを開き直して照らした値）を使う。新しく調べていない |
+| 教科書の式 | 監査 CP60 の修正の本文の文字（修正45・50）と、監査が4節の表に引いた原典の逐語（linnsoft・ta-lib.org・StockCharts・MAMA.pdf・georgepruitt.com・TradingView・Wikipedia）。新しく開いていない |

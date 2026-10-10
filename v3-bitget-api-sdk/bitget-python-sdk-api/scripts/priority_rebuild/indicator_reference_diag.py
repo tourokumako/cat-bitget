@@ -946,6 +946,8 @@ MAKO_K3 = '2026-10-07 まこさん決定「A」（K-3 を3つの工事に分け�
 MAKO_K7 = '2026-10-07 まこさん決定「OK」（K-7 の1番＝前期間pivot の3種に前の週の版を別の材料として足す）＝逐語のファイル ok_k7_pivot_thermo_20261007（m2c15-memo-sort-20261007）'
 # ★2026-10-09（工事 m2c15-shape-structure-20261009）＝K-3b の4種と下半分位置の「使う」の決定の逐語（mako の欄に書く）。
 MAKO_K3B = '2026-10-09 まこさん「よい」（K-3b の作りの3点＝確定した山・谷の本数 k は名前に出さない引数・SMC_SWEEP の教科書の版はライブラリの 15・1.5 を使わない・下半分位置を使う）＝逐語のファイル ok_k3b_design_20261009（m2c15-k3b-decisions-20261009）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007'
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011）＝K-3c の15種の「使う」の決定の逐語（mako の欄に書く）。
+MAKO_K3C = '2026-10-11 まこさん「把握してるならよい／指標の修正のゴールに対し、このフェーズでの修正案は正しく、齟齬が無いのであれば進めて良い」（K-3c の作りの5点＝新しい名前は作りの違いだけ・新しいパラメータは名前に出さない引数・式は監査の本文と原典の逐語から・Aberration 原作は別の材料・対応表と既知答えは K-3b と同じ形）＝逐語のファイル ok_k3c_design_20261011（m2c15-formula-textbook-20261011）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007。THERMO の EMA の版＝ok_k7_pivot_thermo_20261007'
 
 
 def _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None):
@@ -1679,6 +1681,202 @@ _r(r"SMC_SWEEP確定", "SMC_SWEEP確定",
    known=lambda p: [(_smc_fr_case("bull"), [(-1, 1.0, 1e-9)]), (_smc_fr_case("bear"), [(-1, -1.0, 1e-9)]),
                     (_smc_fr_case("stay"), [(-1, 0.0, 1e-9)])],
    mako=MAKO_K3B)
+
+
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正37・45・47〜53 と K-7 の決定）＝計算式の教科書の版。
+#   独立の実装は、素直な繰り返しと部品（_roll・_ema_seed・_wilder）で書く＝観察の道具（ライブラリ）とは別の書き方。
+def _tb_rvol_rv(d, p):
+    c = d.close.to_numpy(float)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        r = np.log(c / np.where(np.roll(c, 1) == 0, np.nan, np.roll(c, 1)))
+    r[0] = np.nan
+    n = int(p[0])
+    return _S(np.sqrt(_roll(r * r, n, "sum") / n) * 100, d)
+
+
+def _geo_case(n=60, r=0.001):
+    """realized_vol_rv の既知答え用＝終値が毎本 同じ割合 r で増える足（対数リターンが一定）。平均を引く今の版は 0・引かない版は 100×ln(1+r)。"""
+    c = 100.0 * (1.0 + r) ** np.arange(n)
+    return _mk(c=c)
+
+
+def _tb_sqz_carter(d, p, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5):
+    o, h, l, c, v = _arr(d)
+    mid, sd = _roll(c, bb_length, "mean"), _roll(c, bb_length, "std", ddof=0)
+    km = _roll((h + l + c) / 3.0, kc_length, "mean")
+    atr = _wilder(_tr(h, l, c), kc_length)
+    on = ((mid - bb_std * sd) > (km - kc_scalar * atr)) & ((mid + bb_std * sd) < (km + kc_scalar * atr))
+    out = np.where(np.isnan(atr) | np.isnan(sd), np.nan, on.astype(float))
+    return _S(out, d)
+
+
+def _tb_stochrsi_raw(d, p):
+    return _S(_stochrsi_parts(d, int(p[0]), int(p[0]), 1, 1)[0], d)
+
+
+def _tb_trix_ema_s(d, p):
+    tx = _trix_parts(d, int(p[0]), int(p[1]))[0]
+    return _S(_ema_seed(tx, int(p[1])), d)
+
+
+def _tb_trix_ema_h(d, p):
+    tx = _trix_parts(d, int(p[0]), int(p[1]))[0]
+    return _S(tx - _ema_seed(tx, int(p[1])), d)
+
+
+def _ssf2_avg(c: np.ndarray, n: int) -> np.ndarray:
+    """Ehlers のスーパースムーザー（2極）＝入力を (c + c[1])/2 にしたもの。"""
+    x = np.pi * np.sqrt(2.0) / n
+    a0 = np.exp(-x)
+    b0 = 2.0 * a0 * np.cos(x)
+    c2, c3 = b0, -a0 * a0
+    c1 = 1.0 - c2 - c3
+    out = c.astype(float).copy()
+    for i in range(2, len(c)):
+        out[i] = c1 * (c[i] + c[i - 1]) / 2.0 + c2 * out[i - 1] + c3 * out[i - 2]
+    return out
+
+
+def _tb_pos_ssf_avg(d, p):
+    return _pos(_ssf2_avg(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _trima_ta(c, n):
+    """TA-Lib の TRIMA。偶数の n＝SMA(SMA(x, n/2), n/2+1)。奇数の n は今の _trima と同じ。"""
+    if n % 2 == 0:
+        return _roll(_roll(c, n // 2, "mean"), n // 2 + 1, "mean")
+    return _trima(c, n)
+
+
+def _tb_pos_trima_ta(d, p):
+    return _pos(_trima_ta(d.close.to_numpy(float), int(p[0])), d)
+
+
+def _vidya_cmo(c: np.ndarray, n: int, m: int = 9) -> np.ndarray:
+    a = 2.0 / (n + 1)
+    up = _roll(np.r_[np.nan, np.diff(c)].clip(min=0), m, "sum")
+    dn = _roll((-np.r_[np.nan, np.diff(c)]).clip(min=0), m, "sum")
+    k = np.abs(_div(up - dn, up + dn))
+    out = np.full(len(c), np.nan)
+    if len(c) < n:
+        return out
+    out[n - 1] = float(np.nanmean(c[:n]))
+    for i in range(n, len(c)):
+        kk = 0.0 if np.isnan(k[i]) else k[i]
+        out[i] = a * kk * c[i] + (1 - a * kk) * out[i - 1]
+    return out
+
+
+def _tb_pos_vidya_cmo(d, p, m=9):
+    return _pos(_vidya_cmo(d.close.to_numpy(float), int(p[0]), int(m)), d)
+
+
+def _tb_dpo_tb(d, p):
+    """教科書の DPO を時点 t で作れる形＝k本前の終値 − いまの n本平均（k=n/2+1）。終値で割って%化（H6）。"""
+    n = int(p[0])
+    c = d.close.to_numpy(float)
+    return (_S(c, d).shift(int(0.5 * n) + 1) - _S(_roll(c, n, "mean"), d)) / d.close * 100
+
+
+def _tb_aber_orig(d, p, length=80, std=2.0):
+    c = d.close.to_numpy(float)
+    mid, sd = _roll(c, int(length), "mean"), _roll(c, int(length), "std", ddof=0)
+    return _S(_div(c - (mid - std * sd), 2.0 * std * sd), d)
+
+
+def _thermo_orig_arr(d):
+    o, h, l, c, v = _arr(d)
+    ph, pl = np.r_[np.nan, h[:-1]], np.r_[np.nan, l[:-1]]
+    return c, np.maximum(np.maximum(h - ph, 0.0), np.maximum(pl - l, 0.0))
+
+
+def _tb_thermo_orig(d, p):
+    c, t = _thermo_orig_arr(d)
+    return _S(_div(t, c) * 100.0, d)
+
+
+def _tb_thermo_ema(d, p, ema_n=20):
+    c, t = _thermo_orig_arr(d)
+    return _S(_div(_ema_seed(t, int(ema_n)), c) * 100.0, d)
+
+
+def _thermo_in_case(n=30):
+    """THERMO原作% の既知答え用＝平らな足（高値 101・安値 99）の最後の足だけ内はらみ（高値 100.5・安値 99.5）。原作は 0・ライブラリの版は 0.5/100×100。"""
+    c = np.full(n, 100.0)
+    h = np.full(n, 101.0)
+    l = np.full(n, 99.0)
+    h[-1], l[-1] = 100.5, 99.5
+    return _mk(c=c, o=c.copy(), h=h, l=l)
+
+
+_r(r"realized_vol_rv(\d+)", "realized_vol_rv",
+   "平均を引かない実現ボラ＝対数リターンの二乗の n 本平均の平方根×100",
+   "監査 CP60 の修正50＝Wikipedia「RV(n) = Σ r²」「the square root of the realized variance」。今の realized_vol（平均を引いた標本の標準偏差）は残す",
+   "ボラ量", "vol", tb=_tb_rvol_rv,
+   known=lambda p: [(_flat(p[0] * 3), [(-1, 0.0, 1e-9)]), (_geo_case(p[0] * 3), [(-1, 100.0 * np.log(1.001), 1e-9)])],
+   mako=MAKO_K3C)
+_r(r"SQZ_ON_Carter", "SQZ_ON_Carter",
+   "スクイーズ（Carter の作り）＝ボリンジャー（終値の SMA ± 2σ）がケルトナー（代表値段の SMA ± 1.5×ATR（Wilder））の内側なら 1",
+   "監査 CP60 の修正47＝StockCharts「Carter uses 20 periods for the moving average and ATR, and 1.5 for the ATR multiplier」。"
+   "4つの数は名前に出さない引数（最初の値 20・2.0・20・1.5）。今の SQZ_ON（中心を終値の SMA・幅を真の値幅の SMA）は残す",
+   "状態量", "none", tb=_tb_sqz_carter, mako=MAKO_K3C)
+_r(r"StochRSI素%K(\d+)", "StochRSI素%K",
+   "RSI にストキャスを掛けた原式の値（ならさない・0〜100）",
+   "監査 CP60 の修正48＝StockCharts「StochRSI = (RSI - Lowest Low RSI) / (Highest High RSI - Lowest Low RSI)」。今の %K（SMA3 でならす）は残す",
+   "順張り値", "trend", tb=_tb_stochrsi_raw, mako=MAKO_K3C)
+_r(r"TRIX_EMAシグナル\((\d+),(\d+)\)", "TRIX_EMAシグナル",
+   "TRIX を g 本の EMA でならしたシグナル", "監査 CP60 の修正49＝StockCharts「The signal line is a 9-day EMA of the TRIX.」。今の TRIXシグナル（単純移動平均）は残す",
+   "順張り値", "trend", tb=_tb_trix_ema_s, mako=MAKO_K3C)
+_r(r"TRIX_EMAヒスト\((\d+),(\d+)\)", "TRIX_EMAヒスト",
+   "TRIX と EMA のシグナルの差", "同上。今の TRIXヒスト（単純移動平均のシグナルとの差）は残す",
+   "状態量＝加速（向きを持たない）", "none", tb=_tb_trix_ema_h, mako=MAKO_K3C)
+_r(r"close vs SSF平均%(\d+)", "close vs SSF平均%",
+   "終値が、入力を2本の平均にした Ehlers のスーパースムーザー（2極）から何%離れているか",
+   "監査 CP60 の修正51＝linnsoft の逐語「Filt = c1*(Close + Close[1]) / 2 + c2*Filt[1] + c3*Filt[2];」。今の close vs SSF%（入力が終値）は残す",
+   "反転サイン", "trend", tb=_tb_pos_ssf_avg, mako=MAKO_K3C)
+_r(r"close vs TRIMA_TA%(\d+)", "close vs TRIMA_TA%",
+   "終値が TA-Lib の TRIMA（偶数の n＝SMA(SMA(x, n/2), n/2+1)）から何%離れているか",
+   "監査 CP60 の修正52＝ta-lib.org「even: SMA(SMA(x,period/2),period/2+1)」。奇数の n は今の版と同じ。今の close vs TRIMA%（偶数でも n/2+1 を2回）は残す",
+   "反転サイン", "trend", tb=_tb_pos_trima_ta, mako=MAKO_K3C)
+_r(r"close vs VIDYA_CMO%(\d+)", "close vs VIDYA_CMO%",
+   "終値が、CMO の本数 m を n と別に持つ VIDYA から何%離れているか",
+   "監査 CP60 の修正52＝ta-lib.org「n = optInTimePeriod, m = optInCMOPeriod」。m は名前に出さない引数（最初の値 9＝資料の既定）。今の版（m=n）は残す",
+   "反転サイン", "trend", tb=_tb_pos_vidya_cmo, mako=MAKO_K3C)
+_r(r"close vs HT_TRENDLINE_HL%", "close vs HT_TRENDLINE_HL%",
+   "終値が、入力を (高値＋安値)/2 にしたヒルベルト変換のトレンド線から何%離れているか",
+   "監査 CP60 の修正53＝Ehlers の入力は (H+L)/2（ta-lib.org の表 79）。★変換が多段で独立実装を書けない。既知答え＝値段が一定なら ぴったり 0。今の版（入力が終値）は残す",
+   "反転サイン", "none", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)
+_r(r"close vs MAMA_HL%", "close vs MAMA_HL%",
+   "終値が、入力を (高値＋安値)/2 にした MAMA から何%離れているか",
+   "監査 CP60 の修正53＝MAMA.pdf のコードの逐語「Inputs: Price((H+L)/2), FastLimit(.5), SlowLimit(.05);」。★独立実装を書けない＝既知答えで検証。今の版は残す",
+   "反転サイン", "none", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)
+_r(r"close vs FAMA_HL%", "close vs FAMA_HL%",
+   "終値が、入力を (高値＋安値)/2 にした FAMA（MAMA の追従線）から何%離れているか",
+   "同上", "反転サイン", "none", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)
+_r(r"DPO教科書%(\d+)", "DPO教科書%",
+   "教科書の DPO を時点 t で作れる形＝k本前の終値 − いまの n本平均（k=n/2+1）を、終値で割って%化",
+   "監査 CP60 の修正37・45＝StockCharts「Price - X-period SMA from {X/2 + 1} periods in the future」を未来を見ずに書いた形（ta の DPOIndicator と同じ）。"
+   "今の DPO%（いまの終値 − k本前の n本平均＝TradingView の中心化しない版）は残す",
+   "反転サイン", "none", tb=_tb_dpo_tb,
+   known=lambda p: [(_flat(p[0] * 3), [(-1, 0.0, 1e-9)]),
+                    (_up(p[0] * 3), [(-1, (((p[0] - 1) / 2.0) - (int(0.5 * p[0]) + 1)) / (100.0 + p[0] * 3 - 1) * 100.0, 1e-9)])],
+   mako=MAKO_K3C)
+_r(r"ABER原作位置", "ABER原作位置",
+   "終値が、Fitschen の原作の Aberration の帯（80本・標準偏差2倍のボリンジャーバンド）の中のどこにあるか。0 で下の帯・1 で上の帯",
+   "監査 CP60 の修正45・71＝georgepruitt.com「a breakout system based on Bollinger bands with a period length of 80 days and two standard deviations」。"
+   "本数と倍率は名前に出さない引数（最初の値 80・2.0）。今の ABER位置（ライブラリの HLC3 の5本 SMA ± ATR15）は残す",
+   "順張り値＝大きいほど帯の上側", "trend", tb=_tb_aber_orig, mako=MAKO_K3C)
+_r(r"THERMO原作%", "THERMO原作%",
+   "Elder の原作の温度計＝前の足から外へはみ出した幅（高値の上げ幅か安値の下げ幅の大きい方・内はらみ足は 0）を、終値で割って%化",
+   "監査 CP60 の修正45・58＝Elder（Come Into My Trading Room 2002 p.162）・TradingView の逐語「Inside bars: Both protrusions clamp to zero」。"
+   "今の THERMO%（絶対値を取るライブラリの版）は残す",
+   "ボラ量", "vol", tb=_tb_thermo_orig,
+   known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)]), (_thermo_in_case(), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)
+_r(r"THERMO_EMA%", "THERMO_EMA%",
+   "Elder の原作の温度計を EMA でならしたもの（終値で割って%化）",
+   "K-7 の決定（ok_k7_pivot_thermo_20261007）＝教科書の既定 20（motivewave）・22（tradingview）は EMA の本数。EMA の本数は名前に出さない引数"
+   "（最初の値＝ライブラリの既定 20）。EMA の種＝最初の n 本の単純平均（ライブラリの既定）",
+   "ボラ量", "vol", tb=_tb_thermo_ema, known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)
 
 
 # ══ 業界の指標（pandas-ta 由来）の独立実装＝照合の相手（2026-08-09・フロー 段6-1・1回目）══
@@ -4696,7 +4894,9 @@ def range_geo_known_check(geo_fn, zone_tol: float, zone_touch: int, zone_lookbac
 TA_CLASS_MAP: dict[str, tuple[str, ...]] = {
     # ── 略号の一致で候補が出た15クラス（まこさん承認 2026-09-02）──
     "AroonIndicator": ("AROONU", "AROOND", "AROONOSC"),
-    "DPOIndicator": ("DPO%",),
+    # ★2026-10-11（工事 m2c15-formula-textbook-20261011・全体の表 G-1・監査 CP60 の修正37 の補足）＝ta の DPOIndicator（k本前の終値 − SMA）を
+    #   教科書の版に対応させる。今の DPO% は比べるために残す（M2-F-10f）。
+    "DPOIndicator": ("DPO教科書%", "DPO%"),
     "KAMAIndicator": ("KAMA傾き%", "close vs KAMA%"),
     "KSTIndicator": ("KST", "KSTシグナル"),
     "KeltnerChannel": ("Keltner上", "Keltner下"),
@@ -4918,6 +5118,13 @@ FAMILY_LINEAGE: dict[str, dict] = {
     "W字確定谷": dict(k="構造・位置", note="W字と同じ（ダブルボトム＝構造パターン）"),
     "S-Rタッチ確定数": dict(k="構造・位置"), "S-Rタッチ確定1時間ATR": dict(k="構造・位置"),
     "SMC_SWEEP確定": dict(k="構造・位置", note="SMC_SWEEP と同じ（確定した山・谷を抜いて戻した足＝水準に関わる判定）"),
+    # ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c）＝計算式の教科書の版（系統は元の種類と同じ）
+    "realized_vol_rv": dict(k="ボラ"), "SQZ_ON_Carter": dict(k="ボラ"), "THERMO原作%": dict(k="ボラ"), "THERMO_EMA%": dict(k="ボラ"),
+    "StochRSI素%K": dict(k="オシレーター"), "DPO教科書%": dict(k="オシレーター"),
+    "TRIX_EMAシグナル": dict(k="トレンド"), "TRIX_EMAヒスト": dict(k="トレンド"),
+    "close vs SSF平均%": dict(k="構造・位置"), "close vs TRIMA_TA%": dict(k="構造・位置"), "close vs VIDYA_CMO%": dict(k="構造・位置"),
+    "close vs HT_TRENDLINE_HL%": dict(k="構造・位置"), "close vs MAMA_HL%": dict(k="構造・位置"), "close vs FAMA_HL%": dict(k="構造・位置"),
+    "ABER原作位置": dict(k="構造・位置", note="ABER位置 と同じ（帯の中の位置）"),
     # ★2026-09-05（M2-C-4）に足した。S-RタッチATR は 2026-09-06（再監査 cp22 の N-1）に外した。
     "レンジ幾何": dict(k="構造・位置", note="RG ゾーンビルダーの帯＝構造そのもの"),
     # 山と谷（2026-08-21・M2-2-6）＝高値と安値の並びそのもの＝構造・位置
@@ -5246,6 +5453,21 @@ INDUSTRY_MAP: dict[str, tuple[tuple[str, ...], str]] = {
     "S-Rタッチ確定1時間ATR": ((), "S-Rタッチ確定数の許容幅を1時間足の ATR% に連動させたもの。ライブラリに相当する関数が無い"),
     "SMC_SWEEP確定": ((), "pandas-ta の smc_sweep は直前 n 本の高安とヒゲの倍率で作る別の版。確定した山・谷で作る教科書の版の関数は"
                           "ライブラリに無い（定義表の既知答えで確かめる）"),
+    # ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c）＝計算式の教科書の版（ライブラリの相当する関数と、作りの違い）
+    "realized_vol_rv": (("hvol",), "hvol は平均を引いた標準偏差。平均を引かない版の関数はライブラリに無い"),
+    "SQZ_ON_Carter": (("squeeze",), "squeeze はケルトナーの中心を終値の SMA・幅を真の値幅の SMA で作る。Carter の作りの関数はライブラリに無い"),
+    "StochRSI素%K": (("stochrsi",), "stochrsi の k を 1 にしたもの（ならさない）"),
+    "TRIX_EMAシグナル": (("trix", "ema"), "trix の本体を ema でならしたもの（trix のシグナルは単純移動平均）"),
+    "TRIX_EMAヒスト": (("trix", "ema"), "同上（本体との差）"),
+    "close vs SSF平均%": (("ssf",), "ssf は入力を2本の平均にしていない。Ehlers の式の関数はライブラリに無い"),
+    "close vs TRIMA_TA%": (("trima",), "trima は偶数の n でも n/2+1 を2回。TA-Lib の偶数の形の関数はライブラリに無い"),
+    "close vs VIDYA_CMO%": (("vidya",), "vidya は CMO の本数を n と同じにする。別に持つ形の関数はライブラリに無い"),
+    "close vs HT_TRENDLINE_HL%": (("ht_trendline",), "入力を (高値＋安値)/2 にして呼ぶ"),
+    "close vs MAMA_HL%": (("mama",), "入力を (高値＋安値)/2 にして呼ぶ"), "close vs FAMA_HL%": (("mama",), "同上"),
+    "DPO教科書%": (("dpo", "sma"), "dpo の centered=False（いまの終値 − k本前の SMA）と値が違う。k本前の終値 − いまの SMA を sma で作る"),
+    "ABER原作位置": ((), "aberration は HLC3 の SMA ± ATR の別の作り。原作（80本・2σ のボリンジャー）の関数は aberration の名ではライブラリに無い"),
+    "THERMO原作%": (("thermo",), "thermo は絶対値を取る（内はらみ足も 0 にならない）。原作の関数はライブラリに無い"),
+    "THERMO_EMA%": (("thermo", "ema"), "原作の温度計を ema でならす"),
     # ★2026-09-05（M2-C-4）に足した。ライブラリに相当する関数が無い＝空のタプルと理由。
     #   S-RタッチATR は 2026-09-06（再監査 cp22 の N-1）に外した。
     "MMI": ((), "Market Meanness Index。ta にも pandas-ta にも無い"

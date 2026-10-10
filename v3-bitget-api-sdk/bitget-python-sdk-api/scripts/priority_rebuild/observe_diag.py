@@ -940,6 +940,10 @@ _reg("BB幅", "BB幅({},{})", False, lambda d, n, s:
      2 * s * d.close.rolling(n).std(ddof=0) / d.close.rolling(n).mean())
 _reg("realized_vol", "realized_vol{}", False, lambda d, n:
      np.log(d.close / d.close.shift()).rolling(n).std() * 100)
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正50 の直した後の文字）＝平均を引かない実現ボラ √(Σr²/n)。
+#   今の版（平均を引いた標本の標準偏差）は残す。どちらが良いかは M2-F-10f で比べる。
+_reg("realized_vol_rv", "realized_vol_rv{}", False, lambda d, n:
+     np.sqrt((np.log(d.close / d.close.shift()) ** 2).rolling(n).sum() / n) * 100)
 _reg("Donchian幅%", "Donchian幅%{}", False, lambda d, n:
      (d.high.rolling(n).max() - d.low.rolling(n).min()) / d.close * 100)
 _reg("zscore", "zscore{}", True, lambda d, n:
@@ -1199,6 +1203,32 @@ _reg("SMC_SWEEP", "SMC_SWEEP", False, lambda d, length=None, wick_mult=None: _pt
 _reg("SQZ%", "SQZ%", False, lambda d: _pta6.squeeze(high=d.high, low=d.low, close=d.close).iloc[:, 0]
      / d.close * 100)
 _reg("SQZ_ON", "SQZ_ON", False, lambda d, bb_length=None, bb_std=None, kc_length=None, kc_scalar=None: _pta6.squeeze(high=d.high, low=d.low, close=d.close, bb_length=bb_length, bb_std=bb_std, kc_length=kc_length, kc_scalar=kc_scalar).iloc[:, 1])
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正47）＝Carter の作り（StockCharts の逐語「Carter uses 20 periods
+#   for the moving average and ATR, and 1.5 for the ATR multiplier」）＝ボリンジャー（終値の SMA ± 倍率×σ・ddof 0）が、ケルトナー
+#   （代表値段 (H+L+C)/3 の SMA ± 倍率×ATR（Wilder））の内側なら 1。ライブラリの版（中心を終値の SMA・幅を真の値幅の SMA）は残す。
+#   ★4つの数は名前に出さない引数（最初の値＝資料の既定 20・2.0・20・1.5）。
+def _atr_wilder(d, n):
+    """Wilder の ATR（最初の n 本の真の値幅の単純平均を種に (前×(n−1)＋今)/n）。真の値幅の1本目は欠損。"""
+    tr = pd.concat([d.high - d.low, (d.high - d.close.shift()).abs(), (d.low - d.close.shift()).abs()], axis=1).max(axis=1).to_numpy(float)
+    tr[0] = np.nan
+    out = np.full(len(tr), np.nan)
+    if len(tr) > n:
+        out[n] = np.nanmean(tr[1:n + 1])
+        for i in range(n + 1, len(tr)):
+            out[i] = (out[i - 1] * (n - 1) + tr[i]) / n
+    return pd.Series(out, index=d.index)
+
+
+def _sqz_carter(d, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5):
+    tp = (d.high + d.low + d.close) / 3.0
+    mid, sd = d.close.rolling(bb_length).mean(), d.close.rolling(bb_length).std(ddof=0)
+    km, atr = tp.rolling(kc_length).mean(), _atr_wilder(d, kc_length)
+    on = ((mid - bb_std * sd) > (km - kc_scalar * atr)) & ((mid + bb_std * sd) < (km + kc_scalar * atr))
+    return on.astype(float).where(atr.notna() & sd.notna())
+
+
+_reg("SQZ_ON_Carter", "SQZ_ON_Carter", False,
+     lambda d, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5: _sqz_carter(d, bb_length, bb_std, kc_length, kc_scalar))
 # ★SQZ_OFF（=1−SQZ_ON）・SQZ_NO（実測で2,000本すべて0）・SQZPRO_OFF（=1−SQZPRO_ON_WIDE）は
 #   情報が増えないので入れない（2026-08-09 実測）。
 _reg("SQZPRO_ON_WIDE", "SQZPRO_ON_WIDE", False, lambda d, k="WIDE":
@@ -1241,12 +1271,25 @@ _reg("StochRSI%K", "StochRSI%K{}", True, lambda d, n, k=None:
      _pta6.stochrsi(close=d.close, length=n, rsi_length=n, k=k).iloc[:, 0])
 _reg("StochRSI%D", "StochRSI%D{}", True, lambda d, n, k=None, d_=None:
      _pta6.stochrsi(close=d.close, length=n, rsi_length=n, k=k, d=d_).iloc[:, 1])
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正48）＝原式のならさない値（StockCharts「StochRSI =
+#   (RSI - Lowest Low RSI) / (Highest High RSI - Lowest Low RSI)」・0〜100）＝ならしの本数 k を 1 にしたもの。今の %K（SMA3）は残す。
+_reg("StochRSI素%K", "StochRSI素%K{}", True, lambda d, n:
+     _pta6.stochrsi(close=d.close, length=n, rsi_length=n, k=1).iloc[:, 0])
 _reg("TRIX", "TRIX({},{})", True, lambda d, n, g_:
      _pta6.trix(close=d.close, length=n, signal=g_).iloc[:, 0])
 _reg("TRIXシグナル", "TRIXシグナル({},{})", True, lambda d, n, g_:
      _pta6.trix(close=d.close, length=n, signal=g_).iloc[:, 1])
 _reg("TRIXヒスト", "TRIXヒスト({},{})", False, lambda d, n, g_:
      _pta6.trixh(close=d.close, length=n, signal=g_).iloc[:, 2])
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正49）＝シグナルを EMA にした版（StockCharts「The signal line
+#   is a 9-day EMA of the TRIX.」）。ライブラリの版（シグナルは単純移動平均）は残す。EMA はライブラリの ema（種＝最初の g 本の単純平均）。
+def _trix_ema(d, n, g_):
+    tx = _pta6.trix(close=d.close, length=n, signal=g_).iloc[:, 0]
+    return tx, _pta6.ema(close=tx, length=g_)
+
+
+_reg("TRIX_EMAシグナル", "TRIX_EMAシグナル({},{})", True, lambda d, n, g_: _trix_ema(d, n, g_)[1])
+_reg("TRIX_EMAヒスト", "TRIX_EMAヒスト({},{})", False, lambda d, n, g_: (lambda t: t[0] - t[1])(_trix_ema(d, n, g_)))
 _reg("TD_SEQ_UP", "TD_SEQ_UP", True, lambda d: _tdseq(d, 0))
 _reg("TD_SEQ_DN", "TD_SEQ_DN", False, lambda d: _tdseq(d, 1))
 _reg("UO", "UO", True, lambda d, fast=None, medium=None, slow=None, fast_w=None, medium_w=None, slow_w=None: _pta6.uo(high=d.high, low=d.low, close=d.close, fast=fast, medium=medium, slow=slow, fast_w=fast_w, medium_w=medium_w, slow_w=slow_w))
@@ -1309,6 +1352,48 @@ for _nm, _mafn in _MA_FUNCS:
     if _nm not in ("JMA",):        # JMA は独立実装を書いていない＝傾きも作らない
         _reg(f"{_nm}傾き", f"{_nm}{{}}傾き%", True,
              lambda d, n, f=_mafn, slope_n=5, **kw: f(d, n, **kw).pct_change(slope_n) * 100)
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正51・52）＝教科書の式の版（今の版は残す・傾きの形は作らない）。
+def _ssf_avg(c, n):
+    """Ehlers のスーパースムーザー（2極）で、入力を2本の平均にしたもの（linnsoft の逐語「Filt = c1*(Close + Close[1]) / 2 + c2*Filt[1] + c3*Filt[2]」）。"""
+    x = np.pi * np.sqrt(2.0) / n
+    a0 = np.exp(-x)
+    b0 = 2.0 * a0 * np.cos(x)
+    c2, c3 = b0, -a0 * a0
+    c1 = 1.0 - c2 - c3
+    v = c.to_numpy(float)
+    out = v.copy()
+    for i in range(2, len(v)):
+        out[i] = c1 * (v[i] + v[i - 1]) / 2.0 + c2 * out[i - 1] + c3 * out[i - 2]
+    return pd.Series(out, index=c.index)
+
+
+def _trima_ta(c, n):
+    """TA-Lib の TRIMA（偶数の n＝SMA(SMA(x, n/2), n/2+1)・ta-lib.org の逐語「even: SMA(SMA(x,period/2),period/2+1)」）。奇数の n は今の版と同じ。"""
+    if n % 2 == 0:
+        return c.rolling(n // 2).mean().rolling(n // 2 + 1).mean()
+    h = n // 2 + 1
+    return c.rolling(h).mean().rolling(h).mean()
+
+
+def _vidya_cmo(c, n, m=9):
+    """VIDYA で CMO の本数 m を n と別に持つ版（ta-lib.org の逐語「n = optInTimePeriod, m = optInCMOPeriod」）。m は名前に出さない引数（最初の値 9＝資料の既定）。"""
+    dif = c.diff()
+    up, dn = dif.clip(lower=0).rolling(m).sum(), (-dif).clip(lower=0).rolling(m).sum()
+    k = ((up - dn) / (up + dn)).abs().to_numpy(float)
+    v = c.to_numpy(float)
+    a = 2.0 / (n + 1)
+    out = np.full(len(v), np.nan)
+    if len(v) >= n:
+        out[n - 1] = float(np.nanmean(v[:n]))
+        for i in range(n, len(v)):
+            kk = 0.0 if np.isnan(k[i]) else k[i]
+            out[i] = a * kk * v[i] + (1 - a * kk) * out[i - 1]
+    return pd.Series(out, index=c.index)
+
+
+_reg("close vs SSF平均%", "close vs SSF平均%{}", True, lambda d, n: (d.close / _ssf_avg(d.close, n) - 1) * 100)
+_reg("close vs TRIMA_TA%", "close vs TRIMA_TA%{}", True, lambda d, n: (d.close / _trima_ta(d.close, n) - 1) * 100)
+_reg("close vs VIDYA_CMO%", "close vs VIDYA_CMO%{}", True, lambda d, n, m=9: (d.close / _vidya_cmo(d.close, n, m) - 1) * 100)
 # ★LRangle（直線あてはめの角度）＝2026-08-11 に一度 材料から外したが、同じ日に戻した。
 #   ★正しい形＝要件のハード制約（H6）に反する指標は、外すのではなく直して使う。
 #   だから「1本あたり何%動くか」の傾きの角度に直して入れる（SQZ% と同じ直し方）。
@@ -1319,9 +1404,20 @@ _reg("close vs HILO%", "close vs HILO%", True, lambda d, high_length=None, low_l
                                                                               close=d.close, high_length=high_length, low_length=low_length).iloc[:, 0] - 1) * 100)
 _reg("close vs HT_TRENDLINE%", "close vs HT_TRENDLINE%", True,
      lambda d: (d.close / _pta6.ht_trendline(close=d.close) - 1) * 100)
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正53）＝Ehlers の入力 (高値＋安値)/2 の版（今の版は残す）。
+_reg("close vs HT_TRENDLINE_HL%", "close vs HT_TRENDLINE_HL%", True,
+     lambda d: (d.close / _pta6.ht_trendline(close=(d.high + d.low) / 2.0) - 1) * 100)
 _reg("close vs HWMA%", "close vs HWMA%", True, lambda d, na=None, nb=None, nc=None: (d.close / _pta6.hwma(close=d.close, na=na, nb=nb, nc=nc) - 1) * 100)
 _reg("close vs MAMA%", "close vs MAMA%", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama(d, fastlimit=fastlimit, slowlimit=slowlimit).iloc[:, 0] - 1) * 100)
 _reg("close vs FAMA%", "close vs FAMA%", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama(d, fastlimit=fastlimit, slowlimit=slowlimit).iloc[:, 1] - 1) * 100)
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正53）＝Ehlers の入力 (高値＋安値)/2 の版
+#   （MAMA.pdf のコードの逐語「Inputs: Price((H+L)/2), FastLimit(.5), SlowLimit(.05);」）。今の版（入力が終値）は残す。
+def _mama_hl(d, **kw):
+    return _pta6.mama(close=(d.high + d.low) / 2.0, **kw)
+
+
+_reg("close vs MAMA_HL%", "close vs MAMA_HL%", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama_hl(d, fastlimit=fastlimit, slowlimit=slowlimit).iloc[:, 0] - 1) * 100)
+_reg("close vs FAMA_HL%", "close vs FAMA_HL%", True, lambda d, fastlimit=None, slowlimit=None: (d.close / _mama_hl(d, fastlimit=fastlimit, slowlimit=slowlimit).iloc[:, 1] - 1) * 100)
 # ★MMAR（2026-08-16・段A の A-6 で直した）
 #   直す前＝`mmar(close=d.close)` を引数なしで呼び、ライブラリの既定の帯（10・15・20・25・30・35）
 #     から1本 取り出していた。だから engine_tuner が範囲 10〜35 から 21 を引くと `MMAR_21` が
@@ -1370,6 +1466,11 @@ _reg("QSTICK%", "QSTICK%{}", True, lambda d, n:
      _pta6.qstick(open_=d.open, close=d.close, length=n) / d.close * 100)
 _reg("DPO%", "DPO%{}", False, lambda d, n:
      _pta6.dpo(close=d.close, length=n, centered=False) / d.close * 100)
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正37・45 の補足の式）＝教科書の DPO を時点 t で計算できる形
+#   「k本前の終値 − いまの n本平均」（k=n/2+1・StockCharts「Price - X-period SMA from {X/2 + 1} periods in the future」）。今の版（いまの終値 −
+#   k本前の n本平均＝TradingView の中心化しない版）は残す。未来は見ない。
+_reg("DPO教科書%", "DPO教科書%{}", False, lambda d, n:
+     (d.close.shift(int(0.5 * n) + 1) - _pta6.sma(close=d.close, length=n)) / d.close * 100)
 _reg("TTM_TREND", "TTM_TREND{}", True, lambda d, n: _pta6.ttm_trend(high=d.high, low=d.low, close=d.close,
                                                                     length=n).iloc[:, 0])
 # ★AMAT は LR の1列だけ入れる（理由は式で決まる＝slow が打ち消されて効かない・2026-08-09 実測）。
@@ -1431,6 +1532,11 @@ _reg("MEDIAN傾き%", "MEDIAN傾き%{}", True,
 _reg("close vs ABER_ZG%", "close vs ABER_ZG%", True, lambda d, length=None: (d.close / _ab(d, length=length).iloc[:, 0] - 1) * 100)
 _reg("ABER位置", "ABER位置", True,
      lambda d, length=None, atr_length=None: (lambda a: (d.close - a.iloc[:, 2]) / (a.iloc[:, 1] - a.iloc[:, 2]))(_ab(d, length=length, atr_length=atr_length)))
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正45・71）＝Fitschen の原作の Aberration＝80本・標準偏差2倍の
+#   ボリンジャーバンドの中の位置（%b と同じ作り・ddof 0）。ライブラリの版（HLC3 の5本 SMA ± ATR15）は残す。
+#   ★本数と倍率は名前に出さない引数（最初の値＝原作の既定 80・2.0＝監査の逐語「80本・標準偏差2倍」）。BB%b の範囲は触らない（案の4）。
+_reg("ABER原作位置", "ABER原作位置", True, lambda d, length=80, std=2.0:
+     (lambda m, s: (d.close - (m - std * s)) / (2.0 * std * s))(d.close.rolling(length).mean(), d.close.rolling(length).std(ddof=0)))
 _reg("close vs ACCBL%", "close vs ACCBL%", True, lambda d, length=None, c=None: (d.close / _acb(d, length=length, c=c).iloc[:, 0] - 1) * 100)
 _reg("close vs ACCBU%", "close vs ACCBU%", True, lambda d, length=None, c=None: (d.close / _acb(d, length=length, c=c).iloc[:, 2] - 1) * 100)
 _reg("close vs CE_L%", "close vs CE_L%", True, lambda d, length=None, multiplier=None: (d.close / _cel(d, length=length, multiplier=multiplier).iloc[:, 0] - 1) * 100)
@@ -1443,6 +1549,15 @@ _reg("PDIST%", "PDIST%", False, lambda d: _pta6.pdist(open_=d.open, high=d.high,
 _reg("TR%", "TR%", False, lambda d: _pta6.true_range(high=d.high, low=d.low, close=d.close) / d.close * 100)
 _reg("THERMO%", "THERMO%", False, lambda d: _th(d).iloc[:, 0] / d.close * 100)
 _reg("THERMO比", "THERMO比", False, lambda d: (lambda t: t.iloc[:, 0] / t.iloc[:, 1])(_th(d)))
+# ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正45 の直した後の文字）＝Elder の原作＝外へはみ出した幅だけ
+#   （max(max(High − PrevHigh, 0), max(PrevLow − Low, 0))・内はらみ足は 0）。ライブラリの版（絶対値）は残す。
+def _thermo_orig(d):
+    return np.maximum((d.high - d.high.shift(1)).clip(lower=0), (d.low.shift(1) - d.low).clip(lower=0))
+
+
+_reg("THERMO原作%", "THERMO原作%", False, lambda d: _thermo_orig(d) / d.close * 100)
+# ★K-7 の決定（ok_k7_pivot_thermo_20261007）＝EMA でならした版。EMA の本数は名前に出さない引数（最初の値＝ライブラリの既定 20・資料の既定は 20 と 22）。
+_reg("THERMO_EMA%", "THERMO_EMA%", False, lambda d, ema_n=20: _pta6.ema(close=_thermo_orig(d), length=ema_n) / d.close * 100)
 _reg("CVI", "CVI{}", False, lambda d, n: _pta6.cvi(high=d.high, low=d.low, length=n))
 _reg("RVI", "RVI{}", True, lambda d, n: _pta6.rvi(close=d.close, length=n))
 _reg("UI", "UI{}", False, lambda d, n: _pta6.ui(close=d.close, length=n))
@@ -1557,6 +1672,7 @@ def build_catalog(cfg: dict) -> list[tuple]:
             addf("BB幅", n, s)
     for n in cfg["realized_vol_periods"]:
         addf("realized_vol", n)
+        addf("realized_vol_rv", n)        # 監査 CP60 の修正50（K-3c・2026-10-11）
     for n in cfg["donchian_periods"]:
         addf("Donchian幅%", n)
     for n in cfg["zscore_periods"]:
@@ -1692,15 +1808,19 @@ def build_catalog(cfg: dict) -> list[tuple]:
                  "SQZPRO_ON_WIDE", "SQZPRO_ON_NARROW", "STC", "STCstoch"):
         addf(_fam)
     addf("SMC_SWEEP確定")                     # 監査 CP60 の修正46（K-3b・2026-10-09）
+    addf("SQZ_ON_Carter")                     # 監査 CP60 の修正47（K-3c・2026-10-11）
 
     # ── 業界の指標（3回目＝アルファベット順 stochf〜willr）──
     for n in cfg["rsi_periods"]:
         addf("StochRSI%K", n)
         addf("StochRSI%D", n)
+        addf("StochRSI素%K", n)           # 監査 CP60 の修正48（K-3c・2026-10-11）
         for (_f, _s, g_) in cfg["macd_params"]:
             addf("TRIX", n, g_)
             addf("TRIXシグナル", n, g_)
             addf("TRIXヒスト", n, g_)
+            addf("TRIX_EMAシグナル", n, g_)   # 監査 CP60 の修正49（K-3c・2026-10-11）
+            addf("TRIX_EMAヒスト", n, g_)
     addf("TD_SEQ_UP")
     addf("TD_SEQ_DN")
     addf("UO")
@@ -1729,6 +1849,7 @@ def build_catalog(cfg: dict) -> list[tuple]:
             addf("FWMA傾き", n)
     addf("close vs HILO%")
     addf("close vs HT_TRENDLINE%")
+    addf("close vs HT_TRENDLINE_HL%")      # 監査 CP60 の修正53（K-3c・2026-10-11）
     addf("close vs HWMA%")
 
     # ── 業界の指標（overlap 2回目＝linregintercept〜rma）──
@@ -1739,6 +1860,8 @@ def build_catalog(cfg: dict) -> list[tuple]:
         addf("LRslope%", n)
     addf("close vs MAMA%")
     addf("close vs FAMA%")
+    addf("close vs MAMA_HL%")               # 監査 CP60 の修正53（K-3c・2026-10-11）
+    addf("close vs FAMA_HL%")
     # ★mavp は入れない＝既定の使い方が未来を見る（実物の逐語＝periods を
     #   np.linspace(minperiod, maxperiod, len(close)) で作る＝各足で使う本数がデータ全体の
     #   本数で決まる。データが増えると過去の足の値まで変わる）。2026-08-09 実測で検出。
@@ -1760,6 +1883,9 @@ def build_catalog(cfg: dict) -> list[tuple]:
                     "TSF", "VIDYA", "VWMA", "WMA", "ZLMA"):
             addf(f"close vs {_nm}%", n)
             addf(f"{_nm}傾き", n)
+        addf("close vs SSF平均%", n)       # 監査 CP60 の修正51（K-3c・2026-10-11）
+        addf("close vs TRIMA_TA%", n)      # 監査 CP60 の修正52（K-3c・2026-10-11）
+        addf("close vs VIDYA_CMO%", n)     # 監査 CP60 の修正52（K-3c・2026-10-11）
 
     # ── 業界の指標（trend 16関数）──
     for n in cfg["atr_periods"]:
@@ -1770,6 +1896,7 @@ def build_catalog(cfg: dict) -> list[tuple]:
         addf("QSTICK%", n)
     for n in cfg["donchian_periods"]:
         addf("DPO%", n)
+        addf("DPO教科書%", n)              # 監査 CP60 の修正37・45（K-3c・2026-10-11）
         addf("TTM_TREND", n)
     for _fam in ("AMAT_LR", "close vs CKSPl%", "close vs CKSPs%", "close vs PMAX%",
                  "close vs PSAR%", "PSAR加速", "PSAR反転", "close vs SAREXT%"):
@@ -1821,12 +1948,15 @@ def build_catalog(cfg: dict) -> list[tuple]:
     for _fam in ("close vs ABER_ZG%", "ABER位置", "close vs ACCBL%", "close vs ACCBU%",
                  "close vs CE_L%", "close vs CE_S%"):
         addf(_fam)
+    addf("ABER原作位置")                     # 監査 CP60 の修正45・71（K-3c・2026-10-11）
     # ★hwc の中心線（HWM）は入れない＝うちに既に在る close vs HWMA% の HWMA と同じ値だった
     #   （2026-08-10 実測＝40,000本すべて 最大差 0.0）。hwc から足すのは、HWMA には無い「帯」の2列だけ。
     #   ★総当たりの重複検出（定数倍＋定数）では捕まらなかった＝終値で割る形が入ると関係が曲がるため。
     #   捕まえたのは「相関 0.999 超の近い組」の報告（相関 −0.999973）。教訓 L-438。
     for _fam in ("HWC位置", "HWC幅%", "MASSI", "PDIST%", "TR%", "THERMO%", "THERMO比"):
         addf(_fam)
+    addf("THERMO原作%")                       # 監査 CP60 の修正45・58（K-3c・2026-10-11）
+    addf("THERMO_EMA%")                      # K-7 の決定（ok_k7_pivot_thermo_20261007・K-3c・2026-10-11）
     for n in cfg["atr_periods"]:
         addf("CVI", n)
         addf("RVI", n)

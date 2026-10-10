@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=1f2077275adde72e tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=cc70663d155435a4 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 ## ▶ 次にやること（最初にここを読む）
@@ -89,6 +89,13 @@
 - 経緯＝`.claude/state/session_worklog_20261003.md` の §29・§30・§38・§39・§41・§43〜§51、`.claude/state/session_worklog_20261004.md` の §1〜§3、違反の記録 #27（`.claude/rules/permanent_rules.md` の §2）。
 - M2 で何を作っているか＝`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/engine_tuner_milestones2.md` の節「🔴 ★M2 で作っている物」。
 
+**指標の修正の中身（4つ・元は前回の資料）**（★修正対応表の道具 `make_fix_plan.py` がこの4行を読む＝消さない。165回目の書き替えで一度 消え、166回目に 2026-10-10 の控えから1文字も変えずに戻した）
+
+1. パラメータ＝指標ごとに、教科書の最初の値（スキャル・デイトレ）と範囲を持たせる。別の指標の期間の一覧の流用（observe_diag.py の build_catalog＝macd_params を AO・APO・PPO・PVO・TSI・VWMACD に・atr_periods を Aroon・CHOP・VHF ほか11種に・sma_periods を SINWMA ほか11種に）をやめる。値の元＝`indicator_params_by_strategy.md`。
+2. 作り＝`indicator_params_review.md` の「メモ」の欄で、教科書と作りが違うと書かれた所（Stoch・StochRSI の %K の平滑・TSI の 25・13・KAMA の効率比の本数・SSF の本数・volume_ratio の計算・BB の50本の倍率・Keltner の ATR の期間・VWAP・pivot・POC・VAH・VAL の区切り方・W字の幅・MAMA の入力・HILO の本数 ほか）と、監査 CP60 の直し。直すかどうかは、思考の順の4（まこさんの基準）と5（直すべき条件4つ）で決める。
+3. 役割＝`indicator_roles_thresholds.md` の食い違い26種・疑い30種を、出どころどおりにする。
+4. 閾値＝同じ表（教科書の閾値を数字で確かめられたのは8種）。
+
 **9. 手を動かすときに毎回 確かめること（159〜163回目に止められた件のまとめ・元の文は控えに在る）**
 
 - 書く前・走らせる前に、`python3 .claude/tools/try_hooks.py` に同じ入力を通す。python3 -c・python3 -（ヒアドキュメント）・for・変数で組んだコマンド・timeout は打たない。json は jq で読む。Bash に渡す文字に「>」「<」「|」を入れない（関数の定義の行「-> 型」も）。
@@ -101,16 +108,17 @@
 - 監査の依頼書は1つの工事に1通。必読の表は1ファイル1行。設計書の手書きの「読み方」に、番号も数字も書かない。工事の逐語のフォルダに、ToDo の4行を含む返信を入れない。
 - 返信は必ず日本語で書く。時刻は date で確かめてから書く。
 
-### ▶▶ 次のセッションでやること（166回目・ここに書くのは次のセッションでやることだけ）
+### ▶▶ 次のセッションでやること（167回目・ここに書くのは次のセッションでやることだけ）
 
 **★書き方の決まり（まこさん指示 2026-10-10）**＝この節には、次のセッションでやることだけを書く。済んだことの記録（N回目にしたこと）は書かない。記録は `session_worklog_YYYYMMDD.md` に書く。セッションの終わりに、この節を丸ごと書き替える（前の回の文を下に残さない）。
 
 1. 上の「毎回 必ず読むこと」と、この節を全部 読む。
-2. **ミスをしない仕組みの残りを作る**（まこさん指示 2026-10-10・逐語「どういうミスをしてるのか検証して、ミスをしないような仕組みを作る」「この強制は作って」）。検証の結果（流れのどこで・どの型のミスを・何回）＝`.claude/state/session_worklog_20261010.md` の §42。済んだ物＝①監査依頼の手書きの文書を保存する瞬間に、依頼書を作るプログラムと同じ検査を掛ける hook（`.claude/hooks/check_source_on_save.py`・登録済み）②お願いの前の検査（`.claude/hooks/check_all_before_handoff.py`）に、手書きの文書の照らしと依頼書の見直し表の照らしを足した ③工事のいまの段・次の一手・まこさんにお願いする前の条件を、実物から読んで出すプログラム（`.claude/tools/next_move.py`）。残り＝(a) 工事の段で見分けて、お願いの前の条件が通るまで返信を止める検査（いまのターンの終わりの検査は、返信の言い方や見出しの形で見分けるので、形が違うお願いが見えない＝型 A の3回。段の判定は next_move.py を使う。登録する前に、過去のやり取りの記録で止まり方を試す＝2026-10-01 に、止まり続ける hook が進行を妨げて登録を外した経緯が `.claude/state/session_worklog_20261001.md` の §4〜§6 に在る）(b) 承認の後・当てた後の手順のミス（型 D）の仕組みの案を まこさんに出す (c) お願いの前の検査が、engine_tuner_gen.py を書き替えている間は全体の自己テストで必ず1件 落ちる所を直す（`.claude/state/session_worklog_20261010.md` の §47）。
-   - ★手を動かす前に、工事の名前で `python3 .claude/tools/next_move.py --work <工事名> --session <セッション>` を走らせ、出た段と条件のとおりに進める。まこさんにお願いを出す前に、`python3 .claude/hooks/check_all_before_handoff.py --session <セッション>` を走らせる（返信を止める hook は登録していない＝走らせるのは CC）。
-   - ★型 D の実例（165回目・`.claude/state/session_worklog_20261010.md` の §46〜§48）＝監査の修正を当てるプログラム（apply_audit_fix.py --report）は、当てた直後に設計書と実装の照らしを掛け、通らなければ G2 と H2 を取り直さない。止まる理由は2つ＝①コミットしていない .py（scripts/priority_rebuild・.claude/hooks・.claude/tools）で、設計書の相手でない物が在る ②監査の修正が、設計書に書いた関数の一部だけを触る（残りを「実装していない」と数える）。解き方＝当てる前に、相手でない .py をコミットする。当てた後は、当てた分をコミットしてから、G2 → H2 を手で取り直す（どちらも まこさんの OK が要る）。
-3. **K-3c（教科書の版を材料に足す・計算式の16種）の読むもの宣言を作る**＝`.claude/state/read_plan_src.json` を書き直し、`python3 .claude/hooks/require_read_plan_before_design.py --write` で宣言を作り、まこさんの OK をもらう。いまの宣言（工事 g2-table-range-source-20261010）は、先に控えへ写す。読むものに入れる物＝監査 CP60 の修正37・45・47〜53 の本文／K-3 を3つに分けた案 `v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/acceptance_archive/verbatim/m2c15-period-textbook-20261007/okd_k3_split_20261007.txt`（16種の一覧）／K-3b の写しの道具 `.claude/state/indicator_review/k3b_draft_build.py`・`k3b_proposal_build.py`（手本）／全体の表／マイルストーン2本。
-   - ★165回目は、必読のうち next_step.md の 258行目より後ろ（§6 ほか）と `.claude/state/indicator_params_review.md` の 74行目より後ろを開いていない。K-3c の読むもの宣言を作る前に開く。
+2. **K-3c の1つ目の工事（m2c15-formula-textbook-20261011＝15種の教科書の版を足した・承認済み・当てた・G-1 済み）の残り**＝①166回目の終わりに残った未コミット（当てた2本のコード・KB・新しい壊すプログラム7本・印・資料の表・next_step・worklog ほか）を `git status` で確かめ、まこさんの OK をもらってファイル単位でコミットする（`git add .` は使わない）②完成の条件7行（acceptance.md の 7-6）は、承認のプログラムが壊すプログラムを測って「済」を書く＝CC は書かない。
+   - ★照らしの道具（`python3 .claude/tools/pre_audit_check.py --check-indicator-sources`）の②＝observe_config.json 13行・search_limits.json 8行が食い違うのは、設計書 4-0 の⑦のとおり＝2つ目の工事で写すまでは食い違ったままで正しい。この間に監査に出す前のチェック（pre_audit_check.py --run）を走らせない（4-4 の順）。
+3. **K-3c の2つ目の工事（W-2＝15種の設定を資料から写す）**＝K-3b の2つ目の工事（m2c15-shape-settings-20261009・`session_worklog_20261010.md` §3）と同じ流れ。手順＝①読むもの宣言（`read_plan_src.json` を書き直し → `require_read_plan_before_design.py --write` → まこさんの OK。マイルストーン2本・acceptance_archive の1つ目の設計書・k3b の2つ目の工事の設計書の控え・r3_draft_build.py を入れる）②写しで確かめる道具＝`k3c_draft_build.py` の G-1 の試し（[6b]）が数えた「工事2で写す設定」（k3c_check.json）と、`r3_draft_build.py` の写し方で、observe_config.json と search_limits.json の差分の指示を作る（設定の指示は「直す前の文字」と「直した後の文字」の2欄）③案（ひな形＝k3b の2つ目の工事の案）→ まこさんの OK → 逐語（gen_verbatim.py --uuid）→ やることの表（手書き5項目）→ `gen_acceptance.py --work <工事名> --write` → 設計書を全部 Read → 見直し表（gen_review.py --skeleton → 埋める → --check・根拠の行は Read で開く・フルパスで書く）→ `require_design_check_before_approval.py --try`（約30分＝まこさんの OK）→ 承認 → `next_move.py --work <工事名>` で当てる前の条件 ✅ → `apply_audit_fix.py --design --dry` → `--design` → 照らしの②が0件 → G2 → H2 → `pre_audit_check.py --run`（約10分）→ 監査の依頼書（工事ごとに1通＝1つ目の工事と2つ目の工事で2通・手書きの文書 → まこさんの OK → gen_audit_docs）。
+   - ★166回目の実測（見込みに使う）＝全部の確かめ（写し・壊し方7本）約19分／承認の前の検査 --try（A12 を含む）32分（A1〜A11 に約14分 掛かる）／壊すプログラムの測り直し 7本 約15分／全体の自己テスト 141秒／H2 約5分。15分を超える物は まこさんの OK をもらってから走らせる。
+   - ★166回目に止められた形（繰り返さない）＝試しの道具は本番と同じ文字（同じ作業ディレクトリ・同じパス）で1本ずつ通す／`--add`・`--alias` の名前の一覧は引用符で1つの引数にする（「close vs …」の空白で切れる）／.claude/tools の .py に py_compile を打たない（土台ゲート）／`echo ====` のような区切りを Bash に入れない／設計書を作り直した後は、本物を全部 Read し、見直し表の根拠の行も Read で開いてからリンクを出す。
+4. **K-3c の後の仕組みの直し（小さい・インフラ）**＝①`make_fix_plan.py` が next_step.md の節「指標の修正の中身（4つ・元は前回の資料）」を読む作り＝節を消すと落ちる。節は166回目に戻した（上の「毎回 必ず読むこと」の 8 の後ろ）。読む元を next_step から別の正本（例＝`.claude/state/indicator_review/research/` の json）へ移すかは、まこさんに1行で聞く ②承認の前の検査 A12 の壊すプログラムの上限 900秒（`require_design_check_before_approval.py` の 707行目）は、全体の自己テストを測る壊すプログラムが6本を超えると時間切れになる＝7本目からは軽い口（--selftest-catalog）で測る壊し方にするか、上限を上げるか（hook の直し＝まこさん）。
 4. 宣言の全部を読む → 写しで確かめる道具 → 案 → まこさんの OK → 設計書（gen_acceptance.py）→ 設計書を全部 読んで見直し表 → 承認の前の検査 → 承認 → 当てる（apply_audit_fix.py --design）→ G-1（表の作り直し・型の表の再承認）→ G2 → H2 → 監査に出す前のチェック → 監査の依頼書。
    - ★監査の依頼書の手書きの文書を書くとき＝①要件定義書（engine_tuner_requirements.md）の必読の範囲は :28-232（前の工事の手本の :28-103 は古い＝2026-10-10 に「探し方の要件」の節が入り、「作ってはいけないもの」の節が 169行からに下がった）②工事のフォルダに req_ で始まる逐語が在る工事は、出どころに req_ のファイルの行の番号だけを書く（保存する瞬間の検査が止める）③依頼書を作ったら、リンクを返信に出す前に、見直し表（gen_review.py --skeleton → 埋める → --check）を作る。経緯＝`.claude/state/session_worklog_20261010.md` の §37・§38。
 5. K-3c の後＝K-4 → B-1＋S-1（§6 の252番も）→ R-1 → T-1 → T-2 → T-3 → P-6 → P-7 → H-1。全部 済んだら M2 へ戻る（M2-D-8 の成績表の作り直し・M2-E-8 ほか）。
@@ -170,9 +178,9 @@
 | **B（.claude を1つに）** | **2つの .claude（直下と sdk）を1つにまとめる**（まこさん 2026-10-02「Bはあとでやるので書いておいて」）。sdk の方を名指ししている hook 16個・道具・文書のパスを全部 直す。地図は A で道具が作る形にした | `.claude/hooks/`・`.claude/tools/`・`v3-bitget-api-sdk/bitget-python-sdk-api/.claude/` | 名指しを全部 直した後、hook の検査と地図の検査（`gen_folder_map.py --verify`）が通る | まだ（いつやるかは まこさんが決める） |
 | — | **★強制へ手を入れたくなったら、先に `lessons_active.md` の L-586 を読む。** | | | 着手しない |
 
-### 0-1 いまの状態（2026-10-11・165回目の終わり・記録＝`session_worklog_20261010.md` §37〜§49 と `session_worklog_20261011.md` §1）
+### 0-1 いまの状態（2026-10-11・166回目の終わり・記録＝`session_worklog_20261011.md` §1〜§19）
 
-**いまの状態（2026-10-11・165回目の終わり）**＝指標の修正（やることリストの M2-C-15）の途中。済んだ物＝K-1・K-8・K-2 と K-6 の代わり・P-5・P-1〜P-4・K-7・K-3a・K-3b と、監査 CP69・CP70 の直しの全部。工事 g2-table-range-source-20261010（監査 CP69 の修正1 のうち、自己テストが止まった理由を出して後ろの検査へ進む直し）は、実装の監査 CP71（GO・Critical 0・Major 1・Minor 3）の修正1〜4 を当てる所まで済んだ（コミット b3b61ba・c108e71）。本走が止まる原因の直しは M2-E-8（全体の自己テストは、それまで終了コード 1 のまま）。165回目に、流れのミスの検証と、ミスをしない仕組みの1回目（コミット fbafab9）を入れた。残り（この順）＝K-3c・K-4・B-1＋S-1・R-1・T-1・T-2・T-3・P-6・P-7・H-1。次の一手＝先頭の「▶▶ 次のセッションでやること」。
+**いまの状態（2026-10-11・166回目の終わり）**＝指標の修正（やることリストの M2-C-15）の途中。済んだ物＝K-1・K-8・K-2 と K-6 の代わり・P-5・P-1〜P-4・K-7・K-3a・K-3b・監査 CP69〜CP71 の直し・ミスをしない仕組みの残り（(a) 工事の段で見分けてお願いを止める検査 require_stage_conditions・(b) 型 D＝直した状態で確認に出す auto_fix と当てる前の条件・(c) お願いの前の検査の落ちの直し＝コミット 84ea5ea・b812bab）。K-3c（計算式が教科書と違う15種に教科書の版を足す）の1つ目の工事 m2c15-formula-textbook-20261011 は、承認（08:16）→ 33件を当てた → 壊すプログラム7本 期待どおり → 全体の自己テスト pass → G-1（オン・オフの表 使う 175・型の表と出口の型の表の再承認 済・材料の文書・観察の説明書・組み立ての表・資料の道具4本・修正対応表）→ G2・H2 の印を取り直した所まで済んだ（★当てた分は未コミット）。照らしの道具の②（observe_config 13行・search_limits 8行）は、2つ目の工事（W-2）で写すまで食い違ったままで正しい。本走が止まる原因の直しは M2-E-8（全体の自己テストは、それまで終了コード 1 のまま）。残り（この順）＝K-3c の W-2 → G-2 → 監査2通 → K-4・B-1＋S-1・R-1・T-1・T-2・T-3・P-6・P-7・H-1。次の一手＝先頭の「▶▶ 次のセッションでやること」。
 
 過去の回の状態（162回目〜149回目の12段落）は、`.claude/state/next_step_history_20261010.md` に写してある。記録は `session_worklog_YYYYMMDD.md` から読む。
 
@@ -181,7 +189,7 @@
 
 ### （0-b-2）🔴 印の状態（2026-10-11・★この節は tidy_next_step.py が json から書く＝手で書かない）
 
-- **H2 の印＝`0186bdae321e5ade…`**（`.claude/state/h2_pass.json`・2026-10-10 23:39:21・対象24ファイル）／**G2 の印＝`cfa756913f69589c…`**（`g2_pass.json`・2026-10-10 23:34:30・対象39ファイル）。
+- **H2 の印＝`bce8d56e45c944b8…`**（`.claude/state/h2_pass.json`・2026-10-11 08:50:08・対象24ファイル）／**G2 の印＝`dfb596176515db42…`**（`g2_pass.json`・2026-10-11 08:45:01・対象39ファイル）。
 - **コードを触ったら取り直す**＝G2 → H2 の順（`gen_signal_families.py --verify` 約30秒 → `leak_causality_diag.py` 約5分・L-565）。
 
 ### （0-d）★まだ埋まっていないこと（2件・2026-09-17 に実物で確かめた）

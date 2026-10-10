@@ -70,6 +70,7 @@
  "b156_sr_fractal_unconfirmed.sh": "96d5b9a59fc8b3ac8d04357fd97425e0a6cb3ad9d4f82236ba084762fd635649",
  "b157_wfractal_tol_point.sh": "9e11076667dd4d8cf86726c2cfd4cba2f58c9b267370b825e0dc3c4f0e8c42d4",
  "b158_shape_ranges_missing.sh": "f68ef2c4dd11c408d3e2d6ff22851f923784be75024da8a21112ae43b4c3a26b",
+ "b159_selftest_run_passthrough.sh": "3d2943ccc20045dbfbf6472ba874a29f4ec758ffa675bd7fd7acae970a34c37b",
  "b15_record_write.sh": "518ec7b231283e71787cc4344022e0d854baef37fc04c589910b06eb5d23bd03",
  "b16_breaks_write.sh": "5f730086d7e1b1c103b6612a74597b1c06f2cc8499c9939c169ea1bb6322945c",
  "b17_pipe_in_table.sh": "1feb960089b94c9c561c416ed42622f0fb71a1be9b15191fc5fafe98febd1723",

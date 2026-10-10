@@ -83,7 +83,12 @@ def facts(work: str, session: str) -> dict:
     import gen_audit_docs as gad
     import apply_audit_fix as aaf
     f: dict = {"work": work}
-    f["wdir"] = gv.work_dir(work)
+    try:
+        f["wdir"] = gv.work_dir(work)
+    except gv.VerbatimError:
+        # ★2026-10-11＝読むもの宣言の段（段1）では、工事のフォルダは まだ無い（案の逐語を保存するときに作る）。
+        #   無いときは作業中の置き場の見込みのパスにして、段1 として出す（止めない）。
+        f["wdir"] = gv.VERBATIM_DIR / work
     f["working"] = f["wdir"].parent == gv.VERBATIM_DIR     # 作業中の置き場か（承認の後は控えの置き場に移る）
     # 読むもの宣言
     plan = STATE / "design_read_plan.md"
@@ -288,7 +293,16 @@ def apply_preconditions(f: dict) -> list:
             with contextlib.redirect_stdout(buf):
                 ok = bool(vdc.check(str(design)))
             last = [x for x in buf.getvalue().splitlines() if x.strip()]
-            out.append((ok, "設計書と実装の照らし（verify_design_contract.check＝当てた直後に掛かる物と同じ）が いま通る"
+            # ★2026-10-11（166回目・K-3c で実測）＝当てる前は、設計書が足す新しい関数がまだ実物に無いので、照らしは必ず落ちる。
+            #   その場合は、承認の前の検査 --try の A12（本物に仮に当てて同じ照らしを掛け、元に戻す）が、いまの設計書の
+            #   ハッシュ値で通った記録（a12_try_ok.json）を、同じ判定として使う。
+            via = ""
+            if not ok:
+                import require_design_check_before_approval as rd0
+                sha = rd0._a12_ok_sha()
+                if sha and sha == rd0._sha_of(str(design)):
+                    ok, via = True, "（当てる前は新しい関数が無いので直には通らない＝A12 の仮当てで通った記録が、この設計書のハッシュ値と合う）"
+            out.append((ok, "設計書と実装の照らし（verify_design_contract.check＝当てた直後に掛かる物と同じ）が いま通る" + via
                             + ("" if ok else "＝" + (last[-1] if last else "通らない"))))
         except Exception as e:                                # noqa: BLE001
             out.append((None, f"設計書と実装の照らしを走らせられない＝{type(e).__name__} {e}"))
