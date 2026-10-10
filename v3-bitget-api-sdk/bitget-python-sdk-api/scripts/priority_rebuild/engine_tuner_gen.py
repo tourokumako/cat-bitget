@@ -5207,8 +5207,13 @@ def _selftest_run(fn, *bufs):
     """
     try:
         return fn()
-    except SystemExit:
-        raise _RunStopped(_stop_note("".join(b.getvalue() for b in bufs))) from None
+    except SystemExit as _e:
+        # ★本走が、止まる理由を SystemExit の中の文として持たせて終わる所（例＝run_generation の「[歩4 エラー] …」）では、
+        #   理由は受け皿に出ない。その文も理由に足す（文が無いときは終了コードを足す）。
+        _code = _e.code
+        _tail = (f" ／ 終わるときの文＝{_code[:200]}" if isinstance(_code, str) and _code
+                 else f" ／ 終了コード＝{_code}")
+        raise _RunStopped(_stop_note("".join(b.getvalue() for b in bufs)) + _tail) from None
 
 
 def selftest_stop_note() -> list:
@@ -5262,6 +5267,26 @@ def selftest_stop_note() -> list:
         out.append("④ SystemExit でない例外（ValueError）が、本走が止まったことにされた")
     except ValueError:
         pass
+
+    # ⑤ 本走が、止まる理由を SystemExit の中の文として持たせて終わる＝その文が理由に入る（受け皿に理由が出ない止まり方）
+    def _stops_msg():
+        raise SystemExit("[見本エラー] 見本の理由")
+    try:
+        _selftest_run(_stops_msg, _io.StringIO())
+        out.append("⑤ 本走が途中で止まったのに、止まったことを知らせない")
+    except _RunStopped as _e5:
+        if "終わるときの文＝[見本エラー] 見本の理由" not in str(_e5):
+            out.append(f"⑤ SystemExit の中の文が理由に入っていない: {_e5}")
+    except SystemExit:
+        out.append("⑤ 本走が途中で止まると、プログラムごと終わってしまう（理由を知らせていない）")
+    # ⑥ 自己テスト（selftest）の中で本走（run_generation）を呼ぶ所が、全部 口（_selftest_run）を通している
+    #   ★行の # より後ろを外してから数える。1か所でも口を通さない呼び方が在れば落ちる。
+    import inspect as _insp
+    _src50 = "\n".join(ln.split("#", 1)[0] for ln in _insp.getsource(selftest).splitlines())
+    _all50 = _src50.count("run_generation(")
+    _via50 = _src50.count("_selftest_run(lambda: run_generation(")
+    if _all50 == 0 or _all50 != _via50:
+        out.append(f"⑥ 自己テストの中で本走を呼ぶ所 {_all50} か所のうち、口を通しているのは {_via50} か所")
     return out
 
 

@@ -16,8 +16,8 @@ python3 - "$G" <<'PYEOF'
 import sys
 p = sys.argv[1]
 s = open(p, encoding='utf-8').read()
-old = '    except SystemExit:\n        raise _RunStopped(_stop_note("".join(b.getvalue() for b in bufs))) from None\n'
-new = '    except SystemExit:\n        raise\n'
+old = '        raise _RunStopped(_stop_note("".join(b.getvalue() for b in bufs)) + _tail) from None\n'
+new = '        raise\n'
 if s.count(old) != 1:
     raise SystemExit("[b159_selftest_run_passthrough] 壊す対象の文字が1か所でない")
 open(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))
