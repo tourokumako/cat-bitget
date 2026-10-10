@@ -16,6 +16,9 @@
 #      承認の前の検査 require_design_check_before_approval.check_all（A1〜A13＝承認の後に起きること全部の仮通しを含む）
 #      ★案の OK 待ち（_draft_*.txt が在り、試しの設計書が ok で設計書より新しい）のときは、どちらも試しの設計書で見る
 #   ⑤ 案の試し＝.claude/state/_draft_*.txt が在れば、最後の trial_design の記録が ok か
+#   ⑥ 監査依頼の手書きの文書（工事のフォルダの「監査依頼の手書き（…）.md」）＝依頼書を作る道具と同じ読み方で照らす（書かない）
+#   ⑦ 作った監査の依頼書（audits/inputs の *_audit_request.md）＝見直し表（gen_review.py --check）
+#      ★⑥⑦は 2026-10-10 に足した。相手は、その監査の結果ファイルがまだ無い分だけ（audit_request_checks）
 # 結果を .claude/state/sessions/<セッション>/handoff_check.json に書く＝require_full_check_before_handoff が読む。
 #
 # 使い方: python3 .claude/hooks/check_all_before_handoff.py --session <id>
@@ -25,13 +28,14 @@ import datetime
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import time
 
 ROOT = "/Users/tachiharamasako/Documents/GitHub/cat-bitget"
 SDK = ROOT + "/v3-bitget-api-sdk/bitget-python-sdk-api"
-WATCH = (".claude/tools/", ".claude/hooks/", ".claude/breaks/", "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/")
+WATCH =(".claude/tools/", ".claude/hooks/", ".claude/breaks/", "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/")
 SKIP_SELFTEST = {"check_all_before_handoff.py"}
 
 
@@ -70,6 +74,70 @@ def open_drafts(acc: str) -> list:
     t_acc = os.path.getmtime(acc) if os.path.isfile(acc) else 0.0
     return [f for f in os.listdir(st) if f.startswith("_draft_") and f.endswith(".txt")
             and os.path.getmtime(os.path.join(st, f)) > t_acc]
+
+
+def audit_request_checks() -> tuple:
+    """⑥監査依頼の手書きの文書を、依頼書を作る道具と同じ読み方で照らす（依頼書は書かない）。⑦作った依頼書の見直し表を照らす。
+
+    ★2026-10-10（165回目・まこさん「結論、どうしたらミスを無くせる？」「だから、どうすんの？」）
+      直す前＝この2つは、まこさんに出した後に初めて検査が走った。
+        ・手書きの文書に OK をいただいた後、依頼書を作る道具（gen_audit_docs.py の read_hand）が、出どころの番号で止めた。
+        ・依頼書のリンクを返信に出した後、ターンの終わりの検査（require_read_used）が、見直し表が無いと止めた。
+      直した後＝お願いの前に走らせるこの道具が、同じ判定を先に走らせる（判定は書き写さず、同じ道具を呼ぶ）。
+    相手＝git に登録していない物・書き替えた物のうち、その監査の結果ファイルがまだ無い分だけ（済んだ監査の物は見ない）。
+    戻り＝(落ちた所の一覧, 走らせた検査の一覧)。"""
+    fails, done = [], []
+    rc, out = run(["git", "-c", "core.quotepath=false", "status", "--porcelain", "--untracked-files=all"])
+    paths = sorted({ln[3:].strip().split(" -> ")[-1].strip('"') for ln in (out or "").splitlines() if ln.strip()})
+    aud = SDK + "/.claude/audits"
+    inputs = os.path.join(aud, "inputs")
+    if not os.path.isdir(inputs):
+        return fails, done
+
+    def answered(cp: str) -> bool:
+        """その番号の監査の結果ファイルが、もう在るか。"""
+        return any(n.endswith(f"_cp{cp}_audit_report.md") for n in os.listdir(aud))
+
+    sys.path.insert(0, ROOT + "/.claude/tools")
+    try:
+        import gen_audit_docs as gad
+    except Exception as e:                                   # noqa: BLE001
+        return [f"依頼書を作る道具（gen_audit_docs.py）を読み込めない（{e}）"], done
+    for p in paths:
+        full = os.path.join(ROOT, p)
+        name = os.path.basename(p)
+        if not os.path.isfile(full):
+            continue
+        # ⑦ 作った依頼書＝見直し表が全部 埋まっているか（リンクで渡す前に要る）
+        m = re.search(r"_cp(\d+)_audit_request\.md$", name)
+        if m and os.path.dirname(full) == inputs and not answered(m.group(1)):
+            rc, o = run(["python3", ".claude/tools/gen_review.py", "--check", p])
+            done.append(f"gen_review.py --check {name}")
+            if rc != 0:
+                fails.append(f"監査の依頼書の見直し表が通らない（リンクで渡す前に作って埋める）: {p}\n{tail(o)}")
+        # ⑥ 監査依頼の手書きの文書＝依頼書を作る道具が読めるか（まこさんに OK をお願いする前に要る）
+        if "/verbatim/" in p and name.startswith("監査依頼の手書き（") and name.endswith("）.md"):
+            work = os.path.basename(os.path.dirname(full))
+            for kind, (label, suffix) in gad.KINDS.items():
+                if name != gad.HAND_MD.format(label=label):
+                    continue
+                task = work.replace("-", "_") + suffix
+                cps = [x.group(1) for x in (re.search(rf"_{re.escape(task)}_cp(\d+)_audit_request\.md$", n)
+                                            for n in os.listdir(inputs)) if x]
+                if cps and all(answered(c) for c in cps):
+                    continue                                 # その工事の監査は、もう結果が出ている
+                acc = ROOT + "/.claude/state/acceptance.md"
+                arch = SDK + f"/.claude/ratchet/acceptance_archive/{work}.md"
+                cur = open(acc, encoding="utf-8").read() if os.path.isfile(acc) else ""
+                dp = None if f'iter="{work}"' in cur else (arch if os.path.isfile(arch) else None)
+                done.append(f"監査依頼の手書きの文書の照らし（{work}・{label}）")
+                try:
+                    gad.build_design_src(kind, 0, work=work, design_path=dp, show_path=dp)
+                except SystemExit as e:
+                    fails.append(f"監査依頼の手書きの文書を、依頼書を作る道具が読めない（OK をお願いする前に直す）: {p}\n      {e}")
+                except Exception as e:                       # noqa: BLE001
+                    fails.append(f"監査依頼の手書きの文書の照らしが走らない: {p}\n      {type(e).__name__} {e}")
+    return fails, done
 
 
 def check(session: str) -> dict:
@@ -136,6 +204,9 @@ def check(session: str) -> dict:
         done.append("案の試しの記録")
         if not os.path.isfile(rp) or not json.load(open(rp, encoding="utf-8")).get("ok"):
             fails.append("案の下書きが在るのに、試しの設計書が検査を通っていない（trial_design.py を走らせる）")
+    f6, d6 = audit_request_checks()                         # ★2026-10-10＝⑥監査依頼の手書きの文書 ⑦依頼書の見直し表
+    fails += f6
+    done += d6
     return {"time": time.time(), "at": datetime.datetime.now().isoformat(), "ok": not fails,
             "files": files, "done": done, "fails": fails}
 
