@@ -9,7 +9,7 @@
     "composition_rules_src.json": "aac785d5d5a2c57b891e11263e1daa31f3563044d7be6d0cc1bf9f41de1d7d7e",
     "exit_families.json": "fe095da61f8e63106b4d3cda29088bb080e8cba74070bd7f683be7ab8b3540f1",
     "search_limits.json": "22ceca4724189e9da5d2ec60266927ab355259e214a2185b6fb428999dda32e7",
-    "signal_families.json": "d9d27ed7532816cd99ae2b15123c95aff8f0bb0e5f94ca8febee93f4bba61307"
+    "signal_families.json": "7df57dee9e51d49e2d6e50eafc9d873bacc4f7af12be1fc13f471c206a58216d"
   },
   "body": {
     "direction_conflict": {

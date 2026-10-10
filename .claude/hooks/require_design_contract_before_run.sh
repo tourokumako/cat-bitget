@@ -105,7 +105,12 @@ CHECK = set(['--selftest', '--self-test', '--verify', '--identity', '--help',
              #   向きを持つ C の abs・abs の鍵だけを試す口（engine_tuner_gen.py の selftest_stage_q＝T44・T49）。設定の写しを使い、
              #   成績表も売買記録も書かない・累積の試行数に足さない。足した理由は上と同じ＝旗は「独立した語として完全一致」で見るので、
              #   '--selftest' に一致しない。壊すプログラム b127 が使う。
-             '--selftest-stage-q'])
+             '--selftest-stage-q',
+             # ★2026-10-10（設計書 iter="g2-table-range-source-20261010"）＝自己テストの中で本走を呼ぶ口の既知答え
+             #   （engine_tuner_gen.py の selftest_stop_note＝T50）だけを試す口。作り物の文と関数だけを使い、案も成績表も
+             #   売買記録も書かない・累積の試行数に足さない。足した理由は上と同じ＝旗は「独立した語として完全一致」で
+             #   見るので、'--selftest' に一致しない。壊すプログラム b159 が使う。
+             '--selftest-stop-note'])
 Q = chr(39) + chr(34)
 try:
     d = json.load(sys.stdin)

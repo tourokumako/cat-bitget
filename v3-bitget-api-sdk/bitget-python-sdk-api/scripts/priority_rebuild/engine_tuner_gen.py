@@ -5183,6 +5183,88 @@ def selftest_stage_q() -> list:
     return out
 
 
+class _RunStopped(Exception):
+    """自己テストの中の本走が、途中で止まった（文＝止まる前に画面へ出た理由の行）。自己テストだけが使う。"""
+
+
+def _stop_note(text: str) -> str:
+    """本走が途中で止まったとき、止まる前に画面へ出た文から、理由の行を短く取り出す（自己テストだけが使う）。"""
+    _ls = [x.strip() for x in text.splitlines()]
+    _bad = [x for x in _ls if x.startswith("❌")]
+    _g2 = [x for x in _ls if x.startswith("[G2] 表に沿っていた構造")]
+    _head = _g2[-1] if _g2 else "止まる前の文に [G2] の行が無い"
+    return f"{_head} ／ ❌ の行 {len(_bad)} 件" + (f" ／ 1件目＝{_bad[0][:200]}" if _bad else "")
+
+
+def _selftest_run(fn, *bufs):
+    """自己テストの中で本走を呼ぶ口（★2026-10-10・工事 g2-table-range-source-20261010・監査 CP69 の修正1）。
+
+    fn が返した物を、そのまま返す。fn が途中でプログラムごと終わろうとしたら（SystemExit）、止まる前に受け皿（bufs）へ
+    出た文から理由の行を取り出し、_RunStopped にして投げる。呼ぶ側は、理由を失敗の一覧に入れて、後ろの検査へ進む。
+    直す前＝本走の中の型の表との照らしが SystemExit で終わると、受け皿の文が捨てられ、止まった理由が1行も出ないまま、
+    自己テストの全部が終了コード 1 で終わっていた（T6 より後ろの検査が1本も走らない）。
+    ★受けるのは SystemExit だけ。ほかの例外は握りつぶさず、そのまま上へ投げる。
+    """
+    try:
+        return fn()
+    except SystemExit:
+        raise _RunStopped(_stop_note("".join(b.getvalue() for b in bufs))) from None
+
+
+def selftest_stop_note() -> list:
+    """本走を呼ぶ口（_selftest_run）の既知答え。戻り＝ダメだった件の一覧（空なら全部 通った）。
+
+    全体の --selftest（T50）と、短い口 --selftest-stop-note が、この同じ本体を呼ぶ（判定を2か所に書き写さない）。
+    ★全体の --selftest は、承認の前の仮当ての打ち切り300秒を超える。だから、この枝だけを走らせる口を持つ。
+    """
+    import io as _io
+    out = []
+    # ① 途中で止まる本走＝理由の行（[G2] の行・❌ の行の数・1件目）を持った _RunStopped が投げられる
+    _b1 = _io.StringIO()
+
+    def _stops():
+        _b1.write("[G2] 表に沿っていた構造 見本の行\n❌ 構造#1: 見本の理由\n❌ 構造#2: 見本の理由\n")
+        raise SystemExit(1)
+    try:
+        _selftest_run(_stops, _b1)
+        out.append("① 本走が途中で止まったのに、止まったことを知らせない")
+    except _RunStopped as _e1:
+        _s1 = str(_e1)
+        if ("[G2] 表に沿っていた構造 見本の行" not in _s1 or "❌ の行 2 件" not in _s1
+                or "1件目＝❌ 構造#1: 見本の理由" not in _s1):
+            out.append(f"① 止まった理由の行が欠けている: {_s1}")
+    except SystemExit:
+        out.append("① 本走が途中で止まると、プログラムごと終わってしまう（理由を知らせていない）")
+
+    # ② 止まらない本走＝fn が返した物が、そのまま返る
+    if _selftest_run(lambda: "見本の結果", _io.StringIO()) != "見本の結果":
+        out.append("② 止まらない本走の結果が、そのまま返らない")
+
+    # ③ 止まる前の文に [G2] の行も ❌ の行も無い＝そう言う（空の理由にしない）
+    def _stops_plain():
+        raise SystemExit(1)
+    try:
+        _selftest_run(_stops_plain, _io.StringIO())
+        out.append("③ 本走が途中で止まったのに、止まったことを知らせない")
+    except _RunStopped as _e3:
+        if "止まる前の文に [G2] の行が無い" not in str(_e3) or "❌ の行 0 件" not in str(_e3):
+            out.append(f"③ 止まる前の文に理由の行が無いことを言わない: {_e3}")
+    except SystemExit:
+        out.append("③ 本走が途中で止まると、プログラムごと終わってしまう（理由を知らせていない）")
+
+    # ④ メタ確認＝SystemExit でない例外は握りつぶさない（そのまま上へ投げる）
+    def _raises():
+        raise ValueError("見本の例外")
+    try:
+        _selftest_run(_raises, _io.StringIO())
+        out.append("④ SystemExit でない例外（ValueError）が握りつぶされた")
+    except _RunStopped:
+        out.append("④ SystemExit でない例外（ValueError）が、本走が止まったことにされた")
+    except ValueError:
+        pass
+    return out
+
+
 def selftest() -> int:
     """番人＝生成器の機械が正しく効くか（合成データのみ・実データの試行ゼロ・累積試行の記録なし）。
 
@@ -5635,28 +5717,37 @@ def selftest() -> int:
         import contextlib
         import io
         buf = io.StringIO()
+        _stop6 = None                                # ★ミニ本走が途中で止まったときの理由（止まらなければ None）
         try:
-            with contextlib.redirect_stdout(buf):
-                out1 = run_generation(df, **kw)
-            with contextlib.redirect_stdout(buf):
-                out2 = run_generation(df, **kw)
+            try:
+                with contextlib.redirect_stdout(buf):
+                    out1 = _selftest_run(lambda: run_generation(df, **kw), buf)
+                with contextlib.redirect_stdout(buf):
+                    out2 = _selftest_run(lambda: run_generation(df, **kw), buf)
+            except _RunStopped as _e6:
+                # ★2026-10-10（監査 CP69 の修正1）＝ミニ本走が途中で止まったら、理由を失敗の一覧に入れて、後ろの検査へ進む。
+                #   ★T6 は失敗のまま＝終了コードは 1。本走が止まる原因の直しは、ここには入れていない（やることリストの M2-E-8）。
+                _stop6 = str(_e6)
             # T6b（2026-08-05 新設）＝確認の走行では累積が1本も増えない
             if _ts.CUMULATIVE.exists():
                 ng.append("T6b: 確認の走行なのに累積ファイルが作られた（数えない約束が守られていない）")
         finally:
             _ts.CUMULATIVE, _ts.CHECK_RUNS = _real_cum, _real_chk
-        if out2["reused"] != 10:
-            ng.append(f"T6: 再開で第1段 10 本が再利用されない（{out2['reused']} 本）")
-        a = [(r["idx"], r["total"], r["ok"]) for r in out1["results1"]]
-        b = [(r["idx"], r["total"], r["ok"]) for r in out2["results1"]]
-        if a != b:
-            ng.append("T6: 再開の結果が初走と一致しない（R12 が壊れている）")
-        # meta が違う journal は拒否（fail-closed）
-        try:
-            Journal(run_dir / "journal.jsonl", {"seed": 999})
-            ng.append("T6: meta 食い違いの journal が拒否されない")
-        except SystemExit:
-            pass
+        if _stop6 is not None:
+            ng.append(f"T6: ミニ本走が途中で止まった＝{_stop6}（再開と journal の検査は走らせていない）")
+        else:
+            if out2["reused"] != 10:
+                ng.append(f"T6: 再開で第1段 10 本が再利用されない（{out2['reused']} 本）")
+            a = [(r["idx"], r["total"], r["ok"]) for r in out1["results1"]]
+            b = [(r["idx"], r["total"], r["ok"]) for r in out2["results1"]]
+            if a != b:
+                ng.append("T6: 再開の結果が初走と一致しない（R12 が壊れている）")
+            # meta が違う journal は拒否（fail-closed）
+            try:
+                Journal(run_dir / "journal.jsonl", {"seed": 999})
+                ng.append("T6: meta 食い違いの journal が拒否されない")
+            except SystemExit:
+                pass
 
     # ── T29 減らしたい損失の実走（要件 R8・2026-08-26 新設・T6 と同じ合成データの小さい本走）──
     #   ★T28 は部品を1つずつ見る検査。T29 は「本走の経路を実際に通したときに、目的が入れ替わり、
@@ -5681,9 +5772,9 @@ def selftest() -> int:
             _b29, _b29b = _io29.StringIO(), _io29.StringIO()
             try:
                 with _c29.redirect_stdout(_b29):
-                    _o29 = run_generation(df, run_dir=_rd29, minimize="TIME_EXIT", **_kw29)
+                    _o29 = _selftest_run(lambda: run_generation(df, run_dir=_rd29, minimize="TIME_EXIT", **_kw29), _b29)
                 with _c29.redirect_stdout(_b29b):
-                    _o29b = run_generation(df, run_dir=_rd29b, **_kw29)
+                    _o29b = _selftest_run(lambda: run_generation(df, run_dir=_rd29b, **_kw29), _b29b)
             finally:
                 _ts.CUMULATIVE, _ts.CHECK_RUNS = _rc29, _rk29
             _s29, _s29b = _b29.getvalue(), _b29b.getvalue()
@@ -5716,6 +5807,9 @@ def selftest() -> int:
             _m29b = json.loads((_rd29b / "journal.jsonl").read_text(encoding="utf-8").splitlines()[0])
             if "minimize" in _m29b.get("meta", {}):
                 t29.append("メタ確認: 指定が無いのに再開の記録の欄が増えている（恒等が壊れる）")
+    except _RunStopped as _e29s:
+        # ★2026-10-10（監査 CP69 の修正1）＝本走が途中で止まったら、理由を失敗の一覧に入れて、後ろの検査へ進む。
+        t29.append(f"本走が途中で止まった＝{_e29s}")
     except Exception as _e29:
         t29.append(f"検査が走らない: {type(_e29).__name__} {_e29}")
     ng += [f"T29: {x}" for x in t29]
@@ -5777,25 +5871,35 @@ def selftest() -> int:
         _ts10.CHECK_RUNS = pathlib.Path(td10) / "chk.json"
         _tj10.JUDGE_DIR = pathlib.Path(td10) / "judgement"
         globals()["build_qtable"] = _counting_qtable
+        _b10 = _io10.StringIO()
+        _stop10 = None                               # ★本走が途中で止まったときの理由（止まらなければ None）
         try:
-            with _ctx10.redirect_stdout(_io10.StringIO()):
-                # ★T6 と同じ種と本数を使う（この合成データで材料が組み立てられることが確認済みの経路）
-                out10 = run_generation(df, limits=lm, judge=judge, start=s4, end=e4,
-                                       trials1=10, trials2=0, top_k=2, seed=11, run_dir=rd10,
-                                       pool=pool, tfs=tfs_small, catalog_total=cat_total,
-                                       purpose=_ts10.PURPOSE_CHECK, tag="t10",
-                                       df_confirm=df, confirm_start=s4, confirm_end=e4,
-                                       base=None)
+            try:
+                with _ctx10.redirect_stdout(_b10):
+                    # ★T6 と同じ種と本数を使う（この合成データで材料が組み立てられることが確認済みの経路）
+                    out10 = _selftest_run(lambda: run_generation(
+                        df, limits=lm, judge=judge, start=s4, end=e4,
+                        trials1=10, trials2=0, top_k=2, seed=11, run_dir=rd10,
+                        pool=pool, tfs=tfs_small, catalog_total=cat_total,
+                        purpose=_ts10.PURPOSE_CHECK, tag="t10",
+                        df_confirm=df, confirm_start=s4, confirm_end=e4,
+                        base=None), _b10)
+            except _RunStopped as _e10:
+                # ★2026-10-10（監査 CP69 の修正1）＝本走が途中で止まったら、理由を失敗の一覧に入れて、後ろの検査へ進む。
+                _stop10 = str(_e10)
         finally:
             globals()["build_qtable"] = _real_qt
             _ts10.CUMULATIVE, _ts10.CHECK_RUNS = _rc, _rk
             _tj10.JUDGE_DIR = _jd
-        if _calls["n"] != 1:
-            t10.append(f"① 分位の解決表を {_calls['n']} 回 作った（確認窓では作り直さない＝1回のはず）")
-        if out10.get("kept") and out10.get("verdict") is None:
-            t10.append("② 通った構造が在るのに判定表を出していない")
-        if out10.get("verdict") == _tj10.PASS:
-            t10.append("② 土台が無いのに『これ以上出ない』と出た（偽装の✅）")
+        if _stop10 is not None:
+            t10.append(f"本走が途中で止まった＝{_stop10}（①②の検査は走らせていない）")
+        else:
+            if _calls["n"] != 1:
+                t10.append(f"① 分位の解決表を {_calls['n']} 回 作った（確認窓では作り直さない＝1回のはず）")
+            if out10.get("kept") and out10.get("verdict") is None:
+                t10.append("② 通った構造が在るのに判定表を出していない")
+            if out10.get("verdict") == _tj10.PASS:
+                t10.append("② 土台が無いのに『これ以上出ない』と出た（偽装の✅）")
     ng += [f"T10: {x}" for x in t10]
 
     # T9 本走の関門（2026-08-05 新設）＝3つの止まり方。1つでも素通りしたら本走を作った意味がない
@@ -5885,9 +5989,13 @@ def selftest() -> int:
     ok1, _w1 = zero_trade_gate({"n": 3, "per_day": 0.01, "total": -5.0})
     if ok1 is not True:
         t12.append("売買が在る案（負けでも）が0玉の門で捨てられた（下限の値の判定はまこさん待ち＝ここではしない）")
-    z_bad = [r for r in out1["results1"] if r["n"] == 0 and r["ok"]]
-    if z_bad:
-        t12.append(f"実走（T6 のミニ本走）の第1段で 0玉の案が {len(z_bad)} 本 通過している")
+    if _stop6 is not None:
+        # ★2026-10-10（監査 CP69 の修正1）＝T6 のミニ本走が止まったときは、その結果を使う検査を「走らせていない」と失敗の一覧に入れる。
+        t12.append("T6 のミニ本走が途中で止まったので、実走の第1段で 0玉の案が通過していないかの検査は走らせていない")
+    else:
+        z_bad = [r for r in out1["results1"] if r["n"] == 0 and r["ok"]]
+        if z_bad:
+            t12.append(f"実走（T6 のミニ本走）の第1段で 0玉の案が {len(z_bad)} 本 通過している")
     ng += [f"T12: {x}" for x in t12]
 
     # T15 件数/日 の下限が実際に案を捨てる（D3 の残り・D6・まこさん OK 2026-08-07「OK」）
@@ -6395,8 +6503,12 @@ def selftest() -> int:
     print(f"  T5 層化の門 ／ T6 R12 再開 ／ T7 値待ち {len(waiting)} 件 ／ T8 生成不能の拒否")
     print("  T9 本走の関門: 目的の未宣言4通り・採点窓・確認窓の越境・役割の下限割れ で停止／"
           "正しい組み合わせは通過／T9b 入口が関門を呼んでいる")
-    print(f"  T10 判定表の接続: 分位の解決表は {_calls['n']} 回だけ作った（確認窓では作り直さない）／"
-          f"土台なしの結論 {out10.get('verdict')}（『これ以上出ない』ではない）")
+    if _stop10 is not None:
+        # ★2026-10-10（監査 CP69 の修正1）＝T10 の本走が止まったときは、その結果を使うまとめの文を出さない。
+        print("  T10 判定表の接続: 本走が途中で止まったので、分位の解決表の回数と結論は出ていない（下の ❌ の行を見る）")
+    else:
+        print(f"  T10 判定表の接続: 分位の解決表は {_calls['n']} 回だけ作った（確認窓では作り直さない）／"
+              f"土台なしの結論 {out10.get('verdict')}（『これ以上出ない』ではない）")
     print(f"  T11 別名の列: カタログ名の列が無く別名（{ex.RUNTIME_ALIAS.get('ADX14__2h')}）だけでも"
           " 分位の解決表が作れる（D4）")
     print("  T12 0玉の門: 売買ゼロの案は min_per_day が空欄でも候補に残らない（D3 の一部・0c）／"
@@ -6454,11 +6566,11 @@ def selftest() -> int:
                     {"not": _lv22("DI差", 14, "1h", "q30")}]}},
                 "block": None}}},
             "entry": {"connective": {"all": [
-                _lv22("ROC", 6, "5m", "q50"),
+                _lv22("ROC", 12, "5m", "q50"),
                 {"form": "hysteresis", "on": _lv22("ADX", 14, "15m", "q70"),
                  "off": _lv22("ADX", 14, "15m", "q40"), "value": {"n": 288}}]}}}
     _k22 = needed_qkeys([_r22])
-    _want22 = {"入口のふつうの条件": "ROC6__5m", "状態を保つ形の中": "ADX14__15m",
+    _want22 = {"入口のふつうの条件": "ROC12__5m", "状態を保つ形の中": "ADX14__15m",
                "判定の中身の中": "RSI14__5m", "判定の中身の否定の中": "DI差14__1h"}
     _miss22 = [f"{lbl}（{key}）" for lbl, key in _want22.items() if key not in _k22]
     if _miss22:
@@ -7886,6 +7998,10 @@ def selftest() -> int:
     t49 = selftest_stage_q()
     ng += t49
     print("  T44・T49 段2a: ①分位を書いた設定で順位が通し番号（材料の順 → 分位の順） ②系統を絞った設定で組むと C に abs ／ abs の鍵が作れる")
+    # ══ T50（2026-10-10・工事 g2-table-range-source-20261010）＝本体は selftest_stop_note（口 --selftest-stop-note と同じ1本）══
+    t50 = selftest_stop_note()
+    ng += [f"T50: {_x}" for _x in t50]
+    print("  T50 本走を呼ぶ口: ①途中で止まると理由の行つきで知らせる ②止まらなければ結果をそのまま返す ③理由の行が無ければそう言う ④ほかの例外は握りつぶさない")
 
     if ng:
         for x in ng:
@@ -8081,7 +8197,17 @@ def main() -> int:
     ap.add_argument("--selftest-stage-q", action="store_true",
                     help="段2a の分位ごとの順位と、向きを持つ C の abs・abs の鍵だけを試す＝T44・T49 と同じ本体（selftest_stage_q）を呼ぶ"
                          "（全体の --selftest は約6分半で、承認の前の仮当ての打ち切り300秒を超えるため・壊すプログラム b127 が使う）")
+    ap.add_argument("--selftest-stop-note", action="store_true",
+                    help="自己テストの中で本走を呼ぶ口（_selftest_run）だけを試す＝T50 と同じ本体（selftest_stop_note）を呼ぶ"
+                         "（全体の --selftest は、承認の前の仮当ての打ち切り300秒を超えるため・壊すプログラム b159 が使う）")
     a = ap.parse_args()
+    if a.selftest_stop_note:
+        # ★2026-10-10（工事 g2-table-range-source-20261010）＝T50 だけを短く走らせる口（--selftest-stage-q と同じ作り）
+        _ng50 = selftest_stop_note()
+        for _x in _ng50:
+            print(f"  ❌ T50: {_x}")
+        print(f"  {'❌' if _ng50 else '✅'} T50 本走を呼ぶ口（途中で止まった理由を知らせる）／ダメだった件 {len(_ng50)}")
+        return 1 if _ng50 else 0
     if a.selftest_stage_q:
         # ★2026-10-03（工事 m2f-stage-quantile-rank-20261003）＝T44・T49 だけを短く走らせる口（--selftest-stages と同じ作り）
         _ng49 = selftest_stage_q()

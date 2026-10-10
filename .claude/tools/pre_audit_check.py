@@ -76,11 +76,16 @@ CHECKS = [
     #   ＝①「使う」の指標が資料の表3つに全部 在るか ②設定ファイルの資料から写した部分が、いまの資料から写し直したものと同じか。
     #   直す前は、どちらを見る検査も無く、RCI と前期間pivot の3種が資料に無いまま3日 気づかなかった。
     INDICATOR_SOURCES_CHECK,
+    # ★2026-10-10（164回目・監査 CP70 の所見・next_step §6 の254番）＝組み立ての表（composition_rules.json）の照らし。
+    #   直す前は、この一覧に無かったので、設定か型の表を変えた後に組み立ての表を作り直していなくても、
+    #   チェックは全部 rc=0 になった（162回目に gen_composition_rules.py --write を飛ばした件が、監査 CP70 まで出なかった）。
+    "gen_composition_rules.py --verify",
 ]
-# ★この3行が消されたら番人 P8 が落ちる（一覧から黙って外せなくする・145番・141番・2026-10-07 の照らし）
+# ★この4行が消されたら番人 P8 が落ちる（一覧から黙って外せなくする・145番・141番・2026-10-07 の照らし・254番）
 _MUST_IN_CHECKS = ("gen_audit_request.py --selftest",
                    "engine_tuner_gen.py --selftest-extra-gate",
-                   INDICATOR_SOURCES_CHECK)
+                   INDICATOR_SOURCES_CHECK,
+                   "gen_composition_rules.py --verify")
 
 # ── 指紋の対象（このどれかが変わったら、チェックはやり直し）────────────────────
 FINGERPRINT_FILES = [

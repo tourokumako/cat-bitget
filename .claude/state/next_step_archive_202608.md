@@ -3157,3 +3157,11 @@ H2（leak なし）・H6（価格非依存）について、最初は「担保�
 
 ---
 
+
+
+# 2026-10-10 に tidy_next_step.py が next_step.md の §6 の表から移した行（✅済 の行 2 行・1文字も変えていない）
+
+| # | ★いつ直すか | 何が問題か | いま何が起きているか | 見つけた日 | 出典 |
+|---|---|---|---|---|---|
+| **253** | ✅済（2026-10-10・164回目）＝apply_audit_fix.py で修正8・9 を当て、型の表を作り直し、まこさんが再承認した（中身の指紋 45cc4bd3…）。コミット 3fcafa9。G2＝監査に出す前のチェックの中で rc=0（worklog 20261010 §33・§34） | **監査 CP69 の修正8・9（gen_signal_families.py の説明の文が「2列」のまま）を直していない** | `gen_signal_families.py:201`「kind=ratio（W%・帯内位置%）だけ」と `gen_signal_families.py:263`「レンジ幾何2列と時刻は extra_parts」。201行の文は型の表にそのまま出る（`signal_families.md:69`）＝直すと型の表の中身が変わり、まこさんの再承認が要る。まこさんの範囲（2026-10-10・選んだ答え「おすすめのとおり」）で今回は直さず、次に型の表が変わるときに一緒に直す。直し方＝監査 CP69 の結果ファイルの修正8・修正9 の文字のとおり（apply_audit_fix.py --report <CP69 の結果> --severity Minor --only 8,9 --choose 8=確定,9=確定）。列の一覧そのものは定義表からプログラムが引くので、3列で正しい（`signal_families.md:68`） | **2026-10-10** | 監査 CP69 の結果の修正8・9・worklog 20261010 §6 |
+| **254** | ✅済（2026-10-10・164回目）＝pre_audit_check.py の走らせる一覧に gen_composition_rules.py --verify を足した。監査に出す前のチェックの全部を走らせて、その行が rc=0（worklog 20261010 §26・§34） | **監査に出す前のチェック pre_audit_check.py が、組み立ての表（composition_rules.json）の照らしを走らせない** | 監査 CP70 の所見（Q5 の MJ-1）。pre_audit_check.py の中に composition の語は0か所（2026-10-10 に grep -c で数えた）＝gen_composition_rules.py --verify が ❌ を返していても、チェックは全部 rc=0 になる。K-3b の2つ目の工事で、162回目の CC が G-1 の「組み立ての表を作り直す」を飛ばした件が、このため出なかった。2026-10-10 に gen_composition_rules.py --write → --verify で直した。直し方の案＝pre_audit_check.py の走らせる一覧に gen_composition_rules.py --verify を足す。それまでの回り道＝設定か型の表を変えた工事の後は、G2 の前に gen_composition_rules.py --write と --verify を手順に書いて打つ | **2026-10-10** | 監査 CP70 の結果の Q5・worklog 20261010 §6・§7 |

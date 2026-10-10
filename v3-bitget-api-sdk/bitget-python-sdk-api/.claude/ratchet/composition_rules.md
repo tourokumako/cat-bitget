@@ -36,5 +36,5 @@
 | composition_rules_src.json | aac785d5d5a2c57b… |
 | exit_families.json | fe095da61f8e6310… |
 | search_limits.json | 22ceca4724189e9d… |
-| signal_families.json | d9d27ed7532816cd… |
+| signal_families.json | 7df57dee9e51d49e… |
 
