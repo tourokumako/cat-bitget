@@ -205,6 +205,7 @@ def steps(f: dict) -> list:
               f["n_fix"] > 0 and f["n_done"] == f["n_fix"],
               f"実装の指示 {f['n_fix']} 件のうち、当てた記録に在る物 {f['n_done']} 件",
               [usage(".claude/tools/apply_audit_fix.py", "apply_audit_fix.py --design"),
+               "当てた後＝当てた分をコミット（まこさんの OK）→ G2 → H2 → gen_regime_kb.py --write todo → 監査に出す前のチェック",
                usage(".claude/tools/pre_audit_check.py", "pre_audit_check.py --run"),
                usage(".claude/tools/pre_audit_check.py", "pre_audit_check.py --verify")]))
     s.append(("7 実装の監査の依頼書の元（手書きの文書）→ まこさんの OK",
@@ -227,7 +228,9 @@ def steps(f: dict) -> list:
               bool(imp["report"]) and left == 0,
               f"状態が「確定」で まだ当てていない修正＝{'・'.join(imp['pending']) or '無い'}／「未決」「案が複数」の修正＝{'・'.join(imp['undecided']) or '無い'}",
               [usage(".claude/tools/apply_audit_fix.py", "apply_audit_fix.py --report"),
-               "直す範囲（Critical だけか・Major もか・Minor もか）は、まこさんが結果ファイルを見て決める（恒久65番）"]))
+               "直す範囲（Critical だけか・Major もか・Minor もか）は、まこさんが結果ファイルを見て決める（恒久65番）",
+               "当てた後＝当てた分をコミット（まこさんの OK）→ G2（gen_signal_families.py --verify）→ H2（leak_causality_diag.py）"
+               "→ gen_regime_kb.py --write todo（当てた直後の照らしは、触った関数を設計書と比べるので、コミットしてから取り直す＝worklog 20261010 §47）"]))
     return s
 
 
@@ -258,6 +261,43 @@ def conditions(f: dict, idx: int) -> list:
         out.append((rc == 0, f"依頼書の見直し表の照らし（gen_review.py --check）＝{last}"))
         rc, last = run(["python3", ".claude/tools/pre_audit_check.py", "--verify"])
         out.append((rc == 0, f"監査に出す前のチェックの記録（pre_audit_check.py --verify）＝{last}"))
+    if idx in (5, 9):                                         # 当てる前（段6＝設計書の指示・段10＝監査の修正）
+        out += apply_preconditions(f)
+    return out
+
+
+def apply_preconditions(f: dict) -> list:
+    """当てる前の条件（★2026-10-11・166回目・まこさん「修正対応をした状態で確認に出す」「OK」）。
+
+    なぜ要るか＝型 D（承認の後・当てた後の手順を先に確かめなかった・worklog 20261010 §42 の表・§46・§47）＝当てた直後に走る照らしが
+      止まり、承認の打ち直し・まこさんの端末の打ち直し・コミットの OK が増えた。当てる前に、当てた後に走る物と同じ判定を呼ぶ。
+    判定は書き写さない（在る関数を呼ぶ）
+      ①設計書と実装の照らし＝verify_design_contract.check（当てる道具 apply_audit_fix.run_commands が当てた直後に掛ける物と同じ）
+      ②壊すプログラムの凍結と実物の一致＝run_breaks.check_frozen（記録を書く走り方 --out が止まる原因・§6 の251番）
+      ③A12 の仮当ての控えが残っていない＝require_design_check_before_approval._a12_leftover（戻せる物は、その中で戻す・§6 の247・249番）
+    ★当てた後の手順（当てた分のコミット → G2 → H2 → gen_regime_kb.py --write todo）は steps の次の一手に出す。"""
+    import contextlib
+    import io
+    out = []
+    design = f.get("design")
+    if design:
+        sys.path.insert(0, str(SDK / "scripts/priority_rebuild"))
+        import verify_design_contract as vdc
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf):
+                ok = bool(vdc.check(str(design)))
+            last = [x for x in buf.getvalue().splitlines() if x.strip()]
+            out.append((ok, "設計書と実装の照らし（verify_design_contract.check＝当てた直後に掛かる物と同じ）が いま通る"
+                            + ("" if ok else "＝" + (last[-1] if last else "通らない"))))
+        except Exception as e:                                # noqa: BLE001
+            out.append((None, f"設計書と実装の照らしを走らせられない＝{type(e).__name__} {e}"))
+    import run_breaks
+    ng = run_breaks.check_frozen()
+    out.append((not ng, "壊すプログラムの凍結と実物の一致（run_breaks.check_frozen）" + ("" if not ng else "＝" + " ／ ".join(ng[:3]))))
+    import require_design_check_before_approval as rd
+    left = rd._a12_leftover()
+    out.append((not left, "A12 の仮当ての控えが残っていない（戻せる物は戻した）" + ("" if not left else "＝" + " ／ ".join(left[:3]))))
     return out
 
 

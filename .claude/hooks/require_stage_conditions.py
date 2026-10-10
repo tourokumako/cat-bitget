@@ -56,16 +56,91 @@ def current_work() -> str:
         return ""
 
 
-def stage_fails(work: str, session: str) -> tuple:
-    """(いまの段の名前, ❌ の条件の一覧)。流れが最後まで済んでいれば ("", [])。"""
+def auto_fix(f: dict, cur: int) -> list:
+    """プログラムが直せる物は、止めずに直す（★2026-10-11・まこさん「修正対応をした状態で確認に出すようにすべき」「OK」）。戻り＝直した物の文の一覧。
+    ①A12 の仮当ての控え＝require_design_check_before_approval._a12_leftover（戻せる物は、その中で戻す）
+    ②hook の一覧＝gen_hook_list.py --verify が落ちたら --write
+    ③見直し表の骨組み＝段4（設計書）・段8（依頼書）で、表が無ければ gen_review.py --skeleton（在る表は触らない＝中身は私が埋める）
+    まこさんの手が要る物（コミット・承認）は直せない＝条件の ❌ として出す。"""
+    import subprocess
+    done = []
+    try:
+        import require_design_check_before_approval as rd
+        before = os.path.isdir(rd.BK_DIR)
+        rd._a12_leftover()
+        if before and not os.path.isdir(rd.BK_DIR):
+            done.append("A12 の仮当ての控えを戻した")
+    except Exception as e:                                   # noqa: BLE001
+        done.append(f"A12 の控えの確かめが走らない＝{type(e).__name__} {e}")
+    try:
+        r = subprocess.run(["python3", ".claude/tools/gen_hook_list.py", "--verify"], capture_output=True, text=True, timeout=60, cwd=ROOT)
+        if r.returncode != 0:
+            w = subprocess.run(["python3", ".claude/tools/gen_hook_list.py", "--write"], capture_output=True, text=True, timeout=60, cwd=ROOT)
+            done.append("hook の一覧を作り直した（gen_hook_list.py --write）" + ("" if w.returncode == 0 else "＝落ちた"))
+    except Exception as e:                                   # noqa: BLE001
+        done.append(f"hook の一覧の照らしが走らない＝{type(e).__name__} {e}")
+    doc = None
+    if cur == 4:
+        doc = os.path.join(ROOT, ".claude/state/acceptance.md")
+    elif cur == 8 and f["audit"]["impl"]["request"]:
+        doc = str(f["audit"]["impl"]["request"])
+    if doc and os.path.isfile(doc):
+        try:
+            import gen_review
+            if not os.path.isfile(gen_review.review_path(doc)):
+                r = subprocess.run(["python3", ".claude/tools/gen_review.py", "--skeleton", doc], capture_output=True, text=True, timeout=60, cwd=ROOT)
+                done.append(f"見直し表の骨組みを作った（gen_review.py --skeleton {os.path.basename(doc)}）" + ("" if r.returncode == 0 else "＝落ちた"))
+        except Exception as e:                               # noqa: BLE001
+            done.append(f"見直し表の骨組みが作れない＝{type(e).__name__} {e}")
+    return done
+
+
+def stage_fails(work: str, session: str, fix: bool = True) -> tuple:
+    """(いまの段の名前, ❌ の条件の一覧, 直した物の一覧)。流れが最後まで済んでいれば ("", [], [])。"""
     import next_move as nm
     f = nm.facts(work, session)
     st = nm.steps(f)
     cur = next((i for i, x in enumerate(st) if not x[1]), None)
     if cur is None:
-        return "", []
+        return "", [], []
+    fixed = auto_fix(f, cur) if fix else []
     bad = [text for ok, text in nm.conditions(f, cur) if ok is False]
-    return st[cur][0], bad
+    return st[cur][0], bad, fixed
+
+
+APPLY_RE = re.compile(r"apply_audit_fix\.py\b.*--(design|report)\b")
+
+
+def pre() -> int:
+    """PreToolUse（Bash）＝当てる道具（apply_audit_fix.py --design／--report・--dry を除く）を打つ直前に、当てる前の条件を見る。"""
+    try:
+        d = json.loads(sys.stdin.read() or "{}")
+    except Exception:                                        # noqa: BLE001
+        return 0
+    cmd = (d.get("tool_input") or {}).get("command") or ""
+    if not APPLY_RE.search(cmd) or "--dry" in cmd:
+        return 0
+    work = current_work()
+    if not work:
+        return 0
+    tp = d.get("transcript_path") or ""
+    session = d.get("session_id") or (os.path.basename(tp)[:-6] if tp else "")
+    try:
+        stage, bad, fixed = stage_fails(work, session)
+    except Exception as e:                                   # noqa: BLE001
+        print(f"[段の条件] 工事 {work} の印を読めない＝{type(e).__name__} {e}（止めない）", file=sys.stderr)
+        return 0
+    for x in fixed:
+        print("[段の条件] 直した＝" + x, file=sys.stderr)
+    if not bad:
+        return 0
+    e = sys.stderr
+    print(f"🔒 [段の条件・当てる前] 工事 {work} の いまの段「{stage}」で、当てる前の条件が ❌ のまま、当てる道具を打とうとしている", file=e)
+    for b in bad:
+        print("   ❌ " + b, file=e)
+    print("   まこさんの指示（2026-10-11）「修正対応をした状態で確認に出すようにすべき」＝当てる前に、当てた後に走る照らしを通しておく", file=e)
+    print("   対処＝❌ を直してから（コミットと承認は まこさんの OK）、python3 .claude/tools/next_move.py --work " + work + " で ✅ を確かめて打つ", file=e)
+    return 2
 
 
 def is_ask(text: str) -> bool:
@@ -101,10 +176,12 @@ def hook() -> int:
         return 0
     session = d.get("session_id") or os.path.basename(tp)[:-6]
     try:
-        stage, bad = stage_fails(work, session)
+        stage, bad, fixed = stage_fails(work, session)
     except Exception as e:                                   # noqa: BLE001
         print(f"[段の条件] 工事 {work} の印を読めない＝{type(e).__name__} {e}（止めない）", file=sys.stderr)
         return 0
+    for x in fixed:
+        print("[段の条件] 直した＝" + x, file=sys.stderr)
     if not bad:
         return 0
     import require_design_check_before_approval as rd
@@ -136,7 +213,7 @@ def try_transcript(tp: str, work: str = "") -> int:
     if not work:
         return 0
     session = os.path.basename(tp)[:-6]
-    stage, bad = stage_fails(work, session)
+    stage, bad, _fixed = stage_fails(work, session, fix=False)   # --try は何も書かない＝直しも走らせない
     print(f"いまの段＝{stage or '（最後まで済）'}／❌ {len(bad)} 件" + ("".join("\n   ❌ " + b for b in bad)))
     rows = rd._load_rows(tp)
     # まこさんの発言ごとに区切り、その後の CC の返信（差し戻しより後だけ）が お願いの返信かを数える
@@ -164,6 +241,8 @@ def try_transcript(tp: str, work: str = "") -> int:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] and sys.argv[1] == "pre":
+        sys.exit(pre())
     if "--try" in sys.argv:
         i = sys.argv.index("--try")
         w = sys.argv[sys.argv.index("--work") + 1] if "--work" in sys.argv else ""

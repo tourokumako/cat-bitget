@@ -189,6 +189,11 @@
           },
           {
             "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_stage_conditions.sh pre",
+            "timeout": 120
+          },
+          {
+            "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_design_contract_before_run.sh"
           },
           {
