@@ -3423,6 +3423,111 @@
    "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
    "at": "2026-10-10T11:00:35",
    "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "1",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "2",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "3",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "4",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "5",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "6",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "7",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "8",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "9",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "10",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "11",
+   "file": "scripts/priority_rebuild/engine_tuner_gen.py",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "12",
+   "file": ".claude/hooks/require_design_contract_before_run.sh",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "design:g2-table-range-source-20261010",
+   "num": "13",
+   "file": ".claude/breaks/b159_selftest_run_passthrough.sh",
+   "at": "2026-10-10T18:53:43",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-10_m2c15_shape_structure_20261009_impl_cp69_audit_report.md",
+   "num": "8",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_signal_families.py",
+   "at": "2026-10-10T19:00:07",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-10_m2c15_shape_structure_20261009_impl_cp69_audit_report.md",
+   "num": "9",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/gen_signal_families.py",
+   "at": "2026-10-10T19:00:07",
+   "how": "当てた"
   }
  ]
 }

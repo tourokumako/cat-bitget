@@ -2510,7 +2510,7 @@
     "下半分位置",
     "帯内位置%"
    ],
-   "rule": "レンジ幾何の列は kind=ratio（W%・帯内位置%）だけ入口の条件の材料に使える。kind=price（帯の4隅 res_hi/res_lo/sup_hi/sup_lo・mid）は placement の幾何参照専用（H6 価格非依存）＝条件の材料に使えない"
+   "rule": "レンジ幾何の列は kind=ratio（W%・帯内位置%・下半分位置）だけ入口の条件の材料に使える。kind=price（帯の4隅 res_hi/res_lo/sup_hi/sup_lo・mid）は placement の幾何参照専用（H6 価格非依存）＝条件の材料に使えない"
   },
   "time": {
    "basis": "indicator_reference_diag.TIME_REF ＋ entry_exit_matrix.md 軸カタログ E-j（逐語＝「時刻と曜日は既存データから列を作れる（材料の列としても追加する）」）",
@@ -5269,7 +5269,7 @@
     "tfs": "all"
    },
    "location": {
-    "basis": "range_scalping_kb §3（手順＝『①ゾーンに到達 → ②拒否の確認 → ③エントリー』）／§7（上位足で機械検出したゾーンの間にいる時だけ入口を開く）／レンジ幾何2列と時刻は extra_parts",
+    "basis": "range_scalping_kb §3（手順＝『①ゾーンに到達 → ②拒否の確認 → ③エントリー』）／§7（上位足で機械検出したゾーンの間にいる時だけ入口を開く）／レンジ幾何3列と時刻は extra_parts",
     "geo": true,
     "lineages": [
      "構造・位置"

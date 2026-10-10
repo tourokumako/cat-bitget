@@ -198,7 +198,7 @@ def build_table() -> dict:
         #   G2 が許可も禁止も言えなかった。保有時間（state:hold_min）は出口の材料＝この表の対象外のまま。
         extra_parts=dict(
             geo=dict(
-                rule="レンジ幾何の列は kind=ratio（W%・帯内位置%）だけ入口の条件の材料に使える。"
+                rule="レンジ幾何の列は kind=ratio（W%・帯内位置%・下半分位置）だけ入口の条件の材料に使える。"
                      "kind=price（帯の4隅 res_hi/res_lo/sup_hi/sup_lo・mid）は placement の幾何参照専用（H6 価格非依存）＝条件の材料に使えない",
                 parts=sorted(nm for nm, r in iref.RANGE_GEO_REF.items() if r.get("kind") == "ratio"),
                 basis="indicator_reference_diag.RANGE_GEO_REF の kind の欄（実行器 engine_tuner_exec.py 152行 G6 が登録済み列だけ通し、"
@@ -260,7 +260,7 @@ def build_table() -> dict:
                 location=dict(
                     lineages=["構造・位置"], tfs="all", geo=True,
                     basis="range_scalping_kb §3（手順＝『①ゾーンに到達 → ②拒否の確認 → ③エントリー』）／"
-                          "§7（上位足で機械検出したゾーンの間にいる時だけ入口を開く）／レンジ幾何2列と時刻は extra_parts",
+                          "§7（上位足で機械検出したゾーンの間にいる時だけ入口を開く）／レンジ幾何3列と時刻は extra_parts",
                 ),
             ),
         ),
