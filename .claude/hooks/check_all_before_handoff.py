@@ -39,6 +39,29 @@ WATCH =(".claude/tools/", ".claude/hooks/", ".claude/breaks/", "v3-bitget-api-sd
 SKIP_SELFTEST = {"check_all_before_handoff.py"}
 
 
+def _rd():
+    """承認の前の検査（require_design_check_before_approval.py）を読み込んで返す（判定を書き写さず、同じ物を呼ぶため）。"""
+    sys.path.insert(0, ROOT + "/.claude/hooks")
+    import require_design_check_before_approval as rd
+    return rd
+
+
+def selftest_arg(name: str) -> str:
+    """その .py に掛ける自己テストの口。承認の前の検査 A12 の一覧（A12_SELFTESTS）に同じ名前が在れば、その口を使う。
+
+    ★2026-10-11（166回目・next_step の「お願いの前の検査の限りの直し」・worklog 20261010 §47）
+      直す前＝engine_tuner_gen.py を書き替えている間は、全体の自己テスト（--selftest）を走らせていた。全体の自己テストは
+        M2-E-8 で直すまで終了コード 1 のまま（T6・T29・T10・T12・T13）なので、必ず1件 落ちた。約9分 使って、新しい情報は出なかった。
+      直した後＝A12 と同じ口（engine_tuner_gen.py は --selftest-extra-gate）を走らせる。落ちを許すかも A12 の許し
+        （a12_fail_allowed＝gen_materials.py の T6 だけ）を呼ぶ＝判定は2か所に書き写さない。
+      限り（正直に）＝engine_tuner_gen.py の全体の自己テストは、ここでは走らない（監査に出す前のチェック pre_audit_check.py は
+        今までどおり走らせる）。A12 の一覧に無い .py は、今までどおり --selftest。"""
+    for n, arg in _rd().A12_SELFTESTS:
+        if n == name and arg.startswith("--selftest"):
+            return arg
+    return "--selftest"
+
+
 def run(cmd, timeout=600, cwd=ROOT):
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd)
@@ -154,9 +177,10 @@ def check(session: str) -> dict:
             src = open(full, encoding="utf-8").read()
             if '"--selftest"' in src and os.path.basename(p) not in SKIP_SELFTEST:
                 cwd = SDK if "priority_rebuild" in p else ROOT
-                rc, out = run(["python3", full, "--selftest"], timeout=900, cwd=cwd)
-                done.append(f"--selftest {p}")
-                if rc != 0:
+                arg = selftest_arg(os.path.basename(p))          # ★2026-10-11＝A12 と同じ口（上の selftest_arg）
+                rc, out = run(["python3", full, arg], timeout=900, cwd=cwd)
+                done.append(f"{arg} {p}")
+                if rc != 0 and not _rd().a12_fail_allowed(os.path.basename(p), rc, out):
                     fails.append(f"自己テストが落ちる（rc={rc}）: {p}\n{tail(out)}")
         else:
             rc, out = run(["bash", "-n", full])

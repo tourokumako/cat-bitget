@@ -277,6 +277,11 @@
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_trial_before_proposal.sh",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_stage_conditions.sh",
+            "timeout": 60
           }
         ]
       }
