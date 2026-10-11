@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=cc70663d155435a4 tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=7089988ae09f9b0d tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 ## ▶ 次にやること（最初にここを読む）
@@ -94,7 +94,7 @@
 1. パラメータ＝指標ごとに、教科書の最初の値（スキャル・デイトレ）と範囲を持たせる。別の指標の期間の一覧の流用（observe_diag.py の build_catalog＝macd_params を AO・APO・PPO・PVO・TSI・VWMACD に・atr_periods を Aroon・CHOP・VHF ほか11種に・sma_periods を SINWMA ほか11種に）をやめる。値の元＝`indicator_params_by_strategy.md`。
 2. 作り＝`indicator_params_review.md` の「メモ」の欄で、教科書と作りが違うと書かれた所（Stoch・StochRSI の %K の平滑・TSI の 25・13・KAMA の効率比の本数・SSF の本数・volume_ratio の計算・BB の50本の倍率・Keltner の ATR の期間・VWAP・pivot・POC・VAH・VAL の区切り方・W字の幅・MAMA の入力・HILO の本数 ほか）と、監査 CP60 の直し。直すかどうかは、思考の順の4（まこさんの基準）と5（直すべき条件4つ）で決める。
 3. 役割＝`indicator_roles_thresholds.md` の食い違い26種・疑い30種を、出どころどおりにする。
-4. 閾値＝同じ表（教科書の閾値を数字で確かめられたのは8種）。
+4. 閾値＝パラメータ（上の 1）と同じ。指標ごとに、教科書の最初の値（スキャル・デイトレ）と範囲を持たせる（置き場＝いまの CONST_REGISTRY は戦略ごとに分かれていない＝分ける）。値は、資料に在る文から数字として取り出す（T-2＝閾値を数字として調べたのは70種だけで、RSI・ADX・Stoch・MFI・CCI・ATR% は調べていない＝「教科書に数字が無い」ではない）。取り出しても本当に数字が無い指標の代表の値は T-3 で決める（いま承認済みなのは分位の範囲の真ん中の1つだけ）。元の表＝`indicator_roles_thresholds.md`（教科書の閾値を数字で確かめられたのは8種）。★まこさん 2026-10-11「閾値に関してもパラメータ同様（指標ごとに、教科書の最初の値（スキャル・デイトレ）と範囲を持たせる）」。
 
 **9. 手を動かすときに毎回 確かめること（159〜163回目に止められた件のまとめ・元の文は控えに在る）**
 
