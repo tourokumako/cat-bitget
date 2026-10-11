@@ -1120,6 +1120,10 @@ def _stack_note(ev: dict, iter_: str, targets: list) -> None:
     重なりの判定＝当てた記録（applied_fixes.json）の design:<別の工事> の行のうち、時刻が HEAD の commit より後で、
       ファイルがこの工事の TARGET と同じもの。前と後は、当てた時刻で分ける。"""
     if ev.get("post"):                                       # 承認の控えが commit 済み＝commit どうしで比べられる
+        # ★監査 CP73 の修正3＝commit どうしで比べる形でも、実装の後の commit に G-1 の作り直しが入る。
+        #   この関数の末尾の注記（監査 CP69 の修正10）は、ここで戻るので、この形の依頼書には出ていなかった。
+        ev["post_desc"] += ("。★この工事の中で、設計書の 4-4 の手順（G-1 の表の作り直しほか）の道具が、TARGET のファイルを書き出し直すことがある"
+                            "（例＝gen_materials.py --write が regime_detection_kb.md の件数の囲みを書き出す）。その行は実装の指示ではなく、設計書の 4-4・5 で照らす")
         return
     import subprocess
     head_at = subprocess.run(["git", "log", "-1", "--format=%cd", "--date=format:%Y-%m-%dT%H:%M:%S", "HEAD"],

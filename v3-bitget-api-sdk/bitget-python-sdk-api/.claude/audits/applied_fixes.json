@@ -3871,6 +3871,20 @@
    "file": ".claude/breaks/b171_alias_axis_range_dropped.sh",
    "at": "2026-10-11T10:29:11",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-11_m2c15_formula_textbook_20261011_impl_cp73_audit_report.md",
+   "num": "1",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-11T14:09:36",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-11_m2c15_formula_textbook_20261011_impl_cp73_audit_report.md",
+   "num": "2",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/scripts/priority_rebuild/indicator_reference_diag.py",
+   "at": "2026-10-11T14:09:36",
+   "how": "当てた"
   }
  ]
 }

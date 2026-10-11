@@ -1684,7 +1684,10 @@ _r(r"SMC_SWEEP確定", "SMC_SWEEP確定",
 
 
 # ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正37・45・47〜53 と K-7 の決定）＝計算式の教科書の版。
-#   独立の実装は、素直な繰り返しと部品（_roll・_ema_seed・_wilder）で書く＝観察の道具（ライブラリ）とは別の書き方。
+#   独立の実装は、素直な繰り返しと部品（_roll・_ema_seed・_wilder）で書く。観察の道具がライブラリか pandas で書いた種類とは別の書き方。
+#   ★観察の道具も手の繰り返しで書いた3種は、同じ式の写しどうしの照らし（監査 CP73 の Q8）＝close vs SSF平均%（_ssf2_avg と
+#   observe_diag.py の _ssf_avg の繰り返しが同じ文字）・close vs VIDYA_CMO%（繰り返しが同じ文字）・SQZ_ON_Carter（Wilder の繰り返しと
+#   内側の判定の式が同じ文字）。この3種の式そのものは、出どころの逐語と読んで照らす。
 def _tb_rvol_rv(d, p):
     c = d.close.to_numpy(float)
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -1845,14 +1848,26 @@ _r(r"close vs VIDYA_CMO%(\d+)", "close vs VIDYA_CMO%",
 _r(r"close vs HT_TRENDLINE_HL%", "close vs HT_TRENDLINE_HL%",
    "終値が、入力を (高値＋安値)/2 にしたヒルベルト変換のトレンド線から何%離れているか",
    "監査 CP60 の修正53＝Ehlers の入力は (H+L)/2（ta-lib.org の表 79）。★変換が多段で独立実装を書けない。既知答え＝値段が一定なら ぴったり 0。今の版（入力が終値）は残す",
-   "反転サイン", "none", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)
+   "反転サイン", "none",
+   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]),
+                    (_mk(c=np.full(400, 100.0), o=np.full(400, 100.0), h=np.full(400, 102.0), l=np.full(400, 100.0)),
+                     [(-1, (100.0 / 101.0 - 1.0) * 100.0, 1e-9)])],
+   mako=MAKO_K3C)
 _r(r"close vs MAMA_HL%", "close vs MAMA_HL%",
    "終値が、入力を (高値＋安値)/2 にした MAMA から何%離れているか",
    "監査 CP60 の修正53＝MAMA.pdf のコードの逐語「Inputs: Price((H+L)/2), FastLimit(.5), SlowLimit(.05);」。★独立実装を書けない＝既知答えで検証。今の版は残す",
-   "反転サイン", "none", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)
+   "反転サイン", "none",
+   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]),
+                    (_mk(c=np.full(400, 100.0), o=np.full(400, 100.0), h=np.full(400, 102.0), l=np.full(400, 100.0)),
+                     [(-1, (100.0 / 101.0 - 1.0) * 100.0, 1e-9)])],
+   mako=MAKO_K3C)
 _r(r"close vs FAMA_HL%", "close vs FAMA_HL%",
    "終値が、入力を (高値＋安値)/2 にした FAMA（MAMA の追従線）から何%離れているか",
-   "同上", "反転サイン", "none", known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], mako=MAKO_K3C)
+   "同上", "反転サイン", "none",
+   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)]),
+                    (_mk(c=np.full(400, 100.0), o=np.full(400, 100.0), h=np.full(400, 102.0), l=np.full(400, 100.0)),
+                     [(-1, (100.0 / 101.0 - 1.0) * 100.0, 1e-9)])],
+   mako=MAKO_K3C)
 _r(r"DPO教科書%(\d+)", "DPO教科書%",
    "教科書の DPO を時点 t で作れる形＝k本前の終値 − いまの n本平均（k=n/2+1）を、終値で割って%化",
    "監査 CP60 の修正37・45＝StockCharts「Price - X-period SMA from {X/2 + 1} periods in the future」を未来を見ずに書いた形（ta の DPOIndicator と同じ）。"

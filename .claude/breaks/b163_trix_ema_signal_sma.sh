@@ -1,11 +1,11 @@
 #!/bin/bash
 # EXPECT_RC: 1
 # MEANS: TRIX_EMAシグナル のシグナルを単純移動平均（今の版）に戻すと、観察の道具の自己テスト（教科書の独立実装）が落ちる
-# EXPECT_MSG: TRIX_EMAシグナル(7,9): 教科書の独立実装と不一致
+# EXPECT_MSG: TRIX_EMAシグナル(15,9): 教科書の独立実装と不一致
 # b163_trix_ema_signal_sma — TRIX_EMAシグナル のシグナルを単純移動平均（今の版）に戻すと、観察の道具の自己テスト（教科書の独立実装）が落ちる（工事 m2c15-formula-textbook-20261011・2026-10-11）
 #   守っているもの＝完成の条件の全体の自己テスト（observe_diag.py --selftest）
 #   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k3b_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。
-#   期待＝observe_diag.py --selftest が「TRIX_EMAシグナル(7,9): 教科書の独立実装と不一致」で落ちる（終了コード 1）。
+#   期待＝observe_diag.py --selftest が「TRIX_EMAシグナル(15,9): 教科書の独立実装と不一致」で落ちる（終了コード 1）。
 #   ★壊す対象が1か所でなければ止まる（黙って壊さない）。
 source "$(dirname "$0")/lib.sh"
 
