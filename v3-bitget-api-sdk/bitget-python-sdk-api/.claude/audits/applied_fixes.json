@@ -3787,6 +3787,90 @@
    "file": ".claude/breaks/b166_sqz_carter_scalar_fixed.sh",
    "at": "2026-10-11T08:19:33",
    "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "1",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "2",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "3",
+   "file": "scripts/priority_rebuild/observe_config.json",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "4",
+   "file": "scripts/priority_rebuild/recipes/search_limits.json",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "5",
+   "file": ".claude/breaks/b142_rci_list_stale.sh",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "6",
+   "file": ".claude/breaks/b149_pending_not_copied.sh",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "7",
+   "file": ".claude/breaks/b158_shape_ranges_missing.sh",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "8",
+   "file": ".claude/breaks/b167_formula_params_missing.sh",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "9",
+   "file": ".claude/breaks/b168_formula_hidden_missing.sh",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "10",
+   "file": ".claude/breaks/b169_formula_ranges_missing.sh",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "11",
+   "file": ".claude/breaks/b170_alias_axis_list_dropped.sh",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
+  },
+  {
+   "report": "design:m2c15-formula-settings-20261011",
+   "num": "12",
+   "file": ".claude/breaks/b171_alias_axis_range_dropped.sh",
+   "at": "2026-10-11T10:29:11",
+   "how": "当てた"
   }
  ]
 }

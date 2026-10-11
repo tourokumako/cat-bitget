@@ -146,10 +146,7 @@
     "THERMO原作%",
     "THERMO比",
     "TR%",
-    "TRIX_EMAヒスト(14,9)",
-    "TRIX_EMAヒスト(21,9)",
-    "TRIX_EMAヒスト(7,9)",
-    "TRIX_EMAヒスト(9,9)",
+    "TRIX_EMAヒスト(15,9)",
     "TRIXヒスト(15,9)",
     "TSIヒスト(12,26,9)",
     "UI14",
@@ -1633,21 +1630,6 @@
      "tf": "1d"
     },
     {
-     "n_eff": 26.1,
-     "part": "StochRSI素%K21",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 26.1,
-     "part": "TRIX_EMAシグナル(21,9)",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 26.1,
-     "part": "TRIX_EMAヒスト(21,9)",
-     "tf": "1d"
-    },
-    {
      "n_eff": 21.1,
      "part": "TSI(12,26,9)",
      "tf": "1d"
@@ -2079,16 +2061,6 @@
     },
     {
      "n_eff": 27.4,
-     "part": "close vs SSF平均%20",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 27.4,
-     "part": "close vs TRIMA_TA%20",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 27.4,
      "part": "close vs VIDYA_CMO%20",
      "tf": "1d"
     },
@@ -2155,16 +2127,6 @@
     {
      "n_eff": 11.0,
      "part": "ZLMA50傾き%",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 11.0,
-     "part": "close vs SSF平均%50",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 11.0,
-     "part": "close vs TRIMA_TA%50",
      "tf": "1d"
     },
     {
@@ -2354,36 +2316,6 @@
     },
     {
      "n_eff": 16.5,
-     "part": "close vs SSF平均%200",
-     "tf": "4h"
-    },
-    {
-     "n_eff": 11.0,
-     "part": "close vs SSF平均%200",
-     "tf": "6h"
-    },
-    {
-     "n_eff": 2.7,
-     "part": "close vs SSF平均%200",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 16.5,
-     "part": "close vs TRIMA_TA%200",
-     "tf": "4h"
-    },
-    {
-     "n_eff": 11.0,
-     "part": "close vs TRIMA_TA%200",
-     "tf": "6h"
-    },
-    {
-     "n_eff": 2.7,
-     "part": "close vs TRIMA_TA%200",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 16.5,
      "part": "close vs VIDYA_CMO%200",
      "tf": "4h"
     },
@@ -2450,11 +2382,6 @@
     {
      "n_eff": 27.4,
      "part": "TTM_TREND20",
-     "tf": "1d"
-    },
-    {
-     "n_eff": 11.4,
-     "part": "DPO教科書%48",
      "tf": "1d"
     },
     {
@@ -2843,6 +2770,13 @@
        "lo": 14
       }
      ],
+     "DPO教科書%": [
+      {
+       "hi": 40,
+       "kind": "int",
+       "lo": 14
+      }
+     ],
      "Donchian幅": [
       {
        "hi": 20,
@@ -3219,7 +3153,38 @@
        "lo": 7
       }
      ],
+     "StochRSI素%K": [
+      {
+       "hi": 21,
+       "kind": "int",
+       "lo": 7
+      }
+     ],
      "TRIX": [
+      {
+       "hi": 21,
+       "kind": "int",
+       "lo": 7
+      },
+      {
+       "hi": 9,
+       "kind": "int",
+       "lo": 9
+      }
+     ],
+     "TRIX_EMAシグナル": [
+      {
+       "hi": 21,
+       "kind": "int",
+       "lo": 7
+      },
+      {
+       "hi": 9,
+       "kind": "int",
+       "lo": 9
+      }
+     ],
+     "TRIX_EMAヒスト": [
       {
        "hi": 21,
        "kind": "int",
@@ -3512,6 +3477,13 @@
        "lo": 10
       }
      ],
+     "close vs SSF平均%": [
+      {
+       "hi": 200,
+       "kind": "int",
+       "lo": 10
+      }
+     ],
      "close vs SWMA%": [
       {
        "hi": 200,
@@ -3540,6 +3512,13 @@
        "lo": 1
       }
      ],
+     "close vs TRIMA_TA%": [
+      {
+       "hi": 200,
+       "kind": "int",
+       "lo": 1
+      }
+     ],
      "close vs TSF%": [
       {
        "hi": 200,
@@ -3552,6 +3531,13 @@
        "hi": 200,
        "kind": "int",
        "lo": 14
+      }
+     ],
+     "close vs VIDYA_CMO%": [
+      {
+       "hi": 200,
+       "kind": "int",
+       "lo": 20
       }
      ],
      "close vs VWAP": [
@@ -3639,6 +3625,13 @@
       }
      ],
      "realized_vol": [
+      {
+       "hi": 50,
+       "kind": "int",
+       "lo": 10
+      }
+     ],
+     "realized_vol_rv": [
       {
        "hi": 50,
        "kind": "int",
@@ -3882,7 +3875,6 @@
    "DM-%9": "トレンド",
    "DPO%20": "オシレーター",
    "DPO教科書%20": "オシレーター",
-   "DPO教科書%48": "オシレーター",
    "DX14": "トレンド",
    "DX21": "トレンド",
    "DX7": "トレンド",
@@ -4143,9 +4135,6 @@
    "StochRSI%D14": "オシレーター",
    "StochRSI%K14": "オシレーター",
    "StochRSI素%K14": "オシレーター",
-   "StochRSI素%K21": "オシレーター",
-   "StochRSI素%K7": "オシレーター",
-   "StochRSI素%K9": "オシレーター",
    "T3200傾き%": "トレンド",
    "T320傾き%": "トレンド",
    "T350傾き%": "トレンド",
@@ -4163,14 +4152,8 @@
    "TRIMA20傾き%": "トレンド",
    "TRIMA50傾き%": "トレンド",
    "TRIX(15,9)": "トレンド",
-   "TRIX_EMAシグナル(14,9)": "トレンド",
-   "TRIX_EMAシグナル(21,9)": "トレンド",
-   "TRIX_EMAシグナル(7,9)": "トレンド",
-   "TRIX_EMAシグナル(9,9)": "トレンド",
-   "TRIX_EMAヒスト(14,9)": "トレンド",
-   "TRIX_EMAヒスト(21,9)": "トレンド",
-   "TRIX_EMAヒスト(7,9)": "トレンド",
-   "TRIX_EMAヒスト(9,9)": "トレンド",
+   "TRIX_EMAシグナル(15,9)": "トレンド",
+   "TRIX_EMAヒスト(15,9)": "トレンド",
    "TRIXシグナル(15,9)": "トレンド",
    "TRIXヒスト(15,9)": "トレンド",
    "TSF20傾き%": "トレンド",
@@ -4267,9 +4250,7 @@
    "close vs SINWMA%14": "構造・位置",
    "close vs SMA9%": "構造・位置",
    "close vs SSF%10": "構造・位置",
-   "close vs SSF平均%20": "構造・位置",
-   "close vs SSF平均%200": "構造・位置",
-   "close vs SSF平均%50": "構造・位置",
+   "close vs SSF平均%10": "構造・位置",
    "close vs SWMA%10": "構造・位置",
    "close vs Supertrend%(10,3.0)": "トレンド",
    "close vs T3%20": "構造・位置",
@@ -4278,9 +4259,7 @@
    "close vs TEMA%10": "構造・位置",
    "close vs TEMA%20": "構造・位置",
    "close vs TRIMA%10": "構造・位置",
-   "close vs TRIMA_TA%20": "構造・位置",
-   "close vs TRIMA_TA%200": "構造・位置",
-   "close vs TRIMA_TA%50": "構造・位置",
+   "close vs TRIMA_TA%10": "構造・位置",
    "close vs TSF%14": "構造・位置",
    "close vs VAH%288": "構造・位置",
    "close vs VAL%288": "構造・位置",
@@ -4433,7 +4412,6 @@
   "DM-%9": "状態量",
   "DPO%20": "反転サイン",
   "DPO教科書%20": "反転サイン",
-  "DPO教科書%48": "反転サイン",
   "DX14": "状態量",
   "DX21": "状態量",
   "DX7": "状態量",
@@ -4694,9 +4672,6 @@
   "StochRSI%D14": "順張り値",
   "StochRSI%K14": "順張り値",
   "StochRSI素%K14": "順張り値",
-  "StochRSI素%K21": "順張り値",
-  "StochRSI素%K7": "順張り値",
-  "StochRSI素%K9": "順張り値",
   "T3200傾き%": "順張り値",
   "T320傾き%": "順張り値",
   "T350傾き%": "順張り値",
@@ -4714,14 +4689,8 @@
   "TRIMA20傾き%": "順張り値",
   "TRIMA50傾き%": "順張り値",
   "TRIX(15,9)": "順張り値",
-  "TRIX_EMAシグナル(14,9)": "順張り値",
-  "TRIX_EMAシグナル(21,9)": "順張り値",
-  "TRIX_EMAシグナル(7,9)": "順張り値",
-  "TRIX_EMAシグナル(9,9)": "順張り値",
-  "TRIX_EMAヒスト(14,9)": "状態量",
-  "TRIX_EMAヒスト(21,9)": "状態量",
-  "TRIX_EMAヒスト(7,9)": "状態量",
-  "TRIX_EMAヒスト(9,9)": "状態量",
+  "TRIX_EMAシグナル(15,9)": "順張り値",
+  "TRIX_EMAヒスト(15,9)": "状態量",
   "TRIXシグナル(15,9)": "順張り値",
   "TRIXヒスト(15,9)": "状態量",
   "TSF20傾き%": "順張り値",
@@ -4818,9 +4787,7 @@
   "close vs SINWMA%14": "反転サイン",
   "close vs SMA9%": "順張り値",
   "close vs SSF%10": "反転サイン",
-  "close vs SSF平均%20": "反転サイン",
-  "close vs SSF平均%200": "反転サイン",
-  "close vs SSF平均%50": "反転サイン",
+  "close vs SSF平均%10": "反転サイン",
   "close vs SWMA%10": "反転サイン",
   "close vs Supertrend%(10,3.0)": "順張り値",
   "close vs T3%20": "反転サイン",
@@ -4829,9 +4796,7 @@
   "close vs TEMA%10": "反転サイン",
   "close vs TEMA%20": "反転サイン",
   "close vs TRIMA%10": "反転サイン",
-  "close vs TRIMA_TA%20": "反転サイン",
-  "close vs TRIMA_TA%200": "反転サイン",
-  "close vs TRIMA_TA%50": "反転サイン",
+  "close vs TRIMA_TA%10": "反転サイン",
   "close vs TSF%14": "反転サイン",
   "close vs VAH%288": "順張り値",
   "close vs VAL%288": "順張り値",
@@ -5180,21 +5145,12 @@
   "SQZ_ON_Carter",
   "StochRSI%K14",
   "StochRSI%D14",
-  "StochRSI素%K7",
+  "StochRSI素%K14",
   "TRIX(15,9)",
   "TRIXシグナル(15,9)",
   "TRIXヒスト(15,9)",
-  "TRIX_EMAシグナル(7,9)",
-  "TRIX_EMAヒスト(7,9)",
-  "StochRSI素%K9",
-  "TRIX_EMAシグナル(9,9)",
-  "TRIX_EMAヒスト(9,9)",
-  "StochRSI素%K14",
-  "TRIX_EMAシグナル(14,9)",
-  "TRIX_EMAヒスト(14,9)",
-  "StochRSI素%K21",
-  "TRIX_EMAシグナル(21,9)",
-  "TRIX_EMAヒスト(21,9)",
+  "TRIX_EMAシグナル(15,9)",
+  "TRIX_EMAヒスト(15,9)",
   "TD_SEQ_UP",
   "TD_SEQ_DN",
   "UO",
@@ -5311,8 +5267,8 @@
   "WMA30傾き%",
   "close vs ZLMA%20",
   "ZLMA20傾き%",
-  "close vs SSF平均%20",
-  "close vs TRIMA_TA%20",
+  "close vs SSF平均%10",
+  "close vs TRIMA_TA%10",
   "close vs VIDYA_CMO%20",
   "SINWMA50傾き%",
   "SSF50傾き%",
@@ -5327,8 +5283,6 @@
   "VWMA50傾き%",
   "close vs ZLMA%50",
   "ZLMA50傾き%",
-  "close vs SSF平均%50",
-  "close vs TRIMA_TA%50",
   "close vs VIDYA_CMO%50",
   "SINWMA200傾き%",
   "SSF200傾き%",
@@ -5342,8 +5296,6 @@
   "VWMA200傾き%",
   "close vs ZLMA%200",
   "ZLMA200傾き%",
-  "close vs SSF平均%200",
-  "close vs TRIMA_TA%200",
   "close vs VIDYA_CMO%200",
   "ADXR7",
   "DI+7",
@@ -5371,7 +5323,6 @@
   "DPO%20",
   "DPO教科書%20",
   "TTM_TREND20",
-  "DPO教科書%48",
   "TTM_TREND48",
   "AMAT_LR",
   "close vs CKSPl%",

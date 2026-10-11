@@ -1,38 +1,5 @@
 {
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
- "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
- "scripts/priority_rebuild/observe_diag.py": [
-  "<モジュール直下>",
-  "_atr_wilder",
-  "_mama_hl",
-  "_sqz_carter",
-  "_ssf_avg",
-  "_thermo_orig",
-  "_trima_ta",
-  "_trix_ema",
-  "_vidya_cmo",
-  "build_catalog"
- ],
- "scripts/priority_rebuild/indicator_reference_diag.py": [
-  "<モジュール直下>",
-  "_geo_case",
-  "_ssf2_avg",
-  "_tb_aber_orig",
-  "_tb_dpo_tb",
-  "_tb_pos_ssf_avg",
-  "_tb_pos_trima_ta",
-  "_tb_pos_vidya_cmo",
-  "_tb_rvol_rv",
-  "_tb_sqz_carter",
-  "_tb_stochrsi_raw",
-  "_tb_thermo_ema",
-  "_tb_thermo_orig",
-  "_tb_trix_ema_h",
-  "_tb_trix_ema_s",
-  "_thermo_in_case",
-  "_thermo_orig_arr",
-  "_trima_ta",
-  "_vidya_cmo"
- ]
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md"
 }

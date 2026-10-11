@@ -16,8 +16,8 @@ python3 - "$F" <<'PYEOF'
 import sys
 p = sys.argv[1]
 s = open(p, encoding='utf-8').read()
-old = '    "close vs VWAP典型": [{"kind": "int", "lo": 288, "hi": 288}],\n    "W字確定谷": [{"kind": "int", "lo": 24, "hi": 96}, {"kind": "float", "lo": 0.0, "hi": 0.06, "dec": 3}],\n    "S-Rタッチ確定数": [{"kind": "int", "lo": 144, "hi": 288}, {"kind": "float", "lo": 0.0015, "hi": 0.006, "dec": 4}],\n    "S-Rタッチ確定1時間ATR": [{"kind": "int", "lo": 144, "hi": 288}, {"kind": "float", "lo": 0.5, "hi": 1.5, "dec": 1}, {"kind": "int", "lo": 7, "hi": 21}]\n'
-new = '    "close vs VWAP典型": [{"kind": "int", "lo": 288, "hi": 288}]\n'
+old = '    "close vs VWAP典型": [{"kind": "int", "lo": 288, "hi": 288}],\n    "W字確定谷": [{"kind": "int", "lo": 24, "hi": 96}, {"kind": "float", "lo": 0.0, "hi": 0.06, "dec": 3}],\n    "S-Rタッチ確定数": [{"kind": "int", "lo": 144, "hi": 288}, {"kind": "float", "lo": 0.0015, "hi": 0.006, "dec": 4}],\n    "S-Rタッチ確定1時間ATR": [{"kind": "int", "lo": 144, "hi": 288}, {"kind": "float", "lo": 0.5, "hi": 1.5, "dec": 1}, {"kind": "int", "lo": 7, "hi": 21}],\n'
+new = '    "close vs VWAP典型": [{"kind": "int", "lo": 288, "hi": 288}],\n'
 if s.count(old) != 1:
     raise SystemExit("[b158_shape_ranges_missing] 壊す対象の文字が1か所でない")
 open(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))

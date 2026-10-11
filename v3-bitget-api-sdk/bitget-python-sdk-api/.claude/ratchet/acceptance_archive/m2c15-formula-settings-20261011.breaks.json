@@ -1,0 +1,79 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "m2c15-formula-settings-20261011",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b167_formula_params_missing.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b167_formula_params_missing.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "2",
+   "script": "b168_formula_hidden_missing.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b168_formula_hidden_missing.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "3",
+   "script": "b169_formula_ranges_missing.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b169_formula_ranges_missing.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "4",
+   "script": "b170_alias_axis_list_dropped.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b170_alias_axis_list_dropped.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "5",
+   "script": "b171_alias_axis_range_dropped.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b171_alias_axis_range_dropped.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "6",
+   "script": "b142_rci_list_stale.sh",
+   "code": 1,
+   "note": "❌ 指標の資料と設定ファイルの照らし: 食い違い 2 件（①は資料に行を足す・②は r3_draft_build.py の写し方で設定ファイルを写し直す＝設計書と承認が要る）",
+   "expect": 1,
+   "means": "指標ごとの一覧の RCI を、今の rci_periods の組（[[7], [9], [26], [52]]）に戻すと、資料と設定ファイルの照らし（②）が落ちる",
+   "match": true
+  },
+  {
+   "no": "7",
+   "script": "b149_pending_not_copied.sh",
+   "code": 1,
+   "note": "❌ 指標の資料と設定ファイルの照らし: 食い違い 2 件（①は資料に行を足す・②は r3_draft_build.py の写し方で設定ファイルを写し直す＝設計書と承認が要る）",
+   "expect": 1,
+   "means": "値を埋めない種類の並びを、資料から写し直す前（11種が載らない形）に戻すと、資料と設定ファイルの照らし（②）が落ちる",
+   "match": true
+  },
+  {
+   "no": "8",
+   "script": "b158_shape_ranges_missing.sh",
+   "code": 1,
+   "note": "❌ 指標の資料と設定ファイルの照らし: 食い違い 2 件（①は資料に行を足す・②は r3_draft_build.py の写し方で設定ファイルを写し直す＝設計書と承認が要る）",
+   "expect": 1,
+   "means": "探す範囲から、1つ目の工事で「使う」に入った3種の行を外すと、資料と設定ファイルの照らし（②）が落ちる",
+   "match": true
+  }
+ ]
+}

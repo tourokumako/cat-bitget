@@ -1,4 +1,4 @@
-<!-- MATERIALS hash=b1edddd118e1768c gen_materials.py が自動生成＝手で書き換えない -->
+<!-- MATERIALS hash=79f2b748be5dec60 gen_materials.py が自動生成＝手で書き換えない -->
 # materials.md — 材料の正本（1枚・全自動生成・CC の手書きの行ゼロ）
 
 **1行＝1つの指標の種類です。**期間で行を分けていません（CCI9 と CCI20 を別の行にしない）。
@@ -49,8 +49,8 @@
 
 | 何 | 数 |
 |---|---|
-| 材料カタログの列（部品 × 時間足） | 6028 列 |
-| **engine_tuner が選べる列** | **3278 列（54.4%）** |
+| 材料カタログの列（部品 × 時間足） | 5874 列 |
+| **engine_tuner が選べる列** | **3124 列（53.2%）** |
 | engine_tuner が選べる指標の種類 | **173 種類** |
 | **engine_tuner が選べない指標の種類** | **118 種類**（上の一覧 B） |
 | そのほかに選べるもの（レンジ幾何） | W%・下半分位置・帯内位置% |
@@ -101,7 +101,7 @@
 
 **場所ごとの中身（全部 実物から）**
 
-- **場所1**＝指標のパラメータ。この 37 件の並びが、下の表の 121 種類・246 通りに広がります。★数える鍵は「名前が `_periods` で終わるもの」ではなく、**材料カタログを作る関数（`observe_diag.build_catalog`）が実際に読む鍵**です（名前で数えると `bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・`*_windows`・`sr_tol`・`w_tol` を丸ごと取りこぼします）。観察の道具だけが使う格子 92 件（`ADX`・`AROOND`・`AROONOSC`・`AROONU`・`ATR%`・`BB%b`・`BB幅`・`CCI`・`CHOP`・`CMF`・`DI差`・`DPO%`・`Donchian幅%`・`EFI比`・`EOM比`・`KAMA傾き`・`KSTシグナル`・`MACDシグナル線%`・`MACDヒスト%`・`MACD線%`・`MFI`・`PPO`・`PPOシグナル`・`PPOヒスト`・`PVO`・`PVOシグナル`・`PVOヒスト`・`RCI`・`ROC`・`RSI`・`StochRSI%D`・`StochRSI%K`・`TRIX`・`TRIXシグナル`・`TRIXヒスト`・`UI`・`VTXM`・`VTXP`・`WMA傾き`・`adverse_marks`・`close vs ALMA%`・`close vs DEMA%`・`close vs EMA`・`close vs FWMA%`・`close vs HMA%`・`close vs JMA%`・`close vs KAMA%`・`close vs Keltner上%`・`close vs Keltner下%`・`close vs LINREG%`・`close vs LRb%`・`close vs MCGD%`・`close vs MEDIAN%`・`close vs MIDPOINT%`・`close vs MIDPRICE%`・`close vs MMAR%`・`close vs PWMA%`・`close vs RAINBOW%`・`close vs RMA%`・`close vs SINWMA%`・`close vs SMA`・`close vs SSF%`・`close vs SWMA%`・`close vs TEMA%`・`close vs TRIMA%`・`close vs TSF%`・`close vs VWMA%`・`close vs WMA%`・`close vs 基準線%`・`close vs 本安値%`・`close vs 本高値%`・`close vs 転換線%`・`early_windows`・`favorable_marks`・`fib位置`・`fractal安値距離%`・`fractal高値距離%`・`quantiles`・`scene_exit_sl_pcts`・`scene_exit_tmax_bars`・`scene_exit_tp_pcts`・`sl_grid`・`stdev%`・`volume_ratio`・`wait_grid`・`スキャル`・`デイトレ`・`安値からの経過バー`・`安値切り上げ幅%`・`構造破断距離%`・`高値からの経過バー`・`高値切り上げ幅%`）は、engine_tuner が振る値ではないので ここでは数えていません。
+- **場所1**＝指標のパラメータ。この 37 件の並びが、下の表の 121 種類・232 通りに広がります。★数える鍵は「名前が `_periods` で終わるもの」ではなく、**材料カタログを作る関数（`observe_diag.build_catalog`）が実際に読む鍵**です（名前で数えると `bb_sigma`・`keltner`・`supertrend`・`ichimoku`・`macd_params`・`*_windows`・`sr_tol`・`w_tol` を丸ごと取りこぼします）。観察の道具だけが使う格子 98 件（`ADX`・`AROOND`・`AROONOSC`・`AROONU`・`ATR%`・`BB%b`・`BB幅`・`CCI`・`CHOP`・`CMF`・`DI差`・`DPO%`・`DPO教科書%`・`Donchian幅%`・`EFI比`・`EOM比`・`KAMA傾き`・`KSTシグナル`・`MACDシグナル線%`・`MACDヒスト%`・`MACD線%`・`MFI`・`PPO`・`PPOシグナル`・`PPOヒスト`・`PVO`・`PVOシグナル`・`PVOヒスト`・`RCI`・`ROC`・`RSI`・`StochRSI%D`・`StochRSI%K`・`StochRSI素%K`・`TRIX`・`TRIX_EMAシグナル`・`TRIX_EMAヒスト`・`TRIXシグナル`・`TRIXヒスト`・`UI`・`VTXM`・`VTXP`・`WMA傾き`・`adverse_marks`・`close vs ALMA%`・`close vs DEMA%`・`close vs EMA`・`close vs FWMA%`・`close vs HMA%`・`close vs JMA%`・`close vs KAMA%`・`close vs Keltner上%`・`close vs Keltner下%`・`close vs LINREG%`・`close vs LRb%`・`close vs MCGD%`・`close vs MEDIAN%`・`close vs MIDPOINT%`・`close vs MIDPRICE%`・`close vs MMAR%`・`close vs PWMA%`・`close vs RAINBOW%`・`close vs RMA%`・`close vs SINWMA%`・`close vs SMA`・`close vs SSF%`・`close vs SSF平均%`・`close vs SWMA%`・`close vs TEMA%`・`close vs TRIMA%`・`close vs TRIMA_TA%`・`close vs TSF%`・`close vs VWMA%`・`close vs WMA%`・`close vs 基準線%`・`close vs 本安値%`・`close vs 本高値%`・`close vs 転換線%`・`early_windows`・`favorable_marks`・`fib位置`・`fractal安値距離%`・`fractal高値距離%`・`quantiles`・`scene_exit_sl_pcts`・`scene_exit_tmax_bars`・`scene_exit_tp_pcts`・`sl_grid`・`stdev%`・`volume_ratio`・`wait_grid`・`スキャル`・`デイトレ`・`安値からの経過バー`・`安値切り上げ幅%`・`構造破断距離%`・`高値からの経過バー`・`高値切り上げ幅%`）は、engine_tuner が振る値ではないので ここでは数えていません。
 - **場所2**＝ほかに 分位（閾値の段）＝**範囲 q10〜q90（81 通り）**（`quantile_range`・★2026-08-15 の段A の A-5-3 で 9段のメニューから範囲にした。`quantile_grid` の9段は ほかの道具がまだ読む分として残してある）／単独の数字 3 件（`fdr_q`・`n_min`・`r_min`）／上限を置かないもの 5 件（`count_range`・`depth_max`・`k_max`・`p_max`・`role_max`＝まこさん決定 2026-08-12）。
 - **場所3**＝ほかに、案を作るときの**確率の数字**が 15 か所（`rng.random() < 0.3` の形）。これは探す値ではありませんが、CC がコードに直に書いた数字なので一緒に数えています。
 - **場所4**＝`search_space` は全部で 45 件です。内訳＝分位 21 ／メニュー 10（うち数の並び 0・本当に選択肢 10）／範囲 14。★このうち 2 件は値が空です（`logics.L5.grid_n`・`logics.S5.grid_n`＝まこさんの判断待ち・値が入るまで engine_tuner は走りません）。
@@ -194,7 +194,7 @@
 | CMF | 20 本（1 通り） |
 | DI差 | 7 本・14 本（2 通り） |
 | DPO% | 20 本（1 通り） |
-| DPO教科書% | 20 本・48 本（2 通り） |
+| DPO教科書% | 20 本（1 通り） |
 | Donchian幅 | 20 本（1 通り） |
 | EFI比 | 13 本（1 通り） |
 | EMA傾き | 9 本・20 本・50 本・200 本（4 通り） |
@@ -231,10 +231,10 @@
 | Stoch%K | 5 本・9 本・14 本（3 通り） |
 | StochRSI%D | 14 本（1 通り） |
 | StochRSI%K | 14 本（1 通り） |
-| StochRSI素%K | 7 本・9 本・14 本・21 本（4 通り） |
+| StochRSI素%K | 14 本（1 通り） |
 | TRIX | (15,9)（1 通り・数字が2つ以上の指標は組で1通り） |
-| TRIX_EMAシグナル | (7,9)・(9,9)・(14,9)・(21,9)（4 通り・数字が2つ以上の指標は組で1通り） |
-| TRIX_EMAヒスト | (7,9)・(9,9)・(14,9)・(21,9)（4 通り・数字が2つ以上の指標は組で1通り） |
+| TRIX_EMAシグナル | (15,9)（1 通り・数字が2つ以上の指標は組で1通り） |
+| TRIX_EMAヒスト | (15,9)（1 通り・数字が2つ以上の指標は組で1通り） |
 | TRIXシグナル | (15,9)（1 通り・数字が2つ以上の指標は組で1通り） |
 | TRIXヒスト | (15,9)（1 通り・数字が2つ以上の指標は組で1通り） |
 | TSI | (12,26,9)（1 通り・数字が2つ以上の指標は組で1通り） |
@@ -269,12 +269,12 @@
 | close vs SINWMA% | 14 本（1 通り） |
 | close vs SMA | 9 本（1 通り） |
 | close vs SSF% | 10 本（1 通り） |
-| close vs SSF平均% | 20 本・50 本・200 本（3 通り） |
+| close vs SSF平均% | 10 本（1 通り） |
 | close vs SWMA% | 10 本（1 通り） |
 | close vs T3% | 20 本・50 本・200 本（3 通り） |
 | close vs TEMA% | 10 本・20 本（2 通り） |
 | close vs TRIMA% | 10 本（1 通り） |
-| close vs TRIMA_TA% | 20 本・50 本・200 本（3 通り） |
+| close vs TRIMA_TA% | 10 本（1 通り） |
 | close vs TSF% | 14 本（1 通り） |
 | close vs VIDYA% | 20 本・50 本・200 本（3 通り） |
 | close vs VIDYA_CMO% | 20 本・50 本・200 本（3 通り） |
@@ -442,8 +442,8 @@
 | 何 | 数 |
 |---|---|
 | 指標の種類 | **173** |
-| うち **パラメータを2つ以上 持つ**（同じ指標のパラメータ違いで 2本 並べられる） | **50** |
-| うち パラメータが1つだけ | 71 |
+| うち **パラメータを2つ以上 持つ**（同じ指標のパラメータ違いで 2本 並べられる） | **44** |
+| うち パラメータが1つだけ | 77 |
 | うち パラメータが無い | 52 |
 | 時間足 | 11 |
 
@@ -452,7 +452,7 @@
 | 何が要るか | 部品 | 使える指標の数 |
 |---|---|---|
 | **材料 1本** | 値を持ってくる・n本 ずらす・n本の平均・絶対値・比べる・掛け算・値が在るか（＋足りない部品の n本の最大値・最小値・順位・ばらつき） | **173（全部）** |
-| **材料 2本** | 引き算（差・クロス・タッチ）（＋足りない部品の 割り算・2本の相関） | **50**（同じ指標のパラメータ違いに限る） |
+| **材料 2本** | 引き算（差・クロス・タッチ）（＋足りない部品の 割り算・2本の相関） | **44**（同じ指標のパラメータ違いに限る） |
 | **条件を受ける** | かつ・でない・n本のうち 全部／どれか・条件を n本 ずらす（＋足りない部品の どれか満たす・何本前に成立したか） | 指標に依らない |
 
 ### ★業界の定番のクロスが、いま作れるか（1件ずつ 機械が判定）
@@ -622,9 +622,9 @@ T16（架空の列を宣言の写しに足すと、欄が変わり「★列を�
 | うち 外側になる形（中に条件を1つ包む） | **3 種** | `engine_tuner_exec.NEST_FORMS` | `streak`・`within_n`・`barssince` |
 | 判定の中身（build）の中だけで使える形 | **1 種** | `engine_tuner_exec._walk_build_tree` | `bool_col` |
 | 束ね方 | **4 通り** | `engine_tuner_exec._walk` | `not`・`all`・`any`・`if-then` |
-| 部品 | **548 種** | `signal_families.json` の `parts` | （一覧は ★2 と ★7） |
+| 部品 | **534 種** | `signal_families.json` の `parts` | （一覧は ★2 と ★7） |
 | 時間足 | **11 本** | `signal_families.json` の `timeframes` | `1m`・`3m`・`5m`・`10m`・`15m`・`30m`・`1h`・`2h`・`4h`・`6h`・`1d` |
-| 材料の列（部品 × 時間足） | **6028 列** | 上の2つの掛け算 | — |
+| 材料の列（部品 × 時間足） | **5874 列** | 上の2つの掛け算 | — |
 | 材料の前処理 | **9 種** | `engine_tuner_exec.MATERIAL_PRE` | `ts_max`・`ts_min`・`ts_rank`・`ts_std`・`ts_pos`・`since_min`・`since_max`・`at_entry`・`abs` |
 | 材料2本の組み方 | **3 種** | `engine_tuner_exec.PAIR_OPS` | `sub`・`div`・`corr` |
 

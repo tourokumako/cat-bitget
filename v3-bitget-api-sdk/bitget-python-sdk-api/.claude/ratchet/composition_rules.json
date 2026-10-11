@@ -4,12 +4,12 @@
     "検査6 「機械が強制する」と書いてある読み込ませる法則は、全部 engine の本体が読む枠に在る（読む枠 0 種＝ ／ 読まない枠 3 種＝direction_conflict／grids／exit_branch_count）"
   ],
   "_作った道具": "gen_composition_rules.py",
-  "_本文の指紋": "2b0066ec1cda5f8a",
+  "_本文の指紋": "367e94e17a760105",
   "_正本の指紋": {
     "composition_rules_src.json": "aac785d5d5a2c57b891e11263e1daa31f3563044d7be6d0cc1bf9f41de1d7d7e",
-    "exit_families.json": "9a322ff52f27f61398e841721eeaa512e8988ccfdce017aea1bfc277f48bbe74",
-    "search_limits.json": "22ceca4724189e9da5d2ec60266927ab355259e214a2185b6fb428999dda32e7",
-    "signal_families.json": "d3c9eed9ba72a8f06ffe54faf73db5ad4188394a39293b6f814f41e840e11cc6"
+    "exit_families.json": "1d227fb26d81bdb1563f611a616ce8c8a75a3f27a38132518b5d83daa483579a",
+    "search_limits.json": "609fc5e82ce2b1714c2949ff252db4b2c211133e399f586121b1d1fc977211e8",
+    "signal_families.json": "17f8dca5ae0ccdfb66ff05417156e4783b5a7c63e7b41bc4014200a9465f149a"
   },
   "body": {
     "direction_conflict": {
@@ -219,6 +219,13 @@
           }
         ],
         "DPO%": [
+          {
+            "hi": 40,
+            "kind": "int",
+            "lo": 14
+          }
+        ],
+        "DPO教科書%": [
           {
             "hi": 40,
             "kind": "int",
@@ -601,7 +608,38 @@
             "lo": 7
           }
         ],
+        "StochRSI素%K": [
+          {
+            "hi": 21,
+            "kind": "int",
+            "lo": 7
+          }
+        ],
         "TRIX": [
+          {
+            "hi": 21,
+            "kind": "int",
+            "lo": 7
+          },
+          {
+            "hi": 9,
+            "kind": "int",
+            "lo": 9
+          }
+        ],
+        "TRIX_EMAシグナル": [
+          {
+            "hi": 21,
+            "kind": "int",
+            "lo": 7
+          },
+          {
+            "hi": 9,
+            "kind": "int",
+            "lo": 9
+          }
+        ],
+        "TRIX_EMAヒスト": [
           {
             "hi": 21,
             "kind": "int",
@@ -894,6 +932,13 @@
             "lo": 10
           }
         ],
+        "close vs SSF平均%": [
+          {
+            "hi": 200,
+            "kind": "int",
+            "lo": 10
+          }
+        ],
         "close vs SWMA%": [
           {
             "hi": 200,
@@ -922,6 +967,13 @@
             "lo": 1
           }
         ],
+        "close vs TRIMA_TA%": [
+          {
+            "hi": 200,
+            "kind": "int",
+            "lo": 1
+          }
+        ],
         "close vs TSF%": [
           {
             "hi": 200,
@@ -934,6 +986,13 @@
             "hi": 200,
             "kind": "int",
             "lo": 14
+          }
+        ],
+        "close vs VIDYA_CMO%": [
+          {
+            "hi": 200,
+            "kind": "int",
+            "lo": 20
           }
         ],
         "close vs VWAP": [
@@ -1021,6 +1080,13 @@
           }
         ],
         "realized_vol": [
+          {
+            "hi": 50,
+            "kind": "int",
+            "lo": 10
+          }
+        ],
+        "realized_vol_rv": [
           {
             "hi": 50,
             "kind": "int",
