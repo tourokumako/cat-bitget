@@ -483,3 +483,68 @@
   - 1つ目の工事の写しで確かめるプログラム k3c_draft_build.py＝code_subs（直す前後の文字の組）→ build_code（写しに当てる）→ break_specs（壊すプログラムの元）→ main。案のプログラム k3c_proposal_build.py は k3c_instr.json・k3c_breaks.json・k3c_check.json を読み、壊すプログラムの本文をひな型 SH から作る。壊すプログラムの決めた文の形＝「<列の名前>: 手計算の既知答えと不一致」「<列の名前>: 教科書の独立実装と不一致」。
   - CP73 の修正1 は、_mk(c=100, o=100, h=102, l=100) の足で (100/101−1)×100 を期待する既知答えを足した（まこさんが端末で当てた）＝入力の違いを見分ける既知答えの手本。
 - ★設計↔実装ゲートが、observe_diag.py の名前を含む Bash を止めた＝「A(双方向) .claude/tools/next_move.py: 設計書の impl_functions に書いていないファイルを触った」。原因＝まこさんが直した next_move.py が git で未コミット（git status --short＝next_move.py・この worklog・decisions.md）。コミットすれば通る（168回目の 250番と同じ型）。観察の道具の自己テストを走らせる前に要る。
+- まこさん「OK」→ コミット bcad09b（next_move.py・この worklog の2本・ファイル単位）。逐語＝verbatim/k4-reference-known-20261011/ok_commit_nextmove_20261011.txt。
+
+## §44 169回目＝K-4 の写しで確かめるプログラム k4_draft_build.py を作り、写しで全部 通った
+
+- 読んだ物（宣言の外・設計に要った）＝ライブラリの実物（pandas_ta_classic の trend/psar.py・sarext.py・cksp.py・pmax.py・overlap/hilo.py・alma.py・volatility/thermo.py・atr.py の rma・trend/dpo.py の shift）・観察の道具の 4種の部品（_ck・_ps・_th＝768〜797行）・カタログの作り（1710〜1903行）・検査3 の自己テスト（7875〜7969行）・前の工事の写しの部品（k3a の make_copy・run・sim・r3 の sub1・run_probe・r1 の run_probe）。
+- 作った物＝`.claude/state/indicator_review/k4_draft_build.py`（手本＝k3c_draft_build.py）。直し＝32件（参照表 30・観察の道具 2）＝①登録 _r に欄 tb_kind ②修正59 の10件の独立実装を使う16の登録に tb_kind="写し"（W字・close vs VWAP・pivotPP/R1/S1・POC/VAH/VAL・S-Rタッチ数・STC/STCstoch・close vs ALMA%/ALMA傾き%・close vs HILO%・DPO%・THERMO%）③既知答えが無い・平らな足で 0 だけの9登録に、定義から導いた既知答え（1本ごとに 1 上げる足・内はらみ足・出来高 9 の足・帯の外の足）④修正60＝CKSPl/CKSPs/PMAX/PSAR%/PSAR加速/PSAR反転/SAREXT% に _dn(600, 1000, 1)（下げ続ける足）の既知答え＝PSAR と SAREXT は終値＋5・CKSPl は終値＋17・CKSPs は終値＋1・PMAX は終値＋7.5・加速 0.2・反転 0（導き方は DN_NOTE の説明に書いた）⑤CP73 の Q8 の3種の独立実装を別の書き方に（SSF＝scipy.signal.lfilter・VIDYA＝np.convolve と itertools.accumulate・Carter の ATR＝pandas の ewm）と tb_kind="教科書" ⑥観察の道具の検査3＝写しの独立実装が合っただけでは一致検証済みに数えない（印「独立(写し)✓」）⑦自己テストに番人2つ（写しの印の登録は既知答えを必ず持つ／既知答えを外した写しの列は検証済みに入らない）⑧仕組みの直し③＝増える・消える列の名前を決めた文に持つ壊すプログラムを .claude/breaks から探す関数 expect_msg_hits。壊すプログラム12本（b172〜b183）の元。
+- 写しで走らせた結果（--check --no-break）＝[1] 指示32件 順に当てて同じ／[2] 文法 通った／[3][4] 材料 534 → 534（増減 0）／[5] 前から在る列の値の違い 0 本／[L-678] 列の名前を決めた文に持つ壊すプログラム 0 本（列が変わらないため）／[6] 印＝写し 16・教科書 3・未判定 272・写しで既知答え無し 0／[7] observe_diag.py --selftest-catalog rc 0（9秒）・observe_diag.py --selftest rc 0（141秒）＝足した既知答え（下げ続ける足の4種を含む）が全部 通った・engine_tuner_exec.py --selftest rc 0・gen_materials.py --selftest rc 0（75秒）・gen_audit_request.py --selftest rc 0・engine_tuner_gen.py --selftest-extra-gate rc 0。
+- ★定義から導いた既知答えが、ライブラリの実物の値と 1e-6 以内で合った＝PSAR の「SAR＝終値＋5」（g←0.8(g+1) の収束 4）・CKSP の「終値＋17」「終値＋1」・PMAX の「EMA10 の遅れ 4.5 ＋ 3×ATR 1」・ALMA の遅れ・HILO の「終値 − 11」・DPO% の「(n/2+1)+(n−1)/2」。導く前にライブラリの実物は読んだが、答えの数字はライブラリから写していない（導き方は参照表の説明に書いた）。
+- まだ走らせていない＝壊し方12本（1本ごとに observe_diag.py --selftest 約141秒 → 約28〜30分）。15分を超えるので、まこさんの OK をもらってから走らせる。
+- まこさん「OK」（17:29・verbatim/k4-reference-known-20261011/ok_break_run_20261011.txt）→ 17:30 に裏で走らせた（`k4_draft_build.py --check --instr k4_instr.json`・記録＝indicator_review/k4_check_run.log・try_hooks 18本 止める物 0）。
+
+## §45 169回目＝案の元（やることの表・ひな型・案のプログラム）を書いた（壊し方の測りの間）
+
+- `.claude/state/verbatim/k4-reference-known-20261011/やることの表.md`（手書き）＝F-1（登録の欄 tb_kind と写しの印16登録）・F-2（写しの既知答え9登録）・F-3（4種に下げ続ける足）・F-4（3種を別の書き方）・F-5（検査3 の数え方と番人2つ）・F-6（仕組みの直し③）・G-2。やらないこと Y-1〜Y-8。手書きの5項目（§1 概要・2-1 何を測るか・3-1・3-2・4-19 通しの例＝SAREXT の下げ続ける足）。2-1 の読み方の欄に算用数字を書かない（教訓＝next_step §6 の202番）。
+- `.claude/state/indicator_review/_k4_template.txt`（案のひな型・@@…@@ を道具が埋める）と `k4_proposal_build.py`（手本＝k3c_proposal_build.py。SELF_CHECK＝_insp_indicator_match・selftest・build_catalog／MUST_USE＝_insp_indicator_match が build_catalog を呼ぶ／設計書の試しは一時の置き場で）。
+- 完成の条件＝壊すプログラム12本（b172〜b183）を1行ずつ。設計書の監査を出す（まこさんの決定③）。
+- 18:03 裏の走行が終わった（rc 0・壊し方12本 1681秒）＝12本とも決めた文で落ちた。SAREXT の絶対値を外すと −198.77%（監査 CP60 の −191.89% と同じ型）、PSAR加速の列を差し替えると 0.0、CKSP の買い側を売り側にすると −0.249%（期待 −4.067%）、PMAX の入力を高値にすると −2.788%（期待 −1.836%）、VWAP の重みを外すと 54.80%（期待 48.58%）、THERMO% の列を差し替えると 0.0476、ALMA を逆向きにすると 4.551（期待 1.063）、STC・HILO・DPO% は nan、番人①②も落ちた。k4_instr.json（32件）・k4_breaks.json・k4_check.json を書いた。
+- k4_proposal_build.py を走らせた（try_hooks 止める物 0）＝案 44件（コード 32・壊すプログラム 12）・777行。触る関数＝参照表（<モジュール直下>・_alma_lag・_r・_ssf2_avg・_tb_sqz_carter・_vidya_cmo）・観察の道具（_insp_indicator_match・selftest）。前からの壊すプログラムが探す文字の数は、当てる前後で同じ（12本）。設計書の試し 2148行。
+
+## §46 169回目＝試しの設計書（速い段）で見つけた抜け3つを直し、見直し表を埋めて A群 0 件にした
+
+- 1回目の --fast＝A群 2件。①設計書の門の検査＝4-19 の「監査 CP60 の実測＝下げの列で −191.89%」が「結果を書いた行に実行コマンドが無い」に当たった（require_acceptance_before_impl.sh:1207＝「実測＝」の語を見る）→ やることの表の 4-19 を「監査 CP60 は、下げの列で −191.89% になることを見つけました」に書き替えた。必読ゲート＝手本 b142 と engine_tuner_gen.py を Read で開いていなかった → 開いた（b142 全文・engine_tuner_gen.py:231〜242）。②A14 見直し表＝前の工事の試しの表が残っていて項目 34〜44 が無い。
+- 2回目の --fast の前に、試しの設計書（2148行）を1行目から最後まで Read で読んだ。★見つけた抜け＝4-4 の3番・4-13 の1番・4-6 の H2 の行に「indicator_reference_diag.py は H2 の対象」と書いていたが、実物の H2 の印の対象（.claude/state/h2_pass.json の files・24件）に indicator_reference_diag.py は無く observe_diag.py だけ。indicator_reference_diag.py は G2 の対象（g2_pass.json・39件の21番目）。ひな型の3か所を実物の一覧に合わせて直した（「observe_diag.py は H2 と G2 の対象・indicator_reference_diag.py は G2 の対象」）。
+- 見直し表＝gen_review.py --skeleton で骨組み（項目 93・埋める所 373）→ 全部 埋めた（.claude/state/reviews/_trial_acceptance.review.md）。判定＝OK 85・直した 4（4-6・4-4・4-19・4-13）・該当なし 4（2-3・2-4・4-10・4-11・4-15・4-16 のうち変えない所）。根拠の行＝設計書の行と、実物の行（参照表・観察の道具・ライブラリの実物・監査 CP60 の結果・やることの表・k4_check_run.log）。--check＝止める理由 0 件・根拠 156 件（1回目は根拠のファイル名だけで別の同名ファイルに当たった9件を、根からのパスに直した）。
+- 3回目の --fast＝A群 0 件・古い語 0 件。次＝--fast を外した1回（A12 の仮当て＝壊すプログラム12本を測るので 約35分の見込み）。15分を超えるので まこさんの OK をもらってから走らせる。
+- まこさん「OK」（18:16・verbatim/k4-reference-known-20261011/ok_trial_full_20261011.txt）→ 18:16 に裏で走らせた（記録＝indicator_review/k4_trial_full.log・try_hooks 18本 止める物 0）。
+
+## §47 169回目＝全部の検査が A12 の打ち切り（900秒）で落ちた → 軽い口 --selftest-match を工事に足し、壊すプログラムの測る口を変えた
+
+- **落ちた中身（k4_trial_full.log）**＝A12（承認の前の仮当て＝写しに当てて壊すプログラムを走らせる）が「run_breaks.py --design … --measure-only timed out after 900 seconds」。壊すプログラム12本の測る口が observe_diag.py --selftest（全体の自己テスト・1本 約142秒）で、12本＝約1700秒。打ち切りは require_design_check_before_approval.py:707 の timeout=900。さらに、打ち切りの瞬間に当たっていた壊すプログラム b178（CKSPl の列を売り側に差し替える）が戻される前に全体の自己テストが走り、「close vs CKSPl%: 手計算の既知答えと不一致（期待 −4.06699 ／ 実測 −0.2487…）」が出た（＝壊し方そのものは効いている）。本物のファイルは A12 が戻した（tb_kind の数 0・CKSPl の行 1478 が元のまま・git status で観察の道具と参照表は変わっていない）。
+- **直し方（next_step §6 の仕組みの直し②＝A12 の上限 900秒に当たる工事は軽い口で測る）**＝観察の道具に軽い口 selftest_match（旗 --selftest-match）を足す。中身＝正しいカタログの検査3 と、写しの印の番人2つ。全体の自己テスト（selftest）は、この軽い口を全列（full=True）で呼ぶ＝中身は減らさない。手本＝selftest_catalog（工事 m2c15-indicator-six-items-20261004 で同じ理由で切り出した口）。
+- **測った結果（写し・k4_draft_build.py --check --no-full --no-break）**＝軽い口が全列の検査3 だと 92秒（12本＝1104秒＞900）。コマンドから呼ぶときは検査3 を「手計算の既知答えを持つ登録の列と、写しの印の列」に絞る形にして 59秒（12本＝約708秒＜900）。壊すプログラム12本が落とす相手（既知答えの不一致・番人①・番人②）は全部この中に在る。
+- **直したファイル**＝k4_draft_build.py（code_subs に観察の道具の直し2件を足して4件＝軽い口の本体・selftest からの呼び出し・旗。壊し方12本の測る口を --selftest-match に。[7] の検査に軽い口を足して秒数と絞った列の本数を記録）・k4_proposal_build.py（GUARD と SELF_CHECK と MUST_USE に軽い口・埋める目印 @@MTSEC@@ と @@NMCOL@@）・_k4_template.txt（4-4 の4・4-9＝旗を1つ足す理由・4-12 の1・4-14 の行・6-3 の壊すプログラムの行・7-5 の3行・7-6 の12行の測る口）・やることの表.md の F-5。
+- **hook に止められた形（記録＝sessions/…/diagnosis.md）**＝k4_draft_build.py と k4_proposal_build.py への Edit が、それぞれ2回「走らせて いまの働きを確かめていない」（require_confirm_before_act）で止まり、3回目は block_repeat_failure に原因の記録を求められた。原因＝まこさんの最後の発言の後に、その相手を走らせた記録が無かった。走らせてから当て直した。★止められた直後に同じ相手への Edit を2つ並べたので「2回 失敗」に数えられた＝止められた直後は1つだけ出す。
+- 1回目の直しで、軽い口の中の変数の名前を selftest と同じ（_ng3b・_v3b・_r3b）にしたため、直す前の文字が当てた後に2か所になり [1] で落ちた → 軽い口の中は _ng3m・_v3m・_r3m にした。
+- 写しで確かめるプログラムの全部（全体の自己テスト＋壊し方12本を軽い口で）を裏で走らせた（見込み 約18分＝自己テスト群 約5分＋12本×約59秒。まこさんの前の OK〔ok_break_run_20261011〕と同じ測り）。記録＝indicator_review/k4_check_run.log（前回の記録は k4_check_run_prev.log に控え）。
+- 結果（rc 0）＝指示 34件（観察の道具 4・参照表 30）・材料 534 → 534・前から在る列の値の違い 0 本・印＝写し 16・教科書 3・未判定 272・軽い口 --selftest-match 63秒（絞った列 254本）・全体の自己テスト 142秒・壊し方12本 714秒（12本とも決めた文で落ちた＝前と同じ値）。k4_instr.json（34件）・k4_breaks.json・k4_check.json を書き直した。
+- 案を作るプログラム（k4_proposal_build.py）を走らせ直した＝案 46件（コード 34・壊すプログラム 12）・811行。試しの設計書の速い段＝1回目は A群2件（4-9 の「実測＝」の語＝設計書の門・見直し表が前の版）→ 語を文に直した。2回目は A群1件（見直し表）。
+- ★試しの設計書（2239行）を1行目から最後まで読んで、抜けを5か所 見つけた＝4-3 の部品の表に軽い口（selftest_match・selftest の呼び出し・コマンドの分岐）が無い／4-5 に「軽い口が回せない」場合が無い／5 に「軽い口で測る」決定が無い／6-2 に絞った軽い口のリスクが無い／7-4 に「軽い口は絞った列の外を見ない」が無い。ひな型を直し（4-0 の⑤・4-3・4-5・4-17・5・6-2・7-4・先頭の箇条書き）、やることの表の 3-2 に4件目（壊すプログラムの測る口＝CC の判断なので決めてほしいことに入れた）を足した。案を作り直し（811行）、試しの設計書（2247行）を作り直して1行目から最後まで Read で読んだ（4-3 が3行・4-5 が1行・5 が1行・6-2 が2行・7-4 が1行 増えた）。
+- 見直し表＝gen_review.py --skeleton で作り直し（項目 95・前の版の答えを道具が残し、埋める所 8）。前の版の根拠の行番号は、観察の道具の直しが2件 → 4件になった所（実装 32 以降）と、足した行の分だけ全部 動いていたので、95行を新しい設計書の行で書き直した（実装 N の「直す前の文字」の囲みの行・節の中身の行）。判定＝OK 64・直した 25・該当なし 6。--check＝止める理由 0 件・根拠 163 件。速い段の3回目＝A群 0 件・古い語 0 件。
+- 全部の検査（A12 の仮当てあり）を裏で走らせた（見込み 約20分＝壊し方 約12分＋自己テスト群 約5分＋ほかの段 約5分。前の走行の OK〔ok_trial_full_20261011〕と同じ検査＝打ち切りで落ちた物の走らせ直し）。記録＝indicator_review/k4_trial_full.log（打ち切りで落ちた前回の記録は k4_trial_full_prev.log に控え）。
+- 全部の検査の結果（rc 0・約20分）＝試しの設計書 2247行・A群 0 件・古い語 0 件＝A12 の仮当て（壊すプログラム12本を軽い口で測る・自己テスト6本）が打ち切りの中で通った。本物の観察の道具と参照表は戻っている（git status で変わっていない・tb_kind 0件）。壊すプログラム b172〜b183 は本物の .claude/breaks にまだ無い。次＝案の全文をチャットに出して まこさんの OK。
+
+## §48 169回目＝案に まこさん「OK」（11:52）→ 逐語を保存 → 設計書を作った → 全部 読んだ → 見直し表
+
+- 案の全文（k4_proposal.txt と同じ文字・811行）をチャットに出した（11:37）→ まこさん「OK」（11:52）。
+- 逐語の保存＝最初は案と OK を1つのファイル（uuid 2件）に写したが、設計書を作るプログラムは「話し手が CC だけ」のファイルを案として読む（gen_acceptance.py:325）ので、【】の見出しが見つからず止まった（「変更の単位」「完成の条件」「TARGET」「DESIGN_CONTRACT」「ハード制約の照合」が無い）。1つのファイルを消し、案（verbatim/k4-reference-known-20261011/k4_proposal_20261011.txt・CC・769行）と OK（ok_k4_proposal_20261011.txt・まこさん・1行）に分けて写し直した（--verify 2本とも1文字も違わない）。
+- 設計書＝`python3 .claude/tools/gen_acceptance.py --work k4-reference-known-20261011 --write` → .claude/state/acceptance.md（2248行・囲み 13個）。試しの設計書との違いは、逐語のファイル名の行（9・22・24・26 行目）と §0-1 の対応の表（33〜66 行目＝まこさんの OK の1行が増えた）だけ（diff で確かめた）。1行目から最後まで Read で読んだ（1〜2248）。
+- 見直し表＝gen_review.py --skeleton .claude/state/acceptance.md（項目 95）→ 試しの見直し表を写すプログラム（.claude/state/indicator_review/k4_review_shift.py＝根拠の行番号を 67 行目以降 +1・0-1 の行の数を本物の値に）で埋めた → --check＝止める理由 0 件・根拠 163 件。
+- まだ＝承認の前の検査（require_design_check_before_approval.py --try＝A12 の仮当てを本物に当てて戻す・約20分の見込み）は、15分を超えるので まこさんの OK をもらってから走らせる。設計書の監査の手書きの文書も まこさんの OK が要る。
+- 設計書の監査の手書きの文書を書いた（verbatim/k4-reference-known-20261011/監査依頼の手書き（設計書の監査）.md＝何のためか2件・必読24本・入れないもの4件・Q8〜Q13・要望のまとめ）。返信の前に、見直し表の根拠の行（実物 59件）を Read で開き直した（hook require_read_used に止められたため）。
+- まこさん「OK」（12:16＝--try を走らせること・手書きの文書の両方）。逐語＝ok_try_and_hand_20261011.txt（手で保存した形に揃えた＝meta を消した。meta が在ると設計書を作るプログラムが §0-1 に写す対象に数え、設計書の作り直しが要るため）。
+- 設計書の監査の依頼書を作った＝`gen_audit_docs.py request-design design --work k4-reference-known-20261011` → cp74（inputs/2026-10-11_k4_reference_known_20261011_design_cp74_audit_request.md・問い W01〜W15・事実データ3・外部検索2・自己申告10）。全文（516行）を Read で読んだ。★依頼書の事実データに「pre_audit_check.json は設計書より前に走らせたもの＝走らせ直してから依頼書を作り直す」と出た＝--try の後に pre_audit_check.py --run を走らせ、cp74 を消して作り直す。
+- --try を裏で走らせた（12:2x・記録＝indicator_review/k4_try.log）。結果＝承認のプログラムの止まり所 A1〜A8・B1・B2 は全部 通る（不足0件・1698秒＝約28分。見込み 約20分より長かった＝A12 の壊すプログラム12本 約12分に加え、自己テスト6本と照合の段が重なった）。本物は戻っている（git status で変わっていない・tb_kind 0件）。
+- 監査に出す前のチェック（pre_audit_check.py --run・裏で走らせた・約10分）＝rc 1。NG は verify_design_contract.py --diff（設計書と実物の照合）の1件だけ（ほかは全部 rc 0＝印と材料の文書の書き直し・G2・H2 約295秒・自己テスト群）。理由＝実装の前なので、設計書が書く関数 selftest_match と旗 --selftest-match が実物に無い。★2026-10-04 の §41 と同じ行き止まり（当てる前の設計書の監査は、道具の決まり〔pre_audit_check --verify rc 0〕では作れない）。cp74 の依頼書は、古い（通っている）pre_audit_check.json の時点で作れていた物。本物のファイルは変わっていない（git status＝worklog と decisions.md だけ）。
+- cp74 の依頼書を消して作り直すつもりだったが、hook 10（依頼書は道具でしか触れない）で消せず、作り直しも --verify で止まる。＝cp74 をそのまま渡し、依頼書の中の2つの注記（pre_audit_check.json は設計書より前の物／自己申告10＝ok_try_and_hand の逐語）を返信で説明する。
+- 依頼書を渡す返信は、ターンの終わりの検査（require_read_used）に2回 止められた＝①設計書の見直し表の根拠の実物の行（59件）を書き替えた後に開き直していない → 全部 Read で開いた ②依頼書の見直し表が無い → gen_review.py --skeleton で骨組み（46項目）を作って全部 埋め、--check＝止める理由 0 件・根拠 78 件。根拠の実物の行（やることの表・手書きの文書・設計書の見出し・逐語・pre_audit_check.json）を開き直して渡した。★設計書の監査の依頼書は、道具の決まり（2026-09-30）で「割り当ての表の確かめ」（W01〜W15）だけ＝手書きの Q8〜Q13 は入らない（実装の監査に入れる）。
+- まこさん（12:5x・逐語）「依頼書はOKなので、別セッションで監査に出す。このセッションは終了するので、引き継ぎ文書作成して」。
+
+## §49 169回目＝締め（next_step の書き替え・教訓 L-680・コミットの OK 待ち）
+
+- next_step.md＝「▶▶ 次のセッションでやること」を170回目の中身に書き替えた（監査 CP74 の結果の確認 → 直す範囲を まこさんが決める → 修正は やることの表に当てて設計書を作り直す → 承認 → 実装 → G2・H2 → 実装の監査。cp74 の注記2つ・次の工事で同じ行き止まりを避ける手順・169回目の実測と止められた形）。0-1 いまの状態を169回目の終わりに書き替えた。「これまでの記録の場所」に169回目の行を足した。
+- 教訓 L-680（壊すプログラムが測る口は、承認の前の仮当ての上限 900秒と先に照らす／設計書の監査の依頼書は、監査に出す前のチェックの記録が通っている間に作る／案と OK は別の逐語のファイルに写す／scratchpad に自作スクリプトを書かない／hook に止められた直後は同じ相手への手を1つだけ）。
+- このセッションで本物（SDK のコード・設定）は1文字も変えていない。K-4 の実装は、設計書の監査の結果 → 承認の後。
+- コミットは まこさんの OK 待ち（ファイル単位）。
