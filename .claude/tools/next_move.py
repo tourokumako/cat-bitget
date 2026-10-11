@@ -158,9 +158,11 @@ def facts(work: str, session: str) -> dict:
             done = aaf.applied_keys()
             for x in fixes:
                 num = str(x.get("番号"))
+                if (a["report"].name, num) in done:
+                    continue                                   # ★256番（2026-10-11）＝当てた記録に在る番号は、状態が「未決」でも数えない
                 if x.get("状態") != "確定":
                     a["undecided"].append(num)
-                elif (a["report"].name, num) not in done:
+                else:
                     a["pending"].append(num)
         f["audit"][kind] = a
     # 案の試しの記録（このセッション）
@@ -308,7 +310,31 @@ def apply_preconditions(f: dict) -> list:
             out.append((None, f"設計書と実装の照らしを走らせられない＝{type(e).__name__} {e}"))
     import run_breaks
     ng = run_breaks.check_frozen()
-    out.append((not ng, "壊すプログラムの凍結と実物の一致（run_breaks.check_frozen）" + ("" if not ng else "＝" + " ／ ".join(ng[:3]))))
+    # ★255番（2026-10-11）＝当てた記録に「当てた」と在り、当てた時刻が凍結の記録の書かれた時刻より後の壊すプログラムは、
+    #   食い違いに数えない（設計書が壊すプログラムを直す・足す工事では、承認の後に当てた物が必ず凍結と違うため）。
+    #   本物の守り run_breaks.check_frozen は変えない。
+    try:
+        import time
+        import apply_audit_fix as aaf
+        frozen_at = run_breaks.FROZEN.stat().st_mtime
+        rec = json.load(open(aaf.APPLIED_RECORD, encoding="utf-8")).get("applied") or []
+        later = {os.path.basename(str(x.get("file", ""))) for x in rec if isinstance(x, dict) and x.get("how") == "当てた"
+                 and time.mktime(time.strptime(str(x.get("at", "")), "%Y-%m-%dT%H:%M:%S")) > frozen_at}
+        # ★監査の結果の修正のうち、対象が壊すプログラムで「直した後の文字」が実物に在る物（＝手で当てた物）も除く。
+        #   判定は、当てる道具が当て終わりを見分ける apply_audit_fix._done_in をそのまま呼ぶ（書き写さない）。
+        rep = (f.get("audit") or {}).get("impl", {}).get("report")
+        for fx in (aaf.read_fixes(Path(rep).read_text(encoding="utf-8")) if rep else []):
+            tgt = str(fx.get("対象のファイル") or "")
+            if "/breaks/" in tgt and (ROOT / tgt).is_file():
+                cur = (ROOT / tgt).read_text(encoding="utf-8")
+                if any(aaf._done_in(str(fx.get("直す前の文字") or ""), k, b, cur) for _a, k, b in (fx.get("4つ目") or [])):
+                    later.add(os.path.basename(tgt))
+
+        ng = [m for m in ng if not any((": " + n) in m for n in later)]
+    except Exception:                                         # noqa: BLE001
+        pass
+    out.append((not ng, "壊すプログラムの凍結と実物の一致（run_breaks.check_frozen・承認の後に当てた記録が在る物は除く）" + ("" if not ng else "＝" + " ／ ".join(ng[:3]))))
+
     import require_design_check_before_approval as rd
     left = rd._a12_leftover()
     out.append((not left, "A12 の仮当ての控えが残っていない（戻せる物は戻した）" + ("" if not left else "＝" + " ／ ".join(left[:3]))))
