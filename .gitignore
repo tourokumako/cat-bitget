@@ -53,6 +53,10 @@ v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
 #   作り直す元が残らない（worklog 20260917 §36-5）。
 !.claude/state/next_step_src.json
 !.claude/state/hook_roles.json
+# ★2026-10-12 追加（172回目・まこさん「これもコミットしてよい」）＝next_step の控えのファイル。
+#   next_step を2本に分けた（毎回読む next_step.md と、要るときに開く next_step_reference.md）。
+#   要件定義の全文・指標の修正の束・あとで直すことの一覧は、こちらに在る（道具 tidy_next_step.py が同じ元データから作る）。
+!.claude/state/next_step_reference.md
 # ★2026-10-12 追加（171回目・まこさん「A」「コミットしてよい」）＝指標の資料の表3つ（教科書の値・戦略ごとの最初の値と範囲・役割と閾値）。
 #   設計書を作るプログラムが写す元になる。この PC にしか無かった。場所は変えない（読んでいるプログラムと ひな型が30本 在るため）。
 !.claude/state/indicator_params_review.md

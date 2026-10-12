@@ -47,9 +47,11 @@ if [ -n "$SID" ]; then
   SESS_DIR="$STATE_DIR/sessions/$SID"
   mkdir -p "$SESS_DIR"
   rm -f "$SESS_DIR/session_todo_posted" "$SESS_DIR/session_todo_shown"
-  echo "=== [ToDo ゲート] このセッションの ToDo の置き場＝$SESS_DIR/session_todo.md（印と表示の記録は消した・ToDo を書いて貼って印を作るまで Bash/Edit/Write は止まる）==="
+  # ★2026-10-12（172回目）＝表示を実物に合わせた。前の ToDo の hook（enforce_todo_declaration）は 2026-10-01 から登録が無い。
+  #   いま ToDo を読むのは、宣言の hook（require_work_declaration）＝「★いまここ」の1件の宣言と、まこさんの返事を求める。
+  echo "=== [ToDo] このセッションの ToDo の置き場＝$SESS_DIR/session_todo.md（必読を読んだ後に書く。いまやる1件に ★いまここ を付け、その番号の宣言〔【宣言】ToDo の N番・【作業内容】【目的】【経緯】【ゴール】〕を返信に書く。まこさんの返事の後に、作業を始める）==="
 else
-  echo "⚠️ [ToDo ゲート] セッションの id が読めない（stdin の json に session_id も transcript_path も無い）＝ToDo ゲートは最初の操作で止まる（fail-closed）。まこさんに報告する。"
+  echo "⚠️ [ToDo] セッションの id が読めない（stdin の json に session_id も transcript_path も無い）＝ToDo の置き場を決められない。まこさんに報告する。"
 fi
 # 目標逆算ゲート（ゲート2）リセット: 前セッションの逆算ブロックは引き継がないが、
 # 引き継ぎ前提（本筋・やってはいけないこと）は残す。必須見出しの語は入れないので
@@ -66,13 +68,18 @@ cat > "$STATE_DIR/goal_block.md" <<'EOF'
 - ⚠️ ここに前セッション固有の handoff を焼き込まない（hook に焼くと古くなって誤誘導する＝2026-06-13 P4 stale 事案）。最新は常に next_step.md。
 EOF
 
-echo "=== [読了強制ゲート 有効] ==="
-echo "必読を Read tool で実際に開くまで、Bash/Edit/Write は block されます（読んだふり防止・require_read_before_work と一致）:"
-echo "  1. next_step.md（★唯一の起点＝§0 次にやること・§6 あとで直すこと。2026-08-25 まこさん指示で WORKFLOW.md を必読から外した）"
+# ★2026-10-12（172回目・まこさん「OK」）＝表示を実物に合わせた。直す前は「読了強制ゲート 有効」「開くまで block されます」と出していたが、
+#   止める hook（require_read_before_work.sh）は 2026-10-01 から settings.json に登録が無い（コミット e31d6e8）＝開かなくても止まらなかった。
+#   いま作業の前に止めるのは、宣言の hook（require_work_declaration.sh）＝ToDo の1件を始める前に、宣言と まこさんの返事が
+#   そろうまで、書き込みと実行を止める。
+echo "=== [必読] 作業の前に、次を Read tool で開く ==="
+echo "★開かなくても、ここでは止まりません（必読を止める hook は 2026-10-01 から登録が無い）。読んだ後に ToDo を書き、いまやる1件の宣言を返信に書く。宣言と まこさんの返事がそろうまで、hook require_work_declaration が、書き込みと実行を止めます:"
+echo "  1. next_step.md（★唯一の起点＝毎回読む文書。あとで直すことの一覧・要件定義の全文・指標の修正の束は、控えのファイル next_step_reference.md に在る＝要るときに開く）"
 echo "  2. adopted_strategies.md（採用ポートフォリオ台帳）"
 echo "  3. permanent_rules.md（恒久の決まり・リポジトリ直下 .claude/rules/・自動で読み込まれるが Read も要る）"
 # ★2026-10-04 まこさん指示（「新セッションでお前が大量のトークンつかって作った資料をCCが面倒だから確認しないんだけど」）
 #   ＝「いま必ず読むもの」の一覧（.claude/state/must_read_now.txt）も出す。require_read_before_work.sh が同じ一覧で止める。
+#   ★2026-10-12＝その hook（require_read_before_work.sh）は、2026-10-01 から settings.json に登録が無い＝止めていない。ここは表示だけ。
 _MR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/must_read_now.txt"
 if [ -f "$_MR" ]; then
   _i=4
@@ -83,7 +90,7 @@ if [ -f "$_MR" ]; then
   done < "$_MR"
 fi
 echo "（WORKFLOW.md＝現在地は「next_step.md §0 を見る」の1行だけ。改訂の履歴は archive/workflow/ に移した）"
-echo "→ grep や表示だけでは解除されません。Read tool で開いてください。"
+echo "→ Read tool で開いてください（grep や表示だけでは、読んだことになりません）。"
 echo "（ledger.md 本体＝特定の過去実験を深掘りする時に読む参照資料。毎回の必読からは外した）"
 echo "★ cat_requirements.md / exchange_spec.md（決済方法）は『設計書を書く瞬間』に強制 read（just-in-time・require_spec_read_before_design.sh）。"
 echo "   理由: セッション開始時に読んでもインプットされない実証（まこさん 2026-06-13・add/決済を毎回誤解）。"

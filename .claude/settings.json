@@ -1,4 +1,10 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(shasum -a 256 \"/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/sessions/692c401d-1974-4818-9ae1-ee532b7887b5/session_todo.md\")",
+      "Bash(shasum -a 256 \"/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/sessions/a7a92842-c8c6-4822-be03-63d3bac78b77/session_todo.md\")"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -69,6 +75,15 @@
           {
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_try_before_act.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_work_declaration.sh"
           }
         ]
       },
@@ -292,10 +307,5 @@
       }
     ],
     "UserPromptSubmit": []
-  },
-  "permissions": {
-    "allow": [
-      "Bash(shasum -a 256 \"/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/sessions/692c401d-1974-4818-9ae1-ee532b7887b5/session_todo.md\")"
-    ]
   }
 }

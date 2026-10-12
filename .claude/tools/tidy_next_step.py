@@ -62,6 +62,18 @@ HD = "### （0-d）"
 HERE_MARK = "★いまここ"
 # ★2026-10-12（A-3）＝固定で載せる文が next_step に入っているかを見る文字（正本の先頭の見出しを、gen_core_requirements が太字の行にした物）
 CORE_MARK = "**■ 要件定義と工事の流れ（固定・毎回 読む・消さない）**"
+# ★2026-10-12（172回目・まこさん「OK」）＝next_step を2本に分けて作る。控えの見出しから後ろは、控えのファイルに出す。
+REF_NAME = "next_step_reference.md"           # 控え（毎回は読まない・要るときに節を選んで開く）のファイル
+REF_HEAD = "# 控え（"                          # この文字で始まる見出しの行から後ろが、控え
+TOP_MAX = 150                                  # (o) 毎回読む部分（先頭から「# §0 」の前まで）の行数の上限
+LINE_MAX = 250                                 # (p) 「次のセッションでやること」の節の、1行の字数の上限
+NEXT_SEC = "### ▶▶ 次のセッションでやること"
+ALL_MAX = 250                                  # (q) next_step.md の全体の行数の上限（まこさん「よい」2026-10-12）
+STATE_SEC = "### 0-1 いまの状態"               # (r) この節は、最新の回だけを書く
+STATE_MAX = 12                                 # (r) 「いまの状態」の、空でない行の数の上限
+MUST_HEAD = "| いま必ず読むもの | なぜ読むか | 外す条件 |"   # (s) 必読の表の見出しの行（この表から must_read_now.txt を書く）
+MUST_FILE = "must_read_now.txt"
+TODO_HEAD = "| 番号 | やること | 状態 |"          # 「次のセッションでやること」の ToDo の表の見出しの行（--todo-from が行を写す）
 # ★(f) 2026-08-28（まこさん指示「直して」）＝0-2 の表に「終わった行」を残せなくする。
 #   なぜ要るか＝(a)〜(e) はどれも「終わった行が表に残っているか」を見ていない。
 #   実測（同日）＝0-2 の表に ✅済 10行・取り消し線 4行・これからやる行 1行。
@@ -473,6 +485,120 @@ def gen_head(body: str) -> str:
     return f"{GEN_HEAD}{_hash16(body)} tidy_next_step.py が {SRC_NAME} から作った＝手で書き換えない -->\n"
 
 
+def split_ref(body: str) -> tuple[str, str]:
+    """本文を、毎回読む文書と、控えに分ける（2026-10-12・172回目・まこさん「OK」）。
+    控えの見出し（REF_HEAD で始まる行）から後ろが控え。その見出しが無ければ、控えは空。
+    なぜ要るか＝毎回読む文書に、期間限定の決まりや古い一覧が混ざり、346行になっていた（worklog 20261012 §32）。"""
+    lines = body.splitlines(keepends=True)
+    for i, l in enumerate(lines):
+        if l.startswith(REF_HEAD):
+            return "".join(lines[:i]), "".join(lines[i:])
+    return body, ""
+
+
+def length_checks(text: str) -> list[str]:
+    """毎回読む文書の長さを見る（2026-10-12・まこさん「OK」＝毎回読む部分 150行・1行 250字）。戻り＝❌ の一覧。
+    なぜ要るか＝長さを止める物が §0 の100行だけで、足すだけで済んでいた。超えたら、何かを控えへ移すまで終われない形にする。"""
+    ng: list[str] = []
+    lines = text.splitlines()
+    s0 = next((i for i, l in enumerate(lines) if l.startswith(SEC0_START)), None)
+    if s0 is not None and s0 > TOP_MAX:
+        ng.append(f"(o) 毎回読む部分（先頭から「{SEC0_START.strip()}」の前まで）が {s0} 行＝上限 {TOP_MAX} 行を超えた"
+                  f"＝経緯は worklog へ・期間限定の物と古い物は控え（{REF_HEAD}…の見出しの後ろ）へ移す")
+    n = next((i for i, l in enumerate(lines) if l.startswith(NEXT_SEC)), None)
+    if n is None:
+        ng.append(f"(p) 「{NEXT_SEC}」の節が無い")
+    else:
+        long_lines = [l for l in lines[n:_section_end(lines, n)] if len(l) > LINE_MAX]
+        if long_lines:
+            ng.append(f"(p) 「次のセッションでやること」の節に、{LINE_MAX} 字を超える行が {len(long_lines)} 行 在る"
+                      f"＝1件1行で短く書く／1つ目＝{long_lines[0][:40]}（{len(long_lines[0])}字）")
+    # (q) 全体の行数（まこさん「よい」2026-10-12＝250行）
+    if len(lines) > ALL_MAX:
+        ng.append(f"(q) next_step.md の全体が {len(lines)} 行＝上限 {ALL_MAX} 行を超えた"
+                  f"＝古い物・期間限定の物を、控え（{REF_HEAD}…の見出しの後ろ）か worklog へ移す")
+    # (r) 「いまの状態」は最新の回だけ（前の回が1つの段落に積み重なっていた＝worklog 20261012 §32 の P5）
+    s1 = next((i for i, l in enumerate(lines) if l.startswith(STATE_SEC)), None)
+    if s1 is not None:
+        body = [l for l in lines[s1 + 1:_section_end(lines, s1)] if l.strip()]
+        long_b = [l for l in body if len(l) > LINE_MAX]
+        if len(body) > STATE_MAX or long_b:
+            ng.append(f"(r) 「0-1 いまの状態」が {len(body)} 行（上限 {STATE_MAX} 行）・{LINE_MAX} 字を超える行が {len(long_b)} 行"
+                      f"＝最新の回だけを、短い行で書く。前の回は worklog の節の番号で指す")
+    # (s) 必読の表（ファイル・なぜ読むか・外す条件）。外す条件が空の行は通さない＝期間限定の必読が、いつまでも残らないようにする
+    rows = must_rows(text)
+    if rows is None:
+        ng.append(f"(s) 必読の表（見出しの行＝{MUST_HEAD}）が無い＝「次のセッションでやること」の「最初にやる事」に置く")
+    else:
+        for path, why, cond in rows:
+            if not (path and why and cond):
+                ng.append(f"(s) 必読の表に、空の欄が在る（ファイル・なぜ読むか・外す条件を全部 書く）＝{path or '（ファイルが空）'}")
+            elif not (ROOT / path).exists():
+                ng.append(f"(s) 必読の表のファイルが無い＝{path}")
+    return ng
+
+
+def must_rows(text: str):
+    """必読の表（MUST_HEAD の行から、表が切れるまで）の行を返す。戻り＝[(ファイル, なぜ読むか, 外す条件)]／表が無ければ None。"""
+    lines = text.splitlines()
+    i = next((k for k, l in enumerate(lines) if l.strip() == MUST_HEAD), None)
+    if i is None:
+        return None
+    out = []
+    for l in lines[i + 2:]:
+        if not l.lstrip().startswith("|"):
+            break
+        cells = [c.strip().strip("`") for c in l.strip().strip("|").split("|")]
+        cells += [""] * (3 - len(cells))
+        out.append((cells[0], cells[1], cells[2]))
+    return out
+
+
+def must_file_text(rows) -> str:
+    """必読の一覧（must_read_now.txt）の中身を、必読の表の行から作る（2026-10-12・172回目）。
+    なぜ要るか＝一覧を手で書いていて、工事が替わった後も、前の工事の資料を読ませ続けていた（worklog 20261012 §28）。"""
+    head = ["# いま必ず読むもの（★tidy_next_step.py が、next_step.md の必読の表から書く＝手で書き換えない・2026-10-12）",
+            "# 直す道＝元データ next_step_src.json の「次のセッションでやること」の必読の表を直す → tidy_next_step.py --write",
+            "# 読む側＝始めの表示（reset_read_log.sh）。「#」の行は読み飛ばす。"
+            "必読を止める hook（require_read_before_work.sh）は 2026-10-01 から登録が無い。"]
+    return "\n".join(head + [p for p, _w, _c in rows if p]) + "\n"
+
+
+def copy_todo(next_path: pathlib.Path, sid: str) -> int:
+    """そのセッションの ToDo の、済んでいない行を、元データの「次のセッションでやること」の表に写す（2026-10-12・まこさん「OK」）。
+    なぜ要るか＝171回目の締めで、ToDo の流れの段を手で写さず、次の回が落とした（worklog 20261012 §29）。写した後に --write を打つ。"""
+    src_path = next_path.parent / SRC_NAME
+    todo = next_path.parent / "sessions" / sid / "session_todo.md"
+    if not src_path.exists() or not todo.exists():
+        print(f"❌ [tidy --todo-from] 元データか ToDo が無い（{src_path}・{todo}）")
+        return 2
+    rows = []
+    for l in todo.read_text(encoding="utf-8").splitlines():
+        s = l.strip()
+        if not s.startswith("|"):
+            continue
+        c = [x.strip() for x in s.strip("|").split("|")]
+        if len(c) < 3 or not c[0].isdigit() or c[2] == "✅済":
+            continue
+        # ToDo の「★いまここ」の行は、次の回が始める行＝「いまここ（次の回は、ここから）」と写す
+        rows.append({"欄": [f" {c[0]} ", f" {c[1]} ", f" {'いまここ（次の回は、ここから）' if c[2] == HERE_MARK else c[2]} "]})
+    src = json.loads(src_path.read_text(encoding="utf-8"))
+    done = False
+    for sec in src["節"]:
+        if not sec.get("見出し", "").startswith(NEXT_SEC):
+            continue
+        for blk in sec.get("塊", []):
+            if "表" in blk and blk["表"]["見出しの行"].strip() == TODO_HEAD:
+                blk["表"]["行"] = rows
+                done = True
+    if not done or not rows:
+        print(f"❌ [tidy --todo-from] 写せない（表の見出しの行「{TODO_HEAD}」が元データに在るか＝{done}・済んでいない行＝{len(rows)}）")
+        return 2
+    _atomic_write(src_path, json.dumps(src, ensure_ascii=False, indent=1) + "\n")
+    print(f"✅ [tidy --todo-from] ToDo の済んでいない {len(rows)} 行を、元データの表に写した → 続けて --write を打つ")
+    return 0
+
+
 def _worklog_secs(state_dir: pathlib.Path, ymd: str, cache: dict) -> set[str] | None:
     if ymd in cache:
         return cache[ymd]
@@ -600,8 +726,20 @@ def check_generated(next_path: pathlib.Path) -> list[str]:
     if h != _hash16(body):
         ng.append(f"(g) 目印のハッシュ値 {h} と本文 {_hash16(body)} が違う＝手で書き換えた → 元データ {SRC_NAME} を直して `--write`")
     src = json.loads(src_path.read_text(encoding="utf-8"))
-    if render(src) != body:
-        ng.append(f"(g) 本文が元データ {SRC_NAME} から作ったものと違う → 元データを直して `--write`／最初に違う所＝{_first_diff(body, render(src))}")
+    # ★2026-10-12（172回目）＝元データから作った全文を、毎回読む文書と控えに分けて、それぞれのファイルと照らす。
+    main_r, ref_r = split_ref(render(src))
+    if main_r != body:
+        ng.append(f"(g) 本文が元データ {SRC_NAME} から作ったものと違う → 元データを直して `--write`／最初に違う所＝{_first_diff(body, main_r)}")
+    ref_path = next_path.parent / REF_NAME
+    if ref_r:
+        if not ref_path.exists():
+            ng.append(f"(g) 控えのファイル {REF_NAME} が無い → `tidy_next_step.py --write`")
+        else:
+            rbody, rh = strip_gen_head(ref_path.read_text(encoding="utf-8"))
+            if rh is None or rh != _hash16(rbody):
+                ng.append(f"(g) 控えのファイル {REF_NAME} の目印のハッシュ値が本文と違う＝手で書き換えた → 元データを直して `--write`")
+            if rbody != ref_r:
+                ng.append(f"(g) 控えのファイル {REF_NAME} が元データから作ったものと違う → `--write`／最初に違う所＝{_first_diff(rbody, ref_r)}")
     return ng
 
 
@@ -623,6 +761,7 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
     miss = [x for x in check_refs(new_next, next_path.parent) if x not in base]
     ng = verify(new_next, h2, g2, latest_worklog_date(next_path.parent), limit)
     ng += reading_checks(new_next)                 # ★2026-10-02＝まこさんが読む形か（(h)〜(k)）
+    ng += length_checks(split_ref(new_next)[0])    # ★2026-10-12＝毎回読む部分の長さ（(o)(p)）
     if miss:
         ng += [f"(参照) {x} が見出しに無い（元データの文を直す）" for x in miss]
     if ng:
@@ -639,7 +778,16 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
     if new_arc != arc:
         _atomic_write(arc_path, new_arc)
     _atomic_write(src_path, json.dumps(new_src, ensure_ascii=False, indent=1) + "\n")
-    _atomic_write(next_path, gen_head(new_next) + new_next)
+    # ★2026-10-12（172回目）＝控えの見出し（REF_HEAD）の行から後ろは、控えのファイルに出す。毎回読む文書には載せない。
+    main_part, ref_part = split_ref(new_next)
+    _atomic_write(next_path, gen_head(main_part) + main_part)
+    ref_path = next_path.parent / REF_NAME
+    if ref_part:
+        _atomic_write(ref_path, gen_head(ref_part) + ref_part)
+    elif ref_path.exists():
+        ref_path.unlink()                          # 控えが空になったら、古い控えのファイルを残さない
+    # ★2026-10-12（172回目）＝必読の一覧（must_read_now.txt）を、毎回読む文書の必読の表から書く（手で書かない）。
+    _atomic_write(next_path.parent / MUST_FILE, must_file_text(must_rows(main_part) or []))
     n_les = trim_lessons(today)                    # ★2026-10-02＝教訓の現役を40件＋名指しされた物に
     n_cp = clean_audit_copies()                    # ★2026-10-02＝結果が出た監査の写しを消す
     print(f"[tidy --write] 元データ {SRC_NAME} から作った／移した節 {rep['moved_sections']}"
@@ -790,20 +938,31 @@ def clean_audit_copies() -> int:
 # ── 口 ───────────────────────────────────────────────────────────────────────
 def do_verify(next_path: pathlib.Path, limit: int) -> int:
     text = next_path.read_text(encoding="utf-8")
-    ng = verify(text, _pass(H2), _pass(G2), latest_worklog_date(next_path.parent), limit)
+    # ★2026-10-12（172回目・まこさん「OK」）＝控えのファイルが在れば、毎回読む文書の後ろに つないだ全文で、前からの検査を掛ける
+    #   （前からの検査は、§6 などを含む1本の文書を相手に作ってある＝相手を変えない）。長さの検査 (o)(p) だけ、毎回読む文書を見る。
+    has_src = (next_path.parent / SRC_NAME).exists()
+    ref_path = next_path.parent / REF_NAME
+    ref_body = strip_gen_head(ref_path.read_text(encoding="utf-8"))[0] if has_src and ref_path.exists() else ""
+    full = text + ref_body
+    ng = verify(full, _pass(H2), _pass(G2), latest_worklog_date(next_path.parent), limit)
     # ★2026-09-17＝元データ next_step_src.json が在れば (g) も見る（目印・全文のハッシュ値・元データから作ったままか）
     ng += check_generated(next_path)
     # ★2026-10-02＝本物の next_step（元データが隣に在る）だけ、読む形 (h)〜(k) と片づけ (l)(m) も見る
     #   （自己テストの見本の文書は元データを持たないので、ここは見ない＝19本のテストはそのまま）
-    if (next_path.parent / SRC_NAME).exists():
-        ng += reading_checks(text) + tidy_checks()
+    if has_src:
+        ng += reading_checks(full) + length_checks(text) + tidy_checks()
+        # ★2026-10-12＝必読の一覧（must_read_now.txt）が、必読の表から書いたままか
+        mf = next_path.parent / MUST_FILE
+        if not mf.exists() or mf.read_text(encoding="utf-8") != must_file_text(must_rows(text) or []):
+            ng.append(f"(s) 必読の一覧 {MUST_FILE} が、next_step.md の必読の表から書いたままではない → `tidy_next_step.py --write`")
     if ng:
         print(f"❌ [tidy --verify] {next_path.name} の形に {len(ng)} 件:")
         for x in ng:
             print(f"   ・{x}")
         return 2
     n0 = sec0_lines(text.splitlines())
-    _n_chk = ("14個（6つ＋(g) 元データと全文のハッシュ値＋(h)〜(k)・(n) 読む形と固定で載せる文＋(l) 教訓の件数・(m) 監査の写し）"
+    _n_chk = ("19個（6つ＋(g) 元データと全文のハッシュ値＋(h)〜(k)・(n) 読む形と固定で載せる文＋(o)(p)(q) 長さ＋(r) いまの状態＋(s) 必読の表"
+              "＋(l) 教訓の件数・(m) 監査の写し）"
               if (next_path.parent / SRC_NAME).exists() else "6つ")
     print(f"✅ [tidy --verify] {_n_chk}とも通った（§0 {n0} 行／上限 {limit}）")
     return 0
@@ -1010,11 +1169,15 @@ def main() -> int:
     ap.add_argument("--file", type=pathlib.Path, default=NEXT, help="検査する next_step.md（テスト用）")
     ap.add_argument("--archive", type=pathlib.Path, default=ARCHIVE)
     ap.add_argument("--limit", type=int, default=LIMIT)
+    ap.add_argument("--todo-from", dest="todo_from", metavar="セッションの id",
+                    help="そのセッションの ToDo の、済んでいない行を、元データの「次のセッションでやること」の表に写す（続けて --write を打つ）")
     a = ap.parse_args()
     if a.selftest:
         return selftest()
     if a.do_import:
         return import_src(a.file)
+    if a.todo_from:
+        return copy_todo(a.file, a.todo_from)
     if a.write:
         return do_write(a.file, a.archive, a.limit)
     if a.verify:

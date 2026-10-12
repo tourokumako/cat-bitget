@@ -36,6 +36,7 @@ import sys
 
 ROOT = pathlib.Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget")
 NEXT = ROOT / ".claude/state/next_step.md"
+NEXT_REF = ROOT / ".claude/state/next_step_reference.md"   # ★2026-10-12＝next_step の控えのファイル（tidy_next_step.py が作る）
 PDCA = ROOT / ".claude/rules/pdca_flow.md"
 ACC = ROOT / ".claude/state/acceptance.md"
 NEXT_MARK = "<!-- NEXT_STEP_GENERATED hash="
@@ -74,14 +75,15 @@ def check(data: dict) -> int:
         path = path.resolve()
     except Exception:
         pass
-    if path == NEXT.resolve():
+    # ★2026-10-12（172回目）＝next_step の控えのファイル（next_step_reference.md）も、同じプログラムが同じ元データから作る＝同じく止める。
+    if path in (NEXT.resolve(), NEXT_REF.resolve()):
         try:
-            first = NEXT.read_text(encoding="utf-8").split("\n", 1)[0]
+            first = path.read_text(encoding="utf-8").split("\n", 1)[0]
         except Exception:
             return 0
         if first.startswith(NEXT_MARK):
             return _block(
-                "🔒 [生成された文書・hook forbid_edit_generated_docs] next_step.md はプログラムが元データから作っています＝手で直せません"
+                "🔒 [生成された文書・hook forbid_edit_generated_docs] next_step.md と、その控えのファイル next_step_reference.md は、プログラムが元データから作っています＝手で直せません"
                 "（まこさん指示 2026-09-17「手書きせざるをえないもの以外は自動生成にしてほしい」）。\n"
                 "   直す道＝元データ .claude/state/next_step_src.json を直す → python3 .claude/tools/tidy_next_step.py --write\n"
                 "   （解除の合言葉はありません）")

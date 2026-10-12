@@ -138,7 +138,9 @@ fi
 #   ＝CC が「探さなかった」と言える状態を無くす（記録の中身は hook が出す）。見つからなければ「過去の実測: なし」を要求。
 #   限界: 引用した数字の解釈（期間の違い等）は見ない＝まこさんの目。
 REC_DIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
-REC_FILES=$(ls "$REC_DIR"/session_worklog_*.md "$REC_DIR"/next_step.md \
+# ★2026-10-12（172回目）＝next_step を2本に分けた（毎回読む next_step.md と、控えの next_step_reference.md）。
+#   あとで直すことの一覧（§6）は控えのファイルに移ったので、探す相手に控えのファイルも入れる。
+REC_FILES=$(ls "$REC_DIR"/session_worklog_*.md "$REC_DIR"/next_step.md "$REC_DIR"/next_step_reference.md \
   "/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/decisions.md" 2>/dev/null)
 HIT_FILES=""; HIT_LINES=""
 for t in $TARGETS; do
