@@ -53,5 +53,19 @@ v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
 #   作り直す元が残らない（worklog 20260917 §36-5）。
 !.claude/state/next_step_src.json
 !.claude/state/hook_roles.json
+# ★2026-10-12 追加（171回目・まこさん「A」「コミットしてよい」）＝指標の資料の表3つ（教科書の値・戦略ごとの最初の値と範囲・役割と閾値）。
+#   設計書を作るプログラムが写す元になる。この PC にしか無かった。場所は変えない（読んでいるプログラムと ひな型が30本 在るため）。
+!.claude/state/indicator_params_review.md
+!.claude/state/indicator_params_review.json
+!.claude/state/indicator_params_by_strategy.md
+!.claude/state/indicator_params_by_strategy.json
+!.claude/state/indicator_roles_thresholds.md
+!.claude/state/indicator_roles_thresholds.json
+# ★2026-10-12 追加＝要件定義の正本（.claude/rules/core_requirements.md）の出どころの逐語のファイル。
+#   無くなると、設計書・監査依頼書・next_step の3つとも作れずに止まる。
+#   フォルダを戻す → 中身を全部 除外 → この工事のフォルダだけ戻す、の3段で書く（44〜45行と同じ理由）。
+!.claude/state/verbatim/
+.claude/state/verbatim/*
+!.claude/state/verbatim/requirements-core-20261012/
 # bitget 側 state はリポジトリ直下 .claude/state へのシンボリックリンク（2026-07-19 統合・パスミス無害化）＝リンク自体も無視（末尾スラッシュ無し）
 v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state
