@@ -1,0 +1,811 @@
+案です（工事 k4-reference-known-20261011＝K-4 検査の直し。監査 CP60 の修正59・60＝参照表の独立実装に「教科書から書いたか・写しか」の印を付け、写しの物と4種の既知答えに定義から導いた答えを足す。まこさん「CCの案でOK」「OK」）。本物のコードには、まだ1文字も書いていません。当て方は1回です。
+
+- 指示は全部で 46件です。内訳は、コードの直し 34件（参照表 30・観察の道具 4）・新しい壊すプログラム 12本です。全部を設計書の 4-20 にして、当てる道具 apply_audit_fix.py の --design で1回で当てます。
+- 材料の値・設定の値は1つも変えません。写しで、材料の列は 534 列 → 534 列（増減 0）、前から在る列の値の違いは 0 本でした。
+- 写しの印は 16件（修正59 が名指しした10件の独立実装を使う登録）、教科書の印は 3件（書き替えた3種）、未判定は 272件（既存の登録は1行も変えない）です。写しの印で既知答えが無い物は 0 件です。
+- 既知答えの数字は、定義（登録の定義・流儀の欄の文と、監査 CP60 が引いた原典の逐語）から合成の足で導いた式で書きました。ライブラリの値は写していません。写しで走らせて、全部 ライブラリの実物の値と合いました（観察の道具の全体の自己テスト rc 0・142秒）。
+- 壊し方 12本は、写しで全部 決めた文で落ちました（測る口＝観察の道具に足す軽い口 --selftest-match・1本 約63秒。全体の自己テストで測ると、承認の前の仮当ての打ち切り 900秒に入らなかったため＝4-9）。増える・消える列の名前を決めた文に持つ壊すプログラムは 0本です（列が変わらないため）。
+- 設計書の監査を出します（まこさん「CCの案でOK」の③）。
+
+【4-0 この仕組みは何か】
+**この工事は、参照表（indicator_reference_diag.py）の検査の守りを直す工事です。**監査 CP60 は、参照表の「教科書の独立実装」のうち10件（_tb_vs_pivot・_vp_ref・_tb_vs_vwap・_tb_wpat・_tb_sr_touch・_alma・_stc_parts・_tb_pos_hilo・_tb_thermo_pct・_tb_dpo）が、教科書でなくカタログかライブラリと同じ変形を別の書き方で写した物で、検査3 の照合が「自分と同じか」しか確かめていないと指摘しました（修正59）。ALMA の重みの向き・STC の式・SAREXT の符号の誤りが、その照合を通った理由です。修正60 は、SAREXT・CKSP・PMAX・PSAR の既知答えが「値段が一定なら 0」だけで、売り側を一度も通らないと指摘しました。
+
+**①登録の欄 tb_kind（F-1）。**登録の関数 _r に、独立実装が「教科書」か「写し」かの欄を足します。既定は None（未判定）で、既存の登録は1行も変わりません。名指しの10件を使う16の登録（W字・close vs VWAP・pivotPP・pivotR1・pivotS1・POC・VAH・VAL・S-Rタッチ数・STC・STCstoch・close vs ALMA%・ALMA傾き%・close vs HILO%・DPO%・THERMO%）に tb_kind="写し" を付けます。
+
+**②写しの既知答え（F-2）。**既知答えが無い6登録と、平らな足で 0 だけの3登録に、定義から導いた既知答えを足します。
+| 登録 | 合成の足 | 答え（式） | 導いた定義 |
+|---|---|---|---|
+| close vs ALMA%(n) | 1本ごとに 1 上げる足（n＋40本） | (終値 ÷ (終値 − 遅れ) − 1)×100・遅れ＝Σ重み_i×(n−1−i)÷Σ重み_i（重み＝正規分布・ずらし 0.85・幅 n/6・i は古い側から） | Legoux／TradingView（監査 CP60 の §5「by setting it to 1, you can make it align fully to the current price」＝山は新しい側） |
+| ALMA傾き%(n) | 同じ足 | 5 ÷ (終値 − 5 − 遅れ)×100 | 同上・傾きは5本前からの変化率（流儀） |
+| STC・STCstoch | 値段が一定の足（400本） | 0 | TA-Lib「When a range is zero, the fraction keeps its previous value (0 before any).」 |
+| close vs HILO% | 1本ごとに 1 上げる足（80本） | (179 ÷ 168 − 1)×100＝線は終値 − 11 | Krausz（LuxAlgo）＝前の高値の平均を終値が上抜けたら安値の平均の線（13本・21本＝流儀） |
+| DPO%(n) | 1本ごとに 1 上げる足（2n＋40本） | ((n/2+1) ＋ (n−1)/2) ÷ 終値 ×100 | 流儀の欄＝終値 − n本平均を (n/2+1) 本ずらしたもの（centered=False） |
+| close vs VWAP%(n) | 出来高 1 で上げる足／最後の1本だけ出来高 9 | (終値 ÷ (終値 − (n−1)/2) − 1)×100／VWAP＝(n×終値 − n(n−1)/2 ＋ 8×終値) ÷ (n＋8) | StockCharts「Cumulative(Volume x Typical Price)/Cumulative(Volume)」の移動窓・終値の流儀 |
+| THERMO% | 内はらみ足（高値 101→100.5・安値 99→99.5） | 0.5 | 流儀の欄＝絶対値の大きい方（教科書の版 THERMO原作% は 0） |
+| S-Rタッチ数(n,tol) | 前の n 本が 50・最後の1本が 100 | 0 | 定義＝帯（終値±許容幅）に触れた本数＝帯の外なら 0 |
+
+**③下げ続ける合成のバー（F-3）。**終値 1000 から1本ごとに 1 下げる600本の足（始値＝前の終値・高値＝始値・安値＝終値。最後の終値 c＝401）で、
+| 登録 | 答え（式） | 導いた定義 |
+|---|---|---|
+| close vs PSAR% | (c ÷ (c＋5) − 1)×100 | Wilder＝SAR_t＝SAR_{t−1}＋AF×(EP_{t−1}−SAR_{t−1})。毎本 新しい安値で AF は 0.2 に頭打ち。SAR と EP の差は g←0.8×(g＋1) で 4 に収束＝SAR＝前の終値＋4＝c＋5 |
+| PSAR加速・PSAR反転 | 0.2・0 | 同上（頭打ち・反転なし） |
+| close vs SAREXT% | (c ÷ (c＋5) − 1)×100 | TA-Lib＝買いと売りの加速が同じなら PSAR と同じ線。売り側は負で返るので絶対値（監査 CP60 の修正24） |
+| close vs CKSPl% | (c ÷ (c＋17) − 1)×100 | Chande & Kroll（TradingView の形 p=10・x=1・q=9・ATR は Wilder）＝真の値幅は毎本 1 → ATR 1。買い側＝直近 q 本の max(10本高値 − ATR)＝c＋17 |
+| close vs CKSPs% | (c ÷ (c＋1) − 1)×100 | 同上。売り側＝直近 q 本の min(10本安値 ＋ ATR)＝c＋1 |
+| close vs PMAX% | (c ÷ (c＋7.5) − 1)×100 | PMax＝EMA10 ± 3×ATR10・下げでは上の帯。EMA10 の遅れは (10−1)/2＝4.5・ATR 1 |
+写しで走らせて、7つとも 1e-6 以内で合いました。値段が一定の足（0）だけでは売り側を一度も通りません。
+
+**④3種の独立の実装を別の書き方に（F-4）。**監査 CP73 の Q8 の (c) の3種は、観察の道具と同じ文字の繰り返しでした。SSF平均は scipy.signal.lfilter（分子 [c1/2, c1/2]・分母 [1, −c2, −c3]・最初の2本を初期状態に）、VIDYA_CMO は np.convolve で CMO の上げ・下げの合計を出し itertools.accumulate で適応の漸化式を畳む形、SQZ_ON_Carter の ATR は pandas の指数平滑（alpha＝1/n・adjust=False・最初の n 本の単純平均を種）にしました。式の出どころは変えません。3種の登録に tb_kind="教科書" を付けます。
+
+**⑤検査3 の直し（F-5）。**観察の道具の検査3（_insp_indicator_match）で、写しの印の独立実装が合っただけでは「一致検証済み」に数えません（印は「独立(写し)✓」）。検証済みにするのは手計算の既知答えです。自己テストに番人を2つ足します＝写しの印の登録は既知答えを必ず持つ／既知答えを外した写しの列は検証済みに入らない。正しいカタログの検査3 と、この番人2つは、軽い口 selftest_match（旗 --selftest-match）に切り出します。全体の自己テストはこの軽い口を全列で呼び、壊すプログラム12本は、検査3 を「既知答えを持つ列と写しの印の列」に絞った軽い口で測ります（理由は 4-9）。
+
+**⑥仕組みの直し③（F-6）。**写しで確かめるプログラムに、増える・消える列の名前を決めた文（EXPECT_MSG）に持つ壊すプログラムを .claude/breaks の全部から探す関数を入れました。この工事は列を変えないので 0本です。
+
+**⑦変えないもの。**材料の列は 534 列 → 534 列（増減 0）。前から在る列の値の違い 0 本。設定ファイル・型の表・オン・オフの表は変わりません（印を作る道具の入力＝参照表の mako の欄は触らない）。
+
+【4-1 システムの境界】
+**誰が動かすか。**私（CC）が、当てる道具 apply_audit_fix.py・観察の道具の自己テスト・壊すプログラム・監査に出す前のチェックを動かします。
+
+**誰が結果を使うか。**
+- 参照表の登録（欄 tb_kind・既知答え・独立の実装）は、観察の道具の検査3 と自己テストが読みます。
+- 検査3 の「一致検証済み」の数は、観察の道具の検査3 の表示と、監査に出す前のチェックが読みます。
+
+【4-2 入力と出力】
+**読むもの。**今の実物（indicator_reference_diag.py・observe_diag.py）・監査 CP60 の修正59・60 と §5 の原典の逐語・監査 CP73 の Q8・設計書の 4-20。
+
+**書くもの。**
+- 当てる（--design）：上の2つのコードと、新しい壊すプログラム 12本。
+- G-2：G2・H2 の記録、監査に出す前のチェックの記録。
+
+【4-3 部品と責任の割り当て】
+| 部品 | 何に責任を持つか | 新設か直すか |
+|---|---|---|
+| indicator_reference_diag.py の _r | 登録の欄 tb_kind（教科書か写しか） | 直す |
+| indicator_reference_diag.py の _alma_lag | ALMA の定義から、1本ごとに 1 上げる足の遅れを導く（既知答え用） | 新設 |
+| indicator_reference_diag.py の16の登録（写し）と7の登録（4種） | 写しの印・定義から導いた既知答え・下げ続ける足の既知答え | 直す |
+| indicator_reference_diag.py の _tb_sqz_carter・_ssf2_avg・_vidya_cmo | 3種の独立の実装（別の書き方） | 直す |
+| observe_diag.py の _insp_indicator_match | 写しの独立実装が合っただけでは一致検証済みに数えない | 直す |
+| observe_diag.py の selftest_match | 軽い口（旗 --selftest-match）＝正しいカタログの検査3 と、写しの印の番人2つ。コマンドから呼ぶときは検査3 を既知答えを持つ列と写しの印の列に絞る | 新設 |
+| observe_diag.py の selftest | 全体の自己テスト＝軽い口 selftest_match を全列で呼ぶ（検査3 の番人の場所を軽い口に移す） | 直す |
+| observe_diag.py のコマンドの分岐 | 旗 --selftest-match で selftest_match を呼ぶ | 直す |
+| .claude/breaks の壊すプログラム | 既知答え・印・検査3 の直しを壊すと、軽い口が決めた文で落ちるかを見る | 新設 |
+- 触る関数（当てる前と後の構文木を関数ごとに比べて道具が数えた）＝indicator_reference_diag.py：<モジュール直下>・_alma_lag・_r・_ssf2_avg・_tb_sqz_carter・_vidya_cmo／observe_diag.py：<モジュール直下>・_insp_indicator_match・selftest・selftest_match
+
+【4-4 処理の流れ】
+1. 設計書の監査（別セッション）の結果を まこさんが確かめ、修正が在れば当てます。
+2. まこさんの承認の後、全部を当てます（apply_audit_fix.py --design --dry → --design）。当てる道具は、全件を当てる前の実物で照らしてから、番号の順に当てます。1件でも合わなければ1件も当てません。
+3. 当てた直後に、当てる道具が G2 と H2 を自分で走らせます（observe_diag.py は H2 と G2 の対象・indicator_reference_diag.py は G2 の対象です＝h2_pass.json と g2_pass.json の files の一覧で確かめた）。
+4. 照合（verify_design_contract.py --diff）をかけます。壊すプログラム（測るのは軽い口 --selftest-match）を走らせ、全体の自己テスト（--selftest）を1回 走らせて、出力をそのまま貼ります（当てた直後の写しで、全部 通ることを確かめた）。
+5. G-2：G2 → H2 を取り直し、監査に出す前のチェック（pre_audit_check.py --run）を走らせます。そのあと実装の監査に出します（1通）。
+
+【4-5 異常系】
+| 起きたこと | どうなるか |
+|---|---|
+| --design の --dry で、当たらない件が出る | 1件も当てずに止まります。まこさんに報告します |
+| 写しの登録の既知答えが実物の値と合わない | 観察の道具の自己テストが「手計算の既知答えと不一致」を出して落ちます |
+| 写しの印の登録から既知答えを外す | 自己テストの番人①が「写しの印の登録に手計算の既知答えが無い」を出して落ちます |
+| 検査3 の直しを戻す（写しが独立実装だけで検証済みになる） | 自己テストの番人②が「写しの独立実装だけで一致検証済みになっている」を出して落ちます |
+| 3種の別の書き方が、観察の道具の値と合わない | 観察の道具の自己テストが「教科書の独立実装と不一致」を出して落ちます |
+| 軽い口が、既知答えを持つ列と写しの印の列を1本も見つけない（参照表の既知答えと印が全部 消えた） | 軽い口が「既知答えを持つ列・写しの印の列がカタログに1本も無い（軽い口が回せない）」を出して落ちます |
+
+【4-6 制約】
+| 決まり | 出どころ | この設計でどう守るか |
+|---|---|---|
+| 写しの物は印と既知答えまで（教科書の作りに書き直さない） | 監査 CP60 の修正59 の補足 | 10件の独立実装の中身は変えません。材料の値も変わりません（写しで 0 本の違い） |
+| 数字を CC が作らない | 思考の順の7（req_thinking_20261004） | 既知答えの数字は、定義から合成の足で導いた式で書きました。ライブラリの値は写していません |
+| 名指しの10件の外の登録は触らない | 読むもの宣言・恒久65番の3 | tb_kind の既定は None＝既存の登録は1行も変わりません |
+| 未来のデータを使わない | 要件定義書 §4.6.H2 | 合成の足と既知答えは検査の中だけで使います。材料の計算は変えません。当てた後に H2（observe_diag.py が対象）を取り直します |
+| 値段の高さで値が変わらない | 要件定義書 §4.6.H6 | 既知答えは全部 終値で割った%か 0/1 です |
+| 乱数を使わない | 恒久67番 | 乱数は使いません |
+
+【4-7 探索の範囲】
+**変わりません。**材料も探す範囲も触りません。
+
+【4-8 データ構造】
+**参照表の登録の欄に tb_kind（文字・None／"教科書"／"写し"）が増えます。**カタログの1件の形・設定の欄の形は変えません。
+
+【4-9 設定】
+**設定ファイルは変えません。**コマンドの旗を1つ足します＝observe_diag.py の --selftest-match（検査3＝参照表との照合と、写しの印の番人2つだけを走らせる軽い口。selftest_catalog の --selftest-catalog と同じ形）。コマンドから呼ぶときは、検査3 を「手計算の既知答えを持つ登録の列と、写しの印の列」（254本）だけに絞ります。壊すプログラム12本が落とす相手は全部この中に在ります。全体の自己テスト（--selftest）はこの軽い口を全列（full=True）で呼ぶので、全体の自己テストの中身は減りません。**なぜ足すか**＝全体の自己テストは1本 約142秒で、承認の前の仮当て（A12）の壊すプログラムの打ち切り 900秒に12本が入りません（試しの設計書の全部の検査を走らせたとき、打ち切りで落ちました）。全列の検査3 でも写しで92秒＝12本で900秒を超えました。壊すプログラム12本は、絞った軽い口で測ります（1本 約63秒）。
+
+【4-10 保存先】
+**変えません。**
+
+【4-11 時刻の扱い】
+**変えません。**合成の足は検査の中だけで使います。
+
+【4-12 出る結果の姿】
+**完成したときに出るもの。**
+1. 観察の道具の全体の自己テストが通る（足した既知答え・写しの印の番人2つを含む）。コマンド＝python3 scripts/priority_rebuild/observe_diag.py --selftest。軽い口（検査3 を既知答えを持つ列と写しの印の列に絞った物と、写しの印の番人2つ）も通る。コマンド＝python3 scripts/priority_rebuild/observe_diag.py --selftest-match。
+2. 検査3 の表示で、写しの印の列に「独立(写し)✓」と「既知n/n」が並ぶ（独立実装だけでは検証済みにならない）。
+3. 壊すプログラムが、全部 決めた文で落ちる。コマンド＝python3 .claude/tools/run_breaks.py --design。
+4. G2 と H2 が取り直される。
+
+【4-13 影響範囲】
+1. **observe_diag.py は H2（未来参照の検査）と G2（型の表の照らし）の対象、indicator_reference_diag.py は G2 の対象です**（h2_pass.json の24件と g2_pass.json の39件の一覧で確かめた）。当てた後に G2 → H2 を取り直します。
+2. **材料の列は増減しません**（写しで 534 列 → 534 列）。型の表・オン・オフの表の作り直し（G-1）は無く、再承認も要りません。
+3. **検査3 の「一致検証済み」の数は変わりません**（写しの16登録は全部 既知答えを持つ）。
+4. **前からの壊すプログラムが探す文字の数は、当てる前と後で同じです。**道具が数えた相手は、下の囲みです。
+```
+b104_atr1h_own_tf.sh・b105_atr1h_future_hour.sh・b106_atr1h_no_clip.sh・b107_atr1h_base_not_passed.sh・b108_atr1h_base_wrong_bars.sh・b122_obs_formula_copied.sh・b126_rank_resume_save_off.sh・b128_k1_copc_back_in_ao_loop.sh・b129_htf_bar_close_two_bars.sh・b131_industry_map_prev_pivot_gone.sh・b132_hidden_param_not_passed.sh・b133_cksp_mixed_set.sh・b134_ao_name_with_value.sh・b135_rci_mako_gone.sh・b136_insp2_bar_close_dropped.sh・b137_material_params_ignored.sh・b138_keep_name_dropped.sh・b139_range_excludes_keep.sh・b140_group_range_ignored.sh・b141_catalog_out_of_range.sh・b143_rci_range_short.sh・b145_vwap_day_no_reset.sh・b146_pivot_week_as_day.sh・b147_vp_today_from_start.sh・b151_w_fractal_not_first.sh・b152_sr_fractal_counts_bars.sh・b153_smc_fractal_no_close_back.sh・b154_lower_half_upper_span.sh・b156_sr_fractal_unconfirmed.sh・b160_dpo_tb_lib_shift.sh・b161_thermo_orig_abs.sh・b162_stochrsi_raw_smoothed.sh・b163_trix_ema_signal_sma.sh・b164_rvol_rv_mean_subtracted.sh・b165_ssf_avg_single_input.sh・b166_sqz_carter_scalar_fixed.sh・b55_cyc_key_time_gone.sh・b56_one_min_csv_old.sh・b60_only5_with_others.sh・b61_insp5_bars_kind.sh・b63_tm_bitget_scope.sh・b64_tm_subdir.sh・b65_tm_badtail.sh
+```
+5. **増える・消える列の名前を決めた文に持つ壊すプログラム＝0本**（教訓 L-678 の照らし・列が変わらないため）。
+
+【4-14 性能】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 観察の道具の自己テスト（全体） | 142秒 | 写しで当てた後に走らせた実測（k4_draft_build.py の [7]） |
+| 軽い口（--selftest-catalog） | 9秒 | 写しで当てた後に走らせた実測（k4_draft_build.py の [7]） |
+| 軽い口（--selftest-match＝この工事で足す・254本に絞った検査3 と番人2つ） | 63秒 | 写しで当てた後に走らせた実測（k4_draft_build.py の [7]） |
+| 材料の一覧 | 534 列 | 写しで数えた（k4_draft_build.py の [3]） |
+
+【4-15 競合】
+**ありません。**全部を --design の1回で当てます。
+
+【4-16 セキュリティ】
+**触らないもの。**人に見せてはいけない値（取引所の鍵・本番の発注の切り替え）には触りません。書き換えられては困る記録（H2・G2 の検査済みの記録・承認の記録）は、取り直しの道具だけが書きます。
+
+【4-17 ログと進捗表示】
+**画面に出すもの。**検査3 の表示に「独立(写し)✓」が増えます。自己テストは、落ちたときだけ「手計算の既知答えと不一致」「写しの印の登録に手計算の既知答えが無い」「写しの独立実装だけで一致検証済みになっている」で始まる行を出します。軽い口（--selftest-match）は、終わりに「検査3（既知答えを持つ列と写しの印の列 N 本）と写しの印の番人（--selftest-match）: ❌ n 件」の1行を出します（selftest_catalog と同じ形）。
+
+【4-18 再利用】
+| 手本 | 何を写すか |
+|---|---|
+| k3a_draft_build.py・k3c_draft_build.py（前の工事の道具） | 写しの作り・A12 の自己テストの一覧と許しの判定（import して使う）・壊し方の確かめ |
+| indicator_reference_diag.py の _flat・_up・_dn・_mk・_thermo_in_case | 既知答えの合成の足（前から在る部品をそのまま使う） |
+| 壊すプログラム b142 | 壊すプログラムの形 |
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "953〜961行（_r・監査 CP60 の修正59＝登録 _r に「教科書から書いたか・写しか」の欄 tb_kind を足す）",
+  "直す前の文字": "def _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None):\n    \"\"\"材料の種類を1つ、定義表に登録する。\n\n    ★mako（2026-09-05・M2-C-4・まこさん決定「案A にします」）＝**まこさんが個別に「使う」と\n      決めた材料**に、その決定の逐語と日付を書く欄。既定は None＝既存の登録は1行も変わらない。\n      この欄は印（indicator_switch.json）の源の4つ目が機械で読む＝CC が手書きの一覧を作らない。\n    \"\"\"\n    REFS.append(dict(pat=re.compile(\"^\" + pat + \"$\"), family=family, teigi=teigi, ryugi=ryugi,\n                     houkou=houkou, prop=prop, tb=tb, ext=ext, known=known, tol=tol, mako=mako))\n",
+  "種類": "直した後の文字",
+  "中身": "def _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None, tb_kind=None):\n    \"\"\"材料の種類を1つ、定義表に登録する。\n\n    ★mako（2026-09-05・M2-C-4・まこさん決定「案A にします」）＝**まこさんが個別に「使う」と\n      決めた材料**に、その決定の逐語と日付を書く欄。既定は None＝既存の登録は1行も変わらない。\n      この欄は印（indicator_switch.json）の源の4つ目が機械で読む＝CC が手書きの一覧を作らない。\n    ★tb_kind（2026-10-11・K-4・監査 CP60 の修正59）＝独立実装 tb が「教科書から書いた物」か「カタログかライブラリと同じ変形を\n      別の書き方で写した物（写し）」かの印。\"写し\" の登録は、検査3 で独立実装が合っただけでは「一致検証済み」に数えない\n      （照合が「自分と同じか」しか確かめていないため）＝手計算の既知答えが要る（観察の道具の自己テストの番人が見る）。\n      \"教科書\"＝教科書の式から書いた物。None＝まだ判定していない（既存の登録は1行も変わらない）。\n    \"\"\"\n    REFS.append(dict(pat=re.compile(\"^\" + pat + \"$\"), family=family, teigi=teigi, ryugi=ryugi,\n                     houkou=houkou, prop=prop, tb=tb, ext=ext, known=known, tol=tol, mako=mako, tb_kind=tb_kind))\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:953「def _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1185〜1193行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印 tb_kind=\"写し\" を付ける（W字＝_tb_wpat））",
+  "直す前の文字": "_r(r\"W字\\((\\d+),([\\d.]+)\\)\", \"W字\",\n   \"ダブルボトム（W字）の完成フラグ。窓 n の前半の最安値と後半の最安値が同水準（許容幅=tol×終値）で、\"\n   \"終値がネックラインを上抜けたら 1・それ以外 0\",\n   \"教科書のダブルボトム＝2つの底が同水準＋間の山（ネックライン）の上抜けで完成。ネックラインは\"\n   \"中央 n/2 区間の最高値で近似（ベクトル計算のための本プロジェクトの流儀）。定義は 2026-07-30 に\"\n   \"まこさん判断不能のため feedback_design_judgment_owner に基づき CC が案A（教科書定義）で確定\",\n   \"反転サイン＝1 は買い転換（ダブルボトム完成）の示唆\", \"reversal\", tb=_tb_wpat,\n   known=lambda p: [(_w_case(int(p[0]), 100.2), [(-1, 1.0, 1e-9)]),\n                    (_w_case(int(p[0]), 92.0), [(-1, 0.0, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"W字\\((\\d+),([\\d.]+)\\)\", \"W字\",\n   \"ダブルボトム（W字）の完成フラグ。窓 n の前半の最安値と後半の最安値が同水準（許容幅=tol×終値）で、\"\n   \"終値がネックラインを上抜けたら 1・それ以外 0\",\n   \"教科書のダブルボトム＝2つの底が同水準＋間の山（ネックライン）の上抜けで完成。ネックラインは\"\n   \"中央 n/2 区間の最高値で近似（ベクトル計算のための本プロジェクトの流儀）。定義は 2026-07-30 に\"\n   \"まこさん判断不能のため feedback_design_judgment_owner に基づき CC が案A（教科書定義）で確定\",\n   \"反転サイン＝1 は買い転換（ダブルボトム完成）の示唆\", \"reversal\", tb=_tb_wpat,\n   known=lambda p: [(_w_case(int(p[0]), 100.2), [(-1, 1.0, 1e-9)]),\n                    (_w_case(int(p[0]), 92.0), [(-1, 0.0, 1e-9)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1185「_r(r\"W字\\((\\d+),([\\d.]+)\\)\", \"W字\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1237〜1238行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印を付け、定義から導いた既知答えを足す（close vs VWAP＝_tb_vs_vwap））",
+  "直す前の文字": "   \"順張り値\", \"trend\", tb=_tb_vs_vwap,\n   known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "   \"順張り値\", \"trend\", tb=_tb_vs_vwap,\n   # ★K-4（監査 CP60 の修正59）＝定義（出来高×終値の合計 ÷ 出来高の合計・n 本の移動窓＝流儀の欄）から導いた既知答えを足す。\n   #   ①出来高が全部 1 で1本ごとに 1 上げる足＝VWAP は終値の単純平均＝終値 − (n−1)/2\n   #   ②同じ足で最後の1本だけ出来高 9＝VWAP＝(n×終値 − n(n−1)/2 ＋ 8×終値) ÷ (n＋8)。出来高の重みを外すと①は通り②だけ落ちる。\n   known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)]),\n                    (_up(p[0] + 40), [(-1, ((100.0 + p[0] + 39) / ((100.0 + p[0] + 39) - (p[0] - 1) / 2.0) - 1.0) * 100.0, 1e-9)]),\n                    (_mk(100.0 + np.arange(p[0] + 40, dtype=float), v=np.r_[np.ones(p[0] + 39), 9.0]),\n                     [(-1, ((100.0 + p[0] + 39) / ((p[0] * (100.0 + p[0] + 39) - p[0] * (p[0] - 1) / 2.0 + 8.0 * (100.0 + p[0] + 39)) / (p[0] + 8.0)) - 1.0) * 100.0, 1e-9)])],\n   tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1237「\"順張り値\", \"trend\", tb=_tb_vs_vwap,」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1316〜1317行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印 tb_kind=\"写し\" を付ける（pivotPP＝_tb_vs_pivot））",
+  "直す前の文字": "   \"順張り値\", \"trend\", tb=_tb_vs_pivot,\n   known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.0, 1e-6)])])\n",
+  "種類": "直した後の文字",
+  "中身": "   \"順張り値\", \"trend\", tb=_tb_vs_pivot,\n   known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.0, 1e-6)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1316「\"順張り値\", \"trend\", tb=_tb_vs_pivot,」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1318〜1323行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印 tb_kind=\"写し\" を付ける（pivotR1＝_tb_vs_pivot_rs））",
+  "直す前の文字": "_r(r\"close vs pivotR1%(\\d+)\", \"pivotR1\",\n   \"ピボットの抵抗1 R1（2×PP − n 本安値）からの乖離%\",\n   \"★流儀に注意＝教科書の R1 は前の期間の高安・終値から。本カタログは PP と同じ移動窓の変形（2026-07-30 検査7 を受けて追加）。外部照合は定義が違うため対象外\",\n   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_pivot_rs(d, p, +1),\n   known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),\n                    (_range_case(n=max(300, p[0] + 60)), [(-1, (105.0 / 110.0 - 1) * 100, 1e-6)])])\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"close vs pivotR1%(\\d+)\", \"pivotR1\",\n   \"ピボットの抵抗1 R1（2×PP − n 本安値）からの乖離%\",\n   \"★流儀に注意＝教科書の R1 は前の期間の高安・終値から。本カタログは PP と同じ移動窓の変形（2026-07-30 検査7 を受けて追加）。外部照合は定義が違うため対象外\",\n   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_pivot_rs(d, p, +1),\n   known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),\n                    (_range_case(n=max(300, p[0] + 60)), [(-1, (105.0 / 110.0 - 1) * 100, 1e-6)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1318「_r(r\"close vs pivotR1%(\\d+)\", \"pivotR1\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1327〜1329行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印 tb_kind=\"写し\" を付ける（pivotS1＝_tb_vs_pivot_rs））",
+  "直す前の文字": "   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_pivot_rs(d, p, -1),\n   known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),\n                    (_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-6)])])\n",
+  "種類": "直した後の文字",
+  "中身": "   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_pivot_rs(d, p, -1),\n   known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),\n                    (_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-6)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1327「\"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_pivot_rs(d, p, -1),」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1381〜1388行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印 tb_kind=\"写し\" を付ける（POC＝_vp_ref））",
+  "直す前の文字": "_r(r\"close vs POC%(\\d+)\", \"POC\",\n   \"出来高プロファイルの最厚価格帯 POC からの乖離%\",\n   \"Market Profile。窓 n 本・25分割の近似。同量の帯が並んだら価格の高い側を採る（実装の決め）\",\n   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_vp(d, p, 0),\n   # 手計算の既知答え（2026-08-09 新設・フロー 段3 の 3-4）。POC＝出来高が一番 厚い区画の中央。\n   # 場合1（出来高が下に偏る 10:1）も 場合2（6:4）も、一番 厚いのは下の区画＝答えは同じ。\n   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"close vs POC%(\\d+)\", \"POC\",\n   \"出来高プロファイルの最厚価格帯 POC からの乖離%\",\n   \"Market Profile。窓 n 本・25分割の近似。同量の帯が並んだら価格の高い側を採る（実装の決め）\",\n   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_vp(d, p, 0),\n   # 手計算の既知答え（2026-08-09 新設・フロー 段3 の 3-4）。POC＝出来高が一番 厚い区画の中央。\n   # 場合1（出来高が下に偏る 10:1）も 場合2（6:4）も、一番 厚いのは下の区画＝答えは同じ。\n   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1381「_r(r\"close vs POC%(\\d+)\", \"POC\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1389〜1395行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印 tb_kind=\"写し\" を付ける（VAH＝_vp_ref））",
+  "直す前の文字": "_r(r\"close vs VAH%(\\d+)\", \"VAH\",\n   \"バリューエリア上端（出来高上位70%帯の上端）からの乖離%\", \"Market Profile。25分割の近似\",\n   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_vp(d, p, 1),\n   # 場合1＝下の区画だけで出来高の91%を占める→上位70%帯は1区画で足りる→上端も下の区画。\n   # 場合2＝下の区画は60%しか無い→上位70%帯に上の区画も要る→上端は上の区画。\n   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_HI, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"close vs VAH%(\\d+)\", \"VAH\",\n   \"バリューエリア上端（出来高上位70%帯の上端）からの乖離%\", \"Market Profile。25分割の近似\",\n   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_vp(d, p, 1),\n   # 場合1＝下の区画だけで出来高の91%を占める→上位70%帯は1区画で足りる→上端も下の区画。\n   # 場合2＝下の区画は60%しか無い→上位70%帯に上の区画も要る→上端は上の区画。\n   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_HI, 1e-9)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1389「_r(r\"close vs VAH%(\\d+)\", \"VAH\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 9,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1396〜1401行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印 tb_kind=\"写し\" を付ける（VAL＝_vp_ref））",
+  "直す前の文字": "_r(r\"close vs VAL%(\\d+)\", \"VAL\",\n   \"バリューエリア下端からの乖離%\", \"Market Profile。25分割の近似\",\n   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_vp(d, p, 2),\n   # 下端は どちらの場合も下の区画。\n   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"close vs VAL%(\\d+)\", \"VAL\",\n   \"バリューエリア下端からの乖離%\", \"Market Profile。25分割の近似\",\n   \"順張り値\", \"trend\", tb=lambda d, p: _tb_vs_vp(d, p, 2),\n   # 下端は どちらの場合も下の区画。\n   known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),\n                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1396「_r(r\"close vs VAL%(\\d+)\", \"VAL\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 10,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1485〜1495行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印を付け、定義から導いた既知答えを足す（S-Rタッチ数＝_tb_sr_touch））",
+  "直す前の文字": "_r(r\"S-Rタッチ数\\((\\d+),([\\d.]+)\\)\", \"S-Rタッチ数\",\n   \"いまの価格の許容幅つき帯に、過去 n 本の高安が何回触れたか\", \"サポート・レジスタンスの強度の近似\",\n   \"状態量＝多いほど節が固い\", \"none\", tb=_tb_sr_touch,\n   known=lambda p: [(_mk(np.full(int(p[0]) + 12, 100.0), o=np.full(int(p[0]) + 12, 100.0),\n                         h=np.full(int(p[0]) + 12, 100.0), l=np.full(int(p[0]) + 12, 100.0)),\n                     [(-1, float(int(p[0])), 1e-9)]),\n                    (_mk(np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],\n                         o=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],\n                         h=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],\n                         l=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0]),\n                     [(-1, 3.0, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"S-Rタッチ数\\((\\d+),([\\d.]+)\\)\", \"S-Rタッチ数\",\n   \"いまの価格の許容幅つき帯に、過去 n 本の高安が何回触れたか\", \"サポート・レジスタンスの強度の近似\",\n   \"状態量＝多いほど節が固い\", \"none\", tb=_tb_sr_touch,\n   known=lambda p: [(_mk(np.full(int(p[0]) + 12, 100.0), o=np.full(int(p[0]) + 12, 100.0),\n                         h=np.full(int(p[0]) + 12, 100.0), l=np.full(int(p[0]) + 12, 100.0)),\n                     [(-1, float(int(p[0])), 1e-9)]),\n                    (_mk(np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],\n                         o=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],\n                         h=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],\n                         l=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0]),\n                     [(-1, 3.0, 1e-9)]),\n                    # ★K-4（監査 CP60 の修正59）＝帯の外の既知答え＝前の n 本が全部 50 で最後の1本だけ 100（帯は 100±許容幅）＝触れる足は 0\n                    (_mk(np.r_[np.full(int(p[0]) + 12, 50.0), 100.0], o=np.r_[np.full(int(p[0]) + 12, 50.0), 100.0],\n                         h=np.r_[np.full(int(p[0]) + 12, 50.0), 100.0], l=np.r_[np.full(int(p[0]) + 12, 50.0), 100.0]),\n                     [(-1, 0.0, 1e-9)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1485「_r(r\"S-Rタッチ数\\((\\d+),([\\d.]+)\\)\", \"S-Rタッチ数\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 11,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1688〜1690行（<モジュール直下>・監査 CP73 の Q8（修正2）＝3種の独立の実装を別の書き方にした旨の説明）",
+  "直す前の文字": "#   ★観察の道具も手の繰り返しで書いた3種は、同じ式の写しどうしの照らし（監査 CP73 の Q8）＝close vs SSF平均%（_ssf2_avg と\n#   observe_diag.py の _ssf_avg の繰り返しが同じ文字）・close vs VIDYA_CMO%（繰り返しが同じ文字）・SQZ_ON_Carter（Wilder の繰り返しと\n#   内側の判定の式が同じ文字）。この3種の式そのものは、出どころの逐語と読んで照らす。\n",
+  "種類": "直した後の文字",
+  "中身": "#   ★観察の道具も手の繰り返しで書いた3種（close vs SSF平均%・close vs VIDYA_CMO%・SQZ_ON_Carter）は、同じ式の写しどうしの照らしだった\n#   （監査 CP73 の Q8）。K-4（2026-10-11・まこさん「CCの案でOK」）で、この3種の独立の実装を別の書き方にした＝SSF は線形フィルタ\n#   （scipy.signal.lfilter）・VIDYA は畳み込みで CMO を出し accumulate で畳む・Carter の ATR は pandas の指数平滑。式の出どころは変えない。\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1688「#   ★観察の道具も手の繰り返しで書いた3種は、同じ式の写しどうしの照らし（監査 CP73 の Q8）＝close vs SSF平均%（_ssf2_avg と」",
+  "状態": "確定"
+ },
+ {
+  "番号": 12,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1706〜1713行（_tb_sqz_carter・監査 CP73 の Q8＝SQZ_ON_Carter の独立の実装を別の書き方に（ATR は pandas の指数平滑））",
+  "直す前の文字": "def _tb_sqz_carter(d, p, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5):\n    o, h, l, c, v = _arr(d)\n    mid, sd = _roll(c, bb_length, \"mean\"), _roll(c, bb_length, \"std\", ddof=0)\n    km = _roll((h + l + c) / 3.0, kc_length, \"mean\")\n    atr = _wilder(_tr(h, l, c), kc_length)\n    on = ((mid - bb_std * sd) > (km - kc_scalar * atr)) & ((mid + bb_std * sd) < (km + kc_scalar * atr))\n    out = np.where(np.isnan(atr) | np.isnan(sd), np.nan, on.astype(float))\n    return _S(out, d)\n",
+  "種類": "直した後の文字",
+  "中身": "def _tb_sqz_carter(d, p, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5):\n    \"\"\"Carter のスクイーズの独立実装（K-4 で別の書き方にした）＝観察の道具は手の繰り返しで Wilder の ATR を出す。こちらは pandas の\n    指数平滑（alpha＝1/n・adjust=False＝(前×(n−1)＋今)/n と同じ式）に、最初の n 本の真の値幅の単純平均を種として渡す。\"\"\"\n    o, h, l, c, v = _arr(d)\n    tr = pd.Series(_tr(h, l, c), index=d.index)\n    seed = tr.iloc[1:kc_length + 1].mean()\n    x = tr.copy()\n    x.iloc[:kc_length] = np.nan\n    x.iloc[kc_length] = seed\n    atr = x.ewm(alpha=1.0 / kc_length, adjust=False).mean()\n    atr[x.isna().cummin()] = np.nan                       # 種より前は欠損\n    mid, sd = d.close.rolling(bb_length).mean(), d.close.rolling(bb_length).std(ddof=0)\n    km = ((d.high + d.low + d.close) / 3.0).rolling(kc_length).mean()\n    inside = ((mid - bb_std * sd) > (km - kc_scalar * atr)) & ((mid + bb_std * sd) < (km + kc_scalar * atr))\n    return inside.astype(float).where(atr.notna() & sd.notna())\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1706「def _tb_sqz_carter(d, p, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 13,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1730〜1740行（_ssf2_avg・監査 CP73 の Q8＝close vs SSF平均% の独立の実装を別の書き方に（scipy の線形フィルタ））",
+  "直す前の文字": "def _ssf2_avg(c: np.ndarray, n: int) -> np.ndarray:\n    \"\"\"Ehlers のスーパースムーザー（2極）＝入力を (c + c[1])/2 にしたもの。\"\"\"\n    x = np.pi * np.sqrt(2.0) / n\n    a0 = np.exp(-x)\n    b0 = 2.0 * a0 * np.cos(x)\n    c2, c3 = b0, -a0 * a0\n    c1 = 1.0 - c2 - c3\n    out = c.astype(float).copy()\n    for i in range(2, len(c)):\n        out[i] = c1 * (c[i] + c[i - 1]) / 2.0 + c2 * out[i - 1] + c3 * out[i - 2]\n    return out\n",
+  "種類": "直した後の文字",
+  "中身": "def _ssf2_avg(c: np.ndarray, n: int) -> np.ndarray:\n    \"\"\"Ehlers のスーパースムーザー（2極）＝入力を (c + c[1])/2 にしたもの（linnsoft の逐語「Filt = c1*(Close + Close[1]) / 2 + c2*Filt[1] + c3*Filt[2]」）。\n    K-4 で別の書き方にした＝線形フィルタ（scipy.signal.lfilter）で書く。分子＝[c1/2, c1/2]・分母＝[1, −c2, −c3]。\n    最初の2本は入力のまま（観察の道具と同じ始め方）＝その2本を初期状態（lfiltic）にして3本目から回す。\"\"\"\n    from scipy.signal import lfilter, lfiltic\n    x = np.pi * np.sqrt(2.0) / n\n    a0 = np.exp(-x)\n    b0 = 2.0 * a0 * np.cos(x)\n    c2, c3 = b0, -a0 * a0\n    c1 = 1.0 - c2 - c3\n    y = np.asarray(c, float).copy()\n    if len(y) > 2:\n        b, a = [c1 / 2.0, c1 / 2.0], [1.0, -c2, -c3]\n        zi = lfiltic(b, a, y=y[1::-1], x=y[1::-1])\n        y[2:] = lfilter(b, a, y[2:], zi=zi)[0]\n    return y\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1730「def _ssf2_avg(c: np.ndarray, n: int) -> np.ndarray:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 14,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1758〜1770行（_vidya_cmo・監査 CP73 の Q8＝close vs VIDYA_CMO% の独立の実装を別の書き方に（畳み込みと accumulate））",
+  "直す前の文字": "def _vidya_cmo(c: np.ndarray, n: int, m: int = 9) -> np.ndarray:\n    a = 2.0 / (n + 1)\n    up = _roll(np.r_[np.nan, np.diff(c)].clip(min=0), m, \"sum\")\n    dn = _roll((-np.r_[np.nan, np.diff(c)]).clip(min=0), m, \"sum\")\n    k = np.abs(_div(up - dn, up + dn))\n    out = np.full(len(c), np.nan)\n    if len(c) < n:\n        return out\n    out[n - 1] = float(np.nanmean(c[:n]))\n    for i in range(n, len(c)):\n        kk = 0.0 if np.isnan(k[i]) else k[i]\n        out[i] = a * kk * c[i] + (1 - a * kk) * out[i - 1]\n    return out\n",
+  "種類": "直した後の文字",
+  "中身": "def _vidya_cmo(c: np.ndarray, n: int, m: int = 9) -> np.ndarray:\n    \"\"\"VIDYA で CMO の本数 m を n と別に持つ版（ta-lib.org の逐語「n = optInTimePeriod, m = optInCMOPeriod」）。\n    K-4 で別の書き方にした＝CMO の上げ・下げの合計は畳み込み（np.convolve）で出し、適応の漸化式 out←a×k×c＋(1−a×k)×out は\n    itertools.accumulate で畳む（種＝最初の n 本の単純平均）。\"\"\"\n    from itertools import accumulate\n    c = np.asarray(c, float)\n    a = 2.0 / (n + 1)\n    dif = np.diff(c)\n    k = np.full(len(c), np.nan)\n    if len(c) > m:\n        up = np.convolve(np.clip(dif, 0.0, None), np.ones(m), \"valid\")\n        dn = np.convolve(np.clip(-dif, 0.0, None), np.ones(m), \"valid\")\n        k[m:] = np.abs(_div(up - dn, up + dn))\n    out = np.full(len(c), np.nan)\n    if len(c) < n:\n        return out\n    kk = np.nan_to_num(k[n:], nan=0.0)\n    seed = float(np.nanmean(c[:n]))\n    out[n - 1:] = list(accumulate(zip(c[n:], kk), lambda prev, t: a * t[1] * t[0] + (1.0 - a * t[1]) * prev, initial=seed))\n    return out\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1758「def _vidya_cmo(c: np.ndarray, n: int, m: int = 9) -> np.ndarray:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 15,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1825行（<モジュール直下>・3種の登録に印 tb_kind=\"教科書\"（SQZ_ON_Carter））",
+  "直す前の文字": "   \"状態量\", \"none\", tb=_tb_sqz_carter, mako=MAKO_K3C)\n",
+  "種類": "直した後の文字",
+  "中身": "   \"状態量\", \"none\", tb=_tb_sqz_carter, mako=MAKO_K3C, tb_kind=\"教科書\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1825「\"状態量\", \"none\", tb=_tb_sqz_carter, mako=MAKO_K3C)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 16,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1839行（<モジュール直下>・3種の登録に印 tb_kind=\"教科書\"（close vs SSF平均%））",
+  "直す前の文字": "   \"反転サイン\", \"trend\", tb=_tb_pos_ssf_avg, mako=MAKO_K3C)\n",
+  "種類": "直した後の文字",
+  "中身": "   \"反転サイン\", \"trend\", tb=_tb_pos_ssf_avg, mako=MAKO_K3C, tb_kind=\"教科書\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1839「\"反転サイン\", \"trend\", tb=_tb_pos_ssf_avg, mako=MAKO_K3C)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 17,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "1847行（<モジュール直下>・3種の登録に印 tb_kind=\"教科書\"（close vs VIDYA_CMO%））",
+  "直す前の文字": "   \"反転サイン\", \"trend\", tb=_tb_pos_vidya_cmo, mako=MAKO_K3C)\n",
+  "種類": "直した後の文字",
+  "中身": "   \"反転サイン\", \"trend\", tb=_tb_pos_vidya_cmo, mako=MAKO_K3C, tb_kind=\"教科書\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:1847「\"反転サイン\", \"trend\", tb=_tb_pos_vidya_cmo, mako=MAKO_K3C)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 18,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3279行（<モジュール直下>・監査 CP60 の修正59＝ALMA の定義から遅れを導く部品 _alma_lag（既知答え用））",
+  "直す前の文字": "_r(r\"close vs ALMA%(\\d+)\", \"close vs ALMA%\",\n",
+  "種類": "直した後の文字",
+  "中身": "def _alma_lag(n: int, sigma: float = 6.0, off: float = 0.85) -> float:\n    \"\"\"ALMA の定義（Legoux／TradingView＝重みは正規分布・ずらし 0.85 で山が新しい側・幅 n/σ）から導く、\n    1本ごとに 1 上げる足での遅れ＝Σ 重み_i × (n−1−i) ÷ Σ 重み_i（i は窓の古い側から数える）。\n    ★K-4（監査 CP60 の修正59）の既知答え用。重みを逆向きに当てる（ライブラリの写し）と遅れは Σ 重み_i × i ÷ Σ 重み_i になり、\n    値が変わる＝監査 CP60 が見つけた向きの誤りを、この既知答えが捕まえる。\"\"\"\n    i = np.arange(n, dtype=float)\n    w = np.exp(-((i - off * (n - 1)) ** 2) / (2.0 * (n / sigma) ** 2))\n    return float(np.sum(w * (n - 1 - i)) / np.sum(w))\n\n\n_r(r\"close vs ALMA%(\\d+)\", \"close vs ALMA%\",\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3279「_r(r\"close vs ALMA%(\\d+)\", \"close vs ALMA%\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 19,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3281行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印を付け、定義から導いた既知答えを足す（close vs ALMA%＝_alma））",
+  "直す前の文字": "   \"Arnaud Legoux。重みは正規分布（ずらし 0.85・幅 n/6）＝ライブラリの既定\", \"反転サイン\", \"trend\", tb=_tb_pos_alma)\n",
+  "種類": "直した後の文字",
+  "中身": "   \"Arnaud Legoux。重みは正規分布（ずらし 0.85・幅 n/6）＝ライブラリの既定\", \"反転サイン\", \"trend\", tb=_tb_pos_alma,\n   # ★K-4（監査 CP60 の修正59）＝定義から導いた既知答え＝1本ごとに 1 上げる足で、ALMA は終値 − 遅れ（_alma_lag）。\n   known=lambda p: [(_up(int(p[0]) + 40), [(-1, ((100.0 + int(p[0]) + 39) / ((100.0 + int(p[0]) + 39) - _alma_lag(int(p[0]))) - 1.0) * 100.0, 1e-9)])],\n   tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3281「\"Arnaud Legoux。重みは正規分布（ずらし 0.85・幅 n/6）＝ライブラリの既定\", \"反転サイン\", \"trend\", tb=_tb_pos_alma)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 20,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3283行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印を付け、定義から導いた既知答えを足す（ALMA傾き%＝_alma））",
+  "直す前の文字": "   \"ALMA の5本前からの変化率%\", \"同上。傾きの5本は本プロジェクトの流儀\", \"順張り値\", \"trend\", tb=_tb_slp_alma)\n",
+  "種類": "直した後の文字",
+  "中身": "   \"ALMA の5本前からの変化率%\", \"同上。傾きの5本は本プロジェクトの流儀\", \"順張り値\", \"trend\", tb=_tb_slp_alma,\n   # ★K-4＝1本ごとに 1 上げる足で、5本前からの変化＝5 ÷ (5本前の ALMA＝終値 − 5 − 遅れ) × 100。\n   known=lambda p: [(_up(int(p[0]) + 40), [(-1, 5.0 / ((100.0 + int(p[0]) + 39) - 5.0 - _alma_lag(int(p[0]))) * 100.0, 1e-9)])],\n   tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3283「\"ALMA の5本前からの変化率%\", \"同上。傾きの5本は本プロジェクトの流儀\", \"順張り値\", \"trend\", tb=_tb_slp_alma)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 21,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3222行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印を付け、定義から導いた既知答えを足す（STC＝_stc_parts））",
+  "直す前の文字": "   \"順張り値\", \"trend\", tb=_tb_stc)\n",
+  "種類": "直した後の文字",
+  "中身": "   \"順張り値\", \"trend\", tb=_tb_stc,\n   # ★K-4（監査 CP60 の修正59）＝TA-Lib の逐語「When a range is zero, the fraction keeps its previous value (0 before any).」から導いた\n   #   既知答え＝値段が一定なら MACD は 0 で範囲も 0＝2段とも 0 のまま。\n   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3222「\"順張り値\", \"trend\", tb=_tb_stc)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 22,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3225行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印を付け、定義から導いた既知答えを足す（STCstoch＝_stc_parts））",
+  "直す前の文字": "   \"同上（Schaff Trend Cycle の1段目）\", \"順張り値\", \"trend\", tb=_tb_stcstoch)\n",
+  "種類": "直した後の文字",
+  "中身": "   \"同上（Schaff Trend Cycle の1段目）\", \"順張り値\", \"trend\", tb=_tb_stcstoch,\n   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3225「\"同上（Schaff Trend Cycle の1段目）\", \"順張り値\", \"trend\", tb=_tb_stcstoch)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 23,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3297行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印を付け、定義から導いた既知答えを足す（close vs HILO%＝_tb_pos_hilo））",
+  "直す前の文字": "   \"反転サイン\", \"none\", tb=_tb_pos_hilo)\n",
+  "種類": "直した後の文字",
+  "中身": "   \"反転サイン\", \"none\", tb=_tb_pos_hilo,\n   # ★K-4（監査 CP60 の修正59）＝定義（Krausz＝前の13本の高値の平均を終値が上抜けたら、21本の安値の平均の線）から導いた既知答え\n   #   ＝1本ごとに 1 上げる足（高値＝終値・安値＝前の終値）では、終値は常に高値の平均の上＝線は安値の平均＝終値 − 11。\n   known=lambda p: [(_up(80), [(-1, (179.0 / 168.0 - 1.0) * 100.0, 1e-9)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3297「\"反転サイン\", \"none\", tb=_tb_pos_hilo)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 24,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3475行（<モジュール直下>・監査 CP60 の修正60＝下げ続ける合成のバーの既知答えの導き方（4種の登録の前の説明））",
+  "直す前の文字": "_r(r\"close vs CKSPl%\", \"close vs CKSPl%\",",
+  "種類": "直した後の文字",
+  "中身": "# ★K-4（監査 CP60 の修正60）＝下の CKSP・PMAX・PSAR・SAREXT の既知答えに「下げ続ける合成のバー」を足した。\n#   足＝_dn(600, 1000.0, 1.0)（終値 1000 から1本ごとに 1 下げる・始値＝前の終値・高値＝始値・安値＝終値）。最後の終値 c＝401。\n#   答えは定義から導いた（ライブラリは見ていない）＝\n#   ・PSAR（Wilder）＝売り側。SAR_t＝SAR_{t−1}＋AF×(EP_{t−1}−SAR_{t−1})。毎本 新しい安値なので AF は 0.02 ずつ増えて 0.2 で頭打ち。\n#     EP_{t−1}＝前の終値＝c＋1。SAR と EP の差 g は g←0.8×(g＋1) で 4 に収束＝SAR＝c＋5 → close vs PSAR%＝(c/(c+5)−1)×100・加速 0.2・反転 0。\n#   ・SAREXT（TA-Lib）＝買いと売りの加速が同じ値なら PSAR と同じ線（絶対値に直してから割る）＝(c/(c+5)−1)×100。\n#   ・CKSP（TradingView の形 p=10・x=1・q=9・ATR は Wilder）＝真の値幅は毎本 1 → ATR＝1。買い側の逆指値＝直近 q 本の max(10本高値 − ATR)\n#     ＝(c＋2＋8＋10)−1＝c＋17（10本高値は 9本前の高値＝終値＋10、q 本の中で最大は 8本前）→ (c/(c+17)−1)×100。\n#     売り側＝直近 q 本の min(10本安値 ＋ ATR)＝今の安値 c ＋ 1 → (c/(c+1)−1)×100。\n#   ・PMAX（EMA10 ± 3×ATR10・下げでは上の帯）＝1本ごとに 1 下げる足で EMA10 の遅れは (10−1)/2＝4.5・ATR＝1 → 線＝c＋4.5＋3 → (c/(c+7.5)−1)×100。\n#   値段が一定の足（0）だけでは売り側を一度も通らない（監査 CP60 の修正60 の文）。\n_r(r\"close vs CKSPl%\", \"close vs CKSPl%\",",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3475「_r(r\"close vs CKSPl%\", \"close vs CKSPl%\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 25,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3475〜3482行（<モジュール直下>・監査 CP60 の修正60＝CKSPl・CKSPs の既知答えに下げ続ける足を足す）",
+  "直す前の文字": "_r(r\"close vs CKSPl%\", \"close vs CKSPl%\",\n   \"終値が Chande Kroll の買い側の逆指値から何%離れているか\",\n   \"Chande & Kroll。★独立実装は書いていないが、定義から導ける既知答えで検証する＝\"\n   \"値段が一定なら逆指値も その値に張り付くので、この列は ぴったり 0\",\n   \"反転サイン\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])\n_r(r\"close vs CKSPs%\", \"close vs CKSPs%\",\n   \"終値が Chande Kroll の売り側の逆指値から何%離れているか\", \"同上\",\n   \"反転サイン\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "_r(r\"close vs CKSPl%\", \"close vs CKSPl%\",\n   \"終値が Chande Kroll の買い側の逆指値から何%離れているか\",\n   \"Chande & Kroll。★独立実装は書いていないが、定義から導ける既知答えで検証する＝\"\n   \"値段が一定なら逆指値も その値に張り付くので、この列は ぴったり 0\",\n   \"反転サイン\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),\n                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 17.0) - 1.0) * 100.0, 1e-6)])])\n_r(r\"close vs CKSPs%\", \"close vs CKSPs%\",\n   \"終値が Chande Kroll の売り側の逆指値から何%離れているか\", \"同上\",\n   \"反転サイン\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),\n                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 1.0) - 1.0) * 100.0, 1e-6)])])\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3475「_r(r\"close vs CKSPl%\", \"close vs CKSPl%\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 26,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3488行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印を付け、定義から導いた既知答えを足す（DPO%＝_tb_dpo））",
+  "直す前の文字": "   \"反転サイン\", \"none\", tb=_tb_dpo)\n",
+  "種類": "直した後の文字",
+  "中身": "   \"反転サイン\", \"none\", tb=_tb_dpo,\n   # ★K-4（監査 CP60 の修正59）＝流儀の欄の定義（終値 − n本平均を (n/2+1) 本ずらしたもの）から導いた既知答え\n   #   ＝1本ごとに 1 上げる足では (n/2+1) ＋ (n−1)/2 を終値で割って%化。教科書の版（DPO教科書%）とは別の値になる。\n   known=lambda p: [(_up(int(p[0]) * 2 + 40), [(-1, ((int(0.5 * int(p[0])) + 1) + (int(p[0]) - 1) / 2.0) / (100.0 + int(p[0]) * 2 + 39) * 100.0, 1e-9)])],\n   tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3488「\"反転サイン\", \"none\", tb=_tb_dpo)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 27,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3491〜3492行（<モジュール直下>・監査 CP60 の修正60＝PMAX の既知答えに下げ続ける足を足す）",
+  "直す前の文字": "   \"ライブラリの計算式。★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0\",\n   \"反転サイン\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "   \"ライブラリの計算式。★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0・下げ続ける足なら EMA10＋3×ATR10 の上の帯（K-4）\",\n   \"反転サイン\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),\n                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 7.5) - 1.0) * 100.0, 1e-6)])])\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3491「\"ライブラリの計算式。★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 28,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3496〜3505行（<モジュール直下>・監査 CP60 の修正60＝PSAR%・PSAR加速・PSAR反転 の既知答えに下げ続ける足を足す）",
+  "直す前の文字": "   \"★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0\",\n   \"反転サイン\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])\n_r(r\"PSAR加速\", \"PSAR加速\",\n   \"パラボリック SAR の加速係数（0.02 ずつ増えて 0.2 で頭打ち）\",\n   \"Wilder。★定義から導ける既知答えで検証する＝値段が一定なら加速しないので初期値 0.02 のまま\",\n   \"状態量\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.02, 1e-9)])])\n_r(r\"PSAR反転\", \"PSAR反転\",\n   \"パラボリック SAR が反転した足か。1 か 0\",\n   \"同上。★既知答えで検証する＝値段が一定なら反転しないので 0\", \"状態量\", \"none\",\n   known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "   \"★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0・下げ続ける足なら売り側の SAR＝終値＋5（K-4）\",\n   \"反転サイン\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),\n                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 5.0) - 1.0) * 100.0, 1e-6)])])\n_r(r\"PSAR加速\", \"PSAR加速\",\n   \"パラボリック SAR の加速係数（0.02 ずつ増えて 0.2 で頭打ち）\",\n   \"Wilder。★定義から導ける既知答えで検証する＝値段が一定なら加速しないので初期値 0.02 のまま・下げ続ける足なら頭打ちの 0.2（K-4）\",\n   \"状態量\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.02, 1e-9)]), (_dn(600, 1000.0, 1.0), [(-1, 0.2, 1e-9)])])\n_r(r\"PSAR反転\", \"PSAR反転\",\n   \"パラボリック SAR が反転した足か。1 か 0\",\n   \"同上。★既知答えで検証する＝値段が一定なら反転しないので 0・下げ続ける足でも反転しないので 0（K-4）\", \"状態量\", \"none\",\n   known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]), (_dn(600, 1000.0, 1.0), [(-1, 0.0, 1e-9)])])\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3496「\"★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 29,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "3513行（<モジュール直下>・監査 CP60 の修正60＝SAREXT の既知答えに下げ続ける足を足す（符号の誤りを捕まえる））",
+  "直す前の文字": "   \"この列は ぴったり 0\", \"反転サイン\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "   \"この列は ぴったり 0。下げ続ける足なら PSAR と同じ線（終値＋5・絶対値に直してから割る＝K-4）\", \"反転サイン\", \"none\",\n   known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]), (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 5.0) - 1.0) * 100.0, 1e-6)])])\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:3513「\"この列は ぴったり 0\", \"反転サイン\", \"none\", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])」",
+  "状態": "確定"
+ },
+ {
+  "番号": 30,
+  "対象のファイル": "scripts/priority_rebuild/indicator_reference_diag.py",
+  "直す箇所": "4246行（<モジュール直下>・監査 CP60 の修正59＝写しの独立実装の登録に印を付け、定義から導いた既知答えを足す（THERMO%＝_tb_thermo_pct））",
+  "直す前の文字": "   tb=_tb_thermo_pct, known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])\n",
+  "種類": "直した後の文字",
+  "中身": "   tb=_tb_thermo_pct,\n   # ★K-4（監査 CP60 の修正59）＝流儀の欄の定義（安値の下げ幅と高値の上げ幅の絶対値の大きい方）から導いた既知答え\n   #   ＝内はらみ足（高値 101→100.5・安値 99→99.5）では 0.5 を終値 100 で割って%化＝0.5。教科書の版（THERMO原作%）は 0＝別の値になる。\n   known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)]), (_thermo_in_case(80), [(-1, 0.5, 1e-9)])], tb_kind=\"写し\")\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/indicator_reference_diag.py:4246「tb=_tb_thermo_pct, known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])」",
+  "状態": "確定"
+ },
+ {
+  "番号": 31,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "4375〜4377行（_insp_indicator_match・監査 CP60 の修正59＝検査3 で写しの独立実装が合っただけでは一致検証済みに数えない）",
+  "直す前の文字": "            elif dmax <= ref[\"tol\"]:\n                marks.append(f\"独立✓({dmax:.0e})\")\n                verified.add(name)\n",
+  "種類": "直した後の文字",
+  "中身": "            elif dmax <= ref[\"tol\"]:\n                if ref.get(\"tb_kind\") == \"写し\":\n                    # ★K-4（2026-10-11・監査 CP60 の修正59）＝写しの独立実装（カタログかライブラリと同じ変形を別の書き方で写した物）は\n                    #   「自分と同じか」しか確かめていない＝一致しても検証済みに数えない。検証済みにするのは手計算の既知答え（③）。\n                    marks.append(f\"独立(写し)✓({dmax:.0e})\")\n                else:\n                    marks.append(f\"独立✓({dmax:.0e})\")\n                    verified.add(name)\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:4375「elif dmax <= ref[\"tol\"]:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 32,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "7333行（selftest_catalog・監査 CP60 の修正59＝検査3 と写しの印の番人2つを走らせる軽い口 selftest_match（壊すプログラム12本が承認の前の仮当ての打ち切り 900秒に入るため））",
+  "直す前の文字": "def selftest_catalog(exit_: bool = True) -> list:\n",
+  "種類": "直した後の文字",
+  "中身": "def selftest_match(exit_: bool = True, with_verified: bool = False, full: bool = False):\n    \"\"\"検査3（参照表との照合）と、写しの印の番人2つだけを走らせる軽い口\n    （工事 k4-reference-known-20261011・2026-10-11・監査 CP60 の修正59）。\n    口＝`--selftest-match`（完成の条件と壊すプログラム b172〜b183 が使う）。全体の自己テスト（selftest）からも full=True で呼ぶ。\n    手本＝selftest_catalog（口の形・selftest からの呼び方）。★全体の自己テストは1本 約2分かかり、承認の前の仮当て（A12）の\n    打ち切り 900秒に壊すプログラム12本が入らないため、検査3 と番人だけを切り出した。\n    full=False（コマンドの口）＝検査3 を「手計算の既知答えを持つ登録の列と、写しの印の列」だけに絞る（壊すプログラムが落とす相手は\n    全部この中に在る。全列では写しで92秒＝12本で900秒を超えた）。full=True（selftest から）＝正しいカタログの全列。\n    with_verified=True のときは (ng, 一致検証済みの列の集合) を返す（selftest が「検証済みにならない列」を数えるのに使う）。\"\"\"\n    cfg = load_config()\n    ng = []\n    import contextlib as _cl2\n    import io as _io2\n    _q = _io2.StringIO()\n    _t3 = np.arange(6000, dtype=float)\n    _c3 = pd.Series(100 + np.sin(_t3 / 9.0) * 2 + _t3 * 0.001,\n                    index=pd.date_range(\"2026-03-01\", periods=6000, freq=\"5min\"))\n    _sb3 = pd.DataFrame({\"open\": _c3.shift().fillna(_c3.iloc[0]), \"high\": _c3 + 0.1,\n                         \"low\": _c3 - 0.1, \"close\": _c3, \"volume\": 1.0}, index=_c3.index)\n    #  ①正しいカタログで検査3 が不一致を出さない（既知答え＝定義から導いた数字と、独立実装・ライブラリの照合）\n    _catm = build_catalog(cfg)\n    if not full:\n        _catm = [x for x in _catm if (iref.find(x[0])[0] or {}).get(\"known\") is not None\n                 or (iref.find(x[0])[0] or {}).get(\"tb_kind\") == \"写し\"]\n        if not _catm:\n            ng.append(\"既知答えを持つ列・写しの印の列がカタログに1本も無い（軽い口が回せない）\")\n    with _cl2.redirect_stdout(_q):\n        _ng3m, _v3m, _r3m = _insp_indicator_match(_sb3, cfg, catalog=_catm)\n    if _ng3m:\n        ng.append(f\"検査3 が正しいカタログで不一致を出す（許容差の線を疑う）: {_ng3m[:3]}\")\n    #  ②写しの印（tb_kind=\"写し\"）の登録は、手計算の既知答えを必ず持つ（独立実装だけでは検証済みにならないため）\n    for _e in iref.REFS:\n        if _e.get(\"tb_kind\") == \"写し\" and _e[\"known\"] is None:\n            ng.append(f\"写しの印の登録に手計算の既知答えが無い: {_e['family']}\")\n    #  ③写しの印の列は、既知答えを外すと「一致検証済み」に入らない（独立実装が合っても検証済みに数えない）\n    _cat_cp = [x for x in build_catalog(cfg)\n               if (iref.find(x[0])[0] or {}).get(\"tb_kind\") == \"写し\" and (iref.find(x[0])[0] or {}).get(\"tb\") is not None]\n    if not _cat_cp:\n        ng.append(\"写しの印の列がカタログに1本も無い（この番人が回せない）\")\n    else:\n        _ecp = iref.find(_cat_cp[0][0])[0]\n        _kn_save = _ecp[\"known\"]\n        _ecp[\"known\"] = None\n        try:\n            with _cl2.redirect_stdout(_q):\n                _ngcp, _vcp, _rcp = _insp_indicator_match(_sb3, cfg, catalog=[_cat_cp[0]])\n        finally:\n            _ecp[\"known\"] = _kn_save\n        if _cat_cp[0][0] in _vcp:\n            ng.append(f\"写しの独立実装だけで一致検証済みになっている: {_cat_cp[0][0]}\")\n    if exit_:\n        for x in ng:\n            print(f\"  ❌ {x}\")\n        print(f\"  検査3（{'全列' if full else '既知答えを持つ列と写しの印の列 ' + str(len(_catm)) + ' 本'}）と写しの印の番人（--selftest-match）: ❌ {len(ng)} 件\")\n        raise SystemExit(1 if ng else 0)\n    return (ng, _v3m) if with_verified else ng\n\n\ndef selftest_catalog(exit_: bool = True) -> list:\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:7333「def selftest_catalog(exit_: bool = True) -> list:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 33,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "7886〜7889行（selftest・監査 CP60 の修正59＝全体の自己テストから軽い口 selftest_match を呼ぶ（正しいカタログの検査3 と写しの印の番人2つ））",
+  "直す前の文字": "    with _cl2.redirect_stdout(_q):\n        _ng3b, _v3b, _r3b = _insp_indicator_match(_sb3, cfg)\n    if _ng3b:\n        ng.append(f\"検査3 が正しいカタログで不一致を出す（許容差の線を疑う）: {_ng3b[:3]}\")\n",
+  "種類": "直した後の文字",
+  "中身": "    # ★K-4（2026-10-11・監査 CP60 の修正59・工事 k4-reference-known-20261011）＝正しいカタログの検査3 と、写しの印の番人2つは\n    #   軽い口 selftest_match に切り出した（壊すプログラムが測る口）。ここからも呼ぶ＝全体の自己テストの中身は減らさない。\n    _ngm, _v3b = selftest_match(exit_=False, with_verified=True, full=True)\n    ng += _ngm\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:7886「with _cl2.redirect_stdout(_q):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 34,
+  "対象のファイル": "scripts/priority_rebuild/observe_diag.py",
+  "直す箇所": "8516〜8517行（<モジュール直下>・監査 CP60 の修正59＝コマンドの旗 --selftest-match を足す（selftest_catalog と同じ形））",
+  "直す前の文字": "    if \"--selftest-catalog\" in sys.argv:              # ★K-1・K-8・G-2 の番人だけを（工事 m2c15-indicator-six-items-20261004・壊すプログラム b128・b129・b131 が使う）\n        selftest_catalog()                            # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n",
+  "種類": "直した後の文字",
+  "中身": "    if \"--selftest-catalog\" in sys.argv:              # ★K-1・K-8・G-2 の番人だけを（工事 m2c15-indicator-six-items-20261004・壊すプログラム b128・b129・b131 が使う）\n        selftest_catalog()                            # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n    if \"--selftest-match\" in sys.argv:                # ★検査3 と写しの印の番人だけを（工事 k4-reference-known-20261011・壊すプログラム b172〜b183 が使う）\n        selftest_match()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）\n",
+  "根拠の抜き書き": "scripts/priority_rebuild/observe_diag.py:8516「if \"--selftest-catalog\" in sys.argv:              # ★K-1・K-8・G-2 の番人だけを（工事 m2c15-indicator-six-items-20261004・壊すプログラム b1」",
+  "状態": "確定"
+ },
+ {
+  "番号": 35,
+  "対象のファイル": ".claude/breaks/b172_alma_weights_reversed.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: ALMA の重みを逆向き（ライブラリの元の 0.85）に戻すと、定義から導いた既知答え（1本ごとに 1 上げる足の遅れ）で検査3 が落ちる＝監査 CP60 が見つけた向きの誤りを捕まえる\n# EXPECT_MSG: close vs ALMA%9: 手計算の既知答えと不一致\n# b172_alma_weights_reversed — ALMA の重みを逆向き（ライブラリの元の 0.85）に戻すと、定義から導いた既知答え（1本ごとに 1 上げる足の遅れ）で検査3 が落ちる＝監査 CP60 が見つけた向きの誤りを捕まえる（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「close vs ALMA%9: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    (\"ALMA\", lambda d, n, distribution_offset=0.15, sigma=None: _pta6.alma(close=d.close, length=n, distribution_offset=distribution_offset, sigma=sigma)),\\n'\nnew = '    (\"ALMA\", lambda d, n, distribution_offset=0.85, sigma=None: _pta6.alma(close=d.close, length=n, distribution_offset=distribution_offset, sigma=sigma)),\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b172_alma_weights_reversed] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 36,
+  "対象のファイル": ".claude/breaks/b173_stc_zero_range_divides.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: STC の「範囲が 0 なら前の値を持ち越す」を外して 0 で割ると、値段が一定の足の既知答え（0）で検査3 が落ちる\n# EXPECT_MSG: STC: 手計算の既知答えと不一致\n# b173_stc_zero_range_divides — STC の「範囲が 0 なら前の値を持ち越す」を外して 0 で割ると、値段が一定の足の既知答え（0）で検査3 が落ちる（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「STC: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '            st[i] = 100.0 * (x[i] - lo[i]) / rng[i] if rng[i] > 0 else st[i - 1]\\n'\nnew = '            st[i] = 100.0 * (x[i] - lo[i]) / rng[i] if rng[i] >= 0 else st[i - 1]\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b173_stc_zero_range_divides] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 37,
+  "対象のファイル": ".claude/breaks/b174_hilo_short_column.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: HILO の線を売り側の列に差し替えると、1本ごとに 1 上げる足の既知答え（終値 − 11 の線）で検査3 が落ちる\n# EXPECT_MSG: close vs HILO%: 手計算の既知答えと不一致\n# b174_hilo_short_column — HILO の線を売り側の列に差し替えると、1本ごとに 1 上げる足の既知答え（終値 − 11 の線）で検査3 が落ちる（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「close vs HILO%: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '                                                                              close=d.close, high_length=high_length, low_length=low_length).iloc[:, 0] - 1) * 100)\\n'\nnew = '                                                                              close=d.close, high_length=high_length, low_length=low_length).iloc[:, 2] - 1) * 100)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b174_hilo_short_column] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 38,
+  "対象のファイル": ".claude/breaks/b175_dpo_centered_future.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: DPO% を未来を見る版（centered=True）に戻すと、1本ごとに 1 上げる足の既知答えで検査3 が落ちる\n# EXPECT_MSG: DPO%20: 手計算の既知答えと不一致\n# b175_dpo_centered_future — DPO% を未来を見る版（centered=True）に戻すと、1本ごとに 1 上げる足の既知答えで検査3 が落ちる（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「DPO%20: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '     _pta6.dpo(close=d.close, length=n, centered=False) / d.close * 100)\\n'\nnew = '     _pta6.dpo(close=d.close, length=n, centered=True) / d.close * 100)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b175_dpo_centered_future] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 39,
+  "対象のファイル": ".claude/breaks/b176_sarext_sign_not_abs.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: SAREXT の絶対値を外す（売り側が負の数のまま）と、下げ続ける足の既知答えで検査3 が落ちる＝監査 CP60 の符号の誤りを捕まえる（直す前は値段が一定の足だけで通った）\n# EXPECT_MSG: close vs SAREXT%: 手計算の既知答えと不一致\n# b176_sarext_sign_not_abs — SAREXT の絶対値を外す（売り側が負の数のまま）と、下げ続ける足の既知答えで検査3 が落ちる＝監査 CP60 の符号の誤りを捕まえる（直す前は値段が一定の足だけで通った）（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「close vs SAREXT%: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = 'accelerationmaxshort=accelerationmaxshort).abs() - 1) * 100)\\n'\nnew = 'accelerationmaxshort=accelerationmaxshort) - 1) * 100)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b176_sarext_sign_not_abs] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 40,
+  "対象のファイル": ".claude/breaks/b177_psar_af_column.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: PSAR加速 を反転の列に差し替えると、下げ続ける足の既知答え（頭打ちの 0.2）で検査3 が落ちる（値段が一定の足では 0.02 の既知答えも落ちる）\n# EXPECT_MSG: PSAR加速: 手計算の既知答えと不一致\n# b177_psar_af_column — PSAR加速 を反転の列に差し替えると、下げ続ける足の既知答え（頭打ちの 0.2）で検査3 が落ちる（値段が一定の足では 0.02 の既知答えも落ちる）（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「PSAR加速: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '_reg(\"PSAR加速\", \"PSAR加速\", False, lambda d, af0=None, af=None, max_af=None: _ps(d, af0=af0, af=af, max_af=max_af).iloc[:, 2])\\n'\nnew = '_reg(\"PSAR加速\", \"PSAR加速\", False, lambda d, af0=None, af=None, max_af=None: _ps(d, af0=af0, af=af, max_af=max_af).iloc[:, 3])\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b177_psar_af_column] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 41,
+  "対象のファイル": ".claude/breaks/b178_cksp_long_short_swapped.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: CKSP の買い側を売り側の列に差し替えると、下げ続ける足の既知答え（終値＋17 の線）で検査3 が落ちる（値段が一定の足では見分けられない）\n# EXPECT_MSG: close vs CKSPl%: 手計算の既知答えと不一致\n# b178_cksp_long_short_swapped — CKSP の買い側を売り側の列に差し替えると、下げ続ける足の既知答え（終値＋17 の線）で検査3 が落ちる（値段が一定の足では見分けられない）（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「close vs CKSPl%: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '_reg(\"close vs CKSPl%\", \"close vs CKSPl%\", True, lambda d, p=None, x=None, q=None: (d.close / _ck(d, p=p, x=x, q=q).iloc[:, 0] - 1) * 100)\\n'\nnew = '_reg(\"close vs CKSPl%\", \"close vs CKSPl%\", True, lambda d, p=None, x=None, q=None: (d.close / _ck(d, p=p, x=x, q=q).iloc[:, 1] - 1) * 100)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b178_cksp_long_short_swapped] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 42,
+  "対象のファイル": ".claude/breaks/b179_pmax_ma_of_high.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: PMAX の移動平均の入力を高値にすると、下げ続ける足の既知答え（EMA10＋3×ATR10 の線）で検査3 が落ちる（値段が一定の足では見分けられない）\n# EXPECT_MSG: close vs PMAX%: 手計算の既知答えと不一致\n# b179_pmax_ma_of_high — PMAX の移動平均の入力を高値にすると、下げ続ける足の既知答え（EMA10＋3×ATR10 の線）で検査3 が落ちる（値段が一定の足では見分けられない）（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「close vs PMAX%: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '     lambda d, length=None, multiplier=None: (d.close / _pta6.pmax(high=d.high, low=d.low, close=d.close, length=length, multiplier=multiplier) - 1) * 100)\\n'\nnew = '     lambda d, length=None, multiplier=None: (d.close / _pta6.pmax(high=d.high, low=d.low, close=d.high, length=length, multiplier=multiplier) - 1) * 100)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b179_pmax_ma_of_high] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 43,
+  "対象のファイル": ".claude/breaks/b180_vwap_volume_weight_dropped.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: VWAP の分子の出来高の重みを外すと、最後の1本だけ出来高 9 の既知答えで検査3 が落ちる（出来高が全部 1 の足では見分けられない）\n# EXPECT_MSG: close vs VWAP%288: 手計算の既知答えと不一致\n# b180_vwap_volume_weight_dropped — VWAP の分子の出来高の重みを外すと、最後の1本だけ出来高 9 の既知答えで検査3 が落ちる（出来高が全部 1 の足では見分けられない）（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「close vs VWAP%288: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '_reg(\"close vs VWAP%\", \"close vs VWAP%{}\", True, lambda d, n: (d.close / ((d.close * d.volume).rolling(n).sum()\\n     / d.volume.rolling(n).sum().replace(0, np.nan)) - 1) * 100)\\n'\nnew = '_reg(\"close vs VWAP%\", \"close vs VWAP%{}\", True, lambda d, n: (d.close / ((d.close * (d.volume * 0 + 1.0)).rolling(n).sum()\\n     / d.volume.rolling(n).sum().replace(0, np.nan)) - 1) * 100)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b180_vwap_volume_weight_dropped] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 44,
+  "対象のファイル": ".claude/breaks/b181_thermo_ma_column.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: THERMO% を EMA の列に差し替えると、内はらみ足の既知答え（0.5）で検査3 が落ちる（値段が一定の足では見分けられない）\n# EXPECT_MSG: THERMO%: 手計算の既知答えと不一致\n# b181_thermo_ma_column — THERMO% を EMA の列に差し替えると、内はらみ足の既知答え（0.5）で検査3 が落ちる（値段が一定の足では見分けられない）（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「THERMO%: 手計算の既知答えと不一致」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '_reg(\"THERMO%\", \"THERMO%\", False, lambda d: _th(d).iloc[:, 0] / d.close * 100)\\n'\nnew = '_reg(\"THERMO%\", \"THERMO%\", False, lambda d: _th(d).iloc[:, 1] / d.close * 100)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b181_thermo_ma_column] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 45,
+  "対象のファイル": ".claude/breaks/b182_copy_mark_without_known.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 写しの印の登録から既知答えを外すと、自己テストの番人①（写しの印の登録は既知答えを必ず持つ）が落ちる\n# EXPECT_MSG: 写しの印の登録に手計算の既知答えが無い: close vs HILO%\n# b182_copy_mark_without_known — 写しの印の登録から既知答えを外すと、自己テストの番人①（写しの印の登録は既知答えを必ず持つ）が落ちる（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/indicator_reference_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「写しの印の登録に手計算の既知答えが無い: close vs HILO%」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/indicator_reference_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '   \"反転サイン\", \"none\", tb=_tb_pos_hilo,\\n   # ★K-4（監査 CP60 の修正59）＝定義（Krausz＝前の13本の高値の平均を終値が上抜けたら、21本の安値の平均の線）から導いた既知答え\\n   #   ＝1本ごとに 1 上げる足（高値＝終値・安値＝前の終値）では、終値は常に高値の平均の上＝線は安値の平均＝終値 − 11。\\n   known=lambda p: [(_up(80), [(-1, (179.0 / 168.0 - 1.0) * 100.0, 1e-9)])], tb_kind=\"写し\")\\n'\nnew = '   \"反転サイン\", \"none\", tb=_tb_pos_hilo,\\n   # ★K-4（監査 CP60 の修正59）＝定義（Krausz＝前の13本の高値の平均を終値が上抜けたら、21本の安値の平均の線）から導いた既知答え\\n   #   ＝1本ごとに 1 上げる足（高値＝終値・安値＝前の終値）では、終値は常に高値の平均の上＝線は安値の平均＝終値 − 11。\\n   tb_kind=\"写し\")\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b182_copy_mark_without_known] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 46,
+  "対象のファイル": ".claude/breaks/b183_copy_verified_by_tb_alone.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 検査3 の「写しの独立実装が合っただけでは検証済みに数えない」を外すと、自己テストの番人②が落ちる\n# EXPECT_MSG: 写しの独立実装だけで一致検証済みになっている\n# b183_copy_verified_by_tb_alone — 検査3 の「写しの独立実装が合っただけでは検証済みに数えない」を外すと、自己テストの番人②が落ちる（工事 k4-reference-known-20261011・2026-10-11）\n#   守っているもの＝完成の条件の軽い口（selftest_match＝検査3 と写しの印の番人）（observe_diag.py --selftest-match）\n#   壊し方＝scripts/priority_rebuild/observe_diag.py の中の、下の old を new に置き換える（k4_draft_build.py が当てた後の写しで同じ壊し方を走らせ、落ちるのを確かめた）。\n#   期待＝observe_diag.py --selftest-match が「写しの独立実装だけで一致検証済みになっている」で落ちる（終了コード 1）。\n#   ★壊す対象が1か所でなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nF=\"$SDK/scripts/priority_rebuild/observe_diag.py\"\nguard \"$F\"\n\npython3 - \"$F\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '            elif dmax <= ref[\"tol\"]:\\n                if ref.get(\"tb_kind\") == \"写し\":\\n                    # ★K-4（2026-10-11・監査 CP60 の修正59）＝写しの独立実装（カタログかライブラリと同じ変形を別の書き方で写した物）は\\n                    #   「自分と同じか」しか確かめていない＝一致しても検証済みに数えない。検証済みにするのは手計算の既知答え（③）。\\n                    marks.append(f\"独立(写し)✓({dmax:.0e})\")\\n                else:\\n                    marks.append(f\"独立✓({dmax:.0e})\")\\n                    verified.add(name)\\n'\nnew = '            elif dmax <= ref[\"tol\"]:\\n                marks.append(f\"独立✓({dmax:.0e})\")\\n                verified.add(name)\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b183_copy_verified_by_tb_alone] 壊す対象の文字が1か所でない\")\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$PR/observe_diag.py\" --selftest-match\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b142_rci_list_stale.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ }
+]
+```
+
+【5 決めたことと理由】
+| 決めたこと | 理由 | 捨てた案 |
+|---|---|---|
+| 写しの既知答えは、原典の数字でなく定義から導いた式にする | 修正59 の補足の例（ALMA の重み）のように原典に数字が在る物は無い。定義から合成の足で1つに決まる値なら、写しが写した誤り（向き・列・未来・重み）で値が変わる（読むもの宣言のとおり） | 既知答えを足さず印だけ付ける（検証済みが減る） |
+| 下げ続ける足は終値 1000 から1本ごとに 1 下げる600本 | 前から在る部品 _dn で作れる。600本で漸化式が収束し、終値が負にならない | 200 から下げる（既存の _dn の既定＝600本で負になる） |
+| 写しの独立実装が合っただけでは検証済みに数えない | 修正59 の文「照合は自分と同じかしか確かめていない」。検証済みにするのは既知答え | 写しの独立実装を照合から外す（独立✗ の検出まで失う） |
+| 3種の独立の実装は別の書き方にし、式の出どころは変えない | 監査 CP73 の Q8 の (c)＝同じ文字の写しどうしでは、両方に同じ誤りが入ると見つからない | 説明の文だけ（CP73 の修正2 で済）のまま |
+| 名指しの10件の外の登録は未判定（None）のまま | 1件ずつの判定が要る（272件）。この工事の範囲の外 | 全部に印を付ける |
+| 設計書の監査を出す | 新しいコードと既知答えの値が入る（判断が入る） | 飛ばす（判断が入らない工事の決まりは当たらない） |
+| 壊すプログラム12本は、検査3 を既知答えを持つ列と写しの印の列に絞った軽い口（--selftest-match）で測る | 承認の前の仮当て（A12）の壊すプログラムの打ち切りは 900秒。全体の自己テスト（1本 約142秒）では12本が入らず、試しの設計書の全部の検査が打ち切りで落ちた。全列の軽い口でも写しで92秒（12本で 900秒を超える）。壊すプログラムが落とす相手（既知答えの不一致・番人①②）は絞った列の中に全部 在る。全体の自己テストは全列で呼ぶので、守りは減らない | 全体の自己テストで測る（打ち切りで落ちた）／全列の軽い口で測る（12本で 900秒を超える）／壊すプログラムを減らす（守りが減る） |
+
+【6-2 リスク】
+| 中身 | どうするか |
+|---|---|
+| 定義から導いた答えが、ライブラリの初期値の作りで 1e-6 を超えてずれる | 写しで7つとも 1e-6 以内で合った（4-0 の③）。ずれたら、答えを合わせずに 3-2 で出す |
+| 写しの印の登録が増えると、検証済みの数が減る | 写しの16登録は全部 既知答えを持つ（番人①）。検証済みの数は変わらない |
+| 3種の別の書き方が scipy を要る | 参照表は2つ目の照合で scipy を既に使う（ext2_ready）。写しで全体の自己テストが通った |
+| 絞った軽い口が通っても、絞った列の外で検査3 が落ちる | 全体の自己テスト（--selftest）が軽い口を全列で呼ぶ（4-12 の1）。完成の条件の壊すプログラムは軽い口、G2・H2 の取り直しと監査に出す前のチェックは全体の自己テストを走らせる |
+| 軽い口が 12本×約63秒で、まだ打ち切り 900秒に近い | 写しで12本を並べて走らせ、900秒の中に入った（k4_draft_build.py の [8]・k4_check_run.log）。超えたら、そこで止めて まこさんに報告する（6-3 の下の文） |
+
+【6-3 見積もり】
+| 何 | 見込み | 根拠 |
+|---|---|---|
+| 当てる（--design） | 1分未満 | 前の工事で、当てる道具は1秒未満で終わった |
+| 全体の自己テスト | 142秒 | 4-14 |
+| 壊すプログラム | 1本あたり約 63秒（軽い口 --selftest-match）×12本 | 写しで壊し方を並べて走らせた（k4_draft_build.py の [8]）。承認の前の仮当ての打ち切り 900秒に入る |
+| 監査に出す前のチェック | 約10分 | 前の工事の実測（pre_audit_check.py --run） |
+| まこさんの承認 | この工事の設計書1回 | 4-4 |
+| 設計書の監査・実装の監査 | 各1通 | まこさん「CCの案でOK」の③ |
+
+【7-1 深掘り4点】
+| 欄 | 中身 |
+|---|---|
+| 真因 | 参照表の「教科書の独立実装」の10件が、カタログかライブラリの変形を別の書き方で写した物で、検査3 の照合が「自分と同じか」しか確かめていなかった（監査 CP60 の修正59・一般の観点④）。4種の既知答えが「値段が一定なら 0」だけで売り側を通らなかった（修正60・観点⑥）。だから ALMA の向き・STC の式・SAREXT の符号の誤りが「一致検証済み」で通った。この工事で、写しの印を付け、写しの独立実装だけでは検証済みにせず、定義から導いた既知答えで検証する。 |
+| 期待値分解 | 売買のロジックには触れません。勝率・平均利益・敗率・平均損失は、この工事では動きません。材料の値も変わりません。変わるのは、材料の検査が誤りを捕まえる力です。 |
+| root か symptom か | root です。検査が「自分と同じか」しか見ていなかったことが原因で、それを直します。 |
+| ベースアップ | 既知答えの定義は、参照表の定義・流儀の欄の文と、監査 CP60 の §5 の原典の逐語（TradingView の ALMA・TA-Lib の STC と SAREXT・LuxAlgo の HILO・StockCharts の VWAP）から取った。Wilder の PSAR・Chande & Kroll・PMax の作りは、監査 CP60 の4節の表と、ライブラリの実物（pandas_ta_classic の trend/psar.py・sarext.py・cksp.py・pmax.py）で確かめた。答えの数字はライブラリから写していない。 |
+
+【7-2 固定値ゼロ宣言】
+この工事に、疑似シミュから取った値は1つもありません。既知答えは合成の足から定義で導いた式です。壊し方の値も、当てた後の中身の行から道具が取りました。
+
+【7-3 変更の単位】
+変更は1つ＝参照表の検査の守りを直す（写しの印・定義から導いた既知答え・下げ続ける足の既知答え・3種の別の書き方・検査3 の数え方と番人）。材料の値と設定は変えない。
+
+【7-3b 作ってはいけないものとの照合】
+| 番号 | 当たるか | 理由 |
+|---|---|---|
+| 1 | 当たりません | 乱数を使いません。条件をつなぐものではなく、検査の守りを直すだけです |
+| 2 | 当たりません | 探す値には触りません |
+
+【7-4 塞げないもの】
+| 問い | 塞げないこと |
+|---|---|
+| 既知答えが、本物の値動きでの正しさまで見るか | 見ません。合成の足で、向き・列・未来・重み・符号を見るだけです |
+| 名指しの10件の外の独立実装が写しかどうか | 見ません。未判定（None）のままです |
+| 定義から導いた答えが、定義の読み違いでないか | 写しでライブラリの実物と合ったことまで。定義の読みは設計書の監査とまこさんの目です |
+| 軽い口（コマンドから呼ぶ --selftest-match）が、絞った列の外の検査3 まで見るか | 見ません。既知答えを持つ列と写しの印の列だけです。全列は全体の自己テスト（--selftest）が見ます |
+| Q5 の1＝完成の条件の数が合っていれば、中身も正しいか | 見ません。行の数がそろっていれば、欄の中身が入れ替わっていても通ります |
+| Q5 の2＝見出しの列の数が正しいか | 見出しの行を基準にします。見出し自体がずれていたら、その数を正しいものとして扱います |
+| Q5 の3＝表が2つ以上 在るとき | プログラムが読む目印の中の表だけを見ます。ほかの表は見ません |
+| Q5 の4＝この設計書を作る道具を書き換えられたら | その道具自身を書き換えれば無効にできます（承認ゲートの対象なので承認は要ります） |
+| Q5 の5＝過去の設計書の控え | 直せません（承認の後は凍結されているため） |
+
+【7-5 §4.6 の照合】
+- TARGET＝indicator_reference_diag.py・observe_diag.py と、新しい壊すプログラムを【7-8】に書いた。主なファイルは observe_diag.py（検査3 の照合本体）。
+- DESIGN_CONTRACT は【7-8】に在る（impl_file＝observe_diag.py・触る関数は道具が構文木の差から数えた）。
+- 新しく作るファイルは壊すプログラム（NEW_FILE）。手本は b142（MODEL）。
+- 真因は 7-1 に書いた。
+- 期待値分解は 7-1 に書いた（売買に触らないので動かない）。
+- root か symptom かは 7-1 に書いた。
+- ベースアップは 7-1 に書いた。
+- 変更は1つ（7-3）。
+- 過去の失敗の再演＝「独立実装と一致した」を「教科書どおり」と読み替えた（監査 CP60 の修正59 の欠陥）。この工事は、写しの印を付けて読み替えを機械で止める。
+- 新しい計算は材料に足さない（既知答えは検査の中だけ）。当てた後に H2 を取り直す。
+- 行番号を指す文書は、当てた後に動く（indicator_reference_diag.py・observe_diag.py に行が増える）。設計書の行番号は当てる前の実物のもの。
+- 直すファイルの名前を本文に持つ壊すプログラムを全部 探し、探す文字の数が当てる前と後で同じことを道具が数えた（4-13 の4）。前からの壊すプログラムが走らせるコマンドの旗は変えない。
+- 壊すプログラムが測るのは、観察の道具の軽い口（--selftest-match＝既知答えを持つ列と写しの印の列の検査3 と、写しの印の番人2つ）で、本物の結果の置き場には書かない。
+- 触る関数（DESIGN_CONTRACT の impl_functions・道具が書いた）＝indicator_reference_diag.py：<モジュール直下>・_alma_lag・_r・_ssf2_avg・_tb_sqz_carter・_vidya_cmo／observe_diag.py：<モジュール直下>・_insp_indicator_match・selftest・selftest_match。self_check_calls と must_use の名前は、当てた後の構文木に在ることを道具が ast で照らした。
+- 新しく足すコマンドの旗は1つ（observe_diag.py の --selftest-match・4-9）。資料の表・設定ファイルは触らない。
+- 2回目の承認の前に、実装の中で変わった手順を設計書に書き直す（その時にやる）。
+- 疑似シミュ由来の固定値は無い（7-2）。
+- ARC の目印は設計書の1行目に在る（iter=k4-reference-known-20261011）。
+- 1変更・過去の失敗の不再演は、7-3 と上の9行目に書いた。
+- 自己検査＝観察の道具の既知答え・写しの印の番人2つ・壊すプログラム（わざと壊して落ちるか）。写しで走らせ、全部 通った。
+
+【7-6 完成の条件】
+| 条件 | コマンド | 経路 | 壊し方 | 壊すプログラム | 監査確認 | いまの状態 |
+|---|---|---|---|---|---|---|
+| F-2＝close vs ALMA% の既知答え（定義から導いた遅れ）が通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | ALMA の重みを逆向き（ライブラリの元の 0.85）に戻す | b172_alma_weights_reversed.sh | — | 未着手 |
+| F-2＝STC の既知答え（範囲が 0 なら前の値）が通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | 範囲 0 で割る形にする | b173_stc_zero_range_divides.sh | — | 未着手 |
+| F-2＝close vs HILO% の既知答え（終値 − 11 の線）が通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | 線を売り側の列に差し替える | b174_hilo_short_column.sh | — | 未着手 |
+| F-2＝DPO% の既知答え（(n/2+1)＋(n−1)/2）が通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | 未来を見る版（centered=True）に戻す | b175_dpo_centered_future.sh | — | 未着手 |
+| F-3＝close vs SAREXT% の下げ続ける足の既知答え（終値＋5・絶対値）が通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | 絶対値を外す（監査 CP60 の符号の誤りに戻す） | b176_sarext_sign_not_abs.sh | — | 未着手 |
+| F-3＝PSAR加速 の下げ続ける足の既知答え（頭打ち 0.2）が通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | 加速の列を反転の列に差し替える | b177_psar_af_column.sh | — | 未着手 |
+| F-3＝close vs CKSPl% の下げ続ける足の既知答え（終値＋17）が通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | 買い側を売り側の列に差し替える | b178_cksp_long_short_swapped.sh | — | 未着手 |
+| F-3＝close vs PMAX% の下げ続ける足の既知答え（EMA10＋3×ATR10）が通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | 移動平均の入力を高値にする | b179_pmax_ma_of_high.sh | — | 未着手 |
+| F-2＝close vs VWAP% の既知答え（出来高 9 の足）が通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | 分子の出来高の重みを外す | b180_vwap_volume_weight_dropped.sh | — | 未着手 |
+| F-2＝THERMO% の既知答え（内はらみ足 0.5）が通る | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | EMA の列に差し替える | b181_thermo_ma_column.sh | — | 未着手 |
+| F-1・F-5＝写しの印の登録は既知答えを必ず持つ（番人①） | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | close vs HILO% の既知答えを外す | b182_copy_mark_without_known.sh | — | 未着手 |
+| F-5＝写しの独立実装だけでは一致検証済みにならない（番人②） | python3 scripts/priority_rebuild/observe_diag.py --selftest-match | 実経路 | 検査3 の直しを戻す | b183_copy_verified_by_tb_alone.sh | — | 未着手 |
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  "scripts/priority_rebuild/indicator_reference_diag.py",
+  "scripts/priority_rebuild/observe_diag.py",
+  ".claude/breaks/b172_alma_weights_reversed.sh",
+  ".claude/breaks/b173_stc_zero_range_divides.sh",
+  ".claude/breaks/b174_hilo_short_column.sh",
+  ".claude/breaks/b175_dpo_centered_future.sh",
+  ".claude/breaks/b176_sarext_sign_not_abs.sh",
+  ".claude/breaks/b177_psar_af_column.sh",
+  ".claude/breaks/b178_cksp_long_short_swapped.sh",
+  ".claude/breaks/b179_pmax_ma_of_high.sh",
+  ".claude/breaks/b180_vwap_volume_weight_dropped.sh",
+  ".claude/breaks/b181_thermo_ma_column.sh",
+  ".claude/breaks/b182_copy_mark_without_known.sh",
+  ".claude/breaks/b183_copy_verified_by_tb_alone.sh"
+ ],
+ "NEW_FILE": [
+  ".claude/breaks/b172_alma_weights_reversed.sh",
+  ".claude/breaks/b173_stc_zero_range_divides.sh",
+  ".claude/breaks/b174_hilo_short_column.sh",
+  ".claude/breaks/b175_dpo_centered_future.sh",
+  ".claude/breaks/b176_sarext_sign_not_abs.sh",
+  ".claude/breaks/b177_psar_af_column.sh",
+  ".claude/breaks/b178_cksp_long_short_swapped.sh",
+  ".claude/breaks/b179_pmax_ma_of_high.sh",
+  ".claude/breaks/b180_vwap_volume_weight_dropped.sh",
+  ".claude/breaks/b181_thermo_ma_column.sh",
+  ".claude/breaks/b182_copy_mark_without_known.sh",
+  ".claude/breaks/b183_copy_verified_by_tb_alone.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b142_rci_list_stale.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "scripts/priority_rebuild/observe_diag.py",
+  "_impl_file の意味": "照らす相手は実在するファイル。検査3 の照合本体（_insp_indicator_match）と自己テスト（selftest）が在る、観察の道具を照らす。参照表（indicator_reference_diag.py）の直しは TARGET と impl_functions で照らす。",
+  "impl_functions": {
+   "scripts/priority_rebuild/indicator_reference_diag.py": [
+    "<モジュール直下>",
+    "_alma_lag",
+    "_r",
+    "_ssf2_avg",
+    "_tb_sqz_carter",
+    "_vidya_cmo"
+   ],
+   "scripts/priority_rebuild/observe_diag.py": [
+    "<モジュール直下>",
+    "_insp_indicator_match",
+    "selftest",
+    "selftest_match"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数（実装の指示を全部 当てる前と後の構文木を関数ごとに比べて、k4_proposal_build.py が数えた）。",
+  "self_check_calls": [
+   "_insp_indicator_match",
+   "selftest",
+   "selftest_match",
+   "build_catalog"
+  ],
+  "_self_check_calls の意味": "実装の後の observe_diag.py に在るはずの、この工事が直す関数の名前。",
+  "must_use": {
+   "_insp_indicator_match": [
+    "build_catalog"
+   ],
+   "selftest": [
+    "selftest_match"
+   ]
+  },
+  "_must_use の意味": "検査3 の照合本体が、材料のカタログ（build_catalog）を読む（k4_proposal_build.py が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は、参照表の検査の守りを直すだけ。外から読む一覧の形（カタログの1件の形・設定の欄）は変えない。参照表の登録の欄 tb_kind は増えるが、既定 None で既存の登録は変わらない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の関数ごとの構文木の差（k4_proposal_build.py が数えた）",
+   "must_use": "ast で照らした",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```
+
+【外部検索】
+| 名前 | 中身 |
+|---|---|
+| 既知答えの定義の出どころ | 参照表の定義・流儀の欄の文と、監査 CP60 の §5 に引いてある原典の逐語（TradingView の ALMA・TA-Lib の STC と SAREXT・LuxAlgo の HILO・StockCharts の VWAP）。新しく Web は開いていない |
+| ライブラリの作りの確かめ | pandas_ta_classic 0.6.52 の実物（trend/psar.py・sarext.py・cksp.py・pmax.py・overlap/hilo.py・alma.py・volatility/thermo.py・trend/dpo.py）を読んだ。答えの数字はそこから写していない |

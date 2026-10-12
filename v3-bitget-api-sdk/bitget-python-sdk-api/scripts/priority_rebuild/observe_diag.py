@@ -4373,8 +4373,13 @@ def _insp_indicator_match(bars: pd.DataFrame, cfg: dict, catalog: list | None = 
                 if not bad:
                     marks.append("独立=点不足")
             elif dmax <= ref["tol"]:
-                marks.append(f"独立✓({dmax:.0e})")
-                verified.add(name)
+                if ref.get("tb_kind") == "写し":
+                    # ★K-4（2026-10-11・監査 CP60 の修正59）＝写しの独立実装（カタログかライブラリと同じ変形を別の書き方で写した物）は
+                    #   「自分と同じか」しか確かめていない＝一致しても検証済みに数えない。検証済みにするのは手計算の既知答え（③）。
+                    marks.append(f"独立(写し)✓({dmax:.0e})")
+                else:
+                    marks.append(f"独立✓({dmax:.0e})")
+                    verified.add(name)
             else:
                 marks.append(f"独立✗({dmax:.1e})")
                 ng.append(f"{name}: 教科書の独立実装と不一致（最大差 {dmax:.3e} > 許容 {ref['tol']:.0e}）")
@@ -7330,6 +7335,64 @@ def _insp_hidden_params() -> list:
     return ng
 
 
+def selftest_match(exit_: bool = True, with_verified: bool = False, full: bool = False):
+    """検査3（参照表との照合）と、写しの印の番人2つだけを走らせる軽い口
+    （工事 k4-reference-known-20261011・2026-10-11・監査 CP60 の修正59）。
+    口＝`--selftest-match`（完成の条件と壊すプログラム b172〜b183 が使う）。全体の自己テスト（selftest）からも full=True で呼ぶ。
+    手本＝selftest_catalog（口の形・selftest からの呼び方）。★全体の自己テストは1本 約2分かかり、承認の前の仮当て（A12）の
+    打ち切り 900秒に壊すプログラム12本が入らないため、検査3 と番人だけを切り出した。
+    full=False（コマンドの口）＝検査3 を「手計算の既知答えを持つ登録の列と、写しの印の列」だけに絞る（壊すプログラムが落とす相手は
+    全部この中に在る。全列では写しで92秒＝12本で900秒を超えた）。full=True（selftest から）＝正しいカタログの全列。
+    with_verified=True のときは (ng, 一致検証済みの列の集合) を返す（selftest が「検証済みにならない列」を数えるのに使う）。"""
+    cfg = load_config()
+    ng = []
+    import contextlib as _cl2
+    import io as _io2
+    _q = _io2.StringIO()
+    _t3 = np.arange(6000, dtype=float)
+    _c3 = pd.Series(100 + np.sin(_t3 / 9.0) * 2 + _t3 * 0.001,
+                    index=pd.date_range("2026-03-01", periods=6000, freq="5min"))
+    _sb3 = pd.DataFrame({"open": _c3.shift().fillna(_c3.iloc[0]), "high": _c3 + 0.1,
+                         "low": _c3 - 0.1, "close": _c3, "volume": 1.0}, index=_c3.index)
+    #  ①正しいカタログで検査3 が不一致を出さない（既知答え＝定義から導いた数字と、独立実装・ライブラリの照合）
+    _catm = build_catalog(cfg)
+    if not full:
+        _catm = [x for x in _catm if (iref.find(x[0])[0] or {}).get("known") is not None
+                 or (iref.find(x[0])[0] or {}).get("tb_kind") == "写し"]
+        if not _catm:
+            ng.append("既知答えを持つ列・写しの印の列がカタログに1本も無い（軽い口が回せない）")
+    with _cl2.redirect_stdout(_q):
+        _ng3m, _v3m, _r3m = _insp_indicator_match(_sb3, cfg, catalog=_catm)
+    if _ng3m:
+        ng.append(f"検査3 が正しいカタログで不一致を出す（許容差の線を疑う）: {_ng3m[:3]}")
+    #  ②写しの印（tb_kind="写し"）の登録は、手計算の既知答えを必ず持つ（独立実装だけでは検証済みにならないため）
+    for _e in iref.REFS:
+        if _e.get("tb_kind") == "写し" and _e["known"] is None:
+            ng.append(f"写しの印の登録に手計算の既知答えが無い: {_e['family']}")
+    #  ③写しの印の列は、既知答えを外すと「一致検証済み」に入らない（独立実装が合っても検証済みに数えない）
+    _cat_cp = [x for x in build_catalog(cfg)
+               if (iref.find(x[0])[0] or {}).get("tb_kind") == "写し" and (iref.find(x[0])[0] or {}).get("tb") is not None]
+    if not _cat_cp:
+        ng.append("写しの印の列がカタログに1本も無い（この番人が回せない）")
+    else:
+        _ecp = iref.find(_cat_cp[0][0])[0]
+        _kn_save = _ecp["known"]
+        _ecp["known"] = None
+        try:
+            with _cl2.redirect_stdout(_q):
+                _ngcp, _vcp, _rcp = _insp_indicator_match(_sb3, cfg, catalog=[_cat_cp[0]])
+        finally:
+            _ecp["known"] = _kn_save
+        if _cat_cp[0][0] in _vcp:
+            ng.append(f"写しの独立実装だけで一致検証済みになっている: {_cat_cp[0][0]}")
+    if exit_:
+        for x in ng:
+            print(f"  ❌ {x}")
+        print(f"  検査3（{'全列' if full else '既知答えを持つ列と写しの印の列 ' + str(len(_catm)) + ' 本'}）と写しの印の番人（--selftest-match）: ❌ {len(ng)} 件")
+        raise SystemExit(1 if ng else 0)
+    return (ng, _v3m) if with_verified else ng
+
+
 def selftest_catalog(exit_: bool = True) -> list:
     """K-1・K-8・G-2 の番人だけを走らせる軽い口（工事 m2c15-indicator-six-items-20261004・2026-10-04）。
     口＝`--selftest-catalog`（完成の条件と壊すプログラム b128・b129・b131 が使う）。全体の自己テスト（selftest）からも呼ぶ。
@@ -7883,10 +7946,10 @@ def selftest() -> None:
         _ng3, _v3, _r3 = _insp_indicator_match(_sb3, cfg, catalog=_fake)
     if not any("不一致" in x for x in _ng3):
         ng.append("検査3 がわざと壊した式（RSI を定数化）を見逃す")
-    with _cl2.redirect_stdout(_q):
-        _ng3b, _v3b, _r3b = _insp_indicator_match(_sb3, cfg)
-    if _ng3b:
-        ng.append(f"検査3 が正しいカタログで不一致を出す（許容差の線を疑う）: {_ng3b[:3]}")
+    # ★K-4（2026-10-11・監査 CP60 の修正59・工事 k4-reference-known-20261011）＝正しいカタログの検査3 と、写しの印の番人2つは
+    #   軽い口 selftest_match に切り出した（壊すプログラムが測る口）。ここからも呼ぶ＝全体の自己テストの中身は減らさない。
+    _ngm, _v3b = selftest_match(exit_=False, with_verified=True, full=True)
+    ng += _ngm
     # ★山と谷の部品の番人（2026-08-21・M2-2-6・受け入れ条件 24a453d6… の確かめ方8）
     #   ＝足した5部品の式をわざと壊すと、検査3 が1件ずつ見つけること。
     #   ★RSI だけを壊す上の番人では、あとから足した部品が照合の対象に入っているかを確かめられない
@@ -8515,6 +8578,8 @@ if __name__ == "__main__":
         selftest_insp5(bars_csv=_bc5)                 # （承認の打ち切り 120秒 に収めるための軽い口）
     if "--selftest-catalog" in sys.argv:              # ★K-1・K-8・G-2 の番人だけを（工事 m2c15-indicator-six-items-20261004・壊すプログラム b128・b129・b131 が使う）
         selftest_catalog()                            # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
+    if "--selftest-match" in sys.argv:                # ★検査3 と写しの印の番人だけを（工事 k4-reference-known-20261011・壊すプログラム b172〜b183 が使う）
+        selftest_match()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest-atr1h" in sys.argv:                # ★T-A1〜T-A5 だけを（設計書 m2e-bundle2-20260926・壊すプログラム b104〜b107 が使う）
         selftest_atr1h()                              # 中で終了コードを返す（0＝全部 通る／1＝❌ あり）
     if "--selftest" in sys.argv:

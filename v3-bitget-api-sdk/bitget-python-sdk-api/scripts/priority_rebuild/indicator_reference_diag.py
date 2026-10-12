@@ -950,15 +950,19 @@ MAKO_K3B = '2026-10-09 まこさん「よい」（K-3b の作りの3点＝確定
 MAKO_K3C = '2026-10-11 まこさん「把握してるならよい／指標の修正のゴールに対し、このフェーズでの修正案は正しく、齟齬が無いのであれば進めて良い」（K-3c の作りの5点＝新しい名前は作りの違いだけ・新しいパラメータは名前に出さない引数・式は監査の本文と原典の逐語から・Aberration 原作は別の材料・対応表と既知答えは K-3b と同じ形）＝逐語のファイル ok_k3c_design_20261011（m2c15-formula-textbook-20261011）。K-3 を3つの工事に分けた まこさん決定「A」＝ok_k3_split_20261007。THERMO の EMA の版＝ok_k7_pivot_thermo_20261007'
 
 
-def _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None):
+def _r(pat, family, teigi, ryugi, houkou, prop, tb=None, ext=None, known=None, tol=1e-6, mako=None, tb_kind=None):
     """材料の種類を1つ、定義表に登録する。
 
     ★mako（2026-09-05・M2-C-4・まこさん決定「案A にします」）＝**まこさんが個別に「使う」と
       決めた材料**に、その決定の逐語と日付を書く欄。既定は None＝既存の登録は1行も変わらない。
       この欄は印（indicator_switch.json）の源の4つ目が機械で読む＝CC が手書きの一覧を作らない。
+    ★tb_kind（2026-10-11・K-4・監査 CP60 の修正59）＝独立実装 tb が「教科書から書いた物」か「カタログかライブラリと同じ変形を
+      別の書き方で写した物（写し）」かの印。"写し" の登録は、検査3 で独立実装が合っただけでは「一致検証済み」に数えない
+      （照合が「自分と同じか」しか確かめていないため）＝手計算の既知答えが要る（観察の道具の自己テストの番人が見る）。
+      "教科書"＝教科書の式から書いた物。None＝まだ判定していない（既存の登録は1行も変わらない）。
     """
     REFS.append(dict(pat=re.compile("^" + pat + "$"), family=family, teigi=teigi, ryugi=ryugi,
-                     houkou=houkou, prop=prop, tb=tb, ext=ext, known=known, tol=tol, mako=mako))
+                     houkou=houkou, prop=prop, tb=tb, ext=ext, known=known, tol=tol, mako=mako, tb_kind=tb_kind))
 
 
 def _num(g):
@@ -1190,7 +1194,7 @@ _r(r"W字\((\d+),([\d.]+)\)", "W字",
    "まこさん判断不能のため feedback_design_judgment_owner に基づき CC が案A（教科書定義）で確定",
    "反転サイン＝1 は買い転換（ダブルボトム完成）の示唆", "reversal", tb=_tb_wpat,
    known=lambda p: [(_w_case(int(p[0]), 100.2), [(-1, 1.0, 1e-9)]),
-                    (_w_case(int(p[0]), 92.0), [(-1, 0.0, 1e-9)])])
+                    (_w_case(int(p[0]), 92.0), [(-1, 0.0, 1e-9)])], tb_kind="写し")
 # ── 山と谷（2026-08-21・M2-2-6・受け入れ条件 24a453d6… の C-1 と D）──
 _r(r"fractal高値距離%\((\d+)\)", "fractal高値距離%",
    "終値と、直近で確定した山（前後 k本 より高い中央のバー）との乖離%",
@@ -1235,7 +1239,14 @@ _r(r"close vs VWAP%(\d+)", "close vs VWAP",
    "終値ベースの移動 VWAP（出来高加重平均）からの乖離%",
    "★流儀に注意＝世界標準の VWAP はセッション起点＋典型価格。本カタログは n 本の移動窓＋終値で、24時間市場向けの本プロジェクトの流儀。外部照合は定義が違うため対象外",
    "順張り値", "trend", tb=_tb_vs_vwap,
-   known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)])])
+   # ★K-4（監査 CP60 の修正59）＝定義（出来高×終値の合計 ÷ 出来高の合計・n 本の移動窓＝流儀の欄）から導いた既知答えを足す。
+   #   ①出来高が全部 1 で1本ごとに 1 上げる足＝VWAP は終値の単純平均＝終値 − (n−1)/2
+   #   ②同じ足で最後の1本だけ出来高 9＝VWAP＝(n×終値 − n(n−1)/2 ＋ 8×終値) ÷ (n＋8)。出来高の重みを外すと①は通り②だけ落ちる。
+   known=lambda p: [(_flat(p[0] + 10), [(-1, 0.0, 1e-9)]),
+                    (_up(p[0] + 40), [(-1, ((100.0 + p[0] + 39) / ((100.0 + p[0] + 39) - (p[0] - 1) / 2.0) - 1.0) * 100.0, 1e-9)]),
+                    (_mk(100.0 + np.arange(p[0] + 40, dtype=float), v=np.r_[np.ones(p[0] + 39), 9.0]),
+                     [(-1, ((100.0 + p[0] + 39) / ((p[0] * (100.0 + p[0] + 39) - p[0] * (p[0] - 1) / 2.0 + 8.0 * (100.0 + p[0] + 39)) / (p[0] + 8.0)) - 1.0) * 100.0, 1e-9)])],
+   tb_kind="写し")
 # ★2026-10-07（工事 m2c15-period-textbook-20261007・監査 CP60 の修正41 の (b)(c)）＝教科書の VWAP（典型価格）の2つの版。
 def _tb_vs_vwap_tp(d, p):
     n = p[0]
@@ -1314,19 +1325,19 @@ _r(r"close vs pivotPP%(\d+)", "pivotPP",
    "ピボットポイント PP（n 本高値＋n 本安値＋前バー終値の平均）からの乖離%",
    "★流儀に注意＝教科書の PP は前の期間の高値・安値・終値。本カタログは移動窓の高安＋前バー終値の変形",
    "順張り値", "trend", tb=_tb_vs_pivot,
-   known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.0, 1e-6)])])
+   known=lambda p: [(_range_case(n=max(300, p[0] + 60)), [(-1, 0.0, 1e-6)])], tb_kind="写し")
 _r(r"close vs pivotR1%(\d+)", "pivotR1",
    "ピボットの抵抗1 R1（2×PP − n 本安値）からの乖離%",
    "★流儀に注意＝教科書の R1 は前の期間の高安・終値から。本カタログは PP と同じ移動窓の変形（2026-07-30 検査7 を受けて追加）。外部照合は定義が違うため対象外",
    "順張り値", "trend", tb=lambda d, p: _tb_vs_pivot_rs(d, p, +1),
    known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),
-                    (_range_case(n=max(300, p[0] + 60)), [(-1, (105.0 / 110.0 - 1) * 100, 1e-6)])])
+                    (_range_case(n=max(300, p[0] + 60)), [(-1, (105.0 / 110.0 - 1) * 100, 1e-6)])], tb_kind="写し")
 _r(r"close vs pivotS1%(\d+)", "pivotS1",
    "ピボットの支持1 S1（2×PP − n 本高値）からの乖離%",
    "★流儀に注意＝教科書の S1 は前の期間の高安・終値から。本カタログは PP と同じ移動窓の変形（2026-07-30 検査7 を受けて追加）。外部照合は定義が違うため対象外",
    "順張り値", "trend", tb=lambda d, p: _tb_vs_pivot_rs(d, p, -1),
    known=lambda p: [(_flat(p[0] + 20), [(-1, 0.0, 1e-9)]),
-                    (_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-6)])])
+                    (_range_case(n=max(300, p[0] + 60)), [(-1, 5.0, 1e-6)])], tb_kind="写し")
 
 
 def _pivot_day_case():
@@ -1385,20 +1396,20 @@ _r(r"close vs POC%(\d+)", "POC",
    # 手計算の既知答え（2026-08-09 新設・フロー 段3 の 3-4）。POC＝出来高が一番 厚い区画の中央。
    # 場合1（出来高が下に偏る 10:1）も 場合2（6:4）も、一番 厚いのは下の区画＝答えは同じ。
    known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),
-                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])])
+                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])], tb_kind="写し")
 _r(r"close vs VAH%(\d+)", "VAH",
    "バリューエリア上端（出来高上位70%帯の上端）からの乖離%", "Market Profile。25分割の近似",
    "順張り値", "trend", tb=lambda d, p: _tb_vs_vp(d, p, 1),
    # 場合1＝下の区画だけで出来高の91%を占める→上位70%帯は1区画で足りる→上端も下の区画。
    # 場合2＝下の区画は60%しか無い→上位70%帯に上の区画も要る→上端は上の区画。
    known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),
-                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_HI, 1e-9)])])
+                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_HI, 1e-9)])], tb_kind="写し")
 _r(r"close vs VAL%(\d+)", "VAL",
    "バリューエリア下端からの乖離%", "Market Profile。25分割の近似",
    "順張り値", "trend", tb=lambda d, p: _tb_vs_vp(d, p, 2),
    # 下端は どちらの場合も下の区画。
    known=lambda p: [(_vp_case(int(p[0]), 10, 1), [(-1, _VP_D_LO, 1e-9)]),
-                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])])
+                    (_vp_case(int(p[0]), 6, 4), [(-1, _VP_D_LO, 1e-9)])], tb_kind="写し")
 
 
 # ★2026-10-07（工事 m2c15-period-textbook-20261007・監査 CP60 の修正42）＝日で区切る出来高プロファイルの2つの版。
@@ -1492,7 +1503,11 @@ _r(r"S-Rタッチ数\((\d+),([\d.]+)\)", "S-Rタッチ数",
                          o=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],
                          h=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0],
                          l=np.r_[np.full(int(p[0]) + 5, 90.0), 100.0, 100.0, 100.0, 90.0, 90.0, 100.0]),
-                     [(-1, 3.0, 1e-9)])])
+                     [(-1, 3.0, 1e-9)]),
+                    # ★K-4（監査 CP60 の修正59）＝帯の外の既知答え＝前の n 本が全部 50 で最後の1本だけ 100（帯は 100±許容幅）＝触れる足は 0
+                    (_mk(np.r_[np.full(int(p[0]) + 12, 50.0), 100.0], o=np.r_[np.full(int(p[0]) + 12, 50.0), 100.0],
+                         h=np.r_[np.full(int(p[0]) + 12, 50.0), 100.0], l=np.r_[np.full(int(p[0]) + 12, 50.0), 100.0]),
+                     [(-1, 0.0, 1e-9)])], tb_kind="写し")
 
 
 # ★2026-10-09（工事 m2c15-shape-structure-20261009・K-3b・監査 CP60 の修正43・44・46）＝確定した山・谷で作る教科書の版。
@@ -1685,9 +1700,9 @@ _r(r"SMC_SWEEP確定", "SMC_SWEEP確定",
 
 # ★2026-10-11（工事 m2c15-formula-textbook-20261011・K-3c・監査 CP60 の修正37・45・47〜53 と K-7 の決定）＝計算式の教科書の版。
 #   独立の実装は、素直な繰り返しと部品（_roll・_ema_seed・_wilder）で書く。観察の道具がライブラリか pandas で書いた種類とは別の書き方。
-#   ★観察の道具も手の繰り返しで書いた3種は、同じ式の写しどうしの照らし（監査 CP73 の Q8）＝close vs SSF平均%（_ssf2_avg と
-#   observe_diag.py の _ssf_avg の繰り返しが同じ文字）・close vs VIDYA_CMO%（繰り返しが同じ文字）・SQZ_ON_Carter（Wilder の繰り返しと
-#   内側の判定の式が同じ文字）。この3種の式そのものは、出どころの逐語と読んで照らす。
+#   ★観察の道具も手の繰り返しで書いた3種（close vs SSF平均%・close vs VIDYA_CMO%・SQZ_ON_Carter）は、同じ式の写しどうしの照らしだった
+#   （監査 CP73 の Q8）。K-4（2026-10-11・まこさん「CCの案でOK」）で、この3種の独立の実装を別の書き方にした＝SSF は線形フィルタ
+#   （scipy.signal.lfilter）・VIDYA は畳み込みで CMO を出し accumulate で畳む・Carter の ATR は pandas の指数平滑。式の出どころは変えない。
 def _tb_rvol_rv(d, p):
     c = d.close.to_numpy(float)
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -1704,13 +1719,20 @@ def _geo_case(n=60, r=0.001):
 
 
 def _tb_sqz_carter(d, p, bb_length=20, bb_std=2.0, kc_length=20, kc_scalar=1.5):
+    """Carter のスクイーズの独立実装（K-4 で別の書き方にした）＝観察の道具は手の繰り返しで Wilder の ATR を出す。こちらは pandas の
+    指数平滑（alpha＝1/n・adjust=False＝(前×(n−1)＋今)/n と同じ式）に、最初の n 本の真の値幅の単純平均を種として渡す。"""
     o, h, l, c, v = _arr(d)
-    mid, sd = _roll(c, bb_length, "mean"), _roll(c, bb_length, "std", ddof=0)
-    km = _roll((h + l + c) / 3.0, kc_length, "mean")
-    atr = _wilder(_tr(h, l, c), kc_length)
-    on = ((mid - bb_std * sd) > (km - kc_scalar * atr)) & ((mid + bb_std * sd) < (km + kc_scalar * atr))
-    out = np.where(np.isnan(atr) | np.isnan(sd), np.nan, on.astype(float))
-    return _S(out, d)
+    tr = pd.Series(_tr(h, l, c), index=d.index)
+    seed = tr.iloc[1:kc_length + 1].mean()
+    x = tr.copy()
+    x.iloc[:kc_length] = np.nan
+    x.iloc[kc_length] = seed
+    atr = x.ewm(alpha=1.0 / kc_length, adjust=False).mean()
+    atr[x.isna().cummin()] = np.nan                       # 種より前は欠損
+    mid, sd = d.close.rolling(bb_length).mean(), d.close.rolling(bb_length).std(ddof=0)
+    km = ((d.high + d.low + d.close) / 3.0).rolling(kc_length).mean()
+    inside = ((mid - bb_std * sd) > (km - kc_scalar * atr)) & ((mid + bb_std * sd) < (km + kc_scalar * atr))
+    return inside.astype(float).where(atr.notna() & sd.notna())
 
 
 def _tb_stochrsi_raw(d, p):
@@ -1728,16 +1750,21 @@ def _tb_trix_ema_h(d, p):
 
 
 def _ssf2_avg(c: np.ndarray, n: int) -> np.ndarray:
-    """Ehlers のスーパースムーザー（2極）＝入力を (c + c[1])/2 にしたもの。"""
+    """Ehlers のスーパースムーザー（2極）＝入力を (c + c[1])/2 にしたもの（linnsoft の逐語「Filt = c1*(Close + Close[1]) / 2 + c2*Filt[1] + c3*Filt[2]」）。
+    K-4 で別の書き方にした＝線形フィルタ（scipy.signal.lfilter）で書く。分子＝[c1/2, c1/2]・分母＝[1, −c2, −c3]。
+    最初の2本は入力のまま（観察の道具と同じ始め方）＝その2本を初期状態（lfiltic）にして3本目から回す。"""
+    from scipy.signal import lfilter, lfiltic
     x = np.pi * np.sqrt(2.0) / n
     a0 = np.exp(-x)
     b0 = 2.0 * a0 * np.cos(x)
     c2, c3 = b0, -a0 * a0
     c1 = 1.0 - c2 - c3
-    out = c.astype(float).copy()
-    for i in range(2, len(c)):
-        out[i] = c1 * (c[i] + c[i - 1]) / 2.0 + c2 * out[i - 1] + c3 * out[i - 2]
-    return out
+    y = np.asarray(c, float).copy()
+    if len(y) > 2:
+        b, a = [c1 / 2.0, c1 / 2.0], [1.0, -c2, -c3]
+        zi = lfiltic(b, a, y=y[1::-1], x=y[1::-1])
+        y[2:] = lfilter(b, a, y[2:], zi=zi)[0]
+    return y
 
 
 def _tb_pos_ssf_avg(d, p):
@@ -1756,17 +1783,24 @@ def _tb_pos_trima_ta(d, p):
 
 
 def _vidya_cmo(c: np.ndarray, n: int, m: int = 9) -> np.ndarray:
+    """VIDYA で CMO の本数 m を n と別に持つ版（ta-lib.org の逐語「n = optInTimePeriod, m = optInCMOPeriod」）。
+    K-4 で別の書き方にした＝CMO の上げ・下げの合計は畳み込み（np.convolve）で出し、適応の漸化式 out←a×k×c＋(1−a×k)×out は
+    itertools.accumulate で畳む（種＝最初の n 本の単純平均）。"""
+    from itertools import accumulate
+    c = np.asarray(c, float)
     a = 2.0 / (n + 1)
-    up = _roll(np.r_[np.nan, np.diff(c)].clip(min=0), m, "sum")
-    dn = _roll((-np.r_[np.nan, np.diff(c)]).clip(min=0), m, "sum")
-    k = np.abs(_div(up - dn, up + dn))
+    dif = np.diff(c)
+    k = np.full(len(c), np.nan)
+    if len(c) > m:
+        up = np.convolve(np.clip(dif, 0.0, None), np.ones(m), "valid")
+        dn = np.convolve(np.clip(-dif, 0.0, None), np.ones(m), "valid")
+        k[m:] = np.abs(_div(up - dn, up + dn))
     out = np.full(len(c), np.nan)
     if len(c) < n:
         return out
-    out[n - 1] = float(np.nanmean(c[:n]))
-    for i in range(n, len(c)):
-        kk = 0.0 if np.isnan(k[i]) else k[i]
-        out[i] = a * kk * c[i] + (1 - a * kk) * out[i - 1]
+    kk = np.nan_to_num(k[n:], nan=0.0)
+    seed = float(np.nanmean(c[:n]))
+    out[n - 1:] = list(accumulate(zip(c[n:], kk), lambda prev, t: a * t[1] * t[0] + (1.0 - a * t[1]) * prev, initial=seed))
     return out
 
 
@@ -1822,7 +1856,7 @@ _r(r"SQZ_ON_Carter", "SQZ_ON_Carter",
    "スクイーズ（Carter の作り）＝ボリンジャー（終値の SMA ± 2σ）がケルトナー（代表値段の SMA ± 1.5×ATR（Wilder））の内側なら 1",
    "監査 CP60 の修正47＝StockCharts「Carter uses 20 periods for the moving average and ATR, and 1.5 for the ATR multiplier」。"
    "4つの数は名前に出さない引数（最初の値 20・2.0・20・1.5）。今の SQZ_ON（中心を終値の SMA・幅を真の値幅の SMA）は残す",
-   "状態量", "none", tb=_tb_sqz_carter, mako=MAKO_K3C)
+   "状態量", "none", tb=_tb_sqz_carter, mako=MAKO_K3C, tb_kind="教科書")
 _r(r"StochRSI素%K(\d+)", "StochRSI素%K",
    "RSI にストキャスを掛けた原式の値（ならさない・0〜100）",
    "監査 CP60 の修正48＝StockCharts「StochRSI = (RSI - Lowest Low RSI) / (Highest High RSI - Lowest Low RSI)」。今の %K（SMA3 でならす）は残す",
@@ -1836,7 +1870,7 @@ _r(r"TRIX_EMAヒスト\((\d+),(\d+)\)", "TRIX_EMAヒスト",
 _r(r"close vs SSF平均%(\d+)", "close vs SSF平均%",
    "終値が、入力を2本の平均にした Ehlers のスーパースムーザー（2極）から何%離れているか",
    "監査 CP60 の修正51＝linnsoft の逐語「Filt = c1*(Close + Close[1]) / 2 + c2*Filt[1] + c3*Filt[2];」。今の close vs SSF%（入力が終値）は残す",
-   "反転サイン", "trend", tb=_tb_pos_ssf_avg, mako=MAKO_K3C)
+   "反転サイン", "trend", tb=_tb_pos_ssf_avg, mako=MAKO_K3C, tb_kind="教科書")
 _r(r"close vs TRIMA_TA%(\d+)", "close vs TRIMA_TA%",
    "終値が TA-Lib の TRIMA（偶数の n＝SMA(SMA(x, n/2), n/2+1)）から何%離れているか",
    "監査 CP60 の修正52＝ta-lib.org「even: SMA(SMA(x,period/2),period/2+1)」。奇数の n は今の版と同じ。今の close vs TRIMA%（偶数でも n/2+1 を2回）は残す",
@@ -1844,7 +1878,7 @@ _r(r"close vs TRIMA_TA%(\d+)", "close vs TRIMA_TA%",
 _r(r"close vs VIDYA_CMO%(\d+)", "close vs VIDYA_CMO%",
    "終値が、CMO の本数 m を n と別に持つ VIDYA から何%離れているか",
    "監査 CP60 の修正52＝ta-lib.org「n = optInTimePeriod, m = optInCMOPeriod」。m は名前に出さない引数（最初の値 9＝資料の既定）。今の版（m=n）は残す",
-   "反転サイン", "trend", tb=_tb_pos_vidya_cmo, mako=MAKO_K3C)
+   "反転サイン", "trend", tb=_tb_pos_vidya_cmo, mako=MAKO_K3C, tb_kind="教科書")
 _r(r"close vs HT_TRENDLINE_HL%", "close vs HT_TRENDLINE_HL%",
    "終値が、入力を (高値＋安値)/2 にしたヒルベルト変換のトレンド線から何%離れているか",
    "監査 CP60 の修正53＝Ehlers の入力は (H+L)/2（ta-lib.org の表 79）。★変換が多段で独立実装を書けない。既知答え＝値段が一定なら ぴったり 0。今の版（入力が終値）は残す",
@@ -3219,10 +3253,14 @@ _r(r"SQZPRO_ON_NARROW", "SQZPRO_ON_NARROW",
 _r(r"STC", "STC",
    "シャフのトレンド周期。MACD にストキャスを2回 掛けて 0〜100 にしたもの",
    "Doug Schaff（Schaff Trend Cycle）。MACD にストキャスを2回 掛けて 0〜100 にする（10/12/26・係数 0.5）",
-   "順張り値", "trend", tb=_tb_stc)
+   "順張り値", "trend", tb=_tb_stc,
+   # ★K-4（監査 CP60 の修正59）＝TA-Lib の逐語「When a range is zero, the fraction keeps its previous value (0 before any).」から導いた
+   #   既知答え＝値段が一定なら MACD は 0 で範囲も 0＝2段とも 0 のまま。
+   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], tb_kind="写し")
 _r(r"STCstoch", "STCstoch",
    "上の STC が内部で使う、1回目のストキャスをならした値",
-   "同上（Schaff Trend Cycle の1段目）", "順張り値", "trend", tb=_tb_stcstoch)
+   "同上（Schaff Trend Cycle の1段目）", "順張り値", "trend", tb=_tb_stcstoch,
+   known=lambda p: [(_flat(400), [(-1, 0.0, 1e-9)])], tb_kind="写し")
 
 
 # ── 登録（3回目・アルファベット順 stochf〜willr）────────────────────────────
@@ -3276,11 +3314,27 @@ _r(r"VWMACDヒスト%\((\d+),(\d+),(\d+)\)", "VWMACDヒスト%",
 # ★移動平均は値段そのもの（H6 違反）なので、うちでは必ず2つの形にして使う。
 #   ①close vs X% ＝（終値 ÷ X − 1）× 100 ②X傾き% ＝ X の5本前からの変化率%（本プロジェクトの流儀）。
 # ★独立実装をまだ書いていないもの＝hilo・ht_trendline・hwma・jma（漸化式が多段で、写すと照合にならない）。
+def _alma_lag(n: int, sigma: float = 6.0, off: float = 0.85) -> float:
+    """ALMA の定義（Legoux／TradingView＝重みは正規分布・ずらし 0.85 で山が新しい側・幅 n/σ）から導く、
+    1本ごとに 1 上げる足での遅れ＝Σ 重み_i × (n−1−i) ÷ Σ 重み_i（i は窓の古い側から数える）。
+    ★K-4（監査 CP60 の修正59）の既知答え用。重みを逆向きに当てる（ライブラリの写し）と遅れは Σ 重み_i × i ÷ Σ 重み_i になり、
+    値が変わる＝監査 CP60 が見つけた向きの誤りを、この既知答えが捕まえる。"""
+    i = np.arange(n, dtype=float)
+    w = np.exp(-((i - off * (n - 1)) ** 2) / (2.0 * (n / sigma) ** 2))
+    return float(np.sum(w * (n - 1 - i)) / np.sum(w))
+
+
 _r(r"close vs ALMA%(\d+)", "close vs ALMA%",
    "終値が ALMA（ガウス重みの移動平均）から何%離れているか",
-   "Arnaud Legoux。重みは正規分布（ずらし 0.85・幅 n/6）＝ライブラリの既定", "反転サイン", "trend", tb=_tb_pos_alma)
+   "Arnaud Legoux。重みは正規分布（ずらし 0.85・幅 n/6）＝ライブラリの既定", "反転サイン", "trend", tb=_tb_pos_alma,
+   # ★K-4（監査 CP60 の修正59）＝定義から導いた既知答え＝1本ごとに 1 上げる足で、ALMA は終値 − 遅れ（_alma_lag）。
+   known=lambda p: [(_up(int(p[0]) + 40), [(-1, ((100.0 + int(p[0]) + 39) / ((100.0 + int(p[0]) + 39) - _alma_lag(int(p[0]))) - 1.0) * 100.0, 1e-9)])],
+   tb_kind="写し")
 _r(r"ALMA(\d+)傾き%", "ALMA傾き%",
-   "ALMA の5本前からの変化率%", "同上。傾きの5本は本プロジェクトの流儀", "順張り値", "trend", tb=_tb_slp_alma)
+   "ALMA の5本前からの変化率%", "同上。傾きの5本は本プロジェクトの流儀", "順張り値", "trend", tb=_tb_slp_alma,
+   # ★K-4＝1本ごとに 1 上げる足で、5本前からの変化＝5 ÷ (5本前の ALMA＝終値 − 5 − 遅れ) × 100。
+   known=lambda p: [(_up(int(p[0]) + 40), [(-1, 5.0 / ((100.0 + int(p[0]) + 39) - 5.0 - _alma_lag(int(p[0]))) * 100.0, 1e-9)])],
+   tb_kind="写し")
 _r(r"close vs DEMA%(\d+)", "close vs DEMA%",
    "終値が DEMA（二重指数移動平均）から何%離れているか",
    "Patrick Mulloy。2×EMA − EMA(EMA)", "反転サイン", "trend", tb=_tb_pos_dema)
@@ -3294,7 +3348,10 @@ _r(r"FWMA(\d+)傾き%", "FWMA傾き%",
 _r(r"close vs HILO%", "close vs HILO%",
    "終値が Gann の高安切替線から何%離れているか",
    "Gann HiLo Activator。高値13本平均・安値21本平均を、終値の上抜け／下抜けで切り替える（ライブラリの既定）",
-   "反転サイン", "none", tb=_tb_pos_hilo)
+   "反転サイン", "none", tb=_tb_pos_hilo,
+   # ★K-4（監査 CP60 の修正59）＝定義（Krausz＝前の13本の高値の平均を終値が上抜けたら、21本の安値の平均の線）から導いた既知答え
+   #   ＝1本ごとに 1 上げる足（高値＝終値・安値＝前の終値）では、終値は常に高値の平均の上＝線は安値の平均＝終値 − 11。
+   known=lambda p: [(_up(80), [(-1, (179.0 / 168.0 - 1.0) * 100.0, 1e-9)])], tb_kind="写し")
 _r(r"close vs HMA%(\d+)", "close vs HMA%",
    "終値が HMA（ハル移動平均）から何%離れているか",
    "Alan Hull。WMA(2×WMA(n/2) − WMA(n), √n)", "反転サイン", "trend", tb=_tb_pos_hma)
@@ -3472,37 +3529,56 @@ _r(r"CHOP(\d+)", "CHOP",
    "チョピネス指数。値動きの合計と、n 本の値幅の比を 0〜100 にしたもの（大きいほどもみ合い）",
    "E.W. Dreiss（Choppiness Index）。★レンジ判定の業界標準",
    "状態量＝大きいほどもみ合い（向きは持たない）", "none", tb=_tb_chop)
+# ★K-4（監査 CP60 の修正60）＝下の CKSP・PMAX・PSAR・SAREXT の既知答えに「下げ続ける合成のバー」を足した。
+#   足＝_dn(600, 1000.0, 1.0)（終値 1000 から1本ごとに 1 下げる・始値＝前の終値・高値＝始値・安値＝終値）。最後の終値 c＝401。
+#   答えは定義から導いた（ライブラリは見ていない）＝
+#   ・PSAR（Wilder）＝売り側。SAR_t＝SAR_{t−1}＋AF×(EP_{t−1}−SAR_{t−1})。毎本 新しい安値なので AF は 0.02 ずつ増えて 0.2 で頭打ち。
+#     EP_{t−1}＝前の終値＝c＋1。SAR と EP の差 g は g←0.8×(g＋1) で 4 に収束＝SAR＝c＋5 → close vs PSAR%＝(c/(c+5)−1)×100・加速 0.2・反転 0。
+#   ・SAREXT（TA-Lib）＝買いと売りの加速が同じ値なら PSAR と同じ線（絶対値に直してから割る）＝(c/(c+5)−1)×100。
+#   ・CKSP（TradingView の形 p=10・x=1・q=9・ATR は Wilder）＝真の値幅は毎本 1 → ATR＝1。買い側の逆指値＝直近 q 本の max(10本高値 − ATR)
+#     ＝(c＋2＋8＋10)−1＝c＋17（10本高値は 9本前の高値＝終値＋10、q 本の中で最大は 8本前）→ (c/(c+17)−1)×100。
+#     売り側＝直近 q 本の min(10本安値 ＋ ATR)＝今の安値 c ＋ 1 → (c/(c+1)−1)×100。
+#   ・PMAX（EMA10 ± 3×ATR10・下げでは上の帯）＝1本ごとに 1 下げる足で EMA10 の遅れは (10−1)/2＝4.5・ATR＝1 → 線＝c＋4.5＋3 → (c/(c+7.5)−1)×100。
+#   値段が一定の足（0）だけでは売り側を一度も通らない（監査 CP60 の修正60 の文）。
 _r(r"close vs CKSPl%", "close vs CKSPl%",
    "終値が Chande Kroll の買い側の逆指値から何%離れているか",
    "Chande & Kroll。★独立実装は書いていないが、定義から導ける既知答えで検証する＝"
    "値段が一定なら逆指値も その値に張り付くので、この列は ぴったり 0",
-   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),
+                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 17.0) - 1.0) * 100.0, 1e-6)])])
 _r(r"close vs CKSPs%", "close vs CKSPs%",
    "終値が Chande Kroll の売り側の逆指値から何%離れているか", "同上",
-   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),
+                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 1.0) - 1.0) * 100.0, 1e-6)])])
 _r(r"DPO%(\d+)", "DPO%",
    "デトレンド振動子。終値から「n本平均を (n/2+1) 本ずらしたもの」を引き、終値で割って%化",
    "標準（Detrended Price Oscillator）。★ライブラリの既定 centered=True は未来を見る"
    "（値を未来の足の方へずらす書き方を使う・2026-08-09 実測）ので、必ず centered=False で呼ぶ。"
    "%化は H6 のための本プロジェクトの流儀",
-   "反転サイン", "none", tb=_tb_dpo)
+   "反転サイン", "none", tb=_tb_dpo,
+   # ★K-4（監査 CP60 の修正59）＝流儀の欄の定義（終値 − n本平均を (n/2+1) 本ずらしたもの）から導いた既知答え
+   #   ＝1本ごとに 1 上げる足では (n/2+1) ＋ (n−1)/2 を終値で割って%化。教科書の版（DPO教科書%）とは別の値になる。
+   known=lambda p: [(_up(int(p[0]) * 2 + 40), [(-1, ((int(0.5 * int(p[0])) + 1) + (int(p[0]) - 1) / 2.0) / (100.0 + int(p[0]) * 2 + 39) * 100.0, 1e-9)])],
+   tb_kind="写し")
 _r(r"close vs PMAX%", "close vs PMAX%",
    "終値が PMAX（移動平均に値動きの荒さを足した追従線）から何%離れているか",
-   "ライブラリの計算式。★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0",
-   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+   "ライブラリの計算式。★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0・下げ続ける足なら EMA10＋3×ATR10 の上の帯（K-4）",
+   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),
+                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 7.5) - 1.0) * 100.0, 1e-6)])])
 _r(r"close vs PSAR%", "close vs PSAR%",
    "終値がパラボリック SAR（放物線の逆指値）から何%離れているか",
    "Wilder（Parabolic SAR）。買い側と売り側のうち、そのとき出ている方を使う。"
-   "★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0",
-   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+   "★定義から導ける既知答えで検証する＝値段が一定なら ぴったり 0・下げ続ける足なら売り側の SAR＝終値＋5（K-4）",
+   "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]),
+                                          (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 5.0) - 1.0) * 100.0, 1e-6)])])
 _r(r"PSAR加速", "PSAR加速",
    "パラボリック SAR の加速係数（0.02 ずつ増えて 0.2 で頭打ち）",
-   "Wilder。★定義から導ける既知答えで検証する＝値段が一定なら加速しないので初期値 0.02 のまま",
-   "状態量", "none", known=lambda p: [(_flat(600), [(-1, 0.02, 1e-9)])])
+   "Wilder。★定義から導ける既知答えで検証する＝値段が一定なら加速しないので初期値 0.02 のまま・下げ続ける足なら頭打ちの 0.2（K-4）",
+   "状態量", "none", known=lambda p: [(_flat(600), [(-1, 0.02, 1e-9)]), (_dn(600, 1000.0, 1.0), [(-1, 0.2, 1e-9)])])
 _r(r"PSAR反転", "PSAR反転",
    "パラボリック SAR が反転した足か。1 か 0",
-   "同上。★既知答えで検証する＝値段が一定なら反転しないので 0", "状態量", "none",
-   known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+   "同上。★既知答えで検証する＝値段が一定なら反転しないので 0・下げ続ける足でも反転しないので 0（K-4）", "状態量", "none",
+   known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]), (_dn(600, 1000.0, 1.0), [(-1, 0.0, 1e-9)])])
 _r(r"QSTICK%(\d+)", "QSTICK%",
    "Qスティック。（終値 − 始値）の n 本平均を、終値で割って%化",
    "Tushar Chande。★値段そのものではなく差なので、終値で割って%にする（H6）",
@@ -3510,7 +3586,8 @@ _r(r"QSTICK%(\d+)", "QSTICK%",
 _r(r"close vs SAREXT%", "close vs SAREXT%",
    "終値が 拡張パラボリック SAR から何%離れているか",
    "TA-Lib（SAREXT）。★定義から導ける既知答えで検証する＝値段が一定なら逆指値も その値に張り付くので"
-   "この列は ぴったり 0", "反転サイン", "none", known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)])])
+   "この列は ぴったり 0。下げ続ける足なら PSAR と同じ線（終値＋5・絶対値に直してから割る＝K-4）", "反転サイン", "none",
+   known=lambda p: [(_flat(600), [(-1, 0.0, 1e-9)]), (_dn(600, 1000.0, 1.0), [(-1, (401.0 / (401.0 + 5.0) - 1.0) * 100.0, 1e-6)])])
 _r(r"TTM_TREND(\d+)", "TTM_TREND",
    "TTM トレンド。終値が直近 n 本の中値の平均より上なら +1、下なら −1",
    "John Carter（TTM Trend）", "順張り値", "trend", tb=_tb_ttm)
@@ -4243,7 +4320,10 @@ _r(r"RVI(\d+)", "RVI",
 _r(r"THERMO%", "THERMO%",
    "エルダーの温度計＝安値の下げ幅と高値の上げ幅の大きい方を、終値で割って%化",
    "Alexander Elder（ライブラリの既定 length=20）。値段の単位なので終値で割る（H6）", "ボラ量", "vol",
-   tb=_tb_thermo_pct, known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)])])
+   tb=_tb_thermo_pct,
+   # ★K-4（監査 CP60 の修正59）＝流儀の欄の定義（安値の下げ幅と高値の上げ幅の絶対値の大きい方）から導いた既知答え
+   #   ＝内はらみ足（高値 101→100.5・安値 99→99.5）では 0.5 を終値 100 で割って%化＝0.5。教科書の版（THERMO原作%）は 0＝別の値になる。
+   known=lambda p: [(_flat(80), [(-1, 0.0, 1e-9)]), (_thermo_in_case(80), [(-1, 0.5, 1e-9)])], tb_kind="写し")
 _r(r"THERMO比", "THERMO比",
    "エルダーの温度計が、その20本 EMA の何倍か",
    "同上。★ライブラリはこの比に固定の閾値（2 と 0.5）を当てた 0/1 の列も返すが、その2列は入れない"

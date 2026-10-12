@@ -1,0 +1,115 @@
+{
+ "_なにこれ": "完成の条件の壊すプログラムを、承認のときに機械が走らせた記録。match が真の行だけ「済」にできる（監査 cp16 の E-12・cp29 の §5-5）",
+ "_欄の読み方": "code＝実際の終了コード ／ expect＝壊すプログラムが宣言した期待値 ／ means＝その値が意味すること ／ match＝一致したか。★b51 だけは向きが裏返っている（意味の文に書いてある）＝1 は『検査が落ちた』ではなく『土台ゲートが通った』",
+ "iter": "k4-reference-known-20261011",
+ "rows": [
+  {
+   "no": "1",
+   "script": "b172_alma_weights_reversed.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b172_alma_weights_reversed.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "2",
+   "script": "b173_stc_zero_range_divides.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b173_stc_zero_range_divides.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "3",
+   "script": "b174_hilo_short_column.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b174_hilo_short_column.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "4",
+   "script": "b175_dpo_centered_future.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b175_dpo_centered_future.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "5",
+   "script": "b176_sarext_sign_not_abs.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b176_sarext_sign_not_abs.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "6",
+   "script": "b177_psar_af_column.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b177_psar_af_column.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "7",
+   "script": "b178_cksp_long_short_swapped.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b178_cksp_long_short_swapped.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "8",
+   "script": "b179_pmax_ma_of_high.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b179_pmax_ma_of_high.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "9",
+   "script": "b180_vwap_volume_weight_dropped.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b180_vwap_volume_weight_dropped.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "10",
+   "script": "b181_thermo_ma_column.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b181_thermo_ma_column.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "11",
+   "script": "b182_copy_mark_without_known.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b182_copy_mark_without_known.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  },
+  {
+   "no": "12",
+   "script": "b183_copy_verified_by_tb_alone.sh",
+   "code": null,
+   "note": "壊すプログラムがありません: /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/breaks/b183_copy_verified_by_tb_alone.sh",
+   "expect": null,
+   "means": "",
+   "match": false
+  }
+ ]
+}
