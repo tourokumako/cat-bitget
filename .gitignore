@@ -71,5 +71,12 @@ v3-bitget-api-sdk/bitget-python-sdk-api/archive/leak_invalid_20260513/
 !.claude/state/verbatim/
 .claude/state/verbatim/*
 !.claude/state/verbatim/requirements-core-20261012/
+# ★2026-10-12 追加（172回目・まこさん「これもコミットして」）＝指標の修正対応表を作るプログラム make_fix_plan.py の1本だけ。
+#   next_step を2本に分けたときに、読む先を控えのファイルに合わせて直した（worklog 20261012 §35）。
+#   同じフォルダのほかのファイル（調べた結果・表を作るプログラム）は、git に入れるかが まだ決まっていない＝戻さない。
+#   フォルダを戻す → 中身を全部 除外 → この1本だけ戻す、の3段で書く（44〜45行と同じ理由）。
+!.claude/state/indicator_review/
+.claude/state/indicator_review/*
+!.claude/state/indicator_review/make_fix_plan.py
 # bitget 側 state はリポジトリ直下 .claude/state へのシンボリックリンク（2026-07-19 統合・パスミス無害化）＝リンク自体も無視（末尾スラッシュ無し）
 v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state
