@@ -197,7 +197,15 @@ _TOOL_OK_J = ('list_banned_words.py', 'gen_impl_functions.py', 'pre_audit_check.
               #   読むだけ。ファイルを1つも書かない（呼ぶのは gen_review.py --check と pre_audit_check.py --verify だけ）。
               #   承認の印・凍結の記録・hook・道具・戦略の .py には1バイトも書かない。
               #   限界＝道具そのものを書き替えれば、書く道を足せる（git diff には出る）。
-              'next_move.py')
+              'next_move.py',
+              # ★2026-10-12（170回目・まこさん「いいよ」＝土台ゲートの通す一覧に足してよいか、への答え）
+              #   ＝固定で載せる文（要件定義・工事の流れ・設計書の監査が要る物）の正本を、逐語のファイルから作る道具。
+              #   まこさん指示（2026-10-12）＝要件定義と工事の流れを、設計書・next_step・監査の依頼書の上部に固定で毎回 載せる。
+              #   ★書く先は道具の側（OUT）で .claude/rules/core_requirements.md の1本だけ。読むのは
+              #     .claude/state/verbatim/requirements-core-20261012/ の逐語のファイル（読むだけ）。
+              #   承認の印・凍結の記録・hook・道具・戦略の .py には1バイトも書かない。
+              #   限界＝道具そのものを書き替えれば、書く先の限りを外せる（git diff には出る）。
+              'gen_core_requirements.py')
 _RUN_SUB_J = ('-exec', '-execdir', '-ok', '-delete', '-fprint', 'system(',
               'popen(', 'os.system', chr(36) + chr(40), chr(96))
 _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')

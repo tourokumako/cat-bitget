@@ -67,6 +67,18 @@ TODO = RATCHET / "m2_todo.json"                     # ★2026-09-29＝設計の�
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gen_verbatim as gv                           # noqa: E402  ★2026-09-29＝まこさんの文の逐語のファイル
+import gen_core_requirements as gcr                 # noqa: E402  ★2026-10-12＝固定で載せる文（要件定義と工事の流れ）の正本
+
+# ★2026-10-12（170回目・まこさん「OK」＝直し方の案 A-1・A-4）＝固定で載せる文と、要件定義との照らしの表を、設計書の上部に載せる。
+CORE_MARK = "**■ 要件定義と工事の流れ（固定・毎回 読む・消さない）**"   # 載っているかを見る文字（正本の先頭の見出しを太字にした行）
+CORE_FROM = "20261012"                                                # この日付からの工事は、案に【0-R】（要件定義との照らし）が必ず要る
+
+
+def core_required(work: str) -> bool:
+    """工事名の末尾の日付（8桁）が CORE_FROM 以降か。日付の無い名前（自己テストの見本）と、それより前の工事は False。
+    ＝2026-10-12 より前に承認した設計書（例＝k4-reference-known-20261011）は、作り直しても中身が変わらない。"""
+    m = re.search(r"(\d{8})$", work or "")
+    return bool(m) and m.group(1) >= CORE_FROM
 
 
 def touches_trading(d: dict) -> bool:
@@ -382,6 +394,10 @@ def src_from_work(work: str) -> dict:
         elif k == "7-3b":
             d["作ってはいけないものとの照合"] = {r["番号"]: {"当たるか": r["当たるか"], "理由": r["理由"]}
                                     for r in _md_table(body, ("番号", "当たるか", "理由"), "【7-3b】", bad)}
+        elif k == "0-R":
+            # ★2026-10-12（A-4・まこさん「OK」）＝要件定義との照らし。番号は、正本の要件の番号（gen_core_requirements.requirement_items）
+            d["要件定義との照らし"] = {r["番号"]: {"関わるか": r["関わるか"], "合っているか": r["合っているか"], "根拠": r["根拠"]}
+                                for r in _md_table(body, ("番号", "関わるか", "合っているか", "根拠"), "【0-R】", bad)}
         elif k == "外部検索":
             # ★2026-09-29＝依頼書の道具（gen_audit_docs.py request-design --work）が読む。設計書には写さない
             d["外部検索"] = _md_table(body, ("名前", "中身"), "【外部検索】", bad)
@@ -404,6 +420,10 @@ def src_from_work(work: str) -> dict:
         d.setdefault(k, [])
     if touches_trading(d) and not d.get("作ってはいけないものとの照合"):
         bad.append("売買に触る工事なのに【7-3b】が無い")
+    # ★2026-10-12（A-4・まこさん「OK」）＝工事名の日付が 2026-10-12 以降の工事は、要件定義との照らし（【0-R】）を必ず書く
+    if core_required(work) and not d.get("要件定義との照らし"):
+        bad.append("OK された案に【0-R】（要件定義との照らし）が無い。表の列＝番号・関わるか・合っているか・根拠。"
+                   "番号は `python3 .claude/tools/gen_core_requirements.py --items` が出す要件の番号（まこさん指示 2026-10-12）")
     if bad:
         raise SystemExit(f"[gen_acceptance] 工事のフォルダ {work} から設計書を組めません（fail-closed・全部で {len(bad)} 件）:\n  "
                          + "\n  ".join(bad))
@@ -928,7 +948,8 @@ TODO_FIELDS = ("一文", "中身", "触るファイル", "出るもの", "確か
 # ★2026-09-29（まこさん指摘「設計書がでたらめ」・worklog 20260929 §84）＝完成の条件を 7-6 から 6-4 へ移したのに、
 #   ここに 7-6 が残っていて、対応の表が無い節を指しても止まらなかった。7-6 を外し、6-4（完成の条件）・6-5（監査の指摘）を足した。
 #   ★同日 まこさん指示「もともとの構成テンプレに合わせて」で、完成の条件を 7-6 に戻した＝一覧も元に戻した。
-FIXED_SECTIONS = {"1", "2-1", "3-1", "3-2", "5", "6-1", "6-2", "6-3", "7-1", "7-2", "7-3", "7-3b",
+FIXED_SECTIONS = {"0-R",                                                          # ★2026-10-12（A-4）＝要件定義との照らし
+                  "1", "2-1", "3-1", "3-2", "5", "6-1", "6-2", "6-3", "7-1", "7-2", "7-3", "7-3b",
                   "7-4", "7-5", "7-6", "7-7", "7-8"}                            # page が必ず出す節の番号
 NO_MATCH = "対応なし"                                                           # 理由を必ず書く
 # ★2026-09-29＝完成の条件を 7-6 から 6-4 へ移した。元データ（ratchet・CC は書けない）の対応の表に残る「7-6」は
@@ -1406,6 +1427,31 @@ def page(d: dict) -> str:
         f"作り直し＝`python3 .claude/tools/gen_acceptance.py --work {WORK} --write`。検出＝`--work {WORK} --verify`。")
     add("")
 
+    # ★2026-10-12（170回目・まこさん「OK」＝直し方の案 A-1・A-4）＝要件定義と工事の流れ（固定で載せる文）と、
+    #   要件定義とこの工事の照らしの表を、設計書の上部に載せる。
+    #   まこさん指示（2026-10-12）＝要件定義を設計書の上部に固定で毎回 載せ、要件定義どおりに個別の工事が対応できているかを確かめる。
+    #   載せる工事＝OK された案に【0-R】が在る工事と、工事名の日付が 2026-10-12 以降の工事
+    #   （それより前に承認した設計書は、作り直しで中身が変わらないように、載せない）。
+    if d.get("要件定義との照らし") or core_required(d.get("iter", "")):
+        add("## 要件定義と工事の流れ（固定・毎回 載せる・消さない）")
+        add("")
+        add(_tag("自動", "正本 .claude/rules/core_requirements.md からプログラムが写した（まこさん指示 2026-10-12）"))
+        for _ln in gcr.embed_lines():
+            add(_ln)
+        add("")
+        add("### 0-R 要件定義との照らし（この工事が、上の要件定義に合っているか）")
+        add("")
+        add(_tag("自動", "左の2列は正本・右の3列は まこさんが OK した案の【0-R】"))
+        add("| # | 要件（正本から） | この工事は関わるか | 合っているか | 根拠 |")
+        add("|---|---|---|---|---|")
+        _hr = d.get("要件定義との照らし") or {}
+        for _no, _name in gcr.requirement_items():
+            _r = _hr.get(_no)
+            if not _r:
+                raise SystemExit(f"[gen_acceptance] 要件定義の {_no}（{_name}）との照らしが、OK された案の【0-R】に無い（fail-closed）")
+            add(f"| {_no} | {_name} | {_r['関わるか']} | {_r['合っているか']} | {_r['根拠']} |")
+        add("")
+
     add("## 0｜設計のもと（まこさんの発言と、まこさんが OK した文）")
     add("")
     # ★2026-09-29（まこさんが OK した提案の7行目「「まこさんの決定」を私が手で書く口は閉じます。」）
@@ -1653,6 +1699,7 @@ def page(d: dict) -> str:
         add(_tag("自動", "TARGET と NEW_FILE から非該当を決めた"))
         add(NONTRADE)
     else:
+        add(_tag("自動", "左の2列は要件の正本・右の2列は まこさんが OK した案の【7-3b】"))
         add("**★左の2列は、要件の正本からプログラムが取り出しています（手で写していません）。**"
             "出どころ＝`.claude/ratchet/engine_tuner_requirements.json`。"
             "**一覧が増えたら、この表も自動で増えます。**照合を書かないと設計書を作り直せません。")
@@ -2272,6 +2319,33 @@ def selftest() -> int:
             print(f"   T{total} 囲みの外に1行 足すと --verify が ❌ → pass")
         else:
             print(f"   T{total} 囲みの外の1行を見つけない → fail（rc={rc16}）")
+
+        # T18・T19（2026-10-12・170回目・まこさん「OK」＝直し方の案 A-1・A-4）＝OK された案に【0-R】（要件定義との照らし）が
+        #   在る工事は、設計書の上部に固定で載せる文と、照らしの表が出る。見本（【0-R】が無く、工事名に日付が無い）には出ない。
+        #   照らしが1行でも無ければ止まる。
+        total += 1
+        _items = gcr.requirement_items()
+        d18 = _copy.deepcopy(base_d)
+        d18["要件定義との照らし"] = {_no: {"関わるか": "見本", "合っているか": "見本", "根拠": "見本"} for _no, _nm in _items}
+        _p18 = page(d18)
+        if (CORE_MARK in _p18 and "### 0-R " in _p18 and CORE_MARK not in page(base_d)
+                and all(f"| {_no} | {_nm} | 見本 | 見本 | 見本 |" in _p18 for _no, _nm in _items)):
+            ok += 1
+            print(f"   T{total} 【0-R】が在る工事は、上部に固定で載せる文と照らしの表（{len(_items)} 行）が出る・無い見本には出ない → pass")
+        else:
+            print(f"   T{total} 固定で載せる文か照らしの表が出ない → fail")
+        total += 1
+        d19 = _copy.deepcopy(d18)
+        d19["要件定義との照らし"].pop(_items[-1][0])
+        try:
+            page(d19)
+            print(f"   T{total} 照らしが1行 無くても止まらない → fail")
+        except SystemExit as e:
+            if "照らし" in str(e):
+                ok += 1
+                print(f"   T{total} 照らしが1行 無いと止まる → pass")
+            else:
+                print(f"   T{total} 別の理由で止まった → fail（{str(e)[:120]}）")
 
         # T14（2026-09-30・同じ設計書）＝本物の設計書と ratchet の直下のファイルに1バイトも書いていない
         total += 1

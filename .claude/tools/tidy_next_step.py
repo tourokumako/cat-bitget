@@ -60,6 +60,8 @@ H02 = "### 0-2 "
 HB2 = "### （0-b-2）"
 HD = "### （0-d）"
 HERE_MARK = "★いまここ"
+# ★2026-10-12（A-3）＝固定で載せる文が next_step に入っているかを見る文字（正本の先頭の見出しを、gen_core_requirements が太字の行にした物）
+CORE_MARK = "**■ 要件定義と工事の流れ（固定・毎回 読む・消さない）**"
 # ★(f) 2026-08-28（まこさん指示「直して」）＝0-2 の表に「終わった行」を残せなくする。
 #   なぜ要るか＝(a)〜(e) はどれも「終わった行が表に残っているか」を見ていない。
 #   実測（同日）＝0-2 の表に ✅済 10行・取り消し線 4行・これからやる行 1行。
@@ -421,6 +423,15 @@ def parse_doc(text: str) -> dict:
     return {"節": secs, "末尾の改行": trailing}
 
 
+def _core_lines() -> list[str]:
+    """固定で載せる文（要件定義と工事の流れ）を、正本から写す形で返す（2026-10-12・A-3）。
+    正本（.claude/rules/core_requirements.md）が無い・逐語のファイルと違うときは、gen_core_requirements が止める（fail-closed）。"""
+    import sys
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    import gen_core_requirements as gcr
+    return gcr.embed_lines()
+
+
 def render(src: dict) -> str:
     """元データから next_step.md の本文を作る（目印の行は付けない）。"""
     out: list[str] = []
@@ -433,6 +444,10 @@ def render(src: dict) -> str:
         for blk in sec.get("塊", []):
             if "文" in blk:
                 out.extend(blk["文"])
+            elif "正本" in blk:
+                # ★2026-10-12（A-3）＝この塊は元データに文を持たない。作るたびに正本から写す（正本を直せば、次の --write で next_step も変わる）。
+                #   ★--import（next_step.md から元データを作り直す口）は、この塊を「文」に変えてしまう＝使ったら、塊を {"正本": …} に戻す。
+                out.extend(_core_lines())
             else:
                 t = blk["表"]
                 out.append(t["見出しの行"])
@@ -670,6 +685,11 @@ def reading_checks(text: str) -> list[str]:
         if long_cells:
             ng.append(f"(j) 0-2 の表に {CELL_MAX} 字を超える欄が {len(long_cells)} 個 在る＝短くし、経緯は worklog へ"
                       f"／1つ目＝{long_cells[0][:40]}（{len(long_cells[0])}字）")
+    # ★2026-10-12（170回目・まこさん「OK」＝直し方の案 A-3）＝固定で載せる文（要件定義と工事の流れ）が、next_step に在るか。
+    #   まこさん指示（2026-10-12）＝要件定義と工事の流れを、設計書・next_step・監査の依頼書の上部に固定で載せる。絶対に消さない。
+    if CORE_MARK not in text:
+        ng.append(f"(n) 固定で載せる文（{CORE_MARK}）が無い＝元データ next_step_src.json の節に、"
+                  "正本を写す塊（{\"正本\": \"core_requirements\"}）を戻す（消さない・まこさん指示 2026-10-12）")
     return ng
 
 
@@ -783,7 +803,7 @@ def do_verify(next_path: pathlib.Path, limit: int) -> int:
             print(f"   ・{x}")
         return 2
     n0 = sec0_lines(text.splitlines())
-    _n_chk = ("13個（6つ＋(g) 元データと全文のハッシュ値＋(h)〜(k) 読む形＋(l) 教訓の件数・(m) 監査の写し）"
+    _n_chk = ("14個（6つ＋(g) 元データと全文のハッシュ値＋(h)〜(k)・(n) 読む形と固定で載せる文＋(l) 教訓の件数・(m) 監査の写し）"
               if (next_path.parent / SRC_NAME).exists() else "6つ")
     print(f"✅ [tidy --verify] {_n_chk}とも通った（§0 {n0} 行／上限 {limit}）")
     return 0

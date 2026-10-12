@@ -26,7 +26,11 @@
 
 限界（正直に）
   ・印は「ファイルが在るか・記録が在るか・検査が通るか」で見る。中身が正しいかは見ない（見直し表・監査・まこさんの目）。
-  ・設計書の監査（設計書を監査に出す段）は、出すかどうかを まこさんが工事ごとに決めるので、事実だけを出し、段の判定には使わない。
+  ・設計書の監査（設計書を監査に出す段）は、段の判定に使う（★2026-10-12・まこさん決定「設計書の監査は飛ばさない」
+    ＝.claude/rules/core_requirements.md の「工事の流れ」）。見るのは「依頼書が設計の中身を問う形か（固定で載せる文が入っているか）」
+    「結果ファイルが在るか」「当てていない修正が残っていないか」まで。監査が設計の中身を正しく見たかは見ない。
+  ・2026-10-12 より前に作った工事は、設計の中身を問う監査を出していないので、段5 が「まだ」と出る。
+    終わった工事を確かめ直すかどうかは、まこさんが決める（このプログラムは事実を出すだけ）。
   ・恒久71番＝読むためのプログラムなので、壊すプログラムと自己テストは付けない。走らせて確かめる。
   ・このプログラムを走らせるかどうかは、CC に掛かっている（止める hook は無い）。
 """
@@ -164,6 +168,13 @@ def facts(work: str, session: str) -> dict:
                     a["undecided"].append(num)
                 else:
                     a["pending"].append(num)
+        # ★2026-10-12＝依頼書が、設計の中身を問う形か（依頼書を作るプログラムが固定で載せる文の見出しが入っているか）
+        a["core"] = False
+        if a["request"]:
+            try:
+                a["core"] = gad.CORE_MARK in a["request"].read_text(encoding="utf-8")
+            except OSError:
+                a["core"] = False
         f["audit"][kind] = a
     # 案の試しの記録（このセッション）
     tp = STATE / "sessions" / (session or "_nosession") / "trial_last.json"
@@ -202,36 +213,59 @@ def steps(f: dict) -> list:
               later,
               f"いまの設計書がこの工事か＝{'はい' if f['acc_is_this'] else 'いいえ'}・承認の控え＝{rel(f['archive']) if f['archive'] else '（無い）'}",
               [usage(".claude/tools/gen_acceptance.py", "--work <工事名> --write")]))
-    s.append(("5 設計書の見直し → 承認（まこさんが打つ）",
+    # ★2026-10-12（まこさん決定「設計書の監査は飛ばさない」）＝設計書の監査の段を2つ足した（承認の前）。
+    #   流れの正本＝.claude/rules/core_requirements.md の「工事の流れ」の 3〜5（設計書の監査 → 結果の確認 → 設計書の修正）。
+    des = f["audit"]["design"]
+    old = "" if re.search(r"(\d{8})$", work) and re.search(r"(\d{8})$", work).group(1) >= "20261012" else \
+        "・2026-10-12 より前に作った工事（終わった工事を確かめ直すかは まこさんが決める）"
+    s.append(("5 設計書の監査の依頼書（手書きの文書 → 依頼書 → 見直し表 → まこさんに渡す）",
+              bool(des["request"]) and des["core"],
+              f"手書きの文書＝{rel(des['hand']) if des['hand'] else '（無い）'}・依頼書＝{rel(des['request']) if des['request'] else '（無い）'}"
+              f"・依頼書が設計の中身を問う形か（固定で載せる文が入っているか）＝{'はい' if des['core'] else 'いいえ'}{old}",
+              [usage(".claude/tools/gen_audit_docs.py", "HAND_FORM = "),
+               usage(".claude/hooks/check_source_on_save.py", "手で確かめる"),
+               usage(".claude/tools/gen_audit_docs.py", "request-design <design|impl> --work"),
+               usage(".claude/tools/gen_review.py", "--skeleton"),
+               usage(".claude/tools/gen_review.py", "抜けを見つけたまま渡さない")]))
+    dleft = len(des["pending"]) + len(des["undecided"])
+    s.append(("6 設計書の監査の結果の確認 → まこさんが直す範囲を決める → 設計書を直す",
+              bool(des["request"]) and des["core"] and bool(des["report"]) and dleft == 0,
+              f"結果ファイル＝{rel(des['report']) if des['report'] else '（まだ無い）'}"
+              f"・状態が「確定」で まだ当てていない修正＝{'・'.join(des['pending']) or '無い'}／「未決」「案が複数」の修正＝{'・'.join(des['undecided']) or '無い'}",
+              ["結果ファイルができるまで待つ（別のセッションで監査中）。監査が見るファイルは書き替えない",
+               usage(".claude/tools/apply_audit_fix.py", "apply_audit_fix.py --report"),
+               "直す範囲（Critical だけか・Major もか・Minor もか）は、まこさんが結果ファイルを見て決める（恒久65番）",
+               "設計の中身の誤りは、ここで直す（実装の監査では問わない＝core_requirements.md の「工事の流れ」）"]))
+    s.append(("7 設計書の見直し → 承認（まこさんが打つ）",
               f["approved"],
               f"承認の記録＝{'在る' if f['approved'] else '無い'}",
               [usage(".claude/tools/gen_review.py", "抜けを見つけたまま渡さない"),
                usage(".claude/hooks/require_design_check_before_approval.py", "手で試す"),
                "承認のコマンドは、承認のプログラムの頭の「使い方」の行（.claude/hooks の approve_impl.sh の 10〜11行）。まこさんが打つ"]))
-    s.append(("6 実装（設計書の実装の指示を当てる）",
+    s.append(("8 実装（設計書の実装の指示を当てる）",
               f["n_fix"] > 0 and f["n_done"] == f["n_fix"],
               f"実装の指示 {f['n_fix']} 件のうち、当てた記録に在る物 {f['n_done']} 件",
               [usage(".claude/tools/apply_audit_fix.py", "apply_audit_fix.py --design"),
                "当てた後＝当てた分をコミット（まこさんの OK）→ G2 → H2 → gen_regime_kb.py --write todo → 監査に出す前のチェック",
                usage(".claude/tools/pre_audit_check.py", "pre_audit_check.py --run"),
                usage(".claude/tools/pre_audit_check.py", "pre_audit_check.py --verify")]))
-    s.append(("7 実装の監査の依頼書の元（手書きの文書）→ まこさんの OK",
+    s.append(("9 実装の監査の依頼書の元（手書きの文書）→ まこさんの OK",
               bool(imp["hand"]) or bool(imp["request"]),
               f"監査依頼の手書きの文書＝{rel(imp['hand']) if imp['hand'] else '（無い）'}",
               [usage(".claude/tools/gen_audit_docs.py", "HAND_FORM = "),
                usage(".claude/hooks/check_source_on_save.py", "手で確かめる")]))
-    s.append(("8 実装の監査の依頼書を作る → 見直し表 → まこさんに渡す",
+    s.append(("10 実装の監査の依頼書を作る → 見直し表 → まこさんに渡す",
               bool(imp["request"]),
               f"依頼書＝{rel(imp['request']) if imp['request'] else '（無い）'}",
               [usage(".claude/tools/gen_audit_docs.py", "request-design <design|impl> --work"),
                usage(".claude/tools/gen_review.py", "--skeleton"),
                usage(".claude/tools/gen_review.py", "抜けを見つけたまま渡さない")]))
-    s.append(("9 監査の結果を待つ",
+    s.append(("11 実装の監査の結果を待つ",
               bool(imp["report"]),
               f"結果ファイル＝{rel(imp['report']) if imp['report'] else '（まだ無い）'}",
               ["結果ファイルができるまで待つ（別のセッションで監査中）。監査が見るファイルは書き替えない"]))
     left = len(imp["pending"]) + len(imp["undecided"])
-    s.append(("10 監査の結果の確認 → まこさんが直す範囲を決める → 修正を当てる",
+    s.append(("12 実装の監査の結果の確認 → まこさんが直す範囲を決める → 修正を当てる",
               bool(imp["report"]) and left == 0,
               f"状態が「確定」で まだ当てていない修正＝{'・'.join(imp['pending']) or '無い'}／「未決」「案が複数」の修正＝{'・'.join(imp['undecided']) or '無い'}",
               [usage(".claude/tools/apply_audit_fix.py", "apply_audit_fix.py --report"),
@@ -252,23 +286,34 @@ def conditions(f: dict, idx: int) -> list:
             out.append((f["trial"], "案の試しの記録（trial_last.json）が、この工事で「通った」になっている"))
         out.append((None, "案は、決まった見出し（【4-0 …】の形）の文の全文をチャットに出す（リンクだけにしない・案の後ろに報告を書かない）"
                           "＝設計書を作るプログラムは、やり取りの記録から読む"))
-    if idx == 4:                                              # 設計書 → 承認
+    des = f["audit"]["design"]
+    if idx == 4 and des["hand"]:                              # 設計書の監査の手書きの文書は在る・設計の中身を問う依頼書は まだ
+        import check_source_on_save as cs0
+        _w0, bad0, why0 = cs0.check(des["hand"], des["hand"].read_text(encoding="utf-8"))
+        if why0:
+            out.append((None, f"設計書の監査の手書きの文書の検査を走らせられない＝{why0}"))
+        else:
+            out.append((not bad0, "設計書の監査の手書きの文書を、依頼書を作るプログラムが読める" + ("" if not bad0 else "＝" + " ／ ".join(bad0))))
+    if idx == 5 and des["request"] and not des["report"]:     # 設計書の監査の依頼書は在る・結果は まだ＝まこさんに渡す前
+        rc, last = run(["python3", ".claude/tools/gen_review.py", "--check", rel(des["request"])])
+        out.append((rc == 0, f"設計書の監査の依頼書の見直し表の照らし（gen_review.py --check）＝{last}"))
+    if idx == 6:                                              # 設計書 → 承認
         rc, last = run(["python3", ".claude/tools/gen_review.py", "--check", ".claude/state/acceptance.md"])
         out.append((rc == 0, f"設計書の見直し表の照らし（gen_review.py --check）＝{last}"))
         out.append((None, "承認の前の検査（A1〜A14・仮当てを含む）は時間がかかるので、ここでは走らせていない。上の「手で試す」の行で走らせる"))
-    if idx == 7 and imp["hand"]:                              # 手書きの文書は在る・依頼書は まだ＝OK をお願いする前
+    if idx == 9 and imp["hand"]:                              # 手書きの文書は在る・依頼書は まだ＝OK をお願いする前
         import check_source_on_save as cs
         _what, bad, why = cs.check(imp["hand"], imp["hand"].read_text(encoding="utf-8"))
         if why:
             out.append((None, f"手書きの文書の検査を走らせられない＝{why}"))
         else:
             out.append((not bad, "手書きの文書を、依頼書を作るプログラムが読める" + ("" if not bad else "＝" + " ／ ".join(bad))))
-    if idx == 8 and imp["request"]:                           # 依頼書は在る・結果は まだ＝まこさんに渡す前
+    if idx == 10 and imp["request"]:                          # 依頼書は在る・結果は まだ＝まこさんに渡す前
         rc, last = run(["python3", ".claude/tools/gen_review.py", "--check", rel(imp["request"])])
         out.append((rc == 0, f"依頼書の見直し表の照らし（gen_review.py --check）＝{last}"))
         rc, last = run(["python3", ".claude/tools/pre_audit_check.py", "--verify"])
         out.append((rc == 0, f"監査に出す前のチェックの記録（pre_audit_check.py --verify）＝{last}"))
-    if idx in (5, 9):                                         # 当てる前（段6＝設計書の指示・段10＝監査の修正）
+    if idx in (7, 11):                                        # 当てる前（段8＝設計書の指示・段12＝実装の監査の修正）
         out += apply_preconditions(f)
     return out
 
@@ -361,9 +406,6 @@ def main() -> int:
     for i, (name, done, ev, _n) in enumerate(st):
         head = "✅ 済" if done else ("▶ いまここ" if i == cur else "・ まだ")
         print(f"  {head}｜{name}｜{ev}")
-    d = f["audit"]["design"]
-    print(f"  （設計書の監査＝手書きの文書 {'在る' if d['hand'] else '無い'}・依頼書 {rel(d['request']) if d['request'] else '無い'}"
-          f"・結果 {rel(d['report']) if d['report'] else '無い'}。出すかどうかは まこさんが工事ごとに決める）")
     print("")
     if cur is None:
         print("いまの段＝この工事の流れは、最後の段まで済んでいる")
