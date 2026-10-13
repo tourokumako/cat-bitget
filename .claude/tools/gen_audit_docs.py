@@ -737,7 +737,9 @@ def _dirty_outside(targets: list) -> list:
             continue
         if not any(s in f for s in ("scripts/priority_rebuild/", ".claude/hooks/", ".claude/tools/")):
             continue
-        if any(f.endswith(str(t).strip()) for t in targets if str(t).strip()):
+        # ★2026-10-13（174回目・まこさん「いいけど」）＝TARGET が「../../.claude/…」（SDK からの相対）の形でも、同じファイルと見分ける。
+        #   直す前＝git の出すパス（根からの形）の末尾と文字が合わず、工事 design-origin-form-20261013 の直す相手2本が「工事の外」に並んだ。
+        if any(f.endswith(str(t).strip().replace('../../', '', 1)) for t in targets if str(t).strip()):
             continue
         out.append(f)
     return sorted(out)

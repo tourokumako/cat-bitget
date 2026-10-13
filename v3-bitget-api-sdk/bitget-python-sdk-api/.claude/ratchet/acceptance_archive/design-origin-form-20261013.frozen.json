@@ -1,0 +1,15 @@
+{
+ "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
+ "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
+ "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
+ "../../.claude/hooks/require_read_plan_before_design.py": [
+  "<モジュール直下>",
+  "build_plan",
+  "check",
+  "selftest",
+  "todo_link"
+ ],
+ "../../.claude/tools/gen_regime_kb.py": [
+  "build_todo"
+ ]
+}

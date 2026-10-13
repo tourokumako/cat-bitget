@@ -2,18 +2,14 @@
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
- "scripts/priority_rebuild/indicator_reference_diag.py": [
+ "../../.claude/hooks/require_read_plan_before_design.py": [
   "<モジュール直下>",
-  "_alma_lag",
-  "_r",
-  "_ssf2_avg",
-  "_tb_sqz_carter",
-  "_vidya_cmo"
- ],
- "scripts/priority_rebuild/observe_diag.py": [
-  "<モジュール直下>",
-  "_insp_indicator_match",
+  "build_plan",
+  "check",
   "selftest",
-  "selftest_match"
+  "todo_link"
+ ],
+ "../../.claude/tools/gen_regime_kb.py": [
+  "build_todo"
  ]
 }

@@ -4221,6 +4221,160 @@
    "file": ".claude/breaks/b183_copy_verified_by_tb_alone.sh",
    "at": "2026-10-12T12:20:13",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-13_design_origin_form_20261013_design_cp75_audit_report.md",
+   "num": "1",
+   "file": ".claude/state/indicator_review/_dof_template.txt",
+   "at": "2026-10-13T12:09:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-13_design_origin_form_20261013_design_cp75_audit_report.md",
+   "num": "2",
+   "file": ".claude/state/sessions/f4ba2d5a-495f-4b7c-ba2d-c36d5ad61f47/draft_proposal_template.txt",
+   "at": "2026-10-13T12:09:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-13_design_origin_form_20261013_design_cp75_audit_report.md",
+   "num": "4",
+   "file": ".claude/state/indicator_review/_dof_template.txt",
+   "at": "2026-10-13T12:09:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-13_design_origin_form_20261013_design_cp75_audit_report.md",
+   "num": "5",
+   "file": ".claude/state/sessions/f4ba2d5a-495f-4b7c-ba2d-c36d5ad61f47/draft_proposal_template.txt",
+   "at": "2026-10-13T12:09:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-13_design_origin_form_20261013_design_cp75_audit_report.md",
+   "num": "6",
+   "file": ".claude/state/sessions/f4ba2d5a-495f-4b7c-ba2d-c36d5ad61f47/draft_todo_table_template.md",
+   "at": "2026-10-13T12:09:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-13_design_origin_form_20261013_design_cp75_audit_report.md",
+   "num": "8",
+   "file": ".claude/state/sessions/f4ba2d5a-495f-4b7c-ba2d-c36d5ad61f47/draft_todo_table_template.md",
+   "at": "2026-10-13T12:09:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-13_design_origin_form_20261013_design_cp75_audit_report.md",
+   "num": "9",
+   "file": ".claude/state/sessions/f4ba2d5a-495f-4b7c-ba2d-c36d5ad61f47/draft_todo_table_template.md",
+   "at": "2026-10-13T12:09:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-13_design_origin_form_20261013_design_cp75_audit_report.md",
+   "num": "11",
+   "file": ".claude/state/verbatim/design-origin-form-20261013/やることの表.md",
+   "at": "2026-10-13T12:09:09",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "1",
+   "file": "../../.claude/hooks/require_read_plan_before_design.py",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "2",
+   "file": "../../.claude/hooks/require_read_plan_before_design.py",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "3",
+   "file": "../../.claude/hooks/require_read_plan_before_design.py",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "4",
+   "file": "../../.claude/hooks/require_read_plan_before_design.py",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "5",
+   "file": "../../.claude/hooks/require_read_plan_before_design.py",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "6",
+   "file": "../../.claude/hooks/require_read_plan_before_design.py",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "7",
+   "file": "../../.claude/hooks/require_read_plan_before_design.py",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "8",
+   "file": "../../.claude/hooks/require_read_plan_before_design.py",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "9",
+   "file": "../../.claude/hooks/require_read_plan_before_design.py",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "10",
+   "file": "../../.claude/tools/gen_regime_kb.py",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "11",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/templates/design_origin_todo_template.md",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "12",
+   "file": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/templates/design_origin_proposal_template.txt",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "13",
+   "file": ".claude/breaks/b184_read_plan_requirement_link_off.sh",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
+  },
+  {
+   "report": "design:design-origin-form-20261013",
+   "num": "14",
+   "file": ".claude/breaks/b185_read_plan_core_not_required.sh",
+   "at": "2026-10-13T13:10:20",
+   "how": "当てた"
   }
  ]
 }

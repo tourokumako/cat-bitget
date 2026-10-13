@@ -18,6 +18,8 @@
 #      ＝開いた記録しか見ず、開くだけの読みでトークンを使わせていた。中身を使ったかは Stop の require_read_used が見る
 #   6. 設計書の中身に engine_tuner の文字が在れば、宣言に engine_tuner_milestones.md と
 #      engine_tuner_milestones2.md（全体のマイルストーン）が入っている
+#   7. （2026-10-13・工事 design-origin-form-20261013）宣言に「やることの番号」と「結ぶ要件の項目」の行が在り、空でない
+#   8. （同）宣言に、要件定義の文書（.claude/rules/core_requirements.md）が入っている
 #
 # 宣言の型（.claude/state/design_read_plan.md）
 #   【読むもの宣言】
@@ -123,6 +125,16 @@ def check(plan_text, mark_text, log_lines, design_text, need_milestones):
     # ★2026-10-01（142回目・まこさん「開くだけは確認ではない」「修正しろ」）＝「宣言の全部を Read で開いたか」の検査を外した。
     #   開いた記録だけを数えるので、中身を使わない開き直しでトークンを使わせていた（54本を開いた事案）。
     #   読んだ中身を判断に使ったかは、Stop の require_read_used が返信の「ファイル名:行番号」で見る。
+    # ★2026-10-13（工事 design-origin-form-20261013）＝やることの番号・結ぶ要件の項目の行と、要件定義の文書を、どの設計書でも求める。
+    #   なぜ＝設計書の元に、工事と要件を結ぶ所が無かった（別セッションの監査 2026-10-12 の M-4 の①＝CC が要件を選ばない）。
+    for key in (NUM_KEY, REQ_KEY):
+        v = _line(plan_text, key)
+        if v is None:
+            ng.append(f"宣言に「{key}」の行が無い（--write で作り直す）")
+        elif not v:
+            ng.append(f"宣言の「{key}」が空（やることリストの行の「結ぶ要件」か、元データの「結ぶ要件」を書いてから --write）")
+    if rows and not any(r.endswith(os.path.basename(CORE_PATH[0])) for r in rows):
+        ng.append(f"宣言に、要件定義の文書（{CORE_PATH[0]}）が無い")
     if need_milestones:
         for d in MILESTONE_DOCS:
             if not any(r.endswith(d) for r in rows):
@@ -183,9 +195,11 @@ def selftest():
     tmp = tempfile.mkdtemp()
     design = '<!-- ARC iter="x-20260909" -->\nengine_tuner を直す\n'
     good = ("【読むもの宣言】\n設計書: x-20260909\nまこさんの OK: 「OK」\n"
+            + NUM_KEY + "なし\n" + REQ_KEY + "要件定義の9番\n"
             "| # | 読むもの | 範囲 | なぜ |\n|---|---|---|---|\n"
             "| 1 | .claude/ratchet/engine_tuner_milestones.md | 全文 | 全体 |\n"
-            "| 2 | .claude/ratchet/engine_tuner_milestones2.md | 全文 | M2 |\n")
+            "| 2 | .claude/ratchet/engine_tuner_milestones2.md | 全文 | M2 |\n"
+            "| 3 | .claude/rules/core_requirements.md | 全文 | 要件 |\n")
     log = ["/a/.claude/ratchet/engine_tuner_milestones.md", "/a/.claude/ratchet/engine_tuner_milestones2.md"]
     h = hashlib.sha256(good.encode("utf-8")).hexdigest()
     cases = [
@@ -200,6 +214,10 @@ def selftest():
         ("T8 engine_tuner でない設計書はマイルストーンを求めない → 通る",
          good.replace("| 1 | .claude/ratchet/engine_tuner_milestones.md | 全文 | 全体 |\n", ""), None,
          log, '<!-- ARC iter="x-20260909" -->\nhook を直す\n', False, None),
+        ("T9 要件定義の文書が無い → 止まる",
+         good.replace("| 3 | .claude/rules/core_requirements.md | 全文 | 要件 |\n", ""), None, log, design, True, "要件定義の文書"),
+        ("T10 やることの番号の行が無い → 止まる", good.replace(NUM_KEY + "なし\n", ""), None, log, design, True, "宣言に「" + NUM_KEY + "」の行が無い"),
+        ("T11 結ぶ要件の項目が空 → 止まる", good.replace(REQ_KEY + "要件定義の9番", REQ_KEY), None, log, design, True, "が空"),
     ]
     ng = 0
     for name, plan, mark, lg, ds, need, want in cases:
@@ -209,7 +227,39 @@ def selftest():
         ok = (not r) if want is None else any(want in x for x in r)
         print(f"  {'✅' if ok else '❌'} {name}" + ("" if ok else f" ← {r}"))
         ng += not ok
-    print(f"\n番人: {len(cases) - ng}/{len(cases)} pass")
+    # ★2026-10-13（工事 design-origin-form-20261013）＝やることの番号と結ぶ要件を写す所（todo_link）の番人
+    global TODO_JSON
+    saved = TODO_JSON
+    TODO_JSON = os.path.join(tmp, "m2_todo.json")
+    with open(TODO_JSON, "w", encoding="utf-8") as f:
+        json.dump({"やること": [{"番号": "X-1", "結ぶ要件": "要件定義の6番"}, {"番号": "X-2"}]}, f, ensure_ascii=False)
+    link_cases = [
+        ("T12 やることリストの行の結ぶ要件を写す → 通る", {"やることの番号": ["X-1"]}, None, "X-1＝要件定義の6番"),
+        ("T13 行に結ぶ要件が無い → 止まる", {"やることの番号": ["X-2"]}, "に「結ぶ要件」が無い", None),
+        ("T14 やることリストに無い番号 → 止まる", {"やることの番号": ["X-9"]}, "やることリストに無い", None),
+        ("T15 行が無い工事で、元データに結ぶ要件が無い → 止まる", {"やることの番号": []}, "元データに「結ぶ要件」が無い", None),
+        ("T16 行が無い工事で、元データの結ぶ要件を写す → 通る", {"やることの番号": [], "結ぶ要件": "要件定義の9番"}, None, "要件定義の9番"),
+        ("T17 元データに やることの番号 の鍵が無い → 止まる", {}, "「やることの番号」が無い", None),
+    ]
+    for name, s, want, has in link_cases:
+        _n, rq, bad = todo_link(s)
+        ok = (not bad and has in rq) if want is None else any(want in x for x in bad)
+        print(f"  {'✅' if ok else '❌'} {name}" + ("" if ok else f" ← {bad or rq}"))
+        ng += not ok
+    TODO_JSON = saved
+    # ★同＝宣言を作る所（build_plan）の番人（設計書の監査 CP75 の Q7 の④＝作った宣言に、2行と要件定義の文書の行が出ることを測る）
+    body, bad = build_plan({"設計書": "x-20260909", "やることの番号": [], "結ぶ要件": "要件定義の9番", "読むもの": []})
+    plan_cases = [
+        ("T18 作った宣言に、やることの番号の行が出る", NUM_KEY + "なし（やることリストに行が無い工事）"),
+        ("T19 作った宣言に、結ぶ要件の項目の行が出る", REQ_KEY + "要件定義の9番"),
+        ("T20 元データに無くても、作った宣言に要件定義の文書の行が出る", "| " + CORE_PATH[0] + " |"),
+    ]
+    for name, has in plan_cases:
+        ok = (not bad) and has in body
+        print(f"  {'✅' if ok else '❌'} {name}" + ("" if ok else f" ← {bad or '宣言に無い'}"))
+        ng += not ok
+    n_all = len(cases) + len(link_cases) + len(plan_cases)
+    print(f"\n番人: {n_all - ng}/{n_all} pass")
     return 1 if ng else 0
 
 
@@ -235,6 +285,44 @@ MILESTONE_PATHS = [
      ["## 🔴 ★M2 で作っている物"], "M2 の全体（恒久68番で必ず読む・M2 の作業の前に毎回 開く節）"),
 ]
 SKIP_DIRS = {".git", "__pycache__", "node_modules", "audits", "archive"}
+
+# ★2026-10-13（工事 design-origin-form-20261013）＝要件定義の文書は、元データに無くても必ず足す
+#   （まこさん 2026-10-12「設計書や、監査依頼書、の上部に要件定義書として固定で毎回記述しておいて」）。
+CORE_PATH = (".claude/rules/core_requirements.md", [],
+             "要件定義・工事の流れ・設計書の監査が要る物（どの工事でも必ず読む）")
+# ★同＝やることリストの元データ。宣言の「やることの番号」と「結ぶ要件の項目」は、ここから写す（CC は書かない）。
+#   やることリストに行が無い工事だけ、元データの「結ぶ要件」（CC が案を書き、まこさんが決めた文）を写す。
+TODO_JSON = os.path.join(SDK, ".claude", "ratchet", "m2_todo.json")
+NUM_KEY = "★**やることの番号**："
+REQ_KEY = "★**結ぶ要件の項目**："
+
+
+def todo_link(src):
+    """やることの番号と、結ぶ要件の項目を返す。戻り＝(番号の文, 要件の文, 問題の並び)。"""
+    if "やることの番号" not in src:
+        return "", "", ["元データに「やることの番号」が無い（やることリストの行の番号の並びを書く。行が無い工事は、空の並び [] を書く）"]
+    nums = [str(n) for n in (src.get("やることの番号") or [])]
+    if not nums:
+        req = str(src.get("結ぶ要件") or "").strip()
+        if not req:
+            return "", "", ["やることリストに行が無い工事なのに、元データに「結ぶ要件」が無い（CC が案を書き、まこさんが決めた文を書く）"]
+        return "なし（やることリストに行が無い工事）", req + "（出どころ＝この宣言の元データ。CC が案を書き、まこさんが決めた）", []
+    try:
+        rows = {t.get("番号"): t for t in json.loads(_read(TODO_JSON)).get("やること", [])}
+    except Exception as e:
+        return "", "", [f"やることリストが読めない: {TODO_JSON}（{e}）"]
+    ng, parts = [], []
+    for n in nums:
+        t = rows.get(n)
+        if t is None:
+            ng.append(f"やることの番号 {n} が、やることリストに無い")
+        elif not str(t.get("結ぶ要件") or "").strip():
+            ng.append(f"やることリストの {n} に「結ぶ要件」が無い（その工事を始めるときに、CC が案を書き、まこさんが決めて、やることリストに書く）")
+        else:
+            parts.append(f"{n}＝{t['結ぶ要件']}")
+    if ng:
+        return "", "", ng
+    return "・".join(nums), "／".join(parts) + "（出どころ＝やることリスト m2_todo.json の「結ぶ要件」）", []
 
 
 def _resolve(p):
@@ -286,7 +374,7 @@ def build_plan(src):
     ng = []
     items = list(src.get("読むもの") or [])
     have = {it.get("パス") for it in items}
-    for mp, words, why in reversed(MILESTONE_PATHS):
+    for mp, words, why in reversed(MILESTONE_PATHS + [CORE_PATH]):
         if mp not in have:
             items.insert(0, {"パス": mp, "探す語": words, "なぜ": why})
     # ★2026-10-01（142回目）＝壊すプログラムを名前の一致で全部 宣言に足すのをやめた。直す相手と関係の無い物まで入り
@@ -307,6 +395,8 @@ def build_plan(src):
         rows.append(f"| {i} | {rel} | {rng} | {str(it.get('なぜ') or '').replace('|', '／')} |")
     if not src.get("設計書"):
         ng.append("元データに「設計書」（ARC iter の名前）が無い")
+    nums, req, bad = todo_link(src)
+    ng += bad
     head = [
         "【読むもの宣言】",
         f"設計書: {src.get('設計書', '')}",
@@ -316,6 +406,8 @@ def build_plan(src):
         f"★**何の設計書か**：{src.get('何の設計書か', '')}",
         f"★**なぜ読むか（全体）**：{src.get('なぜ読むか', '')}",
         f"★**入れないもの**：{src.get('入れないもの', '')}",
+        NUM_KEY + nums,
+        REQ_KEY + req,
     ]
     if src.get("前の宣言"):
         head.append(f"★**前の宣言**：{src['前の宣言']}")
