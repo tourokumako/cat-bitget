@@ -64,6 +64,7 @@ CHECKLIST = SDK / ".claude" / "rules" / "acceptance_checklist.md"
 
 # C の抜き方＝「設計」を含み、かつ「入っていない」ことを指す語を含む行
 MISS_WORDS = ("無い", "落ち", "入っていない", "書いてない", "足りない", "抜け", "ヌケ", "漏れ", "コア")
+C_OLD_RULE_UNTIL = "20260910"                       # この日までの記録は、いままでの拾い方（割り当て済みの番号を動かさない）
 
 
 def _load(path: Path, why: str) -> dict:
@@ -166,6 +167,18 @@ def collect_c() -> list[tuple[str, str, str]]:
             if "設計" not in ln:
                 continue
             if not any(w in ln for w in MISS_WORDS):
+                continue
+            # ★2026-10-13（工事 design-doc-gen-form-20261013）＝2026-09-10（割り当てを作った日）より後の記録は、
+            #   「まこさん」の語のすぐ後ろに続く かぎ括弧の中に、「設計」と、入っていないことを指す語の両方が在る文だけを拾う。
+            #   直す前の拾い方は、検査の出力や CC の文まで拾い、記録を書くたびに件数が増えた（84件のうち、指摘でない物が混ざった）。
+            #   ★設計書の監査 CP77 の修正＝行に「まこさん」の語が在るだけでは拾わない（同じ行の、検査の出力の かぎ括弧を拾っていた）。
+            #     「まこさん」の語から、かぎ括弧の並びが始まるまでの間に、句点・矢印・別の かぎ括弧が在れば、その並びは見ない。
+            #   その日までの記録は、いままでの拾い方のまま＝割り当て済みの番号（C-1〜C-38）を動かさない。
+            if day > C_OLD_RULE_UNTIL:
+                for run in re.findall(r"まこさん[^「」。→]{0,40}((?:\s*[①-⑳]?\s*「[^」]*」)+)", ln):
+                    for q in re.findall(r"「([^」]{12,120})」", run):
+                        if "設計" in q and any(w in q for w in MISS_WORDS):
+                            rows.append((day, q))
                 continue
             for q in re.findall(r"「([^」]{12,120})」", ln):
                 if any(w in q for w in MISS_WORDS) or "設計" in q:

@@ -1,0 +1,721 @@
+指示と受け取りました。範囲は、案の残りの部分（実装の指示と、プログラムが読む設定）を出す所までです。
+
+文章の部分への OK を、ありがとうございます。実装の指示は量が多いので、返信を3つに分けて出します。この返信で始まり、3つ目の返信で終わります。2つ目と3つ目は囲みの続きなので、画面では見た目が崩れます。中身は、全部の検査を通した案と同じ文字です。
+
+【4-20 実装の指示】
+```json
+[
+ {
+  "番号": 1,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "233行（<モジュール直下>・新しい形の やることの表の、手書きの項目の名前を足す）",
+  "直す前の文字": "HAND_KEYS = (\"§1 概要\", \"2-1 何を測るか\", \"3-1 やらないこと\", \"3-2 決めてほしいこと\", \"4-19 通しの例\")\n",
+  "種類": "直した後の文字",
+  "中身": "HAND_KEYS = (\"§1 概要\", \"2-1 何を測るか\", \"3-1 やらないこと\", \"3-2 決めてほしいこと\", \"4-19 通しの例\")\n# ★2026-10-13（工事 design-doc-gen-form-20261013）＝新しい形の やることの表（共通の ひな型 design_origin_todo_template.md）の手書きの項目。\n#   見分け方＝手書きの項目に「### 目標」が在れば、新しい形。無ければ、いままでの形（上の5つ）のまま読む。\nHAND_KEYS_NEW = (\"§1 概要\", \"やることリストのどの行の工事か\", \"2-1 何を測るか\", \"目標\", \"3-2 決めてほしいこと\", \"4-19 通しの例\")\nNEW_FORM_MARK = \"目標\"\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:233「HAND_KEYS = (\"§1 概要\", \"2-1 何を測るか\", \"3-1 やらないこと\", \"3-2 決めてほしいこと\", \"4-19 通しの例\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 2,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "204行（_tag・新しい形の設計書では、見出しの下の表示を「CC が書いて、まこさんが OK した案」にする）",
+  "直す前の文字": "    return f\"［{who}］{what}\"\n",
+  "種類": "直した後の文字",
+  "中身": "    if _NEW_FORM:                                    # ★新しい形の設計書＝案は CC が書いた物（別セッションの監査 2026-10-12 の M-2）\n        what = what.replace(\"まこさんが OK した案\", \"CC が書いて、まこさんが OK した案\")\n    return f\"［{who}］{what}\"\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:204「return f\"［{who}］{what}\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 3,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "314〜317行（src_from_work・新しい形かどうかを見分け、手書きの項目の知らない見出しを止める）",
+  "直す前の文字": "    for k in HAND_KEYS:\n        if k not in hand:\n            bad.append(f\"{TODO_MD} の「## 手書きの項目」に「### {k}」が無い\")\n    d[\"何を作るか\"] = _text(hand.get(\"§1 概要\") or [])\n",
+  "種類": "直した後の文字",
+  "中身": "    new_form = NEW_FORM_MARK in hand                 # ★2026-10-13＝手書きの項目に「### 目標」が在れば、新しい形\n    d[\"形\"] = \"新\" if new_form else \"旧\"\n    hand_keys = HAND_KEYS_NEW if new_form else HAND_KEYS\n    for k in hand_keys:\n        if k not in hand:\n            bad.append(f\"{TODO_MD} の「## 手書きの項目」に「### {k}」が無い\")\n    # ★同＝知らない見出しは止める（直す前は、決まった名前が在るかだけを見て、ほかの見出しを設計書に出さずに通した＝設計書の監査 CP75 の Q9）\n    for k in hand:\n        if k not in hand_keys:\n            bad.append(f\"{TODO_MD} の「## 手書きの項目」に、知らない見出し「### {k}」が在る（写す先の項目が無い）\")\n    d[\"何を作るか\"] = _text(hand.get(\"§1 概要\") or [])\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:314「for k in HAND_KEYS:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 4,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "322行（src_from_work・新しい形の やることの表を読む）",
+  "直す前の文字": "    d[\"設計の中身\"][\"4-19\"] = [ln for ln in (hand.get(\"4-19 通しの例\") or []) if ln.strip()]\n",
+  "種類": "直した後の文字",
+  "中身": "    d[\"設計の中身\"][\"4-19\"] = [ln for ln in (hand.get(\"4-19 通しの例\") or []) if ln.strip()]\n    if new_form:\n        _read_new_todo(d, top, hand, bad, work, d_dir)\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:322「d[\"設計の中身\"][\"4-19\"] = [ln for ln in (hand.get(\"4-19 通しの例\") or []) if ln.strip()]」",
+  "状態": "確定"
+ },
+ {
+  "番号": 5,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "373〜374行（src_from_work・案の新しい見出し3つを読む）",
+  "直す前の文字": "    for k, body in auto.items():\n        if re.fullmatch(r\"4-(?:[0-9]|1[0-8])\", k):\n",
+  "種類": "直した後の文字",
+  "中身": "    if new_form:\n        d[\"案の文\"] = {k: list(v) for k, v in auto.items()}   # 新しい形の検査が読む（見出しごとの、案の文の全部）\n    for k, body in auto.items():\n        if new_form and k in (HEAD_FIVE, HEAD_NUMS, HEAD_UNVERIFIED):\n            _read_new_head(d, k, body, bad)\n        elif re.fullmatch(r\"4-(?:[0-9]|1[0-8])\", k):\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:373「for k, body in auto.items():」",
+  "状態": "確定"
+ },
+ {
+  "番号": 6,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "395〜396行（src_from_work・新しい形の案の【7-3b】は、根拠と確かめ直すコマンドの表を読む）",
+  "直す前の文字": "            d[\"作ってはいけないものとの照合\"] = {r[\"番号\"]: {\"当たるか\": r[\"当たるか\"], \"理由\": r[\"理由\"]}\n                                    for r in _md_table(body, (\"番号\", \"当たるか\", \"理由\"), \"【7-3b】\", bad)}\n",
+  "種類": "直した後の文字",
+  "中身": "            if new_form:                             # ★新しい形＝CC の判定の欄をやめ、根拠と確かめ直すコマンドを読む\n                d[\"作ってはいけないものとの照合\"] = {r[\"番号\"]: {\"根拠\": r[\"根拠\"], \"確かめ直すコマンド\": r[\"確かめ直すコマンド\"]}\n                                        for r in _md_table(body, (\"番号\", \"根拠\", \"確かめ直すコマンド\"), \"【7-3b】\", bad)}\n            else:\n                d[\"作ってはいけないものとの照合\"] = {r[\"番号\"]: {\"当たるか\": r[\"当たるか\"], \"理由\": r[\"理由\"]}\n                                        for r in _md_table(body, (\"番号\", \"当たるか\", \"理由\"), \"【7-3b】\", bad)}\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:395「d[\"作ってはいけないものとの照合\"] = {r[\"番号\"]: {\"当たるか\": r[\"当たるか\"], \"理由\": r[\"理由\"]}」",
+  "状態": "確定"
+ },
+ {
+  "番号": 7,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "413〜414行（src_from_work・新しい形の元を読んだ後の検査を呼ぶ）",
+  "直す前の文字": "    # 足りない欄（page が読む所）を全部 集める\n    need = [\"何を作るか\", \"真因\", \"期待値分解\", \"root か symptom か\", \"ベースアップ\", \"固定値ゼロ宣言\", \"変更の単位\",\n",
+  "種類": "直した後の文字",
+  "中身": "    if new_form:\n        _finish_new(d, bad)\n    # 足りない欄（page が読む所）を全部 集める\n    need = [\"何を作るか\", \"真因\", \"期待値分解\", \"root か symptom か\", \"ベースアップ\", \"固定値ゼロ宣言\", \"変更の単位\",\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:413「# 足りない欄（page が読む所）を全部 集める」",
+  "状態": "確定"
+ },
+ {
+  "番号": 8,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "424行（src_from_work・新しい形の案には、【0-R】を求めない（索引はプログラムが作る））",
+  "直す前の文字": "    if core_required(work) and not d.get(\"要件定義との照らし\"):\n",
+  "種類": "直した後の文字",
+  "中身": "    if core_required(work) and not new_form and not d.get(\"要件定義との照らし\"):\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:424「if core_required(work) and not d.get(\"要件定義との照らし\"):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 9,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "433〜434行（src・新しい形の元を読む関数と、設計書に出す関数を足す）",
+  "直す前の文字": "def src() -> dict:\n    \"\"\"工事のフォルダから設計書を組む中身を作る。「やらないこと」が空なら止まる（fail-closed の2つ目）。\n",
+  "種類": "直した後の文字",
+  "中身": "# ══ 新しい形の設計書の元（共通の ひな型）を読む・出す（2026-10-13・工事 design-doc-gen-form-20261013）══════════\n#   まこさん指示（2026-10-13）「設計書の元を完全に修正完了してから、設計書の修正をすべきだよね。」\n#   ★いままでの形（手書きの項目に「### 目標」が無い やることの表）は、この下の関数を通らない＝承認済みの設計書は、作り直しても変わらない。\n_NEW_FORM = False                                   # いま組んでいる設計書が新しい形か（src が決める。見出しの下の表示 _tag が読む）\nGOAL_NOS = (\"①\", \"②\", \"③\", \"④\", \"⑤\", \"⑥\")\nEMPTY_WORDS = (\"\", \"—\", \"-\", \"無し\", \"なし\", \"特に無し\", \"特になし\", \"ありません\")\nPLAN = STATE / \"design_read_plan.md\"                # 読むもの宣言（require_read_plan_before_design.py --write が作る）\nPLAN_COPY = \"読むもの宣言の写し.md\"                   # 工事のフォルダに置く写し（宣言が次の工事の物に替わった後も、作り直せるように）\nPLAN_NUM_KEY = \"★**やることの番号**：\"\nPLAN_REQ_KEY = \"★**結ぶ要件の項目**：\"\nHEAD_FIVE = \"検査やプログラムを直す工事で書く5つ\"       # 案の新しい見出し（項目の正本の 4-22）\nHEAD_NUMS = \"新しく入る数字と式の一覧\"                 # 同（項目の正本の 4-21）\nHEAD_UNVERIFIED = \"確かめていないこと\"                 # 同（設計書の 6-5）\n# 工事の種類を決める語。直すファイルの一覧（TARGET・NEW_FILE）のパスに1つでも在れば、種類①\nKIND1_WORDS = (\"scripts/priority_rebuild\", \"engine_tuner\", \"regime_laws\", \"indicator_switch\", \"signal_families\",\n               \"material_ranking\", \"search_limits\", \"observe_config\", \"indicator_params\", \"indicator_roles\",\n               \"composition_rules\")\nKIND_TEXT = {1: \"種類①（指標・探索・売買のロジック・設定に触る工事）\", 2: \"種類②（検査やプログラムを直す工事）\"}\nPARAMS = STATE / \"indicator_params_by_strategy.json\"   # 置き場＝パラメータの代表の値と範囲（資料の表）\nROLES = STATE / \"indicator_roles_thresholds.json\"      # 置き場＝役割と閾値（資料の表）\n# 閾値の代表の値を読む欄（まこさん OK 2026-10-13）。役割と閾値の置き場の1件に、この鍵で、パラメータと同じ形\n# （最初の値（スキャル）・最初の値（デイトレ）・範囲・出どころ）を持つ。無ければ「未決」と出す。\nTHRESHOLD_KEY = \"閾値の値\"\nNUM_RE = re.compile(r\"(?<![\\w.])\\d+(?:\\.\\d+)?(?![\\w.])\")\n# 要件定義の番号 → その要件を書く、設計書の節。要件が増えて、ここに行が無ければ止まる。\nINDEX_MAP = {\"1\": (\"3-0 目標の③\",), \"2\": (\"3-0 目標の①\",),\n             \"3-1\": (\"4-7\",), \"3-2\": (\"4-7\",), \"3-3\": (\"4-7\",), \"3-4\": (\"4-7\",), \"3-5\": (\"4-7\",), \"3-6\": (\"4-4\", \"4-6\"),\n             \"4\": (\"4-7\",), \"5\": (\"4-8\", \"4-9\"), \"6\": (\"4-3\", \"4-13\"), \"7\": (\"4-10\",),\n             \"8-1\": (\"7-3b\",), \"8-2\": (\"7-3b\", \"4-21\"), \"9\": (\"3-0 目標の①\", \"3-0 目標の⑤\"), \"10\": (\"2-0\",)}\n\n\ndef _hk(d: dict) -> tuple:\n    \"\"\"その設計書の、手書きの項目の名前（新しい形は6つ・いままでの形は5つ）。\"\"\"\n    return HAND_KEYS_NEW if d.get(\"形\") == \"新\" else HAND_KEYS\n\n\ndef work_kind(d: dict) -> int:\n    \"\"\"工事の種類。1＝指標・探索・売買のロジック・設定に触る工事／2＝検査やプログラムを直す工事。直すファイルの一覧で決める（CC は書かない）。\"\"\"\n    ps = [str(p) for p in (d.get(\"TARGET\") or []) + (d.get(\"NEW_FILE\") or [])]\n    return 1 if any(w in p for p in ps for w in KIND1_WORDS) else 2\n\n\ndef _para(lines: list) -> str:\n    \"\"\"手書きの文を、段落の間の空行を残して1つの文字列にする（ひな型の「★向きを見る所」の行と、前後の空行は落とす）。\"\"\"\n    keep = [ln.rstrip() for ln in lines if not ln.strip().startswith(\"★向きを見る所\")]\n    return re.sub(r\"\\n{3,}\", \"\\n\\n\", \"\\n\".join(keep)).strip()\n\n\ndef _named(name: str, text: str) -> bool:\n    \"\"\"名前（法則の番号・型の番号・指標の名前）が、文の中に、ほかの英数字とつながらずに在るか。\"\"\"\n    return bool(name) and re.search(r\"(?<![A-Za-z0-9_-])\" + re.escape(name) + r\"(?![A-Za-z0-9_-])\", text) is not None\n\n\ndef _plan_link(work: str, d_dir: Path) -> tuple:\n    \"\"\"読むもの宣言から、やることの番号と結ぶ要件の項目を写す（CC は書かない）。戻り＝(番号の文, 要件の文, 問題の文, 宣言の全文)。\n    読む順＝①いまの宣言（設計書の名前がこの工事のとき）②工事のフォルダの写し（宣言が次の工事の物に替わった後）。\"\"\"\n    for p in (PLAN, d_dir / PLAN_COPY):\n        if not p.exists():\n            continue\n        text = p.read_text(encoding=\"utf-8\")\n        got: dict = {}\n        for ln in text.splitlines():\n            s = ln.strip()\n            for key, name in ((\"設計書:\", \"name\"), (PLAN_NUM_KEY, \"nums\"), (PLAN_REQ_KEY, \"req\")):\n                if s.startswith(key) and name not in got:\n                    got[name] = s[len(key):].strip()\n        if got.get(\"name\") == work and got.get(\"nums\") and got.get(\"req\"):\n            return got[\"nums\"], got[\"req\"], \"\", text\n    return \"\", \"\", (f\"読むもの宣言（{PLAN.name} か、工事のフォルダの {PLAN_COPY}）に、この工事（{work}）の「やることの番号」と\"\n                    \"「結ぶ要件の項目」の行が無い（require_read_plan_before_design.py --write で宣言を作る）\"), \"\"\n\n\ndef _read_new_todo(d: dict, top: dict, hand: dict, bad: list, work: str, d_dir: Path) -> None:\n    \"\"\"新しい形の やることの表から、手書きの項目・やることの一覧・やらないことを読む。足りない物は bad に全部 足す。\"\"\"\n    d[\"何を作るか\"] = _para(hand.get(\"§1 概要\") or [])\n    ex = _para(hand.get(\"4-19 通しの例\") or [])\n    d[\"設計の中身\"][\"4-19\"] = ex.split(\"\\n\") if ex else []\n    row = _md_table(hand.get(\"やることリストのどの行の工事か\") or [], (\"欄\", \"中身\"), \"やることリストのどの行の工事か\", bad)\n    if len(row) != 3:\n        bad.append(f\"「やることリストのどの行の工事か」の表が3行（どの行か・どこまで減らすか・順番）でない（いま {len(row)} 行）\")\n    d[\"どの行の工事か\"] = row\n    goal = _md_table(hand.get(\"目標\") or [], (\"番号\", \"欄\", \"中身\"), \"目標\", bad)\n    have = [r[\"番号\"] for r in goal]\n    if have != list(GOAL_NOS):\n        bad.append(f\"「目標」の表の番号が ①〜⑥ の6行でない（いま {'・'.join(have) or '無し'}）\")\n    for r in goal:\n        if r[\"番号\"] in (\"④\", \"⑥\") and r[\"中身\"].strip() in EMPTY_WORDS:\n            bad.append(f\"目標の{r['番号']}（{r['欄']}）が空（空では出せない。無いと書くときは、根拠と確かめ直すコマンドを書く）\")\n    d[\"目標\"] = goal\n    d[\"やることの一覧\"] = _md_table(top.get(\"一覧\") or [], (\"番号\", \"一文\", \"出どころ\"), \"## 一覧\", bad)\n    d[\"やらないこと\"] = [{k: r[k] for k in (\"中身\", \"理由\", \"出どころ\")}\n                       for r in _md_table(top.get(\"やらないこと\") or [], (\"番号\", \"中身\", \"理由\", \"出どころ\"), \"## やらないこと\", bad)]\n    nums, req, why, text = _plan_link(work, d_dir)\n    if why:\n        bad.append(why)\n    d[\"やることの番号の文\"], d[\"結ぶ要件\"], d[\"読むもの宣言の文\"] = nums, req, text\n    # ★読むもの宣言のすり抜けを塞ぐ（設計書の監査 CP75 の Q10）＝宣言が「なし」（やることリストに行が無い工事）なのに、\n    #   やることの表の一覧に、やることリストの行の番号が出てくれば止める。\n    if nums.startswith(\"なし\"):\n        try:\n            known = {str(t.get(\"番号\")) for t in (_load(TODO).get(\"やること\") or []) if isinstance(t, dict) and t.get(\"番号\")}\n        except SystemExit:\n            known = set()\n        hit = sorted(n for n in known if _named(n, \"\\n\".join(top.get(\"一覧\") or [])))\n        if hit:\n            bad.append(f\"読むもの宣言は「やることの番号＝なし」なのに、{TODO_MD} の「## 一覧」に、やることリストの行の番号 {'・'.join(hit)} が在る\"\n                       \"（宣言の元データの「やることの番号」に、その番号を書いて、宣言を作り直す）\")\n\n\ndef _read_new_head(d: dict, k: str, body: list, bad: list) -> None:\n    \"\"\"案の新しい見出し3つを読む。\"\"\"\n    first = _text(body)\n    na = first.startswith(\"非該当\")\n    val = {\"非該当\": first.split(\"＝\", 1)[-1].strip()} if na else [ln for ln in body if ln.strip()]\n    if k == HEAD_FIVE:\n        d[\"設計の中身\"][\"4-22\"] = val\n        d[\"直す工事の5つ\"] = [] if na else _md_table(body, (\"番号\", \"欄\", \"中身\"), f\"【{k}】\", bad)\n    elif k == HEAD_NUMS:\n        d[\"設計の中身\"][\"4-21\"] = val\n        d[\"数字と式\"] = [] if na else _md_table(body, (\"番号\", \"数字か式\", \"出どころ\"), f\"【{k}】\", bad)\n    else:\n        d[\"確かめていないこと\"] = _md_table(body, (\"確かめていないこと\", \"なぜ確かめていないか\", \"確かめるなら、何を走らせるか\"), f\"【{k}】\", bad)\n\n\ndef _new_numbers(d: dict) -> list:\n    \"\"\"実装の指示のうち、売買のロジック・設定のファイルに新しく入る数字を抜き出す。戻り＝[(実装の番号, 数字), …]。\n    コメント（# から後ろ）の中の数字と、直す前の文字にも在る数字は数えない。\"\"\"\n    out = []\n    for it in d.get(\"実装の指示\") or []:\n        if not any(w in str(it.get(\"対象のファイル\") or \"\") for w in KIND1_WORDS):\n            continue\n        def _code(s):\n            return \"\\n\".join(ln.split(\"#\", 1)[0] for ln in str(s or \"\").splitlines())\n        old = set(NUM_RE.findall(_code(it.get(\"直す前の文字\"))))\n        seen: list = []\n        for v in NUM_RE.findall(_code(it.get(\"中身\"))):\n            if v not in old and v not in seen:\n                seen.append(v)\n        out += [(str(it.get(\"番号\")), v) for v in seen]\n    return out\n\n\ndef _finish_new(d: dict, bad: list) -> None:\n    \"\"\"新しい形の元を全部 読んだ後の検査と、プログラムが決める欄。足りない物は bad に全部 足す。\"\"\"\n    body = d[\"設計の中身\"]\n    kind = work_kind(d)\n    if \"要件定義との照らし\" in d:\n        bad.append(\"新しい形の案に【0-R】が在る（要件定義との照らしは、案に書かない。索引は、プログラムが作る）\")\n    if not touches_trading(d):\n        g = {r[\"番号\"]: r[\"中身\"] for r in d.get(\"目標\") or []}\n        d[\"期待値分解\"] = (f\"売買に触らない工事です。目標の③（net までのつながり）＝{g.get('③', '')}／\"\n                        f\"目標の④（無駄だったと分かる物）＝{g.get('④', '')}（プログラムが、目標から写した）\")\n    # 4-6 と 4-7 は、種類①の工事では必ず書く（書くかどうかを CC が決めない）\n    if kind == 1:\n        for no in (\"4-6\", \"4-7\"):\n            if isinstance(body.get(no), dict):\n                bad.append(f\"種類①の工事なのに、案の【{no}】が非該当（種類①の工事では、必ず書く）\")\n    # 検査やプログラムを直す工事で書く5つ（4-22）\n    if kind == 2 and ((\"4-22\" not in body) or isinstance(body[\"4-22\"], dict)):\n        bad.append(f\"種類②の工事なのに、案の【{HEAD_FIVE}】が無い・非該当（種類②の工事では、必ず書く）\")\n    if kind == 1 and \"4-22\" not in body:\n        body[\"4-22\"] = {\"非該当\": \"種類①の工事（直すファイルの一覧から、プログラムが決めた）\"}\n    if \"4-22\" in body and not isinstance(body[\"4-22\"], dict):\n        five = d.get(\"直す工事の5つ\") or []\n        if [r[\"番号\"] for r in five] != [\"①\", \"②\", \"③\", \"④\", \"⑤\"]:\n            bad.append(f\"【{HEAD_FIVE}】の表の番号が ①〜⑤ の5行でない\")\n        for r in five:\n            if r[\"番号\"] == \"④\" and r[\"中身\"].strip() in EMPTY_WORDS:\n                bad.append(f\"【{HEAD_FIVE}】の④（この直しで確かめなくなる事・弱くなる守り）が空（空では出せない）\")\n    # 新しく入る数字と式の一覧（4-21）\n    nums = _new_numbers(d) if kind == 1 else []\n    d[\"新しく入る数字\"] = nums\n    if kind == 1:\n        if \"4-21\" not in body:\n            bad.append(f\"種類①の工事なのに、案の【{HEAD_NUMS}】が無い\")\n        rows = d.get(\"数字と式\") or []\n        cells = \" \".join(r[\"数字か式\"] for r in rows)\n        miss = [f\"実装 {no} の {v}\" for no, v in nums\n                if not re.search(r\"(?<![0-9.])\" + re.escape(v) + r\"(?![0-9.])\", cells)]\n        if miss:\n            bad.append(f\"【{HEAD_NUMS}】に、出どころの行が無い数字が {len(miss)} 件: \" + \"・\".join(miss[:20]))\n        for r in rows:\n            if r[\"出どころ\"].strip() in EMPTY_WORDS:\n                bad.append(f\"【{HEAD_NUMS}】の「{r['数字か式']}」に、出どころが無い\")\n    elif \"4-21\" not in body:\n        body[\"4-21\"] = {\"非該当\": \"種類②の工事。売買のロジック・設定のファイルを直さないので、そこに入る数字が無い（直すファイルの一覧から、プログラムが決めた）\"}\n    if not d.get(\"確かめていないこと\"):\n        bad.append(f\"案の【{HEAD_UNVERIFIED}】に行が無い（CC がやっていない確かめを、1行以上 書く）\")\n    if not d.get(\"作ってはいけないものとの照合\"):\n        bad.append(\"案の【7-3b】が無い（番号・根拠・確かめ直すコマンドの表）\")\n    # 完成の条件に、やることの番号ごとの行が在るか（別セッションの監査 2026-10-12 の M-7）\n    cond = \" \".join(str(r.get(\"条件\") or \"\") for r in d.get(\"完成の条件\") or [])\n    excuse = \" \".join(ln for ln in (d.get(\"案の文\") or {}).get(\"7-6\") or [] if ln.strip().startswith(\"- 行が無いやることの番号\"))\n    for r in d.get(\"やることの一覧\") or []:\n        n = str(r[\"番号\"])\n        if not _named(n, cond) and not _named(n, excuse):\n            bad.append(f\"やることの番号 {n} に、完成の条件（【7-6】）の行が無い（行を足すか、「- 行が無いやることの番号と、その理由：」の行に理由を書く）\")\n\n\ndef _index_lines(d: dict) -> list:\n    \"\"\"要件定義の索引（要件定義の何番を、この設計書のどの節に書いたか）。プログラムが、設計書の中身から作る。\"\"\"\n    body = d.get(\"設計の中身\") or {}\n\n    def _state(sec: str) -> str:\n        if sec.startswith(\"4-\"):\n            got = body.get(sec)\n            if isinstance(got, dict) and got.get(\"非該当\"):\n                return f\"{sec}＝非該当（{_esc(got['非該当'])}）\"\n            return f\"{sec}＝書いた\" if got else f\"{sec}＝書いていない\"\n        return f\"{sec}＝書いた\"\n\n    L = [\"### 0-R 要件定義の索引（要件定義の何番を、この設計書のどの節に書いたか）\", \"\",\n         _tag(\"自動\", \"要件は正本から。書いた節と、その節の状態は、プログラムがこの設計書の中身から決めた（CC は判定を書かない）\"),\n         \"| # | 要件（正本から） | 書いた節と、その節の状態 |\", \"|---|---|---|\"]\n    for no, name in gcr.requirement_items(full=True):\n        secs = INDEX_MAP.get(no)\n        if not secs:\n            raise SystemExit(f\"[gen_acceptance] 要件定義の {no}（{name}）を書く節が、索引の対応（INDEX_MAP）に無い（fail-closed）\")\n        L.append(f\"| {no} | {name} | {'／'.join(_state(s) for s in secs)} |\")\n    if work_kind(d) == 2:\n        L += [\"\", \"非該当と出た節の要件に「触らない」根拠は、4-22（検査やプログラムを直す工事で書く5つ）の⑤に在ります。\"]\n    return L\n\n\ndef _sec2_new(d: dict) -> list:\n    \"\"\"2番の節の先頭（やることリストのどの行の工事か・やることの一覧）。\"\"\"\n    L = [\"### 2-0 やることリストのどの行の工事か\", \"\",\n         _tag(\"自動\", \"やることの番号と結ぶ要件＝読むもの宣言から、プログラムが写した\"),\n         f\"- やることの番号＝{d.get('やることの番号の文', '')}\",\n         f\"- 結ぶ要件＝{d.get('結ぶ要件', '')}\", \"\",\n         _tag(\"手書き\", \"やることの表の「やることリストのどの行の工事か」\"),\n         \"| 欄 | 中身 |\", \"|---|---|\"]\n    L += [f\"| {_esc(r['欄'])} | {_esc(r['中身'])} |\" for r in d.get(\"どの行の工事か\") or []]\n    L += [\"\", \"### 2-0b やることの一覧\", \"\",\n          _tag(\"自動\", \"やることの表の「## 一覧」から、プログラムが写した\"),\n          \"| 番号 | 一文 | 出どころ |\", \"|---|---|---|\"]\n    L += [f\"| {_esc(r['番号'])} | {_esc(r['一文'])} | {_esc(r['出どころ'])} |\" for r in d.get(\"やることの一覧\") or []]\n    return L + [\"\"]\n\n\ndef _goal_lines(d: dict) -> list:\n    \"\"\"3番の節の先頭（目標の6つ）。①は、プログラムが結ぶ要件と「どこまで減らすか」から写す。\"\"\"\n    row = d.get(\"どの行の工事か\") or []\n    less = row[1][\"中身\"] if len(row) > 1 else \"\"\n    L = [\"### 3-0 目標\", \"\",\n         _tag(\"手書き\", \"やることの表の「目標」（①は、プログラムが、結ぶ要件と「その違いを、どこまで減らすか」から写した）\"),\n         \"| 番号 | 欄 | 中身 |\", \"|---|---|---|\"]\n    for r in d.get(\"目標\") or []:\n        body = f\"{d.get('結ぶ要件', '')}。その要件との違いを、どこまで減らすか＝{less}\" if r[\"番号\"] == \"①\" else r[\"中身\"]\n        L.append(f\"| {r['番号']} | {_esc(r['欄'])} | {_esc(body)} |\")\n    return L + [\"\"]\n\n\ndef _unverified_lines(d: dict) -> list:\n    \"\"\"6番の節の最後（確かめていないこと）。\"\"\"\n    L = [\"### 6-5 確かめていないこと（CC がやっていない確かめ）\", \"\",\n         _tag(\"自動\", \"まこさんが OK した案の【確かめていないこと】\"),\n         \"| # | 確かめていないこと | なぜ確かめていないか | 確かめるなら、何を走らせるか |\", \"|---|---|---|---|\"]\n    for i, r in enumerate(d.get(\"確かめていないこと\") or [], 1):\n        L.append(f\"| {i} | {_esc(r['確かめていないこと'])} | {_esc(r['なぜ確かめていないか'])} | {_esc(r['確かめるなら、何を走らせるか'])} |\")\n    return L + [\"\"]\n\n\ndef _forbidden_new(d: dict) -> list:\n    \"\"\"7-3b（作ってはいけないものとの照合）。左の2列は要件定義の8番（正本）・右の2列は案の根拠と確かめ直すコマンド。CC の判定の欄は無い。\"\"\"\n    L = [_tag(\"自動\", \"左の2列は要件定義の8番（正本）・右の2列は まこさんが OK した案の【7-3b】\"),\n         \"| # | 作ってはいけないもの（要件定義の8番） | 根拠 | 確かめ直すコマンド |\", \"|---|---|---|---|\"]\n    got = d.get(\"作ってはいけないものとの照合\") or {}\n    for no, name in gcr.requirement_items(full=True):\n        if not no.startswith(\"8-\"):\n            continue\n        n = no.split(\"-\", 1)[1]\n        r = got.get(n)\n        if not r:\n            raise SystemExit(f\"[gen_acceptance] 「作ってはいけないもの」の {n} 番の行が、案の【7-3b】に無い（fail-closed）\")\n        L.append(f\"| {n} | {_esc(name)} | {_esc(r.get('根拠', ''))} | {_esc(r.get('確かめ直すコマンド', ''))} |\")\n    return L\n\n\ndef _indicator_rows(text: str) -> list:\n    \"\"\"4-7 に、プログラムが置き場から写す行（役割・範囲・代表の値・出どころ・オンか・閾値）。文に名前が在る指標だけ。\"\"\"\n    params = {str(x.get(\"種類\")): x for x in (_load(PARAMS).get(\"指標\") or []) if isinstance(x, dict)}\n    rl = _load(ROLES)\n    roles = {str(x.get(\"種類\")): x for x in (rl if isinstance(rl, list) else []) if isinstance(x, dict)}\n    sw = _load(SWITCH)\n    on, off = {str(x) for x in sw.get(\"on\") or []}, {str(x) for x in sw.get(\"off\") or []}\n    tag = _tag(\"自動\", f\"`{PARAMS.name}`・`{ROLES.name}`・`{SWITCH.name}` から、この項目の文に名前が在る指標の行を、プログラムが写した\")\n    hit = [k for k in sorted(set(params) | set(roles)) if _named(k, text)]\n    if not hit:\n        return [tag, \"この項目の文に、指標の名前（資料の表の「種類」）が見つかりません。\", \"\"]\n    L = [tag, \"| 指標 | 役割（出どころの役割／役割の印） | パラメータの名前と範囲 | 代表の値（スキャル） | 代表の値（デイトレ） | オンか | 閾値の代表の値 |\",\n         \"|---|---|---|---|---|---|---|\"]\n    for k in hit:\n        p, r = params.get(k) or {}, roles.get(k) or {}\n        rng = \"／\".join(f\"{x.get('下限')}〜{x.get('上限')}（{x.get('出どころ')}）\" for x in p.get(\"範囲\") or [] if isinstance(x, dict))\n        th = r.get(THRESHOLD_KEY)\n        th_s = (f\"スキャル {th.get('最初の値（スキャル）')}／デイトレ {th.get('最初の値（デイトレ）')}／範囲 {th.get('範囲')}／出どころ {th.get('出どころ')}\"\n                if isinstance(th, dict) else f\"未決（置き場 {ROLES.name} に「{THRESHOLD_KEY}」の欄が無い）\")\n        L.append(f\"| {_esc(k)} | {_esc(r.get('出どころの役割', '（置き場に行が無い）'))}／{_esc(r.get('役割の印', '—'))} \"\n                 f\"| {_esc('・'.join(str(x) for x in p.get('パラメータの名前') or []))}：{_esc(rng or '（範囲の行が無い）')} \"\n                 f\"| {_esc(p.get('最初の値（スキャル）'))}（{_esc(p.get('最初の値の出どころ（スキャル）'))}） \"\n                 f\"| {_esc(p.get('最初の値（デイトレ）'))}（{_esc(p.get('最初の値の出どころ（デイトレ）'))}） \"\n                 f\"| {'オン' if k in on else ('オフ' if k in off else 'オンとオフの一覧に名前が無い')} | {_esc(th_s)} |\")\n    return L + [\"\"]\n\n\ndef _auto_rows(no: str, lines: list, d: dict) -> list:\n    \"\"\"4番の節の項目の下に、プログラムが置き場から写す行（新しい形の設計書だけ）。写す物が無い項目は空の並び。\"\"\"\n    text = \"\\n\".join(str(x) for x in lines)\n    L: list = []\n    if no == \"4-0\":\n        L += [_tag(\"自動\", \"§1 概要の1文目を、プログラムが写した\"),\n              \"この工事が解く問題＝\" + str(d.get(\"何を作るか\") or \"\").split(\"\\n\")[0], \"\"]\n    if no in (\"4-4\", \"4-6\"):\n        laws = [x for x in (_load(LAWS).get(\"法則\") or []) if isinstance(x, dict) and _named(str(x.get(\"番号\") or \"\"), text)]\n        if laws:\n            L += [_tag(\"自動\", f\"法則の原文＝`{LAWS.name}` から、この項目の文に番号が在る法則を、プログラムが写した\"),\n                  \"| 番号 | 場面 | 一文 | 説明 |\", \"|---|---|---|---|\"]\n            L += [f\"| {_esc(x.get('番号'))} | {_esc(x.get('場面'))} | {_esc(x.get('一文'))} | {_esc(x.get('説明', ''))} |\" for x in laws]\n            L += [\"\"]\n        fams = [f for f in (_load(FAMILIES).get(\"families\") or []) if isinstance(f, dict) and _named(str(f.get(\"id\") or \"\"), text)]\n        if fams:\n            L += [_tag(\"自動\", f\"型の名前＝`{FAMILIES.name}` から、この項目の文に番号が在る型を、プログラムが写した\"),\n                  \"| 型の番号 | 型の名前 |\", \"|---|---|\"]\n            L += [f\"| {_esc(f.get('id'))} | {_esc(f.get('name'))} |\" for f in fams]\n            L += [\"\"]\n    if no == \"4-7\":\n        L += _indicator_rows(text)\n    if no == \"4-21\":\n        nums = d.get(\"新しく入る数字\") or []\n        L += [_tag(\"自動\", \"実装の指示のうち、売買のロジック・設定のファイルに新しく入る数字を、プログラムが抜き出した（コメントの中の数字と、直す前から在る数字は除く）\"),\n              \"| 実装の番号 | 数字 |\", \"|---|---|\"]\n        L += [f\"| {a} | {b} |\" for a, b in nums] or [\"| — | 抜き出した数字は0件 |\"]\n        L += [\"\"]\n    return L\n\n\ndef _design_audit_reports(d: dict) -> list:\n    \"\"\"この設計書が受けた設計書の監査の、結果ファイル（名前に、工事の名前と design_cp が入る物）。\"\"\"\n    key = str(d.get(\"iter\") or \"\").replace(\"-\", \"_\")\n    if not key:\n        return []\n    return sorted(str(p.relative_to(ROOT)) for p in (SDK / \".claude\" / \"audits\").glob(f\"*_{key}_design_cp*_audit_report.md\"))\n\n\ndef _sections_rc() -> tuple:\n    \"\"\"項目の抜けを見張る検算（gen_design_sections.py --check）を走らせる。戻り＝(終了コード, 出力)。\n    見本の工事（自己テスト）では走らせない（本物の記録に頼らないため）。\"\"\"\n    if WORK.startswith(SAMPLE_WORK):\n        return 0, \"\"\n    import contextlib\n    import io\n    import gen_design_sections as gds\n    buf = io.StringIO()\n    with contextlib.redirect_stdout(buf):\n        rc = gds.check()\n    return rc, buf.getvalue()\n\n\ndef src() -> dict:\n    \"\"\"工事のフォルダから設計書を組む中身を作る。「やらないこと」が空なら止まる（fail-closed の2つ目）。\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:433「def src() -> dict:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 10,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "440〜441行（src・いま組んでいる設計書が新しい形かを、覚える）",
+  "直す前の文字": "    d = src_from_work(WORK)\n    if not d.get(\"やらないこと\"):\n",
+  "種類": "直した後の文字",
+  "中身": "    d = src_from_work(WORK)\n    global _NEW_FORM\n    _NEW_FORM = d.get(\"形\") == \"新\"\n    if not d.get(\"やらないこと\"):\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:440「d = src_from_work(WORK)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 11,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "464行（build_materials・新しい形の設計書では、探す材料の一覧を、関わる指標の行だけにする）",
+  "直す前の文字": "    add(f\"**探す指標＝印がオンの {len(on)}種**（印を切り替えると、この一覧も設計も変わります）。\")\n",
+  "種類": "直した後の文字",
+  "中身": "    if d.get(\"形\") == \"新\":\n        # ★2026-10-13＝新しい形の設計書では、関わる指標の行だけを出す（案の【4-7】の文に名前が在る指標）\n        _t47 = \"\\n\".join(str(x) for x in ((d.get(\"設計の中身\") or {}).get(\"4-7\") or []))\n        _all = len(on)\n        on = [x for x in on if _named(str(x), _t47)]\n        add(f\"**この工事が関わる指標＝{len(on)}種**（案の【4-7】の文に名前が在る物。印がオンの指標は、全部で {_all}種）。\")\n    else:\n        add(f\"**探す指標＝印がオンの {len(on)}種**（印を切り替えると、この一覧も設計も変わります）。\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:464「add(f\"**探す指標＝印がオンの {len(on)}種**（印を切り替えると、この一覧も設計も変わります）。\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 12,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "762行（build_checklist・新しい形の設計書では、7-5 の群2 を、直すファイルの全部で決める）",
+  "直す前の文字": "    g2 = needs_group2(tgt)\n",
+  "種類": "直した後の文字",
+  "中身": "    g2 = needs_group2(tgt) or (d.get(\"形\") == \"新\" and touches_trading(d))   # ★新しい形＝直すファイルのどれかが売買に触れば、群2 を出す\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:762「g2 = needs_group2(tgt)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 13,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "953行（<モジュール直下>・対応の表に書いてよい節に、6-5 を足す）",
+  "直す前の文字": "                  \"7-4\", \"7-5\", \"7-6\", \"7-7\", \"7-8\"}                            # page が必ず出す節の番号\n",
+  "種類": "直した後の文字",
+  "中身": "                  \"7-4\", \"7-5\", \"7-6\", \"7-7\", \"7-8\",                            # page が必ず出す節の番号\n                  \"6-5\"}                                                          # ★2026-10-13＝確かめていないこと（新しい形）\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:953「\"7-4\", \"7-5\", \"7-6\", \"7-7\", \"7-8\"}                            # page が必ず出す節の番号」",
+  "状態": "確定"
+ },
+ {
+  "番号": 14,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "957行（<モジュール直下>・案の新しい見出しを、設計書の節の番号に読み替える）",
+  "直す前の文字": "SECTION_ALIAS: dict = {}   # ★同日 7-6 に戻したので空（読み替えは無し）\n",
+  "種類": "直した後の文字",
+  "中身": "# ★2026-10-13（工事 design-doc-gen-form-20261013）＝案の新しい見出し（番号が無い）を、設計書の節の番号に読み替える\nSECTION_ALIAS: dict = {\"検査やプログラムを直す工事で書く5つ\": \"4-22\", \"新しく入る数字と式の一覧\": \"4-21\", \"確かめていないこと\": \"6-5\"}\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:957「SECTION_ALIAS: dict = {}   # ★同日 7-6 に戻したので空（読み替えは無し）」",
+  "状態": "確定"
+ },
+ {
+  "番号": 15,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1269〜1270行（section4・新しい形だけの項目と、新しい形の名前を扱う）",
+  "直す前の文字": "        items = sorted(items, key=lambda x: order.index(str(x.get(\"番号\"))))\n    body = d.get(\"設計の中身\") or {}\n",
+  "種類": "直した後の文字",
+  "中身": "        items = sorted(items, key=lambda x: order.index(str(x.get(\"番号\"))))\n    body = d.get(\"設計の中身\") or {}\n    # ★2026-10-13（工事 design-doc-gen-form-20261013）＝「形」が「新」の項目は、新しい形の設計書にだけ出す\n    new = d.get(\"形\") == \"新\"\n    if not new:\n        items = [x for x in items if x.get(\"形\") != \"新\"]\n\n    def _nm(it: dict) -> str:\n        return str(it.get(\"新しい形の名前\") or it.get(\"名前\")) if new else str(it.get(\"名前\"))\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1269「items = sorted(items, key=lambda x: order.index(str(x.get(\"番号\"))))」",
+  "状態": "確定"
+ },
+
+{
+  "番号": 16,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1292〜1293行（section4・種類①の工事では、4-6 と 4-7 を「必ず」にする）",
+  "直す前の文字": "        step = str(it.get(\"段\", \"\"))\n        name = _esc(it.get(\"名前\"))\n",
+  "種類": "直した後の文字",
+  "中身": "        step = str(it.get(\"段\", \"\"))\n        if new and it.get(\"種類①では必ず\") and work_kind(d) == 1:\n            step = \"必ず\"\n        name = _esc(_nm(it))\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1292「step = str(it.get(\"段\", \"\"))」",
+  "状態": "確定"
+ },
+ {
+  "番号": 17,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1299行（section4・非該当の項目の名前を、形に合わせる）",
+  "直す前の文字": "            na.append(f\"{no} {it.get('名前')}＝{got['非該当']}\")\n",
+  "種類": "直した後の文字",
+  "中身": "            na.append(f\"{no} {_nm(it)}＝{got['非該当']}\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1299「na.append(f\"{no} {it.get('名前')}＝{got['非該当']}\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 18,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1331行（section4・項目の見出しの名前を、形に合わせる）",
+  "直す前の文字": "        add(f\"### {no} {it.get('名前')}\")\n",
+  "種類": "直した後の文字",
+  "中身": "        add(f\"### {no} {_nm(it)}\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1331「add(f\"### {no} {it.get('名前')}\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 19,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1357〜1360行（section4・新しい形の設計書では、項目の下に、プログラムが置き場から写す行を出す）",
+  "直す前の文字": "            for line in got:\n                add(str(line))\n            add(\"\")\n        else:\n",
+  "種類": "直した後の文字",
+  "中身": "            for line in got:\n                add(str(line))\n            add(\"\")\n            if new:\n                for line in _auto_rows(no, got, d):\n                    add(line)\n        else:\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1357「for line in got:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 20,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1402〜1404行（page・新しい形の設計書の先頭に、工事の種類を出す）",
+  "直す前の文字": "    if d.get(\"MODEL\"):\n        add(\"MODEL: \" + \", \".join(d[\"MODEL\"]))\n    add(\"\")\n",
+  "種類": "直した後の文字",
+  "中身": "    if d.get(\"MODEL\"):\n        add(\"MODEL: \" + \", \".join(d[\"MODEL\"]))\n    new = d.get(\"形\") == \"新\"                           # ★2026-10-13＝新しい形の設計書か\n    if new:\n        add(\"工事の種類: \" + KIND_TEXT[work_kind(d)] + \"（直すファイルの一覧から、プログラムが決めた）\")\n    add(\"\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1402「if d.get(\"MODEL\"):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 21,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1425行（page・手書きの項目の数と名前を、形に合わせる）",
+  "直す前の文字": "        f\"CC が手で書いたのは、{TODO_MD} の「手書きの項目」の5つだけです＝{'・'.join(HAND_KEYS)}。\"\n",
+  "種類": "直した後の文字",
+  "中身": "        f\"CC が手で書いたのは、{TODO_MD} の「手書きの項目」の{len(_hk(d))}つだけです＝{'・'.join(_hk(d))}。\"\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1425「f\"CC が手で書いたのは、{TODO_MD} の「手書きの項目」の5つだけです＝{'・'.join(HAND_KEYS)}。\"」",
+  "状態": "確定"
+ },
+ {
+  "番号": 22,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1435〜1436行（page・新しい形の設計書には、要件定義の文を必ず載せる）",
+  "直す前の文字": "    if d.get(\"要件定義との照らし\") or core_required(d.get(\"iter\", \"\")):\n        add(\"## 要件定義と工事の流れ（固定・毎回 載せる・消さない）\")\n",
+  "種類": "直した後の文字",
+  "中身": "    if d.get(\"要件定義との照らし\") or core_required(d.get(\"iter\", \"\")) or new:\n        add(\"## 要件定義と工事の流れ（固定・毎回 載せる・消さない）\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1435「if d.get(\"要件定義との照らし\") or core_required(d.get(\"iter\", \"\")):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 23,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1441〜1442行（page・新しい形の設計書では、要件定義との照らしの表の代わりに、索引を出す）",
+  "直す前の文字": "        add(\"\")\n        add(\"### 0-R 要件定義との照らし（この工事が、上の要件定義に合っているか）\")\n",
+  "種類": "直した後の文字",
+  "中身": "        add(\"\")\n        if new:\n            # ★2026-10-13＝新しい形の設計書では、CC の判定の表をやめ、プログラムが作る索引を出す\n            L.extend(_index_lines(d))\n            add(\"\")\n    if (d.get(\"要件定義との照らし\") or core_required(d.get(\"iter\", \"\"))) and not new:\n        add(\"### 0-R 要件定義との照らし（この工事が、上の要件定義に合っているか）\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1441「add(\"\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 24,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1483行（page・新しい形の設計書の2番の節に、やることリストのどの行の工事かと、やることの一覧を出す）",
+  "直す前の文字": "    add(\"### 2-1 いまの状態（走らせて測ったもの）\")\n",
+  "種類": "直した後の文字",
+  "中身": "    if new:\n        L.extend(_sec2_new(d))\n    add(\"### 2-1 いまの状態（走らせて測ったもの）\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1483「add(\"### 2-1 いまの状態（走らせて測ったもの）\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 25,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1599〜1601行（page・新しい形の設計書の3番の節に、目標を出す。やらないことは、表の1か所から写す）",
+  "直す前の文字": "    add(\"### 3-1 やらないこと（1件ずつ・理由と出どころ）\")\n    add(\"\")\n    add(_wtag(\"手書き\", \"やることの表の「3-1 やらないこと」\"))\n",
+  "種類": "直した後の文字",
+  "中身": "    if new:\n        L.extend(_goal_lines(d))\n    add(\"### 3-1 やらないこと（1件ずつ・理由と出どころ）\")\n    add(\"\")\n    add(_wtag(\"自動\", \"やることの表の「## やらないこと」の表から、同じ件数で、プログラムが写した\") if new\n        else _wtag(\"手書き\", \"やることの表の「3-1 やらないこと」\"))\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1599「add(\"### 3-1 やらないこと（1件ずつ・理由と出どころ）\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 26,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1659〜1662行（page・新しい形の設計書では、受けた設計書の監査の結果ファイルを出す）",
+  "直す前の文字": "    _audit = build_audit(d)\n    if not _audit:\n        add(\"**6-4 この設計書に効いている監査の指摘＝非該当**（監査レポートの欄が空＝この設計書は監査の指摘を受けていない・道具が決めた）\")\n        add(\"\")\n",
+  "種類": "直した後の文字",
+  "中身": "    _audit = build_audit(d)\n    # ★2026-10-13＝新しい形の設計書では、この設計書が受けた設計書の監査の結果ファイルを、プログラムが探して出す\n    #   （直す前は、監査の修正を入れた版にも「監査の指摘を受けていない」と出た＝記録 20261013 §12）。\n    _rep = _design_audit_reports(d) if new else []\n    if not _audit and _rep:\n        add(\"**6-4 この設計書が受けた設計書の監査**＝\" + \"・\".join(f\"`{p}`\" for p in _rep)\n            + \"（結果ファイルの名前から、プログラムが見つけた。修正の指示は、結果ファイルの8番の節に在る）\")\n        add(\"\")\n    if not _audit and not _rep:\n        add(\"**6-4 この設計書に効いている監査の指摘＝非該当**（監査レポートの欄が空＝この設計書は監査の指摘を受けていない・道具が決めた）\")\n        add(\"\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1659「_audit = build_audit(d)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 27,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1672行（page・新しい形の設計書の6番の節に、確かめていないことを出す）",
+  "直す前の文字": "    add(\"## 7｜付録（hook が求める項目）\")\n",
+  "種類": "直した後の文字",
+  "中身": "    if new:\n        L.extend(_unverified_lines(d))\n    add(\"## 7｜付録（hook が求める項目）\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1672「add(\"## 7｜付録（hook が求める項目）\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 28,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1677行（page・新しい形の設計書の 7-1 に、概要の1文目を写す）",
+  "直す前の文字": "    add(\"**① 真因（root cause）**＝\" + d[\"真因\"])\n",
+  "種類": "直した後の文字",
+  "中身": "    if new:\n        add(\"この工事が解く問題＝\" + str(d[\"何を作るか\"]).split(\"\\n\")[0] + \"（プログラムが、§1 概要の1文目を写した）\")\n        add(\"\")\n    add(\"**① 真因（root cause）**＝\" + d[\"真因\"])\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1677「add(\"**① 真因（root cause）**＝\" + d[\"真因\"])」",
+  "状態": "確定"
+ },
+ {
+  "番号": 29,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1698〜1701行（page・新しい形の設計書の 7-3b は、根拠と確かめ直すコマンドの表にする）",
+  "直す前の文字": "    if not touches_trading(d):\n        add(_tag(\"自動\", \"TARGET と NEW_FILE から非該当を決めた\"))\n        add(NONTRADE)\n    else:\n",
+  "種類": "直した後の文字",
+  "中身": "    if new:\n        L.extend(_forbidden_new(d))\n    elif not touches_trading(d):\n        add(_tag(\"自動\", \"TARGET と NEW_FILE から非該当を決めた\"))\n        add(NONTRADE)\n    else:\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1698「if not touches_trading(d):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 30,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1786行（write・設計書を作るたびに、項目の抜けを見張る検算を走らせる）",
+  "直す前の文字": "    body = page(d)\n",
+  "種類": "直した後の文字",
+  "中身": "    # ★2026-10-13（工事 design-doc-gen-form-20261013・まこさん指示 2026-10-12「今後は毎回この検査を走らせるよう強制を入れて」）\n    #   ＝設計書を作るたびに、項目の抜けを見張る検算を走らせる。通らなければ書かない。\n    _rc, _out = _sections_rc()\n    if _rc:\n        raise SystemExit(\"[gen_acceptance] 項目の抜けを見張る検算（gen_design_sections.py --check）が通りません（fail-closed）:\\n\" + _out)\n    body = page(d)\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1786「body = page(d)」",
+  "状態": "確定"
+ },
+ {
+  "番号": 31,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1790〜1791行（write・手書きの印の数の検査を、形に合わせる）",
+  "直す前の文字": "    if n_hand != len(HAND_KEYS):\n        raise SystemExit(f\"[gen_acceptance] ［手書き］の印が {n_hand} 個（割り当ては {len(HAND_KEYS)} 個・fail-closed）\")\n",
+  "種類": "直した後の文字",
+  "中身": "    if n_hand != len(_hk(d)):\n        raise SystemExit(f\"[gen_acceptance] ［手書き］の印が {n_hand} 個（割り当ては {len(_hk(d))} 個・fail-closed）\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1790「if n_hand != len(HAND_KEYS):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 32,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1805〜1806行（write・読むもの宣言の写しを、工事のフォルダに置く）",
+  "直す前の文字": "    out.write_text(body, encoding=\"utf-8\")\n    print(f\"✅ --write 完了: {out}（{len(body.splitlines())}行・囲み {len(BLOCKS)}個）\")\n",
+  "種類": "直した後の文字",
+  "中身": "    out.write_text(body, encoding=\"utf-8\")\n    # ★2026-10-13＝新しい形の設計書を本物に書くときは、読むもの宣言の写しを、工事のフォルダに置く\n    #   （宣言が次の工事の物に替わった後も、やることの番号と結ぶ要件を写せるように）。\n    if not dest and d.get(\"形\") == \"新\" and d.get(\"読むもの宣言の文\"):\n        (gv.work_dir(str(d[\"iter\"])) / PLAN_COPY).write_text(d[\"読むもの宣言の文\"], encoding=\"utf-8\")\n    print(f\"✅ --write 完了: {out}（{len(body.splitlines())}行・囲み {len(BLOCKS)}個）\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1805「out.write_text(body, encoding=\"utf-8\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 33,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1962行（_sample_work・自己テストの見本を、新しい形でも作れるようにする（引数））",
+  "直す前の文字": "def _sample_work(base: Path) -> str:\n",
+  "種類": "直した後の文字",
+  "中身": "def _sample_work(base: Path, new: bool = False) -> str:\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1962「def _sample_work(base: Path) -> str:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 34,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "1974〜1975行（_sample_work・新しい形の見本の、工事の名前）",
+  "直す前の文字": "    work = SAMPLE_WORK\n    na = \"非該当＝見本（自己テストの工事）\"\n",
+  "種類": "直した後の文字",
+  "中身": "    work = SAMPLE_WORK + (\"-new\" if new else \"\")\n    na = \"非該当＝見本（自己テストの工事）\"\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:1974「work = SAMPLE_WORK」",
+  "状態": "確定"
+ },
+ {
+  "番号": 35,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "2012行（_sample_work・新しい形の案の見本）",
+  "直す前の文字": "             \"【外部検索】\", \"| 名前 | 中身 |\", \"|---|---|\", \"| 見本の検索 | 見本の中身 |\"]\n",
+  "種類": "直した後の文字",
+  "中身": "             \"【外部検索】\", \"| 名前 | 中身 |\", \"|---|---|\", \"| 見本の検索 | 見本の中身 |\"]\n    if new:\n        # ★2026-10-13＝新しい形の案の見本（直すファイルは道具だけ＝種類②）。【7-3b】は、根拠と確かめ直すコマンドの表\n        prop += [\"【\" + HEAD_FIVE + \"】\", \"| 番号 | 欄 | 中身 |\", \"|---|---|---|\",\n                 \"| ① | 守る相手 | 見本 |\", \"| ② | 直す前に通っていた誤りの実例 | 見本 |\",\n                 \"| ③ | 直した後に止まる誤りと、まだ通る誤り | 見本 |\", \"| ④ | この直しで確かめなくなる事・弱くなる守り | 見本の守り |\",\n                 \"| ⑤ | 「触らない」とした要件ごとの根拠 | 見本 |\",\n                 \"【\" + HEAD_UNVERIFIED + \"】\", \"| 確かめていないこと | なぜ確かめていないか | 確かめるなら、何を走らせるか |\", \"|---|---|---|\",\n                 \"| 見本の確かめ | 見本 | 見本のコマンド |\",\n                 \"【7-3b 作ってはいけないものとの照合】\", \"| 番号 | 根拠 | 確かめ直すコマンド |\", \"|---|---|---|\",\n                 \"| 1 | 見本の根拠 | 見本のコマンド |\", \"| 2 | 見本の根拠 | 見本のコマンド |\"]\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:2012「\"【外部検索】\", \"| 名前 | 中身 |\", \"|---|---|\", \"| 見本の検索 | 見本の中身 |\"]」",
+  "状態": "確定"
+ },
+ {
+  "番号": 36,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "2034行（_sample_work・新しい形の やることの表と、読むもの宣言の写しの見本）",
+  "直す前の文字": "    (gv.work_dir(work) / TODO_MD).write_text(\"\\n\".join(todo), encoding=\"utf-8\")\n",
+  "種類": "直した後の文字",
+  "中身": "    if new:\n        todo = [\"# やることの表｜工事 selftest-sample-new（見本）\", \"\",\n                \"## 一覧\", \"\", \"| 番号 | 一文 | 出どころ |\", \"|---|---|---|\", \"| 見本 | 見本のやること | 見本 |\", \"\",\n                \"## やらないこと\", \"\", \"| 番号 | 中身 | 理由 | 出どころ |\", \"|---|---|---|---|\", \"| Y-1 | 見本のやらないこと | 見本 | 見本 |\", \"\",\n                \"## 手書きの項目\", \"\",\n                \"### §1 概要\", \"\", \"★向きを見る所。\", \"見本の概要。\", \"\", \"見本の2つ目の段落。\", \"\",\n                \"### やることリストのどの行の工事か\", \"\", \"| 欄 | 中身 |\", \"|---|---|\",\n                \"| 要件定義の「いまの実物との違い」のどの行か | 見本 |\", \"| その違いを、どこまで減らすか | 見本の残り |\", \"| 順番 | 見本 |\", \"\",\n                \"### 2-1 何を測るか\", \"\", \"| 何を測ったか | コマンド | 読み方 |\", \"|---|---|---|\",\n                \"| 見本 | grep -c 'def page' .claude/tools/gen_acceptance.py | 在れば一以上 |\", \"\",\n                \"### 目標\", \"\", \"| 番号 | 欄 | 中身 |\", \"|---|---|---|\",\n                \"| ① | どの要件のためか | 見本 |\", \"| ② | 何が出来るようになるか | 見本 |\", \"| ③ | net までのつながり | 見本のつながり |\",\n                \"| ④ | 無駄だったと分かる物 | 見本の物 |\", \"| ⑤ | 済んだ直後に、②を何で確かめるか | 見本 |\",\n                \"| ⑥ | この工事が損なう恐れのある要件 | 見本の要件 |\", \"\",\n                \"### 3-2 決めてほしいこと\", \"\", \"無し\", \"\",\n                \"### 4-19 通しの例\", \"\", \"見本の例。\", \"\"]\n        (gv.work_dir(work) / PLAN_COPY).write_text(\n            f\"【読むもの宣言】\\n設計書: {work}\\n{PLAN_NUM_KEY}なし（やることリストに行が無い工事）\\n{PLAN_REQ_KEY}要件定義の9番（見本）\\n\",\n            encoding=\"utf-8\")\n    (gv.work_dir(work) / TODO_MD).write_text(\"\\n\".join(todo), encoding=\"utf-8\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:2034「(gv.work_dir(work) / TODO_MD).write_text(\"\\n\".join(todo), encoding=\"utf-8\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 37,
+  "対象のファイル": "../../.claude/tools/gen_acceptance.py",
+  "直す箇所": "2350行（selftest・自己テストに、新しい形の元の番人を6つ足す）",
+  "直す前の文字": "        # T14（2026-09-30・同じ設計書）＝本物の設計書と ratchet の直下のファイルに1バイトも書いていない\n",
+  "種類": "直した後の文字",
+  "中身": "        # T20〜T25（2026-10-13・工事 design-doc-gen-form-20261013）＝新しい形の元（共通の ひな型で書いた やることの表と案）\n        global _NEW_FORM, _sections_rc\n        _keep_work, _keep_rc = WORK, _sections_rc\n        WORK = _sample_work(tmpd, new=True)\n        copy2 = tmpd / \"acceptance_selftest_new.md\"\n        total += 1\n        try:\n            write(dest=copy2)\n            _t20 = copy2.read_text(encoding=\"utf-8\")\n            _miss20 = [s for s in (\"工事の種類: 種類②\", \"### 0-R 要件定義の索引\", \"### 2-0 やることリストのどの行の工事か\",\n                                   \"### 3-0 目標\", \"### 4-22 \", \"### 6-5 確かめていないこと\", \"見本の概要。\\n\\n見本の2つ目の段落。\",\n                                   \"| 10 | \", \"CC が書いて、まこさんが OK した案の【4-0】\") if s not in _t20]\n            if not _miss20 and verify(dest=copy2) == 0 and \"### 0-R 要件定義の索引\" not in copy.read_text(encoding=\"utf-8\"):\n                ok += 1\n                print(f\"   T{total} 新しい形の元から設計書を作れて、--verify が通る（いままでの形の見本には、新しい節が出ない） → pass\")\n            else:\n                print(f\"   T{total} 新しい形の元から作った設計書 → fail（出ていない物＝{_miss20}）\")\n        except SystemExit as e:\n            print(f\"   T{total} 新しい形の元から設計書を作れない → fail（{str(e)[:300]}）\")\n        _tp = gv.work_dir(WORK) / TODO_MD\n        _o21 = _tp.read_text(encoding=\"utf-8\")\n        for _name, _txt, _want in (\n                (\"手書きの項目に知らない見出しが在ると止まる\", _o21 + \"\\n### 知らない見出し\\n\\n見本\\n\", \"知らない見出し「### 知らない見出し」\"),\n                (\"目標の④が空だと止まる\", _o21.replace(\"| ④ | 無駄だったと分かる物 | 見本の物 |\", \"| ④ | 無駄だったと分かる物 | 無し |\"), \"空では出せない\")):\n            total += 1\n            _tp.write_text(_txt, encoding=\"utf-8\")\n            try:\n                src()\n                print(f\"   T{total} {_name}はずが、通った → fail\")\n            except SystemExit as e:\n                if _want in str(e):\n                    ok += 1\n                    print(f\"   T{total} {_name} → pass\")\n                else:\n                    print(f\"   T{total} 別の理由で止まった → fail（{str(e)[:200]}）\")\n            _tp.write_text(_o21, encoding=\"utf-8\")\n        total += 1\n        _sections_rc = lambda: (1, \"見本の抜け\")                # noqa: E731  検算が落ちた場面を作る\n        try:\n            write(dest=copy2)\n            print(f\"   T{total} 項目の抜けを見張る検算が落ちても、設計書を書いた → fail\")\n        except SystemExit as e:\n            if \"項目の抜けを見張る検算\" in str(e):\n                ok += 1\n                print(f\"   T{total} 項目の抜けを見張る検算が落ちると、設計書を書かない → pass\")\n            else:\n                print(f\"   T{total} 別の理由で止まった → fail（{str(e)[:200]}）\")\n        _sections_rc = _keep_rc\n        # 読むもの宣言が「なし」なのに、やることの表の一覧に、やることリストの行の番号が在ると止まる（すり抜けを塞ぐ）\n        total += 1\n        _nums = [str(t.get(\"番号\")) for t in (_load(TODO).get(\"やること\") or []) if isinstance(t, dict) and t.get(\"番号\")]\n        _tp.write_text(_o21.replace(\"| 見本 | 見本のやること | 見本 |\", f\"| 見本 | {_nums[0]} の続きのやること | 見本 |\"), encoding=\"utf-8\")\n        try:\n            src()\n            print(f\"   T{total} 宣言が「なし」で、一覧に やることリストの行の番号が在っても通った → fail\")\n        except SystemExit as e:\n            if \"やることの番号＝なし\" in str(e):\n                ok += 1\n                print(f\"   T{total} 宣言が「なし」なのに、一覧に やることリストの行の番号が在ると止まる → pass\")\n            else:\n                print(f\"   T{total} 別の理由で止まった → fail（{str(e)[:200]}）\")\n        _tp.write_text(_o21, encoding=\"utf-8\")\n        # 置き場から写す行（法則の原文・指標の行）と、新しく入る数字の抜き出し\n        total += 1\n        _r47 = \"\\n\".join(_auto_rows(\"4-7\", [\"ADX に関わる\"], {}))\n        _r46 = \"\\n\".join(_auto_rows(\"4-6\", [\"法則 C1 を守る\"], {}))\n        _n25 = _new_numbers({\"実装の指示\": [{\"番号\": 1, \"対象のファイル\": \"scripts/priority_rebuild/x.py\",\n                                         \"直す前の文字\": \"a = 1\", \"中身\": \"a = 1\\nb = 250  # 300 は使わない\"}]})\n        if \"| ADX |\" in _r47 and \"閾値の代表の値\" in _r47 and \"| C1 |\" in _r46 and _n25 == [(\"1\", \"250\")]:\n            ok += 1\n            print(f\"   T{total} 置き場から、指標の行と法則の原文を写す。新しく入る数字を抜き出す → pass\")\n        else:\n            print(f\"   T{total} 置き場から写す行・数字の抜き出し → fail（指標＝{'| ADX |' in _r47}・法則＝{'| C1 |' in _r46}・数字＝{_n25}）\")\n        WORK = _keep_work\n        _NEW_FORM = False\n\n        # T14（2026-09-30・同じ設計書）＝本物の設計書と ratchet の直下のファイルに1バイトも書いていない\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_acceptance.py:2350「# T14（2026-09-30・同じ設計書）＝本物の設計書と ratchet の直下のファイルに1バイトも書いていない」",
+  "状態": "確定"
+ },
+
+{
+  "番号": 38,
+  "対象のファイル": "../../.claude/tools/gen_design_sections.py",
+  "直す箇所": "170〜172行（collect_c・記録から指摘を拾うときに、まこさんの語が在る行の、設計と抜けの両方を言う文だけを拾う（割り当てを作った日より後））",
+  "直す前の文字": "            for q in re.findall(r\"「([^」]{12,120})」\", ln):\n                if any(w in q for w in MISS_WORDS) or \"設計\" in q:\n                    rows.append((day, q))\n",
+  "種類": "直した後の文字",
+  "中身": "            # ★2026-10-13（工事 design-doc-gen-form-20261013）＝2026-09-10（割り当てを作った日）より後の記録は、\n            #   「まこさん」の語が在る行の、かぎ括弧の中に「設計」と、入っていないことを指す語の両方が在る文だけを拾う。\n            #   直す前の拾い方は、検査の出力や CC の文まで拾い、記録を書くたびに件数が増えた（84件のうち、指摘でない物が混ざった）。\n            #   その日までの記録は、いままでの拾い方のまま＝割り当て済みの番号（C-1〜C-38）を動かさない。\n            late = day > C_OLD_RULE_UNTIL\n            if late and \"まこさん\" not in ln:\n                continue\n            for q in re.findall(r\"「([^」]{12,120})」\", ln):\n                if late:\n                    if \"設計\" in q and any(w in q for w in MISS_WORDS):\n                        rows.append((day, q))\n                elif any(w in q for w in MISS_WORDS) or \"設計\" in q:\n                    rows.append((day, q))\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_design_sections.py:170「for q in re.findall(r\"「([^」]{12,120})」\", ln):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 39,
+  "対象のファイル": "../../.claude/tools/gen_design_sections.py",
+  "直す箇所": "66行（<モジュール直下>・拾い方を分ける日を足す）",
+  "直す前の文字": "MISS_WORDS = (\"無い\", \"落ち\", \"入っていない\", \"書いてない\", \"足りない\", \"抜け\", \"ヌケ\", \"漏れ\", \"コア\")\n",
+  "種類": "直した後の文字",
+  "中身": "MISS_WORDS = (\"無い\", \"落ち\", \"入っていない\", \"書いてない\", \"足りない\", \"抜け\", \"ヌケ\", \"漏れ\", \"コア\")\nC_OLD_RULE_UNTIL = \"20260910\"                       # この日までの記録は、いままでの拾い方（割り当て済みの番号を動かさない）\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_design_sections.py:66「MISS_WORDS = (\"無い\", \"落ち\", \"入っていない\", \"書いてない\", \"足りない\", \"抜け\", \"ヌケ\", \"漏れ\", \"コア\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 40,
+  "対象のファイル": "../../.claude/tools/gen_core_requirements.py",
+  "直す箇所": "149行（<モジュール直下>・要件定義の行の一覧に、5・9・10 を足す（新しい形の設計書の索引だけ））",
+  "直す前の文字": "ONE_ROW = (\"1\", \"2\", \"4\", \"6\", \"7\")\n",
+  "種類": "直した後の文字",
+  "中身": "ONE_ROW_OLD = (\"1\", \"2\", \"4\", \"6\", \"7\")\n# ★2026-10-13（工事 design-doc-gen-form-20261013）＝新しい形の設計書の索引は、5・9・10 も行にする（別セッションの監査 2026-10-12 の M-12）。\n#   いままでの形の設計書（案の【0-R】と照らす）は、ONE_ROW_OLD のまま＝承認済みの設計書は変わらない。\nONE_ROW = (\"1\", \"2\", \"4\", \"5\", \"6\", \"7\", \"9\", \"10\")\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_core_requirements.py:149「ONE_ROW = (\"1\", \"2\", \"4\", \"6\", \"7\")」",
+  "状態": "確定"
+ },
+ {
+  "番号": 41,
+  "対象のファイル": "../../.claude/tools/gen_core_requirements.py",
+  "直す箇所": "152行（requirement_items・行の一覧を、新しい形の索引のために全部 出す引数を足す）",
+  "直す前の文字": "def requirement_items() -> list:\n",
+  "種類": "直した後の文字",
+  "中身": "def requirement_items(full: bool = False) -> list:\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_core_requirements.py:152「def requirement_items() -> list:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 42,
+  "対象のファイル": "../../.claude/tools/gen_core_requirements.py",
+  "直す箇所": "171行（requirement_items・引数で、行の一覧を切り替える）",
+  "直す前の文字": "            if sec in ONE_ROW:\n",
+  "種類": "直した後の文字",
+  "中身": "            if sec in (ONE_ROW if full else ONE_ROW_OLD):\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_core_requirements.py:171「if sec in ONE_ROW:」",
+  "状態": "確定"
+ },
+ {
+  "番号": 43,
+  "対象のファイル": "../../.claude/tools/gen_core_requirements.py",
+  "直す箇所": "182行（requirement_items・件数の検査も、引数で切り替える）",
+  "直す前の文字": "    if len(items) < len(ONE_ROW):\n",
+  "種類": "直した後の文字",
+  "中身": "    if len(items) < len(ONE_ROW if full else ONE_ROW_OLD):\n",
+  "根拠の抜き書き": "../../.claude/tools/gen_core_requirements.py:182「if len(items) < len(ONE_ROW):」",
+  "状態": "確定"
+ },
+ {
+  "番号": 44,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "8行（項目の正本・並び順に、新しい項目2件を足す（4-22 は 4-6 のすぐ後・4-21 は 4-9 のすぐ後。まこさん「１，OK」2026-10-13））",
+  "直す前の文字": "  \"_§4の並び順\": [\"4-0\", \"4-1\", \"4-2\", \"4-6\", \"4-3\", \"4-4\", \"4-19\", \"4-7\", \"4-9\", \"4-12\",\n",
+  "種類": "直した後の文字",
+  "中身": "  \"_§4の並び順\": [\"4-0\", \"4-1\", \"4-2\", \"4-6\", \"4-22\", \"4-3\", \"4-4\", \"4-19\", \"4-7\", \"4-9\", \"4-21\", \"4-12\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:8「\"_§4の並び順\": [\"4-0\", \"4-1\", \"4-2\", \"4-6\", \"4-3\", \"4-4\", \"4-19\", \"4-7\", \"4-9\", \"4-12\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 45,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "26行（項目の正本・4-3 に、足す中身を書き足す）",
+  "直す前の文字": "     \"中身\": \"主要な部品を挙げ、それぞれが何に責任を持つかを書く。部品どうしの協調も。\",\n",
+  "種類": "直した後の文字",
+  "中身": "     \"中身\": \"主要な部品を挙げ、それぞれが何に責任を持つかを書く。部品どうしの協調も。★新しい形の設計書で足す所（項目の表 2026-10-12・まこさん「OK」）＝指標を使う部品は、指標一覧（material）から呼ぶ行を書く。自前の式を置いていない根拠と、指標のオン・オフがその部品に効く道筋も書く。\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:26「\"中身\": \"主要な部品を挙げ、それぞれが何に責任を持つかを書く。部品どうしの協調も。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 46,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "30行（項目の正本・4-4 に、足す中身を書き足す）",
+  "直す前の文字": "     \"中身\": \"工程の順番と、工程の間で何を渡すか。組み方の根拠（何の法則で決めるか）も。\",\n",
+  "種類": "直した後の文字",
+  "中身": "     \"中身\": \"工程の順番と、工程の間で何を渡すか。組み方の根拠（何の法則で決めるか）も。★新しい形の設計書で足す所（項目の表 2026-10-12・まこさん「OK」）＝条件のつなぎ方に触るときは、沿う法則の番号と型の番号を書く。法則と型の原文は、プログラムが法則のファイルと型の表から写す。\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:30「\"中身\": \"工程の順番と、工程の間で何を渡すか。組み方の根拠（何の法則で決めるか）も。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 47,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "37行（項目の正本・4-6 を、種類①の工事（指標・探索・売買のロジック・設定に触る工事）では必ず書く項目にする）",
+  "直す前の文字": "    {\"番号\": \"4-6\", \"節\": \"§4\", \"名前\": \"制約（従う決まりの全件と、その出どころ）\", \"段\": \"条件\",\n",
+  "種類": "直した後の文字",
+  "中身": "    {\"番号\": \"4-6\", \"節\": \"§4\", \"名前\": \"制約（従う決まりの全件と、その出どころ）\", \"段\": \"条件\",\n     \"種類①では必ず\": true,\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:37「{\"番号\": \"4-6\", \"節\": \"§4\", \"名前\": \"制約（従う決まりの全件と、その出どころ）\", \"段\": \"条件\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 48,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "39行（項目の正本・4-6 に、足す中身を書き足す）",
+  "直す前の文字": "     \"中身\": \"決まりを1件も落とさずに並べ、どれをどの工程で使うかを書く。動かせないもの（承認済みの設定・取引所の仕様）も。\",\n",
+  "種類": "直した後の文字",
+  "中身": "     \"中身\": \"決まりを1件も落とさずに並べ、どれをどの工程で使うかを書く。動かせないもの（承認済みの設定・取引所の仕様）も。★新しい形の設計書で足す所（項目の表 2026-10-12・まこさん「OK」）＝法則・型の表・場面の決まり・そのほかに分ける。法則の原文は、プログラムが法則のファイルから写す。CC が書くのは、どう守るかと、新しく足す決まりごとの「何を潰すか」。\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:39「\"中身\": \"決まりを1件も落とさずに並べ、どれをどの工程で使うかを書く。動かせないもの（承認済みの設定・取引所の仕様）も。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 49,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "42行（項目の正本・4-7 を、種類①の工事では必ず書く項目にする）",
+  "直す前の文字": "    {\"番号\": \"4-7\", \"節\": \"§4\", \"名前\": \"探索の範囲（決める値と、その探し方＝範囲・並び・本数）\", \"段\": \"条件\",\n",
+  "種類": "直した後の文字",
+  "中身": "    {\"番号\": \"4-7\", \"節\": \"§4\", \"名前\": \"探索の範囲（決める値と、その探し方＝範囲・並び・本数）\", \"段\": \"条件\",\n     \"種類①では必ず\": true,\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:42「{\"番号\": \"4-7\", \"節\": \"§4\", \"名前\": \"探索の範囲（決める値と、その探し方＝範囲・並び・本数）\", \"段\": \"条件\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 50,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "44行（項目の正本・4-7 に、足す中身を書き足す）",
+  "直す前の文字": "     \"中身\": \"工程ごとに、使う材料（指標）・時間足・閾値の格子・パラメータの範囲・候補の本数。\",\n",
+  "種類": "直した後の文字",
+  "中身": "     \"中身\": \"工程ごとに、使う材料（指標）・時間足・閾値の格子・パラメータの範囲・候補の本数。★新しい形の設計書で足す所（項目の表 2026-10-12・まこさん「OK」）＝指標・閾値・パラメータ・時間足ごとに、どれに関わるか・どう扱うか・探し方のどの段階かを書く。役割・範囲・代表の値（スキャルとデイトレ）・出どころ・オンかどうかは、プログラムが置き場から写す。役割に沿って使うことも書く。\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:44「\"中身\": \"工程ごとに、使う材料（指標）・時間足・閾値の格子・パラメータの範囲・候補の本数。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 51,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "49行（項目の正本・4-8 に、足す中身を書き足す）",
+  "直す前の文字": "     \"中身\": \"途中で作る表の列の意味・鍵の意味・既にあるデータの形をどう変えるか。\",\n",
+  "種類": "直した後の文字",
+  "中身": "     \"中身\": \"途中で作る表の列の意味・鍵の意味・既にあるデータの形をどう変えるか。★新しい形の設計書で足す所（項目の表 2026-10-12・まこさん「OK」）＝値の持ち方（代表の値を、指標の名前に入れない。戦略ごとの設定として持つ置き場）。\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:49「\"中身\": \"途中で作る表の列の意味・鍵の意味・既にあるデータの形をどう変えるか。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 52,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "54行（項目の正本・4-9 に、足す中身を書き足す）",
+  "直す前の文字": "     \"中身\": \"指定できる項目・その置き場・既定値・指定しなかったときの動き。\",\n",
+  "種類": "直した後の文字",
+  "中身": "     \"中身\": \"指定できる項目・その置き場・既定値・指定しなかったときの動き。★新しい形の設計書で足す所（項目の表 2026-10-12・まこさん「OK」）＝値の持ち方（範囲は、指標ごとに1つ）。\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:54「\"中身\": \"指定できる項目・その置き場・既定値・指定しなかったときの動き。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 53,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "59行（項目の正本・4-10 に、足す中身を書き足す）",
+  "直す前の文字": "     \"中身\": \"置き場・上書きか追記か・作り直せるか・古いものをどうするか。\",\n",
+  "種類": "直した後の文字",
+  "中身": "     \"中身\": \"置き場・上書きか追記か・作り直せるか・古いものをどうするか。★新しい形の設計書で足す所（項目の表 2026-10-12・まこさん「OK」）＝置き場が1か所であること・直すと届く先・出どころをどこまで確かめたか。\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:59「\"中身\": \"置き場・上書きか追記か・作り直せるか・古いものをどうするか。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 54,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "72行（項目の正本・4-13 に、足す中身を書き足す）",
+  "直す前の文字": "     \"中身\": \"いま在るもののうち、何がこの部分に依存しているか。★hook 64本と承認・ハッシュ値が絡むので、この repo では特に重い。\",\n",
+  "種類": "直した後の文字",
+  "中身": "     \"中身\": \"いま在るもののうち、何がこの部分に依存しているか。★hook 64本と承認・ハッシュ値が絡むので、この repo では特に重い。★新しい形の設計書で足す所（項目の表 2026-10-12・まこさん「OK」）＝名前が消える・変わるときは、その名前ごとに、探したコマンドと結果を書く。指標の値を変えるときは、Entry・Exit・4つの場面の判定ごとに、壊れる道筋と、測ったコマンドと結果を書く。\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:72「\"中身\": \"いま在るもののうち、何がこの部分に依存しているか。★hook 64本と承認・ハッシュ値が絡むので、この repo では特に重い。\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 55,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "98行（項目の正本・4-19 の、新しい形の設計書での名前を足す（まこさん「２，名前は変更する」2026-10-13））",
+  "直す前の文字": "    {\"番号\": \"4-19\", \"節\": \"§4\", \"名前\": \"通しの例（最初から最後まで、1件を追いかけた例）\", \"段\": \"必ず\",\n",
+  "種類": "直した後の文字",
+  "中身": "    {\"番号\": \"4-19\", \"節\": \"§4\", \"名前\": \"通しの例（最初から最後まで、1件を追いかけた例）\", \"段\": \"必ず\",\n     \"新しい形の名前\": \"この工事で何が変わるかを、1件に当てはめて示した例\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:98「{\"番号\": \"4-19\", \"節\": \"§4\", \"名前\": \"通しの例（最初から最後まで、1件を追いかけた例）\", \"段\": \"必ず\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 56,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "103〜105行（項目の正本・新しい項目2件（4-21・4-22）を足す）",
+  "直す前の文字": "     \"出どころ\": [\"A-4\"]},\n\n    {\"番号\": \"§1\", \"節\": \"§1\", \"名前\": \"概要（何の問題を解くか・1つの文）\",\n",
+  "種類": "直した後の文字",
+  "中身": "     \"出どころ\": [\"A-4\"]},\n\n    {\"番号\": \"4-21\", \"節\": \"§4\", \"名前\": \"新しく入る数字と式の一覧（1件ずつの出どころ）\", \"段\": \"条件\", \"形\": \"新\",\n     \"条件\": \"売買のロジック・設定のファイルに、新しく数字か式が入るとき（種類①の工事では、必ず書く）\",\n     \"中身\": \"この工事で新しく入る数字と式の全件。数字は、プログラムが実装の指示から抜き出す。CC が書くのは、1件ずつの出どころ（資料のファイルと行・まこさんの決定の逐語）。CC が作った数字は書かない。★「形」が「新」の項目は、新しい形の設計書にだけ出る。\",\n     \"出どころ\": [], \"出どころの文\": \"項目の表（記録 session_worklog_20261012.md の §27）・別セッションの監査 2026-10-12 の M-9\"},\n\n    {\"番号\": \"4-22\", \"節\": \"§4\", \"名前\": \"検査やプログラムを直す工事で書く5つ\", \"段\": \"条件\", \"形\": \"新\",\n     \"条件\": \"検査やプログラムを直す工事のとき（種類②の工事では、必ず書く）\",\n     \"中身\": \"①守る相手（どの要件・どの材料を守る検査か）②直す前に通っていた誤りの実例（走らせた結果）③直した後に止まる誤りと、まだ通る誤り ④この直しで確かめなくなる事・弱くなる守り（空では出せない）⑤「触らない」とした要件ごとの根拠（測ったコマンドと結果）。\",\n     \"出どころ\": [], \"出どころの文\": \"項目の表（記録 session_worklog_20261012.md の §27）・別セッションの監査 2026-10-12 の K-2\"},\n\n    {\"番号\": \"§1\", \"節\": \"§1\", \"名前\": \"概要（何の問題を解くか・1つの文）\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:103「\"出どころ\": [\"A-4\"]},」",
+  "状態": "確定"
+ },
+ {
+  "番号": 57,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "125行（項目の正本・検算で入っていなかった、うちの正本の7件（受け入れのチェックリストの項目6件と、設計書を相手にする hook の数）を、付録の項目に入れる）",
+  "直す前の文字": "                  \"A-46\", \"C-11\", \"C-14\", \"C-15\", \"C-17\", \"C-18\", \"C-19\", \"C-20\", \"C-22\", \"C-23\",\n",
+  "種類": "直した後の文字",
+  "中身": "                  \"A-46\", \"A-47\", \"A-48\", \"A-49\", \"A-50\", \"A-51\", \"A-52\", \"A-53\",\n                  \"C-11\", \"C-14\", \"C-15\", \"C-17\", \"C-18\", \"C-19\", \"C-20\", \"C-22\", \"C-23\",\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:125「\"A-46\", \"C-11\", \"C-14\", \"C-15\", \"C-17\", \"C-18\", \"C-19\", \"C-20\", \"C-22\", \"C-23\",」",
+  "状態": "確定"
+ },
+ {
+  "番号": 58,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "126行（項目の正本・検算で入っていなかった、過去の指摘の2件（まこさんの文をそのまま設計書に組み込む・元と設計書の食い違いをプログラムで照らす）を、設計のもとの項目（新しく足す）に入れる。検査の出力の1件を、付録の項目に入れる）",
+  "直す前の文字": "                  \"C-24\", \"C-26\", \"C-27\", \"C-28\", \"C-29\", \"C-32\", \"C-33\"]},\n",
+  "種類": "直した後の文字",
+  "中身": "                  \"C-24\", \"C-26\", \"C-27\", \"C-28\", \"C-29\", \"C-32\", \"C-33\", \"C-40\"]},\n\n    {\"番号\": \"§0\", \"節\": \"§0\", \"名前\": \"設計のもと（まこさんの発言と、まこさんが OK した文の写し・対応の表）\",\n     \"中身\": \"まこさんの文を、CC が写さずに、プログラムが逐語のファイルから写す所。設計書の元と設計書が食い違わないかは、設計書を作るプログラムの --verify が照らす。\",\n     \"出どころ\": [\"C-39\", \"C-42\"]},\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:126「\"C-24\", \"C-26\", \"C-27\", \"C-28\", \"C-29\", \"C-32\", \"C-33\"]},」",
+  "状態": "確定"
+ },
+ {
+  "番号": 59,
+  "対象のファイル": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  "直す箇所": "130行（項目の正本・検算で入っていなかった1件（工事の段の状態を出すプログラムの出力）を、作業の進め方の項目に入れる）",
+  "直す前の文字": "     \"出どころ\": [\"C-5\", \"C-6\"]},\n",
+  "種類": "直した後の文字",
+  "中身": "     \"出どころ\": [\"C-5\", \"C-6\", \"C-41\"]},\n",
+  "根拠の抜き書き": "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json:130「\"出どころ\": [\"C-5\", \"C-6\"]},」",
+  "状態": "確定"
+ },
+ {
+  "番号": 60,
+  "対象のファイル": ".claude/breaks/b186_design_hand_unknown_heading_pass.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: やることの表の手書きの項目に、知らない見出しが在れば止める検査を壊すと、設計書を作るプログラムの自己テストが落ちる\n# EXPECT_MSG: 知らない見出しが在ると止まるはずが、通った\n# b186 — 知らない見出しの検査を、いつも通す形にすると、設計書を作るプログラム（gen_acceptance.py）の自己テストが落ちるか\n#   守っているもの＝やることの表の手書きの項目に、知らない見出しが在れば止める検査（設計書 design-doc-gen-form-20261013）\n#   壊し方＝知らない見出しの検査を、いつも通す形にする。\n#   期待＝自己テスト（`--selftest`）が落ちる（終了コード 1・出力に「知らない見出しが在ると止まるはずが、通った」）。\n#   ★壊す対象が見つからなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nT=\"$ROOT/.claude/tools/gen_acceptance.py\"\nguard \"$T\"\n\npython3 - \"$T\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    for k in hand:\\n        if k not in hand_keys:\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b186] 壊す対象の行が、ちょうど1か所ではない\")\nnew = '    for k in hand:\\n        if False and k not in hand_keys:  # b186 が壊した\\n'\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$T\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b184_read_plan_requirement_link_off.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ },
+ {
+  "番号": 61,
+  "対象のファイル": ".claude/breaks/b187_design_sections_check_ignored.sh",
+  "直す箇所": "なし（新しいファイル）",
+  "直す前の文字": "なし",
+  "種類": "直した後の文字",
+  "中身": "#!/bin/bash\n# EXPECT_RC: 1\n# MEANS: 設計書を作るたびに、項目の抜けを見張る検算を走らせ、通らなければ書かない所を壊すと、設計書を作るプログラムの自己テストが落ちる\n# EXPECT_MSG: 項目の抜けを見張る検算が落ちても、設計書を書いた\n# b187 — 検算の結果を、見ない形にすると、設計書を作るプログラム（gen_acceptance.py）の自己テストが落ちるか\n#   守っているもの＝設計書を作るたびに、項目の抜けを見張る検算を走らせ、通らなければ書かない所（設計書 design-doc-gen-form-20261013）\n#   壊し方＝検算の結果を、見ない形にする。\n#   期待＝自己テスト（`--selftest`）が落ちる（終了コード 1・出力に「項目の抜けを見張る検算が落ちても、設計書を書いた」）。\n#   ★壊す対象が見つからなければ止まる（黙って壊さない）。\nsource \"$(dirname \"$0\")/lib.sh\"\n\nT=\"$ROOT/.claude/tools/gen_acceptance.py\"\nguard \"$T\"\n\npython3 - \"$T\" <<'PYEOF'\nimport sys\np = sys.argv[1]\ns = open(p, encoding='utf-8').read()\nold = '    _rc, _out = _sections_rc()\\n    if _rc:\\n'\nif s.count(old) != 1:\n    raise SystemExit(\"[b187] 壊す対象の行が、ちょうど1か所ではない\")\nnew = '    _rc, _out = _sections_rc()\\n    if False and _rc:  # b187 が壊した\\n'\nopen(p, 'w', encoding='utf-8').write(s.replace(old, new, 1))\nPYEOF\n\nmeasure python3 \"$T\" --selftest\nfinish\n",
+  "根拠の抜き書き": ".claude/breaks/b184_read_plan_requirement_link_off.sh:1「#!/bin/bash」",
+  "状態": "確定"
+ }
+]
+```
+
+【7-8 プログラムが読む設定】
+```json
+{
+ "TARGET": [
+  "../../.claude/tools/gen_acceptance.py",
+  "../../.claude/tools/gen_core_requirements.py",
+  "../../.claude/tools/gen_design_sections.py",
+  "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/design_section_map.json",
+  ".claude/breaks/b186_design_hand_unknown_heading_pass.sh",
+  ".claude/breaks/b187_design_sections_check_ignored.sh"
+ ],
+ "NEW_FILE": [
+  ".claude/breaks/b186_design_hand_unknown_heading_pass.sh",
+  ".claude/breaks/b187_design_sections_check_ignored.sh"
+ ],
+ "MODEL": [
+  ".claude/breaks/b184_read_plan_requirement_link_off.sh"
+ ],
+ "DESIGN_CONTRACT": {
+  "impl_file": "../../.claude/tools/gen_acceptance.py",
+  "_impl_file の意味": "照らす相手は実在するファイル。設計書を作るプログラムを照らす。ほかの2本のプログラムと項目の正本の直しは、TARGET と impl_functions で照らす。",
+  "impl_functions": {
+   "../../.claude/tools/gen_acceptance.py": [
+    "<モジュール直下>",
+    "_auto_rows",
+    "_design_audit_reports",
+    "_finish_new",
+    "_forbidden_new",
+    "_goal_lines",
+    "_hk",
+    "_index_lines",
+    "_indicator_rows",
+    "_named",
+    "_new_numbers",
+    "_para",
+    "_plan_link",
+    "_read_new_head",
+    "_read_new_todo",
+    "_sample_work",
+    "_sec2_new",
+    "_sections_rc",
+    "_tag",
+    "_unverified_lines",
+    "build_checklist",
+    "build_materials",
+    "page",
+    "section4",
+    "selftest",
+    "src",
+    "src_from_work",
+    "work_kind",
+    "write"
+   ],
+   "../../.claude/tools/gen_design_sections.py": [
+    "<モジュール直下>",
+    "collect_c"
+   ],
+   "../../.claude/tools/gen_core_requirements.py": [
+    "<モジュール直下>",
+    "requirement_items"
+   ]
+  },
+  "_impl_functions の意味": "この工事で触る関数（実装の指示を全部 当てる前と後の構文木を関数ごとに比べて、ddg_build.py が数えた）。",
+  "self_check_calls": [
+   "src_from_work",
+   "page",
+   "section4",
+   "write",
+   "work_kind",
+   "_read_new_todo",
+   "_finish_new",
+   "_index_lines",
+   "_sections_rc"
+  ],
+  "_self_check_calls の意味": "実装の後の設計書を作るプログラムに在るはずの、この工事が直す・足す関数の名前。",
+  "must_use": {
+   "src_from_work": [
+    "_read_new_todo",
+    "_finish_new"
+   ],
+   "write": [
+    "_sections_rc"
+   ],
+   "page": [
+    "_index_lines",
+    "work_kind"
+   ]
+  },
+  "_must_use の意味": "設計書の元を読む関数が新しい形の元を読む関数を呼ぶ・設計書を書く関数が検算を呼ぶ・設計書を組む関数が索引と工事の種類を呼ぶ（ddg_build.py が ast で照らした）。",
+  "spec_lists": {},
+  "no_spec_lists_reason": "この工事は、外から読む一覧の形に、在れば読む鍵を足すだけ。いま在る鍵の形は変えない。",
+  "generated_from": {
+   "impl_functions": "当てる前と後の関数ごとの構文木の差（ddg_build.py が数えた）",
+   "must_use": "ast で照らした",
+   "spec_lists": "空（理由＝no_spec_lists_reason）"
+  }
+ }
+}
+```

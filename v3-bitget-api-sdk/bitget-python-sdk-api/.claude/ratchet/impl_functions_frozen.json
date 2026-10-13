@@ -2,14 +2,47 @@
  "_これは何か": "承認の瞬間に凍結した impl_functions。照合A・B はここと比べる（実装から作り直せない）。",
  "_作り方": "approve_impl.sh が承認の瞬間に acceptance.md から書き出す。手で書き換えない。",
  "_出どころ": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
- "../../.claude/hooks/require_read_plan_before_design.py": [
+ "../../.claude/tools/gen_acceptance.py": [
   "<モジュール直下>",
-  "build_plan",
-  "check",
+  "_auto_rows",
+  "_design_audit_reports",
+  "_finish_new",
+  "_forbidden_new",
+  "_goal_lines",
+  "_hit_names",
+  "_hk",
+  "_index_lines",
+  "_indicator_rows",
+  "_named",
+  "_new_numbers",
+  "_para",
+  "_plan_link",
+  "_read_new_head",
+  "_read_new_todo",
+  "_sample_work",
+  "_sec2_new",
+  "_sections_rc",
+  "_table_kinds",
+  "_tag",
+  "_timeframe_rows",
+  "_unverified_lines",
+  "build_checklist",
+  "build_materials",
+  "page",
+  "section4",
   "selftest",
-  "todo_link"
+  "src",
+  "src_from_work",
+  "touches_trading",
+  "work_kind",
+  "write"
  ],
- "../../.claude/tools/gen_regime_kb.py": [
-  "build_todo"
+ "../../.claude/tools/gen_design_sections.py": [
+  "<モジュール直下>",
+  "collect_c"
+ ],
+ "../../.claude/tools/gen_core_requirements.py": [
+  "<モジュール直下>",
+  "requirement_items"
  ]
 }

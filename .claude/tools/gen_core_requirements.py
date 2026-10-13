@@ -146,10 +146,13 @@ def embed_lines() -> list:
 
 # 要件定義のうち、見出し1つを1行として照らす節の番号（3 は機能要件の6行・8 は作ってはいけないものの2行に分ける。
 # 5＝言葉の定義・9＝CC の言葉・10＝いまの実物との違い、は照らす行にしない）
-ONE_ROW = ("1", "2", "4", "6", "7")
+ONE_ROW_OLD = ("1", "2", "4", "6", "7")
+# ★2026-10-13（工事 design-doc-gen-form-20261013）＝新しい形の設計書の索引は、5・9・10 も行にする（別セッションの監査 2026-10-12 の M-12）。
+#   いままでの形の設計書（案の【0-R】と照らす）は、ONE_ROW_OLD のまま＝承認済みの設計書は変わらない。
+ONE_ROW = ("1", "2", "4", "5", "6", "7", "9", "10")
 
 
-def requirement_items() -> list:
+def requirement_items(full: bool = False) -> list:
     """設計書が1行ずつ照らす要件（番号, 名前）を、正本から並べる（2026-10-12・直し方の案 A-4）。
 
     正本の「# 要件定義（…）」の部分の見出し（## N. 名前）から作る。要件が増えたら、行も増える。
@@ -168,7 +171,7 @@ def requirement_items() -> list:
         m = re.match(r"^## (\d+)\. (.+)$", ln)
         if m:
             sec = m.group(1)
-            if sec in ONE_ROW:
+            if sec in (ONE_ROW if full else ONE_ROW_OLD):
                 items.append((sec, m.group(2).strip()))
             continue
         if sec == "3":
@@ -179,7 +182,7 @@ def requirement_items() -> list:
             m8 = re.match(r"^(\d+)\. (.+)$", ln)
             if m8:
                 items.append((f"8-{m8.group(1)}", m8.group(2).strip()))
-    if len(items) < len(ONE_ROW):
+    if len(items) < len(ONE_ROW if full else ONE_ROW_OLD):
         raise CoreError(f"[gen_core_requirements] 正本から照らす要件を読めない（{len(items)} 件・fail-closed）")
     return items
 

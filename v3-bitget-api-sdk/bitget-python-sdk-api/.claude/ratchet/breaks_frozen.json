@@ -98,6 +98,8 @@
  "b181_thermo_ma_column.sh": "1d3992897e477fef855313bcc994a82fdb4b3a91e575f770b2d986e92e8963c2",
  "b182_copy_mark_without_known.sh": "14894d5596b82b5179e294e0c79113fe29f80650d37a4235d1ea32a46a45eee2",
  "b183_copy_verified_by_tb_alone.sh": "63f88b69eca594855fbef3ed19f0f2269ea4bd649c7340b5db764ab0562bf9db",
+ "b184_read_plan_requirement_link_off.sh": "8fc171ae37632b19f943a2093522c4c162007f52c79a21aa3ff9abe16c65f3e2",
+ "b185_read_plan_core_not_required.sh": "9a088555432822a405312675e7f7c80e65ed9806baf8d00aeddf2687ac5a8e50",
  "b18_embedded_run.sh": "7ebdf9c1e8caf9725c5354dde4f5a98800f885f6aa2cbe6e46e094bebaa3f5c2",
  "b19_bash_c_dash_n.sh": "e4569c5c6eb02cc035c2fefb677f17ed0a895bf9ce235a1b73a14b0a67d54f72",
  "b20_path_shape.sh": "a16895983d83fe13adc4965e62ac283735bf12ef7cd3bf21ffee5e410ad2ad38",
