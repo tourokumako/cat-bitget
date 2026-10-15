@@ -26,6 +26,7 @@ import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from require_check_after_failure import ACT_TOOLS, is_read  # 読むだけの判定を同じものにする
+from transcript_rows import rows                            # 記録は会話の本物の行だけを読む（2026-10-15）
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 SESS = ROOT / ".claude/state/sessions"
@@ -61,11 +62,9 @@ def kind_of(text: str):
 def load(path: pathlib.Path):
     """戻り＝[(道具, 入力, 失敗の文 or None, 結果の時刻)]。"""
     calls, res, stops = [], {}, []
-    for line in path.open(encoding="utf-8", errors="replace"):
-        try:
-            o = json.loads(line)
-        except Exception:
-            continue
+    # ★2026-10-15（181回目）＝記録は共通の rows() で読む（会話の本物の行だけ・同じ行は1回）。直す前は行の種類を見ず、
+    #   api-request-blob の行（API に送った中身の控え・この日から記録に入った）の中の呼び出しと結果も数え、1回の失敗を2回と数えた
+    for o in rows(path):
         c = (o.get("message") or {}).get("content")
         # ★2026-10-01（143回目・まこさん「ちゃんと改善しろ」）＝Stop hook の差し戻しも hook ごとに失敗として数える。
         #   差し戻しは記録に「まこさんの発言」の形（本文が「Stop hook feedback:」で始まる文字列）で残るので、

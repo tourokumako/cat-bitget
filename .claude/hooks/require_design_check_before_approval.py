@@ -16,16 +16,19 @@
 # 何をするか＝approve_impl.sh が止まる（または承認を取り消す）場所を、上から順に、
 #   **同じ道具を呼んで**確かめる。不足は全部 集めて一度に出す（1件ずつ止めない）。
 #   A群＝その場で走らせる（読むだけ・何も書かない）。
-#     A1 設計書が在るか（approve_impl.sh:16）
-#     A2 pre_audit_check.py --check-design（:32）
-#     A3 凍結の前の検査＝approve_impl.sh の1つ目の python の囲みを、書き先だけ一時置き場に
-#        替えて そのまま走らせる（:72-288＝contract_for_freeze・resolve_spec_list ほか）
-#     A4 控えを残す所（:301-315）＝ARC の目印・控えの置き場に書けるか・git が無視しないか・index.lock
-#     A5 承認の記録の鍵（:347-366）＝approve_design.sh が書く鍵と check_approval が読む鍵が同じか
-#     A6 run_breaks.py --count-targets --design（:386）
-#     A7 run_breaks.py --parse-only（:401 の入口＝表が読めるか・列がずれていないか）
-#     A8 表に載っている既存の壊すプログラムの宣言を expect_of で読む（:401＝159番の STOP）
-#     A10 完成の条件のコマンドが、SDK を作業場所にしても開けるか（:472 の _run＝cwd=SDK・L-614）
+#   ★2026-10-15＝承認のプログラムの行番号は、ここに書かない（ずれるため）。目印の文字は _ANCHORS に在り、
+#     不足の文には、走らせたときに探した行番号が出る（_at）。止まり所の数の照らしは A16。
+#     A1 設計書が在るか（設計書が無いときに止める所）
+#     A2 pre_audit_check.py --check-design（設計書の門の検査）
+#     A3 凍結の前の検査＝承認のプログラムの1つ目の python の囲みを、書き先だけ一時置き場に
+#        替えて そのまま走らせる（contract_for_freeze・resolve_spec_list ほか）
+#     A4 控えを残す所＝ARC の目印・控えの置き場に書けるか・git が無視しないか・index.lock。
+#        2026-10-15 から、逐語のファイルを控えへ移す所と、壊すプログラムを凍結する所も見る
+#     A5 承認の記録の鍵＝approve_design.sh が書く鍵と check_approval が読む鍵が同じか
+#     A6 run_breaks.py --count-targets --design
+#     A7 run_breaks.py --parse-only（run_breaks.py --design の入口＝表が読めるか・列がずれていないか）
+#     A8 表に載っている既存の壊すプログラムの宣言を expect_of で読む（run_breaks.py --design の159番の STOP）
+#     A10 完成の条件のコマンドが、SDK を作業場所にしても開けるか（済を書く所の _run＝cwd=SDK・L-614）
 #     A11 承認の後に打つ当てる道具（apply_audit_fix.py --design）が、実装の指示を全部 当てられるか
 #         （一時の承認の印で check_one を全件に掛ける・道具そのものを直す件が在れば、当てた写しで2回目も見る）
 #     A12 承認の後に起きること全部（当てる・完成の条件のコマンド・壊すプログラムの測り）を、本物のファイルに仮に当てて通し、
@@ -34,6 +37,7 @@
 #         全部の節の文と照らす（古いまま残った節を、CC に語を選ばせずに見つける）
 #     A14 CC が設計書のいまの版を全部の項目について見直し終えているか（見直し表＝gen_review.py --check・
 #         判定が「抜け」の項目が残っていれば止める）。承認のプログラムも同じ道具を呼んで承認を中止する（2026-10-04）
+#     A16 承認のプログラムの、承認を止める行の数が、この検査の知っている数（_ANCHORS）と同じか（2026-10-15）
 #   B群＝時間がかかるので、その場では走らせない。やり取りの記録（harness が書く）に、
 #        設計書・壊すプログラム・TARGET より新しい実行の結果が在るかを見る。
 #     B1 表に載っている既存の壊すプログラムが、--measure-only で「✅ 期待どおり」だったか
@@ -45,7 +49,9 @@
 #
 # 使い方:
 #   Stop hook        : bash require_design_check_before_approval.sh（標準入力＝hook の json）
-#   書いた直後に出す : python3 <この .py> --after-write   （止めない・出すだけ・A12 は走らせない＝上限 120秒の hook から呼ぶため・2026-10-06）
+#   書いた直後に出す : show_design_check_after_write.sh が python3 <この .py> --post-tool を呼ぶ（標準入力＝hook の json・2026-10-15）
+#                      ＝このコマンドで設計書が書き換わったときだけ調べて、結果を 2 で出す（post_tool の説明）。A12 は走らせない
+#   手で書いた直後を試す: python3 <この .py> --after-write [--design <設計書>]（止めない・出すだけ・A12 は走らせない）
 #   手で試す         : python3 <この .py> --try [--design <設計書>] [--transcript <記録>]
 #
 # 限界（正直に）:
@@ -69,10 +75,12 @@ import time
 ROOT = "/Users/tachiharamasako/Documents/GitHub/cat-bitget"
 SDK = ROOT + "/v3-bitget-api-sdk/bitget-python-sdk-api"
 ACC = ROOT + "/.claude/state/acceptance.md"
-APPROVE = ROOT + "/.claude/hooks/approve_impl.sh"
+# ★2026-10-15＝試すときだけ、承認のプログラムの写しに差し替える口（HOOK_APPROVE_PATH・A16 の両方向の試しに使う）
+APPROVE = os.environ.get("HOOK_APPROVE_PATH") or ROOT + "/.claude/hooks/approve_impl.sh"
 PRE = ROOT + "/.claude/tools/pre_audit_check.py"
 RUNB = ROOT + "/.claude/tools/run_breaks.py"
-ARC_DIR = SDK + "/.claude/ratchet/acceptance_archive"
+# ★2026-10-15＝試すときだけ、控えの置き場を差し替える口（HOOK_ARC_DIR・A4 の「止める」方向の試しに使う）
+ARC_DIR = os.environ.get("HOOK_ARC_DIR") or SDK + "/.claude/ratchet/acceptance_archive"
 TABLE = ROOT + "/.claude/state/design_approved.json"
 # ★お願いの形＝まこさんに打ってもらうコマンド（bash …/approve_impl.sh）。
 #   名前だけ（説明の文の中の approve_impl.sh）では当てない＝説明のたびに止めないため。
@@ -94,12 +102,187 @@ def _tail(out, n=25):
     return "\n".join("        " + l for l in ls[-n:])
 
 
+def _rel(path):
+    """不足の文に書く設計書の置き場（リポジトリの中なら根からの相対・外なら絶対）。★2026-10-15＝決め打ちの acceptance.md をやめた。"""
+    p = os.path.abspath(path)
+    return os.path.relpath(p, ROOT) if p.startswith(ROOT + os.sep) else p
+
+
+# ★2026-10-15（181回目・まこさん「応急処置ではなく根本解決」）＝承認のプログラムの行番号を手で書かない。
+#   直す前＝説明と不足の文に、承認のプログラムの行番号を手で書いていた（:72-288・:311・:360・:386・:401 ほか）。
+#     承認のプログラムが直されるたびにずれ、10か所のうち7か所が、いまの行と合っていなかった。
+#   直した後＝目印の文字を、走らせるたびに承認のプログラムの中で探し、そのときの行番号を出す（_at）。
+#   さらに、承認を止める行（exit・sys.exit）を全部 数え、目印ごとの数と照らす（a16_stops_known）。
+#     ＝承認のプログラムに止まり所が足されたのに、この検査を直していなければ、不足として出る。
+# 並び＝（名前, 承認のプログラムの中の目印の文字, その目印の行から次の目印の前までに在る、承認を止める行の数）。
+#   名前は、その止まり所を先に見ている検査（A1〜A7・A14）。数は 2026-10-15 に承認のプログラムを全部 読んで数えた（14行）。
+_ANCHORS = [
+    ("A1", 'if [ ! -f "$LIST" ]; then', 1),
+    ("A2", 'pre_audit_check.py" --check-design "$LIST"', 1),
+    ("A14", 'gen_review.py" --check "$LIST"', 1),
+    ("A3", 'python3 - "$LIST" "$SPEC_OUT" "$FROZEN_OUT" <<\'PY\'', 3),
+    ("A4", 'cp "$PREV_MD" "$KEEP"', 2),
+    ("A4-逐語", 'mv "$VB_SRC" "$VB_DST"', 1),
+    ("A1-もう一方の承認", 'approve_design.sh" "$LIST"', 1),   # もう一方の承認は、設計書が無いときだけ止まる（A1 と同じ）
+    ("A5", '--check-approval "$LIST"', 1),
+    ("A6", '--count-targets --design "$LIST"', 1),
+    ("A4-凍結", '"$RUNB" --freeze', 1),
+    ("A7", '"$RUNB" --design "$LIST" --iter "$ITER"', 1),
+]
+_STOP_RE = re.compile(r"\bexit\s+[1-9]|\bsys\.exit\(\s*[1-9]")
+
+
+def _approve_lines():
+    try:
+        return open(APPROVE, encoding="utf-8").read().splitlines()
+    except Exception:                                        # noqa: BLE001
+        return None
+
+
+def _at(key):
+    """承認のプログラムの中で、その名前の目印が在る行（例＝「approve_impl.sh:32」）。見つからなければ、そう書いた文を返す。"""
+    name = os.path.basename(APPROVE)
+    lines = _approve_lines()
+    if lines is None:
+        return f"{name} を読めない"
+    pat = next(a for k, a, _n in _ANCHORS if k == key)
+    hits = [i + 1 for i, l in enumerate(lines) if pat in l]
+    if len(hits) != 1:
+        return f"{name} の中に目印「{pat}」が {len(hits)} か所＝この検査の _ANCHORS を直す"
+    return f"{name}:{hits[0]}"
+
+
+def a16_stops_known():
+    """A16 承認のプログラムの、承認を止める行の数が、この検査の知っている数（_ANCHORS）と同じか。
+
+    違えば、承認のプログラムに止まり所が足された（または消えた）のに、この検査が追いついていない。
+    そのまま承認をお願いすると、ここが先に見ていない所で承認が止まりうる＝不足として出す。
+    限界＝exit を使わずに承認を止める書き方を新しく足した場合は数えられない。"""
+    name = os.path.basename(APPROVE)
+    lines = _approve_lines()
+    if lines is None:
+        return [f"A16 承認のプログラムを読めません: {APPROVE}"]
+    bad, pos = [], []
+    for key, pat, n in _ANCHORS:
+        hits = [i for i, l in enumerate(lines) if pat in l]
+        if len(hits) != 1:
+            bad.append(f"A16 {name} の中に目印「{pat}」（{key}）が {len(hits)} か所"
+                       "＝この検査（require_design_check_before_approval.py の _ANCHORS）を直す")
+        else:
+            pos.append((hits[0], key, n))
+    if bad:
+        return bad
+    pos.sort()
+    stops = [i for i, l in enumerate(lines) if not l.lstrip().startswith("#") and _STOP_RE.search(l)]
+    head = [i + 1 for i in stops if i < pos[0][0]]
+    if head:
+        bad.append(f"A16 {name} の最初の目印より前に、承認を止める行が在る（{', '.join(map(str, head))}行）"
+                   "＝この検査が先に見ていない止まり所。この検査（_ANCHORS と A群）を直す")
+    for j, (start, key, n) in enumerate(pos):
+        end = pos[j + 1][0] if j + 1 < len(pos) else len(lines)
+        got = [i + 1 for i in stops if start <= i < end]
+        if len(got) != n:
+            bad.append(f"A16 {name}:{start + 1}〜{end} の承認を止める行が {len(got)} 行"
+                       f"（{', '.join(map(str, got)) or 'なし'}）。この検査が先に見ているのは {n} 行（{key}）"
+                       "＝承認のプログラムの止まり所が増えた（または減った）のに、この検査が追いついていない。"
+                       "この検査（_ANCHORS と A群）を直す")
+    return bad
+
+
+# ★2026-10-15（181回目・まこさん「応急処置ではなく根本解決」）＝設計書を書いた直後の口（--post-tool）。
+#   show_design_check_after_write.sh（PostToolUse Bash）が、標準入力に hook の json を渡して呼ぶ。
+#   直す前＝.sh が、コマンドの文字に「gen_acceptance.py」と「--write」が在るかだけで動き、いつも acceptance.md を調べた。
+#     2026-09-24〜10-15 の記録で、設計書を作っていないのに64回 動き（合計1029秒）、--out で作った設計書は1回も調べなかった。
+#     不足0件のとき（終了コード 0）と、検査が落ちたとき（終了コード 1）は、私の画面に何も出なかった。
+#   直した後＝コマンドの文字では決めない。acceptance.md と、コマンドの --out の後ろの置き場のうち、
+#     このコマンドを出した時刻（やり取りの記録の、その呼び出しの行の時刻）より後に書き換わったものだけを調べる。
+#     調べたときは、不足が在っても0件でも 2 で終わる（PostToolUse で私の画面に届くのは 2 だけ＝記録の182回で届いている）。
+#     書き換わったものが無ければ 0 で、何も出さない。検査が落ちたときは .sh が出す。
+_BASH_MAX_SEC = 600   # Bash の道具の上限（10分）。これより前の更新は、このコマンドの書き換えではない（記録を読まずに済ませる）
+
+
+def _tool_start(transcript, tool_use_id):
+    """このコマンドを出した時刻（UNIX 秒）。やり取りの記録の後ろ 4MB から、その呼び出しの行の時刻を読む。読めなければ None。"""
+    if not transcript or not os.path.isfile(transcript):
+        return None
+    size = os.path.getsize(transcript)
+    with open(transcript, "rb") as fh:
+        fh.seek(max(0, size - 4_000_000))
+        tail = fh.read().decode("utf-8", "replace")
+    ts = None
+    for line in tail.splitlines():
+        if '"tool_use"' not in line:
+            continue
+        try:
+            r = json.loads(line)
+        except Exception:                                    # noqa: BLE001
+            continue
+        if r.get("type") != "assistant":
+            continue
+        for b in (r.get("message") or {}).get("content") or []:
+            if (isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name") == "Bash"
+                    and (not tool_use_id or b.get("id") == tool_use_id)):
+                ts = r.get("timestamp")
+    if not ts:
+        return None
+    try:
+        return datetime.datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+    except Exception:                                        # noqa: BLE001
+        return None
+
+
+def _out_paths(cmd, cwd):
+    """コマンドの中の --out の後ろの置き場（引用符を外し、作業場所からの絶対パスにする）。"""
+    out = []
+    for p in re.findall(r"--out(?:=|\s+)(\"[^\"]+\"|'[^']+'|[^\s;&|]+)", cmd or ""):
+        p = os.path.expanduser(p.strip("\"'"))
+        out.append(os.path.abspath(os.path.join(cwd, p)))
+    return out
+
+
+def post_tool(raw):
+    try:
+        data = json.loads(raw or "{}")
+    except Exception:                                        # noqa: BLE001
+        data = {}
+    cmd = (data.get("tool_input") or {}).get("command") or ""
+    cwd = data.get("cwd") or ROOT
+    now = time.time()
+    cands = list(dict.fromkeys([ACC] + _out_paths(cmd, cwd)))
+    recent = [p for p in cands if os.path.isfile(p) and now - os.path.getmtime(p) <= _BASH_MAX_SEC]
+    if not recent:
+        return 0
+    tr = data.get("transcript_path")
+    start = _tool_start(tr, data.get("tool_use_id"))
+    e = sys.stderr
+    if start is None:
+        print("🔴 [設計書を書いた直後の検査] 設計書が10分以内に書き換わっていますが、このコマンドを出した時刻を"
+              "やり取りの記録から読めません＝このコマンドが書き換えたかを決められないので、調べた結果を出します。", file=e)
+        written = recent
+    else:
+        written = [p for p in recent if os.path.getmtime(p) >= start]
+    if not written:
+        return 0
+    for acc in written:
+        t0 = time.time()
+        bad = check_all(acc, tr, trial=False)
+        if bad:
+            _print(bad, f"📋 [設計書を書いた直後の検査] {acc} が書き換わったので、承認のプログラムの止まり所を上から全部 確かめました。")
+        else:
+            print(f"✅ [設計書を書いた直後の検査] {acc} が書き換わったので確かめました。"
+                  "A12（仮当て）のほかの止まり所は全部 通ります（不足0件）。", file=e)
+        print("   ★A12（承認の後に起きることを本物に仮に当てて通す・約4分半）は、ここでは走らせていません。"
+              "承認をお願いする前に `python3 .claude/hooks/require_design_check_before_approval.py --try` でかけてください。", file=e)
+        print(f"   （かかった時間 {time.time() - t0:.1f} 秒）", file=e)
+    return 2
+
+
 # ── A群 ─────────────────────────────────────────────────────────────
 def a2_check_design(acc):
     rc, out = _run(["python3", PRE, "--check-design", acc])
     if rc == 0:
         return []
-    return [f"A2 設計書の門の検査（approve_impl.sh:32）が rc={rc}:\n{_tail(out, 60)}"]
+    return [f"A2 設計書の門の検査（{_at('A2')}）が rc={rc}:\n{_tail(out, 60)}"]
 
 
 def a3_freeze_block(acc):
@@ -116,7 +299,7 @@ def a3_freeze_block(acc):
                         td + "/impl_functions_frozen.json"], stdin=m.group(1))
     if rc == 0:
         return []
-    return [f"A3 凍結の前の検査（approve_impl.sh:72-288＝ここで落ちると承認が取り消される）が rc={rc}:\n"
+    return [f"A3 凍結の前の検査（{_at('A3')} から始まる囲み＝ここで落ちると承認が取り消される）が rc={rc}:\n"
             f"{_tail(out)}"]
 
 
@@ -129,7 +312,7 @@ def a4_archive(md):
     if not os.path.isdir(ARC_DIR) or not os.access(ARC_DIR, os.W_OK):
         bad.append(f"A4 控えの置き場に書けません: {ARC_DIR}")
     if os.path.exists(ROOT + "/.git/index.lock"):
-        bad.append("A4 .git/index.lock が在る＝git add が失敗して承認が取り消される（approve_impl.sh:311）")
+        bad.append(f"A4 .git/index.lock が在る＝git add が失敗して承認が取り消される（{_at('A4')}）")
     if os.path.exists(f"{ARC_DIR}/{safe}.md"):
         seq = 1
         while os.path.exists(f"{ARC_DIR}/{safe}.{seq:02d}.md"):
@@ -138,7 +321,32 @@ def a4_archive(md):
         rc, _ = _run(["git", "-C", ROOT, "check-ignore", "-q", keep])
         if rc == 0:
             bad.append(f"A4 前の版の控え（{os.path.basename(keep)}）を git が無視する設定＝"
-                       "git add が失敗して承認が取り消される（approve_impl.sh:311）")
+                       f"git add が失敗して承認が取り消される（{_at('A4')}）")
+    # ★2026-10-15（181回目）＝直す前は、次の2か所の止まり所を先に見ていなかった（a16_stops_known の説明）。
+    #   ①設計の元の逐語のファイル（.claude/state/verbatim/<iter>/）を控えの置き場へ移して git に入れる所（2026-09-29 に足された）
+    vb = ROOT + "/.claude/state/verbatim/" + m.group(1)
+    if os.path.isdir(vb):
+        vdst = ARC_DIR + "/verbatim"
+        if not os.access(vdst if os.path.isdir(vdst) else ARC_DIR, os.W_OK):
+            bad.append(f"A4 逐語のファイルの移し先に書けません: {vdst}＝承認が取り消される（{_at('A4-逐語')}）")
+        rc, _ = _run(["git", "-C", ROOT, "check-ignore", "-q", f"{vdst}/{safe}/x"])
+        if rc == 0:
+            bad.append(f"A4 逐語のファイルの移し先（{vdst}/{safe}/）を git が無視する設定＝"
+                       f"git add が失敗して承認が取り消される（{_at('A4-逐語')}）")
+    #   ②壊すプログラムを凍結する所（run_breaks.py --freeze が書く凍結のファイル）
+    sys.path.insert(0, ROOT + "/.claude/tools")
+    try:
+        import run_breaks as rb                               # noqa: E402
+        fz = os.environ.get("HOOK_FROZEN_PATH") or str(rb.FROZEN)   # ★試すときだけ差し替える口（2026-10-15）
+    except Exception as e:                                   # noqa: BLE001
+        bad.append(f"A4 壊すプログラムを走らせる道具を読み込めません（{e}）＝凍結の置き場を確かめられない（{_at('A4-凍結')}）")
+    else:
+        # 凍結を書く側は、親のフォルダを作ってから書く（run_breaks.py の --freeze）＝無ければ、いちばん近い実在する親に書けるかを見る
+        near = fz if os.path.exists(fz) else os.path.dirname(fz)
+        while near and not os.path.exists(near) and os.path.dirname(near) != near:
+            near = os.path.dirname(near)
+        if not os.access(near, os.W_OK):
+            bad.append(f"A4 壊すプログラムの凍結のファイルに書けません: {fz}＝承認が取り消される（{_at('A4-凍結')}）")
     return bad
 
 
@@ -147,7 +355,7 @@ def a5_approval_key(acc):
     try:
         import verify_design_contract as v                    # noqa: E402
     except Exception as e:                                   # noqa: BLE001
-        return [f"A5 照合の道具を読み込めません（{e}）＝承認の直後の確認（approve_impl.sh:360）が落ちる"]
+        return [f"A5 照合の道具を読み込めません（{e}）＝承認の直後の確認（{_at('A5')}）が落ちる"]
     bad = []
     if os.path.abspath(v._DESIGN_APPROVED) != os.path.abspath(TABLE):
         bad.append("A5 承認の記録の置き場が、書く側（approve_design.sh）と読む側（check_approval）で違う")
@@ -161,7 +369,7 @@ def a6_count_targets(acc):
     rc, out = _run(["python3", RUNB, "--count-targets", "--design", acc])
     if rc == 0:
         return []
-    return [f"A6 壊すプログラムの探す文字の数え（approve_impl.sh:386＝落ちると承認が取り消される）が rc={rc}:\n"
+    return [f"A6 壊すプログラムの探す文字の数え（{_at('A6')}＝落ちると承認が取り消される）が rc={rc}:\n"
             f"{_tail(out, 12)}"]
 
 
@@ -169,7 +377,7 @@ def a7_parse_only(acc):
     rc, out = _run(["python3", RUNB, "--parse-only", "--design", acc])
     if rc == 0:
         return []
-    return [f"A7 完成の条件の表を読めません（approve_impl.sh:401 が rc=2 で承認を取り消す）:\n{_tail(out, 12)}"]
+    return [f"A7 完成の条件の表を読めません（{_at('A7')} が rc=2 で承認を取り消す）:\n{_tail(out, 12)}"]
 
 
 def a8_expect(md):
@@ -188,7 +396,7 @@ def a8_expect(md):
         _exp, _means, why, _msg = rb.expect_of(r["script"])
         if why:
             bad.append(f"A8 完成の条件 #{r['no']} の既存の壊すプログラムの宣言を読めません"
-                       f"（approve_impl.sh:401 が承認を取り消す・159番）: {why}")
+                       f"（{_at('A7')} が承認を取り消す・159番）: {why}")
     return bad, exist, rb
 
 
@@ -429,7 +637,7 @@ def a14_review(acc):
     return ["A14 CC が設計書の見直しを終えていません（承認のプログラムも ここで承認を中止します）:\n"
             + _tail("\n".join(ng), 30)
             + "\n        やること: 設計書を1行目から最後まで Read で読み、"
-              "python3 .claude/tools/gen_review.py --skeleton .claude/state/acceptance.md で表を作り、全部の項目を埋める。"
+              f"python3 .claude/tools/gen_review.py --skeleton {_rel(acc)} で表を作り、全部の項目を埋める。"
               "抜けを見つけたら設計書を直す（直すまで判定は「抜け」）"]
 
 
@@ -783,7 +991,9 @@ def _bash_runs(rows):
     return out
 
 
-def b_runtime(md, exist, rb, transcript):
+def b_runtime(md, exist, rb, transcript, acc=ACC):
+    # ★2026-10-15（181回目）＝acc を受け取る。直す前は、調べている設計書ではなく、いつも本物の設計書（ACC）の
+    #   書き替えの時刻と比べていた＝--out で作った設計書を調べると、B1・B2 の判定と「走らせる」の文が誤った。
     if not exist:
         return []
     m = re.search(rb.AT_START, md, re.S | re.M)
@@ -795,7 +1005,7 @@ def b_runtime(md, exist, rb, transcript):
             if cells:
                 line_of[cells[0]] = (s, cells)
     targets = [x.strip() for t in re.findall(r"^TARGET:\s*(.+)$", md, re.M) for x in t.split(",")]
-    newest = os.path.getmtime(ACC) if os.path.exists(ACC) else 0.0
+    newest = os.path.getmtime(acc) if os.path.exists(acc) else 0.0
     for t in targets:
         for base in (ROOT, SDK):
             p = os.path.join(base, t)
@@ -816,8 +1026,7 @@ def b_runtime(md, exist, rb, transcript):
             bad.append(f"B1 完成の条件 #{r['no']}＝{r['script']} を、設計書・壊すプログラム・TARGET の"
                        "いちばん新しい書き替えより後に測った記録が無い（または期待どおりでない）。"
                        "このまま承認すると行が「未着手」のまま残り、もう1回 承認が要ります。\n"
-                       "        走らせる: python3 .claude/tools/run_breaks.py --design "
-                       ".claude/state/acceptance.md --measure-only")
+                       f"        走らせる: python3 .claude/tools/run_breaks.py --design {_rel(acc)} --measure-only")
         mc = re.search(r"`([^`]+)`", cells[2] if len(cells) > 2 else "")
         cmd_want = mc.group(1).strip() if mc else ""
         if not (cmd_want.startswith("python3 ") or cmd_want.startswith("bash ")):
@@ -839,10 +1048,11 @@ def check_all(acc=ACC, transcript=None, split=False, trial=True):
       どの呼び方でも、最初に前の仮当ての残りを見る（_a12_leftover）。"""
     left = _a12_leftover()
     if not os.path.isfile(acc):
-        a1 = left + [f"A1 設計書がありません: {acc}（approve_impl.sh:16）"]
+        a1 = left + [f"A1 設計書がありません: {acc}（{_at('A1')}）"]
         return (a1, []) if split else a1
     md = open(acc, encoding="utf-8").read()
     bad = list(left)
+    bad += a16_stops_known()                                 # ★2026-10-15＝承認のプログラムに、ここが知らない止まり所が増えていないか
     bad += a2_check_design(acc)
     bad += a3_freeze_block(acc)
     bad += a4_archive(md)
@@ -858,7 +1068,7 @@ def check_all(acc=ACC, transcript=None, split=False, trial=True):
         bad += a12_post_approval_trial(acc)                  # 重いので、ほかが全部 通ったときだけ（出す不足は全部 一度に）
     bad += b8
     bad += a14_review(acc)                                   # ★2026-10-04＝CC が設計書を見直し終えているか（承認のプログラムも同じ道具で止める）
-    bad_b = b_runtime(md, exist, rb, transcript) if rb is not None else []
+    bad_b = b_runtime(md, exist, rb, transcript, acc) if rb is not None else []
     return bad + bad_b if not split else (bad, bad_b)
 
 
@@ -906,6 +1116,9 @@ def _print(bad, head):
 
 
 def main(argv):
+    if "--post-tool" in argv:
+        # ★2026-10-15（181回目）＝show_design_check_after_write.sh が、標準入力に hook の json を渡して呼ぶ口（post_tool の説明）
+        return post_tool(sys.stdin.read())
     if "--try" in argv or "--after-write" in argv:
         acc = argv[argv.index("--design") + 1] if "--design" in argv else ACC
         tr = argv[argv.index("--transcript") + 1] if "--transcript" in argv else None

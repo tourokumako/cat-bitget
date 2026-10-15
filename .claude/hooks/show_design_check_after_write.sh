@@ -1,58 +1,48 @@
 #!/bin/bash
-# show_design_check_after_write.sh — 設計書を作り直した直後に、承認の門の検査を走らせて不足を出す（PostToolUse Bash）
+# show_design_check_after_write.sh — 設計書が書き換わった直後に、承認のプログラムの止まり所を先に全部 調べて出す（PostToolUse Bash）
 #
 # まこさん指示（2026-09-19・逐語）＝「これは何回も確認を走らせないように以下の方法で、
 #   回数を1回で直せるように強制してほしい」。
 #
 # なぜ要るか＝2026-09-19（114回目）に、承認が3回 続けて止まり、まこさんに無駄に打たせた。
-#   止まった理由は5つとも pre_audit_check.py --check-design で先に出たもの。
-#   ★承認の直前に止める形（require_design_check_before_approval.sh）だけでは、
-#     CC が「止められて直す」を繰り返す＝回数は減らない（まこさんの指摘）。
 #   ★書いた直後に全部 出せば、CC は1回で直せる。それがこの hook。
 #
-# 何をするか＝Bash で `gen_acceptance.py` を `--write` で走らせた直後に、
-#   その場で pre_audit_check.py --check-design を走らせ、結果を画面に出す。
-#   ★書いた設計書は取り消さない＝書く作業は続けられる。出すだけ。
-#     （2026-09-21＝不足が在るときは終了コード 2 にした。0 だと不足の一覧が CC の画面に出ないため。
-#       PostToolUse の 2 は、走り終わった道具を取り消さない）
+# 何をするか（★2026-10-15・181回目に作り直した＝まこさん「応急処置ではなく根本解決」）＝
+#   標準入力（hook の json）を、そのまま検査の本体 require_design_check_before_approval.py --post-tool に渡す。
+#   本体は、このコマンドで設計書（acceptance.md と、コマンドの --out の後ろの置き場）が本当に書き換わったときだけ調べ、
+#   不足が在っても0件でも 2 で終わる。書き換わっていなければ 0（何も出さない）。
+#   この .sh は、本体の終了コードで出し方を分けるだけ（判定は全部 本体に在る）。
+#   直す前＝コマンドの文字に「gen_acceptance.py」と「--write」が在るかだけで動き（作っていないのに64回）、
+#     --out の設計書を調べず、不足0件と検査が落ちたときは何も出さなかった（worklog 20261015 §9）。
+#
+# 終了コード＝0 何も出さない ／ 2 私の画面に出す（PostToolUse の 2 は、走り終わった道具を取り消さない）。
+#   本体が 0 と 2 以外で終わった（落ちた）ときと、本体が無いときも 2 で、そう出す＝黙って終わらない。
+#   HOOK_CHECK_PY＝試すときだけ、本体の置き場を差し替える口（本体が無いときの試しに使う）。
 #
 # 限界（正直に）:
-#   ・設計書の中身が正しいかは見ない（門の形だけ）。中身は まこさんの目と監査。
-#   ・別の道（道具を直接 import する等）で設計書を作れば当たらない。
+#   ・設計書の中身が正しいかは見ない（承認のプログラムが止まる所だけ）。中身は まこさんの目と監査。
+#   ・上限 120秒（settings.json）で打ち切られたときは何も出ない（これまでの最長は 37.4秒）。
 #   ・この hook 自身を書き換えれば無効にできる（差分は git に出る）。
 
 set -u
 ROOT="/Users/tachiharamasako/Documents/GitHub/cat-bitget"
-ACC="$ROOT/.claude/state/acceptance.md"
-CHK="$ROOT/.claude/tools/pre_audit_check.py"
+PY="${HOOK_CHECK_PY:-${ROOT}/.claude/hooks/require_design_check_before_approval.py}"
+TAG="[設計書を書いた直後の検査・show_design_check_after_write.sh]"
 
-RAW="$(cat)"
-CMD="$(printf '%s' "$RAW" | python3 -c 'import json,sys
-try:
-    d = json.load(sys.stdin)
-except Exception:
-    print(""); raise SystemExit
-print(((d.get("tool_input") or {}).get("command") or ""))' 2>/dev/null)"
-
-case "$CMD" in
-  *gen_acceptance.py*--write*) : ;;
-  *) exit 0 ;;
-esac
-[ -f "$ACC" ] && [ -f "$CHK" ] || exit 0
-
-# ★2026-09-21（まこさん指示「一回で改善できる状態にしろ」）＝承認のプログラムの止まり所を
-#   全部 確かめる本体（require_design_check_before_approval.py）を呼ぶ形にした。
-#   直す前は --check-design（止まり所の1つ目）だけを出していた。止めない（出すだけ）のは変えない。
-TR="$(printf '%s' "$RAW" | python3 -c 'import json,sys
-try:
-    print((json.load(sys.stdin).get("transcript_path") or ""))
-except Exception:
-    print("")' 2>/dev/null)"
-if [ -n "$TR" ]; then
-  python3 "$ROOT/.claude/hooks/require_design_check_before_approval.py" --after-write --transcript "$TR" >&2
-else
-  python3 "$ROOT/.claude/hooks/require_design_check_before_approval.py" --after-write >&2
+if [ ! -f "${PY}" ]; then
+  echo "🔴 ${TAG} 検査の本体が見つかりません: ${PY}" >&2
+  echo "   ＝設計書が書き換わったかも、不足も調べられていません。" >&2
+  exit 2
 fi
-# ★不足が在るときは 2 で終わる＝設計書は もう書き終わっているので取り消されない。
-#   2 にするのは、不足の一覧を CC の画面に出すため（0 だと CC には見えない）。
-exit $?
+
+ERR="$(mktemp)"
+python3 "${PY}" --post-tool 2>"${ERR}"
+RC=$?
+case "${RC}" in
+  0) rm -f "${ERR}"; exit 0 ;;
+  2) cat "${ERR}" >&2; rm -f "${ERR}"; exit 2 ;;
+  *) echo "🔴 ${TAG} 検査の本体が落ちました（終了コード ${RC}）。不足は調べられていません:" >&2
+     tail -n 15 "${ERR}" >&2
+     rm -f "${ERR}"
+     exit 2 ;;
+esac

@@ -6,14 +6,17 @@
   なぜ要るか＝CC が確かめずに書き・走らせ、hook に1つずつ当たって止まり、原因を確かめずに出し直す往復を繰り返した（155回目）。
   先に試せば、止める物が1回で全部 分かる。
 相手＝コード・設定・設計書・hook・道具・壊すプログラムを書く前（Write・Edit・MultiEdit）と、
-  scripts/priority_rebuild の .py を走らせる前（Bash）。記録は30分で切れる。
-限界＝試した後に直す文字を変えても、相手（ファイル）が同じなら通る。ターンの終わりの検査は試せない。
+  .py を走らせる・python3 を変数で走らせる・.claude の hooks／tools／breaks のパスや承認のプログラムの名前が入る Bash の前。
+  ★2026-10-15（181回目）＝本物で打つのと同じ入力（Edit＝ファイル・直す前と後の文字／Bash＝コマンドの文字）を試した印が
+  30分以内に無ければ止める（直す前は相手のファイルごとの記録で、試した後に文字を変えても通った）。
+限界＝Write は中身を見ない（ファイルだけ）。ターンの終わりの検査は試せない。
   この hook と試しの道具を書き換えれば無効にできる（git diff には出る）。
 """
 from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import time
 
@@ -23,6 +26,8 @@ import try_hooks as th  # noqa: E402
 WINDOW = 1800
 WRITE_PARTS = ("/scripts/priority_rebuild/", "/.claude/hooks/", "/.claude/tools/", "/.claude/breaks/")
 WRITE_FILES = ("/.claude/state/acceptance.md", "/.claude/settings.json")
+BASH_PARTS = (".claude/hooks/", ".claude/tools/", ".claude/breaks/", "approve_impl", "approve_design")   # ★2026-10-15
+PY_VAR = re.compile(r"\bpython3?\s+\$")                    # ★2026-10-15＝.py のパスを変数に入れた走らせ方
 
 
 def guarded(tool: str, tin: dict) -> list:
@@ -33,7 +38,14 @@ def guarded(tool: str, tin: dict) -> list:
     cmd = tin.get("command") or ""
     if "try_hooks.py" in cmd:                      # 試しの道具そのもの（--bash の中に走らせる .py の文字が入る）は止めない
         return []
-    return [m.group(1) for m in th.PY_RE.finditer(cmd) if "scripts/priority_rebuild/" in m.group(1)]
+    # ★2026-10-15（181回目・まこさん「強制で解決できないの？」「じゃあ、先に直して」）＝Bash の相手を広げた。
+    #   直す前＝scripts/priority_rebuild の .py を走らせるときだけ。この日 CC は、ほかの Bash（.claude/hooks のパスの grep・
+    #   承認のプログラムの名前・.py のパスを変数に入れた走らせ方）を試さずに打ち、土台・承認・設計↔実装のゲートに止められた。
+    #   直した後＝.py を走らせる Bash・python3 を変数で走らせる Bash・.claude の hooks／tools／breaks のパスや
+    #   承認のプログラムの名前が入る Bash を、全部 相手にする。
+    if th.PY_RE.search(cmd) or PY_VAR.search(cmd) or any(s in cmd for s in BASH_PARTS):
+        return [cmd[:80]]
+    return []
 
 
 def main() -> int:
@@ -45,15 +57,15 @@ def main() -> int:
     tin = data.get("tool_input") or {}
     if tool not in ("Write", "Edit", "MultiEdit", "Bash") or not guarded(tool, tin):
         return 0
-    cwd = data.get("cwd") or os.getcwd()
     try:
         rec = json.load(open(th.RECORD, encoding="utf-8"))
     except Exception:                                        # noqa: BLE001
         rec = {}
     now = time.time()
-    miss = [t for t in th.targets_of(tool, tin, cwd)
-            if any(s in t for s in WRITE_PARTS + ("scripts/priority_rebuild/",)) or t.endswith(WRITE_FILES)]
-    miss = [t for t in miss if now - (rec.get(t) or {}).get("t", 0) > WINDOW]
+    # ★2026-10-15（181回目）＝相手（ファイル）ごとの30分の記録ではなく、本物で打つのと同じ入力を試した印（try_hooks.input_key）を見る。
+    #   直す前＝同じファイルなら、試した後に直す文字を変えても通った＝試していない入力で打ち、止められた。
+    key = th.input_key(tool, tin)
+    miss = [] if now - (rec.get(key) or {}).get("t", 0) <= WINDOW else [f"{tool} {guarded(tool, tin)[0]}"]
     if not miss:
         return 0
     if not data.get("session_id"):
@@ -68,7 +80,7 @@ def main() -> int:
     sys.stderr.write(
         "🔒 [先に試す] 書く・走らせる前に、hook 全部へ同じ入力を先に試して、止める物が0本の記録を作ってください"
         "（まこさん決定 2026-10-06「じゃあ入れる」・恒久75番）。\n"
-        f"   試していない相手（30分以内の記録が無い）: {miss}\n"
+        f"   同じ入力を試した記録が無い（30分以内・直す文字やコマンドを1文字でも変えたら試し直す）: {miss}\n"
         f"   試す: {how}\n"
         "   ★止める hook が在れば、試しの道具が全部 一度に出します＝1つずつ当たって出し直さない。\n")
     return 2

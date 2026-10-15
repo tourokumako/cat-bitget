@@ -18,6 +18,7 @@
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -91,13 +92,32 @@ def run_all(tool: str, tin: dict, session: str, cwd: str) -> list:
     return stops
 
 
-def record(targets: list, session: str) -> None:
+def input_key(tool: str, tin: dict) -> str:
+    """試した入力の印（★2026-10-15・181回目・まこさん「強制で解決できないの？」「じゃあ、先に直して」）。
+
+    直す前＝記録は相手（ファイル）ごとで、30分 使い回せた＝試した後に文字を変えても、試していない入力のまま打てた
+      （この日、CC が試さずに打って止められた回の始まりの1つ）。
+    直した後＝本物で打つのと同じ入力の印が30分以内に無ければ、先に試す hook（require_try_before_act）が止める。
+      Edit＝ファイル・直す前の文字・直した後の文字／Bash＝コマンドの文字／
+      Write＝ファイルだけ（試しの道具の --write は中身を渡さない＝中身を変えても印は同じ・限界）。"""
+    if tool == "Edit":
+        parts = [tool, os.path.realpath(tin.get("file_path") or ""), tin.get("old_string") or "", tin.get("new_string") or ""]
+    elif tool == "MultiEdit":
+        parts = [tool, os.path.realpath(tin.get("file_path") or ""), json.dumps(tin.get("edits") or [], ensure_ascii=False)]
+    elif tool == "Write":
+        parts = [tool, os.path.realpath(tin.get("file_path") or "")]
+    else:
+        parts = [tool, tin.get("command") or ""]
+    return "in:" + hashlib.sha256("\x00".join(parts).encode("utf-8")).hexdigest()[:24]
+
+
+def record(targets: list, session: str, key: str = "") -> None:
     try:
         d = json.load(open(RECORD, encoding="utf-8"))
     except Exception:                                        # noqa: BLE001
         d = {}
     now = time.time()
-    for t in targets:
+    for t in targets + ([key] if key else []):
         d[t] = {"t": now, "session": session}
     d = {k: v for k, v in d.items() if now - v.get("t", 0) < 86400}     # 1日より古い記録は捨てる
     with open(RECORD, "w", encoding="utf-8") as f:
@@ -141,7 +161,7 @@ def main(argv: list) -> int:
             print(f"── {name} ──\n" + "\n".join("   " + ln for ln in keep))
         return 1
     tg = targets_of(tool, tin, cwd)
-    record(tg, session)
+    record(tg, session, input_key(tool, tin))                # ★2026-10-15＝試した入力の印も残す（input_key の説明）
     print(f"✅ 止める hook 0 本 ／ 試した {n} 本。記録した相手＝{tg or '（無し＝止める hook の対象外）'}")
     return 0
 

@@ -174,7 +174,7 @@
    ]
   },
   {
-   "見出し": "### ▶▶ 次のセッションでやること（181回目・ここに書くのは次のセッションでやることだけ）",
+   "見出し": "### ▶▶ 次のセッションでやること（182回目・ここに書くのは次のセッションでやることだけ）",
    "塊": [
     {
      "文": [
@@ -182,18 +182,17 @@
       "**★書き方の決まり（まこさん指示 2026-10-10）**＝この節には、次のセッションでやることだけを書く。済んだことの記録（N回目にしたこと）は書かない。記録は `session_worklog_YYYYMMDD.md` に書く。セッションの終わりに、この節を丸ごと書き替える（前の回の文を下に残さない）。",
       "",
       "**★この節の形（まこさん指示 2026-10-12「このnext_step問題、毎回やらないので、今やって」）**＝次の5つだけを、1件1行で書く。①作る物 ②最初にやる事 ③ToDo の表 ④まこさんの返事を待っている事 ⑤控えの場所。経緯と事実の段落は書かない（worklog の節の番号を書く）。次にやる事を、記憶のファイルや ToDo の置き場にだけ書かない（worklog 20261012 §29）。",
-      "",
       "**① 作る物（いまの件＝hook の見直しを1本ずつ・ToDo の35番）**",
       "- まこさんの要件（2026-10-15）＝hook の不具合・過剰な hook・不要な hook で進行を妨げられている状態を、完全に改善する。正本＝恒久の決まり76番（要件の逐語）。",
       "- 進め方（まこさん 2026-10-15「４０本をまとめて要不要の振り分け、修正ができないから、１本ずつ対応していく」「それでOK」＝76番の2段目と3段目の順を置き替えた）＝1本ずつ ①CC が確かめた事実を出す（役割・動く場面・止めた回数・試した結果）②まこさんが要・不要を決める（CC は決めない）③要らない物は止める行を見ていただいてから止める・要る物は不具合の原因と直し方の案（再発を止める仕組み・防げない物）→ OK → 直す → 両方向に試す ④次の1本へ。",
-      "- 済＝1本目 verify_handoff_paths.sh・2本目 show_decisions.sh・3本目 hook_health_check.sh・4本目 reset_read_log.sh（中身＝`.claude/state/hook_inventory_src.json` の「まこさんの振り分け」）。次＝5本目 show_design_check_after_write.sh（`.claude/state/hook_inventory.md` の表の並び順）。",
+      "- 済＝1〜5本目。181回目に振り分けの前に直した3本（block_repeat_kind・block_repeat_failure・require_try_before_act）は振り分けがまだ（worklog 20261015 §9・§10）。",
+      "- ★次＝1行の追加で走った hook の内訳（worklog 20261015 §10）から、hook ごとに CC の案（止める・直す・残すと理由）を、hook_inventory.md の冒頭の目的と要件から出し、まこさんが決める。丸投げしない。hook を足す・強める案を出さない（L-586・L-692）。",
       "- 決まり＝まこさんの決定は、まこさんが行の頭に【決定事項】と書く（2026-10-15「それで良い」）。gen_decisions.py が、やり取りの記録から拾って決定の一覧に載せる。",
-      "",
       "**② 最初にやる事（上から順に）**",
       "1. 必読を開く。始めの表示に「✅ hook 健全性」と「🔴 異常 3 件」（②-b＝ほかの3本の、変数の直後の全角の文字・それぞれの番で直す）が出るのは、いまの正しい状態。",
-      "2. `.claude/state/session_worklog_20261015.md` の §7 と、`.claude/state/sessions/eb4d99cf-ecfb-45f9-8eda-294cd88f0057/lessons.md`（180回目に止められた形と、次から確かめること）を Read で開く。まこさんへの文を書く前に、記憶のファイル feedback_prose_grammar_and_headings.md を開く。返信は必ず日本語で書く。",
-      "2b. いまの件は ToDo の35番（5本目から）。セッションが替わるので、35番の宣言を出し直す。",
-      "2b-2. 1本ずつの材料＝`.claude/state/hook_inventory.md`（道具＝`.claude/state/_hook_inventory.py`・手で書く欄の元データ＝`.claude/state/hook_inventory_src.json`）。要・不要の材料は、事実だけを出す（要る・要らないの判断を書かない＝まこさん「勝手に要不要を振り分けないで」）。説明は短い普通の文で（まこさん「よくわからない」が出た1本目の細かい書き方に戻さない）。",
+      "2. `.claude/state/session_worklog_20261015.md` の §9・§10 と、`.claude/state/sessions/f837be62-f547-4425-a75c-e7d70a1a7b24/lessons.md` を Read で開く。記憶の feedback_answer_first_no_padding.md と feedback_prose_grammar_and_headings.md を開く。返信は日本語で。",
+      "2b. いまの件は ToDo の35番。宣言を出し直す。試しの hook は、試したのと1文字も違わない入力でしか通さない（.claude/state の .py への Edit は対象外）。試しのコマンドに「>」を書かない。パスは絶対パスで。",
+      "2b-2. 1本ずつの材料＝`.claude/state/hook_inventory.md`（道具＝`.claude/state/_hook_inventory.py`・手で書く欄の元データ＝`.claude/state/hook_inventory_src.json`）。事実に CC の案（止める・直す・残すと理由）を付けて出す（まこさん「丸投げするな」）。決めるのは まこさん。説明は短い普通の文で。",
       "2b-3. hook が「使われていない」と言う前に、settings.json の登録を読むプログラム（pre_audit_check.py の check_design・try_hooks.py）と、その hook の名前を使う所を全部 探す（180回目に、やり取りの記録の止めた回数だけで「不要」と決め、承認の前の検査で使われている4本を外した）。",
       "2b-4. CC は .claude/hooks の .sh を直せない（確認の hook が「直す前に走らせる」を求め、土台のゲートが hooks の .sh を走らせない）。.sh の直しは、直す前と後の文字をお出しして、まこさんにエディタで直していただく。直していただいたら git diff で案と同じかを確かめる。試しは まこさんにターミナルで打っていただく（hook が標準入力を読むときは echo '{}' | を前に付ける）。",
       "2b-5b. hooks・tools・breaks のパスが入る Bash は、grep・wc・ls・cat・head・tail・sed・awk・find・diff・git diff だけ。「<」「>」（>= も）・$(・approve_impl.sh を書かない。hooks の行は Read で開く。案の bash は ${名前} で囲む。試しの見本は .txt（教訓 L-691）。",
@@ -352,16 +351,16 @@
        },
        {
         "欄": [
-         " 34 ",
-         " 締め（worklog・next_step の元データ・教訓・ToDo の表の写し） ",
-         " いまここ（次の回は、ここから） "
+         " 35 ",
+         " hook を1本ずつ確かめ、まこさんが要・過剰・不要を決め、止めるか直す（まこさん 2026-10-15「１本ずつ対応していく」＝30・31番を置き替え） ",
+         " まだ（5本目まで済。次は1行の追加で走った hook の内訳から CC の案を出す・worklog §10） "
         ]
        },
        {
         "欄": [
-         " 35 ",
-         " hook を1本ずつ確かめ、まこさんが要・不要を決め、要る hook の不具合をその場で直して両方向に試す（まこさん 2026-10-15「４０本をまとめて要不要の振り分け、修正ができないから、１本ずつ対応していく」「それでOK」＝30・31番を置き替え）。1〜4本目は済。次は5本目 show_design_check_after_write.sh ",
-         " まだ（5本目から） "
+         " 36 ",
+         " 締め（worklog・next_step の元データ・教訓・ToDo の表の写し） ",
+         " いまここ（次の回は、ここから） "
         ]
        }
       ]
@@ -381,8 +380,9 @@
       "- 必読を止める hook を登録し直すか（未決）。動いていない hook の扱いは、35番の1本ずつの中で見る（始めの表示のパスの誤り＝YYYYMMDD は、180回目に直した）。",
       "- 180回目の件（「完全に不要」と、settings.json を読むプログラムを探さずに判断し、承認の前の検査で使われている4本の登録を外した・お返事の前に戻した・worklog 20261015 §7）を、違反の記録に載せるか。",
       "- （まこさんの手の作業・決まっている）forbid_interpretation_file の登録を外す＝settings.json の 120〜123行を消し、gen_hook_list.py --write を打つ（まこさん「完全に不要なhookは停止」「OK」・CC の Edit は自動の許可の判定に止められた）。hook_health_check.sh の86行目の「扱っている」の後のタブ1つを消す。",
-      "- 調べた結果と表を作るプログラムのフォルダ（`.claude/state/indicator_review`）を git に入れるか。",
+      "- git の対象外（.gitignore の .claude/state/*）の物を git に入れるか＝`.claude/state/indicator_review`・180回目に作った4つ（`_hook_inventory.py`・`hook_inventory_src.json`・`hook_inventory.md`・`mako_decisions.json`）。",
       "- 項目の抜けを見張る検査が走っていなかった件を、違反の記録に載せるか。",
+      "- 181回目の分＝振り分けの前に直した3本の要・過剰・不要／変更のコミット／記録を行の種類を見ずに読む hook（require_confirm_before_act・limit_repeat_verification ほか）の数え違いの疑い（worklog 20261015 §10）。",
       "",
       "**⑤ 先の工事に入るときに開く控え（いまの工事では開かない）**",
       "控えのファイル＝`.claude/state/next_step_reference.md`（要件定義の全文・指標の修正の束・M2 の束・あとで直すことの一覧。節の案内は、そのファイルの先頭に在る）。",
