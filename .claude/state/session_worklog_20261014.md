@@ -105,3 +105,93 @@
 - まこさん決定（2026-10-14・逐語）＝「コミットOK」。教訓 L-688 を書いた（依頼書に「自己テストが測る」と書く前に grep で見る・.py を直す前の順・hook が求める形は判定の行を読む・今日の記録を作った回の next_step の直し方・検査が動いているかは登録で見る）。件数が増えたので、next_step を作り直すプログラムが、いちばん古い教訓1件を、古い教訓の控え（lessons_archive.md）へ移した。25番を ✅済 にして ToDo の表を写し直し（済んでいない 9行）、next_step を作り直した（検査19個とも通った）。そのあと、コミットした。
 - この回に変わったファイル＝gen_acceptance.py（監査 CP78 の修正 1・3 とコメント1行）・design_section_map.json（まこさんが直した1行）・applied_fixes.json（当てた記録2件）・next_step の2本・この記録。
 
+## §7 178回目＝ToDo の10番の1つ目のまとまり（呼ぶ所が見つからなかった検査 27本）を1本ずつ調べた（ファイルは直していない）
+
+- 始め。必読6本・この記録の §4〜§6・記憶のファイル2本・宣言を見る hook・前の回の ToDo を Read で開いた。計画（この回の進め方と10番の宣言）を出し、まこさんの承認をいただいた。ToDo を書いた（全10件。next_step の表の9行と、締めの27番）。
+- 調べ方＝1本ごとに、main と照らす関数を Read で開いて、照らす旗が書き込まないことを読んだ。書き込まず、入力のファイルが要らない検査だけを走らせた。売買のフォルダの .py と hook の .py は、走らせる前に、同じコマンドを試しのプログラム（try_hooks.py --bash）に通した（どれも「止める hook 0 本」）。
+- 27本の内訳＝走らせて通った 11本・走らせて通らなかった 8本・走らせていない 8本。
+- 走らせて通った 11本（出力の文字）
+  - gen_s22_map.py --verify＝「✅ --verify 一致」。相手は s22_map.md（9月10日）。
+  - gen_cat_requirements.py --verify＝「✅ 改変なし（ハッシュ e37c1fbb49c3ed09）」。見るのは、1行目のハッシュ値と本文が合うかだけ（verify は 477〜489行）。元データが変わった後の作り直し忘れは見ない。
+  - gen_windows.py --verify＝「✅ windows.md と差し込み 4 件は実体と一致」。作り直した中身と比べる（284〜308行）。
+  - gen_engine_tuner_requirements.py・gen_engine_tuner_manual.py・gen_observe_manual.py の --verify＝3本とも「✅ 改変なし」。3本とも、ハッシュ値と本文が合うかだけを見る。
+  - gen_design.py --verify＝「verify OK」（e38_design.md・ハッシュ値だけ）。gen_flow.py --out e38_flow.md --verify＝「✅ verify OK」（ハッシュ値だけ。--out が無いと走らない）。
+  - gen_v9_exits.py --verify＝「✅ v9_exits.md は実体と一致」（作り直した中身と比べる）。
+  - enforce_h2_pass.py --check-fingerprint＝「✅ 印と、いまのコードが一致（45ce332d61d5883c… ／ 対象 24 件）」。enforce_g2_pass.py --check-fingerprint＝「✅ 印と、いまのコードが一致（778e6056e187846a… ／ 対象 39 件）」。
+- 走らせて通らなかった 8本（出力の文字）
+  - gen_code_index.py --verify＝「❌ --verify: 目次がいまのコードと食い違っています」。相手の code_index.md は9月9日のまま。
+  - gen_regime_kb.py --verify all＝7つの節のうち2つが「❌ m2_todo.json が変わったのに --write を走らせていません」「❌ m2_stage_candidates.json が変わったのに --write を走らせていません」。ToDo の18番の件。
+  - gen_session_todo.py --verify＝「❌ session_todo.md は元データと食い違います」。元データ todo_src.json は9月17日のまま。
+  - gen_filemap.py --verify＝「❌ filemap.md が実体と食い違う」。filemap.md は8月28日のまま。
+  - gen_auditor_brief.py --verify＝「❌ auditor_template.md の差し込みが実体と食い違う」。auditor_template.md は9月15日のまま。
+  - gen_docmap.py --verify＝「❌ docmap.md が正本と一致しない」「❌ docmap.json の指紋が正本と合わない」。docmap.md は9月5日のまま。
+  - require_read_plan_before_design.py --verify＝「❌ --verify: いまの宣言は、元データと実物から作った物と違う」。宣言 design_read_plan.md は10月13日。原因は調べていない。
+  - enforce_todo_declaration.py --check＝「❌ 中身の不足 4 件」。状態の欄の「まだ（…）」を、3つの言葉のどれでもないと数えた。この hook は設定に登録が無い。
+- 走らせていない 8本と、その理由
+  - gen_audit_index.py --verify＝土台のゲート（require_acceptance_before_impl.sh）が止めた。名前で通すプログラムの一覧（120〜181行）に、この名前が無い。WORKFLOW.md の一覧は「20 件＝報告書 17 本・依頼書 14 本」（592行）。いまのフォルダは報告書 86本・依頼書 89本（find で数えた）。
+  - gen_audit_todo.py --verify と --check-corrections＝監査の結果ファイルの名前を引数に渡す作り。いまの設計書（acceptance.md）に、差し込みの目印（AUDIT_TODO_START）は0個。
+  - engine_tuner_fire_diag.py --verify-journal＝走行（--run）の中の枝（454〜473行）。走行の記録の置き場が要り、走行は結果のファイルを書く。
+  - engine_tuner_gen.py --verify-provenance＝保存した案のファイルが要る。関数は、自己テストの中（7584行・7597行）から呼ばれている。
+  - gen_signal_families.py --check-structures＝案の一覧のファイルが要る。関数は、案を作るプログラム（engine_tuner_gen.py の 4538行）から呼ばれている。
+  - observe_diag.py --check-materials と --check-materials-meta＝5分足のファイルが要る。--check-materials は結果のファイルを書く（8598行）。時間の見込みが無い。
+  - enforce_chat_writing.py --check＝下書きのファイルが要る。この hook は設定に登録が無い。
+  - check_source_on_save.py --check＝監査依頼の手書きの文書が要る。hook の本体は登録が在り、同じ関数（check）を保存のたびに呼ぶ。
+- 途中で分かった事＝①照らす旗のうち6本（要件定義書2本・説明書2本・E38 の設計書とフロー）は、ハッシュ値と本文が合うかだけを見る。元データを直した後の作り直し忘れは、この旗では見つからない ②文書の全数の一覧を作るプログラム（gen_docmap.py）には、ほかのプログラムの --verify を全部 走らせる口（--status）が在る。この口を呼ぶ所は調べていない ③設定の登録に名前が在った hook＝require_read_plan_before_design.sh・check_source_on_save.sh・enforce_h2_pass.sh・enforce_g2_pass.sh。名前が無かった hook＝enforce_chat_writing・enforce_todo_declaration（jq で見た）④印を照らす口を呼ぶ壊すプログラムは b57 の1本（H2 側）。G2 側の口を呼ぶファイルは、hook 自身のほかに無い。
+- 確かめていない事＝①通らなかった8本の、食い違いの中身（どの行が違うか）②走らせていない8本が、いま通るか ③相手の文書（目次・地図・ひな形）が、いまの作業で使われているか ④読むもの宣言の照らしが通らない原因。
+- 止められた形（1回）＝gen_audit_index.py --verify（上のとおり）。打ち直していない。
+- 次＝27本の一覧を まこさんに報告して止まる。残す検査と直す検査は、まこさんが決める。
+- 報告の後に分かった事＝計画の承認は、宣言を見る hook（require_work_declaration）に、まこさんの発言として数えられない。CC は、数えられるかを確かめずに作業に入った（読むこと・書き込まない検査・ToDo と記録の書き込みだけ）。最後の git の状態を見るコマンドで止められて分かった。まこさん「了解」の後に見直した＝git が追うファイルで変わったのは、この記録と、決定の一覧（始めの表示の hook が作り直す）だけ。
+- まこさん「了解」（2026-10-14）。CC の読み＝報告を読んでいただいた。残す・直すの決定とは読んでいない。
+
+## §8 178回目＝ToDo の10番の2つ目のまとまり（設定に登録の在る hook 41本）を調べた（ファイルは直していない）
+
+- 2つ目のまとまりの宣言に、まこさん「OK」（2026-10-14）。
+- 登録（settings.json を jq で並べた）＝46件・名前は41本。内訳＝SessionStart 4件・PostToolUse 3件・PreToolUse 31件・Stop 8件。2回より多く登録されている名前＝require_acceptance_before_impl（3件）・require_confirm_before_act・require_selftest_after_source_edit・require_stage_conditions（各2件）。
+- 役割＝役割の元データ（hook_roles.json・91行）から、登録の在る名前の行を取り出した。41本のうち40本に行が在った。block_long_background.py だけ、行が無い。hook の一覧の文書（pdca_flow.md）にも、この名前は0回。hook の一覧を作るプログラム（gen_hook_list.py の registered・48〜62行）は、名前が .sh で終わる登録だけを数えるので、文書の見出しは「実測 40本」と出る。
+- 直近7日の止めた回数＝数えるプログラム（.claude/state/_hook_usage_probe.py・読むだけ）を、試しのプログラムに通してから走らせた。記録 40本（240MB）。
+  - 止めた回数の在った hook＝21本。多い順に、block_repeat_kind 134回・require_acceptance_before_impl 76回・require_confirm_before_act 65回と ターンの終わりに27回・block_repeat_failure 42回・enforce_audit_report_form 34回・require_read_used 28回・require_design_contract_before_run 26回・require_try_before_act 18回・enforce_next_step_tidy 15回・enforce_audit_request_gen 12回・require_stage_conditions 11回・enforce_observe_diag_only 9回・require_work_declaration 9回・require_selftest_after_source_edit 4回・enforce_g2_pass 3回・require_trial_before_proposal 3回・enforce_purpose_gate 3回・enforce_h2_pass 2回・forbid_edit_generated_docs 2回・check_source_on_save 1回・show_breaks_on_code_edit 1回。
+  - 止められた後、同じ操作をそのまま打ち直して通った回数＝block_repeat_kind 44回・block_repeat_failure 19回・require_confirm_before_act 13回・require_try_before_act 3回・enforce_audit_report_form 1回・enforce_h2_pass 1回・show_breaks_on_code_edit 1回。数え方の限界＝間に別の操作（見立てを書く・行を開く）が入っても、同じ操作が3手の内に通れば数える。
+  - 1回も止めていない登録＝20本。うち6本は、止めない作り（表示と記録）＝verify_handoff_paths・show_decisions・hook_health_check・reset_read_log・record_read・show_design_check_after_write。残りの14本＝block_long_background・enforce_audit_fix_gen・enforce_design_consistency・enforce_flow_declaration・enforce_signal_table_gate・enforce_worklog_on_experiment・forbid_interpretation_file・limit_repeat_verification・require_design_check_before_approval・require_leak_annotation・require_period_source・require_read_plan_before_design・require_source_read_before_acceptance・require_tag_for_experiment。
+- この回に動いたのを見た hook＝始めの表示の3本（verify_handoff_paths・show_decisions・hook_health_check）・読んだ記録（read_log.txt に、この回の Read が書かれている＝record_read）・土台のゲートと宣言の hook（CC を1回ずつ止めた）。
+- fast-mode＝入っている（目印のファイル pdca_fast_mode が7月15日から在る）。登録の在る hook のうち、fast-mode で動きを変える行（コメントでない行）が在るのは、enforce_worklog_on_experiment（fast-mode のときだけ動く・12行）と reset_read_log（記録のファイルを消す・13行）の2本。
+- 読んだ範囲の限界＝hook の本体の判定の行まで読んだのは5本（require_work_declaration.py の全部・check_source_on_save.py の全部・enforce_h2_pass.py と enforce_g2_pass.py の印を照らす関数・block_long_background.py の先頭40行）。残りの36本は、役割の元データの文と、止めた回数と、.sh の行数・呼ぶ .py の名前だけを見た。宣言の作業内容（本体の判定の行を読む）を、36本で満たしていない。
+- 確かめていない事＝①1回も止めていない14本が、止めるべき入力で実際に止まるか ②役割の元データの文が、本体の動きと合っているか（36本）③止めた回数のうち、止めて正しかった回数と、CC の作業を妨げただけの回数の内訳。
+- 次＝41本の一覧を まこさんに報告して止まる。
+
+## §9 178回目＝hook の直しに設計書と監査が要るかの確かめ・まこさんの決定「それでよい」・進め方の見直し
+
+- まこさんの問い（逐語）＝「まとまりごとに一覧をだしてるけど、さっきの１回目のまとまりは、一覧を出しただけで、なにも修正してないよね。どうすればいいの？」。CC の答え＝決めていただく事は3つ（要らないと見立てた3本を消すか・返信の文章を見る hook の扱い・残りは見立てのとおりでよいか）。
+- まこさんの指摘（逐語）＝「hookの修正では、設計書、監査、承認は不要にしてるはず」。記録を開いて確かめた＝①2026-10-02 の決定「インフラ整備でこのフローはいらない」「早く修正しろ」（記憶のファイル feedback_infra_no_design_flow.md）②2026-10-12 の決定の表の2行目（逐語のファイル okd_design_audit_scope_20261012.txt の 32行）に、CC が「何を確かめるか」を決めるプログラムを「要る」と書き、その説明（25行）に hook・検査のプログラムを入れていた。
+- CC の勧め（返信に出した形）＝直すときには設計書も監査も承認も付けない。直し終わった後に、まとめて監査に出す。監査で問う事は3つ（登録の在る hook が、止めると言っている入力で実際に止まるか・残す検査に呼ぶ所が在り、走らせると通るか・決まりの文書の「動いている」という文が、設定の登録の実物と合うか）。守りを減らす直し（hook を外す・止める条件を緩める）は、直す前に、消す行を まこさんに見ていただく。
+- まこさん決定（2026-10-14・逐語）＝「それでよい」。
+- 同じ発言での、まこさんの提案（逐語）＝「まとまり１に関しては、修正するか削除するかを判断できるような情報量ではない（まだ確認していない項目があると言ってる）ので、判断ができるようにまとめ直すべきなのでは？」「それでまとまり１をまず修正して監査に出す　その次はまとまり２へと。というフローがよいのでは？」。
+- 恒久の決まりと next_step への書き込みは、進め方が決まってから1回で行う（まだ書いていない）。
+- CC の答え＝2つとも、そのとおり。進め方＝まとまりごとに「調べ直す → 決めていただく → 直す → 監査に出す → 次のまとまりへ」。まとめ直しの宣言に、まこさん「OK」（2026-10-14）。
+
+## §10 178回目＝1つ目のまとまり（27本）を、判断できる形に調べ直した（ファイルは直していない）
+
+- 調べた事（4つ）＝①相手の文書やプログラムを、いま使う置き場（設定・hook・プログラム・壊すプログラム・決まりの文書・引き継ぎの文書・要件定義書・マイルストーン・売買のフォルダの .py）のどれが名指ししているか（grep で名前ごとに集めた）②通らない検査は、どこが古いか（書かずに作る口の出力と、いまの文書を比べた）③直す場合に何をするか ④消す場合に何が一緒に要らなくなるか。
+- 前の見立ての誤り（2件）
+  - gen_audit_todo.py を「要らない」と書いたのは誤り。設計書を作るプログラム（gen_acceptance.py の 1344行）が、このプログラムを読み込んで使っている。使われていないのは、照らす旗と訂正の文字を見る旗だけ。
+  - 前の ToDo の hook（enforce_todo_declaration.py）も、消せない。始めの表示の hook（reset_read_log.sh の 17行）が、このプログラムの置き場の決め方を使うと書いている。登録は、2026-10-01 に外すプログラム（_remove_hooks_20261001.py の 14行）で外れた。
+- ハッシュ値だけを見る検査が、古い文書を「改変なし」と出していた（実物で確かめた3本）
+  - 要件定義書（cat_requirements.md・8月25日）＝書かずに作った物と比べると、1行目のハッシュ値が違う（いま e37c1fbb49c3ed09・作ると de91afd988d7b3e0）。違いの例＝engine_tuner_gen.py の関数の数が、文書は 169件・作ると 233件。CLAUDE.md の行番号が 97行と 98行。違いの全部の行数は数えていない（先頭24行だけを見た）。
+  - observe_diag の説明書（observe_diag_manual.md）＝ハッシュ値が違う（いま 72efed79613a61c3・作ると 1ed7043358f71df4）。違う行は2か所。
+  - E38 の設計書（e38_design.md）＝作った物に在って文書に無い行が1行（生成元の e38_logics.json の sha256 の行）。
+  - engine_tuner の要件定義書と説明書の2本は、比べるコマンドを、試しのプログラムが止めた（目的のゲート enforce_purpose_gate。目的の照合の「対象」に、この2本の名前が無い）。走らせていない。
+- 作り直した中身と比べる検査で、通らなかった物の中身
+  - ファイルの地図（filemap.md・8月28日）＝作った物に在って地図に無い行が 82行。
+  - 目次（code_index.md・9月9日）＝同じく 50行。目次を名指ししているのは、土台のゲートの名前の一覧・作るプログラム自身・壊すプログラム b75 だけ。読むもの宣言を作るプログラムは、目次を読まない。
+  - 監査のひな形の差し込み（auditor_template.md の 45〜120行）＝差し込みに「まこさんの決定の新しい8件」が入る作り。決定が1件 増えるたびに、古くなる。依頼書 91本のうち 71本が、ひな形の名前を書いている。いちばん新しい設計書の監査の依頼書（CP77）は、ひな形の決まりを行番号で4か所 引くが、必読の表にひな形のパスは無い。依頼書を作るプログラム（gen_audit_docs.py）は、ひな形の名前を書いていない。
+  - 文書の全数の一覧（docmap.md・9月5日）＝一覧を名指ししているのは、作るプログラム自身だけ。違いの中身は見ていない（書かずに作る口が無い）。
+- 使われ方（名指ししている所）
+  - 広く使われている＝cat_requirements.md（hook 3本・依頼書を作るプログラム・引き継ぎの文書ほか）・windows.md（engine_tuner.py・periods.py ほか）・engine_tuner_requirements.md（依頼書を作るプログラム・恒久の決まりほか）・v9_exits.md（score.py ほか）・e38_flow.md（登録の在る hook enforce_flow_declaration.sh）。
+  - 監査のひな形と、古い依頼書を作るプログラム（gen_audit_request.py）だけが名指し＝engine_tuner_manual.md・observe_diag_manual.md。
+  - gen_s22_map.py＝設計書を作るプログラム（1275行）が関数を読み込む。修正を当てるプログラム（apply_audit_fix.py の 93行）が、照らす旗を走らせてよいコマンドに入れている。
+  - gen_session_todo.py と todo_src.json＝土台のゲートの名前の一覧のほかに、名指しは無い。
+- 返信の文章を見る hook（enforce_chat_writing）＝設定に登録が無い。10月1日の外すプログラムの一覧には、この名前は無い（いつ外れたかは調べていない）。本体の .py は、登録の在る hook 2本（require_stage_conditions.py の 188行・require_design_check_before_approval.py の 873行）が、関数 last_chat_text を読み込んで使っている＝消せない。
+- 途中で分かった事（3つ目のまとまりの材料）＝10月1日に登録を外した hook の中に、require_spec_read_before_design（始めの表示が「設計書を書く瞬間に強制 read」と書く hook）と enforce_checked_edit（恒久の決まりの72番が「物理化」と書く hook）が在る（_remove_hooks_20261001.py の 13〜14行）。
+- 保存した案のファイル（structures_marked.json）は、8月27日の走行の物が2つ在る。案の値の出どころを数え直す旗は、走らせていない（古い走行の案なので、通らなくても、検査の故障か案が古いだけかを分けられない）。
+- 確かめていない事＝①要件定義書の違いの全部 ②engine_tuner の要件定義書と説明書が古いか ③文書の全数の一覧の違いの中身 ④読むもの宣言の照らしが通らない原因 ⑤返信の文章を見る hook が、いつ・誰の指示で登録から外れたか ⑥材料の検査（observe_diag.py --check-materials-meta）にかかる時間。
+- 止められた形＝①名前ごとに探すコマンド（for と xargs と printf を使った形）を、受け入れ条件のゲートが止めた。grep の -o と awk の形に直して通した ②上の、目的のゲートの2件（試しのプログラムの中で止まった・打ち直していない）。
+

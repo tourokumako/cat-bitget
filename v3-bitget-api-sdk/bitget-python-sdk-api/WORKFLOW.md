@@ -565,7 +565,7 @@ Critical/Major 判定を伴わない確認程度はこちら。
 
 手で足さない（手で足すと止まる＝5月の CP6 で止まり、7〜8月の engine_tuner の監査 cp1〜cp6 が載っていなかった）。作り直し＝`python3 .claude/tools/gen_audit_index.py --write`／改変・未更新の検出＝`--verify`。
 
-<!-- AUDIT_INDEX_START hash=b3621c5a8a55 ここは .claude/tools/gen_audit_index.py が自動生成＝手で書き換えない -->
+<!-- AUDIT_INDEX_START hash=6c0251f1ee50 ここは .claude/tools/gen_audit_index.py が自動生成＝手で書き換えない -->
 | 日付 | 印 | 対象（ファイル名の幹） | 依頼書（inputs/） | 報告書 | Verdict |
 |---|---|---|---|---|---|
 | 2026-05-15 | audit15 | `audit15_routeB_records` | — | 2026-05-15_audit15_routeB_records.md | — |
@@ -588,8 +588,91 @@ Critical/Major 判定を伴わない確認程度はこちら。
 | 2026-08-25 | cp7 | `exit_fire_forms_design_cp7` | 2026-08-25_exit_fire_forms_design_cp7_audit_request.md | 2026-08-25_exit_fire_forms_design_cp7_audit_report.md | NO-GO（方向は正しい＝維持。設計書の検査を2件→6件に、完成の条件 C1・C3・C6・C8・C11 を書き直して再提… |
 | 2026-08-25 | cp7b | `exit_fire_forms_design_v2_cp7b` | 2026-08-25_exit_fire_forms_design_v2_cp7b_audit_request.md | 2026-08-25_exit_fire_forms_design_v2_cp7b_audit_report.md | OTHER＝条件つき GO（下の改善1・改善2 を設計書に追記した版を承認する。追記なしで承認するなら、設計書自身の基準… |
 | 2026-08-25 | cp6 | `four_elements_gate_design_impl_cp6` | 2026-08-25_four_elements_gate_design_impl_cp6_audit_request.md | 2026-08-25_four_elements_gate_design_impl_cp6_audit_report.md | NO-GO |
+| 2026-08-26 | cp8 | `permission_gate_r17_design_cp8` | 2026-08-26_permission_gate_r17_design_cp8_audit_request.md | 2026-08-26_permission_gate_r17_design_cp8_audit_report.md | NO-GO（このままの設計書では承認に進めない。方向＝許可制は維持） |
+| 2026-08-26 | — | `unordered_scan_docstring_match_report` | — | 2026-08-26_unordered_scan_docstring_match_report.md | — |
+| 2026-08-26 | — | `unordered_scan_docstring_match_request` | 2026-08-26_unordered_scan_docstring_match_request.md | — | （報告書なし） |
+| 2026-08-27 | cp10 | `m2_todo_rewrite_cp10` | 2026-08-27_m2_todo_rewrite_cp10_audit_request.md | — | （報告書なし） |
+| 2026-08-27 | — | `regime_element04` | 2026-08-27_regime_element04_audit_request.md | 2026-08-27_regime_element04_audit_report.md | NO-GO — 第4要素は、いまの engine_tuner では組み立てられない（凍結表の ❌ は維持）。ただし ❌ … |
+| 2026-08-28 | cp10a | `m2_range_laws_cp10a` | 2026-08-28_m2_range_laws_cp10a_audit_request.md | 2026-08-28_m2_range_laws_cp10a_audit_report.md | PIVOT（GO でも NO-GO でもない。理由は §5） |
+| 2026-08-28 | cp10b | `m2_todo_rewrite_cp10b` | 2026-08-28_m2_todo_rewrite_cp10b_audit_request.md | 2026-08-28_m2_todo_rewrite_cp10b_audit_report.md | PIVOT） |
+| 2026-09-01 | cp11 | `m2b3_range_laws_cp11` | 2026-09-01_m2b3_range_laws_cp11_audit_request.md | 2026-09-01_m2b3_range_laws_cp11_audit_report.md | GO（10件はこのまま M2-B-4 以降へ進んでよい）／ Critical 指摘: 0件 |
+| 2026-09-01 | cp12 | `m2c_indicator_onoff_cp12` | 2026-09-01_m2c_indicator_onoff_cp12_audit_request.md | — | （報告書なし） |
+| 2026-09-02 | cp13 | `impl_lock_cp13` | 2026-09-02_impl_lock_cp13_audit_request.md | 2026-09-02_impl_lock_cp13_audit_report.md | NO-GO |
+| 2026-09-03 | cp14 | `impl_lock_fix_cp14` | 2026-09-03_impl_lock_fix_cp14_audit_request.md | 2026-09-03_impl_lock_fix_cp14_audit_report.md | NO-GO |
+| 2026-09-03 | cp15 | `impl_lock_fix_cp15` | 2026-09-03_impl_lock_fix_cp15_audit_request.md | 2026-09-03_impl_lock_fix_cp15_audit_report.md | NO-GO |
+| 2026-09-03 | cp16 | `impl_lock_fix_cp16` | 2026-09-03_impl_lock_fix_cp16_audit_request.md | 2026-09-03_impl_lock_fix_cp16_audit_report.md | — |
+| 2026-09-03 | cp17 | `impl_lock_fix_cp17` | 2026-09-03_impl_lock_fix_cp17_audit_request.md | 2026-09-03_impl_lock_fix_cp17_audit_report.md | — |
+| 2026-09-04 | cp18 | `impl_lock_fix_cp18` | 2026-09-04_impl_lock_fix_cp18_audit_request.md | 2026-09-04_impl_lock_fix_cp18_audit_report.md | — |
+| 2026-09-04 | cp19 | `impl_lock_fix_cp19` | 2026-09-04_impl_lock_fix_cp19_audit_request.md | 2026-09-04_impl_lock_fix_cp19_audit_report.md | — |
+| 2026-09-05 | cp20 | `m2c2_indicator_switch_cp20` | 2026-09-05_m2c2_indicator_switch_cp20_audit_request.md | 2026-09-05_m2c2_indicator_switch_cp20_audit_report.md | PIVOT |
+| 2026-09-05 | cp21 | `m2c4_add_parts_cp21` | 2026-09-05_m2c4_add_parts_cp21_audit_request.md | 2026-09-05_m2c4_add_parts_cp21_audit_report.md | NO-GO |
+| 2026-09-05 | cp22 | `m2c4_cp22_reaudit_report` | — | 2026-09-05_m2c4_cp22_reaudit_report.md | — |
+| 2026-09-05 | cp22 | `m2c4_cp22_reaudit_request` | 2026-09-05_m2c4_cp22_reaudit_request.md | — | （報告書なし） |
+| 2026-09-06 | cp23 | `m2c4_cp23_reaudit_report` | — | 2026-09-06_m2c4_cp23_reaudit_report.md | — |
+| 2026-09-06 | cp23 | `m2c4_cp23_reaudit_request` | 2026-09-06_m2c4_cp23_reaudit_request.md | — | （報告書なし） |
+| 2026-09-06 | cp24 | `m2c4_cp24_reaudit_report` | — | 2026-09-06_m2c4_cp24_reaudit_report.md | — |
+| 2026-09-06 | cp24 | `m2c4_cp24_reaudit_request` | 2026-09-06_m2c4_cp24_reaudit_request.md | — | （報告書なし） |
+| 2026-09-06 | cp25 | `m2c_cp25_reaudit_report` | — | 2026-09-06_m2c_cp25_reaudit_report.md | — |
+| 2026-09-06 | cp25 | `m2c_cp25_reaudit_request` | 2026-09-06_m2c_cp25_reaudit_request.md | — | （報告書なし） |
+| 2026-09-07 | cp26 | `m2c_cp26_reaudit_report` | — | 2026-09-07_m2c_cp26_reaudit_report.md | — |
+| 2026-09-07 | cp26 | `m2c_cp26_reaudit_request` | 2026-09-07_m2c_cp26_reaudit_request.md | — | （報告書なし） |
+| 2026-09-07 | cp27 | `m2d_cp27` | 2026-09-07_m2d_cp27_audit_request.md | 2026-09-07_m2d_cp27_audit_report.md | GO |
+| 2026-09-08 | cp28 | `approval_audit_plumbing_cp28` | 2026-09-08_approval_audit_plumbing_cp28_audit_request.md | 2026-09-08_approval_audit_plumbing_cp28_audit_report.md | — |
+| 2026-09-08 | cp29 | `approval_audit_plumbing_cp29` | 2026-09-08_approval_audit_plumbing_cp29_audit_request.md | 2026-09-08_approval_audit_plumbing_cp29_audit_report.md | — |
+| 2026-09-08 | cp30 | `insp5_frame_cp30` | 2026-09-08_insp5_frame_cp30_audit_request.md | 2026-09-08_insp5_frame_cp30_audit_report.md | — |
+| 2026-09-08 | cp31 | `insp5_frame_cp31` | 2026-09-08_insp5_frame_cp31_audit_request.md | 2026-09-08_insp5_frame_cp31_audit_report.md | — |
+| 2026-09-08 | cp32 | `insp5_path_cp32` | 2026-09-08_insp5_path_cp32_audit_request.md | 2026-09-08_insp5_path_cp32_audit_report.md | — |
+| 2026-09-09 | cp34 | `m2e2_design_cp34` | 2026-09-09_m2e2_design_cp34_audit_request.md | — | （報告書なし） |
+| 2026-09-09 | cp33 | `tm_scope_cp33` | 2026-09-09_tm_scope_cp33_audit_request.md | 2026-09-09_tm_scope_cp33_audit_report.md | — |
+| 2026-09-10 | cp35 | `m2e2_design_cp35` | 2026-09-10_m2e2_design_cp35_audit_request.md | 2026-09-10_m2e2_design_cp35_audit_report.md | — |
+| 2026-09-13 | cp36 | `m2e2_impl_cp36` | 2026-09-13_m2e2_impl_cp36_audit_request.md | 2026-09-13_m2e2_impl_cp36_audit_report.md | — |
+| 2026-09-14 | cp36 | `m2e2_cp36_critical_fix_other_ai_check` | — | 2026-09-14_m2e2_cp36_critical_fix_other_ai_check.md | — |
+| 2026-09-14 | cp37 | `m2e2_major_design_cp37` | 2026-09-14_m2e2_major_design_cp37_audit_request.md | 2026-09-14_m2e2_major_design_cp37_audit_report.md | — |
+| 2026-09-15 | cp37r | `m2e2_major_design_cp37r` | 2026-09-15_m2e2_major_design_cp37r_audit_request.md | 2026-09-15_m2e2_major_design_cp37r_audit_report.md | — |
+| 2026-09-21 | cp40 | `audit_request_tool_impl_cp40` | 2026-09-21_audit_request_tool_impl_cp40_audit_request.md | 2026-09-21_audit_request_tool_impl_cp40_audit_report.md | — |
+| 2026-09-24 | cp42 | `impl_instruction_apply_impl_cp42` | 2026-09-24_impl_instruction_apply_impl_cp42_audit_request.md | 2026-09-24_impl_instruction_apply_impl_cp42_audit_report.md | — |
+| 2026-09-24 | cp41 | `impl_instruction_design_cp41` | 2026-09-24_impl_instruction_design_cp41_audit_request.md | 2026-09-24_impl_instruction_design_cp41_audit_report.md | — |
+| 2026-09-25 | cp39 | `m2e_bundle1_design_cp39` | 2026-09-25_m2e_bundle1_design_cp39_audit_request.md | 2026-09-25_m2e_bundle1_design_cp39_audit_report.md | — |
+| 2026-09-26 | cp43 | `m2e_bundle1_impl_cp43` | 2026-09-26_m2e_bundle1_impl_cp43_audit_request.md | 2026-09-26_m2e_bundle1_impl_cp43_audit_report.md | — |
+| 2026-09-26 | cp44 | `m2e_bundle2_design_cp44` | 2026-09-26_m2e_bundle2_design_cp44_audit_request.md | 2026-09-26_m2e_bundle2_design_cp44_audit_report.md | — |
+| 2026-09-26 | cp45 | `m2e_bundle2_impl_cp45` | 2026-09-26_m2e_bundle2_impl_cp45_audit_request.md | 2026-09-26_m2e_bundle2_impl_cp45_audit_report.md | — |
+| 2026-09-27 | cp46 | `m2e4e_r6_moving_line_design_cp46` | 2026-09-27_m2e4e_r6_moving_line_design_cp46_audit_request.md | 2026-09-27_m2e4e_r6_moving_line_design_cp46_audit_report.md | — |
+| 2026-09-27 | cp47 | `m2e4e_r6_moving_line_impl_cp47` | 2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_request.md | 2026-09-27_m2e4e_r6_moving_line_impl_cp47_audit_report.md | — |
+| 2026-09-27 | cp48 | `m2f2_catch_rank_stages_design_cp48` | 2026-09-27_m2f2_catch_rank_stages_design_cp48_audit_request.md | 2026-09-27_m2f2_catch_rank_stages_design_cp48_audit_report.md | — |
+| 2026-09-28 | cp49 | `m2f2_catch_rank_stages_impl_cp49` | 2026-09-28_m2f2_catch_rank_stages_impl_cp49_audit_request.md | 2026-09-28_m2f2_catch_rank_stages_impl_cp49_audit_report.md | — |
+| 2026-09-29 | cp51 | `five_point_autogen_20260929_design_cp51` | 2026-09-29_five_point_autogen_20260929_design_cp51_audit_request.md | — | （報告書なし） |
+| 2026-09-29 | cp50 | `m2f6d_label_versioned_structure_design_cp50` | 2026-09-29_m2f6d_label_versioned_structure_design_cp50_audit_request.md | — | （報告書なし） |
+| 2026-09-29 | cp52 | `point1_design_autogen_20260929_design_cp52` | 2026-09-29_point1_design_autogen_20260929_design_cp52_audit_request.md | 2026-09-29_point1_design_autogen_20260929_design_cp52_audit_report.md | — |
+| 2026-09-30 | cp53 | `point2_design_to_impl_20260930_impl_cp53` | 2026-09-30_point2_design_to_impl_20260930_impl_cp53_audit_request.md | — | （報告書なし） |
+| 2026-09-30 | cp54 | `point5_report_direct_20260930_impl_cp54` | 2026-09-30_point5_report_direct_20260930_impl_cp54_audit_request.md | — | （報告書なし） |
+| 2026-10-01 | cp57 | `m2f_label_builder_stages_20261001_impl_cp57` | 2026-10-01_m2f_label_builder_stages_20261001_impl_cp57_audit_request.md | 2026-10-01_m2f_label_builder_stages_20261001_impl_cp57_audit_report.md | — |
+| 2026-10-01 | cp55 | `point5_c1c4_20261001_impl_cp55` | 2026-10-01_point5_c1c4_20261001_impl_cp55_audit_request.md | 2026-10-01_point5_c1c4_20261001_impl_cp55_audit_report.md | — |
+| 2026-10-01 | cp56 | `point5_r5_20261001_impl_cp56` | 2026-10-01_point5_r5_20261001_impl_cp56_audit_request.md | 2026-10-01_point5_r5_20261001_impl_cp56_audit_report.md | — |
+| 2026-10-01 | cp54 | `point5_report_direct_20260930_impl_cp54` | 2026-10-01_point5_report_direct_20260930_impl_cp54_audit_request.md | 2026-10-01_point5_report_direct_20260930_impl_cp54_audit_report.md | — |
+| 2026-10-02 | cp59 | `m2f_label_callers_20261002_impl_cp59` | 2026-10-02_m2f_label_callers_20261002_impl_cp59_audit_request.md | 2026-10-02_m2f_label_callers_20261002_impl_cp59_audit_report.md | — |
+| 2026-10-02 | cp58 | `m2f_label_structure_20261001_impl_cp58` | 2026-10-02_m2f_label_structure_20261001_impl_cp58_audit_request.md | 2026-10-02_m2f_label_structure_20261001_impl_cp58_audit_report.md | — |
+| 2026-10-03 | cp60 | `indicator_textbook_check_cp60` | — | 2026-10-03_indicator_textbook_check_cp60_audit_report.md | — |
+| 2026-10-03 | cp60 | `m2_law_faithful_range_20261003_plan_cp60` | 2026-10-03_m2_law_faithful_range_20261003_plan_cp60_audit_request.md | — | （報告書なし） |
+| 2026-10-04 | cp61 | `m2c15_indicator_six_items_20261004_impl_cp61` | 2026-10-04_m2c15_indicator_six_items_20261004_impl_cp61_audit_request.md | 2026-10-04_m2c15_indicator_six_items_20261004_impl_cp61_audit_report.md | — |
+| 2026-10-06 | cp62 | `m2c15_hidden_params_20261004_impl_cp62` | 2026-10-06_m2c15_hidden_params_20261004_impl_cp62_audit_request.md | 2026-10-06_m2c15_hidden_params_20261004_impl_cp62_audit_report.md | — |
+| 2026-10-06 | cp63 | `m2c15_param_values_20261006_impl_cp63` | 2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_request.md | 2026-10-06_m2c15_param_values_20261006_impl_cp63_audit_report.md | — |
+| 2026-10-07 | cp66 | `g2_sentinel_material_pick_20261007_impl_cp66` | 2026-10-07_g2_sentinel_material_pick_20261007_impl_cp66_audit_request.md | 2026-10-07_g2_sentinel_material_pick_20261007_impl_cp66_audit_report.md | — |
+| 2026-10-07 | cp64 | `m2c15_param_values_fix_20261007_impl_cp64` | 2026-10-07_m2c15_param_values_fix_20261007_impl_cp64_audit_request.md | 2026-10-07_m2c15_param_values_fix_20261007_impl_cp64_audit_report.md | — |
+| 2026-10-07 | cp65 | `m2c15_rci_pivot_sources_20261007_impl_cp65` | 2026-10-07_m2c15_rci_pivot_sources_20261007_impl_cp65_audit_request.md | 2026-10-07_m2c15_rci_pivot_sources_20261007_impl_cp65_audit_report.md | — |
+| 2026-10-08 | cp68 | `m2c15_period_settings_20261008_impl_cp68` | 2026-10-08_m2c15_period_settings_20261008_impl_cp68_audit_request.md | 2026-10-08_m2c15_period_settings_20261008_impl_cp68_audit_report.md | — |
+| 2026-10-08 | cp67 | `m2c15_period_textbook_20261007_impl_cp67` | 2026-10-08_m2c15_period_textbook_20261007_impl_cp67_audit_request.md | 2026-10-08_m2c15_period_textbook_20261007_impl_cp67_audit_report.md | — |
+| 2026-10-10 | cp71 | `g2_table_range_source_20261010_impl_cp71` | 2026-10-10_g2_table_range_source_20261010_impl_cp71_audit_request.md | 2026-10-10_g2_table_range_source_20261010_impl_cp71_audit_report.md | — |
+| 2026-10-10 | cp70 | `m2c15_shape_settings_20261009_impl_cp70` | 2026-10-10_m2c15_shape_settings_20261009_impl_cp70_audit_request.md | 2026-10-10_m2c15_shape_settings_20261009_impl_cp70_audit_report.md | — |
+| 2026-10-10 | cp69 | `m2c15_shape_structure_20261009_impl_cp69` | 2026-10-10_m2c15_shape_structure_20261009_impl_cp69_audit_request.md | 2026-10-10_m2c15_shape_structure_20261009_impl_cp69_audit_report.md | — |
+| 2026-10-11 | cp74 | `k4_reference_known_20261011_design_cp74` | 2026-10-11_k4_reference_known_20261011_design_cp74_audit_request.md | 2026-10-11_k4_reference_known_20261011_design_cp74_audit_report.md | — |
+| 2026-10-11 | cp72 | `m2c15_formula_settings_20261011_impl_cp72` | 2026-10-11_m2c15_formula_settings_20261011_impl_cp72_audit_request.md | 2026-10-11_m2c15_formula_settings_20261011_impl_cp72_audit_report.md | — |
+| 2026-10-11 | cp73 | `m2c15_formula_textbook_20261011_impl_cp73` | 2026-10-11_m2c15_formula_textbook_20261011_impl_cp73_audit_request.md | 2026-10-11_m2c15_formula_textbook_20261011_impl_cp73_audit_report.md | — |
+| 2026-10-13 | cp77 | `design_doc_gen_form_20261013_design_cp77` | 2026-10-13_design_doc_gen_form_20261013_design_cp77_audit_request.md | 2026-10-13_design_doc_gen_form_20261013_design_cp77_audit_report.md | — |
+| 2026-10-13 | cp78 | `design_doc_gen_form_20261013_impl_cp78` | 2026-10-13_design_doc_gen_form_20261013_impl_cp78_audit_request.md | 2026-10-13_design_doc_gen_form_20261013_impl_cp78_audit_report.md | — |
+| 2026-10-13 | cp75 | `design_origin_form_20261013_design_cp75` | 2026-10-13_design_origin_form_20261013_design_cp75_audit_request.md | 2026-10-13_design_origin_form_20261013_design_cp75_audit_report.md | — |
+| 2026-10-13 | cp76 | `design_origin_form_20261013_impl_cp76` | 2026-10-13_design_origin_form_20261013_impl_cp76_audit_request.md | 2026-10-13_design_origin_form_20261013_impl_cp76_audit_report.md | — |
 
-（20 件＝`.claude/audits/` の報告書 17 本・依頼書 14 本から機械で作った）
+（103 件＝`.claude/audits/` の報告書 86 本・依頼書 89 本から機械で作った）
 <!-- AUDIT_INDEX_END -->
 
 ## 📚 履歴 archive 参照

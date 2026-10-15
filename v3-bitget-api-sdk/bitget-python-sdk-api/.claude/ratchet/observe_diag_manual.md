@@ -1,4 +1,4 @@
-<!-- MANUAL_HASH=72efed79613a61c3 -->
+<!-- MANUAL_HASH=1ed7043358f71df4 -->
 # observe_diag 取扱説明書（gen_observe_manual.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は observe_diag.py と observe_config.json から
@@ -514,7 +514,6 @@ python3 scripts/priority_rebuild/observe_diag.py --selftest
 - 検査2 が閉じる前のバーへの漏れを検出しない（ずらしを外しても素通り）
 - 検査3 がわざと壊した式（ を定数化）を見逃す
 - 検査3 がわざと壊した式（RSI を定数化）を見逃す
-- 検査3 が正しいカタログで不一致を出す（許容差の線を疑う）:
 - 検査3 の2つ目の照合を持つ列がカタログに1本も無い（この番人が回せない）
 - 検査3 の2つ目の照合（pandas-ta / scipy）が、わざとずらした式を見逃す
 - 検査4 がわざと入れた未来参照列（1本先の close）を見逃す
