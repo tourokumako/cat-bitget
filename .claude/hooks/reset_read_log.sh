@@ -1,17 +1,15 @@
 #!/bin/bash
 # reset_read_log.sh — SessionStart
 # 新セッション開始時に read_log をリセット（前セッションの読了を引き継がない）。
-# これで毎セッション、必読を Read tool で読み直すまで作業ツールが block される。
+# ★2026-10-15＝必読を止める hook（require_read_before_work.sh）は 2026-10-01 から登録が無い＝読み直すまで止めることはしていない。
 
 STATE_DIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 mkdir -p "$STATE_DIR"
 : > "$STATE_DIR/read_log.txt"
-rm -f "$STATE_DIR/budget_rule_shown"   # 予算バナーを新セッションで1回出すため（show_budget_before_design.sh・2026-06-20）
-rm -f "$STATE_DIR/banned_words_checked" # 禁止語チェックの事前実行を新セッションで1回強制（require_banned_words_check.sh・2026-07-11 まこさん指示）
-rm -f "$STATE_DIR/analysis_block.md"   # 分析ブロックを新セッションでリセット（前セッションの分析を持ち越さない＝require_analysis_before_proposal.sh・2026-06-24）
-rm -f "$STATE_DIR/improvement_plan.md" # 改善案生成(STEP1〜5)を新セッションでリセット（probe前ゲートA＋提案ゲートB＝require_probe_naming/require_analysis_before_proposal・2026-06-28）
-rm -f "$STATE_DIR/fastmode_trades_seen" "$STATE_DIR/fastmode_e37_seen" "$STATE_DIR/fastmode_ledger_seen" "$STATE_DIR/worklog_ok" "$STATE_DIR/fastmode_record_pending"  # fast-mode ガード(改善前データ必読[trades/e37/ledger ARC]/引き継ぎ記録/分析後記録)のマーカーを新セッションでリセット（2026-07-16）
-rm -f "$STATE_DIR/comprehension_check.md"   # 理解確認テストの回答を新セッションでリセット＝毎セッション再回答を強制（require_comprehension_check.sh・2026-07-16 まこさん指示）
+# ★2026-10-15（hook の見直しの4本目・まこさん「要る 不具合はすべて修正する」）＝使う hook の無い印の片づけを外した
+#   （show_budget_before_design・require_banned_words_check・require_analysis_before_proposal・require_probe_naming・
+#     track_fastmode_data_read・require_comprehension_check は登録が無い）。残すのは、稼働中の hook が読む印だけ。
+rm -f "$STATE_DIR/worklog_ok" "$STATE_DIR/fastmode_record_pending"  # fast-mode の記録の検査（enforce_worklog_on_experiment）の印を新セッションでリセット（2026-07-16）
 rm -f "$STATE_DIR/flow_declaration_posted"  # フロー宣言の「チャットに貼った」確認マーカーを新セッションでリセット＝新しいセッションでも実行前に必ずまこさんの目に入る（enforce_flow_declaration.sh・2026-07-26 まこさん指示）
 # ★2026-09-06（まこさん承認・iter="todo-gate-per-session-20260906"）＝ToDo ゲートの状態ファイル3つは、
 #   セッションごとの置き場（$STATE_DIR/sessions/<セッションの id>/）に在る（enforce_todo_declaration.py の paths_of）。
@@ -46,27 +44,12 @@ PYEOF
 if [ -n "$SID" ]; then
   SESS_DIR="$STATE_DIR/sessions/$SID"
   mkdir -p "$SESS_DIR"
-  rm -f "$SESS_DIR/session_todo_posted" "$SESS_DIR/session_todo_shown"
   # ★2026-10-12（172回目）＝表示を実物に合わせた。前の ToDo の hook（enforce_todo_declaration）は 2026-10-01 から登録が無い。
   #   いま ToDo を読むのは、宣言の hook（require_work_declaration）＝「★いまここ」の1件の宣言と、まこさんの返事を求める。
   echo "=== [ToDo] このセッションの ToDo の置き場＝$SESS_DIR/session_todo.md（必読を読んだ後に書く。いまやる1件に ★いまここ を付け、その番号の宣言〔【宣言】ToDo の N番・【作業内容】【目的】【経緯】【ゴール】〕を返信に書く。まこさんの返事の後に、作業を始める）==="
 else
   echo "⚠️ [ToDo] セッションの id が読めない（stdin の json に session_id も transcript_path も無い）＝ToDo の置き場を決められない。まこさんに報告する。"
 fi
-# 目標逆算ゲート（ゲート2）リセット: 前セッションの逆算ブロックは引き継がないが、
-# 引き継ぎ前提（本筋・やってはいけないこと）は残す。必須見出しの語は入れないので
-# ゲートは維持され、新セッションは前提を見てから自分で目標逆算を Write し直す（2026-06-12 まこさん指示）。
-cat > "$STATE_DIR/goal_block.md" <<'EOF'
-# 目標逆算（新セッションが本欄を Write し直す）
-
-> ⚠️ 下は前セッションの引き継ぎ前提。新セッションはこれを踏まえ、本欄に目標逆算ブロックを Write し直すこと
-> （必須見出しが揃うまで Bash/Edit/Write はブロックされる＝前提を読んでから自分で逆算する）。
-
-## 引き継ぎ前提
-- 本筋・今セッションの確定・やってはいけないこと・数字の出典は **next_step.md（SessionStart で全文表示）が正本**。
-  そちらを起点に、本欄へ目標逆算ブロック（大目標/器の現在値/ギャップ/候補/天井/選定/3行ゲート/届く構成/戦略照合）を Write し直す。
-- ⚠️ ここに前セッション固有の handoff を焼き込まない（hook に焼くと古くなって誤誘導する＝2026-06-13 P4 stale 事案）。最新は常に next_step.md。
-EOF
 
 # ★2026-10-12（172回目・まこさん「OK」）＝表示を実物に合わせた。直す前は「読了強制ゲート 有効」「開くまで block されます」と出していたが、
 #   止める hook（require_read_before_work.sh）は 2026-10-01 から settings.json に登録が無い（コミット e31d6e8）＝開かなくても止まらなかった。
@@ -92,8 +75,6 @@ fi
 echo "（WORKFLOW.md＝現在地は「next_step.md §0 を見る」の1行だけ。改訂の履歴は archive/workflow/ に移した）"
 echo "→ Read tool で開いてください（grep や表示だけでは、読んだことになりません）。"
 echo "（ledger.md 本体＝特定の過去実験を深掘りする時に読む参照資料。毎回の必読からは外した）"
-echo "★ cat_requirements.md / exchange_spec.md（決済方法）は『設計書を書く瞬間』に強制 read（just-in-time・require_spec_read_before_design.sh）。"
-echo "   理由: セッション開始時に読んでもインプットされない実証（まこさん 2026-06-13・add/決済を毎回誤解）。"
 echo "（補助＝必要時のみ: 設計=strat_v9ml_design / 分析手順=analysis_playbook / 教訓=lessons_active を grep 参照）"
 echo ""
 exit 0

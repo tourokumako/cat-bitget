@@ -15,7 +15,12 @@ DOC="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget
 SHOW=25   # 全部出すと毎セッション長すぎる＝直近25件だけ出して、残りはファイルを開く
 
 [ -f "$GEN" ] || exit 0
-python3 "$GEN" --write >/dev/null 2>&1
+# ★2026-10-15（まこさん「良い」）＝作り直しの失敗を表示する（直す前は出力を捨て、失敗しても古い一覧を黙って出していた）
+GEN_OUT=$(python3 "$GEN" --write 2>&1)
+if [ $? -ne 0 ]; then
+  echo "⚠️ 決定の一覧を作り直せなかった（古いままです）: $GEN"
+  printf '%s\n' "$GEN_OUT" | tail -5
+fi
 [ -f "$DOC" ] || exit 0
 
 echo "=============================================================="

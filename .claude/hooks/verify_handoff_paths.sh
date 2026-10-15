@@ -25,6 +25,7 @@ BASES = [("直下", REPO), ("sdk", SDK)]
 def find_in_bases(rel: str):
     """相対パスを全部の場所で探し、見つかった場所の名前を返す（複数可・空なら本当に無い）。"""
     gp = re.sub(r'\{[^}]*\}', '*', rel)          # {label} 等テンプレ → glob
+    gp = re.sub(r'Y{4}-?M{2}-?D{2}', '*', gp)    # 書き方の例の日付（YYYYMMDD・YYYY-MM-DD）→ glob（2026-10-15）
     hits = []
     for name, base in BASES:
         if glob.glob(os.path.join(base, gp)):
@@ -37,6 +38,7 @@ SENTINEL = [
     (".claude/rules/chat_writing_rules.md", True, "直下にだけ在るファイル"),
     ("scripts/priority_rebuild/periods.py", True, "sdk にだけ在るファイル"),
     (".claude/rules/__this_file_never_exists__.md", False, "本当に無いファイル"),
+    (".claude/state/session_worklog_YYYYMMDD.md", True, "書き方の例の日付を含むパス（同じ形の実物が在れば見つかる）"),
 ]
 sent_ng = []
 for rel, want, imi in SENTINEL:
@@ -78,7 +80,7 @@ if sent_ng:
     for x in sent_ng:
         print(f"   ・{x}")
 else:
-    print("（番人 ✅ 3件 pass＝『直下にだけ在る』『sdk にだけ在る』『本当に無い』を正しく見分けられている）")
+    print("（番人 ✅ 4件 pass＝『直下にだけ在る』『sdk にだけ在る』『本当に無い』『書き方の例の日付』を正しく見分けられている）")
 if not paths:
     print("⚠️ 引き継ぎブロックにファイルパスなし (= 実行可能テンプレ未記載の疑い・5列表で書き直せ)")
 miss = 0

@@ -23,6 +23,11 @@
   ・scripts/priority_rebuild/e38_logics.json    ロジック定義（値の確定）
   ・scripts/priority_rebuild/observe_config.json 観察の設定（刻みの確定）
   ・.claude/state/session_worklog_*.md    直近 WORKLOG_KEEP 本（その日の決定）
+  ・やり取りの記録（~/.claude/projects/…/*.jsonl）の、まこさんの発言の【決定事項】（★2026-10-15 から）
+      まこさん決定（2026-10-15）＝「私が【決定事項】と発言した文書を決定事項として記録するというルールにすれば？」「それで良い」。
+      なぜ＝worklog の印は CC の書き方しだいで、2026-10-15 の §7 は、まこさんの発言の行 9行のうち拾えたのが 0行だった。
+      拾うのは、行の頭に【決定事項】がある発言だけ。貼った文（pasted_content）の中と、hook の差し戻しの文は拾わない。
+      直前の CC の返信の行番号も載せる（「上記の案でOK」の中身を後から開けるように）。
 
 使い方
 --------------------------------------------------------------------------
@@ -40,7 +45,9 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import hashlib
+import json
 import pathlib
 import re
 import sys
@@ -54,6 +61,7 @@ ROOT = HERE.parent.parent                      # bitget-python-sdk-api
 #   形＝(リポジトリの根からのパス, "まるごと" か "一部の節")。
 GENERATES = [
     ("v3-bitget-api-sdk/bitget-python-sdk-api/.claude/ratchet/decisions.md", "まるごと"),
+    (".claude/state/mako_decisions.json", "まるごと"),        # ★2026-10-15＝【決定事項】の控え
 ]
 
 OUT = ROOT / ".claude" / "ratchet" / "decisions.md"
@@ -71,6 +79,17 @@ SOURCES = [
     HERE / "e38_logics.json",
     HERE / "observe_config.json",
 ]
+
+# ★2026-10-15（まこさん「私が【決定事項】と発言した文書を決定事項として記録するというルールにすれば？」「それで良い」）
+#   ＝まこさんの発言の中の【決定事項】を、やり取りの記録から直接 拾う（CC の worklog の書き方に左右されない）。
+TAG = "【決定事項】"
+PROJ = pathlib.Path.home() / ".claude" / "projects" / "-Users-tachiharamasako-Documents-GitHub-cat-bitget"
+TAG_START_DAY = "2026-10-15"                    # この決め方を始めた日＝これより前に書かれた記録は読まない（1.2GB を毎回 読まないため）
+TAG_START = datetime.datetime.fromisoformat(TAG_START_DAY).timestamp()
+CACHE = ROOT / ".claude" / "state" / "mako_decisions.json"   # 読んだ記録と拾った結果の控え（--write のときだけ書く）
+NOT_USER = ("Stop hook feedback", "<task-notification>", "<system-reminder>",
+            "This session is being continued", "[Request interrupted")
+PASTED = re.compile(r"<pasted_content\b[^>]*>.*?</pasted_content\b[^>]*>", re.S)
 
 
 def _worklogs() -> list[pathlib.Path]:
@@ -107,9 +126,79 @@ def _day_of(path: pathlib.Path, line: str) -> str:
     return "日付なし"
 
 
-def collect() -> list[dict]:
-    """印のある行を集めて、日付の新しい順に並べる（重複は落とす）。"""
+def _user_text(o: dict) -> str:
+    """まこさんの発言の文（hook の差し戻し・知らせ・途中で止めた印は外す）。"""
+    c = (o.get("message") or {}).get("content")
+    if isinstance(c, str):
+        ts = [c]
+    elif isinstance(c, list):
+        ts = [b.get("text", "") for b in c if isinstance(b, dict) and b.get("type") == "text"]
+    else:
+        return ""
+    return "\n".join(t for t in ts if t.strip() and not t.lstrip().startswith(NOT_USER))
+
+
+def _tag_rows(path: pathlib.Path) -> list[dict]:
+    """1本のやり取りの記録から、まこさんの発言の【決定事項】を拾う（行の頭に印がある物・貼った文の中は外す）。
+    戻り＝[{day, text, src＝記録のファイル名:行番号, kind＝決定事項, prev＝直前の CC の返信の行番号}]。"""
+    rows, prev = [], None
+    for i, ln in enumerate(path.open(encoding="utf-8", errors="replace"), 1):
+        try:
+            o = json.loads(ln)
+        except Exception:
+            continue
+        if not isinstance(o, dict) or o.get("isSidechain"):
+            continue
+        if o.get("type") == "assistant":
+            if any(isinstance(b, dict) and b.get("type") == "text" and str(b.get("text", "")).strip()
+                   for b in (o.get("message") or {}).get("content") or []):
+                prev = i
+            continue
+        if o.get("type") != "user":
+            continue
+        lines = PASTED.sub("", _user_text(o)).splitlines()
+        for k, line in enumerate(lines):
+            s = line.strip()
+            if not s.startswith(TAG):
+                continue
+            body = " ".join([s[len(TAG):].strip()] + [x.strip() for x in lines[k + 1:] if x.strip()])
+            try:
+                day = datetime.datetime.fromisoformat(str(o.get("timestamp")).replace("Z", "+00:00")).astimezone().strftime("%Y-%m-%d")
+            except ValueError:
+                day = "日付なし"
+            text = TAG + _clean(body) + (f"（直前の CC の返信＝同じ記録の {prev} 行目）" if prev else "")
+            rows.append({"day": day, "text": text, "src": f"{path.name}:{i}", "kind": "決定事項", "prev": prev})
+            break
+    return rows
+
+
+def _tag_decisions(update_cache: bool) -> list[dict]:
+    """やり取りの記録の【決定事項】を全部。読んだ記録と拾った結果は控え（CACHE）に残し、変わった記録だけ読み直す。"""
+    try:
+        cache = json.loads(CACHE.read_text(encoding="utf-8"))
+    except Exception:
+        cache = {}
+    read = cache.setdefault("読んだ記録", {})
+    found = cache.setdefault("決定", {})
+    if PROJ.is_dir():
+        for p in sorted(PROJ.glob("*.jsonl")):
+            mt = p.stat().st_mtime
+            if mt < TAG_START or read.get(p.name) == mt:
+                continue
+            for r in _tag_rows(p):
+                found[r["src"]] = r
+            read[p.name] = mt
+    if update_cache:
+        CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    return list(found.values())
+
+
+def collect(update_cache: bool = False) -> list[dict]:
+    """印のある行を集めて、日付の新しい順に並べる（重複は落とす）。
+    ★2026-10-15＝やり取りの記録の【決定事項】も集める（_tag_decisions）。控えを書くのは update_cache のときだけ。"""
     rows, seen = [], set()
+    for r in _tag_decisions(update_cache):
+        rows.append({k: r[k] for k in ("day", "text", "src", "kind")})
     for p in SOURCES + _worklogs():
         if not p.exists():
             continue
@@ -135,8 +224,8 @@ def _sha(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()[:16]
 
 
-def build() -> str:
-    rows = collect()
+def build(update_cache: bool = False) -> str:
+    rows = collect(update_cache)
     L = []
     L.append("# まこさんが決めたこと（gen_decisions.py が自動生成＝手書き禁止）")
     L.append("")
@@ -162,11 +251,15 @@ def build() -> str:
     L.append("- **印が書かれていない決定は載りません。** 機械は印を探しているだけです。")
     L.append("- **チャットでの発言は止められません。** できるのは目に入れるところまでです。")
     L.append("- 1行を機械で切り出すので、長い決定は前後が切れます。出どころから原文を開いてください。")
+    L.append(f"- 【決定事項】は、まこさんの発言の中で行の頭に {TAG} と書いた物だけを拾います（2026-10-15 から）。"
+             "印の無い決定は載りません。貼り付けた文の中と、hook の差し戻しの文の中は拾いません。")
     L.append("")
-    L.append(f"## 集めた先（{len(SOURCES)} 本の正本 ＋ 直近 {WORKLOG_KEEP} 本の worklog）")
+    L.append(f"## 集めた先（{len(SOURCES)} 本の正本 ＋ 直近 {WORKLOG_KEEP} 本の worklog ＋ やり取りの記録の {TAG}）")
     L.append("")
     for p in SOURCES + _worklogs():
         L.append(f"- {p.name}{'' if p.exists() else '（無い）'}")
+    L.append(f"- やり取りの記録（{PROJ.name}／*.jsonl のうち {TAG_START_DAY} より後に書かれた物）の {TAG}。"
+             f"拾った結果の控え＝{CACHE.name}。出どころは「記録のファイル名:行番号」、直前の CC の返信は同じ記録の行番号")
     L.append("")
     L.append(f"## 決定の一覧（{len(rows)} 件・新しい順）")
     L.append("")
@@ -219,6 +312,28 @@ def selftest() -> int:
     for r in rows:
         if r["day"] != "日付なし" and not re.match(r"^20\d\d-\d\d-\d\d$", r["day"]):
             ng.append(f"日付の形が壊れている: {r['day']}"); break
+    # ⑥ ★2026-10-15（まこさん「私が【決定事項】と発言した文書を決定事項として記録するというルールにすれば？」「それで良い」）
+    #   ＝やり取りの記録から【決定事項】を拾う部品が、拾う物だけを拾うか（見本の記録で確かめる）。
+    with tempfile.TemporaryDirectory() as td:
+        fake = pathlib.Path(td) / "zz_selftest_transcript.jsonl"
+        say = lambda t: json.dumps({"type": "assistant", "message": {"content": [{"type": "text", "text": t}]}}, ensure_ascii=False)
+        usr = lambda t: json.dumps({"type": "user", "timestamp": "2026-10-15T05:00:00Z", "message": {"content": t}}, ensure_ascii=False)
+        fake.write_text("\n".join([
+            say("CC の案です"),                                                        # 1行目＝直前の CC の返信
+            usr("【決定事項】番人の決定A（拾う）"),                                       # 2行目＝拾う
+            usr("ふつうの発言で、印の無い文（拾わない）"),                                 # 3行目
+            usr("Stop hook feedback:\n【決定事項】差し戻しの文の中（拾わない）"),          # 4行目
+            usr("<pasted_content id=\"x\">\n【決定事項】貼った文の中（拾わない）\n</pasted_content id=\"x\">"),  # 5行目
+        ]) + "\n", encoding="utf-8")
+        got = _tag_rows(fake)
+        texts = " ".join(r["text"] for r in got)
+        if len(got) != 1 or "番人の決定A" not in texts:
+            ng.append(f"【決定事項】の拾い方が違う（拾うべき1件だけを拾っていない）: {[r['text'] for r in got]}")
+        elif got[0]["src"] != f"{fake.name}:2" or got[0].get("prev") != 1 or got[0]["day"] != "2026-10-15":
+            ng.append(f"【決定事項】の出どころ・直前の返信・日付が違う: {got[0]}")
+        for bad in ("印の無い文", "差し戻しの文の中", "貼った文の中"):
+            if bad in texts:
+                ng.append(f"拾ってはいけない物を拾った: {bad}")
     # ⑤ ハッシュが本文と一致する（--verify が意味を持つ）
     txt = build()
     head, _, body = txt.partition("\n")
@@ -247,7 +362,7 @@ def main() -> None:
         sys.exit(selftest())
     if a.verify:
         sys.exit(verify())
-    txt = build()
+    txt = build(update_cache=a.write)                # 控え（mako_decisions.json）は --write のときだけ書く
     if a.write:
         OUT.parent.mkdir(parents=True, exist_ok=True)
         OUT.write_text(txt, encoding="utf-8")
