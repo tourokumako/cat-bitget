@@ -17,7 +17,7 @@
 使い方
 --------------------------------------------------------------------------
   python3 gen_engine_tuner_requirements.py --write     # 生成して .claude/ratchet/ に書く
-  python3 gen_engine_tuner_requirements.py --verify    # 手書き改変の検出（ハッシュ照合）
+  python3 gen_engine_tuner_requirements.py --verify    # 手書き改変と、作り直し忘れの検出（ハッシュ照合と、作り直した中身との比べ）
   python3 gen_engine_tuner_requirements.py --selftest  # 自己検査（材料が json から取れているかの番人）
 """
 from __future__ import annotations
@@ -224,18 +224,63 @@ def build() -> str:
     return f"<!-- REQ_HASH={_sha(body)} -->\n{body}"
 
 
-def verify() -> int:
-    if not OUT.exists():
-        print(f"❌ 要件定義書が無い: {OUT}")
+def _print_stale(old: str, new: str) -> None:
+    """作り直した中身と違うときに、違う行の数と、違う行の全部を画面に出す（verify から呼ぶ）。"""
+    import difflib
+    diff = [ln for ln in difflib.unified_diff(old.splitlines(), new.splitlines(),
+                                              "いまの文書", "作り直した中身", n=0, lineterm="")
+            if ln not in ("--- いまの文書", "+++ 作り直した中身")]
+    n = sum(1 for ln in diff if ln[:1] in ("-", "+"))
+    print(f"❌ 作り直していない（元データか実物が変わった後に、作り直していない・違う行 {n} 行）")
+    for ln in diff:
+        print(f"   {ln}")
+    print("   直し方: python3 scripts/priority_rebuild/gen_engine_tuner_requirements.py --write")
+
+
+# ★2026-10-15（工事 verify-rebuild-compare-20261015）＝作り直しとの照らしの番人の部品。selftest から呼ぶ。
+def _stale_guard(wrap, txt: str, run_verify) -> list[str]:
+    """番人の部品。一時の置き場に文書を置いて、照らす旗を走らせる。
+
+    ①作り直した中身そのままの文書は通す（終了コード 0）
+    ②1行 足して、ハッシュ値だけを合わせた文書は止める（終了コード 1）
+    本物の文書には書かない。
+    """
+    import contextlib
+    import io
+    import tempfile
+    ng: list[str] = []
+    _, _, body = txt.partition("\n")
+    with tempfile.TemporaryDirectory() as d:
+        p = pathlib.Path(d) / "doc.md"
+        for name, content, want in (("作り直した中身のまま", txt, 0),
+                                    ("ハッシュ値は合うが古い", wrap(body + "番人用の古い行\n"), 1)):
+            p.write_text(content, encoding="utf-8")
+            with contextlib.redirect_stdout(io.StringIO()):
+                rc = run_verify(p)
+            if rc != want:
+                ng.append(f"番人（作り直しとの照らし）失敗＝{name}の文書で、照らす旗の終了コードが {rc}（期待 {want}）")
+    return ng
+
+
+def verify(path: pathlib.Path = OUT) -> int:
+    if not path.exists():
+        print(f"❌ 要件定義書が無い: {path}")
         return 1
-    txt = OUT.read_text(encoding="utf-8")
+    txt = path.read_text(encoding="utf-8")
     head, _, body = txt.partition("\n")
     want = head.replace("<!-- REQ_HASH=", "").replace(" -->", "").strip()
     got = _sha(body)
     if want != got:
         print(f"❌ 手書きで書き換えられている（ハッシュ不一致 期待 {want} / 実際 {got}）")
         return 1
-    print(f"✅ 改変なし（ハッシュ {got}）")
+    # ★2026-10-15（工事 verify-rebuild-compare-20261015）＝作り直した中身と1文字ずつ比べる。
+    #   ハッシュ値の照らしは、手の書き換えしか見ない。元データ（engine_tuner_requirements.json）が変わった後に
+    #   --write を走らせ忘れても「改変なし」と出ていた（2026-10-14 の実測・worklog 20261014 §10）。
+    rebuilt = build()
+    if txt != rebuilt:
+        _print_stale(txt, rebuilt)
+        return 1
+    print(f"✅ 改変なし・作り直した中身と一致（ハッシュ {got}）")
     return 0
 
 
@@ -303,6 +348,8 @@ def selftest() -> int:
             ng.append("要件の一覧が json を見ていない（json を変えても文書が変わらない）")
     finally:
         REQ.write_text(keep, encoding="utf-8")
+    # 番人（2026-10-15・工事 verify-rebuild-compare-20261015）＝ハッシュ値は合うが、作り直した中身と違う文書を、照らす旗が止めること
+    ng.extend(_stale_guard(lambda b: f"<!-- REQ_HASH={_sha(b)} -->\n{b}", txt, verify))
     print("=" * 80)
     print("gen_engine_tuner_requirements 自己検査")
     print("=" * 80)
@@ -320,7 +367,7 @@ def selftest() -> int:
 def main() -> None:
     ap = argparse.ArgumentParser(description="engine_tuner の要件定義書を機械生成する")
     ap.add_argument("--write", action="store_true", help="生成して書き出す")
-    ap.add_argument("--verify", action="store_true", help="手書き改変の検出")
+    ap.add_argument("--verify", action="store_true", help="手書き改変と、作り直し忘れの検出")
     ap.add_argument("--selftest", action="store_true", help="自己検査")
     a = ap.parse_args()
     if a.selftest:

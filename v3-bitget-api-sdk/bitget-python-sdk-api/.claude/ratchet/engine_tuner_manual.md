@@ -1,4 +1,4 @@
-<!-- MANUAL_HASH=614d102a76c4bef2 -->
+<!-- MANUAL_HASH=606e6d9cb4c660d9 -->
 # engine_tuner 取扱説明書（gen_engine_tuner_manual.py が自動生成＝手書き禁止）
 
 ⚠️ このファイルを手で書き換えないでください。中身は engine_tuner.py と
@@ -216,13 +216,13 @@ TAGLESS_OK=1 python3 scripts/priority_rebuild/engine_tuner.py --logic <ロジッ
 
 | 値 | 何の値か | どう決めるか |
 |---|---|---|
-| grid_n |  | {"type": "int", "lo": null, "hi": null, "step": 1} |
+| grid_n | グリッド売買の線の本数 | {"type": "int", "lo": null, "hi": null, "step": 1} |
 
 ### 入口の値（L5）
 
 | 値 | 何の値か | どう決めるか |
 |---|---|---|
-| grid_n |  | {"type": "int", "lo": null, "hi": null, "step": 1} |
+| grid_n | グリッド売買の線の本数 | {"type": "int", "lo": null, "hi": null, "step": 1} |
 
 ### 入口の値（S4）
 

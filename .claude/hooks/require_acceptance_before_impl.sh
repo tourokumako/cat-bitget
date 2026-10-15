@@ -936,6 +936,9 @@ esac
 #     失うもの（正直に）＝CC が承認や凍結の配管の道具（approve まわり・run_breaks.py ほか）を、承認なしで書き替えられる。
 #       止めるのは git diff と まこさんの目。
 case "$FILE" in
+  # ★2026-10-15（まこさん「じゃあOK」「良い」）＝文書を作るだけの4本は、設計書と承認なしで直せる（中身は文書を書くだけ・売買のロジックに触らない）
+  #   外すのは名前が一致する4本だけ。ほかの scripts/priority_rebuild/*.py は今までどおり承認が要る。
+  */scripts/priority_rebuild/gen_cat_requirements.py|*/scripts/priority_rebuild/gen_engine_tuner_requirements.py|*/scripts/priority_rebuild/gen_engine_tuner_manual.py|*/scripts/priority_rebuild/gen_observe_manual.py) exit 0 ;;
   *scripts/priority_rebuild/*.py) ;;
   */.claude/tools/*.py) exit 0 ;;
   */.claude/breaks/*.sh) ;;
