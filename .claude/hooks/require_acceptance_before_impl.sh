@@ -69,7 +69,11 @@ import re as _re_j
 _READONLY_J = ('cat', 'grep', 'egrep', 'fgrep', 'rg', 'ls', 'wc', 'head', 'tail',
                'diff', 'shasum', 'sha256sum', 'md5', 'md5sum', 'stat', 'file',
                'find', 'awk', 'sed', 'echo', 'printf', 'basename', 'dirname',
-               'realpath', 'which', 'true', 'test', 'git')
+               'realpath', 'which', 'true', 'test', 'git',
+               # ★2026-10-16（182回目・まこさん「OK」）＝ファイルを書けない読むだけの道具を足した。
+               #   なぜ＝承認の控えを jq で読むだけで止まった（7日の記録・試しの道具で確かめた）。
+               #   sort は -o で書けるので、下の⑧で -o を止める。uniq は出力のファイルを書けるので足さない。
+               'jq', 'od', 'cut', 'tr', 'comm', 'nl', 'cmp', 'column', 'sort')
 # ★git は、そのファイルの中身を変えられない副命令だけ通す。
 #   checkout・restore・stash・clean は中身を変えられるので入れない（監査が実測した抜け道）。
 _GIT_OK_J = ('status', 'log', 'diff', 'show', 'add', 'commit', 'ls-files',
@@ -212,17 +216,87 @@ _DEVNULL_J = ('/dev/null', '/dev/stdout', '/dev/stderr', '&1', '&2', '&-')
 _SYNTAX_J = ('if', 'then', 'else', 'elif', 'fi', 'for', 'while', 'until', 'do',
              'done', 'case', 'esac', 'in', 'set', 'shopt', 'local', 'return',
              'break', 'continue', 'wait', 'time', 'then')
+# ★2026-10-16（182回目・まこさん「OK」）＝道具の、確かめるだけの旗と、書き込みの旗。
+_CHECK_FLAGS_J = ('--verify', '--check', '--selftest', '--help', '--print')
+_WRITE_FLAGS_J = ('--write', '--out', '--freeze', '--apply', '--import', '--fix', '--force', '--approve')
 
 
-def _readonly_seg(seg):
+def _mask_j(seg, mask_double):
+    # ★2026-10-16（182回目）＝引用符の中と、逆斜線で打ち消した文字を、同じ長さの印に置き替える。
+    #   一重引用符の中は必ず伏せる。二重引用符の中は mask_double のときだけ伏せる。
+    #   引用符が閉じていないときは、元のまま返す（全部を見る＝安全側・_split_segs_j と同じ考え）。
+    _sq = chr(39)
+    _dq = chr(34)
+    _bs = chr(92)
+    _o = []
+    _st = 0
+    _i = 0
+    _n = len(seg)
+    while _i < _n:
+        _c = seg[_i]
+        if _st != 1 and _c == _bs and _i + 1 < _n:
+            _o.append(chr(3) + chr(3))
+            _i += 2
+            continue
+        if _st == 0:
+            if _c == _sq:
+                _st = 1
+            elif _c == _dq:
+                _st = 2
+            _o.append(_c)
+        elif _st == 1:
+            if _c == _sq:
+                _st = 0
+                _o.append(_c)
+            else:
+                _o.append(chr(1))
+        else:
+            if _c == _dq:
+                _st = 0
+                _o.append(_c)
+            else:
+                _o.append(chr(2) if mask_double else _c)
+        _i += 1
+    if _st != 0:
+        return seg
+    return ''.join(_o)
+
+
+def _readonly_seg(seg, _redir_ok=None):
     # ①走らせる形が文字として在れば、その時点で False（先頭の語を見るより前）
+    #   ★2026-10-16（182回目）＝コマンドを中で走らせる2つの形（ドル記号と丸括弧・逆引用符）は、
+    #     一重引用符の中と、逆斜線で打ち消した物を見ない（シェルも、そこでは走らせない）。
+    #     二重引用符の中は今までどおり見る（シェルは二重引用符の中でも走らせる）。
+    #     ほかの語（-exec・system( ほか）は今までどおり全部を見る（awk・find の中で走るため）。
+    _msq = _mask_j(seg, False)
     for _w in _RUN_SUB_J:
-        if _w in seg:
+        _hay = _msq if _w in (chr(36) + chr(40), chr(96)) else seg
+        if _w in _hay:
             return False
     # ②リダイレクトの先が捨て先でなければ False
-    for _t in _re_j.findall(r'>>?\s*([^\s;|&]+)', seg):
-        if _t not in _DEVNULL_J:
-            return False
+    #   ★2026-10-16（182回目・まこさん「OK」）＝引用符の中の「>」はリダイレクトでない（シェルもそう読む）。
+    #     直す前は、grep の探す文字の「>>」・直す文字の「->」・awk の「>=」まで書き込みと読み、
+    #     読むだけのコマンドを止めた（7日の記録の57回の止めの中に在る・この回にも1回）。
+    #     ★awk だけは、引用符の中の「>」でもファイルに書ける（print > ファイル）＝awk は今までどおり全部を見て、
+    #       比べる記号の「>=」だけを外す。
+    #   ★_redir_ok＝書く先が土台でないかを見る関数（土台ゲートだけが渡す）。渡さないとき（承認ゲート）は、
+    #     今までどおり捨て先のほかは全部 False。
+    if _re_j.match(r'^\s*(?:[A-Za-z_][A-Za-z_0-9]*=\S*\s+)*(?:\S*/)?g?awk\b', seg):
+        _tgts = _re_j.findall(r'(?<![<>=!])>>?(?!=)\s*([^\s;|&]+)', seg)
+    else:
+        _mall = _mask_j(seg, True)
+        _tgts = []
+        for _m in _re_j.finditer(r'>>?', _mall):
+            _mt = _re_j.match(r'>>?\s*([^\s;|&]+)', seg[_m.start():])
+            if _mt:
+                _tgts.append(_mt.group(1))
+    for _t in _tgts:
+        _t = _t.strip(chr(39)).strip(chr(34))
+        if _t in _DEVNULL_J:
+            continue
+        if _redir_ok is not None and _redir_ok(_t):
+            continue
+        return False
     # ②-b 数字だけの断片は通す（★2026-09-07・next_step §6 の143番）
     #   なぜ要るか（実測）＝断片に分ける正規表現は `[;|&\n]+` で、**`2>&1` の中の `&` も
     #     区切りとして扱う**。そのため `cmd 2>&1` は `cmd 2>` と `1` の2つに割れ、
@@ -274,6 +348,17 @@ def _readonly_seg(seg):
                  if not _t.startswith('-')]
         if _args and _args[0].rsplit('/', 1)[-1] in _TOOL_OK_J:
             return True
+        # ★2026-10-16（182回目・まこさん「OK」）＝文法の確かめ（python3 -m py_compile）と、
+        #   .claude/tools の道具の確かめるだけの旗（--verify ほか）を通す。
+        #   なぜ＝一覧に無い道具の --verify（gen_audit_index.py ほか）と py_compile が止まった（試しの道具で確かめた）。
+        #   通す条件＝確かめるだけの旗が1つ以上在り、書き込みの旗が1つも無い。
+        #   ★限界＝道具の --verify の口が、作りの誤りでファイルを書いても、ここでは分からない。
+        if _toks[1:3] == ['-m', 'py_compile']:
+            return True
+        if (_args and _args[0].endswith('.py') and '.claude/tools/' in _args[0]
+                and any(_t.split('=')[0] in _CHECK_FLAGS_J for _t in _toks)
+                and not any(_t.startswith(_w) for _t in _toks for _w in _WRITE_FLAGS_J)):
+            return True
         # ★2026-09-07（next_step §6 の150番・設計書 iter="approval-audit-plumbing-20260907"）
         #   ＝run_breaks.py は「測るだけ」の旗が在るときだけ通す。
         #   なぜ名前だけの一覧（_TOOL_OK_J）に入れないか＝この道具は既定では
@@ -322,14 +407,31 @@ def _readonly_seg(seg):
     if _head not in _READONLY_J:
         return False
     # ⑦git は、2番目の語も見る
+    #   ★2026-10-16（182回目）＝git -C <場所> と -c <設定> は、その後ろの1語ごと読み飛ばしてから副命令を見る。
+    #     なぜ＝git -C <場所> diff が、場所を副命令と読まれて止まった（7日の記録に4回・試しの道具で確かめた）。
     if _head == 'git':
-        _rest = [_t for _t in _toks[1:] if not _t.startswith('-')]
+        _rest = []
+        _skip = False
+        for _t in _toks[1:]:
+            if _skip:
+                _skip = False
+                continue
+            if _t in ('-C', '-c'):
+                _skip = True
+                continue
+            if not _t.startswith('-'):
+                _rest.append(_t)
         if not _rest or _rest[0] not in _GIT_OK_J:
             return False
     # ⑧sed の書き換え（-i・-i.bak・--in-place）は False
     if _head == 'sed':
         for _t in _toks[1:]:
             if _t.startswith('-i') or _t == '--in-place':
+                return False
+    # ★2026-10-16（182回目）＝sort は -o でファイルを書ける＝-o・--output は False
+    if _head == 'sort':
+        for _t in _toks[1:]:
+            if _t.startswith('-o') or _t.startswith('--output'):
                 return False
     return True
 
@@ -568,7 +670,13 @@ def _abs_of(_tok, _idx):
 for p in pats:
     m = re.search(p, bare)
     if m:
-        print(_abs_of(m.group(1), m.start())); sys.exit(0)
+        _ap = _abs_of(m.group(1), m.start())
+        # ★2026-10-16（182回目・まこさん「OK」）＝.claude/tools の .py を Bash で書く形は、ここで土台ゲートとして止める。
+        #   直す前は、ここで書く先を返して終わり、下の土台ゲートまで届かなかった＝cp・tee・リダイレクトで道具を上書きできた
+        #   （試しの道具で確かめた＝cp /tmp/x .claude/tools/next_move.py が通った）。
+        if re.match(r'^' + re.escape(_REPO_LIT) + r'/\.claude/tools/[^/]+\.py$', _ap):
+            print('?BASE?'); sys.exit(0)
+        print(_ap); sys.exit(0)
 # ★書き込む動きの語（リダイレクトは上のパターンで先を見るので、ここには入れない）
 #   ★単語の境界で見る（2026-09-03 に実測して直した）。
 #     直す前は 'ed ' のような文字の一部で当てていたので、'sed -n'（読むだけ）を
@@ -628,7 +736,16 @@ raw_cmd = cmd
 # ★ヒアドキュメントの中身を見るのは、それを何かに食わせているときだけ
 #   （2026-09-03 に実測して狭めた＝git commit の本文に道具の名前が出ただけで止まった）。
 INTERP = re.compile(r'(?:^|[\s;|&(])(?:python[0-9.]*|perl|ruby|node|sh|bash|zsh)\b')
-feeds = bool(INTERP.search(bare))
+# ★2026-10-16（182回目・まこさん「OK」）＝食わせているかは、ヒアドキュメントが始まる行で見る。
+#   直す前は、コマンドのどこかに python・bash が在れば食わせていると見たので、worklog に書き足す
+#   cat >> … <<'EOF' の後ろで道具を走らせただけで、書き足す文の中の道具の名前で止まった（7日の記録）。
+#   ★ヒアドキュメントを .sh・.py などのファイルに書き、同じコマンドのどこかに python・bash が在るときも、
+#     今までどおり食わせていると見る（書いてから走らせる形を塞ぐ）。
+_HDL = re.compile(r'^[^\n]*<<-?\s*[\'\"]?\w+[^\n]*$', re.M)
+_hdl = [_m.group(0) for _m in _HDL.finditer(cmd)]
+feeds = (any(INTERP.search(_l) for _l in _hdl)
+         or (bool(INTERP.search(bare))
+             and any(re.search(r'>>?\s*[^\s;|&]+\.(?:sh|py|pl|rb|js)\b', _l) for _l in _hdl)))
 # ★名前は『ヒアドキュメントを外した後』で探す。外す前の生も見るのは、
 #   ヒアドキュメントを何かに食わせているときだけ（隠した名前を拾うため・監査の実測③）
 # ★2026-09-04（監査 cp18 の J-2・Critical・まこさん指名・承認 3f22cb79abff786f）
@@ -673,6 +790,38 @@ def _seg_touches(_seg, _cwd):
 
 _cwd = '$REPO'
 _base_vars = set()
+# ★2026-10-16（182回目・まこさん「OK」）＝同じコマンドの中で前に決めた変数（名前=値）と、for のくり返しの値を、
+#   中身に置き換えてから判定する。直す前は、T=…/try_hooks.py の後の python3 と変数の形や、
+#   for c in … のくり返しを、読むだけの語でないとして止めた（7日の記録・この回にも1回）。
+#   値が分からない変数（中でコマンドを走らせて作った値ほか）は置き換えず、今までどおり判定する（止まる）。
+#   ★書く先（リダイレクト）は、土台のファイルでなければ通す（_redir_ok）。変数・逆引用符が残る書く先は止める。
+import shlex
+_vals = {}
+_DL = chr(36)
+
+
+def _expand(_s):
+    _outs = [_s]
+    for _v, _xs in _vals.items():
+        _nx = []
+        for _o in _outs:
+            if (_DL + _v) not in _o:
+                _nx.append(_o)
+                continue
+            for _x in _xs[:20]:
+                _o2 = _o.replace(_DL + chr(123) + _v + chr(125), _x)
+                _o2 = re.sub(re.escape(_DL + _v) + r'(?![A-Za-z0-9_])', lambda _m, _x=_x: _x, _o2)
+                _nx.append(_o2)
+        _outs = _nx[:200]
+    return _outs
+
+
+def _redir_ok(_t, _c):
+    if _DL in _t or chr(96) in _t:
+        return False
+    return not _seg_touches(_t, _c)
+
+
 for _seg in _split_segs_j(raw_cmd if feeds else bare):
     _s = _seg.strip()
     if not _s:
@@ -682,14 +831,27 @@ for _seg in _split_segs_j(raw_cmd if feeds else bare):
         _d = _tk[1].strip(chr(39)).strip(chr(34))
         _cwd = os.path.normpath(_d if os.path.isabs(_d) else os.path.join(_cwd, _d))
         continue
-    _touch = _seg_touches(_s, _cwd) or any(
-        (chr(36) + _v) in _s or (chr(36) + chr(123) + _v) in _s for _v in _base_vars)
-    _mv = re.match(r'^([A-Za-z_][A-Za-z_0-9]*)=', _s)
-    if _mv and _touch:
-        _base_vars.add(_mv.group(1))
-    if _touch and not _readonly_seg(_s):
-        print('?BASE?')
-        sys.exit(0)
+    _mf = re.match(r'^for\s+([A-Za-z_][A-Za-z_0-9]*)\s+in\s+(.*)$', _s, re.S)
+    if _mf:
+        _msk = _mask_j(_mf.group(2), False)
+        if (_DL + chr(40)) not in _msk and chr(96) not in _msk:
+            try:
+                _vals[_mf.group(1)] = [_y for _x in shlex.split(_mf.group(2)) for _y in _expand(_x)]
+                continue
+            except ValueError:
+                pass
+    _mv = re.match(r'^([A-Za-z_][A-Za-z_0-9]*)=(\S*)$', _s)
+    if _mv and (_DL + chr(40)) not in _mv.group(2) and chr(96) not in _mv.group(2):
+        _vals[_mv.group(1)] = [_y.strip(chr(39)).strip(chr(34)) for _y in _expand(_mv.group(2))]
+    for _e in _expand(_s):
+        _touch = _seg_touches(_e, _cwd) or any(
+            (chr(36) + _v) in _e or (chr(36) + chr(123) + _v) in _e for _v in _base_vars)
+        _mv2 = re.match(r'^([A-Za-z_][A-Za-z_0-9]*)=', _e)
+        if _mv2 and _touch:
+            _base_vars.add(_mv2.group(1))
+        if _touch and not _readonly_seg(_e, lambda _t, _c=_cwd: _redir_ok(_t, _c)):
+            print('?BASE?')
+            sys.exit(0)
 # ★リダイレクトの先が .py のときだけ「書き込み」とみなす（> out.txt は関係ない）
 
 redir_py = [t for t in re.findall(r'>>?\s*([^\s;|&]+)', bare) if t.endswith('.py')]

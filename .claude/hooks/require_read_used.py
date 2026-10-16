@@ -46,7 +46,7 @@ import re
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from require_confirm_before_act import user_text  # まこさんの発言の見分け方を同じものにする
+from require_run_after_edit import user_text  # まこさんの発言の見分け方を同じものにする（2026-10-15 に require_confirm_before_act から移した）
 
 READ_MAX = 2000  # Read の道具が limit 無しで返す行数の上限
 ROOT = pathlib.Path(__file__).resolve().parents[2]
