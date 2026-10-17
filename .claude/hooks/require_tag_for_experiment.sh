@@ -27,24 +27,21 @@ CMD=$(printf '%s' "$INPUT" | python3 -c "import sys,json;print((json.load(sys.st
 #   直したあと＝shell_cmd_scan.py が ①ヒアドキュメントの中身と注記を外し
 #   ②python と同じ ひとかたまり の中で引数として続く .py だけを拾う。
 #   確かめ方＝python3 .claude/hooks/shell_cmd_scan.py --selftest（11/11 pass・2026-08-22）
-strat=$(printf '%s' "$CMD" | python3 "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/shell_cmd_scan.py" --strategy 2>/dev/null)
+# ★2026-10-17（186回目・まこさん「要 CCの案で修正する」）＝除外の旗と --tag を、コマンド全体のどこかで探すのをやめた。
+#   shell_cmd_scan.py --untagged が、区切りの頭の python が走らせる戦略のうち、その走行の旗に --tag も検査の旗も無い物だけを出す。
+#   直す前のすり抜け＝`… ; grep --help` や `… ; echo --tag x` が通った。確かめ方＝require_tag_for_experiment_selftest.py --selftest
+#   （経緯・残す）テスト/非出力モード（--smoke・--diagnostic・--…selftest…・--no-score・--help）は通す。
+#   ⚠️2026-07-21 修正（まこさん GO）: 旧版は '--selftest'（ダッシュ2つ完全一致）だけを除外しており、
+#   '--param-schema-selftest' / '--v11-selftest-zones' のように接頭辞が付く self-test フラグを誤検知していた
+#   → '--<任意の接頭辞>selftest' を除外に含める（いまは shell_cmd_scan.py の EXEMPT_FLAG）。
+#   --tag があれば OK（出力が _<tag>_<NNN> 連番になる）。py_compile は、走らせる語が py_compile なので拾わない。
+strat=$(printf '%s' "$CMD" | python3 "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/shell_cmd_scan.py" --untagged 2>/dev/null)
 [ -z "$strat" ] && exit 0
-
-# テスト/非出力モード（出力を書かない or 動作確認）は通す
-# ⚠️2026-07-21 修正（まこさん GO）: 旧版は '--selftest'（ダッシュ2つ完全一致）だけを除外しており、
-#   '--param-schema-selftest' / '--v11-selftest-zones' のように接頭辞が付く self-test フラグを
-#   捕まえられず、売買記録を1行も出さない検査を「実験」と誤検知してブロックしていた。
-#   pdca_mark.py が 2026-07-12 に塞いだのと同型の穴（あちらは "selftest" 部分一致で是正済み）。
-#   → '--<任意の接頭辞>selftest' を除外に含める。
-printf '%s' "$CMD" | grep -qE '(--smoke|--diagnostic|--[a-z0-9-]*selftest|--no-score|py_compile|--help)' && exit 0
-
-# --tag があれば OK（出力が _<tag>_<NNN> 連番になる）
-printf '%s' "$CMD" | grep -qE '(^|[[:space:]])--tag([[:space:]]|=)' && exit 0
 
 # ここまで＝戦略を出力モードで --tag 無し実行＝番号なし出力＝ブロック
 echo "🔒 [実験 --tag ゲート] 戦略を出力モードで走らせる時は必ず --tag <名前> を付けてください（出力が _<tag>_<NNN> 連番になる・§3.1・2026-06-29 まこさん承認）。" >&2
 echo "" >&2
-echo "対象戦略: $strat（--tag 無し＝番号なし出力＝命名規則違反）" >&2
+echo "対象戦略: ${strat}（--tag 無し＝番号なし出力＝命名規則違反）" >&2
 echo "" >&2
 echo "理由: タグ無しの安定名は【採用済み base】専用（採用は結果＝score.py 両窓を見てから決まる）。採用前の新戦略に番号なし/\"base\" 名を pre-declare しない（2026-06-29 E37 を _5m_base で出した事案）。" >&2
 echo "対処: --tag <実験名> を付けて再実行（例 --tag v1）。解除は 2026-08-16 に廃止＝タグ無しでは走らせられない。" >&2

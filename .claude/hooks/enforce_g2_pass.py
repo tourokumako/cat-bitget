@@ -52,8 +52,14 @@ MUST = [   # 印の対象一覧に必ず入っていなければならないも�
     f"{_RT}/signal_families_approved.txt",  # 表の承認
 ]
 TARGET = re.compile(r"(engine_tuner|engine_tuner_gen|engine_tuner_exec|e38_priority_stack)\.py")
-EXEMPT = re.compile(r"--selftest|py_compile|--help|--verify|--identity|gen_signal_families|leak_causality_diag")
-_ANY_PY = re.compile(r"[A-Za-z0-9_./\-]+\.py")
+# ★2026-10-17（186回目・まこさん「要 CCの案で修正する」）＝除外の語を区切りのどこかで探すのをやめた（enforce_h2_pass と同じ直し）。
+#   除外するのは、走らせる .py が印を作る道具のときと、走らせる .py の旗として丸ごと書かれたときだけ。
+#   直す前の穴＝走行の引数に除外の語の一部（例 --out gen_signal_families_run）が入ると通った。
+#   --lint-provenance＝engine_tuner_gen.py の静的検査（データも売買も使わない）＝9月18日に2回 止めた。
+EXEMPT_SCRIPT = {"gen_signal_families.py", "leak_causality_diag.py"}
+EXEMPT_FLAG = re.compile(r"(--selftest|--verify)\S*|--help|--identity|--lint-provenance")
+_ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z_0-9]*=")
+_WRAP = {"time", "nice", "nohup", "timeout", "exec", "command", "env", "xargs", "caffeinate"}
 
 # ★2026-08-27（68回目・まこさん承認「了解、修正を進めていいよ」・設計書 iter=h2g2-entry-scan-20260827）
 #   止める相手を「4つのファイル名」だけで決めるのをやめ、
@@ -86,17 +92,43 @@ def _runs_target(cmd_x: str) -> bool:
 
     ★区切り（; & | 改行）で分けた断片ごとに見る（enforce_h2_pass と同じ作り）。
       コマンド全体で見ると、grep でファイルの名前を数えるだけでも止まってしまう（2026-08-19 の直し）。
+    ★2026-10-17（186回目）＝区切りの頭の python が走らせる .py だけを見る（_executed）。中身で止める部品にも、その .py だけを渡す。
     """
     for seg in re.split(r"[;&|\n]+", cmd_x):
-        if not re.search(r"(^|\s)python[0-9.]*(\s|$)", seg):
+        ex = _executed(seg)
+        if ex is None:
             continue                                   # この断片は python 実行でない
-        if EXEMPT.search(seg):
+        script, args = ex
+        if _exempt(script, args):
             continue                                   # 検査・検収・印を作る道具は通す
-        if TARGET.search(seg):
+        if TARGET.fullmatch(script.rsplit("/", 1)[-1]):
             return True
-        if _scan is not None and _scan.uses_engine_entry(seg):
-            return True                                # ★名前が違っても、engine の入口を使うなら止める
+        if script.endswith(".py") and _scan is not None and _scan.uses_engine_entry(script):
+            return True                                # ★名前が違っても、engine の入口を使うなら止める（走らせる .py だけを見る）
     return False
+
+
+def _executed(seg: str):
+    """区切りの頭の python が走らせる語と、その後ろの語を返す（python を走らせていなければ None）。
+    ★2026-10-17（186回目）＝直す前は、区切りの中の名前を全部 見ていた（試しの道具の引数でも止めた）。"""
+    toks = seg.split()
+    i = 0
+    while i < len(toks) and (_ASSIGN.match(toks[i]) or toks[i] in _WRAP or re.fullmatch(r"[0-9.]+[smhd]?", toks[i])
+                             or (i > 0 and toks[i].startswith("-") and toks[i - 1] in _WRAP)):
+        i += 1
+    if i >= len(toks) or not re.fullmatch(r"python[0-9.]*", toks[i].rsplit("/", 1)[-1]):
+        return None
+    j = i + 1
+    while j < len(toks) and toks[j].startswith("-"):
+        j += 1
+    if j >= len(toks):
+        return None
+    return toks[j], toks[j + 1:]
+
+
+def _exempt(script: str, args: list) -> bool:
+    """印を作る道具か、走らせる .py の旗が検査・検収の旗か。"""
+    return script.rsplit("/", 1)[-1] in EXEMPT_SCRIPT or any(EXEMPT_FLAG.fullmatch(a) for a in args)
 
 
 def _scan_broken_on(cmd_x: str) -> bool:
@@ -104,11 +136,10 @@ def _scan_broken_on(cmd_x: str) -> bool:
     if _scan is not None:
         return False
     for seg in re.split(r"[;&|\n]+", cmd_x):
-        if not re.search(r"(^|\s)python[0-9.]*(\s|$)", seg):
+        ex = _executed(seg)
+        if ex is None or _exempt(*ex):
             continue
-        if EXEMPT.search(seg):
-            continue
-        if _ANY_PY.search(seg):
+        if ex[0].endswith(".py"):
             return True
     return False
 
@@ -234,9 +265,11 @@ def selftest():
 
     run = "python3 scripts/priority_rebuild/engine_tuner.py --purpose search"
     ng = 0
+    total = 0                                          # ★2026-10-17＝総数を手で書かずに数える（直す前の「22」は実際 23件だった）
 
     def case(name, want, cmd=run):
-        nonlocal ng
+        nonlocal ng, total
+        total += 1
         got = check(cmd)
         good = (got is None) if want is None else (got is not None and want in got)
         print(f"  {'✅' if good else '❌'} {name}" + ("" if good else f"   ← 出た理由: {got}"))
@@ -284,11 +317,29 @@ def selftest():
     case("走らせずに名前を数えるだけなら通る（grep）", None,
          f"grep -c run_recipe {_real}/regime_r9_diag.py")
 
+    # ── ★2026-10-17 新設（186回目・まこさん「要 CCの案で修正する」）＝区切りの頭の python が走らせる .py だけを見る（H2 と同じ）──
+    #   印は「指紋を書き換えた」状態のまま＝止まるべき所は止まる。
+    case("★試しの道具の引数に engine_tuner.py の名前があるだけなら通る（走らせていない）", None,
+         f"python3 .claude/tools/try_hooks.py --session s --write {_real}/engine_tuner.py")
+    case("★走らせる .py の引数に除外の語の一部（gen_signal_families）が入っても止まる", "指紋の不一致",
+         "python3 scripts/priority_rebuild/engine_tuner.py --purpose search --out gen_signal_families_run")
+    case("★engine_tuner_gen.py の静的検査（--lint-provenance）は印が古くても通る", None,
+         f"python3 {_real}/engine_tuner_gen.py --lint-provenance")
+    case("★cd と time と -u で包んでも、本当に走らせるなら止まる", "指紋の不一致",
+         "cd /x && time python3 -u scripts/priority_rebuild/engine_tuner.py --purpose search")
+    case("★パスつきの python で走らせても止まる", "指紋の不一致",
+         ".venv/bin/python scripts/priority_rebuild/engine_tuner.py --purpose search")
+    case("★--verify で始まる旗（--verify-provenance）は、いままでどおり通る", None,
+         f"python3 {_real}/engine_tuner_gen.py --verify-provenance x")
+    case("★--selftest で始まる旗（--selftest-match）は、いままでどおり通る", None,
+         f"python3 {_real}/regime_r9_diag.py --selftest-match")
+
     # ── ★2026-09-08 新設＝印を照らす口（--check-fingerprint）そのものを試す ──────
     #   監査 cp32 の別枠 D＝H2 には この口が在るのに、G2 には無かった。
     #   ＝「G2 の印を取り直したか」を確かめる口が、どこにも無かった。
     def case_fp(name, want_rc):
-        nonlocal ng
+        nonlocal ng, total
+        total += 1
         got = check_fingerprint()
         good = (got == want_rc)
         print(f"  {'✅' if good else '❌'} {name}" + ("" if good else f"   ← 出た終了コード: {got}"))
@@ -314,7 +365,7 @@ def selftest():
 
     shutil.rmtree(tmp, ignore_errors=True)
     ROOT, PASS = keep
-    print(f"\n番人: {22 - ng}/22 pass")
+    print(f"\n番人: {total - ng}/{total} pass")
     sys.exit(1 if ng else 0)
 
 

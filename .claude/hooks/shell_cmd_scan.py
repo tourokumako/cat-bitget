@@ -34,10 +34,14 @@ import re
 import sys
 
 # 戦略ファイルの名前（e3N_ / strat_ / measure_）。分析の probe と deep_analysis は戦略ではない。
-STRAT_RE = r"(?:e3[0-9][a-z0-9_]*|strat_[a-z0-9_]*|measure_[a-z0-9_]*)\.py"
+STRAT_RE = re.compile(r"(?:e3[0-9][a-z0-9_]*|strat_[a-z0-9_]*|measure_[a-z0-9_]*)\.py")
 NOT_STRAT_RE = re.compile(r"(_probe|_deep_analysis)\.py$")
-# python の後ろに、区切り（| & ; 改行）を挟まずに続く .py だけを拾う
-RUN_RE = re.compile(r"python[0-9.]*[ \t]+[^|&;\n]*?(" + STRAT_RE + r")")
+# ★2026-10-17（186回目・まこさん「要 CCの案で修正する」）＝python の後ろの区切りの中の名前を全部 拾う形（RUN_RE）をやめた。
+#   区切りの頭の python が、旗を飛ばした最初の語として走らせる .py だけを拾う（enforce_flow_declaration と同じ読み方）。
+#   直す前の誤報＝試しの道具の引数・引用符の中の文字（2026-10-15）で止めた。
+EXEMPT_FLAG = re.compile(r"--smoke|--diagnostic|--[a-z0-9-]*selftest[a-z0-9-]*|--no-score|--help")
+_ASSIGN = re.compile(r"^[A-Za-z_][A-Za-z_0-9]*=")
+_WRAP = {"time", "nice", "nohup", "timeout", "exec", "command", "env", "xargs", "caffeinate"}
 HEREDOC_RE = re.compile(r"<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
 
 
@@ -66,24 +70,58 @@ def strip_comments(cmd: str) -> str:
     return "\n".join("" if ln.lstrip().startswith("#") else ln for ln in cmd.split("\n"))
 
 
+def strip_quotes(cmd: str) -> str:
+    """引用符の中を外す（文章での言及では拾わない・2026-10-17）。"""
+    return re.sub(r"'[^']*'", " ", re.sub(r'"[^"]*"', " ", cmd))
+
+
 def effective(cmd: str) -> str:
     """見るべき部分だけにしたコマンドの文字列。"""
-    return strip_comments(strip_heredocs(cmd))
+    return strip_quotes(strip_comments(strip_heredocs(cmd)))
+
+
+def _runs(cmd: str):
+    """区切りごとに、頭の python が走らせる戦略の名前と、その後ろの語を返す。"""
+    for seg in re.split(r"[;&|\n]+", effective(cmd)):
+        toks = seg.split()
+        i = 0
+        while i < len(toks) and (_ASSIGN.match(toks[i]) or toks[i] in _WRAP or re.fullmatch(r"[0-9.]+[smhd]?", toks[i])
+                                 or (i > 0 and toks[i].startswith("-") and toks[i - 1] in _WRAP)):
+            i += 1
+        if i >= len(toks) or not re.fullmatch(r"python[0-9.]*", toks[i].rsplit("/", 1)[-1]):
+            continue
+        j = i + 1
+        while j < len(toks) and toks[j].startswith("-"):
+            j += 1
+        if j >= len(toks):
+            continue
+        name = toks[j].rsplit("/", 1)[-1]
+        if STRAT_RE.fullmatch(name) and not NOT_STRAT_RE.search(name):
+            yield name, toks[j + 1:]
 
 
 def find_strategy(cmd: str) -> str:
     """走らせる戦略ファイルの名前。実験でなければ空文字。"""
-    for m in RUN_RE.finditer(effective(cmd)):
-        name = m.group(1)
-        if not NOT_STRAT_RE.search(name):
-            return name
+    for name, _args in _runs(cmd):
+        return name
+    return ""
+
+
+def find_untagged(cmd: str) -> str:
+    """--tag も検査の旗も付けずに走らせる戦略の名前（無ければ空文字）。旗は、その走行の旗として書かれた物だけを見る。"""
+    for name, args in _runs(cmd):
+        if any(EXEMPT_FLAG.fullmatch(a) or a == "--tag" or a.startswith("--tag=") for a in args):
+            continue
+        return name
     return ""
 
 
 def _selftest() -> int:
     ng: list[str] = []
+    seen: list[str] = []                  # ★2026-10-17＝総数を手で書かずに数える
 
     def chk(name: str, cond: bool, got: object = "") -> None:
+        seen.append(name)
         print(("  ✅ " if cond else "  ❌ ") + name + (f"（実際＝{got!r}）" if not cond else ""))
         if not cond:
             ng.append(name)
@@ -124,18 +162,44 @@ def _selftest() -> int:
     chk("T9 && の後ろの本物は拾う", g == "e36_short_oscillation.py", g)
 
     g = find_strategy("python3 -m py_compile scripts/priority_rebuild/e38_priority_stack.py")
-    chk("T10 ★py_compile も python の引数なので拾う（.sh 側が別に通す）",
-        g == "e38_priority_stack.py", g)
+    # ★2026-10-17＝直す前は「py_compile も python の引数なので拾う（.sh 側が別に通す）」。直した後は、走らせる語が py_compile なので拾わない
+    chk("T10 py_compile は、走らせる語が py_compile なので拾わない（通すのは直す前と同じ）", g == "", g)
 
     hd2 = "cat <<EOF\npython3 measure_x.py\n"       # 終わりの行が無い
     g = find_strategy(hd2)
     chk("T11 ヒアドキュメントの終わりが無ければ、そこから先を全部 外す", g == "", g)
 
-    print(f"[shell_cmd_scan] {11 - len(ng)}/11 pass")
+    # ── ★2026-10-17 新設（186回目）＝区切りの頭の python が走らせる .py だけを拾う ──
+    g = find_strategy("python3 .claude/tools/try_hooks.py --session s --write scripts/priority_rebuild/e37_scalp.py")
+    chk("T12 ★試しの道具の引数の戦略は拾わない", g == "", g)
+    g = find_strategy("printf '%s' \"python3 scripts/priority_rebuild/e37_range_scalp.py\" | wc -c")
+    chk("T13 ★引用符の中は拾わない（2026-10-15 の誤報の形）", g == "", g)
+    g = find_strategy("python3 .claude/tools/gen_design_e38.py")
+    chk("T14 ★名前の末尾だけが同じ .py は拾わない（2026-07-24 の誤報の形）", g == "", g)
+    g = find_strategy("cd /x && time .venv/bin/python scripts/priority_rebuild/e37_scalp.py")
+    chk("T15 ★cd と time とパスつきの python で走らせても拾う", g == "e37_scalp.py", g)
+    p = "python3 scripts/priority_rebuild/e37_scalp.py"
+    g = find_untagged(p)
+    chk("U1 ★タグ無しは返す", g == "e37_scalp.py", g)
+    g = find_untagged(p + " --tag v1")
+    chk("U2 ★--tag を付ければ空", g == "", g)
+    g = find_untagged(p + " --tag=v1")
+    chk("U3 ★--tag=… でも空", g == "", g)
+    g = find_untagged(p + " ; grep --help")
+    chk("U4 ★ほかの区切りの --help では空にしない（すり抜け）", g == "e37_scalp.py", g)
+    g = find_untagged(p + " ; echo --tag x")
+    chk("U5 ★ほかの区切りの --tag では空にしない（すり抜け）", g == "e37_scalp.py", g)
+    g = find_untagged(p + " --param-schema-selftest")
+    chk("U6 ★接頭辞の付く selftest の旗は空（2026-07-21 の形）", g == "", g)
+
+    print(f"[shell_cmd_scan] {len(seen) - len(ng)}/{len(seen)} pass")
     return 1 if ng else 0
 
 
 if __name__ == "__main__":
     if "--selftest" in sys.argv:
         sys.exit(_selftest())
-    sys.stdout.write(find_strategy(sys.stdin.read()))
+    if "--untagged" in sys.argv:
+        sys.stdout.write(find_untagged(sys.stdin.read()))
+    else:
+        sys.stdout.write(find_strategy(sys.stdin.read()))

@@ -51,11 +51,34 @@ print(s)" 2>/dev/null)
 #   直したあと＝「python が、その対象のファイルを実行しようとしている断片」からだけ名前を拾う。
 #   番人＝.claude/hooks/selftest_flow_declaration.sh（わざと壊して止まるかを実測する）
 #   ★末尾は printf '%s\n'（改行なしだと while read が最後の断片を読み落とす）
-TARGETS=$(printf '%s\n' "$CMD_X" | tr ';&|' '\n' | while IFS= read -r seg; do
-  printf '%s' "$seg" | grep -qE '(^|[[:space:]])python[0-9.]*([[:space:]]|$)' || continue
-  printf '%s' "$seg" | grep -qE -- '--selftest|py_compile|--help|--verify' && continue
-  printf '%s' "$seg" | grep -oE '(e38_priority_stack|engine_tuner|engine_search_e37|observe_diag|slot_opportunity_diag|e37_scalp|e3[56]_[a-z_]+|score|precheck|report|analyze|plot_trades)\.py'
-done | sort -u)
+# ★2026-10-17（186回目・まこさん「要。CCの案で修正する」）＝区切りの中に名前がどこかに在れば対象にする形をやめた。
+#   対象にするのは、区切りの頭の python が、旗を飛ばした最初の語として走らせる .py で、ファイル名が対象の名前と全部 一致する物だけ。
+#   直す前の誤報＝試しの道具の引数に observe_diag.py が在るだけで4回 止めた（2026-10-06）・enforce_no_false_report.py を report.py と読んだ。
+#   自己テスト＝.claude/hooks/enforce_flow_declaration_selftest.py（--print-targets で読んだ名前を出させて照らす）
+TARGETS=$(printf '%s\n' "$CMD_X" | python3 -c "
+import sys, re
+s = sys.stdin.read()
+NAME = re.compile(r'(e38_priority_stack|engine_tuner|engine_search_e37|observe_diag|slot_opportunity_diag|e37_scalp|e3[56]_[a-z_]+|score|precheck|report|analyze|plot_trades)\.py')
+ASSIGN = re.compile(r'^[A-Za-z_][A-Za-z_0-9]*=')
+WRAP = set(['time', 'nice', 'nohup', 'timeout', 'exec', 'command', 'env', 'xargs', 'caffeinate'])
+out = set()
+for seg in re.split(r'[;|&\n]+', s):
+    if re.search(r'--selftest|py_compile|--help|--verify', seg):
+        continue
+    toks = seg.split()
+    i = 0
+    while i < len(toks) and (ASSIGN.match(toks[i]) or toks[i] in WRAP or re.fullmatch(r'[0-9.]+[smhd]?', toks[i]) or (i > 0 and toks[i].startswith('-') and toks[i - 1] in WRAP)):
+        i += 1
+    if i >= len(toks) or not re.fullmatch(r'python[0-9.]*', toks[i].rsplit('/', 1)[-1]):
+        continue
+    j = i + 1
+    while j < len(toks) and toks[j].startswith('-'):
+        j += 1
+    if j < len(toks) and NAME.fullmatch(toks[j].rsplit('/', 1)[-1]):
+        out.add(toks[j].rsplit('/', 1)[-1])
+print(chr(10).join(sorted(out)))
+" 2>/dev/null)
+[ "$1" = "--print-targets" ] && { printf '%s\n' "$TARGETS"; exit 0; }   # 自己テスト用（Claude Code は引数なしで呼ぶ）
 [ -z "$TARGETS" ] && exit 0
 
 DECL="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/flow_declaration.md"
@@ -79,7 +102,7 @@ fail() {
   exit 2
 }
 
-[ -f "$DECL" ] || fail "宣言ファイルが無い（$DECL）"
+[ -f "$DECL" ] || fail "宣言ファイルが無い（${DECL}）"
 
 # 鮮度: 24時間以内の更新（古い宣言の使い回し＝工程が変わっても素通り、を防ぐ下限）
 NOW=$(date +%s)
@@ -126,7 +149,7 @@ if [ -n "$PURPOSE" ]; then
   [ "$D_SEARCH" = "1" ] && [ "$D_CHECK" = "1" ] && fail "宣言の「数え方:」に『値を選ぶ』と『確認する』が両方 書いてある（どちらか1つにする）"
   [ "$D_SEARCH" = "0" ] && [ "$D_CHECK" = "0" ] && fail "宣言の「数え方:」が読み取れない（『値を選ぶ』か『確認する』のどちらかを書く）"
   DECL_KIND="check"; [ "$D_SEARCH" = "1" ] && DECL_KIND="search"
-  [ "$DECL_KIND" = "$PURPOSE" ] || fail "宣言の数え方（$DECL_KIND）と、コマンドの --purpose（$PURPOSE）が食い違っている。★プログラムの確認は必ず check（恒久の決まり24番）。累積の試行数に足してよいのは、値を選ぶ走行だけ"
+  [ "$DECL_KIND" = "$PURPOSE" ] || fail "宣言の数え方（${DECL_KIND}）と、コマンドの --purpose（${PURPOSE}）が食い違っている。★プログラムの確認は必ず check（恒久の決まり24番）。累積の試行数に足してよいのは、値を選ぶ走行だけ"
 fi
 
 # ★過去の実測の引用ゲート（2026-08-23 まこさん指示・逐語「手元の記録に在ったのに、走らせる前に探さなかった。
@@ -161,7 +184,7 @@ if [ -n "$HIT_FILES" ]; then
   [ -n "$QUOTE" ] || fail "「過去の実測:」に『「…」』で囲んだ引用が無い（記録の行を逐語で引用する）。見つかった記録:$HIT_LINES"
   CITED=0
   for f in $REC_FILES; do grep -qF -- "$QUOTE" "$f" 2>/dev/null && CITED=1 && break; done
-  [ "$CITED" = "1" ] || fail "「過去の実測:」の引用「$QUOTE」が、記録（worklog・decisions・next_step）のどこにも無い＝実在しない引用は通さない。見つかった記録:$HIT_LINES"
+  [ "$CITED" = "1" ] || fail "「過去の実測:」の引用「${QUOTE}」が、記録（worklog・decisions・next_step）のどこにも無い＝実在しない引用は通さない。見つかった記録:$HIT_LINES"
 else
   grep -qE '過去の実測:.*なし' "$DECL" || fail "「過去の実測: なし」の行が無い（hook が記録を探したが、このスクリプトの時間の実測は見つからなかった＝その旨を書く）"
 fi

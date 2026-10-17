@@ -115,6 +115,18 @@ RUN_SCRIPTS = {
 }
 # ★同＝印（G2・H2）の対象のファイルの一覧の置き場。ここに在るファイルを直したら、G2 → H2 の順で印を取り直す
 PASS_MARKS = (os.path.join(ROOT, ".claude", "state", "g2_pass.json"), os.path.join(ROOT, ".claude", "state", "h2_pass.json"))
+# ★2026-10-17（186回目・まこさん「設計書はなしでよい」）＝型の表の承認が今の表と合わないうちは、生成器と実行器に書かない（G1）。
+#   hook enforce_signal_table_gate.sh は Write・Edit にしか掛からず、この道具は python の中で書くので、その外を通っていた。
+#   照らしの計算は gen_signal_families.py --status をそのまま走らせる（計算を書き写さない）。
+G1_TARGETS = ("engine_tuner_gen.py", "engine_tuner_exec.py")
+
+
+def table_status() -> tuple:
+    """型の表の承認が今の表と合うか（gen_signal_families.py --status の終了コード 0＝合う）。自己テストが差し替える。"""
+    import subprocess
+    r = subprocess.run([sys.executable, os.path.join(SCRIPTS_DIR, "gen_signal_families.py"), "--status"],
+                       capture_output=True, text=True, cwd=SDK, timeout=120)
+    return r.returncode == 0, (r.stdout.strip() or r.stderr.strip())[:200]
 # ★2026-09-30（設計書 audit-fix-evidence-20260930・まこさん承認）＝監査が見た版の設計書の控え。
 #   main が監査結果の「監査が照らしたハッシュ値」と sha256 が同じ承認の控えを見つけて入れる。
 #   根拠が acceptance.md の行なら、いまの acceptance.md ではなく、この控えと照らす（監査の後に設計書が書き替わるため）。
@@ -1026,6 +1038,15 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
             return 1
         mem[path] = new
         plan.append((f, what, path))
+    # ★2026-10-17（186回目）＝生成器・実行器に当てる件が在れば、書く前に型の表の承認を照らす（G1・--dry でも照らす）
+    g1 = sorted({os.path.basename(p) for _f, _w, p in plan if os.path.basename(p) in G1_TARGETS})
+    if g1:
+        t_ok, t_msg = table_status()
+        if not t_ok:
+            print(f"\n❌ {'・'.join(g1)} に当てる件が在りますが、型の表の承認が今の表と合いません（{t_msg}）"
+                  f"＝1件も当てません（G1・enforce_signal_table_gate と同じ照らし）")
+            print("   解除＝まこさんが scripts/priority_rebuild/gen_signal_families.py --approve を実行する")
+            return 1
     if a.dry:
         nums = "・".join(f["番号"] for f, _w, _p in plan) or "（無し）"
         print(f"\n✅ --dry: 当たる {len(plan)} 件（修正 {nums}）／"
@@ -1826,6 +1847,37 @@ def selftest() -> int:
                 print(f"   T{total} 設計書の道は、当てた記録に在る件を、直した後の文字が消えていても当て終わりと見る（監査結果の道は今までどおり） → pass")
             else:
                 fails.append(f"❌ 設計書の道と当てた記録 T{total}: 記録なし={ok47a}/{why47a} 記録あり={ok47b}/{why47b} 監査結果={ok47c}/{why47c}")
+
+            # T48（2026-10-17・186回目・まこさん「設計書はなしでよい」）＝engine_tuner_gen.py・engine_tuner_exec.py に当てる件は、
+            #   型の表の承認が今の表と合わなければ1件も書かない（G1＝enforce_signal_table_gate と同じ照らし）。
+            #   直す前は、この道具が python の中で書くので、Write・Edit にだけ掛かる G1 の hook の外を通っていた。
+            total += 1
+            clear_rec()
+            code48 = os.path.join(tmp, "engine_tuner_gen.py")
+            rel48 = os.path.relpath(code48, ROOT)
+            ts_saved = globals().get("table_status")
+            try:
+                open(code48, "w", encoding="utf-8").write("x = 1\n")
+                items48 = [item(1, rel48, "x = 1", "直した後の文字", "x = 2", f"{rel48}:1「x = 1」")]
+                open(md, "w", encoding="utf-8").write(design(items48, rel48))
+                mark_of(md, mark)
+                globals()["table_status"] = lambda: (False, "見本の未承認")
+                rc48a, out48a = run(["--design", md], mark)
+                body48a = open(code48).read()
+                clear_rec()
+                globals()["table_status"] = lambda: (True, "見本の承認済み")
+                rc48b, _out48b = run(["--design", md], mark)
+                body48b = open(code48).read()
+            finally:
+                if ts_saved is None:
+                    globals().pop("table_status", None)
+                else:
+                    globals()["table_status"] = ts_saved
+            if rc48a == 1 and "型の表の承認" in out48a and body48a == "x = 1\n" and rc48b == 0 and body48b == "x = 2\n":
+                ok += 1
+                print(f"   T{total} engine_tuner_gen.py に当てる件は、型の表の承認が合わなければ1件も書かない（合えば当たる） → pass")
+            else:
+                fails.append(f"❌ 型の表の承認 T{total}: 未承認 rc={rc48a} 中身={body48a!r} ／ 承認済み rc={rc48b} 中身={body48b!r}")
         finally:
             (globals()["TOOLS_DIR"], globals()["DESIGN"], globals()["APPROVED"],
              globals()["HOOKS_DIR"], globals()["BREAKS_DIR"]) = g_saved
