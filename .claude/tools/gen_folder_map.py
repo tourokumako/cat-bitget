@@ -60,7 +60,9 @@ ROLES = {
 def entries(base: pathlib.Path) -> list[str]:
     out = []
     for p in sorted(base.iterdir()):
-        if p.name.startswith(".") or p.name == "__pycache__":
+        # ★2026-10-17＝Claude Code 自身が作るファイル（scheduled_tasks.lock）も数えない。
+        #   10月7日に「役割の書いていないもの」と数えて止め、CC がそのファイルを消して通した。
+        if p.name.startswith(".") or p.name in ("__pycache__", "scheduled_tasks.lock"):
             continue
         if p.is_symlink():
             out.append(p.name)

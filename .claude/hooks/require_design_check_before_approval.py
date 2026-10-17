@@ -85,7 +85,23 @@ TABLE = ROOT + "/.claude/state/design_approved.json"
 # ★お願いの形＝まこさんに打ってもらうコマンド（bash …/approve_impl.sh）。
 #   名前だけ（説明の文の中の approve_impl.sh）では当てない＝説明のたびに止めないため。
 WORD_RE = re.compile(r"bash\s+\S*approve_impl\.sh")
-SAY = "承認は もう1回 要ります"          # B群だけが残るとき、返信に在れば通す文字
+# ★2026-10-17（187回目・まこさん「要とする。上記直す案で修正」）＝コマンドが行の頭にあるか、
+#   コピーするための囲み（```）の中にあるときだけ、お願いと見る（asks_approval）。
+#   直す前は返信のどこかにこの形があれば止め、CC が hook の説明の文に書いただけで止まった。
+LINE_HEAD_RE = re.compile(r"^\s*bash\s+\S*approve_impl\.sh")
+SAY ="承認は もう1回 要ります"          # B群だけが残るとき、返信に在れば通す文字
+
+
+def asks_approval(text: str) -> bool:
+    """承認のお願いか＝コマンドが行の頭にある、またはコピーするための囲みの中にある。"""
+    fence = False
+    for line in text.splitlines():
+        if line.strip().startswith("```"):
+            fence = not fence
+            continue
+        if LINE_HEAD_RE.match(line) or (fence and WORD_RE.search(line)):
+            return True
+    return False
 
 
 def _run(cmd, stdin=None, timeout=90):
@@ -1149,7 +1165,7 @@ def main(argv):
     except Exception:                                        # noqa: BLE001
         data = {}
     text = _turn_text(data)
-    if WORD_RE.search(text) is None:
+    if not asks_approval(text):
         return 0
     # --try-stop は、止める側の道を別の設計書で試すための口（本物の Stop hook は旗なしで呼ばれる＝ACC だけを見る）
     acc = argv[argv.index("--design") + 1] if ("--try-stop" in argv and "--design" in argv) else ACC

@@ -8,11 +8,14 @@
 #   exit 8 = 最新採点 CSV の report_/analysis_ ファイルが無い（B・2026-07-17）
 #   exit 9 = worklog に タグ_番号＋「型別」の分析記録が無い（C・2026-07-17）
 # ★正直な限界: 中身の正しさ（分析の質）は機械では保証できない → 手順は experiment_result_procedure.md・中身はまこさんの目。
+# ★2026-10-17＝止めるのは新しい売買記録（trades_*.csv）の後だけ。分析の印・道具の直しの印は、印を立てる hook
+#   （track_fastmode_data_read・pdca_mark）が 2026-10-01 に登録から外れたので読まない。
 MARK="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/pdca_fast_mode"
 [ ! -f "$MARK" ] && exit 0   # fast-mode 限定（OFF では pdca_gate 等の普段の記録強制に任せる）
 
 STATE="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
-[ -f "$STATE/worklog_ok" ] && exit 0   # 明示オーバーライド（正当に記録不要な時・稀）
+# ★2026-10-17（187回目・まこさん「要で、CCの案の通りに修正する」）＝抜け道（worklog_ok を置くと通す）を消した。
+#   CC が自分で作れ、9月26日に実際に作って抜けた（恒久の決まり57番＝強制解除できない状態にする）。
 
 RATCHET="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/results/priority_rebuild/ratchet"
 WLDIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/v3-bitget-api-sdk/bitget-python-sdk-api/.claude/state"
@@ -44,11 +47,9 @@ if [ "$rc" -eq 9 ]; then
   exit 2
 fi
 
-echo "🔒 [引き継ぎ記録ゲート・fast-mode] 実験(新 trades_*.csv) ／ 分析(report/analyze/score/probe) ／ ★プログラムの直し(scripts/priority_rebuild/*.py) のどれかをしたのに session_worklog が未更新です。" >&2
-echo "★2026-08-22（まこさん決定 A・next_step §6 の20番）＝プログラムを直した作業も対象に足しました。直す前は 売買記録CSV と 分析の印 の2つしか見ておらず、プログラムを直すだけの作業は まるごと検知の外でした。" >&2
+echo "🔒 [引き継ぎ記録ゲート・fast-mode] 戦略の実験（新しい売買記録 trades_*.csv）をしたのに session_worklog が未更新です。" >&2
 echo "" >&2
 echo "fast-mode は改善アーク自動生成が使えない＝都度ログで引き継ぎの「改善内容・経緯（＝なぜそうしたか）」に誤解/ヌケモレを残さない（next_step 運転方式2・cat_requirements §8.5）。実験だけでなく分析の結論・方針判断も記録する（今回たまたま書けただけ＝再現性がないので強制・まこさん 2026-07-16）。" >&2
 echo "対処: session_worklog_<日付>.md に追記してからターンを終える。記載＝①何を変えた/何を分析した ②結論（採点窓 score.py の net・学習窓を持ち込まない）③merit/demerit ④次の一手（なぜ）。" >&2
 echo "  誤解防止チェック: 采否は採点窓 score.py の数字か／学習窓・precheck・L-320 を持ち込んでいないか／crude の数字を采否に使っていないか／E37 は件数/日≥5(スキャル)か。" >&2
-echo "（正当に記録不要な時のみ touch .claude/state/worklog_ok）" >&2
 exit 2

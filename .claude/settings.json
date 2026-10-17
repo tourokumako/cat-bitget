@@ -178,10 +178,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/block_long_background.py"
-          },
-          {
-            "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_stage_conditions.sh pre",
             "timeout": 120
           },
@@ -246,12 +242,7 @@
             "type": "command",
             "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_next_step_tidy.sh",
             "timeout": 15
-          },
-          {
-            "type": "command",
-            "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_read_used.sh",
-            "timeout": 30
-          },
+          },       
           {
             "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/require_run_after_edit.sh",

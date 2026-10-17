@@ -13,23 +13,14 @@
 # テスト用＝第1引数に next_step.md の代わりのファイルを渡せる（--selftest の T8 が使う）。
 ROOT="/Users/tachiharamasako/Documents/GitHub/cat-bitget"
 TOOL="$ROOT/.claude/tools/tidy_next_step.py"
+# ★2026-10-07（158回目・まこさん「案 A で修正する」）＝(0-b-2) の欄の古さだけなら --write で作り直してから検査し直す。
+# ★2026-10-17（187回目・まこさん「要として３つを修正する」）＝判定を next_step_tidy_gate.py に移し、
+#   (l) 教訓の件数・(m) 監査の写し も同じ扱いにし、0-1 の日付は締めのときだけ止める（中身＝その .py の先頭）。
+#   テスト用の第1引数のときは、今までどおり検査だけ（--write を走らせない＝本物を書き替えないため）。
 if [ -n "$1" ]; then
   OUT=$(python3 "$TOOL" --verify --file "$1" 2>&1); RC=$?
 else
-  OUT=$(python3 "$TOOL" --verify 2>&1); RC=$?
-fi
-# ★2026-10-07（158回目・まこさん「案 A で修正する」・問い「これは毎回同じミスをくりかえしているが、改善できないの？」）
-#   ＝落ちた理由が全部「(c) (0-b-2)」の行（H2・G2 の検査済みの記録の指紋と時刻＝tidy_next_step.py が json から機械で書く欄）
-#   だけのときは、止めずに --write で作り直してから検査し直す。G2・H2 を走らせるたびに欄が古くなり、CC が --write を
-#   打ち忘れて止まっていた（やり取りの記録 31本・止められた行 171行）。CC が文を書く所（0-1 の日付ほか）の落ちが
-#   1行でも混ざれば、今までどおり止める。テスト用の第1引数のときは --write を走らせない（本物を書き替えないため）。
-if [ "$RC" -ne 0 ] && [ -z "$1" ]; then
-  BUL=$(printf '%s\n' "$OUT" | grep -E '^[[:space:]]*・')
-  OTH=$(printf '%s\n' "$BUL" | grep -vE '^[[:space:]]*・\(c\) \(0-b-2\) ')
-  if [ -n "$BUL" ] && [ -z "$OTH" ]; then
-    python3 "$TOOL" --write >/dev/null 2>&1
-    OUT=$(python3 "$TOOL" --verify 2>&1); RC=$?
-  fi
+  OUT=$(python3 "$ROOT/.claude/hooks/next_step_tidy_gate.py" 2>&1); RC=$?
 fi
 if [ "$RC" -ne 0 ]; then
   printf "⛔ [next_step の形・Stop hook] next_step.md の §0 が整っていないのでターンを終われません（まこさん 2026-08-28「毎回、next_stepが汚くなり、私が指示しないと整理されない状況なんだけど、改善できないのか？」）。\n%s\n直し方＝python3 .claude/tools/tidy_next_step.py --write ＋ 0-1 を今日の状態に書き直す。\n（解除の合言葉はありません＝2026-08-16 に全部 廃止）\n" "$OUT" >&2
