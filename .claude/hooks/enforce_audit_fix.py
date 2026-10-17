@@ -87,7 +87,7 @@ def pending() -> dict:
             nums = {str(f.get("番号")) for f in a.read_design_fixes(dtext)}
             if not all((key, n) in done for n in nums):
                 for p in a.design_targets(dtext):
-                    out.setdefault(p, []).append((key, "（設計書の実装の指示）"))
+                    out.setdefault(p, []).append((key, "（設計書の実装の指示）", None))
     except Exception:                                        # noqa: BLE001
         pass                                                 # 設計書が読めないときは止めない（fail-open・上と同じ）
     for rep in glob.glob(REPORTS):
@@ -118,8 +118,70 @@ def pending() -> dict:
             if _applied(f, before, text):
                 continue                                     # 当て終わっている＝もう止めない
             out.setdefault(os.path.realpath(path), []).append(
-                (os.path.basename(rep), f.get("番号")))
+                (os.path.basename(rep), f.get("番号"), before))
     return out
+
+
+def _spans(text: str, s: str) -> list:
+    """text の中で s が出てくる範囲 [(始め, 終わり), …]。"""
+    out, i = [], text.find(s) if s else -1
+    while i >= 0:
+        out.append((i, i + len(s)))
+        i = text.find(s, i + 1)
+    return out
+
+
+def blocking(hits: list, fp: str, tool: str, ti: dict, text: str = None) -> list:
+    """★2026-10-17（184回目・まこさん「CC の案：要として、不具合1と2を直す」「修正進めて良い」）＝止める理由のうち、
+    この書き込みに当たる物だけを返す。Write＝ファイル全体を書き替えるので全部。Edit・MultiEdit＝直す文字（old_string）の
+    範囲が、当たっていない修正の「直す前の文字」の範囲と重なる（触れるも含む）物だけ。設計書の実装の指示（直す前の文字が
+    None）は、いままでどおり全部。直す文字がファイルに見つからない・ファイルが読めないときは、止める側に倒す（全部）。
+    直す前は、ファイル全体を止めたので、修正と関係のない行の直しまで止めた（30日で7回）。"""
+    if tool == "Write" or not hits:
+        return hits
+    olds = [e.get("old_string") or "" for e in ti.get("edits") or []] if tool == "MultiEdit" else [ti.get("old_string") or ""]
+    if text is None:
+        try:
+            text = open(fp, encoding="utf-8").read()
+        except Exception:                                    # noqa: BLE001
+            return hits
+    if not olds or any(not o for o in olds):
+        return hits
+    mine = [sp for o in olds for sp in _spans(text, o)]
+    if not mine:
+        return hits
+    out = []
+    for h in hits:
+        before = h[2]
+        theirs = _spans(text, before) if before is not None else []
+        if before is None or not theirs or any(a0 <= b1 and b0 <= a1 for a0, a1 in mine for b0, b1 in theirs):
+            out.append(h)                                    # 重なる・触れる・直す前の文字が見つからない＝止める側
+    return out
+
+
+def selftest() -> int:
+    """★2026-10-17＝blocking を見本の文と見本の止める理由で試す（本物の監査結果は読まない・何も書かない）。"""
+    text = "一行目\n直す前の文字\n三行目\n"
+    hit = [("x_cp1_audit_report.md", "1", "直す前の文字")]
+    design = [("design:x", "（設計書の実装の指示）", None)]
+    E = lambda o: {"old_string": o}                        # noqa: E731
+    cases = [
+        ("H1 Write → 止まる", blocking(hit, "", "Write", {}, text), True),
+        ("H2 Edit の直す文字が「直す前の文字」と重なる → 止まる", blocking(hit, "", "Edit", E("前の文字\n三"), text), True),
+        ("H3 Edit の直す文字が別の行（重ならない）→ 通る", blocking(hit, "", "Edit", E("一行"), text), False),
+        ("H4 Edit の直す文字が「直す前の文字」のすぐ後ろに触れる → 止まる", blocking(hit, "", "Edit", E("\n三行目"), text), True),
+        ("H5 MultiEdit の1つが重なる → 止まる",
+         blocking(hit, "", "MultiEdit", {"edits": [E("一行"), E("直す前")]}, text), True),
+        ("H6 設計書の実装の指示（直す前の文字が None）→ Edit でも止まる", blocking(design, "", "Edit", E("一行"), text), True),
+        ("H7 直す文字がファイルに無い → 止まる（止める側）", blocking(hit, "", "Edit", E("どこにも無い"), text), True),
+    ]
+    ng = 0
+    for nm, got, want in cases:
+        ok = bool(got) == want
+        ng += not ok
+        print(f"  {'✅' if ok else '❌'} {nm}")
+    print(f"自己テスト {len(cases) - ng}/{len(cases)}")
+    return 1 if ng else 0
 
 
 def main(raw: str) -> int:
@@ -132,14 +194,14 @@ def main(raw: str) -> int:
     fp = str((data.get("tool_input") or {}).get("file_path") or "")
     if not fp:
         return 0
-    hit = pending().get(os.path.realpath(fp))
+    hit = blocking(pending().get(os.path.realpath(fp)) or [], fp, data.get("tool_name", ""), data.get("tool_input") or {})
     if not hit:
         return 0
     e = sys.stderr
     print("🔒 [hook 12・監査の修正は当てる道具でしか書けない] このファイルには、"
           "まだ当てていない監査の修正が在ります"
           "（まこさん指示 2026-09-14「テンプレ以外では書けないように強制」）。", file=e)
-    for rep, num in hit[:8]:
+    for rep, num, _b in hit[:8]:
         print(f"   ❌ {rep} の 修正 {num}", file=e)
     print("   ＝先に当ててください（設計書の実装の指示なら python3 .claude/tools/apply_audit_fix.py --design）:", file=e)
     print("     python3 .claude/tools/apply_audit_fix.py --report <上の監査結果> "
@@ -149,6 +211,8 @@ def main(raw: str) -> int:
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 2 and sys.argv[1] == "--selftest":
+        sys.exit(selftest())
     if len(sys.argv) == 3 and sys.argv[1] == "--try":
         sys.exit(main(open(sys.argv[2], encoding="utf-8").read()))
     sys.exit(main(sys.stdin.read()))

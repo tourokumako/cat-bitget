@@ -23,6 +23,10 @@
     対象のファイルが設計書の TARGET／NEW_FILE に無い件は当てない。当てなかった件が1件でも在れば終了コードは 1。
   python3 .claude/tools/apply_audit_fix.py --selftest
     見本の設計書と見本のコードを一時の置き場に作り、設計書 4-19 の場面を測る（本物には1バイトも書かない）。
+  python3 .claude/tools/apply_audit_fix.py --report <監査結果.md> --decline 35,39 --verbatim <工事名>/<名前> [--dry]
+    ★2026-10-17（184回目）＝まこさんが「当てない」と決めた修正を、当てた記録に「まこさんが当てないと決めた」で書く（当てない）。
+    逐語のファイル（gen_verbatim.py で作った物）が記録の発言と合い、まこさんの発言を含むときだけ書く。
+    hook 12・次の一手のプログラム・この道具は、記録に在る修正を済んだ物として扱う。試す口＝--selftest-decline。
 
 何をするか（設計書 4-4）
   1. 監査結果を読み、修正の指示を番号の順に並べる（読み取りは gen_audit_docs.item_fields）
@@ -442,7 +446,8 @@ def _record_applied(entries: list, path: str = None) -> int:
         if not key[0] or not key[1] or key in have:
             continue
         rows.append({"report": key[0], "num": key[1], "file": str(e.get("file", "")),
-                     "at": time.strftime("%Y-%m-%dT%H:%M:%S"), "how": str(e.get("how", ""))})
+                     "at": time.strftime("%Y-%m-%dT%H:%M:%S"), "how": str(e.get("how", "")),
+                     **({"verbatim": str(e["verbatim"])} if e.get("verbatim") else {})})
         have.add(key)
         added += 1
     d["applied"] = rows
@@ -452,6 +457,87 @@ def _record_applied(entries: list, path: str = None) -> int:
         fh.write(json.dumps(d, ensure_ascii=False, indent=1) + "\n")
     os.replace(tmp_path, path)
     return added
+
+
+def _verbatim_ok(name: str) -> tuple:
+    """逐語のファイルが記録の発言と1文字も違わず（gen_verbatim.verify）、まこさんの発言を含むか。戻り＝(よいか, 理由, 本文)。"""
+    import gen_verbatim as gv
+    ok, why = gv.verify(name)
+    if not ok:
+        return False, why, ""
+    txt, meta = gv.paths(name)
+    if "まこさん" not in (json.load(open(meta, encoding="utf-8")).get("who") or []):
+        return False, f"{name} に まこさんの発言が無い（CC の文だけ）", ""
+    return True, "", txt.read_text(encoding="utf-8")
+
+
+def decline(report: str, nums: list, verbatim: str, dry: bool = False, record: str = None, check=None) -> int:
+    """★2026-10-17（184回目・まこさん「CC の案：要として、不具合1と2を直す」「修正進めて良い」）＝まこさんが「当てない」と
+    決めた修正を、当てた記録に how「まこさんが当てないと決めた」で書く。hook 12・次の一手のプログラム・この道具は、記録に在る
+    修正を済んだ物として扱う。書く条件＝監査結果が audits の直下の *_audit_report.md・番号が全部 監査結果に在る・
+    逐語のファイル（gen_verbatim で作った物）が記録の発言と合い、まこさんの発言を含む。
+    直す前は、当てた修正しか記録できず、まこさんが範囲の外にした修正のファイルを hook 12 が止め続けた（CP60 の修正35・39）。"""
+    rp = os.path.realpath(report if os.path.isabs(report) else os.path.join(ROOT, report))
+    if os.path.dirname(rp) != os.path.realpath(os.path.join(SDK, ".claude", "audits")) or not rp.endswith("_audit_report.md") \
+            or not os.path.isfile(rp):
+        print(f"❌ 監査結果ではない（audits の直下の *_audit_report.md だけ）: {report}")
+        return 2
+    fixes = {str(f.get("番号")): f for f in read_fixes(open(rp, encoding="utf-8").read())}
+    miss = [n for n in nums if n not in fixes]
+    if not nums or miss:
+        print(f"❌ 監査結果に無い番号: {'・'.join(miss) or '（番号が空）'}")
+        return 2
+    ok, why, body = (check or _verbatim_ok)(verbatim)
+    if not ok:
+        print(f"❌ 逐語のファイルが使えない: {why}")
+        return 2
+    print(f"まこさんの決定（逐語のファイル {verbatim}）:")
+    print("\n".join(f"  > {ln}" for ln in body.splitlines()))
+    rows = [{"report": os.path.basename(rp), "num": n, "file": fixes[n].get("対象のファイル") or "",
+             "how": "まこさんが当てないと決めた", "verbatim": verbatim} for n in nums]
+    for r in rows:
+        print(f"  {'（--dry＝書かない）' if dry else '書く'}: {r['report']} の 修正 {r['num']}（{r['file']}）")
+    if dry:
+        return 0
+    print(f"✅ 当てた記録に {_record_applied(rows, record)} 件 足した（同じ組が在れば足さない）")
+    return 0
+
+
+def selftest_decline() -> int:
+    """★2026-10-17＝--decline だけを試す軽い口。記録は一時の置き場に書く（本物の記録には書かない）。監査結果は本物を読むだけ。"""
+    import tempfile
+    rep = os.path.join(SDK, ".claude", "audits", "2026-10-03_indicator_textbook_check_cp60_audit_report.md")
+    work = os.path.join(SDK, ".claude", "audits", "cp60_work", "cp60_result.md")
+    good = lambda _n: (True, "", "当てない")                               # noqa: E731
+    bad = lambda _n: (False, "合わない", "")                                # noqa: E731
+    d = tempfile.mkdtemp(prefix="decline_selftest_")
+    rec = os.path.join(d, "applied_fixes.json")
+    import contextlib
+    import io
+    with contextlib.redirect_stdout(io.StringIO()):
+        r1 = decline(rep, ["35", "39"], "x/y", record=rec, check=good)
+        k1 = applied_keys(rec)
+        r2 = decline(rep, ["9999"], "x/y", record=os.path.join(d, "r2.json"), check=good)
+        r3 = decline(rep, ["35"], "x/y", record=os.path.join(d, "r3.json"), check=bad)
+        r4 = decline(work, ["35"], "x/y", record=os.path.join(d, "r4.json"), check=good)
+    rows = json.load(open(rec, encoding="utf-8")).get("applied") or [] if os.path.isfile(rec) else []
+    cases = [
+        ("D1 番号が在り逐語が合う → 記録に「まこさんが当てないと決めた」で2件 足り、applied_keys に入る",
+         r1 == 0 and {(os.path.basename(rep), "35"), (os.path.basename(rep), "39")} <= k1
+         and all(x.get("how") == "まこさんが当てないと決めた" and x.get("verbatim") == "x/y" for x in rows) and len(rows) == 2),
+        ("D2 監査結果に無い番号 → 書かずに止まる", r2 == 2 and not os.path.exists(os.path.join(d, "r2.json"))),
+        ("D3 逐語のファイルが使えない → 書かずに止まる", r3 == 2 and not os.path.exists(os.path.join(d, "r3.json"))),
+        ("D4 作業場の結果を渡す → 書かずに止まる", r4 == 2 and not os.path.exists(os.path.join(d, "r4.json"))),
+    ]
+    ng = 0
+    for nm, ok in cases:
+        ng += not ok
+        print(f"  {'✅' if ok else '❌'} {nm}")
+    for fn in os.listdir(d):
+        os.remove(os.path.join(d, fn))
+    os.rmdir(d)
+    print(f"自己テスト（--decline）{len(cases) - ng}/{len(cases)}")
+    return 1 if ng else 0
 
 
 def _recheck(f: dict, cur: str) -> bool:
@@ -749,10 +835,20 @@ def main(argv: list = None, approved_path: str = None, src_items: list = None) -
     ap.add_argument("--choose", default="")
     ap.add_argument("--only", default="")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--decline", default="")       # ★2026-10-17＝まこさんが当てないと決めた修正の番号（, で区切る）
+    ap.add_argument("--verbatim", default="")      # ★2026-10-17＝その決定の逐語のファイル（gen_verbatim の名前）
+    ap.add_argument("--selftest-decline", action="store_true")
     ap.add_argument("-h", "--help", action="store_true")
     a = ap.parse_args(argv)
     if a.selftest:
         return selftest()
+    if a.selftest_decline:
+        return selftest_decline()
+    if a.decline:                                  # ★2026-10-17＝--report と一緒に使う・--severity は要らない・当てずに記録だけ書く
+        if not a.report or not a.verbatim:
+            print("❌ --decline には --report と --verbatim が要ります")
+            return 2
+        return decline(a.report, [x.strip() for x in a.decline.split(",") if x.strip()], a.verbatim, a.dry)
     if a.report and a.design:
         print("❌ --report と --design は同時に渡せません（どちらか1つにしてください）")
         return 2

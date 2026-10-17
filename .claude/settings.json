@@ -134,10 +134,6 @@
           },
           {
             "type": "command",
-            "command": "/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/enforce_design_consistency.sh"
-          },
-          {
-            "type": "command",
             "command": "bash /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/hooks/show_breaks_on_code_edit.sh"
           },
           {

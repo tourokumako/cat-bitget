@@ -3,9 +3,9 @@
 # Read tool で実際に開いたファイルパスを、セッションごとの read_log.txt（sessions/<セッション>/read_log.txt）に記録する。
 # この記録を判定に使うのは require_source_read_before_acceptance（受け入れ条件の必読ゲート）。acceptance.md を書く前と、
 # 承認の前の検査（approve_impl.sh → pre_audit_check.py --check-design）の中で、設計書が直す対象・読んだと書いたファイルを
-# Read で開いたかを見る（require_source_read_before_acceptance.py:270-315）。
+# Read で開いたかを見る（require_source_read_before_acceptance.py:298-343）。
 # ★2026-10-16（183回目）に直した＝直す前は「require_read_before_work.sh が判定する材料」と書いていたが、その hook は登録が無い。
-#   require_read_plan_before_design も記録を読み込むが、開いたかの検査は 2026-10-01 に外してあり、判定には使っていない。
+#   require_read_plan_before_design は、開いたかの検査を 2026-10-01 に外し、記録の読み込みも 2026-10-17 に外した。
 # ★限界＝Read の一部だけ開いた（offset と limit）か、全部 開いたかは区別しない。
 # 目的: CC が SessionStart 表示を「読んだ」と扱う読んだふり（L-250）を物理的に防ぐ仕組みの一部。
 

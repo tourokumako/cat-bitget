@@ -13,26 +13,33 @@ next_step §0-2 の仕組み1の前半。
   ① Write／Edit／MultiEdit で直すファイルの名前（basename）を、.claude/breaks/*.sh の中から探す。
      名前が出てくる壊すプログラムだけを相手にする（名前が出てこないファイルは見ない＝止めない）。
   ② 直す前にあって直した後に無くなる行（前後の空白を除いて8文字以上）を取り出す。
-  ③ その行の文字が、①の壊すプログラムの中に在るかを探す（\\ を外した形でも探す＝
-     python の文字列や sed の中で \" \' とエスケープされている場合に当てるため）。
-  ④ 当たれば、壊すプログラムの名前と当たった行を出して1回だけ止める（rc=2）。
+  ③ ★2026-10-17（184回目・まこさん「CC の案：要として、誤報を無くす直しをする」）＝①の壊すプログラムから、
+     承認のときと同じ関数（run_breaks.extract_targets）で「相手のファイル」と「探す文字」を取り出し、
+     直す前と直した後の中身で数える。直す前は壊せた（ちょうど1か所・全部を消す形と最初の1か所を使う形は1か所以上）のに、
+     直した後は壊せなくなる物だけを当たりにする（直す前は③'だけで見たので、同じ文字の別の行を直しても止めた＝b48）。
+  ③' 探す文字を取り出せない壊すプログラムと、直した後の中身を作れない（old_string が無い）ときは、いままでどおり、
+     ②の行の文字が壊すプログラムの中に在るかを探す（\\ を外した形でも探す＝python の文字列や sed の中で \" \' と
+     エスケープされている場合に当てるため）。
+  ④ 当たれば、壊すプログラムの名前と当たった行（③は数も）を出して1回だけ止める（rc=2）。
      同じ中身（ファイル・壊すプログラム・行）の2回目は通す。見せた記録は
      .claude/state/sessions/<id>/break_edit_shown.json に hook が書く。
 
 限界（正直に）
   ① Bash（sed -i・python）で直すと見ない。
   ② 壊すプログラムが相手を変数の組み立て（"$PR/$NAME"）で書き、basename が文字として無いと見ない。
-  ③ 壊すプログラムが正規表現や行の一部だけで探す場合、行全体の文字では当たらない（8文字以上の行の
-     全体が壊すプログラムの中に在るときだけ当たる）。
+  ③ 探す文字を取り出せない壊すプログラム（式で探す・相手を決められない＝2026-10-17 に35本）は③'の見方のまま
+     ＝同じ文字の別の行を直しても止める誤報と、行の一部だけで探す場合の見落としが残る。
   ④ 見せるだけで、壊すプログラムを直したかは見ない（それは仕組み1の後半＝探す文字がいまのコードに
-     ちょうど1か所あるかを数える検査で見る）。
-  ⑤ 恒久71番＝BOT の中身でない道具なので、壊すプログラムと自己テストは付けない。--try で1回 確かめる。
+     ちょうど1か所あるかを数える検査で見る）。直す前から探す文字が0か所の物（もう壊れている物）も、ここでは止めない。
+  ⑤ 試し方＝--selftest（S1〜S5・2026-10-17 に足した）と --try <hook の入力の json>。
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
+import re
 import sys
 from pathlib import Path
 
@@ -40,6 +47,7 @@ ROOT = Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget")
 BREAKS = ROOT / ".claude/breaks"
 STATE = ROOT / ".claude/state/sessions"
 MIN_LEN = 8
+sys.path.insert(0, str(ROOT / ".claude/tools"))
 
 
 def pairs_of(tool: str, ti: dict, path: Path) -> list[tuple[str, str]]:
@@ -83,10 +91,10 @@ def breaks_naming(name: str) -> list[Path]:
     return hits
 
 
-def find_hits(path: Path, lines: list[str]) -> list[tuple[str, str]]:
-    """(壊すプログラムの名前, 当たった行) の一覧。"""
+def find_hits(path: Path, lines: list[str], breaks: list[Path] | None = None) -> list[tuple[str, str]]:
+    """(壊すプログラムの名前, 当たった行) の一覧。breaks を渡すと、その壊すプログラムだけを見る。"""
     found = []
-    for b in breaks_naming(path.name):
+    for b in (breaks if breaks is not None else breaks_naming(path.name)):
         try:
             txt = b.read_text(encoding="utf-8")
         except Exception:
@@ -96,6 +104,66 @@ def find_hits(path: Path, lines: list[str]) -> list[tuple[str, str]]:
             if t in txt or t.replace("\\", "") in flat:
                 found.append((b.name, t))
     return found
+
+
+def after_text(tool: str, ti: dict, before: str) -> str | None:
+    """直した後の中身。作れないとき（old_string が無い）は None。"""
+    if tool == "Write":
+        return str(ti.get("content") or "")
+    edits = ti.get("edits") if tool == "MultiEdit" else [ti]
+    s = before
+    for e in edits or []:
+        old, new = str(e.get("old_string") or ""), str(e.get("new_string") or "")
+        if not old or old not in s:
+            return None
+        s = s.replace(old, new) if e.get("replace_all") else s.replace(old, new, 1)
+    return s
+
+
+def _n(srch: dict, text: str) -> int:
+    if srch["kind"] == "文字":
+        return text.count(srch["text"])
+    try:
+        return len(re.findall(srch["text"], text, srch["flags"]))
+    except re.error:
+        return 0
+
+
+def _ok(srch: dict, n: int) -> bool:
+    """壊せるか（run_breaks.count_targets と同じ＝ちょうど1か所・全部を消す形と最初の1か所を使う形は1か所以上）。"""
+    return n == 1 or (n > 1 and bool(srch.get("all") or srch.get("first")))
+
+
+def precise_hits(path: Path, tool: str, ti: dict, lines: list[str],
+                 breaks: list[Path] | None = None) -> list[tuple[str, str]]:
+    """★2026-10-17（184回目・まこさん「CC の案：要として、誤報を無くす直しをする」）＝直した後に壊せなくなる壊すプログラムだけを返す。
+    探す文字を取り出せない壊すプログラムと、直した後の中身を作れないときは、いままでどおり消える行の文字で見る（find_hits）。
+    直す前は消える行の文字だけで見たので、同じ文字の別の行を直しただけでも止めた（2026-10-17 の b48）。"""
+    import run_breaks as rb
+    try:
+        before = path.read_text(encoding="utf-8")
+    except Exception:
+        before = ""
+    after = after_text(tool, ti, before)
+    lib = BREAKS / "lib.sh"
+    lib_text = lib.read_text(encoding="utf-8", errors="ignore") if lib.exists() else ""
+    me = os.path.realpath(path)
+    found, rough = [], []
+    for b in (breaks if breaks is not None else breaks_naming(path.name)):
+        try:
+            items = [it for it in rb.extract_targets(b, lib_text)
+                     if it.get("target") and os.path.realpath(it["target"]) == me]
+        except Exception:
+            items = []
+        srchs = [s for it in items for s in it["searches"]]
+        if not srchs or after is None:
+            rough.append(b)
+            continue
+        for s in srchs:
+            n0, n1 = _n(s, before), _n(s, after)
+            if _ok(s, n0) and not _ok(s, n1):
+                found.append((b.name, f"{s['text'][:80]}（直す前 {n0} か所 → 直した後 {n1} か所）"))
+    return found + (find_hits(path, lines, rough) if rough else [])
 
 
 def first_time(sid: str, key: str) -> bool:
@@ -141,7 +209,7 @@ def main(raw: str) -> int:
     lines = removed_lines(pairs_of(tool, ti, path))
     if not lines:
         return 0
-    hits = find_hits(path, lines)
+    hits = precise_hits(path, tool, ti, lines)
     if not hits:
         return 0
     key = hashlib.sha256(json.dumps([fp, hits], ensure_ascii=False).encode()).hexdigest()
@@ -158,7 +226,50 @@ def main(raw: str) -> int:
     return 2
 
 
+def selftest() -> int:
+    """★2026-10-17＝precise_hits を、一時の置き場の見本のコードと見本の壊すプログラムで試す（本物には書かない）。"""
+    import shutil
+    import tempfile
+    d = Path(tempfile.mkdtemp(prefix="sb_selftest_"))
+    code = d / "x_code.py"
+    body = ("def a():\n    target_line_here()\n    next_line()\n\n"
+            "def b():\n    target_line_here()\n    other()\n")
+    code.write_text(body, encoding="utf-8")
+    head = f'T="{code}"\npython3 - "$T" <<\'PYEOF\'\nimport sys\np = sys.argv[1]\ns = open(p, encoding="utf-8").read()\n'
+    ba = d / "ba.sh"                                 # 探す文字を取り出せる壊すプログラム（a の2行を探す）
+    ba.write_text(head + "old = 'target_line_here()\\n    next_line()\\n'\n"
+                  "if s.count(old) != 1:\n    raise SystemExit(1)\nPYEOF\n", encoding="utf-8")
+    bb = d / "bb.sh"                                 # 探す文字を取り出せない壊すプログラム（式で探す）
+    bb.write_text(head + "# 探す行: target_line_here()\nx = 'target' + '_line_here()'\n"
+                  "s = s.replace(x, 'z', 1)\nPYEOF\n", encoding="utf-8")
+
+    def run(tool, ti, breaks):
+        return precise_hits(code, tool, ti, removed_lines(pairs_of(tool, ti, code)), breaks)
+    E = lambda o, n: {"old_string": o, "new_string": n}            # noqa: E731
+    cases = [
+        ("S1 探す文字を消す Edit → 止まる",
+         run("Edit", E("    target_line_here()\n    next_line()", "    renamed()\n    next_line()"), [ba]), True),
+        ("S2 同じ文字の別の行だけを直す Edit（探す文字は1か所のまま）→ 通る",
+         run("Edit", E("    target_line_here()\n    other()", "    changed()\n    other()"), [ba]), False),
+        ("S3 探す文字を取り出せない壊すプログラムで、消える行の文字が中に在る → 止まる（いままでどおり）",
+         run("Edit", E("    target_line_here()\n    other()", "    changed()\n    other()"), [bb]), True),
+        ("S4 Write で探す文字を消す → 止まる", run("Write", {"content": "def a():\n    pass\n"}, [ba]), True),
+        ("S5 old_string がファイルに無い Edit → いままでどおりの見方（消える行の文字が中に在れば止まる）",
+         run("Edit", E("    target_line_here()\n    zzz()", "    y()"), [ba]), True),
+    ]
+    ng = 0
+    for nm, got, want in cases:
+        ok = bool(got) == want
+        ng += not ok
+        print(f"  {'✅' if ok else '❌'} {nm}" + ("" if ok else f" ← {got}"))
+    shutil.rmtree(d, ignore_errors=True)
+    print(f"自己テスト {len(cases) - ng}/{len(cases)}")
+    return 1 if ng else 0
+
+
 if __name__ == "__main__":
+    if len(sys.argv) == 2 and sys.argv[1] == "--selftest":
+        sys.exit(selftest())
     if len(sys.argv) == 3 and sys.argv[1] == "--try":
         sys.exit(main(Path(sys.argv[2]).read_text(encoding="utf-8")))
     sys.exit(main(sys.stdin.read()))

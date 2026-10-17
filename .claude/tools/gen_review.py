@@ -133,8 +133,11 @@ def skeleton(doc: str, text: str | None = None, old: str | None = None) -> str:
     return "\n".join(L) + "\n"
 
 
-def _resolve(name: str, doc: str) -> str | None:
-    """「ファイル名」から実物のパスを探す（パスつきなら根か SDK から・名前だけなら文書と同じ名前か、決まった置き場を探す）。"""
+def _resolve(name: str, doc: str, table_doc: str | None = None) -> str | None:
+    """「ファイル名」から実物のパスを探す（パスつきなら根か SDK から・名前だけなら文書と同じ名前か、決まった置き場を探す）。
+    ★2026-10-17（184回目・まこさん「要として、不具合1を直す」）＝名前だけの根拠が、表を作ったときの文書（表の1行目の doc=）と
+      同じ名前なら、そのファイルとして探す。直す前は、作業場の結果（cpNN_work/cpNN_result.md）について作った表を、hook 11 が
+      結果の置き場のパスで照らすと、作業場の結果を指す根拠が見つからず止まった（30日で3回＝CP58・CP62・CP65）。"""
     if "/" in name:
         for base in (ROOT, SDK):
             p = os.path.join(base, name)
@@ -143,6 +146,8 @@ def _resolve(name: str, doc: str) -> str | None:
         return None
     if os.path.basename(doc) == name:
         return doc
+    if table_doc and os.path.basename(table_doc) == name and os.path.isfile(table_doc):
+        return table_doc
     for d in SEARCH_DIRS:
         hit = glob.glob(os.path.join(d, "**", name), recursive=True)
         hit = [h for h in hit if "/audits/cp" not in h or "_work/" not in h]
@@ -161,6 +166,8 @@ def check(doc: str, text: str | None = None, review: str | None = None) -> tuple
         review = open(rp, encoding="utf-8").read()
     ng, refs = [], []
     m = re.search(r"doc_sha256=([0-9a-f]{64})", review.splitlines()[0] if review else "")
+    _d = re.search(r"\bdoc=(\S+)", review.splitlines()[0] if review else "")
+    table_doc = os.path.join(ROOT, _d.group(1)) if _d else None
     if not m or m.group(1) != sha(text):
         ng.append("見直し表が、文書のいまの版について書いたものではない（doc_sha256 が違う）＝文書を書き換えた後に、--skeleton で表を作り直して見直す")
     iss = next((ln for ln in review.splitlines() if ln.startswith("争点: ")), "")
@@ -188,7 +195,7 @@ def check(doc: str, text: str | None = None, review: str | None = None) -> tuple
         if not found and not c[3].startswith("該当なし"):
             ng.append(f"②の欄に根拠の「ファイル名:行番号」が無い: {it}")
         for name, line in found:
-            p = _resolve(name, doc)
+            p = _resolve(name, doc, table_doc)
             if not p:
                 ng.append(f"根拠のファイルが見つからない: {name}（{it}）")
                 continue
@@ -234,6 +241,18 @@ def selftest() -> int:
         ("T9 作り直しで前の行の中身を残し、増えた項目だけ <書く> になる",
          ("| 通じる |" in skeleton(doc, body + "\n## 節C\n", fill(sk)) and PLACE in skeleton(doc, body + "\n## 節C\n", fill(sk))), True),
     ]
+    # ★2026-10-17（184回目）＝作業場の結果について作った表を、結果の置き場のパスで照らす（hook 11 と同じ呼び方）。
+    wdoc = os.path.join(d, "w_cp1_result.md")
+    open(wdoc, "w", encoding="utf-8").write(body)
+    rep = os.path.join(d, "x_cp1_audit_report.md")
+    wsk = skeleton(wdoc, body)
+    cases += [
+        ("T12 作業場の名前で根拠を書いた表を、結果の置き場のパスで照らす → 通る",
+         not check(rep, body, fill(wsk, ev="w_cp1_result.md:3"))[0], True),
+        ("T13 表の doc= とも文書とも違い、どこにも無い名前の根拠 → 止まる",
+         not check(rep, body, fill(wsk, ev="nowhere_gen_review_cp1_result.md:3"))[0], False),
+    ]
+    os.remove(wdoc)
     bad = 0
     for name, got, want in cases:
         ok = got == want

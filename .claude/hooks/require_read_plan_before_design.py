@@ -9,9 +9,10 @@
 #   既存の必読ゲート（require_source_read_before_acceptance）は「本文で読んだと書いたものを開いたか」を見るだけで、
 #   「何を読むべきか」を まこさんに先に見せる所が無かった。
 #
-# 何をするか＝.claude/state/acceptance.md（と *_design.md）を Write/Edit する瞬間に、次を見る。
+# 何をするか＝設計書の元（.claude/state/verbatim/<工事名>/やることの表.md）を Write/Edit する瞬間に、次を見る
+#   （2026-10-17 に設計書から移した＝まこさん「設計書を書く＝自動生成の段階でこのhookを走らせる意味はないのでは？」）。
 #   1. 読むもの宣言 .claude/state/design_read_plan.md が在る
-#   2. 宣言の「設計書:」の名前が、書こうとしている設計書の目印（ARC iter="…"）と同じ
+#   2. 宣言の「設計書:」の名前が、工事のフォルダの名前と同じ（宣言が次の工事に替わった後は、工事のフォルダの写しで見る）
 #   3. 宣言に「まこさんの OK:」の行が在り、空でない（★逐語を写す。真偽は機械には分からない＝限界）
 #   4. 宣言をチャットに貼った印（design_read_plan_posted＝宣言の sha256）が一致する
 #   5. （2026-10-01 に外した）宣言の表に書いた「読むもの」を、全部 Read tool で開いている（read_log.txt）
@@ -49,8 +50,30 @@ STATE = os.path.join(ROOT, ".claude", "state")
 SDK = os.path.join(ROOT, "v3-bitget-api-sdk", "bitget-python-sdk-api")
 PLAN = os.path.join(STATE, "design_read_plan.md")
 MARK = os.path.join(STATE, "design_read_plan_posted")
-READ_LOG = os.path.join(STATE, "read_log.txt")
 MILESTONE_DOCS = ("engine_tuner_milestones.md", "engine_tuner_milestones2.md")
+VERBATIM = os.path.join(STATE, "verbatim")
+TODO_NAME = "やることの表.md"                      # 設計書の元（CC が手で書く）
+PLAN_COPY = "読むもの宣言の写し.md"                # 設計書を作ったときに gen_acceptance.py が工事のフォルダに置く写し（gen_acceptance.py:468）
+
+
+def target_work(fpn):
+    """★2026-10-17（184回目・まこさん「hook が見張る相手を、設計書から設計書の元に移す案でOK」）＝書く先が設計書の元
+    （.claude/state/verbatim/<工事名>/やることの表.md）なら工事名を返す。違えば None。承認の控えの置き場は相手にしない。
+    直す前は設計書（acceptance.md・*_design.md）を見張ったが、設計書はプログラムが元から Bash で写すので、30日で直接止めた回は0回。"""
+    if os.path.basename(fpn) != TODO_NAME:
+        return None
+    d = os.path.dirname(fpn)
+    return os.path.basename(d) if os.path.dirname(d) == VERBATIM else None
+
+
+def check_for_work(work, body, plan, mark, copy_text):
+    """設計書の元を書く前の確かめ。宣言の工事名＝工事のフォルダの名前・OK・印・やることの番号と結ぶ要件・要件定義の文書・
+    （engine_tuner の工事なら）マイルストーン2本を、check で見る。宣言が次の工事の物に替わった後に元を直すときは、
+    工事のフォルダの写しの工事名が同じで OK が在れば通す（印は写しには無いので見ない）。"""
+    ng = check(plan, mark, [], f'<!-- ARC iter="{work}" -->', "engine_tuner" in (body or ""))
+    if ng and copy_text and _line(copy_text, "設計書:") == work and (_line(copy_text, "まこさんの OK:") or ""):
+        return []
+    return ng
 
 
 def _read(p):
@@ -144,8 +167,7 @@ def check(plan_text, mark_text, log_lines, design_text, need_milestones):
 
 def cli_check():
     plan = _read(PLAN)
-    log = _read(READ_LOG).splitlines()
-    ng = check(plan, _read(MARK), log, _read(os.path.join(STATE, "acceptance.md")), True)
+    ng = check(plan, _read(MARK), [], "", True)       # ★2026-10-17＝名前を比べるのは、元を書くとき（hook_main）
     ng = [x for x in ng if "印（design_read_plan_posted）" not in x]   # 貼る前の口＝印は見ない
     if ng:
         print(f"❌ 不足 {len(ng)} 件")
@@ -169,15 +191,14 @@ def hook_main():
     if not fp:
         sys.exit(0)
     fpn = os.path.normpath(fp if os.path.isabs(fp) else os.path.join(ROOT, fp))
-    base = os.path.basename(fpn)
-    if not (base == "acceptance.md" or base.endswith("_design.md")):
-        sys.exit(0)
+    work = target_work(fpn)
+    if not work:
+        sys.exit(0)                                  # 設計書の元でなければ見ない（設計書そのものはプログラムが元から写す）
     body = ti.get("content")
     if not isinstance(body, str):
-        body = _read(fpn)
-    need_ms = "engine_tuner" in (body or "")
-    plan = _read(PLAN)
-    ng = check(plan, _read(MARK), _read(READ_LOG).splitlines(), body, need_ms)
+        body = _read(fpn) + "\n" + str(ti.get("new_string") or "") + "\n".join(
+            str((e or {}).get("new_string") or "") for e in ti.get("edits") or [])
+    ng = check_for_work(work, body, _read(PLAN), _read(MARK), _read(os.path.join(os.path.dirname(fpn), PLAN_COPY)))
     if not ng:
         sys.exit(0)
     e = sys.stderr
@@ -258,7 +279,30 @@ def selftest():
         ok = (not bad) and has in body
         print(f"  {'✅' if ok else '❌'} {name}" + ("" if ok else f" ← {bad or '宣言に無い'}"))
         ng += not ok
-    n_all = len(cases) + len(link_cases) + len(plan_cases)
+    # ★2026-10-17（184回目）＝見張る相手を設計書の元に移した（target_work・check_for_work）
+    body8 = "engine_tuner を直す"
+    copy_ok = "【読むもの宣言】\n設計書: x-20260909\nまこさんの OK: 「OK」\n"
+    other = good.replace("設計書: x-20260909", "設計書: z-20261017")
+    todo = os.path.join(VERBATIM, "x-20260909", TODO_NAME)
+    work_cases = [
+        ("T21 元への Write・宣言の工事名が同じ・OK・印が合う → 通る", not check_for_work("x-20260909", body8, good, h, ""), True),
+        ("T22 元への Write・宣言の工事名が違い、写しも無い → 止まる",
+         bool(check_for_work("x-20260909", body8, other, hashlib.sha256(other.encode()).hexdigest(), "")), True),
+        ("T23 宣言が次の工事に替わった後、写しの工事名が同じで OK が在る → 通る",
+         not check_for_work("x-20260909", body8, other, hashlib.sha256(other.encode()).hexdigest(), copy_ok), True),
+        ("T24 写しの OK が空 → 止まる",
+         bool(check_for_work("x-20260909", body8, other, hashlib.sha256(other.encode()).hexdigest(),
+                             copy_ok.replace("「OK」", ""))), True),
+        ("T25 設計書（acceptance.md）は相手にしない", target_work(os.path.join(STATE, "acceptance.md")) is None, True),
+        ("T26 承認の控えの置き場・工事のフォルダの外の やることの表.md は相手にしない",
+         target_work(os.path.join(SDK, ".claude", "ratchet", "acceptance_archive", "verbatim", "x", TODO_NAME)) is None
+         and target_work(os.path.join(STATE, TODO_NAME)) is None and target_work(todo) == "x-20260909", True),
+    ]
+    for name, got, want in work_cases:
+        ok = got == want
+        print(f"  {'✅' if ok else '❌'} {name}")
+        ng += not ok
+    n_all = len(cases) + len(link_cases) + len(plan_cases) + len(work_cases)
     print(f"\n番人: {n_all - ng}/{n_all} pass")
     return 1 if ng else 0
 

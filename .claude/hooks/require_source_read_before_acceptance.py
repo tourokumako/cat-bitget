@@ -171,6 +171,34 @@ def outside_fence(text: str) -> list[str]:
     return out
 
 
+_GEN_START = re.compile(r"^\s*<!--\s*([A-Z][A-Z0-9_]*)_START\b")
+
+
+def outside_generated(lines: list[str]) -> list[str]:
+    """プログラムが書いた所を空行に置き換えて返す（行の数は変えない）。
+    ①行の頭が「［自動］」の行 ②`<!-- 名前_START … -->` から同じ名前の `<!-- 名前_END -->` までの行。
+
+    ★2026-10-17（184回目・まこさん「要として不具合を修正してほしい」「OK.修正進めて」）＝直す前は、プログラムが書いた文の
+      「読んだ」（例＝「［自動］実物のコードから読んだ定義の行」「engine_tuner_gen.py を構文の木で読んだ結果」）を
+      CC の名乗りとして数え、直す相手でない gen_acceptance.py・engine_tuner_gen.py を開けと止めた（30日で少なくとも4回は
+      これだけが理由）。CC が手で書いた所の「読んだ」は、いままでどおり見る。"""
+    out: list[str] = []
+    gen = ""
+    for ln in lines:
+        if gen:
+            out.append("")
+            if re.match(rf"^\s*<!--\s*{gen}_END\b", ln):
+                gen = ""
+            continue
+        m = _GEN_START.match(ln)
+        if m:
+            gen = m.group(1)
+            out.append("")
+            continue
+        out.append("" if ln.lstrip().startswith("［自動］") else ln)
+    return out
+
+
 def _line_values(text: str, prefix: str) -> list[str]:
     """行の頭が prefix の行から、カンマ区切りのパスを集める（重複は残す）。
 
@@ -249,7 +277,7 @@ def claimed_files(text: str) -> list[str]:
     """
     out: list[str] = []
     in_claim = False
-    for ln in outside_fence(text):
+    for ln in outside_generated(outside_fence(text)):
         s = ln.strip()
         # 見出し・区切り線で名乗りの範囲を閉じる
         if s.startswith("#") or s.startswith("---"):
@@ -569,12 +597,30 @@ def selftest() -> int:
     finally:
         shutil.rmtree(_d4, ignore_errors=True)
 
+    # ★2026-10-17（184回目）＝プログラムが書いた所（［自動］の行・<!-- 名前_START --> 〜 _END の囲み）の「読んだ」は名乗りに数えない
+    gen_doc = ("## 7-7 触る関数\n"
+               "［自動］実物のコードから読んだ定義の行\n"
+               "<!-- ACC_CODEREF_START hash=x gen_acceptance.py が自動生成＝手で書き換えない -->\n"
+               "出どころ＝`engine_tuner_gen.py` を構文の木で読んだ結果\n"
+               "<!-- ACC_CODEREF_END -->\n")
+    # T30 プログラムが書いた所のファイル名 → 開いていなくても止まらない
+    if check(gen_doc, []):
+        ng.append(f"T30: プログラムが書いた所の名前で止まった（{check(gen_doc, [])}）")
+    # T31 囲みの外の手書きの「読んだ」 → いままでどおり止まる
+    hand = gen_doc + "\n## ④ ベースアップ\nregime_detection_kb.md を読んだ。\n"
+    if not any("regime_detection_kb.md" in x for x in check(hand, [])):
+        ng.append("T31: 囲みの外の手書きの『読んだ』で止まらなかった")
+    # T32 START だけで END が無い → 後ろは見ない（止めない側＝限界）
+    if check("<!-- ACC_X_START -->\nregime_detection_kb.md を読んだ。\n", []):
+        ng.append("T32: END の無い囲みの後ろを見た")
+
     for x in ng:
         print(f"❌ {x}")
     # ★2026-09-07（113番）＝F1〜F3（囲みの中の見本を宣言として読まない）を足して 19 → 22。
     # ★2026-10-02（147回目）＝N7〜N9（この工事の書き込む道具が作ったファイル）を足して 22 → 25。
     # ★2026-10-16（183回目）＝S1〜S4（読んだ記録はセッションごと）を足して 25 → 29。
-    _n_tests = 29
+    # ★2026-10-17（184回目）＝T30〜T32（プログラムが書いた所の「読んだ」は数えない）を足して 29 → 32。
+    _n_tests = 32
     print(f"{'❌' if ng else '✅'} わざと壊して止まるか試すテスト {_n_tests - len(ng)}/{_n_tests} pass")
     return 1 if ng else 0
 
