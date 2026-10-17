@@ -36,6 +36,8 @@
 #   ② Write/Edit/MultiEdit で acceptance.md ／ *_design.md を書く  … 中身に engine_tuner が在るときだけ
 #   ③ Bash で engine_tuner*.py を python 実行する
 #        除外＝--selftest ／ --verify ／ --identity ／ --help ／ py_compile ／ --dry-run
+#        ★2026-10-17 から＝コマンドの区切りごとに、python の直後の .py が engine_tuner*.py の区切りだけを見て、
+#          除外の旗もその区切りの中だけで見る（試しの道具の引数のパスでは止めない・別の区切りの旗では通さない）
 #        （--dry-run の除外の根拠＝engine_tuner_gen.py:3353 の逐語
 #          「検収専用（selftest／--dry-run）＝採否・本走に使わない」）
 #
@@ -85,9 +87,9 @@ _OLD_SEP = "\x00"                                     # 消される側どうし
 # 探索の経路のファイルの一覧＝H2 の印から読む（★手書きしない＝教訓 L-468）。
 _H2_PASS = os.path.join(ROOT, ".claude", "state", "h2_pass.json")
 
-_RE_PY = re.compile(r"python[0-9.]*\s")
 _RE_SKIP = re.compile(r"--selftest|--verify|--identity|--help|py_compile|--dry-run")
-_RE_TUNER_PY = re.compile(r"(engine_tuner[a-z_]*\.py)")
+# python の直後に書いた .py（-u のような旗は読み飛ばす）。走らせる相手の .py を決める（2026-10-17）
+_RE_RUN_PY = re.compile(r"\bpython[0-9.]*\s+(?:-[A-Za-z]+\s+)*([^\s;|&<>]+\.py)\b")
 _RE_TUNER_NAME = re.compile(r"^engine_tuner[a-z_]*\.py$")
 
 TEMPLATE = """  【目的の照合】
@@ -149,14 +151,19 @@ def is_target(tool, file_path, cmd, content, decl_text=None):
                 return "design", base
         return None, None
     if tool == "Bash":
+        # ★2026-10-17（183回目・まこさん「要として、CCの案で修正する」）＝コマンドを区切り（&&・||・;・|・改行）ごとに見て、
+        #   python の直後に書いた .py が engine_tuner の .py で、その区切りに検査の旗が無いときだけ相手にする。
+        #   直す前は、コマンドのどこかに「python」と「engine_tuner…py」が在れば相手にし、どこかに検査の旗が在れば通した。
+        #   そのため ①試しの道具の引数に engine_tuner のパスが在ると止めた（直近30日で3回）
+        #   ②検査の旗の付いた別のコマンドをつなぐと、engine_tuner の本走も通った。
         x = strip_text(cmd)
-        if not _RE_PY.search(x):
-            return None, None                        # python の実行でなければ通す（読むだけ 等）
-        if _RE_SKIP.search(x):
-            return None, None                        # 検査だけの実行は通す
-        m = _RE_TUNER_PY.search(x)
-        if m:
-            return "run", m.group(1)
+        for seg in re.split(r"&&|\|\||;|\||\n", x):
+            m = _RE_RUN_PY.search(seg)
+            if not m:
+                continue                             # python で .py を走らせる区切りでなければ見ない
+            name = os.path.basename(m.group(1))
+            if _RE_TUNER_NAME.match(name) and not _RE_SKIP.search(seg):
+                return "run", name
         return None, None
     return None, None
 
@@ -569,6 +576,21 @@ def selftest():
          "", False, "既存の行", "既存の行\n足した行"),
         ("42 宣言に 変えない が無ければ observe_diag.py は対象外（従来どおり通る）", "Edit", obs, "",
          "足した行だけ", _decl(now, target="observe_diag.py"), "", False, "既存の行", "足した行だけ"),
+
+        # ---- ★2026-10-17（183回目）＝走らせる物を「python の直後の .py」で見る・検査の旗はその区切りの中だけ ----
+        ("43 ★試しの道具の引数に engine_tuner のパスが在っても通る", B, "",
+         "python3 .claude/tools/try_hooks.py --session x --edit /a/engine_tuner_gen.py --old a --new b", "", None, "", False),
+        ("44 試しの道具の引用符の中の engine_tuner の本走は走らせない＝通る", B, "",
+         'python3 .claude/tools/try_hooks.py --session x --bash "python3 engine_tuner.py --purpose search"', "", None, "",
+         False),
+        ("45 ★検査の旗の付いた別のコマンドをつないでも、engine_tuner の本走は止まる", B, "",
+         "python3 engine_tuner.py --purpose search && python3 x.py --selftest", "", None, "", True),
+        ("46 2つ目の区切りで engine_tuner を走らせると止まる", B, "",
+         "cd v3 && python3 scripts/priority_rebuild/engine_tuner.py --purpose search", "", None, "", True),
+        ("47 time と -u を付けても止まる", B, "",
+         "time python3 -u engine_tuner_exec.py --purpose check 2>&1 | tail -3", "", None, "", True),
+        ("48 検査の旗が同じ区切りに在れば通る", B, "",
+         "python3 engine_tuner_gen.py --selftest 2>&1 | tail -3; echo rc=$?", "", None, "", False),
     ]
     ng_count = 0
     for row in cases:

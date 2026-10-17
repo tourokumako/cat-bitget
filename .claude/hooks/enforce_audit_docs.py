@@ -35,6 +35,7 @@
 #   ⑤この hook のファイル自体を書き換えれば無効にできる（明示の違反）。
 #
 # 試し方: python3 .claude/hooks/enforce_audit_docs.py <request|report> --try <hook の入力の json を書いたファイル>
+#         python3 .claude/hooks/enforce_audit_docs.py --selftest（Bash の見分け方と依頼書への Write・2026-10-17 に足した）
 
 import json
 import os
@@ -48,7 +49,8 @@ import gen_audit_docs as g                                     # noqa: E402
 
 REQ_RE = re.compile(r"/\.claude/audits/inputs/[^/_][^/]*_audit_request\.md$")
 REP_RE = re.compile(r"/\.claude/audits/[^/]+_audit_report\.md$")
-READONLY = ("cat", "grep", "rg", "ls", "wc", "head", "tail", "diff", "shasum", "stat", "find", "awk", "sed", "git")
+READONLY = ("cat", "grep", "rg", "ls", "wc", "head", "tail", "diff", "shasum", "stat", "find", "awk", "sed", "git", "jq",
+            "cmp")   # jq と cmp＝2026-10-17（cmp は2つのファイルを比べるだけ・まこさん「含めてOK」）
 GIT_OK = ("status", "log", "diff", "show", "add", "commit", "ls-files", "grep", "rev-parse", "cat-file")
 FIND_RUN = ("-exec", "-execdir", "-ok", "-okdir", "-delete", "-fprint", "-fprintf", "-fls")
 TOOL = "gen_audit_docs.py"
@@ -57,7 +59,7 @@ TOOL = "gen_audit_docs.py"
 #   （書く先は監査結果の「対象のファイル」の欄。守りの仕組みには道具の側で書かない）。
 # ★2026-10-01（142回目・まこさん「チェック項目を見直しすべきでは？」→ 案に「それならばOK」）＝出す前の見直し表の道具を足した。
 #   `gen_review.py` は依頼書・結果を**読むだけ**で、書く先は見直し表の置き場（.claude/state/reviews/・cp<N>_work/）だけ。
-TOOLS = (TOOL, "apply_audit_fix.py", "gen_review.py")
+TOOLS = (TOOL, "apply_audit_fix.py", "gen_review.py", "try_hooks.py")   # try_hooks.py＝hook に入力を渡すだけ（2026-10-17）
 
 
 def abs_path(p: str, cwd: str) -> str:
@@ -66,38 +68,67 @@ def abs_path(p: str, cwd: str) -> str:
     return os.path.realpath(p if os.path.isabs(p) else os.path.join(cwd or ROOT, p))
 
 
+def _strip_text(cmd: str) -> str:
+    """★2026-10-17（183回目）＝ヒアドキュメントの中身と引用符の中を外す（enforce_purpose_gate の strip_text と同じ外し方）。
+      直す前は外さなかったので、引用符の中の空白で区切り（30日で17回）、文の中の名前で止めた（11回）。"""
+    s = re.sub(r"<<-?\s*[\"']?(\w+)[\"']?.*?^\s*\1\s*$", " ", cmd or "", flags=re.S | re.M)
+    s = re.sub(r'"[^"]*"', '""', s)
+    return re.sub(r"'[^']*'", "''", s)
+
+
+def _is_doc(t: str, word: str) -> bool:
+    """書く先 t が、依頼書・結果ファイルそのものか（名前が word で終わり、作業の置き場 .claude/state の外）。
+    ★2026-10-17＝作業の置き場の見直し表（review_<依頼書の名前>）は、名前の終わりが同じでも依頼書ではない。"""
+    return t.rstrip("/").endswith(word) and ".claude/state/" not in t
+
+
 def bash_bad_parts(cmd: str, word: str) -> list:
-    """word を含む断片のうち、読むだけのコマンドでも gen_audit_docs.py でもないものを返す。"""
+    """word を含む断片のうち、word のファイルを書き替える・消す・動かすものを返す。
+    ★2026-10-17（183回目・まこさん「要だが過剰なので、CCの案で修正」）＝直す前は、word を含む断片の頭の語が
+      読むだけの語か許した道具でなければ止め、書き出し（>）が在れば書く先に関わらず止めた。直近30日で hook 10 が止めた
+      49回のうち47回は、依頼書に触れない操作だった。直した後＝引用符とヒアドキュメントの中を見ない・頭の time と timeout を
+      読み飛ばす・書き出しは書く先が word のときだけ止める・cp は写す先が word のときだけ止める・jq を読むだけの語に足す。
+      rm・mv・tee・sed -i・ほかの書く語と、許していない python の道具は、いままでどおり止める。"""
     bad = []
-    for seg in re.split(r"[;\n]|&&|\|\|", cmd):
+    for seg in re.split(r"[;\n]|&&|\|\|", _strip_text(cmd)):
         for part in seg.split("|"):
             if word not in part:
                 continue
-            for tgt in re.findall(r"\d*>>?\s*([^\s;&|]+)", part):
-                if tgt not in ("/dev/null", "&1", "&2", "&-"):
+            outs = [t for t in re.findall(r"\d*>>?\s*([^\s;&|]+)", part) if t not in ("/dev/null", "&1", "&2", "&-")]
+            if any(_is_doc(t, word) for t in outs):
+                bad.append(part.strip())                 # 書く先が word のファイル
+                continue
+            body = re.sub(r"\d*>>?\s*[^\s;&|]+", " ", part)
+            toks = body.split()
+            while toks and re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", toks[0]):
+                toks.pop(0)
+            while toks and toks[0] in ("time", "timeout"):
+                toks.pop(0)
+                if toks and re.match(r"^\d+[smh]?$", toks[0]):
+                    toks.pop(0)                          # timeout の秒数
+            if not toks:
+                continue
+            head = toks[0].rsplit("/", 1)[-1]
+            args = [t for t in toks[1:] if not t.startswith("-")]
+            if re.match(r"^python[0-9.]*$", head):
+                if not (args and args[0].rsplit("/", 1)[-1] in TOOLS):
                     bad.append(part.strip())
-                    break
-            else:
-                toks = part.split()
-                while toks and re.match(r"^[A-Za-z_][A-Za-z_0-9]*=", toks[0]):
-                    toks.pop(0)
-                if not toks:
-                    continue
-                head = toks[0].rsplit("/", 1)[-1]
-                if re.match(r"^python[0-9.]*$", head):
-                    args = [t for t in toks[1:] if not t.startswith("-")]
-                    if not (args and args[0].rsplit("/", 1)[-1] in TOOLS):
-                        bad.append(part.strip())
-                elif head not in READONLY:
+            elif head == "cp":
+                if args and _is_doc(args[-1], word):
+                    bad.append(part.strip())             # 写す先が word のファイル（写す元が word なのは読むだけ）
+            elif head not in READONLY:
+                bad.append(part.strip())                 # rm・mv・tee・touch・ほかの書く語
+            elif head == "sed" and any(t.startswith("-i") or t == "--in-place" for t in toks):
+                bad.append(part.strip())
+            elif head == "find" and any(t in FIND_RUN for t in toks):
+                bad.append(part.strip())
+            elif head == "git":
+                rest = toks[1:]
+                if len(rest) >= 2 and rest[0] == "-C":
+                    rest = rest[2:]                      # git -C <置き場> <命令>
+                rest = [t for t in rest if not t.startswith("-")]
+                if not rest or rest[0] not in GIT_OK:
                     bad.append(part.strip())
-                elif head == "sed" and any(t.startswith("-i") or t == "--in-place" for t in toks):
-                    bad.append(part.strip())
-                elif head == "find" and any(t in FIND_RUN for t in toks):
-                    bad.append(part.strip())
-                elif head == "git":
-                    rest = [t for t in toks[1:] if not t.startswith("-")]
-                    if not rest or rest[0] not in GIT_OK:
-                        bad.append(part.strip())
     return bad
 
 
@@ -124,8 +155,9 @@ def gate_request(tool: str, ti: dict, cwd: str) -> int:
         if bad:
             return say(["🔒 [hook 10・監査の依頼書は道具でしか作れない] Bash で依頼書に触る、読むだけでないコマンドがあります。",
                         *[f"   ❌ {b}" for b in bad],
-                        "   通るもの＝読むだけのコマンド（cat・grep・ls・wc・head・tail・diff・shasum・stat・find・awk・sed（-i なし）・git の読む語と add・commit）",
-                        "             と python3 .claude/tools/gen_audit_docs.py。"])
+                        "   通るもの＝読むだけのコマンド（cat・grep・ls・wc・head・tail・diff・shasum・stat・find・awk・sed（-i なし）・jq・cmp・git の読む語と add・commit）",
+                        "             と python3 .claude/tools/gen_audit_docs.py（apply_audit_fix.py・gen_review.py・try_hooks.py も）。頭の time と timeout は読み飛ばす。",
+                        "             引用符の中とヒアドキュメントの中は見ない。写す元が依頼書の cp と、依頼書でない所への書き出しも通る（2026-10-17）。"])
     return 0
 
 
@@ -195,7 +227,94 @@ def main(mode: str, raw: str) -> int:
     return 0
 
 
+def selftest() -> int:
+    """★2026-10-17（183回目）＝Bash の見分け方（bash_bad_parts）と、依頼書への Write を試す。何も書かない。"""
+    req = "SDK/.claude/audits/inputs/x_audit_request.md"
+    rep = "SDK/.claude/audits/x_audit_report.md"
+    cases = [
+        ("B1 引用符の中に空白が在る grep → 通る", f'grep -n "^### " {req}', "_audit_request.md", False),
+        ("B2 ヒアドキュメントの中の名前 → 通る",
+         f"cat >> .claude/state/session_worklog_x.md <<'EOF'\n- 依頼書を作った（{req}）\nEOF", "_audit_request.md", False),
+        ("B3 time を付けた依頼書の道具 → 通る", f"time python3 .claude/tools/gen_audit_docs.py result {req} y", "_audit_request.md", False),
+        ("B4 試しの道具の引用符の中 → 通る", f'python3 .claude/tools/try_hooks.py --session s --bash "cat > {req}"',
+         "_audit_request.md", False),
+        ("B5 写す元が依頼書の cp → 通る", f"cp {req} .claude/state/sessions/s/", "_audit_request.md", False),
+        ("B6 写す先が依頼書の cp → 止まる", f"cp a.md {req}", "_audit_request.md", True),
+        ("B7 rm -f → 止まる", f"rm -f {req}", "_audit_request.md", True),
+        ("B8 依頼書への書き出し → 止まる", f"echo hi > {req}", "_audit_request.md", True),
+        ("B9 sed -i → 止まる", f"sed -i '' 's/a/b/' {req}", "_audit_request.md", True),
+        ("B10 mv → 止まる", f"mv {req} /tmp/", "_audit_request.md", True),
+        ("B11 許していない python の道具 → 止まる", f"python3 other.py {req}", "_audit_request.md", True),
+        ("B12 jq → 通る", f"jq -R . {req} | head", "_audit_request.md", False),
+        ("B13 git -C の読む命令 → 通る", f"git -C /a log --oneline -- {req}", "_audit_request.md", False),
+        ("B14 書く先が依頼書でない書き出し → 通る", f"grep -c a {req} > /private/tmp/n.txt", "_audit_request.md", False),
+        ("B15 作業の置き場の見直し表（名前の終わりが同じ）への書き出し → 通る",
+         f"sed '' {req} > .claude/state/sessions/s/review_x_audit_request.md", "_audit_request.md", False),
+        ("B16 結果ファイルへ写す cp（hook 11）→ 止まる", f"cp cp60_work/cp60_result.md {rep}", "_audit_report.md", True),
+        ("B17 cmp で作業場の結果と結果ファイルを比べる（hook 11）→ 通る", f"cmp cp60_work/cp60_result.md {rep}",
+         "_audit_report.md", False),
+        ("R1 結果ファイルへのヒアドキュメントの書き出し（hook 11）→ 止まる",
+         f"cat > {rep} <<'EOF'\n中身\nEOF", "_audit_report.md", True),
+    ]
+    ng = 0
+    for nm, cmd, word, want in cases:
+        got = bool(bash_bad_parts(cmd, word))
+        ok = got == want
+        ng += not ok
+        print(f"  {'✅' if ok else '❌'} {nm}" + ("" if ok else f"（出た結果: {bash_bad_parts(cmd, word)}）"))
+    import contextlib
+    import io
+    with contextlib.redirect_stderr(io.StringIO()):
+        w = gate_request("Write", {"file_path": os.path.join(ROOT, "v3-bitget-api-sdk/bitget-python-sdk-api/.claude/audits/inputs/x_audit_request.md")}, ROOT)
+    ok = w == 2
+    ng += not ok
+    print(f"  {'✅' if ok else '❌'} W1 Write で依頼書を書く → 止まる（{w}）")
+    total = len(cases) + 1
+    print(f"自己テスト {total - ng}/{total}")
+    return 1 if ng else 0
+
+
+def replay(days: int) -> int:
+    """★2026-10-17（183回目）＝直近 days 日の記録で、hook 10・11 が Bash を止めた場面に、いまの見分け方を当て直す。何も書かない。"""
+    import time
+    sys.path.insert(0, os.path.join(ROOT, ".claude", "hooks"))
+    from transcript_rows import rows
+    proj = os.path.expanduser("~/.claude/projects/-Users-tachiharamasako-Documents-GitHub-cat-bitget")
+    cut = time.time() - days * 86400
+    still, gone = [], 0
+    for fn in sorted(os.listdir(proj)):
+        p = os.path.join(proj, fn)
+        if not fn.endswith(".jsonl") or os.path.getmtime(p) < cut:
+            continue
+        cmds, hit = {}, []
+        for o in rows(p):
+            for b in (o.get("message") or {}).get("content") or []:
+                if not isinstance(b, dict):
+                    continue
+                if b.get("type") == "tool_use" and b.get("name") == "Bash":
+                    cmds[b.get("id")] = str((b.get("input") or {}).get("command") or "")
+                elif b.get("type") == "tool_result" and b.get("is_error"):
+                    t = b.get("content")
+                    t = " ".join(x.get("text", "") for x in t if isinstance(x, dict)) if isinstance(t, list) else str(t or "")
+                    for tag, word in (("[hook 10・", "_audit_request.md"), ("[hook 11・", "_audit_report.md")):
+                        if "hook error" in t and tag in t and b.get("tool_use_id") in cmds:
+                            hit.append((cmds[b.get("tool_use_id")], word, tag))
+        for c, w, tag in hit:
+            if bash_bad_parts(c, w):
+                still.append((fn[:8], tag, bash_bad_parts(c, w)[0][:140]))
+            else:
+                gone += 1
+    print(f"直近 {days} 日に hook 10・11 が Bash を止めた {gone + len(still)} 回＝いまの見分け方なら 通る {gone} 回・止まる {len(still)} 回")
+    for s in still:
+        print(f"   止まる: {s[0]} {s[1]} {s[2]}")
+    return 0
+
+
 if __name__ == "__main__":
+    if "--selftest" in sys.argv:
+        sys.exit(selftest())
+    if len(sys.argv) == 3 and sys.argv[1] == "--replay":
+        sys.exit(replay(int(sys.argv[2])))
     if len(sys.argv) == 4 and sys.argv[2] == "--try":
         # 試しのときだけ＝tool_input の "content_file" に書いたファイルの中身を content に入れる（長い中身を json に書かないため）
         _d = json.load(open(sys.argv[3], encoding="utf-8"))

@@ -46,8 +46,12 @@
     ファイル名を打ち間違えただけでも「無い」と判定され、何も開かずに書けてしまうため（86番に記載）。
 
 判定の材料
-  .claude/state/read_log.txt … record_read.sh（PostToolUse on Read）が Read tool の実績を
-  絶対パスで1行ずつ書く。SessionStart の reset_read_log.sh が毎セッション消す。
+  .claude/state/sessions/<セッション>/read_log.txt … record_read.sh（PostToolUse on Read）が Read tool の実績を
+  絶対パスで1行ずつ書く（2026-10-16 からセッションごと）。hook として呼ばれたときは、入力のセッションの記録を読む。
+  承認の前の検査（pre_audit_check.py --check-design）のように入力にセッションが無いときは、いちばん最近に
+  書き足された記録を読む（まこさんが承認を打つのは、CC がその準備をした直後だから）。
+  ★限界＝承認のときに2つのセッションがほぼ同時に Read していると、別のセッションの記録を読むことがある
+  （そのときは、通るべき設計書が止まる側に倒れる）。
 
 限界（正直に書く）
   ・Read tool の offset/limit（一部だけ読む）を区別できない。1行でも開けば「読んだ」になる。
@@ -69,7 +73,7 @@ import tempfile
 
 _REPO = pathlib.Path("/Users/tachiharamasako/Documents/GitHub/cat-bitget")
 _SDK = _REPO / "v3-bitget-api-sdk" / "bitget-python-sdk-api"
-_READ_LOG = _REPO / ".claude" / "state" / "read_log.txt"
+_SESSIONS = _REPO / ".claude" / "state" / "sessions"
 _APPLIED = _SDK / ".claude" / "audits" / "applied_fixes.json"   # 書き込む道具が書いた記録（2026-10-02）
 _ACCEPTANCE_NAMES = ("acceptance.md",)
 
@@ -81,10 +85,29 @@ _FILE_RE = re.compile(r"[A-Za-z0-9_./\-]+\.(?:md|py|json)")
 _STRIP = "`*「」（）()［］[]、。 \t"
 
 
-def read_log_paths() -> list[str]:
-    if not _READ_LOG.exists():
+def _sid_of(d: dict) -> str:
+    """セッションの id（record_read.sh・reset_read_log.sh と同じ決め方）。読めなければ空。"""
+    sid = d.get("session_id") if isinstance(d, dict) else None
+    if not (isinstance(sid, str) and sid.strip()):
+        tp = d.get("transcript_path") if isinstance(d, dict) else None
+        b = pathlib.Path(tp.strip()).name if isinstance(tp, str) and tp.strip() else ""
+        sid = b[:-6] if b.endswith(".jsonl") else b
+    sid = re.sub(r"[^A-Za-z0-9._-]", "_", (sid or "").strip()).lstrip(".")
+    return "" if not sid or set(sid) <= set("._") else sid
+
+
+def read_log_paths(sid: str = "", base: pathlib.Path = _SESSIONS) -> list[str]:
+    """★2026-10-16（183回目・まこさん「よい」）＝セッションごとの記録を読む。直す前は全部のセッションで1つの
+      read_log.txt を読み、別のセッションの始まりで白紙にされた記録で「開いていない」と出た（直近30日で14件）。
+      sid が在ればそのセッションの記録、無ければいちばん最近に書き足された記録。"""
+    if sid:
+        p = base / sid / "read_log.txt"
+    else:
+        logs = sorted(base.glob("*/read_log.txt"), key=lambda q: q.stat().st_mtime)
+        p = logs[-1] if logs else None
+    if p is None or not p.exists():
         return []
-    return [ln.strip() for ln in _READ_LOG.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    return [ln.strip() for ln in p.read_text(encoding="utf-8", errors="replace").splitlines() if ln.strip()]
 
 
 def _opened(token: str, log: list[str]) -> bool:
@@ -340,7 +363,7 @@ def main(argv: list) -> int:
     text = _payload_text(d)
     if not targets_in(text) and not claimed_files(text):
         return 0
-    ng = check(text, read_log_paths())
+    ng = check(text, read_log_paths(_sid_of(d)))
     if not ng:
         return 0
     print("🔒 [必読ゲート・受け入れ条件] 正本を開かずに受け入れ条件を書こうとしています。",
@@ -502,11 +525,56 @@ def selftest() -> int:
     if not any("直す対象を開いていない" in x for x in check(n7, _log_models, _rec)):
         ng.append("N9: この工事が作ったファイルを開かずに通った")
 
+    # ── S1〜S4 読んだ記録はセッションごと（2026-10-16・183回目・まこさん「よい」）──
+    import os
+    import shutil
+    import subprocess
+    import time
+    with tempfile.TemporaryDirectory() as _sd:
+        _b = pathlib.Path(_sd)
+        (_b / "a").mkdir()
+        (_b / "a" / "read_log.txt").write_text("/x/scripts/priority_rebuild/X.py\n", encoding="utf-8")
+        (_b / "b").mkdir()
+        (_b / "b" / "read_log.txt").write_text("", encoding="utf-8")
+        _now = time.time()
+        os.utime(_b / "a" / "read_log.txt", (_now - 20, _now - 20))
+        os.utime(_b / "b" / "read_log.txt", (_now - 10, _now - 10))
+        # S1 別のセッション（b）が後から始まっても、a の記録は残る
+        if "/x/scripts/priority_rebuild/X.py" not in read_log_paths("a", _b):
+            ng.append("S1: 別のセッションが始まった後に、先のセッションの記録が読めない")
+        # S2 別のセッション（a）の記録では通らない
+        if read_log_paths("b", _b):
+            ng.append("S2: 別のセッションの記録が混じっている")
+        # S3 セッションを渡さないときは、いちばん最近に書き足された記録（a を後から書き足した）
+        with open(_b / "a" / "read_log.txt", "a", encoding="utf-8") as _fh:
+            _fh.write("/x/Y.md\n")
+        os.utime(_b / "a" / "read_log.txt", (_now, _now))
+        if "/x/Y.md" not in read_log_paths("", _b):
+            ng.append("S3: セッションを渡さないときに、いちばん最近に書き足された記録を読まない")
+    # S4 本物の record_read.sh が、セッションの置き場に書き、共有の read_log.txt を変えない
+    _sid4 = "_selftest_record_read"
+    _d4 = _SESSIONS / _sid4
+    _shared = _REPO / ".claude" / "state" / "read_log.txt"
+    _before = _shared.read_bytes() if _shared.exists() else None
+    shutil.rmtree(_d4, ignore_errors=True)
+    try:
+        subprocess.run(["bash", str(_REPO / ".claude" / "hooks" / "record_read.sh")],
+                       input=json.dumps({"session_id": _sid4, "tool_input": {"file_path": "/x/S4.py"}}),
+                       capture_output=True, text=True)
+        _after = _shared.read_bytes() if _shared.exists() else None
+        if read_log_paths(_sid4) != ["/x/S4.py"]:
+            ng.append(f"S4: record_read.sh がセッションの置き場に書いていない（{read_log_paths(_sid4)}）")
+        if _after != _before:
+            ng.append("S4: record_read.sh が共有の read_log.txt を書き替えた")
+    finally:
+        shutil.rmtree(_d4, ignore_errors=True)
+
     for x in ng:
         print(f"❌ {x}")
     # ★2026-09-07（113番）＝F1〜F3（囲みの中の見本を宣言として読まない）を足して 19 → 22。
     # ★2026-10-02（147回目）＝N7〜N9（この工事の書き込む道具が作ったファイル）を足して 22 → 25。
-    _n_tests = 25
+    # ★2026-10-16（183回目）＝S1〜S4（読んだ記録はセッションごと）を足して 25 → 29。
+    _n_tests = 29
     print(f"{'❌' if ng else '✅'} わざと壊して止まるか試すテスト {_n_tests - len(ng)}/{_n_tests} pass")
     return 1 if ng else 0
 

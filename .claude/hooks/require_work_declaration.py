@@ -12,7 +12,9 @@
 止めるもの＝Write・Edit・MultiEdit・NotebookEdit・読むだけでない Bash・Agent。
 止めないもの＝読む操作／検査だけの実行（--selftest・--verify・--check・--help・--dry・try_hooks.py・next_move.py。--write の付く物は除く）／
   セッションの置き場（ToDo）・worklog・memory・計画のファイルへの書き込み／サブエージェント／記録が読めないとき／
-  引き継ぎの文書の元データ（next_step_src.json）への書き込みと、next_step を作り直す操作（tidy_next_step.py）。
+  引き継ぎの文書の元データ（next_step_src.json）への書き込みと、next_step を作り直す操作（tidy_next_step.py）／
+  ★2026-10-17 から＝監査のセッション（require_read_used._auditor_session で見分ける）／読むだけの調べ（作業場と /tmp への書き出し・
+  git -C の読む命令・git check-ignore）。検査だけの実行と読むだけの調べは、コマンドの区切りごとに見る（check_or_read）。
 
 なぜこの形か（worklog 20261001 §14）＝前の ToDo の hook（enforce_todo_declaration）は、7日で232回 止め、うち96回は同じ操作の繰り返しで通った。
   原因＝①全文を画面に出すために必ず1回 止まる ②同じ返信の中の貼り付けを、hook が読めないことが在る ③書き替えるたびに、貼る手続きと証拠のファイルが要る。
@@ -31,7 +33,9 @@ import tempfile
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from require_check_after_failure import ACT_TOOLS, is_read  # 読むだけの判定を、動いている hook と同じものにする
+from require_check_after_failure import ACT_TOOLS, is_read, bash_is_read  # 読むだけの判定を、動いている hook と同じものにする
+from require_read_used import _auditor_session  # 監査のセッションの見分け方を1か所にする（2026-10-17）
+from transcript_rows import rows                # 記録は会話の本物の行だけを読む
 
 ROOT = HERE.parent.parent
 SESSIONS = ROOT / ".claude" / "state" / "sessions"
@@ -44,6 +48,9 @@ HEADS = ("【作業内容】", "【目的】", "【経緯】", "【ゴール】"
 DECL_RE = re.compile(r"【宣言】\s*ToDo\s*の?\s*(\d+)\s*番")
 DOING = "★いまここ"
 CHECK_ONLY = re.compile(r"--selftest|--verify|--check|--help|--dry\b|py_compile|try_hooks\.py|next_move\.py")
+TMP_OUT = re.compile(r"\d?>>?\s*(/private)?/tmp/\S+")            # 作業場と /tmp への書き出し（2026-10-17）
+GIT_EXTRA = re.compile(r"^git\s+check-ignore(\s|$)")               # 無視される置き場かを見るだけ（2026-10-17）
+TOOL_CHECK = re.compile(r"^python[0-9.]*\s+\S*(try_hooks|next_move)\.py(\s|$)")  # 書き込まない道具（2026-10-17）
 MIN_BODY = 8                                   # 見出しの後の中身の字数の下限（見出しだけの宣言を通さない）
 FILE_TOOLS = ("Write", "Edit", "MultiEdit", "NotebookEdit")
 
@@ -121,7 +128,8 @@ def check(transcript: pathlib.Path, todo: pathlib.Path):
         return f"このセッションの ToDo が無い（{todo}）。ToDo を書き、いまやる1件に「{DOING}」を付ける"
     nums = doing_numbers(todo.read_text(encoding="utf-8", errors="replace"))
     if len(nums) != 1:
-        return f"ToDo の「{DOING}」が {len(nums)} 件（ちょうど1件にする）＝{todo}"
+        return (f"ToDo の「{DOING}」が {len(nums)} 件（ちょうど1件にする）＝{todo}。"
+                f"数えるのは、表の状態の欄が「{DOING}」の文字だけの行（説明を足すと数えない）")
     num = nums[0]
     ev = events(transcript)
     last = None                                # いちばん新しい num 番の宣言の（場所, 足りない所）
@@ -141,6 +149,29 @@ def check(transcript: pathlib.Path, todo: pathlib.Path):
     return f"ToDo の {num}番の宣言の後に、まこさんの返事が まだ無い"
 
 
+def check_or_read(cmd: str) -> bool:
+    """★2026-10-17（183回目・まこさん「要とし、CCの案で修正する」）＝コマンドを区切り（&&・||・;・|・改行）ごとに見て、
+      全部が「検査だけの実行」か「読むだけの調べ」なら通す。直す前は、コマンドのどこかに --check などの文字が在れば通したので、
+      後ろに書き込みをつないでも通った。引用符の中は見ない（試しの道具の --bash "…" の中の --write を数えない）。
+      読むだけの調べに足した物＝作業場と /tmp への書き出し・git -C <置き場> <読む命令>・git check-ignore
+      （直近7日で、中身は読むだけの調べを5回 止めていた）。$( ) と for のくり返しは広げない（中で何が走るかを決められない）。"""
+    c = re.sub(r"'[^']*'|\"[^\"]*\"", "''", str(cmd or ""))
+    c = TMP_OUT.sub(" ", c)
+    if re.search(r">(?!\s*/dev/null|&)", c.replace("2>&1", "")):
+        return False                            # 作業場と /tmp の外への書き出しは止める
+    for seg in re.split(r"&&|\|\||;|\||\n", c):
+        s = re.sub(r"^\s*(time|timeout\s+\d+)\s+", "", seg).strip()
+        s = re.sub(r"^git\s+-C\s+\S+\s+", "git ", s)
+        if not s or bash_is_read(s) or GIT_EXTRA.match(s):
+            continue
+        if TOOL_CHECK.match(s):
+            continue
+        if re.match(r"python[0-9.]*\s", s) and CHECK_ONLY.search(s) and "--write" not in s:
+            continue
+        return False
+    return True
+
+
 def gate(d: dict):
     """止める理由（文）を返す。通すときは None。"""
     if d.get("agent_type"):
@@ -153,13 +184,17 @@ def gate(d: dict):
         return None
     if name == "Bash":
         cmd = str(inp.get("command", ""))
-        if re.search(r"\bpython[0-9.]*\s", cmd) and CHECK_ONLY.search(cmd) and "--write" not in cmd:
-            return None                        # 検査だけの実行は通す
+        if check_or_read(cmd):
+            return None                        # 検査だけの実行と、読むだけの調べは通す（区切りごとに見る・2026-10-17）
         if re.search(r"\bpython[0-9.]*\s+\S*tidy_next_step\.py(\s|$)", cmd):
             return None                        # ★2026-10-12＝引き継ぎの文書（next_step）を作り直す操作は、記録と同じ扱いで通す
     tp, sid = d.get("transcript_path"), session_id(d)
     if not tp or not sid or not pathlib.Path(tp).exists():
         return None                            # 記録が読めないときは止めない（判定できないため）
+    # ★2026-10-17（183回目・まこさん「監査にはあてない」）＝監査のセッション（別のセッションで依頼書を渡して動かすもの）は止めない。
+    #   見分け方は require_read_used._auditor_session と同じ（決まりを1か所にする）。
+    if _auditor_session(list(rows(pathlib.Path(tp)))):
+        return None
     return check(pathlib.Path(tp), SESSIONS / sid / "session_todo.md")
 
 
@@ -235,7 +270,31 @@ def selftest() -> int:
             dict(base, tool_name="Bash", tool_input={"command": "python3 .claude/tools/tidy_next_step.py --selftest"}))
         run("T13 宣言なしで、ふつうのファイルへの書き込み → 止まる", [_user("始めて")], None, True,
             dict(base, tool_name="Edit", tool_input={"file_path": "/tmp/a.py"}))
-    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 13件のうち、期待と違う {ng} 件")
+        # ★2026-10-17（183回目）＝区切りごとに見る・読むだけの調べ・監査のセッション
+        def bash(c):
+            return dict(base, tool_name="Bash", tool_input={"command": c})
+        run("T14 検査の旗の後ろに書き込みをつなぐ → 止まる", [_user("始めて")], None, True,
+            bash("python3 x.py --check; cp a b"))
+        run("T15 試しの道具の引用符の中の --write → 通る", [_user("始めて")], None, False,
+            bash('python3 .claude/tools/try_hooks.py --session x --bash "python3 y.py --write"'))
+        run("T16 作業場への書き出し → 通る", [_user("始めて")], None, False,
+            bash("git status --short > /private/tmp/claude-501/x/s.txt; wc -l /private/tmp/claude-501/x/s.txt"))
+        run("T17 作業場の外への書き出し → 止まる", [_user("始めて")], None, True,
+            bash("git status --short > .claude/state/s.txt"))
+        run("T18 git -C の読む命令 → 通る", [_user("始めて")], None, False,
+            bash("git -C /a/b log --oneline -3 && shasum -a 256 x.md"))
+        run("T19 git check-ignore → 通る", [_user("始めて")], None, False, bash("git check-ignore -v a.md"))
+        run("T20 time を付けた自己テスト → 通る", [_user("始めて")], None, False,
+            bash("time python3 a.py --selftest 2>&1 | tail -3"))
+        run("T21 最初の発言に依頼書のパス（監査のセッション）・ToDo が無い → 通る",
+            [_user("監査してほしい v3/.claude/audits/inputs/2026-10-13_x_impl_cp78_audit_request.md")], None, False,
+            bash("cp a b"))
+        run("T22 最初の発言が「監査して」で始まる（IDE の塊つき）・ToDo が無い → 通る",
+            [_user("<ide_opened_file>The user opened a.md</ide_opened_file>\n監査して 実装の監査の依頼書 CP76")], None, False,
+            bash("cp a b"))
+        run("T23 最初の発言が【相談】で始まる（普通のセッション）・ToDo が無い → 止まる",
+            [_user("【相談】監査の依頼書の作り方")], None, True, bash("cp a b"))
+    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 23件のうち、期待と違う {ng} 件")
     return 1 if ng else 0
 
 

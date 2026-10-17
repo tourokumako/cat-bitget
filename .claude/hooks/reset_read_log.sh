@@ -1,11 +1,14 @@
 #!/bin/bash
 # reset_read_log.sh — SessionStart
-# 新セッション開始時に read_log をリセット（前セッションの読了を引き継がない）。
+# 新しいセッションの始めに、前のセッションの印を片づけ、このセッションの ToDo の置き場と必読の一覧を表示する。
 # ★2026-10-15＝必読を止める hook（require_read_before_work.sh）は 2026-10-01 から登録が無い＝読み直すまで止めることはしていない。
 
 STATE_DIR="/Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state"
 mkdir -p "$STATE_DIR"
-: > "$STATE_DIR/read_log.txt"
+# ★2026-10-16（183回目・まこさん「よい」）＝共有の read_log.txt を白紙にする行を外した。読んだ記録は record_read.sh が
+#   セッションごとの置き場（sessions/<セッション>/read_log.txt）に書くので、新しいセッションは空の記録から始まる
+#   （前のセッションの読了を引き継がない、という元の狙いは変わらない）。直す前は、新しく始まったセッションが、
+#   同時に動いている別のセッションの記録まで消していた。
 # ★2026-10-15（hook の見直しの4本目・まこさん「要る 不具合はすべて修正する」）＝使う hook の無い印の片づけを外した
 #   （show_budget_before_design・require_banned_words_check・require_analysis_before_proposal・require_probe_naming・
 #     track_fastmode_data_read・require_comprehension_check は登録が無い）。残すのは、稼働中の hook が読む印だけ。

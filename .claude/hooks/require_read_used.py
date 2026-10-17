@@ -142,12 +142,19 @@ def _missing(ranges: list, n: int) -> list:
     return [g for g in gaps if g[0] <= g[1]]
 
 
+_IDE_TAGS = re.compile(r"<(ide_opened_file|ide_selection|browser_instruction)>.*?</\1>", re.S)
+
+
 def _auditor_session(objs) -> bool:
-    """監査人のセッションか＝まこさんの最初の発言に監査依頼書のパス（…_audit_request.md）が在る。
+    """監査人のセッションか＝まこさんの最初の発言に監査依頼書のパス（…_audit_request.md）が在るか、
+    最初の発言が「監査して」で始まる（IDE が足す塊は除いて見る）。
     ★2026-10-06（修正依頼の R2）＝依頼書の末尾の「まこさん向け呼びかけ例文」が「監査してほしい」と依頼書のパスの形
-      （CP62 の監査人の記録 58d612d0 の最初の発言も同じ形）。メインのセッションは依頼書を読むが、最初の発言には書かない。"""
+      （CP62 の監査人の記録 58d612d0 の最初の発言も同じ形）。メインのセッションは依頼書を読むが、最初の発言には書かない。
+    ★2026-10-17（183回目・まこさん「監査にはあてない」）＝「監査して 実装の監査の依頼書 CP76」のように、パスを書かずに
+      始めた監査のセッション（ddf83350）を取りこぼしていた。直近7日の記録35本で、監査10本は全部 当たり、普通25本は当たらない。
+      require_work_declaration も、この関数で監査のセッションを見分ける（決まりを1か所にする）。"""
     first = next((user_text(o) for o in objs if o.get("type") == "user" and user_text(o)), "")
-    return "_audit_request.md" in first
+    return "_audit_request.md" in first or _IDE_TAGS.sub("", first).lstrip().startswith("監査して")
 
 
 def check_handover(objs, texts: list, review_for=None) -> list:
