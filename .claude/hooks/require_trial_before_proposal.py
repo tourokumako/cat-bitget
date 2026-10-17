@@ -30,7 +30,10 @@ def proposal_lines(text: str) -> list:
             if inside:
                 out.append(s)
             continue
-        if HEAD_RE.match(ln):
+        # ★2026-10-17（188回目・まこさん「直す」）＝囲み（```）の中の見出しは、説明や手順の例なので案の見出しと数えない。
+        #   直す前は、CC が問題点の説明で囲みの中に見出しの例を書いただけで「試しの記録が無い」と止めた。
+        #   OK された案の逐語のファイル 271本で、囲みの外の案の見出しは320行・囲みの中は0行（本物の案を見落とさない）。
+        if not fence and HEAD_RE.match(ln):
             inside = True
             out.append(s)
             continue
@@ -58,10 +61,26 @@ def check(text: str, sid: str) -> list:
     bad = []
     if not rec.get("ok"):
         bad.append(f"試しの設計書が検査を通っていない（A群 {len(rec.get('a_bad') or [])} 件・古い語 {len(rec.get('stale') or [])} 件）。直して走らせ直す: {how}")
-    have = {ln.strip() for ln in (rec.get("draft") or "").splitlines() if ln.strip()}
-    miss = [ln for ln in lines if ln not in have]
+    draft = rec.get("draft") or ""
+    have = {ln.strip() for ln in draft.splitlines() if ln.strip()}
+    miss = [i for i, ln in enumerate(lines) if ln not in have]
     if miss:
-        bad.append(f"返信の案の行のうち {len(miss)} 行が、試した下書きに無い（最初＝「{miss[0][:60]}」）。案を下書きに書いて試し直す: {how}")
+        # ★2026-10-17（188回目・まこさん「何度も同じ確認を繰り返さないための修正は上記でよい」「１は修正する」）
+        #   直す前＝案の後ろに書いた報告の文（例「worklog に書きました」）でも「下書きに足して試し直す」と案内した。
+        #   案は変わっていないのに12〜17分の試しを走らせ直させ（直近30日の止め15回のうち9回）、しかも報告の文が
+        #   設計書に写る形になった（gen_acceptance.py は、最後の見出しより後ろの行もその節に写す＝:358-371）。
+        #   直した後＝試した案の行が全部 返信に在り、合わない行が全部 その後ろ（下書きと合う最後の行より後ろ）なら、
+        #   後ろの文を消して出し直すよう案内し、試しは走らせ直させない。止める範囲は変えない。
+        tried = proposal_lines(draft)
+        matched = [i for i, ln in enumerate(lines) if ln in have]
+        trailing = bool(tried) and set(tried) <= set(lines) and bool(matched) and min(miss) > max(matched)
+        first = lines[miss[0]][:60]
+        if trailing:
+            bad.append(f"案の後ろに、試した下書きに無い文が {len(miss)} 行ある（最初＝「{first}」）。案の中身は試したとおり。"
+                       "後ろの文を消して、案だけをもう一度出す。試しは走らせ直さない（報告は案より前に書く。"
+                       "案の後ろの文は、設計書を作るプログラムがその節の中身として写す）")
+        else:
+            bad.append(f"返信の案の行のうち {len(miss)} 行が、試した下書きに無い（最初＝「{first}」）。案を下書きに書いて試し直す: {how}")
     return bad
 
 

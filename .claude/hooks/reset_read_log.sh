@@ -12,7 +12,9 @@ mkdir -p "$STATE_DIR"
 # ★2026-10-15（hook の見直しの4本目・まこさん「要る 不具合はすべて修正する」）＝使う hook の無い印の片づけを外した
 #   （show_budget_before_design・require_banned_words_check・require_analysis_before_proposal・require_probe_naming・
 #     track_fastmode_data_read・require_comprehension_check は登録が無い）。残すのは、稼働中の hook が読む印だけ。
-rm -f "$STATE_DIR/worklog_ok" "$STATE_DIR/fastmode_record_pending"  # fast-mode の記録の検査（enforce_worklog_on_experiment）の印を新セッションでリセット（2026-07-16）
+# ★2026-10-17（188回目・まこさん「修正する」）＝worklog_ok と fastmode_record_pending の片づけを外した。
+#   187回目に enforce_worklog_on_experiment がこの2つを読まなくなり、読む hook が登録に無い（読むのは登録の無い
+#   track_fastmode_data_read.sh と enforce_todo_declaration.py だけ）。残すと hook_health_check.sh が毎回 異常として出す。
 rm -f "$STATE_DIR/flow_declaration_posted"  # フロー宣言の「チャットに貼った」確認マーカーを新セッションでリセット＝新しいセッションでも実行前に必ずまこさんの目に入る（enforce_flow_declaration.sh・2026-07-26 まこさん指示）
 # ★2026-09-06（まこさん承認・iter="todo-gate-per-session-20260906"）＝ToDo ゲートの状態ファイル3つは、
 #   セッションごとの置き場（$STATE_DIR/sessions/<セッションの id>/）に在る（enforce_todo_declaration.py の paths_of）。
