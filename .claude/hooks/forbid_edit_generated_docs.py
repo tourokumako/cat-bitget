@@ -5,7 +5,7 @@
 設計書 docs-autogen-next-step-pdca-20260917 の 4-3（まこさん決定「４つともCCのおすすめのやり方でOK」の③）。
 
 何を止めるか
-  ① .claude/state/next_step.md＝1行目に生成の目印（<!-- NEXT_STEP_GENERATED hash=…）が在れば、Write・Edit・MultiEdit を全部 止める。
+  ① .claude/state/next_step.md と、その控え .claude/state/next_step_reference.md（2026-10-12 から）＝1行目に生成の目印（<!-- NEXT_STEP_GENERATED hash=…）が在れば、Write・Edit・MultiEdit を全部 止める。
      直す道＝元データ .claude/state/next_step_src.json を直して `python3 .claude/tools/tidy_next_step.py --write`。
   ② .claude/rules/pdca_flow.md＝目印 <!-- HOOK_LIST_START … --> 〜 <!-- HOOK_LIST_END --> の中に当たる直しを止める。
      Edit・MultiEdit＝消す文字（old_string）が囲みと重なれば止める。Write＝囲みの中身が変われば止める。
@@ -20,7 +20,9 @@
 
 止めないもの
   ・セッションの id が無い呼び方（承認のプログラムが設計書の不足を探すために hook を試しに呼ぶとき。本物の Write・Edit には必ず付く）。
-  ・サブエージェント／読めない入力／本体の例外（fail-open）。★Bash での書き替えは見ない＝Stop hook の --verify がハッシュ値で止める。
+  ・サブエージェント／読めない入力／本体の例外（fail-open）。★Bash での書き替えは見ない。
+    next_step.md と pdca_flow.md の一覧は、Stop hook（enforce_next_step_tidy.sh）の --verify がハッシュ値で止める。
+    ★acceptance.md（設計書）は、Bash で書き替えても止める物が無い（gen_acceptance.py --verify を呼ぶのは、登録の無い check_all_before_handoff.py だけ・2026-10-17 に確かめた）。
 
 限界（正直に）
   ・この hook と道具そのものを書き換えれば無効にできる（差分は git に出る）。

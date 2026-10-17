@@ -42,7 +42,36 @@ print(s)" 2>/dev/null)
 printf '%s' "$CMD_X" | grep -qE 'python[0-9.]*[[:space:]]' || exit 0
 
 # /private/tmp・/tmp・scratchpad 配下の .py を実行対象にしているか（＝自作の検証/観察スクリプト）
-bad=$(printf '%s' "$CMD_X" | grep -oE '(/private/tmp|/tmp)/[^ "'"'"';|&]*\.py|[^ "'"'"';|&]*scratchpad/[^ "'"'"';|&]*\.py')
+# ★2026-10-17（185回目・まこさん「必要。CCの案で修正してよい」）＝名前がどこかに在れば止める形をやめた。
+#   止めるのは ①python がその .py をプログラムとして走らせる ②cp・mv ほかでその .py を写す（写して走らせる回り込み）の2つだけ。
+#   直す前の誤報＝rm で消すだけ（2026-10-06）・試しの道具の引数（2026-10-10）を止めた。
+#   自己テスト＝python3 .claude/hooks/enforce_observe_diag_only_selftest.py --selftest
+bad=$(printf '%s' "$CMD_X" | python3 -c "
+import sys, re
+s = sys.stdin.read()
+SCR = re.compile(r'(?:/private/tmp|/tmp)/[^\s;|&]*\.py|[^\s;|&]*scratchpad/[^\s;|&]*\.py')
+ASSIGN = re.compile(r'^[A-Za-z_][A-Za-z_0-9]*=')
+WRAP = set(['time', 'nice', 'nohup', 'timeout', 'exec', 'command', 'env', 'xargs', 'caffeinate'])
+COPY = set(['cp', 'mv', 'install', 'ln', 'rsync'])
+out = []
+for seg in re.split(r'[;|&\n]+', s):
+    toks = seg.split()
+    i = 0
+    while i < len(toks) and (ASSIGN.match(toks[i]) or toks[i] in WRAP or re.fullmatch(r'[0-9.]+[smhd]?', toks[i]) or (i > 0 and toks[i].startswith('-') and toks[i - 1] in WRAP)):
+        i += 1
+    if i >= len(toks):
+        continue
+    head = toks[i].rsplit('/', 1)[-1]
+    if re.fullmatch(r'python[0-9.]*', head):
+        j = i + 1
+        while j < len(toks) and toks[j].startswith('-'):
+            j += 1
+        if j < len(toks) and SCR.fullmatch(toks[j]):
+            out.append(toks[j])
+    elif head in COPY:
+        out += [t for t in toks[i + 1:] if SCR.fullmatch(t)]
+print(chr(10).join(out))
+" 2>/dev/null)
 [ -z "$bad" ] && exit 0
 
 echo "🔒 [検証は observe_diag だけ・safety hook] scratchpad・/tmp の自作スクリプトの実行はブロックします（まこさん指示 2026-07-24）。" >&2

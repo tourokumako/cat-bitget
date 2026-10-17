@@ -15,12 +15,17 @@
   3. ❌ が在るとき、いまの返信（まこさんの最後の発言より後・hook の差し戻しより後だけ＝2026-10-01 の _turn_text の直しと同じ）が
      お願いの返信（下の ASK_RE＝承認・OK・お願いします の語か、設計書・依頼書・手書きの文書・読むもの宣言へのリンク）なら止める（終了コード 2）。
      ★お願いの返信でなければ通す（答える・報告する返信を止めない）。
+     ★2026-10-17（185回目）＝お願いの返信は、いまの工事の文書へのリンク（設計書・読むもの宣言・その工事の依頼書と
+       手書きの文書）と、お願いの語の、両方が在るときだけ（直す前は、どちらか一方で止め、10回とも関係の無い返信を止めた）。
+       監査のセッション（require_read_used._auditor_session）では止めない。
   4. 止めるのは、まこさんの同じ発言に対して2回まで。3回目は理由を出して通す（2026-10-01 に止まり続ける hook が進行を妨げた＝worklog 20261001 §4〜§6）。
 限界（正直に）
   ・お願いかどうかは、語とリンクで見る（形の見分けは残る）。段の見分けと条件は next_move.py が実物から読む＝そちらは形に依らない。
+  ・リンクを書かずに、言葉だけで OK をお願いする返信は見ない（2026-10-17 から）。相談のセッションは見分けていない。
   ・条件は「走らせて落ちたか」まで。中身が正しいかは見ない（見直し表・監査・まこさんの目）。
   ・恒久71番＝読むための hook。壊すプログラムと自己テストは付けない。--try <記録> で、過去の記録に対して何が止まるかを出して確かめる。
 使い方: （hook）標準入力に Stop の JSON ／ --try <やり取りの記録 .jsonl> [--work <工事名>]（何も止めない・何も書かない）
+        ／ --selftest（お願いの返信の見分け方 S1〜S6・2026-10-17）
 """
 import json
 import os
@@ -36,7 +41,6 @@ sys.path.insert(0, ROOT + "/.claude/tools")
 #   （165回目の記録で試した＝1語で見ると 51回のうち 23回が当たった）。
 ASK_RE = re.compile(r"(承認|OK|オーケー)(を|の|は)?\s*(お願い|もらえ|いただ|ください|頂)|お願いします|お願いいたします|"
                     r"打ってください|決めてください|確認してください|よろしいでしょうか|見ていただけ|決めていただ")
-LINK_RE = re.compile(r"\]\([^)\s]*(?:acceptance\.md|_audit_request\.md|監査依頼の手書き|design_read_plan\.md)[^)]*\)")
 
 
 def current_work() -> str:
@@ -143,8 +147,26 @@ def pre() -> int:
     return 2
 
 
-def is_ask(text: str) -> bool:
-    return bool(ASK_RE.search(text or "") or LINK_RE.search(text or ""))
+LINK_ANY_RE = re.compile(r"\]\(([^)\s]+)\)")
+
+
+def work_links(text: str, work: str) -> list:
+    """返信の中の、いまの工事の文書へのリンク（★2026-10-17・185回目）。"""
+    names = {work, work.replace("-", "_")} if work else set()
+    out = []
+    for link in LINK_ANY_RE.findall(text or ""):
+        base = os.path.basename(link.split("#")[0])
+        if base in ("acceptance.md", "design_read_plan.md"):
+            out.append(link)
+        elif ("_audit_request.md" in base or "監査依頼の手書き" in link) and any(n and n in link for n in names):
+            out.append(link)
+    return out
+
+
+def is_ask(text: str, work: str) -> bool:
+    """お願いの返信＝いまの工事の文書へのリンクと、お願いの語の両方が在る（★2026-10-17・185回目）。
+    直す前は、どちらか一方で「お願い」と見た＝工事と関係の無い返信も止めた（10月11日・12日の10回）。"""
+    return bool(ASK_RE.search(text or "")) and bool(work_links(text, work))
 
 
 def _count(session: str, uid: str) -> int:
@@ -186,8 +208,11 @@ def hook() -> int:
         return 0
     import require_design_check_before_approval as rd
     from enforce_chat_writing import last_chat_text
+    from require_read_used import _auditor_session
+    if _auditor_session(rd._load_rows(tp)):
+        return 0                                             # ★2026-10-17＝監査のセッションでは止めない（段は、メインの工事の物）
     text = rd._turn_text(d)
-    if not is_ask(text):
+    if not is_ask(text, work):
         return 0
     _t, uid = last_chat_text(tp)
     n = _count(session, uid or "")
@@ -227,7 +252,7 @@ def try_transcript(tp: str, work: str = "") -> int:
                 continue
             if cur:
                 turns += 1
-                in_ask += int(is_ask("\n".join(cur)))
+                in_ask += int(is_ask("\n".join(cur), work))
             cur = []
         elif r.get("type") == "assistant":
             for b in (r.get("message") or {}).get("content") or []:
@@ -235,12 +260,38 @@ def try_transcript(tp: str, work: str = "") -> int:
                     cur.append(b.get("text") or "")
     if cur:
         turns += 1
-        in_ask += int(is_ask("\n".join(cur)))
+        in_ask += int(is_ask("\n".join(cur), work))
     print(f"返信の区切り {turns} 回のうち、お願いの返信と見る物 {in_ask} 回。❌ が在る状態なら、その {in_ask} 回が止まる（同じ発言につき2回まで）")
     return 0
 
 
+def selftest() -> int:
+    """お願いの返信の見分け方（★2026-10-17・185回目）。S1〜S5＝is_ask／S6＝監査のセッションの見分け方。"""
+    from require_read_used import _auditor_session
+    w = "k4-reference-known-20261011"
+    acc = "[設計書](.claude/state/acceptance.md)"
+    req_now = "[依頼書](SDK/.claude/audits/inputs/2026-10-12_k4_reference_known_20261011_design_cp74_audit_request.md)"
+    req_other = "[依頼書](SDK/.claude/audits/inputs/2026-10-13_design_doc_gen_form_20261013_impl_cp78_audit_request.md)"
+    cases = [
+        ("S1 いまの工事の設計書へのリンク＋お願いの語＝お願い", is_ask(f"{acc} の承認をお願いします", w), True),
+        ("S2 お願いの語だけ＝お願いでない", is_ask("要・過剰・不要のどれにするか決めてください", w), False),
+        ("S3 リンクだけの報告＝お願いでない", is_ask(f"{acc} を作り直しました", w), False),
+        ("S4 ほかの工事の依頼書＋お願いの語＝お願いでない", is_ask(f"{req_other} を見ていただけますか", w), False),
+        ("S5 いまの工事の依頼書（_ の形）＋お願いの語＝お願い", is_ask(f"{req_now} を見ていただけますか", w), True),
+        ("S6 最初の発言が「監査して」のセッション＝監査のセッション",
+         _auditor_session([{"type": "user", "message": {"content": "監査して 実装の監査の依頼書 CP76"}}]), True),
+    ]
+    ng = 0
+    for name, got, want in cases:
+        print(f"{'✅' if got == want else '❌'} {name}（期待 {want}・結果 {got}）")
+        ng += int(got != want)
+    print(f"selftest {len(cases) - ng}/{len(cases)}")
+    return 1 if ng else 0
+
+
 if __name__ == "__main__":
+    if "--selftest" in sys.argv:
+        sys.exit(selftest())
     if sys.argv[1:] and sys.argv[1] == "pre":
         sys.exit(pre())
     if "--try" in sys.argv:

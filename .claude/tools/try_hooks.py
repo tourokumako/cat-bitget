@@ -10,7 +10,8 @@
 使い方（SESSION＝やり取りの記録の名前・cat-bitget の根で打つ）:
   python3 .claude/tools/try_hooks.py --session SESSION --edit <パス> [--old <直す前の文字> --new <直した後の文字>]
   python3 .claude/tools/try_hooks.py --session SESSION --edit <パス> --old-file <ファイル> --new-file <ファイル>
-  python3 .claude/tools/try_hooks.py --session SESSION --write <パス>
+  python3 .claude/tools/try_hooks.py --session SESSION --write <パス> [--content <中身を書いたファイル>]
+      （--content を省くと、中身は空の文字で渡す＝中身を見る hook〔check_source_on_save ほか〕は本物と違う判定をする）
   python3 .claude/tools/try_hooks.py --session SESSION --bash "<走らせるコマンド>"
   python3 .claude/tools/try_hooks.py --selftest
 限界＝試すのは書く前・走らせる前の hook だけ（ターンの終わりの検査と、書いた後の検査は試せない）。
@@ -99,7 +100,7 @@ def input_key(tool: str, tin: dict) -> str:
       （この日、CC が試さずに打って止められた回の始まりの1つ）。
     直した後＝本物で打つのと同じ入力の印が30分以内に無ければ、先に試す hook（require_try_before_act）が止める。
       Edit＝ファイル・直す前の文字・直した後の文字／Bash＝コマンドの文字／
-      Write＝ファイルだけ（試しの道具の --write は中身を渡さない＝中身を変えても印は同じ・限界）。"""
+      Write＝ファイルだけ（中身は印に入れない＝中身を変えても印は同じ・限界）。"""
     if tool == "Edit":
         parts = [tool, os.path.realpath(tin.get("file_path") or ""), tin.get("old_string") or "", tin.get("new_string") or ""]
     elif tool == "MultiEdit":
@@ -124,6 +125,13 @@ def record(targets: list, session: str, key: str = "") -> None:
         json.dump(d, f, ensure_ascii=False, indent=1)
 
 
+def write_input(path: str, content_file) -> dict:
+    """Write の試しの入力（★2026-10-17・185回目）。--content のファイルが在れば、その中身を渡す。
+    省けば空の文字（直す前と同じ）。"""
+    content = open(content_file, encoding="utf-8").read() if content_file else ""
+    return dict(file_path=os.path.abspath(path), content=content)
+
+
 def main(argv: list) -> int:
     def opt(k):
         return argv[argv.index(k) + 1] if k in argv and argv.index(k) + 1 < len(argv) else None
@@ -144,7 +152,7 @@ def main(argv: list) -> int:
         new = open(opt("--new-file"), encoding="utf-8").read() if opt("--new-file") else (opt("--new") or "")
         tool, tin = "Edit", dict(file_path=os.path.abspath(opt("--edit")), old_string=old, new_string=new)
     elif opt("--write"):
-        tool, tin = "Write", dict(file_path=os.path.abspath(opt("--write")), content="")
+        tool, tin = "Write", write_input(opt("--write"), opt("--content"))
     elif opt("--bash"):
         tool, tin = "Bash", dict(command=opt("--bash"))
     else:
@@ -167,8 +175,9 @@ def main(argv: list) -> int:
 
 
 def selftest() -> int:
-    """番人5つ＝①止める hook 自身を試さない ②Bash の相手は、相対の cd の後ろでは そのフォルダにつないだ .py
-    ③Edit の相手は書くファイル ④絶対パスの cd の後ろでは そのフォルダにつなぐ ⑤cd が無ければ cwd につなぐ。"""
+    """番人6つ＝①止める hook 自身を試さない ②Bash の相手は、相対の cd の後ろでは そのフォルダにつないだ .py
+    ③Edit の相手は書くファイル ④絶対パスの cd の後ろでは そのフォルダにつなぐ ⑤cd が無ければ cwd につなぐ
+    ⑥Write の中身は --content のファイルの中身（省けば空）。"""
     ng = []
     if any(SELF_GATE in c for t in ("Write", "Edit", "Bash") for c in hooks_for(t)):
         ng.append("①止める hook 自身が試しに入っている")
@@ -184,7 +193,10 @@ def selftest() -> int:
     tg5 = targets_of("Bash", {"command": "python3 .claude/tools/run_breaks.py --selftest"}, ROOT)
     if tg5 != [os.path.realpath(os.path.join(ROOT, ".claude/tools/run_breaks.py"))]:
         ng.append(f"⑤Bash の相手が違う（cd が無いときに cwd につないでいない）: {tg5}")
-    print("✅ selftest 5/5 pass" if not ng else "❌ " + "／".join(ng))
+    if write_input("/a/b.md", __file__)["content"] != open(__file__, encoding="utf-8").read() \
+            or write_input("/a/b.md", None)["content"] != "":
+        ng.append("⑥Write の中身が違う（--content のファイルの中身を渡していない／省いたときに空でない）")
+    print("✅ selftest 6/6 pass" if not ng else "❌ " + "／".join(ng))
     return 0 if not ng else 1
 
 

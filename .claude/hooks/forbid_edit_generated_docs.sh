@@ -1,7 +1,7 @@
 #!/bin/bash
 # forbid_edit_generated_docs.sh — PreToolUse on Write／Edit／MultiEdit（2026-09-17 まこさん指示・新設）
 #
-# 目的: 元データから作った文書（next_step.md の全部・pdca_flow.md の §1 の hook の一覧）を、手で直す道を止める
+# 目的: 元データから作った文書（next_step.md と next_step_reference.md の全部・acceptance.md〔生成の目印が在るとき〕の全部・pdca_flow.md の §1 の hook の一覧）を、手で直す道を止める
 #   （まこさん逐語「CCは確認せずミスを繰り返すので、手書きせざるをえないもの以外は自動生成にしてほしい」・
 #    設計書 docs-autogen-next-step-pdca-20260917）。
 #

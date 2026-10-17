@@ -187,10 +187,21 @@ segs_blank = re.split(r'[;|&\n]+', blanked)
 if len(segs_raw) != len(segs_blank):
     segs_raw = segs_blank
 unparsed = []
+# ★2026-10-17（185回目・まこさん「OK」）＝python を走らせていない区切りを止めていた誤報2つを直した。
+#   ①頭の「名前=値」の代入を読み飛ばす（F=…engine_tuner_gen.py && grep … を、engine_tuner を走らせると読んでいた）
+#   ②読み飛ばした後の先頭の語が読むだけの命令なら、走らせる形ではない（ls …/python3・grep -i python を止めていた）
+#   ★find・xargs・env・sh・bash・timeout は入れない（中で python を走らせられる＝いままでどおり見る）。
+READONLY = set(['ls', 'grep', 'egrep', 'fgrep', 'rg', 'cat', 'head', 'tail', 'wc', 'echo', 'printf',
+                'which', 'type', 'stat', 'file', 'readlink', 'realpath', 'basename', 'dirname'])
+ASSIGN = re.compile(r'^[A-Za-z_][A-Za-z_0-9]*=')
 for seg, seg_raw in zip(segs_blank, segs_raw):
+    toks = seg.split()
+    while toks and ASSIGN.match(toks[0]):
+        toks = toks[1:]
+    if toks and os.path.basename(toks[0]) in READONLY:
+        continue
     m = re.search(r'python[0-9.]*\s+(.*)', seg)
     if not m:
-        toks = seg.split()
         if toks and toks[0].rstrip('/').endswith('.py'):     # shebang での直実行
             saw = True
             runs.append(os.path.basename(toks[0]))
@@ -203,6 +214,9 @@ for seg, seg_raw in zip(segs_blank, segs_raw):
             unparsed.append(seg.strip())
         continue
     args = m.group(1).split()
+    # ★2026-10-17（185回目）＝python の後ろが --version／-V だけなら、走らせる形ではない（python3 --version を止めていた）。
+    if args and set(args) <= set(['--version', '-V', '-VV']):
+        continue
     # ★2026-09-03（監査 cp16 の E-5・Critical・まこさん指名・承認 36051934db6eede3）
     #   ＝免除は「位置と語の完全一致」でだけ与える。
     #   監査の逐語＝『139行 if 'py_compile' in args をやめ、-m の直後の語が py_compile の

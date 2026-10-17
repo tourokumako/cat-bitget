@@ -1,8 +1,11 @@
 #!/bin/bash
 # require_period_source.sh — PreToolUse on Bash
 # priority_rebuild の .py を python で「実行する前」に、検証期間の境界
-#   (TRAIN_END / SC_START / SCORE_START / SCORE_END / SEAL_START / EMBARGO_START / EMBARGO_END)
+#   (TRAIN_END / SC_START / SCORE_START / SCORE_END / SEAL_START / EMBARGO_START / EMBARGO_END
+#    ／ 2026-10-17 から SEARCH_START / SEARCH_END / CONFIRM_START / CONFIRM_END も)
 #   を自前で定義していないか検査する。periods.py 由来でない代入があれば exit 2 でブロック。
+#   コマンドの中で走らせる .py は全部 見る（2026-10-17 から・直す前は1本目だけ）。
+#   自己テスト＝python3 .claude/hooks/require_period_source_selftest.py --selftest
 #
 # 目的（まこさん命令 2026-06-18「期間のズレが絶対に発生しない状態にしろ」）:
 #   E35 が学習窓 TRAIN_END=2025-01-01・採点窓を自前ベタ書きし、地面(E31窓)と違う窓で測った。
@@ -28,33 +31,51 @@ try:
 except Exception:
     sys.exit(0)
 cmd = (d.get('tool_input', {}) or {}).get('command', '') or ''
-# 実行される .py を抽出（python(3) ... script.py）
-m = re.search(r'python[0-9.]*[ \t]+[^|&;\n]*?([^ \t|&;\n]+\.py)', cmd)
-if not m:
-    sys.exit(0)
-path = m.group(1); base = os.path.basename(path)
-# priority_rebuild 対象のみ・periods.py は除外
-if 'priority_rebuild' not in path and not os.path.exists(os.path.join(DIR, base)):
-    sys.exit(0)
-if base == 'periods.py':
-    sys.exit(0)
-cand = path if os.path.exists(path) else os.path.join(DIR, base)
-if not os.path.exists(cand):
-    sys.exit(0)
-try:
-    src = open(cand, encoding='utf-8').read()
-except Exception:
-    sys.exit(0)
-NAMES = r'(TRAIN_END|SC_START|SCORE_START|SCORE_END|SEAL_START|EMBARGO_START|EMBARGO_END)'
-bad = []
-for ln in src.splitlines():
-    mm = re.match(r'\s*' + NAMES + r'\s*=\s*(.+)\$', ln)
-    if mm:
-        rhs = mm.group(2).strip()
-        if not rhs.startswith('periods.'):
-            bad.append(ln.strip())
-if bad:
-    print(base + '\t' + ' / '.join(bad[:4]))
+# ★2026-10-17（185回目・まこさん「要」「修正をして」）＝見落とし2つを直した。
+#   ①コマンドの中の .py を全部 見る（直す前は re.search で1本目だけ＝python3 a.py && python3 b.py の b.py を見なかった）
+#   ②見る名前に、値決めの窓（SEARCH_START・SEARCH_END）と確認の窓（CONFIRM_START・CONFIRM_END）を足した
+#     （periods.py:94-103 に在り、engine_tuner が使う。直す前は古い7つだけ）
+NAMES = r'(TRAIN_END|SC_START|SCORE_START|SCORE_END|SEAL_START|EMBARGO_START|EMBARGO_END|SEARCH_START|SEARCH_END|CONFIRM_START|CONFIRM_END)'
+# ★引用符の中は「走らせる形」ではなく「渡す文字」として外す（試しの道具 --bash の引数・grep の型・echo の文）。
+#   2026-10-17 に、①で全部を見るようにしたら、try_hooks.py --bash の引用符の中の .py まで走らせると読んだ（実測）。
+#   ★sh -c の引用符の中で走らせる形は、設計↔実装ゲート（require_design_contract_before_run）が止める。
+Q = chr(39) + chr(34)
+blank = []
+q = None
+for ch in cmd:
+    if q:
+        blank.append(' ' if ch != q else ch)
+        if ch == q:
+            q = None
+        continue
+    if ch in Q:
+        q = ch
+    blank.append(ch)
+cmd = ''.join(blank)
+for m in re.finditer(r'python[0-9.]*[ \t]+[^|&;\n]*?([^ \t|&;\n]+\.py)', cmd):
+    path = m.group(1); base = os.path.basename(path)
+    # priority_rebuild 対象のみ・periods.py は除外
+    if 'priority_rebuild' not in path and not os.path.exists(os.path.join(DIR, base)):
+        continue
+    if base == 'periods.py':
+        continue
+    cand = path if os.path.exists(path) else os.path.join(DIR, base)
+    if not os.path.exists(cand):
+        continue
+    try:
+        src = open(cand, encoding='utf-8').read()
+    except Exception:
+        continue
+    bad = []
+    for ln in src.splitlines():
+        mm = re.match(r'\s*' + NAMES + r'\s*=\s*(.+)\$', ln)
+        if mm:
+            rhs = mm.group(2).strip()
+            if not rhs.startswith('periods.'):
+                bad.append(ln.strip())
+    if bad:
+        print(base + '\t' + ' / '.join(bad[:4]))
+        sys.exit(0)
 " 2>/dev/null)
 
 if [ -n "$OUT" ]; then

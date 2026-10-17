@@ -25,6 +25,8 @@
 #   その工事の設計書が、いまの設計書にも承認の控えにも無い）。理由は標準エラーに1行 出す。
 #   2026-10-01 に、止め続ける hook が進行を妨げた（まこさん「強制の不具合で進行が妨げられている」）ので、
 #   検査が見つけた不足だけで止め、検査が走らないことでは止めない。
+#   ★2026-10-17（185回目）＝Write の中身が空のとき（試しの道具の --write を --content なしで打った形）も止めない。
+#     標準エラーに1行、中身で試す口を知らせる。
 #
 # 使い方:
 #   hook        ：標準入力に PreToolUse の json
@@ -159,6 +161,13 @@ def hook() -> int:
         print(f"[元を保存する瞬間の検査] 検査が走らなかった（止めない）＝{type(e).__name__} {e}", file=sys.stderr)
         return 0
     if not what:
+        return 0
+    if tool == "Write" and not (ti.get("content") or ""):
+        # ★2026-10-17（185回目）＝空の中身の Write は、試しの道具（try_hooks.py --write を --content なしで）の形。
+        #   空の手書きの文書を本当に保存する場面は無い。検査すると「表が無い」の誤報になる（10月11日・13日）。
+        print(f"[元を保存する瞬間の検査] Write の中身が空なので検査しない（止めない）。"
+              f"中身で試すときは try_hooks.py --write <パス> --content <中身のファイル> か、"
+              f"python3 .claude/hooks/check_source_on_save.py --check <元のファイル> --as <中身のファイル>", file=sys.stderr)
         return 0
     if why:
         print(f"[元を保存する瞬間の検査] {what}の検査を走らせられない（止めない）＝{why}", file=sys.stderr)
