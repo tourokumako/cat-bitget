@@ -160,3 +160,5 @@
 - 新しく作ったファイル＝`.claude/state/next_step_fixed.md`（固定の文の下書き）・`.claude/state/next_step_fixed_approved.json`（まこさんが承認した版・まこさんの端末で作った）。どちらも .gitignore の `.claude/state/*` に当たるので、git に入れるかは まこさんに伺う。
 - ★CC の誤り（この回）＝L-701 の①〜④（要件定義の節の印の前後の文を確かめずに消した・止められたコマンドの中の bash -n を「通った」と書いた・壊すプログラム b67 を直す前に探さなかった・承認待ちの間に検査が何をするかを案の段で試さなかった）。
 - 教訓 L-701 を書いた。next_step の元データの「2 次のセッションでやること」を191回目（15番）に書き替え、「3-1 いまの状態」を190回目の終わりに書き替え、tidy_next_step.py --todo-from → --write。
+- まこさん「コミットok」→ 15本をファイルごとに git add してコミットした（d315136）。固定の文の2本（next_step_fixed.md・next_step_fixed_approved.json）を git に入れるか（.gitignore の `.claude/state/*` に当たる・`git add -f` が要る）は、お返事が無かったので入れていない＝次のセッションで伺う。コミットの後に、ToDo の46番を ✅済 にし、15番を ★いまここ（次の回が始める行）にして表を写し直した（この直しと、この行は、次のコミットに入る）。
+- まこさん「（next_step_fixed.md と next_step_fixed_approved.json）を git に入れる」→ ★いまここを15番に移した後だったので、git add が宣言の hook に止められた → ToDo に47番を足して ★いまここを移し、宣言 → まこさん「ok」→ 2本を git add -f した（278行）。next_step の 4-1 の git の行から、2本の問いを外し「入れました」と書いた。ToDo の47番を ✅済、15番を ★いまここに戻して表を写し直し、2本と next_step.md・next_step_src.json・この記録を一緒にコミットした。

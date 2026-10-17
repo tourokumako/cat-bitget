@@ -1,4 +1,4 @@
-<!-- NEXT_STEP_GENERATED hash=265c78787c48a94e tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
+<!-- NEXT_STEP_GENERATED hash=c0102a92a6c8765b tidy_next_step.py が next_step_src.json から作った＝手で書き換えない -->
 # 次のセッションの起点
 
 ## 1 毎回最初に読むこと
@@ -73,7 +73,7 @@
 | 番号 | やること | 状態 |
 |---|---|---|
 | 10 | まこさんの指示の3。動いている検査の一覧と中身を出し、要る検査かを1本ずつ見る。2026-10-15 に29〜33番に置き替えた | まだ（29〜33番に置き替え） |
-| 15 | 監査依頼書を作るプログラム（gen_audit_docs.py）を直す | まだ（44番の後＝設計書なしで直す → 直したプログラムで15番だけの監査依頼書を作り、監査に出す。直す物の一覧＝worklog 20261018 §2） |
+| 15 | 監査依頼書を作るプログラム（gen_audit_docs.py）を直す | いまここ（次の回は、ここから） |
 | 16 | 監査を通さずに直した物の扱い | まだ |
 | 17 | 確かめずにミスをする問題に対して、どういう解決策が妥当かを検討する | まだ |
 | 18 | やることリストの文書の検査（gen_regime_kb.py --verify todo と all）が通っていない件。直ったかは32番の監査で確かめる | まだ（監査で確かめる） |
@@ -85,7 +85,6 @@
 | 31 | hook の流れの3。必要な hook の不具合を、1件ずつ根本から直し、両方向に試す | まだ（35番に置き替え） |
 | 32 | hook の流れの4。まとめて監査に1回 出す | まだ（15番の監査を出した後） |
 | 33 | hook の流れの5。同じ状態に戻らない仕組みを作る | まだ |
-| 46 | 締め（worklog・next_step の元データ・教訓・ToDo の表の写し）＝190回目の分 | いまここ（次の回は、ここから） |
 
 **④ この先の順番**
 ToDo の表が片づいた後の順番は、まこさんが 2026-10-12 に決めました（設計書のテンプレ化の後の順として決めたもの・worklog 20261012 §22）。9月30日より後の設計書の洗い出し、K-4 に戻る、指標の修正の残り（B-1＋S-1、R-1、T-1、T-2、T-3、P-6、P-7、H-1 の順）、M2 へ戻る、の順です。
@@ -136,7 +135,7 @@ ToDo の44番（next_step の組み替え）が済みました（まこさん「
 - 必読を止める hook（require_read_before_work.sh）を登録し直すか。まだ決まっていません。
 - 180回目の件を、違反の記録に載せるか。180回目に私は、settings.json を読むプログラムを探さずに「完全に不要」と判断し、承認の前の検査で使われている hook 4本の登録を外しました。まこさんのお返事の前に、元に戻しています（worklog 20261015 §7）。
 - まこさんの手で行っていただく作業が残っています（やることは決まっています）。1つ目は forbid_interpretation_file の登録を外す作業で、settings.json の102〜105行の4行を消してから、`gen_hook_list.py --write` を打ちます（まこさん「完全に不要なhookは停止」「OK」。私の Edit は、自動の許可の判定に止められました）。2つ目は、hook_health_check.sh の86行目で、「扱っている」の後のタブを1つ消す作業です。
-- git の対象外（.gitignore の `.claude/state/*`）の物を、git に入れるか。対象は `.claude/state/indicator_review` と `mako_decisions.json` です。indicator_review は、make_fix_plan.py の1本だけが git に入っています（2026-10-18 に git ls-files で確かめました）。一覧の3本（`_hook_inventory.py`・`hook_inventory_src.json`・`hook_inventory.md`）は、188回目に入れました（まこさん「これもgitにいれる」・コミット ffd0373）。
+- git の対象外（.gitignore の `.claude/state/*`）の物を、git に入れるか。対象は `.claude/state/indicator_review` と `mako_decisions.json` です。190回目に作った固定の文の2本（`next_step_fixed.md`・`next_step_fixed_approved.json`）は、まこさん「git に入れる」（2026-10-18）で入れました。indicator_review は、make_fix_plan.py の1本だけが git に入っています（2026-10-18 に git ls-files で確かめました）。一覧の3本（`_hook_inventory.py`・`hook_inventory_src.json`・`hook_inventory.md`）は、188回目に入れました（まこさん「これもgitにいれる」・コミット ffd0373）。
 - 項目の抜けを見張る検査が走っていなかった件を、違反の記録に載せるか。
 - 181・182回目の分で5つあります。①記録を行の種類を見ずに読む hook が、数え違いをしている疑い（worklog 20261015 §10）。②L-693 の件を、違反の記録に載せるか。③P7-1 が落ちる件。④測るだけの口が、古い控えの名前と合わない件。⑤hook_fix_proposals を git に入れるか。
 - 183・184回目の分で5つあります（記録は session_worklog_20261017.md）。①共有の read_log.txt を消すか（§2）。②hook 12 の当て終わりの見分け方（§8）。③承認ゲートが、文の中の名前で止める件（§12）。④宣言ゲートの止めの文（§10）。⑤CP60 の、説明だけの9件と修正59（§8）。

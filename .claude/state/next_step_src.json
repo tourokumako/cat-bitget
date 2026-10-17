@@ -145,7 +145,7 @@
         "欄": [
          " 15 ",
          " 監査依頼書を作るプログラム（gen_audit_docs.py）を直す ",
-         " まだ（44番の後＝設計書なしで直す → 直したプログラムで15番だけの監査依頼書を作り、監査に出す。直す物の一覧＝worklog 20261018 §2） "
+         " いまここ（次の回は、ここから） "
         ]
        },
        {
@@ -223,13 +223,6 @@
          " 33 ",
          " hook の流れの5。同じ状態に戻らない仕組みを作る ",
          " まだ "
-        ]
-       },
-       {
-        "欄": [
-         " 46 ",
-         " 締め（worklog・next_step の元データ・教訓・ToDo の表の写し）＝190回目の分 ",
-         " いまここ（次の回は、ここから） "
         ]
        }
       ]
@@ -351,7 +344,7 @@
       "- 必読を止める hook（require_read_before_work.sh）を登録し直すか。まだ決まっていません。",
       "- 180回目の件を、違反の記録に載せるか。180回目に私は、settings.json を読むプログラムを探さずに「完全に不要」と判断し、承認の前の検査で使われている hook 4本の登録を外しました。まこさんのお返事の前に、元に戻しています（worklog 20261015 §7）。",
       "- まこさんの手で行っていただく作業が残っています（やることは決まっています）。1つ目は forbid_interpretation_file の登録を外す作業で、settings.json の102〜105行の4行を消してから、`gen_hook_list.py --write` を打ちます（まこさん「完全に不要なhookは停止」「OK」。私の Edit は、自動の許可の判定に止められました）。2つ目は、hook_health_check.sh の86行目で、「扱っている」の後のタブを1つ消す作業です。",
-      "- git の対象外（.gitignore の `.claude/state/*`）の物を、git に入れるか。対象は `.claude/state/indicator_review` と `mako_decisions.json` です。indicator_review は、make_fix_plan.py の1本だけが git に入っています（2026-10-18 に git ls-files で確かめました）。一覧の3本（`_hook_inventory.py`・`hook_inventory_src.json`・`hook_inventory.md`）は、188回目に入れました（まこさん「これもgitにいれる」・コミット ffd0373）。",
+      "- git の対象外（.gitignore の `.claude/state/*`）の物を、git に入れるか。対象は `.claude/state/indicator_review` と `mako_decisions.json` です。190回目に作った固定の文の2本（`next_step_fixed.md`・`next_step_fixed_approved.json`）は、まこさん「git に入れる」（2026-10-18）で入れました。indicator_review は、make_fix_plan.py の1本だけが git に入っています（2026-10-18 に git ls-files で確かめました）。一覧の3本（`_hook_inventory.py`・`hook_inventory_src.json`・`hook_inventory.md`）は、188回目に入れました（まこさん「これもgitにいれる」・コミット ffd0373）。",
       "- 項目の抜けを見張る検査が走っていなかった件を、違反の記録に載せるか。",
       "- 181・182回目の分で5つあります。①記録を行の種類を見ずに読む hook が、数え違いをしている疑い（worklog 20261015 §10）。②L-693 の件を、違反の記録に載せるか。③P7-1 が落ちる件。④測るだけの口が、古い控えの名前と合わない件。⑤hook_fix_proposals を git に入れるか。",
       "- 183・184回目の分で5つあります（記録は session_worklog_20261017.md）。①共有の read_log.txt を消すか（§2）。②hook 12 の当て終わりの見分け方（§8）。③承認ゲートが、文の中の名前で止める件（§12）。④宣言ゲートの止めの文（§10）。⑤CP60 の、説明だけの9件と修正59（§8）。",
