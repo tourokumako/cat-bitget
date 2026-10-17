@@ -8,7 +8,7 @@
 #   だから「触るもの」の欄には、置き場まで書いたパスしか書けない形にする。
 #
 # 見るもの（2つ）
-#   1. next_step.md の 0-2 の表の「触るもの」の欄（3列目）
+#   1. next_step.md の「5 プロジェクトのやることの表」の「触るもの」の欄（3列目）（2026-10-18 までは「0-2 の表」）
 #   2. m2_todo.json の、状態が ✅済 でも 保留 でもない行の「触るファイル」
 # 決まり＝欄の中の `…​.py`・`.json`・`.md`・`.sh`・`.txt`・`.csv` の名前は、
 #   ①「/」を含むパスで書く ②リポジトリ直下か sdk 直下（v3-bitget-api-sdk/bitget-python-sdk-api）の
@@ -79,9 +79,10 @@ def check_next_step(path: str) -> list:
         text = open(path, encoding="utf-8").read()
     except OSError:
         return [f"{path} が読めない"]
-    m = re.search(r"^### 0-2 .*?$(.*?)^### ", text, re.S | re.M)
+    # ★2026-10-18（190回目）＝next_step を組み替え、「### 0-2」は「## 5 プロジェクトのやることの表」になった。節の終わりは次の「## 」か「# 」。
+    m = re.search(r"^## 5 .*?$(.*?)^#{1,2} ", text, re.S | re.M)
     if not m:
-        return ["next_step.md に 0-2 の節が見つからない"]
+        return ["next_step.md に「5 プロジェクトのやることの表」の節が見つからない"]
     for line in m.group(1).splitlines():
         if not line.startswith("|") or line.startswith("|---") or "触るもの" in line:
             continue
@@ -89,7 +90,7 @@ def check_next_step(path: str) -> list:
         if len(cols) < 5:
             continue
         num = cols[1].strip().strip("*")
-        ng += problems_in_cell(f"next_step 0-2 の {num}番", cols[3])
+        ng += problems_in_cell(f"next_step の 5 やることの表 の {num}番", cols[3])
     return ng
 
 

@@ -1,5 +1,6 @@
 #!/bin/bash
-# enforce_next_step_tidy.sh — Stop: next_step.md の §0 の形を検査し、❌ が1つでも在ればターンを終われない
+# enforce_next_step_tidy.sh — Stop: next_step.md の形を検査し、❌ が1つでも在ればターンを終われない
+#   （★2026-10-18＝next_step を8つの項目に組み替え、§0 という区切りは無くなった。前の 0-1 は「3-1 いまの状態」、(0-b-2) は「3-2 印の状態」）
 #   （2026-08-28・まこさん承認・設計書 iter=tidy-next-step-20260828・safety hook＝fast-mode でも動く）
 #
 # なぜ＝next_step.md は毎セッション汚れて、まこさんが指示しないと整理されなかった（69回目の末に実測）。
@@ -7,7 +8,7 @@
 #   検査 ❌ のままではセッションを閉じられない形にする。
 # 判定の本体は .py（pdca_gate.sh L13-19 の決まり＝hook の python は別ファイル化）。
 # 直し方＝python3 .claude/tools/tidy_next_step.py --write（「消す」印の節を archive へ移し (0-b-2) を json から書く）
-#         ＋ 0-1 を今日の状態に書き直す（文章は CC が書く・機械は日付だけ見る）。
+#         ＋ 3-1 いまの状態 を今日の状態に書き直す（文章は CC が書く・機械は日付だけ見る）。
 # ★fast-mode の判定は入れない（(0-b-2) の腐りと「消す」印の溜まりは fast-mode の間にも起きる）。
 # ★止める回数に上限は付けない（直し方が1つで、機械で直せるため）。
 # テスト用＝第1引数に next_step.md の代わりのファイルを渡せる（--selftest の T8 が使う）。
@@ -23,7 +24,7 @@ else
   OUT=$(python3 "$ROOT/.claude/hooks/next_step_tidy_gate.py" 2>&1); RC=$?
 fi
 if [ "$RC" -ne 0 ]; then
-  printf "⛔ [next_step の形・Stop hook] next_step.md の §0 が整っていないのでターンを終われません（まこさん 2026-08-28「毎回、next_stepが汚くなり、私が指示しないと整理されない状況なんだけど、改善できないのか？」）。\n%s\n直し方＝python3 .claude/tools/tidy_next_step.py --write ＋ 0-1 を今日の状態に書き直す。\n（解除の合言葉はありません＝2026-08-16 に全部 廃止）\n" "$OUT" >&2
+  printf "⛔ [next_step の形・Stop hook] next_step.md の形が整っていないのでターンを終われません（まこさん 2026-08-28「毎回、next_stepが汚くなり、私が指示しないと整理されない状況なんだけど、改善できないのか？」）。\n%s\n直し方＝python3 .claude/tools/tidy_next_step.py --write ＋ 3-1 いまの状態 を今日の状態に書き直す。\n（解除の合言葉はありません＝2026-08-16 に全部 廃止）\n" "$OUT" >&2
   exit 2
 fi
 # ★2026-09-09（まこさん指示・逐語「session_worklogへの記録は日付で区切ってほしい」「今後、このようなこと
@@ -42,7 +43,7 @@ if [ -z "$1" ]; then
   # ★2026-09-27（まこさん指示・逐語「→今後間違えないように対策して」）＝やることの「触るもの」に、
   #   置き場の無いファイル名（例＝`m2_stage_candidates.json`）を書いたままではターンを終われない。
   #   125回目の CC が置き場を推測して scripts/priority_rebuild/ を探した（本当は .claude/ratchet/）。
-  #   判定の本体＝check_todo_file_paths.py（next_step の 0-2 の3列目と、m2_todo.json のまだの行）。
+  #   判定の本体＝check_todo_file_paths.py（next_step の「5 やることの表」の3列目と、m2_todo.json のまだの行）。
   FP=$(python3 "$ROOT/.claude/hooks/check_todo_file_paths.py" 2>&1); FRC=$?
   if [ "$FRC" -ne 0 ]; then
     printf "⛔ [触るものの置き場・Stop hook] やることの「触るもの」に、置き場の書かれていないファイル名があります（まこさん 2026-09-27「今後間違えないように対策して」）。\n%s\n直し方＝next_step_src.json か m2_todo.json の欄を、直下か sdk 直下から辿れるパス（例＝.claude/ratchet/m2_stage_candidates.json）に直し、tidy_next_step.py --write ／ gen_regime_kb.py --write todo・flow で作り直す。\n（解除の合言葉はありません）\n" "$FP" >&2

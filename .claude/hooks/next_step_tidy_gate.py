@@ -33,7 +33,8 @@ SESSIONS = ROOT / ".claude" / "state" / "sessions"
 DOING = "★いまここ"
 BULLET = re.compile(r"^\s*・")
 AUTO = re.compile(r"^\s*・(\(c\) \(0-b-2\) |\(l\) |\(m\) )")                          # --write で直る3種類
-DATE = re.compile(r"^\s*・\(b\) 0-1 の日付 \S+ が、いちばん新しい worklog の日付 ")      # 締めのときだけ止める
+# ★2026-10-18（190回目）＝next_step を組み替え、「0-1 いまの状態」は「3-1 いまの状態」になった。検査の文も「3-1 の日付」に変わったので、両方を読む。
+DATE = re.compile(r"^\s*・\(b\) (?:0-1|3-1) の日付 \S+ が、いちばん新しい worklog の日付 ")      # 締めのときだけ止める
 
 
 def session_id(d: dict) -> str | None:
@@ -100,7 +101,7 @@ def main() -> int:
             return 0
         j = judge(out, is_closing)
     if j == "pass":
-        print("（0-1 の日付が、いちばん新しい worklog の日付と違います。締めのときに書き直してください。いまは止めません）")
+        print("（3-1 いまの状態 の日付が、いちばん新しい worklog の日付と違います。締めのときに書き直してください。いまは止めません）")
         return 0
     print(out, end="")
     return 2
@@ -119,6 +120,9 @@ R_G = ("   ・(g) 本文が元データ next_step_src.json から作ったもの
        "     作り直し＝| **253** | …")
 R_M = "   ・(m) 結果が出た監査の写しが 2 個 残っている → `--write` で消す／1つ目＝v3-bitget-api-sdk/x"
 R_NODATE = "   ・(b) 0-1 の見出しに日付（YYYY-MM-DD）が無い"
+# ★2026-10-18（190回目）＝組み替えた後に tidy_next_step.py が出す文（3-1）
+R_DATE31 = "   ・(b) 3-1 の日付 2026-10-17 が、いちばん新しい worklog の日付 2026-10-18 と違う → 3-1 いまの状態 を今日の状態に書き直す"
+R_NODATE31 = "   ・(b) 3-1 いまの状態 の見出しに日付（YYYY-MM-DD）が無い"
 TODO = "| 番号 | やること | 状態 | 記録 |\n|---|---|---|---|\n| 35 | hook を1本ずつ | {a} | — |\n| 41 | 締め（worklog・next_step） | {b} | — |\n"
 
 
@@ -133,6 +137,9 @@ def selftest() -> int:
         ("(0-b-2) と 0-1 の日付が混ざる・途中の回 → 直してから見直す", judge(HEAD + R_C + "\n" + R_DATE, False), "write"),
         ("(0-b-2) と 0-1 の日付が混ざる・締めの回 → 止める", judge(HEAD + R_C + "\n" + R_DATE, True), "block"),
         ("見出しに日付が無い・途中の回 → 止める", judge(HEAD + R_NODATE, False), "block"),
+        ("組み替えた後の 3-1 の日付だけ・途中の回 → 通す", judge(HEAD + R_DATE31, False), "pass"),
+        ("組み替えた後の 3-1 の日付・締めの回 → 止める", judge(HEAD + R_DATE31, True), "block"),
+        ("組み替えた後の 3-1 の見出しに日付が無い → 止める", judge(HEAD + R_NODATE31, False), "block"),
         ("理由の行が読めない → 止める", judge("Traceback (most recent call last):\n  ...", False), "block"),
         ("締めの行に ★いまここ → 締め", closing(TODO.format(a="✅済", b=DOING)), True),
         ("ほかの行に ★いまここ → 締めでない", closing(TODO.format(a=DOING, b="まだ")), False),

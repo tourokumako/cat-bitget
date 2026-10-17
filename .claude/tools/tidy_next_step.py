@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""tidy_next_step.py — next_step.md の §0（次にやること）を機械で整えて検査する（2026-08-28・まこさん承認）
+"""tidy_next_step.py — next_step.md を機械で整えて検査する（2026-08-28・まこさん承認）
+★2026-10-18（190回目・まこさん「一旦上記で修正してよい」「よい」）＝next_step を目的ごとの8つの項目に組み替えた
+  （1 毎回最初に読むこと／2 次のセッションでやること／3 いまの状態／4 まこさんに決めていただくこと／
+   5 プロジェクトのやることの表／6 記録と置き場の案内／7 この文書の決まり／8 CC メモ）。§0 という区切りは無くなった。
+  前は §0 の範囲に掛けていた (d)(i)(k) は、もとの §0 の中身が入った項目 3・5・6 に掛ける。
+  (o) は、先頭から項目 2 の終わりまで（項目 1・2）に掛ける。上限の数は変えていない（worklog 20261018 §5）。
 
 なぜ在るか＝next_step.md は毎セッション汚れて、まこさんが指示しないと整理されなかった
 （69回目の末に4節・45行の「次の書き替えで消す」印が残り、(0-b-2) の印の値は3日前のまま）。
@@ -13,14 +18,14 @@
 
 検査する6つ（--verify）:
   (a)「次の書き替えで消す」を見出しに含む節が 0件
-  (b) 0-1 の見出しの日付が、いちばん新しい session_worklog_YYYYMMDD.md の日付と同じ
-  (c) (0-b-2) に書いてある H2・G2 の印の値（先頭16桁）が h2_pass.json / g2_pass.json の fingerprint と一致
-  (d) `# §0` から `## §0-4` の前までの行数が上限（LIMIT・まこさんが決める）以下
-  (e) 0-2 の節の「★いまここ」がちょうど1件
-  (f) 0-2 の表に「✅済」か取り消し線の行が0件（★2026-08-28 追加・終わった行を残せなくする）
+  (b) 3-1 いまの状態 の見出しの日付が、いちばん新しい session_worklog_YYYYMMDD.md の日付と同じ
+  (c) 3-2 印の状態 に書いてある H2・G2 の印の値（先頭16桁）が h2_pass.json / g2_pass.json の fingerprint と一致
+  (d) 項目 3・5・6（もとの §0 の中身）の行数の合計が上限（LIMIT・まこさんが決める）以下
+  (e) 5 やることの表 の節の「★いまここ」がちょうど1件
+  (f) 5 やることの表 に「✅済」か取り消し線の行が0件（★2026-08-28 追加・終わった行を残せなくする）
   ★2026-10-02 追加（まこさん「自発的にやれるようにできないの？」→「じゃあ、その修正しろ」・本物の next_step だけに掛ける）
-  (h) 最初の「## 」の見出しが「## ▶ 次にやること」 (i) §0 に「N回目にしたこと」（経緯）が無い
-  (j) 0-2 の表の欄が250字以内 (k) §0 に同じ行が2回 無い
+  (h) 最初の「## 」の見出しが「## 1 毎回最初に読むこと」 (i) 項目 3・5・6 に「N回目にしたこと」（経緯）が無い
+  (j) 5 やることの表 の欄が250字以内 (k) 項目 3・5・6 に同じ行が2回 無い
   (l) 教訓の現役が40件＋名指しされた物だけ（--write が古い物を lessons_archive.md へ移す）
   (m) 結果が出た監査の写し（cp<N>_work の mirror・pristine・tmp・git の外・作って1時間 過ぎ）が無い（--write が消す）
 
@@ -49,27 +54,28 @@ H2 = STATE / "h2_pass.json"
 G2 = STATE / "g2_pass.json"
 HOOK = ROOT / ".claude" / "hooks" / "enforce_next_step_tidy.sh"
 
-LIMIT = 100                                   # §0 の行数の上限（まこさん決定 2026-08-28・設計書 §5）
+LIMIT = 100                                   # 項目 3・5・6 の行数の上限（まこさん決定 2026-08-28・設計書 §5。前は §0 の上限）
 MARKS = ("🔴", "★消さない", "毎回消さない")   # 消してはいけない印（数を前後で照らす）
 DISPOSE = "次の書き替えで消す"
 HEAD_RE = re.compile(r"^(#{1,6})\s")
-SEC0_START = "# §0 "
-SEC0_END = "## §0-4"
-H01 = "### 0-1 "
-H02 = "### 0-2 "
-HB2 = "### （0-b-2）"
-HD = "### （0-d）"
+# ★2026-10-18（190回目）＝§0 の区切り（「# §0 」〜「## §0-4」）を、項目の見出しの一覧に替えた。
+CHECK_ITEMS = ("## 3 ", "## 5 ", "## 6 ")     # (d)(i)(k) の相手＝もとの §0 の中身が入った項目
+TOP_ITEMS = ("## 1 ", "## 2 ")                # (o) の相手＝毎回読む部分（先頭から項目 2 の終わりまで）
+H01 = "### 3-1 "
+H02 = "## 5 "
+HB2 = "### 3-2 "
+HD = "### 3-3 "
 HERE_MARK = "★いまここ"
 # ★2026-10-12（A-3）＝固定で載せる文が next_step に入っているかを見る文字（正本の先頭の見出しを、gen_core_requirements が太字の行にした物）
 CORE_MARK = "**■ 要件定義と工事の流れ（固定・毎回 読む・消さない）**"
 # ★2026-10-12（172回目・まこさん「OK」）＝next_step を2本に分けて作る。控えの見出しから後ろは、控えのファイルに出す。
 REF_NAME = "next_step_reference.md"           # 控え（毎回は読まない・要るときに節を選んで開く）のファイル
 REF_HEAD = "# 控え（"                          # この文字で始まる見出しの行から後ろが、控え
-TOP_MAX = 150                                  # (o) 毎回読む部分（先頭から「# §0 」の前まで）の行数の上限
+TOP_MAX = 150                                  # (o) 毎回読む部分（先頭から項目 2 の終わりまで・前は「# §0 」の前まで）の行数の上限
 LINE_MAX = 250                                 # (p) 「次のセッションでやること」の節の、1行の字数の上限
-NEXT_SEC = "### ▶▶ 次のセッションでやること"
+NEXT_SEC = "## 2 次のセッションでやること"
 ALL_MAX = 250                                  # (q) next_step.md の全体の行数の上限（まこさん「よい」2026-10-12）
-STATE_SEC = "### 0-1 いまの状態"               # (r) この節は、最新の回だけを書く
+STATE_SEC = "### 3-1 いまの状態"               # (r) この節は、最新の回だけを書く
 STATE_MAX = 12                                 # (r) 「いまの状態」の、空でない行の数の上限
 MUST_HEAD = "| いま必ず読むもの | なぜ読むか | 外す条件 |"   # (s) 必読の表の見出しの行（この表から must_read_now.txt を書く）
 MUST_FILE = "must_read_now.txt"
@@ -115,7 +121,7 @@ PIN_FILES = (ROOT / ".claude" / "rules" / "permanent_rules.md", ROOT / "v3-bitge
 AUDITS_DIR = SDK_DIR / ".claude" / "audits"
 COPY_PREFIX = ("mirror", "pristine", "tmp")   # 監査の作業のフォルダ cp<N>_work の中の写し
 COPY_MIN_AGE = 3600                           # 作って1時間 以内の写しは消さない（走っている監査を壊さない）
-TOP_NEXT = "## ▶ 次にやること"
+TOP_NEXT = "## 1 毎回最初に読むこと"
 HISTORY_RE = re.compile(r"\d+回目にしたこと")
 CELL_MAX = 250                                # 0-2 の表の1つの欄の字数の上限
 
@@ -240,7 +246,7 @@ def move_done_rows(next_text: str, arc_text: str, today: str) -> tuple[str, str,
         _sep_ln = (_rows[1] if len(_rows) >= 2 and "---" in _rows[1]
                    else "|" + "---|" * max(1, _head_ln.count("|") - 1) + "\n")
         head_rows = _head_ln + _sep_ln
-    head = (f"\n\n# {today} に tidy_next_step.py が next_step.md の 0-2 の表から移した行"
+    head = (f"\n\n# {today} に tidy_next_step.py が next_step.md の「5 プロジェクトのやることの表」から移した行"
             f"（終わった行 {len(moved_rows)} 行・1文字も変えていない）\n\n" + head_rows)
     new_arc = arc_text + head + moved
     before, after, mv = count_marks(next_text), count_marks(new_next), count_marks(moved)
@@ -269,30 +275,33 @@ def _pass(path: pathlib.Path) -> dict:
 
 
 def marks_block(h2: dict, g2: dict, today: str) -> str:
-    """(0-b-2) の節の本文（型は固定・自由記述なし）。"""
-    return (f"{HB2}🔴 印の状態（{today}・★この節は tidy_next_step.py が json から書く＝手で書かない）\n"
+    """3-2 印の状態 の節の本文（型は固定・自由記述なし）。"""
+    # ★2026-10-18（190回目・44番の3段目）＝「＝」と「／」でつないだ文を、読める文に書き直した（中身の値は同じ）。
+    return (f"{HB2}🔴 印の状態（{today}・この節はプログラムが印の記録から書く）\n"
             "\n"
-            f"- **H2 の印＝`{h2['fp']}…`**（`.claude/state/h2_pass.json`・{h2['when']}・対象{h2['n']}ファイル）"
-            f"／**G2 の印＝`{g2['fp']}…`**（`g2_pass.json`・{g2['when']}・対象{g2['n']}ファイル）。\n"
-            "- **コードを触ったら取り直す**＝G2 → H2 の順（`gen_signal_families.py --verify` 約30秒 → `leak_causality_diag.py` 約5分・L-565）。\n"
+            f"- **H2 の印**は `{h2['fp']}…` です。未来のデータを使っていないかを調べる検査（`leak_causality_diag.py`）が、"
+            f"全部通ったときの記録です（`.claude/state/h2_pass.json`・{h2['when']}・対象{h2['n']}ファイル）。\n"
+            f"- **G2 の印**は `{g2['fp']}…` です。型の表に沿った案かを見る審査が、見本に正しく反応するかを試すテスト"
+            f"（`gen_signal_families.py --verify`）が通ったときの記録です（`.claude/state/g2_pass.json`・{g2['when']}・対象{g2['n']}ファイル）。\n"
+            "- コードを触ったら、G2、H2 の順に印を取り直します。かかる時間は、G2 が約30秒、H2 が約5分です（教訓 L-565）。\n"
             "\n")
 
 
 def refresh_marks(next_text: str, h2: dict, g2: dict, today: str) -> str:
-    """(0-b-2) の節を json の値で書き直す。節が無ければ (0-d) の直前に足す。印の数は変えない。"""
+    """3-2 印の状態 の節を json の値で書き直す。節が無ければ 3-3 の直前に足す。印の数は変えない。"""
     lines = next_text.splitlines(keepends=True)
     idx = next((i for i, l in enumerate(lines) if l.startswith(HB2)), None)
     block = marks_block(h2, g2, today)
     if idx is None:
         ins = next((i for i, l in enumerate(lines) if l.startswith(HD)), None)
         if ins is None:
-            raise SystemExit("[tidy] (0-b-2) も (0-d) も無い＝どこに書くか決められない")
+            raise SystemExit("[tidy] 3-2 印の状態 も 3-3 まだ埋まっていないこと も無い＝どこに書くか決められない")
         return "".join(lines[:ins]) + block + "".join(lines[ins:])
     j = _section_end(lines, idx)
     new = "".join(lines[:idx]) + block + "".join(lines[j:])
     b, a = count_marks(next_text), count_marks(new)
     if b != a:
-        raise SystemExit(f"[tidy] (0-b-2) を書き直すと印の数が変わる（前 {b} → 後 {a}）＝書かずに止まる")
+        raise SystemExit(f"[tidy] 3-2 印の状態 を書き直すと印の数が変わる（前 {b} → 後 {a}）＝書かずに止まる")
     return new
 
 
@@ -305,12 +314,31 @@ def latest_worklog_date(state_dir: pathlib.Path) -> str | None:
     return max(ds) if ds else None
 
 
-def sec0_lines(lines: list[str]) -> int | None:
-    s = next((i for i, l in enumerate(lines) if l.startswith(SEC0_START)), None)
-    e = next((i for i, l in enumerate(lines) if l.startswith(SEC0_END)), None)
-    if s is None or e is None or e < s:
+def item_lines(lines: list[str], prefixes: tuple[str, ...]) -> list[str] | None:
+    """見出しが prefixes で始まる項目の行を、並びのまま全部つないで返す（2026-10-18・§0 の区切りの代わり）。
+    1つでも見つからなければ None。控えの見出し（REF_HEAD）より後ろは探さない（控えの中の同じ見出しを拾わない）。"""
+    end_all = next((i for i, l in enumerate(lines) if l.startswith(REF_HEAD)), len(lines))
+    out: list[str] = []
+    for p in prefixes:
+        s = next((i for i in range(end_all) if lines[i].startswith(p)), None)
+        if s is None:
+            return None
+        out += lines[s:min(_section_end(lines, s), end_all)]
+    return out
+
+
+def check_area_lines(lines: list[str]) -> int | None:
+    """(d) の相手（項目 3・5・6）の行数の合計。項目が1つでも無ければ None。"""
+    got = item_lines(lines, CHECK_ITEMS)
+    return None if got is None else len(got)
+
+
+def top_lines(lines: list[str]) -> int | None:
+    """(o) の相手＝先頭から項目 2 の終わりまでの行数。項目 1・2 のどちらかが無ければ None。"""
+    if item_lines(lines, TOP_ITEMS) is None:
         return None
-    return e - s
+    s2 = next(i for i, l in enumerate(lines) if l.startswith(TOP_ITEMS[-1]))
+    return _section_end(lines, s2)
 
 
 def verify(next_text: str, h2: dict, g2: dict, worklog_date: str | None, limit: int = LIMIT) -> list[str]:
@@ -322,22 +350,25 @@ def verify(next_text: str, h2: dict, g2: dict, worklog_date: str | None, limit: 
         ng.append(f"(a)「{DISPOSE}」の節が {n_disp} 件 残っている → `--write` で archive へ移す")
     h01 = next((l for l in lines if l.startswith(H01)), None)
     if h01 is None:
-        ng.append(f"(b) 見出し『{H01.strip()}』が無い")
+        ng.append(f"(b) 見出し『{H01.strip()} いまの状態』が無い")
     else:
         m = DATE_RE.search(h01)
         if not m:
-            ng.append("(b) 0-1 の見出しに日付（YYYY-MM-DD）が無い")
+            ng.append("(b) 3-1 いまの状態 の見出しに日付（YYYY-MM-DD）が無い")
         elif worklog_date and m.group(1) != worklog_date:
-            ng.append(f"(b) 0-1 の日付 {m.group(1)} が、いちばん新しい worklog の日付 {worklog_date} と違う → 0-1 を今日の状態に書き直す")
+            ng.append(f"(b) 3-1 の日付 {m.group(1)} が、いちばん新しい worklog の日付 {worklog_date} と違う → 3-1 いまの状態 を今日の状態に書き直す")
     hb = next((i for i, l in enumerate(lines) if l.startswith(HB2)), None)
     if hb is None:
-        ng.append(f"(c) 節『{HB2}』が無い → `--write` で作る")
+        ng.append(f"(c) 節『{HB2.strip()} 印の状態』が無い → `--write` で作る")
     else:
         body = "\n".join(lines[hb:_section_end(lines, hb)])
         if h2["fp"] not in body:
             ng.append(f"(c) (0-b-2) の H2 の印が json（{h2['fp']}…）と違う → `--write`")
         if g2["fp"] not in body:
             ng.append(f"(c) (0-b-2) の G2 の印が json（{g2['fp']}…）と違う → `--write`")
+        # ★2026-10-18（190回目）＝(c) の文の「(0-b-2)」は、項目の名前が「3-2 印の状態」に変わった後も残す。
+        #   壊すプログラム b67_marks_time_check.sh が、下の時刻の2行を文字のまま探している。壊すプログラムの直しは承認が要るので、
+        #   この回は直していない（まこさん決定 2026-10-18「このまま残す」・worklog 20261018 §5・§6）。前の行の印の2行も、言い方をそろえて残した。
         # ★2026-09-08（監査 cp32 の別枠 E・設計書 tm-scope-and-g2-fingerprint-20260908 の F）
         #   ＝時刻も照らす。直す前は指紋の値だけを見ていたので、印を取り直した後に
         #     `--write` を走らせ忘れると、時刻だけが古いまま残った（監査が実測した）。
@@ -345,24 +376,24 @@ def verify(next_text: str, h2: dict, g2: dict, worklog_date: str | None, limit: 
             ng.append(f"(c) (0-b-2) の H2 の時刻が json（{h2['when']}）と違う → `--write`")
         if g2["when"] not in body:
             ng.append(f"(c) (0-b-2) の G2 の時刻が json（{g2['when']}）と違う → `--write`")
-    n0 = sec0_lines(lines)
+    n0 = check_area_lines(lines)
     if n0 is None:
-        ng.append(f"(d) 『{SEC0_START.strip()}』〜『{SEC0_END}』が見つからない")
+        ng.append(f"(d) 項目 {'・'.join(p.strip() for p in CHECK_ITEMS)} の見出しのどれかが見つからない")
     elif n0 > limit:
-        ng.append(f"(d) §0 が {n0} 行（上限 {limit}）→ 古い節に「{DISPOSE}」の印を付けて `--write` で移す")
+        ng.append(f"(d) 項目 3・5・6 が {n0} 行（上限 {limit}）→ 古い節に「{DISPOSE}」の印を付けて `--write` で移す")
     s2 = next((i for i, l in enumerate(lines) if l.startswith(H02)), None)
     if s2 is None:
-        ng.append(f"(e) 見出し『{H02.strip()}』が無い")
+        ng.append(f"(e) 見出し『{H02.strip()} プロジェクトのやることの表』が無い")
     else:
         sec2 = lines[s2:_section_end(lines, s2)]
         n_here = "\n".join(sec2).count(HERE_MARK)
         if n_here != 1:
-            ng.append(f"(e) 0-2 の『{HERE_MARK}』が {n_here} 件（ちょうど1件のはず）")
+            ng.append(f"(e) 5 やることの表 の『{HERE_MARK}』が {n_here} 件（ちょうど1件のはず）")
         # (f) 終わった行を表に残せない（表の行だけを見る＝説明の文に書いても止めない）
         done = [l for l in sec2
                 if l.lstrip().startswith("|") and (DONE_MARK in l or STRIKE_RE.search(l))]
         if done:
-            ng.append(f"(f) 0-2 の表に、終わった行が {len(done)} 行 残っている"
+            ng.append(f"(f) 5 やることの表 に、終わった行が {len(done)} 行 残っている"
                       f"（『{DONE_MARK}』か 取り消し線）→ archive へ移して表から消す"
                       f"／1行目＝{done[0].strip()[:50]}")
     return ng
@@ -444,6 +475,187 @@ def _core_lines() -> list[str]:
     return gcr.embed_lines()
 
 
+# ── 固定の文（2026-10-18・190回目・まこさん「OK」＝44番の2段目）──────────────────────
+#   なぜ要るか＝next_step の「毎回最初に読むこと」や決まりの文も、元データの中のただの文だった。CC が書き足し続けると、
+#   また崩れる（189回目に「次のセッションでやること」へ CC の注意書きを足し続けた＝worklog 20261018 §4）。
+#   作り＝固定の文は、下書き（FIXED_DRAFT）と、まこさんが承認した版（FIXED_OK）に分ける。next_step は承認した版からだけ写す。
+#     元データには文を持たせず、{"固定": "<名前>"} の印だけを置く（要件定義の {"正本": …} と同じ形）。
+#     承認＝まこさんがご自分の端末で `tidy_next_step.py --approve-fixed` を打つ。Claude Code の中（環境変数 CLAUDECODE）からは断る。
+#   限界＝CC が環境変数を外して打てば通る（止める物は無い・L-586＝抜け道を hook で塞ぎ続けない）。文が分かりやすいかは見ない。
+FIXED_DRAFT = STATE / "next_step_fixed.md"
+FIXED_OK = STATE / "next_step_fixed_approved.json"
+FIXED_MARK_RE = re.compile(r"^<!-- 固定 (見出し|文 (.+)) -->$")
+NO_EXTRA_ITEMS = ("## 1 ", "## 7 ")            # この項目の中には、固定の見出しの一覧に無い見出しを置かせない
+FREE_NG_RE = re.compile(r"L-\d+|★")           # 「2 次のセッションでやること」の CC が書く行に入れない物（注意書きの印）
+
+
+def parse_fixed(text: str) -> dict:
+    """固定の文のファイルを {"見出し": [行], "文": {名前: [行]}} にする。形が崩れていれば ValueError。"""
+    heads: list[str] | None = None
+    blocks: dict[str, list[str]] = {}
+    cur: list[str] | None = None
+    lines = text.split("\n")
+    if lines and lines[-1] == "":
+        lines = lines[:-1]
+    for ln in lines:
+        m = FIXED_MARK_RE.match(ln)
+        if m:
+            cur = []
+            if m.group(1) == "見出し":
+                if heads is not None:
+                    raise ValueError("「見出し」の印が2つ在る")
+                heads = cur
+            else:
+                name = m.group(2)
+                if name in blocks:
+                    raise ValueError(f"同じ名前の固定の文が2つ在る＝{name}")
+                blocks[name] = cur
+            continue
+        if cur is not None:
+            cur.append(ln)
+    if heads is None:
+        raise ValueError("「<!-- 固定 見出し -->」の印が無い")
+    if not blocks:
+        raise ValueError("固定の文（<!-- 固定 文 名前 -->）が1つも無い")
+    return {"見出し": [h for h in heads if h.strip()], "文": blocks}
+
+
+def _sha(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+_FIXED_CACHE: dict = {}
+
+
+def load_fixed_ok(path: pathlib.Path = None) -> dict | None:
+    """承認した版を読む。戻り＝{"見出し", "文", "ok"（ハッシュ値が合うか）, "text"}／ファイルが無ければ None。"""
+    path = path or FIXED_OK
+    if not path.exists():
+        return None
+    d = json.loads(path.read_text(encoding="utf-8"))
+    text = d.get("文", "")
+    got = parse_fixed(text)
+    got["ok"] = _sha(text) == d.get("sha256")
+    got["text"] = text
+    return got
+
+
+def _fixed_lines(name: str) -> list[str]:
+    if "ok" not in _FIXED_CACHE:
+        _FIXED_CACHE["ok"] = load_fixed_ok()
+    ok = _FIXED_CACHE["ok"]
+    if ok is None:
+        raise SystemExit(f"[tidy] 承認した固定の文（{FIXED_OK.name}）が無い＝まこさんに `tidy_next_step.py --approve-fixed` を打っていただく")
+    if name not in ok["文"]:
+        raise SystemExit(f"[tidy] 承認した固定の文に「{name}」が無い＝元データの {{\"固定\": …}} の名前か、固定の文のファイルを直す")
+    return ok["文"][name]
+
+
+def approve_fixed() -> int:
+    """下書き（FIXED_DRAFT）を、承認した版（FIXED_OK）として記録する。まこさんが端末で打つ口。"""
+    if os.environ.get("CLAUDECODE"):
+        print("❌ [tidy --approve-fixed] Claude Code の中からは打てません。まこさんが、ご自分の端末で打ってください。")
+        return 2
+    if not FIXED_DRAFT.exists():
+        print(f"❌ [tidy --approve-fixed] 下書き {FIXED_DRAFT} が無い")
+        return 2
+    text = FIXED_DRAFT.read_text(encoding="utf-8")
+    try:
+        got = parse_fixed(text)
+    except ValueError as e:
+        print(f"❌ [tidy --approve-fixed] 下書きの形が崩れている＝{e}")
+        return 2
+    old = load_fixed_ok()
+    from datetime import datetime
+    _atomic_write(FIXED_OK, json.dumps({"sha256": _sha(text), "承認した日時": datetime.now().isoformat(timespec="seconds"),
+                                        "文": text}, ensure_ascii=False, indent=1) + "\n")
+    changed = ([n for n in got["文"] if old is None or old["文"].get(n) != got["文"][n]]
+               + [n for n in (old["文"] if old else {}) if n not in got["文"]])
+    print(f"✅ [tidy --approve-fixed] 固定の文を承認した版として記録した（見出し {len(got['見出し'])} 行・固定の文 {len(got['文'])} 個"
+          f"・前の承認から変わった物 {len(changed)} 個）")
+    for n in changed:
+        print(f"   ・{n}")
+    print("   続けて CC が `tidy_next_step.py --write` を打つと、next_step に入ります。")
+    return 0
+
+
+def _heading_match(doc_h: str, want: str) -> bool:
+    """固定の見出しと合うか＝同じ、または、その後ろに「（」で始まる補足が付いている（日付・回の数・件数が入る見出し）。"""
+    return doc_h == want or doc_h.startswith(want + "（")
+
+
+def fixed_checks_core(src: dict, doc_text: str, ok: dict | None) -> list[str]:
+    """(t) 固定の文の検査。src＝元データ／doc_text＝作った全文（毎回読む文書＋控え）／ok＝承認した版。戻り＝❌ の一覧。"""
+    ng: list[str] = []
+    used = [b["固定"] for s in src["節"] for b in s.get("塊", []) if "固定" in b]
+    if ok is None:
+        if used:
+            ng.append(f"(t) 元データが固定の文を使っているのに、承認した版（{FIXED_OK.name}）が無い"
+                      "＝まこさんに `tidy_next_step.py --approve-fixed` を打っていただく")
+        return ng
+    if not ok["ok"]:
+        ng.append(f"(t) 承認した版（{FIXED_OK.name}）のハッシュ値が中身と違う＝承認の記録を手で書き替えた"
+                  "→ 書き替えを戻すか、まこさんに承認し直していただく")
+    for n in used:
+        if n not in ok["文"]:
+            ng.append(f"(t) 元データの固定の印「{n}」が、承認した版に無い")
+    for n in ok["文"]:
+        k = used.count(n)
+        if k != 1:
+            ng.append(f"(t) 承認した固定の文「{n[:40]}」が、元データで {k} 回 使われている（ちょうど1回のはず）"
+                      "＝元データの固定の印を消した・増やした")
+    by_head = {s.get("見出し", ""): s for s in src["節"]}
+    for n in ok["文"]:
+        s = by_head.get(n)
+        if s is not None and s.get("塊") != [{"固定": n}]:
+            ng.append(f"(t) 固定の節「{n[:40]}」に、固定の文のほかの物が入っている＝CC の書き足しは「8 CC メモ」へ移す")
+    heads = [l for l in doc_text.splitlines() if HEAD_RE.match(l)]
+    k = 0
+    for h in heads:
+        if k < len(ok["見出し"]) and _heading_match(h, ok["見出し"][k]):
+            k += 1
+    if k < len(ok["見出し"]):
+        ng.append(f"(t) 固定の見出し「{ok['見出し'][k][:40]}」が、決まった順の位置に無い＝見出しを直した・消した・並べ替えた")
+    lines = doc_text.splitlines()
+    for p in NO_EXTRA_ITEMS:
+        s = next((i for i, l in enumerate(lines) if l.startswith(p)), None)
+        if s is None:
+            continue
+        extra = [l for l in lines[s + 1:_section_end(lines, s)]
+                 if HEAD_RE.match(l) and not any(_heading_match(l, w) for w in ok["見出し"])]
+        if extra:
+            ng.append(f"(t) 項目「{p.strip()}」の中に、固定の一覧に無い見出しが在る＝{extra[0][:40]}（CC の書き足しは「8 CC メモ」へ）")
+    sec2 = next((s for s in src["節"] if s.get("見出し", "").startswith(NEXT_SEC)), None)
+    if sec2 is not None:
+        bad = [l for b in sec2.get("塊", []) if "文" in b for l in b["文"] if l.strip() and FREE_NG_RE.search(l)]
+        if bad:
+            ng.append(f"(t) 「2 次のセッションでやること」の CC が書く行に、教訓の番号か「★」が {len(bad)} 行 在る"
+                      f"＝注意書きは「8 CC メモ」へ移す／1行目＝{bad[0][:40]}")
+    return ng
+
+
+def _section_lines(sec: dict) -> list[str]:
+    return render({"節": [sec], "末尾の改行": False}).split("\n")
+
+
+def restore_special_blocks(old: dict, new: dict) -> None:
+    """作った文書を元データに戻したとき（parse_doc）、固定の印と正本の印の塊は文に変わってしまう。
+    元の元データで印を持っていた節の塊を、同じ見出しの節に戻す。中身が変わっていれば書かずに止まる（fail-closed）。
+    ★2026-10-18（190回目）に見つけた不具合の直し＝前は、要件定義の {"正本": …} の塊が、--write のたびに文に書き戻されていた
+      （いまの元データに「正本」の塊は0個・2026-10-18 に jq で確かめた）。正本を直しても、next_step は変わらなかった。"""
+    taken: set[int] = set()
+    for so in old["節"]:
+        if not any(("固定" in b or "正本" in b) for b in so.get("塊", [])):
+            continue
+        j = next((k for k, sn in enumerate(new["節"]) if k not in taken and sn.get("見出し") == so.get("見出し")), None)
+        if j is None:
+            raise SystemExit(f"[tidy] 固定の文か正本を写す節「{so.get('見出し', '')[:40]}」が、作った文書に無い＝書かずに止まる")
+        if _section_lines(new["節"][j]) != _section_lines(so):
+            raise SystemExit(f"[tidy] 固定の文か正本を写す節「{so.get('見出し', '')[:40]}」の中身が、作る途中で変わった＝書かずに止まる")
+        new["節"][j]["塊"] = so["塊"]
+        taken.add(j)
+
+
 def render(src: dict) -> str:
     """元データから next_step.md の本文を作る（目印の行は付けない）。"""
     out: list[str] = []
@@ -456,6 +668,9 @@ def render(src: dict) -> str:
         for blk in sec.get("塊", []):
             if "文" in blk:
                 out.extend(blk["文"])
+            elif "固定" in blk:
+                # ★2026-10-18（190回目）＝この塊は元データに文を持たない。まこさんが承認した固定の文から写す。
+                out.extend(_fixed_lines(blk["固定"]))
             elif "正本" in blk:
                 # ★2026-10-12（A-3）＝この塊は元データに文を持たない。作るたびに正本から写す（正本を直せば、次の --write で next_step も変わる）。
                 #   ★--import（next_step.md から元データを作り直す口）は、この塊を「文」に変えてしまう＝使ったら、塊を {"正本": …} に戻す。
@@ -501,9 +716,11 @@ def length_checks(text: str) -> list[str]:
     なぜ要るか＝長さを止める物が §0 の100行だけで、足すだけで済んでいた。超えたら、何かを控えへ移すまで終われない形にする。"""
     ng: list[str] = []
     lines = text.splitlines()
-    s0 = next((i for i, l in enumerate(lines) if l.startswith(SEC0_START)), None)
-    if s0 is not None and s0 > TOP_MAX:
-        ng.append(f"(o) 毎回読む部分（先頭から「{SEC0_START.strip()}」の前まで）が {s0} 行＝上限 {TOP_MAX} 行を超えた"
+    s0 = top_lines(lines)
+    if s0 is None:
+        ng.append(f"(o) 項目 {'・'.join(p.strip() for p in TOP_ITEMS)} の見出しのどちらかが見つからない")
+    elif s0 > TOP_MAX:
+        ng.append(f"(o) 毎回読む部分（先頭から項目 2 の終わりまで）が {s0} 行＝上限 {TOP_MAX} 行を超えた"
                   f"＝経緯は worklog へ・期間限定の物と古い物は控え（{REF_HEAD}…の見出しの後ろ）へ移す")
     n = next((i for i, l in enumerate(lines) if l.startswith(NEXT_SEC)), None)
     if n is None:
@@ -523,7 +740,7 @@ def length_checks(text: str) -> list[str]:
         body = [l for l in lines[s1 + 1:_section_end(lines, s1)] if l.strip()]
         long_b = [l for l in body if len(l) > LINE_MAX]
         if len(body) > STATE_MAX or long_b:
-            ng.append(f"(r) 「0-1 いまの状態」が {len(body)} 行（上限 {STATE_MAX} 行）・{LINE_MAX} 字を超える行が {len(long_b)} 行"
+            ng.append(f"(r) 「3-1 いまの状態」が {len(body)} 行（上限 {STATE_MAX} 行）・{LINE_MAX} 字を超える行が {len(long_b)} 行"
                       f"＝最新の回だけを、短い行で書く。前の回は worklog の節の番号で指す")
     # (s) 必読の表（ファイル・なぜ読むか・外す条件）。外す条件が空の行は通さない＝期間限定の必読が、いつまでも残らないようにする
     rows = must_rows(text)
@@ -764,6 +981,7 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
     ng = verify(new_next, h2, g2, latest_worklog_date(next_path.parent), limit)
     ng += reading_checks(new_next)                 # ★2026-10-02＝まこさんが読む形か（(h)〜(k)）
     ng += length_checks(split_ref(new_next)[0])    # ★2026-10-12＝毎回読む部分の長さ（(o)(p)）
+    ng += fixed_checks_core(src, new_next, load_fixed_ok())   # ★2026-10-18＝固定の文（(t)）
     if miss:
         ng += [f"(参照) {x} が見出しに無い（元データの文を直す）" for x in miss]
     if ng:
@@ -772,6 +990,7 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
             print(f"   ・{x}")
         return 2
     new_src = parse_doc(new_next)
+    restore_special_blocks(src, new_src)           # ★2026-10-18＝固定の印と正本の印を、文に変えずに残す
     if render(new_src) != new_next:
         print(f"❌ [tidy --write] 作った文書を元データに戻すと形が変わる＝書かない／{_first_diff(new_next, render(new_src))}")
         return 2
@@ -793,7 +1012,7 @@ def do_write_src(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) ->
     n_les = trim_lessons(today)                    # ★2026-10-02＝教訓の現役を40件＋名指しされた物に
     n_cp = clean_audit_copies()                    # ★2026-10-02＝結果が出た監査の写しを消す
     print(f"[tidy --write] 元データ {SRC_NAME} から作った／移した節 {rep['moved_sections']}"
-          f"／0-2 の表から移した行 {rep2['moved_rows']}／§6 の表から移した行 {rep3['moved_rows']}"
+          f"／5 やることの表 から移した行 {rep2['moved_rows']}／§6 の表から移した行 {rep3['moved_rows']}"
           f"（§6 を移す設定＝{bool(src.get(S6_FLAG))}）／worklog の参照を照らした（控えの外で見つからない参照 0 件）"
           f"／(0-b-2) を json から書いた／教訓を控えへ移した {n_les} 件／監査の写しを消した {n_cp} 個")
     return do_verify(next_path, limit)
@@ -806,14 +1025,12 @@ def reading_checks(text: str) -> list[str]:
     lines = text.splitlines()
     h2s = [l for l in lines if l.startswith("## ")]
     if not h2s or not h2s[0].startswith(TOP_NEXT):
-        ng.append(f"(h) 最初の「## 」の見出しが『{TOP_NEXT}』でない＝次にやることを文書の先頭に置く")
-    s0 = next((i for i, l in enumerate(lines) if l.startswith(SEC0_START)), None)
-    e0 = next((i for i, l in enumerate(lines) if l.startswith(SEC0_END)), None)
-    if s0 is not None and e0 is not None:
-        sec0 = lines[s0:e0]
+        ng.append(f"(h) 最初の「## 」の見出しが『{TOP_NEXT}』でない＝毎回最初に読むことを文書の先頭に置く")
+    sec0 = item_lines(lines, CHECK_ITEMS)
+    if sec0 is not None:
         hist = [l for l in sec0 if HISTORY_RE.search(l)]
         if hist:
-            ng.append(f"(i) §0 に経緯（「N回目にしたこと」）が {len(hist)} 行 在る＝経緯は worklog に書く"
+            ng.append(f"(i) 項目 3・5・6 に経緯（「N回目にしたこと」）が {len(hist)} 行 在る＝経緯は worklog に書く"
                       f"（その節の見出しに「{DISPOSE}」を付けて `--write` で控えへ）／1行目＝{hist[0].strip()[:40]}")
         seen: dict[str, int] = {}
         for l in sec0:
@@ -823,7 +1040,7 @@ def reading_checks(text: str) -> list[str]:
             seen[t] = seen.get(t, 0) + 1
         dup = [t for t, n in seen.items() if n > 1]
         if dup:
-            ng.append(f"(k) §0 に同じ行が {len(dup)} 種類 2回以上 在る＝1か所にまとめる／1つ目＝{dup[0][:40]}")
+            ng.append(f"(k) 項目 3・5・6 に同じ行が {len(dup)} 種類 2回以上 在る＝1か所にまとめる／1つ目＝{dup[0][:40]}")
     s2 = next((i for i, l in enumerate(lines) if l.startswith(H02)), None)
     if s2 is not None:
         long_cells = []
@@ -833,7 +1050,7 @@ def reading_checks(text: str) -> list[str]:
                 if len(c.strip()) > CELL_MAX:
                     long_cells.append(c.strip())
         if long_cells:
-            ng.append(f"(j) 0-2 の表に {CELL_MAX} 字を超える欄が {len(long_cells)} 個 在る＝短くし、経緯は worklog へ"
+            ng.append(f"(j) 5 やることの表 に {CELL_MAX} 字を超える欄が {len(long_cells)} 個 在る＝短くし、経緯は worklog へ"
                       f"／1つ目＝{long_cells[0][:40]}（{len(long_cells[0])}字）")
     # ★2026-10-12（170回目・まこさん「OK」＝直し方の案 A-3）＝固定で載せる文（要件定義と工事の流れ）が、next_step に在るか。
     #   まこさん指示（2026-10-12）＝要件定義と工事の流れを、設計書・next_step・監査の依頼書の上部に固定で載せる。絶対に消さない。
@@ -953,6 +1170,13 @@ def do_verify(next_path: pathlib.Path, limit: int) -> int:
     #   （自己テストの見本の文書は元データを持たないので、ここは見ない＝19本のテストはそのまま）
     if has_src:
         ng += reading_checks(full) + length_checks(text) + tidy_checks()
+        # ★2026-10-18＝固定の文（(t)）。下書きが承認した版と違うだけなら止めない（承認を待っている状態）＝知らせるだけ
+        _src = json.loads((next_path.parent / SRC_NAME).read_text(encoding="utf-8"))
+        _ok = load_fixed_ok()
+        ng += fixed_checks_core(_src, strip_gen_head(text)[0] + ref_body, _ok)
+        if _ok is not None and FIXED_DRAFT.exists() and FIXED_DRAFT.read_text(encoding="utf-8") != _ok["text"]:
+            print(f"（固定の文の下書き {FIXED_DRAFT.name} が、承認した版と違います＝まこさんの承認を待っている直しが在る。"
+                  "next_step は承認した版から作っています）")
         # ★2026-10-12＝必読の一覧（must_read_now.txt）が、必読の表から書いたままか
         mf = next_path.parent / MUST_FILE
         if not mf.exists() or mf.read_text(encoding="utf-8") != must_file_text(must_rows(text) or []):
@@ -962,11 +1186,11 @@ def do_verify(next_path: pathlib.Path, limit: int) -> int:
         for x in ng:
             print(f"   ・{x}")
         return 2
-    n0 = sec0_lines(text.splitlines())
-    _n_chk = ("19個（6つ＋(g) 元データと全文のハッシュ値＋(h)〜(k)・(n) 読む形と固定で載せる文＋(o)(p)(q) 長さ＋(r) いまの状態＋(s) 必読の表"
-              "＋(l) 教訓の件数・(m) 監査の写し）"
+    n0 = check_area_lines(text.splitlines())
+    _n_chk = ("20個（6つ＋(g) 元データと全文のハッシュ値＋(h)〜(k)・(n) 読む形と固定で載せる文＋(o)(p)(q) 長さ＋(r) いまの状態＋(s) 必読の表"
+              "＋(l) 教訓の件数・(m) 監査の写し＋(t) 固定の文）"
               if (next_path.parent / SRC_NAME).exists() else "6つ")
-    print(f"✅ [tidy --verify] {_n_chk}とも通った（§0 {n0} 行／上限 {limit}）")
+    print(f"✅ [tidy --verify] {_n_chk}とも通った（項目 3・5・6 が {n0} 行／上限 {limit}）")
     return 0
 
 
@@ -985,47 +1209,49 @@ def do_write(next_path: pathlib.Path, arc_path: pathlib.Path, limit: int) -> int
         arc_path.write_text(new_arc, encoding="utf-8")
     next_path.write_text(new_next, encoding="utf-8")
     print(f"[tidy --write] 移した節 {rep['moved_sections']}／行 {rep['moved_lines']}"
-          f"／0-2 の表から移した行 {rep2['moved_rows']}"
+          f"／5 やることの表 から移した行 {rep2['moved_rows']}"
           f"／印の数 前 {rep['before']} → 後 {count_marks(new_next)}（移した分 {rep['moved']}＋{rep2['moved']}）"
           f"／(0-b-2) を json から書いた")
     return do_verify(next_path, limit)
 
 
 # ── わざと壊して止まるか試すテスト ────────────────────────────────────────────
+# ★2026-10-18（190回目）＝見本を、組み替えた後の項目の見出し（3 いまの状態・5 やることの表・6 記録と置き場の案内）に替えた。
+#   前は「# §0 」〜「## §0-4」の範囲と、0-1・0-2・(0-b-2)・(0-d) の見出しだった。中身の行（記録・表の行・印）は同じ。
 SAMPLE = """# 次のセッションの起点
 
-# §0 次にやること
+## 3 いまの状態
 
-### 0-1 いまの状態（{d}・◯回目の末）
+### 3-1 いまの状態（{d}・◯回目の末）
 
 > 🔴 次のセッションはここから。
 
-#### （0-1' 前回の記録・次の書き替えで消す）
+#### （3-1' 前回の記録・次の書き替えで消す）
 
 - 🔴 古い記録1
 
-#### （0-1'' 前々回の記録・次の書き替えで消す）
+#### （3-1'' 前々回の記録・次の書き替えで消す）
 
 - ★消さない 古い記録2
 - 毎回消さない 古い記録3
 
-### 0-2 🔴 次にやること
+### 3-2 🔴 印の状態（2026-01-01 時点）
+
+- H2 の印＝`0000000000000000…`／G2 の印＝`1111111111111111…`
+
+### 3-3 まだ埋まっていないこと
+
+| # | 何 |
+|---|---|
+
+## 5 🔴 次にやること
 
 | 番号 | やること | 状態 |
 |---|---|---|
 | 1 | あれ | まだ |
 | 2 | これ | ★いまここ |
 
-### （0-b-2）🔴 印の状態（2026-01-01 時点）
-
-- H2 の印＝`0000000000000000…`／G2 の印＝`1111111111111111…`
-
-### （0-d）まだ埋まっていないこと
-
-| # | 何 |
-|---|---|
-
-## §0-4 🔴 まこさんの判断待ち
+## 6 記録と置き場の案内
 
 - 何か
 """
@@ -1057,7 +1283,7 @@ def selftest() -> int:
     r7 = verify(clean, h2, g2, today, LIMIT)
     if r7:
         ng.append(f"T7: きれいな見本で ❌ {r7}")
-    r3 = verify(clean.replace(f"### 0-1 いまの状態（{today}", "### 0-1 いまの状態（2026-08-20"), h2, g2, today, LIMIT)
+    r3 = verify(clean.replace(f"### 3-1 いまの状態（{today}", "### 3-1 いまの状態（2026-08-20"), h2, g2, today, LIMIT)
     if not any(x.startswith("(b)") for x in r3):
         ng.append(f"T3: 古い日付で (b) が出ない {r3}")
     r4 = verify(clean.replace(h2["fp"], "deadbeefdeadbeef"), h2, g2, today, LIMIT)
@@ -1068,7 +1294,7 @@ def selftest() -> int:
     r4b = verify(clean.replace(h2["when"], "2020-01-01 00:00:00"), h2, g2, today, LIMIT)
     if not any(x.startswith("(c)") for x in r4b):
         ng.append(f"T4b: 印の時刻が違うのに (c) が出ない {r4b}")
-    n0 = sec0_lines(clean.splitlines())
+    n0 = check_area_lines(clean.splitlines())
     r5 = verify(clean, h2, g2, today, limit=n0 - 1)
     if not any(x.startswith("(d)") for x in r5):
         ng.append(f"T5: 上限超えで (d) が出ない {r5}")
@@ -1087,8 +1313,8 @@ def selftest() -> int:
     r9b = verify(clean.replace("| 1 | あれ | まだ |", "| 1 | ~~あれ~~ | まだ |"), h2, g2, today, LIMIT)
     if not any(x.startswith("(f)") for x in r9b):
         ng.append(f"T9b: 0-2 の表に取り消し線の行が在るのに (f) が出ない {r9b}")
-    r9c = verify(clean.replace("### 0-2 🔴 次にやること",
-                               f"### 0-2 🔴 次にやること\n\n終わった行（{DONE_MARK}）は archive へ移します。"),
+    r9c = verify(clean.replace("## 5 🔴 次にやること",
+                               f"## 5 🔴 次にやること\n\n終わった行（{DONE_MARK}）は archive へ移します。"),
                  h2, g2, today, LIMIT)
     if any(x.startswith("(f)") for x in r9c):
         ng.append(f"T9c: 説明の文に『{DONE_MARK}』が在るだけで (f) が出た（誤報）{r9c}")
@@ -1105,8 +1331,8 @@ def selftest() -> int:
     _n11, _a11, r11 = move_done_rows(d11, "# archive\n", today)
     if r11["moved_rows"] != 1:
         ng.append(f"T10b: 0-2 の表の取り消し線の行が移らない（移した行 {r11['moved_rows']}）")
-    d12 = clean.replace("### 0-2 🔴 次にやること",
-                        f"### 0-2 🔴 次にやること\n\n終わった行（{DONE_MARK}）は archive へ移します。")
+    d12 = clean.replace("## 5 🔴 次にやること",
+                        f"## 5 🔴 次にやること\n\n終わった行（{DONE_MARK}）は archive へ移します。")
     n12, _a12, r12 = move_done_rows(d12, "# archive\n", today)
     if r12["moved_rows"] != 0 or f"終わった行（{DONE_MARK}）は archive へ移します。" not in n12:
         ng.append(f"T10c: 説明の文（表でない行）を移してしまった（移した行 {r12['moved_rows']}）")
@@ -1127,6 +1353,62 @@ def selftest() -> int:
     if r15["moved_rows"] != 1 or "| 番号 | やること | 状態 |" not in a15:
         ng.append(f"T10f: 見出しが無い表で、既定の見出しが入らない（移した行 {r15['moved_rows']}）")
 
+    # ★T11〜T17（2026-10-18・190回目）＝固定の文 (t)。本物の承認した版は使わず、見本の版を _FIXED_CACHE に入れて試す。
+    fx_text = ("<!-- 固定 見出し -->\n# 題\n## 1 毎回最初に読むこと\n### 1-1 甲\n## 2 次のセッションでやること\n"
+               "<!-- 固定 文 ### 1-1 甲 -->\n\n- 甲の文\n<!-- 固定 文 2 手順 -->\n- 手順\n")
+    fx_ok = parse_fixed(fx_text)
+    fx_ok.update(ok=True, text=fx_text)
+    fx_src = {"節": [{"見出し": "# 題", "塊": [{"文": [""]}]}, {"見出し": "## 1 毎回最初に読むこと", "塊": []},
+                     {"見出し": "### 1-1 甲", "塊": [{"固定": "### 1-1 甲"}]},
+                     {"見出し": "## 2 次のセッションでやること（9回目）", "塊": [{"固定": "2 手順"}, {"文": ["- 作る物"]}]}],
+              "末尾の改行": True}
+    _saved = _FIXED_CACHE.pop("ok", None)
+    _FIXED_CACHE["ok"] = fx_ok
+    try:
+        fx_doc = render(fx_src)
+        r11 = fixed_checks_core(fx_src, fx_doc, fx_ok)
+        if r11:
+            ng.append(f"T11: きれいな見本で (t) が出た {r11}")
+        s12 = json.loads(json.dumps(fx_src))
+        s12["節"][2]["塊"].append({"文": ["- CC が足した行"]})
+        if not any(x.startswith("(t)") for x in fixed_checks_core(s12, render(s12), fx_ok)):
+            ng.append("T12: 固定の節に書き足しても (t) が出ない")
+        s13 = json.loads(json.dumps(fx_src))
+        s13["節"][3]["塊"][1]["文"].append("- ★次から気をつける（L-999）")
+        if not any(x.startswith("(t)") for x in fixed_checks_core(s13, render(s13), fx_ok)):
+            ng.append("T13: 2 の CC が書く行に ★ と教訓の番号が在っても (t) が出ない")
+        d14a = fx_doc.replace("### 1-1 甲", "### 1-1 乙")
+        d14b = fx_doc.replace("- 甲の文", "- 甲の文\n#### CC のメモ")
+        if not (any(x.startswith("(t)") for x in fixed_checks_core(fx_src, d14a, fx_ok))
+                and any(x.startswith("(t)") for x in fixed_checks_core(fx_src, d14b, fx_ok))):
+            ng.append("T14: 固定の見出しを変えても、項目 1 に見出しを足しても (t) が出ない")
+        if not any(x.startswith("(t)") for x in fixed_checks_core(fx_src, fx_doc, dict(fx_ok, ok=False))):
+            ng.append("T15: 承認の記録のハッシュ値が中身と違うのに (t) が出ない")
+        n16 = parse_doc(fx_doc)
+        restore_special_blocks(fx_src, n16)
+        if n16["節"][2]["塊"] != [{"固定": "### 1-1 甲"}] or render(n16) != fx_doc:
+            ng.append(f"T16: 作った文書を元データに戻すと、固定の印が文に変わる {n16['節'][2]['塊']}")
+        n16b = parse_doc(fx_doc.replace("- 手順", "- 手順を変えた"))
+        try:
+            restore_special_blocks(fx_src, n16b)
+            ng.append("T16b: 固定の文が途中で変わったのに止まらない")
+        except SystemExit:
+            pass
+    finally:
+        _FIXED_CACHE.pop("ok", None)
+        if _saved is not None:
+            _FIXED_CACHE["ok"] = _saved
+    _env = os.environ.get("CLAUDECODE")
+    os.environ["CLAUDECODE"] = "1"
+    try:
+        if approve_fixed() != 2:
+            ng.append("T17: Claude Code の中から --approve-fixed を打っても断らない")
+    finally:
+        if _env is None:
+            os.environ.pop("CLAUDECODE", None)
+        else:
+            os.environ["CLAUDECODE"] = _env
+
     # T8 hook を見本で直に呼ぶ（❌ の見本＝exit 2／✅ の見本＝exit 0）★実物の json と worklog の日付で
     if HOOK.exists():
         real_h2, real_g2 = _pass(H2), _pass(G2)
@@ -1136,7 +1418,7 @@ def selftest() -> int:
             good = pathlib.Path(td) / "next_step_good.md"
             bad.write_text(src, encoding="utf-8")
             good_text = refresh_marks(new_next, real_h2, real_g2, today).replace(
-                f"### 0-1 いまの状態（{today}", f"### 0-1 いまの状態（{wd}")
+                f"### 3-1 いまの状態（{today}", f"### 3-1 いまの状態（{wd}")
             good.write_text(good_text, encoding="utf-8")
             rb = subprocess.run(["bash", str(HOOK), str(bad)], capture_output=True, text=True)
             rg = subprocess.run(["bash", str(HOOK), str(good)], capture_output=True, text=True)
@@ -1153,21 +1435,25 @@ def selftest() -> int:
           "／T9a ✅済 の行／T9b 取り消し線／T9c 説明の文は止めない"
           "／T10a 表の ✅済 を移す／T10b 表の取り消し線を移す／T10c 説明の文は移さない"
           "／T10d 控えに区切りの行が入る／T10e 生きている行を複製しない／T10f 見出しが無い表でも落ちない"
-          "／T4b 印の時刻も照らす")
+          "／T4b 印の時刻も照らす"
+          "／T11 固定の文のきれいな見本／T12 固定の節への書き足し／T13 2 の注意書き／T14 固定の見出し／T15 承認の記録の改ざん"
+          "／T16 固定の印を文に変えない（T16b 途中で変われば止まる）／T17 Claude Code の中から承認を打てない")
     for x in ng:
         print(f"  ❌ {x}")
-    total = 19
+    total = 27
     print(f"  {'❌' if ng else '✅'} わざと壊して止まるか試すテスト {total - len(ng)}/{total} pass")
     return 1 if ng else 0
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="next_step.md の §0 を機械で整えて検査する")
+    ap = argparse.ArgumentParser(description="next_step.md を機械で整えて検査する")
     ap.add_argument("--verify", action="store_true")
     ap.add_argument("--import", dest="do_import", action="store_true",
                     help="いまの next_step.md から next_step_src.json を作る（最初の1回・作り直しが1文字も違わないときだけ書く）")
     ap.add_argument("--write", action="store_true")
     ap.add_argument("--selftest", action="store_true")
+    ap.add_argument("--approve-fixed", dest="approve_fixed", action="store_true",
+                    help="固定の文の下書き（next_step_fixed.md）を、承認した版として記録する（まこさんが端末で打つ。Claude Code の中からは断る）")
     ap.add_argument("--file", type=pathlib.Path, default=NEXT, help="検査する next_step.md（テスト用）")
     ap.add_argument("--archive", type=pathlib.Path, default=ARCHIVE)
     ap.add_argument("--limit", type=int, default=LIMIT)
@@ -1176,6 +1462,8 @@ def main() -> int:
     a = ap.parse_args()
     if a.selftest:
         return selftest()
+    if a.approve_fixed:
+        return approve_fixed()
     if a.do_import:
         return import_src(a.file)
     if a.todo_from:

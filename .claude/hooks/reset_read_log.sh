@@ -77,7 +77,7 @@ if [ -f "$_MR" ]; then
     _i=$((_i + 1))
   done < "$_MR"
 fi
-echo "（WORKFLOW.md＝現在地は「next_step.md §0 を見る」の1行だけ。改訂の履歴は archive/workflow/ に移した）"
+echo "（WORKFLOW.md＝現在地は「next_step.md の『2 次のセッションでやること』と『3 いまの状態』を見る」の1行だけ。改訂の履歴は archive/workflow/ に移した）"
 echo "→ Read tool で開いてください（grep や表示だけでは、読んだことになりません）。"
 echo "（ledger.md 本体＝特定の過去実験を深掘りする時に読む参照資料。毎回の必読からは外した）"
 echo "（補助＝必要時のみ: 設計=strat_v9ml_design / 分析手順=analysis_playbook / 教訓=lessons_active を grep 参照）"

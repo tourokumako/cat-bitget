@@ -90,9 +90,9 @@
    - 古いものは `lessons_archive.md`（L-102以前・参照用）。active が約40件超えたら最古を archive に移送する
 
 2. **`.claude/state/next_step.md` を更新する（★唯一の起点・2026-08-25 まこさん指示で WORKFLOW.md から移した）**
-   - 次にやること（§0）・あとで直すこと（§6）・今セッションの確定を書き直す
+   - 次にやること（「2 次のセッションでやること」）・あとで直すこと（控えの §6）・今セッションの確定を書き直す
    - パス: リポジトリ直下 `.claude/state/next_step.md`
-   - **WORKFLOW.md には現在地・引き継ぎを書かない**（現在地は「next_step.md §0 を見る」の1行だけ・改訂の番号は248で止めた）。理由＝同じ事実を2か所に書くと片方だけ直って食い違う
+   - **WORKFLOW.md には現在地・引き継ぎを書かない**（現在地は「next_step.md の『2 次のセッションでやること』と『3 いまの状態』を見る」の1行だけ・改訂の番号は248で止めた）。理由＝同じ事実を2か所に書くと片方だけ直って食い違う
 
 3. **ML pipeline Phase 進捗を WORKFLOW.md に反映する** (旧表記「Priority 再構築フェーズ」)
    - ML pipeline Phase 0 (ラベル再生成 14 ラベル独立) / Phase 1〜3 (LightGBM 学習+ハイパラ) / Phase 4 (クラスタリング+Exit) / Phase 5 (Replay) / Phase 6 (本テスト) / Phase 7 (Bot 統合) のどこまで進んだか
@@ -117,7 +117,7 @@
 セッション終了チェック:
 [ ] .claude/state/next_step.md 上書き更新完了（次セッションの起点・SessionStart 表示・必須＝①本筋 ②今セッションの確定=ledger E番号参照 ③やってはいけないこと ④数字の出典。毎回上書き=最新1枚。ledger 編集後は pdca_gate が物理強制・cat_requirements §8.3）
 [ ] lessons_active.md 更新完了
-[ ] WORKFLOW.md＝現在地は書かない（★2026-08-25 まこさん指示・起点は next_step.md §0 の1本）。作業の決まりを変えた時だけ直す／CP 監査一覧は `python3 .claude/tools/gen_audit_index.py --write` で作り直す
+[ ] WORKFLOW.md＝現在地は書かない（★2026-08-25 まこさん指示・起点は next_step.md の「2 次のセッションでやること」と「3 いまの状態」の1本）。作業の決まりを変えた時だけ直す／CP 監査一覧は `python3 .claude/tools/gen_audit_index.py --write` で作り直す
 [ ] ml_pipeline_execlog.md（旧8工程フローの記録＝廃止・参照のみ＝原則「該当なし」）
 ```
 → 全て [ ] に ✓ が入るまでセッション終了を宣言しない。
