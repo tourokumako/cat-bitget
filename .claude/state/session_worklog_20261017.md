@@ -325,4 +325,30 @@
 - ToDo の★いまここを42番に移し、42番の宣言 → まこさん「よい」。
 - この回の数＝稼働中の hook の最後の1本（require_trial_before_proposal）を要として2か所 直した（案の後ろの一言で止めたときの案内・囲みの中の見出しの例）。見出しの無い案が見えない件は直さない（まこさん決定）。始めの表示の異常2件の片づけの行を消した（reset_read_log.sh）。一覧を作る道具に「確かめる項目」の表の欄を足した。新しく作った物＝require_trial_before_proposal_selftest.py（13件）。
 - ★CC の誤り（この回）＝L-699 の①〜⑥（無い決まりを書いた・説明が伝わらなかった・問いを置き換えた・読めない形で「書いた」と言った・確かめずに問題点を挙げた・説明の例で自分の返信を止められた）。
-- 教訓 L-699 を書いた。next_step の元データを189回目にし（次は ToDo の29番・66行の縮めた文を L-692 の原文に合わせて直した）、tidy_next_step.py --todo-from → --write。
+- 教訓 L-699 を書いた。next_step の元データを189回目にし（次は ToDo の29番・66行の縮めた文を L-692 の原文に合わせて直した）、tidy_next_step.py --todo-from → --write（19個の照らし 通った）・--selftest 19/19。
+- まこさん「一覧の3つ（_hook_inventory.py、hook_inventory.md、hook_inventory_src.json）これもgitにいれる」→ 9本と、git の対象外の3本（git add -f）をファイルごとに入れてコミットした（ffd0373）。コミットの後に、ToDo の42番を ✅済 にし、next_step の④の git の行を直して、表を写し直した（この直しと、この行は、次のコミットに入る）。
+
+## §44 189回目（2026-10-17）＝始めと、ToDo の29番＝登録の無い hook 78本を「止めた記録が在る物」と「無い物」に分けた
+
+- 必読6本・この worklog の §40〜§43・教訓 L-698・L-699・記憶の3本を Read で開いた。始めの表示の異常は1件（予定どおり）。計画モードで ToDo と29番の宣言を出し、承認された。
+- 本数（_hook_inventory.py --verify）＝登録の無い .sh 60本（止める物がまだ 56本）・呼ばれない .py 18本（まだ 17本）。next_step の「16本」は古い。
+- まこさん「動いていないhookのうち止めてるものはそのままでも問題がないと思うので、そのままでいいのでは。それよりも、hookがあるが、トリガーがない等の理由で動いていないhookが問題だよね」→ CC が「止めた記録が在る物と無い物に分け、後者だけ止める物を書く。分けるのは記録で決める」と答えた → まこさん「それでよい」。
+- 分けた結果（78本）＝①止めた記録が在る 57本（2026-10-01 にまこさんの指示で外した42本＝_remove_hooks_20261001.py・b・c／一覧の元データの「停止」5本／記録を探して見つけた9本＝require_comprehension_check〔worklog 20260726 §20〕・enforce_chat_writing と enforce_no_false_claim〔20260930 §17〕・forbid_guess_retry〔20261001:74〕・require_check_before_action〔20261001 §6〕・require_full_check_before_handoff〔20261001 §5〕・check_chat_draft〔恒久 §0-4 の2番〕・require_chat_draft_before_long_reply〔20260919:82〕・require_request_understood〔20260929 §57〕／arc_doc_ok.py は呼ぶ所の pdca_gate と pdca_mark が止まったので一緒に止まっている＝CC の読み）②hook ではなく、部品・道具・試し 18本（動いている hook から呼ばれる部品 lib_engine_entry_scan・transcript_rows・require_check_after_failure・trial_design／人か CC が打つ道具 check_all_before_handoff・approve_impl・approve_design〔approve_impl.sh:381 から呼ぶ〕・pdca_fast／試し selftest_flow_declaration・test_worklog_toolchange・*_selftest.py 8本）③止めた記録が見つからない 3本（require_confirm_on_order.py・require_plan_approval.py・require_workflow_for_impl.sh）。
+- ついでに分かった事実＝enforce_chat_writing が登録から外れた日は 2026-09-30（コミット 9a24dff・まこさんが端末で sed を打った）。chat_writing_rules.md の「いつ外れたかは、まだ調べていません」は、これで分かった。
+- まこさん「よい」（元データに書く形）→ hook_inventory_src.json の「停止」に52本（2026-10-01 の42本・探して見つけた9本・arc_doc_ok.py）を、止めた日・まこさんの言葉・記録の行で書いた。「hooks」に21本（記録の無い3本は止める物・守る要件・動く場面／部品・道具・試しの18本は「止めない（hook ではない）」と呼ぶ所）を書いた。書いた根拠の行は sed で実物と照らした。_hook_inventory.py --write → ✅（根拠の行は全部 実在）。まだの行の数＝登録なしの .sh は止める物 51本・呼ばれない .py は 1本（停止に書いた物も「まだ」に数える作りのため）。
+- 見つけた問題＝一覧を作る道具は、登録も名指しも無い物に、止めた記録が無くても ❌️「止めている」を自動で付ける（_hook_inventory.py:270-271）。記録の無い3本も、わざと止めた物と同じ ❌️ で出ている。
+- まこさん「書き直して良い」→ _hook_inventory.py を直した＝①❌️ は「停止」に書いた物だけ（stopped）②元データの hooks の「種類」（部品・道具・試し）が在る物は【hook ではない：…】（kind_of）③登録が無く、停止も種類も無い物は ⚠️【呼ぶ所が無い・止めた記録も無い】（orphan）④--verify の「まだ」は、停止と種類の物を除いて数え、⚠️ の名前を出す ⑤一覧の説明の行（❌️・⚠️・【hook ではない】）を直した。元データの18本に「種類」を、require_workflow_for_impl.sh に「役割」を足した。
+- ★CC の直し漏れ＝⑤の後の --write で「中身が違う」と落ちた。照らす所（_hook_inventory.py:426）が「| `」と「| ❌」で始まる行だけ止めた回数の欄を外して比べる作りで、⚠️ の行を足していなかった。❌ を前提にする所を grep で全部 探し（426行の1か所だけ・一覧の文書を読むほかのプログラムは無い）、⚠ を足した。
+- 結果（--write → ✅）＝稼働 37本（止めた記録 1本・それ以外 36本）／登録なしの .sh 60本（止めた記録 55本・hook ではない 4本・⚠️ 1本）／呼ばれない .py 18本（止めた記録 2本・hook ではない 14本・⚠️ 2本）。それ以外の「まだ」は全部 0本。⚠️ の3本＝require_workflow_for_impl.sh・require_confirm_on_order.py・require_plan_approval.py。
+
+## §45 189回目＝ToDo の35番＝⚠️ の3本を1本ずつ確かめる
+
+- まこさん「⚠️ の3本を１本ずつ確かめて、要／不要、修正すべきかを確かめる」→ ToDo の29番を ✅済、35番を★いまここにし、宣言 → まこさん「OK」。
+- 1本目 require_confirm_on_order.py＝--replay 7（8秒）＝記録37本・引き金に当たった発言 5回・止める回数 2回（2回とも何も開かずに書き込み・実行に入っていた）。5回の中身（jq で記録から取り出した）＝①10-10 11:51「自動で確認をしてミスを見つけ…強制できるということだよね？」（問い）②10-10 15:35 同じ語を含む問い ③10-12 09:11「じゃあ全部確認しろよ」（指示）④10-12 11:56「進めてよいが、ミスが多いので確認をしてから進めて」（指示）⑤10-17 01:10「15分超えたとしても走らせて確認してよい」（許可）＝指示は2回・問いと許可が3回。どの2回で止めたかは、この口は出さない。
+- まこさん「これからやることが正しいと、根拠をもって確かめることを確認させることは不可能ということなんだよね？」→ CC「はい（プログラムは操作の形しか見えない）。本体 2.1.301 に AI に判断させる Prompt Hook は在る（strings で説明の文を確かめた）が、正しさの保証はできず、別の AI の採点は 2026-08-18 にトークンの理由でやめている」→ まこさん「ではこのhookは停止でよい」。元データの「停止」「まこさんの振り分け（不要）」「直し」に書き、--write → ✅（⚠️ は2本に減った）。
+- 2本目 require_plan_approval.py＝--replay 7（8秒）＝記録37本・まこさんの発言 819回・書き込み・実行 4389回・止める回数 402回（指示ごとに1回）。2026-10-01 の数え（session_worklog_20261001.md:171）は 620回。
+- CC の最初の説明は、まこさんに「え？よくわからない」と言われた → 今日のやり取り（指示 → 宣言 → OK → 書こうとして止まる → ボタンで承認 → 次の発言でまた止まる）に当てはめて書き直した → まこさん「停止でよい」。元データの「停止」「まこさんの振り分け（不要）」「直し」に書いた。
+- 3本目 require_workflow_for_impl.sh＝出どころの cc_role §1.4.6.3 は 2026-06-15 に まこさんの合意で改訂され、「実装前に Workflow 起動を強制する hook」案は撤回と書いてある（cc_role.md:228・:249）。直近7日に本体の会話が priority_rebuild の .py を Write・Edit した回数＝36回（文書を作る gen_*.py 32回・監査の作業場の写し 4回）＝登録していれば全部 止めた。★数える jq を1回 承認ゲートに止められた（コマンドに scripts/priority_rebuild と .py と Write の語が並んだ）＝読むだけでも文字の並びで止まる。
+- まこさん「これも停止でいいよね」「他に、検査回してるふりをして実は動いていなかったhookがなかったか？」→ CC「はい（停止でよい）」。元データへの記録はお返事の後。2つ目の問いへの調べ（読むだけ）＝①fast-mode の印 .claude/state/pdca_fast_mode は 2026-07-15 から置かれたまま。登録の在る37本でこの印を見るのは enforce_worklog_on_experiment.sh だけで、印が在るときに動く作り（:13-14）＝いまは動いている。印で抜けていた25本（session_worklog_20261001.md:119）は、どれも 10-01 に登録から外れた ②登録の在る .sh で、本体の失敗を「|| true」などで握りつぶすのは hook_health_check.sh:90（表示だけ）の1か所 ③matcher が来ない道具だけを指す登録＝PreToolUse の MultiEdit だけの1つ（中身は require_acceptance_before_impl.sh・ほかの登録でも動く＝抜けではない）④毎回読まれる permanent_rules.md に、10-01 に登録を外した hook を「止める」と書いたまま注記の無い行が3つ＝:9（require_read_before_work）・:354（56番の物理化＝enforce_todo_declaration）・:425（72番の物理化＝enforce_checked_edit）。調べていない物＝登録の在る37本の .py の中で、例外のときに通す作り（35番の1本ずつの確かめで、まこさんと見た範囲より先は見ていない）。
+- まこさん「どちらもOK」（3本目を停止として記録する・permanent_rules.md の3行に注記を足す）→ ①元データの「停止」「まこさんの振り分け（不要）」「直し」に require_workflow_for_impl.sh を書いた ②permanent_rules.md の 9行の後・56番の末尾・72番の物理化の後に「2026-10-17 に実物で確かめた（いまは効いていない）」の注記を足した（文は消していない・_remove_hooks_20261001.py:12・:14 を根拠に）。permanent_rules.md を読むプログラム（gen_design_sections.py は70番だけ・tidy_next_step.py は教訓の名指しだけ）は、触った行を読まない。
+- --write で根拠の照らしが1件落ちた＝cc_role.md:228 は sdk の .claude/rules に在り、照らす道具（check_cites）はその場所を探さない → 「.claude/rules/cc_role.md:228」の形に直した → --write → ✅。⚠️ は0本（登録なしの .sh 60本＝止めた記録 56本・hook ではない 4本／呼ばれない .py 18本＝止めた記録 4本・hook ではない 14本）。

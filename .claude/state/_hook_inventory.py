@@ -264,12 +264,19 @@ def build(use: dict | None) -> tuple[list[str], dict]:
     decide = {n: v for n, v in (src.get("まこさんの振り分け") or {}).items() if not n.startswith("_")}
 
     def stopped(name: str) -> str:
-        """止めている理由（止めていなければ ""）。①元データの「停止」②登録が無く、どこからも名指しの無い物。"""
-        if name in stop_map:
-            return str(stop_map[name])
-        if name not in reg and not facts(name)["名指し"]:
-            return "登録が無く、どこからも名指しが無い＝動かない"
-        return ""
+        """止めている理由（止めていなければ ""）＝元データの「停止」に書いた物だけ。
+        ★2026-10-17（189回目・まこさん「書き直して良い」）＝直す前は、登録も名指しも無い物にも、止めた記録が無いのに
+          ❌️「止めている」を自動で付けていた。そのため、作ったのに呼ぶ所が無くて動いていない hook（まこさん「hookがあるが、
+          トリガーがない等の理由で動いていないhookが問題だよね」）が、わざと止めた hook と同じ印で出ていた。"""
+        return str(stop_map[name]) if name in stop_map else ""
+
+    def kind_of(name: str) -> str:
+        """hook ではない物の種類（部品・道具・試し）。元データの hooks の「種類」に手で書く（2026-10-17）。"""
+        return str((hand.get(name) or {}).get("種類") or "")
+
+    def orphan(name: str) -> bool:
+        """登録が無く、止めた記録（停止）も、hook ではない印（種類）も無い物＝作ったのに呼ぶ所が無くて動いていない。"""
+        return name not in reg and name not in stop_map and not kind_of(name)
 
     def facts(name: str) -> dict:
         if name in info:
@@ -304,10 +311,15 @@ def build(use: dict | None) -> tuple[list[str], dict]:
         why = stopped(name)
         if why:
             role = f"【止めている：{why}】" + role
+        elif kind_of(name):
+            role = f"【hook ではない：{kind_of(name)}】" + role
+        elif orphan(name):
+            role = "【呼ぶ所が無い・止めた記録も無い】" + role
         if decide.get(name):                     # まこさんの振り分けの頭の語（「要」など・「（」の前まで）
             role = f"【まこさん：{str(decide[name]).split('（')[0]}】" + role
+        mark = "❌️" if why else ("⚠️" if orphan(name) else "")
         return "| " + " | ".join([
-            ("❌️" if why else "") + f"`{name}`", cell(role), cell(f["要件"] or "（まだ）"), cell(f["動く場面"] or "（まだ）"),
+            mark + f"`{name}`", cell(role), cell(f["要件"] or "（まだ）"), cell(f["動く場面"] or "（まだ）"),
             cell(f["重なり"] or "（まだ）"), cell(bug), cell(f["直し"] or "（まだ確かめていない）"), cnt, retry]) + " |"
 
     def detail(name: str) -> list[str]:
@@ -363,7 +375,9 @@ def build(use: dict | None) -> tuple[list[str], dict]:
         f"- settings.json の登録＝{stats['登録の件数']}件（名前は {stats['登録の名前']}本）。.claude/hooks の .sh＝{stats['sh']}本、.py＝{stats['py']}本（archive と __pycache__ は数えない）。",
         f"- 登録の名前で、実物のファイルが無い物＝{len(stats['登録の名前で実物が無い'])}本 {' '.join(stats['登録の名前で実物が無い'])}",
         "- 役割＝hook の本体の「役割:」の行か、説明の行「名前 — 役割」をプログラムが写した。どちらも無い物だけ手で書いた。",
-        "- ❌️＝止めている hook（まこさん決定 2026-10-15「完全に不要なhookは停止→表の名前の前に❌️をつける」「OK」）。付け方は2つ＝①元データの「停止」に書いた物（登録を外した物）②登録が無く、どこからも名指しの無い物（プログラムが付ける）。❌️ は止めている印で、ファイルを消す意味ではない。",
+        "- ❌️＝止めている hook（まこさん決定 2026-10-15「完全に不要なhookは停止→表の名前の前に❌️をつける」「OK」）。付けるのは、元データの「停止」に、止めた日と記録の場所を書いた物だけ。❌️ は止めている印で、ファイルを消す意味ではない。",
+        "- ⚠️＝登録が無く、止めた記録も、hook ではない印も無い物＝作ったのに呼ぶ所が無くて動いていない hook（まこさん 2026-10-17「hookがあるが、トリガーがない等の理由で動いていないhookが問題だよね」）。この印の hook は、35番の1本ずつの確かめで、まこさんに扱いを決めていただく。",
+        "- 【hook ではない：部品・道具・試し】＝ほかの hook から読み込まれる部品、人か CC が打つ道具、自己テスト。元データの hooks の「種類」に書いた物。",
         "- 作られたきっかけ＝本体のコメントの、日付とまこさんの言葉が在る最初の行をプログラムが写した。",
         "- 守っている要件＝CC の案（30番で、まこさんに振り分けていただく材料）。",
         "- 【まこさん：要】などの印＝まこさんが1本ずつ決めた振り分け（2026-10-15「hookを１本ずつ確かめて、不要か必要かを決める」）。"
@@ -380,7 +394,9 @@ def build(use: dict | None) -> tuple[list[str], dict]:
         "## 4. 1本ずつの詳しい中身", "",
         *[x for n in regd + unreg_sh + loose_py for x in detail(n)],
     ]
-    stats.update({"1": regd, "2": unreg_sh, "3": loose_py, "hand": hand, "info": info, "decide": decide})
+    stats.update({"1": regd, "2": unreg_sh, "3": loose_py, "hand": hand, "info": info, "decide": decide,
+                  "stop": set(stop_map), "kind": {n for n in names if kind_of(n)},
+                  "orphan": [n for n in unreg_sh + loose_py if orphan(n)]})
     return lines, stats
 
 
@@ -407,7 +423,7 @@ def do_verify() -> int:
     if not m or m.group(1) != digest(txt[1:]):
         ng.append("1行目のハッシュ値と中身が合わない＝手で書き換えた → 元データを直して --write")
     # 止めた回数の欄を除けば、いまの元データと実物から作った物と同じか
-    strip = lambda ls: [re.sub(r"\| [^|]* \| [^|]* \|$", "|", x) if x.startswith(("| `", "| ❌")) else x for x in ls]
+    strip = lambda ls: [re.sub(r"\| [^|]* \| [^|]* \|$", "|", x) if x.startswith(("| `", "| ❌", "| ⚠")) else x for x in ls]
     if strip(txt[1:]) != strip(lines):
         ng.append("中身が、いまの元データと実物（登録・ファイル・名指し・本体の説明の行）から作った物と違う → --write")
     if st["登録の名前で実物が無い"]:
@@ -432,11 +448,20 @@ def do_verify() -> int:
             ng.append(f"{name} は振り分けを決めたのに、元データの「直し」の欄が空（済・まだ・不具合なし のどれかを書く）")
     print(f"[_hook_inventory --verify] まこさんの振り分け＝{len(st['decide'])}本（{'・'.join(st['decide'])}）")
     info = st["info"]
+    # ★2026-10-17（189回目）＝止めた物（停止）と hook ではない物（種類）は、止める物・役割・守っている要件を書かない
+    #   （まこさん「止めてるものはそのままでいいのでは」「それでよい」）ので、「まだ」に数えない。
     for k, label in (("1", "稼働"), ("2", "登録なしの .sh"), ("3", "呼ばれない .py")):
-        miss = {c: [n for n in st[k] if not info[n][f]] for c, f in
+        rest = [n for n in st[k] if n not in st["stop"] and n not in st["kind"]]
+        miss = {c: [n for n in rest if not info[n][f]] for c, f in
                 (("止める物", "止める物"), ("役割", "役割"), ("守っている要件", "要件"))}
-        print(f"[_hook_inventory --verify] {label}＝{len(st[k])}本のうち、まだの行＝止める物 {len(miss['止める物'])}本・"
+        n_stop = sum(n in st["stop"] for n in st[k])
+        n_kind = sum(n in st["kind"] and n not in st["stop"] for n in st[k])
+        print(f"[_hook_inventory --verify] {label}＝{len(st[k])}本（止めた記録が在る {n_stop}本・hook ではない {n_kind}本・"
+              f"それ以外 {len(rest)}本）。それ以外のうち、まだの行＝止める物 {len(miss['止める物'])}本・"
               f"役割 {len(miss['役割'])}本・守っている要件 {len(miss['守っている要件'])}本")
+        orph = [n for n in st["orphan"] if n in st[k]]
+        if orph:
+            print(f"   ⚠️ 呼ぶ所が無い・止めた記録も無い {len(orph)}本: " + " ".join(orph))
         if k == "1":
             for c, ns in miss.items():
                 if ns:
