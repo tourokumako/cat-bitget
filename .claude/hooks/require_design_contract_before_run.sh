@@ -118,6 +118,12 @@ except Exception:
     print('UNREADABLE')
     sys.exit(0)
 cmd = (d.get('tool_input', {}) or {}).get('command', '') or ''
+# ★2026-10-18（191回目・ToDo の15番・まこさん「hookの不具合はすぐに修正して」）＝確かめの旗の免除で .py を開くときの起点のフォルダ。
+#   直す前は、相対パスを hook が動いているフォルダから開いた。シェルが別のフォルダに居ると .py を開けず、
+#   --selftest を持つ .py も免除されずに照合へ進み、止まった（実測＝根からのパスなら通り、/tmp から相対パスで打つと止まる）。
+#   直したプログラムを走らせて成功させる hook（require_run_after_edit）と、互いに通れない形でぶつかった。
+#   いま＝hook の入力の cwd（シェルのフォルダ）から始め、コマンドの中の cd を順にたどる（下の区切りの輪）。
+base_dir = d.get('cwd') or os.getcwd()
 # ★2026-09-03（監査 cp16 の実装中に実測して足した）＝ヒアドキュメントの中身は外してから見る。
 #   なぜ＝中身は「走らせる形」ではなく「渡す文字」。git commit の本文に python の語が出ただけで
 #   止まった（実測）。承認ゲートは前から外していたので、そちらに合わせる。
@@ -198,6 +204,12 @@ for seg, seg_raw in zip(segs_blank, segs_raw):
     toks = seg.split()
     while toks and ASSIGN.match(toks[0]):
         toks = toks[1:]
+    # ★2026-10-18＝cd の区切りは、起点のフォルダを移すだけ（走らせる形ではない）。行き先は引用符を外した生の語で読む
+    if toks and toks[0] == 'cd':
+        raw = seg_raw.split()
+        if len(raw) > 1:
+            base_dir = os.path.normpath(os.path.join(base_dir, os.path.expanduser(raw[1].strip(Q))))
+        continue
     if toks and os.path.basename(toks[0]) in READONLY:
         continue
     m = re.search(r'python[0-9.]*\s+(.*)', seg)
@@ -248,7 +260,7 @@ for seg, seg_raw in zip(segs_blank, segs_raw):
     if hit:
         # ★その .py が実際にその旗を持つときだけ免除する（監査 N-f＝--identity を足すと外れた）
         src = ''
-        for cand in (pys[0], os.path.join('$BASE/scripts/priority_rebuild', os.path.basename(pys[0]))):
+        for cand in (os.path.join(base_dir, os.path.expanduser(pys[0])), pys[0], os.path.join('$BASE/scripts/priority_rebuild', os.path.basename(pys[0]))):
             try:
                 src = open(cand, encoding='utf-8', errors='ignore').read()
                 break

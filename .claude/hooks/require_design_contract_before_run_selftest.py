@@ -32,19 +32,31 @@ CASES = [
     ("S9 find -exec python3 は止まる（find は読むだけの命令に入れない）", "find . -name a -exec python3 {} ;", NO_PY),
     ("S10 engine_tuner.py は止まる（設計書が1本も無い）",
      f"cd {SDK} && python3 scripts/priority_rebuild/engine_tuner.py --selftest", NO_ET),
+    # ★2026-10-18（191回目・まこさん「hookの不具合はすぐに修正して」）＝確かめの旗の免除で開く .py の起点のフォルダ。
+    #   直す前は、hook が動いているフォルダから相対パスを開き、シェルが別のフォルダに居ると --selftest も止まった。
+    #   （名前, コマンド, 期待, 入力の cwd, hook を動かすフォルダ）
+    ("S11 シェルが別のフォルダでも、cd の後の相対パスの --selftest は通る",
+     f"cd {ROOT} && python3 .claude/tools/gen_acceptance.py --selftest", "通る", "/tmp", "/tmp"),
+    ("S12 入力の cwd が根なら、hook が別のフォルダで動いても、相対パスの --selftest は通る",
+     "python3 .claude/tools/gen_acceptance.py --selftest", "通る", ROOT, "/tmp"),
+    ("S13 cd をたどっても、旗を持たない engine_tuner.py は今までどおり止まる",
+     f"cd {ROOT}/{SDK} && python3 scripts/priority_rebuild/engine_tuner.py --selftest", NO_ET, "/tmp", "/tmp"),
 ]
 
 
-def run(cmd: str) -> tuple:
-    inp = json.dumps({"session_id": "selftest", "tool_name": "Bash", "tool_input": {"command": cmd}}, ensure_ascii=False)
-    r = subprocess.run(["bash", HOOK], input=inp, capture_output=True, text=True, timeout=120, cwd=ROOT)
+def run(cmd: str, in_cwd: str = None, proc_cwd: str = ROOT) -> tuple:
+    inp = {"session_id": "selftest", "tool_name": "Bash", "tool_input": {"command": cmd}}
+    if in_cwd:
+        inp["cwd"] = in_cwd
+    r = subprocess.run(["bash", HOOK], input=json.dumps(inp, ensure_ascii=False), capture_output=True, text=True,
+                       timeout=120, cwd=proc_cwd)
     return r.returncode, r.stderr
 
 
 def selftest() -> int:
     ng = 0
-    for name, cmd, want in CASES:
-        rc, err = run(cmd)
+    for name, cmd, want, *where in CASES:
+        rc, err = run(cmd, *where)
         ok = (rc == 0) if want == "通る" else (rc == 2 and want in err)
         got = "通る" if rc == 0 else f"止まる（rc={rc}）"
         print(f"{'✅' if ok else '❌'} {name}（期待 {want}・結果 {got}）")

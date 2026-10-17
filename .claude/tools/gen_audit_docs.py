@@ -25,6 +25,10 @@
   python3 .claude/tools/gen_audit_docs.py request <元データ.md> <依頼書.md>
     → 元データ（下の形）とテンプレから依頼書を作る。★2026-09-29 から、元データは request-design が作った物だけを受ける
       （1行目の目印と本文のハッシュ値を照らす＝CC が手で書いた元データの口は閉じた）。
+    → ★2026-10-18（ToDo の15番・まこさん「設計書ナシや、例外的監査は、項目以外は手書きにすれば？」）＝設計書の無い直しの監査
+      （メタの監査区分＝「設計書の無い直しの監査」・依頼書の名前に _nodesign_・元データは作業場）だけは、CC が手で書いた元データを受ける。
+  python3 .claude/tools/gen_audit_docs.py check-request <依頼書.md>
+    → ★2026-10-18（ToDo の15番）＝出来上がった依頼書を、元データ（設計書から作った依頼書なら、設計書と設計書の元も）と照らす。何も書かない。
   python3 .claude/tools/gen_audit_docs.py result <依頼書.md> <結果.md>
     → 依頼書から結果の骨組み（11節・問いの見出し・事実データと外部検索と自己申告の見出し）を作る。中身は監査が書く。
   python3 .claude/tools/gen_audit_docs.py check <依頼書.md> <結果.md>
@@ -188,6 +192,97 @@ DESIGN_Q7 = (
     "要件定義に合わない所・設計の中身の誤り・抜けを全部 挙げ、設計書の行と、根拠の実物の行を示す。"
     "この問いの答えが、結論を決める問い2 の答えになる。",
 )
+# ★2026-10-18（ToDo の15番・別セッションの監査 2026-10-12 の M-11 と Q9・まこさん「最低限伝わるのでこれで進めていいよ」）
+#   ＝新しい形の設計書（目標・工事の種類・要件定義の索引・確かめていないこと が在る設計書）の監査の、決まった問い。
+#   要件ごとの問い（R）は、要件定義の正本の行・設計書の索引の対応（gen_acceptance.INDEX_MAP）・工事の種類から、プログラムが組む。
+#   どの工事にも出す問い（F）と、検査やプログラムを直す工事にだけ出す問い（K）は、決まった文（worklog 20261018 §16 の文）。
+#   問いごとに、誤りを直す修正の書き先を書く。修正を当てるプログラム（apply_audit_fix.py）は、やることの表.md には当て、
+#   まこさんが OK した案の写し（逐語のファイル）には当てない（apply_audit_fix.py の is_verbatim）。
+#   直す前は、設計の中身を問う決まった問いが Q7 の1問だけで、ほかは工事ごとに CC が手で書いた（CC が問いを選ぶ形＝9月29日・30日と同じ道）。
+FIX_AUTO = ("この修正は、プログラムが自動で直します。",)
+FIX_OK = ("この修正は、自動では直りません。", "CC が案を直し、まこさんの OK をいただいてから、設計書を作り直します。")
+NEW_WHY_R = "要件定義に反する設計や、書き漏れが、そのまま実装に進む（この答えが問い2 の答えになる）"
+# (番号, 名前, 優先度の理由, 本文の行, 書き先)。書き先＝goal（やることの表の目標）／any（前提の3の表）／案の見出し名／None（修正を書かない）
+DESIGN_F = (
+    ("F1", "この設計書のとおりに作ると、要件に沿って目標に近づく工事になるか",
+     "目標につながらない工事が、実装に進む（まこさん 2026-10-13「そもそもの問いはいらないの？」）",
+     ("目標は、本番で全月 net ≥ $1,900 を達成することです。",
+      "設計書の「3-0 目標」には、この工事が済むと何ができるようになるか（②）と、それが net までどうつながるか（③）が書いてあります。",
+      "この2つを読み、この工事が要件定義に沿い、目標に近づく工事になっているかを確かめてください。",
+      "あわせて、無駄だったと後から分かる物（④）と、損なう恐れのある要件（⑥）に抜けが無いかも見てください。"), "goal"),
+    ("F2", "設計書の文が、言い切りでなく根拠で書かれているか",
+     "CC の判定だけの文が在ると、監査も まこさんも、その文が正しいかを確かめられない",
+     ("設計書の中で、CC が「合っています」「当たりません」「変わりません」とだけ書いている所が無いかを見てください。",
+      "そういう所には、根拠（ファイルの名前と行）か、確かめ直すコマンドが付いていなければなりません。",
+      "付いていない所を、設計書の行で全部 挙げてください。"), "any"),
+    ("F3", "CC がまだ確かめていないことを、確かめないまま進めてよいか",
+     "確かめていないことの中に、実装の前に確かめるべき物が在ると、誤りが実装の後に出る",
+     ("設計書の「6-5 確かめていないこと」に、CC がまだ確かめていないことが書いてあります。",
+      "1件ずつ読み、確かめないまま実装に進んでよいかを判断してください。",
+      "進めてはいけない物があれば、その理由と、先に走らせるべきコマンドを書いてください。",
+      "6-5 に書かれていない、確かめていないことが見つかれば、それも挙げてください。"), "確かめていないこと"),
+    ("F4", "採らなかった案を、理由なく捨てていないか",
+     "より良い案を理由なく捨てていると、目標に遠い作りのまま実装に進む",
+     ("設計書の「5 決めたことと理由」に、決めたことと、採らなかった案と、その理由が書いてあります。",
+      "採った案より良い案を、理由なく捨てていないかを確かめてください。",
+      "書かれていない別の案のほうが良ければ、それも挙げてください。"), "5"),
+    ("F5", "設計書を全部 書く前に、まこさんに向きを見せたか",
+     "まこさんが向きを見ないまま設計の中身が書かれると、向きの誤りが設計書の監査の後まで残る",
+     ("CC は、設計書の中身を全部 書く前に、概要と目標とやらないことを、まこさんに見せることになっています。",
+      "設計書の「0-1」に、そのときの まこさんの OK の発言の写しが在るかを確かめてください。",
+      "写しが無ければ、まこさんが向きを見ないまま、設計の中身が書かれたことになります。",
+      "",
+      "写しが無いときは、所見に書いてください。この問いには、修正の指示を書きません（足りないのは まこさんの発言で、監査が文を書けないため）。"),
+     None),
+    # ★2026-10-18（まこさん「工事の内容、目的が正しいのかという問い」「その３つは追加」「F678はOK」）＝工事そのものの正しさを問う。
+    #   F1 は「設計書のとおりに作ると目標に近づくか」で、工事の目的と中身が正しいことを前提にしていた（10月12日の誤りと同じ型）。
+    ("F6", "この工事の目的は正しいか",
+     "目的そのものが誤っていると、設計書がどれだけ正しくても、目標につながらない工事が実装に進む",
+     ("この工事が何のための工事かは、設計書の「§1 概要」に書いてあります。依頼書の経緯の1にも、同じ目的を書いています。",
+      "その目的が、上部の要件定義と、全月 net ≥ $1,900 という目標から見て、正しいかを確かめてください。",
+      "目的が目標につながらない所や、要件定義に反する所があれば、挙げてください。"), "概要"),
+    ("F7", "この工事が満たそうとしている要件は正しいか",
+     "結ぶ要件を取り違えると、要件ごとの問いが見る所も取り違える",
+     ("設計書には、この工事が要件定義の何番を満たすための工事かが書いてあります（設計書の「結ぶ要件」）。",
+      "その要件が、この工事の目的と中身に合っているかを確かめてください。",
+      "もっと合う要件がある場合や、満たすべき要件が抜けている場合は、挙げてください。"), "plan"),
+    ("F8", "この工事でやることが、目的に対して過不足ないか",
+     "目的に要る直しが抜けると、工事が済んでも目的が果たされない。要らない直しが入ると、守りを壊す恐れが増える",
+     ("設計書の「やることの一覧」に、この工事でやることが1件ずつ書いてあります。",
+      "この一覧を、工事の目的と照らしてください。",
+      "目的を果たすのに要るのに、一覧に無い直しがあれば、挙げてください。",
+      "目的に要らないのに、一覧に入っている直しがあれば、それも挙げてください。",
+      "あわせて、「やらないこと」に回した直しの中に、この工事でやるべき物が無いかも見てください。"), "一覧"),
+)
+DESIGN_K = (
+    ("K1", "この検査が守る相手は正しいか", "守る相手を取り違えると、直した検査が守るべき物を守らない",
+     ("設計書の「4-22」の①に、この工事で直す検査やプログラムが、どの要件やどの材料を守るための物かが書いてあります。",
+      "直すプログラムの実物を開き、書いてある守る相手と合っているかを確かめてください。")),
+    ("K2", "直す前に通っていた誤りは、本当に在るか", "本当は無い誤りを直す工事は、無駄な工事になる",
+     ("設計書の「4-22」の②に、直す前のプログラムが通してしまっていた誤りの実例と、それを確かめたコマンドが書いてあります。",
+      "写しの作業場でそのコマンドを走らせ、書いてある誤りが本当に通るかを確かめてください。")),
+    ("K3", "直した後に止まる誤りと、まだ通る誤りは、正しく書かれているか", "まだ通る誤りが書かれていないと、直ったと思い込んだまま進む",
+     ("設計書の「4-22」の③に、直した後に止まるようになる誤りと、直した後もまだ通る誤りが書いてあります。",
+      "設計の中身と照らして、合っているかを確かめてください。",
+      "まだ通る誤りのうち、書かれていない物が無いかも見てください。")),
+    ("K4", "この直しで弱くなる守りに、抜けが無いか", "弱くなる守りが書かれていないと、守りを減らしたことに誰も気づかない",
+     ("設計書の「4-22」の④に、この直しのせいで確かめなくなる事や、弱くなる守りが書いてあります。",
+      "抜けが無いかを確かめてください。")),
+)
+# 依頼書の頭に置く案内の見出し（テンプレには無い。build_request が、メタ情報の節のすぐ下に足す・記録 20261013 の 181行）
+GUIDE_HEAD = "## はじめに読む案内（この依頼書で答えてほしいこと）"
+GUIDE_GROUP = {"W": "割り当ての表のとおりか", "Q": "決まった問いと工事ごとの問い", "R": "要件ごとの問い",
+               "F": "どの工事にも出す問い", "K": "検査やプログラムを直す工事の問い"}
+# 元データの外部検索の行の頭（build_design_src が書き、build_request がクエリ案と調べる物に分ける）
+SEARCH_WORDS = "検索の言葉："
+SEARCH_WHAT = "調べる物："
+SEARCH_NONE = "（案に検索の言葉の列が無い。下の「調べる物」から、監査が検索の言葉を決めてください）"
+# ★2026-10-18（ToDo の15番・まこさん「設計書ナシや、例外的監査は、項目以外は手書きにすれば？」）
+#   ＝設計書の無い直し（道具・hook の直しほか）の監査。項目（見出しと並び）と決まった文はプログラムが出し、項目の中身は CC が手で書く。
+#   依頼書の名前に _nodesign_ を入れ、元データは作業場（SDK/.claude/audits/<何か>_work/）に置く。
+NODESIGN_LABEL = "設計書の無い直しの監査"
+NODESIGN_NA_SEARCH = ("該当なし（この監査は、直したプログラムが直しの目的どおりかを実物で照らす。"
+                      "外部の知見は答えに要らない）")
 # ★2026-10-12（A-2）＝固定で載せる文が依頼書に入っているかを見る文字（正本の先頭の見出し。gen_core_requirements.embed_lines が太字の行にする）
 CORE_MARK = "**■ 要件定義と工事の流れ（固定・毎回 読む・消さない）**"
 # 依頼書に足す節の見出し（テンプレには無い。build_request が、メタ情報の節のすぐ下に足す）
@@ -303,7 +398,9 @@ def inputs_gate(out_path: str) -> list:
     if not INPUT_REQUEST_RE.search(os.path.realpath(out_path)):
         return []
     errs = []
-    if "_design_" not in os.path.basename(out_path):
+    # ★2026-10-18（ToDo の15番）＝設計書の無い直しの監査（名前に _nodesign_）は、承認する設計書が無いので、承認との照らしをしない。
+    #   監査に出す前のチェック（下）は、ほかの監査と同じく掛ける。
+    if "_design_" not in os.path.basename(out_path) and "_nodesign_" not in os.path.basename(out_path):
         now = sha256_file(DESIGN) if os.path.isfile(DESIGN) else ""
         want = open(APPROVED, encoding="utf-8").read().strip() if os.path.isfile(APPROVED) else ""
         if not want or now != want:
@@ -417,15 +514,63 @@ def consistency_errors(src: dict) -> list:
         name = CONCLUSION_RE.match(ln).group(1)
         if name not in note:
             errs.append(f"結論の問い「{name}」が、大目的の注記のスコープに無い")
+    # ★2026-10-18（ToDo の15番）＝決まった問い（要件ごと R・どの工事にも F・検査やプログラムを直す工事 K）も、監査対象に並ぶ
+    for n in ids:
+        if re.match(r"^[RFK]\d", n or "") and f"- {n}：" not in target:
+            errs.append(f"問い {n} が、監査対象に無い")
     for it in src["自己申告"]:
         if re.match(r"\*\*塞げないもの\*\*＝Q\d+ の\d+＝", it["body"]):
             errs.append("自己申告の塞げないものに、出どころの無い番号（Q5 の1＝ など）が在る＝依頼書の問いの番号と取り違える")
     return errs
 
 
+def guide_lines(src: dict) -> list:
+    """依頼書の頭の案内（2026-10-18・ToDo の15番）。結論を決める問いと、問いの数と内訳と、それぞれが依頼書のどこに在るか。"""
+    concl = [CONCLUSION_RE.match(ln).group(1) for ln in (src["結論を決める問い"] or "").splitlines() if CONCLUSION_RE.match(ln)]
+    ids = [q["attrs"].get("番号", "") for q in src["問い"]]
+    groups: dict = {}
+    for n in ids:
+        m = re.match(r"^([A-Z]+)", n)
+        groups.setdefault(m.group(1) if m else "?", []).append(n)
+    parts = [f"{GUIDE_GROUP.get(k, k)} {len(v)}件（{v[0]}{'〜' + v[-1] if len(v) > 1 else ''}）" for k, v in groups.items()]
+    return [f"この依頼書で答えていただくのは、次の2つです。",
+            f"- 結論を決める問い（{len(concl)}つ・{'と'.join(concl)}）。「## この監査で答えてほしいこと」の節に在ります。",
+            f"- 問い（{len(ids)}件）。「## 監査観点 (本監査固有・Q1-QN)」の節に在ります。内訳は、{'・'.join(parts) or '無し'}です。",
+            "",
+            "この案内の下には、要件定義と工事の流れ（固定の文）、経緯、着手前必読、事実データが続きます。どれも、問いに答えるための材料です。"]
+
+
+def nodesign_errors(src_path: str, out_path: str, meta: dict) -> list:
+    """設計書の無い直しの監査（2026-10-18・まこさん「設計書ナシや、例外的監査は、項目以外は手書きにすれば？」）の手書きの元データの照らし。
+    手書きを受けるのは、この種類の監査だけ。ほかの監査の元データは、今までどおり request-design が作った物だけを受ける。"""
+    errs = []
+    p = os.path.realpath(src_path)
+    a = os.path.realpath(AUDITS)
+    parts = os.path.relpath(p, a).split(os.sep) if p.startswith(a + os.sep) else []
+    if not (len(parts) >= 2 and parts[0].endswith("_work")):
+        errs.append("設計書の無い直しの監査の元データは、作業場（SDK/.claude/audits/<何か>_work/）に置く")
+    if "_nodesign_" not in os.path.basename(out_path):
+        errs.append("設計書の無い直しの監査の依頼書は、名前に _nodesign_ を入れる（設計書の監査・実装の監査と取り違えない）")
+    if os.path.basename(meta.get("監査の相手", "")) == os.path.basename(DESIGN):
+        errs.append("設計書の無い直しの監査の相手に、設計書（acceptance.md）を書かない（設計書の監査か実装の監査にする）")
+    m = re.search(r"cp(\d+)", meta.get("cp", ""))
+    task = meta.get("task", "")
+    if m:
+        for d in (AUDITS, os.path.join(AUDITS, "inputs")):
+            for n in os.listdir(d):
+                if re.search(rf"_cp{m.group(1)}_audit_(?:request|report)\.md$", n) and f"_{task}_cp" not in n:
+                    errs.append(f"監査の番号 cp{m.group(1)} は、ほかの監査（{n}）が使っている")
+    return errs
+
+
 def build_request(src_path: str, out_path: str) -> int:
     src, meta, errs = parse_src(src_path)
-    _gm = gen_mark_problem(src_path)
+    # ★2026-10-18（ToDo の15番・まこさん「設計書ナシや、例外的監査は、項目以外は手書きにすれば？」）
+    #   ＝設計書の無い直しの監査だけは、CC が手で書いた元データを受ける（項目と決まった文は、この道具がテンプレから出す）
+    nodesign = meta.get("監査区分", "") == NODESIGN_LABEL
+    if nodesign:
+        errs += nodesign_errors(src_path, out_path, meta)
+    _gm = "" if nodesign else gen_mark_problem(src_path)
     if _gm:
         # ★口を閉じる＝どの置き場にも1バイトも書かない（直す前は inputs 以外の置き場なら ❌ でも書いていた）
         print(f"❌ {_gm}")
@@ -439,7 +584,7 @@ def build_request(src_path: str, out_path: str) -> int:
             errs.append(f"項目「{k}」が無い")
     for k in ("事実データ", "問い", "外部検索"):
         # ★2026-10-01（142回目）＝実装の監査は外部検索を求めない（該当なし）
-        if not src[k] and not (k == "外部検索" and meta.get("監査区分", "") == "実装の監査"):
+        if not src[k] and not (k == "外部検索" and meta.get("監査区分", "") in ("実装の監査", NODESIGN_LABEL)):
             errs.append(f"項目「{k}」が1件も無い")
     if not [ln for ln in (src["結論を決める問い"] or "").splitlines() if CONCLUSION_RE.match(ln)]:
         errs.append("項目「結論を決める問い」に「- **問い1**＝…」の形の行が1つも無い")
@@ -598,8 +743,8 @@ def build_request(src_path: str, out_path: str) -> int:
                         f"**優先度の理由**＝{a.get('理由', '')}", ""]
                 out += q["body"].splitlines() + [""]
         elif kind == "外部検索":
-            if impl and not src["外部検索"]:
-                out += ["件数: 0 件 (結果の外部検索の節にも「該当なし」と書く)", "", IMPL_NA_SEARCH]
+            if (impl or nodesign) and not src["外部検索"]:
+                out += ["件数: 0 件 (結果の外部検索の節にも「該当なし」と書く)", "", NODESIGN_NA_SEARCH if nodesign else IMPL_NA_SEARCH]
                 out = body_strip(out) + ["", "---", ""]
                 continue
             for x in body:
@@ -611,9 +756,14 @@ def build_request(src_path: str, out_path: str) -> int:
             # ★2026-09-30（3点目-a）＝テンプレの形（番号つきの「トピック・クエリ案・期待発見」）。
             #   直す前は検索ごとに「### 検索 N —」の見出しを立てていた（worklog 20260929 §67 の③）
             for i, it in enumerate(src["外部検索"], 1):
-                q = " ".join(it["body"].split()) or it["attrs"].get("名前", "")
+                # ★2026-10-18（ToDo の15番）＝元データの「検索の言葉：」の行をクエリ案に、「調べる物：」の行を調べる物にする。
+                #   どちらの行も無い元データ（前の形）は、いままでどおり本文の全部をクエリ案にする。
+                bl = it["body"].splitlines()
+                qw = next((x[len(SEARCH_WORDS):].strip() for x in bl if x.startswith(SEARCH_WORDS)), None)
+                what = next((x[len(SEARCH_WHAT):].strip() for x in bl if x.startswith(SEARCH_WHAT)), None)
+                q = qw if qw is not None else (" ".join(it["body"].split()) or it["attrs"].get("名前", ""))
                 out += [f"{i}. **{it['attrs'].get('名前', '')}**:",
-                        f"   - クエリ案: {q}",
+                        f"   - クエリ案: {q}"] + ([f"   - 調べる物: {what}"] if what else []) + [
                         "   - 期待発見: URL と、使った逐語（無ければ「見つからなかった」と書く）"]
             out.append("")
         elif kind == "自己申告":
@@ -628,6 +778,9 @@ def build_request(src_path: str, out_path: str) -> int:
             #   正本が無い・逐語のファイルと違うときは、ここで止まる（fail-closed）。
             #   テンプレ（_template.md）には節を足さない＝テンプレを読む別の道具（scripts/priority_rebuild/gen_audit_request.py）が、
             #   知らない見出しで止まるため（2026-10-12 に足して、その自己テストが落ちるのを見た）。
+            # ★2026-10-18（ToDo の15番・記録 20261013 の 181行「頭から読むと依頼の中身に着くまでが長い」）＝メタ情報のすぐ下に、
+            #   何を答えてほしいかの案内を置く（中身は、結論を決める問いと問いの一覧から、プログラムが数えて作る）。
+            out += [GUIDE_HEAD, ""] + guide_lines(src) + ["", "---", ""]
             import gen_core_requirements as gcr
             out += [CORE_HEAD, ""] + gcr.embed_lines() + ["", "---", ""]
 
@@ -669,10 +822,12 @@ def next_cp() -> int:
 def repo_ref(p: str) -> str:
     """設計書のパス（リポジトリ直下か SDK からの相対）を、依頼書の書き方（SDK/… か直下）に直す。無ければ空。"""
     p = (p or "").strip().strip("`")
-    if os.path.exists(os.path.join(ROOT, p)):
-        return p
-    if os.path.exists(os.path.join(SDK, p)):
-        return "SDK/" + p
+    # ★2026-10-18（ToDo の15番・記録 20261013 の 368行「直す相手の3本のパスが SDK/../../.claude/tools/… の形で出ている」）
+    #   ＝実物のパスに直してから、依頼書の書き方（_req_style）にそろえる。直す前は SDK からの相対の「../../」を、そのまま SDK/ の後ろに付けた。
+    for base in (ROOT, SDK):
+        full = os.path.normpath(os.path.join(base, p))
+        if full.startswith(ROOT + os.sep) and os.path.exists(full):
+            return _req_style(full)
     return ""
 
 
@@ -1050,7 +1205,9 @@ def request_content_errors(text: str) -> list:
         errs.append(f"着手前必読に、監査の相手の設計書（{_tgt}）が無い")
     read_names = {os.path.basename(t) for t in re.findall(r"`([^`]+)`", reads)}
     need = text.split(f"\n### {NEED_NAME}", 1)[1].split("\n## ", 1)[0].split("\n### ", 1)[0] if f"\n### {NEED_NAME}" in text else ""
-    if not need:
+    # ★2026-10-18（ToDo の15番）＝設計書の無い直しの監査は、道具が設計書から要るファイルを拾えない（必読は CC が手で書く）
+    nodesign = f"- 監査区分: {NODESIGN_LABEL}" in text
+    if not need and not nodesign:
         errs.append(f"事実データに「{NEED_NAME}」が無い＝必読に要るファイルを照らせない")
     for row in re.findall(r"^\| `([^`]+)` \| [^|]* \| ([^|]+) \|$", need, re.M):
         if row[1].strip().startswith("入れる") and os.path.basename(row[0]) not in read_names:
@@ -1194,6 +1351,101 @@ def _stack_note(ev: dict, iter_: str, targets: list) -> None:
                         "（例＝gen_materials.py --write が regime_detection_kb.md の件数の囲みを書き出す）。その行は実装の指示ではなく、設計書の 4-4・5 で照らす")
 
 
+def _head_name(md: str, sec: str) -> str:
+    """索引の対応の書き方の節（「4-3」「3-0 目標の③」ほか）を、設計書の見出しの文字（「4-3 部品と責任の割り当て」ほか）にする。
+    見出しが見つからなければ、節の番号のまま。"""
+    base, _, tail = sec.partition(" ")
+    # 書いた見出しは「### 4-3 …」、非該当の項目は見出しが無いので 4-A の一覧の表（| 4-7 | 条件 | 探索の範囲（…） | …）から探す
+    m = (re.search(rf"^### {re.escape(base)} (.+?)\s*$", md, re.M)
+         or re.search(rf"^\| {re.escape(base)} \| [^|]+ \| ([^|]+?) \|", md, re.M))
+    name = f"{base} {m.group(1).split('（')[0].strip()}" if m else base
+    if tail.startswith("目標の"):
+        name += tail[len("目標"):]                 # 「3-0 目標」＋「の③」
+    return name
+
+
+def _fix_lines(secs: list, src_label: str, okd: str) -> list:
+    """節の誤りを直す修正の書き先（文の行）。やることの表.md の物は自動で直る。まこさんが OK した案の写しの物は直らない
+    （修正を当てるプログラムは、逐語のファイルに当てない＝apply_audit_fix.py の is_verbatim）。"""
+    import gen_acceptance as ga
+    L: list = []
+    if any(s in ("2-0", "3-0 目標の①") for s in secs):
+        L += [f"「この工事が結ぶ要件と、減らす違い」の誤りを見つけたら、修正の指示は、設計書の元（{src_label}）の"
+              "「### この工事が結ぶ要件と、減らす違い」の表に対して書いてください。", *FIX_AUTO,
+              "やることの番号と結ぶ要件は、読むもの宣言から写しています。この2つの誤りは、修正の指示にせず、所見に書いてください。"]
+    if any(s.startswith("3-0 目標の") and s != "3-0 目標の①" for s in secs) or "goal" in secs:
+        L += [f"目標の誤りを見つけたら、修正の指示は、設計書の元（{src_label}）の「### 目標」の表に対して書いてください。", *FIX_AUTO]
+    if "概要" in secs:
+        L += [f"目的の誤りを見つけたら、修正の指示は、設計書の元（{src_label}）の「### §1 概要」に対して書いてください。", *FIX_AUTO]
+    if "一覧" in secs:
+        L += [f"一覧の誤りを見つけたら、修正の指示は、設計書の元（{src_label}）の「## 一覧」の表に対して書いてください。", *FIX_AUTO]
+    if "plan" in secs:
+        L.append("この要件は、読むもの宣言から写しています。誤りは、修正の指示にせず、所見に書いてください。")
+    heads = [{"4-21": ga.HEAD_NUMS, "4-22": ga.HEAD_FIVE}.get(s, s) for s in secs
+             if s.startswith(("4-", "7-")) or s in ("5", ga.HEAD_UNVERIFIED)]
+    if heads:
+        L += [f"誤りを見つけたら、修正の指示は、まこさんが OK した案の写し（{okd}）の"
+              + "か".join(f"【{h}】" for h in dict.fromkeys(heads)) + "に対して書いてください。", *FIX_OK]
+    if any(s in ("4-6", "4-7") for s in secs):
+        L.append("ただし、設計書で［自動］の印が付いた行（法則と型の原文、指標の役割・範囲・代表の値・オンかどうか）の誤りは、"
+                 "案の写しではなく、写した元の置き場のファイル（法則のファイル・型の表・指標のオンとオフの表・資料の表）に書いてください。")
+    if "any" in secs:
+        L.append("修正の指示は、その文が在る見出しの書き先（この監査の前提の3番）に書いてください。")
+    return L
+
+
+def _design_new_questions(d: dict, md: str, src_label: str, okd: str) -> list:
+    """新しい形の設計書の監査の、決まった問い（要件ごとの問い R・どの工事にも出す問い F・検査やプログラムを直す工事の問い K）。
+    戻り＝[(番号, 優先度, 優先度の理由, 名前, 本文)]。★問いの文は CC が書かない（正本の要件の行・索引の対応・工事の種類から組む）。"""
+    import gen_acceptance as ga
+    import gen_core_requirements as gcr
+    kind = ga.work_kind(d)
+    out = []
+    for no, name in gcr.requirement_items(full=True):
+        secs = ga.INDEX_MAP.get(no)
+        if not secs:
+            raise SystemExit(f"要件定義の {no}（{name}）を書く節が、索引の対応（gen_acceptance.INDEX_MAP）に無い（fail-closed）")
+        st = {s: ga.sec_state(d, s)[0] for s in secs}
+        wr = [s for s in secs if st[s] == "書いた"]
+        empty = [s for s in secs if st[s] in ("書いていない", "空")]
+        na = [s for s in secs if st[s] == "非該当"]
+
+        def hn(ss: list) -> str:
+            return "」と「".join(_head_name(md, s) for s in ss)
+        L = [f"要件定義の{no}番は「{name}」です。", "全文は、この依頼書の上部にあります。", ""]
+        if len(wr) == 1:
+            L += [f"この工事の設計書では、この要件に当たる中身を「{hn(wr)}」に書いています。",
+                  f"この見出しを読み、要件定義の{no}番に反する所や、書き漏れが無いかを確かめてください。"]
+        elif wr:
+            L += [f"この工事の設計書では、この要件に当たる中身を、{len(wr)}つの見出しに書いています。", f"「{hn(wr)}」です。",
+                  f"この{len(wr)}つを読み、要件定義の{no}番に反する所や、書き漏れが無いかを確かめてください。"]
+        if empty:
+            L.append(f"「{hn(empty)}」は、この設計書では中身が空です。書くべきだったかを確かめてください。")
+        if na and (wr or empty):
+            L.append("")
+        if na and kind == 2:
+            L += ["この工事は、検査やプログラムを直す工事です。",
+                  f"そのため、設計書の「{hn(na)}」には「この工事には当たらない」と書いてあります。",
+                  "その代わりに、設計書の「4-22 検査やプログラムを直す工事で書く5つ」の⑤に、根拠を書いてあります。",
+                  f"この工事が要件定義の{no}番に触らないと言える根拠です。",
+                  "根拠は、走らせたコマンドと、その結果です。",
+                  "その根拠で、本当に触らないと言えるかを確かめてください。"]
+        elif na:
+            L += [f"設計書の「{hn(na)}」には「この工事には当たらない」と、その理由が書いてあります。",
+                  "その理由で、本当に当たらないと言えるかを確かめてください。"]
+        L += [""] + _fix_lines(wr + empty + (["4-22"] if (na and kind == 2) else na), src_label, okd)
+        title = (f"要件定義の{no}番「{name}」に、この工事が本当に{'触らない' if kind == 2 else '当たらない'}か"
+                 if (na and not wr and not empty) else f"要件定義の{no}番「{name}」が、設計書に正しく書かれているか")
+        out.append((f"R{no}", "A", NEW_WHY_R, title, "\n".join(L).strip()))
+    for num, name, why, body, place in DESIGN_F:
+        fx = [] if place is None else _fix_lines([place], src_label, okd)
+        out.append((num, "A", why, name, "\n".join(list(body) + ([""] + fx if fx else [])).strip()))
+    if kind == 2:
+        for num, name, why, body in DESIGN_K:
+            out.append((num, "A", why, name, "\n".join(list(body) + [""] + _fix_lines(["4-22"], src_label, okd)).strip()))
+    return out
+
+
 def build_design_src(kind: str, cp: int, work: str, design_path: str = None, show_path: str = None) -> tuple:
     """設計書と元データから、依頼書の元データ（本文）を作る。戻り＝(本文, 依頼書の名前の頭)。
 
@@ -1236,6 +1488,12 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
     src = d.get("設計のもと") or {}
     names = [str(n) for n in (src.get("逐語のファイル") or [])]
     todos = [str(n) for n in (src.get("やることの番号") or [])] or todo_numbers_from_table(wdir)
+    # ★2026-10-18（ToDo の15番）＝まこさんが OK した案の写し（設計の中身の誤りを直す修正の書き先。自動では直らない）
+    okd_paths = [os.path.relpath(str(wdir / (n.split("/")[-1] + ".txt")), ROOT) for n in names if n.split("/")[-1].startswith("okd_")]
+    okd = "・".join(f"`{p}`" for p in okd_paths) or "工事のフォルダの okd_ で始まるファイル"
+    # ★同＝新しい形の設計書の監査は、要件ごとの問い（R）・どの工事にも出す問い（F）・検査やプログラムを直す工事の問い（K）を出す
+    new_form = kind == "design" and d.get("形") == "新"
+    new_qs = _design_new_questions(d, md, src_label, okd) if new_form else []
     B = []
     add = B.append
     add("<!-- 項目: メタ -->")
@@ -1287,7 +1545,11 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
                "まこさんが OK した文を写しました。ほかは道具が実物から作りました。")
     if only_table:
         add(made_by + "問いは、やることの表の「手書きと自動の割り当て」の表の1行ごと（W）に1つずつと、設計の中身が要件定義に合っていて"
-            "正しいかを問う Q7（結論を決める問い2 に当たる）と、この工事で確かめてほしいことを問う工事ごとの問い（Q8〜）です。")
+            "正しいかを問う Q7（結論を決める問い2 に当たる）と、"
+            + ("要件定義の行ごとの問い（R）と、どの工事にも出す問い（F）と、"
+               + ("検査やプログラムを直す工事の問い（K）と、" if any(q[0].startswith("K") for q in new_qs) else "")
+               if new_qs else "")
+            + "この工事で確かめてほしいことを問う工事ごとの問い（Q8〜）です。")
     else:
         # ★2026-09-30（3点目-a・まこさん OK）＝実装の監査の問いは、設計書と実装の照合の決まった6問（Q1〜Q6）だけ。
         #   直す前は設計のもとの1行ずつ（S）ほかを問いにし、cp53 で問いが686件（うち S が640件）になった。
@@ -1318,6 +1580,8 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
             "1行でも割り当てと違えば NO。")
         # ★2026-10-12（B-3・まこさん「OK」）＝設計の中身を、結論を決める問いに足す（直す前は問い1 だけ＝手順の確かめだけだった）
         add("- **問い2**＝設計の中身が、依頼書の上部の要件定義に合っていて、正しいか（Q7 で照らす）。"
+            + (f"要件ごとの問い・どの工事にも出す問い{'・検査やプログラムを直す工事の問い' if any(q[0].startswith('K') for q in new_qs) else ''}"
+               f"（{'・'.join(q[0] for q in new_qs)}）でも照らす。" if new_qs else "")
             + (f"あわせて、この工事で確かめてほしいこと（Q8〜Q{7 + len(hand['問い'])} で照らす）。" if hand["問い"] else "")
             + "要件定義に合わない所・設計の中身の誤り・抜けが1つでも在れば NO。")
         add("")
@@ -1365,7 +1629,19 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
     add("<!-- 項目: この監査の前提 -->")
     add("1. **乱数は禁止です**（恒久67番）。乱数を残す・足す形なら Critical にしてください。")
     add("2. **CC は自分で「合っている」「動く」と判定していません**（恒久64番）。")
-    add(f"3. **修正の指示は、設計書の元（{src_label}）に対して書いてください**（設計書はプログラムが作るので直接は書けない）。")
+    # ★2026-10-18（ToDo の15番・まこさん「監査結果からは自動で設計書と実装データを直せるようにしているので、この監査依頼書の問いも
+    #   上記に対応できるよう考慮すること」）＝修正の書き先を、直る道ごとに書く。直す前は「設計書の元に書く」の1つだけで、
+    #   案から写した見出しの誤りの書き先が無かった（修正を当てるプログラムは、案の写し＝逐語のファイルに当てない）。
+    if kind == "design":
+        add("3. **修正の指示の書き先は、設計書の見出しで決まります**（設計書はプログラムが作るので、設計書には直接書けません）。")
+        add(f"   - 手書きの見出し（事実データの割り当ての表で「手書き」の項目）＝設計書の元（{src_label}）。{FIX_AUTO[0]}")
+        add(f"   - まこさんが OK した案から写した見出し（割り当ての表で「自動」の項目のうち、案から写した物）＝まこさんが OK した案の写し（{okd}）。"
+            f"直す見出しの番号（【4-3】など）を、直す箇所に書いてください。{FIX_OK[0]}{FIX_OK[1]}")
+        add("   - 置き場から写した行（設計書で［自動］の印が付き、法則のファイル・型の表・指標のオンとオフの表・資料の表から写した行）＝その置き場のファイル。")
+    else:
+        add("3. **修正の指示の書き先**＝実装が設計書と違う所は、その実装のファイルに書いてください（修正を当てるプログラムが当てます。"
+            ".claude/hooks・.claude/tools・.claude/breaks のファイルには当てず、CC が書きます）。"
+            f"設計書の誤りは、設計書の元（{src_label}）に書いてください（設計書はプログラムが作るので直接は書けない）。")
     add("4. **監査は1つの工事につき1回です**（恒久65番）。どこまで直すかは、まこさんが結果ファイルを見て決めます。")
     if engine:
         add("5. **net は M2-L まで使いません**（まこさん決定 2026-09-01）。")
@@ -1389,6 +1665,17 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
     add(f"2. **この工事は何か**＝{VERBATIM_NAME_RE.sub('逐語のファイル', _one_line(d.get('何を作るか')))}"
         f"（やることの番号 {'・'.join(todos) or '無し'}）")
     add(f"   **この工事の位置**＝{_position_chain(todos)}")
+    # ★2026-10-18（ToDo の15番・14番の設計書 design-doc-gen-form-20261013.md の 347行「監査依頼書を作るプログラムは、設計書の新しい節
+    #   （目標・確かめていないこと）を、依頼書の問いと自己申告へ写しません。次の工事で直します」）＝新しい形の設計書の、工事の種類と目標を写す
+    if new_form:
+        _kd = ga.work_kind(d)
+        add(f"3. **工事の種類**＝{ga.KIND_TEXT.get(_kd, _kd)}。直すファイルの一覧から、プログラムが決めました。")
+        add("4. **目標**（設計書の 3-0。①は、プログラムが結ぶ要件から写しました）")
+        _row = d.get("どの行の工事か") or []
+        _less = _row[1]["中身"] if len(_row) > 1 else ""
+        for r in d.get("目標") or []:
+            _v = f"{d.get('結ぶ要件', '')}。その要件との違いを、どこまで減らすか＝{_less}" if r["番号"] == "①" else r["中身"]
+            add(f"   {r['番号']} {_one_line(r['欄'])}＝{_cc_voice(_one_line(_v))}")
     add("")
     add("<!-- 項目: 着手前必読 -->")
     add("**パスはリポジトリの根（`cat-bitget/`）からの相対です。**`SDK` ＝ `v3-bitget-api-sdk/bitget-python-sdk-api`。")
@@ -1404,16 +1691,26 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
         reads.append(("SDK/.claude/audits/applied_fixes.json", "", f"当てた記録（名前 design:{iter_} の行）"))
     # 前提の3（修正の指示は設計書の元に書く）の書く先＝いつも要る
     reads.append((os.path.relpath(src_file, ROOT), "", "設計書の元（やることの表）＝修正の指示を書く先"))
+    if kind == "design":
+        # ★2026-10-18（ToDo の15番）＝案から写した見出しの誤りの書き先（前提の3）を、監査が開けるようにする
+        reads += [(p, "", "まこさんが OK した案の写し＝案から写した見出しの誤りを直す修正の書き先（自動では直らない）") for p in okd_paths]
     reads += hand["必読"]
-    seen = set()
-    i = 0
+    # ★2026-10-18（ToDo の15番・記録 20261013 の 158・368・490行「必読に、設計書と やることの表が2回ずつ出ている」）
+    #   ＝同じファイルは1行にまとめる（範囲と「なぜ」を足し合わせる）。直す前は重なりを消す鍵が（パス, 範囲）の組で、
+    #   道具が足した行（範囲なし）と、手書きの行（範囲つき）が別の行になった。
+    merged: dict = {}
     for p, rng_txt, why in reads:
-        if (p, rng_txt) in seen:                      # 同じファイルの別の範囲は別の行にする
-            continue
-        seen.add((p, rng_txt))
-        i += 1
+        key = os.path.realpath(repo_path(p))
+        _p0, rngs, whys = merged.setdefault(key, (p, [], []))
+        r = rng_txt.strip().strip("（）()").strip()
+        if r and r not in rngs:
+            rngs.append(r)
+        w = _one_line(why)
+        if w and w not in whys:
+            whys.append(w)
+    for i, (p, rngs, whys) in enumerate(merged.values(), 1):
         # ★2026-09-30（3点目-a）＝テンプレの形（番号つきの「パス — 1行要約」）。直す前は表だった（worklog 20260929 §67 の②）
-        add(f"{i}. `{p}`{rng_txt} — {_one_line(why)}")
+        add(f"{i}. `{p}`{'（' + '・'.join(rngs) + '）' if rngs else ''} — {'／'.join(whys)}")
     add("")
     add("<!-- 項目: 大目的の注記 -->")
     # ★2026-09-30（3点目-a）＝テンプレの形（⚠️ 本監査スコープ = …）。守りの穴探しは対象外（まこさん 2026-09-30
@@ -1494,6 +1791,8 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
             add(f"- {_one_line(r['項目'])}（{_one_line(r['手書き／自動'])}）")
         # ★2026-10-12（B-1・B-3）＝設計の中身を問う Q7 と、手書きの工事ごとの問いも、監査対象に並べる
         add(f"- Q7：{DESIGN_Q7[0]}")
+        for num, _pr, _why, name, _body in new_qs:          # ★2026-10-18（ToDo の15番）＝要件ごとの問い・どの工事にも出す問い ほか
+            add(f"- {num}：{_one_line(name)}")
         for q in hand["問い"]:
             add(f"- {q['番号']}：{_one_line(q['名前'])}")
     else:
@@ -1537,6 +1836,10 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
         add(f"<!-- 項目: 問い 番号=Q7 優先度=A 理由={_attr(DESIGN_Q7[1])} 名前={_attr(DESIGN_Q7[0])} -->")
         add(DESIGN_Q7[2])
         add("")
+        for num, pr, why, name, body in new_qs:
+            add(f"<!-- 項目: 問い 番号={num} 優先度={pr} 理由={_attr(why)} 名前={_attr(name)} -->")
+            add(body)
+            add("")
         for q in hand["問い"]:
             add(f"<!-- 項目: 問い 番号={q['番号']} 優先度={q['優先度']} 理由={_attr(q['理由'])} 名前={_attr(q['名前'])} -->")
             add(q["body"])
@@ -1575,10 +1878,13 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
             add(q["body"])
             add("")
     # ★何を調べるかは手で決める（worklog §42）＝元データの「外部検索」から作る（直す前は題の40文字で切れた＝§40 の9）
+    # ★2026-10-18（ToDo の15番・監査 CP75 の外部検索の Process「クエリ案が、検索の言葉でない」）＝クエリ案は、案の「検索の言葉」の列から写す。
+    #   列が無い古い形の案は、無いと書き、調べる物の文から監査が検索の言葉を決める（直す前は、CC の文をそのままクエリ案にしていた）。
     for s in searches:
         s = s if isinstance(s, dict) else {"名前": str(s), "中身": ""}
         add(f"<!-- 項目: 外部検索 名前={_attr(_cc_voice(s.get('名前', '')))} -->")
-        add(_cc_voice(_one_line(s.get("中身") or s.get("名前", ""))))     # ★クエリ案（期待発見の文は build_request がテンプレの形で足す）
+        add(f"{SEARCH_WORDS}{_one_line(s.get('検索の言葉')) or SEARCH_NONE}")
+        add(f"{SEARCH_WHAT}{_cc_voice(_one_line(s.get('中身') or s.get('名前', '')))}")
         add("")
     # ★自己申告＝設計書の「塞げないもの」と、見積もりの「測っていない」の行（OK をもらった提案の28行目）
     for r in d.get("塞げないもの") or []:
@@ -1594,6 +1900,14 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
         add("<!-- 項目: 自己申告 -->")
         # ★2026-10-01（工事 point5-q5label-20261001）＝番号を外さず、出どころを書いて写す（依頼書の Q5 とも取り違えない）
         add(f"**塞げないもの**＝{_cc_voice(GATE_Q5_RE.sub(GATE_Q5_TO, q))}：{_cc_voice(_one_line(r.get('塞げないこと')))}")
+    # ★2026-10-18（ToDo の15番・14番の設計書の 347行）＝設計書の「確かめていないこと」（6-5）を、自己申告に1件ずつ写す
+    if kind == "design":
+        for r in d.get("確かめていないこと") or []:
+            add("")
+            add("<!-- 項目: 自己申告 -->")
+            add(_cc_voice(f"**確かめていないこと**＝{_one_line(r.get('確かめていないこと'))}"
+                          f"（なぜ確かめていないか＝{_one_line(r.get('なぜ確かめていないか'))}。"
+                          f"確かめるなら＝{_one_line(r.get('確かめるなら、何を走らせるか'))}）"))
     for r in d.get("見積もり") or []:
         if "測っていない" in f"{r.get('見込み', '')}{r.get('根拠', '')}":
             add("")
@@ -1626,7 +1940,7 @@ def build_design_src(kind: str, cp: int, work: str, design_path: str = None, sho
         add(f"**設計書を作った後に写した逐語**＝{'・'.join(n.split('/')[-1] for n in late)}（工事のフォルダには在るが、"
             "設計書の §0-1 に名前が無い。設計書を作り直すまで、設計書の §0-1 はこの分だけ元と違う）")
     body = "\n".join(B) + "\n"
-    head = (f"{GEN_MARK} kind={kind} design_sha256={sha256_file(design_path or DESIGN)} "
+    head = (f"{GEN_MARK} kind={kind} work={work} design_sha256={sha256_file(design_path or DESIGN)} "
             f"src_sha256={sha256_file(src_file)} "
             f"body_sha256={sha256_text(body)} -->")
     return head + "\n" + body, base
@@ -1667,6 +1981,79 @@ def request_design(kind: str, work: str, design_path: str = None) -> int:
         f.write(text)
     print(f"書いた（依頼書の元データ・道具が作った）: {rel_of(src_path)}")
     return build_request(src_path, os.path.join(AUDITS, "inputs", f"{base}_audit_request.md"))
+
+
+def check_request(req_path: str) -> list:
+    """出来上がった依頼書を、元データと照らす（2026-10-18・ToDo の15番）。戻り＝「✅ …」「❌ …」の行。本物には何も書かない。
+    まこさん（2026-10-17・記録 20261017 §35）「チェックするとしたら、自動生成の不備で、元データと生成後のデータで齟齬があるかどうかくらい？」
+    直す前は、依頼書の目印に元データと設計書のハッシュ値を書いていたが、照らす所が0件だった。
+    見ること＝①依頼書と元データが、作った後に書き替えられていない ②設計書から作った依頼書なら、監査の相手の設計書と設計書の元が、
+      元データを作った時と同じで、いま作り直した元データと1文字も同じ ③元データから作り直した依頼書と1文字も同じ。"""
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    lines: list = []
+
+    def ok(cond: bool, what: str, detail: str = "") -> None:
+        lines.append(("✅ " if cond else "❌ ") + what + (f"（{detail}）" if detail and not cond else ""))
+
+    def first_diff(a: str, b: str) -> str:
+        al, bl = a.splitlines(), b.splitlines()
+        for i, (x, y) in enumerate(zip(al, bl), 1):
+            if x != y:
+                return f"{i} 行目が違う＝いま「{x[:60]}」／作り直した物「{y[:60]}」"
+        return f"行の数が違う（いま {len(al)} 行／作り直した物 {len(bl)} 行）"
+
+    text = open(req_path, encoding="utf-8").read()
+    body, mark = split_mark(text)
+    ok(bool(mark.get("body_sha256")) and mark.get("body_sha256") == sha256_text(body), "依頼書は、道具が作った後に書き替えられていない")
+    src_rel = mark.get("src", "")
+    src_path = os.path.join(ROOT, src_rel) if src_rel else ""
+    if not src_path or not os.path.isfile(src_path):
+        ok(False, "依頼書の目印の元データが在る", src_rel or "目印に src が無い")
+        return lines
+    ok(mark.get("src_sha256") == sha256_file(src_path), "元データは、依頼書を作った後に書き替えられていない")
+    src_text = open(src_path, encoding="utf-8").read()
+    first = src_text.partition("\n")[0]
+    _s, smeta, _e = parse_src(src_path)
+    if first.startswith(GEN_MARK):
+        import gen_acceptance as ga
+        a = dict(re.findall(r"(\S+?)=(\S+)", first))
+        work = a.get("work") or re.sub(r"^.*／設計書 ", "", smeta.get("監査対象タスク", ""))
+        tgt = smeta.get("監査の相手", "")
+        dpath = repo_path(tgt) if tgt else ""
+        ok(bool(dpath) and os.path.isfile(dpath) and a.get("design_sha256") == sha256_file(dpath),
+           "監査の相手の設計書は、元データを作った時と同じ", tgt or "元データのメタに監査の相手が無い")
+        tpath = ga.gv.work_dir(work) / ga.TODO_MD
+        ok(tpath.is_file() and a.get("src_sha256") == sha256_file(str(tpath)),
+           "設計書の元（やることの表.md）は、元データを作った時と同じ", str(tpath))
+        cp = int((re.search(r"\d+", smeta.get("cp", "")) or [0])[0] or 0)
+        show = dpath if os.path.basename(tgt) != os.path.basename(DESIGN) else None
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                again, _b = build_design_src(a.get("kind", ""), cp, work, design_path=show, show_path=show)
+            again = re.sub(r"^日付: .*$", f"日付: {smeta.get('日付', '')}", again, count=1, flags=re.M)
+            same = again.partition("\n")[2] == src_text.partition("\n")[2]
+            ok(same, "元データは、設計書と工事のフォルダから作り直した物と1文字も同じ",
+               "" if same else first_diff(src_text.partition("\n")[2], again.partition("\n")[2]))
+        except SystemExit as e:
+            ok(False, "元データを、設計書と工事のフォルダから作り直せる", str(e)[:200])
+    else:
+        ok(smeta.get("監査区分", "") == NODESIGN_LABEL, "目印の無い（手書きの）元データは、設計書の無い直しの監査の物",
+           f"監査区分＝{smeta.get('監査区分', '')}")
+    tmpd = tempfile.mkdtemp(prefix="gad_check_", suffix="_work", dir=AUDITS)
+    try:
+        out = os.path.join(tmpd, os.path.basename(req_path))
+        with contextlib.redirect_stdout(io.StringIO()):
+            build_request(src_path, out)
+        again_req = open(out, encoding="utf-8").read() if os.path.isfile(out) else ""
+        ok(again_req == text, "依頼書は、元データから作り直した物と1文字も同じ",
+           "作り直せなかった" if not again_req else first_diff(text, again_req))
+    finally:
+        shutil.rmtree(tmpd, ignore_errors=True)
+    return lines
 
 
 # ───────────── 依頼書を読む ─────────────
@@ -1990,7 +2377,7 @@ def form_errors(rtext: str) -> list:
     return errs
 
 
-def selftest() -> int:
+def selftest(keep: bool = False) -> int:
     """request-design の自己テスト（2026-09-29・まこさん指摘「監査の依頼内容が変じゃないか？」を測る）。
 
     ★本物の inputs にも設計書にも書かない。依頼書は一時の置き場に作る。
@@ -2252,10 +2639,118 @@ def selftest() -> int:
              bool(req_d2) and "設計書の中身そのものが正しいか" not in req_d2)
         case("設計書の監査と実装の監査の依頼書に、固定で載せる文（要件定義と工事の流れ）が在る",
              CORE_MARK in req_d2 and CORE_MARK in req_i)
+        # ★2026-10-18（ToDo の15番）＝新しい形の設計書の監査の依頼書（見本＝検査やプログラムを直す工事・種類②）
+        import gen_core_requirements as gcr
+        work_n = ga._sample_work(vtmp, new=True)
+        ga.WORK = work_n
+        design_n = str(vtmp / "acceptance_sample_new.md")
+        ga.write(dest=Path(design_n))
+        (ga.gv.work_dir(work_n) / HAND_MD.format(label="設計書の監査")).write_text(hand_body, encoding="utf-8")
+        try:
+            text_n, base_n = build_design_src("design", 996, work_n, design_n, show_path=design_n)
+        except SystemExit as e:                          # 止まっても、残りの試しを ❌ にして数える（自己テストごと落とさない）
+            print(f"   ❌ 新しい形の見本から、依頼書の元データを作れない: {e}")
+            text_n, base_n = "", "2026-10-18_selftest_new_design_cp996"
+        sp_n = os.path.join(tmpd, "src_design_new.gen.md")
+        open(sp_n, "w", encoding="utf-8").write(text_n)
+        op_n = os.path.join(tmpd, f"{base_n}_audit_request.md")
+        rc_n = build_request(sp_n, op_n)
+        req_n = open(op_n, encoding="utf-8").read() if os.path.isfile(op_n) else ""
+        qs_n = re.findall(r"^### (\S+) — ", req_n, re.M)
+        tgt_n = req_n.split("### 監査対象 (本監査内)", 1)[-1].split("### 監査対象外", 1)[0]
+        want_n = ([f"R{no}" for no, _nm in gcr.requirement_items(full=True)] + [f[0] for f in DESIGN_F] + [k[0] for k in DESIGN_K])
+        case("新しい形の設計書の監査の依頼書に、要件ごとの問い R（要件の行の数）・F1〜F5・K1〜K4 が在り、どれも監査対象に在る",
+             rc_n == 0 and all(q in qs_n for q in want_n) and all(f"- {q}：" in tgt_n for q in want_n))
+
+        def qbody(text: str, num: str) -> str:
+            return text.split(f"### {num} — ", 1)[-1].split("\n### ", 1)[0] if f"### {num} — " in text else ""
+        r31, r6, r10, f5 = qbody(req_n, "R3-1"), qbody(req_n, "R6"), qbody(req_n, "R10"), qbody(req_n, "F5")
+        case("要件ごとの問いが、見出しの名前・非該当の根拠（4-22 の⑤）・修正の書き先（案の写しは自動で直らない／やることの表は自動で直る）を出す",
+             "に、この工事が本当に触らないか" in r31 and "4-22 検査やプログラムを直す工事で書く5つ" in r31
+             and f"【{ga.HEAD_FIVE}】" in r31 and FIX_OK[0] in r31
+             and "2つの見出し" in r6 and "【4-3】か【4-13】" in r6 and "4-3 部品と責任" in r6
+             and "やることの表.md" in r10 and FIX_AUTO[0] in r10 and "修正の指示を書きません" in f5
+             # ★2026-10-18（F6〜F8）＝工事そのものの正しさの問いと、その書き先
+             and "「### §1 概要」" in qbody(req_n, "F6") and "読むもの宣言から写しています" in qbody(req_n, "F7")
+             and "「## 一覧」の表" in qbody(req_n, "F8") and "やることリスト" not in r10)
+        case("設計書の「確かめていないこと」が、自己申告に1件ずつ写る",
+             "**確かめていないこと**＝見本の確かめ（なぜ確かめていないか＝見本。確かめるなら＝見本のコマンド）" in req_n)
+        kei_n = req_n.split("## 監査依頼の経緯", 1)[-1].split("\n## ", 1)[0]
+        case("経緯に、工事の種類と、目標の①〜⑥が在る",
+             "3. **工事の種類**＝種類②" in kei_n and "4. **目標**" in kei_n and "③ net までのつながり＝見本のつながり" in kei_n
+             and "① どの要件のためか＝要件定義の9番（見本）。" in kei_n)
+        case("外部検索のクエリ案は、案の「検索の言葉」の列から作る（古い形の案は、無いと書く）",
+             "クエリ案: 見本 検索の言葉" in req_n and "調べる物: 見本の中身" in req_n and SEARCH_NONE in req)
+        rd_n = req_n.split("## 着手前必読", 1)[-1].split("\n## ", 1)[0]
+        paths_n = re.findall(r"^\d+\. `([^`]+)`", rd_n, re.M)
+        case("必読に、同じファイルを2回出さない（範囲と「なぜ」は1行にまとめる）・案の写しが在る",
+             bool(paths_n) and len(paths_n) == len(set(paths_n)) and any("okd_s.txt" in p for p in paths_n)
+             and len(re.findall(r"^\d+\. `[^`]*gen_verbatim\.py`", rd_n, re.M)) == 1)
+        case("パスを直す関数が「../../.claude/…」を実物のパスにする",
+             repo_ref("../../.claude/tools/gen_acceptance.py") == ".claude/tools/gen_acceptance.py"
+             and repo_ref("scripts/priority_rebuild/periods.py") == "SDK/scripts/priority_rebuild/periods.py"
+             and repo_ref("no/such/file.py") == "")
+        case("依頼書の頭（メタ情報のすぐ下・固定の文の前）に、何を答えてほしいかの案内が在り、問いの数が問いの節と合う",
+             GUIDE_HEAD in req_n and req_n.index(GUIDE_HEAD) < req_n.index(CORE_HEAD)
+             and f"問い（{len(qs_n)}件）" in req_n and "要件ごとの問い" in req_n.split(CORE_HEAD, 1)[0])
+        case("前提の3に、修正の書き先が3通り（設計書の元・案の写し・置き場）在り、実装の監査は実装のファイルを書き先にする",
+             "修正の指示の書き先は、設計書の見出しで決まります" in req_n and "okd_s.txt" in req_n.split("## 監査依頼の経緯", 1)[0]
+             and "置き場から写した行" in req_n and "実装が設計書と違う所は、その実装のファイル" in req_i)
+        cr = check_request(op_n) if req_n else []
+        tl_n = ga.gv.work_dir(work_n) / ga.TODO_MD
+        _keep_n = tl_n.read_text(encoding="utf-8")
+        tl_n.write_text(_keep_n + "\n", encoding="utf-8")
+        cr_bad = check_request(op_n) if req_n else []
+        tl_n.write_text(_keep_n, encoding="utf-8")
+        case("依頼書を元データと照らす口が、いまの依頼書は全部 ✅・設計書の元を書き替えると ❌ を出す",
+             bool(cr) and all(x.startswith("✅ ") for x in cr) and any(x.startswith("❌ ") and "設計書の元" in x for x in cr_bad))
+        # ★2026-10-18（まこさん「よい」＝指定どおりかを見本で照らす）＝指標や売買のロジックに触る工事（種類①）の要件ごとの問い。
+        #   見本の工事は種類②なので、直すファイルの一覧と 4-6・4-7 だけを差し替えた中身で、問いを組む（本物には書かない）
+        d1 = ga.src_from_work(work_n)
+        d1["TARGET"] = ["scripts/priority_rebuild/observe_config.json"]
+        d1["設計の中身"].update({"4-6": ["- 見本の制約。"], "4-7": ["- 見本の探索の範囲。"]})
+        qs1 = _design_new_questions(d1, open(design_n, encoding="utf-8").read(), "`やることの表.md`", "`okd_s.txt`")
+        q1 = {n: b for n, _p, _w, _nm, b in qs1}
+        case("指標や売買のロジックに触る工事（種類①）では、K を出さず、R3-1 は「4-7 探索の範囲」を読ませ、書き先に置き場の行を添える",
+             not any(n.startswith("K") for n in q1) and "「4-7 探索の範囲」に書いています" in q1.get("R3-1", "")
+             and "写した元の置き場のファイル" in q1.get("R3-1", "") and "検査やプログラムを直す工事です" not in q1.get("R3-1", "")
+             and any(n == "R5" and "この工事が本当に当たらないか" in nm for n, _p, _w, nm, _b in qs1))
+        if keep:
+            open(os.path.join(tmpd, "kind1_questions.md"), "w", encoding="utf-8").write(
+                "\n\n".join(f"### {n} — {nm}（優先度 {p}）\n\n**優先度の理由**＝{w}\n\n{b}" for n, p, w, nm, b in qs1) + "\n")
+        # 設計書の無い直しの監査＝項目は道具・中身は手書き。名前・作業場・監査区分が合わなければ作らない
+        hs = os.path.join(tmpd, "hand_nodesign.md")
+        hand_src = "\n".join([
+            "<!-- 項目: メタ -->", "日付: 2026-10-18", "task: selftest_nodesign", "cp: cp995", "題: CP995 — 見本（設計書の無い直しの監査）",
+            "依頼者: CC（起案者）", f"監査区分: {NODESIGN_LABEL}", "監査対象タスク: 見本", "監査の相手: .claude/tools/gen_audit_docs.py",
+            "<!-- 項目: 結論を決める問い -->", "- **問い1**＝見本の結論の問い。",
+            "<!-- 項目: 経緯 -->", "1. **この工事は何のためか**＝見本の目的。", "2. **この工事は何か**＝見本の工事。",
+            "<!-- 項目: 着手前必読 -->", "1. `.claude/tools/gen_audit_docs.py` — 監査の相手",
+            "<!-- 項目: 大目的の注記 -->", "⚠️ 本監査スコープ = 見本。",
+            "<!-- 項目: 事実データ 名前=見本の事実 -->", "見本の事実。",
+            "<!-- 項目: 監査対象 -->", "- Q1：見本の問い", "<!-- 項目: 監査対象外 -->", "- 見本の対象外",
+            "<!-- 項目: 問い 番号=Q1 優先度=A 理由=見本の理由 名前=見本の問い -->", "見本の見てほしいこと。",
+            "<!-- 項目: 自己申告 -->", "見本の自己申告。"]) + "\n"
+        open(hs, "w", encoding="utf-8").write(hand_src)
+        op_h = os.path.join(tmpd, "2026-10-18_selftest_nodesign_cp995_audit_request.md")
+        rc_h = build_request(hs, op_h)
+        req_h = open(op_h, encoding="utf-8").read() if os.path.isfile(op_h) else ""
+        rc_h2 = build_request(hs, os.path.join(tmpd, "2026-10-18_selftest_other_cp995_audit_request.md"))
+        hs3 = os.path.join(tmpd, "hand_not_nodesign.md")
+        open(hs3, "w", encoding="utf-8").write(hand_src.replace(f"監査区分: {NODESIGN_LABEL}", "監査区分: 設計書の監査"))
+        rc_h3 = build_request(hs3, os.path.join(tmpd, "2026-10-18_selftest_nodesign_cp994_audit_request.md"))
+        case("設計書の無い直しの監査は、手書きの元データから作れ（項目と決まった文は道具）、名前に _nodesign_ が無い・"
+             "監査区分が違う手書きの元データでは作らない",
+             rc_h == 0 and CORE_MARK in req_h and GUIDE_HEAD in req_h and NODESIGN_NA_SEARCH in req_h
+             and rc_h2 == 1 and rc_h3 == 1 and all(x.startswith("✅ ") for x in check_request(op_h)))
     finally:
         ga.WORK, ga.gv.VERBATIM_DIR, ga.gv.ARCHIVE_DIR, ga.src_from_work = saved
-        shutil.rmtree(tmpd, ignore_errors=True)
-        shutil.rmtree(str(vtmp), ignore_errors=True)
+        # ★2026-10-18（ToDo の15番）＝--selftest --keep で、見本の依頼書を消さずに残す（読む人の目で、出来上がった文を1回 見るため）
+        if keep:
+            print(f"（--keep）見本の依頼書と元データを残した: {rel_of(tmpd)}（見本の工事のフォルダ＝{rel_of(str(vtmp))}）")
+        else:
+            shutil.rmtree(tmpd, ignore_errors=True)
+            shutil.rmtree(str(vtmp), ignore_errors=True)
     print(f"\n{'✅' if ok == total else '❌'} selftest {ok}/{total} pass")
     return 0 if ok == total else 1
 
@@ -2263,7 +2758,7 @@ def selftest() -> int:
 def main(argv: list) -> int:
     if argv and argv[0] == "--selftest":
         # ★2026-09-30（設計書 point1-one-way-20260930-2）＝控えの元データを受ける口は消した（見本の工事のフォルダだけで試す）
-        return selftest()
+        return selftest(keep=argv[1:] == ["--keep"])
     if len(argv) == 2 and argv[0] == "request-design":
         print("❌ request-design は --work <工事名> が要ります（元データの JSON から作る古い口は消した）")
         return 2
@@ -2273,6 +2768,17 @@ def main(argv: list) -> int:
     # ★2026-10-07（まこさん「A」）＝… --work <工事名> --design <承認の控えの設計書>＝前の工事の依頼書を、控えの設計書から作る
     if len(argv) == 6 and argv[0] == "request-design" and argv[2] == "--work" and argv[4] == "--design":
         return request_design(argv[1], argv[3], argv[5])
+    # ★2026-10-18（ToDo の15番）＝check-request <依頼書>＝出来上がった依頼書を、元データ（と設計書・設計書の元）と照らす。何も書かない
+    if len(argv) == 2 and argv[0] == "check-request":
+        if not os.path.isfile(argv[1]):
+            print(f"❌ ファイルが無い: {argv[1]}")
+            return 1
+        res = check_request(argv[1])
+        for ln in res:
+            print(ln)
+        bad = sum(1 for ln in res if ln.startswith("❌ "))
+        print(f"食い違い {bad} 件")
+        return 1 if bad else 0
     ok_shape = (len(argv) == 3 and argv[0] in ("request", "result", "check")) or (len(argv) == 2 and argv[0] == "form")
     if not ok_shape:
         print(__doc__)

@@ -237,7 +237,7 @@ TODO_MD = "やることの表.md"
 HAND_KEYS = ("§1 概要", "2-1 何を測るか", "3-1 やらないこと", "3-2 決めてほしいこと", "4-19 通しの例")
 # ★2026-10-13（工事 design-doc-gen-form-20261013）＝新しい形の やることの表（共通の ひな型 design_origin_todo_template.md）の手書きの項目。
 #   見分け方＝手書きの項目に「### 目標」が在れば、新しい形。無ければ、いままでの形（上の5つ）のまま読む。
-HAND_KEYS_NEW = ("§1 概要", "やることリストのどの行の工事か", "2-1 何を測るか", "目標", "3-2 決めてほしいこと", "4-19 通しの例")
+HAND_KEYS_NEW = ("§1 概要", "この工事が結ぶ要件と、減らす違い", "2-1 何を測るか", "目標", "3-2 決めてほしいこと", "4-19 通しの例")
 NEW_FORM_MARK = "目標"
 AUTO_TEXT = {"7-2": "固定値ゼロ宣言", "7-3": "変更の単位"}
 AUTO_TABLE = {"5": ("決めたことと理由", ("決めたこと", "理由", "捨てた案")),
@@ -321,6 +321,10 @@ def src_from_work(work: str) -> dict:
     hand = _sections(top.get("手書きの項目") or [], re.compile(r"^###\s+(.+)$"))
     new_form = NEW_FORM_MARK in hand                 # ★2026-10-13＝手書きの項目に「### 目標」が在れば、新しい形
     d["形"] = "新" if new_form else "旧"
+    # ★2026-10-18（ToDo の15番・監査 CP77 の Minor）＝見出しの下の表示を替える変数は、元を読むここで立てる。
+    #   直す前は src() だけが立て、元を直に読むプログラム（監査依頼書を作るプログラム）で表示が食い違う道が残った。
+    global _NEW_FORM
+    _NEW_FORM = new_form
     hand_keys = HAND_KEYS_NEW if new_form else HAND_KEYS
     for k in hand_keys:
         if k not in hand:
@@ -426,7 +430,14 @@ def src_from_work(work: str) -> dict:
                                 for r in _md_table(body, ("番号", "関わるか", "合っているか", "根拠"), "【0-R】", bad)}
         elif k == "外部検索":
             # ★2026-09-29＝依頼書の道具（gen_audit_docs.py request-design --work）が読む。設計書には写さない
-            d["外部検索"] = _md_table(body, ("名前", "中身"), "【外部検索】", bad)
+            # ★2026-10-18（ToDo の15番・監査 CP75 の外部検索の Process）＝検索の言葉の列を読む。直す前は「名前」「中身」の2列だけで、
+            #   依頼書のクエリ案に CC の文がそのまま出た。新しい形の案では、検索の言葉の列を必ず書く（古い形は、無くても読む）。
+            _head = next((ln for ln in body if ln.strip().startswith("|")), "")
+            _cols = ("名前", "中身", "検索の言葉") if "検索の言葉" in _head else ("名前", "中身")
+            if new_form and len(_cols) == 2:
+                bad.append("新しい形の案の【外部検索】に「検索の言葉」の列が無い（列＝名前・中身・検索の言葉。"
+                           "検索の言葉は、監査が WebSearch にそのまま入れる言葉）")
+            d["外部検索"] = _md_table(body, _cols, "【外部検索】", bad)
         elif k == "7-5":
             d["ハード制約の照合"] = [re.sub(r"^\s*(?:[-*]|\d+\.)\s*", "", ln) for ln in body if ln.strip()]
         elif k == "7-8":
@@ -537,9 +548,9 @@ def _read_new_todo(d: dict, top: dict, hand: dict, bad: list, work: str, d_dir: 
     d["何を作るか"] = _para(hand.get("§1 概要") or [])
     ex = _para(hand.get("4-19 通しの例") or [])
     d["設計の中身"]["4-19"] = ex.split("\n") if ex else []
-    row = _md_table(hand.get("やることリストのどの行の工事か") or [], ("欄", "中身"), "やることリストのどの行の工事か", bad)
+    row = _md_table(hand.get("この工事が結ぶ要件と、減らす違い") or [], ("欄", "中身"), "この工事が結ぶ要件と、減らす違い", bad)
     if len(row) != 3:
-        bad.append(f"「やることリストのどの行の工事か」の表が3行（どの行か・どこまで減らすか・順番）でない（いま {len(row)} 行）")
+        bad.append(f"「この工事が結ぶ要件と、減らす違い」の表が3行（どの行か・どこまで減らすか・順番）でない（いま {len(row)} 行）")
     d["どの行の工事か"] = row
     goal = _md_table(hand.get("目標") or [], ("番号", "欄", "中身"), "目標", bad)
     have = [r["番号"] for r in goal]
@@ -659,21 +670,28 @@ def _finish_new(d: dict, bad: list) -> None:
             bad.append(f"やることの番号 {n} に、完成の条件（【7-6】）の行が無い（行を足すか、「- 行が無いやることの番号と、その理由：」の行に理由を書く）")
 
 
+def sec_state(d: dict, sec: str) -> tuple:
+    """索引の対応（INDEX_MAP）の節の状態。戻り＝(状態, 非該当の理由)。状態＝書いた／非該当／書いていない／空。
+    ★2026-10-18（ToDo の15番）＝索引（_index_lines）と、監査依頼書の要件ごとの問い（gen_audit_docs.py）が、同じ決め方を呼ぶ（2か所に書かない）。"""
+    body = d.get("設計の中身") or {}
+    if sec.startswith("4-"):
+        got = body.get(sec)
+        if isinstance(got, dict) and got.get("非該当"):
+            return "非該当", str(got["非該当"])
+        return ("書いた", "") if got else ("書いていない", "")
+    if sec.startswith("3-0 目標の") and sec[-1] != "①":
+        cell = next((str(r.get("中身") or "") for r in d.get("目標") or [] if r.get("番号") == sec[-1]), "")
+        if cell.strip() in EMPTY_WORDS:
+            return "空", ""
+    return "書いた", ""
+
+
 def _index_lines(d: dict) -> list:
     """要件定義の索引（要件定義の何番を、この設計書のどの節に書いたか）。プログラムが、設計書の中身から作る。"""
-    body = d.get("設計の中身") or {}
 
     def _state(sec: str) -> str:
-        if sec.startswith("4-"):
-            got = body.get(sec)
-            if isinstance(got, dict) and got.get("非該当"):
-                return f"{sec}＝非該当（{_esc(got['非該当'])}）"
-            return f"{sec}＝書いた" if got else f"{sec}＝書いていない"
-        if sec.startswith("3-0 目標の") and sec[-1] != "①":
-            cell = next((str(r.get("中身") or "") for r in d.get("目標") or [] if r.get("番号") == sec[-1]), "")
-            if cell.strip() in EMPTY_WORDS:
-                return f"{sec}＝空"
-        return f"{sec}＝書いた"
+        st, why = sec_state(d, sec)
+        return f"{sec}＝{st}（{_esc(why)}）" if st == "非該当" else f"{sec}＝{st}"
 
     L = ["### 0-R 要件定義の索引（要件定義の何番を、この設計書のどの節に書いたか）", "",
          _tag("自動", "要件は正本から。書いた節と、その節の状態は、プログラムがこの設計書の中身から決めた（CC は判定を書かない）"),
@@ -689,12 +707,12 @@ def _index_lines(d: dict) -> list:
 
 
 def _sec2_new(d: dict) -> list:
-    """2番の節の先頭（やることリストのどの行の工事か・やることの一覧）。"""
-    L = ["### 2-0 やることリストのどの行の工事か", "",
+    """2番の節の先頭（この工事が結ぶ要件と、減らす違い・やることの一覧）。"""
+    L = ["### 2-0 この工事が結ぶ要件と、減らす違い", "",
          _tag("自動", "やることの番号と結ぶ要件＝読むもの宣言から、プログラムが写した"),
          f"- やることの番号＝{d.get('やることの番号の文', '')}",
          f"- 結ぶ要件＝{d.get('結ぶ要件', '')}", "",
-         _tag("手書き", "やることの表の「やることリストのどの行の工事か」"),
+         _tag("手書き", "やることの表の「この工事が結ぶ要件と、減らす違い」"),
          "| 欄 | 中身 |", "|---|---|"]
     L += [f"| {_esc(r['欄'])} | {_esc(r['中身'])} |" for r in d.get("どの行の工事か") or []]
     L += ["", "### 2-0b やることの一覧", "",
@@ -892,9 +910,7 @@ def src() -> dict:
     if not WORK:
         raise SystemExit("[gen_acceptance] 工事名がありません（fail-closed）。--work <工事名> を付けてください"
                          "（設計書の作り方は工事のフォルダの1本だけ・元データの JSON は使わない）。")
-    d = src_from_work(WORK)
-    global _NEW_FORM
-    _NEW_FORM = d.get("形") == "新"
+    d = src_from_work(WORK)                          # ★見出しの下の表示を替える変数（_NEW_FORM）は src_from_work が立てる（2026-10-18）
     if not d.get("やらないこと"):
         raise SystemExit(
             "[gen_acceptance] 元データの「やらないこと」が空です（fail-closed）。\n"
@@ -2538,7 +2554,8 @@ def _sample_work(base: Path, new: bool = False) -> str:
                                              "impl_functions": {"../../.claude/tools/gen_verbatim.py": ["work_dir", "summary"]}}},
                         ensure_ascii=False),
              "```",
-             "【外部検索】", "| 名前 | 中身 |", "|---|---|", "| 見本の検索 | 見本の中身 |"]
+             "【外部検索】"] + (["| 名前 | 中身 | 検索の言葉 |", "|---|---|---|", "| 見本の検索 | 見本の中身 | 見本 検索の言葉 |"]
+                               if new else ["| 名前 | 中身 |", "|---|---|", "| 見本の検索 | 見本の中身 |"])
     if new:
         # ★2026-10-13＝新しい形の案の見本（直すファイルは道具だけ＝種類②）。【7-3b】は、根拠と確かめ直すコマンドの表
         prop += ["【" + HEAD_FIVE + "】", "| 番号 | 欄 | 中身 |", "|---|---|---|",
@@ -2574,9 +2591,12 @@ def _sample_work(base: Path, new: bool = False) -> str:
         todo = ["# やることの表｜工事 selftest-sample-new（見本）", "",
                 "## 一覧", "", "| 番号 | 一文 | 出どころ |", "|---|---|---|", "| 見本 | 見本のやること | 見本 |", "",
                 "## やらないこと", "", "| 番号 | 中身 | 理由 | 出どころ |", "|---|---|---|---|", "| Y-1 | 見本のやらないこと | 見本 | 見本 |", "",
+                # ★2026-10-18（ToDo の15番）＝共通の ひな型と同じく、割り当ての表を持つ（監査依頼書を作るプログラムが、この表から問い W を作る）
+                "## 手書きと自動の割り当て", "", "| 項目 | 手書き／自動 |", "|---|---|",
+                "| §1 概要 | 手書き |", "| 目標の②〜⑥ | 手書き |", "| 4-0〜4-18 設計の中身 | 自動 |", "",
                 "## 手書きの項目", "",
                 "### §1 概要", "", "★向きを見る所。", "見本の概要。", "", "見本の2つ目の段落。", "",
-                "### やることリストのどの行の工事か", "", "| 欄 | 中身 |", "|---|---|",
+                "### この工事が結ぶ要件と、減らす違い", "", "| 欄 | 中身 |", "|---|---|",
                 "| 要件定義の「いまの実物との違い」のどの行か | 見本 |", "| その違いを、どこまで減らすか | 見本の残り |", "| 順番 | 見本 |", "",
                 "### 2-1 何を測るか", "", "| 何を測ったか | コマンド | 読み方 |", "|---|---|---|",
                 "| 見本 | grep -c 'def page' .claude/tools/gen_acceptance.py | 在れば一以上 |", "",
@@ -2915,7 +2935,7 @@ def selftest() -> int:
         try:
             write(dest=copy2)
             _t20 = copy2.read_text(encoding="utf-8")
-            _miss20 = [s for s in ("工事の種類: 種類②", "### 0-R 要件定義の索引", "### 2-0 やることリストのどの行の工事か",
+            _miss20 = [s for s in ("工事の種類: 種類②", "### 0-R 要件定義の索引", "### 2-0 この工事が結ぶ要件と、減らす違い",
                                    "### 3-0 目標", "### 4-22 ", "### 6-5 確かめていないこと", "見本の概要。\n\n見本の2つ目の段落。",
                                    "| 10 | ", "CC が書いて、まこさんが OK した案の【4-0】",
                                    "この工事が解く問題＝見本の概要。", "目標の③（net までのつながり）＝見本のつながり",
