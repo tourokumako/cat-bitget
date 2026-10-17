@@ -578,7 +578,9 @@ def copy_todo(next_path: pathlib.Path, sid: str) -> int:
         if not s.startswith("|"):
             continue
         c = [x.strip() for x in s.strip("|").split("|")]
-        if len(c) < 3 or not c[0].isdigit() or c[2] == "✅済":
+        # ★2026-10-18（189回目）＝恒久の決まり55番は「✅済（日付）」と日付を添える。直す前は「✅済」の4文字だけと比べ、
+        #   日付つきの済んだ行（29・35・43番）を写していた＝毎回読む部分が上限を超えた
+        if len(c) < 3 or not c[0].isdigit() or c[2].startswith(DONE_MARK):
             continue
         # ToDo の「★いまここ」の行は、次の回が始める行＝「いまここ（次の回は、ここから）」と写す
         rows.append({"欄": [f" {c[0]} ", f" {c[1]} ", f" {'いまここ（次の回は、ここから）' if c[2] == HERE_MARK else c[2]} "]})
