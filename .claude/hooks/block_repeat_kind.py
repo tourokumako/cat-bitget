@@ -186,6 +186,8 @@ def hook() -> int:
         d = json.loads(sys.stdin.read() or "{}")
     except Exception:
         return 0
+    if d.get("agent_type"):
+        return 0                                   # ★2026-10-18（監査 CP79）＝サブエージェントは通す。記録は親の筋の物で、親の失敗2回を子（読むだけの Plan agent）に当てて止めた実測（require_work_declaration.py:177 と同じ形）
     name, inp = d.get("tool_name"), d.get("tool_input") or {}
     if name not in ACT_TOOLS or is_read(name, inp) or free_write(name, inp) or check_only(name, inp):
         return 0
@@ -241,7 +243,7 @@ def selftest() -> int:
         ("C3 next_move.py を tail に流す → 止めない", "python3 .claude/tools/next_move.py --work x 2>&1 | tail -5", True),
         ("C4 試しの道具の出力をファイルへ → 止める", "python3 .claude/tools/try_hooks.py --session x > out.txt", False),
         ("C5 確かめていない道具 → 止める", "python3 .claude/tools/gen_verbatim.py --list", False),
-        ("C6 cp が混じる → 止める", "python3 -m py_compile a.py && cp a.py b.py", False),
+        ("C6 cp が混じる → 止める", "python3 -m py_compile a.py && cp a.py b.py", False),        ("C7 find -delete（書き込み・監査 CP79）→ 止める", "find /x -name a.md -delete", False),
     ]
     bad = total = 0
     for nm, cmd, want in tc:

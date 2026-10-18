@@ -207,8 +207,8 @@ def main(raw: str) -> int:
     if path.parent == BREAKS:
         return 0                                   # 壊すプログラム自身を直すときは見ない
     lines = removed_lines(pairs_of(tool, ti, path))
-    if not lines:
-        return 0
+    # ★2026-10-18（監査 CP79 の修正）＝消える行が8文字未満でも、探す文字の数え直し（precise_hits）は走らせる。
+    #   直す前は lines が空だと見ずに通したので、7文字以下の old_string で探す文字を壊す Edit が通った（b48 の相手で実測）。
     hits = precise_hits(path, tool, ti, lines)
     if not hits:
         return 0
@@ -255,7 +255,8 @@ def selftest() -> int:
          run("Edit", E("    target_line_here()\n    other()", "    changed()\n    other()"), [bb]), True),
         ("S4 Write で探す文字を消す → 止まる", run("Write", {"content": "def a():\n    pass\n"}, [ba]), True),
         ("S5 old_string がファイルに無い Edit → いままでどおりの見方（消える行の文字が中に在れば止まる）",
-         run("Edit", E("    target_line_here()\n    zzz()", "    y()"), [ba]), True),
+         run("Edit", E("    target_line_here()\n    zzz()", "    y()"), [ba]), True),        ("S6 7文字の old_string（消える行の一覧は空）で探す文字を壊す Edit → 止まる（2026-10-18・監査 CP79）",
+         run("Edit", E("line_he", "line_XX"), [ba]), True),
     ]
     ng = 0
     for nm, got, want in cases:

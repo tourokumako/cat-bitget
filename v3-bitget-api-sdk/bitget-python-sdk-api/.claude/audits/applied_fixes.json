@@ -4907,6 +4907,172 @@
    "file": ".claude/tools/gen_acceptance.py",
    "at": "2026-10-14T10:13:10",
    "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "10",
+   "file": ".claude/rules/pdca_flow.md",
+   "at": "2026-10-18T15:10:29",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "hook-fix-part1-nodesign-cp79/ok_apply_except_q8_20261018"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "22",
+   "file": ".claude/rules/pdca_flow.md",
+   "at": "2026-10-18T15:10:29",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "hook-fix-part1-nodesign-cp79/ok_apply_except_q8_20261018"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "23",
+   "file": ".claude/rules/pdca_flow.md",
+   "at": "2026-10-18T15:10:29",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "hook-fix-part1-nodesign-cp79/ok_apply_except_q8_20261018"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "24",
+   "file": ".claude/state/hook_roles.json",
+   "at": "2026-10-18T15:10:29",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "hook-fix-part1-nodesign-cp79/ok_apply_except_q8_20261018"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "25",
+   "file": ".claude/rules/pdca_flow.md",
+   "at": "2026-10-18T15:10:29",
+   "how": "まこさんが当てないと決めた",
+   "verbatim": "hook-fix-part1-nodesign-cp79/ok_apply_except_q8_20261018"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "1",
+   "file": ".claude/hooks/enforce_audit_docs.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "2",
+   "file": ".claude/hooks/enforce_audit_docs.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "3",
+   "file": ".claude/hooks/enforce_audit_docs.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "4",
+   "file": ".claude/hooks/block_repeat_kind.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "5",
+   "file": ".claude/hooks/require_check_after_failure.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "6",
+   "file": ".claude/hooks/require_work_declaration.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "7",
+   "file": ".claude/hooks/require_work_declaration.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "8",
+   "file": ".claude/hooks/require_work_declaration.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "9",
+   "file": ".claude/hooks/block_repeat_kind.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "11",
+   "file": ".claude/hooks/show_breaks_on_code_edit.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "12",
+   "file": ".claude/hooks/show_breaks_on_code_edit.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "14",
+   "file": ".claude/hooks/require_work_declaration.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "16",
+   "file": ".claude/hooks/enforce_audit_docs.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "17",
+   "file": ".claude/state/hook_inventory_src.json",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "18",
+   "file": ".claude/state/hook_inventory_src.json",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "19",
+   "file": ".claude/state/hook_inventory_src.json",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "20",
+   "file": ".claude/state/hook_inventory_src.json",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
+  },
+  {
+   "report": "2026-10-18_hook_fix_part1_nodesign_cp79_audit_report.md",
+   "num": "26",
+   "file": ".claude/state/_hook_inventory.py",
+   "at": "2026-10-18T15:12:09",
+   "how": "当てた"
   }
  ]
 }

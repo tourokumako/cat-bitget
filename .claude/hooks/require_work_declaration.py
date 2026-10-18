@@ -47,7 +47,9 @@ NOT_USER = ("Stop hook feedback", "<task-notification>", "<system-reminder>", "T
 HEADS = ("【作業内容】", "【目的】", "【経緯】", "【ゴール】")
 DECL_RE = re.compile(r"【宣言】\s*ToDo\s*の?\s*(\d+)\s*番")
 DOING = "★いまここ"
-CHECK_ONLY = re.compile(r"--selftest|--verify|--check|--help|--dry\b|py_compile|try_hooks\.py|next_move\.py")
+CHECK_ONLY = re.compile(r"--(?:selftest|verify|check|help|dry)(?=\s|$)|-m\s+py_compile(?=\s|$)|try_hooks\.py(?=\s|$)|next_move\.py(?=\s|$)")
+# ★2026-10-18（監査 CP79 の修正）＝旗は丸ごと一致で見る（--checkpoint-and-save の --check を検査の旗と見ていた）。
+#   旗の中身（その道具が本当に書かないか）は見ない＝防げない物（hook_inventory_src.json に書く）
 TMP_OUT = re.compile(r"\d?>>?\s*(/private)?/tmp/\S+")            # 作業場と /tmp への書き出し（2026-10-17）
 GIT_EXTRA = re.compile(r"^git\s+check-ignore(\s|$)")               # 無視される置き場かを見るだけ（2026-10-17）
 TOOL_CHECK = re.compile(r"^python[0-9.]*\s+\S*(try_hooks|next_move)\.py(\s|$)")  # 書き込まない道具（2026-10-17）
@@ -80,12 +82,8 @@ def doing_numbers(todo_text: str) -> list:
 def events(path: pathlib.Path) -> list:
     """戻り＝[("user", None) | ("say", CC の返信の文)] を、記録の順に。サブエージェントの行は数えない。"""
     out = []
-    for line in path.open(encoding="utf-8", errors="replace"):
-        try:
-            o = json.loads(line)
-        except Exception:
-            continue
-        if not isinstance(o, dict) or o.get("isSidechain"):
+    for o in rows(path):                           # ★2026-10-18（監査 CP79）＝記録は共通の rows() で読む（同じ uuid は1回・会話の本物の行だけ）
+        if o.get("isSidechain"):
             continue
         if o.get("type") == "user":
             c = (o.get("message") or {}).get("content")
@@ -166,8 +164,8 @@ def check_or_read(cmd: str) -> bool:
             continue
         if TOOL_CHECK.match(s):
             continue
-        if re.match(r"python[0-9.]*\s", s) and CHECK_ONLY.search(s) and "--write" not in s:
-            continue
+        if re.match(r"python[0-9.]*\s+(?!-c\b|-\s|-$)", s) and CHECK_ONLY.search(s) and "--write" not in s:
+            continue                                # python3 -c と python3 - は、.py が無いので検査だけの実行と見ない（2026-10-18）
         return False
     return True
 
@@ -294,7 +292,17 @@ def selftest() -> int:
             bash("cp a b"))
         run("T23 最初の発言が【相談】で始まる（普通のセッション）・ToDo が無い → 止まる",
             [_user("【相談】監査の依頼書の作り方")], None, True, bash("cp a b"))
-    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 23件のうち、期待と違う {ng} 件")
+        # ★2026-10-18（監査 CP79 の修正）＝旗の名前だけで通っていた2つの形と、直した後も通る（防げない物）1つの形
+        run("T24 python3 -c の書き込みに --check を付ける → 止まる", [_user("始めて")], None, True,
+            bash("python3 -c \"open('/tmp/zz','w').write('a')\" --check"))
+        run("T25 --check で始まる別の旗（--checkpoint-and-save）→ 止まる", [_user("始めて")], None, True,
+            bash("python3 x.py --checkpoint-and-save"))
+        run("T26 .py に検査の旗だけ → 通る（旗の中身は見ない＝防げない物）", [_user("始めて")], None, False,
+            bash("python3 x.py --check"))
+        # ★2026-10-18（監査 CP79）＝find -delete・sort -o を読むだけと見ていた穴（require_check_after_failure.bash_is_read の直しで止まる）
+        run("T27 find -delete → 止まる", [_user("始めて")], None, True, bash("find /tmp/x -name a.md -delete"))
+        run("T28 sort -o → 止まる", [_user("始めて")], None, True, bash("sort -o /tmp/out.txt /tmp/in.txt"))
+    print(f"  {'✅' if not ng else '❌'} 見本の記録で試した 28件のうち、期待と違う {ng} 件")
     return 1 if ng else 0
 
 

@@ -71,9 +71,19 @@ def abs_path(p: str, cwd: str) -> str:
 def _strip_text(cmd: str) -> str:
     """★2026-10-17（183回目）＝ヒアドキュメントの中身と引用符の中を外す（enforce_purpose_gate の strip_text と同じ外し方）。
       直す前は外さなかったので、引用符の中の空白で区切り（30日で17回）、文の中の名前で止めた（11回）。"""
-    s = re.sub(r"<<-?\s*[\"']?(\w+)[\"']?.*?^\s*\1\s*$", " ", cmd or "", flags=re.S | re.M)
-    s = re.sub(r'"[^"]*"', '""', s)
-    return re.sub(r"'[^']*'", "''", s)
+    # ★2026-10-18（監査 CP79 の修正）＝引用符の中が、空白も区切りの文字（; | & < > ( ) $ ` \）も含まない1語（パス）のときは、
+    #   引用符だけを外して中身を残す。中身ごと消すと、引用符で囲んだ依頼書のパス（rm -f "…_audit_request.md"）が見えなくなって通った。
+    #   空白や区切りを含む中身（文・grep -E の候補 "GO|NO-GO"・sed の行の指定 '1p;5p'・試しの道具の --bash "…"）は、いままでどおり消す。
+    #   ヒアドキュメントは1行目（<< の在る行）を残し、2行目から終わりの印までだけを外す。1行目まで外すと、
+    #   同じ行の書き出し（cat <<'EOF' > …_audit_request.md）が見えなくなって通った。
+    s = re.sub(r"(<<-?\s*[\"']?(\w+)[\"']?[^\n]*)\n.*?^\s*\2\s*$", r"\1", cmd or "", flags=re.S | re.M)
+
+    def _q(m):
+        inner = m.group(0)[1:-1]
+        return inner if inner and not re.search(r"[\s;|&<>()$`\\]", inner) else m.group(0)[0] * 2
+
+    s = re.sub(r'"[^"]*"', _q, s)
+    return re.sub(r"'[^']*'", _q, s)
 
 
 def _is_doc(t: str, word: str) -> bool:
@@ -114,8 +124,14 @@ def bash_bad_parts(cmd: str, word: str) -> list:
                 if not (args and args[0].rsplit("/", 1)[-1] in TOOLS):
                     bad.append(part.strip())
             elif head == "cp":
-                if args and _is_doc(args[-1], word):
-                    bad.append(part.strip())             # 写す先が word のファイル（写す元が word なのは読むだけ）
+                # ★2026-10-18（監査 CP79 の修正）＝word の名前のファイルを、依頼書の置き場（audits/inputs）か結果の置き場（audits）へ
+                #   写す cp も止める（写す先が置き場のときは、名前が写す元から付くので、写す先の名前だけでは見えなかった）
+                dest = args[-1].rstrip("/") if args else ""
+                into_dir = (len(args) >= 2 and any(a.rstrip("/").endswith(word) for a in args[:-1])
+                            and dest.endswith("/audits/inputs" if word.endswith("_request.md") else "/audits")
+                            and ".claude/state/" not in dest)
+                if args and (_is_doc(args[-1], word) or into_dir):
+                    bad.append(part.strip())             # 写す先が word のファイルか、word の名前のファイルを置き場へ写す（写す元が word なのは読むだけ）
             elif head not in READONLY:
                 bad.append(part.strip())                 # rm・mv・tee・touch・ほかの書く語
             elif head == "sed" and any(t.startswith("-i") or t == "--in-place" for t in toks):
@@ -157,7 +173,7 @@ def gate_request(tool: str, ti: dict, cwd: str) -> int:
                         *[f"   ❌ {b}" for b in bad],
                         "   通るもの＝読むだけのコマンド（cat・grep・ls・wc・head・tail・diff・shasum・stat・find・awk・sed（-i なし）・jq・cmp・git の読む語と add・commit）",
                         "             と python3 .claude/tools/gen_audit_docs.py（apply_audit_fix.py・gen_review.py・try_hooks.py も）。頭の time と timeout は読み飛ばす。",
-                        "             引用符の中とヒアドキュメントの中は見ない。写す元が依頼書の cp と、依頼書でない所への書き出しも通る（2026-10-17）。"])
+                        "             ヒアドキュメントの2行目から終わりの印までは見ない。引用符の中は、空白も区切りも無い1語（パス）だけ見る（監査 CP79・2026-10-18）。写す元が依頼書の cp と、依頼書でない所への書き出しも通る（2026-10-17）。"])
     return 0
 
 
@@ -254,7 +270,21 @@ def selftest() -> int:
         ("B17 cmp で作業場の結果と結果ファイルを比べる（hook 11）→ 通る", f"cmp cp60_work/cp60_result.md {rep}",
          "_audit_report.md", False),
         ("R1 結果ファイルへのヒアドキュメントの書き出し（hook 11）→ 止まる",
-         f"cat > {rep} <<'EOF'\n中身\nEOF", "_audit_report.md", True),
+         f"cat > {rep} <<'EOF'\n中身\nEOF", "_audit_report.md", True),        # ★2026-10-18（監査 CP79 の修正）＝直す前に通っていた形（止まる側）と、直した後も通るべき形（通る側）
+        ("B18 引用符で囲んだ依頼書のパスの rm → 止まる", f'rm -f "{req}"', "_audit_request.md", True),
+        ("B19 ヒアドキュメントと同じ行の依頼書への書き出し → 止まる", f"cat <<'EOF' > {req}\nhi\nEOF", "_audit_request.md", True),
+        ("B20 依頼書の名前のファイルを inputs の置き場へ写す cp → 止まる", "cp /tmp/x_audit_request.md SDK/.claude/audits/inputs/",
+         "_audit_request.md", True),
+        ("B21 引用符で囲んだ道具のパスと依頼書 → 通る", f'python3 ".claude/tools/gen_audit_docs.py" request a.md "{req}"',
+         "_audit_request.md", False),
+        ("B22 結果の名前のファイルを audits の置き場へ写す cp（hook 11）→ 止まる", "cp cp60_work/x_audit_report.md SDK/.claude/audits/",
+         "_audit_report.md", True),
+        ("B23 引用符で囲んだ依頼書への sed -i → 止まる", f"sed -i '' 's/a/b/' \"{req}\"", "_audit_request.md", True),
+        ("B24 引用符で囲んだ結果ファイルへの tee（hook 11）→ 止まる", f'cat a.md | tee "{rep}"', "_audit_report.md", True),
+        ("B25 引用符の中の文に依頼書の名前（worklog へ書き足す）→ 通る",
+         f'echo "依頼書 {req} を作った" >> .claude/state/session_worklog_x.md', "_audit_request.md", False),
+        ("B26 引用符の中の grep -E の候補（| を含む）→ 通る", f'grep -n -E "GO|CONDITIONAL-GO|NO-GO" {rep}', "_audit_report.md", False),
+        ("B27 引用符の中の sed の行の指定（; を含む）→ 通る", f"sed -n '326,330p;1435p' {rep}", "_audit_report.md", False),
     ]
     ng = 0
     for nm, cmd, word, want in cases:

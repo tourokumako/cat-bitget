@@ -71,7 +71,8 @@ wf = block(f"{SDK}/WORKFLOW.md", r"🔴 現在(のフェーズ|地)", r"^## (改
 ns = block(f"{REPO}/.claude/state/next_step.md", r".")
 text = wf + "\n" + ns
 
-pat = r'(?:results|scripts|data|\.claude)/[A-Za-z0-9_./{}*-]+\.(?:parquet|py|md|json|csv|joblib)'
+# ★2026-10-18（監査 CP79）＝日本語を含むパス（next_step.md の m2c15_全体の表.md）と .txt・.tsv・.jsonl も拾う。空白と引用符と括弧と句読点で切る。
+pat = r'(?:results|scripts|data|\.claude)/[^\s`\'"|<>()（）「」『』〔〕【】、。，・…:：;；,]+\.(?:parquet|py|md|json|csv|joblib|txt|tsv|jsonl)'
 paths = sorted(set(re.findall(pat, text)))
 
 print("=== 次セッション着手: 参照パス存在チェック (自動・L-239 ずれ防止) ===")

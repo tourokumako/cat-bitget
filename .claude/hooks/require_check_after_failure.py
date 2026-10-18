@@ -37,6 +37,10 @@ def bash_is_read(cmd: str) -> bool:
         return False
     if re.search(r"\bsed\s+-i", c):
         return False
+    if re.search(r"\bfind\b[^;&|\n]*\s(?:-delete|-exec|-execdir|-ok|-okdir|-fprint|-fprintf|-fls)\b", c):
+        return False                               # ★2026-10-18（監査 CP79）＝find の消す・走らせる旗は読むだけでない（enforce_audit_docs.py の FIND_RUN と同じ）
+    if re.search(r"\bsort\b[^;&|\n]*\s(?:-o|--output)\b", c):
+        return False                               # ★2026-10-18（監査 CP79）＝sort -o はファイルへの書き出し
     for seg in re.split(r"&&|\|\||;|\||\n", c):
         w = seg.strip().split()
         while w and "=" in w[0] and not w[0].startswith("="):
