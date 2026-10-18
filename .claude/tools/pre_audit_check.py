@@ -68,7 +68,10 @@ CHECKS = [
     #     3回の監査をまたいでいた。この一覧に無いので、赤が画面に出なかった。
     #   145番＝2026-09-07 に足した別枠3種の審査のテスト（T33-g）を、毎回 走らせる所が無かった。
     #     （全体の --selftest は約6分半かかるので、その枝だけを数秒で走らせる口を使う）
-    "gen_audit_request.py --selftest",
+    # ★2026-10-18（192回目・ToDo の52番・まこさん決定「１は外しても問題ないなら、外す」）＝gen_audit_request.py --selftest を外した。
+    #   古い依頼書の道具（RG-v5 の監査専用・2026-09-29 から不使用）は退役。依頼書は gen_audit_docs.py だけが作る。
+    #   外しても問題ない根拠＝凍結ファイルを読む物がほかに無い・P8 は _MUST_IN_CHECKS の各行が CHECKS に在るかだけを見る（記録 20261018 §26）。
+    #   ★壊すプログラム b42 は、この行を探していた。b42 の探す行を ②（engine_tuner_gen）に替える直しは まこさんの手（breaks は承認の相手）。
     "engine_tuner_gen.py --selftest-extra-gate",
     # ★2026-09-27（監査 CP47 の Process）＝設計書の SPEC と実物の突き合わせ。実装の後に設計書の SPEC を作り直していないと、本走が設計↔実装ゲートで止まる（M2-E-4e で齟齬 6件のまま監査に出た）。
     "verify_design_contract.py --diff /Users/tachiharamasako/Documents/GitHub/cat-bitget/.claude/state/acceptance.md",
@@ -81,9 +84,9 @@ CHECKS = [
     #   チェックは全部 rc=0 になった（162回目に gen_composition_rules.py --write を飛ばした件が、監査 CP70 まで出なかった）。
     "gen_composition_rules.py --verify",
 ]
-# ★この4行が消されたら番人 P8 が落ちる（一覧から黙って外せなくする・145番・141番・2026-10-07 の照らし・254番）
-_MUST_IN_CHECKS = ("gen_audit_request.py --selftest",
-                   "engine_tuner_gen.py --selftest-extra-gate",
+# ★この3行が消されたら番人 P8 が落ちる（一覧から黙って外せなくする・145番・2026-10-07 の照らし・254番）
+#   ★2026-10-18＝141番の gen_audit_request.py --selftest は、古い道具の退役で外した（上の CHECKS の注記）。
+_MUST_IN_CHECKS = ("engine_tuner_gen.py --selftest-extra-gate",
                    INDICATOR_SOURCES_CHECK,
                    "gen_composition_rules.py --verify")
 

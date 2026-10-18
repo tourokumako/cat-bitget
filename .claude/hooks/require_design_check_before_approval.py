@@ -686,14 +686,14 @@ def _a12_ok_write(acc):
     with open(A12_OK, "w", encoding="utf-8") as fh:
         json.dump({"acc_sha": _sha_of(acc), "acc": acc, "time": time.strftime("%Y-%m-%d %H:%M:%S")}, fh, ensure_ascii=False)
 # ★2026-10-06（156回目・まこさん「監査出したあとに上記修正をする」「OK」・next_step の手順6）
-#   ＝仮当てのまま走らせる自己テスト6本（監査に出す前のチェック pre_audit_check.py の CHECKS のうち、表を作り直さずに
+#   ＝仮当てのまま走らせる自己テスト5本（2026-10-18 に6本から1本 外した・監査に出す前のチェック pre_audit_check.py の CHECKS のうち、表を作り直さずに
 #   走らせられるもの）。表の一致の検査（--verify）と H2 は入れない＝仮当てでは表を作り直さないので、名前が変わる工事では
 #   必ず落ちる。増える時間＝1回 約3分半（2026-10-06 の実測の合計＝8.4・120.4・72.6・2.3・3.1・0.5秒）。
 A12_SELFTESTS = (
     ("engine_tuner_exec.py", "--selftest"),
     ("observe_diag.py", "--selftest"),
     ("gen_materials.py", "--selftest"),
-    ("gen_audit_request.py", "--selftest"),
+    # ★2026-10-18（192回目・まこさん決定「１は外しても問題ないなら、外す」）＝gen_audit_request.py --selftest を外した（古い道具の退役・記録 20261018 §26）
     ("engine_tuner_gen.py", "--selftest-extra-gate"),
     ("verify_design_contract.py", "--diff"),       # 設計書のパスを後ろに足して走らせる
 )
