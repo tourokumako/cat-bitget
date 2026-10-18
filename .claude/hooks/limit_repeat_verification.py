@@ -50,13 +50,17 @@ def is_verification(inp: dict) -> set:
     text = f"{inp.get('description') or ''}\n{inp.get('prompt') or ''}"
     if not any(k in text for k in KEYWORDS):
         return set()
-    return {Path(t).name for t in TARGET_RE.findall(text)} or {"（名指しなし）"}
+    names = [Path(t).name for t in TARGET_RE.findall(text)]
+    return {names[0]} if names else {"（名指しなし）"}   # ★2026-10-18（監査 CP80）＝相手は依頼の文で最初に名指ししたファイル1つ
 
 
 def past_count(transcript: str, targets: set) -> int:
-    """同じ相手の照合の Agent の数（いま出そうとしている依頼も含む＝PreToolUse の時点で記録に入っている）。
-    ★2026-10-17（185回目）＝結果がエラーの依頼（hook に止められた・許可の判定で拒まれた＝Agent は走っていない）は数えない。"""
-    hits, failed = [], set()
+    """同じ相手の照合の Agent のうち、走り終えた（結果が在り、エラーでない）依頼の数。
+    ★2026-10-17（185回目）＝結果がエラーの依頼（hook に止められた・許可の判定で拒まれた＝Agent は走っていない）は数えない。
+    ★2026-10-18（監査 CP80）＝結果の無い依頼（いま出そうとしている依頼）は数えない。いまの依頼の行が PreToolUse の時点で記録に
+      入っているかは決まっていない（block_repeat_failure は、入っていない前提で止めている）。入っていないと、走り終えた照合の後の
+      2回目が n=1 で通った（作り物の記録で確かめた）。走り終えた依頼が1回在れば止める（main の n < MAX_PER_SESSION）。"""
+    hits, failed, done = [], set(), set()
     try:
         f = open(transcript, encoding="utf-8")
     except Exception:
@@ -78,9 +82,9 @@ def past_count(transcript: str, targets: set) -> int:
                 if b.get("type") == "tool_use" and b.get("name") == "Agent":
                     if is_verification(b.get("input") or {}) & targets:
                         hits.append(b.get("id"))
-                elif b.get("type") == "tool_result" and b.get("is_error") is True:
-                    failed.add(b.get("tool_use_id"))
-    return sum(1 for i in hits if i not in failed)
+                elif b.get("type") == "tool_result":
+                    (failed if b.get("is_error") is True else done).add(b.get("tool_use_id"))
+    return sum(1 for i in dict.fromkeys(hits) if i in done and i not in failed)
 
 
 def main(raw: str) -> int:
@@ -96,8 +100,8 @@ def main(raw: str) -> int:
     if not targets:
         return 0
     n = past_count(str(data.get("transcript_path") or ""), targets)
-    if n <= MAX_PER_SESSION:
-        return 0
+    if n < MAX_PER_SESSION:
+        return 0                                   # ★2026-10-18（監査 CP80）＝n は走り終えた依頼の数（いま出す依頼を含まない）＝1回 走り終えていれば止める
     e = sys.stderr
     print("🔒 [照合は1回まで] 同じ相手の照合を、このセッションで既に "
           f"{n} 回 頼んでいます（相手＝{', '.join(sorted(targets))}）。", file=e)
@@ -119,9 +123,14 @@ def selftest() -> int:
         {"type": "tool_use", "id": "{id}", "name": "Agent", "input": kw}]}}, ensure_ascii=False)
     err = json.dumps({"type": "user", "message": {"content": [
         {"type": "tool_result", "tool_use_id": "{id}", "is_error": True, "content": "止めた"}]}}, ensure_ascii=False)
+    fin = json.dumps({"type": "user", "message": {"content": [
+        {"type": "tool_result", "tool_use_id": "{id}", "content": "照合の結果"}]}}, ensure_ascii=False)
     cases = [
         ("S1 1回目は通る", [use.replace("{id}", "now")], kw, 0),
-        ("S2 走った依頼の後の2回目は止まる", [use.replace("{id}", "a"), use.replace("{id}", "now")], kw, 2),
+        ("S2 走った依頼の後の2回目は止まる",
+         [use.replace("{id}", "a"), fin.replace("{id}", "a"), use.replace("{id}", "now")], kw, 2),
+        ("S5 いま出す依頼が記録に入っていなくても、走った依頼の後の2回目は止まる（監査 CP80）",
+         [use.replace("{id}", "a"), fin.replace("{id}", "a")], kw, 2),
         ("S3 止められた依頼の後の出し直しは通る",
          [use.replace("{id}", "a"), err.replace("{id}", "a"), use.replace("{id}", "now")], kw, 0),
         ("S4 照合の語が無い依頼は通る", [use.replace("{id}", "a"), use.replace("{id}", "now")],

@@ -16,6 +16,7 @@ needs another tweak."／RegressionLedger「原因の見立てを2〜3個 書く�
 使い方: （hook）標準入力に PreToolUse の JSON ／ --replay <日数> 直近の記録に流して数える（何も止めない）
 """
 import json
+import os
 import pathlib
 import re
 import sys
@@ -43,7 +44,9 @@ def target_of(name, inp) -> str:
       全部「try_hooks.py」と数えられた＝別々の操作を同じ相手と数えた。"""
     inp = inp or {}
     if name in ("Edit", "Write", "MultiEdit", "NotebookEdit"):
-        return str(inp.get("file_path") or inp.get("notebook_path") or "")
+        p = str(inp.get("file_path") or inp.get("notebook_path") or "")
+        # ★2026-10-18（監査 CP80）＝同じファイルを別のパス（sdk の .claude/state の近道）で書くと別の相手と数えていた＝本物のパスで数える
+        return os.path.realpath(p) if p else ""
     if name == "Bash":
         cmd = str(inp.get("command", ""))
         if "try_hooks.py" in cmd:                        # 試しの道具＝試した相手で数える
@@ -53,7 +56,11 @@ def target_of(name, inp) -> str:
             m = re.search(r"--bash\s+([\"'])(.*?)\1(?=\s|$)", cmd, re.S)
             if m:
                 return "try:" + target_of("Bash", {"command": m.group(2)})
-        body = re.sub(r"'[^']*'|\"[^\"]*\"", "", HEREDOC.sub("", cmd))
+        # ★2026-10-18（監査 CP80）＝引用符の中が空白も区切りも無い1語（パス）なら、引用符だけを外して中身を残す
+        #   （直す前は python3 "x.py" の名前が消え、同じプログラムを別の相手と数えて3回目が通った）
+        body = re.sub(r"'[^']*'|\"[^\"]*\"",
+                      lambda m: m.group(0)[1:-1] if re.fullmatch(r"[^\s;|&<>()$`\\]+", m.group(0)[1:-1]) else "",
+                      HEREDOC.sub("", cmd))
         m = RUN_PY.search(body)
         if m:
             return pathlib.Path(m.group(1)).name
@@ -89,7 +96,9 @@ def load(path: pathlib.Path):
 
 def two_strikes(rows, tgt):
     """その相手への最後の2回の操作が両方 失敗なら、2回目の時刻を返す。違えば None。"""
-    hits = [r for r in rows if r[1] in ACT_TOOLS and not is_read(r[1], r[2]) and target_of(r[1], r[2]) == tgt]
+    # ★2026-10-18（監査 CP80）＝結果の無い呼び出し（いま打とうとしている操作）は数えない。いまの操作の行が PreToolUse の時点で
+    #   記録に入っていると、その操作が「最後の1回」になり、結果が無い＝失敗でない扱いで必ず通した（作り物の記録で確かめた）。
+    hits = [r for r in rows if r[1] in ACT_TOOLS and not is_read(r[1], r[2]) and target_of(r[1], r[2]) == tgt and r[4]]
     if len(hits) >= 2 and hits[-1][3] and hits[-2][3]:
         return hits[-1][4] or ""
     return None
@@ -141,6 +150,8 @@ def hook() -> int:
     except Exception:
         return 0
     name, inp = d.get("tool_name"), d.get("tool_input") or {}
+    if d.get("agent_type"):
+        return 0                                   # ★2026-10-18（監査 CP80）＝サブエージェントは通す。子の失敗は親の記録に入らず、親の失敗2回を子に当てていた（block_repeat_kind.py と同じ形）
     if name not in ACT_TOOLS or is_read(name, inp):
         return 0
     if name == "Write" and str(inp.get("file_path", "")).endswith("/diagnosis.md"):

@@ -650,3 +650,27 @@ F8 — やることの一覧が、目的に対して過不足ないか（優先�
 ## §32 193回目＝締め（ToDo の55番）
 
 - このセッションで書き替えた物＝.claude/hooks の5本（enforce_audit_docs・block_repeat_kind・require_check_after_failure・require_work_declaration・show_breaks_on_code_edit＝CP79 の修正）・verify_handoff_paths.sh（まこさんの手）・permanent_rules.md（77番）・hook_inventory_src.json と hook_inventory.md と _hook_inventory.py（修正17〜21・26）・applied_fixes.json（23件）・verbatim の2本・cp80_work の元データ・CP80 の依頼書・next_step（締め）・教訓 L-704。apply_audit_fix.py は直して元に戻した（差分 無し）。
+
+## §33 194回目＝ToDo の57番 ✅済＝CP80 の結果の確認と報告。58番 ✅済＝CP80 の修正42件を当てた
+
+- CP80（15本・問い4つ）の結果＝CONDITIONAL-GO。開始 15:41:12・本文を書き終え 16:40（59分）・結果ファイル 16:55（74分）。Plan agent は41分 並行。Critical 4／Major 20／Minor 16／Process 2＝42件（確定38・未決4＝18・24・27・28）。止める10本の全部に、一覧に書いていないすり抜けか止めすぎが在った。Critical＝目的ゲートの引用符とヒアドキュメント（CP79 の型①）・$( ) の中の実行を読むだけと見る部品・grep に --selftest の文字が在るだけで「走らせた」と数える形。
+- まこさん「修正は全部やる」（57番）→ 58番の宣言 → まこさん「OK」。
+- やった事＝①逐語のファイル＝verbatim/hook-fix-part2-nodesign-cp80/ok_apply_all_cp80_20261018（uuid 51d4dc4a・17ab6592・--verify ✅）②apply_audit_fix.py に CP79 と同じ NODESIGN_HOOK_OK の道（3か所）を足した。Claude Code の自動の許可の判定が、Edit を2回 止めた（1回目＝3か所のうち2か所・2回目＝1か所）。1回目の後は半分だけ入った状態を残さず git と同じに戻した。まこさん「前回は、CCのほうで修正してもらったので、このセッションでもそうしてほしい」で、書き方を少し変えて入れ直し、3か所とも入った ③--dry＝36件（未決4件は --choose <番号>=確定 で40件・修正40・42 は走らせるコマンド）④当てた＝40件 全部［自動］（applied_fixes.json に40件）⑤確かめ＝py_compile 10本 OK・bash -n 4本 OK・enforce_purpose_gate 56/56・block_repeat_failure 14/14・require_selftest_after_source_edit 12/12・enforce_audit_docs 29/29・require_read_plan_before_design 26/26・require_source_read_before_acceptance 32/32・limit_repeat_verification 5/5・enforce_audit_fix 7/7・require_check_after_failure --replay 1（記録12本・止める193回・読む操作を止めた回数0）⑥修正40・42＝_hook_inventory.py --write（稼働37本・登録なし60本・呼ばれない18本・--verify ✅）⑦apply_audit_fix.py の道を3か所とも消した（git diff 無し・自己テスト 48/48）。
+- 修正27・28（.sh の *_error.log を落ちたときだけ残す）＝監査人が試せていなかった件。bash -n OK。変数 rc は、止める前の行（require_read_plan_before_design.sh:16・require_source_read_before_acceptance.sh:26）で入っている。
+- 止められた事＝宣言の hook（58番の宣言の前に Bash を打った・2回）→ block_repeat_failure と block_repeat_kind が、見立て（diagnosis.md）と決まり（lessons.md）を求めた。見立て＝gen_verbatim.py の不具合ではなく、宣言の順を飛ばした私の手順の誤り。
+- 残り＝残り15本の分け方（59番）は未決。CC の勧め＝1回（CP81）で15本。
+
+## §34 194回目＝ToDo の59番 ✅済＝残り15本の監査（CP81・最後）の依頼書を作った
+
+- まこさん「次へ進める」（残り15本の分け方への返事）＝CC の勧め（15本を1回）のとおりに読み、返信の1行目に書いた。
+- 残り15本の決め方＝一覧の表の「不具合の直し」が済の36本から、CP79 の5本・CP80 の15本・require_leak_annotation（直し＝無し・不具合が見つからなかった）を除いた15本＝require_acceptance_before_impl・require_stage_conditions・require_design_contract_before_run・require_period_source・enforce_observe_diag_only・enforce_flow_declaration・enforce_h2_pass・enforce_g2_pass・require_tag_for_experiment・enforce_signal_table_gate・enforce_next_step_tidy・require_run_after_edit・enforce_worklog_on_experiment・require_design_check_before_approval・require_trial_before_proposal（15本とも止める hook・Bash 9本〔うち1本は Write/Edit も〕・Write/Edit 1本・Stop 5本）。判定を .sh 自身が行う物が6本。
+- 手書きの元データ＝cp81_work/hook_fix_nodesign_src.md（143行）。問いは R0・Q1（止める／止めすぎ）・Q2（すり抜け）・Q3（自己テスト）＝CP80 の Q2〜Q4 と同じ（表示だけの hook が0本なので CP80 の Q1 は無い）。Q2 に CP79・CP80 のすり抜けの型10個を書いた。Q1 の試し方に、.sh 自身が判定する6本は試しの道具（try_hooks.py --bash）と自己テストで試すこと（土台ゲートが bash での直接の走行を止める）を書いた。事実データに、15本の登録の場面（settings.json を jq で読んだ）・判定の本体・自己テストの口（grep で見た・別の名前の自己テスト6本）の表を入れた。範囲の外に、scripts/priority_rebuild の .py（設計書と承認が要る＝誤りは一覧の元データへの追記に）を入れた。自己申告4件（自己テストを走らせ直していない・時間の見込み約75分は CP80 の実測から・CP80 で塞いだ型が4本の「防げない物」に残っている・CP80 で変わった部品は使っていない）。
+- 依頼書＝inputs/2026-10-18_hook_fix_part3_nodesign_cp81_audit_request.md（408行・着手前必読40件）。全部 読んだ。目的の3に require_leak_annotation を「この回の15本のうち」と書いていた食い違いを元データで直し、作り直した。check-request 食い違い0件。一覧のハッシュ値（492041e2…）は実物と一致。起動はまこさん。
+
+## §35 194回目＝締め（ToDo の55番）
+
+- まこさん「監査に出した。締め作業へ進めて」（CP81 を起動）。
+- やった事＝tidy_next_step.py --todo-from（済んでいない14行を写した）→ 元データの「2 次のセッションでやること」（195回目・①作る物・②最初にやる事＝CP81 の結果を読む所から・当て方の手順に CP80 で分かった事〔--choose <番号>=確定・自動の許可の判定が止めたときの戻し方〕を足した）と「3-1 いまの状態」（194回目の終わり・§33〜§35）を書き替え → --write → 教訓 L-705。
+- このセッションで書き替えた物＝.claude/hooks の13本（CP80 の修正1〜28＝enforce_purpose_gate.py・require_check_after_failure.py・require_selftest_after_source_edit.py・block_repeat_failure.py・enforce_audit_docs.py・require_read_plan_before_design.py・require_source_read_before_acceptance.py・limit_repeat_verification.py・forbid_edit_generated_docs.py・record_read.sh・enforce_audit_fix_gen.sh・require_read_plan_before_design.sh・require_source_read_before_acceptance.sh）・一覧の3本（hook_inventory_src.json・hook_inventory.md・_hook_inventory.py）・applied_fixes.json（CP80 の40件）・逐語のファイル（verbatim/hook-fix-part2-nodesign-cp80/ok_apply_all_cp80_20261018）・CP81 の元データと依頼書・decisions.md（セッションの始めのプログラム）・next_step（締め）・教訓 L-705。apply_audit_fix.py は直して元に戻した（差分 無し）。
+- 残り＝CP81 の結果を読む（次のセッション）。CP79 の修正15 は未決のまま。
+- まこさん決定（2026-10-18・逐語）＝「次のセッションでは、監査結果出るまで、２２をやる」。＝次のセッションは、CP81 の結果が出るまで ToDo の22番（代表の値が2つある指標〔ADX のデイトレ〕を1つにする）を進める。next_step の②の1と、ToDo の22番の状態の欄に書いた。

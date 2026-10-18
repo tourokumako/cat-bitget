@@ -87,10 +87,33 @@ _OLD_SEP = "\x00"                                     # 消される側どうし
 # 探索の経路のファイルの一覧＝H2 の印から読む（★手書きしない＝教訓 L-468）。
 _H2_PASS = os.path.join(ROOT, ".claude", "state", "h2_pass.json")
 
-_RE_SKIP = re.compile(r"--selftest|--verify|--identity|--help|py_compile|--dry-run")
+# ★2026-10-18（監査 CP80）＝検査の旗は、空白の後ろの1語として見る（--tag x--help・--log /tmp/x--verify.log のような値の中の文字では通さない）
+_RE_SKIP = re.compile(r"(?:^|\s)(?:--selftest[\w-]*|--verify[\w-]*|--identity[\w-]*|--help|--dry-run|-m\s+py_compile)(?=[\s=]|$)")
+
+
+def _run_target(seg):
+    """★2026-10-18（監査 CP80）＝区切りの中で python が走らせる .py の名前を返す（無ければ None）。
+    値を1つ取る旗（-X・-W）は値ごと読み飛ばし、-m <モジュール> はモジュールの最後の名前に .py を付けて返す。
+    直す前の _RE_RUN_PY は、-X utf8・-W ignore の値で .py を見失い、-m も見なかった（engine_tuner の本走が通った）。"""
+    m = re.search(r"\bpython[0-9.]*\s+(.*)", seg, re.S)
+    if not m:
+        return None
+    toks = m.group(1).split()
+    i = 0
+    while i < len(toks):
+        t = toks[i]
+        if t == "-m":
+            return (toks[i + 1].rsplit(".", 1)[-1] + ".py") if i + 1 < len(toks) else None
+        if t.endswith(".py"):
+            return os.path.basename(t)
+        if t.startswith("-"):
+            i += 2 if t in ("-X", "-W") else 1
+            continue
+        return None
+    return None
 # python の直後に書いた .py（-u のような旗は読み飛ばす）。走らせる相手の .py を決める（2026-10-17）
 _RE_RUN_PY = re.compile(r"\bpython[0-9.]*\s+(?:-[A-Za-z]+\s+)*([^\s;|&<>]+\.py)\b")
-_RE_TUNER_NAME = re.compile(r"^engine_tuner[a-z_]*\.py$")
+_RE_TUNER_NAME = re.compile(r"^engine_tuner[a-z_]*\.py$", re.I)   # ★2026-10-18（監査 CP80）＝APFS は大文字と小文字を区別しない（Engine_Tuner_gen.py も同じファイル）
 
 TEMPLATE = """  【目的の照合】
   対象: <いま書く／直す／走らせるファイルの名前>
@@ -124,9 +147,17 @@ TEMPLATE = """  【目的の照合】
 
 def strip_text(cmd):
     """引用符とヒアドキュメントの中身を外す（文章での言及で誤って止めないため・他 hook と同型）。"""
-    s = re.sub(r"<<\s*[\"']?(\w+)[\"']?.*?^\1", " ", cmd or "", flags=re.S | re.M)
-    s = re.sub(r'"[^"]*"', " ", s)
-    s = re.sub(r"'[^']*'", " ", s)
+    # ★2026-10-18（監査 CP80・CP79 の修正と同じ直し）＝ヒアドキュメントは1行目（<< の在る行）を残し、2行目から終わりの印までだけを外す
+    #   （cat <<'EOF' | python3 engine_tuner.py … が、同じ行の本走ごと消えて通った）。
+    #   引用符の中が、空白も区切りの文字も含まない1語（パス）のときは、引用符だけを外して中身を残す
+    #   （enforce_audit_docs._strip_text と同じ外し方）。中身ごと消すと python3 "…/engine_tuner.py" が見えなくなって通った。
+    s = re.sub(r"(<<-?\s*[\"']?(\w+)[\"']?[^\n]*)\n.*?^\s*\2\s*$", r"\1", cmd or "", flags=re.S | re.M)
+
+    def _q(m):
+        inner = m.group(0)[1:-1]
+        return inner if inner and not re.search(r"[\s;|&<>()$`\\]", inner) else " "
+    s = re.sub(r'"[^"]*"', _q, s)
+    s = re.sub(r"'[^']*'", _q, s)
     return s
 
 
@@ -157,11 +188,11 @@ def is_target(tool, file_path, cmd, content, decl_text=None):
         #   そのため ①試しの道具の引数に engine_tuner のパスが在ると止めた（直近30日で3回）
         #   ②検査の旗の付いた別のコマンドをつなぐと、engine_tuner の本走も通った。
         x = strip_text(cmd)
-        for seg in re.split(r"&&|\|\||;|\||\n", x):
-            m = _RE_RUN_PY.search(seg)
-            if not m:
+        for seg in re.split(r"&&|\|\||;|\||&|\n", x):
+            seg = re.sub(r"(?:^|\s)#.*$", " ", seg)      # ★2026-10-18（監査 CP80）＝区切りの後ろのコメント（# --selftest）の旗と、& でつないだ別のコマンドの旗では通さない
+            name = _run_target(seg)
+            if not name:
                 continue                             # python で .py を走らせる区切りでなければ見ない
-            name = os.path.basename(m.group(1))
             if _RE_TUNER_NAME.match(name) and not _RE_SKIP.search(seg):
                 return "run", name
         return None, None
@@ -591,6 +622,23 @@ def selftest():
          "time python3 -u engine_tuner_exec.py --purpose check 2>&1 | tail -3", "", None, "", True),
         ("48 検査の旗が同じ区切りに在れば通る", B, "",
          "python3 engine_tuner_gen.py --selftest 2>&1 | tail -3; echo rc=$?", "", None, "", False),
+        # ---- ★2026-10-18（監査 CP80）＝緩めた道（引用符・ヒアドキュメント・区切りの中の旗・値を取る旗・-m）で本走が通らないか ----
+        ("49 ★引用符で囲んだ engine_tuner のパスの本走は止まる", B, "",
+         'python3 "scripts/priority_rebuild/engine_tuner.py" --logic S2 --purpose search', "", None, "", True),
+        ("50 ★ヒアドキュメントと同じ行の本走は止まる", B, "",
+         "cat <<'EOF' | python3 engine_tuner.py --logic S2 --purpose search\nx\nEOF", "", None, "", True),
+        ("51 ★旗の名前を値に書いても本走は止まる（--log の置き場の名前）", B, "",
+         "python3 engine_tuner.py --logic S2 --purpose search --log /tmp/x--verify.log", "", None, "", True),
+        ("52 ★区切りの後ろのコメントの旗では通さない", B, "",
+         "python3 engine_tuner.py --logic S2 --purpose search # --selftest", "", None, "", True),
+        ("53 ★& でつないだ別のコマンドの旗では通さない", B, "",
+         "python3 engine_tuner.py --logic S2 --purpose search & echo --selftest", "", None, "", True),
+        ("54 ★値を取る旗（-X utf8）を前に置いた本走は止まる", B, "",
+         "python3 -X utf8 engine_tuner.py --logic S2 --purpose search", "", None, "", True),
+        ("55 ★python3 -m で呼ぶ本走は止まる", B, "",
+         "python3 -m scripts.priority_rebuild.engine_tuner --purpose search", "", None, "", True),
+        ("56 ★値を取る検査の旗の付いた自己テスト（--selftest-extra-gate）は通る", B, "",
+         "python3 engine_tuner_gen.py --selftest-extra-gate", "", None, "", False),
     ]
     ng_count = 0
     for row in cases:

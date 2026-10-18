@@ -190,7 +190,8 @@ def hook_main():
     fp = str(ti.get("file_path") or "")
     if not fp:
         sys.exit(0)
-    fpn = os.path.normpath(fp if os.path.isabs(fp) else os.path.join(ROOT, fp))
+    # ★2026-10-18（監査 CP80）＝本物のパスで見る（sdk の .claude/state は直下の .claude/state への近道＝normpath では別の場所に見えて通った）
+    fpn = os.path.realpath(fp if os.path.isabs(fp) else os.path.join(ROOT, fp))
     work = target_work(fpn)
     if not work:
         sys.exit(0)                                  # 設計書の元でなければ見ない（設計書そのものはプログラムが元から写す）

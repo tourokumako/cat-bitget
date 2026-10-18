@@ -48,6 +48,7 @@ from __future__ import annotations
 import ast
 import datetime as dt
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -203,7 +204,10 @@ def stop(data: dict) -> int:
         if not Path(r).is_file():
             continue
         name = Path(r).name
-        if any(name in c and "--selftest" in c for c in commands_since(tr, e.get("since", ""))):
+        # ★2026-10-18（監査 CP80）＝python でその道具を --selftest つきで走らせたコマンドだけを数える
+        #   （直す前は grep -c -- "--selftest" <道具> のように、名前と旗の文字が在るだけで「走らせた」と数えた）
+        ran = re.compile(r"\bpython[0-9.]*\s+(?:-\S+\s+)*\S*" + re.escape(name) + r"\b[^;&|\n]*\s--selftest\b")
+        if any(ran.search(c) for c in commands_since(tr, e.get("since", ""))):
             continue
         left[r] = e
     save(p, left)

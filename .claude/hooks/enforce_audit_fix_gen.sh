@@ -1,5 +1,5 @@
 #!/bin/bash
-# enforce_audit_fix_gen.sh — hook 12・PreToolUse on Write|Edit|MultiEdit（2026-09-16 まこさん承認・新設）
+# enforce_audit_fix_gen.sh — hook 12・PreToolUse on Write|Edit|MultiEdit|Bash（2026-09-16 まこさん承認・新設。Bash の登録は在るが、本体は Bash を見ない＝enforce_audit_fix.py:192-193）
 #
 # 目的: 監査結果の修正を、当てる道具（.claude/tools/apply_audit_fix.py）以外では書けないようにする。
 #   まこさん逐語 2026-09-14「今後はそのテンプレ以外では監査結果を書けないように強制してほしい」

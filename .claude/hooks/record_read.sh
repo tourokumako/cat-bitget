@@ -35,7 +35,7 @@ sid=re.sub(r'[^A-Za-z0-9._-]','_',(sid or '').strip()).lstrip('.')
 if not sid or set(sid)<=set('._'):
     sid=''
 print(sid)
-print((d.get('tool_input') or {}).get('file_path',''))" 2>/dev/null)
+print('' if d.get('agent_type') else (d.get('tool_input') or {}).get('file_path',''))" 2>/dev/null)
 SID=$(printf '%s\n' "$out" | sed -n 1p)
 fp=$(printf '%s\n' "$out" | sed -n 2p)
 

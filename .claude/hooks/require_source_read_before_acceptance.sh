@@ -26,6 +26,9 @@ out=$(printf '%s' "$input" | python3 "$PY" 2>"$LOGERR")
 rc=$?
 if [ -s "$LOGERR" ]; then
   cat "$LOGERR" >&2
+  # ★2026-10-18（監査 CP80）＝止めた（2）・通した（0）ときの文は、実行時のエラーではない。残すと、次のセッションの始めに
+  #   hook_health_check.sh の③が「実行時エラーあり（fail-open で素通りした可能性）」と誤って出す＝落ちたときだけ残す。
+  if [ "$rc" = "0" ] || [ "$rc" = "2" ]; then : > "$LOGERR"; fi
 fi
 if [ -n "$out" ]; then
   echo "$out"

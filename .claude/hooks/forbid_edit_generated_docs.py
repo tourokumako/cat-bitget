@@ -77,6 +77,12 @@ def check(data: dict) -> int:
         path = path.resolve()
     except Exception:
         pass
+    # ★2026-10-18（監査 CP80）＝macOS の APFS は大文字と小文字を区別しない（.claude/state/NEXT_STEP.md は next_step.md と同じファイル）。
+    #   下の == は文字のまま比べるので、大文字と小文字を変えたパスの Write・Edit が通った。守る相手と、大文字と小文字を無視して同じなら、その相手として見る。
+    for _p in (NEXT, NEXT_REF, ACC, PDCA):
+        if str(path).casefold() == str(_p.resolve()).casefold():
+            path = _p.resolve()
+            break
     # ★2026-10-12（172回目）＝next_step の控えのファイル（next_step_reference.md）も、同じプログラムが同じ元データから作る＝同じく止める。
     if path in (NEXT.resolve(), NEXT_REF.resolve()):
         try:

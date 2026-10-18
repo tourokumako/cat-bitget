@@ -35,8 +35,12 @@ def bash_is_read(cmd: str) -> bool:
     c = re.sub(r"'[^']*'|\"[^\"]*\"", "''", cmd)
     if re.search(r">(?!\s*/dev/null|&)", c.replace("2>&1", "")):
         return False
-    if re.search(r"\bsed\s+-i", c):
-        return False
+    if re.search(r"\bsed\b[^;&|\n]*\s(?:-i|--in-place)", c):
+        return False                               # ★2026-10-18（監査 CP80）＝sed -n -i のように -i が後ろに在る形も書き込み
+    if re.search(r"\$\(|`", cmd):
+        return False                               # ★2026-10-18（監査 CP80）＝$( ) と ` ` の中は別のコマンドが走る（echo $(python3 …) が読むだけに見えた）
+    if re.search(r"\bawk\b", c) and re.search(r"system\s*\(|\bprint[^\n]*>|getline|\|&", cmd):
+        return False                               # ★2026-10-18（監査 CP80）＝awk の system()・print > は、引用符の中でも書き込み・実行
     if re.search(r"\bfind\b[^;&|\n]*\s(?:-delete|-exec|-execdir|-ok|-okdir|-fprint|-fprintf|-fls)\b", c):
         return False                               # ★2026-10-18（監査 CP79）＝find の消す・走らせる旗は読むだけでない（enforce_audit_docs.py の FIND_RUN と同じ）
     if re.search(r"\bsort\b[^;&|\n]*\s(?:-o|--output)\b", c):

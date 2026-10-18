@@ -47,8 +47,9 @@ sys.path.insert(0, os.path.join(ROOT, ".claude", "tools"))
 
 import gen_audit_docs as g                                     # noqa: E402
 
-REQ_RE = re.compile(r"/\.claude/audits/inputs/[^/_][^/]*_audit_request\.md$")
-REP_RE = re.compile(r"/\.claude/audits/[^/]+_audit_report\.md$")
+# ★2026-10-18（監査 CP80）＝大文字と小文字を区別しない（macOS の APFS は …_AUDIT_REPORT.md が …_audit_report.md と同じファイル＝Edit で一度出した結果を書き替えられた）
+REQ_RE = re.compile(r"/\.claude/audits/inputs/[^/_][^/]*_audit_request\.md$", re.I)
+REP_RE = re.compile(r"/\.claude/audits/[^/]+_audit_report\.md$", re.I)
 READONLY = ("cat", "grep", "rg", "ls", "wc", "head", "tail", "diff", "shasum", "stat", "find", "awk", "sed", "git", "jq",
             "cmp")   # jq と cmp＝2026-10-17（cmp は2つのファイルを比べるだけ・まこさん「含めてOK」）
 GIT_OK = ("status", "log", "diff", "show", "add", "commit", "ls-files", "grep", "rev-parse", "cat-file")
@@ -100,7 +101,13 @@ def bash_bad_parts(cmd: str, word: str) -> list:
       読み飛ばす・書き出しは書く先が word のときだけ止める・cp は写す先が word のときだけ止める・jq を読むだけの語に足す。
       rm・mv・tee・sed -i・ほかの書く語と、許していない python の道具は、いままでどおり止める。"""
     bad = []
-    for seg in re.split(r"[;\n]|&&|\|\|", _strip_text(cmd)):
+    s = _strip_text(cmd)
+    # ★2026-10-18（監査 CP80）＝変数に入れた word のパス（D=…_audit_report.md; cp a $D）は、使う所に値を戻してから見る。
+    #   直す前は、代入の区切りは頭の語が無いので飛ばし、$D を使う区切りには word の文字が無いので見ず、通った。
+    for n, v in re.findall(r"(?:^|[\s;&|(])(?:export\s+)?([A-Za-z_][A-Za-z_0-9]*)=([^\s;&|]+)", s):
+        if word in v:
+            s = re.sub(r"\$\{?" + n + r"\}?(?![A-Za-z_0-9])", lambda _m, v=v: v, s)
+    for seg in re.split(r"[;\n]|&&|\|\|", s):
         for part in seg.split("|"):
             if word not in part:
                 continue

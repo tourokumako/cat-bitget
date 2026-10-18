@@ -115,9 +115,14 @@ def _opened(token: str, log: list[str]) -> bool:
     t = token.strip(_STRIP)
     if not t:
         return True
-    base = t.rsplit("/", 1)[-1]
+    # ★2026-10-18（監査 CP80）＝パスで書いた token は、パスの区切り（/）の位置で後ろが一致する記録だけを数える。
+    #   直す前は、名前（basename）が同じだけの別のファイル（作業場の写し・控え）を開いても「開いた」と数え、
+    #   区切りの無い後ろ一致（regen.py で gen.py）も数えた。名前だけの token（「/」が無い）は、いままでどおり名前で見る。
+    if "/" not in t:
+        return any(p.rsplit("/", 1)[-1] == t for p in log)
+    t = t[2:] if t.startswith("./") else t
     for p in log:
-        if p.endswith("/" + t) or p.endswith(t) or p.rsplit("/", 1)[-1] == base:
+        if p == t or p.endswith("/" + t):
             return True
     return False
 
